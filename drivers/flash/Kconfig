@@ -11,35 +11,29 @@
 #
 config FLASH_HAS_DRIVER_ENABLED
 	bool
-	default n
 	help
 	  This option is enabled when any flash driver is enabled.
 
 config FLASH_HAS_PAGE_LAYOUT
 	bool
-	default n
 	help
 	  This option is enabled when the SoC flash driver supports
 	  retrieving the layout of flash memory pages.
 
 menuconfig FLASH
-	bool
-	prompt "Flash hardware support"
-	default n
+	bool "Flash hardware support"
 	help
 	  Enable support for the flash hardware.
 
 config FLASH_PAGE_LAYOUT
 	bool "API for retrieving the layout of pages"
 	depends on FLASH && FLASH_HAS_PAGE_LAYOUT
-	default n
 	help
 	  Enables API for retrieving the layout of flash memory pages.
 
 config SOC_FLASH_NRF
 	bool "Nordic Semiconductor nRF flash driver"
 	depends on FLASH && SOC_FAMILY_NRF
-	default n
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
 	help
@@ -57,7 +51,6 @@ config SOC_FLASH_MCUX
 	depends on FLASH && HAS_MCUX
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
-	default n
 	help
 	  Enables the MCUX flash shim driver.
 	  WARNING: This driver will disable the system interrupts for
@@ -68,7 +61,6 @@ config SOC_FLASH_MCUX
 config SOC_FLASH_NIOS2_QSPI
 	bool "Nios-II QSPI flash driver"
 	depends on FLASH && HAS_ALTERA_HAL
-	default n
 	select FLASH_HAS_DRIVER_ENABLED
 	help
 	  Enables the Nios-II QSPI flash driver.

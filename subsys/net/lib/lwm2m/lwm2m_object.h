@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2018 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -169,6 +170,8 @@ struct lwm2m_engine_obj {
 	/* object event callbacks */
 	lwm2m_engine_obj_create_cb_t create_cb;
 	lwm2m_engine_obj_delete_cb_t delete_cb;
+	lwm2m_engine_user_cb_t user_create_cb;
+	lwm2m_engine_user_cb_t user_delete_cb;
 
 	/* object member data */
 	u16_t obj_id;
@@ -230,7 +233,7 @@ struct lwm2m_engine_res_inst {
 	lwm2m_engine_get_data_cb_t	read_cb;
 	lwm2m_engine_get_data_cb_t	pre_write_cb;
 	lwm2m_engine_set_data_cb_t	post_write_cb;
-	lwm2m_engine_exec_cb_t		execute_cb;
+	lwm2m_engine_user_cb_t		execute_cb;
 
 	u8_t  *multi_count_var;
 	void  *data_ptr;
@@ -258,17 +261,11 @@ struct lwm2m_output_context {
 	/* current write fragment in net_buf chain */
 	struct net_buf *frag;
 
-	/* markers for last resource inst */
-	struct net_buf *mark_frag_ri;
-
 	/* current write position in net_buf chain */
 	u16_t offset;
 
-	/* markers for last resource inst ID */
-	u16_t mark_pos_ri;
-
-	/* flags for reader/writer */
-	u8_t writer_flags;
+	/* private output data */
+	void *user_data;
 };
 
 struct lwm2m_input_context {
@@ -292,6 +289,14 @@ struct lwm2m_writer {
 			    struct lwm2m_obj_path *path);
 	size_t (*put_end)(struct lwm2m_output_context *out,
 			  struct lwm2m_obj_path *path);
+	size_t (*put_begin_oi)(struct lwm2m_output_context *out,
+			       struct lwm2m_obj_path *path);
+	size_t (*put_end_oi)(struct lwm2m_output_context *out,
+			     struct lwm2m_obj_path *path);
+	size_t (*put_begin_r)(struct lwm2m_output_context *out,
+			      struct lwm2m_obj_path *path);
+	size_t (*put_end_r)(struct lwm2m_output_context *out,
+			    struct lwm2m_obj_path *path);
 	size_t (*put_begin_ri)(struct lwm2m_output_context *out,
 			       struct lwm2m_obj_path *path);
 	size_t (*put_end_ri)(struct lwm2m_output_context *out,
@@ -350,6 +355,25 @@ struct lwm2m_engine_context {
 	u8_t operation;
 };
 
+/* output user_data management functions */
+
+static inline void engine_set_out_user_data(struct lwm2m_output_context *out,
+					    void *user_data)
+{
+	out->user_data = user_data;
+}
+
+static inline void *engine_get_out_user_data(struct lwm2m_output_context *out)
+{
+	return out->user_data;
+}
+
+static inline void
+engine_clear_out_user_data(struct lwm2m_output_context *out)
+{
+	out->user_data = NULL;
+}
+
 /* inline multi-format write / read functions */
 
 static inline size_t engine_put_begin(struct lwm2m_output_context *out,
@@ -367,6 +391,46 @@ static inline size_t engine_put_end(struct lwm2m_output_context *out,
 {
 	if (out->writer->put_end) {
 		return out->writer->put_end(out, path);
+	}
+
+	return 0;
+}
+
+static inline size_t engine_put_begin_oi(struct lwm2m_output_context *out,
+					 struct lwm2m_obj_path *path)
+{
+	if (out->writer->put_begin_oi) {
+		return out->writer->put_begin_oi(out, path);
+	}
+
+	return 0;
+}
+
+static inline size_t engine_put_end_oi(struct lwm2m_output_context *out,
+				       struct lwm2m_obj_path *path)
+{
+	if (out->writer->put_end_oi) {
+		return out->writer->put_end_oi(out, path);
+	}
+
+	return 0;
+}
+
+static inline size_t engine_put_begin_r(struct lwm2m_output_context *out,
+					struct lwm2m_obj_path *path)
+{
+	if (out->writer->put_begin_r) {
+		return out->writer->put_begin_r(out, path);
+	}
+
+	return 0;
+}
+
+static inline size_t engine_put_end_r(struct lwm2m_output_context *out,
+				      struct lwm2m_obj_path *path)
+{
+	if (out->writer->put_end_r) {
+		return out->writer->put_end_r(out, path);
 	}
 
 	return 0;

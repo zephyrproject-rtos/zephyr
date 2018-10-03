@@ -14,8 +14,8 @@
  * as a part of ongoing development.
  */
 
-#ifndef __CRYPTO_CIPHER_H__
-#define __CRYPTO_CIPHER_H__
+#ifndef ZEPHYR_INCLUDE_CRYPTO_CIPHER_H_
+#define ZEPHYR_INCLUDE_CRYPTO_CIPHER_H_
 
 #include <device.h>
 #include <errno.h>
@@ -268,4 +268,4 @@ static inline int cipher_ccm_op(struct cipher_ctx *ctx,
 	return ctx->ops.ccm_crypt_hndlr(ctx, pkt, nonce);
 }
 
-#endif /* __CRYPTO_CIPHER_H__ */
+#endif /* ZEPHYR_INCLUDE_CRYPTO_CIPHER_H_ */

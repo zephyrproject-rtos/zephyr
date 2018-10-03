@@ -635,6 +635,20 @@ __STATIC_INLINE void nrf_saadc_channel_init(uint8_t                             
     nrf_saadc_channel_input_set(channel, config->pin_p, config->pin_n);
 }
 
+/**
+ * @brief Function for configuring the burst mode for the specified channel.
+ *
+ * @param[in] channel Channel number.
+ * @param[in] burst   Burst mode setting.
+ */
+__STATIC_INLINE void nrf_saadc_burst_set(uint8_t channel,
+                                         nrf_saadc_burst_t burst)
+{
+    NRF_SAADC->CH[channel].CONFIG =
+        (NRF_SAADC->CH[channel].CONFIG & ~SAADC_CH_CONFIG_BURST_Msk) |
+        (burst << SAADC_CH_CONFIG_BURST_Pos);
+}
+
 /** @} */
 
 #ifdef __cplusplus

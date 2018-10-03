@@ -7,27 +7,28 @@
 #
 
 config USB_DEVICE_HID
-	bool
-	prompt "USB Human Interface Device support"
-	default n
+	bool "USB Human Interface Device support"
 	help
 	  Enables USB Human Interface Device support.
 
 if USB_DEVICE_HID
 
-config HID_INT_EP_ADDR
-	hex
-	prompt "USB HID Device Interrupt Endpoint address"
-	default 0x81
-	range 0x81 0x8F
+config ENABLE_HID_INT_OUT_EP
+	bool
+	prompt "Enable USB HID Device Interrupt OUT Endpoint"
 	help
-	  USB HID Device interrupt endpoint address
+	  Enable USB HID Device Interrupt OUT Endpoint.
 
 config HID_INTERRUPT_EP_MPS
-	int
-	prompt "USB HID Device Interrupt Endpoint size"
+	int "USB HID Device Interrupt Endpoint size"
 	default 16
 	help
 	  USB HID Device interrupt endpoint size
+
+config USB_HID_MAX_PAYLOAD_SIZE
+	int
+	default 64
+	help
+	  Max allowed payload size over USB HID Class
 
 endif # USB_DEVICE_HID

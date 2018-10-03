@@ -210,7 +210,7 @@ static int boot_flag_write(int flag, u32_t bank_offs)
 		return rc;
 	}
 
-	memset(buf, BOOT_FLAG_UNSET, sizeof(buf));
+	(void)memset(buf, BOOT_FLAG_UNSET, sizeof(buf));
 	buf[0] = BOOT_FLAG_SET;
 
 	rc = boot_flash_write(offs, buf, sizeof(buf));

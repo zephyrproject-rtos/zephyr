@@ -6,17 +6,6 @@
  */
 
 
-/**
- * @brief test Stack Protector feature using canary
- *
- * This is the test program to test stack protection using canary.
- *
- * The main thread starts a second thread, which generates a stack check
- * failure.
- * By design, the second thread will not complete its execution and
- * will not set ret to TC_FAIL.
- */
-
 #include <zephyr.h>
 #include <ztest.h>
 
@@ -104,12 +93,18 @@ K_THREAD_STACK_DEFINE(alt_thread_stack_area, STACKSIZE);
 static struct k_thread alt_thread_data;
 
 /**
+ * @brief test Stack Protector feature using canary
  *
+ * @details This is the test program to test stack protection using canary.
+ * The main thread starts a second thread, which generates a stack check
+ * failure.
+ * By design, the second thread will not complete its execution and
+ * will not set ret to TC_FAIL.
  * This is the entry point to the test stack protection feature.
  * It starts the thread that tests stack protection, then prints out
  * a few messages before terminating.
  *
- * @return N/A
+ * @ingroup kernel_memprotect_tests
  */
 
 void test_stackprot(void)

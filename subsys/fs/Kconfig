@@ -7,19 +7,16 @@
 # Hidden. Automatically selected by file systems or FCB that need it
 config FS_FLASH_STORAGE_PARTITION
 	bool
-	default n
 
 menu "File Systems"
 
 config FILE_SYSTEM
 	bool "File system support"
-	default n
 	help
 	  Enables support for file system.
 
 config SYS_LOG_FS_LEVEL
-	int
-	prompt "File System log level"
+	int "File System log level"
 	depends on SYS_LOG
 	default 0
 	help
@@ -32,6 +29,14 @@ config SYS_LOG_FS_LEVEL
 	  - 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
 
 if FILE_SYSTEM
+
+config APP_LINK_WITH_FS
+	bool "Link 'app' with FS"
+	default y
+	help
+	  Add FS header files to the 'app' include path. It may be
+	  disabled if the include paths for FS are causing aliasing
+	  issues for 'app'.
 
 config FAT_FILESYSTEM_ELM
 	bool "ELM FAT File System"
@@ -71,8 +76,7 @@ menu "NFFS Settings"
 	visible if FILE_SYSTEM_NFFS
 
 config FS_NFFS_FLASH_DEV_NAME
-	string
-	prompt "Flash device name to be used"
+	string "Flash device name to be used"
 
 config FS_NFFS_NUM_INODES
 	int "Maximum number of inodes"

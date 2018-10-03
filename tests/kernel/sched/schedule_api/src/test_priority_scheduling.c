@@ -8,8 +8,10 @@
 
 #define STACK_SIZE (384 + CONFIG_TEST_EXTRA_STACKSIZE)
 /* nrf 51 has lower ram, so creating less number of threads */
-#if defined(CONFIG_SOC_SERIES_NRF51X) || defined(CONFIG_SOC_SERIES_STM32F3X) \
-    || defined(CONFIG_SOC_EMSK_EM7D)
+#if CONFIG_SRAM_SIZE <= 24
+	#define NUM_THREAD 2
+#elif (CONFIG_SRAM_SIZE <= 32) \
+	|| defined(CONFIG_SOC_EMSK_EM7D)
 	#define NUM_THREAD 3
 #else
 	#define NUM_THREAD 10
@@ -59,6 +61,8 @@ static void thread_tslice(void *p1, void *p2, void *p3)
  * @details Create multiple threads of different priorities - all are preemptive,
  * current thread is also made preemptive. Check how the threads get chance to
  * execute based on their priorities
+ *
+ * @ingroup kernel_sched_tests
  */
 void test_priority_scheduling(void)
 {

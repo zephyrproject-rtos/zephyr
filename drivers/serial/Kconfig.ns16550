@@ -1,6 +1,5 @@
 menuconfig UART_NS16550
 	bool "NS16550 serial driver"
-	default n
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	help
@@ -10,7 +9,6 @@ menuconfig UART_NS16550
 
 config UART_NS16550_PCI
 	bool "Enable PCI Support"
-	default n
 	depends on PCI && UART_NS16550
 	help
 	  This enables NS16550 to probe for PCI-based serial devices.
@@ -20,7 +18,6 @@ config UART_NS16550_PCI
 
 config UART_NS16550_DLF
 	bool "Enable Divisor Latch Fraction (DLF) support"
-	default n
 	depends on UART_NS16550
 	help
 	  This enables support for divisor latch fraction (DLF).
@@ -30,7 +27,6 @@ config UART_NS16550_DLF
 
 config UART_NS16550_LINE_CTRL
 	bool "Enable Serial Line Control for Apps"
-	default n
 	depends on UART_LINE_CTRL && UART_NS16550
 	help
 	  This enables the API for apps to control the serial line,
@@ -40,7 +36,6 @@ config UART_NS16550_LINE_CTRL
 
 config UART_NS16550_DRV_CMD
 	bool "Enable Driver Commands"
-	default n
 	depends on UART_DRV_CMD && UART_NS16550
 	help
 	  This enables the API for apps to send commands to driver.
@@ -49,7 +44,6 @@ config UART_NS16550_DRV_CMD
 
 config UART_NS16750
 	bool "Enable 64-bytes FIFO for UART 16750"
-	default n
 	depends on UART_NS16550
 	help
 	  This enables support for 64-bytes FIFO if UART controller is 16750.
@@ -58,7 +52,6 @@ config UART_NS16750
 
 menuconfig UART_NS16550_PORT_0
 	bool "Enable NS16550 Port 0"
-	default n
 	depends on UART_NS16550
 	help
 	  This tells the driver to configure the UART port at boot, depending on
@@ -108,7 +101,6 @@ config UART_NS16550_PORT_0_DLF
 
 config UART_NS16550_PORT_0_PCI
 	bool "Port 0 is PCI-based"
-	default n
 	depends on UART_NS16550_PCI && UART_NS16550_PORT_0
 	help
 	  Obtain port information from PCI.
@@ -117,7 +109,6 @@ config UART_NS16550_PORT_0_PCI
 
 menuconfig UART_NS16550_PORT_1
 	bool "Enable NS16550 Port 1"
-	default n
 	depends on UART_NS16550
 	help
 	  This tells the driver to configure the UART port at boot, depending on
@@ -165,11 +156,16 @@ config UART_NS16550_PORT_1_DLF
 	help
 	  Value for DLF register.
 
+config UART_NS16550_PORT_1_PCI
+	bool "Port 1 is PCI-based"
+	depends on UART_NS16550_PCI && UART_NS16550_PORT_1
+	help
+	  Obtain port information from PCI.
+
 # ---------- Port 2 ----------
 
 menuconfig UART_NS16550_PORT_2
 	bool "Enable NS16550 Port 2"
-	default n
 	depends on UART_NS16550
 	help
 	  This tells the driver to configure the UART port at boot, depending on
@@ -189,3 +185,38 @@ config UART_NS16550_PORT_2_DLF
 	depends on UART_NS16550_PORT_2 && UART_NS16550_DLF
 	help
 	  Value for DLF register.
+
+config UART_NS16550_PORT_2_PCI
+	bool "Port 2 is PCI-based"
+	depends on UART_NS16550_PCI && UART_NS16550_PORT_2
+	help
+	  Obtain port information from PCI.
+
+# ---------- Port 3 ----------
+
+menuconfig UART_NS16550_PORT_3
+	bool "Enable NS16550 Port 3"
+	depends on UART_NS16550
+	help
+	  This tells the driver to configure the UART port at boot, depending on
+	  the additional configure options below.
+
+config UART_NS16550_PORT_3_OPTIONS
+	int "Port 3 Options"
+	default 0
+	depends on UART_NS16550_PORT_3
+	help
+	  Options used for port initialization.
+
+config UART_NS16550_PORT_3_DLF
+	hex "Port 3 DLF value"
+	default 0x0
+	depends on UART_NS16550_PORT_3 && UART_NS16550_DLF
+	help
+	  Value for DLF register.
+
+config UART_NS16550_PORT_3_PCI
+	bool "Port 3 is PCI-based"
+	depends on UART_NS16550_PCI && UART_NS16550_PORT_3
+	help
+	  Obtain port information from PCI.

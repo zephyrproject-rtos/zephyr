@@ -54,7 +54,7 @@ Z_SYSCALL_HANDLER(uart_line_ctrl_set, dev, ctrl, val)
 	return _impl_uart_line_ctrl_set((struct device *)dev, ctrl, val);
 }
 
-Z_SYSCALL_HANDLER(uart_line_ctrl_get, dev, ctrl, val);
+Z_SYSCALL_HANDLER(uart_line_ctrl_get, dev, ctrl, val)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_UART(dev, line_ctrl_get));
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(val, sizeof(u32_t)));

@@ -275,21 +275,21 @@ typedef struct
   */
 
 /** @brief  Reset I2S handle state
-  * @param  __HANDLE__: specifies the I2S handle.
+  * @param  __HANDLE__ specifies the I2S handle.
   * @retval None
   */
 #define __HAL_I2S_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = HAL_I2S_STATE_RESET)
 
 /** @brief  Enable or disable the specified SPI peripheral (in I2S mode).
-  * @param  __HANDLE__: specifies the I2S Handle. 
+  * @param  __HANDLE__ specifies the I2S Handle. 
   * @retval None
   */
 #define __HAL_I2S_ENABLE(__HANDLE__) ((__HANDLE__)->Instance->I2SCFGR |= SPI_I2SCFGR_I2SE)
 #define __HAL_I2S_DISABLE(__HANDLE__) ((__HANDLE__)->Instance->I2SCFGR &= ~SPI_I2SCFGR_I2SE)
 
 /** @brief  Enable or disable the specified I2S interrupts.
-  * @param  __HANDLE__: specifies the I2S Handle.
-  * @param  __INTERRUPT__: specifies the interrupt source to enable or disable.
+  * @param  __HANDLE__ specifies the I2S Handle.
+  * @param  __INTERRUPT__ specifies the interrupt source to enable or disable.
   *        This parameter can be one of the following values:
   *            @arg I2S_IT_TXE: Tx buffer empty interrupt enable
   *            @arg I2S_IT_RXNE: RX buffer not empty interrupt enable
@@ -300,9 +300,9 @@ typedef struct
 #define __HAL_I2S_DISABLE_IT(__HANDLE__, __INTERRUPT__) ((__HANDLE__)->Instance->CR2 &= ~(__INTERRUPT__))
  
 /** @brief  Checks if the specified I2S interrupt source is enabled or disabled.
-  * @param  __HANDLE__: specifies the I2S Handle.
+  * @param  __HANDLE__ specifies the I2S Handle.
   *         This parameter can be I2S where x: 1, 2, or 3 to select the I2S peripheral.
-  * @param  __INTERRUPT__: specifies the I2S interrupt source to check.
+  * @param  __INTERRUPT__ specifies the I2S interrupt source to check.
   *          This parameter can be one of the following values:
   *            @arg I2S_IT_TXE: Tx buffer empty interrupt enable
   *            @arg I2S_IT_RXNE: RX buffer not empty interrupt enable
@@ -312,8 +312,8 @@ typedef struct
 #define __HAL_I2S_GET_IT_SOURCE(__HANDLE__, __INTERRUPT__) ((((__HANDLE__)->Instance->CR2 & (__INTERRUPT__)) == (__INTERRUPT__)) ? SET : RESET)
 
 /** @brief  Checks whether the specified I2S flag is set or not.
-  * @param  __HANDLE__: specifies the I2S Handle.
-  * @param  __FLAG__: specifies the flag to check.
+  * @param  __HANDLE__ specifies the I2S Handle.
+  * @param  __FLAG__ specifies the flag to check.
   *        This parameter can be one of the following values:
   *            @arg I2S_FLAG_RXNE: Receive buffer not empty flag
   *            @arg I2S_FLAG_TXE: Transmit buffer empty flag
@@ -327,7 +327,7 @@ typedef struct
 #define __HAL_I2S_GET_FLAG(__HANDLE__, __FLAG__) ((((__HANDLE__)->Instance->SR) & (__FLAG__)) == (__FLAG__))
 
 /** @brief Clears the I2S OVR pending flag.
-  * @param  __HANDLE__: specifies the I2S Handle.
+  * @param  __HANDLE__ specifies the I2S Handle.
   * @retval None
   */
 #define __HAL_I2S_CLEAR_OVRFLAG(__HANDLE__)     \
@@ -339,7 +339,7 @@ typedef struct
   } while(0)
     
 /** @brief Clears the I2S UDR pending flag.
-  * @param  __HANDLE__: specifies the I2S Handle.
+  * @param  __HANDLE__ specifies the I2S Handle.
   * @retval None
   */
 #define __HAL_I2S_CLEAR_UDRFLAG(__HANDLE__)     \

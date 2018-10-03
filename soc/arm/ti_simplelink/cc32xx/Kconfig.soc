@@ -1,0 +1,21 @@
+# Kconfig.soc - Texas Instruments CC32XX
+#
+
+choice
+prompt "TI SimpleLink MCU Selection"
+depends on SOC_SERIES_CC32XX
+
+config SOC_CC3220SF
+	bool "CC3220SF"
+	select HAS_CC3220SDK
+
+endchoice
+
+
+if SOC_CC3220SF
+
+config CC3220SF_DEBUG
+	bool "Prepend debug header, disabling flash verification" if XIP
+	default XIP
+
+endif # SOC_CC3220SF

@@ -146,17 +146,17 @@ static int init_app(void)
 	struct sockaddr_in6 my_addr;
 	int r;
 
-	if (net_addr_pton(AF_INET6, CONFIG_NET_APP_MY_IPV6_ADDR,
+	if (net_addr_pton(AF_INET6, CONFIG_NET_CONFIG_MY_IPV6_ADDR,
 			  &my_addr.sin6_addr)) {
 		NET_ERR("Invalid my IPv6 address: %s",
-			CONFIG_NET_APP_MY_IPV6_ADDR);
+			CONFIG_NET_CONFIG_MY_IPV6_ADDR);
 		return -1;
 	}
 
-	if (net_addr_pton(AF_INET6, CONFIG_NET_APP_PEER_IPV6_ADDR,
+	if (net_addr_pton(AF_INET6, CONFIG_NET_CONFIG_PEER_IPV6_ADDR,
 			  &peer_addr.sin6_addr)) {
 		NET_ERR("Invalid peer IPv6 address: %s",
-			CONFIG_NET_APP_PEER_IPV6_ADDR);
+			CONFIG_NET_CONFIG_PEER_IPV6_ADDR);
 		return -1;
 	}
 

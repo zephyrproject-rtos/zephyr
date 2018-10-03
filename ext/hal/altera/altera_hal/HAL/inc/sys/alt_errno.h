@@ -65,7 +65,9 @@
 extern int* (*alt_errno) (void);
 
 /* Must define this so that values such as EBADFD are defined in errno.h. */
+#ifndef __LINUX_ERRNO_EXTENSIONS__
 #define __LINUX_ERRNO_EXTENSIONS__
+#endif
 
 #include <errno.h>
 

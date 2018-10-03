@@ -10,7 +10,6 @@ menuconfig ETH_ENC28J60
 	bool "ENC28J60C Ethernet Controller"
 	depends on NET_L2_ETHERNET
 	depends on SPI
-	default n
 	help
 	  ENC28J60C Stand-Alone Ethernet Controller
 	  with SPI Interface
@@ -43,7 +42,6 @@ config ETH_EN28J60_TIMEOUT
 config ETH_ENC28J60_0
 	bool "ENC28J60C Ethernet port 0"
 	depends on ETH_ENC28J60
-	default n
 	help
 	  Include port 0 driver
 
@@ -85,14 +83,12 @@ config ETH_ENC28J60_0_SLAVE
 
 config ETH_ENC28J60_0_GPIO_SPI_CS
 	bool "Manage SPI CS through a GPIO pin"
-	default n
 	help
 	This option is useful if one needs to manage SPI CS through a GPIO
 	pin to by-pass the SPI controller's CS logic.
 
 config ETH_ENC28J60_0_SPI_CS_PORT_NAME
 	string "SPI cs port name"
-	default ""
 	depends on ETH_ENC28J60_0_GPIO_SPI_CS
 	help
 	Master SPI port name through which ENC28J60C chip is accessed.

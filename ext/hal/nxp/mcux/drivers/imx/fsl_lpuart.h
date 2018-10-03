@@ -1,31 +1,9 @@
 /*
  * Copyright (c) 2015-2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 #ifndef _FSL_LPUART_H_
 #define _FSL_LPUART_H_
@@ -113,7 +91,7 @@ typedef enum _lpuart_transmit_cts_config
 typedef enum _lpuart_idle_type_select
 {
     kLPUART_IdleTypeStartBit = 0U, /*!< Start counting after a valid start bit. */
-    kLPUART_IdleTypeStopBit = 1U,  /*!< Start conuting after a stop bit. */
+    kLPUART_IdleTypeStopBit = 1U,  /*!< Start counting after a stop bit. */
 } lpuart_idle_type_select_t;
 
 /*! @brief LPUART idle detected configuration.
@@ -547,6 +525,14 @@ static inline void LPUART_EnableRxDMA(LPUART_Type *base, bool enable)
  * @name Bus Operations
  * @{
  */
+
+/*!
+ * @brief Get the LPUART instance from peripheral base address.
+ *
+ * @param base LPUART peripheral base address.
+ * @return LPUART instance.
+ */
+uint32_t LPUART_GetInstance(LPUART_Type *base);
 
 /*!
  * @brief Enables or disables the LPUART transmitter.

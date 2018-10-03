@@ -1,0 +1,28 @@
+#
+# Copyright (c) 2018, Foundries.io
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: UART Device Base Structure
+id: uart-device
+version: 0.1
+
+description: >
+    This binding gives the base structures for all uart devices
+
+parent:
+    bus: uart
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      generation: define
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+...

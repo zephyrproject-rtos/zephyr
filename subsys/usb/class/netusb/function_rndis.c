@@ -25,6 +25,8 @@
 
 #include <class/usb_cdc.h>
 
+#include <os_desc.h>
+
 #include "netusb.h"
 #include "function_rndis.h"
 
@@ -84,7 +86,7 @@ static struct __rndis {
 	u8_t mac[6];
 	u8_t media_status;
 } rndis = {
-	.mac =  { 0x00, 0x11, 0x22, 0x33, 0x44, 0x66 },
+	.mac =  { 0x00, 0x00, 0x5E, 0x00, 0x53, 0x01 },
 	.mtu = 1500, /* Ethernet frame */
 	.media_status = RNDIS_OBJECT_ID_MEDIA_DISCONNECTED,
 	.state = UNINITIALIZED,
@@ -142,15 +144,15 @@ static void rndis_bulk_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status);
 static struct usb_ep_cfg_data rndis_ep_data[] = {
 	{
 		.ep_cb = rndis_int_in,
-		.ep_addr = CONFIG_RNDIS_INT_EP_ADDR
+		.ep_addr = RNDIS_INT_EP_ADDR
 	},
 	{
 		.ep_cb = rndis_bulk_out,
-		.ep_addr = CONFIG_RNDIS_OUT_EP_ADDR
+		.ep_addr = RNDIS_OUT_EP_ADDR
 	},
 	{
 		.ep_cb = rndis_bulk_in,
-		.ep_addr = CONFIG_RNDIS_IN_EP_ADDR
+		.ep_addr = RNDIS_IN_EP_ADDR
 	},
 };
 
@@ -452,7 +454,7 @@ static int rndis_init_handle(u8_t *data, u32_t len)
 							rndis_payload_packet));
 
 	rsp->pkt_align_factor = sys_cpu_to_le32(0);
-	memset(rsp->__reserved, 0, sizeof(rsp->__reserved));
+	(void)memset(rsp->__reserved, 0, sizeof(rsp->__reserved));
 
 	rndis.state = INITIALIZED;
 
@@ -923,7 +925,7 @@ static void rndis_hdr_add(u8_t *buf, u32_t len)
 	struct rndis_payload_packet *hdr = (void *)buf;
 	u32_t offset = offsetof(struct rndis_payload_packet, payload_offset);
 
-	memset(hdr, 0, sizeof(*hdr));
+	(void)memset(hdr, 0, sizeof(*hdr));
 
 	hdr->type = sys_cpu_to_le32(RNDIS_DATA_PACKET);
 	hdr->len = sys_cpu_to_le32(len + sizeof(*hdr));
@@ -1036,6 +1038,79 @@ static int rndis_send(struct net_pkt *pkt)
 	return 0;
 }
 
+#if defined(CONFIG_USB_DEVICE_OS_DESC)
+/* This string descriptor would be read the first time device is plugged in.
+ * It is Microsoft extension called an OS String Descriptor
+ */
+#define MSOS_STRING_LENGTH	18
+static struct string_desc {
+	u8_t bLength;
+	u8_t bDescriptorType;
+	u8_t bString[MSOS_STRING_LENGTH - 4];
+	u8_t bMS_VendorCode;
+	u8_t bPad;
+} __packed msosv1_string_descriptor = {
+	.bLength = MSOS_STRING_LENGTH,
+	.bDescriptorType = USB_STRING_DESC,
+	/* Signature MSFT100 */
+	.bString = {
+		'M', 0x00, 'S', 0x00, 'F', 0x00, 'T', 0x00,
+		'1', 0x00, '0', 0x00, '0', 0x00
+	},
+	.bMS_VendorCode = 0x03,	/* Vendor Code, used for a control request */
+	.bPad = 0x00,		/* Padding byte for VendorCode look as UTF16 */
+};
+
+static struct compat_id_desc {
+	/* MS OS 1.0 Header Section */
+	u32_t dwLength;
+	u16_t bcdVersion;
+	u16_t wIndex;
+	u8_t bCount;
+	u8_t Reserved[7];
+	/* MS OS 1.0 Function Section */
+	struct compat_id_func {
+		u8_t bFirstInterfaceNumber;
+		u8_t Reserved1;
+		u8_t compatibleID[8];
+		u8_t subCompatibleID[8];
+		u8_t Reserved2[6];
+	} __packed func[1];
+} __packed msosv1_compatid_descriptor = {
+	.dwLength = sys_cpu_to_le32(40),
+	.bcdVersion = sys_cpu_to_le16(0x0100),
+	.wIndex = sys_cpu_to_le16(USB_OSDESC_EXTENDED_COMPAT_ID),
+	.bCount = 0x01, /* One function section */
+	.Reserved = {
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+	},
+
+	.func = {
+		{
+			.bFirstInterfaceNumber = 0x00,
+			.Reserved1 = 0x01,
+			.compatibleID = {
+				'R', 'N', 'D', 'I', 'S', 0x00, 0x00, 0x00
+			},
+			.subCompatibleID = {
+				'5', '1', '6', '2', '0', '0', '1', 0x00
+			},
+			.Reserved2 = {
+				0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+			}
+		},
+	}
+};
+
+static struct usb_os_descriptor os_desc = {
+	.string = (u8_t *)&msosv1_string_descriptor,
+	.string_len = sizeof(msosv1_string_descriptor),
+	.vendor_code = 0x03,
+	.compat_id = (u8_t *)&msosv1_compatid_descriptor,
+	.compat_id_len = sizeof(msosv1_compatid_descriptor),
+};
+#endif /* CONFIG_USB_DEVICE_OS_DESC */
+
 static int rndis_init(void)
 {
 	SYS_LOG_DBG("");
@@ -1046,6 +1121,9 @@ static int rndis_init(void)
 	k_fifo_init(&rndis_cmd_queue);
 
 	k_delayed_work_init(&notify_work, rndis_notify);
+
+	/* Register MS OS Descriptor */
+	usb_register_os_desc(&os_desc);
 
 	k_thread_create(&cmd_thread_data, cmd_stack,
 			K_THREAD_STACK_SIZEOF(cmd_stack),

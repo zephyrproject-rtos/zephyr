@@ -3449,6 +3449,31 @@ __STATIC_INLINE void LL_RCC_PLL_ConfigDomain_DSI(uint32_t Source, uint32_t PLLM,
 #endif /* DSI */
 
 /**
+  * @brief  Configure PLL clock source
+  * @rmtoll PLLCFGR      PLLSRC        LL_RCC_PLL_SetMainSource
+  * @param PLLSource This parameter can be one of the following values:
+  *         @arg @ref LL_RCC_PLLSOURCE_HSI
+  *         @arg @ref LL_RCC_PLLSOURCE_HSE
+  * @retval None
+  */
+__STATIC_INLINE void LL_RCC_PLL_SetMainSource(uint32_t PLLSource)
+{
+  MODIFY_REG(RCC->PLLCFGR, RCC_PLLCFGR_PLLSRC, PLLSource);
+}
+
+/**
+  * @brief  Get the oscillator used as PLL clock source.
+  * @rmtoll PLLCFGR      PLLSRC        LL_RCC_PLL_GetMainSource
+  * @retval Returned value can be one of the following values:
+  *         @arg @ref LL_RCC_PLLSOURCE_HSI
+  *         @arg @ref LL_RCC_PLLSOURCE_HSE
+  */
+__STATIC_INLINE uint32_t LL_RCC_PLL_GetMainSource(void)
+{
+  return (uint32_t)(READ_BIT(RCC->PLLCFGR, RCC_PLLCFGR_PLLSRC));
+}
+
+/**
   * @brief  Get Main PLL multiplication factor for VCO
   * @rmtoll PLLCFGR      PLLN          LL_RCC_PLL_GetN
   * @retval Between 50 and 432
@@ -3515,18 +3540,6 @@ __STATIC_INLINE uint32_t LL_RCC_PLL_GetR(void)
   return (uint32_t)(READ_BIT(RCC->PLLCFGR, RCC_PLLCFGR_PLLR));
 }
 #endif /* RCC_PLLCFGR_PLLR */
-
-/**
-  * @brief  Get the oscillator used as PLL clock source.
-  * @rmtoll PLLCFGR      PLLSRC        LL_RCC_PLL_GetMainSource
-  * @retval Returned value can be one of the following values:
-  *         @arg @ref LL_RCC_PLLSOURCE_HSI
-  *         @arg @ref LL_RCC_PLLSOURCE_HSE
-  */
-__STATIC_INLINE uint32_t LL_RCC_PLL_GetMainSource(void)
-{
-  return (uint32_t)(READ_BIT(RCC->PLLCFGR, RCC_PLLCFGR_PLLSRC));
-}
 
 /**
   * @brief  Get Division factor for the main PLL and other PLL
@@ -4026,7 +4039,7 @@ __STATIC_INLINE void LL_RCC_PLLI2S_ConfigDomain_SPDIFRX(uint32_t Source, uint32_
 __STATIC_INLINE void LL_RCC_PLLI2S_ConfigDomain_I2S(uint32_t Source, uint32_t PLLM, uint32_t PLLN, uint32_t PLLR)
 {
   MODIFY_REG(RCC->PLLCFGR, RCC_PLLCFGR_PLLSRC | RCC_PLLCFGR_PLLM, Source | PLLM);
-  MODIFY_REG(RCC->PLLI2SCFGR, RCC_PLLI2SCFGR_PLLI2SN | RCC_PLLI2SCFGR_PLLI2SR, PLLN << RCC_PLLI2SCFGR_PLLI2SN_Pos | PLLR);
+  MODIFY_REG(RCC->PLLI2SCFGR, RCC_PLLI2SCFGR_PLLI2SN | RCC_PLLI2SCFGR_PLLI2SR, PLLN << RCC_PLLI2SCFGR_PLLI2SN_Pos | PLLR << RCC_PLLI2SCFGR_PLLI2SR_Pos);
 }
 
 /**
@@ -4077,7 +4090,7 @@ __STATIC_INLINE uint32_t LL_RCC_PLLI2S_GetQ(void)
   */
 __STATIC_INLINE uint32_t LL_RCC_PLLI2S_GetR(void)
 {
-  return (uint32_t)(READ_BIT(RCC->PLLI2SCFGR, RCC_PLLI2SCFGR_PLLI2SR));
+  return (uint32_t)(READ_BIT(RCC->PLLI2SCFGR, RCC_PLLI2SCFGR_PLLI2SR) >> RCC_PLLI2SCFGR_PLLI2SR_Pos);
 }
 
 #if defined(RCC_PLLI2SCFGR_PLLI2SP)

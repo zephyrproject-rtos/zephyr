@@ -4,5 +4,7 @@ type: mcu
 arch: arm
 toolchain:
   - zephyr
-  - gccarmemb
+  - gnuarmemb
 ram: 32
+supported:
+  - rtc

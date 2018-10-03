@@ -7,15 +7,13 @@
 #
 
 config NESTED_INTERRUPTS
-	bool
-	prompt "Enable nested interrupts"
+	bool "Enable nested interrupts"
 	default y
 	help
 	  This option enables support for nested interrupts.
 
 config EXCEPTION_DEBUG
-	bool
-	prompt "Unhandled exception debugging"
+	bool "Unhandled exception debugging"
 	default y
 	depends on PRINTK
 	help
@@ -27,8 +25,7 @@ config EXCEPTION_DEBUG
 menu "Memory Layout Options"
 
 config IDT_NUM_VECTORS
-	int
-	prompt "Number of IDT vectors"
+	int "Number of IDT vectors"
 	default 256
 	range 32 256
 	help
@@ -37,8 +34,7 @@ config IDT_NUM_VECTORS
 	  supported in an IDT requiring 2048 bytes of memory.
 
 config MAX_IRQ_LINES
-	int
-	prompt "Number of IRQ lines"
+	int "Number of IRQ lines"
 	default 128
 	range 0 256
 	help
@@ -49,8 +45,7 @@ config MAX_IRQ_LINES
 	  interrupts.
 
 config SET_GDT
-	bool
-	prompt "Setup GDT as part of boot process"
+	bool "Setup GDT as part of boot process"
 	default y
 	help
 	  This option sets up the GDT as part of the boot process. However,
@@ -60,10 +55,8 @@ config SET_GDT
 	  will not be available.
 
 config GDT_DYNAMIC
-	bool
-	prompt "Store GDT in RAM so that it can be modified"
+	bool "Store GDT in RAM so that it can be modified"
 	depends on SET_GDT
-	default n
 	help
 	  This option stores the GDT in RAM instead of ROM, so that it may
 	  be modified at runtime at the expense of some memory.
@@ -71,8 +64,7 @@ config GDT_DYNAMIC
 endmenu
 
 config DISABLE_SSBD
-	bool
-	prompt "Disable Speculative Store Bypass"
+	bool "Disable Speculative Store Bypass"
 	depends on USERSPACE
 	default y if !X86_NO_SPECTRE_V4
 	help

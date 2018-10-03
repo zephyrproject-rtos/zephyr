@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2018 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -95,6 +96,13 @@ struct json_data {
 	u8_t value_len;
 };
 
+struct json_out_formatter_data {
+	struct net_buf *mark_frag_ri;
+	u16_t mark_pos_ri;
+	u8_t writer_flags;
+	u8_t path_level;
+};
+
 /* some temporary buffer space for format conversions */
 static char json_buffer[64];
 
@@ -116,7 +124,7 @@ static int json_next_token(struct lwm2m_input_context *in,
 	u8_t c;
 	bool escape = false;
 
-	memset(json, 0, sizeof(struct json_data));
+	(void)memset(json, 0, sizeof(struct json_data));
 	cont = 1;
 
 	/* We will be either at start, or at a specific position */
@@ -207,12 +215,18 @@ static int json_next_token(struct lwm2m_input_context *in,
 static size_t put_begin(struct lwm2m_output_context *out,
 			struct lwm2m_obj_path *path)
 {
-	int len;
+	int len = -1;
 
-	len = snprintk(json_buffer, sizeof(json_buffer),
-		       "{\"bn\":\"/%u/%u/\",\"e\":[",
-		       path->obj_id, path->obj_inst_id);
-	out->writer_flags = 0; /* set flags to zero */
+	if (path->level >= 2) {
+		len = snprintk(json_buffer, sizeof(json_buffer),
+			       "{\"bn\":\"/%u/%u/\",\"e\":[",
+			       path->obj_id, path->obj_inst_id);
+	} else {
+		len = snprintk(json_buffer, sizeof(json_buffer),
+			       "{\"bn\":\"/%u/\",\"e\":[",
+			       path->obj_id);
+	}
+
 	if (len < 0) {
 		/* TODO: Generate error? */
 		return 0;
@@ -246,14 +260,28 @@ static size_t put_end(struct lwm2m_output_context *out,
 static size_t put_begin_ri(struct lwm2m_output_context *out,
 			   struct lwm2m_obj_path *path)
 {
-	out->writer_flags |= WRITER_RESOURCE_INSTANCE;
+	struct json_out_formatter_data *fd;
+
+	fd = engine_get_out_user_data(out);
+	if (!fd) {
+		return 0;
+	}
+
+	fd->writer_flags |= WRITER_RESOURCE_INSTANCE;
 	return 0;
 }
 
 static size_t put_end_ri(struct lwm2m_output_context *out,
 			 struct lwm2m_obj_path *path)
 {
-	out->writer_flags &= ~WRITER_RESOURCE_INSTANCE;
+	struct json_out_formatter_data *fd;
+
+	fd = engine_get_out_user_data(out);
+	if (!fd) {
+		return 0;
+	}
+
+	fd->writer_flags &= ~WRITER_RESOURCE_INSTANCE;
 	return 0;
 }
 
@@ -261,18 +289,39 @@ static size_t put_json_prefix(struct lwm2m_output_context *out,
 			      struct lwm2m_obj_path *path,
 			      const char *format)
 {
-	char *sep = SEPARATOR(out->writer_flags);
+	struct json_out_formatter_data *fd;
+	char *sep;
 	int len = 0;
 
-	if (out->writer_flags & WRITER_RESOURCE_INSTANCE) {
-		len = snprintk(json_buffer, sizeof(json_buffer),
-			       "%s{\"n\":\"%u/%u\",%s:",
-			       sep, path->res_id, path->res_inst_id,
-			       format);
+	fd = engine_get_out_user_data(out);
+	if (!fd) {
+		return 0;
+	}
+
+	sep = SEPARATOR(fd->writer_flags);
+	if (fd->path_level >= 2) {
+		if (fd->writer_flags & WRITER_RESOURCE_INSTANCE) {
+			len = snprintk(json_buffer, sizeof(json_buffer),
+				       "%s{\"n\":\"%u/%u\",%s:",
+				       sep, path->res_id, path->res_inst_id,
+				       format);
+		} else {
+			len = snprintk(json_buffer, sizeof(json_buffer),
+				       "%s{\"n\":\"%u\",%s:",
+				       sep, path->res_id, format);
+		}
 	} else {
-		len = snprintk(json_buffer, sizeof(json_buffer),
-			       "%s{\"n\":\"%u\",%s:",
-			       sep, path->res_id, format);
+		if (fd->writer_flags & WRITER_RESOURCE_INSTANCE) {
+			len = snprintk(json_buffer, sizeof(json_buffer),
+				       "%s{\"n\":\"%u/%u/%u\",%s:",
+				       sep, path->obj_inst_id, path->res_id,
+				       path->res_inst_id, format);
+		} else {
+			len = snprintk(json_buffer, sizeof(json_buffer),
+				       "%s{\"n\":\"%u/%u\",%s:",
+				       sep, path->obj_inst_id, path->res_id,
+				       format);
+		}
 	}
 
 	if (len < 0) {
@@ -293,6 +342,12 @@ static size_t put_json_prefix(struct lwm2m_output_context *out,
 
 static size_t put_json_postfix(struct lwm2m_output_context *out)
 {
+	struct json_out_formatter_data *fd;
+
+	fd = engine_get_out_user_data(out);
+	if (!fd) {
+		return 0;
+	}
 
 	out->frag = net_pkt_write(out->out_cpkt->pkt, out->frag,
 				  out->offset, &out->offset, 1, "}",
@@ -302,7 +357,7 @@ static size_t put_json_postfix(struct lwm2m_output_context *out)
 		return 0;
 	}
 
-	out->writer_flags |= WRITER_OUTPUT_VALUE;
+	fd->writer_flags |= WRITER_OUTPUT_VALUE;
 	return 1;
 }
 
@@ -451,20 +506,36 @@ static size_t put_bool(struct lwm2m_output_context *out,
 }
 
 const struct lwm2m_writer json_writer = {
-	put_begin,
-	put_end,
-	put_begin_ri,
-	put_end_ri,
-	put_s8,
-	put_s16,
-	put_s32,
-	put_s64,
-	put_string,
-	put_float32fix,
-	put_float64fix,
-	put_bool,
-	NULL
+	.put_begin = put_begin,
+	.put_end = put_end,
+	.put_begin_ri = put_begin_ri,
+	.put_end_ri = put_end_ri,
+	.put_s8 = put_s8,
+	.put_s16 = put_s16,
+	.put_s32 = put_s32,
+	.put_s64 = put_s64,
+	.put_string = put_string,
+	.put_float32fix = put_float32fix,
+	.put_float64fix = put_float64fix,
+	.put_bool = put_bool,
 };
+
+int do_read_op_json(struct lwm2m_engine_obj *obj,
+		    struct lwm2m_engine_context *context,
+		    int content_format)
+{
+	struct json_out_formatter_data fd;
+	int ret;
+
+	(void)memset(&fd, 0, sizeof(fd));
+	engine_set_out_user_data(context->out, &fd);
+	/* save the level for output processing */
+	fd.path_level = context->path->level;
+	ret = lwm2m_perform_read_op(obj, context, content_format);
+	engine_clear_out_user_data(context->out);
+
+	return ret;
+}
 
 static int parse_path(const u8_t *buf, u16_t buflen,
 		      struct lwm2m_obj_path *path)

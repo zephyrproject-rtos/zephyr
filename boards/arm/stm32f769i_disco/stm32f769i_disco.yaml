@@ -1,0 +1,7 @@
+identifier: stm32f769i_disco
+name: STM32F769IDISCOVERY
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb

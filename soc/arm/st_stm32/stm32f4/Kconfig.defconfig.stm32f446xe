@@ -1,0 +1,28 @@
+# Kconfig - ST STM32F446XE MCU configuration options
+#
+# Copyright (c) 2018 Philemon Jaermann.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_STM32F446XE
+
+config SOC
+	string
+	default "stm32f446xx"
+
+config NUM_IRQS
+	int
+	default 97
+
+if GPIO_STM32
+
+config GPIO_STM32_PORTE
+	default n
+
+config GPIO_STM32_PORTH
+	default n
+
+endif # GPIO_STM32
+
+endif # SOC_STM32F446XE

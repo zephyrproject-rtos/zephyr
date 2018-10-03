@@ -1,0 +1,11 @@
+# Kconfig - SAM D20 Xplained Pro board configuration
+#
+# Copyright (c) 2018 Sean Nyekjaer
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ATSAMD20_XPRO
+
+config BOARD
+	default "atsamd20_xpro"
+
+endif # BOARD_ATSAMD20_XPRO

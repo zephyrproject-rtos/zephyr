@@ -8,7 +8,6 @@
 
 menuconfig NET_RPL
 	bool "Enable RPL (Ripple) support"
-	default n
 	select NET_IPV6
 	select NET_IPV6_NBR_CACHE
 	select NET_ROUTE
@@ -28,8 +27,8 @@ config NET_RPL_PREFIX
 
 choice
 	prompt "Network type"
-	default NET_RPL_L2_ANY
 	default NET_RPL_L2_IEEE802154 if NET_L2_IEEE802154
+	default NET_RPL_L2_ANY
 	help
 	  The type of the network that this RPL device is supporting.
 	  Currently all the nodes in the network need to be the same type
@@ -40,6 +39,7 @@ config NET_RPL_L2_ANY
 
 config NET_RPL_L2_IEEE802154
 	bool "IEEE 802.15.4"
+
 endchoice
 
 choice
@@ -104,7 +104,6 @@ endchoice
 config	NET_RPL_PROBING
 	bool "Enable RPL probing"
 	depends on NET_RPL
-	default n
 	help
 	  When enabled, probes will be sent periodically to keep
 	  parent link estimates up to date.
@@ -272,13 +271,11 @@ config	NET_RPL_DIS_INTERVAL
 config NET_STATISTICS_RPL
 	bool "Collect RPL statistics"
 	depends on NET_STATISTICS
-	default n
 	help
 	  Keep track of RPL related statistics
 
 config  NET_DEBUG_RPL
 	bool "Debug RPL"
-	default n
 	depends on NET_RPL && NET_LOG
 	help
 	  Enables RPL output debug messages

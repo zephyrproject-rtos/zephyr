@@ -1,0 +1,51 @@
+# Kconfig - ST Microelectronics STM32F103XX MCU
+#
+# Copyright (c) 2017, embedjournal.com
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_STM32F103XB || SOC_STM32F103X8
+
+config SOC
+	string
+	default "stm32f103xb"
+
+config NUM_IRQS
+	int
+	default 43
+
+if GPIO_STM32
+
+config GPIO_STM32_PORTE
+	default y
+
+endif # GPIO_STM32
+
+endif # SOC_STM32F103XB || SOC_STM32F103X8
+
+if SOC_STM32F103XE
+
+config SOC
+	string
+	default "stm32f103xe"
+
+config NUM_IRQS
+	int
+	default 60
+
+if GPIO_STM32
+
+config GPIO_STM32_PORTE
+	default y
+
+config GPIO_STM32_PORTF
+	default y
+
+config GPIO_STM32_PORTG
+	default y
+
+endif # GPIO_STM32
+
+endif # SOC_STM32F103XE
+

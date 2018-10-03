@@ -32,7 +32,4 @@ else()
 zephyr_cc_option(-mno-hw-div)
 endif()
 
-set_property(GLOBAL PROPERTY E_KERNEL_ENTRY  -e${CONFIG_KERNEL_ENTRY})
-
-add_subdirectory(soc/${SOC_PATH})
 add_subdirectory(core)

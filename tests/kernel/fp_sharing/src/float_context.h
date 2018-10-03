@@ -63,7 +63,7 @@ struct fp_non_volatile_register_set {
 #define SIZEOF_FP_VOLATILE_REGISTER_SET sizeof(struct fp_volatile_register_set)
 #define SIZEOF_FP_NON_VOLATILE_REGISTER_SET 0
 
-#elif defined(CONFIG_CPU_CORTEX_M4)
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_FP)
 
 #define FP_OPTION 0
 

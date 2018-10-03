@@ -1,0 +1,11 @@
+identifier: stm32f723e_disco
+name: STM32F723EDISCOVERY
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - i2c
+  - usb_device

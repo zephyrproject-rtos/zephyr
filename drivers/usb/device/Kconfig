@@ -10,13 +10,10 @@ if USB
 
 config USB_DEVICE_DRIVER
 	bool
-	default n
 
 config USB_DW
-	bool
-	prompt "Designware USB Device Controller Driver"
+	bool "Designware USB Device Controller Driver"
 	select USB_DEVICE_DRIVER
-	default n
 	help
 	  Designware USB Device Controller Driver.
 
@@ -26,50 +23,47 @@ config USB_DW_IRQ_PRI
 	help
 	  USB interrupt priority.
 
+config USB_DW_USB_2_0
+	bool "DesignWare Controller and PHY support for USB specification 2.0"
+	depends on USB_DW
+	help
+	  Indicates whether or not USB specification version 2.0 is supported
+
 config USB_DC_STM32
-	bool
-	prompt "USB device controller driver for STM32 devices"
+	bool "USB device controller driver for STM32 devices"
 	depends on SOC_FAMILY_STM32
 	select USB_DEVICE_DRIVER
 	select USE_STM32_LL_USB if !SOC_SERIES_STM32F0X && !SOC_SERIES_STM32F3X && !SOC_SERIES_STM32L0X
 	select USE_STM32_HAL_PCD
 	select USE_STM32_HAL_PCD_EX
 	select HAS_DTS_USB
-	default n
 	help
-	  Enable USB support on the STM32 F0, F1, F3, F4, L0 and L4 family of
+	  Enable USB support on the STM32 F0, F1, F2, F3, F4, F7, L0 and L4 family of
 	  processors.
 
 config USB_DC_SAM0
-	bool
-	prompt "SAM0 series USB Device Controller driver"
+	bool "SAM0 series USB Device Controller driver"
 	depends on SOC_FAMILY_SAM0
 	select USB_DEVICE_DRIVER
-	default n
 	help
 	  SAM0 family USB device controller Driver.
 
 config USB_NRF52840
-	bool
-	prompt "Nordic Semiconductor nRF52840 USB Device Controller Driver"
+	bool "Nordic Semiconductor nRF52840 USB Device Controller Driver"
 	depends on SOC_NRF52840
 	select USB_DEVICE_DRIVER
 	select HAS_DTS_USB
-	default n
 	help
 	  nRF52840 USB Device Controller Driver
 
 config USB_KINETIS
-	bool
-	prompt "Kinetis USB Device Controller Driver"
+	bool "Kinetis USB Device Controller Driver"
 	select USB_DEVICE_DRIVER
-	default n
 	help
 	  Kinetis USB Device Controller Driver.
 
 config SYS_LOG_USB_DRIVER_LEVEL
-	int
-	prompt "USB driver log level"
+	int "USB driver log level"
 	depends on SYS_LOG
 	default 0
 	help
@@ -90,7 +84,6 @@ config SYS_LOG_USB_DRIVER_LEVEL
 config USB_DC_STM32_DISCONN_ENABLE
 	bool
 	depends on USB_DC_STM32
-	default n
 	help
 	  Say Y if your board uses USB DISCONNECT pin to enable the
 	  pull-up resistor on USB DP.

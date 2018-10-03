@@ -1,0 +1,56 @@
+/*
+ * Copyright (c) 2017 RnDity Sp. z o.o.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/stm32-pinctrl.h>
+
+/ {
+	soc {
+		pinctrl: pin-controller@48000000 {
+			usart1_pins_a: usart1_a {
+				rx_tx {
+					rx = <STM32_PIN_PB7 (STM32_PINMUX_ALT_FUNC_0 | STM32_PUPDR_NO_PULL)>;
+					tx = <STM32_PIN_PB6 (STM32_PINMUX_ALT_FUNC_0 | STM32_PUSHPULL_NOPULL)>;
+				};
+			};
+			usart1_pins_b: usart1_b {
+				rx_tx {
+					rx = <STM32_PIN_PA10 (STM32_PINMUX_ALT_FUNC_1 | STM32_PUPDR_NO_PULL)>;
+					tx = <STM32_PIN_PA9 (STM32_PINMUX_ALT_FUNC_1 | STM32_PUSHPULL_NOPULL)>;
+				};
+			};
+			usart2_pins_a: usart2_a {
+				rx_tx {
+					rx = <STM32_PIN_PA3 (STM32_PINMUX_ALT_FUNC_1 | STM32_PUPDR_NO_PULL)>;
+					tx = <STM32_PIN_PA2 (STM32_PINMUX_ALT_FUNC_1 | STM32_PUSHPULL_NOPULL)>;
+				};
+			};
+			usart2_pins_b: usart2_b {
+				rx_tx {
+					rx = <STM32_PIN_PA15 (STM32_PINMUX_ALT_FUNC_1 | STM32_PUPDR_NO_PULL)>;
+					tx = <STM32_PIN_PA14 (STM32_PINMUX_ALT_FUNC_1 | STM32_PUSHPULL_NOPULL)>;
+				};
+			};
+			usart2_pins_d: usart2_d {
+				rx_tx {
+					rx = <STM32_PIN_PD6 (STM32_PINMUX_ALT_FUNC_0 | STM32_PUPDR_NO_PULL)>;
+					tx = <STM32_PIN_PD5 (STM32_PINMUX_ALT_FUNC_0 | STM32_PUSHPULL_NOPULL)>;
+				};
+			};
+			can_pins_a: can_a {
+				rx_tx {
+					rx = <STM32_PIN_PB8 (STM32_PINMUX_ALT_FUNC_4 | STM32_PUPDR_PULL_UP)>;
+					tx = <STM32_PIN_PB9 (STM32_PINMUX_ALT_FUNC_4 | STM32_PUPDR_NO_PULL)>;
+				};
+			};
+			can_pins_b: can_b {
+				rx_tx {
+					rx = <STM32_PIN_PD0 (STM32_PINMUX_ALT_FUNC_0 | STM32_PUPDR_PULL_UP)>;
+					tx = <STM32_PIN_PD1 (STM32_PINMUX_ALT_FUNC_0 | STM32_PUPDR_NO_PULL)>;
+				};
+			};
+		};
+	};
+};

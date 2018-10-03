@@ -73,21 +73,107 @@ void test_sprintf_double(void)
 
 	var.u1 = 0x00000000;
 	var.u2 = 0x7ff00000;    /* Bit pattern for +INF (double) */
+	sprintf(buffer, "%e", var.d);
+	zassert_true((strcmp(buffer, "inf") == 0),
+		     "sprintf(inf) - incorrect output '%s'\n", buffer);
+
+	sprintf(buffer, "%E", var.d);
+	zassert_true((strcmp(buffer, "INF") == 0),
+		     "sprintf(INF) - incorrect output '%s'\n", buffer);
+
 	sprintf(buffer, "%f", var.d);
-	zassert_true((strcmp(buffer, "+INF") == 0),
-		     "sprintf(+INF) - incorrect output '%s'\n", buffer);
+	zassert_true((strcmp(buffer, "inf") == 0),
+		     "sprintf(inf) - incorrect output '%s'\n", buffer);
+
+	sprintf(buffer, "%F", var.d);
+	zassert_true((strcmp(buffer, "INF") == 0),
+		     "sprintf(INF) - incorrect output '%s'\n", buffer);
+
+	sprintf(buffer, "%g", var.d);
+	zassert_true((strcmp(buffer, "inf") == 0),
+		     "sprintf(inf) - incorrect output '%s'\n", buffer);
+
+	sprintf(buffer, "%G", var.d);
+	zassert_true((strcmp(buffer, "INF") == 0),
+		     "sprintf(INF) - incorrect output '%s'\n", buffer);
 
 	var.u1 = 0x00000000;
 	var.u2 = 0xfff00000;    /* Bit pattern for -INF (double) */
+	sprintf(buffer, "%e", var.d);
+	zassert_true((strcmp(buffer, "-inf") == 0),
+		     "sprintf(-INF) - incorrect output '%s'\n", buffer);
+
+	sprintf(buffer, "%E", var.d);
+	zassert_true((strcmp(buffer, "-INF") == 0),
+		     "sprintf(-INF) - incorrect output '%s'\n", buffer);
+
 	sprintf(buffer, "%f", var.d);
+	zassert_true((strcmp(buffer, "-inf") == 0),
+		     "sprintf(-INF) - incorrect output '%s'\n", buffer);
+
+	sprintf(buffer, "%F", var.d);
+	zassert_true((strcmp(buffer, "-INF") == 0),
+		     "sprintf(-INF) - incorrect output '%s'\n", buffer);
+
+	sprintf(buffer, "%g", var.d);
+	zassert_true((strcmp(buffer, "-inf") == 0),
+		     "sprintf(-INF) - incorrect output '%s'\n", buffer);
+
+	sprintf(buffer, "%G", var.d);
 	zassert_true((strcmp(buffer, "-INF") == 0),
 		     "sprintf(-INF) - incorrect output '%s'\n", buffer);
 
 	var.u1 = 0x00000000;
 	var.u2 = 0x7ff80000;    /* Bit pattern for NaN (double) */
+	sprintf(buffer, "%e", var.d);
+	zassert_true((strcmp(buffer, "nan") == 0),
+		     "sprintf(nan) - incorrect output '%s'\n", buffer);
+
+	sprintf(buffer, "%E", var.d);
+	zassert_true((strcmp(buffer, "NAN") == 0),
+		     "sprintf(NAN) - incorrect output '%s'\n", buffer);
+
 	sprintf(buffer, "%f", var.d);
-	zassert_true((strcmp(buffer, "NaN") == 0),
-		     "sprintf(NaN) - incorrect output '%s'\n", buffer);
+	zassert_true((strcmp(buffer, "nan") == 0),
+		     "sprintf(nan) - incorrect output '%s'\n", buffer);
+
+	sprintf(buffer, "%F", var.d);
+	zassert_true((strcmp(buffer, "NAN") == 0),
+		     "sprintf(NAN) - incorrect output '%s'\n", buffer);
+
+	sprintf(buffer, "%g", var.d);
+	zassert_true((strcmp(buffer, "nan") == 0),
+		     "sprintf(nan) - incorrect output '%s'\n", buffer);
+
+	sprintf(buffer, "%G", var.d);
+	zassert_true((strcmp(buffer, "NAN") == 0),
+		     "sprintf(NAN) - incorrect output '%s'\n", buffer);
+
+	var.u1 = 0x00000000;
+	var.u2 = 0xfff80000;    /* Bit pattern for -NaN (double) */
+	sprintf(buffer, "%e", var.d);
+	zassert_true((strcmp(buffer, "-nan") == 0),
+		     "sprintf(-nan) - incorrect output '%s'\n", buffer);
+
+	sprintf(buffer, "%E", var.d);
+	zassert_true((strcmp(buffer, "-NAN") == 0),
+		     "sprintf(-NAN) - incorrect output '%s'\n", buffer);
+
+	sprintf(buffer, "%f", var.d);
+	zassert_true((strcmp(buffer, "-nan") == 0),
+		     "sprintf(-nan) - incorrect output '%s'\n", buffer);
+
+	sprintf(buffer, "%F", var.d);
+	zassert_true((strcmp(buffer, "-NAN") == 0),
+		     "sprintf(-NAN) - incorrect output '%s'\n", buffer);
+
+	sprintf(buffer, "%g", var.d);
+	zassert_true((strcmp(buffer, "-nan") == 0),
+		     "sprintf(-nan) - incorrect output '%s'\n", buffer);
+
+	sprintf(buffer, "%G", var.d);
+	zassert_true((strcmp(buffer, "-NAN") == 0),
+		     "sprintf(-NAN) - incorrect output '%s'\n", buffer);
 
 	var.d = 1.0;
 	sprintf(buffer, "%f", var.d);
@@ -135,37 +221,37 @@ void test_sprintf_double(void)
 	/*******************/
 	var.d = 1234.0;
 	sprintf(buffer, "%e", var.d);
-	zassert_true((strcmp(buffer, "1.234000e+003") == 0),
-		     "sprintf(1.234000e+003) - incorrect "
+	zassert_true((strcmp(buffer, "1.234000e+03") == 0),
+		     "sprintf(1.234000e+03) - incorrect "
 		     "output '%s'\n", buffer);
 
 	sprintf(buffer, "%E", var.d);
-	zassert_true((strcmp(buffer, "1.234000E+003") == 0),
-		     "sprintf(1.234000E+003) - incorrect "
+	zassert_true((strcmp(buffer, "1.234000E+03") == 0),
+		     "sprintf(1.234000E+03) - incorrect "
 		     "output '%s'\n", buffer);
 
 	/*******************/
 	var.d = 0.1234;
 	sprintf(buffer, "%e", var.d);
-	zassert_true((strcmp(buffer, "1.234000e-001") == 0),
-		     "sprintf(1.234000e-001) - incorrect "
+	zassert_true((strcmp(buffer, "1.234000e-01") == 0),
+		     "sprintf(1.234000e-01) - incorrect "
 		     "output '%s'\n", buffer);
 
 	sprintf(buffer, "%E", var.d);
-	zassert_true((strcmp(buffer, "1.234000E-001") == 0),
-		     "sprintf(1.234000E-001) - incorrect "
+	zassert_true((strcmp(buffer, "1.234000E-01") == 0),
+		     "sprintf(1.234000E-01) - incorrect "
 		     "output '%s'\n", buffer);
 
 	/*******************/
 	var.d = 1234000000.0;
 	sprintf(buffer, "%g", var.d);
-	zassert_true((strcmp(buffer, "1.234e+009") == 0),
-		     "sprintf(1.234e+009) - incorrect "
+	zassert_true((strcmp(buffer, "1.234e+09") == 0),
+		     "sprintf(1.234e+09) - incorrect "
 		     "output '%s'\n", buffer);
 
 	sprintf(buffer, "%G", var.d);
-	zassert_true((strcmp(buffer, "1.234E+009") == 0),
-		     "sprintf(1.234E+009) - incorrect "
+	zassert_true((strcmp(buffer, "1.234E+09") == 0),
+		     "sprintf(1.234E+09) - incorrect "
 		     "output '%s'\n", buffer);
 }
 
@@ -278,9 +364,21 @@ void test_vsprintf(void)
 
 void test_snprintf(void)
 {
+#if defined(__GNUC__) && __GNUC__ >= 7
+	/*
+	 * GCC 7 and newer are smart enough to realize that in the statements
+	 * below, the output will not fit in 0 or 4 bytes, but that it requires
+	 * 9.
+	 * So it throws a warning in compile time. But in this case we are
+	 * actually testing that snprintf's return value is what it should be
+	 * while truncating the output. So let's suppress this warning here.
+	 */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-truncation"
+#endif
+
 	int len;
 	char buffer[100];
-
 
 	/*******************/
 	buffer[0] = '\0';
@@ -302,6 +400,9 @@ void test_snprintf(void)
 		     "snprintf(%%x).  Expected '%s', got '%s'\n",
 		     "dea", buffer);
 
+#if defined(__GNUC__) && __GNUC__ >= 7
+#pragma GCC diagnostic pop
+#endif
 }
 
 /**

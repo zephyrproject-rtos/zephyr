@@ -10,7 +10,6 @@ menuconfig ADC_TI_ADC108S102
 	bool "TI adc108s102 chip driver"
 	select SPI
 	select ADC_0
-	default n
 	help
 	  Enable support for TI's ADC chip adc108s102 driver.
 

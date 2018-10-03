@@ -170,7 +170,7 @@ ErrorStatus LL_DMA2D_DeInit(DMA2D_TypeDef *DMA2Dx)
   * @note   DMA2D transfers must be disabled to set initialization bits in configuration registers,
   *         otherwise ERROR result is returned.
   * @param  DMA2Dx DMA2D Instance
-  * @param  DMA2D_InitStruct: pointer to a LL_DMA2D_InitTypeDef structure
+  * @param  DMA2D_InitStruct pointer to a LL_DMA2D_InitTypeDef structure
   *         that contains the configuration information for the specified DMA2D peripheral.
   * @retval An ErrorStatus enumeration value:
   *          - SUCCESS: DMA2D registers are initialized according to DMA2D_InitStruct content
@@ -241,7 +241,7 @@ ErrorStatus LL_DMA2D_Init(DMA2D_TypeDef *DMA2Dx, LL_DMA2D_InitTypeDef *DMA2D_Ini
 
 /**
   * @brief Set each @ref LL_DMA2D_InitTypeDef field to default value.
-  * @param DMA2D_InitStruct: pointer to a @ref LL_DMA2D_InitTypeDef structure
+  * @param DMA2D_InitStruct pointer to a @ref LL_DMA2D_InitTypeDef structure
   *                          whose fields will be set to default values.
   * @retval None
   */
@@ -268,9 +268,9 @@ void LL_DMA2D_StructInit(LL_DMA2D_InitTypeDef *DMA2D_InitStruct)
   * @brief  Configure the foreground or background according to the specified parameters
   *         in the LL_DMA2D_LayerCfgTypeDef structure.
   * @param  DMA2Dx DMA2D Instance
-  * @param  DMA2D_LayerCfg: pointer to a LL_DMA2D_LayerCfgTypeDef structure that contains
+  * @param  DMA2D_LayerCfg pointer to a LL_DMA2D_LayerCfgTypeDef structure that contains
   *         the configuration information for the specified layer.
-  * @param  LayerIdx: DMA2D Layer index.
+  * @param  LayerIdx DMA2D Layer index.
   *                   This parameter can be one of the following values:
   *                   0(background) / 1(foreground)
   * @retval None
@@ -362,7 +362,7 @@ void LL_DMA2D_ConfigLayer(DMA2D_TypeDef *DMA2Dx, LL_DMA2D_LayerCfgTypeDef *DMA2D
 
 /**
   * @brief Set each @ref LL_DMA2D_LayerCfgTypeDef field to default value.
-  * @param DMA2D_LayerCfg: pointer to a @ref LL_DMA2D_LayerCfgTypeDef structure
+  * @param DMA2D_LayerCfg pointer to a @ref LL_DMA2D_LayerCfgTypeDef structure
   *                        whose fields will be set to default values.
   * @retval None
   */
@@ -390,7 +390,7 @@ void LL_DMA2D_LayerCfgStructInit(LL_DMA2D_LayerCfgTypeDef *DMA2D_LayerCfg)
   * @brief  Initialize DMA2D output color register according to the specified parameters
   *         in DMA2D_ColorStruct.
   * @param  DMA2Dx DMA2D Instance
-  * @param  DMA2D_ColorStruct: pointer to a LL_DMA2D_ColorTypeDef structure that contains
+  * @param  DMA2D_ColorStruct pointer to a LL_DMA2D_ColorTypeDef structure that contains
   *         the color configuration information for the specified DMA2D peripheral.
   * @retval None
   */

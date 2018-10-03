@@ -8,7 +8,6 @@
 
 menuconfig NET_IPV4
 	bool "IPv4"
-	default n
 	help
 	  Enable IPv4 support. If this is enabled then the device is
 	  able to send and receive IPv4 network packets.
@@ -23,14 +22,15 @@ config NET_INITIAL_TTL
 
 config NET_IF_MAX_IPV4_COUNT
 	int "Max number of IPv4 network interfaces in the system"
-	default 1
 	default NET_VLAN_COUNT if NET_VLAN
+	default 1
 	help
-	This tells how many network interfaces there will be in the system
-	that will have IPv4 enabled.
+	  This tells how many network interfaces there will be in the system
+	  that will have IPv4 enabled.
 
 config NET_IF_UNICAST_IPV4_ADDR_COUNT
 	int "Max number of unicast IPv4 addresses per network interface"
+	default 2 if NET_IPV4_AUTO
 	default 1
 
 config NET_IF_MCAST_IPV4_ADDR_COUNT
@@ -40,28 +40,36 @@ config NET_IF_MCAST_IPV4_ADDR_COUNT
 config NET_DHCPV4
 	bool "Enable DHCPv4 client"
 	depends on NET_IPV4
-	default n
+
+config NET_IPV4_AUTO
+	bool "Enable IPv4 autoconfiguration [EXPERIMENTAL]"
+	depends on NET_IPV4 && NET_ARP
+	help
+	  Enables IPv4 auto IP address configuration (see RFC 3927)
 
 if NET_LOG
 
 config NET_DEBUG_IPV4
 	bool "Debug core IPv4"
-	default n
 	help
 	  Enables core IPv4 code part to output debug messages
 
 config NET_DEBUG_ICMPV4
 	bool "Debug ICMPv4"
-	default n
 	help
 	  Enables ICMPv4 code part to output debug messages
 
 config NET_DEBUG_DHCPV4
 	bool "Debug DHCPv4 client"
 	depends on NET_DHCPV4
-	default n
 	help
 	  Enable debug diagnostic from DHCPV4 client.
+
+config NET_DEBUG_IPV4_AUTOCONF
+	bool "Debug IPv4 autoconf client"
+	depends on NET_IPV4_AUTO
+	help
+	  Enable debug diagnostic from IPv4 autoconf client.
 
 endif # NET_LOG
 

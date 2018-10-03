@@ -7,26 +7,25 @@
 #
 
 menuconfig TEMP_NRF5
-	bool
-	prompt "nRF5 Temperature Sensor"
+	bool "nRF5 Temperature Sensor"
 	depends on SOC_FAMILY_NRF
-	default n
 	help
 	  Enable driver for nRF5 temperature sensor.
 
+if TEMP_NRF5
+
 config TEMP_NRF5_NAME
-	string
-	prompt "Driver name"
+	string "Driver name"
 	default "TEMP_0"
-	depends on TEMP_NRF5
 	help
 	  Device name with which the nRF5 temperature sensor is identified.
 
 config TEMP_NRF5_PRI
 	int "TEMP interrupt priority"
-	depends on TEMP_NRF5
 	range 0 1 if SOC_SERIES_NRF51X
 	range 0 5 if SOC_SERIES_NRF52X
 	default 1
 	help
 	  nRF5X TEMP IRQ priority.
+
+endif # TEMP_NRF5

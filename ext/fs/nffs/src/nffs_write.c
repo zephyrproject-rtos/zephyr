@@ -353,7 +353,9 @@ nffs_write_chunk(struct nffs_inode_entry *inode_entry, uint32_t file_offset,
 
         data_offset = cache_block->ncb_file_offset + chunk_off - file_offset;
         rc = nffs_write_over_block(cache_block->ncb_block.nb_hash_entry,
-                                   chunk_off, data + data_offset, chunk_sz);
+                                   chunk_off,
+                                   (const uint8_t *)data + data_offset,
+                                   chunk_sz);
         if (rc != 0) {
             return rc;
         }

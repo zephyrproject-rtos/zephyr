@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef _XTENSA_ASM2_H
-#define _XTENSA_ASM2_H
+#ifndef ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_ASM2_H_
+#define ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_ASM2_H_
 
 #include "xtensa-asm2-context.h"
 
@@ -20,4 +20,4 @@ void *xtensa_init_stack(int *stack_top,
 			void (*entry)(void *, void *, void *),
 			void *arg1, void *arg2, void *arg3);
 
-#endif /* _XTENSA_ASM2_H */
+#endif /* ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_ASM2_H_ */

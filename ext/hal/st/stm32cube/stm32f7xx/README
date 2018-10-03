@@ -6,7 +6,7 @@ Origin:
    http://www.st.com/en/embedded-software/stm32cubef7.html
 
 Status:
-   version 1.8.0
+   version 1.11.0
 
 Purpose:
    ST Microelectronics official MCU package for STM32F7 series.
@@ -23,7 +23,7 @@ URL:
    http://www.st.com/en/embedded-software/stm32cubef7.html
 
 commit:
-   version 1.8.0
+   version 1.11.0
 
 Maintained-by:
    External
@@ -47,3 +47,21 @@ Patch List:
     Impacted files:
      drivers/include/stm32f7xx_ll_spi.h
     ST Bug tracker ID: 13359
+
+   *Add correct shifting to I2SR field in PLLI2SCFGR register
+     The I2SR field should be shifted by RCC_PLLI2SCFGR_PLLI2SR_Pos when the PLLI2SCFGR register
+     is read or written.
+    Impacted files:
+     drivers/include/stm32f7xx_ll_rcc.h
+    ST Bug tracker ID: 50108
+
+
+   *Disable new CAN API and enable Legacy API
+     A new CAN API has been delivered on recent F7 stm32cube.
+     This new API breaks current CAN driver. Disable the new API and enable the
+     legacy API.
+     Disable related systematic warning message
+    Impacted files:
+     CMakeLists.txt
+     drivers/include/stm32f7xx_hal_conf.h
+     drivers/src/Legacy/stm32f7_hal_can.c

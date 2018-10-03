@@ -9,13 +9,21 @@
 #ifdef CONFIG_USERSPACE
 
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
-#define LIST_LEN	5
+#define LIST_LEN        5
 
 static K_THREAD_STACK_DEFINE(child_stack, STACK_SIZE);
 static __kernel struct k_thread child_thread;
 static struct qdata qdata[LIST_LEN * 2];
 
-K_MEM_POOL_DEFINE(test_pool, 16, 64, 4, 4);
+K_MEM_POOL_DEFINE(test_pool, 16, 96, 4, 4);
+
+/**
+ * @brief Tests for queue
+ * @defgroup kernel_queue_tests Queues
+ * @ingroup all_tests
+ * @{
+ * @}
+ */
 
 /* Higher priority than the thread putting stuff in the queue */
 void child_thread_get(void *p1, void *p2, void *p3)
@@ -51,6 +59,14 @@ void child_thread_get(void *p1, void *p2, void *p3)
 	k_sem_give(sem);
 }
 
+/**
+ * @brief Verify queue elements from a user thread
+ * @details The test adds elements to queue and then
+ * verified by the child user thread.
+ * @ingroup kernel_queue_tests
+ * @see k_queue_append(), k_queue_alloc_append(),
+ * k_queue_init(), k_queue_cancel_wait()
+ */
 void test_queue_supv_to_user(void)
 {
 	/* Supervisor mode will add a bunch of data, some with alloc
@@ -97,6 +113,11 @@ void test_queue_supv_to_user(void)
 	k_sem_take(sem, K_FOREVER);
 }
 
+/**
+ * @brief Test to verify free of allocated elements of queue
+ * @ingroup kernel_queue_tests
+ * @see k_mem_pool_alloc(), k_mem_pool_free()
+ */
 void test_auto_free(void)
 {
 	/* Ensure any resources requested by the previous test were released

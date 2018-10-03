@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f1xx_ll_dac.h
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    12-May-2017
   * @brief   Header file of DAC LL module.
   ******************************************************************************
   * @attention
@@ -151,24 +149,24 @@ typedef struct
 {
   uint32_t TriggerSource;               /*!< Set the conversion trigger source for the selected DAC channel: internal (SW start) or from external IP (timer event, external interrupt line).
                                              This parameter can be a value of @ref DAC_LL_EC_TRIGGER_SOURCE
-                                             
+
                                              This feature can be modified afterwards using unitary function @ref LL_DAC_SetTriggerSource(). */
 
   uint32_t WaveAutoGeneration;          /*!< Set the waveform automatic generation mode for the selected DAC channel.
                                              This parameter can be a value of @ref DAC_LL_EC_WAVE_AUTO_GENERATION_MODE
-                                             
+
                                              This feature can be modified afterwards using unitary function @ref LL_DAC_SetWaveAutoGeneration(). */
 
   uint32_t WaveAutoGenerationConfig;    /*!< Set the waveform automatic generation mode for the selected DAC channel.
                                              If waveform automatic generation mode is set to noise, this parameter can be a value of @ref DAC_LL_EC_WAVE_NOISE_LFSR_UNMASK_BITS
                                              If waveform automatic generation mode is set to triangle, this parameter can be a value of @ref DAC_LL_EC_WAVE_TRIANGLE_AMPLITUDE
                                              @note If waveform automatic generation mode is disabled, this parameter is discarded.
-                                             
+
                                              This feature can be modified afterwards using unitary function @ref LL_DAC_SetWaveNoiseLFSR() or @ref LL_DAC_SetWaveTriangleAmplitude(), depending on the wave automatic generation selected. */
 
   uint32_t OutputBuffer;                /*!< Set the output buffer for the selected DAC channel.
                                              This parameter can be a value of @ref DAC_LL_EC_OUTPUT_BUFFER
-                                             
+
                                              This feature can be modified afterwards using unitary function @ref LL_DAC_SetOutputBuffer(). */
 
 } LL_DAC_InitTypeDef;
@@ -1036,7 +1034,7 @@ __STATIC_INLINE void LL_DAC_TrigSWConversion(DAC_TypeDef *DACx, uint32_t DAC_Cha
 __STATIC_INLINE void LL_DAC_ConvertData12RightAligned(DAC_TypeDef *DACx, uint32_t DAC_Channel, uint32_t Data)
 {
   register uint32_t *preg = __DAC_PTR_REG_OFFSET(DACx->DHR12R1, __DAC_MASK_SHIFT(DAC_Channel, DAC_REG_DHR12RX_REGOFFSET_MASK));
-  
+
   MODIFY_REG(*preg,
              DAC_DHR12R1_DACC1DHR,
              Data);
@@ -1058,7 +1056,7 @@ __STATIC_INLINE void LL_DAC_ConvertData12RightAligned(DAC_TypeDef *DACx, uint32_
 __STATIC_INLINE void LL_DAC_ConvertData12LeftAligned(DAC_TypeDef *DACx, uint32_t DAC_Channel, uint32_t Data)
 {
   register uint32_t *preg = __DAC_PTR_REG_OFFSET(DACx->DHR12R1, __DAC_MASK_SHIFT(DAC_Channel, DAC_REG_DHR12LX_REGOFFSET_MASK));
-  
+
   MODIFY_REG(*preg,
              DAC_DHR12L1_DACC1DHR,
              Data);
@@ -1080,7 +1078,7 @@ __STATIC_INLINE void LL_DAC_ConvertData12LeftAligned(DAC_TypeDef *DACx, uint32_t
 __STATIC_INLINE void LL_DAC_ConvertData8RightAligned(DAC_TypeDef *DACx, uint32_t DAC_Channel, uint32_t Data)
 {
   register uint32_t *preg = __DAC_PTR_REG_OFFSET(DACx->DHR12R1, __DAC_MASK_SHIFT(DAC_Channel, DAC_REG_DHR8RX_REGOFFSET_MASK));
-  
+
   MODIFY_REG(*preg,
              DAC_DHR8R1_DACC1DHR,
              Data);
@@ -1160,7 +1158,7 @@ __STATIC_INLINE void LL_DAC_ConvertDualData8RightAligned(DAC_TypeDef *DACx, uint
 __STATIC_INLINE uint32_t LL_DAC_RetrieveOutputData(DAC_TypeDef *DACx, uint32_t DAC_Channel)
 {
   register uint32_t *preg = __DAC_PTR_REG_OFFSET(DACx->DOR1, __DAC_MASK_SHIFT(DAC_Channel, DAC_REG_DORX_REGOFFSET_MASK));
-  
+
   return (uint16_t) READ_BIT(*preg, DAC_DOR1_DACC1DOR);
 }
 

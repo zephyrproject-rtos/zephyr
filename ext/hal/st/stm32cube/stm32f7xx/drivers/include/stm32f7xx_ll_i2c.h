@@ -281,14 +281,14 @@ typedef struct
 /** @defgroup I2C_LL_EC_GENERATE Start And Stop Generation
   * @{
   */
-#define LL_I2C_GENERATE_NOSTARTSTOP         0x00000000U                                                  /*!< Don't Generate Stop and Start condition.                */
-#define LL_I2C_GENERATE_STOP                I2C_CR2_STOP                                                 /*!< Generate Stop condition (Size should be set to 0).      */
-#define LL_I2C_GENERATE_START_READ          (uint32_t)(I2C_CR2_START | I2C_CR2_RD_WRN)                   /*!< Generate Start for read request.                        */
-#define LL_I2C_GENERATE_START_WRITE         I2C_CR2_START                                                /*!< Generate Start for write request.                       */
-#define LL_I2C_GENERATE_RESTART_7BIT_READ   (uint32_t)(I2C_CR2_START | I2C_CR2_RD_WRN)                   /*!< Generate Restart for read request, slave 7Bit address.  */
-#define LL_I2C_GENERATE_RESTART_7BIT_WRITE  I2C_CR2_START                                                /*!< Generate Restart for write request, slave 7Bit address. */
-#define LL_I2C_GENERATE_RESTART_10BIT_READ  (uint32_t)(I2C_CR2_START | I2C_CR2_RD_WRN | I2C_CR2_HEAD10R) /*!< Generate Restart for read request, slave 10Bit address. */
-#define LL_I2C_GENERATE_RESTART_10BIT_WRITE I2C_CR2_START                                                /*!< Generate Restart for write request, slave 10Bit address.*/
+#define LL_I2C_GENERATE_NOSTARTSTOP         0x00000000U                                                                /*!< Don't Generate Stop and Start condition.                */
+#define LL_I2C_GENERATE_STOP                (uint32_t)(0x80000000U | I2C_CR2_STOP)                                     /*!< Generate Stop condition (Size should be set to 0).      */
+#define LL_I2C_GENERATE_START_READ          (uint32_t)(0x80000000U | I2C_CR2_START | I2C_CR2_RD_WRN)                   /*!< Generate Start for read request.                        */
+#define LL_I2C_GENERATE_START_WRITE         (uint32_t)(0x80000000U | I2C_CR2_START)                                    /*!< Generate Start for write request.                       */
+#define LL_I2C_GENERATE_RESTART_7BIT_READ   (uint32_t)(0x80000000U | I2C_CR2_START | I2C_CR2_RD_WRN)                   /*!< Generate Restart for read request, slave 7Bit address.  */
+#define LL_I2C_GENERATE_RESTART_7BIT_WRITE  (uint32_t)(0x80000000U | I2C_CR2_START)                                    /*!< Generate Restart for write request, slave 7Bit address. */
+#define LL_I2C_GENERATE_RESTART_10BIT_READ  (uint32_t)(0x80000000U | I2C_CR2_START | I2C_CR2_RD_WRN | I2C_CR2_HEAD10R) /*!< Generate Restart for read request, slave 10Bit address. */
+#define LL_I2C_GENERATE_RESTART_10BIT_WRITE (uint32_t)(0x80000000U | I2C_CR2_START)                                    /*!< Generate Restart for write request, slave 10Bit address.*/
 /**
   * @}
   */
@@ -2067,7 +2067,7 @@ __STATIC_INLINE uint32_t LL_I2C_GetSlaveAddr(I2C_TypeDef *I2Cx)
 __STATIC_INLINE void LL_I2C_HandleTransfer(I2C_TypeDef *I2Cx, uint32_t SlaveAddr, uint32_t SlaveAddrSize,
                                            uint32_t TransferSize, uint32_t EndMode, uint32_t Request)
 {
-  MODIFY_REG(I2Cx->CR2, I2C_CR2_SADD | I2C_CR2_ADD10 | I2C_CR2_RD_WRN | I2C_CR2_START | I2C_CR2_STOP | I2C_CR2_RELOAD |
+  MODIFY_REG(I2Cx->CR2, I2C_CR2_SADD | I2C_CR2_ADD10 | (I2C_CR2_RD_WRN & (uint32_t)(Request >> (31U - I2C_CR2_RD_WRN_Pos))) | I2C_CR2_START | I2C_CR2_STOP | I2C_CR2_RELOAD |
              I2C_CR2_NBYTES | I2C_CR2_AUTOEND | I2C_CR2_HEAD10R,
              SlaveAddr | SlaveAddrSize | TransferSize << I2C_CR2_NBYTES_Pos | EndMode | Request);
 }

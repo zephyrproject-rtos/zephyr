@@ -10,22 +10,33 @@ menu "Debugging Options"
 
 config DEBUG
 	bool "Build kernel with debugging enabled"
-	default n
 	help
 	  Build a kernel suitable for debugging.  Right now, this option
 	  only disables optimization, more debugging variants can be selected
 	  from here to allow more debugging.
 
+config TRACING
+	bool "Enabling Tracing"
+	help
+	  Enable system tracing. This requires a backend such as SEGGER
+	  Systemview to be enabled as well.
+config ASAN
+	bool "Build with address sanitizer"
+	depends on ARCH_POSIX
+	help
+	  Builds Zephyr with Address Sanitizer enabled.  This is currently
+	  only supported by the native_posix port, and requires a recent-ish
+	  compiler with the `-fsanitize=address` command line option, and
+	  the libasan library.
+
 config STACK_USAGE
 	bool "Generate stack usage information"
-	default n
 	help
 	  Generate an extra file that specifies the maximum amount of stack used,
 	  on a per-function basis.
 
 config STACK_SENTINEL
 	bool "Enable stack sentinel"
-	default n
 	select THREAD_STACK_INFO
 	depends on !USERSPACE
 	help
@@ -50,8 +61,7 @@ config STACK_SENTINEL
 	  to use that hardware support.
 
 config PRINTK
-	bool
-	prompt "Send printk() to console"
+	bool "Send printk() to console"
 	depends on CONSOLE_HAS_DRIVER
 	default y
 	help
@@ -61,8 +71,7 @@ config PRINTK
 	  any mutual exclusion or buffering.
 
 config PRINTK_BUFFER_SIZE
-	int
-	prompt "printk() buffer size"
+	int "printk() buffer size"
 	depends on PRINTK
 	depends on USERSPACE
 	default 32
@@ -72,9 +81,7 @@ config PRINTK_BUFFER_SIZE
 	  the size of this buffer.
 
 config EARLY_CONSOLE
-	bool
-	prompt "Send stdout at the earliest stage possible"
-	default n
+	bool "Send stdout at the earliest stage possible"
 	help
 	  This option will enable stdout as early as possible, for debugging
 	  purpose. For instance, in case of STDOUT_CONSOLE being set it will
@@ -82,8 +89,7 @@ config EARLY_CONSOLE
 	  sent through the console at the earliest stage possible.
 
 config ASSERT
-	bool
-	prompt "Enable __ASSERT() macro"
+	bool "Enable __ASSERT() macro"
 	default y if TEST
 	help
 	  This enables the __ASSERT() macro in the kernel code. If an assertion
@@ -92,8 +98,7 @@ config ASSERT
 	  in a non-production system.
 
 config ASSERT_LEVEL
-	int
-	prompt "__ASSERT() level"
+	int "__ASSERT() level"
 	default 2
 	range 0 2
 	depends on ASSERT
@@ -106,9 +111,7 @@ config ASSERT_LEVEL
 	  Level 2: on + no warning
 
 config FORCE_NO_ASSERT
-	bool
-	prompt "Force-disable no assertions"
-	default n
+	bool "Force-disable no assertions"
 	help
 	  This boolean option disables Zephyr assertion testing even
 	  in circumstances (sanitycheck) where it is enabled via
@@ -116,17 +119,13 @@ config FORCE_NO_ASSERT
 	  around compiler bugs for specific tests.
 
 config OBJECT_TRACING
-	bool
-	prompt "Kernel object tracing"
-	default n
+	bool "Kernel object tracing"
 	help
 	  This option enable the feature for tracing kernel objects. This option
 	  is for debug purposes and increases the memory footprint of the kernel.
 
 config OVERRIDE_FRAME_POINTER_DEFAULT
-	bool
-	prompt "Override compiler defaults for -fomit-frame-pointer"
-	default n
+	bool "Override compiler defaults for -fomit-frame-pointer"
 	help
 	  Omitting the frame pointer prevents the compiler from putting the stack
 	  frame pointer into a register. Saves a few instructions in function
@@ -142,9 +141,7 @@ config OVERRIDE_FRAME_POINTER_DEFAULT
 	  of your compiler, otherwise choose N.
 
 config OMIT_FRAME_POINTER
-	bool
-	prompt "Omit frame pointer"
-	default n
+	bool "Omit frame pointer"
 	depends on OVERRIDE_FRAME_POINTER_DEFAULT
 	help
 	  Choose Y for best performance. On some architectures (including x86)
@@ -163,7 +160,6 @@ config OMIT_FRAME_POINTER
 #
 config DEBUG_INFO
 	bool "Enable system debugging information"
-	default n
 	help
 	  This option enables the addition of various information that can be
 	  used by debuggers in debugging the system, or enable additional
@@ -185,9 +181,7 @@ config EXCEPTION_STACK_TRACE
 #
 
 config OPENOCD_SUPPORT
-	bool
-	prompt "OpenOCD support [EXPERIMENTAL]"
-	default n
+	bool "OpenOCD support [EXPERIMENTAL]"
 	select THREAD_MONITOR
 	help
 	  This option exports an array of offsets to kernel structs, used by

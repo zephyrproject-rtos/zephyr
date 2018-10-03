@@ -1,0 +1,181 @@
+# Kconfig - OpenThread driver configuration options
+#
+#
+# Copyright (c) 2018 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+#
+# OpenThread options
+#
+menuconfig NET_L2_OPENTHREAD
+	bool "OpenThread L2"
+	depends on FLASH
+	depends on FLASH_PAGE_LAYOUT
+	depends on CPLUSPLUS
+	depends on REBOOT
+	select OPENTHREAD_PLAT
+
+if NET_L2_OPENTHREAD
+
+config OPENTHREAD_PLAT
+	bool
+	depends on NET_L2_OPENTHREAD
+	help
+	  This option enables OpenThread platform
+
+if OPENTHREAD_PLAT
+
+menuconfig OPENTHREAD_DEBUG
+	bool "OpenThread stack log support"
+	help
+	  This option enables log support for OpenThread
+
+if OPENTHREAD_DEBUG
+
+choice
+	prompt "OpenThread stack log level"
+	help
+	  This option selects log level for OpenThread stack.
+
+config OPENTHREAD_LOG_LEVEL_ERROR
+	bool "Error"
+config OPENTHREAD_LOG_LEVEL_WARNING
+	bool "Warning"
+config OPENTHREAD_LOG_LEVEL_INFO
+	bool "Info"
+config OPENTHREAD_LOG_LEVEL_DEBUG
+	bool "Debug"
+endchoice
+
+endif
+
+endif
+
+config	OPENTHREAD_LOG_LEVEL
+	int
+	default 1 if OPENTHREAD_LOG_LEVEL_ERROR
+	default 2 if OPENTHREAD_LOG_LEVEL_WARNING
+	default 3 if OPENTHREAD_LOG_LEVEL_INFO
+	default 4 if OPENTHREAD_LOG_LEVEL_DEBUG
+	default 0
+
+menuconfig OPENTHREAD_L2_DEBUG
+	bool "OpenThread L2 log support"
+	help
+	  This option enables log support for OpenThread
+
+if OPENTHREAD_L2_DEBUG
+choice
+	prompt "OpenThread L2 log level"
+	depends on OPENTHREAD_L2_DEBUG
+	help
+	  This option selects log level for OpenThread driver.
+
+config OPENTHREAD_L2_LOG_LEVEL_ERROR
+	bool "Error"
+config OPENTHREAD_L2_LOG_LEVEL_WARNING
+	bool "Warning"
+config OPENTHREAD_L2_LOG_LEVEL_INFO
+	bool "Info"
+config OPENTHREAD_L2_LOG_LEVEL_DEBUG
+	bool "Debug"
+endchoice
+
+config OPENTHREAD_L2_DEBUG_DUMP_15_4
+	bool "Dump 802.15.4 packets"
+	help
+	  This option enables dumping of 802.15.4 packets
+
+config OPENTHREAD_L2_DEBUG_DUMP_IPV6
+	bool "Dump IPv6 packets"
+	help
+	  This option enables dumping of IPv6 packets
+
+endif
+
+config	OPENTHREAD_L2_LOG_LEVEL
+	int
+	default 1 if OPENTHREAD_L2_LOG_LEVEL_ERROR
+	default 2 if OPENTHREAD_L2_LOG_LEVEL_WARNING
+	default 3 if OPENTHREAD_L2_LOG_LEVEL_INFO
+	default 4 if OPENTHREAD_L2_LOG_LEVEL_DEBUG
+	default 0
+
+config OPENTHREAD_THREAD_PRIORITY
+	int "OpenThread thread priority"
+	default 8
+
+config OPENTHREAD_THREAD_STACK_SIZE
+	int "OpenThread thread stack size"
+	default 3072
+
+config OPENTHREAD_PKT_LIST_SIZE
+	int "List size for Ip6 packet buffering"
+	default 10
+
+config OPENTHREAD_PANID
+	int "Default PAN ID"
+	default 43981
+
+config OPENTHREAD_CHANNEL
+	int "Default Channel"
+	default 11
+
+config OPENTHREAD_NETWORK_NAME
+	string "Default network name"
+	default "ot_zephyr"
+	help
+	  Network name for OpenThread
+
+config OPENTHREAD_XPANID
+	string "Default Extended PAN ID"
+	default "de:ad:00:be:ef:00:ca:fe"
+	help
+	  Extended PAN ID for OpenThread with
+	  format "de:ad:00:be:ef:00:ca:fe"
+
+choice
+	prompt "OpenThread device type"
+	help
+	  This option selects Thread network device type
+
+config OPENTHREAD_FTD
+	bool "FTD - Full Thread Device"
+config OPENTHREAD_MTD
+	bool "MTD - Minimal Thread Device"
+endchoice
+
+config OPENTHREAD_SHELL
+	bool "Enable OpenThread shell"
+	select CONSOLE_SHELL
+	default y
+
+config OPENTHREAD_DIAG
+	bool "Diagnostic functions support"
+	help
+	  Enable OpenThread CLI diagnostic commands
+
+config OPENTHREAD_COMMISSIONER
+	bool "Commissioner functions support"
+	help
+	  Enable commissioner capability in OpenThread stack
+
+config OPENTHREAD_JOINER
+	bool "Joiner functions support"
+	help
+	  Enable joiner capability in OpenThread stack
+
+config OPENTHREAD_JAM_DETECTION
+	bool "Jam detection support"
+	help
+	  Enable jam detection in OpenThread stack
+
+config OT_PLAT_FLASH_PAGES_COUNT
+	int "Flash pages count used by OpenThread platform"
+	default 4
+	help
+	  This option sets flash pages count used by OpenThread to store its settings. They are located at the end of flash.
+
+endif

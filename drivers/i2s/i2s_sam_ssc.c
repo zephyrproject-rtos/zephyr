@@ -169,7 +169,7 @@ static int start_dma(struct device *dev_dma, u32_t channel,
 	struct dma_block_config blk_cfg;
 	int ret;
 
-	memset(&blk_cfg, 0, sizeof(blk_cfg));
+	(void)memset(&blk_cfg, 0, sizeof(blk_cfg));
 	blk_cfg.block_size = blk_size;
 	blk_cfg.source_address = (u32_t)src;
 	blk_cfg.dest_address = (u32_t)dst;
@@ -508,6 +508,25 @@ static int bit_clock_set(Ssc *const ssc, u32_t bit_clk_freq)
 	return 0;
 }
 
+static struct i2s_config *i2s_sam_config_get(struct device *dev,
+					     enum i2s_dir dir)
+{
+	struct i2s_sam_dev_data *const dev_data = DEV_DATA(dev);
+	struct stream *stream;
+
+	if (dir == I2S_DIR_RX) {
+		stream = &dev_data->rx;
+	} else {
+		stream = &dev_data->tx;
+	}
+
+	if (stream->state == I2S_STATE_NOT_READY) {
+		return NULL;
+	}
+
+	return &stream->cfg;
+}
+
 static int i2s_sam_configure(struct device *dev, enum i2s_dir dir,
 			     struct i2s_config *i2s_cfg)
 {
@@ -538,7 +557,7 @@ static int i2s_sam_configure(struct device *dev, enum i2s_dir dir,
 
 	if (i2s_cfg->frame_clk_freq == 0) {
 		stream->queue_drop(stream);
-		memset(&stream->cfg, 0, sizeof(struct i2s_config));
+		(void)memset(&stream->cfg, 0, sizeof(struct i2s_config));
 		stream->state = I2S_STATE_NOT_READY;
 		return 0;
 	}
@@ -925,6 +944,7 @@ static int i2s_sam_initialize(struct device *dev)
 
 static const struct i2s_driver_api i2s_sam_driver_api = {
 	.configure = i2s_sam_configure,
+	.config_get = i2s_sam_config_get,
 	.read = i2s_sam_read,
 	.write = i2s_sam_write,
 	.trigger = i2s_sam_trigger,

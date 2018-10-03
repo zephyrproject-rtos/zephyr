@@ -5,55 +5,23 @@
 #
 
 menuconfig LPS25HB
-	bool
-	prompt "LPS25HB pressure and temperature"
-	depends on I2C
-	default n
+	bool "LPS25HB pressure and temperature"
+	depends on I2C && HAS_DTS_I2C
 	help
 	  Enable driver for LPS25HB I2C-based pressure and temperature
 	  sensor.
 
-if !HAS_DTS_I2C_DEVICE
-
-config LPS25HB_DEV_NAME
-	string
-	prompt "Device name"
-	default "lps25hb"
-	depends on LPS25HB
-	help
-	  Device name with which the LPS25HB sensor is identified.
-
-config LPS25HB_I2C_ADDR
-	hex
-	prompt "I2C address"
-	depends on LPS25HB
-	default "0x5C"
-	help
-	  I2C address of the LPS25HB sensor.
-	  Use 0x5C if the SA0 pin is pulled to GND or 0x5D if the SA0
-	  pin is pulled to VDD.
-
-config LPS25HB_I2C_MASTER_DEV_NAME
-	string
-	prompt "I2C master where LPS25HB is connected"
-	depends on LPS25HB
-	default "I2C_0"
-	help
-	  Specify the device name of the I2C master device to which
-	  LPS25HB is connected.
-
-endif
+if LPS25HB
 
 menu "Attributes"
-	depends on LPS25HB
 
 config LPS25HB_SAMPLING_RATE
-	int
-	prompt "Output data rate"
-	depends on LPS25HB
+	int "Output data rate"
 	default 25
 	help
 	  Sensor output data rate expressed in samples per second.
 	  Data rates supported by the chip are 1, 7, 13, 25.
 
 endmenu
+
+endif # LPS25HB

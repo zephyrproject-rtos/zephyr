@@ -9,9 +9,7 @@
 if USB_DEVICE_STACK
 
 config USB_CDC_ACM
-	bool
-	prompt "USB CDC ACM Device Class Driver"
-	default n
+	bool "USB CDC ACM Device Class Driver"
 	help
 	  USB CDC ACM device class driver
 
@@ -21,30 +19,6 @@ config CDC_ACM_PORT_NAME
 	default "CDC_ACM"
 	help
 	  Port name through which CDC ACM class device driver is accessed
-
-config CDC_ACM_INT_EP_ADDR
-	hex "CDC ACM Interrupt Endpoint address"
-	depends on USB_CDC_ACM
-	default 0x85
-	range 0x81 0x8f
-	help
-	  CDC ACM class interrupt endpoint address
-
-config CDC_ACM_IN_EP_ADDR
-	hex "CDC ACM BULK IN Endpoint address"
-	depends on USB_CDC_ACM
-	default 0x84
-	range 0x81 0x8f
-	help
-	  CDC ACM class IN endpoint address
-
-config CDC_ACM_OUT_EP_ADDR
-	hex "CDC ACM BULK OUT Endpoint address"
-	depends on USB_CDC_ACM
-	default 0x03
-	range 0x01 0x0f
-	help
-	  CDC ACM class OUT endpoint address
 
 config CDC_ACM_INTERRUPT_EP_MPS
 	int
@@ -61,8 +35,7 @@ config CDC_ACM_BULK_EP_MPS
 	  CDC ACM class bulk endpoints size
 
 config SYS_LOG_USB_CDC_ACM_LEVEL
-	int
-	prompt "USB CDC ACM device class driver log level"
+	int "USB CDC ACM device class driver log level"
 	depends on USB_CDC_ACM && SYS_LOG
 	default 0
 	help
@@ -81,10 +54,8 @@ config SYS_LOG_USB_CDC_ACM_LEVEL
 	  - 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
 
 config USB_MASS_STORAGE
-	bool
-	prompt "USB Mass Storage Device Class Driver"
+	bool "USB Mass Storage Device Class Driver"
 	select DISK_ACCESS
-	default n
 	help
 	  USB Mass Storage device class driver
 
@@ -95,22 +66,6 @@ config MASS_STORAGE_DISK_NAME
 	help
 	  Mass storage device disk or drive name
 
-config MASS_STORAGE_IN_EP_ADDR
-	hex
-	depends on USB_MASS_STORAGE
-	default 0x82
-	range 0x81 0x8f
-	help
-	  Mass storage device class IN endpoint address
-
-config MASS_STORAGE_OUT_EP_ADDR
-	hex
-	depends on USB_MASS_STORAGE
-	default 0x01
-	range 0x01 0x0f
-	help
-	  Mass storage device class OUT endpoint address
-
 config MASS_STORAGE_BULK_EP_MPS
 	int
 	depends on USB_MASS_STORAGE
@@ -120,8 +75,7 @@ config MASS_STORAGE_BULK_EP_MPS
 	  Mass storage device class bulk endpoints size
 
 config SYS_LOG_USB_MASS_STORAGE_LEVEL
-	int
-	prompt "USB Mass Storage device class driver log level"
+	int "USB Mass Storage device class driver log level"
 	depends on USB_MASS_STORAGE && SYS_LOG
 	default 0
 	help
@@ -140,37 +94,11 @@ config SYS_LOG_USB_MASS_STORAGE_LEVEL
 	  - 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
 
 config USB_DEVICE_BLUETOOTH
-	bool
-	prompt "USB Bluetooth Device Class Driver"
+	bool "USB Bluetooth Device Class Driver"
 	select BT
 	select BT_HCI_RAW
-	default n
 	help
 	  USB Bluetooth device class driver
-
-config BLUETOOTH_INT_EP_ADDR
-	hex
-	depends on USB_DEVICE_BLUETOOTH
-	default 0x81
-	range 0x81 0x8f
-	help
-	  Bluetooth device class INT endpoint address
-
-config BLUETOOTH_OUT_EP_ADDR
-	hex
-	depends on USB_DEVICE_BLUETOOTH
-	default 0x02
-	range 0x01 0x0f
-	help
-	  Bluetooth device class OUT endpoint address
-
-config BLUETOOTH_IN_EP_ADDR
-	hex
-	depends on USB_DEVICE_BLUETOOTH
-	default 0x82
-	range 0x81 0x8f
-	help
-	  Bluetooth device class IN endpoint address
 
 config BLUETOOTH_INT_EP_MPS
 	int
@@ -188,16 +116,26 @@ config BLUETOOTH_BULK_EP_MPS
 	help
 	  Bluetooth device class bulk endpoint size
 
+config USB_DEVICE_LOOPBACK
+	bool "USB Loopback Function Driver"
+	help
+	  USB Loopback Function Driver
+
+config LOOPBACK_BULK_EP_MPS
+	int
+	depends on USB_DEVICE_LOOPBACK
+	default 64
+	help
+	  Loopback Function bulk endpoint size
+
 source "subsys/usb/class/netusb/Kconfig"
 
 source "subsys/usb/class/hid/Kconfig"
 
 config USB_DFU_CLASS
-	bool
-	prompt "USB DFU Class Driver"
-	depends on IMG_MANAGER
+	bool "USB DFU Class Driver"
 	select MPU_ALLOW_FLASH_WRITE
-	default n
+	depends on IMG_MANAGER
 	help
 	  USB DFU class driver
 

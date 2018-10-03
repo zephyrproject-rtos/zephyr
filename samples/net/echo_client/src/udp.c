@@ -327,7 +327,7 @@ void start_udp(void)
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
 		k_delayed_work_init(&conf.ipv6.recv, wait_reply);
 
-		ret = connect_udp(&udp6, CONFIG_NET_APP_PEER_IPV6_ADDR,
+		ret = connect_udp(&udp6, CONFIG_NET_CONFIG_PEER_IPV6_ADDR,
 				  &conf.ipv6, dtls_result_ipv6,
 				  sizeof(dtls_result_ipv6),
 				  net_app_dtls_stack_ipv6,
@@ -341,7 +341,7 @@ void start_udp(void)
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
 		k_delayed_work_init(&conf.ipv4.recv, wait_reply);
 
-		ret = connect_udp(&udp4, CONFIG_NET_APP_PEER_IPV4_ADDR,
+		ret = connect_udp(&udp4, CONFIG_NET_CONFIG_PEER_IPV4_ADDR,
 				  &conf.ipv4, dtls_result_ipv4,
 				  sizeof(dtls_result_ipv4),
 				  net_app_dtls_stack_ipv4,

@@ -5,11 +5,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <soc.h>
+#include <misc/dlist.h>
+#include <misc/mempool_base.h>
+
 #include "hal/cntr.h"
 
 #include "common/log.h"
 #include "hal/debug.h"
+#include "nrf_rtc.h"
 
 #ifndef NRF_RTC
 #define NRF_RTC NRF_RTC0
@@ -20,13 +23,10 @@ static u8_t _refcount;
 void cntr_init(void)
 {
 	NRF_RTC->PRESCALER = 0;
-	NRF_RTC->EVTENSET = (RTC_EVTENSET_COMPARE0_Msk |
+	nrf_rtc_event_enable(NRF_RTC, RTC_EVTENSET_COMPARE0_Msk |
 			     RTC_EVTENSET_COMPARE1_Msk);
-	NRF_RTC->INTENSET = (RTC_INTENSET_COMPARE0_Msk |
+	nrf_rtc_int_enable(NRF_RTC, RTC_INTENSET_COMPARE0_Msk |
 			     RTC_INTENSET_COMPARE1_Msk);
-#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
-	NRF_RTC0_regw_sideeffects();
-#endif
 }
 
 u32_t cntr_start(void)
@@ -35,10 +35,7 @@ u32_t cntr_start(void)
 		return 1;
 	}
 
-	NRF_RTC->TASKS_START = 1;
-#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
-	NRF_RTC0_regw_sideeffects();
-#endif
+	nrf_rtc_task_trigger(NRF_RTC, NRF_RTC_TASK_START);
 
 	return 0;
 }
@@ -51,20 +48,17 @@ u32_t cntr_stop(void)
 		return 1;
 	}
 
-	NRF_RTC->TASKS_STOP = 1;
-#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
-	NRF_RTC0_regw_sideeffects();
-#endif
+	nrf_rtc_task_trigger(NRF_RTC, NRF_RTC_TASK_STOP);
 
 	return 0;
 }
 
 u32_t cntr_cnt_get(void)
 {
-	return NRF_RTC->COUNTER;
+	return nrf_rtc_counter_get(NRF_RTC);
 }
 
 void cntr_cmp_set(u8_t cmp, u32_t value)
 {
-	NRF_RTC->CC[cmp] = value;
+	nrf_rtc_cc_set(NRF_RTC, cmp, value);
 }

@@ -8,6 +8,5 @@
 
 menuconfig DMA_CAVS
 	bool "Enable CAVS DMA driver"
-	default n
 	help
 	  CAVS DMA driver.

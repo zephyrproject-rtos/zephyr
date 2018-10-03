@@ -320,7 +320,7 @@ architecture-specific system call implementation, plus an opaque context
 pointer which indicates the system state when the system call was invoked from
 user code.
 
-To simplify the prototype, the variadic :c:macro:`_SYSCALL_HANDLER()` macro
+To simplify the prototype, the variadic :c:macro:`Z_SYSCALL_HANDLER()` macro
 should be used to declare the handler name and names of each argument. Type
 information is not necessary since all arguments and the return value are
 :c:type:`u32_t`. Using :c:func:`k_sem_init()` as an example:

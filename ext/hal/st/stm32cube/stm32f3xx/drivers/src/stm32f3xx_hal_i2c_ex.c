@@ -17,7 +17,8 @@
 
        (+) Possibility to disable or enable Analog Noise Filter
        (+) Use of a configured Digital Noise Filter
-       (+) Disable or enable wakeup from Stop mode
+       (+) Disable or enable wakeup from Stop mode(s)
+       (+) Disable or enable Fast Mode Plus
 
                      ##### How to use this driver #####
   ==============================================================================
@@ -96,6 +97,7 @@
     [..] This section provides functions allowing to:
       (+) Configure Noise Filters
       (+) Configure Wake Up Feature
+      (+) Configure Fast Mode Plus
 
 @endverbatim
   * @{
@@ -198,7 +200,7 @@ HAL_StatusTypeDef HAL_I2CEx_ConfigDigitalFilter(I2C_HandleTypeDef *hi2c, uint32_
 }
 
 /**
-  * @brief  Enable I2C wakeup from stop mode.
+  * @brief  Enable I2C wakeup from Stop mode(s).
   * @param  hi2c Pointer to a I2C_HandleTypeDef structure that contains
   *                the configuration information for the specified I2Cx peripheral.
   * @retval HAL status
@@ -237,7 +239,7 @@ HAL_StatusTypeDef HAL_I2CEx_EnableWakeUp(I2C_HandleTypeDef *hi2c)
 }
 
 /**
-  * @brief  Disable I2C wakeup from stop mode.
+  * @brief  Disable I2C wakeup from Stop mode(s).
   * @param  hi2c Pointer to a I2C_HandleTypeDef structure that contains
   *                the configuration information for the specified I2Cx peripheral.
   * @retval HAL status

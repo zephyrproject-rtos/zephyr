@@ -13,7 +13,7 @@ GTEXT(__swap)
 GTEXT(_thread_entry_wrapper)
 
 /* imports */
-GTEXT(_sys_k_event_logger_context_switch)
+GTEXT(z_sys_trace_thread_switched_in)
 GTEXT(_k_neg_eagain)
 
 /* unsigned int __swap(unsigned int key)
@@ -22,6 +22,33 @@ GTEXT(_k_neg_eagain)
  */
 SECTION_FUNC(exception.other, __swap)
 
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	/* Get a reference to _kernel in r10 */
+	movhi r10, %hi(_kernel)
+	ori   r10, r10, %lo(_kernel)
+
+	/* Get the pointer to kernel->current */
+	ldw  r11, _kernel_offset_to_current(r10)
+	stw r2, _thread_offset_to_r16(r11)
+	stw r3, _thread_offset_to_r17(r11)
+	stw r4, _thread_offset_to_r18(r11)
+	stw ra,  _thread_offset_to_ra(r11)
+	stw sp,  _thread_offset_to_sp(r11)
+
+	call read_timer_start_of_swap
+	/* Get a reference to _kernel in r10 */
+	movhi r10, %hi(_kernel)
+	ori   r10, r10, %lo(_kernel)
+
+	/* Get the pointer to kernel->current */
+	ldw  r11, _kernel_offset_to_current(r10)
+	ldw r2, _thread_offset_to_r16(r11)
+	ldw r3, _thread_offset_to_r17(r11)
+	ldw r4, _thread_offset_to_r18(r11)
+	ldw ra,  _thread_offset_to_ra(r11)
+	ldw sp,  _thread_offset_to_sp(r11)
+
+#endif
 	/* Get a reference to _kernel in r10 */
 	movhi r10, %hi(_kernel)
 	ori   r10, r10, %lo(_kernel)
@@ -57,8 +84,8 @@ SECTION_FUNC(exception.other, __swap)
 	ldw   r4, (r5)
 	stw   r4, _thread_offset_to_retval(r11)
 
-#if CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
-	call _sys_k_event_logger_context_switch
+#if CONFIG_TRACING
+	call z_sys_trace_thread_switched_in
 	/* restore caller-saved r10 */
 	movhi r10, %hi(_kernel)
 	ori   r10, r10, %lo(_kernel)
@@ -113,6 +140,33 @@ SECTION_FUNC(exception.other, __swap)
 no_unlock:
 #else
 	wrctl status, r3
+#endif
+
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	/* Get a reference to _kernel in r10 */
+	movhi r10, %hi(_kernel)
+	ori   r10, r10, %lo(_kernel)
+
+	ldw  r11, _kernel_offset_to_current(r10)
+	stw r2, _thread_offset_to_r16(r11)
+	stw r3, _thread_offset_to_r17(r11)
+	stw r4, _thread_offset_to_r18(r11)
+	stw ra,  _thread_offset_to_ra(r11)
+	stw sp,  _thread_offset_to_sp(r11)
+
+	call read_timer_end_of_swap
+
+	/* Get a reference to _kernel in r10 */
+	movhi r10, %hi(_kernel)
+	ori   r10, r10, %lo(_kernel)
+
+	/* Get the pointer to kernel->current */
+	ldw  r11, _kernel_offset_to_current(r10)
+	ldw r2, _thread_offset_to_r16(r11)
+	ldw r3, _thread_offset_to_r17(r11)
+	ldw r4, _thread_offset_to_r18(r11)
+	ldw ra,  _thread_offset_to_ra(r11)
+	ldw sp,  _thread_offset_to_sp(r11)
 #endif
 	ret
 

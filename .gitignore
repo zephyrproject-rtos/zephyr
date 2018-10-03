@@ -40,3 +40,8 @@ tags
 .xxproject
 .envrc
 .vscode
+
+# Tag files
+GPATH
+GRTAGS
+GTAGS

@@ -37,7 +37,6 @@
  */
 struct dns_msg_t {
 	u8_t *msg;
-	u16_t msg_size;
 
 	int response_type;
 	u16_t response_position;
@@ -45,6 +44,7 @@ struct dns_msg_t {
 
 	u16_t query_offset;
 	u16_t answer_offset;
+	u16_t msg_size;
 };
 
 #define DNS_MSG_INIT(b, s)	{.msg = b, .msg_size = s,	\
@@ -347,6 +347,12 @@ int dns_copy_qname(u8_t *buf, u16_t *len, u16_t size,
  *         4 Not Implemented and 5 Refused.
  */
 int mdns_unpack_query_header(struct dns_msg_t *msg, u16_t *src_id);
+
+static inline int llmnr_unpack_query_header(struct dns_msg_t *msg,
+					    u16_t *src_id)
+{
+	return mdns_unpack_query_header(msg, src_id);
+}
 
 /**
  * @brief Unpacks the query.

@@ -4,7 +4,6 @@
 menuconfig GPIO_CC32XX
 	bool "TI CC32XX GPIO driver"
 	depends on GPIO && SOC_FAMILY_TISIMPLELINK
-	default n
 	help
 	  Enable the GPIO driver on TI SimpleLink CC32xx boards
 
@@ -13,7 +12,6 @@ if GPIO_CC32XX
 config GPIO_CC32XX_A0
 	bool "GPIO block A0"
 	depends on GPIO_CC32XX
-	default n
 	help
 	  Include support for the GPIO port A0.
 
@@ -33,7 +31,6 @@ config GPIO_CC32XX_A0_IRQ_PRI
 config GPIO_CC32XX_A1
 	bool "GPIO block A1"
 	depends on GPIO_CC32XX
-	default n
 	help
 	  Include support for the GPIO port A1.
 
@@ -53,7 +50,6 @@ config GPIO_CC32XX_A1_IRQ_PRI
 config GPIO_CC32XX_A2
 	bool "GPIO block A2"
 	depends on GPIO_CC32XX
-	default n
 	help
 	  Include support for the GPIO port A2.
 
@@ -73,7 +69,6 @@ config GPIO_CC32XX_A2_IRQ_PRI
 config GPIO_CC32XX_A3
 	bool "GPIO block A3"
 	depends on GPIO_CC32XX
-	default n
 	help
 	  Include support for the GPIO port A3.
 

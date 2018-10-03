@@ -12,8 +12,8 @@
  * Declare API implemented by system timer driver and used by kernel components.
  */
 
-#ifndef _TIMER__H_
-#define _TIMER__H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_SYSTEM_TIMER_H_
+#define ZEPHYR_INCLUDE_DRIVERS_SYSTEM_TIMER_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,6 +26,7 @@ GTEXT(_timer_int_handler)
 #else /* _ASMLANGUAGE */
 
 #include <device.h>
+#include <stdbool.h>
 
 extern int _sys_clock_driver_init(struct device *device);
 
@@ -39,8 +40,8 @@ extern void sys_clock_disable(void);
 extern void _timer_idle_enter(s32_t ticks);
 extern void _timer_idle_exit(void);
 #else
-#define _timer_idle_enter(ticks) do { } while ((0))
-#define _timer_idle_exit() do { } while ((0))
+#define _timer_idle_enter(ticks) do { } while (false)
+#define _timer_idle_exit() do { } while (false)
 #endif /* CONFIG_TICKLESS_IDLE */
 
 extern void _nano_sys_clock_tick_announce(s32_t ticks);
@@ -88,4 +89,4 @@ static inline void _sys_clock_final_tick_announce(void)
 }
 #endif
 
-#endif /* _TIMER__H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_SYSTEM_TIMER_H_ */

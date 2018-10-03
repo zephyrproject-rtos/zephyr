@@ -9,8 +9,8 @@
  * @brief APIs used when examining the objects in a debug tracing list.
  */
 
-#ifndef _OBJECT_TRACING_H_
-#define _OBJECT_TRACING_H_
+#ifndef ZEPHYR_INCLUDE_DEBUG_OBJECT_TRACING_H_
+#define ZEPHYR_INCLUDE_DEBUG_OBJECT_TRACING_H_
 
 #ifdef CONFIG_OBJECT_TRACING
 
@@ -27,6 +27,7 @@ extern struct k_stack    *_trace_list_k_stack;
 extern struct k_msgq     *_trace_list_k_msgq;
 extern struct k_mbox     *_trace_list_k_mbox;
 extern struct k_pipe     *_trace_list_k_pipe;
+extern struct k_queue	 *_trace_list_k_queue;
 
 /**
  * @def SYS_TRACING_HEAD
@@ -84,4 +85,4 @@ extern struct k_pipe     *_trace_list_k_pipe;
 
 #endif /*CONFIG_THREAD_MONITOR*/
 
-#endif /*_OBJECT_TRACING_H_*/
+#endif /*ZEPHYR_INCLUDE_DEBUG_OBJECT_TRACING_H_*/

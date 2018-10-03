@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f1xx_hal_spi.h
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    12-May-2017
   * @brief   Header file of SPI HAL module.
   ******************************************************************************
   * @attention
@@ -44,7 +42,7 @@
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f1xx_hal_def.h"  
+#include "stm32f1xx_hal_def.h"
 
 /** @addtogroup STM32F1xx_HAL_Driver
   * @{

@@ -4,8 +4,9 @@ type: mcu
 arch: arm
 toolchain:
   - zephyr
-  - gccarmemb
+  - gnuarmemb
 supported:
+  - adc
   - usb_device
   - ble
   - ieee802154

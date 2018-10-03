@@ -1,0 +1,11 @@
+identifier: nsim_em
+name: EM Nsim simulator
+type: mcu
+simulation: nsim
+arch: arc
+toolchain:
+  - zephyr
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

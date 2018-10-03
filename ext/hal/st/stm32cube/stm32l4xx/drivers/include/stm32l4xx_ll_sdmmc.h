@@ -34,8 +34,8 @@
   */ 
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __STM32L4xx_LL_SDMMC_H
-#define __STM32L4xx_LL_SDMMC_H
+#ifndef STM32L4xx_LL_SDMMC_H
+#define STM32L4xx_LL_SDMMC_H
 
 #ifdef __cplusplus
  extern "C" {
@@ -421,9 +421,9 @@ typedef struct
   */
 #if defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
 /* SDMMC_CK frequency = SDMMCCLK / [2 * CLKDIV] */
-#define IS_SDMMC_CLKDIV(DIV)   ((DIV) < 0x400)
+#define IS_SDMMC_CLKDIV(DIV)   ((DIV) < 0x400U)
 #else
-#define IS_SDMMC_CLKDIV(DIV)   ((DIV) <= 0xFF)
+#define IS_SDMMC_CLKDIV(DIV)   ((DIV) <= 0xFFU)
 #endif /* STM32L4R5xx || STM32L4R7xx || STM32L4R9xx || STM32L4S5xx || STM32L4S7xx || STM32L4S9xx */
 /**
   * @}
@@ -447,7 +447,7 @@ typedef struct
 /** @defgroup SDMMC_LL_Command_Index Command Index
   * @{
   */
-#define IS_SDMMC_CMD_INDEX(INDEX)            ((INDEX) < 0x40)
+#define IS_SDMMC_CMD_INDEX(INDEX)            ((INDEX) < 0x40U)
 /**
   * @}
   */
@@ -525,7 +525,7 @@ typedef struct
 /** @defgroup SDMMC_LL_Data_Length Data Lenght
   * @{
   */
-#define IS_SDMMC_DATA_LENGTH(LENGTH) ((LENGTH) <= 0x01FFFFFF)
+#define IS_SDMMC_DATA_LENGTH(LENGTH) ((LENGTH) <= 0x01FFFFFFU)
 /**
   * @}
   */
@@ -946,7 +946,7 @@ typedef struct
   *            @arg SDMMC_FLAG_RXDAVL:     Data available in receive FIFO
   * @retval The new state of SDMMC_FLAG (SET or RESET).
   */
-#define __SDMMC_GET_FLAG(__INSTANCE__, __FLAG__)  (((__INSTANCE__)->STA &(__FLAG__)) != RESET)
+#define __SDMMC_GET_FLAG(__INSTANCE__, __FLAG__)  (((__INSTANCE__)->STA &(__FLAG__)) != 0U)
 
 
 /**
@@ -1229,6 +1229,6 @@ uint32_t SDMMC_CmdVoltageSwitch(SDMMC_TypeDef *SDMMCx);
 }
 #endif
 
-#endif /* __STM32L4xx_LL_SDMMC_H */
+#endif /* STM32L4xx_LL_SDMMC_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

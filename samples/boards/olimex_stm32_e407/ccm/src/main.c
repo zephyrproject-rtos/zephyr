@@ -136,9 +136,9 @@ void main(void)
 	ccm_data_var_16 = ~CCM_DATA_VAR_16_VAL;
 	ccm_data_var_32 = ~CCM_DATA_VAR_32_VAL;
 
-	memset(ccm_data_array, 0xAA, sizeof(ccm_data_array));
-	memset(ccm_bss_array, 0xBB, sizeof(ccm_bss_array));
-	memset(ccm_noinit_array, 0xCC, sizeof(ccm_noinit_array));
+	(void)memset(ccm_data_array, 0xAA, sizeof(ccm_data_array));
+	(void)memset(ccm_bss_array, 0xBB, sizeof(ccm_bss_array));
+	(void)memset(ccm_noinit_array, 0xCC, sizeof(ccm_noinit_array));
 
 	printf("\nVariable values after writing:\n");
 	print_var_values();

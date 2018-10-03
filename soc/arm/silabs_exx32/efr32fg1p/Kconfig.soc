@@ -1,0 +1,31 @@
+# Kconfig - EFR32FG1P MCU line
+#
+# Copyright (c) 2018 Christian Taedcke
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+choice
+prompt "EFR32FG1P Flex Gecko MCU Selection"
+depends on SOC_SERIES_EFR32FG1P
+
+config SOC_EFR32FG1P
+	bool "SOC_EFR32FG1P"
+	select HAS_CMU
+
+endchoice
+
+if SOC_SERIES_EFR32FG1P
+
+config SOC_PART_NUMBER_EFR32FG1P133F256GM48
+	bool
+
+config SOC_PART_NUMBER_EXX32_EFR32FG1P
+	string
+	default "EFR32FG1P133F256GM48" if SOC_PART_NUMBER_EFR32FG1P133F256GM48
+	help
+	  This string holds the full part number of the SoC. It is a hidden option
+	  that you should not set directly. The part number selection choice defines
+	  the default value for this string.
+
+endif # SOC_SERIES_EFR32FG1P

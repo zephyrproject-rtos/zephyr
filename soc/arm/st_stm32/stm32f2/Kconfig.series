@@ -1,0 +1,18 @@
+# Kconfig - ST Microelectronics STM32F2X MCU series
+#
+# Copyright (c) 2018 qianfan Zhao <qianfanguijin@163.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_SERIES_STM32F2X
+	bool "stm32f2x Series MCU"
+	select CPU_CORTEX_M
+	select CPU_CORTEX_M3
+	select SOC_FAMILY_STM32
+	select SYS_POWER_LOW_POWER_STATE_SUPPORTED
+	select HAS_STM32CUBE
+	select CPU_HAS_SYSTICK
+	select CLOCK_CONTROL_STM32_CUBE if CLOCK_CONTROL
+	help
+	  Enable support for stm32f2 MCU series

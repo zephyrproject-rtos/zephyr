@@ -1,5 +1,3 @@
-zephyr_include_directories($ENV{ZEPHYR_BASE}/ext/fs/nffs/include)
-
 zephyr_sources(
   settings_store.c
   settings.c

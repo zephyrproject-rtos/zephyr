@@ -9,6 +9,5 @@
 menuconfig PINMUX_BEETLE
 	bool "ARM V2M Beetle Pin multiplexer driver"
 	depends on PINMUX && SOC_SERIES_BEETLE
-	default n
 	help
 	  Enable driver for ARM V2M Beetle Pin multiplexer.

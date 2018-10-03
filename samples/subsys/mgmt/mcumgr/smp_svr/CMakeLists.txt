@@ -1,3 +1,4 @@
+cmake_minimum_required(VERSION 3.8.2)
 # Top-level CMakeLists.txt for the skeleton application.
 #
 # Copyright (c) 2017 Open Source Foundries Limited

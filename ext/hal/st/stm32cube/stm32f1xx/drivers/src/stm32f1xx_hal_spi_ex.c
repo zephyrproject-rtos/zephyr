@@ -2,14 +2,12 @@
   ******************************************************************************
   * @file    stm32f1xx_hal_spi_ex.c
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    12-May-2017
   * @brief   Extended SPI HAL module driver.
-  *    
-  *          This file provides firmware functions to manage the following 
+  *
+  *          This file provides firmware functions to manage the following
   *          functionalities SPI extension peripheral:
   *           + Extended Peripheral Control functions
-  *  
+  *
   ******************************************************************************
   * @attention
   *
@@ -91,7 +89,7 @@ uint8_t uCRCErrorWorkaroundCheck = 0U;
   */
 
 /**
-  * @brief  Initializes the SPI according to the specified parameters 
+  * @brief  Initializes the SPI according to the specified parameters
   *         in the SPI_InitTypeDef and create the associated handle.
   * @param  hspi: pointer to a SPI_HandleTypeDef structure that contains
   *                the configuration information for SPI module.
@@ -131,7 +129,7 @@ HAL_StatusTypeDef HAL_SPI_Init(SPI_HandleTypeDef *hspi)
     /* Init the low level hardware : GPIO, CLOCK, NVIC... */
     HAL_SPI_MspInit(hspi);
   }
-  
+
   hspi->State = HAL_SPI_STATE_BUSY;
 
   /* Disble the selected SPI peripheral */
@@ -172,7 +170,7 @@ HAL_StatusTypeDef HAL_SPI_Init(SPI_HandleTypeDef *hspi)
 
   hspi->ErrorCode = HAL_SPI_ERROR_NONE;
   hspi->State = HAL_SPI_STATE_READY;
-  
+
   return HAL_OK;
 }
 
@@ -189,11 +187,11 @@ HAL_StatusTypeDef HAL_SPI_Init(SPI_HandleTypeDef *hspi)
   */
 #if (USE_SPI_CRC != 0U)
 /**
-  * @brief  Checks if encountered CRC error could be corresponding to wrongly detected errors 
+  * @brief  Checks if encountered CRC error could be corresponding to wrongly detected errors
   *         according to SPI instance, Device type, and revision ID.
   * @param  hspi: pointer to a SPI_HandleTypeDef structure that contains
   *               the configuration information for SPI module.
-  * @retval CRC error validity (SPI_INVALID_CRC_ERROR or SPI_VALID_CRC_ERROR).  
+  * @retval CRC error validity (SPI_INVALID_CRC_ERROR or SPI_VALID_CRC_ERROR).
 */
 uint8_t SPI_ISCRCErrorValid(SPI_HandleTypeDef *hspi)
 {

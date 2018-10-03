@@ -887,64 +887,64 @@ typedef struct
 /* Exported macros -----------------------------------------------------------*/
 /**
   * @brief  Enables the DSI host.
-  * @param  __HANDLE__: DSI handle
+  * @param  __HANDLE__ DSI handle
   * @retval None.
   */
 #define __HAL_DSI_ENABLE(__HANDLE__) ((__HANDLE__)->Instance->CR |= DSI_CR_EN)
 
 /**
   * @brief  Disables the DSI host.
-  * @param  __HANDLE__: DSI handle
+  * @param  __HANDLE__ DSI handle
   * @retval None.
   */
 #define __HAL_DSI_DISABLE(__HANDLE__) ((__HANDLE__)->Instance->CR &= ~DSI_CR_EN)
 
 /**
   * @brief  Enables the DSI wrapper.
-  * @param  __HANDLE__: DSI handle
+  * @param  __HANDLE__ DSI handle
   * @retval None.
   */
 #define __HAL_DSI_WRAPPER_ENABLE(__HANDLE__) ((__HANDLE__)->Instance->WCR |= DSI_WCR_DSIEN)
 
 /**
   * @brief  Disable the DSI wrapper.
-  * @param  __HANDLE__: DSI handle
+  * @param  __HANDLE__ DSI handle
   * @retval None.
   */
 #define __HAL_DSI_WRAPPER_DISABLE(__HANDLE__) ((__HANDLE__)->Instance->WCR &= ~DSI_WCR_DSIEN)
 
 /**
   * @brief  Enables the DSI PLL.
-  * @param  __HANDLE__: DSI handle
+  * @param  __HANDLE__ DSI handle
   * @retval None.
   */
 #define __HAL_DSI_PLL_ENABLE(__HANDLE__) ((__HANDLE__)->Instance->WRPCR |= DSI_WRPCR_PLLEN)
 
 /**
   * @brief  Disables the DSI PLL.
-  * @param  __HANDLE__: DSI handle
+  * @param  __HANDLE__ DSI handle
   * @retval None.
   */
 #define __HAL_DSI_PLL_DISABLE(__HANDLE__) ((__HANDLE__)->Instance->WRPCR &= ~DSI_WRPCR_PLLEN)
 
 /**
   * @brief  Enables the DSI regulator.
-  * @param  __HANDLE__: DSI handle
+  * @param  __HANDLE__ DSI handle
   * @retval None.
   */
 #define __HAL_DSI_REG_ENABLE(__HANDLE__) ((__HANDLE__)->Instance->WRPCR |= DSI_WRPCR_REGEN)
 
 /**
   * @brief  Disables the DSI regulator.
-  * @param  __HANDLE__: DSI handle
+  * @param  __HANDLE__ DSI handle
   * @retval None.
   */
 #define __HAL_DSI_REG_DISABLE(__HANDLE__) ((__HANDLE__)->Instance->WRPCR &= ~DSI_WRPCR_REGEN)
 
 /**
   * @brief  Get the DSI pending flags.
-  * @param  __HANDLE__: DSI handle.
-  * @param  __FLAG__: Get the specified flag.
+  * @param  __HANDLE__ DSI handle.
+  * @param  __FLAG__ Get the specified flag.
   *          This parameter can be any combination of the following values:
   *            @arg DSI_FLAG_TE   : Tearing Effect Interrupt Flag 
   *            @arg DSI_FLAG_ER   : End of Refresh Interrupt Flag 
@@ -960,8 +960,8 @@ typedef struct
 
 /**
   * @brief  Clears the DSI pending flags.
-  * @param  __HANDLE__: DSI handle.
-  * @param  __FLAG__: specifies the flag to clear.
+  * @param  __HANDLE__ DSI handle.
+  * @param  __FLAG__ specifies the flag to clear.
   *          This parameter can be any combination of the following values:
   *            @arg DSI_FLAG_TE   : Tearing Effect Interrupt Flag 
   *            @arg DSI_FLAG_ER   : End of Refresh Interrupt Flag 
@@ -974,8 +974,8 @@ typedef struct
 
 /**
   * @brief  Enables the specified DSI interrupts.
-  * @param  __HANDLE__: DSI handle.
-  * @param __INTERRUPT__: specifies the DSI interrupt sources to be enabled. 
+  * @param  __HANDLE__ DSI handle.
+  * @param __INTERRUPT__ specifies the DSI interrupt sources to be enabled. 
   *          This parameter can be any combination of the following values:
   *            @arg DSI_IT_TE  : Tearing Effect Interrupt
   *            @arg DSI_IT_ER  : End of Refresh Interrupt
@@ -988,8 +988,8 @@ typedef struct
 
 /**
   * @brief  Disables the specified DSI interrupts.
-  * @param  __HANDLE__: DSI handle
-  * @param __INTERRUPT__: specifies the DSI interrupt sources to be disabled. 
+  * @param  __HANDLE__ DSI handle
+  * @param __INTERRUPT__ specifies the DSI interrupt sources to be disabled. 
   *          This parameter can be any combination of the following values:
   *            @arg DSI_IT_TE  : Tearing Effect Interrupt
   *            @arg DSI_IT_ER  : End of Refresh Interrupt
@@ -1002,8 +1002,8 @@ typedef struct
 
 /**
   * @brief  Checks whether the specified DSI interrupt has occurred or not.
-  * @param  __HANDLE__: DSI handle
-  * @param  __INTERRUPT__: specifies the DSI interrupt source to check.
+  * @param  __HANDLE__ DSI handle
+  * @param  __INTERRUPT__ specifies the DSI interrupt source to check.
   *          This parameter can be one of the following values:
   *            @arg DSI_IT_TE  : Tearing Effect Interrupt
   *            @arg DSI_IT_ER  : End of Refresh Interrupt

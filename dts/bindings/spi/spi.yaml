@@ -15,6 +15,11 @@ child:
     bus: spi
 
 properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      generation: define
     "#address-cells":
       type: int
       category: required
@@ -28,7 +33,11 @@ properties:
       category: required
       description: Human readable string describing the device (used by Zephyr for API name)
       generation: define
-
+    clocks:
+      type: array
+      category: optional
+      description: Clock gate information
+      generation: define
     cs-gpios:
       type: compound
       category: optional

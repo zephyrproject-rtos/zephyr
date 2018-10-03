@@ -1,4 +1,5 @@
-/* Copyright (c) 2017 dXplore
+/*
+ * Copyright (c) 2017 Jan Van Winkel <jan.van_winkel@dxplore.eu>
  *
  * SPDX-License-Identifier: Apache-2.0
  */

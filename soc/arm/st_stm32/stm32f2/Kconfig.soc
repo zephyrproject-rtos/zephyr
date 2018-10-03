@@ -1,0 +1,18 @@
+# Kconfig - ST Microelectronics stm32f2 MCU line
+#
+# Copyright (c) 2018 qianfan Zhao <qianfanguijin@163.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+choice
+prompt "STM32F2X MCU Selection"
+depends on SOC_SERIES_STM32F2X
+
+config SOC_STM32F207XE
+	bool "STM32F207XE"
+
+config SOC_STM32F207XG
+	bool "STM32F207XG"
+
+endchoice

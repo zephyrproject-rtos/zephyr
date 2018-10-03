@@ -10,15 +10,13 @@ menu "C Library"
 depends on !NATIVE_APPLICATION
 
 config NEWLIB_LIBC
-	bool
-	prompt "Build with newlib c library"
+	bool "Build with newlib c library"
 	help
 	  Build with newlib library. The newlib library is expected to be
 	  part of the SDK in this case.
 
 config NEWLIB_LIBC_ALIGNED_HEAP_SIZE
-	int
-	prompt "Newlib aligned heap size"
+	int "Newlib aligned heap size"
 	depends on MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 	depends on NEWLIB_LIBC
 	depends on USERSPACE
@@ -34,7 +32,6 @@ config NEWLIB_LIBC_ALIGNED_HEAP_SIZE
 
 config NEWLIB_LIBC_FLOAT_PRINTF
 	bool "Build with newlib float printf"
-	default n
 	depends on NEWLIB_LIBC
 	help
 	  Build with floating point printf enabled. This will increase the size of
@@ -42,21 +39,29 @@ config NEWLIB_LIBC_FLOAT_PRINTF
 
 config NEWLIB_LIBC_FLOAT_SCANF
 	bool "Build with newlib float scanf"
-	default n
 	depends on NEWLIB_LIBC
 	help
 	  Build with floating point scanf enabled. This will increase the size of
 	  the image.
 
 config STDOUT_CONSOLE
-	bool
-	prompt "Send stdout to console"
+	bool "Send stdout to console"
 	depends on CONSOLE_HAS_DRIVER
-	default n
-	default y if NEWLIB_LIBC
+	default NEWLIB_LIBC
 	help
 	  This option directs standard output (e.g. printf) to the console
 	  device, rather than suppressing it entirely. See also EARLY_CONSOLE
 	  option.
+
+# Minimal libc options
+
+config MINIMAL_LIBC_MALLOC_ARENA_SIZE
+	int "Size of the minimal libc malloc arena"
+	depends on !NEWLIB_LIBC
+	default 0
+	help
+	  Indicate the size of the memory arena used for minimal libc's
+	  malloc() implementation. This size value must be compatible with
+	  a sys_mem_pool definition with nmax of 1 and minsz of 16.
 
 endmenu

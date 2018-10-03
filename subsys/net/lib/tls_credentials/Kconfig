@@ -1,0 +1,20 @@
+#
+# Copyright (c) 2018 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig TLS_CREDENTIALS
+	bool "TLS credentials management"
+	help
+	  Enable TLS credentials management subsystem.
+
+if TLS_CREDENTIALS
+
+config TLS_MAX_CREDENTIALS_NUMBER
+	int "Maximum number of TLS credentials"
+	default 4
+	help
+	  Maximum number of TLS credentials that can be registered.
+
+endif # TLS_CREDENTIALS

@@ -3,7 +3,7 @@
   * @file    stm32f7xx_hal_i2c_ex.c
   * @author  MCD Application Team
   * @brief   I2C Extended HAL module driver.
-  *          This file provides firmware functions to manage the following 
+  *          This file provides firmware functions to manage the following
   *          functionalities of I2C Extended peripheral:
   *           + Extended features functions
   *
@@ -91,7 +91,7 @@
                       ##### Extended features functions #####
  ===============================================================================
     [..] This section provides functions allowing to:
-      (+) Configure Noise Filters 
+      (+) Configure Noise Filters
       (+) Configure Fast Mode Plus
 
 @endverbatim
@@ -111,7 +111,7 @@ HAL_StatusTypeDef HAL_I2CEx_ConfigAnalogFilter(I2C_HandleTypeDef *hi2c, uint32_t
   assert_param(IS_I2C_ALL_INSTANCE(hi2c->Instance));
   assert_param(IS_I2C_ANALOG_FILTER(AnalogFilter));
 
-  if(hi2c->State == HAL_I2C_STATE_READY)
+  if (hi2c->State == HAL_I2C_STATE_READY)
   {
     /* Process Locked */
     __HAL_LOCK(hi2c);
@@ -157,7 +157,7 @@ HAL_StatusTypeDef HAL_I2CEx_ConfigDigitalFilter(I2C_HandleTypeDef *hi2c, uint32_
   assert_param(IS_I2C_ALL_INSTANCE(hi2c->Instance));
   assert_param(IS_I2C_DIGITAL_FILTER(DigitalFilter));
 
-  if(hi2c->State == HAL_I2C_STATE_READY)
+  if (hi2c->State == HAL_I2C_STATE_READY)
   {
     /* Process Locked */
     __HAL_LOCK(hi2c);
@@ -194,7 +194,7 @@ HAL_StatusTypeDef HAL_I2CEx_ConfigDigitalFilter(I2C_HandleTypeDef *hi2c, uint32_
   }
 }
 
-#if defined(SYSCFG_PMC_I2C1_FMP)
+#if  (defined(SYSCFG_PMC_I2C_PB6_FMP) || defined(SYSCFG_PMC_I2C_PB7_FMP)) || (defined(SYSCFG_PMC_I2C_PB8_FMP) || defined(SYSCFG_PMC_I2C_PB9_FMP)) || (defined(SYSCFG_PMC_I2C1_FMP)) || (defined(SYSCFG_PMC_I2C2_FMP)) || defined(SYSCFG_PMC_I2C3_FMP) || defined(SYSCFG_PMC_I2C4_FMP)
 /**
   * @brief Enable the I2C fast mode plus driving capability.
   * @param ConfigFastModePlus Selects the pin.
@@ -252,7 +252,8 @@ void HAL_I2CEx_DisableFastModePlus(uint32_t ConfigFastModePlus)
   /* Disable fast mode plus driving capability for selected pin */
   CLEAR_BIT(SYSCFG->PMC, (uint32_t)ConfigFastModePlus);
 }
-#endif /* SYSCFG_PMC_I2C1_FMP */
+
+#endif
 /**
   * @}
   */

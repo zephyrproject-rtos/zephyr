@@ -170,7 +170,7 @@ void mcp9808_setup_interrupt(struct device *dev)
 
 	k_thread_create(&mcp9808_thread, mcp9808_thread_stack,
 			CONFIG_MCP9808_THREAD_STACK_SIZE,
-			mcp9808_thread_main, POINTER_TO_INT(dev), 0, NULL,
+			(k_thread_entry_t)mcp9808_thread_main, dev, 0, NULL,
 			K_PRIO_COOP(CONFIG_MCP9808_THREAD_PRIORITY), 0, 0);
 #else /* CONFIG_MCP9808_TRIGGER_GLOBAL_THREAD */
 	data->work.handler = mcp9808_gpio_thread_cb;

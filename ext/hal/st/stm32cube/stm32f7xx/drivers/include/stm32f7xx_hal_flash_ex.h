@@ -478,7 +478,7 @@ typedef struct
 /**
   * @brief  Calculate the FLASH Boot Base Adress (BOOT_ADD0 or BOOT_ADD1)
   * @note   Returned value BOOT_ADDx[15:0] corresponds to boot address [29:14].
-  * @param  __ADDRESS__: FLASH Boot Address (in the range 0x0000 0000 to 0x2004 FFFF with a granularity of 16KB)
+  * @param  __ADDRESS__ FLASH Boot Address (in the range 0x0000 0000 to 0x2004 FFFF with a granularity of 16KB)
   * @retval The FLASH Boot Base Adress
   */
 #define __HAL_FLASH_CALC_BOOT_BASE_ADR(__ADDRESS__) ((__ADDRESS__) >> 14)

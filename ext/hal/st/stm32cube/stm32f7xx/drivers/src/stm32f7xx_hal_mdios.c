@@ -143,7 +143,7 @@
 /**
   * @brief  Initializes the MDIOS according to the specified parameters in 
   *         the MDIOS_InitTypeDef and creates the associated handle .
-  * @param  hmdios: pointer to a MDIOS_HandleTypeDef structure that contains
+  * @param  hmdios pointer to a MDIOS_HandleTypeDef structure that contains
   *         the configuration information for MDIOS module
   * @retval HAL status
   */
@@ -201,7 +201,7 @@ HAL_StatusTypeDef HAL_MDIOS_Init(MDIOS_HandleTypeDef *hmdios)
 
 /**
   * @brief  DeInitializes the MDIOS peripheral.
-  * @param  hmdios: MDIOS handle
+  * @param  hmdios MDIOS handle
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_MDIOS_DeInit(MDIOS_HandleTypeDef *hmdios)
@@ -236,7 +236,7 @@ HAL_StatusTypeDef HAL_MDIOS_DeInit(MDIOS_HandleTypeDef *hmdios)
 
 /**
   * @brief  MDIOS MSP Init
-  * @param  hmdios: mdios handle
+  * @param  hmdios mdios handle
   * @retval None
   */
  __weak void HAL_MDIOS_MspInit(MDIOS_HandleTypeDef *hmdios)
@@ -251,7 +251,7 @@ HAL_StatusTypeDef HAL_MDIOS_DeInit(MDIOS_HandleTypeDef *hmdios)
 
 /**
   * @brief  MDIOS MSP DeInit
-  * @param  hmdios: mdios handle
+  * @param  hmdios mdios handle
   * @retval None
   */
  __weak void HAL_MDIOS_MspDeInit(MDIOS_HandleTypeDef *hmdios)
@@ -302,9 +302,9 @@ HAL_StatusTypeDef HAL_MDIOS_DeInit(MDIOS_HandleTypeDef *hmdios)
 
 /**
   * @brief  Writes to an MDIOS output register
-  * @param  hmdios: mdios handle
-  * @param  RegNum: MDIOS input register number    
-  * @param  Data: Data to write
+  * @param  hmdios mdios handle
+  * @param  RegNum MDIOS input register number    
+  * @param  Data Data to write
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_MDIOS_WriteReg(MDIOS_HandleTypeDef *hmdios, uint32_t RegNum, uint16_t Data)
@@ -331,9 +331,9 @@ HAL_StatusTypeDef HAL_MDIOS_WriteReg(MDIOS_HandleTypeDef *hmdios, uint32_t RegNu
       
 /**
   * @brief  Reads an MDIOS input register
-  * @param  hmdios: mdios handle
-  * @param  RegNum: MDIOS input register number
-  * @param  pData: pointer to Data
+  * @param  hmdios mdios handle
+  * @param  RegNum MDIOS input register number
+  * @param  pData pointer to Data
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_MDIOS_ReadReg(MDIOS_HandleTypeDef *hmdios, uint32_t RegNum, uint16_t *pData)
@@ -360,7 +360,7 @@ HAL_StatusTypeDef HAL_MDIOS_ReadReg(MDIOS_HandleTypeDef *hmdios, uint32_t RegNum
 
 /**
   * @brief  Gets Written registers by MDIO master
-  * @param  hmdios: mdios handle
+  * @param  hmdios mdios handle
   * @retval bit map of written registers addresses
   */
 uint32_t HAL_MDIOS_GetWrittenRegAddress(MDIOS_HandleTypeDef *hmdios)
@@ -370,7 +370,7 @@ uint32_t HAL_MDIOS_GetWrittenRegAddress(MDIOS_HandleTypeDef *hmdios)
 
 /**
   * @brief  Gets Read registers by MDIO master
-  * @param  hmdios: mdios handle
+  * @param  hmdios mdios handle
   * @retval bit map of read registers addresses
   */
 uint32_t HAL_MDIOS_GetReadRegAddress(MDIOS_HandleTypeDef *hmdios)
@@ -380,8 +380,8 @@ uint32_t HAL_MDIOS_GetReadRegAddress(MDIOS_HandleTypeDef *hmdios)
 
 /**
   * @brief  Clears Write registers flag
-  * @param  hmdios: mdios handle
-  * @param  RegNum: registers addresses to be cleared
+  * @param  hmdios mdios handle
+  * @param  RegNum registers addresses to be cleared
   * @retval HAL status 
   */
 HAL_StatusTypeDef HAL_MDIOS_ClearWriteRegAddress(MDIOS_HandleTypeDef *hmdios, uint32_t RegNum)
@@ -403,8 +403,8 @@ HAL_StatusTypeDef HAL_MDIOS_ClearWriteRegAddress(MDIOS_HandleTypeDef *hmdios, ui
 
 /**
   * @brief  Clears Read register flag
-  * @param  hmdios: mdios handle
-  * @param  RegNum: registers addresses to be cleared
+  * @param  hmdios mdios handle
+  * @param  RegNum registers addresses to be cleared
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_MDIOS_ClearReadRegAddress(MDIOS_HandleTypeDef *hmdios, uint32_t RegNum)
@@ -426,7 +426,7 @@ HAL_StatusTypeDef HAL_MDIOS_ClearReadRegAddress(MDIOS_HandleTypeDef *hmdios, uin
 
 /**
   * @brief  Enables Events for MDIOS peripheral 
-  * @param  hmdios: mdios handle
+  * @param  hmdios mdios handle
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_MDIOS_EnableEvents(MDIOS_HandleTypeDef *hmdios)
@@ -445,7 +445,7 @@ HAL_StatusTypeDef HAL_MDIOS_EnableEvents(MDIOS_HandleTypeDef *hmdios)
 
 /**
   * @brief This function handles MDIOS interrupt request.
-  * @param hmdios: MDIOS handle
+  * @param hmdios MDIOS handle
   * @retval None
   */
 void HAL_MDIOS_IRQHandler(MDIOS_HandleTypeDef *hmdios)
@@ -505,7 +505,7 @@ void HAL_MDIOS_IRQHandler(MDIOS_HandleTypeDef *hmdios)
 
 /**
   * @brief  Write Complete Callback
-  * @param  hmdios: mdios handle
+  * @param  hmdios mdios handle
   * @retval None
   */
  __weak void HAL_MDIOS_WriteCpltCallback(MDIOS_HandleTypeDef *hmdios)
@@ -520,7 +520,7 @@ void HAL_MDIOS_IRQHandler(MDIOS_HandleTypeDef *hmdios)
 
 /**
   * @brief  Read Complete Callback
-  * @param  hmdios: mdios handle
+  * @param  hmdios mdios handle
   * @retval None
   */
  __weak void HAL_MDIOS_ReadCpltCallback(MDIOS_HandleTypeDef *hmdios)
@@ -535,7 +535,7 @@ void HAL_MDIOS_IRQHandler(MDIOS_HandleTypeDef *hmdios)
 
 /**
   * @brief Error Callback
-  * @param hmdios: mdios handle
+  * @param hmdios mdios handle
   * @retval None
   */
  __weak void HAL_MDIOS_ErrorCallback(MDIOS_HandleTypeDef *hmdios)
@@ -550,7 +550,7 @@ void HAL_MDIOS_IRQHandler(MDIOS_HandleTypeDef *hmdios)
 
 /**
   * @brief  MDIOS WAKEUP interrupt callback
-  * @param hmdios: mdios handle
+  * @param hmdios mdios handle
   * @retval None
   */
 __weak void HAL_MDIOS_WakeUpCallback(MDIOS_HandleTypeDef *hmdios)
@@ -585,7 +585,7 @@ __weak void HAL_MDIOS_WakeUpCallback(MDIOS_HandleTypeDef *hmdios)
 
 /**
   * @brief  Gets MDIOS error flags 
-  * @param  hmdios: mdios handle
+  * @param  hmdios mdios handle
   * @retval bit map of occured errors 
   */
 uint32_t HAL_MDIOS_GetError(MDIOS_HandleTypeDef *hmdios)
@@ -596,7 +596,7 @@ uint32_t HAL_MDIOS_GetError(MDIOS_HandleTypeDef *hmdios)
 
 /**
   * @brief  Return the MDIOS HAL state
-  * @param  hmdios: mdios handle
+  * @param  hmdios mdios handle
   * @retval MDIOS state
   */
 HAL_MDIOS_StateTypeDef HAL_MDIOS_GetState(MDIOS_HandleTypeDef *hmdios)

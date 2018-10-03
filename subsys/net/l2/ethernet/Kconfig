@@ -1,0 +1,68 @@
+#
+# Copyright (c) 2018 Intel Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig NET_L2_ETHERNET
+	bool "Enable Ethernet support"
+	help
+	  Add support for Ethernet, enabling selecting relevant hardware drivers.
+	  If NET_SLIP_TAP is selected, NET_L2_ETHERNET will enable to fully
+	  simulate Ethernet through SLIP.
+
+if NET_L2_ETHERNET
+
+config NET_DEBUG_L2_ETHERNET
+	bool "Debug Ethernet L2 layer"
+	default y if NET_LOG_GLOBAL
+	depends on NET_LOG
+	help
+	  Enables Ethernet L2 output debug messages
+
+config NET_L2_ETHERNET_MGMT
+	bool "Enable Ethernet network management interface"
+	depends on NET_MGMT && NET_MGMT_EVENT
+	help
+	  Enable support net_mgmt Ethernet interface which can be used to
+	  configure at run-time Ethernet drivers and L2 settings.
+
+config NET_VLAN
+	bool "Enable virtual lan support"
+	help
+	  Enables virtual lan (VLAN) support for Ethernet.
+
+config NET_VLAN_COUNT
+	int "Max VLAN tags supported in the system"
+	default 1
+	range 1 255
+	depends on NET_VLAN
+	help
+	  How many VLAN tags can be configured.
+
+config NET_ARP
+	bool "Enable ARP"
+	default y
+	depends on NET_IPV4
+	help
+	  Enable ARP support. This is necessary on hardware that requires it to
+	  get IPv4 working (like Ethernet devices).
+
+config NET_ARP_TABLE_SIZE
+	int "Number of entries in ARP table."
+	depends on NET_ARP
+	default 2
+	help
+	  Each entry in the ARP table consumes 22 bytes of memory.
+
+config NET_DEBUG_ARP
+	bool "Debug IPv4 ARP"
+	depends on NET_ARP && NET_LOG
+	default y if NET_LOG_GLOBAL
+	help
+	  Enables core ARP code part to output debug messages
+
+source "subsys/net/l2/ethernet/gptp/Kconfig"
+source "subsys/net/l2/ethernet/lldp/Kconfig"
+
+endif # NET_L2_ETHERNET

@@ -1,0 +1,75 @@
+# Kconfig - nrfx I2C support
+#
+# Copyright (c) 2018, Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig I2C_NRFX
+	bool "nRF TWI nrfx drivers"
+	depends on SOC_FAMILY_NRF
+	select HAS_DTS_I2C
+	help
+	  Enable support for nrfx TWI drivers for nRF MCU series.
+	  Peripherals with the same instance ID cannot be used together,
+	  e.g. I2C_0 and SPI_0. You may need to disable SPI_0 or SPI_1.
+
+if I2C_NRFX
+
+# In most Nordic SoCs the SPI and TWI peripherals with the same instance
+# number share certain resources and cannot be used at the same time.
+# In nRF52810 there are only single instances of these peripherals and
+# they are arranged in a different way so this limitation does not apply.
+if I2C_0 && (!SPI_0 || SOC_NRF52810)
+
+choice I2C_0_NRF_TYPE
+	prompt "I2C Port 0 Driver type"
+
+config I2C_0_NRF_TWI
+	bool "nRF TWI 0"
+	depends on HAS_HW_NRF_TWI0
+	select NRFX_TWI
+	help
+	  Enable nRF TWI Master without EasyDMA on port 0.
+
+config I2C_0_NRF_TWIM
+	bool "nRF TWIM 0"
+	depends on HAS_HW_NRF_TWIM0
+	select NRFX_TWIM
+	help
+	  Enable nRF TWI Master with EasyDMA on port 0.
+	  This peripheral accepts transfers from RAM only,
+	  if provided buffer is placed in flash, transfer will fail.
+
+endchoice
+
+endif # I2C_0 && (!SPI_0 || SOC_NRF52810)
+
+# Nordic TWIx1 and SPIx1 instances can not be used at the same time.
+if I2C_1 && !SPI_1
+
+choice I2C_1_NRF_TYPE
+	prompt "I2C Port 1 Driver type"
+
+config I2C_1_NRF_TWI
+	bool "nRF TWI 1"
+	depends on HAS_HW_NRF_TWI1
+	select NRFX_TWI
+	help
+	  Enable nRF TWI Master without EasyDMA on port 1.
+
+config I2C_1_NRF_TWIM
+	bool "nRF TWIM 1"
+	depends on HAS_HW_NRF_TWIM1
+	select NRFX_TWIM
+	help
+	  Enable nRF TWI Master with EasyDMA on port 1.
+	  This peripheral accepts transfers from RAM only,
+	  if provided buffer is placed in flash, transfer will fail.
+
+endchoice
+
+endif # I2C_1 && !SPI_1
+
+endif #I2C_NRFX
+

@@ -7,25 +7,21 @@
 #
 
 menuconfig LIS3DH
-	bool
-	prompt "LIS3DH Three Axis Accelerometer"
+	bool "LIS3DH Three Axis Accelerometer"
 	depends on I2C
-	default n
 	help
 	  Enable driver for LIS3DH I2C-based triaxial accelerometer sensor.
 
+if LIS3DH
+
 config LIS3DH_NAME
-	string
-	prompt "Driver name"
+	string "Driver name"
 	default "LIS3DH"
-	depends on LIS3DH
 	help
 	  Device name with which the LIS3DH sensor is identified.
 
 config LIS3DH_I2C_ADDR
-	hex
-	prompt "LIS3DH I2C address"
-	depends on LIS3DH
+	hex "LIS3DH I2C address"
 	default 0x18
 	help
 	  I2C address of the LIS3DH sensor.
@@ -34,9 +30,7 @@ config LIS3DH_I2C_ADDR
 	  0x19: Choose this option if the SDO pin is pulled to VDDIO.
 
 config LIS3DH_I2C_MASTER_DEV_NAME
-	string
-	prompt "I2C master where LIS3DH is connected"
-	depends on LIS3DH
+	string "I2C master where LIS3DH is connected"
 	default "I2C_0"
 	help
 	  Specify the device name of the I2C master device to which LIS3DH is
@@ -44,24 +38,20 @@ config LIS3DH_I2C_MASTER_DEV_NAME
 
 choice
 	prompt "Trigger mode"
-	depends on LIS3DH
 	default LIS3DH_TRIGGER_GLOBAL_THREAD
 	help
 	  Specify the type of triggering to be used by the driver.
 
 config LIS3DH_TRIGGER_NONE
-	bool
-	prompt "No trigger"
+	bool "No trigger"
 
 config LIS3DH_TRIGGER_GLOBAL_THREAD
-	bool
-	prompt "Use global thread"
+	bool "Use global thread"
 	depends on GPIO
 	select LIS3DH_TRIGGER
 
 config LIS3DH_TRIGGER_OWN_THREAD
-	bool
-	prompt "Use own thread"
+	bool "Use own thread"
 	depends on GPIO
 	select LIS3DH_TRIGGER
 
@@ -69,132 +59,110 @@ endchoice
 
 config LIS3DH_TRIGGER
 	bool
-	depends on LIS3DH
 
 config LIS3DH_GPIO_DEV_NAME
-	string
-	prompt "GPIO device"
+	string "GPIO device"
 	default "GPIO_0"
-	depends on LIS3DH && LIS3DH_TRIGGER
+	depends on LIS3DH_TRIGGER
 	help
 	  The device name of the GPIO device to which the LIS3DH interrupt pins
 	  are connected.
 
 config LIS3DH_GPIO_PIN_NUM
-	int
-	prompt "Interrupt GPIO pin number"
+	int "Interrupt GPIO pin number"
 	default 0
-	depends on LIS3DH && LIS3DH_TRIGGER
+	depends on LIS3DH_TRIGGER
 	help
 	  The number of the GPIO on which the interrupt signal from the LIS3DH
 	  chip will be received.
 
 config LIS3DH_THREAD_PRIORITY
-	int
-	prompt "Thread priority"
-	depends on LIS3DH && LIS3DH_TRIGGER_OWN_THREAD
+	int "Thread priority"
+	depends on LIS3DH_TRIGGER_OWN_THREAD
 	default 10
 	help
 	  Priority of thread used by the driver to handle interrupts.
 
 config LIS3DH_THREAD_STACK_SIZE
-	int
-	prompt "Thread stack size"
-	depends on LIS3DH && LIS3DH_TRIGGER_OWN_THREAD
+	int "Thread stack size"
+	depends on LIS3DH_TRIGGER_OWN_THREAD
 	default 1024
 	help
 	  Stack size of thread used by the driver to handle interrupts.
 
 choice
 	prompt "Acceleration measurement range"
-	depends on LIS3DH
 	default LIS3DH_ACCEL_RANGE_2G
 	help
 	  Measurement full scale range for acceleration values.
 
 config LIS3DH_ACCEL_RANGE_2G
-	bool
-	prompt "+/-2g"
+	bool "+/-2g"
 
 config LIS3DH_ACCEL_RANGE_4G
-	bool
-	prompt "+/-4g"
+	bool "+/-4g"
 
 config LIS3DH_ACCEL_RANGE_8G
-	bool
-	prompt "+/-8g"
+	bool "+/-8g"
 
 config LIS3DH_ACCEL_RANGE_16G
-	bool
-	prompt "+/-16g"
+	bool "+/-16g"
 
 endchoice
 
 choice
 	prompt "Power mode"
-	depends on LIS3DH
 	default LIS3DH_POWER_MODE_NORMAL
 	help
 	  Choose between normal or low power operation mode for chip.
 
 config LIS3DH_POWER_MODE_NORMAL
-	bool
-	prompt "normal"
+	bool "normal"
 
 config LIS3DH_POWER_MODE_LOW
-	bool
-	prompt "low"
+	bool "low"
 
 endchoice
 
 choice
 	prompt "Data rate frequency"
-	depends on LIS3DH
 	default LIS3DH_ODR_1
 	help
 	  Data rate frequency of acceleration data.
 
 config LIS3DH_ODR_1
-	bool
-	prompt "1Hz"
+	bool "1Hz"
 
 config LIS3DH_ODR_2
-	bool
-	prompt "10Hz"
+	bool "10Hz"
 
 config LIS3DH_ODR_3
-	bool
-	prompt "25Hz"
+	bool "25Hz"
 
 config LIS3DH_ODR_4
-	bool
-	prompt "50Hz"
+	bool "50Hz"
 
 config LIS3DH_ODR_5
-	bool
-	prompt "100Hz"
+	bool "100Hz"
 
 config LIS3DH_ODR_6
-	bool
-	prompt "200Hz"
+	bool "200Hz"
 
 config LIS3DH_ODR_7
-	bool
-	prompt "400Hz"
+	bool "400Hz"
 
 config LIS3DH_ODR_8
-	bool
-	prompt "1.6KHz"
+	bool "1.6KHz"
 	depends on LIS3DH_POWER_MODE_LOW
 
 config LIS3DH_ODR_9_NORMAL
-	bool
-	prompt "1.25KHz"
+	bool "1.25KHz"
 	depends on LIS3DH_POWER_MODE_NORMAL
 
 config LIS3DH_ODR_9_LOW
-	bool
-	prompt "5KHz"
+	bool "5KHz"
 	depends on LIS3DH_POWER_MODE_LOW
 
 endchoice
+
+endif # LIS3DH

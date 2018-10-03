@@ -15,6 +15,11 @@ child:
     bus: i2c
 
 properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      generation: define
     "#address-cells":
       type: int
       category: required

@@ -9,8 +9,6 @@
 #include <misc/util.h>	/* for ARRAY_SIZE */
 #include <ztest.h>
 
-#define RC_STR(rc)	(rc == TC_PASS ? PASS : FAIL)
-
 #define CLIENTID	"zephyr"
 #define CLIENTID_LEN	6
 #define TOPIC		"sensors"
@@ -735,7 +733,7 @@ int eval_buffers(u8_t *buf, u16_t buf_len, u8_t *expected,
 	return TC_PASS;
 
 exit_eval:
-	TC_PRINT("%s\n", FAIL);
+	TC_PRINT("FAIL\n");
 	TC_PRINT("Computed:");
 	print_array(buf, buf_len);
 	TC_PRINT("Expected:");
@@ -1020,7 +1018,8 @@ void test_mqtt_packet(void)
 		}
 
 		rc = test->eval_fcn(test);
-		TC_PRINT("[%s] %d - %s\n", RC_STR(rc), i + 1, test->test_name);
+		TC_PRINT("[%s] %d - %s\n", TC_RESULT_TO_STR(rc), i + 1,
+			test->test_name);
 
 		/**TESTPOINT: Check eval_fcn*/
 		zassert_false(rc, "mqtt_packet test error");

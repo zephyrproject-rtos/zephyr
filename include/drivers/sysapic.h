@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __INC_SYS_APIC_H
-#define __INC_SYS_APIC_H
+#ifndef ZEPHYR_INCLUDE_DRIVERS_SYSAPIC_H_
+#define ZEPHYR_INCLUDE_DRIVERS_SYSAPIC_H_
 
 #include <drivers/loapic.h>
 
@@ -60,4 +60,4 @@ static inline void __irq_controller_eoi(void)
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* __INC_SYS_APIC_H */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_SYSAPIC_H_ */

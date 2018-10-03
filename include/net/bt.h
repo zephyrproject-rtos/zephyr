@@ -9,8 +9,8 @@
  * @brief Bluetooth L2 stack public header
  */
 
-#ifndef __BT_H__
-#define __BT_H__
+#ifndef ZEPHYR_INCLUDE_NET_BT_H_
+#define ZEPHYR_INCLUDE_NET_BT_H_
 
 #include <net/net_mgmt.h>
 
@@ -57,4 +57,4 @@ enum net_event_bt_cmd {
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_BT_DISCONNECT);
 
-#endif /* __BT_H__ */
+#endif /* ZEPHYR_INCLUDE_NET_BT_H_ */

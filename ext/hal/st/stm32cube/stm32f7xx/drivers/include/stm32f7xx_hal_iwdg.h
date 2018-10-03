@@ -126,7 +126,7 @@ typedef struct
 
 /**
   * @brief  Enable the IWDG peripheral.
-  * @param  __HANDLE__: IWDG handle
+  * @param  __HANDLE__ IWDG handle
   * @retval None
   */
 #define __HAL_IWDG_START(__HANDLE__)                WRITE_REG((__HANDLE__)->Instance->KR, IWDG_KEY_ENABLE)
@@ -134,7 +134,7 @@ typedef struct
 /**
   * @brief  Reload IWDG counter with value defined in the reload register
   *         (write access to IWDG_PR, IWDG_RLR & IWDG_WINR registers disabled).
-  * @param  __HANDLE__:  IWDG handle
+  * @param  __HANDLE__  IWDG handle
   * @retval None
   */
 #define __HAL_IWDG_RELOAD_COUNTER(__HANDLE__)       WRITE_REG((__HANDLE__)->Instance->KR, IWDG_KEY_RELOAD)
@@ -194,21 +194,21 @@ HAL_StatusTypeDef HAL_IWDG_Refresh(IWDG_HandleTypeDef *hiwdg);
 
 /**
   * @brief  Enable write access to IWDG_PR, IWDG_RLR and IWDG_WINR registers.
-  * @param  __HANDLE__: IWDG handle
+  * @param  __HANDLE__ IWDG handle
   * @retval None
   */
 #define IWDG_ENABLE_WRITE_ACCESS(__HANDLE__)  WRITE_REG((__HANDLE__)->Instance->KR, IWDG_KEY_WRITE_ACCESS_ENABLE)
 
 /**
   * @brief  Disable write access to IWDG_PR, IWDG_RLR and IWDG_WINR registers.
-  * @param  __HANDLE__: IWDG handle
+  * @param  __HANDLE__ IWDG handle
   * @retval None
   */
 #define IWDG_DISABLE_WRITE_ACCESS(__HANDLE__) WRITE_REG((__HANDLE__)->Instance->KR, IWDG_KEY_WRITE_ACCESS_DISABLE)
 
 /**
   * @brief  Check IWDG prescaler value.
-  * @param  __PRESCALER__: IWDG prescaler value
+  * @param  __PRESCALER__ IWDG prescaler value
   * @retval None
   */
 #define IS_IWDG_PRESCALER(__PRESCALER__)      (((__PRESCALER__) == IWDG_PRESCALER_4)  || \
@@ -221,14 +221,14 @@ HAL_StatusTypeDef HAL_IWDG_Refresh(IWDG_HandleTypeDef *hiwdg);
 
 /**
   * @brief  Check IWDG reload value.
-  * @param  __RELOAD__: IWDG reload value
+  * @param  __RELOAD__ IWDG reload value
   * @retval None
   */
 #define IS_IWDG_RELOAD(__RELOAD__)            ((__RELOAD__) <= IWDG_RLR_RL)
 
 /**
   * @brief  Check IWDG window value.
-  * @param  __WINDOW__: IWDG window value
+  * @param  __WINDOW__ IWDG window value
   * @retval None
   */
 #define IS_IWDG_WINDOW(__WINDOW__)            ((__WINDOW__) <= IWDG_WINR_WIN)

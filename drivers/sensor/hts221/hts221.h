@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __SENSOR_HTS221_H__
-#define __SENSOR_HTS221_H__
+#ifndef ZEPHYR_DRIVERS_SENSOR_HTS221_HTS221_H_
+#define ZEPHYR_DRIVERS_SENSOR_HTS221_HTS221_H_
 
 #include <device.h>
 #include <misc/util.h>

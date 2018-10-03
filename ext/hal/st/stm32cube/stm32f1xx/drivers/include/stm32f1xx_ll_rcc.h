@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f1xx_ll_rcc.h
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    12-May-2017
   * @brief   Header file of RCC LL module.
   ******************************************************************************
   * @attention
@@ -122,7 +120,7 @@ typedef struct
 #endif /* LSE_VALUE */
 
 #if !defined  (LSI_VALUE)
-#define LSI_VALUE    40000U    /*!< Value of the LSI oscillator in Hz */
+#define LSI_VALUE    32000U    /*!< Value of the LSI oscillator in Hz */
 #endif /* LSI_VALUE */
 /**
   * @}
@@ -322,8 +320,8 @@ typedef struct
 #if defined(RCC_CFGR_USBPRE)
 #define LL_RCC_USB_CLKSOURCE_PLL             RCC_CFGR_USBPRE        /*!< PLL clock is not divided */
 #define LL_RCC_USB_CLKSOURCE_PLL_DIV_1_5     0x00000000U            /*!< PLL clock is divided by 1.5 */
-#endif /*RCC_CFGR_USBPRE*/                   
-#if defined(RCC_CFGR_OTGFSPRE)               
+#endif /*RCC_CFGR_USBPRE*/
+#if defined(RCC_CFGR_OTGFSPRE)
 #define LL_RCC_USB_CLKSOURCE_PLL_DIV_2       RCC_CFGR_OTGFSPRE      /*!< PLL clock is divided by 2 */
 #define LL_RCC_USB_CLKSOURCE_PLL_DIV_3       0x00000000U            /*!< PLL clock is divided by 3 */
 #endif /*RCC_CFGR_OTGFSPRE*/
@@ -424,8 +422,8 @@ typedef struct
 #define LL_RCC_PLLSOURCE_PLL2              (RCC_CFGR_PLLSRC | RCC_CFGR2_PREDIV1SRC << 4U) /*!< PLL2/PREDIV1 clock selected as PLL entry clock source */
 #endif /*RCC_CFGR2_PREDIV1SRC*/
 
-#define LL_RCC_PLLSOURCE_HSE_DIV_1         RCC_CFGR_PLLSRC                                /*!< HSE clock selected as PLL entry clock source */
 #if defined(RCC_CFGR2_PREDIV1)
+#define LL_RCC_PLLSOURCE_HSE_DIV_1         (RCC_CFGR_PLLSRC | RCC_CFGR2_PREDIV1_DIV1)    /*!< HSE/1 clock selected as PLL entry clock source */
 #define LL_RCC_PLLSOURCE_HSE_DIV_2         (RCC_CFGR_PLLSRC | RCC_CFGR2_PREDIV1_DIV2)    /*!< HSE/2 clock selected as PLL entry clock source */
 #define LL_RCC_PLLSOURCE_HSE_DIV_3         (RCC_CFGR_PLLSRC | RCC_CFGR2_PREDIV1_DIV3)    /*!< HSE/3 clock selected as PLL entry clock source */
 #define LL_RCC_PLLSOURCE_HSE_DIV_4         (RCC_CFGR_PLLSRC | RCC_CFGR2_PREDIV1_DIV4)    /*!< HSE/4 clock selected as PLL entry clock source */
@@ -442,6 +440,7 @@ typedef struct
 #define LL_RCC_PLLSOURCE_HSE_DIV_15        (RCC_CFGR_PLLSRC | RCC_CFGR2_PREDIV1_DIV15)   /*!< HSE/15 clock selected as PLL entry clock source */
 #define LL_RCC_PLLSOURCE_HSE_DIV_16        (RCC_CFGR_PLLSRC | RCC_CFGR2_PREDIV1_DIV16)   /*!< HSE/16 clock selected as PLL entry clock source */
 #if defined(RCC_CFGR2_PREDIV1SRC)
+#define LL_RCC_PLLSOURCE_PLL2_DIV_1        (RCC_CFGR_PLLSRC | RCC_CFGR2_PREDIV1_DIV1 | RCC_CFGR2_PREDIV1SRC << 4U)    /*!< PLL2/1 clock selected as PLL entry clock source */
 #define LL_RCC_PLLSOURCE_PLL2_DIV_2        (RCC_CFGR_PLLSRC | RCC_CFGR2_PREDIV1_DIV2 | RCC_CFGR2_PREDIV1SRC << 4U)    /*!< PLL2/2 clock selected as PLL entry clock source */
 #define LL_RCC_PLLSOURCE_PLL2_DIV_3        (RCC_CFGR_PLLSRC | RCC_CFGR2_PREDIV1_DIV3 | RCC_CFGR2_PREDIV1SRC << 4U)    /*!< PLL2/3 clock selected as PLL entry clock source */
 #define LL_RCC_PLLSOURCE_PLL2_DIV_4        (RCC_CFGR_PLLSRC | RCC_CFGR2_PREDIV1_DIV4 | RCC_CFGR2_PREDIV1SRC << 4U)    /*!< PLL2/4 clock selected as PLL entry clock source */
@@ -459,6 +458,7 @@ typedef struct
 #define LL_RCC_PLLSOURCE_PLL2_DIV_16       (RCC_CFGR_PLLSRC | RCC_CFGR2_PREDIV1_DIV16 | RCC_CFGR2_PREDIV1SRC << 4U)   /*!< PLL2/16 clock selected as PLL entry clock source */
 #endif /*RCC_CFGR2_PREDIV1SRC*/
 #else
+#define LL_RCC_PLLSOURCE_HSE_DIV_1         (RCC_CFGR_PLLSRC | 0x00000000U)               /*!< HSE/1 clock selected as PLL entry clock source */
 #define LL_RCC_PLLSOURCE_HSE_DIV_2         (RCC_CFGR_PLLSRC | RCC_CFGR_PLLXTPRE)         /*!< HSE/2 clock selected as PLL entry clock source */
 #endif /*RCC_CFGR2_PREDIV1*/
 /**
@@ -1451,6 +1451,7 @@ __STATIC_INLINE uint32_t LL_RCC_PLL_IsReady(void)
   *         @arg @ref LL_RCC_PLLSOURCE_HSE_DIV_14 (*)
   *         @arg @ref LL_RCC_PLLSOURCE_HSE_DIV_15 (*)
   *         @arg @ref LL_RCC_PLLSOURCE_HSE_DIV_16 (*)
+  *         @arg @ref LL_RCC_PLLSOURCE_PLL2_DIV_1 (*)
   *         @arg @ref LL_RCC_PLLSOURCE_PLL2_DIV_2 (*)
   *         @arg @ref LL_RCC_PLLSOURCE_PLL2_DIV_3 (*)
   *         @arg @ref LL_RCC_PLLSOURCE_PLL2_DIV_4 (*)
@@ -1501,6 +1502,24 @@ __STATIC_INLINE void LL_RCC_PLL_ConfigDomain_SYS(uint32_t Source, uint32_t PLLMu
   MODIFY_REG(RCC->CFGR2, RCC_CFGR2_PREDIV1, (Source & RCC_CFGR2_PREDIV1));
 #endif /*RCC_CFGR2_PREDIV1SRC*/
 #endif /*RCC_CFGR2_PREDIV1*/
+}
+
+/**
+  * @brief  Configure PLL clock source
+  * @rmtoll CFGR      PLLSRC        LL_RCC_PLL_SetMainSource\n
+  *         CFGR2     PREDIV1SRC    LL_RCC_PLL_SetMainSource
+  * @param PLLSource This parameter can be one of the following values:
+  *         @arg @ref LL_RCC_PLLSOURCE_HSI_DIV_2
+  *         @arg @ref LL_RCC_PLLSOURCE_HSE
+  *         @arg @ref LL_RCC_PLLSOURCE_PLL2 (*)
+  * @retval None
+  */
+__STATIC_INLINE void LL_RCC_PLL_SetMainSource(uint32_t PLLSource)
+{
+#if defined(RCC_CFGR2_PREDIV1SRC)
+  MODIFY_REG(RCC->CFGR2, RCC_CFGR2_PREDIV1SRC, ((PLLSource & (RCC_CFGR2_PREDIV1SRC << 4U)) >> 4U));
+#endif /* RCC_CFGR2_PREDIV1SRC */
+  MODIFY_REG(RCC->CFGR, RCC_CFGR_PLLSRC, PLLSource);
 }
 
 /**

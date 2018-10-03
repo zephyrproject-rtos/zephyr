@@ -335,6 +335,9 @@ void HAL_NVIC_GetPriority(IRQn_Type IRQn, uint32_t PriorityGroup, uint32_t *pPre
   */
 void HAL_NVIC_SetPendingIRQ(IRQn_Type IRQn)
 {
+  /* Check the parameters */
+  assert_param(IS_NVIC_DEVICE_IRQ(IRQn));
+
   /* Set interrupt pending */
   NVIC_SetPendingIRQ(IRQn);
 }
@@ -350,6 +353,9 @@ void HAL_NVIC_SetPendingIRQ(IRQn_Type IRQn)
   */
 uint32_t HAL_NVIC_GetPendingIRQ(IRQn_Type IRQn)
 {
+  /* Check the parameters */
+  assert_param(IS_NVIC_DEVICE_IRQ(IRQn));
+
   /* Return 1 if pending else 0 */
   return NVIC_GetPendingIRQ(IRQn);
 }
@@ -363,6 +369,9 @@ uint32_t HAL_NVIC_GetPendingIRQ(IRQn_Type IRQn)
   */
 void HAL_NVIC_ClearPendingIRQ(IRQn_Type IRQn)
 {
+  /* Check the parameters */
+  assert_param(IS_NVIC_DEVICE_IRQ(IRQn));
+
   /* Clear pending interrupt */
   NVIC_ClearPendingIRQ(IRQn);
 }
@@ -424,6 +433,46 @@ __weak void HAL_SYSTICK_Callback(void)
 }
 
 #if (__MPU_PRESENT == 1)
+/**
+  * @brief  Disable the MPU.
+  * @retval None
+  */
+void HAL_MPU_Disable(void)
+{
+  /* Make sure outstanding transfers are done */
+  __DMB();
+
+  /* Disable fault exceptions */
+  SCB->SHCSR &= ~SCB_SHCSR_MEMFAULTENA_Msk;
+  
+  /* Disable the MPU and clear the control register*/
+  MPU->CTRL = 0U;
+}
+
+/**
+  * @brief  Enable the MPU.
+  * @param  MPU_Control: Specifies the control mode of the MPU during hard fault, 
+  *          NMI, FAULTMASK and privileged accessto the default memory 
+  *          This parameter can be one of the following values:
+  *            @arg MPU_HFNMI_PRIVDEF_NONE
+  *            @arg MPU_HARDFAULT_NMI
+  *            @arg MPU_PRIVILEGED_DEFAULT
+  *            @arg MPU_HFNMI_PRIVDEF
+  * @retval None
+  */
+void HAL_MPU_Enable(uint32_t MPU_Control)
+{
+  /* Enable the MPU */
+  MPU->CTRL = MPU_Control | MPU_CTRL_ENABLE_Msk;
+  
+  /* Enable fault exceptions */
+  SCB->SHCSR |= SCB_SHCSR_MEMFAULTENA_Msk;
+  
+  /* Ensure MPU settings take effects */
+  __DSB();
+  __ISB();
+}
+
 /**
   * @brief  Initialize and configure the Region and the memory to be protected.
   * @param  MPU_Init: Pointer to a MPU_Region_InitTypeDef structure that contains

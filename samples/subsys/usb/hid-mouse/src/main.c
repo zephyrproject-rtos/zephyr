@@ -153,7 +153,6 @@ void main(void)
 		k_sem_take(&sem, K_FOREVER);
 
 		report[0] = status;
-		usb_write(CONFIG_HID_INT_EP_ADDR, report,
-			  sizeof(report), NULL);
+		hid_int_ep_write(report, sizeof(report), NULL);
 	}
 }

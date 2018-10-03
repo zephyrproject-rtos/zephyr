@@ -113,7 +113,7 @@ long strtol(const char *nptr, char **endptr, register int base)
 		errno = ERANGE;
 	} else if (neg)
 		acc = -acc;
-	if (endptr != 0)
+	if (endptr != NULL)
 		*endptr = (char *)(any ? s - 1 : nptr);
 	return acc;
 }

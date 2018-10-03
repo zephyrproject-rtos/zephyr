@@ -4,18 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/*
- * @file
- * @brief Test sleep and wakeup APIs
- *
- * This module tests the following sleep and wakeup scenarios:
- * 1. k_sleep() without cancellation
- * 2. k_sleep() cancelled via k_wakeup()
- * 3. k_sleep() cancelled via k_wakeup()
- * 4. k_sleep() cancelled via k_wakeup()
- * 5. k_sleep() - no cancellation exists
- */
-
 #include <tc_util.h>
 #include <ztest.h>
 #include <arch/cpu.h>
@@ -29,11 +17,12 @@
 #define THREAD_STACK    (384 + CONFIG_TEST_EXTRA_STACKSIZE)
 #endif
 
-#define TEST_THREAD_PRIORITY	-4
+#define TEST_THREAD_PRIORITY    -4
 #define HELPER_THREAD_PRIORITY  -10
 
-#define ONE_SECOND  (MSEC_PER_SEC)
-#define TICKS_PER_MS  (MSEC_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#define ONE_SECOND		(MSEC_PER_SEC)
+#define ONE_SECOND_ALIGNED	\
+	(u32_t)(__ticks_to_ms(_ms_to_ticks(ONE_SECOND) + _TICK_ALIGN))
 
 static struct k_sem test_thread_sem;
 static struct k_sem helper_thread_sem;
@@ -42,14 +31,31 @@ static struct k_sem task_sem;
 static K_THREAD_STACK_DEFINE(test_thread_stack, THREAD_STACK);
 static K_THREAD_STACK_DEFINE(helper_thread_stack, THREAD_STACK);
 
-static k_tid_t  test_thread_id;
-static k_tid_t  helper_thread_id;
+static k_tid_t test_thread_id;
+static k_tid_t helper_thread_id;
 
 static struct k_thread test_thread_data;
 static struct k_thread helper_thread_data;
 
 static bool test_failure = true;     /* Assume the test will fail */
 
+/**
+ * @brief Test sleep and wakeup APIs
+ *
+ * @defgroup kernel_sleep_tests Sleep Tests
+ *
+ * @ingroup all_tests
+ *
+ * This module tests the following sleep and wakeup scenarios:
+ * 1. k_sleep() without cancellation
+ * 2. k_sleep() cancelled via k_wakeup()
+ * 3. k_sleep() cancelled via k_wakeup()
+ * 4. k_sleep() cancelled via k_wakeup()
+ * 5. k_sleep() - no cancellation exists
+ *
+ * @{
+ * @}
+ */
 static void test_objects_init(void)
 {
 	k_sem_init(&test_thread_sem, 0, UINT_MAX);
@@ -96,16 +102,12 @@ static void test_thread(int arg1, int arg2)
 	align_to_tick_boundary();
 
 	start_tick = k_uptime_get_32();
-
-	/* FIXME: one tick less to account for
-	 * one  extra tick for _TICK_ALIGN in k_sleep
-	 */
-	k_sleep(ONE_SECOND - TICKS_PER_MS);
+	k_sleep(ONE_SECOND);
 	end_tick = k_uptime_get_32();
 
-	if (!sleep_time_valid(start_tick, end_tick, ONE_SECOND)) {
+	if (!sleep_time_valid(start_tick, end_tick, ONE_SECOND_ALIGNED)) {
 		TC_ERROR(" *** k_sleep() slept for %d ticks not %d.",
-				 end_tick - start_tick, ONE_SECOND);
+			 end_tick - start_tick, ONE_SECOND_ALIGNED);
 
 		return;
 	}
@@ -115,15 +117,12 @@ static void test_thread(int arg1, int arg2)
 	align_to_tick_boundary();
 
 	start_tick = k_uptime_get_32();
-	/* FIXME: one tick less to account for
-	 * one  extra tick for _TICK_ALIGN in k_sleep
-	 */
-	k_sleep(ONE_SECOND - TICKS_PER_MS);
+	k_sleep(ONE_SECOND);
 	end_tick = k_uptime_get_32();
 
 	if (end_tick - start_tick > 1) {
 		TC_ERROR(" *** k_wakeup() took too long (%d ticks)\n",
-				 end_tick - start_tick);
+			 end_tick - start_tick);
 		return;
 	}
 
@@ -132,15 +131,12 @@ static void test_thread(int arg1, int arg2)
 	align_to_tick_boundary();
 
 	start_tick = k_uptime_get_32();
-	/* FIXME: one tick less to account for
-	 * one  extra tick for _TICK_ALIGN in k_sleep
-	 */
-	k_sleep(ONE_SECOND - TICKS_PER_MS);
+	k_sleep(ONE_SECOND);
 	end_tick = k_uptime_get_32();
 
 	if (end_tick - start_tick > 1) {
 		TC_ERROR(" *** k_wakeup() took too long (%d ticks)\n",
-				 end_tick - start_tick);
+			 end_tick - start_tick);
 		return;
 	}
 
@@ -149,16 +145,12 @@ static void test_thread(int arg1, int arg2)
 	align_to_tick_boundary();
 
 	start_tick = k_uptime_get_32();
-
-	/* FIXME: one tick less to account for
-	 * one  extra tick for _TICK_ALIGN in k_sleep
-	 */
-	k_sleep(ONE_SECOND - TICKS_PER_MS);           /* Task will execute */
+	k_sleep(ONE_SECOND);	/* Task will execute */
 	end_tick = k_uptime_get_32();
 
 	if (end_tick - start_tick > 1) {
 		TC_ERROR(" *** k_wakeup() took too long (%d ticks) at LAST\n",
-				 end_tick - start_tick);
+			 end_tick - start_tick);
 		return;
 	}
 	test_failure = false;
@@ -181,11 +173,18 @@ static void helper_thread(int arg1, int arg2)
 	irq_offload(irq_offload_isr, (void *)test_thread_id);
 }
 
+/**
+ * @brief Test sleep functionality
+ *
+ * @ingroup kernel_sleep_tests
+ *
+ * @see k_sleep(), k_wakeup(), k_uptime_get_32()
+ */
 void test_sleep(void)
 {
-	int       status = TC_FAIL;
-	u32_t  start_tick;
-	u32_t  end_tick;
+	int status = TC_FAIL;
+	u32_t start_tick;
+	u32_t end_tick;
 
 	/*
 	 * Main thread(test_main) priority is 0 but ztest thread runs at
@@ -225,14 +224,11 @@ void test_sleep(void)
 	TC_PRINT("Testing kernel k_sleep()\n");
 	align_to_tick_boundary();
 	start_tick = k_uptime_get_32();
-	/* FIXME: one tick less to account for
-	 * one  extra tick for _TICK_ALIGN in k_sleep
-	 */
-	k_sleep(ONE_SECOND - TICKS_PER_MS);
+	k_sleep(ONE_SECOND);
 	end_tick = k_uptime_get_32();
-	zassert_true(sleep_time_valid(start_tick, end_tick, ONE_SECOND),
+	zassert_true(sleep_time_valid(start_tick, end_tick, ONE_SECOND_ALIGNED),
 		     "k_sleep() slept for %d ticks, not %d\n",
-		     end_tick - start_tick, ONE_SECOND);
+		     end_tick - start_tick, ONE_SECOND_ALIGNED);
 
 	status = TC_PASS;
 }
@@ -241,6 +237,6 @@ void test_sleep(void)
 void test_main(void)
 {
 	ztest_test_suite(sleep,
-			ztest_unit_test(test_sleep));
+			 ztest_unit_test(test_sleep));
 	ztest_run_test_suite(sleep);
 }

@@ -9,31 +9,26 @@
 menu "Management"
 
 config MCUMGR_SMP_BT
-	bool
-	prompt "Bluetooth mcumgr SMP transport"
+	bool "Bluetooth mcumgr SMP transport"
 	select MCUMGR
 	select BT
 	select BT_PERIPHERAL
-	default n
 	help
 	  Enables handling of SMP commands received over Bluetooth.
 
 config MCUMGR_SMP_SHELL
-	bool
-	prompt "Shell mcumgr SMP transport"
+	bool "Shell mcumgr SMP transport"
 	select MCUMGR
 	select UART_CONSOLE_MCUMGR
 	select CONSOLE_SHELL
 	select BASE64
-	default n
 	help
 	  Enables handling of SMP commands received over shell.  This allows
 	  the shell to be use for both mcumgr commands and shell commands.
 
 if MCUMGR_SMP_SHELL
 config MCUMGR_SMP_SHELL_MTU
-	int
-	prompt "Shell SMP MTU"
+	int "Shell SMP MTU"
 	default 256
 	help
 	  Maximum size of SMP frames sent and received over shell.  This value
@@ -43,12 +38,10 @@ endif
 
 
 config MCUMGR_SMP_UART
-	bool
-	prompt "UART mcumgr SMP transport"
+	bool "UART mcumgr SMP transport"
 	select MCUMGR
 	select UART_MCUMGR
 	select BASE64
-	default n
 	help
 	  Enables handling of SMP commands received over UART.  This is a
 	  lightweight alternative to MCUMGR_SMP_SHELL.  It allows mcumgr
@@ -57,8 +50,7 @@ config MCUMGR_SMP_UART
 
 if MCUMGR_SMP_UART
 config MCUMGR_SMP_UART_MTU
-	int
-	prompt "UART SMP MTU"
+	int "UART SMP MTU"
 	default 256
 	help
 	  Maximum size of SMP frames sent and received over UART, in bytes.
@@ -68,16 +60,14 @@ config MCUMGR_SMP_UART_MTU
 endif
 
 config MCUMGR_BUF_COUNT
-	int
-	prompt "Number of mcumgr buffers"
+	int "Number of mcumgr buffers"
 	default 4
 	help
 	  The number of net_bufs to allocate for mcumgr.  These buffers are
 	  used for both requests and responses.
 
 config MCUMGR_BUF_SIZE
-	int
-	prompt "Size of each mcumgr buffer"
+	int "Size of each mcumgr buffer"
 	default 384
 	help
 	  The size, in bytes, of each mcumgr buffer.  This value must satisfy
@@ -85,12 +75,11 @@ config MCUMGR_BUF_SIZE
 	  MCUMGR_BUF_SIZE >= transport-specific-MTU + transport-overhead
 
 config MCUMGR_BUF_USER_DATA_SIZE
-	int
-	prompt "Size of mcumgr buffer user data"
-	default 7
+	int "Size of mcumgr buffer user data"
+	default 4
 	help
 	  The size, in bytes, of user data to allocate for each mcumgr buffer.
 	  Different mcumgr transports impose different requirements for this
-	  setting.  A value of 7 is sufficient for UART, shell, and bluetooth.
+	  setting.  A value of 4 is sufficient for UART, shell, and bluetooth.
 
 endmenu

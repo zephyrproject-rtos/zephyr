@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _kernel_include_timeout_q__h_
-#define _kernel_include_timeout_q__h_
+#ifndef ZEPHYR_KERNEL_INCLUDE_TIMEOUT_Q_H_
+#define ZEPHYR_KERNEL_INCLUDE_TIMEOUT_Q_H_
 
 /**
  * @file
@@ -68,7 +68,7 @@ _init_thread_timeout(struct _thread_base *thread_base)
 static inline void _unpend_thread_timing_out(struct k_thread *thread,
 					     struct _timeout *timeout_obj)
 {
-	if (timeout_obj->wait_q) {
+	if (timeout_obj->wait_q != NULL) {
 		_unpend_thread_no_timeout(thread);
 		thread->base.timeout.wait_q = NULL;
 	}
@@ -88,14 +88,14 @@ static inline void _handle_one_expired_timeout(struct _timeout *timeout)
 	timeout->delta_ticks_from_prev = _INACTIVE;
 
 	K_DEBUG("timeout %p\n", timeout);
-	if (thread) {
+	if (thread != NULL) {
 		_unpend_thread_timing_out(thread, timeout);
 		_mark_thread_as_started(thread);
 		_ready_thread(thread);
 		irq_unlock(key);
 	} else {
 		irq_unlock(key);
-		if (timeout->func) {
+		if (timeout->func != NULL) {
 			timeout->func(timeout);
 		}
 	}
@@ -112,7 +112,6 @@ static inline void _handle_expired_timeouts(sys_dlist_t *expired)
 	struct _timeout *timeout, *next;
 
 	SYS_DLIST_FOR_EACH_CONTAINER_SAFE(expired, timeout, next, node) {
-		sys_dlist_remove(&timeout->node);
 		_handle_one_expired_timeout(timeout);
 	}
 }
@@ -291,4 +290,4 @@ static inline s32_t _get_next_timeout_expiry(void)
 }
 #endif
 
-#endif /* _kernel_include_timeout_q__h_ */
+#endif /* ZEPHYR_KERNEL_INCLUDE_TIMEOUT_Q_H_ */

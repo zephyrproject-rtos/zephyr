@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _CAVS_ICTL_H_
-#define _CAVS_ICTL_H_
+#ifndef ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_CAVS_ICTL_H_
+#define ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_CAVS_ICTL_H_
 
 #include <zephyr/types.h>
 
@@ -36,4 +36,4 @@ struct cavs_registers {
 }
 #endif
 
-#endif /* _CAVS_ICTL_H_ */
+#endif /* ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_CAVS_ICTL_H_ */

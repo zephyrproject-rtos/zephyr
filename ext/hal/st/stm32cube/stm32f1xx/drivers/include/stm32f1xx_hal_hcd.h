@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f1xx_hal_hcd.h
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    12-May-2017
   * @brief   Header file of HCD HAL module.
   ******************************************************************************
   * @attention
@@ -33,7 +31,7 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-  */ 
+  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __STM32F1xx_HAL_HCD_H
@@ -55,7 +53,7 @@
 
 /** @addtogroup HCD
   * @{
-  */ 
+  */
 
 /* Exported types ------------------------------------------------------------*/
 /** @defgroup HCD_Exported_Types HCD Exported Types
@@ -113,7 +111,7 @@ typedef struct
 
 /**
   * @}
-  */ 
+  */
 
 /* Exported macro ------------------------------------------------------------*/
 /** @defgroup HCD_Exported_Macros HCD Exported Macros
@@ -122,18 +120,18 @@ typedef struct
  */
 #define __HAL_HCD_ENABLE(__HANDLE__)                       USB_EnableGlobalInt ((__HANDLE__)->Instance)
 #define __HAL_HCD_DISABLE(__HANDLE__)                      USB_DisableGlobalInt ((__HANDLE__)->Instance)
-   
-   
+
+
 #define __HAL_HCD_GET_FLAG(__HANDLE__, __INTERRUPT__)      ((USB_ReadInterrupts((__HANDLE__)->Instance) & (__INTERRUPT__)) == (__INTERRUPT__))
 #define __HAL_HCD_CLEAR_FLAG(__HANDLE__, __INTERRUPT__)    (((__HANDLE__)->Instance->GINTSTS) = (__INTERRUPT__))
-#define __HAL_HCD_IS_INVALID_INTERRUPT(__HANDLE__)         (USB_ReadInterrupts((__HANDLE__)->Instance) == 0U)    
-   
-   
-#define __HAL_HCD_CLEAR_HC_INT(chnum, __INTERRUPT__)       (USBx_HC(chnum)->HCINT = (__INTERRUPT__)) 
-#define __HAL_HCD_MASK_HALT_HC_INT(chnum)                  (USBx_HC(chnum)->HCINTMSK &= ~USB_OTG_HCINTMSK_CHHM) 
-#define __HAL_HCD_UNMASK_HALT_HC_INT(chnum)                (USBx_HC(chnum)->HCINTMSK |= USB_OTG_HCINTMSK_CHHM) 
-#define __HAL_HCD_MASK_ACK_HC_INT(chnum)                   (USBx_HC(chnum)->HCINTMSK &= ~USB_OTG_HCINTMSK_ACKM) 
-#define __HAL_HCD_UNMASK_ACK_HC_INT(chnum)                 (USBx_HC(chnum)->HCINTMSK |= USB_OTG_HCINTMSK_ACKM) 
+#define __HAL_HCD_IS_INVALID_INTERRUPT(__HANDLE__)         (USB_ReadInterrupts((__HANDLE__)->Instance) == 0U)
+
+
+#define __HAL_HCD_CLEAR_HC_INT(chnum, __INTERRUPT__)       (USBx_HC(chnum)->HCINT = (__INTERRUPT__))
+#define __HAL_HCD_MASK_HALT_HC_INT(chnum)                  (USBx_HC(chnum)->HCINTMSK &= ~USB_OTG_HCINTMSK_CHHM)
+#define __HAL_HCD_UNMASK_HALT_HC_INT(chnum)                (USBx_HC(chnum)->HCINTMSK |= USB_OTG_HCINTMSK_CHHM)
+#define __HAL_HCD_MASK_ACK_HC_INT(chnum)                   (USBx_HC(chnum)->HCINTMSK &= ~USB_OTG_HCINTMSK_ACKM)
+#define __HAL_HCD_UNMASK_ACK_HC_INT(chnum)                 (USBx_HC(chnum)->HCINTMSK |= USB_OTG_HCINTMSK_ACKM)
 
 /**
   * @}
@@ -233,7 +231,7 @@ uint32_t               HAL_HCD_GetCurrentSpeed(HCD_HandleTypeDef *hhcd);
 /**
   * @}
   */
- 
+
 /**
   * @}
   */

@@ -10,6 +10,5 @@
 # before selecting the Altera HAL.
 menuconfig HAS_ALTERA_HAL
 	bool "Altera HAL drivers support"
-	default n
 	depends on NIOS2
 	depends on NEWLIB_LIBC

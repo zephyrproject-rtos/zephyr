@@ -10,7 +10,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#include "posix_soc_if.h"
+#include "posix_trace.h"
+#include "posix_board_if.h"
 #include "zephyr/types.h"
 #include "cmdline_common.h"
 
@@ -39,32 +40,35 @@ int cmd_is_option(const char *arg, const char *option, int with_value)
 		of++;
 	}
 
-	if (strncmp(&arg[of], option, to_match_len) != 0) {
-		return 0;
-	}
-
-	of += to_match_len;
-
-	if (with_value) {
-		if ((arg[of] == ':') || (arg[of] == '=')) {
-			of++;
-			if (arg[of] == 0) { /* we need a value to follow */
-				of = 0;
-			}
+	if (!with_value) {
+		if (strcmp(&arg[of], option) != 0) {
+			return 0;
 		} else {
-			of = 0;
-		}
-	} else {
-		if (arg[of] != 0) { /* we don't accept any extra characters */
-			of = 0;
+			return of + to_match_len;
 		}
 	}
-	if (of == 0) {
-		posix_print_error_and_exit("Incorrect option syntax '%s'. Run "
-					   "with --help for more information\n",
+
+	while (!(arg[of] == 0 && *option == 0)) {
+		if (*option == 0) {
+			if ((arg[of] == ':') || (arg[of] == '=')) {
+				of++;
+				break;
+			}
+			return 0;
+		}
+		if (arg[of] != *option) {
+			return 0;
+		}
+		of++;
+		option++;
+	}
+
+	if (arg[of] == 0) { /* we need a value to follow */
+		posix_print_error_and_exit("Incorrect option syntax '%s'. The "
+					   "value should follow the options. "
+					   "For example --ratio=3\n",
 					   arg);
 	}
-
 	return of;
 }
 
@@ -139,6 +143,7 @@ void cmd_read_option_value(const char *str, void *dest, const char type,
 		break;
 	case 's':
 		*(char **)dest = (char *)str;
+		endptr = (char *)str + strlen(str);
 		break;
 	case 'u':
 		*(u32_t *)dest = strtoul(str, &endptr, 0);
@@ -160,13 +165,13 @@ void cmd_read_option_value(const char *str, void *dest, const char type,
 		break;
 	}
 
-	if (*endptr != 0) {
+	if (!error && *endptr != 0) {
 		error = 1;
 	}
 
 	if (error) {
-		posix_print_error_and_exit("Error reading value %s '%s'. Use "
-					   "--help for usage information\n",
+		posix_print_error_and_exit("Error reading value of %s '%s'. Use"
+					   " --help for usage information\n",
 					   option, str);
 	}
 }
@@ -367,7 +372,7 @@ static void cmd_handle_this_matched_arg(char *argv, int offset,
 			cmd_read_option_value(&argv[offset],
 					      arg_element->dest,
 					      arg_element->type,
-					      arg_element->name);
+					      arg_element->option);
 		}
 	}
 
@@ -397,7 +402,7 @@ bool cmd_parse_one_arg(char *argv, struct args_struct_t args_struct[])
 			continue;
 		}
 		ret = cmd_is_option(argv, args_struct[count].option,
-				       !args_struct[count].is_switch);
+				    !args_struct[count].is_switch);
 		if (ret) {
 			cmd_handle_this_matched_arg(argv,
 						    ret,

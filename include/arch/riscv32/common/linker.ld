@@ -41,6 +41,8 @@ MEMORY
     IDT_LIST  (wx)      : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
 }
 
+ENTRY(CONFIG_KERNEL_ENTRY)
+
 SECTIONS
     {
 
@@ -81,6 +83,7 @@ SECTIONS
 		*(.text)
 		*(".text.*")
 		*(.gnu.linkonce.t.*)
+		*(.eh_frame)
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
     _image_text_end = .;

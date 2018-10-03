@@ -1,0 +1,60 @@
+# Kconfig - UDOO Neo Full board
+#
+# Copyright (c) 2018, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_UDOO_NEO_FULL_M4
+
+config BOARD
+	default "udoo_neo_full_m4"
+
+if UART_IMX
+
+config UART_IMX_UART_1
+	def_bool n
+
+config UART_IMX_UART_2
+	def_bool n
+
+config UART_IMX_UART_3
+	def_bool n
+
+config UART_IMX_UART_4
+	def_bool n
+
+config UART_IMX_UART_5
+	def_bool y if UART_CONSOLE
+
+config UART_IMX_UART_6
+	def_bool n
+
+endif # UART_IMX
+
+if GPIO_IMX
+
+config GPIO_IMX_PORT_1
+	def_bool n
+
+config GPIO_IMX_PORT_2
+	def_bool n
+
+config GPIO_IMX_PORT_3
+	def_bool n
+
+config GPIO_IMX_PORT_4
+	def_bool y
+
+config GPIO_IMX_PORT_5
+	def_bool n
+
+config GPIO_IMX_PORT_6
+	def_bool n
+
+config GPIO_IMX_PORT_7
+	def_bool n
+
+endif # GPIO_IMX
+
+endif # BOARD_UDOO_NEO_FULL_M4

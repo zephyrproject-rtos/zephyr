@@ -1,0 +1,39 @@
+#
+# Copyright (c) 2018, marc-cpdesign
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: NRF5 GPIO
+id: nordic,nrf-gpio
+version: 0.1
+
+description: >
+    This is a representation of the NRF GPIO nodes
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "nordic,nrf-gpio"
+      generation: define
+
+    reg:
+      type: int
+      description: mmio register space
+      generation: define
+      category: required
+
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+
+cell_string: GPIO
+
+"#cells":
+  - pin
+  - flags
+...

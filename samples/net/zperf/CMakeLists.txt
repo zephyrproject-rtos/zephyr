@@ -1,3 +1,4 @@
+cmake_minimum_required(VERSION 3.8.2)
 macro(set_conf_file)
   if(PROFILER)
     set(CONF_FILE prj_${BOARD}_prof.conf)

@@ -7,8 +7,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __BT_UUID_H
-#define __BT_UUID_H
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_UUID_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_UUID_H_
 
 /**
  * @brief UUIDs
@@ -207,6 +207,10 @@ struct bt_uuid_128 {
  *  @brief BAS Characteristic Battery Level
  */
 #define BT_UUID_BAS_BATTERY_LEVEL         BT_UUID_DECLARE_16(0x2a19)
+/** @def BT_UUID_HIDS_BOOT_KB_IN_REPORT
+ *  @brief HID Characteristic Boot Keyboard Input Report
+ */
+#define BT_UUID_HIDS_BOOT_KB_IN_REPORT    BT_UUID_DECLARE_16(0x2a22)
 /** @def BT_UUID_DIS_SYSTEM_ID
  *  @brief DIS Characteristic System ID
  */
@@ -247,6 +251,14 @@ struct bt_uuid_128 {
  *  @brief Magnetic Declination Characteristic
  */
 #define BT_UUID_MAGN_DECLINATION          BT_UUID_DECLARE_16(0x2a2c)
+/** @def BT_UUID_HIDS_BOOT_KB_OUT_REPORT
+ *  @brief HID Boot Keyboard Output Report Characteristic
+ */
+#define BT_UUID_HIDS_BOOT_KB_OUT_REPORT   BT_UUID_DECLARE_16(0x2a32)
+/** @def BT_UUID_HIDS_BOOT_MOUSE_IN_REPORT
+ *  @brief HID Boot Mouse Input Report Characteristic
+ */
+#define BT_UUID_HIDS_BOOT_MOUSE_IN_REPORT BT_UUID_DECLARE_16(0x2a33)
 /** @def BT_UUID_HRS_MEASUREMENT
  *  @brief HRS Characteristic Measurement Interval
  */
@@ -275,6 +287,10 @@ struct bt_uuid_128 {
  *  @brief HID Report Characteristic
  */
 #define BT_UUID_HIDS_REPORT               BT_UUID_DECLARE_16(0x2a4d)
+/** @def BT_UUID_HIDS_PROTOCOL_MODE
+ *  @brief HID Protocol Mode Characteristic
+ */
+#define BT_UUID_HIDS_PROTOCOL_MODE        BT_UUID_DECLARE_16(0x2a4e)
 /** @def BT_UUID_CSC_MEASUREMENT
  *  @brief CSC Measurement Characteristic
  */
@@ -371,6 +387,10 @@ struct bt_uuid_128 {
  *  @brief Barometric Pressure Trend Characteristic
  */
 #define BT_UUID_BAR_PRESSURE_TREND        BT_UUID_DECLARE_16(0x2aa3)
+/** @def BT_UUID_CENTRAL_ADDR_RES
+ *  @brief Central Address Resolution Characteristic
+ */
+#define BT_UUID_CENTRAL_ADDR_RES          BT_UUID_DECLARE_16(0x2aa6)
 /** @def BT_UUID_MESH_PROV_DATA_IN
  *  @brief Mesh Provisioning Data In
  */
@@ -476,4 +496,4 @@ static inline const char *bt_uuid_str(const struct bt_uuid *uuid)
  * @}
  */
 
-#endif /* __BT_UUID_H */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_UUID_H_ */

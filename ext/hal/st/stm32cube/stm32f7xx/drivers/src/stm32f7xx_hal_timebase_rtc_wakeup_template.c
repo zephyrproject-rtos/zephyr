@@ -112,7 +112,7 @@ void RTC_WKUP_IRQHandler(void);
                         = 1 ms
   * @note   This function is called  automatically at the beginning of program after
   *         reset by HAL_Init() or at any time when clock is configured, by HAL_RCC_ClockConfig(). 
-  * @param  TickPriority: Tick interrupt priority.
+  * @param  TickPriority Tick interrupt priority.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_InitTick (uint32_t TickPriority)
@@ -263,7 +263,7 @@ void HAL_ResumeTick(void)
   * @note   This function is called  when RTC_WKUP interrupt took place, inside
   * RTC_WKUP_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
   * a global variable "uwTick" used as application time base.
-  * @param  hrtc : RTC handle
+  * @param  hrtc  RTC handle
   * @retval None
   */
 void HAL_RTCEx_WakeUpTimerEventCallback(RTC_HandleTypeDef *hrtc)

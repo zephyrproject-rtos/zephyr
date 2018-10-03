@@ -5,6 +5,7 @@
  */
 
 #include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
 #include "cmdline_common.h"
 #include "zephyr/types.h"
@@ -12,62 +13,87 @@
 #include "timer_model.h"
 #include "cmdline.h"
 #include "toolchain.h"
-#include "board.h"
+#include "posix_trace.h"
+#include "native_tracing.h"
 
 static int s_argc, test_argc;
 static char **s_argv, **test_argv;
 
-static struct args_t args;
+static struct args_struct_t *args_struct;
+static int used_args;
+static int args_aval;
+#define ARGS_ALLOC_CHUNK_SIZE 20
 
-static void cmd_stop_at_found(char *argv, int offset)
+void native_cleanup_cmd_line(void)
 {
-	ARG_UNUSED(offset);
-	if (args.stop_at < 0) {
-		posix_print_error_and_exit("Error: stop-at must be positive "
-					   "(%s)\n", argv);
+	if (args_struct != NULL) { /* LCOV_EXCL_BR_LINE */
+		free(args_struct);
+		args_struct = NULL;
 	}
-	hwm_set_end_of_time(args.stop_at*1e6);
 }
 
-static void cmd_realtime_found(char *argv, int offset)
+/**
+ * Add a set of command line options to the program.
+ *
+ * Each option to be added is described in one entry of the input <args>
+ * This input must be terminated with an entry containing ARG_TABLE_ENDMARKER.
+ */
+void native_add_command_line_opts(struct args_struct_t *args)
 {
-	ARG_UNUSED(argv);
-	ARG_UNUSED(offset);
-	hwtimer_set_real_time(true);
-}
+	int count = 0;
 
-static void cmd_no_realtime_found(char *argv, int offset)
-{
-	ARG_UNUSED(argv);
-	ARG_UNUSED(offset);
-	hwtimer_set_real_time(false);
-}
+	while (args[count].option != NULL) {
+		count++;
+	}
+	count++; /*for the end marker*/
 
-#if defined(CONFIG_FAKE_ENTROPY_NATIVE_POSIX)
-extern void entropy_native_posix_set_seed(unsigned int seed_i);
-static void cmd_seed_found(char *argv, int offset)
-{
-	ARG_UNUSED(argv);
-	ARG_UNUSED(offset);
-	entropy_native_posix_set_seed(args.seed);
-}
-#endif
+	if (used_args + count >= args_aval) {
+		int growby = count;
+		/* reallocs are expensive let's do them only in big chunks */
+		if (growby < ARGS_ALLOC_CHUNK_SIZE) {
+			growby = ARGS_ALLOC_CHUNK_SIZE;
+		}
 
-#if defined(CONFIG_BT_USERCHAN)
-int bt_dev_index = -1;
-
-static void cmd_bt_dev_found(char *argv, int offset)
-{
-	if (strncmp(&argv[offset], "hci", 3) || strlen(&argv[offset]) < 4) {
-		posix_print_error_and_exit("Error: Invalid Bluetooth device "
-					   "name '%s' (should be e.g. hci0)\n",
-					   &argv[offset]);
-		return;
+		args_struct = realloc(args_struct,
+				      (args_aval + growby)*
+				      sizeof(struct args_struct_t));
+		args_aval += growby;
+		/* LCOV_EXCL_START */
+		if (args_struct == NULL) {
+			posix_print_error_and_exit("Could not allocate memory");
+		}
+		/* LCOV_EXCL_STOP */
 	}
 
-	bt_dev_index = strtol(&argv[offset + 3], NULL, 10);
+	memcpy(&args_struct[used_args], args,
+		count*sizeof(struct args_struct_t));
+
+	used_args += count - 1;
+	/*
+	 * -1 as the end marker should be overwritten next time something
+	 * is added
+	 */
 }
-#endif
+
+void native_add_testargs_option(void)
+{
+	static struct args_struct_t testargs_options[] = {
+		/*
+		 * Fields:
+		 * manual, mandatory, switch,
+		 * option_name, var_name ,type,
+		 * destination, callback,
+		 * description
+		 */
+		{true, false, false,
+		"testargs", "arg", 'l',
+		(void *)NULL, NULL,
+		"Any argument that follows will be ignored by the top level, "
+		"and made available for possible tests"},
+		ARG_TABLE_ENDMARKER};
+
+	native_add_command_line_opts(testargs_options);
+}
 
 /**
  * Handle possible command line arguments.
@@ -78,54 +104,8 @@ void native_handle_cmd_line(int argc, char *argv[])
 {
 	int i;
 
-	struct args_struct_t args_struct[] = {
-		/*
-		 * Fields:
-		 * manual, mandatory, switch,
-		 * option_name, var_name ,type,
-		 * destination, callback,
-		 * description
-		 */
-		{false, false, true,
-		"rt", "", 'b',
-		NULL, cmd_realtime_found,
-		"Slow down the execution to the host real time"},
-
-		{false, false, true,
-		"no-rt", "", 'b',
-		NULL, cmd_no_realtime_found,
-		"Do NOT slow down the execution to real time, but advance "
-		"Zephyr's time as fast as possible and decoupled from the host "
-		"time"},
-
-		{false, false, false,
-		 "stop_at", "time", 'd',
-		(void *)&args.stop_at, cmd_stop_at_found,
-		"In simulated seconds, when to stop automatically"},
-
-#if defined(CONFIG_FAKE_ENTROPY_NATIVE_POSIX)
-		{false, false, false,
-		  "seed", "r_seed", 'u',
-		(void *)&args.seed, cmd_seed_found,
-		"A 32-bit integer seed value for the entropy device, such as "
-		"97229 (decimal), 0x17BCD (hex), or 0275715 (octal)"},
-#endif
-
-#if defined(CONFIG_BT_USERCHAN)
-		{ false, true, false,
-		  "bt-dev", "hciX", 's',
-		  NULL, cmd_bt_dev_found,
-		"A local HCI device to be used for Bluetooth (e.g. hci0)" },
-#endif
-
-		{true, false, false,
-		 "testargs", "arg", 'l',
-		(void *)NULL, NULL,
-		"Any argument that follows will be ignored by the top level, "
-		"and made available for possible tests"},
-
-		ARG_TABLE_ENDMARKER
-	};
+	native_add_tracing_options();
+	native_add_testargs_option();
 
 	s_argv = argv;
 	s_argc = argc;
@@ -146,13 +126,6 @@ void native_handle_cmd_line(int argc, char *argv[])
 						   argv[i]);
 		}
 	}
-
-#if defined(CONFIG_BT_USERCHAN)
-	if (bt_dev_index < 0) {
-		posix_print_error_and_exit("Error: Bluetooth device missing. "
-					   "Specify one using --bt-dev=hciN\n");
-	}
-#endif
 }
 
 /**

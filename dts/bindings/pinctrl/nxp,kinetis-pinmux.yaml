@@ -1,5 +1,6 @@
 ---
 title: Kinetis Pinmux
+id: nxp,kinetis-pinmux
 version: 0.1
 
 description: >
@@ -11,6 +12,7 @@ properties:
       category: required
       description: compatible strings
       constraint: "nxp,kinetis-pinmux"
+      generation: define
 
     reg:
       type: int

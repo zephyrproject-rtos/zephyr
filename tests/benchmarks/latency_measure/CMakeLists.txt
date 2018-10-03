@@ -1,3 +1,4 @@
+cmake_minimum_required(VERSION 3.8.2)
 set(small_freq_divider_frdm_k64f TRUE)
 set(small_freq_divider_arduino_due TRUE)
 set(small_freq_divider_qemu_cortex_m3 TRUE)

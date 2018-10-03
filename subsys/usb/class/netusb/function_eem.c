@@ -27,12 +27,12 @@ static struct usb_ep_cfg_data eem_ep_data[] = {
 	{
 		/* Use transfer API */
 		.ep_cb = usb_transfer_ep_callback,
-		.ep_addr = CONFIG_CDC_EEM_OUT_EP_ADDR
+		.ep_addr = CDC_EEM_OUT_EP_ADDR
 	},
 	{
 		/* Use transfer API */
 		.ep_cb = usb_transfer_ep_callback,
-		.ep_addr = CONFIG_CDC_EEM_IN_EP_ADDR
+		.ep_addr = CDC_EEM_IN_EP_ADDR
 	},
 };
 

@@ -361,25 +361,58 @@ typedef struct
   * @}
   */
 
-/** 
+/**
   * @brief  ADC handle Structure definition
   */
-typedef struct
+typedef struct __ADC_HandleTypeDef
 {
   ADC_TypeDef                   *Instance;              /*!< Register base address */
-
   ADC_InitTypeDef               Init;                   /*!< ADC initialization parameters and regular conversions setting */
-
   DMA_HandleTypeDef             *DMA_Handle;            /*!< Pointer DMA Handler */
-
   HAL_LockTypeDef               Lock;                   /*!< ADC locking object */
-
   __IO uint32_t                 State;                  /*!< ADC communication state (bitmap of ADC states) */
-
   __IO uint32_t                 ErrorCode;              /*!< ADC Error code */
-
   ADC_InjectionConfigTypeDef    InjectionConfig ;       /*!< ADC injected channel configuration build-up structure */
+#if (USE_HAL_ADC_REGISTER_CALLBACKS == 1)
+  void (* ConvCpltCallback)(struct __ADC_HandleTypeDef *hadc);              /*!< ADC conversion complete callback */
+  void (* ConvHalfCpltCallback)(struct __ADC_HandleTypeDef *hadc);          /*!< ADC conversion DMA half-transfer callback */
+  void (* LevelOutOfWindowCallback)(struct __ADC_HandleTypeDef *hadc);      /*!< ADC analog watchdog 1 callback */
+  void (* ErrorCallback)(struct __ADC_HandleTypeDef *hadc);                 /*!< ADC error callback */
+  void (* InjectedConvCpltCallback)(struct __ADC_HandleTypeDef *hadc);      /*!< ADC group injected conversion complete callback */
+  void (* InjectedQueueOverflowCallback)(struct __ADC_HandleTypeDef *hadc); /*!< ADC group injected context queue overflow callback */
+  void (* LevelOutOfWindow2Callback)(struct __ADC_HandleTypeDef *hadc);     /*!< ADC analog watchdog 2 callback */
+  void (* LevelOutOfWindow3Callback)(struct __ADC_HandleTypeDef *hadc);     /*!< ADC analog watchdog 3 callback */
+  void (* EndOfSamplingCallback)(struct __ADC_HandleTypeDef *hadc);         /*!< ADC end of sampling callback */
+  void (* MspInitCallback)(struct __ADC_HandleTypeDef *hadc);               /*!< ADC Msp Init callback */
+  void (* MspDeInitCallback)(struct __ADC_HandleTypeDef *hadc);             /*!< ADC Msp DeInit callback */
+#endif /* USE_HAL_ADC_REGISTER_CALLBACKS */
 }ADC_HandleTypeDef;
+
+#if (USE_HAL_ADC_REGISTER_CALLBACKS == 1)
+/**
+  * @brief  HAL ADC Callback ID enumeration definition
+  */
+typedef enum
+{
+  HAL_ADC_CONVERSION_COMPLETE_CB_ID     = 0x00U,  /*!< ADC conversion complete callback ID */
+  HAL_ADC_CONVERSION_HALF_CB_ID         = 0x01U,  /*!< ADC conversion DMA half-transfer callback ID */
+  HAL_ADC_LEVEL_OUT_OF_WINDOW_1_CB_ID   = 0x02U,  /*!< ADC analog watchdog 1 callback ID */
+  HAL_ADC_ERROR_CB_ID                   = 0x03U,  /*!< ADC error callback ID */
+  HAL_ADC_INJ_CONVERSION_COMPLETE_CB_ID = 0x04U,  /*!< ADC group injected conversion complete callback ID */
+  HAL_ADC_INJ_QUEUE_OVEFLOW_CB_ID       = 0x05U,  /*!< ADC group injected context queue overflow callback ID */
+  HAL_ADC_LEVEL_OUT_OF_WINDOW_2_CB_ID   = 0x06U,  /*!< ADC analog watchdog 2 callback ID */
+  HAL_ADC_LEVEL_OUT_OF_WINDOW_3_CB_ID   = 0x07U,  /*!< ADC analog watchdog 3 callback ID */
+  HAL_ADC_END_OF_SAMPLING_CB_ID         = 0x08U,  /*!< ADC end of sampling callback ID */
+  HAL_ADC_MSPINIT_CB_ID                 = 0x09U,  /*!< ADC Msp Init callback ID          */
+  HAL_ADC_MSPDEINIT_CB_ID               = 0x0AU   /*!< ADC Msp DeInit callback ID        */
+} HAL_ADC_CallbackIDTypeDef;
+
+/**
+  * @brief  HAL ADC Callback pointer definition
+  */
+typedef  void (*pADC_CallbackTypeDef)(ADC_HandleTypeDef *hadc); /*!< pointer to a ADC callback function */
+
+#endif /* USE_HAL_ADC_REGISTER_CALLBACKS */
 
 /**
   * @}
@@ -395,12 +428,15 @@ typedef struct
 /** @defgroup ADC_Error_Code ADC Error Code
   * @{
   */
-#define HAL_ADC_ERROR_NONE        (0x00U)   /*!< No error                                    */
-#define HAL_ADC_ERROR_INTERNAL    (0x01U)   /*!< ADC IP internal error (problem of clocking,
-                                                 enable/disable, erroneous state, ...)       */
-#define HAL_ADC_ERROR_OVR         (0x02U)   /*!< Overrun error                               */
-#define HAL_ADC_ERROR_DMA         (0x04U)   /*!< DMA transfer error                          */
-#define HAL_ADC_ERROR_JQOVF       (0x08U)   /*!< Injected context queue overflow error       */
+#define HAL_ADC_ERROR_NONE              (0x00U)   /*!< No error                                    */
+#define HAL_ADC_ERROR_INTERNAL          (0x01U)   /*!< ADC IP internal error (problem of clocking,
+                                                       enable/disable, erroneous state, ...)       */
+#define HAL_ADC_ERROR_OVR               (0x02U)   /*!< Overrun error                               */
+#define HAL_ADC_ERROR_DMA               (0x04U)   /*!< DMA transfer error                          */
+#define HAL_ADC_ERROR_JQOVF             (0x08U)   /*!< Injected context queue overflow error       */
+#if (USE_HAL_ADC_REGISTER_CALLBACKS == 1)
+#define HAL_ADC_ERROR_INVALID_CALLBACK  (0x10U)   /*!< Invalid Callback error */
+#endif /* USE_HAL_ADC_REGISTER_CALLBACKS */
 /**
   * @}
   */
@@ -689,17 +725,17 @@ typedef struct
 /** @defgroup ADC_interrupts_definition ADC interrupts definition
   * @{
   */
-#define ADC_IT_RDY           ADC_IER_ADRDY      /*!< ADC Ready interrupt source */
-#define ADC_IT_EOSMP         ADC_IER_EOSMP      /*!< ADC End of sampling interrupt source */
-#define ADC_IT_EOC           ADC_IER_EOC        /*!< ADC End of regular conversion interrupt source */
-#define ADC_IT_EOS           ADC_IER_EOS        /*!< ADC End of regular sequence of conversions interrupt source */
-#define ADC_IT_OVR           ADC_IER_OVR        /*!< ADC overrun interrupt source */
-#define ADC_IT_JEOC          ADC_IER_JEOC       /*!< ADC End of injected conversion interrupt source */
-#define ADC_IT_JEOS          ADC_IER_JEOS       /*!< ADC End of injected sequence of conversions interrupt source */
-#define ADC_IT_AWD1          ADC_IER_AWD1       /*!< ADC Analog watchdog 1 interrupt source (main analog watchdog) */
-#define ADC_IT_AWD2          ADC_IER_AWD2       /*!< ADC Analog watchdog 2 interrupt source (additional analog watchdog) */
-#define ADC_IT_AWD3          ADC_IER_AWD3       /*!< ADC Analog watchdog 3 interrupt source (additional analog watchdog) */
-#define ADC_IT_JQOVF         ADC_IER_JQOVF      /*!< ADC Injected Context Queue Overflow interrupt source */
+#define ADC_IT_RDY           ADC_IER_ADRDYIE    /*!< ADC Ready interrupt source */
+#define ADC_IT_EOSMP         ADC_IER_EOSMPIE    /*!< ADC End of sampling interrupt source */
+#define ADC_IT_EOC           ADC_IER_EOCIE      /*!< ADC End of regular conversion interrupt source */
+#define ADC_IT_EOS           ADC_IER_EOSIE      /*!< ADC End of regular sequence of conversions interrupt source */
+#define ADC_IT_OVR           ADC_IER_OVRIE      /*!< ADC overrun interrupt source */
+#define ADC_IT_JEOC          ADC_IER_JEOCIE     /*!< ADC End of injected conversion interrupt source */
+#define ADC_IT_JEOS          ADC_IER_JEOSIE     /*!< ADC End of injected sequence of conversions interrupt source */
+#define ADC_IT_AWD1          ADC_IER_AWD1IE     /*!< ADC Analog watchdog 1 interrupt source (main analog watchdog) */
+#define ADC_IT_AWD2          ADC_IER_AWD2IE     /*!< ADC Analog watchdog 2 interrupt source (additional analog watchdog) */
+#define ADC_IT_AWD3          ADC_IER_AWD3IE     /*!< ADC Analog watchdog 3 interrupt source (additional analog watchdog) */
+#define ADC_IT_JQOVF         ADC_IER_JQOVFIE    /*!< ADC Injected Context Queue Overflow interrupt source */
 
 #define ADC_IT_AWD           ADC_IT_AWD1        /*!< ADC Analog watchdog 1 interrupt source: naming for compatibility with other STM32 devices having only one analog watchdog */
 
@@ -1026,8 +1062,17 @@ typedef struct
   * @param __HANDLE__ ADC handle
   * @retval None
   */
+#if (USE_HAL_ADC_REGISTER_CALLBACKS == 1)
+#define __HAL_ADC_RESET_HANDLE_STATE(__HANDLE__)                               \
+  do{                                                                          \
+     (__HANDLE__)->State = HAL_ADC_STATE_RESET;                               \
+     (__HANDLE__)->MspInitCallback = NULL;                                     \
+     (__HANDLE__)->MspDeInitCallback = NULL;                                   \
+    } while(0)
+#else
 #define __HAL_ADC_RESET_HANDLE_STATE(__HANDLE__)                               \
   ((__HANDLE__)->State = HAL_ADC_STATE_RESET)
+#endif
 
 /**
   * @brief Enable ADC interrupt.
@@ -1698,6 +1743,12 @@ HAL_StatusTypeDef       HAL_ADC_Init(ADC_HandleTypeDef* hadc);
 HAL_StatusTypeDef       HAL_ADC_DeInit(ADC_HandleTypeDef *hadc);
 void                    HAL_ADC_MspInit(ADC_HandleTypeDef* hadc);
 void                    HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc);
+
+#if (USE_HAL_ADC_REGISTER_CALLBACKS == 1)
+/* Callbacks Register/UnRegister functions  ***********************************/
+HAL_StatusTypeDef HAL_ADC_RegisterCallback(ADC_HandleTypeDef *hadc, HAL_ADC_CallbackIDTypeDef CallbackID, pADC_CallbackTypeDef pCallback);
+HAL_StatusTypeDef HAL_ADC_UnRegisterCallback(ADC_HandleTypeDef *hadc, HAL_ADC_CallbackIDTypeDef CallbackID);
+#endif /* USE_HAL_ADC_REGISTER_CALLBACKS */
 /**
   * @}
   */

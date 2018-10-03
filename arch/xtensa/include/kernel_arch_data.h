@@ -17,8 +17,8 @@
  * in the offsets.o module.
  */
 
-#ifndef _kernel_arch_data__h_
-#define _kernel_arch_data__h_
+#ifndef ZEPHYR_ARCH_XTENSA_INCLUDE_KERNEL_ARCH_DATA_H_
+#define ZEPHYR_ARCH_XTENSA_INCLUDE_KERNEL_ARCH_DATA_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -67,5 +67,5 @@ void xtensa_switch(void *switch_to, void **switched_from);
 }
 #endif
 
-#endif /* _kernel_arch_data__h_ */
+#endif /* ZEPHYR_ARCH_XTENSA_INCLUDE_KERNEL_ARCH_DATA_H_ */
 

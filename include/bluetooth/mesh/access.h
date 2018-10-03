@@ -7,8 +7,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __BT_MESH_ACCESS_H
-#define __BT_MESH_ACCESS_H
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_ACCESS_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_MESH_ACCESS_H_
 
 /**
  * @brief Bluetooth Mesh Access Layer
@@ -421,4 +421,4 @@ struct bt_mesh_comp {
  * @}
  */
 
-#endif /* __BT_MESH_ACCESS_H */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_MESH_ACCESS_H_ */

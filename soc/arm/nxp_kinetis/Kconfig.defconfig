@@ -1,0 +1,1 @@
+source "soc/arm/nxp_kinetis/*/Kconfig.defconfig.series"

@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f1xx_hal_smartcard.h
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    12-May-2017
   * @brief   Header file of SMARTCARD HAL module.
   ******************************************************************************
   * @attention
@@ -40,7 +38,7 @@
 #define __STM32F1xx_HAL_SMARTCARD_H
 
 #ifdef __cplusplus
- extern "C" {
+extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
@@ -54,7 +52,7 @@
   * @{
   */
 
-/* Exported types ------------------------------------------------------------*/ 
+/* Exported types ------------------------------------------------------------*/
 /** @defgroup SMARTCARD_Exported_Types SMARTCARD Exported Types
   * @{
   */
@@ -95,7 +93,7 @@ typedef struct
                                            data bit (MSB) has to be output on the SCLK pin in synchronous mode.
                                            This parameter can be a value of @ref SMARTCARD_Last_Bit */
 
-  uint32_t Prescaler;                 /*!< Specifies the SmartCard Prescaler value used for dividing the system clock 
+  uint32_t Prescaler;                 /*!< Specifies the SmartCard Prescaler value used for dividing the system clock
                                            to provide the smartcard clock. The value given in the register (5 significant bits)
                                            is multiplied by 2 to give the division factor of the source clock frequency.
                                            This parameter can be a value of @ref SMARTCARD_Prescaler */
@@ -104,15 +102,15 @@ typedef struct
 
   uint32_t NACKState;                 /*!< Specifies the SmartCard NACK Transmission state
                                            This parameter can be a value of @ref SMARTCARD_NACK_State */
-}SMARTCARD_InitTypeDef;
+} SMARTCARD_InitTypeDef;
 
-/** 
+/**
   * @brief HAL SMARTCARD State structures definition
   * @note  HAL SMARTCARD State value is a combination of 2 different substates: gState and RxState.
-  *        - gState contains SMARTCARD state information related to global Handle management 
+  *        - gState contains SMARTCARD state information related to global Handle management
   *          and also information related to Tx operations.
   *          gState value coding follow below described bitmap :
-  *          b7-b6  Error information 
+  *          b7-b6  Error information
   *             00 : No Error
   *             01 : (Not Used)
   *             10 : Timeout
@@ -157,16 +155,16 @@ typedef enum
                                                         Value is allowed for gState only */
   HAL_SMARTCARD_STATE_BUSY_RX           = 0x22U,    /*!< Data Reception process is ongoing
                                                         Value is allowed for RxState only */
-  HAL_SMARTCARD_STATE_BUSY_TX_RX        = 0x23U,    /*!< Data Transmission and Reception process is ongoing 
+  HAL_SMARTCARD_STATE_BUSY_TX_RX        = 0x23U,    /*!< Data Transmission and Reception process is ongoing
                                                         Not to be used for neither gState nor RxState.
                                                         Value is result of combination (Or) between gState and RxState values */
   HAL_SMARTCARD_STATE_TIMEOUT           = 0xA0U,    /*!< Timeout state
                                                         Value is allowed for gState only */
   HAL_SMARTCARD_STATE_ERROR             = 0xE0U     /*!< Error
                                                         Value is allowed for gState only */
-}HAL_SMARTCARD_StateTypeDef;
+} HAL_SMARTCARD_StateTypeDef;
 
-/** 
+/**
   * @brief  SMARTCARD handle Structure definition
   */
 typedef struct
@@ -193,15 +191,15 @@ typedef struct
 
   HAL_LockTypeDef                  Lock;             /*!< Locking object */
 
-  __IO HAL_SMARTCARD_StateTypeDef  gState;           /*!< SmartCard state information related to global Handle management 
+  __IO HAL_SMARTCARD_StateTypeDef  gState;           /*!< SmartCard state information related to global Handle management
                                                         and also related to Tx operations.
                                                         This parameter can be a value of @ref HAL_SMARTCARD_StateTypeDef */
-  
+
   __IO HAL_SMARTCARD_StateTypeDef  RxState;          /*!< SmartCard state information related to Rx operations.
                                                         This parameter can be a value of @ref HAL_SMARTCARD_StateTypeDef */
 
   __IO uint32_t                    ErrorCode;        /*!< SmartCard Error code */
-}SMARTCARD_HandleTypeDef;
+} SMARTCARD_HandleTypeDef;
 
 /**
   * @}
@@ -246,7 +244,7 @@ typedef struct
   * @{
   */
 #define SMARTCARD_PARITY_EVEN                    ((uint32_t)USART_CR1_PCE)
-#define SMARTCARD_PARITY_ODD                     ((uint32_t)(USART_CR1_PCE | USART_CR1_PS)) 
+#define SMARTCARD_PARITY_ODD                     ((uint32_t)(USART_CR1_PCE | USART_CR1_PS))
 /**
   * @}
   */
@@ -268,7 +266,7 @@ typedef struct
 #define SMARTCARD_POLARITY_HIGH                  ((uint32_t)USART_CR2_CPOL)
 /**
   * @}
-  */ 
+  */
 
 /** @defgroup SMARTCARD_Clock_Phase  SMARTCARD Clock Phase
   * @{
@@ -397,7 +395,7 @@ typedef struct
                                                             (__HANDLE__)->RxState = HAL_SMARTCARD_STATE_RESET;     \
                                                           } while(0U)
 
-/** @brief  Flush the Smartcard DR register 
+/** @brief  Flush the Smartcard DR register
   * @param  __HANDLE__: specifies the SMARTCARD Handle.
   *         SMARTCARD Handle selects the USARTx peripheral (USART availability and x value depending on device).
   */
@@ -427,12 +425,12 @@ typedef struct
   *         This parameter can be any combination of the following values:
   *            @arg SMARTCARD_FLAG_TC:   Transmission Complete flag.
   *            @arg SMARTCARD_FLAG_RXNE: Receive data register not empty flag.
-  *   
-  * @note   PE (Parity error), FE (Framing error), NE (Noise error) and ORE (OverRun 
-  *          error) flags are cleared by software sequence: a read operation to 
+  *
+  * @note   PE (Parity error), FE (Framing error), NE (Noise error) and ORE (OverRun
+  *          error) flags are cleared by software sequence: a read operation to
   *          USART_SR register followed by a read operation to USART_DR register.
   * @note   RXNE flag can be also cleared by a read to the USART_DR register.
-  * @note   TC flag can be also cleared by software sequence: a read operation to 
+  * @note   TC flag can be also cleared by software sequence: a read operation to
   *          USART_SR register followed by a write operation to USART_DR register.
   * @note   TXE flag is cleared only by a write to the USART_DR register.
   */
@@ -619,7 +617,7 @@ uint32_t HAL_SMARTCARD_GetError(SMARTCARD_HandleTypeDef *hsc);
   */
 
 /** @brief SMARTCARD interruptions flag mask
-  * 
+  *
   */
 #define SMARTCARD_IT_MASK                     0x0000FFFFU
 
@@ -670,7 +668,7 @@ uint32_t HAL_SMARTCARD_GetError(SMARTCARD_HandleTypeDef *hsc);
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}

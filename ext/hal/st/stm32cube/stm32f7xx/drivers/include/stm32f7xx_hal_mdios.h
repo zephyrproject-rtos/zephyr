@@ -244,14 +244,14 @@ typedef struct
   */
 
 /** @brief Reset MDIOS handle state
-  * @param  __HANDLE__: MDIOS handle.
+  * @param  __HANDLE__ MDIOS handle.
   * @retval None
   */
 #define __HAL_MDIOS_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = HAL_MDIOS_STATE_RESET)
 
 /**
   * @brief  Enable/Disable the MDIOS peripheral.
-  * @param  __HANDLE__: specifies the MDIOS handle.
+  * @param  __HANDLE__ specifies the MDIOS handle.
   * @retval None
   */
 #define __HAL_MDIOS_ENABLE(__HANDLE__) ((__HANDLE__)->Instance->CR |= MDIOS_CR_EN)
@@ -260,8 +260,8 @@ typedef struct
 
 /**
   * @brief  Enable the MDIOS device interrupt.
-  * @param  __HANDLE__: specifies the MDIOS handle.
-  * @param  __INTERRUPT__ : specifies the MDIOS interrupt sources to be enabled.
+  * @param  __HANDLE__ specifies the MDIOS handle.
+  * @param  __INTERRUPT__  specifies the MDIOS interrupt sources to be enabled.
   *         This parameter can be one or a combination of the following values:
   *            @arg MDIOS_IT_WRITE: Register write interrupt
   *            @arg MDIOS_IT_READ: Register read interrupt
@@ -272,8 +272,8 @@ typedef struct
 
 /**
   * @brief  Disable the MDIOS device interrupt.
-  * @param  __HANDLE__: specifies the MDIOS handle.
-  * @param  __INTERRUPT__ : specifies the MDIOS interrupt sources to be disabled.
+  * @param  __HANDLE__ specifies the MDIOS handle.
+  * @param  __INTERRUPT__  specifies the MDIOS interrupt sources to be disabled.
   *         This parameter can be one or a combination of the following values:
   *            @arg MDIOS_IT_WRITE: Register write interrupt
   *            @arg MDIOS_IT_READ: Register read interrupt
@@ -283,22 +283,22 @@ typedef struct
 #define __HAL_MDIOS_DISABLE_IT(__HANDLE__, __INTERRUPT__)  ((__HANDLE__)->Instance->CR &= ~(__INTERRUPT__))
 
 /** @brief Set MDIOS slave get write register flag
-  * @param  __HANDLE__: specifies the MDIOS handle.
-  * @param  __FLAG__: specifies the write register flag
+  * @param  __HANDLE__ specifies the MDIOS handle.
+  * @param  __FLAG__ specifies the write register flag
   * @retval The state of write flag
   */
 #define __HAL_MDIOS_GET_WRITE_FLAG(__HANDLE__, __FLAG__)      ((__HANDLE__)->Instance->WRFR &  (__FLAG__))
 
 /** @brief MDIOS slave get read register flag
-  * @param  __HANDLE__: specifies the MDIOS handle.
-  * @param  __FLAG__: specifies the read register flag
+  * @param  __HANDLE__ specifies the MDIOS handle.
+  * @param  __FLAG__ specifies the read register flag
   * @retval The state of read flag
   */
 #define __HAL_MDIOS_GET_READ_FLAG(__HANDLE__, __FLAG__)        ((__HANDLE__)->Instance->RDFR &  (__FLAG__))
 
 /** @brief MDIOS slave get interrupt
-  * @param  __HANDLE__: specifies the MDIOS handle.
-  * @param  __FLAG__ : specifies the Error flag.
+  * @param  __HANDLE__ specifies the MDIOS handle.
+  * @param  __FLAG__  specifies the Error flag.
   *         This parameter can be one or a combination of the following values:
   *            @arg MDIOS_TURNARROUND_ERROR_FLAG: Register write interrupt
   *            @arg MDIOS_START_ERROR_FLAG: Register read interrupt
@@ -308,8 +308,8 @@ typedef struct
 #define __HAL_MDIOS_GET_ERROR_FLAG(__HANDLE__, __FLAG__)       ((__HANDLE__)->Instance->SR &  (__FLAG__))
 
 /** @brief  MDIOS slave clear interrupt
-  * @param  __HANDLE__: specifies the MDIOS handle.
-  * @param  __FLAG__ : specifies the Error flag.
+  * @param  __HANDLE__ specifies the MDIOS handle.
+  * @param  __FLAG__  specifies the Error flag.
   *         This parameter can be one or a combination of the following values:
   *            @arg MDIOS_TURNARROUND_ERROR_FLAG: Register write interrupt
   *            @arg MDIOS_START_ERROR_FLAG: Register read interrupt
@@ -320,8 +320,8 @@ typedef struct
 
 /**
   * @brief  Checks whether the specified MDIOS interrupt is set or not.
-  * @param  __HANDLE__: specifies the MDIOS handle.
-  * @param  __INTERRUPT__ : specifies the MDIOS interrupt sources
+  * @param  __HANDLE__ specifies the MDIOS handle.
+  * @param  __INTERRUPT__  specifies the MDIOS interrupt sources
   *            This parameter can be one or a combination of the following values:
   *            @arg MDIOS_IT_WRITE: Register write interrupt
   *            @arg MDIOS_IT_READ: Register read interrupt

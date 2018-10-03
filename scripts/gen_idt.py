@@ -180,7 +180,7 @@ def get_symbols(obj):
 # };
 
 
-intlist_header_fmt = "<IIi"
+intlist_header_fmt = "<II"
 
 # struct genidt_entry_s {
 #	uint32_t isr;

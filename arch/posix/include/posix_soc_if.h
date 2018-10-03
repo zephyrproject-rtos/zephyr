@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef _POSIX_CORE_SOC_PROVIDED_IF_H
-#define _POSIX_CORE_SOC_PROVIDED_IF_H
+#ifndef ZEPHYR_ARCH_POSIX_INCLUDE_POSIX_SOC_IF_H_
+#define ZEPHYR_ARCH_POSIX_INCLUDE_POSIX_SOC_IF_H_
 
 /*
  * This file lists the functions the POSIX architecture core expects the
@@ -14,13 +14,11 @@
  * or all its boards
  */
 
+#include "posix_trace.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-void posix_print_error_and_exit(const char *format, ...);
-void posix_print_warning(const char *format, ...);
-void posix_print_trace(const char *format, ...);
 
 void posix_halt_cpu(void);
 void posix_atomic_halt_cpu(unsigned int imask);
@@ -43,4 +41,4 @@ int  posix_get_current_irq(void);
 }
 #endif
 
-#endif /* _POSIX_CORE_SOC_PROVIDED_IF_H */
+#endif /* ZEPHYR_ARCH_POSIX_INCLUDE_POSIX_SOC_IF_H_ */

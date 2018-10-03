@@ -11,9 +11,6 @@ inherits:
 
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "st,stm32-can"
 
     reg:
@@ -26,6 +23,12 @@ properties:
       type: array
       category: required
       description: required interrupts
+      generation: define
+
+    interrupt-names:
+      type: array
+      category: optional
+      description: names off the interrupt lines
       generation: define
 
     gpio-port:
@@ -44,5 +47,11 @@ properties:
       type: string
       category: required
       description: tx pin name
+      generation: define
+
+    clocks:
+      type: array
+      category: required
+      description: Clock gate control information
       generation: define
 ...

@@ -16,9 +16,6 @@ inherits:
 
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "nxp,lpc-usart"
 
     reg:
@@ -42,6 +39,6 @@ properties:
     clocks:
       type: array
       category: required
-      description: Clock gate control information
-      generation: structures
+      description: Clock gate information
+      generation: define
 ...

@@ -11,6 +11,7 @@ menuconfig BT_MESH
 	select TINYCRYPT
 	select TINYCRYPT_AES
 	select TINYCRYPT_AES_CMAC
+	depends on BT_OBSERVER && BT_BROADCASTER
 	help
 	  This option enables Bluetooth Mesh support. The specific
 	  features that are available may depend on other features
@@ -68,8 +69,8 @@ if BT_MESH_PROXY
 
 config BT_MESH_PROXY_FILTER_SIZE
 	int "Maximum number of filter entries per Proxy Client"
-	default 1
 	default 3 if BT_MESH_GATT_PROXY
+	default 1
 	range 1 32767
 	help
 	  This option specifies how many Proxy Filter entries the local
@@ -154,13 +155,12 @@ config BT_MESH_ADV_BUF_COUNT
 	default 6
 	range 6 256
 	help
-	  Number of advertising buffers available. The transport layer
-	  reserves ADV_BUF_COUNT - 3 buffers for outgoing segments. The
-	  maximum outgoing SDU size is 12 times this number (out of which
-	  4 or 8 bytes is used for the Transport Layer MIC). For
-	  example, 5 segments means the maximum SDU size is 60 bytes,
-	  which leaves 56 bytes for application layer data using a
-	  4-byte MIC and 52 bytes using an 8-byte MIC.
+	  Number of advertising buffers available. This should be chosen
+	  based on what kind of features the local node should have. E.g.
+	  a relay will perform better the more buffers it has. Another
+	  thing to consider is outgoing segmented messages. There must
+	  be at least three more advertising buffers than the maximum
+	  supported outgoing segment count (BT_MESH_TX_SEG_MAX).
 
 config BT_MESH_IVU_DIVIDER
 	int "Divider for IV Update state refresh timer"
@@ -206,12 +206,39 @@ config BT_MESH_RX_SEG_MSG_COUNT
 
 config BT_MESH_RX_SDU_MAX
 	int "Maximum incoming Upper Transport Access PDU length"
-	default 384
-	range 36 384
+	default 72
+	range 24 384
 	help
-	  Maximum incoming Upper Transport Access PDU length. Leave this
-	  to the default value, unless you really need to optimize memory
-	  usage.
+	  Maximum incoming Upper Transport Access PDU length. This
+	  determines also how many segments incoming segmented messages
+	  can have. Each segment can contain 12 bytes, so this value should
+	  be set to a multiple of 12 to avoid wasted memory. The minimum
+	  requirement is 2 segments (24 bytes) whereas the maximum supported
+	  by the Mesh specification is 32 segments (384 bytes).
+
+config BT_MESH_TX_SEG_MAX
+	int "Maximum number of segments in outgoing messages"
+	default 3
+	range 2 32
+	help
+	  Maximum number of segments supported for outgoing messages.
+	  This value should typically be fine-tuned based on what
+	  models the local node supports, i.e. what's the largest
+	  message payload that the node needs to be able to send.
+	  This value affects memory and call stack consumption, which
+	  is why the default is lower than the maximum that the
+	  specification would allow (32 segments).
+
+	  The maximum outgoing SDU size is 12 times this number (out of
+	  which 4 or 8 bytes is used for the Transport Layer MIC). For
+	  example, 5 segments means the maximum SDU size is 60 bytes,
+	  which leaves 56 bytes for application layer data using a
+	  4-byte MIC and 52 bytes using an 8-byte MIC.
+
+	  Be sure to specify a sufficient number of advertising buffers
+	  when setting this option to a higher value. There must be at
+	  least three more advertising buffers (BT_MESH_ADV_BUF_COUNT)
+	  as there are outgoing segments.
 
 config BT_MESH_RELAY
 	bool "Relay support"

@@ -16,9 +16,6 @@ inherits:
 
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "st,stm32-i2c-v1"
 
     reg:
@@ -37,11 +34,5 @@ properties:
       type: stringlist
       category: optional
       description: readable string describing the interrupts
-      generation: define
-
-    clocks:
-      type: array
-      category: required
-      description: Clock gate control information
       generation: define
 ...

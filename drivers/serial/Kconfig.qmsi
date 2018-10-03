@@ -1,7 +1,6 @@
 menuconfig UART_QMSI
 	depends on QMSI
 	bool "QMSI UART driver"
-	default n
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	help
@@ -13,7 +12,6 @@ menuconfig UART_QMSI
 config UART_QMSI_0
 	depends on UART_QMSI
 	bool "Enable UART 0 controller"
-	default n
 
 config UART_QMSI_0_HW_FC
 	depends on UART_QMSI_0
@@ -23,7 +21,6 @@ config UART_QMSI_0_HW_FC
 config UART_QMSI_1
 	depends on UART_QMSI
 	bool "Enable UART 1 controller"
-	default n
 
 config UART_QMSI_1_HW_FC
 	depends on UART_QMSI_1

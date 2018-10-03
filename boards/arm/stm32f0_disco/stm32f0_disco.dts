@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <st/stm32f051.dtsi>
+#include <st/f0/stm32f051X8.dtsi>
 
 / {
 	model = "STMicroelectronics STM32F0DISCOVERY board";
@@ -19,11 +19,11 @@
 
 	leds {
 		compatible = "gpio-leds";
-		green_led_3: led@0 {
+		green_led_3: led_3 {
 			gpios = <&gpioc 9 GPIO_INT_ACTIVE_HIGH>;
 			label = "User LD3";
 		};
-		blue_led_4: led@1 {
+		blue_led_4: led_4 {
 			gpios = <&gpioc 8 GPIO_INT_ACTIVE_HIGH>;
 			label = "User LD4";
 		};
@@ -31,7 +31,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
-		user_button: button@0 {
+		user_button: button {
 			label = "Key";
 			gpios = <&gpioa 0 GPIO_INT_ACTIVE_LOW>;
 		};

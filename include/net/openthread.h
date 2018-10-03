@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __NET_OPENTHREAD_H_
-#define __NET_OPENTHREAD_H_
+#ifndef ZEPHYR_INCLUDE_NET_OPENTHREAD_H_
+#define ZEPHYR_INCLUDE_NET_OPENTHREAD_H_
 
 #include <kernel.h>
 
@@ -36,4 +36,4 @@ struct openthread_context {
 }
 #endif
 
-#endif /* __NET_OPENTHREAD_H_ */
+#endif /* ZEPHYR_INCLUDE_NET_OPENTHREAD_H_ */

@@ -13,16 +13,18 @@
 
 int bt_rand(void *buf, size_t len)
 {
+	u8_t *buf8 = buf;
+
 	while (len) {
 		u32_t v = sys_rand32_get();
 
 		if (len >= sizeof(v)) {
-			memcpy(buf, &v, sizeof(v));
+			memcpy(buf8, &v, sizeof(v));
 
-			buf += sizeof(v);
+			buf8 += sizeof(v);
 			len -= sizeof(v);
 		} else {
-			memcpy(buf, &v, len);
+			memcpy(buf8, &v, len);
 			break;
 		}
 	}

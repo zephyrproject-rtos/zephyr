@@ -29,7 +29,10 @@ SECTIONS
 
 #include <linker/common-ram.ld>
 
+#include <arch/posix/native_tasks.ld>
+
  __data_ram_end = .;
+
  } INSERT AFTER .data;
 
 /*

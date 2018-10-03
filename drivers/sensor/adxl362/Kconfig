@@ -8,18 +8,17 @@
 menuconfig ADXL362
 	bool "ADXL362 sensor"
 	depends on SPI
-	default n
 	help
 	  Enable driver for ADXL362 Three-Axis Digital Accelerometers.
 
+if ADXL362
+
 config ADXL362_DEV_NAME
 	string "ADXL362 device name"
-	depends on ADXL362
 	default "ADXL362"
 
 config ADXL362_SPI_DEV_NAME
 	string "SPI device where ADXL362 is connected"
-	depends on ADXL362
 	default "SPI_0"
 	help
 	  Specify the device name of the SPI device to which ADXL362 is
@@ -27,7 +26,6 @@ config ADXL362_SPI_DEV_NAME
 
 config ADXL362_SPI_DEV_SLAVE
 	int "SPI Slave Select where ADXL362 is connected"
-	depends on ADXL362
 	default 2
 	help
 	  Specify the slave select pin of the SPI to which ADXL362 is
@@ -35,7 +33,6 @@ config ADXL362_SPI_DEV_SLAVE
 
 choice
 	prompt "Accelerometer range setting"
-	depends on ADXL362
 	default ADXL362_ACCEL_RANGE_RUNTIME
 
 config ADXL362_ACCEL_RANGE_RUNTIME
@@ -54,7 +51,6 @@ endchoice
 
 choice
 	prompt "Accelerometer sampling frequency."
-	depends on ADXL362
 	default ADXL362_ACCEL_ODR_RUNTIME
 
 config ADXL362_ACCEL_ODR_RUNTIME
@@ -79,3 +75,5 @@ config ADXL362_ACCEL_ODR_400
 	bool "400 Hz"
 
 endchoice
+
+endif # ADXL362

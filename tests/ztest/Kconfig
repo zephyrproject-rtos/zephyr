@@ -6,7 +6,6 @@
 
 config ZTEST
 	bool "Zephyr testing framework"
-	default n
 	select TEST
 	help
 	  Enable the Zephyr testing framework. You should enable this only
@@ -20,7 +19,6 @@ config ZTEST_STACKSIZE
 config ZTEST_FAIL_FAST
 	bool "Abort on first failing test"
 	depends on ZTEST
-	default n
 	help
 	  Stop and abort on first failing test. Do not continue with other
 	  tests that might be in the queue.
@@ -39,7 +37,6 @@ config ZTEST_ASSERT_VERBOSE
 config ZTEST_MOCKING
 	bool "Mocking support functions"
 	depends on ZTEST
-	default n
 	help
 	  Enable mocking support for Ztest. This allows the test to set
 	  return values and expected parameters to functions.

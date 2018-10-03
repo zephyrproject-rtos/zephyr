@@ -1,6 +1,6 @@
 mainmenu "SPI Loopback Test"
 
-source "$ZEPHYR_BASE/Kconfig.zephyr"
+source "$(ZEPHYR_BASE)/Kconfig.zephyr"
 
 config SPI_LOOPBACK_DRV_NAME
 	string "SPI device name to use for test"
@@ -9,11 +9,9 @@ config SPI_LOOPBACK_DRV_NAME
 config SPI_LOOPBACK_CS_GPIO
 	bool "SPI port CS pin is controlled via a GPIO port during test"
 	depends on GPIO
-	default n
 
 config SPI_LOOPBACK_CS_CTRL_GPIO_DRV_NAME
-	string
-	prompt "The GPIO port which is used to control CS"
+	string "The GPIO port which is used to control CS"
 	depends on SPI_LOOPBACK_CS_GPIO
 	default "GPIO_0"
 

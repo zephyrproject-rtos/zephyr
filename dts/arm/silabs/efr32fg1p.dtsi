@@ -1,0 +1,45 @@
+#include <arm/armv7-m.dtsi>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			compatible = "arm,cortex-m4f";
+			reg = <0>;
+		};
+	};
+
+	flash0: flash@0 {
+		compatible = "soc-nv-flash";
+		label = "FLASH_0";
+	};
+
+	sram0: memory@20000000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+	};
+
+	soc {
+		uart0: uart@40010000 { /* USART0 */
+			compatible = "silabs,efm32-usart";
+			reg = <0x40010000 0x400>;
+			interrupts = <11 0 12 0>;
+			status = "disabled";
+			label = "UART_0";
+		};
+
+		uart1: uart@40010400 { /* USART1 */
+			compatible = "silabs,efm32-usart";
+			reg = <0x40010400 0x400>;
+			interrupts = <19 0 20 0>;
+			status = "disabled";
+			label = "UART_1";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

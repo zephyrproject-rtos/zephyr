@@ -16,9 +16,6 @@ inherits:
 
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "nxp,kinetis-ftm"
 
     reg:

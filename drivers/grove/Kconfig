@@ -8,16 +8,13 @@
 
 
 menuconfig GROVE
-	bool
-	prompt "Grove Device Drivers"
-	default n
+	bool "Grove Device Drivers"
 	help
 	  Check this box to enable the Seeed Grove device drivers
 
 
 config SYS_LOG_GROVE_LEVEL
-	int
-	prompt "Grove Log level"
+	int "Grove Log level"
 	depends on SYS_LOG && GROVE
 	default 0
 	range 0 4
@@ -31,10 +28,8 @@ config SYS_LOG_GROVE_LEVEL
 	  4 DEBUG, write SYS_LOG_DBG in addition to previous levels
 
 config GROVE_LCD_RGB
-	bool
-	default n
+	bool "Enable the Seeed Grove LCD RGB Backlight"
 	depends on GROVE
-	prompt "Enable the Seeed Grove LCD RGB Backlight"
 	help
 	  Setting this value will enable driver support for the Groove-LCD RGB
 	  Backlight.
@@ -48,25 +43,21 @@ config GROVE_LCD_RGB_I2C_MASTER_DEV_NAME
 	  Grove LCD is connected.
 
 config GROVE_LIGHT_SENSOR
-	bool
-	prompt "Enable the Seeed Grove Light Sensor"
+	bool "Enable the Seeed Grove Light Sensor"
 	depends on SENSOR && GROVE && ADC && NEWLIB_LIBC
-	default n
 	help
 	  Setting this value will enable driver support for the Grove Light
 	  Sensor.
 
 config GROVE_LIGHT_SENSOR_NAME
-	string
-	prompt "Driver name"
+	string "Driver name"
 	depends on GROVE_LIGHT_SENSOR
 	default "GROVE_LIGHT_SENSOR"
 	help
 	  Specify the device name with which the sensor is identified.
 
 config GROVE_LIGHT_SENSOR_ADC_DEV_NAME
-	string
-	prompt "ADC where Grove Light Sensor is connected"
+	string "ADC where Grove Light Sensor is connected"
 	depends on GROVE_LIGHT_SENSOR
 	default "ADC_0"
 	help
@@ -74,8 +65,7 @@ config GROVE_LIGHT_SENSOR_ADC_DEV_NAME
 	  is connected.
 
 config GROVE_LIGHT_SENSOR_ADC_CHANNEL
-	int
-	prompt "ADC channel used by Grove Light Sensor"
+	int "ADC channel used by Grove Light Sensor"
 	depends on GROVE_LIGHT_SENSOR
 	default 10
 	help
@@ -83,17 +73,14 @@ config GROVE_LIGHT_SENSOR_ADC_CHANNEL
 	  connected.
 
 config GROVE_TEMPERATURE_SENSOR
-	bool
-	prompt "Enable the Seeed Grove Temperature Sensor"
+	bool "Enable the Seeed Grove Temperature Sensor"
 	depends on SENSOR && GROVE && ADC && NEWLIB_LIBC
-	default n
 	help
 	  Setting this value will enable driver support for the Grove
 	  Temperature Sensor.
 
 config GROVE_TEMPERATURE_SENSOR_NAME
-	string
-	prompt "Driver name"
+	string "Driver name"
 	depends on GROVE_TEMPERATURE_SENSOR
 	default "GROVE_TEMPERATURE_SENSOR"
 	help
@@ -108,22 +95,19 @@ choice
 	  Choose the version of the Grove Temperature Sensor.
 
 config GROVE_TEMPERATURE_SENSOR_V1_0
-	bool
-	prompt "v1.0"
+	bool "v1.0"
 	help
 	  Version 1.0
 
 config GROVE_TEMPERATURE_SENSOR_V1_X
-	bool
-	prompt "v1.1/v1.2"
+	bool "v1.1/v1.2"
 	help
 	  Version 1.1 or 1.2
 
 endchoice
 
 config GROVE_TEMPERATURE_SENSOR_ADC_DEV_NAME
-	string
-	prompt "ADC where Grove Temperature Sensor is connected"
+	string "ADC where Grove Temperature Sensor is connected"
 	depends on GROVE_TEMPERATURE_SENSOR
 	default "ADC_0"
 	help
@@ -131,8 +115,7 @@ config GROVE_TEMPERATURE_SENSOR_ADC_DEV_NAME
 	  Sensor is connected.
 
 config GROVE_TEMPERATURE_SENSOR_ADC_CHANNEL
-	int
-	prompt "ADC channel used by Grove Temperature Sensor"
+	int "ADC channel used by Grove Temperature Sensor"
 	depends on GROVE_TEMPERATURE_SENSOR
 	default 10
 	help

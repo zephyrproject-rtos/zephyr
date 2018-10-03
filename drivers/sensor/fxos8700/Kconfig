@@ -7,37 +7,14 @@
 
 menuconfig FXOS8700
 	bool "FXOS8700 accelerometer/magnetometer driver"
-	depends on I2C
-	default n
+	depends on I2C && HAS_DTS_I2C && HAS_DTS_GPIO
 	help
 	  Enable driver for the FXOS8700 accelerometer/magnetometer
 
-if !HAS_DTS_I2C_DEVICE
-
-config FXOS8700_NAME
-	string "Device name"
-	depends on FXOS8700
-	default "FXOS8700"
-
-config FXOS8700_I2C_NAME
-	string "I2C device name"
-	depends on FXOS8700
-	default I2C_0_NAME
-
-config FXOS8700_I2C_ADDRESS
-	hex "I2C address"
-	depends on FXOS8700
-	range 0x1c 0x1f
-	default 0x1d
-	help
-	  The I2C slave address can be configured by the SA0 and SA1 input
-	  pins. This option should usually be set by the board defconfig.
-
-endif # !HAS_DTS_I2C_DEVICE
+if FXOS8700
 
 config FXOS8700_WHOAMI
 	hex "WHOAMI value"
-	depends on FXOS8700
 	range 0x00 0xff
 	default 0xc7
 	help
@@ -47,7 +24,6 @@ config FXOS8700_WHOAMI
 
 choice
 	prompt "Mode"
-	depends on FXOS8700
 	default FXOS8700_MODE_ACCEL
 
 config FXOS8700_MODE_ACCEL
@@ -63,8 +39,7 @@ endchoice
 
 config FXOS8700_TEMP
 	bool "Enable temperature"
-	depends on FXOS8700 && (FXOS8700_MODE_MAGN || FXOS8700_MODE_HYBRID)
-	default n
+	depends on FXOS8700_MODE_MAGN || FXOS8700_MODE_HYBRID
 	help
 	  Enable the temperature sensor. Note that the temperature sensor is
 	  uncalibrated and its output for a given temperature may vary from one
@@ -72,7 +47,6 @@ config FXOS8700_TEMP
 
 choice
 	prompt "Range"
-	depends on FXOS8700
 	default FXOS8700_RANGE_8G
 
 config FXOS8700_RANGE_8G
@@ -88,7 +62,6 @@ endchoice
 
 choice
 	prompt "Trigger mode"
-	depends on FXOS8700
 	default FXOS8700_TRIGGER_NONE
 
 config FXOS8700_TRIGGER_NONE
@@ -106,25 +79,10 @@ endchoice
 
 config FXOS8700_TRIGGER
 	bool
-	depends on FXOS8700
-	default n
-
-if !HAS_DTS_GPIO_DEVICE
-
-config FXOS8700_GPIO_NAME
-	string "GPIO device name"
-	depends on FXOS8700_TRIGGER
-
-config FXOS8700_GPIO_PIN
-	int "GPIO pin"
-	depends on FXOS8700_TRIGGER
-
-endif
 
 config FXOS8700_DRDY_INT1
 	bool "Data ready interrupt to INT1 pin"
 	depends on FXOS8700_TRIGGER
-	default n
 	help
 	  Say Y to route data ready interrupt to INT1 pin. Say N to route to
 	  INT2 pin.
@@ -143,7 +101,6 @@ config FXOS8700_THREAD_STACK_SIZE
 
 menuconfig FXOS8700_PULSE
 	bool "Pulse detection"
-	default n
 	help
 	  Enable pulse detection
 
@@ -151,7 +108,6 @@ if FXOS8700_PULSE
 
 config FXOS8700_PULSE_INT1
 	bool "Pulse interrupt to INT1 pin"
-	default n
 	help
 	  Say Y to route pulse interrupt to INT1 pin. Say N to route to INT2 pin.
 
@@ -233,3 +189,5 @@ config FXOS8700_PULSE_WIND
 endif # FXOS8700_PULSE
 
 endif # FXOS8700_TRIGGER
+
+endif # FXOS8700

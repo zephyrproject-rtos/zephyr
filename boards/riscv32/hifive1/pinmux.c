@@ -12,21 +12,21 @@ static int hifive1_pinmux_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	struct device *p = device_get_binding(CONFIG_PINMUX_FE310_0_NAME);
+	struct device *p = device_get_binding(CONFIG_PINMUX_SIFIVE_0_NAME);
 
 	/* UART0 RX */
-	pinmux_pin_set(p, 16, FE310_PINMUX_IOF0);
+	pinmux_pin_set(p, 16, SIFIVE_PINMUX_IOF0);
 
 	/* UART0 TX */
-	pinmux_pin_set(p, 17, FE310_PINMUX_IOF0);
+	pinmux_pin_set(p, 17, SIFIVE_PINMUX_IOF0);
 
 	/* SPI1 */
-	pinmux_pin_set(p, 2, FE310_PINMUX_IOF0); /* SS0 */
-	pinmux_pin_set(p, 3, FE310_PINMUX_IOF0); /* MOSI */
-	pinmux_pin_set(p, 4, FE310_PINMUX_IOF0); /* MISO */
-	pinmux_pin_set(p, 5, FE310_PINMUX_IOF0); /* SCK */
-	pinmux_pin_set(p, 9, FE310_PINMUX_IOF0); /* SS2 */
-	pinmux_pin_set(p, 10, FE310_PINMUX_IOF0); /* SS3 */
+	pinmux_pin_set(p, 2, SIFIVE_PINMUX_IOF0); /* SS0 */
+	pinmux_pin_set(p, 3, SIFIVE_PINMUX_IOF0); /* MOSI */
+	pinmux_pin_set(p, 4, SIFIVE_PINMUX_IOF0); /* MISO */
+	pinmux_pin_set(p, 5, SIFIVE_PINMUX_IOF0); /* SCK */
+	pinmux_pin_set(p, 9, SIFIVE_PINMUX_IOF0); /* SS2 */
+	pinmux_pin_set(p, 10, SIFIVE_PINMUX_IOF0); /* SS3 */
 
 	return 0;
 }

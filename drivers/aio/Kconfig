@@ -10,14 +10,11 @@
 # AIO/Comparator options
 #
 menuconfig AIO_COMPARATOR
-	bool
-	prompt "AIO/Comparator Configuration"
-	default n
+	bool "AIO/Comparator Configuration"
 
 if AIO_COMPARATOR
 menuconfig AIO_COMPARATOR_QMSI
 	bool "Enable QMSI AIO/comparator driver"
-	default n
 	depends on QMSI
 	help
 	  QMSI AIO/Comparator driver.

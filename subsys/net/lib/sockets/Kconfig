@@ -8,7 +8,6 @@
 
 menuconfig NET_SOCKETS
 	bool "BSD Sockets compatible API"
-	default n
 	help
 	  Provide BSD Sockets like API on top of native Zephyr networking API.
 
@@ -16,7 +15,6 @@ if NET_SOCKETS
 
 config NET_SOCKETS_POSIX_NAMES
 	bool "Standard POSIX names for Sockets API"
-	default n
 	help
 	  By default, Sockets API function are prefixed with ``zsock_`` to avoid
 	  namespacing issues. If this option is enabled, they will be provided
@@ -26,15 +24,80 @@ config NET_SOCKETS_POSIX_NAMES
 	  option enabled, it will still apply only to sockets.
 
 config NET_SOCKETS_POLL_MAX
-	int
-	prompt "Max number of supported poll() entries"
+	int "Max number of supported poll() entries"
 	default 3
 	help
 	  Maximum number of entries supported for poll() call.
 
+config NET_SOCKETS_SOCKOPT_TLS
+	bool "Enable TCP TLS socket option support [EXPERIMENTAL]"
+	select TLS_CREDENTIALS
+	help
+	  Enable TLS socket option support which automatically establishes
+	  a TLS connection to the remote host.
+
+config NET_SOCKETS_ENABLE_DTLS
+	bool "Enable DTLS socket support [EXPERIMENTAL]"
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	select TLS_DTLS
+	help
+	  Enable DTLS socket support. By default only TLS over TCP is supported.
+
+config NET_SOCKETS_DTLS_TIMEOUT
+	int "Timeout value in milliseconds for DTLS connection"
+	default 5000
+	depends on NET_SOCKETS_ENABLE_DTLS
+	help
+	  This variable specifies time in milliseconds after which DTLS
+	  connection is considered dead by TLS server and DTLS resources are
+	  freed. This is needed to prevent situation when DTLS client shuts down
+	  without closing connection gracefully, which can prevent other peers
+	  from connecting. Value of 0 indicates no timeout - resources will be
+	  freed only when connection is gracefully closed by peer sending TLS
+	  notification or socket is closed.
+
+config NET_SOCKETS_TLS_MAX_CONTEXTS
+	int "Maximum number of TLS/DTLS contexts"
+	default 1
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	help
+	  "This variable specifies maximum number of TLS/DTLS contexts that can
+	   be allocated at the same time."
+
+config NET_SOCKETS_TLS_MAX_CREDENTIALS
+	int "Maximum number of TLS/DTLS credentials per socket"
+	default 4
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	help
+	  This variable sets maximum number of TLS/DTLS credentials that can be
+	  used with a specific socket.
+
+config NET_SOCKETS_TLS_MAX_CIPHERSUITES
+	int "Maximum number of TLS/DTLS ciphersuites per socket"
+	default 4
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	help
+	  This variable sets maximum number of TLS/DTLS ciphersuites that can
+	  be used with specific socket, if set explicitly by socket option.
+	  By default, all ciphersuites that are available in the system are
+	  available to the socket.
+
+config NET_SOCKETS_OFFLOAD
+	bool "Offload Socket APIs [EXPERIMENTAL]"
+	select NET_SOCKETS_POSIX_NAMES
+	help
+	  Enables direct offloading of socket operations to dedicated TCP/IP
+	  hardware.
+	  This feature is intended to save resources by bypassing the Zephyr
+	  TCP/IP stack in the case where there is only one network interface
+	  required in the system, providing full BSD socket offload capability.
+	  As a result, it bypasses any potential IP routing that Zephyr might
+	  provide between multiple network interfaces.
+	  See NET_OFFLOAD for a more deeply integrated approach which offloads
+	  from the net_context() API within the Zephyr IP stack.
+
 config NET_DEBUG_SOCKETS
 	bool "Debug BSD Sockets compatible API calls"
-	default n
 	default y if NET_LOG_GLOBAL
 	help
 	  Enables logging for sockets code. (Logging level is defined by

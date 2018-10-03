@@ -1,0 +1,50 @@
+STM32CubeF2
+###########
+
+Origin:
+   ST Microelectronics
+   http://www.st.com/en/embedded-software/stm32cubef2.html
+
+Status:
+   version 1.7.0
+
+Purpose:
+   ST Microelectronics official MCU package for STM32F2 series.
+
+Description:
+   This package is an extract of official STM32CubeF2 package written by ST Microelectronics.
+   It is composed of STM32Cube hardware abstraction layer (HAL) and low layer (LL) plus a set
+   of CMSIS headers files, one for each SoC in STM32F2 series.
+
+Dependencies:
+    None.
+
+URL:
+   http://www.st.com/en/embedded-software/stm32cubef2.html
+
+commit:
+   version 1.7.0
+
+Maintained-by:
+   External
+
+License:
+   BSD-3-Clause
+
+License Link:
+   http://www.st.com/resource/en/license_agreement/dm00218346.pdf
+
+Patch List:
+
+   *Fix VBUS sensing deactivation
+     The error is detected if USART1 TX configured to PA9 and RX to PA10.
+     The serial cable removal stops the USB communication.
+     In case of VBUS sensing deactivation, erroneously
+     both USB_OTG_GCCFG_VBUSBSEN and USB_OTG_GCCFG_NOVBUSSENS are set in GCCFG.
+     Correct handling is:
+      - VBUS sensing deactivation: set USB_OTG_GCCFG_NOVBUSSENS in GCCFG.
+      - VBUS sensing activation:   set USB_OTG_GCCFG_VBUSBSEN in GCCFG.
+    Impacted files:
+     ext/hal/st/stm32cube/stm32f2xx/drivers/src/stm32f2xx_ll_usb.c
+    ST Bug Tracker ID: 34714
+

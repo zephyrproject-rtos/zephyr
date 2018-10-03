@@ -1,0 +1,7 @@
+common:
+  platform_whitelist: native_posix qemu_x86 qemu_cortex_m3
+tests:
+  net.timestamp:
+    min_ram: 16
+    tags: net tx_timestamp gptp
+    depends_on: netif

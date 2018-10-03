@@ -12,7 +12,6 @@ menu "Timer Drivers"
 
 config HPET_TIMER
 	bool "HPET timer"
-	default n
 	depends on X86
 	select IOAPIC
 	select LOAPIC
@@ -23,7 +22,6 @@ config HPET_TIMER
 
 config HPET_TIMER_LEGACY_EMULATION
 	bool "HPET timer legacy emulation mode"
-	default n
 	depends on HPET_TIMER
 	help
 	  This option switches HPET to legacy emulation mode.
@@ -32,7 +30,6 @@ config HPET_TIMER_LEGACY_EMULATION
 
 config HPET_TIMER_DEBUG
 	bool "Enable HPET debug output"
-	default n
 	depends on HPET_TIMER && PRINTK
 	help
 	  This option enables HPET debugging output.
@@ -88,7 +85,6 @@ endchoice
 config LOAPIC_TIMER
 	bool "LOAPIC timer"
 	depends on (LOAPIC || MVIC) && X86
-	default n
 	help
 	  This option selects LOAPIC timer as a system timer.
 
@@ -107,8 +103,7 @@ config LOAPIC_TIMER_IRQ_PRIORITY
 	  This options specifies the IRQ priority used by the LOAPIC timer.
 
 config TSC_CYCLES_PER_SEC
-	int
-	prompt "Frequency of x86 CPU timestamp counter"
+	int "Frequency of x86 CPU timestamp counter"
 	default 0
 	depends on LOAPIC_TIMER
 	help
@@ -170,7 +165,6 @@ config PULPINO_TIMER
 
 config RISCV_MACHINE_TIMER
 	bool "RISCV Machine Timer"
-	default n
 	depends on SOC_FAMILY_RISCV_PRIVILEGE
 	help
 	  This module implements a kernel device driver for the generic RISCV machine
@@ -228,7 +222,6 @@ config XTENSA_TIMER_IRQ_PRIORITY
 
 config SYSTEM_CLOCK_DISABLE
 	bool "API to disable system clock"
-	default n
 	help
 	  This option enables the sys_clock_disable() API in the kernel. It is
 	  needed by some subsystems (which will automatically select it), but is
@@ -236,7 +229,6 @@ config SYSTEM_CLOCK_DISABLE
 
 config TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 	bool "Timer queries its hardware to find its frequency at runtime"
-	default n
 	help
 	  The drivers select this option automatically when needed. Do not modify
 	  this unless you have a very good reason for it.

@@ -9,6 +9,13 @@
 #include <linker/linker-defs.h>
 #include <ztest.h>
 
+/**
+ * @brief Memory protection tests
+ * @defgroup kernel_memprotect_tests Memory Protection Tests
+ * @ingroup all_tests
+ * @{
+ * @}
+ */
 struct test_struct {
 	int foo;
 	int bar;
@@ -47,6 +54,11 @@ int kernel_loc(void *ptr)
 	return data_loc(__kernel_ram_start, __kernel_ram_end, ptr);
 }
 
+/**
+ * @brief Test to determine the memory bounds
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 void test_app_memory(void)
 {
 	printk("Memory bounds:\n");

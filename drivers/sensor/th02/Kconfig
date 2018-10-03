@@ -5,24 +5,20 @@
 #
 
 menuconfig TH02
-	bool
-	prompt "TH02 Temperature Sensor"
-	default n
+	bool "TH02 Temperature Sensor"
 	depends on I2C
 	help
 	  Enable driver for the TH02 temperature sensor.
 
 if TH02
 config TH02_NAME
-	string
-	prompt "Driver name"
+	string "Driver name"
 	default "TH02"
 	help
 	  Device name with which the TH02 sensor is identified.
 
 config TH02_I2C_MASTER_DEV_NAME
-	string
-	prompt "I2C Master"
+	string "I2C Master"
 	default "I2C_0"
 	help
 	  The device name of the I2C master device to which the TH02

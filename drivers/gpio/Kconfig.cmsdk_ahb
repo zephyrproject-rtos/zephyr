@@ -9,7 +9,6 @@
 menuconfig GPIO_CMSDK_AHB
 	bool "ARM CMSDK (Cortex-M System Design Kit) AHB GPIO Controllers"
 	depends on GPIO && SOC_SERIES_BEETLE
-	default n
 	help
 	  Enable config options to support the ARM CMSDK GPIO controllers.
 
@@ -22,7 +21,6 @@ if GPIO_CMSDK_AHB
 config GPIO_CMSDK_AHB_PORT0
 	bool "Enable driver for GPIO Port 0"
 	depends on GPIO_CMSDK_AHB
-	default n
 	help
 	  Build the driver to utilize GPIO controller Port 0.
 
@@ -45,7 +43,6 @@ config GPIO_CMSDK_AHB_PORT0_IRQ_PRI
 config GPIO_CMSDK_AHB_PORT1
 	bool "Enable driver for GPIO Port 1"
 	depends on GPIO_CMSDK_AHB
-	default n
 	help
 	  Build the driver to utilize GPIO controller Port 1.
 
@@ -68,7 +65,6 @@ config GPIO_CMSDK_AHB_PORT1_IRQ_PRI
 config GPIO_CMSDK_AHB_PORT2
 	bool "Enable driver for GPIO Port 2"
 	depends on GPIO_CMSDK_AHB
-	default n
 	help
 	  Build the driver to utilize GPIO controller Port 2.
 
@@ -91,7 +87,6 @@ config GPIO_CMSDK_AHB_PORT2_IRQ_PRI
 config GPIO_CMSDK_AHB_PORT3
 	bool "Enable driver for GPIO Port 3"
 	depends on GPIO_CMSDK_AHB
-	default n
 	help
 	  Build the driver to utilize GPIO controller Port 3.
 

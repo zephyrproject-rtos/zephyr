@@ -61,11 +61,13 @@
 	#define MMU_PAGE_ALIGN
 #endif
 
+ENTRY(CONFIG_KERNEL_ENTRY)
+
 /* SECTIONS definitions */
 SECTIONS
 	{
 	GROUP_START(ROMABLE_REGION)
-#ifdef CONFIG_JAILHOUSE
+#ifdef CONFIG_REALMODE
 	/* 16-bit sections */
 	. = PHYS_RAM_ADDR;
 
@@ -78,7 +80,7 @@ SECTIONS
 	. = ALIGN(8);
 
 	_image_rom_start = PHYS_LOAD_ADDR;
-#ifndef CONFIG_JAILHOUSE
+#ifndef CONFIG_REALMODE
 	_image_text_start = PHYS_LOAD_ADDR;
 #else
 	_image_text_start = .;
@@ -156,13 +158,24 @@ SECTIONS
 	/* RAMABLE_REGION */
 	GROUP_START(RAMABLE_REGION)
 
+	/* APP SHARED MEMORY REGION */
+	SECTION_PROLOGUE(_APP_SMEM_SECTION_NAME, (OPTIONAL),)
+	{
+		_image_ram_start = .;
+		_app_smem_start = .;
+		APP_SMEM_SECTION()
+		MMU_PAGE_ALIGN
+		_app_smem_end = .;
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+
+	_app_smem_size = _app_smem_end - _app_smem_start;
+	_app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
 #ifdef CONFIG_APPLICATION_MEMORY
 	SECTION_DATA_PROLOGUE(_APP_DATA_SECTION_NAME, (OPTIONAL),)
 	{
 #ifndef CONFIG_XIP
 		MMU_PAGE_ALIGN
 #endif
-		_image_ram_start = .;
 		__app_ram_start = .;
 		__app_data_ram_start = .;
 		APP_INPUT_SECTION(.data)
@@ -196,24 +209,13 @@ SECTIONS
 
 	SECTION_PROLOGUE(_BSS_SECTION_NAME, (NOLOAD OPTIONAL),)
 	{
-	/*
-	 * Without Jailhouse, we get the page alignment here for free by
-	 * definition of the beginning of the "RAMable" region on the board
-	 * configurations. With Jailhouse, everything falls in RAM and we
-	 * try to glue sections in sequence, thus we have to realign here so
-	 * that gen_mmu.py does not complain.
-	 */
-#ifdef CONFIG_JAILHOUSE
 	MMU_PAGE_ALIGN
-#endif
+
 	/*
 	 * For performance, BSS section is forced to be both 4 byte aligned and
 	 * a multiple of 4 bytes.
 	 */
 	. = ALIGN(4);
-#ifndef CONFIG_APPLICATION_MEMORY
-	_image_ram_start = .;
-#endif
 	__kernel_ram_start = .;
 	__bss_start = .;
 
@@ -326,11 +328,8 @@ SECTIONS
 	{
 	KEEP(*(.spurIsr))
 	KEEP(*(.spurNoErrIsr))
-	__INT_LIST_START__ = .;
-	LONG((__INT_LIST_END__ - __INT_LIST_START__) / __ISR_LIST_SIZEOF)
 	KEEP(*(.intList))
 	KEEP(*(.gnu.linkonce.intList.*))
-	__INT_LIST_END__ = .;
 	} > IDT_LIST
 
 #ifdef CONFIG_X86_MMU

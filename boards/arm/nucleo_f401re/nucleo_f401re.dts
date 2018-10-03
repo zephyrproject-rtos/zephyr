@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <st/stm32f401.dtsi>
+#include <st/f4/stm32f401Xe.dtsi>
 
 / {
 	model = "STMicroelectronics STM32F401RE-NUCLEO board";
@@ -19,7 +19,7 @@
 
 	leds {
 		compatible = "gpio-leds";
-		green_led_2: led@0 {
+		green_led_2: led_2 {
 			gpios = <&gpioa 5 GPIO_INT_ACTIVE_HIGH>;
 			label = "User LD2";
 		};
@@ -27,7 +27,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
-		user_button: button@0 {
+		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_INT_ACTIVE_LOW>;
 		};
@@ -69,7 +69,7 @@
 &flash0 {
 	/*
 	 * For more information, see:
-	 * http://docs.zephyrproject.org/devices/dts/flash_partitions.html
+	 * http://docs.zephyrproject.org/latest/devices/dts/flash_partitions.html
 	 */
 	partitions {
 		compatible = "fixed-partitions";
@@ -110,4 +110,8 @@
 	pwm {
 		status = "ok";
 	};
+};
+
+&rtc {
+	status = "ok";
 };

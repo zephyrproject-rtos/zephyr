@@ -1,11 +1,13 @@
 tests:
   kernel.fp_sharing:
     extra_args: PI_NUM_ITERATIONS=70000
-    platform_whitelist: frdm_k64f
+    filter: CONFIG_ARMV7_M_ARMV8_M_FP
     slow: true
     tags: core
     timeout: 600
+    min_ram: 16
   kernel.fp_sharing.x86:
+    extra_args: CONF_FILE=prj_x86.conf
     platform_whitelist: qemu_x86
     slow: true
     tags: core

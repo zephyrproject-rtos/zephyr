@@ -17,8 +17,8 @@
  * stack frame is modified.
  */
 
-#ifndef _SWAPSTK_H
-#define _SWAPSTK_H
+#ifndef ZEPHYR_ARCH_X86_INCLUDE_SWAPSTK_H_
+#define ZEPHYR_ARCH_X86_INCLUDE_SWAPSTK_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,4 +43,4 @@ typedef struct s_SwapStk {
 }
 #endif
 
-#endif /* _SWAPSTK_H */
+#endif /* ZEPHYR_ARCH_X86_INCLUDE_SWAPSTK_H_ */

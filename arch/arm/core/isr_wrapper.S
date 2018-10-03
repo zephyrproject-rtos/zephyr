@@ -47,12 +47,8 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	bl read_timer_start_of_isr
 #endif
 
-#ifdef CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT
-	bl _sys_k_event_logger_interrupt
-#endif
-
-#ifdef CONFIG_KERNEL_EVENT_LOGGER_SLEEP
-	bl _sys_k_event_logger_exit_sleep
+#ifdef CONFIG_TRACING
+	bl z_sys_trace_isr_enter
 #endif
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT

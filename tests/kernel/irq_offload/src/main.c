@@ -33,8 +33,10 @@ static void offload_function(void *param)
 /**
  * @brief Verify thread context
  *
- * Check whether offloaded running function is in interrupt context, on the IRQ
- * stack or not.
+ * @ingroup kernel_interrupt_tests
+ *
+ * @details Check whether offloaded running function is in interrupt
+ * context, on the IRQ stack or not.
  */
 void test_irq_offload(void)
 {

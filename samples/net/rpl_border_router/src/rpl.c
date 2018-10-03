@@ -71,7 +71,7 @@ bool setup_rpl(struct net_if *iface, const char *addr_prefix)
 	/* As the addr_prefix is Kconfig option we need to copy it to temporary
 	 * buffer in order to be able to manipulate it.
 	 */
-	memset(prefix, 0, sizeof(prefix));
+	(void)memset(prefix, 0, sizeof(prefix));
 	memcpy(prefix, addr_prefix, min(strlen(addr_prefix),
 					NET_IPV6_ADDR_LEN));
 

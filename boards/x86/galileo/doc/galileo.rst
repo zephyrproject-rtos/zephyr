@@ -218,10 +218,10 @@ copy of GRUB, follow these steps to test on supported boards using a custom GRUB
    .. code-block:: console
 
      $ cd $ZEPHYR_BASE
-     $ ./boards/x86/common/scripts/build_grub.sh
+     $ ./boards/x86/common/scripts/build_grub.sh i386
 
 #. Find the binary at
-   :file:`$ZEPHYR_BASE/boards/x86/common/scripts/grub/bin/grub.efi`.
+   :file:`$ZEPHYR_BASE/boards/x86/common/scripts/grub/bin/grub_i386.efi`.
 
 
 

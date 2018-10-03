@@ -152,7 +152,7 @@ typedef enum __HAL_LPTIM_StateTypeDef
 /** 
   * @brief  LPTIM handle Structure definition  
   */ 
-typedef struct
+typedef struct __LPTIM_HandleTypeDef
 {
       LPTIM_TypeDef              *Instance;         /*!< Register base address     */
       
@@ -163,9 +163,43 @@ typedef struct
       HAL_LockTypeDef             Lock;             /*!< LPTIM locking object      */
   
    __IO  HAL_LPTIM_StateTypeDef   State;            /*!< LPTIM peripheral state    */
-  
+
+#if (USE_HAL_LPTIM_REGISTER_CALLBACKS == 1)
+  void (* MspInitCallback)(struct __LPTIM_HandleTypeDef *hlptim);            /*!< LPTIM Base Msp Init Callback                 */
+  void (* MspDeInitCallback)(struct __LPTIM_HandleTypeDef *hlptim);          /*!< LPTIM Base Msp DeInit Callback               */
+  void (* CompareMatchCallback)(struct __LPTIM_HandleTypeDef *hlptim);       /*!< Compare match Callback                       */
+  void (* AutoReloadMatchCallback)(struct __LPTIM_HandleTypeDef *hlptim);    /*!< Auto-reload match Callback                   */
+  void (* TriggerCallback)(struct __LPTIM_HandleTypeDef *hlptim);            /*!< External trigger event detection Callback    */
+  void (* CompareWriteCallback)(struct __LPTIM_HandleTypeDef *hlptim);       /*!< Compare register write complete Callback     */
+  void (* AutoReloadWriteCallback)(struct __LPTIM_HandleTypeDef *hlptim);    /*!< Auto-reload register write complete Callback */
+  void (* DirectionUpCallback)(struct __LPTIM_HandleTypeDef *hlptim);        /*!< Up-counting direction change Callback        */
+  void (* DirectionDownCallback)(struct __LPTIM_HandleTypeDef *hlptim);      /*!< Down-counting direction change Callback      */
+#endif /* USE_HAL_LPTIM_REGISTER_CALLBACKS */
 }LPTIM_HandleTypeDef;
 
+#if (USE_HAL_LPTIM_REGISTER_CALLBACKS == 1)
+/**
+  * @brief  HAL LPTIM Callback ID enumeration definition
+  */
+typedef enum
+{
+  HAL_LPTIM_MSPINIT_CB_ID          = 0x00U,    /*!< LPTIM Base Msp Init Callback ID                  */
+  HAL_LPTIM_MSPDEINIT_CB_ID        = 0x01U,    /*!< LPTIM Base Msp DeInit Callback ID                */
+  HAL_LPTIM_COMPARE_MATCH_CB_ID    = 0x02U,    /*!< Compare match Callback ID                        */
+  HAL_LPTIM_AUTORELOAD_MATCH_CB_ID = 0x03U,    /*!< Auto-reload match Callback ID                    */
+  HAL_LPTIM_TRIGGER_CB_ID          = 0x04U,    /*!< External trigger event detection Callback ID     */
+  HAL_LPTIM_COMPARE_WRITE_CB_ID    = 0x05U,    /*!< Compare register write complete Callback ID      */
+  HAL_LPTIM_AUTORELOAD_WRITE_CB_ID = 0x06U,    /*!< Auto-reload register write complete Callback ID  */
+  HAL_LPTIM_DIRECTION_UP_CB_ID     = 0x07U,    /*!< Up-counting direction change Callback ID         */
+  HAL_LPTIM_DIRECTION_DOWN_CB_ID   = 0x08U,    /*!< Down-counting direction change Callback ID       */
+} HAL_LPTIM_CallbackIDTypeDef;
+
+/**
+  * @brief  HAL TIM Callback pointer definition
+  */
+typedef  void (*pLPTIM_CallbackTypeDef)(LPTIM_HandleTypeDef *hlptim);  /*!< pointer to the LPTIM callback function */
+
+#endif /* USE_HAL_LPTIM_REGISTER_CALLBACKS */
 /**
   * @}
   */
@@ -352,7 +386,15 @@ typedef struct
   * @param  __HANDLE__: LPTIM handle
   * @retval None
   */
+#if (USE_HAL_LPTIM_REGISTER_CALLBACKS == 1)
+#define __HAL_LPTIM_RESET_HANDLE_STATE(__HANDLE__) do {                                                        \
+                                                      (__HANDLE__)->State             = HAL_LPTIM_STATE_RESET; \
+                                                      (__HANDLE__)->MspInitCallback   = NULL;                  \
+                                                      (__HANDLE__)->MspDeInitCallback = NULL;                  \
+                                                     } while(0)
+#else
 #define __HAL_LPTIM_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = HAL_LPTIM_STATE_RESET)
+#endif /* USE_HAL_LPTIM_REGISTER_CALLBACKS */
 
 /**
   * @brief  Enable the LPTIM peripheral.
@@ -556,6 +598,12 @@ void HAL_LPTIM_CompareWriteCallback(LPTIM_HandleTypeDef *hlptim);
 void HAL_LPTIM_AutoReloadWriteCallback(LPTIM_HandleTypeDef *hlptim);
 void HAL_LPTIM_DirectionUpCallback(LPTIM_HandleTypeDef *hlptim);
 void HAL_LPTIM_DirectionDownCallback(LPTIM_HandleTypeDef *hlptim);
+
+/* Callbacks Register/UnRegister functions  ***********************************/
+#if (USE_HAL_LPTIM_REGISTER_CALLBACKS == 1)
+HAL_StatusTypeDef HAL_LPTIM_RegisterCallback(LPTIM_HandleTypeDef *lphtim, HAL_LPTIM_CallbackIDTypeDef CallbackID, pLPTIM_CallbackTypeDef pCallback);
+HAL_StatusTypeDef HAL_LPTIM_UnRegisterCallback(LPTIM_HandleTypeDef *lphtim, HAL_LPTIM_CallbackIDTypeDef CallbackID);
+#endif /* USE_HAL_LPTIM_REGISTER_CALLBACKS */
 
 /* Peripheral State functions  ************************************************/
 HAL_LPTIM_StateTypeDef HAL_LPTIM_GetState(LPTIM_HandleTypeDef *hlptim);

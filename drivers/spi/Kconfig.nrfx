@@ -6,6 +6,7 @@
 menuconfig SPI_NRFX
 	bool "nRF SPI nrfx drivers"
 	depends on SOC_FAMILY_NRF
+	select HAS_DTS_SPI
 	help
 	  Enable support for nrfx SPI drivers for nRF MCU series.
 	  Peripherals with the same instance ID cannot be used together,
@@ -13,31 +14,35 @@ menuconfig SPI_NRFX
 
 if SPI_NRFX
 
-# Nordic TWIx0 and SPIx0 instances can not be used at the same time.
-if SPI_0 && !I2C_0
+# In most Nordic SoCs the SPI and TWI peripherals with the same instance
+# number share certain resources and cannot be used at the same time.
+# In nRF52810 there are only single instances of these peripherals and
+# they are arranged in a different way so this limitation does not apply.
+if SPI_0 && (!I2C_0 || SOC_NRF52810)
 
 choice
 	prompt "SPI Port 0 Driver type"
-	optional
 
 config SPI_0_NRF_SPI
 	bool "nRF SPI 0"
-	depends on SOC_SERIES_NRF52X || SOC_SERIES_NRF51X
+	depends on HAS_HW_NRF_SPI0
 	select NRFX_SPI
 	help
 	  Enable nRF SPI Master without EasyDMA on port 0.
 
 config SPI_0_NRF_SPIM
 	bool "nRF SPIM 0"
-	depends on SOC_NRF52840
+	# This driver is not available for nRF52832 because of the anomaly 58
+	# (SPIM: An additional byte is clocked out when RXD.MAXCNT = 1).
+	depends on HAS_HW_NRF_SPIM0 && !SOC_NRF52832
 	select NRFX_SPIM
 	help
 	  Enable nRF SPI Master with EasyDMA on port 0.
 
 config SPI_0_NRF_SPIS
 	bool "nRF SPIS 0"
-	depends on SOC_SERIES_NRF52X
-	select SPI_SLAVE
+	depends on HAS_HW_NRF_SPIS0
+	depends on SPI_SLAVE
 	select NRFX_SPIS
 	help
 	  Enable nRF SPI Slave with EasyDMA on port 0.
@@ -47,27 +52,6 @@ config SPI_0_NRF_SPIS
 endchoice
 
 if SPI_0_NRF_SPI || SPI_0_NRF_SPIM || SPI_0_NRF_SPIS
-
-config SPI_0_NRF_SCK_PIN
-	int "SCK pin number"
-	range 0 47 if SOC_NRF52840_QIAA
-	range 0 31
-	help
-	  GPIO pin number to use for SCK.
-
-config SPI_0_NRF_MOSI_PIN
-	int "MOSI pin number"
-	range 0 47 if SOC_NRF52840_QIAA
-	range 0 31
-	help
-	  GPIO pin number to use for MOSI.
-
-config SPI_0_NRF_MISO_PIN
-	int "MISO pin number"
-	range 0 47 if SOC_NRF52840_QIAA
-	range 0 31
-	help
-	  GPIO pin number to use for MISO.
 
 config SPI_0_NRF_ORC
 	hex "Over-read Character"
@@ -81,13 +65,6 @@ endif # SPI_0_NRF_SPI || SPI_0_NRF_SPIM || SPI_0_NRF_SPIS
 
 if SPI_0_NRF_SPIS
 
-config SPI_0_NRF_CSN_PIN
-	int "CSN pin number"
-	range 0 47 if SOC_NRF52840_QIAA
-	range 0 31
-	help
-	  GPIO pin number to use for Chip Select.
-
 config SPI_0_NRF_DEF
 	hex "Default Character"
 	range 0x00 0xff
@@ -98,33 +75,34 @@ config SPI_0_NRF_DEF
 
 endif # SPI_0_NRF_SPIS
 
-endif # SPI_0 && !I2C_0
+endif # SPI_0 && (!I2C_0 || SOC_NRF52810)
 
 # Nordic TWIx1 and SPIx1 instances can not be used at the same time.
 if SPI_1 && !I2C_1
 
 choice
 	prompt "SPI Port 1 Driver type"
-	optional
 
 config SPI_1_NRF_SPI
 	bool "nRF SPI 1"
-	depends on SOC_SERIES_NRF52X || SOC_SERIES_NRF51X
+	depends on HAS_HW_NRF_SPI1
 	select NRFX_SPI
 	help
 	  Enable nRF SPI Master without EasyDMA on port 1.
 
 config SPI_1_NRF_SPIM
 	bool "nRF SPIM 1"
-	depends on SOC_NRF52840
+	# This driver is not available for nRF52832 because of the anomaly 58
+	# (SPIM: An additional byte is clocked out when RXD.MAXCNT = 1).
+	depends on HAS_HW_NRF_SPIM1 && !SOC_NRF52832
 	select NRFX_SPIM
 	help
 	  Enable nRF SPI Master with EasyDMA on port 1.
 
 config SPI_1_NRF_SPIS
 	bool "nRF SPIS 1"
-	depends on SOC_SERIES_NRF52X || SOC_SERIES_NRF51X
-	select SPI_SLAVE
+	depends on HAS_HW_NRF_SPIS1
+	depends on SPI_SLAVE
 	select NRFX_SPIS
 	help
 	  Enable nRF SPI Slave with EasyDMA on port 1.
@@ -134,27 +112,6 @@ config SPI_1_NRF_SPIS
 endchoice
 
 if SPI_1_NRF_SPI || SPI_1_NRF_SPIM || SPI_1_NRF_SPIS
-
-config SPI_1_NRF_SCK_PIN
-	int "SCK pin number"
-	range 0 47 if SOC_NRF52840_QIAA
-	range 0 31
-	help
-	  GPIO pin number to use for SCK.
-
-config SPI_1_NRF_MOSI_PIN
-	int "MOSI pin number"
-	range 0 47 if SOC_NRF52840_QIAA
-	range 0 31
-	help
-	  GPIO pin number to use for MOSI.
-
-config SPI_1_NRF_MISO_PIN
-	int "MISO pin number"
-	range 0 47 if SOC_NRF52840_QIAA
-	range 0 31
-	help
-	  GPIO pin number to use for MISO.
 
 config SPI_1_NRF_ORC
 	hex "Over-read Character"
@@ -167,13 +124,6 @@ config SPI_1_NRF_ORC
 endif # SPI_1_NRF_SPI || SPI_1_NRF_SPIM || SPI_1_NRF_SPIS
 
 if SPI_1_NRF_SPIS
-
-config SPI_1_NRF_CSN_PIN
-	int "CSN pin number"
-	range 0 47 if SOC_NRF52840_QIAA
-	range 0 31
-	help
-	  GPIO pin number to use for Chip Select.
 
 config SPI_1_NRF_DEF
 	hex "Default Character"
@@ -191,26 +141,27 @@ if SPI_2
 
 choice
 	prompt "SPI Port 2 Driver type"
-	optional
 
 config SPI_2_NRF_SPI
 	bool "nRF SPI 2"
-	depends on SOC_SERIES_NRF52X
+	depends on HAS_HW_NRF_SPI2
 	select NRFX_SPI
 	help
 	  Enable nRF SPI Master without EasyDMA on port 2.
 
 config SPI_2_NRF_SPIM
 	bool "nRF SPIM 2"
-	depends on SOC_NRF52840
+	# This driver is not available for nRF52832 because of the anomaly 58
+	# (SPIM: An additional byte is clocked out when RXD.MAXCNT = 1).
+	depends on HAS_HW_NRF_SPIM2 && !SOC_NRF52832
 	select NRFX_SPIM
 	help
 	  Enable nRF SPI Master with EasyDMA on port 2.
 
 config SPI_2_NRF_SPIS
 	bool "nRF SPIS 2"
-	depends on SOC_SERIES_NRF52X
-	select SPI_SLAVE
+	depends on HAS_HW_NRF_SPIS2
+	depends on SPI_SLAVE
 	select NRFX_SPIS
 	help
 	  Enable nRF SPI Slave with EasyDMA on port 2.
@@ -220,27 +171,6 @@ config SPI_2_NRF_SPIS
 endchoice
 
 if SPI_2_NRF_SPI || SPI_2_NRF_SPIM || SPI_2_NRF_SPIS
-
-config SPI_2_NRF_SCK_PIN
-	int "SCK pin number"
-	range 0 47 if SOC_NRF52840_QIAA
-	range 0 31
-	help
-	  GPIO pin number to use for SCK.
-
-config SPI_2_NRF_MOSI_PIN
-	int "MOSI pin number"
-	range 0 47 if SOC_NRF52840_QIAA
-	range 0 31
-	help
-	  GPIO pin number to use for MOSI.
-
-config SPI_2_NRF_MISO_PIN
-	int "MISO pin number"
-	range 0 47 if SOC_NRF52840_QIAA
-	range 0 31
-	help
-	  GPIO pin number to use for MISO.
 
 config SPI_2_NRF_ORC
 	hex "Over-read Character"
@@ -253,13 +183,6 @@ config SPI_2_NRF_ORC
 endif # SPI_2_NRF_SPI || SPI_2_NRF_SPIM || SPI_2_NRF_SPIS
 
 if SPI_2_NRF_SPIS
-
-config SPI_2_NRF_CSN_PIN
-	int "CSN pin number"
-	range 0 47 if SOC_NRF52840_QIAA
-	range 0 31
-	help
-	  GPIO pin number to use for Chip Select.
 
 config SPI_2_NRF_DEF
 	hex "Default Character"
@@ -277,32 +200,11 @@ if SPI_3
 
 config SPI_3_NRF_SPIM
 	bool
-	depends on SOC_NRF52840
+	depends on HAS_HW_NRF_SPIM3
 	select NRFX_SPIM
 	default y
 
 if SPI_3_NRF_SPIM
-
-config SPI_3_NRF_SCK_PIN
-	int "SCK pin number"
-	range 0 47 if SOC_NRF52840_QIAA
-	range 0 31
-	help
-	  GPIO pin number to use for SCK
-
-config SPI_3_NRF_MOSI_PIN
-	int "MOSI pin number"
-	range 0 47 if SOC_NRF52840_QIAA
-	range 0 31
-	help
-	  GPIO pin number to use for MOSI
-
-config SPI_3_NRF_MISO_PIN
-	int "MISO pin number"
-	range 0 47 if SOC_NRF52840_QIAA
-	range 0 31
-	help
-	  GPIO pin number to use for MISO
 
 config SPI_3_NRF_ORC
 	hex "Over-read Character"

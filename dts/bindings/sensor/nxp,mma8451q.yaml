@@ -1,0 +1,22 @@
+#
+# Copyright (c) 2018, Lars Knudsen
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: MMA8451Q 3-axis Accelerometer
+id: nxp,mma8451q
+version: 0.1
+
+description: >
+    This is a representation of the MMA8451Q 3-axis Accelerometer
+    sensor
+
+inherits:
+    !include i2c-device.yaml
+
+properties:
+    compatible:
+      constraint: "nxp,mma8451q"
+
+...

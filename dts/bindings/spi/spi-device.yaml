@@ -19,6 +19,7 @@ properties:
       type: string
       category: required
       description: compatible strings
+      generation: define
     reg:
       type: array
       description: Chip select address of device

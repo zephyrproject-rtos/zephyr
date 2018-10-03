@@ -7,54 +7,42 @@
 #
 
 config TINYCRYPT
-	bool
-	prompt "TinyCrypt Support"
-	default n
+	bool "TinyCrypt Support"
 	help
 	  This option enables the TinyCrypt cryptography library.
 
 config TINYCRYPT_CTR_PRNG
-	bool
-	prompt "PRNG in counter mode"
+	bool "PRNG in counter mode"
 	depends on TINYCRYPT
-	default n
 	help
 	  This option enables support for the pseudo-random number
 	  generator in counter mode.
 
 config TINYCRYPT_SHA256
-	bool
-	prompt "SHA-256 Hash function support"
+	bool "SHA-256 Hash function support"
 	depends on TINYCRYPT
-	default n
 	help
 	  This option enables support for SHA-256
 	  hash function primitive.
 
 config TINYCRYPT_SHA256_HMAC
-	bool
-	prompt "HMAC (via SHA256) message auth support"
+	bool "HMAC (via SHA256) message auth support"
 	depends on TINYCRYPT_SHA256
-	default n
 	help
 	  This option enables support for HMAC using SHA-256
 	  message authentication code.
 
 config TINYCRYPT_SHA256_HMAC_PRNG
-	bool
-	prompt "PRNG (via HMAC-SHA256) support"
+	bool "PRNG (via HMAC-SHA256) support"
 	depends on TINYCRYPT_SHA256_HMAC
-	default n
 	help
 	  This option enables support for pseudo-random number
 	  generator.
 
 config TINYCRYPT_ECC_DH
-	bool
-	prompt "ECC_DH anonymous key agreement protocol"
+	bool "ECC_DH anonymous key agreement protocol"
 	depends on TINYCRYPT
 	select ENTROPY_GENERATOR
-	default n
 	help
 	  This option enables support for the Elliptic curve
 	  Diffie-Hellman anonymous key agreement protocol.
@@ -63,11 +51,9 @@ config TINYCRYPT_ECC_DH
 	  generator.
 
 config TINYCRYPT_ECC_DSA
-	bool
-	prompt "ECC_DSA digital signature algorithm"
+	bool "ECC_DSA digital signature algorithm"
 	depends on TINYCRYPT
 	select ENTROPY_GENERATOR
-	default n
 	help
 	  This option enables support for the Elliptic Curve Digital
 	  Signature Algorithm (ECDSA).
@@ -76,41 +62,31 @@ config TINYCRYPT_ECC_DSA
 	  generator.
 
 config TINYCRYPT_AES
-	bool
-	prompt "AES-128 decrypt/encrypt"
+	bool "AES-128 decrypt/encrypt"
 	depends on TINYCRYPT
-	default n
 	help
 	  This option enables support for AES-128 decrypt and encrypt.
 
 config TINYCRYPT_AES_CBC
-	bool
-	prompt "AES-128 block cipher"
+	bool "AES-128 block cipher"
 	depends on TINYCRYPT_AES
-	default n
 	help
 	  This option enables support for AES-128 block cipher mode.
 
 config TINYCRYPT_AES_CTR
-	bool
-	prompt "AES-128 counter mode"
+	bool "AES-128 counter mode"
 	depends on TINYCRYPT_AES
-	default n
 	help
 	  This option enables support for AES-128 counter mode.
 
 config TINYCRYPT_AES_CCM
-	bool
-	prompt "AES-128 CCM mode"
+	bool "AES-128 CCM mode"
 	depends on TINYCRYPT_AES
-	default n
 	help
 	  This option enables support for AES-128 CCM mode.
 
 config TINYCRYPT_AES_CMAC
-	bool
-	prompt "AES-128 CMAC mode"
+	bool "AES-128 CMAC mode"
 	depends on TINYCRYPT_AES
-	default n
 	help
 	  This option enables support for AES-128 CMAC mode.

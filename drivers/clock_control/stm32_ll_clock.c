@@ -56,11 +56,15 @@ static inline int stm32_clock_control_on(struct device *dev,
 	case STM32_CLOCK_BUS_AHB1:
 		LL_AHB1_GRP1_EnableClock(pclken->enr);
 		break;
-#if defined(CONFIG_SOC_SERIES_STM32L4X) || defined(CONFIG_SOC_SERIES_STM32F4X)
+#if defined(CONFIG_SOC_SERIES_STM32L4X) || \
+	defined(CONFIG_SOC_SERIES_STM32F4X) || \
+	defined(CONFIG_SOC_SERIES_STM32F7X) || \
+	defined(CONFIG_SOC_SERIES_STM32F2X)
 	case STM32_CLOCK_BUS_AHB2:
 		LL_AHB2_GRP1_EnableClock(pclken->enr);
 		break;
-#endif /* CONFIG_SOC_SERIES_STM32L4X || CONFIG_SOC_SERIES_STM32F4X */
+#endif /* CONFIG_SOC_SERIES_STM32L4X || CONFIG_SOC_SERIES_STM32F4X ||
+		CONFIG_SOC_SERIES_STM32F7X */
 	case STM32_CLOCK_BUS_APB1:
 		LL_APB1_GRP1_EnableClock(pclken->enr);
 		break;
@@ -96,11 +100,15 @@ static inline int stm32_clock_control_off(struct device *dev,
 	case STM32_CLOCK_BUS_AHB1:
 		LL_AHB1_GRP1_DisableClock(pclken->enr);
 		break;
-#if defined(CONFIG_SOC_SERIES_STM32L4X) || defined(CONFIG_SOC_SERIES_STM32F4X)
+#if defined(CONFIG_SOC_SERIES_STM32L4X) || \
+	defined(CONFIG_SOC_SERIES_STM32F4X) || \
+	defined(CONFIG_SOC_SERIES_STM32F7X) || \
+	defined(CONFIG_SOC_SERIES_STM32F2X)
 	case STM32_CLOCK_BUS_AHB2:
 		LL_AHB2_GRP1_DisableClock(pclken->enr);
 		break;
-#endif /* CONFIG_SOC_SERIES_STM32L4X || CONFIG_SOC_SERIES_STM32F4X */
+#endif /* CONFIG_SOC_SERIES_STM32L4X || CONFIG_SOC_SERIES_STM32F4X ||
+		CONFIG_SOC_SERIES_STM32F7X */
 	case STM32_CLOCK_BUS_APB1:
 		LL_APB1_GRP1_DisableClock(pclken->enr);
 		break;
@@ -316,11 +324,12 @@ static int stm32_clock_control_init(struct device *dev)
 #elif CONFIG_CLOCK_STM32_SYSCLK_SRC_MSI
 
 	/* Set MSI Range */
-	LL_RCC_MSI_SetRange(LL_RCC_MSIRANGE_8);
+	LL_RCC_MSI_EnableRangeSelection();
+	LL_RCC_MSI_SetRange(CONFIG_CLOCK_STM32_MSI_RANGE << RCC_CR_MSIRANGE_Pos);
 
 	/* Enable MSI if not enabled */
 	if (LL_RCC_MSI_IsReady() != 1) {
-		/* Enable HSI */
+		/* Enable MSI */
 		LL_RCC_MSI_Enable();
 		while (LL_RCC_MSI_IsReady() != 1) {
 		/* Wait for HSI ready */
@@ -333,9 +342,10 @@ static int stm32_clock_control_init(struct device *dev)
 	while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_MSI) {
 	}
 
-	/* Update SystemCoreClock variable */
-	LL_SetSystemCoreClock(__LL_RCC_CALC_HCLK_FREQ(MSI_VALUE,
-						s_ClkInitStruct.AHBCLKDivider));
+	/* Update SystemCoreClock variable with MSI freq */
+	/* MSI freq is defined from RUN range selection */
+	LL_SetSystemCoreClock(__LL_RCC_CALC_MSI_FREQ(LL_RCC_MSIRANGESEL_RUN,
+						     LL_RCC_MSI_GetRange()));
 
 	/* Set APB1 & APB2 prescaler*/
 	LL_RCC_SetAPB1Prescaler(s_ClkInitStruct.APB1CLKDivider);
@@ -358,7 +368,7 @@ static int stm32_clock_control_init(struct device *dev)
 	LL_SetSystemCoreClock(__LL_RCC_CALC_HCLK_FREQ(HSI_VALUE,
 						s_ClkInitStruct.AHBCLKDivider));
 
-    /* Set APB1 & APB2 prescaler*/
+	/* Set APB1 & APB2 prescaler*/
 	LL_RCC_SetAPB1Prescaler(s_ClkInitStruct.APB1CLKDivider);
 #ifndef CONFIG_SOC_SERIES_STM32F0X
 	LL_RCC_SetAPB2Prescaler(s_ClkInitStruct.APB2CLKDivider);

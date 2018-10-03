@@ -7,10 +7,8 @@
 #
 
 menuconfig TMP112
-	bool
-	prompt "TMP112 Temperature Sensor"
+	bool "TMP112 Temperature Sensor"
 	depends on I2C
-	default n
 	help
 	  Enable the driver for Texas Instruments TMP112 High-Accuracy Digital
 	  Temperature Sensors.
@@ -18,17 +16,16 @@ menuconfig TMP112
 	  The TMP102 is compatible with the TMP112 but is less accurate and has
 	  been successfully tested with this driver.
 
+if TMP112
+
 config TMP112_NAME
-	string
-	prompt "Driver name"
+	string "Driver name"
 	default "TMP112"
-	depends on TMP112
 	help
 	  Device name with which the TMP112 sensor is identified.
 
 config TMP112_I2C_ADDR
 	hex "I2C address for TMP112"
-	depends on TMP112
 	default 0x48
 	help
 	  I2C address of the TMP112 sensor.
@@ -40,10 +37,10 @@ config TMP112_I2C_ADDR
 
 
 config TMP112_I2C_MASTER_DEV_NAME
-	string
-	prompt "I2C master where TMP112 is connected"
-	depends on TMP112
+	string "I2C master where TMP112 is connected"
 	default "I2C_0"
 	help
 	  Specify the device name of the I2C master device to which the
 	  TMP112 chip is connected.
+
+endif # TMP112

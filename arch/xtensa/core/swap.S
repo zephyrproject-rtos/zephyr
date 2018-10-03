@@ -75,12 +75,12 @@ __swap:
 	s16i    a3,  a4, THREAD_OFFSET(cpEnable) /* clear saved cpenable */
 #endif
 
-#ifdef CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
+#ifdef CONFIG_TRACING
 	/* Register the context switch */
 #ifdef __XTENSA_CALL0_ABI__
-	call0 _sys_k_event_logger_context_switch
+	call0 z_sys_trace_thread_switched_in
 #else
-	call4 _sys_k_event_logger_context_switch
+	call4 z_sys_trace_thread_switched_in
 #endif
 #endif
 	/* _thread := _kernel.ready_q.cache */

@@ -595,7 +595,7 @@ void test_parse_url(void)
 	elements = ARRAY_SIZE(url_tests);
 	for (i = 0; i < elements; i++) {
 		test = &url_tests[i];
-		memset(&u, 0, sizeof(u));
+		(void)memset(&u, 0, sizeof(u));
 
 		rv = http_parser_parse_url(test->url,
 					   strlen(test->url),
@@ -820,8 +820,6 @@ int test_header_cr_no_lf_error(int req)
 
 	return TC_FAIL;
 }
-
-#define RC_STR(rc)	(rc == TC_PASS ? PASS : FAIL)
 
 void test_http_header_fields(void)
 {

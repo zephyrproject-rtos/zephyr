@@ -16,7 +16,7 @@
 #include <ipm.h>
 #include <ipm/ipm_quark_se.h>
 
-#define TASK_TIME_IN_SEC 10
+#define TASK_TIME_IN_SEC 5
 #define MAX_SUSPEND_DEVICE_COUNT 15
 
 static struct device *suspended_devices[MAX_SUSPEND_DEVICE_COUNT];
@@ -48,12 +48,12 @@ int _sys_soc_suspend(s32_t ticks)
 
 	suspend_devices();
 
-	_sys_soc_set_power_state(SYS_POWER_STATE_DEEP_SLEEP_2);
+	_sys_soc_set_power_state(SYS_POWER_STATE_DEEP_SLEEP);
 
 	if (!post_ops_done) {
 		post_ops_done = 1;
 		resume_devices();
-		_sys_soc_power_state_post_ops(SYS_POWER_STATE_DEEP_SLEEP_2);
+		_sys_soc_power_state_post_ops(SYS_POWER_STATE_DEEP_SLEEP);
 	}
 
 	return SYS_PM_DEEP_SLEEP;
@@ -63,7 +63,7 @@ void _sys_soc_resume(void)
 {
 	if (!post_ops_done) {
 		post_ops_done = 1;
-		_sys_soc_power_state_post_ops(SYS_POWER_STATE_DEEP_SLEEP_2);
+		_sys_soc_power_state_post_ops(SYS_POWER_STATE_DEEP_SLEEP);
 		resume_devices();
 	}
 }

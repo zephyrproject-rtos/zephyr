@@ -6,6 +6,8 @@
 
 #include <arm/armv7-m.dtsi>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/i2c/i2c.h>
+#include <dt-bindings/rdc/imx_rdc.h>
 
 / {
 	cpus {
@@ -77,6 +79,10 @@
 			compatible = "nxp,imx-gpio";
 			reg = <0x30200000 0x10000>;
 			interrupts = <64 0>, <65 0>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
 			label = "GPIO_1";
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -87,6 +93,10 @@
 			compatible = "nxp,imx-gpio";
 			reg = <0x30210000 0x10000>;
 			interrupts = <66 0>, <67 0>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
 			label = "GPIO_2";
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -97,6 +107,10 @@
 			compatible = "nxp,imx-gpio";
 			reg = <0x30220000 0x10000>;
 			interrupts = <68 0>, <69 0>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
 			label = "GPIO_3";
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -107,6 +121,10 @@
 			compatible = "nxp,imx-gpio";
 			reg = <0x30230000 0x10000>;
 			interrupts = <70 0>, <71 0>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
 			label = "GPIO_4";
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -117,6 +135,10 @@
 			compatible = "nxp,imx-gpio";
 			reg = <0x30240000 0x10000>;
 			interrupts = <72 0>, <73 0>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
 			label = "GPIO_5";
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -127,6 +149,10 @@
 			compatible = "nxp,imx-gpio";
 			reg = <0x30250000 0x10000>;
 			interrupts = <74 0>, <75 0>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
 			label = "GPIO_6";
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -138,6 +164,10 @@
 			reg = <0x30260000 0x10000>;
 			interrupts = <76 0>, <77 0>;
 			label = "GPIO_7";
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
 			gpio-controller;
 			#gpio-cells = <2>;
 			status = "disabled";
@@ -150,6 +180,10 @@
 			compatible = "nxp,imx-uart";
 			reg = <0x30860000 0x10000>;
 			interrupts = <26 3>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
 			label = "UART_1";
 			status = "disabled";
 		};
@@ -158,6 +192,10 @@
 			compatible = "nxp,imx-uart";
 			reg = <0x30890000 0x10000>;
 			interrupts = <27 3>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
 			label = "UART_2";
 			status = "disabled";
 		};
@@ -166,6 +204,10 @@
 			compatible = "nxp,imx-uart";
 			reg = <0x30880000 0x10000>;
 			interrupts = <28 3>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
 			label = "UART_3";
 			status = "disabled";
 		};
@@ -174,6 +216,10 @@
 			compatible = "nxp,imx-uart";
 			reg = <0x30A60000 0x10000>;
 			interrupts = <29 3>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
 			label = "UART_4";
 			status = "disabled";
 		};
@@ -182,6 +228,10 @@
 			compatible = "nxp,imx-uart";
 			reg = <0x30A70000 0x10000>;
 			interrupts = <30 3>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
 			label = "UART_5";
 			status = "disabled";
 		};
@@ -190,6 +240,10 @@
 			compatible = "nxp,imx-uart";
 			reg = <0x30A80000 0x10000>;
 			interrupts = <16 3>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
 			label = "UART_6";
 			status = "disabled";
 		};
@@ -198,7 +252,123 @@
 			compatible = "nxp,imx-uart";
 			reg = <0x30A90000 0x10000>;
 			interrupts = <126 3>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
 			label = "UART_7";
+			status = "disabled";
+		};
+
+		i2c1: i2c@30A20000 {
+			compatible = "fsl,imx7d-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x30A20000 0x10000>;
+			interrupts = <35 0>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
+			label = "I2C_1";
+			status = "disabled";
+		};
+
+		i2c2: i2c@30A30000 {
+			compatible = "fsl,imx7d-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x30A30000 0x10000>;
+			interrupts = <36 0>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
+			label = "I2C_2";
+			status = "disabled";
+		};
+
+		i2c3: i2c@30A40000 {
+			compatible = "fsl,imx7d-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x30A40000 0x10000>;
+			interrupts = <37 0>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
+			label = "I2C_3";
+			status = "disabled";
+		};
+
+		i2c4: i2c@30A50000 {
+			compatible = "fsl,imx7d-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x30A50000 0x10000>;
+			interrupts = <38 0>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
+			label = "I2C_4";
+			status = "disabled";
+		};
+
+		pwm1: pwm@30660000 {
+			compatible = "fsl,imx7d-pwm";
+			reg = <0x30660000 0x10000>;
+			interrupts = <81 0>;
+			prescaler = <0>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
+			label = "PWM_1";
+			status = "disabled";
+		};
+
+		pwm2: pwm@30670000 {
+			compatible = "fsl,imx7d-pwm";
+			reg = <0x30670000 0x10000>;
+			interrupts = <82 0>;
+			prescaler = <0>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
+			label = "PWM_2";
+			status = "disabled";
+		};
+
+		pwm3: pwm@30680000 {
+			compatible = "fsl,imx7d-pwm";
+			reg = <0x30680000 0x10000>;
+			interrupts = <83 0>;
+			prescaler = <0>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
+			label = "PWM_3";
+			status = "disabled";
+		};
+
+		pwm4: pwm@30690000 {
+			compatible = "fsl,imx7d-pwm";
+			reg = <0x30690000 0x10000>;
+			interrupts = <84 0>;
+			prescaler = <0>;
+			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
+			label = "PWM_4";
 			status = "disabled";
 		};
 	};

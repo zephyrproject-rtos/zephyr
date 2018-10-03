@@ -88,11 +88,14 @@ illustrated and explained below:
 
 There are three interrupt levels shown here.
 
+* '-' means interrupt line and is numbered from 0 (right most).
 * LEVEL 1 has 12 interrupt lines, with two lines (2 and 9) connected
-  to nested controllers.
+  to nested controllers and one device 'A' on line 4.
 * One of the LEVEL 2 controllers has interrupt line 5 connected to
-  a LEVEL 3 nested controller.
-* The other LEVEL 2 controller has no nested controllers.
+  a LEVEL 3 nested controller and one device 'C' on line 3.
+* The other LEVEL 2 controller has no nested controllers but has one
+  device 'B' on line 2.
+* The LEVEL 3 controller has one device 'D' on line 2.
 
 Here's how unique interrupt numbers are generated for each
 hardware interrupt.  Let's consider four interrupts shown above
@@ -107,7 +110,11 @@ as A, B, C, and D:
 
 .. note::
    The bit positions for LEVEL 2 and onward are offset by 1, as 0 means that
-   interrupt number is not present for that level.
+   interrupt number is not present for that level. For our example, the LEVEL 3
+   controller has device D on line 2, connected to the LEVEL 2 controller's line
+   5, that is connected to the LEVEL 1 controller's line 9 (2 -> 5 -> 9).
+   Because of the encoding offset for LEVEL 2 and onward, device D is given the
+   number 0x00030609.
 
 Preventing Interruptions
 ========================

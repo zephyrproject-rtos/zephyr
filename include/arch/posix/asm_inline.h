@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _ASM_INLINE_PUBLIC_H
-#define _ASM_INLINE_PUBLIC_H
+#ifndef ZEPHYR_INCLUDE_ARCH_POSIX_ASM_INLINE_H_
+#define ZEPHYR_INCLUDE_ARCH_POSIX_ASM_INLINE_H_
 
 /*
  * The file must not be included directly
@@ -20,4 +20,4 @@
 #error "Only a compiler with GNU C extensions is supported for the POSIX arch"
 #endif
 
-#endif /* _ASM_INLINE_PUBLIC_H */
+#endif /* ZEPHYR_INCLUDE_ARCH_POSIX_ASM_INLINE_H_ */

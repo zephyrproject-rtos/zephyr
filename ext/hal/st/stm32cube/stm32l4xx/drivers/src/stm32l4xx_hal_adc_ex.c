@@ -81,22 +81,14 @@
                                       ADC_JSQR_JSQ3 | ADC_JSQR_JSQ4 ))  /*!< ADC_JSQR fields of parameters that can be updated anytime
                                                                              once the ADC is enabled */
                                       
-#define ADC_CFGR2_INJ_FIELDS  ((uint32_t)(ADC_CFGR2_JOVSE | ADC_CFGR2_OVSR  |\
-                                       ADC_CFGR2_OVSS ))     /*!< ADC_CFGR2 injected oversampling parameters that can be updated
-                                                                  when no conversion is on-going (neither regular nor injected) */
-                                       
-#define ADC_OFR_INJ_FIELDS  ((uint32_t)(ADC_OFR1_OFFSET1 | ADC_OFR1_OFFSET1_CH | ADC_OFR1_OFFSET1_EN)) /*!< ADC_OFR fields of parameters that can be updated when no conversion
-                                                                                                        (neither regular nor injected) is on-going */
-
 /* Fixed timeout value for ADC calibration.                                   */
-/* Values defined to be higher than worst cases: low clock frequency,         */
-/* maximum prescalers.                                                        */
-/* Ex of profile low frequency : f_ADC at 0.14 MHz (minimum value             */
-/* according to Data sheet), calibration_time MAX = 112 / f_ADC               */
-/*           112 / 140,000 = 0.8 ms                                           */
-/* At maximum CPU speed (80 MHz), this means                                  */
-/*    0.8 ms * 80 MHz = 64000 CPU cycles                                      */  
-#define ADC_CALIBRATION_TIMEOUT         (64000U)    /*!< ADC calibration time-out value */ 
+/* Values defined to be higher than worst cases: maximum ratio between ADC    */
+/* and CPU clock frequencies.                                                 */
+/* Example of profile low frequency : ADC frequency at 31.25kHz (ADC clock    */
+/* source PLL SAI 8MHz, ADC clock prescaler 256), CPU frequency 80MHz.        */
+/* Calibration time max = 116 / fADC (refer to datasheet)                     */
+/*                      = 296 960 CPU cycles                                  */
+#define ADC_CALIBRATION_TIMEOUT         (296960U)   /*!< ADC calibration time-out value (unit: CPU cycles) */
                                     
 /**
   * @}
@@ -1067,6 +1059,10 @@ uint32_t HAL_ADCEx_MultiModeGetValue(ADC_HandleTypeDef* hadc)
   /* Check the parameters */
   assert_param(IS_ADC_MULTIMODE_MASTER_INSTANCE(hadc->Instance));
   
+  /* Prevent unused argument(s) compilation warning if no assert_param check */
+  /* and possible no usage in __LL_ADC_COMMON_INSTANCE() below               */
+  UNUSED(hadc);
+  
   /* Pointer to the common control register  */
   tmpADC_Common = __LL_ADC_COMMON_INSTANCE(hadc->Instance);
   
@@ -1927,7 +1923,6 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedConfigChannel(ADC_HandleTypeDef* hadc, ADC_I
   /* Parameters update conditioned to ADC state:                              */
   /* Parameters that can be updated only when ADC is disabled:                */
   /*  - Single or differential mode                                           */
-  /*  - Internal measurement channels: Vbat/VrefInt/TempSensor                */
   if (ADC_IS_ENABLE(hadc) == RESET)
   {
     /* Set mode single-ended or differential input of the selected ADC channel */
@@ -1940,71 +1935,54 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedConfigChannel(ADC_HandleTypeDef* hadc, ADC_I
       LL_ADC_SetChannelSamplingTime(hadc->Instance, __LL_ADC_DECIMAL_NB_TO_CHANNEL(__LL_ADC_CHANNEL_TO_DECIMAL_NB(sConfigInjected->InjectedChannel) + 1), sConfigInjected->InjectedSamplingTime);
     }
     
-    /* Management of internal measurement channels: Vbat/VrefInt/TempSensor   */
-    /* internal measurement paths enable: If internal channel selected,       */
-    /* enable dedicated internal buffers and path.                            */
-    /* Note: these internal measurement paths can be disabled using           */
-    /* HAL_ADC_DeInit().                                                      */
+  }
 
-    /* Configuration of common ADC parameters                                 */
-    /* If the requested internal measurement path has already been enabled,   */
-    /* bypass the configuration processing.                                   */
-      if (( (sConfigInjected->InjectedChannel == ADC_CHANNEL_TEMPSENSOR) &&
-            ((LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(hadc->Instance)) & LL_ADC_PATH_INTERNAL_TEMPSENSOR) == 0U)) ||
-          ( (sConfigInjected->InjectedChannel == ADC_CHANNEL_VBAT)       &&
-            ((LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(hadc->Instance)) & LL_ADC_PATH_INTERNAL_VBAT) == 0U))      ||
-          ( (sConfigInjected->InjectedChannel == ADC_CHANNEL_VREFINT)    &&
-            ((LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(hadc->Instance)) & LL_ADC_PATH_INTERNAL_VREFINT) == 0U))
-         )
+  /* Management of internal measurement channels: Vbat/VrefInt/TempSensor   */
+  /* internal measurement paths enable: If internal channel selected,       */
+  /* enable dedicated internal buffers and path.                            */
+  /* Note: these internal measurement paths can be disabled using           */
+  /* HAL_ADC_DeInit().                                                      */
+
+  /* Configuration of common ADC parameters                                 */
+  /* If the requested internal measurement path has already been enabled,   */
+  /* bypass the configuration processing.                                   */
+    if (( (sConfigInjected->InjectedChannel == ADC_CHANNEL_TEMPSENSOR) &&
+          ((LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(hadc->Instance)) & LL_ADC_PATH_INTERNAL_TEMPSENSOR) == 0U)) ||
+        ( (sConfigInjected->InjectedChannel == ADC_CHANNEL_VBAT)       &&
+          ((LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(hadc->Instance)) & LL_ADC_PATH_INTERNAL_VBAT) == 0U))      ||
+        ( (sConfigInjected->InjectedChannel == ADC_CHANNEL_VREFINT)    &&
+          ((LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(hadc->Instance)) & LL_ADC_PATH_INTERNAL_VREFINT) == 0U))
+       )
+  {
+    if (sConfigInjected->InjectedChannel == ADC_CHANNEL_TEMPSENSOR)
     {
-      /* Configuration of common ADC parameters (continuation)                */
-      /* Software is allowed to change common parameters only when all ADCs   */
-      /* of the common group are disabled.                                    */
-      if ((ADC_IS_ENABLE(hadc) == RESET)   &&
-         (ADC_ANY_OTHER_ENABLED(hadc) == RESET) )              
+      if (ADC_TEMPERATURE_SENSOR_INSTANCE(hadc)) 
       {
-        if (sConfigInjected->InjectedChannel == ADC_CHANNEL_TEMPSENSOR)
+        LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(hadc->Instance), LL_ADC_PATH_INTERNAL_TEMPSENSOR | LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(hadc->Instance)));
+      
+        /* Delay for temperature sensor stabilization time */
+        /* Compute number of CPU cycles to wait for */
+        wait_loop_index = (LL_ADC_DELAY_TEMPSENSOR_STAB_US * (SystemCoreClock / 1000000));
+        while(wait_loop_index != 0)
         {
-          if (ADC_TEMPERATURE_SENSOR_INSTANCE(hadc)) 
-          {
-            LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(hadc->Instance), LL_ADC_PATH_INTERNAL_TEMPSENSOR | LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(hadc->Instance)));
-          
-            /* Delay for temperature sensor stabilization time */
-            /* Compute number of CPU cycles to wait for */
-            wait_loop_index = (LL_ADC_DELAY_TEMPSENSOR_STAB_US * (SystemCoreClock / 1000000));
-            while(wait_loop_index != 0)
-            {
-              wait_loop_index--;
-            }
-          }
+          wait_loop_index--;
         }
-        else if (sConfigInjected->InjectedChannel == ADC_CHANNEL_VBAT)
-        { 
-          if (ADC_BATTERY_VOLTAGE_INSTANCE(hadc))
-          {
-            LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(hadc->Instance), LL_ADC_PATH_INTERNAL_VBAT | LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(hadc->Instance)));
-          }
-        }
-        else if (sConfigInjected->InjectedChannel == ADC_CHANNEL_VREFINT)
-        { 
-          if (ADC_VREFINT_INSTANCE(hadc))
-          {
-            LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(hadc->Instance), LL_ADC_PATH_INTERNAL_VREFINT | LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(hadc->Instance)));
-          }
-        }
-      }
-      /* If the requested internal measurement path has already been enabled  */
-      /* and other ADC of the common group are enabled, internal              */
-      /* measurement paths cannot be enabled.                                 */
-      else  
-      {
-        /* Update ADC state machine to error */
-        SET_BIT(hadc->State, HAL_ADC_STATE_ERROR_CONFIG);
-        
-        tmp_hal_status = HAL_ERROR;
       }
     }
-    
+    else if (sConfigInjected->InjectedChannel == ADC_CHANNEL_VBAT)
+    { 
+      if (ADC_BATTERY_VOLTAGE_INSTANCE(hadc))
+      {
+        LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(hadc->Instance), LL_ADC_PATH_INTERNAL_VBAT | LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(hadc->Instance)));
+      }
+    }
+    else if (sConfigInjected->InjectedChannel == ADC_CHANNEL_VREFINT)
+    { 
+      if (ADC_VREFINT_INSTANCE(hadc))
+      {
+        LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(hadc->Instance), LL_ADC_PATH_INTERNAL_VREFINT | LL_ADC_GetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(hadc->Instance)));
+      }
+    }
   }
   
   /* Process unlocked */

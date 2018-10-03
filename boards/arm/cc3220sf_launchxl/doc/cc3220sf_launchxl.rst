@@ -59,6 +59,8 @@ driver support.
 +-----------+------------+-----------------------+
 | I2C       | on-chip    | i2c                   |
 +-----------+------------+-----------------------+
+| SPI_0     | on-chip    | WiFi host driver      |
++-----------+------------+-----------------------+
 
 .. note::
 
@@ -209,6 +211,42 @@ build target:
    :board: cc3220sf_launchxl
    :maybe-skip-config:
    :goals: debug
+
+
+WiFi Support
+************
+
+The SimpleLink Host Driver, imported from the SimpleLink SDK, has been ported
+to Zephyr, and communicates over a dedicated SPI to the network co-processor.
+It is available as a Zephyr WiFi device driver in
+:file:`drivers/wifi/simplelink`.
+
+Currently only the Zephyr WiFi management operations are exported.
+
+Usage:
+======
+
+Set :option:`CONFIG_WIFI_SIMPLELINK` to ``y`` to enable WiFi.
+See :file:`samples/net/wifi/boards/cc3220sf_launchxl.conf`.
+
+Provisioning:
+=============
+
+SimpleLink provides a few rather sophisticated WiFi provisioning methods.
+To keep it simple for Zephyr development and demos, the SimpleLink
+"Fast Connect" policy is enabled, with one-shot scanning.
+This enables the cc3220sf_launchxl to automatically reconnect to the last
+good known access point (AP), without having to restart a scan, and
+re-specify the SSID and password.
+
+To connect to an AP, first run the Zephyr WiFi shell sample application,
+and connect to a known AP with SSID and password.
+
+See :ref:`wifi_sample`
+
+Once the connection succeeds, the network co-processor keeps the AP identity in
+its persistent memory.  Newly loaded WiFi applications then need not explicitly
+execute any WiFi scan or connect operations, until the need to change to a new AP.
 
 References
 **********

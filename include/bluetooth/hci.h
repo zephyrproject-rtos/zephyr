@@ -5,8 +5,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __BT_HCI_H
-#define __BT_HCI_H
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_HCI_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_HCI_H_
 
 #include <toolchain.h>
 #include <zephyr/types.h>
@@ -40,6 +40,8 @@ typedef struct {
 } bt_addr_le_t;
 
 #define BT_ADDR_ANY     (&(bt_addr_t) { { 0, 0, 0, 0, 0, 0 } })
+#define BT_ADDR_NONE    (&(bt_addr_t) { \
+			 { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff } })
 #define BT_ADDR_LE_ANY  (&(bt_addr_le_t) { 0, { { 0, 0, 0, 0, 0, 0 } } })
 #define BT_ADDR_LE_NONE (&(bt_addr_le_t) { 0, \
 			 { { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff } } })
@@ -121,9 +123,16 @@ static inline bool bt_addr_le_is_identity(const bt_addr_le_t *addr)
 #define BT_HCI_ERR_UNSUPP_REMOTE_FEATURE        0x1a
 #define BT_HCI_ERR_INVALID_LL_PARAM             0x1e
 #define BT_HCI_ERR_UNSPECIFIED                  0x1f
+#define BT_HCI_ERR_UNSUPP_LL_PARAM_VAL          0x20
+#define BT_HCI_ERR_LL_RESP_TIMEOUT              0x22
+#define BT_HCI_ERR_LL_PROC_COLLISION            0x23
+#define BT_HCI_ERR_INSTANT_PASSED               0x28
 #define BT_HCI_ERR_PAIRING_NOT_SUPPORTED        0x29
+#define BT_HCI_ERR_DIFF_TRANS_COLLISION         0x2a
 #define BT_HCI_ERR_UNACCEPT_CONN_PARAM          0x3b
 #define BT_HCI_ERR_ADV_TIMEOUT                  0x3c
+#define BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL         0x3d
+#define BT_HCI_ERR_CONN_FAIL_TO_ESTAB           0x3e
 
 /* EIR/AD data type definitions */
 #define BT_DATA_FLAGS                   0x01 /* AD flags */
@@ -1834,7 +1843,7 @@ struct bt_hci_evt_le_chan_sel_algo {
   *
   * This function allocates a new buffer for a HCI command. It is given
   * the OpCode (encoded e.g. using the BT_OP macro) and the total length
-  * of the parameters. Opon successful return the buffer is ready to have
+  * of the parameters. Upon successful return the buffer is ready to have
   * the parameters encoded into it.
   *
   * @param opcode     Command OpCode.
@@ -1853,7 +1862,7 @@ struct net_buf *bt_hci_cmd_create(u16_t opcode, u8_t param_len);
   * return from this function the caller only knows that it was queued
   * successfully.
   *
-  * If synchronous behavior, and retreival of the Command Complete paramters
+  * If synchronous behavior, and retrieval of the Command Complete parameters
   * is desired, the bt_hci_cmd_send_sync() API should be used instead.
   *
   * @param opcode Command OpCode.
@@ -1893,4 +1902,4 @@ int bt_hci_cmd_send_sync(u16_t opcode, struct net_buf *buf,
 }
 #endif
 
-#endif /* __BT_HCI_H */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_HCI_H_ */

@@ -10,19 +10,18 @@
 menuconfig LSM9DS0_MFD
 	bool "LSM9DS0 I2C accelerometer, magnetometer and temperature sensor chip"
 	depends on I2C
-	default n
 	help
 	  Enable driver for LSM9DS0 I2C-based MFD sensor.
 
+if LSM9DS0_MFD
+
 config LSM9DS0_MFD_DEV_NAME
 	string "LSM9DS0_MFD device name"
-	depends on LSM9DS0_MFD
 	default "lsm9ds0_mfd"
 
 config LSM9DS0_MFD_I2C_ADDR
 	hex "LSM9DS0_MFD I2C slave address"
 	default 0x1E
-	depends on LSM9DS0_MFD
 	help
 	  Specify the I2C slave address for the LSM9DS0_MFD.
 
@@ -31,7 +30,6 @@ config LSM9DS0_MFD_I2C_ADDR
 
 config LSM9DS0_MFD_I2C_MASTER_DEV_NAME
 	string "I2C master where LSM9DS0 gyroscope is connected"
-	depends on LSM9DS0_MFD
 	default "I2C_0"
 	help
 	  Specify the device name of the I2C master device to which LSM9DS0_MFD
@@ -39,7 +37,6 @@ config LSM9DS0_MFD_I2C_MASTER_DEV_NAME
 
 config LSM9DS0_MFD_ACCEL_ENABLE
 	bool "Enable accelerometer"
-	depends on LSM9DS0_MFD
 	default y
 	help
 	  Enable/disable accelerometer totally by stripping everything related
@@ -47,7 +44,6 @@ config LSM9DS0_MFD_ACCEL_ENABLE
 
 config LSM9DS0_MFD_MAGN_ENABLE
 	bool "Enable magnetometer"
-	depends on LSM9DS0_MFD
 	default y
 	help
 	  Enable/disable magnetometer totally by stripping everything related in
@@ -55,14 +51,11 @@ config LSM9DS0_MFD_MAGN_ENABLE
 
 config LSM9DS0_MFD_TEMP_ENABLE
 	bool "Enable temperature sensor"
-	depends on LSM9DS0_MFD
-	default n
 	help
 	  Enable/disable temperature sensor totally by stripping everything
 	  related in driver.
 
 menu "Attributes"
-	depends on LSM9DS0_MFD
 
 choice
 	prompt "Accelerometer sampling rate"
@@ -72,55 +65,43 @@ choice
 	  Specify the default sampling rate frequency for accelerometer.
 
 config LSM9DS0_MFD_ACCEL_SAMPLING_RATE_0
-	bool
-	prompt "0 Hz (power down)"
+	bool "0 Hz (power down)"
 
 config LSM9DS0_MFD_ACCEL_SAMPLING_RATE_3_125
-	bool
-	prompt "3.125 Hz"
+	bool "3.125 Hz"
 
 config LSM9DS0_MFD_ACCEL_SAMPLING_RATE_6_25
-	bool
-	prompt "6.25 Hz"
+	bool "6.25 Hz"
 
 config LSM9DS0_MFD_ACCEL_SAMPLING_RATE_12_5
-	bool
-	prompt "12.5 Hz"
+	bool "12.5 Hz"
 
 config LSM9DS0_MFD_ACCEL_SAMPLING_RATE_25
-	bool
-	prompt "25 Hz"
+	bool "25 Hz"
 
 config LSM9DS0_MFD_ACCEL_SAMPLING_RATE_50
-	bool
-	prompt "50 Hz"
+	bool "50 Hz"
 
 config LSM9DS0_MFD_ACCEL_SAMPLING_RATE_100
-	bool
-	prompt "100 Hz"
+	bool "100 Hz"
 
 config LSM9DS0_MFD_ACCEL_SAMPLING_RATE_200
-	bool
-	prompt "200 Hz"
+	bool "200 Hz"
 
 config LSM9DS0_MFD_ACCEL_SAMPLING_RATE_400
-	bool
-	prompt "400 Hz"
+	bool "400 Hz"
 
 config LSM9DS0_MFD_ACCEL_SAMPLING_RATE_800
-	bool
-	prompt "800 Hz"
+	bool "800 Hz"
 
 config LSM9DS0_MFD_ACCEL_SAMPLING_RATE_1600
-	bool
-	prompt "1600 Hz"
+	bool "1600 Hz"
 
 endchoice
 
 config LSM9DS0_MFD_ACCEL_SAMPLING_RATE_RUNTIME
 	bool "Enable dynamic sampling rate for accelerometer"
 	depends on LSM9DS0_MFD_ACCEL_ENABLE
-	default n
 	help
 	  Enable alteration of accelerometer sampling rate attribute at
 	  runtime.
@@ -133,31 +114,25 @@ choice
 	  Specify the default full-scale for accelerometer.
 
 config LSM9DS0_MFD_ACCEL_FULL_SCALE_2
-	bool
-	prompt "2G"
+	bool "2G"
 
 config LSM9DS0_MFD_ACCEL_FULL_SCALE_4
-	bool
-	prompt "4G"
+	bool "4G"
 
 config LSM9DS0_MFD_ACCEL_FULL_SCALE_6
-	bool
-	prompt "6G"
+	bool "6G"
 
 config LSM9DS0_MFD_ACCEL_FULL_SCALE_8
-	bool
-	prompt "8G"
+	bool "8G"
 
 config LSM9DS0_MFD_ACCEL_FULL_SCALE_16
-	bool
-	prompt "16G"
+	bool "16G"
 
 endchoice
 
 config LSM9DS0_MFD_ACCEL_FULL_SCALE_RUNTIME
 	bool "Enable dynamic full-scale for accelerometer"
 	depends on LSM9DS0_MFD_ACCEL_ENABLE
-	default n
 	help
 	  Enable alteration of accelerometer full-scale attribute at
 	  runtime.
@@ -185,35 +160,28 @@ choice
 	  Specify the default sampling rate frequency for magnetometer.
 
 config LSM9DS0_MFD_MAGN_SAMPLING_RATE_3_125
-	bool
-	prompt "3.125 Hz"
+	bool "3.125 Hz"
 
 config LSM9DS0_MFD_MAGN_SAMPLING_RATE_6_25
-	bool
-	prompt "6.25 Hz"
+	bool "6.25 Hz"
 
 config LSM9DS0_MFD_MAGN_SAMPLING_RATE_12_5
-	bool
-	prompt "12.5 Hz"
+	bool "12.5 Hz"
 
 config LSM9DS0_MFD_MAGN_SAMPLING_RATE_25
-	bool
-	prompt "25 Hz"
+	bool "25 Hz"
 
 config LSM9DS0_MFD_MAGN_SAMPLING_RATE_50
-	bool
-	prompt "50 Hz"
+	bool "50 Hz"
 
 config LSM9DS0_MFD_MAGN_SAMPLING_RATE_100
-	bool
-	prompt "100 Hz"
+	bool "100 Hz"
 
 endchoice
 
 config LSM9DS0_MFD_MAGN_SAMPLING_RATE_RUNTIME
 	bool "Enable dynamic sampling rate for magnetometer"
 	depends on LSM9DS0_MFD_MAGN_ENABLE
-	default n
 	help
 	  Enable alteration of magnetometer sampling rate attribute at
 	  runtime.
@@ -226,29 +194,26 @@ choice
 	  Specify the default full-scale for magnetometer.
 
 config LSM9DS0_MFD_MAGN_FULL_SCALE_2
-	bool
-	prompt "2 Gauss"
+	bool "2 Gauss"
 
 config LSM9DS0_MFD_MAGN_FULL_SCALE_4
-	bool
-	prompt "4 Gauss"
+	bool "4 Gauss"
 
 config LSM9DS0_MFD_MAGN_FULL_SCALE_8
-	bool
-	prompt "8 Gauss"
+	bool "8 Gauss"
 
 config LSM9DS0_MFD_MAGN_FULL_SCALE_12
-	bool
-	prompt "12 Gauss"
+	bool "12 Gauss"
 
 endchoice
 
 config LSM9DS0_MFD_MAGN_FULL_SCALE_RUNTIME
 	bool "Enable dynamic full-scale for magnetometer"
 	depends on LSM9DS0_MFD_MAGN_ENABLE
-	default n
 	help
 	  Enable alteration of magnetometer full-scale attribute at
 	  runtime.
 
 endmenu
+
+endif # LSM9DS0_MFD

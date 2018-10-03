@@ -759,7 +759,7 @@ u32_t ll_rl_add(bt_addr_le_t *id_addr, const u8_t pirk[16],
 		memcpy(rl[i].local_irk, lirk, 16);
 		rl[i].local_rpa = NULL;
 	}
-	memset(rl[i].curr_rpa.val, 0x00, sizeof(rl[i].curr_rpa));
+	(void)memset(rl[i].curr_rpa.val, 0x00, sizeof(rl[i].curr_rpa));
 	rl[i].rpas_ready = 0;
 	/* Default to Network Privacy */
 	rl[i].dev = 0;

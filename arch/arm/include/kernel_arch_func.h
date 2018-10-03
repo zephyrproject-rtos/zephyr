@@ -19,8 +19,8 @@
 
 /* this file is only meant to be included by kernel_structs.h */
 
-#ifndef _kernel_arch_func__h_
-#define _kernel_arch_func__h_
+#ifndef ZEPHYR_ARCH_ARM_INCLUDE_KERNEL_ARCH_FUNC_H_
+#define ZEPHYR_ARCH_ARM_INCLUDE_KERNEL_ARCH_FUNC_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -77,6 +77,7 @@ _arch_switch_to_main_thread(struct k_thread *main_thread,
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 		"cpsie i \t\n"
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+		"cpsie if \t\n"
 		"movs %%r1, #0 \n\t"
 		"msr BASEPRI, %%r1 \n\t"
 #else
@@ -134,4 +135,4 @@ extern FUNC_NORETURN void _arm_userspace_enter(k_thread_entry_t user_entry,
 }
 #endif
 
-#endif /* _kernel_arch_func__h_ */
+#endif /* ZEPHYR_ARCH_ARM_INCLUDE_KERNEL_ARCH_FUNC_H_ */

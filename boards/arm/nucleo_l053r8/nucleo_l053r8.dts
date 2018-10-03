@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <st/stm32l053.dtsi>
+#include <st/l0/stm32l053X8.dtsi>
 
 / {
 	model = "STMicroelectronics STM32L053R8-NUCLEO board";
@@ -19,7 +19,7 @@
 
 	leds {
 		compatible = "gpio-leds";
-		green_led_2: led@0 {
+		green_led_2: led_2 {
 			gpios = <&gpioa 5 GPIO_INT_ACTIVE_HIGH>;
 			label = "User LD2";
 		};
@@ -27,7 +27,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
-		user_button: button@0 {
+		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_INT_ACTIVE_LOW>;
 		};

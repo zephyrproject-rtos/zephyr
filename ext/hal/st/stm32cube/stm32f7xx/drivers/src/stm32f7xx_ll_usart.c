@@ -76,8 +76,10 @@
 #define IS_LL_USART_BAUDRATE(__BAUDRATE__) ((__BAUDRATE__) <= 27000000U)
 
 /* __VALUE__ In case of oversampling by 16 and 8, BRR content must be greater than or equal to 16d. */
-#define IS_LL_USART_BRR(__VALUE__) (((__VALUE__) >= 16U) \
-                                    && ((__VALUE__) <= 0x0000FFFFU))
+#define IS_LL_USART_BRR_MIN(__VALUE__) ((__VALUE__) >= 16U)
+
+/* __VALUE__ BRR content must be lower than or equal to 0xFFFF. */
+#define IS_LL_USART_BRR_MAX(__VALUE__) ((__VALUE__) <= 0x0000FFFFU)
 
 #define IS_LL_USART_DIRECTION(__VALUE__) (((__VALUE__) == LL_USART_DIRECTION_NONE) \
                                        || ((__VALUE__) == LL_USART_DIRECTION_RX) \
@@ -225,7 +227,7 @@ ErrorStatus LL_USART_DeInit(USART_TypeDef *USARTx)
   *         USART IP should be in disabled state prior calling this function. Otherwise, ERROR result will be returned.
   * @note   Baud rate value stored in USART_InitStruct BaudRate field, should be valid (different from 0).
   * @param  USARTx USART Instance
-  * @param  USART_InitStruct: pointer to a LL_USART_InitTypeDef structure
+  * @param  USART_InitStruct pointer to a LL_USART_InitTypeDef structure
   *         that contains the configuration information for the specified USART peripheral.
   * @retval An ErrorStatus enumeration value:
   *          - SUCCESS: USART registers are initialized according to USART_InitStruct content
@@ -330,7 +332,10 @@ ErrorStatus LL_USART_Init(USART_TypeDef *USARTx, LL_USART_InitTypeDef *USART_Ini
                            USART_InitStruct->BaudRate);
 
       /* Check BRR is greater than or equal to 16d */
-      assert_param(IS_LL_USART_BRR(USARTx->BRR));
+      assert_param(IS_LL_USART_BRR_MIN(USARTx->BRR));
+
+      /* Check BRR is greater than or equal to 16d */
+      assert_param(IS_LL_USART_BRR_MAX(USARTx->BRR));
     }
   }
   /* Endif (=> USART not in Disabled state => return ERROR) */
@@ -340,7 +345,7 @@ ErrorStatus LL_USART_Init(USART_TypeDef *USARTx, LL_USART_InitTypeDef *USART_Ini
 
 /**
   * @brief Set each @ref LL_USART_InitTypeDef field to default value.
-  * @param USART_InitStruct: pointer to a @ref LL_USART_InitTypeDef structure
+  * @param USART_InitStruct pointer to a @ref LL_USART_InitTypeDef structure
   *                          whose fields will be set to default values.
   * @retval None
   */
@@ -363,7 +368,7 @@ void LL_USART_StructInit(LL_USART_InitTypeDef *USART_InitStruct)
   * @note   As some bits in USART configuration registers can only be written when the USART is disabled (USART_CR1_UE bit =0),
   *         USART IP should be in disabled state prior calling this function. Otherwise, ERROR result will be returned.
   * @param  USARTx USART Instance
-  * @param  USART_ClockInitStruct: pointer to a @ref LL_USART_ClockInitTypeDef structure
+  * @param  USART_ClockInitStruct pointer to a @ref LL_USART_ClockInitTypeDef structure
   *         that contains the Clock configuration information for the specified USART peripheral.
   * @retval An ErrorStatus enumeration value:
   *          - SUCCESS: USART registers related to Clock settings are initialized according to USART_ClockInitStruct content
@@ -424,7 +429,7 @@ ErrorStatus LL_USART_ClockInit(USART_TypeDef *USARTx, LL_USART_ClockInitTypeDef 
 
 /**
   * @brief Set each field of a @ref LL_USART_ClockInitTypeDef type structure to default value.
-  * @param USART_ClockInitStruct: pointer to a @ref LL_USART_ClockInitTypeDef structure
+  * @param USART_ClockInitStruct pointer to a @ref LL_USART_ClockInitTypeDef structure
   *                               whose fields will be set to default values.
   * @retval None
   */

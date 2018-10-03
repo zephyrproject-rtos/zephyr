@@ -12,8 +12,8 @@
  * processors.
  */
 
-#ifndef _CORTEXM_MEMORY_MAP__H_
-#define _CORTEXM_MEMORY_MAP__H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_MEMORY_MAP_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_MEMORY_MAP_H_
 
 #include <misc/util.h>
 
@@ -107,4 +107,4 @@
 #define _VENDOR_BASE_ADDR         0xE0100000
 #define _VENDOR_END_ADDR          0xFFFFFFFF
 
-#endif /* _CORTEXM_MEMORY_MAP__H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_MEMORY_MAP_H_ */

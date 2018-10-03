@@ -32,7 +32,7 @@ extern "C" {
  */
 static inline void metal_cache_flush(void *addr, unsigned int len)
 {
-	return __metal_cache_flush(addr, len);
+	__metal_cache_flush(addr, len);
 }
 
 /**
@@ -45,7 +45,7 @@ static inline void metal_cache_flush(void *addr, unsigned int len)
  */
 static inline void metal_cache_invalidate(void *addr, unsigned int len)
 {
-	return __metal_cache_invalidate(addr, len);
+	__metal_cache_invalidate(addr, len);
 }
 
 /** @} */

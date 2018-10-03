@@ -38,9 +38,9 @@ typedef enum net_verdict (*icmpv4_callback_handler_t)(struct net_pkt *pkt);
 
 struct net_icmpv4_handler {
 	sys_snode_t node;
+	icmpv4_callback_handler_t handler;
 	u8_t type;
 	u8_t code;
-	icmpv4_callback_handler_t handler;
 };
 
 /**
@@ -73,15 +73,12 @@ void net_icmpv4_register_handler(struct net_icmpv4_handler *handler);
 
 void net_icmpv4_unregister_handler(struct net_icmpv4_handler *handler);
 
-enum net_verdict net_icmpv4_input(struct net_pkt *pkt,
-				  u8_t type, u8_t code);
+enum net_verdict net_icmpv4_input(struct net_pkt *pkt);
 
-struct net_icmp_hdr *net_icmpv4_get_hdr(struct net_pkt *pkt,
-					struct net_icmp_hdr *hdr);
-struct net_icmp_hdr *net_icmpv4_set_hdr(struct net_pkt *pkt,
-					struct net_icmp_hdr *hdr);
-struct net_buf *net_icmpv4_set_chksum(struct net_pkt *pkt,
-				      struct net_buf *frag);
+int net_icmpv4_get_hdr(struct net_pkt *pkt, struct net_icmp_hdr *hdr);
+int net_icmpv4_set_hdr(struct net_pkt *pkt, struct net_icmp_hdr *hdr);
+
+int net_icmpv4_set_chksum(struct net_pkt *pkt);
 
 #if defined(CONFIG_NET_IPV4)
 void net_icmpv4_init(void);

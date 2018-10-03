@@ -28,9 +28,9 @@ Information about the system is extracted from the compiled DTS and used to
 create the application image.
 
 Device tree uses a specific format to describe the device nodes in a system.
-This format is described in `EPAPR document`_.
+This format is described in the `Device Tree Specification`_.
 
-.. _EPAPR document: https://www.devicetree.org/downloads/devicetree-specification-v0.1-20160524.pdf
+.. _Device Tree Specification: https://github.com/devicetree-org/devicetree-specification/releases
 
 More device tree information can be found at the `device tree repository`_.
 
@@ -57,14 +57,9 @@ information is intended to augment the device tree descriptions.  The main
 reason for this is to leverage existing device tree files that a SoC vendor may
 already have defined for a given platform.
 
-Today, configuration in Zephyr comes from a number of different places.  It can
-come from Kconfig files, CMSIS header files, vendor header files, prj.conf
-files, and other miscellaneous sources.  The intent of using device tree is to
-replace or curtail the use of Kconfig files throughout the system, and instead
-use device tree files to describe the configuration of device nodes.  CMSIS and
-vendor header files can be used in conjunction with the device tree to fully
-describe hardware.  Device tree is not intended to replace CMSIS or vendor
-include files.
+Device Tree provides a unified description of a hardware system used in an
+application. It is used in Zephyr to describe hardware and provide a boot-time
+configuration of this hardware.
 
 The device tree files are compiled using the device tree compiler.  The compiler
 runs the .dts file through the C preprocessor to resolve any macro or #defines
@@ -79,6 +74,64 @@ A temporary fixup file is required for device tree support on most devices.
 This .fixup file by default resides in the board directory and is named
 dts.fixup.  This fixup file maps the generated include information to the
 current driver/source usage.
+
+.. _dt_vs_kconfig:
+
+Device Tree vs Kconfig
+**********************
+
+As mentioned above there are several tools used to configure the build with
+Zephyr.
+The two main ones, Device Tree and Kconfig, might seem to overlap in purpose,
+but in fact they do not. This section serves as a reference to help you decide
+whether to place configuration items in Device Tree or Kconfig.
+
+The scope of each configuration tool can be summarized as follows:
+
+* Device Tree is used to describe the **hardware** and its **boot-time
+  configuration**.
+* Kconfig is used to describe which **software features** will be built into
+  the final image, and their **configuration**.
+
+Hence Device Tree deals mostly with hardware and Kconfig with software.
+A couple of noteworthy exceptions are:
+
+* Device Tree's ``chosen`` keyword, which allows the user to select a
+  particular instance of a hardware device to be used for a concrete purpose
+  by the software. An example of this is selecting a particular UART for use as
+  the system's console.
+* Device Tree's ``status`` keyword, which allows the user to enable or disable
+  a particular instance of a hardware device in the Device Tree file itself.
+  This takes precedence over Kconfig.
+
+To further clarify this separation, let's use a particular, well-known
+example to illustrate this: serial ports a.k.a. UARTs. Let's consider a
+board containing a SoC with 2 UART instances:
+
+* The fact that the target hardware **contains** 2 UARTs is described with Device
+  Tree. This includes the UART type, its driver compatibility and certain
+  immutable (i.e. not software-configurable) settings such as the base address
+  of the hardware peripheral in memory or its interrupt line.
+* Additionally, **hardware boot-time configuration** is also described with Device
+  Tree. This includes things such as the IRQ priority and boot-time UART
+  baudrate. These may also be modifiable at runtime later, but their boot-time
+  default configuration is described in Device Tree.
+* The fact that the user intends to include **software support** for UART in the
+  build is described in Kconfig. Through the use of Kconfig, users can opt not
+  to include support for this particular hardware item if they don't require it.
+
+Another example is a device with a 2.4GHz, multi-protocol radio supporting
+both the Bluetooth Low Energy and 802.15.4 wireless technologies. In this case:
+
+* Device Tree describes the presence of a radio peripheral compatible with a
+  certain radio driver.
+* Additional hardware boot-time configuration settings may also be present
+  in the Device Tree files. In this particular case it could be a
+  default TX power in dBm if the hardware does have a simple, cross-wireless
+  technology register for that.
+* Kconfig will describe which **protocol stack** is to be used with that radio.
+  The user may decide to select BLE or 802.15.4, which will both depend on
+  the presence of a compatible radio in the Device Tree files.
 
 Device tree file formats
 ************************
@@ -175,7 +228,7 @@ The following is a more precise list of required files:
   * Board .dts file should specify the SRAM and FLASH devices, if present.
 
     * Flash device node might specify flash partitions. For more details see
-      :ref:'flash_partitions'
+      :ref:`flash_partitions`
 
   * Add board-specific YAML files, if required.  This would occur if the
     board has additional hardware that is not covered by the SoC family

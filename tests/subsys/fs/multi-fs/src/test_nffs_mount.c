@@ -11,7 +11,9 @@
 #include <ztest.h>
 #include <ztest_assert.h>
 #include "nffs_test_utils.h"
+#include "test_fs_shell.h"
 
+#if !defined(CONFIG_FILE_SYSTEM_SHELL)
 /* NFFS work area strcut */
 static struct nffs_flash_desc flash_desc;
 
@@ -43,8 +45,13 @@ static int test_mount(void)
 
 	return TC_PASS;
 }
+#endif
 
 void test_nffs_mount(void)
 {
+#ifdef CONFIG_FILE_SYSTEM_SHELL
+	test_fs_nffs_mount();
+#else
 	zassert_true(test_mount() == TC_PASS, NULL);
+#endif
 }

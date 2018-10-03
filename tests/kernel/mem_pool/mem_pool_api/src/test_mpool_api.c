@@ -7,6 +7,7 @@
 #include <ztest.h>
 #include <irq_offload.h>
 #include "test_mpool.h"
+#include <kernel_internal.h>
 
 /** TESTPOINT: Statically define and initialize a memory pool*/
 K_MEM_POOL_DEFINE(kmpool, BLK_SIZE_MIN, BLK_SIZE_MAX, BLK_NUM_MAX, BLK_ALIGN);
@@ -171,3 +172,20 @@ void test_mpool_alloc_timeout(void)
 	}
 }
 
+/**
+ * @brief Validate allocation and free from system heap memory pool
+ *
+ * @see k_thread_system_pool_assign(), z_thread_malloc(), k_free()
+ */
+void test_sys_heap_mem_pool_assign(void)
+{
+	void *ptr;
+
+	k_thread_system_pool_assign(k_current_get());
+	ptr = (char *)z_thread_malloc(BLK_SIZE_MIN/2);
+	zassert_not_null(ptr, "bytes allocation failed from system pool");
+	k_free(ptr);
+
+	zassert_is_null((char *)z_thread_malloc(BLK_SIZE_MAX * 2),
+						"overflow check failed");
+}

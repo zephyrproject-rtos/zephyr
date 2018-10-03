@@ -72,6 +72,10 @@
 /* Serial state notification timeout */
 #define CDC_CONTROL_SERIAL_STATE_TIMEOUT_US 100000
 
+#define CDC_ACM_INT_EP_ADDR		0x85
+#define CDC_ACM_IN_EP_ADDR		0x84
+#define CDC_ACM_OUT_EP_ADDR		0x03
+
 #define ACM_INT_EP_IDX			0
 #define ACM_OUT_EP_IDX			1
 #define ACM_IN_EP_IDX			2
@@ -159,7 +163,7 @@ USBD_CLASS_DESCR_DEFINE(primary) struct usb_cdc_acm_config cdc_acm_cfg = {
 	.if0_int_ep = {
 		.bLength = sizeof(struct usb_ep_descriptor),
 		.bDescriptorType = USB_ENDPOINT_DESC,
-		.bEndpointAddress = CONFIG_CDC_ACM_INT_EP_ADDR,
+		.bEndpointAddress = CDC_ACM_INT_EP_ADDR,
 		.bmAttributes = USB_DC_EP_INTERRUPT,
 		.wMaxPacketSize =
 			sys_cpu_to_le16(
@@ -182,7 +186,7 @@ USBD_CLASS_DESCR_DEFINE(primary) struct usb_cdc_acm_config cdc_acm_cfg = {
 	.if1_in_ep = {
 		.bLength = sizeof(struct usb_ep_descriptor),
 		.bDescriptorType = USB_ENDPOINT_DESC,
-		.bEndpointAddress = CONFIG_CDC_ACM_IN_EP_ADDR,
+		.bEndpointAddress = CDC_ACM_IN_EP_ADDR,
 		.bmAttributes = USB_DC_EP_BULK,
 		.wMaxPacketSize =
 			sys_cpu_to_le16(
@@ -193,7 +197,7 @@ USBD_CLASS_DESCR_DEFINE(primary) struct usb_cdc_acm_config cdc_acm_cfg = {
 	.if1_out_ep = {
 		.bLength = sizeof(struct usb_ep_descriptor),
 		.bDescriptorType = USB_ENDPOINT_DESC,
-		.bEndpointAddress = CONFIG_CDC_ACM_OUT_EP_ADDR,
+		.bEndpointAddress = CDC_ACM_OUT_EP_ADDR,
 		.bmAttributes = USB_DC_EP_BULK,
 		.wMaxPacketSize =
 			sys_cpu_to_le16(
@@ -210,8 +214,9 @@ static struct k_sem poll_wait_sem;
 struct cdc_acm_dev_data_t {
 	/* USB device status code */
 	enum usb_dc_status_code usb_status;
-	/* Callback function pointer */
-	uart_irq_callback_t	cb;
+	/* Callback function pointer/arg */
+	uart_irq_callback_user_data_t cb;
+	void *cb_data;
 	/* Tx ready status. Signals when */
 	u8_t tx_ready;
 	u8_t rx_ready;                 /* Rx ready status */
@@ -303,7 +308,7 @@ static void cdc_acm_bulk_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 	k_sem_give(&poll_wait_sem);
 	/* Call callback only if tx irq ena */
 	if (dev_data->cb && dev_data->tx_irq_ena) {
-		dev_data->cb(cdc_acm_dev);
+		dev_data->cb(dev_data->cb_data);
 	}
 }
 
@@ -357,7 +362,7 @@ static void cdc_acm_bulk_out(u8_t ep,
 	dev_data->rx_ready = 1;
 	/* Call callback only if rx irq ena */
 	if (dev_data->cb && dev_data->rx_irq_ena) {
-		dev_data->cb(cdc_acm_dev);
+		dev_data->cb(dev_data->cb_data);
 	}
 }
 
@@ -440,15 +445,15 @@ static void cdc_interface_config(u8_t bInterfaceNumber)
 static struct usb_ep_cfg_data cdc_acm_ep_data[] = {
 	{
 		.ep_cb	= cdc_acm_int_in,
-		.ep_addr = CONFIG_CDC_ACM_INT_EP_ADDR
+		.ep_addr = CDC_ACM_INT_EP_ADDR
 	},
 	{
 		.ep_cb	= cdc_acm_bulk_out,
-		.ep_addr = CONFIG_CDC_ACM_OUT_EP_ADDR
+		.ep_addr = CDC_ACM_OUT_EP_ADDR
 	},
 	{
 		.ep_cb = cdc_acm_bulk_in,
-		.ep_addr = CONFIG_CDC_ACM_IN_EP_ADDR
+		.ep_addr = CDC_ACM_IN_EP_ADDR
 	}
 };
 
@@ -740,11 +745,13 @@ static int cdc_acm_irq_update(struct device *dev)
  * @return N/A
  */
 static void cdc_acm_irq_callback_set(struct device *dev,
-				     uart_irq_callback_t cb)
+				     uart_irq_callback_user_data_t cb,
+				     void *cb_data)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
 	dev_data->cb = cb;
+	dev_data->cb_data = cb_data;
 }
 
 #ifdef CONFIG_UART_LINE_CTRL

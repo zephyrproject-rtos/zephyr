@@ -327,7 +327,7 @@ static int i2s_cavs_configure(struct device *dev, enum i2s_dir dir,
 
 	if (i2s_cfg->frame_clk_freq == 0) {
 		strm->queue_drop(strm);
-		memset(&strm->cfg, 0, sizeof(struct i2s_config));
+		(void)memset(&strm->cfg, 0, sizeof(struct i2s_config));
 		strm->state = I2S_STATE_NOT_READY;
 		return 0;
 	}
@@ -719,10 +719,6 @@ static int i2s1_cavs_initialize(struct device *dev)
 {
 	const struct i2s_cavs_config *const dev_cfg = DEV_CFG(dev);
 	struct i2s_cavs_dev_data *const dev_data = DEV_DATA(dev);
-
-#ifdef CONFIG_SOC_INTEL_S1000
-	setup_ownership_i2s();
-#endif
 
 	/* Configure interrupts */
 	dev_cfg->irq_config();

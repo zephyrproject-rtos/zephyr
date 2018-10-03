@@ -13,6 +13,7 @@
  */
 
 #include <kernel_structs.h>
+#include <syscall_handler.h>
 
 /*
  * Define _k_neg_eagain for use in assembly files as errno.h is
@@ -22,8 +23,20 @@
 const int _k_neg_eagain = -EAGAIN;
 
 #ifdef CONFIG_ERRNO
-int *__errno(void)
+#ifdef CONFIG_USERSPACE
+int *_impl_z_errno(void)
+{
+	/* Initialized to the lowest address in the stack so the thread can
+	 * directly read/write it
+	 */
+	return &_current->userspace_local_data->errno_var;
+}
+
+Z_SYSCALL_HANDLER0_SIMPLE(z_errno);
+#else
+int *_impl_z_errno(void)
 {
 	return &_current->errno_var;
 }
-#endif
+#endif /* CONFIG_USERSPACE */
+#endif /* CONFIG_ERRNO */

@@ -94,6 +94,8 @@ The Zephyr stm32f4_disco board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+
+| USB       | on-chip    | usb                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
 
@@ -121,6 +123,8 @@ Default Zephyr Peripheral Mapping:
 - LD4 : PD12
 - LD5 : PD14
 - LD6 : PD15
+- USB DM : PA11
+- USB DP : PA12
 
 System Clock
 ============

@@ -12,6 +12,13 @@
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_CLOCK_CONTROL_LEVEL
 #include <logging/sys_log.h>
 
+static const clock_name_t lpspi_clocks[] = {
+	kCLOCK_Usb1PllPfd1Clk,
+	kCLOCK_Usb1PllPfd0Clk,
+	kCLOCK_SysPllClk,
+	kCLOCK_SysPllPfd2Clk,
+};
+
 static int mcux_ccm_on(struct device *dev,
 			      clock_control_subsys_t sub_system)
 {
@@ -31,6 +38,16 @@ static int mcux_ccm_get_subsys_rate(struct device *dev,
 	u32_t clock_name = (u32_t) sub_system;
 
 	switch (clock_name) {
+	case IMX_CCM_LPSPI_CLK:
+	{
+		u32_t lpspi_mux = CLOCK_GetMux(kCLOCK_LpspiMux);
+		clock_name_t lpspi_clock = lpspi_clocks[lpspi_mux];
+
+		*rate = CLOCK_GetFreq(lpspi_clock)
+			/ (CLOCK_GetDiv(kCLOCK_LpspiDiv) + 1);
+		break;
+	}
+
 	case IMX_CCM_LPUART_CLK:
 		if (CLOCK_GetMux(kCLOCK_UartMux) == 0) {
 			*rate = CLOCK_GetPllFreq(kCLOCK_PllUsb1) / 6

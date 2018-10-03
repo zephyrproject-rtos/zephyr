@@ -16,12 +16,13 @@
  *   section
  */
 
-#ifndef _LINKERDEFS_H
-#define _LINKERDEFS_H
+#ifndef ZEPHYR_INCLUDE_LINKER_LINKER_DEFS_H_
+#define ZEPHYR_INCLUDE_LINKER_LINKER_DEFS_H_
 
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <misc/util.h>
+#include <offsets.h>
 
 /* include platform dependent linker-defs */
 #ifdef CONFIG_X86
@@ -52,7 +53,7 @@
  */
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 #define DEVICE_COUNT \
-	((__device_init_end - __device_init_start) / _DEVICE_STRUCT_SIZE)
+	((__device_init_end - __device_init_start) / _DEVICE_STRUCT_SIZEOF)
 #define DEV_BUSY_SZ	(((DEVICE_COUNT + 31) / 32) * 4)
 #define DEVICE_BUSY_BITFIELD()			\
 		FILL(0x00) ;			\
@@ -107,30 +108,34 @@
 		KEEP(*(".shell_cmd_*"));		\
 		__shell_cmd_end = .;			\
 
+/*
+ * link in shell initialization objects for all modules that use shell and
+ * their shell commands are automatically initialized by the kernel.
+ */
+
 #ifdef CONFIG_APPLICATION_MEMORY
-
-#ifndef NUM_KERNEL_OBJECT_FILES
-#error "Expected NUM_KERNEL_OBJECT_FILES to be defined"
-#elif NUM_KERNEL_OBJECT_FILES > 32
-#error "Max supported kernel objects is 32."
-/* TODO: Using the preprocessor to do this was a mistake. Rewrite to
-   scale better. e.g. by aggregating the kernel objects into two
-   archives like KBuild did.*/
-#endif
-
-#define X(i, j) KERNEL_OBJECT_FILE_##i (j)
-#define Y(i, j) KERNEL_OBJECT_FILE_##i
-
-#define KERNEL_INPUT_SECTION(sect) \
-    UTIL_LISTIFY(NUM_KERNEL_OBJECT_FILES, X, sect)
-#define APP_INPUT_SECTION(sect)	\
-    *(EXCLUDE_FILE (UTIL_LISTIFY(NUM_KERNEL_OBJECT_FILES, Y, ~)) sect)
-
+/*
+ * KERNELSPACE_OBJECT_FILES is a space-separated list of object files
+ * and libraries that belong in kernelspace.
+ */
+#define MAYBE_EXCLUDE_SOME_FILES EXCLUDE_FILE (KERNELSPACE_OBJECT_FILES)
 #else
-#define KERNEL_INPUT_SECTION(sect)	*(sect)
-#define APP_INPUT_SECTION(sect)		*(sect)
-#endif
+#define MAYBE_EXCLUDE_SOME_FILES
+#endif /* CONFIG_APPLICATION_MEMORY */
 
+/*
+ * APP_INPUT_SECTION should be invoked on sections that should be in
+ * 'app' space. KERNEL_INPUT_SECTION should be invoked on sections
+ * that should be in 'kernel' space.
+ *
+ * NB: APP_INPUT_SECTION must be invoked before
+ * KERNEL_INPUT_SECTION. If it is not all sections will end up in
+ * kernelspace.
+ */
+#define APP_INPUT_SECTION(sect)    *(MAYBE_EXCLUDE_SOME_FILES sect)
+#define KERNEL_INPUT_SECTION(sect) *(sect)
+
+#define APP_SMEM_SECTION() KEEP(*(SORT(data_smem_[_a-zA-Z0-9]*)))
 
 #ifdef CONFIG_X86 /* LINKER FILES: defines used by linker script */
 /* Should be moved to linker-common-defs.h */
@@ -166,6 +171,15 @@ GDATA(__data_num_words)
 #else /* ! _ASMLANGUAGE */
 
 #include <zephyr/types.h>
+/*
+ * The following are externs symbols from the linker. This enables
+ * the dynamic k_mem_domain and k_mem_partition creation and alignment
+ * to the section produced in the linker.
+ */
+extern char _app_smem_start[];
+extern char _app_smem_end[];
+extern char _app_smem_size[];
+extern char _app_smem_rom_start[];
 
 #ifdef CONFIG_APPLICATION_MEMORY
 /* Memory owned by the application. Start and end will be aligned for memory
@@ -247,7 +261,16 @@ extern char __ccm_noinit_end[];
 extern char __ccm_end[];
 #endif /* CONFIG_CCM_BASE_ADDRESS */
 
+/* Used by the Security Attribution Unit to configure the
+ * Non-Secure Callable region.
+ */
+#ifdef CONFIG_ARM_FIRMWARE_HAS_SECURE_ENTRY_FUNCS
+extern char __sg_start[];
+extern char __sg_end[];
+extern char __sg_size[];
+#endif /* CONFIG_ARM_FIRMWARE_HAS_SECURE_ENTRY_FUNCS */
+
 
 #endif /* ! _ASMLANGUAGE */
 
-#endif /* _LINKERDEFS_H */
+#endif /* ZEPHYR_INCLUDE_LINKER_LINKER_DEFS_H_ */

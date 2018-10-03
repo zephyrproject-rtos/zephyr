@@ -8,8 +8,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef VL53L0X_TYPES_H_
-#define VL53L0X_TYPES_H_
+#ifndef ZEPHYR_DRIVERS_SENSOR_VL53L0X_VL53L0X_TYPES_H_
+#define ZEPHYR_DRIVERS_SENSOR_VL53L0X_VL53L0X_TYPES_H_
 
 
 /* Zephyr provides stdint.h and stddef.h, so this is enough to include it.
@@ -35,4 +35,4 @@
  */
 typedef uint32_t FixPoint1616_t;
 
-#endif /* VL53L0X_TYPES_H_ */
+#endif /* ZEPHYR_DRIVERS_SENSOR_VL53L0X_VL53L0X_TYPES_H_ */

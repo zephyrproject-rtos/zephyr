@@ -5,25 +5,21 @@
 #
 
 menuconfig HMC5883L
-	bool
-	prompt "HMC5883L magnetometer"
+	bool "HMC5883L magnetometer"
 	depends on I2C
-	default n
 	help
 	  Enable driver for HMC5883L I2C-based magnetometer.
 
+if HMC5883L
+
 config HMC5883L_NAME
-	string
-	prompt "Driver name"
+	string "Driver name"
 	default "HMC5883L"
-	depends on HMC5883L
 	help
 	  Device name with which the HMC5883L sensor is identified.
 
 config HMC5883L_I2C_MASTER_DEV_NAME
-	string
-	prompt "I2C master where HMC5883L is connected"
-	depends on HMC5883L
+	string "I2C master where HMC5883L is connected"
 	default "I2C_0"
 	help
 	  Specify the device name of the I2C master device to which HMC5883L
@@ -31,24 +27,20 @@ config HMC5883L_I2C_MASTER_DEV_NAME
 
 choice
 	prompt "Trigger mode"
-	depends on HMC5883L
 	default HMC5883L_TRIGGER_GLOBAL_THREAD
 	help
 	  Specify the type of triggering to be used by the driver.
 
 config HMC5883L_TRIGGER_NONE
-	bool
-	prompt "No trigger"
+	bool "No trigger"
 
 config HMC5883L_TRIGGER_GLOBAL_THREAD
-	bool
-	prompt "Use global thread"
+	bool "Use global thread"
 	depends on GPIO
 	select HMC5883L_TRIGGER
 
 config HMC5883L_TRIGGER_OWN_THREAD
-	bool
-	prompt "Use own thread"
+	bool "Use own thread"
 	depends on GPIO
 	select HMC5883L_TRIGGER
 
@@ -56,46 +48,39 @@ endchoice
 
 config HMC5883L_TRIGGER
 	bool
-	depends on HMC5883L
 
 config HMC5883L_GPIO_DEV_NAME
-	string
-	prompt "GPIO device"
+	string "GPIO device"
 	default "GPIO_0"
-	depends on HMC5883L && HMC5883L_TRIGGER
+	depends on HMC5883L_TRIGGER
 	help
 	  The device name of the GPIO device to which the HMC5883L interrupt
 	  pin is connected.
 
 config HMC5883L_GPIO_PIN_NUM
-	int
-	prompt "Interrupt GPIO pin number"
+	int "Interrupt GPIO pin number"
 	default 0
-	depends on HMC5883L && HMC5883L_TRIGGER
+	depends on HMC5883L_TRIGGER
 	help
 	  The number of the GPIO on which the interrupt signal from the
 	  HMC5883L chip will be received.
 
 config HMC5883L_THREAD_PRIORITY
-	int
-	prompt "Thread priority"
-	depends on HMC5883L && HMC5883L_TRIGGER_OWN_THREAD
+	int "Thread priority"
+	depends on HMC5883L_TRIGGER_OWN_THREAD
 	default 10
 	help
 	  Priority of thread used by the driver to handle interrupts.
 
 config HMC5883L_THREAD_STACK_SIZE
-	int
-	prompt "Thread stack size"
-	depends on HMC5883L && HMC5883L_TRIGGER_OWN_THREAD
+	int "Thread stack size"
+	depends on HMC5883L_TRIGGER_OWN_THREAD
 	default 1024
 	help
 	  Stack size of thread used by the driver to handle interrupts.
 
 config HMC5883L_ODR
-	string
-	prompt "Output data rate"
-	depends on HMC5883L
+	string "Output data rate"
 	default "15"
 	help
 	  Magnetometer output data rate expressed in samples per second.
@@ -103,11 +88,11 @@ config HMC5883L_ODR
 	  and 75.
 
 config HMC5883L_FS
-	string
-	prompt "Full-scale range"
-	depends on HMC5883L
+	string "Full-scale range"
 	default "1.3"
 	help
 	  Magnetometer full-scale range.
 	  An X value for the config represents a range of +/- X gauss. Valid
 	  values are 0.88, 1.3, 1.9, 2.5, 4, 4.7, 5.6 and 8.1.
+
+endif # HMC5883L

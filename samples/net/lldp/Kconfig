@@ -1,0 +1,55 @@
+# Kconfig - Private config options for LLDP sample app
+
+#
+# Copyright (c) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# This sample application will have three network interfaces.
+
+mainmenu "LLDP sample application"
+
+source "$(ZEPHYR_BASE)/Kconfig.zephyr"
+
+if NET_LLDP
+
+config NET_SAMPLE_IFACE2_MY_IPV6_ADDR
+	string "My IPv6 address for second interface"
+	help
+	  The value depends on your network setup.
+
+config NET_SAMPLE_IFACE2_MY_IPV4_ADDR
+	string "My IPv4 address for second interface"
+	help
+	  The value depends on your network setup.
+
+config NET_SAMPLE_IFACE2_VLAN_TAG
+	int "VLAN tag for second interface"
+	default 100
+	range 0 4094
+	depends on NET_VLAN
+	help
+	  Set VLAN (virtual LAN) tag (id) that is used in the sample
+	  application.
+
+config NET_SAMPLE_IFACE3_MY_IPV6_ADDR
+	string "My IPv6 address for third interface"
+	help
+	  The value depends on your network setup.
+
+config NET_SAMPLE_IFACE3_MY_IPV4_ADDR
+	string "My IPv4 address for third interface"
+	help
+	  The value depends on your network setup.
+
+config NET_SAMPLE_IFACE3_VLAN_TAG
+	int "VLAN tag for third interface"
+	default 200
+	range 0 4094
+	depends on NET_VLAN
+	help
+	  Set VLAN (virtual LAN) tag (id) that is used in the sample
+	  application.
+
+endif

@@ -30,12 +30,13 @@ enum {
 enum {
 	BT_DEV_ENABLE,
 	BT_DEV_READY,
-	BT_DEV_ID_STATIC_RANDOM,
+	BT_DEV_PRESET_ID,
 	BT_DEV_USER_ID_ADDR,
 	BT_DEV_HAS_PUB_KEY,
 	BT_DEV_PUB_KEY_BUSY,
 
 	BT_DEV_ADVERTISING,
+	BT_DEV_ADVERTISING_NAME,
 	BT_DEV_KEEP_ADVERTISING,
 	BT_DEV_SCANNING,
 	BT_DEV_EXPLICIT_SCAN,
@@ -58,8 +59,8 @@ enum {
 
 /* Flags which should not be cleared upon HCI_Reset */
 #define BT_DEV_PERSISTENT_FLAGS (BIT(BT_DEV_ENABLE) | \
-				 BIT(BT_DEV_USER_ID_ADDR) | \
-				 BIT(BT_DEV_ID_STATIC_RANDOM))
+				 BIT(BT_DEV_PRESET_ID) | \
+				 BIT(BT_DEV_USER_ID_ADDR))
 
 struct bt_dev_le {
 	/* LE features */
@@ -102,8 +103,12 @@ struct bt_dev_br {
 
 /* State tracking for the local Bluetooth controller */
 struct bt_dev {
-	/* Local Identity Address */
-	bt_addr_le_t		id_addr;
+	/* Local Identity Address(es) */
+	bt_addr_le_t		id_addr[CONFIG_BT_ID_MAX];
+	u8_t                    id_count;
+
+	/* ID Address used for advertising */
+	u8_t                    adv_id;
 
 	/* Current local Random Address */
 	bt_addr_le_t		random_addr;
@@ -158,10 +163,15 @@ struct bt_dev {
 
 #if defined(CONFIG_BT_PRIVACY)
 	/* Local Identity Resolving Key */
-	u8_t			irk[16];
+	u8_t			irk[CONFIG_BT_ID_MAX][16];
 
 	/* Work used for RPA rotation */
 	struct k_delayed_work rpa_update;
+#endif
+
+	/* Local Name */
+#if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
+	char			name[CONFIG_BT_DEVICE_NAME_MAX];
 #endif
 };
 
@@ -174,7 +184,7 @@ bool bt_le_conn_params_valid(const struct bt_le_conn_param *param);
 
 int bt_le_scan_update(bool fast_scan);
 
-bool bt_addr_le_is_bonded(const bt_addr_le_t *addr);
+bool bt_addr_le_is_bonded(u8_t id, const bt_addr_le_t *addr);
 
 int bt_send(struct net_buf *buf);
 
@@ -182,9 +192,14 @@ u16_t bt_hci_get_cmd_opcode(struct net_buf *buf);
 
 /* Don't require everyone to include keys.h */
 struct bt_keys;
-int bt_id_add(struct bt_keys *keys);
-int bt_id_del(struct bt_keys *keys);
+void bt_id_add(struct bt_keys *keys);
+void bt_id_del(struct bt_keys *keys);
 
-int bt_set_static_addr(void);
+int bt_setup_id_addr(void);
 
 void bt_dev_show_info(void);
+
+int bt_le_adv_start_internal(const struct bt_le_adv_param *param,
+			     const struct bt_data *ad, size_t ad_len,
+			     const struct bt_data *sd, size_t sd_len,
+			     const bt_addr_le_t *peer);

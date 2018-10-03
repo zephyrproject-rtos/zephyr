@@ -58,7 +58,7 @@
   * @{
   */
 
-/** 
+/**
   * @brief  WWDG Init structure definition
   */
 typedef struct
@@ -75,18 +75,40 @@ typedef struct
   uint32_t EWIMode ;      /*!< Specifies if WWDG Early Wakeup Interupt is enable or not.
                                This parameter can be a value of @ref WWDG_EWI_Mode */
 
-}WWDG_InitTypeDef;
+} WWDG_InitTypeDef;
 
 /**
   * @brief  WWDG handle Structure definition
   */
-typedef struct
+typedef struct __WWDG_HandleTypeDef
 {
-  WWDG_TypeDef                 *Instance;  /*!< Register base address    */
+  WWDG_TypeDef      *Instance;  /*!< Register base address */
 
-  WWDG_InitTypeDef             Init;       /*!< WWDG required parameters */
+  WWDG_InitTypeDef  Init;       /*!< WWDG required parameters */
 
-}WWDG_HandleTypeDef;
+#if (USE_HAL_WWDG_REGISTER_CALLBACKS == 1)
+  void              (* EwiCallback)(struct __WWDG_HandleTypeDef *hwwdg);     /*!< WWDG Early WakeUp Interrupt callback */
+
+  void              (* MspInitCallback)(struct __WWDG_HandleTypeDef *hwwdg); /*!< WWDG Msp Init callback */
+#endif
+} WWDG_HandleTypeDef;
+
+#if (USE_HAL_WWDG_REGISTER_CALLBACKS == 1)
+/**
+  * @brief  HAL WWDG common Callback ID enumeration definition
+  */
+typedef enum
+{
+  HAL_WWDG_EWI_CB_ID          = 0x00u,    /*!< WWDG EWI callback ID */
+  HAL_WWDG_MSPINIT_CB_ID      = 0x01u,    /*!< WWDG MspInit callback ID */
+}HAL_WWDG_CallbackIDTypeDef;
+
+/**
+  * @brief  HAL WWDG Callback pointer definition
+  */
+typedef void (*pWWDG_CallbackTypeDef)(WWDG_HandleTypeDef * hppp); /*!< pointer to a WWDG common callback functions */
+
+#endif
 /**
   * @}
   */
@@ -117,10 +139,10 @@ typedef struct
 /** @defgroup WWDG_Prescaler WWDG Prescaler
   * @{
   */
-#define WWDG_PRESCALER_1                    0x00000000u       /*!< WWDG counter clock = (PCLK1/4096)/1 */
-#define WWDG_PRESCALER_2                    WWDG_CFR_WDGTB_0  /*!< WWDG counter clock = (PCLK1/4096)/2 */
-#define WWDG_PRESCALER_4                    WWDG_CFR_WDGTB_1  /*!< WWDG counter clock = (PCLK1/4096)/4 */
-#define WWDG_PRESCALER_8                    WWDG_CFR_WDGTB    /*!< WWDG counter clock = (PCLK1/4096)/8 */
+#define WWDG_PRESCALER_1                    0x00000000u                              /*!< WWDG counter clock = (PCLK1/4096)/1 */
+#define WWDG_PRESCALER_2                    WWDG_CFR_WDGTB_0                         /*!< WWDG counter clock = (PCLK1/4096)/2 */
+#define WWDG_PRESCALER_4                    WWDG_CFR_WDGTB_1                         /*!< WWDG counter clock = (PCLK1/4096)/4 */
+#define WWDG_PRESCALER_8                    (WWDG_CFR_WDGTB_1 | WWDG_CFR_WDGTB_0)    /*!< WWDG counter clock = (PCLK1/4096)/8 */
 /**
   * @}
   */
@@ -143,9 +165,9 @@ typedef struct
 /** @defgroup WWDG_Private_Macros WWDG Private Macros
   * @{
   */
-#define IS_WWDG_PRESCALER(__PRESCALER__)    (((__PRESCALER__) == WWDG_PRESCALER_1) || \
-                                             ((__PRESCALER__) == WWDG_PRESCALER_2) || \
-                                             ((__PRESCALER__) == WWDG_PRESCALER_4) || \
+#define IS_WWDG_PRESCALER(__PRESCALER__)    (((__PRESCALER__) == WWDG_PRESCALER_1)  || \
+                                             ((__PRESCALER__) == WWDG_PRESCALER_2)  || \
+                                             ((__PRESCALER__) == WWDG_PRESCALER_4)  || \
                                              ((__PRESCALER__) == WWDG_PRESCALER_8))
 
 #define IS_WWDG_WINDOW(__WINDOW__)          (((__WINDOW__) >= WWDG_CFR_W_6) && ((__WINDOW__) <= WWDG_CFR_W))
@@ -247,6 +269,12 @@ typedef struct
 /* Initialization/de-initialization functions  **********************************/
 HAL_StatusTypeDef     HAL_WWDG_Init(WWDG_HandleTypeDef *hwwdg);
 void                  HAL_WWDG_MspInit(WWDG_HandleTypeDef *hwwdg);
+/* Callbacks Register/UnRegister functions  ***********************************/
+#if (USE_HAL_WWDG_REGISTER_CALLBACKS == 1)
+HAL_StatusTypeDef     HAL_WWDG_RegisterCallback(WWDG_HandleTypeDef *hwwdg, HAL_WWDG_CallbackIDTypeDef CallbackID, pWWDG_CallbackTypeDef pCallback);
+HAL_StatusTypeDef     HAL_WWDG_UnRegisterCallback(WWDG_HandleTypeDef *hwwdg, HAL_WWDG_CallbackIDTypeDef CallbackID);
+#endif
+
 /**
   * @}
   */
@@ -257,7 +285,7 @@ void                  HAL_WWDG_MspInit(WWDG_HandleTypeDef *hwwdg);
 /* I/O operation functions ******************************************************/
 HAL_StatusTypeDef     HAL_WWDG_Refresh(WWDG_HandleTypeDef *hwwdg);
 void                  HAL_WWDG_IRQHandler(WWDG_HandleTypeDef *hwwdg);
-void                  HAL_WWDG_EarlyWakeupCallback(WWDG_HandleTypeDef* hwwdg);
+void                  HAL_WWDG_EarlyWakeupCallback(WWDG_HandleTypeDef *hwwdg);
 /**
   * @}
   */

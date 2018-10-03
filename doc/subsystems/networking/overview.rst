@@ -65,9 +65,7 @@ can be disabled if not needed.
 
 * **CoAP** Constrained Application Protocol (RFC 7252) is supported.
   Both :ref:`coap-client-sample` and :ref:`coap-server-sample` sample
-  applications are implemented. A :ref:`coaps-client-sample` and
-  :ref:`coaps-server-sample` using DTLS (Datagram Transport Layer Security)
-  (RFC 6347) are also implemented.
+  applications are implemented.
 
 * **LWM2M** OMA Lightweight Machine-to-Machine Protocol (V1.0 Feb 2017) is
   supported via the "Register Device" API (Register, De-Register and Update)
@@ -107,6 +105,15 @@ can be disabled if not needed.
   be prioritized depending on application needs.
   See :ref:`traffic-class-support` for more details.
 
+* **Websocket** Websocket (RFC 6455) server side functionality is supported.
+  The HTTP server API will enable websocket support if
+  :option:`CONFIG_WEBSOCKET` is enabled. Client side websocket functionality is
+  currently not supported by the websocket API.
+  See :ref:`websocket-server-sample` for information how to use the API.
+
+* **Time Sensitive Networking.** The gPTP (generalized Precision Time Protocol)
+  is supported. See :ref:`gptp-support` for more details.
+
 Additionally these network technologies (link layers) are supported in
 Zephyr OS v1.7 and later:
 
@@ -120,10 +127,14 @@ Zephyr OS v1.7 and later:
 Source Tree Layout
 ******************
 
-The IP stack source code tree is organized as follows:
+The networking stack source code tree is organized as follows:
 
 ``subsys/net/ip/``
   This is where the IP stack code is located.
+
+``subsys/net/l2/``
+  This is where the IP stack layer 2 code is located. This includes generic
+  support for Bluetooth IPSP adaptation, Ethernet, IEEE 802.15.4 and WiFI.
 
 ``subsys/net/lib/``
   Application-level protocols (DNS, MQTT, etc.) and additional stack

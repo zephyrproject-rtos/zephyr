@@ -1,0 +1,11 @@
+common:
+  harness: net
+  tags: net
+  depends_on: netif
+sample:
+  description: Test network sockets using a client/server
+    sample
+  name: Socket Echo Server
+tests:
+  test:
+    tags: net

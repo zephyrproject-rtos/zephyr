@@ -158,7 +158,7 @@ static void udp_received(struct net_app_ctx *ctx,
 	 */
 	set_dst_addr(family, pkt, &dst_addr);
 
-	reply_pkt = build_reply_pkt(dbg, ctx, pkt);
+	reply_pkt = build_reply_pkt(dbg, ctx, pkt, NET_UDPH_LEN);
 
 	net_pkt_unref(pkt);
 

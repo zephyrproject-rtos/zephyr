@@ -5,16 +5,13 @@
 #
 
 config OPENAMP
-	bool
-	prompt "OpenAMP Support"
+	bool "OpenAMP Support"
 	select LIBMETAL
-	default n
 	help
 	  This option enables the OpenAMP IPC library
 
 config OPENAMP_SRC_PATH
-	string
-	prompt "OpenAMP library source path"
+	string "OpenAMP library source path"
 	default "open-amp"
 	help
 	  This option specifies the path to the source for the open-amp library

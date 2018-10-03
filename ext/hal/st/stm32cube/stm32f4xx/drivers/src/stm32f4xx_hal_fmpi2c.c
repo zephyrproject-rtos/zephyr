@@ -105,6 +105,12 @@
       (++) FMPI2C_LAST_FRAME: Sequential usage, this option allow to manage a sequance with a restart condition, address
                             and with new data to transfer if the direction change or manage only the new data to transfer
                             if no direction change and with a final stop condition in both cases
+      (++) FMPI2C_LAST_FRAME_NO_STOP: Sequential usage (Master only), this option allow to manage a restart condition after several call of the same master sequential
+                            interface several times (link with option FMPI2C_FIRST_AND_NEXT_FRAME).
+                            Usage can, transfer several bytes one by one using HAL_FMPI2C_Master_Sequential_Transmit_IT(option FMPI2C_FIRST_AND_NEXT_FRAME then FMPI2C_NEXT_FRAME)
+                            or HAL_FMPI2C_Master_Sequential_Receive_IT(option FMPI2C_FIRST_AND_NEXT_FRAME then FMPI2C_NEXT_FRAME).
+                            Then usage of this option FMPI2C_LAST_FRAME_NO_STOP at the last Transmit or Receive sequence permit to call the oposite interface Receive or Transmit
+                            without stopping the communication and so generate a restart condition.
 
       (+) Differents sequential FMPI2C interfaces are listed below:
       (++) Sequential transmit in master FMPI2C mode an amount of data in non-blocking mode using HAL_FMPI2C_Master_Sequential_Transmit_IT()

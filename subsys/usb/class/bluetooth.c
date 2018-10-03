@@ -40,6 +40,10 @@ NET_BUF_POOL_DEFINE(tx_pool, CONFIG_BT_HCI_CMD_COUNT, CMD_BUF_SIZE,
 #define BT_BUF_ACL_SIZE BT_L2CAP_BUF_SIZE(BT_L2CAP_MTU)
 NET_BUF_POOL_DEFINE(acl_tx_pool, 2, BT_BUF_ACL_SIZE, sizeof(u8_t), NULL);
 
+#define BLUETOOTH_INT_EP_ADDR		0x81
+#define BLUETOOTH_OUT_EP_ADDR		0x02
+#define BLUETOOTH_IN_EP_ADDR		0x82
+
 /* HCI RX/TX threads */
 static K_THREAD_STACK_DEFINE(rx_thread_stack, 512);
 static struct k_thread rx_thread_data;
@@ -71,7 +75,7 @@ USBD_CLASS_DESCR_DEFINE(primary) struct usb_bluetooth_config bluetooth_cfg = {
 	.if0_int_ep = {
 		.bLength = sizeof(struct usb_ep_descriptor),
 		.bDescriptorType = USB_ENDPOINT_DESC,
-		.bEndpointAddress = CONFIG_BLUETOOTH_INT_EP_ADDR,
+		.bEndpointAddress = BLUETOOTH_INT_EP_ADDR,
 		.bmAttributes = USB_DC_EP_INTERRUPT,
 		.wMaxPacketSize =
 			sys_cpu_to_le16(
@@ -83,7 +87,7 @@ USBD_CLASS_DESCR_DEFINE(primary) struct usb_bluetooth_config bluetooth_cfg = {
 	.if0_out_ep = {
 		.bLength = sizeof(struct usb_ep_descriptor),
 		.bDescriptorType = USB_ENDPOINT_DESC,
-		.bEndpointAddress = CONFIG_BLUETOOTH_OUT_EP_ADDR,
+		.bEndpointAddress = BLUETOOTH_OUT_EP_ADDR,
 		.bmAttributes = USB_DC_EP_BULK,
 		.wMaxPacketSize =
 			sys_cpu_to_le16(
@@ -95,7 +99,7 @@ USBD_CLASS_DESCR_DEFINE(primary) struct usb_bluetooth_config bluetooth_cfg = {
 	.if0_in_ep = {
 		.bLength = sizeof(struct usb_ep_descriptor),
 		.bDescriptorType = USB_ENDPOINT_DESC,
-		.bEndpointAddress = CONFIG_BLUETOOTH_IN_EP_ADDR,
+		.bEndpointAddress = BLUETOOTH_IN_EP_ADDR,
 		.bmAttributes = USB_DC_EP_BULK,
 		.wMaxPacketSize =
 			sys_cpu_to_le16(
@@ -111,15 +115,15 @@ USBD_CLASS_DESCR_DEFINE(primary) struct usb_bluetooth_config bluetooth_cfg = {
 static struct usb_ep_cfg_data bluetooth_ep_data[] = {
 	{
 		.ep_cb = usb_transfer_ep_callback,
-		.ep_addr = CONFIG_BLUETOOTH_INT_EP_ADDR,
+		.ep_addr = BLUETOOTH_INT_EP_ADDR,
 	},
 	{
 		.ep_cb = usb_transfer_ep_callback,
-		.ep_addr = CONFIG_BLUETOOTH_OUT_EP_ADDR,
+		.ep_addr = BLUETOOTH_OUT_EP_ADDR,
 	},
 	{
 		.ep_cb = usb_transfer_ep_callback,
-		.ep_addr = CONFIG_BLUETOOTH_IN_EP_ADDR,
+		.ep_addr = BLUETOOTH_IN_EP_ADDR,
 	},
 };
 

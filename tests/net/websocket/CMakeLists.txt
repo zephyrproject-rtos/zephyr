@@ -1,3 +1,4 @@
+cmake_minimum_required(VERSION 3.8.2)
 include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
 project(NONE)
 
@@ -17,5 +18,3 @@ foreach(inc_file
     ${ZEPHYR_BINARY_DIR}/include/generated/${inc_file}.inc
     )
 endforeach()
-
-target_link_libraries_ifdef(CONFIG_MBEDTLS app mbedTLS)

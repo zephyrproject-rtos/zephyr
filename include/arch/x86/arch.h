@@ -11,14 +11,15 @@
  * by the generic kernel interface header (include/arch/cpu.h)
  */
 
-#ifndef _ARCH_IFACE_H
-#define _ARCH_IFACE_H
+#ifndef ZEPHYR_INCLUDE_ARCH_X86_ARCH_H_
+#define ZEPHYR_INCLUDE_ARCH_X86_ARCH_H_
 
 #include <irq.h>
 #include <arch/x86/irq_controller.h>
 #include <kernel_arch_thread.h>
 #include <generated_dts_board.h>
 #include <mmustructs.h>
+#include <stdbool.h>
 
 #ifndef _ASMLANGUAGE
 #include <arch/x86/asm_inline.h>
@@ -30,18 +31,11 @@
 extern "C" {
 #endif
 
-/* APIs need to support non-byte addressable architectures */
-
-#define OCTET_TO_SIZEOFUNIT(X) (X)
-#define SIZEOFUNIT_TO_OCTET(X) (X)
-
 /* GDT layout */
 #define CODE_SEG	0x08
 #define DATA_SEG	0x10
 #define MAIN_TSS	0x18
 #define DF_TSS		0x20
-#define USER_CODE_SEG	0x2b /* at dpl=3 */
-#define USER_DATA_SEG	0x33 /* at dpl=3 */
 
 /**
  * Macro used internally by NANO_CPU_INT_REGISTER and NANO_CPU_INT_REGISTER_ASM.
@@ -55,8 +49,8 @@ extern "C" {
 void _int_latency_start(void);
 void _int_latency_stop(void);
 #else
-#define _int_latency_start()  do { } while (0)
-#define _int_latency_stop()   do { } while (0)
+#define _int_latency_start()  do { } while (false)
+#define _int_latency_stop()   do { } while (false)
 #endif
 
 /* interrupt/exception/error related definitions */
@@ -273,7 +267,7 @@ extern unsigned char _irq_to_interrupt_vector[];
 extern void _arch_irq_direct_pm(void);
 #define _ARCH_ISR_DIRECT_PM() _arch_irq_direct_pm()
 #else
-#define _ARCH_ISR_DIRECT_PM() do { } while (0)
+#define _ARCH_ISR_DIRECT_PM() do { } while (false)
 #endif
 
 #define _ARCH_ISR_DIRECT_HEADER() _arch_isr_direct_header()
@@ -477,7 +471,6 @@ extern void	_arch_irq_disable(unsigned int irq);
  */
 
 struct k_thread;
-typedef struct k_thread *k_tid_t;
 
 /**
  * @brief Enable preservation of floating point context information.
@@ -508,7 +501,7 @@ typedef struct k_thread *k_tid_t;
  *
  * @return N/A
  */
-extern void k_float_enable(k_tid_t thread, unsigned int options);
+extern void k_float_enable(struct k_thread *thread, unsigned int options);
 
 /**
  * @brief Disable preservation of floating point context information.
@@ -524,7 +517,7 @@ extern void k_float_enable(k_tid_t thread, unsigned int options);
  *
  * @return N/A
  */
-extern void k_float_disable(k_tid_t thread);
+extern void k_float_disable(struct k_thread *thread);
 
 /**
  * @}
@@ -549,142 +542,6 @@ extern FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
 #ifdef CONFIG_X86_ENABLE_TSS
 extern struct task_state_segment _main_tss;
 #endif
-
-#ifdef CONFIG_USERSPACE
-/* Syscall invocation macros. x86-specific machine constraints used to ensure
- * args land in the proper registers, see implementation of
- * _x86_syscall_entry_stub in userspace.S
- *
- * the entry stub clobbers EDX and ECX on IAMCU systems
- */
-
-static inline u32_t _arch_syscall_invoke6(u32_t arg1, u32_t arg2, u32_t arg3,
-					  u32_t arg4, u32_t arg5, u32_t arg6,
-					  u32_t call_id)
-{
-	u32_t ret;
-
-	__asm__ volatile("push %%ebp\n\t"
-			 "mov %[arg6], %%ebp\n\t"
-			 "int $0x80\n\t"
-			 "pop %%ebp\n\t"
-			 : "=a" (ret)
-#ifdef CONFIG_X86_IAMCU
-			   , "=d" (arg2), "=c" (arg3)
-#endif
-			 : "S" (call_id), "a" (arg1), "d" (arg2),
-			   "c" (arg3), "b" (arg4), "D" (arg5),
-			   [arg6] "m" (arg6)
-			 : "memory", "esp");
-	return ret;
-}
-
-static inline u32_t _arch_syscall_invoke5(u32_t arg1, u32_t arg2, u32_t arg3,
-					  u32_t arg4, u32_t arg5, u32_t call_id)
-{
-	u32_t ret;
-
-	__asm__ volatile("int $0x80"
-			 : "=a" (ret)
-#ifdef CONFIG_X86_IAMCU
-			   , "=d" (arg2), "=c" (arg3)
-#endif
-			 : "S" (call_id), "a" (arg1), "d" (arg2),
-			   "c" (arg3), "b" (arg4), "D" (arg5)
-			 : "memory");
-	return ret;
-}
-
-static inline u32_t _arch_syscall_invoke4(u32_t arg1, u32_t arg2, u32_t arg3,
-					  u32_t arg4, u32_t call_id)
-{
-	u32_t ret;
-
-	__asm__ volatile("int $0x80"
-			 : "=a" (ret)
-#ifdef CONFIG_X86_IAMCU
-			   , "=d" (arg2), "=c" (arg3)
-#endif
-			 : "S" (call_id), "a" (arg1), "d" (arg2), "c" (arg3),
-			   "b" (arg4)
-			 : "memory");
-	return ret;
-}
-
-static inline u32_t _arch_syscall_invoke3(u32_t arg1, u32_t arg2, u32_t arg3,
-					  u32_t call_id)
-{
-	u32_t ret;
-
-	__asm__ volatile("int $0x80"
-			 : "=a" (ret)
-#ifdef CONFIG_X86_IAMCU
-			   , "=d" (arg2), "=c" (arg3)
-#endif
-			 : "S" (call_id), "a" (arg1), "d" (arg2), "c" (arg3)
-			 : "memory");
-	return ret;
-}
-
-static inline u32_t _arch_syscall_invoke2(u32_t arg1, u32_t arg2, u32_t call_id)
-{
-	u32_t ret;
-
-	__asm__ volatile("int $0x80"
-			 : "=a" (ret)
-#ifdef CONFIG_X86_IAMCU
-			   , "=d" (arg2)
-#endif
-			 : "S" (call_id), "a" (arg1), "d" (arg2)
-			 : "memory"
-#ifdef CONFIG_X86_IAMCU
-			 , "ecx"
-#endif
-			 );
-	return ret;
-}
-
-static inline u32_t _arch_syscall_invoke1(u32_t arg1, u32_t call_id)
-{
-	u32_t ret;
-
-	__asm__ volatile("int $0x80"
-			 : "=a" (ret)
-			 : "S" (call_id), "a" (arg1)
-			 : "memory"
-#ifdef CONFIG_X86_IAMCU
-			 , "edx", "ecx"
-#endif
-			 );
-	return ret;
-}
-
-static inline u32_t _arch_syscall_invoke0(u32_t call_id)
-{
-	u32_t ret;
-
-	__asm__ volatile("int $0x80"
-			 : "=a" (ret)
-			 : "S" (call_id)
-			 : "memory"
-#ifdef CONFIG_X86_IAMCU
-			 , "edx", "ecx"
-#endif
-			 );
-	return ret;
-}
-
-static inline int _arch_is_user_context(void)
-{
-	int cs;
-
-	/* On x86, read the CS register (which cannot be manually set) */
-	__asm__ volatile ("mov %%cs, %[cs_val]" : [cs_val] "=r" (cs));
-
-	return cs == USER_CODE_SEG;
-}
-#endif /* CONFIG_USERSPACE */
-
 
 #if defined(CONFIG_HW_STACK_PROTECTION) && defined(CONFIG_USERSPACE)
 /* With both hardware stack protection and userspace enabled, stacks are
@@ -738,12 +595,15 @@ static inline int _arch_is_user_context(void)
 		__aligned(_STACK_BASE_ALIGN) \
 		sym[ROUND_UP((size), _STACK_SIZE_ALIGN) + _STACK_GUARD_SIZE]
 
+#define _ARCH_THREAD_STACK_LEN(size) \
+		(ROUND_UP((size), \
+			  max(_STACK_BASE_ALIGN, _STACK_SIZE_ALIGN)) + \
+		_STACK_GUARD_SIZE)
+
 #define _ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
 	struct _k_thread_stack_element __kernel_noinit \
 		__aligned(_STACK_BASE_ALIGN) \
-		sym[nmemb][ROUND_UP(size, max(_STACK_BASE_ALIGN, \
-					      _STACK_SIZE_ALIGN)) + \
-			   _STACK_GUARD_SIZE]
+		sym[nmemb][_ARCH_THREAD_STACK_LEN(size)]
 
 #define _ARCH_THREAD_STACK_MEMBER(sym, size) \
 	struct _k_thread_stack_element __aligned(_STACK_BASE_ALIGN) \
@@ -764,7 +624,7 @@ static inline int _arch_is_user_context(void)
 		: [vector] "i" (CONFIG_X86_KERNEL_OOPS_VECTOR), \
 		  [reason] "i" (reason_p)); \
 	CODE_UNREACHABLE; \
-} while (0)
+} while (false)
 #endif
 
 /** Dummy ESF for fatal errors that would otherwise not have an ESF */
@@ -833,4 +693,4 @@ void _x86_mmu_set_flags(void *ptr,
 }
 #endif
 
-#endif /* _ARCH_IFACE_H */
+#endif /* ZEPHYR_INCLUDE_ARCH_X86_ARCH_H_ */

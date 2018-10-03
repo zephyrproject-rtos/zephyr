@@ -6,5 +6,4 @@
 
 config BOARD_96B_NITROGEN
 	bool "96Boards Nitrogen"
-	select HAS_DTS_GPIO
 	depends on SOC_NRF52832_QFAA

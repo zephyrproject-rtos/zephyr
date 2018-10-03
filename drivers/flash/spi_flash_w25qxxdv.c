@@ -14,6 +14,17 @@
 #include "spi_flash_w25qxxdv.h"
 #include "flash_priv.h"
 
+#if defined(CONFIG_MULTITHREADING)
+#define SYNC_INIT() k_sem_init( \
+		&((struct spi_flash_data *)dev->driver_data)->sem, 1, UINT_MAX)
+#define SYNC_LOCK() k_sem_take(&driver_data->sem, K_FOREVER)
+#define SYNC_UNLOCK() k_sem_give(&driver_data->sem)
+#else
+#define SYNC_INIT()
+#define SYNC_LOCK()
+#define SYNC_UNLOCK()
+#endif
+
 static int spi_flash_wb_access(struct spi_flash_data *ctx,
 			       u8_t cmd, bool addressed, off_t offset,
 			       void *data, size_t length, bool write)
@@ -73,7 +84,7 @@ static inline int spi_flash_wb_id(struct device *dev)
 	temp_data |= ((u32_t) buf[1]) << 8;
 	temp_data |= (u32_t) buf[2];
 
-	if (temp_data != W25QXXDV_RDID_VALUE) {
+	if (temp_data != CONFIG_SPI_FLASH_W25QXXDV_DEVICE_ID) {
 		return -ENODEV;
 	}
 
@@ -123,14 +134,14 @@ static int spi_flash_wb_read(struct device *dev, off_t offset, void *data,
 		return -ENODEV;
 	}
 
-	k_sem_take(&driver_data->sem, K_FOREVER);
+	SYNC_LOCK();
 
 	wait_for_flash_idle(dev);
 
 	ret = spi_flash_wb_access(driver_data, W25QXXDV_CMD_READ,
 				  true, offset, data, len, false);
 
-	k_sem_give(&driver_data->sem);
+	SYNC_UNLOCK();
 
 	return ret;
 }
@@ -146,13 +157,13 @@ static int spi_flash_wb_write(struct device *dev, off_t offset,
 		return -ENOTSUP;
 	}
 
-	k_sem_take(&driver_data->sem, K_FOREVER);
+	SYNC_LOCK();
 
 	wait_for_flash_idle(dev);
 
 	reg = spi_flash_wb_reg_read(dev, W25QXXDV_CMD_RDSR);
 	if (!(reg & W25QXXDV_WEL_BIT)) {
-		k_sem_give(&driver_data->sem);
+		SYNC_UNLOCK();
 		return -EIO;
 	}
 
@@ -165,7 +176,7 @@ static int spi_flash_wb_write(struct device *dev, off_t offset,
 	ret = spi_flash_wb_access(driver_data, W25QXXDV_CMD_PP,
 				  true, offset, (void *)data, len, true);
 
-	k_sem_give(&driver_data->sem);
+	SYNC_UNLOCK();
 
 	return ret;
 }
@@ -176,7 +187,7 @@ static int spi_flash_wb_write_protection_set(struct device *dev, bool enable)
 	u8_t reg = 0;
 	int ret;
 
-	k_sem_take(&driver_data->sem, K_FOREVER);
+	SYNC_LOCK();
 
 	wait_for_flash_idle(dev);
 
@@ -188,7 +199,7 @@ static int spi_flash_wb_write_protection_set(struct device *dev, bool enable)
 
 	ret = spi_flash_wb_reg_write(dev, reg);
 
-	k_sem_give(&driver_data->sem);
+	SYNC_UNLOCK();
 
 	return ret;
 }
@@ -252,12 +263,12 @@ static int spi_flash_wb_erase(struct device *dev, off_t offset, size_t size)
 		return -ENODEV;
 	}
 
-	k_sem_take(&driver_data->sem, K_FOREVER);
+	SYNC_LOCK();
 
 	reg = spi_flash_wb_reg_read(dev, W25QXXDV_CMD_RDSR);
 
 	if (!(reg & W25QXXDV_WEL_BIT)) {
-		k_sem_give(&driver_data->sem);
+		SYNC_UNLOCK();
 		return -EIO;
 	}
 
@@ -292,7 +303,7 @@ static int spi_flash_wb_erase(struct device *dev, off_t offset, size_t size)
 		}
 	}
 
-	k_sem_give(&driver_data->sem);
+	SYNC_UNLOCK();
 
 	return ret;
 }
@@ -330,7 +341,7 @@ static int spi_flash_wb_configure(struct device *dev)
 	}
 
 	data->cs_ctrl.gpio_pin = CONFIG_SPI_FLASH_W25QXXDV_GPIO_SPI_CS_PIN;
-	data->cs_ctrl.delay = 0;
+	data->cs_ctrl.delay = CONFIG_SPI_FLASH_W25QXXDV_GPIO_CS_WAIT_DELAY;
 
 	data->spi_cfg.cs = &data->cs_ctrl;
 #endif /* CONFIG_SPI_FLASH_W25QXXDV_GPIO_SPI_CS */
@@ -340,10 +351,9 @@ static int spi_flash_wb_configure(struct device *dev)
 
 static int spi_flash_init(struct device *dev)
 {
-	struct spi_flash_data *data = dev->driver_data;
 	int ret;
 
-	k_sem_init(&data->sem, 1, UINT_MAX);
+	SYNC_INIT();
 
 	ret = spi_flash_wb_configure(dev);
 	if (!ret) {

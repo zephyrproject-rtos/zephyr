@@ -47,7 +47,7 @@
   * @{
   */
 
-#if defined (SWPMI1)
+#if defined(SWPMI1)
 
 /** @addtogroup SWPMI_LL
   * @{
@@ -119,7 +119,7 @@ ErrorStatus LL_SWPMI_DeInit(SWPMI_TypeDef *SWPMIx)
 ErrorStatus LL_SWPMI_Init(SWPMI_TypeDef *SWPMIx, LL_SWPMI_InitTypeDef *SWPMI_InitStruct)
 {
   ErrorStatus status = SUCCESS;
-  
+
   /* Check the parameters */
   assert_param(IS_SWPMI_INSTANCE(SWPMIx));
   assert_param(IS_LL_SWPMI_BITRATE_VALUE(SWPMI_InitStruct->BitRatePrescaler));
@@ -177,7 +177,7 @@ void LL_SWPMI_StructInit(LL_SWPMI_InitTypeDef *SWPMI_InitStruct)
   * @}
   */
 
-#endif /* defined (SWPMI1) */
+#endif /* SWPMI1 */
 
 /**
   * @}

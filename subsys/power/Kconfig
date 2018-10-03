@@ -1,0 +1,8 @@
+
+if PM_CONTROL_OS
+menu "OS Power Management"
+
+source "subsys/power/policy/Kconfig"
+
+endmenu
+endif # PM_CONTROL_OS

@@ -10,9 +10,7 @@
 # DMA options
 #
 menuconfig DMA
-	bool
-	prompt "DMA driver Configuration"
-	default n
+	bool "DMA driver Configuration"
 
 if DMA
 config DMA_0_NAME
@@ -52,8 +50,7 @@ config DMA_2_IRQ_PRI
 	  IRQ Priority for DMA Controller 2.
 
 config SYS_LOG_DMA_LEVEL
-	int
-	prompt "DMA Driver Log level"
+	int "DMA Driver Log level"
 	depends on SYS_LOG
 	default 0
 	range 0 4
@@ -67,9 +64,7 @@ config SYS_LOG_DMA_LEVEL
 	  4 DEBUG, write SYS_LOG_DBG in addition to previous levels
 
 config DCACHE_WRITEBACK
-	bool
-	prompt "Data Cache Writeback"
-	default n
+	bool "Data Cache Writeback"
 	help
 	  Cache configuration for "Writeback".
 

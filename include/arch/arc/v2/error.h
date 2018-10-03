@@ -11,10 +11,12 @@
  * ARC-specific kernel error handling interface. Included by arc/arch.h.
  */
 
-#ifndef _ARCH_ARC_V2_ERROR_H_
-#define _ARCH_ARC_V2_ERROR_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARC_V2_ERROR_H_
+#define ZEPHYR_INCLUDE_ARCH_ARC_V2_ERROR_H_
 
+#include <arch/arc/syscall.h>
 #include <arch/arc/v2/exc.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,10 +34,6 @@ extern void _SysFatalErrorHandler(unsigned int cause, const NANO_ESF *esf);
 #define _NANO_ERR_KERNEL_OOPS (4)       /* Kernel oops (fatal to thread) */
 #define _NANO_ERR_KERNEL_PANIC (5)	/* Kernel panic (fatal to system) */
 
-
-#define _TRAP_S_SCALL_IRQ_OFFLOAD		1
-#define _TRAP_S_CALL_RUNTIME_EXCEPT		2
-#define _TRAP_S_CALL_SYSTEM_CALL		3
 
 /*
  * the exception caused by kernel will be handled in interrupt context
@@ -57,11 +55,11 @@ extern void _SysFatalErrorHandler(unsigned int cause, const NANO_ESF *esf);
 		: "memory"); \
 		CODE_UNREACHABLE; \
 	} \
-	} while (0)
+	} while (false)
 
 #ifdef __cplusplus
 }
 #endif
 
 
-#endif /* _ARCH_ARC_V2_ERROR_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARC_V2_ERROR_H_ */

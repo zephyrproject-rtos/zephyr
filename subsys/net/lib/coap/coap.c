@@ -382,6 +382,22 @@ int coap_packet_parse(struct coap_packet *cpkt, struct net_pkt *pkt,
 	return 0;
 }
 
+#define append(pkt, type, value)					\
+	do {								\
+		if (!net_pkt_append_##type##_timeout(pkt, value,	\
+						     PKT_WAIT_TIME)) {	\
+			return -ENOMEM;					\
+		}							\
+	} while (0)
+
+#define append_all(pkt, size, value)					\
+	do {								\
+		if (!net_pkt_append_all(pkt, size, value,		\
+					PKT_WAIT_TIME)) {		\
+			return -ENOMEM;					\
+		}							\
+	} while (0)
+
 int coap_packet_init(struct coap_packet *cpkt, struct net_pkt *pkt,
 		     u8_t ver, u8_t type, u8_t tokenlen,
 		     u8_t *token, u8_t code, u16_t id)
@@ -393,7 +409,7 @@ int coap_packet_init(struct coap_packet *cpkt, struct net_pkt *pkt,
 		return -EINVAL;
 	}
 
-	memset(cpkt, 0, sizeof(*cpkt));
+	(void)memset(cpkt, 0, sizeof(*cpkt));
 	cpkt->pkt = pkt;
 	cpkt->frag = pkt->frags;
 	cpkt->offset = 0;
@@ -403,9 +419,9 @@ int coap_packet_init(struct coap_packet *cpkt, struct net_pkt *pkt,
 	hdr |= (type & 0x3) << 4;
 	hdr |= tokenlen & 0xF;
 
-	net_pkt_append_u8(pkt, hdr);
-	net_pkt_append_u8(pkt, code);
-	net_pkt_append_be16(pkt, id);
+	append(pkt, u8, hdr);
+	append(pkt, u8, code);
+	append(pkt, be16, id);
 
 	if (token && tokenlen) {
 		res = net_pkt_append_all(pkt, tokenlen, token, PKT_WAIT_TIME);
@@ -424,7 +440,7 @@ int coap_pending_init(struct coap_pending *pending,
 		      const struct coap_packet *request,
 		      const struct sockaddr *addr)
 {
-	memset(pending, 0, sizeof(*pending));
+	(void)memset(pending, 0, sizeof(*pending));
 	pending->id = coap_header_get_id(request);
 	memcpy(&pending->addr, addr, sizeof(*addr));
 
@@ -689,7 +705,7 @@ unsigned int coap_option_value_to_int(const struct coap_option *option)
 		return (option->value[2] << 0) | (option->value[1] << 8) |
 			(option->value[0] << 16);
 	case 4:
-		return (option->value[2] << 0) | (option->value[2] << 8) |
+		return (option->value[3] << 0) | (option->value[2] << 8) |
 			(option->value[1] << 16) | (option->value[0] << 24);
 	default:
 		return 0;
@@ -787,7 +803,7 @@ void coap_reply_init(struct coap_reply *reply,
 
 void coap_reply_clear(struct coap_reply *reply)
 {
-	memset(reply, 0, sizeof(*reply));
+	(void)memset(reply, 0, sizeof(*reply));
 }
 
 int coap_resource_notify(struct coap_resource *resource)
@@ -906,7 +922,8 @@ struct coap_observer *coap_find_observer_by_addr(
 
 int coap_packet_append_payload_marker(struct coap_packet *cpkt)
 {
-	return net_pkt_append_u8(cpkt->pkt, COAP_MARKER) ? 0 : -EINVAL;
+	return net_pkt_append_u8_timeout(cpkt->pkt, COAP_MARKER,
+					 PKT_WAIT_TIME) ? 0 : -EINVAL;
 }
 
 int coap_packet_append_payload(struct coap_packet *cpkt, u8_t *payload,
@@ -958,18 +975,18 @@ static int encode_option(struct coap_packet *cpkt, u16_t code,
 	option_header_set_delta(&opt, opt_delta);
 	option_header_set_len(&opt, opt_len);
 
-	net_pkt_append_u8(cpkt->pkt, opt);
+	append(cpkt->pkt, u8, opt);
 
 	if (delta_size == 1) {
-		net_pkt_append_u8(cpkt->pkt, (u8_t) delta_ext);
+		append(cpkt->pkt, u8, (u8_t) delta_ext);
 	} else if (delta_size == 2) {
-		net_pkt_append_be16(cpkt->pkt, delta_ext);
+		append(cpkt->pkt, be16, delta_ext);
 	}
 
 	if (len_size == 1) {
-		net_pkt_append_u8(cpkt->pkt, (u8_t) len_ext);
+		append(cpkt->pkt, u8, (u8_t) len_ext);
 	} else if (delta_size == 2) {
-		net_pkt_append_be16(cpkt->pkt, len_ext);
+		append(cpkt->pkt, be16, len_ext);
 	}
 
 	if (len && value) {
@@ -1043,8 +1060,8 @@ int coap_append_option_int(struct coap_packet *cpkt, u16_t code,
 		sys_put_be16(val, data);
 		len = 2;
 	} else if (val < 0xFFFFFF) {
-		sys_put_be16(val, data);
-		data[2] = val >> 16;
+		sys_put_be16(val, &data[1]);
+		data[0] = val >> 16;
 		len = 3;
 	} else {
 		sys_put_be32(val, data);

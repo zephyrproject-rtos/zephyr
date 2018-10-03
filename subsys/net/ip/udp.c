@@ -18,36 +18,10 @@
 
 #define PKT_WAIT_TIME K_SECONDS(1)
 
-struct net_pkt *net_udp_append_raw(struct net_pkt *pkt,
-				   u16_t src_port,
-				   u16_t dst_port)
-{
-	struct net_buf *frag;
-	u16_t offset;
-
-	net_pkt_append(pkt, sizeof(src_port), (u8_t *)&src_port,
-		       PKT_WAIT_TIME);
-	net_pkt_append(pkt, sizeof(dst_port), (u8_t *)&dst_port,
-		       PKT_WAIT_TIME);
-	net_pkt_append_be16(pkt, net_pkt_get_len(pkt) -
-			    net_pkt_ip_hdr_len(pkt) -
-			    net_pkt_ipv6_ext_len(pkt));
-
-	frag = net_frag_get_pos(pkt, net_pkt_ip_hdr_len(pkt) +
-				net_pkt_ipv6_ext_len(pkt) +
-				sizeof(struct net_udp_hdr),
-				&offset);
-	if (frag) {
-		net_pkt_set_appdata(pkt, frag->data + offset);
-	}
-
-	return pkt;
-}
-
-struct net_pkt *net_udp_insert_raw(struct net_pkt *pkt,
-				   u16_t offset,
-				   u16_t src_port,
-				   u16_t dst_port)
+struct net_pkt *net_udp_insert(struct net_pkt *pkt,
+			       u16_t offset,
+			       u16_t src_port,
+			       u16_t dst_port)
 {
 	struct net_buf *frag, *prev, *udp;
 	u16_t pos;
@@ -233,29 +207,6 @@ struct net_udp_hdr *net_udp_set_hdr(struct net_pkt *pkt,
 	return hdr;
 }
 
-struct net_pkt *net_udp_append(struct net_context *context,
-			       struct net_pkt *pkt,
-			       u16_t port)
-{
-	/* Append writes using *_be16() so it swap the port here */
-	return net_udp_append_raw(pkt,
-				  net_sin((struct sockaddr *)
-					  &context->local)->sin_port,
-				  port);
-}
-
-struct net_pkt *net_udp_insert(struct net_context *context,
-			       struct net_pkt *pkt,
-			       u16_t offset,
-			       u16_t port)
-{
-	return net_udp_insert_raw(pkt,
-				  offset,
-				  net_sin((struct sockaddr *)
-					  &context->local)->sin_port,
-				  port);
-}
-
 int net_udp_register(const struct sockaddr *remote_addr,
 				   const struct sockaddr *local_addr,
 				   u16_t remote_port,
@@ -272,8 +223,4 @@ int net_udp_register(const struct sockaddr *remote_addr,
 int net_udp_unregister(struct net_conn_handle *handle)
 {
 	return net_conn_unregister(handle);
-}
-
-void net_udp_init(void)
-{
 }

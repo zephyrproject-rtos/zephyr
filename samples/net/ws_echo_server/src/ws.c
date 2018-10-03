@@ -459,7 +459,7 @@ void start_server(void)
 
 #elif ADDR_OPTION == 2
 	/* Accept any local listening address */
-	memset(&addr, 0, sizeof(addr));
+	(void)memset(&addr, 0, sizeof(addr));
 
 	net_sin(&addr)->sin_port = htons(ZEPHYR_PORT);
 
@@ -470,7 +470,7 @@ void start_server(void)
 
 #elif ADDR_OPTION == 3
 	/* Set the bind address according to your configuration */
-	memset(&addr, 0, sizeof(addr));
+	(void)memset(&addr, 0, sizeof(addr));
 
 	/* In this example, listen only IPv6 */
 	addr.sa_family = AF_INET6;

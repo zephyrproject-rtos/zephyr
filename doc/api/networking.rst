@@ -108,6 +108,12 @@ Hostname Configuration Library
 .. doxygengroup:: net_hostname
    :project: Zephyr
 
+generic Precision Time Protocol (gPTP)
+**************************************
+
+.. doxygengroup:: gptp
+   :project: Zephyr
+
 Network technologies
 ********************
 
@@ -127,6 +133,12 @@ Virtual LAN definitions and helpers
 ===================================
 
 .. doxygengroup:: vlan
+   :project: Zephyr
+
+Link Layer Discovery Protocol definitions and helpers
+=====================================================
+
+.. doxygengroup:: lldp
    :project: Zephyr
 
 IEEE 802.15.4

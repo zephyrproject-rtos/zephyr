@@ -15,6 +15,10 @@
 /**
  * @brief The test validates k_calloc() API.
  *
+ * @ingroup kernel_heap_tests
+ *
+ * @see k_malloc(), k_free()
+ *
  * @details The 8 blocks of memory of size 16 bytes are allocated
  * by k_calloc() API. When allocated using k_calloc() the memory buffers
  * have to be zeroed. Check is done, if the blocks are memset to 0 and
@@ -43,6 +47,10 @@ void test_mheap_malloc_align4(void)
 
 /**
  * @brief The test case to ensure heap minimum block size is 64 bytes.
+ *
+ * @ingroup kernel_heap_tests
+ *
+ * @see k_malloc(), k_free()
  *
  * @details Heap pool's minimum block size is 64 bytes. The test case tries
  * to ensure it by allocating blocks lesser than minimum block size.
@@ -82,6 +90,10 @@ void test_mheap_min_block_size(void)
 /**
  * @brief Verify if the block descriptor is included
  * in every block which is allocated
+ *
+ * @ingroup kernel_heap_tests
+ *
+ * @see k_malloc(), k_free()
  */
 void test_mheap_block_desc(void)
 {

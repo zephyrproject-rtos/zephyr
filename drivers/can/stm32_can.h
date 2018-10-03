@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef _STM32_CAN_H_
-#define _STM32_CAN_H_
+#ifndef ZEPHYR_DRIVERS_CAN_STM32_CAN_H_
+#define ZEPHYR_DRIVERS_CAN_STM32_CAN_H_
 
 #include <can.h>
 
@@ -74,4 +74,4 @@ struct can_stm32_config {
 	void (*config_irq)(CAN_TypeDef *can);
 };
 
-#endif /*_STM32_CAN_H_*/
+#endif /*ZEPHYR_DRIVERS_CAN_STM32_CAN_H_*/

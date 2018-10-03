@@ -236,7 +236,7 @@ __STATIC_INLINE uint32_t LL_GetUID_Word2(void)
   */
 __STATIC_INLINE uint32_t LL_GetFlashSize(void)
 {
-  return (uint16_t)(READ_REG(*((uint32_t *)FLASHSIZE_BASE_ADDRESS)));
+  return (uint32_t)(READ_REG(*((uint32_t *)FLASHSIZE_BASE_ADDRESS)) & 0xFFFFU);
 }
 
 /**
@@ -251,7 +251,7 @@ __STATIC_INLINE uint32_t LL_GetFlashSize(void)
   */
 __STATIC_INLINE uint32_t LL_GetPackageType(void)
 {
-  return (uint16_t)(READ_REG(*((uint32_t *)PACKAGE_BASE_ADDRESS)) & 0x0700U);
+  return (uint32_t)(READ_REG(*((uint32_t *)PACKAGE_BASE_ADDRESS)) & 0x0700U);
 }
 
 /**

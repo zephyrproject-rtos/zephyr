@@ -324,8 +324,8 @@ typedef struct {
 /**
   * @brief  Sets the TIM Capture Compare Register value on runtime without
   *         calling another time ConfigChannel function.
-  * @param  __HANDLE__: TIM handle.
-  * @param  __CHANNEL__ : TIM Channels to be configured.
+  * @param  __HANDLE__ TIM handle.
+  * @param  __CHANNEL__  TIM Channels to be configured.
   *          This parameter can be one of the following values:
   *            @arg TIM_CHANNEL_1: TIM Channel 1 selected
   *            @arg TIM_CHANNEL_2: TIM Channel 2 selected
@@ -333,7 +333,7 @@ typedef struct {
   *            @arg TIM_CHANNEL_4: TIM Channel 4 selected
   *            @arg TIM_CHANNEL_5: TIM Channel 5 selected
   *            @arg TIM_CHANNEL_6: TIM Channel 6 selected
-  * @param  __COMPARE__: specifies the Capture Compare register new value.
+  * @param  __COMPARE__ specifies the Capture Compare register new value.
   * @retval None
   */
 #define __HAL_TIM_SET_COMPARE(__HANDLE__, __CHANNEL__, __COMPARE__) \
@@ -346,8 +346,8 @@ typedef struct {
 
 /**
   * @brief  Gets the TIM Capture Compare Register value on runtime
-  * @param  __HANDLE__: TIM handle.
-  * @param  __CHANNEL__ : TIM Channel associated with the capture compare register
+  * @param  __HANDLE__ TIM handle.
+  * @param  __CHANNEL__  TIM Channel associated with the capture compare register
   *          This parameter can be one of the following values:
   *            @arg TIM_CHANNEL_1: get capture/compare 1 register value
   *            @arg TIM_CHANNEL_2: get capture/compare 2 register value
@@ -367,8 +367,8 @@ typedef struct {
 
 /**
   * @brief  Sets the TIM Output compare preload.
-  * @param  __HANDLE__: TIM handle.
-  * @param  __CHANNEL__: TIM Channels to be configured.
+  * @param  __HANDLE__ TIM handle.
+  * @param  __CHANNEL__ TIM Channels to be configured.
   *          This parameter can be one of the following values:
   *            @arg TIM_CHANNEL_1: TIM Channel 1 selected
   *            @arg TIM_CHANNEL_2: TIM Channel 2 selected
@@ -388,8 +388,8 @@ typedef struct {
 
 /**
   * @brief  Resets the TIM Output compare preload.
-  * @param  __HANDLE__: TIM handle.
-  * @param  __CHANNEL__: TIM Channels to be configured.
+  * @param  __HANDLE__ TIM handle.
+  * @param  __CHANNEL__ TIM Channels to be configured.
   *          This parameter can be one of the following values:
   *            @arg TIM_CHANNEL_1: TIM Channel 1 selected
   *            @arg TIM_CHANNEL_2: TIM Channel 2 selected

@@ -87,8 +87,8 @@ struct bt_smp_encrypt_info {
 
 #define BT_SMP_CMD_MASTER_IDENT			0x07
 struct bt_smp_master_ident {
-	u16_t ediv;
-	u64_t rand;
+	u8_t ediv[2];
+	u8_t rand[8];
 } __packed;
 
 #define BT_SMP_CMD_IDENT_INFO			0x08

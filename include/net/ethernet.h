@@ -10,8 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __ETHERNET_H
-#define __ETHERNET_H
+#ifndef ZEPHYR_INCLUDE_NET_ETHERNET_H_
+#define ZEPHYR_INCLUDE_NET_ETHERNET_H_
 
 #include <zephyr/types.h>
 #include <stdbool.h>
@@ -19,6 +19,7 @@
 
 #include <net/net_ip.h>
 #include <net/net_pkt.h>
+#include <net/lldp.h>
 #include <misc/util.h>
 #include <net/net_if.h>
 #include <net/ethernet_vlan.h>
@@ -44,6 +45,8 @@ struct net_eth_addr {
 #define NET_ETH_PTYPE_IP		0x0800
 #define NET_ETH_PTYPE_IPV6		0x86dd
 #define NET_ETH_PTYPE_VLAN		0x8100
+#define NET_ETH_PTYPE_PTP		0x88f7
+#define NET_ETH_PTYPE_LLDP		0x88cc
 
 #define NET_ETH_MINIMAL_FRAME_SIZE	60
 
@@ -71,6 +74,24 @@ enum ethernet_hw_caps {
 
 	/** Changing duplex (half/full) supported */
 	ETHERNET_DUPLEX_SET		= BIT(7),
+
+	/** IEEE 802.1AS (gPTP) clock supported */
+	ETHERNET_PTP			= BIT(8),
+
+	/** IEEE 802.1Qav (credit-based shaping) supported */
+	ETHERNET_QAV			= BIT(9),
+
+	/** Promiscuous mode supported */
+	ETHERNET_PROMISC_MODE		= BIT(10),
+
+	/** Priority queues available */
+	ETHERNET_PRIORITY_QUEUES	= BIT(11),
+
+	/** MAC address filtering supported */
+	ETHERNET_HW_FILTERING		= BIT(12),
+
+	/** Link Layer Discovery Protocol supported */
+	ETHERNET_LLDP			= BIT(13),
 };
 
 enum ethernet_config_type {
@@ -78,6 +99,51 @@ enum ethernet_config_type {
 	ETHERNET_CONFIG_TYPE_LINK,
 	ETHERNET_CONFIG_TYPE_DUPLEX,
 	ETHERNET_CONFIG_TYPE_MAC_ADDRESS,
+	ETHERNET_CONFIG_TYPE_QAV_PARAM,
+	ETHERNET_CONFIG_TYPE_PROMISC_MODE,
+	ETHERNET_CONFIG_TYPE_PRIORITY_QUEUES_NUM,
+	ETHERNET_CONFIG_TYPE_FILTER,
+};
+
+enum ethernet_qav_param_type {
+	ETHERNET_QAV_PARAM_TYPE_DELTA_BANDWIDTH,
+	ETHERNET_QAV_PARAM_TYPE_IDLE_SLOPE,
+	ETHERNET_QAV_PARAM_TYPE_OPER_IDLE_SLOPE,
+	ETHERNET_QAV_PARAM_TYPE_TRAFFIC_CLASS,
+	ETHERNET_QAV_PARAM_TYPE_STATUS,
+};
+
+struct ethernet_qav_param {
+	/** ID of the priority queue to use */
+	int queue_id;
+	/** Type of Qav parameter */
+	enum ethernet_qav_param_type type;
+	union {
+		/** True if Qav is enabled for queue */
+		bool enabled;
+		/** Delta Bandwidth (percentage of bandwidth) */
+		unsigned int delta_bandwidth;
+		/** Idle Slope (bits per second) */
+		unsigned int idle_slope;
+		/** Oper Idle Slope (bits per second) */
+		unsigned int oper_idle_slope;
+		/** Traffic class the queue is bound to */
+		unsigned int traffic_class;
+	};
+};
+
+enum ethernet_filter_type {
+	ETHERNET_FILTER_TYPE_SRC_MAC_ADDRESS,
+	ETHERNET_FILTER_TYPE_DST_MAC_ADDRESS,
+};
+
+struct ethernet_filter {
+	/** Type of filter */
+	enum ethernet_filter_type type;
+	/** MAC address to filter */
+	struct net_eth_addr mac_address;
+	/** Set (true) or unset (false) the filter */
+	bool set;
 };
 
 struct ethernet_config {
@@ -85,6 +151,7 @@ struct ethernet_config {
 	union {
 		bool auto_negotiation;
 		bool full_duplex;
+		bool promisc_mode;
 
 		struct {
 			bool link_10bt;
@@ -93,6 +160,12 @@ struct ethernet_config {
 		} l;
 
 		struct net_eth_addr mac_address;
+
+		struct ethernet_qav_param qav_param;
+
+		int priority_queues_num;
+
+		struct ethernet_filter filter;
 	};
 /* @endcond */
 };
@@ -109,8 +182,14 @@ struct ethernet_api {
 	 * should be set by driver if statistics needs to be collected
 	 * for that driver.
 	 */
-	struct net_stats_eth *stats;
+	struct net_stats_eth *(*get_stats)(struct device *dev);
 #endif
+
+	/** Start the device */
+	int (*start)(struct device *dev);
+
+	/** Stop the device */
+	int (*stop)(struct device *dev);
 
 	/** Get the device capabilities */
 	enum ethernet_hw_caps (*get_capabilities)(struct device *dev);
@@ -119,6 +198,11 @@ struct ethernet_api {
 	int (*set_config)(struct device *dev,
 			  enum ethernet_config_type type,
 			  const struct ethernet_config *config);
+
+	/** Get hardware specific configuration */
+	int (*get_config)(struct device *dev,
+			  enum ethernet_config_type type,
+			  struct ethernet_config *config);
 
 #if defined(CONFIG_NET_VLAN)
 	/** The IP stack will call this function when a VLAN tag is enabled
@@ -129,6 +213,11 @@ struct ethernet_api {
 	int (*vlan_setup)(struct device *dev, struct net_if *iface,
 			  u16_t tag, bool enable);
 #endif /* CONFIG_NET_VLAN */
+
+#if defined(CONFIG_PTP_CLOCK)
+	/** Return ptp_clock device that is tied to this ethernet device */
+	struct device *(*get_ptp_clock)(struct device *dev);
+#endif /* CONFIG_PTP_CLOCK */
 };
 
 struct net_eth_hdr {
@@ -152,6 +241,28 @@ struct ethernet_vlan {
  */
 #define NET_VLAN_MAX_COUNT 1
 #endif
+
+#if defined(CONFIG_NET_LLDP)
+struct ethernet_lldp {
+	/** Used for track timers */
+	sys_snode_t node;
+
+	/** LLDP information element related to this network interface. */
+	const struct net_lldpdu *lldpdu;
+
+	/** Network interface that has LLDP supported. */
+	struct net_if *iface;
+
+	/** LLDP TX timer start time */
+	s64_t tx_timer_start;
+
+	/** LLDP TX timeout */
+	u32_t tx_timer_timeout;
+
+	/** LLDP RX callback function */
+	net_lldp_recv_cb_t cb;
+};
+#endif /* CONFIG_NET_LLDP */
 
 /** Ethernet L2 context that is needed for VLAN */
 struct ethernet_context {
@@ -179,6 +290,23 @@ struct ethernet_context {
 		 */
 		struct net_if *iface;
 	} carrier_mgmt;
+
+#if defined(CONFIG_NET_LLDP)
+	struct ethernet_lldp lldp[NET_VLAN_MAX_COUNT];
+#endif
+
+	/**
+	 * This tells what L2 features does ethernet support.
+	 */
+	enum net_l2_flags ethernet_l2_flags;
+
+#if defined(CONFIG_NET_GPTP)
+	/** The gPTP port number for this network device. We need to store the
+	 * port number here so that we do not need to fetch it for every
+	 * incoming gPTP packet.
+	 */
+	int port;
+#endif
 
 #if defined(CONFIG_NET_VLAN)
 	/** Flag that tells whether how many VLAN tags are enabled for this
@@ -244,6 +372,22 @@ static inline bool net_eth_is_addr_multicast(struct net_eth_addr *addr)
 	if (addr->addr[0] == 0x01 &&
 	    addr->addr[1] == 0x00 &&
 	    addr->addr[2] == 0x5e) {
+		return true;
+	}
+#endif
+
+	return false;
+}
+
+static inline bool net_eth_is_addr_lldp_multicast(struct net_eth_addr *addr)
+{
+#if defined(CONFIG_NET_GPTP) || defined(CONFIG_NET_LLDP)
+	if (addr->addr[0] == 0x01 &&
+	    addr->addr[1] == 0x80 &&
+	    addr->addr[2] == 0xc2 &&
+	    addr->addr[3] == 0x00 &&
+	    addr->addr[4] == 0x00 &&
+	    addr->addr[5] == 0x0e) {
 		return true;
 	}
 #endif
@@ -336,6 +480,15 @@ struct net_if *net_eth_get_vlan_iface(struct net_if *iface, u16_t tag);
 bool net_eth_is_vlan_enabled(struct ethernet_context *ctx,
 			     struct net_if *iface);
 
+/**
+ * @brief Get VLAN status for a given network interface (enabled or not).
+ *
+ * @param iface Network interface
+ *
+ * @return True if VLAN is enabled for this network interface, false if not.
+ */
+bool net_eth_get_vlan_status(struct net_if *iface);
+
 #define ETH_NET_DEVICE_INIT(dev_name, drv_name, init_fn,		 \
 			    data, cfg_info, prio, api, mtu)		 \
 	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data,		 \
@@ -370,6 +523,11 @@ static inline
 struct net_if *net_eth_get_vlan_iface(struct net_if *iface, u16_t tag)
 {
 	return NULL;
+}
+
+static inline bool net_eth_get_vlan_status(struct net_if *iface)
+{
+	return false;
 }
 #endif /* CONFIG_NET_VLAN */
 
@@ -406,6 +564,90 @@ void net_eth_carrier_on(struct net_if *iface);
  */
 void net_eth_carrier_off(struct net_if *iface);
 
+/**
+ * @brief Set promiscuous mode either ON or OFF.
+ *
+ * @param iface Network interface
+ *
+ * @param enable on (true) or off (false)
+ *
+ * @return 0 if mode set or unset was successful, <0 otherwise.
+ */
+int net_eth_promisc_mode(struct net_if *iface, bool enable);
+
+/**
+ * @brief Return PTP clock that is tied to this ethernet network interface.
+ *
+ * @param iface Network interface
+ *
+ * @return Pointer to PTP clock if found, NULL if not found or if this
+ * ethernet interface does not support PTP.
+ */
+struct device *net_eth_get_ptp_clock(struct net_if *iface);
+
+#if defined(CONFIG_NET_GPTP)
+/**
+ * @brief Return gPTP port number attached to this interface.
+ *
+ * @param iface Network interface
+ *
+ * @return Port number, no such port if < 0
+ */
+int net_eth_get_ptp_port(struct net_if *iface);
+
+/**
+ * @brief Set gPTP port number attached to this interface.
+ *
+ * @param iface Network interface
+ * @param port Port number to set
+ */
+void net_eth_set_ptp_port(struct net_if *iface, int port);
+#else
+static inline int net_eth_get_ptp_port(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+
+	return -ENODEV;
+}
+#endif /* CONFIG_NET_GPTP */
+
+struct net_lldpdu;
+
+/**
+ * @brief Set LLDP protocol data unit (LLDPDU) for the network interface.
+ *
+ * @param iface Network interface
+ * @param lldpdu LLDPDU pointer
+ *
+ * @return <0 if error, index in lldp array if iface is found there
+ */
+#if defined(CONFIG_NET_LLDP)
+int net_eth_set_lldpdu(struct net_if *iface, const struct net_lldpdu *lldpdu);
+#else
+static inline int net_eth_set_lldpdu(struct net_if *iface,
+				     const struct net_lldpdu *lldpdu)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(lldpdu);
+
+	return -ENOTSUP;
+}
+#endif
+
+/**
+ * @brief Unset LLDP protocol data unit (LLDPDU) for the network interface.
+ *
+ * @param iface Network interface
+ */
+#if defined(CONFIG_NET_LLDP)
+void net_eth_unset_lldpdu(struct net_if *iface);
+#else
+static inline void net_eth_unset_lldpdu(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+}
+#endif
+
 #ifdef __cplusplus
 }
 #endif
@@ -414,4 +656,4 @@ void net_eth_carrier_off(struct net_if *iface);
  * @}
  */
 
-#endif /* __ETHERNET_H */
+#endif /* ZEPHYR_INCLUDE_NET_ETHERNET_H_ */

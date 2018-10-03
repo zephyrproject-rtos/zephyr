@@ -1,0 +1,35 @@
+#
+# Copyright (c) 2018 Intel Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: Intel Quark D2000 ADC
+id: intel,quark-d2000-adc
+version: 0.1
+
+description: >
+    This is a representation of the Intel Quark D2000 ADC Controller
+
+inherits:
+    !include adc.yaml
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "intel,quark-d2000-adc"
+
+    reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+    interrupts:
+      type: array
+      category: required
+      description: required interrupts
+      generation: define
+...

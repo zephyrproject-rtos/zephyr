@@ -4,14 +4,65 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __CONSOLE_H__
-#define __CONSOLE_H__
+#ifndef ZEPHYR_INCLUDE_CONSOLE_H_
+#define ZEPHYR_INCLUDE_CONSOLE_H_
 
 #include <zephyr/types.h>
+#include <kernel.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+struct tty_serial {
+	struct device *uart_dev;
+
+	struct k_sem rx_sem;
+	u8_t *rx_ringbuf;
+	u32_t rx_ringbuf_sz;
+	u16_t rx_get, rx_put;
+
+	u8_t *tx_ringbuf;
+	u32_t tx_ringbuf_sz;
+	u16_t tx_get, tx_put;
+};
+
+/**
+ * @brief Initialize buffered serial port (classically known as tty).
+ *
+ * "tty" device provides buffered, interrupt-driver access to an
+ * underlying UART device.
+ *
+ * @param tty tty device structure to initialize
+ * @param uart_dev underlying UART device to use (should support
+ *                 interrupt-driven operation)
+ * @param rxbuf pointer to receive buffer
+ * @param rxbuf_sz size of receive buffer
+ * @param txbuf pointer to transmit buffer
+ * @param txbuf_sz size of transmit buffer
+ *
+ * @return N/A
+ */
+void tty_init(struct tty_serial *tty, struct device *uart_dev,
+	      u8_t *rxbuf, u16_t rxbuf_sz,
+	      u8_t *txbuf, u16_t txbuf_sz);
+
+
+/**
+ * @brief Input a character from a tty device.
+ *
+ * @param tty tty device structure
+ */
+u8_t tty_getchar(struct tty_serial *tty);
+
+/**
+ * @brief Output a character from to tty device.
+ *
+ * @param tty tty device structure
+ * @param c character to output
+ * @return 0 if ok, <0 if error
+ */
+int tty_putchar(struct tty_serial *tty, u8_t c);
 
 /** @brief Initialize console_getchar()/putchar() calls.
  *
@@ -77,9 +128,28 @@ void console_getline_init(void);
  */
 char *console_getline(void);
 
+/** @brief Initialize legacy fifo-based line input
+ *
+ *  Input processing is started when string is typed in the console.
+ *  Carriage return is translated to NULL making string always NULL
+ *  terminated. Application before calling register function need to
+ *  initialize two fifo queues mentioned below.
+ *
+ *  This is a special-purpose function, it's recommended to use
+ *  console_getchar() or console_getline() functions instead.
+ *
+ *  @param avail_queue k_fifo queue keeping available line buffers
+ *  @param out_queue k_fifo queue of entered lines which to be processed
+ *         in the application code.
+ *  @param completion callback for tab completion of entered commands
+ */
+void console_register_line_input(struct k_fifo *avail_queue,
+				 struct k_fifo *out_queue,
+				 u8_t (*completion)(char *str, u8_t len));
+
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __CONSOLE_H__ */
+#endif /* ZEPHYR_INCLUDE_CONSOLE_H_ */

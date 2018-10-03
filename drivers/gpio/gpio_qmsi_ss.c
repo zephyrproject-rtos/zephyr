@@ -132,7 +132,7 @@ DEVICE_DEFINE(ss_gpio_1, CONFIG_GPIO_QMSI_SS_1_NAME, &ss_gpio_qmsi_init,
 
 #endif /* CONFIG_GPIO_QMSI_SS_1 */
 
-static void ss_gpio_qmsi_callback(void *data, u32_t status)
+static void ss_gpio_qmsi_callback(void *data, uint32_t status)
 {
 	struct device *port = data;
 	struct ss_gpio_qmsi_runtime *context = port->driver_data;
@@ -152,7 +152,7 @@ static void ss_qmsi_write_bit(u32_t *target, u8_t bit, u8_t value)
 	}
 }
 
-static inline void ss_qmsi_pin_config(struct device *port, u32_t pin,
+static inline void ss_qmsi_pin_config(struct device *port, u8_t pin,
 				      int flags)
 {
 	const struct ss_gpio_qmsi_config *gpio_config =
@@ -186,17 +186,17 @@ static inline void ss_qmsi_pin_config(struct device *port, u32_t pin,
 	cfg.callback = ss_gpio_qmsi_callback;
 	cfg.callback_data = port;
 
-	ss_qmsi_write_bit(&cfg.direction, pin, (flags & GPIO_DIR_MASK));
+	ss_qmsi_write_bit((u32_t *)&cfg.direction, pin, (flags & GPIO_DIR_MASK));
 
 	if (flags & GPIO_INT) {
-		ss_qmsi_write_bit(&cfg.int_type, pin, (flags & GPIO_INT_EDGE));
-		ss_qmsi_write_bit(&cfg.int_polarity, pin,
+		ss_qmsi_write_bit((u32_t *)&cfg.int_type, pin, (flags & GPIO_INT_EDGE));
+		ss_qmsi_write_bit((u32_t *)&cfg.int_polarity, pin,
 			       (flags & GPIO_INT_ACTIVE_HIGH));
-		ss_qmsi_write_bit(&cfg.int_debounce, pin,
+		ss_qmsi_write_bit((u32_t *)&cfg.int_debounce, pin,
 			       (flags & GPIO_INT_DEBOUNCE));
-		ss_qmsi_write_bit(&cfg.int_en, pin, 1);
+		ss_qmsi_write_bit((u32_t *)&cfg.int_en, pin, 1);
 	} else {
-		ss_qmsi_write_bit(&cfg.int_en, pin, 0);
+		ss_qmsi_write_bit((u32_t *)&cfg.int_en, pin, 0);
 	}
 
 	if (IS_ENABLED(CONFIG_GPIO_QMSI_API_REENTRANCY)) {
@@ -278,7 +278,7 @@ static inline int ss_gpio_qmsi_read(struct device *port, int access_op,
 		qm_ss_gpio_read_pin(gpio, pin, &state);
 		*value = state;
 	} else {
-		qm_ss_gpio_read_port(gpio, value);
+		qm_ss_gpio_read_port(gpio, (uint32_t *)value);
 	}
 
 	return 0;

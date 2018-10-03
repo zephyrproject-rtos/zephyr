@@ -12,6 +12,7 @@ properties:
       category: required
       description: compatible strings
       constraint: "arm,cmsdk-timer"
+      generation: define
 
     reg:
       type: array

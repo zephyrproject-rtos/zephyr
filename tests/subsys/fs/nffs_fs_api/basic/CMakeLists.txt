@@ -1,3 +1,4 @@
+cmake_minimum_required(VERSION 3.8.2)
 if(BOARD STREQUAL nrf51_pca10028)
     set(CONF_FILE nrf5x.conf)
 elseif(BOARD STREQUAL nrf52_pca10040)
@@ -41,6 +42,5 @@ endif()
 
 
 zephyr_include_directories(../common)
-target_link_libraries(app NFFS)
 FILE(GLOB app_sources ../common/*.c src/*.c)
 target_sources(app PRIVATE ${app_sources})

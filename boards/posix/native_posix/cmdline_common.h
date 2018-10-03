@@ -74,6 +74,9 @@ int cmd_is_option(const char *arg, const char *option, int with_value);
 int cmd_is_help_option(const char *arg);
 void cmd_read_option_value(const char *str, void *dest, const char type,
 			   const char *option);
+void cmd_args_set_defaults(struct args_struct_t args_struct[]);
+bool cmd_parse_one_arg(char *argv, struct args_struct_t args_struct[]);
+void cmd_print_switches_help(struct args_struct_t args_struct[]);
 
 #ifdef __cplusplus
 }

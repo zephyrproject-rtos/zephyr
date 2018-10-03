@@ -64,7 +64,7 @@ static int test_gy271(void)
 		return TC_FAIL;
 	}
 
-	memset(datas, 0, sizeof(datas));
+	(void)memset(datas, 0, sizeof(datas));
 
 	/* 3. verify i2c_read() */
 	if (i2c_read(i2c_dev, datas, 6, 0x1E)) {
@@ -108,7 +108,7 @@ static int test_burst_gy271(void)
 
 	k_sleep(1);
 
-	memset(datas, 0, sizeof(datas));
+	(void)memset(datas, 0, sizeof(datas));
 
 	/* 3. verify i2c_burst_read() */
 	if (i2c_burst_read(i2c_dev, 0x1E, 0x03, datas, 6)) {

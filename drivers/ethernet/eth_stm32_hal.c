@@ -372,6 +372,8 @@ static void eth_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, dev_data->mac_addr,
 			     sizeof(dev_data->mac_addr),
 			     NET_LINK_ETHERNET);
+
+	ethernet_init(iface);
 }
 
 static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(struct device *dev)

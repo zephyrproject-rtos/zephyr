@@ -1,4 +1,9 @@
 tests:
-  benchmark.timing:
-    arch_whitelist: x86 arm
+  benchmark.timing.default_kernel:
+    arch_exclude: posix
+    tags: benchmark
+  benchmark.timing.userspace:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    extra_args: CONF_FILE=prj_userspace.conf
+    arch_whitelist: x86 arm arc
     tags: benchmark

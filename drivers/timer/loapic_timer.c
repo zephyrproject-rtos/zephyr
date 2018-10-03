@@ -233,6 +233,7 @@ static inline void divide_configuration_register_set(void)
 }
 #endif
 
+#if defined(CONFIG_TICKLESS_KERNEL) || defined(CONFIG_TICKLESS_IDLE)
 /**
  *
  * @brief Get the value from the current count register
@@ -251,6 +252,7 @@ static inline u32_t current_count_register_get(void)
 	return read_x2apic(LOAPIC_TIMER_CCR >> 4);
 #endif
 }
+#endif
 
 #if defined(CONFIG_TICKLESS_IDLE)
 /**
@@ -349,8 +351,8 @@ void _timer_int_handler(void *unused /* parameter is not used */
 		}
 
 		/* Return the timer to periodic mode */
-		initial_count_register_set(cycles_per_tick - 1);
 		periodic_mode_set();
+		initial_count_register_set(cycles_per_tick - 1);
 		timer_known_to_have_expired = false;
 		timer_mode = TIMER_MODE_PERIODIC;
 	}
@@ -519,8 +521,8 @@ void _timer_idle_enter(s32_t ticks /* system ticks */
 	}
 
 	/* Set timer to one-shot mode */
-	initial_count_register_set(programmed_cycles);
 	one_shot_mode_set();
+	initial_count_register_set(programmed_cycles);
 	timer_mode = TIMER_MODE_ONE_SHOT;
 #endif
 }
@@ -653,12 +655,12 @@ int _sys_clock_driver_init(struct device *device)
 #ifndef CONFIG_MVIC
 	divide_configuration_register_set();
 #endif
-	initial_count_register_set(cycles_per_tick - 1);
 #ifdef CONFIG_TICKLESS_KERNEL
 	one_shot_mode_set();
 #else
 	periodic_mode_set();
 #endif
+	initial_count_register_set(cycles_per_tick - 1);
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	loapic_timer_device_power_state = DEVICE_PM_ACTIVE_STATE;
 #endif

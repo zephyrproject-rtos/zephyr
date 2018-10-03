@@ -128,9 +128,9 @@
     
 /**
   * @brief  Performs the SDRAM device initialization sequence.
-  * @param  hsdram: pointer to a SDRAM_HandleTypeDef structure that contains
+  * @param  hsdram pointer to a SDRAM_HandleTypeDef structure that contains
   *                the configuration information for SDRAM module.
-  * @param  Timing: Pointer to SDRAM control timing structure 
+  * @param  Timing Pointer to SDRAM control timing structure 
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SDRAM_Init(SDRAM_HandleTypeDef *hsdram, FMC_SDRAM_TimingTypeDef *Timing)
@@ -166,7 +166,7 @@ HAL_StatusTypeDef HAL_SDRAM_Init(SDRAM_HandleTypeDef *hsdram, FMC_SDRAM_TimingTy
 
 /**
   * @brief  Perform the SDRAM device initialization sequence.
-  * @param  hsdram: pointer to a SDRAM_HandleTypeDef structure that contains
+  * @param  hsdram pointer to a SDRAM_HandleTypeDef structure that contains
   *                the configuration information for SDRAM module.
   * @retval HAL status
   */
@@ -189,7 +189,7 @@ HAL_StatusTypeDef HAL_SDRAM_DeInit(SDRAM_HandleTypeDef *hsdram)
 
 /**
   * @brief  SDRAM MSP Init.
-  * @param  hsdram: pointer to a SDRAM_HandleTypeDef structure that contains
+  * @param  hsdram pointer to a SDRAM_HandleTypeDef structure that contains
   *                the configuration information for SDRAM module.
   * @retval None
   */
@@ -205,7 +205,7 @@ __weak void HAL_SDRAM_MspInit(SDRAM_HandleTypeDef *hsdram)
 
 /**
   * @brief  SDRAM MSP DeInit.
-  * @param  hsdram: pointer to a SDRAM_HandleTypeDef structure that contains
+  * @param  hsdram pointer to a SDRAM_HandleTypeDef structure that contains
   *                the configuration information for SDRAM module.
   * @retval None
   */
@@ -221,7 +221,7 @@ __weak void HAL_SDRAM_MspDeInit(SDRAM_HandleTypeDef *hsdram)
 
 /**
   * @brief  This function handles SDRAM refresh error interrupt request.
-  * @param  hsdram: pointer to a SDRAM_HandleTypeDef structure that contains
+  * @param  hsdram pointer to a SDRAM_HandleTypeDef structure that contains
   *                the configuration information for SDRAM module.
   * @retval HAL status
 */
@@ -240,7 +240,7 @@ void HAL_SDRAM_IRQHandler(SDRAM_HandleTypeDef *hsdram)
 
 /**
   * @brief  SDRAM Refresh error callback.
-  * @param  hsdram: pointer to a SDRAM_HandleTypeDef structure that contains
+  * @param  hsdram pointer to a SDRAM_HandleTypeDef structure that contains
   *                the configuration information for SDRAM module. 
   * @retval None
   */
@@ -256,7 +256,7 @@ __weak void HAL_SDRAM_RefreshErrorCallback(SDRAM_HandleTypeDef *hsdram)
 
 /**
   * @brief  DMA transfer complete callback.
-  * @param  hdma: pointer to a DMA_HandleTypeDef structure that contains
+  * @param  hdma pointer to a DMA_HandleTypeDef structure that contains
   *                the configuration information for the specified DMA module.
   * @retval None
   */
@@ -272,7 +272,7 @@ __weak void HAL_SDRAM_DMA_XferCpltCallback(DMA_HandleTypeDef *hdma)
 
 /**
   * @brief  DMA transfer complete error callback.
-  * @param  hdma: DMA handle
+  * @param  hdma DMA handle
   * @retval None
   */
 __weak void HAL_SDRAM_DMA_XferErrorCallback(DMA_HandleTypeDef *hdma)
@@ -305,11 +305,11 @@ __weak void HAL_SDRAM_DMA_XferErrorCallback(DMA_HandleTypeDef *hdma)
 
 /**
   * @brief  Reads 8-bit data buffer from the SDRAM memory.
-  * @param  hsdram: pointer to a SDRAM_HandleTypeDef structure that contains
+  * @param  hsdram pointer to a SDRAM_HandleTypeDef structure that contains
   *                the configuration information for SDRAM module.
-  * @param  pAddress: Pointer to read start address
-  * @param  pDstBuffer: Pointer to destination buffer  
-  * @param  BufferSize: Size of the buffer to read from memory
+  * @param  pAddress Pointer to read start address
+  * @param  pDstBuffer Pointer to destination buffer  
+  * @param  BufferSize Size of the buffer to read from memory
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SDRAM_Read_8b(SDRAM_HandleTypeDef *hsdram, uint32_t *pAddress, uint8_t *pDstBuffer, uint32_t BufferSize)
@@ -346,11 +346,11 @@ HAL_StatusTypeDef HAL_SDRAM_Read_8b(SDRAM_HandleTypeDef *hsdram, uint32_t *pAddr
 
 /**
   * @brief  Writes 8-bit data buffer to SDRAM memory.
-  * @param  hsdram: pointer to a SDRAM_HandleTypeDef structure that contains
+  * @param  hsdram pointer to a SDRAM_HandleTypeDef structure that contains
   *                the configuration information for SDRAM module.
-  * @param  pAddress: Pointer to write start address
-  * @param  pSrcBuffer: Pointer to source buffer to write  
-  * @param  BufferSize: Size of the buffer to write to memory
+  * @param  pAddress Pointer to write start address
+  * @param  pSrcBuffer Pointer to source buffer to write  
+  * @param  BufferSize Size of the buffer to write to memory
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SDRAM_Write_8b(SDRAM_HandleTypeDef *hsdram, uint32_t *pAddress, uint8_t *pSrcBuffer, uint32_t BufferSize)
@@ -390,11 +390,11 @@ HAL_StatusTypeDef HAL_SDRAM_Write_8b(SDRAM_HandleTypeDef *hsdram, uint32_t *pAdd
 
 /**
   * @brief  Reads 16-bit data buffer from the SDRAM memory. 
-  * @param  hsdram: pointer to a SDRAM_HandleTypeDef structure that contains
+  * @param  hsdram pointer to a SDRAM_HandleTypeDef structure that contains
   *                the configuration information for SDRAM module.
-  * @param  pAddress: Pointer to read start address
-  * @param  pDstBuffer: Pointer to destination buffer  
-  * @param  BufferSize: Size of the buffer to read from memory
+  * @param  pAddress Pointer to read start address
+  * @param  pDstBuffer Pointer to destination buffer  
+  * @param  BufferSize Size of the buffer to read from memory
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SDRAM_Read_16b(SDRAM_HandleTypeDef *hsdram, uint32_t *pAddress, uint16_t *pDstBuffer, uint32_t BufferSize)
@@ -430,11 +430,11 @@ HAL_StatusTypeDef HAL_SDRAM_Read_16b(SDRAM_HandleTypeDef *hsdram, uint32_t *pAdd
 
 /**
   * @brief  Writes 16-bit data buffer to SDRAM memory. 
-  * @param  hsdram: pointer to a SDRAM_HandleTypeDef structure that contains
+  * @param  hsdram pointer to a SDRAM_HandleTypeDef structure that contains
   *                the configuration information for SDRAM module.
-  * @param  pAddress: Pointer to write start address
-  * @param  pSrcBuffer: Pointer to source buffer to write  
-  * @param  BufferSize: Size of the buffer to write to memory
+  * @param  pAddress Pointer to write start address
+  * @param  pSrcBuffer Pointer to source buffer to write  
+  * @param  BufferSize Size of the buffer to write to memory
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SDRAM_Write_16b(SDRAM_HandleTypeDef *hsdram, uint32_t *pAddress, uint16_t *pSrcBuffer, uint32_t BufferSize)
@@ -473,11 +473,11 @@ HAL_StatusTypeDef HAL_SDRAM_Write_16b(SDRAM_HandleTypeDef *hsdram, uint32_t *pAd
 
 /**
   * @brief  Reads 32-bit data buffer from the SDRAM memory. 
-  * @param  hsdram: pointer to a SDRAM_HandleTypeDef structure that contains
+  * @param  hsdram pointer to a SDRAM_HandleTypeDef structure that contains
   *                the configuration information for SDRAM module.
-  * @param  pAddress: Pointer to read start address
-  * @param  pDstBuffer: Pointer to destination buffer  
-  * @param  BufferSize: Size of the buffer to read from memory
+  * @param  pAddress Pointer to read start address
+  * @param  pDstBuffer Pointer to destination buffer  
+  * @param  BufferSize Size of the buffer to read from memory
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SDRAM_Read_32b(SDRAM_HandleTypeDef *hsdram, uint32_t *pAddress, uint32_t *pDstBuffer, uint32_t BufferSize)
@@ -513,11 +513,11 @@ HAL_StatusTypeDef HAL_SDRAM_Read_32b(SDRAM_HandleTypeDef *hsdram, uint32_t *pAdd
 
 /**
   * @brief  Writes 32-bit data buffer to SDRAM memory. 
-  * @param  hsdram: pointer to a SDRAM_HandleTypeDef structure that contains
+  * @param  hsdram pointer to a SDRAM_HandleTypeDef structure that contains
   *                the configuration information for SDRAM module.
-  * @param  pAddress: Pointer to write start address
-  * @param  pSrcBuffer: Pointer to source buffer to write  
-  * @param  BufferSize: Size of the buffer to write to memory
+  * @param  pAddress Pointer to write start address
+  * @param  pSrcBuffer Pointer to source buffer to write  
+  * @param  BufferSize Size of the buffer to write to memory
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SDRAM_Write_32b(SDRAM_HandleTypeDef *hsdram, uint32_t *pAddress, uint32_t *pSrcBuffer, uint32_t BufferSize)
@@ -556,11 +556,11 @@ HAL_StatusTypeDef HAL_SDRAM_Write_32b(SDRAM_HandleTypeDef *hsdram, uint32_t *pAd
 
 /**
   * @brief  Reads a Words data from the SDRAM memory using DMA transfer. 
-  * @param  hsdram: pointer to a SDRAM_HandleTypeDef structure that contains
+  * @param  hsdram pointer to a SDRAM_HandleTypeDef structure that contains
   *                the configuration information for SDRAM module.
-  * @param  pAddress: Pointer to read start address
-  * @param  pDstBuffer: Pointer to destination buffer  
-  * @param  BufferSize: Size of the buffer to read from memory
+  * @param  pAddress Pointer to read start address
+  * @param  pDstBuffer Pointer to destination buffer  
+  * @param  BufferSize Size of the buffer to read from memory
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SDRAM_Read_DMA(SDRAM_HandleTypeDef *hsdram, uint32_t *pAddress, uint32_t *pDstBuffer, uint32_t BufferSize)
@@ -597,11 +597,11 @@ HAL_StatusTypeDef HAL_SDRAM_Read_DMA(SDRAM_HandleTypeDef *hsdram, uint32_t *pAdd
 
 /**
   * @brief  Writes a Words data buffer to SDRAM memory using DMA transfer.
-  * @param  hsdram: pointer to a SDRAM_HandleTypeDef structure that contains
+  * @param  hsdram pointer to a SDRAM_HandleTypeDef structure that contains
   *                the configuration information for SDRAM module.
-  * @param  pAddress: Pointer to write start address
-  * @param  pSrcBuffer: Pointer to source buffer to write  
-  * @param  BufferSize: Size of the buffer to write to memory
+  * @param  pAddress Pointer to write start address
+  * @param  pSrcBuffer Pointer to source buffer to write  
+  * @param  BufferSize Size of the buffer to write to memory
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SDRAM_Write_DMA(SDRAM_HandleTypeDef *hsdram, uint32_t *pAddress, uint32_t *pSrcBuffer, uint32_t BufferSize)
@@ -657,7 +657,7 @@ HAL_StatusTypeDef HAL_SDRAM_Write_DMA(SDRAM_HandleTypeDef *hsdram, uint32_t *pAd
 
 /**
   * @brief  Enables dynamically SDRAM write protection.
-  * @param  hsdram: pointer to a SDRAM_HandleTypeDef structure that contains
+  * @param  hsdram pointer to a SDRAM_HandleTypeDef structure that contains
   *                the configuration information for SDRAM module.
   * @retval HAL status
   */
@@ -683,7 +683,7 @@ HAL_StatusTypeDef HAL_SDRAM_WriteProtection_Enable(SDRAM_HandleTypeDef *hsdram)
 
 /**
   * @brief  Disables dynamically SDRAM write protection.
-  * @param  hsdram: pointer to a SDRAM_HandleTypeDef structure that contains
+  * @param  hsdram pointer to a SDRAM_HandleTypeDef structure that contains
   *                the configuration information for SDRAM module.
   * @retval HAL status
   */
@@ -709,10 +709,10 @@ HAL_StatusTypeDef HAL_SDRAM_WriteProtection_Disable(SDRAM_HandleTypeDef *hsdram)
 
 /**
   * @brief  Sends Command to the SDRAM bank.
-  * @param  hsdram: pointer to a SDRAM_HandleTypeDef structure that contains
+  * @param  hsdram pointer to a SDRAM_HandleTypeDef structure that contains
   *                the configuration information for SDRAM module.
-  * @param  Command: SDRAM command structure
-  * @param  Timeout: Timeout duration
+  * @param  Command SDRAM command structure
+  * @param  Timeout Timeout duration
   * @retval HAL status
   */  
 HAL_StatusTypeDef HAL_SDRAM_SendCommand(SDRAM_HandleTypeDef *hsdram, FMC_SDRAM_CommandTypeDef *Command, uint32_t Timeout)
@@ -744,9 +744,9 @@ HAL_StatusTypeDef HAL_SDRAM_SendCommand(SDRAM_HandleTypeDef *hsdram, FMC_SDRAM_C
 
 /**
   * @brief  Programs the SDRAM Memory Refresh rate.
-  * @param  hsdram: pointer to a SDRAM_HandleTypeDef structure that contains
+  * @param  hsdram pointer to a SDRAM_HandleTypeDef structure that contains
   *                the configuration information for SDRAM module.  
-  * @param  RefreshRate: The SDRAM refresh rate value       
+  * @param  RefreshRate The SDRAM refresh rate value       
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SDRAM_ProgramRefreshRate(SDRAM_HandleTypeDef *hsdram, uint32_t RefreshRate)
@@ -771,9 +771,9 @@ HAL_StatusTypeDef HAL_SDRAM_ProgramRefreshRate(SDRAM_HandleTypeDef *hsdram, uint
 
 /**
   * @brief  Sets the Number of consecutive SDRAM Memory auto Refresh commands.
-  * @param  hsdram: pointer to a SDRAM_HandleTypeDef structure that contains
+  * @param  hsdram pointer to a SDRAM_HandleTypeDef structure that contains
   *                the configuration information for SDRAM module.  
-  * @param  AutoRefreshNumber: The SDRAM auto Refresh number       
+  * @param  AutoRefreshNumber The SDRAM auto Refresh number       
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SDRAM_SetAutoRefreshNumber(SDRAM_HandleTypeDef *hsdram, uint32_t AutoRefreshNumber)
@@ -798,7 +798,7 @@ HAL_StatusTypeDef HAL_SDRAM_SetAutoRefreshNumber(SDRAM_HandleTypeDef *hsdram, ui
 
 /**
   * @brief  Returns the SDRAM memory current mode.
-  * @param  hsdram: pointer to a SDRAM_HandleTypeDef structure that contains
+  * @param  hsdram pointer to a SDRAM_HandleTypeDef structure that contains
   *                the configuration information for SDRAM module.
   * @retval The SDRAM memory mode.        
   */
@@ -829,7 +829,7 @@ uint32_t HAL_SDRAM_GetModeStatus(SDRAM_HandleTypeDef *hsdram)
 
 /**
   * @brief  Returns the SDRAM state.
-  * @param  hsdram: pointer to a SDRAM_HandleTypeDef structure that contains
+  * @param  hsdram pointer to a SDRAM_HandleTypeDef structure that contains
   *                the configuration information for SDRAM module.
   * @retval HAL state
   */

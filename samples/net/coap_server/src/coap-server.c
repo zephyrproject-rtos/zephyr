@@ -737,7 +737,7 @@ static int large_get(struct coap_resource *resource,
 	size = min(coap_block_size_to_bytes(ctx.block_size),
 		   ctx.total_size - ctx.current);
 
-	memset(payload, 'A', size);
+	(void)memset(payload, 'A', min(size, sizeof(payload)));
 
 	r = coap_packet_append_payload(&response, (u8_t *)payload, size);
 	if (r < 0) {
@@ -748,7 +748,7 @@ static int large_get(struct coap_resource *resource,
 	r = coap_next_block(&response, &ctx);
 	if (!r) {
 		/* Will return 0 when it's the last block. */
-		memset(&ctx, 0, sizeof(ctx));
+		(void)memset(&ctx, 0, sizeof(ctx));
 	}
 
 	return net_context_sendto(pkt, (const struct sockaddr *)&from,
@@ -1305,12 +1305,12 @@ static bool join_coap_multicast_group(void)
 		return false;
 	}
 
-#if defined(CONFIG_NET_APP_SETTINGS)
+#if defined(CONFIG_NET_CONFIG_SETTINGS)
 	if (net_addr_pton(AF_INET6,
-			  CONFIG_NET_APP_MY_IPV6_ADDR,
+			  CONFIG_NET_CONFIG_MY_IPV6_ADDR,
 			  &my_addr) < 0) {
 		NET_ERR("Invalid IPv6 address %s",
-			CONFIG_NET_APP_MY_IPV6_ADDR);
+			CONFIG_NET_CONFIG_MY_IPV6_ADDR);
 	}
 #endif
 

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __WEBSOCKET_H__
-#define __WEBSOCKET_H__
+#ifndef ZEPHYR_INCLUDE_NET_WEBSOCKET_H_
+#define ZEPHYR_INCLUDE_NET_WEBSOCKET_H_
 
 #include <net/http.h>
 

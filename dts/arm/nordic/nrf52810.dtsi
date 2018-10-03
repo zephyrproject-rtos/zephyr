@@ -1,0 +1,107 @@
+#include <arm/armv7-m.dtsi>
+#include <dt-bindings/i2c/i2c.h>
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4";
+			reg = <0>;
+		};
+	};
+
+	flash-controller@4001E000 {
+			compatible = "nrf,nrf52-flash-controller";
+			reg = <0x4001E000 0x550>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			label="NRF_FLASH_DRV_NAME";
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				label = "NRF_FLASH";
+				write-block-size = <4>;
+			};
+	};
+
+	sram0: memory@20000000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+	};
+
+	soc {
+		adc: adc@40007000 {
+			compatible = "nordic,nrf-saadc";
+			reg = <0x40007000 0x1000>;
+			interrupts = <7 1>;
+			status = "disabled";
+			label = "ADC_0";
+		};
+
+		uart0: uart@40002000 {
+			compatible = "nordic,nrf-uarte";
+			reg = <0x40002000 0x1000>;
+			interrupts = <2 1>;
+			status = "disabled";
+			label = "UART_0";
+		};
+
+		gpiote: gpiote@40006000 {
+			compatible = "nordic,nrf-gpiote";
+			reg = <0x40006000 0x1000>;
+			interrupts = <6 5>;
+			interrupt-names = "gpiote";
+			status = "disabled";
+			label = "GPIOTE_0";
+		};
+
+		gpio0: gpio@50000000 {
+			compatible = "nordic,nrf-gpio";
+			gpio-controller;
+			reg = <0x50000000 0x200
+			       0x50000500 0x300>;
+			#gpio-cells = <2>;
+			label = "GPIO_0";
+			status = "disabled";
+		};
+
+		i2c0: i2c@40003000 {
+			compatible = "nordic,nrf-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40003000 0x1000>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <3 1>;
+			status = "disabled";
+			label = "I2C_0";
+		};
+
+		spi0: spi@40004000 {
+			compatible = "nordic,nrf-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40004000 0x1000>;
+			interrupts = <4 1>;
+			status = "disabled";
+			label = "SPI_0";
+		};
+
+		wdt: watchdog@40010000 {
+			compatible = "nordic,nrf-watchdog";
+			reg = <0x40010000 0x1000>;
+			interrupts = <16 1>;
+			interrupt-names = "wdt";
+			label = "WDT";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

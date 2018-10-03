@@ -23,11 +23,17 @@ void memorymap_test(void)
 	u32_t et; /* elapsed time */
 	int i;
 	void *p;
+	int alloc_status;
 
 	PRINT_STRING(dashline, output_file);
 	et = BENCH_START();
 	for (i = 0; i < NR_OF_MAP_RUNS; i++) {
-		k_mem_slab_alloc(&MAP1, &p, K_FOREVER);
+		alloc_status = k_mem_slab_alloc(&MAP1, &p, K_FOREVER);
+		if (alloc_status != 0) {
+			PRINT_F(output_file, FORMAT,
+				"Error: Slab allocation failed.", alloc_status);
+			break;
+		}
 		k_mem_slab_free(&MAP1, &p);
 	}
 	et = TIME_STAMP_DELTA_GET(et);

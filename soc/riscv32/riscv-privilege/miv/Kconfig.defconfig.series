@@ -1,0 +1,47 @@
+if SOC_SERIES_RISCV32_MIV
+
+config SOC_SERIES
+	string
+	default "miv"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 660000
+
+config RISCV_SOC_INTERRUPT_INIT
+	bool
+	default y
+
+config RISCV_HAS_CPU_IDLE
+	bool
+	default y
+
+config RISCV_HAS_PLIC
+	bool
+	default y
+
+config NUM_IRQS
+	int
+	default 42
+
+config XIP
+	bool
+	default y
+
+config RISCV_ROM_BASE_ADDR
+	hex
+	default 0x80000000
+
+config RISCV_ROM_SIZE
+	hex
+	default 0x40000
+
+config RISCV_RAM_BASE_ADDR
+	hex
+	default	0x80040000
+
+config RISCV_RAM_SIZE
+	hex
+	default 0x40000
+
+endif # SOC_SERIES_RISCV32_MIV

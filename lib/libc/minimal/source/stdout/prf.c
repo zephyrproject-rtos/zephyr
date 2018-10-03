@@ -225,18 +225,36 @@ static int _to_float(char *buf, uint64_t double_temp, int c,
 
 
 	if (exp == 0x7ff) {
+		if (sign) {
+			*buf++ = '-';
+		}
 		if (!fract) {
-			*buf++ = sign ? '-' : '+';
-			*buf++ = 'I';
-			*buf++ = 'N';
-			*buf++ = 'F';
+			if (isupper(c)) {
+				*buf++ = 'I';
+				*buf++ = 'N';
+				*buf++ = 'F';
+			} else {
+				*buf++ = 'i';
+				*buf++ = 'n';
+				*buf++ = 'f';
+			}
 		} else {
-			*buf++ = 'N';
-			*buf++ = 'a';
-			*buf++ = 'N';
+			if (isupper(c)) {
+				*buf++ = 'N';
+				*buf++ = 'A';
+				*buf++ = 'N';
+			} else {
+				*buf++ = 'n';
+				*buf++ = 'a';
+				*buf++ = 'n';
+			}
 		}
 		*buf = 0;
 		return buf - start;
+	}
+
+	if (c == 'F') {
+		c = 'f';
 	}
 
 	if ((exp | fract) != 0) {
@@ -364,8 +382,6 @@ static int _to_float(char *buf, uint64_t double_temp, int c,
 			*buf++ = '-';
 		} else
 			*buf++ = '+';
-		*buf++ = (char) ((decexp / 100) + '0');
-		decexp %= 100;
 		*buf++ = (char) ((decexp / 10) + '0');
 		decexp %= 10;
 		*buf++ = (char) (decexp + '0');
@@ -545,6 +561,7 @@ int _prf(int (*func)(), void *dest, char *format, va_list vargs)
 			case 'e':
 			case 'E':
 			case 'f':
+			case 'F':
 			case 'g':
 			case 'G':
 				/* standard platforms which supports double */

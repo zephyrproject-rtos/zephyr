@@ -42,4 +42,28 @@ config UART_IMX_UART_2
 
 endif # UART_IMX
 
+if I2C_IMX
+
+config I2C_1
+	def_bool n
+
+config I2C_2
+	def_bool n
+
+config I2C_3
+	def_bool n
+
+config I2C_4
+	def_bool y
+
+endif # I2C_IMX
+
+if PWM_IMX
+
+config PWM_1
+	def_bool y
+
+endif # PWM_IMX
+
+
 endif # BOARD_COLIBRI_IMX7D_M4

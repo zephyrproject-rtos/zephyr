@@ -6,13 +6,17 @@
  */
 
 #include <string.h>
-#include <soc.h>
+
+#include <misc/dlist.h>
+#include <misc/mempool_base.h>
 
 #include "util/mem.h"
 #include "hal/ecb.h"
 
 #include "common/log.h"
 #include "hal/debug.h"
+
+#include "nrf_ecb.h"
 
 struct ecb_param {
 	u8_t key[16];
@@ -23,28 +27,21 @@ struct ecb_param {
 static void do_ecb(struct ecb_param *ecb)
 {
 	do {
-		NRF_ECB->TASKS_STOPECB = 1;
+		nrf_ecb_task_trigger(NRF_ECB, NRF_ECB_TASK_STOPECB);
 		NRF_ECB->ECBDATAPTR = (u32_t)ecb;
 		NRF_ECB->EVENTS_ENDECB = 0;
 		NRF_ECB->EVENTS_ERRORECB = 0;
-		NRF_ECB->TASKS_STARTECB = 1;
-#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
-		NRF_ECB_regw_sideeffects_TASKS_STOPECB();
-		NRF_ECB_regw_sideeffects_TASKS_STARTECB();
-#endif
+		nrf_ecb_task_trigger(NRF_ECB, NRF_ECB_TASK_STARTECB);
 		while ((NRF_ECB->EVENTS_ENDECB == 0) &&
 		       (NRF_ECB->EVENTS_ERRORECB == 0) &&
 		       (NRF_ECB->ECBDATAPTR != 0)) {
-#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
+#if defined(CONFIG_SOC_SERIES_NWTSIM_NRFXX)
 			__WFE();
 #else
 			/*__WFE();*/
 #endif
 		}
-		NRF_ECB->TASKS_STOPECB = 1;
-#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
-		NRF_ECB_regw_sideeffects_TASKS_STOPECB();
-#endif
+		nrf_ecb_task_trigger(NRF_ECB, NRF_ECB_TASK_STOPECB);
 	} while ((NRF_ECB->EVENTS_ERRORECB != 0) || (NRF_ECB->ECBDATAPTR == 0));
 
 	NRF_ECB->ECBDATAPTR = 0;
@@ -101,18 +98,15 @@ u32_t ecb_encrypt_nonblocking(struct ecb *ecb)
 	NRF_ECB->ECBDATAPTR = (u32_t)ecb;
 	NRF_ECB->EVENTS_ENDECB = 0;
 	NRF_ECB->EVENTS_ERRORECB = 0;
-	NRF_ECB->INTENSET = ECB_INTENSET_ERRORECB_Msk | ECB_INTENSET_ENDECB_Msk;
+	nrf_ecb_int_enable(NRF_ECB, ECB_INTENSET_ERRORECB_Msk
+				    | ECB_INTENSET_ENDECB_Msk);
 
 	/* enable interrupt */
 	NVIC_ClearPendingIRQ(ECB_IRQn);
 	irq_enable(ECB_IRQn);
 
 	/* start the encryption h/w */
-	NRF_ECB->TASKS_STARTECB = 1;
-#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
-	NRF_ECB_regw_sideeffects_INTENSET();
-	NRF_ECB_regw_sideeffects_TASKS_STARTECB();
-#endif
+	nrf_ecb_task_trigger(NRF_ECB, NRF_ECB_TASK_STARTECB);
 
 	return 0;
 }
@@ -121,9 +115,7 @@ static void ecb_cleanup(void)
 {
 	/* stop h/w */
 	NRF_ECB->TASKS_STOPECB = 1;
-#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
-	NRF_ECB_regw_sideeffects_TASKS_STOPECB();
-#endif
+	nrf_ecb_task_trigger(NRF_ECB, NRF_ECB_TASK_STOPECB);
 
 	/* cleanup interrupt */
 	irq_disable(ECB_IRQn);

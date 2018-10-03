@@ -9,7 +9,6 @@
 menuconfig PWM_DW
 	bool "DesignWare PWM"
 	depends on PWM
-	default n
 	help
 	  Enable driver to utilize PWM on the DesignWare Timer IP block.
 	  Care must be taken if one is also to use the timer feature, as

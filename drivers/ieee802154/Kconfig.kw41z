@@ -10,7 +10,6 @@ menuconfig  IEEE802154_KW41Z
 	bool "NXP KW41Z Driver support"
 	depends on NETWORKING
 	select NEWLIB_LIBC
-	default n
 
 if IEEE802154_KW41Z
 
@@ -30,7 +29,6 @@ config IEEE802154_KW41Z_INIT_PRIO
 
 config KW41_DBG_TRACE
 	bool "Enabled simplified debug tracing of events"
-	default n
 	help
 	  The value depends on your debugging needs. This generates an encoded
 	  trace of events without going to debug logging to avoid timing impact

@@ -26,7 +26,7 @@ void test_config_getset_bytes(void)
 		tmp = strlen(str);
 		zassert_true(tmp < sizeof(str), "encoded string is to long");
 
-		memset(bytes, 0, sizeof(bytes));
+		(void)memset(bytes, 0, sizeof(bytes));
 		tmp = sizeof(bytes);
 
 		tmp = sizeof(bytes);

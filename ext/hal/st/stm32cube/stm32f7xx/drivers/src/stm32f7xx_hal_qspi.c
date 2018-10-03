@@ -243,7 +243,7 @@ static void QSPI_Config(QSPI_HandleTypeDef *hqspi, QSPI_CommandTypeDef *cmd, uin
 /**
   * @brief Initializes the QSPI mode according to the specified parameters
   *        in the QSPI_InitTypeDef and creates the associated handle.
-  * @param hqspi: qspi handle
+  * @param hqspi qspi handle
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_QSPI_Init(QSPI_HandleTypeDef *hqspi)
@@ -322,7 +322,7 @@ HAL_StatusTypeDef HAL_QSPI_Init(QSPI_HandleTypeDef *hqspi)
 
 /**
   * @brief DeInitializes the QSPI peripheral 
-  * @param hqspi: qspi handle
+  * @param hqspi qspi handle
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_QSPI_DeInit(QSPI_HandleTypeDef *hqspi)
@@ -356,7 +356,7 @@ HAL_StatusTypeDef HAL_QSPI_DeInit(QSPI_HandleTypeDef *hqspi)
 
 /**
   * @brief QSPI MSP Init
-  * @param hqspi: QSPI handle
+  * @param hqspi QSPI handle
   * @retval None
   */
  __weak void HAL_QSPI_MspInit(QSPI_HandleTypeDef *hqspi)
@@ -371,7 +371,7 @@ HAL_StatusTypeDef HAL_QSPI_DeInit(QSPI_HandleTypeDef *hqspi)
 
 /**
   * @brief QSPI MSP DeInit
-  * @param hqspi: QSPI handle
+  * @param hqspi QSPI handle
   * @retval None
   */
  __weak void HAL_QSPI_MspDeInit(QSPI_HandleTypeDef *hqspi)
@@ -410,7 +410,7 @@ HAL_StatusTypeDef HAL_QSPI_DeInit(QSPI_HandleTypeDef *hqspi)
 
 /**
   * @brief This function handles QSPI interrupt request.
-  * @param hqspi: QSPI handle
+  * @param hqspi QSPI handle
   * @retval None.
   */
 void HAL_QSPI_IRQHandler(QSPI_HandleTypeDef *hqspi)
@@ -634,9 +634,9 @@ void HAL_QSPI_IRQHandler(QSPI_HandleTypeDef *hqspi)
 
 /**
   * @brief Sets the command configuration. 
-  * @param hqspi: QSPI handle
-  * @param cmd : structure that contains the command configuration information
-  * @param Timeout : Time out duration
+  * @param hqspi QSPI handle
+  * @param cmd  structure that contains the command configuration information
+  * @param Timeout  Time out duration
   * @note   This function is used only in Indirect Read or Write Modes
   * @retval HAL status
   */
@@ -725,8 +725,8 @@ HAL_StatusTypeDef HAL_QSPI_Command(QSPI_HandleTypeDef *hqspi, QSPI_CommandTypeDe
 
 /**
   * @brief Sets the command configuration in interrupt mode. 
-  * @param hqspi: QSPI handle
-  * @param cmd : structure that contains the command configuration information
+  * @param hqspi QSPI handle
+  * @param cmd  structure that contains the command configuration information
   * @note   This function is used only in Indirect Read or Write Modes
   * @retval HAL status
   */
@@ -824,9 +824,9 @@ HAL_StatusTypeDef HAL_QSPI_Command_IT(QSPI_HandleTypeDef *hqspi, QSPI_CommandTyp
 
 /**
   * @brief Transmit an amount of data in blocking mode. 
-  * @param hqspi: QSPI handle
-  * @param pData: pointer to data buffer
-  * @param Timeout : Time out duration
+  * @param hqspi QSPI handle
+  * @param pData pointer to data buffer
+  * @param Timeout  Time out duration
   * @note   This function is used only in Indirect Write Mode
   * @retval HAL status
   */
@@ -910,9 +910,9 @@ HAL_StatusTypeDef HAL_QSPI_Transmit(QSPI_HandleTypeDef *hqspi, uint8_t *pData, u
 
 /**
   * @brief Receive an amount of data in blocking mode 
-  * @param hqspi: QSPI handle
-  * @param pData: pointer to data buffer
-  * @param Timeout : Time out duration
+  * @param hqspi QSPI handle
+  * @param pData pointer to data buffer
+  * @param Timeout  Time out duration
   * @note   This function is used only in Indirect Read Mode
   * @retval HAL status
   */
@@ -998,8 +998,8 @@ HAL_StatusTypeDef HAL_QSPI_Receive(QSPI_HandleTypeDef *hqspi, uint8_t *pData, ui
 
 /**
   * @brief  Send an amount of data in interrupt mode 
-  * @param  hqspi: QSPI handle
-  * @param  pData: pointer to data buffer
+  * @param  hqspi QSPI handle
+  * @param  pData pointer to data buffer
   * @note   This function is used only in Indirect Write Mode
   * @retval HAL status
   */
@@ -1058,8 +1058,8 @@ HAL_StatusTypeDef HAL_QSPI_Transmit_IT(QSPI_HandleTypeDef *hqspi, uint8_t *pData
 
 /**
   * @brief  Receive an amount of data in no-blocking mode with Interrupt
-  * @param  hqspi: QSPI handle
-  * @param  pData: pointer to data buffer
+  * @param  hqspi QSPI handle
+  * @param  pData pointer to data buffer
   * @note   This function is used only in Indirect Read Mode
   * @retval HAL status
   */
@@ -1122,8 +1122,8 @@ HAL_StatusTypeDef HAL_QSPI_Receive_IT(QSPI_HandleTypeDef *hqspi, uint8_t *pData)
 
 /**
   * @brief  Sends an amount of data in non blocking mode with DMA. 
-  * @param  hqspi: QSPI handle
-  * @param  pData: pointer to data buffer
+  * @param  hqspi QSPI handle
+  * @param  pData pointer to data buffer
   * @note   This function is used only in Indirect Write Mode
   * @note   If DMA peripheral access is configured as halfword, the number 
   *         of data and the fifo threshold should be aligned on halfword
@@ -1256,8 +1256,8 @@ HAL_StatusTypeDef HAL_QSPI_Transmit_DMA(QSPI_HandleTypeDef *hqspi, uint8_t *pDat
                           
 /**
   * @brief  Receives an amount of data in non blocking mode with DMA. 
-  * @param  hqspi: QSPI handle
-  * @param  pData: pointer to data buffer.
+  * @param  hqspi QSPI handle
+  * @param  pData pointer to data buffer.
   * @note   This function is used only in Indirect Read Mode
   * @note   If DMA peripheral access is configured as halfword, the number 
   *         of data and the fifo threshold should be aligned on halfword
@@ -1392,10 +1392,10 @@ HAL_StatusTypeDef HAL_QSPI_Receive_DMA(QSPI_HandleTypeDef *hqspi, uint8_t *pData
 
 /**
   * @brief  Configure the QSPI Automatic Polling Mode in blocking mode. 
-  * @param  hqspi: QSPI handle
-  * @param  cmd: structure that contains the command configuration information.
-  * @param  cfg: structure that contains the polling configuration information.
-  * @param  Timeout : Time out duration
+  * @param  hqspi QSPI handle
+  * @param  cmd structure that contains the command configuration information.
+  * @param  cfg structure that contains the polling configuration information.
+  * @param  Timeout  Time out duration
   * @note   This function is used only in Automatic Polling Mode
   * @retval HAL status
   */
@@ -1493,9 +1493,9 @@ HAL_StatusTypeDef HAL_QSPI_AutoPolling(QSPI_HandleTypeDef *hqspi, QSPI_CommandTy
 
 /**
   * @brief  Configure the QSPI Automatic Polling Mode in non-blocking mode. 
-  * @param  hqspi: QSPI handle
-  * @param  cmd: structure that contains the command configuration information.
-  * @param  cfg: structure that contains the polling configuration information.
+  * @param  hqspi QSPI handle
+  * @param  cmd structure that contains the command configuration information.
+  * @param  cfg structure that contains the polling configuration information.
   * @note   This function is used only in Automatic Polling Mode
   * @retval HAL status
   */
@@ -1597,9 +1597,9 @@ HAL_StatusTypeDef HAL_QSPI_AutoPolling_IT(QSPI_HandleTypeDef *hqspi, QSPI_Comman
 
 /**
   * @brief  Configure the Memory Mapped mode. 
-  * @param  hqspi: QSPI handle
-  * @param  cmd: structure that contains the command configuration information.
-  * @param  cfg: structure that contains the memory mapped configuration information.
+  * @param  hqspi QSPI handle
+  * @param  cmd structure that contains the command configuration information.
+  * @param  cfg structure that contains the memory mapped configuration information.
   * @note   This function is used only in Memory mapped Mode
   * @retval HAL status
   */
@@ -1686,7 +1686,7 @@ HAL_StatusTypeDef HAL_QSPI_MemoryMapped(QSPI_HandleTypeDef *hqspi, QSPI_CommandT
 
 /**
   * @brief  Transfer Error callbacks
-  * @param  hqspi: QSPI handle
+  * @param  hqspi QSPI handle
   * @retval None
   */
 __weak void HAL_QSPI_ErrorCallback(QSPI_HandleTypeDef *hqspi)
@@ -1701,7 +1701,7 @@ __weak void HAL_QSPI_ErrorCallback(QSPI_HandleTypeDef *hqspi)
 
 /**
   * @brief  Abort completed callback.
-  * @param  hqspi: QSPI handle
+  * @param  hqspi QSPI handle
   * @retval None
   */
 __weak void HAL_QSPI_AbortCpltCallback(QSPI_HandleTypeDef *hqspi)
@@ -1716,7 +1716,7 @@ __weak void HAL_QSPI_AbortCpltCallback(QSPI_HandleTypeDef *hqspi)
 
 /**
   * @brief  Command completed callback.
-  * @param  hqspi: QSPI handle
+  * @param  hqspi QSPI handle
   * @retval None
   */
 __weak void HAL_QSPI_CmdCpltCallback(QSPI_HandleTypeDef *hqspi)
@@ -1731,7 +1731,7 @@ __weak void HAL_QSPI_CmdCpltCallback(QSPI_HandleTypeDef *hqspi)
 
 /**
   * @brief  Rx Transfer completed callbacks.
-  * @param  hqspi: QSPI handle
+  * @param  hqspi QSPI handle
   * @retval None
   */
 __weak void HAL_QSPI_RxCpltCallback(QSPI_HandleTypeDef *hqspi)
@@ -1746,7 +1746,7 @@ __weak void HAL_QSPI_RxCpltCallback(QSPI_HandleTypeDef *hqspi)
 
 /**
   * @brief  Tx Transfer completed callbacks.
-  * @param  hqspi: QSPI handle
+  * @param  hqspi QSPI handle
   * @retval None
   */
  __weak void HAL_QSPI_TxCpltCallback(QSPI_HandleTypeDef *hqspi)
@@ -1761,7 +1761,7 @@ __weak void HAL_QSPI_RxCpltCallback(QSPI_HandleTypeDef *hqspi)
 
 /**
   * @brief  Rx Half Transfer completed callbacks.
-  * @param  hqspi: QSPI handle
+  * @param  hqspi QSPI handle
   * @retval None
   */
 __weak void HAL_QSPI_RxHalfCpltCallback(QSPI_HandleTypeDef *hqspi)
@@ -1776,7 +1776,7 @@ __weak void HAL_QSPI_RxHalfCpltCallback(QSPI_HandleTypeDef *hqspi)
 
 /**
   * @brief  Tx Half Transfer completed callbacks.
-  * @param  hqspi: QSPI handle
+  * @param  hqspi QSPI handle
   * @retval None
   */
  __weak void HAL_QSPI_TxHalfCpltCallback(QSPI_HandleTypeDef *hqspi)
@@ -1791,7 +1791,7 @@ __weak void HAL_QSPI_RxHalfCpltCallback(QSPI_HandleTypeDef *hqspi)
 
 /**
   * @brief  FIFO Threshold callbacks
-  * @param  hqspi: QSPI handle
+  * @param  hqspi QSPI handle
   * @retval None
   */
 __weak void HAL_QSPI_FifoThresholdCallback(QSPI_HandleTypeDef *hqspi)
@@ -1806,7 +1806,7 @@ __weak void HAL_QSPI_FifoThresholdCallback(QSPI_HandleTypeDef *hqspi)
 
 /**
   * @brief  Status Match callbacks
-  * @param  hqspi: QSPI handle
+  * @param  hqspi QSPI handle
   * @retval None
   */
 __weak void HAL_QSPI_StatusMatchCallback(QSPI_HandleTypeDef *hqspi)
@@ -1821,7 +1821,7 @@ __weak void HAL_QSPI_StatusMatchCallback(QSPI_HandleTypeDef *hqspi)
 
 /**
   * @brief  Timeout callbacks
-  * @param  hqspi: QSPI handle
+  * @param  hqspi QSPI handle
   * @retval None
   */
 __weak void HAL_QSPI_TimeOutCallback(QSPI_HandleTypeDef *hqspi)
@@ -1857,7 +1857,7 @@ __weak void HAL_QSPI_TimeOutCallback(QSPI_HandleTypeDef *hqspi)
 
 /**
   * @brief  Return the QSPI handle state.
-  * @param  hqspi: QSPI handle
+  * @param  hqspi QSPI handle
   * @retval HAL state
   */
 HAL_QSPI_StateTypeDef HAL_QSPI_GetState(QSPI_HandleTypeDef *hqspi)
@@ -1868,7 +1868,7 @@ HAL_QSPI_StateTypeDef HAL_QSPI_GetState(QSPI_HandleTypeDef *hqspi)
 
 /**
 * @brief  Return the QSPI error code
-* @param  hqspi: QSPI handle
+* @param  hqspi QSPI handle
 * @retval QSPI Error Code
 */
 uint32_t HAL_QSPI_GetError(QSPI_HandleTypeDef *hqspi)
@@ -1878,7 +1878,7 @@ uint32_t HAL_QSPI_GetError(QSPI_HandleTypeDef *hqspi)
 
 /**
 * @brief  Abort the current transmission
-* @param  hqspi: QSPI handle
+* @param  hqspi QSPI handle
 * @retval HAL status
 */
 HAL_StatusTypeDef HAL_QSPI_Abort(QSPI_HandleTypeDef *hqspi)
@@ -1931,7 +1931,7 @@ HAL_StatusTypeDef HAL_QSPI_Abort(QSPI_HandleTypeDef *hqspi)
 
 /**
 * @brief  Abort the current transmission (non-blocking function)
-* @param  hqspi: QSPI handle
+* @param  hqspi QSPI handle
 * @retval HAL status
 */
 HAL_StatusTypeDef HAL_QSPI_Abort_IT(QSPI_HandleTypeDef *hqspi)
@@ -1976,8 +1976,8 @@ HAL_StatusTypeDef HAL_QSPI_Abort_IT(QSPI_HandleTypeDef *hqspi)
 }
 
 /** @brief Set QSPI timeout
-  * @param  hqspi: QSPI handle.
-  * @param  Timeout: Timeout for the QSPI memory access.
+  * @param  hqspi QSPI handle.
+  * @param  Timeout Timeout for the QSPI memory access.
   * @retval None
   */
 void HAL_QSPI_SetTimeout(QSPI_HandleTypeDef *hqspi, uint32_t Timeout)
@@ -1986,8 +1986,8 @@ void HAL_QSPI_SetTimeout(QSPI_HandleTypeDef *hqspi, uint32_t Timeout)
 }
 
 /** @brief Set QSPI Fifo threshold.
-  * @param  hqspi: QSPI handle.
-  * @param  Threshold: Threshold of the Fifo (value between 1 and 16).
+  * @param  hqspi QSPI handle.
+  * @param  Threshold Threshold of the Fifo (value between 1 and 16).
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_QSPI_SetFifoThreshold(QSPI_HandleTypeDef *hqspi, uint32_t Threshold)
@@ -2019,7 +2019,7 @@ HAL_StatusTypeDef HAL_QSPI_SetFifoThreshold(QSPI_HandleTypeDef *hqspi, uint32_t 
 }
 
 /** @brief Get QSPI Fifo threshold.
-  * @param  hqspi: QSPI handle.
+  * @param  hqspi QSPI handle.
   * @retval Fifo threshold (value between 1 and 16)
   */
 uint32_t HAL_QSPI_GetFifoThreshold(QSPI_HandleTypeDef *hqspi)
@@ -2035,7 +2035,7 @@ uint32_t HAL_QSPI_GetFifoThreshold(QSPI_HandleTypeDef *hqspi)
  
 /**
   * @brief  DMA QSPI receive process complete callback. 
-  * @param  hdma: DMA handle
+  * @param  hdma DMA handle
   * @retval None
   */
 static void QSPI_DMARxCplt(DMA_HandleTypeDef *hdma)  
@@ -2049,7 +2049,7 @@ static void QSPI_DMARxCplt(DMA_HandleTypeDef *hdma)
 
 /**
   * @brief  DMA QSPI transmit process complete callback. 
-  * @param  hdma: DMA handle
+  * @param  hdma DMA handle
   * @retval None
   */
 static void QSPI_DMATxCplt(DMA_HandleTypeDef *hdma)     
@@ -2063,7 +2063,7 @@ static void QSPI_DMATxCplt(DMA_HandleTypeDef *hdma)
 
 /**
   * @brief  DMA QSPI receive process half complete callback 
-  * @param  hdma : DMA handle
+  * @param  hdma  DMA handle
   * @retval None
   */
 static void QSPI_DMARxHalfCplt(DMA_HandleTypeDef *hdma)
@@ -2075,7 +2075,7 @@ static void QSPI_DMARxHalfCplt(DMA_HandleTypeDef *hdma)
 
 /**
   * @brief  DMA QSPI transmit process half complete callback 
-  * @param  hdma : DMA handle
+  * @param  hdma  DMA handle
   * @retval None
   */
 static void QSPI_DMATxHalfCplt(DMA_HandleTypeDef *hdma)
@@ -2087,7 +2087,7 @@ static void QSPI_DMATxHalfCplt(DMA_HandleTypeDef *hdma)
 
 /**
   * @brief  DMA QSPI communication error callback.
-  * @param  hdma: DMA handle
+  * @param  hdma DMA handle
   * @retval None
   */
 static void QSPI_DMAError(DMA_HandleTypeDef *hdma)   
@@ -2111,7 +2111,7 @@ static void QSPI_DMAError(DMA_HandleTypeDef *hdma)
 
 /**
   * @brief  DMA QSPI abort complete callback.
-  * @param  hdma: DMA handle
+  * @param  hdma DMA handle
   * @retval None
   */
 static void QSPI_DMAAbortCplt(DMA_HandleTypeDef *hdma)   
@@ -2146,11 +2146,11 @@ static void QSPI_DMAAbortCplt(DMA_HandleTypeDef *hdma)
 
 /**
   * @brief  Wait for a flag state until timeout.
-  * @param  hqspi: QSPI handle
-  * @param  Flag: Flag checked
-  * @param  State: Value of the flag expected
-  * @param  tickstart: Start tick value
-  * @param  Timeout: Duration of the time out
+  * @param  hqspi QSPI handle
+  * @param  Flag Flag checked
+  * @param  State Value of the flag expected
+  * @param  tickstart Start tick value
+  * @param  Timeout Duration of the time out
   * @retval HAL status
   */
 static HAL_StatusTypeDef QSPI_WaitFlagStateUntilTimeout(QSPI_HandleTypeDef *hqspi, uint32_t Flag, 
@@ -2176,9 +2176,9 @@ static HAL_StatusTypeDef QSPI_WaitFlagStateUntilTimeout(QSPI_HandleTypeDef *hqsp
 
 /**
   * @brief  Configure the communication registers.
-  * @param  hqspi: QSPI handle
-  * @param  cmd: structure that contains the command configuration information
-  * @param  FunctionalMode: functional mode to configured
+  * @param  hqspi QSPI handle
+  * @param  cmd structure that contains the command configuration information
+  * @param  FunctionalMode functional mode to configured
   *           This parameter can be one of the following values:
   *            @arg QSPI_FUNCTIONAL_MODE_INDIRECT_WRITE: Indirect write mode
   *            @arg QSPI_FUNCTIONAL_MODE_INDIRECT_READ: Indirect read mode

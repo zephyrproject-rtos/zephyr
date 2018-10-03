@@ -16,25 +16,21 @@
 # Under the License.
 
 menuconfig MCUMGR_CMD_FS_MGMT
-    bool
-    prompt "Enable mcumgr handlers for file management"
+    bool "Enable mcumgr handlers for file management"
     depends on FILE_SYSTEM
-    default n
     help
       Enables mcumgr handlers for file management
 
 if MCUMGR_CMD_FS_MGMT
 config FS_MGMT_UL_CHUNK_SIZE
-    int
-    prompt "Maximum chunk size for file uploads"
+    int "Maximum chunk size for file uploads"
     default 512
     help
       Limits the maximum chunk size for file uploads, in bytes.  A buffer of
       this size gets allocated on the stack during handling of a file upload command.
 
 config FS_MGMT_DL_CHUNK_SIZE
-    int
-    prompt "Maximum chunk size for file downloads"
+    int "Maximum chunk size for file downloads"
     default 512
     help
       Limits the maximum chunk size for file downloads, in bytes.  A buffer of
@@ -42,8 +38,7 @@ config FS_MGMT_DL_CHUNK_SIZE
       command.
 
 config FS_MGMT_PATH_SIZE
-    int
-    prompt "Maximum file path length"
+    int "Maximum file path length"
     default 64
     help
       Limits the maximum path length for file operations, in bytes.  A buffer

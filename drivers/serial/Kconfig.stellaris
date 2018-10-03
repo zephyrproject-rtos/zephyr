@@ -1,6 +1,5 @@
 menuconfig UART_STELLARIS
 	bool "Stellaris serial driver"
-	default n
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	help
@@ -12,7 +11,6 @@ menuconfig UART_STELLARIS
 
 menuconfig UART_STELLARIS_PORT_0
 	bool "Enable Stellaris UART Port 0"
-	default n
 	depends on UART_STELLARIS
 	help
 	  This tells the driver to configure the UART port at boot, depending on
@@ -22,7 +20,6 @@ menuconfig UART_STELLARIS_PORT_0
 
 menuconfig UART_STELLARIS_PORT_1
 	bool "Enable Stellaris UART Port 1"
-	default n
 	depends on UART_STELLARIS
 	help
 	  This tells the driver to configure the UART port at boot, depending on
@@ -32,7 +29,6 @@ menuconfig UART_STELLARIS_PORT_1
 
 menuconfig UART_STELLARIS_PORT_2
 	bool "Enable Stellaris UART Port 2"
-	default n
 	depends on UART_STELLARIS
 	help
 	  This tells the driver to configure the UART port at boot, depending on

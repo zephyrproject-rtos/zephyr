@@ -305,7 +305,7 @@ extern "C" {
   *         a register from a register basis from which an offset
   *         is applied.
   * @param  __REG__ Register basis from which the offset is applied.
-  * @param  __REG_OFFFSET__ Offset to be applied (unit: number of registers).
+  * @param  __REG_OFFFSET__ Offset to be applied (unit number of registers).
   * @retval Pointer to register address
   */
 #define __ADC_PTR_REG_OFFSET(__REG__, __REG_OFFFSET__)                         \
@@ -1154,7 +1154,7 @@ typedef struct
   * @note   Example:
   *           __LL_ADC_DECIMAL_NB_TO_CHANNEL(4)
   *           will return a data equivalent to "LL_ADC_CHANNEL_4".
-  * @param  __DECIMAL_NB__: Value between Min_Data=0 and Max_Data=18
+  * @param  __DECIMAL_NB__ Value between Min_Data=0 and Max_Data=18
   * @retval Returned value can be one of the following values:
   *         @arg @ref LL_ADC_CHANNEL_0
   *         @arg @ref LL_ADC_CHANNEL_1
@@ -1624,7 +1624,7 @@ typedef struct
   * @note   Analog reference voltage (Vref+) must be either known from
   *         user board environment or can be calculated using ADC measurement
   *         and ADC helper macro @ref __LL_ADC_CALC_VREFANALOG_VOLTAGE().
-  * @param  __VREFANALOG_VOLTAGE__ Analog reference voltage (unit: mV)
+  * @param  __VREFANALOG_VOLTAGE__ Analog reference voltage (unit mV)
   * @param  __ADC_DATA__ ADC conversion data (resolution 12 bits)
   *                       (unit: digital value).
   * @param  __ADC_RESOLUTION__ This parameter can be one of the following values:
@@ -1657,7 +1657,7 @@ typedef struct
   *         internal voltage reference VrefInt.
   *         Otherwise, this macro performs the processing to scale
   *         ADC conversion data to 12 bits.
-  * @param  __VREFINT_ADC_DATA__: ADC conversion data (resolution 12 bits)
+  * @param  __VREFINT_ADC_DATA__ ADC conversion data (resolution 12 bits)
   *         of internal voltage reference VrefInt (unit: digital value).
   * @param  __ADC_RESOLUTION__ This parameter can be one of the following values:
   *         @arg @ref LL_ADC_RESOLUTION_12B
@@ -1707,7 +1707,7 @@ typedef struct
   *         temperature sensor.
   *         Otherwise, this macro performs the processing to scale
   *         ADC conversion data to 12 bits.
-  * @param  __VREFANALOG_VOLTAGE__  Analog reference voltage (unit: mV)
+  * @param  __VREFANALOG_VOLTAGE__  Analog reference voltage (unit mV)
   * @param  __TEMPSENSOR_ADC_DATA__ ADC conversion data of internal
   *                                 temperature sensor (unit: digital value).
   * @param  __ADC_RESOLUTION__      ADC resolution at which internal temperature
@@ -1762,13 +1762,13 @@ typedef struct
   * @note   ADC measurement data must correspond to a resolution of 12bits
   *         (full scale digital value 4095). If not the case, the data must be
   *         preliminarily rescaled to an equivalent resolution of 12 bits.
-  * @param  __TEMPSENSOR_TYP_AVGSLOPE__   Device datasheet data: Temperature sensor slope typical value (unit: uV/DegCelsius).
+  * @param  __TEMPSENSOR_TYP_AVGSLOPE__   Device datasheet data Temperature sensor slope typical value (unit uV/DegCelsius).
   *                                       On STM32F7, refer to device datasheet parameter "Avg_Slope".
-  * @param  __TEMPSENSOR_TYP_CALX_V__     Device datasheet data: Temperature sensor voltage typical value (at temperature and Vref+ defined in parameters below) (unit: mV).
+  * @param  __TEMPSENSOR_TYP_CALX_V__     Device datasheet data Temperature sensor voltage typical value (at temperature and Vref+ defined in parameters below) (unit mV).
   *                                       On STM32F4, refer to device datasheet parameter "V25".
-  * @param  __TEMPSENSOR_CALX_TEMP__      Device datasheet data: Temperature at which temperature sensor voltage (see parameter above) is corresponding (unit: mV)
-  * @param  __VREFANALOG_VOLTAGE__        Analog voltage reference (Vref+) voltage (unit: mV)
-  * @param  __TEMPSENSOR_ADC_DATA__       ADC conversion data of internal temperature sensor (unit: digital value).
+  * @param  __TEMPSENSOR_CALX_TEMP__      Device datasheet data Temperature at which temperature sensor voltage (see parameter above) is corresponding (unit mV)
+  * @param  __VREFANALOG_VOLTAGE__        Analog voltage reference (Vref+) voltage (unit mV)
+  * @param  __TEMPSENSOR_ADC_DATA__       ADC conversion data of internal temperature sensor (unit digital value).
   * @param  __ADC_RESOLUTION__            ADC resolution at which internal temperature sensor voltage has been measured.
   *         This parameter can be one of the following values:
   *         @arg @ref LL_ADC_RESOLUTION_12B
@@ -3558,7 +3558,7 @@ __STATIC_INLINE uint32_t LL_ADC_GetAnalogWDMonitChannels(ADC_TypeDef *ADCx)
   * @param  AWDThresholdsHighLow This parameter can be one of the following values:
   *         @arg @ref LL_ADC_AWD_THRESHOLD_HIGH
   *         @arg @ref LL_ADC_AWD_THRESHOLD_LOW
-  * @param  AWDThresholdValue: Value between Min_Data=0x000 and Max_Data=0xFFF
+  * @param  AWDThresholdValue Value between Min_Data=0x000 and Max_Data=0xFFF
   * @retval None
   */
 __STATIC_INLINE void LL_ADC_SetAnalogWDThresholds(ADC_TypeDef *ADCx, uint32_t AWDThresholdsHighLow, uint32_t AWDThresholdValue)

@@ -10,13 +10,19 @@ Zephyr applications use the nrf51_pca10028 board configuration to run on the
 nRF51 Development Kit (PCA10028) hardware. It provides support for the Nordic Semiconductor
 nRF51822 ARM Cortex-M0 CPU and the following devices:
 
-* :abbr:`NVIC (Nested Vectored Interrupt Controller)`
-* :abbr:`RTC (nRF RTC System Clock)`
-* UART
-* GPIO
+* :abbr:`ADC (Analog to Digital Converter)`
+* CLOCK
 * FLASH
-* RADIO (Bluetooth Low Energy)
+* :abbr:`GPIO (General Purpose Input Output)`
+* :abbr:`I2C (Inter-Integrated Circuit)`
+* :abbr:`NVIC (Nested Vectored Interrupt Controller)`
+* :abbr:`PWM (Pulse Width Modulation)`
+* RADIO (Bluetooth Low Energy and 802.15.4)
+* :abbr:`RTC (nRF RTC System Clock)`
 * Segger RTT (RTT Console)
+* :abbr:`SPI (Serial Peripheral Interface)`
+* :abbr:`UART (Universal asynchronous receiver-transmitter)`
+* :abbr:`WDT (Watchdog Timer)`
 
 .. figure:: img/nrf51_pca10028.jpg
      :width: 442px
@@ -45,20 +51,32 @@ hardware features:
 +-----------+------------+----------------------+
 | Interface | Controller | Driver/Component     |
 +===========+============+======================+
-| NVIC      | on-chip    | nested vectored      |
-|           |            | interrupt controller |
 +-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
+| ADC       | on-chip    | adc                  |
 +-----------+------------+----------------------+
-| UART      | on-chip    | serial port          |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
+| CLOCK     | on-chip    | clock_control        |
 +-----------+------------+----------------------+
 | FLASH     | on-chip    | flash                |
 +-----------+------------+----------------------+
+| GPIO      | on-chip    | gpio                 |
++-----------+------------+----------------------+
+| I2C(M)    | on-chip    | i2c                  |
++-----------+------------+----------------------+
+| NVIC      | on-chip    | arch/arm             |
++-----------+------------+----------------------+
+| PWM       | on-chip    | pwm                  |
++-----------+------------+----------------------+
 | RADIO     | on-chip    | Bluetooth            |
 +-----------+------------+----------------------+
-| RTT       | on-chip    | console              |
+| RTC       | on-chip    | system clock         |
++-----------+------------+----------------------+
+| RTT       | Segger     | console              |
++-----------+------------+----------------------+
+| SPI(M/S)  | on-chip    | spi                  |
++-----------+------------+----------------------+
+| UART      | on-chip    | serial               |
++-----------+------------+----------------------+
+| WDT       | on-chip    | watchdog             |
 +-----------+------------+----------------------+
 
 Other hardware features are not supported by the Zephyr kernel.

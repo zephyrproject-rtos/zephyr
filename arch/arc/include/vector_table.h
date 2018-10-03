@@ -18,8 +18,8 @@
  * Refer to the ARCv2 manual for an explanation of the exceptions.
  */
 
-#ifndef _VECTOR_TABLE__H_
-#define _VECTOR_TABLE__H_
+#ifndef ZEPHYR_ARCH_ARC_INCLUDE_VECTOR_TABLE_H_
+#define ZEPHYR_ARCH_ARC_INCLUDE_VECTOR_TABLE_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -77,4 +77,4 @@ extern void __ev_maligned(void);
 }
 #endif
 
-#endif /* _VECTOR_TABLE__H_ */
+#endif /* ZEPHYR_ARCH_ARC_INCLUDE_VECTOR_TABLE_H_ */

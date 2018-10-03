@@ -7,24 +7,19 @@
 #
 
 config COAP
-	bool
-	prompt "CoAP Support"
-	default n
+	bool "CoAP Support"
 	help
 	  This option enables the CoAP implementation.
 
 # This setting is only used by unit test. Do not enable it in applications
 config COAP_TEST_API_ENABLE
 	bool "Enable test API for CoAP unit tests"
-	default n
 	depends on COAP
 	help
 	  Do not enable this for normal use.
 
 config COAP_WELL_KNOWN_BLOCK_WISE
-	bool
-	prompt "CoAP ./well-known/core services block wise support"
-	default n
+	bool "CoAP ./well-known/core services block wise support"
 	depends on COAP
 	help
 	  This option enables the block wise support of CoAP response
@@ -34,8 +29,7 @@ config COAP_WELL_KNOWN_BLOCK_WISE
 	  of networks.
 
 config COAP_WELL_KNOWN_BLOCK_WISE_SIZE
-	int
-	prompt "CoAP ./well-known/core services block wise support"
+	int "CoAP ./well-known/core services block wise support"
 	default 32
 	depends on COAP_WELL_KNOWN_BLOCK_WISE
 	help
@@ -44,7 +38,6 @@ config COAP_WELL_KNOWN_BLOCK_WISE_SIZE
 
 config COAP_EXTENDED_OPTIONS_LEN
 	bool "Support for CoAP extended options"
-	default n
 	depends on COAP
 	help
 	  This option enables the parsing of extended CoAP options length.
@@ -71,7 +64,6 @@ config COAP_INIT_ACK_TIMEOUT_MS
 
 config NET_DEBUG_COAP
 	bool "Debug COAP"
-	default n
 	depends on COAP && NET_LOG
 	help
 	  Enables CoaP output debug messages

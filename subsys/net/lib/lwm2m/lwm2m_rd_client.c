@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
- * Copyright (c) 2017 Open Source Foundries Limited.
+ * Copyright (c) 2017 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -62,7 +62,7 @@
 
 #define LWM2M_RD_CLIENT_URI "rd"
 
-#define SECONDS_TO_UPDATE_EARLY	2
+#define SECONDS_TO_UPDATE_EARLY	6
 #define STATE_MACHINE_UPDATE_INTERVAL K_MSEC(500)
 
 /* Leave room for 32 hexadeciaml digits (UUID) + NULL */
@@ -640,7 +640,10 @@ static int sm_registration_done(void)
 	int ret = 0;
 	bool forced_update;
 
-	/* check for lifetime seconds - 1 so that we can update early */
+	/*
+	 * check for lifetime seconds - SECONDS_TO_UPDATE_EARLY
+	 * so that we can update early and avoid lifetime timeout
+	 */
 	if (sm_is_registered() &&
 	    (client.trigger_update ||
 	     ((client.lifetime - SECONDS_TO_UPDATE_EARLY) <=
@@ -774,7 +777,7 @@ int lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx,
 	ret = lwm2m_engine_start(client_ctx, peer_str, peer_port);
 	if (ret < 0) {
 		SYS_LOG_ERR("Cannot init LWM2M engine (%d)", ret);
-		goto cleanup;
+		return ret;
 	}
 
 	if (!client_ctx->net_app_ctx.default_ctx) {
@@ -790,11 +793,6 @@ int lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx,
 	SYS_LOG_INF("LWM2M Client: %s", client.ep_name);
 
 	return 0;
-
-cleanup:
-	net_app_close(&client_ctx->net_app_ctx);
-	net_app_release(&client_ctx->net_app_ctx);
-	return ret;
 }
 
 static int lwm2m_rd_client_init(struct device *dev)

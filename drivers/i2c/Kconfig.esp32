@@ -8,9 +8,8 @@
 
 menuconfig I2C_ESP32
 	bool "ESP32 I2C"
-	depends on I2C && SOC_ESP32
+	depends on SOC_ESP32
 	select GPIO_ESP32
-	default n
 	help
 	  Enables the ESP32 I2C driver
 
@@ -28,11 +27,9 @@ config I2C_0_DEFAULT_CFG
 
 config I2C_ESP32_0_TX_LSB_FIRST
 	bool "Port 0 Transmit LSB first"
-	default n
 
 config I2C_ESP32_0_RX_LSB_FIRST
 	bool "Port 0 Receive LSB first"
-	default n
 
 config I2C_ESP32_0_IRQ
 	int "Port 0 IRQ line"
@@ -56,11 +53,9 @@ config I2C_1_DEFAULT_CFG
 
 config I2C_ESP32_1_TX_LSB_FIRST
 	bool "Port 1 Transmit LSB first"
-	default n
 
 config I2C_ESP32_1_RX_LSB_FIRST
 	bool "Port 1 Receive LSB first"
-	default n
 
 config I2C_ESP32_1_IRQ
 	int "Port 1 IRQ line"

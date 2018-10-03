@@ -7,8 +7,8 @@
 #include <errno.h>
 #include <kernel.h>
 #include <limits.h>
-#include <posix/pthread.h>
 #include <posix/unistd.h>
+#include <posix/dirent.h>
 #include <string.h>
 
 BUILD_ASSERT_MSG(PATH_MAX > MAX_FILE_NAME,
@@ -106,7 +106,7 @@ int open(const char *name, int flags)
 		errno = ENFILE;
 		return -1;
 	}
-	memset(ptr, 0, sizeof(struct fs_file_t));
+	(void)memset(ptr, 0, sizeof(struct fs_file_t));
 
 	rc = fs_open(ptr, name);
 	if (rc < 0) {
@@ -233,7 +233,7 @@ DIR *opendir(const char *dirname)
 		errno = EMFILE;
 		return NULL;
 	}
-	memset(ptr, 0, sizeof(struct fs_dir_t));
+	(void)memset(ptr, 0, sizeof(struct fs_dir_t));
 
 	rc = fs_opendir(ptr, dirname);
 	if (rc < 0) {
@@ -297,7 +297,7 @@ struct dirent *readdir(DIR *dirp)
 	memcpy(pdirent.d_name, fdirent.name, rc);
 
 	/* Make sure the name is NULL terminated */
-	pdirent.d_name[rc + 1] = '\0';
+	pdirent.d_name[rc] = '\0';
 	return &pdirent;
 }
 

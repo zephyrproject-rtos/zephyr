@@ -380,13 +380,13 @@ HAL_StatusTypeDef HAL_PWREx_DisableOverDrive(void)
   *         By keeping the internal regulator ON during Stop mode, the consumption 
   *         is higher although the startup time is reduced.
   *     
-  * @param  Regulator: specifies the regulator state in STOP mode.
+  * @param  Regulator specifies the regulator state in STOP mode.
   *          This parameter can be one of the following values:
   *            @arg PWR_MAINREGULATOR_UNDERDRIVE_ON:  Main Regulator in under-drive mode 
   *                 and Flash memory in power-down when the device is in Stop under-drive mode
   *            @arg PWR_LOWPOWERREGULATOR_UNDERDRIVE_ON:  Low Power Regulator in under-drive mode 
   *                and Flash memory in power-down when the device is in Stop under-drive mode
-  * @param  STOPEntry: specifies if STOP mode in entered with WFI or WFE instruction.
+  * @param  STOPEntry specifies if STOP mode in entered with WFI or WFE instruction.
   *          This parameter can be one of the following values:
   *            @arg PWR_SLEEPENTRY_WFI: enter STOP mode with WFI instruction
   *            @arg PWR_SLEEPENTRY_WFE: enter STOP mode with WFE instruction
@@ -465,7 +465,7 @@ uint32_t HAL_PWREx_GetVoltageRange(void)
 
 /**
   * @brief Configures the main internal regulator output voltage.
-  * @param  VoltageScaling: specifies the regulator output voltage to achieve
+  * @param  VoltageScaling specifies the regulator output voltage to achieve
   *         a tradeoff between performance and power consumption.
   *          This parameter can be one of the following values:
   *            @arg PWR_REGULATOR_VOLTAGE_SCALE1: Regulator voltage output range 1 mode,

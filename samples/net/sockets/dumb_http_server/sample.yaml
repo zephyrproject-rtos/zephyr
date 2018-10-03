@@ -3,6 +3,7 @@ sample:
   name: socket_dumb_http_server
 tests:
   test:
+    platform_exclude: esp32
     harness: net
     min_ram: 32
     tags: net

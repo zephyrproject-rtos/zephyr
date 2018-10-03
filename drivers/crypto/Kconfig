@@ -10,9 +10,7 @@
 # CRYPTO options
 #
 menuconfig CRYPTO
-	bool
-	prompt "Crypto Drivers [EXPERIMENTAL]"
-	default n
+	bool "Crypto Drivers [EXPERIMENTAL]"
 
 if CRYPTO
 
@@ -43,7 +41,6 @@ config SYS_LOG_CRYPTO_LEVEL
 
 config CRYPTO_TINYCRYPT_SHIM
 	bool "Enable TinyCrypt shim driver [EXPERIMENTAL]"
-	default n
 	select TINYCRYPT
 	select TINYCRYPT_AES
 	select TINYCRYPT_AES_CBC
@@ -70,7 +67,6 @@ config CRYPTO_TINYCRYPT_SHIM_DRV_NAME
 
 config CRYPTO_MBEDTLS_SHIM
 	bool "Enable mbedTLS shim driver [EXPERIMENTAL]"
-	default n
 	select MBEDTLS
 	select MBEDTLS_ENABLE_HEAP
 	help

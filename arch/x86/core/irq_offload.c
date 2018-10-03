@@ -27,7 +27,7 @@ void _irq_do_offload(void)
 
 void irq_offload(irq_offload_routine_t routine, void *parameter)
 {
-	int key;
+	unsigned int key;
 
 	/*
 	 * Lock interrupts here to prevent any concurrency issues with

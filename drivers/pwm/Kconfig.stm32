@@ -8,7 +8,6 @@
 
 menuconfig PWM_STM32
 	bool "STM32 MCU PWM driver"
-	default n
 	depends on PWM && SOC_FAMILY_STM32
 	select USE_STM32_HAL_TIM
 	help
@@ -19,7 +18,6 @@ menuconfig PWM_STM32
 config PWM_STM32_1
 	bool "STM32 PWM 1 Output"
 	depends on PWM_STM32
-	default n
 	help
 	  Enable output for PWM1 in the driver. Say y here
 	  if you want to use PWM1 output.
@@ -27,7 +25,6 @@ config PWM_STM32_1
 config PWM_STM32_2
 	bool "STM32 PWM 2 Output"
 	depends on PWM_STM32
-	default n
 	help
 	  Enable output for PWM2 in the driver. Say y here
 	  if you want to use PWM2 output.
@@ -35,7 +32,6 @@ config PWM_STM32_2
 config PWM_STM32_3
 	bool "STM32 PWM 3 Output"
 	depends on PWM_STM32
-	default n
 	help
 	  Enable output for PWM3 in the driver. Say y here
 	  if you want to use PWM3 output.
@@ -43,7 +39,6 @@ config PWM_STM32_3
 config PWM_STM32_4
 	bool "STM32 PWM 4 Output"
 	depends on PWM_STM32
-	default n
 	help
 	  Enable output for PWM4 in the driver. Say y here
 	  if you want to use PWM4 output.
@@ -51,7 +46,6 @@ config PWM_STM32_4
 config PWM_STM32_5
 	bool "STM32 PWM 5 Output"
 	depends on PWM_STM32
-	default n
 	help
 	  Enable output for PWM5 in the driver. Say y here
 	  if you want to use PWM5 output.
@@ -59,7 +53,6 @@ config PWM_STM32_5
 config PWM_STM32_6
 	bool "STM32 PWM 6 Output"
 	depends on PWM_STM32
-	default n
 	help
 	  Enable output for PWM6 in the driver. Say y here
 	  if you want to use PWM6 output.
@@ -67,7 +60,6 @@ config PWM_STM32_6
 config PWM_STM32_7
 	bool "STM32 PWM 7 Output"
 	depends on PWM_STM32
-	default n
 	help
 	  Enable output for PWM7 in the driver. Say y here
 	  if you want to use PWM7 output.
@@ -75,7 +67,6 @@ config PWM_STM32_7
 config PWM_STM32_8
 	bool "STM32 PWM 8 Output"
 	depends on PWM_STM32
-	default n
 	help
 	  Enable output for PWM8 in the driver. Say y here
 	  if you want to use PWM8 output.
@@ -83,7 +74,6 @@ config PWM_STM32_8
 config PWM_STM32_9
 	bool "STM32 PWM 9 Output"
 	depends on PWM_STM32
-	default n
 	help
 	  Enable output for PWM9 in the driver. Say y here
 	  if you want to use PWM9 output.
@@ -91,7 +81,6 @@ config PWM_STM32_9
 config PWM_STM32_10
 	bool "STM32 PWM 10 Output"
 	depends on PWM_STM32
-	default n
 	help
 	  Enable output for PWM10 in the driver. Say y here
 	  if you want to use PWM10 output.
@@ -99,7 +88,6 @@ config PWM_STM32_10
 config PWM_STM32_11
 	bool "STM32 PWM 11 Output"
 	depends on PWM_STM32
-	default n
 	help
 	  Enable output for PWM11 in the driver. Say y here
 	  if you want to use PWM11 output.
@@ -107,7 +95,6 @@ config PWM_STM32_11
 config PWM_STM32_12
 	bool "STM32 PWM 12 Output"
 	depends on PWM_STM32
-	default n
 	help
 	  Enable output for PWM12 in the driver. Say y here
 	  if you want to use PWM12 output.
@@ -115,7 +102,6 @@ config PWM_STM32_12
 config PWM_STM32_13
 	bool "STM32 PWM 13 Output"
 	depends on PWM_STM32
-	default n
 	help
 	  Enable output for PWM13 in the driver. Say y here
 	  if you want to use PWM13 output.
@@ -123,7 +109,6 @@ config PWM_STM32_13
 config PWM_STM32_14
 	bool "STM32 PWM 14 Output"
 	depends on PWM_STM32
-	default n
 	help
 	  Enable output for PWM14 in the driver. Say y here
 	  if you want to use PWM14 output.
@@ -131,7 +116,6 @@ config PWM_STM32_14
 config PWM_STM32_15
 	bool "STM32 PWM 15 Output"
 	depends on PWM_STM32
-	default n
 	help
 	  Enable output for PWM15 in the driver. Say y here
 	  if you want to use PWM15 output.
@@ -139,7 +123,6 @@ config PWM_STM32_15
 config PWM_STM32_16
 	bool "STM32 PWM 16 Output"
 	depends on PWM_STM32
-	default n
 	help
 	  Enable output for PWM16 in the driver. Say y here
 	  if you want to use PWM16 output.
@@ -147,7 +130,6 @@ config PWM_STM32_16
 config PWM_STM32_17
 	bool "STM32 PWM 17 Output"
 	depends on PWM_STM32
-	default n
 	help
 	  Enable output for PWM17 in the driver. Say y here
 	  if you want to use PWM17 output.
@@ -155,7 +137,6 @@ config PWM_STM32_17
 config PWM_STM32_18
 	bool "STM32 PWM 18 Output"
 	depends on PWM_STM32
-	default n
 	help
 	  Enable output for PWM18 in the driver. Say y here
 	  if you want to use PWM18 output.
@@ -163,7 +144,6 @@ config PWM_STM32_18
 config PWM_STM32_19
 	bool "STM32 PWM 19 Output"
 	depends on PWM_STM32
-	default n
 	help
 	  Enable output for PWM19 in the driver. Say y here
 	  if you want to use PWM19 output.
@@ -171,7 +151,6 @@ config PWM_STM32_19
 config PWM_STM32_20
 	bool "STM32 PWM 20 Output"
 	depends on PWM_STM32
-	default n
 	help
 	  Enable output for PWM20 in the driver. Say y here
 	  if you want to use PWM20 output.

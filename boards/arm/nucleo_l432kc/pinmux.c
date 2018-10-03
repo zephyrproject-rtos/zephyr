@@ -36,6 +36,10 @@ static const struct pin_config pinconf[] = {
 	{STM32_PIN_PA6, STM32L4X_PINMUX_FUNC_PA6_SPI1_MISO},
 	{STM32_PIN_PA7, STM32L4X_PINMUX_FUNC_PA7_SPI1_MOSI},
 #endif /* CONFIG_SPI_1 */
+#ifdef CONFIG_CAN_1
+	{STM32_PIN_PA11, STM32L4X_PINMUX_FUNC_PA11_CAN_RX},
+	{STM32_PIN_PA12, STM32L4X_PINMUX_FUNC_PA12_CAN_TX},
+#endif /* CONFIG_CAN_1 */
 };
 
 static int pinmux_stm32_init(struct device *port)

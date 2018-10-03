@@ -1,0 +1,40 @@
+# Kconfig - I2C Slave configuration options
+
+#
+# Copyright (c) 2017 BayLibre, SAS
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+#
+# I2C options
+#
+menuconfig I2C_SLAVE
+	bool "I2C Slave Drivers"
+	help
+	  Enable I2C Slave Driver Configuration
+
+if I2C_SLAVE
+
+config I2C_SLAVE_INIT_PRIORITY
+	int "Init priority"
+	default 60
+	help
+	  I2C Slave device driver initialization priority.
+
+config SYS_LOG_I2C_SLAVE_LEVEL
+	int "I2C Slave log level"
+	depends on SYS_LOG
+	default 0
+	help
+	  Sets log level for I2C drivers.
+	  Levels are:
+	  - 0 OFF, do not write
+	  - 1 ERROR, only write SYS_LOG_ERR
+	  - 2 WARNING, write SYS_LOG_WRN in addition to previous level
+	  - 3 INFO, write SYS_LOG_INF in addition to previous levels
+	  - 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
+
+source "drivers/i2c/slave/Kconfig.eeprom"
+
+endif # I2C_SLAVE

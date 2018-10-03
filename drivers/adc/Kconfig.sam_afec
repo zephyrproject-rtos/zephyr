@@ -9,8 +9,6 @@
 menuconfig ADC_SAM_AFEC
 	bool "SAM ADC Driver"
 	depends on SOC_FAMILY_SAM
-	select HAS_DTS_ADC
-	default n
 	help
 	  Enable Atmel SAM MCU Family Analog-to-Digital Converter (ADC) driver
 	  based on AFEC module.

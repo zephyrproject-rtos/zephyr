@@ -1,0 +1,223 @@
+# Kconfig - Micropower, 3-Axis, +/-200g Digital Accelerometer
+#
+# Copyright (c) 2018 Analog Devices Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig ADXL372
+	bool "ADXL372 Three Axis High-g I2C/SPI accelerometer"
+	depends on (I2C && HAS_DTS_I2C) || (SPI && HAS_DTS_SPI)
+	help
+	  Enable driver for ADXL372 Three-Axis Digital Accelerometers.
+
+if ADXL372
+
+choice ADXL372_BUS_TYPE
+	prompt "Interface type"
+	help
+	  Select interface the digital interface type for the ADXL372
+
+config ADXL372_I2C
+	depends on I2C
+	bool "I2C Interface"
+
+config ADXL372_SPI
+	depends on SPI
+	bool "SPI Interface"
+
+endchoice
+
+choice
+	prompt "Operating mode"
+	default ADXL372_PEAK_DETECT_MODE
+
+config ADXL372_PEAK_DETECT_MODE
+	bool "Max Peak detect mode"
+	help
+	  In most high-g applications, a single (3-axis) acceleration sample at
+	  the peak of an impact event contains sufficient information
+	  about the event, and the full acceleration history is not required.
+	  In this mode the device returns only the over threshold
+	  Peak Acceleration between two consecutive sample fetches.
+
+config ADXL372_MEASUREMENT_MODE
+	bool "Measurement Mode"
+	help
+	  In this mode, acceleration data is provided continuously at the
+	  output data rate (ODR).
+
+endchoice
+
+choice
+	prompt "Accelerometer sampling frequency (ODR)"
+	default ADXL372_ODR_6400HZ if ADXL372_PEAK_DETECT_MODE
+	default ADXL372_ODR_400HZ if ADXL372_MEASUREMENT_MODE
+
+config ADXL372_ODR_400HZ
+	bool "400 Hz"
+
+config ADXL372_ODR_800HZ
+	bool "800 Hz"
+
+config ADXL372_ODR_1600HZ
+	bool "1600 Hz"
+
+config ADXL372_ODR_3200HZ
+	bool "3200 Hz"
+
+config ADXL372_ODR_6400HZ
+	bool "6400 Hz"
+
+endchoice
+
+choice
+	prompt "Low-Pass (Antialiasing) Filter corner frequency"
+	default ADXL372_BW_200HZ if ADXL372_ODR_400HZ
+	default ADXL372_BW_400HZ if ADXL372_ODR_800HZ
+	default ADXL372_BW_800HZ if ADXL372_ODR_1600HZ
+	default ADXL372_BW_1600HZ if ADXL372_ODR_3200HZ
+	default ADXL372_BW_3200HZ if ADXL372_ODR_6400HZ
+	help
+	  High g events often include acceleration content over a wide range
+	  of frequencies. The ADC of the ADXL372 samples the input acceleration
+	  at the user selected ODR.
+	  In the absence of antialiasing filters, input signals whose frequency
+	  is more than half the ODR alias or fold into the measurement bandwidth
+	  can lead to inaccurate measurements.
+
+config ADXL372_LPF_DISABLE
+	bool "Disabled"
+
+config ADXL372_BW_200HZ
+	bool "200 Hz"
+
+config ADXL372_BW_400HZ
+	bool "400 Hz"
+
+config ADXL372_BW_800HZ
+	bool "800 Hz"
+
+config ADXL372_BW_1600HZ
+	bool "1600 Hz"
+
+config ADXL372_BW_3200HZ
+	bool "3200 Hz"
+
+endchoice
+
+choice
+	prompt "High-Pass Filter corner frequency"
+	default ADXL372_HPF_CORNER0
+	help
+	  The ADXL372 offers a one-pole, high-pass filter with a user
+	  selectable −3 dB frequency. Applications that do not require dc
+	  acceleration measurements can use the high-pass filter to minimize
+	  constant or slow varying offset errors including initial bias,
+	  bias drift due to temperature, and bias drift due to supply voltage
+
+config ADXL372_HPF_DISABLE
+	bool "Disabled"
+
+config ADXL372_HPF_CORNER0
+	bool "ODR/210"
+
+config ADXL372_HPF_CORNER1
+	bool "ODR/411"
+
+config ADXL372_HPF_CORNER2
+	bool "ODR/812"
+
+config ADXL372_HPF_CORNER3
+	bool "ODR/1616"
+
+endchoice
+
+
+config ADXL372_ACTIVITY_THRESHOLD
+	int "Activity threshold in mg"
+	range 0 200000
+	default 500
+	help
+	  Threshold for activity detection.
+
+config ADXL372_INACTIVITY_THRESHOLD
+	int "In-activity threshold in mg"
+	range 0 200000
+	default 400
+	help
+	  Threshold for in-activity detection.
+
+config ADXL372_ACTIVITY_TIME
+	int "Activity time"
+	range 0 255
+	default 1
+	help
+	  The activity timer implements a robust activity detection that
+	  minimizes false positive motion triggers. When the timer is used,
+	  only sustained motion can trigger activity detection.
+	  Number of multiples of 3.3 ms activity timer for which above threshold
+	  acceleration is required to detect activity. It is 3.3 ms per code
+	  for 6400 Hz ODR, and it is 6.6 ms per code for 3200 Hz ODR and below.
+
+config ADXL372_INACTIVITY_TIME
+	int "In-activity time"
+	range 0 255
+	default 2
+	help
+	  The time that all enabled axes must be lower than the inactivity
+	  threshold for an inactivity event to be detected. Number of multiples
+	  of 26 ms inactivity timer for which below threshold acceleration is
+	  required to detect inactivity. It is 26 ms per code for 3200 Hz ODR
+	  and below, and it is 13 ms per code for 6400 Hz ODR.
+
+config ADXL372_REFERENCED_ACTIVITY_DETECTION_MODE
+	bool "Use referenced activity/in-activity detection"
+	default y
+	help
+	  Activity detection can be configured as referenced or absolute.
+	  When using absolute activity detection, acceleration samples are
+	  compared directly to a user set threshold to determine whether
+	  motion is present. In many applications, it is advantageous for
+	  activity detection to be based not on an absolute threshold,
+	  but on a deviation from a reference point or orientation.
+
+choice
+	prompt "Trigger mode"
+	default ADXL372_TRIGGER_NONE
+	help
+	  Specify the type of triggering used by the driver.
+
+config ADXL372_TRIGGER_NONE
+	bool "No trigger"
+
+config ADXL372_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select ADXL372_TRIGGER
+
+config ADXL372_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select ADXL372_TRIGGER
+
+endchoice
+
+config ADXL372_TRIGGER
+	bool
+
+config ADXL372_THREAD_PRIORITY
+	int "Thread priority"
+	depends on ADXL372_TRIGGER_OWN_THREAD && ADXL372_TRIGGER
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config ADXL372_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on ADXL372_TRIGGER_OWN_THREAD && ADXL372_TRIGGER
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+endif #ADXL372

@@ -9,19 +9,23 @@ config BOARD_DEPRECATED
 
 config QEMU_TARGET
 	bool
-	default n
 	help
 	  Mark all QEMU targets with this variable for checking whether we are
 	  running in an emulated environment.
 
-# $ENV_VAR_BOARD_DIR might be a glob pattern
+# Note: $BOARD_DIR might be a glob pattern
 
 choice
 prompt "Board Selection"
-gsource "$ENV_VAR_BOARD_DIR/Kconfig.board"
+source "$(BOARD_DIR)/Kconfig.board"
 endchoice
 
 
 menu "Board Options"
-gsource "$ENV_VAR_BOARD_DIR/Kconfig"
+# There might not be any board options, hence the optional source
+osource "$(BOARD_DIR)/Kconfig"
+endmenu
+
+menu "Shields"
+source "boards/shields/*/Kconfig.shield"
 endmenu

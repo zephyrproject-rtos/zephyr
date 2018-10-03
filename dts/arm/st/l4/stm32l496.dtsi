@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2017 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/l4/stm32l475.dtsi>
+
+/ {
+	soc {
+		i2c4: i2c@40008400 {
+			compatible = "st,stm32-i2c-v2";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40008400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000002>;
+			interrupts = <83 0>, <84 0>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+			label= "I2C_4";
+		};
+
+		pinctrl: pin-controller@48000000 {
+			reg = <0x48000000 0x2400>;
+
+			gpioi: gpio@48002000 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x48002000 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000100>;
+				label = "GPIOI";
+			};
+		};
+	};
+};

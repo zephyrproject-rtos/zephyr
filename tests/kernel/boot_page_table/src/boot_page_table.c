@@ -82,7 +82,22 @@ static void ending_start_addr_range(u32_t start_addr_range)
 			      addr_range, REGION_PERM);
 	}
 }
+/**
+ * @brief Test for boot page table
+ * @defgroup kernel_boot_page_table_tests Boot Page Table
+ * @ingroup all_tests
+ * @{
+ */
 
+/**
+ * @brief Test boot page table entry permissions
+ *
+ * @details Initiallize a memory region with particular permission.
+ * Later using the same address read the corresponding page table entry.
+ * And using the PTE check the permission of the region, it should match.
+ * Permission of the memory region is validated just before the specified
+ * region and just after the specified region.
+ */
 void test_boot_page_table(void)
 {
 	u32_t start_addr_range;
@@ -116,3 +131,6 @@ void test_boot_page_table(void)
 	}
 }
 
+/**
+ * @}
+ */

@@ -15,6 +15,10 @@ if(LIBC_LIBRARY_DIR)
   set(LIBC_LIBRARY_DIR_FLAG -L${LIBC_LIBRARY_DIR})
 endif()
 
+# define __LINUX_ERRNO_EXTENSIONS__ so we get errno defines like -ESHUTDOWN
+# used by the network stack
+zephyr_compile_definitions(__LINUX_ERRNO_EXTENSIONS__)
+
 zephyr_link_libraries(
   m
   c

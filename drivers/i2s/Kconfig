@@ -8,9 +8,7 @@
 # I2S Drivers
 #
 menuconfig I2S
-	bool
-	prompt "I2S bus drivers"
-	default n
+	bool "I2S bus drivers"
 	help
 	  Enable support for the I2S (Inter-IC Sound) hardware bus.
 
@@ -38,6 +36,6 @@ config SYS_LOG_I2S_LEVEL
 
 comment "Device Drivers"
 
-gsource "drivers/i2s/Kconfig.*"
+source "drivers/i2s/Kconfig.*"
 
 endif # I2S

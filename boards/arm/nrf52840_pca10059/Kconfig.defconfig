@@ -1,0 +1,29 @@
+# Kconfig - nRF52 PCA10059 board configuration
+#
+# Copyright (c) 2018 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NRF52840_PCA10059
+
+config BOARD
+	default "nrf52840_pca10059"
+
+if USB
+
+config USB_NRF52840
+	def_bool y
+
+config USB_DEVICE_STACK
+	def_bool y
+
+endif # USB
+
+if IEEE802154
+
+config IEEE802154_NRF5
+	def_bool y
+
+endif # IEEE802154
+
+endif # BOARD_NRF52840_PCA10059

@@ -10,6 +10,8 @@ void main(void)
 {
 	console_init();
 
+	printk("Start typing characters to see them echoed back\n");
+
 	while (1) {
 		u8_t c = console_getchar();
 

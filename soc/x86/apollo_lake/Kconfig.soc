@@ -1,0 +1,10 @@
+#
+# Copyright (c) 2018 Intel Corporation Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_APOLLO_LAKE
+	bool "Intel Apollo Lake Soc"
+	select CPU_APOLLO_LAKE
+	select BOOTLOADER_UNKNOWN

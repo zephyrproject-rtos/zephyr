@@ -16,22 +16,22 @@
 #define MY_PREFIX_LEN_STR IP6PREFIX_STR(MY_PREFIX_LEN)
 
 /* Note that you can set local endpoint address in config file */
-#if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_APP_SETTINGS)
-#define MY_IP6ADDR CONFIG_NET_APP_MY_IPV6_ADDR
-#define DST_IP6ADDR CONFIG_NET_APP_PEER_IPV6_ADDR
+#if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_CONFIG_SETTINGS)
+#define MY_IP6ADDR CONFIG_NET_CONFIG_MY_IPV6_ADDR
+#define DST_IP6ADDR CONFIG_NET_CONFIG_PEER_IPV6_ADDR
 #endif
 
-#if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_APP_SETTINGS)
-#define MY_IP4ADDR CONFIG_NET_APP_MY_IPV4_ADDR
-#define DST_IP4ADDR CONFIG_NET_APP_PEER_IPV4_ADDR
+#if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_CONFIG_SETTINGS)
+#define MY_IP4ADDR CONFIG_NET_CONFIG_MY_IPV4_ADDR
+#define DST_IP4ADDR CONFIG_NET_CONFIG_PEER_IPV4_ADDR
 #endif
 
 #define PACKET_SIZE_MAX      1024
 
 #define HW_CYCLES_TO_USEC(__hw_cycle__) \
 	( \
-		((u64_t)(__hw_cycle__) * (u64_t)sys_clock_us_per_tick) / \
-		((u64_t)sys_clock_hw_cycles_per_tick) \
+		((u64_t)(__hw_cycle__) * (u64_t)USEC_PER_SEC) / \
+		((u64_t)sys_clock_hw_cycles_per_sec) \
 	)
 
 #define HW_CYCLES_TO_SEC(__hw_cycle__) \
@@ -42,8 +42,8 @@
 
 #define USEC_TO_HW_CYCLES(__usec__) \
 	( \
-		((u64_t)(__usec__) * (u64_t)sys_clock_hw_cycles_per_tick) / \
-		((u64_t)sys_clock_us_per_tick) \
+		((u64_t)(__usec__) * (u64_t)sys_clock_hw_cycles_per_sec) / \
+		((u64_t)USEC_PER_SEC) \
 	)
 
 #define SEC_TO_HW_CYCLES(__sec__) \

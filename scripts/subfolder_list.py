@@ -24,6 +24,8 @@ def main():
 
     parser.add_argument('-d', '--directory', required=True,
                         help='Directory to walk for sub-directory discovery')
+    parser.add_argument('-c', '--create-links', required=False,
+                        help='Create links for each directory found in directory given')
     parser.add_argument('-o', '--out-file', required=True,
                         help='File to write containing a list of all directories found')
     parser.add_argument('-t', '--trigger-file', required=False,
@@ -32,11 +34,27 @@ def main():
     args = parser.parse_args()
 
     dirlist = []
-    dirlist.extend(args.directory)
+    if(args.create_links is not None):
+        if not os.path.exists(args.create_links):
+            os.makedirs(args.create_links)
+        directory = args.directory
+        symlink   = args.create_links + os.path.sep + directory.replace(os.path.sep, '_')
+        if not os.path.exists(symlink):
+            os.symlink(directory, symlink)
+        dirlist.extend(symlink)
+    else:
+        dirlist.extend(args.directory)
     dirlist.extend(os.linesep)
     for root, dirs, files in os.walk(args.directory):
         for subdir in dirs:
-            dirlist.extend(os.path.join(root, subdir))
+            if(args.create_links is not None):
+                directory = os.path.join(root, subdir)
+                symlink   = args.create_links + os.path.sep + directory.replace(os.path.sep, '_')
+                if not os.path.exists(symlink):
+                    os.symlink(directory, symlink)
+                dirlist.extend(symlink)
+            else:
+                dirlist.extend(os.path.join(root, subdir))
             dirlist.extend(os.linesep)
 
     new      = ''.join(dirlist)
@@ -46,13 +64,15 @@ def main():
         with open(args.out_file, 'r') as fp:
             existing = fp.read()
 
-    if new != existing:
-        touch(args.trigger_file)
+        if new != existing:
+            with open(args.out_file, 'w') as fp:
+                fp.write(new)
+    else:
+        with open(args.out_file, 'w') as fp:
+            fp.write(new)
 
-    # Always write the file to ensure dependencies to changed files are updated
-    with open(args.out_file, 'w') as fp:
-        fp.write(new)
-
+    # Always touch trigger file to ensure json files are updated
+    touch(args.trigger_file)
 
 if __name__ == "__main__":
     main()

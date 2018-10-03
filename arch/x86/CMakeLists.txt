@@ -7,11 +7,22 @@ else()
   zephyr_compile_definitions(PERF_OPT)
 endif()
 
+if(CONFIG_X86_IAMCU)
+  set_property(GLOBAL APPEND PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES -D__IAMCU)
+  set_property(GLOBAL        PROPERTY PROPERTY_OUTPUT_FORMAT         "elf32-iamcu")
+  set_property(GLOBAL        PROPERTY PROPERTY_OUTPUT_ARCH           "iamcu:intel")
+else()
+  set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_ARCH "i386")
+  set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT "elf32-i386")
+endif()
+
+
+
 if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
   if(CONFIG_X86_IAMCU)
-    zephyr_cc_option(-Qunused-arguments)
+    zephyr_compile_options(-miamcu)
   else()
-    zephyr_cc_option(-mmcu)
+    zephyr_compile_options(-Qunused-arguments)
   endif()
 
   zephyr_cc_option(
@@ -23,20 +34,15 @@ endif()
 zephyr_cc_option_ifdef (CONFIG_LTO         -flto)
 zephyr_cc_option_ifndef(CONFIG_SSE_FP_MATH -mno-sse)
 
-set_property(GLOBAL PROPERTY E_KERNEL_ENTRY  -e${CONFIG_KERNEL_ENTRY})
-
 if(CMAKE_VERBOSE_MAKEFILE)
   set(GENIDT_EXTRA_ARGS --verbose)
 else()
   set(GENIDT_EXTRA_ARGS "")
 endif()
 
-set(GENIDT ${PROJECT_SOURCE_DIR}/scripts/gen_idt.py)
+set(GENIDT ${ZEPHYR_BASE}/scripts/gen_idt.py)
 
 define_property(GLOBAL PROPERTY PROPERTY_OUTPUT_ARCH BRIEF_DOCS " " FULL_DOCS " ")
-set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_ARCH "i386")
-
-set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT "elf32-i386")
 
 # Use gen_idt.py and objcopy to generate irq_int_vector_map.o and
 # staticIdt.o from the elf file zephyr_prebuilt
@@ -62,7 +68,6 @@ add_custom_command(
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
 
-add_subdirectory(soc/${SOC_PATH})
 # Must be last so that soc/ can override default exception handlers
 add_subdirectory(core)
 
@@ -134,7 +139,7 @@ if(CONFIG_X86_MMU)
     OUTPUT mmu_tables.bin
     COMMAND
     ${PYTHON_EXECUTABLE}
-    ${PROJECT_SOURCE_DIR}/scripts/gen_mmu_x86.py
+    ${ZEPHYR_BASE}/scripts/gen_mmu_x86.py
     -i mmulist.bin
     -k $<TARGET_FILE:zephyr_prebuilt>
     -o mmu_tables.bin
@@ -174,7 +179,7 @@ if(CONFIG_GDT_DYNAMIC)
     OUTPUT gdt.bin
     COMMAND
     ${PYTHON_EXECUTABLE}
-    ${PROJECT_SOURCE_DIR}/scripts/gen_gdt.py
+    ${ZEPHYR_BASE}/scripts/gen_gdt.py
     --kernel $<TARGET_FILE:zephyr_prebuilt>
     --output-gdt gdt.bin
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>

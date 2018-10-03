@@ -33,6 +33,7 @@
 /* Interface 1 addresses */
 static struct in6_addr my_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+static struct in_addr my_ipv4_addr1 = { { { 192, 0, 2, 1 } } };
 
 /* Interface 2 addresses */
 static struct in6_addr my_addr2 = { { { 0x20, 0x01, 0x0d, 0xb8, 2, 0, 0, 0,
@@ -53,6 +54,7 @@ static struct in6_addr in6addr_mcast = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 static struct net_if *iface1;
 static struct net_if *iface2;
 static struct net_if *iface3;
+static struct net_if *iface4;
 
 static bool test_failed;
 static bool test_started;
@@ -181,6 +183,136 @@ NET_DEVICE_INIT_INSTANCE(net_iface3_test,
 			 _ETH_L2_CTX_TYPE,
 			 127);
 
+struct eth_fake_context {
+	struct net_if *iface;
+	u8_t mac_address[6];
+	bool promisc_mode;
+};
+
+static struct eth_fake_context eth_fake_data;
+
+static void eth_fake_iface_init(struct net_if *iface)
+{
+	struct device *dev = net_if_get_device(iface);
+	struct eth_fake_context *ctx = dev->driver_data;
+
+	ctx->iface = iface;
+
+	net_if_set_link_addr(iface, ctx->mac_address,
+			     sizeof(ctx->mac_address),
+			     NET_LINK_ETHERNET);
+
+	ethernet_init(iface);
+}
+
+static int eth_fake_send(struct net_if *iface,
+			 struct net_pkt *pkt)
+{
+	ARG_UNUSED(iface);
+
+	net_pkt_unref(pkt);
+
+	return 0;
+}
+
+static enum ethernet_hw_caps eth_fake_get_capabilities(struct device *dev)
+{
+	return ETHERNET_PROMISC_MODE;
+}
+
+static int eth_fake_set_config(struct device *dev,
+			       enum ethernet_config_type type,
+			       const struct ethernet_config *config)
+{
+	struct eth_fake_context *ctx = dev->driver_data;
+
+	switch (type) {
+	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
+		if (config->promisc_mode == ctx->promisc_mode) {
+			return -EALREADY;
+		}
+
+		ctx->promisc_mode = config->promisc_mode;
+
+		break;
+
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static struct ethernet_api eth_fake_api_funcs = {
+	.iface_api.init = eth_fake_iface_init,
+	.iface_api.send = eth_fake_send,
+
+	.get_capabilities = eth_fake_get_capabilities,
+	.set_config = eth_fake_set_config,
+};
+
+static int eth_fake_init(struct device *dev)
+{
+	struct eth_fake_context *ctx = dev->driver_data;
+
+	ctx->promisc_mode = false;
+
+	return 0;
+}
+
+ETH_NET_DEVICE_INIT(eth_fake, "eth_fake", eth_fake_init, &eth_fake_data,
+		    NULL, CONFIG_ETH_INIT_PRIORITY, &eth_fake_api_funcs, 1500);
+
+#if defined(CONFIG_NET_DEBUG_IF)
+static const char *iface2str(struct net_if *iface)
+{
+	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
+		return "Ethernet";
+	}
+
+	if (net_if_l2(iface) == &NET_L2_GET_NAME(DUMMY)) {
+		return "Dummy";
+	}
+
+	return "<unknown type>";
+}
+#endif
+
+static void iface_cb(struct net_if *iface, void *user_data)
+{
+	static int if_count;
+
+	DBG("Interface %p (%s) [%d]\n", iface, iface2str(iface),
+	    net_if_get_by_iface(iface));
+
+	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
+		const struct ethernet_api *api =
+			net_if_get_device(iface)->driver_api;
+
+		/* As native_posix board will introduce another ethernet
+		 * interface, make sure that we only use our own in this test.
+		 */
+		if (api->get_capabilities ==
+		    eth_fake_api_funcs.get_capabilities) {
+			iface4 = iface;
+		}
+	} else {
+		switch (if_count) {
+		case 0:
+			iface1 = iface;
+			break;
+		case 1:
+			iface2 = iface;
+			break;
+		case 2:
+			iface3 = iface;
+			break;
+		}
+
+		if_count++;
+	}
+}
+
 static void iface_setup(void)
 {
 	struct net_if_mcast_addr *maddr;
@@ -190,22 +322,19 @@ static void iface_setup(void)
 	/* The semaphore is there to wait the data to be received. */
 	k_sem_init(&wait_data, 0, UINT_MAX);
 
-	iface1 = net_if_get_by_index(0);
-	iface2 = net_if_get_by_index(1);
-	iface3 = net_if_get_by_index(2);
-
-	((struct net_if_test *)net_if_get_device(iface1)->driver_data)->idx = 0;
-	((struct net_if_test *)net_if_get_device(iface2)->driver_data)->idx = 1;
-	((struct net_if_test *)net_if_get_device(iface3)->driver_data)->idx = 2;
+	net_if_foreach(iface_cb, NULL);
 
 	idx = net_if_get_by_iface(iface1);
-	zassert_equal(idx, 0, "Invalid index iface1");
+	((struct net_if_test *)
+	 net_if_get_device(iface1)->driver_data)->idx = idx;
 
 	idx = net_if_get_by_iface(iface2);
-	zassert_equal(idx, 1, "Invalid index iface2");
+	((struct net_if_test *)
+	 net_if_get_device(iface2)->driver_data)->idx = idx;
 
 	idx = net_if_get_by_iface(iface3);
-	zassert_equal(idx, 2, "Invalid index iface3");
+	((struct net_if_test *)
+	 net_if_get_device(iface3)->driver_data)->idx = idx;
 
 	DBG("Interfaces: [%d] iface1 %p, [%d] iface2 %p, [%d] iface3 %p\n",
 	    net_if_get_by_iface(iface1), iface1,
@@ -222,6 +351,14 @@ static void iface_setup(void)
 		DBG("Cannot add IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&my_addr1));
 		zassert_not_null(ifaddr, "addr1");
+	}
+
+	ifaddr = net_if_ipv4_addr_add(iface1, &my_ipv4_addr1,
+				      NET_ADDR_MANUAL, 0);
+	if (!ifaddr) {
+		DBG("Cannot add IPv4 address %s\n",
+		       net_sprint_ipv4_addr(&my_ipv4_addr1));
+		zassert_not_null(ifaddr, "ipv4 addr1");
 	}
 
 	/* For testing purposes we need to set the adddresses preferred */
@@ -269,6 +406,7 @@ static void iface_setup(void)
 	net_if_up(iface1);
 	net_if_up(iface2);
 	net_if_up(iface3);
+	net_if_up(iface4);
 
 	/* The interface might receive data which might fail the checks
 	 * in the iface sending function, so we need to reset the failure
@@ -363,6 +501,120 @@ static void send_iface1_up(void)
 	zassert_true(ret, "iface 1 up again");
 }
 
+static void select_src_iface(void)
+{
+	struct in6_addr dst_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
+					  0, 0, 0, 0, 0, 0, 0, 0x2 } } };
+	struct in6_addr ll_addr1 = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
+					 0, 0, 0x09, 0x12, 0xaa, 0x29, 0x02,
+					 0x88 } } };
+	struct in6_addr dst_addr3 = { { { 0x20, 0x01, 0x0d, 0xb8, 3, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0x99 } } };
+	struct in6_addr in6addr_mcast1 = { { { 0x00 } } };
+	struct in_addr dst_addr_2 = { { { 192, 0, 2, 2 } } };
+
+	struct net_if_addr *ifaddr;
+	struct net_if *iface;
+	struct sockaddr_in ipv4;
+	struct sockaddr_in6 ipv6;
+
+	iface = net_if_ipv6_select_src_iface(&dst_addr1);
+	zassert_equal_ptr(iface, iface1, "Invalid interface %p vs %p selected",
+			  iface, iface1);
+
+	iface = net_if_ipv6_select_src_iface(&ll_addr1);
+	zassert_equal_ptr(iface, iface1, "Invalid interface %p vs %p selected",
+			  iface, iface1);
+
+	net_ipv6_addr_create(&in6addr_mcast1, 0xff02, 0, 0, 0, 0, 0, 0, 0x0002);
+
+	iface = net_if_ipv6_select_src_iface(&in6addr_mcast1);
+	zassert_equal_ptr(iface, iface1, "Invalid interface %p vs %p selected",
+			  iface, iface1);
+
+	iface = net_if_ipv6_select_src_iface(&dst_addr3);
+	zassert_equal_ptr(iface, iface2, "Invalid interface %p vs %p selected",
+			  iface, iface2);
+
+	ifaddr = net_if_ipv6_addr_lookup(&ll_addr, NULL);
+	zassert_not_null(ifaddr, "No such ll_addr found");
+
+	ifaddr->addr_state = NET_ADDR_TENTATIVE;
+
+	/* We should now get default interface */
+	iface = net_if_ipv6_select_src_iface(&ll_addr1);
+	zassert_equal_ptr(iface, net_if_get_default(),
+			  "Invalid interface %p vs %p selected",
+			  iface, net_if_get_default());
+
+	net_ipaddr_copy(&ipv4.sin_addr, &dst_addr_2);
+	ipv4.sin_family = AF_INET;
+	ipv4.sin_port = 0;
+
+	iface = net_if_select_src_iface((struct sockaddr *)&ipv4);
+	zassert_equal_ptr(iface, iface1, "Invalid interface %p vs %p selected",
+			  iface, iface1);
+
+	net_ipaddr_copy(&ipv6.sin6_addr, &dst_addr1);
+	ipv6.sin6_family = AF_INET6;
+	ipv6.sin6_port = 0;
+
+	iface = net_if_select_src_iface((struct sockaddr *)&ipv6);
+	zassert_equal_ptr(iface, iface1, "Invalid interface %p vs %p selected",
+			  iface, iface1);
+}
+
+static void check_promisc_mode_off(void)
+{
+	bool ret;
+
+	DBG("Make sure promiscuous mode is OFF (%p)\n", iface4);
+
+	ret = net_if_is_promisc(iface4);
+
+	zassert_false(ret, "iface 1 promiscuous mode ON");
+}
+
+static void check_promisc_mode_on(void)
+{
+	bool ret;
+
+	DBG("Make sure promiscuous mode is ON (%p)\n", iface4);
+
+	ret = net_if_is_promisc(iface4);
+
+	zassert_true(ret, "iface 1 promiscuous mode OFF");
+}
+
+static void set_promisc_mode_on_again(void)
+{
+	int ret;
+
+	DBG("Make sure promiscuous mode is ON (%p)\n", iface4);
+
+	ret = net_if_set_promisc(iface4);
+
+	zassert_equal(ret, -EALREADY, "iface 1 promiscuous mode OFF");
+}
+
+static void set_promisc_mode_on(void)
+{
+	bool ret;
+
+	DBG("Setting promiscuous mode ON (%p)\n", iface4);
+
+	ret = net_if_set_promisc(iface4);
+
+	zassert_equal(ret, 0, "iface 1 promiscuous mode set failed");
+}
+
+static void set_promisc_mode_off(void)
+{
+	DBG("Setting promiscuous mode OFF (%p)\n", iface4);
+
+	net_if_unset_promisc(iface4);
+}
+
 void test_main(void)
 {
 	ztest_test_suite(net_iface_test,
@@ -371,8 +623,14 @@ void test_main(void)
 			 ztest_unit_test(send_iface2),
 			 ztest_unit_test(send_iface3),
 			 ztest_unit_test(send_iface1_down),
-			 ztest_unit_test(send_iface1_up)
-			 );
+			 ztest_unit_test(send_iface1_up),
+			 ztest_unit_test(select_src_iface),
+			 ztest_unit_test(check_promisc_mode_off),
+			 ztest_unit_test(set_promisc_mode_on),
+			 ztest_unit_test(check_promisc_mode_on),
+			 ztest_unit_test(set_promisc_mode_on_again),
+			 ztest_unit_test(set_promisc_mode_off),
+			 ztest_unit_test(check_promisc_mode_off));
 
 	ztest_run_test_suite(net_iface_test);
 }

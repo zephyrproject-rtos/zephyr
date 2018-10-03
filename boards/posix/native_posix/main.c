@@ -13,10 +13,17 @@
  *   and you go for lunch in the middle of the debug session.
  *
  * This is achieved as follows:
- * The HW models run in their own simulated time. We do really not attempt
- * to link ourselves to the actual real time / wall time of the machine as this
- * would make execution indeterministic and debugging or instrumentation not
- * really possible. Although we may slow the run to real time.
+ *  The execution of native_posix is decoupled from the underlying host and its
+ *  peripherals (unless set otherwise).
+ *  In general, time in native_posix is simulated.
+ *
+ * But, native_posix can also be linked if desired to the underlying host,
+ * e.g.:You can use the provided Ethernet TAP driver, or a host BLE controller.
+ *
+ * In this case, the no-indeterminism principle is lost. Runs of native_posix
+ * will depend on the host load and the interactions with those real host
+ * peripherals.
+ *
  */
 
 #include <soc.h>
@@ -37,31 +44,32 @@ void posix_exit(int exit_code)
 	 */
 	posix_soc_clean_up();
 	hwm_cleanup();
-	exit(exit_code);
+	native_cleanup_cmd_line();
+	exit(max_exit_code);
 }
 
 /**
  * This is the actual main for the Linux process,
  * the Zephyr application main is renamed something else thru a define.
- *
- * Note that normally one wants to use this POSIX arch to be part of a
- * simulation engine, with some proper HW models and what not
- *
- * This is just a very simple demo which is able to run some of the sample
- * apps (hello world, synchronization, philosophers) and run the sanity-check
- * regression
  */
 int main(int argc, char *argv[])
 {
+	run_native_tasks(_NATIVE_PRE_BOOT_1_LEVEL);
 
 	native_handle_cmd_line(argc, argv);
 
+	run_native_tasks(_NATIVE_PRE_BOOT_2_LEVEL);
+
 	hwm_init();
+
+	run_native_tasks(_NATIVE_PRE_BOOT_3_LEVEL);
 
 	posix_boot_cpu();
 
+	run_native_tasks(_NATIVE_FIRST_SLEEP_LEVEL);
+
 	hwm_main_loop();
 
-	return 0;
-
+	/* This line should be unreachable */
+	return 1; /* LCOV_EXCL_LINE */
 }

@@ -39,7 +39,7 @@ static s8_t dht_measure_signal_duration(struct dht_data *drv_data,
 		gpio_pin_read(drv_data->gpio, CONFIG_DHT_GPIO_PIN_NUM, &val);
 		elapsed_cycles = k_cycle_get_32() - start_cycles;
 
-		if (elapsed_cycles >= max_wait_cycles) {
+		if (elapsed_cycles > max_wait_cycles) {
 			return -1;
 		}
 	} while (val == signal_val);
@@ -126,7 +126,7 @@ static int dht_sample_fetch(struct device *dev, enum sensor_channel chan)
 
 	/* store bits in buf */
 	j = 0;
-	memset(buf, 0, sizeof(buf));
+	(void)memset(buf, 0, sizeof(buf));
 	for (i = 0; i < DHT_DATA_BITS_NUM; i++) {
 		if (signal_duration[i] >= avg_duration) {
 			buf[j] = (buf[j] << 1) | 1;

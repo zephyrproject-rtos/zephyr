@@ -11,6 +11,5 @@ config JAILHOUSE
 config JAILHOUSE_X2APIC
 	depends on JAILHOUSE
 	bool "When in Jailhouse inmate cell mode, access APIC in x2APIC mode"
-	default n
 
 endif # BOARD_X86_JAILHOUSE

@@ -570,7 +570,6 @@ static int adxl362_init(struct device *dev)
 {
 	struct adxl362_data *data = dev->driver_data;
 	u8_t value;
-	int ret;
 
 	data->spi = device_get_binding(CONFIG_ADXL362_SPI_DEV_NAME);
 	if (!data->spi) {

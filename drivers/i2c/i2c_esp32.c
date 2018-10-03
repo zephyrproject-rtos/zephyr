@@ -13,6 +13,7 @@
 #include <soc.h>
 #include <errno.h>
 #include <gpio.h>
+#include <gpio/gpio_esp32.h>
 #include <i2c.h>
 #include <misc/util.h>
 #include <string.h>
@@ -73,10 +74,7 @@ struct i2c_esp32_config {
 		int sda;
 	} pins;
 
-	const struct {
-		int clk;
-		int rst;
-	} enable_bits;
+	const struct esp32_peripheral peripheral;
 
 	const struct {
 		bool tx_lsb_first;
@@ -91,45 +89,12 @@ struct i2c_esp32_config {
 	const u32_t default_config;
 };
 
-static inline void set_mask32(u32_t v, u32_t mem_addr)
-{
-	sys_write32(sys_read32(mem_addr) | v, mem_addr);
-}
-
-static inline void clear_mask32(u32_t v, u32_t mem_addr)
-{
-	sys_write32(sys_read32(mem_addr) & ~v, mem_addr);
-}
-
-static void i2c_esp32_enable_peripheral(const struct i2c_esp32_config *config)
-{
-	set_mask32(config->enable_bits.clk, DPORT_PERIP_CLK_EN_REG);
-	clear_mask32(config->enable_bits.rst, DPORT_PERIP_RST_EN_REG);
-}
-
-static const char *i2c_esp32_get_gpio_for_pin(int pin)
-{
-	if (pin < 32) {
-#if defined(CONFIG_GPIO_ESP32_0)
-		return CONFIG_GPIO_ESP32_0_NAME;
-#else
-		return NULL;
-#endif /* CONFIG_GPIO_ESP32_0 */
-	}
-
-#if defined(CONFIG_GPIO_ESP32_1)
-	return CONFIG_GPIO_ESP32_1_NAME;
-#else
-	return NULL;
-#endif /* CONFIG_GPIO_ESP32_1 */
-}
-
 static int i2c_esp32_configure_pins(int pin, int matrix_out, int matrix_in)
 {
 	const int pin_mode = GPIO_DIR_OUT |
 			     GPIO_DS_DISCONNECT_LOW |
 			     GPIO_PUD_PULL_UP;
-	const char *device_name = i2c_esp32_get_gpio_for_pin(pin);
+	const char *device_name = gpio_esp32_get_gpio_for_pin(pin);
 	struct device *gpio;
 	int ret;
 
@@ -176,25 +141,25 @@ static int i2c_esp32_configure_speed(const struct i2c_esp32_config *config,
 
 	period = (APB_CLK_FREQ / freq_hz) / 2;
 
-	set_mask32(period << I2C_SCL_LOW_PERIOD_S,
+	esp32_set_mask32(period << I2C_SCL_LOW_PERIOD_S,
 		   I2C_SCL_LOW_PERIOD_REG(config->index));
-	set_mask32(period << I2C_SCL_HIGH_PERIOD_S,
+	esp32_set_mask32(period << I2C_SCL_HIGH_PERIOD_S,
 		   I2C_SCL_HIGH_PERIOD_REG(config->index));
 
 	period /= 2; /* Set hold and setup times to 1/2th of period */
-	set_mask32(period << I2C_SCL_START_HOLD_TIME_S,
+	esp32_set_mask32(period << I2C_SCL_START_HOLD_TIME_S,
 		   I2C_SCL_START_HOLD_REG(config->index));
-	set_mask32(period << I2C_SCL_RSTART_SETUP_TIME_S,
+	esp32_set_mask32(period << I2C_SCL_RSTART_SETUP_TIME_S,
 		   I2C_SCL_RSTART_SETUP_REG(config->index));
-	set_mask32(period << I2C_SCL_STOP_HOLD_TIME_S,
+	esp32_set_mask32(period << I2C_SCL_STOP_HOLD_TIME_S,
 		   I2C_SCL_STOP_HOLD_REG(config->index));
-	set_mask32(period << I2C_SCL_STOP_SETUP_TIME_S,
+	esp32_set_mask32(period << I2C_SCL_STOP_SETUP_TIME_S,
 		   I2C_SCL_STOP_SETUP_REG(config->index));
 
 	period /= 2; /* Set sample and hold times to 1/4th of period */
-	set_mask32(period << I2C_SDA_HOLD_TIME_S,
+	esp32_set_mask32(period << I2C_SDA_HOLD_TIME_S,
 		   I2C_SDA_HOLD_REG(config->index));
-	set_mask32(period << I2C_SDA_SAMPLE_TIME_S,
+	esp32_set_mask32(period << I2C_SDA_SAMPLE_TIME_S,
 		   I2C_SDA_SAMPLE_REG(config->index));
 
 	return 0;
@@ -204,7 +169,7 @@ static int i2c_esp32_configure(struct device *dev, u32_t dev_config)
 {
 	const struct i2c_esp32_config *config = dev->config->config_info;
 	struct i2c_esp32_data *data = dev->driver_data;
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 	u32_t v = 0;
 	int ret;
 
@@ -222,7 +187,7 @@ static int i2c_esp32_configure(struct device *dev, u32_t dev_config)
 		return ret;
 	}
 
-	i2c_esp32_enable_peripheral(config);
+	esp32_enable_peripheral(&config->peripheral);
 
 	/* MSB or LSB first is configurable for both TX and RX */
 	if (config->mode.tx_lsb_first) {
@@ -289,8 +254,8 @@ static inline void i2c_esp32_reset_fifo(const struct i2c_esp32_config *config)
 	u32_t reg = I2C_FIFO_CONF_REG(config->index);
 
 	/* Writing 1 and then 0 to these bits will reset the I2C fifo */
-	set_mask32(I2C_TX_FIFO_RST | I2C_RX_FIFO_RST, reg);
-	clear_mask32(I2C_TX_FIFO_RST | I2C_RX_FIFO_RST, reg);
+	esp32_set_mask32(I2C_TX_FIFO_RST | I2C_RX_FIFO_RST, reg);
+	esp32_clear_mask32(I2C_TX_FIFO_RST | I2C_RX_FIFO_RST, reg);
 }
 
 static int i2c_esp32_spin_yield(int *counter)
@@ -618,7 +583,7 @@ static const struct i2c_esp32_config i2c_esp32_config_0 = {
 		.scl = CONFIG_I2C_ESP32_0_SCL_PIN,
 		.sda = CONFIG_I2C_ESP32_0_SDA_PIN,
 	},
-	.enable_bits = {
+	.peripheral = {
 		.clk = DPORT_I2C_EXT0_CLK_EN,
 		.rst = DPORT_I2C_EXT0_RST,
 	},
@@ -665,7 +630,7 @@ static const struct i2c_esp32_config i2c_esp32_config_1 = {
 		.scl = CONFIG_I2C_ESP32_1_SCL_PIN,
 		.sda = CONFIG_I2C_ESP32_1_SDA_PIN,
 	},
-	.enable_bits = {
+	.peripheral = {
 		.clk = DPORT_I2C_EXT1_CLK_EN,
 		.rst = DPORT_I2C_EXT1_RST,
 	},
@@ -694,7 +659,7 @@ static int i2c_esp32_init(struct device *dev)
 {
 	const struct i2c_esp32_config *config = dev->config->config_info;
 	struct i2c_esp32_data *data = dev->driver_data;
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	k_sem_init(&data->fifo_sem, 1, 1);
 	k_sem_init(&data->transfer_sem, 1, 1);

@@ -1,0 +1,40 @@
+# Kconfig.miv - Mi-V UART configuration option
+#
+# Copyright (c) 2018 Antmicro <www.antmicro.com>
+#
+
+menuconfig UART_MIV
+	bool "Mi-V serial driver"
+	depends on SOC_RISCV32_MIV
+	select SERIAL_HAS_DRIVER
+	help
+	  This option enables the Mi-V serial driver.
+
+menuconfig UART_MIV_PORT_0
+	bool "Enable Mi-V Port 0"
+	depends on UART_MIV
+	help
+	  This tells the driver to configure the UART port at boot, depending on
+	  the additional configuration options below.
+
+config UART_MIV_PORT_0_NAME
+	string "Port 0 Device Name"
+	default "uart0"
+	depends on UART_MIV_PORT_0
+	help
+	  This is the device name for UART, and is included in the device
+	  struct.
+
+config UART_MIV_PORT_0_BAUD_RATE
+	int "Port 0 Baud Rate"
+	default 0
+	depends on UART_MIV_PORT_0
+	help
+	  The baud rate for UART port to be set to at boot.
+
+config UART_MIV_PORT_0_IRQ_PRIORITY
+	int "Port 0 Interrupt Priority"
+	default 1
+	depends on UART_MIV_PORT_0
+	help
+	  Port 0 Interrupt Priority

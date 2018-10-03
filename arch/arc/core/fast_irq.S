@@ -60,10 +60,18 @@ SECTION_FUNC(TEXT, _firq_enter)
  * This has already been done by _isr_wrapper.
  */
 #ifdef CONFIG_ARC_STACK_CHECKING
+#ifdef CONFIG_ARC_HAS_SECURE
+	lr r2, [_ARC_V2_SEC_STAT]
+	bclr r2, r2, _ARC_V2_SEC_STAT_SSC_BIT
+	/* sflag r2 */
+	/* sflag instruction is not supported in current ARC GNU */
+	.long 0x00bf302f
+#else
 	/* disable stack checking */
 	lr r2, [_ARC_V2_STATUS32]
 	bclr r2, r2, _ARC_V2_STATUS32_SC_BIT
 	kflag r2
+#endif
 #endif
 
 #if CONFIG_RGF_NUM_BANKS != 1

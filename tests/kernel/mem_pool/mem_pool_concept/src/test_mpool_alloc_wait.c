@@ -36,6 +36,8 @@ void tmpool_alloc_wait_ok(void *p1, void *p2, void *p3)
 /**
  * @brief Verify alloc and free with different prio threads
  *
+ * @ingroup kernel_memory_pool_tests
+ *
  * @details The test case allocates 3 blocks of 64 bytes,
  * and spawns 3 threads with lowest priority T1 and other
  * 2 threads, T2 and T3 of same but higher than T1 with

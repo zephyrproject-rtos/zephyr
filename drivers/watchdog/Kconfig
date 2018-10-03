@@ -7,8 +7,7 @@
 #
 
 menuconfig WATCHDOG
-	bool
-	prompt "Watchdog Support"
+	bool "Watchdog Support"
 	help
 	  Include support for watchdogs.
 
@@ -20,19 +19,17 @@ config WDT_0_NAME
 	string "Watchdog driver instance name"
 	default "WATCHDOG_0"
 	help
-	  Set the name used by the watchdog device during registation.
+	  Set the name used by the watchdog device during registration.
 
 endif # HAS_DTS_WDT
 
 config WDT_DISABLE_AT_BOOT
-	bool
-	prompt "Disable at boot"
+	bool "Disable at boot"
 	help
 	  Disable watchdog at Zephyr system startup.
 
 config SYS_LOG_WDT_LEVEL
-	int
-	prompt "Watchdog Driver Log level"
+	int "Watchdog Driver Log level"
 	depends on SYS_LOG
 	default 0
 	range 0 4
@@ -49,8 +46,7 @@ config HAS_WDT_MULTISTAGE
 	bool
 
 config WDT_MULTISTAGE
-	bool
-	prompt "Enable multistage timeouts"
+	bool "Enable multistage timeouts"
 	depends on HAS_WDT_MULTISTAGE
 	help
 	  Enable multistage operation of watchdog timeouts.

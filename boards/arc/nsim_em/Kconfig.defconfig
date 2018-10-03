@@ -1,0 +1,21 @@
+
+if BOARD_NSIM_EM
+
+config BOARD
+	default "nsim_em"
+
+config CPU_ARCEM4
+	def_bool y
+
+if SERIAL
+
+config UART_NSIM
+	def_bool y
+
+config UART_NSIM_PORT_0_BASE_ADDR
+	default 0xf0000000
+
+endif # SERIAL
+
+
+endif # BOARD_NSIM_EM

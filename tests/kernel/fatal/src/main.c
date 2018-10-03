@@ -94,7 +94,7 @@ void alt_thread1(void)
 
 void alt_thread2(void)
 {
-	int key;
+	unsigned int key;
 
 	key = irq_lock();
 	k_oops();
@@ -105,7 +105,7 @@ void alt_thread2(void)
 
 void alt_thread3(void)
 {
-	int key;
+	unsigned int key;
 
 	key = irq_lock();
 	k_panic();
@@ -119,7 +119,7 @@ void blow_up_stack(void)
 	char buf[OVERFLOW_STACKSIZE];
 
 	TC_PRINT("posting %zu bytes of junk to stack...\n", sizeof(buf));
-	memset(buf, 0xbb, sizeof(buf));
+	(void)memset(buf, 0xbb, sizeof(buf));
 }
 
 void stack_thread1(void)
@@ -135,7 +135,7 @@ void stack_thread1(void)
 
 void stack_thread2(void)
 {
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	/* Test that stack overflow check due to swap works */
 	blow_up_stack();
@@ -146,7 +146,15 @@ void stack_thread2(void)
 	irq_unlock(key);
 }
 
-
+/**
+ * @brief Test the kernel fatal error handling works correctly
+ * @details Manually trigger the crash with various ways and check
+ * that the kernel is handling that properly or not. Also the crash reason
+ * should match. Check for stack sentinel feature by overflowing the
+ * thread's stack and check for the exception.
+ *
+ * @ingroup kernel_common_tests
+ */
 void test_fatal(void)
 {
 	rv = TC_PASS;
@@ -240,7 +248,7 @@ void test_fatal(void)
 			(k_thread_entry_t)stack_thread2,
 			NULL, NULL, NULL, K_PRIO_PREEMPT(PRIORITY), 0,
 			K_NO_WAIT);
-#ifdef CONFIG_NXP_MPU
+#ifdef CPU_HAS_NXP_MPU
 	/* FIXME: See #7706 */
 	zassert_true(crash_reason == _NANO_ERR_STACK_CHK_FAIL ||
 		     crash_reason == _NANO_ERR_HW_EXCEPTION, NULL);

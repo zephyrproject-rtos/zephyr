@@ -33,8 +33,8 @@
  * @brief Designware ADC header file
  */
 
-#ifndef DW_ADC_H_
-#define DW_ADC_H_
+#ifndef ZEPHYR_DRIVERS_ADC_ADC_DW_H_
+#define ZEPHYR_DRIVERS_ADC_ADC_DW_H_
 
 #include <zephyr/types.h>
 #include <adc.h>
@@ -135,6 +135,8 @@ extern "C" {
 #define RESUME_ADC_CAPTURE (ADC_INT_DSB|ADC_CLK_ENABLE|ADC_SEQ_PTR_RST)
 #define FLUSH_ADC_ERRORS (ADC_INT_DSB|ADC_CLK_ENABLE|ADC_CLR_OVERFLOW|ADC_CLR_UNDRFLOW)
 
+#define DW_CHANNEL_COUNT	19
+
 /** mV = 3.3V*/
 #define ADC_VREF 3300
 
@@ -188,13 +190,19 @@ struct adc_config {
  * during driver execution.
  */
 struct adc_info {
-	struct k_sem device_sync_sem;
+	struct device *dev;
+	struct adc_context ctx;
+	u16_t *buffer;
+	u32_t active_channels;
+	u32_t channels;
+	u32_t channel_id;
+
 #ifdef CONFIG_ADC_DW_REPETITIVE
 	/**Current reception buffer index*/
 	u8_t  index[BUFS_NUM];
 #endif
 	/**Sequence entries' array*/
-	struct adc_seq_entry *entries;
+	const struct adc_sequence *entries;
 	/**State of execution of the driver*/
 	u8_t  state;
 	/**Sequence size*/
@@ -208,7 +216,6 @@ struct adc_info {
 #endif
 
 };
-
 
 /**
  *
@@ -227,4 +234,4 @@ int adc_dw_init(struct device *dev);
 }
 #endif
 
-#endif  /*  DW_ADC_H_ */
+#endif  /*  ZEPHYR_DRIVERS_ADC_ADC_DW_H_ */

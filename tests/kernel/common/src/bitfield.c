@@ -14,6 +14,19 @@
 #define BIT_VAL(bit)    (1 << (bit & 0x7))
 #define BITFIELD_SIZE   512
 
+/**
+ * @addtogroup kernel_common_tests
+ * @{
+ */
+
+/**
+ * @brief Test bitfield operations
+ *
+ * @see sys_test_bit(), sys_set_bit(), sys_clear_bit(),
+ * sys_bitfield_set_bit(), sys_bitfield_clear_bit(),
+ * sys_bitfield_test_bit(), sys_bitfield_test_and_set_bit(),
+ * sys_bitfield_test_and_clear_bit()
+ */
 void test_bitfield(void)
 {
 	u32_t b1 = 0;
@@ -108,3 +121,7 @@ void test_bitfield(void)
 			      bit);
 	}
 }
+
+/**
+ * @}
+ */

@@ -7,47 +7,41 @@
 #
 
 menuconfig BMA280
-	bool
-	prompt "BMA280 Three Axis Accelerometer Family"
+	bool "BMA280 Three Axis Accelerometer Family"
 	depends on I2C
-	default n
 	help
 	  Enable driver for BMA280 I2C-based triaxial accelerometer sensor
 	  family.
 
+if BMA280
+
 choice
 	prompt "Chip type"
-	depends on BMA280
 	default BMA280_CHIP_BMA280
 	help
 	  Choose desired chip type from the BMA280 family.
 
 config BMA280_CHIP_BMA280
-	bool
-	prompt "BMA280"
+	bool "BMA280"
 	help
 	  Choose this option to enable the BMA280 chip.
 
 config BMA280_CHIP_BMC150_ACCEL
-	bool
-	prompt "BMC150_ACCEL"
+	bool "BMC150_ACCEL"
 	help
 	  Choose this option to enable the accelerometer of the BMC150 chip.
 
 endchoice
 
 config BMA280_NAME
-	string
-	prompt "Driver name"
+	string "Driver name"
 	default "BMA280" if BMA280_CHIP_BMA280
 	default "BMC150_ACCEL" if BMA280_CHIP_BMC150_ACCEL
-	depends on BMA280
 	help
 	  Device name with which the sensor is identified.
 
 config BMA280_I2C_ADDR
 	hex "BMA280 I2C address"
-	depends on BMA280
 	default 0x18 if BMA280_CHIP_BMA280
 	default 0x10 if BMA280_CHIP_BMC150_ACCEL
 	help
@@ -59,9 +53,7 @@ config BMA280_I2C_ADDR
 	  0x19: Use if the SDO pin is pulled to VDDIO.
 
 config BMA280_I2C_MASTER_DEV_NAME
-	string
-	prompt "I2C master device name"
-	depends on BMA280
+	string "I2C master device name"
 	default "I2C_0"
 	help
 	  Specify the device name of the I2C master device to which chip is
@@ -69,24 +61,20 @@ config BMA280_I2C_MASTER_DEV_NAME
 
 choice
 	prompt "Trigger mode"
-	depends on BMA280
 	default BMA280_TRIGGER_GLOBAL_THREAD
 	help
 	  Specify the type of triggering to be used by the driver.
 
 config BMA280_TRIGGER_NONE
-	bool
-	prompt "No trigger"
+	bool "No trigger"
 
 config BMA280_TRIGGER_GLOBAL_THREAD
-	bool
-	prompt "Use global thread"
+	bool "Use global thread"
 	depends on GPIO
 	select BMA280_TRIGGER
 
 config BMA280_TRIGGER_OWN_THREAD
-	bool
-	prompt "Use own thread"
+	bool "Use own thread"
 	depends on GPIO
 	select BMA280_TRIGGER
 
@@ -94,104 +82,87 @@ endchoice
 
 config BMA280_TRIGGER
 	bool
-	depends on BMA280
 
 config BMA280_GPIO_DEV_NAME
-	string
-	prompt "GPIO device"
+	string "GPIO device"
 	default "GPIO_0"
-	depends on BMA280 && BMA280_TRIGGER
+	depends on BMA280_TRIGGER
 	help
 	  The device name of the GPIO device to which the chip's interrupt pins
 	  are connected.
 
 config BMA280_GPIO_PIN_NUM
-	int
-	prompt "Interrupt GPIO pin number"
+	int "Interrupt GPIO pin number"
 	default 0
-	depends on BMA280 && BMA280_TRIGGER
+	depends on BMA280_TRIGGER
 	help
 	  The number of the GPIO on which the interrupt signal from the chip
 	  will be received.
 
 config BMA280_THREAD_PRIORITY
-	int
-	prompt "Thread priority"
-	depends on BMA280 && BMA280_TRIGGER_OWN_THREAD
+	int "Thread priority"
+	depends on BMA280_TRIGGER_OWN_THREAD
 	default 10
 	help
 	  Priority of thread used by the driver to handle interrupts.
 
 config BMA280_THREAD_STACK_SIZE
-	int
-	prompt "Thread stack size"
-	depends on BMA280 && BMA280_TRIGGER_OWN_THREAD
+	int "Thread stack size"
+	depends on BMA280_TRIGGER_OWN_THREAD
 	default 1024
 	help
 	  Stack size of thread used by the driver to handle interrupts.
 
 choice
 	prompt "Acceleration measurement range"
-	depends on BMA280
 	default BMA280_PMU_RANGE_2G
 	help
 	  Measurement range for acceleration values.
 
 config BMA280_PMU_RANGE_2G
-	bool
-	prompt "+/-2g"
+	bool "+/-2g"
 
 config BMA280_PMU_RANGE_4G
-	bool
-	prompt "+/-4g"
+	bool "+/-4g"
 
 config BMA280_PMU_RANGE_8G
-	bool
-	prompt "+/-8g"
+	bool "+/-8g"
 
 config BMA280_PMU_RANGE_16G
-	bool
-	prompt "+/-16g"
+	bool "+/-16g"
 
 endchoice
 
 choice
 	prompt "Acceleration data filter bandwidth"
-	depends on BMA280
 	default BMA280_PMU_BW_7
 	help
 	  Bandwidth of filtered acceleration data.
 
 config BMA280_PMU_BW_1
-	bool
-	prompt "7.81Hz"
+	bool "7.81Hz"
 
 config BMA280_PMU_BW_2
-	bool
-	prompt "15.63HZ"
+	bool "15.63HZ"
 
 config BMA280_PMU_BW_3
-	bool
-	prompt "31.25Hz"
+	bool "31.25Hz"
 
 config BMA280_PMU_BW_4
-	bool
-	prompt "62.5Hz"
+	bool "62.5Hz"
 
 config BMA280_PMU_BW_5
-	bool
-	prompt "125Hz"
+	bool "125Hz"
 
 config BMA280_PMU_BW_6
-	bool
-	prompt "250HZ"
+	bool "250HZ"
 
 config BMA280_PMU_BW_7
-	bool
-	prompt "500Hz"
+	bool "500Hz"
 
 config BMA280_PMU_BW_8
-	bool
-	prompt "unfiltered"
+	bool "unfiltered"
 
 endchoice
+
+endif # BMA280

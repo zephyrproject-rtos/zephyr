@@ -6,9 +6,7 @@
 #
 
 menuconfig CLOCK_CONTROL_MCUX_SIM
-	bool
-	prompt "MCUX SIM driver"
+	bool "MCUX SIM driver"
 	depends on HAS_MCUX_SIM
-	default n
 	help
 	  Enable support for mcux sim driver.

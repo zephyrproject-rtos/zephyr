@@ -7,23 +7,21 @@
 #
 
 menuconfig LIS2DH
-	bool
-	prompt "LIS2DH Three Axis Accelerometer"
+	bool "LIS2DH Three Axis Accelerometer"
 	depends on I2C || SPI
-	default n
 	help
 	  Enable driver for LIS2DH SPI/I2C-based triaxial accelerometer sensor.
+
+if LIS2DH
 
 config LIS2DH_NAME
 	string "Driver name"
 	default "LIS2DH"
-	depends on LIS2DH
 	help
 	  Device name with which the LIS2DH sensor is identified.
 
 choice
 	prompt "Sensor Bus Type"
-	depends on LIS2DH
 	default LIS2DH_BUS_SPI
 	help
 	  Specify bus type, SPI versus I2C, to which the sensor is attached.
@@ -44,7 +42,7 @@ endchoice
 
 config LIS2DH_SPI_MASTER_DEV_NAME
 	string "SPI master device name"
-	depends on LIS2DH && LIS2DH_BUS_SPI
+	depends on LIS2DH_BUS_SPI
 	default "SPI_0"
 	help
 	  Specify the device name of the SPI master device to which LIS2DH is
@@ -52,7 +50,7 @@ config LIS2DH_SPI_MASTER_DEV_NAME
 
 config LIS2DH_SPI_SS_1
 	int "LIS2DH SPI slave 1 select number"
-	depends on LIS2DH && LIS2DH_BUS_SPI
+	depends on LIS2DH_BUS_SPI
 	range 1 4
 	default 1
 	help
@@ -60,7 +58,7 @@ config LIS2DH_SPI_SS_1
 
 config LIS2DH_SPI_FREQUENCY
 	int "SPI clock frequency"
-	depends on LIS2DH && LIS2DH_BUS_SPI
+	depends on LIS2DH_BUS_SPI
 	range 125000 10000000
 	default 4000000
 	help
@@ -69,7 +67,7 @@ config LIS2DH_SPI_FREQUENCY
 
 config LIS2DH_I2C_ADDR
 	hex "LIS2DH I2C address"
-	depends on LIS2DH && LIS2DH_BUS_I2C
+	depends on LIS2DH_BUS_I2C
 	default 0x18
 	help
 	  I2C address of the LIS2DH sensor.
@@ -78,9 +76,8 @@ config LIS2DH_I2C_ADDR
 	  0x19: Choose this option if the SDO pin is pulled to VDDIO.
 
 config LIS2DH_I2C_MASTER_DEV_NAME
-	string
-	prompt "I2C master where LIS2DH is connected"
-	depends on LIS2DH && LIS2DH_BUS_I2C
+	string "I2C master where LIS2DH is connected"
+	depends on LIS2DH_BUS_I2C
 	default "I2C_0"
 	help
 	  Specify the device name of the I2C master device to which LIS2DH is
@@ -88,7 +85,6 @@ config LIS2DH_I2C_MASTER_DEV_NAME
 
 choice
 	prompt "Trigger mode"
-	depends on LIS2DH
 	default LIS2DH_TRIGGER_GLOBAL_THREAD
 	help
 	  Specify the type of triggering to be used by the driver.
@@ -110,12 +106,11 @@ endchoice
 
 config LIS2DH_TRIGGER
 	bool
-	depends on LIS2DH
 
 config LIS2DH_GPIO_DEV_NAME
 	string "GPIO device"
 	default "GPIO_0"
-	depends on LIS2DH && LIS2DH_TRIGGER
+	depends on LIS2DH_TRIGGER
 	help
 	  The device name of the GPIO device to which the LIS2DH interrupt pins
 	  are connected.
@@ -124,7 +119,7 @@ config LIS2DH_INT1_GPIO_PIN
 	int "Interrupt 1 GPIO pin number"
 	range 0 254
 	default 25
-	depends on LIS2DH && LIS2DH_TRIGGER
+	depends on LIS2DH_TRIGGER
 	help
 	  The number of the GPIO on which the interrupt 1 signal from the LIS2DH
 	  chip will be received.
@@ -133,28 +128,27 @@ config LIS2DH_INT2_GPIO_PIN
 	int "Interrupt 2 GPIO pin number"
 	range 0 254
 	default 26
-	depends on LIS2DH && LIS2DH_TRIGGER
+	depends on LIS2DH_TRIGGER
 	help
 	  The number of the GPIO on which the interrupt 2 signal from the LIS2DH
 	  chip will be received.
 
 config LIS2DH_THREAD_PRIORITY
 	int "Thread priority"
-	depends on LIS2DH && LIS2DH_TRIGGER_OWN_THREAD
+	depends on LIS2DH_TRIGGER_OWN_THREAD
 	default 10
 	help
 	  Priority of thread used by the driver to handle interrupts.
 
 config LIS2DH_THREAD_STACK_SIZE
 	int "Thread stack size"
-	depends on LIS2DH && LIS2DH_TRIGGER_OWN_THREAD
+	depends on LIS2DH_TRIGGER_OWN_THREAD
 	default 1024
 	help
 	  Stack size of thread used by the driver to handle interrupts.
 
 choice
 	prompt "Acceleration measurement range"
-	depends on LIS2DH
 	default LIS2DH_ACCEL_RANGE_RUNTIME
 	help
 	  Initial measurement full scale range for acceleration values.
@@ -178,7 +172,6 @@ endchoice
 
 choice
 	prompt "Power mode"
-	depends on LIS2DH
 	default LIS2DH_POWER_MODE_NORMAL
 	help
 	  Choose between normal or low power operation mode for chip at init.
@@ -193,7 +186,6 @@ endchoice
 
 choice
 	prompt "Output data rate frequency"
-	depends on LIS2DH
 	default LIS2DH_ODR_RUNTIME
 	help
 	  Initial data rate frequency of acceleration data at initialization.
@@ -239,3 +231,5 @@ config LIS2DH_ODR_9_LOW
 	depends on LIS2DH_POWER_MODE_LOW
 
 endchoice
+
+endif # LIS2DH

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __SENSOR_LIS2DH_H__
-#define __SENSOR_LIS2DH_H__
+#ifndef ZEPHYR_DRIVERS_SENSOR_LIS2DH_LIS2DH_H_
+#define ZEPHYR_DRIVERS_SENSOR_LIS2DH_LIS2DH_H_
 
 #include <kernel.h>
 #include <device.h>

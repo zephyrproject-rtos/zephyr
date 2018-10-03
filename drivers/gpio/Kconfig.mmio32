@@ -6,7 +6,6 @@
 
 config GPIO_MMIO32
 	bool
-	default n
 	help
 	  This is a driver for accessing a simple, fixed purpose, 32-bit
 	  memory-mapped i/o register using the same APIs as GPIO drivers. This

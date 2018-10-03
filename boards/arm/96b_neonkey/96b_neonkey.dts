@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <st/stm32f411.dtsi>
+#include <st/f4/stm32f411Xe.dtsi>
 
 / {
 	model = "Tocoding Neonkey 96boards";
@@ -19,19 +19,19 @@
 
 	leds {
 		compatible = "gpio-leds";
-		green_led_0: led@0 {
+		green_led_0: led_0 {
 			gpios = <&gpiob 12 GPIO_INT_ACTIVE_HIGH>;
 			label = "USR0 LED";
 		};
-		green_led_1: led@1 {
+		green_led_1: led_1 {
 			gpios = <&gpiob 13 GPIO_INT_ACTIVE_HIGH>;
 			label = "USR1 LED";
 		};
-		green_led_2: led@2 {
+		green_led_2: led_2 {
 			gpios = <&gpiob 14 GPIO_INT_ACTIVE_HIGH>;
 			label = "USR2 LED";
 		};
-		green_led_3: led@3 {
+		green_led_3: led_3 {
 			gpios = <&gpiob 15 GPIO_INT_ACTIVE_HIGH>;
 			label = "USR3 LED";
 		};
@@ -39,7 +39,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
-		user_button: button@0 {
+		user_button: button_0 {
 			label = "User";
 			gpios = <&gpiob 2 GPIO_INT_ACTIVE_LOW>;
 		};
@@ -82,5 +82,9 @@
 };
 
 &spi1 {
+	status = "ok";
+};
+
+&rtc {
 	status = "ok";
 };

@@ -9,42 +9,15 @@
 
 menuconfig LSM6DS0
 	bool "LSM6DS0 I2C accelerometer and gyroscope Chip"
-	depends on I2C
-	default n
+	depends on I2C && HAS_DTS_I2C
 	help
 	  Enable driver for LSM6DS0 I2C-based accelerometer and gyroscope
 	  sensor.
 
-if !HAS_DTS_I2C_DEVICE
-
-config LSM6DS0_DEV_NAME
-	string "LSM6DS0 device name"
-	depends on LSM6DS0
-	default "lsm6ds0"
-
-config LSM6DS0_I2C_ADDR
-	hex
-	prompt "LSM6DS0 I2C address"
-	depends on LSM6DS0
-	default 0x6B
-	help
-	  I2C address of the LSM6DS0 sensor.
-	  Use 0x6A if the SA0 pin is pulled to GND or 0x6B if the SA0 pin
-	  is pulled to VCC.
-
-config LSM6DS0_I2C_MASTER_DEV_NAME
-	string "I2C master where LSM6DS0 chip is connected"
-	depends on LSM6DS0
-	default "I2C_0"
-	help
-	  Specify the device name of the I2C master device to which LSM6DS0 is
-	  connected.
-
-endif
+if LSM6DS0
 
 config LSM6DS0_ACCEL_ENABLE_X_AXIS
 	bool "Enable accelerometer X axis"
-	depends on LSM6DS0
 	default y
 	help
 	  Enable/disable accelerometer X axis totally by stripping everything
@@ -52,7 +25,6 @@ config LSM6DS0_ACCEL_ENABLE_X_AXIS
 
 config LSM6DS0_ACCEL_ENABLE_Y_AXIS
 	bool "Enable accelerometer Y axis"
-	depends on LSM6DS0
 	default y
 	help
 	  Enable/disable accelerometer Y axis totally by stripping everything
@@ -60,7 +32,6 @@ config LSM6DS0_ACCEL_ENABLE_Y_AXIS
 
 config LSM6DS0_ACCEL_ENABLE_Z_AXIS
 	bool "Enable accelerometer Z axis"
-	depends on LSM6DS0
 	default y
 	help
 	  Enable/disable accelerometer Z axis totally by stripping everything
@@ -68,7 +39,6 @@ config LSM6DS0_ACCEL_ENABLE_Z_AXIS
 
 config LSM6DS0_GYRO_ENABLE_X_AXIS
 	bool "Enable gyroscope X axis"
-	depends on LSM6DS0
 	default y
 	help
 	  Enable/disable gyroscope X axis totally by stripping everything
@@ -76,7 +46,6 @@ config LSM6DS0_GYRO_ENABLE_X_AXIS
 
 config LSM6DS0_GYRO_ENABLE_Y_AXIS
 	bool "Enable gyroscope Y axis"
-	depends on LSM6DS0
 	default y
 	help
 	  Enable/disable gyroscope Y axis totally by stripping everything
@@ -84,7 +53,6 @@ config LSM6DS0_GYRO_ENABLE_Y_AXIS
 
 config LSM6DS0_GYRO_ENABLE_Z_AXIS
 	bool "Enable gyroscope Z axis"
-	depends on LSM6DS0
 	default y
 	help
 	  Enable/disable gyroscope Z axis totally by stripping everything
@@ -92,19 +60,14 @@ config LSM6DS0_GYRO_ENABLE_Z_AXIS
 
 config LSM6DS0_ENABLE_TEMP
 	bool "Enable temperature"
-	depends on LSM6DS0
-	default n
 	help
 	  Enable/disable temperature totally by stripping everything related in
 	  driver.
 
 menu "Attributes"
-	depends on LSM6DS0
 
 config LSM6DS0_GYRO_FULLSCALE
-	int
-	prompt "Gyroscope full-scale range"
-	depends on LSM6DS0
+	int "Gyroscope full-scale range"
 	default 245
 	help
 	  Specify the default gyroscope full-scale range.
@@ -112,9 +75,7 @@ config LSM6DS0_GYRO_FULLSCALE
 	  second. Valid values are 245, 500 and 2000.
 
 config LSM6DS0_GYRO_SAMPLING_RATE
-	int
-	prompt "Output data rate"
-	depends on LSM6DS0
+	int "Output data rate"
 	default 15
 	help
 	  Specify the default gyroscope output data rate expressed in samples
@@ -123,9 +84,7 @@ config LSM6DS0_GYRO_SAMPLING_RATE
 	  952.
 
 config LSM6DS0_ACCEL_FULLSCALE
-	int
-	prompt "Accelerometer full-scale range"
-	depends on LSM6DS0
+	int "Accelerometer full-scale range"
 	default 2
 	help
 	  Specify the default accelerometer full-scale range.
@@ -133,9 +92,7 @@ config LSM6DS0_ACCEL_FULLSCALE
 	  are 2, 4, 8 and 16.
 
 config LSM6DS0_ACCEL_SAMPLING_RATE
-	int
-	prompt "Output data rate"
-	depends on LSM6DS0
+	int "Output data rate"
 	default 10
 	help
 	  Specify the default accelerometer output data rate expressed in
@@ -143,3 +100,5 @@ config LSM6DS0_ACCEL_SAMPLING_RATE
 	  Data rates supported by the chip are 0, 10, 50, 119, 238, 476, 952.
 
 endmenu
+
+endif # LSM6DS0

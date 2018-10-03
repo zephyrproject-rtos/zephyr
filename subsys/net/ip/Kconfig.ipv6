@@ -17,11 +17,11 @@ if NET_IPV6
 
 config NET_IF_MAX_IPV6_COUNT
 	int "Max number of IPv6 network interfaces in the system"
-	default 1
 	default NET_VLAN_COUNT if NET_VLAN
+	default 1
 	help
-	This tells how many network interfaces there will be in the system
-	that will have IPv6 enabled.
+	  This tells how many network interfaces there will be in the system
+	  that will have IPv6 enabled.
 
 config NET_IF_UNICAST_IPV6_ADDR_COUNT
 	int "Max number of unicast IPv6 addresses per network interface"
@@ -50,7 +50,6 @@ config NET_IPV6_MAX_NEIGHBORS
 
 config NET_IPV6_FRAGMENT
 	bool "Support IPv6 fragmentation"
-	default n
 	help
 	  IPv6 fragmentation is disabled by default. This saves memory and
 	  should not cause issues normally as we support anyway the minimum
@@ -121,7 +120,6 @@ config NET_IPV6_RA_RDNSS
 
 config NET_6LO
 	bool "Enable 6lowpan IPv6 Compression library"
-	default n
 	default y if NET_L2_IEEE802154
 	help
 	  6lowpan compression and fragmentation. It is enabled by default
@@ -129,7 +127,6 @@ config NET_6LO
 
 config NET_6LO_CONTEXT
 	bool "Enable 6lowpan context based compression"
-	default n
 	depends on NET_6LO
 	help
 	  Enables 6lowpan context based compression based on information
@@ -152,19 +149,16 @@ if NET_LOG
 
 config NET_DEBUG_IPV6
 	bool "Debug core IPv6"
-	default n
 	help
 	  Enables core IPv6 code part to output debug messages
 
 config NET_DEBUG_ICMPV6
 	bool "Debug ICMPv6"
-	default n
 	help
 	  Enables ICMPv6 code part to output debug messages
 
 config NET_DEBUG_IPV6_NBR_CACHE
 	bool "Debug IPv6 neighbor cache"
-	default n
 	help
 	  Enables Neighbor Cache code to output debug messages
 

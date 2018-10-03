@@ -26,3 +26,5 @@ The Zephyr APIs are used the same way on all SoCs and boards.
    file_system
    display_api
    misc_api
+   logger_api
+   shell_api

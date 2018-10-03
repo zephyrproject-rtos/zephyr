@@ -6,7 +6,6 @@
 
 menuconfig LWM2M_IPSO_SUPPORT
 	bool "IPSO Alliance Smart Object Support"
-	default n
 	depends on LWM2M
 	help
 	  This option adds general support for IPSO objects
@@ -15,7 +14,6 @@ if LWM2M_IPSO_SUPPORT
 
 config LWM2M_IPSO_TEMP_SENSOR
 	bool "IPSO Temperature Sensor Support"
-	default n
 	help
 	  This IPSO object should be used with a temperature sensor to
 	  report a temperature measurement. It also provides resources for
@@ -33,7 +31,6 @@ config LWM2M_IPSO_TEMP_SENSOR_INSTANCE_COUNT
 
 config LWM2M_IPSO_LIGHT_CONTROL
 	bool "IPSO Light Control Support"
-	default n
 	help
 	  This Object is used to control a light source, such as a LED or other
 	  light. It allows a light to be turned on or off and its dimmer

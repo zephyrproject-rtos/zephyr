@@ -11,8 +11,8 @@
  * included by the generic kernel interface header (include/arch/cpu.h)
  */
 
-#ifndef _ARCH_IFACE_H
-#define _ARCH_IFACE_H
+#ifndef ZEPHYR_INCLUDE_ARCH_NIOS2_ARCH_H_
+#define ZEPHYR_INCLUDE_ARCH_NIOS2_ARCH_H_
 
 #include <system.h>
 #include <arch/nios2/asm_inline.h>
@@ -31,11 +31,6 @@ extern "C" {
 #define _NANO_ERR_SPURIOUS_INT (4)	/* Spurious interrupt */
 #define _NANO_ERR_KERNEL_OOPS (5)       /* Kernel oops (fatal to thread) */
 #define _NANO_ERR_KERNEL_PANIC (6)	/* Kernel panic (fatal to system) */
-
-/* APIs need to support non-byte addressable architectures */
-
-#define OCTET_TO_SIZEOFUNIT(X) (X)
-#define SIZEOFUNIT_TO_OCTET(X) (X)
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>

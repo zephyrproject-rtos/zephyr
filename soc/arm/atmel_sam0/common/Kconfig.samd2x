@@ -1,0 +1,34 @@
+if SOC_SERIES_SAMD20 || SOC_SERIES_SAMD21
+
+config SOC_ATMEL_SAMD_XOSC32K
+	bool "Enable the external 32 kHz crystal oscillator"
+	help
+	  Say y to enable the external 32 kHZ crystal oscillator at
+	  startup.  This can then be selected as the main clock source
+	  for the SOC.
+
+config SOC_ATMEL_SAMD_XOSC
+	bool "Enable the external crystal oscillator"
+	help
+	  Say y to enable the external crystal oscillator at startup.
+
+choice
+	prompt "Main clock source"
+	help
+	  Selects the clock that the main clocks, such as the CPU
+	  clock and AHB clock, will be derived from.
+
+config SOC_ATMEL_SAMD_XOSC32K_AS_MAIN
+	depends on SOC_ATMEL_SAMD_XOSC32K
+	bool "XOSC32K"
+
+config SOC_ATMEL_SAMD_XOSC_AS_MAIN
+	depends on SOC_ATMEL_SAMD_XOSC
+	bool "XOSC"
+
+config SOC_ATMEL_SAMD_OSC8M_AS_MAIN
+	bool "OSC8M"
+
+endchoice
+
+endif # SOC_SERIES_SAMD20 || SOC_SERIES_SAMD21

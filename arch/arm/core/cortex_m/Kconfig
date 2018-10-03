@@ -68,7 +68,6 @@ config CPU_CORTEX_M7
 	# Omit prompt to signify "hidden" option
 	select ARMV7_M_ARMV8_M_MAINLINE
 	select ARMV7_M_ARMV8_M_FP if CPU_HAS_FPU
-	default n
 	help
 	  This option signifies the use of a Cortex-M7 CPU
 
@@ -77,7 +76,6 @@ if CPU_CORTEX_M
 config ISA_THUMB2
 	bool
 	# Omit prompt to signify "hidden" option
-	default n
 	help
 	  From: http://www.arm.com/products/processors/technologies/instruction-set-architectures.php
 
@@ -107,7 +105,6 @@ config CPU_CORTEX_M_HAS_BASEPRI
 	bool
 	# Omit prompt to signify "hidden" option
 	depends on ARMV7_M_ARMV8_M_MAINLINE
-	default n
 	help
 	  This option signifies the CPU has the BASEPRI register.
 
@@ -122,7 +119,6 @@ config CPU_CORTEX_M_HAS_VTOR
 	bool
 	# Omit prompt to signify "hidden" option
 	depends on !CPU_CORTEX_M0
-	default n
 	help
 	  This option signifies the CPU has the VTOR register.
 	  The VTOR indicates the offset of the vector table base
@@ -136,7 +132,6 @@ config CPU_CORTEX_M_HAS_SPLIM
 	bool
 	# Omit prompt to signify "hidden" option
 	depends on ARMV8_M_MAINLINE || (ARMV8_M_SE && !ARM_NONSECURE_FIRMWARE)
-	default n
 	help
 	  This option signifies the CPU has the MSPLIM, PSPLIM registers.
 
@@ -154,7 +149,6 @@ config CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS
 	bool
 	# Omit prompt to signify "hidden" option
 	depends on ARMV7_M_ARMV8_M_MAINLINE
-	default n
 	help
 	  This option signifies the CPU may trigger system faults
 	  (other than HardFault) with configurable priority, and,
@@ -163,7 +157,6 @@ config CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS
 config CPU_CORTEX_M0_HAS_VECTOR_TABLE_REMAP
 	bool
 	# Omit prompt to signify "hidden" option
-	default n
 	help
 	  This option signifies the Cortex-M0 has some mechanisms that can map
 	  the vector table to SRAM
@@ -171,14 +164,12 @@ config CPU_CORTEX_M0_HAS_VECTOR_TABLE_REMAP
 config CPU_CORTEX_M_HAS_CMSE
 	bool
 	depends on ARMV8_M_BASELINE || ARMV8_M_MAINLINE
-	default n
 	help
 	  This option signifies the Cortex-M CPU has the CMSE intrinsics.
 
 config ARMV6_M_ARMV8_M_BASELINE
 	bool
 	# Omit prompt to signify "hidden" option
-	default n
 	select ATOMIC_OPERATIONS_C
 	select ISA_THUMB2
 	help
@@ -197,7 +188,6 @@ config ARMV6_M_ARMV8_M_BASELINE
 config ARMV8_M_BASELINE
 	bool
 	# Omit prompt to signify "hidden" option
-	default n
 	select ARMV6_M_ARMV8_M_BASELINE
 	select CPU_CORTEX_M_HAS_CMSE
 	help
@@ -210,7 +200,6 @@ config ARMV8_M_BASELINE
 config ARMV7_M_ARMV8_M_MAINLINE
 	bool
 	# Omit prompt to signify "hidden" option
-	default n
 	select ATOMIC_OPERATIONS_BUILTIN
 	select ISA_THUMB2
 	select CPU_CORTEX_M_HAS_BASEPRI
@@ -263,6 +252,14 @@ config ARMV7_M_ARMV8_M_FP
 	  implementation, or the use of an ARMv8-M processor
 	  implementation supporting the Floating-Point Extension.
 
+config ARMV8_M_DSP
+	bool
+	# Omit prompt to signify "hidden" option
+	depends on ARMV8_M_MAINLINE
+	help
+	  This option signifies the use of an ARMv8-M processor
+	  implementation supporting the DSP Extension.
+
 menu "ARM Cortex-M options"
 	depends on CPU_CORTEX_M
 
@@ -279,18 +276,15 @@ config DATA_ENDIANNESS_LITTLE
 	  implemented as big endian.
 
 config STACK_ALIGN_DOUBLE_WORD
-	bool
-	prompt "Align stacks on double-words (8 octets)"
+	bool "Align stacks on double-words (8 octets)"
 	default y
 	help
 	  This is needed to conform to AAPCS, the procedure call standard for
 	  the ARM. It wastes stack space.
 
 config RUNTIME_NMI
-	bool
-	prompt "Attach an NMI handler at runtime"
+	bool "Attach an NMI handler at runtime"
 	select REBOOT
-	default n
 	help
 	  The kernel provides a simple NMI handler that simply hangs in a tight
 	  loop if triggered. This fills the requirement that there must be an
@@ -298,8 +292,7 @@ config RUNTIME_NMI
 	  needed, enable this option and attach it via _NmiHandlerSet().
 
 config FAULT_DUMP
-	int
-	prompt "Fault dump level"
+	int "Fault dump level"
 	default 2
 	range 0 2
 	help
@@ -324,25 +317,23 @@ config GEN_ISR_TABLES
 	default y
 
 config ZERO_LATENCY_IRQS
-	bool
-	prompt "Enable zero-latency interrupts"
-	default n
+	bool "Enable zero-latency interrupts"
 	depends on CPU_CORTEX_M_HAS_BASEPRI
 	help
-	  Interrupt locking is done by setting exception masking to priority
-	  one, thus allowing exception of priority zero to still come in. By
-	  default, the kernel verifies, via __ASSERT() statements, that the
-	  interrupt priority is not set to zero when either connecting them or
-	  setting their priority. Enabling this option disables the check,
-	  thus allowing setting the priority of interrupts to zero.
-
-	  Note that this is a somewhat dangerous option: ISRs of priority zero
-	  interrupts cannot use any kernel functionality.
+	  The kernel may reserve some of the highest interrupts priorities in
+	  the system for its own use. These interrupts will not be masked
+	  by interrupt locking.
+	  When connecting interrupts the kernel will offset all interrupts
+	  to lower priority than those reserved by the kernel.
+	  Zero-latency interrupt can be used to set up an interrupt at the
+	  highest interrupt priority which will not be blocked by interrupt
+	  locking.
+	  Since Zero-latency ISRs will run in the same priority or possibly at
+	  higher priority than the rest of the kernel they cannot use any
+	  kernel functionality.
 
 config SW_VECTOR_RELAY
-	bool
-	prompt "Enable Software Vector Relay"
-	default n
+	bool "Enable Software Vector Relay"
 	default y if BOOTLOADER_MCUBOOT
 	depends on ARMV6_M_ARMV8_M_BASELINE && !(CPU_CORTEX_M0_HAS_VECTOR_TABLE_REMAP || CPU_CORTEX_M_HAS_VTOR)
 	help
@@ -354,9 +345,7 @@ config SW_VECTOR_RELAY
 	  relocation table mechanisms.
 
 config PLATFORM_SPECIFIC_INIT
-	bool
-	prompt "Enable platform (SOC) specific startup hook"
-	default n
+	bool "Enable platform (SOC) specific startup hook"
 	help
 	  The platform specific initialization code (_PlatformInit) is executed
 	  at the beginning of the startup code (__start).

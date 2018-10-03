@@ -10,8 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _DMA_H_
-#define _DMA_H_
+#ifndef ZEPHYR_INCLUDE_DMA_H_
+#define ZEPHYR_INCLUDE_DMA_H_
 
 #include <kernel.h>
 #include <device.h>
@@ -306,4 +306,4 @@ static inline u32_t dma_burst_index(u32_t burst)
 
 #include <syscalls/dma.h>
 
-#endif /* _DMA_H_ */
+#endif /* ZEPHYR_INCLUDE_DMA_H_ */

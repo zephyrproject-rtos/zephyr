@@ -13,24 +13,17 @@ simple SPI and I2S interfaces, to the microphone array via I2S or PDM
 interfaces, and to speakers via I2S. In addition, it has an I2C interface
 for controlling platform components such as ADCs, DACs, CODECs and PMICs.
 
-Intel S1000 is designed to handle speech recognition at the edge (e.g.
-locally) so some of your voice commands should still work when not connected
-to the network.[1]_
+The Intel S1000 contains the following:
 
-The features include the following:
+- Dual DSP
 
-- Digital Signal Processors
-
-  - Dual Tensilica LX6 cores @ 400 MHz with HiFi3 DSP
-  - Single precision scalar floating-point instructions
+  - Dual 400 MHz Tensilica HiFi3 cores
+  - Single precision scalar floating-point
   - 16KB 4-way I$; 48KB 4-way D$
-  - Up to 2400 DMIPS, 3.2 GMACS (16x16), 800 MFLOPS of Compute
 
-- Speech Accelerators
+- Inference Engine
 
-  - A GMM (Gaussian Mixture Model) and neural network accelerator
-  - Low power keyboard and limited vocabulary recognition
-  - Up to 9.6 GMACS (16x16) of compute
+  - On-chip Neural Network Accelerator
 
 - Internal Memory
 
@@ -44,24 +37,13 @@ The features include the following:
 
 - I/O Interfaces
 
-  - Host I/O: SPI for command and control, I2S for streaming audio, IRQ, reset, wake, optional USB 2.0 HS device
+  - Host I/O: SPI or USB 2.0 High-speed device
   - Microphone: I2S/TDM 9.6 MHz max. bit clock
-  - Digital Microphone: 4 PDM ports 4.8 MHz max. bit clock
+  - Digital Microphone: 4 stereo PDM ports up to 4.8 MHz clock
   - Speaker: I2S/TDM 9.6 MHz max. bit clock
-  - Instrumentation: I2C master @ 100/400 MHz
-  - Debug: UART Tx/Rx/RTS/CTS up to 2.4 Mbaud/s
-  - GPIO: 10 mA sink/source, 8x PWM outputs
-
-- Power Management / Consumption
-
-  - Low power idle (memory retention); voice activity detection; play through; full active
-  - Clock and power gating support
-  - < 20 mW voice activity detection
-  - < 250 mW full active
-
-- Package (preliminary): FCCSP132 7.45 x 8.3mm 0.6/0.7mm pitch staggered/orthogonal
-
-- Temperature Range:- Commercial: 0 to 70 degree C; industrial: -40 to +85 degree C
+  - Instrumentation: I2C master @ 100/400 KHz
+  - Debug: UART up to 2.4 Mbaud/s
+  - GPIO: 8 GPIOs with PWM output capability
 
 System requirements
 *******************
@@ -69,27 +51,33 @@ System requirements
 Prerequisites
 =============
 
-The Xtensa 'toolchain'_ i.e. XCC is required to build this port. This needs a
-license and is available for Linux and Windows. Intel is currently working with Cadence
-to make the license available for wider audience. For now, please contact your board
-supplier for licensing information and tool chain access.
+The Xtensa 'toolchain' i.e. XCC is required to build this port. This needs a
+license and is available for Linux and Windows from Cadence.
+
+In order to download the installer and the core configuration, users need to
+have a registered account at https://tensilicatools.com.
+
+The toolchain installer and the core configuration can be downloaded by following
+the links at
+https://tensilicatools.com/platform/intel-sue-creek
+
+Select version RF-2016.4 and download the archive. The archive contains the installer
+"Xplorer-6.0.4-linux-installer.bin" and the core configuration "X6H3SUE_2016_4".
+
+For JTAG based debugging, download the XOCD package as well.
+
+A node locked license key can also be generated from the tensilicatools.com portal.
 
 Set up build environment
 ========================
-
-To install the Xplorer software, log on to https://xpg.cadence.com/login/gen/ten4genlogin.html.
-using your browser.
-
-Once you have entered the login name and password, select version as RF-2015.3 to download
-"Xplorer-6.0.3-linux-installer.bin".
 
 Run the installer using these commands:
 
 .. code-block:: console
 
    cd ~/Downloads
-   chmod +x Xplorer-6.0.3-linux-installer.bin
-   sudo ./Xplorer-6.0.3-linux-installer.bin
+   chmod +x Xplorer-6.0.4-linux-installer.bin
+   sudo ./Xplorer-6.0.4-linux-installer.bin
 
 Xplorer software will be installed into the /opt/xtensa folder. Please note a dialogue box
 should pop-up after running this command. Otherwise, it means your system is missing some
@@ -100,23 +88,19 @@ install this missing package with:
 
    sudo apt-get install gtk2-i686
 
-The Xtensa processor in the S1000 board (cavs21_LX6HiFi3_RF3_WB16) is not
-supported by the stock RF-2015.3 (Xplorer-6.0.3) tools installed above. Please
-contact your board supplier for downloading the cavs21_LX6HiFi3_RF3_WB16 build.
-
-The cavs21_LX6HiFi3_RF3_WB16 build will be in .tgz format. Once you have downloaded
-it, follow the below steps to install the additional needed support:
+After the tool chain is successfully installed, the core build needs to be installed as
+follows
 
 .. code-block:: console
 
-   tar -xvzf cavs21_LX6HiFi3_RF3_WB16_linux_redist.tgz --directory /opt/xtensa/XtDevTools/install/builds.
-   cd /opt/xtensa/XtDevTools/install/builds/RF-2015.3-linux/cavs21_LX6HiFi3_RF3_WB16
+   tar -xvzf X6H3SUE_2016_4_linux_redist.tgz --directory /opt/xtensa/XtDevTools/install/builds
+   cd /opt/xtensa/XtDevTools/install/builds/RF-2016.4-linux/X6H3SUE_2016_4
    sudo ./install
 
 "install" is the Xtensa Processor Configuration Installation Tool which is required
 to update the installation path. When it prompts to enter the path to the Xtensa Tools
-directory, enter /opt/xtensa/XtDevTools/install/tools/RF-2015.3-linux/XtensaTools. You
-should use the default registry /opt/xtensa/XtDevTools/install/tools/RF-2015.3-linux/XtensaTools/config.
+directory, enter /opt/xtensa/XtDevTools/install/tools/RF-2016.4-linux/XtensaTools. You
+should use the default registry /opt/xtensa/XtDevTools/install/tools/RF-2016.4-linux/XtensaTools/config.
 
 With the XCC toolchain installed, the Zephyr build system must be instructed
 to use this particular variant by setting the ``ZEPHYR_TOOLCHAIN_VARIANT``
@@ -126,9 +110,9 @@ shell variable. Some more environment variables are also required (see below):
 
    export XTENSA_PREFER_LICENSE=XTENSA
    export ZEPHYR_TOOLCHAIN_VARIANT=xcc
-   export TOOLCHAIN_VER=RF-2015.3-linux
-   export XTENSA_CORE=cavs21_LX6HiFi3_RF3_WB16
-   export XTENSA_SYSTEM=/opt/xtensa/XtDevTools/install/tools/RF-2015.3-linux/XtensaTools/config/
+   export TOOLCHAIN_VER=RF-2016.4-linux
+   export XTENSA_CORE=X6H3SUE_2016_4
+   export XTENSA_SYSTEM=/opt/xtensa/XtDevTools/install/tools/RF-2016.4-linux/XtensaTools/config/
    export XTENSA_BUILD_PATHS=/opt/xtensa/XtDevTools/install/builds/
    export XTENSA_OCD_PATH=/opt/Tensilica/xocd-12.0.4
 
@@ -194,49 +178,29 @@ shown below. Note that pin 6 on CRB is left unconnected.
 
 The corresponding pin mapping is
 
-+-------------+-----------+
-| Flyswatter2 |   S1000   |
-+=============+===========+
-|     1       |     7     |
-+-------------+-----------+
-|     2       |    NC     |
-+-------------+-----------+
-|     3       |     4     |
-+-------------+-----------+
-|     4       |    NC     |
-+-------------+-----------+
-|     5       |     3     |
-+-------------+-----------+
-|     6       |     8     |
-+-------------+-----------+
-|     7       |     2     |
-+-------------+-----------+
-|     8       |    NC     |
-+-------------+-----------+
-|     9       |     1     |
-+-------------+-----------+
-|     10      |    NC     |
-+-------------+-----------+
-|     11      |    NC     |
-+-------------+-----------+
-|     12      |    NC     |
-+-------------+-----------+
-|     13      |     5     |
-+-------------+-----------+
-|     14      |    NC     |
-+-------------+-----------+
-|     15      |    NC     |
-+-------------+-----------+
-|     16      |    NC     |
-+-------------+-----------+
-|     17      |    NC     |
-+-------------+-----------+
-|     18      |    NC     |
-+-------------+-----------+
-|     19      |    NC     |
-+-------------+-----------+
-|     20      |    NC     |
-+-------------+-----------+
++-----------+-------------+-------------+-----------+
+|   S1000   | Flyswatter2 | Flyswatter2 |   S1000   |
++===========+=============+=============+===========+
+|     7     |     1       |     11      |    NC     |
++-----------+-------------+-------------+-----------+
+|    NC     |     2       |     12      |    NC     |
++-----------+-------------+-------------+-----------+
+|     4     |     3       |     13      |     5     |
++-----------+-------------+-------------+-----------+
+|    NC     |     4       |     14      |    NC     |
++-----------+-------------+-------------+-----------+
+|     3     |     5       |     15      |    NC     |
++-----------+-------------+-------------+-----------+
+|     8     |     6       |     16      |    NC     |
++-----------+-------------+-------------+-----------+
+|     2     |     7       |     17      |    NC     |
++-----------+-------------+-------------+-----------+
+|    NC     |     8       |     18      |    NC     |
++-----------+-------------+-------------+-----------+
+|     1     |     9       |     19      |    NC     |
++-----------+-------------+-------------+-----------+
+|    NC     |     10      |     20      |    NC     |
++-----------+-------------+-------------+-----------+
 
 Ideally, these connections should have been enough to get the debug working.
 However, we need to short 2 pins on Host Connector J3 via a 3.3k resistor
@@ -248,6 +212,4 @@ References
 
 .. target-notes::
 
-.. _`Purchase Intel S1000`: https://click.intel.com/intelr-speech-enabling-developer-kit.html
-.. _`Set Up Your Intel Speech Enabling Developer Kit`: https://youtu.be/wGoXiJFkm6k
 .. _`FT232 UART`: https://www.amazon.com/FT232RL-Serial-Converter-Adapter-Arduino/dp/B06XDH2VK9

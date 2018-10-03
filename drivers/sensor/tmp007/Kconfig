@@ -7,25 +7,21 @@
 #
 
 menuconfig TMP007
-	bool
-	prompt "TMP007 Infrared Thermopile Sensor"
+	bool "TMP007 Infrared Thermopile Sensor"
 	depends on I2C
-	default n
 	help
 	  Enable driver for TMP007 infrared thermopile sensors.
 
+if TMP007
+
 config TMP007_NAME
-	string
-	prompt "Driver name"
+	string "Driver name"
 	default "TMP007"
-	depends on TMP007
 	help
 	  Device name with which the TMP007 sensor is identified.
 
 config TMP007_I2C_ADDR
-	hex
-	prompt "I2C address for TMP006 Sensor"
-	depends on TMP007
+	hex "I2C address for TMP006 Sensor"
 	default "0x40"
 	help
 	  I2C address of the TMP007 sensor.
@@ -40,9 +36,7 @@ config TMP007_I2C_ADDR
 	  0x47: A0 connected SCL and A1 connected to VDD.
 
 config TMP007_I2C_MASTER_DEV_NAME
-	string
-	prompt "I2C master where TMP007 is connected"
-	depends on TMP007
+	string "I2C master where TMP007 is connected"
 	default "I2C_0"
 	help
 	  Specify the device name of the I2C master device to which the
@@ -50,24 +44,20 @@ config TMP007_I2C_MASTER_DEV_NAME
 
 choice
 	prompt "Trigger mode"
-	depends on TMP007
 	default TMP007_TRIGGER_NONE
 	help
 	  Specify the type of triggering to be used by the driver.
 
 config TMP007_TRIGGER_NONE
-	bool
-	prompt "No trigger"
+	bool "No trigger"
 
 config TMP007_TRIGGER_GLOBAL_THREAD
-	bool
-	prompt "Use global thread"
+	bool "Use global thread"
 	depends on GPIO
 	select TMP007_TRIGGER
 
 config TMP007_TRIGGER_OWN_THREAD
-	bool
-	prompt "Use own thread"
+	bool "Use own thread"
 	depends on GPIO
 	select TMP007_TRIGGER
 
@@ -75,38 +65,35 @@ endchoice
 
 config TMP007_TRIGGER
 	bool
-	depends on TMP007
 
 config TMP007_GPIO_DEV_NAME
-	string
-	prompt "GPIO device"
+	string "GPIO device"
 	default "GPIO_0"
-	depends on TMP007 && TMP007_TRIGGER
+	depends on TMP007_TRIGGER
 	help
 	  The device name of the GPIO device to which the TMP007 interrupt
 	  (alert) pin is connected.
 
 config TMP007_GPIO_PIN_NUM
-	int
-	prompt "Interrupt GPIO pin number"
+	int "Interrupt GPIO pin number"
 	default 0
-	depends on TMP007 && TMP007_TRIGGER
+	depends on TMP007_TRIGGER
 	help
 	  The number of the GPIO pin on which the interrupt signal from the
 	  TMP007 chip will be received.
 
 config TMP007_THREAD_PRIORITY
-	int
-	prompt "Thread priority"
-	depends on TMP007 && TMP007_TRIGGER_OWN_THREAD
+	int "Thread priority"
+	depends on TMP007_TRIGGER_OWN_THREAD
 	default 10
 	help
 	  Priority of thread used by the driver to handle interrupts.
 
 config TMP007_THREAD_STACK_SIZE
-	int
-	prompt "Thread stack size"
-	depends on TMP007 && TMP007_TRIGGER_OWN_THREAD
+	int "Thread stack size"
+	depends on TMP007_TRIGGER_OWN_THREAD
 	default 1024
 	help
 	  Stack size of thread used by the driver to handle interrupts.
+
+endif # TMP007

@@ -9,7 +9,6 @@
 
 menuconfig LED_STRIP
 	bool "LED strip drivers"
-	default n
 	help
 		Include LED strip drivers in the system configuration.
 
@@ -41,7 +40,6 @@ config LED_STRIP_INIT_PRIORITY
 # is not normally needed.
 config LED_STRIP_RGB_SCRATCH
 	bool
-	default n
 
 source "drivers/led_strip/Kconfig.lpd880x"
 

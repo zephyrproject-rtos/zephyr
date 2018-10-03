@@ -10,8 +10,8 @@
  * by the generic kernel interface header (include/arch/cpu.h)
  */
 
-#ifndef _ARCH_IFACE_H
-#define _ARCH_IFACE_H
+#ifndef ZEPHYR_INCLUDE_ARCH_XTENSA_ARCH_H_
+#define ZEPHYR_INCLUDE_ARCH_XTENSA_ARCH_H_
 
 #include <irq.h>
 
@@ -28,8 +28,6 @@ extern "C" {
 #include <xtensa/config/core.h>
 
 #define STACK_ALIGN 16
-#define OCTET_TO_SIZEOFUNIT(X) (X)
-#define SIZEOFUNIT_TO_OCTET(X) (X)
 
 #define _NANO_ERR_HW_EXCEPTION (0)      /* MPU/Bus/Usage fault */
 #define _NANO_ERR_STACK_CHK_FAIL (2)    /* Stack corruption detected */
@@ -141,4 +139,4 @@ extern u32_t _timer_cycle_get_32(void);
 }
 #endif
 
-#endif /* _ARCH_IFACE_H */
+#endif /* ZEPHYR_INCLUDE_ARCH_XTENSA_ARCH_H_ */

@@ -18,68 +18,52 @@
 #
 
 config TINYCBOR
-	bool
-	prompt "tinyCBOR Support"
-	default n
+	bool "tinyCBOR Support"
 	help
 	  This option enables the tinyCBOR library.
 
 if TINYCBOR
 
 config CBOR_NO_DFLT_WRITER
-	bool
-	prompt "No default writer support"
-	default n
+	bool "No default writer support"
 	help
 	  This option specifies whether a default writer exists.
 
 config CBOR_NO_DFLT_READER
-	bool
-	prompt "No default reader support"
-	default n
+	bool "No default reader support"
 	help
 	  This option specifies whether a default reader exists.
 
 config CBOR_ENCODER_NO_CHECK_USER
-	bool
-	prompt "No encoder checks for user args for validity"
-	default n
+	bool "No encoder checks for user args for validity"
 	help
 	  This option specifies whether a check user exists for a cbor encoder.
 
 config CBOR_PARSER_MAX_RECURSIONS
-	int
-	prompt "Parser max recursions"
+	int "Parser max recursions"
 	default 1024
 	help
 	  This option specifies max recursions for the parser.
 
 config CBOR_PARSER_NO_STRICT_CHECKS
-	bool
-	prompt "No strict parser checks"
-	default n
+	bool "No strict parser checks"
 	help
 	  This option enables the strict parser checks.
 
 config CBOR_FLOATING_POINT
-	bool
+	bool "Floating point support"
 	select NEWLIB_LIBC
-	prompt "Floating point support"
-	default n
 	help
 	  This option enables floating point support.
 
 config CBOR_HALF_FLOAT_TYPE
-	bool
+	bool "Half float type support"
 	select NEWLIB_LIBC
-	prompt "Half float type support"
-	default n
 	help
 	  This option enables half float type support.
 
 config CBOR_WITHOUT_OPEN_MEMSTREAM
-	bool
-	prompt "Without open memstream"
+	bool "Without open memstream"
 	default y
 	help
 	  This option enables open memstream support.

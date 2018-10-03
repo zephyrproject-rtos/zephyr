@@ -1,0 +1,28 @@
+# Kconfig - ST STM32F746XG MCU configuration options
+#
+# Copyright (c) 2018 Yurii Hamann
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_STM32F746XG
+
+config SOC
+	string
+	default "stm32f746xx"
+
+if GPIO_STM32
+
+config GPIO_STM32_PORTJ
+	default y
+
+config GPIO_STM32_PORTK
+	default y
+
+endif # GPIO_STM32
+
+config NUM_IRQS
+	int
+	default 98
+
+endif # SOC_STM32F746XG

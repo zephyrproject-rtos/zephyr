@@ -72,10 +72,10 @@ export functionality, for example, writing to the shell console).
     static int8 foo_val;
 
     struct settings_handler my_conf = {
-        .h_name = "foo",
+        .name = "foo",
         .h_set = foo_settings_set,
         .h_export = foo_settings_export
-    }
+    };
 
     static int foo_settings_set(int argc, char **argv, char *val)
     {
@@ -116,9 +116,9 @@ up from where it was before restart.
     static int8 foo_val;
 
     struct settings_handler my_conf = {
-        .h_name = "foo",
+        .name = "foo",
         .h_set = foo_settings_set
-    }
+    };
 
     static int foo_settings_set(int argc, char **argv, char *val)
     {

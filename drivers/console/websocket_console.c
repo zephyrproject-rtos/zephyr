@@ -169,7 +169,7 @@ static inline struct line_buf *ws_rb_get_line_in(void)
 /* The actual printk hook */
 static int ws_console_out(int c)
 {
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 	struct line_buf *lb = ws_rb_get_line_in();
 	bool yield = false;
 

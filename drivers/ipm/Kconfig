@@ -1,21 +1,17 @@
 menuconfig IPM
-	bool
-	prompt "IPM drivers"
-	default n
+	bool "IPM drivers"
 	help
 	  Include interrupt-based inter-processor mailboxes
 	  drivers in system configuration
 
 config IPM_QUARK_SE
 	bool "Quark SE IPM driver"
-	default n
 	depends on IPM
 	help
 	  Driver for Quark SE mailboxes
 
 config IPM_QUARK_SE_MASTER
 	bool "Quark SE IPM master controller"
-	default n
 	depends on IPM_QUARK_SE
 	help
 	  Enable this for the first CPU that initializes IPM.
@@ -24,7 +20,6 @@ config IPM_QUARK_SE_MASTER
 
 config IPM_MCUX
 	bool "MCUX IPM driver"
-	default n
 	depends on IPM && HAS_MCUX
 	help
 	  Driver for MCUX mailbox

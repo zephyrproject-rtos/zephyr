@@ -1,7 +1,6 @@
 menuconfig UART_CC32XX
 	depends on SOC_SERIES_CC32XX
 	bool "CC32XX UART driver"
-	default n
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	depends on SOC_FAMILY_TISIMPLELINK

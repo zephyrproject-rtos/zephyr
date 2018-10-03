@@ -7,7 +7,6 @@
 menuconfig ETH_NATIVE_POSIX
 	bool "Native Posix Ethernet driver"
 	depends on ARCH_POSIX && NET_L2_ETHERNET
-	default n
 	help
 	  Enable native posix ethernet driver. Note, this driver is run inside
 	  a process in your host system.
@@ -28,6 +27,30 @@ config ETH_NATIVE_POSIX_SETUP_SCRIPT
 	  CONFIG_ETH_NATIVE_POSIX_DRV_NAME option to the end of the options
 	  list when calling the host setup script.
 
+config ETH_NATIVE_POSIX_STARTUP_SCRIPT
+	string "Host startup script"
+	default ""
+	help
+	  This option sets the name of the script that is run when the host TAP
+	  network interface is created and setup script has been run.
+	  The startup script could launch e.g., wireshark to capture
+	  the network traffic for the freshly started network interface.
+	  Note that the network interface name CONFIG_ETH_NATIVE_POSIX_DRV_NAME
+	  is appended at the end of this startup script name.
+	  Example script for starting wireshark is provided in
+	  ${ZEPHYR_BASE}/samples/net/eth_native_posix/net_start_wireshark.sh
+	  file.
+
+config ETH_NATIVE_POSIX_STARTUP_SCRIPT_USER
+	string "Username to run the host startup script"
+	default ""
+	help
+	  By default the startup script is run as a root user. Set here the
+	  username to run the script if running it as a root user is not
+	  desired. Note that this setting is only for startup script and not
+	  for the setup script. The setup script needs to be run always as
+	  a root user.
+
 config ETH_NATIVE_POSIX_DRV_NAME
 	string "Ethernet driver name"
 	default "zeth"
@@ -40,6 +63,13 @@ config ETH_NATIVE_POSIX_DEV_NAME
 	default "/dev/net/tun"
 	help
 	  This option sets the TUN/TAP device name in your host system.
+
+config ETH_NATIVE_POSIX_PTP_CLOCK
+	bool "PTP clock driver support"
+	select PTP_CLOCK
+	depends on NET_GPTP
+	help
+	  Enable PTP clock support.
 
 config ETH_NATIVE_POSIX_RANDOM_MAC
 	bool "Random MAC address"

@@ -25,16 +25,6 @@ on QEMU as follows:
    :goals: run
    :compact:
 
-On the supported ARM MCUs the project can be built with the MPU and the Thread
-Stack Guard feature enabled:
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/synchronization
-   :board: v2m_beetle
-   :conf: prj_stack_guard.conf
-   :goals: build flash
-   :compact:
-
 Sample Output
 =============
 

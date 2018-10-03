@@ -1,0 +1,15 @@
+# Kconfig.soc - Cypress PSOC6 MCU line
+#
+# Copyright (c) 2018, Cypress
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+choice
+prompt "Cypress PSoC6 MCU Selection"
+depends on SOC_SERIES_PSOC62
+
+config SOC_PART_NUMBER_CY8C6247BZI_D54
+	bool "CY8C6247BZI_D54"
+
+endchoice

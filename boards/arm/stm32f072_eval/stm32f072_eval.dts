@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <st/stm32f072.dtsi>
+#include <st/f0/stm32f072Xb.dtsi>
 
 / {
 	model = "STMicroelectronics STM32F072-EVAL board";
@@ -20,19 +20,19 @@
 
 	leds {
 		compatible = "gpio-leds";
-		green_led_1: led@0 {
+		green_led_1: led_1 {
 			gpios = <&gpiod 8 GPIO_INT_ACTIVE_HIGH>;
 			label = "User LD1";
 		};
-		orange_led_2: led@1 {
+		orange_led_2: led_2 {
 			gpios = <&gpiod 9 GPIO_INT_ACTIVE_HIGH>;
 			label = "User LD2";
 		};
-		red_led_3: led@2 {
+		red_led_3: led_3 {
 			gpios = <&gpiod 10 GPIO_INT_ACTIVE_HIGH>;
 			label = "User LD3";
 		};
-		blue_led_4: led@3 {
+		blue_led_4: led_4 {
 			gpios = <&gpiod 11 GPIO_INT_ACTIVE_HIGH>;
 			label = "User LD4";
 		};
@@ -40,27 +40,27 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
-		tamper: tamper@0 {
+		tamper: tamper_button {
 			label = "tamper button";
 			gpios = <&gpioc 13 GPIO_INT_ACTIVE_LOW>;
 		};
-		joy_sel: joystick@1 {
+		joy_sel: joystick_selection {
 			label = "joystick selection";
 			gpios = <&gpioa 0 GPIO_INT_ACTIVE_LOW>;
 		};
-		joy_down: joystick@2 {
+		joy_down: joystick_down {
 			label = "joystick down";
 			gpios = <&gpiof 10 GPIO_INT_ACTIVE_LOW>;
 		};
-		joy_up: joystick@3 {
+		joy_up: joystick_up {
 			label = "joystick up";
 			gpios = <&gpiof 9 GPIO_INT_ACTIVE_LOW>;
 		};
-		joy_left: joystick@4 {
+		joy_left: joystick_left {
 			label = "joystick left";
 			gpios = <&gpiof 2 GPIO_INT_ACTIVE_LOW>;
 		};
-		joy_right: joystick@5 {
+		joy_right: joystick_right {
 			label = "joystick right";
 			gpios = <&gpioe 3 GPIO_INT_ACTIVE_LOW>;
 		};

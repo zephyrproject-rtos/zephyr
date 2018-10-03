@@ -14,8 +14,12 @@ The number of additional queries is controlled by the
 DNS_RESOLVER_ADDITIONAL_QUERIES Kconfig variable.
 
 The multicast DNS (mDNS) client resolver support can be enabled by setting
-CONFIG_MDNS_RESOLVER Kconfig variable.
+:option:`CONFIG_MDNS_RESOLVER` Kconfig option.
 See https://tools.ietf.org/html/rfc6762 for more details about mDNS.
+
+The link-local multicast name resolution (LLMNR) client resolver support can be
+enabled by setting the :option:`CONFIG_LLMNR_RESOLVER` Kconfig option.
+See https://tools.ietf.org/html/rfc4795 for more details about LLMNR.
 
 For more information about DNS configuration variables, see:
 :file:`subsys/net/lib/dns/Kconfig`. The DNS resolver API can be found at
@@ -54,8 +58,8 @@ for example:
 
 .. code-block:: console
 
-	CONFIG_NET_APP_MY_IPV6_ADDR="2001:db8::1"
-	CONFIG_NET_APP_PEER_IPV6_ADDR="2001:db8::2"
+	CONFIG_NET_CONFIG_MY_IPV6_ADDR="2001:db8::1"
+	CONFIG_NET_CONFIG_PEER_IPV6_ADDR="2001:db8::2"
 
 are the IPv6 addresses for the DNS client running Zephyr and the DNS server,
 respectively.
@@ -110,6 +114,24 @@ For testing mDNS, use Avahi script in net-tools project:
 
     $ cd net-tools
     $ ./avahi-daemon.sh
+
+
+LLMNR Responder
+===============
+
+If you want Zephyr to respond to a LLMNR DNS request that Windows host is
+sending, then following config options could be set:
+
+.. code-block:: console
+
+    CONFIG_NET_HOSTNAME_ENABLE=y
+    CONFIG_NET_HOSTNAME="zephyr-device"
+    CONFIG_DNS_RESOLVER=y
+    CONFIG_LLMNR_RESPONDER=y
+
+A Zephyr host needs a hostname assigned to it so that it can respond to a DNS
+query. Note that the hostname should not have any dots in it.
+
 
 QEMU x86
 ========

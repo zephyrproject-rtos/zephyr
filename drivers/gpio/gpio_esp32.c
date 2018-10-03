@@ -86,7 +86,7 @@ static int config_interrupt(u32_t pin, int flags)
 	volatile u32_t *reg = gpio_pin_reg(pin);
 	int type = convert_int_type(flags);
 	u32_t v;
-	int key;
+	unsigned int key;
 
 	if (type < 0) {
 		return type;

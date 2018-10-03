@@ -6,15 +6,13 @@
 
 menuconfig I2C_SBCON
 	bool "I2C driver for ARM's SBCon two-wire serial bus interface"
-	depends on I2C && ARM
+	depends on ARM
 	select I2C_BITBANG
-	default n
 
 if I2C_SBCON
 
 config I2C_SBCON_0
 	bool "Enable SBCon device 0"
-	default n
 
 config I2C_SBCON_0_NAME
 	depends on I2C_SBCON_0
@@ -23,7 +21,6 @@ config I2C_SBCON_0_NAME
 
 config I2C_SBCON_1
 	bool "Enable SBCon device 1"
-	default n
 
 config I2C_SBCON_1_NAME
 	depends on I2C_SBCON_1
@@ -32,7 +29,6 @@ config I2C_SBCON_1_NAME
 
 config I2C_SBCON_2
 	bool "Enable SBCon device 2"
-	default n
 
 config I2C_SBCON_2_NAME
 	depends on I2C_SBCON_2
@@ -41,7 +37,6 @@ config I2C_SBCON_2_NAME
 
 config I2C_SBCON_3
 	bool "Enable SBCon device 3"
-	default n
 
 config I2C_SBCON_3_NAME
 	depends on I2C_SBCON_3

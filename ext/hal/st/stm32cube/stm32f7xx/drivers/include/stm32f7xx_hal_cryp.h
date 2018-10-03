@@ -256,14 +256,14 @@ typedef struct
   */
   
 /** @brief Reset CRYP handle state
-  * @param  __HANDLE__: specifies the CRYP handle.
+  * @param  __HANDLE__ specifies the CRYP handle.
   * @retval None
   */
 #define __HAL_CRYP_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = HAL_CRYP_STATE_RESET)
 
 /**
   * @brief  Enable/Disable the CRYP peripheral.
-  * @param  __HANDLE__: specifies the CRYP handle.
+  * @param  __HANDLE__ specifies the CRYP handle.
   * @retval None
   */
 #define __HAL_CRYP_ENABLE(__HANDLE__)  ((__HANDLE__)->Instance->CR |=  CRYP_CR_CRYPEN)
@@ -271,22 +271,22 @@ typedef struct
 
 /**
   * @brief  Flush the data FIFO.
-  * @param  __HANDLE__: specifies the CRYP handle.
+  * @param  __HANDLE__ specifies the CRYP handle.
   * @retval None
   */
 #define __HAL_CRYP_FIFO_FLUSH(__HANDLE__) ((__HANDLE__)->Instance->CR |=  CRYP_CR_FFLUSH)
 
 /**
   * @brief  Set the algorithm mode: AES-ECB, AES-CBC, AES-CTR, DES-ECB, DES-CBC.
-  * @param  __HANDLE__: specifies the CRYP handle.
-  * @param  MODE: The algorithm mode.
+  * @param  __HANDLE__ specifies the CRYP handle.
+  * @param  MODE The algorithm mode.
   * @retval None
   */
 #define __HAL_CRYP_SET_MODE(__HANDLE__, MODE)  ((__HANDLE__)->Instance->CR |= (uint32_t)(MODE))
 
 /** @brief  Check whether the specified CRYP flag is set or not.
-  * @param  __HANDLE__: specifies the CRYP handle.
-  * @param  __FLAG__: specifies the flag to check.
+  * @param  __HANDLE__ specifies the CRYP handle.
+  * @param  __FLAG__ specifies the flag to check.
   *         This parameter can be one of the following values:
   *            @arg CRYP_FLAG_BUSY: The CRYP core is currently processing a block of data 
   *                                 or a key preparation (for AES decryption). 
@@ -303,8 +303,8 @@ typedef struct
                                                  ((((__HANDLE__)->Instance->RISR) & ((__FLAG__) & CRYP_FLAG_MASK)) == ((__FLAG__) & CRYP_FLAG_MASK)))
 
 /** @brief  Check whether the specified CRYP interrupt is set or not.
-  * @param  __HANDLE__: specifies the CRYP handle.
-  * @param  __INTERRUPT__: specifies the interrupt to check.
+  * @param  __HANDLE__ specifies the CRYP handle.
+  * @param  __INTERRUPT__ specifies the interrupt to check.
   *         This parameter can be one of the following values:
   *            @arg CRYP_IT_INRIS: Input FIFO service raw interrupt is pending
   *            @arg CRYP_IT_OUTRIS: Output FIFO service raw interrupt is pending
@@ -314,16 +314,16 @@ typedef struct
 
 /**
   * @brief  Enable the CRYP interrupt.
-  * @param  __HANDLE__: specifies the CRYP handle.
-  * @param  __INTERRUPT__: CRYP Interrupt.
+  * @param  __HANDLE__ specifies the CRYP handle.
+  * @param  __INTERRUPT__ CRYP Interrupt.
   * @retval None
   */
 #define __HAL_CRYP_ENABLE_IT(__HANDLE__, __INTERRUPT__) (((__HANDLE__)->Instance->IMSCR) |= (__INTERRUPT__))
 
 /**
   * @brief  Disable the CRYP interrupt.
-  * @param  __HANDLE__: specifies the CRYP handle.
-  * @param  __INTERRUPT__: CRYP interrupt.
+  * @param  __HANDLE__ specifies the CRYP handle.
+  * @param  __INTERRUPT__ CRYP interrupt.
   * @retval None
   */
 #define __HAL_CRYP_DISABLE_IT(__HANDLE__, __INTERRUPT__) (((__HANDLE__)->Instance->IMSCR) &= ~(__INTERRUPT__))
@@ -825,7 +825,7 @@ typedef struct
   */
 
 /** @brief Reset CRYP handle state.
-  * @param  __HANDLE__: specifies the CRYP handle.
+  * @param  __HANDLE__ specifies the CRYP handle.
   * @retval None
   */
 #define __HAL_CRYP_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = HAL_CRYP_STATE_RESET)
@@ -844,7 +844,7 @@ typedef struct
 
 /**
   * @brief  Set the algorithm operating mode.
-  * @param  __OPERATING_MODE__: specifies the operating mode
+  * @param  __OPERATING_MODE__ specifies the operating mode
   *          This parameter can be one of the following values:
   *            @arg @ref CRYP_ALGOMODE_ENCRYPT encryption     
   *            @arg @ref CRYP_ALGOMODE_KEYDERIVATION key derivation        
@@ -857,7 +857,7 @@ typedef struct
 
 /**
   * @brief  Set the algorithm chaining mode.
-  * @param  __CHAINING_MODE__: specifies the chaining mode
+  * @param  __CHAINING_MODE__ specifies the chaining mode
   *          This parameter can be one of the following values:
   *            @arg @ref CRYP_CHAINMODE_AES_ECB Electronic CodeBook     
   *            @arg @ref CRYP_CHAINMODE_AES_CBC Cipher Block Chaining        
@@ -871,7 +871,7 @@ typedef struct
 
 
 /** @brief  Check whether the specified CRYP status flag is set or not.
-  * @param  __FLAG__: specifies the flag to check.
+  * @param  __FLAG__ specifies the flag to check.
   *         This parameter can be one of the following values:
   *            @arg @ref CRYP_FLAG_BUSY GCM process suspension forbidden  
   *            @arg @ref CRYP_IT_WRERR Write Error 
@@ -883,7 +883,7 @@ typedef struct
 
 
 /** @brief  Clear the CRYP pending status flag.
-  * @param  __FLAG__: specifies the flag to clear.
+  * @param  __FLAG__ specifies the flag to clear.
   *         This parameter can be one of the following values:
   *            @arg @ref CRYP_ERR_CLEAR Read (RDERR) or Write Error (WRERR) Flag Clear
   *            @arg @ref CRYP_CCF_CLEAR Computation Complete Flag (CCF) Clear  
@@ -894,7 +894,7 @@ typedef struct
 
 
 /** @brief  Check whether the specified CRYP interrupt source is enabled or not.
-  * @param __INTERRUPT__: CRYP interrupt source to check
+  * @param __INTERRUPT__ CRYP interrupt source to check
   *         This parameter can be one of the following values:
   *            @arg @ref CRYP_IT_ERRIE Error interrupt (used for RDERR and WRERR)
   *            @arg @ref CRYP_IT_CCFIE Computation Complete interrupt  
@@ -904,7 +904,7 @@ typedef struct
 
 
 /** @brief  Check whether the specified CRYP interrupt is set or not.
-  * @param  __INTERRUPT__: specifies the interrupt to check.
+  * @param  __INTERRUPT__ specifies the interrupt to check.
   *         This parameter can be one of the following values:
   *            @arg @ref CRYP_IT_WRERR Write Error 
   *            @arg @ref CRYP_IT_RDERR Read Error 
@@ -916,7 +916,7 @@ typedef struct
 
 
 /** @brief  Clear the CRYP pending interrupt.
-  * @param  __INTERRUPT__: specifies the IT to clear.
+  * @param  __INTERRUPT__ specifies the IT to clear.
   *         This parameter can be one of the following values:
   *            @arg @ref CRYP_ERR_CLEAR Read (RDERR) or Write Error (WRERR) Flag Clear
   *            @arg @ref CRYP_CCF_CLEAR Computation Complete Flag (CCF) Clear    
@@ -927,7 +927,7 @@ typedef struct
 
 /**
   * @brief  Enable the CRYP interrupt.  
-  * @param  __INTERRUPT__: CRYP Interrupt.
+  * @param  __INTERRUPT__ CRYP Interrupt.
   *         This parameter can be one of the following values:  
   *            @arg @ref CRYP_IT_ERRIE Error interrupt (used for RDERR and WRERR)
   *            @arg @ref CRYP_IT_CCFIE Computation Complete interrupt    
@@ -938,7 +938,7 @@ typedef struct
 
 /**
   * @brief  Disable the CRYP interrupt.
-  * @param  __INTERRUPT__: CRYP Interrupt.
+  * @param  __INTERRUPT__ CRYP Interrupt.
   *         This parameter can be one of the following values:  
   *            @arg @ref CRYP_IT_ERRIE Error interrupt (used for RDERR and WRERR)
   *            @arg @ref CRYP_IT_CCFIE Computation Complete interrupt    
@@ -957,7 +957,7 @@ typedef struct
 
 /**
   * @brief Verify the key size length.
-  * @param __KEYSIZE__: Ciphering/deciphering algorithm key size. 
+  * @param __KEYSIZE__ Ciphering/deciphering algorithm key size. 
   * @retval SET (__KEYSIZE__ is a valid value) or RESET (__KEYSIZE__ is invalid)
   */  
 #define IS_CRYP_KEYSIZE(__KEYSIZE__)  (((__KEYSIZE__) == CRYP_KEYSIZE_128B)  || \
@@ -965,7 +965,7 @@ typedef struct
 
 /**
   * @brief Verify the input data type.
-  * @param __DATATYPE__: Ciphering/deciphering algorithm input data type.
+  * @param __DATATYPE__ Ciphering/deciphering algorithm input data type.
   * @retval SET (__DATATYPE__ is valid) or RESET (__DATATYPE__ is invalid)
   */  
 #define IS_CRYP_DATATYPE(__DATATYPE__) (((__DATATYPE__) == CRYP_DATATYPE_32B) || \
@@ -975,7 +975,7 @@ typedef struct
 
 /**
   * @brief Verify the CRYP AES IP running mode.
-  * @param __MODE__: CRYP AES IP running mode.
+  * @param __MODE__ CRYP AES IP running mode.
   * @retval SET (__MODE__ is valid) or RESET (__MODE__ is invalid)
   */                                     
 #define IS_CRYP_AES(__MODE__) (((__MODE__) == CRYP_AES_DISABLE) || \
@@ -983,7 +983,7 @@ typedef struct
 
 /**
   * @brief Verify the selected CRYP algorithm.
-  * @param __ALGOMODE__: Selected CRYP algorithm (ciphering, deciphering, key derivation or a combination of the latter).
+  * @param __ALGOMODE__ Selected CRYP algorithm (ciphering, deciphering, key derivation or a combination of the latter).
   * @retval SET (__ALGOMODE__ is valid) or RESET (__ALGOMODE__ is invalid)
   */                            
 #define IS_CRYP_ALGOMODE(__ALGOMODE__) (((__ALGOMODE__) == CRYP_ALGOMODE_ENCRYPT)        || \
@@ -994,7 +994,7 @@ typedef struct
 
 /**
   * @brief Verify the selected CRYP chaining algorithm.
-  * @param __CHAINMODE__: Selected CRYP chaining algorithm.
+  * @param __CHAINMODE__ Selected CRYP chaining algorithm.
   * @retval SET (__CHAINMODE__ is valid) or RESET (__CHAINMODE__ is invalid)
   */   
 #if defined(AES_CR_NPBLB)
@@ -1013,7 +1013,7 @@ typedef struct
 
 /**
   * @brief Verify the deciphering key write option.
-  * @param __WRITE__: deciphering key write option.
+  * @param __WRITE__ deciphering key write option.
   * @retval SET (__WRITE__ is valid) or RESET (__WRITE__ is invalid)
   */                                   
 #define IS_CRYP_WRITE(__WRITE__)   (((__WRITE__) == CRYP_KEY_WRITE_ENABLE)      || \
@@ -1021,7 +1021,7 @@ typedef struct
 
 /**
   * @brief Verify the CRYP input data DMA mode.
-  * @param __MODE__: CRYP input data DMA mode.
+  * @param __MODE__ CRYP input data DMA mode.
   * @retval SET (__MODE__ is valid) or RESET (__MODE__ is invalid)
   */  
 #define IS_CRYP_DMAIN(__MODE__) (((__MODE__) == CRYP_DMAIN_DISABLE) || \
@@ -1029,7 +1029,7 @@ typedef struct
 
 /**
   * @brief Verify the CRYP output data DMA mode.
-  * @param __MODE__: CRYP output data DMA mode.
+  * @param __MODE__ CRYP output data DMA mode.
   * @retval SET (__MODE__ is valid) or RESET (__MODE__ is invalid)
   */                             
 #define IS_CRYP_DMAOUT(__MODE__) (((__MODE__) == CRYP_DMAOUT_DISABLE) || \
@@ -1037,7 +1037,7 @@ typedef struct
 
 /**
   * @brief Verify the CRYP AES ciphering/deciphering/authentication algorithm phase.
-  * @param __PHASE__: CRYP AES ciphering/deciphering/authentication algorithm phase.
+  * @param __PHASE__ CRYP AES ciphering/deciphering/authentication algorithm phase.
   * @retval SET (__PHASE__ is valid) or RESET (__PHASE__ is invalid)
   */                               
 #define IS_CRYP_GCMCMAC_PHASE(__PHASE__) (((__PHASE__) == CRYP_GCM_INIT_PHASE)       || \

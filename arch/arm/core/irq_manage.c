@@ -23,7 +23,7 @@
 #include <sw_isr_table.h>
 #include <irq.h>
 #include <kernel_structs.h>
-#include <logging/kernel_event_logger.h>
+#include <tracing.h>
 
 extern void __reserved(void);
 
@@ -137,7 +137,6 @@ void _irq_spurious(void *unused)
  * arch/cpu.h and kernel_structs.h; the inline functions typically need to
  * perform operations on _kernel.  For now, leave as regular functions, a
  * future iteration will resolve this.
- * We have a similar issue with the k_event_logger functions.
  *
  * See https://github.com/zephyrproject-rtos/zephyr/issues/3056
  */
@@ -146,7 +145,7 @@ void _irq_spurious(void *unused)
 void _arch_isr_direct_pm(void)
 {
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-	int key;
+	unsigned int key;
 
 	/* irq_lock() does what we wan for this CPU */
 	key = irq_lock();
@@ -178,14 +177,10 @@ void _arch_isr_direct_pm(void)
 }
 #endif
 
-#if defined(CONFIG_KERNEL_EVENT_LOGGER_SLEEP) || \
-	defined(CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT)
 void _arch_isr_direct_header(void)
 {
-	_sys_k_event_logger_interrupt();
-	_sys_k_event_logger_exit_sleep();
+	z_sys_trace_isr_enter();
 }
-#endif
 
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
 /**

@@ -511,7 +511,7 @@ static int test_retransmit_second_round(void)
 	net_pkt_frag_add(pkt, frag);
 	id = coap_next_id();
 
-	r = coap_packet_init(&cpkt, pkt, 1, COAP_TYPE_CON, 0, NULL,
+	r = coap_packet_init(&cpkt, pkt, 1, COAP_TYPE_CON, 0, coap_next_token(),
 			     COAP_METHOD_GET, id);
 	if (r) {
 		TC_PRINT("Could not initialize packet\n");
@@ -951,7 +951,7 @@ static int test_observer_client(void)
 
 	reply = coap_reply_next_unused(replies, NUM_REPLIES);
 	if (!reply) {
-		printk("No resources for waiting for replies.\n");
+		TC_PRINT("No resources for waiting for replies.\n");
 		goto done;
 	}
 
@@ -1183,6 +1183,187 @@ static int test_block_size(void)
 	}
 
 	if (rsp_ctx.total_size != 127) {
+		TC_PRINT("Couldn't packet total size from request\n");
+		goto done;
+	}
+
+	result = TC_PASS;
+
+done:
+	net_pkt_unref(pkt);
+
+	TC_END_RESULT(result);
+
+	return result;
+}
+
+static int test_block_2_size(void)
+{
+	struct coap_block_context req_ctx, rsp_ctx;
+	struct coap_packet req;
+	struct net_pkt *pkt = NULL;
+	struct net_buf *frag;
+	const char token[] = "token";
+	u8_t payload[32] = { 0 };
+	int result = TC_FAIL;
+	int r;
+
+	pkt = net_pkt_get_reserve(&coap_pkt_slab, 0, K_NO_WAIT);
+	if (!pkt) {
+		TC_PRINT("Could not get packet from pool\n");
+		goto done;
+	}
+
+	frag = net_buf_alloc(&coap_data_pool, K_NO_WAIT);
+	if (!frag) {
+		TC_PRINT("Could not get buffer from pool\n");
+		goto done;
+	}
+
+	net_pkt_frag_add(pkt, frag);
+	net_pkt_set_ip_hdr_len(pkt, NET_IPV6H_LEN);
+	net_pkt_set_ipv6_ext_len(pkt, 0);
+
+	if (!net_pkt_append_all(pkt, sizeof(ipv6_block),
+			       (u8_t *)ipv6_block, K_FOREVER)) {
+		TC_PRINT("Unable to append IPv6 header\n");
+		goto done;
+	}
+
+	r = coap_packet_init(&req, pkt, 1, COAP_TYPE_CON,
+			     strlen(token), (u8_t *) token,
+			     COAP_METHOD_POST, coap_next_id());
+	if (r < 0) {
+		TC_PRINT("Unable to initialize request\n");
+		goto done;
+	}
+
+	req.offset = sizeof(ipv6_block);
+
+	coap_block_transfer_init(&req_ctx, COAP_BLOCK_64, 255);
+
+	r = coap_append_block2_option(&req, &req_ctx);
+	if (r) {
+		TC_PRINT("Unable to append block2 option\n");
+		goto done;
+	}
+
+	r = coap_append_size2_option(&req, &req_ctx);
+	if (r) {
+		TC_PRINT("Unable to append size2 option\n");
+		goto done;
+	}
+
+	r = coap_packet_append_payload_marker(&req);
+	if (r) {
+		TC_PRINT("Unable to append payload marker\n");
+		goto done;
+	}
+
+	r = coap_packet_append_payload(&req, payload,
+				       coap_block_size_to_bytes(COAP_BLOCK_64));
+	if (r) {
+		TC_PRINT("Unable to append payload\n");
+		goto done;
+	}
+
+	coap_block_transfer_init(&rsp_ctx, COAP_BLOCK_1024, 255);
+
+	r = coap_update_from_block(&req, &rsp_ctx);
+	if (r < 0) {
+		TC_PRINT("Couldn't parse Block options\n");
+		goto done;
+	}
+
+	if (rsp_ctx.block_size != COAP_BLOCK_64) {
+		TC_PRINT("Couldn't get block size from request\n");
+		goto done;
+	}
+
+	if (rsp_ctx.current != 0) {
+		TC_PRINT("Couldn't get the current block size position\n");
+		goto done;
+	}
+
+	if (rsp_ctx.total_size != 255) {
+		TC_PRINT("Couldn't packet total size from request\n");
+		goto done;
+	}
+
+	/* Let's try the second packet */
+	coap_next_block(&req, &req_ctx);
+
+	/* Suppose that pkt was sent */
+	net_pkt_unref(pkt);
+
+	pkt = net_pkt_get_reserve(&coap_pkt_slab, 0, K_NO_WAIT);
+	if (!pkt) {
+		TC_PRINT("Could not get packet from pool\n");
+		goto done;
+	}
+
+	frag = net_buf_alloc(&coap_data_pool, K_NO_WAIT);
+	if (!frag) {
+		TC_PRINT("Could not get buffer from pool\n");
+		goto done;
+	}
+
+	net_pkt_frag_add(pkt, frag);
+	net_pkt_set_ip_hdr_len(pkt, NET_IPV6H_LEN);
+	net_pkt_set_ipv6_ext_len(pkt, 0);
+
+	if (!net_pkt_append_all(pkt, sizeof(ipv6_block),
+			       (u8_t *)ipv6_block, K_FOREVER)) {
+		TC_PRINT("Unable to append IPv6 header\n");
+		goto done;
+	}
+
+	r = coap_packet_init(&req, pkt, 1, COAP_TYPE_CON,
+			     strlen(token), (u8_t *) token,
+			     COAP_METHOD_POST, coap_next_id());
+	if (r < 0) {
+		TC_PRINT("Unable to initialize request\n");
+		goto done;
+	}
+
+	req.offset = sizeof(ipv6_block);
+
+	r = coap_append_block2_option(&req, &req_ctx);
+	if (r) {
+		TC_PRINT("Unable to append block2 option\n");
+		goto done;
+	}
+
+	r = coap_packet_append_payload_marker(&req);
+	if (r) {
+		TC_PRINT("Unable to append payload marker\n");
+		goto done;
+	}
+
+	r = coap_packet_append_payload(&req, payload,
+				       coap_block_size_to_bytes(COAP_BLOCK_32));
+	if (r) {
+		TC_PRINT("Unable to append payload\n");
+		goto done;
+	}
+
+	r = coap_update_from_block(&req, &rsp_ctx);
+	if (r < 0) {
+		TC_PRINT("Couldn't parse Block options\n");
+		goto done;
+	}
+
+	if (rsp_ctx.block_size != COAP_BLOCK_64) {
+		TC_PRINT("Couldn't get block size from request\n");
+		goto done;
+	}
+
+	if (rsp_ctx.current != coap_block_size_to_bytes(COAP_BLOCK_64)) {
+		TC_PRINT("Couldn't get the current block size position\n");
+		goto done;
+	}
+
+	if (rsp_ctx.total_size != 255) {
 		TC_PRINT("Couldn't packet total size from request\n");
 		goto done;
 	}
@@ -1565,6 +1746,7 @@ static const struct {
 	{ "Test observer server", test_observer_server, },
 	{ "Test observer client", test_observer_client, },
 	{ "Test block sized transfer", test_block_size, },
+	{ "Test block sized 2 transfer", test_block_2_size, },
 	{ "Test match path uri", test_match_path_uri, },
 	{ "Parse malformed option", test_parse_malformed_opt },
 	{ "Parse malformed option length", test_parse_malformed_opt_len },

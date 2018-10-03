@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _SENSOR_BMM150_H_
-#define _SENSOR_BMM150_H_
+#ifndef ZEPHYR_DRIVERS_SENSOR_BMM150_BMM150_H_
+#define ZEPHYR_DRIVERS_SENSOR_BMM150_BMM150_H_
 
 
 #include <zephyr/types.h>

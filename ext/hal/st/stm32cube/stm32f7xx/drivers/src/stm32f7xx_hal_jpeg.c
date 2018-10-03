@@ -467,7 +467,7 @@ static void JPEG_DMAOutAbortCallback(DMA_HandleTypeDef *hdma)  ;
 /**
   * @brief  Initializes the JPEG according to the specified
   *         parameters in the JPEG_InitTypeDef and creates the associated handle.
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
   * @retval HAL status
   */
@@ -552,7 +552,7 @@ HAL_StatusTypeDef HAL_JPEG_Init(JPEG_HandleTypeDef *hjpeg)
 
 /**
   * @brief  DeInitializes the JPEG peripheral. 
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
   * @retval HAL status
   */
@@ -592,7 +592,7 @@ HAL_StatusTypeDef HAL_JPEG_DeInit(JPEG_HandleTypeDef *hjpeg)
 
 /**
   * @brief  Initializes the JPEG MSP.
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
   * @retval None
   */
@@ -608,7 +608,7 @@ __weak void HAL_JPEG_MspInit(JPEG_HandleTypeDef *hjpeg)
 
 /**
   * @brief  DeInitializes JPEG MSP.
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
   * @retval None
   */
@@ -646,9 +646,9 @@ __weak void HAL_JPEG_MspDeInit(JPEG_HandleTypeDef *hjpeg)
 
 /**
   * @brief  Set the JPEG encoding configuration. 
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
-  * @param  pConf: pointer to a JPEG_ConfTypeDef structure that contains
+  * @param  pConf pointer to a JPEG_ConfTypeDef structure that contains
   *         the encoding configuration 
   * @retval HAL status
   */
@@ -827,9 +827,9 @@ HAL_StatusTypeDef HAL_JPEG_ConfigEncoding(JPEG_HandleTypeDef *hjpeg, JPEG_ConfTy
 
 /**
   * @brief  Extract the image configuration from the JPEG header during the decoding
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
-  * @param  pInfo: pointer to a JPEG_ConfTypeDef structure that contains
+  * @param  pInfo pointer to a JPEG_ConfTypeDef structure that contains
   *         The JPEG decoded header informations
   * @retval HAL status
   */
@@ -896,7 +896,7 @@ HAL_StatusTypeDef HAL_JPEG_GetInfo(JPEG_HandleTypeDef *hjpeg, JPEG_ConfTypeDef *
 
 /**
   * @brief  Enable JPEG Header parsing for decoding
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *               the configuration information for the JPEG.
   * @retval HAL status
   */
@@ -932,7 +932,7 @@ HAL_StatusTypeDef HAL_JPEG_EnableHeaderParsing(JPEG_HandleTypeDef *hjpeg)
 
 /**
   * @brief  Disable JPEG Header parsing for decoding
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *               the configuration information for the JPEG.
   * @retval HAL status
   */
@@ -968,15 +968,15 @@ HAL_StatusTypeDef HAL_JPEG_DisableHeaderParsing(JPEG_HandleTypeDef *hjpeg)
 
 /**
   * @brief  Modify the default Quantization tables used for JPEG encoding.
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
-  * @param  QTable0 : pointer to uint8_t , define the user quantification table for color component 1.
+  * @param  QTable0  pointer to uint8_t , define the user quantification table for color component 1.
   *                   If NULL assume no need to update  the table and no error return
-  * @param  QTable1 : pointer to uint8_t , define the user quantification table for color component 2. 
+  * @param  QTable1  pointer to uint8_t , define the user quantification table for color component 2. 
   *                   If NULL assume no need to update  the table and no error return.
-  * @param  QTable2 : pointer to uint8_t , define the user quantification table for color component 3, 
+  * @param  QTable2  pointer to uint8_t , define the user quantification table for color component 3, 
   *                   If NULL assume no need to update  the table and no error return. 
-  * @param  QTable3 : pointer to uint8_t , define the user quantification table for color component 4. 
+  * @param  QTable3  pointer to uint8_t , define the user quantification table for color component 4. 
   *                   If NULL assume no need to update  the table and no error return.
   *
   * @retval HAL status
@@ -1048,13 +1048,13 @@ HAL_StatusTypeDef  HAL_JPEG_SetUserQuantTables(JPEG_HandleTypeDef *hjpeg, uint8_
 
 /**
   * @brief  Starts JPEG encoding with polling processing
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
-  * @param  pDataInMCU: Pointer to the Input buffer
-  * @param  InDataLength: size in bytes Input buffer
-  * @param  pDataOut: Pointer to the jpeg output data buffer
-  * @param  OutDataLength: size in bytes of the Output buffer
-  * @param  Timeout: Specify Timeout value 
+  * @param  pDataInMCU Pointer to the Input buffer
+  * @param  InDataLength size in bytes Input buffer
+  * @param  pDataOut Pointer to the jpeg output data buffer
+  * @param  OutDataLength size in bytes of the Output buffer
+  * @param  Timeout Specify Timeout value 
   * @retval HAL status
   */
 HAL_StatusTypeDef  HAL_JPEG_Encode(JPEG_HandleTypeDef *hjpeg, uint8_t *pDataInMCU, uint32_t InDataLength, uint8_t *pDataOut, uint32_t OutDataLength, uint32_t Timeout)
@@ -1154,13 +1154,13 @@ HAL_StatusTypeDef  HAL_JPEG_Encode(JPEG_HandleTypeDef *hjpeg, uint8_t *pDataInMC
 
 /**
   * @brief  Starts JPEG decoding with polling processing
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
-  * @param  pDataIn: Pointer to the input data buffer 
-  * @param  InDataLength: size in bytes Input buffer
-  * @param  pDataOutMCU: Pointer to the Output data buffer
-  * @param  OutDataLength: size in bytes of the Output buffer
-  * @param  Timeout: Specify Timeout value 
+  * @param  pDataIn Pointer to the input data buffer 
+  * @param  InDataLength size in bytes Input buffer
+  * @param  pDataOutMCU Pointer to the Output data buffer
+  * @param  OutDataLength size in bytes of the Output buffer
+  * @param  Timeout Specify Timeout value 
   * @retval HAL status
   */
 HAL_StatusTypeDef  HAL_JPEG_Decode(JPEG_HandleTypeDef *hjpeg ,uint8_t *pDataIn ,uint32_t InDataLength ,uint8_t *pDataOutMCU ,uint32_t OutDataLength, uint32_t Timeout)
@@ -1252,12 +1252,12 @@ HAL_StatusTypeDef  HAL_JPEG_Decode(JPEG_HandleTypeDef *hjpeg ,uint8_t *pDataIn ,
 
 /**
   * @brief  Starts JPEG encoding with interrupt processing
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
-  * @param  pDataInMCU: Pointer to the Input buffer
-  * @param  InDataLength: size in bytes Input buffer
-  * @param  pDataOut: Pointer to the jpeg output data buffer
-  * @param  OutDataLength: size in bytes of the Output buffer
+  * @param  pDataInMCU Pointer to the Input buffer
+  * @param  InDataLength size in bytes Input buffer
+  * @param  pDataOut Pointer to the jpeg output data buffer
+  * @param  OutDataLength size in bytes of the Output buffer
   * @retval HAL status
   */
 HAL_StatusTypeDef  HAL_JPEG_Encode_IT(JPEG_HandleTypeDef *hjpeg, uint8_t *pDataInMCU, uint32_t InDataLength, uint8_t *pDataOut, uint32_t OutDataLength)
@@ -1326,12 +1326,12 @@ HAL_StatusTypeDef  HAL_JPEG_Encode_IT(JPEG_HandleTypeDef *hjpeg, uint8_t *pDataI
 
 /**
   * @brief  Starts JPEG decoding with interrupt processing
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
-  * @param  pDataIn: Pointer to the input data buffer 
-  * @param  InDataLength: size in bytes Input buffer
-  * @param  pDataOutMCU: Pointer to the Output data buffer
-  * @param  OutDataLength: size in bytes of the Output buffer
+  * @param  pDataIn Pointer to the input data buffer 
+  * @param  InDataLength size in bytes Input buffer
+  * @param  pDataOutMCU Pointer to the Output data buffer
+  * @param  OutDataLength size in bytes of the Output buffer
   * @retval HAL status
   */
 HAL_StatusTypeDef  HAL_JPEG_Decode_IT(JPEG_HandleTypeDef *hjpeg ,uint8_t *pDataIn ,uint32_t InDataLength ,uint8_t *pDataOutMCU ,uint32_t OutDataLength)
@@ -1390,12 +1390,12 @@ HAL_StatusTypeDef  HAL_JPEG_Decode_IT(JPEG_HandleTypeDef *hjpeg ,uint8_t *pDataI
 
 /**
   * @brief  Starts JPEG encoding with DMA processing
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
-  * @param  pDataInMCU: Pointer to the Input buffer
-  * @param  InDataLength: size in bytes Input buffer
-  * @param  pDataOut: Pointer to the jpeg output data buffer
-  * @param  OutDataLength: size in bytes of the Output buffer
+  * @param  pDataInMCU Pointer to the Input buffer
+  * @param  InDataLength size in bytes Input buffer
+  * @param  pDataOut Pointer to the jpeg output data buffer
+  * @param  OutDataLength size in bytes of the Output buffer
   * @retval HAL status
   */
 HAL_StatusTypeDef  HAL_JPEG_Encode_DMA(JPEG_HandleTypeDef *hjpeg, uint8_t *pDataInMCU, uint32_t InDataLength, uint8_t *pDataOut, uint32_t OutDataLength)
@@ -1463,12 +1463,12 @@ HAL_StatusTypeDef  HAL_JPEG_Encode_DMA(JPEG_HandleTypeDef *hjpeg, uint8_t *pData
 
 /**
   * @brief  Starts JPEG decoding with DMA processing
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
-  * @param  pDataIn: Pointer to the input data buffer 
-  * @param  InDataLength: size in bytes Input buffer
-  * @param  pDataOutMCU: Pointer to the Output data buffer
-  * @param  OutDataLength: size in bytes of the Output buffer
+  * @param  pDataIn Pointer to the input data buffer 
+  * @param  InDataLength size in bytes Input buffer
+  * @param  pDataOutMCU Pointer to the Output data buffer
+  * @param  OutDataLength size in bytes of the Output buffer
   * @retval HAL status
   */
 HAL_StatusTypeDef  HAL_JPEG_Decode_DMA(JPEG_HandleTypeDef *hjpeg ,uint8_t *pDataIn ,uint32_t InDataLength ,uint8_t *pDataOutMCU ,uint32_t OutDataLength)
@@ -1526,9 +1526,9 @@ HAL_StatusTypeDef  HAL_JPEG_Decode_DMA(JPEG_HandleTypeDef *hjpeg ,uint8_t *pData
 
 /**
   * @brief  Pause the JPEG Input/Output processing
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
-  * @param  XferSelection: This parameter can be one of the following values :
+  * @param  XferSelection This parameter can be one of the following values :
   *                           JPEG_PAUSE_RESUME_INPUT : Pause Input processing
   *                           JPEG_PAUSE_RESUME_OUTPUT: Pause Output processing
   *                           JPEG_PAUSE_RESUME_INPUT_OUTPUT: Pause Input and Output processing
@@ -1578,9 +1578,9 @@ HAL_StatusTypeDef  HAL_JPEG_Pause(JPEG_HandleTypeDef *hjpeg, uint32_t XferSelect
 
 /**
   * @brief  Resume the JPEG Input/Output processing
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
-  * @param  XferSelection: This parameter can be one of the following values :
+  * @param  XferSelection This parameter can be one of the following values :
   *                           JPEG_PAUSE_RESUME_INPUT : Resume Input processing
   *                           JPEG_PAUSE_RESUME_OUTPUT: Resume Output processing
   *                           JPEG_PAUSE_RESUME_INPUT_OUTPUT: Resume Input and Output processing
@@ -1659,10 +1659,10 @@ HAL_StatusTypeDef  HAL_JPEG_Resume(JPEG_HandleTypeDef *hjpeg, uint32_t XferSelec
 
 /**
   * @brief  Config Encoding/Decoding Input Buffer.
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module.
-  * @param  pNewInputBuffer: Pointer to the new input data buffer
-  * @param  InDataLength: Size in bytes of the new Input data buffer 
+  * @param  pNewInputBuffer Pointer to the new input data buffer
+  * @param  InDataLength Size in bytes of the new Input data buffer 
   * @retval HAL status
   */
 void HAL_JPEG_ConfigInputBuffer(JPEG_HandleTypeDef *hjpeg, uint8_t *pNewInputBuffer, uint32_t InDataLength)
@@ -1673,10 +1673,10 @@ void HAL_JPEG_ConfigInputBuffer(JPEG_HandleTypeDef *hjpeg, uint8_t *pNewInputBuf
 
 /**
   * @brief  Config Encoding/Decoding Output Buffer.
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module.
-  * @param  pNewOutputBuffer: Pointer to the new output data buffer
-  * @param  OutDataLength: Size in bytes of the new Output data buffer 
+  * @param  pNewOutputBuffer Pointer to the new output data buffer
+  * @param  OutDataLength Size in bytes of the new Output data buffer 
   * @retval HAL status
   */
 void HAL_JPEG_ConfigOutputBuffer(JPEG_HandleTypeDef *hjpeg, uint8_t *pNewOutputBuffer, uint32_t OutDataLength)
@@ -1687,7 +1687,7 @@ void HAL_JPEG_ConfigOutputBuffer(JPEG_HandleTypeDef *hjpeg, uint8_t *pNewOutputB
 
 /**
   * @brief  Aborts the JPEG Encoding/Decoding.
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
   * @retval HAL status
   */
@@ -1788,9 +1788,9 @@ HAL_StatusTypeDef HAL_JPEG_Abort(JPEG_HandleTypeDef *hjpeg)
 
 /**
   * @brief  Decoding JPEG Info ready callback.
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
-  * @param  pInfo: pointer to a JPEG_ConfTypeDef structure that contains
+  * @param  pInfo pointer to a JPEG_ConfTypeDef structure that contains
   *         The JPEG decoded header informations
   * @retval None
   */
@@ -1807,7 +1807,7 @@ __weak void HAL_JPEG_InfoReadyCallback(JPEG_HandleTypeDef *hjpeg,JPEG_ConfTypeDe
 
 /**
   * @brief  Encoding complete callback.
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
   * @retval None
   */
@@ -1823,7 +1823,7 @@ __weak void HAL_JPEG_EncodeCpltCallback(JPEG_HandleTypeDef *hjpeg)
 
 /**
   * @brief  Decoding complete callback.
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
   * @retval None
   */
@@ -1839,7 +1839,7 @@ __weak void HAL_JPEG_DecodeCpltCallback(JPEG_HandleTypeDef *hjpeg)
 
 /**
   * @brief  JPEG error callback.
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
   * @retval None
   */
@@ -1855,9 +1855,9 @@ __weak void HAL_JPEG_DecodeCpltCallback(JPEG_HandleTypeDef *hjpeg)
 
 /**
   * @brief  Get New Data chunk callback.
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
-  * @param  NbDecodedData: Number of consummed data in the previous chunk in bytes
+  * @param  NbDecodedData Number of consummed data in the previous chunk in bytes
   * @retval None
   */
  __weak void HAL_JPEG_GetDataCallback(JPEG_HandleTypeDef *hjpeg, uint32_t NbDecodedData)
@@ -1873,10 +1873,10 @@ __weak void HAL_JPEG_DecodeCpltCallback(JPEG_HandleTypeDef *hjpeg)
 
 /**
   * @brief  Decoded/Encoded Data ready  callback.
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
-  * @param  pDataOut: pointer to the output data buffer 
-  * @param  OutDataLength: number in bytes of data available in the specified output buffer 
+  * @param  pDataOut pointer to the output data buffer 
+  * @param  OutDataLength number in bytes of data available in the specified output buffer 
   * @retval None
   */
 __weak void HAL_JPEG_DataReadyCallback (JPEG_HandleTypeDef *hjpeg, uint8_t *pDataOut, uint32_t OutDataLength)
@@ -1912,7 +1912,7 @@ __weak void HAL_JPEG_DataReadyCallback (JPEG_HandleTypeDef *hjpeg, uint8_t *pDat
 
 /**
   * @brief  This function handles JPEG interrupt request.
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
   * @retval None
   */
@@ -1962,7 +1962,7 @@ void HAL_JPEG_IRQHandler(JPEG_HandleTypeDef *hjpeg)
 
 /**
   * @brief  Returns the JPEG state.
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
   * @retval JPEG state
   */
@@ -1973,7 +1973,7 @@ HAL_JPEG_STATETypeDef HAL_JPEG_GetState(JPEG_HandleTypeDef *hjpeg)
 
 /**
 * @brief  Return the JPEG error code
-* @param  hjpeg : pointer to a JPEG_HandleTypeDef structure that contains
+* @param  hjpeg  pointer to a JPEG_HandleTypeDef structure that contains
   *              the configuration information for the specified JPEG.
 * @retval JPEG Error Code
 */
@@ -1997,10 +1997,10 @@ uint32_t HAL_JPEG_GetError(JPEG_HandleTypeDef *hjpeg)
 
 /**
   * @brief  Generates Huffman sizes/Codes Table from Bits/vals Table
-  * @param  Bits: pointer to bits table
-  * @param  Huffsize: pointer to sizes table
-  * @param  Huffcode: pointer to codes table
-  * @param  LastK: pointer to last Coeff (table dimmension) 
+  * @param  Bits pointer to bits table
+  * @param  Huffsize pointer to sizes table
+  * @param  Huffcode pointer to codes table
+  * @param  LastK pointer to last Coeff (table dimmension) 
   * @retval HAL status
   */   
 static HAL_StatusTypeDef JPEG_Bits_To_SizeCodes(uint8_t *Bits, uint8_t *Huffsize, uint32_t *Huffcode, uint32_t *LastK)
@@ -2051,8 +2051,8 @@ static HAL_StatusTypeDef JPEG_Bits_To_SizeCodes(uint8_t *Bits, uint8_t *Huffsize
 /**
   * @brief  Transform a Bits/Vals AC Huffman table to sizes/Codes huffman Table
   *         that can programmed to the JPEG encoder registers
-  * @param  AC_BitsValsTable: pointer to AC huffman bits/vals table
-  * @param  AC_SizeCodesTable: pointer to AC huffman Sizes/Codes table 
+  * @param  AC_BitsValsTable pointer to AC huffman bits/vals table
+  * @param  AC_SizeCodesTable pointer to AC huffman Sizes/Codes table 
   * @retval HAL status
   */ 
 static HAL_StatusTypeDef JPEG_ACHuff_BitsVals_To_SizeCodes(JPEG_ACHuffTableTypeDef *AC_BitsValsTable, JPEG_AC_HuffCodeTableTypeDef *AC_SizeCodesTable)
@@ -2109,8 +2109,8 @@ static HAL_StatusTypeDef JPEG_ACHuff_BitsVals_To_SizeCodes(JPEG_ACHuffTableTypeD
 /**
   * @brief  Transform a Bits/Vals DC Huffman table to sizes/Codes huffman Table
   *         that can programmed to the JPEG encoder registers
-  * @param  DC_BitsValsTable: pointer to DC huffman bits/vals table
-  * @param  DC_SizeCodesTable: pointer to DC huffman Sizes/Codes table 
+  * @param  DC_BitsValsTable pointer to DC huffman bits/vals table
+  * @param  DC_SizeCodesTable pointer to DC huffman Sizes/Codes table 
   * @retval HAL status
   */ 
 static HAL_StatusTypeDef JPEG_DCHuff_BitsVals_To_SizeCodes(JPEG_DCHuffTableTypeDef *DC_BitsValsTable, JPEG_DC_HuffCodeTableTypeDef *DC_SizeCodesTable)
@@ -2151,10 +2151,10 @@ static HAL_StatusTypeDef JPEG_DCHuff_BitsVals_To_SizeCodes(JPEG_DCHuffTableTypeD
 
 /**
   * @brief  Set the JPEG register with an DC huffman table at the given DC table address
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
-  * @param  HuffTableDC: pointer to DC huffman table
-  * @param  DCTableAddress: Encoder DC huffman table address it could be HUFFENC_DC0 or HUFFENC_DC1. 
+  * @param  HuffTableDC pointer to DC huffman table
+  * @param  DCTableAddress Encoder DC huffman table address it could be HUFFENC_DC0 or HUFFENC_DC1. 
   * @retval HAL status
   */    
 static HAL_StatusTypeDef JPEG_Set_HuffDC_Mem(JPEG_HandleTypeDef *hjpeg, JPEG_DCHuffTableTypeDef *HuffTableDC, uint32_t *DCTableAddress)
@@ -2208,10 +2208,10 @@ static HAL_StatusTypeDef JPEG_Set_HuffDC_Mem(JPEG_HandleTypeDef *hjpeg, JPEG_DCH
 
 /**
   * @brief  Set the JPEG register with an AC huffman table at the given AC table address
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
-  * @param  HuffTableAC: pointer to AC huffman table
-  * @param  ACTableAddress: Encoder AC huffman table address it could be HUFFENC_AC0 or HUFFENC_AC1. 
+  * @param  HuffTableAC pointer to AC huffman table
+  * @param  ACTableAddress Encoder AC huffman table address it could be HUFFENC_AC0 or HUFFENC_AC1. 
   * @retval HAL status
   */  
 static HAL_StatusTypeDef JPEG_Set_HuffAC_Mem(JPEG_HandleTypeDef *hjpeg, JPEG_ACHuffTableTypeDef *HuffTableAC, uint32_t *ACTableAddress)
@@ -2280,12 +2280,12 @@ static HAL_StatusTypeDef JPEG_Set_HuffAC_Mem(JPEG_HandleTypeDef *hjpeg, JPEG_ACH
 /**
   * @brief  Configure the JPEG encoder register huffman tables to used during
   *         the encdoing operation
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
-  * @param  HuffTableAC0: AC0 huffman table
-  * @param  HuffTableDC0: DC0 huffman table
-  * @param  HuffTableAC1: AC1 huffman table
-  * @param  HuffTableDC1: DC1 huffman table  
+  * @param  HuffTableAC0 AC0 huffman table
+  * @param  HuffTableDC0 DC0 huffman table
+  * @param  HuffTableAC1 AC1 huffman table
+  * @param  HuffTableDC1 DC1 huffman table  
   * @retval None
   */ 
 static HAL_StatusTypeDef JPEG_Set_HuffEnc_Mem(JPEG_HandleTypeDef *hjpeg, JPEG_ACHuffTableTypeDef *HuffTableAC0, JPEG_DCHuffTableTypeDef *HuffTableDC0 ,  JPEG_ACHuffTableTypeDef *HuffTableAC1, JPEG_DCHuffTableTypeDef *HuffTableDC1)
@@ -2336,12 +2336,12 @@ static HAL_StatusTypeDef JPEG_Set_HuffEnc_Mem(JPEG_HandleTypeDef *hjpeg, JPEG_AC
 /**
   * @brief  Configure the JPEG register huffman tables to be included in the JPEG
   *         file header (used for encoding only)
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
-  * @param  HuffTableAC0: AC0 huffman table
-  * @param  HuffTableDC0: DC0 huffman table
-  * @param  HuffTableAC1: AC1 huffman table
-  * @param  HuffTableDC1: DC1 huffman table  
+  * @param  HuffTableAC0 AC0 huffman table
+  * @param  HuffTableDC0 DC0 huffman table
+  * @param  HuffTableAC1 AC1 huffman table
+  * @param  HuffTableDC1 DC1 huffman table  
   * @retval None
   */ 
 static void JPEG_Set_Huff_DHTMem(JPEG_HandleTypeDef *hjpeg, JPEG_ACHuffTableTypeDef *HuffTableAC0, JPEG_DCHuffTableTypeDef *HuffTableDC0 ,  JPEG_ACHuffTableTypeDef *HuffTableAC1, JPEG_DCHuffTableTypeDef *HuffTableDC1)
@@ -2532,10 +2532,10 @@ static void JPEG_Set_Huff_DHTMem(JPEG_HandleTypeDef *hjpeg, JPEG_ACHuffTableType
 
 /**
   * @brief  Configure the JPEG registers with a given quantization table
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
-  * @param  QTable: pointer to an array of 64 bytes giving the quantization table
-  * @param  QTableAddress: destination quantization address in the JPEG peripheral
+  * @param  QTable pointer to an array of 64 bytes giving the quantization table
+  * @param  QTableAddress destination quantization address in the JPEG peripheral
   *         it could be QMEM0, QMEM1, QMEM2 or QMEM3         
   * @retval None
   */
@@ -2601,7 +2601,7 @@ static HAL_StatusTypeDef  JPEG_Set_Quantization_Mem(JPEG_HandleTypeDef *hjpeg, u
 
 /**
   * @brief  Configure the JPEG registers for YCbCr color space
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
   * @retval None
   */
@@ -2662,7 +2662,7 @@ static void JPEG_SetColorYCBCR(JPEG_HandleTypeDef *hjpeg)
 
 /**
   * @brief  Configure the JPEG registers for GrayScale color space
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
   * @retval None
   */
@@ -2682,7 +2682,7 @@ static void JPEG_SetColorGrayScale(JPEG_HandleTypeDef *hjpeg)
 
 /**
   * @brief  Configure the JPEG registers for CMYK color space
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
   * @retval None
   */
@@ -2741,7 +2741,7 @@ static void JPEG_SetColorCMYK(JPEG_HandleTypeDef *hjpeg)
 
 /**
   * @brief  Init the JPEG encoding/decoding process in case of Polling or Interrupt and DMA
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
   * @retval None
   */
@@ -2795,7 +2795,7 @@ static void JPEG_Init_Process(JPEG_HandleTypeDef *hjpeg)
 
 /**
   * @brief  JPEG encoding/decoding process in case of Polling or Interrupt
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
   * @retval JPEG_PROCESS_DONE if the process has ends else JPEG_PROCESS_ONGOING
   */
@@ -2912,9 +2912,9 @@ static uint32_t JPEG_Process(JPEG_HandleTypeDef *hjpeg)
   * @brief  Store some output data from the JPEG peripheral to the output buffer.
   *         This function is used when the JPEG peripheral has new data to output 
   *         in case of Polling or Interrupt process
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
-  * @param  nbOutputWords: Number of output words (of 32 bits) ready from the JPEG peripheral
+  * @param  nbOutputWords Number of output words (of 32 bits) ready from the JPEG peripheral
   * @retval None 
   */
 static void JPEG_StoreOutputData(JPEG_HandleTypeDef *hjpeg, uint32_t nbOutputWords)
@@ -2982,9 +2982,9 @@ static void JPEG_StoreOutputData(JPEG_HandleTypeDef *hjpeg, uint32_t nbOutputWor
   * @brief  Read some input Data from the input buffer.
   *         This function is used when the JPEG peripheral needs new data 
   *         in case of Polling or Interrupt process
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
-  * @param  nbRequestWords: Number of input words (of 32 bits) that the JPE peripheral request
+  * @param  nbRequestWords Number of input words (of 32 bits) that the JPE peripheral request
   * @retval None 
   */
 static void JPEG_ReadInputData(JPEG_HandleTypeDef *hjpeg, uint32_t nbRequestWords)
@@ -3051,7 +3051,7 @@ static void JPEG_ReadInputData(JPEG_HandleTypeDef *hjpeg, uint32_t nbRequestWord
 
 /**
   * @brief  Start the JPEG DMA process (encoding/decoding) 
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
   * @retval JPEG_PROCESS_DONE if process ends else JPEG_PROCESS_ONGOING 
   */
@@ -3099,7 +3099,7 @@ static HAL_StatusTypeDef JPEG_DMA_StartProcess(JPEG_HandleTypeDef *hjpeg)
 
 /**
   * @brief  Continue the current JPEG DMA process (encoding/decoding) 
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
   * @retval JPEG_PROCESS_DONE if process ends else JPEG_PROCESS_ONGOING 
   */
@@ -3163,7 +3163,7 @@ static uint32_t JPEG_DMA_ContinueProcess(JPEG_HandleTypeDef *hjpeg)
 
 /**
   * @brief  Finalize the current JPEG DMA process (encoding/decoding) 
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
   * @retval JPEG_PROCESS_DONE
   */
@@ -3217,7 +3217,7 @@ static uint32_t JPEG_DMA_EndProcess(JPEG_HandleTypeDef *hjpeg)
 
 /**
   * @brief  Poll residual output data when DMA process (encoding/decoding) 
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module
   * @retval None.
   */
@@ -3275,7 +3275,7 @@ static void JPEG_DMA_PollResidualData(JPEG_HandleTypeDef *hjpeg)
 
 /**
   * @brief  DMA input transfer complete callback
-  * @param  hdma: pointer to a DMA_HandleTypeDef structure. 
+  * @param  hdma pointer to a DMA_HandleTypeDef structure. 
   * @retval None
   */
 static void JPEG_DMAInCpltCallback(DMA_HandleTypeDef *hdma)  
@@ -3320,7 +3320,7 @@ static void JPEG_DMAInCpltCallback(DMA_HandleTypeDef *hdma)
 
 /**
   * @brief  DMA output transfer complete callback
-  * @param  hdma: pointer to a DMA_HandleTypeDef structure. 
+  * @param  hdma pointer to a DMA_HandleTypeDef structure. 
   * @retval None
   */
 static void JPEG_DMAOutCpltCallback(DMA_HandleTypeDef *hdma)  
@@ -3355,7 +3355,7 @@ static void JPEG_DMAOutCpltCallback(DMA_HandleTypeDef *hdma)
 
 /**
   * @brief  DMA Transfer error callback
-  * @param  hdma: pointer to a DMA_HandleTypeDef structure. 
+  * @param  hdma pointer to a DMA_HandleTypeDef structure. 
   * @retval None
   */
 static void JPEG_DMAErrorCallback(DMA_HandleTypeDef *hdma)
@@ -3382,7 +3382,7 @@ static void JPEG_DMAErrorCallback(DMA_HandleTypeDef *hdma)
 
 /**
   * @brief  DMA output Abort callback
-  * @param  hdma: pointer to a DMA_HandleTypeDef structure. 
+  * @param  hdma pointer to a DMA_HandleTypeDef structure. 
   * @retval None
   */
 static void JPEG_DMAOutAbortCallback(DMA_HandleTypeDef *hdma)  
@@ -3397,7 +3397,7 @@ static void JPEG_DMAOutAbortCallback(DMA_HandleTypeDef *hdma)
 
 /**
   * @brief  Calculate the decoded image quality (from 1 to 100)
-  * @param  hjpeg: pointer to a JPEG_HandleTypeDef structure that contains
+  * @param  hjpeg pointer to a JPEG_HandleTypeDef structure that contains
   *         the configuration information for JPEG module 
   * @retval JPEG image quality from 1 to 100.
   */

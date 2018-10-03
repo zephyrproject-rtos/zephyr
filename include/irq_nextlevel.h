@@ -8,8 +8,8 @@
  * @file
  * @brief Public interface for configuring interrupts
  */
-#ifndef _IRQ_NEXTLEVEL_H_
-#define _IRQ_NEXTLEVEL_H_
+#ifndef ZEPHYR_INCLUDE_IRQ_NEXTLEVEL_H_
+#define ZEPHYR_INCLUDE_IRQ_NEXTLEVEL_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -92,4 +92,4 @@ static inline unsigned int irq_is_enabled_next_level(struct device *dev)
 }
 #endif
 
-#endif /* _IRQ_NEXTLEVEL_H_ */
+#endif /* ZEPHYR_INCLUDE_IRQ_NEXTLEVEL_H_ */

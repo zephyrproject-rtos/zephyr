@@ -8,7 +8,6 @@
 
 menuconfig UART_CMSDK_APB
 	bool "ARM CMSDK APB UART driver"
-	default n
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	depends on SOC_FAMILY_ARM
@@ -21,7 +20,6 @@ if UART_CMSDK_APB
 
 config UART_CMSDK_APB_PORT0
 	bool "Enable driver for UART 0"
-	default n
 	help
 	  Build the driver to utilize UART controller Port 0.
 
@@ -29,7 +27,6 @@ config UART_CMSDK_APB_PORT0
 
 config UART_CMSDK_APB_PORT1
 	bool "Enable driver for UART 1"
-	default n
 	help
 	  Build the driver to utilize UART controller Port 1.
 
@@ -37,7 +34,6 @@ config UART_CMSDK_APB_PORT1
 
 config UART_CMSDK_APB_PORT2
 	bool "Enable driver for UART 2"
-	default n
 	help
 	  Build the driver to utilize UART controller Port 2.
 
@@ -45,7 +41,6 @@ config UART_CMSDK_APB_PORT2
 
 config UART_CMSDK_APB_PORT3
 	bool "Enable driver for UART 3"
-	default n
 	help
 	  Build the driver to utilize UART controller Port 3.
 
@@ -53,7 +48,6 @@ config UART_CMSDK_APB_PORT3
 
 config UART_CMSDK_APB_PORT4
 	bool "Enable driver for UART 4"
-	default n
 	help
 	  Build the driver to utilize UART controller Port 4.
 

@@ -15,20 +15,22 @@ if HAS_IMX_HAL
 
 config HAS_IMX_RDC
 	bool
-	default n
 	help
 	  Set if the RDC module is present in the SoC.
 
 config HAS_IMX_CCM
 	bool
-	default n
 	help
 	  Set if the CCM module is present in the SoC.
 
 config HAS_IMX_GPIO
 	bool
-	default n
 	help
 	  Set if the GPIO module is present in the SoC.
+
+config HAS_IMX_I2C
+	bool
+	help
+	  Set if the I2C module is present in the SoC.
 
 endif # HAS_IMX_HAL

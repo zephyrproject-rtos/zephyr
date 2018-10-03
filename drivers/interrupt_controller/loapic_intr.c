@@ -297,7 +297,7 @@ void _loapic_int_vec_set(unsigned int irq, /* IRQ number of the interrupt */
 				  unsigned int vector /* vector to copy into the LVT */
 				  )
 {
-	s32_t oldLevel;   /* previous interrupt lock level */
+	unsigned int oldLevel;   /* previous interrupt lock level */
 
 	/*
 	 * The following mappings are used:
@@ -334,7 +334,7 @@ void _loapic_int_vec_set(unsigned int irq, /* IRQ number of the interrupt */
 
 void _loapic_irq_enable(unsigned int irq)
 {
-	s32_t oldLevel;   /* previous interrupt lock level */
+	unsigned int oldLevel;   /* previous interrupt lock level */
 
 	/*
 	 * See the comments in _LoApicLvtVecSet() regarding IRQ to LVT mappings
@@ -363,7 +363,7 @@ void _loapic_irq_enable(unsigned int irq)
 
 void _loapic_irq_disable(unsigned int irq)
 {
-	s32_t oldLevel;   /* previous interrupt lock level */
+	unsigned int oldLevel;   /* previous interrupt lock level */
 
 	/*
 	 * See the comments in _LoApicLvtVecSet() regarding IRQ to LVT mappings
@@ -432,7 +432,7 @@ static int loapic_suspend(struct device *port)
 
 	ARG_UNUSED(port);
 
-	memset(loapic_suspend_buf, 0, (LOPIC_SUSPEND_BITS_REQD >> 3));
+	(void)memset(loapic_suspend_buf, 0, (LOPIC_SUSPEND_BITS_REQD >> 3));
 
 	for (loapic_irq = 0; loapic_irq < LOAPIC_IRQ_COUNT; loapic_irq++) {
 

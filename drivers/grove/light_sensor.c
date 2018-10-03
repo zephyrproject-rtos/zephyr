@@ -16,16 +16,26 @@
 
 struct gls_data {
 	struct device *adc;
-	struct adc_seq_entry sample;
-	struct adc_seq_table adc_table;
+	struct adc_channel_cfg ch10_cfg;
 	u8_t adc_buffer[4];
 };
+
+static struct adc_sequence_options options = {
+	.interval_us = 12,
+	.extra_samplings = 0,
+};
+
+static struct adc_sequence adc_table = {
+	.options = &options,
+};
+
+#define ADC_RESOLUTION 12
 
 static int gls_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct gls_data *drv_data = dev->driver_data;
 
-	return adc_read(drv_data->adc, &drv_data->adc_table);
+	return adc_read(drv_data->adc, &adc_table);
 }
 
 static int gls_channel_get(struct device *dev,
@@ -44,7 +54,7 @@ static int gls_channel_get(struct device *dev,
 	/*
 	 * The formula for converting the analog value to lux is taken from
 	 * the UPM project:
-	 *     https://github.com/intel-iot-devkit/upm/blob/master/src/grove/grove.cxx#L161
+	 * https://github.com/intel-iot-devkit/upm/blob/master/src/grove/grove.cxx#L161
 	 */
 	ldr_val = (1023.0 - analog_val) * 10.0 / analog_val;
 	dval = 10000.0 / pow(ldr_val * 15.0, 4.0/3.0);
@@ -71,15 +81,18 @@ static int gls_init(struct device *dev)
 		return -EINVAL;
 	}
 
-	drv_data->sample.sampling_delay = 12;
-	drv_data->sample.channel_id = CONFIG_GROVE_LIGHT_SENSOR_ADC_CHANNEL;
-	drv_data->sample.buffer = drv_data->adc_buffer;
-	drv_data->sample.buffer_length = 4;
+	/*Change following parameters according to board if necessary*/
+	drv_data->ch10_cfg.channel_id =	CONFIG_GROVE_LIGHT_SENSOR_ADC_CHANNEL;
+	drv_data->ch10_cfg.differential = false;
+	drv_data->ch10_cfg.gain = ADC_GAIN_1,
+	drv_data->ch10_cfg.reference = ADC_REF_INTERNAL;
+	drv_data->ch10_cfg.acquisition_time = ADC_ACQ_TIME_DEFAULT;
+	adc_table.buffer = drv_data->adc_buffer;
+	adc_table.channels = BIT(CONFIG_GROVE_LIGHT_SENSOR_ADC_CHANNEL);
+	adc_table.resolution = ADC_RESOLUTION;
+	adc_table.buffer_size = 4;
 
-	drv_data->adc_table.entries = &drv_data->sample;
-	drv_data->adc_table.num_entries = 1;
-
-	adc_enable(drv_data->adc);
+	adc_channel_setup(drv_data->adc, &drv_data->ch10_cfg);
 
 	dev->driver_api = &gls_api;
 

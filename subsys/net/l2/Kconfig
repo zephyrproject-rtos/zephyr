@@ -1,0 +1,101 @@
+#
+# Copyright (c) 2016 Intel Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menu "Link layer options"
+
+config NET_L2_DUMMY
+	bool "Enable dummy l2 layer"
+	default y if !NET_L2_ETHERNET && NET_TEST
+	help
+	  Add a dummy L2 layer driver. This is usually only needed when
+	  simulating a network interface when running network stack inside QEMU.
+
+config NET_L2_BT
+	bool "Enable Bluetooth support"
+	select BT
+	select BT_PERIPHERAL
+	select BT_CENTRAL
+	select BT_SMP
+	select BT_L2CAP_DYNAMIC_CHANNEL
+	select NET_6LO
+	help
+	  Enable Bluetooth driver that send and receives IPv6 packets,
+	  does header compression on it and writes it to the
+	  Bluetooth stack via L2CAP channel.
+
+config NET_L2_BT_ZEP1656
+	bool "***Workaround to work with Linux.***"
+	depends on NET_L2_BT
+	help
+	  This workaround is necessary to interoperate with Linux up to 4.10 but
+	  it might not be compliant with RFC 7668 as it cause the stack to skip
+	  Neighbor Discovery cache causing the destination link address to be
+	  omitted. For more details why this is needed see:
+	  https://github.com/zephyrproject-rtos/zephyr/issues/3111
+
+config NET_L2_BT_SEC_LEVEL
+	int "Security level of Bluetooth Link"
+	depends on NET_L2_BT
+	default 1
+	range 1 4
+	help
+	  Security level of Bluetooth Link:
+	  Level 1 (BT_SECURITY_LOW) = No encryption or authentication required
+	  Level 2 (BT_SECURITY_MEDIUM) = Only encryption required
+	  Level 3 (BT_SECURITY_HIGH) = Encryption and authentication required
+	  Level 4 (BT_SECURITY_FIPS) = Secure connection required
+
+config NET_DEBUG_L2_BT
+	bool "Debug Bluetooth L2 layer"
+	default y if NET_LOG_GLOBAL
+	depends on NET_LOG
+	depends on NET_L2_BT
+	help
+	  Enables Bluetooth L2 output debug messages
+
+config NET_L2_BT_MGMT
+	bool "Enable Bluetooth Network Management support"
+	depends on NET_L2_BT
+	select NET_MGMT
+	select NET_MGMT_EVENT
+
+config NET_L2_BT_SHELL
+	bool "Enable Bluetooth shell module"
+	select CONSOLE_SHELL
+	select NET_L2_BT_MGMT
+	help
+	  This can be used for testing Bluetooth management commands through the
+	  console via a shell module named "net_bt".
+
+source "subsys/net/l2/ethernet/Kconfig"
+
+source "subsys/net/l2/ieee802154/Kconfig"
+
+source "subsys/net/l2/openthread/Kconfig"
+
+config NET_L2_WIFI_MGMT
+	bool "Enable WiFi Management support"
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	select NET_MGMT_EVENT_INFO
+	help
+	Add support for WiFi Management interface.
+
+config NET_DEBUG_L2_WIFI_MGMT
+	bool "Debug WiFi Management layer"
+	default y if NET_LOG_GLOBAL
+	depends on NET_LOG && NET_L2_WIFI_MGMT
+	help
+	Enables WiFi management interface to output debug messages
+
+config NET_L2_WIFI_SHELL
+	bool "Enable WiFi shell module"
+	select NET_L2_WIFI_MGMT
+	help
+	  This can be used for controlling WiFi through the console via
+	  exposing a shell module named "wifi".
+
+endmenu

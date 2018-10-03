@@ -1,0 +1,12 @@
+identifier: nucleo_f207zg
+name: NUCLEO-F207ZG
+type: mcu
+arch: arm
+ram: 128
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - usb_device

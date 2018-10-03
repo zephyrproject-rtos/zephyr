@@ -11,8 +11,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __NET_STATS_H
-#define __NET_STATS_H
+#ifndef ZEPHYR_INCLUDE_NET_NET_STATS_H_
+#define ZEPHYR_INCLUDE_NET_NET_STATS_H_
 
 #include <zephyr/types.h>
 #include <net/net_core.h>
@@ -341,6 +341,13 @@ struct net_stats_eth_hw_timestamp {
 	net_stats_t tx_hwtstamp_skipped;
 };
 
+#ifdef CONFIG_NET_STATISTICS_ETHERNET_VENDOR
+struct net_stats_eth_vendor {
+	const char * const key;
+	u32_t value;
+};
+#endif
+
 /* Ethernet specific statistics */
 struct net_stats_eth {
 	struct net_stats_bytes bytes;
@@ -356,6 +363,10 @@ struct net_stats_eth {
 	net_stats_t tx_dropped;
 	net_stats_t tx_timeout_count;
 	net_stats_t tx_restart_queue;
+#ifdef CONFIG_NET_STATISTICS_ETHERNET_VENDOR
+	/** Array is terminated with an entry containing a NULL key */
+	struct net_stats_eth_vendor *vendor;
+#endif
 };
 
 #if defined(CONFIG_NET_STATISTICS_USER_API)
@@ -469,4 +480,4 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_ETHERNET);
 }
 #endif
 
-#endif /* __NET_STATS_H */
+#endif /* ZEPHYR_INCLUDE_NET_NET_STATS_H_ */

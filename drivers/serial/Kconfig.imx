@@ -8,7 +8,6 @@
 
 menuconfig UART_IMX
 	bool "NXP i.MX7 family processor UART driver"
-	default n
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	depends on HAS_IMX_HAL
@@ -18,7 +17,6 @@ menuconfig UART_IMX
 
 config UART_IMX_UART_1
 	bool "Enable NXP i.MX7 UART1 Port"
-	default n
 	depends on UART_IMX
 	help
 	  Enable support for UART1 port in the driver. Say y here
@@ -26,7 +24,6 @@ config UART_IMX_UART_1
 
 config UART_IMX_UART_2
 	bool "Enable NXP i.MX7 UART2 Port"
-	default n
 	depends on UART_IMX
 	help
 	  Enable support for UART2 port in the driver. Say y here
@@ -34,7 +31,6 @@ config UART_IMX_UART_2
 
 config UART_IMX_UART_3
 	bool "Enable NXP i.MX7 UART3 Port"
-	default n
 	depends on UART_IMX
 	help
 	  Enable support for UART3 port in the driver. Say y here
@@ -42,7 +38,6 @@ config UART_IMX_UART_3
 
 config UART_IMX_UART_4
 	bool "Enable NXP i.MX7 UART4 Port"
-	default n
 	depends on UART_IMX
 	help
 	  Enable support for UART4 port in the driver. Say y here
@@ -50,7 +45,6 @@ config UART_IMX_UART_4
 
 config UART_IMX_UART_5
 	bool "Enable NXP i.MX7 UART5 Port"
-	default n
 	depends on UART_IMX
 	help
 	  Enable support for UART5 port in the driver. Say y here
@@ -58,7 +52,6 @@ config UART_IMX_UART_5
 
 config UART_IMX_UART_6
 	bool "Enable NXP i.MX7 UART6 Port"
-	default n
 	depends on UART_IMX
 	help
 	  Enable support for UART6 port in the driver. Say y here
@@ -66,7 +59,6 @@ config UART_IMX_UART_6
 
 config UART_IMX_UART_7
 	bool "Enable NXP i.MX7 UART7 Port"
-	default n
 	depends on UART_IMX
 	help
 	  Enable support for UART7 port in the driver. Say y here

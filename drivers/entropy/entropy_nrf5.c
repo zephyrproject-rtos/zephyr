@@ -8,6 +8,7 @@
 #include <entropy.h>
 #include <atomic.h>
 #include <soc.h>
+#include "nrf_rng.h"
 
 /*
  * The nRF5 RNG HW has several characteristics that need to be taken
@@ -161,10 +162,7 @@ static inline u8_t get(struct rand *rng, u8_t octets, u8_t *rand)
 	}
 
 	if (remaining < rng->threshold) {
-		NRF_RNG->TASKS_START = 1;
-#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
-		NRF_RNG_regw_sideeffects();
-#endif
+		nrf_rng_task_trigger(NRF_RNG_TASK_START);
 	}
 
 	return octets;
@@ -228,10 +226,7 @@ static void isr_rand(void *arg)
 		NRF_RNG->EVENTS_VALRDY = 0;
 
 		if (ret != -EBUSY) {
-			NRF_RNG->TASKS_STOP = 1;
-#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
-			NRF_RNG_regw_sideeffects();
-#endif
+			nrf_rng_task_trigger(NRF_RNG_TASK_STOP);
 		}
 	}
 }
@@ -281,14 +276,41 @@ static int entropy_nrf5_get_entropy_isr(struct device *dev, u8_t *buf, u16_t len
 		return get((struct rand *)dev_data->isr, len, buf);
 	}
 
-	while (len) {
+	if (len) {
+		u32_t intenset;
+
+		irq_disable(RNG_IRQn);
 		NRF_RNG->EVENTS_VALRDY = 0;
-		NRF_RNG->TASKS_START = 1;
-		while (NRF_RNG->EVENTS_VALRDY == 0) {
+
+		intenset = NRF_RNG->INTENSET;
+		nrf_rng_int_enable(NRF_RNG_INT_VALRDY_MASK);
+
+		nrf_rng_task_trigger(NRF_RNG_TASK_START);
+
+		do {
+			while (NRF_RNG->EVENTS_VALRDY == 0) {
+				__WFE();
+				__SEV();
+				__WFE();
+			}
+
+			buf[--len] = NRF_RNG->VALUE;
+
+			NRF_RNG->EVENTS_VALRDY = 0;
+
+			NVIC_ClearPendingIRQ(RNG_IRQn);
+		} while (len);
+
+		nrf_rng_task_trigger(NRF_RNG_TASK_STOP);
+
+		if (!(intenset & RNG_INTENSET_VALRDY_Msk)) {
+			nrf_rng_int_disable(NRF_RNG_INT_VALRDY_MASK);
 		}
-		buf[--len] = NRF_RNG->VALUE;
+
+		NVIC_ClearPendingIRQ(RNG_IRQn);
+
+		irq_enable(RNG_IRQn);
 	}
-	NRF_RNG->TASKS_STOP = 1;
 
 	return cnt;
 }
@@ -328,12 +350,8 @@ static int entropy_nrf5_init(struct device *device)
 	}
 
 	NRF_RNG->EVENTS_VALRDY = 0;
-	NRF_RNG->INTENSET = RNG_INTENSET_VALRDY_Msk;
-
-	NRF_RNG->TASKS_START = 1;
-#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
-	NRF_RNG_regw_sideeffects();
-#endif
+	nrf_rng_int_enable(NRF_RNG_INT_VALRDY_MASK);
+	nrf_rng_task_trigger(NRF_RNG_TASK_START);
 
 	IRQ_CONNECT(NRF5_IRQ_RNG_IRQn, CONFIG_ENTROPY_NRF5_PRI, isr_rand,
 		    DEVICE_GET(entropy_nrf5), 0);

@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f1xx_ll_usart.h
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    12-May-2017
   * @brief   Header file of USART LL module.
   ******************************************************************************
   * @attention
@@ -219,7 +217,7 @@ typedef struct
 
 /** @defgroup USART_LL_EC_PARITY Parity Control
   * @{
-  */ 
+  */
 #define LL_USART_PARITY_NONE                    0x00000000U                          /*!< Parity control disabled */
 #define LL_USART_PARITY_EVEN                    USART_CR1_PCE                        /*!< Parity control enabled and Even Parity is selected */
 #define LL_USART_PARITY_ODD                     (USART_CR1_PCE | USART_CR1_PS)       /*!< Parity control enabled and Odd Parity is selected */
@@ -1935,7 +1933,7 @@ __STATIC_INLINE uint32_t LL_USART_IsActiveFlag_RWU(USART_TypeDef *USARTx)
   * @brief  Clear Parity Error Flag
   * @note   Clearing this flag is done by a read access to the USARTx_SR
   *         register followed by a read access to the USARTx_DR register.
-  * @note   Please also consider that when clearing this flag, other flags as 
+  * @note   Please also consider that when clearing this flag, other flags as
   *         NE, FE, ORE, IDLE would also be cleared.
   * @rmtoll SR           PE            LL_USART_ClearFlag_PE
   * @param  USARTx USART Instance
@@ -1954,7 +1952,7 @@ __STATIC_INLINE void LL_USART_ClearFlag_PE(USART_TypeDef *USARTx)
   * @brief  Clear Framing Error Flag
   * @note   Clearing this flag is done by a read access to the USARTx_SR
   *         register followed by a read access to the USARTx_DR register.
-  * @note   Please also consider that when clearing this flag, other flags as 
+  * @note   Please also consider that when clearing this flag, other flags as
   *         PE, NE, ORE, IDLE would also be cleared.
   * @rmtoll SR           FE            LL_USART_ClearFlag_FE
   * @param  USARTx USART Instance
@@ -1973,7 +1971,7 @@ __STATIC_INLINE void LL_USART_ClearFlag_FE(USART_TypeDef *USARTx)
   * @brief  Clear Noise detected Flag
   * @note   Clearing this flag is done by a read access to the USARTx_SR
   *         register followed by a read access to the USARTx_DR register.
-  * @note   Please also consider that when clearing this flag, other flags as 
+  * @note   Please also consider that when clearing this flag, other flags as
   *         PE, FE, ORE, IDLE would also be cleared.
   * @rmtoll SR           NF            LL_USART_ClearFlag_NE
   * @param  USARTx USART Instance
@@ -1992,7 +1990,7 @@ __STATIC_INLINE void LL_USART_ClearFlag_NE(USART_TypeDef *USARTx)
   * @brief  Clear OverRun Error Flag
   * @note   Clearing this flag is done by a read access to the USARTx_SR
   *         register followed by a read access to the USARTx_DR register.
-  * @note   Please also consider that when clearing this flag, other flags as 
+  * @note   Please also consider that when clearing this flag, other flags as
   *         PE, NE, FE, IDLE would also be cleared.
   * @rmtoll SR           ORE           LL_USART_ClearFlag_ORE
   * @param  USARTx USART Instance
@@ -2011,7 +2009,7 @@ __STATIC_INLINE void LL_USART_ClearFlag_ORE(USART_TypeDef *USARTx)
   * @brief  Clear IDLE line detected Flag
   * @note   Clearing this flag is done by a read access to the USARTx_SR
   *         register followed by a read access to the USARTx_DR register.
-  * @note   Please also consider that when clearing this flag, other flags as 
+  * @note   Please also consider that when clearing this flag, other flags as
   *         PE, NE, FE, ORE would also be cleared.
   * @rmtoll SR           IDLE          LL_USART_ClearFlag_IDLE
   * @param  USARTx USART Instance

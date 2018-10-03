@@ -8,7 +8,7 @@
  * @file
  * @brief Linker command/script file
  *
- * Linker script for the Cortex-M3 platform.
+ * Linker script for the Cortex-M platforms.
  */
 
 #define _LINKER
@@ -82,6 +82,8 @@ MEMORY
     /* Used by and documented in include/linker/intlist.ld */
     IDT_LIST  (wx)      : ORIGIN = (RAM_ADDR + RAM_SIZE), LENGTH = 2K
     }
+
+ENTRY(CONFIG_KERNEL_ENTRY)
 
 SECTIONS
     {
@@ -182,6 +184,22 @@ SECTIONS
 	. = ALIGN(4);
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
+#if defined CONFIG_ARM_FIRMWARE_HAS_SECURE_ENTRY_FUNCS
+#if CONFIG_ARM_NSC_REGION_BASE_ADDRESS != 0
+       SECTION_PROLOGUE(.gnu.sgstubs,CONFIG_ARM_NSC_REGION_BASE_ADDRESS,)
+#else
+       SECTION_PROLOGUE(.gnu.sgstubs,,)
+#endif /* CONFIG_ARM_NSC_REGION_BASE_ADDRESS != 0 */
+       {
+       . = ALIGN(4);
+       __sg_start = .;
+       *(.gnu*)
+       . = ALIGN(4);
+       __sg_end = .;
+       __sg_size = __sg_end - __sg_start;
+       } GROUP_LINK_IN(ROMABLE_REGION)
+#endif /* CONFIG_ARM_FIRMWARE_HAS_SECURE_ENTRY_FUNCS */
+
 	_image_rodata_end = .;
 	_image_rom_end = .;
 
@@ -217,15 +235,34 @@ SECTIONS
 	}
 #endif
 
+#include <app_data_alignment.ld>
+
+#if defined(CONFIG_APP_SHARED_MEM)
+#if defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
+#define APP_SHARED_ALIGN . = ALIGN(4);
+		#include <app_smem.ld>
+#else
+	SECTION_PROLOGUE(_APP_SMEM_SECTION_NAME, (OPTIONAL),)
+	{
+		. = ALIGN(4);
+		_image_ram_start = .;
+		_app_smem_start = .;
+		APP_SMEM_SECTION()
+		_app_smem_end = .;
+		. = ALIGN(4);
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+#endif  /* CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT */
+
+	_app_smem_size = _app_smem_end - _app_smem_start;
+	_app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
+#endif  /* CONFIG_APP_SHARED_MEM */
+
 #ifdef CONFIG_APPLICATION_MEMORY
 	SECTION_DATA_PROLOGUE(_APP_DATA_SECTION_NAME, (OPTIONAL),)
 	{
 
-#include <app_data_alignment.ld>
-
 		__app_ram_start = .;
 		__app_data_ram_start = .;
-		_image_ram_start = .;
 		APP_INPUT_SECTION(.data)
 		APP_INPUT_SECTION(".data.*")
 		__app_data_ram_end = .;
@@ -269,9 +306,6 @@ SECTIONS
          */
         . = ALIGN(4);
 	__bss_start = .;
-#ifndef CONFIG_APPLICATION_MEMORY
-	_image_ram_start = .;
-#endif
 	__kernel_ram_start = .;
 
 	KERNEL_INPUT_SECTION(.bss)

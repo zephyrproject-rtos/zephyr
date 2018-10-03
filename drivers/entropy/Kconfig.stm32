@@ -8,10 +8,10 @@ menuconfig ENTROPY_STM32_RNG
 	bool "STM32 RNG driver"
 	depends on SOC_FAMILY_STM32
 	depends on ENTROPY_GENERATOR
-	default n
 	select ENTROPY_HAS_DRIVER
 	select USE_STM32_LL_RNG
 	help
 	  This option enables the RNG processor, which is a entropy number
 	  generator, based on a continuous analog noise, that provides
-	  a entropy 32-bit value to the host when read.
+	  a entropy 32-bit value to the host when read. It is available for
+	  F4 (except STM32F401 & STM32F411), L4 and F7 series.

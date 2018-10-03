@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f1xx_ll_exti.c
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    12-May-2017
   * @brief   EXTI LL module driver.
   ******************************************************************************
   * @attention

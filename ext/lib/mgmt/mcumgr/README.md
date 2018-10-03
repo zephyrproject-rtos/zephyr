@@ -16,8 +16,8 @@ both the Apache Mynewt and Zephyr operating systems.
 For tips on using mcumgr with your particular OS, see the appropriate file from
 the list below:
 
-* README-mynewt.md
-* README-zephyr.md
+* [Mynewt](README-mynewt.md)
+* [Zephyr](README-zephyr.md)
 
 ## Dependencies
 

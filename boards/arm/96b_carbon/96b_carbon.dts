@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <st/stm32f401.dtsi>
+#include <st/f4/stm32f401Xe.dtsi>
 
 / {
 	model = "Seeed Studio Carbon 96boards";
@@ -19,15 +19,15 @@
 
 	leds {
 		compatible = "gpio-leds";
-		green_led_1: led@0 {
+		green_led_1: led_1 {
 			gpios = <&gpiod 2 GPIO_INT_ACTIVE_HIGH>;
 			label = "USR1 LED";
 		};
-		green_led_2: led@1 {
+		green_led_2: led_2 {
 			gpios = <&gpioa 15 GPIO_INT_ACTIVE_HIGH>;
 			label = "USR2 LED";
 		};
-		bt_blue_led: led@2 {
+		bt_blue_led: led_3 {
 			gpios = <&gpioa 15 GPIO_INT_ACTIVE_HIGH>;
 			label = "BT LED";
 		};
@@ -35,7 +35,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
-		user_button: button@0 {
+		user_button: button {
 			label = "User";
 			gpios = <&gpiob 2 GPIO_INT_ACTIVE_LOW>;
 		};
@@ -105,7 +105,7 @@
 &flash0 {
 	/*
 	 * For more information, see:
-	 * http://docs.zephyrproject.org/devices/dts/flash_partitions.html
+	 * http://docs.zephyrproject.org/latest/devices/dts/flash_partitions.html
 	 */
 	partitions {
 		compatible = "fixed-partitions";
@@ -137,4 +137,8 @@
 			reg = <0x00060000 0x00020000>;
 		};
 	};
+};
+
+&rtc {
+	status = "ok";
 };

@@ -35,7 +35,7 @@ static struct net_buf *alloc_buf_cb(struct bt_l2cap_chan *chan)
 
 static u8_t recv_cb_buf[DATA_MTU + sizeof(struct l2cap_data_received_ev)];
 
-static void recv_cb(struct bt_l2cap_chan *l2cap_chan, struct net_buf *buf)
+static int recv_cb(struct bt_l2cap_chan *l2cap_chan, struct net_buf *buf)
 {
 	struct l2cap_data_received_ev *ev = (void *) recv_cb_buf;
 	struct channel *chan = CONTAINER_OF(l2cap_chan, struct channel, le);
@@ -46,6 +46,8 @@ static void recv_cb(struct bt_l2cap_chan *l2cap_chan, struct net_buf *buf)
 
 	tester_send(BTP_SERVICE_ID_L2CAP, L2CAP_EV_DATA_RECEIVED,
 		    CONTROLLER_INDEX, recv_cb_buf, sizeof(*ev) + buf->len);
+
+	return 0;
 }
 
 static void connected_cb(struct bt_l2cap_chan *l2cap_chan)
@@ -80,7 +82,7 @@ static void disconnected_cb(struct bt_l2cap_chan *l2cap_chan)
 	struct channel *chan = CONTAINER_OF(l2cap_chan, struct channel, le);
 	struct bt_conn_info info;
 
-	memset(&ev, 0, sizeof(struct l2cap_disconnected_ev));
+	(void)memset(&ev, 0, sizeof(struct l2cap_disconnected_ev));
 
 	/* TODO: ev.result */
 	ev.chan_id = chan->chan_id;
@@ -137,7 +139,7 @@ static void connect(u8_t *data, u16_t len)
 	struct channel *chan;
 	int err;
 
-	conn = bt_conn_lookup_addr_le((bt_addr_le_t *) data);
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
 	if (!conn) {
 		goto fail;
 	}
@@ -308,7 +310,7 @@ static void supported_commands(u8_t *data, u16_t len)
 	u8_t cmds[1];
 	struct l2cap_read_supported_commands_rp *rp = (void *) cmds;
 
-	memset(cmds, 0, sizeof(cmds));
+	(void)memset(cmds, 0, sizeof(cmds));
 
 	tester_set_bit(cmds, L2CAP_READ_SUPPORTED_COMMANDS);
 	tester_set_bit(cmds, L2CAP_CONNECT);

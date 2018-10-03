@@ -9,8 +9,8 @@
  * @brief WiFi L2 stack public header
  */
 
-#ifndef __WIFI_MGMT_H__
-#define __WIFI_MGMT_H__
+#ifndef ZEPHYR_INCLUDE_NET_WIFI_MGMT_H_
+#define ZEPHYR_INCLUDE_NET_WIFI_MGMT_H_
 
 #include <net/net_mgmt.h>
 #include <net/wifi.h>
@@ -123,4 +123,4 @@ void wifi_mgmt_raise_disconnect_result_event(struct net_if *iface, int status);
 
 #endif /* CONFIG_WIFI_OFFLOAD */
 
-#endif /* __WIFI_MGMT_H__ */
+#endif /* ZEPHYR_INCLUDE_NET_WIFI_MGMT_H_ */

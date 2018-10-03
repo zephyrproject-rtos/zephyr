@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f1xx_hal_usart.h
   * @author  MCD Application Team
-  * @version V1.1.1
-  * @date    12-May-2017
   * @brief   Header file of USART HAL module.
   ******************************************************************************
   * @attention
@@ -54,7 +52,7 @@
   * @{
   */
 
-/* Exported types ------------------------------------------------------------*/ 
+/* Exported types ------------------------------------------------------------*/
 /** @defgroup USART_Exported_Types USART Exported Types
   * @{
   */
@@ -96,24 +94,24 @@ typedef struct
                                            This parameter can be a value of @ref USART_Last_Bit */
 }USART_InitTypeDef;
 
-/** 
+/**
   * @brief HAL State structures definition
-  */ 
+  */
 typedef enum
 {
   HAL_USART_STATE_RESET             = 0x00U,    /*!< Peripheral is not yet initialized   */
   HAL_USART_STATE_READY             = 0x01U,    /*!< Peripheral Initialized and ready for use */
-  HAL_USART_STATE_BUSY              = 0x02U,    /*!< an internal process is ongoing */   
-  HAL_USART_STATE_BUSY_TX           = 0x12U,    /*!< Data Transmission process is ongoing */ 
+  HAL_USART_STATE_BUSY              = 0x02U,    /*!< an internal process is ongoing */
+  HAL_USART_STATE_BUSY_TX           = 0x12U,    /*!< Data Transmission process is ongoing */
   HAL_USART_STATE_BUSY_RX           = 0x22U,    /*!< Data Reception process is ongoing */
   HAL_USART_STATE_BUSY_TX_RX        = 0x32U,    /*!< Data Transmission Reception process is ongoing */
   HAL_USART_STATE_TIMEOUT           = 0x03U,    /*!< Timeout state */
   HAL_USART_STATE_ERROR             = 0x04U     /*!< Error */
 }HAL_USART_StateTypeDef;
 
-/** 
-  * @brief  USART handle Structure definition  
-  */  
+/**
+  * @brief  USART handle Structure definition
+  */
 typedef struct
 {
   USART_TypeDef                 *Instance;        /*!< USART registers base address        */
@@ -137,9 +135,9 @@ typedef struct
   DMA_HandleTypeDef             *hdmarx;          /*!< Usart Rx DMA Handle parameters      */
 
   HAL_LockTypeDef               Lock;             /*!< Locking object                      */
-  
+
   __IO HAL_USART_StateTypeDef   State;            /*!< Usart communication state           */
-  
+
   __IO uint32_t                 ErrorCode;        /*!< USART Error code                    */
 }USART_HandleTypeDef;
 /**
@@ -183,36 +181,36 @@ typedef struct
 #define USART_STOPBITS_1_5                   ((uint32_t)(USART_CR2_STOP_0 | USART_CR2_STOP_1))
 /**
   * @}
-  */ 
+  */
 
 /** @defgroup USART_Parity USART Parity
   * @{
-  */ 
+  */
 #define USART_PARITY_NONE                    0x00000000U
 #define USART_PARITY_EVEN                    ((uint32_t)USART_CR1_PCE)
 #define USART_PARITY_ODD                     ((uint32_t)(USART_CR1_PCE | USART_CR1_PS))
 /**
   * @}
-  */ 
+  */
 
 /** @defgroup USART_Mode USART Mode
   * @{
-  */ 
+  */
 #define USART_MODE_RX                        ((uint32_t)USART_CR1_RE)
 #define USART_MODE_TX                        ((uint32_t)USART_CR1_TE)
 #define USART_MODE_TX_RX                     ((uint32_t)(USART_CR1_TE |USART_CR1_RE))
 /**
   * @}
   */
-    
+
 /** @defgroup USART_Clock USART Clock
   * @{
-  */ 
+  */
 #define USART_CLOCK_DISABLE                 0x00000000U
 #define USART_CLOCK_ENABLE                  ((uint32_t)USART_CR2_CLKEN)
 /**
   * @}
-  */ 
+  */
 
 /** @defgroup USART_Clock_Polarity USART Clock Polarity
   * @{
@@ -221,7 +219,7 @@ typedef struct
 #define USART_POLARITY_HIGH                  ((uint32_t)USART_CR2_CPOL)
 /**
   * @}
-  */ 
+  */
 
 /** @defgroup USART_Clock_Phase USART Clock Phase
   * @{
@@ -331,7 +329,7 @@ typedef struct
   *          This parameter can be any combination of the following values:
   *            @arg USART_FLAG_TC:   Transmission Complete flag.
   *            @arg USART_FLAG_RXNE: Receive data register not empty flag.
-  *   
+  *
   * @note   PE (Parity error), FE (Framing error), NE (Noise error), ORE (OverRun
   *          error) and IDLE (Idle line detected) flags are cleared by software
   *          sequence: a read operation to USART_SR register followed by a read
@@ -340,7 +338,7 @@ typedef struct
   * @note   TC flag can be also cleared by software sequence: a read operation to
   *          USART_SR register followed by a write operation to USART_DR register
   * @note   TXE flag is cleared only by a write to the USART_DR register
-  *   
+  *
   */
 #define __HAL_USART_CLEAR_FLAG(__HANDLE__, __FLAG__) ((__HANDLE__)->Instance->SR = ~(__FLAG__))
 
@@ -435,13 +433,13 @@ typedef struct
   * @param  __HANDLE__: specifies the USART Handle.
   *         USART Handle selects the USARTx peripheral (USART availability and x value depending on device).
   */
-#define __HAL_USART_ENABLE(__HANDLE__)               SET_BIT((__HANDLE__)->Instance->CR1,(USART_CR1_UE)) 
+#define __HAL_USART_ENABLE(__HANDLE__)               SET_BIT((__HANDLE__)->Instance->CR1,(USART_CR1_UE))
 
 /** @brief  Disable USART
   * @param  __HANDLE__: specifies the USART Handle.
   *         USART Handle selects the USARTx peripheral (USART availability and x value depending on device).
-  */ 
-#define __HAL_USART_DISABLE(__HANDLE__)              CLEAR_BIT((__HANDLE__)->Instance->CR1,(USART_CR1_UE)) 
+  */
+#define __HAL_USART_DISABLE(__HANDLE__)              CLEAR_BIT((__HANDLE__)->Instance->CR1,(USART_CR1_UE))
 /**
   * @}
   */
@@ -502,7 +500,7 @@ HAL_USART_StateTypeDef HAL_USART_GetState(USART_HandleTypeDef *husart);
 uint32_t               HAL_USART_GetError(USART_HandleTypeDef *husart);
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
@@ -514,7 +512,7 @@ uint32_t               HAL_USART_GetError(USART_HandleTypeDef *husart);
   * @{
   */
 /** @brief USART interruptions flag mask
-  * 
+  *
   */
 #define USART_IT_MASK                   0x0000FFFFU
 
@@ -580,7 +578,7 @@ uint32_t               HAL_USART_GetError(USART_HandleTypeDef *husart);
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}

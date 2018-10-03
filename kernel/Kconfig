@@ -10,8 +10,7 @@
 menu "General Kernel Options"
 
 config MULTITHREADING
-	bool
-	prompt "Multi-threading"
+	bool "Multi-threading"
 	default y
 	help
 	  If disabled, only the main thread is available, so a main() function
@@ -24,10 +23,9 @@ config MULTITHREADING
 	  when you REALLY know what you are doing.
 
 config NUM_COOP_PRIORITIES
-	int
-	prompt "Number of coop priorities" if MULTITHREADING
-	default 16
+	int "Number of coop priorities" if MULTITHREADING
 	default 1 if !MULTITHREADING
+	default 16
 	range 0 128
 	help
 	  Number of cooperative priorities configured in the system. Gives access
@@ -54,10 +52,9 @@ config NUM_COOP_PRIORITIES
 	  priority, and be the only thread at that priority.
 
 config NUM_PREEMPT_PRIORITIES
-	int
-	prompt "Number of preemptible priorities" if MULTITHREADING
-	default 15
+	int "Number of preemptible priorities" if MULTITHREADING
 	default 0 if !MULTITHREADING
+	default 15
 	range 0 128
 	help
 	  Number of preemptible priorities available in the system. Gives access
@@ -77,32 +74,25 @@ config NUM_PREEMPT_PRIORITIES
 	  priority, and be the only thread at that priority.
 
 config MAIN_THREAD_PRIORITY
-	int
-	prompt "Priority of initialization/main thread"
-	default 0
+	int "Priority of initialization/main thread"
 	default -2 if !PREEMPT_ENABLED
+	default 0
 	help
 	  Priority at which the initialization thread runs, including the start
 	  of the main() function. main() can then change its priority if desired.
 
 config COOP_ENABLED
-	bool
-	default y
-	default n if (NUM_COOP_PRIORITIES = 0)
+	def_bool (NUM_COOP_PRIORITIES != 0)
 
 config PREEMPT_ENABLED
-	bool
-	default y
-	default n if (NUM_PREEMPT_PRIORITIES = 0)
+	def_bool (NUM_PREEMPT_PRIORITIES != 0)
 
 config PRIORITY_CEILING
-	int
-	prompt "Priority inheritance ceiling"
+	int "Priority inheritance ceiling"
 	default 0
 
 config NUM_METAIRQ_PRIORITIES
-	int
-	prompt "Number of very-high priority 'preemptor' threads"
+	int "Number of very-high priority 'preemptor' threads"
 	default 0
 	help
 	 This defines a set of priorities at the (numerically) lowest
@@ -123,9 +113,7 @@ config NUM_METAIRQ_PRIORITIES
 	 from application code.
 
 config SCHED_DEADLINE
-	bool
-	prompt "Enable earliest-deadline-first scheduling"
-	default n
+	bool "Enable earliest-deadline-first scheduling"
 	help
 	  This enables a simple "earliest deadline first" scheduling
 	  mode where threads can set "deadline" deltas measured in
@@ -135,10 +123,9 @@ config SCHED_DEADLINE
 
 
 config MAIN_STACK_SIZE
-	int
-	prompt "Size of stack for initialization and main thread"
-	default 1024
+	int "Size of stack for initialization and main thread"
 	default 512 if ZTEST
+	default 1024
 	help
 	  When the initialization is complete, the thread executing it then
 	  executes the main() routine, so as to reuse the stack used by the
@@ -147,12 +134,11 @@ config MAIN_STACK_SIZE
 	  After initialization is complete, the thread runs main().
 
 config IDLE_STACK_SIZE
-	int
-	prompt "Size of stack for idle thread"
-	default 256
-	default 320 if ARC || (ARM && CPU_HAS_FPU)
-	default 512 if RISCV32
+	int "Size of stack for idle thread"
 	default 1024 if XTENSA
+	default 512 if RISCV32
+	default 320 if ARC || (ARM && CPU_HAS_FPU)
+	default 256
 	help
 	  Depending on the work that the idle task must do, most likely due to
 	  power management but possibly to other features like system event
@@ -160,33 +146,37 @@ config IDLE_STACK_SIZE
 	  may need more stack space than the default value.
 
 config ISR_STACK_SIZE
-	int
-	prompt "ISR and initialization stack size (in bytes)"
+	int "ISR and initialization stack size (in bytes)"
 	default 2048
 	help
 	  This option specifies the size of the stack used by interrupt
 	  service routines (ISRs), and during kernel initialization.
 
 config THREAD_STACK_INFO
-	bool
-	prompt "Thread stack info"
-	default n
+	bool "Thread stack info"
 	help
 	  This option allows each thread to store the thread stack info into
 	  the k_thread data structure.
 
 config  THREAD_CUSTOM_DATA
-	bool
-	prompt "Thread custom data"
-	default n
+	bool "Thread custom data"
 	help
 	  This option allows each thread to store 32 bits of custom data,
 	  which can be accessed using the k_thread_custom_data_xxx() APIs.
 
-config ERRNO
+config THREAD_USERSPACE_LOCAL_DATA
 	bool
-	prompt "Enable errno support"
+	depends on USERSPACE
+
+config THREAD_USERSPACE_LOCAL_DATA_ARCH_DEFER_SETUP
+	bool
+	depends on THREAD_USERSPACE_LOCAL_DATA
+	default y if ARCH="arc"
+
+config ERRNO
+	bool "Enable errno support"
 	default y
+	select THREAD_USERSPACE_LOCAL_DATA if USERSPACE
 	help
 	  Enable per-thread errno in the kernel. Application and library code must
 	  include errno.h provided by the C library (libc) to use the errno
@@ -194,33 +184,24 @@ config ERRNO
 	  _get_errno() symbol.
 
 config APPLICATION_MEMORY
-	bool
-	prompt "Split kernel and application memory"
-	default n
+	bool "Split kernel and application memory"
 	help
 	  For all read-write memory sections (namely bss, noinit, data),
 	  separate them into application and kernel areas. The application area
 	  will have the project-level application objects and any libraries
 	  including the C library in it.
 
-config WAITQ_FAST
-	bool
-	prompt "Use scalable wait_q implementation"
-	default n
+choice SCHED_ALGORITHM
+	prompt "Scheduler priority queue algorithm"
+	default SCHED_DUMB
 	help
-	  When selected, the wait_q abstraction used in IPC primitives
-	  to pend threads for wakeup later will be implemented with a
-	  balanced tree instead of a linear list.  Choose this if you
-	  expect to have many threads waiting on individual
-	  primitives, or if you have already included the red/black
-	  tree code in the build for some other purpose (in which case
-	  this results in less code size increase than the default
-	  implementation).
+	  The kernel can be built with with several choices for the
+	  ready queue implementation, offering different choices between
+	  code size, constant factor runtime overhead and performance
+	  scaling when many threads are added.
 
 config SCHED_DUMB
-	bool
-	prompt "Use a simple linked list scheduler"
-	default y
+	bool "Simple linked-list ready queue"
 	help
 	  When selected, the scheduler ready queue will be implemented
 	  as a simple unordered list, with very fast constant time
@@ -231,22 +212,81 @@ config SCHED_DUMB
 	  (that are not otherwise using the red/black tree) this
 	  results in a savings of ~2k of code size.
 
+config SCHED_SCALABLE
+	bool "Red/black tree ready queue"
+	help
+	  When selected, the scheduler ready queue will be implemented
+	  as a red/black tree.  This has rather slower constant-time
+	  insertion and removal overhead, and on most platforms (that
+	  are not otherwise using the rbtree somewhere) requires an
+	  extra ~2kb of code.  But the resulting behavior will scale
+	  cleanly and quickly into the many thousands of threads.  Use
+	  this on platforms where you may have many threads (very
+	  roughly: more than 20 or so) marked as runnable at a given
+	  time.  Most applications don't want this.
+
+config SCHED_MULTIQ
+	bool "Traditional multi-queue ready queue"
+	depends on !SCHED_DEADLINE
+	help
+	  When selected, the scheduler ready queue will be implemented
+	  as the classic/textbook array of lists, one per priority
+	  (max 32 priorities).  This corresponds to the scheduler
+	  algorithm used in Zephyr versions prior to 1.12.  It incurs
+	  only a tiny code size overhead vs. the "dumb" scheduler and
+	  runs in O(1) time in almost all circumstances with very low
+	  constant factor.  But it requires a fairly large RAM budget
+	  to store those list heads, and the limited features make it
+	  incompatible with features like deadline scheduling that
+	  need to sort threads more finely, and SMP affinity which
+	  need to traverse the list of threads.  Typical applications
+	  with small numbers of runnable threads probably want the
+	  DUMB scheduler.
+
+endchoice # SCHED_ALGORITHM
+
+choice WAITQ_ALGORITHM
+	prompt "Wait queue priority algorithm"
+	default WAITQ_DUMB
+	help
+	  The wait_q abstraction used in IPC primitives to pend
+	  threads for later wakeup shares the same backend data
+	  structure choices as the scheduler, and can use the same
+	  options.
+
+config WAITQ_SCALABLE
+	bool "Use scalable wait_q implementation"
+	help
+	  When selected, the wait_q will be implemented with a
+	  balanced tree.  Choose this if you expect to have many
+	  threads waiting on individual primitives.  There is a ~2kb
+	  code size increase over WAITQ_DUMB (which may be shared with
+	  SCHED_SCALABLE) if the rbtree is not used elsewhere in the
+	  application, and pend/unpend operations on "small" queues
+	  will be somewhat slower (though this is not generally a
+	  performance path).
+
+config WAITQ_DUMB
+	bool "Simple linked-list wait_q"
+	help
+	  When selected, the wait_q will be implemented with a
+	  doubly-linked list.  Choose this if you expect to have only
+	  a few threads blocked on any single IPC primitive.
+
+endchoice # WAITQ_ALGORITHM
+
 menu "Kernel Debugging and Metrics"
 
 config INIT_STACKS
-	bool
-	prompt "Initialize stack areas"
-	default n
+	bool "Initialize stack areas"
 	help
 	  This option instructs the kernel to initialize stack areas with a
 	  known value (0xaa) before they are first used, so that the high
 	  water mark can be easily determined. This applies to the stack areas
-	  for threads.
+	  for threads, as well as to the interrupt stack.
 
 config KERNEL_DEBUG
-	bool
-	prompt "Kernel debugging"
-	default n
+	bool "Kernel debugging"
 	select INIT_STACKS
 	help
 	  Enable kernel debugging.
@@ -254,20 +294,16 @@ config KERNEL_DEBUG
 	  Note that debugging the kernel internals can be very verbose.
 
 config BOOT_BANNER
-	bool
-	prompt "Boot banner"
+	bool "Boot banner"
 	default y
 	depends on CONSOLE_HAS_DRIVER
 	select PRINTK
 	select EARLY_CONSOLE
 	help
-	  This option outputs a banner to the console device during boot up. It
-	  also embeds a date & time stamp in the kernel if the BUILD_TIMESTAMP
-	  option is enabled.
+	  This option outputs a banner to the console device during boot up.
 
 config BOOT_DELAY
-	int
-	prompt "Boot delay in milliseconds"
+	int "Boot delay in milliseconds"
 	default 0
 	help
 	  This option delays bootup for the specified amount of
@@ -279,19 +315,8 @@ config BOOT_DELAY
 	  achieved by waiting for DCD on the serial port--however, not
 	  all serial ports have DCD.
 
-config BUILD_TIMESTAMP
-	bool
-	default n
-	prompt "Build Timestamp"
-	help
-	  Record a timestamp from the build and add it to the boot banner.
-	  Note that this will make the build unreproducible: building
-	  Zephyr twice will result in different binaries.
-
 config INT_LATENCY_BENCHMARK
-	bool
-	prompt "Interrupt latency metrics [EXPERIMENTAL]"
-	default n
+	bool "Interrupt latency metrics [EXPERIMENTAL]"
 	depends on ARCH="x86"
 	help
 	  This option enables the tracking of interrupt latency metrics;
@@ -301,9 +326,7 @@ config INT_LATENCY_BENCHMARK
 	  each time int_latency_show() is called thereafter.
 
 config EXECUTION_BENCHMARKING
-	bool
-	prompt "Timing metrics"
-	default n
+	bool "Timing metrics"
 	help
 	  This option enables the tracking of various times inside the kernel
 	  the exact set of metrics being tracked is board-dependent.
@@ -311,13 +334,16 @@ config EXECUTION_BENCHMARKING
 	  In other architectures only a subset are enabled.
 
 config THREAD_MONITOR
-	bool
-	prompt "Thread monitoring [EXPERIMENTAL]"
-	default n
+	bool "Thread monitoring [EXPERIMENTAL]"
 	help
 	  This option instructs the kernel to maintain a list of all threads
 	  (excluding those that have not yet started or have already
 	  terminated).
+
+config THREAD_NAME
+	bool "Thread name [EXPERIMENTAL]"
+	help
+	  This option allows to set a name for a thread.
 endmenu
 
 menu "Work Queue Options"
@@ -327,9 +353,9 @@ config SYSTEM_WORKQUEUE_STACK_SIZE
 
 config SYSTEM_WORKQUEUE_PRIORITY
 	int "System workqueue priority"
-	default -1
-	default  0 if !COOP_ENABLED
 	default -2 if COOP_ENABLED && !PREEMPT_ENABLED
+	default  0 if !COOP_ENABLED
+	default -1
 	help
 	  By default, system work queue priority is the lowest cooperative
 	  priority. This means that any work handler, once started, won't
@@ -401,9 +427,7 @@ config TIMESLICE_PRIORITY
 	  not subject to time slicing.
 
 config POLL
-	bool
-	prompt "Async I/O Framework"
-	default n
+	bool "Async I/O Framework"
 	help
 	  Asynchronous notification framework. Enable the k_poll() and
 	  k_poll_signal() APIs.  The former can wait on multiple events
@@ -437,8 +461,7 @@ config NUM_PIPE_ASYNC_MSGS
 	  pipe messages.
 
 config HEAP_MEM_POOL_SIZE
-	int
-	prompt "Heap memory pool size (in bytes)"
+	int "Heap memory pool size (in bytes)"
 	default 0 if !POSIX_MQUEUE
 	default 1024 if POSIX_MQUEUE
 	help
@@ -451,7 +474,6 @@ endmenu
 config ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	bool
 	# hidden
-	default n
 	help
 	  It's possible that an architecture port cannot use _Swap() to swap to
 	  the _main() thread, but instead must do something custom. It must
@@ -460,15 +482,13 @@ config ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 config ARCH_HAS_CUSTOM_BUSY_WAIT
 	bool
 	# hidden
-	default n
 	help
 	  It's possible that an architecture port cannot or does not want to use
 	  the provided k_busy_wait(), but instead must do something custom. It must
 	  enable this option in that case.
 
 config SYS_CLOCK_TICKS_PER_SEC
-	int
-	prompt "System tick frequency (in ticks/second)"
+	int "System tick frequency (in ticks/second)"
 	default 100
 	help
 	  This option specifies the frequency of the system clock in Hz.
@@ -496,20 +516,17 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int "System clock's h/w timer frequency"
 	help
 	  This option specifies the frequency of the hardware timer used for the
-	  system clock (in Hz). This option is set by the board's Kconfig file
+	  system clock (in Hz). This option is set by the SOC's or board's Kconfig file
 	  and the user should generally avoid modifying it via the menu configuration.
 
 config SYS_CLOCK_EXISTS
-	bool
+	def_bool (SYS_CLOCK_TICKS_PER_SEC != 0)
 	# omit prompt to signify a "hidden" option
-	default y
-	default n if (SYS_CLOCK_TICKS_PER_SEC = 0)
 	help
 	  This option specifies that the kernel lacks timer support.
 
 config XIP
-	bool
-	prompt "Execute in place"
+	bool "Execute in place"
 	help
 	  This option allows the kernel to operate with its text and read-only
 	  sections residing in ROM (or similar read-only memory). Not all boards
@@ -520,8 +537,7 @@ config XIP
 menu "Initialization Priorities"
 
 config KERNEL_INIT_PRIORITY_OBJECTS
-	int
-	prompt "Kernel objects initialization priority"
+	int "Kernel objects initialization priority"
 	default 30
 	help
 	  Kernel objects use this priority for initialization. This
@@ -529,15 +545,13 @@ config KERNEL_INIT_PRIORITY_OBJECTS
 	  priority.
 
 config KERNEL_INIT_PRIORITY_DEFAULT
-	int
-	prompt "Default init priority"
+	int "Default init priority"
 	default 40
 	help
 	  Default minimal init priority for each init level.
 
 config KERNEL_INIT_PRIORITY_DEVICE
-	int
-	prompt "Default init priority for device drivers"
+	int "Default init priority for device drivers"
 	default 50
 	help
 	  Device driver, that depends on common components, such as
@@ -545,8 +559,7 @@ config KERNEL_INIT_PRIORITY_DEVICE
 	  uses this init priority.
 
 config APPLICATION_INIT_PRIORITY
-	int
-	prompt "Default init priority for application level drivers"
+	int "Default init priority for application level drivers"
 	default 90
 	help
 	  This priority level is for end-user drivers such as sensors and display
@@ -558,8 +571,7 @@ endmenu
 menu "Security Options"
 
 config RETPOLINE
-	bool
-	prompt "Build with retpolines enabled"
+	bool "Build with retpolines enabled"
 	default y if !X86_NO_SPECTRE_V2
 	help
 	  This is recommended on platforms with speculative executions, to protect
@@ -571,9 +583,7 @@ config RETPOLINE
 	  [1] https://support.google.com/faqs/answer/7625886
 
 config STACK_CANARIES
-	bool
-	prompt "Compiler stack canaries"
-	default n
+	bool "Compiler stack canaries"
 	help
 	  This option enables compiler stack canaries support kernel functions.
 
@@ -602,8 +612,7 @@ config EXECUTE_XOR_WRITE
 	  If unsure, say Y.
 
 config STACK_POINTER_RANDOM
-	int
-	prompt "Initial stack pointer randomization bounds"
+	int "Initial stack pointer randomization bounds"
 	depends on !STACK_GROWS_UP
 	default 0
 	help
@@ -624,8 +633,7 @@ config STACK_POINTER_RANDOM
 endmenu
 
 config MAX_DOMAIN_PARTITIONS
-	int
-	prompt "Maximum number of partitions per memory domain"
+	int "Maximum number of partitions per memory domain"
 	default 16
 	range 0 255
 	depends on USERSPACE
@@ -634,9 +642,7 @@ config MAX_DOMAIN_PARTITIONS
 
 menu "SMP Options"
 config USE_SWITCH
-	bool
-	prompt "Use new-style _arch_switch instead of __swap"
-	default n
+	bool "Use new-style _arch_switch instead of __swap"
 	help
 	  The _arch_switch() API is a lower level context switching
 	  primitive than the original __swap mechanism.  It is required
@@ -646,24 +652,19 @@ config USE_SWITCH
 	  overhead and may be slower.
 
 config SMP
-	bool
-	prompt "Enable symmetric multithreading support"
-	default n
+	bool "Enable symmetric multithreading support"
 	help
 	  When true, kernel will be built with SMP support, allowing
 	  more than one CPU to schedule Zephyr tasks at a time.
 
 config MP_NUM_CPUS
-	int
-	prompt "Number of CPUs/cores"
+	int "Number of CPUs/cores"
 	default 1
 	help
 	  Number of multiprocessing-capable cores available to the
 	  multicpu API and SMP features.
 
 endmenu
-
-source "kernel/Kconfig.event_logger"
 
 source "kernel/Kconfig.power_mgmt"
 

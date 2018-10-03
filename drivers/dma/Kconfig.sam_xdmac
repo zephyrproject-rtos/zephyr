@@ -8,6 +8,5 @@
 menuconfig DMA_SAM_XDMAC
 	bool "Atmel SAM DMA (XDMAC) driver"
 	depends on SOC_FAMILY_SAM
-	default n
 	help
 	  Enable Atmel SAM MCU Family Direct Memory Access (XDMAC) driver.

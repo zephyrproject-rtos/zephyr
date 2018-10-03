@@ -33,7 +33,7 @@ void main(void)
 
 	/* ipv4 */
 	rv = sntp_init(&ctx,
-		       CONFIG_NET_APP_PEER_IPV4_ADDR,
+		       CONFIG_NET_CONFIG_PEER_IPV4_ADDR,
 		       SNTP_PORT,
 		       K_FOREVER);
 	if (rv < 0) {
@@ -52,7 +52,7 @@ void main(void)
 
 	/* ipv6 */
 	rv = sntp_init(&ctx,
-		       CONFIG_NET_APP_PEER_IPV6_ADDR,
+		       CONFIG_NET_CONFIG_PEER_IPV6_ADDR,
 		       SNTP_PORT,
 		       K_NO_WAIT);
 	if (rv < 0) {

@@ -9,47 +9,27 @@ if BOARD_NRF51_VBLUNO51
 config BOARD
 	default "nrf51_vbluno51"
 
-if GPIO_NRF5
-
-config GPIO_NRF5_P0
-	default y
-
-endif # GPIO_NRF5
-
-if UART_NRFX
-
-config UART_0_NRF_TX_PIN
-	default 10
-
-config UART_0_NRF_RX_PIN
-	default 11
-
-config UART_0_NRF_RTS_PIN
-	default 12
-
-config UART_0_NRF_CTS_PIN
-	default 13
-
-endif # UART_NRFX
-
 if I2C
 
-config I2C_NRF5
+config I2C_NRFX
 	def_bool y
 
+if I2C_NRFX
+
 config I2C_0
-	default y
+	def_bool y
+
+endif #I2C_NRFX
+
+if I2C_0
+
+choice I2C_0_NRF_TYPE
+	default I2C_0_NRF_TWI
+
+endchoice
+
+endif # I2C_0
 
 endif # I2C
-
-if I2C_NRF5
-
-config I2C_NRF5_0_GPIO_SCL_PIN
-	default 30
-
-config I2C_NRF5_0_GPIO_SDA_PIN
-	default 29
-
-endif # I2C_NRF5
 
 endif # BOARD_NRF51_VBLUNO51

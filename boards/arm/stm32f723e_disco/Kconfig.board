@@ -1,0 +1,10 @@
+# Kconfig - STM32F723E Discovery board configuration
+#
+# Copyright (c) 2018 Aurelien Jarno
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BOARD_STM32F723E_DISCO
+	bool "STM32F723E Discovery Development Board"
+	depends on SOC_STM32F723XE

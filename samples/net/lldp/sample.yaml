@@ -1,0 +1,10 @@
+common:
+  harness: net
+  tags: net lldp
+sample:
+  description: Test LLDP functionality
+  name: LLDP sample app
+tests:
+  test:
+    platform_whitelist: native_posix
+    depends_on: netif

@@ -217,7 +217,7 @@ if(CONFIG_OPENTHREAD_FTD)
   set(cli_lib         openthread-cli-ftd)
 elseif(CONFIG_OPENTHREAD_MTD)
   list(APPEND ot_libs openthread-mtd)
-  set(cli_lib         openthread-cli-ftd)
+  set(cli_lib         openthread-cli-mtd)
 endif()
 
 if(CONFIG_OPENTHREAD_SHELL)

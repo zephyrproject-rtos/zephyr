@@ -5,6 +5,7 @@ arch: x86
 toolchain:
   - zephyr
   - issm
+  - xtools
 ram: 8
 flash: 32
 supported:

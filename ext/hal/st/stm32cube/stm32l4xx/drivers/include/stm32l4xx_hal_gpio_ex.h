@@ -682,7 +682,7 @@
   */
 #define GPIO_AF12_COMP1        ((uint8_t)0x0C)  /* COMP1 Alternate Function mapping   */
 #define GPIO_AF12_COMP2        ((uint8_t)0x0C)  /* COMP2 Alternate Function mapping   */
-#define GPIO_AF12_DSI          ((uint8_t)0x0C)  /* FMC Alternate Function mapping     */
+#define GPIO_AF12_DSI          ((uint8_t)0x0C)  /* DSI Alternate Function mapping     */
 #define GPIO_AF12_FMC          ((uint8_t)0x0C)  /* FMC Alternate Function mapping     */
 #define GPIO_AF12_SDMMC1       ((uint8_t)0x0C)  /* SDMMC1 Alternate Function mapping  */
 #define GPIO_AF12_TIM1_COMP1   ((uint8_t)0x0C)  /* TIM1/COMP1 Break in Alternate Function mapping  */
@@ -716,7 +716,7 @@
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
@@ -804,7 +804,7 @@
   * @}
   */
 
-/* Exported functions --------------------------------------------------------*/ 
+/* Exported functions --------------------------------------------------------*/
 /**
   * @}
   */

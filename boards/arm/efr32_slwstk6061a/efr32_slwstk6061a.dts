@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2018 Christian Taedcke
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/efr32fg1p133f256gm48.dtsi>
+
+/ {
+	model = "Silicon Labs EFR32 SLWSTK6061A board";
+	compatible = "silabs,efr32_slwstk6061a", "silabs,efr32fg1p";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
+
+&uart0 {
+	current-speed = <115200>;
+	status = "ok";
+};

@@ -19,7 +19,7 @@ calls _sys_soc_suspend() hook function :
    A. CONSTANT LATENCY LOW POWER MODE : This Low Power State triggers CONSTLAT
       task on nrf52 SOC. In this Mode there is Low Exit latency and 16MHz Clock
       is kept ON.
-   B. LOW POWER STATE : In this Power State CONSTLAT task is triggered on nrf52
+   B. LOW POWER STATE : In this Power State LOWPWR task is triggered on nrf52
       SOC. This is a deeper power state than CONSTANT LATENCY Mode. In this mode
       the 16MHz Clock is turned off and only 32KHz clock is used.
 
@@ -47,9 +47,9 @@ Running:
 
 1. Open UART terminal.
 2. Power Cycle Device.
-3. Device will enter into Low Power Mode.
-4. Press Button 1 on device. This will wake device from Low Power Mode.
-5. Repeat Step 4 for entering into other Low Power/Deep Sleep states.
+3. Device will enter into Low Power Modes.
+4. Press Button 1 on device to enter deep sleep state.
+5. Press Button 2 on device to wake up from deep sleep state.
 
 
 Sample Output
@@ -63,8 +63,30 @@ nrf52 core output
   Demo Description
   Application creates Idleness, Due to which System Idle Thread is
   scheduled and it enters into various Low Power States.
-  Press Button 1 on Board to wake device from Low Power State
-  Application main thread
-  ---->Low power state entry - CONSTANT LATENCY MODE----- Low power state exit!
-  ---->Low power state entry - LOW POWER MODE ----- Low power state exit!
-  ===> Entry Into Deep Sleep ==
+
+  <-- App doing busy wait for 10 Sec -->
+
+  <-- App going to sleep for 30 Sec -->
+  --> Entering into Constant Latency State --- Low Power State exit !
+  --> Entering into Constant Latency State --- Low Power State exit !
+
+  <-- App doing busy wait for 10 Sec -->
+
+  <-- App going to sleep for 90 Sec -->
+  --> Entering into Low Power State --- Low Power State exit !
+  --> Entering into Low Power State --- Low Power State exit !
+
+  <-- App doing busy wait for 10 Sec -->
+
+  <-- App going to sleep for 30 Sec -->
+  --> Entering into Constant Latency State --- Low Power State exit !
+  --> Entering into Constant Latency State --- Low Power State exit !
+
+  <-- App doing busy wait for 10 Sec -->
+
+  <-- App going to sleep for 90 Sec -->
+  --> Entering into Low Power State --- Low Power State exit !
+  --> Entering into Low Power State --- Low Power State exit !
+
+  Press BUTTON1 to enter into Deep Dleep state...Press BUTTON2 to exit Deep Sleep state
+  --> Entering into Deep Sleep State -

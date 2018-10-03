@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _MMUSTRUCTS_H
-#define _MMUSTRUCTS_H
+#ifndef ZEPHYR_ARCH_X86_INCLUDE_MMUSTRUCTS_H_
+#define ZEPHYR_ARCH_X86_INCLUDE_MMUSTRUCTS_H_
 
 #define MMU_PAGE_SIZE 4096
 #define MMU_PAGE_MASK 0xfff
@@ -778,4 +778,4 @@ struct x86_mmu_page_table {
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* _MMUSTRUCTS_H */
+#endif /* ZEPHYR_ARCH_X86_INCLUDE_MMUSTRUCTS_H_ */

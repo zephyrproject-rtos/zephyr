@@ -50,6 +50,32 @@ extern void net_tc_tx_init(void);
 extern void net_tc_rx_init(void);
 extern void net_tc_submit_to_tx_queue(u8_t tc, struct net_pkt *pkt);
 extern void net_tc_submit_to_rx_queue(u8_t tc, struct net_pkt *pkt);
+extern enum net_verdict net_promisc_mode_input(struct net_pkt *pkt);
+
+char *net_sprint_addr(sa_family_t af, const void *addr);
+
+#define net_sprint_ipv4_addr(_addr) net_sprint_addr(AF_INET, _addr)
+
+#define net_sprint_ipv6_addr(_addr) net_sprint_addr(AF_INET6, _addr)
+
+#if defined(CONFIG_NET_GPTP)
+/**
+ * @brief Initialize Precision Time Protocol Layer.
+ */
+void net_gptp_init(void);
+
+/**
+ * @brief Process a ptp message.
+ *
+ * @param buf Buffer with a valid PTP Ethernet type.
+ *
+ * @return Return the policy for network buffer.
+ */
+enum net_verdict net_gptp_recv(struct net_if *iface, struct net_pkt *pkt);
+#else
+#define net_gptp_init()
+#define net_gptp_recv(iface, pkt)
+#endif /* CONFIG_NET_GPTP */
 
 #if defined(CONFIG_NET_IPV6_FRAGMENT)
 int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
@@ -117,8 +143,8 @@ struct net_tcp_hdr *net_tcp_header_fits(struct net_pkt *pkt,
 	return NULL;
 }
 
-void net_context_set_appdata_values(struct net_pkt *pkt,
-				    enum net_ip_protocol proto);
+void net_pkt_set_appdata_values(struct net_pkt *pkt,
+				enum net_ip_protocol proto);
 
 enum net_verdict net_context_packet_received(struct net_conn *conn,
 					     struct net_pkt *pkt,
@@ -154,50 +180,6 @@ static inline char *net_sprint_ll_addr(const u8_t *ll, u8_t ll_len)
 	static char buf[sizeof("xx:xx:xx:xx:xx:xx:xx:xx")];
 
 	return net_sprint_ll_addr_buf(ll, ll_len, (char *)buf, sizeof(buf));
-}
-
-static inline char *net_sprint_ipv6_addr(const struct in6_addr *addr)
-{
-#if defined(CONFIG_NET_IPV6)
-	static char buf[NET_IPV6_ADDR_LEN];
-
-	return net_addr_ntop(AF_INET6, addr, (char *)buf, sizeof(buf));
-#else
-	return NULL;
-#endif
-}
-
-static inline char *net_sprint_ipv4_addr(const struct in_addr *addr)
-{
-#if defined(CONFIG_NET_IPV4)
-	static char buf[NET_IPV4_ADDR_LEN];
-
-	return net_addr_ntop(AF_INET, addr, (char *)buf, sizeof(buf));
-#else
-	return NULL;
-#endif
-}
-
-static inline char *net_sprint_ip_addr(const struct net_addr *addr)
-{
-	switch (addr->family) {
-	case AF_INET6:
-#if defined(CONFIG_NET_IPV6)
-		return net_sprint_ipv6_addr(&addr->in6_addr);
-#else
-		break;
-#endif
-	case AF_INET:
-#if defined(CONFIG_NET_IPV4)
-		return net_sprint_ipv4_addr(&addr->in_addr);
-#else
-		break;
-#endif
-	default:
-		break;
-	}
-
-	return NULL;
 }
 
 static inline void _hexdump(const u8_t *packet, size_t length, u8_t reserve)
@@ -333,27 +315,6 @@ static inline char *net_sprint_ll_addr(const u8_t *ll, u8_t ll_len)
 {
 	ARG_UNUSED(ll);
 	ARG_UNUSED(ll_len);
-
-	return NULL;
-}
-
-static inline char *net_sprint_ipv6_addr(const struct in6_addr *addr)
-{
-	ARG_UNUSED(addr);
-
-	return NULL;
-}
-
-static inline char *net_sprint_ipv4_addr(const struct in_addr *addr)
-{
-	ARG_UNUSED(addr);
-
-	return NULL;
-}
-
-static inline char *net_sprint_ip_addr(const struct net_addr *addr)
-{
-	ARG_UNUSED(addr);
 
 	return NULL;
 }

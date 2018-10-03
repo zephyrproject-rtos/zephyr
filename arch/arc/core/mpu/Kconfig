@@ -6,8 +6,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 config ARC_MPU_VER
-	int
-	prompt "ARC MPU version"
+	int "ARC MPU version"
 	range 2 4
 	default 2
 	help
@@ -17,14 +16,12 @@ config ARC_MPU_VER
 config ARC_CORE_MPU
 	bool "ARC Core MPU functionalities"
 	depends on CPU_HAS_MPU
-	default n
 	help
 	  ARC core MPU functionalities
 
 config MPU_STACK_GUARD
 	bool "Thread Stack Guards"
 	depends on ARC_CORE_MPU && !ARC_STACK_CHECKING
-	default n
 	help
 	  Enable thread stack guards via MPU. ARC supports built-in stack protection.
 	  If your core supports that, it is preferred over MPU stack guard
@@ -35,6 +32,5 @@ config ARC_MPU
 	select ARC_CORE_MPU
 	select THREAD_STACK_INFO
 	select MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT if ARC_MPU_VER = 2
-	default n
 	help
 	  Target has ARC MPU (currently only works for EMSK 2.2/2.3 ARCEM7D)

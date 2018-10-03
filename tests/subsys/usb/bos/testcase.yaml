@@ -1,0 +1,4 @@
+tests:
+  usb.bos:
+    platform_whitelist: native_posix frdm_k64f
+    tags: usb bos

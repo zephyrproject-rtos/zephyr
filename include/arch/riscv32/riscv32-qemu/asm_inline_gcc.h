@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _ASM_INLINE_GCC_H
-#define _ASM_INLINE_GCC_H
+#ifndef ZEPHYR_INCLUDE_ARCH_RISCV32_RISCV32_QEMU_ASM_INLINE_GCC_H_
+#define ZEPHYR_INCLUDE_ARCH_RISCV32_RISCV32_QEMU_ASM_INLINE_GCC_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -63,4 +63,4 @@ static ALWAYS_INLINE unsigned int find_msb_set(u32_t op)
 }
 #endif
 
-#endif /* _ASM_INLINE_GCC_PUBLIC_GCC_H */
+#endif /* ZEPHYR_INCLUDE_ARCH_RISCV32_RISCV32_QEMU_ASM_INLINE_GCC_H_ */

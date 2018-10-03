@@ -22,6 +22,17 @@
 	} while (0)
 #endif
 
+/**
+ * @addtogroup kernel_common_tests
+ * @{
+ */
+
+/**
+ * @brief Test clock uptime APIs functionality
+ *
+ * @see k_uptime_get(), k_uptime_get_32(), k_uptime_delta()
+ * k_uptime_delta_32()
+ */
 void test_clock_uptime(void)
 {
 	u64_t t64, t32;
@@ -76,6 +87,11 @@ void test_clock_uptime(void)
 	zassert_true(k_uptime_delta_32(&d64) > 0, NULL);
 }
 
+/**
+ * @brief Test clock cycle functionality
+ *
+ * @see k_cycle_get_32(), k_uptime_get_32()
+ */
 void test_clock_cycle(void)
 {
 	u32_t c32, c0, c1, t32;
@@ -114,3 +130,7 @@ void test_clock_cycle(void)
 			     (NSEC_PER_SEC / MSEC_PER_SEC), NULL);
 	}
 }
+
+/**
+ * @}
+ */

@@ -13,9 +13,13 @@
 /* Exports */
 GTEXT(_x86_syscall_entry_stub)
 GTEXT(_x86_userspace_enter)
+GTEXT(z_arch_user_string_nlen)
+GTEXT(z_arch_user_string_nlen_fault_start)
+GTEXT(z_arch_user_string_nlen_fault_end)
+GTEXT(z_arch_user_string_nlen_fixup)
 
 /* Imports */
-GTEXT(_k_syscall_table)
+GDATA(_k_syscall_table)
 
 /* Landing site for syscall SW IRQ. Marshal arguments and call C function for
  * further processing. We're on the kernel stack for the invoking thread.
@@ -27,7 +31,7 @@ SECTION_FUNC(TEXT, _x86_syscall_entry_stub)
 	/* call_id is in ESI. bounds-check it, must be less than
 	 * K_SYSCALL_LIMIT
 	 */
-	cmp	$_SYSCALL_LIMIT, %esi
+	cmp	$K_SYSCALL_LIMIT, %esi
 	jae	_bad_syscall
 
 _id_ok:
@@ -79,8 +83,48 @@ _bad_syscall:
 	 * anyway, it's going to generate a kernel oops
 	 */
 	mov	%esi, %eax
-	mov	$_SYSCALL_BAD, %esi
+	mov	$K_SYSCALL_BAD, %esi
 	jmp	_id_ok
+
+
+/*
+ * size_t z_arch_user_string_nlen(const char *s, size_t maxsize, int *err_arg)
+ */
+SECTION_FUNC(TEXT, z_arch_user_string_nlen)
+	push	%ebp
+	mov	%esp, %ebp
+
+	/* error value, set to -1 initially. This location is -4(%ebp) */
+	push	$-1
+
+	/* Do the strlen operation, based on disassembly of minimal libc */
+	xor	%eax, %eax		/* EAX = 0, length count */
+	mov	0x8(%ebp), %edx		/* EDX base of string */
+
+	/* This code might page fault */
+strlen_loop:
+z_arch_user_string_nlen_fault_start:
+	cmpb	$0x0, (%edx, %eax, 1)	/* *(EDX + EAX) == 0? Could fault. */
+
+z_arch_user_string_nlen_fault_end:
+	je	strlen_done
+	cmp	0xc(%ebp), %eax		/* Max length reached? */
+	je	strlen_done
+	inc	%eax			/* EAX++ and loop again */
+	jmp	strlen_loop
+
+strlen_done:
+	/* Set error value to 0 since we succeeded */
+	movl	$0, -4(%ebp)
+
+z_arch_user_string_nlen_fixup:
+	/* Write error value to err pointer parameter */
+	movl	0x10(%ebp), %ecx
+	pop	%edx
+	movl	%edx, (%ecx)
+
+	pop	%ebp
+	ret
 
 
 /* FUNC_NORETURN void _x86_userspace_enter(k_thread_entry_t user_entry,
@@ -178,6 +222,19 @@ SECTION_FUNC(TEXT, _x86_userspace_enter)
 	pushfl			/* EFLAGS */
 	push	$USER_CODE_SEG	/* CS */
 	push	$_thread_entry	/* EIP */
+
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	/* Save the eax and edx registers before reading the time stamp
+	* once done pop the values.
+	*/
+	push %eax
+	push %edx
+	rdtsc
+	mov %eax,__end_drop_to_usermode_time
+	mov %edx,__end_drop_to_usermode_time+4
+	pop %edx
+	pop %eax
+#endif
 
 	/* We will land in _thread_entry() in user mode after this */
 	iret

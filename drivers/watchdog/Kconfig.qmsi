@@ -8,7 +8,6 @@
 
 config WDT_QMSI
 	bool "QMSI Watchdog driver"
-	default n
 	help
 	  This option enables the QMSI watchdog driver.
 	  This driver is simply a shim driver based on the watchdog
@@ -21,9 +20,7 @@ config WDT_0_IRQ_PRI
 	  Watchdog interrupt priority
 
 config WDT_QMSI_API_REENTRANCY
-	bool
-	prompt "WDT shim driver API reentrancy"
+	bool "WDT shim driver API reentrancy"
 	depends on WDT_QMSI
-	default n
 	help
 	  Enable support for WDT shim driver API reentrancy.

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2018 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -51,6 +52,9 @@ extern const struct lwm2m_reader plain_text_reader;
 size_t plain_text_put_format(struct lwm2m_output_context *out,
 			     const char *format, ...);
 
+int do_read_op_plain_text(struct lwm2m_engine_obj *obj,
+			  struct lwm2m_engine_context *context,
+			  int content_format);
 int do_write_op_plain_text(struct lwm2m_engine_obj *obj,
 			   struct lwm2m_engine_context *context);
 

@@ -1,0 +1,24 @@
+# Kconfig - Quark SE configuration options
+
+#
+# Copyright (c) 2015-2016 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_QUARK_SE_C1000
+
+config SOC
+	default "quark_se_c1000"
+
+if IEEE802154 && NET_CONFIG_SETTINGS
+
+config IEEE802154_CC2520
+	def_bool y
+
+config NET_CONFIG_IEEE802154_DEV_NAME
+	default IEEE802154_CC2520_DRV_NAME
+
+endif # IEEE802154 && NET_CONFIG_SETTINGS
+
+endif

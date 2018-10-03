@@ -13,14 +13,15 @@
  * components that use timer functionality.
  */
 
-#ifndef _SYS_CLOCK__H_
-#define _SYS_CLOCK__H_
+#ifndef ZEPHYR_INCLUDE_SYS_CLOCK_H_
+#define ZEPHYR_INCLUDE_SYS_CLOCK_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #ifndef _ASMLANGUAGE
+#include <toolchain.h>
 #include <zephyr/types.h>
 
 #if defined(CONFIG_SYS_CLOCK_EXISTS) && \
@@ -46,8 +47,10 @@ extern int sys_clock_hw_cycles_per_sec;
 /*
  * sys_clock_us_per_tick global variable represents a number
  * of microseconds in one OS timer tick
+ *
+ * Note: This variable is deprecated and will be removed soon!
  */
-extern int sys_clock_us_per_tick;
+__deprecated extern int sys_clock_us_per_tick;
 
 /*
  * sys_clock_hw_cycles_per_tick global variable represents a number
@@ -75,8 +78,7 @@ extern int sys_clock_hw_cycles_per_tick;
 
 /* SYS_CLOCK_HW_CYCLES_TO_NS64 converts CPU clock cycles to nanoseconds */
 #define SYS_CLOCK_HW_CYCLES_TO_NS64(X) \
-	(((u64_t)(X) * sys_clock_us_per_tick * NSEC_PER_USEC) / \
-	 sys_clock_hw_cycles_per_tick)
+	(((u64_t)(X) * NSEC_PER_SEC) / sys_clock_hw_cycles_per_sec)
 
 /*
  * SYS_CLOCK_HW_CYCLES_TO_NS_AVG converts CPU clock cycles to nanoseconds
@@ -126,4 +128,4 @@ extern volatile u64_t _sys_clock_tick_count;
 }
 #endif
 
-#endif /* _SYS_CLOCK__H_ */
+#endif /* ZEPHYR_INCLUDE_SYS_CLOCK_H_ */

@@ -8,8 +8,8 @@
  * @file Header file for the PCA9685 PWM driver.
  */
 
-#ifndef __PWM_PCA9685_H__
-#define __PWM_PCA9685_H__
+#ifndef ZEPHYR_DRIVERS_PWM_PWM_PCA9685_H_
+#define ZEPHYR_DRIVERS_PWM_PWM_PCA9685_H_
 
 #include <gpio.h>
 #include <i2c.h>
@@ -46,4 +46,4 @@ struct pwm_pca9685_drv_data {
 }
 #endif
 
-#endif /* __PWM_PCA9685_H__ */
+#endif /* ZEPHYR_DRIVERS_PWM_PWM_PCA9685_H_ */

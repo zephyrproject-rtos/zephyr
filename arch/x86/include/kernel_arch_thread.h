@@ -17,8 +17,8 @@
  * necessary to instantiate instances of struct k_thread.
  */
 
-#ifndef _kernel_arch_thread__h_
-#define _kernel_arch_thread__h_
+#ifndef ZEPHYR_ARCH_X86_INCLUDE_KERNEL_ARCH_THREAD_H_
+#define ZEPHYR_ARCH_X86_INCLUDE_KERNEL_ARCH_THREAD_H_
 
 /**
  * Floating point register set alignment.
@@ -272,4 +272,4 @@ typedef struct _thread_arch _thread_arch_t;
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* _kernel_arch_thread__h_ */
+#endif /* ZEPHYR_ARCH_X86_INCLUDE_KERNEL_ARCH_THREAD_H_ */

@@ -20,7 +20,7 @@ mapping:
     enum: [ 'mcu', 'qemu', 'sim', 'unit', 'native']
   "simulation":
     type: str
-    enum: [ 'qemu', 'simics', 'xt-sim', 'renode']
+    enum: [ 'qemu', 'simics', 'xt-sim', 'renode', 'nsim']
   "arch":
     type: str
   "toolchain":
@@ -32,6 +32,8 @@ mapping:
     type: int
   "flash":
     type: int
+  "sanitycheck":
+    type: bool
   "supported":
     type: seq
     seq:

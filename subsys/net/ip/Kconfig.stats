@@ -8,7 +8,6 @@
 
 menuconfig NET_STATISTICS
 	bool "Network statistics"
-	default n
 	help
 	  Manage statistics accounting. This takes memory so say 'n' if unsure.
 
@@ -23,7 +22,6 @@ config NET_STATISTICS_PER_INTERFACE
 config NET_STATISTICS_USER_API
 	bool "Expose statistics through NET MGMT API"
 	select NET_MGMT
-	default n
 	help
 	  Enable this if you need to grab relevant statistics in your code,
 	  via calling net_mgmt() with relevant NET_REQUEST_STATS_GET_* command.
@@ -31,7 +29,6 @@ config NET_STATISTICS_USER_API
 config NET_STATISTICS_PERIODIC_OUTPUT
 	bool "Simple periodic output"
 	depends on NET_LOG
-	default n
 	help
 	  Print out all the statistics periodically through logging.
 	  This is meant for testing mostly.
@@ -101,5 +98,14 @@ config NET_STATISTICS_ETHERNET
 	  Keep track of Ethernet related statistics. Note that this
 	  requires support from the ethernet driver. The driver needs
 	  to collect the statistics.
+
+config NET_STATISTICS_ETHERNET_VENDOR
+	bool "Vendor specific Ethernet statistics"
+	depends on NET_STATISTICS_ETHERNET
+	help
+	  Allows Ethernet drivers to provide statistics information
+	  from vendor specific hardware registers in a form of
+	  key-value pairs. Deciphering the information may require
+	  vendor documentation.
 
 endif # NET_STATISTICS

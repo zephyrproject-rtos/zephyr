@@ -13,7 +13,28 @@
 #define DUMMY_PORT_1    "dummy"
 #define DUMMY_PORT_2    "dummy_driver"
 
+/**
+ * @brief Test cases to verify device objects
+ *
+ * Verify zephyr device driver apis with different device types
+ *
+ * @defgroup kernel_device_tests Device
+ *
+ * @ingroup all_tests
+ *
+ * @{
+ */
 
+/**
+ * @brief Test device object binding
+ *
+ * Validates device binding for an existing and a non-existing device object.
+ * It creates a dummy_driver device object with basic init and configuration
+ * information and validates its binding.
+ *
+ * @see device_get_binding(), device_busy_set(), device_busy_clear(),
+ * DEVICE_AND_API_INIT()
+ */
 void test_dummy_device(void)
 {
 	struct device *dev;
@@ -25,9 +46,15 @@ void test_dummy_device(void)
 
 	device_busy_set(dev);
 	device_busy_clear(dev);
-
 }
 
+/**
+ * @brief Test device binding for existing device
+ *
+ * Validates device binding for an existing device object.
+ *
+ * @see device_get_binding(), DEVICE_AND_API_INIT()
+ */
 static void test_dynamic_name(void)
 {
 	struct device *mux;
@@ -38,6 +65,14 @@ static void test_dynamic_name(void)
 	zassert_true(mux != NULL, NULL);
 }
 
+/**
+ * @brief Test device binding for non-existing device
+ *
+ * Validates binding of a random device driver(non-defined driver) named
+ * "ANOTHER_BOGUS_NAME".
+ *
+ * @see device_get_binding(), DEVICE_AND_API_INIT()
+ */
 static void test_bogus_dynamic_name(void)
 {
 	struct device *mux;
@@ -49,6 +84,14 @@ static void test_bogus_dynamic_name(void)
 }
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+/**
+ * @brief Test system device list query API with PM enabled.
+ *
+ * It queries the list of devices in the system, used to suspend or
+ * resume the devices in PM applications.
+ *
+ * @see device_list_get()
+ */
 static void build_suspend_device_list(void)
 {
 	int devcount;
@@ -58,6 +101,17 @@ static void build_suspend_device_list(void)
 	zassert_false((devcount == 0), NULL);
 }
 
+/**
+ * @brief Test device binding for existing device with PM enabled.
+ *
+ * Validates device binding for an existing device object with Power management
+ * enabled. It also checks if the device is in the middle of a transaction,
+ * sets/clears busy status and validates status again.
+ *
+ * @see device_get_binding(), device_busy_set(), device_busy_clear(),
+ * device_busy_check(), device_any_busy_check(),
+ * device_list_get(), device_set_power_state()
+ */
 void test_dummy_device_pm(void)
 {
 	struct device *dev;
@@ -69,6 +123,8 @@ void test_dummy_device_pm(void)
 	busy = device_any_busy_check();
 	zassert_true((busy == 0), NULL);
 
+	/* Set device state to DEVICE_PM_ACTIVE_STATE */
+	device_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
 	device_busy_set(dev);
 
 	busy = device_any_busy_check();
@@ -96,6 +152,9 @@ void test_dummy_device_pm(void)
 }
 #endif
 
+/**
+ * @}
+ */
 
 void test_main(void)
 {

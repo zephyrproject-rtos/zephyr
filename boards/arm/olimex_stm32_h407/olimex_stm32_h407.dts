@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <st/stm32f407.dtsi>
+#include <st/f4/stm32f407Xg.dtsi>
 
 / {
 	model = "Olimex STM32-H407 board";
@@ -20,7 +20,7 @@
 
 	leds {
 		compatible = "gpio-leds";
-		green_led_2: led@0 {
+		green_led_2: led_2 {
 			gpios = <&gpioa 0 GPIO_INT_ACTIVE_HIGH>;
 			label = "User LD2";
 		};
@@ -28,7 +28,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
-		user_button: button@0 {
+		user_button: button {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_INT_ACTIVE_LOW>;
 		};
@@ -58,5 +58,9 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&usart6_pins_b>;
 	pinctrl-names = "default";
+	status = "ok";
+};
+
+&rtc {
 	status = "ok";
 };

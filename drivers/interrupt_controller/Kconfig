@@ -10,7 +10,6 @@ menu "Interrupt Controllers"
 
 config LOAPIC
 	bool "LOAPIC"
-	default n
 	select IOAPIC
 	depends on X86
 	help
@@ -25,7 +24,6 @@ config LOAPIC_BASE_ADDRESS
 
 config LOAPIC_SPURIOUS_VECTOR
 	bool "Handle LOAPIC spurious interrupts"
-	default n
 	depends on LOAPIC
 	help
 	  A special situation may occur when a processor raises its task
@@ -57,7 +55,6 @@ config IOAPIC
 
 config IOAPIC_DEBUG
 	bool "IO-APIC Debugging"
-	default n
 	depends on IOAPIC
 	help
 	  Enable debugging for IO-APIC driver.
@@ -85,7 +82,6 @@ config IOAPIC_MASK_RTE
 
 config MVIC
 	bool "Intel Quark D2000 Interrupt Controller (MVIC)"
-	default n
 	depends on X86
 	select X86_FIXED_IRQ_MAPPING
 	help
@@ -116,18 +112,17 @@ config ARCV2_INTERRUPT_UNIT
 	  building a processor, you can configure the processor to include an
 	  interrupt unit. The ARCv2 interrupt unit is highly programmable.
 
-config PLIC_FE310
-	bool "SiFive Freedom E310 Platform Level Interrupt Controller (PLIC)"
+config PLIC
+	bool "Platform Level Interrupt Controller (PLIC)"
 	default y
-	depends on SOC_RISCV32_FE310
+	depends on SOC_FAMILY_RISCV_PRIVILEGE && !QEMU_TARGET
 	select RISCV_HAS_PLIC
 	help
-	  SiFive Freedom E310 Platform Level Interrupt Controller provides support
-	  for external interrupt lines defined by the FE310 SOC;
+	  Platform Level Interrupt Controller provides support
+	  for external interrupt lines defined by the RISC-V SoC;
 
 config DW_ICTL
 	bool "Designware Interrupt Controller"
-	default n
 	depends on MULTI_LEVEL_INTERRUPTS
 	help
 	  Designware Interrupt Controller can be used as a 2nd level interrupt

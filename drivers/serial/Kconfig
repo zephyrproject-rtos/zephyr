@@ -7,9 +7,7 @@
 #
 
 menuconfig SERIAL
-	bool
-	prompt "Serial Drivers"
-	default n
+	bool "Serial Drivers"
 	help
 	  Enable options for serial drivers.
 
@@ -19,7 +17,6 @@ comment "Capabilities"
 
 config SERIAL_HAS_DRIVER
 	bool
-	default n
 	help
 	  This is an option to be enabled by individual serial driver
 	  to signal that there is a serial driver. This is being used
@@ -27,15 +24,12 @@ config SERIAL_HAS_DRIVER
 
 config SERIAL_SUPPORT_INTERRUPT
 	bool
-	default n
 	help
 	  This is an option to be enabled by individual serial driver
 	  to signal that the driver and hardware supports interrupts.
 
 config UART_INTERRUPT_DRIVEN
-	bool
-	prompt "Enable UART Interrupt support"
-	default n
+	bool "Enable UART Interrupt support"
 	depends on SERIAL_SUPPORT_INTERRUPT
 	help
 	  This option enables interrupt support for UART allowing console
@@ -43,7 +37,6 @@ config UART_INTERRUPT_DRIVEN
 
 config UART_LINE_CTRL
 	bool "Enable Serial Line Control API"
-	default n
 	help
 	  This enables the API for apps to control the serial line,
 	  such as baud rate, CTS and RTS.
@@ -54,7 +47,6 @@ config UART_LINE_CTRL
 
 config UART_DRV_CMD
 	bool "Enable driver commands API"
-	default n
 	help
 	  This enables the API to send extra commands to drivers.
 	  This allows drivers to expose hardware specific functions.
@@ -73,9 +65,13 @@ source "drivers/serial/Kconfig.mcux_lpsci"
 
 source "drivers/serial/Kconfig.mcux_lpuart"
 
+source "drivers/serial/Kconfig.miv"
+
 source "drivers/serial/Kconfig.imx"
 
 source "drivers/serial/Kconfig.stellaris"
+
+source "drivers/serial/Kconfig.native_posix"
 
 source "drivers/serial/Kconfig.nsim"
 
@@ -97,7 +93,7 @@ source "drivers/serial/Kconfig.cmsdk_apb"
 
 source "drivers/serial/Kconfig.riscv_qemu"
 
-source "drivers/serial/Kconfig.fe310"
+source "drivers/serial/Kconfig.sifive"
 
 source "drivers/serial/Kconfig.esp32"
 
@@ -106,5 +102,7 @@ source "drivers/serial/Kconfig.gecko"
 source "drivers/serial/Kconfig.msp432p4xx"
 
 source "drivers/serial/Kconfig.sam0"
+
+source "drivers/serial/Kconfig.psoc6"
 
 endif

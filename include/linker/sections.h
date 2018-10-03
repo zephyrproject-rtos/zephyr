@@ -12,8 +12,8 @@
  * files.
  */
 
-#ifndef _SECTIONS_H
-#define _SECTIONS_H
+#ifndef ZEPHYR_INCLUDE_LINKER_SECTIONS_H_
+#define ZEPHYR_INCLUDE_LINKER_SECTIONS_H_
 
 #define _TEXT_SECTION_NAME text
 #define _RODATA_SECTION_NAME rodata
@@ -23,6 +23,7 @@
 #define _BSS_SECTION_NAME bss
 #define _NOINIT_SECTION_NAME noinit
 
+#define _APP_SMEM_SECTION_NAME		app_smem
 #define _APP_DATA_SECTION_NAME		app_datas
 #define _APP_BSS_SECTION_NAME		app_bss
 #define _APP_NOINIT_SECTION_NAME	app_noinit
@@ -60,4 +61,4 @@
 
 #include <linker/section_tags.h>
 
-#endif /* _SECTIONS_H */
+#endif /* ZEPHYR_INCLUDE_LINKER_SECTIONS_H_ */

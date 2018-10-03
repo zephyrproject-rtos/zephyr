@@ -5,6 +5,7 @@ simulation: qemu
 arch: x86
 toolchain:
   - zephyr
+  - xtools
 supported:
   - pci
   - netif:slip

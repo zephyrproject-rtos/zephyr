@@ -9,6 +9,7 @@
 
 #include <board.h>
 #include <gpio.h>
+#include <led.h>
 #include <i2c.h>
 #include <spi.h>
 #include <sensor.h>
@@ -98,12 +99,38 @@ static void lsm6dsl_trigger_handler(struct device *dev,
 }
 #endif
 
+#define NUM_LEDS 12
+#define DELAY_TIME K_MSEC(50)
+
 void main(void)
 {
 	int cnt = 0;
 	char out_str[64];
 	static struct device *led0, *led1;
 	int i, on = 1;
+
+#ifdef CONFIG_LP3943
+	static struct device *ledc;
+
+	ledc = device_get_binding(CONFIG_LP3943_DEV_NAME);
+	if (!ledc) {
+		printk("Could not get pointer to %s sensor\n",
+			CONFIG_LP3943_DEV_NAME);
+		return;
+	}
+
+	/* turn all leds on */
+	for (i = 0; i < NUM_LEDS; i++) {
+		led_on(ledc, i);
+		k_sleep(DELAY_TIME);
+	}
+
+	/* turn all leds off */
+	for (i = 0; i < NUM_LEDS; i++) {
+		led_off(ledc, i);
+		k_sleep(DELAY_TIME);
+	}
+#endif
 
 	led0 = device_get_binding(LED0_GPIO_CONTROLLER);
 	gpio_pin_configure(led0, LED0_GPIO_PIN, GPIO_DIR_OUT);

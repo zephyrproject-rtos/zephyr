@@ -43,6 +43,8 @@ void tmslab_alloc_wait_ok(void *p1, void *p2, void *p3)
  * 20ms. Checks the behavior of alloc when requested by multiple
  * threads
  *
+ * @ingroup kernel_memory_slab_tests
+ *
  * @see k_mem_slab_alloc()
  * @see k_mem_slab_free()
  */

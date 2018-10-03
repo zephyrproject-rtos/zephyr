@@ -31,9 +31,6 @@
 #include "stat_mgmt/stat_mgmt.h"
 #endif
 
-#define DEVICE_NAME         CONFIG_BT_DEVICE_NAME
-#define DEVICE_NAME_LEN     (sizeof(DEVICE_NAME) - 1)
-
 /* Define an example stats group; approximates seconds since boot. */
 STATS_SECT_START(smp_svr_stats)
 STATS_SECT_ENTRY(ticks)
@@ -64,18 +61,13 @@ static const struct bt_data ad[] = {
 		      0xd3, 0x4c, 0xb7, 0x1d, 0x1d, 0xdc, 0x53, 0x8d),
 };
 
-static const struct bt_data sd[] = {
-	BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LEN),
-};
-
 static void advertise(void)
 {
 	int rc;
 
 	bt_le_adv_stop();
 
-	rc = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad),
-			     sd, ARRAY_SIZE(sd));
+	rc = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (rc) {
 		printk("Advertising failed to start (rc %d)\n", rc);
 		return;

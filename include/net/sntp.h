@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __SNTP_H
-#define __SNTP_H
+#ifndef ZEPHYR_INCLUDE_NET_SNTP_H_
+#define ZEPHYR_INCLUDE_NET_SNTP_H_
 
 #include <net/net_app.h>
 

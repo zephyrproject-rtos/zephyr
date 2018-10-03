@@ -41,6 +41,7 @@
 
 #include "mbedtls/x509_crt.h"
 #include "mbedtls/oid.h"
+#include "mbedtls/platform_util.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -89,11 +90,6 @@ typedef struct {
  * Max size of verification chain: end-entity + intermediates + trusted root
  */
 #define X509_MAX_VERIFY_CHAIN_SIZE    ( MBEDTLS_X509_MAX_INTERMEDIATE_CA + 2 )
-
-/* Implementation that should never be optimized out by the compiler */
-static void mbedtls_zeroize( void *v, size_t n ) {
-    volatile unsigned char *p = v; while( n-- ) *p++ = 0;
-}
 
 /*
  * Default profile
@@ -733,7 +729,7 @@ static int x509_crt_parse_der_core( mbedtls_x509_crt *crt, const unsigned char *
 
     memcpy( p, buf, crt->raw.len );
 
-    // Direct pointers to the new buffer 
+    // Direct pointers to the new buffer
     p += crt->raw.len - len;
     end = crt_end = p + len;
 
@@ -1115,7 +1111,7 @@ int mbedtls_x509_crt_parse_file( mbedtls_x509_crt *chain, const char *path )
 
     ret = mbedtls_x509_crt_parse( chain, buf, n );
 
-    mbedtls_zeroize( buf, n );
+    mbedtls_platform_zeroize( buf, n );
     mbedtls_free( buf );
 
     return( ret );
@@ -2426,7 +2422,7 @@ void mbedtls_x509_crt_free( mbedtls_x509_crt *crt )
         {
             name_prv = name_cur;
             name_cur = name_cur->next;
-            mbedtls_zeroize( name_prv, sizeof( mbedtls_x509_name ) );
+            mbedtls_platform_zeroize( name_prv, sizeof( mbedtls_x509_name ) );
             mbedtls_free( name_prv );
         }
 
@@ -2435,7 +2431,7 @@ void mbedtls_x509_crt_free( mbedtls_x509_crt *crt )
         {
             name_prv = name_cur;
             name_cur = name_cur->next;
-            mbedtls_zeroize( name_prv, sizeof( mbedtls_x509_name ) );
+            mbedtls_platform_zeroize( name_prv, sizeof( mbedtls_x509_name ) );
             mbedtls_free( name_prv );
         }
 
@@ -2444,7 +2440,8 @@ void mbedtls_x509_crt_free( mbedtls_x509_crt *crt )
         {
             seq_prv = seq_cur;
             seq_cur = seq_cur->next;
-            mbedtls_zeroize( seq_prv, sizeof( mbedtls_x509_sequence ) );
+            mbedtls_platform_zeroize( seq_prv,
+                                      sizeof( mbedtls_x509_sequence ) );
             mbedtls_free( seq_prv );
         }
 
@@ -2453,13 +2450,14 @@ void mbedtls_x509_crt_free( mbedtls_x509_crt *crt )
         {
             seq_prv = seq_cur;
             seq_cur = seq_cur->next;
-            mbedtls_zeroize( seq_prv, sizeof( mbedtls_x509_sequence ) );
+            mbedtls_platform_zeroize( seq_prv,
+                                      sizeof( mbedtls_x509_sequence ) );
             mbedtls_free( seq_prv );
         }
 
         if( cert_cur->raw.p != NULL )
         {
-            mbedtls_zeroize( cert_cur->raw.p, cert_cur->raw.len );
+            mbedtls_platform_zeroize( cert_cur->raw.p, cert_cur->raw.len );
             mbedtls_free( cert_cur->raw.p );
         }
 
@@ -2473,7 +2471,7 @@ void mbedtls_x509_crt_free( mbedtls_x509_crt *crt )
         cert_prv = cert_cur;
         cert_cur = cert_cur->next;
 
-        mbedtls_zeroize( cert_prv, sizeof( mbedtls_x509_crt ) );
+        mbedtls_platform_zeroize( cert_prv, sizeof( mbedtls_x509_crt ) );
         if( cert_prv != crt )
             mbedtls_free( cert_prv );
     }

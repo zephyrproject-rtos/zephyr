@@ -12,8 +12,8 @@
  * ARCv2 processor architecture.
  */
 
-#ifndef _ARCV2_CACHE__H_
-#define _ARCV2_CACHE__H_
+#ifndef ZEPHYR_ARCH_ARC_INCLUDE_V2_CACHE_H_
+#define ZEPHYR_ARCH_ARC_INCLUDE_V2_CACHE_H_
 
 #include <arch/cpu.h>
 
@@ -56,4 +56,4 @@ static ALWAYS_INLINE void _icache_setup(void)
 }
 #endif
 
-#endif /* _ARCV2_CACHE__H_ */
+#endif /* ZEPHYR_ARCH_ARC_INCLUDE_V2_CACHE_H_ */

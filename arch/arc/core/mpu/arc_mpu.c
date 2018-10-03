@@ -296,7 +296,8 @@ void arc_core_mpu_enable(void)
 	 * simulate MPU enable
 	 */
 #elif CONFIG_ARC_MPU_VER == 3
-	arc_core_mpu_default(0);
+#define MPU_ENABLE_ATTR   0
+	arc_core_mpu_default(MPU_ENABLE_ATTR);
 #endif
 }
 
@@ -506,7 +507,8 @@ void arc_core_mpu_configure_mem_domain(struct k_mem_domain *mem_domain)
  * it doesn't work for memory domain, because the dynamic region numbers.
  * So be careful to avoid the overlap situation.
  */
-	for (; region_index <  _get_num_regions() - 1; region_index++) {
+	u32_t num_regions = _get_num_regions() - 1;
+	for (; region_index < num_regions; region_index++) {
 #endif
 		if (num_partitions && pparts->size) {
 			SYS_LOG_DBG("set region 0x%x 0x%x 0x%x",

@@ -7,9 +7,7 @@
 #
 
 menuconfig SENSOR
-	bool
-	prompt "Sensor Drivers"
-	default n
+	bool "Sensor Drivers"
 	help
 	  Include sensor drivers in system config
 
@@ -30,15 +28,18 @@ config SYS_LOG_SENSOR_LEVEL
 	  4 DEBUG, write SYS_LOG_DBG in addition to previous levels
 
 config SENSOR_INIT_PRIORITY
-	int
-	prompt "Sensor init priority"
+	int "Sensor init priority"
 	default 90
 	help
 	  Sensor initialization priority.
 
 comment "Device Drivers"
 
+source "drivers/sensor/adt7420/Kconfig"
+
 source "drivers/sensor/adxl362/Kconfig"
+
+source "drivers/sensor/adxl372/Kconfig"
 
 source "drivers/sensor/ak8975/Kconfig"
 
@@ -99,6 +100,8 @@ source "drivers/sensor/max30101/Kconfig"
 source "drivers/sensor/max44009/Kconfig"
 
 source "drivers/sensor/mcp9808/Kconfig"
+
+source "drivers/sensor/mma8451q/Kconfig"
 
 source "drivers/sensor/mpu6050/Kconfig"
 

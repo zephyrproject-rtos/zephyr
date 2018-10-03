@@ -7,56 +7,49 @@
 #
 
 menuconfig DHT
-	bool
-	prompt "DHT Temperature and Humidity Sensor"
+	bool "DHT Temperature and Humidity Sensor"
 	depends on GPIO
-	default n
 	help
 	  Enable driver for the DHT temperature and humidity sensor family.
 
+if DHT
+
 choice
 	prompt "Chip type"
-	depends on DHT
 	default DHT_CHIP_DHT11
 	help
 	  Choose desired chip type from the DHT family.
 
 config DHT_CHIP_DHT11
-	bool
-	prompt "DHT11"
+	bool "DHT11"
 	help
 	  Choose this option to enable the DHT11 chip.
 
 config DHT_CHIP_DHT22
-	bool
-	prompt "DHT22"
+	bool "DHT22"
 	help
 	  Choose this option to enable the DHT22 chip.
 
 endchoice
 
 config DHT_NAME
-	string
-	prompt "Driver name"
+	string "Driver name"
 	default "DHT11" if DHT_CHIP_DHT11
 	default "DHT22" if DHT_CHIP_DHT22
-	depends on DHT
 	help
 	  Device name with which the sensor is identified.
 
 config DHT_GPIO_DEV_NAME
-	string
-	prompt "GPIO device"
+	string "GPIO device"
 	default "GPIO_0"
-	depends on DHT
 	help
 	  The device name of the GPIO device to which the chip's data pin
 	  is connected.
 
 config DHT_GPIO_PIN_NUM
-	int
-	prompt "Interrupt GPIO pin number"
+	int "Interrupt GPIO pin number"
 	default 0
-	depends on DHT
 	help
 	  The number of the GPIO on which the chip's data pin is connected.
+
+endif # DHT

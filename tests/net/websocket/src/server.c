@@ -289,7 +289,7 @@ void test_websocket_init_server(void)
 
 #elif ADDR_OPTION == 2
 	/* Accept any local listening address */
-	memset(&addr, 0, sizeof(addr));
+	(void)memset(&addr, 0, sizeof(addr));
 
 	net_sin(&addr)->sin_port = htons(ZEPHYR_PORT);
 
@@ -300,7 +300,7 @@ void test_websocket_init_server(void)
 
 #elif ADDR_OPTION == 3
 	/* Set the bind address according to your configuration */
-	memset(&addr, 0, sizeof(addr));
+	(void)memset(&addr, 0, sizeof(addr));
 
 	/* In this example, listen only IPv6 */
 	addr.sa_family = AF_INET6;
@@ -356,10 +356,4 @@ void test_websocket_init_server(void)
 	http_server_enable(&http_ctx);
 
 	ws_ctx = &http_ctx;
-}
-
-void websocket_cleanup_server(void)
-{
-	http_server_disable(&http_ctx);
-	http_release(&http_ctx);
 }

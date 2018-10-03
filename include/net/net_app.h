@@ -8,8 +8,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __NET_APP_H
-#define __NET_APP_H
+#ifndef ZEPHYR_INCLUDE_NET_NET_APP_H_
+#define ZEPHYR_INCLUDE_NET_NET_APP_H_
 
 #if defined(CONFIG_NET_APP_TLS) || defined(CONFIG_NET_APP_DTLS)
 #if defined(CONFIG_MBEDTLS)
@@ -55,16 +55,11 @@ extern "C" {
  * @{
  */
 
-/** Flags that tell what kind of functionality is needed by the application. */
-#define NET_APP_NEED_ROUTER 0x00000001
-#define NET_APP_NEED_IPV6   0x00000002
-#define NET_APP_NEED_IPV4   0x00000004
-
 enum net_app_type {
 	NET_APP_UNSPEC = 0,
 	NET_APP_SERVER,
 	NET_APP_CLIENT,
-};
+} __packed;
 
 struct net_app_ctx;
 
@@ -452,18 +447,6 @@ struct net_app_ctx {
 	/** Unused bits */
 	u8_t _padding : 5;
 };
-
-/**
- * @brief Initialize this network application.
- *
- * @param app_info String describing this application.
- * @param flags Flags related to this application startup.
- * @param timeout How long to wait the network setup before continuing
- * the startup.
- *
- * @return 0 if ok, <0 if error.
- */
-int net_app_init(const char *app_info, u32_t flags, s32_t timeout);
 
 #if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
 /**
@@ -1010,4 +993,4 @@ void net_app_client_foreach(net_app_ctx_cb_t cb, void *user_data);
 }
 #endif
 
-#endif /* __NET_APP_H */
+#endif /* ZEPHYR_INCLUDE_NET_NET_APP_H_ */

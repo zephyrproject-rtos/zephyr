@@ -42,7 +42,7 @@ static void attrs_get(struct k_msgq *q)
  */
 
 /**
- * @brief Test k_msgq_get_attrs()
+ * @brief Test basic attributes of a message queue
  *
  * @see  k_msgq_get_attrs()
  */
@@ -55,7 +55,7 @@ void test_msgq_attrs_get(void)
 #ifdef CONFIG_USERSPACE
 
 /**
- * @brief Test k_msgq_get_attrs()
+ * @brief Test basic attributes of a message queue
  *
  * @see  k_msgq_get_attrs()
  */

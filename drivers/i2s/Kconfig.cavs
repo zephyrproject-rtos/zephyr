@@ -9,7 +9,6 @@ menuconfig I2S_CAVS
 	bool "Intel I2S (SSP) Bus Driver"
 	depends on BOARD_INTEL_S1000_CRB
 	select DMA
-	default n
 	help
 	  Enable Inter Sound (I2S) bus driver for Intel_S1000 based on
 	  Synchronous Serial Port (SSP) module.

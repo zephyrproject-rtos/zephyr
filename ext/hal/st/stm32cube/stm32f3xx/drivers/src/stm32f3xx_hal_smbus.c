@@ -542,7 +542,7 @@ HAL_StatusTypeDef HAL_SMBUS_ConfigDigitalFilter(SMBUS_HandleTypeDef *hsmbus, uin
   * @param  hsmbus Pointer to a SMBUS_HandleTypeDef structure that contains
   *                the configuration information for the specified SMBUS.
   * @param  DevAddress Target device address: The device 7 bits address value
-  *         in datasheet must be shift at right before call interface
+  *         in datasheet must be shifted to the left before calling the interface
   * @param  pData Pointer to data buffer
   * @param  Size Amount of data to be sent
   * @param  XferOptions Options of Transfer, value of @ref SMBUS_XferOptions_definition
@@ -635,7 +635,7 @@ HAL_StatusTypeDef HAL_SMBUS_Master_Transmit_IT(SMBUS_HandleTypeDef *hsmbus, uint
   * @param  hsmbus Pointer to a SMBUS_HandleTypeDef structure that contains
   *                the configuration information for the specified SMBUS.
   * @param  DevAddress Target device address: The device 7 bits address value
-  *         in datasheet must be shift at right before call interface
+  *         in datasheet must be shifted to the left before calling the interface
   * @param  pData Pointer to data buffer
   * @param  Size Amount of data to be sent
   * @param  XferOptions Options of Transfer, value of @ref SMBUS_XferOptions_definition
@@ -722,7 +722,7 @@ HAL_StatusTypeDef HAL_SMBUS_Master_Receive_IT(SMBUS_HandleTypeDef *hsmbus, uint1
   * @param  hsmbus Pointer to a SMBUS_HandleTypeDef structure that contains
   *                the configuration information for the specified SMBUS.
   * @param  DevAddress Target device address: The device 7 bits address value
-  *         in datasheet must be shift at right before call interface
+  *         in datasheet must be shifted to the left before calling the interface
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SMBUS_Master_Abort_IT(SMBUS_HandleTypeDef *hsmbus, uint16_t DevAddress)
@@ -791,7 +791,7 @@ HAL_StatusTypeDef HAL_SMBUS_Slave_Transmit_IT(SMBUS_HandleTypeDef *hsmbus, uint8
   /* Check the parameters */
   assert_param(IS_SMBUS_TRANSFER_OPTIONS_REQUEST(XferOptions));
 
-  if (hsmbus->State == HAL_SMBUS_STATE_LISTEN)
+  if ((hsmbus->State & HAL_SMBUS_STATE_LISTEN) == HAL_SMBUS_STATE_LISTEN)
   {
     if ((pData == NULL) || (Size == 0U))
     {
@@ -804,7 +804,7 @@ HAL_StatusTypeDef HAL_SMBUS_Slave_Transmit_IT(SMBUS_HandleTypeDef *hsmbus, uint8
     /* Process Locked */
     __HAL_LOCK(hsmbus);
 
-    hsmbus->State |= HAL_SMBUS_STATE_SLAVE_BUSY_TX;
+    hsmbus->State = (HAL_SMBUS_STATE_SLAVE_BUSY_TX | HAL_SMBUS_STATE_LISTEN);
     hsmbus->ErrorCode = HAL_SMBUS_ERROR_NONE;
 
     /* Set SBC bit to manage Acknowledge at each bit */
@@ -884,7 +884,7 @@ HAL_StatusTypeDef HAL_SMBUS_Slave_Receive_IT(SMBUS_HandleTypeDef *hsmbus, uint8_
   /* Check the parameters */
   assert_param(IS_SMBUS_TRANSFER_OPTIONS_REQUEST(XferOptions));
 
-  if (hsmbus->State == HAL_SMBUS_STATE_LISTEN)
+  if ((hsmbus->State & HAL_SMBUS_STATE_LISTEN) == HAL_SMBUS_STATE_LISTEN)
   {
     if ((pData == NULL) || (Size == 0U))
     {
@@ -897,7 +897,7 @@ HAL_StatusTypeDef HAL_SMBUS_Slave_Receive_IT(SMBUS_HandleTypeDef *hsmbus, uint8_
     /* Process Locked */
     __HAL_LOCK(hsmbus);
 
-    hsmbus->State |= HAL_SMBUS_STATE_SLAVE_BUSY_RX;
+    hsmbus->State = (HAL_SMBUS_STATE_SLAVE_BUSY_RX | HAL_SMBUS_STATE_LISTEN);
     hsmbus->ErrorCode = HAL_SMBUS_ERROR_NONE;
 
     /* Set SBC bit to manage Acknowledge at each bit */
@@ -1031,7 +1031,7 @@ HAL_StatusTypeDef HAL_SMBUS_DisableAlert_IT(SMBUS_HandleTypeDef *hsmbus)
   * @param  hsmbus Pointer to a SMBUS_HandleTypeDef structure that contains
   *                the configuration information for the specified SMBUS.
   * @param  DevAddress Target device address: The device 7 bits address value
-  *         in datasheet must be shift at right before call interface
+  *         in datasheet must be shifted to the left before calling the interface
   * @param  Trials Number of trials
   * @param  Timeout Timeout duration
   * @retval HAL status
@@ -1200,7 +1200,7 @@ void HAL_SMBUS_EV_IRQHandler(SMBUS_HandleTypeDef *hsmbus)
   if (((SMBUS_CHECK_FLAG(tmpisrvalue, SMBUS_FLAG_ADDR) != RESET) || (SMBUS_CHECK_FLAG(tmpisrvalue, SMBUS_FLAG_STOPF) != RESET) || (SMBUS_CHECK_FLAG(tmpisrvalue, SMBUS_FLAG_AF) != RESET))
       && ((__HAL_SMBUS_GET_IT_SOURCE(hsmbus, SMBUS_IT_ADDRI) != RESET) || (__HAL_SMBUS_GET_IT_SOURCE(hsmbus, SMBUS_IT_STOPI) != RESET) || (__HAL_SMBUS_GET_IT_SOURCE(hsmbus, SMBUS_IT_NACKI) != RESET)))
   {
-    if (hsmbus->State == HAL_SMBUS_STATE_LISTEN)
+    if ((hsmbus->State & HAL_SMBUS_STATE_LISTEN) == HAL_SMBUS_STATE_LISTEN)
     {
       SMBUS_Slave_ISR(hsmbus);
     }
@@ -1683,7 +1683,7 @@ static HAL_StatusTypeDef SMBUS_Slave_ISR(SMBUS_HandleTypeDef *hsmbus)
         /* or only the last Byte of Transfer */
         /* So reset the RELOAD bit mode */
         hsmbus->XferOptions &= ~SMBUS_RELOAD_MODE;
-        SMBUS_TransferConfig(hsmbus, 0U , 1U , hsmbus->XferOptions, SMBUS_NO_STARTSTOP);
+        SMBUS_TransferConfig(hsmbus, 0U, 1U, hsmbus->XferOptions, SMBUS_NO_STARTSTOP);
       }
       else if (hsmbus->XferCount == 0U)
       {
@@ -2097,25 +2097,14 @@ static HAL_StatusTypeDef SMBUS_WaitOnFlagUntilTimeout(SMBUS_HandleTypeDef *hsmbu
   */
 static void SMBUS_TransferConfig(SMBUS_HandleTypeDef *hsmbus,  uint16_t DevAddress, uint8_t Size, uint32_t Mode, uint32_t Request)
 {
-  uint32_t tmpreg = 0U;
-
   /* Check the parameters */
   assert_param(IS_SMBUS_ALL_INSTANCE(hsmbus->Instance));
   assert_param(IS_SMBUS_TRANSFER_MODE(Mode));
   assert_param(IS_SMBUS_TRANSFER_REQUEST(Request));
 
-  /* Get the CR2 register value */
-  tmpreg = hsmbus->Instance->CR2;
-
-  /* clear tmpreg specific bits */
-  tmpreg &= (uint32_t)~((uint32_t)(I2C_CR2_SADD | I2C_CR2_NBYTES | I2C_CR2_RELOAD | I2C_CR2_AUTOEND | I2C_CR2_RD_WRN | I2C_CR2_START | I2C_CR2_STOP | I2C_CR2_PECBYTE));
-
-  /* update tmpreg */
-  tmpreg |= (uint32_t)(((uint32_t)DevAddress & I2C_CR2_SADD) | (((uint32_t)Size << 16U) & I2C_CR2_NBYTES) | \
-                       (uint32_t)Mode | (uint32_t)Request);
-
   /* update CR2 register */
-  hsmbus->Instance->CR2 = tmpreg;
+  MODIFY_REG(hsmbus->Instance->CR2, ((I2C_CR2_SADD | I2C_CR2_NBYTES | I2C_CR2_RELOAD | I2C_CR2_AUTOEND | (I2C_CR2_RD_WRN & (uint32_t)(Request >> (31U - I2C_CR2_RD_WRN_Pos))) | I2C_CR2_START | I2C_CR2_STOP  | I2C_CR2_PECBYTE)), \
+             (uint32_t)(((uint32_t)DevAddress & I2C_CR2_SADD) | (((uint32_t)Size << I2C_CR2_NBYTES_Pos) & I2C_CR2_NBYTES) | (uint32_t)Mode | (uint32_t)Request));
 }
 
 /**

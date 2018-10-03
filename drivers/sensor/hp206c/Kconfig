@@ -8,46 +8,45 @@
 menuconfig HP206C
 	bool "HopeRF HP206C precision barometer and altimeter sensor"
 	depends on I2C
-	default n
 	help
 	  Enable HopeRF HP206C barometer and altimeter support.
 
+if HP206C
+
 config  HP206C_DRV_NAME
 	string "Driver's name"
-	depends on HP206C
 	default "hp206c"
 	help
 	  Name for the HP206C driver which will be used for binding.
 
 config HP206C_I2C_PORT_NAME
 	string "I2C master controller port name"
-	depends on HP206C
 	default "I2C_0"
 	help
 	  Master I2C port name through which HP206C chip is accessed.
 
 config HP206C_OSR_RUNTIME
 	bool "Oversampling rate set at runtime"
-	depends on HP206C
 	default y
 
 config HP206C_OSR
 	int "Oversampling rate"
-	depends on HP206C && !HP206C_OSR_RUNTIME
+	depends on !HP206C_OSR_RUNTIME
 	default 4096
 	help
 	  Allowed values: 4096, 2048, 1024, 512, 256, 128
 
 config HP206C_ALT_OFFSET_RUNTIME
 	bool "Altitude offset set at runtime"
-	depends on HP206C
 	default y
 
 config HP206C_ALT_OFFSET
 	int "Altitude offset (in cm)"
-	depends on HP206C && !HP206C_ALT_OFFSET_RUNTIME
+	depends on !HP206C_ALT_OFFSET_RUNTIME
 	default 0
 	help
 	  Value, in cm, that will be used to compensate altitude calculation.
 	  For more info on how to choose this value, consult section 6.1.1 in
 	  the datasheet.
+
+endif # HP206C

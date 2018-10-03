@@ -27,15 +27,17 @@ if(uname_output MATCHES "MSYS")
   set(MSYS 1)
 endif()
 
-# CMake version 3.8.2 is the minimum supported version. Version 3.9 is
-# supported but it introduced a warning that we do not wish to
-# show to users. Specifically, it displays a warning when an OLD
-# policy is used, but we need policy CMP0000 set to OLD to avoid
-# copy-pasting cmake_minimum_required across application
-# CMakeLists.txt files.
+# CMake version 3.8.2 is the real minimum supported version.
+#
+# Unfortunately CMake requires the toplevel CMakeLists.txt file to
+# define the required version, not even invoking it from an included
+# file, like boilerplate.cmake, is sufficient. It is however permitted
+# to have multiple invocations of cmake_minimum_required.
+#
+# Under these restraints we use a second 'cmake_minimum_required'
+# invocation in every toplevel CMakeLists.txt.
 cmake_minimum_required(VERSION 3.8.2)
 
-cmake_policy(SET CMP0000 OLD)
 cmake_policy(SET CMP0002 NEW)
 
 define_property(GLOBAL PROPERTY ZEPHYR_LIBS
@@ -72,6 +74,14 @@ set(APPLICATION_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE PATH "Application B
 set(__build_dir ${CMAKE_CURRENT_BINARY_DIR}/zephyr)
 
 set(PROJECT_BINARY_DIR ${__build_dir})
+
+# CMake's 'project' concept has proven to not be very useful for Zephyr
+# due in part to how Zephyr is organized and in part to it not fitting well
+# with cross compilation.
+# CMake therefore tries to rely as little as possible on project()
+# and its associated variables, e.g. PROJECT_SOURCE_DIR.
+# It is recommended to always use ZEPHYR_BASE instead of PROJECT_SOURCE_DIR
+# when trying to reference ENV${ZEPHYR_BASE}.
 set(PROJECT_SOURCE_DIR $ENV{ZEPHYR_BASE})
 
 # Convert path to use the '/' separator
@@ -179,20 +189,37 @@ message(STATUS "Selected BOARD ${BOARD}")
 # Store the selected board in the cache
 set(CACHED_BOARD ${BOARD} CACHE STRING "Selected board")
 
-# Use BOARD to search zephyr/boards/** for a _defconfig file,
-# e.g. zephyr/boards/arm/96b_carbon_nrf51/96b_carbon_nrf51_defconfig. When
-# found, use that path to infer the ARCH we are building for.
-if(NOT BOARD_ROOT)
-  set(BOARD_ROOT ${ZEPHYR_BASE})
+# 'BOARD_ROOT' is a prioritized list of directories where boards may
+# be found. It always includes ${ZEPHYR_BASE} at the lowest priority.
+list(APPEND BOARD_ROOT ${ZEPHYR_BASE})
+
+if(NOT SOC_ROOT)
+  set(SOC_DIR ${ZEPHYR_BASE}/soc)
+else()
+  set(SOC_DIR ${SOC_ROOT}/soc)
 endif()
 
-find_path(BOARD_DIR NAMES "${BOARD}_defconfig" PATHS ${BOARD_ROOT}/boards/*/* NO_DEFAULT_PATH)
+# Use BOARD to search for a '_defconfig' file.
+# e.g. zephyr/boards/arm/96b_carbon_nrf51/96b_carbon_nrf51_defconfig.
+# When found, use that path to infer the ARCH we are building for.
+foreach(root ${BOARD_ROOT})
+  # NB: find_path will return immediately if the output variable is
+  # already set
+  find_path(BOARD_DIR
+	NAMES ${BOARD}_defconfig
+	PATHS ${root}/boards/*/*
+	NO_DEFAULT_PATH
+	)
+  if(BOARD_DIR AND NOT (${root} STREQUAL ${ZEPHYR_BASE}))
+	set(USING_OUT_OF_TREE_BOARD 1)
+  endif()
+endforeach()
 
 assert_with_usage(BOARD_DIR "No board named '${BOARD}' found")
 
 get_filename_component(BOARD_ARCH_DIR ${BOARD_DIR} DIRECTORY)
-get_filename_component(ARCH ${BOARD_ARCH_DIR} NAME)
-get_filename_component(BOARD_FAMILY ${BOARD_DIR} NAME)
+get_filename_component(BOARD_FAMILY   ${BOARD_DIR} NAME     )
+get_filename_component(ARCH           ${BOARD_ARCH_DIR} NAME)
 
 if(CONF_FILE)
   # CONF_FILE has either been specified on the cmake CLI or is already
@@ -243,10 +270,19 @@ include(${ZEPHYR_BASE}/cmake/toolchain.cmake)
 
 find_package(Git QUIET)
 if(GIT_FOUND)
-  execute_process(COMMAND ${GIT_EXECUTABLE} --work-tree=${ZEPHYR_BASE} describe
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  execute_process(COMMAND ${GIT_EXECUTABLE} describe
+    WORKING_DIRECTORY ${ZEPHYR_BASE}
     OUTPUT_VARIABLE BUILD_VERSION
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_STRIP_TRAILING_WHITESPACE
+    ERROR_VARIABLE stderr
+    RESULT_VARIABLE return_code
+    )
+  if(return_code)
+    message(STATUS "git describe failed: ${stderr}; ${KERNEL_VERSION_STRING} will be used instead")
+  elseif(CMAKE_VERBOSE_MAKEFILE)
+    message(STATUS "git describe stderr: ${stderr}")
+  endif()
 endif()
 
 set(SOC_NAME ${CONFIG_SOC})
@@ -310,6 +346,7 @@ foreach(boilerplate_lib ${ZEPHYR_INTERFACE_LIBS_PROPERTY})
   target_link_libraries_ifdef(
     CONFIG_APP_LINK_WITH_${boilerplate_lib_upper_case}
     app
+    PUBLIC
     ${boilerplate_lib}
     )
 endforeach()

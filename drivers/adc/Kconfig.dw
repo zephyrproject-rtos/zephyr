@@ -10,7 +10,6 @@ menuconfig ADC_DW
 	bool "ARC Designware Driver"
 	depends on ARC
 	select ADC_0
-	default n
 	help
 	  Enable the driver implementation of the Designware ADC IP.
 
@@ -26,15 +25,6 @@ config ADC_DW_CALIBRATION
 	  If disabled, the ADC will require the application/system-integrator
 	  to provide a calibration method.
 
-config ADC_DW_DUMMY_CONVERSION
-	bool "Enable dummy conversion"
-	default y
-	help
-	  After awaking from low power state a dummy
-	  conversion must be performed and discarded.
-	  If disabled the user will have to discard the first
-	  sample after a resume from a low power state.
-
 choice
 	prompt "Output Mode"
 	default ADC_DW_SERIAL
@@ -46,20 +36,6 @@ config ADC_DW_SERIAL
 
 config ADC_DW_PARALLEL
 	bool "Parallel"
-
-endchoice
-
-choice
-	prompt "Sequence Mode"
-	default ADC_DW_SINGLESHOT
-	help
-	  ADC sequence mode - single run/repetitive
-
-config ADC_DW_SINGLESHOT
-	bool "Single Ended"
-
-config ADC_DW_REPETITIVE
-	bool "Differential"
 
 endchoice
 
@@ -77,20 +53,6 @@ config ADC_DW_FALLING_EDGE
 	bool "Falling Edge"
 
 endchoice
-
-config ADC_DW_SAMPLE_WIDTH
-	int "Sample Width"
-	default 31
-	help
-	  Defines ADC device data sample width (resolution):
-
-	  - 0 = 6 bits resolution
-
-	  - 1 = 8 bits resolution
-
-	  - 2 = 10 bits resolution
-
-	  - 3 = 12 bits resolution
 
 config ADC_DW_SERIAL_DELAY
 	int "Serial Delay"

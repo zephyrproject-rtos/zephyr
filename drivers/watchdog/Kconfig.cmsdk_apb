@@ -18,7 +18,6 @@ config WDOG_CMSDK_APB
 config WDOG_CMSDK_APB_START_AT_BOOT
 	bool "Start Watchdog during boot"
 	depends on WDOG_CMSDK_APB
-	default n
 	help
 	  Enable this setting to allow WDOG to be automatically started
 	  during device initialization. Note that once WDOG is started

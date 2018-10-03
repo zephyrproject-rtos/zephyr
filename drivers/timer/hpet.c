@@ -580,11 +580,10 @@ int _sys_clock_driver_init(struct device *device)
  */
 
 	/*
-	 * Convert the 'sys_clock_us_per_tick' value
-	 * from microseconds to femptoseconds
+	 * Get tick time (in femptoseconds).
 	 */
 
-	tickFempto = (u64_t)sys_clock_us_per_tick * 1000000000;
+	tickFempto = 1000000000000000ull / sys_clock_ticks_per_sec;
 
 	/*
 	 * This driver shall read the COUNTER_CLK_PERIOD value from the general

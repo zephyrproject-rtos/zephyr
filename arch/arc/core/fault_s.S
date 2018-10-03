@@ -16,6 +16,7 @@
 #include <linker/sections.h>
 #include <arch/cpu.h>
 #include <swap_macros.h>
+#include <syscall.h>
 
 GTEXT(_Fault)
 GTEXT(_do_kernel_oops)
@@ -64,15 +65,6 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_dc_error)
 SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_maligned)
 
 _exc_entry:
-
-#ifdef CONFIG_ARC_STACK_CHECKING
-	st r0, [saved_value]
-	/* disable stack checking */
-	lr r0, [_ARC_V2_STATUS32]
-	bclr r0, r0, _ARC_V2_STATUS32_SC_BIT
-	kflag r0
-	ld r0, [saved_value]
-#endif
 	st sp, [saved_value]
 	/*
 	 * re-use the top part of interrupt stack as exception
@@ -149,6 +141,9 @@ _exc_return:
 #endif
 
 _exc_return_from_exc:
+	ld_s r0, [sp, ___isf_t_pc_OFFSET]
+	sr r0, [_ARC_V2_ERET]
+
 	_pop_irq_stack_frame
 	ld sp, [saved_value]
 	rtie
@@ -162,12 +157,12 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_trap)
 	cmp ilink, _TRAP_S_CALL_SYSTEM_CALL
 	bne _do_non_syscall_trap
 /* do sys_call */
-	mov ilink, _SYSCALL_LIMIT
+	mov ilink, K_SYSCALL_LIMIT
 	cmp r6, ilink
 	blt valid_syscall_id
 
 	mov r0, r6
-	mov r6, _SYSCALL_BAD
+	mov r6, K_SYSCALL_BAD
 
 valid_syscall_id:
 #ifdef CONFIG_ARC_HAS_SECURE
@@ -209,13 +204,6 @@ _do_non_syscall_trap:
 	st_s r0, [sp, ___isf_t_status32_OFFSET]
 	lr r0,[_ARC_V2_ERET]
 	st_s r0, [sp, ___isf_t_pc_OFFSET] /* eret into pc */
-
-#ifdef CONFIG_ARC_STACK_CHECKING
-	/* disable stack checking */
-	lr r0, [_ARC_V2_STATUS32]
-	bclr r0, r0, _ARC_V2_STATUS32_SC_BIT
-	kflag r0
-#endif
 
 	ld r1, [exc_nest_count]
 	add r0, r1, 1

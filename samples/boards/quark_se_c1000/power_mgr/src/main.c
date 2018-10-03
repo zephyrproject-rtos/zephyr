@@ -14,6 +14,7 @@
 #define SECONDS_TO_SLEEP	5
 #define ALARM		(RTC_ALARM_SECOND * (SECONDS_TO_SLEEP - 1))
 #define GPIO_IN_PIN	16
+#define MAX_SYS_PM_STATES	2
 
 /* In Tickless Kernel mode, time is passed in milliseconds instead of ticks */
 #ifdef CONFIG_TICKLESS_KERNEL
@@ -34,6 +35,7 @@ static void resume_devices(void);
 
 static struct device *device_list;
 static int device_count;
+static int test_complete;
 
 static int post_ops_done = 1;
 
@@ -54,16 +56,21 @@ int pm_state;
 
 void main(void)
 {
+	int i;
+
 	printk("Power Management Demo on %s\n", CONFIG_ARCH);
 
 	setup_rtc();
 
 	create_device_list();
 
-	while (1) {
+	for (i = 0; i < MAX_SYS_PM_STATES; i++) {
 		printk("\nApplication main thread\n");
 		k_sleep(SECONDS_TO_SLEEP * 1000);
 	}
+	test_complete = 1;
+
+	printk("**Power States test complete**\n");
 }
 
 static int check_pm_policy(s32_t ticks)
@@ -176,6 +183,11 @@ int _sys_soc_suspend(s32_t ticks)
 	if ((ticks != K_FOREVER) && (ticks < MIN_TIME_TO_SUSPEND)) {
 		printk("Not enough time for PM operations (" TIME_UNIT_STRING
 		       ": %d).\n", ticks);
+		return SYS_PM_NOT_HANDLED;
+	}
+
+	/* If test is comepleted then do not enter LPS states */
+	if (test_complete) {
 		return SYS_PM_NOT_HANDLED;
 	}
 

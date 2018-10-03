@@ -72,7 +72,7 @@ int sys_bitfield_find_first_clear(const unsigned long *bitmap,
 		else if (neg_bitmap == ~0UL)	/* first bit */
 			return cnt * BITS_PER_UL;
 		else
-			return cnt * BITS_PER_UL + __builtin_ffsl(neg_bitmap);
+			return cnt * BITS_PER_UL + __builtin_ffsl(neg_bitmap) - 1;
 	}
 	return -1;
 }
@@ -108,7 +108,7 @@ struct parameter *alloc_parameter(void)
 	}
 	sys_bitfield_set_bit((mem_addr_t) params_allocation, allocation_index);
 	param = params + allocation_index;
-	memset(param, 0, sizeof(*param));
+	(void)memset(param, 0, sizeof(*param));
 	return param;
 }
 
@@ -144,15 +144,17 @@ static void insert_value(struct parameter *param, const char *fn,
 {
 	struct parameter *value;
 
-	value = find_and_delete_value(param, fn, name);
-	if (!value) {
-		value = alloc_parameter();
-	}
-
+	value = alloc_parameter();
 	value->fn = fn;
 	value->name = name;
 	value->value = val;
 
+	/* Seek to end of linked list to ensure correct discovery order in find_and_delete_value */
+	while (param->next) {
+		param = param->next;
+	}
+
+	/* Append to end of linked list */
 	value->next = param->next;
 	param->next = value;
 }

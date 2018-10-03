@@ -1,0 +1,34 @@
+# Kconfig - STM32F723E DISCOVERY board configuration
+#
+# Copyright (c) 2018 Aurelien Jarno
+
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_STM32F723E_DISCO
+
+config BOARD
+	default "stm32f723e_disco"
+
+if UART_CONSOLE
+
+config UART_STM32_PORT_6
+	default y
+
+endif # UART_CONSOLE
+
+if I2C
+
+config I2C_1
+	default y
+
+config I2C_2
+	default y
+
+config I2C_3
+	default y
+
+endif # I2C
+
+endif # BOARD_STM32F723E_DISCO

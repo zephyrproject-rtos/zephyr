@@ -23,6 +23,9 @@ CONFIG_I2C=y
 # enable SPI
 CONFIG_SPI=y
 
+# enable LED
+CONFIG_LED=y
+
 # clock configuration
 CONFIG_CLOCK_CONTROL=y
 

@@ -14,16 +14,16 @@
  *	@(#)errno.h	7.1 (Berkeley) 6/4/86
  */
 
-#ifndef __INCerrnoh
-#define __INCerrnoh
+#ifndef ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_ERRNO_H_
+#define ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_ERRNO_H_
+
+#include <misc/errno_private.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-
-extern int *__errno(void);
-#define errno (*__errno())
+#define errno (*z_errno())
 
 /*
  * POSIX Error codes
@@ -126,10 +126,16 @@ extern int *__errno(void);
 #define ETIME 79   /* STREAMS timeout occurred */
 #define ENOMSG 80  /* Unexpected message type */
 
+/* specific encryption errno values */
+#define ENOKEY 126       /* Required key not available */
+#define EKEYEXPIRED 127  /* Required key not available */
+#define EKEYREVOKED 128  /* Key has been revoked */
+#define EKEYREJECTED 129 /* Key was rejected by service */
+
 #define EILSEQ 138 /* Illegal byte sequence */
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __INCerrnoh */
+#endif /* ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_ERRNO_H_ */

@@ -17,7 +17,7 @@
 
 #include "receiver.h"
 
-char data_recv[OCTET_TO_SIZEOFUNIT(MESSAGE_SIZE)] = { 0 };
+char data_recv[MESSAGE_SIZE] = { 0 };
 
 void dequtask(void);
 void waittask(void);

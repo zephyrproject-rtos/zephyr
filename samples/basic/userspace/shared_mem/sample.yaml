@@ -1,0 +1,17 @@
+sample:
+  description: userspace memory domain protection
+    example application
+  name: protected memory
+  platforms: all
+common:
+    tags: samples
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "MSG"
+tests:
+  kernel.memory_protection.userspace:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    tags: userspace samples
+

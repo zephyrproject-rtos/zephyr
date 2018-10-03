@@ -64,7 +64,8 @@ struct usart_sam_dev_data {
 	u32_t baud_rate;
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	uart_irq_callback_t irq_cb;	/* Interrupt Callback */
+	uart_irq_callback_user_data_t irq_cb;	/* Interrupt Callback */
+	void *cb_data;	/* Interrupt Callback Arg */
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
@@ -308,11 +309,13 @@ static int usart_sam_irq_update(struct device *dev)
 }
 
 static void usart_sam_irq_callback_set(struct device *dev,
-				       uart_irq_callback_t cb)
+				       uart_irq_callback_user_data_t cb,
+				       void *cb_data)
 {
 	struct usart_sam_dev_data *const dev_data = DEV_DATA(dev);
 
 	dev_data->irq_cb = cb;
+	dev_data->cb_data = cb_data;
 }
 
 static void usart_sam_isr(void *arg)
@@ -321,7 +324,7 @@ static void usart_sam_isr(void *arg)
 	struct usart_sam_dev_data *const dev_data = DEV_DATA(dev);
 
 	if (dev_data->irq_cb) {
-		dev_data->irq_cb(dev);
+		dev_data->irq_cb(dev_data->cb_data);
 	}
 }
 

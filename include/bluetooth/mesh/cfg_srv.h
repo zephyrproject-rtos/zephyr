@@ -7,8 +7,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __BT_MESH_CFG_SRV_H
-#define __BT_MESH_CFG_SRV_H
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_CFG_SRV_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_MESH_CFG_SRV_H_
 
 /**
  * @brief Bluetooth Mesh
@@ -66,4 +66,4 @@ extern const struct bt_mesh_model_op bt_mesh_cfg_srv_op[];
  * @}
  */
 
-#endif /* __BT_MESH_CFG_SRV_H */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_MESH_CFG_SRV_H_ */

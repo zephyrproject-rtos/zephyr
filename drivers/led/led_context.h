@@ -9,8 +9,8 @@
  * @brief Private LED driver APIs
  */
 
-#ifndef __LED_CONTEXT_H__
-#define __LED_CONTEXT_H__
+#ifndef ZEPHYR_DRIVERS_LED_LED_CONTEXT_H_
+#define ZEPHYR_DRIVERS_LED_LED_CONTEXT_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,4 +35,4 @@ struct led_data {
 }
 #endif
 
-#endif /* __LED_CONTEXT_H__ */
+#endif /* ZEPHYR_DRIVERS_LED_LED_CONTEXT_H_ */

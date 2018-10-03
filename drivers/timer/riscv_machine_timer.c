@@ -64,11 +64,20 @@ static ALWAYS_INLINE void riscv_machine_rearm_timer(void)
 static void riscv_machine_timer_irq_handler(void *unused)
 {
 	ARG_UNUSED(unused);
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	extern void read_timer_start_of_tick_handler(void);
+	read_timer_start_of_tick_handler();
+#endif
 
 	_sys_clock_tick_announce();
 
 	/* Rearm timer */
 	riscv_machine_rearm_timer();
+
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	extern void read_timer_end_of_tick_handler(void);
+	read_timer_end_of_tick_handler();
+#endif
 }
 
 #ifdef CONFIG_TICKLESS_IDLE

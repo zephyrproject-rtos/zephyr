@@ -127,10 +127,10 @@ static int test_task(u32_t chan_id, u32_t blen, u32_t block_count)
 	printk("Preparing DMA Controller: Chan_ID=%u, BURST_LEN=%u\n",
 			chan_id, blen);
 
-	memset(rx_data, 0, sizeof(rx_data));
-	memset(rx_data2, 0, sizeof(rx_data2));
-	memset(rx_data3, 0, sizeof(rx_data3));
-	memset(rx_data4, 0, sizeof(rx_data4));
+	(void)memset(rx_data, 0, sizeof(rx_data));
+	(void)memset(rx_data2, 0, sizeof(rx_data2));
+	(void)memset(rx_data3, 0, sizeof(rx_data3));
+	(void)memset(rx_data4, 0, sizeof(rx_data4));
 
 	dma_block_cfg.next_block = &dma_block_cfg2;
 	dma_block_cfg2.next_block = &dma_block_cfg3;

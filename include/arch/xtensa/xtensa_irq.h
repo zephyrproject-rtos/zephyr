@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef XTENSA_IRQ_H
-#define XTENSA_IRQ_H
+#ifndef ZEPHYR_INCLUDE_ARCH_XTENSA_XTENSA_IRQ_H_
+#define ZEPHYR_INCLUDE_ARCH_XTENSA_XTENSA_IRQ_H_
 
 #include <xtensa_api.h>
 #include <xtensa/xtruntime.h>
@@ -73,4 +73,4 @@ static ALWAYS_INLINE void _arch_irq_unlock(unsigned int key)
 
 #include <irq.h>
 
-#endif /* XTENSA_IRQ_H */
+#endif /* ZEPHYR_INCLUDE_ARCH_XTENSA_XTENSA_IRQ_H_ */

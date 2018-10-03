@@ -1,0 +1,29 @@
+#
+# Copyright (c) 2018, Workaround GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: STM32 RTC
+id: st,stm32-rtc
+version: 0.1
+
+description: >
+    This binding gives a base representation of the STM32 RTC
+
+inherits:
+    !include rtc.yaml
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "st,stm32-rtc"
+
+    reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+...

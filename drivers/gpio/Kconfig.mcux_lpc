@@ -8,7 +8,6 @@
 menuconfig GPIO_MCUX_LPC
 	bool "MCUX LPC GPIO driver"
 	depends on GPIO && HAS_MCUX
-	default n
 	help
 	  Enable the MCUX LPC pinmux driver.
 
@@ -17,7 +16,6 @@ if GPIO_MCUX_LPC
 config GPIO_MCUX_LPC_PORT0
 	bool "Port 0"
 	depends on PINMUX_MCUX_LPC_PORT0
-	default n
 	help
 	  Enable Port 0.
 
@@ -29,7 +27,6 @@ config GPIO_MCUX_LPC_PORT0_NAME
 config GPIO_MCUX_LPC_PORT1
 	bool "Port 1"
 	depends on PINMUX_MCUX_LPC_PORT1
-	default n
 	help
 	  Enable Port 1.
 

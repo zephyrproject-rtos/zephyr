@@ -6,21 +6,17 @@
 
 
 menuconfig SPI_FLASH_W25QXXDV
-	bool
-	prompt "SPI NOR Flash Winbond W25QXXDV"
+	bool "SPI NOR Flash Winbond W25QXXDV"
 	select FLASH_HAS_DRIVER_ENABLED
 	depends on SPI && FLASH
 
 if SPI_FLASH_W25QXXDV
 
 config SPI_FLASH_W25QXXDV_SPI_NAME
-	string
-	prompt "SPI controller device name"
-	default ""
+	string "SPI controller device name"
 
 config SPI_FLASH_W25QXXDV_DRV_NAME
-	string
-	prompt "SPI flash device name"
+	string "SPI flash device name"
 	default "W25QXXDV"
 
 config SPI_FLASH_W25QXXDV_INIT_PRIORITY
@@ -47,14 +43,12 @@ config SPI_FLASH_W25QXXDV_SPI_SLAVE
 
 config SPI_FLASH_W25QXXDV_GPIO_SPI_CS
 	bool "Manage SPI CS through a GPIO pin"
-	default n
 	help
 	This option is useful if one needs to manage SPI CS through a GPIO
 	pin to by-pass the SPI controller's CS logic.
 
 config SPI_FLASH_W25QXXDV_GPIO_SPI_CS_DRV_NAME
 	string "GPIO driver's name to use to drive SPI CS through"
-	default ""
 	depends on SPI_FLASH_W25QXXDV_GPIO_SPI_CS
 	help
 	This option is mandatory to set which GPIO controller to use in order
@@ -68,10 +62,24 @@ config SPI_FLASH_W25QXXDV_GPIO_SPI_CS_PIN
 	This option is mandatory to set which GPIO pin to use in order
 	to actually emulate the SPI CS.
 
+config SPI_FLASH_W25QXXDV_GPIO_CS_WAIT_DELAY
+	int "Delay time in us"
+	default 0
+        depends on SPI_FLASH_W25QXXDV_GPIO_SPI_CS
+	help
+	This is the wait delay (in us) to allow for CS switching to take effect
+
 config SPI_FLASH_W25QXXDV_FLASH_SIZE
 	int "Flash size in bytes"
 	default 2097152
 	help
 	  This is the flash capacity in bytes.
+
+config SPI_FLASH_W25QXXDV_DEVICE_ID
+	hex "Device ID in hex"
+	default 0x00ef4015
+	help
+	  This is the device ID of the flash chip to use, which is 0x00ef4015 for
+          the W25QXXDV
 
 endif # SPI_FLASH_W25QXXDV

@@ -1,3 +1,4 @@
 tests:
   kernel.poll:
     tags: kernel userspace
+    min_ram: 16

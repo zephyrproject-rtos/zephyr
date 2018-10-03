@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef SYS_MEMPOOL_BASE_H
-#define SYS_MEMPOOL_BASE_H
+#ifndef ZEPHYR_INCLUDE_MISC_MEMPOOL_BASE_H_
+#define ZEPHYR_INCLUDE_MISC_MEMPOOL_BASE_H_
 
 #include <zephyr/types.h>
 #include <stddef.h>
@@ -23,15 +23,15 @@ struct sys_mem_pool_lvl {
 	sys_dlist_t free_list;
 };
 
-#define SYS_MEM_POOL_KERNEL	0
-#define SYS_MEM_POOL_USER	1
+#define SYS_MEM_POOL_KERNEL	BIT(0)
+#define SYS_MEM_POOL_USER	BIT(1)
 
 struct sys_mem_pool_base {
 	void *buf;
 	size_t max_sz;
 	u16_t n_max;
 	u8_t n_levels;
-	u8_t max_inline_level;
+	s8_t max_inline_level;
 	struct sys_mem_pool_lvl *levels;
 	u8_t flags;
 };
@@ -107,4 +107,4 @@ int _sys_mem_pool_block_alloc(struct sys_mem_pool_base *p, size_t size,
 void _sys_mem_pool_block_free(struct sys_mem_pool_base *p, u32_t level,
 			      u32_t block);
 
-#endif /* SYS_MEMPOOL_BASE_H */
+#endif /* ZEPHYR_INCLUDE_MISC_MEMPOOL_BASE_H_ */

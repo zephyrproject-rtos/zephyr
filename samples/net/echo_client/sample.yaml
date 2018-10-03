@@ -10,21 +10,22 @@ tests:
     platform_whitelist: qemu_x86 frdm_k64f sam_e70_xplained
       qemu_cortex_m3 arduino_101 frdm_kw41z
   test_802154:
-    extra_args: CONF_FILE="prj_qemu_802154.conf"
+    extra_args: OVERLAY_CONFIG="overlay-qemu_802154.conf"
     platform_whitelist: qemu_x86
   test_bt:
-    extra_args: CONF_FILE="prj_bt.conf"
+    extra_args: OVERLAY_CONFIG="overlay-bt.conf"
     platform_whitelist: qemu_x86
     tags: bluetooth
   test_cc2520:
-    extra_args: CONF_FILE="prj_frdm_k64f_cc2520.conf"
+    extra_args: OVERLAY_CONFIG="overlay-frdm_k64f_cc2520.conf"
     platform_whitelist: frdm_k64f
+  test_nrf:
+    platform_whitelist: nrf52840_pca10056
   test_nrf_openthread:
-    extra_args: CONF_FILE="prj_nrf52840_ot.conf"
+    extra_args: OVERLAY_CONFIG="overlay-ot.conf"
     platform_whitelist: nrf52840_pca10056
   test_kw41z:
-    extra_args: CONF_FILE="prj_frdm_kw41z.conf"
     platform_whitelist: frdm_kw41z
   test_kw41z_openthread:
-    extra_args: CONF_FILE="prj_frdm_kw41z_ot.conf"
+    extra_args: OVERLAY_CONFIG="overlay-ot.conf"
     platform_whitelist: frdm_kw41z

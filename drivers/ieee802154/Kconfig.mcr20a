@@ -9,7 +9,6 @@
 menuconfig  IEEE802154_MCR20A
 	bool "NXP MCR20A Driver support"
 	depends on NETWORKING && SPI
-	default n
 
 if IEEE802154_MCR20A
 
@@ -19,7 +18,7 @@ config IEEE802154_MCR20A_DRV_NAME
 	help
 	  This option sets the driver name
 
-if !HAS_DTS_SPI_DEVICE
+if !HAS_DTS_SPI
 
 config IEEE802154_MCR20A_SPI_DRV_NAME
 	string "SPI driver's name to use to access MCR20A"
@@ -43,20 +42,14 @@ config IEEE802154_MCR20A_SPI_SLAVE
 	  This option sets the SPI slave number SPI controller has to switch
 	  to when dealing with MCR20A chip.
 
-endif # !HAS_DTS_SPI_DEVICE
-
 config IEEE802154_MCR20A_GPIO_SPI_CS
 	bool "Manage SPI CS through a GPIO pin"
-	default n
 	help
 	This option is useful if one needs to manage SPI CS through a GPIO
 	pin to by-pass the SPI controller's CS logic.
 
-if !HAS_DTS_SPI_PINS
-
 config IEEE802154_MCR20A_GPIO_SPI_CS_DRV_NAME
 	string "GPIO driver's name to use to drive SPI CS through"
-	default ""
 	depends on IEEE802154_MCR20A_GPIO_SPI_CS
 	help
 	This option is mandatory to set which GPIO controller to use in order
@@ -70,9 +63,9 @@ config IEEE802154_MCR20A_GPIO_SPI_CS_PIN
 	This option is mandatory to set which GPIO pin to use in order
 	to actually emulate the SPI CS.
 
-endif # !HAS_DTS_SPI_PINS
+endif # !HAS_DTS_SPI
 
-if !HAS_DTS_GPIO_DEVICE
+if !HAS_DTS_GPIO
 
 config MCR20A_GPIO_IRQ_B_NAME
 	string "GPIO device used for IRQ_B output of MCR20A"
@@ -88,11 +81,10 @@ config MCR20A_GPIO_RESET_PIN
 	int "GPIO pin connected to RESET input of MCR20A"
 	default 2
 
-endif # !HAS_DTS_GPIO_DEVICE
+endif # !HAS_DTS_GPIO
 
 config MCR20A_IS_PART_OF_KW2XD_SIP
 	bool "MCR20A device is part of KW2xD SiP"
-	default n
 	help
 	  If this option is set, the driver does not perform a hardware
 	  reset and the CLK_OUT frequency is not set, instead these settings

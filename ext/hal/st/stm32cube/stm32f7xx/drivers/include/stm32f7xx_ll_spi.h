@@ -48,7 +48,7 @@ extern "C" {
   * @{
   */
 
-#if defined (SPI1) || defined (SPI2) || defined (SPI3) || defined(SPI4) || defined(SPI5) || defined(SPI6) 
+#if defined (SPI1) || defined (SPI2) || defined (SPI3) || defined(SPI4) || defined(SPI5) || defined(SPI6)
 
 /** @defgroup SPI_LL SPI
   * @{

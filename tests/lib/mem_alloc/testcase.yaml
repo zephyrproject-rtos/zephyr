@@ -1,0 +1,9 @@
+tests:
+  libraries.libc.minimal:
+    extra_args: CONF_FILE=prj.conf
+    platform_exclude: native_posix
+    tags: clib minimal_libc
+  libraries.libc.newlib:
+    extra_args: CONF_FILE=prj_newlib.conf
+    platform_exclude: native_posix
+    tags: clib newlib

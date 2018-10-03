@@ -7,25 +7,21 @@
 #
 
 menuconfig AK8975
-	bool
-	prompt "AK8975 Magnetometer"
+	bool "AK8975 Magnetometer"
 	depends on I2C
-	default n
 	help
 	  Enable driver for AK8975 magnetometer.
 
+if AK8975
+
 config AK8975_NAME
-	string
-	prompt "Driver name"
+	string "Driver name"
 	default "AK8975"
-	depends on AK8975
 	help
 	  Device name with which the AK8975 sensor is identified.
 
 config AK8975_I2C_ADDR
-	hex
-	prompt "I2C address"
-	depends on AK8975
+	hex "I2C address"
 	default 0x0C
 	range 0x0C 0x0F
 	help
@@ -40,29 +36,25 @@ config AK8975_I2C_ADDR
 	  needs to be 0x0C.
 
 config AK8975_I2C_MASTER_DEV_NAME
-	string
-	prompt "I2C master where AK8975 is connected"
-	depends on AK8975
+	string "I2C master where AK8975 is connected"
 	default "I2C_0"
 	help
 	  Specify the device name of the I2C master device to which the
 	  AK8975 chip is connected.
 
 config MPU9150
-	bool
-	prompt "Enable MPU9180 support"
-	depends on AK8975
-	default n
+	bool "Enable MPU9180 support"
 	help
 	  Enable this config option if the AK8975 sensor is part of a
 	  MPU9150 chip.
 
 config MPU9150_I2C_ADDR
-	hex
-	prompt "MPU9180 I2C address"
-	depends on AK8975 && MPU9150 && !MPU6050
+	hex "MPU9180 I2C address"
+	depends on MPU9150 && !MPU6050
 	range 0x68 0x69
 	default 0x68
 	help
 	  I2C address of the MPU9150. If the driver for MPU6050 is enabled,
 	  its address will be used and this option made unavailable.
+
+endif # AK8975

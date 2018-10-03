@@ -127,10 +127,10 @@ int sema_test(void)
 	t = BENCH_START();
 
 	k_thread_create(&thread_data1, thread_stack1, STACK_SIZE, sema_thread1,
-			 NULL, (void *) NUMBER_OF_LOOPS, NULL,
+			 NULL, (void *) number_of_loops, NULL,
 			 K_PRIO_COOP(3), 0, K_NO_WAIT);
 	k_thread_create(&thread_data2, thread_stack2, STACK_SIZE, sema_thread2,
-			 (void *) &i, (void *) NUMBER_OF_LOOPS, NULL,
+			 (void *) &i, (void *) number_of_loops, NULL,
 			 K_PRIO_COOP(3), 0, K_NO_WAIT);
 
 	t = TIME_STAMP_DELTA_GET(t);
@@ -152,10 +152,10 @@ int sema_test(void)
 	t = BENCH_START();
 
 	k_thread_create(&thread_data1, thread_stack1, STACK_SIZE, sema_thread1,
-			 NULL, (void *) NUMBER_OF_LOOPS, NULL,
+			 NULL, (void *) number_of_loops, NULL,
 			 K_PRIO_COOP(3), 0, K_NO_WAIT);
 	k_thread_create(&thread_data2, thread_stack2, STACK_SIZE, sema_thread3,
-			 (void *) &i, (void *) NUMBER_OF_LOOPS, NULL,
+			 (void *) &i, (void *) number_of_loops, NULL,
 			 K_PRIO_COOP(3), 0, K_NO_WAIT);
 
 	t = TIME_STAMP_DELTA_GET(t);
@@ -177,9 +177,9 @@ int sema_test(void)
 	t = BENCH_START();
 
 	k_thread_create(&thread_data1, thread_stack1, STACK_SIZE, sema_thread1,
-			 NULL, (void *) NUMBER_OF_LOOPS, NULL,
+			 NULL, (void *) number_of_loops, NULL,
 			 K_PRIO_COOP(3), 0, K_NO_WAIT);
-	for (i = 0; i < NUMBER_OF_LOOPS; i++) {
+	for (i = 0; i < number_of_loops; i++) {
 		k_sem_give(&sem1);
 		k_sem_take(&sem2, K_FOREVER);
 	}

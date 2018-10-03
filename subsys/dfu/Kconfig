@@ -12,9 +12,7 @@
 menu "DFU options"
 
 config IMG_MANAGER
-	bool
-	prompt "DFU image manager"
-	default n
+	bool "DFU image manager"
 	help
 	  Enable support for managing DFU image.
 
@@ -33,9 +31,8 @@ config MCUBOOT_IMG_MANAGER
 endchoice
 
 config IMG_BLOCK_BUF_SIZE
-	int
+	int "Image writer buffer size"
 	depends on MCUBOOT_IMG_MANAGER
-	prompt "Image writer buffer size"
 	default 512
 	help
 	  Size (in Bytes) of buffer for image writer. Must be a multiple of

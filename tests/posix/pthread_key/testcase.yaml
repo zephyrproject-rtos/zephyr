@@ -1,0 +1,3 @@
+tests:
+  portability.posix.pthread_key:
+    tags: posix

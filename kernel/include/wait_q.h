@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _kernel_include_wait_q__h_
-#define _kernel_include_wait_q__h_
+#ifndef ZEPHYR_KERNEL_INCLUDE_WAIT_Q_H_
+#define ZEPHYR_KERNEL_INCLUDE_WAIT_Q_H_
 
 #include <kernel_structs.h>
 #include <misc/dlist.h>
@@ -44,7 +44,7 @@ static ALWAYS_INLINE int _abort_thread_timeout(struct k_thread *thread)
 #define _get_next_timeout_expiry() (K_FOREVER)
 #endif
 
-#ifdef CONFIG_WAITQ_FAST
+#ifdef CONFIG_WAITQ_SCALABLE
 
 #define _WAIT_Q_FOR_EACH(wq, thread_ptr) \
 	RB_FOR_EACH_CONTAINER(&(wq)->waitq.tree, thread_ptr, base.qnode_rb)
@@ -63,7 +63,7 @@ static inline struct k_thread *_waitq_head(_wait_q_t *w)
 	return (void *)rb_get_min(&w->waitq.tree);
 }
 
-#else /* !CONFIG_WAITQ_FAST: */
+#else /* !CONFIG_WAITQ_SCALABLE: */
 
 #define _WAIT_Q_FOR_EACH(wq, thread_ptr) \
 	SYS_DLIST_FOR_EACH_CONTAINER(&((wq)->waitq), thread_ptr, \
@@ -79,10 +79,10 @@ static inline struct k_thread *_waitq_head(_wait_q_t *w)
 	return (void *)sys_dlist_peek_head(&w->waitq);
 }
 
-#endif /* !CONFIG_WAITQ_FAST */
+#endif /* !CONFIG_WAITQ_SCALABLE */
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _kernel_include_wait_q__h_ */
+#endif /* ZEPHYR_KERNEL_INCLUDE_WAIT_Q_H_ */

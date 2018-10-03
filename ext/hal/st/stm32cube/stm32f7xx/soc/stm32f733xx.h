@@ -14857,16 +14857,22 @@ typedef struct
 #define USB_OTG_PCGCCTL_PHYSUSP_Msk              (0x1U << USB_OTG_PCGCCTL_PHYSUSP_Pos) /*!< 0x00000010 */
 #define USB_OTG_PCGCCTL_PHYSUSP                  USB_OTG_PCGCCTL_PHYSUSP_Msk   /*!<Bit 1 */
 
-/********************  Bit definition for USBPHYC_PLL register  ********************/
-#define USB_HS_PHYC_PLL_PLLEN_Pos                (0U)                          
-#define USB_HS_PHYC_PLL_PLLEN_Msk                (0x1U << USB_HS_PHYC_PLL_PLLEN_Pos) /*!< 0x00000001 */
-#define USB_HS_PHYC_PLL_PLLEN                    USB_HS_PHYC_PLL_PLLEN_Msk     /*!< Enable PLL */
-#define USB_HS_PHYC_PLL_PLLSEL_Pos               (2U)                          
-#define USB_HS_PHYC_PLL_PLLSEL_Msk               (0x5U << USB_HS_PHYC_PLL_PLLSEL_Pos) /*!< 0x00000014 */
-#define USB_HS_PHYC_PLL_PLLSEL                   USB_HS_PHYC_PLL_PLLSEL_Msk    /*!< Controls PHY frequency operation selection */
-#define USB_HS_PHYC_PLL_PLLSEL_1                 (0x0U << USB_HS_PHYC_PLL_PLLSEL_Pos) /*!< 0x00000002 */
-#define USB_HS_PHYC_PLL_PLLSEL_2                 (0x1U << USB_HS_PHYC_PLL_PLLSEL_Pos) /*!< 0x00000004 */
-#define USB_HS_PHYC_PLL_PLLSEL_3                 (0x2U << USB_HS_PHYC_PLL_PLLSEL_Pos) /*!< 0x00000008 */
+/********************  Bit definition for USBPHYC_PLL1 register  ********************/
+#define USB_HS_PHYC_PLL1_PLLEN_Pos                (0U)                          
+#define USB_HS_PHYC_PLL1_PLLEN_Msk                (0x1U << USB_HS_PHYC_PLL1_PLLEN_Pos) /*!< 0x00000001 */
+#define USB_HS_PHYC_PLL1_PLLEN                    USB_HS_PHYC_PLL1_PLLEN_Msk     /*!< Enable PLL */
+#define USB_HS_PHYC_PLL1_PLLSEL_Pos               (1U)                          
+#define USB_HS_PHYC_PLL1_PLLSEL_Msk               (0x7U << USB_HS_PHYC_PLL1_PLLSEL_Pos) /*!< 0x0000000E */
+#define USB_HS_PHYC_PLL1_PLLSEL                   USB_HS_PHYC_PLL1_PLLSEL_Msk    /*!< Controls PHY frequency operation selection */
+#define USB_HS_PHYC_PLL1_PLLSEL_1                 (0x1U << USB_HS_PHYC_PLL1_PLLSEL_Pos) /*!< 0x00000002 */
+#define USB_HS_PHYC_PLL1_PLLSEL_2                 (0x2U << USB_HS_PHYC_PLL1_PLLSEL_Pos) /*!< 0x00000004 */
+#define USB_HS_PHYC_PLL1_PLLSEL_3                 (0x4U << USB_HS_PHYC_PLL1_PLLSEL_Pos) /*!< 0x00000008 */
+
+#define USB_HS_PHYC_PLL1_PLLSEL_12MHZ             0x00000000U                                                       /*!< PHY PLL1 input clock frequency 12 MHz   */
+#define USB_HS_PHYC_PLL1_PLLSEL_12_5MHZ           USB_HS_PHYC_PLL1_PLLSEL_1                                         /*!< PHY PLL1 input clock frequency 12.5 MHz */
+#define USB_HS_PHYC_PLL1_PLLSEL_16MHZ             (uint32_t)(USB_HS_PHYC_PLL1_PLLSEL_1 | USB_HS_PHYC_PLL1_PLLSEL_2) /*!< PHY PLL1 input clock frequency 16 MHz   */
+#define USB_HS_PHYC_PLL1_PLLSEL_24MHZ             USB_HS_PHYC_PLL1_PLLSEL_3                                         /*!< PHY PLL1 input clock frequency 24 MHz   */
+#define USB_HS_PHYC_PLL1_PLLSEL_25MHZ             (uint32_t)(USB_HS_PHYC_PLL1_PLLSEL_2 | USB_HS_PHYC_PLL1_PLLSEL_3) /*!< PHY PLL1 input clock frequency 25 MHz   */
 
 /********************  Bit definition for USBPHYC_LDO register  ********************/
 #define USB_HS_PHYC_LDO_USED_Pos                 (0U)                          
@@ -14875,9 +14881,24 @@ typedef struct
 #define USB_HS_PHYC_LDO_STATUS_Pos               (1U)                          
 #define USB_HS_PHYC_LDO_STATUS_Msk               (0x1U << USB_HS_PHYC_LDO_STATUS_Pos) /*!< 0x00000002 */
 #define USB_HS_PHYC_LDO_STATUS                   USB_HS_PHYC_LDO_STATUS_Msk    /*!< Monitors the status of the PHY's LDO.        */
-#define USB_HS_PHYC_LDO_ENABLE_Pos               (2U)                          
-#define USB_HS_PHYC_LDO_ENABLE_Msk               (0x1U << USB_HS_PHYC_LDO_ENABLE_Pos) /*!< 0x00000004 */
-#define USB_HS_PHYC_LDO_ENABLE                   USB_HS_PHYC_LDO_ENABLE_Msk    /*!< Controls disable of the High Speed PHY's LDO */
+#define USB_HS_PHYC_LDO_DISABLE_Pos              (2U)                          
+#define USB_HS_PHYC_LDO_DISABLE_Msk              (0x1U << USB_HS_PHYC_LDO_DISABLE_Pos) /*!< 0x00000004 */
+#define USB_HS_PHYC_LDO_DISABLE                  USB_HS_PHYC_LDO_DISABLE_Msk    /*!< Controls disable of the High Speed PHY's LDO */
+
+/* Legacy */
+#define USB_HS_PHYC_PLL_PLLEN_Pos               USB_HS_PHYC_PLL1_PLLEN_Pos 
+#define USB_HS_PHYC_PLL_PLLEN_Msk               USB_HS_PHYC_PLL1_PLLEN_Msk 
+#define USB_HS_PHYC_PLL_PLLEN                   USB_HS_PHYC_PLL1_PLLEN     
+#define USB_HS_PHYC_PLL_PLLSEL_Pos              USB_HS_PHYC_PLL1_PLLSEL_Pos
+#define USB_HS_PHYC_PLL_PLLSEL_Msk              USB_HS_PHYC_PLL1_PLLSEL_Msk
+#define USB_HS_PHYC_PLL_PLLSEL                  USB_HS_PHYC_PLL1_PLLSEL    
+#define USB_HS_PHYC_PLL_PLLSEL_1                USB_HS_PHYC_PLL1_PLLSEL_1  
+#define USB_HS_PHYC_PLL_PLLSEL_2                USB_HS_PHYC_PLL1_PLLSEL_2  
+#define USB_HS_PHYC_PLL_PLLSEL_3                USB_HS_PHYC_PLL1_PLLSEL_3
+
+#define USB_HS_PHYC_LDO_ENABLE_Pos               USB_HS_PHYC_LDO_DISABLE_Pos
+#define USB_HS_PHYC_LDO_ENABLE_Msk               USB_HS_PHYC_LDO_DISABLE_Msk
+#define USB_HS_PHYC_LDO_ENABLE                   USB_HS_PHYC_LDO_DISABLE
 
 
 

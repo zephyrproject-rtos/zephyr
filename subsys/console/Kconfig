@@ -4,18 +4,17 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menu "Console (pull-style)"
+menu "Console"
 
-config CONSOLE_PULL
-	bool
-	default n
-	prompt "Enable pull-style Console access"
+config CONSOLE_SUBSYS
+	bool "Console subsystem/support routines [EXPERIMENTAL]"
 	help
-	  Get data from console using getchar/getline calls
+	  Console subsystem and helper functions
 
-if CONSOLE_PULL
+if CONSOLE_SUBSYS
 choice
 	prompt "Console 'get' function selection"
+	optional
 
 config CONSOLE_GETCHAR
 	bool "Character by character input and output"
@@ -49,5 +48,5 @@ config CONSOLE_PUTCHAR_BUFSIZE
 
 endif # CONSOLE_GETCHAR
 
-endif # CONSOLE_PULL
+endif # CONSOLE_SUBSYS
 endmenu

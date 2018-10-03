@@ -1,7 +1,0 @@
-sample:
-  name: mbedTLS client
-tests:
-  test:
-    harness: net
-    tags: net crypto mbedtls
-    depends_on: netif

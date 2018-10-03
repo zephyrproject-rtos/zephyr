@@ -48,7 +48,7 @@ static u8_t discover_func(struct bt_conn *conn,
 
 	if (!attr) {
 		printk("Discover complete\n");
-		memset(params, 0, sizeof(*params));
+		(void)memset(params, 0, sizeof(*params));
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -124,28 +124,27 @@ static void connected(struct bt_conn *conn, u8_t conn_err)
 	}
 }
 
-static bool eir_found(u8_t type, const u8_t *data, u8_t data_len,
-		      void *user_data)
+static bool eir_found(struct bt_data *data, void *user_data)
 {
 	bt_addr_le_t *addr = user_data;
 	int i;
 
-	printk("[AD]: %u data_len %u\n", type, data_len);
+	printk("[AD]: %u data_len %u\n", data->type, data->data_len);
 
-	switch (type) {
+	switch (data->type) {
 	case BT_DATA_UUID16_SOME:
 	case BT_DATA_UUID16_ALL:
-		if (data_len % sizeof(u16_t) != 0) {
+		if (data->data_len % sizeof(u16_t) != 0) {
 			printk("AD malformed\n");
 			return true;
 		}
 
-		for (i = 0; i < data_len; i += sizeof(u16_t)) {
+		for (i = 0; i < data->data_len; i += sizeof(u16_t)) {
 			struct bt_uuid *uuid;
 			u16_t u16;
 			int err;
 
-			memcpy(&u16, &data[i], sizeof(u16));
+			memcpy(&u16, &data->data[i], sizeof(u16));
 			uuid = BT_UUID_DECLARE_16(sys_le16_to_cpu(u16));
 			if (bt_uuid_cmp(uuid, BT_UUID_HRS)) {
 				continue;
@@ -166,35 +165,6 @@ static bool eir_found(u8_t type, const u8_t *data, u8_t data_len,
 	return true;
 }
 
-static void ad_parse(struct net_buf_simple *ad,
-		     bool (*func)(u8_t type, const u8_t *data,
-				  u8_t data_len, void *user_data),
-		     void *user_data)
-{
-	while (ad->len > 1) {
-		u8_t len = net_buf_simple_pull_u8(ad);
-		u8_t type;
-
-		/* Check for early termination */
-		if (len == 0) {
-			return;
-		}
-
-		if (len > ad->len) {
-			printk("AD malformed\n");
-			return;
-		}
-
-		type = net_buf_simple_pull_u8(ad);
-
-		if (!func(type, ad->data, len - 1, user_data)) {
-			return;
-		}
-
-		net_buf_simple_pull(ad, len - 1);
-	}
-}
-
 static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
 			 struct net_buf_simple *ad)
 {
@@ -206,8 +176,7 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
 
 	/* We're only interested in connectable events */
 	if (type == BT_LE_ADV_IND || type == BT_LE_ADV_DIRECT_IND) {
-		/* TODO: Move this to a place it can be shared */
-		ad_parse(ad, eir_found, (void *)addr);
+		bt_data_parse(ad, eir_found, (void *)addr);
 	}
 }
 

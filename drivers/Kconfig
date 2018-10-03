@@ -53,6 +53,8 @@ source "drivers/watchdog/Kconfig"
 
 source "drivers/clock_control/Kconfig"
 
+source "drivers/ptp_clock/Kconfig"
+
 source "drivers/ipm/Kconfig"
 
 source "drivers/aio/Kconfig"
@@ -78,5 +80,9 @@ source "drivers/wifi/Kconfig"
 source "drivers/led/Kconfig"
 
 source "drivers/can/Kconfig"
+
+source "drivers/modem/Kconfig"
+
+source "drivers/audio/Kconfig"
 
 endmenu

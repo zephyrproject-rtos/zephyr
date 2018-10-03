@@ -82,6 +82,10 @@ supports the following hardware features on the Cortex M4 Core:
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
+| PWM       | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
@@ -108,6 +112,12 @@ was tested with the following pinmux controller configuration.
 | SODIMM_135    | GPIO1_IO02      | LED0                      |
 +---------------+-----------------+---------------------------+
 | SODIMM_133    | GPIO2_IO26      | SW0                       |
++---------------+-----------------+---------------------------+
+| SODIMM_194    | I2C4_SDA        | I2C_SDA                   |
++---------------+-----------------+---------------------------+
+| SODIMM_196    | I2C4_SCL        | I2C_SCL                   |
++---------------+-----------------+---------------------------+
+| SODIMM_59     | PWM1/GPIO1_IO08 | PWM                       |
 +---------------+-----------------+---------------------------+
 
 System Clock
@@ -218,7 +228,7 @@ Debugging
 Download and install `J-Link Tools`_ and `NXP iMX7D Connect CortexM4.JLinkScript`_.
 
 To run Zephyr Binary using J-Link create the following script in order to
-get the Program Counter and Stack Pointer from zephry.bin.
+get the Program Counter and Stack Pointer from zephyr.bin.
 
 get-pc-sp.sh:
 .. code-block:: console

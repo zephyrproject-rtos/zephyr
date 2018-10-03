@@ -1,0 +1,25 @@
+#
+# Copyright (c) 2018, Phytec Messtechnik GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: APDS9960 Digital Proximity, Ambient Light, RGB and Gesture Sensor
+id: avago,apds9960
+version: 0.1
+
+description: >
+    This is a representation of the APDS9960 sensor
+
+inherits:
+    !include i2c-device.yaml
+
+properties:
+    compatible:
+      constraint: "avago,apds9960"
+
+    int-gpios:
+      type: compound
+      category: required
+      generation: define, use-prop-name
+...

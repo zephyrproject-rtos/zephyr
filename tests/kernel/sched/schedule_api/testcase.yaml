@@ -2,3 +2,7 @@ tests:
   kernel.sched:
     min_ram: 20
     tags: kernel threads sched
+  kernel.sched.native_posix:
+    extra_args: CONF_FILE=prj_native_posix.conf
+    platform_whitelist: native_posix
+    tags: kernel threads sched

@@ -142,7 +142,7 @@ typedef struct
   * @{
   */
 /** @brief Reset NOR handle state
-  * @param  __HANDLE__: specifies the NOR handle.
+  * @param  __HANDLE__ specifies the NOR handle.
   * @retval None
   */
 #define __HAL_NOR_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = HAL_NOR_STATE_RESET)
@@ -255,9 +255,9 @@ HAL_NOR_StatusTypeDef HAL_NOR_GetStatus(NOR_HandleTypeDef *hnor, uint32_t Addres
   */
 /**
   * @brief  NOR memory address shifting.
-  * @param  __NOR_ADDRESS: NOR base address 
-  * @param  __NOR_MEMORY_WIDTH_: NOR memory width
-  * @param  __ADDRESS__: NOR memory address 
+  * @param  __NOR_ADDRESS NOR base address 
+  * @param  __NOR_MEMORY_WIDTH_ NOR memory width
+  * @param  __ADDRESS__ NOR memory address 
   * @retval NOR shifted address value
   */
 #define NOR_ADDR_SHIFT(__NOR_ADDRESS, __NOR_MEMORY_WIDTH_, __ADDRESS__)       \
@@ -267,8 +267,8 @@ HAL_NOR_StatusTypeDef HAL_NOR_GetStatus(NOR_HandleTypeDef *hnor, uint32_t Addres
  
 /**
   * @brief  NOR memory write data to specified address.
-  * @param  __ADDRESS__: NOR memory address 
-  * @param  __DATA__: Data to write
+  * @param  __ADDRESS__ NOR memory address 
+  * @param  __DATA__ Data to write
   * @retval None
   */
 #define NOR_WRITE(__ADDRESS__, __DATA__)   do{                                                             \

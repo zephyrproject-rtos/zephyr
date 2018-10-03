@@ -70,16 +70,16 @@ void _timestamp_open(void)
 	/* minimum 3 clk delay is required before timer register access */
 	k_sleep(3 * TICKS_TO_MS);
 
-	_TIMESTAMP_CTRL = 0x0;  /* disable/reset timer */
-	_TIMESTAMP_CFG = 0x0;  /* 32-bit timer */
-	_TIMESTAMP_MODE = 0x2;  /* periodic mode */
-	_TIMESTAMP_LOAD = _TIMESTAMP_MAX; /* maximum interval
-					   * to reduce rollovers
-					   */
-	_TIMESTAMP_IMASK = 0x70F;  /* mask all timer interrupts */
-	_TIMESTAMP_ICLEAR = 0x70F;  /* clear all interrupt status */
+	_TIMESTAMP_CTRL = 0x0;                  /* disable/reset timer */
+	_TIMESTAMP_CFG = 0x0;                   /* 32-bit timer */
+	_TIMESTAMP_MODE = 0x2;                  /* periodic mode */
 
-	_TIMESTAMP_CTRL = 0x1;  /* enable timer */
+	/* maximum interval to reduce rollovers */
+	_TIMESTAMP_LOAD = _TIMESTAMP_MAX;
+	_TIMESTAMP_IMASK = 0x70F;               /* mask all timer interrupts */
+	_TIMESTAMP_ICLEAR = 0x70F;              /* clear all interrupt status */
+
+	_TIMESTAMP_CTRL = 0x1;                  /* enable timer */
 }
 
 /**
@@ -175,22 +175,23 @@ void _timestamp_open(void)
 	/* set 32 KHz RTC clk */
 	_SYSOPTCTRL2 |= _SYSOPTCTRL2_32KHZRTCCLK;
 
-	_TIMESTAMP_STATUS = 0x0;  /* disable counter */
-	_TIMESTAMP_CTRL = 0x100;  /* enable oscillator */
+	_TIMESTAMP_STATUS = 0x0;        /* disable counter */
+	_TIMESTAMP_CTRL = 0x100;        /* enable oscillator */
 
-	_TIMESTAMP_LOCK = 0xFF;  /* unlock registers */
-	_TIMESTAMP_PRESCALE = 0x0;  /* reset prescale value */
-	_TIMESTAMP_COMP = 0x0;  /* reset compensation values */
-	_TIMESTAMP_RACCESS = 0xFF;  /* allow register read access */
-	_TIMESTAMP_WACCESS = 0xFF;  /* allow register write access */
-	_TIMESTAMP_IMASK = 0x0;  /* mask all timer interrupts */
+	_TIMESTAMP_LOCK = 0xFF;         /* unlock registers */
+	_TIMESTAMP_PRESCALE = 0x0;      /* reset prescale value */
+	_TIMESTAMP_COMP = 0x0;          /* reset compensation values */
+	_TIMESTAMP_RACCESS = 0xFF;      /* allow register read access */
+	_TIMESTAMP_WACCESS = 0xFF;      /* allow register write access */
+	_TIMESTAMP_IMASK = 0x0;         /* mask all timer interrupts */
 
 	/* minimum 0.3 sec delay required for oscillator stabilization */
 	k_sleep(0.3 * MSEC_PER_SEC);
 
-	_TIMESTAMP_VAL = 0x0;  /* clear invalid time flag in status register */
+	/* clear invalid time flag in status register */
+	_TIMESTAMP_VAL = 0x0;
 
-	_TIMESTAMP_STATUS = 0x10;  /* enable counter */
+	_TIMESTAMP_STATUS = 0x10;       /* enable counter */
 }
 
 /**
@@ -215,9 +216,9 @@ u32_t _timestamp_read(void)
 		prescale2 = _TIMESTAMP_PRESCALE;
 	}
 
-	 /* handle prescale rollover @ 0x8000
-	  * for every other read (end of sleep)
-	  */
+	/* handle prescale rollover @ 0x8000
+	 * for every other read (end of sleep)
+	 */
 
 	if ((cnt % 2) && (prescale1 < last_prescale)) {
 		prescale1 += 0x8000;
@@ -239,8 +240,8 @@ u32_t _timestamp_read(void)
  */
 void _timestamp_close(void)
 {
-	_TIMESTAMP_STATUS = 0x0;  /* disable counter */
-	_TIMESTAMP_CTRL = 0x0;  /* disable oscillator */
+	_TIMESTAMP_STATUS = 0x0;        /* disable counter */
+	_TIMESTAMP_CTRL = 0x0;          /* disable oscillator */
 }
 
 #elif defined(CONFIG_SOC_FAMILY_SAM)

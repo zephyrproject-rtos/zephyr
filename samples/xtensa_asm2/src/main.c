@@ -258,7 +258,7 @@ int test_switch(void)
 
 	printk("%s\n", __func__);
 
-	memset(stack2, 0, sizeof(stack2));
+	(void)memset(stack2, 0, sizeof(stack2));
 
 	int *sp = xtensa_init_stack(&stack2[ARRAY_SIZE(stack2)],
 				    (void *)test_switch_bounce,

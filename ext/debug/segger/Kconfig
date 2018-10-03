@@ -6,11 +6,58 @@
 
 config HAS_SEGGER_RTT
 	bool
-	default n
+
+if HAS_SEGGER_RTT
 
 config SEGGER_SYSTEMVIEW
-	bool
-	prompt "Segger SystemView support"
-	default n
-	depends on HAS_SEGGER_RTT
+	bool "Segger SystemView support"
 	select RTT_CONSOLE
+	select THREAD_MONITOR
+	select THREAD_STACK_INFO
+	select TRACING
+
+config SEGGER_RTT_MAX_NUM_UP_BUFFERS
+	int "Maximum number of up-buffers"
+	default 3
+
+config SEGGER_RTT_MAX_NUM_DOWN_BUFFERS
+	int "Maximum number of down-buffers"
+	default 3
+
+config SEGGER_RTT_BUFFER_SIZE_UP
+	int "Size of the buffer for terminal output of target, up to host"
+	default 1024
+
+config SEGGER_RTT_BUFFER_SIZE_DOWN
+	int "Size of the buffer for terminal input of target, from host"
+	default 16
+
+config SEGGER_RTT_PRINTF_BUFFER_SIZE
+	int "Size of buffer for RTT printf to bulk-send chars via RTT"
+	default 64
+
+choice
+	prompt "Mode for pre-initialized terminal channel (buffer 0)"
+	default SEGGER_RTT_MODE_NO_BLOCK_SKIP
+
+config SEGGER_RTT_MODE_NO_BLOCK_SKIP
+	bool "Skip. Do not block, output nothing."
+
+config SEGGER_RTT_MODE_NO_BLOCK_TRIM
+	bool "Trim: Do not block, output as much as fits."
+
+config SEGGER_RTT_MODE_BLOCK_IF_FIFO_FULL
+	bool "Block: Wait until there is space in the buffer."
+
+endchoice
+
+config SEGGER_RTT_MODE
+	int 
+	default 2 if SEGGER_RTT_MODE_BLOCK_IF_FIFO_FULL
+	default 1 if SEGGER_RTT_MODE_NO_BLOCK_TRIM
+	default 0
+
+config SEGGER_RTT_MEMCPY_USE_BYTELOOP
+	bool "Use a simple byte-loop instead of standard memcpy"
+
+endif

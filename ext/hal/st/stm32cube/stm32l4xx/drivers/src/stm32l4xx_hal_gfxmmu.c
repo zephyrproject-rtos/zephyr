@@ -53,6 +53,50 @@
              HAL_NVIC_DisableIRQ().
       (#) De-initialize GFXMMU using the HAL_GFXMMU_DeInit() function.
 
+    *** Callback registration ***
+    =============================
+
+    The compilation define USE_HAL_GFXMMU_REGISTER_CALLBACKS when set to 1
+    allows the user to configure dynamically the driver callbacks.
+    Use functions @ref HAL_GFXMMU_RegisterCallback() to register a user callback.
+
+    Function @ref HAL_GFXMMU_RegisterCallback() allows to register following callbacks:
+      (+) ErrorCallback      : GFXMMU error.
+      (+) MspInitCallback    : GFXMMU MspInit.
+      (+) MspDeInitCallback  : GFXMMU MspDeInit.
+    This function takes as parameters the HAL peripheral handle, the callback ID
+    and a pointer to the user callback function.
+
+    Use function @ref HAL_GFXMMU_UnRegisterCallback() to reset a callback to the default
+    weak (surcharged) function.
+    @ref HAL_GFXMMU_UnRegisterCallback() takes as parameters the HAL peripheral handle,
+    and the callback ID.
+    This function allows to reset following callbacks:
+      (+) ErrorCallback      : GFXMMU error.
+      (+) MspInitCallback    : GFXMMU MspInit.
+      (+) MspDeInitCallback  : GFXMMU MspDeInit.
+
+    By default, after the @ref HAL_GFXMMU_Init and if the state is HAL_GFXMMU_STATE_RESET
+    all callbacks are reset to the corresponding legacy weak (surcharged) functions:
+    examples @ref HAL_GFXMMU_ErrorCallback().
+    Exception done for MspInit and MspDeInit callbacks that are respectively
+    reset to the legacy weak (surcharged) functions in the @ref HAL_GFXMMU_Init
+    and @ref  HAL_GFXMMU_DeInit only when these callbacks are null (not registered beforehand).
+    If not, MspInit or MspDeInit are not null, the @ref HAL_GFXMMU_Init and @ref HAL_GFXMMU_DeInit
+    keep and use the user MspInit/MspDeInit callbacks (registered beforehand).
+
+    Callbacks can be registered/unregistered in READY state only.
+    Exception done for MspInit/MspDeInit callbacks that can be registered/unregistered
+    in READY or RESET state, thus registered (user) MspInit/DeInit callbacks can be used
+    during the Init/DeInit.
+    In that case first register the MspInit/MspDeInit user callbacks
+    using @ref HAL_GFXMMU_RegisterCallback before calling @ref HAL_GFXMMU_DeInit
+    or @ref HAL_GFXMMU_Init function.
+
+    When the compilation define USE_HAL_GFXMMU_REGISTER_CALLBACKS is set to 0 or
+    not defined, the callback registering feature is not available
+    and weak (surcharged) callbacks are used.
+
   @endverbatim
   ******************************************************************************
   * @attention
@@ -150,8 +194,20 @@ HAL_StatusTypeDef HAL_GFXMMU_Init(GFXMMU_HandleTypeDef *hgfxmmu)
     assert_param(IS_GFXMMU_BUFFER_ADDRESS(hgfxmmu->Init.Buffers.Buf3Address));
     assert_param(IS_FUNCTIONAL_STATE(hgfxmmu->Init.Interrupts.Activation));
     
+#if (USE_HAL_GFXMMU_REGISTER_CALLBACKS == 1)
+    /* Reset callback pointers to the weak predefined callbacks */
+    hgfxmmu->ErrorCallback = HAL_GFXMMU_ErrorCallback;
+
+    /* Call GFXMMU MSP init function */
+    if(hgfxmmu->MspInitCallback == NULL)
+    {
+      hgfxmmu->MspInitCallback = HAL_GFXMMU_MspInit;
+    }
+    hgfxmmu->MspInitCallback(hgfxmmu);
+#else
     /* Call GFXMMU MSP init function */
     HAL_GFXMMU_MspInit(hgfxmmu);
+#endif
     
     /* Configure blocks per line and interrupts parameters on GFXMMU_CR register */
     hgfxmmu->Instance->CR &= ~(GFXMMU_CR_B0OIE | GFXMMU_CR_B1OIE | GFXMMU_CR_B2OIE | GFXMMU_CR_B3OIE |
@@ -206,7 +262,15 @@ HAL_StatusTypeDef HAL_GFXMMU_DeInit(GFXMMU_HandleTypeDef *hgfxmmu)
                                GFXMMU_CR_AMEIE);
     
     /* Call GFXMMU MSP de-init function */
+#if (USE_HAL_GFXMMU_REGISTER_CALLBACKS == 1)
+    if(hgfxmmu->MspDeInitCallback == NULL)
+    {
+      hgfxmmu->MspDeInitCallback = HAL_GFXMMU_MspDeInit;
+    }
+    hgfxmmu->MspDeInitCallback(hgfxmmu);
+#else
     HAL_GFXMMU_MspDeInit(hgfxmmu);
+#endif
     
     /* Set GFXMMU to reset state */
     hgfxmmu->State = HAL_GFXMMU_STATE_RESET;
@@ -244,6 +308,150 @@ __weak void HAL_GFXMMU_MspDeInit(GFXMMU_HandleTypeDef *hgfxmmu)
             the HAL_GFXMMU_MspDeInit could be implemented in the user file.
    */
 }
+
+#if (USE_HAL_GFXMMU_REGISTER_CALLBACKS == 1)
+/**
+  * @brief  Register a user GFXMMU callback
+  *         to be used instead of the weak predefined callback.
+  * @param  hgfxmmu GFXMMU handle.
+  * @param  CallbackID ID of the callback to be registered.
+  *         This parameter can be one of the following values:
+  *           @arg @ref HAL_GFXMMU_ERROR_CB_ID error callback ID.
+  *           @arg @ref HAL_GFXMMU_MSPINIT_CB_ID MSP init callback ID.
+  *           @arg @ref HAL_GFXMMU_MSPDEINIT_CB_ID MSP de-init callback ID.
+  * @param  pCallback pointer to the callback function.
+  * @retval HAL status.
+  */
+HAL_StatusTypeDef HAL_GFXMMU_RegisterCallback(GFXMMU_HandleTypeDef        *hgfxmmu,
+                                              HAL_GFXMMU_CallbackIDTypeDef CallbackID,
+                                              pGFXMMU_CallbackTypeDef      pCallback)
+{
+  HAL_StatusTypeDef status = HAL_OK;
+
+  if(pCallback == NULL)
+  {
+    /* update the error code */
+    hgfxmmu->ErrorCode |= GFXMMU_ERROR_INVALID_CALLBACK;
+    /* update return status */
+    status = HAL_ERROR;
+  }
+  else
+  {
+    if(HAL_GFXMMU_STATE_READY == hgfxmmu->State)
+    {
+      switch (CallbackID)
+      {
+      case HAL_GFXMMU_ERROR_CB_ID :
+        hgfxmmu->ErrorCallback = pCallback;
+        break;
+      case HAL_GFXMMU_MSPINIT_CB_ID :
+        hgfxmmu->MspInitCallback = pCallback;
+        break;
+      case HAL_GFXMMU_MSPDEINIT_CB_ID :
+        hgfxmmu->MspDeInitCallback = pCallback;
+        break;
+      default :
+        /* update the error code */
+        hgfxmmu->ErrorCode |= GFXMMU_ERROR_INVALID_CALLBACK;
+        /* update return status */
+        status = HAL_ERROR;
+        break;
+      }
+    }
+    else if(HAL_GFXMMU_STATE_RESET == hgfxmmu->State)
+    {
+      switch (CallbackID)
+      {
+      case HAL_GFXMMU_MSPINIT_CB_ID :
+        hgfxmmu->MspInitCallback = pCallback;
+        break;
+      case HAL_GFXMMU_MSPDEINIT_CB_ID :
+        hgfxmmu->MspDeInitCallback = pCallback;
+        break;
+      default :
+        /* update the error code */
+        hgfxmmu->ErrorCode |= GFXMMU_ERROR_INVALID_CALLBACK;
+        /* update return status */
+        status = HAL_ERROR;
+        break;
+      }
+    }
+    else
+    {
+      /* update the error code */
+      hgfxmmu->ErrorCode |= GFXMMU_ERROR_INVALID_CALLBACK;
+      /* update return status */
+      status = HAL_ERROR;
+    }
+  }
+  return status;
+}
+
+/**
+  * @brief  Unregister a user GFXMMU callback.
+  *         GFXMMU callback is redirected to the weak predefined callback.
+  * @param  hgfxmmu GFXMMU handle.
+  * @param  CallbackID ID of the callback to be unregistered.
+  *         This parameter can be one of the following values:
+  *           @arg @ref HAL_GFXMMU_ERROR_CB_ID error callback ID.
+  *           @arg @ref HAL_GFXMMU_MSPINIT_CB_ID MSP init callback ID.
+  *           @arg @ref HAL_GFXMMU_MSPDEINIT_CB_ID MSP de-init callback ID.
+  * @retval HAL status.
+  */
+HAL_StatusTypeDef HAL_GFXMMU_UnRegisterCallback(GFXMMU_HandleTypeDef        *hgfxmmu,
+                                                HAL_GFXMMU_CallbackIDTypeDef CallbackID)
+{
+  HAL_StatusTypeDef status = HAL_OK;
+
+  if(HAL_GFXMMU_STATE_READY == hgfxmmu->State)
+  {
+    switch (CallbackID)
+    {
+    case HAL_GFXMMU_ERROR_CB_ID :
+      hgfxmmu->ErrorCallback = HAL_GFXMMU_ErrorCallback;
+      break;
+    case HAL_GFXMMU_MSPINIT_CB_ID :
+      hgfxmmu->MspInitCallback = HAL_GFXMMU_MspInit;
+      break;
+    case HAL_GFXMMU_MSPDEINIT_CB_ID :
+      hgfxmmu->MspDeInitCallback = HAL_GFXMMU_MspDeInit;
+      break;
+    default :
+      /* update the error code */
+      hgfxmmu->ErrorCode |= GFXMMU_ERROR_INVALID_CALLBACK;
+      /* update return status */
+      status = HAL_ERROR;
+      break;
+    }
+  }
+  else if(HAL_GFXMMU_STATE_RESET == hgfxmmu->State)
+  {
+    switch (CallbackID)
+    {
+    case HAL_GFXMMU_MSPINIT_CB_ID :
+      hgfxmmu->MspInitCallback = HAL_GFXMMU_MspInit;
+      break;
+    case HAL_GFXMMU_MSPDEINIT_CB_ID :
+      hgfxmmu->MspDeInitCallback = HAL_GFXMMU_MspDeInit;
+      break;
+    default :
+      /* update the error code */
+      hgfxmmu->ErrorCode |= GFXMMU_ERROR_INVALID_CALLBACK;
+      /* update return status */
+      status = HAL_ERROR;
+      break;
+    }
+  }
+  else
+  {
+    /* update the error code */
+    hgfxmmu->ErrorCode |= GFXMMU_ERROR_INVALID_CALLBACK;
+    /* update return status */
+    status = HAL_ERROR;
+  }
+  return status;
+}
+#endif /* USE_HAL_GFXMMU_REGISTER_CALLBACKS */
 
 /**
   * @}
@@ -403,7 +611,7 @@ HAL_StatusTypeDef HAL_GFXMMU_ConfigLutLine(GFXMMU_HandleTypeDef *hgfxmmu, GFXMMU
       *((uint32_t *)lutxl_address) = (lutLine->LineStatus | 
                                      (lutLine->FirstVisibleBlock << GFXMMU_LUTXL_FVB_OFFSET) | 
                                      (lutLine->LastVisibleBlock << GFXMMU_LUTXL_LVB_OFFSET));
-      *((uint32_t *)lutxh_address) = lutLine->LineOffset;
+      *((uint32_t *)lutxh_address) = (uint32_t) lutLine->LineOffset;
     }
     else
     {
@@ -473,7 +681,11 @@ void HAL_GFXMMU_IRQHandler(GFXMMU_HandleTypeDef *hgfxmmu)
     hgfxmmu->ErrorCode |= error;
     
     /* Call GFXMMU error callback */
+#if (USE_HAL_GFXMMU_REGISTER_CALLBACKS == 1)
+    hgfxmmu->ErrorCallback(hgfxmmu);
+#else
     HAL_GFXMMU_ErrorCallback(hgfxmmu);
+#endif
   }
 }
 

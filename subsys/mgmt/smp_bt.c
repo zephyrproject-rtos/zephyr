@@ -23,6 +23,10 @@
 
 struct device;
 
+struct smp_bt_user_data {
+	struct bt_conn *conn;
+};
+
 static struct zephyr_smp_transport smp_bt_transport;
 
 /* SMP service.
@@ -47,14 +51,14 @@ static ssize_t smp_bt_chr_write(struct bt_conn *conn,
 				const void *buf, u16_t len, u16_t offset,
 				u8_t flags)
 {
-	const bt_addr_le_t *addr;
+	struct smp_bt_user_data *ud;
 	struct net_buf *nb;
 
 	nb = mcumgr_buf_alloc();
 	net_buf_add_mem(nb, buf, len);
 
-	addr = bt_conn_get_dst(conn);
-	memcpy(net_buf_user_data(nb), addr, sizeof(*addr));
+	ud = net_buf_user_data(nb);
+	ud->conn = bt_conn_ref(conn);
 
 	zephyr_smp_rx_req(&smp_bt_transport, nb);
 
@@ -89,16 +93,17 @@ static int smp_bt_tx_rsp(struct bt_conn *conn, const void *data, u16_t len)
 }
 
 /**
- * Extracts the peer address from a net_buf's user data and looks up the
- * corresponding conection.
+ * Extracts the Bluetooth connection from a net_buf's user data.
  */
 static struct bt_conn *smp_bt_conn_from_pkt(const struct net_buf *nb)
 {
-	bt_addr_le_t addr;
+	struct smp_bt_user_data *ud = net_buf_user_data(nb);
 
-	/* Cast away const. */
-	memcpy(&addr, net_buf_user_data((void *)nb), sizeof(addr));
-	return bt_conn_lookup_addr_le(&addr);
+	if (!ud->conn) {
+		return NULL;
+	}
+
+	return bt_conn_ref(ud->conn);
 }
 
 /**
@@ -122,6 +127,28 @@ static u16_t smp_bt_get_mtu(const struct net_buf *nb)
 	return mtu - 3;
 }
 
+static void smp_bt_ud_free(void *ud)
+{
+	struct smp_bt_user_data *user_data = ud;
+
+	if (user_data->conn) {
+		bt_conn_unref(user_data->conn);
+		user_data->conn = NULL;
+	}
+}
+
+static int smp_bt_ud_copy(struct net_buf *dst, const struct net_buf *src)
+{
+	struct smp_bt_user_data *src_ud = net_buf_user_data(src);
+	struct smp_bt_user_data *dst_ud = net_buf_user_data(dst);
+
+	if (src_ud->conn) {
+		dst_ud->conn = bt_conn_ref(src_ud->conn);
+	}
+
+	return 0;
+}
+
 /**
  * Transmits the specified SMP response.
  */
@@ -138,6 +165,7 @@ static int smp_bt_tx_pkt(struct zephyr_smp_transport *zst, struct net_buf *nb)
 		bt_conn_unref(conn);
 	}
 
+	smp_bt_ud_free(net_buf_user_data(nb));
 	mcumgr_buf_free(nb);
 
 	return rc;
@@ -153,7 +181,8 @@ static int smp_bt_init(struct device *dev)
 	ARG_UNUSED(dev);
 
 	zephyr_smp_transport_init(&smp_bt_transport, smp_bt_tx_pkt,
-				  smp_bt_get_mtu);
+				  smp_bt_get_mtu, smp_bt_ud_copy,
+				  smp_bt_ud_free);
 	return 0;
 }
 

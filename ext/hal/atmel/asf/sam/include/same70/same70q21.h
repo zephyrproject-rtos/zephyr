@@ -155,7 +155,10 @@ typedef enum IRQn
   RSWDT_IRQn                = 63 , /**< 63  SAME70Q21 Reinforced Safety Watchdog Timer (RSWDT) */
   SDRAMC_IRQn               = 62 , /**< 62  SAME70Q21 SDRAM Controller (SDRAMC) */
 
-  PERIPH_COUNT_IRQn        = 64  /**< Number of peripheral IDs */
+  GMACQ1_IRQn               = 66 , /**< 66  SAME70Q21 Priority Queue 1 (GMAC) */
+  GMACQ2_IRQn               = 67 , /**< 67  SAME70Q21 Priority Queue 2 (GMAC) */
+
+  PERIPH_COUNT_IRQn                /**< Number of peripheral IDs */
 } IRQn_Type;
 #endif /* !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
 

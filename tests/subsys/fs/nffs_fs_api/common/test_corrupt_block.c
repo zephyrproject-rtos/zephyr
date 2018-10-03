@@ -36,9 +36,9 @@ void test_corrupt_block(void)
 	struct fs_file_t fs_file;
 	struct nffs_file *file;
 	struct nffs_block block;
-	u32_t flash_offset;
-	u32_t area_offset;
-	u8_t area_idx;
+	uint32_t flash_offset;
+	uint32_t area_offset;
+	uint8_t area_idx;
 	u8_t off;    /* offset to corrupt */
 	int rc;
 	struct nffs_disk_block ndb;

@@ -9,7 +9,6 @@ menuconfig UART_GECKO
 	bool "Gecko uart driver"
 	depends on HAS_SILABS_GECKO
 	depends on GPIO_GECKO
-	default n
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	help
@@ -19,7 +18,6 @@ if UART_GECKO
 
 menuconfig UART_GECKO_0
 	bool "UART 0"
-	default n
 	help
 	  Enable UART 0.
 
@@ -36,7 +34,6 @@ endif # UART_GECKO_0
 
 menuconfig UART_GECKO_1
 	bool "UART 1"
-	default n
 	help
 	  Enable UART 1.
 
@@ -50,5 +47,37 @@ config UART_GECKO_1_GPIO_LOC
 	  The GPIO pins to use.
 
 endif # UART_GECKO_1
+
+menuconfig USART_GECKO_0
+	bool "USART 0"
+	help
+	  Enable USART 0.
+
+if USART_GECKO_0
+
+config USART_GECKO_0_GPIO_LOC
+	int "Pin Locations"
+	range 0 3
+	depends on UART_GECKO
+	help
+	  The GPIO pins to use.
+
+endif # USART_GECKO_0
+
+menuconfig USART_GECKO_1
+	bool "USART 1"
+	help
+	  Enable USART 1.
+
+if USART_GECKO_1
+
+config USART_GECKO_1_GPIO_LOC
+	int "Pin Locations"
+	range 0 3
+	depends on UART_GECKO
+	help
+	  The GPIO pins to use.
+
+endif # USART_GECKO_1
 
 endif # UART_GECKO

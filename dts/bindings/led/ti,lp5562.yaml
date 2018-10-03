@@ -1,0 +1,17 @@
+---
+title: TI LP5562 LED Driver
+id: ti,lp5562
+version: 0.1
+
+description: TI LP5562 LED binding
+
+inherits:
+    !include i2c-device.yaml
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "ti,lp5562"
+...

@@ -19,24 +19,31 @@ static K_THREAD_STACK_ARRAY_DEFINE(tstack, NUM_THREAD, STACK_SIZE);
 K_SEM_DEFINE(sema, 0, NUM_THREAD);
 /*elapsed_slice taken by last thread*/
 static s64_t elapsed_slice;
-/*expected elapsed duration*/
-static s64_t expected_slice[NUM_THREAD] = {
-	HALF_SLICE_SIZE,        /* the ztest native thread taking a half timeslice*/
-	SLICE_SIZE,             /* the spawned thread taking a full timeslice, reset*/
-	SLICE_SIZE              /* the spawned thread taking a full timeslice, reset*/
-};
 static int thread_idx;
 
 static void thread_tslice(void *p1, void *p2, void *p3)
 {
 	s64_t t = k_uptime_delta(&elapsed_slice);
+	s64_t expected_slice_min, expected_slice_max;
+
+	if (thread_idx == 0) {
+		/*thread number 0 releases CPU after HALF_SLICE_SIZE*/
+		expected_slice_min = HALF_SLICE_SIZE;
+		expected_slice_max = HALF_SLICE_SIZE;
+	} else {
+		/*other threads are sliced with tick granulity*/
+		expected_slice_min = __ticks_to_ms(_ms_to_ticks(SLICE_SIZE));
+		expected_slice_max = __ticks_to_ms(_ms_to_ticks(SLICE_SIZE)+1);
+	}
 
 	#ifdef CONFIG_DEBUG
-	TC_PRINT("thread[%d] elapsed slice %lld, ", thread_idx, t);
-	TC_PRINT("expected %lld\n", expected_slice[thread_idx]);
+	TC_PRINT("thread[%d] elapsed slice: %lld, expected: <%lld, %lld>\n",
+		thread_idx, t, expected_slice_min, expected_slice_max);
 	#endif
+
 	/** TESTPOINT: timeslice should be reset for each preemptive thread*/
-	zassert_true(t <= expected_slice[thread_idx], NULL);
+	zassert_true(t >= expected_slice_min, NULL);
+	zassert_true(t <= expected_slice_max, NULL);
 	thread_idx = (thread_idx + 1) % NUM_THREAD;
 
 	u32_t t32 = k_uptime_get_32();
@@ -65,6 +72,8 @@ static void thread_tslice(void *p1, void *p2, void *p3)
  *
  * @see k_sched_time_slice_set(), k_sem_reset(), k_uptime_delta(),
  * k_uptime_get_32()
+ *
+ * @ingroup kernel_sched_tests
  */
 void test_slice_reset(void)
 {

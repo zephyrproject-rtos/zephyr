@@ -7,21 +7,17 @@
 #
 
 menuconfig ETH_DW
-	bool
-	prompt "Synopsys DesignWare Ethernet driver"
+	bool "Synopsys DesignWare Ethernet driver"
 	depends on NET_L2_ETHERNET
-	default n
 	help
 	  Enable Synopsys DesignWare Ethernet driver.
 
 if ETH_DW
 config ETH_DW_SHARED_IRQ
 	bool
-	default n
 
 config ETH_DW_0
 	bool "Synopsys DesignWare Ethernet port 0"
-	default n
 	help
 	 Include port 0 driver
 

@@ -6,9 +6,7 @@
 #
 
 menuconfig SYS_POWER_MANAGEMENT
-	bool
-	prompt "Power management"
-	default n
+	bool "Power management"
 	help
 	  This option enables the board to implement extra power management
 	  policies whenever the kernel becomes idle. The kernel informs the
@@ -16,10 +14,31 @@ menuconfig SYS_POWER_MANAGEMENT
 	  timer is due to expire.
 
 if SYS_POWER_MANAGEMENT
-config SYS_POWER_LOW_POWER_STATE
+choice POWER_MANAGEMENT_CONTROL
+	prompt "Power Management Control"
+	default PM_CONTROL_APP
+	help
+	  Select the Application managed or OS managed power saving
+	  mechanism.
+
+config PM_CONTROL_APP
 	bool
-	prompt "Low power state"
-	default n
+	prompt "Handled at Application level"
+	help
+	  This option enables the Application to handle all the Power
+	  Management flows for the platform.
+
+config PM_CONTROL_OS
+	bool
+	prompt "Handle at OS level"
+	help
+	  This option allows the OS to handle all the Power
+	  Management flows for the platform.
+
+endchoice # POWER_MANAGEMENT_CONTROL
+
+config SYS_POWER_LOW_POWER_STATE
+	bool "Low power state"
 	depends on SYS_POWER_LOW_POWER_STATE_SUPPORTED
 	help
 	  This option enables the kernel to interface with a power manager
@@ -29,9 +48,7 @@ config SYS_POWER_LOW_POWER_STATE
 	  saving most power.
 
 config SYS_POWER_DEEP_SLEEP
-	bool
-	prompt "Deep sleep state"
-	default n
+	bool "Deep sleep state"
 	depends on SYS_POWER_DEEP_SLEEP_SUPPORTED
 	help
 	  This option enables the kernel to interface with a power manager
@@ -43,9 +60,7 @@ config SYS_POWER_DEEP_SLEEP
 	  restoration of states that were saved at the time of suspend.
 
 config DEVICE_POWER_MANAGEMENT
-	bool
-	prompt "Device power management"
-	default n
+	bool "Device power management"
 	help
 	  This option enables the device power management interface.  The
 	  interface consists of hook functions implemented by device drivers
@@ -56,8 +71,7 @@ config DEVICE_POWER_MANAGEMENT
 	  may also save and restore states in these hook functions.
 
 config TICKLESS_IDLE
-	bool
-	prompt "Tickless idle"
+	bool "Tickless idle"
 	default y
 	help
 	  This option suppresses periodic system clock interrupts whenever the
@@ -66,8 +80,7 @@ config TICKLESS_IDLE
 	  service each tick as it occurs.
 
 config TICKLESS_IDLE_THRESH
-	int
-	prompt "Tickless idle threshold"
+	int "Tickless idle threshold"
 	default 3
 	depends on TICKLESS_IDLE
 	help
@@ -77,9 +90,7 @@ config TICKLESS_IDLE_THRESH
 	  for suppression to happen.
 
 config TICKLESS_KERNEL
-	bool
-	prompt "Tickless kernel"
-	default n
+	bool "Tickless kernel"
 	depends on TICKLESS_IDLE
 	help
 	  This option enables a fully event driven kernel. Periodic system
@@ -87,8 +98,7 @@ config TICKLESS_KERNEL
 	  requires Tickless Idle option to be enabled.
 
 config TICKLESS_KERNEL_TIME_UNIT_IN_MICRO_SECS
-	int
-	prompt "Tickless kernel time unit in micro seconds"
+	int "Tickless kernel time unit in micro seconds"
 	default 1000
 	depends on TICKLESS_KERNEL
 	help
@@ -100,9 +110,7 @@ config TICKLESS_KERNEL_TIME_UNIT_IN_MICRO_SECS
 	  system speed can support would cause scheduling errors.
 
 config BUSY_WAIT_USES_ALTERNATE_CLOCK
-	bool
-	prompt "Busy wait uses alternate clock in tickless kernel mode"
-	default n
+	bool "Busy wait uses alternate clock in tickless kernel mode"
 	help
 	  In tickless kernel mode, the system clock will be stopped when
 	  there are no timer events programmed. If the system clock is to

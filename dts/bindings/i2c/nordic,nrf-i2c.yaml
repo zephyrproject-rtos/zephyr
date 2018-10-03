@@ -1,0 +1,48 @@
+#
+# Copyright (c) 2018 Aapo Vienamo
+# Copyright (c) 2018 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: Nordic nRF Family I2C Master node
+id: nordic,nrf-i2c
+version: 0.1
+
+description: >
+    This is a representation of the Nordic nRF I2C node
+
+inherits:
+    !include i2c.yaml
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "nordic,nrf-i2c"
+
+    reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+    interrupts:
+      type: array
+      category: required
+      description: required interrupts
+      generation: define
+
+    sda-pin:
+      type: int
+      description: SDA pin
+      generation: define
+      category: required
+
+    scl-pin:
+      type: int
+      description: SCL pin
+      generation: define
+      category: required
+...

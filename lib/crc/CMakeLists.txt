@@ -1,1 +1,1 @@
-zephyr_sources(crc16_sw.c crc8_sw.c)
+zephyr_sources(crc32_sw.c crc16_sw.c crc8_sw.c)

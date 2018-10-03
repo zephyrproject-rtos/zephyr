@@ -34,8 +34,8 @@
   */ 
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __STM32L4xx_HAL_SD_EX_H
-#define __STM32L4xx_HAL_SD_EX_H
+#ifndef STM32L4xx_HAL_SD_EX_H
+#define STM32L4xx_HAL_SD_EX_H
 
 #ifdef __cplusplus
  extern "C" {
@@ -139,6 +139,6 @@ void HAL_SDEx_Write_DMADoubleBuffer1CpltCallback(SD_HandleTypeDef *hsd);
 #endif
 
 
-#endif /* __STM32L4xx_HAL_SDEx_H */ 
+#endif /* STM32L4xx_HAL_SDEx_H */ 
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

@@ -139,11 +139,6 @@ static int gpio_cc2650_config_pin(int pin, int flags)
 			iocfg_config |= CC2650_IOC_NEG_AND_POS_EDGE_DET;
 		}
 
-		if (flags & GPIO_INT_CLOCK_SYNC) {
-			/* Don't commit changes */
-			return -ENOTSUP;
-		}
-
 		if (flags & GPIO_INT_DEBOUNCE) {
 			iocfg_config |= CC2650_IOC_HYSTERESIS_ENABLED;
 		} else {

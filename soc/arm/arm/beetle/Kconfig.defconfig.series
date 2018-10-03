@@ -1,0 +1,24 @@
+# Kconfig - ARM LTD Beetle SoC configuration options
+
+#
+# Copyright (c) 2016 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_BEETLE
+
+source "soc/arm/arm/beetle/Kconfig.defconfig.beetle*"
+
+config SOC_SERIES
+	default "beetle"
+
+config NUM_IRQS
+	int
+	default 45
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 24000000
+
+endif # SOC_SERIES_BEETLE

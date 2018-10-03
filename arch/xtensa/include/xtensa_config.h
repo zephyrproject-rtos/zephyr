@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef XTENSA_CONFIG_H
-#define XTENSA_CONFIG_H
+#ifndef ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_CONFIG_H_
+#define ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_CONFIG_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -137,5 +137,5 @@ extern "C" {
 }
 #endif
 
-#endif /* XTENSA_CONFIG_H */
+#endif /* ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_CONFIG_H_ */
 

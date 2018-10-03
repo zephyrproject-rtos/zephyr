@@ -6,7 +6,7 @@ Origin:
    http://www.st.com/en/embedded-software/stm32cubel4.html
 
 Status:
-   version 1.10.0
+   version 1.12.0
 
 Purpose:
    ST Microelectronics official MCU package for STM32L4 series.
@@ -23,7 +23,7 @@ URL:
    http://www.st.com/en/embedded-software/stm32cubel4.html
 
 commit:
-   version 1.10.0
+   version 1.12.0
 
 Maintained-by:
    External
@@ -36,18 +36,6 @@ License Link:
 
 Patch List:
 
-   *Current implementation of LL_SPI_TransmitData16 on F3/F7/L4 family
-    generates following warning:
-    "warning: dereferencing type-punned pointer will break strict-aliasing
-    rules [-Wstrict-aliasing]"
-    Besides being forbidden by rule, this cast is not needed, as register is
-    16 bits wide. Modification has been tested on L4 SoC.
-    stm32yyxx_ll_spi.h being included in soc.h file, warning is generated
-    at each compiled object, this commit allows a clean build.
-    Impacted files:
-     drivers/include/stm32l4xx_ll_spi.h
-    ST Bug tracker ID: 13359
-
     * The STM32L4x2 SoCs need to control the isolation of the USB features
     from VDDUSB. This is done through the PWR_CR2 bit USV. The STM32L4 HAL
     in stm32l4xx_ll_pwr.h wrongly checks for the PWR_CR2_PVME1 bit, which
@@ -55,3 +43,14 @@ Patch List:
     Impacted files:
      ext/hal/st/stm32cube/stm32l4xx/drivers/include/stm32l4xx_ll_pwr.h
     ST Bug tracker ID: 47844
+
+
+   *Disable new CAN API and enable Legacy API
+     A new CAN API has been delivered on recent L4 stm32cube.
+     This new API breaks current CAN driver. Disable the new API and enable the
+     legacy API.
+     Disable related systematic warning message
+    Impacted files:
+     CMakeLists.txt
+     drivers/include/stm32l4xx_hal_conf.h
+     drivers/src/Legacy/stm32l4_hal_can.c

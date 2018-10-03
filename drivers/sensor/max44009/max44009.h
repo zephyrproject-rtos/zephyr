@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _SENSOR_MAX44009
-#define _SENSOR_MAX44009
+#ifndef ZEPHYR_DRIVERS_SENSOR_MAX44009_MAX44009_H_
+#define ZEPHYR_DRIVERS_SENSOR_MAX44009_MAX44009_H_
 
 #include <misc/util.h>
 

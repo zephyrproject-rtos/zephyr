@@ -5,7 +5,7 @@
  */
 
 /**
- * Bare-bones HW model sufficient to run some of the sample apps
+ * Reduced set of HW models sufficient to run some of the sample apps
  * and regression tests
  */
 
@@ -20,7 +20,7 @@
 #include "posix_arch_internal.h"
 
 
-static u64_t device_time; /* The actual time as known by the device */
+static u64_t simu_time; /* The actual time as known by the HW models */
 static u64_t end_of_time = NEVER; /* When will this device stop */
 
 /* List of HW model timers: */
@@ -80,21 +80,21 @@ void hwm_set_sig_handler(void)
 
 static void hwm_sleep_until_next_timer(void)
 {
-	if (next_timer_time >= device_time) { /* LCOV_EXCL_BR_LINE */
-		device_time = next_timer_time;
+	if (next_timer_time >= simu_time) { /* LCOV_EXCL_BR_LINE */
+		simu_time = next_timer_time;
 	} else {
 		/* LCOV_EXCL_START */
 		posix_print_warning("next_timer_time corrupted (%"PRIu64"<= %"
 				PRIu64", timer idx=%i)\n",
 				next_timer_time,
-				device_time,
+				simu_time,
 				next_timer_index);
 		/* LCOV_EXCL_STOP */
 	}
 
-	if (signaled_end || (device_time >= end_of_time)) {
-		posix_print_trace("\nStopped after %.3Lfs\n",
-				((long double)device_time)/1.0e6);
+	if (signaled_end || (simu_time > end_of_time)) {
+		posix_print_trace("\nStopped at %.3Lfs\n",
+				((long double)simu_time)/1.0e6);
 
 		posix_exit(0);
 	}
@@ -159,7 +159,7 @@ void hwm_set_end_of_time(u64_t new_end_of_time)
  */
 u64_t hwm_get_time(void)
 {
-	return device_time;
+	return simu_time;
 }
 
 u64_t posix_get_hw_cycle(void)

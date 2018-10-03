@@ -5,7 +5,6 @@
 menuconfig GPIO_CC2650
 	bool "TI CC2650 GPIO driver"
 	depends on GPIO && SOC_SERIES_CC2650
-	default n
 	help
 	  Enable the GPIO driver on boards equipped with TI CC2650.
 
@@ -14,13 +13,11 @@ if GPIO_CC2650
 # A single block of GPIO exist.
 
 config GPIO_CC2650_NAME
-	string
+	string "GPIO driver name."
 	default "GPIO_0"
-	prompt "GPIO driver name."
 
 config GPIO_CC2650_INIT_PRIO
-	int
+	int "GPIO driver initialization priority."
 	default 40
-	prompt "GPIO driver initialization priority."
 
 endif # GPIO_CC2650

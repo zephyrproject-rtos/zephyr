@@ -875,6 +875,10 @@ void        LL_COMP_StructInit(LL_COMP_InitTypeDef *COMP_InitStruct);
   * @}
   */
 
+/**
+  * @}
+  */
+
 #endif /* COMP1 || COMP2 */
 
 /**

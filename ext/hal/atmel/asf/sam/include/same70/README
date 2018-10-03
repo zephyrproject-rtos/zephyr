@@ -1,0 +1,52 @@
+Atmel SAM E70
+#############
+
+Origin:
+   Microchip Packs Repository
+   http://packs.download.atmel.com/
+
+   Atmel SAME70 Series Device Support (2.0.78)
+   http://packs.download.atmel.com/Atmel.SAME70_DFP.2.0.78.atpack
+
+Status:
+   version 2.0.78
+
+Purpose:
+   Official package for SAM E70.
+
+Description:
+   Atmel Software Framework (ASF) provides a set of low-level
+   header files that give access to different hardware
+   peripherals of Atmel's ICs.
+
+URL:
+   http://packs.download.atmel.com/
+   http://packs.download.atmel.com/Atmel.SAME70_DFP.2.0.78.atpack
+
+commit:
+  n/a
+
+Maintained-by:
+   External
+
+License:
+   Apache-2.0
+
+License Link:
+   https://www.apache.org/licenses/LICENSE-2.0
+
+Patch Lst:
+   * Add missing header files symbols for Atmel SAM E70
+      Several missing symbols for same70q21 SoC are added:
+      - TC Channel Mode Register: Waveform Mode definitions
+      - Legacy peripheral IDs definitions
+      - DACC alternate pin functions
+
+    * Remove unused and broken preprocessor macros
+       Header files from Atmel ASF define several preprocessor macros
+       which are unused and break compilation with some toolchains.
+       This patch removes those macros. Currently only from same70q21.h
+       header file which is used by SAM E70 Xplained target board.
+
+    * Add missing interrupt number definitions
+       Adds missing interrupt definitions for SAM GMAC Priority Queues.

@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdbool.h>
+
 #if defined(CONFIG_SOC_FAMILY_NRF)
 #include "hal/nrf5/ticker.h"
 #endif /* CONFIG_SOC_FAMILY_NRF */

@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <st/stm32f103Xe.dtsi>
+#include <st/f1/stm32f103Xe.dtsi>
 
 / {
 	model = "STM32 MINI A15 board";

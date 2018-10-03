@@ -63,7 +63,7 @@ static inline struct net_nbr *get_nbr(struct net_nbr *start, int idx)
 {
 	NET_ASSERT(idx < CONFIG_NET_IPV6_MAX_NEIGHBORS);
 
-	return (struct net_nbr *)((void *)start +
+	return (struct net_nbr *)((u8_t *)start +
 			((sizeof(struct net_nbr) +
 			  start->size + start->extra_data_size) * idx));
 }
@@ -148,8 +148,8 @@ int net_nbr_unlink(struct net_nbr *nbr, struct net_linkaddr *lladdr)
 	net_neighbor_lladdr[nbr->idx].ref--;
 
 	if (!net_neighbor_lladdr[nbr->idx].ref) {
-		memset(net_neighbor_lladdr[nbr->idx].lladdr.addr, 0,
-		       sizeof(net_neighbor_lladdr[nbr->idx].lladdr.addr));
+		(void)memset(net_neighbor_lladdr[nbr->idx].lladdr.addr, 0,
+			     sizeof(net_neighbor_lladdr[nbr->idx].lladdr.addr));
 	}
 
 	nbr->idx = NET_NBR_LLADDR_UNKNOWN;

@@ -1,0 +1,7 @@
+identifier: stm32f746g_disco
+name: STM32F746GDISCOVERY
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb

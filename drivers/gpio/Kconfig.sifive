@@ -1,0 +1,150 @@
+# Kconfig.fe310 - SiFive Freedom GPIO configuration option
+#
+# Copyright (c) 2017 Jean-Paul Etienne <fractalclone@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig GPIO_SIFIVE
+	bool "SiFive Freedom Processor GPIO driver"
+	depends on GPIO && SOC_RISCV32_SIFIVE_FREEDOM
+	help
+	  Enable driver for the SiFive Freedom GPIO controller.
+
+	  Says n if not sure.
+
+if GPIO_SIFIVE
+
+config GPIO_SIFIVE_GPIO_NAME
+	string "GPIO driver name"
+	default "gpio0"
+
+config GPIO_SIFIVE_0_PRIORITY
+	int "GPIO 0 interrupt priority"
+	default 1
+
+config GPIO_SIFIVE_1_PRIORITY
+	int "GPIO 1 interrupt priority"
+	default 1
+
+config GPIO_SIFIVE_2_PRIORITY
+	int "GPIO 2 interrupt priority"
+	default 1
+
+config GPIO_SIFIVE_3_PRIORITY
+	int "GPIO 3 interrupt priority"
+	default 1
+
+config GPIO_SIFIVE_4_PRIORITY
+	int "GPIO 4 interrupt priority"
+	default 1
+
+config GPIO_SIFIVE_5_PRIORITY
+	int "GPIO 5 interrupt priority"
+	default 1
+
+config GPIO_SIFIVE_6_PRIORITY
+	int "GPIO 6 interrupt priority"
+	default 1
+
+config GPIO_SIFIVE_7_PRIORITY
+	int "GPIO 7 interrupt priority"
+	default 1
+
+config GPIO_SIFIVE_8_PRIORITY
+	int "GPIO 8 interrupt priority"
+	default 1
+
+config GPIO_SIFIVE_9_PRIORITY
+	int "GPIO 9 interrupt priority"
+	default 1
+
+config GPIO_SIFIVE_10_PRIORITY
+	int "GPIO 10 interrupt priority"
+	default 1
+
+config GPIO_SIFIVE_11_PRIORITY
+	int "GPIO 11 interrupt priority"
+	default 1
+
+config GPIO_SIFIVE_12_PRIORITY
+	int "GPIO 12 interrupt priority"
+	default 1
+
+config GPIO_SIFIVE_13_PRIORITY
+	int "GPIO 13 interrupt priority"
+	default 1
+
+config GPIO_SIFIVE_14_PRIORITY
+	int "GPIO 14 interrupt priority"
+	default 1
+
+config GPIO_SIFIVE_15_PRIORITY
+	int "GPIO 15 interrupt priority"
+	default 1
+
+config GPIO_SIFIVE_16_PRIORITY
+	int "GPIO 16 interrupt priority"
+	default 1
+
+config GPIO_SIFIVE_17_PRIORITY
+	int "GPIO 17 interrupt priority"
+	default 1
+
+config GPIO_SIFIVE_18_PRIORITY
+	int "GPIO 18 interrupt priority"
+	default 1
+
+config GPIO_SIFIVE_19_PRIORITY
+	int "GPIO 19 interrupt priority"
+	default 1
+
+config GPIO_SIFIVE_20_PRIORITY
+	int "GPIO 20 interrupt priority"
+	default 1
+
+config GPIO_SIFIVE_21_PRIORITY
+	int "GPIO 21 interrupt priority"
+	default 1
+
+config GPIO_SIFIVE_22_PRIORITY
+	int "GPIO 22 interrupt priority"
+	default 1
+
+config GPIO_SIFIVE_23_PRIORITY
+	int "GPIO 23 interrupt priority"
+	default 1
+
+config GPIO_SIFIVE_24_PRIORITY
+	int "GPIO 24 interrupt priority"
+	default 1
+
+config GPIO_SIFIVE_25_PRIORITY
+	int "GPIO 25 interrupt priority"
+	default 1
+
+config GPIO_SIFIVE_26_PRIORITY
+	int "GPIO 26 interrupt priority"
+	default 1
+
+config GPIO_SIFIVE_27_PRIORITY
+	int "GPIO 27 interrupt priority"
+	default 1
+
+config GPIO_SIFIVE_28_PRIORITY
+	int "GPIO 28 interrupt priority"
+	default 1
+
+config GPIO_SIFIVE_29_PRIORITY
+	int "GPIO 29 interrupt priority"
+	default 1
+
+config GPIO_SIFIVE_30_PRIORITY
+	int "GPIO 30 interrupt priority"
+	default 1
+
+config GPIO_SIFIVE_31_PRIORITY
+	int "GPIO 31 interrupt priority"
+	default 1
+
+endif # GPIO_SIFIVE

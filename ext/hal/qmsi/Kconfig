@@ -11,7 +11,6 @@ config HAS_QMSI
 
 menuconfig QMSI
 	bool "QMSI driver support"
-	default n
 	depends on HAS_QMSI
 	help
 	  automatically set when either of QMSI_LIBRARY or QMSI_BUILTIN
@@ -21,14 +20,12 @@ if HAS_QMSI
 
 config QMSI_BUILTIN
 	bool "Enable QMSI drivers through integrated sources"
-	default n
 	select QMSI
 	help
 	  Link with local QMSI sources instead of external library.
 
 config QMSI_LIBRARY
 	bool "Enable QMSI drivers using external library"
-	default n
 	select QMSI
 	help
 	  This option enables QMSI device drivers. These drivers are actually shim
@@ -43,12 +40,5 @@ config QMSI_INSTALL_PATH
 	  This option holds the path where the QMSI library and headers are
 	  installed. Make sure this option is properly set when QMSI_LIBRARY
 	  is enabled otherwise the build will fail.
-
-config SOC_WATCH
-	bool "Enable SoCWatch drivers and related instrumentation"
-	default n
-	depends on KERNEL_EVENT_LOGGER
-	help
-	  This option enables the SoCWatch driver and related instrumentation.
 
 endif

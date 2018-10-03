@@ -382,7 +382,7 @@ void LL_RTC_TIME_StructInit(LL_RTC_TimeTypeDef *RTC_TimeStruct)
   * @param  RTC_Format This parameter can be one of the following values:
   *         @arg @ref LL_RTC_FORMAT_BIN
   *         @arg @ref LL_RTC_FORMAT_BCD
-  * @param  RTC_DateStruct: pointer to a RTC_DateTypeDef structure that contains
+  * @param  RTC_DateStruct pointer to a RTC_DateTypeDef structure that contains
   *                         the date configuration information for the RTC.
   * @retval An ErrorStatus enumeration value:
   *          - SUCCESS: RTC Day register is configured

@@ -5,86 +5,79 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig CLOCK_CONTROL_NRF5
-	bool
-	prompt "NRF5 Clock controller support"
+	bool "NRF5 Clock controller support"
 	depends on SOC_FAMILY_NRF
-	default n
 	help
 	  Enable support for the Nordic Semiconductor nRF5x series SoC clock
 	  driver.
 
+if CLOCK_CONTROL_NRF5
+
 config CLOCK_CONTROL_NRF5_IRQ_PRIORITY
-	int
-	prompt "Power Clock Interrupt Priority"
-	depends on CLOCK_CONTROL_NRF5
+	int "Power Clock Interrupt Priority"
 	range 0 7
 	default 1
 	help
 	  The interrupt priority for Power Clock interrupt.
 
 config CLOCK_CONTROL_NRF5_M16SRC_DRV_NAME
-	string
-	prompt "NRF5 16MHz clock device name"
-	depends on CLOCK_CONTROL_NRF5
+	string "NRF5 16MHz clock device name"
 	default "clk_m16src"
 
 config CLOCK_CONTROL_NRF5_K32SRC_DRV_NAME
-	string
-	prompt "NRF5 32KHz clock device name"
-	depends on CLOCK_CONTROL_NRF5
+	string "NRF5 32KHz clock device name"
 	default "clk_k32src"
 
 choice
 	prompt "32KHz clock source"
 	default CLOCK_CONTROL_NRF5_K32SRC_XTAL
-	depends on CLOCK_CONTROL_NRF5
 
 config CLOCK_CONTROL_NRF5_K32SRC_RC
-	bool
-	prompt "RC Oscillator"
+	bool "RC Oscillator"
 
 config CLOCK_CONTROL_NRF5_K32SRC_XTAL
-	bool
-	prompt "Crystal Oscillator"
+	bool "Crystal Oscillator"
 
 endchoice
+
+config CLOCK_CONTROL_NRF5_K32SRC_BLOCKING
+	bool "Blocking 32KHz crystal oscillator startup"
+	depends on CLOCK_CONTROL_NRF5_K32SRC_XTAL
+	help
+	  Clock control driver will spin wait in CPU sleep until 32KHz
+	  crystal oscillator starts up. If not enabled, RC oscillator will
+	  initially start running and automatically switch to crystal when
+	  ready.
 
 choice
 	prompt "32KHz clock accuracy"
 	default CLOCK_CONTROL_NRF5_K32SRC_500PPM if CLOCK_CONTROL_NRF5_K32SRC_RC
 	default CLOCK_CONTROL_NRF5_K32SRC_20PPM
-	depends on CLOCK_CONTROL_NRF5
 
 config CLOCK_CONTROL_NRF5_K32SRC_500PPM
-	bool
-	prompt "251 ppm to 500 ppm"
+	bool "251 ppm to 500 ppm"
 
 config CLOCK_CONTROL_NRF5_K32SRC_250PPM
-	bool
-	prompt "151 ppm to 250 ppm"
+	bool "151 ppm to 250 ppm"
 
 config CLOCK_CONTROL_NRF5_K32SRC_150PPM
-	bool
-	prompt "101 ppm to 150 ppm"
+	bool "101 ppm to 150 ppm"
 
 config CLOCK_CONTROL_NRF5_K32SRC_100PPM
-	bool
-	prompt "76 ppm to 100 ppm"
+	bool "76 ppm to 100 ppm"
 
 config CLOCK_CONTROL_NRF5_K32SRC_75PPM
-	bool
-	prompt "51 ppm to 75 ppm"
+	bool "51 ppm to 75 ppm"
 
 config CLOCK_CONTROL_NRF5_K32SRC_50PPM
-	bool
-	prompt "31 ppm to 50 ppm"
+	bool "31 ppm to 50 ppm"
 
 config CLOCK_CONTROL_NRF5_K32SRC_30PPM
-	bool
-	prompt "21 ppm to 30 ppm"
+	bool "21 ppm to 30 ppm"
 
 config CLOCK_CONTROL_NRF5_K32SRC_20PPM
-	bool
-	prompt "0 ppm to 20 ppm"
+	bool "0 ppm to 20 ppm"
 
 endchoice
+
+endif # CLOCK_CONTROL_NRF5

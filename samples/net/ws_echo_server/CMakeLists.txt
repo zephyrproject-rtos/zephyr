@@ -1,3 +1,4 @@
+cmake_minimum_required(VERSION 3.8.2)
 include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
 project(NONE)
 
@@ -23,5 +24,3 @@ foreach(inc_file
 endforeach()
 
 generate_inc_file_for_target(app src/ws.js ${gen_dir}/ws.js.gz.inc --gzip)
-
-target_link_libraries_ifdef(CONFIG_MBEDTLS app mbedTLS)

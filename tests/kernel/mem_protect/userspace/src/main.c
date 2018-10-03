@@ -12,6 +12,8 @@
 #include <kernel_structs.h>
 #include <string.h>
 #include <stdlib.h>
+#include <app_memory/app_memdomain.h>
+#include <misc/util.h>
 
 #if defined(CONFIG_ARC)
 #include <arch/arc/v2/mpu/arc_core_mpu.h>
@@ -26,8 +28,24 @@ K_SEM_DEFINE(uthread_end_sem, 0, 1);
 K_SEM_DEFINE(test_revoke_sem, 0, 1);
 K_SEM_DEFINE(expect_fault_sem, 0, 1);
 
-static volatile bool give_uthread_end_sem;
-static volatile bool expect_fault;
+/*
+ * Create partitions. part0 is for all variables to run
+ * ztest and this test suite. part1 and part2 are for
+ * subsequent test specifically for this new implementation.
+ */
+FOR_EACH(appmem_partition, part0, part1, part2);
+
+/*
+ * Create memory domains. dom0 is for the ztest and this
+ * test suite, specifically. dom1 is for a specific test
+ * in this test suite.
+ */
+FOR_EACH(appmem_domain, dom0, dom1);
+
+_app_dmem(part0) static volatile bool give_uthread_end_sem;
+_app_dmem(part0) bool mem_access_check;
+
+_app_bmem(part0) static volatile bool expect_fault;
 
 #if defined(CONFIG_X86)
 #define REASON_HW_EXCEPTION _NANO_ERR_CPU_EXCEPTION
@@ -41,7 +59,7 @@ static volatile bool expect_fault;
 #else
 #error "Not implemented for this architecture"
 #endif
-static volatile unsigned int expected_reason;
+_app_bmem(part0) static volatile unsigned int expected_reason;
 
 /*
  * We need something that can act as a memory barrier
@@ -84,6 +102,11 @@ void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
 #endif
 }
 
+/**
+ * @brief Test to check if the thread is in user mode
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 static void is_usermode(void)
 {
 	/* Confirm that we are in fact running in user mode. */
@@ -92,6 +115,11 @@ static void is_usermode(void)
 	zassert_true(_is_user_context(), "thread left in kernel mode");
 }
 
+/**
+ * @brief Test to write to a control register
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 static void write_control(void)
 {
 	/* Try to write to a control register. */
@@ -116,9 +144,9 @@ static void write_control(void)
 		"msr CONTROL, %0;\n\t"
 		"mrs %0, CONTROL;\n\t"
 		: "=r" (msr_value)::
-		);
+	);
 	zassert_true((msr_value & 1),
-		      "Write to control register was successful");
+		     "Write to control register was successful");
 #elif defined(CONFIG_ARC)
 	unsigned int er_status;
 
@@ -126,16 +154,21 @@ static void write_control(void)
 	expected_reason = REASON_HW_EXCEPTION;
 	BARRIER();
 	/* _ARC_V2_ERSTATUS is privilege aux reg */
-	__asm__ volatile(
+	__asm__ volatile (
 		"lr %0, [0x402]\n"
 		: "=r" (er_status)::
-		);
+	);
 #else
 #error "Not implemented for this architecture"
 	zassert_unreachable("Write to control register did not fault");
 #endif
 }
 
+/**
+ * @brief Test to disable memory protection
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 static void disable_mmu_mpu(void)
 {
 	/* Try to disable memory protections. */
@@ -164,6 +197,11 @@ static void disable_mmu_mpu(void)
 	zassert_unreachable("Disable MMU/MPU did not fault");
 }
 
+/**
+ * @brief Test to read from kernel RAM
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 static void read_kernram(void)
 {
 	/* Try to read from kernel RAM. */
@@ -177,6 +215,11 @@ static void read_kernram(void)
 	zassert_unreachable("Read from kernel RAM did not fault");
 }
 
+/**
+ * @brief Test to write to kernel RAM
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 static void write_kernram(void)
 {
 	/* Try to write to kernel RAM. */
@@ -191,6 +234,11 @@ extern int _k_neg_eagain;
 
 #include <linker/linker-defs.h>
 
+/**
+ * @brief Test to write kernel RO
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 static void write_kernro(void)
 {
 	/* Try to write to kernel RO. */
@@ -206,6 +254,11 @@ static void write_kernro(void)
 	zassert_unreachable("Write to kernel RO did not fault");
 }
 
+/**
+ * @brief Test to write to kernel text section
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 static void write_kerntext(void)
 {
 	/* Try to write to kernel text. */
@@ -218,6 +271,11 @@ static void write_kerntext(void)
 
 __kernel static int kernel_data;
 
+/**
+ * @brief Testto read from kernel data section
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 static void read_kernel_data(void)
 {
 	/* Try to read from embedded kernel data. */
@@ -231,6 +289,11 @@ static void read_kernel_data(void)
 	zassert_unreachable("Read from __kernel data did not fault");
 }
 
+/**
+ * @brief Test to write to kernel data section
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 static void write_kernel_data(void)
 {
 	expect_fault = true;
@@ -243,17 +306,23 @@ static void write_kernel_data(void)
 /*
  * volatile to avoid compiler mischief.
  */
-volatile int *priv_stack_ptr;
+_app_dmem(part0) volatile int *priv_stack_ptr;
 #if defined(CONFIG_X86)
 /*
  * We can't inline this in the code or make it static
  * or local without triggering a warning on -Warray-bounds.
  */
-size_t size = MMU_PAGE_SIZE;
+_app_dmem(part0) size_t size = MMU_PAGE_SIZE;
 #elif defined(CONFIG_ARC)
-int32_t size = (0 - CONFIG_PRIVILEGED_STACK_SIZE - STACK_GUARD_SIZE);
+_app_dmem(part0) s32_t size = (0 - CONFIG_PRIVILEGED_STACK_SIZE -
+			       STACK_GUARD_SIZE);
 #endif
 
+/**
+ * @brief Test to read provileged stack
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 static void read_priv_stack(void)
 {
 	/* Try to read from privileged stack. */
@@ -275,6 +344,11 @@ static void read_priv_stack(void)
 	zassert_unreachable("Read from privileged stack did not fault");
 }
 
+/**
+ * @brief Test to write to privilege stack
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 static void write_priv_stack(void)
 {
 	/* Try to write to privileged stack. */
@@ -297,8 +371,13 @@ static void write_priv_stack(void)
 }
 
 
-static struct k_sem sem;
+_app_bmem(part0) static struct k_sem sem;
 
+/**
+ * @brief Test to pass a user object to system call
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 static void pass_user_object(void)
 {
 	/* Try to pass a user object to a system call. */
@@ -311,6 +390,11 @@ static void pass_user_object(void)
 
 __kernel static struct k_sem ksem;
 
+/**
+ * @brief Test to pass object to a system call without permissions
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 static void pass_noperms_object(void)
 {
 	/* Try to pass a object to a system call w/o permissions. */
@@ -324,13 +408,18 @@ static void pass_noperms_object(void)
 
 __kernel struct k_thread kthread_thread;
 
-#define STACKSIZE 512
+#define STACKSIZE 1024
 K_THREAD_STACK_DEFINE(kthread_stack, STACKSIZE);
 
 void thread_body(void)
 {
 }
 
+/**
+ * @brief Test to start kernel thread from usermode
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 static void start_kernel_thread(void)
 {
 	/* Try to start a kernel thread from a usermode thread */
@@ -357,10 +446,16 @@ static void uthread_body(void)
 	k_sem_take(&uthread_end_sem, K_FOREVER);
 }
 
+/**
+ * @brief Test to read from another thread's stack
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 static void read_other_stack(void)
 {
 	/* Try to read from another thread's stack. */
 	unsigned int *ptr;
+
 	k_thread_create(&uthread_thread, uthread_stack, STACKSIZE,
 			(k_thread_entry_t)uthread_body, NULL, NULL, NULL,
 			-1, K_USER | K_INHERIT_PERMS,
@@ -384,6 +479,11 @@ static void read_other_stack(void)
 	zassert_unreachable("Read from other thread stack did not fault");
 }
 
+/**
+ * @brief Test to write to other thread's stack
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 static void write_other_stack(void)
 {
 	/* Try to write to another thread's stack. */
@@ -412,6 +512,11 @@ static void write_other_stack(void)
 	zassert_unreachable("Write to other thread stack did not fault");
 }
 
+/**
+ * @brief Test to revoke acess to kobject without permission
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 static void revoke_noperms_object(void)
 {
 	/* Attempt to revoke access to kobject w/o permissions*/
@@ -421,9 +526,14 @@ static void revoke_noperms_object(void)
 	k_object_release(&ksem);
 
 	zassert_unreachable("Revoke access to unauthorized object "
-		"did not fault");
+			    "did not fault");
 }
 
+/**
+ * @brief Test to access object after revoking access
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 static void access_after_revoke(void)
 {
 	k_object_release(&test_revoke_sem);
@@ -439,7 +549,7 @@ static void access_after_revoke(void)
 
 static void umode_enter_func(void)
 {
-	if (_is_user_context())	{
+	if (_is_user_context()) {
 		/*
 		 * Have to explicitly call ztest_test_pass() because
 		 * k_thread_user_mode_enter() does not return.  We have
@@ -452,18 +562,28 @@ static void umode_enter_func(void)
 	}
 }
 
+/**
+ * @brief Test to check enter to usermode
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 static void user_mode_enter(void)
 {
 	expect_fault = false;
 	BARRIER();
 	k_thread_user_mode_enter((k_thread_entry_t)umode_enter_func,
-			NULL, NULL, NULL);
+				 NULL, NULL, NULL);
 }
 
 /* Define and initialize pipe. */
 K_PIPE_DEFINE(kpipe, PIPE_LEN, BYTES_TO_READ_WRITE);
-static size_t bytes_written_read;
+_app_bmem(part0) static size_t bytes_written_read;
 
+/**
+ * @brief Test to write to kobject using pipe
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 static void write_kobject_user_pipe(void)
 {
 	/*
@@ -474,12 +594,17 @@ static void write_kobject_user_pipe(void)
 	expected_reason = REASON_KERNEL_OOPS;
 	BARRIER();
 	k_pipe_get(&kpipe, &uthread_start_sem, BYTES_TO_READ_WRITE,
-		&bytes_written_read, 1,	K_NO_WAIT);
+		   &bytes_written_read, 1, K_NO_WAIT);
 
 	zassert_unreachable("System call memory write validation "
-		"did not fault");
+			    "did not fault");
 }
 
+/**
+ * @brief Test to read from kobject using pipe
+ *
+ * @ingroup kernel_memprotect_tests
+ */
 static void read_kobject_user_pipe(void)
 {
 	/*
@@ -490,11 +615,66 @@ static void read_kobject_user_pipe(void)
 	expected_reason = REASON_KERNEL_OOPS;
 	BARRIER();
 	k_pipe_put(&kpipe, &uthread_start_sem, BYTES_TO_READ_WRITE,
-		&bytes_written_read, 1, K_NO_WAIT);
+		   &bytes_written_read, 1, K_NO_WAIT);
 
 	zassert_unreachable("System call memory read validation "
-		"did not fault");
+			    "did not fault");
 }
+
+/* Removed test for access_non_app_memory
+ * due to the APPLICATION_MEMORY variable
+ * defaulting to y, when enabled the
+ * section app_bss is made available to
+ * all threads breaking the test
+ */
+
+/* Create bool in part1 partitions */
+_app_dmem(part1) bool thread_bool;
+
+static void shared_mem_thread(void)
+{
+	/*
+	 * Try to access thread_bool_1 in denied memory
+	 * domain.
+	 */
+	expect_fault = true;
+	expected_reason = REASON_HW_EXCEPTION;
+	BARRIER();
+	thread_bool = false;
+	zassert_unreachable("Thread accessed global in other "
+			    "memory domain\n");
+}
+
+/**
+ * @brief Test to access other memory domain
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+static void access_other_memdomain(void)
+{
+	/*
+	 * Following tests the ability for a thread to access data
+	 * in a domain that it is denied.
+	 */
+
+	/* initialize domain dom1 with partition part2 */
+	appmem_init_domain_dom1(part2);
+	/* add partition part0 for test globals */
+	appmem_add_part_dom1(part0);
+	/* remove current thread from domain dom0 */
+	appmem_rm_thread_dom0(k_current_get());
+	/* initialize domain with current thread*/
+	appmem_add_thread_dom1(k_current_get());
+
+	/* Create user mode thread */
+	k_thread_create(&uthread_thread, uthread_stack, STACKSIZE,
+			(k_thread_entry_t)shared_mem_thread, NULL,
+			NULL, NULL, -1, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+
+	k_thread_abort(k_current_get());
+
+}
+
 
 #if defined(CONFIG_ARM)
 extern u8_t *_k_priv_stack_find(void *obj);
@@ -503,8 +683,35 @@ extern k_thread_stack_t ztest_thread_stack[];
 
 void test_main(void)
 {
+	/* partitions must be initialized first */
+	FOR_EACH(appmem_init_part, part0, part1, part2);
+	/*
+	 * Next, the app_memory must be initialized in order to
+	 * calculate size of the dynamically created subsections.
+	 */
+#if defined(CONFIG_ARC)
+	/*
+	 * appmem_init_app_memory will accees all partitions
+	 * For CONFIG_ARC_MPU_VER == 3, these partiontons are not added
+	 * into MPU now, so need to disable mpu first to do app_bss_zero()
+	 */
+	arc_core_mpu_disable();
+	appmem_init_app_memory();
+	arc_core_mpu_enable();
+#else
+	appmem_init_app_memory();
+#endif
+	/* Domain is initialized with partition part0 */
+	appmem_init_domain_dom0(part0);
+	/* Next, the partition must be added to the domain */
+	appmem_add_part_dom0(part1);
+	/* Finally, the current thread is added to domain */
+	appmem_add_thread_dom0(k_current_get());
+
 #if defined(CONFIG_ARM)
-	priv_stack_ptr = (int *)_k_priv_stack_find(ztest_thread_stack);
+	priv_stack_ptr = (int *)_k_priv_stack_find(ztest_thread_stack) -
+		MPU_GUARD_ALIGN_AND_SIZE;
+
 #endif
 	k_thread_access_grant(k_current_get(),
 			      &kthread_thread, &kthread_stack,
@@ -533,7 +740,8 @@ void test_main(void)
 			 ztest_user_unit_test(access_after_revoke),
 			 ztest_unit_test(user_mode_enter),
 			 ztest_user_unit_test(write_kobject_user_pipe),
-			 ztest_user_unit_test(read_kobject_user_pipe)
-		);
+			 ztest_user_unit_test(read_kobject_user_pipe),
+			 ztest_unit_test(access_other_memdomain)
+			 );
 	ztest_run_test_suite(userspace);
 }

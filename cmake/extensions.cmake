@@ -428,7 +428,7 @@ macro(zephyr_library_named name)
 
   zephyr_append_cmake_library(${name})
 
-  target_link_libraries(${name} zephyr_interface)
+  target_link_libraries(${name} PUBLIC zephyr_interface)
 endmacro()
 
 
@@ -448,7 +448,7 @@ function(zephyr_library_include_directories)
 endfunction()
 
 function(zephyr_library_link_libraries item)
-  target_link_libraries(${ZEPHYR_CURRENT_LIBRARY} ${item} ${ARGN})
+  target_link_libraries(${ZEPHYR_CURRENT_LIBRARY} PUBLIC ${item} ${ARGN})
 endfunction()
 
 function(zephyr_library_compile_definitions item)
@@ -473,7 +473,7 @@ function(zephyr_library_compile_options item)
   add_library(           ${lib_name} INTERFACE)
   target_compile_options(${lib_name} INTERFACE ${item} ${ARGN})
 
-  target_link_libraries(${ZEPHYR_CURRENT_LIBRARY} ${lib_name})
+  target_link_libraries(${ZEPHYR_CURRENT_LIBRARY} PRIVATE ${lib_name})
 endfunction()
 
 function(zephyr_library_cc_option)
@@ -1091,10 +1091,11 @@ macro(assert_with_usage test comment)
   if(NOT ${test})
     message(${comment})
     message("see usage:")
+	string(REPLACE ";" " " BOARD_ROOT_SPACE_SEPARATED "${BOARD_ROOT}")
     execute_process(
       COMMAND
       ${CMAKE_COMMAND}
-      -DBOARD_ROOT=${BOARD_ROOT}
+      -DBOARD_ROOT_SPACE_SEPARATED=${BOARD_ROOT_SPACE_SEPARATED}
       -P ${ZEPHYR_BASE}/cmake/usage/usage.cmake
       )
     message(FATAL_ERROR "Invalid usage")

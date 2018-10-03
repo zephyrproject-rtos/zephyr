@@ -214,6 +214,25 @@ __STATIC_INLINE void nrf_ppi_channel_endpoint_setup(nrf_ppi_channel_t channel,
                                                     uint32_t          eep,
                                                     uint32_t          tep);
 
+/**
+ * @brief Function for setting up the event endpoint for a given PPI channel.
+ *
+ * @param[in] eep Event register address.
+ * @param[in] channel Channel to which the given endpoint is assigned.
+ */
+__STATIC_INLINE void nrf_ppi_event_endpoint_setup(nrf_ppi_channel_t channel,
+                                                  uint32_t          eep);
+
+/**
+ * @brief Function for setting up the task endpoint for a given PPI channel.
+ *
+ * @param[in] tep Task register address.
+ * @param[in] channel Channel to which the given endpoint is assigned.
+ */
+__STATIC_INLINE void nrf_ppi_task_endpoint_setup(nrf_ppi_channel_t channel,
+                                                 uint32_t          tep);
+
+
 #if defined(PPI_FEATURE_FORKS_PRESENT) || defined(__NRFX_DOXYGEN__)
 /**
  * @brief Function for setting up task endpoint for a given PPI fork.
@@ -389,6 +408,18 @@ __STATIC_INLINE void nrf_ppi_channel_endpoint_setup(nrf_ppi_channel_t channel,
                                                     uint32_t          tep)
 {
     NRF_PPI->CH[(uint32_t) channel].EEP = eep;
+    NRF_PPI->CH[(uint32_t) channel].TEP = tep;
+}
+
+__STATIC_INLINE void nrf_ppi_event_endpoint_setup(nrf_ppi_channel_t channel,
+                                                  uint32_t          eep)
+{
+    NRF_PPI->CH[(uint32_t) channel].EEP = eep;
+}
+
+__STATIC_INLINE void nrf_ppi_task_endpoint_setup(nrf_ppi_channel_t channel,
+                                                 uint32_t          tep)
+{
     NRF_PPI->CH[(uint32_t) channel].TEP = tep;
 }
 

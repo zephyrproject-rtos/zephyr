@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <st/stm32l475.dtsi>
+#include <st/l4/stm32l475Xg.dtsi>
 
 / {
 	model = "STMicroelectronics B-L475E-IOT01Ax board";
@@ -19,11 +19,11 @@
 
 	leds {
 		compatible = "gpio-leds";
-		green_led_1: led@0 {
+		green_led_1: led_1 {
 			gpios = <&gpioa 5 GPIO_INT_ACTIVE_HIGH>;
 			label = "User LD1";
 		};
-		green_led_2: led@1 {
+		green_led_2: led_2 {
 			gpios = <&gpiob 14 GPIO_INT_ACTIVE_HIGH>;
 			label = "User LD2";
 		};
@@ -31,7 +31,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
-		user_button: button@0 {
+		user_button: button_0 {
 			label = "User";
 			gpios = <&gpioc 13 GPIO_INT_ACTIVE_LOW>;
 		};
@@ -113,7 +113,7 @@
 		reg = <0>;
 		reset-gpios = <&gpioa 8 0>;
 		irq-gpios = <&gpioe 6 0>;
-		spi-max-frequency = <8000000>;
+		spi-max-frequency = <2000000>;
 		label = "SPBTLE-RF";
 	};
 };
@@ -121,7 +121,7 @@
 &flash0 {
 	/*
 	 * For more information, see:
-	 * http://docs.zephyrproject.org/devices/dts/flash_partitions.html
+	 * http://docs.zephyrproject.org/latest/devices/dts/flash_partitions.html
 	 */
 	partitions {
 		compatible = "fixed-partitions";
@@ -162,4 +162,8 @@
 	pwm {
 		status = "ok";
 	};
+};
+
+&rtc {
+	status = "ok";
 };

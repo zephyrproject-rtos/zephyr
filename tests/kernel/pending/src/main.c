@@ -94,7 +94,7 @@ static inline void *my_lifo_get(struct k_lifo *lifo, s32_t timeout)
 static int increment_counter(void)
 {
 	int tmp;
-	int key = irq_lock();
+	unsigned int key = irq_lock();
 
 	tmp = ++counter;
 	irq_unlock(key);
@@ -270,6 +270,21 @@ void task_low(void)
 	lifo_tests(FOURTH_SECOND, &task_low_state, my_lifo_get, k_sem_take);
 }
 
+/**
+ * @brief Test pending
+ *
+ * @defgroup kernel_pending_tests Pending tests
+ *
+ * @ingroup all_tests
+ *
+ * @{
+ */
+
+/**
+ * @brief Test pending of workq, fifo and lifo
+ *
+ * @see k_sleep(), K_THREAD_DEFINE()
+ */
 void test_pending(void)
 {
 	/*
@@ -417,6 +432,9 @@ void test_pending(void)
 	k_sem_give(&end_test_sem);
 }
 
+/**
+ * @}
+ */
 void test_main(void)
 {
 	ztest_test_suite(pend,

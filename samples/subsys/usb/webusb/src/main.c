@@ -13,6 +13,9 @@
  * the browser at host.
  */
 
+#define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
+#include <logging/sys_log.h>
+
 #include <stdio.h>
 #include <string.h>
 #include <device.h>
@@ -20,24 +23,10 @@
 #include <zephyr.h>
 #include <misc/byteorder.h>
 #include <usb/usb_common.h>
+#include <usb/usb_device.h>
+#include <usb/bos.h>
+
 #include "webusb_serial.h"
-
-static volatile bool data_transmitted;
-static volatile bool data_arrived;
-static u8_t data_buf[64];
-
-struct usb_bos_capability_webusb {
-	u16_t bcdVersion;
-	u8_t bVendorCode;
-	u8_t iLandingPage;
-} __packed;
-
-struct usb_bos_capability_msos {
-	u32_t dwWindowsVersion;
-	u16_t wMSOSDescriptorSetTotalLength;
-	u8_t bMS_VendorCode;
-	u8_t bAltEnumCode;
-} __packed;
 
 /* Predefined response to control commands related to MS OS 2.0 descriptors */
 static const u8_t msos2_descriptor[] = {
@@ -65,26 +54,14 @@ static const u8_t msos2_descriptor[] = {
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-static struct webusb_bos_desc {
-	struct usb_bos_descriptor bos;
-	struct usb_bos_platform_descriptor platform_webusb;
-	struct usb_bos_capability_webusb capability_data_webusb;
-	struct usb_bos_platform_descriptor platform_msos;
-	struct usb_bos_capability_msos capability_data_msos;
-} __packed webusb_bos_descriptor = {
-	.bos = {
-		.bLength = sizeof(struct usb_bos_descriptor),
-		.bDescriptorType = USB_BINARY_OBJECT_STORE_DESC,
-		.wTotalLength = sizeof(struct usb_bos_descriptor)
-			+ sizeof(struct usb_bos_platform_descriptor)
-			+ sizeof(struct usb_bos_capability_webusb)
-			+ 0x1C,
-		.bNumDeviceCaps = 2,
-	},
+USB_DEVICE_BOS_DESC_DEFINE_CAP struct usb_bos_webusb_desc {
+	struct usb_bos_platform_descriptor platform;
+	struct usb_bos_capability_webusb cap;
+} __packed bos_cap_webusb = {
 	/* WebUSB Platform Capability Descriptor:
 	 * https://wicg.github.io/webusb/#webusb-platform-capability-descriptor
 	 */
-	.platform_webusb = {
+	.platform = {
 		.bLength = sizeof(struct usb_bos_platform_descriptor)
 			+ sizeof(struct usb_bos_capability_webusb),
 		.bDescriptorType = USB_DEVICE_CAPABILITY_DESC,
@@ -101,11 +78,17 @@ static struct webusb_bos_desc {
 			0xA0, 0x76, 0x88, 0x15, 0xB6, 0x65,
 		},
 	},
-	.capability_data_webusb = {
+	.cap = {
 		.bcdVersion = sys_cpu_to_le16(0x0100),
 		.bVendorCode = 0x01,
 		.iLandingPage = 0x01
-	},
+	}
+};
+
+USB_DEVICE_BOS_DESC_DEFINE_CAP struct usb_bos_msosv2_desc {
+	struct usb_bos_platform_descriptor platform;
+	struct usb_bos_capability_msos cap;
+} __packed bos_cap_msosv2 = {
 	/* Microsoft OS 2.0 Platform Capability Descriptor
 	 * See https://docs.microsoft.com/en-us/windows-hardware/drivers/usbcon/
 	 * microsoft-defined-usb-descriptors
@@ -113,7 +96,7 @@ static struct webusb_bos_desc {
 	 * https://github.com/sowbug/weblight/blob/master/firmware/webusb.c
 	 * (BSD-2) Thanks http://janaxelson.com/files/ms_os_20_descriptors.c
 	 */
-	.platform_msos = {
+	.platform = {
 		.bLength = sizeof(struct usb_bos_platform_descriptor)
 			+ sizeof(struct usb_bos_capability_msos),
 		.bDescriptorType = USB_DEVICE_CAPABILITY_DESC,
@@ -131,14 +114,14 @@ static struct webusb_bos_desc {
 			0x65, 0x9D, 0x9E, 0x64, 0x8A, 0x9F,
 		},
 	},
-	.capability_data_msos = {
+	.cap = {
 		/* Windows version (8.1) (0x06030000) */
 		.dwWindowsVersion = sys_cpu_to_le32(0x06030000),
 		.wMSOSDescriptorSetTotalLength =
 			sys_cpu_to_le16(sizeof(msos2_descriptor)),
 		.bMS_VendorCode = 0x02,
 		.bAltEnumCode = 0x00
-	}
+	},
 };
 
 /* WebUSB Device Requests */
@@ -173,12 +156,22 @@ static const u8_t webusb_origin_url[] = {
  * Please note that this code only defines "extended compat ID OS feature
  * descriptors" and not "extended properties OS features descriptors"
  */
-static const u8_t msos1_string_descriptor[] = {
-	0x12, /* Descriptor size (18 bytes) */
-	0x03, /* Descriptor type (string)   */
-	'M',  0x00, 'S',  0x00, 'F',  0x00, 'T',  0x00, '1',  0x00, '0',  0x00, '0', 0x00,
-	0x03, /* Vendor-assigned bMS_VendorCode, used for a control request */
-	0x00, /* Padding byte, so bMS_VendorCode looks UTF16-compliant. */
+#define MSOS_STRING_LENGTH	18
+static struct string_desc {
+	u8_t bLength;
+	u8_t bDescriptorType;
+	u8_t bString[MSOS_STRING_LENGTH];
+
+} __packed msos1_string_descriptor = {
+	.bLength = MSOS_STRING_LENGTH,
+	.bDescriptorType = USB_STRING_DESC,
+	/* Signature MSFT100 */
+	.bString = {
+		'M', 0x00, 'S', 0x00, 'F', 0x00, 'T', 0x00,
+		'1', 0x00, '0', 0x00, '0', 0x00,
+		0x03, /* Vendor Code, used for a control request */
+		0x00, /* Padding byte for VendorCode looks like UTF16 */
+	},
 };
 
 static const u8_t msos1_compatid_descriptor[] = {
@@ -213,13 +206,6 @@ static const u8_t msos1_compatid_descriptor[] = {
 int custom_handle_req(struct usb_setup_packet *pSetup,
 		      s32_t *len, u8_t **data)
 {
-	if (GET_DESC_TYPE(pSetup->wValue) == DESCRIPTOR_TYPE_BOS) {
-		*data = (u8_t *)(&webusb_bos_descriptor);
-		*len = sizeof(webusb_bos_descriptor);
-
-		return 0;
-	}
-
 	if (GET_DESC_TYPE(pSetup->wValue) == DESC_STRING &&
 	    GET_DESC_INDEX(pSetup->wValue) == 0xEE) {
 		*data = (u8_t *)(&msos1_string_descriptor);
@@ -282,45 +268,6 @@ int vendor_handle_req(struct usb_setup_packet *pSetup,
 	return -ENOTSUP;
 }
 
-static void interrupt_handler(struct device *dev)
-{
-	uart_irq_update(dev);
-
-	if (uart_irq_tx_ready(dev)) {
-		data_transmitted = true;
-	}
-
-	if (uart_irq_rx_ready(dev)) {
-		data_arrived = true;
-	}
-}
-
-static void write_data(struct device *dev, const u8_t *buf, int len)
-{
-	uart_irq_tx_enable(dev);
-
-	data_transmitted = false;
-	uart_fifo_fill(dev, buf, len);
-	while (data_transmitted == false)
-		;
-
-	uart_irq_tx_disable(dev);
-}
-
-static void read_and_echo_data(struct device *dev, int *bytes_read)
-{
-	while (data_arrived == false)
-		;
-
-	data_arrived = false;
-
-	/* Read all data and echo it back */
-	while ((*bytes_read = uart_fifo_read(dev,
-	    data_buf, sizeof(data_buf)))) {
-		write_data(dev, data_buf, *bytes_read);
-	}
-}
-
 /* Custom and Vendor request handlers */
 static struct webusb_req_handlers req_handlers = {
 	.custom_handler = custom_handle_req,
@@ -329,47 +276,13 @@ static struct webusb_req_handlers req_handlers = {
 
 void main(void)
 {
-	struct device *dev;
-	u32_t baudrate, dtr = 0;
-	int ret, bytes_read;
-
-	dev = device_get_binding(WEBUSB_SERIAL_PORT_NAME);
-	if (!dev) {
-		printf("WebUSB device not found\n");
-		return;
-	}
+	SYS_LOG_DBG("");
 
 	/* Set the custom and vendor request handlers */
 	webusb_register_request_handlers(&req_handlers);
 
-#ifdef CONFIG_UART_LINE_CTRL
-	printf("Wait for DTR\n");
-	while (1) {
-		uart_line_ctrl_get(dev, LINE_CTRL_DTR, &dtr);
-		if (dtr) {
-			break;
-		}
-	}
-	printf("DTR set, start test\n");
+	usb_bos_register_cap((void *)&bos_cap_webusb);
+	usb_bos_register_cap((void *)&bos_cap_msosv2);
 
-	/* Wait 1 sec for the host to do all settings */
-	k_busy_wait(1000000);
-
-	ret = uart_line_ctrl_get(dev, LINE_CTRL_BAUD_RATE, &baudrate);
-	if (ret) {
-		printf("Failed to get baudrate, ret code %d\n", ret);
-	} else {
-		printf("Baudrate detected: %d\n", baudrate);
-	}
-#endif
-
-	uart_irq_callback_set(dev, interrupt_handler);
-
-	/* Enable rx interrupts */
-	uart_irq_rx_enable(dev);
-
-	/* Echo the received data */
-	while (1) {
-		read_and_echo_data(dev, &bytes_read);
-	}
+	webusb_serial_init();
 }

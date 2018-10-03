@@ -22,6 +22,6 @@ struct getinfo{
 };
 
 /* global data */
-extern char data_recv[OCTET_TO_SIZEOFUNIT(MESSAGE_SIZE)];
+extern char data_recv[MESSAGE_SIZE];
 
 #endif /* _RECEIVER_H */

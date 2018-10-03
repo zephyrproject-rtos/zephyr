@@ -97,7 +97,7 @@ static int quark_se_ipm_send(struct device *d, int wait, u32_t id,
 	const struct quark_se_ipm_config_info *config = d->config->config_info;
 	volatile struct quark_se_ipm *ipm = config->ipm;
 	u32_t data32[4]; /* Until we change API to u32_t array */
-	int flags;
+	unsigned int flags;
 	int i;
 
 	if (id > QUARK_SE_IPM_MAX_ID_VAL) {

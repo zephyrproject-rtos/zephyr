@@ -9,8 +9,8 @@
  * @brief Network Events code public header
  */
 
-#ifndef __NET_EVENT_H__
-#define __NET_EVENT_H__
+#ifndef ZEPHYR_INCLUDE_NET_NET_EVENT_H_
+#define ZEPHYR_INCLUDE_NET_NET_EVENT_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -193,4 +193,4 @@ struct net_event_ipv6_route {
  * @}
  */
 
-#endif /* __NET_EVENT_H__ */
+#endif /* ZEPHYR_INCLUDE_NET_NET_EVENT_H_ */

@@ -861,7 +861,7 @@ __STATIC_INLINE void LL_DAC_SetWaveNoiseLFSR(DAC_TypeDef *DACx, uint32_t DAC_Cha
 }
 
 /**
-  * @brief  Set the noise waveform generation for the selected DAC channel:
+  * @brief  Get the noise waveform generation for the selected DAC channel:
   *         Noise mode and parameters LFSR (linear feedback shift register).
   * @rmtoll CR       MAMP1          LL_DAC_GetWaveNoiseLFSR\n
   *         CR       MAMP2          LL_DAC_GetWaveNoiseLFSR
@@ -933,7 +933,7 @@ __STATIC_INLINE void LL_DAC_SetWaveTriangleAmplitude(DAC_TypeDef *DACx, uint32_t
 }
 
 /**
-  * @brief  Set the triangle waveform generation for the selected DAC channel:
+  * @brief  Get the triangle waveform generation for the selected DAC channel:
   *         triangle mode and amplitude.
   * @rmtoll CR       MAMP1          LL_DAC_GetWaveTriangleAmplitude\n
   *         CR       MAMP2          LL_DAC_GetWaveTriangleAmplitude

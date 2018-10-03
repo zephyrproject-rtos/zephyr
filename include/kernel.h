@@ -10,31 +10,13 @@
  * @brief Public kernel APIs.
  */
 
-#ifndef _kernel__h_
-#define _kernel__h_
+#ifndef ZEPHYR_INCLUDE_KERNEL_H_
+#define ZEPHYR_INCLUDE_KERNEL_H_
 
 #if !defined(_ASMLANGUAGE)
-#include <stddef.h>
-#include <zephyr/types.h>
-#include <limits.h>
-#include <toolchain.h>
-#include <linker/sections.h>
-#include <atomic.h>
+#include <kernel_includes.h>
 #include <errno.h>
-#include <misc/__assert.h>
-#include <sched_priq.h>
-#include <misc/dlist.h>
-#include <misc/slist.h>
-#include <misc/sflist.h>
-#include <misc/util.h>
-#include <misc/mempool_base.h>
-#include <kernel_version.h>
-#include <random/rand32.h>
-#include <kernel_arch_thread.h>
-#include <syscall.h>
-#include <misc/printk.h>
-#include <arch/cpu.h>
-#include <misc/rb.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -93,13 +75,13 @@ extern "C" {
 #define K_HIGHEST_APPLICATION_THREAD_PRIO (K_HIGHEST_THREAD_PRIO)
 #define K_LOWEST_APPLICATION_THREAD_PRIO (K_LOWEST_THREAD_PRIO - 1)
 
-#ifdef CONFIG_WAITQ_FAST
+#ifdef CONFIG_WAITQ_SCALABLE
 
 typedef struct {
 	struct _priq_rb waitq;
 } _wait_q_t;
 
-extern int _priq_rb_lessthan(struct rbnode *a, struct rbnode *b);
+extern bool _priq_rb_lessthan(struct rbnode *a, struct rbnode *b);
 
 #define _WAIT_Q_INIT(wait_q) { { { .lessthan_fn = _priq_rb_lessthan } } }
 
@@ -118,7 +100,7 @@ typedef struct {
 #define _OBJECT_TRACING_INIT .__next = NULL,
 #else
 #define _OBJECT_TRACING_INIT
-#define _OBJECT_TRACING_NEXT_PTR(type)
+#define _OBJECT_TRACING_NEXT_PTR(type) u8_t __dummy_next[0]
 #endif
 
 #ifdef CONFIG_POLL
@@ -426,7 +408,7 @@ struct _thread_base {
 		struct rbnode qnode_rb;
 	};
 
-#ifdef CONFIG_WAITQ_FAST
+#ifdef CONFIG_WAITQ_SCALABLE
 	/* wait queue on which the thread is pended (needed only for
 	 * trees, not dumb lists)
 	 */
@@ -522,6 +504,12 @@ struct _mem_domain_info {
 
 #endif /* CONFIG_USERSPACE */
 
+#ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
+struct _thread_userspace_local_data {
+	int errno_var;
+};
+#endif
+
 /**
  * @ingroup thread_apis
  * Thread Structure
@@ -552,14 +540,25 @@ struct k_thread {
 	struct k_thread *next_thread;
 #endif
 
+#if defined(CONFIG_THREAD_NAME)
+	/* Thread name */
+	const char *name;
+#endif
+
 #ifdef CONFIG_THREAD_CUSTOM_DATA
 	/** crude thread-local storage */
 	void *custom_data;
 #endif
 
+#ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
+	struct _thread_userspace_local_data *userspace_local_data;
+#endif
+
 #ifdef CONFIG_ERRNO
+#ifndef CONFIG_USERSPACE
 	/** per-thread errno variable */
 	int errno_var;
+#endif
 #endif
 
 #if defined(CONFIG_THREAD_STACK_INFO)
@@ -611,26 +610,6 @@ typedef void (*k_thread_user_cb_t)(const struct k_thread *thread,
 				   void *user_data);
 
 /**
- * @brief Analyze the main, idle, interrupt and system workqueue call stacks
- *
- * This routine calls @ref STACK_ANALYZE on the 4 call stacks declared and
- * maintained by the kernel. The sizes of those 4 call stacks are defined by:
- *
- * CONFIG_MAIN_STACK_SIZE
- * CONFIG_IDLE_STACK_SIZE
- * CONFIG_ISR_STACK_SIZE
- * CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE
- *
- * @note CONFIG_INIT_STACKS and CONFIG_PRINTK must be set for this function to
- * produce output.
- *
- * @return N/A
- *
- * @deprecated This API is deprecated.  Use k_thread_foreach().
- */
-__deprecated extern void k_call_stacks_analyze(void);
-
-/**
  * @brief Iterate over all the threads in the system.
  *
  * This routine iterates over all the threads in the system and
@@ -669,13 +648,13 @@ extern void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data);
  * @brief system thread that must not abort
  * @req K-THREAD-000
  * */
-#define K_ESSENTIAL (1 << 0)
+#define K_ESSENTIAL (BIT(0))
 
 #if defined(CONFIG_FP_SHARING)
 /**
  * @brief thread uses floating point registers
  */
-#define K_FP_REGS (1 << 1)
+#define K_FP_REGS (BIT(1))
 #endif
 
 /**
@@ -684,7 +663,7 @@ extern void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data);
  * This thread has dropped from supervisor mode to user mode and consequently
  * has additional restrictions
  */
-#define K_USER (1 << 2)
+#define K_USER (BIT(2))
 
 /**
  * @brief Inherit Permissions
@@ -694,14 +673,14 @@ extern void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data);
  * permissions from the thread that created it. No effect if CONFIG_USERSPACE
  * is not enabled.
  */
-#define K_INHERIT_PERMS (1 << 3)
+#define K_INHERIT_PERMS (BIT(3))
 
 #ifdef CONFIG_X86
 /* x86 Bitmask definitions for threads user options */
 
 #if defined(CONFIG_FP_SHARING) && defined(CONFIG_SSE)
 /* thread uses SSEx (and also FP) registers */
-#define K_SSE_REGS (1 << 7)
+#define K_SSE_REGS (BIT(7))
 #endif
 #endif
 
@@ -941,11 +920,12 @@ struct _static_thread_data {
 	u32_t init_options;
 	s32_t init_delay;
 	void (*init_abort)(void);
+	const char *init_name;
 };
 
 #define _THREAD_INITIALIZER(thread, stack, stack_size,           \
 			    entry, p1, p2, p3,                   \
-			    prio, options, delay, abort, groups) \
+			    prio, options, delay, abort, tname)  \
 	{                                                        \
 	.init_thread = (thread),				 \
 	.init_stack = (stack),					 \
@@ -958,6 +938,7 @@ struct _static_thread_data {
 	.init_options = (options),                               \
 	.init_delay = (delay),                                   \
 	.init_abort = (abort),                                   \
+	.init_name = STRINGIFY(tname),                           \
 	}
 
 /**
@@ -1004,7 +985,7 @@ struct _static_thread_data {
 		_THREAD_INITIALIZER(&_k_thread_obj_##name,		 \
 				    _k_thread_stack_##name, stack_size,  \
 				entry, p1, p2, p3, prio, options, delay, \
-				NULL, 0);				 \
+				NULL, name);				 	 \
 	const k_tid_t name = (k_tid_t)&_k_thread_obj_##name
 
 /**
@@ -1251,9 +1232,27 @@ __syscall void k_thread_custom_data_set(void *value);
 __syscall void *k_thread_custom_data_get(void);
 
 /**
+ * @brief Set current thread name
+ *
+ * Set the name of the thread to be used when THREAD_MONITOR is enabled for
+ * tracing and debugging.
+ *
+ */
+__syscall void k_thread_name_set(k_tid_t thread_id, const char *value);
+
+/**
+ * @brief Get thread name
+ *
+ * Get the name of a thread
+ *
+ * @param thread_id Thread ID
+ *
+ */
+__syscall const char *k_thread_name_get(k_tid_t thread_id);
+
+/**
  * @}
  */
-
 #include <sys_clock.h>
 
 /**
@@ -1339,47 +1338,64 @@ __syscall void *k_thread_custom_data_get(void);
 
 /* kernel clocks */
 
-#if	(sys_clock_ticks_per_sec == 1000) || \
-	(sys_clock_ticks_per_sec == 500)  || \
-	(sys_clock_ticks_per_sec == 250)  || \
-	(sys_clock_ticks_per_sec == 125)  || \
-	(sys_clock_ticks_per_sec == 100)  || \
-	(sys_clock_ticks_per_sec == 50)   || \
-	(sys_clock_ticks_per_sec == 25)   || \
-	(sys_clock_ticks_per_sec == 20)   || \
-	(sys_clock_ticks_per_sec == 10)   || \
-	(sys_clock_ticks_per_sec == 1)
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 
-	#define _ms_per_tick (MSEC_PER_SEC / sys_clock_ticks_per_sec)
-#else
-	/* yields horrible 64-bit math on many architectures: try to avoid */
+/*
+ * If timer frequency is known at compile time, a simple (32-bit)
+ * tick <-> ms conversion could be used for some combinations of
+ * hardware timer frequency and tick rate. Otherwise precise
+ * (64-bit) calculations are used.
+ */
+
+#if !defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
+#if	(sys_clock_hw_cycles_per_sec % sys_clock_ticks_per_sec) != 0
+	#define _NEED_PRECISE_TICK_MS_CONVERSION
+#elif	(MSEC_PER_SEC % sys_clock_ticks_per_sec) != 0
 	#define _NON_OPTIMIZED_TICKS_PER_SEC
 #endif
+#endif
 
-#ifdef _NON_OPTIMIZED_TICKS_PER_SEC
-extern s32_t _ms_to_ticks(s32_t ms);
-#else
+#if	defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME) || \
+	defined(_NON_OPTIMIZED_TICKS_PER_SEC)
+	#define _NEED_PRECISE_TICK_MS_CONVERSION
+#endif
+#endif
+
 static ALWAYS_INLINE s32_t _ms_to_ticks(s32_t ms)
 {
-	return (s32_t)ceiling_fraction((u32_t)ms, _ms_per_tick);
-}
+#ifdef CONFIG_SYS_CLOCK_EXISTS
+
+#ifdef _NEED_PRECISE_TICK_MS_CONVERSION
+	/* use 64-bit math to keep precision */
+	return (s32_t)ceiling_fraction(
+		(s64_t)ms * sys_clock_hw_cycles_per_sec,
+		((s64_t)MSEC_PER_SEC * sys_clock_hw_cycles_per_sec) /
+		sys_clock_ticks_per_sec);
+#else
+	/* simple division keeps precision */
+	s32_t ms_per_tick = MSEC_PER_SEC / sys_clock_ticks_per_sec;
+
+	return (s32_t)ceiling_fraction(ms, ms_per_tick);
 #endif
 
-/* added tick needed to account for tick in progress */
-#ifdef CONFIG_TICKLESS_KERNEL
-#define _TICK_ALIGN 0
 #else
-#define _TICK_ALIGN 1
+	__ASSERT(ms == 0, "ms not zero");
+	return 0;
 #endif
+}
 
 static inline s64_t __ticks_to_ms(s64_t ticks)
 {
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 
-#ifdef _NON_OPTIMIZED_TICKS_PER_SEC
-	return (MSEC_PER_SEC * (u64_t)ticks) / sys_clock_ticks_per_sec;
+#ifdef _NEED_PRECISE_TICK_MS_CONVERSION
+	/* use 64-bit math to keep precision */
+	return (u64_t)ticks * MSEC_PER_SEC / sys_clock_ticks_per_sec;
 #else
-	return (u64_t)ticks * _ms_per_tick;
+	/* simple multiplication keeps precision */
+	u32_t ms_per_tick = MSEC_PER_SEC / sys_clock_ticks_per_sec;
+
+	return (u64_t)ticks * ms_per_tick;
 #endif
 
 #else
@@ -1387,6 +1403,13 @@ static inline s64_t __ticks_to_ms(s64_t ticks)
 	return 0;
 #endif
 }
+
+/* added tick needed to account for tick in progress */
+#ifdef CONFIG_TICKLESS_KERNEL
+#define _TICK_ALIGN 0
+#else
+#define _TICK_ALIGN 1
+#endif
 
 struct k_timer {
 	/*
@@ -1656,19 +1679,19 @@ __syscall s64_t k_uptime_get(void);
  *
  * @retval prev_status Previous status of always on flag
  */
-#ifdef CONFIG_TICKLESS_KERNEL
 static inline int k_enable_sys_clock_always_on(void)
 {
+#ifdef CONFIG_TICKLESS_KERNEL
 	int prev_status = _sys_clock_always_on;
 
 	_sys_clock_always_on = 1;
 	_enable_sys_clock();
 
 	return prev_status;
-}
 #else
-#define k_enable_sys_clock_always_on() do { } while ((0))
+	return -ENOTSUP;
 #endif
+}
 
 /**
  * @brief Disable clock always on in tickless kernel
@@ -1678,14 +1701,12 @@ static inline int k_enable_sys_clock_always_on(void)
  * scheduling. To save power, this routine should be called
  * immediately when clock is not used to track time.
  */
-#ifdef CONFIG_TICKLESS_KERNEL
 static inline void k_disable_sys_clock_always_on(void)
 {
+#ifdef CONFIG_TICKLESS_KERNEL
 	_sys_clock_always_on = 0;
-}
-#else
-#define k_disable_sys_clock_always_on() do { } while ((0))
 #endif
+}
 
 /**
  * @brief Get system uptime (32-bit version).
@@ -1800,6 +1821,9 @@ __syscall void k_queue_init(struct k_queue *queue);
  *
  * This routine causes first thread pending on @a queue, if any, to
  * return from k_queue_get() call with NULL value (as if timeout expired).
+ * If the queue is being waited on by k_poll(), it will return with
+ * -EINTR and K_POLL_STATE_CANCELLED state (and per above, subsequent
+ * k_queue_get() will return NULL).
  *
  * @note Can be called by ISRs.
  *
@@ -4183,9 +4207,9 @@ extern void *k_calloc(size_t nmemb, size_t size);
 /* polling API - PRIVATE */
 
 #ifdef CONFIG_POLL
-#define _INIT_OBJ_POLL_EVENT(obj) do { (obj)->poll_event = NULL; } while ((0))
+#define _INIT_OBJ_POLL_EVENT(obj) do { (obj)->poll_event = NULL; } while (false)
 #else
-#define _INIT_OBJ_POLL_EVENT(obj) do { } while ((0))
+#define _INIT_OBJ_POLL_EVENT(obj) do { } while (false)
 #endif
 
 /* private - implementation data created as needed, per-type */
@@ -4226,6 +4250,9 @@ enum _poll_states_bits {
 
 	/* data is available to read on queue/fifo/lifo */
 	_POLL_STATE_DATA_AVAILABLE,
+
+	/* queue/fifo/lifo wait was cancelled */
+	_POLL_STATE_CANCELLED,
 
 	_POLL_NUM_STATES
 };
@@ -4272,6 +4299,7 @@ enum k_poll_modes {
 #define K_POLL_STATE_SEM_AVAILABLE _POLL_STATE_BIT(_POLL_STATE_SEM_AVAILABLE)
 #define K_POLL_STATE_DATA_AVAILABLE _POLL_STATE_BIT(_POLL_STATE_DATA_AVAILABLE)
 #define K_POLL_STATE_FIFO_DATA_AVAILABLE K_POLL_STATE_DATA_AVAILABLE
+#define K_POLL_STATE_CANCELLED _POLL_STATE_BIT(_POLL_STATE_CANCELLED)
 
 /* public - poll signal object */
 struct k_poll_signal {
@@ -4403,7 +4431,11 @@ extern void k_poll_event_init(struct k_poll_event *event, u32_t type,
  *
  * @retval 0 One or more events are ready.
  * @retval -EAGAIN Waiting period timed out.
- * @retval -EINTR Poller thread has been interrupted.
+ * @retval -EINTR Polling has been interrupted, e.g. with
+ *         k_queue_cancel_wait(). All output events are still set and valid,
+ *         cancelled event(s) will be set to K_POLL_STATE_CANCELLED. In other
+ *         words, -EINTR status means that at least one of output events is
+ *         K_POLL_STATE_CANCELLED.
  * @retval -ENOMEM Thread resource pool insufficient memory (user mode only)
  * @retval -EINVAL Bad parameters (user mode only)
  * @req K-POLL-001
@@ -4532,7 +4564,7 @@ extern void _sys_power_save_idle_exit(s32_t ticks);
 		printk("@ %s:%d:\n", __FILE__,  __LINE__); \
 		_NanoFatalErrorHandler(reason, &_default_esf); \
 		CODE_UNREACHABLE; \
-	} while (0)
+	} while (false)
 
 #endif /* _ARCH__EXCEPT */
 
@@ -4574,7 +4606,7 @@ extern void _init_static_threads(void);
 /**
  * @internal
  */
-#define _init_static_threads() do { } while ((0))
+#define _init_static_threads() do { } while (false)
 #endif
 
 /**
@@ -4606,6 +4638,7 @@ extern void _timer_expiration_handler(struct _timeout *t);
 #define K_THREAD_STACK_DEFINE(sym, size) _ARCH_THREAD_STACK_DEFINE(sym, size)
 #define K_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
 		_ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size)
+#define K_THREAD_STACK_LEN(size) _ARCH_THREAD_STACK_LEN(size)
 #define K_THREAD_STACK_MEMBER(sym, size) _ARCH_THREAD_STACK_MEMBER(sym, size)
 #define K_THREAD_STACK_SIZEOF(sym) _ARCH_THREAD_STACK_SIZEOF(sym)
 static inline char *K_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
@@ -4643,6 +4676,19 @@ static inline char *K_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
 	struct _k_thread_stack_element __noinit __aligned(STACK_ALIGN) sym[size]
 
 /**
+ * @brief Calculate size of stacks to be allocated in a stack array
+ *
+ * This macro calculates the size to be allocated for the stacks
+ * inside a stack array. It accepts the indicated "size" as a parameter
+ * and if required, pads some extra bytes (e.g. for MPU scenarios). Refer
+ * K_THREAD_STACK_ARRAY_DEFINE definition to see how this is used.
+ *
+ * @param size Size of the stack memory region
+ * @req K-TSTACK-001
+ */
+#define K_THREAD_STACK_LEN(size) (size)
+
+/**
  * @brief Declare a toplevel array of thread stack memory regions
  *
  * Create an array of equally sized stacks. See K_THREAD_STACK_DEFINE
@@ -4658,7 +4704,7 @@ static inline char *K_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
  */
 #define K_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
 	struct _k_thread_stack_element __noinit \
-		__aligned(STACK_ALIGN) sym[nmemb][size]
+		__aligned(STACK_ALIGN) sym[nmemb][K_THREAD_STACK_LEN(size)]
 
 /**
  * @brief Declare an embedded stack memory region
@@ -4757,7 +4803,7 @@ struct k_mem_partition {
 #endif	/* CONFIG_USERSPACE */
 };
 
-/* memory domian
+/* memory domain
  * Note: Always declare this structure with __kernel prefix
  */
 struct k_mem_domain {
@@ -4938,8 +4984,9 @@ inline void *operator new[](size_t size, void *ptr)
 
 #endif /* defined(CONFIG_CPLUSPLUS) && defined(__cplusplus) */
 
+#include <tracing.h>
 #include <syscalls/kernel.h>
 
 #endif /* !_ASMLANGUAGE */
 
-#endif /* _kernel__h_ */
+#endif /* ZEPHYR_INCLUDE_KERNEL_H_ */

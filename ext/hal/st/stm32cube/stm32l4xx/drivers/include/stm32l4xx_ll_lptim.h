@@ -1030,7 +1030,7 @@ __STATIC_INLINE void LL_LPTIM_ClearFLAG_ARRM(LPTIM_TypeDef *LPTIMx)
 }
 
 /**
-  * @brief  Inform application whether a autoreload match interrupt has occured.
+  * @brief  Inform application whether a autoreload match interrupt has occurred.
   * @rmtoll ISR          ARRM          LL_LPTIM_IsActiveFlag_ARRM
   * @param  LPTIMx Low-Power Timer instance
   * @retval State of bit (1 or 0).

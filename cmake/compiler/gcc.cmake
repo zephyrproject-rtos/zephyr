@@ -24,6 +24,19 @@ TOOLCHAIN_HOME: ${TOOLCHAIN_HOME}
 ")
 endif()
 
+execute_process(
+  COMMAND ${CMAKE_C_COMPILER} --version
+  RESULT_VARIABLE ret
+  OUTPUT_QUIET
+  ERROR_QUIET
+  )
+if(ret)
+  message(FATAL_ERROR "Executing the below command failed. Are permissions set correctly?
+'${CMAKE_C_COMPILER} --version'
+"
+    )
+endif()
+
 if(CONFIG_CPLUSPLUS)
   set(cplusplus_compiler ${CROSS_COMPILE}${C++})
 else()
@@ -36,7 +49,7 @@ else()
     set(cplusplus_compiler ${CMAKE_C_COMPILER})
   endif()
 endif()
-set(CMAKE_CXX_COMPILER ${cplusplus_compiler}     CACHE INTERNAL " " FORCE)
+find_program(CMAKE_CXX_COMPILER ${cplusplus_compiler} PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
 
 set(NOSTDINC "")
 
@@ -45,7 +58,7 @@ foreach(file_name include include-fixed)
     COMMAND ${CMAKE_C_COMPILER} --print-file-name=${file_name}
     OUTPUT_VARIABLE _OUTPUT
     )
-  string(REGEX REPLACE "\n" "" _OUTPUT ${_OUTPUT})
+  string(REGEX REPLACE "\n" "" _OUTPUT "${_OUTPUT}")
 
   if(MSYS)
     # TODO: Remove this when
@@ -80,7 +93,7 @@ else()
     if(CONFIG_FLOAT)
       list(APPEND TOOLCHAIN_C_FLAGS -mfpu=${FPU_FOR_${GCC_M_CPU}})
       if    (CONFIG_FP_SOFTABI)
-        list(APPEND TOOLCHAIN_C_FLAGS -mfloat-abi=soft)
+        list(APPEND TOOLCHAIN_C_FLAGS -mfloat-abi=softfp)
       elseif(CONFIG_FP_HARDABI)
         list(APPEND TOOLCHAIN_C_FLAGS -mfloat-abi=hard)
       endif()

@@ -280,7 +280,6 @@ static void mod_init(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 		mod->keys[i] = BT_MESH_KEY_UNUSED;
 	}
 
-	mod->flags = 0;
 	mod->elem_idx = elem - dev_comp->elem;
 	if (vnd) {
 		mod->mod_idx = mod - elem->vnd_models;
@@ -425,7 +424,7 @@ static bool model_has_key(struct bt_mesh_model *mod, u16_t key)
 }
 
 static const struct bt_mesh_model_op *find_op(struct bt_mesh_model *models,
-					      u8_t model_count,
+					      u8_t model_count, u16_t dst,
 					      u16_t app_idx, u32_t opcode,
 					      struct bt_mesh_model **model)
 {
@@ -435,6 +434,13 @@ static const struct bt_mesh_model_op *find_op(struct bt_mesh_model *models,
 		const struct bt_mesh_model_op *op;
 
 		*model = &models[i];
+
+		if (BT_MESH_ADDR_IS_GROUP(dst) ||
+		    BT_MESH_ADDR_IS_VIRTUAL(dst)) {
+			if (!bt_mesh_model_find_group(*model, dst)) {
+				continue;
+			}
+		}
 
 		if (!model_has_key(*model, app_idx)) {
 			continue;
@@ -531,9 +537,7 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 			}
 		} else if (BT_MESH_ADDR_IS_GROUP(rx->ctx.recv_dst) ||
 			   BT_MESH_ADDR_IS_VIRTUAL(rx->ctx.recv_dst)) {
-			if (!bt_mesh_elem_find_group(elem, rx->ctx.recv_dst)) {
-				continue;
-			}
+			/* find_op() will do proper model/group matching */
 		} else if (i != 0 ||
 			   !bt_mesh_fixed_group_match(rx->ctx.recv_dst)) {
 			continue;
@@ -551,7 +555,8 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 			count = elem->vnd_model_count;
 		}
 
-		op = find_op(models, count, rx->ctx.app_idx, opcode, &model);
+		op = find_op(models, count, rx->ctx.recv_dst, rx->ctx.app_idx,
+			     opcode, &model);
 		if (op) {
 			struct net_buf_simple_state state;
 

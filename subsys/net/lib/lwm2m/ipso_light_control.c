@@ -176,9 +176,9 @@ static int ipso_light_control_init(struct device *dev)
 	int ret = 0;
 
 	/* Set default values */
-	memset(inst, 0, sizeof(*inst) * MAX_INSTANCE_COUNT);
-	memset(res, 0, sizeof(struct lwm2m_engine_res_inst) *
-		       MAX_INSTANCE_COUNT * LIGHT_MAX_ID);
+	(void)memset(inst, 0, sizeof(*inst) * MAX_INSTANCE_COUNT);
+	(void)memset(res, 0, sizeof(struct lwm2m_engine_res_inst) *
+			MAX_INSTANCE_COUNT * LIGHT_MAX_ID);
 
 	light_control.obj_id = IPSO_OBJECT_LIGHT_CONTROL_ID;
 	light_control.fields = fields;

@@ -1,0 +1,6 @@
+sample:
+  name: USB loopback sample
+tests:
+  usb.loopback:
+    depends_on: usb_device
+    tags: usb

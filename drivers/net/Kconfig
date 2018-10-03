@@ -34,8 +34,7 @@
 # SLIP options
 #
 menuconfig SLIP
-	bool
-	prompt "SLIP driver"
+	bool "SLIP driver"
 	select UART_PIPE
 	select UART_INTERRUPT_DRIVEN
 
@@ -58,8 +57,7 @@ config	SLIP_MTU
 	  does not use this value.
 
 config	SYS_LOG_SLIP_LEVEL
-	int
-	prompt "SLIP driver log level"
+	int "SLIP driver log level"
 	depends on SYS_LOG && SLIP
 	default 0
 	range 0 4
@@ -74,7 +72,6 @@ config	SYS_LOG_SLIP_LEVEL
 
 config	SLIP_STATISTICS
 	bool "SLIP network connection statistics"
-	default n
 	help
 	  This option enables statistics support for SLIP driver.
 
@@ -88,7 +85,6 @@ config  SLIP_TAP
 
 config	SLIP_MAC_ADDR
 	string "MAC address for the interface"
-	default ""
 	help
 	  Specify a MAC address for the SLIP interface in the form of
 	  six hex 8-bit chars separated by colons (e.g.:
@@ -102,15 +98,13 @@ endif
 # Net loopback options
 #
 menuconfig NET_LOOPBACK
-	bool
-	prompt "Net loopback driver"
+	bool "Net loopback driver"
 	select NET_L2_DUMMY
 
 if NET_LOOPBACK
 
 config  SYS_LOG_NET_LOOPBACK_LEVEL
-        int
-        prompt "Net loopback driver log level"
+        int "Net loopback driver log level"
         depends on SYS_LOG && NET_LOOPBACK
         default 0
         range 0 4

@@ -16,17 +16,14 @@
 # Under the License.
 
 menuconfig MCUMGR_CMD_STAT_MGMT
-    bool
-    prompt "Enable mcumgr handlers for statistics management"
+    bool "Enable mcumgr handlers for statistics management"
     depends on STATS
-    default n
     help
       Enables mcumgr handlers for statistics management.
 
 if MCUMGR_CMD_STAT_MGMT
 config STAT_MGMT_MAX_NAME_LEN
-    int
-    prompt "Maximum stat group name length"
+    int "Maximum stat group name length"
     default 32
     help
       Limits the maximum stat group name length in mcumgr requests, in bytes.

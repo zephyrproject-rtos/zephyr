@@ -1,1 +1,0 @@
-gsource "arch/arm/soc/st_stm32/*/Kconfig.defconfig.series"

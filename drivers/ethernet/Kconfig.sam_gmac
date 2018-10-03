@@ -5,10 +5,8 @@
 #
 
 menuconfig ETH_SAM_GMAC
-	bool
-	prompt "Atmel SAM Ethernet driver"
+	bool "Atmel SAM Ethernet driver"
 	depends on SOC_FAMILY_SAM
-	default n
 	help
 	  Enable Atmel SAM MCU Family Ethernet driver.
 
@@ -20,6 +18,23 @@ config ETH_SAM_GMAC_NAME
 	help
 	  Device name allows user to obtain a handle to the device object
 	  required by all driver API functions. Device name has to be unique.
+
+config ETH_SAM_GMAC_QUEUES
+	int "Number of hardware TX and RX queues"
+	default 1
+	range 1 3
+	help
+	  Select the number of hardware queues used by the driver. Packets will be
+	  routed to appropriate queues based on their priority.
+
+config ETH_SAM_GMAC_TX_TIMEOUT_MSEC
+	int "TX timeout"
+	default 5000
+	range 1000 10000
+	help
+	  The maximum time in msec that the driver will wait for a TX interrupt
+	  after scheduling a packet to be sent. If no interrupt is reported during
+	  that period, all TX packets in the queue will be discarded.
 
 config ETH_SAM_GMAC_BUF_RX_COUNT
 	int "Network RX buffers preallocated by the SAM ETH driver"
@@ -56,6 +71,11 @@ config ETH_SAM_GMAC_MAC_I2C_EEPROM
 	bool "Read from an I2C EEPROM"
 	help
 	  Read MAC address from an I2C EEPROM.
+
+config ETH_SAM_GMAC_RANDOM_MAC
+	bool "Random MAC address"
+	help
+	  Generate a random MAC address dynamically.
 
 endchoice
 
@@ -141,5 +161,13 @@ config ETH_SAM_GMAC_PHY_ADDR
 	  GMAC PHY Address as used by IEEE 802.3, Section 2 MII compatible PHY
 	  transceivers. If you have a single PHY on board it is safe to leave it
 	  at 0 which is the broadcast address.
+
+config PTP_CLOCK_SAM_GMAC
+	bool "SAM GMAC PTP clock driver support"
+	default y
+	select PTP_CLOCK
+	depends on NET_GPTP
+	help
+	  Enable SAM GMAC PTP Clock support.
 
 endif # ETH_SAM_GMAC

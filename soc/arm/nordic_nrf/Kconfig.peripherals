@@ -1,0 +1,207 @@
+# Kconfig.peripherals - Nordic Semiconductor nRFx MCU peripherals list.
+#
+# Copyright (c) 2018 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config HAS_HW_NRF_ACL
+	bool
+
+config HAS_HW_NRF_ADC
+	bool
+
+config HAS_HW_NRF_CC310
+	bool
+
+config HAS_HW_NRF_CCM
+	bool
+
+config HAS_HW_NRF_CLOCK
+	bool
+
+config HAS_HW_NRF_COMP
+	bool
+
+config HAS_HW_NRF_ECB
+	bool
+
+config HAS_HW_NRF_EGU0
+	bool
+
+config HAS_HW_NRF_EGU1
+	bool
+
+config HAS_HW_NRF_EGU2
+	bool
+
+config HAS_HW_NRF_EGU3
+	bool
+
+config HAS_HW_NRF_EGU4
+	bool
+
+config HAS_HW_NRF_EGU5
+	bool
+
+config HAS_HW_NRF_GPIO0
+	bool
+
+config HAS_HW_NRF_GPIO1
+	bool
+
+config HAS_HW_NRF_GPIOTE
+	bool
+
+config HAS_HW_NRF_I2S
+	bool
+
+config HAS_HW_NRF_LPCOMP
+	bool
+
+config HAS_HW_NRF_MWU
+	bool
+
+config HAS_HW_NRF_NFCT
+	bool
+
+config HAS_HW_NRF_PDM
+	bool
+
+config HAS_HW_NRF_POWER
+	bool
+
+config HAS_HW_NRF_PPI
+	bool
+
+config HAS_HW_NRF_PWM0
+	bool
+
+config HAS_HW_NRF_PWM1
+	bool
+
+config HAS_HW_NRF_PWM2
+	bool
+
+config HAS_HW_NRF_PWM3
+	bool
+
+config HAS_HW_NRF_QDEC
+	bool
+
+config HAS_HW_NRF_QSPI
+	bool
+
+config HAS_HW_NRF_RNG
+	bool
+
+config HAS_HW_NRF_RTC0
+	bool
+
+config HAS_HW_NRF_RTC1
+	bool
+
+config HAS_HW_NRF_RTC2
+	bool
+
+config HAS_HW_NRF_SAADC
+	bool
+
+config HAS_HW_NRF_SPI0
+	bool
+
+config HAS_HW_NRF_SPI1
+	bool
+
+config HAS_HW_NRF_SPI2
+	bool
+
+config HAS_HW_NRF_SPIM0
+	bool
+
+config HAS_HW_NRF_SPIM1
+	bool
+
+config HAS_HW_NRF_SPIM2
+	bool
+
+config HAS_HW_NRF_SPIM3
+	bool
+
+config HAS_HW_NRF_SPIS0
+	bool
+
+config HAS_HW_NRF_SPIS1
+	bool
+
+config HAS_HW_NRF_SPIS2
+	bool
+
+config HAS_HW_NRF_SWI0
+	bool
+
+config HAS_HW_NRF_SWI1
+	bool
+
+config HAS_HW_NRF_SWI2
+	bool
+
+config HAS_HW_NRF_SWI3
+	bool
+
+config HAS_HW_NRF_SWI4
+	bool
+
+config HAS_HW_NRF_SWI5
+	bool
+
+config HAS_HW_NRF_TEMP
+	bool
+
+config HAS_HW_NRF_TIMER0
+	bool
+
+config HAS_HW_NRF_TIMER1
+	bool
+
+config HAS_HW_NRF_TIMER2
+	bool
+
+config HAS_HW_NRF_TIMER3
+	bool
+
+config HAS_HW_NRF_TIMER4
+	bool
+
+config HAS_HW_NRF_TWI0
+	bool
+
+config HAS_HW_NRF_TWI1
+	bool
+
+config HAS_HW_NRF_TWIM0
+	bool
+
+config HAS_HW_NRF_TWIM1
+	bool
+
+config HAS_HW_NRF_TWIS0
+	bool
+
+config HAS_HW_NRF_TWIS1
+	bool
+
+config HAS_HW_NRF_UART0
+	bool
+
+config HAS_HW_NRF_UARTE0
+	bool
+
+config HAS_HW_NRF_UARTE1
+	bool
+
+config HAS_HW_NRF_USBD
+	bool
+
+config HAS_HW_NRF_WDT
+	bool

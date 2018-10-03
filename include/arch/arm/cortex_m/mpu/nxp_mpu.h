@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef _NXP_MPU_H_
-#define _NXP_MPU_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_MPU_NXP_MPU_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_MPU_NXP_MPU_H_
 
 #include <fsl_common.h>
 #include <arch/arm/cortex_m/mpu/arm_core_mpu_dev.h>
@@ -119,6 +119,8 @@
 
 #define REGION_DEBUG_ATTR  MPU_REGION_SU
 
+#define REGION_BACKGROUND_ATTR	MPU_REGION_SU_RW
+
 /* Region definition data structure */
 struct nxp_mpu_region {
 	/* Region Base Address */
@@ -152,4 +154,4 @@ struct nxp_mpu_config {
 /* Reference to the MPU configuration */
 extern struct nxp_mpu_config mpu_config;
 
-#endif /* _NXP_MPU_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_MPU_NXP_MPU_H_ */

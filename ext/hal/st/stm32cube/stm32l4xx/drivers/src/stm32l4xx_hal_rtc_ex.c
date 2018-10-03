@@ -208,6 +208,9 @@ HAL_StatusTypeDef HAL_RTCEx_SetTimeStamp(RTC_HandleTypeDef *hrtc, uint32_t TimeS
   assert_param(IS_TIMESTAMP_EDGE(TimeStampEdge));
   assert_param(IS_RTC_TIMESTAMP_PIN(RTC_TimeStampPin));
 
+  /* Prevent unused argument(s) compilation warning if no assert_param check */
+  UNUSED(RTC_TimeStampPin);
+
   /* Process Locked */
   __HAL_LOCK(hrtc);
 
@@ -263,6 +266,9 @@ HAL_StatusTypeDef HAL_RTCEx_SetTimeStamp_IT(RTC_HandleTypeDef *hrtc, uint32_t Ti
   /* Check the parameters */
   assert_param(IS_TIMESTAMP_EDGE(TimeStampEdge));
   assert_param(IS_RTC_TIMESTAMP_PIN(RTC_TimeStampPin));
+
+  /* Prevent unused argument(s) compilation warning if no assert_param check */
+  UNUSED(RTC_TimeStampPin);
 
   /* Process Locked */ 
   __HAL_LOCK(hrtc);
@@ -718,7 +724,11 @@ void HAL_RTCEx_TamperTimeStampIRQHandler(RTC_HandleTypeDef *hrtc)
     if((__HAL_RTC_TIMESTAMP_GET_IT_SOURCE(hrtc, RTC_IT_TS) != RESET) && (__HAL_RTC_TIMESTAMP_GET_FLAG(hrtc, RTC_FLAG_TSF) != RESET))
     {
       /* TIMESTAMP callback */ 
+#if (USE_HAL_RTC_REGISTER_CALLBACKS == 1)
+      hrtc->TimeStampEventCallback(hrtc);
+#else
       HAL_RTCEx_TimeStampEventCallback(hrtc);
+#endif /* USE_HAL_RTC_REGISTER_CALLBACKS */
       
       /* Clear the TIMESTAMP interrupt pending bit (this will clear timestamp time and date registers) */
       __HAL_RTC_TIMESTAMP_CLEAR_FLAG(hrtc, RTC_FLAG_TSF);
@@ -732,7 +742,11 @@ void HAL_RTCEx_TamperTimeStampIRQHandler(RTC_HandleTypeDef *hrtc)
       __HAL_RTC_TAMPER_CLEAR_FLAG(hrtc, RTC_FLAG_TAMP1F);
       
       /* Tamper1 callback */
+#if (USE_HAL_RTC_REGISTER_CALLBACKS == 1)
+      hrtc->Tamper1EventCallback(hrtc);
+#else
       HAL_RTCEx_Tamper1EventCallback(hrtc);
+#endif /* USE_HAL_RTC_REGISTER_CALLBACKS */
     }
 #endif /* RTC_TAMPER1_SUPPORT */
     
@@ -743,7 +757,11 @@ void HAL_RTCEx_TamperTimeStampIRQHandler(RTC_HandleTypeDef *hrtc)
       __HAL_RTC_TAMPER_CLEAR_FLAG(hrtc, RTC_FLAG_TAMP2F);
       
       /* Tamper2 callback */
+#if (USE_HAL_RTC_REGISTER_CALLBACKS == 1)
+      hrtc->Tamper2EventCallback(hrtc);
+#else
       HAL_RTCEx_Tamper2EventCallback(hrtc);
+#endif /* USE_HAL_RTC_REGISTER_CALLBACKS */
     }
 
 #if defined(RTC_TAMPER3_SUPPORT)
@@ -754,7 +772,11 @@ void HAL_RTCEx_TamperTimeStampIRQHandler(RTC_HandleTypeDef *hrtc)
       __HAL_RTC_TAMPER_CLEAR_FLAG(hrtc, RTC_FLAG_TAMP3F);
       
       /* Tamper3 callback */
+#if (USE_HAL_RTC_REGISTER_CALLBACKS == 1)
+      hrtc->Tamper3EventCallback(hrtc);
+#else
       HAL_RTCEx_Tamper3EventCallback(hrtc);
+#endif /* USE_HAL_RTC_REGISTER_CALLBACKS */
     }
 #endif /* RTC_TAMPER3_SUPPORT */
   
@@ -1256,7 +1278,11 @@ void HAL_RTCEx_WakeUpTimerIRQHandler(RTC_HandleTypeDef *hrtc)
     __HAL_RTC_WAKEUPTIMER_CLEAR_FLAG(hrtc, RTC_FLAG_WUTF);
 
     /* WAKEUPTIMER callback */ 
+#if (USE_HAL_RTC_REGISTER_CALLBACKS == 1)
+      hrtc->WakeUpTimerEventCallback(hrtc);
+#else
     HAL_RTCEx_WakeUpTimerEventCallback(hrtc);
+#endif /* USE_HAL_RTC_REGISTER_CALLBACKS */
   }
 
   /* Change RTC state */

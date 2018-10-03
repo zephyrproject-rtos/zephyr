@@ -1,0 +1,4 @@
+# Kconfig - Texas Instruments SimpleLink Family
+#
+
+source "soc/arm/ti_simplelink/*/Kconfig.series"

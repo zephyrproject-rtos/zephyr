@@ -1373,7 +1373,12 @@ __STATIC_INLINE uint16_t LL_SPI_ReceiveData16(SPI_TypeDef *SPIx)
   */
 __STATIC_INLINE void LL_SPI_TransmitData8(SPI_TypeDef *SPIx, uint8_t TxData)
 {
+#if defined (__GNUC__)
+  __IO uint8_t *spidr = ((__IO uint8_t *)&SPIx->DR);
+  *spidr = TxData;
+#else
   *((__IO uint8_t *)&SPIx->DR) = TxData;
+#endif
 }
 
 /**
@@ -1385,7 +1390,12 @@ __STATIC_INLINE void LL_SPI_TransmitData8(SPI_TypeDef *SPIx, uint8_t TxData)
   */
 __STATIC_INLINE void LL_SPI_TransmitData16(SPI_TypeDef *SPIx, uint16_t TxData)
 {
-  SPIx->DR = TxData;
+#if defined (__GNUC__)
+  __IO uint16_t *spidr = ((__IO uint16_t *)&SPIx->DR);
+  *spidr = TxData;
+#else
+  *((__IO uint16_t *)&SPIx->DR) = TxData;
+#endif
 }
 
 /**

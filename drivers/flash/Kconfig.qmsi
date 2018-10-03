@@ -5,11 +5,9 @@
 #
 
 menuconfig SOC_FLASH_QMSI
-	bool
-	prompt "QMSI flash driver"
+	bool "QMSI flash driver"
 	depends on QMSI && FLASH
 	select FLASH_HAS_DRIVER_ENABLED
-	default n
 	help
 	  Enable QMSI Quark flash driver.
 
@@ -40,7 +38,6 @@ config SOC_FLASH_QMSI_SYS_SIZE
 
 config SOC_FLASH_QMSI_API_REENTRANCY
 	bool "flash driver API reentrancy for QMSI shim driver"
-	default n
 	help
 	 Enable support for QMSI flash driver API reentrancy.
 

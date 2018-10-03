@@ -12,6 +12,7 @@ class Harness:
         self.tests = {}
         self.id = None
         self.fail_on_fault = True
+        self.fault = False
 
     def configure(self, instance):
         config = instance.test.harness_config
@@ -64,7 +65,8 @@ class Test(Harness):
             "MPU FAULT",
             "Kernel Panic",
             "Kernel OOPS",
-            "BUS FAULT"
+            "BUS FAULT",
+            "CPU Page Fault"
             ]
 
     def handle(self, line):
@@ -75,7 +77,10 @@ class Test(Harness):
             self.tests[name] = match.group(1)
 
         if self.RUN_PASSED in line:
-            self.state = "passed"
+            if self.fault:
+                self.state = "failed"
+            else:
+                self.state = "passed"
 
         if self.RUN_FAILED in line:
             self.state = "failed"
@@ -83,5 +88,5 @@ class Test(Harness):
         if self.fail_on_fault:
             for fault in self.faults:
                 if fault in line:
-                    self.state = "failed"
+                    self.fault = True
 

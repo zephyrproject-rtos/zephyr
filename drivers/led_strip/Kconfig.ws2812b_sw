@@ -26,7 +26,7 @@ config WS2812B_SW_NAME
 
 config WS2812B_SW_GPIO_NAME
 	string "GPIO port that the LED strip is connected to"
-	default GPIO_NRF5_P0_DEV_NAME if SOC_FAMILY_NRF
+	default "GPIO_0" if SOC_FAMILY_NRF
 	help
 	  GPIO port name.
 

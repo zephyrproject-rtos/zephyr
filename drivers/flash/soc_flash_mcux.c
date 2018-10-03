@@ -39,7 +39,7 @@ static int flash_mcux_erase(struct device *dev, off_t offset, size_t len)
 	struct flash_priv *priv = dev->driver_data;
 	u32_t addr;
 	status_t rc;
-	int key;
+	unsigned int key;
 
 	if (k_sem_take(&priv->write_lock, K_NO_WAIT)) {
 		return -EACCES;
@@ -80,7 +80,7 @@ static int flash_mcux_write(struct device *dev, off_t offset,
 	struct flash_priv *priv = dev->driver_data;
 	u32_t addr;
 	status_t rc;
-	int key;
+	unsigned int key;
 
 	if (k_sem_take(&priv->write_lock, K_NO_WAIT)) {
 		return -EACCES;

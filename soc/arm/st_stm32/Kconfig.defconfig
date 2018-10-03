@@ -1,0 +1,1 @@
+source "soc/arm/st_stm32/*/Kconfig.defconfig.series"

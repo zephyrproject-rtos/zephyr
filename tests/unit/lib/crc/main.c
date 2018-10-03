@@ -6,8 +6,20 @@
 
 #include <ztest.h>
 
+#include <lib/crc/crc32_sw.c>
 #include <lib/crc/crc16_sw.c>
 #include <lib/crc/crc8_sw.c>
+
+void test_crc32_ieee(void)
+{
+	u8_t test1[] = { 'A' };
+	u8_t test2[] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+	u8_t test3[] = { 'Z', 'e', 'p', 'h', 'y', 'r' };
+
+	zassert_equal(crc32_ieee(test1, sizeof(test1)), 0xD3D99E8B, NULL);
+	zassert_equal(crc32_ieee(test2, sizeof(test2)), 0xCBF43926, NULL);
+	zassert_equal(crc32_ieee(test3, sizeof(test3)), 0x20089AA4, NULL);
+}
 
 void test_crc16(void)
 {
@@ -100,6 +112,7 @@ void test_crc8_ccitt(void)
 void test_main(void)
 {
 	ztest_test_suite(test_crc,
+			 ztest_unit_test(test_crc32_ieee),
 			 ztest_unit_test(test_crc16),
 			 ztest_unit_test(test_crc16_ansi),
 			 ztest_unit_test(test_crc16_ccitt),

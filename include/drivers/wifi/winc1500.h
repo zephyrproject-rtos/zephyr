@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef ZEPHYR_INCLUDE_DRIVERS_WIFI_WINC1500_H_
+#define ZEPHYR_INCLUDE_DRIVERS_WIFI_WINC1500_H_
+
 #include <device.h>
 
 enum winc1500_gpio_index {
@@ -20,3 +23,5 @@ struct winc1500_gpio_configuration {
 };
 
 struct winc1500_gpio_configuration *winc1500_configure_gpios(void);
+
+#endif	/* ZEPHYR_INCLUDE_DRIVERS_WIFI_WINC1500_H_ */

@@ -71,18 +71,18 @@ typedef enum
 
 /* Exported macros -----------------------------------------------------------*/
 
+#define UNUSED(X) (void)X      /* To avoid gcc/g++ warnings */
+
 #define HAL_MAX_DELAY      0xFFFFFFFFU
 
 #define HAL_IS_BIT_SET(REG, BIT)         (((REG) & (BIT)) == (BIT))
-#define HAL_IS_BIT_CLR(REG, BIT)         (((REG) & (BIT)) == RESET)
+#define HAL_IS_BIT_CLR(REG, BIT)         (((REG) & (BIT)) == 0U)
 
 #define __HAL_LINKDMA(__HANDLE__, __PPP_DMA_FIELD__, __DMA_HANDLE__)             \
                         do{                                                      \
                             (__HANDLE__)->__PPP_DMA_FIELD__ = &(__DMA_HANDLE__); \
                             (__DMA_HANDLE__).Parent = (__HANDLE__);              \
                         } while(0)
-
-#define UNUSED(x) ((void)(x))
 
 /** @brief Reset the Handle's State field.
   * @param __HANDLE__: specifies the Peripheral Handle.

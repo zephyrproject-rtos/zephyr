@@ -1,0 +1,184 @@
+# Kconfig.tls - TLS/DTLS related options
+
+#
+# Copyright (c) 2018 Intel Corporation
+# Copyright (c) 2018 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menu "TLS configuration"
+
+menu "Supported TLS version"
+
+config TLS_VERSION_1_0
+	bool "Enable support for TLS 1.0"
+	select TLS_MAC_MD5_ENABLED
+	select TLS_MAC_SHA1_ENABLED
+
+config TLS_VERSION_1_1
+	bool "Enable support for TLS 1.1 (DTLS 1.0)"
+	select TLS_MAC_MD5_ENABLED
+	select TLS_MAC_SHA1_ENABLED
+
+config TLS_VERSION_1_2
+	bool "Enable support for TLS 1.2 (DTLS 1.2)"
+	default y
+
+config TLS_DTLS
+	bool "Enable support for DTLS"
+	depends on TLS_VERSION_1_1 || TLS_VERSION_1_2
+
+endmenu
+
+menu "Ciphersuite configuration"
+
+comment "Supported key exchange modes"
+
+config TLS_KEY_EXCHANGE_PSK_ENABLED
+	bool "Enable the PSK based ciphersuite modes"
+
+config TLS_KEY_EXCHANGE_DHE_PSK_ENABLED
+	bool "Enable the DHE-PSK based ciphersuite modes"
+
+config TLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
+	bool "Enable the ECDHE-PSK based ciphersuite modes"
+
+config TLS_KEY_EXCHANGE_RSA_PSK_ENABLED
+	bool "Enable the RSA-PSK based ciphersuite modes"
+
+config TLS_KEY_EXCHANGE_RSA_ENABLED
+	bool "Enable the RSA-only based ciphersuite modes"
+	default y
+
+config TLS_KEY_EXCHANGE_DHE_RSA_ENABLED
+	bool "Enable the DHE-RSA based ciphersuite modes"
+
+config TLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
+	bool "Enable the ECDHE-RSA based ciphersuite modes"
+
+config TLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
+	bool "Enable the ECDHE-ECDSA based ciphersuite modes"
+
+config TLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
+	bool "Enable the ECDH-ECDSA based ciphersuite modes"
+
+config TLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
+	bool "Enable the ECDH-RSA based ciphersuite modes"
+
+config TLS_KEY_EXCHANGE_ECJPAKE_ENABLED
+	bool "Enable the ECJPAKE based ciphersuite modes"
+
+if TLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED || \
+   TLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED || \
+   TLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED || \
+   TLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED || \
+   TLS_KEY_EXCHANGE_ECDH_RSA_ENABLED || \
+   TLS_KEY_EXCHANGE_ECJPAKE_ENABLED
+
+comment "Supported elliptic curves"
+
+config TLS_ECP_DP_SECP192R1_ENABLED
+	bool "Enable SECP192R1 elliptic curve"
+
+config TLS_ECP_DP_SECP224R1_ENABLED
+	bool "Enable SECP224R1 elliptic curve"
+
+config TLS_ECP_DP_SECP256R1_ENABLED
+	bool "Enable SECP256R1 elliptic curve"
+
+config TLS_ECP_DP_SECP384R1_ENABLED
+	bool "Enable SECP384R1 elliptic curve"
+
+config TLS_ECP_DP_SECP521R1_ENABLED
+	bool "Enable SECP521R1 elliptic curve"
+
+config TLS_ECP_DP_SECP192K1_ENABLED
+	bool "Enable SECP192K1 elliptic curve"
+
+config TLS_ECP_DP_SECP224K1_ENABLED
+	bool "Enable SECP224K1 elliptic curve"
+
+config TLS_ECP_DP_SECP256K1_ENABLED
+	bool "Enable SECP256K1 elliptic curve"
+
+config TLS_ECP_DP_BP256R1_ENABLED
+	bool "Enable BP256R1 elliptic curve"
+
+config TLS_ECP_DP_BP384R1_ENABLED
+	bool "Enable BP384R1 elliptic curve"
+
+config TLS_ECP_DP_BP512R1_ENABLED
+	bool "Enable BP512R1 elliptic curve"
+
+config TLS_ECP_DP_CURVE25519_ENABLED
+	bool "Enable CURVE25519 elliptic curve"
+
+config TLS_ECP_DP_CURVE448_ENABLED
+	bool "Enable CURVE448 elliptic curve"
+
+config TLS_ECP_NIST_OPTIM
+	bool "Enable NSIT curves optimization"
+
+endif
+
+comment "Supported cipher modes"
+
+config TLS_CIPHER_AES_ENABLED
+	bool "Enable the AES block cipher"
+	default y
+
+config TLS_CIPHER_CAMELLIA_ENABLED
+	bool "Enable the Camellia block cipher"
+
+config TLS_CIPHER_DES_ENABLED
+	bool "Enable the DES block cipher"
+	default y
+
+config TLS_CIPHER_CCM_ENABLED
+	bool "Enable the Counter with CBC-MAC (CCM) mode for 128-bit block cipher"
+	depends on TLS_CIPHER_AES_ENABLED || TLS_CIPHER_CAMELLIA_ENABLED
+
+config TLS_CIPHER_CBC_ENABLED
+	bool "Enable Cipher Block Chaining mode (CBC) for symmetric ciphers"
+	default y
+
+comment "Supported message authentication methods"
+
+config TLS_MAC_MD5_ENABLED
+	bool "Enable the MD5 hash algorithm"
+	default y
+
+config TLS_MAC_SHA1_ENABLED
+	bool "Enable the SHA1 hash algorithm"
+	default y
+
+config TLS_MAC_SHA256_ENABLED
+	bool "Enable the SHA-224 and SHA-256 hash algorithms"
+	default y
+
+config TLS_MAC_SHA512_ENABLED
+	bool "Enable the SHA-384 and SHA-512 hash algorithms"
+
+endmenu
+
+config TLS_PEM_CERTIFICATE_FORMAT
+	bool "Enable support for PEM certificate format"
+	help
+	  By default only DER (binary) format of certificates is supported. Enable
+	  this option to enable support for PEM format.
+
+config TLS_USER_CONFIG_ENABLE
+	bool "Enable user mbedTLS config file"
+	help
+	  Enable user mbedTLS config file that will be included at the end of
+	  the generic config file.
+
+config TLS_USER_CONFIG_FILE
+	string "User configuration file for mbedTLS"
+	depends on TLS_USER_CONFIG_ENABLE
+	help
+	  User config file that can contain mbedTLS configs that were not
+	  covered by the generic config file.
+
+endmenu

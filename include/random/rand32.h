@@ -17,8 +17,8 @@
  * sys_rand32_get().
  */
 
-#ifndef __INCrand32h
-#define __INCrand32h
+#ifndef ZEPHYR_INCLUDE_RANDOM_RAND32_H_
+#define ZEPHYR_INCLUDE_RANDOM_RAND32_H_
 
 #include <zephyr/types.h>
 
@@ -32,4 +32,4 @@ extern u32_t sys_rand32_get(void);
 }
 #endif
 
-#endif /* __INCrand32h */
+#endif /* ZEPHYR_INCLUDE_RANDOM_RAND32_H_ */

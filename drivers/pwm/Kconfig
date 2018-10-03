@@ -8,15 +8,13 @@
 
 menuconfig PWM
 	bool "PWM (Pulse Width Modulation) Drivers"
-	default n
 	help
 	  Enable config options for PWM drivers.
 
 if PWM
 
 config SYS_LOG_PWM_LEVEL
-	int
-	prompt "PWM Driver Log level"
+	int "PWM Driver Log level"
 	depends on SYS_LOG
 	default 0
 	range 0 4
@@ -31,19 +29,18 @@ config SYS_LOG_PWM_LEVEL
 
 config PWM_0
 	bool "Enable PWM port 0"
-	default n
 
 config PWM_1
 	bool "Enable PWM port 1"
-	default n
 
 config PWM_2
 	bool "Enable PWM port 2"
-	default n
 
 config PWM_3
 	bool "Enable PWM port 3"
-	default n
+
+config PWM_4
+	bool "Enable PWM port 4"
 
 source "drivers/pwm/Kconfig.pca9685"
 
@@ -55,7 +52,11 @@ source "drivers/pwm/Kconfig.stm32"
 
 source "drivers/pwm/Kconfig.nrf5_sw"
 
+source "drivers/pwm/Kconfig.nrfx"
+
 source "drivers/pwm/Kconfig.mcux_ftm"
+
+source "drivers/pwm/Kconfig.imx"
 
 source "drivers/pwm/Kconfig.esp32"
 

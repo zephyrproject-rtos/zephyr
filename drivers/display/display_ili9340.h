@@ -1,9 +1,10 @@
-/* Copyright (c) 2017 dXplore
+/*
+ * Copyright (c) 2017 Jan Van Winkel <jan.van_winkel@dxplore.eu>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef DISPLAY_ILI9340_H
-#define DISPLAY_ILI9340_H
+#ifndef ZEPHYR_DRIVERS_DISPLAY_DISPLAY_ILI9340_H_
+#define ZEPHYR_DRIVERS_DISPLAY_DISPLAY_ILI9340_H_
 
 #include <zephyr.h>
 
@@ -60,4 +61,4 @@ void ili9340_transmit(struct ili9340_data *data, u8_t cmd, void *tx_data,
  */
 void ili9340_lcd_init(struct ili9340_data *data);
 
-#endif /* DISPLAY_ILI9340_H */
+#endif /* ZEPHYR_DRIVERS_DISPLAY_DISPLAY_ILI9340_H_ */

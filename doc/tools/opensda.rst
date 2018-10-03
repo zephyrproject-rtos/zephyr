@@ -44,8 +44,8 @@ device. Power cycle the board, this time without holding the reset button.
 pyOCD
 *****
 
-pyOCD is an Open Source python 2.7 based library for programming and debugging
-ARM Cortex-M microcontrollers using CMSIS-DAP.
+pyOCD is an Open Source python library for programming and debugging ARM
+Cortex-M microcontrollers using CMSIS-DAP.
 
 Host Tools and Firmware
 =======================
@@ -107,8 +107,15 @@ application binary. :ref:`nxp_opensda_firmware` with this application.
 Flashing
 ========
 
-The Segger J-Link firmware does not support command line flashing, therefore
-the CMake ``flash`` target is not supported.
+Use the CMake ``flash`` target with the argument ``OPENSDA_FW=jlink`` to build
+your Zephyr application, invoke the J-Link Commander, and program your Zephyr
+application to flash. Some boards set the argument by default, so it is not
+always necessary to set explicitly.
+
+  .. zephyr-app-commands::
+     :zephyr-app: samples/hello_world
+     :gen-args: -DOPENSDA_FW=jlink
+     :goals: flash
 
 Debugging
 =========

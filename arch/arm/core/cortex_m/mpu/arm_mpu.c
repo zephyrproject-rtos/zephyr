@@ -14,73 +14,21 @@
 #include <logging/sys_log.h>
 #include <linker/linker-defs.h>
 
-#define ARM_MPU_DEV ((volatile struct arm_mpu *) ARM_MPU_BASE)
+#if defined(CONFIG_CPU_CORTEX_M0PLUS) || \
+	defined(CONFIG_CPU_CORTEX_M3) || \
+	defined(CONFIG_CPU_CORTEX_M4) || \
+	defined(CONFIG_CPU_CORTEX_M7)
+#include <arm_mpu_v7_internal.h>
+#elif defined(CONFIG_CPU_CORTEX_M23) || \
+	defined(CONFIG_CPU_CORTEX_M33)
+#include <arm_mpu_v8_internal.h>
+#else
+#error "Unsupported ARM CPU"
+#endif
 
 /**
- * The attributes referenced in this function are described at:
- * https://goo.gl/hMry3r
- * This function is private to the driver.
+ *  Get the number of supported MPU regions.
  */
-static inline u32_t _get_region_attr(u32_t xn, u32_t ap, u32_t tex,
-				     u32_t c, u32_t b, u32_t s,
-				     u32_t srd, u32_t size)
-{
-	return ((xn << 28) | (ap) | (tex << 19) | (s << 18)
-		| (c << 17) | (b << 16) | (srd << 8) | (size));
-}
-
-/**
- * This internal function converts the region size to
- * the SIZE field value of MPU_RASR.
- */
-static inline u32_t _size_to_mpu_rasr_size(u32_t size)
-{
-	/* The minimal supported region size is 32 bytes */
-	if (size <= 32) {
-		return REGION_32B;
-	}
-
-	/*
-	 * A size value greater than 2^31 could not be handled by
-	 * round_up_to_next_power_of_two() properly. We handle
-	 * it separately here.
-	 */
-	if (size > (1 << 31)) {
-		return REGION_4G;
-	}
-
-	size = 1 << (32 - __builtin_clz(size - 1));
-	return (32 - __builtin_clz(size) - 2) << 1;
-}
-
-
-/**
- * This internal function is utilized by the MPU driver to parse the intent
- * type (i.e. THREAD_STACK_REGION) and return the correct parameter set.
- */
-static inline u32_t _get_region_attr_by_type(u32_t type, u32_t size)
-{
-	int region_size = _size_to_mpu_rasr_size(size);
-
-	switch (type) {
-	case THREAD_STACK_USER_REGION:
-		return _get_region_attr(1, P_RW_U_RW, 0, 1, 0,
-					1, 0, region_size);
-	case THREAD_STACK_REGION:
-		return _get_region_attr(1, P_RW_U_RW, 0, 1, 0,
-					1, 0, region_size);
-	case THREAD_STACK_GUARD_REGION:
-		return _get_region_attr(1, P_RO_U_NA, 0, 1, 0,
-					1, 0, region_size);
-	case THREAD_APP_DATA_REGION:
-		return _get_region_attr(1, P_RW_U_RW, 0, 1, 0,
-					1, 0, region_size);
-	default:
-		/* Size 0 region */
-		return 0;
-	}
-}
-
 static inline u8_t _get_num_regions(void)
 {
 #if defined(CONFIG_CPU_CORTEX_M0PLUS) || \
@@ -91,29 +39,80 @@ static inline u8_t _get_num_regions(void)
 	 */
 	return 8;
 #else
-	u32_t type = ARM_MPU_DEV->type;
+	u32_t type = MPU->TYPE;
 
-	type = (type & 0xFF00) >> 8;
+	type = (type & MPU_TYPE_DREGION_Msk) >> MPU_TYPE_DREGION_Pos;
 
 	return (u8_t)type;
 #endif
 }
 
-/* This internal function performs MPU region initialization.
- *
- * Note:
- *   The caller must provide a valid region index.
+/* ARM Core MPU Driver API Implementation for ARM MPU */
+
+/**
+ * @brief enable the MPU
  */
-static void _region_init(u32_t index, u32_t region_addr,
-			 u32_t region_attr)
+void arm_core_mpu_enable(void)
 {
-	/* Select the region you want to access */
-	ARM_MPU_DEV->rnr = index;
-	/* Configure the region */
-	ARM_MPU_DEV->rbar = (region_addr & REGION_BASE_ADDR_MASK)
-				| REGION_VALID | index;
-	ARM_MPU_DEV->rasr = region_attr | REGION_ENABLE;
-	SYS_LOG_DBG("[%d] 0x%08x 0x%08x", index, region_addr, region_attr);
+	/* Enable MPU and use the default memory map as a
+	 * background region for privileged software access.
+	 */
+	MPU->CTRL = MPU_CTRL_ENABLE_Msk | MPU_CTRL_PRIVDEFENA_Msk;
+
+	/* Make sure that all the registers are set before proceeding */
+	__DSB();
+	__ISB();
+}
+
+/**
+ * @brief disable the MPU
+ */
+void arm_core_mpu_disable(void)
+{
+	/* Disable MPU */
+	MPU->CTRL = 0;
+}
+
+#if defined(CONFIG_USERSPACE) || defined(CONFIG_MPU_STACK_GUARD) || \
+	defined(CONFIG_APPLICATION_MEMORY)
+
+/**
+ * This internal function is utilized by the MPU driver to parse the intent
+ * type (i.e. THREAD_STACK_REGION) and to fill-in the correct parameter
+ * set to the provided attribute structure.
+ *
+ * @return 0 on Success, otherwise return -EINVAL.
+ */
+static inline int _get_region_attr_by_type(arm_mpu_region_attr_t *p_attr,
+	u32_t type, u32_t base, u32_t size)
+{
+	switch (type) {
+#ifdef CONFIG_USERSPACE
+	case THREAD_STACK_REGION:
+		_get_mpu_ram_region_attr(p_attr, P_RW_U_RW, base, size);
+		return 0;
+#endif
+#ifdef CONFIG_MPU_STACK_GUARD
+	case THREAD_STACK_GUARD_REGION:
+		_get_mpu_ram_region_attr(p_attr, P_RO_U_NA, base, size);
+		return 0;
+#endif
+#ifdef CONFIG_APPLICATION_MEMORY
+	case THREAD_APP_DATA_REGION:
+		_get_mpu_ram_region_attr(p_attr, P_RW_U_RW, base, size);
+		return 0;
+#endif
+	default:
+		/* Assert on MPU region types not supported in the
+		 * implementation.  If asserts are disabled, the error
+		 * can be tracked by the returned status (-EINVAL).
+		 */
+		__ASSERT(0,
+			"Failed to derive attributes for MPU region type %u\n",
+			type);
+		/* Size 0 region */
+		return -EINVAL;
+	}
 }
 
 /**
@@ -122,35 +121,18 @@ static void _region_init(u32_t index, u32_t region_addr,
  */
 static inline u32_t _get_region_index_by_type(u32_t type)
 {
-	/*
-	 * The new MPU regions are allocated per type after the statically
-	 * configured regions. The type is one-indexed rather than
-	 * zero-indexed, therefore we need to subtract by one to get the region
-	 * index.
-	 */
-	switch (type) {
-	case THREAD_STACK_USER_REGION:
-		return mpu_config.num_regions + THREAD_STACK_REGION - 1;
-	case THREAD_STACK_REGION:
-	case THREAD_STACK_GUARD_REGION:
-	case THREAD_APP_DATA_REGION:
-		return mpu_config.num_regions + type - 1;
-	case THREAD_DOMAIN_PARTITION_REGION:
-#if defined(CONFIG_USERSPACE)
-		return mpu_config.num_regions + type - 1;
-#elif defined(CONFIG_MPU_STACK_GUARD)
-		return mpu_config.num_regions + type - 2;
-#else
-		/*
-		 * Start domain partition region from stack guard region
-		 * since stack guard is not enabled.
-		 */
-		return mpu_config.num_regions + type - 3;
-#endif
-	default:
-		__ASSERT(0, "Unsupported type");
-		return 0;
-	}
+	u32_t region_index;
+
+	__ASSERT(type < THREAD_MPU_REGION_LAST,
+		 "unsupported region type");
+
+	region_index = mpu_config.num_regions + type;
+
+	__ASSERT(region_index < _get_num_regions(),
+		 "out of MPU regions, requested %u max is %u",
+		 region_index, _get_num_regions() - 1);
+
+	return region_index;
 }
 
 /**
@@ -169,95 +151,7 @@ static inline void _disable_region(u32_t r_index)
 		_get_num_regions());
 	SYS_LOG_DBG("disable region 0x%x", r_index);
 	/* Disable region */
-	ARM_MPU_DEV->rnr = r_index;
-	ARM_MPU_DEV->rbar = 0;
-	ARM_MPU_DEV->rasr = 0;
-}
-
-/**
- * This internal function checks if region is enabled or not.
- *
- * Note:
- *   The caller must provide a valid region number.
- */
-static inline int _is_enabled_region(u32_t r_index)
-{
-	ARM_MPU_DEV->rnr = r_index;
-
-	return ARM_MPU_DEV->rasr & REGION_ENABLE_MASK;
-}
-
-/**
- * This internal function checks if the given buffer is in the region.
- *
- * Note:
- *   The caller must provide a valid region number.
- */
-static inline int _is_in_region(u32_t r_index, u32_t start, u32_t size)
-{
-	u32_t r_addr_start;
-	u32_t r_size_lshift;
-	u32_t r_addr_end;
-
-	ARM_MPU_DEV->rnr = r_index;
-	r_addr_start = ARM_MPU_DEV->rbar & REGION_BASE_ADDR_MASK;
-	r_size_lshift = ((ARM_MPU_DEV->rasr & REGION_SIZE_MASK) >>
-			REGION_SIZE_OFFSET) + 1;
-	r_addr_end = r_addr_start + (1 << r_size_lshift) - 1;
-
-	if (start >= r_addr_start && (start + size - 1) <= r_addr_end) {
-		return 1;
-	}
-
-	return 0;
-}
-
-/**
- * This internal function checks if the region is user accessible or not.
- *
- * Note:
- *   The caller must provide a valid region number.
- */
-static inline int _is_user_accessible_region(u32_t r_index, int write)
-{
-	u32_t r_ap;
-
-	ARM_MPU_DEV->rnr = r_index;
-	r_ap = ARM_MPU_DEV->rasr & ACCESS_PERMS_MASK;
-
-	/* always return true if this is the thread stack region */
-	if (_get_region_index_by_type(THREAD_STACK_REGION) == r_index) {
-		return 1;
-	}
-
-	if (write) {
-		return r_ap == P_RW_U_RW;
-	}
-
-	/* For all user accessible permissions, their AP[1] bit is l */
-	return r_ap & (0x2 << ACCESS_PERMS_OFFSET);
-}
-
-/* ARM Core MPU Driver API Implementation for ARM MPU */
-
-/**
- * @brief enable the MPU
- */
-void arm_core_mpu_enable(void)
-{
-	/* Enable MPU and use the default memory map as a
-	 * background region for privileged software access.
-	 */
-	ARM_MPU_DEV->ctrl = ARM_MPU_ENABLE | ARM_MPU_PRIVDEFENA;
-}
-
-/**
- * @brief disable the MPU
- */
-void arm_core_mpu_disable(void)
-{
-	/* Disable MPU */
-	ARM_MPU_DEV->ctrl = 0;
+	ARM_MPU_ClrRegion(r_index);
 }
 
 /**
@@ -269,15 +163,21 @@ void arm_core_mpu_disable(void)
  */
 void arm_core_mpu_configure(u8_t type, u32_t base, u32_t size)
 {
+	struct arm_mpu_region region_conf;
+
 	SYS_LOG_DBG("Region info: 0x%x 0x%x", base, size);
 	u32_t region_index = _get_region_index_by_type(type);
-	u32_t region_attr = _get_region_attr_by_type(type, size);
+
+	if (_get_region_attr_by_type(&region_conf.attr, type, base, size)) {
+		return;
+	}
+	region_conf.base = base;
 
 	if (region_index >= _get_num_regions()) {
 		return;
 	}
 
-	_region_init(region_index, base, region_attr);
+	_region_init(region_index, &region_conf);
 }
 
 #if defined(CONFIG_USERSPACE)
@@ -285,32 +185,13 @@ void arm_core_mpu_configure_user_context(struct k_thread *thread)
 {
 	u32_t base = (u32_t)thread->stack_obj;
 	u32_t size = thread->stack_info.size;
-	u32_t index = _get_region_index_by_type(THREAD_STACK_USER_REGION);
-	u32_t region_attr = _get_region_attr_by_type(THREAD_STACK_USER_REGION,
-						     size);
 
 	if (!thread->arch.priv_stack_start) {
-		_disable_region(index);
+		_disable_region(_get_region_index_by_type(
+			THREAD_STACK_REGION));
 		return;
 	}
-	if (index >= _get_num_regions()) {
-		return;
-	}
-	/* configure stack */
-	_region_init(index, base, region_attr);
-
-#if defined(CONFIG_APPLICATION_MEMORY)
-	/* configure app data portion */
-	index = _get_region_index_by_type(THREAD_APP_DATA_REGION);
-	if (index < _get_num_regions()) {
-		size = (u32_t)&__app_ram_end - (u32_t)&__app_ram_start;
-		region_attr =
-			_get_region_attr_by_type(THREAD_APP_DATA_REGION, size);
-		if (size > 0) {
-			_region_init(index, (u32_t)&__app_ram_start, region_attr);
-		}
-	}
-#endif /* CONFIG_APPLICATION_MEMORY */
+	arm_core_mpu_configure(THREAD_STACK_REGION, base, size);
 }
 
 /**
@@ -322,9 +203,9 @@ void arm_core_mpu_configure_mem_domain(struct k_mem_domain *mem_domain)
 {
 	u32_t region_index =
 		_get_region_index_by_type(THREAD_DOMAIN_PARTITION_REGION);
-	u32_t region_attr;
 	u32_t num_partitions;
 	struct k_mem_partition *pparts;
+	struct arm_mpu_region region_conf;
 
 	if (mem_domain) {
 		SYS_LOG_DBG("configure domain: %p", mem_domain);
@@ -340,9 +221,10 @@ void arm_core_mpu_configure_mem_domain(struct k_mem_domain *mem_domain)
 		if (num_partitions && pparts->size) {
 			SYS_LOG_DBG("set region 0x%x 0x%x 0x%x",
 				    region_index, pparts->start, pparts->size);
-			region_attr = pparts->attr |
-				      _size_to_mpu_rasr_size(pparts->size);
-			_region_init(region_index, pparts->start, region_attr);
+			region_conf.base = pparts->start;
+			_get_ram_region_attr_by_conf(&region_conf.attr,
+				pparts->attr,	pparts->start, pparts->size);
+			_region_init(region_index, &region_conf);
 			num_partitions--;
 		} else {
 			_disable_region(region_index);
@@ -362,7 +244,7 @@ void arm_core_mpu_configure_mem_partition(u32_t part_index,
 {
 	u32_t region_index =
 		_get_region_index_by_type(THREAD_DOMAIN_PARTITION_REGION);
-	u32_t region_attr;
+	struct arm_mpu_region region_conf;
 
 	SYS_LOG_DBG("configure partition index: %u", part_index);
 
@@ -370,9 +252,10 @@ void arm_core_mpu_configure_mem_partition(u32_t part_index,
 		(region_index + part_index < _get_num_regions())) {
 		SYS_LOG_DBG("set region 0x%x 0x%x 0x%x",
 			    region_index + part_index, part->start, part->size);
-		region_attr = part->attr | _size_to_mpu_rasr_size(part->size);
-		_region_init(region_index + part_index, part->start,
-			     region_attr);
+		_get_ram_region_attr_by_conf(&region_conf.attr,
+			part->attr, part->start, part->size);
+		region_conf.base = part->start;
+		_region_init(region_index + part_index, &region_conf);
 	} else {
 		_disable_region(region_index + part_index);
 	}
@@ -407,33 +290,15 @@ int arm_core_mpu_get_max_domain_partition_regions(void)
 
 /**
  * @brief validate the given buffer is user accessible or not
+ *
+ * Presumes the background mapping is NOT user accessible.
  */
 int arm_core_mpu_buffer_validate(void *addr, size_t size, int write)
 {
-	s32_t r_index;
-
-	/* Iterate all mpu regions in reversed order */
-	for (r_index = _get_num_regions() - 1; r_index >= 0;  r_index--) {
-		if (!_is_enabled_region(r_index) ||
-		    !_is_in_region(r_index, (u32_t)addr, size)) {
-			continue;
-		}
-
-		/* For ARM MPU, higher region number takes priority.
-		 * Since we iterate all mpu regions in reversed order, so
-		 * we can stop the iteration immediately once we find the
-		 * matched region that grants permission or denies access.
-		 */
-		if (_is_user_accessible_region(r_index, write)) {
-			return 0;
-		} else {
-			return -EPERM;
-		}
-	}
-
-	return -EPERM;
+	return _mpu_buffer_validate(addr, size, write);
 }
 #endif /* CONFIG_USERSPACE */
+#endif /* USERSPACE || MPU_STACK_GUARD || APPLICATION_MEMORY */
 
 /* ARM MPU Driver Initial Setup */
 
@@ -443,7 +308,7 @@ int arm_core_mpu_buffer_validate(void *addr, size_t size, int write)
  * This function provides the default configuration mechanism for the Memory
  * Protection Unit (MPU).
  */
-static void _arm_mpu_config(void)
+static int arm_mpu_init(struct device *arg)
 {
 	u32_t r_index;
 
@@ -459,40 +324,44 @@ static void _arm_mpu_config(void)
 			mpu_config.num_regions,
 			_get_num_regions()
 		);
-		return;
+		return -1;
 	}
 
-	/* Disable MPU */
-	ARM_MPU_DEV->ctrl = 0;
+	SYS_LOG_DBG("total region count: %d", _get_num_regions());
+
+	arm_core_mpu_disable();
+
+	/* Architecture-specific configuration */
+	_mpu_init();
 
 	/* Configure regions */
 	for (r_index = 0; r_index < mpu_config.num_regions; r_index++) {
-		_region_init(r_index,
-			     mpu_config.mpu_regions[r_index].base,
-			     mpu_config.mpu_regions[r_index].attr);
+		_region_init(r_index, &mpu_config.mpu_regions[r_index]);
 	}
 
-	/* Enable MPU and use the default memory map as a
-	 * background region for privileged software access.
-	 */
-	ARM_MPU_DEV->ctrl = ARM_MPU_ENABLE | ARM_MPU_PRIVDEFENA;
+#if defined(CONFIG_APPLICATION_MEMORY)
+	u32_t index, size;
+	struct arm_mpu_region region_conf;
 
-	/* Make sure that all the registers are set before proceeding */
-	__DSB();
-	__ISB();
-}
+	/* configure app data portion */
+	index = _get_region_index_by_type(THREAD_APP_DATA_REGION);
+	size = (u32_t)&__app_ram_end - (u32_t)&__app_ram_start;
+	_get_region_attr_by_type(&region_conf.attr, THREAD_APP_DATA_REGION,
+			(u32_t)&__app_ram_start, size);
+	region_conf.base = (u32_t)&__app_ram_start;
+	if (size > 0) {
+		_region_init(index, &region_conf);
+	}
+#endif
 
-static int arm_mpu_init(struct device *arg)
-{
-	ARG_UNUSED(arg);
-
-	_arm_mpu_config();
+	arm_core_mpu_enable();
 
 	/* Sanity check for number of regions in Cortex-M0+, M3, and M4. */
 #if defined(CONFIG_CPU_CORTEX_M0PLUS) || \
 	defined(CONFIG_CPU_CORTEX_M3) || \
 	defined(CONFIG_CPU_CORTEX_M4)
-	__ASSERT((ARM_MPU_DEV->type & 0xFF00) >> 8 == 8,
+	__ASSERT(
+		(MPU->TYPE & MPU_TYPE_DREGION_Msk) >> MPU_TYPE_DREGION_Pos == 8,
 		"Invalid number of MPU regions\n");
 #endif
 	return 0;

@@ -1,0 +1,5 @@
+mainmenu "I2C Slave API Test"
+
+source "$(ZEPHYR_BASE)/Kconfig.zephyr"
+
+source "$(ZEPHYR_BASE)/tests/drivers/i2c/i2c_slave_api/common/Kconfig"

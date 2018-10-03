@@ -163,10 +163,10 @@ int fifo_test(void)
 	t = BENCH_START();
 
 	k_thread_create(&thread_data1, thread_stack1, STACK_SIZE, fifo_thread1,
-			 NULL, (void *) NUMBER_OF_LOOPS, NULL,
+			 NULL, (void *) number_of_loops, NULL,
 			 K_PRIO_COOP(3), 0, K_NO_WAIT);
 	k_thread_create(&thread_data2, thread_stack2, STACK_SIZE, fifo_thread2,
-			 (void *) &i, (void *) NUMBER_OF_LOOPS, NULL,
+			 (void *) &i, (void *) number_of_loops, NULL,
 			 K_PRIO_COOP(3), 0, K_NO_WAIT);
 
 	t = TIME_STAMP_DELTA_GET(t);
@@ -195,10 +195,10 @@ int fifo_test(void)
 
 	i = 0;
 	k_thread_create(&thread_data1, thread_stack1, STACK_SIZE, fifo_thread1,
-			 NULL, (void *) NUMBER_OF_LOOPS, NULL,
+			 NULL, (void *) number_of_loops, NULL,
 			 K_PRIO_COOP(3), 0, K_NO_WAIT);
 	k_thread_create(&thread_data2, thread_stack2, STACK_SIZE, fifo_thread3,
-			 (void *) &i, (void *) NUMBER_OF_LOOPS, NULL,
+			 (void *) &i, (void *) number_of_loops, NULL,
 			 K_PRIO_COOP(3), 0, K_NO_WAIT);
 
 	t = TIME_STAMP_DELTA_GET(t);
@@ -226,12 +226,12 @@ int fifo_test(void)
 	t = BENCH_START();
 
 	k_thread_create(&thread_data1, thread_stack1, STACK_SIZE, fifo_thread1,
-			 NULL, (void *) (NUMBER_OF_LOOPS / 2), NULL,
+			 NULL, (void *) (number_of_loops / 2), NULL,
 			 K_PRIO_COOP(3), 0, K_NO_WAIT);
 	k_thread_create(&thread_data2, thread_stack2, STACK_SIZE, fifo_thread1,
-			 NULL, (void *) (NUMBER_OF_LOOPS / 2), NULL,
+			 NULL, (void *) (number_of_loops / 2), NULL,
 			 K_PRIO_COOP(3), 0, K_NO_WAIT);
-	for (i = 0; i < NUMBER_OF_LOOPS / 2; i++) {
+	for (i = 0; i < number_of_loops / 2; i++) {
 		int element[2];
 		int *pelement;
 

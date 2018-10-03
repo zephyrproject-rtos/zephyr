@@ -19,6 +19,9 @@ you use native host tools for compiling, debugging, and analyzing your
 Zephyr application, eliminating the need for architecture-specific
 target hardware in the early phases of development.
 
+This board provides a few peripherals such as an Ethernet driver and UART.
+See `Peripherals`_ for more information.
+
 Host system dependencies
 ========================
 
@@ -163,17 +166,6 @@ available options::
 
    $ zephyr/zephyr.exe --help
 
-     [-h] [--h] [--help] [-?]  :Display this help
-     [-rt]                     :Slow down the execution to the host real time
-     [-no-rt]                  :Do NOT slow down the execution to real time, but
-                                advance Zephyr's time as fast as possible and
-                                decoupled from the host time
-     [-stop_at=<time>]         :In simulated seconds, when to stop automatically
-     [-seed=<r_seed>]          :Seed for the entropy device
-     [-testargs <arg>...]      :Any argument that follows will be ignored
-                                by the top level, and made
-                                available for possible tests
-
 Note that the Zephyr kernel does not actually exit once the application is
 finished. It simply goes into the idle loop forever.
 Therefore you must stop the application manually (Ctrl+C in Linux).
@@ -193,13 +185,26 @@ instrumented as any other native program. The program is compiled with debug
 information, so it can be run directly in, for example, ``gdb`` or instrumented
 with ``valgrind``.
 
-Because the execution of your Zephyr application is fully deterministic
+Because the execution of your Zephyr application is normally deterministic
 (there are no asynchronous or random components), you can execute the
 code multiple times and get the exact same result. Instrumenting the
 code does not affect its execution.
 
 To ease debugging you may want to compile your code without optimizations
-(e.g., -O0).
+(e.g., -O0) by setting :option:`CONFIG_NO_OPTIMIZATIONS`.
+
+Address Sanitizer (ASan)
+========================
+
+You can also build Zephyr with `Address Sanitizer`_. To do this, set
+:option:`CONFIG_ASAN`, for example, in the application project file, or in the
+cmake command line invocation.
+
+Note that you will need the ASan library installed in your system.
+In Debian/Ubuntu this is ``libasan1``.
+
+.. _Address Sanitizer:
+   https://github.com/google/sanitizers/wiki/AddressSanitizer
 
 Rationale for this port
 ***********************
@@ -213,8 +218,9 @@ The main intents of this port are:
 - Run tests fast: several minutes of simulated time per wall time second.
 - Possibility to connect to external tools which may be able to run much
   faster or much slower than real time.
-- Fully deterministic, repeatable runs:
-  There must not be any randomness or indeterminism.
+- Deterministic, repeatable runs:
+  There must not be any randomness or indeterminism (unless host peripherals
+  are used).
   The result must **not** be affected by:
 
   - Debugging or instrumenting the code.
@@ -248,7 +254,7 @@ This native port compiles your code directly to x86, with no instrumentation or
 monitoring code. Your code executes directly in the host CPU. That is, your code
 executes just as fast as it possibly can.
 
-Simulated time is decoupled from real host time.
+Simulated time is normally decoupled from real host time.
 The problem of how to emulate the instruction execution speed is solved
 by assuming that code executes in zero simulated time.
 
@@ -353,56 +359,140 @@ If the SW unmasks a pending interrupt while running, or triggers a SW
 interrupt, the interrupt controller may raise the interrupt immediately
 depending on interrupt priorities, masking, and locking state.
 
-Normally the resulting executable runs fully decoupled from the real host time.
-That is, simulated time will advance as fast as it can. This is desirable when
-running in a debugger or testing in batch, but not if one wants to interact
-with external interfaces which are based on the real host time.
+About time in native_posix
+==========================
+
+Normally simulated time runs fully decoupled from the real host time
+and as fast as the host compute power would allow.
+This is desirable when running in a debugger or testing in batch, but not if
+interacting with external interfaces based on the real host time.
+
+The Zephyr kernel is only aware of the simulated time as provided by the
+HW models. Therefore any normal Zephyr thread will also know only about
+simulated time.
+
+The only link between the simulated time and the real/host time, if any,
+is created by the clock and timer model.
+
+This model can be configured to slow down the execution of native_posix to
+real time.
+You can do this with the ``--rt`` and ``--no-rt`` options from the command line.
+The default behavior is set with
+:option:`CONFIG_NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME`.
+Note that all this model does is wait before raising the
+next system tick interrupt until the corresponding real/host time.
+If, for some reason, native_posix runs slower than real time, all this
+model can do is "catch up" as soon as possible by not delaying the
+following ticks.
+So if the host load is too high, or you are running in a debugger, you will
+see simulated time lagging behind the real host time.
+This solution ensures that normal runs are still deterministic while
+providing an illusion of real timeness to the observer.
+
+When locked to real time, simulated time can also be set to run faster or
+slower than real time.
+This can be controlled with the ``--rt-ratio=<ratio>`` and ``-rt-drift=<drift>``
+command line options. Note that both of these options control the same
+underlying mechanism, and that ``drift`` is by definition equal to
+``ratio - 1``.
+It is also possible to adjust this clock speed on the fly with
+:c:func:`native_rtc_adjust_clock()`.
+
+In this way if, for example, ``--rt-ratio=2`` is given, the simulated time
+will advance at twice the real time speed.
+Similarly if ``--rt-drift=-100e-6`` is given, the simulated time will progress
+100ppm slower than real time.
+Note that the these 2 options have no meaning when running in non real-time
+mode.
+
+How simulated time and real time relate to each other
+-----------------------------------------------------
+
+Simulated time (``st``) can be calculated from real time (``rt``) as
+
+``st = (rt - last_rt) * ratio + last_st``
+
+And vice-versa:
+
+``rt = (st - last_st) / ratio + last_rt``
+
+Where ``last_rt`` and ``last_st`` are respectively the real time and the
+simulated time when the last clock ratio adjustment took place.
+
+All times are kept in microseconds.
 
 Peripherals
 ***********
 
 The following peripherals are currently provided with this board:
 
-**Console driver**:
-  A console driver is provided which by default is configured to:
-
-  - Redirect any :c:func:`printk` write to the native host application's
-    `stdout`.
-
-  - Feed any input from the native application `stdin` to a possible
-    running :ref:`Shell`. For more information refer to the section
-    `Shell support`_.
-
-**Simple timer**:
-  A simple timer provides the kernel with a 10ms tick.
-  This peripheral driver also provides the needed functionality for this
-  architecture-specific :c:func:`k_busy_wait`.
-
-  This timer, may be configured
-  to slow down the execution to real host time.
-  This will provide the illusion that the simulated time is running at the same
-  speed as the real host time.
-  In reality, the timer will monitor how much real host time
-  has actually passed since boot, and when needed, it will pause
-  the execution before raising its next timer interrupt.
-  Normally the Zephyr application and HW models run in very little time
-  on the host CPU, so this is a good enough approach.
-  To configure the timer to slow down the execution, either set the option
-  :option:`CONFIG_NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME`
-  or use the command line switch --rt.
-
-**Entropy device**:
-  An entropy device based on the host :c:func:`random` API.
-  This device will generate the same sequence of random number if initialized
-  with the same random seed.
-  You can change this random seed value by using the command line option:
-  ``--seed=<random_seed>`` where the value specified is a 32-bit integer
-  such as 97229 (decimal),  0x17BCD (hex), or 0275715 (octal).
-
 **Interrupt controller**:
   A simple yet generic interrupt controller is provided. It can nest interrupts
   and provides interrupt priorities. Interrupts can be individually masked or
   unmasked. SW interrupts are also supported.
+
+**Clock, timer and system tick model**
+  This model provides the system tick timer. By default
+  :option:`CONFIG_SYS_CLOCK_TICKS_PER_SEC` configures it to tick every 10ms.
+
+  This peripheral driver also provides the needed functionality for this
+  architecture-specific :c:func:`k_busy_wait`.
+
+  Please refer to the section `About time in native_posix`_ for more
+  information.
+
+**UART**
+  An optional UART driver can be compiled with native_posix.
+  For more information refer to the section `UART`_.
+
+**Console driver**:
+  A console driver is provided which by default is configured to:
+
+  - Redirect any :c:func:`printk` write to the native host application's
+    ``stdout``.
+
+  - If the legacy shell is compiled with your application, redirect the
+    native application's ``stdin`` to the legacy shell for any input.
+    For more information refer to the section `Legacy shell support`_.
+
+**Real time clock**
+  The real time clock model provides a model of a constantly powered clock.
+  By default this is initialized to the host time at boot.
+
+  This RTC can also be set to start from time 0 with the ``--rtc-reset`` command
+  line option.
+
+  It is possible to offset the RTC clock value at boot with the
+  ``--rtc-offset=<offset>`` option,
+  or to adjust it dynamically with the function :c:func:`native_rtc_offset`.
+
+  After start, this RTC advances with the simulated time, and is therefore
+  affected by the simulated time speed ratio.
+  See `About time in native_posix`_ for more information.
+
+  The time can be queried with the functions :c:func:`native_rtc_gettime_us`
+  and :c:func:`native_rtc_gettime`. Both accept as parameter the clock source:
+
+  - ``RTC_CLOCK_BOOT``: It counts the simulated time passed since boot.
+    It is not subject to offset adjustments
+  - ``RTC_CLOCK_REALTIME``: RTC persistent time. It is affected by
+    offset adjustments.
+  - ``RTC_CLOCK_PSEUDOHOSTREALTIME``: A version of the real host time,
+    as if the host was also affected by the clock speed ratio and offset
+    adjustments performed to the simulated clock and this RTC. Normally
+    this value will be a couple of hundredths of microseconds ahead of the
+    simulated time, depending on the host execution speed.
+    This clock source should be used with care, as depending on the actual
+    execution speed of native_posix and the host load,
+    it may return a value considerably ahead of the simulated time.
+
+**Entropy device**:
+  An entropy device based on the host :c:func:`random` API.
+  This device will generate the same sequence of random numbers if initialized
+  with the same random seed.
+  You can change this random seed value by using the command line option:
+  ``--seed=<random_seed>`` where the value specified is a 32-bit integer
+  such as 97229 (decimal),  0x17BCD (hex), or 0275715 (octal).
 
 **Ethernet driver**:
   A simple TAP based ethernet driver is provided. The driver will create
@@ -427,21 +517,55 @@ The following peripherals are currently provided with this board:
   must be powered down and support Bluetooth Low Energy (i.e. support the
   Bluetooth specification version 4.0 or greater).
 
-Shell support
-*************
 
-When the :ref:`Shell` subsystem is compiled with your application, the native
-standard input (`stdin`) will be redirected to the shell.
-You may use the shell interactively through the console,
+UART
+*****
+
+This driver can be configured to either create and link the UART to a new
+pseudoterminal (i.e. ``/dev/pts<nbr>``), or to map the UART input and
+output to the executable's ``stdin`` and ``stdout``.
+This is chosen by selecting either
+:option:`CONFIG_NATIVE_UART_0_ON_OWN_PTY` or
+:option:`CONFIG_NATIVE_UART_0_ON_STDINOUT`
+For interactive use with the :ref:`Shell`, choose the first (OWN_PTY) option.
+The second (STDINOUT) option can be used with the shell for automated
+testing, such as when piping other processes' output to control it.
+This is because the shell subsystem expects access to a raw terminal,
+which (by default) a normal Linux terminal is not.
+
+When :option:`CONFIG_NATIVE_UART_0_ON_OWN_PTY` is chosen, the name of the
+newly created UART pseudo-terminal will be displayed in the console.
+If you want to interact with it manually, you should attach a terminal emulator
+to it. This can be done, for example with the command::
+
+   $ xterm -e screen /dev/<ttyn> &
+
+where ``/dev/<ttyn>`` should be replaced with the actual TTY device.
+
+You may also chose to automatically attach a terminal emulator to it by
+passing the command line option ``-attach_uart`` to the executable.
+The command used for attaching to the new shell can be set with the command line
+option ``-attach_uart_cmd=<"cmd">``. Where the default command is given by
+:option:`CONFIG_NATIVE_UART_AUTOATTACH_DEFAULT_CMD`.
+Note that the default command assumes both ``xterm`` and ``screen`` are
+installed in the system.
+
+
+Legacy shell support
+********************
+
+When the legacy shell subsystem is compiled with your application,
+the native standard input (``stdin``) will be redirected to the shell.
+You may use this shell interactively through the console,
 by piping another process output to it, or by feeding it a file.
 
 When using it interactively you may want to select the option
 :option:`CONFIG_NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME`.
 
-When feeding `stdin` from a pipe or file, the console driver will ensure
+When feeding ``stdin`` from a pipe or file, the console driver will ensure
 reproducibility between runs of the process:
 
-- The execution of the process will be stalled while waiting for new `stdin`
+- The execution of the process will be stalled while waiting for new ``stdin``
   data to be ready.
 
 - Commands will be fed to the shell as fast as the shell can process them.
@@ -460,7 +584,7 @@ forwarded to the shell.
 These directives are:
 
 - ``!wait <ms>``: When received, the driver will pause feeding commands to the
-  shell for `<ms>` milliseconds.
+  shell for ``<ms>`` milliseconds.
 
 - ``!quit``: When received the driver will cause the application to gracefully
   exit by calling :c:func:`posix_exit`.
@@ -469,16 +593,8 @@ These directives are:
 Use example
 ===========
 
-For example, you can build the shell sample app:
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/subsys/shell/shell_module
-   :host-os: unix
-   :board: native_posix
-   :goals: build
-   :compact:
-
-And feed it the following set of commands through a pipe:
+For example, after you have built an application with the legacy shell, you
+can feed it the following set of commands through a pipe:
 
 .. code-block:: console
 

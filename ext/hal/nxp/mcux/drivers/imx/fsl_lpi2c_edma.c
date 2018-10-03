@@ -1,31 +1,9 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fsl_lpi2c_edma.h"
@@ -35,6 +13,11 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
+
+/* Component ID definition, used by tools. */
+#ifndef FSL_COMPONENT_ID
+#define FSL_COMPONENT_ID "platform.drivers.lpi2c_edma"
+#endif
 
 /* @brief Mask to align an address to 32 bytes. */
 #define ALIGN_32_MASK (0x1fU)
@@ -95,12 +78,6 @@ typedef void (*lpi2c_isr_t)(LPI2C_Type *base, void *handle);
 /*******************************************************************************
  * Prototypes
  ******************************************************************************/
-
-/* Defined in fsl_lpi2c.c. */
-extern status_t LPI2C_CheckForBusyBus(LPI2C_Type *base);
-
-/* Defined in fsl_lpi2c.c. */
-extern status_t LPI2C_MasterCheckAndClearError(LPI2C_Type *base, uint32_t status);
 
 static uint32_t LPI2C_GenerateCommands(lpi2c_master_edma_handle_t *handle);
 
@@ -446,18 +423,21 @@ status_t LPI2C_MasterTransferAbortEDMA(LPI2C_Type *base, lpi2c_master_edma_handl
 static void LPI2C_MasterEDMACallback(edma_handle_t *dmaHandle, void *userData, bool isTransferDone, uint32_t tcds)
 {
     lpi2c_master_edma_handle_t *handle = (lpi2c_master_edma_handle_t *)userData;
-    bool hasReceiveData = (handle->transfer.direction == kLPI2C_Read) && (handle->transfer.dataSize);
+    bool hasReceiveData;
+
+    if (!handle)
+    {
+        return;
+    }
+
+    hasReceiveData = (handle->transfer.direction == kLPI2C_Read) && (handle->transfer.dataSize);
+
     if (hasReceiveData && !FSL_FEATURE_LPI2C_HAS_SEPARATE_DMA_RX_TX_REQn(base))
     {
         if (EDMA_GetNextTCDAddress(handle->tx) != 0)
         {
             LPI2C_MasterEnableDMA(handle->base, false, true);
         }
-    }
-
-    if (!handle)
-    {
-        return;
     }
 
     /* Check for errors. */

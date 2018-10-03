@@ -1,0 +1,19 @@
+# Kconfig - nRF52810 PCA10040 board configuration
+#
+# Copyright (c) 2018 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NRF52810_PCA10040
+
+config BOARD_ENABLE_DCDC
+        bool "Enable DCDC mode"
+        select SOC_DCDC_NRF52X
+        default y
+
+# BT_CTLR depends on BT. When BT is enabled we should default to also
+# enabling the controller.
+config BT_CTLR
+	default y if BT
+
+endif # BOARD_NRF52810_PCA10040

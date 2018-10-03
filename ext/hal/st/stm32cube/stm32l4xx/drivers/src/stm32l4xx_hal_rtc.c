@@ -84,6 +84,62 @@
        Wakeup from STOP and Standby modes is possible only when the RTC clock source
        is LSE or LSI.
 
+  *** Callback registration ***
+  =============================================
+
+  The compilation define  USE_RTC_REGISTER_CALLBACKS when set to 1
+  allows the user to configure dynamically the driver callbacks.
+  Use Function @ref HAL_RTC_RegisterCallback() to register an interrupt callback.
+
+  Function @ref HAL_RTC_RegisterCallback() allows to register following callbacks:
+    (+) AlarmAEventCallback          : RTC Alarm A Event callback.
+    (+) AlarmBEventCallback          : RTC Alarm B Event callback.
+    (+) TimeStampEventCallback       : RTC TimeStamp Event callback.
+    (+) WakeUpTimerEventCallback     : RTC WakeUpTimer Event callback.
+    (+) Tamper1EventCallback         : RTC Tamper 1 Event callback.
+    (+) Tamper2EventCallback         : RTC Tamper 2 Event callback.
+    (+) Tamper3EventCallback         : RTC Tamper 3 Event callback.
+    (+) MspInitCallback              : RTC MspInit callback.
+    (+) MspDeInitCallback            : RTC MspDeInit callback.
+  This function takes as parameters the HAL peripheral handle, the Callback ID
+  and a pointer to the user callback function.
+
+  Use function @ref HAL_RTC_UnRegisterCallback() to reset a callback to the default
+  weak function.
+  @ref HAL_RTC_UnRegisterCallback() takes as parameters the HAL peripheral handle,
+  and the Callback ID.
+  This function allows to reset following callbacks:
+    (+) AlarmAEventCallback          : RTC Alarm A Event callback.
+    (+) AlarmBEventCallback          : RTC Alarm B Event callback.
+    (+) TimeStampEventCallback       : RTC TimeStamp Event callback.
+    (+) WakeUpTimerEventCallback     : RTC WakeUpTimer Event callback.
+    (+) Tamper1EventCallback         : RTC Tamper 1 Event callback.
+    (+) Tamper2EventCallback         : RTC Tamper 2 Event callback.
+    (+) Tamper3EventCallback         : RTC Tamper 3 Event callback.
+    (+) MspInitCallback              : RTC MspInit callback.
+    (+) MspDeInitCallback            : RTC MspDeInit callback.
+
+  By default, after the @ref HAL_RTC_Init() and when the state is HAL_RTC_STATE_RESET,
+  all callbacks are set to the corresponding weak functions :
+  examples @ref AlarmAEventCallback(), @ref TimeStampEventCallback().
+  Exception done for MspInit and MspDeInit callbacks that are reset to the legacy weak function
+  in the @ref HAL_RTC_Init()/@ref HAL_RTC_DeInit() only when these callbacks are null
+  (not registered beforehand).
+  If not, MspInit or MspDeInit are not null, @ref HAL_RTC_Init()/@ref HAL_RTC_DeInit()
+  keep and use the user MspInit/MspDeInit callbacks (registered beforehand)
+
+  Callbacks can be registered/unregistered in HAL_RTC_STATE_READY state only.
+  Exception done MspInit/MspDeInit that can be registered/unregistered
+  in HAL_RTC_STATE_READY or HAL_RTC_STATE_RESET state,
+  thus registered (user) MspInit/DeInit callbacks can be used during the Init/DeInit.
+  In that case first register the MspInit/MspDeInit user callbacks
+  using @ref HAL_RTC_RegisterCallback() before calling @ref HAL_RTC_DeInit()
+  or @ref HAL_RTC_Init() function.
+
+  When The compilation define USE_HAL_RTC_REGISTER_CALLBACKS is set to 0 or
+  not defined, the callback registration feature is not available and all callbacks
+  are set to the corresponding weak functions.
+
    @endverbatim
 
   ******************************************************************************
@@ -199,6 +255,37 @@ HAL_StatusTypeDef HAL_RTC_Init(RTC_HandleTypeDef *hrtc)
   assert_param(IS_RTC_OUTPUT_POL(hrtc->Init.OutPutPolarity));
   assert_param(IS_RTC_OUTPUT_TYPE(hrtc->Init.OutPutType));
   
+#if (USE_HAL_RTC_REGISTER_CALLBACKS == 1)
+  if(hrtc->State == HAL_RTC_STATE_RESET)
+  {
+    /* Allocate lock resource and initialize it */
+    hrtc->Lock = HAL_UNLOCKED;
+
+    hrtc->AlarmAEventCallback          =  HAL_RTC_AlarmAEventCallback;        /* Legacy weak AlarmAEventCallback      */
+    hrtc->AlarmBEventCallback          =  HAL_RTCEx_AlarmBEventCallback;      /* Legacy weak AlarmBEventCallback      */
+    hrtc->TimeStampEventCallback       =  HAL_RTCEx_TimeStampEventCallback;   /* Legacy weak TimeStampEventCallback   */
+    hrtc->WakeUpTimerEventCallback     =  HAL_RTCEx_WakeUpTimerEventCallback; /* Legacy weak WakeUpTimerEventCallback */
+#if defined(RTC_TAMPER1_SUPPORT)
+    hrtc->Tamper1EventCallback         =  HAL_RTCEx_Tamper1EventCallback;     /* Legacy weak Tamper1EventCallback     */
+#endif /* RTC_TAMPER1_SUPPORT */
+    hrtc->Tamper2EventCallback         =  HAL_RTCEx_Tamper2EventCallback;     /* Legacy weak Tamper2EventCallback     */
+#if defined(RTC_TAMPER3_SUPPORT)
+    hrtc->Tamper3EventCallback         =  HAL_RTCEx_Tamper3EventCallback;     /* Legacy weak Tamper3EventCallback     */
+#endif /* RTC_TAMPER3_SUPPORT */
+
+    if(hrtc->MspInitCallback == NULL)
+    {
+      hrtc->MspInitCallback = HAL_RTC_MspInit;
+    }
+    /* Init the low level hardware */
+    hrtc->MspInitCallback(hrtc);
+
+    if(hrtc->MspDeInitCallback == NULL)
+    {
+      hrtc->MspDeInitCallback = HAL_RTC_MspDeInit;
+    }
+  }
+#else
   if(hrtc->State == HAL_RTC_STATE_RESET)
   {
     /* Allocate lock resource and initialize it */
@@ -207,6 +294,7 @@ HAL_StatusTypeDef HAL_RTC_Init(RTC_HandleTypeDef *hrtc)
     /* Initialize RTC MSP */
     HAL_RTC_MspInit(hrtc);
   }
+#endif /* (USE_HAL_RTC_REGISTER_CALLBACKS) */
 
   /* Set RTC state */
   hrtc->State = HAL_RTC_STATE_BUSY;
@@ -359,8 +447,19 @@ HAL_StatusTypeDef HAL_RTC_DeInit(RTC_HandleTypeDef *hrtc)
   /* Enable the write protection for RTC registers */
   __HAL_RTC_WRITEPROTECTION_ENABLE(hrtc);
 
+#if (USE_HAL_RTC_REGISTER_CALLBACKS == 1)
+    if(hrtc->MspDeInitCallback == NULL)
+    {
+      hrtc->MspDeInitCallback = HAL_RTC_MspDeInit;
+    }
+
+    /* DeInit the low level hardware: CLOCK, NVIC.*/
+    hrtc->MspDeInitCallback(hrtc);
+
+#else
   /* De-Initialize RTC MSP */
   HAL_RTC_MspDeInit(hrtc);
+#endif /* (USE_HAL_RTC_REGISTER_CALLBACKS) */
 
   hrtc->State = HAL_RTC_STATE_RESET;
   
@@ -369,6 +468,222 @@ HAL_StatusTypeDef HAL_RTC_DeInit(RTC_HandleTypeDef *hrtc)
 
   return HAL_OK;
 }
+
+#if (USE_HAL_RTC_REGISTER_CALLBACKS == 1)
+/**
+  * @brief  Register a User RTC Callback
+  *         To be used instead of the weak predefined callback
+  * @param  hrtc RTC handle
+  * @param  CallbackID ID of the callback to be registered
+  *         This parameter can be one of the following values:
+  *          @arg @ref HAL_RTC_ALARM_A_EVENT_CB_ID          Alarm A Event Callback ID
+  *          @arg @ref HAL_RTC_ALARM_B_EVENT_CB_ID          Alarm B Event Callback ID
+  *          @arg @ref HAL_RTC_TIMESTAMP_EVENT_CB_ID        TimeStamp Event Callback ID
+  *          @arg @ref HAL_RTC_WAKEUPTIMER_EVENT_CB_ID      WakeUp Timer Event Callback ID
+  *          @arg @ref HAL_RTC_TAMPER1_EVENT_CB_ID          Tamper 1 Callback ID
+  *          @arg @ref HAL_RTC_TAMPER2_EVENT_CB_ID          Tamper 2 Callback ID
+  *          @arg @ref HAL_RTC_TAMPER3_EVENT_CB_ID          Tamper 3 Callback ID
+  *          @arg @ref HAL_RTC_MSPINIT_CB_ID                Msp Init callback ID
+  *          @arg @ref HAL_RTC_MSPDEINIT_CB_ID              Msp DeInit callback ID
+  * @param  pCallback pointer to the Callback function
+  * @retval HAL status
+  */
+HAL_StatusTypeDef HAL_RTC_RegisterCallback(RTC_HandleTypeDef *hrtc, HAL_RTC_CallbackIDTypeDef CallbackID, pRTC_CallbackTypeDef pCallback)
+{
+  HAL_StatusTypeDef status = HAL_OK;
+
+  if(pCallback == NULL)
+  {
+    return HAL_ERROR;
+  }
+
+  /* Process locked */
+  __HAL_LOCK(hrtc);
+
+  if(HAL_RTC_STATE_READY == hrtc->State)
+  {
+    switch (CallbackID)
+    {
+    case HAL_RTC_ALARM_A_EVENT_CB_ID :
+      hrtc->AlarmAEventCallback = pCallback;
+      break;
+
+    case HAL_RTC_ALARM_B_EVENT_CB_ID :
+      hrtc->AlarmBEventCallback = pCallback;
+      break;
+
+    case HAL_RTC_TIMESTAMP_EVENT_CB_ID :
+      hrtc->TimeStampEventCallback = pCallback;
+      break;
+
+    case HAL_RTC_WAKEUPTIMER_EVENT_CB_ID :
+      hrtc->WakeUpTimerEventCallback = pCallback;
+      break;
+
+#if defined(RTC_TAMPER1_SUPPORT)
+    case HAL_RTC_TAMPER1_EVENT_CB_ID :
+      hrtc->Tamper1EventCallback = pCallback;
+      break;
+#endif /* RTC_TAMPER1_SUPPORT */
+
+    case HAL_RTC_TAMPER2_EVENT_CB_ID :
+      hrtc->Tamper2EventCallback = pCallback;
+      break;
+
+#if defined(RTC_TAMPER3_SUPPORT)
+    case HAL_RTC_TAMPER3_EVENT_CB_ID :
+      hrtc->Tamper3EventCallback = pCallback;
+      break;
+#endif /* RTC_TAMPER3_SUPPORT */
+
+   case HAL_RTC_MSPINIT_CB_ID :
+      hrtc->MspInitCallback = pCallback;
+      break;
+
+   case HAL_RTC_MSPDEINIT_CB_ID :
+      hrtc->MspDeInitCallback = pCallback;
+      break;
+
+    default :
+     /* Return error status */
+      status =  HAL_ERROR;
+      break;
+    }
+  }
+  else if(HAL_RTC_STATE_RESET == hrtc->State)
+  {
+    switch (CallbackID)
+    {
+    case HAL_RTC_MSPINIT_CB_ID :
+      hrtc->MspInitCallback = pCallback;
+      break;
+
+   case HAL_RTC_MSPDEINIT_CB_ID :
+      hrtc->MspDeInitCallback = pCallback;
+      break;
+
+    default :
+     /* Return error status */
+      status =  HAL_ERROR;
+      break;
+    }
+  }
+  else
+  {
+    /* Return error status */
+    status =  HAL_ERROR;
+  }
+
+  /* Release Lock */
+  __HAL_UNLOCK(hrtc);
+
+  return status;
+}
+
+/**
+  * @brief  Unregister an RTC Callback
+  *         RTC callabck is redirected to the weak predefined callback
+  * @param  hrtc RTC handle
+  * @param  CallbackID ID of the callback to be unregistered
+  *         This parameter can be one of the following values:
+  *          @arg @ref HAL_RTC_ALARM_A_EVENT_CB_ID          Alarm A Event Callback ID
+  *          @arg @ref HAL_RTC_ALARM_B_EVENT_CB_ID          Alarm B Event Callback ID
+  *          @arg @ref HAL_RTC_TIMESTAMP_EVENT_CB_ID        TimeStamp Event Callback ID
+  *          @arg @ref HAL_RTC_WAKEUPTIMER_EVENT_CB_ID      WakeUp Timer Event Callback ID
+  *          @arg @ref HAL_RTC_TAMPER1_EVENT_CB_ID          Tamper 1 Callback ID
+  *          @arg @ref HAL_RTC_TAMPER2_EVENT_CB_ID          Tamper 2 Callback ID
+  *          @arg @ref HAL_RTC_TAMPER3_EVENT_CB_ID          Tamper 3 Callback ID
+  *          @arg @ref HAL_RTC_MSPINIT_CB_ID Msp Init callback ID
+  *          @arg @ref HAL_RTC_MSPDEINIT_CB_ID Msp DeInit callback ID
+  * @retval HAL status
+  */
+HAL_StatusTypeDef HAL_RTC_UnRegisterCallback(RTC_HandleTypeDef *hrtc, HAL_RTC_CallbackIDTypeDef CallbackID)
+{
+  HAL_StatusTypeDef status = HAL_OK;
+
+  /* Process locked */
+  __HAL_LOCK(hrtc);
+
+  if(HAL_RTC_STATE_READY == hrtc->State)
+  {
+    switch (CallbackID)
+    {
+    case HAL_RTC_ALARM_A_EVENT_CB_ID :
+      hrtc->AlarmAEventCallback = HAL_RTC_AlarmAEventCallback;         /* Legacy weak AlarmAEventCallback    */
+      break;
+
+    case HAL_RTC_ALARM_B_EVENT_CB_ID :
+      hrtc->AlarmBEventCallback = HAL_RTCEx_AlarmBEventCallback;          /* Legacy weak AlarmBEventCallback */
+      break;
+
+    case HAL_RTC_TIMESTAMP_EVENT_CB_ID :
+      hrtc->TimeStampEventCallback = HAL_RTCEx_TimeStampEventCallback;    /* Legacy weak TimeStampEventCallback    */
+      break;
+
+    case HAL_RTC_WAKEUPTIMER_EVENT_CB_ID :
+      hrtc->WakeUpTimerEventCallback = HAL_RTCEx_WakeUpTimerEventCallback; /* Legacy weak WakeUpTimerEventCallback */
+      break;
+
+#if defined(RTC_TAMPER1_SUPPORT)
+    case HAL_RTC_TAMPER1_EVENT_CB_ID :
+      hrtc->Tamper1EventCallback = HAL_RTCEx_Tamper1EventCallback;         /* Legacy weak Tamper1EventCallback   */
+      break;
+#endif /* RTC_TAMPER1_SUPPORT */
+
+    case HAL_RTC_TAMPER2_EVENT_CB_ID :
+      hrtc->Tamper2EventCallback = HAL_RTCEx_Tamper2EventCallback;         /* Legacy weak Tamper2EventCallback         */
+      break;
+
+#if defined(RTC_TAMPER3_SUPPORT)
+    case HAL_RTC_TAMPER3_EVENT_CB_ID :
+      hrtc->Tamper3EventCallback = HAL_RTCEx_Tamper3EventCallback;         /* Legacy weak Tamper3EventCallback         */
+      break;
+#endif /* RTC_TAMPER3_SUPPORT */
+
+    case HAL_RTC_MSPINIT_CB_ID :
+      hrtc->MspInitCallback = HAL_RTC_MspInit;
+      break;
+
+    case HAL_RTC_MSPDEINIT_CB_ID :
+      hrtc->MspDeInitCallback = HAL_RTC_MspDeInit;
+      break;
+
+    default :
+     /* Return error status */
+      status =  HAL_ERROR;
+      break;
+    }
+  }
+  else if(HAL_RTC_STATE_RESET == hrtc->State)
+  {
+    switch (CallbackID)
+    {
+    case HAL_RTC_MSPINIT_CB_ID :
+      hrtc->MspInitCallback = HAL_RTC_MspInit;
+      break;
+
+    case HAL_RTC_MSPDEINIT_CB_ID :
+      hrtc->MspDeInitCallback = HAL_RTC_MspDeInit;
+      break;
+
+    default :
+     /* Return error status */
+      status =  HAL_ERROR;
+      break;
+    }
+  }
+  else
+  {
+    /* Return error status */
+    status =  HAL_ERROR;
+  }
+
+  /* Release Lock */
+  __HAL_UNLOCK(hrtc);
+
+  return status;
+}
+#endif /* USE_HAL_RTC_REGISTER_CALLBACKS */
 
 /**
   * @brief  Initialize the RTC MSP.
@@ -1302,7 +1617,11 @@ void HAL_RTC_AlarmIRQHandler(RTC_HandleTypeDef* hrtc)
       __HAL_RTC_ALARM_CLEAR_FLAG(hrtc, RTC_FLAG_ALRAF);
 
       /* AlarmA callback */
+#if (USE_HAL_RTC_REGISTER_CALLBACKS == 1)
+      hrtc->AlarmAEventCallback(hrtc);
+#else
       HAL_RTC_AlarmAEventCallback(hrtc);
+#endif /* USE_HAL_RTC_REGISTER_CALLBACKS */
     }
 
     /* Get the AlarmB interrupt source enable status and pending flag status*/
@@ -1312,7 +1631,11 @@ void HAL_RTC_AlarmIRQHandler(RTC_HandleTypeDef* hrtc)
       __HAL_RTC_ALARM_CLEAR_FLAG(hrtc, RTC_FLAG_ALRBF);
 
       /* AlarmB callback */
+#if (USE_HAL_RTC_REGISTER_CALLBACKS == 1)
+      hrtc->AlarmBEventCallback(hrtc);
+#else
       HAL_RTCEx_AlarmBEventCallback(hrtc);
+#endif /* USE_HAL_RTC_REGISTER_CALLBACKS */
     }
   }
 

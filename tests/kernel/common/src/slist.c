@@ -161,7 +161,21 @@ static inline bool verify_tail_head(sys_slist_t *list,
 
 	return true;
 }
+/**
+ * @addtogroup kernel_common_tests
+ * @{
+ */
 
+/**
+ * @brief Test singly linked list functionalities
+ *
+ * @details Test list initialization, append item to the list,
+ * find and remove item, prepend, append, remove list
+ *
+ * @see sys_slist_init(), sys_slist_append(),
+ * sys_slist_find_and_remove(), sys_slist_prepend(),
+ * sys_slist_remove()
+ */
 void test_slist(void)
 {
 	sys_slist_init(&test_list);
@@ -310,3 +324,7 @@ void test_slist(void)
 	}
 	zassert_equal(ii, 2, "");
 }
+
+/**
+ * @}
+ */

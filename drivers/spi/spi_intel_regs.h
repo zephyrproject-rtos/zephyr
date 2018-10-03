@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __SPI_INTEL_REGS_H__
-#define __SPI_INTEL_REGS_H__
+#ifndef ZEPHYR_DRIVERS_SPI_SPI_INTEL_REGS_H_
+#define ZEPHYR_DRIVERS_SPI_SPI_INTEL_REGS_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -77,4 +77,4 @@ extern "C" {
 }
 #endif
 
-#endif /* __SPI_INTEL_REGS_H__ */
+#endif /* ZEPHYR_DRIVERS_SPI_SPI_INTEL_REGS_H_ */

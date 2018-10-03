@@ -63,7 +63,7 @@
 /* Private macros ------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
-/* Exported functions ---------------------------------------------------------*/
+/* Exported functions --------------------------------------------------------*/
 
 /** @defgroup SPIEx_Exported_Functions SPIEx Exported Functions
   * @{
@@ -88,8 +88,8 @@
   */
 
 /**
-  * @brief Flush the RX fifo.
-  * @param  hspi: pointer to a SPI_HandleTypeDef structure that contains
+  * @brief  Flush the RX fifo.
+  * @param  hspi pointer to a SPI_HandleTypeDef structure that contains
   *               the configuration information for the specified SPI module.
   * @retval HAL status
   */

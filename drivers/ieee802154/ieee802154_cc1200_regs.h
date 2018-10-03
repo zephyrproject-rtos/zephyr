@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __IEEE802154_CC1200_REGS_H__
-#define __IEEE802154_CC1200_REGS_H__
+#ifndef ZEPHYR_DRIVERS_IEEE802154_IEEE802154_CC1200_REGS_H_
+#define ZEPHYR_DRIVERS_IEEE802154_IEEE802154_CC1200_REGS_H_
 
 /* Access types (see Section 3.2) */
 
@@ -521,4 +521,4 @@
 /* ToDo: supporting 802.15.4g will make this header of a different size */
 #define CC1200_PHY_HDR_LEN			(1)
 
-#endif /* __IEEE802154_CC1200_REGS_H__ */
+#endif /* ZEPHYR_DRIVERS_IEEE802154_IEEE802154_CC1200_REGS_H_ */

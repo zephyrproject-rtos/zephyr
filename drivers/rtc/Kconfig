@@ -11,7 +11,6 @@
 #
 menuconfig RTC
 	bool "Real-Time Clock"
-	default n
 	help
 	  Enable options for Real-Time Clock drivers.
 
@@ -28,5 +27,6 @@ comment "RTC drivers"
 
 source "drivers/rtc/Kconfig.qmsi"
 source "drivers/rtc/Kconfig.mcux_rtc"
+source "drivers/rtc/Kconfig.stm32_rtc"
 
 endif # RTC

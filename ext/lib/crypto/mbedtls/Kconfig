@@ -18,9 +18,7 @@
 
 
 menuconfig MBEDTLS
-	bool
-	prompt "mbedTLS Support"
-	default n
+	bool "mbedTLS Support"
 	help
 	  This option enables the mbedTLS cryptography library.
 
@@ -45,12 +43,18 @@ endchoice
 config MBEDTLS_CFG_FILE
 	string "mbed TLS configuration file"
 	depends on MBEDTLS_BUILTIN
-	default "config-mini-tls1_2.h"
+	default "config-tls-generic.h"
 	help
-	  Use a specific mbed TLS configuration file. The default is suitable to
-	  communicate with majority of HTTPS servers on the Internet, but has
-	  relatively many features enabled. To optimize resources for special
-	  TLS usage, an alternative config may be selected.
+	  Use a specific mbed TLS configuration file. The default config file
+	  file can be tweaked with Kconfig. The default configuration is
+	  suitable to communicate with majority of HTTPS servers on the Internet,
+	  but has relatively many features enabled. To optimize resources for
+	  special TLS usage, use available Kconfig options, or select an
+	  alternative config.
+
+if MBEDTLS_BUILTIN && MBEDTLS_CFG_FILE = "config-tls-generic.h"
+source "ext/lib/crypto/mbedtls/Kconfig.tls-generic"
+endif
 
 config MBEDTLS_SSL_MAX_CONTENT_LEN
 	int "Max payload size for TLS protocol message"
@@ -70,7 +74,6 @@ config MBEDTLS_SSL_MAX_CONTENT_LEN
 config MBEDTLS_DEBUG
 	bool "mbed TLS debug activation"
 	depends on MBEDTLS_BUILTIN
-	default n
 	help
 	  Enable debugging activation for mbed TLS configuration. If you use
 	  mbedTLS/Zephyr integration (e.g. net_app), this will activate debug
@@ -99,7 +102,6 @@ config MBEDTLS_DEBUG_LEVEL
 config MBEDTLS_TEST
 	bool "Compile internal self test functions"
 	depends on MBEDTLS_BUILTIN
-	default n
 	help
 	  Enable self test function for the crypto algorithms
 
@@ -113,7 +115,6 @@ config MBEDTLS_INSTALL_PATH
 
 config MBEDTLS_ENABLE_HEAP
 	bool "Enable global heap for mbed TLS"
-	default n
 	help
 	  This option enables the mbedtls to use the heap. This setting must
 	  be global so that various applications and libraries in Zephyr do not

@@ -7,8 +7,8 @@
  * @brief Atmel SAM MCU family Ethernet PHY (GMAC) driver.
  */
 
-#ifndef _PHY_SAM_GMAC_H_
-#define _PHY_SAM_GMAC_H_
+#ifndef ZEPHYR_DRIVERS_ETHERNET_PHY_SAM_GMAC_H_
+#define ZEPHYR_DRIVERS_ETHERNET_PHY_SAM_GMAC_H_
 
 #include <zephyr/types.h>
 #include <soc.h>
@@ -57,4 +57,4 @@ u32_t phy_sam_gmac_id_get(const struct phy_sam_gmac_dev *phy);
 }
 #endif
 
-#endif /* _PHY_SAM_GMAC_H_ */
+#endif /* ZEPHYR_DRIVERS_ETHERNET_PHY_SAM_GMAC_H_ */

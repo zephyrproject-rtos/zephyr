@@ -127,7 +127,20 @@ static void thread_entry_fn_isr(void *p1, void *p2, void *p3)
 	k_sem_give(&end_sema);
 }
 
-/*test cases*/
+/**
+ * @addtogroup kernel_fifo_tests
+ * @{
+ */
+
+/**
+ * @brief Tests single fifo get and put operation in thread context
+ * @details Test Thread enters items into a fifo, starts the Child Thread
+ * and waits for a semaphore. Child thread extracts all items from
+ * the fifo and enters some items back into the fifo.  Child Thread
+ * gives the semaphore for Test Thread to continue.  Once the control
+ * is returned back to Test Thread, it extracts all items from the fifo.
+ * @see k_fifo_get(), k_fifo_is_empty(), k_fifo_put(), #K_FIFO_DEFINE(x)
+ */
 static void test_single_fifo_play(void)
 {
 	void *rx_data;
@@ -158,6 +171,15 @@ static void test_single_fifo_play(void)
 	k_thread_abort(tid);
 }
 
+/**
+ * @brief Tests dual fifo get and put operation in thread context
+ * @details test Thread enters an item into fifo2, starts a Child Thread and
+ * extract an item from fifo1 once the item is there.  The Child Thread
+ * will extract an item from fifo2 once the item is there and and enter
+ * an item to fifo1.  The flow of control goes from Test Thread to
+ * Child Thread and so forth.
+ * @see k_fifo_get(), k_fifo_is_empty(), k_fifo_put(), #K_FIFO_DEFINE(x)
+ */
 static void test_dual_fifo_play(void)
 {
 	void *rx_data;
@@ -181,6 +203,15 @@ static void test_dual_fifo_play(void)
 
 }
 
+/**
+ * @brief Tests fifo put and get operation in interrupt context
+ * @details Tests the ISR interfaces. Test thread puts items into fifo2
+ * and gives control to the Child thread. Child thread gets items from
+ * fifo2 and then puts items into fifo1. Child thread gives back control
+ * to the Test thread and Test thread gets the items from fifo1.
+ * All the Push and Pop operations happen in ISR Context.
+ * @see k_fifo_get(), k_fifo_is_empty(), k_fifo_put(), #K_FIFO_DEFINE(x)
+ */
 static void test_isr_fifo_play(void)
 {
 	/* Init kernel objects */
@@ -203,6 +234,10 @@ static void test_isr_fifo_play(void)
 	/* Clear the spawn thread to avoid side effect */
 	k_thread_abort(tid);
 }
+
+/**
+ * @}
+ */
 
 /*test case main entry*/
 void test_main(void)

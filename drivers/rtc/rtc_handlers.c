@@ -16,13 +16,15 @@ Z_SYSCALL_HANDLER(rtc_read, dev)
 Z_SYSCALL_HANDLER(rtc_enable, dev)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_RTC(dev, enable));
-	return _impl_rtc_enable((struct device *)dev);
+	_impl_rtc_enable((struct device *)dev);
+	return 0;
 }
 
 Z_SYSCALL_HANDLER(rtc_disable, dev)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_RTC(dev, disable));
-	return _impl_rtc_disable((struct device *)dev);
+	_impl_rtc_disable((struct device *)dev);
+	return 0;
 }
 
 Z_SYSCALL_HANDLER(rtc_set_alarm, dev, alarm_val)

@@ -32,28 +32,35 @@ echo-server directory:
 - :file:`prj.conf`
   Generic config file, normally you should use this.
 
-- :file:`prj_arduino_101.conf`
-  Use this for Arduino 101 with external enc28j60 ethernet board.
+- :file:`overlay-frdm_k64f_cc2520.conf`
+  This overlay config enables support for IEEE 802.15.4 CC2520 and frdm_k64f
 
-- :file:`prj_bt.conf`
-  Use this for Bluetooth IPSP connectivity.
+- :file:`overlay-frdm_k64f_mcr20a.conf`
+  This overlay config enables support for IEEE 802.15.4 mcr20a and frdm_k64f
 
-- :file:`prj_cc2520.conf`
-  Use this for devices that have support for IEEE 802.15.4 cc2520 chip.
+- :file:`overlay-ot.conf`
+  This overlay config enables support for OpenThread
 
-- :file:`prj_frdm_k64f_cc2520.conf`
-  Use this for FRDM-K64F board with external IEEE 802.15.4 cc2520 board.
+- :file:`overlay-enc28j60.conf`
+  This overlay config enables support for enc28j60 ethernet board. This
+  add-on board can be used for example with Arduino 101 board.
 
-- :file:`prj_frdm_k64f_mcr20a.conf`
-  Use this for FRDM-K64F board with IEEE 802.15.4 mcr20a board.
+- :file:`overlay-cc2520.conf`
+  This overlay config enables support for IEEE 802.15.4 cc2520 chip.
 
-- :file:`prj_qemu_802154.conf`
-  Use this when simulating IEEE 802.15.4 network using two QEMU's that
-  are connected together.
+- :file:`overlay-bt.conf`
+  This overlay config enables support for Bluetooth IPSP connectivity.
 
-- :file:`prj_netusb.conf`
-  Use this for Ethernet over USB setup with supported boards. The setup is
-  described in :ref:`usb_device_networking_setup`.
+- :file:`overlay-qemu_802154.conf`
+  This overlay config enables support for two QEMU's when simulating
+  IEEE 802.15.4 network that are connected together.
+
+- :file:`overlay-tls.conf`
+  This overlay config enables support for TLS.
+
+- :file:`overlay-netusb.conf`
+  This overlay config enables support for Ethernet over USB setup with
+  supported boards. The setup is described in :ref:`usb_device_networking_setup`
 
 Build echo-server sample application like this:
 
@@ -62,6 +69,16 @@ Build echo-server sample application like this:
    :board: <board to use>
    :conf: <config file to use>
    :goals: build
+   :compact:
+
+Example building for the FRDM-K64F with TI CC2520 support:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/echo_server
+   :host-os: unix
+   :board: frdm_k64f
+   :conf: "prj.conf overlay-frdm_k64f_cc2520.conf"
+   :goals: run
    :compact:
 
 Make can select the default configuration file based on the BOARD you've

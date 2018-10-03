@@ -4,10 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/**
- * @brief Test to verify the behavior of CONFIG_RUNTIME_NMI at runtime.
- */
-
 #include <zephyr.h>
 #include <misc/printk.h>
 #include <misc/reboot.h>
@@ -31,6 +27,14 @@ static void nmi_test_isr(void)
 }
 
 /**
+ * @brief Test the behavior of CONFIG_RUNTIME_NMI at runtime.
+ * @addtogroup kernel_interrupt_tests
+ * @ingroup all_tests
+ * @{
+ */
+
+
+/**
  * @brief test the behavior of CONFIG_RUNTIME_NMI at run time
  *
  * @details this test is to validate _NmiHandlerSet() api.
@@ -38,6 +42,8 @@ static void nmi_test_isr(void)
  * After wait for some time, and set the  Interrupt Control and
  * State Register(ICSR) of System control block (SCB).
  * The registered NMI isr should fire immediately.
+ *
+ * @see _NmiHandlerSet()
  */
 void test_arm_runtime_nmi(void)
 {
@@ -55,3 +61,6 @@ void test_arm_runtime_nmi(void)
 	/* Trigger NMI: Should fire immediately */
 	SCB->ICSR |= SCB_ICSR_NMIPENDSET_Msk;
 }
+/**
+ * @}
+ */

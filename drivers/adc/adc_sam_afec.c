@@ -1,11 +1,15 @@
 /*
  * Copyright (c) 2017 comsuisse AG
+ * Copyright (c) 2018 Justin Watson
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /** @file
  * @brief Atmel SAM MCU family ADC (AFEC) driver.
+ *
+ * This is an implementation of the Zephyr ADC driver using the SAM Analog
+ * Front-End Controller (AFEC) peripheral.
  */
 
 #include <errno.h>
@@ -16,143 +20,249 @@
 #include <soc.h>
 #include <adc.h>
 
+#define ADC_CONTEXT_USES_KERNEL_TIMER
+#include "adc_context.h"
+
 #define SYS_LOG_DOMAIN "dev/adc_sam_afec"
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_ADC_LEVEL
 #include <logging/sys_log.h>
 
-#define ADC_CHANNELS 12
-
-struct adc_sam_dev_cfg {
-	Afec *regs;
-	const struct soc_gpio_pin *pin_trigger;
-	void (*irq_config)(void);
-	u8_t irq_id;
-	u8_t periph_id;
-};
-
-struct channel_samples {
-	u16_t *buffer;
-	u32_t length;
-};
-
-struct adc_sam_dev_data {
-	struct k_sem sem_meas;
-	struct k_sem mutex_thread;
-	u16_t active_channels;
-	u16_t measured_channels;
-	u16_t active_chan_last;
-	struct channel_samples samples[ADC_CHANNELS];
-};
+#define NUM_CHANNELS 12
 
 #define CONF_ADC_PRESCALER ((SOC_ATMEL_SAM_MCK_FREQ_HZ / 15000000) - 1)
 
-#define DEV_NAME(dev) ((dev)->config->name)
+typedef void (*cfg_func_t)(struct device *dev);
+
+struct adc_sam_data {
+	struct adc_context ctx;
+	struct device *dev;
+
+	/* Pointer to the buffer in the sequence. */
+	u16_t *buffer;
+
+	/* Pointer to the beginning of a sample. Consider the number of
+	 * channels in the sequence: this buffer changes by that amount
+	 * so all the channels would get repeated.
+	 */
+	u16_t *repeat_buffer;
+
+	/* Bit mask of the channels to be sampled. */
+	u32_t channels;
+
+	/* Index of the channel being sampled. */
+	u8_t channel_id;
+};
+
+struct adc_sam_cfg {
+	Afec *regs;
+	cfg_func_t cfg_func;
+	u32_t periph_id;
+	struct soc_gpio_pin afec_trg_pin;
+};
+
 #define DEV_CFG(dev) \
-	((const struct adc_sam_dev_cfg *const)(dev)->config->config_info)
+	((const struct adc_sam_cfg *const)(dev)->config->config_info)
+
 #define DEV_DATA(dev) \
-	((struct adc_sam_dev_data *const)(dev)->driver_data)
+	((struct adc_sam_data *)(dev)->driver_data)
 
-static void adc_sam_isr(void *arg)
+static int adc_sam_channel_setup(struct device *dev,
+				 const struct adc_channel_cfg *channel_cfg)
 {
-	struct device *dev = (struct device *)arg;
-	const struct adc_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
-	struct adc_sam_dev_data *const dev_data = DEV_DATA(dev);
-	Afec *const afec = dev_cfg->regs;
-	struct channel_samples *samples = dev_data->samples;
-	u32_t isr_status;
-	u16_t value;
+	const struct adc_sam_cfg * const cfg = DEV_CFG(dev);
+	Afec *const afec = cfg->regs;
 
-	isr_status = afec->AFEC_ISR;
-	for (int i = 0; i < ADC_CHANNELS; i++) {
-		if (isr_status & BIT(i)) {
-			/* Channel i has been sampled */
-			afec->AFEC_CSELR = AFEC_CSELR_CSEL(i);
-			value = (u16_t)(afec->AFEC_CDR);
+	u8_t channel_id = channel_cfg->channel_id;
 
-			if (samples[i].length > 0) {
-				/* Save sample */
-				*samples[i].buffer = value;
-				samples[i].length--;
-				samples[i].buffer++;
+	/* Clear the gain bits for the channel. */
+	afec->AFEC_CGR &= ~(3 << channel_id * 2);
 
-				dev_data->measured_channels |= BIT(i);
-			}
-			if (samples[i].length == 0) {
-				afec->AFEC_CHDR |= BIT(i);
-				afec->AFEC_IDR |= BIT(i);
-				dev_data->active_channels &= ~BIT(i);
-			}
-		}
+	switch (channel_cfg->gain) {
+	case ADC_GAIN_1:
+		/* A value of 0 in this register is a gain of 1. */
+		break;
+	case ADC_GAIN_1_2:
+		afec->AFEC_CGR |= (1 << (channel_id * 2));
+		break;
+	case ADC_GAIN_1_4:
+		afec->AFEC_CGR |= (2 << (channel_id * 2));
+		break;
+	default:
+		SYS_LOG_ERR("Selected ADC gain is not valid");
+		return -EINVAL;
 	}
 
-	if (dev_data->active_chan_last == dev_data->measured_channels) {
-		if (!dev_data->active_channels) {
-			/* No more conversions needed */
-			k_sem_give(&dev_data->sem_meas);
-		} else {
-			/* Start another conversion with remaining channels */
-			dev_data->measured_channels = 0;
-			dev_data->active_chan_last = dev_data->active_channels;
-			afec->AFEC_CR = AFEC_CR_START;
-		}
-	}
-}
-
-static int adc_sam_read(struct device *dev, struct adc_seq_table *seq_tbl)
-{
-	const struct adc_sam_dev_cfg *dev_cfg = DEV_CFG(dev);
-	struct adc_sam_dev_data *const dev_data = DEV_DATA(dev);
-	Afec *const afec = dev_cfg->regs;
-	u8_t channel;
-	u32_t num_samples;
-
-	k_sem_take(&dev_data->mutex_thread, K_FOREVER);
-
-	dev_data->active_channels = 0;
-
-	/* Enable chosen channels */
-	for (int i = 0; i < seq_tbl->num_entries; i++) {
-		channel = seq_tbl->entries[i].channel_id;
-		if (channel >= ADC_CHANNELS) {
-			return -EINVAL;
-		}
-
-		/* Check and set number of requested samples */
-		num_samples = seq_tbl->entries[i].buffer_length / sizeof(u16_t);
-		if (!num_samples) {
-			return -EINVAL;
-		}
-		dev_data->samples[channel].length = num_samples;
-
-		/* Set start of sample buffer */
-		dev_data->samples[channel].buffer =
-			(u16_t *)seq_tbl->entries[i].buffer;
-
-		/* Enable channel */
-		dev_data->active_channels |= BIT(channel);
+	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
+		SYS_LOG_ERR("Selected ADC acquisition time is not valid");
+		return -EINVAL;
 	}
 
-	/* Enable chosen channels and their interrupts */
-	afec->AFEC_CHER = dev_data->active_channels;
-	afec->AFEC_IER = dev_data->active_channels;
+	if (channel_cfg->reference != ADC_REF_EXTERNAL0) {
+		SYS_LOG_ERR("Selected reference is not valid");
+		return -EINVAL;
+	}
 
-	/* Start conversions */
-	dev_data->measured_channels = 0;
-	dev_data->active_chan_last = dev_data->active_channels;
-	afec->AFEC_CR = AFEC_CR_START;
-	k_sem_take(&dev_data->sem_meas, K_FOREVER);
+	if (channel_cfg->differential) {
+		SYS_LOG_ERR("Differential input is not supported");
+		return -EINVAL;
+	}
 
-	k_sem_give(&dev_data->mutex_thread);
+	/* Set single ended channels to unsigned and differential channels
+	 * to signed conversions.
+	 */
+	afec->AFEC_EMR &= ~(AFEC_EMR_SIGNMODE(
+			  AFEC_EMR_SIGNMODE_SE_UNSG_DF_SIGN_Val));
 
 	return 0;
 }
 
-static void adc_sam_configure(struct device *dev)
+static void adc_sam_start_conversion(struct device *dev)
 {
-	const struct adc_sam_dev_cfg *dev_cfg = DEV_CFG(dev);
-	Afec *const afec = dev_cfg->regs;
+	const struct adc_sam_cfg *const cfg = DEV_CFG(dev);
+	struct adc_sam_data *data = DEV_DATA(dev);
+	Afec *const afec = cfg->regs;
 
-	/* Reset the AFEC */
+	data->channel_id = find_lsb_set(data->channels) - 1;
+
+	SYS_LOG_DBG("Starting channel %d", data->channel_id);
+
+	/* Disable all channels. */
+	afec->AFEC_CHDR = 0xfff;
+	afec->AFEC_IDR = 0xfff;
+
+	/* Enable the ADC channel. This also enables/selects the channel pin as
+	 * an input to the AFEC (50.5.1 SAM E70 datasheet).
+	 */
+	afec->AFEC_CHER = (1 << data->channel_id);
+
+	/* Enable the interrupt for the channel. */
+	afec->AFEC_IER = (1 << data->channel_id);
+
+	/* Start the conversions. */
+	afec->AFEC_CR = AFEC_CR_START;
+}
+
+/**
+ * This is only called once at the beginning of all the conversions,
+ * all channels as a group.
+ */
+static void adc_context_start_sampling(struct adc_context *ctx)
+{
+	struct adc_sam_data *data = CONTAINER_OF(ctx, struct adc_sam_data, ctx);
+
+	data->channels = ctx->sequence->channels;
+
+	adc_sam_start_conversion(data->dev);
+}
+
+static void adc_context_update_buffer_pointer(struct adc_context *ctx,
+					      bool repeat_sampling)
+{
+	struct adc_sam_data *data = CONTAINER_OF(ctx, struct adc_sam_data, ctx);
+
+	if (repeat_sampling) {
+		data->buffer = data->repeat_buffer;
+	}
+}
+
+static int check_buffer_size(const struct adc_sequence *sequence,
+			     u8_t active_channels)
+{
+	size_t needed_buffer_size;
+	needed_buffer_size = active_channels * sizeof(u16_t);
+	if (sequence->options) {
+		needed_buffer_size *= (1 + sequence->options->extra_samplings);
+	}
+	if (sequence->buffer_size < needed_buffer_size) {
+		SYS_LOG_ERR("Provided buffer is too small (%u/%u)",
+				sequence->buffer_size, needed_buffer_size);
+		return -ENOMEM;
+	}
+	return 0;
+}
+
+static int start_read(struct device *dev, const struct adc_sequence *sequence)
+{
+	struct adc_sam_data *data = DEV_DATA(dev);
+	int error = 0;
+	u32_t channels = sequence->channels;
+
+	data->channels = 0;
+
+	/* Signal an error if the channel selection is invalid (no channels or
+	 * a non-existing one is selected).
+	 */
+	if (channels == 0 ||
+	   (channels & (~0UL << NUM_CHANNELS))) {
+		SYS_LOG_ERR("Invalid selection of channels");
+		return -EINVAL;
+	}
+
+	if (sequence->oversampling != 0) {
+		SYS_LOG_ERR("Oversampling is not supported");
+		return -EINVAL;
+	}
+
+	if (sequence->resolution != 12) {
+		/* TODO JKW: Support the Enhanced Resolution Mode 50.6.3 page
+		 * 1544.
+		 */
+		SYS_LOG_ERR("ADC resolution value %d is not valid",
+			    sequence->resolution);
+		return -EINVAL;
+	}
+
+	u8_t num_active_channels = 0;
+	u8_t channel = 0;
+
+	while (channels > 0) {
+		if (channels & 1) {
+			++num_active_channels;
+		}
+		channels >>= 1;
+		++channel;
+	}
+
+	error = check_buffer_size(sequence, num_active_channels);
+	if (error) {
+		return error;
+	}
+
+	/* In the context you have a pointer to the adc_sam_data structure
+	 * only.
+	 */
+	data->buffer = sequence->buffer;
+	data->repeat_buffer = sequence->buffer;
+
+	/* At this point we allow the scheduler to do other things while
+	 * we wait for the conversions to complete. This is provided by the
+	 * adc_context functions. However, the caller of this function is
+	 * blocked until the results are in.
+	 */
+	adc_context_start_read(&data->ctx, sequence);
+
+	error = adc_context_wait_for_completion(&data->ctx);
+	adc_context_release(&data->ctx, error);
+
+	return error;
+}
+
+static int adc_sam_read(struct device *dev,
+			const struct adc_sequence *sequence)
+{
+	struct adc_sam_data *data = DEV_DATA(dev);
+
+	adc_context_lock(&data->ctx, false, NULL);
+	return start_read(dev, sequence);
+}
+
+static int adc_sam_init(struct device *dev)
+{
+	const struct adc_sam_cfg *const cfg = DEV_CFG(dev);
+	struct adc_sam_data *data = DEV_DATA(dev);
+	Afec *const afec = cfg->regs;
+
+	/* Reset the AFEC. */
 	afec->AFEC_CR = AFEC_CR_SWRST;
 
 	afec->AFEC_MR = AFEC_MR_TRGEN_DIS
@@ -164,100 +274,127 @@ static void adc_sam_configure(struct device *dev)
 		      | AFEC_MR_ONE
 		      | AFEC_MR_USEQ_NUM_ORDER;
 
-	/* Set all channels CM voltage to Vrefp/2 (512) */
-	for (int i = 0; i < ADC_CHANNELS; i++) {
+	/* Set all channels CM voltage to Vrefp/2 (512). */
+	for (int i = 0; i < NUM_CHANNELS; i++) {
 		afec->AFEC_CSELR = i;
 		afec->AFEC_COCR = 512;
 	}
 
-	/* Enable PGA and Current Bias */
+	/* Enable PGA and Current Bias. */
 	afec->AFEC_ACR = AFEC_ACR_PGA0EN
 		       | AFEC_ACR_PGA1EN
 		       | AFEC_ACR_IBCTL(1);
-}
 
-static int adc_sam_initialize(struct device *dev)
-{
-	const struct adc_sam_dev_cfg *dev_cfg = DEV_CFG(dev);
-	struct adc_sam_dev_data *const dev_data = DEV_DATA(dev);
+	soc_pmc_peripheral_enable(cfg->periph_id);
 
-	/* Initialize semaphores */
-	k_sem_init(&dev_data->sem_meas, 0, 1);
-	k_sem_init(&dev_data->mutex_thread, 1, 1);
+	cfg->cfg_func(dev);
 
-	/* Configure interrupts */
-	dev_cfg->irq_config();
+	data->dev = dev;
 
-	/* Enable module's clock */
-	soc_pmc_peripheral_enable(dev_cfg->periph_id);
-
-	/* Configure ADC */
-	adc_sam_configure(dev);
-
-	/* Enable module interrupt */
-	irq_enable(dev_cfg->irq_id);
-
-	SYS_LOG_INF("Device %s initialized", DEV_NAME(dev));
+	adc_context_unlock_unconditionally(&data->ctx);
 
 	return 0;
 }
 
-static const struct adc_driver_api adc_sam_driver_api = {
-	.read    = adc_sam_read,
+#ifdef CONFIG_ADC_ASYNC
+static int adc_sam_read_async(struct device *dev,
+			      const struct adc_sequence *sequence,
+			      struct k_poll_signal *async)
+{
+	struct adc_sam_data *data = DEV_DATA(dev);
+
+	adc_context_lock(&data->ctx, true, async);
+	return start_read(dev, sequence);
+}
+#endif
+
+static const struct adc_driver_api adc_sam_api = {
+	.channel_setup = adc_sam_channel_setup,
+	.read = adc_sam_read,
+#ifdef CONFIG_ADC_ASYNC
+	.read_async = adc_sam_read_async,
+#endif
 };
 
-/* ADC_0 */
+static void adc_sam_isr(void *arg)
+{
+	struct device *dev = (struct device *)arg;
+	struct adc_sam_data *data = DEV_DATA(dev);
+	const struct adc_sam_cfg *const cfg = DEV_CFG(dev);
+	Afec *const afec = cfg->regs;
+	u16_t result;
+
+	afec->AFEC_CHDR |= BIT(data->channel_id);
+	afec->AFEC_IDR |= BIT(data->channel_id);
+
+	afec->AFEC_CSELR = AFEC_CSELR_CSEL(data->channel_id);
+	result = (u16_t)(afec->AFEC_CDR);
+
+	*data->buffer++ = result;
+	data->channels &= ~BIT(data->channel_id);
+
+	if (data->channels) {
+		adc_sam_start_conversion(dev);
+	} else {
+		/* Called once all conversions have completed.*/
+		adc_context_on_sampling_done(&data->ctx, dev);
+	}
+}
 
 #ifdef CONFIG_ADC_0
-static struct device DEVICE_NAME_GET(adc0_sam);
+static void adc0_sam_cfg_func(struct device *dev);
 
-static void adc0_irq_config(void)
-{
-	IRQ_CONNECT(AFEC0_IRQn, CONFIG_ADC_0_IRQ_PRI, adc_sam_isr,
-		    DEVICE_GET(adc0_sam), 0);
-}
-
-static const struct soc_gpio_pin pin_adc0 = PIN_AFE0_ADTRG;
-
-static const struct adc_sam_dev_cfg adc0_sam_config = {
-	.regs = AFEC0,
-	.pin_trigger = &pin_adc0,
-	.periph_id = ID_AFEC0,
-	.irq_config = adc0_irq_config,
-	.irq_id = AFEC0_IRQn,
+static const struct adc_sam_cfg adc0_sam_cfg = {
+	.regs = (Afec *)CONFIG_ADC_0_BASE_ADDRESS,
+	.cfg_func = adc0_sam_cfg_func,
+	.periph_id = CONFIG_ADC_0_PERIPHERAL_ID,
+	.afec_trg_pin = PIN_AFE0_ADTRG,
 };
 
-static struct adc_sam_dev_data adc0_sam_data;
+static struct adc_sam_data adc0_sam_data = {
+	ADC_CONTEXT_INIT_TIMER(adc0_sam_data, ctx),
+	ADC_CONTEXT_INIT_LOCK(adc0_sam_data, ctx),
+	ADC_CONTEXT_INIT_SYNC(adc0_sam_data, ctx),
+};
 
-DEVICE_AND_API_INIT(adc0_sam, CONFIG_ADC_0_NAME, &adc_sam_initialize,
-		    &adc0_sam_data, &adc0_sam_config, POST_KERNEL,
-		    CONFIG_ADC_INIT_PRIORITY, &adc_sam_driver_api);
-#endif
+DEVICE_AND_API_INIT(adc0_sam, CONFIG_ADC_0_NAME, adc_sam_init,
+		    &adc0_sam_data, &adc0_sam_cfg, POST_KERNEL,
+		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &adc_sam_api);
 
-/* ADC_1 */
+static void adc0_sam_cfg_func(struct device *dev)
+{
+	IRQ_CONNECT(CONFIG_ADC_0_IRQ, CONFIG_ADC_0_IRQ_PRI, adc_sam_isr,
+		    DEVICE_GET(adc0_sam), 0);
+	irq_enable(CONFIG_ADC_0_IRQ);
+}
+
+#endif /* CONFIG_ADC_0 */
 
 #ifdef CONFIG_ADC_1
-static struct device DEVICE_NAME_GET(adc1_sam);
+static void adc1_sam_cfg_func(struct device *dev);
 
-static void adc1_irq_config(void)
-{
-	IRQ_CONNECT(AFEC1_IRQn, CONFIG_ADC_1_IRQ_PRI, adc_sam_isr,
-		    DEVICE_GET(adc1_sam), 0);
-}
-
-static const struct soc_gpio_pin pin_adc1 = PIN_AFE1_ADTRG;
-
-static const struct adc_sam_dev_cfg adc1_sam_config = {
-	.regs = AFEC1,
-	.pin_trigger = &pin_adc1,
-	.periph_id = ID_AFEC1,
-	.irq_config = adc1_irq_config,
-	.irq_id = AFEC1_IRQn,
+static const struct adc_sam_cfg adc1_sam_cfg = {
+	.regs = (Afec *)CONFIG_ADC_1_BASE_ADDRESS,
+	.cfg_func = adc1_sam_cfg_func,
+	.periph_id = CONFIG_ADC_1_PERIPHERAL_ID,
+	.afec_trg_pin = PIN_AFE1_ADTRG,
 };
 
-static struct adc_sam_dev_data adc1_sam_data;
+static struct adc_sam_data adc1_sam_data = {
+	ADC_CONTEXT_INIT_TIMER(adc1_sam_data, ctx),
+	ADC_CONTEXT_INIT_LOCK(adc1_sam_data, ctx),
+	ADC_CONTEXT_INIT_SYNC(adc1_sam_data, ctx),
+};
 
-DEVICE_AND_API_INIT(adc1_sam, CONFIG_ADC_1_NAME, &adc_sam_initialize,
-		    &adc1_sam_data, &adc1_sam_config, POST_KERNEL,
-		    CONFIG_ADC_INIT_PRIORITY, &adc_sam_driver_api);
-#endif
+DEVICE_AND_API_INIT(adc1_sam, CONFIG_ADC_1_NAME, adc_sam_init,
+		    &adc1_sam_data, &adc1_sam_cfg, POST_KERNEL,
+		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &adc_sam_api);
+
+static void adc1_sam_cfg_func(struct device *dev)
+{
+	IRQ_CONNECT(CONFIG_ADC_1_IRQ, CONFIG_ADC_1_IRQ_PRI, adc_sam_isr,
+		    DEVICE_GET(adc1_sam), 0);
+	irq_enable(CONFIG_ADC_1_IRQ);
+}
+
+#endif /* CONFIG_ADC_1 */

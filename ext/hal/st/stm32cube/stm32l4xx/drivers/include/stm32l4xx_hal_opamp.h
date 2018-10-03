@@ -135,13 +135,18 @@ typedef enum
 /** 
   * @brief OPAMP Handle Structure definition
   */ 
-typedef struct
+typedef struct __OPAMP_HandleTypeDef
 {
   OPAMP_TypeDef       *Instance;                    /*!< OPAMP instance's registers base address   */
   OPAMP_InitTypeDef   Init;                         /*!< OPAMP required parameters */
   HAL_StatusTypeDef Status;                         /*!< OPAMP peripheral status   */
   HAL_LockTypeDef   Lock;                           /*!< Locking object          */
   __IO HAL_OPAMP_StateTypeDef  State;               /*!< OPAMP communication state */
+  
+#if (USE_HAL_OPAMP_REGISTER_CALLBACKS == 1)
+void (* MspInitCallback)                (struct __OPAMP_HandleTypeDef *hopamp);
+void (* MspDeInitCallback)              (struct __OPAMP_HandleTypeDef *hopamp); 
+#endif /* USE_HAL_OPAMP_REGISTER_CALLBACKS */ 
   
 } OPAMP_HandleTypeDef;
 
@@ -155,6 +160,24 @@ typedef  uint32_t HAL_OPAMP_TrimmingValueTypeDef;
   * @}
   */
 
+#if (USE_HAL_OPAMP_REGISTER_CALLBACKS == 1)
+/**
+  * @brief  HAL OPAMP Callback ID enumeration definition
+  */
+typedef enum
+{
+  HAL_OPAMP_MSP_INIT_CB_ID                     = 0x01U,  /*!< OPAMP MspInit Callback ID           */
+  HAL_OPAMP_MSP_DEINIT_CB_ID                   = 0x02U,  /*!< OPAMP MspDeInit Callback ID         */
+  HAL_OPAMP_ALL_CB_ID                          = 0x03U   /*!< OPAMP All ID                        */
+}HAL_OPAMP_CallbackIDTypeDef;                            
+
+/**
+  * @brief  HAL OPAMP Callback pointer definition
+  */
+typedef void (*pOPAMP_CallbackTypeDef)(OPAMP_HandleTypeDef *hopamp);
+#endif /* USE_HAL_OPAMP_REGISTER_CALLBACKS */
+    
+    
 /* Exported constants --------------------------------------------------------*/
 
 /** @defgroup OPAMP_Exported_Constants OPAMP Exported Constants
@@ -282,7 +305,17 @@ typedef  uint32_t HAL_OPAMP_TrimmingValueTypeDef;
   * @param  __HANDLE__: OPAMP handle.
   * @retval None
   */
+#if (USE_HAL_OPAMP_REGISTER_CALLBACKS == 1)
+#define __HAL_OPAMP_RESET_HANDLE_STATE(__HANDLE__)           do {                                              \
+                                                                 (__HANDLE__)->State = HAL_OPAMP_STATE_RESET; \
+                                                                 (__HANDLE__)->MspInitCallback = NULL;       \
+                                                                 (__HANDLE__)->MspDeInitCallback = NULL;     \
+                                                               } while(0)
+#else
 #define __HAL_OPAMP_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = HAL_OPAMP_STATE_RESET)
+#endif /* USE_HAL_OPAMP_REGISTER_CALLBACKS */
+
+
 
 /**
   * @}
@@ -395,6 +428,12 @@ HAL_StatusTypeDef HAL_OPAMP_SelfCalibrate(OPAMP_HandleTypeDef *hopamp);
   */
 
 /* Peripheral Control functions  ************************************************/
+#if (USE_HAL_OPAMP_REGISTER_CALLBACKS == 1)
+/* OPAMP callback registering/unregistering */
+HAL_StatusTypeDef HAL_OPAMP_RegisterCallback (OPAMP_HandleTypeDef *hopamp, HAL_OPAMP_CallbackIDTypeDef CallbackID, pOPAMP_CallbackTypeDef pCallback);
+HAL_StatusTypeDef HAL_OPAMP_UnRegisterCallback (OPAMP_HandleTypeDef *hopamp, HAL_OPAMP_CallbackIDTypeDef CallbackID);
+#endif /* USE_HAL_OPAMP_REGISTER_CALLBACKS */
+
 HAL_StatusTypeDef HAL_OPAMP_Lock(OPAMP_HandleTypeDef *hopamp); 
 HAL_OPAMP_TrimmingValueTypeDef HAL_OPAMP_GetTrimOffset (OPAMP_HandleTypeDef *hopamp, uint32_t trimmingoffset);
 

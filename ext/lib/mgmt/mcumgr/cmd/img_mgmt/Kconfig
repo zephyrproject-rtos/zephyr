@@ -16,20 +16,16 @@
 # Under the License.
 
 menuconfig MCUMGR_CMD_IMG_MGMT
-    bool
-    prompt "Enable mcumgr handlers for image management"
+    bool "Enable mcumgr handlers for image management"
     select FLASH
     select MPU_ALLOW_FLASH_WRITE if CPU_HAS_MPU
     select IMG_MANAGER
-
-    default n
     help
       Enables mcumgr handlers for image management
 
 if MCUMGR_CMD_IMG_MGMT
 config IMG_MGMT_UL_CHUNK_SIZE
-    int
-    prompt "Maximum chunk size for image uploads"
+    int "Maximum chunk size for image uploads"
     default 512
     help
       Limits the maximum chunk size for image uploads, in bytes.  A buffer of

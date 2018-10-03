@@ -9,27 +9,25 @@
 menuconfig BMG160
 	bool "Bosch BMG160 gyroscope support"
 	depends on I2C
-	default n
 	help
 	  Enable Bosch BMG160 gyroscope support.
 
+if BMG160
+
 config BMG160_DRV_NAME
 	string "Driver's name"
-	depends on BMG160
 	default "bmg160"
 	help
 	  Name for the BMG160 driver which will be used for binding.
 
 config BMG160_I2C_PORT_NAME
 	string "I2C master controller port name"
-	depends on BMG160
 	default "I2C_0"
 	help
 	  Master I2C port name through which BMG160 chip is accessed.
 
 config BMG160_I2C_ADDR
 	hex "BMG160 I2C address"
-	depends on BMG160
 	default 0x68
 	help
 	  BMG160 chip's I2C address. Chip supports two addresses: 0x68 and 0x69 (if
@@ -38,7 +36,6 @@ config BMG160_I2C_ADDR
 choice
 	prompt "BMG160 I2C bus speed"
 	default BMG160_I2C_SPEED_STANDARD
-	depends on BMG160
 
 config BMG160_I2C_SPEED_STANDARD
 	bool "Standard"
@@ -53,14 +50,12 @@ endchoice
 
 choice
 	prompt "Trigger mode"
-	depends on BMG160
 	default BMG160_TRIGGER_GLOBAL_THREAD
 	help
 	  Specify the type of triggering to be used by the driver.
 
 config BMG160_TRIGGER_NONE
-	bool
-	prompt "No trigger"
+	bool "No trigger"
 
 config BMG160_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
@@ -73,39 +68,37 @@ endchoice
 
 config BMG160_TRIGGER
 	bool
-	depends on BMG160
 
 config BMG160_THREAD_PRIORITY
 	int "Own thread priority"
-	depends on BMG160 && BMG160_TRIGGER_OWN_THREAD
+	depends on BMG160_TRIGGER_OWN_THREAD
 	default 10
 	help
 	  The priority of the thread used for handling interrupts.
 
 config BMG160_THREAD_STACK_SIZE
 	int "Own thread stack size"
-	depends on BMG160 && BMG160_TRIGGER_OWN_THREAD
+	depends on BMG160_TRIGGER_OWN_THREAD
 	default 1024
 	help
 	  The thread stack size.
 
 config BMG160_GPIO_PORT_NAME
 	string "GPIO controller port name"
-	depends on BMG160 && BMG160_TRIGGER
+	depends on BMG160_TRIGGER
 	default "GPIO_0"
 	help
 	  The gpio controller the interrupt pin is attached to.
 
 config BMG160_INT_PIN
 	hex "BMG160 INT PIN"
-	depends on BMG160 && BMG160_TRIGGER
+	depends on BMG160_TRIGGER
 	default 2
 	help
 	  BMG160 interrupt pin.
 
 choice
 	prompt "Gyroscope range setting."
-	depends on BMG160
 	default BMG160_RANGE_RUNTIME
 
 config BMG160_RANGE_RUNTIME
@@ -129,7 +122,6 @@ endchoice
 
 choice
 	prompt "Gyroscope sampling frequency."
-	depends on BMG160
 	default BMG160_ODR_RUNTIME
 
 config BMG160_ODR_RUNTIME
@@ -150,3 +142,5 @@ config BMG160_ODR_1000
 config BMG160_ODR_2000
 	bool "2000 Hz"
 endchoice
+
+endif # BMG160

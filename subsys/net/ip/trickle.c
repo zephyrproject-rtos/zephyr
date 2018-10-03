@@ -156,7 +156,7 @@ int net_trickle_create(struct net_trickle *trickle,
 {
 	NET_ASSERT(trickle && Imax > 0 && k > 0 && !CHECK_IMIN(Imin));
 
-	memset(trickle, 0, sizeof(struct net_trickle));
+	(void)memset(trickle, 0, sizeof(struct net_trickle));
 
 	trickle->Imin = Imin;
 	trickle->Imax = Imax;

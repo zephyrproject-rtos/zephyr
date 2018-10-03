@@ -1,0 +1,5 @@
+sample:
+  description: A simple application that demonstrate
+    use of logging feature.
+  name: logger sample
+  platforms: all

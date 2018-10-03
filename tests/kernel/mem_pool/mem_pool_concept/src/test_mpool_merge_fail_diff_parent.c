@@ -13,6 +13,8 @@ extern struct k_mem_pool mpool1;
 /**
  * @brief Test to verify merge of blocks of different quad-block
  *
+ * @ingroup kernel_memory_pool_tests
+ *
  * @details TESTPOINT: The algo cannot merge adjacent free blocks
  * of the same size if they belong to different parent quad-blocks
  * Test steps: 1. allocate block [0~7] in minimum block size

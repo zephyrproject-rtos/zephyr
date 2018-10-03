@@ -177,8 +177,8 @@
 
 /**
   * @brief  Initializes the GPIOx peripheral according to the specified parameters in the GPIO_Init.
-  * @param  GPIOx: where x can be (A..K) to select the GPIO peripheral.
-  * @param  GPIO_Init: pointer to a GPIO_InitTypeDef structure that contains
+  * @param  GPIOx where x can be (A..K) to select the GPIO peripheral.
+  * @param  GPIO_Init pointer to a GPIO_InitTypeDef structure that contains
   *         the configuration information for the specified GPIO peripheral.
   * @retval None
   */
@@ -302,8 +302,8 @@ void HAL_GPIO_Init(GPIO_TypeDef  *GPIOx, GPIO_InitTypeDef *GPIO_Init)
 
 /**
   * @brief  De-initializes the GPIOx peripheral registers to their default reset values.
-  * @param  GPIOx: where x can be (A..K) to select the GPIO peripheral.
-  * @param  GPIO_Pin: specifies the port bit to be written.
+  * @param  GPIOx where x can be (A..K) to select the GPIO peripheral.
+  * @param  GPIO_Pin specifies the port bit to be written.
   *          This parameter can be one of GPIO_PIN_x where x can be (0..15).
   * @retval None
   */
@@ -382,8 +382,8 @@ void HAL_GPIO_DeInit(GPIO_TypeDef  *GPIOx, uint32_t GPIO_Pin)
 
 /**
   * @brief  Reads the specified input port pin.
-  * @param  GPIOx: where x can be (A..K) to select the GPIO peripheral.
-  * @param  GPIO_Pin: specifies the port bit to read.
+  * @param  GPIOx where x can be (A..K) to select the GPIO peripheral.
+  * @param  GPIO_Pin specifies the port bit to read.
   *         This parameter can be GPIO_PIN_x where x can be (0..15).
   * @retval The input port pin value.
   */
@@ -412,10 +412,10 @@ GPIO_PinState HAL_GPIO_ReadPin(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin)
   *         accesses. In this way, there is no risk of an IRQ occurring between
   *         the read and the modify access.
   *
-  * @param  GPIOx: where x can be (A..K) to select the GPIO peripheral.
-  * @param  GPIO_Pin: specifies the port bit to be written.
+  * @param  GPIOx where x can be (A..K) to select the GPIO peripheral.
+  * @param  GPIO_Pin specifies the port bit to be written.
   *          This parameter can be one of GPIO_PIN_x where x can be (0..15).
-  * @param  PinState: specifies the value to be written to the selected bit.
+  * @param  PinState specifies the value to be written to the selected bit.
   *          This parameter can be one of the GPIO_PinState enum values:
   *            @arg GPIO_PIN_RESET: to clear the port pin
   *            @arg GPIO_PIN_SET: to set the port pin
@@ -439,8 +439,8 @@ void HAL_GPIO_WritePin(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, GPIO_PinState Pin
 
 /**
   * @brief  Toggles the specified GPIO pins.
-  * @param  GPIOx: Where x can be (A..I) to select the GPIO peripheral.
-  * @param  GPIO_Pin: Specifies the pins to be toggled.
+  * @param  GPIOx Where x can be (A..I) to select the GPIO peripheral.
+  * @param  GPIO_Pin Specifies the pins to be toggled.
   * @retval None
   */
 void HAL_GPIO_TogglePin(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin)
@@ -457,8 +457,8 @@ void HAL_GPIO_TogglePin(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin)
   *         GPIOx_PUPDR, GPIOx_AFRL and GPIOx_AFRH.
   * @note   The configuration of the locked GPIO pins can no longer be modified
   *         until the next reset.
-  * @param  GPIOx: where x can be (A..F) to select the GPIO peripheral for STM32F7 family
-  * @param  GPIO_Pin: specifies the port bit to be locked.
+  * @param  GPIOx where x can be (A..F) to select the GPIO peripheral for STM32F7 family
+  * @param  GPIO_Pin specifies the port bit to be locked.
   *         This parameter can be any combination of GPIO_PIN_x where x can be (0..15).
   * @retval None
   */
@@ -492,7 +492,7 @@ HAL_StatusTypeDef HAL_GPIO_LockPin(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin)
 
 /**
   * @brief  This function handles EXTI interrupt request.
-  * @param  GPIO_Pin: Specifies the pins connected EXTI line
+  * @param  GPIO_Pin Specifies the pins connected EXTI line
   * @retval None
   */
 void HAL_GPIO_EXTI_IRQHandler(uint16_t GPIO_Pin)
@@ -507,7 +507,7 @@ void HAL_GPIO_EXTI_IRQHandler(uint16_t GPIO_Pin)
 
 /**
   * @brief  EXTI line detection callbacks.
-  * @param  GPIO_Pin: Specifies the pins connected EXTI line
+  * @param  GPIO_Pin Specifies the pins connected EXTI line
   * @retval None
   */
 __weak void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)

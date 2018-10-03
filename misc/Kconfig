@@ -43,8 +43,8 @@ endif
 
 config TEXT_SECTION_OFFSET
 	hex "TEXT section offset"
-	default 0
 	default 0x200 if BOOTLOADER_MCUBOOT
+	default 0
 	help
 	  If the application is built for chain-loading by a bootloader this
 	  variable is required to be set to value that leaves sufficient
@@ -56,15 +56,13 @@ config TEXT_SECTION_OFFSET
 	  may require smaller or larger values.
 
 config HAVE_CUSTOM_LINKER_SCRIPT
-	prompt "Custom linker scripts provided"
-	def_bool n
+	bool "Custom linker scripts provided"
 	help
 	  Set this option if you have a custom linker script which needed to
 	  be define in CUSTOM_LINKER_SCRIPT.
 
 config CUSTOM_LINKER_SCRIPT
 	string "Path to custom linker script"
-	default ""
 	depends on HAVE_CUSTOM_LINKER_SCRIPT
 	help
 	  Path to the linker script to be used instead of the one define by the
@@ -79,28 +77,24 @@ config CUSTOM_LINKER_SCRIPT
 
 config CUSTOM_RODATA_LD
 	bool "Include custom-rodata.ld"
-	default n
 	help
 	  Include a customized linker script fragment for inserting additional
 	  data and linker directives into the rodata section.
 
 config CUSTOM_RWDATA_LD
 	bool "Include custom-rwdata.ld"
-	default n
 	help
 	  Include a customized linker script fragment for inserting additional
 	  data and linker directives into the data section.
 
 config CUSTOM_SECTIONS_LD
 	bool "Include custom-sections.ld"
-	default n
 	help
 	  Include a customized linker script fragment for inserting additional
 	  arbitrary sections.
 
 config LINK_WHOLE_ARCHIVE
 	bool "Allow linking with --whole-archive"
-	default n
 	help
 	  This options allows linking external libraries with the
 	  --whole-archive option to keep all symbols.
@@ -131,7 +125,6 @@ config CROSS_COMPILE
 
 config NATIVE_APPLICATION
 	bool "Build as a native host application"
-	default n
 	help
 	  Build as a native application that can run on the host and using
 	  resources and libraries provided by the host.
@@ -152,6 +145,12 @@ config SIZE_OPTIMIZATIONS
 	  Compiler optimizations will be set to -Os independently of other
 	  options.
 
+config SPEED_OPTIMIZATIONS
+	bool "Optimize for speed"
+	help
+	  Compiler optimizations will be set to -O2 independently of other
+	  options.
+
 config DEBUG_OPTIMIZATIONS
 	bool "Optimize debugging experience"
 	help
@@ -167,9 +166,7 @@ config NO_OPTIMIZATIONS
 endchoice
 
 config COMPILER_OPT
-	string
-	prompt "Custom compiler options"
-	default ""
+	string "Custom compiler options"
 	help
 	  This option is a free-form string that is passed to the compiler
 	  when building all parts of a project (i.e. kernel).
@@ -180,7 +177,6 @@ config COMPILER_OPT
 
 config CPLUSPLUS
 	bool "Enable C++ support for the application"
-	default n
 	help
 	  This option enables the use of applications built with C++.
 
@@ -222,7 +218,6 @@ config OUTPUT_PRINT_MEMORY_USAGE
 
 config BUILD_OUTPUT_HEX
 	bool "Build a binary in HEX format"
-	default n
 	help
 	  Build a binary in HEX format. This will build a zephyr.hex file need
 	  by some platforms.
@@ -236,24 +231,27 @@ config BUILD_OUTPUT_BIN
 
 config BUILD_OUTPUT_EXE
 	bool "Build a binary in ELF format with .exe extension"
-	default n
 	help
 	  Build a binary in ELF format that can run in the host system. This
 	  will build a zephyr.exe file.
 
 config BUILD_OUTPUT_S19
 	bool "Build a binary in S19 format"
-	default n
 	help
 	  Build a binary in S19 format. This will build a zephyr.s19 file need
 	  by some platforms.
 
 config BUILD_OUTPUT_STRIPPED
 	bool "Build a stripped binary"
-	default n
 	help
 	  Build a stripped binary. This will build a zephyr.stripped file need
 	  by some platforms.
+
+config APPLICATION_DEFINED_SYSCALL
+	bool "Scan application folder for any syscall definition"
+	help
+	  Scan additional folders inside application source folder
+	  for application defined syscalls.
 
 endmenu
 endmenu
@@ -261,16 +259,12 @@ endmenu
 menu "System Monitoring Options"
 
 config PERFORMANCE_METRICS
-	bool
-	prompt "Enable performance metrics [EXPERIMENTAL]"
-	default n
+	bool "Enable performance metrics [EXPERIMENTAL]"
 	help
 	  Enable Performance Metrics.
 
 config BOOT_TIME_MEASUREMENT
-	bool
-	prompt "Boot time measurements [EXPERIMENTAL]"
-	default n
+	bool "Boot time measurements [EXPERIMENTAL]"
 	depends on PERFORMANCE_METRICS
 	help
 	  This option enables the recording of timestamps during system start
@@ -280,8 +274,7 @@ config BOOT_TIME_MEASUREMENT
 	  recorded in terms of CPU clock cycles since system reset.
 
 config CPU_CLOCK_FREQ_MHZ
-	int
-	prompt "CPU Clock Frequency in MHz"
+	int "CPU Clock Frequency in MHz"
 	default 20
 	depends on BOOT_TIME_MEASUREMENT
 	help
@@ -289,19 +282,15 @@ config CPU_CLOCK_FREQ_MHZ
 	  convert Intel RDTSC timestamp to microseconds.
 
 config STATS
-	bool
-	prompt "Statistics support"
-	default n
+	bool "Statistics support"
 	help
 	  Enable per-module event counters for troubleshooting, maintenance,
 	  and usage monitoring.  Statistics can be retrieved with the mcumgr
 	  management subsystem.
 
 config STATS_NAMES
-	bool
-	prompt "Statistic names"
+	bool "Statistic names"
 	depends on STATS
-	default n
 	help
 	  Include a full name string for each statistic in the build.  If this
 	  setting is disabled, statistics are assigned generic names of the
@@ -313,7 +302,6 @@ menu "Boot Options"
 
 config IS_BOOTLOADER
 	bool "Act as a bootloader"
-	default n
 	depends on XIP
 	depends on ARM
 	help
@@ -333,9 +321,7 @@ config BOOTLOADER_SRAM_SIZE
 	  bootloader that loads the Zephyr !XIP image onto SRAM.
 
 config BOOTLOADER_MCUBOOT
-	bool
-	prompt "MCUboot bootloader support"
-	default n
+	bool "MCUboot bootloader support"
 	help
 	  This option signifies that the target uses MCUboot as a bootloader,
 	  or in other words that the image is to be chain-loaded by MCUboot.
@@ -350,19 +336,30 @@ config BOOTLOADER_MCUBOOT
 	    * Including dts/common/mcuboot.overlay when building the Device
 	      Tree in order to place and link the image at the slot0 offset
 
-config BOOTLOADER_KEXEC
-	bool
-	prompt "Boot using Linux kexec() system call"
+config BOOTLOADER_ESP_IDF
+	bool "ESP-IDF bootloader support"
+	depends on SOC_ESP32
+	help
+	  This option will trigger the compilation of the ESP-IDF bootloader
+	  inside the build folder.
+	  At flash time, the bootloader will be flashed with the zephyr image
+
+config REALMODE
+	bool "boot from x86 real mode"
 	depends on X86
-	default n
+	help
+	  This option enabled Zephyr to start in x86 real mode, instead of
+	  protected mode.
+
+config BOOTLOADER_KEXEC
+	bool "Boot using Linux kexec() system call"
+	depends on X86
 	help
 	  This option signifies that Linux boots the kernel using kexec system call
 	  and utility. This method is used to boot the kernel over the network.
 
 config BOOTLOADER_UNKNOWN
-	bool
-	prompt "Generic boot loader support"
-	default n
+	bool "Generic boot loader support"
 	depends on X86
 	help
 	  This option signifies that the target has a generic bootloader
@@ -371,8 +368,7 @@ config BOOTLOADER_UNKNOWN
 	  the board may have to do extra work to ensure a proper startup.
 
 config BOOTLOADER_CONTEXT_RESTORE
-	bool
-	prompt "Boot loader has context restore support"
+	bool "Boot loader has context restore support"
 	default y
 	depends on SYS_POWER_DEEP_SLEEP && BOOTLOADER_CONTEXT_RESTORE_SUPPORTED
 	help
@@ -382,7 +378,6 @@ config BOOTLOADER_CONTEXT_RESTORE
 
 config REBOOT
 	bool "Reboot functionality"
-	default n
 	select SYSTEM_CLOCK_DISABLE
 	help
 	  Enable the sys_reboot() API. Enabling this can drag in other subsystems

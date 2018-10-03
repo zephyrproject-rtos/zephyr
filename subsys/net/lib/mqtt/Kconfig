@@ -8,14 +8,12 @@
 
 config  MQTT_LIB
 	bool "MQTT Library Support"
-	default n
 	select NET_APP_CLIENT
 	help
 	  Enable the Zephyr MQTT Library
 
 config MQTT_MSG_MAX_SIZE
-	int
-	prompt "Max size of a MQTT message"
+	int "Max size of a MQTT message"
 	depends on MQTT_LIB
 	default 128
 	range 128 1024
@@ -24,8 +22,7 @@ config MQTT_MSG_MAX_SIZE
 	  longer than CONFIG_MQTT_MSG_SIZE will be processed.
 
 config MQTT_ADDITIONAL_BUFFER_CTR
-	int
-	prompt "Additional buffers available for the MQTT application"
+	int "Additional buffers available for the MQTT application"
 	depends on MQTT_LIB
 	default 0
 	help
@@ -34,8 +31,7 @@ config MQTT_ADDITIONAL_BUFFER_CTR
 	  relation between application contexts and internal buffers.
 
 config MQTT_SUBSCRIBE_MAX_TOPICS
-	int
-	prompt "Max number of topics to subscribe to"
+	int "Max number of topics to subscribe to"
 	depends on MQTT_LIB
 	default 1
 	range 1 8
@@ -44,10 +40,8 @@ config MQTT_SUBSCRIBE_MAX_TOPICS
 	  messages during reception.
 
 config MQTT_LIB_TLS
-	bool
-	prompt "Enable TLS support for the MQTT application"
+	bool "Enable TLS support for the MQTT application"
 	depends on MQTT_LIB
-	default n
 	select NET_APP_TLS
 	help
 	  Enables MQTT library with TLS support

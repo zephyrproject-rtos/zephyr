@@ -17,6 +17,7 @@
 #include <flash.h>
 #include <board.h>
 #include <dfu/flash_img.h>
+#include <inttypes.h>
 
 BUILD_ASSERT_MSG((CONFIG_IMG_BLOCK_BUF_SIZE % FLASH_WRITE_BLOCK_SIZE == 0),
 		 "CONFIG_IMG_BLOCK_BUF_SIZE is not a multiple of "
@@ -33,13 +34,13 @@ static bool flash_verify(struct device *dev, off_t offset,
 		size = (len >= sizeof(temp)) ? sizeof(temp) : len;
 		rc = flash_read(dev, offset, &temp, size);
 		if (rc) {
-			SYS_LOG_ERR("flash_read error %d offset=0x%08x",
+			SYS_LOG_ERR("flash_read error %d offset=0x%08"PRIx32,
 				    rc, offset);
 			break;
 		}
 
 		if (memcmp(data, &temp, size)) {
-			SYS_LOG_ERR("offset=0x%08x VERIFY FAIL. "
+			SYS_LOG_ERR("offset=0x%08"PRIx32" VERIFY FAIL. "
 				    "expected: 0x%08x, actual: 0x%08x",
 				    offset, temp, *(__packed u32_t*)data);
 			break;
@@ -69,7 +70,7 @@ static int flash_block_write(struct flash_img_context *ctx, off_t offset,
 				 ctx->buf, CONFIG_IMG_BLOCK_BUF_SIZE);
 		flash_write_protection_set(ctx->dev, true);
 		if (rc) {
-			SYS_LOG_ERR("flash_write error %d offset=0x%08x",
+			SYS_LOG_ERR("flash_write error %d offset=0x%08"PRIx32,
 				    rc, offset + ctx->bytes_written);
 			return rc;
 		}
@@ -93,15 +94,15 @@ static int flash_block_write(struct flash_img_context *ctx, off_t offset,
 
 	if (finished && ctx->buf_bytes > 0) {
 		/* pad the rest of ctx->buf and write it out */
-		memset(ctx->buf + ctx->buf_bytes, 0xFF,
-		       CONFIG_IMG_BLOCK_BUF_SIZE - ctx->buf_bytes);
+		(void)memset(ctx->buf + ctx->buf_bytes, 0xFF,
+			     CONFIG_IMG_BLOCK_BUF_SIZE - ctx->buf_bytes);
 
 		flash_write_protection_set(ctx->dev, false);
 		rc = flash_write(ctx->dev, offset + ctx->bytes_written,
 				 ctx->buf, CONFIG_IMG_BLOCK_BUF_SIZE);
 		flash_write_protection_set(ctx->dev, true);
 		if (rc) {
-			SYS_LOG_ERR("flash_write error %d offset=0x%08x",
+			SYS_LOG_ERR("flash_write error %d offset=0x%08"PRIx32,
 				    rc, offset + ctx->bytes_written);
 			return rc;
 		}

@@ -11,6 +11,9 @@
 #include <linker/linker-defs.h>
 #include <misc/util.h>
 #include <kernel_internal.h>
+#include <misc/errno_private.h>
+#include <misc/libc-hooks.h>
+#include <syscall_handler.h>
 
 #define USED_RAM_END_ADDR   POINTER_TO_UINT(&_end)
 
@@ -75,8 +78,7 @@ void __stdin_hook_install(unsigned char (*hook)(void))
 	_stdin_hook = hook;
 }
 
-#ifndef CONFIG_POSIX_FS
-int _read(int fd, char *buf, int nbytes)
+int _impl__zephyr_read(char *buf, int nbytes)
 {
 	int i = 0;
 
@@ -89,9 +91,16 @@ int _read(int fd, char *buf, int nbytes)
 	}
 	return i;
 }
-FUNC_ALIAS(_read, read, int);
 
-int _write(int fd, char *buf, int nbytes)
+#ifdef CONFIG_USERSPACE
+Z_SYSCALL_HANDLER(_zephyr_read, buf, nbytes)
+{
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(buf, nbytes));
+	return _impl__zephyr_read((char *)buf, nbytes);
+}
+#endif
+
+int _impl__zephyr_write(char *buf, int nbytes)
 {
 	int i;
 
@@ -102,6 +111,30 @@ int _write(int fd, char *buf, int nbytes)
 		_stdout_hook(*(buf + i));
 	}
 	return nbytes;
+}
+
+#ifdef CONFIG_USERSPACE
+Z_SYSCALL_HANDLER(_zephyr_write, buf, nbytes)
+{
+	Z_OOPS(Z_SYSCALL_MEMORY_READ(buf, nbytes));
+	return _impl__zephyr_write((char *)buf, nbytes);
+}
+#endif
+
+#ifndef CONFIG_POSIX_FS
+int _read(int fd, char *buf, int nbytes)
+{
+	ARG_UNUSED(fd);
+
+	return _zephyr_read(buf, nbytes);
+}
+FUNC_ALIAS(_read, read, int);
+
+int _write(int fd, char *buf, int nbytes)
+{
+	ARG_UNUSED(fd);
+
+	return _zephyr_write(buf, nbytes);
 }
 FUNC_ALIAS(_write, write, int);
 
@@ -177,4 +210,9 @@ void z_newlib_get_heap_bounds(void **base, size_t *size)
 {
 	*base = heap_base;
 	*size = MAX_HEAP_SIZE;
+}
+
+int *__errno(void)
+{
+	return z_errno();
 }

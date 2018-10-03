@@ -5,19 +5,17 @@
 
 menuconfig WEBSOCKET
 	bool "Websocket support [EXPERIMENTAL]"
-	default n
 	depends on HTTP
 	select NET_TCP
 	select BASE64
 	help
-	This option enables the websocket library.
+	  This option enables the websocket library.
 
 if WEBSOCKET
 
 config NET_DEBUG_WEBSOCKET
 	bool "Debug websocket library"
-	default n
 	help
-	Enables websocket library to output debug messages
+	  Enables websocket library to output debug messages
 
 endif # WEBSOCKET
