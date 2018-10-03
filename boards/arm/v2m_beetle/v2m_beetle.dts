@@ -1,7 +1,6 @@
 /dts-v1/;
 
 #include <arm/armv7-m.dtsi>
-#include "arm/beetle/soc_irq.h"
 
 / {
 	compatible = "arm,beetle";
@@ -38,25 +37,25 @@
 		timer0: timer@40000000 {
 			compatible = "arm,cmsdk-timer";
 			reg = <0x40000000 0x1000>;
-			interrupts = <IRQ_TIMER0 3>;
+			interrupts = <8 3>;
 		};
 
 		timer1: timer@40001000 {
 			compatible = "arm,cmsdk-timer";
 			reg = <0x40001000 0x1000>;
-			interrupts = <IRQ_TIMER1 3>;
+			interrupts = <9 3>;
 		};
 
 		dtimer0: dtimer@40002000 {
 			compatible = "arm,cmsdk-dtimer";
 			reg = <0x40000000 0x1000>;
-			interrupts = <IRQ_DUALTIMER 3>;
+			interrupts = <10 3>;
 		};
 
 		uart0: uart@40004000 {
 			compatible = "arm,cmsdk-uart";
 			reg = <0x40004000 0x1000>;
-			interrupts = <IRQ_UART0 3>;
+			interrupts = <0 3>;
 			current-speed = <115200>;
 			label = "UART_0";
 		};
@@ -64,7 +63,7 @@
 		uart1: uart@40005000 {
 			compatible = "arm,cmsdk-uart";
 			reg = <0x40005000 0x1000>;
-			interrupts = <IRQ_UART1 3>;
+			interrupts = <1 3>;
 			current-speed = <115200>;
 			label = "UART_1";
 		};
@@ -77,25 +76,25 @@
 		gpio0: gpio@40010000 {
 			compatible = "arm,cmsdk-gpio";
 			reg = <0x40010000 0x1000>;
-			interrupts = <IRQ_PORT0_ALL 3>;
+			interrupts = <6 3>;
 		};
 
 		gpio1: gpio@40011000 {
 			compatible = "arm,cmsdk-gpio";
 			reg = <0x40011000 0x1000>;
-			interrupts = <IRQ_PORT1_ALL 3>;
+			interrupts = <7 3>;
 		};
 
 		gpio2: gpio@40012000 {
 			compatible = "arm,cmsdk-gpio";
 			reg = <0x40012000 0x1000>;
-			interrupts = <IRQ_PORT2_ALL 3>;
+			interrupts = <42 3>;
 		};
 
 		gpio3: gpio@40013000 {
 			compatible = "arm,cmsdk-gpio";
 			reg = <0x40013000 0x1000>;
-			interrupts = <IRQ_PORT3_ALL 3>;
+			interrupts = <43 3>;
 		};
 	};
 };

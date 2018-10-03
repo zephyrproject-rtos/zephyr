@@ -11,17 +11,10 @@
 #define _ARM_BEETLE_SOC_IRQ_H_
 
 /* IRQ Numbers */
-#define IRQ_UART0               0  /* UART 0 RX and TX Combined Interrupt   */
 #define IRQ_SPARE               1  /* Undefined                             */
-#define IRQ_UART1               2  /* UART 1 RX and TX Combined Interrupt   */
 #define IRQ_I2C0                3  /* I2C 0 Interrupt                       */
 #define IRQ_I2C1                4  /* I2C 1 Interrupt                       */
 #define IRQ_RTC                 5  /* RTC Interrupt                         */
-#define IRQ_PORT0_ALL           6  /* GPIO Port 0 combined Interrupt        */
-#define IRQ_PORT1_ALL           7  /* GPIO Port 1 combined Interrupt        */
-#define IRQ_TIMER0              8  /* TIMER 0 Interrupt                     */
-#define IRQ_TIMER1              9  /* TIMER 1 Interrupt                     */
-#define IRQ_DUALTIMER           10 /* Dual Timer Interrupt                  */
 #define IRQ_SPI0                11 /* SPI 0 Interrupt                       */
 #define IRQ_UARTOVF             12 /* Common UART Overflow Interrupt        */
 #define IRQ_SPI1                13 /* SPI 1 Interrupt                       */
@@ -53,8 +46,6 @@
 #define IRQ_LLCC_RXEVT_VALID    39 /* Cordio                                 */
 #define IRQ_LLCC_RXDMAH_DONE    40 /* Cordio                                 */
 #define IRQ_LLCC_RXDMAL_DONE    41 /* Cordio                                 */
-#define IRQ_PORT2_ALL           42 /* GPIO Port 2 combined Interrupt        */
-#define IRQ_PORT3_ALL           43 /* GPIO Port 3 combined Interrupt        */
 #define IRQ_TRNG                44 /* Random number generator Interrupt     */
 
 #endif /* _ARM_BEETLE_SOC_IRQ_H_ */
