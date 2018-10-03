@@ -323,9 +323,7 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names,
     if 'parent' in yaml[node_compat]:
         if 'bus' in yaml[node_compat]['parent']:
             # get parent label
-            parent_address = ''
-            for comp in node_address.split('/')[1:-1]:
-                parent_address += '/' + comp
+            parent_address = get_parent_address(node_address)
 
             #check parent has matching child bus value
             try:
