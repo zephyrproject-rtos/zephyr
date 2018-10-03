@@ -196,13 +196,13 @@ def find_parent_prop(node_address, prop):
 
 # Get the #{address,size}-cells for a given node
 def get_addr_size_cells(node_address):
-    path = ''
+    parent_addr = get_parent_address(node_address)
+    if parent_addr == '':
+        parent_addr = '/'
 
-    nr_addr = reduced['/']['props'].get('#address-cells')
-    nr_size = reduced['/']['props'].get('#size-cells')
+    # The DT spec says that if #address-cells is missing default to 2
+    # if #size-cells is missing default to 1
+    nr_addr = reduced[parent_addr]['props'].get('#address-cells', 2)
+    nr_size = reduced[parent_addr]['props'].get('#size-cells', 1)
 
-    for comp in node_address.split('/')[1:-1]:
-        path += '/' + comp
-        nr_addr = reduced[path]['props'].get('#address-cells', nr_addr)
-        nr_size = reduced[path]['props'].get('#size-cells', nr_size)
     return (nr_addr, nr_size)
