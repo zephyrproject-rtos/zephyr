@@ -13,7 +13,8 @@
 #include <hal/nrf_gpio.h>
 
 
-static NRF_UART_Type *const uart0_addr = (NRF_UART_Type *)DT_UART_0_BASE;
+static NRF_UART_Type *const uart0_addr =
+		(NRF_UART_Type *)DT_NORDIC_NRF_UART_UART_0_BASE_ADDRESS;
 
 #ifdef CONFIG_UART_0_INTERRUPT_DRIVEN
 
@@ -281,7 +282,7 @@ static void uart_nrfx_irq_tx_enable(struct device *dev)
 		/* Due to HW limitation first TXDRDY interrupt shall be
 		 * triggered by the software.
 		 */
-		NVIC_SetPendingIRQ(DT_UART_0_IRQ_NUM);
+		NVIC_SetPendingIRQ(DT_NORDIC_NRF_UART_UART_0_IRQ);
 	}
 	irq_unlock(key);
 }
@@ -404,33 +405,35 @@ static int uart_nrfx_init(struct device *dev)
 	/* Setting default height state of the TX PIN to avoid glitches
 	 * on the line during peripheral activation/deactivation.
 	 */
-	nrf_gpio_pin_write(DT_UART_0_TX_PIN, 1);
-	nrf_gpio_cfg_output(DT_UART_0_TX_PIN);
+	nrf_gpio_pin_write(DT_NORDIC_NRF_UART_UART_0_TX_PIN, 1);
+	nrf_gpio_cfg_output(DT_NORDIC_NRF_UART_UART_0_TX_PIN);
 
-	nrf_gpio_cfg_input(DT_UART_0_RX_PIN, NRF_GPIO_PIN_NOPULL);
+	nrf_gpio_cfg_input(DT_NORDIC_NRF_UART_UART_0_RX_PIN,
+			   NRF_GPIO_PIN_NOPULL);
 
 	nrf_uart_txrx_pins_set(uart0_addr,
-			       DT_UART_0_TX_PIN,
-			       DT_UART_0_RX_PIN);
+			       DT_NORDIC_NRF_UART_UART_0_TX_PIN,
+			       DT_NORDIC_NRF_UART_UART_0_RX_PIN);
 
 #ifdef CONFIG_UART_0_NRF_FLOW_CONTROL
-#ifndef DT_UART_0_RTS_PIN
+#ifndef DT_NORDIC_NRF_UART_UART_0_RTS_PIN
 #error Flow control for UART0 is enabled, but RTS pin is not defined.
 #endif
-#ifndef DT_UART_0_CTS_PIN
+#ifndef DT_NORDIC_NRF_UART_UART_0_CTS_PIN
 #error Flow control for UART0 is enabled, but CTS pin is not defined.
 #endif
 	/* Setting default height state of the RTS PIN to avoid glitches
 	 * on the line during peripheral activation/deactivation.
 	 */
-	nrf_gpio_pin_write(DT_UART_0_RTS_PIN, 1);
-	nrf_gpio_cfg_output(DT_UART_0_RTS_PIN);
+	nrf_gpio_pin_write(DT_NORDIC_NRF_UART_UART_0_RTS_PIN, 1);
+	nrf_gpio_cfg_output(DT_NORDIC_NRF_UART_UART_0_RTS_PIN);
 
-	nrf_gpio_cfg_input(DT_UART_0_CTS_PIN, NRF_GPIO_PIN_NOPULL);
+	nrf_gpio_cfg_input(DT_NORDIC_NRF_UART_UART_0_CTS_PIN,
+			   NRF_GPIO_PIN_NOPULL);
 
 	nrf_uart_hwfc_pins_set(uart0_addr,
-			       DT_UART_0_RTS_PIN,
-			       DT_UART_0_CTS_PIN);
+			       DT_NORDIC_NRF_UART_UART_0_RTS_PIN,
+			       DT_NORDIC_NRF_UART_UART_0_CTS_PIN);
 #endif /* CONFIG_UART_0_NRF_FLOW_CONTROL */
 
 	nrf_uart_configure(uart0_addr,
@@ -446,7 +449,7 @@ static int uart_nrfx_init(struct device *dev)
 #endif /* CONFIG_UART_0_NRF_PARITY_BIT */
 
 	/* Set baud rate */
-	err = baudrate_set(dev, DT_UART_0_BAUD_RATE);
+	err = baudrate_set(dev, DT_NORDIC_NRF_UART_UART_0_CURRENT_SPEED);
 	if (err) {
 		return err;
 	}
@@ -467,12 +470,12 @@ static int uart_nrfx_init(struct device *dev)
 	 */
 	uart_sw_event_txdrdy = 1;
 
-	IRQ_CONNECT(DT_UART_0_IRQ_NUM,
-		    DT_UART_0_IRQ_PRI,
+	IRQ_CONNECT(DT_NORDIC_NRF_UART_UART_0_IRQ,
+		    DT_NORDIC_NRF_UART_UART_0_IRQ_PRIORITY,
 		    uart_nrfx_isr,
 		    DEVICE_GET(uart_nrfx_uart0),
 		    0);
-	irq_enable(DT_UART_0_IRQ_NUM);
+	irq_enable(DT_NORDIC_NRF_UART_UART_0_IRQ);
 #endif
 
 	return 0;
@@ -540,7 +543,7 @@ static int uart_nrfx_pm_control(struct device *dev,
 #endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
 
 DEVICE_DEFINE(uart_nrfx_uart0,
-	      DT_UART_0_NAME,
+	      DT_NORDIC_NRF_UART_UART_0_LABEL,
 	      uart_nrfx_init,
 	      uart_nrfx_pm_control,
 	      NULL,
