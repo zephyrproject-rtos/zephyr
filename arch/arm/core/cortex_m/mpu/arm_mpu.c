@@ -200,6 +200,32 @@ static void _disable_region_by_type(u8_t type)
 	}
 	_disable_region(region_index);
 }
+
+#if defined(CONFIG_USERSPACE) || defined(CONFIG_MPU_STACK_GUARD)
+/**
+ * This internal function determines the background region
+ * type corresponding to the requested MPU region type.
+ */
+static inline int _get_background_region_type(u8_t type)
+{
+	switch (type) {
+#if defined(CONFIG_USERSPACE)
+	case THREAD_STACK_REGION:
+		return KERNEL_BKGND_THREAD_STACK_REGION;
+#endif
+#if defined(CONFIG_MPU_STACK_GUARD)
+	case THREAD_STACK_GUARD_REGION:
+		return KERNEL_BKGND_STACK_GUARD_REGION;
+#endif
+	default:
+		__ASSERT(0,
+			"Failed to get background type for region type %u\n",
+			type);
+		return -EINVAL;
+	}
+}
+
+#endif /* CONFIG_USERSPACE || CONFIG_MPU_STACK_GUARD */
 #endif /* CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS */
 
 /**
