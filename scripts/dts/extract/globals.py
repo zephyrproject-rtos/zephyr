@@ -193,3 +193,16 @@ def find_parent_prop(node_address, prop):
                         " has no " + prop + " property")
 
     return parent_prop
+
+# Get the #{address,size}-cells for a given node
+def get_addr_size_cells(node_address):
+    path = ''
+
+    nr_addr = reduced['/']['props'].get('#address-cells')
+    nr_size = reduced['/']['props'].get('#size-cells')
+
+    for comp in node_address.split('/')[1:-1]:
+        path += '/' + comp
+        nr_addr = reduced[path]['props'].get('#address-cells', nr_addr)
+        nr_size = reduced[path]['props'].get('#size-cells', nr_size)
+    return (nr_addr, nr_size)
