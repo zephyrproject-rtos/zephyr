@@ -14,6 +14,8 @@ ExternalProject_Add(
   SOURCE_DIR ${APPLICATION_SOURCE_DIR}/remote
   INSTALL_COMMAND ""      # This particular build system has no install command
   BUILD_BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/ipm_mcux_remote-prefix/src/ipm_mcux_remote-build/zephyr/zephyr.bin"
+  CMAKE_CACHE_ARGS -DBOARD:STRING=${BOARD}
+  # NB: Do we need to pass on more CMake variables?
 )
 
 project(NONE)
