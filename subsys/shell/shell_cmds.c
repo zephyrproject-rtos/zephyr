@@ -446,10 +446,6 @@ static int cmd_resize(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
-/* Warning!
- * Subcommands must be placed in alphabetical order to ensure correct
- * autocompletion.
- */
 SHELL_CREATE_STATIC_SUBCMD_SET(m_sub_colors)
 {
 	SHELL_CMD(off, NULL, SHELL_HELP_COLORS_OFF, cmd_colors_off),

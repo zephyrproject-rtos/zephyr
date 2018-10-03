@@ -56,13 +56,10 @@ Use the following macros for adding shell commands:
   have different name.
 * :c:macro:`SHELL_CMD` - Initialize a command.
 * :c:macro:`SHELL_CREATE_STATIC_SUBCMD_SET` - Create a static subcommands
-  array. Static subcommands must be added in alphabetical order to ensure
-  correct smart completion.
+  array.
 * :c:macro:`SHELL_SUBCMD_SET_END` - shall be placed as last in
   :c:macro:`SHELL_CREATE_STATIC_SUBCMD_SET` macro.
 * :c:macro:`SHELL_CREATE_DYNAMIC_CMD` - Create a dynamic subcommands array.
-  Dynamic subcommands must be returned in alphabetical order to ensure correct
-  smart completion.
 
 Commands can be created in any file in the system that includes
 :file:`include/shell/shell.h`. All created commands are available for all
@@ -86,7 +83,6 @@ subcommands.
 	 */
 	SHELL_CREATE_STATIC_SUBCMD_SET(sub_demo)
 	{
-		/* Alphabetically sorted. */
 		SHELL_CMD(params, NULL, "Print params command.",
 						       cmd_demo_params),
 		SHELL_CMD(ping,   NULL, "Ping command.", cmd_demo_ping),
@@ -130,9 +126,6 @@ Newly added commands can be prompted or autocompleted with the :kbd:`Tab` key.
 				    struct shell_static_entry *entry)
 	{
 		if (idx < dynamic_cmd_cnt) {
-			/* m_dynamic_cmd_buffer must be sorted alphabetically
-			 * to ensure correct Shell autocompletion
-			 */
 			entry->syntax = dynamic_cmd_buffer[idx];
 			entry->handler  = NULL;
 			entry->subcmd = NULL;
@@ -469,7 +462,6 @@ The following code shows a simple use case of this library:
 	 */
 	SHELL_CREATE_STATIC_SUBCMD_SET(sub_demo)
 	{
-		/* Alphabetically sorted. */
 		SHELL_CMD(params, NULL, "Print params command.",
 						       cmd_demo_params),
 		SHELL_CMD(ping,   NULL, "Ping command.", cmd_demo_ping),
