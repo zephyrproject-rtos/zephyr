@@ -7,7 +7,7 @@
 
 #include <stdbool.h>
 
-#if defined(CONFIG_SOC_FAMILY_NRF)
+#if defined(CONFIG_SOC_COMPATIBLE_NRF)
 #include "hal/nrf5/ticker.h"
 #endif /* CONFIG_SOC_FAMILY_NRF */
 

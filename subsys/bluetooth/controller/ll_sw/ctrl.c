@@ -17,10 +17,10 @@
 
 #include "ll.h"
 
-#if defined(CONFIG_SOC_FAMILY_NRF)
+#if defined(CONFIG_SOC_COMPATIBLE_NRF)
 #include <drivers/clock_control/nrf5_clock_control.h>
 #include <drivers/entropy/nrf5_entropy.h>
-#endif /* CONFIG_SOC_FAMILY_NRF */
+#endif /* CONFIG_SOC_COMPATIBLE_NRF */
 
 #include "hal/cpu.h"
 #include "hal/ecb.h"

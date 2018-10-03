@@ -24,8 +24,8 @@ config BT_LL_SW
 	bool "Software-based BLE Link Layer"
 	select BT_RECV_IS_RX_THREAD
 	select ENTROPY_GENERATOR
-	select ENTROPY_NRF5_RNG if SOC_FAMILY_NRF
-	select ENTROPY_NRF5_BIAS_CORRECTION if SOC_FAMILY_NRF
+	select ENTROPY_NRF5_RNG if SOC_COMPATIBLE_NRF
+	select ENTROPY_NRF5_BIAS_CORRECTION if SOC_COMPATIBLE_NRF
 	help
 	  Use Zephyr software BLE Link Layer implementation.
 
@@ -138,7 +138,7 @@ config BT_CTLR_TX_PWR_PLUS_4
 
 config BT_CTLR_TX_PWR_PLUS_3
 	bool "+3 dBm"
-	depends on SOC_SERIES_NRF52X
+	depends on SOC_COMPATIBLE_NRF52X
 
 config BT_CTLR_TX_PWR_PLUS_2
 	bool "+2 dBm"
@@ -168,7 +168,7 @@ config BT_CTLR_TX_PWR_MINUS_30
 
 config BT_CTLR_TX_PWR_MINUS_40
 	bool "-40 dBm"
-	depends on SOC_SERIES_NRF52X
+	depends on SOC_COMPATIBLE_NRF52X
 
 endchoice
 
@@ -229,7 +229,7 @@ config BT_CTLR_RL_SIZE
 	int "LE Controller-based Privacy Resolving List size"
 	depends on BT_CTLR_PRIVACY
 	default 8
-	range 1 8 if SOC_FAMILY_NRF
+	range 1 8 if SOC_COMPATIBLE_NRF
 	help
 	  Set the size of the Resolving List for LE Controller-based Privacy.
 	  On nRF5x-based controllers, the hardware imposes a limit of 8 devices.
@@ -244,7 +244,7 @@ config BT_CTLR_EXT_SCAN_FP
 
 config BT_CTLR_DATA_LENGTH
 	bool "Data Length Update"
-	default y if SOC_SERIES_NRF52X
+	default y if SOC_COMPATIBLE_NRF52X
 	help
 	  Enable support for Bluetooth v4.2 LE Data Length Update procedure in
 	  the Controller.
@@ -253,14 +253,14 @@ config BT_CTLR_DATA_LENGTH_MAX
 	int "Maximum data length supported"
 	depends on BT_CTLR_DATA_LENGTH
 	default 27
-	range 27 251 if SOC_SERIES_NRF52X || BT_CTLR_DATA_LENGTH_CLEAR
+	range 27 251 if SOC_COMPATIBLE_NRF52X || BT_CTLR_DATA_LENGTH_CLEAR
 	range 27 27
 	help
 	  Set the maximum data length of PDU supported in the Controller.
 
 config BT_CTLR_PHY
 	bool "PHY Update"
-	default y if SOC_SERIES_NRF52X
+	default y if SOC_COMPATIBLE_NRF52X
 	help
 	  Enable support for Bluetooth 5.0 PHY Update Procedure in the
 	  Controller.
@@ -346,7 +346,7 @@ endif # BT_CTLR_PHY
 config BT_CTLR_WORKER_PRIO
 	int "Radio and Ticker's Worker IRQ priority"
 	range 0 3 if SOC_SERIES_NRF51X
-	range 0 6 if SOC_SERIES_NRF52X
+	range 0 6 if SOC_COMPATIBLE_NRF52X
 	default 0
 	help
 	  The interrupt priority for event preparation and radio IRQ. This value
@@ -355,7 +355,7 @@ config BT_CTLR_WORKER_PRIO
 config BT_CTLR_JOB_PRIO
 	int "Ticker's JOB IRQ priority"
 	range BT_CTLR_WORKER_PRIO 3 if SOC_SERIES_NRF51X
-	range BT_CTLR_WORKER_PRIO 6 if SOC_SERIES_NRF52X
+	range BT_CTLR_WORKER_PRIO 6 if SOC_COMPATIBLE_NRF52X
 	default 0
 	help
 	  The interrupt priority for Ticker's Job (SWI4) IRQ. This value shall
@@ -411,7 +411,7 @@ config BT_CTLR_SCHED_ADVANCED
 
 config BT_CTLR_RADIO_ENABLE_FAST
 	bool "Use tTXEN/RXEN,FAST ramp-up"
-	depends on SOC_SERIES_NRF52X
+	depends on SOC_COMPATIBLE_NRF52X
 	default y
 	help
 	  Enable use of fast radio ramp-up mode.
@@ -425,7 +425,7 @@ config BT_CTLR_TIFS_HW
 
 config BT_CTLR_SW_SWITCH_SINGLE_TIMER
 	bool "Single TIMER tIFS Trx SW switching"
-	depends on (!BT_CTLR_TIFS_HW) && SOC_SERIES_NRF52X
+	depends on (!BT_CTLR_TIFS_HW) && SOC_COMPATIBLE_NRF52X
 	help
 	  Implement the tIFS Trx SW switch with the same TIMER
 	  instance, as the one used for BLE event timing. Requires
