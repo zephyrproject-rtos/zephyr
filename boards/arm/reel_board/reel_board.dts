@@ -44,7 +44,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
-		user_button: button@0 {
+		user_button: button_0 {
 			gpios = <&gpio0 7 GPIO_PUD_PULL_UP>;
 			label = "User Button";
 		};
