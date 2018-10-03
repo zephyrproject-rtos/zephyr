@@ -31,13 +31,6 @@ to deal directly with the hardware. All device controller drivers should
 implement the APIs described in file usb_dc.h. This allows the integration of
 new USB device controllers to be done without changing the upper layers.
 
-.. _usb_device_controller_api:
-
-USB Device Controller API
-=========================
-.. doxygengroup:: _usb_device_controller_api
-   :project: Zephyr
-
 USB device core layer
 *********************
 
@@ -54,11 +47,6 @@ functionalities:
      customer applications. The APIs are described in the usb_device.h file.
    * Uses the APIs provided by the device controller drivers to interact with
      the USB device controller.
-
-USB Device Core Layer API
-=========================
-.. doxygengroup:: _usb_device_core_api
-   :project: Zephyr
 
 USB device class drivers
 ************************
@@ -326,4 +314,13 @@ USB transaction(s), depending endpoint max packet size. The class driver does
 not have to implement endpoint callback and should set this callback to the
 generic usb_transfer_ep_callback.
 
+Further reading
+***************
 
+More information on the stack and its usage can be found in the following
+subsections:
+
+.. toctree::
+   :maxdepth: 2
+
+   ../../api/usb_api.rst

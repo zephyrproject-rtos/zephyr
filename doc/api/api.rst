@@ -28,3 +28,4 @@ The Zephyr APIs are used the same way on all SoCs and boards.
    misc_api
    logger_api
    shell_api
+   usb_api
