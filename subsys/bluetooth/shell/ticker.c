@@ -16,9 +16,9 @@
 
 #include <shell/shell.h>
 
-#if defined(CONFIG_SOC_FAMILY_NRF)
+#if defined(CONFIG_SOC_COMPATIBLE_NRF)
 #include "../controller/hal/nrf5/ticker.h"
-#endif /* CONFIG_SOC_FAMILY_NRF */
+#endif /* CONFIG_SOC_COMPATIBLE_NRF */
 
 #include "../controller/util/memq.h"
 #include "../controller/util/mayfly.h"

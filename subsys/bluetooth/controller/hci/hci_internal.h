@@ -19,11 +19,11 @@ extern atomic_t hci_state_mask;
 #define HCI_CLASS_EVT_CONNECTION  2
 #define HCI_CLASS_ACL_DATA        3
 
-#if defined(CONFIG_SOC_FAMILY_NRF)
+#if defined(CONFIG_SOC_COMPATIBLE_NRF)
 #define BT_HCI_VS_HW_PLAT BT_HCI_VS_HW_PLAT_NORDIC
 #if defined(CONFIG_SOC_SERIES_NRF51X)
 #define BT_HCI_VS_HW_VAR  BT_HCI_VS_HW_VAR_NORDIC_NRF51X;
-#elif defined(CONFIG_SOC_SERIES_NRF52X)
+#elif defined(CONFIG_SOC_COMPATIBLE_NRF52X)
 #define BT_HCI_VS_HW_VAR  BT_HCI_VS_HW_VAR_NORDIC_NRF52X;
 #endif
 #else
