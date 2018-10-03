@@ -16,6 +16,10 @@ menuconfig LSM6DSL
 
 if LSM6DSL
 
+config LSM6DSL_DEV_NAME
+	string "LSM6DSL device name"
+	default "LSM6DSL"
+
 choice LSM6DSL_BUS_TYPE
 	prompt "Interface to AP"
 	help
