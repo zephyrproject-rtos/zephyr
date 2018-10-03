@@ -60,7 +60,7 @@ official project e-mail address, posting via an official social media
 account, or acting as an appointed representative at an online or
 offline event. Representation of a project may be further defined and
 clarified by project maintainers and `project governing bodies
-<https://www.zephyrproject.org/about/organization/>`__.
+<https://www.zephyrproject.org/about/organization/>`
 
 Enforcement
 ***********
