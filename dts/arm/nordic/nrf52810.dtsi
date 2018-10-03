@@ -35,6 +35,10 @@
 		compatible = "mmio-sram";
 	};
 
+	aliases {
+		i2c-0 = &i2c0;
+	};
+
 	soc {
 		adc: adc@40007000 {
 			compatible = "nordic,nrf-saadc";

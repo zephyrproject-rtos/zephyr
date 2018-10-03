@@ -137,29 +137,32 @@ static int init_twim(struct device *dev, const nrfx_twim_config_t *config)
 	return 0;
 }
 
-#define I2C_NRFX_TWIM_DEVICE(idx)					\
-	static int twim_##idx##_init(struct device *dev)		\
-	{								\
-		IRQ_CONNECT(DT_I2C_##idx##_IRQ,			\
-			    DT_I2C_##idx##_IRQ_PRI,			\
-			    nrfx_isr, nrfx_twim_##idx##_irq_handler, 0);\
-		const nrfx_twim_config_t config = {			\
-			.scl       = DT_I2C_##idx##_SCL_PIN,	\
-			.sda       = DT_I2C_##idx##_SDA_PIN,	\
-			.frequency = NRF_TWIM_FREQ_100K,		\
-		};							\
-		return init_twim(dev, &config);				\
-	}								\
-	static struct i2c_nrfx_twim_data twim_##idx##_data = {		\
-		.sync = _K_SEM_INITIALIZER(twim_##idx##_data.sync, 0, 1)\
-	};								\
-	static const struct i2c_nrfx_twim_config twim_##idx##_config = {\
-		.twim = NRFX_TWIM_INSTANCE(idx)				\
-	};								\
-	DEVICE_AND_API_INIT(twim_##idx, CONFIG_I2C_##idx##_NAME,	\
-			    twim_##idx##_init, &twim_##idx##_data,	\
-			    &twim_##idx##_config, POST_KERNEL,		\
-			    CONFIG_I2C_INIT_PRIORITY,			\
+#define I2C_NRFX_TWIM_DEVICE(idx)					       \
+	static int twim_##idx##_init(struct device *dev)		       \
+	{								       \
+		IRQ_CONNECT(DT_NORDIC_NRF_I2C_I2C_##idx##_IRQ,		       \
+			    DT_NORDIC_NRF_I2C_I2C_##idx##_IRQ_PRIORITY,	       \
+			    nrfx_isr, nrfx_twim_##idx##_irq_handler, 0);       \
+		const nrfx_twim_config_t config = {			       \
+			.scl       = DT_NORDIC_NRF_I2C_I2C_##idx##_SCL_PIN,    \
+			.sda       = DT_NORDIC_NRF_I2C_I2C_##idx##_SDA_PIN,    \
+			.frequency = NRF_TWIM_FREQ_100K,		       \
+		};							       \
+		return init_twim(dev, &config);				       \
+	}								       \
+	static struct i2c_nrfx_twim_data twim_##idx##_data = {		       \
+		.sync = _K_SEM_INITIALIZER(twim_##idx##_data.sync, 0, 1)       \
+	};								       \
+	static const struct i2c_nrfx_twim_config twim_##idx##_config = {       \
+		.twim = NRFX_TWIM_INSTANCE(idx)				       \
+	};								       \
+	DEVICE_AND_API_INIT(twim_##idx,					       \
+			    DT_NORDIC_NRF_I2C_I2C_##idx##_LABEL,	       \
+			    twim_##idx##_init,				       \
+			    &twim_##idx##_data,				       \
+			    &twim_##idx##_config,			       \
+			    POST_KERNEL,				       \
+			    CONFIG_I2C_INIT_PRIORITY,			       \
 			    &i2c_nrfx_twim_driver_api)
 
 #ifdef CONFIG_I2C_0_NRF_TWIM
