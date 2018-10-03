@@ -51,10 +51,12 @@ extern int z_clock_device_ctrl(struct device *device,
  * from the the current time have elapsed.  Note that spurious calls
  * to z_clock_announce() are allowed (i.e. it's legal to announce
  * every tick and implement this function as a noop), the requirement
- * is that one tick announcement should occur within one tick after
- * the specified expiration.  A ticks value of zero (or even negative)
- * is legal, it simply indicates the kernel would like the next tick
- * announcement as soon as possible.
+ * is that one tick announcement should occur within one tick BEFORE
+ * the specified expiration (that is, passing ticks==1 means "announce
+ * the next tick", this convention was chosen to match legacy usage).
+ * A ticks value of zero (or even negative) is legal, it simply
+ * indicates the kernel would like the next tick announcement as soon
+ * as possible.
  *
  * Note that ticks can also be passed the special value K_FOREVER,
  * indicating that no future timer interrupts are expected or required
