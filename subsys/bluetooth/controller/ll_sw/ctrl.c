@@ -9398,10 +9398,20 @@ static void enc_req_reused_send(struct connection *conn,
 		conn->llcp.encryption.ediv[0];
 	pdu_ctrl_tx->llctrl.enc_req.ediv[1] =
 		conn->llcp.encryption.ediv[1];
+
+	/*
+	 * Take advantage of the fact that ivm and skdm fields, which both have
+	 * to be filled with random data, are adjacent and use single call to
+	 * the entropy driver.
+	 */
+	BUILD_ASSERT(offsetof(__typeof(pdu_ctrl_tx->llctrl.enc_req), ivm) ==
+		     (offsetof(__typeof(pdu_ctrl_tx->llctrl.enc_req), skdm) +
+		     sizeof(pdu_ctrl_tx->llctrl.enc_req.skdm)));
+
 	/* NOTE: if not sufficient random numbers, ignore waiting */
-	entropy_get_entropy_isr(_radio.entropy, pdu_ctrl_tx->llctrl.enc_req.skdm,
-				sizeof(pdu_ctrl_tx->llctrl.enc_req.skdm), 0);
-	entropy_get_entropy_isr(_radio.entropy, pdu_ctrl_tx->llctrl.enc_req.ivm,
+	entropy_get_entropy_isr(_radio.entropy,
+				pdu_ctrl_tx->llctrl.enc_req.skdm,
+				sizeof(pdu_ctrl_tx->llctrl.enc_req.skdm) +
 				sizeof(pdu_ctrl_tx->llctrl.enc_req.ivm), 0);
 }
 
@@ -9421,10 +9431,20 @@ static u8_t enc_rsp_send(struct connection *conn)
 	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, enc_rsp) +
 			   sizeof(struct pdu_data_llctrl_enc_rsp);
 	pdu_ctrl_tx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_ENC_RSP;
+
+	/*
+	 * Take advantage of the fact that ivs and skds fields, which both have
+	 * to be filled with random data, are adjacent and use single call to
+	 * the entropy driver.
+	 */
+	BUILD_ASSERT(offsetof(__typeof(pdu_ctrl_tx->llctrl.enc_rsp), ivs) ==
+		     (offsetof(__typeof(pdu_ctrl_tx->llctrl.enc_rsp), skds) +
+		     sizeof(pdu_ctrl_tx->llctrl.enc_rsp.skds)));
+
 	/* NOTE: if not sufficient random numbers, ignore waiting */
-	entropy_get_entropy_isr(_radio.entropy, pdu_ctrl_tx->llctrl.enc_rsp.skds,
-				sizeof(pdu_ctrl_tx->llctrl.enc_rsp.skds), 0);
-	entropy_get_entropy_isr(_radio.entropy, pdu_ctrl_tx->llctrl.enc_rsp.ivs,
+	entropy_get_entropy_isr(_radio.entropy,
+				pdu_ctrl_tx->llctrl.enc_rsp.skds,
+				sizeof(pdu_ctrl_tx->llctrl.enc_rsp.skds) +
 				sizeof(pdu_ctrl_tx->llctrl.enc_rsp.ivs), 0);
 
 	/* things from slave stored for session key calculation */
