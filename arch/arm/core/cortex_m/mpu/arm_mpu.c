@@ -142,6 +142,29 @@ static inline u32_t _get_region_index_by_type(u32_t type)
 }
 
 /**
+ * This internal function programs the MPU region of the given type,
+ * base address, and size.
+ */
+static void _mpu_configure_by_type(u8_t type, u32_t base, u32_t size)
+{
+	struct arm_mpu_region region_conf;
+
+	LOG_DBG("Region info: 0x%x 0x%x", base, size);
+	u32_t region_index = _get_region_index_by_type(type);
+
+	if (_get_region_attr_by_type(&region_conf.attr, type, base, size)) {
+		return;
+	}
+	region_conf.base = base;
+
+	if (region_index >= _get_num_regions()) {
+		return;
+	}
+
+	_region_init(region_index, &region_conf);
+}
+
+/**
  * This internal function disables a given MPU region.
  */
 static inline void _disable_region(u32_t r_index)
@@ -169,21 +192,7 @@ static inline void _disable_region(u32_t r_index)
  */
 void arm_core_mpu_configure(u8_t type, u32_t base, u32_t size)
 {
-	struct arm_mpu_region region_conf;
-
-	LOG_DBG("Region info: 0x%x 0x%x", base, size);
-	u32_t region_index = _get_region_index_by_type(type);
-
-	if (_get_region_attr_by_type(&region_conf.attr, type, base, size)) {
-		return;
-	}
-	region_conf.base = base;
-
-	if (region_index >= _get_num_regions()) {
-		return;
-	}
-
-	_region_init(region_index, &region_conf);
+	_mpu_configure_by_type(type, base, size);
 }
 
 #if defined(CONFIG_USERSPACE)
