@@ -44,7 +44,7 @@
 
 	buttons {
 		compatible = "gpio-keys";
-		button0: button@0 {
+		button0: button_0 {
 			gpios = <&gpio1 6 GPIO_PUD_PULL_UP>;
 			label = "Push button switch 0";
 		};

@@ -44,19 +44,19 @@
 
 	buttons {
 		compatible = "gpio-keys";
-		button0: button@0 {
+		button0: button_0 {
 			gpios = <&gpio0 13 GPIO_PUD_PULL_UP>;
 			label = "Push button switch 0";
 		};
-		button1: button@1 {
+		button1: button_1 {
 			gpios = <&gpio0 14 GPIO_PUD_PULL_UP>;
 			label = "Push button switch 1";
 		};
-		button2: button@2 {
+		button2: button_2 {
 			gpios = <&gpio0 15 GPIO_PUD_PULL_UP>;
 			label = "Push button switch 2";
 		};
-		button3: button@3 {
+		button3: button_3 {
 			gpios = <&gpio0 16 GPIO_PUD_PULL_UP>;
 			label = "Push button switch 3";
 		};
