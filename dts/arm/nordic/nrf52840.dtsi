@@ -43,6 +43,8 @@
 		spi-1 = &spi1;
 		spi-2 = &spi2;
 		spi-3 = &spi3;
+		uart-0 = &uart0;
+		uart-1 = &uart1;
 	};
 
 	soc {
