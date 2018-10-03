@@ -378,6 +378,11 @@ static void _test_kernel_interrupts(disable_int_func disable_int,
  */
 static void test_kernel_interrupts(void)
 {
+	/* IRQ locks don't prevent ticks from advancing in tickless mode */
+	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		return;
+	}
+
 	_test_kernel_interrupts(irq_lock_wrapper, irq_unlock_wrapper, -1);
 }
 
