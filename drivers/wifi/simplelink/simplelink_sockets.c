@@ -76,7 +76,7 @@ static SlSockAddr_t *translate_z_to_sl_addrs(const struct sockaddr *addr,
 		*sl_addrlen = sizeof(SlSockAddrIn_t);
 		sl_addr_in->sin_family = AF_INET;
 		sl_addr_in->sin_port = z_sockaddr_in->sin_port;
-		sl_addr_in->sin_addr.S_un.S_addr =
+		sl_addr_in->sin_addr.s_addr =
 			z_sockaddr_in->sin_addr.s_addr;
 
 		sl_addr = (SlSockAddr_t *)sl_addr_in;
@@ -114,7 +114,7 @@ static void translate_sl_to_z_addr(SlSockAddr_t *sl_addr,
 			z_sockaddr_in->sin_family = AF_INET;
 			z_sockaddr_in->sin_port = sl_addr_in->sin_port;
 			z_sockaddr_in->sin_addr.s_addr =
-				sl_addr_in->sin_addr.S_un.S_addr;
+				sl_addr_in->sin_addr.s_addr;
 			*addrlen = sizeof(struct sockaddr_in);
 		} else {
 			*addrlen = sl_addrlen;
