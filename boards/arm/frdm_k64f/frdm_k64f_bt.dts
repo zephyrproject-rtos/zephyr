@@ -1,0 +1,12 @@
+#include <frdm_k64f.dts>
+
+/ {
+	chosen {
+		zephyr,bt-uart = &uart3;
+	};
+};
+
+&uart3 {
+	status = "ok";
+	current-speed = <115200>;
+};

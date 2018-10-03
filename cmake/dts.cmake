@@ -87,6 +87,7 @@ if(CONFIG_HAS_DTS)
     -x assembler-with-cpp
     -nostdinc
     -I${ZEPHYR_BASE}/soc/${ARCH}
+    -isystem ${BOARD_DIR}
     -isystem ${ZEPHYR_BASE}/include
     -isystem ${ZEPHYR_BASE}/dts/${ARCH}
     -isystem ${ZEPHYR_BASE}/dts

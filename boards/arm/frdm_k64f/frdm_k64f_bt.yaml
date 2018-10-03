@@ -1,0 +1,19 @@
+identifier: frdm_k64f_bt
+name: NXP FRDM-K64F BT
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - netif:eth
+  - adc
+  - i2c
+  - nvs
+  - spi
+  - gpio
+  - usb_device
+  - watchdog
+  - ble
+testing:
+  default: true
