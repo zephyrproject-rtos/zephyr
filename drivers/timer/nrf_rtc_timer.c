@@ -22,7 +22,7 @@
 /* Minimum delta between current counter and CC register that the RTC is able
  * to handle
  */
-#if defined(CONFIG_SOC_SERIES_NWTSIM_NRFXX)
+#if defined(CONFIG_SOC_SERIES_BSIM_NRFXX)
 #define RTC_MIN_DELTA          1
 #else
 #define RTC_MIN_DELTA          2
