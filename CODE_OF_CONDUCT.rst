@@ -62,42 +62,9 @@ offline event. Representation of a project may be further defined and
 clarified by project maintainers and `project governing bodies
 <https://www.zephyrproject.org/about/organization/>`
 
-Enforcement
-***********
-
-Instances of abusive, harassing, or otherwise unacceptable behavior may
-be reported by contacting the project team at info@zephyrproject.org.
-The project team will review and investigate all complaints, and will
-respond in a way that it deems appropriate to the circumstances. The
-project team is obligated to maintain confidentiality with regard to the
-reporter of an incident. Further details of specific enforcement
-policies may be posted separately.
-
-Project maintainers who do not follow or enforce the Code of Conduct in
-good faith may face temporary or permanent repercussions as determined
-by other members of the project's leadership and our Technical Steering
-Committee.
-
-Guideline Violations - Three Strikes Method
-===========================================
-
-We need a fair way to deal with people who are making our community an
-unpleasant place.
-
-- **First occurrence**:
-  Public reminder that the behavior is inappropriate according to our
-  guidelines.
-
-- **Second occurrence**:
-  Private message warning that any additional violations will
-  result in removal from the community.
-
-- **Third occurrence**:
-  Depending on the violation, may include account deletion or banning.
-
 
 Attribution
 ***********
 
 This Code of Conduct is adapted from the `Contributor
-Covenant version 1.4 <http://contributor-covenant.org/version/1/4/>`__.
+Covenant version 1.4 <http://contributor-covenant.org/version/1/4/>
