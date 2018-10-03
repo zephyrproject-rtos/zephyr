@@ -86,14 +86,12 @@ if(CONFIG_HAS_DTS)
     COMMAND ${CMAKE_C_COMPILER}
     -x assembler-with-cpp
     -nostdinc
-    -I${ZEPHYR_BASE}/soc/${ARCH}
     -isystem ${ZEPHYR_BASE}/include
     -isystem ${ZEPHYR_BASE}/dts/${ARCH}
     -isystem ${ZEPHYR_BASE}/dts
     -include ${AUTOCONF_H}
     ${DTC_INCLUDE_FLAG_FOR_DTS}  # include the DTS source and overlays
     -I${ZEPHYR_BASE}/dts/common
-    -I${ZEPHYR_BASE}/drivers
     -undef -D__DTS__
     -P
     -E ${ZEPHYR_BASE}/misc/empty_file.c
