@@ -6,6 +6,7 @@
 #
 
 config SOC_FAMILY_NRF
+	select SOC_COMPATIBLE_NRF
 	bool
 	# omit prompt to signify a "hidden" option
 
