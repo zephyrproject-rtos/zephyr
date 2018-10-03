@@ -5,3 +5,5 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
+supported:
+  - gpio
