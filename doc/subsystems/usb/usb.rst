@@ -3,10 +3,10 @@
 USB device stack
 ################
 
-The USB device stack is split into three layers:
-   * `USB device controller drivers`_ (hardware dependent)
-   * `USB device core layer`_ (hardware independent)
-   * `USB device class drivers`_ (hardware independent)
+.. contents::
+   :depth: 2
+   :local:
+   :backlinks: top
 
 USB Vendor and Product identifiers
 **********************************
