@@ -63,7 +63,7 @@
  *
  */
 
-struct rand {
+struct rng_pool {
 	u8_t count;
 	u8_t threshold;
 	u8_t first;
@@ -71,17 +71,17 @@ struct rand {
 	u8_t rand[0];
 };
 
-#define RAND_DEFINE(name, len) u8_t name[sizeof(struct rand) + len] __aligned(4)
+#define RNG_POOL_DEFINE(name, len) u8_t name[sizeof(struct rng_pool) + len] __aligned(4)
 
-#define RAND_THREAD_LEN (CONFIG_ENTROPY_NRF5_THR_BUF_LEN + 1)
-#define RAND_ISR_LEN    (CONFIG_ENTROPY_NRF5_ISR_BUF_LEN + 1)
+#define RNG_POOL_ISR_LEN (CONFIG_ENTROPY_NRF5_ISR_BUF_LEN + 1)
+#define RNG_POOL_THR_LEN (CONFIG_ENTROPY_NRF5_THR_BUF_LEN + 1)
 
 struct entropy_nrf5_dev_data {
 	struct k_sem sem_lock;
 	struct k_sem sem_sync;
 
-	RAND_DEFINE(thr, RAND_THREAD_LEN);
-	RAND_DEFINE(isr, RAND_ISR_LEN);
+	RNG_POOL_DEFINE(isr, RNG_POOL_ISR_LEN);
+	RNG_POOL_DEFINE(thr, RNG_POOL_THR_LEN);
 };
 
 #define DEV_DATA(dev) \
@@ -108,7 +108,7 @@ static int random_byte_get(void)
 #if defined(CONFIG_BT_CTLR_FAST_ENC)
 #pragma GCC optimize ("Ofast")
 #endif
-static inline u8_t get(struct rand *rng, u8_t octets, u8_t *rand)
+static inline u8_t rng_pool_get(struct rng_pool *rng, u8_t octets, u8_t *rand)
 {
 	u8_t first, last, avail, remaining, *d, *s;
 
@@ -186,7 +186,7 @@ static inline u8_t get(struct rand *rng, u8_t octets, u8_t *rand)
 }
 #pragma GCC pop_options
 
-static int isr(struct rand *rng, bool store, u8_t byte)
+static int rng_pool_put(struct rng_pool *rng, bool store, u8_t byte)
 {
 	u8_t last;
 
@@ -225,7 +225,7 @@ static int isr(struct rand *rng, bool store, u8_t byte)
 	return -EBUSY;
 }
 
-static void isr_rand(void *arg)
+static void isr(void *arg)
 {
 	struct device *device = arg;
 	struct entropy_nrf5_dev_data *dev_data = DEV_DATA(device);
@@ -236,10 +236,10 @@ static void isr_rand(void *arg)
 		return;
 	}
 
-	ret = isr((struct rand *)dev_data->isr, true, byte);
+	ret = rng_pool_put((struct rng_pool *)dev_data->isr, true, byte);
 	if (ret != -EBUSY) {
-		ret = isr((struct rand *)dev_data->thr,
-			  (ret == -ENOBUFS), byte);
+		ret = rng_pool_put((struct rng_pool *)dev_data->thr,
+			           (ret == -ENOBUFS), byte);
 		k_sem_give(&dev_data->sem_sync);
 	}
 
@@ -248,7 +248,7 @@ static void isr_rand(void *arg)
 	}
 }
 
-static void init(struct rand *rng, u8_t len, u8_t threshold)
+static void rng_pool_init(struct rng_pool *rng, u8_t len, u8_t threshold)
 {
 	rng->count = len;
 	rng->threshold = threshold;
@@ -271,7 +271,8 @@ static int entropy_nrf5_get_entropy(struct device *device, u8_t *buf, u16_t len)
 
 		while (len8) {
 			k_sem_take(&dev_data->sem_lock, K_FOREVER);
-			len8 = get((struct rand *)dev_data->thr, len8, buf);
+			len8 = rng_pool_get((struct rng_pool *)dev_data->thr,
+					    len8, buf);
 			k_sem_give(&dev_data->sem_lock);
 			if (len8) {
 				/* Sleep until next interrupt */
@@ -290,7 +291,7 @@ static int entropy_nrf5_get_entropy_isr(struct device *dev, u8_t *buf, u16_t len
 	u16_t cnt = len;
 
 	if (!(flags & ENTROPY_BUSYWAIT)) {
-		return get((struct rand *)dev_data->isr, len, buf);
+		return rng_pool_get((struct rng_pool *)dev_data->isr, len, buf);
 	}
 
 	if (len) {
@@ -354,10 +355,10 @@ static int entropy_nrf5_init(struct device *device)
 	/* Synching semaphore */
 	k_sem_init(&dev_data->sem_sync, 0, 1);
 
-	init((struct rand *)dev_data->thr, RAND_THREAD_LEN,
-	     CONFIG_ENTROPY_NRF5_THR_THRESHOLD);
-	init((struct rand *)dev_data->isr, RAND_ISR_LEN,
-	     CONFIG_ENTROPY_NRF5_ISR_THRESHOLD);
+	rng_pool_init((struct rng_pool *)dev_data->thr, RNG_POOL_THR_LEN,
+	              CONFIG_ENTROPY_NRF5_THR_THRESHOLD);
+	rng_pool_init((struct rng_pool *)dev_data->isr, RNG_POOL_ISR_LEN,
+	              CONFIG_ENTROPY_NRF5_ISR_THRESHOLD);
 
 	/* Enable or disable bias correction */
 	if (IS_ENABLED(CONFIG_ENTROPY_NRF5_BIAS_CORRECTION)) {
@@ -370,7 +371,7 @@ static int entropy_nrf5_init(struct device *device)
 	nrf_rng_int_enable(NRF_RNG_INT_VALRDY_MASK);
 	nrf_rng_task_trigger(NRF_RNG_TASK_START);
 
-	IRQ_CONNECT(RNG_IRQn, CONFIG_ENTROPY_NRF5_PRI, isr_rand,
+	IRQ_CONNECT(RNG_IRQn, CONFIG_ENTROPY_NRF5_PRI, isr,
 		    DEVICE_GET(entropy_nrf5), 0);
 	irq_enable(RNG_IRQn);
 
@@ -380,6 +381,6 @@ static int entropy_nrf5_init(struct device *device)
 u8_t entropy_nrf_get_entropy_isr(struct device *dev, u8_t *buf, u8_t len)
 {
 	ARG_UNUSED(dev);
-	return get((struct rand *)entropy_nrf5_data.isr, len, buf);
+	return rng_pool_get((struct rng_pool *)entropy_nrf5_data.isr, len, buf);
 }
 
