@@ -197,13 +197,14 @@ static int init_wdt(struct device *dev)
 		return -EBUSY;
 	}
 
-	IRQ_CONNECT(DT_WDT_NRF_IRQ, DT_WDT_NRF_IRQ_PRI,
+	IRQ_CONNECT(DT_NORDIC_NRF_WATCHDOG_WDT_0_IRQ,
+		    DT_NORDIC_NRF_WATCHDOG_WDT_0_IRQ_PRIORITY,
 		    nrfx_isr, nrfx_wdt_irq_handler, 0);
-	irq_enable(DT_WDT_NRF_IRQ);
+	irq_enable(DT_NORDIC_NRF_WATCHDOG_WDT_0_IRQ);
 
 	return 0;
 }
 
-DEVICE_AND_API_INIT(wdt_nrf, CONFIG_WDT_0_NAME, init_wdt,
+DEVICE_AND_API_INIT(wdt_nrf, DT_NORDIC_NRF_WATCHDOG_WDT_0_LABEL, init_wdt,
 		    NULL, NULL, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &wdt_nrf_api);
