@@ -87,6 +87,23 @@ struct entropy_nrf5_dev_data {
 #define DEV_DATA(dev) \
 	((struct entropy_nrf5_dev_data *)(dev)->driver_data)
 
+static int random_byte_get(void)
+{
+	int retval = -EAGAIN;
+	unsigned int key;
+
+	key = irq_lock();
+
+	if (nrf_rng_event_get(NRF_RNG_EVENT_VALRDY)) {
+		retval = nrf_rng_random_value_get();
+		nrf_rng_event_clear(NRF_RNG_EVENT_VALRDY);
+	}
+
+	irq_unlock(key);
+
+	return retval;
+}
+
 #pragma GCC push_options
 #if defined(CONFIG_BT_CTLR_FAST_ENC)
 #pragma GCC optimize ("Ofast")
@@ -169,7 +186,7 @@ static inline u8_t get(struct rand *rng, u8_t octets, u8_t *rand)
 }
 #pragma GCC pop_options
 
-static int isr(struct rand *rng, bool store)
+static int isr(struct rand *rng, bool store, u8_t byte)
 {
 	u8_t last;
 
@@ -193,7 +210,7 @@ static int isr(struct rand *rng, bool store)
 		return -EBUSY;
 	}
 
-	rng->rand[rng->last] = nrf_rng_random_value_get();
+	rng->rand[rng->last] = byte;
 	rng->last = last;
 
 	last = rng->last + 1;
@@ -211,23 +228,23 @@ static int isr(struct rand *rng, bool store)
 static void isr_rand(void *arg)
 {
 	struct device *device = arg;
+	struct entropy_nrf5_dev_data *dev_data = DEV_DATA(device);
+	int byte, ret;
 
-	if (nrf_rng_event_get(NRF_RNG_EVENT_VALRDY)) {
-		struct entropy_nrf5_dev_data *dev_data = DEV_DATA(device);
-		int ret;
+	byte = random_byte_get();
+	if (byte < 0) {
+		return;
+	}
 
-		ret = isr((struct rand *)dev_data->isr, true);
-		if (ret != -EBUSY) {
-			ret = isr((struct rand *)dev_data->thr,
-				  (ret == -ENOBUFS));
-			k_sem_give(&dev_data->sem_sync);
-		}
+	ret = isr((struct rand *)dev_data->isr, true, byte);
+	if (ret != -EBUSY) {
+		ret = isr((struct rand *)dev_data->thr,
+			  (ret == -ENOBUFS), byte);
+		k_sem_give(&dev_data->sem_sync);
+	}
 
-		nrf_rng_event_clear(NRF_RNG_EVENT_VALRDY);
-
-		if (ret != -EBUSY) {
-			nrf_rng_task_trigger(NRF_RNG_TASK_STOP);
-		}
+	if (ret != -EBUSY) {
+		nrf_rng_task_trigger(NRF_RNG_TASK_STOP);
 	}
 }
 
@@ -288,15 +305,22 @@ static int entropy_nrf5_get_entropy_isr(struct device *dev, u8_t *buf, u16_t len
 		nrf_rng_task_trigger(NRF_RNG_TASK_START);
 
 		do {
+			int byte;
+
 			while (!nrf_rng_event_get(NRF_RNG_EVENT_VALRDY)) {
 				__WFE();
 				__SEV();
 				__WFE();
 			}
 
-			buf[--len] = nrf_rng_random_value_get();
-			nrf_rng_event_clear(NRF_RNG_EVENT_VALRDY);
+			byte = random_byte_get();
 			NVIC_ClearPendingIRQ(RNG_IRQn);
+
+			if (byte < 0) {
+				continue;
+			}
+
+			buf[--len] = byte;
 		} while (len);
 
 		nrf_rng_task_trigger(NRF_RNG_TASK_STOP);
