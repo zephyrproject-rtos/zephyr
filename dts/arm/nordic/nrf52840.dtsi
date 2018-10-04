@@ -50,6 +50,7 @@
 		gpio-1 = &gpio1;
 		gpiote-0 = &gpiote;
 		wdt-0 = &wdt;
+		usbd-0 = &usbd;
 	};
 
 	soc {
@@ -180,7 +181,6 @@
 			compatible = "nordic,nrf-usbd";
 			reg = <0x40027000 0x1000>;
 			interrupts = <39 1>;
-			interrupt-names = "usbd";
 			num-bidir-endpoints = <1>;
 			num-in-endpoints = <7>;
 			num-out-endpoints = <7>;
