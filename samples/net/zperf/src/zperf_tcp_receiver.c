@@ -27,8 +27,6 @@
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
 
-#define TAG CMD_STR_TCP_DOWNLOAD" "
-
 #define TCP_RX_FIBER_STACK_SIZE 1024
 
 static K_THREAD_STACK_DEFINE(zperf_tcp_rx_stack, TCP_RX_FIBER_STACK_SIZE);
@@ -46,6 +44,7 @@ static void tcp_received(struct net_context *context,
 			 int status,
 			 void *user_data)
 {
+	const struct shell *shell = user_data;
 	struct session *session;
 	u32_t time;
 
@@ -57,14 +56,14 @@ static void tcp_received(struct net_context *context,
 
 	session = get_session(pkt, SESSION_TCP);
 	if (!session) {
-		printk(TAG "ERROR! cannot get a session!\n");
+		shell_fprintf(shell, SHELL_WARNING, "Cannot get a session!\n");
 		return;
 	}
 
 	switch (session->state) {
 	case STATE_NULL:
 	case STATE_COMPLETED:
-		printk(TAG "New session started\n");
+		shell_fprintf(shell, SHELL_NORMAL, "New session started\n");
 		zperf_reset_session_stats(session);
 		session->start_time = k_cycle_get_32();
 		session->state = STATE_ONGOING;
@@ -91,21 +90,23 @@ static void tcp_received(struct net_context *context,
 				rate_in_kbps = 0;
 			}
 
-			printk(TAG "TCP session ended\n");
+			shell_fprintf(shell, SHELL_NORMAL,
+				      "TCP session ended\n");
 
-			printk(TAG " duration:\t\t");
-			print_number(duration, TIME_US, TIME_US_UNIT);
-			printk("\n");
+			shell_fprintf(shell, SHELL_NORMAL,
+				      " Duration:\t\t");
+			print_number(shell, duration, TIME_US, TIME_US_UNIT);
+			shell_fprintf(shell, SHELL_NORMAL, "\n");
 
-			printk(TAG " rate:\t\t\t");
-			print_number(rate_in_kbps, KBPS, KBPS_UNIT);
-			printk("\n");
+			shell_fprintf(shell, SHELL_NORMAL, " rate:\t\t\t");
+			print_number(shell, rate_in_kbps, KBPS, KBPS_UNIT);
+			shell_fprintf(shell, SHELL_NORMAL, "\n");
 		}
 		break;
 	case STATE_LAST_PACKET_RECEIVED:
 		break;
 	default:
-		printk(TAG "Error! Unsupported case\n");
+		shell_fprintf(shell, SHELL_WARNING, "Unsupported case\n");
 	}
 
 	net_pkt_unref(pkt);
@@ -117,113 +118,124 @@ static void tcp_accepted(struct net_context *context,
 			 int error,
 			 void *user_data)
 {
+	const struct shell *shell = user_data;
 	int ret;
 
 	ret = net_context_recv(context, tcp_received, K_NO_WAIT, user_data);
 	if (ret < 0) {
-		printk(TAG "Cannot receive TCP packet (family %d)",
-			net_context_get_family(context));
+		shell_fprintf(shell, SHELL_WARNING,
+			      "Cannot receive TCP packet (family %d)",
+			      net_context_get_family(context));
 	}
 }
 
-static void zperf_tcp_rx_thread(int port)
+static void zperf_tcp_rx_thread(const struct shell *shell, int port)
 {
-#if defined(CONFIG_NET_IPV4)
 	struct net_context *context4 = NULL;
-#endif
-#if defined(CONFIG_NET_IPV6)
 	struct net_context *context6 = NULL;
-#endif
 	int ret, fail = 0;
 
-#if defined(CONFIG_NET_IPV4) && defined(MY_IP4ADDR)
-	ret = net_context_get(AF_INET, SOCK_STREAM, IPPROTO_TCP, &context4);
-	if (ret < 0) {
-		printk(TAG "ERROR! Cannot get IPv4 TCP network context.\n");
-		return;
+	if (IS_ENABLED(CONFIG_NET_IPV4) && MY_IP4ADDR) {
+		ret = net_context_get(AF_INET, SOCK_STREAM, IPPROTO_TCP,
+				      &context4);
+		if (ret < 0) {
+			shell_fprintf(shell, SHELL_WARNING,
+				     "Cannot get IPv4 TCP network context.\n");
+			return;
+		}
+
+		ret = zperf_get_ipv4_addr(shell, MY_IP4ADDR,
+					  &in4_addr_my->sin_addr);
+		if (ret < 0) {
+			shell_fprintf(shell, SHELL_WARNING,
+				      "Unable to set IPv4\n");
+			return;
+		}
+
+		shell_fprintf(shell, SHELL_NORMAL, "Binding to %s\n",
+			      net_sprint_ipv4_addr(&in4_addr_my->sin_addr));
+
+		in4_addr_my->sin_port = htons(port);
 	}
 
-	ret = zperf_get_ipv4_addr(MY_IP4ADDR, &in4_addr_my->sin_addr, TAG);
-	if (ret < 0) {
-		printk(TAG "ERROR! Unable to set IPv4\n");
-		return;
+	if (IS_ENABLED(CONFIG_NET_IPV6) && MY_IP6ADDR) {
+		ret = net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP,
+				      &context6);
+		if (ret < 0) {
+			shell_fprintf(shell, SHELL_WARNING,
+				     "Cannot get IPv6 TCP network context.\n");
+			return;
+		}
+
+		ret = zperf_get_ipv6_addr(shell, MY_IP6ADDR, MY_PREFIX_LEN_STR,
+					  &in6_addr_my->sin6_addr);
+		if (ret < 0) {
+			shell_fprintf(shell, SHELL_WARNING,
+				      "Unable to set IPv6\n");
+			return;
+		}
+
+		shell_fprintf(shell, SHELL_NORMAL, "Binding to %s\n",
+			      net_sprint_ipv6_addr(&in6_addr_my->sin6_addr));
+
+		in6_addr_my->sin6_port = htons(port);
 	}
 
-	printk(TAG "Binding to %s\n",
-	       net_sprint_ipv4_addr(&in4_addr_my->sin_addr));
-
-	in4_addr_my->sin_port = htons(port);
-#endif
-
-#if defined(CONFIG_NET_IPV6) && defined(MY_IP6ADDR)
-	ret = net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP, &context6);
-	if (ret < 0) {
-		printk(TAG "ERROR! Cannot get IPv6 TCP network context.\n");
-		return;
-	}
-
-	ret = zperf_get_ipv6_addr(MY_IP6ADDR, MY_PREFIX_LEN_STR,
-				  &in6_addr_my->sin6_addr, TAG);
-	if (ret < 0) {
-		printk(TAG "ERROR! Unable to set IPv6\n");
-		return;
-	}
-
-	printk(TAG "Binding to %s\n",
-	       net_sprint_ipv6_addr(&in6_addr_my->sin6_addr));
-
-	in6_addr_my->sin6_port = htons(port);
-#endif
-
-#if defined(CONFIG_NET_IPV6)
-	if (context6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) && context6) {
 		ret = net_context_bind(context6,
 				       (struct sockaddr *)in6_addr_my,
 				       sizeof(struct sockaddr_in6));
 		if (ret < 0) {
-			printk(TAG "Cannot bind IPv6 TCP port %d (%d)\n",
-			       ntohs(in6_addr_my->sin6_port), ret);
+			shell_fprintf(shell, SHELL_WARNING,
+				      "Cannot bind IPv6 TCP port %d (%d)\n",
+				      ntohs(in6_addr_my->sin6_port), ret);
 			fail++;
 		}
 
 		ret = net_context_listen(context6, 0);
 		if (ret < 0) {
-			printk(TAG "Cannot listen IPv6 TCP (%d)", ret);
+			shell_fprintf(shell, SHELL_WARNING,
+				      "Cannot listen IPv6 TCP (%d)", ret);
 			return;
 		}
 
-		ret = net_context_accept(context6, tcp_accepted, K_NO_WAIT, NULL);
+		ret = net_context_accept(context6, tcp_accepted, K_NO_WAIT,
+					 NULL);
 		if (ret < 0) {
-			printk(TAG "Cannot receive IPv6 TCP packets (%d)", ret);
+			shell_fprintf(shell, SHELL_WARNING,
+				      "Cannot receive IPv6 TCP packets (%d)",
+				      ret);
 			return;
 		}
 	}
-#endif
 
-#if defined(CONFIG_NET_IPV4)
-	if (context4) {
+	if (IS_ENABLED(CONFIG_NET_IPV4) && context4) {
 		ret = net_context_bind(context4,
 				       (struct sockaddr *)in4_addr_my,
 				       sizeof(struct sockaddr_in));
 		if (ret < 0) {
-			printk(TAG "Cannot bind IPv4 TCP port %d (%d)\n",
-			       ntohs(in4_addr_my->sin_port), ret);
+			shell_fprintf(shell, SHELL_WARNING,
+				      "Cannot bind IPv4 TCP port %d (%d)\n",
+				      ntohs(in4_addr_my->sin_port), ret);
 			fail++;
 		}
 
 		ret = net_context_listen(context4, 0);
 		if (ret < 0) {
-			printk(TAG "Cannot listen IPv4 TCP (%d)", ret);
+			shell_fprintf(shell, SHELL_WARNING,
+				      "Cannot listen IPv4 TCP (%d)", ret);
 			return;
 		}
 
-		ret = net_context_accept(context4, tcp_accepted, K_NO_WAIT, NULL);
+		ret = net_context_accept(context4, tcp_accepted, K_NO_WAIT,
+					 (void *)shell);
 		if (ret < 0) {
-			printk(TAG "Cannot receive IPv4 TCP packets (%d)", ret);
+			shell_fprintf(shell, SHELL_WARNING,
+				      "Cannot receive IPv4 TCP packets (%d)",
+				      ret);
 			return;
 		}
 	}
-#endif
 
 	if (fail > 1) {
 		return;
@@ -232,18 +244,19 @@ static void zperf_tcp_rx_thread(int port)
 	k_sleep(K_FOREVER);
 }
 
-void zperf_tcp_receiver_init(int port)
+void zperf_tcp_receiver_init(const struct shell *shell, int port)
 {
-#if defined(CONFIG_NET_IPV6)
-	in6_addr_my = zperf_get_sin6();
-#endif
-#if defined(CONFIG_NET_IPV4)
-	in4_addr_my = zperf_get_sin();
-#endif
+	if (IS_ENABLED(CONFIG_NET_IPV6)) {
+		in6_addr_my = zperf_get_sin6();
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4)) {
+		in4_addr_my = zperf_get_sin();
+	}
 
 	k_thread_create(&zperf_tcp_rx_thread_data, zperf_tcp_rx_stack,
 			K_THREAD_STACK_SIZEOF(zperf_tcp_rx_stack),
 			(k_thread_entry_t)zperf_tcp_rx_thread,
-			INT_TO_POINTER(port), 0, 0,
+			(void *)shell, INT_TO_POINTER(port), 0,
 			K_PRIO_COOP(7), 0, K_NO_WAIT);
 }

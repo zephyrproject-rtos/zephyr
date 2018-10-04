@@ -8,6 +8,7 @@
 
 #include <limits.h>
 #include <net/net_ip.h>
+#include <shell/shell.h>
 
 #define IP6PREFIX_STR2(s) #s
 #define IP6PREFIX_STR(p) IP6PREFIX_STR2(p)
@@ -19,11 +20,19 @@
 #if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_CONFIG_SETTINGS)
 #define MY_IP6ADDR CONFIG_NET_CONFIG_MY_IPV6_ADDR
 #define DST_IP6ADDR CONFIG_NET_CONFIG_PEER_IPV6_ADDR
+#define MY_IP6ADDR_SET
+#else
+#define MY_IP6ADDR NULL
+#define DST_IP6ADDR NULL
 #endif
 
 #if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_CONFIG_SETTINGS)
 #define MY_IP4ADDR CONFIG_NET_CONFIG_MY_IPV4_ADDR
 #define DST_IP4ADDR CONFIG_NET_CONFIG_PEER_IPV4_ADDR
+#define MY_IP4ADDR_SET
+#else
+#define MY_IP4ADDR NULL
+#define DST_IP4ADDR NULL
 #endif
 
 #define PACKET_SIZE_MAX      1024
@@ -78,33 +87,30 @@ static inline u32_t time_delta(u32_t ts, u32_t t)
 	return (t >= ts) ? (t - ts) : (ULONG_MAX - ts + t);
 }
 
-#if defined(CONFIG_NET_IPV6)
-int zperf_get_ipv6_addr(char *host, char *prefix_str, struct in6_addr *addr,
-			const char *str);
+int zperf_get_ipv6_addr(const struct shell *shell, char *host,
+			char *prefix_str, struct in6_addr *addr);
 struct sockaddr_in6 *zperf_get_sin6(void);
-#endif
 
-#if defined(CONFIG_NET_IPV4)
-int zperf_get_ipv4_addr(char *host, struct in_addr *addr, const char *str);
+int zperf_get_ipv4_addr(const struct shell *shell, char *host,
+			struct in_addr *addr);
 struct sockaddr_in *zperf_get_sin(void);
-#endif
 
-extern void zperf_udp_upload(struct net_context *net_context,
+extern void zperf_udp_upload(const struct shell *shell,
+			     struct net_context *context,
 			     unsigned int duration_in_ms,
 			     unsigned int packet_size,
 			     unsigned int rate_in_kbps,
 			     struct zperf_results *results);
 
-extern void zperf_receiver_init(int port);
+extern void zperf_receiver_init(const struct shell *shell, int port);
 
-#if defined(CONFIG_NET_TCP)
-extern void zperf_tcp_receiver_init(int port);
+extern void zperf_tcp_receiver_init(const struct shell *shell, int port);
 extern void zperf_tcp_uploader_init(struct k_fifo *tx_queue);
-extern void zperf_tcp_upload(struct net_context *net_context,
+extern void zperf_tcp_upload(const struct shell *shell,
+			     struct net_context *net_context,
 			     unsigned int duration_in_ms,
 			     unsigned int packet_size,
 			     struct zperf_results *results);
-#endif
 
 extern void connect_ap(char *ssid);
 
