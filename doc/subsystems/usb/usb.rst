@@ -52,245 +52,63 @@ USB device class drivers
 ************************
 
 To initialize the device class driver instance the USB device class driver
-should call usb_set_config() passing as parameter the instance's configuration
-structure.
+should call :c:func:`usb_set_config()` passing as parameter the instance's
+configuration structure.
 
-For example, for CDC_ACM sample application:
+For example, for USB loopback application:
 
-.. code-block:: c
+.. literalinclude:: ../../../subsys/usb/class/loopback.c
+   :language: c
+   :start-after: usb.rst config structure start
+   :end-before: usb.rst config structure end
+   :linenos:
 
-   static const u8_t cdc_acm_usb_description[] = {
-      /* Device descriptor */
-      USB_DEVICE_DESC_SIZE,           /* Descriptor size */
-      USB_DEVICE_DESC,                /* Descriptor type */
-      LOW_BYTE(USB_1_1),
-      HIGH_BYTE(USB_1_1),             /* USB version in BCD format */
-      COMMUNICATION_DEVICE_CLASS,     /* Class */
-      0x00,                           /* SubClass - Interface specific */
-      0x00,                           /* Protocol - Interface specific */
-      MAX_PACKET_SIZE_EP0,            /* Max Packet Size */
-      LOW_BYTE(VENDOR_ID),
-      HIGH_BYTE(VENDOR_ID),           /* Vendor Id */
-      LOW_BYTE(CDC_PRODUCT_ID),
-      HIGH_BYTE(CDC_PRODUCT_ID),      /* Product Id */
-      LOW_BYTE(BCDDEVICE_RELNUM),
-      HIGH_BYTE(BCDDEVICE_RELNUM),    /* Device Release Number */
-      0x01,                           /* Index of Manufacturer String Descriptor */
-      0x02,                           /* Index of Product String Descriptor */
-      0x03,                           /* Index of Serial Number String Descriptor */
-      CDC_NUM_CONF,                   /* Number of Possible Configuration */
+Endpoint configuration:
 
-      /* Configuration descriptor */
-      USB_CONFIGURATION_DESC_SIZE,    /* Descriptor size */
-      USB_CONFIGURATION_DESC,         /* Descriptor type */
-      LOW_BYTE(CDC_CONF_SIZE),
-      HIGH_BYTE(CDC_CONF_SIZE),       /* Total length in bytes of data returned */
-      CDC_NUM_ITF,                    /* Number of interfaces */
-      0x01,                           /* Configuration value */
-      0x00,                           /* Index of the Configuration string */
-      USB_CONFIGURATION_ATTRIBUTES,   /* Attributes */
-      MAX_LOW_POWER,                  /* Max power consumption */
+.. literalinclude:: ../../../subsys/usb/class/loopback.c
+   :language: c
+   :start-after: usb.rst endpoint configuration start
+   :end-before: usb.rst endpoint configuration end
+   :linenos:
 
-      /* Interface descriptor */
-      USB_INTERFACE_DESC_SIZE,        /* Descriptor size */
-      USB_INTERFACE_DESC,             /* Descriptor type */
-      0x00,                           /* Interface index */
-      0x00,                           /* Alternate setting */
-      CDC1_NUM_EP,                    /* Number of Endpoints */
-      COMMUNICATION_DEVICE_CLASS,     /* Class */
-      ACM_SUBCLASS,                   /* SubClass */
-      V25TER_PROTOCOL,                /* Protocol */
-      0x00,                           /* Index of the Interface String Descriptor */
+USB Device configuration structure:
 
-      /* Header Functional Descriptor */
-      USB_HFUNC_DESC_SIZE,            /* Descriptor size */
-      CS_INTERFACE,                   /* Descriptor type */
-      USB_HFUNC_SUBDESC,              /* Descriptor SubType */
-      LOW_BYTE(USB_1_1),
-      HIGH_BYTE(USB_1_1),             /* CDC Device Release Number */
+.. literalinclude:: ../../../subsys/usb/class/loopback.c
+   :language: c
+   :start-after: usb.rst device config data start
+   :end-before: usb.rst device config data end
+   :linenos:
 
-      /* Call Management Functional Descriptor */
-      USB_CMFUNC_DESC_SIZE,           /* Descriptor size */
-      CS_INTERFACE,                   /* Descriptor type */
-      USB_CMFUNC_SUBDESC,             /* Descriptor SubType */
-      0x00,                           /* Capabilities */
-      0x01,                           /* Data Interface */
+For the Composite USB Device configuration is done by composite layer,
+otherwise:
 
-      /* ACM Functional Descriptor */
-      USB_ACMFUNC_DESC_SIZE,          /* Descriptor size */
-      CS_INTERFACE,                   /* Descriptor type */
-      USB_ACMFUNC_SUBDESC,            /* Descriptor SubType */
-      /* Capabilities - Device supports the request combination of:
-       *	Set_Line_Coding,
-       *	Set_Control_Line_State,
-       *	Get_Line_Coding
-       *	and the notification Serial_State
-       */
-      0x02,
-
-      /* Union Functional Descriptor */
-      USB_UFUNC_DESC_SIZE,            /* Descriptor size */
-      CS_INTERFACE,                   /* Descriptor type */
-      USB_UFUNC_SUBDESC,              /* Descriptor SubType */
-      0x00,                           /* Master Interface */
-      0x01,                           /* Slave Interface */
-
-      /* Endpoint INT */
-      USB_ENDPOINT_DESC_SIZE,         /* Descriptor size */
-      USB_ENDPOINT_DESC,              /* Descriptor type */
-      CDC_ENDP_INT,                   /* Endpoint address */
-      USB_DC_EP_INTERRUPT,            /* Attributes */
-      LOW_BYTE(CDC_INTERRUPT_EP_MPS),
-      HIGH_BYTE(CDC_INTERRUPT_EP_MPS),/* Max packet size */
-      0x0A,                           /* Interval */
-
-      /* Interface descriptor */
-      USB_INTERFACE_DESC_SIZE,        /* Descriptor size */
-      USB_INTERFACE_DESC,             /* Descriptor type */
-      0x01,                           /* Interface index */
-      0x00,                           /* Alternate setting */
-      CDC2_NUM_EP,                    /* Number of Endpoints */
-      COMMUNICATION_DEVICE_CLASS_DATA,/* Class */
-      0x00,                           /* SubClass */
-      0x00,                           /* Protocol */
-      0x00,                           /* Index of the Interface String Descriptor */
-
-      /* First Endpoint IN */
-      USB_ENDPOINT_DESC_SIZE,         /* Descriptor size */
-      USB_ENDPOINT_DESC,              /* Descriptor type */
-      CDC_ENDP_IN,                    /* Endpoint address */
-      USB_DC_EP_BULK,                 /* Attributes */
-      LOW_BYTE(CDC_BULK_EP_MPS),
-      HIGH_BYTE(CDC_BULK_EP_MPS),     /* Max packet size */
-      0x00,                           /* Interval */
-
-      /* Second Endpoint OUT */
-      USB_ENDPOINT_DESC_SIZE,         /* Descriptor size */
-      USB_ENDPOINT_DESC,              /* Descriptor type */
-      CDC_ENDP_OUT,                   /* Endpoint address */
-      USB_DC_EP_BULK,                 /* Attributes */
-      LOW_BYTE(CDC_BULK_EP_MPS),
-      HIGH_BYTE(CDC_BULK_EP_MPS),     /* Max packet size */
-      0x00,                           /* Interval */
-
-      /* String descriptor language, only one, so min size 4 bytes.
-       * 0x0409 English(US) language code used
-       */
-      USB_STRING_DESC_SIZE,           /* Descriptor size */
-      USB_STRING_DESC,                /* Descriptor type */
-      0x09,
-      0x04,
-      /* Manufacturer String Descriptor "Intel" */
-      0x0C,
-      USB_STRING_DESC,
-      'I', 0, 'n', 0, 't', 0, 'e', 0, 'l', 0,
-      /* Product String Descriptor "CDC-ACM" */
-      0x10,
-      USB_STRING_DESC,
-      'C', 0, 'D', 0, 'C', 0, '-', 0, 'A', 0, 'C', 0, 'M', 0,
-      /* Serial Number String Descriptor "00.01" */
-      0x0C,
-      USB_STRING_DESC,
-      '0', 0, '0', 0, '.', 0, '0', 0, '1', 0,
-   };
-
-.. code-block:: c
-
-   static struct usb_ep_cfg_data cdc_acm_ep_data[] = {
-      {
-         .ep_cb = cdc_acm_int_in,
-         .ep_addr = CDC_ENDP_INT
-      },
-      {
-         .ep_cb = cdc_acm_bulk_out,
-         .ep_addr = CDC_ENDP_OUT
-      },
-      {
-         .ep_cb = cdc_acm_bulk_in,
-         .ep_addr = CDC_ENDP_IN
-      }
-   };
-
-.. code-block:: c
-
-   static struct usb_cfg_data cdc_acm_config = {
-      .usb_device_description = cdc_acm_usb_description,
-      .cb_usb_status = cdc_acm_dev_status_cb,
-      .interface = {
-      .class_handler = cdc_acm_class_handle_req,
-      .custom_handler = NULL,
-      .payload_data = NULL,
-      },
-      .num_endpoints = CDC1_NUM_EP + CDC2_NUM_EP,
-      .endpoint = cdc_acm_ep_data
-   };
-
-.. code-block:: c
-
-   ret = usb_set_config(&cdc_acm_config);
-   if (ret < 0) {
-      DBG("Failed to config USB\n");
-      return ret;
-   }
+.. literalinclude:: ../../../subsys/usb/class/loopback.c
+   :language: c
+   :start-after: usb.rst configure USB controller start
+   :end-before: usb.rst configure USB controller end
+   :linenos:
 
 To enable the USB device for host/device connection:
 
-.. code-block:: c
+.. literalinclude:: ../../../subsys/usb/class/loopback.c
+   :language: c
+   :start-after: usb.rst enable USB controller start
+   :end-before:  usb.rst enable USB controller end
+   :linenos:
 
-   ret = usb_enable(&cdc_acm_config);
-   if (ret < 0) {
-      DBG("Failed to enable USB\n");
-      return ret;
-   }
-
-The class device requests are forwarded by the USB stack core driver to the
+The vendor device requests are forwarded by the USB stack core driver to the
 class driver through the registered class handler.
-For the CDC ACM sample class driver, 'cdc_acm_class_handle_req' processes
-the SET_LINE_CODING, CDC_SET_CONTROL_LINE_STATE and CDC_GET_LINE_CODING
-class requests:
 
-.. code-block:: c
+For the loopback class driver, :c:func:`loopback_vendor_handler` processes
+the vendor requests:
 
-   int cdc_acm_class_handle_req(struct usb_setup_packet *pSetup,
-         s32_t *len, u8_t **data)
-   {
-      struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(cdc_acm_dev);
+.. literalinclude:: ../../../subsys/usb/class/loopback.c
+   :language: c
+   :start-after: usb.rst vendor handler start
+   :end-before:  usb.rst vendor handler end
+   :linenos:
 
-      switch (pSetup->bRequest) {
-      case CDC_SET_LINE_CODING:
-         memcpy(&dev_data->line_coding, *data, sizeof(dev_data->line_coding));
-         DBG("\nCDC_SET_LINE_CODING %d %d %d %d\n",
-            sys_le32_to_cpu(dev_data->line_coding.dwDTERate),
-            dev_data->line_coding.bCharFormat,
-            dev_data->line_coding.bParityType,
-            dev_data->line_coding.bDataBits);
-      break;
-
-      case CDC_SET_CONTROL_LINE_STATE:
-         dev_data->line_state = (u8_t)sys_le16_to_cpu(pSetup->wValue);
-         DBG("CDC_SET_CONTROL_LINE_STATE 0x%x\n", dev_data->line_state);
-            break;
-
-      case CDC_GET_LINE_CODING:
-         *data = (u8_t *)(&dev_data->line_coding);
-         *len = sizeof(dev_data->line_coding);
-         DBG("\nCDC_GET_LINE_CODING %d %d %d %d\n",
-         sys_le32_to_cpu(dev_data->line_coding.dwDTERate),
-            dev_data->line_coding.bCharFormat,
-            dev_data->line_coding.bParityType,
-            dev_data->line_coding.bDataBits);
-            break;
-
-      default:
-         DBG("CDC ACM request 0x%x, value 0x%x\n",
-            pSetup->bRequest, pSetup->wValue);
-            return -EINVAL;
-      }
-
-      return 0;
-   }
-
-The class driver should wait for the USB_DC_INTERFACE device status code
+The class driver waits for the :makevar:`USB_DC_CONFIGURED` device status code
 before transmitting any data.
 
 There are two ways to transmit data, using the 'low' level read/write API or
