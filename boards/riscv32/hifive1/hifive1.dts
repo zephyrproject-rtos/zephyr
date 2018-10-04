@@ -39,6 +39,11 @@
 &uart0 {
 	status = "ok";
 	current-speed = <115200>;
+	clock-frequency = <16000000>;
+};
+
+&uart1 {
+	clock-frequency = <16000000>;
 };
 
 &spi0 {
