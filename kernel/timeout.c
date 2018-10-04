@@ -63,6 +63,7 @@ void _add_timeout(struct _timeout *to, _timeout_func_t fn, s32_t ticks)
 {
 	__ASSERT(to->dticks < 0, "");
 	to->fn = fn;
+	ticks = max(1, ticks);
 
 	LOCKED(&timeout_lock) {
 		struct _timeout *t;
