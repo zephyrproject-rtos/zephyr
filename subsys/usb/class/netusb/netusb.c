@@ -156,54 +156,6 @@ USBD_CLASS_DESCR_DEFINE(primary) struct usb_rndis_config rndis_cfg = {
 #endif /* CONFIG_USB_DEVICE_NETWORK_RNDIS */
 
 
-#ifdef CONFIG_USB_DEVICE_NETWORK_EEM
-struct usb_cdc_eem_config {
-	struct usb_if_descriptor if0;
-	struct usb_ep_descriptor if0_in_ep;
-	struct usb_ep_descriptor if0_out_ep;
-} __packed;
-
-USBD_CLASS_DESCR_DEFINE(primary) struct usb_cdc_eem_config cdc_eem_cfg = {
-	/* Interface descriptor 0 */
-	/* CDC Communication interface */
-	.if0 = {
-		.bLength = sizeof(struct usb_if_descriptor),
-		.bDescriptorType = USB_INTERFACE_DESC,
-		.bInterfaceNumber = 0,
-		.bAlternateSetting = 0,
-		.bNumEndpoints = 2,
-		.bInterfaceClass = COMMUNICATION_DEVICE_CLASS,
-		.bInterfaceSubClass = EEM_SUBCLASS,
-		.bInterfaceProtocol = EEM_PROTOCOL,
-		.iInterface = 0,
-	},
-
-	/* Data Endpoint IN */
-	.if0_in_ep = {
-		.bLength = sizeof(struct usb_ep_descriptor),
-		.bDescriptorType = USB_ENDPOINT_DESC,
-		.bEndpointAddress = CDC_EEM_IN_EP_ADDR,
-		.bmAttributes = USB_DC_EP_BULK,
-		.wMaxPacketSize =
-			sys_cpu_to_le16(
-			CONFIG_CDC_EEM_BULK_EP_MPS),
-		.bInterval = 0x00,
-	},
-
-	/* Data Endpoint OUT */
-	.if0_out_ep = {
-		.bLength = sizeof(struct usb_ep_descriptor),
-		.bDescriptorType = USB_ENDPOINT_DESC,
-		.bEndpointAddress = CDC_EEM_OUT_EP_ADDR,
-		.bmAttributes = USB_DC_EP_BULK,
-		.wMaxPacketSize =
-			sys_cpu_to_le16(
-			CONFIG_CDC_EEM_BULK_EP_MPS),
-		.bInterval = 0x00,
-	},
-};
-#endif /* CONFIG_USB_DEVICE_NETWORK_EEM */
-
 static struct __netusb {
 	struct net_if *iface;
 	bool enabled;
@@ -213,7 +165,8 @@ static struct __netusb {
 static int netusb_class_handler(struct usb_setup_packet *setup,
 				s32_t *len, u8_t **data);
 
-#if !defined(CONFIG_USB_DEVICE_NETWORK_ECM)
+#if !defined(CONFIG_USB_DEVICE_NETWORK_ECM) && \
+	!defined(CONFIG_USB_DEVICE_NETWORK_EEM)
 static void netusb_interface_config(u8_t bInterfaceNumber)
 {
 #ifdef CONFIG_USB_DEVICE_NETWORK_ECM
@@ -253,7 +206,6 @@ static void netusb_interface_config(u8_t bInterfaceNumber)
 static u8_t interface_data[300];
 #endif
 
-#if !defined(CONFIG_USB_DEVICE_NETWORK_ECM)
 USBD_CFG_DATA_DEFINE(netusb) struct usb_cfg_data netusb_config = {
 	.usb_device_description = NULL,
 	.interface_config = netusb_interface_config,
@@ -350,7 +302,8 @@ void netusb_disable(void)
 	net_if_down(netusb.iface);
 }
 
-#if !defined(CONFIG_USB_DEVICE_NETWORK_ECM)
+#if !defined(CONFIG_USB_DEVICE_NETWORK_ECM) && \
+	!defined(CONFIG_USB_DEVICE_NETWORK_EEM)
 u8_t netusb_get_first_iface_number(void)
 {
 	USB_DBG("");
@@ -466,7 +419,8 @@ static void netusb_init(struct net_if *iface)
 		return;
 	}
 
-#if !defined(CONFIG_USB_DEVICE_NETWORK_ECM)
+#if !defined(CONFIG_USB_DEVICE_NETWORK_ECM) && \
+	!defined(CONFIG_USB_DEVICE_NETWORK_EEM)
 	netusb_config.endpoint = netusb.func->ep;
 	netusb_config.num_endpoints = netusb.func->num_ep;
 	netusb_config.cb_usb_status = netusb.func->status_cb;
