@@ -96,13 +96,6 @@ static inline void spi_context_release(struct spi_context *ctx, int status)
 #endif /* CONFIG_SPI_ASYNC */
 }
 
-static inline void spi_context_unlock_unconditionally(struct spi_context *ctx)
-{
-	if (!k_sem_count_get(&ctx->lock)) {
-		k_sem_give(&ctx->lock);
-	}
-}
-
 static inline int spi_context_wait_for_completion(struct spi_context *ctx)
 {
 	int status = 0;
@@ -185,16 +178,18 @@ static inline void spi_context_cs_configure(struct spi_context *ctx)
 	}
 }
 
-static inline void spi_context_cs_control(struct spi_context *ctx, bool on)
+static inline void _spi_context_cs_control(struct spi_context *ctx,
+					   bool on, bool force_off)
 {
-	if (ctx->config->cs && ctx->config->cs->gpio_dev) {
+	if (ctx->config && ctx->config->cs && ctx->config->cs->gpio_dev) {
 		if (on) {
 			gpio_pin_write(ctx->config->cs->gpio_dev,
 				       ctx->config->cs->gpio_pin,
 				       spi_context_cs_active_value(ctx));
 			k_busy_wait(ctx->config->cs->delay);
 		} else {
-			if (ctx->config->operation & SPI_HOLD_ON_CS) {
+			if (!force_off &&
+			    ctx->config->operation & SPI_HOLD_ON_CS) {
 				return;
 			}
 
@@ -203,6 +198,21 @@ static inline void spi_context_cs_control(struct spi_context *ctx, bool on)
 				       ctx->config->cs->gpio_pin,
 				       spi_context_cs_inactive_value(ctx));
 		}
+	}
+}
+
+static inline void spi_context_cs_control(struct spi_context *ctx, bool on)
+{
+	_spi_context_cs_control(ctx, on, false);
+}
+
+static inline void spi_context_unlock_unconditionally(struct spi_context *ctx)
+{
+	/* Forcing CS to go to inactive status */
+	_spi_context_cs_control(ctx, false, true);
+
+	if (!k_sem_count_get(&ctx->lock)) {
+		k_sem_give(&ctx->lock);
 	}
 }
 
