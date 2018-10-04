@@ -46,6 +46,9 @@
 		uart-0 = &uart0;
 		uart-1 = &uart1;
 		adc-0 = &adc;
+		gpio-0 = &gpio0;
+		gpio-1 = &gpio1;
+		gpiote-0 = &gpiote;
 	};
 
 	soc {
@@ -78,7 +81,6 @@
 			compatible = "nordic,nrf-gpiote";
 			reg = <0x40006000 0x1000>;
 			interrupts = <6 5>;
-			interrupt-names = "gpiote";
 			status = "disabled";
 			label = "GPIOTE_0";
 		};
