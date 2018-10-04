@@ -162,18 +162,18 @@ K_MEM_POOL_DEFINE(fifo_elem_pool, FIFO_ELEM_MIN_SZ, FIFO_ELEM_MAX_SZ,
  */
 
 /** Number of IN Endpoints configured (including control) */
-#define CFG_EPIN_CNT (DT_USBD_NRF_NUM_IN_EP + \
-		      DT_USBD_NRF_NUM_BIDIR_EP)
+#define CFG_EPIN_CNT (DT_NORDIC_NRF_USBD_USBD_0_NUM_IN_ENDPOINTS + \
+		      DT_NORDIC_NRF_USBD_USBD_0_NUM_BIDIR_ENDPOINTS)
 
 /** Number of OUT Endpoints configured (including control) */
-#define CFG_EPOUT_CNT (DT_USBD_NRF_NUM_OUT_EP + \
-		       DT_USBD_NRF_NUM_BIDIR_EP)
+#define CFG_EPOUT_CNT (DT_NORDIC_NRF_USBD_USBD_0_NUM_OUT_ENDPOINTS + \
+		       DT_NORDIC_NRF_USBD_USBD_0_NUM_BIDIR_ENDPOINTS)
 
 /** Number of ISO IN Endpoints */
-#define CFG_EP_ISOIN_CNT DT_USBD_NRF_NUM_ISOIN_EP
+#define CFG_EP_ISOIN_CNT DT_NORDIC_NRF_USBD_USBD_0_NUM_ISOIN_ENDPOINTS
 
 /** Number of ISO OUT Endpoints */
-#define CFG_EP_ISOOUT_CNT DT_USBD_NRF_NUM_ISOOUT_EP
+#define CFG_EP_ISOOUT_CNT DT_NORDIC_NRF_USBD_USBD_0_NUM_ISOOUT_ENDPOINTS
 
 /** ISO endpoint index */
 #define EP_ISOIN_INDEX CFG_EPIN_CNT
@@ -1038,8 +1038,8 @@ int usb_dc_attach(void)
 	k_fifo_init(&ctx->work_queue);
 	k_sem_init(&ctx->dma_in_use, 1, 1);
 
-	IRQ_CONNECT(DT_USBD_NRF_IRQ,
-		    DT_USBD_NRF_IRQ_PRI,
+	IRQ_CONNECT(DT_NORDIC_NRF_USBD_USBD_0_IRQ,
+		    DT_NORDIC_NRF_USBD_USBD_0_IRQ_PRIORITY,
 		    nrfx_isr, nrfx_usbd_irq_handler, 0);
 
 	/* NOTE: Non-blocking HF clock enable can return -EINPROGRESS
