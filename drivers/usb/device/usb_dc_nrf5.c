@@ -29,9 +29,15 @@
 
 #include <nrf_usbd.h>
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_DRIVER_LEVEL
-#define SYS_LOG_DOMAIN "usb/dc"
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(usb_dc_nrf5);
+
+#define USB_DBG(fmt, ...) LOG_DBG("(%p): %s: " fmt, k_current_get(), \
+				  __func__, ##__VA_ARGS__)
+#define USB_ERR(fmt, ...) LOG_ERR(fmt, ##__VA_ARGS__)
+#define USB_WRN(fmt, ...) LOG_WRN(fmt, ##__VA_ARGS__)
+#define USB_INF(fmt, ...) LOG_INF(fmt, ##__VA_ARGS__)
 
 #define MAX_EP_BUF_SZ		64UL
 #define MAX_ISO_EP_BUF_SZ	1024UL
@@ -401,8 +407,7 @@ static struct nrf5_usbd_ep_ctx *epstatus_to_ep_ctx(u32_t epstatus)
 	 * multiple events and queue them up to the FIFO.
 	 */
 	if (popcount(epstatus) > 1) {
-		SYS_LOG_ERR("%d bits set in epstatus!!",
-			    popcount(epstatus));
+		USB_ERR("%d bits set in epstatus!!", popcount(epstatus));
 		__ASSERT_NO_MSG(0);
 	}
 
@@ -431,7 +436,7 @@ static struct nrf5_usbd_ep_ctx *epstatus_to_ep_ctx(u32_t epstatus)
 		}
 	}
 
-	SYS_LOG_ERR("invalid epstatus 0x%08x", epstatus);
+	USB_ERR("invalid epstatus 0x%08x", epstatus);
 	__ASSERT_NO_MSG(0);
 
 	return NULL;
@@ -451,8 +456,8 @@ static struct nrf5_usbd_ep_ctx *epdatastatus_to_ep_ctx(u32_t epdatastatus)
 	 * multiple events and queue them up to the FIFO.
 	 */
 	if (popcount(epdatastatus) > 1) {
-		SYS_LOG_ERR("%d bits set in epdatastatus!!",
-			    popcount(epdatastatus));
+		USB_ERR("%d bits set in epdatastatus!!",
+			popcount(epdatastatus));
 		__ASSERT_NO_MSG(0);
 	}
 
@@ -481,7 +486,7 @@ static struct nrf5_usbd_ep_ctx *epdatastatus_to_ep_ctx(u32_t epdatastatus)
 		}
 	}
 
-	SYS_LOG_ERR("invalid epdatastatus 0x%08x", epdatastatus);
+	USB_ERR("invalid epdatastatus 0x%08x", epdatastatus);
 	__ASSERT_NO_MSG(0);
 
 	return NULL;
@@ -493,12 +498,12 @@ static void start_epin_task(u8_t ep)
 	nrf_usbd_task_t task;
 
 	if (NRF_USBD_EPOUT_CHECK(ep)) {
-		SYS_LOG_ERR("invalid endpoint!");
+		USB_ERR("invalid endpoint!");
 		return;
 	}
 
 	if (epnum > NRF_USBD_EPIN_CNT) {
-		SYS_LOG_ERR("invalid endpoint %d", epnum);
+		USB_ERR("invalid endpoint %d", epnum);
 		return;
 	}
 
@@ -512,12 +517,12 @@ static void start_epout_task(u8_t ep)
 	nrf_usbd_task_t task;
 
 	if (NRF_USBD_EPIN_CHECK(ep)) {
-		SYS_LOG_ERR("invalid endpoint!");
+		USB_ERR("invalid endpoint!");
 		return;
 	}
 
 	if (epnum > NRF_USBD_EPOUT_CNT) {
-		SYS_LOG_ERR("invalid endpoint %d", epnum);
+		USB_ERR("invalid endpoint %d", epnum);
 		return;
 	}
 
@@ -550,7 +555,7 @@ static inline struct ep_usb_event *alloc_ep_usb_event(void)
 			       sizeof(struct ep_usb_event),
 			       K_NO_WAIT);
 	if (ret < 0) {
-		SYS_LOG_DBG("ep usb event alloc failed!");
+		USB_DBG("ep usb event alloc failed!");
 		__ASSERT_NO_MSG(0);
 		return NULL;
 	}
@@ -980,7 +985,7 @@ void nrf5_usbd_power_event_callback(nrf_power_event_t event)
 		ctx->state = USBD_DETACHED;
 		break;
 	default:
-		SYS_LOG_DBG("Unknown USB event");
+		USB_DBG("Unknown USB event");
 		return;
 	}
 
@@ -1005,7 +1010,7 @@ static int hf_clock_enable(bool on, bool blocking)
 
 	clock = device_get_binding(CONFIG_CLOCK_CONTROL_NRF5_M16SRC_DRV_NAME);
 	if (!clock) {
-		SYS_LOG_ERR("NRF5 HF Clock device not found!");
+		USB_ERR("NRF5 HF Clock device not found!");
 		return ret;
 	}
 
@@ -1016,12 +1021,12 @@ static int hf_clock_enable(bool on, bool blocking)
 	}
 
 	if (ret && (blocking || (ret != -EINPROGRESS))) {
-		SYS_LOG_ERR("NRF5 HF clock %s fail: %d",
-			    on ? "start" : "stop", ret);
+		USB_ERR("NRF5 HF clock %s fail: %d",
+			on ? "start" : "stop", ret);
 		return ret;
 	}
 
-	SYS_LOG_DBG("HF clock %s success (%d)", on ? "start" : "stop", ret);
+	USB_DBG("HF clock %s success (%d)", on ? "start" : "stop", ret);
 
 	return ret;
 }
@@ -1057,11 +1062,11 @@ static void usbd_handle_state_change(struct nrf5_usbd_ctx *ctx)
 {
 	switch (ctx->state) {
 	case USBD_ATTACHED:
-		SYS_LOG_DBG("USB detected");
+		USB_DBG("USB detected");
 		nrf_usbd_enable();
 		break;
 	case USBD_POWERED:
-		SYS_LOG_DBG("USB Powered");
+		USB_DBG("USB Powered");
 		ctx->status_code = USB_DC_CONNECTED;
 		ctx->flags |= BIT(NRF5_USB_STATUS_CHANGE);
 		usbd_enable_endpoints(ctx);
@@ -1069,7 +1074,7 @@ static void usbd_handle_state_change(struct nrf5_usbd_ctx *ctx)
 		ctx->ready = true;
 		break;
 	case USBD_DETACHED:
-		SYS_LOG_DBG("USB Removed");
+		USB_DBG("USB Removed");
 		if (nrf_usbd_pullup_check()) {
 			nrf_usbd_pullup_disable();
 			ctx->ready = false;
@@ -1079,7 +1084,7 @@ static void usbd_handle_state_change(struct nrf5_usbd_ctx *ctx)
 		ctx->flags |= BIT(NRF5_USB_STATUS_CHANGE);
 		break;
 	default:
-		SYS_LOG_ERR("Unknown USB state");
+		USB_ERR("Unknown USB state");
 	}
 
 	if (ctx->flags) {
@@ -1136,8 +1141,8 @@ static inline void handle_ctrl_ep_idle_state_events(struct ep_usb_event *ev)
 	case EP_DMA_END:
 	case EP_WRITE_COMPLETE:
 	case EP_SOF:
-		SYS_LOG_ERR("invalid event %d in data state for EP %d",
-			    ev->evt, ep_ctx->cfg.addr);
+		USB_ERR("invalid event %d in data state for EP %d",
+			ev->evt, ep_ctx->cfg.addr);
 		__ASSERT_NO_MSG(0);
 		break;
 	}
@@ -1175,7 +1180,7 @@ static inline void handle_ctrl_ep_setup_state_events(struct ep_usb_event *ev)
 	case EP_DMA_END:
 	case EP_WRITE_COMPLETE:
 	case EP_SOF:
-		SYS_LOG_ERR("invalid event %d in setup state", ev->evt);
+		USB_ERR("invalid event %d in setup state", ev->evt);
 		__ASSERT_NO_MSG(0);
 		break;
 	}
@@ -1249,8 +1254,8 @@ static inline void handle_ctrl_ep_data_state_events(struct ep_usb_event *ev)
 		break;
 	case EP_SETUP_RECV:
 	case EP_SOF:
-		SYS_LOG_ERR("invalid event %d in data state for EP %d",
-			    ev->evt, ep_ctx->cfg.addr);
+		USB_ERR("invalid event %d in data state for EP %d",
+			ev->evt, ep_ctx->cfg.addr);
 		__ASSERT_NO_MSG(0);
 		break;
 	}
@@ -1315,7 +1320,7 @@ static inline void handle_data_ep_idle_state_events(struct ep_usb_event *ev)
 	case EP_DMA_END:
 	case EP_SETUP_RECV:
 	case EP_SOF:
-		SYS_LOG_ERR("invalid event %d in idle state", ev->evt);
+		USB_ERR("invalid event %d in idle state", ev->evt);
 		__ASSERT_NO_MSG(0);
 		break;
 	}
@@ -1368,7 +1373,7 @@ static inline void handle_data_ep_data_state_events(struct ep_usb_event *ev)
 	case EP_DMA_START:
 	case EP_SETUP_RECV:
 	case EP_SOF:
-		SYS_LOG_ERR("invalid event %d in data state", ev->evt);
+		USB_ERR("invalid event %d in data state", ev->evt);
 		__ASSERT_NO_MSG(0);
 		break;
 	}
@@ -1388,8 +1393,8 @@ static void handle_data_ep_event(struct ep_usb_event *ev)
 		break;
 	case EP_SETUP:
 	case EP_STATUS:
-		SYS_LOG_ERR("invalid state(%d) for data ep %d",
-			    ep_ctx->state, ep_ctx->cfg.addr);
+		USB_ERR("invalid state(%d) for data ep %d",
+			ep_ctx->state, ep_ctx->cfg.addr);
 		break;
 	}
 }
@@ -1460,7 +1465,7 @@ static inline void handle_iso_ep_idle_state_events(struct ep_usb_event *ev)
 	case EP_DMA_END:
 	case EP_SETUP_RECV:
 	case EP_DATA_RECV:
-		SYS_LOG_ERR("invalid event %d in idle state", ev->evt);
+		USB_ERR("invalid event %d in idle state", ev->evt);
 		__ASSERT_NO_MSG(0);
 		break;
 	}
@@ -1495,7 +1500,7 @@ static inline void handle_iso_ep_data_state_events(struct ep_usb_event *ev)
 	case EP_DMA_START:
 	case EP_WRITE_COMPLETE:
 	case EP_SETUP_RECV:
-		SYS_LOG_ERR("invalid event %d in idle state", ev->evt);
+		USB_ERR("invalid event %d in idle state", ev->evt);
 		__ASSERT_NO_MSG(0);
 		break;
 	}
@@ -1525,8 +1530,8 @@ static void handle_iso_ep_event(struct ep_usb_event *ev)
 		break;
 	case EP_SETUP:
 	case EP_STATUS:
-		SYS_LOG_ERR("invalid state(%d) for a iso ep %d",
-			    ep_ctx->state, ep_ctx->cfg.addr);
+		USB_ERR("invalid state(%d) for a iso ep %d",
+			ep_ctx->state, ep_ctx->cfg.addr);
 		break;
 	}
 }
@@ -1608,7 +1613,7 @@ static void endpoint_ctx_init(void)
 		ret = k_mem_pool_alloc(&ep_buf_pool, &ep_ctx->buf.block,
 				       MAX_EP_BUF_SZ, K_NO_WAIT);
 		if (ret < 0) {
-			SYS_LOG_ERR("EP buffer alloc failed for EPIN%d", i);
+			USB_ERR("EP buffer alloc failed for EPIN%d", i);
 			__ASSERT_NO_MSG(0);
 		}
 
@@ -1623,7 +1628,7 @@ static void endpoint_ctx_init(void)
 		ret = k_mem_pool_alloc(&ep_buf_pool, &ep_ctx->buf.block,
 				       MAX_EP_BUF_SZ, K_NO_WAIT);
 		if (ret < 0) {
-			SYS_LOG_ERR("EP buffer alloc failed for EPOUT%d", i);
+			USB_ERR("EP buffer alloc failed for EPOUT%d", i);
 			__ASSERT_NO_MSG(0);
 		}
 
@@ -1638,7 +1643,7 @@ static void endpoint_ctx_init(void)
 		ret = k_mem_pool_alloc(&ep_buf_pool, &ep_ctx->buf.block,
 				       MAX_ISO_EP_BUF_SZ, K_NO_WAIT);
 		if (ret < 0) {
-			SYS_LOG_ERR("EP buffer alloc failed for ISOIN");
+			USB_ERR("EP buffer alloc failed for ISOIN");
 			__ASSERT_NO_MSG(0);
 		}
 
@@ -1653,7 +1658,7 @@ static void endpoint_ctx_init(void)
 		ret = k_mem_pool_alloc(&ep_buf_pool, &ep_ctx->buf.block,
 				       MAX_ISO_EP_BUF_SZ, K_NO_WAIT);
 		if (ret < 0) {
-			SYS_LOG_ERR("EP buffer alloc failed for ISOOUT");
+			USB_ERR("EP buffer alloc failed for ISOOUT");
 			__ASSERT_NO_MSG(0);
 		}
 
@@ -1701,7 +1706,7 @@ static int usbd_power_int_enable(bool enable)
 	struct device *dev = device_get_binding(CONFIG_USBD_NRF5_NAME);
 
 	if (!dev) {
-		SYS_LOG_ERR("could not get USBD power device binding");
+		USB_ERR("could not get USBD power device binding");
 		return -ENODEV;
 	}
 
@@ -1823,22 +1828,22 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 {
 	u8_t ep_idx = NRF_USBD_EP_NR_GET(cfg->ep_addr);
 
-	SYS_LOG_DBG("ep %x, mps %d, type %d", cfg->ep_addr, cfg->ep_mps,
-		    cfg->ep_type);
+	USB_DBG("ep %x, mps %d, type %d", cfg->ep_addr, cfg->ep_mps,
+		cfg->ep_type);
 
 	if ((cfg->ep_type == USB_DC_EP_CONTROL) && ep_idx) {
-		SYS_LOG_ERR("invalid endpoint configuration");
+		USB_ERR("invalid endpoint configuration");
 		return -1;
 	}
 
 	if (!NRF_USBD_EP_VALIDATE(cfg->ep_addr)) {
-		SYS_LOG_ERR("invalid endpoint index/address");
+		USB_ERR("invalid endpoint index/address");
 		return -1;
 	}
 
 	if ((cfg->ep_type == USB_DC_EP_ISOCHRONOUS) &&
 	    (!NRF_USBD_EPISO_CHECK(cfg->ep_addr))) {
-		SYS_LOG_WRN("invalid endpoint type");
+		USB_WRN("invalid endpoint type");
 		return -1;
 	}
 
@@ -1897,7 +1902,7 @@ int usb_dc_ep_set_stall(const u8_t ep)
 		nrf_usbd_ep_stall(ep);
 		break;
 	case USB_DC_EP_ISOCHRONOUS:
-		SYS_LOG_ERR("STALL unsupported on ISO endpoints");
+		USB_ERR("STALL unsupported on ISO endpoints");
 		return -EINVAL;
 	}
 
@@ -2114,7 +2119,7 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 		start_epin_task(ep);
 		break;
 	default:
-		SYS_LOG_ERR("Invalid endpoint type");
+		USB_ERR("Invalid endpoint type");
 		break;
 	}
 
