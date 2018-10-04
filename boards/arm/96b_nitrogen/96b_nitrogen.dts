@@ -17,6 +17,37 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		bt = &led1;
+		sw0 = &button0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		/* green led */
+		led0: led_0 {
+			gpios = <&gpio0 29 0>;
+			label = "USR1 LED";
+		};
+		/* blue led */
+		led1: led_1 {
+			gpios = <&gpio0 28 0>;
+			label = "BT LED";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			/* gpio flags need validation */
+			gpios = <&gpio0 27 GPIO_INT_ACTIVE_LOW>;
+			label = "User Push Button";
+		};
+	};
 };
 
 &gpiote {
