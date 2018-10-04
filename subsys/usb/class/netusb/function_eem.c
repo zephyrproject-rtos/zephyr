@@ -16,9 +16,61 @@ LOG_MODULE_REGISTER(usb_eem)
 #include <net/net_pkt.h>
 
 #include <usb_descriptor.h>
+#include <class/usb_cdc.h>
 #include "netusb.h"
 
 static u8_t tx_buf[NETUSB_MTU], rx_buf[NETUSB_MTU];
+
+struct usb_cdc_eem_config {
+	struct usb_if_descriptor if0;
+	struct usb_ep_descriptor if0_in_ep;
+	struct usb_ep_descriptor if0_out_ep;
+} __packed;
+
+USBD_CLASS_DESCR_DEFINE(primary) struct usb_cdc_eem_config cdc_eem_cfg = {
+	/* Interface descriptor 0 */
+	/* CDC Communication interface */
+	.if0 = {
+		.bLength = sizeof(struct usb_if_descriptor),
+		.bDescriptorType = USB_INTERFACE_DESC,
+		.bInterfaceNumber = 0,
+		.bAlternateSetting = 0,
+		.bNumEndpoints = 2,
+		.bInterfaceClass = COMMUNICATION_DEVICE_CLASS,
+		.bInterfaceSubClass = EEM_SUBCLASS,
+		.bInterfaceProtocol = EEM_PROTOCOL,
+		.iInterface = 0,
+	},
+
+	/* Data Endpoint IN */
+	.if0_in_ep = {
+		.bLength = sizeof(struct usb_ep_descriptor),
+		.bDescriptorType = USB_ENDPOINT_DESC,
+		.bEndpointAddress = CDC_EEM_IN_EP_ADDR,
+		.bmAttributes = USB_DC_EP_BULK,
+		.wMaxPacketSize =
+			sys_cpu_to_le16(
+			CONFIG_CDC_EEM_BULK_EP_MPS),
+		.bInterval = 0x00,
+	},
+
+	/* Data Endpoint OUT */
+	.if0_out_ep = {
+		.bLength = sizeof(struct usb_ep_descriptor),
+		.bDescriptorType = USB_ENDPOINT_DESC,
+		.bEndpointAddress = CDC_EEM_OUT_EP_ADDR,
+		.bmAttributes = USB_DC_EP_BULK,
+		.wMaxPacketSize =
+			sys_cpu_to_le16(
+			CONFIG_CDC_EEM_BULK_EP_MPS),
+		.bInterval = 0x00,
+	},
+};
+
+static u8_t eem_get_first_iface_number(void)
+{
+	return cdc_eem_cfg.if0.bInterfaceNumber;
+}
 
 #define EEM_OUT_EP_IDX		0
 #define EEM_IN_EP_IDX		1
@@ -175,7 +227,7 @@ static inline void eem_status_interface(const u8_t *iface)
 {
 	USB_DBG("");
 
-	if (*iface != netusb_get_first_iface_number()) {
+	if (*iface != eem_get_first_iface_number()) {
 		return;
 	}
 
@@ -219,4 +271,24 @@ struct netusb_function eem_function = {
 	.send_pkt = eem_send,
 	.num_ep = ARRAY_SIZE(eem_ep_data),
 	.ep = eem_ep_data,
+};
+
+static void eem_interface_config(u8_t bInterfaceNumber)
+{
+	cdc_eem_cfg.if0.bInterfaceNumber = bInterfaceNumber;
+}
+
+USBD_CFG_DATA_DEFINE(netusb) struct usb_cfg_data netusb_config = {
+	.usb_device_description = NULL,
+	.interface_config = eem_interface_config,
+	.interface_descriptor = &cdc_eem_cfg.if0,
+	.cb_usb_status = eem_status_cb,
+	.interface = {
+		.class_handler = NULL,
+		.custom_handler = NULL,
+		.vendor_handler = NULL,
+		.payload_data = NULL,
+	},
+	.num_endpoints = ARRAY_SIZE(eem_ep_data),
+	.endpoint = eem_ep_data,
 };
