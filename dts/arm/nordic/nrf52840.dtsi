@@ -51,6 +51,8 @@
 		gpiote-0 = &gpiote;
 		wdt-0 = &wdt;
 		usbd-0 = &usbd;
+		cc310 = &cryptocell;
+		arm-cryptocell-310 = &cryptocell310;
 	};
 
 	soc {
