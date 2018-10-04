@@ -64,7 +64,7 @@ config NET_L2_BT_MGMT
 
 config NET_L2_BT_SHELL
 	bool "Enable Bluetooth shell module"
-	select CONSOLE_SHELL
+	select SHELL
 	select NET_L2_BT_MGMT
 	help
 	  This can be used for testing Bluetooth management commands through the

@@ -13,7 +13,8 @@
 #include <string.h>
 #include <errno.h>
 
-#include <shell/legacy_shell.h>
+#include <shell/shell.h>
+#include <shell/shell_uart.h>
 #include <misc/printk.h>
 
 #include <net/net_core.h>
@@ -23,8 +24,6 @@
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
-
-#define BT_SHELL_MODULE "net_bt"
 
 static int char2hex(const char *c, u8_t *x)
 {
@@ -78,86 +77,119 @@ static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
 	return 0;
 }
 
-static int shell_cmd_connect(int argc, char *argv[])
+static int shell_cmd_connect(const struct shell *shell,
+			     size_t argc, char *argv[])
 {
 	int err;
 	bt_addr_le_t addr;
 	struct net_if *iface = net_if_get_default();
 
-	if (argc < 3) {
-		return -EINVAL;
+	if (argc < 3 || shell_help_requested(shell)) {
+		shell_help_print(shell, NULL, 0);
+		return -ENOEXEC;
 	}
 
 	err = str2bt_addr_le(argv[1], argv[2], &addr);
 	if (err) {
-		printk("Invalid peer address (err %d)\n", err);
+		shell_fprintf(shell, SHELL_WARNING,
+			      "Invalid peer address (err %d)\n", err);
 		return 0;
 	}
 
 	if (net_mgmt(NET_REQUEST_BT_CONNECT, iface, &addr, sizeof(addr))) {
-		printk("Connection failed\n");
+		shell_fprintf(shell, SHELL_WARNING,
+			      "Connection failed\n");
 	} else {
-		printk("Connection pending\n");
+		shell_fprintf(shell, SHELL_NORMAL,
+			      "Connection pending\n");
 	}
 
 	return 0;
 }
 
-static int shell_cmd_scan(int argc, char *argv[])
+static int shell_cmd_scan(const struct shell *shell,
+			  size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_default();
 
-	if (argc < 2) {
-		return -EINVAL;
+	if (argc < 2 || shell_help_requested(shell)) {
+		shell_help_print(shell, NULL, 0);
+		return -ENOEXEC;
 	}
 
 	if (net_mgmt(NET_REQUEST_BT_SCAN, iface, argv[1], strlen(argv[1]))) {
-		printk("Scan failed\n");
+		shell_fprintf(shell, SHELL_WARNING,
+			      "Scan failed\n");
 	} else {
-		printk("Scan in progress\n");
+		shell_fprintf(shell, SHELL_NORMAL,
+			      "Scan in progress\n");
 	}
 
 	return 0;
 }
 
-static int shell_cmd_disconnect(int argc, char *argv[])
+static int shell_cmd_disconnect(const struct shell *shell,
+				size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_default();
+
+	if (shell_help_requested(shell)) {
+		shell_help_print(shell, NULL, 0);
+		return -ENOEXEC;
+	}
 
 	if (net_mgmt(NET_REQUEST_BT_DISCONNECT, iface, NULL, 0)) {
-		printk("Disconnect failed\n");
+		shell_fprintf(shell, SHELL_WARNING,
+			      "Disconnect failed\n");
 	} else {
-		printk("Disconnected\n");
+		shell_fprintf(shell, SHELL_NORMAL,
+			      "Disconnected\n");
 	}
 
 	return 0;
 }
 
-static int shell_cmd_advertise(int argc, char *argv[])
+static int shell_cmd_advertise(const struct shell *shell,
+			       size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_default();
 
-	if (argc < 2) {
-		return -EINVAL;
+	if (argc < 2 || shell_help_requested(shell)) {
+		shell_help_print(shell, NULL, 0);
+		return -ENOEXEC;
 	}
 
 	if (net_mgmt(NET_REQUEST_BT_ADVERTISE, iface, argv[1],
 		     strlen(argv[1]))) {
-		printk("Advertise failed\n");
+		shell_fprintf(shell, SHELL_WARNING,
+			      "Advertise failed\n");
 	} else {
-		printk("Advertise in progress\n");
+		shell_fprintf(shell, SHELL_NORMAL,
+			      "Advertise in progress\n");
 	}
 
 	return 0;
 }
 
-static struct shell_cmd bt_commands[] = {
-	{ "advertise",  shell_cmd_advertise, "on/off" },
-	{ "connect", shell_cmd_connect,
-		"<address: XX:XX:XX:XX:XX:XX> <type: (public|random)>" },
-	{ "scan", shell_cmd_scan, "<on/off/active/passive>" },
-	{ "disconnect", shell_cmd_disconnect, "" },
-	{ NULL, NULL, NULL },
+SHELL_CREATE_STATIC_SUBCMD_SET(bt_commands)
+{
+	SHELL_CMD(advertise, NULL,
+		  "on/off",
+		  shell_cmd_advertise),
+	SHELL_CMD(connect, NULL,
+		  "<address: XX:XX:XX:XX:XX:XX> <type: (public|random)>",
+		  shell_cmd_connect),
+	SHELL_CMD(scan, NULL,
+		  "<on/off/active/passive>",
+		  shell_cmd_scan),
+	SHELL_CMD(disconnect, NULL,
+		  "",
+		  shell_cmd_disconnect),
+	SHELL_SUBCMD_SET_END
 };
 
-SHELL_REGISTER(BT_SHELL_MODULE, bt_commands);
+SHELL_CMD_REGISTER(net_bt, &bt_commands, "Net Bluetooth commands", NULL);
+
+void net_bt_shell_init(void)
+{
+}

@@ -44,6 +44,12 @@
 static struct bt_conn *default_conn;
 #endif
 
+#if defined(CONFIG_NET_L2_BT_SHELL)
+extern int net_bt_shell_init(void);
+#else
+#define net_bt_shell_init(...)
+#endif
+
 struct bt_context {
 	struct net_if *iface;
 	struct bt_l2cap_le_chan ipsp_chan;
@@ -560,6 +566,8 @@ static int net_bt_init(struct device *dev)
 	bt_conn_cb_register(&conn_callbacks);
 #endif
 	bt_l2cap_server_register(&server);
+
+	net_bt_shell_init();
 
 	return 0;
 }
