@@ -20,13 +20,4 @@
 #define uart_sifive_port_0_clk_freq    16000000
 #define uart_sifive_port_1_clk_freq    16000000
 
-/* LEDS configuration */
-#define LED0_GPIO_PORT        "gpio0"
-#define LED1_GPIO_PORT        "gpio0"
-#define LED2_GPIO_PORT        "gpio0"
-
-#define LED0_GPIO_PIN         19
-#define LED1_GPIO_PIN         21
-#define LED2_GPIO_PIN         22
-
 #endif /* __INC_BOARD_H */
