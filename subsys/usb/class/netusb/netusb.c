@@ -196,21 +196,31 @@ static void netusb_init(struct net_if *iface)
 	}
 
 #ifndef CONFIG_USB_COMPOSITE_DEVICE
-	int ret;
+	/* Linker-defined symbols bound the USB descriptor structs */
+	extern struct usb_cfg_data __usb_data_start[];
+	extern struct usb_cfg_data __usb_data_end[];
+	size_t size = (__usb_data_end - __usb_data_start);
 
-	netusb_config.interface.payload_data = interface_data;
-	netusb_config.usb_device_description = usb_get_device_descriptor();
+	for (size_t i = 0; i < size; i++) {
+		struct usb_cfg_data *cfg = &(__usb_data_start[i]);
+		int ret;
 
-	ret = usb_set_config(&netusb_config);
-	if (ret < 0) {
-		USB_ERR("Failed to configure USB device");
-		return;
-	}
+		USB_DBG("Registering function %u", i);
 
-	ret = usb_enable(&netusb_config);
-	if (ret < 0) {
-		USB_ERR("Failed to enable USB");
-		return;
+		cfg->interface.payload_data = interface_data;
+		cfg->usb_device_description = usb_get_device_descriptor();
+
+		ret = usb_set_config(cfg);
+		if (ret < 0) {
+			USB_ERR("Failed to configure USB device");
+			return;
+		}
+
+		ret = usb_enable(cfg);
+		if (ret < 0) {
+			USB_ERR("Failed to enable USB");
+			return;
+		}
 	}
 #endif /* CONFIG_USB_COMPOSITE_DEVICE */
 
