@@ -39,6 +39,7 @@ int try_write(u8_t ep, u8_t *data, u16_t len);
 void netusb_enable(void);
 void netusb_disable(void);
 u8_t netusb_get_first_iface_number(void);
+bool netusb_enabled(void);
 
 #if defined(CONFIG_USB_DEVICE_NETWORK_ECM)
 struct netusb_function ecm_function;
