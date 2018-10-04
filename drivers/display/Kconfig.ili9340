@@ -38,20 +38,6 @@ config ILI9340_SPI_FREQ
 	help
 	Frequency to be used to communicate with the ILI9340.
 
-config LOG_ILI9340_LEVEL
-	int "ILI9340 Log level"
-	depends on LOG
-	default 0
-	range 0 4
-	help
-	Sets log level for ILI9340 display driver.
-	Levels are:
-	- 0 OFF: do not write
-	- 1 ERROR: only write LOG_ERR
-	- 2 WARNING: write LOG_WRN in addition to previous level
-	- 3 INFO: write LOG_INF in addition to previous levels
-	- 4 DEBUG: write LOG_DBG in addition to previous levels
-
 config ILI9340_RESET_GPIO_PORT_NAME
 	string "Reset GPIO controller port name"
 	default "GPIO_0"
