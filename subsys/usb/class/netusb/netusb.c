@@ -26,206 +26,15 @@ LOG_MODULE_REGISTER(usb_net)
 #include <usb_descriptor.h>
 #include "netusb.h"
 
-#ifdef CONFIG_USB_DEVICE_NETWORK_RNDIS
-struct usb_rndis_config {
-#ifdef CONFIG_USB_COMPOSITE_DEVICE
-	struct usb_association_descriptor iad;
-#endif
-	struct usb_if_descriptor if0;
-	struct cdc_header_descriptor if0_header;
-	struct cdc_cm_descriptor if0_cm;
-	struct cdc_acm_descriptor if0_acm;
-	struct cdc_union_descriptor if0_union;
-	struct usb_ep_descriptor if0_int_ep;
-
-	struct usb_if_descriptor if1;
-	struct usb_ep_descriptor if1_in_ep;
-	struct usb_ep_descriptor if1_out_ep;
-} __packed;
-
-USBD_CLASS_DESCR_DEFINE(primary) struct usb_rndis_config rndis_cfg = {
-#ifdef CONFIG_USB_COMPOSITE_DEVICE
-	.iad = {
-		.bLength = sizeof(struct usb_association_descriptor),
-		.bDescriptorType = USB_ASSOCIATION_DESC,
-		.bFirstInterface = 0,
-		.bInterfaceCount = 0x02,
-		.bFunctionClass = COMMUNICATION_DEVICE_CLASS,
-		.bFunctionSubClass = 6,
-		.bFunctionProtocol = 0,
-		.iFunction = 0,
-	},
-#endif
-	/* Interface descriptor 0 */
-	/* CDC Communication interface */
-	.if0 = {
-		.bLength = sizeof(struct usb_if_descriptor),
-		.bDescriptorType = USB_INTERFACE_DESC,
-		.bInterfaceNumber = 0,
-		.bAlternateSetting = 0,
-		.bNumEndpoints = 1,
-		.bInterfaceClass = COMMUNICATION_DEVICE_CLASS,
-		.bInterfaceSubClass = ACM_SUBCLASS,
-		.bInterfaceProtocol = ACM_VENDOR_PROTOCOL,
-		.iInterface = 0,
-	},
-	/* Header Functional Descriptor */
-	.if0_header = {
-		.bFunctionLength = sizeof(struct cdc_header_descriptor),
-		.bDescriptorType = CS_INTERFACE,
-		.bDescriptorSubtype = HEADER_FUNC_DESC,
-		.bcdCDC = sys_cpu_to_le16(USB_1_1),
-	},
-	/* Call Management Functional Descriptor */
-	.if0_cm = {
-		.bFunctionLength = sizeof(struct cdc_cm_descriptor),
-		.bDescriptorType = CS_INTERFACE,
-		.bDescriptorSubtype = CALL_MANAGEMENT_FUNC_DESC,
-		.bmCapabilities = 0x00,
-		.bDataInterface = 1,
-	},
-	/* ACM Functional Descriptor */
-	.if0_acm = {
-		.bFunctionLength = sizeof(struct cdc_acm_descriptor),
-		.bDescriptorType = CS_INTERFACE,
-		.bDescriptorSubtype = ACM_FUNC_DESC,
-		/* Device supports the request combination of:
-		 *	Set_Line_Coding,
-		 *	Set_Control_Line_State,
-		 *	Get_Line_Coding
-		 *	and the notification Serial_State
-		 */
-		.bmCapabilities = 0x00,
-	},
-	/* Union Functional Descriptor */
-	.if0_union = {
-		.bFunctionLength = sizeof(struct cdc_union_descriptor),
-		.bDescriptorType = CS_INTERFACE,
-		.bDescriptorSubtype = UNION_FUNC_DESC,
-		.bControlInterface = 0,
-		.bSubordinateInterface0 = 1,
-	},
-	/* Notification EP Descriptor */
-	.if0_int_ep = {
-		.bLength = sizeof(struct usb_ep_descriptor),
-		.bDescriptorType = USB_ENDPOINT_DESC,
-		.bEndpointAddress = RNDIS_INT_EP_ADDR,
-		.bmAttributes = USB_DC_EP_INTERRUPT,
-		.wMaxPacketSize =
-			sys_cpu_to_le16(
-			CONFIG_RNDIS_INTERRUPT_EP_MPS),
-		.bInterval = 0x09,
-	},
-
-	/* Interface descriptor 1 */
-	/* CDC Data Interface */
-	.if1 = {
-		.bLength = sizeof(struct usb_if_descriptor),
-		.bDescriptorType = USB_INTERFACE_DESC,
-		.bInterfaceNumber = 1,
-		.bAlternateSetting = 0,
-		.bNumEndpoints = 2,
-		.bInterfaceClass = COMMUNICATION_DEVICE_CLASS_DATA,
-		.bInterfaceSubClass = 0,
-		.bInterfaceProtocol = 0,
-		.iInterface = 0,
-	},
-	/* Data Endpoint IN */
-	.if1_in_ep = {
-		.bLength = sizeof(struct usb_ep_descriptor),
-		.bDescriptorType = USB_ENDPOINT_DESC,
-		.bEndpointAddress = RNDIS_IN_EP_ADDR,
-		.bmAttributes = USB_DC_EP_BULK,
-		.wMaxPacketSize =
-			sys_cpu_to_le16(
-			CONFIG_RNDIS_BULK_EP_MPS),
-		.bInterval = 0x00,
-	},
-	/* Data Endpoint OUT */
-	.if1_out_ep = {
-		.bLength = sizeof(struct usb_ep_descriptor),
-		.bDescriptorType = USB_ENDPOINT_DESC,
-		.bEndpointAddress = RNDIS_OUT_EP_ADDR,
-		.bmAttributes = USB_DC_EP_BULK,
-		.wMaxPacketSize =
-			sys_cpu_to_le16(
-			CONFIG_RNDIS_BULK_EP_MPS),
-		.bInterval = 0x00,
-	},
-};
-#endif /* CONFIG_USB_DEVICE_NETWORK_RNDIS */
-
-
 static struct __netusb {
 	struct net_if *iface;
 	bool enabled;
 	struct netusb_function *func;
 } netusb;
 
-static int netusb_class_handler(struct usb_setup_packet *setup,
-				s32_t *len, u8_t **data);
-
-#if !defined(CONFIG_USB_DEVICE_NETWORK_ECM) && \
-	!defined(CONFIG_USB_DEVICE_NETWORK_EEM)
-static void netusb_interface_config(u8_t bInterfaceNumber)
-{
-#ifdef CONFIG_USB_DEVICE_NETWORK_ECM
-	int idx = usb_get_str_descriptor_idx(&utf16le_mac);
-
-	if (idx) {
-		USB_DBG("fixup string %d", idx);
-		cdc_ecm_cfg.if0_netfun_ecm.iMACAddress = idx;
-	}
-
-	cdc_ecm_cfg.if0.bInterfaceNumber = bInterfaceNumber;
-	cdc_ecm_cfg.if0_union.bControlInterface = bInterfaceNumber;
-	cdc_ecm_cfg.if0_union.bSubordinateInterface0 = bInterfaceNumber + 1;
-	cdc_ecm_cfg.if1_0.bInterfaceNumber = bInterfaceNumber + 1;
-	cdc_ecm_cfg.if1_1.bInterfaceNumber = bInterfaceNumber + 1;
-#ifdef CONFIG_USB_COMPOSITE_DEVICE
-	cdc_ecm_cfg.iad.bFirstInterface = bInterfaceNumber;
-#endif
-#endif
-#ifdef CONFIG_USB_DEVICE_NETWORK_RNDIS
-	rndis_cfg.if0.bInterfaceNumber = bInterfaceNumber;
-	rndis_cfg.if0_union.bControlInterface = bInterfaceNumber;
-	rndis_cfg.if0_union.bSubordinateInterface0 = bInterfaceNumber + 1;
-	rndis_cfg.if1.bInterfaceNumber = bInterfaceNumber + 1;
-#ifdef CONFIG_USB_COMPOSITE_DEVICE
-	rndis_cfg.iad.bFirstInterface = bInterfaceNumber;
-#endif
-#endif
-#ifdef CONFIG_USB_DEVICE_NETWORK_EEM
-	cdc_eem_cfg.if0.bInterfaceNumber = bInterfaceNumber;
-#endif
-}
-#endif
-
 #if !defined(CONFIG_USB_COMPOSITE_DEVICE)
 /* TODO: FIXME: correct buffer size */
 static u8_t interface_data[300];
-#endif
-
-USBD_CFG_DATA_DEFINE(netusb) struct usb_cfg_data netusb_config = {
-	.usb_device_description = NULL,
-	.interface_config = netusb_interface_config,
-#ifdef CONFIG_USB_DEVICE_NETWORK_RNDIS
-	.interface_descriptor = &rndis_cfg.if0,
-#endif
-#ifdef CONFIG_USB_DEVICE_NETWORK_ECM
-	.interface_descriptor = &cdc_ecm_cfg.if0,
-#endif
-#ifdef CONFIG_USB_DEVICE_NETWORK_EEM
-	.interface_descriptor = &cdc_eem_cfg.if0,
-#endif
-	.cb_usb_status = NULL,
-	.interface = {
-		.class_handler = netusb_class_handler,
-		.custom_handler = NULL,
-		.vendor_handler = NULL,
-		.payload_data = NULL,
-	},
-};
 #endif
 
 static int netusb_send(struct net_if *iface, struct net_pkt *pkt)
@@ -300,39 +109,6 @@ void netusb_disable(void)
 	netusb.enabled = false;
 	netusb_disconnect_media();
 	net_if_down(netusb.iface);
-}
-
-#if !defined(CONFIG_USB_DEVICE_NETWORK_ECM) && \
-	!defined(CONFIG_USB_DEVICE_NETWORK_EEM)
-u8_t netusb_get_first_iface_number(void)
-{
-	USB_DBG("");
-
-#ifdef CONFIG_USB_DEVICE_NETWORK_ECM
-	return cdc_ecm_cfg.if0.bInterfaceNumber;
-#endif
-#ifdef CONFIG_USB_DEVICE_NETWORK_RNDIS
-	return rndis_cfg.if0.bInterfaceNumber;
-#endif
-#ifdef CONFIG_USB_DEVICE_NETWORK_EEM
-	return cdc_eem_cfg.if0.bInterfaceNumber;
-#endif
-}
-#endif
-
-static int netusb_class_handler(struct usb_setup_packet *setup,
-				s32_t *len, u8_t **data)
-{
-	USB_DBG("len %d req_type 0x%x req 0x%x enabled %u",
-		*len, setup->bmRequestType, setup->bRequest,
-		    netusb.enabled);
-
-	if (!netusb.enabled) {
-		USB_ERR("interface disabled");
-		return -ENODEV;
-	}
-
-	return netusb.func->class_handler(setup, len, data);
 }
 
 bool netusb_enabled(void)
@@ -418,13 +194,6 @@ static void netusb_init(struct net_if *iface)
 		USB_ERR("Initialization failed");
 		return;
 	}
-
-#if !defined(CONFIG_USB_DEVICE_NETWORK_ECM) && \
-	!defined(CONFIG_USB_DEVICE_NETWORK_EEM)
-	netusb_config.endpoint = netusb.func->ep;
-	netusb_config.num_endpoints = netusb.func->num_ep;
-	netusb_config.cb_usb_status = netusb.func->status_cb;
-#endif
 
 #ifndef CONFIG_USB_COMPOSITE_DEVICE
 	int ret;

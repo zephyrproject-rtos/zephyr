@@ -52,6 +52,133 @@ static struct k_delayed_work notify_work;
 static K_THREAD_STACK_DEFINE(cmd_stack, 2048);
 static struct k_thread cmd_thread_data;
 
+struct usb_rndis_config {
+#ifdef CONFIG_USB_COMPOSITE_DEVICE
+	struct usb_association_descriptor iad;
+#endif
+	struct usb_if_descriptor if0;
+	struct cdc_header_descriptor if0_header;
+	struct cdc_cm_descriptor if0_cm;
+	struct cdc_acm_descriptor if0_acm;
+	struct cdc_union_descriptor if0_union;
+	struct usb_ep_descriptor if0_int_ep;
+
+	struct usb_if_descriptor if1;
+	struct usb_ep_descriptor if1_in_ep;
+	struct usb_ep_descriptor if1_out_ep;
+} __packed;
+
+USBD_CLASS_DESCR_DEFINE(primary) struct usb_rndis_config rndis_cfg = {
+#ifdef CONFIG_USB_COMPOSITE_DEVICE
+	.iad = {
+		.bLength = sizeof(struct usb_association_descriptor),
+		.bDescriptorType = USB_ASSOCIATION_DESC,
+		.bFirstInterface = 0,
+		.bInterfaceCount = 0x02,
+		.bFunctionClass = COMMUNICATION_DEVICE_CLASS,
+		.bFunctionSubClass = 6,
+		.bFunctionProtocol = 0,
+		.iFunction = 0,
+	},
+#endif
+	/* Interface descriptor 0 */
+	/* CDC Communication interface */
+	.if0 = {
+		.bLength = sizeof(struct usb_if_descriptor),
+		.bDescriptorType = USB_INTERFACE_DESC,
+		.bInterfaceNumber = 0,
+		.bAlternateSetting = 0,
+		.bNumEndpoints = 1,
+		.bInterfaceClass = COMMUNICATION_DEVICE_CLASS,
+		.bInterfaceSubClass = ACM_SUBCLASS,
+		.bInterfaceProtocol = ACM_VENDOR_PROTOCOL,
+		.iInterface = 0,
+	},
+	/* Header Functional Descriptor */
+	.if0_header = {
+		.bFunctionLength = sizeof(struct cdc_header_descriptor),
+		.bDescriptorType = CS_INTERFACE,
+		.bDescriptorSubtype = HEADER_FUNC_DESC,
+		.bcdCDC = sys_cpu_to_le16(USB_1_1),
+	},
+	/* Call Management Functional Descriptor */
+	.if0_cm = {
+		.bFunctionLength = sizeof(struct cdc_cm_descriptor),
+		.bDescriptorType = CS_INTERFACE,
+		.bDescriptorSubtype = CALL_MANAGEMENT_FUNC_DESC,
+		.bmCapabilities = 0x00,
+		.bDataInterface = 1,
+	},
+	/* ACM Functional Descriptor */
+	.if0_acm = {
+		.bFunctionLength = sizeof(struct cdc_acm_descriptor),
+		.bDescriptorType = CS_INTERFACE,
+		.bDescriptorSubtype = ACM_FUNC_DESC,
+		/* Device supports the request combination of:
+		 *	Set_Line_Coding,
+		 *	Set_Control_Line_State,
+		 *	Get_Line_Coding
+		 *	and the notification Serial_State
+		 */
+		.bmCapabilities = 0x00,
+	},
+	/* Union Functional Descriptor */
+	.if0_union = {
+		.bFunctionLength = sizeof(struct cdc_union_descriptor),
+		.bDescriptorType = CS_INTERFACE,
+		.bDescriptorSubtype = UNION_FUNC_DESC,
+		.bControlInterface = 0,
+		.bSubordinateInterface0 = 1,
+	},
+	/* Notification EP Descriptor */
+	.if0_int_ep = {
+		.bLength = sizeof(struct usb_ep_descriptor),
+		.bDescriptorType = USB_ENDPOINT_DESC,
+		.bEndpointAddress = RNDIS_INT_EP_ADDR,
+		.bmAttributes = USB_DC_EP_INTERRUPT,
+		.wMaxPacketSize =
+			sys_cpu_to_le16(
+			CONFIG_RNDIS_INTERRUPT_EP_MPS),
+		.bInterval = 0x09,
+	},
+
+	/* Interface descriptor 1 */
+	/* CDC Data Interface */
+	.if1 = {
+		.bLength = sizeof(struct usb_if_descriptor),
+		.bDescriptorType = USB_INTERFACE_DESC,
+		.bInterfaceNumber = 1,
+		.bAlternateSetting = 0,
+		.bNumEndpoints = 2,
+		.bInterfaceClass = COMMUNICATION_DEVICE_CLASS_DATA,
+		.bInterfaceSubClass = 0,
+		.bInterfaceProtocol = 0,
+		.iInterface = 0,
+	},
+	/* Data Endpoint IN */
+	.if1_in_ep = {
+		.bLength = sizeof(struct usb_ep_descriptor),
+		.bDescriptorType = USB_ENDPOINT_DESC,
+		.bEndpointAddress = RNDIS_IN_EP_ADDR,
+		.bmAttributes = USB_DC_EP_BULK,
+		.wMaxPacketSize =
+			sys_cpu_to_le16(
+			CONFIG_RNDIS_BULK_EP_MPS),
+		.bInterval = 0x00,
+	},
+	/* Data Endpoint OUT */
+	.if1_out_ep = {
+		.bLength = sizeof(struct usb_ep_descriptor),
+		.bDescriptorType = USB_ENDPOINT_DESC,
+		.bEndpointAddress = RNDIS_OUT_EP_ADDR,
+		.bmAttributes = USB_DC_EP_BULK,
+		.wMaxPacketSize =
+			sys_cpu_to_le16(
+			CONFIG_RNDIS_BULK_EP_MPS),
+		.bInterval = 0x00,
+	},
+};
+
 /*
  * TLV structure is used for data encapsulation parsing
  */
@@ -873,7 +1000,14 @@ static int handle_encapsulated_rsp(u8_t **data, u32_t *len)
 static int rndis_class_handler(struct usb_setup_packet *setup, s32_t *len,
 			       u8_t **data)
 {
-	USB_DBG("");
+	USB_DBG("len %d req_type 0x%x req 0x%x enabled %u",
+		*len, setup->bmRequestType, setup->bRequest,
+		netusb_enabled());
+
+	if (!netusb_enabled()) {
+		LOG_ERR("interface disabled");
+		return -ENODEV;
+	}
 
 	if (setup->bRequest == CDC_SEND_ENC_CMD &&
 	    REQTYPE_GET_DIR(setup->bmRequestType) == REQTYPE_DIR_TO_DEVICE) {
@@ -1183,4 +1317,30 @@ struct netusb_function rndis_function = {
 	.send_pkt = rndis_send,
 	.num_ep = ARRAY_SIZE(rndis_ep_data),
 	.ep = rndis_ep_data,
+};
+
+static void netusb_interface_config(u8_t bInterfaceNumber)
+{
+	rndis_cfg.if0.bInterfaceNumber = bInterfaceNumber;
+	rndis_cfg.if0_union.bControlInterface = bInterfaceNumber;
+	rndis_cfg.if0_union.bSubordinateInterface0 = bInterfaceNumber + 1;
+	rndis_cfg.if1.bInterfaceNumber = bInterfaceNumber + 1;
+#ifdef CONFIG_USB_COMPOSITE_DEVICE
+	rndis_cfg.iad.bFirstInterface = bInterfaceNumber;
+#endif
+}
+
+USBD_CFG_DATA_DEFINE(netusb) struct usb_cfg_data netusb_config = {
+	.usb_device_description = NULL,
+	.interface_config = netusb_interface_config,
+	.interface_descriptor = &rndis_cfg.if0,
+	.cb_usb_status = rndis_status_cb,
+	.interface = {
+		.class_handler = rndis_class_handler,
+		.custom_handler = NULL,
+		.vendor_handler = NULL,
+		.payload_data = NULL,
+	},
+	.num_endpoints = ARRAY_SIZE(rndis_ep_data),
+	.endpoint = rndis_ep_data,
 };
