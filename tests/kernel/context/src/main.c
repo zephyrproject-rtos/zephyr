@@ -225,7 +225,16 @@ void irq_enable_wrapper(int irq)
 	irq_enable(irq);
 }
 
-#ifdef HAS_POWERSAVE_INSTRUCTION
+#if defined(CONFIG_TICKLESS_KERNEL)
+static void test_kernel_cpu_idle(void)
+{
+	ztest_test_skip();
+}
+static void test_kernel_cpu_idle_atomic(void)
+{
+	ztest_test_skip();
+}
+#elif defined(HAS_POWERSAVE_INSTRUCTION)
 static void _test_kernel_cpu_idle(int atomic)
 {
 	int tms, tms2;;         /* current time in millisecond */
