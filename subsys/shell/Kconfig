@@ -38,13 +38,13 @@ menuconfig SHELL
 	bool "Enable shell"
 	select LOG_RUNTIME_FILTERING
 	select POLL
-	depends on SERIAL
 
 if SHELL
 
 module = SHELL
 module-str = Shell
 source "subsys/logging/Kconfig.template.log_config"
+source "subsys/shell/Kconfig.backends"
 
 config SHELL_STACK_SIZE
 	int "Shell thread stack size"

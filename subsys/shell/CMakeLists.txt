@@ -16,6 +16,10 @@ zephyr_sources_ifdef(
   shell_fprintf.c
   shell_utils.c
   shell_ops.c
+  )
+
+zephyr_sources_ifdef(
+  CONFIG_SHELL_BACKEND_SERIAL
   shell_uart.c
   )
 

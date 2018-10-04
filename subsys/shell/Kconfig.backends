@@ -1,0 +1,25 @@
+# Kconfig.backends - Shell badckends configuration options
+
+#
+# Copyright (c) 2018 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig SHELL_BACKENDS
+	bool "Enable shell backends"
+	default y
+	help
+	  Enable shell backends.
+
+if SHELL_BACKENDS
+
+config SHELL_BACKEND_SERIAL
+	bool "Enable serial backends."
+	default y
+	select SERIAL
+	help
+	  Enable serial backends.
+
+endif # SHELL_BACKENDS
+
