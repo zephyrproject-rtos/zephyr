@@ -51,6 +51,8 @@
 		compatible = "semtech,sx1509b";
 		reg = <0x3e>;
 		label = "GPIO_P0";
+		gpio-controller;
+		#gpio-cells = <2>;
 	};
 
 	lps22hb_press: lps22hb_press@5c {

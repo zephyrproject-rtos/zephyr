@@ -17,4 +17,16 @@ inherits:
 properties:
     compatible:
       constraint: "semtech,sx1509b"
+
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+
+cell_string: GPIO
+
+"#cells":
+  - pin
+  - flags
 ...
