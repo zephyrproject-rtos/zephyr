@@ -7,8 +7,7 @@
 *.swp
 *.swo
 *~
-build
-build-*
+build*
 cscope.*
 .dir
 
@@ -30,7 +29,7 @@ doc/boards
 doc/samples
 doc/latex
 doc/themes/zephyr-docs-theme
-sanity-out/
+sanity-out*
 scripts/grub
 doc/reference/kconfig/*.rst
 doc/doc.warnings
