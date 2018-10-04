@@ -13,7 +13,7 @@ tests:
   test_usbnet_ecm:
     harness: net
     extra_args: CONF_FILE="prj_netusb.conf"
-    platform_whitelist: quark_se_c1000_devboard 96b_carbon
+    platform_whitelist: 96b_carbon
     tags: net usb
   test_usbnet_eem:
     harness: net
@@ -21,5 +21,5 @@ tests:
     extra_configs:
       - CONFIG_USB_DEVICE_NETWORK_ECM=n
       - CONFIG_USB_DEVICE_NETWORK_EEM=y
-    platform_whitelist: quark_se_c1000_devboard 96b_carbon
+    platform_whitelist: 96b_carbon
     tags: net usb
