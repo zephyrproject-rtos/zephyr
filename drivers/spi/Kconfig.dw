@@ -30,6 +30,13 @@ config SPI_DW_FIFO_DEPTH
 	  SSI_RX_FIFO_DEPTH of the DesignWare Synchronous
 	  Serial Interface. Depth ranges from 2-256.
 
+config SPI_DW_ENABLE_EEPROM_MODE
+	bool "enable eeprom mode"
+	default n
+	help
+	  Enable internal EEPROM MODE.
+
+
 if SPI_0
 
 config SPI_DW_PORT_0_INTERRUPT_SINGLE_LINE

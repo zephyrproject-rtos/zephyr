@@ -121,9 +121,19 @@ static void push_data(struct device *dev)
 			}
 		} else if (spi_context_rx_on(&spi->ctx)) {
 			/* No need to push more than necessary */
+#ifdef CONFIG_SPI_DW_ENABLE_EEPROM_MODE
+		/* In eeprom mode dummy write for reading is not required as
+		 * it will taken care by SPI controller. The serial transfer
+		 * continues until number of data frames received by SPI master
+		 * matches the value of NDF field in CTRL1 register. Please
+		 * refer SPI DW data sheet section 3.3.4.
+		 */
+			break;
+#else
 			if ((int)(spi->ctx.rx_len - spi->fifo_diff) <= 0) {
 				break;
 			}
+#endif
 
 			data = 0;
 		} else if (spi_context_tx_on(&spi->ctx)) {
@@ -200,10 +210,6 @@ static int spi_dw_configure(const struct spi_dw_config *info,
 
 	SYS_LOG_DBG("%p (prev %p)", config, spi->ctx.config);
 
-	if (spi_context_configured(&spi->ctx, config)) {
-		/* Nothing to do */
-		return 0;
-	}
 
 	/* Verify if requested op mode is relevant to this controller */
 	if (config->operation & SPI_OP_MODE_SLAVE) {
@@ -245,6 +251,11 @@ static int spi_dw_configure(const struct spi_dw_config *info,
 
 	/* Installing the configuration */
 	write_ctrlr0(ctrlr0, info->regs);
+
+	if (spi_context_configured(&spi->ctx, config)) {
+		/* Nothing to do */
+		return 0;
+	}
 
 	/* At this point, it's mandatory to set this on the context! */
 	spi->ctx.config = config;
@@ -345,14 +356,19 @@ static int transceive(struct device *dev,
 		goto out;
 	}
 
+
 	if (!rx_bufs || !rx_bufs->buffers) {
 		tmod = DW_SPI_CTRLR0_TMOD_TX;
 	} else if (!tx_bufs || !tx_bufs->buffers) {
 		tmod = DW_SPI_CTRLR0_TMOD_RX;
+	} else {
+	#ifdef CONFIG_SPI_DW_ENABLE_EEPROM_MODE
+		tmod = DW_SPI_CTRLR0_TMOD_EEPROM;
+	#endif
 	}
 
-	/* ToDo: add a way to determine EEPROM mode */
 
+	/* ToDo: add a way to determine EEPROM mode */
 	if (tmod >= DW_SPI_CTRLR0_TMOD_RX &&
 	    !spi_dw_is_slave(spi)) {
 		reg_data = spi_dw_compute_ndf(rx_bufs->buffers,
