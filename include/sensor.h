@@ -39,12 +39,24 @@ extern "C" {
  *     -0.5: val1 =  0, val2 = -500000
  *     -1.0: val1 = -1, val2 =  0
  *     -1.5: val1 = -1, val2 = -500000
+ *
+ * Alternatively, the sensor readout may be a string pointer, str.
+ * str_len holds the length of the string pointed to by str.
  */
 struct sensor_value {
-	/** Integer part of the value. */
-	s32_t val1;
-	/** Fractional part of the value (in one-millionth parts). */
-	s32_t val2;
+	union {
+		/** Integer part of the value. */
+		s32_t val1;
+		/** Pointer to string. */
+		char *str;
+	};
+
+	union {
+		/** Fractional part of the value (in one-millionth parts). */
+		s32_t val2;
+		/** Length of the string. */
+		u32_t str_len;
+	};
 };
 
 /**
@@ -142,6 +154,9 @@ enum sensor_channel {
 	SENSOR_CHAN_VOLTAGE,
 	/** Current, in amps **/
 	SENSOR_CHAN_CURRENT,
+
+	/** NMEA sentence */
+	SENSOR_CHAN_NMEA_SENTENCE,
 
 	/** All channels. */
 	SENSOR_CHAN_ALL,
