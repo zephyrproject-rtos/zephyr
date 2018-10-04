@@ -26,8 +26,6 @@
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
 
-#define TAG CMD_STR_UDP_DOWNLOAD" "
-
 #define RX_THREAD_STACK_SIZE 1024
 #define MY_SRC_PORT 50001
 
@@ -35,16 +33,13 @@
 static K_THREAD_STACK_DEFINE(zperf_rx_stack, RX_THREAD_STACK_SIZE);
 static struct k_thread zperf_rx_thread_data;
 
-#if defined(CONFIG_NET_IPV6)
 static struct sockaddr_in6 *in6_addr_my;
-#endif
-#if defined(CONFIG_NET_IPV4)
 static struct sockaddr_in *in4_addr_my;
-#endif
 
 #define MAX_DBG_PRINT 64
 
-static inline void set_dst_addr(sa_family_t family,
+static inline void set_dst_addr(const struct shell *shell,
+				sa_family_t family,
 				struct net_pkt *pkt,
 				struct sockaddr *dst_addr)
 {
@@ -52,30 +47,28 @@ static inline void set_dst_addr(sa_family_t family,
 
 	udp_hdr = net_udp_get_hdr(pkt, &hdr);
 	if (!udp_hdr) {
-		printk(TAG "Invalid UDP data\n");
+		shell_fprintf(shell, SHELL_WARNING,
+			      "Invalid UDP data\n");
 		return;
 	}
 
-#if defined(CONFIG_NET_IPV6)
-	if (family == AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
 		net_ipaddr_copy(&net_sin6(dst_addr)->sin6_addr,
 				&NET_IPV6_HDR(pkt)->src);
 		net_sin6(dst_addr)->sin6_family = AF_INET6;
 		net_sin6(dst_addr)->sin6_port = udp_hdr->src_port;
 	}
-#endif /* CONFIG_NET_IPV6 */
 
-#if defined(CONFIG_NET_IPV4)
-	if (family == AF_INET) {
+	if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
 		net_ipaddr_copy(&net_sin(dst_addr)->sin_addr,
 				&NET_IPV4_HDR(pkt)->src);
 		net_sin(dst_addr)->sin_family = AF_INET;
 		net_sin(dst_addr)->sin_port = udp_hdr->src_port;
 	}
-#endif /* CONFIG_NET_IPV4 */
 }
 
-static inline struct net_pkt *build_reply_pkt(struct net_context *context,
+static inline struct net_pkt *build_reply_pkt(const struct shell *shell,
+					      struct net_context *context,
 					      struct net_pkt *pkt,
 					      struct zperf_udp_datagram *hdr,
 					      struct zperf_server_hdr *stat)
@@ -83,7 +76,8 @@ static inline struct net_pkt *build_reply_pkt(struct net_context *context,
 	struct net_pkt *reply_pkt;
 	struct net_buf *frag;
 
-	printk(TAG "received %d bytes\n",  net_pkt_appdatalen(pkt));
+	shell_fprintf(shell, SHELL_NORMAL,
+		      "Received %d bytes\n", net_pkt_appdatalen(pkt));
 
 	reply_pkt = net_pkt_get_tx(context, K_FOREVER);
 	frag = net_pkt_get_data(context, K_FOREVER);
@@ -109,7 +103,8 @@ static inline struct net_pkt *build_reply_pkt(struct net_context *context,
 }
 
 /* Send statistics to the remote client */
-static int zperf_receiver_send_stat(struct net_context *context,
+static int zperf_receiver_send_stat(const struct shell *shell,
+				    struct net_context *context,
 				    struct net_pkt *pkt,
 				    struct zperf_udp_datagram *hdr,
 				    struct zperf_server_hdr *stat)
@@ -118,9 +113,9 @@ static int zperf_receiver_send_stat(struct net_context *context,
 	struct sockaddr dst_addr;
 	int ret;
 
-	set_dst_addr(net_pkt_family(pkt), pkt, &dst_addr);
+	set_dst_addr(shell, net_pkt_family(pkt), pkt, &dst_addr);
 
-	reply_pkt = build_reply_pkt(context, pkt, hdr, stat);
+	reply_pkt = build_reply_pkt(shell, context, pkt, hdr, stat);
 
 	net_pkt_unref(pkt);
 
@@ -130,7 +125,8 @@ static int zperf_receiver_send_stat(struct net_context *context,
 				 sizeof(struct sockaddr_in),
 				 NULL, 0, NULL, NULL);
 	if (ret < 0) {
-		printk(TAG " Cannot send data to peer (%d)", ret);
+		shell_fprintf(shell, SHELL_WARNING,
+			      " Cannot send data to peer (%d)", ret);
 		net_pkt_unref(reply_pkt);
 	}
 
@@ -142,6 +138,7 @@ static void udp_received(struct net_context *context,
 			 int status,
 			 void *user_data)
 {
+	const struct shell *shell = user_data;
 	struct zperf_udp_datagram hdr;
 	struct session *session;
 	struct net_buf *frag;
@@ -157,7 +154,8 @@ static void udp_received(struct net_context *context,
 	frag = pkt->frags;
 
 	if (net_pkt_appdatalen(pkt) < sizeof(struct zperf_udp_datagram)) {
-		printk(TAG "ERROR! short iperf packet!\n");
+		shell_fprintf(shell, SHELL_WARNING,
+			      "Short iperf packet!\n");
 		net_pkt_unref(pkt);
 		return;
 	}
@@ -166,7 +164,8 @@ static void udp_received(struct net_context *context,
 
 	session = get_session(pkt, SESSION_UDP);
 	if (!session) {
-		printk(TAG "ERROR! cannot get a session!\n");
+		shell_fprintf(shell, SHELL_WARNING,
+			      "Cannot get a session!\n");
 		return;
 	}
 
@@ -180,16 +179,16 @@ static void udp_received(struct net_context *context,
 
 	/* Check last packet flags */
 	if (id < 0) {
-		printk(TAG "End of session!\n");
+		shell_fprintf(shell, SHELL_NORMAL, "End of session!\n");
 
 		if (session->state == STATE_COMPLETED) {
 			/* Session is already completed: Resend the stat packet
 			 * and continue
 			 */
-			if (zperf_receiver_send_stat(context, pkt, &hdr,
+			if (zperf_receiver_send_stat(shell, context, pkt, &hdr,
 						     &session->stat) < 0) {
-				printk(TAG "ERROR! Failed to send the "
-				       "packet\n");
+				shell_fprintf(shell, SHELL_WARNING,
+					      "Failed to send the packet\n");
 
 				net_pkt_unref(pkt);
 			}
@@ -200,7 +199,8 @@ static void udp_received(struct net_context *context,
 
 	} else if (session->state != STATE_ONGOING) {
 		/* Start a new session! */
-		printk(TAG "New session started.\n");
+		shell_fprintf(shell, SHELL_NORMAL,
+			      "New session started.\n");
 
 		zperf_reset_session_stats(session);
 		session->state = STATE_ONGOING;
@@ -270,32 +270,39 @@ static void udp_received(struct net_context *context,
 			session->stat.jitter1 = 0;
 			session->stat.jitter2 = session->jitter;
 
-			if (zperf_receiver_send_stat(context, pkt, &hdr,
+			if (zperf_receiver_send_stat(shell, context, pkt, &hdr,
 						     &session->stat) < 0) {
-				printk(TAG "ERROR! Failed to send the "
-				       "packet\n");
+				shell_fprintf(shell, SHELL_WARNING,
+					    "Failed to send the packet\n");
 
 				net_pkt_unref(pkt);
 			}
 
-			printk(TAG " duration:\t\t");
-			print_number(duration, TIME_US, TIME_US_UNIT);
-			printk("\n");
+			shell_fprintf(shell, SHELL_NORMAL,
+				      " duration:\t\t");
+			print_number(shell, duration, TIME_US, TIME_US_UNIT);
+			shell_fprintf(shell, SHELL_NORMAL, "\n");
 
-			printk(TAG " received packets:\t%u\n",
-			       session->counter);
-			printk(TAG " nb packets lost:\t%u\n",
-			       session->outorder);
-			printk(TAG " nb packets outorder:\t%u\n",
-			       session->error);
+			shell_fprintf(shell, SHELL_NORMAL,
+				      " received packets:\t%u\n",
+				      session->counter);
+			shell_fprintf(shell, SHELL_NORMAL,
+				      " nb packets lost:\t%u\n",
+				      session->outorder);
+			shell_fprintf(shell, SHELL_NORMAL,
+				      " nb packets outorder:\t%u\n",
+				      session->error);
 
-			printk(TAG " jitter:\t\t\t");
-			print_number(session->jitter, TIME_US, TIME_US_UNIT);
-			printk("\n");
+			shell_fprintf(shell, SHELL_NORMAL,
+				      " jitter:\t\t\t");
+			print_number(shell, session->jitter, TIME_US,
+				     TIME_US_UNIT);
+			shell_fprintf(shell, SHELL_NORMAL, "\n");
 
-			printk(TAG " rate:\t\t\t");
-			print_number(rate_in_kbps, KBPS, KBPS_UNIT);
-			printk("\n");
+			shell_fprintf(shell, SHELL_NORMAL,
+				      " rate:\t\t\t");
+			print_number(shell, rate_in_kbps, KBPS, KBPS_UNIT);
+			shell_fprintf(shell, SHELL_NORMAL, "\n");
 		}
 	} else {
 		net_pkt_unref(pkt);
@@ -303,108 +310,123 @@ static void udp_received(struct net_context *context,
 }
 
 /* RX thread entry point */
-static void zperf_rx_thread(int port)
+static void zperf_rx_thread(const struct shell *shell, int port)
 {
-#if defined(CONFIG_NET_IPV4) && defined(MY_IP4ADDR)
 	struct net_context *context4 = NULL;
-#endif
-#if defined(CONFIG_NET_IPV6) && defined(MY_IP6ADDR)
 	struct net_context *context6 = NULL;
-#endif
 	int ret;
 
-#if defined(CONFIG_NET_IPV4) && defined(MY_IP4ADDR)
-	ret = net_context_get(AF_INET, SOCK_DGRAM, IPPROTO_UDP, &context4);
-	if (ret < 0) {
-		printk(TAG "ERROR! Cannot get IPv4 network context.\n");
-		return;
-	}
-
-	ret = zperf_get_ipv4_addr(MY_IP4ADDR, &in4_addr_my->sin_addr, TAG);
-	if (ret < 0) {
-		printk(TAG "ERROR! Unable to set IPv4\n");
-		return;
-	}
-
-	printk(TAG "Binding to %s\n",
-	       net_sprint_ipv4_addr(&in4_addr_my->sin_addr));
-
-	in4_addr_my->sin_port = htons(port);
-
-	if (context4) {
-		ret = net_context_bind(context4,
-				       (struct sockaddr *)in4_addr_my,
-				       sizeof(struct sockaddr_in));
+	if (IS_ENABLED(CONFIG_NET_IPV4) && MY_IP4ADDR) {
+		ret = net_context_get(AF_INET, SOCK_DGRAM, IPPROTO_UDP,
+				      &context4);
 		if (ret < 0) {
-			printk(TAG "Cannot bind IPv4 UDP port %d (%d)\n",
-			       ntohs(in4_addr_my->sin_port), ret);
+			shell_fprintf(shell, SHELL_WARNING,
+				      "Cannot get IPv4 network context.\n");
+			return;
+		}
+
+		ret = zperf_get_ipv4_addr(shell, MY_IP4ADDR,
+					  &in4_addr_my->sin_addr);
+		if (ret < 0) {
+			shell_fprintf(shell, SHELL_WARNING,
+				      "Unable to set IPv4\n");
+			return;
+		}
+
+		shell_fprintf(shell, SHELL_NORMAL, "Binding to %s\n",
+			      net_sprint_ipv4_addr(&in4_addr_my->sin_addr));
+
+		in4_addr_my->sin_port = htons(port);
+
+		if (context4) {
+			ret = net_context_bind(context4,
+					       (struct sockaddr *)in4_addr_my,
+					       sizeof(struct sockaddr_in));
+			if (ret < 0) {
+				shell_fprintf(shell, SHELL_WARNING,
+					 "Cannot bind IPv4 UDP port %d (%d)\n",
+					      ntohs(in4_addr_my->sin_port),
+					      ret);
+				return;
+			}
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && MY_IP6ADDR) {
+		ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP,
+				      &context6);
+		if (ret < 0) {
+			shell_fprintf(shell, SHELL_WARNING,
+				      "Cannot get IPv6 network context.\n");
+			return;
+		}
+
+		ret = zperf_get_ipv6_addr(shell, MY_IP6ADDR, MY_PREFIX_LEN_STR,
+					  &in6_addr_my->sin6_addr);
+		if (ret < 0) {
+			shell_fprintf(shell, SHELL_WARNING,
+				      "Unable to set IPv6\n");
+			return;
+		}
+
+		shell_fprintf(shell, SHELL_NORMAL, "Binding to %s\n",
+			      net_sprint_ipv6_addr(&in6_addr_my->sin6_addr));
+
+		in6_addr_my->sin6_port = htons(port);
+
+		if (context6) {
+			ret = net_context_bind(context6,
+					       (struct sockaddr *)in6_addr_my,
+					       sizeof(struct sockaddr_in6));
+			if (ret < 0) {
+				shell_fprintf(shell, SHELL_WARNING,
+					 "Cannot bind IPv6 UDP port %d (%d)\n",
+					      ntohs(in6_addr_my->sin6_port),
+					      ret);
+				return;
+			}
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6)) {
+		ret = net_context_recv(context6, udp_received, K_NO_WAIT,
+				       (void *)shell);
+		if (ret < 0) {
+			shell_fprintf(shell, SHELL_WARNING,
+				      "Cannot receive IPv6 UDP packets\n");
 			return;
 		}
 	}
-#endif
 
-#if defined(CONFIG_NET_IPV6) && defined(MY_IP6ADDR)
-	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP, &context6);
-	if (ret < 0) {
-		printk(TAG "ERROR! Cannot get IPv6 network context.\n");
-		return;
-	}
-
-	ret = zperf_get_ipv6_addr(MY_IP6ADDR, MY_PREFIX_LEN_STR,
-				  &in6_addr_my->sin6_addr, TAG);
-	if (ret < 0) {
-		printk(TAG "ERROR! Unable to set IPv6\n");
-		return;
-	}
-
-	printk(TAG "Binding to %s\n",
-	       net_sprint_ipv6_addr(&in6_addr_my->sin6_addr));
-
-	in6_addr_my->sin6_port = htons(port);
-
-	if (context6) {
-		ret = net_context_bind(context6,
-				       (struct sockaddr *)in6_addr_my,
-				       sizeof(struct sockaddr_in6));
+	if (IS_ENABLED(CONFIG_NET_IPV4)) {
+		ret = net_context_recv(context4, udp_received, K_NO_WAIT,
+				       (void *)shell);
 		if (ret < 0) {
-			printk(TAG "Cannot bind IPv6 UDP port %d (%d)\n",
-			       ntohs(in6_addr_my->sin6_port), ret);
+			shell_fprintf(shell, SHELL_WARNING,
+				      "Cannot receive IPv4 UDP packets\n");
 			return;
 		}
 	}
-#endif
 
-#if defined(CONFIG_NET_IPV6)
-	ret = net_context_recv(context6, udp_received, K_NO_WAIT, NULL);
-	if (ret < 0) {
-		printk(TAG "Cannot receive IPv6 UDP packets\n");
-	}
-#endif /* CONFIG_NET_IPV6 */
-
-#if defined(CONFIG_NET_IPV4)
-	ret = net_context_recv(context4, udp_received, K_NO_WAIT, NULL);
-	if (ret < 0) {
-		printk(TAG "Cannot receive IPv4 UDP packets\n");
-	}
-#endif /* CONFIG_NET_IPV4 */
-
-	printk(TAG "Listening on port %d\n", port);
+	shell_fprintf(shell, SHELL_NORMAL,
+		      "Listening on port %d\n", port);
 
 	k_sleep(K_FOREVER);
 }
 
-void zperf_receiver_init(int port)
+void zperf_receiver_init(const struct shell *shell, int port)
 {
-#if defined(CONFIG_NET_IPV6)
-	in6_addr_my = zperf_get_sin6();
-#endif
-#if defined(CONFIG_NET_IPV4)
-	in4_addr_my = zperf_get_sin();
-#endif
+	if (IS_ENABLED(CONFIG_NET_IPV6)) {
+		in6_addr_my = zperf_get_sin6();
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4)) {
+		in4_addr_my = zperf_get_sin();
+	}
 
 	k_thread_create(&zperf_rx_thread_data, zperf_rx_stack,
 			K_THREAD_STACK_SIZEOF(zperf_rx_stack),
 			(k_thread_entry_t)zperf_rx_thread,
-			INT_TO_POINTER(port), 0, 0,
+			(void *)shell, INT_TO_POINTER(port), 0,
 			K_PRIO_COOP(7), 0, K_NO_WAIT);
 }

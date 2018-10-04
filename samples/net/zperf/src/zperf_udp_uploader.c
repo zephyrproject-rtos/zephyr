@@ -18,11 +18,10 @@
 #include "zperf.h"
 #include "zperf_internal.h"
 
-#define TAG CMD_STR_UDP_UPLOAD" "
-
 static u8_t sample_packet[PACKET_SIZE_MAX];
 
-static inline void zperf_upload_decode_stat(struct net_pkt *pkt,
+static inline void zperf_upload_decode_stat(const struct shell *shell,
+					    struct net_pkt *pkt,
 					    struct zperf_results *results)
 {
 	struct net_buf *frag;
@@ -31,7 +30,8 @@ static inline void zperf_upload_decode_stat(struct net_pkt *pkt,
 	u16_t pos;
 
 	if (!pkt) {
-		printk(TAG "ERROR! Failed to receive statistic\n");
+		shell_fprintf(shell, SHELL_WARNING,
+			      "Failed to receive statistics\n");
 		return;
 	}
 
@@ -42,7 +42,8 @@ static inline void zperf_upload_decode_stat(struct net_pkt *pkt,
 				sizeof(struct zperf_udp_datagram),
 				&offset);
 	if (!frag) {
-		printk(TAG "ERROR! Network packet too short\n");
+		shell_fprintf(shell, SHELL_WARNING,
+			      "Network packet too short\n");
 		return;
 	}
 
@@ -50,7 +51,8 @@ static inline void zperf_upload_decode_stat(struct net_pkt *pkt,
 	if (net_pkt_appdatalen(pkt) <
 		   (sizeof(struct zperf_server_hdr) +
 		    sizeof(struct zperf_udp_datagram))) {
-		printk(TAG "ERROR! Statistics too small\n");
+		shell_fprintf(shell, SHELL_WARNING,
+			      "Statistics too small\n");
 		return;
 	}
 
@@ -84,7 +86,8 @@ static void stat_received(struct net_context *context,
 	*stat = pkt;
 }
 
-static inline void zperf_upload_fin(struct net_context *context,
+static inline void zperf_upload_fin(const struct shell *shell,
+				    struct net_context *context,
 				    u32_t nb_packets,
 				    u32_t end_time,
 				    u32_t packet_size,
@@ -102,13 +105,15 @@ static inline void zperf_upload_fin(struct net_context *context,
 
 		pkt = net_pkt_get_tx(context, K_FOREVER);
 		if (!pkt) {
-			printk(TAG "ERROR! Failed to retrieve a packet\n");
+			shell_fprintf(shell, SHELL_WARNING,
+				      "Failed to retrieve a packet\n");
 			continue;
 		}
 
 		frag = net_pkt_get_data(context, K_FOREVER);
 		if (!frag) {
-			printk(TAG "ERROR! Failed to retrieve a fragment\n");
+			shell_fprintf(shell, SHELL_WARNING,
+				      "Failed to retrieve a fragment\n");
 			continue;
 		}
 
@@ -118,12 +123,13 @@ static inline void zperf_upload_fin(struct net_context *context,
 		datagram.id = htonl(-nb_packets);
 		datagram.tv_sec = htonl(HW_CYCLES_TO_SEC(end_time));
 		datagram.tv_usec = htonl(HW_CYCLES_TO_USEC(end_time) %
-					    USEC_PER_SEC);
+					 USEC_PER_SEC);
 
 		status = net_pkt_append_all(pkt, sizeof(datagram),
-					(u8_t *)&datagram, K_FOREVER);
+					    (u8_t *)&datagram, K_FOREVER);
 		if (!status) {
-			printk(TAG "ERROR! Cannot append datagram data\n");
+			shell_fprintf(shell, SHELL_WARNING,
+				      "Cannot append datagram data\n");
 			break;
 		}
 
@@ -143,8 +149,9 @@ static inline void zperf_upload_fin(struct net_context *context,
 		/* Send the packet */
 		ret = net_context_send(pkt, NULL, K_NO_WAIT, NULL, NULL);
 		if (ret < 0) {
-			printk(TAG "ERROR! Failed to send the packet (%d)\n",
-			       ret);
+			shell_fprintf(shell, SHELL_WARNING,
+				      "Failed to send the packet (%d)\n",
+				      ret);
 			net_pkt_unref(pkt);
 			continue;
 		}
@@ -153,7 +160,7 @@ static inline void zperf_upload_fin(struct net_context *context,
 		stat = NULL;
 
 		ret = net_context_recv(context, stat_received,
-				       2 * MSEC_PER_SEC, &stat);
+				       K_SECONDS(2), &stat);
 		if (ret == -ETIMEDOUT) {
 			break;
 		}
@@ -161,7 +168,7 @@ static inline void zperf_upload_fin(struct net_context *context,
 
 	/* Decode statistics */
 	if (stat) {
-		zperf_upload_decode_stat(stat, results);
+		zperf_upload_decode_stat(shell, stat, results);
 
 		net_pkt_unref(stat);
 	}
@@ -177,14 +184,16 @@ static inline void zperf_upload_fin(struct net_context *context,
 		}
 
 		if (stat) {
-			printk(TAG "Drain one spurious stat packet!\n");
+			shell_fprintf(shell, SHELL_WARNING,
+				      "Drain one spurious stat packet!\n");
 
 			net_pkt_unref(stat);
 		}
 	}
 }
 
-void zperf_udp_upload(struct net_context *context,
+void zperf_udp_upload(const struct shell *shell,
+		      struct net_context *context,
 		      unsigned int duration_in_ms,
 		      unsigned int packet_size,
 		      unsigned int rate_in_kbps,
@@ -200,12 +209,14 @@ void zperf_udp_upload(struct net_context *context,
 	u32_t start_time, last_print_time, last_loop_time, end_time;
 
 	if (packet_size > PACKET_SIZE_MAX) {
-		printk(TAG "WARNING! packet size too large! max size: %u\n",
-		       PACKET_SIZE_MAX);
+		shell_fprintf(shell, SHELL_WARNING,
+			      "Packet size too large! max size: %u\n",
+			      PACKET_SIZE_MAX);
 		packet_size = PACKET_SIZE_MAX;
 	} else if (packet_size < sizeof(struct zperf_udp_datagram)) {
-		printk(TAG "WARNING! packet size set to the min size: %zu\n",
-		       sizeof(struct zperf_udp_datagram));
+		shell_fprintf(shell, SHELL_WARNING,
+			      "Packet size set to the min size: %zu\n",
+			      sizeof(struct zperf_udp_datagram));
 		packet_size = sizeof(struct zperf_udp_datagram);
 	}
 
@@ -248,13 +259,15 @@ void zperf_udp_upload(struct net_context *context,
 
 		pkt = net_pkt_get_tx(context, K_FOREVER);
 		if (!pkt) {
-			printk(TAG "ERROR! Failed to retrieve a packet\n");
+			shell_fprintf(shell, SHELL_WARNING,
+				      "Failed to retrieve a packet\n");
 			continue;
 		}
 
 		frag = net_pkt_get_data(context, K_FOREVER);
 		if (!frag) {
-			printk(TAG "ERROR! Failed to retrieve a frag\n");
+			shell_fprintf(shell, SHELL_WARNING,
+				      "Failed to retrieve a frag\n");
 			continue;
 		}
 
@@ -269,7 +282,8 @@ void zperf_udp_upload(struct net_context *context,
 		status = net_pkt_append_all(pkt, sizeof(datagram),
 					(u8_t *)&datagram, K_FOREVER);
 		if (!status) {
-			printk(TAG "ERROR! Cannot append datagram data\n");
+			shell_fprintf(shell, SHELL_WARNING,
+				      "Cannot append datagram data\n");
 			break;
 		}
 
@@ -288,8 +302,9 @@ void zperf_udp_upload(struct net_context *context,
 		/* Send the packet */
 		ret = net_context_send(pkt, NULL, K_NO_WAIT, NULL, NULL);
 		if (ret < 0) {
-			printk(TAG "ERROR! Failed to send the packet (%d)\n",
-				ret);
+			shell_fprintf(shell, SHELL_WARNING,
+				      "Failed to send the packet (%d)\n",
+				      ret);
 
 			net_pkt_unref(pkt);
 			break;
@@ -299,8 +314,9 @@ void zperf_udp_upload(struct net_context *context,
 
 		/* Print log every seconds */
 		if (time_delta(last_print_time, loop_time) > print_interval) {
-			printk(TAG "nb_packets=%u\tdelay=%u\tadjust=%d\n",
-			       nb_packets, delay, adjust);
+			shell_fprintf(shell, SHELL_WARNING,
+				    "nb_packets=%u\tdelay=%u\tadjust=%d\n",
+				    nb_packets, delay, adjust);
 			last_print_time = loop_time;
 		}
 
@@ -313,7 +329,8 @@ void zperf_udp_upload(struct net_context *context,
 
 	end_time = k_cycle_get_32();
 
-	zperf_upload_fin(context, nb_packets, end_time, packet_size, results);
+	zperf_upload_fin(shell, context, nb_packets, end_time, packet_size,
+			 results);
 
 	/* Add result coming from the client */
 	results->nb_packets_sent = nb_packets;

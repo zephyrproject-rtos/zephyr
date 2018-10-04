@@ -6,18 +6,7 @@
 #ifndef __ZPERF_H
 #define __ZPERF_H
 
-#define VERSION "1.0"
-
-/* commands strings */
-#define CMD_STR_SETIP "setip"
-#define CMD_STR_CONNECTAP "connectap"
-#define CMD_STR_VERSION "version"
-#define CMD_STR_UDP_UPLOAD "udp.upload"
-#define CMD_STR_UDP_UPLOAD2 "udp.upload2"
-#define CMD_STR_UDP_DOWNLOAD "udp.download"
-#define CMD_STR_TCP_UPLOAD "tcp.upload"
-#define CMD_STR_TCP_UPLOAD2 "tcp.upload2"
-#define CMD_STR_TCP_DOWNLOAD "tcp.download"
+#define VERSION "1.1"
 
 struct zperf_results {
 	u32_t nb_packets_sent;
