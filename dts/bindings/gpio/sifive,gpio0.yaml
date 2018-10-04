@@ -30,4 +30,9 @@ properties:
       generation: define
       category: required
 
+cell_string: GPIO
+
+"#cells":
+  - pin
+  - flags
 ...
