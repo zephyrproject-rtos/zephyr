@@ -49,6 +49,7 @@
 		gpio-0 = &gpio0;
 		gpio-1 = &gpio1;
 		gpiote-0 = &gpiote;
+		wdt-0 = &wdt;
 	};
 
 	soc {
@@ -193,7 +194,6 @@
 			compatible = "nordic,nrf-watchdog";
 			reg = <0x40010000 0x1000>;
 			interrupts = <16 1>;
-			interrupt-names = "wdt";
 			label = "WDT";
 		};
 
