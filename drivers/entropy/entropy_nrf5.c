@@ -227,8 +227,7 @@ static int rng_pool_put(struct rng_pool *rng, bool store, u8_t byte)
 
 static void isr(void *arg)
 {
-	struct device *device = arg;
-	struct entropy_nrf5_dev_data *dev_data = DEV_DATA(device);
+	struct entropy_nrf5_dev_data *dev_data = arg;
 	int byte, ret;
 
 	byte = random_byte_get();
@@ -372,7 +371,7 @@ static int entropy_nrf5_init(struct device *device)
 	nrf_rng_task_trigger(NRF_RNG_TASK_START);
 
 	IRQ_CONNECT(RNG_IRQn, CONFIG_ENTROPY_NRF5_PRI, isr,
-		    DEVICE_GET(entropy_nrf5), 0);
+		    &entropy_nrf5_data, 0);
 	irq_enable(RNG_IRQn);
 
 	return 0;
