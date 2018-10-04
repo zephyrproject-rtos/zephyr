@@ -210,7 +210,11 @@ static void reset_time_slice(void)
 {
 	int to = _get_next_timeout_expiry();
 
-	_current_cpu->slice_ticks = slice_time;
+	/* Add the elapsed time since the last announced tick to the
+	 * slice count, as we'll see those "expired" ticks arrive in a
+	 * FUTURE z_time_slice() call.
+	 */
+	_current_cpu->slice_ticks = slice_time + z_clock_elapsed();
 
 	if (to == K_FOREVER || slice_time < to) {
 		z_clock_set_timeout(slice_time, false);
