@@ -5,8 +5,30 @@
 / {
 	model = "SiFive HiFive 1";
 	compatible = "sifive,hifive1";
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+	};
+
 	chosen {
 		zephyr,console = &uart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio0 19 0>;
+			label = "Green LED";
+		};
+		led1: led_1 {
+			gpios = <&gpio0 21 0>;
+			label = "Blue LED";
+		};
+		led2: led_2 {
+			gpios = <&gpio0 22 0>;
+			label = "Red LED";
+		};
 	};
 };
 
