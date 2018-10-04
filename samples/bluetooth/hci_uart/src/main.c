@@ -38,7 +38,7 @@ static struct k_thread tx_thread_data;
 NET_BUF_POOL_DEFINE(cmd_tx_pool, CONFIG_BT_HCI_CMD_COUNT, CMD_BUF_SIZE,
 		    BT_BUF_USER_DATA_MIN, NULL);
 
-#if defined(CONFIG_BT_CTLR)
+#if defined(CONFIG_BT_CTLR_TX_BUFFER_SIZE)
 #define BT_L2CAP_MTU (CONFIG_BT_CTLR_TX_BUFFER_SIZE - BT_L2CAP_HDR_SIZE)
 #else
 #define BT_L2CAP_MTU 65 /* 64-byte public key + opcode */
