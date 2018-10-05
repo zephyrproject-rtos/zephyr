@@ -149,7 +149,7 @@ endchoice
 
 config OPENTHREAD_SHELL
 	bool "Enable OpenThread shell"
-	select CONSOLE_SHELL
+	select SHELL
 	default y
 
 config OPENTHREAD_DIAG
