@@ -12,6 +12,7 @@
 #include <misc/reboot.h>
 #include <misc/stack.h>
 #include <string.h>
+#include <device.h>
 
 static int cmd_kernel_version(const struct shell *shell,
 			      size_t argc, char **argv)
