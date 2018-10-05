@@ -234,7 +234,7 @@ static bool usb_handle_request(struct usb_setup_packet *setup,
  */
 static void usb_data_to_host(void)
 {
-	u32_t chunk = min(MAX_PACKET_SIZE0, usb_dev.data_buf_residue);
+	u32_t chunk = usb_dev.data_buf_residue;
 
 	/*Always EP0 for control*/
 	usb_dc_ep_write(0x80, usb_dev.data_buf, chunk, &chunk);
