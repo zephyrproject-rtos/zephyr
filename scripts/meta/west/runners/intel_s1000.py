@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-'''Runner for debugging and flashing intel_s1000 devices'''
+'''Runner for debugging and flashing Intel S1000 CRB'''
 from os import path
 import time
 import subprocess
@@ -15,7 +15,7 @@ DEFAULT_XT_GDB_PORT = 20000
 
 
 class IntelS1000BinaryRunner(ZephyrBinaryRunner):
-    '''Runner front-end for Intel_s1000.'''
+    '''Runner front-end for Intel S1000.'''
 
     def __init__(self, cfg, xt_ocd_dir,
                  ocd_topology, ocd_jtag_instr, gdb_flash_file,
@@ -38,8 +38,8 @@ class IntelS1000BinaryRunner(ZephyrBinaryRunner):
     def do_add_parser(cls, parser):
         # Optional
         parser.add_argument(
-            '--xt-ocd-dir', default='/opt/Tensilica/xocd-12.0.4/xt-ocd',
-            help='ocd-dir, defaults to /opt/Tensilica/xocd-12.0.4/xt-ocd')
+            '--xt-ocd-dir', default='/opt/tensilica/xocd-12.0.4/xt-ocd',
+            help='ocd-dir, defaults to /opt/tensilica/xocd-12.0.4/xt-ocd')
         parser.add_argument(
             '--ocd-topology', default='topology_dsp0_flyswatter2.xml',
             help='ocd-topology, defaults to topology_dsp0_flyswatter2.xml')
