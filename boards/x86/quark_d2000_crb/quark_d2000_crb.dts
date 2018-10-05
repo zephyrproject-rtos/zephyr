@@ -12,6 +12,8 @@
 	compatible = "intel,quark-d2000-crb", "intel,quark-d2000";
 
 	aliases {
+		led0 = &led0;
+		sw0 = &button0;
 		uart-0 = &uart0;
 		uart-1 = &uart1;
 	};
@@ -20,6 +22,23 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,console = &uart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio 24 0>;
+			label = "LED";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			/* gpio flags need validation */
+			gpios = <&gpio 2 GPIO_INT_ACTIVE_LOW>;
+			label = "Push button switch 0";
+		};
 	};
 };
 
