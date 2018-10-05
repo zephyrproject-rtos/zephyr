@@ -16,6 +16,19 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&portb 30 0>;
+			label = "Yellow LED";
+		};
+	};
 };
 
 &sercom0 {
