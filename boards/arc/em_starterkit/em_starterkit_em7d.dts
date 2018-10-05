@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <emsk.dtsi>
+#include "board.dtsi"
 
 / {
 	model = "em_starterkit-em7d";
