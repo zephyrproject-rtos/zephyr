@@ -3036,7 +3036,7 @@ typedef int (*k_alert_handler_t)(struct k_alert *alert);
  */
 
 #define K_ALERT_DEFAULT NULL
-#define K_ALERT_IGNORE ((void *)(-1))
+#define K_ALERT_IGNORE ((k_alert_handler_t)0xFFFFFFFF)
 
 struct k_alert {
 	k_alert_handler_t handler;
