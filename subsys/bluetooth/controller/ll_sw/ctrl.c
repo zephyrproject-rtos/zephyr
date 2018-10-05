@@ -3911,7 +3911,6 @@ static inline u32_t isr_close_adv(void)
 						    (void *)&random_delay,
 						    sizeof(random_delay));
 			random_delay %= 10000;
-			random_delay += 1;
 
 			/* Call to ticker_update can fail under the race
 			 * condition where in the Adv role is being stopped but
@@ -3923,7 +3922,7 @@ static inline u32_t isr_close_adv(void)
 				ticker_update(RADIO_TICKER_INSTANCE_ID_RADIO,
 					RADIO_TICKER_USER_ID_WORKER,
 					RADIO_TICKER_ID_ADV,
-					HAL_TICKER_US_TO_TICKS(random_delay),
+					HAL_TICKER_US_TO_TICKS(random_delay)+1,
 					0, 0, 0, 0, 0, ticker_update_adv_assert,
 					(void *)__LINE__);
 			LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
