@@ -1154,6 +1154,8 @@ static int shell_instance_init(const struct shell *shell, const void *p_config,
 {
 	__ASSERT_NO_MSG(shell);
 	__ASSERT_NO_MSG(shell->ctx && shell->iface && shell->prompt);
+	__ASSERT_NO_MSG((shell->shell_flag == SHELL_FLAG_CRLF_DEFAULT)	||
+			(shell->shell_flag == SHELL_FLAG_OLF_CRLF));
 
 	int err;
 

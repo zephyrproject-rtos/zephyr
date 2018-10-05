@@ -166,7 +166,6 @@ enum shell_receive_state {
 	SHELL_RECEIVE_TILDE_EXP
 };
 
-
 /**
  * @internal @brief Internal shell state.
  */
@@ -347,6 +346,14 @@ struct shell_ctx {
 extern const struct log_backend_api log_backend_shell_api;
 
 /**
+ * @brief Flags for setting shell output newline sequence.
+ */
+enum shell_flag {
+	SHELL_FLAG_CRLF_DEFAULT	= (1<<0),	/* Do not map CR or LF */
+	SHELL_FLAG_OLF_CRLF	= (1<<1)	/* Map LF to CRLF on output */
+};
+
+/**
  * @brief Shell instance internals.
  */
 struct shell {
@@ -356,6 +363,8 @@ struct shell {
 	struct shell_ctx *ctx; /*!< Internal context.*/
 
 	struct shell_history *history;
+
+	const enum shell_flag shell_flag;
 
 	const struct shell_fprintf *fprintf_ctx;
 
@@ -376,9 +385,10 @@ struct shell {
  * @param[in] _prompt           Shell prompt string.
  * @param[in] transport_iface   Pointer to the transport interface.
  * @param[in] log_queue_size    Logger processing queue size.
+ * @param[in] _shell_flag	Shell output newline sequence.
  */
 #define SHELL_DEFINE(_name, _prompt, transport_iface,			     \
-		     log_queue_size)					     \
+		     log_queue_size, _shell_flag)			     \
 	static const struct shell _name;				     \
 	static struct shell_ctx UTIL_CAT(_name, _ctx);			     \
 	static char _name##prompt[CONFIG_SHELL_PROMPT_LENGTH + 1] = _prompt; \
@@ -386,7 +396,7 @@ struct shell {
 	SHELL_LOG_BACKEND_DEFINE(_name, _name##_out_buffer,		     \
 					 CONFIG_SHELL_PRINTF_BUFF_SIZE);     \
 	SHELL_HISTORY_DEFINE(_name, 128, 8);/*todo*/			     \
-	SHELL_FPRINTF_DEFINE(_name## _fprintf, &_name, _name##_out_buffer,   \
+	SHELL_FPRINTF_DEFINE(_name##_fprintf, &_name, _name##_out_buffer,    \
 			     CONFIG_SHELL_PRINTF_BUFF_SIZE,		     \
 			     true, shell_print_stream);			     \
 	LOG_INSTANCE_REGISTER(shell, _name, CONFIG_SHELL_LOG_LEVEL);	     \
@@ -398,6 +408,7 @@ struct shell {
 		.iface = transport_iface,				     \
 		.ctx = &UTIL_CAT(_name, _ctx),				     \
 		.history = SHELL_HISTORY_PTR(_name),			     \
+		.shell_flag = _shell_flag,				     \
 		.fprintf_ctx = &_name##_fprintf,			     \
 		.stats = SHELL_STATS_PTR(_name),			     \
 		.log_backend = SHELL_LOG_BACKEND_PTR(_name),		     \
