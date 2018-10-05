@@ -190,10 +190,6 @@ static void netusb_init(struct net_if *iface)
 #else
 #error Unknown USB Device Networking function
 #endif
-	if (netusb.func->init && netusb.func->init()) {
-		USB_ERR("Initialization failed");
-		return;
-	}
 
 #ifndef CONFIG_USB_COMPOSITE_DEVICE
 	/* Linker-defined symbols bound the USB descriptor structs */
