@@ -9,13 +9,4 @@
 
 #include <soc.h>
 
-
-/* Push button switch 0 */
-#define SW0_GPIO_PIN	2
-#define SW0_GPIO_NAME	CONFIG_GPIO_QMSI_0_NAME
-
-/* Onboard LED */
-#define LED0_GPIO_PORT	CONFIG_GPIO_QMSI_0_NAME
-#define LED0_GPIO_PIN	24
-
 #endif /* __INC_BOARD_H */

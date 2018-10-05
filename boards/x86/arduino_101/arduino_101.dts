@@ -12,6 +12,7 @@
 	compatible = "arduino,101","intel,quark";
 
 	aliases {
+		led0 = &led0;
 		uart-0 = &uart0;
 		uart-1 = &uart1;
 	};
@@ -27,6 +28,14 @@
 		zephyr,bt-uart = &uart0;
 		zephyr,uart-pipe = &uart1;
 		zephyr,bt-mon-uart = &uart1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio0 8 0>;
+			label = "LED";
+		};
 	};
 };
 
