@@ -798,6 +798,7 @@ ssize_t nvs_read_hist_more(struct nvs_fs *fs, u16_t id, void *data, size_t len,
 	u16_t cnt_his;
 	struct nvs_ate wlk_ate;
 	size_t ate_size;
+	ssize_t ret;
 
 	ate_size = _nvs_al_size(fs, sizeof(struct nvs_ate));
 
@@ -836,7 +837,14 @@ ssize_t nvs_read_hist_more(struct nvs_fs *fs, u16_t id, void *data, size_t len,
 		goto err;
 	}
 
-	return wlk_ate.len;
+	ret = wlk_ate.len;
+
+	if (more != NULL) {
+		(void) _nvs_prev_ate(fs, &wlk_addr, &wlk_ate); //save to ignore?
+		*more = (wlk_ate.id == id) &&  (!_nvs_ate_crc8_check(&wlk_ate));
+	}
+
+	return ret;
 
 err:
 	return rc;
