@@ -7,10 +7,10 @@
 /**
  * @file
  *
- * @brief Sample app to utilize GPIO on Intel_S1000.
+ * @brief Sample app to utilize GPIO on Intel S1000 CRB.
  *
- * Intel_S1000 - Xtensa
- * --------------------
+ * Intel S1000 CRB
+ * ---------------
  *
  * The gpio_dw driver is being used.
  *
