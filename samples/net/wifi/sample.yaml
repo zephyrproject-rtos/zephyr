@@ -1,0 +1,9 @@
+common:
+  harness: net
+  tags: net wifi
+sample:
+  description: Test wifi driver and APIs functionality
+  name: WiFi sample app
+tests:
+  test:
+    platform_whitelist: quark_se_c1000_devboard cc3220sf_launchxl
