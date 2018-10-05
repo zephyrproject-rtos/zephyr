@@ -17,6 +17,11 @@ module = GPIO
 module-str = gpio
 source "subsys/logging/Kconfig.template.log_config"
 
+config GPIO_SHELL
+	bool "Enable GPIO Shell"
+	help
+	  Enable GPIO Shell for testing.
+
 source "drivers/gpio/Kconfig.dw"
 
 source "drivers/gpio/Kconfig.pcal9535a"
