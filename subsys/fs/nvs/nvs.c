@@ -790,8 +790,8 @@ int nvs_delete(struct nvs_fs *fs, u16_t id)
 	return nvs_write(fs, id, NULL, 0);
 }
 
-ssize_t nvs_read_hist(struct nvs_fs *fs, u16_t id, void *data, size_t len,
-		      u16_t cnt)
+ssize_t nvs_read_hist_more(struct nvs_fs *fs, u16_t id, void *data, size_t len,
+		      u16_t cnt, bool *more)
 {
 	int rc;
 	u32_t wlk_addr, rd_addr;
@@ -839,6 +839,15 @@ ssize_t nvs_read_hist(struct nvs_fs *fs, u16_t id, void *data, size_t len,
 	return wlk_ate.len;
 
 err:
+	return rc;
+}
+
+ssize_t nvs_read_hist(struct nvs_fs *fs, u16_t id, void *data, size_t len,
+		    u16_t cnt)
+{
+	int rc;
+
+	rc = nvs_read_hist_more(fs, id, data, len, cnt, NULL);
 	return rc;
 }
 

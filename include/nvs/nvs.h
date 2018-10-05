@@ -172,6 +172,27 @@ ssize_t nvs_read_hist(struct nvs_fs *fs, u16_t id, void *data, size_t len,
 		  u16_t cnt);
 
 /**
+ * @brief nvs_read_hist_more
+ *
+ * Read a history entry from the file system and allows you to loop over all entries
+ *
+ * @param fs Pointer to file system
+ * @param id Id of the entry to be read
+ * @param data Pointer to data buffer
+ * @param len Number of bytes to be read
+ * @param cnt History counter: 0: latest entry, 1:one before latest ...
+ * @param[in,out] more If this pointer is not NULL, it will be set to true,
+ *	if there are additional entries of the same id
+ *
+ * @return Number of bytes read. On success, it will be equal to the number
+ * of bytes requested to be read. When the return value is larger than the
+ * number of bytes requested to read this indicates not all bytes were read,
+ * and more data is available. On error returns -ERRNO code.
+ */
+ssize_t nvs_read_hist_more(struct nvs_fs *fs, u16_t id, void *data, size_t len,
+		  u16_t cnt, bool *more);
+
+/**
  * @}
  */
 
