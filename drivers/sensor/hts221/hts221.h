@@ -11,10 +11,10 @@
 #include <misc/util.h>
 #include <zephyr/types.h>
 #include <gpio.h>
+#include <logging/log.h>
 
-#define SYS_LOG_DOMAIN "HTS221"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_SENSOR_LEVEL
+LOG_MODULE_REGISTER(HTS221);
 
 #define HTS221_I2C_ADDR			0x5F
 #define HTS221_AUTOINCREMENT_ADDR	BIT(7)

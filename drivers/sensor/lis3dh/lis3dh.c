@@ -63,7 +63,7 @@ int lis3dh_sample_fetch(struct device *dev, enum sensor_channel chan)
 	if (i2c_burst_read(drv_data->i2c, LIS3DH_I2C_ADDRESS,
 			   (LIS3DH_REG_ACCEL_X_LSB | LIS3DH_AUTOINCREMENT_ADDR),
 			   buf, 6) < 0) {
-		SYS_LOG_DBG("Could not read accel axis data");
+		LOG_DBG("Could not read accel axis data");
 		return -EIO;
 	}
 
@@ -88,7 +88,7 @@ int lis3dh_init(struct device *dev)
 
 	drv_data->i2c = device_get_binding(CONFIG_LIS3DH_I2C_MASTER_DEV_NAME);
 	if (drv_data->i2c == NULL) {
-		SYS_LOG_DBG("Could not get pointer to %s device",
+		LOG_DBG("Could not get pointer to %s device",
 		    CONFIG_LIS3DH_I2C_MASTER_DEV_NAME);
 		return -EINVAL;
 	}
@@ -97,19 +97,19 @@ int lis3dh_init(struct device *dev)
 	if (i2c_reg_write_byte(drv_data->i2c, LIS3DH_I2C_ADDRESS,
 			       LIS3DH_REG_CTRL1, LIS3DH_ACCEL_EN_BITS |
 			       LIS3DH_LP_EN_BIT | LIS3DH_ODR_BITS) < 0) {
-		SYS_LOG_DBG("Failed to configure chip.");
+		LOG_DBG("Failed to configure chip.");
 	}
 
 	/* set full scale range */
 	if (i2c_reg_write_byte(drv_data->i2c, LIS3DH_I2C_ADDRESS,
 			       LIS3DH_REG_CTRL4, LIS3DH_FS_BITS) < 0) {
-		SYS_LOG_DBG("Failed to set full scale range.");
+		LOG_DBG("Failed to set full scale range.");
 		return -EIO;
 	}
 
 #ifdef CONFIG_LIS3DH_TRIGGER
 	if (lis3dh_init_interrupt(dev) < 0) {
-		SYS_LOG_DBG("Failed to initialize interrupts.");
+		LOG_DBG("Failed to initialize interrupts.");
 		return -EIO;
 	}
 #endif

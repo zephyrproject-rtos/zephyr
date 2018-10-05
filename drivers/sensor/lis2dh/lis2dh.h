@@ -216,9 +216,9 @@ struct lis2dh_data {
 #endif /* CONFIG_LIS2DH_TRIGGER */
 };
 
-#define SYS_LOG_DOMAIN "lis2dh"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(lis2dh);
 
 #if defined(CONFIG_LIS2DH_BUS_SPI)
 int lis2dh_spi_access(struct lis2dh_data *ctx, u8_t cmd,
@@ -304,7 +304,7 @@ static inline int lis2dh_bus_configure(struct device *dev)
 #if defined(CONFIG_LIS2DH_BUS_SPI)
 	lis2dh->spi = device_get_binding(LIS2DH_BUS_DEV_NAME);
 	if (lis2dh->spi == NULL) {
-		SYS_LOG_ERR("Could not get pointer to %s device",
+		LOG_ERR("Could not get pointer to %s device",
 			    LIS2DH_BUS_DEV_NAME);
 		return -EINVAL;
 	}
@@ -317,7 +317,7 @@ static inline int lis2dh_bus_configure(struct device *dev)
 #elif defined(CONFIG_LIS2DH_BUS_I2C)
 	lis2dh->bus = device_get_binding(LIS2DH_BUS_DEV_NAME);
 	if (lis2dh->bus == NULL) {
-		SYS_LOG_ERR("Could not get pointer to %s device",
+		LOG_ERR("Could not get pointer to %s device",
 			    LIS2DH_BUS_DEV_NAME);
 		return -EINVAL;
 	}

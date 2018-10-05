@@ -58,7 +58,7 @@ static int hmc5883l_sample_fetch(struct device *dev, enum sensor_channel chan)
 	/* fetch magnetometer sample */
 	if (i2c_burst_read(drv_data->i2c, HMC5883L_I2C_ADDR,
 			   HMC5883L_REG_DATA_START, (u8_t *)buf, 6) < 0) {
-		SYS_LOG_ERR("Failed to fetch megnetometer sample.");
+		LOG_ERR("Failed to fetch megnetometer sample.");
 		return -EIO;
 	}
 
@@ -84,7 +84,7 @@ int hmc5883l_init(struct device *dev)
 
 	drv_data->i2c = device_get_binding(CONFIG_HMC5883L_I2C_MASTER_DEV_NAME);
 	if (drv_data->i2c == NULL) {
-		SYS_LOG_ERR("Failed to get pointer to %s device.",
+		LOG_ERR("Failed to get pointer to %s device.",
 			    CONFIG_HMC5883L_I2C_MASTER_DEV_NAME);
 		return -EINVAL;
 	}
@@ -92,13 +92,13 @@ int hmc5883l_init(struct device *dev)
 	/* check chip ID */
 	if (i2c_burst_read(drv_data->i2c, HMC5883L_I2C_ADDR,
 			   HMC5883L_REG_CHIP_ID, id, 3) < 0) {
-		SYS_LOG_ERR("Failed to read chip ID.");
+		LOG_ERR("Failed to read chip ID.");
 		return -EIO;
 	}
 
 	if (id[0] != HMC5883L_CHIP_ID_A || id[1] != HMC5883L_CHIP_ID_B ||
 	    id[2] != HMC5883L_CHIP_ID_C) {
-		SYS_LOG_ERR("Invalid chip ID.");
+		LOG_ERR("Invalid chip ID.");
 		return -EINVAL;
 	}
 
@@ -110,7 +110,7 @@ int hmc5883l_init(struct device *dev)
 	}
 
 	if (idx == ARRAY_SIZE(hmc5883l_fs_strings)) {
-		SYS_LOG_ERR("Invalid full-scale range value.");
+		LOG_ERR("Invalid full-scale range value.");
 		return -EINVAL;
 	}
 
@@ -124,7 +124,7 @@ int hmc5883l_init(struct device *dev)
 	}
 
 	if (idx == ARRAY_SIZE(hmc5883l_odr_strings)) {
-		SYS_LOG_ERR("Invalid ODR value.");
+		LOG_ERR("Invalid ODR value.");
 		return -EINVAL;
 	}
 
@@ -135,13 +135,13 @@ int hmc5883l_init(struct device *dev)
 
 	if (i2c_burst_write(drv_data->i2c, HMC5883L_I2C_ADDR,
 			    HMC5883L_REG_CONFIG_A, chip_cfg, 3) < 0) {
-		SYS_LOG_ERR("Failed to configure chip.");
+		LOG_ERR("Failed to configure chip.");
 		return -EIO;
 	}
 
 #ifdef CONFIG_HMC5883L_TRIGGER
 	if (hmc5883l_init_interrupt(dev) < 0) {
-		SYS_LOG_ERR("Failed to initialize interrupts.");
+		LOG_ERR("Failed to initialize interrupts.");
 		return -EIO;
 	}
 #endif

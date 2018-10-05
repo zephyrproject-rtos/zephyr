@@ -175,7 +175,7 @@ int bmc150_magn_trigger_set(struct device *dev,
 int bmc150_magn_init_interrupt(struct device *dev);
 #endif
 
-#define SYS_LOG_DOMAIN "BMC150_MAGN"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(BMC150_MAGN)
 #endif /* ZEPHYR_DRIVERS_SENSOR_BMC150_MAGN_BMC150_MAGN_H_ */

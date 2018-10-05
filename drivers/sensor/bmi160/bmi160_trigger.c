@@ -275,7 +275,7 @@ int bmi160_trigger_mode_init(struct device *dev)
 
 	bmi160->gpio = device_get_binding((char *)cfg->gpio_port);
 	if (!bmi160->gpio) {
-		SYS_LOG_DBG("Gpio controller %s not found.", cfg->gpio_port);
+		LOG_DBG("Gpio controller %s not found.", cfg->gpio_port);
 		return -EINVAL;
 	}
 
@@ -293,7 +293,7 @@ int bmi160_trigger_mode_init(struct device *dev)
 
 	/* map all interrupts to INT1 pin */
 	if (bmi160_word_write(dev, BMI160_REG_INT_MAP0, 0xf0ff) < 0) {
-		SYS_LOG_DBG("Failed to map interrupts.");
+		LOG_DBG("Failed to map interrupts.");
 		return -EIO;
 	}
 

@@ -146,7 +146,7 @@ int isl29035_trigger_set(struct device *dev,
 int isl29035_init_interrupt(struct device *dev);
 #endif
 
-#define SYS_LOG_DOMAIN "ISL29035"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(ISL29035);
 #endif /* ZEPHYR_DRIVERS_SENSOR_ISL29035_ISL29035_H_ */

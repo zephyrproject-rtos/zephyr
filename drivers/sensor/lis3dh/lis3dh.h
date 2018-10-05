@@ -114,7 +114,7 @@ int lis3dh_sample_fetch(struct device *dev, enum sensor_channel chan);
 int lis3dh_init_interrupt(struct device *dev);
 #endif
 
-#define SYS_LOG_DOMAIN "LIS3DH"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(LIS3DH);
 #endif /* __SENSOR_LIS3DH__ */

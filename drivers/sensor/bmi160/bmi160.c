@@ -16,6 +16,9 @@
 
 #include "bmi160.h"
 
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+LOG_MODULE_REGISTER(BMI160);
+
 struct bmi160_device_data bmi160_data;
 
 static int bmi160_transceive(struct device *dev, u8_t reg,
@@ -426,7 +429,7 @@ static int bmi160_acc_config(struct device *dev, enum sensor_channel chan,
 		return bmi160_acc_slope_config(dev, attr, val);
 #endif
 	default:
-		SYS_LOG_DBG("Accel attribute not supported.");
+		LOG_DBG("Accel attribute not supported.");
 		return -ENOTSUP;
 	}
 
@@ -579,7 +582,7 @@ static int bmi160_gyr_config(struct device *dev, enum sensor_channel chan,
 		return bmi160_gyr_calibrate(dev, chan);
 
 	default:
-		SYS_LOG_DBG("Gyro attribute not supported.");
+		LOG_DBG("Gyro attribute not supported.");
 		return -ENOTSUP;
 	}
 
@@ -606,7 +609,7 @@ static int bmi160_attr_set(struct device *dev, enum sensor_channel chan,
 		return bmi160_acc_config(dev, chan, attr, val);
 #endif
 	default:
-		SYS_LOG_DBG("attr_set() not supported on this channel.");
+		LOG_DBG("attr_set() not supported on this channel.");
 		return -ENOTSUP;
 	}
 
@@ -770,7 +773,7 @@ static int bmi160_channel_get(struct device *dev,
 	case SENSOR_CHAN_DIE_TEMP:
 		return bmi160_temp_channel_get(dev, val);
 	default:
-		SYS_LOG_DBG("Channel not supported.");
+		LOG_DBG("Channel not supported.");
 		return -ENOTSUP;
 	}
 
@@ -794,7 +797,7 @@ int bmi160_init(struct device *dev)
 
 	bmi160->spi = device_get_binding(CONFIG_BMI160_SPI_PORT_NAME);
 	if (!bmi160->spi) {
-		SYS_LOG_DBG("SPI master controller not found: %s.",
+		LOG_DBG("SPI master controller not found: %s.",
 			    CONFIG_BMI160_SPI_PORT_NAME);
 		return -EINVAL;
 	}
@@ -805,7 +808,7 @@ int bmi160_init(struct device *dev)
 
 	/* reboot the chip */
 	if (bmi160_byte_write(dev, BMI160_REG_CMD, BMI160_CMD_SOFT_RESET) < 0) {
-		SYS_LOG_DBG("Cannot reboot chip.");
+		LOG_DBG("Cannot reboot chip.");
 		return -EIO;
 	}
 
@@ -813,19 +816,19 @@ int bmi160_init(struct device *dev)
 
 	/* do a dummy read from 0x7F to activate SPI */
 	if (bmi160_byte_read(dev, 0x7F, &val) < 0) {
-		SYS_LOG_DBG("Cannot read from 0x7F..");
+		LOG_DBG("Cannot read from 0x7F..");
 		return -EIO;
 	}
 
 	k_busy_wait(100);
 
 	if (bmi160_byte_read(dev, BMI160_REG_CHIPID, &val) < 0) {
-		SYS_LOG_DBG("Failed to read chip id.");
+		LOG_DBG("Failed to read chip id.");
 		return -EIO;
 	}
 
 	if (val != BMI160_CHIP_ID) {
-		SYS_LOG_DBG("Unsupported chip detected (0x%x)!", val);
+		LOG_DBG("Unsupported chip detected (0x%x)!", val);
 		return -ENODEV;
 	}
 
@@ -842,14 +845,14 @@ int bmi160_init(struct device *dev)
 	 * called.
 	 */
 	if (bmi160_pmu_set(dev, &bmi160->pmu_sts) < 0) {
-		SYS_LOG_DBG("Failed to set power mode.");
+		LOG_DBG("Failed to set power mode.");
 		return -EIO;
 	}
 
 	/* set accelerometer default range */
 	if (bmi160_byte_write(dev, BMI160_REG_ACC_RANGE,
 				BMI160_DEFAULT_RANGE_ACC) < 0) {
-		SYS_LOG_DBG("Cannot set default range for accelerometer.");
+		LOG_DBG("Cannot set default range for accelerometer.");
 		return -EIO;
 	}
 
@@ -860,7 +863,7 @@ int bmi160_init(struct device *dev)
 	/* set gyro default range */
 	if (bmi160_byte_write(dev, BMI160_REG_GYR_RANGE,
 			      BMI160_DEFAULT_RANGE_GYR) < 0) {
-		SYS_LOG_DBG("Cannot set default range for gyroscope.");
+		LOG_DBG("Cannot set default range for gyroscope.");
 		return -EIO;
 	}
 
@@ -872,7 +875,7 @@ int bmi160_init(struct device *dev)
 				    BMI160_ACC_CONF_ODR_POS,
 				    BMI160_ACC_CONF_ODR_MASK,
 				    BMI160_DEFAULT_ODR_ACC) < 0) {
-		SYS_LOG_DBG("Failed to set accel's default ODR.");
+		LOG_DBG("Failed to set accel's default ODR.");
 		return -EIO;
 	}
 
@@ -880,13 +883,13 @@ int bmi160_init(struct device *dev)
 				    BMI160_GYR_CONF_ODR_POS,
 				    BMI160_GYR_CONF_ODR_MASK,
 				    BMI160_DEFAULT_ODR_GYR) < 0) {
-		SYS_LOG_DBG("Failed to set gyro's default ODR.");
+		LOG_DBG("Failed to set gyro's default ODR.");
 		return -EIO;
 	}
 
 #ifdef CONFIG_BMI160_TRIGGER
 	if (bmi160_trigger_mode_init(dev) < 0) {
-		SYS_LOG_DBG("Cannot set up trigger mode.");
+		LOG_DBG("Cannot set up trigger mode.");
 		return -EINVAL;
 	}
 #endif
@@ -902,6 +905,8 @@ const struct bmi160_device_config bmi160_config = {
 	.int_pin = CONFIG_BMI160_GPIO_PIN_NUM,
 #endif
 };
+
+
 
 DEVICE_INIT(bmi160, CONFIG_BMI160_NAME, bmi160_init, &bmi160_data,
 	    &bmi160_config, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY);

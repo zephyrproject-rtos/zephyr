@@ -97,7 +97,7 @@ int hmc5883l_init_interrupt(struct device *dev)
 	/* setup data ready gpio interrupt */
 	drv_data->gpio = device_get_binding(CONFIG_HMC5883L_GPIO_DEV_NAME);
 	if (drv_data->gpio == NULL) {
-		SYS_LOG_ERR("Failed to get pointer to %s device.",
+		LOG_ERR("Failed to get pointer to %s device.",
 			    CONFIG_HMC5883L_GPIO_DEV_NAME);
 		return -EINVAL;
 	}
@@ -111,7 +111,7 @@ int hmc5883l_init_interrupt(struct device *dev)
 			   BIT(CONFIG_HMC5883L_GPIO_PIN_NUM));
 
 	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
-		SYS_LOG_ERR("Failed to set gpio callback.");
+		LOG_ERR("Failed to set gpio callback.");
 		return -EIO;
 	}
 

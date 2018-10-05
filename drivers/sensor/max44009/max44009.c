@@ -8,6 +8,7 @@
 #include <i2c.h>
 #include <sensor.h>
 #include <misc/__assert.h>
+#include <logging/log.h>
 
 #include "max44009.h"
 
@@ -92,7 +93,7 @@ static int max44009_attr_set(struct device *dev, enum sensor_channel chan,
 		if (max44009_reg_update(drv_data, MAX44009_REG_CONFIG,
 					MAX44009_SAMPLING_CONTROL_BIT,
 					value) != 0) {
-			SYS_LOG_DBG("Failed to set attribute!");
+			LOG_DBG("Failed to set attribute!");
 			return -EIO;
 		}
 
@@ -169,7 +170,7 @@ int max44009_init(struct device *dev)
 
 	drv_data->i2c = device_get_binding(CONFIG_MAX44009_I2C_DEV_NAME);
 	if (drv_data->i2c == NULL) {
-		SYS_LOG_DBG("Failed to get pointer to %s device!",
+		LOG_DBG("Failed to get pointer to %s device!",
 			    CONFIG_MAX44009_I2C_DEV_NAME);
 		return -EINVAL;
 	}

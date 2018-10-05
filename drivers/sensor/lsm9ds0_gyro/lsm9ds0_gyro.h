@@ -255,7 +255,7 @@ int lsm9ds0_gyro_trigger_set(struct device *dev,
 int lsm9ds0_gyro_init_interrupt(struct device *dev);
 #endif
 
-#define SYS_LOG_DOMAIN "LSM9DS0_GYRO"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(LSM9DS0_GYRO);
 #endif /* ZEPHYR_DRIVERS_SENSOR_LSM9DS0_GYRO_LSM9DS0_GYRO_H_ */
