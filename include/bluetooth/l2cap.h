@@ -78,6 +78,8 @@ struct bt_l2cap_chan {
 	bt_l2cap_chan_destroy_t		destroy;
 	/* Response Timeout eXpired (RTX) timer */
 	struct k_delayed_work		rtx_work;
+	struct k_work			rx_work;
+	struct k_fifo			rx_queue;
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 	bt_l2cap_chan_state_t		state;
 	/** Remote PSM to be connected */

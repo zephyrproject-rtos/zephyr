@@ -26,6 +26,7 @@
 #include "l2cap_internal.h"
 
 #define LE_CHAN_RTX(_w) CONTAINER_OF(_w, struct bt_l2cap_le_chan, chan.rtx_work)
+#define CHAN_RX(_w) CONTAINER_OF(_w, struct bt_l2cap_chan, rx_work)
 
 #define L2CAP_LE_MIN_MTU		23
 
@@ -228,6 +229,8 @@ void bt_l2cap_chan_set_state(struct bt_l2cap_chan *chan,
 
 void bt_l2cap_chan_del(struct bt_l2cap_chan *chan)
 {
+	struct net_buf *buf;
+
 	BT_DBG("conn %p chan %p", chan->conn, chan);
 
 	if (!chan->conn) {
@@ -247,6 +250,11 @@ destroy:
 	chan->psm = 0;
 #endif
 
+	/* Remove buffers on the RX queue */
+	while ((buf = net_buf_get(&chan->rx_queue, K_NO_WAIT))) {
+		net_buf_unref(buf);
+	}
+
 	if (chan->destroy) {
 		chan->destroy(chan);
 	}
@@ -260,6 +268,20 @@ static void l2cap_rtx_timeout(struct k_work *work)
 
 	bt_l2cap_chan_remove(chan->chan.conn, &chan->chan);
 	bt_l2cap_chan_del(&chan->chan);
+}
+
+static void l2cap_chan_recv(struct bt_l2cap_chan *chan, struct net_buf *buf);
+
+static void l2cap_rx_process(struct k_work *work)
+{
+	struct bt_l2cap_chan *chan = CHAN_RX(work);
+	struct net_buf *buf;
+
+	while ((buf = net_buf_get(&chan->rx_queue, K_NO_WAIT))) {
+		BT_DBG("chan %p buf %p", chan, buf);
+		l2cap_chan_recv(chan, buf);
+		net_buf_unref(buf);
+	}
 }
 
 void bt_l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
@@ -290,6 +312,8 @@ static bool l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 	}
 
 	k_delayed_work_init(&chan->rtx_work, l2cap_rtx_timeout);
+	k_work_init(&chan->rx_work, l2cap_rx_process);
+	k_fifo_init(&chan->rx_queue);
 
 	bt_l2cap_chan_add(conn, chan, destroy);
 
@@ -1558,6 +1582,13 @@ static void l2cap_chan_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	chan->ops->recv(chan, buf);
 }
 
+static void l2cap_chan_recv_queue(struct bt_l2cap_chan *chan,
+				  struct net_buf *buf)
+{
+	net_buf_put(&chan->rx_queue, buf);
+	k_work_submit(&chan->rx_work);
+}
+
 void bt_l2cap_recv(struct bt_conn *conn, struct net_buf *buf)
 {
 	struct bt_l2cap_hdr *hdr = (void *)buf->data;
@@ -1588,8 +1619,7 @@ void bt_l2cap_recv(struct bt_conn *conn, struct net_buf *buf)
 		return;
 	}
 
-	l2cap_chan_recv(chan, buf);
-	net_buf_unref(buf);
+	l2cap_chan_recv_queue(chan, buf);
 }
 
 int bt_l2cap_update_conn_param(struct bt_conn *conn,
