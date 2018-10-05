@@ -54,7 +54,7 @@ static int spi_stm32_get_err(SPI_TypeDef *spi)
 
 	if (sr & SPI_STM32_ERR_MSK) {
 		SYS_LOG_ERR("%s: err=%d", __func__,
-			    sr & SPI_STM32_ERR_MSK);
+			    sr & (u32_t)SPI_STM32_ERR_MSK);
 
 		/* OVR error must be explicitly cleared */
 		if (LL_SPI_IsActiveFlag_OVR(spi)) {
