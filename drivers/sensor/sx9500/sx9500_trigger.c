@@ -82,7 +82,7 @@ static void sx9500_thread_main(int arg1, int unused)
 
 		if (i2c_reg_read_byte(data->i2c_master, data->i2c_slave_addr,
 					SX9500_REG_IRQ_SRC, &reg_val) < 0) {
-			SYS_LOG_DBG("sx9500: error reading IRQ source register");
+			LOG_DBG("sx9500: error reading IRQ source register");
 			continue;
 		}
 
@@ -117,7 +117,7 @@ static void sx9500_gpio_thread_cb(void *arg)
 
 	if (i2c_reg_read_byte(data->i2c_master, data->i2c_slave_addr,
 			      SX9500_REG_IRQ_SRC, &reg_val) < 0) {
-		SYS_LOG_DBG("sx9500: error reading IRQ source register");
+		LOG_DBG("sx9500: error reading IRQ source register");
 		return;
 	}
 
@@ -155,7 +155,7 @@ int sx9500_setup_interrupt(struct device *dev)
 
 	gpio = device_get_binding(CONFIG_SX9500_GPIO_CONTROLLER);
 	if (!gpio) {
-		SYS_LOG_DBG("sx9500: gpio controller %s not found",
+		LOG_DBG("sx9500: gpio controller %s not found",
 			    CONFIG_SX9500_GPIO_CONTROLLER);
 		return -EINVAL;
 	}

@@ -136,9 +136,8 @@ int amg88xx_trigger_set(struct device *dev,
 int amg88xx_init_interrupt(struct device *dev);
 #endif /* CONFIG_AMG88XX_TRIGGER */
 
-#define SYS_LOG_DOMAIN "AMG88XX"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 
-#include <logging/sys_log.h>
-
+#include <logging/log.h>
+LOG_MODULE_REGISTER(AMG88XX);
 #endif

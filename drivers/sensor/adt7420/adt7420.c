@@ -71,7 +71,7 @@ static int adt7420_attr_set(struct device *dev,
 					ADT7420_REG_CONFIG,
 					ADT7420_CONFIG_OP_MODE(~0),
 					ADT7420_CONFIG_OP_MODE(val8)) < 0) {
-			SYS_LOG_DBG("Failed to set attribute!");
+			LOG_DBG("Failed to set attribute!");
 			return -EIO;
 		}
 
@@ -92,7 +92,7 @@ static int adt7420_attr_set(struct device *dev,
 		value = (value / ADT7420_TEMP_SCALE) << 1;
 
 		if (adt7420_temp_reg_write(dev, reg, value) < 0) {
-			SYS_LOG_DBG("Failed to set attribute!");
+			LOG_DBG("Failed to set attribute!");
 			return -EIO;
 		}
 
@@ -185,7 +185,7 @@ static int adt7420_probe(struct device *dev)
 
 #ifdef CONFIG_ADT7420_TRIGGER
 	if (adt7420_init_interrupt(dev) < 0) {
-		SYS_LOG_ERR("Failed to initialize interrupt!");
+		LOG_ERR("Failed to initialize interrupt!");
 		return -EIO;
 	}
 #endif
@@ -200,7 +200,7 @@ static int adt7420_init(struct device *dev)
 
 	drv_data->i2c = device_get_binding(cfg->i2c_port);
 	if (drv_data->i2c == NULL) {
-		SYS_LOG_DBG("Failed to get pointer to %s device!",
+		LOG_DBG("Failed to get pointer to %s device!",
 			    cfg->i2c_port);
 		return -EINVAL;
 	}

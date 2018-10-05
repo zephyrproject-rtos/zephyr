@@ -147,7 +147,7 @@ int lsm6dsl_spi_init(struct device *dev)
 		lsm6dsl_cs_ctrl.gpio_dev = device_get_binding(
 			CONFIG_LSM6DSL_SPI_GPIO_CS_DRV_NAME);
 		if (!lsm6dsl_cs_ctrl.gpio_dev) {
-			SYS_LOG_ERR("Unable to get GPIO SPI CS device");
+			LOG_ERR("Unable to get GPIO SPI CS device");
 			return -ENODEV;
 		}
 
@@ -156,7 +156,7 @@ int lsm6dsl_spi_init(struct device *dev)
 
 		lsm6dsl_spi_conf.cs = &lsm6dsl_cs_ctrl;
 
-		SYS_LOG_DBG("SPI GPIO CS configured on %s:%u",
+		LOG_DBG("SPI GPIO CS configured on %s:%u",
 			    CONFIG_LSM6DSL_SPI_GPIO_CS_DRV_NAME,
 			    CONFIG_LSM6DSL_SPI_GPIO_CS_PIN);
 	}

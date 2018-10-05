@@ -39,7 +39,7 @@ int tmp007_attr_set(struct device *dev,
 	value = (value / TMP007_TEMP_TH_SCALE) << 6;
 
 	if (tmp007_reg_write(drv_data, reg, value) < 0) {
-		SYS_LOG_DBG("Failed to set attribute!");
+		LOG_DBG("Failed to set attribute!");
 		return -EIO;
 	}
 
@@ -136,14 +136,14 @@ int tmp007_init_interrupt(struct device *dev)
 
 	if (tmp007_reg_update(drv_data, TMP007_REG_CONFIG,
 			      TMP007_ALERT_EN_BIT, TMP007_ALERT_EN_BIT) < 0) {
-		SYS_LOG_DBG("Failed to enable interrupt pin!");
+		LOG_DBG("Failed to enable interrupt pin!");
 		return -EIO;
 	}
 
 	/* setup gpio interrupt */
 	drv_data->gpio = device_get_binding(CONFIG_TMP007_GPIO_DEV_NAME);
 	if (drv_data->gpio == NULL) {
-		SYS_LOG_DBG("Failed to get pointer to %s device!",
+		LOG_DBG("Failed to get pointer to %s device!",
 		    CONFIG_TMP007_GPIO_DEV_NAME);
 		return -EINVAL;
 	}
@@ -157,7 +157,7 @@ int tmp007_init_interrupt(struct device *dev)
 			   BIT(CONFIG_TMP007_GPIO_PIN_NUM));
 
 	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
-		SYS_LOG_DBG("Failed to set gpio callback!");
+		LOG_DBG("Failed to set gpio callback!");
 		return -EIO;
 	}
 

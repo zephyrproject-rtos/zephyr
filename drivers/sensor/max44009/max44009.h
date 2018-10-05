@@ -9,9 +9,9 @@
 
 #include <misc/util.h>
 
-#define SYS_LOG_DOMAIN "MAX44009"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(MAX44009);
 
 #define MAX44009_I2C_ADDRESS	CONFIG_MAX44009_I2C_ADDR
 

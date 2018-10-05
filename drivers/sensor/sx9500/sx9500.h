@@ -61,7 +61,7 @@ static inline int sx9500_setup_interrupt(struct device *dev)
 }
 #endif
 
-#define SYS_LOG_DOMAIN "SX9500"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(SX9500);
 #endif /* ZEPHYR_DRIVERS_SENSOR_SX9500_SX9500_H_ */

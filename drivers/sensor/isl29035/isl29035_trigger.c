@@ -50,7 +50,7 @@ int isl29035_attr_set(struct device *dev,
 			       lsb_reg, raw_val & 0xFF) < 0 ||
 	    i2c_reg_write_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
 			       msb_reg, raw_val >> 8) < 0) {
-		SYS_LOG_DBG("Failed to set attribute.");
+		LOG_DBG("Failed to set attribute.");
 		return -EIO;
 	}
 
@@ -142,14 +142,14 @@ int isl29035_init_interrupt(struct device *dev)
 				ISL29035_COMMAND_I_REG,
 				ISL29035_INT_PRST_MASK,
 				ISL29035_INT_PRST_BITS) < 0) {
-		SYS_LOG_DBG("Failed to set interrupt persistence cycles.");
+		LOG_DBG("Failed to set interrupt persistence cycles.");
 		return -EIO;
 	}
 
 	/* setup gpio interrupt */
 	drv_data->gpio = device_get_binding(CONFIG_ISL29035_GPIO_DEV_NAME);
 	if (drv_data->gpio == NULL) {
-		SYS_LOG_DBG("Failed to get GPIO device.");
+		LOG_DBG("Failed to get GPIO device.");
 		return -EINVAL;
 	}
 
@@ -162,7 +162,7 @@ int isl29035_init_interrupt(struct device *dev)
 			   BIT(CONFIG_ISL29035_GPIO_PIN_NUM));
 
 	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
-		SYS_LOG_DBG("Failed to set gpio callback.");
+		LOG_DBG("Failed to set gpio callback.");
 		return -EIO;
 	}
 

@@ -158,7 +158,7 @@ enum bmm150_presets {
 	#define BMM150_DEFAULT_PRESET BMM150_HIGH_ACCURACY_PRESET
 #endif
 
-#define SYS_LOG_DOMAIN "BMM150"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(BMM150);
 #endif /* __SENSOR_BMM150_H__ */

@@ -9,9 +9,9 @@
 
 #include <device.h>
 
-#define SYS_LOG_DOMAIN "DHT"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(DHT);
 
 #define DHT_START_SIGNAL_DURATION		18000
 #define DHT_SIGNAL_MAX_WAIT_DURATION		100

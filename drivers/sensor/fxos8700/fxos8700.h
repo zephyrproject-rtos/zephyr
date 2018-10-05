@@ -7,10 +7,10 @@
 #include <sensor.h>
 #include <i2c.h>
 #include <gpio.h>
+#include <logging/log.h>
 
-#define SYS_LOG_DOMAIN "FXOS8700"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+LOG_MODULE_REGISTER(FXOS8700);
 
 #define FXOS8700_REG_STATUS			0x00
 #define FXOS8700_REG_OUTXMSB			0x01

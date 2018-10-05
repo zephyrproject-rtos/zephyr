@@ -54,8 +54,8 @@ struct ccs811_data {
 	u16_t resistance;
 };
 
-#define SYS_LOG_DOMAIN "CCS811"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(CCS811);
 
 #endif /* _SENSOR_CCS811_ */

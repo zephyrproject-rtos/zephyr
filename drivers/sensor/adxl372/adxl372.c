@@ -115,7 +115,7 @@ static int adxl372_reg_write(struct device *dev,
 			      u8_t reg_addr,
 			      u8_t reg_data)
 {
-	SYS_LOG_DBG("[0x%X] = 0x%X", reg_addr, reg_data);
+	LOG_DBG("[0x%X] = 0x%X", reg_addr, reg_data);
 
 	return adxl372_bus_access(dev, ADXL372_REG_WRITE(reg_addr),
 				  &reg_data, 1);
@@ -664,7 +664,7 @@ static int adxl372_attr_set_thresh(struct device *dev, enum sensor_channel chan,
 	case SENSOR_CHAN_ACCEL_XYZ:
 		return adxl372_set_activity_threshold_xyz(dev, reg, &threshold);
 	default:
-		SYS_LOG_ERR("attr_set() not supported on this channel");
+		LOG_ERR("attr_set() not supported on this channel");
 		return -ENOTSUP;
 	}
 }
@@ -759,7 +759,7 @@ static int adxl372_probe(struct device *dev)
 	}
 
 	if (dev_id != ADXL372_DEVID_VAL || part_id != ADXL372_PARTID_VAL) {
-		SYS_LOG_ERR("failed to read id (0x%X:0x%X)", dev_id, part_id);
+		LOG_ERR("failed to read id (0x%X:0x%X)", dev_id, part_id);
 		return -ENODEV;
 	}
 
@@ -770,7 +770,7 @@ static int adxl372_probe(struct device *dev)
 	 */
 	adxl372_reg_read(dev, ADXL372_REVID, &dev_id);
 	if (dev_id < 3) {
-		SYS_LOG_WRN("The ADXL372 Rev %u only supports point to point I2C communication!",
+		LOG_WRN("The ADXL372 Rev %u only supports point to point I2C communication!",
 			    dev_id);
 	}
 #endif
@@ -852,7 +852,7 @@ static int adxl372_probe(struct device *dev)
 
 #ifdef CONFIG_ADXL372_TRIGGER
 	if (adxl372_init_interrupt(dev) < 0) {
-		SYS_LOG_ERR("Failed to initialize interrupt!");
+		LOG_ERR("Failed to initialize interrupt!");
 		return -EIO;
 	}
 #endif
@@ -878,7 +878,7 @@ static int adxl372_init(struct device *dev)
 #ifdef CONFIG_ADXL372_I2C
 	data->bus  = device_get_binding(cfg->i2c_port);
 	if (data->bus  == NULL) {
-		SYS_LOG_ERR("Failed to get pointer to %s device!",
+		LOG_ERR("Failed to get pointer to %s device!",
 			    cfg->i2c_port);
 		return -EINVAL;
 	}
@@ -886,7 +886,7 @@ static int adxl372_init(struct device *dev)
 #ifdef CONFIG_ADXL372_SPI
 	data->bus = device_get_binding(cfg->spi_port);
 	if (!data->bus) {
-		SYS_LOG_ERR("spi device not found: %s", cfg->spi_port);
+		LOG_ERR("spi device not found: %s", cfg->spi_port);
 		return -EINVAL;
 	}
 	/* CPOL=0, CPHA=0, max 10MHz */
@@ -899,7 +899,7 @@ static int adxl372_init(struct device *dev)
 
 	data->adxl372_cs_ctrl.gpio_dev = device_get_binding(cfg->gpio_cs_port);
 	if (!data->adxl372_cs_ctrl.gpio_dev) {
-		SYS_LOG_ERR("Unable to get GPIO SPI CS device");
+		LOG_ERR("Unable to get GPIO SPI CS device");
 		return -ENODEV;
 	}
 

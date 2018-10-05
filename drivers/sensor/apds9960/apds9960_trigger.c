@@ -85,7 +85,7 @@ int apds9960_trigger_set(struct device *dev,
 		}
 		break;
 	default:
-		SYS_LOG_ERR("Unsupported sensor trigger");
+		LOG_ERR("Unsupported sensor trigger");
 		return -ENOTSUP;
 	}
 
