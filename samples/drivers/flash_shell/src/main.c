@@ -20,13 +20,14 @@
 LOG_MODULE_REGISTER(app);
 
 SHELL_UART_DEFINE(shell_transport_uart);
-SHELL_DEFINE(uart_shell, "uart:~$ ", &shell_transport_uart, 10);
+SHELL_DEFINE(uart_shell, "uart:~$ ", &shell_transport_uart, 10,
+	     SHELL_FLAG_OLF_CRLF);
 
 #define PR_SHELL(shell, fmt, ...)				\
 	shell_fprintf(shell, SHELL_NORMAL, fmt, ##__VA_ARGS__)
 #define PR_ERROR(shell, fmt, ...)				\
 	shell_fprintf(shell, SHELL_ERROR, fmt, ##__VA_ARGS__)
-#define PR_INFO(fshell, fmt, ...)				\
+#define PR_INFO(shell, fmt, ...)				\
 	shell_fprintf(shell, SHELL_INFO, fmt, ##__VA_ARGS__)
 #define PR_WARNING(shell, fmt, ...)				\
 	shell_fprintf(shell, SHELL_WARNING, fmt, ##__VA_ARGS__)
@@ -91,7 +92,7 @@ static int check_flash_device(const struct shell *shell)
 {
 	if (flash_device == NULL) {
 		PR_ERROR(shell, "Flash device is unknown."
-				" Run set_device first.\r\n");
+				" Run set_device first.\n");
 		return -ENODEV;
 	}
 	return 0;
@@ -103,7 +104,7 @@ static void dump_buffer(const struct shell *shell, u8_t *buf, size_t size)
 	u8_t *p = buf;
 
 	while (size >= 8) {
-		PR_SHELL(shell, "%02x %02x %02x %02x | %02x %02x %02x %02x\r\n",
+		PR_SHELL(shell, "%02x %02x %02x %02x | %02x %02x %02x %02x\n",
 		       p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7]);
 		p += 8;
 		size -= 8;
@@ -120,7 +121,7 @@ static void dump_buffer(const struct shell *shell, u8_t *buf, size_t size)
 		newline = true;
 	}
 	if (newline) {
-		PR_SHELL(shell, "\r\n");
+		PR_SHELL(shell, "\n");
 	}
 }
 
@@ -173,7 +174,7 @@ static int do_read(const struct shell *shell, off_t offset, size_t len)
 	return 0;
 
  err_read:
-	PR_ERROR(shell, "flash_read error: %d\r\n", ret);
+	PR_ERROR(shell, "flash_read error: %d\n", ret);
 	return ret;
 }
 
@@ -185,18 +186,18 @@ static int do_erase(const struct shell *shell, off_t offset, size_t size)
 	ret = flash_write_protection_set(flash_device, false);
 	if (ret) {
 		PR_ERROR(shell, "Failed to disable flash protection (err: %d)."
-				"\r\n", ret);
+				"\n", ret);
 		return ret;
 	}
 	ret = flash_erase(flash_device, offset, size);
 	if (ret) {
-		PR_ERROR(shell, "flash_erase failed (err:%d).\r\n", ret);
+		PR_ERROR(shell, "flash_erase failed (err:%d).\n", ret);
 		return ret;
 	}
 	ret = flash_write_protection_set(flash_device, true);
 	if (ret) {
 		PR_ERROR(shell, "Failed to enable flash protection (err: %d)."
-				"\r\n", ret);
+				"\n", ret);
 	}
 	return ret;
 }
@@ -210,22 +211,22 @@ static int do_write(const struct shell *shell, off_t offset, u8_t *buf,
 	ret = flash_write_protection_set(flash_device, false);
 	if (ret) {
 		PR_ERROR(shell, "Failed to disable flash protection (err: %d)."
-				"\r\n", ret);
+				"\n", ret);
 		return ret;
 	}
 	ret = flash_write(flash_device, offset, buf, len);
 	if (ret) {
-		PR_ERROR(shell, "flash_write failed (err:%d).\r\n", ret);
+		PR_ERROR(shell, "flash_write failed (err:%d).\n", ret);
 		return ret;
 	}
 	ret = flash_write_protection_set(flash_device, true);
 	if (ret) {
 		PR_ERROR(shell, "Failed to enable flash protection (err: %d)."
-				"\r\n", ret);
+				"\n", ret);
 		return ret;
 	}
 	if (read_back) {
-		PR_SHELL(shell, "Reading back written bytes:\r\n");
+		PR_SHELL(shell, "Reading back written bytes:\n");
 		ret = do_read(shell, offset, len);
 	}
 	return ret;
@@ -252,7 +253,7 @@ static int cmd_write_block_size(const struct shell *shell, size_t argc,
 
 	err = check_flash_device(shell);
 	if (!err) {
-		PR_SHELL(shell, "%d\r\n",
+		PR_SHELL(shell, "%d\n",
 			 flash_get_write_block_size(flash_device));
 	}
 
@@ -274,7 +275,7 @@ static int cmd_read(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	if (parse_ul(argv[1], &offset) || parse_ul(argv[2], &len)) {
-		PR_ERROR(shell, "Invalid arguments.\r\n");
+		PR_ERROR(shell, "Invalid arguments.\n");
 		err = -EINVAL;
 		goto exit;
 	}
@@ -300,7 +301,7 @@ static int cmd_erase(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	if (parse_ul(argv[1], &offset) || parse_ul(argv[2], &size)) {
-		PR_ERROR(shell, "Invalid arguments.\r\n");
+		PR_ERROR(shell, "Invalid arguments.\n");
 		err = -EINVAL;
 		goto exit;
 	}
@@ -327,15 +328,15 @@ static int cmd_write(const struct shell *shell, size_t argc, char **argv)
 
 	err = parse_ul(argv[1], &offset);
 	if (err) {
-		PR_ERROR(shell, "Invalid argument.\r\n");
+		PR_ERROR(shell, "Invalid argument.\n");
 		goto exit;
 	}
 
 	if ((argc - 2) > ARGC_MAX) {
 		/* Can only happen if Zephyr limit is increased. */
-		PR_ERROR(shell, "At most %lu bytes can be written.\r\n"
+		PR_ERROR(shell, "At most %lu bytes can be written.\n"
 				"In order to write more bytes please increase"
-				" parameter: CONFIG_SHELL_ARGC_MAX.\r\n",
+				" parameter: CONFIG_SHELL_ARGC_MAX.\n",
 			 (unsigned long)ARGC_MAX);
 		err = -EINVAL;
 		goto exit;
@@ -346,9 +347,9 @@ static int cmd_write(const struct shell *shell, size_t argc, char **argv)
 	argv += 2;
 	for (i = 0; i < argc; i++) {
 		if (parse_u8(argv[i], &buf[i])) {
-			PR_ERROR(shell, "Argument %lu (%s) is not a byte.\r\n"
+			PR_ERROR(shell, "Argument %lu (%s) is not a byte.\n"
 					"Bytes shall be passed in decimal"
-					" notation.\r\n",
+					" notation.\n",
 				 i + 1, argv[i]);
 			err = -EINVAL;
 			goto exit;
@@ -374,7 +375,7 @@ static int cmd_page_count(const struct shell *shell, size_t argc, char **argv)
 	err = check_flash_device(shell);
 	if (!err) {
 		page_count = flash_get_page_count(flash_device);
-		PR_SHELL(shell, "Flash device contains %lu pages.\r\n",
+		PR_SHELL(shell, "Flash device contains %lu pages.\n",
 			 (unsigned long int)page_count);
 	}
 
@@ -400,7 +401,7 @@ static bool page_layout_cb(const struct flash_pages_info *info, void *datav)
 
 	sz = info->size;
 	PR_SHELL(data->shell,
-		 "\tPage %u: start 0x%08x, length 0x%lx (%lu, %lu KB)\r\n",
+		 "\tPage %u: start 0x%08x, length 0x%lx (%lu, %lu KB)\n",
 		 info->index, info->start_offset, sz, sz, sz / KB(1));
 	return true;
 }
@@ -440,7 +441,7 @@ static int cmd_page_layout(const struct shell *shell, size_t argc, char **argv)
 		}
 		break;
 	default:
-		PR_ERROR(shell, "Invalid argument count.\r\n");
+		PR_ERROR(shell, "Invalid argument count.\n");
 		return -EINVAL;
 	}
 
@@ -451,7 +452,7 @@ static int cmd_page_layout(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 
 bail:
-	PR_ERROR(shell, "Invalid arguments.\r\n");
+	PR_ERROR(shell, "Invalid arguments.\n");
 	return err;
 }
 
@@ -485,7 +486,7 @@ static int cmd_page_read(const struct shell *shell, size_t argc, char **argv)
 	ret = flash_get_page_info_by_idx(flash_device, page, &info);
 	if (ret) {
 		PR_ERROR(shell, "Function flash_page_info_by_idx returned an"
-				" error: %d\r\n", ret);
+				" error: %d\n", ret);
 		return ret;
 	}
 	offset += info.start_offset;
@@ -493,7 +494,7 @@ static int cmd_page_read(const struct shell *shell, size_t argc, char **argv)
 	return ret;
 
  bail:
-	PR_ERROR(shell, "Invalid arguments.\r\n");
+	PR_ERROR(shell, "Invalid arguments.\n");
 	return ret;
 }
 
@@ -526,11 +527,11 @@ static int cmd_page_erase(const struct shell *shell, size_t argc, char **argv)
 		ret = flash_get_page_info_by_idx(flash_device, page + i, &info);
 		if (ret) {
 			PR_ERROR(shell, "flash_get_page_info_by_idx error:"
-				" %d\r\n", ret);
+				" %d\n", ret);
 			return ret;
 		}
 		PR_SHELL(shell, "Erasing page %u (start offset 0x%x,"
-				" size 0x%x)\r\n",
+				" size 0x%x)\n",
 		       info.index, info.start_offset, info.size);
 		ret = do_erase(shell, info.start_offset, info.size);
 		if (ret) {
@@ -541,7 +542,7 @@ static int cmd_page_erase(const struct shell *shell, size_t argc, char **argv)
 	return ret;
 
  bail:
-	PR_ERROR(shell, "Invalid arguments.\r\n");
+	PR_ERROR(shell, "Invalid arguments.\n");
 	return ret;
 }
 
@@ -570,7 +571,7 @@ static int cmd_page_write(const struct shell *shell, size_t argc, char **argv)
 	argv += 3;
 	for (i = 0; i < argc; i++) {
 		if (parse_u8(argv[i], &buf[i])) {
-			PR_ERROR(shell, "Argument %d (%s) is not a byte.\r\n",
+			PR_ERROR(shell, "Argument %d (%s) is not a byte.\n",
 				 i + 2, argv[i]);
 			ret = -EINVAL;
 			goto bail;
@@ -579,14 +580,14 @@ static int cmd_page_write(const struct shell *shell, size_t argc, char **argv)
 
 	ret = flash_get_page_info_by_idx(flash_device, page, &info);
 	if (ret) {
-		PR_ERROR(shell, "flash_get_page_info_by_idx: %d\r\n", ret);
+		PR_ERROR(shell, "flash_get_page_info_by_idx: %d\n", ret);
 		return ret;
 	}
 	ret = do_write(shell, info.start_offset + off, buf, i, true);
 	return ret;
 
  bail:
-	PR_ERROR(shell, "Invalid arguments.\r\n");
+	PR_ERROR(shell, "Invalid arguments.\n");
 	return ret;
 }
 #endif	/* CONFIG_FLASH_PAGE_LAYOUT */
@@ -605,11 +606,11 @@ static int cmd_set_dev(const struct shell *shell, size_t argc, char **argv)
 	/* Run command. */
 	dev = device_get_binding(name);
 	if (!dev) {
-		PR_ERROR(shell, "No device named %s.\r\n", name);
+		PR_ERROR(shell, "No device named %s.\n", name);
 		return -ENOEXEC;
 	}
 	if (flash_device) {
-		PR_SHELL(shell, "Leaving behind device %s\r\n",
+		PR_SHELL(shell, "Leaving behind device %s\n",
 			 flash_device->config->name);
 	}
 	flash_device = dev;

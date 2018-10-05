@@ -34,7 +34,6 @@ struct shell_fprintf {
 	struct shell_fprintf_control_block *ctrl_blk;
 };
 
-
 /**
  * @brief Macro for defining shell_fprintf instance.
  *
