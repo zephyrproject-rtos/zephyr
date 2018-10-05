@@ -32,7 +32,7 @@ static inline size_t _nvs_al_size(struct nvs_fs *fs, size_t len)
 /* flash routines */
 /* basic aligned flash write to nvs address */
 static int _nvs_flash_al_wrt(struct nvs_fs *fs, u32_t addr, const void *data,
-		      size_t len)
+			     size_t len)
 {
 	const u8_t *data8 = (const u8_t *)data;
 	int rc = 0;
@@ -83,7 +83,7 @@ end:
 
 /* basic flash read from nvs address */
 static int _nvs_flash_rd(struct nvs_fs *fs, u32_t addr, void *data,
-		  size_t len)
+			 size_t len)
 {
 	int rc;
 	off_t offset;
@@ -136,7 +136,7 @@ static int _nvs_flash_ate_rd(struct nvs_fs *fs, u32_t addr,
  * returns 0 if equal, 1 if not equal, errcode if error
  */
 static int _nvs_flash_block_cmp(struct nvs_fs *fs, u32_t addr, const void *data,
-			 size_t len)
+				size_t len)
 {
 	const u8_t *data8 = (const u8_t *)data;
 	int rc;
@@ -166,7 +166,7 @@ static int _nvs_flash_block_cmp(struct nvs_fs *fs, u32_t addr, const void *data,
  * errcode if error
  */
 static int _nvs_flash_cmp_const(struct nvs_fs *fs, u32_t addr, u8_t value,
-			       size_t len)
+				size_t len)
 {
 	int rc;
 	size_t bytes_to_cmp, block_size;
@@ -198,7 +198,7 @@ static int _nvs_flash_block_move(struct nvs_fs *fs, u32_t addr, size_t len)
 	block_size = NVS_BLOCK_SIZE & ~(fs->write_block_size - 1);
 
 	while (len) {
-		bytes_to_copy =	min(block_size, len);
+		bytes_to_copy = min(block_size, len);
 		rc = _nvs_flash_rd(fs, addr, buf, bytes_to_copy);
 		if (rc) {
 			return rc;
@@ -236,8 +236,8 @@ static int _nvs_flash_erase_sector(struct nvs_fs *fs, u32_t addr)
 		/* flash protection set error */
 		return rc;
 	}
-	LOG_DBG("Erasing flash at %"PRIx32", len %d",
-	         offset, fs->sector_size);
+	LOG_DBG("Erasing flash at %" PRIx32 ", len %d",
+		offset, fs->sector_size);
 	rc = flash_erase(fs->flash_device, offset, fs->sector_size);
 	if (rc) {
 		/* flash erase error */
@@ -272,7 +272,7 @@ static int _nvs_ate_crc8_check(const struct nvs_ate *entry)
 
 /* store an entry in flash */
 static int _nvs_flash_wrt_entry(struct nvs_fs *fs, u16_t id, const void *data,
-			size_t len)
+				size_t len)
 {
 	int rc;
 	struct nvs_ate entry;
@@ -321,7 +321,7 @@ static int _nvs_prev_ate(struct nvs_fs *fs, u32_t *addr, struct nvs_ate *ate)
 
 	while (1) {
 		*addr += ate_size;
-		if (((*addr) & ADDR_OFFS_MASK) != fs->sector_size)  {
+		if (((*addr) & ADDR_OFFS_MASK) != fs->sector_size) {
 			break;
 		}
 		/* last ate in sector, do jump to previous sector */
@@ -586,7 +586,7 @@ int nvs_reinit(struct nvs_fs *fs)
 			goto end;
 		}
 		if (!_nvs_ate_crc8_check(&ate)) {
-		/* crc8 is ok, complete write of ate was performed */
+			/* crc8 is ok, complete write of ate was performed */
 			fs->data_wra += ate.offset;
 			fs->data_wra += _nvs_al_size(fs, ate.len);
 		}
@@ -668,12 +668,12 @@ int nvs_init(struct nvs_fs *fs, const char *dev_name)
 	}
 
 	LOG_INF("%d Sectors of %d bytes", fs->sector_count, fs->sector_size);
-	LOG_INF("alloc wra: %d, %"PRIx32"",
-		    (fs->ate_wra >> ADDR_SECT_SHIFT),
-		    (fs->ate_wra & ADDR_OFFS_MASK));
-	LOG_INF("data wra: %d, %"PRIx32"",
-		    (fs->data_wra >> ADDR_SECT_SHIFT),
-		    (fs->data_wra & ADDR_OFFS_MASK));
+	LOG_INF("alloc wra: %d, %" PRIx32 "",
+		(fs->ate_wra >> ADDR_SECT_SHIFT),
+		(fs->ate_wra & ADDR_OFFS_MASK));
+	LOG_INF("data wra: %d, %" PRIx32 "",
+		(fs->data_wra >> ADDR_SECT_SHIFT),
+		(fs->data_wra & ADDR_OFFS_MASK));
 	LOG_INF("Free space: %d", fs->free_space);
 
 	return 0;
@@ -691,7 +691,7 @@ ssize_t nvs_write(struct nvs_fs *fs, u16_t id, const void *data, size_t len)
 	data_size = _nvs_al_size(fs, len);
 
 
-	if ((len > (fs->sector_size - 2*ate_size)) ||
+	if ((len > (fs->sector_size - 2 * ate_size)) ||
 	    ((len > 0) && (data == NULL))) {
 		return -EINVAL;
 	}
@@ -791,7 +791,7 @@ int nvs_delete(struct nvs_fs *fs, u16_t id)
 }
 
 ssize_t nvs_read_hist(struct nvs_fs *fs, u16_t id, void *data, size_t len,
-		  u16_t cnt)
+		      u16_t cnt)
 {
 	int rc;
 	u32_t wlk_addr, rd_addr;
@@ -801,7 +801,7 @@ ssize_t nvs_read_hist(struct nvs_fs *fs, u16_t id, void *data, size_t len,
 
 	ate_size = _nvs_al_size(fs, sizeof(struct nvs_ate));
 
-	if (len > (fs->sector_size - 2*ate_size)) {
+	if (len > (fs->sector_size - 2 * ate_size)) {
 		return -EINVAL;
 	}
 
