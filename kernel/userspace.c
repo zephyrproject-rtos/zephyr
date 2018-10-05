@@ -291,11 +291,11 @@ struct _k_object *_k_object_find(void *obj)
 	ret = _k_object_gperf_find(obj);
 
 	if (ret == NULL) {
-		struct dyn_obj *dyn_obj;
+		struct dyn_obj *dynamic_obj;
 
-		dyn_obj = dyn_object_find(obj);
-		if (dyn_obj != NULL) {
-			ret = &dyn_obj->kobj;
+		dynamic_obj = dyn_object_find(obj);
+		if (dynamic_obj != NULL) {
+			ret = &dynamic_obj->kobj;
 		}
 	}
 
