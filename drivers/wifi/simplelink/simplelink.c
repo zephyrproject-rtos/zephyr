@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_WIFI_LEVEL
-#define SYS_LOG_DOMAIN "dev/simplelink"
-#include <logging/sys_log.h>
+#define LOG_MODULE_NAME wifi_simplelink
+#define LOG_LEVEL CONFIG_WIFI_LOG_LEVEL
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <zephyr.h>
 #include <kernel.h>
@@ -72,7 +74,7 @@ static void simplelink_wifi_cb(u32_t event, struct sl_connect_state *conn)
 		break;
 
 	default:
-		SYS_LOG_DBG("Unrecognized mgmt event: 0x%x", event);
+		LOG_DBG("Unrecognized mgmt event: 0x%x", event);
 		break;
 	}
 }
@@ -110,15 +112,15 @@ static void simplelink_scan_work_handler(struct k_work *work)
 		delay = (simplelink_data.num_results_or_err > 0 ? 0 :
 			 SCAN_RETRY_DELAY);
 		if (delay > 0) {
-			SYS_LOG_DBG("Retrying scan...");
+			LOG_DBG("Retrying scan...");
 		}
 		k_delayed_work_submit(&simplelink_data.work, delay);
 
 	} else {
 		/* Encountered an error, or max retries exceeded: */
-		SYS_LOG_ERR("Scan failed: retries: %d; err: %d",
-			    simplelink_data.scan_retries,
-			    simplelink_data.num_results_or_err);
+		LOG_ERR("Scan failed: retries: %d; err: %d",
+			simplelink_data.scan_retries,
+			simplelink_data.num_results_or_err);
 		simplelink_data.cb(simplelink_data.iface, -EIO, NULL);
 	}
 }
@@ -180,7 +182,7 @@ static int simplelink_dummy_get(sa_family_t family,
 				struct net_context **context)
 {
 
-	SYS_LOG_ERR("NET_SOCKET_OFFLOAD must be configured for this driver");
+	LOG_ERR("NET_SOCKET_OFFLOAD must be configured for this driver");
 
 	return -1;
 }
@@ -200,11 +202,11 @@ static struct net_offload simplelink_offload = {
 
 static void simplelink_iface_init(struct net_if *iface)
 {
-	SYS_LOG_DBG("MAC Address %02X:%02X:%02X:%02X:%02X:%02X",
-		    simplelink_data.mac[0], simplelink_data.mac[1],
-		    simplelink_data.mac[2],
-		    simplelink_data.mac[3], simplelink_data.mac[4],
-		    simplelink_data.mac[5]);
+	LOG_DBG("MAC Address %02X:%02X:%02X:%02X:%02X:%02X",
+		simplelink_data.mac[0], simplelink_data.mac[1],
+		simplelink_data.mac[2],
+		simplelink_data.mac[3], simplelink_data.mac[4],
+		simplelink_data.mac[5]);
 
 	net_if_set_link_addr(iface, simplelink_data.mac,
 			     sizeof(simplelink_data.mac),
@@ -232,7 +234,7 @@ static int simplelink_init(struct device *dev)
 	/* Initialize and configure NWP to defaults: */
 	ret = _simplelink_init(simplelink_wifi_cb);
 	if (ret) {
-		SYS_LOG_ERR("_simplelink_init failed!");
+		LOG_ERR("_simplelink_init failed!");
 		return(-EIO);
 	}
 
@@ -248,7 +250,7 @@ static int simplelink_init(struct device *dev)
 	socket_offload_register(&simplelink_ops);
 #endif
 
-	SYS_LOG_DBG("SimpleLink driver Initialized");
+	LOG_DBG("SimpleLink driver Initialized");
 
 	return 0;
 }
