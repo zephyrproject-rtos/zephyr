@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(usb_rndis)
 #include <net_private.h>
 
 #include <zephyr.h>
+#include <init.h>
 
 #include <usb_device.h>
 #include <usb_common.h>
@@ -1005,7 +1006,7 @@ static int rndis_class_handler(struct usb_setup_packet *setup, s32_t *len,
 		netusb_enabled());
 
 	if (!netusb_enabled()) {
-		LOG_ERR("interface disabled");
+		USB_ERR("interface disabled");
 		return -ENODEV;
 	}
 
@@ -1242,9 +1243,11 @@ static struct usb_os_descriptor os_desc = {
 };
 #endif /* CONFIG_USB_DEVICE_OS_DESC */
 
-static int rndis_init(void)
+static int rndis_init(struct device *arg)
 {
-	USB_DBG("");
+	ARG_UNUSED(arg);
+
+	USB_DBG("RNDIS initialization");
 
 	/* Transmit queue init */
 	k_fifo_init(&rndis_tx_queue);
@@ -1310,7 +1313,6 @@ static void rndis_status_cb(enum usb_dc_status_code status, const u8_t *param)
 }
 
 struct netusb_function rndis_function = {
-	.init = rndis_init,
 	.connect_media = rndis_connect_media,
 	.class_handler = rndis_class_handler,
 	.status_cb = rndis_status_cb,
@@ -1344,3 +1346,6 @@ USBD_CFG_DATA_DEFINE(netusb) struct usb_cfg_data netusb_config = {
 	.num_endpoints = ARRAY_SIZE(rndis_ep_data),
 	.endpoint = rndis_ep_data,
 };
+
+/* Initialize this before eth_netusb device init */
+SYS_INIT(rndis_init, POST_KERNEL, 0);

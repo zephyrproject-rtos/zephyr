@@ -391,7 +391,6 @@ static void ecm_status_cb(enum usb_dc_status_code status, const u8_t *param)
 }
 
 struct netusb_function ecm_function = {
-	.init = NULL,
 	.connect_media = ecm_connect,
 	.class_handler = ecm_class_handler,
 	.status_cb = ecm_status_cb,
