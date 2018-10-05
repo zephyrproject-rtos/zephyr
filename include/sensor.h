@@ -119,6 +119,8 @@ enum sensor_channel {
 	SENSOR_CHAN_VOLTAGE,
 	/** Current, in amps **/
 	SENSOR_CHAN_CURRENT,
+	/** Resistance , in Ohm **/
+	SENSOR_CHAN_RESISTANCE,
 
 	/** Angular rotation, in degrees */
 	SENSOR_CHAN_ROTATION,
