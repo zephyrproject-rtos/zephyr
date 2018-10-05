@@ -7,6 +7,7 @@
 #include "skeleton.dtsi"
 #include <arc/emsk_dt.h>
 #include <dt-bindings/i2c/i2c.h>
+#include <dt-bindings/gpio/gpio.h>
 
 
 / {
@@ -111,6 +112,8 @@
 			interrupts = <DT_GPIO0_INTNO 1>;
 			interrupt-parent = <&intc>;
 
+			gpio-controller;
+			#gpio-cells = <2>;
 		};
 
 		gpio1: gpio@f000200C {
@@ -121,6 +124,8 @@
 			interrupts = <DT_GPIO1_INTNO 1>;
 			interrupt-parent = <&intc>;
 
+			gpio-controller;
+			#gpio-cells = <2>;
 		};
 
 		gpio2: gpio@f0002018 {
@@ -132,6 +137,8 @@
 			interrupts = <DT_GPIO2_INTNO 1>;
 			interrupt-parent = <&intc>;
 
+			gpio-controller;
+			#gpio-cells = <2>;
 		};
 
 		gpio3: gpio@f0002024 {
@@ -143,6 +150,8 @@
 			interrupts = <DT_GPIO3_INTNO 1>;
 			interrupt-parent = <&intc>;
 
+			gpio-controller;
+			#gpio-cells = <2>;
 		};
 
 		spi0: spi@f0006000 {
