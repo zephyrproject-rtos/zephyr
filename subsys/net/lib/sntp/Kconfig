@@ -12,10 +12,10 @@ menuconfig SNTP
 
 if SNTP
 
-module=SNTP
-module-dep=NET_LOG
-module-str=Log level for SNTP
-module-help=Enable debug message of SNTP client library.
+module = SNTP
+module-dep = NET_LOG
+module-str = Log level for SNTP
+module-help = Enable debug message of SNTP client library.
 source "subsys/net/Kconfig.template.log_config.net"
 
 endif # SNTP
