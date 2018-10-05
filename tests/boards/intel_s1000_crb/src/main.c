@@ -61,7 +61,7 @@ void iomux_config_i2c(void)
 
 void main(void)
 {
-	printk("Sample app running on: %s Intel_S1000\n", CONFIG_ARCH);
+	printk("Sample app running on: %s Intel S1000 CRB\n", CONFIG_ARCH);
 
 	disable_ts_powergate();
 	iomux_config_i2c();

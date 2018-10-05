@@ -7,9 +7,9 @@
 /**
  * @file
  *
- * @brief Sample app to illustrate dma transfer on Intel_S1000.
+ * @brief Sample app to illustrate dma transfer on Intel S1000 CRB.
  *
- * Intel_S1000 - Xtensa
+ * Intel S1000 CRB - Xtensa
  * --------------------
  *
  * The dma_cavs driver is being used.
