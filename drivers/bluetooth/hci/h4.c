@@ -16,6 +16,7 @@
 #include <uart.h>
 #include <misc/util.h>
 #include <misc/byteorder.h>
+#include <misc/stack.h>
 #include <string.h>
 
 #include <bluetooth/bluetooth.h>
@@ -129,6 +130,9 @@ static inline void get_evt_hdr(void)
 			rx.discardable = true;
 			break;
 #endif
+		case BT_HCI_EVT_DISCONN_COMPLETE:
+			STACK_ANALYZE("rx stack", rx_thread_stack);
+			break;
 		}
 	}
 
