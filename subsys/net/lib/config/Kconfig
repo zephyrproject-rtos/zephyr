@@ -55,10 +55,10 @@ config NET_CONFIG_NEED_IPV4
 	  This option makes sure the network application is initialized properly
 	  in order to use IPv4.
 
-module=NET_CONFIG
-module-dep=NET_LOG
-module-str=Log level for network config library
-module-help=Enables net config library to output debug messages.
+module = NET_CONFIG
+module-dep = NET_LOG
+module-str = Log level for network config library
+module-help = Enables net config library to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 
 menuconfig NET_CONFIG_SETTINGS

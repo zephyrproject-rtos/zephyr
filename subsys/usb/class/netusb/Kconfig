@@ -87,9 +87,9 @@ endif # USB_DEVICE_NETWORK_RNDIS
 
 if USB_DEVICE_NETWORK
 
-module=USB_DEVICE_NETWORK
-module-dep=LOG
-module-str=USR Device Network log level
+module = USB_DEVICE_NETWORK
+module-dep = LOG
+module-str = USB Device Network log level
 source "subsys/net/Kconfig.template.log_config.net"
 
 endif # USB_DEVICE_NETWORK

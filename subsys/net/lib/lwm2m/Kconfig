@@ -14,9 +14,9 @@ menuconfig LWM2M
 
 if LWM2M
 
-module=LWM2M
-module-dep=LOG
-module-str=Log level for LWM2M library
+module = LWM2M
+module-dep = LOG
+module-str = Log level for LWM2M library
 source "subsys/net/Kconfig.template.log_config.net"
 
 config LWM2M_ENGINE_STACK_SIZE

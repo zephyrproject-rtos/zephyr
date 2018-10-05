@@ -33,10 +33,10 @@ config NET_BUF_LOG
 
 if NET_BUF_LOG
 
-module=NET_BUF
-module-dep=LOG
-module-str=Log level for network buffer handling
-module-help=Sets log level for network buffers.
+module = NET_BUF
+module-dep = LOG
+module-str = Log level for network buffer handling
+module-help = Sets log level for network buffers.
 source "subsys/net/Kconfig.template.log_config.net"
 
 config NET_BUF_WARN_ALLOC_INTERVAL

@@ -9,10 +9,10 @@
 menu "Ethernet Drivers"
 
 if NET_L2_ETHERNET
-module=ETHERNET
-module-dep=LOG
-module-str=Log level for Ethernet driver
-module-help=Sets log level for Ethernet Device Drivers.
+module = ETHERNET
+module-dep = LOG
+module-str = Log level for Ethernet driver
+module-help = Sets log level for Ethernet Device Drivers.
 source "subsys/net/Kconfig.template.log_config.net"
 endif # NET_L2_ETHERNET
 
