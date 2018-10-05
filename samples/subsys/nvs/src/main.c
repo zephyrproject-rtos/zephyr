@@ -75,6 +75,7 @@ void main(void)
 	char buf[16];
 	u8_t key[8], longarray[128];
 	u32_t reboot_counter = 0, reboot_counter_his;
+	bool more;
 
 	rc = nvs_init(&fs, FLASH_DEV_NAME);
 	if (rc) {
@@ -184,18 +185,19 @@ void main(void)
 				 * Check the counter history in flash
 				 */
 				printk("Reboot counter history: ");
-				while (1) {
-					rc = nvs_read_hist(
+				do {
+					rc = nvs_read_hist_more(
 						&fs, RBT_CNT_ID,
 						&reboot_counter_his,
 						sizeof(reboot_counter_his),
-						cnt_his);
-					if (rc < 0) {
-						break;
-					}
-					printk("...%d", reboot_counter_his);
-					cnt_his++;
-				}
+						cnt_his, &more);
+						if (rc < 0) {
+							break;
+						}
+						printk("...%d", reboot_counter_his);
+						cnt_his++;
+				} while (more);
+
 				if (cnt_his == 0) {
 					printk("\n Error, no Reboot counter");
 				} else {
