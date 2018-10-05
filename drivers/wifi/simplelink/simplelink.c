@@ -4,10 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME wifi_simplelink
-#define LOG_LEVEL CONFIG_WIFI_LOG_LEVEL
-
-#include <logging/log.h>
+#include "simplelink_log.h"
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <zephyr.h>

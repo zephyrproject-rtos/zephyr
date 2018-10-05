@@ -5,14 +5,12 @@
  *
  */
 
-#define LOG_MODULE_NAME wifi_simplelink_support
-#define LOG_LEVEL CONFIG_WIFI_LOG_LEVEL
-
-#include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
-
 #include <stdlib.h>
 #include <string.h>
+
+#include "simplelink_log.h"
+LOG_MODULE_DECLARE(LOG_MODULE_NAME);
+
 #include <zephyr.h>
 #include <stdint.h>
 

@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "simplelink_log.h"
+LOG_MODULE_DECLARE(LOG_MODULE_NAME);
+
 #include <zephyr.h>
 /* Define sockaddr, etc, before simplelink.h */
 #include <net/socket_offload.h>
