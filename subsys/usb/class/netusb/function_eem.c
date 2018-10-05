@@ -223,6 +223,11 @@ static int eem_connect(bool connected)
 	return 0;
 }
 
+static struct netusb_function eem_function = {
+	.connect_media = eem_connect,
+	.send_pkt = eem_send,
+};
+
 static inline void eem_status_interface(const u8_t *iface)
 {
 	USB_DBG("");
@@ -231,7 +236,7 @@ static inline void eem_status_interface(const u8_t *iface)
 		return;
 	}
 
-	netusb_enable();
+	netusb_enable(&eem_function);
 }
 
 static void eem_status_cb(enum usb_dc_status_code status, const u8_t *param)
@@ -263,15 +268,6 @@ static void eem_status_cb(enum usb_dc_status_code status, const u8_t *param)
 		break;
 	}
 }
-
-struct netusb_function eem_function = {
-	.connect_media = eem_connect,
-	.class_handler = NULL,
-	.status_cb = eem_status_cb,
-	.send_pkt = eem_send,
-	.num_ep = ARRAY_SIZE(eem_ep_data),
-	.ep = eem_ep_data,
-};
 
 static void eem_interface_config(u8_t bInterfaceNumber)
 {

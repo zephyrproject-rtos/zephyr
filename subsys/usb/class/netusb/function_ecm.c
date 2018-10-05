@@ -348,6 +348,11 @@ static int ecm_connect(bool connected)
 	return 0;
 }
 
+static struct netusb_function ecm_function = {
+	.connect_media = ecm_connect,
+	.send_pkt = ecm_send,
+};
+
 static inline void ecm_status_interface(const u8_t *iface)
 {
 	USB_DBG("iface %u", *iface);
@@ -357,7 +362,7 @@ static inline void ecm_status_interface(const u8_t *iface)
 		return;
 	}
 
-	netusb_enable();
+	netusb_enable(&ecm_function);
 }
 
 static void ecm_status_cb(enum usb_dc_status_code status, const u8_t *param)
@@ -389,15 +394,6 @@ static void ecm_status_cb(enum usb_dc_status_code status, const u8_t *param)
 		break;
 	}
 }
-
-struct netusb_function ecm_function = {
-	.connect_media = ecm_connect,
-	.class_handler = ecm_class_handler,
-	.status_cb = ecm_status_cb,
-	.send_pkt = ecm_send,
-	.num_ep = ARRAY_SIZE(ecm_ep_data),
-	.ep = ecm_ep_data,
-};
 
 struct usb_cdc_ecm_mac_descr {
 	u8_t bLength;

@@ -28,8 +28,7 @@ LOG_MODULE_REGISTER(usb_net)
 
 static struct __netusb {
 	struct net_if *iface;
-	bool enabled;
-	struct netusb_function *func;
+	const struct netusb_function *func;
 } netusb;
 
 #if !defined(CONFIG_USB_COMPOSITE_DEVICE)
@@ -43,7 +42,7 @@ static int netusb_send(struct net_if *iface, struct net_pkt *pkt)
 
 	USB_DBG("Send pkt, len %u", net_pkt_get_len(pkt));
 
-	if (!netusb.enabled) {
+	if (!netusb_enabled()) {
 		USB_ERR("interface disabled");
 		return -ENODEV;
 	}
@@ -71,6 +70,11 @@ static int netusb_connect_media(void)
 {
 	USB_DBG("");
 
+	if (!netusb_enabled()) {
+		USB_ERR("interface disabled");
+		return -ENODEV;
+	}
+
 	if (!netusb.func->connect_media) {
 		return -ENOTSUP;
 	}
@@ -82,6 +86,11 @@ static int netusb_disconnect_media(void)
 {
 	USB_DBG("");
 
+	if (!netusb_enabled()) {
+		USB_ERR("interface disabled");
+		return -ENODEV;
+	}
+
 	if (!netusb.func->connect_media) {
 		return -ENOTSUP;
 	}
@@ -89,11 +98,12 @@ static int netusb_disconnect_media(void)
 	return netusb.func->connect_media(false);
 }
 
-void netusb_enable(void)
+void netusb_enable(const struct netusb_function *func)
 {
 	USB_DBG("");
 
-	netusb.enabled = true;
+	netusb.func = func;
+
 	net_if_up(netusb.iface);
 	netusb_connect_media();
 }
@@ -102,18 +112,19 @@ void netusb_disable(void)
 {
 	USB_DBG("");
 
-	if (!netusb.enabled) {
+	if (!netusb_enabled()) {
 		return;
 	}
 
-	netusb.enabled = false;
+	netusb.func = NULL;
+
 	netusb_disconnect_media();
 	net_if_down(netusb.iface);
 }
 
 bool netusb_enabled(void)
 {
-	return netusb.enabled;
+	return !!netusb.func;
 }
 
 int try_write(u8_t ep, u8_t *data, u16_t len)
@@ -177,19 +188,6 @@ static void netusb_init(struct net_if *iface)
 	net_if_set_link_addr(iface, mac, sizeof(mac), NET_LINK_ETHERNET);
 
 	net_if_down(iface);
-
-/*
- * TODO: Add multi-function configuration
- */
-#if defined(CONFIG_USB_DEVICE_NETWORK_ECM)
-	netusb.func = &ecm_function;
-#elif defined(CONFIG_USB_DEVICE_NETWORK_RNDIS)
-	netusb.func = &rndis_function;
-#elif defined(CONFIG_USB_DEVICE_NETWORK_EEM)
-	netusb.func = &eem_function;
-#else
-#error Unknown USB Device Networking function
-#endif
 
 #ifndef CONFIG_USB_COMPOSITE_DEVICE
 	/* Linker-defined symbols bound the USB descriptor structs */

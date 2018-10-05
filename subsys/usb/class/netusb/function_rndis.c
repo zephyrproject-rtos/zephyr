@@ -1282,13 +1282,18 @@ static int rndis_connect_media(bool status)
 #endif
 }
 
+static struct netusb_function rndis_function = {
+	.connect_media = rndis_connect_media,
+	.send_pkt = rndis_send,
+};
+
 static void rndis_status_cb(enum usb_dc_status_code status, const u8_t *param)
 {
 	/* Check the USB status and do needed action if required */
 	switch (status) {
 	case USB_DC_CONFIGURED:
 		USB_DBG("USB device configured");
-		netusb_enable();
+		netusb_enable(&rndis_function);
 		break;
 
 	case USB_DC_DISCONNECTED:
@@ -1311,15 +1316,6 @@ static void rndis_status_cb(enum usb_dc_status_code status, const u8_t *param)
 		break;
 	}
 }
-
-struct netusb_function rndis_function = {
-	.connect_media = rndis_connect_media,
-	.class_handler = rndis_class_handler,
-	.status_cb = rndis_status_cb,
-	.send_pkt = rndis_send,
-	.num_ep = ARRAY_SIZE(rndis_ep_data),
-	.ep = rndis_ep_data,
-};
 
 static void netusb_interface_config(u8_t bInterfaceNumber)
 {
