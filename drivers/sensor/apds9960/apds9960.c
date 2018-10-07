@@ -455,20 +455,20 @@ static const struct sensor_driver_api apds9960_driver_api = {
 };
 
 static const struct apds9960_config apds9960_config = {
-	.i2c_name = CONFIG_APDS9960_I2C_DEV_NAME,
-	.i2c_address = APDS9960_I2C_ADDRESS,
-	.gpio_name = CONFIG_APDS9960_GPIO_DEV_NAME,
-	.gpio_pin = CONFIG_APDS9960_GPIO_PIN_NUM,
+	.i2c_name = APDS9960_0_BUS_NAME,
+	.i2c_address = APDS9960_0_BASE_ADDRESS,
+	.gpio_name = APDS9960_0_INT_GPIOS_CONTROLLER,
+	.gpio_pin = APDS9960_0_INT_GPIOS_PIN,
 };
 
 static struct apds9960_data apds9960_data;
 
 #ifndef CONFIG_DEVICE_POWER_MANAGEMENT
-DEVICE_AND_API_INIT(apds9960, CONFIG_APDS9960_DRV_NAME, &apds9960_init,
+DEVICE_AND_API_INIT(apds9960, APDS9960_0_LABEL, &apds9960_init,
 		    &apds9960_data, &apds9960_config, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &apds9960_driver_api);
 #else
-DEVICE_DEFINE(apds9960, CONFIG_APDS9960_DRV_NAME, apds9960_init,
+DEVICE_DEFINE(apds9960, APDS9960_0_LABEL, apds9960_init,
 	      apds9960_device_ctrl, &apds9960_data, &apds9960_config,
 	      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &apds9960_driver_api);
 #endif

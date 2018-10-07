@@ -29,7 +29,7 @@ void main(void)
 	struct sensor_value intensity, pdata;
 
 	printk("APDS9960 sample application\n");
-	dev = device_get_binding(CONFIG_APDS9960_DRV_NAME);
+	dev = device_get_binding(APDS9960_0_LABEL);
 	if (!dev) {
 		printk("sensor: device not found.\n");
 		return;
