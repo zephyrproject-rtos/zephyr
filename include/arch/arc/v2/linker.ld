@@ -21,8 +21,6 @@
 #include <linker/linker-defs.h>
 #include <linker/linker-tool.h>
 
-#define KOBJECT_TEXT_AREA 256
-
 /* physical address of RAM */
 #ifdef CONFIG_HARVARD
 	#define ROMABLE_REGION ICCM

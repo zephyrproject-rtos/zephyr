@@ -95,6 +95,22 @@ config PRIVILEGED_STACK_SIZE
 	  this region will be inaccessible from user mode.  During system calls,
 	  this region will be utilized by the system call.
 
+config PRIVILEGED_STACK_TEXT_AREA
+	int "Privileged stacks text area"
+	default 256 if (DEBUG || STACK_CANARIES)
+	default 128
+	depends on ARCH_HAS_USERSPACE
+	help
+	  Stack text area size for privileged stacks.
+
+config KOBJECT_TEXT_AREA
+	int "Size if kobject text area"
+	default 256 if (!SIZE_OPTIMIZATIONS || STACK_CANARIES || ARC)
+	default 128
+	depends on ARCH_HAS_USERSPACE
+	help
+	  Size of kernel object text area. Used in linker script.
+
 config STACK_GROWS_UP
 	bool "Stack grows towards higher memory addresses"
 	help
