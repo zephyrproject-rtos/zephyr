@@ -3,12 +3,12 @@ sample:
 tests:
   test:
     harness: sensor
-    platform_whitelist: reel_board
+    platform_whitelist: reel_board arduino_101_sss
     tags: samples sensor
     depends_on: i2c gpio
   test-trigger:
     harness: sensor
-    platform_whitelist: reel_board
+    platform_whitelist: reel_board arduino_101_sss
     tags: samples sensor
     depends_on: i2c gpio
     extra_configs:

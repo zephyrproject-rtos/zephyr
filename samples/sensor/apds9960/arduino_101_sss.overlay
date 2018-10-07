@@ -1,0 +1,20 @@
+/*
+ *
+ * Copyright (c) 2018, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		apds9960-0 = &apds9960;
+	};
+};
+
+&i2c0 {
+	apds9960: apds9960@29 {
+		compatible = "avago,apds9960";
+		reg = <0x29>;
+		label = "APDS9960";
+	};
+};
