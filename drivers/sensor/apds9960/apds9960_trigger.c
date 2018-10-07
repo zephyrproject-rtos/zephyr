@@ -29,7 +29,7 @@ void apds9960_work_cb(struct k_work *work)
 		data->p_th_handler(dev, &data->p_th_trigger);
 	}
 
-	gpio_pin_enable_callback(data->gpio, DT_AVAGO_APDS9960_0_INT_GPIOS_PIN);
+	gpio_pin_enable_callback(data->gpio, data->gpio_pin);
 }
 
 int apds9960_attr_set(struct device *dev,
@@ -37,12 +37,13 @@ int apds9960_attr_set(struct device *dev,
 		      enum sensor_attribute attr,
 		      const struct sensor_value *val)
 {
+	const struct apds9960_config *config = dev->config->config_info;
 	struct apds9960_data *data = dev->driver_data;
 
 	if (chan == SENSOR_CHAN_PROX) {
 		if (attr == SENSOR_ATTR_UPPER_THRESH) {
 			if (i2c_reg_write_byte(data->i2c,
-					       APDS9960_I2C_ADDRESS,
+					       config->i2c_address,
 					       APDS9960_PIHT_REG,
 					       (u8_t)val->val1)) {
 				return -EIO;
@@ -52,7 +53,7 @@ int apds9960_attr_set(struct device *dev,
 		}
 		if (attr == SENSOR_ATTR_LOWER_THRESH) {
 			if (i2c_reg_write_byte(data->i2c,
-					       APDS9960_I2C_ADDRESS,
+					       config->i2c_address,
 					       APDS9960_PILT_REG,
 					       (u8_t)val->val1)) {
 				return -EIO;
@@ -69,16 +70,17 @@ int apds9960_trigger_set(struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
 {
+	const struct apds9960_config *config = dev->config->config_info;
 	struct apds9960_data *data = dev->driver_data;
 
-	gpio_pin_disable_callback(data->gpio, DT_AVAGO_APDS9960_0_INT_GPIOS_PIN);
+	gpio_pin_disable_callback(data->gpio, config->gpio_pin);
 
 	switch (trig->type) {
 	case SENSOR_TRIG_THRESHOLD:
 		if (trig->chan == SENSOR_CHAN_PROX) {
 			data->p_th_handler = handler;
 			if (i2c_reg_update_byte(data->i2c,
-						APDS9960_I2C_ADDRESS,
+						config->i2c_address,
 						APDS9960_ENABLE_REG,
 						APDS9960_ENABLE_PIEN,
 						APDS9960_ENABLE_PIEN)) {
@@ -93,7 +95,7 @@ int apds9960_trigger_set(struct device *dev,
 		return -ENOTSUP;
 	}
 
-	gpio_pin_enable_callback(data->gpio, DT_AVAGO_APDS9960_0_INT_GPIOS_PIN);
+	gpio_pin_enable_callback(data->gpio, config->gpio_pin);
 
 	return 0;
 }
