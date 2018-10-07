@@ -218,6 +218,13 @@
 #define APDS9960_DEFAULT_GPULSE		0xC9
 #define APDS9960_DEFAULT_GCONF3		0
 
+struct apds9960_config {
+	char *i2c_name;
+	char *gpio_name;
+	u8_t gpio_pin;
+	u8_t i2c_address;
+};
+
 struct apds9960_data {
 	struct device *i2c;
 	struct device *gpio;
@@ -226,6 +233,7 @@ struct apds9960_data {
 	struct device *dev;
 	u16_t sample_crgb[4];
 	u8_t pdata;
+	u8_t gpio_pin;
 
 #ifdef CONFIG_APDS9960_TRIGGER
 	sensor_trigger_handler_t p_th_handler;
