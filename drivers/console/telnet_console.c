@@ -34,15 +34,15 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include "telnet_protocol.h"
 
 /* Various definitions mapping the telnet service configuration options */
-#define TELNET_PORT		CONFIG_TELNET_CONSOLE_PORT
-#define TELNET_STACK_SIZE	CONFIG_TELNET_CONSOLE_THREAD_STACK
-#define TELNET_PRIORITY		CONFIG_TELNET_CONSOLE_PRIO
-#define TELNET_LINES		CONFIG_TELNET_CONSOLE_LINE_BUF_NUMBERS
-#define TELNET_LINE_SIZE	CONFIG_TELNET_CONSOLE_LINE_BUF_SIZE
-#define TELNET_TIMEOUT		K_MSEC(CONFIG_TELNET_CONSOLE_SEND_TIMEOUT)
-#define TELNET_THRESHOLD	CONFIG_TELNET_CONSOLE_SEND_THRESHOLD
+#define TELNET_PORT             CONFIG_TELNET_CONSOLE_PORT
+#define TELNET_STACK_SIZE       CONFIG_TELNET_CONSOLE_THREAD_STACK
+#define TELNET_PRIORITY         CONFIG_TELNET_CONSOLE_PRIO
+#define TELNET_LINES            CONFIG_TELNET_CONSOLE_LINE_BUF_NUMBERS
+#define TELNET_LINE_SIZE        CONFIG_TELNET_CONSOLE_LINE_BUF_SIZE
+#define TELNET_TIMEOUT          K_MSEC(CONFIG_TELNET_CONSOLE_SEND_TIMEOUT)
+#define TELNET_THRESHOLD        CONFIG_TELNET_CONSOLE_SEND_THRESHOLD
 
-#define TELNET_MIN_MSG		2
+#define TELNET_MIN_MSG          2
 
 /* These 2 structures below are used to store the console output
  * before sending it to the client. This is done to keep some
@@ -191,7 +191,7 @@ static int telnet_console_out(int c)
 	lb->buf[lb->len++] = (char)c;
 
 	if (c == '\n' || lb->len == TELNET_LINE_SIZE - 1) {
-		lb->buf[lb->len-1] = NVT_CR;
+		lb->buf[lb->len - 1] = NVT_CR;
 		lb->buf[lb->len++] = NVT_LF;
 		telnet_rb_switch();
 		yield = true;
@@ -314,8 +314,7 @@ static inline void telnet_reply_command(void)
 		telnet_reply_do_command();
 		break;
 	default:
-		LOG_DBG("Operation %u not handled",
-			    telnet_cmd.op);
+		LOG_DBG("Operation %u not handled", telnet_cmd.op);
 		break;
 	}
 
@@ -349,7 +348,7 @@ static inline bool telnet_handle_command(struct net_pkt *pkt)
 		k_sem_give(&cmd_lock);
 		k_sem_give(&send_lock);
 	}
-#endif /* CONFIG_TELNET_CONSOLE_SUPPORT_COMMAND */
+#endif  /* CONFIG_TELNET_CONSOLE_SUPPORT_COMMAND */
 
 	return true;
 }
@@ -381,13 +380,13 @@ static inline void telnet_handle_input(struct net_pkt *pkt)
 	net_frag_read(pkt->frags, offset, &pos, len, (u8_t *)input->line);
 
 	/* LF/CR will be removed if only the line is not NUL terminated */
-	if (input->line[len-1] != NVT_NUL) {
-		if (input->line[len-1] == NVT_LF) {
-			input->line[len-1] = NVT_NUL;
+	if (input->line[len - 1] != NVT_NUL) {
+		if (input->line[len - 1] == NVT_LF) {
+			input->line[len - 1] = NVT_NUL;
 		}
 
-		if (input->line[len-2] == NVT_CR) {
-			input->line[len-2] = NVT_NUL;
+		if (input->line[len - 2] == NVT_CR) {
+			input->line[len - 2] = NVT_NUL;
 		}
 	}
 
@@ -403,8 +402,8 @@ static void telnet_recv(struct net_context *client,
 		telnet_end_client_connection();
 
 		LOG_DBG("Telnet client dropped (AF_INET%s) status %d",
-			    net_context_get_family(client) == AF_INET ?
-			    "" : "6", status);
+			net_context_get_family(client) == AF_INET ?
+			"" : "6", status);
 		return;
 	}
 
@@ -445,7 +444,7 @@ static void telnet_accept(struct net_context *client,
 
 	if (net_context_recv(client, telnet_recv, 0, NULL)) {
 		LOG_ERR("Unable to setup reception (family %u)",
-			    net_context_get_family(client));
+			net_context_get_family(client));
 		goto error;
 	}
 
@@ -454,7 +453,7 @@ static void telnet_accept(struct net_context *client,
 	}
 
 	LOG_DBG("Telnet client connected (family AF_INET%s)",
-		    net_context_get_family(client) == AF_INET ? "" : "6");
+		net_context_get_family(client) == AF_INET ? "" : "6");
 
 	orig_printk_hook = __printk_get_hook();
 	__printk_hook_install(telnet_console_out);
@@ -477,7 +476,7 @@ static void telnet_setup_server(struct net_context **ctx, sa_family_t family,
 
 	if (net_context_bind(*ctx, addr, addrlen)) {
 		LOG_ERR("Cannot bind on family AF_INET%s",
-			    family == AF_INET ? "" : "6");
+			family == AF_INET ? "" : "6");
 		goto error;
 	}
 
@@ -492,12 +491,12 @@ static void telnet_setup_server(struct net_context **ctx, sa_family_t family,
 	}
 
 	LOG_DBG("Telnet console enabled on AF_INET%s",
-		    family == AF_INET ? "" : "6");
+		family == AF_INET ? "" : "6");
 
 	return;
 error:
 	LOG_ERR("Unable to start telnet on AF_INET%s",
-		    family == AF_INET ? "" : "6");
+		family == AF_INET ? "" : "6");
 
 	if (*ctx) {
 		net_context_put(*ctx);
