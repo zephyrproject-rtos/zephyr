@@ -93,16 +93,13 @@ add_custom_target(
   content
   # Copy all files in doc/ to the rst folder
   COMMAND ${CMAKE_COMMAND} -E env
-  ZEPHYR_BUILD=${CMAKE_CURRENT_BINARY_DIR}
-  ${PYTHON_EXECUTABLE} scripts/extract_content.py -a ${RST_OUT} doc
+  ${PYTHON_EXECUTABLE} scripts/extract_content.py --ignore ${CMAKE_CURRENT_BINARY_DIR} -a ${RST_OUT} doc
   # Copy the .rst files in samples/ and boards/ to the rst folder
   COMMAND ${CMAKE_COMMAND} -E env
-  ZEPHYR_BUILD=${CMAKE_CURRENT_BINARY_DIR}
-  ${PYTHON_EXECUTABLE} scripts/extract_content.py ${RST_OUT} samples boards
+  ${PYTHON_EXECUTABLE} scripts/extract_content.py --ignore ${CMAKE_CURRENT_BINARY_DIR} ${RST_OUT} samples boards
   # Copy the .rst files in samples/ and boards/ to the doc folder inside rst
   COMMAND ${CMAKE_COMMAND} -E env
-  ZEPHYR_BUILD=${CMAKE_CURRENT_BINARY_DIR}
-  ${PYTHON_EXECUTABLE} scripts/extract_content.py ${RST_OUT}/doc samples boards
+  ${PYTHON_EXECUTABLE} scripts/extract_content.py --ignore ${CMAKE_CURRENT_BINARY_DIR} ${RST_OUT}/doc samples boards
   WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
 )
 
