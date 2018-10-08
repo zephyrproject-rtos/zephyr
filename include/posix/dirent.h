@@ -16,7 +16,7 @@ extern "C" {
 #ifdef CONFIG_POSIX_FS
 #include <fs.h>
 
-typedef struct fs_dir_t DIR;
+typedef void DIR;
 
 struct dirent {
 	unsigned int d_ino;
