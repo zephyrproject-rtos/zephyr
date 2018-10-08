@@ -236,11 +236,16 @@ static inline void init_iface(struct net_if *iface)
 {
 	const struct net_if_api *api = net_if_get_device(iface)->driver_api;
 
-	NET_ASSERT(api && api->init && api->send);
+	NET_ASSERT(api && api->init);
 
 	NET_DBG("On iface %p", iface);
 
 	api->init(iface);
+
+	/* Test for api->send only when ip is *not* offloaded: */
+	if (!net_if_is_ip_offloaded(iface)) {
+		NET_ASSERT(api->send);
+	}
 }
 
 enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
