@@ -14,9 +14,10 @@
 # the tree.
 
 import argparse
-import filecmp
+import collections
 import fnmatch
 import os
+from os import path
 import re
 import shutil
 import sys
@@ -24,76 +25,131 @@ import sys
 # directives to parse for included files
 DIRECTIVES = ["figure", "include", "image", "literalinclude"]
 
+# A simple namedtuple for a generated output file.
+#
+# - src: source file, what file should be copied (in source directory)
+# - dst: destination file, path it should be copied to (in build directory)
+Output = collections.namedtuple('Output', 'src dst')
 
-def copy_if_different(src, dst):
-    # Copies 'src' as 'dst', but only if dst does not exist or if itx contents
-    # differ from src.This avoids unnecessary # timestamp updates, which
-    # trigger documentation rebuilds.
-    if os.path.exists(dst) and filecmp.cmp(src, dst):
-        return
-    shutil.copyfile(src, dst)
+# Represents the content which must be extracted from the Zephyr tree,
+# as well as the output directories needed to contain it.
+#
+# - outputs: list of Output objects for extracted content.
+# - output_dirs: set of directories which must exist to contain
+#                output destination files.
+Content = collections.namedtuple('Content', 'outputs output_dirs')
 
 
-def get_files(zephyr_base, src, dest, fnfilter, ignore):
-    matches = []
-    for root, dirnames, filenames in os.walk('%s/%s' % (zephyr_base, src)):
-        # Append any matching files.
-        for filename in fnmatch.filter(filenames, fnfilter):
-            matches.append(os.path.join(root, filename))
+def src_deps(zephyr_base, src_file, dest):
+    # - zephyr_base: the ZEPHYR_BASE directory containing src_file
+    # - src_file: path to a source file in the documentation
+    # - dest: path to the top-level output/destination directory
+    #
+    # Return a list of Output objects which contain src_file's
+    # additional dependencies, as they should be copied into
+    # dest. Output paths inside dest are based on each
+    # dependency's relative path from zephyr_base.
 
-        # Limit the rest of the walk to subdirectories that aren't ignored.
-        dirnames[:] = [d for d in dirnames if not
-                       os.path.join(root, d).startswith(ignore)]
+    # Inspect only .rst files for directives referencing other files
+    # we'll need to copy (as configured in the DIRECTIVES variable)
+    if not src_file.endswith(".rst"):
+        return []
 
-    for src_file in matches:
-        frel = src_file.replace(zephyr_base, "").strip("/")
-        dir = os.path.dirname(frel)
-        if not os.path.exists(os.path.join(dest, dir)):
-            os.makedirs(os.path.join(dest, dir))
+    # Load the file's contents, bailing on decode errors.
+    try:
+        with open(src_file, encoding="utf-8") as f:
+            content = [x.strip() for x in f.readlines()]
+    except UnicodeDecodeError as e:
+        sys.stderr.write(
+            "Malformed {} in {}\n"
+            "  Context: {}\n"
+            "  Problematic data: {}\n"
+            "  Reason: {}\n".format(
+                e.encoding, src_file,
+                e.object[max(e.start - 40, 0):e.end + 40],
+                e.object[e.start:e.end],
+                e.reason))
+        return []
 
-        copy_if_different(src_file, os.path.join(dest, frel))
+    # Source file's directory.
+    src_dir = path.dirname(src_file)
+    # Destination directory for any dependencies.
+    dst_dir = path.join(dest, path.relpath(src_dir, start=zephyr_base))
 
-        # Inspect only .rst files for directives referencing other files
-        # we'll need to copy (as configured in the DIRECTIVES variable)
-        if not fnmatch.fnmatch(src_file, "*.rst"):
+    # Find directives in the content which imply additional
+    # dependencies. We assume each such directive takes a single
+    # argument, which is a (relative) path to the additional
+    # dependency file.
+    directives = "|".join(DIRECTIVES)
+    pattern = re.compile("\.\.\s+(?P<directive>%s)::\s+(?P<dep_rel>.*)" %
+                         directives)
+    deps = []
+    for l in content:
+        m = pattern.match(l)
+        if not m:
             continue
 
-        try:
-            with open(src_file, encoding="utf-8") as f:
-                content = f.readlines()
+        dep_rel = m.group('dep_rel')  # relative to src_dir
+        dep_src = path.abspath(path.join(src_dir, dep_rel))
+        if not path.isfile(dep_src):
+            print("File not found:", dep_src, "\n  referenced by:",
+                  src_file, file=sys.stderr)
+            continue
 
-            content = [x.strip() for x in content]
-            directives = "|".join(DIRECTIVES)
-            pattern = re.compile("\s*\.\.\s+(%s)::\s+(.*)" % directives)
-            for l in content:
-                m = pattern.match(l)
-                if m:
-                    inf = m.group(2)
-                    ind = os.path.dirname(inf)
-                    if not os.path.exists(os.path.join(dest, dir, ind)):
-                        os.makedirs(os.path.join(dest, dir, ind))
+        dep_dst = path.abspath(path.join(dst_dir, dep_rel))
+        deps.append(Output(dep_src, dep_dst))
 
-                    src = os.path.join(zephyr_base, dir, inf)
-                    dst = os.path.join(dest, dir, inf)
-                    try:
-                        copy_if_different(src, dst)
+    return deps
 
-                    except FileNotFoundError:
-                        print("File not found:", inf, "\n  referenced by:",
-                              src_file, file=sys.stderr)
 
-        except UnicodeDecodeError as e:
-            sys.stderr.write(
-                "Malformed {} in {}\n"
-                "  Context: {}\n"
-                "  Problematic data: {}\n"
-                "  Reason: {}\n".format(
-                    e.encoding, src_file,
-                    e.object[max(e.start - 40, 0):e.end + 40],
-                    e.object[e.start:e.end],
-                    e.reason))
+def find_content(zephyr_base, src, dest, fnfilter, ignore):
+    # Create a list of Outputs to copy over, and new directories we
+    # might need to make to contain them. Don't copy any files or
+    # otherwise modify dest.
+    outputs = []
+    output_dirs = set()
+    for dirpath, dirnames, filenames in os.walk(path.join(zephyr_base, src)):
+        # Limit the rest of the walk to subdirectories that aren't ignored.
+        dirnames[:] = [d for d in dirnames if not
+                       path.join(dirpath, d).startswith(ignore)]
 
-        f.close()
+        # If the current directory contains no matching files, keep going.
+        sources = fnmatch.filter(filenames, fnfilter)
+        if not sources:
+            continue
+
+        # There are sources here; track that the output directory
+        # needs to exist.
+        dst_dir = path.join(dest, path.relpath(dirpath, start=zephyr_base))
+        output_dirs.add(path.abspath(dst_dir))
+
+        # Initialize an Output for each source file, as well as any of
+        # that file's additional dependencies. Make sure output
+        # directories for dependencies are tracked too.
+        for src_rel in sources:
+            src_abs = path.join(dirpath, src_rel)
+            deps = src_deps(zephyr_base, src_abs, dest)
+
+            for depdir in (path.dirname(d.dst) for d in deps):
+                output_dirs.add(depdir)
+
+            outputs.extend(deps)
+            outputs.append(Output(src_abs,
+                                  path.abspath(path.join(dst_dir, src_rel))))
+
+    return Content(outputs, output_dirs)
+
+
+def extract_content(content):
+    # Ensure each output subdirectory exists.
+    for d in content.output_dirs:
+        os.makedirs(d, exist_ok=True)
+
+    # Create each output file. Use copy2() to avoid updating
+    # modification times unnecessarily, as this triggers documentation
+    # rebuilds.
+    for output in content.outputs:
+        shutil.copy2(output.src, output.dst)
 
 
 def main():
@@ -122,14 +178,15 @@ def main():
     if not args.ignore:
         ignore = ()
     else:
-        ignore = tuple(os.path.normpath(ign) for ign in args.ignore)
+        ignore = tuple(path.normpath(ign) for ign in args.ignore)
     if args.all:
         fnfilter = '*'
     else:
         fnfilter = '*.rst'
 
     for d in args.src:
-        get_files(zephyr_base, d, dest, fnfilter, ignore)
+        content = find_content(zephyr_base, d, dest, fnfilter, ignore)
+        extract_content(content)
 
 
 if __name__ == "__main__":
