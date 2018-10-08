@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2018 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,15 +9,18 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-#define N_THR 3
-
+#define N_THR_E 3
+#define N_THR_T 4
 #define BOUNCES 64
+#define STACKS 1024
+#define THREAD_PRIORITY 3
+#define ONE_SECOND 1
 
-#define STACKSZ 1024
+K_THREAD_STACK_ARRAY_DEFINE(stack_e, N_THR_E, STACKS);
+K_THREAD_STACK_ARRAY_DEFINE(stack_t, N_THR_T, STACKS);
 
-K_THREAD_STACK_ARRAY_DEFINE(stacks, N_THR, STACKSZ);
-
-void *thread_top(void *p1);
+void *thread_top_exec(void *p1);
+void *thread_top_term(void *p1);
 
 PTHREAD_MUTEX_DEFINE(lock);
 
@@ -25,17 +28,17 @@ PTHREAD_COND_DEFINE(cvar0);
 
 PTHREAD_COND_DEFINE(cvar1);
 
-PTHREAD_BARRIER_DEFINE(barrier, N_THR);
+PTHREAD_BARRIER_DEFINE(barrier, N_THR_E);
 
 sem_t main_sem;
 
 static int bounce_failed;
-static int bounce_done[N_THR];
+static int bounce_done[N_THR_E];
 
 static int curr_bounce_thread;
 
 static int barrier_failed;
-static int barrier_done[N_THR];
+static int barrier_done[N_THR_E];
 
 /* First phase bounces execution between two threads using a condition
  * variable, continuously testing that no other thread is mucking with
@@ -50,7 +53,7 @@ static int barrier_done[N_THR];
  * Test success is signaled to main() using a traditional semaphore.
  */
 
-void *thread_top(void *p1)
+void *thread_top_exec(void *p1)
 {
 	int i, j, id = (int) p1;
 	int policy;
@@ -123,7 +126,7 @@ void *thread_top(void *p1)
 	/* Now just wait on the barrier.  Make sure no one else finished
 	 * before we wait on it, then signal that we're done
 	 */
-	for (i = 0; i < N_THR; i++) {
+	for (i = 0; i < N_THR_E; i++) {
 		if (barrier_done[i]) {
 			printk("Barrier exited early\n");
 			barrier_failed = 1;
@@ -146,7 +149,7 @@ int bounce_test_done(void)
 		return 1;
 	}
 
-	for (i = 0; i < N_THR; i++) {
+	for (i = 0; i < N_THR_E; i++) {
 		if (!bounce_done[i]) {
 			return 0;
 		}
@@ -163,7 +166,7 @@ int barrier_test_done(void)
 		return 1;
 	}
 
-	for (i = 0; i < N_THR; i++) {
+	for (i = 0; i < N_THR_E; i++) {
 		if (!barrier_done[i]) {
 			return 0;
 		}
@@ -172,17 +175,51 @@ int barrier_test_done(void)
 	return 1;
 }
 
-void test_pthread(void)
+void *thread_top_term(void *p1)
+{
+	pthread_t self;
+	int oldstate, ret;
+	int val = (u32_t) p1;
+	struct sched_param param;
+
+	param.priority = N_THR_T - (s32_t) p1;
+
+	self = pthread_self();
+
+	/* Change priority of thread */
+	zassert_false(pthread_setschedparam(self, SCHED_RR, &param),
+		      "Unable to set thread priority!");
+
+	if (val % 2) {
+		ret = pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &oldstate);
+		zassert_false(ret, "Unable to set cancel state!");
+	}
+
+	if (val >= 2) {
+		ret = pthread_detach(self);
+		if (val == 2) {
+			zassert_equal(ret, EINVAL, "re-detached thread!");
+		}
+	}
+
+	printk("Cancelling thread %d\n", (s32_t) p1);
+	pthread_cancel(self);
+	printk("Thread %d could not be cancelled\n", (s32_t) p1);
+	sleep(ONE_SECOND);
+	pthread_exit(p1);
+	return NULL;
+}
+
+void test_posix_pthread_execution(void)
 {
 	int i, ret, min_prio, max_prio;
-	pthread_attr_t attr[N_THR];
+	pthread_attr_t attr[N_THR_E];
 	struct sched_param schedparam;
-	pthread_t newthread[N_THR];
+	pthread_t newthread[N_THR_E];
 	int schedpolicy = SCHED_FIFO;
 	void *retval;
 
 	sem_init(&main_sem, 0, 1);
-	printk("POSIX thread IPC APIs\n");
 	schedparam.priority = CONFIG_NUM_COOP_PRIORITIES - 1;
 	min_prio = sched_get_priority_min(schedpolicy);
 	max_prio = sched_get_priority_max(schedpolicy);
@@ -191,11 +228,11 @@ void test_pthread(void)
 			schedparam.priority < min_prio ||
 			schedparam.priority > max_prio);
 
-	/*TESTPOINT: Check if scheduling priority is valid*/
+	/* TESTPOINT: Check if scheduling priority is valid */
 	zassert_false(ret,
 			"Scheduling priority outside valid priority range");
 
-	for (i = 0; i < N_THR; i++) {
+	for (i = 0; i < N_THR_E; i++) {
 		ret = pthread_attr_init(&attr[i]);
 		if (ret != 0) {
 			zassert_false(pthread_attr_destroy(&attr[i]),
@@ -204,13 +241,13 @@ void test_pthread(void)
 				      "Unable to create pthread object attrib");
 		}
 
-		pthread_attr_setstack(&attr[i], &stacks[i][0], STACKSZ);
+		pthread_attr_setstack(&attr[i], &stack_e[i][0], STACKS);
 		pthread_attr_setschedpolicy(&attr[i], schedpolicy);
 		pthread_attr_setschedparam(&attr[i], &schedparam);
-		ret = pthread_create(&newthread[i], &attr[i], thread_top,
+		ret = pthread_create(&newthread[i], &attr[i], thread_top_exec,
 				     (void *)i);
 
-		/*TESTPOINT: Check if thread is created successfully*/
+		/* TESTPOINT: Check if thread is created successfully */
 		zassert_false(ret, "Number of threads exceed max limit");
 	}
 
@@ -218,7 +255,7 @@ void test_pthread(void)
 		sem_wait(&main_sem);
 	}
 
-	/*TESTPOINT: Check if bounce test passes*/
+	/* TESTPOINT: Check if bounce test passes */
 	zassert_false(bounce_failed, "Bounce test failed");
 
 	printk("Bounce test OK\n");
@@ -232,19 +269,49 @@ void test_pthread(void)
 		sem_wait(&main_sem);
 	}
 
-	/*TESTPOINT: Check if barrier test passes*/
+	/* TESTPOINT: Check if barrier test passes */
 	zassert_false(barrier_failed, "Barrier test failed");
 
-	for (i = 0; i < N_THR; i++) {
+	for (i = 0; i < N_THR_E; i++) {
 		pthread_join(newthread[i], &retval);
 	}
 
 	printk("Barrier test OK\n");
 }
 
-void test_main(void)
+void test_posix_pthread_termination(void)
 {
-	ztest_test_suite(test_pthreads,
-			ztest_unit_test(test_pthread));
-	ztest_run_test_suite(test_pthreads);
+	s32_t i, ret;
+	pthread_attr_t attr[N_THR_T];
+	struct sched_param schedparam;
+	pthread_t newthread[N_THR_T];
+	void *retval;
+
+	/* Creating 4 threads with lowest application priority */
+	for (i = 0; i < N_THR_T; i++) {
+		ret = pthread_attr_init(&attr[i]);
+		if (ret != 0) {
+			zassert_false(pthread_attr_destroy(&attr[i]),
+				      "Unable to destroy pthread object attrib");
+			zassert_false(pthread_attr_init(&attr[i]),
+				      "Unable to create pthread object attrib");
+		}
+
+		if (i == 2) {
+			pthread_attr_setdetachstate(&attr[i],
+						    PTHREAD_CREATE_DETACHED);
+		}
+
+		schedparam.priority = 2;
+		pthread_attr_setschedparam(&attr[i], &schedparam);
+		pthread_attr_setstack(&attr[i], &stack_t[i][0], STACKS);
+		ret = pthread_create(&newthread[i], &attr[i], thread_top_term,
+				     (void *)i);
+
+		zassert_false(ret, "Not enough space to create new thread");
+	}
+
+	for (i = 0; i < N_THR_T; i++) {
+		pthread_join(newthread[i], &retval);
+	}
 }
