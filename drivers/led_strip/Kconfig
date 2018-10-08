@@ -14,20 +14,9 @@ menuconfig LED_STRIP
 
 if LED_STRIP
 
-config SYS_LOG_LED_STRIP_LEVEL
-	int "LED strip system log level"
-	depends on SYS_LOG
-	default 0
-	range 0 4
-	help
-		Sets the log level for LED strip drivers. You must have
-		system logging enabled.
-		Levels are:
-		0 OFF, do not write
-		1 ERROR, only write SYS_LOG_ERR
-		2 WARNING, write SYS_LOG_WRN in addition to previous level
-		3 INFO, write SYS_LOG_INF in addition to previous levels
-		4 DEBUG, write SYS_LOG_DBG in addition to previous levels
+module = LED_STRIP
+module-str = LED strip
+source "subsys/logging/Kconfig.template.log_config"
 
 config LED_STRIP_INIT_PRIORITY
 	int "LED strip initialization priority"

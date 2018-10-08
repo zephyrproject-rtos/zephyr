@@ -9,8 +9,9 @@
 #include <errno.h>
 #include <string.h>
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_LED_STRIP_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_LED_STRIP_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(lpd880x);
 
 #include <zephyr.h>
 #include <device.h>
@@ -72,7 +73,7 @@ static int lpd880x_update(struct device *dev, void *data, size_t size)
 
 	rc = spi_write(drv_data->spi, &drv_data->config, &tx);
 	if (rc) {
-		SYS_LOG_ERR("can't update strip: %d", rc);
+		LOG_ERR("can't update strip: %d", rc);
 	}
 
 	return rc;
@@ -126,7 +127,7 @@ static int lpd880x_strip_init(struct device *dev)
 
 	data->spi = device_get_binding(CONFIG_LPD880X_STRIP_SPI_DEV_NAME);
 	if (!data->spi) {
-		SYS_LOG_ERR("SPI device %s not found",
+		LOG_ERR("SPI device %s not found",
 			    CONFIG_LPD880X_STRIP_SPI_DEV_NAME);
 		return -ENODEV;
 	}
