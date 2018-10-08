@@ -681,7 +681,9 @@ class SizeCalculator:
                    'log_backends_sections', 'log_dynamic_sections',
                    'log_const_sections',"app_smem", 'shell_root_cmds_sections',
                    'log_const_sections',"app_smem", "font_entry_sections",
-                   "priv_stacks_noinit", "_TEXT_SECTION_NAME_2"]
+                   "priv_stacks_noinit", "_TEXT_SECTION_NAME_2",
+                   '_GCOV_BSS_SECTION_NAME', 'gcov']
+
     # These get copied into RAM only on non-XIP
     ro_sections = ["text", "ctors", "init_array", "reset", "object_access",
                    "rodata", "devconfig", "net_l2", "vector", "sw_isr_table",
@@ -2766,8 +2768,59 @@ def size_report(sc):
          (sc.rom_size, sc.ram_size))
     info("")
 
+def retrieve_data(intput_file):
+    if VERBOSE:
+        print("Working on %s" %intput_file)
+    extracted_coverage_info = {}
+    capture_data = False
+    with open(intput_file, 'r') as fp:
+        for line in fp.readlines():
+            if re.search("GCOV_COVERAGE_DUMP_START", line):
+                capture_data = True
+                continue
+            if re.search("GCOV_COVERAGE_DUMP_END", line):
+                capture_data = True
+                break
+            # Loop until the coverage data is found.
+            if not capture_data:
+                continue
+            if line.startswith("*"):
+                sp = line.split("<")
+                if len(sp) > 1:
+                    # Remove the leading delimiter "*"
+                    file_name = sp[0][1:]
+                    # Remove the trailing new line char
+                    hex_dump = sp[1][:-1]
+                else:
+                    continue
+            else:
+                continue
+            extracted_coverage_info.update({file_name:hex_dump})
+    return extracted_coverage_info
+
+def create_gcda_files(extracted_coverage_info):
+    if VERBOSE:
+        print("Generating gcda files")
+    for filename, hexdump_val in extracted_coverage_info.items():
+        # if kobject_hash is given for coverage gcovr fails
+        # hence skipping it problem only in gcovr v4.1
+        if "kobject_hash" in filename:
+            filename = (filename[:-4]) +"gcno"
+            try:
+                os.remove(filename)
+            except:
+                pass
+            continue
+
+        with open(filename, 'wb') as fp:
+            fp.write(bytes.fromhex(hexdump_val))
 
 def generate_coverage(outdir, ignores):
+
+    for filename in glob.glob("%s/**/handler.log" %outdir, recursive=True):
+        extracted_coverage_info = retrieve_data(filename)
+        create_gcda_files(extracted_coverage_info)
+
     with open(os.path.join(outdir, "coverage.log"), "a") as coveragelog:
         coveragefile = os.path.join(outdir, "coverage.info")
         ztestfile = os.path.join(outdir, "ztest.info")
