@@ -151,7 +151,7 @@ int close(int fd)
  *
  * See IEEE 1003.1
  */
-ssize_t write(int fd, char *buffer, unsigned int count)
+ssize_t write(int fd, const void *buffer, size_t count)
 {
 	ssize_t rc;
 	struct fs_file_t *ptr = NULL;
@@ -175,7 +175,7 @@ ssize_t write(int fd, char *buffer, unsigned int count)
  *
  * See IEEE 1003.1
  */
-ssize_t read(int fd, char *buffer, unsigned int count)
+ssize_t read(int fd, void *buffer, size_t count)
 {
 	ssize_t rc;
 	struct fs_file_t *ptr = NULL;
@@ -199,7 +199,7 @@ ssize_t read(int fd, char *buffer, unsigned int count)
  *
  * See IEEE 1003.1
  */
-int lseek(int fd, int offset, int whence)
+off_t lseek(int fd, off_t offset, int whence)
 {
 	int rc;
 	struct fs_file_t *ptr = NULL;
