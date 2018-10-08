@@ -19,8 +19,9 @@
 
 #include "gpio_pcal9535a.h"
 
-#define LOG_LEVEL CONFIG_LOG_GPIO_LEVEL
+#define LOG_LEVEL CONFIG_GPIO_LOG_LEVEL
 #include <logging/log.h>
+LOG_MODULE_REGISTER(gpio_pcal9535a);
 
 /* Register definitions */
 #define REG_INPUT_PORT0			0x00
@@ -351,7 +352,7 @@ static int gpio_pcal9535a_config(struct device *dev, int access_op,
 {
 	int ret;
 
-#if (CONFIG_LOG_GPIO_LEVEL >= LOG_LEVEL_DEBUG)
+#if (CONFIG_GPIO_LOG_LEVEL >= LOG_LEVEL_DEBUG)
 	const struct gpio_pcal9535a_config * const config =
 		dev->config->config_info;
 	u16_t i2c_addr = config->i2c_slave_addr;
