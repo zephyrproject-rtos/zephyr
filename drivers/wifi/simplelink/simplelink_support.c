@@ -218,7 +218,7 @@ void SimpleLinkWlanEventHandler(SlWlanEvent_t *wlan_event)
 		memcpy(sl_conn.bssid, wlan_event->Data.Connect.Bssid,
 		       BSSID_LEN_MAX);
 
-		LOG_INF("\n[WLAN EVENT] STA Connected to the AP: %s, "
+		LOG_INF("[WLAN EVENT] STA Connected to the AP: %s, "
 			"BSSID: %x:%x:%x:%x:%x:%x",
 			sl_conn.ssid, sl_conn.bssid[0],
 			sl_conn.bssid[1], sl_conn.bssid[2],
@@ -242,20 +242,21 @@ void SimpleLinkWlanEventHandler(SlWlanEvent_t *wlan_event)
 		 */
 		if (SL_WLAN_DISCONNECT_USER_INITIATED ==
 		    event_data->ReasonCode) {
-			LOG_INF("\n[WLAN EVENT] "
-				"Device disconnected from the AP: %s,\n\r"
-				"BSSID: %x:%x:%x:%x:%x:%x on application's"
-				" request",
-				event_data->SsidName, event_data->Bssid[0],
+			LOG_INF("[WLAN EVENT] "
+				"Device disconnected from the AP: %s",
+				event_data->SsidName);
+			LOG_INF("BSSID: %x:%x:%x:%x:%x:%x on application's"
+				" request", event_data->Bssid[0],
 				event_data->Bssid[1], event_data->Bssid[2],
 				event_data->Bssid[3], event_data->Bssid[4],
 				event_data->Bssid[5]);
 			sl_conn.error = 0;
 		} else {
-			LOG_ERR("\n[WLAN ERROR] "
-				"Device disconnected from the AP: %s,\n\r"
-				"BSSID: %x:%x:%x:%x:%x:%x on error: %d",
-				event_data->SsidName, event_data->Bssid[0],
+			LOG_ERR("[WLAN ERROR] "
+				"Device disconnected from the AP: %s",
+				event_data->SsidName);
+			LOG_ERR("BSSID: %x:%x:%x:%x:%x:%x on error: %d",
+				event_data->Bssid[0],
 				event_data->Bssid[1], event_data->Bssid[2],
 				event_data->Bssid[3], event_data->Bssid[4],
 				event_data->Bssid[5],
@@ -273,7 +274,7 @@ void SimpleLinkWlanEventHandler(SlWlanEvent_t *wlan_event)
 	case SL_WLAN_EVENT_STA_ADDED:
 		memcpy(&(sl_conn.bssid), wlan_event->Data.STAAdded.Mac,
 		       SL_WLAN_BSSID_LENGTH);
-		LOG_INF("\n[WLAN EVENT] STA was added to AP: "
+		LOG_INF("[WLAN EVENT] STA was added to AP: "
 			"BSSID: %x:%x:%x:%x:%x:%x",
 			sl_conn.bssid[0], sl_conn.bssid[1],
 			sl_conn.bssid[2], sl_conn.bssid[3],
@@ -282,7 +283,7 @@ void SimpleLinkWlanEventHandler(SlWlanEvent_t *wlan_event)
 	case SL_WLAN_EVENT_STA_REMOVED:
 		memcpy(&(sl_conn.bssid), wlan_event->Data.STAAdded.Mac,
 		       SL_WLAN_BSSID_LENGTH);
-		LOG_INF("\n[WLAN EVENT] STA was removed from AP: "
+		LOG_INF("[WLAN EVENT] STA was removed from AP: "
 			"BSSID: %x:%x:%x:%x:%x:%x",
 			sl_conn.bssid[0], sl_conn.bssid[1],
 			sl_conn.bssid[2], sl_conn.bssid[3],
@@ -291,7 +292,7 @@ void SimpleLinkWlanEventHandler(SlWlanEvent_t *wlan_event)
 		(void)memset(&(sl_conn.bssid), 0x0, sizeof(sl_conn.bssid));
 		break;
 	default:
-		LOG_ERR("\n[WLAN EVENT] Unexpected event [0x%lx]",
+		LOG_ERR("[WLAN EVENT] Unexpected event [0x%lx]",
 			wlan_event->Id);
 		break;
 	}
@@ -326,7 +327,7 @@ void SimpleLinkNetAppEventHandler(SlNetAppEvent_t *netapp_event)
 		/* Gateway IP address */
 		sl_conn.gateway_ip = event_data->Gateway;
 
-		LOG_INF("\n[NETAPP EVENT] IP set to: IPv4=%d.%d.%d.%d, "
+		LOG_INF("[NETAPP EVENT] IP set to: IPv4=%d.%d.%d.%d, "
 			"Gateway=%d.%d.%d.%d",
 			SL_IPV4_BYTE(sl_conn.ip_addr, 3),
 			SL_IPV4_BYTE(sl_conn.ip_addr, 2),
@@ -355,7 +356,7 @@ void SimpleLinkNetAppEventHandler(SlNetAppEvent_t *netapp_event)
 			net_addr_ntop(AF_INET6, sl_conn.ipv6_addr,
 				      ipv6_addr,
 				      sizeof(ipv6_addr));
-			LOG_INF("\n[NETAPP EVENT] IP Acquired: IPv6= %s",
+			LOG_INF("[NETAPP EVENT] IP Acquired: IPv6= %s",
 				    ipv6_addr);
 		}
 
@@ -366,7 +367,7 @@ void SimpleLinkNetAppEventHandler(SlNetAppEvent_t *netapp_event)
 		SET_STATUS_BIT(nwp.status, STATUS_BIT_IP_ACQUIRED);
 
 		sl_conn.sta_ip = netapp_event->Data.IpLeased.IpAddress;
-		LOG_INF("\n[NETAPP EVENT] IP Leased to Client: "
+		LOG_INF("[NETAPP EVENT] IP Leased to Client: "
 			"IP=%d.%d.%d.%d",
 			SL_IPV4_BYTE(sl_conn.sta_ip, 3),
 			SL_IPV4_BYTE(sl_conn.sta_ip, 2),
@@ -376,11 +377,11 @@ void SimpleLinkNetAppEventHandler(SlNetAppEvent_t *netapp_event)
 		break;
 
 	case SL_DEVICE_EVENT_DROPPED_NETAPP_IP_RELEASED:
-		LOG_INF("\n[NETAPP EVENT] IP is released.");
+		LOG_INF("[NETAPP EVENT] IP is released.");
 		break;
 
 	default:
-		LOG_ERR("\n[NETAPP EVENT] Unexpected event [0x%lx]",
+		LOG_ERR("[NETAPP EVENT] Unexpected event [0x%lx]",
 			netapp_event->Id);
 		break;
 	}
@@ -402,7 +403,7 @@ void SimpleLinkGeneralEventHandler(SlDeviceEvent_t *dev_event)
 		return;
 	}
 
-	LOG_INF("\n[GENERAL EVENT] - ID=[%d] Sender=[%d]",
+	LOG_INF("[GENERAL EVENT] - ID=[%d] Sender=[%d]",
 		dev_event->Data.Error.Code,
 		dev_event->Data.Error.Source);
 }
@@ -418,7 +419,7 @@ void SimpleLinkFatalErrorEventHandler(SlDeviceFatal_t *fatal_err_event)
 
 	switch (fatal_err_event->Id) {
 	case SL_DEVICE_EVENT_FATAL_DEVICE_ABORT:
-		LOG_ERR("\n[ERROR] - FATAL ERROR: "
+		LOG_ERR("[ERROR] - FATAL ERROR: "
 			"Abort NWP event detected: "
 			"AbortType=%ld, AbortData=0x%lx",
 			fatal_err_event->Data.DeviceAssert.Code,
@@ -426,28 +427,28 @@ void SimpleLinkFatalErrorEventHandler(SlDeviceFatal_t *fatal_err_event)
 		break;
 
 	case SL_DEVICE_EVENT_FATAL_DRIVER_ABORT:
-		LOG_ERR("\n[ERROR] - FATAL ERROR: Driver Abort detected.");
+		LOG_ERR("[ERROR] - FATAL ERROR: Driver Abort detected.");
 		break;
 
 	case SL_DEVICE_EVENT_FATAL_NO_CMD_ACK:
-		LOG_ERR("\n[ERROR] - FATAL ERROR: No Cmd Ack detected "
+		LOG_ERR("[ERROR] - FATAL ERROR: No Cmd Ack detected "
 			"[cmd opcode = 0x%lx]",
 			fatal_err_event->Data.NoCmdAck.Code);
 		break;
 
 	case SL_DEVICE_EVENT_FATAL_SYNC_LOSS:
-		LOG_ERR("\n[ERROR] - FATAL ERROR: Sync loss detected");
+		LOG_ERR("[ERROR] - FATAL ERROR: Sync loss detected");
 		break;
 
 	case SL_DEVICE_EVENT_FATAL_CMD_TIMEOUT:
-		LOG_ERR("\n[ERROR] - FATAL ERROR: "
+		LOG_ERR("[ERROR] - FATAL ERROR: "
 			"Async event timeout detected "
 			"[event opcode =0x%lx]",
 			fatal_err_event->Data.CmdTimeout.Code);
 		break;
 
 	default:
-		LOG_ERR("\n[ERROR] - FATAL ERROR: "
+		LOG_ERR("[ERROR] - FATAL ERROR: "
 			"Unspecified error detected");
 		break;
 	}
