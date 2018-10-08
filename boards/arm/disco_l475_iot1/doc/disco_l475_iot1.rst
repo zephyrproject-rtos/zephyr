@@ -117,6 +117,8 @@ The Zephyr Disco L475 IoT board configuration supports the following hardware fe
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+
 
@@ -141,17 +143,12 @@ For detailed information about available pins please refer to `STM32 Disco L475 
 Default Zephyr Peripheral Mapping:
 ----------------------------------
 
-- UART_1_TX : PB6
-- UART_1_RX : PB7
-- UART_2_TX : PA2
-- UART_2_RX : PA3
-- I2C_1_SCL : PB8
-- I2C_1_SDA : PB9
-- I2C_2_SCL : PB10
-- I2C_2_SDA : PB11
-- SPI_1_SCK : PA5
-- SPI_1_MISO : PA6
-- SPI_1_MOSI : PA7
+- UART_1 TX/RX : PB6/PB7 (ST-Link Virtual Port Com)
+- UART_4 TX/RX : PA0/PA1 (Arduino Serial)
+- I2C1 SCL/SDA : PB8/PB9 (Arduino I2C)
+- I2C2 SCL/SDA : PB10/PB11 (Sensor I2C bus)
+- SPI1 SCK/MISO/MOSI : PA5/PA6/PA7 (Arduino SPI)
+- SPI3 SCK/MISO/MOSI : PC10/PC11/PC12 (BT SPI bus)
 - PWM_2_CH1 : PA15
 - USER_PB : PC13
 - LD2 : PA5

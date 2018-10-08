@@ -7,3 +7,7 @@ toolchain:
   - gnuarmemb
 supported:
   - rtc
+  - i2c
+  - spi
+  - gpio
+  - usb_device

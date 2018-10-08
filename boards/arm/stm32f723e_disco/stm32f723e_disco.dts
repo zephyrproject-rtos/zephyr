@@ -49,6 +49,10 @@
 	};
 };
 
+arduino_i2c: &i2c2 {};
+arduino_spi: &spi1 {};
+arduino_serial: &usart2 {};
+
 &usart2 {
 	current-speed = <115200>;
 	pinctrl-names = "default";
@@ -71,6 +75,10 @@
 };
 
 &i2c3 {
+	status = "ok";
+};
+
+&spi1 {
 	status = "ok";
 };
 
