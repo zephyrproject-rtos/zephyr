@@ -44,6 +44,22 @@ struct __esf {
 	u32_t a6;       /* function argument */
 	u32_t a7;       /* function argument */
 
+#ifdef CONFIG_USE_SWITCH
+	/* USE_SWITCH on RISC-V stores callee-saved registers on the stack */
+	u32_t s0;       /* Callee-saved register */
+	u32_t s1;       /* Callee-saved register */
+	u32_t s2;       /* Callee-saved register */
+	u32_t s3;       /* Callee-saved register */
+	u32_t s4;       /* Callee-saved register */
+	u32_t s5;       /* Callee-saved register */
+	u32_t s6;       /* Callee-saved register */
+	u32_t s7;       /* Callee-saved register */
+	u32_t s8;       /* Callee-saved register */
+	u32_t s9;       /* Callee-saved register */
+	u32_t s10;      /* Callee-saved register */
+	u32_t s11;      /* Callee-saved register */
+#endif
+
 	u32_t mepc;      /* machine exception program counter */
 	u32_t mstatus;   /* machine status register */
 

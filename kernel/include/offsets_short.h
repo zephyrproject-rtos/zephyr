@@ -32,6 +32,21 @@
 #define _kernel_offset_to_ready_q_cache \
 	(___kernel_t_ready_q_OFFSET + ___ready_q_t_cache_OFFSET)
 
+#define _cpu_offset_to_nested \
+	(___cpu_t_nested_OFFSET)
+
+#define _cpu_offset_to_irq_stack \
+	(___cpu_t_irq_stack_OFFSET)
+
+#define _cpu_offset_to_current \
+	(___cpu_t_current_OFFSET)
+
+#define _cpu_offset_to_idle \
+	(___cpu_t_idle_OFFSET)
+
+#define _cpu_offset_to_current_fp \
+	(___cpu_t_current_fp_OFFSET)
+
 /* end - kernel */
 
 /* threads */

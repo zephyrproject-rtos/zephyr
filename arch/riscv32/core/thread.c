@@ -63,5 +63,9 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	stack_init->mstatus = SOC_MSTATUS_DEF_RESTORE;
 	stack_init->mepc = (u32_t)_thread_entry_wrapper;
 
+#ifdef CONFIG_USE_SWITCH
+	thread->switch_handle = (void *)stack_init;
+#else
 	thread->callee_saved.sp = (u32_t)stack_init;
+#endif /* CONFIG_USE_SWITCH */
 }
