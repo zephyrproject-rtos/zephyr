@@ -854,21 +854,6 @@ __syscall void k_wakeup(k_tid_t thread);
 __syscall k_tid_t k_current_get(void);
 
 /**
- * @brief Cancel thread performing a delayed start.
- *
- * This routine prevents @a thread from executing if it has not yet started
- * execution. The thread must be re-spawned before it will execute.
- *
- * @param thread ID of thread to cancel.
- *
- * @retval 0 Thread spawning canceled.
- * @retval -EINVAL Thread has already started executing.
- *
- * @deprecated This API is deprecated.  Use k_thread_abort().
- */
-__deprecated __syscall int k_thread_cancel(k_tid_t thread);
-
-/**
  * @brief Abort a thread.
  *
  * This routine permanently stops execution of @a thread. The thread is taken
