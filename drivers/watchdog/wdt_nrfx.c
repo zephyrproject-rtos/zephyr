@@ -7,9 +7,10 @@
 #include <nrfx_wdt.h>
 #include <watchdog.h>
 
-#define SYS_LOG_DOMAIN "wdt_nrfx"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_WDT_LEVEL
-#include <logging/sys_log.h>
+#define LOG_MODULE_NAME wdt_nrfx
+#define LOG_LEVEL CONFIG_LOG_WDT_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER();
 
 DEVICE_DECLARE(wdt_nrfx);
 
@@ -130,7 +131,7 @@ static void wdt_nrf_enable(struct device *dev)
 {
 	ARG_UNUSED(dev);
 	/* Deprecated function. No implementation needed. */
-	SYS_LOG_ERR("Function not implemented!");
+	LOG_ERR("Function not implemented!");
 }
 
 static int wdt_nrf_set_config(struct device *dev, struct wdt_config *config)
@@ -138,7 +139,7 @@ static int wdt_nrf_set_config(struct device *dev, struct wdt_config *config)
 	ARG_UNUSED(dev);
 	ARG_UNUSED(config);
 	/* Deprecated function. No implementation needed. */
-	SYS_LOG_ERR("Function not implemented!");
+	LOG_ERR("Function not implemented!");
 	return 0;
 }
 
@@ -147,14 +148,14 @@ static void wdt_nrf_get_config(struct device *dev, struct wdt_config *config)
 	ARG_UNUSED(dev);
 	ARG_UNUSED(config);
 	/* Deprecated function. No implementation needed. */
-	SYS_LOG_ERR("Function not implemented!");
+	LOG_ERR("Function not implemented!");
 }
 
 static void wdt_nrf_reload(struct device *dev)
 {
 	ARG_UNUSED(dev);
 	/* Deprecated function. No implementation needed. */
-	SYS_LOG_ERR("Function not implemented!");
+	LOG_ERR("Function not implemented!");
 }
 
 static const struct wdt_driver_api wdt_nrf_api = {
