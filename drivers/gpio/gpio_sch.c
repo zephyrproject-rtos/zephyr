@@ -102,7 +102,7 @@ static void _gpio_pin_config(struct device *dev, u32_t pin, int flags)
 		}
 
 		LOG_DBG("Setting up pin %d to active_high %d and "
-			"active_low %d", active_high, active_low);
+			"active_low %d", pin, active_high, active_low);
 	}
 
 	/* We store the gtpe/gtne settings. These will be used once
