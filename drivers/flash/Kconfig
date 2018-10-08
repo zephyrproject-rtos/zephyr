@@ -25,15 +25,16 @@ menuconfig FLASH
 	help
 	  Enable support for the flash hardware.
 
+if FLASH
 config FLASH_PAGE_LAYOUT
 	bool "API for retrieving the layout of pages"
-	depends on FLASH && FLASH_HAS_PAGE_LAYOUT
+	depends on FLASH_HAS_PAGE_LAYOUT
 	help
 	  Enables API for retrieving the layout of flash memory pages.
 
 config SOC_FLASH_NRF
 	bool "Nordic Semiconductor nRF flash driver"
-	depends on FLASH && SOC_FAMILY_NRF
+	depends on SOC_FAMILY_NRF
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
 	help
@@ -48,7 +49,7 @@ config SOC_FLASH_NRF_RADIO_SYNC
 
 config SOC_FLASH_MCUX
 	bool "MCUX flash shim driver"
-	depends on FLASH && HAS_MCUX
+	depends on HAS_MCUX
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
 	help
@@ -60,7 +61,7 @@ config SOC_FLASH_MCUX
 
 config SOC_FLASH_NIOS2_QSPI
 	bool "Nios-II QSPI flash driver"
-	depends on FLASH && HAS_ALTERA_HAL
+	depends on HAS_ALTERA_HAL
 	select FLASH_HAS_DRIVER_ENABLED
 	help
 	  Enables the Nios-II QSPI flash driver.
@@ -79,3 +80,5 @@ source "drivers/flash/Kconfig.stm32"
 source "drivers/flash/Kconfig.sam0"
 
 source "drivers/flash/Kconfig.w25qxxdv"
+
+endif
