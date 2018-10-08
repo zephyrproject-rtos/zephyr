@@ -23,9 +23,10 @@
 #include <soc.h>
 #include "i2s_cavs.h"
 
-#define SYS_LOG_DOMAIN "dev/i2s_cavs"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_I2S_LEVEL
-#include <logging/sys_log.h>
+#define LOG_DOMAIN dev_i2s_cavs
+#define LOG_LEVEL CONFIG_I2S_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 #ifdef CONFIG_DCACHE_WRITEBACK
 #define DCACHE_INVALIDATE(addr, size) \
@@ -210,13 +211,13 @@ static int start_dma(struct device *dev_dma, u32_t channel,
 
 	ret = dma_config(dev_dma, channel, cfg);
 	if (ret < 0) {
-		SYS_LOG_ERR("dma_config failed: %d", ret);
+		LOG_ERR("dma_config failed: %d", ret);
 		return ret;
 	}
 
 	ret = dma_start(dev_dma, channel);
 	if (ret < 0) {
-		SYS_LOG_ERR("dma_start failed: %d", ret);
+		LOG_ERR("dma_start failed: %d", ret);
 	}
 
 	return ret;
@@ -243,7 +244,7 @@ static void dma_tx_callback(struct device *dev_dma, u32_t channel, int status)
 
 	/* Stop transmission if there was an error */
 	if (strm->state == I2S_STATE_ERROR) {
-		SYS_LOG_DBG("TX error detected");
+		LOG_DBG("TX error detected");
 		goto tx_disable;
 	}
 
@@ -274,7 +275,7 @@ static void dma_tx_callback(struct device *dev_dma, u32_t channel, int status)
 			strm->mem_block, (void *)&(ssp->ssd),
 			mem_block_size);
 	if (ret < 0) {
-		SYS_LOG_DBG("Failed to start TX DMA transfer: %d", ret);
+		LOG_DBG("Failed to start TX DMA transfer: %d", ret);
 		goto tx_disable;
 	}
 	return;
@@ -315,13 +316,13 @@ static int i2s_cavs_configure(struct device *dev, enum i2s_dir dir,
 	if (dir == I2S_DIR_TX) {
 		strm = &dev_data->tx;
 	} else {
-		SYS_LOG_ERR("TX direction must be selected");
+		LOG_ERR("TX direction must be selected");
 		return -EINVAL;
 	}
 
 	if (strm->state != I2S_STATE_NOT_READY &&
 	    strm->state != I2S_STATE_READY) {
-		SYS_LOG_ERR("invalid state");
+		LOG_ERR("invalid state");
 		return -EINVAL;
 	}
 
@@ -334,13 +335,13 @@ static int i2s_cavs_configure(struct device *dev, enum i2s_dir dir,
 
 	if (word_size_bits < CAVS_SSP_WORD_SIZE_BITS_MIN ||
 	    word_size_bits > CAVS_SSP_WORD_SIZE_BITS_MAX) {
-		SYS_LOG_ERR("Unsupported I2S word size");
+		LOG_ERR("Unsupported I2S word size");
 		return -EINVAL;
 	}
 
 	if (num_words < CAVS_SSP_WORD_PER_FRAME_MIN ||
 	    num_words > CAVS_SSP_WORD_PER_FRAME_MAX) {
-		SYS_LOG_ERR("Unsupported words per frame number");
+		LOG_ERR("Unsupported words per frame number");
 		return -EINVAL;
 	}
 
@@ -408,7 +409,7 @@ static int i2s_cavs_configure(struct device *dev, enum i2s_dir dir,
 		break;
 
 	default:
-		SYS_LOG_ERR("Unsupported Clock format");
+		LOG_ERR("Unsupported Clock format");
 		return -EINVAL;
 	}
 
@@ -417,7 +418,7 @@ static int i2s_cavs_configure(struct device *dev, enum i2s_dir dir,
 
 	/* BCLK is generated from MCLK - must be divisible */
 	if (mclk % bit_clk_freq) {
-		SYS_LOG_INF("MCLK/BCLK is not an integer, using M/N divider");
+		LOG_INF("MCLK/BCLK is not an integer, using M/N divider");
 
 		/*
 		 * Simplification: Instead of calculating lowest values of
@@ -440,7 +441,7 @@ static int i2s_cavs_configure(struct device *dev, enum i2s_dir dir,
 
 	/* divisor must be within SCR range */
 	if (mdiv > (SSCR0_SCR_MASK >> 8)) {
-		SYS_LOG_ERR("Divisor is not within SCR range");
+		LOG_ERR("Divisor is not within SCR range");
 		return -EINVAL;
 	}
 
@@ -476,7 +477,7 @@ static int i2s_cavs_configure(struct device *dev, enum i2s_dir dir,
 	case I2S_FMT_DATA_FORMAT_PCM_SHORT:
 	case I2S_FMT_DATA_FORMAT_PCM_LONG:
 	default:
-		SYS_LOG_ERR("Unsupported I2S data format");
+		LOG_ERR("Unsupported I2S data format");
 		return -EINVAL;
 	}
 
@@ -532,7 +533,7 @@ static int tx_stream_start(struct stream *strm,
 			strm->mem_block, (void *)&(ssp->ssd),
 			mem_block_size);
 	if (ret < 0) {
-		SYS_LOG_ERR("Failed to start TX DMA transfer: %d", ret);
+		LOG_ERR("Failed to start TX DMA transfer: %d", ret);
 		return ret;
 	}
 
@@ -605,14 +606,14 @@ static int i2s_cavs_trigger(struct device *dev, enum i2s_dir dir,
 	if (dir == I2S_DIR_TX) {
 		strm = &dev_data->tx;
 	} else {
-		SYS_LOG_ERR("TX direction must be selected");
+		LOG_ERR("TX direction must be selected");
 		return -EINVAL;
 	}
 
 	switch (cmd) {
 	case I2S_TRIGGER_START:
 		if (strm->state != I2S_STATE_READY) {
-			SYS_LOG_DBG("START trigger: invalid state");
+			LOG_DBG("START trigger: invalid state");
 			return -EIO;
 		}
 
@@ -620,7 +621,7 @@ static int i2s_cavs_trigger(struct device *dev, enum i2s_dir dir,
 
 		ret = strm->stream_start(strm, ssp, dev_data->dev_dma);
 		if (ret < 0) {
-			SYS_LOG_DBG("START trigger failed %d", ret);
+			LOG_DBG("START trigger failed %d", ret);
 			return ret;
 		}
 
@@ -632,7 +633,7 @@ static int i2s_cavs_trigger(struct device *dev, enum i2s_dir dir,
 		key = irq_lock();
 		if (strm->state != I2S_STATE_RUNNING) {
 			irq_unlock(key);
-			SYS_LOG_DBG("STOP trigger: invalid state");
+			LOG_DBG("STOP trigger: invalid state");
 			return -EIO;
 		}
 		strm->state = I2S_STATE_STOPPING;
@@ -644,7 +645,7 @@ static int i2s_cavs_trigger(struct device *dev, enum i2s_dir dir,
 		key = irq_lock();
 		if (strm->state != I2S_STATE_RUNNING) {
 			irq_unlock(key);
-			SYS_LOG_DBG("DRAIN trigger: invalid state");
+			LOG_DBG("DRAIN trigger: invalid state");
 			return -EIO;
 		}
 		strm->state = I2S_STATE_STOPPING;
@@ -653,7 +654,7 @@ static int i2s_cavs_trigger(struct device *dev, enum i2s_dir dir,
 
 	case I2S_TRIGGER_DROP:
 		if (strm->state == I2S_STATE_NOT_READY) {
-			SYS_LOG_DBG("DROP trigger: invalid state");
+			LOG_DBG("DROP trigger: invalid state");
 			return -EIO;
 		}
 		strm->stream_disable(strm, ssp, dev_data->dev_dma);
@@ -663,7 +664,7 @@ static int i2s_cavs_trigger(struct device *dev, enum i2s_dir dir,
 
 	case I2S_TRIGGER_PREPARE:
 		if (strm->state != I2S_STATE_ERROR) {
-			SYS_LOG_DBG("PREPARE trigger: invalid state");
+			LOG_DBG("PREPARE trigger: invalid state");
 			return -EIO;
 		}
 		strm->state = I2S_STATE_READY;
@@ -671,7 +672,7 @@ static int i2s_cavs_trigger(struct device *dev, enum i2s_dir dir,
 		break;
 
 	default:
-		SYS_LOG_ERR("Unsupported trigger command");
+		LOG_ERR("Unsupported trigger command");
 		return -EINVAL;
 	}
 
@@ -686,13 +687,13 @@ static int i2s_cavs_write(struct device *dev, void *mem_block, size_t size)
 
 	if (dev_data->tx.state != I2S_STATE_RUNNING &&
 	    dev_data->tx.state != I2S_STATE_READY) {
-		SYS_LOG_ERR("invalid state");
+		LOG_ERR("invalid state");
 		return -EIO;
 	}
 
 	ret = k_sem_take(&dev_data->tx.sem, dev_data->tx.cfg.timeout);
 	if (ret < 0) {
-		SYS_LOG_ERR("Failure taking sem");
+		LOG_ERR("Failure taking sem");
 		return ret;
 	}
 
@@ -729,14 +730,14 @@ static int i2s1_cavs_initialize(struct device *dev)
 
 	dev_data->dev_dma = device_get_binding(CONFIG_I2S_CAVS_DMA_NAME);
 	if (!dev_data->dev_dma) {
-		SYS_LOG_ERR("%s device not found", CONFIG_I2S_CAVS_DMA_NAME);
+		LOG_ERR("%s device not found", CONFIG_I2S_CAVS_DMA_NAME);
 		return -ENODEV;
 	}
 
 	/* Enable module's IRQ */
 	irq_enable(dev_cfg->irq_id);
 
-	SYS_LOG_INF("Device %s initialized", DEV_NAME(dev));
+	LOG_INF("Device %s initialized", DEV_NAME(dev));
 
 	return 0;
 }
