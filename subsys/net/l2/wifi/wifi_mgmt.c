@@ -18,8 +18,11 @@
 static int wifi_connect(u32_t mgmt_request, struct net_if *iface,
 			void *data, size_t len)
 {
+	struct device *dev = net_if_get_device(iface);
 	struct wifi_connect_req_params *params =
 		(struct wifi_connect_req_params *)data;
+	struct net_wifi_mgmt_offload *off_api =
+		(struct net_wifi_mgmt_offload *) dev->driver_api;
 
 	SYS_LOG_DBG("%s %u %u %u %s %u",
 		    params->ssid, params->ssid_length,
@@ -38,15 +41,7 @@ static int wifi_connect(u32_t mgmt_request, struct net_if *iface,
 		return -EINVAL;
 	}
 
-	if (net_if_is_ip_offloaded(iface)) {
-		struct device *dev = net_if_get_device(iface);
-		struct net_wifi_mgmt_offload *off_api =
-			(struct net_wifi_mgmt_offload *) dev->driver_api;
-
-		return off_api->connect(dev, params);
-	}
-
-	return -ENETDOWN;
+	return off_api->connect(dev, params);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_CONNECT, wifi_connect);
@@ -76,15 +71,11 @@ static void _scan_result_cb(struct net_if *iface, int status,
 static int wifi_scan(u32_t mgmt_request, struct net_if *iface,
 		     void *data, size_t len)
 {
-	if (net_if_is_ip_offloaded(iface)) {
-		struct device *dev = net_if_get_device(iface);
-		struct net_wifi_mgmt_offload *off_api =
-			(struct net_wifi_mgmt_offload *) dev->driver_api;
+	struct device *dev = net_if_get_device(iface);
+	struct net_wifi_mgmt_offload *off_api =
+		(struct net_wifi_mgmt_offload *) dev->driver_api;
 
-		return off_api->scan(dev, _scan_result_cb);
-	}
-
-	return -ENETDOWN;
+	return off_api->scan(dev, _scan_result_cb);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_SCAN, wifi_scan);
@@ -93,15 +84,11 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_SCAN, wifi_scan);
 static int wifi_disconnect(u32_t mgmt_request, struct net_if *iface,
 			   void *data, size_t len)
 {
-	if (net_if_is_ip_offloaded(iface)) {
-		struct device *dev = net_if_get_device(iface);
-		struct net_wifi_mgmt_offload *off_api =
+	struct device *dev = net_if_get_device(iface);
+	struct net_wifi_mgmt_offload *off_api =
 			(struct net_wifi_mgmt_offload *) dev->driver_api;
 
-		return off_api->disconnect(dev);
-	}
-
-	return -ENETDOWN;
+	return off_api->disconnect(dev);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_DISCONNECT, wifi_disconnect);
