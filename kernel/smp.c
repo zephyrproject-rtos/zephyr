@@ -92,26 +92,26 @@ static void smp_init_top(int key, void *arg)
 }
 #endif
 
+static atomic_t _smp_start_flag;
+
 void smp_init(void)
 {
-	atomic_t start_flag;
-
-	(void)atomic_clear(&start_flag);
+	atomic_clear(&_smp_start_flag);
 
 #if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 1
 	_arch_start_cpu(1, _interrupt_stack1, CONFIG_ISR_STACK_SIZE,
-			smp_init_top, &start_flag);
+			smp_init_top, &_smp_start_flag);
 #endif
 
 #if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 2
 	_arch_start_cpu(2, _interrupt_stack2, CONFIG_ISR_STACK_SIZE,
-			smp_init_top, &start_flag);
+			smp_init_top, &_smp_start_flag);
 #endif
 
 #if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 3
 	_arch_start_cpu(3, _interrupt_stack3, CONFIG_ISR_STACK_SIZE,
-			smp_init_top, &start_flag);
+			smp_init_top, &_smp_start_flag);
 #endif
 
-	(void)atomic_set(&start_flag, 1);
+	atomic_set(&_smp_start_flag, 1);
 }
