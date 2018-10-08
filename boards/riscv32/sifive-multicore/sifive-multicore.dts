@@ -1,0 +1,26 @@
+/dts-v1/;
+
+#include <riscv32-fe310.dtsi>
+
+/ {
+	model = "SiFive Multicore";
+	compatible = "sifive,rocket0";
+	chosen {
+		zephyr,console = &uart0;
+	};
+};
+
+&gpio0 {
+	status = "ok";
+};
+
+&uart0 {
+	status = "ok";
+	current-speed = <115200>;
+	clock-frequency = <16000000>;
+};
+
+&spi0 {
+	status = "ok";
+};
+

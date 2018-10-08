@@ -1,0 +1,12 @@
+identifier: sifive-multicore
+name: SiFive E Multicore
+type: mcu
+arch: riscv32
+simulation: qemu
+toolchain:
+  - zephyr
+ram: 16
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

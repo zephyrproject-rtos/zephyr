@@ -1,0 +1,4 @@
+config BOARD_SIFIVE_MULTICORE
+	bool "Multicore Generic Sifive Target"
+	depends on SOC_RISCV32_SIFIVE_FREEDOM
+	select HAS_DTS

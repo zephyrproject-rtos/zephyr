@@ -1,0 +1,6 @@
+if BOARD_SIFIVE_MULTICORE
+
+config BOARD
+	default "sifive-multicore"
+
+endif
