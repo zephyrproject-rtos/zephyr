@@ -6,9 +6,9 @@
  */
 
 #define LOG_MODULE_NAME fota_flash_block
-#define LOG_LEVEL CONFIG_LOG_IMG_MANAGER_LEVEL
+#define LOG_LEVEL CONFIG_IMG_MANAGER_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER();
+LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <zephyr/types.h>
 #include <stddef.h>

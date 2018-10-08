@@ -38,22 +38,8 @@ config IMG_BLOCK_BUF_SIZE
 	  Size (in Bytes) of buffer for image writer. Must be a multiple of
 	  the access alignment required by used flash driver.
 
-config LOG_IMG_MANAGER_LEVEL
-	int "Image manager Log level"
-	depends on LOG && MCUBOOT_IMG_MANAGER
-	default 0
-	range 0 4
-	help
-	  Sets log level for the image manager.
-	  Levels are:
+module = IMG_MANAGER
+module-str = image manager
+source "subsys/logging/Kconfig.template.log_config"
 
-	  - 0 OFF: do not write
-
-	  - 1 ERROR: only write LOG_ERR
-
-	  - 2 WARNING: write LOG_WRN in addition to previous level
-
-	  - 3 INFO: write LOG_INF in addition to previous levels
-
-	  - 4 DEBUG: write LOG_DBG in addition to previous levels
 endmenu
