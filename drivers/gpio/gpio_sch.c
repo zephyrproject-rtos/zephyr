@@ -17,8 +17,9 @@
 #include "gpio_sch.h"
 #include "gpio_utils.h"
 
-#define LOG_LEVEL CONFIG_LOG_GPIO_LEVEL
+#define LOG_LEVEL CONFIG_GPIO_LOG_LEVEL
 #include <logging/log.h>
+LOG_MODULE_REGISTER(gpio_sch)
 
 /* Define GPIO_SCH_LEGACY_IO_PORTS_ACCESS
  * inside soc.h if the GPIO controller
