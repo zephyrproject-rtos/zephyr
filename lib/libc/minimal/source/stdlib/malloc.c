@@ -10,7 +10,7 @@
 #include <errno.h>
 #include <misc/mempool.h>
 #include <string.h>
-#include <logging/sys_log.h>
+#include <logging/log.h>
 
 #if (CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE > 0)
 K_MUTEX_DEFINE(malloc_mutex);
@@ -47,7 +47,7 @@ void *malloc(size_t size)
 {
 	ARG_UNUSED(size);
 
-	SYS_LOG_DBG("CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE is 0\n");
+	LOG_DBG("CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE is 0\n");
 	errno = ENOMEM;
 
 	return NULL;
