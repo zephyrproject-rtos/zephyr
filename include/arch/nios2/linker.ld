@@ -82,6 +82,23 @@ ENTRY(CONFIG_KERNEL_ENTRY)
 
 SECTIONS
     {
+
+#include <linker/rel-sections.ld>
+
+    /*
+     * .plt and .iplt are here according to
+     * 'nios2-zephyr-elf-ld --verbose', before text section.
+     */
+    SECTION_PROLOGUE(.plt,,)
+        {
+        *(.plt)
+        }
+
+    SECTION_PROLOGUE(.iplt,,)
+        {
+        *(.iplt)
+        }
+
     GROUP_START(ROMABLE_REGION)
     _image_rom_start = _ROM_ADDR;
 
@@ -260,6 +277,8 @@ SECTIONS
 #ifdef CONFIG_GEN_ISR_TABLES
 #include <linker/intlist.ld>
 #endif
+
+#include <linker/debug-sections.ld>
 
     }
 
