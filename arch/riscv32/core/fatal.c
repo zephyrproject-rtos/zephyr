@@ -91,6 +91,7 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 		break;
 	}
 
+#ifndef CONFIG_SMP
 	printk("Current thread ID = %p\n"
 	       "Faulting instruction address = 0x%x\n"
 	       "  ra: 0x%x  gp: 0x%x  tp: 0x%x  t0: 0x%x\n"
@@ -105,6 +106,24 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 	       esf->t5, esf->t6, esf->a0, esf->a1,
 	       esf->a2, esf->a3, esf->a4, esf->a5,
 	       esf->a6, esf->a7);
+#else
+	printk("Hart: %d\n"
+		   "Current thread ID = %p\n"
+	       "Faulting instruction address = 0x%x\n"
+	       "  ra: 0x%x  gp: 0x%x  tp: 0x%x  t0: 0x%x\n"
+	       "  t1: 0x%x  t2: 0x%x  t3: 0x%x  t4: 0x%x\n"
+	       "  t5: 0x%x  t6: 0x%x  a0: 0x%x  a1: 0x%x\n"
+	       "  a2: 0x%x  a3: 0x%x  a4: 0x%x  a5: 0x%x\n"
+	       "  a6: 0x%x  a7: 0x%x\n",
+		   _current_cpu->id,
+	       k_current_get(),
+	       (esf->mepc == 0xdeadbaad) ? 0xdeadbaad : esf->mepc,
+	       esf->ra, esf->gp, esf->tp, esf->t0,
+	       esf->t1, esf->t2, esf->t3, esf->t4,
+	       esf->t5, esf->t6, esf->a0, esf->a1,
+	       esf->a2, esf->a3, esf->a4, esf->a5,
+	       esf->a6, esf->a7);
+#endif
 
 	_SysFatalErrorHandler(reason, esf);
 	/* spin forever */
