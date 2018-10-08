@@ -179,18 +179,39 @@ int log_printk(const char *fmt, va_list ap)
 	}
 }
 
+/** @brief Count number of arguments in formatted string.
+ *
+ * Function counts number of '%' not followed by '%'.
+ */
+static u32_t count_args(const char *fmt)
+{
+	u32_t args = 0;
+	bool prev = false; /* if previous char was a modificator. */
+
+	while (*fmt != '\0') {
+		if (*fmt == '%') {
+			prev = !prev;
+		} else if (prev) {
+			args++;
+			prev = false;
+		}
+		fmt++;
+	}
+
+	return args;
+}
+
 void log_generic(struct log_msg_ids src_level, const char *fmt, va_list ap)
 {
 	u32_t args[LOG_MAX_NARGS];
+	u32_t nargs = count_args(fmt);
 
-	for (int i = 0; i < LOG_MAX_NARGS; i++) {
-		args[i] = va_arg(ap, u32_t);
+	for (int i = 0; i < nargs; i++) {
+		u32_t arg = va_arg(ap, u32_t);
+		args[i] = arg;
 	}
 
-	/* Assume maximum amount of parameters. Determining exact number would
-	 * require string analysis.
-	 */
-	log_n(fmt, args, LOG_MAX_NARGS, src_level);
+	log_n(fmt, args, nargs, src_level);
 }
 
 static u32_t timestamp_get(void)
@@ -537,6 +558,7 @@ bool log_is_strdup(void *buf)
 
 	return ((char *)buf >= pool_first->buf) &&
 	       ((char *)buf <= pool_last->buf);
+
 }
 
 void log_free(void *str)
