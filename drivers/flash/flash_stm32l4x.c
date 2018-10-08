@@ -5,9 +5,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define SYS_LOG_DOMAIN "flash_stm32l4"
-#define SYS_LOG_LEVEL SYS_LOG_LEVEL_ERROR
-#include <logging/sys_log.h>
+#define LOG_DOMAIN flash_stm32l4
+#define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 #include <kernel.h>
 #include <device.h>
