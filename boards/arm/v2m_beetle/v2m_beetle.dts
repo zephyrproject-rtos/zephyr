@@ -63,7 +63,7 @@
 		uart1: uart@40005000 {
 			compatible = "arm,cmsdk-uart";
 			reg = <0x40005000 0x1000>;
-			interrupts = <1 3>;
+			interrupts = <2 3>;
 			current-speed = <115200>;
 			label = "UART_1";
 		};
