@@ -4,7 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_RTC_LOG_LEVEL
+#include <logging/log.h>
+LOG_DOMAIN_REGISTER(rtc_mcux);
+
 #include <errno.h>
 #include <device.h>
 #include <init.h>
@@ -59,7 +62,7 @@ static int mcux_rtc_set_alarm(struct device *dev, const u32_t alarm_val)
 	const struct mcux_rtc_config *config = dev->config->config_info;
 
 	if (alarm_val < config->base->TSR) {
-		SYS_LOG_ERR("alarm cannot be earlier than current time\n");
+		LOG_ERR("alarm cannot be earlier than current time");
 		return -EINVAL;
 	}
 
