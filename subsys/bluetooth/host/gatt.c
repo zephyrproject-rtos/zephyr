@@ -36,7 +36,8 @@
 #include "settings.h"
 #include "gatt_internal.h"
 
-#define SC_TIMEOUT K_MSEC(10)
+#define SC_TIMEOUT	K_MSEC(10)
+#define CCC_STORE_DELAY	K_SECONDS(1)
 
 /* Persistent storage format for GATT CCC */
 struct ccc_store {
@@ -275,6 +276,59 @@ static void sc_process(struct k_work *work)
 	atomic_set_bit(sc->flags, SC_INDICATE_PENDING);
 }
 
+#if defined(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE)
+static struct gatt_ccc_store {
+	struct bt_conn *conn_list[CONFIG_BT_MAX_CONN];
+	struct k_delayed_work work;
+} gatt_ccc_store;
+
+static bool gatt_ccc_conn_is_queued(struct bt_conn *conn)
+{
+	return (conn == gatt_ccc_store.conn_list[bt_conn_get_id(conn)]);
+}
+
+static void gatt_ccc_conn_unqueue(struct bt_conn *conn)
+{
+	u8_t index = bt_conn_get_id(conn);
+
+	if (gatt_ccc_store.conn_list[index] != NULL) {
+		bt_conn_unref(gatt_ccc_store.conn_list[index]);
+		gatt_ccc_store.conn_list[index] = NULL;
+	}
+}
+
+static bool gatt_ccc_conn_queue_is_empty(void)
+{
+	for (size_t i = 0; i < CONFIG_BT_MAX_CONN; i++) {
+		if (gatt_ccc_store.conn_list[i]) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+static void ccc_delayed_store(struct k_work *work)
+{
+	struct gatt_ccc_store *ccc_store =
+		CONTAINER_OF(work, struct gatt_ccc_store, work);
+
+	for (size_t i = 0; i < CONFIG_BT_MAX_CONN; i++) {
+		struct bt_conn *conn = ccc_store->conn_list[i];
+
+		if (!conn) {
+			continue;
+		}
+
+		if (bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+			bt_gatt_store_ccc(conn->id, &conn->le.dst);
+			bt_conn_unref(conn);
+			ccc_store->conn_list[i] = NULL;
+		}
+	}
+}
+#endif
+
 void bt_gatt_init(void)
 {
 	if (!atomic_cas(&init, 0, 1)) {
@@ -286,6 +340,9 @@ void bt_gatt_init(void)
 	gatt_register(&gatt_svc);
 
 	k_delayed_work_init(&gatt_sc.work, sc_process);
+#if defined(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE)
+	k_delayed_work_init(&gatt_ccc_store.work, ccc_delayed_store);
+#endif
 }
 
 static bool update_range(u16_t *start, u16_t *end, u16_t new_start,
@@ -658,6 +715,19 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 	/* Update cfg if don't match */
 	if (ccc->cfg[i].value != ccc->value) {
 		gatt_ccc_changed(attr, ccc);
+
+#if defined(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE)
+		if ((!gatt_ccc_conn_is_queued(conn)) &&
+		    bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+			/* Store the connection with the same index it has in
+			 * the conns array
+			 */
+			gatt_ccc_store.conn_list[bt_conn_get_id(conn)] =
+				bt_conn_ref(conn);
+			k_delayed_work_submit(&gatt_ccc_store.work,
+					      CCC_STORE_DELAY);
+		}
+#endif
 	}
 
 	/* Disabled CCC is the same as no configured CCC, so clear the entry */
@@ -2364,6 +2434,14 @@ void bt_gatt_disconnected(struct bt_conn *conn)
 {
 	BT_DBG("conn %p", conn);
 	bt_gatt_foreach_attr(0x0001, 0xffff, disconnected_cb, conn);
+
+#if defined(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE)
+	gatt_ccc_conn_unqueue(conn);
+
+	if (gatt_ccc_conn_queue_is_empty()) {
+		k_delayed_work_cancel(&gatt_ccc_store.work);
+	}
+#endif
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS) &&
 	    bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
