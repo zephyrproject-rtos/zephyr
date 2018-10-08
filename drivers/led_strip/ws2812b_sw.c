@@ -8,8 +8,9 @@
 
 #include <string.h>
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_LED_STRIP_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_LED_STRIP_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(ws2812b_sw);
 
 #include <zephyr.h>
 #include <board.h>
@@ -33,7 +34,7 @@ static int send_buf(u8_t *buf, size_t len)
 
 	clock = device_get_binding(CONFIG_CLOCK_CONTROL_NRF5_M16SRC_DRV_NAME);
 	if (!clock) {
-		SYS_LOG_ERR("Unable to get HF clock");
+		LOG_ERR("Unable to get HF clock");
 		return -EIO;
 	}
 
@@ -119,7 +120,7 @@ static int ws2812b_sw_update_rgb(struct device *dev, struct led_rgb *pixels,
 static int ws2812b_sw_update_channels(struct device *dev, u8_t *channels,
 				      size_t num_channels)
 {
-	SYS_LOG_ERR("update_channels not implemented");
+	LOG_ERR("update_channels not implemented");
 	return -ENOSYS;
 }
 
@@ -129,7 +130,7 @@ static int ws2812b_sw_init(struct device *dev)
 
 	gpio = device_get_binding(CONFIG_WS2812B_SW_GPIO_NAME);
 	if (!gpio) {
-		SYS_LOG_ERR("Unable to find %s", CONFIG_WS2812B_SW_GPIO_NAME);
+		LOG_ERR("Unable to find %s", CONFIG_WS2812B_SW_GPIO_NAME);
 		return -ENODEV;
 	}
 
