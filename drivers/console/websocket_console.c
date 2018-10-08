@@ -13,9 +13,10 @@
  * a websocket connection.
  */
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_WEBSOCKET_CONSOLE_LEVEL
-#define SYS_LOG_DOMAIN "ws/console"
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_WEBSOCKET_CONSOLE_LOG_LEVEL
+#define LOG_DOMAIN ws_console
+#include <logging/log.h>
+LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 #include <zephyr.h>
 #include <init.h>
@@ -328,7 +329,7 @@ static int ws_console_init(struct device *arg)
 			NULL, NULL, NULL,
 			K_PRIO_COOP(WS_CONSOLE_PRIORITY), 0, K_MSEC(10));
 
-	SYS_LOG_INF("Websocket console initialized");
+	LOG_INF("Websocket console initialized");
 
 	return 0;
 }

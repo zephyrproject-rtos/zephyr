@@ -72,24 +72,9 @@ config WEBSOCKET_CONSOLE_PRIO
 	help
 	This option helps to fine-tune WS console inner thread priority.
 
-config SYS_LOG_WEBSOCKET_CONSOLE_LEVEL
-	int "WS console log level"
-	default 0
-	depends on SYS_LOG
-	help
-	Sets log level for websocket console (for WS console dev only)
-
-	Levels are:
-
-	- 0 OFF, do not write
-
-	- 1 ERROR, only write SYS_LOG_ERR
-
-	- 2 WARNING, write SYS_LOG_WRN in addition to previous level
-
-	- 3 INFO, write SYS_LOG_INF in addition to previous levels
-
-	- 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
+module = WEBSOCKET_CONSOLE
+module-str = web socket console
+source "subsys/logging/Kconfig.template.log_config"
 
 config WEBSOCKET_CONSOLE_DEBUG_DEEP
 	bool "Forward output to original console handler"
