@@ -69,7 +69,7 @@ int _arch_irq_is_enabled(unsigned int irq)
 void soc_interrupt_init(void)
 {
 	/* ensure that all interrupts are disabled */
-	(void)irq_lock();
+	(void)_arch_irq_lock();
 
 	__asm__ volatile ("csrwi mie, 0\n"
 			  "csrwi mip, 0\n");
