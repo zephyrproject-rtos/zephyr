@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_WIFI_LEVEL
-#define SYS_LOG_DOMAIN "dev/winc1500"
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_WIFI_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(winc1500);
 
 #include <stdio.h>
 #include <stdint.h>
@@ -79,7 +79,7 @@ static s8_t spi_rw(u8_t *mosi, u8_t *miso, u16_t size)
 	};
 
 	if (spi_transceive(winc1500.spi, &winc1500.spi_cfg, &tx, &rx)) {
-		SYS_LOG_ERR("spi_transceive fail");
+		LOG_ERR("spi_transceive fail");
 		return M2M_ERR_BUS_FAIL;
 	}
 
@@ -99,7 +99,7 @@ s8_t nm_bus_init(void *pvinit)
 	/* setup SPI device */
 	winc1500.spi = device_get_binding(CONFIG_WIFI_WINC1500_SPI_DRV_NAME);
 	if (!winc1500.spi) {
-		SYS_LOG_ERR("spi device binding");
+		LOG_ERR("spi device binding");
 		return -1;
 	}
 
@@ -111,7 +111,7 @@ s8_t nm_bus_init(void *pvinit)
 	cs_ctrl.gpio_dev = device_get_binding(
 		CONFIG_WIFI_WINC1500_GPIO_SPI_CS_DRV_NAME);
 	if (!cs_ctrl.gpio_dev) {
-		SYS_LOG_ERR("Unable to get GPIO SPI CS device");
+		LOG_ERR("Unable to get GPIO SPI CS device");
 		return -ENODEV;
 	}
 
@@ -120,7 +120,7 @@ s8_t nm_bus_init(void *pvinit)
 
 	winc1500.spi_cfg.cs = &cs_ctrl;
 
-	SYS_LOG_DBG("SPI GPIO CS configured on %s:%u",
+	LOG_DBG("SPI GPIO CS configured on %s:%u",
 		    CONFIG_WIFI_WINC1500_GPIO_SPI_CS_DRV_NAME,
 		    CONFIG_WIFI_WINC1500_GPIO_SPI_CS_PIN);
 #endif /* CONFIG_WIFI_WINC1500_GPIO_SPI_CS */
@@ -130,7 +130,7 @@ s8_t nm_bus_init(void *pvinit)
 
 	nm_bsp_interrupt_ctrl(1);
 
-	SYS_LOG_DBG("NOTICE:DONE");
+	LOG_DBG("NOTICE:DONE");
 #endif
 	return 0;
 }
