@@ -33,8 +33,9 @@
 #include <device.h>
 #include <zephyr.h>
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_LED_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_LED_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(lp5562);
 
 #include "led_context.h"
 
@@ -185,7 +186,7 @@ static int lp5562_get_pwm_reg(enum lp5562_led_channels channel, u8_t *reg)
 		*reg = LP5562_B_PWM;
 		break;
 	default:
-		SYS_LOG_ERR("Invalid channel given.");
+		LOG_ERR("Invalid channel given.");
 		return -EINVAL;
 	}
 
@@ -310,7 +311,7 @@ static int lp5562_set_led_source(struct device *dev,
 				LP5562_LED_MAP,
 				LP5562_CHANNEL_MASK(channel),
 				source << (channel << 1))) {
-		SYS_LOG_ERR("LED reg update failed.");
+		LOG_ERR("LED reg update failed.");
 		return -EIO;
 	}
 
@@ -369,7 +370,7 @@ static bool lp5562_is_engine_executing(struct device *dev,
 
 	if (i2c_reg_read_byte(data->i2c, CONFIG_LP5562_I2C_ADDRESS,
 				LP5562_ENABLE, &enabled)) {
-		SYS_LOG_ERR("Failed to read ENABLE register.");
+		LOG_ERR("Failed to read ENABLE register.");
 		return false;
 	}
 
@@ -398,13 +399,13 @@ static int lp5562_get_available_engine(struct device *dev,
 
 	for (src = LP5562_SOURCE_ENGINE_1; src < LP5562_SOURCE_COUNT; src++) {
 		if (!lp5562_is_engine_executing(dev, src)) {
-			SYS_LOG_DBG("Available engine: %d", src);
+			LOG_DBG("Available engine: %d", src);
 			*engine = src;
 			return 0;
 		}
 	}
 
-	SYS_LOG_ERR("No unused engine available");
+	LOG_ERR("No unused engine available");
 
 	return -ENODEV;
 }
@@ -548,21 +549,21 @@ static int lp5562_program_command(struct device *dev,
 
 	ret = lp5562_get_engine_ram_base_addr(engine, &prog_base_addr);
 	if (ret) {
-		SYS_LOG_ERR("Failed to get base RAM address.");
+		LOG_ERR("Failed to get base RAM address.");
 		return ret;
 	}
 
 	if (i2c_reg_write_byte(data->i2c, CONFIG_LP5562_I2C_ADDRESS,
 			       prog_base_addr + (command_index << 1),
 			       command_msb)) {
-		SYS_LOG_ERR("Failed to update LED.");
+		LOG_ERR("Failed to update LED.");
 		return -EIO;
 	}
 
 	if (i2c_reg_write_byte(data->i2c, CONFIG_LP5562_I2C_ADDRESS,
 			       prog_base_addr + (command_index << 1) + 1,
 			       command_lsb)) {
-		SYS_LOG_ERR("Failed to update LED.");
+		LOG_ERR("Failed to update LED.");
 		return -EIO;
 	}
 
@@ -735,7 +736,7 @@ static int lp5562_update_blinking_brightness(struct device *dev,
 
 	ret = lp5562_start_program_exec(dev, engine);
 	if (ret) {
-		SYS_LOG_ERR("Failed to execute program.");
+		LOG_ERR("Failed to execute program.");
 		return ret;
 	}
 
@@ -758,7 +759,7 @@ static int lp5562_led_blink(struct device *dev, u32_t led,
 
 	ret = lp5562_set_led_source(dev, led, engine);
 	if (ret) {
-		SYS_LOG_ERR("Failed to set LED source.");
+		LOG_ERR("Failed to set LED source.");
 		return ret;
 	}
 
@@ -796,7 +797,7 @@ static int lp5562_led_blink(struct device *dev, u32_t led,
 
 	ret = lp5562_start_program_exec(dev, engine);
 	if (ret) {
-		SYS_LOG_ERR("Failed to execute program.");
+		LOG_ERR("Failed to execute program.");
 		return ret;
 	}
 
@@ -846,7 +847,7 @@ static int lp5562_led_set_brightness(struct device *dev, u32_t led, u8_t value)
 
 	if (i2c_reg_write_byte(data->i2c, CONFIG_LP5562_I2C_ADDRESS,
 			       reg, val)) {
-		SYS_LOG_ERR("LED write failed");
+		LOG_ERR("LED write failed");
 		return -EIO;
 	}
 
@@ -891,7 +892,7 @@ static int lp5562_led_init(struct device *dev)
 
 	data->i2c = device_get_binding(CONFIG_LP5562_I2C_MASTER_DEV_NAME);
 	if (data->i2c == NULL) {
-		SYS_LOG_ERR("Failed to get I2C device");
+		LOG_ERR("Failed to get I2C device");
 		return -EINVAL;
 	}
 
@@ -904,7 +905,7 @@ static int lp5562_led_init(struct device *dev)
 	if (i2c_reg_write_byte(data->i2c, CONFIG_LP5562_I2C_ADDRESS,
 				LP5562_ENABLE,
 				LP5562_ENABLE_CHIP_EN)) {
-		SYS_LOG_ERR("Enabling LP5562 LED chip failed.");
+		LOG_ERR("Enabling LP5562 LED chip failed.");
 		return -EIO;
 	}
 
@@ -912,19 +913,19 @@ static int lp5562_led_init(struct device *dev)
 				LP5562_CONFIG,
 				(LP5562_CONFIG_INTERNAL_CLOCK ||
 				 LP5562_CONFIG_PWRSAVE_EN))) {
-		SYS_LOG_ERR("Configuring LP5562 LED chip failed.");
+		LOG_ERR("Configuring LP5562 LED chip failed.");
 		return -EIO;
 	}
 
 	if (i2c_reg_write_byte(data->i2c, CONFIG_LP5562_I2C_ADDRESS,
 				LP5562_OP_MODE, 0x00)) {
-		SYS_LOG_ERR("Disabling all engines failed.");
+		LOG_ERR("Disabling all engines failed.");
 		return -EIO;
 	}
 
 	if (i2c_reg_write_byte(data->i2c, CONFIG_LP5562_I2C_ADDRESS,
 				LP5562_LED_MAP, 0x00)) {
-		SYS_LOG_ERR("Setting all LEDs to manual control failed.");
+		LOG_ERR("Setting all LEDs to manual control failed.");
 		return -EIO;
 	}
 
