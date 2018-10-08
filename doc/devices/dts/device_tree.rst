@@ -71,8 +71,8 @@ information is placed in a header file that is used by the rest of the code as
 the project is compiled.
 
 A temporary fixup file is required for device tree support on most devices.
-This .fixup file by default resides in the board directory and is named
-dts.fixup.  This fixup file maps the generated include information to the
+This fixup file by default resides in the board directory and is named
+dts_fixup.h.  This fixup file maps the generated include information to the
 current driver/source usage.
 
 .. _dt_vs_kconfig:
