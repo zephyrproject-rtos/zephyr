@@ -4,8 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define SYS_LOG_DOMAIN "flash"
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(flash_sam0);
 
 #include <device.h>
 #include <flash.h>
@@ -70,11 +71,11 @@ static inline void flash_sam0_sem_give(struct device *dev)
 static int flash_sam0_valid_range(off_t offset, size_t len)
 {
 	if (offset < 0) {
-		SYS_LOG_WRN("%x: before start of flash", offset);
+		LOG_WRN("%x: before start of flash", offset);
 		return -EINVAL;
 	}
 	if ((offset + len) > CONFIG_FLASH_SIZE * 1024) {
-		SYS_LOG_WRN("%x: ends past the end of flash", offset);
+		LOG_WRN("%x: ends past the end of flash", offset);
 		return -EINVAL;
 	}
 
@@ -98,13 +99,13 @@ static int flash_sam0_check_status(off_t offset)
 	NVMCTRL->STATUS = status;
 
 	if (status.bit.PROGE) {
-		SYS_LOG_ERR("programming error at 0x%x", offset);
+		LOG_ERR("programming error at 0x%x", offset);
 		return -EIO;
 	} else if (status.bit.LOCKE) {
-		SYS_LOG_ERR("lock error at 0x%x", offset);
+		LOG_ERR("lock error at 0x%x", offset);
 		return -EROFS;
 	} else if (status.bit.NVME) {
-		SYS_LOG_ERR("NVM error at 0x%x", offset);
+		LOG_ERR("NVM error at 0x%x", offset);
 		return -EIO;
 	}
 
@@ -135,7 +136,7 @@ static int flash_sam0_write_page(struct device *dev, off_t offset,
 	}
 
 	if (memcmp(data, FLASH_MEM(offset), FLASH_PAGE_SIZE) != 0) {
-		SYS_LOG_ERR("verify error at offset 0x%x", offset);
+		LOG_ERR("verify error at offset 0x%x", offset);
 		return -EIO;
 	}
 
@@ -190,7 +191,7 @@ static int flash_sam0_write(struct device *dev, off_t offset,
 	off_t addr;
 	int err;
 
-	SYS_LOG_DBG("%x: len %u", offset, len);
+	LOG_DBG("%x: len %u", offset, len);
 
 	err = flash_sam0_valid_range(offset, len);
 	if (err != 0) {
@@ -233,12 +234,12 @@ static int flash_sam0_write(struct device *dev, off_t offset,
 	}
 
 	if ((offset % FLASH_PAGE_SIZE) != 0) {
-		SYS_LOG_WRN("%x: not on a write block boundrary", offset);
+		LOG_WRN("%x: not on a write block boundrary", offset);
 		return -EINVAL;
 	}
 
 	if ((len % FLASH_PAGE_SIZE) != 0) {
-		SYS_LOG_WRN("%x: not a integer number of write blocks", len);
+		LOG_WRN("%x: not a integer number of write blocks", len);
 		return -EINVAL;
 	}
 
@@ -284,12 +285,12 @@ static int flash_sam0_erase(struct device *dev, off_t offset, size_t size)
 	}
 
 	if ((offset % ROW_SIZE) != 0) {
-		SYS_LOG_WRN("%x: not on a page boundrary", offset);
+		LOG_WRN("%x: not on a page boundrary", offset);
 		return -EINVAL;
 	}
 
 	if ((size % ROW_SIZE) != 0) {
-		SYS_LOG_WRN("%x: not a integer number of pages", size);
+		LOG_WRN("%x: not a integer number of pages", size);
 		return -EINVAL;
 	}
 

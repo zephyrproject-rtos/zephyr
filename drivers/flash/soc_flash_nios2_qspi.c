@@ -17,10 +17,13 @@
 #include <init.h>
 #include <soc.h>
 #include <misc/util.h>
-#include <logging/sys_log.h>
 #include "flash_priv.h"
 #include "altera_generic_quad_spi_controller2_regs.h"
 #include "altera_generic_quad_spi_controller2.h"
+
+#define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(flash_nios2_qspi);
 
 /*
  * Remove the following macros once the Altera HAL
@@ -76,7 +79,7 @@ static int flash_nios2_qspi_erase(struct device *dev, off_t offset, size_t len)
 	if (((offset + len) > qspi_dev->data_end) ||
 			(0 != (erase_offset &
 			       (NIOS2_WRITE_BLOCK_SIZE - 1)))) {
-		SYS_LOG_ERR("erase failed at offset %ld\n", offset);
+		LOG_ERR("erase failed at offset %ld\n", offset);
 		rc = -EINVAL;
 		goto qspi_erase_err;
 	}
@@ -135,7 +138,7 @@ static int flash_nios2_qspi_erase(struct device *dev, off_t offset, size_t len)
 
 		if ((flag_status & FLAG_STATUS_ERASE_ERROR) ||
 				(flag_status & FLAG_STATUS_PROTECTION_ERROR)) {
-			SYS_LOG_ERR("erase failed, Flag Status Reg:%x\n",
+			LOG_ERR("erase failed, Flag Status Reg:%x\n",
 								flag_status);
 			rc = -EIO;
 			goto qspi_erase_err;
@@ -234,7 +237,7 @@ static int flash_nios2_qspi_write_block(struct device *dev, int block_offset,
 
 		if ((flag_status & FLAG_STATUS_PROGRAM_ERROR) ||
 			(flag_status & FLAG_STATUS_PROTECTION_ERROR)) {
-			SYS_LOG_ERR("write failed, Flag Status Reg:%x\n",
+			LOG_ERR("write failed, Flag Status Reg:%x\n",
 								flag_status);
 			rc = -EIO; /* sector might be protected */
 			goto qspi_write_block_err;
@@ -269,7 +272,7 @@ static int flash_nios2_qspi_write(struct device *dev, off_t offset,
 	if ((data == NULL) || ((offset + len) > qspi_dev->data_end) ||
 			(0 != (write_offset &
 			       (NIOS2_WRITE_BLOCK_SIZE - 1)))) {
-		SYS_LOG_ERR("write failed at offset %ld\n", offset);
+		LOG_ERR("write failed at offset %ld\n", offset);
 		rc = -EINVAL;
 		goto qspi_write_err;
 	}
@@ -334,7 +337,7 @@ static int flash_nios2_qspi_read(struct device *dev, off_t offset,
 	 */
 	if ((data == NULL) || ((offset + len) > qspi_dev->data_end) ||
 			(0 != (read_offset & (NIOS2_WRITE_BLOCK_SIZE - 1)))) {
-		SYS_LOG_ERR("read failed at offset %ld\n", offset);
+		LOG_ERR("read failed at offset %ld\n", offset);
 		rc = -EINVAL;
 		goto qspi_read_err;
 	}
@@ -415,7 +418,7 @@ static int flash_nios2_qspi_write_protection(struct device *dev, bool enable)
 	}
 
 	if (timeout <= 0) {
-		SYS_LOG_ERR("locking failed, status-reg 0x%x\n", status);
+		LOG_ERR("locking failed, status-reg 0x%x\n", status);
 		rc = -EIO;
 	}
 

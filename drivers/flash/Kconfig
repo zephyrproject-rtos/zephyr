@@ -26,6 +26,11 @@ menuconfig FLASH
 	  Enable support for the flash hardware.
 
 if FLASH
+
+module = FLASH
+module-str = flash
+source "subsys/logging/Kconfig.template.log_config"
+
 config FLASH_PAGE_LAYOUT
 	bool "API for retrieving the layout of pages"
 	depends on FLASH_HAS_PAGE_LAYOUT
