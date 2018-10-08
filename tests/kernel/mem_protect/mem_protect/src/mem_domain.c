@@ -35,7 +35,10 @@ K_MEM_PARTITION_DEFINE(mem_domain_memory_partition,
 		       sizeof(mem_domain_buf),
 		       K_MEM_PARTITION_P_RW_U_RW);
 
-#ifdef CONFIG_X86
+#if defined(CONFIG_X86) || \
+	((defined(CONFIG_ARMV8_M_BASELINE) || \
+		defined(CONFIG_ARMV8_M_MAINLINE)) \
+		&& defined(CONFIG_CPU_HAS_ARM_MPU))
 K_MEM_PARTITION_DEFINE(mem_domain_memory_partition1,
 		       mem_domain_buf1,
 		       sizeof(mem_domain_buf1),
