@@ -2829,15 +2829,24 @@ def main():
                     reason))
 
 
-    def native_posix_and_unit_first(a, b):
-        if a[0].startswith('native_posix') or a[0].startswith('unit_testing'):
+    def native_and_unit_first(a, b):
+        if a[0].startswith('unit_testing'):
             return -1
-        if b[0].startswith('native_posix') or b[0].startswith('unit_testing'):
+        if b[0].startswith('unit_testing'):
             return 1
+        if a[0].startswith('native_posix'):
+            return -1
+        if b[0].startswith('native_posix'):
+            return 1
+        if a[0].split("/",1)[0].endswith("_bsim"):
+            return -1
+        if b[0].split("/",1)[0].endswith("_bsim"):
+            return 1
+
         return (a > b) - (a < b)
 
     ts.instances = OrderedDict(sorted(ts.instances.items(),
-                               key=cmp_to_key(native_posix_and_unit_first)))
+                               key=cmp_to_key(native_and_unit_first)))
 
     if options.save_tests:
         ts.run_report(options.save_tests)
