@@ -58,7 +58,6 @@ extern "C" {
 #include <ztest_mock.h>
 #include <ztest_test.h>
 #include <tc_util.h>
-#include <logging/sys_log.h>
 
 void test_main(void);
 
