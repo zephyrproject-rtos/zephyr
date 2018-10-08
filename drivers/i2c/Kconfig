@@ -36,7 +36,7 @@ config I2C_INIT_PRIORITY
 
 config SYS_LOG_I2C_LEVEL
 	int "I2C log level"
-	depends on SYS_LOG
+	depends on SYS_LOG || LOG
 	default 0
 	help
 	  Sets log level for I2C drivers.
