@@ -30,21 +30,21 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 #ifdef CONFIG_DCACHE_WRITEBACK
 #define DCACHE_INVALIDATE(addr, size) \
-		{ dcache_invalidate_region(addr, size); }
+	{ dcache_invalidate_region(addr, size); }
 #define DCACHE_CLEAN(addr, size) \
-		{ dcache_writeback_region(addr, size); }
+	{ dcache_writeback_region(addr, size); }
 #else
 #define DCACHE_INVALIDATE(addr, size) \
-		do { } while (0)
+	do { } while (0)
 
 #define DCACHE_CLEAN(addr, size) \
-		do { } while (0)
+	do { } while (0)
 #endif
 
-#define CAVS_SSP_WORD_SIZE_BITS_MIN	4
-#define CAVS_SSP_WORD_SIZE_BITS_MAX	32
-#define CAVS_SSP_WORD_PER_FRAME_MIN	1
-#define CAVS_SSP_WORD_PER_FRAME_MAX	8
+#define CAVS_SSP_WORD_SIZE_BITS_MIN     4
+#define CAVS_SSP_WORD_SIZE_BITS_MAX     32
+#define CAVS_SSP_WORD_PER_FRAME_MIN     1
+#define CAVS_SSP_WORD_PER_FRAME_MAX     8
 
 struct queue_item {
 	void *mem_block;
@@ -81,9 +81,9 @@ struct stream {
 	void *mem_block;
 	bool last_block;
 	int (*stream_start)(struct stream *,
-			volatile struct i2s_cavs_ssp *const, struct device *);
+			    volatile struct i2s_cavs_ssp *const, struct device *);
 	void (*stream_disable)(struct stream *,
-			volatile struct i2s_cavs_ssp *const, struct device *);
+			       volatile struct i2s_cavs_ssp *const, struct device *);
 	void (*queue_drop)(struct stream *);
 };
 
@@ -109,7 +109,7 @@ struct i2s_cavs_dev_data {
 static struct device *get_dev_from_dma_channel(u32_t dma_channel);
 static void dma_tx_callback(struct device *, u32_t, int);
 static void tx_stream_disable(struct stream *,
-		volatile struct i2s_cavs_ssp *const, struct device *);
+			      volatile struct i2s_cavs_ssp *const, struct device *);
 
 static inline u16_t modulo_inc(u16_t val, u16_t max)
 {
@@ -121,7 +121,7 @@ static inline u16_t modulo_inc(u16_t val, u16_t max)
  * Get data from the queue
  */
 static int queue_get(struct ring_buf *rb, u8_t mode, void **mem_block,
-			size_t *size)
+		     size_t *size)
 {
 	unsigned int key;
 
@@ -164,7 +164,7 @@ static int queue_get(struct ring_buf *rb, u8_t mode, void **mem_block,
  * Put data in the queue
  */
 static int queue_put(struct ring_buf *rb, u8_t mode, void *mem_block,
-			size_t size)
+		     size_t size)
 {
 	u16_t head_next;
 	unsigned int key;
@@ -285,7 +285,7 @@ tx_disable:
 }
 
 static int i2s_cavs_configure(struct device *dev, enum i2s_dir dir,
-			     struct i2s_config *i2s_cfg)
+			      struct i2s_config *i2s_cfg)
 {
 	const struct i2s_cavs_config *const dev_cfg = DEV_CFG(dev);
 	struct i2s_cavs_dev_data *const dev_data = DEV_DATA(dev);
@@ -579,7 +579,7 @@ static void tx_queue_drop(struct stream *strm)
 	while (queue_get(&strm->mem_block_queue, strm->cfg.options,
 			 &mem_block, &size) == 0) {
 		if ((strm->cfg.options & I2S_OPT_PINGPONG)
-				!= I2S_OPT_PINGPONG) {
+		    != I2S_OPT_PINGPONG) {
 			k_mem_slab_free(strm->cfg.mem_slab, &mem_block);
 			n++;
 		}
@@ -594,7 +594,7 @@ static void tx_queue_drop(struct stream *strm)
 }
 
 static int i2s_cavs_trigger(struct device *dev, enum i2s_dir dir,
-			   enum i2s_trigger_cmd cmd)
+			    enum i2s_trigger_cmd cmd)
 {
 	const struct i2s_cavs_config *const dev_cfg = DEV_CFG(dev);
 	struct i2s_cavs_dev_data *const dev_data = DEV_DATA(dev);
@@ -699,7 +699,7 @@ static int i2s_cavs_write(struct device *dev, void *mem_block, size_t size)
 
 	/* Add data to the end of the TX queue */
 	queue_put(&dev_data->tx.mem_block_queue, strm->cfg.options,
-			 mem_block, size);
+		  mem_block, size);
 	return 0;
 }
 
