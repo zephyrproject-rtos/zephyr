@@ -6,14 +6,14 @@
 
 #include <ztest.h>
 #include <kernel.h>
-#include <posix/pthread.h>
+#include <pthread.h>
 
 #define N_THR 2
 #define N_KEY 2
 #define STACKSZ 1024
 #define BUFFSZ 48
 
-K_THREAD_STACK_ARRAY_DEFINE(stacks, N_THR, STACKSZ);
+K_THREAD_STACK_ARRAY_DEFINE(stackp, N_THR, STACKSZ);
 
 pthread_key_t key, keys[N_KEY];
 static pthread_once_t key_once, keys_once;
@@ -117,7 +117,7 @@ static void make_keys(void)
  * multiple keys.
  */
 
-void test_multiple_threads_single_key(void)
+void test_posix_multiple_threads_single_key(void)
 {
 	int i, ret = -1;
 
@@ -145,7 +145,7 @@ void test_multiple_threads_single_key(void)
 
 		schedparam.priority = 2;
 		pthread_attr_setschedparam(&attr[i], &schedparam);
-		pthread_attr_setstack(&attr[i], &stacks[i][0], STACKSZ);
+		pthread_attr_setstack(&attr[i], &stackp[i][0], STACKSZ);
 
 		ret = pthread_create(&newthread[i], &attr[i], thread_top,
 				(void *)i);
@@ -166,7 +166,7 @@ void test_multiple_threads_single_key(void)
 	printk("\n");
 }
 
-void test_single_thread_multiple_keys(void)
+void test_posix_single_thread_multiple_keys(void)
 {
 	int i, ret = -1;
 
@@ -190,7 +190,7 @@ void test_single_thread_multiple_keys(void)
 
 	schedparam.priority = 2;
 	pthread_attr_setschedparam(&attr, &schedparam);
-	pthread_attr_setstack(&attr, &stacks[0][0], STACKSZ);
+	pthread_attr_setstack(&attr, &stackp[0][0], STACKSZ);
 
 	ret = pthread_create(&newthread, &attr, thread_func,
 			(void *)0);
@@ -207,12 +207,4 @@ void test_single_thread_multiple_keys(void)
 		zassert_false(ret, "attempt to delete keys failed");
 	}
 	printk("\n");
-}
-
-void test_main(void)
-{
-	ztest_test_suite(test_pthread_key,
-			ztest_unit_test(test_multiple_threads_single_key),
-			ztest_unit_test(test_single_thread_multiple_keys));
-	ztest_run_test_suite(test_pthread_key);
 }

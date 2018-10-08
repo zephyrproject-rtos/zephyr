@@ -15,10 +15,18 @@ extern void test_posix_semaphore(void);
 extern void test_posix_rw_lock(void);
 extern void test_posix_realtime(void);
 extern void test_posix_timer(void);
+extern void test_posix_pthread_execution(void);
+extern void test_posix_pthread_termination(void);
+extern void test_posix_multiple_threads_single_key(void);
+extern void test_posix_single_thread_multiple_keys(void);
 
 void test_main(void)
 {
 	ztest_test_suite(posix_apis,
+			ztest_unit_test(test_posix_pthread_execution),
+			ztest_unit_test(test_posix_pthread_termination),
+			ztest_unit_test(test_posix_multiple_threads_single_key),
+			ztest_unit_test(test_posix_single_thread_multiple_keys),
 			ztest_unit_test(test_posix_clock),
 			ztest_unit_test(test_posix_semaphore),
 			ztest_unit_test(test_posix_normal_mutex),
