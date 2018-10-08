@@ -27,8 +27,8 @@ struct timeval {
 
 #include <kernel.h>
 #include <errno.h>
-#include "sys/types.h"
-#include "signal.h"
+#include <sys/types.h>
+#include <signal.h>
 
 #ifndef CLOCK_REALTIME
 #define CLOCK_REALTIME 0
