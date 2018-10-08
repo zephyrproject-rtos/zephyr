@@ -8,7 +8,7 @@
 menuconfig SPI_FLASH_W25QXXDV
 	bool "SPI NOR Flash Winbond W25QXXDV"
 	select FLASH_HAS_DRIVER_ENABLED
-	depends on SPI && FLASH
+	depends on SPI
 
 if SPI_FLASH_W25QXXDV
 
