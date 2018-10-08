@@ -101,7 +101,7 @@ config BT_RX_STACK_SIZE
 	depends on BT_HCI_HOST || BT_RECV_IS_RX_THREAD
 	default 512 if BT_HCI_RAW
 	default 2048 if BT_MESH
-	default 2048 if BT_SETTINGS
+	default 2200 if BT_SETTINGS
 	default 1024
 	range 512 65536 if BT_HCI_RAW
 	range 1100 65536 if BT_MESH
@@ -152,6 +152,20 @@ config BT_SETTINGS
 	  that there may be other subsystems using the settings API, in
 	  which case it's more efficient to load all settings in one go,
 	  instead of each subsystem doing it independently.
+
+if BT_SETTINGS
+config BT_SETTINGS_CCC_STORE_ON_WRITE
+	bool "Store CCC value immediately after it has been written"
+	default n
+	help
+	  Store Client Configuration Characteristic value right after it has
+	  been updated.
+
+	  By default, CCC is only stored on disconnection.
+	  Choosing this option is safer for battery-powered devices or devices
+	  that expect to be reset suddenly. However, it requires additional
+	  workqueue stack space.
+endif # BT_SETTINGS
 
 if BT_CONN
 
