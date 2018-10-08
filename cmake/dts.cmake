@@ -42,14 +42,14 @@ foreach(shield_path ${shields_refs_list})
 
   if(${shield_config})
     # if shield config flag is on, add shield overlay to the shield overlays
-    # list and dts.fixup file to the shield fixup file
+    # list and dts_fixup file to the shield fixup file
     list(APPEND
       dts_files
       ${shield_dir}/${shield_path}
       )
     list(APPEND
       dts_fixups
-      ${shield_dir}/${shield}/dts.fixup
+      ${shield_dir}/${shield}/dts_fixup.h
       )
   endif()
 endforeach()
@@ -121,13 +121,13 @@ if(CONFIG_HAS_DTS)
 
   # Run extract_dts_includes.py for the header file
   # generated_dts_board.h
-  set_ifndef(DTS_BOARD_FIXUP_FILE ${BOARD_DIR}/dts.fixup)
-  set_ifndef(DTS_SOC_FIXUP_FILE   ${PROJECT_SOURCE_DIR}/soc/${ARCH}/${SOC_PATH}/dts.fixup)
+  set_ifndef(DTS_BOARD_FIXUP_FILE ${BOARD_DIR}/dts_fixup.h)
+  set_ifndef(DTS_SOC_FIXUP_FILE   ${PROJECT_SOURCE_DIR}/soc/${ARCH}/${SOC_PATH}/dts_fixup.h)
 
   list(APPEND dts_fixups
     ${DTS_BOARD_FIXUP_FILE}
     ${DTS_SOC_FIXUP_FILE}
-    ${APPLICATION_SOURCE_DIR}/dts.fixup
+    ${APPLICATION_SOURCE_DIR}/dts_fixup.h
     )
 
   foreach(fixup ${dts_fixups})

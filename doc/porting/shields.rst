@@ -20,7 +20,7 @@ under :file:`/boards/shields`:
    ├── Kconfig.shield
    ├── Kconfig.defconfig
    ├── <shield>.overlay
-   └── dts.fixup
+   └── dts_fixup.h
 
 These files provides shield configuration as follows:
 
@@ -37,7 +37,7 @@ These files provides shield configuration as follows:
   format that is merged with the board's device tree information before
   compilation.
 
-* **dts.fixup**: This is a fixup file to bind board components definitions with
+* **dts_fixup.h**: This is a fixup file to bind board components definitions with
   application in a generic fashion to enable shield compatibility across boards
 
 Board compatibility
