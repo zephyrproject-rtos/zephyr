@@ -166,7 +166,7 @@ static struct k_thread *next_up(void)
 	 * queue such that we don't want to re-add it".
 	 */
 	int queued = _is_thread_queued(_current);
-	int active = !_is_thread_prevented_from_running(_current);
+	int active = _is_thread_ready(_current);
 
 	/* Choose the best thread that is not current */
 	struct k_thread *th = _priq_run_best(&_kernel.ready_q.runq);
@@ -283,8 +283,10 @@ static void update_cache(int preempt_ok)
 void _add_thread_to_ready_q(struct k_thread *thread)
 {
 	LOCKED(&sched_lock) {
-		_priq_run_add(&_kernel.ready_q.runq, thread);
-		_mark_thread_as_queued(thread);
+		if(!_is_thread_queued(thread)) {
+			_priq_run_add(&_kernel.ready_q.runq, thread);
+			_mark_thread_as_queued(thread);
+		}
 		update_cache(0);
 	}
 }
@@ -292,7 +294,12 @@ void _add_thread_to_ready_q(struct k_thread *thread)
 void _move_thread_to_end_of_prio_q(struct k_thread *thread)
 {
 	LOCKED(&sched_lock) {
-		_priq_run_remove(&_kernel.ready_q.runq, thread);
+		/* In SMP, the current thread is not in the queue, and if we call
+		 * remove on the current thread, it corrupts the ready queue, so check
+		 * that the thread we're moving is queued before removing it */
+		if(_is_thread_queued(thread)) {
+			_priq_run_remove(&_kernel.ready_q.runq, thread);
+		}
 		_priq_run_add(&_kernel.ready_q.runq, thread);
 		_mark_thread_as_queued(thread);
 		update_cache(thread == _current);
@@ -317,7 +324,9 @@ static void pend(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
 
 	if (wait_q != NULL) {
 		thread->base.pended_on = wait_q;
-		_priq_wait_add(&wait_q->waitq, thread);
+		LOCKED(&sched_lock) {
+			_priq_wait_add(&wait_q->waitq, thread);
+		}
 	}
 
 	if (timeout != K_FOREVER) {
@@ -415,12 +424,18 @@ void _thread_priority_set(struct k_thread *thread, int prio)
 	bool need_sched = 0;
 
 	LOCKED(&sched_lock) {
-		need_sched = _is_thread_ready(thread);
+		need_sched = _is_thread_ready(thread) && _is_thread_queued(thread);
 
 		if (need_sched) {
+			/* Remove thread from run queue */
 			_priq_run_remove(&_kernel.ready_q.runq, thread);
+
+			/* Adjust thread priority */
 			thread->base.prio = prio;
+
+			/* Add thread back to queue (in the right place) */
 			_priq_run_add(&_kernel.ready_q.runq, thread);
+			_mark_thread_as_queued(thread);
 			update_cache(1);
 		} else {
 			thread->base.prio = prio;
@@ -563,6 +578,9 @@ void _priq_dumb_remove(sys_dlist_t *pq, struct k_thread *thread)
 
 struct k_thread *_priq_dumb_best(sys_dlist_t *pq)
 {
+	if(sys_dlist_is_empty(pq))
+		return NULL;
+
 	return CONTAINER_OF(sys_dlist_peek_head(pq),
 			    struct k_thread, base.qnode_dlist);
 }
@@ -777,8 +795,11 @@ void _impl_k_yield(void)
 
 	if (!_is_idle(_current)) {
 		LOCKED(&sched_lock) {
-			_priq_run_remove(&_kernel.ready_q.runq, _current);
+			if(_is_thread_queued(_current)) {
+				_priq_run_remove(&_kernel.ready_q.runq, _current);
+			}
 			_priq_run_add(&_kernel.ready_q.runq, _current);
+			_mark_thread_as_queued(_current);
 			update_cache(1);
 		}
 	}
