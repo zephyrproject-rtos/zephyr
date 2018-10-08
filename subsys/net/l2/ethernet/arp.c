@@ -445,9 +445,31 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 	return pkt;
 }
 
-static inline void arp_update(struct net_if *iface,
-			      struct in_addr *src,
-			      struct net_eth_addr *hwaddr)
+static void arp_gratuitous(struct net_if *iface,
+			   struct in_addr *src,
+			   struct net_eth_addr *hwaddr)
+{
+	sys_snode_t *prev = NULL;
+	struct arp_entry *entry;
+
+	entry = arp_entry_find(&arp_table, iface, src, &prev);
+	if (entry) {
+		NET_DBG("Gratuitous ARP hwaddr %s -> %s",
+			log_strdup(net_sprint_ll_addr(
+					   (const u8_t *)&entry->eth,
+					   sizeof(struct net_eth_addr))),
+			log_strdup(net_sprint_ll_addr(
+					   (const u8_t *)hwaddr,
+					   sizeof(struct net_eth_addr))));
+
+		memcpy(&entry->eth, hwaddr, sizeof(struct net_eth_addr));
+	}
+}
+
+static void arp_update(struct net_if *iface,
+		       struct in_addr *src,
+		       struct net_eth_addr *hwaddr,
+		       bool gratuitous)
 {
 	struct arp_entry *entry;
 	struct net_pkt *pkt;
@@ -456,6 +478,10 @@ static inline void arp_update(struct net_if *iface,
 
 	entry = arp_entry_get_pending(iface, src);
 	if (!entry) {
+		if (IS_ENABLED(CONFIG_NET_ARP_GRATUITOUS) && gratuitous) {
+			arp_gratuitous(iface, src, hwaddr);
+		}
+
 		return;
 	}
 
@@ -567,6 +593,28 @@ enum net_verdict net_arp_input(struct net_pkt *pkt)
 
 	switch (ntohs(arp_hdr->opcode)) {
 	case NET_ARP_REQUEST:
+		if (IS_ENABLED(CONFIG_NET_ARP_GRATUITOUS)) {
+			struct net_eth_hdr *eth_hdr = NET_ETH_HDR(pkt);
+
+			if (memcmp(&eth_hdr->dst,
+				   net_eth_broadcast_addr(),
+				   sizeof(struct net_eth_addr)) == 0 &&
+			    memcmp(&arp_hdr->dst_hwaddr,
+				   net_eth_broadcast_addr(),
+				   sizeof(struct net_eth_addr)) == 0 &&
+			    memcmp(&arp_hdr->dst_ipaddr, &arp_hdr->src_ipaddr,
+				   sizeof(struct in_addr)) == 0) {
+				/* If the IP address is in our cache,
+				 * then update it here.
+				 */
+				arp_update(net_pkt_iface(pkt),
+					   &arp_hdr->src_ipaddr,
+					   &arp_hdr->src_hwaddr,
+					   true);
+				break;
+			}
+		}
+
 		/* Someone wants to know our ll address */
 		addr = if_get_addr(net_pkt_iface(pkt), &arp_hdr->dst_ipaddr);
 		if (!addr) {
@@ -595,8 +643,10 @@ enum net_verdict net_arp_input(struct net_pkt *pkt)
 		if (net_is_my_ipv4_addr(&arp_hdr->dst_ipaddr)) {
 			arp_update(net_pkt_iface(pkt),
 				   &arp_hdr->src_ipaddr,
-				   &arp_hdr->src_hwaddr);
+				   &arp_hdr->src_hwaddr,
+				   false);
 		}
+
 		break;
 	}
 
