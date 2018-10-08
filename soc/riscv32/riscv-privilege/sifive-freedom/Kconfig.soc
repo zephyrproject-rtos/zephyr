@@ -11,6 +11,5 @@ depends on SOC_SERIES_RISCV32_SIFIVE_FREEDOM
 
 config SOC_RISCV32_SIFIVE_FREEDOM
 	bool "SiFive Freedom SOC implementation"
-	select ATOMIC_OPERATIONS_C
 
 endchoice

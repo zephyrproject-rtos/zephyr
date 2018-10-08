@@ -5,4 +5,6 @@ zephyr_sources(
   soc_irq.S
   soc_common_irq.c
   vector.S
+  atomics.c
+  atomic_cas.S
   )
