@@ -13,7 +13,7 @@ extern "C" {
 #include "sys/types.h"
 #include "sys/stat.h"
 
-#ifdef CONFIG_POSIX_FS
+#ifdef CONFIG_POSIX_API
 #include <fs.h>
 
 typedef unsigned int mode_t;
@@ -21,9 +21,9 @@ typedef unsigned int mode_t;
 /* File related operations */
 extern int open(const char *name, int flags);
 extern int close(int file);
-extern ssize_t write(int file, char *buffer, unsigned int count);
-extern ssize_t read(int file, char *buffer, unsigned int count);
-extern int lseek(int file, int offset, int whence);
+extern ssize_t write(int file, const void *buffer, size_t count);
+extern ssize_t read(int file, void *buffer, size_t count);
+extern off_t lseek(int file, off_t offset, int whence);
 
 /* File System related operations */
 extern int rename(const char *old, const char *newp);
