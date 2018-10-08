@@ -7,7 +7,7 @@
 *.swp
 *.swo
 *~
-build*
+build*/
 cscope.*
 .dir
 
