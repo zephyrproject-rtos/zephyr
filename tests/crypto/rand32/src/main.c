@@ -14,7 +14,6 @@
 
 
 #include <ztest.h>
-#include <logging/sys_log.h>
 #include <kernel_internal.h>
 
 #define N_VALUES 10
