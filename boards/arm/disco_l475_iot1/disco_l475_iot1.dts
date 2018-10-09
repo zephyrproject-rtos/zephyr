@@ -107,7 +107,7 @@
 &spi3 {
 	status = "ok";
 
-	cs-gpios = <&gpiod 13 0>;
+	cs-gpios = <&gpiod 13 0>, <&gpioe 0 0>;
 
 	bt0: spbtle-rf@0 {
 		compatible = "st,spbtle-rf";
@@ -118,7 +118,7 @@
 		label = "SPBTLE-RF";
 	};
 
-	wifi0: ism43362@0 {
+	wifi0: ism43362@1 {
 		compatible = "inventek,eswifi";
 		spi-max-frequency = <2000000>;
 		reg = <1>;
@@ -126,7 +126,6 @@
 		boot0-gpios = <&gpiob 12 0>;
 		wakeup-gpios = <&gpiob 13 0>;
 		data-gpios = <&gpioe 1 0>;
-		csn-gpios = <&gpioe 0 0>;
 		label = "ESWIFI0";
 	};
 };

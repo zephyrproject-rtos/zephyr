@@ -11,6 +11,7 @@ menuconfig WIFI_ESWIFI
 	depends on WIFI
 	select NET_L2_WIFI_MGMT
 	select WIFI_OFFLOAD
+	select NET_OFFLOAD
 
 if WIFI_ESWIFI
 
