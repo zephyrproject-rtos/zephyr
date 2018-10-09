@@ -11368,25 +11368,26 @@ void ll_rx_mem_release(void **node_rx)
 
 		switch (_node_rx_free->hdr.type) {
 		case NODE_RX_TYPE_CONNECTION:
-			if (*((u8_t *)_node_rx_free->pdu_data) ==
-			    BT_HCI_ERR_UNKNOWN_CONN_ID) {
-				struct connection *conn;
+			if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
+				if (*((u8_t *)_node_rx_free->pdu_data) ==
+				    BT_HCI_ERR_UNKNOWN_CONN_ID) {
+					struct connection *conn;
 
-				conn = _radio.scanner.conn;
-				_radio.scanner.conn = NULL;
+					conn = _radio.scanner.conn;
+					_radio.scanner.conn = NULL;
 
-				mem_release(conn, &_radio.conn_free);
+					mem_release(conn, &_radio.conn_free);
 
-				_radio.scanner.is_enabled = 0;
+					_radio.scanner.is_enabled = 0;
 
-				if (!_radio.advertiser.is_enabled) {
-					ll_adv_scan_state_cb(0);
+					if (!_radio.advertiser.is_enabled) {
+						ll_adv_scan_state_cb(0);
+					}
+
+					break;
 				}
-
-				break;
 			}
 			/* passthrough */
-
 		case NODE_RX_TYPE_DC_PDU:
 		case NODE_RX_TYPE_REPORT:
 
