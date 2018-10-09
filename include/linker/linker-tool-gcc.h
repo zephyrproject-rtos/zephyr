@@ -16,7 +16,12 @@
 #define ZEPHYR_INCLUDE_LINKER_LINKER_TOOL_GCC_H_
 
 #if defined(CONFIG_ARM)
-	OUTPUT_FORMAT("elf32-littlearm", "elf32-bigarm", "elf32-littlearm")
+#if defined(CONFIG_BIG_ENDIAN)
+#define OUTPUT_FORMAT_ "elf32-bigarm"
+#else
+#define OUTPUT_FORMAT_ "elf32-littlearm"
+#endif
+	OUTPUT_FORMAT(OUTPUT_FORMAT_)
 #elif defined(CONFIG_ARC)
 	OUTPUT_FORMAT("elf32-littlearc", "elf32-bigarc", "elf32-littlearc")
 #elif defined(CONFIG_X86)

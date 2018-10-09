@@ -772,6 +772,7 @@ if(CONFIG_GEN_ISR_TABLES)
     --output-source isr_tables.c
     --kernel $<TARGET_FILE:zephyr_prebuilt>
     --intlist isrList.bin
+    $<$<BOOL:${CONFIG_BIG_ENDIAN}>:--big-endian>
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--debug>
     ${GEN_ISR_TABLE_EXTRA_ARG}
     DEPENDS zephyr_prebuilt
