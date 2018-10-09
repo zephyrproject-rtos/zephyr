@@ -379,7 +379,7 @@ extern "C" {
           break;                                              \
        }                                                      \
     }                                                         \
-  } while(0)  
+  } while(0)
 #endif
 
 /**

@@ -74,7 +74,7 @@
         HAL_GPIO_WritePin()/HAL_GPIO_TogglePin().
 
    (#) To lock pin configuration until next reset use HAL_GPIO_LockPin().
-  
+
     (#) During and just after reset, the alternate functions are not
         active and the GPIO pins are configured in input floating mode (except JTAG
         pins).
@@ -150,7 +150,7 @@
 /**
   * @}
   */
-  
+
 /* Private macros ------------------------------------------------------------*/
 /* Private macros ------------------------------------------------------------*/
 /** @defgroup GPIO_Private_Macros GPIO Private Macros
@@ -167,7 +167,7 @@
   * @{
   */
 
-/** @defgroup GPIO_Exported_Functions_Group1 Initialization/de-initialization functions 
+/** @defgroup GPIO_Exported_Functions_Group1 Initialization/de-initialization functions
  *  @brief    Initialization and Configuration functions
  *
 @verbatim
@@ -213,7 +213,7 @@ void HAL_GPIO_Init(GPIO_TypeDef  *GPIOx, GPIO_InitTypeDef *GPIO_Init)
         /* Check the Alternate function parameters */
         assert_param(IS_GPIO_AF_INSTANCE(GPIOx));
         assert_param(IS_GPIO_AF(GPIO_Init->Alternate));
-        
+
         /* Configure Alternate function mapped with the current IO */
         temp = GPIOx->AFR[position >> 3];
         temp &= ~((uint32_t)0xF << ((uint32_t)(position & (uint32_t)0x07) * 4)) ;
@@ -313,7 +313,7 @@ void HAL_GPIO_Init(GPIO_TypeDef  *GPIOx, GPIO_InitTypeDef *GPIO_Init)
         EXTI->FTSR1 = temp;
       }
     }
-    
+
     position++;
   }
 }
@@ -368,7 +368,7 @@ void HAL_GPIO_DeInit(GPIO_TypeDef  *GPIOx, uint32_t GPIO_Pin)
 
       /*------------------------- EXTI Mode Configuration --------------------*/
       /* Clear the External Interrupt or Event for the current IO */
-      
+
       tmp = SYSCFG->EXTICR[position >> 2];
       tmp &= (((uint32_t)0x0F) << (4 * (position & 0x03)));
       if(tmp == (GPIO_GET_INDEX(GPIOx) << (4 * (position & 0x03))))
@@ -385,7 +385,7 @@ void HAL_GPIO_DeInit(GPIO_TypeDef  *GPIOx, uint32_t GPIO_Pin)
         EXTI->FTSR1 &= ~((uint32_t)iocurrent);
       }
     }
-    
+
     position++;
   }
 }
@@ -394,7 +394,7 @@ void HAL_GPIO_DeInit(GPIO_TypeDef  *GPIOx, uint32_t GPIO_Pin)
   * @}
   */
 
-/** @defgroup GPIO_Exported_Functions_Group2 IO operation functions 
+/** @defgroup GPIO_Exported_Functions_Group2 IO operation functions
  *  @brief GPIO Read, Write, Toggle, Lock and EXTI management functions.
  *
 @verbatim

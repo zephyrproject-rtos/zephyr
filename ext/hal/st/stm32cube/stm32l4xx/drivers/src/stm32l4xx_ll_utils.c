@@ -234,7 +234,7 @@ void LL_mDelay(uint32_t Delay)
     [..]
          System, AHB and APB buses clocks configuration
 
-         (+) The maximum frequency of the SYSCLK, HCLK, PCLK1 and PCLK2 is 
+         (+) The maximum frequency of the SYSCLK, HCLK, PCLK1 and PCLK2 is
              120000000 Hz for STM32L4Rx/STM32L4Sx devices and 80000000 Hz for others.
   @endverbatim
   @internal
@@ -856,7 +856,7 @@ static ErrorStatus UTILS_EnablePLLAndSwitchSystem(uint32_t SYSCLK_Frequency, LL_
     LL_RCC_SetAPB1Prescaler(UTILS_ClkInitStruct->APB1CLKDivider);
     LL_RCC_SetAPB2Prescaler(UTILS_ClkInitStruct->APB2CLKDivider);
   }
-    
+
   /* Decreasing the number of wait states because of lower CPU frequency */
   if(SystemCoreClock > hclk_frequency)
   {
