@@ -118,10 +118,10 @@ static void UARTEx_Wakeup_AddressConfig(UART_HandleTypeDef *huart, UART_WakeUpTy
 
 @endverbatim
 
-  Depending on the frame length defined by the M1 and M0 bits (7-bit, 
-  8-bit or 9-bit), the possible UART formats are listed in the 
+  Depending on the frame length defined by the M1 and M0 bits (7-bit,
+  8-bit or 9-bit), the possible UART formats are listed in the
   following table.
-  
+
     Table 1. UART frame format.
     +-----------------------------------------------------------------------+
     |  M1 bit |  M0 bit |  PCE bit  |             UART frame                |
@@ -244,8 +244,8 @@ HAL_StatusTypeDef HAL_RS485Ex_Init(UART_HandleTypeDef *huart, uint32_t Polarity,
          trigger: address match, Start Bit detection or RXNE bit status.
      (+) HAL_UARTEx_EnableStopMode() API enables the UART to wake up the MCU from stop mode
      (+) HAL_UARTEx_DisableStopMode() API disables the above functionality
-     (+) HAL_UARTEx_EnableClockStopMode() API enables the UART HSI clock during stop mode   
-     (+) HAL_UARTEx_DisableClockStopMode() API disables the above functionality   
+     (+) HAL_UARTEx_EnableClockStopMode() API enables the UART HSI clock during stop mode
+     (+) HAL_UARTEx_DisableClockStopMode() API disables the above functionality
      (+) HAL_UARTEx_WakeupCallback() called upon UART wakeup interrupt
 
 
@@ -261,7 +261,7 @@ HAL_StatusTypeDef HAL_RS485Ex_Init(UART_HandleTypeDef *huart, uint32_t Polarity,
   *        to address mark, the UART handles only 4-bit long addresses detection;
   *        this API allows to enable longer addresses detection (6-, 7- or 8-bit
   *        long).
-  * @note  Addresses detection lengths are: 6-bit address detection in 7-bit data mode, 
+  * @note  Addresses detection lengths are: 6-bit address detection in 7-bit data mode,
   *        7-bit address detection in 8-bit data mode, 8-bit address detection in 9-bit data mode.
   * @param huart: UART handle.
   * @param AddressLength: this parameter can be one of the following values:
@@ -413,22 +413,22 @@ HAL_StatusTypeDef HAL_UARTEx_EnableClockStopMode(UART_HandleTypeDef *huart)
 {
   /* Process Locked */
   __HAL_LOCK(huart);
-  
+
   huart->gState = HAL_UART_STATE_BUSY;
-  
+
   /* Set UCESM bit */
   SET_BIT(huart->Instance->CR3, USART_CR3_UCESM);
-  
+
   huart->gState = HAL_UART_STATE_READY;
-  
+
   /* Process Unlocked */
   __HAL_UNLOCK(huart);
-  
-  return HAL_OK; 
+
+  return HAL_OK;
 }
 
 /**
-  * @brief Disable UART Clock in Stop Mode 
+  * @brief Disable UART Clock in Stop Mode
   * @param huart: uart handle
   * @retval HAL status
   */

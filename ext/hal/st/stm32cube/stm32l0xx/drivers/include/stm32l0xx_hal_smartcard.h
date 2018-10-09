@@ -155,10 +155,10 @@ typedef struct
 /**
   * @brief HAL SMARTCARD State structures definition
   * @note  HAL SMARTCARD State value is a combination of 2 different substates: gState and RxState.
-  *        - gState contains SMARTCARD state information related to global Handle management 
+  *        - gState contains SMARTCARD state information related to global Handle management
   *          and also information related to Tx operations.
   *          gState value coding follow below described bitmap :
-  *          b7-b6  Error information 
+  *          b7-b6  Error information
   *             00 : No Error
   *             01 : (Not Used)
   *             10 : Timeout
@@ -197,7 +197,7 @@ typedef enum
                                                         Value is allowed for gState and RxState */
   HAL_SMARTCARD_STATE_READY             = 0x20U,   /*!< Peripheral Initialized and ready for use
                                                         Value is allowed for gState and RxState */
-  HAL_SMARTCARD_STATE_BUSY              = 0x24U,   /*!< an internal process is ongoing 
+  HAL_SMARTCARD_STATE_BUSY              = 0x24U,   /*!< an internal process is ongoing
                                                         Value is allowed for gState only */
   HAL_SMARTCARD_STATE_BUSY_TX           = 0x21U,   /*!< Data Transmission process is ongoing
                                                         Value is allowed for gState only */
@@ -255,7 +255,7 @@ typedef struct
 
   HAL_LockTypeDef                 Lock;             /*!< Locking object                                        */
 
-  __IO HAL_SMARTCARD_StateTypeDef    gState;        /*!< SmartCard state information related to global Handle management 
+  __IO HAL_SMARTCARD_StateTypeDef    gState;        /*!< SmartCard state information related to global Handle management
                                                          and also related to Tx operations.
                                                          This parameter can be a value of @ref HAL_SMARTCARD_StateTypeDef */
 
@@ -510,7 +510,7 @@ typedef enum
   *           - ZZZZ  : Flag position in the ISR register(4bits)
   * @{
   */
-  
+
 #define SMARTCARD_IT_PE                          ((uint16_t)0x0028U)    /*!< SMARTCARD parity error interruption                 */
 #define SMARTCARD_IT_TXE                         ((uint16_t)0x0727U)    /*!< SMARTCARD transmit data register empty interruption */
 #define SMARTCARD_IT_TC                          ((uint16_t)0x0626U)    /*!< SMARTCARD transmission complete interruption        */
@@ -526,20 +526,20 @@ typedef enum
 #define SMARTCARD_IT_RTO                         ((uint16_t)0x0B3AU)    /*!< SMARTCARD receiver timeout interruption */
 /**
   * @}
-  */ 
+  */
 
 
 /** @defgroup SMARTCARD_IT_CLEAR_Flags SMARTCARD IT CLEAR Flags
   * @{
   */
-#define SMARTCARD_CLEAR_PEF                       USART_ICR_PECF            /*!< Parity Error Clear Flag */          
-#define SMARTCARD_CLEAR_FEF                       USART_ICR_FECF            /*!< Framing Error Clear Flag */         
-#define SMARTCARD_CLEAR_NEF                       USART_ICR_NCF             /*!< Noise detected Clear Flag */        
-#define SMARTCARD_CLEAR_OREF                      USART_ICR_ORECF           /*!< OverRun Error Clear Flag */         
+#define SMARTCARD_CLEAR_PEF                       USART_ICR_PECF            /*!< Parity Error Clear Flag */
+#define SMARTCARD_CLEAR_FEF                       USART_ICR_FECF            /*!< Framing Error Clear Flag */
+#define SMARTCARD_CLEAR_NEF                       USART_ICR_NCF             /*!< Noise detected Clear Flag */
+#define SMARTCARD_CLEAR_OREF                      USART_ICR_ORECF           /*!< OverRun Error Clear Flag */
 #define SMARTCARD_CLEAR_IDLEF                     USART_ICR_IDLECF          /*!< IDLE line detected Clear Flag */
-#define SMARTCARD_CLEAR_TCF                       USART_ICR_TCCF            /*!< Transmission Complete Clear Flag */ 
-#define SMARTCARD_CLEAR_RTOF                      USART_ICR_RTOCF           /*!< Receiver Time Out Clear Flag */     
-#define SMARTCARD_CLEAR_EOBF                      USART_ICR_EOBCF           /*!< End Of Block Clear Flag */          
+#define SMARTCARD_CLEAR_TCF                       USART_ICR_TCCF            /*!< Transmission Complete Clear Flag */
+#define SMARTCARD_CLEAR_RTOF                      USART_ICR_RTOCF           /*!< Receiver Time Out Clear Flag */
+#define SMARTCARD_CLEAR_EOBF                      USART_ICR_EOBCF           /*!< End Of Block Clear Flag */
 /**
   * @}
   */
@@ -663,7 +663,7 @@ typedef enum
   *            @arg @ref SMARTCARD_FLAG_TXE   Transmit data register empty flag
   *            @arg @ref SMARTCARD_FLAG_TC    Transmission complete flag
   *            @arg @ref SMARTCARD_FLAG_RXNE  Receive data register not empty flag
-  *            @arg @ref SMARTCARD_FLAG_IDLE  Idle line detection flag  
+  *            @arg @ref SMARTCARD_FLAG_IDLE  Idle line detection flag
   *            @arg @ref SMARTCARD_FLAG_ORE   Overrun error flag
   *            @arg @ref SMARTCARD_FLAG_NE    Noise error flag
   *            @arg @ref SMARTCARD_FLAG_FE    Framing error flag
@@ -682,7 +682,7 @@ typedef enum
   *            @arg @ref SMARTCARD_IT_TXE   Transmit data register empty interrupt
   *            @arg @ref SMARTCARD_IT_TC    Transmission complete interrupt
   *            @arg @ref SMARTCARD_IT_RXNE  Receive data register not empty interrupt
-  *            @arg @ref SMARTCARD_IT_IDLE  Idle line detection interrupt  
+  *            @arg @ref SMARTCARD_IT_IDLE  Idle line detection interrupt
   *            @arg @ref SMARTCARD_IT_PE    Parity error interrupt
   *            @arg @ref SMARTCARD_IT_ERR   Error interrupt(frame error, noise error, overrun error)
   * @retval None
@@ -700,7 +700,7 @@ typedef enum
   *            @arg @ref SMARTCARD_IT_TXE   Transmit data register empty interrupt
   *            @arg @ref SMARTCARD_IT_TC    Transmission complete interrupt
   *            @arg @ref SMARTCARD_IT_RXNE  Receive data register not empty interrupt
-  *            @arg @ref SMARTCARD_IT_IDLE  Idle line detection interrupt   
+  *            @arg @ref SMARTCARD_IT_IDLE  Idle line detection interrupt
   *            @arg @ref SMARTCARD_IT_PE    Parity error interrupt
   *            @arg @ref SMARTCARD_IT_ERR   Error interrupt(frame error, noise error, overrun error)
   * @retval None
@@ -719,14 +719,14 @@ typedef enum
   *            @arg @ref SMARTCARD_IT_TXE   Transmit data register empty interrupt
   *            @arg @ref SMARTCARD_IT_TC    Transmission complete interrupt
   *            @arg @ref SMARTCARD_IT_RXNE  Receive data register not empty interrupt
-  *            @arg @ref SMARTCARD_IT_IDLE  Idle line detection interrupt  
+  *            @arg @ref SMARTCARD_IT_IDLE  Idle line detection interrupt
   *            @arg @ref SMARTCARD_IT_ORE   Overrun error interrupt
   *            @arg @ref SMARTCARD_IT_NE    Noise error interrupt
   *            @arg @ref SMARTCARD_IT_FE    Framing error interrupt
   *            @arg @ref SMARTCARD_IT_PE    Parity error interrupt
   * @retval The new state of __IT__ (TRUE or FALSE).
   */
-#define __HAL_SMARTCARD_GET_IT(__HANDLE__, __IT__) ((__HANDLE__)->Instance->ISR & ((uint32_t)1U << ((__IT__)>> 0x08U))) 
+#define __HAL_SMARTCARD_GET_IT(__HANDLE__, __IT__) ((__HANDLE__)->Instance->ISR & ((uint32_t)1U << ((__IT__)>> 0x08U)))
 
 /** @brief  Check whether the specified SmartCard interrupt source is enabled or not.
   * @param  __HANDLE__: specifies the SMARTCARD Handle.
@@ -737,7 +737,7 @@ typedef enum
   *            @arg @ref SMARTCARD_IT_TXE   Transmit data register empty interrupt
   *            @arg @ref SMARTCARD_IT_TC    Transmission complete interrupt
   *            @arg @ref SMARTCARD_IT_RXNE  Receive data register not empty interrupt
-  *            @arg @ref SMARTCARD_IT_IDLE  Idle line detection interrupt  
+  *            @arg @ref SMARTCARD_IT_IDLE  Idle line detection interrupt
   *            @arg @ref SMARTCARD_IT_ERR   Framing, overrun or noise error interrupt
   *            @arg @ref SMARTCARD_IT_PE    Parity error interrupt
   * @retval The new state of __IT__ (TRUE or FALSE).
@@ -756,7 +756,7 @@ typedef enum
   *            @arg @ref SMARTCARD_CLEAR_FEF    Framing error clear flag
   *            @arg @ref SMARTCARD_CLEAR_NEF    Noise detected clear flag
   *            @arg @ref SMARTCARD_CLEAR_OREF   OverRun error clear flag
-  *            @arg @ref SMARTCARD_CLEAR_IDLEF  Idle line detection clear flag    
+  *            @arg @ref SMARTCARD_CLEAR_IDLEF  Idle line detection clear flag
   *            @arg @ref SMARTCARD_CLEAR_TCF    Transmission complete clear flag
   *            @arg @ref SMARTCARD_CLEAR_RTOF   Receiver timeout clear flag
   *            @arg @ref SMARTCARD_CLEAR_EOBF   End of block clear flag
@@ -776,13 +776,13 @@ typedef enum
 #define __HAL_SMARTCARD_SEND_REQ(__HANDLE__, __REQ__) ((__HANDLE__)->Instance->RQR |= (uint16_t)(__REQ__))
 
 /** @brief  Enable the SMARTCARD one bit sample method.
-  * @param  __HANDLE__: specifies the SMARTCARD Handle.  
+  * @param  __HANDLE__: specifies the SMARTCARD Handle.
   * @retval None
   */
 #define __HAL_SMARTCARD_ONE_BIT_SAMPLE_ENABLE(__HANDLE__) ((__HANDLE__)->Instance->CR3|= USART_CR3_ONEBIT)
 
 /** @brief  Disable the SMARTCARD one bit sample method.
-  * @param  __HANDLE__: specifies the SMARTCARD Handle.  
+  * @param  __HANDLE__: specifies the SMARTCARD Handle.
   * @retval None
   */
 #define __HAL_SMARTCARD_ONE_BIT_SAMPLE_DISABLE(__HANDLE__) ((__HANDLE__)->Instance->CR3 &= (uint32_t)~((uint32_t)USART_CR3_ONEBIT))
@@ -819,7 +819,7 @@ typedef enum
   * @{
   */
 
-/** @brief  Check the Baud rate range. 
+/** @brief  Check the Baud rate range.
   * @note   The maximum Baud Rate is derived from the maximum clock on L0 (i.e. 32 MHz)
   *         divided by the oversampling used on the SMARTCARD (i.e. 16).
   * @param  __BAUDRATE__: Baud rate set by the configuration function.
@@ -834,14 +834,14 @@ typedef enum
   */
 #define IS_SMARTCARD_BLOCKLENGTH(__LENGTH__) ((__LENGTH__) <= 0xFFU)
 
-/** @brief  Check the receiver timeout value. 
+/** @brief  Check the receiver timeout value.
   * @note   The maximum SMARTCARD receiver timeout value is 0xFFFFFF.
   * @param  __TIMEOUTVALUE__: receiver timeout value.
   * @retval Test result (TRUE or FALSE)
   */
 #define IS_SMARTCARD_TIMEOUT_VALUE(__TIMEOUTVALUE__)    ((__TIMEOUTVALUE__) <= 0xFFFFFFU)
 
-/** @brief  Check the SMARTCARD autoretry counter value. 
+/** @brief  Check the SMARTCARD autoretry counter value.
   * @note   The maximum number of retransmissions is 0x7.
   * @param  __COUNT__: number of retransmissions.
   * @retval Test result (TRUE or FALSE)
@@ -850,51 +850,51 @@ typedef enum
 
 /**
   * @brief Ensure that SMARTCARD frame length is valid.
-  * @param __LENGTH__: SMARTCARD frame length. 
+  * @param __LENGTH__: SMARTCARD frame length.
   * @retval SET (__LENGTH__ is valid) or RESET (__LENGTH__ is invalid)
-  */ 
+  */
 #define IS_SMARTCARD_WORD_LENGTH(__LENGTH__) ((__LENGTH__) == SMARTCARD_WORDLENGTH_9B)
 
 /**
   * @brief Ensure that SMARTCARD frame number of stop bits is valid.
-  * @param __STOPBITS__: SMARTCARD frame number of stop bits. 
+  * @param __STOPBITS__: SMARTCARD frame number of stop bits.
   * @retval SET (__STOPBITS__ is valid) or RESET (__STOPBITS__ is invalid)
-  */ 
+  */
 #define IS_SMARTCARD_STOPBITS(__STOPBITS__) (((__STOPBITS__) == SMARTCARD_STOPBITS_0_5) ||\
                                              ((__STOPBITS__) == SMARTCARD_STOPBITS_1_5))
 
 /**
   * @brief Ensure that SMARTCARD frame parity is valid.
-  * @param __PARITY__: SMARTCARD frame parity. 
+  * @param __PARITY__: SMARTCARD frame parity.
   * @retval SET (__PARITY__ is valid) or RESET (__PARITY__ is invalid)
-  */ 
+  */
 #define IS_SMARTCARD_PARITY(__PARITY__) (((__PARITY__) == SMARTCARD_PARITY_EVEN) || \
                                          ((__PARITY__) == SMARTCARD_PARITY_ODD))
 
 /**
   * @brief Ensure that SMARTCARD communication mode is valid.
-  * @param __MODE__: SMARTCARD communication mode. 
+  * @param __MODE__: SMARTCARD communication mode.
   * @retval SET (__MODE__ is valid) or RESET (__MODE__ is invalid)
-  */ 
+  */
 #define IS_SMARTCARD_MODE(__MODE__) ((((__MODE__) & (uint16_t)0xFFF3) == 0x00) && ((__MODE__) != (uint16_t)0x00))
 
 /**
   * @brief Ensure that SMARTCARD frame polarity is valid.
-  * @param __CPOL__: SMARTCARD frame polarity. 
+  * @param __CPOL__: SMARTCARD frame polarity.
   * @retval SET (__CPOL__ is valid) or RESET (__CPOL__ is invalid)
-  */ 
+  */
 #define IS_SMARTCARD_POLARITY(__CPOL__) (((__CPOL__) == SMARTCARD_POLARITY_LOW) || ((__CPOL__) == SMARTCARD_POLARITY_HIGH))
 
 /**
   * @brief Ensure that SMARTCARD frame phase is valid.
-  * @param __CPHA__: SMARTCARD frame phase. 
+  * @param __CPHA__: SMARTCARD frame phase.
   * @retval SET (__CPHA__ is valid) or RESET (__CPHA__ is invalid)
   */
 #define IS_SMARTCARD_PHASE(__CPHA__) (((__CPHA__) == SMARTCARD_PHASE_1EDGE) || ((__CPHA__) == SMARTCARD_PHASE_2EDGE))
 
 /**
   * @brief Ensure that SMARTCARD frame last bit clock pulse setting is valid.
-  * @param __LASTBIT__: SMARTCARD frame last bit clock pulse setting. 
+  * @param __LASTBIT__: SMARTCARD frame last bit clock pulse setting.
   * @retval SET (__LASTBIT__ is valid) or RESET (__LASTBIT__ is invalid)
   */
 #define IS_SMARTCARD_LASTBIT(__LASTBIT__) (((__LASTBIT__) == SMARTCARD_LASTBIT_DISABLE) || \
@@ -902,7 +902,7 @@ typedef enum
 
 /**
   * @brief Ensure that SMARTCARD frame sampling is valid.
-  * @param __ONEBIT__: SMARTCARD frame sampling. 
+  * @param __ONEBIT__: SMARTCARD frame sampling.
   * @retval SET (__ONEBIT__ is valid) or RESET (__ONEBIT__ is invalid)
   */
 #define IS_SMARTCARD_ONE_BIT_SAMPLE(__ONEBIT__) (((__ONEBIT__) == SMARTCARD_ONE_BIT_SAMPLE_DISABLE) || \
@@ -910,7 +910,7 @@ typedef enum
 
 /**
   * @brief Ensure that SMARTCARD NACK transmission setting is valid.
-  * @param __NACK__: SMARTCARD NACK transmission setting. 
+  * @param __NACK__: SMARTCARD NACK transmission setting.
   * @retval SET (__NACK__ is valid) or RESET (__NACK__ is invalid)
   */
 #define IS_SMARTCARD_NACK(__NACK__) (((__NACK__) == SMARTCARD_NACK_ENABLE) || \
@@ -918,7 +918,7 @@ typedef enum
 
 /**
   * @brief Ensure that SMARTCARD receiver timeout setting is valid.
-  * @param __TIMEOUT__: SMARTCARD receiver timeout setting. 
+  * @param __TIMEOUT__: SMARTCARD receiver timeout setting.
   * @retval SET (__TIMEOUT__ is valid) or RESET (__TIMEOUT__ is invalid)
   */
 #define IS_SMARTCARD_TIMEOUT(__TIMEOUT__) (((__TIMEOUT__) == SMARTCARD_TIMEOUT_DISABLE) || \
@@ -926,7 +926,7 @@ typedef enum
 
 /**
   * @brief Ensure that SMARTCARD advanced features initialization is valid.
-  * @param __INIT__: SMARTCARD advanced features initialization. 
+  * @param __INIT__: SMARTCARD advanced features initialization.
   * @retval SET (__INIT__ is valid) or RESET (__INIT__ is invalid)
   */
 #define IS_SMARTCARD_ADVFEATURE_INIT(__INIT__) ((__INIT__) <= (SMARTCARD_ADVFEATURE_NO_INIT                | \
@@ -940,7 +940,7 @@ typedef enum
 
 /**
   * @brief Ensure that SMARTCARD frame TX inversion setting is valid.
-  * @param __TXINV__: SMARTCARD frame TX inversion setting. 
+  * @param __TXINV__: SMARTCARD frame TX inversion setting.
   * @retval SET (__TXINV__ is valid) or RESET (__TXINV__ is invalid)
   */
 #define IS_SMARTCARD_ADVFEATURE_TXINV(__TXINV__) (((__TXINV__) == SMARTCARD_ADVFEATURE_TXINV_DISABLE) || \
@@ -948,7 +948,7 @@ typedef enum
 
 /**
   * @brief Ensure that SMARTCARD frame RX inversion setting is valid.
-  * @param __RXINV__: SMARTCARD frame RX inversion setting. 
+  * @param __RXINV__: SMARTCARD frame RX inversion setting.
   * @retval SET (__RXINV__ is valid) or RESET (__RXINV__ is invalid)
   */
 #define IS_SMARTCARD_ADVFEATURE_RXINV(__RXINV__) (((__RXINV__) == SMARTCARD_ADVFEATURE_RXINV_DISABLE) || \
@@ -956,7 +956,7 @@ typedef enum
 
 /**
   * @brief Ensure that SMARTCARD frame data inversion setting is valid.
-  * @param __DATAINV__: SMARTCARD frame data inversion setting. 
+  * @param __DATAINV__: SMARTCARD frame data inversion setting.
   * @retval SET (__DATAINV__ is valid) or RESET (__DATAINV__ is invalid)
   */
 #define IS_SMARTCARD_ADVFEATURE_DATAINV(__DATAINV__) (((__DATAINV__) == SMARTCARD_ADVFEATURE_DATAINV_DISABLE) || \
@@ -964,7 +964,7 @@ typedef enum
 
 /**
   * @brief Ensure that SMARTCARD frame RX/TX pins swap setting is valid.
-  * @param __SWAP__: SMARTCARD frame RX/TX pins swap setting. 
+  * @param __SWAP__: SMARTCARD frame RX/TX pins swap setting.
   * @retval SET (__SWAP__ is valid) or RESET (__SWAP__ is invalid)
   */
 #define IS_SMARTCARD_ADVFEATURE_SWAP(__SWAP__) (((__SWAP__) == SMARTCARD_ADVFEATURE_SWAP_DISABLE) || \
@@ -972,7 +972,7 @@ typedef enum
 
 /**
   * @brief Ensure that SMARTCARD frame overrun setting is valid.
-  * @param __OVERRUN__: SMARTCARD frame overrun setting. 
+  * @param __OVERRUN__: SMARTCARD frame overrun setting.
   * @retval SET (__OVERRUN__ is valid) or RESET (__OVERRUN__ is invalid)
   */
 #define IS_SMARTCARD_OVERRUN(__OVERRUN__) (((__OVERRUN__) == SMARTCARD_ADVFEATURE_OVERRUN_ENABLE) || \
@@ -980,7 +980,7 @@ typedef enum
 
 /**
   * @brief Ensure that SMARTCARD DMA enabling or disabling on error setting is valid.
-  * @param __DMA__: SMARTCARD DMA enabling or disabling on error setting. 
+  * @param __DMA__: SMARTCARD DMA enabling or disabling on error setting.
   * @retval SET (__DMA__ is valid) or RESET (__DMA__ is invalid)
   */
 #define IS_SMARTCARD_ADVFEATURE_DMAONRXERROR(__DMA__) (((__DMA__) == SMARTCARD_ADVFEATURE_DMA_ENABLEONRXERROR) || \
@@ -988,7 +988,7 @@ typedef enum
 
 /**
   * @brief Ensure that SMARTCARD frame MSB first setting is valid.
-  * @param __MSBFIRST__: SMARTCARD frame MSB first setting. 
+  * @param __MSBFIRST__: SMARTCARD frame MSB first setting.
   * @retval SET (__MSBFIRST__ is valid) or RESET (__MSBFIRST__ is invalid)
   */
 #define IS_SMARTCARD_ADVFEATURE_MSBFIRST(__MSBFIRST__) (((__MSBFIRST__) == SMARTCARD_ADVFEATURE_MSBFIRST_DISABLE) || \
@@ -996,7 +996,7 @@ typedef enum
 
 /**
   * @brief Ensure that SMARTCARD request parameter is valid.
-  * @param __PARAM__: SMARTCARD request parameter. 
+  * @param __PARAM__: SMARTCARD request parameter.
   * @retval SET (__PARAM__ is valid) or RESET (__PARAM__ is invalid)
   */
 #define IS_SMARTCARD_REQUEST_PARAMETER(__PARAM__) (((__PARAM__) == SMARTCARD_RXDATA_FLUSH_REQUEST) || \

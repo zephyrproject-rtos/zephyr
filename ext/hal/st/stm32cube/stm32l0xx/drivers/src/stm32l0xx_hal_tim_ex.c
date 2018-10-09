@@ -3,17 +3,17 @@
   * @file    stm32l0xx_hal_tim_ex.c
   * @author  MCD Application Team
   * @brief   TIM HAL module driver.
-  * @brief   This file provides firmware functions to manage the following 
+  * @brief   This file provides firmware functions to manage the following
   *          functionalities of the Timer (TIM) peripheral:
   *           + Time Hall Sensor Interface Initialization
   *           + Time Hall Sensor Interface Start
   *           + Time Master and Slave synchronization configuration
-  @verbatim 
+  @verbatim
 ================================================================================
           ##### TIM specific features integration #####
 ================================================================================
-           
-    [..] The Timer features include: 
+
+    [..] The Timer features include:
          (#) 16-bit up, down, up/down auto-reload counter.
          (#) 16-bit programmable prescaler allowing dividing (also on the fly) the counter clock
              frequency either by any factor between 1 and 65536.
@@ -25,30 +25,30 @@
          (#) Synchronization circuit to control the timer with external signals and to interconnect
             several timers together.
          (#) Supports incremental (quadrature) encoder and hall-sensor circuitry for positioning
-           purposes               
-   
+           purposes
+
             ##### How to use this driver #####
 ================================================================================
     [..]
-     (#) Enable the TIM interface clock using 
-         __HAL_RCC_TIMx_CLK_ENABLE(); 
-       
+     (#) Enable the TIM interface clock using
+         __HAL_RCC_TIMx_CLK_ENABLE();
+
      (#) TIM pins configuration
           (++) Enable the clock for the TIM GPIOs using the following function:
-              __HAL_RCC_GPIOx_CLK_ENABLE();   
-          (++) Configure these TIM pins in Alternate function mode using HAL_GPIO_Init();  
+              __HAL_RCC_GPIOx_CLK_ENABLE();
+          (++) Configure these TIM pins in Alternate function mode using HAL_GPIO_Init();
 
-     (#) The external Clock can be configured, if needed (the default clock is the internal clock from the APBx), 
+     (#) The external Clock can be configured, if needed (the default clock is the internal clock from the APBx),
          using the following function:
          HAL_TIM_ConfigClockSource, the clock configuration should be done before any start function.
-  
-     (#) Configure the TIM in the desired operating mode using one of the 
+
+     (#) Configure the TIM in the desired operating mode using one of the
          configuration function of this driver:
           (++) HAL_TIMEx_MasterConfigSynchronization() to configure the peripheral in master mode.
 
      (#) Remap the Timer I/O using HAL_TIMEx_RemapConfig() API.
 
-  
+
   @endverbatim
   ******************************************************************************
   * @attention
@@ -78,7 +78,7 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-  */ 
+  */
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l0xx_hal.h"
@@ -103,23 +103,23 @@
 /** @addtogroup TIMEx_Exported_Functions_Group1
  *  @brief    Peripheral Control functions
  *
-@verbatim   
+@verbatim
  ===============================================================================
              ##### Peripheral Control functions #####
- ===============================================================================  
+ ===============================================================================
     [..]  This section provides functions allowing to:
       (+) Configure Master and the Slave synchronization.
-      
+
 @endverbatim
   * @{
   */
 
 /**
   * @brief  Configures the TIM in master mode.
-  * @param  htim: TIM handle.   
+  * @param  htim: TIM handle.
   * @param  sMasterConfig: pointer to a TIM_MasterConfigTypeDef structure that
-  *         contains the selected trigger output (TRGO) and the Master/Slave 
-  *         mode. 
+  *         contains the selected trigger output (TRGO) and the Master/Slave
+  *         mode.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_TIMEx_MasterConfigSynchronization(TIM_HandleTypeDef *htim, TIM_MasterConfigTypeDef * sMasterConfig)
@@ -128,9 +128,9 @@ HAL_StatusTypeDef HAL_TIMEx_MasterConfigSynchronization(TIM_HandleTypeDef *htim,
   assert_param(IS_TIM_MASTER_INSTANCE(htim->Instance));
   assert_param(IS_TIM_TRGO_SOURCE(sMasterConfig->MasterOutputTrigger));
   assert_param(IS_TIM_MSM_STATE(sMasterConfig->MasterSlaveMode));
-  
+
   __HAL_LOCK(htim);
-  
+
   /* Change the handler state */
   htim->State = HAL_TIM_STATE_BUSY;
 
@@ -145,11 +145,11 @@ HAL_StatusTypeDef HAL_TIMEx_MasterConfigSynchronization(TIM_HandleTypeDef *htim,
   htim->Instance->SMCR |= sMasterConfig->MasterSlaveMode;
 
   htim->State = HAL_TIM_STATE_READY;
-  
+
   __HAL_UNLOCK(htim);
-  
+
   return HAL_OK;
-}  
+}
 
 
 #if defined (STM32L071xx) || defined (STM32L072xx) || defined (STM32L073xx) \
@@ -247,7 +247,7 @@ HAL_StatusTypeDef HAL_TIMEx_MasterConfigSynchronization(TIM_HandleTypeDef *htim,
   *
   * @retval HAL status
   */
-#elif defined (STM32L031xx) || defined (STM32L041xx) 
+#elif defined (STM32L031xx) || defined (STM32L041xx)
   /**
   * @brief  Configures the remapping of the TIM2, TIM21 and TIM22 inputs.
   *         The channel inputs (T1..T4) and the Trigger input (ETR) of the
@@ -307,8 +307,8 @@ HAL_StatusTypeDef HAL_TIMEx_MasterConfigSynchronization(TIM_HandleTypeDef *htim,
   *                                    GPIOA(6)_AF5 or GPIOB(4)_AF4
   *
   * @retval HAL status
-  */      
-#elif defined (STM32L011xx) || defined (STM32L021xx) 
+  */
+#elif defined (STM32L011xx) || defined (STM32L021xx)
   /**
   * @brief  Configures the remapping of the TIM2 and TIM21 inputs.
   *         The channel inputs (T1..T4) and the Trigger input (ETR) of the
@@ -354,7 +354,7 @@ HAL_StatusTypeDef HAL_TIMEx_MasterConfigSynchronization(TIM_HandleTypeDef *htim,
   *           @arg TIM21_TI2_COMP2_OUT:TIM21 TI2 connected to COMP2 output
   *
   * @retval HAL status
-  */      
+  */
 #else
 /**
   * @brief  Configures the remapping of the TIM2, TIM21 and TIM22 inputs.
@@ -456,9 +456,9 @@ HAL_StatusTypeDef HAL_TIMEx_RemapConfig(TIM_HandleTypeDef *htim, uint32_t Remap)
 #endif /* HAL_TIM_MODULE_ENABLED */
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
-  */ 
+  */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

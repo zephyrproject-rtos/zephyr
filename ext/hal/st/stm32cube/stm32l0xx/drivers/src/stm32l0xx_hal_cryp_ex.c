@@ -3,11 +3,11 @@
   * @file    stm32l0xx_hal_cryp_ex.c
   * @author  MCD Application Team
   * @brief   CRYPEx HAL module driver.
-  *    
-  *          This file provides firmware functions to manage the following 
+  *
+  *          This file provides firmware functions to manage the following
   *          functionalities of the Cryptography (CRYP) extension peripheral:
   *           + Computation completed callback.
-  *         
+  *
   ******************************************************************************
   * @attention
   *
@@ -35,8 +35,8 @@
   * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
-  ******************************************************************************  
-  */ 
+  ******************************************************************************
+  */
 
 #if defined (STM32L021xx) ||defined (STM32L041xx) || defined (STM32L061xx) || defined (STM32L062xx) || defined (STM32L063xx) || defined (STM32L081xx) || defined (STM32L082xx) || defined (STM32L083xx)
 /* Includes ------------------------------------------------------------------*/
@@ -67,12 +67,12 @@
 
 
 /** @addtogroup CRYPEx_Exported_Functions_Group1
- *  @brief    Extended features functions. 
+ *  @brief    Extended features functions.
  *
-@verbatim   
+@verbatim
  ===============================================================================
                  ##### Extended features functions #####
- =============================================================================== 
+ ===============================================================================
     [..]  This section provides callback functions:
       (+) Computation completed.
 
@@ -93,7 +93,7 @@ __weak void HAL_CRYPEx_ComputationCpltCallback(CRYP_HandleTypeDef *hcryp)
 
   /* NOTE : This function Should not be modified, when the callback is needed,
             the HAL_CRYP_ComputationCpltCallback could be implemented in the user file
-   */ 
+   */
 }
 
 /**
