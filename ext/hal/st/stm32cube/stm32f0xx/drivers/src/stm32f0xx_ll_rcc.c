@@ -192,9 +192,9 @@ ErrorStatus LL_RCC_DeInit(void)
   *         and different peripheral clocks available on the device.
   * @note   If SYSCLK source is HSI, function returns values based on HSI_VALUE(**)
   * @note   If SYSCLK source is HSE, function returns values based on HSE_VALUE(***)
-  * @note   If SYSCLK source is PLL, function returns values based on 
+  * @note   If SYSCLK source is PLL, function returns values based on
   *         HSI_VALUE(**) or HSE_VALUE(***) multiplied/divided by the PLL factors.
-  * @note   (**) HSI_VALUE is a defined constant but the real value may vary 
+  * @note   (**) HSI_VALUE is a defined constant but the real value may vary
   *              depending on the variations in voltage and temperature.
   * @note   (***) HSE_VALUE is a defined constant, user has to ensure that
   *               HSE_VALUE is same as the real frequency of the crystal used.

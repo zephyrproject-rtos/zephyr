@@ -115,8 +115,8 @@ static void UARTEx_Wakeup_AddressConfig(UART_HandleTypeDef *huart, UART_WakeUpTy
         (++) MSB first on communication line
         (++) auto Baud rate detection
     [..]
-    The HAL_LIN_Init() and HAL_RS485Ex_Init() APIs follows respectively the LIN and 
-    the UART RS485 mode configuration procedures (details for the procedures are 
+    The HAL_LIN_Init() and HAL_RS485Ex_Init() APIs follows respectively the LIN and
+    the UART RS485 mode configuration procedures (details for the procedures are
     available in reference manual).
 
 @endverbatim
@@ -130,8 +130,8 @@ static void UARTEx_Wakeup_AddressConfig(UART_HandleTypeDef *huart, UART_WakeUpTy
                      frame length is either defined by the M bit (8-bits or 9-bits)
                      or by the M1 and M0 bits (7-bit, 8-bit or 9-bit).
                      Possible UART frame formats are as listed in the following table:
-            
-      Table 1. UART frame format.             
+
+      Table 1. UART frame format.
       +-----------------------------------------------------------------------+
       |       M bit       |  PCE bit  |             UART frame                |
       |-------------------|-----------|---------------------------------------|
@@ -321,14 +321,14 @@ HAL_StatusTypeDef HAL_LIN_Init(UART_HandleTypeDef *huart, uint32_t BreakDetectLe
   /* TEACK and/or REACK to check before moving huart->gState and huart->RxState to Ready */
   return (UART_CheckIdleState(huart));
 }
-#endif /* !defined(STM32F030x6) && !defined(STM32F030x8)&& !defined(STM32F070xB)&& !defined(STM32F070x6)&& !defined(STM32F030xC) */ 
+#endif /* !defined(STM32F030x6) && !defined(STM32F030x8)&& !defined(STM32F070xB)&& !defined(STM32F070x6)&& !defined(STM32F030xC) */
 
 /**
   * @}
   */
 
-/** @defgroup UARTEx_Exported_Functions_Group2 Extended IO operation function 
-  * @brief    Extended UART Interrupt handling function 
+/** @defgroup UARTEx_Exported_Functions_Group2 Extended IO operation function
+  * @brief    Extended UART Interrupt handling function
   *
 @verbatim
  ===============================================================================
@@ -336,7 +336,7 @@ HAL_StatusTypeDef HAL_LIN_Init(UART_HandleTypeDef *huart, uint32_t BreakDetectLe
  ===============================================================================
     [..]
     This subsection provides function to handle Wake up interrupt call-back.
-        
+
     (#) Callback provided in No_Blocking mode:
         (++) HAL_UARTEx_WakeupCallback()
 
@@ -359,7 +359,7 @@ __weak void HAL_UARTEx_WakeupCallback(UART_HandleTypeDef *huart)
             the HAL_UARTEx_WakeupCallback can be implemented in the user file.
    */
 }
-#endif /*!defined(STM32F030x6) && !defined(STM32F030x8)&& !defined(STM32F070xB)&& !defined(STM32F070x6)&& !defined(STM32F030xC)*/ 
+#endif /*!defined(STM32F030x6) && !defined(STM32F030x8)&& !defined(STM32F070xB)&& !defined(STM32F070x6)&& !defined(STM32F030xC)*/
 
 /**
   * @}
@@ -374,11 +374,11 @@ __weak void HAL_UARTEx_WakeupCallback(UART_HandleTypeDef *huart)
                       ##### Peripheral Control functions #####
  ===============================================================================
     [..]
-    This subsection provides extended functions allowing to control the UART.         
+    This subsection provides extended functions allowing to control the UART.
      (+) HAL_UARTEx_StopModeWakeUpSourceConfig() API sets Wakeup from Stop mode interrupt flag selection
-     (+) HAL_UARTEx_EnableStopMode() API allows the UART to wake up the MCU from Stop mode as 
-         long as UART clock is HSI or LSE 
-     (+) HAL_UARTEx_DisableStopMode() API disables the above feature 
+     (+) HAL_UARTEx_EnableStopMode() API allows the UART to wake up the MCU from Stop mode as
+         long as UART clock is HSI or LSE
+     (+) HAL_UARTEx_DisableStopMode() API disables the above feature
      (+) HAL_MultiProcessorEx_AddressLength_Set() API optionally sets the UART node address
          detection length to more than 4 bits for multiprocessor address mark wake up.
      (+) HAL_LIN_SendBreak() API transmits the break characters
@@ -508,7 +508,7 @@ HAL_StatusTypeDef HAL_UARTEx_DisableStopMode(UART_HandleTypeDef *huart)
   *        to address mark, the UART handles only 4-bit long addresses detection;
   *        this API allows to enable longer addresses detection (6-, 7- or 8-bit
   *        long).
-  * @note  Addresses detection lengths are: 6-bit address detection in 7-bit data mode, 
+  * @note  Addresses detection lengths are: 6-bit address detection in 7-bit data mode,
   *        7-bit address detection in 8-bit data mode, 8-bit address detection in 9-bit data mode.
   * @param huart UART handle.
   * @param AddressLength this parameter can be one of the following values:

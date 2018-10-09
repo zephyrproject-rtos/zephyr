@@ -453,7 +453,7 @@ __weak void HAL_SMARTCARD_MspDeInit(SMARTCARD_HandleTypeDef *hsmartcard)
 
     (#) In Non-Blocking mode transfers, possible errors are split into 2 categories.
         Errors are handled as follows :
-        (++) Error is considered as Recoverable and non blocking : Transfer could go till end, but error severity is 
+        (++) Error is considered as Recoverable and non blocking : Transfer could go till end, but error severity is
              to be evaluated by user : this concerns Frame Error, Parity Error or Noise Error in Interrupt mode reception .
              Received character is then retrieved and stored in Rx buffer, Error code is set to allow user to identify error type,
              and HAL_SMARTCARD_ErrorCallback() user callback is executed. Transfer is kept ongoing on SMARTCARD side.
@@ -502,7 +502,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_Transmit(SMARTCARD_HandleTypeDef *hsmartcard, ui
     CLEAR_BIT(hsmartcard->Instance->CR1, USART_CR1_RE);
     SET_BIT(hsmartcard->Instance->RQR, SMARTCARD_RXDATA_FLUSH_REQUEST);
     SET_BIT(hsmartcard->Instance->CR1, USART_CR1_TE);
-    
+
     /* Enable the Peripheral */
     SET_BIT(hsmartcard->Instance->CR1, USART_CR1_UE);
 
@@ -532,7 +532,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_Transmit(SMARTCARD_HandleTypeDef *hsmartcard, ui
       /* Enable the Peripheral */
       SET_BIT(hsmartcard->Instance->CR1, USART_CR1_UE);
     }
-    
+
     /* At end of Tx process, restore hsmartcard->gState to Ready */
     hsmartcard->gState = HAL_SMARTCARD_STATE_READY;
 
@@ -641,7 +641,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_Transmit_IT(SMARTCARD_HandleTypeDef *hsmartcard,
     CLEAR_BIT(hsmartcard->Instance->CR1, USART_CR1_RE);
     SET_BIT(hsmartcard->Instance->RQR, SMARTCARD_RXDATA_FLUSH_REQUEST);
     SET_BIT(hsmartcard->Instance->CR1, USART_CR1_TE);
-    
+
     /* Enable the Peripheral */
     SET_BIT(hsmartcard->Instance->CR1, USART_CR1_UE);
 
@@ -742,7 +742,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_Transmit_DMA(SMARTCARD_HandleTypeDef *hsmartcard
     CLEAR_BIT(hsmartcard->Instance->CR1, USART_CR1_RE);
     SET_BIT(hsmartcard->Instance->RQR, SMARTCARD_RXDATA_FLUSH_REQUEST);
     SET_BIT(hsmartcard->Instance->CR1, USART_CR1_TE);
-    
+
     /* Enable the Peripheral */
     SET_BIT(hsmartcard->Instance->CR1, USART_CR1_UE);
 
@@ -845,7 +845,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_Receive_DMA(SMARTCARD_HandleTypeDef *hsmartcard,
   * @brief  Abort ongoing transfers (blocking mode).
   * @param  hsmartcard Pointer to a SMARTCARD_HandleTypeDef structure that contains
   *                    the configuration information for the specified SMARTCARD module.
-  * @note   This procedure could be used for aborting any ongoing transfer started in Interrupt or DMA mode. 
+  * @note   This procedure could be used for aborting any ongoing transfer started in Interrupt or DMA mode.
   *         This procedure performs following operations :
   *           - Disable SMARTCARD Interrupts (Tx and Rx)
   *           - Disable the DMA transfer in the peripheral register (if enabled)
@@ -868,7 +868,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_Abort(SMARTCARD_HandleTypeDef *hsmartcard)
     /* Abort the SMARTCARD DMA Tx channel : use blocking DMA Abort API (no callback) */
     if(hsmartcard->hdmatx != NULL)
     {
-      /* Set the SMARTCARD DMA Abort callback to Null. 
+      /* Set the SMARTCARD DMA Abort callback to Null.
          No call back execution at end of DMA abort procedure */
       hsmartcard->hdmatx->XferAbortCallback = NULL;
 
@@ -884,7 +884,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_Abort(SMARTCARD_HandleTypeDef *hsmartcard)
     /* Abort the SMARTCARD DMA Rx channel : use blocking DMA Abort API (no callback) */
     if(hsmartcard->hdmarx != NULL)
     {
-      /* Set the SMARTCARD DMA Abort callback to Null. 
+      /* Set the SMARTCARD DMA Abort callback to Null.
          No call back execution at end of DMA abort procedure */
       hsmartcard->hdmarx->XferAbortCallback = NULL;
 
@@ -893,8 +893,8 @@ HAL_StatusTypeDef HAL_SMARTCARD_Abort(SMARTCARD_HandleTypeDef *hsmartcard)
   }
 
   /* Reset Tx and Rx transfer counters */
-  hsmartcard->TxXferCount = 0U; 
-  hsmartcard->RxXferCount = 0U; 
+  hsmartcard->TxXferCount = 0U;
+  hsmartcard->RxXferCount = 0U;
 
   /* Clear the Error flags in the ICR register */
   __HAL_SMARTCARD_CLEAR_FLAG(hsmartcard, SMARTCARD_CLEAR_OREF | SMARTCARD_CLEAR_NEF | SMARTCARD_CLEAR_PEF | SMARTCARD_CLEAR_FEF | SMARTCARD_CLEAR_RTOF | SMARTCARD_CLEAR_EOBF);
@@ -913,7 +913,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_Abort(SMARTCARD_HandleTypeDef *hsmartcard)
   * @brief  Abort ongoing Transmit transfer (blocking mode).
   * @param  hsmartcard Pointer to a SMARTCARD_HandleTypeDef structure that contains
   *                    the configuration information for the specified SMARTCARD module.
-  * @note   This procedure could be used for aborting any ongoing Tx transfer started in Interrupt or DMA mode. 
+  * @note   This procedure could be used for aborting any ongoing Tx transfer started in Interrupt or DMA mode.
   *         This procedure performs following operations :
   *           - Disable SMARTCARD Interrupts (Tx)
   *           - Disable the DMA transfer in the peripheral register (if enabled)
@@ -942,7 +942,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_AbortTransmit(SMARTCARD_HandleTypeDef *hsmartcar
     /* Abort the SMARTCARD DMA Tx channel : use blocking DMA Abort API (no callback) */
     if(hsmartcard->hdmatx != NULL)
     {
-      /* Set the SMARTCARD DMA Abort callback to Null. 
+      /* Set the SMARTCARD DMA Abort callback to Null.
          No call back execution at end of DMA abort procedure */
       hsmartcard->hdmatx->XferAbortCallback = NULL;
 
@@ -951,7 +951,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_AbortTransmit(SMARTCARD_HandleTypeDef *hsmartcar
   }
 
   /* Reset Tx transfer counter */
-  hsmartcard->TxXferCount = 0U; 
+  hsmartcard->TxXferCount = 0U;
 
   /* Clear the Error flags in the ICR register */
   __HAL_SMARTCARD_CLEAR_FLAG(hsmartcard, SMARTCARD_CLEAR_FEF);
@@ -966,7 +966,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_AbortTransmit(SMARTCARD_HandleTypeDef *hsmartcar
   * @brief  Abort ongoing Receive transfer (blocking mode).
   * @param  hsmartcard Pointer to a SMARTCARD_HandleTypeDef structure that contains
   *                    the configuration information for the specified SMARTCARD module.
-  * @note   This procedure could be used for aborting any ongoing Rx transfer started in Interrupt or DMA mode. 
+  * @note   This procedure could be used for aborting any ongoing Rx transfer started in Interrupt or DMA mode.
   *         This procedure performs following operations :
   *           - Disable SMARTCARD Interrupts (Rx)
   *           - Disable the DMA transfer in the peripheral register (if enabled)
@@ -995,7 +995,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_AbortReceive(SMARTCARD_HandleTypeDef *hsmartcard
     /* Abort the SMARTCARD DMA Rx channel : use blocking DMA Abort API (no callback) */
     if(hsmartcard->hdmarx != NULL)
     {
-      /* Set the SMARTCARD DMA Abort callback to Null. 
+      /* Set the SMARTCARD DMA Abort callback to Null.
          No call back execution at end of DMA abort procedure */
       hsmartcard->hdmarx->XferAbortCallback = NULL;
 
@@ -1004,7 +1004,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_AbortReceive(SMARTCARD_HandleTypeDef *hsmartcard
   }
 
   /* Reset Rx transfer counter */
-  hsmartcard->RxXferCount = 0U; 
+  hsmartcard->RxXferCount = 0U;
 
   /* Clear the Error flags in the ICR register */
   __HAL_SMARTCARD_CLEAR_FLAG(hsmartcard, SMARTCARD_CLEAR_OREF | SMARTCARD_CLEAR_NEF | SMARTCARD_CLEAR_PEF | SMARTCARD_CLEAR_FEF | SMARTCARD_CLEAR_RTOF | SMARTCARD_CLEAR_EOBF);
@@ -1019,7 +1019,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_AbortReceive(SMARTCARD_HandleTypeDef *hsmartcard
   * @brief  Abort ongoing transfers (Interrupt mode).
   * @param  hsmartcard Pointer to a SMARTCARD_HandleTypeDef structure that contains
   *                    the configuration information for the specified SMARTCARD module.
-  * @note   This procedure could be used for aborting any ongoing transfer started in Interrupt or DMA mode. 
+  * @note   This procedure could be used for aborting any ongoing transfer started in Interrupt or DMA mode.
   *         This procedure performs following operations :
   *           - Disable SMARTCARD Interrupts (Tx and Rx)
   *           - Disable the DMA transfer in the peripheral register (if enabled)
@@ -1033,7 +1033,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_AbortReceive(SMARTCARD_HandleTypeDef *hsmartcard
 HAL_StatusTypeDef HAL_SMARTCARD_Abort_IT(SMARTCARD_HandleTypeDef *hsmartcard)
 {
   uint32_t abortcplt = 1U;
-  
+
   /* Disable RTOIE, EOBIE, TXEIE, TCIE, RXNE, PE and ERR (Frame error, noise error, overrun error) interrupts */
   CLEAR_BIT(hsmartcard->Instance->CR1, (USART_CR1_RXNEIE | USART_CR1_PEIE | USART_CR1_TXEIE | USART_CR1_TCIE | USART_CR1_RTOIE | USART_CR1_EOBIE));
   CLEAR_BIT(hsmartcard->Instance->CR3, USART_CR3_EIE);
@@ -1068,7 +1068,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_Abort_IT(SMARTCARD_HandleTypeDef *hsmartcard)
       hsmartcard->hdmarx->XferAbortCallback = NULL;
     }
   }
-  
+
   /* Disable the SMARTCARD DMA Tx request if enabled */
   if(HAL_IS_BIT_SET(hsmartcard->Instance->CR3, USART_CR3_DMAT))
   {
@@ -1078,7 +1078,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_Abort_IT(SMARTCARD_HandleTypeDef *hsmartcard)
     /* Abort the SMARTCARD DMA Tx channel : use non blocking DMA Abort API (callback) */
     if(hsmartcard->hdmatx != NULL)
     {
-      /* SMARTCARD Tx DMA Abort callback has already been initialised : 
+      /* SMARTCARD Tx DMA Abort callback has already been initialised :
          will lead to call HAL_SMARTCARD_AbortCpltCallback() at end of DMA abort procedure */
 
       /* Abort DMA TX */
@@ -1101,7 +1101,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_Abort_IT(SMARTCARD_HandleTypeDef *hsmartcard)
     /* Abort the SMARTCARD DMA Rx channel : use non blocking DMA Abort API (callback) */
     if(hsmartcard->hdmarx != NULL)
     {
-      /* SMARTCARD Rx DMA Abort callback has already been initialised : 
+      /* SMARTCARD Rx DMA Abort callback has already been initialised :
          will lead to call HAL_SMARTCARD_AbortCpltCallback() at end of DMA abort procedure */
 
       /* Abort DMA RX */
@@ -1121,7 +1121,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_Abort_IT(SMARTCARD_HandleTypeDef *hsmartcard)
   if (abortcplt == 1U)
   {
     /* Reset Tx and Rx transfer counters */
-    hsmartcard->TxXferCount = 0U; 
+    hsmartcard->TxXferCount = 0U;
     hsmartcard->RxXferCount = 0U;
 
     /* Reset errorCode */
@@ -1145,7 +1145,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_Abort_IT(SMARTCARD_HandleTypeDef *hsmartcard)
   * @brief  Abort ongoing Transmit transfer (Interrupt mode).
   * @param  hsmartcard Pointer to a SMARTCARD_HandleTypeDef structure that contains
   *                    the configuration information for the specified SMARTCARD module.
-  * @note   This procedure could be used for aborting any ongoing Tx transfer started in Interrupt or DMA mode. 
+  * @note   This procedure could be used for aborting any ongoing Tx transfer started in Interrupt or DMA mode.
   *         This procedure performs following operations :
   *           - Disable SMARTCARD Interrupts (Tx)
   *           - Disable the DMA transfer in the peripheral register (if enabled)
@@ -1176,7 +1176,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_AbortTransmit_IT(SMARTCARD_HandleTypeDef *hsmart
     /* Abort the SMARTCARD DMA Tx channel : use non blocking DMA Abort API (callback) */
     if(hsmartcard->hdmatx != NULL)
     {
-      /* Set the SMARTCARD DMA Abort callback : 
+      /* Set the SMARTCARD DMA Abort callback :
          will lead to call HAL_SMARTCARD_AbortCpltCallback() at end of DMA abort procedure */
       hsmartcard->hdmatx->XferAbortCallback = SMARTCARD_DMATxOnlyAbortCallback;
 
@@ -1190,7 +1190,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_AbortTransmit_IT(SMARTCARD_HandleTypeDef *hsmart
     else
     {
       /* Reset Tx transfer counter */
-      hsmartcard->TxXferCount = 0U; 
+      hsmartcard->TxXferCount = 0U;
 
       /* Restore hsmartcard->gState to Ready */
       hsmartcard->gState = HAL_SMARTCARD_STATE_READY;
@@ -1202,7 +1202,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_AbortTransmit_IT(SMARTCARD_HandleTypeDef *hsmart
   else
   {
     /* Reset Tx transfer counter */
-    hsmartcard->TxXferCount = 0U; 
+    hsmartcard->TxXferCount = 0U;
 
     /* Clear the Error flags in the ICR register */
     __HAL_SMARTCARD_CLEAR_FLAG(hsmartcard, SMARTCARD_CLEAR_FEF);
@@ -1221,7 +1221,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_AbortTransmit_IT(SMARTCARD_HandleTypeDef *hsmart
   * @brief  Abort ongoing Receive transfer (Interrupt mode).
   * @param  hsmartcard Pointer to a SMARTCARD_HandleTypeDef structure that contains
   *                    the configuration information for the specified SMARTCARD module.
-  * @note   This procedure could be used for aborting any ongoing Rx transfer started in Interrupt or DMA mode. 
+  * @note   This procedure could be used for aborting any ongoing Rx transfer started in Interrupt or DMA mode.
   *         This procedure performs following operations :
   *           - Disable SMARTCARD Interrupts (Rx)
   *           - Disable the DMA transfer in the peripheral register (if enabled)
@@ -1252,7 +1252,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_AbortReceive_IT(SMARTCARD_HandleTypeDef *hsmartc
     /* Abort the SMARTCARD DMA Rx channel : use non blocking DMA Abort API (callback) */
     if(hsmartcard->hdmarx != NULL)
     {
-      /* Set the SMARTCARD DMA Abort callback : 
+      /* Set the SMARTCARD DMA Abort callback :
          will lead to call HAL_SMARTCARD_AbortCpltCallback() at end of DMA abort procedure */
       hsmartcard->hdmarx->XferAbortCallback = SMARTCARD_DMARxOnlyAbortCallback;
 
@@ -1266,7 +1266,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_AbortReceive_IT(SMARTCARD_HandleTypeDef *hsmartc
     else
     {
       /* Reset Rx transfer counter */
-      hsmartcard->RxXferCount = 0U; 
+      hsmartcard->RxXferCount = 0U;
 
       /* Clear the Error flags in the ICR register */
       __HAL_SMARTCARD_CLEAR_FLAG(hsmartcard, SMARTCARD_CLEAR_OREF | SMARTCARD_CLEAR_NEF | SMARTCARD_CLEAR_PEF | SMARTCARD_CLEAR_FEF | SMARTCARD_CLEAR_RTOF | SMARTCARD_CLEAR_EOBF);
@@ -1281,7 +1281,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_AbortReceive_IT(SMARTCARD_HandleTypeDef *hsmartc
   else
   {
     /* Reset Rx transfer counter */
-    hsmartcard->RxXferCount = 0U; 
+    hsmartcard->RxXferCount = 0U;
 
     /* Clear the Error flags in the ICR register */
     __HAL_SMARTCARD_CLEAR_FLAG(hsmartcard, SMARTCARD_CLEAR_OREF | SMARTCARD_CLEAR_NEF | SMARTCARD_CLEAR_PEF | SMARTCARD_CLEAR_FEF | SMARTCARD_CLEAR_RTOF | SMARTCARD_CLEAR_EOBF);
@@ -1320,11 +1320,11 @@ void HAL_SMARTCARD_IRQHandler(SMARTCARD_HandleTypeDef *hsmartcard)
       /* Clear RXNE interrupt flag done by reading RDR in SMARTCARD_Receive_IT() */
       return;
     }
-  }  
+  }
 
   /* If some errors occur */
   cr3its = READ_REG(hsmartcard->Instance->CR3);
-  if(   (errorflags != RESET) 
+  if(   (errorflags != RESET)
      && (    ((cr3its & USART_CR3_EIE) != RESET)
           || ((cr1its & (USART_CR1_RXNEIE | USART_CR1_PEIE | USART_CR1_RTOIE)) != RESET)) )
   {
@@ -1385,7 +1385,7 @@ void HAL_SMARTCARD_IRQHandler(SMARTCARD_HandleTypeDef *hsmartcard)
       */
       if (   ((hsmartcard->ErrorCode & (HAL_SMARTCARD_ERROR_RTO | HAL_SMARTCARD_ERROR_ORE)) != RESET)
           || (HAL_IS_BIT_SET(hsmartcard->Instance->CR3, USART_CR3_DMAR)))
-      {  
+      {
         /* Blocking error : transfer is aborted
            Set the SMARTCARD state ready to be able to start again the process,
            Disable Rx Interrupts, and disable Rx DMA request, if ongoing */
@@ -1399,7 +1399,7 @@ void HAL_SMARTCARD_IRQHandler(SMARTCARD_HandleTypeDef *hsmartcard)
           /* Abort the SMARTCARD DMA Rx channel */
           if(hsmartcard->hdmarx != NULL)
           {
-            /* Set the SMARTCARD DMA Abort callback : 
+            /* Set the SMARTCARD DMA Abort callback :
                will lead to call HAL_SMARTCARD_ErrorCallback() at end of DMA abort procedure */
             hsmartcard->hdmarx->XferAbortCallback = SMARTCARD_DMAAbortOnError;
 
@@ -1440,7 +1440,7 @@ void HAL_SMARTCARD_IRQHandler(SMARTCARD_HandleTypeDef *hsmartcard)
           /* Abort the SMARTCARD DMA Tx channel */
           if(hsmartcard->hdmatx != NULL)
           {
-            /* Set the SMARTCARD DMA Abort callback : 
+            /* Set the SMARTCARD DMA Abort callback :
                will lead to call HAL_SMARTCARD_ErrorCallback() at end of DMA abort procedure */
             hsmartcard->hdmatx->XferAbortCallback = SMARTCARD_DMAAbortOnError;
 
@@ -1465,7 +1465,7 @@ void HAL_SMARTCARD_IRQHandler(SMARTCARD_HandleTypeDef *hsmartcard)
       }
       else
       {
-        /* Non Blocking error : transfer could go on. 
+        /* Non Blocking error : transfer could go on.
            Error is notified to user through user error callback */
         HAL_SMARTCARD_ErrorCallback(hsmartcard);
         hsmartcard->ErrorCode = HAL_SMARTCARD_ERROR_NONE;
@@ -1834,7 +1834,7 @@ static HAL_StatusTypeDef SMARTCARD_CheckIdleState(SMARTCARD_HandleTypeDef *hsmar
   tickstart = HAL_GetTick();
 
   /* TEACK and REACK bits in ISR are checked only when available (not available on all F0 devices).
-     Bits are defined for some specific devices, and are available only for UART instances supporting WakeUp from Stop Mode feature. 
+     Bits are defined for some specific devices, and are available only for UART instances supporting WakeUp from Stop Mode feature.
   */
 #if !defined(STM32F030x6) && !defined(STM32F030x8)&& !defined(STM32F070xB)&& !defined(STM32F070x6)&& !defined(STM32F030xC)
   if (IS_UART_WAKEUP_FROMSTOP_INSTANCE(hsmartcard->Instance))
@@ -2044,7 +2044,7 @@ static void SMARTCARD_DMAAbortOnError(DMA_HandleTypeDef *hdma)
 static void SMARTCARD_DMATxAbortCallback(DMA_HandleTypeDef *hdma)
 {
   SMARTCARD_HandleTypeDef* hsmartcard = (SMARTCARD_HandleTypeDef* )(hdma->Parent);
-  
+
   hsmartcard->hdmatx->XferAbortCallback = NULL;
 
   /* Check if an Abort process is still ongoing */
@@ -2055,7 +2055,7 @@ static void SMARTCARD_DMATxAbortCallback(DMA_HandleTypeDef *hdma)
       return;
     }
   }
-  
+
   /* No Abort process still ongoing : All DMA channels are aborted, call user Abort Complete callback */
   hsmartcard->TxXferCount = 0U;
   hsmartcard->RxXferCount = 0U;
@@ -2086,7 +2086,7 @@ static void SMARTCARD_DMATxAbortCallback(DMA_HandleTypeDef *hdma)
 static void SMARTCARD_DMARxAbortCallback(DMA_HandleTypeDef *hdma)
 {
   SMARTCARD_HandleTypeDef* hsmartcard = (SMARTCARD_HandleTypeDef* )(hdma->Parent);
-  
+
   hsmartcard->hdmarx->XferAbortCallback = NULL;
 
   /* Check if an Abort process is still ongoing */
@@ -2097,7 +2097,7 @@ static void SMARTCARD_DMARxAbortCallback(DMA_HandleTypeDef *hdma)
       return;
     }
   }
-  
+
   /* No Abort process still ongoing : All DMA channels are aborted, call user Abort Complete callback */
   hsmartcard->TxXferCount = 0U;
   hsmartcard->RxXferCount = 0U;
@@ -2229,7 +2229,7 @@ static HAL_StatusTypeDef SMARTCARD_EndTransmit_IT(SMARTCARD_HandleTypeDef *hsmar
     /* Enable the Peripheral */
     SET_BIT(hsmartcard->Instance->CR1, USART_CR1_UE);
   }
-  
+
   /* Tx process is ended, restore hsmartcard->gState to Ready */
   hsmartcard->gState = HAL_SMARTCARD_STATE_READY;
 

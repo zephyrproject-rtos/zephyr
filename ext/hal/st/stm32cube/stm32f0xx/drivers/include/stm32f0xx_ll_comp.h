@@ -127,32 +127,32 @@ typedef struct
 {
   uint32_t PowerMode;                   /*!< Set comparator operating mode to adjust power and speed.
                                              This parameter can be a value of @ref COMP_LL_EC_POWERMODE
-                                             
+
                                              This feature can be modified afterwards using unitary function @ref LL_COMP_SetPowerMode(). */
 
   uint32_t InputPlus;                   /*!< Set comparator input plus (non-inverting input).
                                              This parameter can be a value of @ref COMP_LL_EC_INPUT_PLUS
-                                             
+
                                              This feature can be modified afterwards using unitary function @ref LL_COMP_SetInputPlus(). */
 
   uint32_t InputMinus;                  /*!< Set comparator input minus (inverting input).
                                              This parameter can be a value of @ref COMP_LL_EC_INPUT_MINUS
-                                             
+
                                              This feature can be modified afterwards using unitary function @ref LL_COMP_SetInputMinus(). */
 
   uint32_t InputHysteresis;             /*!< Set comparator hysteresis mode of the input minus.
                                              This parameter can be a value of @ref COMP_LL_EC_INPUT_HYSTERESIS
-                                             
+
                                              This feature can be modified afterwards using unitary function @ref LL_COMP_SetInputHysteresis(). */
 
   uint32_t OutputSelection;             /*!< Set comparator output selection.
                                              This parameter can be a value of @ref COMP_LL_EC_OUTPUT_SELECTION
-                                             
+
                                              This feature can be modified afterwards using unitary function @ref LL_COMP_SetOutputSelection(). */
 
   uint32_t OutputPolarity;              /*!< Set comparator output polarity.
                                              This parameter can be a value of @ref COMP_LL_EC_OUTPUT_POLARITY
-                                             
+
                                              This feature can be modified afterwards using unitary function @ref LL_COMP_SetOutputPolarity(). */
 
 } LL_COMP_InitTypeDef;
@@ -452,7 +452,7 @@ __STATIC_INLINE uint32_t LL_COMP_GetPowerMode(COMP_TypeDef *COMPx)
   * @param  InputPlus This parameter can be one of the following values:
   *         @arg @ref LL_COMP_INPUT_PLUS_IO1
   *         @arg @ref LL_COMP_INPUT_PLUS_DAC1_CH1 (1)
-  *         
+  *
   *         (1) Parameter available only on COMP instance: COMP1.
   * @retval None
   */
@@ -477,7 +477,7 @@ __STATIC_INLINE void LL_COMP_ConfigInputs(COMP_TypeDef *COMPx, uint32_t InputMin
   * @param  InputPlus This parameter can be one of the following values:
   *         @arg @ref LL_COMP_INPUT_PLUS_IO1
   *         @arg @ref LL_COMP_INPUT_PLUS_DAC1_CH1 (1)
-  *         
+  *
   *         (1) Parameter available only on COMP instance: COMP1.
   * @retval None
   */
@@ -502,7 +502,7 @@ __STATIC_INLINE void LL_COMP_SetInputPlus(COMP_TypeDef *COMPx, uint32_t InputPlu
   * @retval Returned value can be one of the following values:
   *         @arg @ref LL_COMP_INPUT_PLUS_IO1
   *         @arg @ref LL_COMP_INPUT_PLUS_DAC1_CH1 (1)
-  *         
+  *
   *         (1) Parameter available only on COMP instance: COMP1.
   */
 __STATIC_INLINE uint32_t LL_COMP_GetInputPlus(COMP_TypeDef *COMPx)
@@ -626,7 +626,7 @@ __STATIC_INLINE uint32_t LL_COMP_GetInputHysteresis(COMP_TypeDef *COMPx)
   *         @arg @ref LL_COMP_OUTPUT_TIM2_OCCLR     (1)
   *         @arg @ref LL_COMP_OUTPUT_TIM3_IC1       (1)
   *         @arg @ref LL_COMP_OUTPUT_TIM3_OCCLR     (1)
-  *         
+  *
   *         (1) Parameter availability depending on timer availability
   *             on the selected device.
   * @retval None
@@ -654,7 +654,7 @@ __STATIC_INLINE void LL_COMP_SetOutputSelection(COMP_TypeDef *COMPx, uint32_t Ou
   *         @arg @ref LL_COMP_OUTPUT_TIM2_OCCLR     (1)
   *         @arg @ref LL_COMP_OUTPUT_TIM3_IC1       (1)
   *         @arg @ref LL_COMP_OUTPUT_TIM3_OCCLR     (1)
-  *         
+  *
   *         (1) Parameter availability depending on timer availability
   *             on the selected device.
   */

@@ -30,7 +30,7 @@
   * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
-  ******************************************************************************  
+  ******************************************************************************
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
@@ -57,7 +57,7 @@
 
 /** @defgroup PWR_Exported_Constants PWR Exported Constants
   * @{
-  */ 
+  */
 
 /** @defgroup PWR_Regulator_state_in_STOP_mode PWR Regulator state in STOP mode
   * @{
@@ -114,7 +114,7 @@
   *            @arg PWR_FLAG_PVDO: PVD Output. This flag is valid only if PVD is enabled
   *                  by the HAL_PWR_EnablePVD() function. The PVD is stopped by Standby mode
   *                  For this reason, this bit is equal to 0 after Standby or reset
-  *                  until the PVDE bit is set. 
+  *                  until the PVDE bit is set.
   *                  Warning: this Flag is not available on STM32F030x8 products
   *            @arg PWR_FLAG_VREFINTRDY: This flag indicates that the internal reference
   *                  voltage VREFINT is ready.
@@ -144,8 +144,8 @@
 /** @addtogroup PWR_Exported_Functions PWR Exported Functions
   * @{
   */
-  
-/** @addtogroup PWR_Exported_Functions_Group1 Initialization and de-initialization functions 
+
+/** @addtogroup PWR_Exported_Functions_Group1 Initialization and de-initialization functions
   * @{
   */
 
@@ -156,7 +156,7 @@ void HAL_PWR_DeInit(void);
   * @}
   */
 
-/** @addtogroup PWR_Exported_Functions_Group2 Peripheral Control functions 
+/** @addtogroup PWR_Exported_Functions_Group2 Peripheral Control functions
   * @{
   */
 

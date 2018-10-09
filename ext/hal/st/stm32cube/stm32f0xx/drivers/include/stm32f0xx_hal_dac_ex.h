@@ -51,18 +51,18 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f0xx_hal_def.h"
-           
+
 /** @addtogroup DACEx
   * @{
   */
 
 /* Exported types ------------------------------------------------------------*/
-   
+
 /* Exported constants --------------------------------------------------------*/
 
 /** @defgroup DACEx_Exported_Constants DACEx Exported Constants
   * @{
-  */  
+  */
 
 /** @defgroup DACEx_lfsrunmask_triangleamplitude DACEx lfsrunmask triangleamplitude
   * @{
@@ -107,13 +107,13 @@
 /** @defgroup DACEx_Exported_Macros DACEx Exported Macros
   * @{
   */
-  
+
 /** @defgroup DAC_trigger_selection DAC trigger selection
   * @{
   */
 #if defined(STM32F051x8) || defined(STM32F058xx)
 
-#define DAC_TRIGGER_NONE                   (0x00000000U) /*!< Conversion is automatic once the DAC1_DHRxxxx register 
+#define DAC_TRIGGER_NONE                   (0x00000000U) /*!< Conversion is automatic once the DAC1_DHRxxxx register
                                                                        has been loaded, and not by external trigger */
 #define DAC_TRIGGER_T2_TRGO                ((uint32_t)(DAC_CR_TSEL1_2 | DAC_CR_TEN1)) /*!< TIM2 TRGO selected as external conversion trigger for DAC channel */
 #define DAC_TRIGGER_T3_TRGO                ((uint32_t)(DAC_CR_TSEL1_0 | DAC_CR_TEN1)) /*!< TIM3 TRGO selected as external conversion trigger for DAC channel */
@@ -127,7 +127,7 @@
 #if defined(STM32F071xB) || defined(STM32F072xB) || defined(STM32F078xx) || \
     defined(STM32F091xC) || defined(STM32F098xx)
 
-#define DAC_TRIGGER_NONE                   (0x00000000U) /*!< Conversion is automatic once the DAC1_DHRxxxx register 
+#define DAC_TRIGGER_NONE                   (0x00000000U) /*!< Conversion is automatic once the DAC1_DHRxxxx register
                                                                        has been loaded, and not by external trigger */
 #define DAC_TRIGGER_T2_TRGO                ((uint32_t)(DAC_CR_TSEL1_2 | DAC_CR_TEN1)) /*!< TIM2 TRGO selected as external conversion trigger for DAC channel */
 #define DAC_TRIGGER_T3_TRGO                ((uint32_t)(DAC_CR_TSEL1_0 | DAC_CR_TEN1)) /*!< TIM3 TRGO selected as external conversion trigger for DAC channel */
@@ -147,7 +147,7 @@
 /** @defgroup DAC_Channel_selection DAC Channel selection
   * @{
   */
-  
+
 #if defined(STM32F071xB) || defined(STM32F072xB) || defined(STM32F078xx) || \
     defined(STM32F091xC) || defined(STM32F098xx)
 
@@ -161,12 +161,12 @@
 
 #define DAC_CHANNEL_1                      (0x00000000U)
 
-#endif  /* STM32F051x8 || STM32F058xx */ 
+#endif  /* STM32F051x8 || STM32F058xx */
 
 /**
   * @}
   */
-  
+
 /**
   * @}
   */
@@ -179,7 +179,7 @@
 
 #if defined(STM32F071xB) || defined(STM32F072xB) || defined(STM32F078xx) || \
     defined(STM32F091xC) || defined(STM32F098xx)
-      
+
 #define IS_DAC_TRIGGER(TRIGGER) (((TRIGGER) == DAC_TRIGGER_NONE) || \
                                  ((TRIGGER) == DAC_TRIGGER_T2_TRGO) || \
                                  ((TRIGGER) == DAC_TRIGGER_T3_TRGO) || \
@@ -187,7 +187,7 @@
                                  ((TRIGGER) == DAC_TRIGGER_T7_TRGO) || \
                                  ((TRIGGER) == DAC_TRIGGER_T15_TRGO) || \
                                  ((TRIGGER) == DAC_TRIGGER_EXT_IT9) || \
-                                 ((TRIGGER) == DAC_TRIGGER_SOFTWARE))      
+                                 ((TRIGGER) == DAC_TRIGGER_SOFTWARE))
 
 #endif /* STM32F071xB || STM32F072xB || STM32F078xx || */
        /* STM32F091xC || STM32F098xx */
@@ -206,7 +206,7 @@
 
 #if defined(STM32F071xB) || defined(STM32F072xB) || defined(STM32F078xx) || \
     defined(STM32F091xC) || defined(STM32F098xx)
-      
+
 #define IS_DAC_TRIGGER(TRIGGER) (((TRIGGER) == DAC_TRIGGER_NONE) || \
                                  ((TRIGGER) == DAC_TRIGGER_T2_TRGO) || \
                                  ((TRIGGER) == DAC_TRIGGER_T3_TRGO) || \
@@ -214,7 +214,7 @@
                                  ((TRIGGER) == DAC_TRIGGER_T7_TRGO) || \
                                  ((TRIGGER) == DAC_TRIGGER_T15_TRGO) || \
                                  ((TRIGGER) == DAC_TRIGGER_EXT_IT9) || \
-                                 ((TRIGGER) == DAC_TRIGGER_SOFTWARE))      
+                                 ((TRIGGER) == DAC_TRIGGER_SOFTWARE))
 
 #endif /* STM32F071xB || STM32F072xB || STM32F078xx || */
        /* STM32F091xC || STM32F098xx */
@@ -248,7 +248,7 @@
   * @}
   */
 
-/* Exported functions --------------------------------------------------------*/  
+/* Exported functions --------------------------------------------------------*/
 
 /** @addtogroup DACEx_Exported_Functions
   * @{
@@ -256,9 +256,9 @@
 
 /** @addtogroup DACEx_Exported_Functions_Group1
  * @{
- */    
+ */
 /* IO operation functions *****************************************************/
-  
+
 HAL_StatusTypeDef HAL_DACEx_TriangleWaveGenerate(DAC_HandleTypeDef* hdac, uint32_t Channel, uint32_t Amplitude);
 HAL_StatusTypeDef HAL_DACEx_NoiseWaveGenerate(DAC_HandleTypeDef* hdac, uint32_t Channel, uint32_t Amplitude);
 HAL_StatusTypeDef HAL_DACEx_DualSetValue(DAC_HandleTypeDef* hdac, uint32_t Alignment, uint32_t Data1, uint32_t Data2);
@@ -274,7 +274,7 @@ void              HAL_DACEx_DMAUnderrunCallbackCh2(DAC_HandleTypeDef* hdac);
 
 /** @addtogroup DACEx_Exported_Functions_Group3
   * @{
-  */ 
+  */
 /* Peripheral Control functions ***********************************************/
 
 uint32_t          HAL_DACEx_DualGetValue(DAC_HandleTypeDef* hdac);
@@ -301,8 +301,8 @@ uint32_t          HAL_DACEx_DualGetValue(DAC_HandleTypeDef* hdac);
 
 #ifdef __cplusplus
 }
-#endif 
-  
+#endif
+
 #endif /*__STM32F0xx_HAL_DAC_EX_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

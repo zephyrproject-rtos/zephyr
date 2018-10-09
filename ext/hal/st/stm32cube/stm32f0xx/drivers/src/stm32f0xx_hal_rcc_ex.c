@@ -3,7 +3,7 @@
   * @file    stm32f0xx_hal_rcc_ex.c
   * @author  MCD Application Team
   * @brief   Extended RCC HAL module driver.
-  *          This file provides firmware functions to manage the following 
+  *          This file provides firmware functions to manage the following
   *          functionalities RCC extension peripheral:
   *           + Extended Peripheral Control functions
   *           + Extended Clock Recovery System Control functions
@@ -35,8 +35,8 @@
   * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
-  ******************************************************************************  
-  */ 
+  ******************************************************************************
+  */
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f0xx_hal.h"
@@ -66,7 +66,7 @@
   * @}
   */
 #endif /* CRS */
-  
+
 /* Private macro -------------------------------------------------------------*/
 /** @defgroup RCCEx_Private_Macros RCCEx Private Macros
   * @{
@@ -83,22 +83,22 @@
   * @{
   */
 
-/** @defgroup RCCEx_Exported_Functions_Group1 Extended Peripheral Control functions 
+/** @defgroup RCCEx_Exported_Functions_Group1 Extended Peripheral Control functions
   * @brief    Extended Peripheral Control functions
  *
 @verbatim
  ===============================================================================
                 ##### Extended Peripheral Control functions  #####
- ===============================================================================  
+ ===============================================================================
     [..]
-    This subsection provides a set of functions allowing to control the RCC Clocks 
+    This subsection provides a set of functions allowing to control the RCC Clocks
     frequencies.
-    [..] 
+    [..]
     (@) Important note: Care must be taken when HAL_RCCEx_PeriphCLKConfig() is used to
-        select the RTC clock source; in this case the Backup domain will be reset in  
-        order to modify the RTC Clock source, as consequence RTC registers (including 
+        select the RTC clock source; in this case the Backup domain will be reset in
+        order to modify the RTC Clock source, as consequence RTC registers (including
         the backup registers) are set to their reset values.
-      
+
 @endverbatim
   * @{
   */
@@ -110,9 +110,9 @@
   *         contains the configuration information for the Extended Peripherals clocks
   *         (USART, RTC, I2C, CEC and USB).
   *
-  * @note   Care must be taken when @ref HAL_RCCEx_PeriphCLKConfig() is used to select 
-  *         the RTC clock source; in this case the Backup domain will be reset in  
-  *         order to modify the RTC Clock source, as consequence RTC registers (including 
+  * @note   Care must be taken when @ref HAL_RCCEx_PeriphCLKConfig() is used to select
+  *         the RTC clock source; in this case the Backup domain will be reset in
+  *         order to modify the RTC Clock source, as consequence RTC registers (including
   *         the backup registers) and RCC_BDCR register are set to their reset values.
   *
   * @retval HAL status
@@ -124,16 +124,16 @@ HAL_StatusTypeDef HAL_RCCEx_PeriphCLKConfig(RCC_PeriphCLKInitTypeDef  *PeriphClk
 
   /* Check the parameters */
   assert_param(IS_RCC_PERIPHCLOCK(PeriphClkInit->PeriphClockSelection));
-  
+
   /*---------------------------- RTC configuration -------------------------------*/
   if(((PeriphClkInit->PeriphClockSelection) & RCC_PERIPHCLK_RTC) == (RCC_PERIPHCLK_RTC))
   {
     /* check for RTC Parameters used to output RTCCLK */
     assert_param(IS_RCC_RTCCLKSOURCE(PeriphClkInit->RTCClockSelection));
-    
+
     FlagStatus       pwrclkchanged = RESET;
 
-    /* As soon as function is called to change RTC clock source, activation of the 
+    /* As soon as function is called to change RTC clock source, activation of the
        power domain is done. */
     /* Requires to enable write access to Backup Domain of necessary */
     if(__HAL_RCC_PWR_IS_CLK_DISABLED())
@@ -141,15 +141,15 @@ HAL_StatusTypeDef HAL_RCCEx_PeriphCLKConfig(RCC_PeriphCLKInitTypeDef  *PeriphClk
     __HAL_RCC_PWR_CLK_ENABLE();
       pwrclkchanged = SET;
     }
-    
+
     if(HAL_IS_BIT_CLR(PWR->CR, PWR_CR_DBP))
     {
       /* Enable write access to Backup domain */
       SET_BIT(PWR->CR, PWR_CR_DBP);
-      
+
       /* Wait for Backup domain Write protection disable */
       tickstart = HAL_GetTick();
-      
+
       while(HAL_IS_BIT_CLR(PWR->CR, PWR_CR_DBP))
       {
         if((HAL_GetTick() - tickstart) > RCC_DBP_TIMEOUT_VALUE)
@@ -158,8 +158,8 @@ HAL_StatusTypeDef HAL_RCCEx_PeriphCLKConfig(RCC_PeriphCLKInitTypeDef  *PeriphClk
         }
       }
     }
-    
-    /* Reset the Backup domain only if the RTC Clock source selection is modified from reset value */ 
+
+    /* Reset the Backup domain only if the RTC Clock source selection is modified from reset value */
     temp_reg = (RCC->BDCR & RCC_BDCR_RTCSEL);
     if((temp_reg != 0x00000000U) && (temp_reg != (PeriphClkInit->RTCClockSelection & RCC_BDCR_RTCSEL)))
     {
@@ -170,14 +170,14 @@ HAL_StatusTypeDef HAL_RCCEx_PeriphCLKConfig(RCC_PeriphCLKInitTypeDef  *PeriphClk
       __HAL_RCC_BACKUPRESET_RELEASE();
       /* Restore the Content of BDCR register */
       RCC->BDCR = temp_reg;
-      
+
       /* Wait for LSERDY if LSE was enabled */
       if (HAL_IS_BIT_SET(temp_reg, RCC_BDCR_LSEON))
       {
         /* Get Start Tick */
         tickstart = HAL_GetTick();
-        
-        /* Wait till LSE is ready */  
+
+        /* Wait till LSE is ready */
         while(__HAL_RCC_GET_FLAG(RCC_FLAG_LSERDY) == RESET)
         {
           if((HAL_GetTick() - tickstart) > RCC_LSE_TIMEOUT_VALUE)
@@ -196,24 +196,24 @@ HAL_StatusTypeDef HAL_RCCEx_PeriphCLKConfig(RCC_PeriphCLKInitTypeDef  *PeriphClk
     }
   }
 
-  /*------------------------------- USART1 Configuration ------------------------*/ 
+  /*------------------------------- USART1 Configuration ------------------------*/
   if(((PeriphClkInit->PeriphClockSelection) & RCC_PERIPHCLK_USART1) == RCC_PERIPHCLK_USART1)
   {
     /* Check the parameters */
     assert_param(IS_RCC_USART1CLKSOURCE(PeriphClkInit->Usart1ClockSelection));
-    
+
     /* Configure the USART1 clock source */
     __HAL_RCC_USART1_CONFIG(PeriphClkInit->Usart1ClockSelection);
   }
-  
+
 #if defined(STM32F071xB) || defined(STM32F072xB) || defined(STM32F078xx)\
  || defined(STM32F091xC) || defined(STM32F098xx)
-  /*----------------------------- USART2 Configuration --------------------------*/ 
+  /*----------------------------- USART2 Configuration --------------------------*/
   if(((PeriphClkInit->PeriphClockSelection) & RCC_PERIPHCLK_USART2) == RCC_PERIPHCLK_USART2)
   {
     /* Check the parameters */
     assert_param(IS_RCC_USART2CLKSOURCE(PeriphClkInit->Usart2ClockSelection));
-    
+
     /* Configure the USART2 clock source */
     __HAL_RCC_USART2_CONFIG(PeriphClkInit->Usart2ClockSelection);
   }
@@ -221,34 +221,34 @@ HAL_StatusTypeDef HAL_RCCEx_PeriphCLKConfig(RCC_PeriphCLKInitTypeDef  *PeriphClk
        /* STM32F091xC || STM32F098xx */
 
 #if defined(STM32F091xC) || defined(STM32F098xx)
-  /*----------------------------- USART3 Configuration --------------------------*/ 
+  /*----------------------------- USART3 Configuration --------------------------*/
   if(((PeriphClkInit->PeriphClockSelection) & RCC_PERIPHCLK_USART3) == RCC_PERIPHCLK_USART3)
   {
     /* Check the parameters */
     assert_param(IS_RCC_USART3CLKSOURCE(PeriphClkInit->Usart3ClockSelection));
-    
+
     /* Configure the USART3 clock source */
     __HAL_RCC_USART3_CONFIG(PeriphClkInit->Usart3ClockSelection);
   }
-#endif /* STM32F091xC || STM32F098xx */  
+#endif /* STM32F091xC || STM32F098xx */
 
-  /*------------------------------ I2C1 Configuration ------------------------*/ 
+  /*------------------------------ I2C1 Configuration ------------------------*/
   if(((PeriphClkInit->PeriphClockSelection) & RCC_PERIPHCLK_I2C1) == RCC_PERIPHCLK_I2C1)
   {
     /* Check the parameters */
     assert_param(IS_RCC_I2C1CLKSOURCE(PeriphClkInit->I2c1ClockSelection));
-    
+
     /* Configure the I2C1 clock source */
     __HAL_RCC_I2C1_CONFIG(PeriphClkInit->I2c1ClockSelection);
   }
 
 #if defined(STM32F042x6) || defined(STM32F048xx) || defined(STM32F072xB) || defined(STM32F078xx) || defined(STM32F070xB) || defined(STM32F070x6)
-  /*------------------------------ USB Configuration ------------------------*/ 
+  /*------------------------------ USB Configuration ------------------------*/
   if(((PeriphClkInit->PeriphClockSelection) & RCC_PERIPHCLK_USB) == RCC_PERIPHCLK_USB)
   {
     /* Check the parameters */
     assert_param(IS_RCC_USBCLKSOURCE(PeriphClkInit->UsbClockSelection));
-    
+
     /* Configure the USB clock source */
     __HAL_RCC_USB_CONFIG(PeriphClkInit->UsbClockSelection);
   }
@@ -258,12 +258,12 @@ HAL_StatusTypeDef HAL_RCCEx_PeriphCLKConfig(RCC_PeriphCLKInitTypeDef  *PeriphClk
  || defined(STM32F051x8) || defined(STM32F058xx)\
  || defined(STM32F071xB) || defined(STM32F072xB) || defined(STM32F078xx)\
  || defined(STM32F091xC) || defined(STM32F098xx)
-  /*------------------------------ CEC clock Configuration -------------------*/ 
+  /*------------------------------ CEC clock Configuration -------------------*/
   if(((PeriphClkInit->PeriphClockSelection) & RCC_PERIPHCLK_CEC) == RCC_PERIPHCLK_CEC)
   {
     /* Check the parameters */
     assert_param(IS_RCC_CECCLKSOURCE(PeriphClkInit->CecClockSelection));
-    
+
     /* Configure the CEC clock source */
     __HAL_RCC_CEC_CONFIG(PeriphClkInit->CecClockSelection);
   }
@@ -271,7 +271,7 @@ HAL_StatusTypeDef HAL_RCCEx_PeriphCLKConfig(RCC_PeriphCLKInitTypeDef  *PeriphClk
        /* STM32F051x8 || STM32F058xx ||                */
        /* STM32F071xB || STM32F072xB || STM32F078xx || */
        /* STM32F091xC || STM32F098xx */
-  
+
   return HAL_OK;
 }
 
@@ -287,7 +287,7 @@ void HAL_RCCEx_GetPeriphCLKConfig(RCC_PeriphCLKInitTypeDef  *PeriphClkInit)
 {
   /* Set all possible values for the extended clock type parameter------------*/
   /* Common part first */
-  PeriphClkInit->PeriphClockSelection = RCC_PERIPHCLK_USART1 | RCC_PERIPHCLK_I2C1   | RCC_PERIPHCLK_RTC;  
+  PeriphClkInit->PeriphClockSelection = RCC_PERIPHCLK_USART1 | RCC_PERIPHCLK_I2C1   | RCC_PERIPHCLK_RTC;
   /* Get the RTC configuration --------------------------------------------*/
   PeriphClkInit->RTCClockSelection = __HAL_RCC_GET_RTC_SOURCE();
   /* Get the USART1 clock configuration --------------------------------------------*/
@@ -387,7 +387,7 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk)
 {
   /* frequency == 0 : means that no available frequency for the peripheral */
   uint32_t frequency = 0U;
-  
+
   uint32_t srcclk = 0U;
 #if defined(USB)
   uint32_t pllmull = 0U, pllsource = 0U, predivfactor = 0U;
@@ -395,7 +395,7 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk)
 
   /* Check the parameters */
   assert_param(IS_RCC_PERIPHCLOCK(PeriphClk));
-  
+
   switch (PeriphClk)
   {
   case RCC_PERIPHCLK_RTC:
@@ -589,7 +589,7 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk)
       break;
     }
 #endif /* CEC */
-  default: 
+  default:
     {
       break;
     }
@@ -603,7 +603,7 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk)
 
 #if defined(CRS)
 
-/** @defgroup RCCEx_Exported_Functions_Group3 Extended Clock Recovery System Control functions 
+/** @defgroup RCCEx_Exported_Functions_Group3 Extended Clock Recovery System Control functions
  *  @brief  Extended Clock Recovery System Control functions
  *
 @verbatim
@@ -621,11 +621,11 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk)
           (##) Prepare synchronization configuration necessary for HSI48 calibration
               (+++) Default values can be set for frequency Error Measurement (reload and error limit)
                         and also HSI48 oscillator smooth trimming.
-              (+++) Macro @ref __HAL_RCC_CRS_RELOADVALUE_CALCULATE can be also used to calculate 
+              (+++) Macro @ref __HAL_RCC_CRS_RELOADVALUE_CALCULATE can be also used to calculate
                         directly reload value with target and synchronization frequencies values
           (##) Call function @ref HAL_RCCEx_CRSConfig which
               (+++) Reset CRS registers to their default values.
-              (+++) Configure CRS registers with synchronization configuration 
+              (+++) Configure CRS registers with synchronization configuration
               (+++) Enable automatic calibration and frequency error counter feature
            Note: When using USB LPM (Link Power Management) and the device is in Sleep mode, the
            periodic USB SOF will not be generated by the host. No SYNC signal will therefore be
@@ -637,23 +637,23 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk)
               (+++) Call function @ref HAL_RCCEx_CRSWaitSynchronization()
               (+++) According to CRS status, user can decide to adjust again the calibration or continue
                         application if synchronization is OK
-              
+
       (#) User can retrieve information related to synchronization in calling function
             @ref HAL_RCCEx_CRSGetSynchronizationInfo()
 
       (#) Regarding synchronization status and synchronization information, user can try a new calibration
            in changing synchronization configuration and call again HAL_RCCEx_CRSConfig.
-           Note: When the SYNC event is detected during the downcounting phase (before reaching the zero value), 
-           it means that the actual frequency is lower than the target (and so, that the TRIM value should be 
-           incremented), while when it is detected during the upcounting phase it means that the actual frequency 
+           Note: When the SYNC event is detected during the downcounting phase (before reaching the zero value),
+           it means that the actual frequency is lower than the target (and so, that the TRIM value should be
+           incremented), while when it is detected during the upcounting phase it means that the actual frequency
            is higher (and that the TRIM value should be decremented).
 
-      (#) In interrupt mode, user can resort to the available macros (__HAL_RCC_CRS_XXX_IT). Interrupts will go 
+      (#) In interrupt mode, user can resort to the available macros (__HAL_RCC_CRS_XXX_IT). Interrupts will go
           through CRS Handler (RCC_IRQn/RCC_IRQHandler)
               (++) Call function @ref HAL_RCCEx_CRSConfig()
               (++) Enable RCC_IRQn (thanks to NVIC functions)
               (++) Enable CRS interrupt (@ref __HAL_RCC_CRS_ENABLE_IT)
-              (++) Implement CRS status management in the following user callbacks called from 
+              (++) Implement CRS status management in the following user callbacks called from
                    HAL_RCCEx_CRS_IRQHandler():
                    (+++) @ref HAL_RCCEx_CRS_SyncOkCallback()
                    (+++) @ref HAL_RCCEx_CRS_SyncWarnCallback()
@@ -662,7 +662,7 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk)
 
       (#) To force a SYNC EVENT, user can use the function @ref HAL_RCCEx_CRSSoftwareSynchronizationGenerate().
           This function can be called before calling @ref HAL_RCCEx_CRSConfig (for instance in Systick handler)
-            
+
 @endverbatim
  * @{
  */
@@ -675,7 +675,7 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk)
 void HAL_RCCEx_CRSConfig(RCC_CRSInitTypeDef *pInit)
 {
   uint32_t value = 0U;
-  
+
   /* Check the parameters */
   assert_param(IS_RCC_CRS_SYNC_DIV(pInit->Prescaler));
   assert_param(IS_RCC_CRS_SYNC_SOURCE(pInit->Source));
@@ -703,9 +703,9 @@ void HAL_RCCEx_CRSConfig(RCC_CRSInitTypeDef *pInit)
   /* Adjust HSI48 oscillator smooth trimming */
   /* Set the TRIM[5:0] bits according to RCC_CRS_HSI48CalibrationValue value */
   MODIFY_REG(CRS->CR, CRS_CR_TRIM, (pInit->HSI48CalibrationValue << CRS_CR_TRIM_BITNUMBER));
-  
+
   /* START AUTOMATIC SYNCHRONIZATION*/
-  
+
   /* Enable Automatic trimming & Frequency error counter */
   SET_BIT(CRS->CR, CRS_CR_AUTOTRIMEN | CRS_CR_CEN);
 }
@@ -720,7 +720,7 @@ void HAL_RCCEx_CRSSoftwareSynchronizationGenerate(void)
 }
 
 /**
-  * @brief  Return synchronization info 
+  * @brief  Return synchronization info
   * @param  pSynchroInfo Pointer on RCC_CRSSynchroInfoTypeDef structure
   * @retval None
   */
@@ -728,10 +728,10 @@ void HAL_RCCEx_CRSGetSynchronizationInfo(RCC_CRSSynchroInfoTypeDef *pSynchroInfo
 {
   /* Check the parameter */
   assert_param(pSynchroInfo != NULL);
-  
+
   /* Get the reload value */
   pSynchroInfo->ReloadValue = (uint32_t)(READ_BIT(CRS->CFGR, CRS_CFGR_RELOAD));
-  
+
   /* Get HSI48 oscillator smooth trimming */
   pSynchroInfo->HSI48CalibrationValue = (uint32_t)(READ_BIT(CRS->CR, CRS_CR_TRIM) >> CRS_CR_TRIM_BITNUMBER);
 
@@ -761,10 +761,10 @@ uint32_t HAL_RCCEx_CRSWaitSynchronization(uint32_t Timeout)
 {
   uint32_t crsstatus = RCC_CRS_NONE;
   uint32_t tickstart = 0U;
-  
+
   /* Get timeout */
   tickstart = HAL_GetTick();
-  
+
   /* Wait for CRS flag or timeout detection */
   do
   {
@@ -780,51 +780,51 @@ uint32_t HAL_RCCEx_CRSWaitSynchronization(uint32_t Timeout)
     {
       /* CRS SYNC event OK */
       crsstatus |= RCC_CRS_SYNCOK;
-    
+
       /* Clear CRS SYNC event OK bit */
       __HAL_RCC_CRS_CLEAR_FLAG(RCC_CRS_FLAG_SYNCOK);
     }
-    
+
     /* Check CRS SYNCWARN flag  */
     if(__HAL_RCC_CRS_GET_FLAG(RCC_CRS_FLAG_SYNCWARN))
     {
       /* CRS SYNC warning */
       crsstatus |= RCC_CRS_SYNCWARN;
-    
+
       /* Clear CRS SYNCWARN bit */
       __HAL_RCC_CRS_CLEAR_FLAG(RCC_CRS_FLAG_SYNCWARN);
     }
-    
+
     /* Check CRS TRIM overflow flag  */
     if(__HAL_RCC_CRS_GET_FLAG(RCC_CRS_FLAG_TRIMOVF))
     {
       /* CRS SYNC Error */
       crsstatus |= RCC_CRS_TRIMOVF;
-    
+
       /* Clear CRS Error bit */
       __HAL_RCC_CRS_CLEAR_FLAG(RCC_CRS_FLAG_TRIMOVF);
     }
-    
+
     /* Check CRS Error flag  */
     if(__HAL_RCC_CRS_GET_FLAG(RCC_CRS_FLAG_SYNCERR))
     {
       /* CRS SYNC Error */
       crsstatus |= RCC_CRS_SYNCERR;
-    
+
       /* Clear CRS Error bit */
       __HAL_RCC_CRS_CLEAR_FLAG(RCC_CRS_FLAG_SYNCERR);
     }
-    
+
     /* Check CRS SYNC Missed flag  */
     if(__HAL_RCC_CRS_GET_FLAG(RCC_CRS_FLAG_SYNCMISS))
     {
       /* CRS SYNC Missed */
       crsstatus |= RCC_CRS_SYNCMISS;
-    
+
       /* Clear CRS SYNC Missed bit */
       __HAL_RCC_CRS_CLEAR_FLAG(RCC_CRS_FLAG_SYNCMISS);
     }
-    
+
     /* Check CRS Expected SYNC flag  */
     if(__HAL_RCC_CRS_GET_FLAG(RCC_CRS_FLAG_ESYNC))
     {
@@ -894,7 +894,7 @@ void HAL_RCCEx_CRS_IRQHandler(void)
 
       /* Clear CRS Error flags */
       WRITE_REG(CRS->ICR, CRS_ICR_ERRC);
-    
+
       /* user error callback */
       HAL_RCCEx_CRS_ErrorCallback(crserror);
     }
@@ -936,7 +936,7 @@ __weak void HAL_RCCEx_CRS_ExpectedSyncCallback(void)
 
 /**
   * @brief  RCCEx Clock Recovery System Error interrupt callback.
-  * @param  Error Combination of Error status. 
+  * @param  Error Combination of Error status.
   *         This parameter can be a combination of the following values:
   *           @arg @ref RCC_CRS_SYNCERR
   *           @arg @ref RCC_CRS_SYNCMISS
@@ -970,7 +970,7 @@ __weak void HAL_RCCEx_CRS_ErrorCallback(uint32_t Error)
 /**
   * @}
   */
-  
+
 #endif /* HAL_RCC_MODULE_ENABLED */
 
 /**

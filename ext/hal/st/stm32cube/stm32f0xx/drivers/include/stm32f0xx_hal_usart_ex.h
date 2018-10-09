@@ -64,12 +64,12 @@
 #if defined (STM32F042x6) || defined (STM32F048xx) || defined (STM32F070x6) || \
     defined (STM32F071xB) || defined (STM32F072xB) || defined (STM32F078xx) || defined (STM32F070xB) || \
     defined (STM32F091xC) || defined (STM32F098xx) || defined (STM32F030xC)
-#define USART_WORDLENGTH_7B                  ((uint32_t)USART_CR1_M1)   /*!< 7-bit long USART frame */ 
-#define USART_WORDLENGTH_8B                  (0x00000000U)              /*!< 8-bit long USART frame */ 
-#define USART_WORDLENGTH_9B                  ((uint32_t)USART_CR1_M0)   /*!< 9-bit long USART frame */ 
+#define USART_WORDLENGTH_7B                  ((uint32_t)USART_CR1_M1)   /*!< 7-bit long USART frame */
+#define USART_WORDLENGTH_8B                  (0x00000000U)              /*!< 8-bit long USART frame */
+#define USART_WORDLENGTH_9B                  ((uint32_t)USART_CR1_M0)   /*!< 9-bit long USART frame */
 #else
-#define USART_WORDLENGTH_8B                  (0x00000000U)              /*!< 8-bit long USART frame */ 
-#define USART_WORDLENGTH_9B                  ((uint32_t)USART_CR1_M)    /*!< 9-bit long USART frame */ 
+#define USART_WORDLENGTH_8B                  (0x00000000U)              /*!< 8-bit long USART frame */
+#define USART_WORDLENGTH_9B                  ((uint32_t)USART_CR1_M)    /*!< 9-bit long USART frame */
 #endif /* defined (STM32F042x6) || defined (STM32F048xx) || defined (STM32F070x6) || defined (STM32F070xB) || \
           defined (STM32F071xB) || defined (STM32F072xB) || defined (STM32F078xx) || \
           defined (STM32F091xC) || defined (STM32F098xx) || defined (STM32F030xC) */
@@ -84,7 +84,7 @@
 #if !defined(STM32F030x6) && !defined(STM32F030x8) && !defined(STM32F070x6)  && !defined(STM32F070xB)  && !defined(STM32F030xC)
 #define USART_TXDATA_FLUSH_REQUEST        ((uint32_t)USART_RQR_TXFRQ)        /*!< Transmit data flush Request */
 #else
-#endif /* !defined(STM32F030x6) && !defined(STM32F030x8) && !defined(STM32F070x6)  && !defined(STM32F070xB)  && !defined(STM32F030xC) */ 
+#endif /* !defined(STM32F030x6) && !defined(STM32F030x8) && !defined(STM32F070x6)  && !defined(STM32F070xB)  && !defined(STM32F030xC) */
 /**
   * @}
   */
@@ -124,7 +124,7 @@
 
 /** @brief  Flush the USART Data registers.
   * @param  __HANDLE__ specifies the USART Handle.
-  * @retval None  
+  * @retval None
   */
 #if !defined(STM32F030x6) && !defined(STM32F030x8) && !defined(STM32F070x6)  && !defined(STM32F070xB)  && !defined(STM32F030xC)
 #define __HAL_USART_FLUSH_DRREGISTER(__HANDLE__)  \
@@ -137,7 +137,7 @@
   do{                \
       SET_BIT((__HANDLE__)->Instance->RQR, USART_RXDATA_FLUSH_REQUEST); \
     }  while(0)
-#endif /* !defined(STM32F030x6) && !defined(STM32F030x8) && !defined(STM32F070x6)  && !defined(STM32F070xB)  && !defined(STM32F030xC) */ 
+#endif /* !defined(STM32F030x6) && !defined(STM32F030x8) && !defined(STM32F070x6)  && !defined(STM32F070xB)  && !defined(STM32F030xC) */
 
 /**
   * @}
@@ -533,7 +533,7 @@
 
 /**
   * @brief Ensure that USART frame length is valid.
-  * @param __LENGTH__ USART frame length. 
+  * @param __LENGTH__ USART frame length.
   * @retval SET (__LENGTH__ is valid) or RESET (__LENGTH__ is invalid)
   */
 #if defined (STM32F042x6) || defined (STM32F048xx) || defined (STM32F070x6) || \
@@ -551,7 +551,7 @@
 
 /**
   * @brief Ensure that USART request parameter is valid.
-  * @param __PARAM__ USART request parameter. 
+  * @param __PARAM__ USART request parameter.
   * @retval SET (__PARAM__ is valid) or RESET (__PARAM__ is invalid)
   */
 #if !defined(STM32F030x6) && !defined(STM32F030x8) && !defined(STM32F070x6)  && !defined(STM32F070xB)  && !defined(STM32F030xC)
@@ -559,7 +559,7 @@
                                                ((__PARAM__) == USART_TXDATA_FLUSH_REQUEST))
 #else
 #define IS_USART_REQUEST_PARAMETER(__PARAM__) ((__PARAM__) == USART_RXDATA_FLUSH_REQUEST)
-#endif /* !defined(STM32F030x6) && !defined(STM32F030x8) && !defined(STM32F070x6)  && !defined(STM32F070xB)  && !defined(STM32F030xC) */ 
+#endif /* !defined(STM32F030x6) && !defined(STM32F030x8) && !defined(STM32F070x6)  && !defined(STM32F070xB)  && !defined(STM32F030xC) */
 
 /**
   * @}
