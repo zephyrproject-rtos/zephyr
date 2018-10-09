@@ -371,7 +371,9 @@ static inline int inet_pton(sa_family_t family, const char *src, void *dst)
 #define EAI_AGAIN DNS_EAI_AGAIN
 #define EAI_FAIL DNS_EAI_FAIL
 #define EAI_NODATA DNS_EAI_NODATA
+#define EAI_MEMORY DNS_EAI_MEMORY
 #define EAI_SYSTEM DNS_EAI_SYSTEM
+#define EAI_SERVICE DNS_EAI_SERVICE
 #endif /* defined(CONFIG_NET_SOCKETS_POSIX_NAMES) */
 
 #ifdef __cplusplus
