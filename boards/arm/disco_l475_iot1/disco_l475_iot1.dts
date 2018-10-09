@@ -42,6 +42,7 @@
 		led1 = &green_led_1;
 		sw0 = &user_button;
 		bt = &bt0;
+		eswifi0 = &wifi0;
 	};
 };
 
@@ -115,6 +116,18 @@
 		irq-gpios = <&gpioe 6 0>;
 		spi-max-frequency = <2000000>;
 		label = "SPBTLE-RF";
+	};
+
+	wifi0: ism43362@0 {
+		compatible = "inventek,eswifi";
+		spi-max-frequency = <2000000>;
+		reg = <1>;
+		resetn-gpios = <&gpioe 8 0>;
+		boot0-gpios = <&gpiob 12 0>;
+		wakeup-gpios = <&gpiob 13 0>;
+		data-gpios = <&gpioe 1 0>;
+		csn-gpios = <&gpioe 0 0>;
+		label = "ESWIFI0";
 	};
 };
 
