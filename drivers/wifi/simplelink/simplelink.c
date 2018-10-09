@@ -229,6 +229,7 @@ static void simplelink_iface_init(struct net_if *iface)
 #ifdef CONFIG_NET_SOCKETS_OFFLOAD
 	/* Direct socket offload: */
 	socket_offload_register(&simplelink_ops);
+	simplelink_sockets_init();
 #endif
 
 }

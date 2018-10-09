@@ -12,6 +12,7 @@ extern "C" {
 #endif
 
 extern const struct socket_offload simplelink_ops;
+extern void simplelink_sockets_init(void);
 
 #ifdef __cplusplus
 }
