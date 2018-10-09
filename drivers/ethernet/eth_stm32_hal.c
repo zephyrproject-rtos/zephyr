@@ -338,7 +338,7 @@ static void eth_iface_init(struct net_if *iface)
 	if (hal_ret == HAL_TIMEOUT) {
 		/* HAL Init time out. This could be linked to */
 		/* a recoverable error. Log the issue and continue */
-		/* dirver initialisation */
+		/* driver initialisation */
 		LOG_ERR("HAL_ETH_Init Timed out");
 	} else if (hal_ret != HAL_OK) {
 		LOG_ERR("HAL_ETH_Init failed: %d", hal_ret);
