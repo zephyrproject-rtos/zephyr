@@ -401,16 +401,13 @@ static bool gen_delta_setunack(struct bt_mesh_model *model,
 	tid = net_buf_simple_pull_u8(buf);
 
 	now = k_uptime_get();
-	if (state->last_tid == tid && state->last_tx_addr == ctx->addr) {
+	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
+	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
 
-		if (now - state->last_msg_timestamp <= K_SECONDS(6)) {
-			if (state->last_delta == delta) {
-				return false;
-			}
-			tmp32 = state->last_level + delta;
-		} else {
+		if (state->last_delta == delta) {
 			return false;
 		}
+		tmp32 = state->last_level + delta;
 
 	} else {
 		state->last_level = state->level;
