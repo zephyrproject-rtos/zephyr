@@ -1,0 +1,30 @@
+# Kconfig - MIMXRT1064-EVK board
+#
+# Copyright (c) 2018, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_MIMXRT1064_EVK
+
+config BOARD
+	default "mimxrt1064_evk"
+
+if GPIO_MCUX_IGPIO
+
+config GPIO_MCUX_IGPIO_1
+	def_bool y
+
+config GPIO_MCUX_IGPIO_5
+	def_bool y
+
+endif # GPIO_MCUX_IGPIO
+
+if UART_MCUX_LPUART
+
+config UART_MCUX_LPUART_1
+	def_bool y
+
+endif # UART_MCUX_LPUART
+
+endif # BOARD_MIMXRT1064_EVK
