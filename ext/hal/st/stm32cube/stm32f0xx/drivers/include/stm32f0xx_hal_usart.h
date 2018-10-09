@@ -176,7 +176,7 @@ typedef struct
 #define HAL_USART_ERROR_DMA       (0x00000010U)    /*!< DMA transfer error  */
 /**
   * @}
-  */ 
+  */
 
 /** @defgroup USART_Stop_Bits  USART Number of Stop Bits
   * @{
@@ -261,15 +261,15 @@ typedef struct
   * @{
   */
 
-#define USART_IT_PE                          ((uint16_t)0x0028U)     /*!< USART parity error interruption                 */   
-#define USART_IT_TXE                         ((uint16_t)0x0727U)     /*!< USART transmit data register empty interruption */   
-#define USART_IT_TC                          ((uint16_t)0x0626U)     /*!< USART transmission complete interruption        */   
-#define USART_IT_RXNE                        ((uint16_t)0x0525U)     /*!< USART read data register not empty interruption */   
-#define USART_IT_IDLE                        ((uint16_t)0x0424U)     /*!< USART idle interruption                         */   
+#define USART_IT_PE                          ((uint16_t)0x0028U)     /*!< USART parity error interruption                 */
+#define USART_IT_TXE                         ((uint16_t)0x0727U)     /*!< USART transmit data register empty interruption */
+#define USART_IT_TC                          ((uint16_t)0x0626U)     /*!< USART transmission complete interruption        */
+#define USART_IT_RXNE                        ((uint16_t)0x0525U)     /*!< USART read data register not empty interruption */
+#define USART_IT_IDLE                        ((uint16_t)0x0424U)     /*!< USART idle interruption                         */
 #define USART_IT_ERR                         ((uint16_t)0x0060U)     /*!< USART error interruption                        */
-#define USART_IT_ORE                         ((uint16_t)0x0300U)     /*!< USART overrun error interruption                */ 
-#define USART_IT_NE                          ((uint16_t)0x0200U)     /*!< USART noise error interruption                  */ 
-#define USART_IT_FE                          ((uint16_t)0x0100U)     /*!< USART frame error interruption                  */ 
+#define USART_IT_ORE                         ((uint16_t)0x0300U)     /*!< USART overrun error interruption                */
+#define USART_IT_NE                          ((uint16_t)0x0200U)     /*!< USART noise error interruption                  */
+#define USART_IT_FE                          ((uint16_t)0x0100U)     /*!< USART frame error interruption                  */
 /**
   * @}
   */
@@ -486,13 +486,13 @@ typedef struct
 #define __HAL_USART_SEND_REQ(__HANDLE__, __REQ__)      ((__HANDLE__)->Instance->RQR |= (__REQ__))
 
 /** @brief  Enable the USART one bit sample method.
-  * @param  __HANDLE__ specifies the USART Handle.  
+  * @param  __HANDLE__ specifies the USART Handle.
   * @retval None
   */
 #define __HAL_USART_ONE_BIT_SAMPLE_ENABLE(__HANDLE__) ((__HANDLE__)->Instance->CR3|= USART_CR3_ONEBIT)
 
 /** @brief  Disable the USART one bit sample method.
-  * @param  __HANDLE__ specifies the USART Handle.  
+  * @param  __HANDLE__ specifies the USART Handle.
   * @retval None
   */
 #define __HAL_USART_ONE_BIT_SAMPLE_DISABLE(__HANDLE__) ((__HANDLE__)->Instance->CR3 &= (uint32_t)~((uint32_t)USART_CR3_ONEBIT))
@@ -528,7 +528,7 @@ typedef struct
 
 /**
   * @brief Ensure that USART frame number of stop bits is valid.
-  * @param __STOPBITS__ USART frame number of stop bits. 
+  * @param __STOPBITS__ USART frame number of stop bits.
   * @retval SET (__STOPBITS__ is valid) or RESET (__STOPBITS__ is invalid)
   */
 #ifdef USART_SMARTCARD_SUPPORT
@@ -543,45 +543,45 @@ typedef struct
 
 /**
   * @brief Ensure that USART frame parity is valid.
-  * @param __PARITY__ USART frame parity. 
+  * @param __PARITY__ USART frame parity.
   * @retval SET (__PARITY__ is valid) or RESET (__PARITY__ is invalid)
-  */ 
+  */
 #define IS_USART_PARITY(__PARITY__) (((__PARITY__) == USART_PARITY_NONE) || \
                                      ((__PARITY__) == USART_PARITY_EVEN) || \
                                      ((__PARITY__) == USART_PARITY_ODD))
 
 /**
   * @brief Ensure that USART communication mode is valid.
-  * @param __MODE__ USART communication mode. 
+  * @param __MODE__ USART communication mode.
   * @retval SET (__MODE__ is valid) or RESET (__MODE__ is invalid)
-  */ 
+  */
 #define IS_USART_MODE(__MODE__) ((((__MODE__) & 0xFFFFFFF3U) == 0x00U) && ((__MODE__) != 0x00U))
 
 /**
   * @brief Ensure that USART clock state is valid.
-  * @param __CLOCK__ USART clock state. 
+  * @param __CLOCK__ USART clock state.
   * @retval SET (__CLOCK__ is valid) or RESET (__CLOCK__ is invalid)
-  */ 
+  */
 #define IS_USART_CLOCK(__CLOCK__) (((__CLOCK__) == USART_CLOCK_DISABLE) || \
                                    ((__CLOCK__) == USART_CLOCK_ENABLE))
 
 /**
   * @brief Ensure that USART frame polarity is valid.
-  * @param __CPOL__ USART frame polarity. 
+  * @param __CPOL__ USART frame polarity.
   * @retval SET (__CPOL__ is valid) or RESET (__CPOL__ is invalid)
-  */ 
+  */
 #define IS_USART_POLARITY(__CPOL__) (((__CPOL__) == USART_POLARITY_LOW) || ((__CPOL__) == USART_POLARITY_HIGH))
 
 /**
   * @brief Ensure that USART frame phase is valid.
-  * @param __CPHA__ USART frame phase. 
+  * @param __CPHA__ USART frame phase.
   * @retval SET (__CPHA__ is valid) or RESET (__CPHA__ is invalid)
   */
 #define IS_USART_PHASE(__CPHA__) (((__CPHA__) == USART_PHASE_1EDGE) || ((__CPHA__) == USART_PHASE_2EDGE))
 
 /**
   * @brief Ensure that USART frame last bit clock pulse setting is valid.
-  * @param __LASTBIT__ USART frame last bit clock pulse setting. 
+  * @param __LASTBIT__ USART frame last bit clock pulse setting.
   * @retval SET (__LASTBIT__ is valid) or RESET (__LASTBIT__ is invalid)
   */
 #define IS_USART_LASTBIT(__LASTBIT__) (((__LASTBIT__) == USART_LASTBIT_DISABLE) || \

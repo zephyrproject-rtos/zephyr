@@ -2781,7 +2781,7 @@ __STATIC_INLINE void LL_TIM_ConfigETR(TIM_TypeDef *TIMx, uint32_t ETRPolarity, u
   */
 __STATIC_INLINE void LL_TIM_EnableBRK(TIM_TypeDef *TIMx)
 {
-  __IO uint32_t tmpreg; 
+  __IO uint32_t tmpreg;
 
   SET_BIT(TIMx->BDTR, TIM_BDTR_BKE);
 

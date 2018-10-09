@@ -59,7 +59,7 @@
 
 
 /**
-  * @brief  TIM Hall sensor Configuration Structure definition 
+  * @brief  TIM Hall sensor Configuration Structure definition
   */
 
 typedef struct
@@ -78,18 +78,18 @@ typedef struct
 } TIM_HallSensor_InitTypeDef;
 
 /**
-  * @brief  TIM Master configuration Structure definition 
-  */ 
+  * @brief  TIM Master configuration Structure definition
+  */
 typedef struct {
-  uint32_t  MasterOutputTrigger;   /*!< Trigger output (TRGO) selection 
+  uint32_t  MasterOutputTrigger;   /*!< Trigger output (TRGO) selection
                                       This parameter can be a value of @ref TIM_Master_Mode_Selection */
-  uint32_t  MasterSlaveMode;       /*!< Master/slave mode selection 
+  uint32_t  MasterSlaveMode;       /*!< Master/slave mode selection
                                       This parameter can be a value of @ref TIM_Master_Slave_Mode */
 }TIM_MasterConfigTypeDef;
 
 /**
-  * @brief  TIM Break and Dead time configuration Structure definition 
-  */ 
+  * @brief  TIM Break and Dead time configuration Structure definition
+  */
 typedef struct
 {
   uint32_t OffStateRunMode;       /*!< TIM off state in run mode
@@ -98,13 +98,13 @@ typedef struct
                                      This parameter can be a value of @ref TIM_OSSI_Off_State_Selection_for_Idle_mode_state */
   uint32_t LockLevel;             /*!< TIM Lock level
                                      This parameter can be a value of @ref TIM_Lock_level */
-  uint32_t DeadTime;              /*!< TIM dead Time 
+  uint32_t DeadTime;              /*!< TIM dead Time
                                      This parameter can be a number between Min_Data = 0x00 and Max_Data = 0xFF */
-  uint32_t BreakState;            /*!< TIM Break State 
+  uint32_t BreakState;            /*!< TIM Break State
                                      This parameter can be a value of @ref TIM_Break_Input_enable_disable */
-  uint32_t BreakPolarity;         /*!< TIM Break input polarity 
+  uint32_t BreakPolarity;         /*!< TIM Break input polarity
                                      This parameter can be a value of @ref TIM_Break_Polarity */
-  uint32_t AutomaticOutput;       /*!< TIM Automatic Output Enable state 
+  uint32_t AutomaticOutput;       /*!< TIM Automatic Output Enable state
                                      This parameter can be a value of @ref TIM_AOE_Bit_Set_Reset */
 } TIM_BreakDeadTimeConfigTypeDef;
 
@@ -304,7 +304,7 @@ HAL_TIM_StateTypeDef HAL_TIMEx_HallSensor_GetState(TIM_HandleTypeDef *htim);
 void TIMEx_DMACommutationCplt(DMA_HandleTypeDef *hdma);
 /**
 * @}
-*/ 
+*/
 /* End of private functions --------------------------------------------------*/
 
 /**

@@ -30,7 +30,7 @@
   * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
-  ******************************************************************************  
+  ******************************************************************************
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
@@ -52,7 +52,7 @@
   * @{
   */
 
-/* Exported types ------------------------------------------------------------*/ 
+/* Exported types ------------------------------------------------------------*/
 
 /** @defgroup PWREx_Exported_Types PWREx Exported Types
  *  @{
@@ -164,7 +164,7 @@ typedef struct
 #endif /* defined (STM32F031x6) || defined (STM32F042x6) || defined (STM32F051x8) || */
        /* defined (STM32F071xB) || defined (STM32F072xB) || */
        /* defined (STM32F091xC) */
-      
+
 #if defined (STM32F042x6) || defined (STM32F048xx) || \
     defined (STM32F071xB) || defined (STM32F072xB) || defined (STM32F078xx) || \
     defined (STM32F091xC) || defined (STM32F098xx)
@@ -250,8 +250,8 @@ typedef struct
 
 /**
   * @}
-  */ 
-  
+  */
+
 /* Exported macro ------------------------------------------------------------*/
 /** @defgroup PWREx_Exported_Macros PWREx Exported Macros
   * @{
@@ -367,7 +367,7 @@ typedef struct
                             EXTI->FTSR &= ~(PWR_EXTI_LINE_VDDIO2);   \
                             EXTI->RTSR &= ~(PWR_EXTI_LINE_VDDIO2);   \
                           } while(0)
-                    
+
 /**
   * @brief  Vddio2 Monitor EXTI line configuration: set falling edge trigger.
   * @retval None.
@@ -439,7 +439,7 @@ void HAL_PWR_DisablePVD(void);
 #endif /* defined (STM32F031x6) || defined (STM32F042x6) || defined (STM32F051x8) || */
        /* defined (STM32F071xB) || defined (STM32F072xB) || */
        /* defined (STM32F091xC) */
-       
+
 #if defined (STM32F042x6) || defined (STM32F048xx) || \
     defined (STM32F071xB) || defined (STM32F072xB) || defined (STM32F078xx) || \
     defined (STM32F091xC) || defined (STM32F098xx)

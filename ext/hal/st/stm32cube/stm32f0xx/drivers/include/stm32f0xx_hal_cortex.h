@@ -31,7 +31,7 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-  */ 
+  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __STM32F0xx_HAL_CORTEX_H
@@ -50,14 +50,14 @@
 
 /** @addtogroup CORTEX CORTEX
   * @{
-  */ 
+  */
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 
 /** @defgroup CORTEX_Exported_Constants CORTEX Exported Constants
   * @{
   */
-  
+
 /** @defgroup CORTEX_SysTick_clock_source CORTEX SysTick clock source
   * @{
   */
@@ -71,14 +71,14 @@
 /**
   * @}
   */
-  
+
 /* Exported Macros -----------------------------------------------------------*/
 
 /* Exported functions --------------------------------------------------------*/
 /** @addtogroup CORTEX_Exported_Functions CORTEX Exported Functions
   * @{
   */
-/** @addtogroup CORTEX_Exported_Functions_Group1 Initialization and de-initialization functions 
+/** @addtogroup CORTEX_Exported_Functions_Group1 Initialization and de-initialization functions
  *  @brief    Initialization and Configuration functions
  * @{
  */
@@ -92,11 +92,11 @@ uint32_t HAL_SYSTICK_Config(uint32_t TicksNumb);
   * @}
   */
 
-/** @addtogroup CORTEX_Exported_Functions_Group2 Peripheral Control functions 
+/** @addtogroup CORTEX_Exported_Functions_Group2 Peripheral Control functions
  *  @brief   Cortex control functions
  * @{
  */
- 
+
 /* Peripheral Control functions *************************************************/
 uint32_t HAL_NVIC_GetPriority(IRQn_Type IRQn);
 uint32_t HAL_NVIC_GetPendingIRQ(IRQn_Type IRQn);
@@ -107,13 +107,13 @@ void HAL_SYSTICK_IRQHandler(void);
 void HAL_SYSTICK_Callback(void);
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
-  */ 
+  */
 
-/* Private types -------------------------------------------------------------*/ 
+/* Private types -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 /* Private constants ---------------------------------------------------------*/
 /* Private macros ------------------------------------------------------------*/
@@ -128,22 +128,22 @@ void HAL_SYSTICK_Callback(void);
                                       ((SOURCE) == SYSTICK_CLKSOURCE_HCLK_DIV8))
 /**
   * @}
-  */ 
-
-/**
-  * @}
   */
 
 /**
   * @}
   */
-    
+
+/**
+  * @}
+  */
+
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* __STM32F0xx_HAL_CORTEX_H */
- 
+
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
 

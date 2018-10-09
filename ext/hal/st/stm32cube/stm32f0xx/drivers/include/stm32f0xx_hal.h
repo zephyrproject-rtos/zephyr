@@ -2,7 +2,7 @@
   ******************************************************************************
   * @file    stm32f0xx_hal.h
   * @author  MCD Application Team
-  * @brief   This file contains all the functions prototypes for the HAL 
+  * @brief   This file contains all the functions prototypes for the HAL
   *          module driver.
   ******************************************************************************
   * @attention
@@ -32,7 +32,7 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-  */ 
+  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __STM32F0xx_HAL_H
@@ -51,7 +51,7 @@
 
 /** @addtogroup HAL
   * @{
-  */ 
+  */
 
 /* Private macros ------------------------------------------------------------*/
 /** @addtogroup HAL_Private_Macros
@@ -89,7 +89,7 @@
 /** @defgroup HAL_Exported_Constants HAL Exported Constants
   * @{
   */
-   
+
 #if defined(SYSCFG_CFGR1_PA11_PA12_RMP)
 /** @defgroup HAL_Pin_remapping HAL Pin remapping
   * @{
@@ -123,7 +123,7 @@
   */
 
 /** @brief  Fast-mode Plus driving capability on a specific GPIO
-  */  
+  */
 #if defined(STM32F091xC) || defined(STM32F098xx) || defined(STM32F042x6) || defined(STM32F048xx) || \
     defined(STM32F030x6) || defined(STM32F031x6) || defined(STM32F038xx) || defined(STM32F070x6) || \
     defined(STM32F070xB) || defined(STM32F030x6)
@@ -258,18 +258,18 @@
 
 /**
   * @}
-  */  
+  */
 
 /* Exported macros -----------------------------------------------------------*/
 /** @defgroup HAL_Exported_Macros HAL Exported Macros
-  * @{  
+  * @{
   */
 
 /** @defgroup HAL_Freeze_Unfreeze_Peripherals HAL Freeze Unfreeze Peripherals
-  * @brief  Freeze/Unfreeze Peripherals in Debug mode 
-  * @{  
+  * @brief  Freeze/Unfreeze Peripherals in Debug mode
+  * @{
   */
-  
+
 #if defined(DBGMCU_APB1_FZ_DBG_CAN_STOP)
 #define __HAL_FREEZE_CAN_DBGMCU()            (DBGMCU->APB1FZ |= (DBGMCU_APB1_FZ_DBG_CAN_STOP))
 #define __HAL_UNFREEZE_CAN_DBGMCU()          (DBGMCU->APB1FZ &= ~(DBGMCU_APB1_FZ_DBG_CAN_STOP))
@@ -342,10 +342,10 @@
 
 /**
   * @}
-  */  
-  
+  */
+
 /** @defgroup Memory_Mapping_Selection Memory Mapping Selection
-  * @{   
+  * @{
   */
 #if defined(SYSCFG_CFGR1_MEM_MODE)
 /** @brief  Main Flash memory mapped at 0x00000000
@@ -366,18 +366,18 @@
   */
 #define __HAL_SYSCFG_REMAPMEMORY_SRAM()         do {SYSCFG->CFGR1 &= ~(SYSCFG_CFGR1_MEM_MODE); \
                                              SYSCFG->CFGR1 |= (SYSCFG_CFGR1_MEM_MODE_0 | SYSCFG_CFGR1_MEM_MODE_1); \
-                                            }while(0) 
+                                            }while(0)
 #endif /* SYSCFG_CFGR1_MEM_MODE_0 && SYSCFG_CFGR1_MEM_MODE_1 */
 /**
   * @}
-  */ 
+  */
 
 
 #if defined(SYSCFG_CFGR1_PA11_PA12_RMP)
-/** @defgroup HAL_Pin_remap HAL Pin remap 
+/** @defgroup HAL_Pin_remap HAL Pin remap
   * @brief  Pin remapping enable/disable macros
   * @param __PIN_REMAP__ This parameter can be a value of @ref HAL_Pin_remapping
-  * @{   
+  * @{
   */
 #define __HAL_REMAP_PIN_ENABLE(__PIN_REMAP__)          do {assert_param(IS_HAL_REMAP_PIN((__PIN_REMAP__)));                 \
                                                            SYSCFG->CFGR1 |= (__PIN_REMAP__);                                \
@@ -387,7 +387,7 @@
                                                          }while(0)
 /**
   * @}
-  */  
+  */
 #endif /* SYSCFG_CFGR1_PA11_PA12_RMP */
 
 /** @brief  Fast-mode Plus driving capability enable/disable macros
@@ -403,7 +403,7 @@
                                                                }while(0)
 #if defined(SYSCFG_CFGR2_LOCKUP_LOCK)
 /** @defgroup Cortex_Lockup_Enable Cortex Lockup Enable
-  * @{   
+  * @{
   */
 /** @brief  SYSCFG Break Lockup lock
   *         Enables and locks the connection of Cortex-M0 LOCKUP (Hardfault) output to TIM1/15/16/17 Break input
@@ -414,12 +414,12 @@
                                               }while(0)
 /**
   * @}
-  */  
+  */
 #endif /* SYSCFG_CFGR2_LOCKUP_LOCK */
 
 #if defined(SYSCFG_CFGR2_PVD_LOCK)
 /** @defgroup PVD_Lock_Enable PVD Lock
-  * @{  
+  * @{
   */
 /** @brief  SYSCFG Break PVD lock
   *         Enables and locks the PVD connection with Timer1/8/15/16/17 Break Input, , as well as the PVDE and PLS[2:0] in the PWR_CR register
@@ -454,7 +454,7 @@
   * @brief  Parity check on RAM disable macro
   * @note   Disabling the parity check on RAM locks the configuration bit.
   *         To re-enable the parity check on RAM perform a system reset.
-  * @{  
+  * @{
   */
 #define __HAL_SYSCFG_RAM_PARITYCHECK_DISABLE()   (SYSCFG->CFGR2 |= SYSCFG_CFGR2_SRAM_PEF)
 /**
@@ -466,9 +466,9 @@
 #if defined(STM32F091xC) || defined (STM32F098xx)
 /** @defgroup HAL_ISR_wrapper_check HAL ISR wrapper check
   * @brief  ISR wrapper check
-  * @note This feature is applicable on STM32F09x  
+  * @note This feature is applicable on STM32F09x
   * @note Allow to determine interrupt source per line.
-  * @{  
+  * @{
   */
 #define __HAL_GET_PENDING_IT(__SOURCE__)       (SYSCFG->IT_LINE_SR[((__SOURCE__) >> 0x18U)] & ((__SOURCE__) & 0x00FFFFFF))
 /**
@@ -481,7 +481,7 @@
   * @brief  selection of the modulation envelope signal macro, using bits [7:6] of SYS_CTRL(CFGR1) register
   * @note This feature is applicable on STM32F09x
   * @param __SOURCE__ This parameter can be a value of @ref HAL_IRDA_ENV_SEL
-  * @{  
+  * @{
   */
 #define __HAL_SYSCFG_IRDA_ENV_SELECTION(__SOURCE__)  do {assert_param(IS_HAL_SYSCFG_IRDA_ENV_SEL((__SOURCE__))); \
                                                          SYSCFG->CFGR1 &= ~(SYSCFG_CFGR1_IRDA_ENV_SEL); \
@@ -496,8 +496,8 @@
 
 /**
   * @}
-  */  
-  
+  */
+
 /* Exported functions --------------------------------------------------------*/
 
 /** @addtogroup HAL_Exported_Functions
@@ -506,7 +506,7 @@
 
 /** @addtogroup HAL_Exported_Functions_Group1
   * @{
-  */    
+  */
 /* Initialization and de-initialization functions  ******************************/
 HAL_StatusTypeDef HAL_Init(void);
 HAL_StatusTypeDef HAL_DeInit(void);
@@ -515,11 +515,11 @@ void              HAL_MspDeInit(void);
 HAL_StatusTypeDef HAL_InitTick (uint32_t TickPriority);
 /**
   * @}
-  */  
+  */
 
 /** @addtogroup HAL_Exported_Functions_Group2
   * @{
-  */    
+  */
 
 /* Peripheral Control functions  ************************************************/
 void              HAL_IncTick(void);
@@ -539,7 +539,7 @@ void              HAL_DBGMCU_EnableDBGStandbyMode(void);
 void              HAL_DBGMCU_DisableDBGStandbyMode(void);
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
@@ -547,7 +547,7 @@ void              HAL_DBGMCU_DisableDBGStandbyMode(void);
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
