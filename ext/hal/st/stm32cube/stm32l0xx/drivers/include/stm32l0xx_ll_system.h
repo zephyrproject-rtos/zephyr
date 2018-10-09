@@ -81,7 +81,7 @@ extern "C" {
  * @brief Power-down in Run mode Flash key
  */
 #define FLASH_PDKEY1                  ((uint32_t)0x04152637U) /*!< Flash power down key1 */
-#define FLASH_PDKEY2                  ((uint32_t)0xFAFBFCFDU) /*!< Flash power down key2: used with FLASH_PDKEY1 
+#define FLASH_PDKEY2                  ((uint32_t)0xFAFBFCFDU) /*!< Flash power down key2: used with FLASH_PDKEY1
                                                                    to unlock the RUN_PD bit in FLASH_ACR */
 
 /**

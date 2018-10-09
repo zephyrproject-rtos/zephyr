@@ -40,9 +40,9 @@
 #ifdef __cplusplus
  extern "C" {
 #endif
-   
+
 #if !defined (STM32L011xx) && !defined (STM32L021xx) && !defined (STM32L031xx) && !defined (STM32L041xx) && !defined (STM32L051xx) && !defined (STM32L061xx) && !defined (STM32L071xx) && !defined (STM32L081xx)
-   
+
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l0xx_hal_def.h"
 
@@ -60,9 +60,9 @@
   * @{
   */
 
-/** 
-  * @brief  HAL State structures definition  
-  */ 
+/**
+  * @brief  HAL State structures definition
+  */
 typedef enum
 {
   HAL_DAC_STATE_RESET             = 0x00U,  /*!< DAC not yet initialized or disabled  */
@@ -70,12 +70,12 @@ typedef enum
   HAL_DAC_STATE_BUSY              = 0x02U,  /*!< DAC internal processing is ongoing   */
   HAL_DAC_STATE_TIMEOUT           = 0x03U,  /*!< DAC timeout state                    */
   HAL_DAC_STATE_ERROR             = 0x04U   /*!< DAC error state                      */
- 
+
 }HAL_DAC_StateTypeDef;
- 
-/** 
-  * @brief  DAC handle Structure definition  
-  */ 
+
+/**
+  * @brief  DAC handle Structure definition
+  */
 typedef struct
 {
   DAC_TypeDef                 *Instance;     /*!< Register base address             */
@@ -87,14 +87,14 @@ typedef struct
   DMA_HandleTypeDef           *DMA_Handle1;  /*!< Pointer DMA handler for channel 1 */
 
 #if defined (STM32L072xx) || defined (STM32L073xx) || defined (STM32L082xx) || defined (STM32L083xx)
-  DMA_HandleTypeDef           *DMA_Handle2;  /*!< Pointer DMA handler for channel 2 */ 
+  DMA_HandleTypeDef           *DMA_Handle2;  /*!< Pointer DMA handler for channel 2 */
 #endif
 
   __IO uint32_t               ErrorCode;     /*!< DAC Error code                   */
 
 }DAC_HandleTypeDef;
 
-/** 
+/**
   * @brief   DAC Configuration regular Channel structure definition
   */
 typedef struct
@@ -115,7 +115,7 @@ typedef struct
 
 /** @defgroup DAC_Exported_Constants DAC Exported Constants
   * @{
-  */  
+  */
 
 /** @defgroup DAC_Error_Code DAC Error Code
   * @{
@@ -222,10 +222,10 @@ typedef struct
 
 /** @defgroup DAC_flags_definition DAC flags definition
   * @{
-  */ 
+  */
 #define DAC_FLAG_DMAUDR1                   ((uint32_t)DAC_SR_DMAUDR1)
 #if defined (STM32L072xx) || defined (STM32L073xx) || defined (STM32L082xx) || defined (STM32L083xx)
-#define DAC_FLAG_DMAUDR2                   ((uint32_t)DAC_SR_DMAUDR2)   
+#define DAC_FLAG_DMAUDR2                   ((uint32_t)DAC_SR_DMAUDR2)
 #endif
 
 /**
@@ -234,10 +234,10 @@ typedef struct
 
 /** @defgroup DAC_IT_definition DAC IT definition
   * @{
-  */ 
+  */
 #define DAC_IT_DMAUDR1                   ((uint32_t)DAC_SR_DMAUDR1)
 #if defined (STM32L072xx) || defined (STM32L073xx) || defined (STM32L082xx) || defined (STM32L083xx)
-#define DAC_IT_DMAUDR2                   ((uint32_t)DAC_SR_DMAUDR2)   
+#define DAC_IT_DMAUDR2                   ((uint32_t)DAC_SR_DMAUDR2)
 #endif
 
 /**
@@ -276,7 +276,7 @@ SET_BIT((__HANDLE__)->Instance->CR, (DAC_CR_EN1 << (__DAC_CHANNEL__)))
 #define __HAL_DAC_DISABLE(__HANDLE__, __DAC_CHANNEL__) \
 CLEAR_BIT((__HANDLE__)->Instance->CR, (DAC_CR_EN1 << (__DAC_CHANNEL__)))
 
-  
+
 #define __HAL_DAC_ENABLE_IT(__HANDLE__, __INTERRUPT__) \
 SET_BIT((__HANDLE__)->Instance->CR, (__INTERRUPT__))
 
@@ -318,7 +318,7 @@ CLEAR_BIT((__HANDLE__)->Instance->CR, (__INTERRUPT__))
 
 /**
   * @}
-  */ 
+  */
 
 /* Private macro ------------------------------------------------------------*/
 
@@ -349,10 +349,10 @@ CLEAR_BIT((__HANDLE__)->Instance->CR, (__INTERRUPT__))
   * @param  __INTERRUPT__: specifies the DAC interrupt.
   * @retval None
   */
-  
+
 /**
   * @}
-  */ 
+  */
 
 
 /* Include DAC HAL Extension module */
@@ -366,7 +366,7 @@ CLEAR_BIT((__HANDLE__)->Instance->CR, (__INTERRUPT__))
 
 /** @defgroup DAC_Exported_Functions_Group1 Initialization and de-initialization functions
   * @{
-  */ 
+  */
 /* Initialization and de-initialization functions *****************************/
 HAL_StatusTypeDef HAL_DAC_Init(DAC_HandleTypeDef* hdac);
 HAL_StatusTypeDef HAL_DAC_DeInit(DAC_HandleTypeDef* hdac);
@@ -431,7 +431,7 @@ uint32_t HAL_DAC_GetError(DAC_HandleTypeDef *hdac);
   */
 
 #endif /* STM32L011xx && STM32L021xx && STM32L031xx && STM32L041xx && STM32L061xx && STM32L071xx && STM32L081xx*/
-  
+
 #ifdef __cplusplus
 }
 #endif

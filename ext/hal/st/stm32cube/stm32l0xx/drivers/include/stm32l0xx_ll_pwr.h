@@ -240,7 +240,7 @@ __STATIC_INLINE uint32_t LL_PWR_IsEnabledLowPowerRunMode(void)
 }
 
 /**
-  * @brief  Set voltage regulator to low-power and switch from 
+  * @brief  Set voltage regulator to low-power and switch from
   *         run main mode to run low-power mode.
   * @rmtoll CR    LPSDSR       LL_PWR_EnterLowPowerRunMode\n
   *         CR    LPRUN        LL_PWR_EnterLowPowerRunMode
@@ -259,12 +259,12 @@ __STATIC_INLINE void LL_PWR_EnterLowPowerRunMode(void)
 }
 
 /**
-  * @brief  Set voltage regulator to main and switch from 
+  * @brief  Set voltage regulator to main and switch from
   *         run main mode to low-power mode.
   * @rmtoll CR    LPSDSR       LL_PWR_ExitLowPowerRunMode\n
   *         CR    LPRUN        LL_PWR_ExitLowPowerRunMode
-  * @note   This "high level" function is introduced to provide functional   
-  *         compatibility with other families. Notice that the two registers 
+  * @note   This "high level" function is introduced to provide functional
+  *         compatibility with other families. Notice that the two registers
   *         have to be written sequentially, so this function is not atomic.
   *         To assure atomicity you can call separately the following functions:
   *         - @ref LL_PWR_DisableLowPowerRunMode();
@@ -391,9 +391,9 @@ __STATIC_INLINE uint32_t LL_PWR_GetRegulModeDS(void)
   * @param  PDMode This parameter can be one of the following values:
   *         @arg @ref LL_PWR_MODE_STOP
   *         @arg @ref LL_PWR_MODE_STANDBY
-  * @note   Set the regulator to low power (bit @ref LL_PWR_REGU_LPMODES_LOW_POWER)  
-  *         before setting MODE_STOP. If the regulator remains in "main mode",   
-  *         it consumes more power without providing any additional feature. 
+  * @note   Set the regulator to low power (bit @ref LL_PWR_REGU_LPMODES_LOW_POWER)
+  *         before setting MODE_STOP. If the regulator remains in "main mode",
+  *         it consumes more power without providing any additional feature.
   *         In MODE_STANDBY the regulator is automatically off.
   * @retval None
   */

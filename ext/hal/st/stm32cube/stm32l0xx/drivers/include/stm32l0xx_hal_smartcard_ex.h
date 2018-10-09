@@ -52,14 +52,14 @@
   * @{
   */
 
-/* Exported types ------------------------------------------------------------*/  
+/* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
-/* Exported macros -----------------------------------------------------------*/  
+/* Exported macros -----------------------------------------------------------*/
 /* Private macros ------------------------------------------------------------*/
 /** @defgroup SMARTCARDEx_Private_Macros SMARTCARD Extended Private Macros
   * @{
   */
-  
+
 /** @brief  Report the SMARTCARD clock source.
   * @param  __HANDLE__: specifies the SMARTCARD Handle.
   * @param  __CLOCKSOURCE__: output variable.

@@ -3,9 +3,9 @@
   * @file    stm32l0xx_hal_msp_template.c
   * @author  MCD Application Team
   * @brief   HAL MSP module.
-  *          This file template is located in the HAL folder and should be copied 
+  *          This file template is located in the HAL folder and should be copied
   *          to the user folder.
-  *         
+  *
   @verbatim
  ===============================================================================
                      ##### How to use this driver #####
@@ -41,8 +41,8 @@
   * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
-  ******************************************************************************  
-  */ 
+  ******************************************************************************
+  */
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l0xx_hal.h"
@@ -74,12 +74,12 @@
   */
 void HAL_MspInit(void)
 {
-  /* NOTE : This function is eventually modified by the user */ 
+  /* NOTE : This function is eventually modified by the user */
 }
 
 /**
   * @brief  DeInitializes the Global MSP.
-  * @param  None  
+  * @param  None
   * @retval None
   */
 void HAL_MspDeInit(void)
@@ -94,12 +94,12 @@ void HAL_MspDeInit(void)
   */
 void HAL_PPP_MspInit(void)
 {
-  /* NOTE : This function is eventually modified by the user */ 
+  /* NOTE : This function is eventually modified by the user */
 }
 
 /**
   * @brief  DeInitializes the PPP MSP.
-  * @param  None  
+  * @param  None
   * @retval None
   */
 void HAL_PPP_MspDeInit(void)

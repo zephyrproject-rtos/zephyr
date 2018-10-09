@@ -31,7 +31,7 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-  */ 
+  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __STM32L0xx_FLASH_RAMFUNC_H
@@ -50,9 +50,9 @@
 
 /** @addtogroup FLASH_RAMFUNC
   * @{
-  */ 
+  */
 
-/* Exported types ------------------------------------------------------------*/ 
+/* Exported types ------------------------------------------------------------*/
 
 
 /* Exported functions --------------------------------------------------------*/
@@ -66,7 +66,7 @@
   *         These functions are defined inside the "stm32l0xx_hal_flash_ramfunc.c"
   *         file.
   */
-  
+
 /** @addtogroup FLASH_RAMFUNC_Exported_Functions_Group1
   * @{
   */
@@ -76,7 +76,7 @@ __RAM_FUNC HAL_FLASHEx_DisableRunPowerDown(void);
 
 /**
   * @}
-  */ 
+  */
 
 /** @addtogroup FLASH_RAMFUNC_Exported_Functions_Group2
   * @{
@@ -93,7 +93,7 @@ __RAM_FUNC HAL_FLASHEx_HalfPageProgram(uint32_t Address, uint32_t* pBuffer);
 
 /**
   * @}
-  */ 
+  */
 
 /** @addtogroup FLASH_RAMFUNC_Exported_Functions_Group3
   * @{
@@ -101,15 +101,15 @@ __RAM_FUNC HAL_FLASHEx_HalfPageProgram(uint32_t Address, uint32_t* pBuffer);
 __RAM_FUNC  HAL_FLASHEx_GetError(uint32_t *Error);
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
