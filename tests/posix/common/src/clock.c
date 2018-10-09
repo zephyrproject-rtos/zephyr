@@ -8,6 +8,7 @@
 #include <posix/unistd.h>
 
 #define SLEEP_SECONDS 1
+#define CLOCK_INVALID -1
 
 void test_posix_clock(void)
 {
@@ -15,6 +16,12 @@ void test_posix_clock(void)
 	struct timespec ts, te;
 
 	printk("POSIX clock APIs\n");
+
+	/* TESTPOINT: Pass invalid clock type */
+	zassert_equal(clock_gettime(CLOCK_INVALID, &ts), -1,
+			NULL);
+	zassert_equal(errno, EINVAL, NULL);
+
 	clock_gettime(CLOCK_MONOTONIC, &ts);
 	/* 2 Sec Delay */
 	sleep(SLEEP_SECONDS);
@@ -45,6 +52,8 @@ void test_posix_realtime(void)
 
 	int ret;
 	struct timespec rts, mts;
+	struct timeval tv;
+
 	printk("POSIX clock set APIs\n");
 	ret = clock_gettime(CLOCK_MONOTONIC, &mts);
 	zassert_equal(ret, 0, "Fail to get monotonic clock");
@@ -61,6 +70,12 @@ void test_posix_realtime(void)
 	struct timespec nts;
 	nts.tv_sec = 1514821501;
 	nts.tv_nsec = NSEC_PER_SEC / 2;
+
+	/* TESTPOINT: Pass invalid clock type */
+	zassert_equal(clock_settime(CLOCK_INVALID, &nts), -1,
+			NULL);
+	zassert_equal(errno, EINVAL, NULL);
+
 	ret = clock_settime(CLOCK_MONOTONIC, &nts);
 	zassert_not_equal(ret, 0, "Should not be able to set monotonic time");
 
@@ -98,6 +113,22 @@ void test_posix_realtime(void)
 
 		last_delta = delta;
 	}
+
+	/* Validate gettimeofday API */
+	ret = gettimeofday(&tv, NULL);
+	zassert_equal(ret, 0, NULL);
+
+	ret = clock_gettime(CLOCK_REALTIME, &rts);
+	zassert_equal(ret, 0, NULL);
+
+	/* TESTPOINT: Check if time obtained from
+	 * gettimeofday is same or more than obtained
+	 * from clock_gettime
+	 */
+	zassert_true(rts.tv_sec >= tv.tv_sec, "gettimeofday didn't"
+			" provide correct result");
+	zassert_true(rts.tv_nsec >= tv.tv_usec * NSEC_PER_USEC,
+			"gettimeofday didn't provide correct result");
 
 	printk("POSIX clock set APIs test done\n");
 }
