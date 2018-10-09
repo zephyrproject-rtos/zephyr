@@ -140,7 +140,7 @@ typedef struct
 /** @defgroup SDADC_Idle_Low_Power_Mode SDADC Idle Low Power Mode
   * @{
   */
-#define SDADC_LOWPOWER_NONE                  (0x00000000U)
+#define SDADC_LOWPOWER_NONE                  (0x00000000UL)
 #define SDADC_LOWPOWER_POWERDOWN             SDADC_CR1_PDI
 #define SDADC_LOWPOWER_STANDBY               SDADC_CR1_SBI
 /**
@@ -150,7 +150,7 @@ typedef struct
 /** @defgroup SDADC_Fast_Conv_Mode SDADC Fast Conversion Mode
   * @{
   */
-#define SDADC_FAST_CONV_DISABLE              (0x00000000U)
+#define SDADC_FAST_CONV_DISABLE              (0x00000000UL)
 #define SDADC_FAST_CONV_ENABLE               SDADC_CR2_FAST
 /**
   * @}
@@ -159,7 +159,7 @@ typedef struct
 /** @defgroup SDADC_Slow_Clock_Mode SDADC Slow Clock Mode
   * @{
   */
-#define SDADC_SLOW_CLOCK_DISABLE             (0x00000000U)
+#define SDADC_SLOW_CLOCK_DISABLE             (0x00000000UL)
 #define SDADC_SLOW_CLOCK_ENABLE              SDADC_CR1_SLOWCK
 /**
   * @}
@@ -168,7 +168,7 @@ typedef struct
 /** @defgroup SDADC_Reference_Voltage SDADC Reference Voltage
   * @{
   */
-#define SDADC_VREF_EXT                       (0x00000000U) /*!< The reference voltage is forced externally using VREF pin */
+#define SDADC_VREF_EXT                       (0x00000000UL) /*!< The reference voltage is forced externally using VREF pin */
 #define SDADC_VREF_VREFINT1                  SDADC_CR1_REFV_0       /*!< The reference voltage is forced internally to 1.22V VREFINT */
 #define SDADC_VREF_VREFINT2                  SDADC_CR1_REFV_1       /*!< The reference voltage is forced internally to 1.8V VREFINT */
 #define SDADC_VREF_VDDA                      SDADC_CR1_REFV         /*!< The reference voltage is forced internally to VDDA */
@@ -180,7 +180,7 @@ typedef struct
   * @{
   */
 
-#define SDADC_CONF_INDEX_0                     (0x00000000U) /*!< Configuration 0 Register selected */
+#define SDADC_CONF_INDEX_0                     (0x00000000UL) /*!< Configuration 0 Register selected */
 #define SDADC_CONF_INDEX_1                     (0x00000001U) /*!< Configuration 1 Register selected */
 #define SDADC_CONF_INDEX_2                     (0x00000002U) /*!< Configuration 2 Register selected */
 /**
@@ -190,7 +190,7 @@ typedef struct
 /** @defgroup SDADC_InputMode SDADC Input Mode
   * @{
   */
-#define SDADC_INPUT_MODE_DIFF                (0x00000000U) /*!< Conversions are executed in differential mode */
+#define SDADC_INPUT_MODE_DIFF                (0x00000000UL) /*!< Conversions are executed in differential mode */
 #define SDADC_INPUT_MODE_SE_OFFSET           SDADC_CONF0R_SE0_0     /*!< Conversions are executed in single ended offset mode */
 #define SDADC_INPUT_MODE_SE_ZERO_REFERENCE   SDADC_CONF0R_SE0       /*!< Conversions are executed in single ended zero-volt reference mode */
 /**
@@ -200,7 +200,7 @@ typedef struct
 /** @defgroup SDADC_Gain SDADC Gain
   * @{
   */
-#define SDADC_GAIN_1                         (0x00000000U)  /*!< Gain equal to 1U */
+#define SDADC_GAIN_1                         (0x00000000UL)  /*!< Gain equal to 1U */
 #define SDADC_GAIN_2                         SDADC_CONF0R_GAIN0_0    /*!< Gain equal to 2U */
 #define SDADC_GAIN_4                         SDADC_CONF0R_GAIN0_1    /*!< Gain equal to 4U */
 #define SDADC_GAIN_8                         (0x00300000U)  /*!< Gain equal to 8U */
@@ -214,7 +214,7 @@ typedef struct
 /** @defgroup SDADC_CommonMode SDADC Common Mode
   * @{
   */
-#define SDADC_COMMON_MODE_VSSA               (0x00000000U) /*!< Select SDADC VSSA as common mode */
+#define SDADC_COMMON_MODE_VSSA               (0x00000000UL) /*!< Select SDADC VSSA as common mode */
 #define SDADC_COMMON_MODE_VDDA_2             SDADC_CONF0R_COMMON0_0 /*!< Select SDADC VDDA/2 as common mode */
 #define SDADC_COMMON_MODE_VDDA               SDADC_CONF0R_COMMON0_1 /*!< Select SDADC VDDA as common mode */
 /**
@@ -234,16 +234,16 @@ typedef struct
    e.g. for channel 5 definition:
         - the channel mask is 0x00000020 (bit 5 is set)
         - the channel number 5 is 0x00050000
-        --> Consequently, channel 5 definition is 0x00000020U | 0x00050000U = 0x00050020U */
-#define SDADC_CHANNEL_0                              (0x00000001U)
-#define SDADC_CHANNEL_1                              (0x00010002U)
-#define SDADC_CHANNEL_2                              (0x00020004U)
-#define SDADC_CHANNEL_3                              (0x00030008U)
-#define SDADC_CHANNEL_4                              (0x00040010U)
-#define SDADC_CHANNEL_5                              (0x00050020U)
-#define SDADC_CHANNEL_6                              (0x00060040U)
-#define SDADC_CHANNEL_7                              (0x00070080U)
-#define SDADC_CHANNEL_8                              (0x00080100U)
+        --> Consequently, channel 5 definition is 0x00000020 | 0x00050000 = 0x00050020 */
+#define SDADC_CHANNEL_0                              (0x00000001UL)
+#define SDADC_CHANNEL_1                              (0x00010002UL)
+#define SDADC_CHANNEL_2                              (0x00020004UL)
+#define SDADC_CHANNEL_3                              (0x00030008UL)
+#define SDADC_CHANNEL_4                              (0x00040010UL)
+#define SDADC_CHANNEL_5                              (0x00050020UL)
+#define SDADC_CHANNEL_6                              (0x00060040UL)
+#define SDADC_CHANNEL_7                              (0x00070080UL)
+#define SDADC_CHANNEL_8                              (0x00080100UL)
 /**
   * @}
   */
@@ -251,7 +251,7 @@ typedef struct
 /** @defgroup SDADC_CalibrationSequence SDADC Calibration Sequence
   * @{
   */
-#define SDADC_CALIBRATION_SEQ_1                   (0x00000000U) /*!< One calibration sequence to calculate offset of conf0 (OFFSET0[11:0]) */
+#define SDADC_CALIBRATION_SEQ_1                   (0x00000000UL) /*!< One calibration sequence to calculate offset of conf0 (OFFSET0[11:0]) */
 #define SDADC_CALIBRATION_SEQ_2                   SDADC_CR2_CALIBCNT_0   /*!< Two calibration sequences to calculate offset of conf0 and conf1 (OFFSET0[11:0] and OFFSET1[11:0]) */
 #define SDADC_CALIBRATION_SEQ_3                   SDADC_CR2_CALIBCNT_1   /*!< Three calibration sequences to calculate offset of conf0, conf1 and conf2 (OFFSET0[11:0], OFFSET1[11:0], and OFFSET2[11:0]) */
 /**
@@ -261,8 +261,8 @@ typedef struct
 /** @defgroup SDADC_ContinuousMode SDADC Continuous Mode
   * @{
   */
-#define SDADC_CONTINUOUS_CONV_OFF            (0x00000000U) /*!< Conversion are not continuous */
-#define SDADC_CONTINUOUS_CONV_ON             (0x00000001U) /*!< Conversion are continuous */
+#define SDADC_CONTINUOUS_CONV_OFF            (0x00000000UL) /*!< Conversion are not continuous */
+#define SDADC_CONTINUOUS_CONV_ON             (0x00000001UL) /*!< Conversion are continuous */
 /**
   * @}
   */
@@ -270,9 +270,9 @@ typedef struct
 /** @defgroup SDADC_Trigger SDADC Trigger
   * @{
   */
-#define SDADC_SOFTWARE_TRIGGER               (0x00000000U) /*!< Software trigger */
-#define SDADC_SYNCHRONOUS_TRIGGER            (0x00000001U) /*!< Synchronous with SDADC1 (only for SDADC2 and SDADC3) */
-#define SDADC_EXTERNAL_TRIGGER               (0x00000002U) /*!< External trigger */
+#define SDADC_SOFTWARE_TRIGGER               (0x00000000UL) /*!< Software trigger */
+#define SDADC_SYNCHRONOUS_TRIGGER            (0x00000001UL) /*!< Synchronous with SDADC1 (only for SDADC2 and SDADC3) */
+#define SDADC_EXTERNAL_TRIGGER               (0x00000002UL) /*!< External trigger */
 /**
   * @}
   */
@@ -280,26 +280,26 @@ typedef struct
 /** @defgroup SDADC_InjectedExtTrigger SDADC Injected External Trigger
   * @{
   */
-#define SDADC_EXT_TRIG_TIM13_CC1             (0x00000000U) /*!< Trigger source for SDADC1 */
-#define SDADC_EXT_TRIG_TIM14_CC1             (0x00000100U) /*!< Trigger source for SDADC1 */
-#define SDADC_EXT_TRIG_TIM16_CC1             (0x00000000U) /*!< Trigger source for SDADC3 */
-#define SDADC_EXT_TRIG_TIM17_CC1             (0x00000000U) /*!< Trigger source for SDADC2 */
-#define SDADC_EXT_TRIG_TIM12_CC1             (0x00000100U) /*!< Trigger source for SDADC2 */
-#define SDADC_EXT_TRIG_TIM12_CC2             (0x00000100U) /*!< Trigger source for SDADC3 */
-#define SDADC_EXT_TRIG_TIM15_CC2             (0x00000200U) /*!< Trigger source for SDADC1 */
-#define SDADC_EXT_TRIG_TIM2_CC3              (0x00000200U) /*!< Trigger source for SDADC2 */
-#define SDADC_EXT_TRIG_TIM2_CC4              (0x00000200U) /*!< Trigger source for SDADC3 */
-#define SDADC_EXT_TRIG_TIM3_CC1              (0x00000300U) /*!< Trigger source for SDADC1 */
-#define SDADC_EXT_TRIG_TIM3_CC2              (0x00000300U) /*!< Trigger source for SDADC2 */
-#define SDADC_EXT_TRIG_TIM3_CC3              (0x00000300U) /*!< Trigger source for SDADC3 */
-#define SDADC_EXT_TRIG_TIM4_CC1              (0x00000400U) /*!< Trigger source for SDADC1 */
-#define SDADC_EXT_TRIG_TIM4_CC2              (0x00000400U) /*!< Trigger source for SDADC2 */
-#define SDADC_EXT_TRIG_TIM4_CC3              (0x00000400U) /*!< Trigger source for SDADC3 */
-#define SDADC_EXT_TRIG_TIM19_CC2             (0x00000500U) /*!< Trigger source for SDADC1 */
-#define SDADC_EXT_TRIG_TIM19_CC3             (0x00000500U) /*!< Trigger source for SDADC2 */
-#define SDADC_EXT_TRIG_TIM19_CC4             (0x00000500U) /*!< Trigger source for SDADC3 */
-#define SDADC_EXT_TRIG_EXTI11                (0x00000700U) /*!< Trigger source for SDADC1, SDADC2 and SDADC3 */
-#define SDADC_EXT_TRIG_EXTI15                (0x00000600U) /*!< Trigger source for SDADC1, SDADC2 and SDADC3 */
+#define SDADC_EXT_TRIG_TIM13_CC1             (0x00000000UL) /*!< Trigger source for SDADC1 */
+#define SDADC_EXT_TRIG_TIM14_CC1             (0x00000100UL) /*!< Trigger source for SDADC1 */
+#define SDADC_EXT_TRIG_TIM16_CC1             (0x00000000UL) /*!< Trigger source for SDADC3 */
+#define SDADC_EXT_TRIG_TIM17_CC1             (0x00000000UL) /*!< Trigger source for SDADC2 */
+#define SDADC_EXT_TRIG_TIM12_CC1             (0x00000100UL) /*!< Trigger source for SDADC2 */
+#define SDADC_EXT_TRIG_TIM12_CC2             (0x00000100UL) /*!< Trigger source for SDADC3 */
+#define SDADC_EXT_TRIG_TIM15_CC2             (0x00000200UL) /*!< Trigger source for SDADC1 */
+#define SDADC_EXT_TRIG_TIM2_CC3              (0x00000200UL) /*!< Trigger source for SDADC2 */
+#define SDADC_EXT_TRIG_TIM2_CC4              (0x00000200UL) /*!< Trigger source for SDADC3 */
+#define SDADC_EXT_TRIG_TIM3_CC1              (0x00000300UL) /*!< Trigger source for SDADC1 */
+#define SDADC_EXT_TRIG_TIM3_CC2              (0x00000300UL) /*!< Trigger source for SDADC2 */
+#define SDADC_EXT_TRIG_TIM3_CC3              (0x00000300UL) /*!< Trigger source for SDADC3 */
+#define SDADC_EXT_TRIG_TIM4_CC1              (0x00000400UL) /*!< Trigger source for SDADC1 */
+#define SDADC_EXT_TRIG_TIM4_CC2              (0x00000400UL) /*!< Trigger source for SDADC2 */
+#define SDADC_EXT_TRIG_TIM4_CC3              (0x00000400UL) /*!< Trigger source for SDADC3 */
+#define SDADC_EXT_TRIG_TIM19_CC2             (0x00000500UL) /*!< Trigger source for SDADC1 */
+#define SDADC_EXT_TRIG_TIM19_CC3             (0x00000500UL) /*!< Trigger source for SDADC2 */
+#define SDADC_EXT_TRIG_TIM19_CC4             (0x00000500UL) /*!< Trigger source for SDADC3 */
+#define SDADC_EXT_TRIG_EXTI11                (0x00000700UL) /*!< Trigger source for SDADC1, SDADC2 and SDADC3 */
+#define SDADC_EXT_TRIG_EXTI15                (0x00000600UL) /*!< Trigger source for SDADC1, SDADC2 and SDADC3 */
 /**
   * @}
   */
@@ -317,7 +317,7 @@ typedef struct
 /** @defgroup SDADC_InjectedDelay SDADC Injected Conversion Delay
   * @{
   */
-#define SDADC_INJECTED_DELAY_NONE            (0x00000000U) /*!< No delay on injected conversion */
+#define SDADC_INJECTED_DELAY_NONE            (0x00000000UL) /*!< No delay on injected conversion */
 #define SDADC_INJECTED_DELAY                 SDADC_CR2_JDS          /*!< Delay on injected conversion */
 /**
   * @}
@@ -326,7 +326,7 @@ typedef struct
 /** @defgroup SDADC_MultimodeType SDADC Multimode Type
   * @{
   */
-#define SDADC_MULTIMODE_SDADC1_SDADC2        (0x00000000U) /*!< Get conversion values for SDADC1 and SDADC2 */
+#define SDADC_MULTIMODE_SDADC1_SDADC2        (0x00000000UL) /*!< Get conversion values for SDADC1 and SDADC2 */
 #define SDADC_MULTIMODE_SDADC1_SDADC3        (0x00000001U) /*!< Get conversion values for SDADC1 and SDADC3 */
 /**
   * @}
@@ -335,10 +335,10 @@ typedef struct
 /** @defgroup SDADC_ErrorCode SDADC Error Code
   * @{
   */
-#define SDADC_ERROR_NONE                     (0x00000000U) /*!< No error */
-#define SDADC_ERROR_REGULAR_OVERRUN          (0x00000001U) /*!< Overrun occurs during regular conversion */
-#define SDADC_ERROR_INJECTED_OVERRUN         (0x00000002U) /*!< Overrun occurs during injected conversion */
-#define SDADC_ERROR_DMA                      (0x00000003U) /*!< DMA error occurs */
+#define SDADC_ERROR_NONE                     (0x00000000UL) /*!< No error */
+#define SDADC_ERROR_REGULAR_OVERRUN          (0x00000001UL) /*!< Overrun occurs during regular conversion */
+#define SDADC_ERROR_INJECTED_OVERRUN         (0x00000002UL) /*!< Overrun occurs during injected conversion */
+#define SDADC_ERROR_DMA                      (0x00000003UL) /*!< DMA error occurs */
 /**
   * @}
   */

@@ -11462,7 +11462,7 @@ typedef struct
    ((INSTANCE) == TIM19))
 
 /****************** TIM Instances : supporting Hall interface *****************/
-#define IS_TIM_HALL_INTERFACE_INSTANCE(INSTANCE) (0)
+#define IS_TIM_HALL_SENSOR_INTERFACE_INSTANCE(INSTANCE) (0)
 
 /****************** TIM Instances : supporting input XOR function *************/
 #define IS_TIM_XOR_INSTANCE(INSTANCE)\
@@ -11493,6 +11493,9 @@ typedef struct
    ((INSTANCE) == TIM12)   || \
    ((INSTANCE) == TIM15)   || \
    ((INSTANCE) == TIM19))
+
+/****************** TIM Instances : supporting synchronization ****************/
+#define IS_TIM_SYNCHRO_INSTANCE(INSTANCE)  IS_TIM_MASTER_INSTANCE(INSTANCE)
 
 /****************** TIM Instances : supporting 32 bits counter ****************/
 #define IS_TIM_32B_COUNTER_INSTANCE(INSTANCE)\
@@ -11730,9 +11733,9 @@ typedef struct
 #define USB_LP_CAN_RX0_IRQn     CAN_RX0_IRQn
 #define USB_HP_CAN_TX_IRQn      CAN_TX_IRQn
 #define USBWakeUp_IRQn          CEC_IRQn
-#define COMP1_2_IRQn            COMP_IRQn
-#define COMP1_2_3_IRQn          COMP_IRQn
 #define COMP2_IRQn              COMP_IRQn
+#define COMP1_2_3_IRQn          COMP_IRQn
+#define COMP1_2_IRQn            COMP_IRQn
 #define ADC4_IRQn               SDADC1_IRQn
 #define TIM8_BRK_IRQn           TIM12_IRQn
 #define TIM8_UP_IRQn            TIM13_IRQn
@@ -11751,9 +11754,9 @@ typedef struct
 #define USB_LP_CAN_RX0_IRQHandler     CAN_RX0_IRQHandler
 #define USB_HP_CAN_TX_IRQHandler      CAN_TX_IRQHandler
 #define USBWakeUp_IRQHandler          CEC_IRQHandler
-#define COMP1_2_IRQHandler            COMP_IRQHandler
-#define COMP1_2_3_IRQHandler          COMP_IRQHandler
 #define COMP2_IRQHandler              COMP_IRQHandler
+#define COMP1_2_3_IRQHandler          COMP_IRQHandler
+#define COMP1_2_IRQHandler            COMP_IRQHandler
 #define ADC4_IRQHandler               SDADC1_IRQHandler
 #define TIM8_BRK_IRQHandler           TIM12_IRQHandler
 #define TIM8_UP_IRQHandler            TIM13_IRQHandler

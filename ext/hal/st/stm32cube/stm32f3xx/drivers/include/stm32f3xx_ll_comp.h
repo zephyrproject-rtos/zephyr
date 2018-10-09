@@ -1141,7 +1141,7 @@ __STATIC_INLINE uint32_t LL_COMP_GetInputHysteresis(COMP_TypeDef *COMPx)
   */
 __STATIC_INLINE void LL_COMP_SetOutputSelection(COMP_TypeDef *COMPx, uint32_t OutputSelection)
 {
-  MODIFY_REG(COMPx->CSR, COMP_CSR_COMPxOUTSEL , OutputSelection);
+  MODIFY_REG(COMPx->CSR, COMP_CSR_COMPxOUTSEL, OutputSelection);
 }
 
 /**
@@ -1815,7 +1815,7 @@ __STATIC_INLINE void LL_COMP_SetPowerMode(COMP_TypeDef *COMPx, uint32_t PowerMod
 {
   MODIFY_REG(COMP->CSR,
              COMP_CSR_COMP1MODE << __COMP_BITOFFSET_INSTANCE(COMPx),
-             PowerMode          << __COMP_BITOFFSET_INSTANCE(COMPx) );
+             PowerMode          << __COMP_BITOFFSET_INSTANCE(COMPx));
 }
 
 /**
@@ -1880,7 +1880,7 @@ __STATIC_INLINE void LL_COMP_ConfigInputs(COMP_TypeDef *COMPx, uint32_t InputMin
   /*       kept unmodified.                                                   */
   MODIFY_REG(COMP->CSR,
              (COMP_CSR_COMP1INSEL | (COMP_CSR_COMP1SW1 * __COMP_IS_INSTANCE_ODD(COMPx))) << __COMP_BITOFFSET_INSTANCE(COMPx),
-             (InputMinus | InputPlus)                                        << __COMP_BITOFFSET_INSTANCE(COMPx) );
+             (InputMinus | InputPlus)                                        << __COMP_BITOFFSET_INSTANCE(COMPx));
 }
 
 /**
@@ -1905,7 +1905,7 @@ __STATIC_INLINE void LL_COMP_SetInputPlus(COMP_TypeDef *COMPx, uint32_t InputPlu
   /*       kept unmodified.                                                   */
   MODIFY_REG(COMP->CSR,
              (COMP_CSR_COMP1SW1 * __COMP_IS_INSTANCE_ODD(COMPx)) << __COMP_BITOFFSET_INSTANCE(COMPx),
-             InputPlus                                           << __COMP_BITOFFSET_INSTANCE(COMPx) );
+             InputPlus                                           << __COMP_BITOFFSET_INSTANCE(COMPx));
 }
 
 /**
@@ -1957,7 +1957,7 @@ __STATIC_INLINE void LL_COMP_SetInputMinus(COMP_TypeDef *COMPx, uint32_t InputMi
 {
   MODIFY_REG(COMP->CSR,
              COMP_CSR_COMP1INSEL << __COMP_BITOFFSET_INSTANCE(COMPx),
-             InputMinus          << __COMP_BITOFFSET_INSTANCE(COMPx) );
+             InputMinus          << __COMP_BITOFFSET_INSTANCE(COMPx));
 }
 
 /**
@@ -2004,7 +2004,7 @@ __STATIC_INLINE void LL_COMP_SetInputHysteresis(COMP_TypeDef *COMPx, uint32_t In
 {
   MODIFY_REG(COMP->CSR,
              COMP_CSR_COMP1HYST << __COMP_BITOFFSET_INSTANCE(COMPx),
-             InputHysteresis    << __COMP_BITOFFSET_INSTANCE(COMPx) );
+             InputHysteresis    << __COMP_BITOFFSET_INSTANCE(COMPx));
 }
 
 /**
@@ -2060,7 +2060,7 @@ __STATIC_INLINE void LL_COMP_SetOutputSelection(COMP_TypeDef *COMPx, uint32_t Ou
 {
   MODIFY_REG(COMP->CSR,
              COMP_CSR_COMP1OUTSEL << __COMP_BITOFFSET_INSTANCE(COMPx),
-             OutputSelection      << __COMP_BITOFFSET_INSTANCE(COMPx) );
+             OutputSelection      << __COMP_BITOFFSET_INSTANCE(COMPx));
 }
 
 /**
@@ -2105,7 +2105,7 @@ __STATIC_INLINE void LL_COMP_SetOutputPolarity(COMP_TypeDef *COMPx, uint32_t Out
 {
   MODIFY_REG(COMP->CSR,
              COMP_CSR_COMP1POL << __COMP_BITOFFSET_INSTANCE(COMPx),
-             OutputPolarity    << __COMP_BITOFFSET_INSTANCE(COMPx) );
+             OutputPolarity    << __COMP_BITOFFSET_INSTANCE(COMPx));
 }
 
 /**
@@ -2170,7 +2170,8 @@ __STATIC_INLINE void LL_COMP_Disable(COMP_TypeDef *COMPx)
   */
 __STATIC_INLINE uint32_t LL_COMP_IsEnabled(COMP_TypeDef *COMPx)
 {
-  return (READ_BIT(COMP->CSR, COMP_CSR_COMP1EN << __COMP_BITOFFSET_INSTANCE(COMPx)) == COMP_CSR_COMP1EN << __COMP_BITOFFSET_INSTANCE(COMPx));
+  return (READ_BIT(COMP->CSR, COMP_CSR_COMP1EN << __COMP_BITOFFSET_INSTANCE(COMPx)) == COMP_CSR_COMP1EN <<
+          __COMP_BITOFFSET_INSTANCE(COMPx));
 }
 
 /**
@@ -2199,7 +2200,8 @@ __STATIC_INLINE void LL_COMP_Lock(COMP_TypeDef *COMPx)
   */
 __STATIC_INLINE uint32_t LL_COMP_IsLocked(COMP_TypeDef *COMPx)
 {
-  return (READ_BIT(COMP->CSR, COMP_CSR_COMP1LOCK << __COMP_BITOFFSET_INSTANCE(COMPx)) == COMP_CSR_COMP1LOCK << __COMP_BITOFFSET_INSTANCE(COMPx));
+  return (READ_BIT(COMP->CSR, COMP_CSR_COMP1LOCK << __COMP_BITOFFSET_INSTANCE(COMPx)) == COMP_CSR_COMP1LOCK <<
+          __COMP_BITOFFSET_INSTANCE(COMPx));
 }
 
 /**

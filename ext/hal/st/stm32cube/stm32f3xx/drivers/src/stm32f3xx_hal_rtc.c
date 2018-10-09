@@ -688,10 +688,8 @@ HAL_StatusTypeDef HAL_RTC_SetDate(RTC_HandleTypeDef *hrtc, RTC_DateTypeDef *sDat
   else
   {
     assert_param(IS_RTC_YEAR(RTC_Bcd2ToByte(sDate->Year)));
-    datetmpreg = RTC_Bcd2ToByte(sDate->Month);
-    assert_param(IS_RTC_MONTH(datetmpreg));
-    datetmpreg = RTC_Bcd2ToByte(sDate->Date);
-    assert_param(IS_RTC_DATE(datetmpreg));
+    assert_param(IS_RTC_MONTH(RTC_Bcd2ToByte(sDate->Month)));
+    assert_param(IS_RTC_DATE(RTC_Bcd2ToByte(sDate->Date)));
 
     datetmpreg = ((((uint32_t)sDate->Year) << 16U) | \
                   (((uint32_t)sDate->Month) << 8U) | \

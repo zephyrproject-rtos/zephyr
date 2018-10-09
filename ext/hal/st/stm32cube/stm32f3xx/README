@@ -6,7 +6,7 @@ Origin:
    http://www.st.com/en/embedded-software/stm32cubef3.html
 
 Status:
-   version 1.9.0
+   version 1.10.0
 
 Purpose:
    ST Microelectronics official MCU package for STM32F3 series.
@@ -23,7 +23,7 @@ URL:
    http://www.st.com/en/embedded-software/stm32cubef3.html
 
 commit:
-   version 1.9.1
+   version 1.10.0
 
 Maintained-by:
    External

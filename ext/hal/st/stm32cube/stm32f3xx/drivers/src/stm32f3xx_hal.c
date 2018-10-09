@@ -68,11 +68,11 @@
   * @{
   */
 /**
- * @brief STM32F3xx HAL Driver version number V1.5.1
+ * @brief STM32F3xx HAL Driver version number V1.5.2
    */
 #define __STM32F3xx_HAL_VERSION_MAIN   (0x01U) /*!< [31:24] main version */
 #define __STM32F3xx_HAL_VERSION_SUB1   (0x05U) /*!< [23:16] sub1 version */
-#define __STM32F3xx_HAL_VERSION_SUB2   (0x01U) /*!< [15:8]  sub2 version */
+#define __STM32F3xx_HAL_VERSION_SUB2   (0x02U) /*!< [15:8]  sub2 version */
 #define __STM32F3xx_HAL_VERSION_RC     (0x00U) /*!< [7:0]  release candidate */
 #define __STM32F3xx_HAL_VERSION         ((__STM32F3xx_HAL_VERSION_MAIN << 24U)\
                                         |(__STM32F3xx_HAL_VERSION_SUB1 << 16U)\
@@ -85,8 +85,8 @@
   */
 
 /* Private macro -------------------------------------------------------------*/
-/* Private variables ---------------------------------------------------------*/
-/** @defgroup HAL_Private_Variables HAL Private Variables
+/* Exported variables --------------------------------------------------------*/
+/** @defgroup HAL_Exported_Variables HAL Exported Variables
   * @{
   */
 __IO uint32_t uwTick;
