@@ -705,6 +705,23 @@ static void light_ctl_temp_tt_handler(struct k_timer *dummy)
 }
 /* Timers related handlers & threads (End) */
 
+K_TIMER_DEFINE(onoff_transition_timer, onoff_tt_handler, NULL);
+
+K_TIMER_DEFINE(level_lightness_transition_timer,
+	       level_lightness_tt_handler, NULL);
+K_TIMER_DEFINE(level_temp_transition_timer,
+	       level_temp_tt_handler, NULL);
+
+K_TIMER_DEFINE(light_lightness_actual_transition_timer,
+	       light_lightness_actual_tt_handler, NULL);
+K_TIMER_DEFINE(light_lightness_linear_transition_timer,
+	       light_lightness_linear_tt_handler, NULL);
+
+K_TIMER_DEFINE(light_ctl_transition_timer,
+	       light_ctl_tt_handler, NULL);
+K_TIMER_DEFINE(light_ctl_temp_transition_timer,
+	       light_ctl_temp_tt_handler, NULL);
+
 /* Messages handlers (Start) */
 void onoff_handler(struct generic_onoff_state *state)
 {
@@ -771,21 +788,4 @@ void light_ctl_temp_handler(struct light_ctl_state *state)
 		      K_MSEC(state->quo_tt));
 }
 /* Messages handlers (End) */
-
-K_TIMER_DEFINE(onoff_transition_timer, onoff_tt_handler, NULL);
-
-K_TIMER_DEFINE(level_lightness_transition_timer,
-	       level_lightness_tt_handler, NULL);
-K_TIMER_DEFINE(level_temp_transition_timer,
-	       level_temp_tt_handler, NULL);
-
-K_TIMER_DEFINE(light_lightness_actual_transition_timer,
-	       light_lightness_actual_tt_handler, NULL);
-K_TIMER_DEFINE(light_lightness_linear_transition_timer,
-	       light_lightness_linear_tt_handler, NULL);
-
-K_TIMER_DEFINE(light_ctl_transition_timer,
-	       light_ctl_tt_handler, NULL);
-K_TIMER_DEFINE(light_ctl_temp_transition_timer,
-	       light_ctl_temp_tt_handler, NULL);
 

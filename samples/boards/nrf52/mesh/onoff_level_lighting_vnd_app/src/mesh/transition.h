@@ -27,7 +27,6 @@ enum transition_time {
 
 extern u8_t enable_transition, default_tt;
 extern u32_t *ptr_tt_counter;
-extern s64_t transition_start_timestamp;
 
 struct k_timer onoff_transition_timer;
 struct k_timer level_lightness_transition_timer;
