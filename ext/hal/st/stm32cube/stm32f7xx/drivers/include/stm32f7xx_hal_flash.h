@@ -185,6 +185,15 @@ typedef struct
 /** @defgroup FLASH_Sectors FLASH Sectors
   * @{
   */
+#if (FLASH_SECTOR_TOTAL == 2)
+#define FLASH_SECTOR_0           ((uint32_t)0U) /*!< Sector Number 0   */
+#define FLASH_SECTOR_1           ((uint32_t)1U) /*!< Sector Number 1   */
+#elif (FLASH_SECTOR_TOTAL == 4)
+#define FLASH_SECTOR_0           ((uint32_t)0U) /*!< Sector Number 0   */
+#define FLASH_SECTOR_1           ((uint32_t)1U) /*!< Sector Number 1   */
+#define FLASH_SECTOR_2           ((uint32_t)2U) /*!< Sector Number 2   */
+#define FLASH_SECTOR_3           ((uint32_t)3U) /*!< Sector Number 3   */
+#else
 #define FLASH_SECTOR_0           ((uint32_t)0U) /*!< Sector Number 0   */
 #define FLASH_SECTOR_1           ((uint32_t)1U) /*!< Sector Number 1   */
 #define FLASH_SECTOR_2           ((uint32_t)2U) /*!< Sector Number 2   */
@@ -193,6 +202,7 @@ typedef struct
 #define FLASH_SECTOR_5           ((uint32_t)5U) /*!< Sector Number 5   */
 #define FLASH_SECTOR_6           ((uint32_t)6U) /*!< Sector Number 6   */
 #define FLASH_SECTOR_7           ((uint32_t)7U) /*!< Sector Number 7   */
+#endif /* FLASH_SECTOR_TOTAL */
 /**
   * @}
   */

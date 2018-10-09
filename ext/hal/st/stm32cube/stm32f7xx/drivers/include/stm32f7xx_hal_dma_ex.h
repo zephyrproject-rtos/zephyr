@@ -93,7 +93,7 @@ typedef enum
 #define DMA_CHANNEL_7                     0x0E000000U  /*!< DMA Channel 7 */
 #if defined (STM32F722xx) || defined (STM32F723xx) || defined (STM32F732xx) || defined (STM32F733xx) ||\
     defined (STM32F765xx) || defined (STM32F767xx) || defined (STM32F769xx) || defined (STM32F777xx) ||\
-    defined (STM32F779xx)
+    defined (STM32F779xx) || defined (STM32F730xx)
 #define DMA_CHANNEL_8                     0x10000000U  /*!< DMA Channel 8 */
 #define DMA_CHANNEL_9                     0x12000000U  /*!< DMA Channel 9 */
 #define DMA_CHANNEL_10                    0x14000000U  /*!< DMA Channel 10*/
@@ -103,7 +103,7 @@ typedef enum
 #define DMA_CHANNEL_14                    0x1C000000U  /*!< DMA Channel 14*/
 #define DMA_CHANNEL_15                    0x1E000000U  /*!< DMA Channel 15*/
 #endif /* STM32F722xx || STM32F723xx || STM32F732xx || STM32F733xx || STM32F765xx || STM32F767xx ||
-          STM32F769xx || STM32F777xx || STM32F779xx */
+          STM32F769xx || STM32F777xx || STM32F779xx || STM32F730xx */
 
 /**
   * @}
@@ -143,7 +143,7 @@ HAL_StatusTypeDef HAL_DMAEx_ChangeMemory(DMA_HandleTypeDef *hdma, uint32_t Addre
   */
 #if defined (STM32F722xx) || defined (STM32F723xx) || defined (STM32F732xx) || defined (STM32F733xx) ||\
     defined (STM32F765xx) || defined (STM32F767xx) || defined (STM32F769xx) || defined (STM32F777xx) ||\
-    defined (STM32F779xx)
+    defined (STM32F779xx) || defined (STM32F730xx)
 #define IS_DMA_CHANNEL(CHANNEL) (((CHANNEL) == DMA_CHANNEL_0)  || \
                                  ((CHANNEL) == DMA_CHANNEL_1)  || \
                                  ((CHANNEL) == DMA_CHANNEL_2)  || \
@@ -170,7 +170,7 @@ HAL_StatusTypeDef HAL_DMAEx_ChangeMemory(DMA_HandleTypeDef *hdma, uint32_t Addre
                                  ((CHANNEL) == DMA_CHANNEL_6) || \
                                  ((CHANNEL) == DMA_CHANNEL_7))
 #endif /* STM32F722xx || STM32F723xx || STM32F732xx || STM32F733xx || STM32F765xx || STM32F767xx ||
-          STM32F769xx || STM32F777xx || STM32F779xx */
+          STM32F769xx || STM32F777xx || STM32F779xx || STM32F730xx*/
 /**
   * @}
   */

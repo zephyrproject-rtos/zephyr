@@ -440,7 +440,34 @@ typedef struct
   */
 #endif /* FLASH_SECTOR_TOTAL == 8 */
 
+#if (FLASH_SECTOR_TOTAL == 4)
+/** @defgroup FLASHEx_Option_Bytes_Write_Protection FLASH Option Bytes Write Protection
+  * @{
+  */
+#define OB_WRP_SECTOR_0       ((uint32_t)0x00010000U) /*!< Write protection of Sector0     */
+#define OB_WRP_SECTOR_1       ((uint32_t)0x00020000U) /*!< Write protection of Sector1     */
+#define OB_WRP_SECTOR_2       ((uint32_t)0x00040000U) /*!< Write protection of Sector2     */
+#define OB_WRP_SECTOR_3       ((uint32_t)0x00080000U) /*!< Write protection of Sector3     */
+#define OB_WRP_SECTOR_All     ((uint32_t)0x000F0000U) /*!< Write protection of all Sectors */
+/**
+  * @}
+  */
+#endif /* FLASH_SECTOR_TOTAL == 4 */
+
+#if (FLASH_SECTOR_TOTAL == 2)
+/** @defgroup FLASHEx_Option_Bytes_Write_Protection FLASH Option Bytes Write Protection
+  * @{
+  */
+#define OB_WRP_SECTOR_0       ((uint32_t)0x00010000U) /*!< Write protection of Sector0     */
+#define OB_WRP_SECTOR_1       ((uint32_t)0x00020000U) /*!< Write protection of Sector1     */
+#define OB_WRP_SECTOR_All     ((uint32_t)0x00030000U) /*!< Write protection of all Sectors */
+/**
+  * @}
+  */
+#endif /* FLASH_SECTOR_TOTAL == 2 */
+
 #if defined (FLASH_OPTCR2_PCROP)
+#if (FLASH_SECTOR_TOTAL == 8)
 /** @defgroup FLASHEx_Option_Bytes_PCROP_Sectors FLASH Option Bytes PCROP Sectors
   * @{
   */
@@ -456,6 +483,21 @@ typedef struct
 /**
   * @}
   */
+#endif /* FLASH_SECTOR_TOTAL == 8 */
+
+#if (FLASH_SECTOR_TOTAL == 4)
+/** @defgroup FLASHEx_Option_Bytes_PCROP_Sectors FLASH Option Bytes PCROP Sectors
+  * @{
+  */
+#define OB_PCROP_SECTOR_0     ((uint32_t)0x00000001U) /*!< PC Readout protection of Sector0      */
+#define OB_PCROP_SECTOR_1     ((uint32_t)0x00000002U) /*!< PC Readout protection of Sector1      */
+#define OB_PCROP_SECTOR_2     ((uint32_t)0x00000004U) /*!< PC Readout protection of Sector2      */
+#define OB_PCROP_SECTOR_3     ((uint32_t)0x00000008U) /*!< PC Readout protection of Sector3      */
+#define OB_PCROP_SECTOR_All   ((uint32_t)0x0000000FU) /*!< PC Readout protection of all Sectors  */
+/**
+  * @}
+  */
+#endif /* FLASH_SECTOR_TOTAL == 4 */
 
 /** @defgroup FLASHEx_Option_Bytes_PCROP_RDP FLASH Option Bytes PCROP_RDP Bit
   * @{
@@ -606,6 +648,19 @@ void              HAL_FLASHEx_OBGetConfig(FLASH_OBProgramInitTypeDef *pOBInit);
 
 #define IS_OB_WRP_SECTOR(SECTOR)  ((((SECTOR) & 0xF000FFFFU) == 0x00000000U) && ((SECTOR) != 0x00000000U))
 #endif /* FLASH_SECTOR_TOTAL == 24 */
+
+#if (FLASH_SECTOR_TOTAL == 4)
+#define IS_FLASH_SECTOR(SECTOR) (((SECTOR) == FLASH_SECTOR_0)   || ((SECTOR) == FLASH_SECTOR_1)   ||\
+                                 ((SECTOR) == FLASH_SECTOR_2)   || ((SECTOR) == FLASH_SECTOR_3))
+
+#define IS_OB_WRP_SECTOR(SECTOR)  ((((SECTOR) & 0xFFF0FFFFU) == 0x00000000U) && ((SECTOR) != 0x00000000U))
+#endif /* FLASH_SECTOR_TOTAL == 4 */
+
+#if (FLASH_SECTOR_TOTAL == 2)
+#define IS_FLASH_SECTOR(SECTOR) (((SECTOR) == FLASH_SECTOR_0)   || ((SECTOR) == FLASH_SECTOR_1))
+
+#define IS_OB_WRP_SECTOR(SECTOR)  ((((SECTOR) & 0xFFFCFFFFU) == 0x00000000U) && ((SECTOR) != 0x00000000U))
+#endif /* FLASH_SECTOR_TOTAL == 2 */
 
 #if defined (FLASH_OPTCR_nDBANK)
 #define IS_OB_NDBANK(VALUE)        (((VALUE) == OB_NDBANK_SINGLE_BANK) || \

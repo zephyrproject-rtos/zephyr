@@ -96,7 +96,7 @@
 /** @addtogroup STM32F7xx_HAL_Driver
   * @{
   */
-#if defined(STM32F756xx) || defined(STM32F777xx) || defined(STM32F779xx)
+#if defined(STM32F756xx) || defined(STM32F777xx) || defined(STM32F779xx) || defined (STM32F750xx)
 
 /** @defgroup HASHEx HASHEx
   * @brief HASH Extension HAL module driver.
@@ -1625,7 +1625,7 @@ HAL_StatusTypeDef HAL_HMACEx_SHA256_Start_DMA(HASH_HandleTypeDef *hhash, uint8_t
 /**
   * @}
   */
-#endif /* STM32F756xx || STM32F777xx || STM32F779xx */
+#endif /* STM32F756xx || STM32F777xx || STM32F779xx || STM32F750xx */
 
 /**
   * @}

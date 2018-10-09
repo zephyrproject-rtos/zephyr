@@ -41,7 +41,7 @@
  extern "C" {
 #endif
 
-#if defined (STM32F756xx) || defined (STM32F777xx) || defined (STM32F779xx)
+#if defined (STM32F756xx) || defined (STM32F777xx) || defined (STM32F779xx) || defined (STM32F750xx)
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f7xx_hal_def.h"
 
@@ -433,7 +433,7 @@ void HAL_HASH_ErrorCallback(HASH_HandleTypeDef *hhash);
 /**
   * @}
   */
-#endif /* STM32F756xx || STM32F777xx || STM32F779xx */
+#endif /* STM32F756xx || STM32F777xx || STM32F779xx || STM32F750xx */
 /**
   * @}
   */
