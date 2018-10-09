@@ -265,7 +265,7 @@ extern "C" {
 #define SMARTCARD_TRANSMISSION_COMPLETION_SETTING(__HANDLE__)         \
   do {                                                                \
     (__HANDLE__)->AdvancedInit.TxCompletionIndication = SMARTCARD_TC; \
-  } while(0U)  
+  } while(0U)
 #endif /* USART_TCBGT_SUPPORT */
 
 /** @brief  Return the transmission completion flag.

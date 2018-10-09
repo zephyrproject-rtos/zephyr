@@ -154,7 +154,7 @@ typedef struct
                                        This parameter can be set to ENABLE or DISABLE */
 
   uint32_t BankNumber;            /*!< Select the start slave bank filter.
-                                       This parameter must be a number between Min_Data = 0 and Max_Data = 28 */ 
+                                       This parameter must be a number between Min_Data = 0 and Max_Data = 28 */
 
 }CAN_FilterConfTypeDef;
 
@@ -596,7 +596,7 @@ typedef struct
   * @retval None
   */
 #define __HAL_CAN_FIFO_RELEASE(__HANDLE__, __FIFONUMBER__) (((__FIFONUMBER__) == CAN_FIFO0)? \
-((__HANDLE__)->Instance->RF0R |= CAN_RF0R_RFOM0) : ((__HANDLE__)->Instance->RF1R |= CAN_RF1R_RFOM1)) 
+((__HANDLE__)->Instance->RF0R |= CAN_RF0R_RFOM0) : ((__HANDLE__)->Instance->RF1R |= CAN_RF1R_RFOM1))
 
 /**
   * @brief  Cancel a transmit request.
@@ -612,29 +612,29 @@ typedef struct
 /**
   * @brief  Enable or disable the DBG Freeze for CAN.
   * @param  __HANDLE__: specifies the CAN Handle.
-  * @param  __NEWSTATE__: new state of the CAN peripheral. 
+  * @param  __NEWSTATE__: new state of the CAN peripheral.
   *         This parameter can be: ENABLE (CAN reception/transmission is frozen
-  *         during debug. Reception FIFO can still be accessed/controlled normally) 
+  *         during debug. Reception FIFO can still be accessed/controlled normally)
   *         or DISABLE (CAN is working during debug).
   * @retval None
   */
 #define __HAL_CAN_DBG_FREEZE(__HANDLE__, __NEWSTATE__) (((__NEWSTATE__) == ENABLE)? \
-((__HANDLE__)->Instance->MCR |= CAN_MCR_DBF) : ((__HANDLE__)->Instance->MCR &= ~CAN_MCR_DBF)) 
+((__HANDLE__)->Instance->MCR |= CAN_MCR_DBF) : ((__HANDLE__)->Instance->MCR &= ~CAN_MCR_DBF))
 
 /**
  * @}
- */  
- 
-/* Exported functions --------------------------------------------------------*/  
+ */
+
+/* Exported functions --------------------------------------------------------*/
 /** @addtogroup CAN_Exported_Functions CAN Exported Functions
   * @{
   */
-  
-/** @defgroup CAN_Exported_Functions_Group1 Initialization and de-initialization functions 
- *  @brief    Initialization and Configuration functions 
+
+/** @defgroup CAN_Exported_Functions_Group1 Initialization and de-initialization functions
+ *  @brief    Initialization and Configuration functions
  * @{
  */
-/* addtogroup and de-initialization functions *****************************/ 
+/* addtogroup and de-initialization functions *****************************/
 HAL_StatusTypeDef HAL_CAN_Init(CAN_HandleTypeDef* hcan);
 HAL_StatusTypeDef HAL_CAN_ConfigFilter(CAN_HandleTypeDef* hcan, CAN_FilterConfTypeDef* sFilterConfig);
 HAL_StatusTypeDef HAL_CAN_DeInit(CAN_HandleTypeDef* hcan);
@@ -642,10 +642,10 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef* hcan);
 void HAL_CAN_MspDeInit(CAN_HandleTypeDef* hcan);
 /**
  * @}
- */ 
- 
+ */
+
 /** @addtogroup CAN_Exported_Functions_Group2 Input and Output operation functions
- *  @brief    I/O operation functions 
+ *  @brief    I/O operation functions
  * @{
  */
 /* IO operation functions *****************************************************/
@@ -661,10 +661,10 @@ void HAL_CAN_RxCpltCallback(CAN_HandleTypeDef* hcan);
 void HAL_CAN_ErrorCallback(CAN_HandleTypeDef *hcan);
 /**
  * @}
- */ 
- 
+ */
+
 /** @addtogroup CAN_Exported_Functions_Group3 Peripheral State and Error functions
- *  @brief   CAN Peripheral State functions 
+ *  @brief   CAN Peripheral State functions
  * @{
  */
 /* Peripheral State and Error functions ***************************************/
@@ -672,11 +672,11 @@ uint32_t HAL_CAN_GetError(CAN_HandleTypeDef *hcan);
 HAL_CAN_StateTypeDef HAL_CAN_GetState(CAN_HandleTypeDef* hcan);
 /**
  * @}
- */ 
+ */
 
 /**
  * @}
- */ 
+ */
 
 /* Private types -------------------------------------------------------------*/
 /* Private constants ---------------------------------------------------------*/

@@ -533,7 +533,7 @@ void       HAL_DCMI_MspInit(DCMI_HandleTypeDef* hdcmi);
 void       HAL_DCMI_MspDeInit(DCMI_HandleTypeDef* hdcmi);
 
 /* Callbacks Register/UnRegister functions  ***********************************/
-#if (USE_HAL_DCMI_REGISTER_CALLBACKS == 1)   
+#if (USE_HAL_DCMI_REGISTER_CALLBACKS == 1)
 HAL_StatusTypeDef HAL_DCMI_RegisterCallback(DCMI_HandleTypeDef *hdcmi, HAL_DCMI_CallbackIDTypeDef CallbackID, pDCMI_CallbackTypeDef pCallback);
 HAL_StatusTypeDef HAL_DCMI_UnRegisterCallback(DCMI_HandleTypeDef *hdcmi, HAL_DCMI_CallbackIDTypeDef CallbackID);
 #endif /* USE_HAL_DCMI_REGISTER_CALLBACKS */

@@ -130,7 +130,7 @@ typedef struct
 
 /** @defgroup  LCD_ErrorCode LCD Error Code
   * @{
-  */ 
+  */
 #define HAL_LCD_ERROR_NONE       ((uint32_t)0x00)    /*!< No error */
 #define HAL_LCD_ERROR_FCRSF      ((uint32_t)0x01)    /*!< Synchro flag timeout error */
 #define HAL_LCD_ERROR_UDR        ((uint32_t)0x02)    /*!< Update display request flag timeout error */
@@ -140,7 +140,7 @@ typedef struct
 /**
   * @}
   */
-  
+
 /** @defgroup LCD_Prescaler LCD Prescaler
   * @{
   */

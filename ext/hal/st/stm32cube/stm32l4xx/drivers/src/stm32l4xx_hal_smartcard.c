@@ -1836,7 +1836,7 @@ void HAL_SMARTCARD_IRQHandler(SMARTCARD_HandleTypeDef *hsmartcard)
         && (((cr1its & USART_CR1_RXNEIE_RXFNEIE) != RESET)
             || ((cr3its & USART_CR3_RXFTIE) != RESET)))
 #else
-    if (((isrflags & USART_ISR_RXNE) != RESET) 
+    if (((isrflags & USART_ISR_RXNE) != RESET)
        && ((cr1its & USART_CR1_RXNEIE) != RESET))
 #endif
     {
@@ -1917,7 +1917,7 @@ void HAL_SMARTCARD_IRQHandler(SMARTCARD_HandleTypeDef *hsmartcard)
           && (((cr1its & USART_CR1_RXNEIE_RXFNEIE) != RESET)
               || ((cr3its & USART_CR3_RXFTIE) != RESET)))
 #else
-      if (((isrflags & USART_ISR_RXNE) != RESET) 
+      if (((isrflags & USART_ISR_RXNE) != RESET)
          && ((cr1its & USART_CR1_RXNEIE) != RESET))
 #endif
       {

@@ -365,7 +365,7 @@ __weak void HAL_UARTEx_TxFifoEmptyCallback(UART_HandleTypeDef *huart)
   * @brief  Keep UART Clock enabled when in Stop Mode.
   * @note   When the USART clock source is configured to be LSE or HSI, it is possible to keep enabled
   *         this clock during STOP mode by setting the UCESM bit in USART_CR3 control register.
-  * @note   When LPUART is used to wakeup from stop with LSE is selected as LPUART clock source, 
+  * @note   When LPUART is used to wakeup from stop with LSE is selected as LPUART clock source,
   *         and desired baud rate is 9600 baud, the bit UCESM bit in LPUART_CR3 control register must be set.
   * @param  huart UART handle.
   * @retval HAL status
