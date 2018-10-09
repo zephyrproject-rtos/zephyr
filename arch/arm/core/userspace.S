@@ -40,6 +40,15 @@ SECTION_FUNC(TEXT,_arm_userspace_enter)
     /* move user_entry to lr */
     mov lr, r0
 
+#if defined (CONFIG_MPU_STACK_GUARD)
+    /* Re-program MPU to guard the privileged stack. */
+    push {r1,r2,r3,lr}
+    ldr r0, =_kernel
+    ldr r0, [r0, #_kernel_offset_to_current]
+    bl configure_mpu_stack_guard
+    pop {r1,r2,r3,lr}
+#endif
+
     /* set stack to priviliged stack */
     ldr r0, =_kernel
     ldr r0, [r0, #_kernel_offset_to_current]
