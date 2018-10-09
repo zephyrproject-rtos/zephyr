@@ -68,25 +68,39 @@ static enum net_verdict net_bt_recv(struct net_if *iface, struct net_pkt *pkt)
 	return NET_CONTINUE;
 }
 
-static enum net_verdict net_bt_send(struct net_if *iface, struct net_pkt *pkt)
+static int net_bt_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct bt_context *ctxt = net_if_get_device(iface)->driver_data;
+	struct net_buf *frags;
+	int length;
+	int ret;
 
 	NET_DBG("iface %p pkt %p len %zu", iface, pkt, net_pkt_get_len(pkt));
 
 	/* Only accept IPv6 packets */
 	if (net_pkt_family(pkt) != AF_INET6) {
-		return NET_DROP;
+		return -EINVAL;
 	}
 
 	if (!net_6lo_compress(pkt, true, NULL)) {
 		NET_DBG("Packet compression failed");
-		return NET_DROP;
+		return -ENOBUFS;
 	}
 
-	net_if_queue_tx(ctxt->iface, pkt);
+	length = net_pkt_get_len(pkt);
 
-	return NET_OK;
+	/* Dettach data fragments for packet */
+	frags = pkt->frags;
+	pkt->frags = NULL;
+
+	ret = bt_l2cap_chan_send(&ctxt->ipsp_chan.chan, frags);
+	if (ret < 0) {
+		return ret;
+	}
+
+	net_pkt_unref(pkt);
+
+	return length;
 }
 
 static inline u16_t net_bt_reserve(struct net_if *iface, void *unused)
@@ -241,28 +255,6 @@ static struct bt_context bt_context_data = {
 	.ipsp_chan.rx.mtu	= L2CAP_IPSP_MTU,
 };
 
-static int bt_iface_send(struct net_if *iface, struct net_pkt *pkt)
-{
-	struct bt_context *ctxt = net_if_get_device(iface)->driver_data;
-	struct net_buf *frags;
-	int ret;
-
-	NET_DBG("iface %p pkt %p len %zu", iface, pkt, net_pkt_get_len(pkt));
-
-	/* Dettach data fragments for packet */
-	frags = pkt->frags;
-	pkt->frags = NULL;
-
-	net_pkt_unref(pkt);
-
-	ret = bt_l2cap_chan_send(&ctxt->ipsp_chan.chan, frags);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return ret;
-}
-
 static void bt_iface_init(struct net_if *iface)
 {
 	struct bt_context *ctxt = net_if_get_device(iface)->driver_data;
@@ -281,7 +273,6 @@ static void bt_iface_init(struct net_if *iface)
 
 static struct net_if_api bt_if_api = {
 	.init = bt_iface_init,
-	.send = bt_iface_send,
 };
 
 static int ipsp_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
