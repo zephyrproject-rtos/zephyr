@@ -31,7 +31,7 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-  */ 
+  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __STM32F2xx_HAL_PCD_EX_H
@@ -43,7 +43,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f2xx_hal_def.h"
-   
+
 /** @addtogroup STM32F2xx_HAL_Driver
   * @{
   */
@@ -67,15 +67,15 @@ HAL_StatusTypeDef HAL_PCDEx_SetRxFiFo(PCD_HandleTypeDef *hpcd, uint16_t size);
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}

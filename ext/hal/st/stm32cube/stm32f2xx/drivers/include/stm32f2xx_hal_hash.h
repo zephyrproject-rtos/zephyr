@@ -50,10 +50,10 @@
   * @{
   */
 
-/** @addtogroup HASH    
-  * @brief HASH HAL module driver 
+/** @addtogroup HASH
+  * @brief HASH HAL module driver
   *  @{
-  */ 
+  */
 
 /* Exported types ------------------------------------------------------------*/
 /** @defgroup HASH_Exported_Types HASH Exported Types
@@ -74,7 +74,7 @@ typedef struct
   uint8_t* pKey;      /*!< The key is used only in HMAC operation               */
 }HASH_InitTypeDef;
 
-/** 
+/**
   * @}
   */
 
@@ -91,28 +91,28 @@ typedef enum
   HAL_HASH_STATE_ERROR     = 0x04U   /*!< HASH error state                     */
 }HAL_HASH_StateTypeDef;
 
-/** 
+/**
   * @}
   */
-  
+
 /** @defgroup HASH_Exported_Types_Group3 HASH phase structures definition
   * @{
   */
-  
+
 typedef enum
 {
   HAL_HASH_PHASE_READY     = 0x01U,  /*!< HASH peripheral is ready for initialization */
   HAL_HASH_PHASE_PROCESS   = 0x02U,  /*!< HASH peripheral is in processing phase      */
 }HAL_HASH_PhaseTypeDef;
 
-/** 
+/**
   * @}
   */
- 
+
 /** @defgroup HASH_Exported_Types_Group4 HASH Handle structures definition
   * @{
-  */ 
-  
+  */
+
 typedef struct
 {
       HASH_InitTypeDef           Init;              /*!< HASH required parameters       */
@@ -138,15 +138,15 @@ typedef struct
      __IO HAL_HASH_StateTypeDef  State;             /*!< HASH peripheral state          */
 } HASH_HandleTypeDef;
 
-/** 
+/**
   * @}
   */
-  
+
 
 /**
   * @}
-  */ 
-  
+  */
+
 /* Exported constants --------------------------------------------------------*/
 /** @defgroup HASH_Exported_Constants HASH Exported Constants
   * @{
@@ -164,7 +164,7 @@ typedef struct
 /** @defgroup HASH_Exported_Constants_Group2 HASH Algorithm Mode
   * @{
   */
-#define HASH_ALGOMODE_HASH         0x00000000U  /*!< Algorithm is HASH */ 
+#define HASH_ALGOMODE_HASH         0x00000000U  /*!< Algorithm is HASH */
 #define HASH_ALGOMODE_HMAC         HASH_CR_MODE            /*!< Algorithm is HMAC */
 /**
   * @}
@@ -181,7 +181,7 @@ typedef struct
   * @}
   */
 
-/** @defgroup HASH_Exported_Constants_Group4 HASH HMAC Long key 
+/** @defgroup HASH_Exported_Constants_Group4 HASH HMAC Long key
   * @brief HASH HMAC Long key used only for HMAC mode
   * @{
   */
@@ -191,7 +191,7 @@ typedef struct
   * @}
   */
 
-/** @defgroup HASH_Exported_Constants_Group5 HASH Flags definition 
+/** @defgroup HASH_Exported_Constants_Group5 HASH Flags definition
   * @{
   */
 #define HASH_FLAG_DINIS            HASH_SR_DINIS  /*!< 16 locations are free in the DIN : A new block can be entered into the input buffer */
@@ -203,7 +203,7 @@ typedef struct
   * @}
   */
 
-/** @defgroup HASH_Exported_Constants_Group6 HASH Interrupts definition 
+/** @defgroup HASH_Exported_Constants_Group6 HASH Interrupts definition
   * @{
   */
 #define HASH_IT_DINI               HASH_IMR_DINIE  /*!< A new block can be entered into the input buffer (DIN) */
@@ -220,7 +220,7 @@ typedef struct
 /** @defgroup HASH_Exported_Macros HASH Exported Macros
   * @{
   */
-  
+
 /** @brief Reset HASH handle state
   * @param  __HANDLE__ specifies the HASH handle.
   * @retval None
@@ -230,7 +230,7 @@ typedef struct
 /** @brief  Check whether the specified HASH flag is set or not.
   * @param  __FLAG__ specifies the flag to check.
   *         This parameter can be one of the following values:
-  *            @arg HASH_FLAG_DINIS: A new block can be entered into the input buffer. 
+  *            @arg HASH_FLAG_DINIS: A new block can be entered into the input buffer.
   *            @arg HASH_FLAG_DCIS: Digest calculation complete
   *            @arg HASH_FLAG_DMAS: DMA interface is enabled (DMAE=1) or a transfer is ongoing
   *            @arg HASH_FLAG_BUSY: The hash core is Busy : processing a block of data
@@ -256,7 +256,7 @@ typedef struct
 
 /**
   * @}
-  */ 
+  */
 
 
 /* Exported functions --------------------------------------------------------*/
@@ -267,69 +267,69 @@ typedef struct
 
 /** @addtogroup HASH_Exported_Functions_Group1
   * @{
-  */  
+  */
 HAL_StatusTypeDef HAL_HASH_Init(HASH_HandleTypeDef *hhash);
 HAL_StatusTypeDef HAL_HASH_DeInit(HASH_HandleTypeDef *hhash);
 /**
   * @}
-  */ 
+  */
 
 /** @addtogroup HASH_Exported_Functions_Group2
   * @{
-  */  
+  */
 HAL_StatusTypeDef HAL_HASH_SHA1_Start(HASH_HandleTypeDef *hhash, uint8_t *pInBuffer, uint32_t Size, uint8_t* pOutBuffer, uint32_t Timeout);
 HAL_StatusTypeDef HAL_HASH_MD5_Start(HASH_HandleTypeDef *hhash, uint8_t *pInBuffer, uint32_t Size, uint8_t* pOutBuffer, uint32_t Timeout);
 HAL_StatusTypeDef HAL_HASH_MD5_Accumulate(HASH_HandleTypeDef *hhash, uint8_t *pInBuffer, uint32_t Size);
 HAL_StatusTypeDef HAL_HASH_SHA1_Accumulate(HASH_HandleTypeDef *hhash, uint8_t *pInBuffer, uint32_t Size);
 /**
   * @}
-  */ 
-  
+  */
+
 /** @addtogroup HASH_Exported_Functions_Group3
   * @{
-  */  
+  */
 HAL_StatusTypeDef HAL_HMAC_SHA1_Start(HASH_HandleTypeDef *hhash, uint8_t *pInBuffer, uint32_t Size, uint8_t* pOutBuffer, uint32_t Timeout);
 HAL_StatusTypeDef HAL_HMAC_MD5_Start(HASH_HandleTypeDef *hhash, uint8_t *pInBuffer, uint32_t Size, uint8_t* pOutBuffer, uint32_t Timeout);
 /**
   * @}
-  */ 
+  */
 
 /** @addtogroup HASH_Exported_Functions_Group4
   * @{
-  */  
+  */
 HAL_StatusTypeDef HAL_HASH_SHA1_Start_IT(HASH_HandleTypeDef *hhash, uint8_t *pInBuffer, uint32_t Size, uint8_t* pOutBuffer);
 HAL_StatusTypeDef HAL_HASH_MD5_Start_IT(HASH_HandleTypeDef *hhash, uint8_t *pInBuffer, uint32_t Size, uint8_t* pOutBuffer);
 /**
   * @}
-  */ 
+  */
 
 /** @addtogroup HASH_Exported_Functions_Group5
   * @{
-  */    
+  */
 HAL_StatusTypeDef HAL_HASH_SHA1_Start_DMA(HASH_HandleTypeDef *hhash, uint8_t *pInBuffer, uint32_t Size);
 HAL_StatusTypeDef HAL_HASH_SHA1_Finish(HASH_HandleTypeDef *hhash, uint8_t* pOutBuffer, uint32_t Timeout);
 HAL_StatusTypeDef HAL_HASH_MD5_Start_DMA(HASH_HandleTypeDef *hhash, uint8_t *pInBuffer, uint32_t Size);
 HAL_StatusTypeDef HAL_HASH_MD5_Finish(HASH_HandleTypeDef *hhash, uint8_t* pOutBuffer, uint32_t Timeout);
 /**
   * @}
-  */ 
+  */
 
 /** @addtogroup HASH_Exported_Functions_Group6
   * @{
-  */  
+  */
 HAL_StatusTypeDef HAL_HMAC_SHA1_Start_DMA(HASH_HandleTypeDef *hhash, uint8_t *pInBuffer, uint32_t Size);
 HAL_StatusTypeDef HAL_HMAC_MD5_Start_DMA(HASH_HandleTypeDef *hhash, uint8_t *pInBuffer, uint32_t Size);
 /**
   * @}
-  */ 
+  */
 
 /** @addtogroup HASH_Exported_Functions_Group7
   * @{
-  */  
+  */
 void HAL_HASH_IRQHandler(HASH_HandleTypeDef *hhash);
 /**
   * @}
-  */ 
+  */
 
 /** @addtogroup HASH_Exported_Functions_Group8
   * @{
@@ -342,12 +342,12 @@ void HAL_HASH_DgstCpltCallback(HASH_HandleTypeDef *hhash);
 void HAL_HASH_ErrorCallback(HASH_HandleTypeDef *hhash);
 /**
   * @}
-  */ 
-  
+  */
+
  /**
   * @}
-  */ 
- 
+  */
+
  /* Private types -------------------------------------------------------------*/
 /** @defgroup HASH_Private_Types HASH Private Types
   * @{
@@ -355,7 +355,7 @@ void HAL_HASH_ErrorCallback(HASH_HandleTypeDef *hhash);
 
 /**
   * @}
-  */ 
+  */
 
 /* Private variables ---------------------------------------------------------*/
 /** @defgroup HASH_Private_Variables HASH Private Variables
@@ -364,7 +364,7 @@ void HAL_HASH_ErrorCallback(HASH_HandleTypeDef *hhash);
 
 /**
   * @}
-  */ 
+  */
 
 /* Private constants ---------------------------------------------------------*/
 /** @defgroup HASH_Private_Constants HASH Private Constants
@@ -373,7 +373,7 @@ void HAL_HASH_ErrorCallback(HASH_HandleTypeDef *hhash);
 
 /**
   * @}
-  */ 
+  */
 
 /* Private macros ------------------------------------------------------------*/
 /** @defgroup HASH_Private_Macros HASH Private Macros
@@ -400,7 +400,7 @@ void HAL_HASH_ErrorCallback(HASH_HandleTypeDef *hhash);
 
 /**
   * @}
-  */ 
+  */
 
 /* Private functions ---------------------------------------------------------*/
 /** @defgroup HASH_Private_Functions HASH Private Functions
@@ -410,16 +410,16 @@ void HAL_HASH_ErrorCallback(HASH_HandleTypeDef *hhash);
 /**
   * @}
   */
- 
+
 #endif /* STM32F215xx || STM32F217xx */
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
   */
-  
+
 #ifdef __cplusplus
 }
 #endif

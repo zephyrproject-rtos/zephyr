@@ -31,7 +31,7 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-  */ 
+  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __STM32F2xx_HAL_PWR_EX_H
@@ -50,9 +50,9 @@
 
 /** @addtogroup PWREx
   * @{
-  */ 
+  */
 
-/* Exported types ------------------------------------------------------------*/ 
+/* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 /** @defgroup PWREx_Exported_Constants PWR Exported Constants
   * @{
@@ -60,7 +60,7 @@
 
 /**
   * @}
-  */ 
+  */
 
 /* Exported macro ------------------------------------------------------------*/
 /** @defgroup PWREx_Exported_Constants PWR Exported Constants
@@ -74,14 +74,14 @@
 /** @addtogroup PWREx_Exported_Functions PWR Exported Functions
   *  @{
   */
- 
+
 /** @addtogroup PWREx_Exported_Functions_Group1
   * @{
   */
 void HAL_PWREx_EnableFlashPowerDown(void);
-void HAL_PWREx_DisableFlashPowerDown(void); 
+void HAL_PWREx_DisableFlashPowerDown(void);
 HAL_StatusTypeDef HAL_PWREx_EnableBkUpReg(void);
-HAL_StatusTypeDef HAL_PWREx_DisableBkUpReg(void); 
+HAL_StatusTypeDef HAL_PWREx_DisableBkUpReg(void);
 /**
   * @}
   */
@@ -111,11 +111,11 @@ HAL_StatusTypeDef HAL_PWREx_DisableBkUpReg(void);
 
 /** @defgroup PWREx_CSR_register_alias PWR CSR Register alias address
   * @{
-  */  
+  */
 /* --- CSR Register ---*/
 /* Alias word address of BRE bit */
 #define BRE_BIT_NUMBER   POSITION_VAL(PWR_CSR_BRE)
-#define CSR_BRE_BB      (uint32_t)(PERIPH_BB_BASE + (PWR_CSR_OFFSET_BB * 32U) + (BRE_BIT_NUMBER * 4U))    
+#define CSR_BRE_BB      (uint32_t)(PERIPH_BB_BASE + (PWR_CSR_OFFSET_BB * 32U) + (BRE_BIT_NUMBER * 4U))
 /**
   * @}
   */
@@ -143,12 +143,12 @@ HAL_StatusTypeDef HAL_PWREx_DisableBkUpReg(void);
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
   */
-  
+
 #ifdef __cplusplus
 }
 #endif

@@ -3,10 +3,10 @@
   * @file    stm32f2xx_hal_pwr_ex.c
   * @author  MCD Application Team
   * @brief   Extended PWR HAL module driver.
-  *          This file provides firmware functions to manage the following 
-  *          functionalities of PWR extension peripheral:           
+  *          This file provides firmware functions to manage the following
+  *          functionalities of PWR extension peripheral:
   *           + Peripheral Extended features functions
-  *         
+  *
   ******************************************************************************
   * @attention
   *
@@ -35,7 +35,7 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-  */ 
+  */
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f2xx_hal.h"
@@ -55,13 +55,13 @@
 /* Private define ------------------------------------------------------------*/
 /** @addtogroup PWREx_Private_Constants
   * @{
-  */    
+  */
 #define PWR_BKPREG_TIMEOUT_VALUE     1000U
 /**
   * @}
   */
 
-   
+
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
@@ -70,10 +70,10 @@
   *  @{
   */
 
-/** @defgroup PWREx_Exported_Functions_Group1 Peripheral Extended features functions 
-  *  @brief Peripheral Extended features functions 
+/** @defgroup PWREx_Exported_Functions_Group1 Peripheral Extended features functions
+  *  @brief Peripheral Extended features functions
   *
-@verbatim   
+@verbatim
 
  ===============================================================================
                  ##### Peripheral extended features functions #####
@@ -81,37 +81,37 @@
 
     *** Main and Backup Regulators configuration ***
     ================================================
-    [..] 
-      (+) The backup domain includes 4 Kbytes of backup SRAM accessible only from 
-          the CPU, and address in 32-bit, 16-bit or 8-bit mode. Its content is 
+    [..]
+      (+) The backup domain includes 4 Kbytes of backup SRAM accessible only from
+          the CPU, and address in 32-bit, 16-bit or 8-bit mode. Its content is
           retained even in Standby or VBAT mode when the low power backup regulator
-          is enabled. It can be considered as an internal EEPROM when VBAT is 
-          always present. You can use the HAL_PWREx_EnableBkUpReg() function to 
-          enable the low power backup regulator. 
+          is enabled. It can be considered as an internal EEPROM when VBAT is
+          always present. You can use the HAL_PWREx_EnableBkUpReg() function to
+          enable the low power backup regulator.
 
-      (+) When the backup domain is supplied by VDD (analog switch connected to VDD) 
-          the backup SRAM is powered from VDD which replaces the VBAT power supply to 
+      (+) When the backup domain is supplied by VDD (analog switch connected to VDD)
+          the backup SRAM is powered from VDD which replaces the VBAT power supply to
           save battery life.
 
-      (+) The backup SRAM is not mass erased by a tamper event. It is read 
-          protected to prevent confidential data, such as cryptographic private 
-          key, from being accessed. The backup SRAM can be erased only through 
-          the Flash interface when a protection level change from level 1 to 
-          level 0 is requested. 
-      -@- Refer to the description of Read protection (RDP) in the Flash 
+      (+) The backup SRAM is not mass erased by a tamper event. It is read
+          protected to prevent confidential data, such as cryptographic private
+          key, from being accessed. The backup SRAM can be erased only through
+          the Flash interface when a protection level change from level 1 to
+          level 0 is requested.
+      -@- Refer to the description of Read protection (RDP) in the Flash
           programming manual.
 
         Refer to the product datasheets for more details.
 
     *** FLASH Power Down configuration ****
     =======================================
-    [..] 
-      (+) By setting the FPDS bit in the PWR_CR register by using the 
-          HAL_PWREx_EnableFlashPowerDown() function, the Flash memory also enters power 
-          down mode when the device enters Stop mode. When the Flash memory 
-          is in power down mode, an additional startup delay is incurred when 
+    [..]
+      (+) By setting the FPDS bit in the PWR_CR register by using the
+          HAL_PWREx_EnableFlashPowerDown() function, the Flash memory also enters power
+          down mode when the device enters Stop mode. When the Flash memory
+          is in power down mode, an additional startup delay is incurred when
           waking up from Stop mode.
-          
+
 @endverbatim
   * @{
   */
@@ -129,13 +129,13 @@ HAL_StatusTypeDef HAL_PWREx_EnableBkUpReg(void)
   /* Get tick */
   tickstart = HAL_GetTick();
 
-  /* Wait till Backup regulator ready flag is set */  
+  /* Wait till Backup regulator ready flag is set */
   while(__HAL_PWR_GET_FLAG(PWR_FLAG_BRR) == RESET)
   {
     if((HAL_GetTick() - tickstart ) > PWR_BKPREG_TIMEOUT_VALUE)
     {
       return HAL_TIMEOUT;
-    } 
+    }
   }
   return HAL_OK;
 }
@@ -153,13 +153,13 @@ HAL_StatusTypeDef HAL_PWREx_DisableBkUpReg(void)
   /* Get tick */
   tickstart = HAL_GetTick();
 
-  /* Wait till Backup regulator ready flag is set */  
+  /* Wait till Backup regulator ready flag is set */
   while(__HAL_PWR_GET_FLAG(PWR_FLAG_BRR) != RESET)
   {
     if((HAL_GetTick() - tickstart ) > PWR_BKPREG_TIMEOUT_VALUE)
     {
       return HAL_TIMEOUT;
-    } 
+    }
   }
   return HAL_OK;
 }

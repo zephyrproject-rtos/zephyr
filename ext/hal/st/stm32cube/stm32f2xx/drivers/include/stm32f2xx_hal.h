@@ -2,7 +2,7 @@
   ******************************************************************************
   * @file    stm32f2xx_hal.h
   * @author  MCD Application Team
-  * @brief   This file contains all the functions prototypes for the HAL 
+  * @brief   This file contains all the functions prototypes for the HAL
   *          module driver.
   ******************************************************************************
   * @attention
@@ -32,7 +32,7 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-  */ 
+  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __STM32F2xx_HAL_H
@@ -51,7 +51,7 @@
 
 /** @addtogroup HAL
   * @{
-  */ 
+  */
 
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
@@ -60,7 +60,7 @@
   * @{
   */
 
-/** @brief  Freeze/Unfreeze Peripherals in Debug mode 
+/** @brief  Freeze/Unfreeze Peripherals in Debug mode
   */
 #define __HAL_DBGMCU_FREEZE_TIM2()           (DBGMCU->APB1FZ |= (DBGMCU_APB1_FZ_DBG_TIM2_STOP))
 #define __HAL_DBGMCU_FREEZE_TIM3()           (DBGMCU->APB1FZ |= (DBGMCU_APB1_FZ_DBG_TIM3_STOP))
@@ -130,7 +130,7 @@
                                                   SYSCFG->MEMRMP |= (SYSCFG_MEMRMP_MEM_MODE_1);\
                                                  }while(0);
 
- 
+
 /**
   * @}
   */
@@ -203,8 +203,8 @@ void HAL_GetUID(uint32_t *UID);
 
 /**
   * @}
-  */ 
-  
+  */
+
 #ifdef __cplusplus
 }
 #endif

@@ -309,7 +309,7 @@ __STATIC_INLINE uint32_t LL_SYSCFG_IsActiveFlag_CMPCR(void)
 }
 #if defined(SYSCFG_PMC_MII_RMII_SEL)
 /**
-  * @brief  Select Ethernet PHY interface 
+  * @brief  Select Ethernet PHY interface
   * @rmtoll SYSCFG_PMC MII_RMII_SEL       LL_SYSCFG_SetPHYInterface
   * @param  Interface This parameter can be one of the following values:
   *         @arg @ref LL_SYSCFG_PMC_ETHMII
@@ -322,7 +322,7 @@ __STATIC_INLINE void LL_SYSCFG_SetPHYInterface(uint32_t Interface)
 }
 
 /**
-  * @brief  Get Ethernet PHY interface 
+  * @brief  Get Ethernet PHY interface
   * @rmtoll SYSCFG_PMC MII_RMII_SEL       LL_SYSCFG_GetPHYInterface
   * @retval Returned value can be one of the following values:
   *         @arg @ref LL_SYSCFG_PMC_ETHMII

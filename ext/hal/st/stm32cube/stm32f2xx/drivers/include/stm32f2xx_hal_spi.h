@@ -42,7 +42,7 @@
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f2xx_hal_def.h"  
+#include "stm32f2xx_hal_def.h"
 
 /** @addtogroup STM32F2xx_HAL_Driver
   * @{
@@ -56,7 +56,7 @@
 /** @defgroup SPI_Exported_Types SPI Exported Types
   * @{
   */
-  
+
 /**
   * @brief  SPI Configuration Structure definition
   */
@@ -111,7 +111,7 @@ typedef enum
   HAL_SPI_STATE_BUSY_TX    = 0x03U,    /*!< Data Transmission process is ongoing               */
   HAL_SPI_STATE_BUSY_RX    = 0x04U,    /*!< Data Reception process is ongoing                  */
   HAL_SPI_STATE_BUSY_TX_RX = 0x05U,    /*!< Data Transmission and Reception process is ongoing */
-  HAL_SPI_STATE_ERROR      = 0x06U     /*!< SPI error state                                    */   
+  HAL_SPI_STATE_ERROR      = 0x06U     /*!< SPI error state                                    */
 }HAL_SPI_StateTypeDef;
 
 /**
@@ -126,7 +126,7 @@ typedef struct __SPI_HandleTypeDef
   uint8_t                    *pTxBuffPtr;  /* Pointer to SPI Tx transfer Buffer */
 
   uint16_t                   TxXferSize;   /* SPI Tx transfer size */
-  
+
   __IO uint16_t              TxXferCount;  /* SPI Tx Transfer Counter */
 
   uint8_t                    *pRxBuffPtr;  /* Pointer to SPI Rx transfer Buffer */
@@ -200,9 +200,9 @@ typedef struct __SPI_HandleTypeDef
 #define SPI_DATASIZE_16BIT              SPI_CR1_DFF
 /**
   * @}
-  */ 
+  */
 
-/** @defgroup SPI_Clock_Polarity SPI Clock Polarity 
+/** @defgroup SPI_Clock_Polarity SPI Clock Polarity
   * @{
   */
 #define SPI_POLARITY_LOW                0x00000000U
@@ -245,7 +245,7 @@ typedef struct __SPI_HandleTypeDef
   * @}
   */
 
-/** @defgroup SPI_MSB_LSB_transmission SPI MSB LSB Transmission 
+/** @defgroup SPI_MSB_LSB_transmission SPI MSB LSB Transmission
   * @{
   */
 #define SPI_FIRSTBIT_MSB                0x00000000U
@@ -508,7 +508,7 @@ uint32_t             HAL_SPI_GetError(SPI_HandleTypeDef *hspi);
 
 #define IS_SPI_MODE(MODE) (((MODE) == SPI_MODE_SLAVE) || \
                            ((MODE) == SPI_MODE_MASTER))
-                           
+
 #define IS_SPI_DIRECTION(MODE) (((MODE) == SPI_DIRECTION_2LINES)        || \
                                 ((MODE) == SPI_DIRECTION_2LINES_RXONLY) || \
                                 ((MODE) == SPI_DIRECTION_1LINE))
@@ -548,9 +548,9 @@ uint32_t             HAL_SPI_GetError(SPI_HandleTypeDef *hspi);
 
 #define IS_SPI_CRC_CALCULATION(CALCULATION) (((CALCULATION) == SPI_CRCCALCULATION_DISABLE) || \
                                              ((CALCULATION) == SPI_CRCCALCULATION_ENABLE))
-                                                                                                      
+
 #define IS_SPI_CRC_POLYNOMIAL(POLYNOMIAL) (((POLYNOMIAL) >= 0x01U) && ((POLYNOMIAL) <= 0xFFFFU))
-                          
+
 /**
   * @}
   */
@@ -572,7 +572,7 @@ uint32_t             HAL_SPI_GetError(SPI_HandleTypeDef *hspi);
   * @}
   */
 
-  
+
 #ifdef __cplusplus
 }
 #endif
