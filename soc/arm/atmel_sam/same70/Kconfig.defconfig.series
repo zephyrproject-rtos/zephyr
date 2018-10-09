@@ -43,4 +43,9 @@ config DMA_SAM_XDMAC
 	default y
 endif # DMA
 
+if SPI
+config SPI_SAM
+	def_bool y
+endif # SPI
+
 endif # SOC_SERIES_SAME70
