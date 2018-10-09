@@ -1462,7 +1462,6 @@ static struct mcr20a_context mcr20a_context_data;
 
 static struct ieee802154_radio_api mcr20a_radio_api = {
 	.iface_api.init	= mcr20a_iface_init,
-	.iface_api.send	= ieee802154_radio_send,
 
 	.get_capabilities	= mcr20a_get_capabilities,
 	.cca			= mcr20a_cca,

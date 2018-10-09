@@ -19,9 +19,9 @@
 #include "ieee802154_utils.h"
 #include "ieee802154_radio_utils.h"
 
-static inline int csma_ca_tx_fragment(struct net_if *iface,
-				      struct net_pkt *pkt,
-				      struct net_buf *frag)
+static inline int csma_ca_radio_send(struct net_if *iface,
+				     struct net_pkt *pkt,
+				     struct net_buf *frag)
 {
 	const u8_t max_bo = CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA_MAX_BO;
 	const u8_t max_be = CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA_MAX_BE;
@@ -69,13 +69,6 @@ loop:
 	}
 
 	return ret;
-}
-
-static int csma_ca_radio_send(struct net_if *iface, struct net_pkt *pkt)
-{
-	NET_DBG("pkt %p (frags %p)", pkt, pkt->frags);
-
-	return tx_packet_fragments(iface, pkt, csma_ca_tx_fragment);
 }
 
 static enum net_verdict csma_ca_radio_handle_ack(struct net_if *iface,

@@ -1072,7 +1072,6 @@ static struct cc2520_context cc2520_context_data;
 
 static struct ieee802154_radio_api cc2520_radio_api = {
 	.iface_api.init	= cc2520_iface_init,
-	.iface_api.send	= ieee802154_radio_send,
 
 	.get_capabilities	= cc2520_get_capabilities,
 	.cca			= cc2520_cca,

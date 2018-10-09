@@ -1008,7 +1008,6 @@ static void kw41z_iface_init(struct net_if *iface)
 
 static struct ieee802154_radio_api kw41z_radio_api = {
 	.iface_api.init	= kw41z_iface_init,
-	.iface_api.send	= ieee802154_radio_send,
 
 	.get_capabilities	= kw41z_get_capabilities,
 	.cca			= kw41z_cca,

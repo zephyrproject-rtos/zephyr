@@ -16,9 +16,9 @@
 #include "ieee802154_utils.h"
 #include "ieee802154_radio_utils.h"
 
-static inline int aloha_tx_fragment(struct net_if *iface,
-				    struct net_pkt *pkt,
-				    struct net_buf *frag)
+static inline int aloha_radio_send(struct net_if *iface,
+				   struct net_pkt *pkt,
+				   struct net_buf *frag)
 {
 	u8_t retries = CONFIG_NET_L2_IEEE802154_RADIO_TX_RETRIES;
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
@@ -42,13 +42,6 @@ static inline int aloha_tx_fragment(struct net_if *iface,
 	}
 
 	return ret;
-}
-
-static int aloha_radio_send(struct net_if *iface, struct net_pkt *pkt)
-{
-	NET_DBG("pkt %p (frags %p)", pkt, pkt->frags);
-
-	return tx_packet_fragments(iface, pkt, aloha_tx_fragment);
 }
 
 static enum net_verdict aloha_radio_handle_ack(struct net_if *iface,
