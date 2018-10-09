@@ -39,6 +39,12 @@
 					tx = <STM32_PIN_PC10 STM32_PIN_USART_TX>;
 				};
 			};
+			uart5_pins_a: uart5_a {
+				rx_tx {
+					rx = <STM32_PIN_PC12 STM32_PIN_USART_RX>;
+					tx = <STM32_PIN_PD2 STM32_PIN_USART_TX>;
+				};
+			};
 		};
 	};
 };
