@@ -1,0 +1,28 @@
+# Kconfig - es-WiFi driver options
+
+#
+# Copyright (c) 2018 Linaro
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig WIFI_ESWIFI
+	bool "Inventek eS-WiFi support"
+	depends on WIFI
+	select NET_L2_WIFI_MGMT
+	select WIFI_OFFLOAD
+
+if WIFI_ESWIFI
+
+config WIFI_ESWIFI_NAME
+	string "Driver name"
+	default "ESWIFI"
+
+config WIFI_ESWIFI_THREAD_PRIO
+	int "esWiFi threads priority"
+	default 2
+	help
+	  This option sets the priority of the esWiFi threads.
+	  Do not touch it unless you know what you are doing.
+
+endif
