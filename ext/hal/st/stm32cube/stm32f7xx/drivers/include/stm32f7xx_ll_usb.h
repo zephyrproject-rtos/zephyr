@@ -2,7 +2,7 @@
   ******************************************************************************
   * @file    stm32f7xx_ll_usb.h
   * @author  MCD Application Team
-  * @brief   Header file of USB Core HAL module.
+  * @brief   Header file of USB Low Layer HAL module.
   ******************************************************************************
   * @attention
   *
@@ -44,11 +44,11 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f7xx_hal_def.h"
 
-/** @addtogroup STM32F7xx_HAL
+/** @addtogroup STM32F7xx_HAL_Driver
   * @{
   */
 
-/** @addtogroup USB_Core
+/** @addtogroup USB_LL
   * @{
   */
 
@@ -59,30 +59,29 @@
   */
 typedef enum
 {
-   USB_OTG_DEVICE_MODE  = 0U,
-   USB_OTG_HOST_MODE    = 1U,
-   USB_OTG_DRD_MODE     = 2U
-
+   USB_DEVICE_MODE  = 0,
+   USB_HOST_MODE    = 1,
+   USB_DRD_MODE     = 2
 }USB_OTG_ModeTypeDef;
 
+#if defined (USB_OTG_FS) || defined (USB_OTG_HS)
 /**
   * @brief  URB States definition
   */
 typedef enum {
-  URB_IDLE = 0U,
+  URB_IDLE = 0,
   URB_DONE,
   URB_NOTREADY,
   URB_NYET,
   URB_ERROR,
   URB_STALL
-
 }USB_OTG_URBStateTypeDef;
 
 /**
   * @brief  Host channel States  definition
   */
 typedef enum {
-  HC_IDLE = 0U,
+  HC_IDLE = 0,
   HC_XFRC,
   HC_HALTED,
   HC_NAK,
@@ -91,11 +90,10 @@ typedef enum {
   HC_XACTERR,
   HC_BBLERR,
   HC_DATATGLERR
-
 }USB_OTG_HCStateTypeDef;
 
 /**
-  * @brief  PCD Initialization Structure definition
+  * @brief  USB OTG Initialization Structure definition
   */
 typedef struct
 {
@@ -110,7 +108,7 @@ typedef struct
   uint32_t speed;                /*!< USB Core speed.
                                       This parameter can be any value of @ref USB_Core_Speed_                */
 
-  uint32_t dma_enable;           /*!< Enable or disable of the USB embedded DMA.                             */
+  uint32_t dma_enable;           /*!< Enable or disable of the USB embedded DMA used only for OTG HS.                             */
 
   uint32_t ep0_mps;              /*!< Set the Endpoint 0 Max Packet size.
                                       This parameter can be any value of @ref USB_EP0_MPS_                   */
@@ -131,7 +129,6 @@ typedef struct
   uint32_t use_dedicated_ep1;    /*!< Enable or disable the use of the dedicated EP1 interrupt.              */
 
   uint32_t use_external_vbus;    /*!< Enable or disable the use of the external VBUS.                        */
-
 }USB_OTG_CfgTypeDef;
 
 typedef struct
@@ -167,7 +164,6 @@ typedef struct
   uint32_t  xfer_len;       /*!< Current transfer length                                                  */
 
   uint32_t  xfer_count;     /*!< Partial transfer length in case of multi packet transfer                 */
-
 }USB_OTG_EPTypeDef;
 
 typedef struct
@@ -221,8 +217,9 @@ typedef struct
 
   USB_OTG_HCStateTypeDef   state;     /*!< Host Channel state.
                                            This parameter can be any value of @ref USB_OTG_HCStateTypeDef  */
-
 }USB_OTG_HCTypeDef;
+#endif /* defined USB_OTG_FS || USB_OTG_HS */
+
 
 /* Exported constants --------------------------------------------------------*/
 
@@ -230,6 +227,7 @@ typedef struct
   * @{
   */
 
+#if defined (USB_OTG_FS) || defined (USB_OTG_HS)
 /** @defgroup USB_Core_Mode_ USB Core Mode
   * @{
   */
@@ -240,7 +238,7 @@ typedef struct
   * @}
   */
 
-/** @defgroup USB_Core_Speed_   USB Core Speed
+/** @defgroup USB_LL_Core_Speed USB Low Layer Core Speed
   * @{
   */
 #define USB_OTG_SPEED_HIGH                     0U
@@ -251,7 +249,7 @@ typedef struct
   * @}
   */
 
-/** @defgroup USB_Core_PHY_   USB Core PHY
+/** @defgroup USB_LL_Core_PHY USB Low Layer Core PHY
   * @{
   */
 #define USB_OTG_ULPI_PHY                       1U
@@ -261,33 +259,32 @@ typedef struct
 #if !defined  (USB_HS_PHYC_TUNE_VALUE)
   #define USB_HS_PHYC_TUNE_VALUE    0x00000F13U /*!< Value of USB HS PHY Tune */
 #endif /* USB_HS_PHYC_TUNE_VALUE */
-
 /**
   * @}
   */
 
-/** @defgroup USB_Core_MPS_   USB Core MPS
+/** @defgroup USB_LL_Core_MPS USB Low Layer Core MPS
   * @{
   */
-#define USB_OTG_HS_MAX_PACKET_SIZE           512U
-#define USB_OTG_FS_MAX_PACKET_SIZE           64U
-#define USB_OTG_MAX_EP0_SIZE                 64U
+#define USB_OTG_HS_MAX_PACKET_SIZE             512U
+#define USB_OTG_FS_MAX_PACKET_SIZE             64U
+#define USB_OTG_MAX_EP0_SIZE                   64U
 /**
   * @}
   */
 
-/** @defgroup USB_Core_Phy_Frequency_   USB Core Phy Frequency
+/** @defgroup USB_LL_Core_PHY_Frequency USB Low Layer Core PHY Frequency
   * @{
   */
-#define DSTS_ENUMSPD_HS_PHY_30MHZ_OR_60MHZ     (0 << 1)
-#define DSTS_ENUMSPD_FS_PHY_30MHZ_OR_60MHZ     (1 << 1)
-#define DSTS_ENUMSPD_LS_PHY_6MHZ               (2 << 1)
-#define DSTS_ENUMSPD_FS_PHY_48MHZ              (3 << 1)
+#define DSTS_ENUMSPD_HS_PHY_30MHZ_OR_60MHZ     (0U << 1)
+#define DSTS_ENUMSPD_FS_PHY_30MHZ_OR_60MHZ     (1U << 1)
+#define DSTS_ENUMSPD_LS_PHY_6MHZ               (2U << 1)
+#define DSTS_ENUMSPD_FS_PHY_48MHZ              (3U << 1)
 /**
   * @}
   */
 
-/** @defgroup USB_CORE_Frame_Interval_   USB CORE Frame Interval
+/** @defgroup USB_LL_CORE_Frame_Interval USB Low Layer Core Frame Interval
   * @{
   */
 #define DCFG_FRAME_INTERVAL_80                 0U
@@ -298,7 +295,7 @@ typedef struct
   * @}
   */
 
-/** @defgroup USB_EP0_MPS_  USB EP0 MPS
+/** @defgroup USB_LL_EP0_MPS USB Low Layer EP0 MPS
   * @{
   */
 #define DEP0CTL_MPS_64                         0U
@@ -309,7 +306,7 @@ typedef struct
   * @}
   */
 
-/** @defgroup USB_EP_Speed_  USB EP Speed
+/** @defgroup USB_LL_EP_Speed USB Low Layer EP Speed
   * @{
   */
 #define EP_SPEED_LOW                           0U
@@ -319,7 +316,7 @@ typedef struct
   * @}
   */
 
-/** @defgroup USB_EP_Type_  USB EP Type
+/** @defgroup USB_LL_EP_Type USB Low Layer EP Type
   * @{
   */
 #define EP_TYPE_CTRL                           0U
@@ -331,7 +328,7 @@ typedef struct
   * @}
   */
 
-/** @defgroup USB_STS_Defines_   USB STS Defines
+/** @defgroup USB_LL_STS_Defines USB Low Layer STS Defines
   * @{
   */
 #define STS_GOUT_NAK                           1U
@@ -343,7 +340,7 @@ typedef struct
   * @}
   */
 
-/** @defgroup HCFG_SPEED_Defines_   HCFG SPEED Defines
+/** @defgroup USB_LL_HCFG_SPEED_Defines USB Low Layer HCFG Speed Defines
   * @{
   */
 #define HCFG_30_60_MHZ                         0U
@@ -353,7 +350,7 @@ typedef struct
   * @}
   */
 
-/** @defgroup HPRT0_PRTSPD_SPEED_Defines_  HPRT0 PRTSPD SPEED Defines
+/** @defgroup USB_LL_HPRT0_PRTSPD_SPEED_Defines USB Low Layer HPRT0 PRTSPD Speed Defines
   * @{
   */
 #define HPRT0_PRTSPD_HIGH_SPEED                0U
@@ -378,30 +375,43 @@ typedef struct
 #define GRXSTS_PKTSTS_DATA_TOGGLE_ERR          5U
 #define GRXSTS_PKTSTS_CH_HALTED                7U
 
-#define USBx_PCGCCTL    *(__IO uint32_t *)((uint32_t)USBx + USB_OTG_PCGCCTL_BASE)
-#define USBx_HPRT0      *(__IO uint32_t *)((uint32_t)USBx + USB_OTG_HOST_PORT_BASE)
+#define USBx_PCGCCTL    *(__IO uint32_t *)((uint32_t)USBx_BASE + USB_OTG_PCGCCTL_BASE)
+#define USBx_HPRT0      *(__IO uint32_t *)((uint32_t)USBx_BASE + USB_OTG_HOST_PORT_BASE)
 
-#define USBx_DEVICE     ((USB_OTG_DeviceTypeDef *)((uint32_t )USBx + USB_OTG_DEVICE_BASE))
-#define USBx_INEP(i)    ((USB_OTG_INEndpointTypeDef *)((uint32_t)USBx + USB_OTG_IN_ENDPOINT_BASE + (i)*USB_OTG_EP_REG_SIZE))
-#define USBx_OUTEP(i)   ((USB_OTG_OUTEndpointTypeDef *)((uint32_t)USBx + USB_OTG_OUT_ENDPOINT_BASE + (i)*USB_OTG_EP_REG_SIZE))
-#define USBx_DFIFO(i)   *(__IO uint32_t *)((uint32_t)USBx + USB_OTG_FIFO_BASE + (i) * USB_OTG_FIFO_SIZE)
+#define USBx_DEVICE     ((USB_OTG_DeviceTypeDef *)(USBx_BASE + USB_OTG_DEVICE_BASE))
+#define USBx_INEP(i)    ((USB_OTG_INEndpointTypeDef *)(USBx_BASE + USB_OTG_IN_ENDPOINT_BASE + ((i) * USB_OTG_EP_REG_SIZE)))
+#define USBx_OUTEP(i)   ((USB_OTG_OUTEndpointTypeDef *)(USBx_BASE + USB_OTG_OUT_ENDPOINT_BASE + ((i) * USB_OTG_EP_REG_SIZE)))
+#define USBx_DFIFO(i)   *(__IO uint32_t *)(USBx_BASE + USB_OTG_FIFO_BASE + ((i) * USB_OTG_FIFO_SIZE))
 
-#define USBx_HOST       ((USB_OTG_HostTypeDef *)((uint32_t )USBx + USB_OTG_HOST_BASE))
-#define USBx_HC(i)      ((USB_OTG_HostChannelTypeDef *)((uint32_t)USBx + USB_OTG_HOST_CHANNEL_BASE + (i)*USB_OTG_HOST_CHANNEL_SIZE))
+#define USBx_HOST       ((USB_OTG_HostTypeDef *)(USBx_BASE + USB_OTG_HOST_BASE))
+#define USBx_HC(i)      ((USB_OTG_HostChannelTypeDef *)(USBx_BASE + USB_OTG_HOST_CHANNEL_BASE + ((i) * USB_OTG_HOST_CHANNEL_SIZE)))
 #define USBPHYC         ((USBPHYC_GlobalTypeDef *)((uint32_t )USB_PHY_HS_CONTROLLER_BASE))
-
+#endif /* USB_OTG_FS || USB_OTG_HS */
 
 /**
   * @}
   */
+
 /* Exported macro ------------------------------------------------------------*/
+/** @defgroup USB_LL_Exported_Macros USB Low Layer Exported Macros
+  * @{
+  */
+#if defined (USB_OTG_FS) || defined (USB_OTG_HS)
 #define USB_MASK_INTERRUPT(__INSTANCE__, __INTERRUPT__)     ((__INSTANCE__)->GINTMSK &= ~(__INTERRUPT__))
 #define USB_UNMASK_INTERRUPT(__INSTANCE__, __INTERRUPT__)   ((__INSTANCE__)->GINTMSK |= (__INTERRUPT__))
 
 #define CLEAR_IN_EP_INTR(__EPNUM__, __INTERRUPT__)          (USBx_INEP(__EPNUM__)->DIEPINT = (__INTERRUPT__))
 #define CLEAR_OUT_EP_INTR(__EPNUM__, __INTERRUPT__)         (USBx_OUTEP(__EPNUM__)->DOEPINT = (__INTERRUPT__))
+#endif /* USB_OTG_FS || USB_OTG_HS */
+/**
+  * @}
+  */
 
 /* Exported functions --------------------------------------------------------*/
+/** @addtogroup USB_LL_Exported_Functions USB Low Layer Exported Functions
+  * @{
+  */
+#if defined (USB_OTG_FS) || defined (USB_OTG_HS)
 HAL_StatusTypeDef USB_CoreInit(USB_OTG_GlobalTypeDef *USBx, USB_OTG_CfgTypeDef Init);
 HAL_StatusTypeDef USB_DevInit(USB_OTG_GlobalTypeDef *USBx, USB_OTG_CfgTypeDef Init);
 HAL_StatusTypeDef USB_EnableGlobalInt(USB_OTG_GlobalTypeDef *USBx);
@@ -409,7 +419,7 @@ HAL_StatusTypeDef USB_DisableGlobalInt(USB_OTG_GlobalTypeDef *USBx);
 HAL_StatusTypeDef USB_SetCurrentMode(USB_OTG_GlobalTypeDef *USBx , USB_OTG_ModeTypeDef mode);
 HAL_StatusTypeDef USB_SetDevSpeed(USB_OTG_GlobalTypeDef *USBx , uint8_t speed);
 HAL_StatusTypeDef USB_FlushRxFifo (USB_OTG_GlobalTypeDef *USBx);
-HAL_StatusTypeDef USB_FlushTxFifo (USB_OTG_GlobalTypeDef *USBx, uint32_t num );
+HAL_StatusTypeDef USB_FlushTxFifo (USB_OTG_GlobalTypeDef *USBx, uint32_t num);
 HAL_StatusTypeDef USB_ActivateEndpoint(USB_OTG_GlobalTypeDef *USBx, USB_OTG_EPTypeDef *ep);
 HAL_StatusTypeDef USB_DeactivateEndpoint(USB_OTG_GlobalTypeDef *USBx, USB_OTG_EPTypeDef *ep);
 HAL_StatusTypeDef USB_ActivateDedicatedEndpoint(USB_OTG_GlobalTypeDef *USBx, USB_OTG_EPTypeDef *ep);
@@ -442,17 +452,27 @@ HAL_StatusTypeDef USB_DriveVbus (USB_OTG_GlobalTypeDef *USBx, uint8_t state);
 uint32_t          USB_GetHostSpeed (USB_OTG_GlobalTypeDef *USBx);
 uint32_t          USB_GetCurrentFrame (USB_OTG_GlobalTypeDef *USBx);
 HAL_StatusTypeDef USB_HC_Init(USB_OTG_GlobalTypeDef *USBx,
-                                  uint8_t ch_num,
-                                  uint8_t epnum,
-                                  uint8_t dev_address,
-                                  uint8_t speed,
-                                  uint8_t ep_type,
-                                  uint16_t mps);
+                              uint8_t ch_num,
+                              uint8_t epnum,
+                              uint8_t dev_address,
+                              uint8_t speed,
+                              uint8_t ep_type,
+                              uint16_t mps);
 HAL_StatusTypeDef USB_HC_StartXfer(USB_OTG_GlobalTypeDef *USBx, USB_OTG_HCTypeDef *hc, uint8_t dma);
 uint32_t          USB_HC_ReadInterrupt (USB_OTG_GlobalTypeDef *USBx);
 HAL_StatusTypeDef USB_HC_Halt(USB_OTG_GlobalTypeDef *USBx , uint8_t hc_num);
 HAL_StatusTypeDef USB_DoPing(USB_OTG_GlobalTypeDef *USBx , uint8_t ch_num);
 HAL_StatusTypeDef USB_StopHost(USB_OTG_GlobalTypeDef *USBx);
+HAL_StatusTypeDef USB_ActivateRemoteWakeup(USB_OTG_GlobalTypeDef *USBx);
+HAL_StatusTypeDef USB_DeActivateRemoteWakeup(USB_OTG_GlobalTypeDef *USBx);
+#endif /* USB_OTG_FS || USB_OTG_HS */
+
+/**
+  * @}
+  */
+/**
+  * @}
+  */
 
 /**
   * @}

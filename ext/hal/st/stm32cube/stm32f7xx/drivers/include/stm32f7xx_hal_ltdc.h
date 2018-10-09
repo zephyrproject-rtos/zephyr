@@ -41,7 +41,7 @@
  extern "C" {
 #endif
 
-#if defined (STM32F746xx) || defined (STM32F756xx) || defined (STM32F767xx) || defined (STM32F769xx) || defined (STM32F777xx) || defined (STM32F779xx)
+#if defined (STM32F746xx) || defined (STM32F756xx) || defined (STM32F767xx) || defined (STM32F769xx) || defined (STM32F777xx) || defined (STM32F779xx) || defined (STM32F750xx)
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f7xx_hal_def.h"
@@ -646,7 +646,7 @@ uint32_t              HAL_LTDC_GetError(LTDC_HandleTypeDef *hltdc);
 /**
   * @}
   */
-#endif /* STM32F746xx || STM32F756xx || STM32F767xx || STM32F769xx || STM32F777xx || STM32F779xx */
+#endif /* STM32F746xx || STM32F756xx || STM32F767xx || STM32F769xx || STM32F777xx || STM32F779xx || STM32F750xx */
 /**
   * @}
   */

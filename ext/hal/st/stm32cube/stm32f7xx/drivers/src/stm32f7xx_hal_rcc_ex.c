@@ -104,7 +104,8 @@
   * @{
   */
 #if defined (STM32F745xx) || defined (STM32F746xx) || defined (STM32F756xx) || defined (STM32F765xx) || \
-    defined (STM32F767xx) || defined (STM32F769xx) || defined (STM32F777xx) || defined (STM32F779xx)
+    defined (STM32F767xx) || defined (STM32F769xx) || defined (STM32F777xx) || defined (STM32F779xx) || \
+    defined (STM32F750xx)
 /**
   * @brief  Initializes the RCC extended peripherals clocks according to the specified
   *         parameters in the RCC_PeriphCLKInitTypeDef.
@@ -408,12 +409,12 @@ HAL_StatusTypeDef HAL_RCCEx_PeriphCLKConfig(RCC_PeriphCLKInitTypeDef  *PeriphClk
   }
 
   /*-------------------------------------- LTDC Configuration -----------------------------------*/
-#if defined(STM32F746xx) || defined(STM32F756xx) || defined (STM32F767xx) || defined (STM32F769xx) || defined (STM32F777xx) || defined (STM32F779xx)
+#if defined(STM32F746xx) || defined(STM32F756xx) || defined (STM32F767xx) || defined (STM32F769xx) || defined (STM32F777xx) || defined (STM32F779xx) || defined (STM32F750xx)
   if(((PeriphClkInit->PeriphClockSelection) & RCC_PERIPHCLK_LTDC) == RCC_PERIPHCLK_LTDC)
   {
     pllsaiused = 1;
   }
-#endif /* STM32F746xx || STM32F756xx || STM32F767xx || STM32F769xx || STM32F777xx || STM32F779xx */
+#endif /* STM32F746xx || STM32F756xx || STM32F767xx || STM32F769xx || STM32F777xx || STM32F779xx || STM32F750xx */
 
   /*-------------------------------------- LPTIM1 Configuration -----------------------------------*/
   if(((PeriphClkInit->PeriphClockSelection) & RCC_PERIPHCLK_LPTIM1) == RCC_PERIPHCLK_LPTIM1)
@@ -445,7 +446,7 @@ HAL_StatusTypeDef HAL_RCCEx_PeriphCLKConfig(RCC_PeriphCLKInitTypeDef  *PeriphClk
     /* Configure the SDMMC2 clock source */
     __HAL_RCC_SDMMC2_CONFIG(PeriphClkInit->Sdmmc2ClockSelection);
   }
-	
+
   /*------------------------------------- DFSDM1 Configuration -------------------------------------*/
   if(((PeriphClkInit->PeriphClockSelection) & RCC_PERIPHCLK_DFSDM1) == RCC_PERIPHCLK_DFSDM1)
   {
@@ -633,7 +634,7 @@ HAL_StatusTypeDef HAL_RCCEx_PeriphCLKConfig(RCC_PeriphCLKInitTypeDef  *PeriphClk
       __HAL_RCC_PLLSAI_CONFIG(PeriphClkInit->PLLSAI.PLLSAIN , PeriphClkInit->PLLSAI.PLLSAIP, tmpreg0, tmpreg1);
     }
 
-#if defined(STM32F746xx) || defined(STM32F756xx) || defined (STM32F767xx) || defined (STM32F769xx) || defined (STM32F777xx) || defined (STM32F779xx)
+#if defined(STM32F746xx) || defined(STM32F756xx) || defined (STM32F767xx) || defined (STM32F769xx) || defined (STM32F777xx) || defined (STM32F779xx) || defined (STM32F750xx)
     /*---------------------------- LTDC configuration -------------------------------*/
     if(((PeriphClkInit->PeriphClockSelection) & RCC_PERIPHCLK_LTDC) == (RCC_PERIPHCLK_LTDC))
     {
@@ -652,7 +653,7 @@ HAL_StatusTypeDef HAL_RCCEx_PeriphCLKConfig(RCC_PeriphCLKInitTypeDef  *PeriphClk
       /* LTDC_CLK = LTDC_CLK(first level)/PLLSAIDIVR */
       __HAL_RCC_PLLSAI_PLLSAICLKDIVR_CONFIG(PeriphClkInit->PLLSAIDivR);
     }
-#endif /* STM32F746xx || STM32F756xx || STM32F767xx || STM32F769xx || STM32F777xx || STM32F779xx */
+#endif /* STM32F746xx || STM32F756xx || STM32F767xx || STM32F769xx || STM32F777xx || STM32F779xx || STM32F750xx  */
 
     /* Enable PLLSAI Clock */
     __HAL_RCC_PLLSAI_ENABLE();
@@ -788,7 +789,7 @@ void HAL_RCCEx_GetPeriphCLKConfig(RCC_PeriphCLKInitTypeDef  *PeriphClkInit)
 #if defined (STM32F765xx) || defined (STM32F767xx) || defined (STM32F769xx) || defined (STM32F777xx) || defined (STM32F779xx)
   /* Get the SDMMC2 clock configuration -----------------------------------------------*/
   PeriphClkInit->Sdmmc2ClockSelection = __HAL_RCC_GET_SDMMC2_SOURCE();
-	
+
   /* Get the DFSDM clock configuration -----------------------------------------------*/
   PeriphClkInit->Dfsdm1ClockSelection = __HAL_RCC_GET_DFSDM1_SOURCE();
 
@@ -810,9 +811,9 @@ void HAL_RCCEx_GetPeriphCLKConfig(RCC_PeriphCLKInitTypeDef  *PeriphClkInit)
     PeriphClkInit->TIMPresSelection = RCC_TIMPRES_ACTIVATED;
   }
 }
-#endif /* STM32F745xx || STM32F746xx || STM32F756xx || STM32F765xx || STM32F767xx || STM32F769xx || STM32F777xx || STM32F779xx */
+#endif /* STM32F745xx || STM32F746xx || STM32F756xx || STM32F765xx || STM32F767xx || STM32F769xx || STM32F777xx || STM32F779xx || STM32F750xx */
 
-#if defined (STM32F722xx) || defined (STM32F723xx) || defined (STM32F732xx) || defined (STM32F733xx)
+#if defined (STM32F722xx) || defined (STM32F723xx) || defined (STM32F732xx) || defined (STM32F733xx) || defined (STM32F730xx)
 /**
   * @brief  Initializes the RCC extended peripherals clocks according to the specified
   *         parameters in the RCC_PeriphCLKInitTypeDef.
@@ -1386,7 +1387,7 @@ void HAL_RCCEx_GetPeriphCLKConfig(RCC_PeriphCLKInitTypeDef  *PeriphClkInit)
     PeriphClkInit->TIMPresSelection = RCC_TIMPRES_ACTIVATED;
   }
 }
-#endif /* STM32F722xx || STM32F723xx || STM32F732xx || STM32F733xx */
+#endif /* STM32F722xx || STM32F723xx || STM32F732xx || STM32F733xx || STM32F730xx */
 
 /**
   * @brief  Return the peripheral clock frequency for a given peripheral(SAI..)
@@ -1627,7 +1628,7 @@ HAL_StatusTypeDef HAL_RCCEx_EnablePLLI2S(RCC_PLLI2SInitTypeDef  *PLLI2SInit)
   }
 
   /* Configure the PLLI2S division factors */
-#if defined (STM32F722xx) || defined (STM32F723xx) || defined (STM32F732xx) || defined (STM32F733xx)
+#if defined (STM32F722xx) || defined (STM32F723xx) || defined (STM32F732xx) || defined (STM32F733xx) || defined (STM32F730xx)
   /* PLLI2S_VCO = f(VCO clock) = f(PLLI2S clock input) * PLLI2SN */
   /* I2SQCLK = PLLI2S_VCO / PLLI2SQ */
   /* I2SRCLK = PLLI2S_VCO / PLLI2SR */
@@ -1638,7 +1639,7 @@ HAL_StatusTypeDef HAL_RCCEx_EnablePLLI2S(RCC_PLLI2SInitTypeDef  *PLLI2SInit)
   /* I2SQCLK = PLLI2S_VCO / PLLI2SQ */
   /* I2SRCLK = PLLI2S_VCO / PLLI2SR */
   __HAL_RCC_PLLI2S_CONFIG(PLLI2SInit->PLLI2SN, PLLI2SInit->PLLI2SP, PLLI2SInit->PLLI2SQ, PLLI2SInit->PLLI2SR);
-#endif /* STM32F722xx || STM32F723xx || STM32F732xx || STM32F733xx */
+#endif /* STM32F722xx || STM32F723xx || STM32F732xx || STM32F733xx || STM32F730xx */
 
   /* Enable the PLLI2S */
   __HAL_RCC_PLLI2S_ENABLE();
@@ -1715,7 +1716,7 @@ HAL_StatusTypeDef HAL_RCCEx_EnablePLLSAI(RCC_PLLSAIInitTypeDef  *PLLSAIInit)
   }
 
   /* Configure the PLLSAI division factors */
-#if defined (STM32F722xx) || defined (STM32F723xx) || defined (STM32F732xx) || defined (STM32F733xx)
+#if defined (STM32F722xx) || defined (STM32F723xx) || defined (STM32F732xx) || defined (STM32F733xx) || defined (STM32F730xx)
   /* PLLSAI_VCO = f(VCO clock) = f(PLLSAI clock input) * PLLSAIN */
   /* SAIPCLK = PLLSAI_VCO / PLLSAIP */
   /* SAIQCLK = PLLSAI_VCO / PLLSAIQ */
@@ -1727,7 +1728,7 @@ HAL_StatusTypeDef HAL_RCCEx_EnablePLLSAI(RCC_PLLSAIInitTypeDef  *PLLSAIInit)
   /* SAIRCLK = PLLSAI_VCO / PLLSAIR */
   __HAL_RCC_PLLSAI_CONFIG(PLLSAIInit->PLLSAIN, PLLSAIInit->PLLSAIP, \
                           PLLSAIInit->PLLSAIQ, PLLSAIInit->PLLSAIR);
-#endif /* STM32F722xx || STM32F723xx || STM32F732xx || STM32F733xx */
+#endif /* STM32F722xx || STM32F723xx || STM32F732xx || STM32F733xx || STM32F730xx */
 
   /* Enable the PLLSAI */
   __HAL_RCC_PLLSAI_ENABLE();
