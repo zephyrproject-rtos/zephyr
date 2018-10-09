@@ -8,7 +8,7 @@
 #define NET_LOG_LEVEL CONFIG_NET_SOCKETS_LOG_LEVEL
 
 /* libc headers */
-#include <sys/fcntl.h>
+#include <fcntl.h>
 
 /* Zephyr headers */
 #include <kernel.h>
