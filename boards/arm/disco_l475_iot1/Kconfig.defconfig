@@ -138,4 +138,14 @@ config BT_HCI_VS_EXT
 
 endif #BT
 
+if WIFI
+
+config SPI
+	default y
+
+config WIFI_ESWIFI
+	default y
+
+endif #WIFI
+
 endif # BOARD_DISCO_L475_IOT1
