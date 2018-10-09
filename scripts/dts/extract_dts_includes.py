@@ -467,7 +467,7 @@ def generate_keyvalue_file(kv_file):
         output_keyvalue_lines(fd)
 
 
-def output_include_lines(fd, fixups):
+def output_include_lines(fd):
     compatible = reduced['/']['props']['compatible'][0]
 
     fd.write("/**************************************************\n")
@@ -476,8 +476,8 @@ def output_include_lines(fd, fixups):
     fd.write(" *               DO NOT MODIFY\n")
     fd.write(" */\n")
     fd.write("\n")
-    fd.write("#ifndef DEVICE_TREE_BOARD_H" + "\n")
-    fd.write("#define DEVICE_TREE_BOARD_H" + "\n")
+    fd.write("#ifndef GENERATED_DTS_BOARD_UNFIXED_H" + "\n")
+    fd.write("#define GENERATED_DTS_BOARD_UNFIXED_H" + "\n")
     fd.write("\n")
 
     node_keys = sorted(defs.keys())
@@ -510,28 +510,12 @@ def output_include_lines(fd, fixups):
 
         fd.write("\n")
 
-    if fixups:
-        for fixup in fixups:
-            if os.path.exists(fixup):
-                fd.write("\n")
-                fd.write(
-                    "/* Following definitions fixup the generated include */\n")
-                try:
-                    with open(fixup, "r", encoding="utf-8") as fixup_fd:
-                        for line in fixup_fd.readlines():
-                            fd.write(line)
-                        fd.write("\n")
-                except:
-                    raise Exception(
-                        "Input file " + os.path.abspath(fixup) +
-                        " does not exist.")
-
     fd.write("#endif\n")
 
 
-def generate_include_file(inc_file, fixups):
+def generate_include_file(inc_file):
     with open(inc_file, "w") as fd:
-        output_include_lines(fd, fixups)
+        output_include_lines(fd)
 
 
 def load_and_parse_dts(dts_file):
@@ -584,8 +568,6 @@ def parse_arguments():
     parser.add_argument("-d", "--dts", nargs=1, required=True, help="DTS file")
     parser.add_argument("-y", "--yaml", nargs='+', required=True,
                         help="YAML file directories, we allow multiple")
-    parser.add_argument("-f", "--fixup", nargs='+',
-                        help="Fixup file(s), we allow multiple")
     parser.add_argument("-i", "--include", nargs=1,
                         help="Generate include file for the build system")
     parser.add_argument("-k", "--keyvalue", nargs=1,
@@ -626,7 +608,7 @@ def main():
        generate_keyvalue_file(args.keyvalue[0])
 
     if (args.include is not None):
-       generate_include_file(args.include[0], args.fixup)
+       generate_include_file(args.include[0])
 
 
 if __name__ == '__main__':

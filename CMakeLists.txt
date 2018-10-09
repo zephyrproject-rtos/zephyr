@@ -468,6 +468,54 @@ function(construct_add_custom_command_for_linker_pass linker_output_name output_
     )
 endfunction()
 
+# Error-out when the deprecated naming convention is found (until
+# after 1.14.0 has been released)
+foreach(path
+	${BOARD_DIR}/dts.fixup
+	${PROJECT_SOURCE_DIR}/soc/${ARCH}/${SOC_PATH}/dts.fixup
+    ${APPLICATION_SOURCE_DIR}/dts.fixup
+	)
+  if(EXISTS ${path})
+	message(FATAL_ERROR
+	  "A deprecated filename has been detected. Porting is required."
+	  "The file '${path}' exists, but it should be named dts_fixup.h instead."
+	  "See https://github.com/zephyrproject-rtos/zephyr/pull/10352 for more details"
+	  )
+  endif()
+endforeach()
+
+set_ifndef(  DTS_BOARD_FIXUP_FILE                                   ${BOARD_DIR}/dts_fixup.h)
+set_ifndef(    DTS_SOC_FIXUP_FILE                 ${SOC_DIR}/${ARCH}/${SOC_PATH}/dts_fixup.h)
+set(           DTS_APP_FIXUP_FILE                      ${APPLICATION_SOURCE_DIR}/dts_fixup.h)
+set_ifndef(DTS_SHIELDS_FIXUP_FILE ${ZEPHYR_BINARY_DIR}/include/generated/shields/dts_fixup.h)
+
+# Concatenate the shield fixups into a single file for easy
+# #include'ing
+foreach(f ${shield_dts_fixups})
+  if(EXISTS ${f})
+	file(READ ${f} contents)
+	file(APPEND ${DTS_SHIELDS_FIXUP_FILE} "${contents}")
+  endif()
+endforeach()
+
+foreach(fixup_source
+      DTS_BOARD_FIXUP_FILE
+        DTS_SOC_FIXUP_FILE
+        DTS_APP_FIXUP_FILE
+	DTS_SHIELDS_FIXUP_FILE
+	)
+  if(EXISTS ${${fixup_source}})
+	# Add defines such that generated_dts_board.h knows which fixups
+	# are present and where they
+	# are. e.g. -DDTS_SOC_FIXUP_FILE=/path/to/fixup.h
+	zephyr_compile_definitions(${fixup_source}="${${fixup_source}}")
+	set_property(GLOBAL APPEND PROPERTY
+	  PROPERTY_LINKER_SCRIPT_DEFINES
+	  -D${fixup_source}="${${fixup_source}}"
+	  )
+  endif()
+endforeach()
+
 # Unfortunately, the order in which CMakeLists.txt code is processed
 # matters so we need to be careful about how we order the processing
 # of subdirectories. One example is "Compiler flags added late in the
