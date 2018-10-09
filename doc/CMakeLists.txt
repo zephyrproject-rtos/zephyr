@@ -41,6 +41,8 @@ if(NOT DEFINED SPHINX_OUTPUT_DIR)
   set(SPHINX_OUTPUT_DIR_LATEX ${CMAKE_CURRENT_BINARY_DIR}/latex)
   set(SPHINX_OUTPUT_DIR_PDF ${CMAKE_CURRENT_BINARY_DIR}/pdf)
 else()
+  # SPHINX_OUTPUT_DIR is used to specify exactly where HTML (or other
+  # outputs) are placed, so no /html, /latex, /pdf suffixes are needed.
   set(SPHINX_OUTPUT_DIR_HTML ${SPHINX_OUTPUT_DIR})
   set(SPHINX_OUTPUT_DIR_LATEX ${SPHINX_OUTPUT_DIR})
   set(SPHINX_OUTPUT_DIR_PDF ${SPHINX_OUTPUT_DIR})
