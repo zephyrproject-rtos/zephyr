@@ -100,6 +100,8 @@ The Zephyr stm32f746g_disco board configuration supports the following hardware 
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
+| ETHERNET  | on-chip    | Ethernet                            |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
 
