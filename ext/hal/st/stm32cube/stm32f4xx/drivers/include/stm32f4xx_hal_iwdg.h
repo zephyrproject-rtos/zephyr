@@ -57,7 +57,7 @@
   * @{
   */
 
-/** 
+/**
   * @brief  IWDG Init structure definition
   */
 typedef struct

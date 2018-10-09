@@ -31,7 +31,7 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-  */ 
+  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __STM32F4xx_HAL_SPDIFRX_H
@@ -44,7 +44,7 @@
 #if defined(STM32F446xx)
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f4xx_hal_def.h"  
+#include "stm32f4xx_hal_def.h"
 
 /** @addtogroup STM32F4xx_HAL_Driver
   * @{
@@ -52,15 +52,15 @@
 
 /** @addtogroup SPDIFRX
   * @{
-  */ 
+  */
 
-/* Exported types ------------------------------------------------------------*/ 
+/* Exported types ------------------------------------------------------------*/
 /** @defgroup SPDIFRX_Exported_Types SPDIFRX Exported Types
   * @{
   */
 
-/** 
-  * @brief SPDIFRX Init structure definition  
+/**
+  * @brief SPDIFRX Init structure definition
   */
 typedef struct
 {
@@ -89,14 +89,14 @@ typedef struct
                                                                                   This parameter can be a value of @ref SPDIFRX_ChannelStatus_Mask */
 
     uint32_t ValidityBitMask;          /*!< Specifies whether the validity bit is copied or not into the received frame.
-                                                                                  This parameter can be a value of @ref SPDIFRX_V_Mask */                                                                                
+                                                                                  This parameter can be a value of @ref SPDIFRX_V_Mask */
 
     uint32_t ParityErrorMask;          /*!< Specifies whether the parity error bit is copied or not into the received frame.
                                                                                   This parameter can be a value of @ref SPDIFRX_PE_Mask */
 }SPDIFRX_InitTypeDef;
 
-/** 
-  * @brief SPDIFRX SetDataFormat structure definition  
+/**
+  * @brief SPDIFRX SetDataFormat structure definition
   */
 typedef struct
 {
@@ -113,27 +113,27 @@ typedef struct
                                                                                   This parameter can be a value of @ref SPDIFRX_ChannelStatus_Mask */
 
   uint32_t ValidityBitMask;          /*!< Specifies whether the validity bit is copied or not into the received frame.
-                                                                                  This parameter can be a value of @ref SPDIFRX_V_Mask */                                                                                
+                                                                                  This parameter can be a value of @ref SPDIFRX_V_Mask */
 
   uint32_t ParityErrorMask;          /*!< Specifies whether the parity error bit is copied or not into the received frame.
                                                                                   This parameter can be a value of @ref SPDIFRX_PE_Mask */
 }SPDIFRX_SetDataFormatTypeDef;
 
-/** 
-  * @brief  HAL State structures definition  
-  */ 
+/**
+  * @brief  HAL State structures definition
+  */
 typedef enum
 {
   HAL_SPDIFRX_STATE_RESET      = 0x00U,  /*!< SPDIFRX not yet initialized or disabled                */
   HAL_SPDIFRX_STATE_READY      = 0x01U,  /*!< SPDIFRX initialized and ready for use                  */
-  HAL_SPDIFRX_STATE_BUSY       = 0x02U,  /*!< SPDIFRX internal process is ongoing                    */ 
-  HAL_SPDIFRX_STATE_BUSY_RX    = 0x03U,  /*!< SPDIFRX internal Data Flow RX process is ongoing       */  
-  HAL_SPDIFRX_STATE_BUSY_CX    = 0x04U,  /*!< SPDIFRX internal Control Flow RX process is ongoing    */    
-  HAL_SPDIFRX_STATE_ERROR      = 0x07U   /*!< SPDIFRX error state                                    */      
+  HAL_SPDIFRX_STATE_BUSY       = 0x02U,  /*!< SPDIFRX internal process is ongoing                    */
+  HAL_SPDIFRX_STATE_BUSY_RX    = 0x03U,  /*!< SPDIFRX internal Data Flow RX process is ongoing       */
+  HAL_SPDIFRX_STATE_BUSY_CX    = 0x04U,  /*!< SPDIFRX internal Control Flow RX process is ongoing    */
+  HAL_SPDIFRX_STATE_ERROR      = 0x07U   /*!< SPDIFRX error state                                    */
 }HAL_SPDIFRX_StateTypeDef;
 
-/** 
-  * @brief SPDIFRX handle Structure definition  
+/**
+  * @brief SPDIFRX handle Structure definition
   */
 typedef struct
 {
@@ -147,22 +147,22 @@ typedef struct
 
   __IO uint16_t              RxXferSize;   /* SPDIFRX Rx transfer size */
 
-  __IO uint16_t              RxXferCount;  /* SPDIFRX Rx transfer counter 
-                                              (This field is initialized at the 
-                                               same value as transfer size at the 
-                                               beginning of the transfer and 
-                                               decremented when a sample is received. 
+  __IO uint16_t              RxXferCount;  /* SPDIFRX Rx transfer counter
+                                              (This field is initialized at the
+                                               same value as transfer size at the
+                                               beginning of the transfer and
+                                               decremented when a sample is received.
                                                NbSamplesReceived = RxBufferSize-RxBufferCount) */
 
   __IO uint16_t              CsXferSize;   /* SPDIFRX Rx transfer size */
 
-  __IO uint16_t              CsXferCount;  /* SPDIFRX Rx transfer counter 
-                                              (This field is initialized at the 
-                                               same value as transfer size at the 
-                                               beginning of the transfer and 
-                                               decremented when a sample is received. 
+  __IO uint16_t              CsXferCount;  /* SPDIFRX Rx transfer counter
+                                              (This field is initialized at the
+                                               same value as transfer size at the
+                                               beginning of the transfer and
+                                               decremented when a sample is received.
                                                NbSamplesReceived = RxBufferSize-RxBufferCount) */
-                                                                                             
+
   DMA_HandleTypeDef          *hdmaCsRx;    /* SPDIFRX EC60958_channel_status and user_information DMA handle parameters */
 
   DMA_HandleTypeDef          *hdmaDrRx;    /* SPDIFRX Rx DMA handle parameters */
@@ -183,17 +183,17 @@ typedef struct
   */
 /** @defgroup SPDIFRX_ErrorCode SPDIFRX Error Code
   * @{
-  */ 
+  */
 #define HAL_SPDIFRX_ERROR_NONE      0x00000000U  /*!< No error           */
-#define HAL_SPDIFRX_ERROR_TIMEOUT   0x00000001U  /*!< Timeout error      */  
+#define HAL_SPDIFRX_ERROR_TIMEOUT   0x00000001U  /*!< Timeout error      */
 #define HAL_SPDIFRX_ERROR_OVR       0x00000002U  /*!< OVR error          */
 #define HAL_SPDIFRX_ERROR_PE        0x00000004U  /*!< Parity error       */
 #define HAL_SPDIFRX_ERROR_DMA       0x00000008U  /*!< DMA transfer error */
-#define HAL_SPDIFRX_ERROR_UNKNOWN   0x00000010U  /*!< Unknown Error error */  
+#define HAL_SPDIFRX_ERROR_UNKNOWN   0x00000010U  /*!< Unknown Error error */
 /**
   * @}
   */
-  
+
 /** @defgroup SPDIFRX_Input_Selection SPDIFRX Input Selection
   * @{
   */
@@ -224,7 +224,7 @@ typedef struct
 /**
   * @}
   */
-    
+
 /** @defgroup SPDIFRX_PT_Mask SPDIFRX Preamble Type Mask
 * @{
 */
@@ -278,7 +278,7 @@ typedef struct
 #define SPDIFRX_DATAFORMAT_32BITS                0x00000020U
 /**
   * @}
-  */ 
+  */
 
 /** @defgroup SPDIFRX_Stereo_Mode SPDIFRX Stereo Mode
   * @{
@@ -287,7 +287,7 @@ typedef struct
 #define SPDIFRX_STEREOMODE_ENABLE           ((uint32_t)SPDIFRX_CR_RXSTEO)
 /**
   * @}
-  */ 
+  */
 
 /** @defgroup SPDIFRX_State SPDIFRX State
   * @{
@@ -299,7 +299,7 @@ typedef struct
 /**
   * @}
   */
-    
+
 /** @defgroup SPDIFRX_Interrupts_Definition SPDIFRX Interrupts Definition
   * @{
   */
@@ -313,7 +313,7 @@ typedef struct
 /**
   * @}
   */
-    
+
 /** @defgroup SPDIFRX_Flags_Definition SPDIFRX Flags Definition
   * @{
   */
@@ -332,8 +332,8 @@ typedef struct
 
 /**
   * @}
-  */ 
-  
+  */
+
 /* Exported macros -----------------------------------------------------------*/
 /** @defgroup SPDIFRX_Exported_macros SPDIFRX Exported Macros
   * @{
@@ -346,20 +346,20 @@ typedef struct
 #define __HAL_SPDIFRX_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = (uint16_t)SPDIFRX_CR_SPDIFEN)
 
 /** @brief  Disable the specified SPDIFRX peripheral (IDLE State).
-  * @param  __HANDLE__ specifies the SPDIFRX Handle. 
+  * @param  __HANDLE__ specifies the SPDIFRX Handle.
   * @retval None
   */
 #define __HAL_SPDIFRX_IDLE(__HANDLE__) ((__HANDLE__)->Instance->CR &= SPDIFRX_STATE_IDLE)
 
 /** @brief  Enable the specified SPDIFRX peripheral (SYNC State).
-  * @param  __HANDLE__ specifies the SPDIFRX Handle. 
+  * @param  __HANDLE__ specifies the SPDIFRX Handle.
   * @retval None
   */
 #define __HAL_SPDIFRX_SYNC(__HANDLE__) ((__HANDLE__)->Instance->CR |= SPDIFRX_STATE_SYNC)
 
 
 /** @brief  Enable the specified SPDIFRX peripheral (RCV State).
-  * @param  __HANDLE__ specifies the SPDIFRX Handle. 
+  * @param  __HANDLE__ specifies the SPDIFRX Handle.
   * @retval None
   */
 #define __HAL_SPDIFRX_RCV(__HANDLE__) ((__HANDLE__)->Instance->CR |= SPDIFRX_STATE_RCV)
@@ -404,10 +404,10 @@ typedef struct
   *            @arg SPDIFRX_FLAG_PERR
   *            @arg SPDIFRX_FLAG_OVR
   *            @arg SPDIFRX_FLAG_SBD
-  *            @arg SPDIFRX_FLAG_SYNCD 
-  *            @arg SPDIFRX_FLAG_FERR 
-  *            @arg SPDIFRX_FLAG_SERR 
-  *            @arg SPDIFRX_FLAG_TERR 
+  *            @arg SPDIFRX_FLAG_SYNCD
+  *            @arg SPDIFRX_FLAG_FERR
+  *            @arg SPDIFRX_FLAG_SERR
+  *            @arg SPDIFRX_FLAG_TERR
   * @retval The new state of __FLAG__ (TRUE or FALSE).
   */
 #define __HAL_SPDIFRX_GET_FLAG(__HANDLE__, __FLAG__) ((((__HANDLE__)->Instance->SR) & (__FLAG__)) == (__FLAG__))
@@ -423,17 +423,17 @@ typedef struct
   *            @arg SPDIFRX_SR_SYNCD
   * @retval None
   */
-#define __HAL_SPDIFRX_CLEAR_IT(__HANDLE__, __IT_CLEAR__) ((__HANDLE__)->Instance->IFCR = (uint32_t)(__IT_CLEAR__)) 
-  
+#define __HAL_SPDIFRX_CLEAR_IT(__HANDLE__, __IT_CLEAR__) ((__HANDLE__)->Instance->IFCR = (uint32_t)(__IT_CLEAR__))
+
 /**
   * @}
   */
-  
+
 /* Exported functions --------------------------------------------------------*/
 /** @addtogroup SPDIFRX_Exported_Functions
   * @{
   */
-                                                
+
 /** @addtogroup SPDIFRX_Exported_Functions_Group1
   * @{
   */
@@ -488,7 +488,7 @@ uint32_t HAL_SPDIFRX_GetError(SPDIFRX_HandleTypeDef *hspdif);
 
 /**
   * @}
-  */ 
+  */
 /* Private types -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 /* Private constants ---------------------------------------------------------*/
@@ -533,7 +533,7 @@ uint32_t HAL_SPDIFRX_GetError(SPDIFRX_HandleTypeDef *hspdif);
 /**
   * @}
   */
- 
+
 /**
   * @}
   */

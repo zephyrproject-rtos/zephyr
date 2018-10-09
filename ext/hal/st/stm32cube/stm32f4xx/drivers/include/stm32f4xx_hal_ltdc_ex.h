@@ -31,7 +31,7 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-  */ 
+  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __STM32F4xx_HAL_LTDC_EX_H
@@ -54,7 +54,7 @@
   * @{
   */
 
-/* Exported types ------------------------------------------------------------*/ 
+/* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/
@@ -69,11 +69,11 @@ HAL_StatusTypeDef HAL_LTDCEx_StructInitFromVideoConfig(LTDC_HandleTypeDef* hltdc
 HAL_StatusTypeDef HAL_LTDCEx_StructInitFromAdaptedCommandConfig(LTDC_HandleTypeDef* hltdc, DSI_CmdCfgTypeDef *CmdCfg);
 /**
   * @}
-  */ 
- 
+  */
+
 /**
   * @}
-  */ 
+  */
 
 /* Private types -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -83,14 +83,14 @@ HAL_StatusTypeDef HAL_LTDCEx_StructInitFromAdaptedCommandConfig(LTDC_HandleTypeD
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
   */
 
-#endif /* STM32F469xx || STM32F479xx */ 
-  
+#endif /* STM32F469xx || STM32F479xx */
+
 #ifdef __cplusplus
 }
 #endif

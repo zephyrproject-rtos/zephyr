@@ -250,7 +250,7 @@ __STATIC_INLINE uint32_t LL_GetFlashSize(void)
   *         @arg @ref LL_UTILS_PACKAGETYPE_LQFP100_LQFP208_TFBGA216 (*)
   *         @arg @ref LL_UTILS_PACKAGETYPE_LQFP208_TFBGA216 (*)
   *         @arg @ref LL_UTILS_PACKAGETYPE_TQFP64_UFBGA144_LQFP144 (*)
-  * 
+  *
   *         (*) value not defined in all devices.
   */
 __STATIC_INLINE uint32_t LL_GetPackageType(void)
@@ -269,7 +269,7 @@ __STATIC_INLINE uint32_t LL_GetPackageType(void)
 /**
   * @brief  This function configures the Cortex-M SysTick source of the time base.
   * @param  HCLKFrequency HCLK frequency in Hz (can be calculated thanks to RCC helper macro)
-  * @note   When a RTOS is used, it is recommended to avoid changing the SysTick 
+  * @note   When a RTOS is used, it is recommended to avoid changing the SysTick
   *         configuration by calling this function, for a delay use rather osDelay RTOS service.
   * @param  Ticks Number of ticks
   * @retval None

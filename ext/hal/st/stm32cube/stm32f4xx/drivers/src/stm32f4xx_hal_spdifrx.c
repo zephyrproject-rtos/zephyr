@@ -31,7 +31,7 @@
             (+++) Configure the declared DMA handle structure CtrlRx/DataRx with the required parameters.
             (+++) Configure the DMA Channel.
             (+++) Associate the initialized DMA handle to the SPDIFRX DMA CtrlRx/DataRx handle.
-            (+++) Configure the priority and enable the NVIC for the transfer complete interrupt on the 
+            (+++) Configure the priority and enable the NVIC for the transfer complete interrupt on the
                   DMA CtrlRx/DataRx channel.
 
    (#) Program the input selection, re-tries number, wait for activity, channel status selection, data format, stereo mode and masking of user bits
@@ -51,11 +51,11 @@
 
    *** Interrupt mode for reception operation ***
    =========================================
-   [..]    
-     (+) Receive an amount of data (Data Flow) in non blocking mode using HAL_SPDIFRX_ReceiveDataFlow_IT() 
-     (+) Receive an amount of data (Control Flow) in non blocking mode using HAL_SPDIFRX_ReceiveControlFlow_IT() 
-     (+) At reception end of half transfer HAL_SPDIFRX_RxHalfCpltCallback is executed and user can 
-         add his own code by customization of function pointer HAL_SPDIFRX_RxHalfCpltCallback 
+   [..]
+     (+) Receive an amount of data (Data Flow) in non blocking mode using HAL_SPDIFRX_ReceiveDataFlow_IT()
+     (+) Receive an amount of data (Control Flow) in non blocking mode using HAL_SPDIFRX_ReceiveControlFlow_IT()
+     (+) At reception end of half transfer HAL_SPDIFRX_RxHalfCpltCallback is executed and user can
+         add his own code by customization of function pointer HAL_SPDIFRX_RxHalfCpltCallback
      (+) At reception end of transfer HAL_SPDIFRX_RxCpltCallback is executed and user can
          add his own code by customization of function pointer HAL_SPDIFRX_RxCpltCallback
      (+) In case of transfer Error, HAL_SPDIFRX_ErrorCallback() function is executed and user can
@@ -64,7 +64,7 @@
    *** DMA mode for reception operation ***
    ========================================
    [..]
-     (+) Receive an amount of data (Data Flow) in non blocking mode (DMA) using HAL_SPDIFRX_ReceiveDataFlow_DMA() 
+     (+) Receive an amount of data (Data Flow) in non blocking mode (DMA) using HAL_SPDIFRX_ReceiveDataFlow_DMA()
      (+) Receive an amount of data (Control Flow) in non blocking mode (DMA) using HAL_SPDIFRX_ReceiveControlFlow_DMA()
      (+) At reception end of half transfer HAL_SPDIFRX_RxHalfCpltCallback is executed and user can
          add his own code by customization of function pointer HAL_SPDIFRX_RxHalfCpltCallback
@@ -529,7 +529,7 @@ HAL_StatusTypeDef HAL_SPDIFRX_ReceiveControlFlow(SPDIFRX_HandleTypeDef *hspdif, 
       {
         return HAL_TIMEOUT;
       }
-      
+
       (*pData++) = hspdif->Instance->CSR;
       Size--;
     }
@@ -728,7 +728,7 @@ HAL_StatusTypeDef HAL_SPDIFRX_ReceiveDataFlow_DMA(SPDIFRX_HandleTypeDef *hspdif,
   {
     return  HAL_ERROR;
   }
-  
+
   if((hspdif->State == HAL_SPDIFRX_STATE_READY) || (hspdif->State == HAL_SPDIFRX_STATE_BUSY_CX))
   {
     hspdif->pRxBuffPtr = pData;
@@ -959,7 +959,7 @@ void HAL_SPDIFRX_IRQHandler(SPDIFRX_HandleTypeDef *hspdif)
 
     /* the transfer is not stopped */
     HAL_SPDIFRX_ErrorCallback(hspdif);
-  } 
+  }
 }
 
 /**

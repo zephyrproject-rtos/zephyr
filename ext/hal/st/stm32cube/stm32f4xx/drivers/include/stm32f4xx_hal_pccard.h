@@ -31,7 +31,7 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-  */ 
+  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __STM32F4xx_HAL_PCCARD_H
@@ -59,16 +59,16 @@
 
 /** @addtogroup PCCARD
   * @{
-  */ 
+  */
 
 /* Exported typedef ----------------------------------------------------------*/
 /** @defgroup PCCARD_Exported_Types PCCARD Exported Types
   * @{
   */
 
-/** 
-  * @brief  HAL PCCARD State structures definition  
-  */ 
+/**
+  * @brief  HAL PCCARD State structures definition
+  */
 typedef enum
 {
   HAL_PCCARD_STATE_RESET     = 0x00U,    /*!< PCCARD peripheral not yet initialized or disabled */
@@ -85,19 +85,19 @@ typedef enum
   HAL_PCCARD_STATUS_TIMEOUT
 }HAL_PCCARD_StatusTypeDef;
 
-/** 
-  * @brief  FMC_PCCARD handle Structure definition  
-  */   
+/**
+  * @brief  FMC_PCCARD handle Structure definition
+  */
 typedef struct
 {
   FMC_PCCARD_TypeDef           *Instance;              /*!< Register base address for PCCARD device          */
-  
+
   FMC_PCCARD_InitTypeDef       Init;                   /*!< PCCARD device control configuration parameters   */
 
   __IO HAL_PCCARD_StateTypeDef State;                  /*!< PCCARD device access state                       */
-   
-  HAL_LockTypeDef              Lock;                   /*!< PCCARD Lock                                      */ 
- 
+
+  HAL_LockTypeDef              Lock;                   /*!< PCCARD Lock                                      */
+
 }PCCARD_HandleTypeDef;
 /**
   * @}
@@ -115,14 +115,14 @@ typedef struct
 #define __HAL_PCCARD_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = HAL_PCCARD_STATE_RESET)
 /**
   * @}
-  */ 
+  */
 
 /* Exported functions --------------------------------------------------------*/
-/** @addtogroup PCCARD_Exported_Functions 
+/** @addtogroup PCCARD_Exported_Functions
   * @{
   */
 
-/** @addtogroup PCCARD_Exported_Functions_Group1 
+/** @addtogroup PCCARD_Exported_Functions_Group1
   * @{
   */
 /* Initialization/de-initialization functions  **********************************/
@@ -200,7 +200,7 @@ HAL_PCCARD_StatusTypeDef HAL_PCCARD_ReadStatus(PCCARD_HandleTypeDef *hpccard);
 #define PCCARD_PROGR                   ((uint8_t)0x01)
 #define PCCARD_READY                   ((uint8_t)0x40)
 
-#define PCCARD_SECTOR_SIZE             255U               /* In half words */ 
+#define PCCARD_SECTOR_SIZE             255U               /* In half words */
 
 /**
   * @}
@@ -231,14 +231,14 @@ HAL_PCCARD_StatusTypeDef HAL_PCCARD_ReadStatus(PCCARD_HandleTypeDef *hpccard);
 
 #define CF_DEVICE_ADDRESS           PCCARD_DEVICE_ADDRESS
 #define CF_ATTRIBUTE_SPACE_ADDRESS  PCCARD_ATTRIBUTE_SPACE_ADDRESS
-#define CF_COMMON_SPACE_ADDRESS     PCCARD_COMMON_SPACE_ADDRESS   
-#define CF_IO_SPACE_ADDRESS         PCCARD_IO_SPACE_ADDRESS       
-#define CF_IO_SPACE_PRIMARY_ADDR    PCCARD_IO_SPACE_PRIMARY_ADDR  
+#define CF_COMMON_SPACE_ADDRESS     PCCARD_COMMON_SPACE_ADDRESS
+#define CF_IO_SPACE_ADDRESS         PCCARD_IO_SPACE_ADDRESS
+#define CF_IO_SPACE_PRIMARY_ADDR    PCCARD_IO_SPACE_PRIMARY_ADDR
 
 #define CF_TIMEOUT_ERROR            PCCARD_TIMEOUT_ERROR
-#define CF_BUSY                     PCCARD_BUSY         
-#define CF_PROGR                    PCCARD_PROGR        
-#define CF_READY                    PCCARD_READY        
+#define CF_BUSY                     PCCARD_BUSY
+#define CF_PROGR                    PCCARD_PROGR
+#define CF_READY                    PCCARD_READY
 
 #define CF_SECTOR_SIZE              PCCARD_SECTOR_SIZE
 
@@ -254,7 +254,7 @@ HAL_PCCARD_StatusTypeDef HAL_PCCARD_ReadStatus(PCCARD_HandleTypeDef *hpccard);
 /**
   * @}
   */
-  
+
 #ifdef __cplusplus
 }
 #endif

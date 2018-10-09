@@ -372,13 +372,13 @@ uint32_t LL_DMA_Init(DMA_TypeDef *DMAx, uint32_t Stream, LL_DMA_InitTypeDef *DMA
      * - FIFOMode:                DMA_SxFCR_DMDIS bit
      * - FIFOThreshold:           DMA_SxFCR_FTH[1:0] bits
      */
-    LL_DMA_ConfigFifo(DMAx, Stream, DMA_InitStruct->FIFOMode, DMA_InitStruct->FIFOThreshold);   
+    LL_DMA_ConfigFifo(DMAx, Stream, DMA_InitStruct->FIFOMode, DMA_InitStruct->FIFOThreshold);
 
     /*---------------------------- DMAx SxCR Configuration --------------------------
      * Configure DMAx_Streamy:  memory burst transfer with parameters :
      * - MemBurst:                DMA_SxCR_MBURST[1:0] bits
      */
-    LL_DMA_SetMemoryBurstxfer(DMAx,Stream,DMA_InitStruct->MemBurst); 
+    LL_DMA_SetMemoryBurstxfer(DMAx,Stream,DMA_InitStruct->MemBurst);
 
     /*---------------------------- DMAx SxCR Configuration --------------------------
      * Configure DMAx_Streamy:  peripheral burst transfer with parameters :

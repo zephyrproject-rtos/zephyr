@@ -706,7 +706,7 @@ HAL_CAN_StateTypeDef HAL_CAN_GetState(CAN_HandleTypeDef* hcan);
 
 /**
   * @}
-  */ 
+  */
 
 /* Private constants ---------------------------------------------------------*/
 /** @defgroup CAN_Private_Constants CAN Private Constants

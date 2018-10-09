@@ -150,7 +150,7 @@ void HAL_FMPI2CEx_DisableFastModePlus(uint32_t ConfigFastModePlus);
 /**
   * @}
   */
-#endif /* STM32F410xx || STM32F446xx || STM32F412Zx || STM32F412Vx || STM32F412Rx || STM32F412Cx || STM32F413xx || STM32F423xx */  
+#endif /* STM32F410xx || STM32F446xx || STM32F412Zx || STM32F412Vx || STM32F412Rx || STM32F412Cx || STM32F413xx || STM32F423xx */
 #ifdef __cplusplus
 }
 #endif

@@ -47,7 +47,7 @@ extern "C" {
 /** @addtogroup STM32F4xx_LL_Driver
   * @{
   */
-#if defined (LPTIM1) 
+#if defined (LPTIM1)
 	
 /** @defgroup LPTIM_LL LPTIM
   * @{
@@ -274,7 +274,7 @@ typedef struct
   * @}
   */
 
-  
+
 /**
   * @}
   */

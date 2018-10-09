@@ -354,7 +354,7 @@ HAL_StatusTypeDef HAL_I2SEx_TransmitReceive(I2S_HandleTypeDef *hi2s, uint16_t *p
 
       /* Enable I2Sext(transmitter) after enabling I2Sx peripheral */
       __HAL_I2SEXT_ENABLE(hi2s);
-      
+
       /* Enable I2S peripheral before the I2Sext*/
       __HAL_I2S_ENABLE(hi2s);
 

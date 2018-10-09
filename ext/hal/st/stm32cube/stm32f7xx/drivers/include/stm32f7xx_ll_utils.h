@@ -178,9 +178,9 @@ typedef struct
 #define LL_UTILS_PACKAGETYPE_LQFP100                    0x00000100U /*!< LQFP100 package type                         */
 #define LL_UTILS_PACKAGETYPE_LQFP144_WLCSP143           0x00000200U /*!< LQFP144 or WLCSP143 package type             */
 #define LL_UTILS_PACKAGETYPE_WLCSP180_LQFP176_UFBGA176  0x00000300U /*!< WLCSP180, LQFP176 or UFBGA176 package type   */
-#define LL_UTILS_PACKAGETYPE_LQFP176_LQFP208_TFBGA216   0x00000400U /*!< LQFP176, LQFP208 or TFBGA216 package type    */ 
-#define LL_UTILS_PACKAGETYPE_TFBGA216_LQFP176_LQFP208   0x00000500U /*!< LQFP176, LQFP208 or TFBGA216 package type    */ 
-#define LL_UTILS_PACKAGETYPE_LQFP176_TFBGA216_LQFP208   0x00000600U /*!< LQFP176, LQFP208 or TFBGA216 package type    */ 
+#define LL_UTILS_PACKAGETYPE_LQFP176_LQFP208_TFBGA216   0x00000400U /*!< LQFP176, LQFP208 or TFBGA216 package type    */
+#define LL_UTILS_PACKAGETYPE_TFBGA216_LQFP176_LQFP208   0x00000500U /*!< LQFP176, LQFP208 or TFBGA216 package type    */
+#define LL_UTILS_PACKAGETYPE_LQFP176_TFBGA216_LQFP208   0x00000600U /*!< LQFP176, LQFP208 or TFBGA216 package type    */
 #define LL_UTILS_PACKAGETYPE_LQFP208_LQFP176_TFBGA216   0x00000700U /*!< LQFP176, LQFP208 or TFBGA216 package type    */
 /**
   * @}
@@ -265,7 +265,7 @@ __STATIC_INLINE uint32_t LL_GetPackageType(void)
 /**
   * @brief  This function configures the Cortex-M SysTick source of the time base.
   * @param  HCLKFrequency HCLK frequency in Hz (can be calculated thanks to RCC helper macro)
-  * @note   When a RTOS is used, it is recommended to avoid changing the SysTick 
+  * @note   When a RTOS is used, it is recommended to avoid changing the SysTick
   *         configuration by calling this function, for a delay use rather osDelay RTOS service.
   * @param  Ticks Number of ticks
   * @retval None

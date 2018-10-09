@@ -3,27 +3,27 @@
   * @file    stm32f4xx_hal_i2c_ex.c
   * @author  MCD Application Team
   * @brief   I2C Extension HAL module driver.
-  *          This file provides firmware functions to manage the following 
+  *          This file provides firmware functions to manage the following
   *          functionalities of I2C extension peripheral:
   *           + Extension features functions
-  *    
+  *
   @verbatim
   ==============================================================================
                ##### I2C peripheral extension features  #####
   ==============================================================================
-           
-  [..] Comparing to other previous devices, the I2C interface for STM32F427xx/437xx/ 
+
+  [..] Comparing to other previous devices, the I2C interface for STM32F427xx/437xx/
        429xx/439xx devices contains the following additional features :
-       
+
        (+) Possibility to disable or enable Analog Noise Filter
        (+) Use of a configured Digital Noise Filter
-   
+
                      ##### How to use this driver #####
   ==============================================================================
   [..] This driver provides functions to configure Noise Filter
     (#) Configure I2C Analog noise filter using the function HAL_I2C_AnalogFilter_Config()
     (#) Configure I2C Digital noise filter using the function HAL_I2C_DigitalFilter_Config()
-  
+
   @endverbatim
   ******************************************************************************
   * @attention
@@ -53,7 +53,7 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-  */ 
+  */
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_hal.h"
@@ -83,22 +83,22 @@
   */
 
 
-/** @defgroup I2CEx_Exported_Functions_Group1 Extension features functions 
- *  @brief   Extension features functions 
+/** @defgroup I2CEx_Exported_Functions_Group1 Extension features functions
+ *  @brief   Extension features functions
  *
-@verbatim   
+@verbatim
  ===============================================================================
                       ##### Extension features functions #####
- ===============================================================================  
+ ===============================================================================
     [..] This section provides functions allowing to:
-      (+) Configure Noise Filters 
+      (+) Configure Noise Filters
 
 @endverbatim
   * @{
   */
-  
+
 /**
-  * @brief  Configures I2C Analog noise filter. 
+  * @brief  Configures I2C Analog noise filter.
   * @param  hi2c pointer to a I2C_HandleTypeDef structure that contains
   *                the configuration information for the specified I2Cx peripheral.
   * @param  AnalogFilter new state of the Analog filter.
@@ -109,13 +109,13 @@ HAL_StatusTypeDef HAL_I2CEx_ConfigAnalogFilter(I2C_HandleTypeDef *hi2c, uint32_t
   /* Check the parameters */
   assert_param(IS_I2C_ALL_INSTANCE(hi2c->Instance));
   assert_param(IS_I2C_ANALOG_FILTER(AnalogFilter));
-  
+
   if(hi2c->State == HAL_I2C_STATE_READY)
   {
     hi2c->State = HAL_I2C_STATE_BUSY;
 
     /* Disable the selected I2C peripheral */
-    __HAL_I2C_DISABLE(hi2c);    
+    __HAL_I2C_DISABLE(hi2c);
 
     /* Reset I2Cx ANOFF bit */
     hi2c->Instance->FLTR &= ~(I2C_FLTR_ANOFF);
@@ -123,7 +123,7 @@ HAL_StatusTypeDef HAL_I2CEx_ConfigAnalogFilter(I2C_HandleTypeDef *hi2c, uint32_t
     /* Disable the analog filter */
     hi2c->Instance->FLTR |= AnalogFilter;
 
-    __HAL_I2C_ENABLE(hi2c); 
+    __HAL_I2C_ENABLE(hi2c);
 
     hi2c->State = HAL_I2C_STATE_READY;
 
@@ -136,7 +136,7 @@ HAL_StatusTypeDef HAL_I2CEx_ConfigAnalogFilter(I2C_HandleTypeDef *hi2c, uint32_t
 }
 
 /**
-  * @brief  Configures I2C Digital noise filter. 
+  * @brief  Configures I2C Digital noise filter.
   * @param  hi2c pointer to a I2C_HandleTypeDef structure that contains
   *                the configuration information for the specified I2Cx peripheral.
   * @param  DigitalFilter Coefficient of digital noise filter between 0x00 and 0x0F.
@@ -149,37 +149,37 @@ HAL_StatusTypeDef HAL_I2CEx_ConfigDigitalFilter(I2C_HandleTypeDef *hi2c, uint32_
   /* Check the parameters */
   assert_param(IS_I2C_ALL_INSTANCE(hi2c->Instance));
   assert_param(IS_I2C_DIGITAL_FILTER(DigitalFilter));
-  
+
   if(hi2c->State == HAL_I2C_STATE_READY)
   {
     hi2c->State = HAL_I2C_STATE_BUSY;
-    
+
     /* Disable the selected I2C peripheral */
-    __HAL_I2C_DISABLE(hi2c);  
-    
+    __HAL_I2C_DISABLE(hi2c);
+
     /* Get the old register value */
     tmpreg = hi2c->Instance->FLTR;
-    
+
     /* Reset I2Cx DNF bit [3:0] */
     tmpreg &= ~(I2C_FLTR_DNF);
-    
+
     /* Set I2Cx DNF coefficient */
     tmpreg |= DigitalFilter;
-    
+
     /* Store the new register value */
     hi2c->Instance->FLTR = tmpreg;
-    
-    __HAL_I2C_ENABLE(hi2c); 
-    
+
+    __HAL_I2C_ENABLE(hi2c);
+
     hi2c->State = HAL_I2C_STATE_READY;
-    
-    return HAL_OK; 
+
+    return HAL_OK;
   }
   else
   {
-    return HAL_BUSY; 
+    return HAL_BUSY;
   }
-}  
+}
 
 /**
   * @}
@@ -187,7 +187,7 @@ HAL_StatusTypeDef HAL_I2CEx_ConfigDigitalFilter(I2C_HandleTypeDef *hi2c, uint32_
 
 /**
   * @}
-  */  
+  */
 #endif /* STM32F427xx || STM32F429xx || STM32F437xx || STM32F439xx || STM32F401xC ||\
           STM32F401xE || STM32F446xx || STM32F469xx || STM32F479xx || STM32F413xx ||\
 		  STM32F423xx */
