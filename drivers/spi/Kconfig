@@ -251,6 +251,8 @@ source "drivers/spi/Kconfig.mcux_dspi"
 
 source "drivers/spi/Kconfig.mcux_lpspi"
 
+source "drivers/spi/Kconfig.sam"
+
 source "drivers/spi/Kconfig.sam0"
 
 source "drivers/spi/Kconfig.nrfx"
