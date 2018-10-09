@@ -788,29 +788,33 @@ static void le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 	}
 #endif
 
-	if (evt->status) {
-		/*
-		 * if there was an error we are only interested in pending
-		 * connection so there is no need to check ID address as
-		 * only one connection can be in that state
-		 *
-		 * Depending on error code address might not be valid anyway.
-		 */
-		conn = bt_conn_lookup_state_le(NULL, BT_CONN_CONNECT);
-		if (!conn) {
-			return;
+	if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
+		if (evt->status) {
+			/*
+			 * if there was an error we are only interested in pending
+			 * connection so there is no need to check ID address as
+			 * only one connection can be in that state
+			 *
+			 * Depending on error code address might not be valid anyway.
+			 */
+			conn = bt_conn_lookup_state_le(NULL, BT_CONN_CONNECT);
+			if (!conn) {
+				return;
+			}
+
+			conn->err = evt->status;
+
+			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+
+			/* check if device is market for auto connect */
+			if (atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT)) {
+				bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
+			}
+
+			goto done;
 		}
-
-		conn->err = evt->status;
-
-		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
-
-		/* check if device is market for auto connect */
-		if (atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT)) {
-			bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
-		}
-
-		goto done;
+	} else {
+		BT_ASSERT(evt->status == 0);
 	}
 
 	bt_addr_le_copy(&id_addr, &evt->peer_addr);
