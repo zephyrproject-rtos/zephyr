@@ -224,8 +224,8 @@
 #if !defined(RCC_MAX_FREQUENCY_SCALE1)
 #define IS_LL_UTILS_PLL_FREQUENCY(__VALUE__) ((LL_PWR_GetRegulVoltageScaling() == LL_PWR_REGU_VOLTAGE_SCALE2) ? ((__VALUE__) <= UTILS_MAX_FREQUENCY_SCALE2) : \
                                              ((__VALUE__) <= UTILS_MAX_FREQUENCY_SCALE3))
-                                             
-#elif defined(RCC_MAX_FREQUENCY_SCALE3) 
+
+#elif defined(RCC_MAX_FREQUENCY_SCALE3)
 #define IS_LL_UTILS_PLL_FREQUENCY(__VALUE__) ((LL_PWR_GetRegulVoltageScaling() == LL_PWR_REGU_VOLTAGE_SCALE1) ? ((__VALUE__) <= UTILS_MAX_FREQUENCY_SCALE1) : \
                                               (LL_PWR_GetRegulVoltageScaling() == LL_PWR_REGU_VOLTAGE_SCALE2) ? ((__VALUE__) <= UTILS_MAX_FREQUENCY_SCALE2) : \
                                               ((__VALUE__) <= UTILS_MAX_FREQUENCY_SCALE3))
@@ -523,7 +523,7 @@ static ErrorStatus UTILS_SetFlashLatency(uint32_t HCLK_Frequency)
         latency = LL_FLASH_LATENCY_3;
       }
 #endif /* UTILS_SCALE1_LATENCY3_FREQ */
-#if defined (UTILS_SCALE1_LATENCY2_FREQ) 
+#if defined (UTILS_SCALE1_LATENCY2_FREQ)
       if((HCLK_Frequency > UTILS_SCALE1_LATENCY2_FREQ)&&(latency == LL_FLASH_LATENCY_0))
       {
         latency = LL_FLASH_LATENCY_2;
@@ -621,7 +621,7 @@ static uint32_t UTILS_GetPLLOutputFrequency(uint32_t PLL_InputFrequency, LL_UTIL
   assert_param(IS_LL_UTILS_PLLM_VALUE(UTILS_PLLInitStruct->PLLM));
   assert_param(IS_LL_UTILS_PLLN_VALUE(UTILS_PLLInitStruct->PLLN));
   assert_param(IS_LL_UTILS_PLLP_VALUE(UTILS_PLLInitStruct->PLLP));
-  
+
   /* Check different PLL parameters according to RM                          */
   /*  - PLLM: ensure that the VCO input frequency ranges from @ref UTILS_PLLVCO_INPUT_MIN to @ref UTILS_PLLVCO_INPUT_MAX MHz.   */
   pllfreq = PLL_InputFrequency / (UTILS_PLLInitStruct->PLLM & (RCC_PLLCFGR_PLLM >> RCC_PLLCFGR_PLLM_Pos));
@@ -630,7 +630,7 @@ static uint32_t UTILS_GetPLLOutputFrequency(uint32_t PLL_InputFrequency, LL_UTIL
   /*  - PLLN: ensure that the VCO output frequency is between @ref UTILS_PLLVCO_OUTPUT_MIN and @ref UTILS_PLLVCO_OUTPUT_MAX .*/
   pllfreq = pllfreq * (UTILS_PLLInitStruct->PLLN & (RCC_PLLCFGR_PLLN >> RCC_PLLCFGR_PLLN_Pos));
   assert_param(IS_LL_UTILS_PLLVCO_OUTPUT(pllfreq));
-  
+
   /*  - PLLP: ensure that max frequency at @ref RCC_MAX_FREQUENCY Hz is reached     */
   pllfreq = pllfreq / (((UTILS_PLLInitStruct->PLLP >> RCC_PLLCFGR_PLLP_Pos) + 1) * 2);
   assert_param(IS_LL_UTILS_PLL_FREQUENCY(pllfreq));
@@ -724,7 +724,7 @@ static ErrorStatus UTILS_EnablePLLAndSwitchSystem(uint32_t SYSCLK_Frequency, LL_
     LL_RCC_SetAPB1Prescaler(UTILS_ClkInitStruct->APB1CLKDivider);
     LL_RCC_SetAPB2Prescaler(UTILS_ClkInitStruct->APB2CLKDivider);
   }
-    
+
   /* Decreasing the number of wait states because of lower CPU frequency */
   if(SystemCoreClock > hclk_frequency)
   {

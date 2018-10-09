@@ -50,14 +50,14 @@
 
 /** @addtogroup ADCEx
   * @{
-  */ 
+  */
 
 /* Exported types ------------------------------------------------------------*/
 /** @defgroup ADCEx_Exported_Types ADC Exported Types
   * @{
   */
-   
-/** 
+
+/**
   * @brief  ADC Configuration injected Channel structure definition
   * @note   Parameters of this structure are shared within 2 scopes:
   *          - Scope channel: InjectedChannel, InjectedRank, InjectedSamplingTime, InjectedOffset
@@ -69,7 +69,7 @@
   *          - For all except parameters 'InjectedDiscontinuousConvMode' and 'AutoInjectedConv': ADC enabled without conversion on going on injected group.
   *          - For parameters 'ExternalTrigInjecConv' and 'ExternalTrigInjecConvEdge': ADC enabled, even with conversion on going on injected group.
   */
-typedef struct 
+typedef struct
 {
   uint32_t InjectedChannel;               /*!< Selection of ADC channel to configure
                                                This parameter can be a value of @ref ADC_channels
@@ -93,17 +93,17 @@ typedef struct
   uint32_t InjectedNbrOfConversion;       /*!< Specifies the number of ranks that will be converted within the injected group sequencer.
                                                To use the injected group sequencer and convert several ranks, parameter 'ScanConvMode' must be enabled.
                                                This parameter must be a number between Min_Data = 1 and Max_Data = 4.
-                                               Caution: this setting impacts the entire injected group. Therefore, call of HAL_ADCEx_InjectedConfigChannel() to 
+                                               Caution: this setting impacts the entire injected group. Therefore, call of HAL_ADCEx_InjectedConfigChannel() to
                                                         configure a channel on injected group can impact the configuration of other channels previously set. */
   uint32_t InjectedDiscontinuousConvMode; /*!< Specifies whether the conversions sequence of injected group is performed in Complete-sequence/Discontinuous-sequence (main sequence subdivided in successive parts).
                                                Discontinuous mode is used only if sequencer is enabled (parameter 'ScanConvMode'). If sequencer is disabled, this parameter is discarded.
                                                Discontinuous mode can be enabled only if continuous mode is disabled. If continuous mode is enabled, this parameter setting is discarded.
                                                This parameter can be set to ENABLE or DISABLE.
                                                Note: For injected group, number of discontinuous ranks increment is fixed to one-by-one.
-                                               Caution: this setting impacts the entire injected group. Therefore, call of HAL_ADCEx_InjectedConfigChannel() to 
+                                               Caution: this setting impacts the entire injected group. Therefore, call of HAL_ADCEx_InjectedConfigChannel() to
                                                         configure a channel on injected group can impact the configuration of other channels previously set. */
   uint32_t AutoInjectedConv;              /*!< Enables or disables the selected ADC automatic injected group conversion after regular one
-                                               This parameter can be set to ENABLE or DISABLE.      
+                                               This parameter can be set to ENABLE or DISABLE.
                                                Note: To use Automatic injected conversion, discontinuous mode must be disabled ('DiscontinuousConvMode' and 'InjectedDiscontinuousConvMode' set to DISABLE)
                                                Note: To use Automatic injected conversion, injected group external triggers must be disabled ('ExternalTrigInjecConv' set to ADC_SOFTWARE_START)
                                                Note: In case of DMA used with regular group: if DMA configured in normal mode (single shot) JAUTO will be stopped upon DMA transfer complete.
@@ -121,16 +121,16 @@ typedef struct
   uint32_t ExternalTrigInjecConvEdge;     /*!< Selects the external trigger edge of injected group.
                                                This parameter can be a value of @ref ADCEx_External_trigger_edge_Injected.
                                                If trigger is set to ADC_INJECTED_SOFTWARE_START, this parameter is discarded.
-                                               Caution: this setting impacts the entire injected group. Therefore, call of HAL_ADCEx_InjectedConfigChannel() to 
+                                               Caution: this setting impacts the entire injected group. Therefore, call of HAL_ADCEx_InjectedConfigChannel() to
                                                         configure a channel on injected group can impact the configuration of other channels previously set. */
-}ADC_InjectionConfTypeDef; 
+}ADC_InjectionConfTypeDef;
 
-/** 
-  * @brief ADC Configuration multi-mode structure definition  
-  */ 
+/**
+  * @brief ADC Configuration multi-mode structure definition
+  */
 typedef struct
 {
-  uint32_t Mode;              /*!< Configures the ADC to operate in independent or multi mode. 
+  uint32_t Mode;              /*!< Configures the ADC to operate in independent or multi mode.
                                    This parameter can be a value of @ref ADCEx_Common_mode */
   uint32_t DMAAccessMode;     /*!< Configures the Direct memory access mode for multi ADC mode.
                                    This parameter can be a value of @ref ADCEx_Direct_memory_access_mode_for_multi_mode */
@@ -140,7 +140,7 @@ typedef struct
 
 /**
   * @}
-  */ 
+  */
 
 /* Exported constants --------------------------------------------------------*/
 /** @defgroup ADCEx_Exported_Constants ADC Exported Constants
@@ -150,7 +150,7 @@ typedef struct
 /** @defgroup ADCEx_Common_mode ADC Common Mode
   * @{
   */
-#define ADC_MODE_INDEPENDENT                  ((uint32_t)0x00000000U)      
+#define ADC_MODE_INDEPENDENT                  ((uint32_t)0x00000000U)
 #define ADC_DUALMODE_REGSIMULT_INJECSIMULT    ((uint32_t)ADC_CCR_MULTI_0)
 #define ADC_DUALMODE_REGSIMULT_ALTERTRIG      ((uint32_t)ADC_CCR_MULTI_1)
 #define ADC_DUALMODE_INJECSIMULT              ((uint32_t)(ADC_CCR_MULTI_2 | ADC_CCR_MULTI_0))
@@ -165,18 +165,18 @@ typedef struct
 #define ADC_TRIPLEMODE_ALTERTRIG              ((uint32_t)(ADC_CCR_MULTI_4 | ADC_CCR_MULTI_3 | ADC_CCR_MULTI_0))
 /**
   * @}
-  */ 
+  */
 
 /** @defgroup ADCEx_Direct_memory_access_mode_for_multi_mode ADC Direct Memory Access Mode For Multi Mode
   * @{
-  */ 
+  */
 #define ADC_DMAACCESSMODE_DISABLED  ((uint32_t)0x00000000U)     /*!< DMA mode disabled */
 #define ADC_DMAACCESSMODE_1         ((uint32_t)ADC_CCR_DMA_0)  /*!< DMA mode 1 enabled (2 / 3 half-words one by one - 1 then 2 then 3)*/
 #define ADC_DMAACCESSMODE_2         ((uint32_t)ADC_CCR_DMA_1)  /*!< DMA mode 2 enabled (2 / 3 half-words by pairs - 2&1 then 1&3 then 3&2)*/
 #define ADC_DMAACCESSMODE_3         ((uint32_t)ADC_CCR_DMA)    /*!< DMA mode 3 enabled (2 / 3 bytes by pairs - 2&1 then 1&3 then 3&2) */
 /**
   * @}
-  */ 
+  */
 
 /** @defgroup ADCEx_External_trigger_edge_Injected ADC External Trigger Edge Injected
   * @{
@@ -187,7 +187,7 @@ typedef struct
 #define ADC_EXTERNALTRIGINJECCONVEDGE_RISINGFALLING  ((uint32_t)ADC_CR2_JEXTEN)
 /**
   * @}
-  */ 
+  */
 
 /** @defgroup ADCEx_External_trigger_Source_Injected ADC External Trigger Source Injected
   * @{
@@ -210,30 +210,30 @@ typedef struct
 #define ADC_INJECTED_SOFTWARE_START                ((uint32_t)ADC_CR2_JEXTSEL + 1)
 /**
   * @}
-  */ 
+  */
 
 /** @defgroup ADCEx_injected_rank ADC Injected Channel Rank
   * @{
-  */ 
+  */
 #define ADC_INJECTED_RANK_1    ((uint32_t)0x00000001U)
 #define ADC_INJECTED_RANK_2    ((uint32_t)0x00000002U)
 #define ADC_INJECTED_RANK_3    ((uint32_t)0x00000003U)
 #define ADC_INJECTED_RANK_4    ((uint32_t)0x00000004U)
 /**
   * @}
-  */ 
+  */
 
 /** @defgroup ADCEx_channels  ADC Specific Channels
   * @{
   */
-#define ADC_CHANNEL_TEMPSENSOR  ((uint32_t)ADC_CHANNEL_18 | 0x10000000U)    
+#define ADC_CHANNEL_TEMPSENSOR  ((uint32_t)ADC_CHANNEL_18 | 0x10000000U)
 /**
   * @}
   */
-  
+
 /**
   * @}
-  */ 
+  */
 
 /* Exported macro ------------------------------------------------------------*/
 /** @defgroup ADC_Exported_Macros ADC Exported Macros
@@ -270,7 +270,7 @@ HAL_StatusTypeDef HAL_ADCEx_MultiModeConfigChannel(ADC_HandleTypeDef* hadc, ADC_
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
@@ -292,7 +292,7 @@ HAL_StatusTypeDef HAL_ADCEx_MultiModeConfigChannel(ADC_HandleTypeDef* hadc, ADC_
   */
 #define IS_ADC_CHANNEL(CHANNEL) (((CHANNEL) <= ADC_CHANNEL_18)  || \
                                  ((CHANNEL) == ADC_CHANNEL_TEMPSENSOR))
-                                     
+
 #define IS_ADC_MODE(__MODE__) (((__MODE__) == ADC_MODE_INDEPENDENT)                 || \
                                ((__MODE__) == ADC_DUALMODE_REGSIMULT_INJECSIMULT)   || \
                                ((__MODE__) == ADC_DUALMODE_REGSIMULT_ALTERTRIG)     || \
@@ -338,8 +338,8 @@ HAL_StatusTypeDef HAL_ADCEx_MultiModeConfigChannel(ADC_HandleTypeDef* hadc, ADC_
 /**
   * @brief  Set the selected injected Channel rank.
   * @param  _CHANNELNB_ Channel number.
-  * @param  _RANKNB_ Rank number. 
-  * @param  _JSQR_JL_ Sequence length.     
+  * @param  _RANKNB_ Rank number.
+  * @param  _JSQR_JL_ Sequence length.
   * @retval None
   */
 #define   ADC_JSQR(_CHANNELNB_, _RANKNB_,_JSQR_JL_) (((uint32_t)((uint16_t)(_CHANNELNB_))) << (5 * (uint8_t)(((_RANKNB_) + 3) - (_JSQR_JL_))))

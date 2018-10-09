@@ -102,7 +102,7 @@ extern "C" {
 /**
   * @}
   */
-  
+
 /** @defgroup PWR_LL_EC_MODE_PWR Mode Power
   * @{
   */
@@ -161,7 +161,7 @@ extern "C" {
 /**
   * @}
   */
-  
+
 /**
   * @}
   */
@@ -208,12 +208,12 @@ extern "C" {
   * @brief  Enable Under Drive Mode
   * @rmtoll CR1    UDEN       LL_PWR_EnableUnderDriveMode
   * @note  This mode is enabled only with STOP low power mode.
-  *        In this mode, the 1.2V domain is preserved in reduced leakage mode. This 
-  *        mode is only available when the main Regulator or the low power Regulator 
-  *        is in low voltage mode.      
-  * @note  If the Under-drive mode was enabled, it is automatically disabled after 
-  *        exiting Stop mode. 
-  *        When the voltage Regulator operates in Under-drive mode, an additional  
+  *        In this mode, the 1.2V domain is preserved in reduced leakage mode. This
+  *        mode is only available when the main Regulator or the low power Regulator
+  *        is in low voltage mode.
+  * @note  If the Under-drive mode was enabled, it is automatically disabled after
+  *        exiting Stop mode.
+  *        When the voltage Regulator operates in Under-drive mode, an additional
   *        startup delay is induced when waking up from Stop mode.
   * @retval None
   */
@@ -514,7 +514,7 @@ __STATIC_INLINE uint32_t LL_PWR_GetRegulModeDS(void)
   * @rmtoll CR1    PDDS         LL_PWR_SetPowerMode\n
   *         CR1    LPDS         LL_PWR_SetPowerMode\n
   *         CR1    FPDS         LL_PWR_SetPowerMode\n
-  *         CR1    LPUDS        LL_PWR_SetPowerMode\n  
+  *         CR1    LPUDS        LL_PWR_SetPowerMode\n
   *         CR1    MRUDS        LL_PWR_SetPowerMode
   * @param  PDMode This parameter can be one of the following values:
   *         @arg @ref LL_PWR_MODE_STOP_MAINREGU
@@ -534,7 +534,7 @@ __STATIC_INLINE void LL_PWR_SetPowerMode(uint32_t PDMode)
   * @rmtoll CR1    PDDS         LL_PWR_GetPowerMode\n
   *         CR1    LPDS         LL_PWR_GetPowerMode\n
   *         CR1    FPDS         LL_PWR_GetPowerMode\n
-  *         CR1    LPUDS        LL_PWR_GetPowerMode\n  
+  *         CR1    LPUDS        LL_PWR_GetPowerMode\n
   *         CR1    MRUDS        LL_PWR_GetPowerMode
   * @retval Returned value can be one of the following values:
   *         @arg @ref LL_PWR_MODE_STOP_MAINREGU

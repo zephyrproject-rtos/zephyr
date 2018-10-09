@@ -1235,7 +1235,7 @@ void HAL_UART_IRQHandler(UART_HandleTypeDef *huart)
 
       huart->ErrorCode |= HAL_UART_ERROR_NE;
     }
-    
+
     /* UART Over-Run interrupt occurred -----------------------------------------*/
     if(((isrflags & USART_ISR_ORE) != RESET) &&
        (((cr1its & USART_CR1_RXNEIE) != RESET) || ((cr3its & USART_CR3_EIE) != RESET)))

@@ -6,7 +6,7 @@
   *          feature. Its content is now moved to common files
   *          (stm32f7xx_hal_dcmi.c/.h) as there's no device's dependency within F7
   *          family. It's just kept for compatibility reasons.
-  * 
+  *
   ******************************************************************************
   * @attention
   *
@@ -35,7 +35,7 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-  */ 
+  */
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f7xx_hal.h"

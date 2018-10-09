@@ -286,12 +286,12 @@ __STATIC_INLINE uint32_t LL_PWR_IsEnabledFLASHMemorySTOP(void)
   * @brief  Enable Under Drive Mode
   * @rmtoll CR    UDEN       LL_PWR_EnableUnderDriveMode
   * @note  This mode is enabled only with STOP low power mode.
-  *        In this mode, the 1.2V domain is preserved in reduced leakage mode. This 
-  *        mode is only available when the main Regulator or the low power Regulator 
-  *        is in low voltage mode.      
-  * @note  If the Under-drive mode was enabled, it is automatically disabled after 
-  *        exiting Stop mode. 
-  *        When the voltage Regulator operates in Under-drive mode, an additional  
+  *        In this mode, the 1.2V domain is preserved in reduced leakage mode. This
+  *        mode is only available when the main Regulator or the low power Regulator
+  *        is in low voltage mode.
+  * @note  If the Under-drive mode was enabled, it is automatically disabled after
+  *        exiting Stop mode.
+  *        When the voltage Regulator operates in Under-drive mode, an additional
   *        startup delay is induced when waking up from Stop mode.
   * @retval None
   */

@@ -2013,7 +2013,7 @@ HAL_StatusTypeDef HAL_SPI_Abort_IT(SPI_HandleTypeDef *hspi)
   {
     hspi->RxISR = SPI_AbortRx_ISR;
   }
-  
+
   while (hspi->State != HAL_SPI_STATE_ABORT)
   {
     if ((HAL_GetTick() - tickstart) >=  HAL_MAX_DELAY)

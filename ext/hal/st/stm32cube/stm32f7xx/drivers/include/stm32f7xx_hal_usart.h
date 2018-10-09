@@ -31,7 +31,7 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-  */ 
+  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __STM32F7xx_HAL_USART_H
@@ -83,7 +83,7 @@ typedef struct
                                            This parameter can be a value of @ref USART_Mode */
 
   uint32_t OverSampling;              /*!< Specifies whether the Over sampling 8 is enabled or disabled, to achieve higher speed (up to fPCLK/8).
-                                           This parameter can be a value of @ref USART_Over_Sampling */                                                                                        
+                                           This parameter can be a value of @ref USART_Over_Sampling */
 
   uint32_t CLKPolarity;               /*!< Specifies the steady state of the serial clock.
                                            This parameter can be a value of @ref USART_Clock_Polarity */
@@ -170,9 +170,9 @@ typedef struct
   */
 
 /** @defgroup USART_Error_Code USART Error Code
-  * @brief    USART Error Code 
+  * @brief    USART Error Code
   * @{
-  */ 
+  */
 #define HAL_USART_ERROR_NONE         ((uint32_t)0x00000000U)   /*!< No error            */
 #define HAL_USART_ERROR_PE           ((uint32_t)0x00000001U)   /*!< Parity error        */
 #define HAL_USART_ERROR_NE           ((uint32_t)0x00000002U)   /*!< Noise error         */
@@ -260,7 +260,7 @@ typedef struct
 /** @defgroup USART_Request_Parameters  USART Request Parameters
   * @{
   */
-#define USART_RXDATA_FLUSH_REQUEST        ((uint32_t)USART_RQR_RXFRQ)        /*!< Receive Data flush Request */ 
+#define USART_RXDATA_FLUSH_REQUEST        ((uint32_t)USART_RQR_RXFRQ)        /*!< Receive Data flush Request */
 #define USART_TXDATA_FLUSH_REQUEST        ((uint32_t)USART_RQR_TXFRQ)        /*!< Transmit data flush Request */
 /**
   * @}
@@ -272,7 +272,7 @@ typedef struct
   * @{
   */
 #define USART_FLAG_REACK                     ((uint32_t)0x00400000U)
-#define USART_FLAG_TEACK                     ((uint32_t)0x00200000U)  
+#define USART_FLAG_TEACK                     ((uint32_t)0x00200000U)
 #define USART_FLAG_BUSY                      ((uint32_t)0x00010000U)
 #define USART_FLAG_CTS                       ((uint32_t)0x00000400U)
 #define USART_FLAG_CTSIF                     ((uint32_t)0x00000200U)
@@ -457,7 +457,7 @@ typedef struct
   *
   * @retval None
   */
-#define __HAL_USART_SEND_REQ(__HANDLE__, __REQ__) ((__HANDLE__)->Instance->RQR |= (uint16_t)(__REQ__)) 
+#define __HAL_USART_SEND_REQ(__HANDLE__, __REQ__) ((__HANDLE__)->Instance->RQR |= (uint16_t)(__REQ__))
 
 /** @brief  Enable USART
   * @param  __HANDLE__ specifies the USART Handle.
@@ -521,7 +521,7 @@ void HAL_USART_ErrorCallback(USART_HandleTypeDef *husart);
 
 /**
   * @}
-  */ 
+  */
 
 /** @addtogroup USART_Exported_Functions_Group3
   * @{
@@ -544,8 +544,8 @@ uint32_t               HAL_USART_GetError(USART_HandleTypeDef *husart);
   * @{
   */
 /** @brief USART interruptions flag mask
-  * 
-  */ 
+  *
+  */
 #define USART_IT_MASK                             ((uint16_t)0x001FU)
 
 /**
@@ -643,7 +643,7 @@ uint32_t               HAL_USART_GetError(USART_HandleTypeDef *husart);
        }                                                       \
     }                                                          \
  } while(0)
-  
+
 
 #define IS_USART_STOPBITS(__STOPBITS__) (((__STOPBITS__) == USART_STOPBITS_1) || \
                                          ((__STOPBITS__) == USART_STOPBITS_1_5) || \
@@ -661,7 +661,7 @@ uint32_t               HAL_USART_GetError(USART_HandleTypeDef *husart);
 #define IS_USART_LASTBIT(__LASTBIT__) (((__LASTBIT__) == USART_LASTBIT_DISABLE) || \
                                        ((__LASTBIT__) == USART_LASTBIT_ENABLE))
 #define IS_USART_REQUEST_PARAMETER(__PARAM__) (((__PARAM__) == USART_RXDATA_FLUSH_REQUEST) || \
-                                               ((__PARAM__) == USART_TXDATA_FLUSH_REQUEST))   
+                                               ((__PARAM__) == USART_TXDATA_FLUSH_REQUEST))
 #define IS_USART_BAUDRATE(__BAUDRATE__) ((__BAUDRATE__) < 9000001)
 
 /**
@@ -679,12 +679,12 @@ uint32_t               HAL_USART_GetError(USART_HandleTypeDef *husart);
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
   */
-  
+
 #ifdef __cplusplus
 }
 #endif
