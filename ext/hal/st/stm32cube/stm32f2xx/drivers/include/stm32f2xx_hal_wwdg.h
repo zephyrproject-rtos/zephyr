@@ -31,7 +31,7 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-  */ 
+  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __STM32F2xx_HAL_WWDG_H
@@ -50,14 +50,14 @@
 
 /** @addtogroup WWDG
   * @{
-  */ 
+  */
 
 /* Exported types ------------------------------------------------------------*/
 /** @defgroup WWDG_Exported_Types WWDG Exported Types
   * @{
   */
 
-/** 
+/**
   * @brief  WWDG Init structure definition
   */
 typedef struct
@@ -115,7 +115,7 @@ typedef struct
 
 /** @defgroup WWDG_Prescaler WWDG Prescaler
   * @{
-  */ 
+  */
 #define WWDG_PRESCALER_1                  0x00000000U  /*!< WWDG counter clock = (PCLK1/4096)/1 */
 #define WWDG_PRESCALER_2                  WWDG_CFR_WDGTB0         /*!< WWDG counter clock = (PCLK1/4096)/2 */
 #define WWDG_PRESCALER_4                  WWDG_CFR_WDGTB1         /*!< WWDG counter clock = (PCLK1/4096)/4 */
