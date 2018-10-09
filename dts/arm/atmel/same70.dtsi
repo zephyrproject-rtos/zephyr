@@ -68,6 +68,28 @@
 			status = "disabled";
 		};
 
+		spi0: spi@40008000 {
+			compatible = "atmel,sam-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40008000 0x4000>;
+			interrupts = <21 0>;
+			peripheral-id = <21>;
+			label = "SPI_0";
+			status = "disabled";
+		};
+
+		spi1: spi@40058000 {
+			compatible = "atmel,sam-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40058000 0x4000>;
+			interrupts = <42 0>;
+			peripheral-id = <42>;
+			label = "SPI_1";
+			status = "disabled";
+		};
+
 		uart0: uart@400E0800 {
 			compatible = "atmel,sam-uart";
 			reg = <0x400E0800 0x100>;
