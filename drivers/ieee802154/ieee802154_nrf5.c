@@ -424,7 +424,6 @@ static const struct nrf5_802154_config nrf5_radio_cfg = {
 
 static struct ieee802154_radio_api nrf5_radio_api = {
 	.iface_api.init = nrf5_iface_init,
-	.iface_api.send = ieee802154_radio_send,
 
 	.get_capabilities = nrf5_get_capabilities,
 	.cca = nrf5_cca,

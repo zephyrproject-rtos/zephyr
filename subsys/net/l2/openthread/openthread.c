@@ -229,11 +229,12 @@ static enum net_verdict openthread_recv(struct net_if *iface,
 	return NET_OK;
 }
 
-enum net_verdict openthread_send(struct net_if *iface, struct net_pkt *pkt)
+int openthread_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct openthread_context *ot_context = net_if_l2_data(iface);
-	otMessage *message;
+	int len = net_pkt_get_len(pkt);
 	struct net_buf *frag;
+	otMessage *message;
 
 	NET_DBG("Sending Ip6 packet to ot stack");
 
@@ -264,7 +265,7 @@ enum net_verdict openthread_send(struct net_if *iface, struct net_pkt *pkt)
 exit:
 	net_pkt_unref(pkt);
 
-	return NET_OK;
+	return len;
 }
 
 static u16_t openthread_reserve(struct net_if *iface, void *arg)
@@ -343,17 +344,6 @@ static int openthread_init(struct net_if *iface)
 void ieee802154_init(struct net_if *iface)
 {
 	openthread_init(iface);
-}
-
-int ieee802154_radio_send(struct net_if *iface, struct net_pkt *pkt)
-{
-	ARG_UNUSED(iface);
-	ARG_UNUSED(pkt);
-
-	/* Shouldn't be here */
-	__ASSERT(false, "OpenThread L2 should never reach here");
-
-	return -EIO;
 }
 
 static enum net_l2_flags openthread_flags(struct net_if *iface)

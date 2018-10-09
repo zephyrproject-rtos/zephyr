@@ -20,6 +20,7 @@
 #include "ieee802154_mgmt_priv.h"
 #include "ieee802154_security.h"
 #include "ieee802154_utils.h"
+#include "ieee802154_radio_utils.h"
 
 enum net_verdict ieee802154_handle_beacon(struct net_if *iface,
 					  struct ieee802154_mpdu *mpdu,
@@ -138,7 +139,7 @@ static int ieee802154_scan(u32_t mgmt_request, struct net_if *iface,
 			net_pkt_ref(pkt);
 			net_pkt_frag_ref(pkt->frags);
 
-			ret = ieee802154_radio_send(iface, pkt);
+			ret = ieee802154_radio_send(iface, pkt, pkt->frags);
 			if (ret) {
 				NET_DBG("Could not send Beacon Request (%d)",
 					ret);

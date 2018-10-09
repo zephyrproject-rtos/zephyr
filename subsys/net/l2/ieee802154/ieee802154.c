@@ -28,6 +28,7 @@
 #include "ieee802154_mgmt_priv.h"
 #include "ieee802154_security.h"
 #include "ieee802154_utils.h"
+#include "ieee802154_radio_utils.h"
 
 #define BUF_TIMEOUT K_MSEC(50)
 
@@ -244,42 +245,57 @@ static enum net_verdict ieee802154_recv(struct net_if *iface,
 	return ieee802154_manage_recv_packet(iface, pkt);
 }
 
-static enum net_verdict ieee802154_send(struct net_if *iface,
-					struct net_pkt *pkt)
+static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	u8_t reserved_space = net_pkt_ll_reserve(pkt);
 	struct net_buf *frag;
+	int len;
 
 	if (net_pkt_family(pkt) != AF_INET6) {
-		return NET_DROP;
+		return -EINVAL;
 	}
 
 	if (!ieee802154_manage_send_packet(iface, pkt)) {
-		return NET_DROP;
+		return -ENOBUFS;
 	}
+
+	len = 0;
 
 	frag = pkt->frags;
 	while (frag) {
+		int ret;
+
 		if (frag->len > IEEE802154_MTU) {
 			NET_ERR("Frag %p as too big length %u",
 				frag, frag->len);
-			return NET_DROP;
+			return -EINVAL;
 		}
 
 		if (!ieee802154_create_data_frame(ctx, net_pkt_lladdr_dst(pkt),
 						  frag, reserved_space)) {
-			return NET_DROP;
+			return -EINVAL;
 		}
 
+		if (IS_ENABLED(CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA) &&
+		    ieee802154_get_hw_capabilities(iface) &
+		    IEEE802154_HW_CSMA) {
+			ret = ieee802154_tx(iface, pkt, frag);
+		} else {
+			ret = ieee802154_radio_send(iface, pkt, frag);
+		}
+
+		if (ret) {
+			return ret;
+		}
+
+		len += frag->len;
 		frag = frag->frags;
 	}
 
-	pkt_hexdump(TX_PKT_TITLE " (with ll)", pkt, false, true);
+	net_pkt_unref(pkt);
 
-	net_if_queue_tx(iface, pkt);
-
-	return NET_OK;
+	return len;
 }
 
 static u16_t ieee802154_reserve(struct net_if *iface, void *data)
