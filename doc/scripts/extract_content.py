@@ -154,39 +154,45 @@ def extract_content(content):
 
 def main():
     parser = argparse.ArgumentParser(
-        description='''Recursively copy .rst files from the origin folder(s) to
-        the destination folder, plus files referenced in those .rst files by a
-        configurable list of directives: {}. The ZEPHYR_BASE environment
+        description='''Recursively copy documentation files from ZEPHYR_BASE to
+        a destination folder, along with files referenced in those .rst files
+        by a configurable list of directives: {}. The ZEPHYR_BASE environment
         variable is used to determine source directories to copy files
         from.'''.format(DIRECTIVES))
 
-    parser.add_argument('-a', '--all', action='store_true',
-                        help='''Copy all files (recursively) in the specified
-                        source folder(s).''')
+    parser.add_argument('--outputs',
+                        help='If given, save input/output files to this path')
     parser.add_argument('--ignore', action='append',
                         help='''Source directories to ignore when copying
                         files. This may be given multiple times.''')
-    parser.add_argument('dest', nargs=1)
-    parser.add_argument('src', nargs='+')
+    parser.add_argument('content_config', nargs='+',
+                        help='''A glob:source:destination specification
+                        for content to extract. The "glob" is a documentation
+                        file name pattern to include, "source" is a source
+                        directory to search for such files in, and
+                        "destination" is the directory to copy it into.''')
     args = parser.parse_args()
 
     if "ZEPHYR_BASE" not in os.environ:
         sys.exit("ZEPHYR_BASE environment variable undefined.")
     zephyr_base = os.environ["ZEPHYR_BASE"]
 
-    dest = args.dest[0]
     if not args.ignore:
         ignore = ()
     else:
         ignore = tuple(path.normpath(ign) for ign in args.ignore)
-    if args.all:
-        fnfilter = '*'
-    else:
-        fnfilter = '*.rst'
 
-    for d in args.src:
-        content = find_content(zephyr_base, d, dest, fnfilter, ignore)
+    content_config = [cfg.split(':', 2) for cfg in args.content_config]
+    outputs = set()
+    for fnfilter, source, dest in content_config:
+        content = find_content(zephyr_base, source, dest, fnfilter, ignore)
         extract_content(content)
+        outputs |= set(content.outputs)
+    if args.outputs:
+        with open(args.outputs, 'w') as f:
+            for o in outputs:
+                print(o.src, file=f, end='\n')
+                print(o.dst, file=f, end='\n')
 
 
 if __name__ == "__main__":
