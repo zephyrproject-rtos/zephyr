@@ -227,21 +227,72 @@ const uint8_t aPredivFactorTable[16] = { 1U, 2U,  3U,  4U,  5U,  6U,  7U,  8U,
   * @note   This function does not modify the configuration of the
   *            - Peripheral clocks
   *            - LSI, LSE and RTC clocks
-  * @retval None
+  * @retval HAL status
   */
-void HAL_RCC_DeInit(void)
+HAL_StatusTypeDef HAL_RCC_DeInit(void)
 {
-  /* Set HSION bit, HSITRIM[4:0] bits to the reset value*/
-  SET_BIT(RCC->CR, RCC_CR_HSION | RCC_CR_HSITRIM_4);
+  uint32_t tickstart = 0;
+
+  /* Set HSION bit */
+  SET_BIT(RCC->CR, RCC_CR_HSION);
+
+  /* Insure HSIRDY bit is set before writing default HSITRIM value */
+  /* Get start tick */
+  tickstart = HAL_GetTick();
+
+  /* Wait till HSI is ready */
+  while(READ_BIT(RCC->CR, RCC_CR_HSIRDY) == RESET)
+  {
+    if((HAL_GetTick() - tickstart) > HSI_TIMEOUT_VALUE)
+    {
+      return HAL_TIMEOUT;
+    }
+  }
+
+  /* Set HSITRIM default value */
+  MODIFY_REG(RCC->CR, RCC_CR_HSITRIM, RCC_CR_HSITRIM_4);
 
   /* Reset SW[1:0], HPRE[3:0], PPRE1[2:0], PPRE2[2:0] and MCOSEL[2:0] bits */
   CLEAR_BIT(RCC->CFGR, RCC_CFGR_SW | RCC_CFGR_HPRE | RCC_CFGR_PPRE1 | RCC_CFGR_PPRE2 | RCC_CFGR_MCO);
+
+  /* Insure HSI selected as system clock source */
+  /* Get start tick */
+  tickstart = HAL_GetTick();
+
+  /* Wait till system clock source is ready */
+  while(READ_BIT(RCC->CFGR, RCC_CFGR_SWS) != RCC_CFGR_SWS_HSI)
+  {
+    if((HAL_GetTick() - tickstart) > CLOCKSWITCH_TIMEOUT_VALUE)
+    {
+      return HAL_TIMEOUT;
+    }
+  }
+
+  /* Update the SystemCoreClock global variable for HSI as system clock source */
+  SystemCoreClock = HSI_VALUE;
+
+  /* Configure the source of time base considering new system clock settings  */
+  if(HAL_InitTick(TICK_INT_PRIORITY) != HAL_OK)
+  {
+    return HAL_ERROR;
+  }
 
   /* Reset HSEON, CSSON, PLLON bits */
   CLEAR_BIT(RCC->CR, RCC_CR_PLLON | RCC_CR_CSSON | RCC_CR_HSEON);
 
   /* Reset HSEBYP bit */
   CLEAR_BIT(RCC->CR, RCC_CR_HSEBYP);
+
+  /* Insure PLLRDY is reset */
+  /* Get start tick */
+  tickstart = HAL_GetTick();
+  while(READ_BIT(RCC->CR, RCC_CR_PLLRDY) != 0U)
+  {
+    if((HAL_GetTick() - tickstart) > PLL_TIMEOUT_VALUE)
+    {
+      return HAL_TIMEOUT;
+    }
+  }
 
   /* Reset CFGR register */
   CLEAR_REG(RCC->CFGR);
@@ -252,11 +303,16 @@ void HAL_RCC_DeInit(void)
   /* Reset CFGR3 register */
   CLEAR_REG(RCC->CFGR3);
 
+  /* Clear all interrupt flags */
+  SET_BIT(RCC->CIR, RCC_CIR_LSIRDYC | RCC_CIR_LSERDYC | RCC_CIR_HSIRDYC | RCC_CIR_HSERDYC | RCC_CIR_PLLRDYC | RCC_CIR_CSSC);
+
   /* Disable all interrupts */
   CLEAR_REG(RCC->CIR);
 
-  /* Update the SystemCoreClock global variable */
-  SystemCoreClock = HSI_VALUE;
+  /* Reset all CSR flags */
+  __HAL_RCC_CLEAR_RESET_FLAGS();
+
+  return HAL_OK;
 }
 
 /**
@@ -275,10 +331,15 @@ void HAL_RCC_DeInit(void)
   */
 HAL_StatusTypeDef HAL_RCC_OscConfig(RCC_OscInitTypeDef  *RCC_OscInitStruct)
 {
-   uint32_t tickstart = 0U;
+  uint32_t tickstart;
+
+  /* Check Null pointer */
+  if(RCC_OscInitStruct == NULL)
+  {
+    return HAL_ERROR;
+  }
 
   /* Check the parameters */
-  assert_param(RCC_OscInitStruct != NULL);
   assert_param(IS_RCC_OSCILLATORTYPE(RCC_OscInitStruct->OscillatorType));
 
   /*------------------------------- HSE Configuration ------------------------*/
@@ -627,8 +688,13 @@ HAL_StatusTypeDef HAL_RCC_ClockConfig(RCC_ClkInitTypeDef  *RCC_ClkInitStruct, ui
 {
   uint32_t tickstart = 0U;
 
+  /* Check Null pointer */
+  if(RCC_ClkInitStruct == NULL)
+  {
+    return HAL_ERROR;
+  }
+
   /* Check the parameters */
-  assert_param(RCC_ClkInitStruct != NULL);
   assert_param(IS_RCC_CLOCKTYPE(RCC_ClkInitStruct->ClockType));
   assert_param(IS_FLASH_LATENCY(FLatency));
 
@@ -637,14 +703,14 @@ HAL_StatusTypeDef HAL_RCC_ClockConfig(RCC_ClkInitTypeDef  *RCC_ClkInitStruct, ui
     (HCLK) of the device. */
 
   /* Increasing the number of wait states because of higher CPU frequency */
-  if(FLatency > (FLASH->ACR & FLASH_ACR_LATENCY))
+  if(FLatency > __HAL_FLASH_GET_LATENCY())
   {
     /* Program the new number of wait states to the LATENCY bits in the FLASH_ACR register */
     __HAL_FLASH_SET_LATENCY(FLatency);
 
     /* Check that the new number of wait states is taken into account to access the Flash
     memory by reading the FLASH_ACR register */
-    if((FLASH->ACR & FLASH_ACR_LATENCY) != FLatency)
+    if(__HAL_FLASH_GET_LATENCY() != FLatency)
     {
       return HAL_ERROR;
     }
@@ -689,51 +755,29 @@ HAL_StatusTypeDef HAL_RCC_ClockConfig(RCC_ClkInitTypeDef  *RCC_ClkInitStruct, ui
         return HAL_ERROR;
       }
     }
+
     __HAL_RCC_SYSCLK_CONFIG(RCC_ClkInitStruct->SYSCLKSource);
 
     /* Get Start Tick */
     tickstart = HAL_GetTick();
 
-    if(RCC_ClkInitStruct->SYSCLKSource == RCC_SYSCLKSOURCE_HSE)
+    while (__HAL_RCC_GET_SYSCLK_SOURCE() != (RCC_ClkInitStruct->SYSCLKSource << RCC_CFGR_SWS_Pos))
     {
-      while (__HAL_RCC_GET_SYSCLK_SOURCE() != RCC_SYSCLKSOURCE_STATUS_HSE)
+      if ((HAL_GetTick() - tickstart) > CLOCKSWITCH_TIMEOUT_VALUE)
       {
-        if((HAL_GetTick() - tickstart ) > CLOCKSWITCH_TIMEOUT_VALUE)
-        {
-          return HAL_TIMEOUT;
-        }
-      }
-    }
-    else if(RCC_ClkInitStruct->SYSCLKSource == RCC_SYSCLKSOURCE_PLLCLK)
-    {
-      while (__HAL_RCC_GET_SYSCLK_SOURCE() != RCC_SYSCLKSOURCE_STATUS_PLLCLK)
-      {
-        if((HAL_GetTick() - tickstart ) > CLOCKSWITCH_TIMEOUT_VALUE)
-        {
-          return HAL_TIMEOUT;
-        }
-      }
-    }
-    else
-    {
-      while (__HAL_RCC_GET_SYSCLK_SOURCE() != RCC_SYSCLKSOURCE_STATUS_HSI)
-      {
-        if((HAL_GetTick() - tickstart ) > CLOCKSWITCH_TIMEOUT_VALUE)
-        {
-          return HAL_TIMEOUT;
-        }
+        return HAL_TIMEOUT;
       }
     }
   }
   /* Decreasing the number of wait states because of lower CPU frequency */
-  if(FLatency < (FLASH->ACR & FLASH_ACR_LATENCY))
+  if(FLatency < __HAL_FLASH_GET_LATENCY())
   {
     /* Program the new number of wait states to the LATENCY bits in the FLASH_ACR register */
     __HAL_FLASH_SET_LATENCY(FLatency);
 
     /* Check that the new number of wait states is taken into account to access the Flash
     memory by reading the FLASH_ACR register */
-    if((FLASH->ACR & FLASH_ACR_LATENCY) != FLatency)
+    if(__HAL_FLASH_GET_LATENCY() != FLatency)
     {
       return HAL_ERROR;
     }

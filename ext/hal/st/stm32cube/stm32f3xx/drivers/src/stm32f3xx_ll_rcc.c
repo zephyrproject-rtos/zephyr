@@ -244,6 +244,10 @@ ErrorStatus LL_RCC_DeInit(void)
   /* Set HSION bit */
   LL_RCC_HSI_Enable();
 
+  /* Wait for HSI READY bit */
+  while(LL_RCC_HSI_IsReady() != 1U)
+  {}
+
   /* Set HSITRIM bits to the reset value*/
   LL_RCC_HSI_SetCalibTrimming(0x10U);
 
@@ -252,10 +256,18 @@ ErrorStatus LL_RCC_DeInit(void)
   CLEAR_BIT(vl_mask, (RCC_CFGR_SW | RCC_CFGR_HPRE | RCC_CFGR_PPRE1 | RCC_CFGR_PPRE2 | RCC_CFGR_MCOSEL));
   LL_RCC_WriteReg(CFGR, vl_mask);
 
+  /* Wait till system clock source is ready */
+  while(LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSI)
+  {}
+
   /* Reset HSEON, CSSON, PLLON bits */
   vl_mask = 0xFFFFFFFFU;
   CLEAR_BIT(vl_mask, (RCC_CR_PLLON | RCC_CR_CSSON | RCC_CR_HSEON));
   LL_RCC_WriteReg(CR, vl_mask);
+
+  /* Wait for PLL READY bit to be reset */
+  while(LL_RCC_PLL_IsReady() != 0U)
+  {}
 
   /* Reset HSEBYP bit */
   LL_RCC_HSE_DisableBypass();
@@ -275,6 +287,9 @@ ErrorStatus LL_RCC_DeInit(void)
 
   /* Disable all interrupts */
   LL_RCC_WriteReg(CIR, 0x00000000U);
+
+  /* Clear reset flags */
+  LL_RCC_ClearResetFlags();
 
   return SUCCESS;
 }

@@ -7,7 +7,7 @@
   *          This file contains:
   *           - Data structures and the address mapping for all peripherals
   *           - Peripheral's registers declarations and bits definition
-  *           - Macros to access peripheral’s registers hardware
+  *           - Macros to access peripheralÂ’s registers hardware
   *
   ******************************************************************************
   * @attention
@@ -12104,9 +12104,6 @@ typedef struct
    ((INSTANCE) == TIM2))
 
 /****************** TIM Instances : supporting Hall interface *****************/
-#define IS_TIM_HALL_INTERFACE_INSTANCE(INSTANCE)\
-  ((INSTANCE) == TIM1)
-
 #define IS_TIM_HALL_SENSOR_INTERFACE_INSTANCE(INSTANCE)\
   ((INSTANCE) == TIM1)
 
@@ -12135,11 +12132,7 @@ typedef struct
    ((INSTANCE) == TIM15))
 
 /****************** TIM Instances : supporting synchronization ****************/
-#define IS_TIM_SYNCHRO_INSTANCE(INSTANCE)\
-    (((INSTANCE) == TIM1)    || \
-     ((INSTANCE) == TIM2)    || \
-     ((INSTANCE) == TIM6)    || \
-     ((INSTANCE) == TIM15))
+#define IS_TIM_SYNCHRO_INSTANCE(INSTANCE)  IS_TIM_MASTER_INSTANCE(INSTANCE)
 
 /****************** TIM Instances : supporting 32 bits counter ****************/
 #define IS_TIM_32B_COUNTER_INSTANCE(INSTANCE)\
@@ -12329,9 +12322,9 @@ typedef struct
 
 /* Aliases for __IRQn */
 #define ADC1_2_IRQn      ADC1_IRQn
-#define COMP1_2_IRQn     COMP2_IRQn
 #define COMP1_2_3_IRQn   COMP2_IRQn
 #define COMP_IRQn        COMP2_IRQn
+#define COMP1_2_IRQn     COMP2_IRQn
 #define COMP4_5_6_IRQn   COMP4_6_IRQn
 #define HRTIM1_FLT_IRQn  I2C3_ER_IRQn
 #define HRTIM1_TIME_IRQn I2C3_EV_IRQn
@@ -12348,9 +12341,9 @@ typedef struct
 
 /* Aliases for __IRQHandler */
 #define ADC1_2_IRQHandler      ADC1_IRQHandler
-#define COMP1_2_IRQHandler     COMP2_IRQHandler
 #define COMP1_2_3_IRQHandler   COMP2_IRQHandler
 #define COMP_IRQHandler        COMP2_IRQHandler
+#define COMP1_2_IRQHandler     COMP2_IRQHandler
 #define COMP4_5_6_IRQHandler   COMP4_6_IRQHandler
 #define HRTIM1_FLT_IRQHandler  I2C3_ER_IRQHandler
 #define HRTIM1_TIME_IRQHandler I2C3_EV_IRQHandler
