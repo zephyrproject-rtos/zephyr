@@ -77,6 +77,19 @@ config SOC_MIMXRT1062
 	select INIT_SYS_PLL
 	select INIT_USB1_PLL
 
+config SOC_MIMXRT1064
+	bool "SOC_MIMXRT1064"
+	select HAS_MCUX
+	select HAS_MCUX_CCM
+	select HAS_MCUX_IGPIO
+	select HAS_MCUX_LPUART
+	select HAS_MCUX_TRNG
+	select CPU_HAS_FPU
+	select CPU_HAS_MPU
+	select INIT_ARM_PLL
+	select INIT_SYS_PLL
+	select INIT_USB1_PLL
+
 endchoice
 
 if SOC_SERIES_IMX_RT
@@ -117,6 +130,12 @@ config SOC_PART_NUMBER_MIMXRT1062CVL5A
 config SOC_PART_NUMBER_MIMXRT1062DVL6A
 	bool
 
+config SOC_PART_NUMBER_MIMXRT1064CVL5A
+	bool
+
+config SOC_PART_NUMBER_MIMXRT1064DVL6A
+	bool
+
 config SOC_PART_NUMBER_IMX_RT
 	string
 	default "MIMXRT1021CAG4A" if SOC_PART_NUMBER_MIMXRT1021CAG4A
@@ -131,6 +150,8 @@ config SOC_PART_NUMBER_IMX_RT
 	default "MIMXRT1061DVL6A" if SOC_PART_NUMBER_MIMXRT1061DVL6A
 	default "MIMXRT1062CVL5A" if SOC_PART_NUMBER_MIMXRT1062CVL5A
 	default "MIMXRT1062DVL6A" if SOC_PART_NUMBER_MIMXRT1062DVL6A
+	default "MIMXRT1064CVL5A" if SOC_PART_NUMBER_MIMXRT1064CVL5A
+	default "MIMXRT1064DVL6A" if SOC_PART_NUMBER_MIMXRT1064DVL6A
 	help
 	  This string holds the full part number of the SoC. It is a hidden option
 	  that you should not set directly. The part number selection choice defines
