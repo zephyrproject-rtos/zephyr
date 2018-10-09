@@ -687,6 +687,7 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 {
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 	HAL_StatusTypeDef status;
+	u32_t len = data_len;
 	int ret = 0;
 
 	USB_DBG("ep 0x%02x, len %u", ep, data_len);
@@ -706,8 +707,12 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 		irq_disable(CONFIG_USB_IRQ);
 	}
 
+	if (ep == EP0_IN && len > MAX_PACKET_SIZE0) {
+		len = MAX_PACKET_SIZE0;
+	}
+
 	status = HAL_PCD_EP_Transmit(&usb_dc_stm32_state.pcd, ep,
-				     (void *)data, data_len);
+				     (void *)data, len);
 	if (status != HAL_OK) {
 		USB_ERR("HAL_PCD_EP_Transmit failed(0x%02x), %d", ep,
 			(int)status);
@@ -715,7 +720,7 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 		ret = -EIO;
 	}
 
-	if (!ret && ep == EP0_IN && data_len > 0) {
+	if (!ret && ep == EP0_IN && len > 0) {
 		/* Wait for an empty package as from the host.
 		 * This also flushes the TX FIFO to the host.
 		 */
@@ -727,7 +732,7 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 	}
 
 	if (ret_bytes) {
-		*ret_bytes = data_len;
+		*ret_bytes = len;
 	}
 
 	return ret;
