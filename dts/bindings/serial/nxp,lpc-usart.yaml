@@ -5,7 +5,6 @@
 #
 ---
 title: LPC USART
-id: nxp,lpc-usart
 version: 0.1
 
 description: >

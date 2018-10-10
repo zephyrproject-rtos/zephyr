@@ -5,7 +5,6 @@
 #
 ---
 title: Atmel SAM SPI driver
-id: atmel,sam-spi
 version: 0.1
 
 description: >

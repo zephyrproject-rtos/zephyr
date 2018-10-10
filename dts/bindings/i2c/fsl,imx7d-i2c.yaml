@@ -5,7 +5,6 @@
 #
 ---
 title: i.MX I2C Controller
-id: fsl,imx7d-i2c
 version: 0.1
 
 description: >

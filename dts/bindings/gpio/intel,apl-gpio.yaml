@@ -5,7 +5,6 @@
 #
 ---
 title: Intel Apollo Lake GPIO controller
-id: intel,apl-gpio
 version: 0.1
 
 description: >

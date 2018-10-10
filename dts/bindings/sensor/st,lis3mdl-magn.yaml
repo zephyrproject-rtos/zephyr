@@ -5,7 +5,6 @@
 #
 ---
 title: STMicroelectronics MEMS sensors LIS3MDL
-id: st,lis3mdl-magn
 version: 0.1
 
 description: >

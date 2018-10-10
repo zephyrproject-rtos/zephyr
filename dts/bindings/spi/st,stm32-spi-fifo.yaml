@@ -5,7 +5,6 @@
 #
 ---
 title: STM32 SPI FIFO
-id: st,stm32-spi-fifo
 version: 0.1
 
 description: >

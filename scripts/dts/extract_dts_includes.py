@@ -472,7 +472,6 @@ def yaml_traverse_inherited(node):
     """ Recursive overload procedure inside ``node``
     ``inherits`` section is searched for and used as node base when found.
     Base values are then overloaded by node values
-    Additionally, 'id' key of 'inherited' dict is converted to 'node_type'
     and some consistency checks are done.
     :param node:
     :return: node
@@ -484,14 +483,16 @@ def yaml_traverse_inherited(node):
         # If 'title' is missing, make fault finding more easy.
         # Give a hint what node we are looking at.
         print("extract_dts_includes.py: node without 'title' -", node)
-    for prop in ('title', 'id', 'version', 'description'):
+    for prop in ('title', 'version', 'description'):
         if prop not in node:
             node[prop] = "<unknown {}>".format(prop)
             print("extract_dts_includes.py: '{}' property missing".format(prop),
                   "in '{}' binding. Using '{}'.".format(node['title'], node[prop]))
 
-    if 'node_type' not in node:
-        node['node_type'] = [node['id'],]
+    # warn if we have an 'id' field
+    if 'id' in node:
+        print("extract_dts_includes.py: WARNING: id field set",
+              "in '{}', should be removed.".format(node['title']))
 
     if 'inherits' in node:
         if isinstance(node['inherits'], list):
@@ -502,21 +503,9 @@ def yaml_traverse_inherited(node):
         for inherits in inherits_list:
             if 'inherits' in inherits:
                 inherits = yaml_traverse_inherited(inherits)
-            if 'node_type' in inherits:
-                node['node_type'].extend(inherits['node_type'])
-            else:
-                if 'id' not in inherits:
-                    inherits['id'] = "<unknown id>"
-                    title = inherits.get('title', "<unknown title>")
-                    print("extract_dts_includes.py: 'id' property missing in",
-                          "'{}' binding. Using '{}'.".format(title,
-                                                             inherits['id']))
-                node['node_type'].append(inherits['id'])
-            # id, node_type, title, description, version of inherited node
+            # title, description, version of inherited node
             # are overwritten by intention. Remove to prevent dct_merge to
             # complain about duplicates.
-            inherits.pop('id')
-            inherits.pop('node_type', None)
             inherits.pop('title', None)
             inherits.pop('version', None)
             inherits.pop('description', None)

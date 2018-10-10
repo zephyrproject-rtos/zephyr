@@ -1,6 +1,5 @@
 ---
 title: RISCV QEMU UART
-id: riscv,qemu-uart
 version: 0.1
 
 description: >

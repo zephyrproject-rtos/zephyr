@@ -5,7 +5,6 @@
 #
 ---
 title: i.MX Clock Controller Module (CCM)
-id: nxp,imx-ccm
 version: 0.1
 
 description: >

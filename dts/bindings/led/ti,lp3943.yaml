@@ -1,6 +1,5 @@
 ---
 title: TI LP3943 LED Driver
-id: ti,lp3943
 version: 0.1
 
 description: TI LP3943 LED binding

@@ -5,7 +5,6 @@
 #
 ---
 title: SiFive PWM
-id: sifive,pwm0
 version: 0.1
 
 description: >

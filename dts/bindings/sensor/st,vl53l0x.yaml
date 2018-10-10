@@ -5,7 +5,6 @@
 #
 ---
 title: STMicroelectronics MEMS sensors VL53L0X
-id: st,vl53l0x
 version: 0.1
 
 description: >

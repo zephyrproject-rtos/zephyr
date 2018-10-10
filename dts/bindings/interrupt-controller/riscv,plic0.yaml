@@ -5,7 +5,6 @@
 #
 ---
 title: RISC-V PLIC
-id: riscv,plic0
 version: 0.1
 
 description: >

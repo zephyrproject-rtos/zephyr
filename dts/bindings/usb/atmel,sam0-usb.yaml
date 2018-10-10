@@ -1,6 +1,5 @@
 ---
 title: Atmel SAM0 USB device
-id: atmel,sam0-usb
 version: 0.1
 
 description: >

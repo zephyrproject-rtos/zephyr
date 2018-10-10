@@ -5,7 +5,6 @@
 #
 ---
 title: NXP DSPI
-id: nxp,kinetis-dspi
 version: 0.1
 
 description: >

@@ -5,7 +5,6 @@
 #
 ---
 title: PULPINO GPIO Controller
-id: pulp,pulpino-gpio
 version: 0.1
 
 description: >

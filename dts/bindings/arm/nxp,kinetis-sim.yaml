@@ -5,7 +5,6 @@
 #
 ---
 title: Kinetis System Integration Module (SIM)
-id: nxp,kinetis-sim
 version: 0.1
 
 description: >

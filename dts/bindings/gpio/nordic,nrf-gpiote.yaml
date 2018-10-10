@@ -5,7 +5,6 @@
 #
 ---
 title: NRF5 GPIOTE
-id: nordic,nrf-gpiote
 version: 0.1
 
 description: >

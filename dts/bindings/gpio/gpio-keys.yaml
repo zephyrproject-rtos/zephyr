@@ -5,7 +5,6 @@
 #
 ---
 title: GPIO KEYS
-id: gpio-keys
 version: 0.1
 
 description: >

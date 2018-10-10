@@ -5,7 +5,6 @@
 #
 ---
 title: Synopsys Designware SPI Controller
-id: snps,designware-spi
 version: 0.1
 
 description: >

@@ -5,7 +5,6 @@
 #
 ---
 title: CYPRESS UART
-id: cypress,psoc6-uart
 version: 0.1
 
 description: >
