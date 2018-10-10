@@ -13,8 +13,9 @@
  * the browser at host.
  */
 
-#define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(main);
 
 #include <stdio.h>
 #include <string.h>
@@ -276,7 +277,7 @@ static struct webusb_req_handlers req_handlers = {
 
 void main(void)
 {
-	SYS_LOG_DBG("");
+	LOG_DBG("");
 
 	/* Set the custom and vendor request handlers */
 	webusb_register_request_handlers(&req_handlers);
