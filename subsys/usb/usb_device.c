@@ -1463,7 +1463,7 @@ static int composite_setup_ep_cb(void)
 	for (size_t i = 0; i < size; i++) {
 		ep_data = __usb_data_start[i].endpoint;
 		for (u8_t n = 0; n < __usb_data_start[i].num_endpoints; n++) {
-			USB_ERR("set cb, ep: 0x%x\n", ep_data[n].ep_addr);
+			USB_DBG("set cb, ep: 0x%x", ep_data[n].ep_addr);
 			if (usb_dc_ep_set_callback(ep_data[n].ep_addr,
 						   ep_data[n].ep_cb)) {
 				return -1;
