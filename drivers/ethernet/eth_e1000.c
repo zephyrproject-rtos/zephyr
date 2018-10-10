@@ -165,10 +165,10 @@ int e1000_probe(struct device *device)
 
 		pci_show(&dev->pci);
 
-		found = true;
+		return 0;
 	}
 
-	return found;
+	return -ENODEV;
 }
 
 static struct device DEVICE_NAME_GET(eth_e1000);
