@@ -90,6 +90,8 @@ struct entropy_nrf5_dev_data {
 	RNG_POOL_DEFINE(thr, CONFIG_ENTROPY_NRF5_THR_POOL_SIZE);
 };
 
+static struct entropy_nrf5_dev_data entropy_nrf5_data;
+
 #define DEV_DATA(dev) \
 	((struct entropy_nrf5_dev_data *)(dev)->driver_data)
 
@@ -199,40 +201,43 @@ static void rng_pool_init(struct rng_pool *rngp, u16_t size, u8_t threshold)
 
 static void isr(void *arg)
 {
-	struct entropy_nrf5_dev_data *dev_data = arg;
 	int byte, ret;
+
+	ARG_UNUSED(arg);
 
 	byte = random_byte_get();
 	if (byte < 0) {
 		return;
 	}
 
-	ret = rng_pool_put((struct rng_pool *)dev_data->isr, byte);
+	ret = rng_pool_put((struct rng_pool *)(entropy_nrf5_data.isr), byte);
 	if (ret < 0) {
-		ret = rng_pool_put((struct rng_pool *)dev_data->thr, byte);
+		ret = rng_pool_put((struct rng_pool *)(entropy_nrf5_data.thr),
+				   byte);
 		if (ret < 0) {
 			nrf_rng_task_trigger(NRF_RNG_TASK_STOP);
 		}
 
-		k_sem_give(&dev_data->sem_sync);
+		k_sem_give(&entropy_nrf5_data.sem_sync);
 	}
 }
 
 static int entropy_nrf5_get_entropy(struct device *device, u8_t *buf, u16_t len)
 {
-	struct entropy_nrf5_dev_data *dev_data = DEV_DATA(device);
+	/* Check if this API is called on correct driver instance. */
+	__ASSERT_NO_MSG(&entropy_nrf5_data == DEV_DATA(device));
 
 	while (len) {
 		u16_t bytes;
 
-		k_sem_take(&dev_data->sem_lock, K_FOREVER);
-		bytes = rng_pool_get((struct rng_pool *)dev_data->thr,
+		k_sem_take(&entropy_nrf5_data.sem_lock, K_FOREVER);
+		bytes = rng_pool_get((struct rng_pool *)(entropy_nrf5_data.thr),
 				     buf, len);
-		k_sem_give(&dev_data->sem_lock);
+		k_sem_give(&entropy_nrf5_data.sem_lock);
 
 		if (bytes == 0) {
 			/* Pool is empty: Sleep until next interrupt. */
-			k_sem_take(&dev_data->sem_sync, K_FOREVER);
+			k_sem_take(&entropy_nrf5_data.sem_sync, K_FOREVER);
 			continue;
 		}
 
@@ -246,11 +251,14 @@ static int entropy_nrf5_get_entropy(struct device *device, u8_t *buf, u16_t len)
 static int entropy_nrf5_get_entropy_isr(struct device *dev, u8_t *buf, u16_t len,
 					u32_t flags)
 {
-	struct entropy_nrf5_dev_data *dev_data = DEV_DATA(dev);
 	u16_t cnt = len;
 
+	/* Check if this API is called on correct driver instance. */
+	__ASSERT_NO_MSG(&entropy_nrf5_data == DEV_DATA(dev));
+
 	if (!(flags & ENTROPY_BUSYWAIT)) {
-		return rng_pool_get((struct rng_pool *)dev_data->isr, buf, len);
+		return rng_pool_get((struct rng_pool *)(entropy_nrf5_data.isr),
+				    buf, len);
 	}
 
 	if (len) {
@@ -292,7 +300,6 @@ static int entropy_nrf5_get_entropy_isr(struct device *dev, u8_t *buf, u16_t len
 	return cnt;
 }
 
-static struct entropy_nrf5_dev_data entropy_nrf5_data;
 static int entropy_nrf5_init(struct device *device);
 
 static const struct entropy_driver_api entropy_nrf5_api_funcs = {
@@ -307,18 +314,19 @@ DEVICE_AND_API_INIT(entropy_nrf5, CONFIG_ENTROPY_NAME,
 
 static int entropy_nrf5_init(struct device *device)
 {
-	struct entropy_nrf5_dev_data *dev_data = DEV_DATA(device);
+	/* Check if this API is called on correct driver instance. */
+	__ASSERT_NO_MSG(&entropy_nrf5_data == DEV_DATA(device));
 
 	/* Locking semaphore initialized to 1 (unlocked) */
-	k_sem_init(&dev_data->sem_lock, 1, 1);
+	k_sem_init(&entropy_nrf5_data.sem_lock, 1, 1);
 
 	/* Synching semaphore */
-	k_sem_init(&dev_data->sem_sync, 0, 1);
+	k_sem_init(&entropy_nrf5_data.sem_sync, 0, 1);
 
-	rng_pool_init((struct rng_pool *)dev_data->thr,
+	rng_pool_init((struct rng_pool *)(entropy_nrf5_data.thr),
 		      CONFIG_ENTROPY_NRF5_THR_POOL_SIZE,
 		      CONFIG_ENTROPY_NRF5_THR_THRESHOLD);
-	rng_pool_init((struct rng_pool *)dev_data->isr,
+	rng_pool_init((struct rng_pool *)(entropy_nrf5_data.isr),
 		      CONFIG_ENTROPY_NRF5_ISR_POOL_SIZE,
 		      CONFIG_ENTROPY_NRF5_ISR_THRESHOLD);
 
