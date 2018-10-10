@@ -1,6 +1,5 @@
 ---
 title: Atmel SAM0 PINMUX
-id: atmel,sam0-pinmux
 version: 0.1
 
 description: >

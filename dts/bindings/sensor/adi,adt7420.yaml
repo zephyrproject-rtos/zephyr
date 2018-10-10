@@ -5,7 +5,6 @@
 #
 ---
 title: ADT7420 16-Bit Digital I2C Temperature Sensor
-id: adi,adt7420
 version: 0.1
 
 description: >

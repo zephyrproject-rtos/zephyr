@@ -5,7 +5,6 @@
 #
 ---
 title: NXP LPSPI
-id: nxp,imx-lpspi
 version: 0.1
 
 description: >

@@ -5,7 +5,6 @@
 #
 ---
 title: Virtual I2C slave eeprom
-id: i2c,eeprom
 version: 0.1
 
 description: >

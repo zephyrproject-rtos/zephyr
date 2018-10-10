@@ -5,7 +5,6 @@
 #
 ---
 title: NXP FlexSPI
-id: nxp,imx-flexspi
 version: 0.1
 
 description: >

@@ -5,7 +5,6 @@
 #
 ---
 title: NXP Kinetis watchdog driver
-id: nxp,kinetis-wdog
 version: 0.1
 
 description: >

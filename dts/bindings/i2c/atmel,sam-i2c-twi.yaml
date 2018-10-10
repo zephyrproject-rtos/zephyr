@@ -5,7 +5,6 @@
 #
 ---
 title: Atmel SAM Family I2C (TWI) node
-id: atmel,sam-i2c-twi
 version: 0.1
 
 description: >

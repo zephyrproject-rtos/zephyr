@@ -5,7 +5,6 @@
 #
 ---
 title: Intel QMSI Uart
-id: intel,qmsi-uart
 version: 0.1
 
 description: >

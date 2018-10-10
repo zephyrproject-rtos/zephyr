@@ -1,6 +1,5 @@
 ---
 title: Kinetis LPSCI UART
-id: nxp,kinetis-lpsci
 version: 0.1
 
 description: >

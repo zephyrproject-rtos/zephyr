@@ -5,7 +5,6 @@
 #
 ---
 title: Texas Instruments TLV320DAC Audio DAC
-id: ti,tlv320dac
 version: 0.1
 
 description: >

@@ -5,7 +5,6 @@
 #
 ---
 title: LPC MAILBOX
-id: nxp,lpc-mailbox
 version: 0.1
 
 description: >

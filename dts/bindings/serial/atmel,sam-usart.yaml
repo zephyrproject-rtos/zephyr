@@ -1,6 +1,5 @@
 ---
 title: Atmel SAM Family USART
-id: atmel,sam-usart
 version: 0.1
 
 description: >

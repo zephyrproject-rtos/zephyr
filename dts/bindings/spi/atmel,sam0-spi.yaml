@@ -5,7 +5,6 @@
 #
 ---
 title: Atmel SAM0 SERCOM SPI driver
-id: atmel,sam0-spi
 version: 0.1
 
 description: >

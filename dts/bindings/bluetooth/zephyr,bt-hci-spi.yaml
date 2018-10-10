@@ -5,7 +5,6 @@
 #
 ---
 title: Bluetooth module based on Zephyr's Bluetooth HCI SPI driver
-id: zephyr,bt-hci-spi
 version: 0.1
 
 description: >

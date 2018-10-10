@@ -5,7 +5,6 @@
 #
 ---
 title: Intel QMSI RTC
-id: intel,qmsi-rtc
 version: 0.1
 
 description: >
