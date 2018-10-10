@@ -93,7 +93,7 @@
 				label = "GPIOD";
 			};
 
-			gpiof: gpio@480014000 {
+			gpiof: gpio@48001400 {
 				compatible = "st,stm32-gpio";
 				gpio-controller;
 				#gpio-cells = <2>;
