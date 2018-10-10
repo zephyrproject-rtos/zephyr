@@ -356,7 +356,14 @@ def kconfig_definition_rst(sc):
             if node is node.kconfig.top_node:
                 break
 
-            path = arrow + node.prompt[0] + path
+            # Promptless choices can show up as parents, e.g. when people
+            # define choices in multiple locations to add symbols. Use
+            # standard_sc_expr_str() to show them. That way they show up as
+            # '<choice (name if any)>'.
+            path = arrow + \
+                   (node.prompt[0] if node.prompt else
+                    kconfiglib.standard_sc_expr_str(node.item)) + \
+                   path
 
         return "(top menu)" + path
 

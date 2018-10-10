@@ -16,7 +16,7 @@ inspired by Vi:
   J/K     : Down/Up
   L       : Enter menu/Toggle item
   H       : Leave menu
-  Ctrl-D/U: Page Down/Page Down
+  Ctrl-D/U: Page Down/Page Up
   G/End   : Jump to end of list
   g/Home  : Jump to beginning of list
 
@@ -785,7 +785,7 @@ def _menuconfig(stdscr):
                    "h", "H"):
 
             if c == "\x1B" and _cur_menu is _kconf.top_node:
-                res = quit_dialog()
+                res = _quit_dialog()
                 if res:
                     return res
             else:
@@ -836,11 +836,11 @@ def _menuconfig(stdscr):
             _show_name = not _show_name
 
         elif c in ("q", "Q"):
-            res = quit_dialog()
+            res = _quit_dialog()
             if res:
                 return res
 
-def quit_dialog():
+def _quit_dialog():
     if not _conf_changed:
         return "No changes to save"
 
@@ -1190,7 +1190,11 @@ def _draw_main():
 
     menu = _cur_menu
     while menu is not _kconf.top_node:
-        menu_prompts.append(menu.prompt[0])
+        # Promptless choices can be entered in show-all mode. Use
+        # standard_sc_expr_str() for them, so they show up as
+        # '<choice (name if any)>'.
+        menu_prompts.append(menu.prompt[0] if menu.prompt else
+                            standard_sc_expr_str(menu.item))
         menu = _parent_menu(menu)
     menu_prompts.append("(top menu)")
     menu_prompts.reverse()
@@ -1382,7 +1386,7 @@ def _change_node(node):
         s = sc.str_value
 
         while True:
-            s = _input_dialog("Value for '{}' ({})".format(
+            s = _input_dialog("{} ({})".format(
                                   node.prompt[0], TYPE_TO_STR[sc.type]),
                               s, _range_info(sc))
 
@@ -2489,7 +2493,11 @@ def _menu_path_info(node):
 
     node = _parent_menu(node)
     while node is not _kconf.top_node:
-        path = " -> " + node.prompt[0] + path
+        # Promptless choices might appear among the parents. Use
+        # standard_sc_expr_str() for them, so that they show up as
+        # '<choice (name if any)>'.
+        path = " -> " + (node.prompt[0] if node.prompt else
+                         standard_sc_expr_str(node.item)) + path
         node = _parent_menu(node)
 
     return "(top menu)" + path
@@ -2645,13 +2653,13 @@ def _node_str(node):
     # This approach gives nice alignment for empty string symbols ("()  Foo")
     s = "{:{}}".format(_value_str(node), 3 + indent)
 
-    # 'not node.prompt' can only be True in show-all mode
-    if not node.prompt or \
-       (_show_name and
-        (isinstance(node.item, Symbol) or
-         (isinstance(node.item, Choice) and node.item.name))):
-
-        s += " <{}>".format(node.item.name)
+    if _should_show_name(node):
+        if isinstance(node.item, Symbol):
+            s += " <{}>".format(node.item.name)
+        else:
+            # For choices, use standard_sc_expr_str(). That way they show up as
+            # '<choice (name if any)>'.
+            s += " " + standard_sc_expr_str(node.item)
 
     if node.prompt:
         s += " "
@@ -2686,6 +2694,15 @@ def _node_str(node):
         s += "  --->" if _shown_nodes(node) else "  ---> (empty)"
 
     return s
+
+def _should_show_name(node):
+    # Returns True if 'node' is a symbol or choice whose name should shown (if
+    # any, as names are optional for choices)
+
+    # The 'not node.prompt' case only hits in show-all mode, for promptless
+    # symbols and choices
+    return not node.prompt or \
+           (_show_name and isinstance(node.item, (Symbol, Choice)))
 
 def _value_str(node):
     # Returns the value part ("[*]", "<M>", "(foo)" etc.) of a menu node
