@@ -787,7 +787,7 @@ static void vnd_get(struct bt_mesh_model *model,
 	struct net_buf_simple *msg = NET_BUF_SIMPLE(3 + 6 + 4);
 	struct vendor_state *state = model->user_data;
 
-	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_3(0x03, CID_ZEPHYR));
+	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_3(0x04, CID_ZEPHYR));
 	net_buf_simple_add_le16(msg, state->current);
 	net_buf_simple_add_le32(msg, state->response);
 
@@ -1972,10 +1972,10 @@ static const struct bt_mesh_model_op light_ctl_temp_srv_op[] = {
 
 /* Mapping of message handlers for Vendor (0x4321) */
 static const struct bt_mesh_model_op vnd_ops[] = {
-	{ BT_MESH_MODEL_OP_3(0x00, CID_ZEPHYR), 0, vnd_get },
-	{ BT_MESH_MODEL_OP_3(0x01, CID_ZEPHYR), 3, vnd_set },
-	{ BT_MESH_MODEL_OP_3(0x02, CID_ZEPHYR), 3, vnd_set_unack },
-	{ BT_MESH_MODEL_OP_3(0x03, CID_ZEPHYR), 6, vnd_status },
+	{ BT_MESH_MODEL_OP_3(0x01, CID_ZEPHYR), 0, vnd_get },
+	{ BT_MESH_MODEL_OP_3(0x02, CID_ZEPHYR), 3, vnd_set },
+	{ BT_MESH_MODEL_OP_3(0x03, CID_ZEPHYR), 3, vnd_set_unack },
+	{ BT_MESH_MODEL_OP_3(0x04, CID_ZEPHYR), 6, vnd_status },
 	BT_MESH_MODEL_OP_END,
 };
 
