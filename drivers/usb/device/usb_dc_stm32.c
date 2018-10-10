@@ -96,6 +96,15 @@ LOG_MODULE_REGISTER(usb_dc_stm32);
 
 #else /* USB_OTG_FS */
 
+/*
+ * STM32L4 series USB LL API doesn't provide HIGH and HIGH_IN_FULL speed
+ * defines.
+ */
+#if defined(CONFIG_SOC_SERIES_STM32L4X)
+#define USB_OTG_SPEED_HIGH                     0U
+#define USB_OTG_SPEED_HIGH_IN_FULL             1U
+#endif /* CONFIG_SOC_SERIES_STM32L4X */
+
 #define EP0_MPS USB_OTG_MAX_EP0_SIZE
 #ifdef CONFIG_USB_HS_BASE_ADDRESS
 #define EP_MPS USB_OTG_HS_MAX_PACKET_SIZE
