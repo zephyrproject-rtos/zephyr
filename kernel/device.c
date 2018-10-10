@@ -50,9 +50,15 @@ void _sys_device_do_config_level(int level)
 	for (info = config_levels[level]; info < config_levels[level+1];
 								info++) {
 		struct device_config *device = info->config;
+		int res;
 
-		(void)device->init(info);
-		_k_object_init(info);
+		res = device->init(info);
+
+		if (res < 0) {
+			printk("dev init: %s: error %d\n", device->name, res);
+		} else {
+			_k_object_init(info);
+		}
 	}
 }
 
