@@ -16,6 +16,11 @@
 #define THREAD_PRIORITY 3
 #define ONE_SECOND 1
 
+/* Macros to test invalid states */
+#define PTHREAD_CANCEL_INVALID -1
+#define SCHED_INVALID -1
+#define PRIO_INVALID -1
+
 K_THREAD_STACK_ARRAY_DEFINE(stack_e, N_THR_E, STACKS);
 K_THREAD_STACK_ARRAY_DEFINE(stack_t, N_THR_T, STACKS);
 
@@ -178,9 +183,9 @@ int barrier_test_done(void)
 void *thread_top_term(void *p1)
 {
 	pthread_t self;
-	int oldstate, ret;
+	int oldstate, policy, ret;
 	int val = (u32_t) p1;
-	struct sched_param param;
+	struct sched_param param, getschedparam;
 
 	param.priority = N_THR_T - (s32_t) p1;
 
@@ -189,6 +194,12 @@ void *thread_top_term(void *p1)
 	/* Change priority of thread */
 	zassert_false(pthread_setschedparam(self, SCHED_RR, &param),
 		      "Unable to set thread priority!");
+
+	zassert_false(pthread_getschedparam(self, &policy, &getschedparam),
+			"Unable to get thread priority!");
+
+	printk("Thread %d starting with a priority of %d\n", (s32_t) p1,
+			getschedparam.priority);
 
 	if (val % 2) {
 		ret = pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &oldstate);
@@ -213,11 +224,13 @@ void *thread_top_term(void *p1)
 void test_posix_pthread_execution(void)
 {
 	int i, ret, min_prio, max_prio;
+	int dstate, policy;
 	pthread_attr_t attr[N_THR_E];
-	struct sched_param schedparam;
+	struct sched_param schedparam, getschedparam;
 	pthread_t newthread[N_THR_E];
 	int schedpolicy = SCHED_FIFO;
-	void *retval;
+	void *retval, *stackaddr;
+	size_t stacksize;
 
 	sem_init(&main_sem, 0, 1);
 	schedparam.priority = CONFIG_NUM_COOP_PRIORITIES - 1;
@@ -232,6 +245,45 @@ void test_posix_pthread_execution(void)
 	zassert_false(ret,
 			"Scheduling priority outside valid priority range");
 
+	/* TESTPOINTS: Try setting attributes before init */
+	ret = pthread_attr_setschedparam(&attr[0], &schedparam);
+	zassert_equal(ret, EINVAL, "uninitialized attr set!");
+
+	ret = pthread_attr_setdetachstate(&attr[0], PTHREAD_CREATE_JOINABLE);
+	zassert_equal(ret, EINVAL, "uninitialized attr set!");
+
+	ret = pthread_attr_setschedpolicy(&attr[0], schedpolicy);
+	zassert_equal(ret, EINVAL, "uninitialized attr set!");
+
+	/* TESTPOINT: Try setting attribute with empty stack */
+	ret = pthread_attr_setstack(&attr[0], 0, STACKS);
+	zassert_equal(ret, EACCES, "empty stack set!");
+
+	/* TESTPOINTS: Try getting attributes before init */
+	ret = pthread_attr_getschedparam(&attr[0], &getschedparam);
+	zassert_equal(ret, EINVAL, "uninitialized attr retrieved!");
+
+	ret = pthread_attr_getdetachstate(&attr[0], &dstate);
+	zassert_equal(ret, EINVAL, "uninitialized attr retrieved!");
+
+	ret = pthread_attr_getschedpolicy(&attr[0], &policy);
+	zassert_equal(ret, EINVAL, "uninitialized attr retrieved!");
+
+	ret = pthread_attr_getstack(&attr[0], &stackaddr, &stacksize);
+	zassert_equal(ret, EINVAL, "uninitialized attr retrieved!");
+
+	ret = pthread_attr_getstacksize(&attr[0], &stacksize);
+	zassert_equal(ret, EINVAL, "uninitialized attr retrieved!");
+
+	/* TESTPOINT: Try destroying attr before init */
+	ret = pthread_attr_destroy(&attr[0]);
+	zassert_equal(ret, EINVAL, "uninitialized attr destroyed!");
+
+	/* TESTPOINT: Try creating thread before attr init */
+	ret = pthread_create(&newthread[0], &attr[0],
+				thread_top_exec, NULL);
+	zassert_equal(ret, EINVAL, "thread created before attr init!");
+
 	for (i = 0; i < N_THR_E; i++) {
 		ret = pthread_attr_init(&attr[i]);
 		if (ret != 0) {
@@ -241,11 +293,28 @@ void test_posix_pthread_execution(void)
 				      "Unable to create pthread object attrib");
 		}
 
+		/* TESTPOINTS: Retrieve set stack attributes and compare */
 		pthread_attr_setstack(&attr[i], &stack_e[i][0], STACKS);
+		pthread_attr_getstack(&attr[i], &stackaddr, &stacksize);
+		zassert_equal_ptr(attr[i].stack, stackaddr,
+				"stack attribute addresses do not match!");
+		zassert_equal(STACKS, stacksize, "stack sizes do not match!");
+
+		pthread_attr_getstacksize(&attr[i], &stacksize);
+		zassert_equal(STACKS, stacksize, "stack sizes do not match!");
+
 		pthread_attr_setschedpolicy(&attr[i], schedpolicy);
+		pthread_attr_getschedpolicy(&attr[i], &policy);
+		zassert_equal(schedpolicy, policy,
+				"scheduling policies do not match!");
+
 		pthread_attr_setschedparam(&attr[i], &schedparam);
+		pthread_attr_getschedparam(&attr[i], &getschedparam);
+		zassert_equal(schedparam.priority, getschedparam.priority,
+				"scheduling priorities do not match!");
+
 		ret = pthread_create(&newthread[i], &attr[i], thread_top_exec,
-				     (void *)i);
+				(void *)i);
 
 		/* TESTPOINT: Check if thread is created successfully */
 		zassert_false(ret, "Number of threads exceed max limit");
@@ -282,6 +351,7 @@ void test_posix_pthread_execution(void)
 void test_posix_pthread_termination(void)
 {
 	s32_t i, ret;
+	int oldstate, policy;
 	pthread_attr_t attr[N_THR_T];
 	struct sched_param schedparam;
 	pthread_t newthread[N_THR_T];
@@ -311,7 +381,32 @@ void test_posix_pthread_termination(void)
 		zassert_false(ret, "Not enough space to create new thread");
 	}
 
+	/* TESTPOINT: Try setting invalid cancel state to current thread */
+	ret = pthread_setcancelstate(PTHREAD_CANCEL_INVALID, &oldstate);
+	zassert_equal(ret, EINVAL, "invalid cancel state set!");
+
+	/* TESTPOINT: Try setting invalid policy */
+	ret = pthread_setschedparam(newthread[0], SCHED_INVALID, &schedparam);
+	zassert_equal(ret, EINVAL, "invalid policy set!");
+
+	/* TESTPOINT: Try setting invalid priority */
+	schedparam.priority = PRIO_INVALID;
+	ret = pthread_setschedparam(newthread[0], SCHED_RR, &schedparam);
+	zassert_equal(ret, EINVAL, "invalid priority set!");
+
 	for (i = 0; i < N_THR_T; i++) {
 		pthread_join(newthread[i], &retval);
 	}
+
+	/* TESTPOINT: Test for deadlock */
+	ret = pthread_join(pthread_self(), &retval);
+	zassert_equal(ret, EDEADLK, "thread joined with self inexplicably!");
+
+	/* TESTPOINT: Try canceling a terminated thread */
+	ret = pthread_cancel(newthread[N_THR_T/2]);
+	zassert_equal(ret, ESRCH, "cancelled a terminated thread!");
+
+	/* TESTPOINT: Try getting scheduling info from terminated thread */
+	ret = pthread_getschedparam(newthread[N_THR_T/2], &policy, &schedparam);
+	zassert_equal(ret, ESRCH, "got attr from terminated thread!");
 }
