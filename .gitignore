@@ -34,11 +34,11 @@ scripts/grub
 doc/reference/kconfig/*.rst
 doc/doc.warnings
 tags
-.project
-.cproject
-.xxproject
+.*project
+.settings
 .envrc
 .vscode
+hide-defaults-note
 
 # Tag files
 GPATH
