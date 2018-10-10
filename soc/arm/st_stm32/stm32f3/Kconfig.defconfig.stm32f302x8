@@ -1,0 +1,29 @@
+# Kconfig - ST Microelectronics STM32F302X8 MCU
+#
+# Copyright (c) 2018 Seitz & Associates
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_STM32F302X8
+
+config SOC
+	string
+	default "stm32f302x8"
+
+config FLASH_PAGE_SIZE
+	hex
+	default 0x800
+
+config NUM_IRQS
+	int
+	default 82
+
+if GPIO_STM32
+
+config GPIO_STM32_PORTF
+	default y
+
+endif # GPIO_STM32
+
+endif # SOC_STM32F302X8
