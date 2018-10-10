@@ -29,6 +29,7 @@ static u8_t interface_data[64];
 
 static u8_t loopback_buf[1024];
 
+/* usb.rst config structure start */
 struct usb_loopback_config {
 	struct usb_if_descriptor if0;
 	struct usb_ep_descriptor if0_out_ep;
@@ -69,6 +70,7 @@ USBD_CLASS_DESCR_DEFINE(primary) struct usb_loopback_config loopback_cfg = {
 		.bInterval = 0x00,
 	},
 };
+/* usb.rst config structure end */
 
 static void loopback_out_cb(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
@@ -87,6 +89,7 @@ static void loopback_in_cb(u8_t ep,
 	}
 }
 
+/* usb.rst endpoint configuration start */
 static struct usb_ep_cfg_data ep_cfg[] = {
 	{
 		.ep_cb = loopback_out_cb,
@@ -97,6 +100,7 @@ static struct usb_ep_cfg_data ep_cfg[] = {
 		.ep_addr = LOOPBACK_IN_EP_ADDR,
 	},
 };
+/* usb.rst endpoint configuration end */
 
 static void loopback_status_cb(enum usb_dc_status_code status,
 			       const u8_t *param)
@@ -120,6 +124,7 @@ static void loopback_status_cb(enum usb_dc_status_code status,
 	}
 }
 
+/* usb.rst vendor handler start */
 static int loopback_vendor_handler(struct usb_setup_packet *setup,
 				   s32_t *len, u8_t **data)
 {
@@ -151,12 +156,14 @@ static int loopback_vendor_handler(struct usb_setup_packet *setup,
 
 	return -ENOTSUP;
 }
+/* usb.rst vendor handler end */
 
 static void loopback_interface_config(u8_t bInterfaceNumber)
 {
 	loopback_cfg.if0.bInterfaceNumber = bInterfaceNumber;
 }
 
+/* usb.rst device config data start */
 USBD_CFG_DATA_DEFINE(loopback) struct usb_cfg_data loopback_config = {
 	.usb_device_description = NULL,
 	.interface_config = loopback_interface_config,
@@ -172,6 +179,7 @@ USBD_CFG_DATA_DEFINE(loopback) struct usb_cfg_data loopback_config = {
 	.num_endpoints = ARRAY_SIZE(ep_cfg),
 	.endpoint = ep_cfg,
 };
+/* usb.rst device config data end */
 
 static int loopback_init(struct device *dev)
 {
@@ -180,19 +188,22 @@ static int loopback_init(struct device *dev)
 
 	loopback_config.interface.payload_data = interface_data;
 	loopback_config.usb_device_description = usb_get_device_descriptor();
-	/* Initialize the USB driver with the right configuration */
+
+	/* usb.rst configure USB controller start */
 	ret = usb_set_config(&loopback_config);
 	if (ret < 0) {
 		USB_ERR("Failed to config USB");
 		return ret;
 	}
+	/* usb.rst configure USB controller end */
 
-	/* Enable USB driver */
+	/* usb.rst enable USB controller start */
 	ret = usb_enable(&loopback_config);
 	if (ret < 0) {
 		USB_ERR("Failed to enable USB");
 		return ret;
 	}
+	/* usb.rst enable USB controller end */
 #endif
 	USB_DBG("");
 
