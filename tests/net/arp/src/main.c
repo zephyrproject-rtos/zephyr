@@ -34,6 +34,15 @@ static bool req_test;
 
 static char *app_data = "0123456789";
 
+static bool entry_found;
+static struct net_eth_addr *expected_hwaddr;
+
+static struct net_pkt *pending_pkt;
+
+static struct net_eth_addr hwaddr = { { 0x42, 0x11, 0x69, 0xde, 0xfa, 0xec } };
+
+static int send_status = -EINVAL;
+
 struct net_arp_context {
 	u8_t mac_addr[sizeof(struct net_eth_addr)];
 	struct net_linkaddr ll_addr;
@@ -71,12 +80,6 @@ static void net_arp_iface_init(struct net_if *iface)
 
 	net_if_set_link_addr(iface, mac, 6, NET_LINK_ETHERNET);
 }
-
-static struct net_pkt *pending_pkt;
-
-static struct net_eth_addr hwaddr = { { 0x42, 0x11, 0x69, 0xde, 0xfa, 0xec } };
-
-static int send_status = -EINVAL;
 
 static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 {
@@ -277,7 +280,7 @@ fail:
 }
 
 static void setup_eth_header(struct net_if *iface, struct net_pkt *pkt,
-			     struct net_eth_addr *hwaddr, u16_t type)
+			     const struct net_eth_addr *hwaddr, u16_t type)
 {
 	struct net_eth_hdr *hdr = (struct net_eth_hdr *)net_pkt_ll(pkt);
 
@@ -312,6 +315,17 @@ NET_DEVICE_INIT(net_arp_test, "net_arp_test",
 		net_arp_dev_init, &net_arp_context_data, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&net_arp_if_api, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE, 127);
+
+static void arp_cb(struct arp_entry *entry, void *user_data)
+{
+	struct in_addr *addr = user_data;
+
+	if (memcmp(&entry->ip, addr, sizeof(struct in_addr)) == 0 &&
+	    memcmp(&entry->eth, expected_hwaddr,
+		   sizeof(struct net_eth_addr)) == 0) {
+		entry_found = true;
+	}
+}
 
 void test_arp(void)
 {
@@ -647,6 +661,63 @@ void test_arp(void)
 		"ARP req was not sent");
 
 	net_pkt_unref(pkt);
+
+	/**TESTPOINT: Check gratuitous ARP */
+	if (IS_ENABLED(CONFIG_NET_ARP_GRATUITOUS)) {
+		struct net_eth_addr new_hwaddr = {
+			{ 0x11, 0x12, 0x13, 0x14, 0x15, 0x16 }
+		};
+		enum net_verdict verdict;
+
+		/* First make sure that we have an entry in cache */
+		entry_found = false;
+		expected_hwaddr = &hwaddr;
+		net_arp_foreach(arp_cb, &dst);
+		zassert_true(entry_found, "Entry not found");
+
+		pkt = net_pkt_get_reserve_rx(sizeof(struct net_eth_hdr),
+					     K_FOREVER);
+
+		zassert_not_null(pkt, "Out of mem RX request");
+
+		frag = net_pkt_get_frag(pkt, K_FOREVER);
+
+		zassert_not_null(frag, "Out of mem DATA request");
+
+		net_pkt_frag_add(pkt, frag);
+
+		net_pkt_set_iface(pkt, iface);
+
+		setup_eth_header(iface, pkt, net_eth_broadcast_addr(),
+				 NET_ETH_PTYPE_ARP);
+
+		arp_hdr = NET_ARP_HDR(pkt);
+
+		arp_hdr->hwtype = htons(NET_ARP_HTYPE_ETH);
+		arp_hdr->protocol = htons(NET_ETH_PTYPE_IP);
+		arp_hdr->hwlen = sizeof(struct net_eth_addr);
+		arp_hdr->protolen = sizeof(struct in_addr);
+		arp_hdr->opcode = htons(NET_ARP_REQUEST);
+		memcpy(&arp_hdr->src_hwaddr, &new_hwaddr, 6);
+		memcpy(&arp_hdr->dst_hwaddr, net_eth_broadcast_addr(), 6);
+		net_ipaddr_copy(&arp_hdr->dst_ipaddr, &dst);
+		net_ipaddr_copy(&arp_hdr->src_ipaddr, &dst);
+
+		net_buf_add(frag, sizeof(struct net_arp_hdr));
+
+		verdict = net_arp_input(pkt);
+		zassert_not_equal(verdict, NET_DROP, "Gratuitous ARP failed");
+
+		/* Then check that the HW address is changed for an existing
+		 * entry.
+		 */
+		entry_found = false;
+		expected_hwaddr = &new_hwaddr;
+		net_arp_foreach(arp_cb, &dst);
+		zassert_true(entry_found, "Changed entry not found");
+
+		net_pkt_unref(pkt);
+	}
 }
 
 void test_main(void)
