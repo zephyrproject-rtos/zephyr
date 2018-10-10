@@ -368,7 +368,4 @@ int adxl372_trigger_set(struct device *dev,
 int adxl372_init_interrupt(struct device *dev);
 #endif /* CONFIG_ADT7420_TRIGGER */
 
-#define SYS_LOG_DOMAIN "ADXL372"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <logging/sys_log.h>
 #endif /* ZEPHYR_DRIVERS_SENSOR_ADXL372_ADXL372_H_ */

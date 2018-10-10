@@ -17,8 +17,12 @@
 #include <init.h>
 #include <kernel.h>
 #include <string.h>
+#include <logging/log.h>
 
 #include "apds9960.h"
+
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+LOG_MODULE_REGISTER(APDS9960);
 
 static void apds9960_gpio_callback(struct device *dev,
 				  struct gpio_callback *cb, u32_t pins)
@@ -41,7 +45,7 @@ static int apds9960_sample_fetch(struct device *dev, enum sensor_channel chan)
 	u8_t status;
 
 	if (chan != SENSOR_CHAN_ALL) {
-		SYS_LOG_ERR("Unsupported sensor channel");
+		LOG_ERR("Unsupported sensor channel");
 		return -ENOTSUP;
 	}
 
@@ -53,7 +57,7 @@ static int apds9960_sample_fetch(struct device *dev, enum sensor_channel chan)
 				APDS9960_ENABLE_REG,
 				APDS9960_ENABLE_PON | APDS9960_ENABLE_AIEN,
 				APDS9960_ENABLE_PON | APDS9960_ENABLE_AIEN)) {
-		SYS_LOG_ERR("Power on bit not set.");
+		LOG_ERR("Power on bit not set.");
 		return -EIO;
 	}
 
@@ -65,7 +69,7 @@ static int apds9960_sample_fetch(struct device *dev, enum sensor_channel chan)
 		return -EIO;
 	}
 
-	SYS_LOG_DBG("status: 0x%x", status);
+	LOG_DBG("status: 0x%x", status);
 	if (status & APDS9960_STATUS_PINT) {
 		if (i2c_reg_read_byte(data->i2c, APDS9960_I2C_ADDRESS,
 				      APDS9960_PDATA_REG, &data->pdata)) {
@@ -141,21 +145,21 @@ static int apds9960_proxy_setup(struct device *dev, int gain)
 	if (i2c_reg_write_byte(data->i2c, APDS9960_I2C_ADDRESS,
 			       APDS9960_POFFSET_UR_REG,
 			       APDS9960_DEFAULT_POFFSET_UR)) {
-		SYS_LOG_ERR("Default offset UR not set ");
+		LOG_ERR("Default offset UR not set ");
 		return -EIO;
 	}
 
 	if (i2c_reg_write_byte(data->i2c, APDS9960_I2C_ADDRESS,
 			       APDS9960_POFFSET_DL_REG,
 			       APDS9960_DEFAULT_POFFSET_DL)) {
-		SYS_LOG_ERR("Default offset DL not set ");
+		LOG_ERR("Default offset DL not set ");
 		return -EIO;
 	}
 
 	if (i2c_reg_write_byte(data->i2c, APDS9960_I2C_ADDRESS,
 			       APDS9960_PPULSE_REG,
 			       APDS9960_DEFAULT_PROX_PPULSE)) {
-		SYS_LOG_ERR("Default pulse count not set ");
+		LOG_ERR("Default pulse count not set ");
 		return -EIO;
 	}
 
@@ -163,33 +167,33 @@ static int apds9960_proxy_setup(struct device *dev, int gain)
 				APDS9960_CONTROL_REG,
 				APDS9960_CONTROL_LDRIVE,
 				APDS9960_DEFAULT_LDRIVE)) {
-		SYS_LOG_ERR("LED Drive Strength not set");
+		LOG_ERR("LED Drive Strength not set");
 		return -EIO;
 	}
 
 	if (i2c_reg_update_byte(data->i2c, APDS9960_I2C_ADDRESS,
 				APDS9960_CONTROL_REG, APDS9960_CONTROL_PGAIN,
 				(gain & APDS9960_PGAIN_8X))) {
-		SYS_LOG_ERR("Gain is not set");
+		LOG_ERR("Gain is not set");
 		return -EIO;
 	}
 
 	if (i2c_reg_write_byte(data->i2c, APDS9960_I2C_ADDRESS,
 			       APDS9960_PILT_REG, APDS9960_DEFAULT_PILT)) {
-		SYS_LOG_ERR("Low threshold not set");
+		LOG_ERR("Low threshold not set");
 		return -EIO;
 	}
 
 	if (i2c_reg_write_byte(data->i2c, APDS9960_I2C_ADDRESS,
 			       APDS9960_PIHT_REG, APDS9960_DEFAULT_PIHT)) {
-		SYS_LOG_ERR("High threshold not set");
+		LOG_ERR("High threshold not set");
 		return -EIO;
 	}
 
 	if (i2c_reg_update_byte(data->i2c, APDS9960_I2C_ADDRESS,
 				APDS9960_ENABLE_REG, APDS9960_ENABLE_PEN,
 				APDS9960_ENABLE_PEN)) {
-		SYS_LOG_ERR("Proximity mode is not enabled");
+		LOG_ERR("Proximity mode is not enabled");
 		return -EIO;
 	}
 
@@ -204,7 +208,7 @@ static int apds9960_ambient_setup(struct device *dev, int gain)
 	/* ADC value */
 	if (i2c_reg_write_byte(data->i2c, APDS9960_I2C_ADDRESS,
 			       APDS9960_ATIME_REG, APDS9960_DEFAULT_ATIME)) {
-		SYS_LOG_ERR("Default integration time not set for ADC");
+		LOG_ERR("Default integration time not set for ADC");
 		return -EIO;
 	}
 
@@ -213,7 +217,7 @@ static int apds9960_ambient_setup(struct device *dev, int gain)
 				APDS9960_CONTROL_REG,
 				APDS9960_CONTROL_AGAIN,
 				(gain & APDS9960_AGAIN_64X))) {
-		SYS_LOG_ERR("Ambient Gain is not set");
+		LOG_ERR("Ambient Gain is not set");
 		return -EIO;
 	}
 
@@ -221,7 +225,7 @@ static int apds9960_ambient_setup(struct device *dev, int gain)
 	if (i2c_burst_write(data->i2c, APDS9960_I2C_ADDRESS,
 			    APDS9960_INT_AILTL_REG,
 			    (u8_t *)&th, sizeof(th))) {
-		SYS_LOG_ERR("ALS low threshold not set");
+		LOG_ERR("ALS low threshold not set");
 		return -EIO;
 	}
 
@@ -229,7 +233,7 @@ static int apds9960_ambient_setup(struct device *dev, int gain)
 	if (i2c_burst_write(data->i2c, APDS9960_I2C_ADDRESS,
 			    APDS9960_INT_AIHTL_REG,
 			    (u8_t *)&th, sizeof(th))) {
-		SYS_LOG_ERR("ALS low threshold not set");
+		LOG_ERR("ALS low threshold not set");
 		return -EIO;
 	}
 
@@ -237,7 +241,7 @@ static int apds9960_ambient_setup(struct device *dev, int gain)
 	if (i2c_reg_update_byte(data->i2c, APDS9960_I2C_ADDRESS,
 				APDS9960_ENABLE_REG, APDS9960_ENABLE_AEN,
 				APDS9960_ENABLE_AEN)) {
-		SYS_LOG_ERR("ALS is not enabled");
+		LOG_ERR("ALS is not enabled");
 		return -EIO;
 	}
 
@@ -251,19 +255,19 @@ static int apds9960_sensor_setup(struct device *dev)
 
 	if (i2c_reg_read_byte(data->i2c, APDS9960_I2C_ADDRESS,
 			      APDS9960_ID_REG, &chip_id)) {
-		SYS_LOG_ERR("Failed reading chip id");
+		LOG_ERR("Failed reading chip id");
 		return -EIO;
 	}
 
 	if (!((chip_id == APDS9960_ID_1) || (chip_id == APDS9960_ID_2))) {
-		SYS_LOG_ERR("Invalid chip id 0x%x", chip_id);
+		LOG_ERR("Invalid chip id 0x%x", chip_id);
 		return -EIO;
 	}
 
 	/* Disable all functions and interrupts */
 	if (i2c_reg_write_byte(data->i2c, APDS9960_I2C_ADDRESS,
 			       APDS9960_ENABLE_REG, 0)) {
-		SYS_LOG_ERR("ENABLE register is not cleared");
+		LOG_ERR("ENABLE register is not cleared");
 		return -EIO;
 	}
 
@@ -275,51 +279,51 @@ static int apds9960_sensor_setup(struct device *dev)
 	/* Disable gesture interrupt */
 	if (i2c_reg_write_byte(data->i2c, APDS9960_I2C_ADDRESS,
 			       APDS9960_GCONFIG4_REG, 0)) {
-		SYS_LOG_ERR("GCONFIG4 register is not cleared");
+		LOG_ERR("GCONFIG4 register is not cleared");
 		return -EIO;
 	}
 
 	if (i2c_reg_write_byte(data->i2c, APDS9960_I2C_ADDRESS,
 			       APDS9960_WTIME_REG, APDS9960_DEFAULT_WTIME)) {
-		SYS_LOG_ERR("Default wait time not set");
+		LOG_ERR("Default wait time not set");
 		return -EIO;
 	}
 
 	if (i2c_reg_write_byte(data->i2c, APDS9960_I2C_ADDRESS,
 			       APDS9960_CONFIG1_REG,
 			       APDS9960_DEFAULT_CONFIG1)) {
-		SYS_LOG_ERR("Default WLONG not set");
+		LOG_ERR("Default WLONG not set");
 		return -EIO;
 	}
 
 	if (i2c_reg_write_byte(data->i2c, APDS9960_I2C_ADDRESS,
 			       APDS9960_CONFIG2_REG,
 			       APDS9960_DEFAULT_CONFIG2)) {
-		SYS_LOG_ERR("Configuration Register Two not set");
+		LOG_ERR("Configuration Register Two not set");
 		return -EIO;
 	}
 
 	if (i2c_reg_write_byte(data->i2c, APDS9960_I2C_ADDRESS,
 			       APDS9960_CONFIG3_REG,
 			       APDS9960_DEFAULT_CONFIG3)) {
-		SYS_LOG_ERR("Configuration Register Three not set");
+		LOG_ERR("Configuration Register Three not set");
 		return -EIO;
 	}
 
 	if (i2c_reg_write_byte(data->i2c, APDS9960_I2C_ADDRESS,
 			       APDS9960_PERS_REG,
 			       APDS9960_DEFAULT_PERS)) {
-		SYS_LOG_ERR("Interrupt persistence not set");
+		LOG_ERR("Interrupt persistence not set");
 		return -EIO;
 	}
 
 	if (apds9960_proxy_setup(dev, APDS9960_DEFAULT_PGAIN)) {
-		SYS_LOG_ERR("Failed to setup proximity functionality");
+		LOG_ERR("Failed to setup proximity functionality");
 		return -EIO;
 	}
 
 	if (apds9960_ambient_setup(dev, APDS9960_DEFAULT_AGAIN)) {
-		SYS_LOG_ERR("Failed to setup ambient light functionality");
+		LOG_ERR("Failed to setup ambient light functionality");
 		return -EIO;
 	}
 
@@ -333,7 +337,7 @@ static int apds9960_init_interrupt(struct device *dev)
 	/* setup gpio interrupt */
 	drv_data->gpio = device_get_binding(CONFIG_APDS9960_GPIO_DEV_NAME);
 	if (drv_data->gpio == NULL) {
-		SYS_LOG_ERR("Failed to get pointer to %s device!",
+		LOG_ERR("Failed to get pointer to %s device!",
 			    CONFIG_APDS9960_GPIO_DEV_NAME);
 		return -EINVAL;
 	}
@@ -348,7 +352,7 @@ static int apds9960_init_interrupt(struct device *dev)
 			   BIT(CONFIG_APDS9960_GPIO_PIN_NUM));
 
 	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
-		SYS_LOG_DBG("Failed to set gpio callback!");
+		LOG_DBG("Failed to set gpio callback!");
 		return -EIO;
 	}
 
@@ -359,7 +363,7 @@ static int apds9960_init_interrupt(struct device *dev)
 				APDS9960_ENABLE_REG,
 				APDS9960_ENABLE_PON,
 				APDS9960_ENABLE_PON)) {
-		SYS_LOG_ERR("Power on bit not set.");
+		LOG_ERR("Power on bit not set.");
 		return -EIO;
 	}
 
@@ -419,7 +423,7 @@ static int apds9960_init(struct device *dev)
 	data->i2c = device_get_binding(CONFIG_APDS9960_I2C_DEV_NAME);
 
 	if (data->i2c == NULL) {
-		SYS_LOG_ERR("Failed to get pointer to %s device!",
+		LOG_ERR("Failed to get pointer to %s device!",
 		CONFIG_APDS9960_I2C_DEV_NAME);
 		return -EINVAL;
 	}
@@ -430,7 +434,7 @@ static int apds9960_init(struct device *dev)
 	apds9960_sensor_setup(dev);
 
 	if (apds9960_init_interrupt(dev) < 0) {
-		SYS_LOG_ERR("Failed to initialize interrupt!");
+		LOG_ERR("Failed to initialize interrupt!");
 		return -EIO;
 	}
 

@@ -15,6 +15,10 @@
 
 extern struct amg88xx_data amg88xx_driver;
 
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_DECLARE(AMG88XX);
+
 int amg88xx_attr_set(struct device *dev,
 		     enum sensor_channel chan,
 		     enum sensor_attribute attr,
@@ -30,7 +34,7 @@ int amg88xx_attr_set(struct device *dev,
 		return -ENOTSUP;
 	}
 
-	SYS_LOG_DBG("set threshold to %d", int_level);
+	LOG_DBG("set threshold to %d", int_level);
 
 	if (attr == SENSOR_ATTR_UPPER_THRESH) {
 		intl_reg = AMG88XX_INTHL;
@@ -43,12 +47,12 @@ int amg88xx_attr_set(struct device *dev,
 	}
 
 	if (amg88xx_reg_write(drv_data, intl_reg, (u8_t)int_level)) {
-		SYS_LOG_DBG("Failed to set INTxL attribute!");
+		LOG_DBG("Failed to set INTxL attribute!");
 		return -EIO;
 	}
 
 	if (amg88xx_reg_write(drv_data, inth_reg, (u8_t)(int_level >> 8))) {
-		SYS_LOG_DBG("Failed to set INTxH attribute!");
+		LOG_DBG("Failed to set INTxH attribute!");
 		return -EIO;
 	}
 
@@ -129,7 +133,7 @@ int amg88xx_trigger_set(struct device *dev,
 		drv_data->th_handler = handler;
 		drv_data->th_trigger = *trig;
 	} else {
-		SYS_LOG_ERR("Unsupported sensor trigger");
+		LOG_ERR("Unsupported sensor trigger");
 		return -ENOTSUP;
 	}
 
@@ -146,7 +150,7 @@ int amg88xx_init_interrupt(struct device *dev)
 	/* setup gpio interrupt */
 	drv_data->gpio = device_get_binding(CONFIG_AMG88XX_GPIO_DEV_NAME);
 	if (drv_data->gpio == NULL) {
-		SYS_LOG_DBG("Failed to get pointer to %s device!",
+		LOG_DBG("Failed to get pointer to %s device!",
 		    CONFIG_AMG88XX_GPIO_DEV_NAME);
 		return -EINVAL;
 	}
@@ -160,7 +164,7 @@ int amg88xx_init_interrupt(struct device *dev)
 			   BIT(CONFIG_AMG88XX_GPIO_PIN_NUM));
 
 	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
-		SYS_LOG_DBG("Failed to set gpio callback!");
+		LOG_DBG("Failed to set gpio callback!");
 		return -EIO;
 	}
 

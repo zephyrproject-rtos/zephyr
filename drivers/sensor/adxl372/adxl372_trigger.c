@@ -11,6 +11,10 @@
 #include <sensor.h>
 #include "adxl372.h"
 
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_DECLARE(ADXL372);
+
 static void adxl372_thread_cb(void *arg)
 {
 	struct device *dev = arg;
@@ -109,7 +113,7 @@ int adxl372_trigger_set(struct device *dev,
 		int_mask = ADXL372_INT1_MAP_DATA_RDY_MSK;
 		break;
 	default:
-		SYS_LOG_ERR("Unsupported sensor trigger");
+		LOG_ERR("Unsupported sensor trigger");
 		ret = -ENOTSUP;
 		goto out;
 	}
@@ -136,7 +140,7 @@ int adxl372_init_interrupt(struct device *dev)
 
 	drv_data->gpio = device_get_binding(cfg->gpio_port);
 	if (drv_data->gpio == NULL) {
-		SYS_LOG_ERR("Failed to get pointer to %s device!",
+		LOG_ERR("Failed to get pointer to %s device!",
 		    cfg->gpio_port);
 		return -EINVAL;
 	}
@@ -150,7 +154,7 @@ int adxl372_init_interrupt(struct device *dev)
 			   BIT(cfg->int_gpio));
 
 	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
-		SYS_LOG_ERR("Failed to set gpio callback!");
+		LOG_ERR("Failed to set gpio callback!");
 		return -EIO;
 	}
 

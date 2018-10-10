@@ -13,6 +13,10 @@
 
 #include "ms5837.h"
 
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(MS5837);
+
 static int ms5837_get_measurement(struct device *i2c_master,
 				  const u8_t i2c_address, u32_t *val,
 				  u8_t cmd, const u8_t delay)
@@ -187,7 +191,7 @@ static int ms5837_attr_set(struct device *dev, enum sensor_channel chan,
 			conv_delay = 1;
 			break;
 		default:
-			SYS_LOG_ERR("invalid oversampling rate %d", val->val1);
+			LOG_ERR("invalid oversampling rate %d", val->val1);
 			return -EINVAL;
 		}
 
@@ -255,7 +259,7 @@ static int ms5837_init(struct device *dev)
 
 	data->i2c_master = device_get_binding(cfg->i2c_name);
 	if (data->i2c_master == NULL) {
-		SYS_LOG_ERR("i2c master %s not found",
+		LOG_ERR("i2c master %s not found",
 			    CONFIG_MS5837_I2C_MASTER_DEV_NAME);
 		return -EINVAL;
 	}

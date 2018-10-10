@@ -7,6 +7,10 @@
 #include "fxos8700.h"
 #include <misc/util.h>
 #include <misc/__assert.h>
+#include <logging/log.h>
+
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+LOG_MODULE_REGISTER(FXOS8700);
 
 static int fxos8700_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
@@ -19,7 +23,7 @@ static int fxos8700_sample_fetch(struct device *dev, enum sensor_channel chan)
 	int i;
 
 	if (chan != SENSOR_CHAN_ALL) {
-		SYS_LOG_ERR("Unsupported sensor channel");
+		LOG_ERR("Unsupported sensor channel");
 		return -ENOTSUP;
 	}
 
@@ -35,7 +39,7 @@ static int fxos8700_sample_fetch(struct device *dev, enum sensor_channel chan)
 
 	if (i2c_burst_read(data->i2c, config->i2c_address, config->start_addr,
 			   buffer, num_bytes)) {
-		SYS_LOG_ERR("Could not fetch sample");
+		LOG_ERR("Could not fetch sample");
 		ret = -EIO;
 		goto exit;
 	}
@@ -57,7 +61,7 @@ static int fxos8700_sample_fetch(struct device *dev, enum sensor_channel chan)
 #ifdef CONFIG_FXOS8700_TEMP
 	if (i2c_reg_read_byte(data->i2c, config->i2c_address, FXOS8700_REG_TEMP,
 			      &data->temp)) {
-		SYS_LOG_ERR("Could not fetch temperature");
+		LOG_ERR("Could not fetch temperature");
 		ret = -EIO;
 		goto exit;
 	}
@@ -224,7 +228,7 @@ static int fxos8700_channel_get(struct device *dev, enum sensor_channel chan,
 	}
 
 	if (ret != 0) {
-		SYS_LOG_ERR("Unsupported sensor channel");
+		LOG_ERR("Unsupported sensor channel");
 	}
 
 	k_sem_give(&data->sem);
@@ -241,7 +245,7 @@ int fxos8700_get_power(struct device *dev, enum fxos8700_power *power)
 	if (i2c_reg_read_byte(data->i2c, config->i2c_address,
 			      FXOS8700_REG_CTRLREG1,
 			      &val)) {
-		SYS_LOG_ERR("Could not get power setting");
+		LOG_ERR("Could not get power setting");
 		return -EIO;
 	}
 	val &= FXOS8700_M_CTRLREG1_MODE_MASK;
@@ -270,7 +274,7 @@ static int fxos8700_init(struct device *dev)
 	/* Get the I2C device */
 	data->i2c = device_get_binding(config->i2c_name);
 	if (data->i2c == NULL) {
-		SYS_LOG_ERR("Could not find I2C device");
+		LOG_ERR("Could not find I2C device");
 		return -EINVAL;
 	}
 
@@ -280,12 +284,12 @@ static int fxos8700_init(struct device *dev)
 	*/
 	if (i2c_reg_read_byte(data->i2c, config->i2c_address,
 			      FXOS8700_REG_WHOAMI, &whoami)) {
-		SYS_LOG_ERR("Could not get WHOAMI value");
+		LOG_ERR("Could not get WHOAMI value");
 		return -EIO;
 	}
 
 	if (whoami != config->whoami) {
-		SYS_LOG_ERR("WHOAMI value received 0x%x, expected 0x%x",
+		LOG_ERR("WHOAMI value received 0x%x, expected 0x%x",
 			    whoami, FXOS8700_REG_WHOAMI);
 		return -EIO;
 	}
@@ -308,7 +312,7 @@ static int fxos8700_init(struct device *dev)
 				FXOS8700_REG_M_CTRLREG1,
 				FXOS8700_M_CTRLREG1_MODE_MASK,
 				config->mode)) {
-		SYS_LOG_ERR("Could not set mode");
+		LOG_ERR("Could not set mode");
 		return -EIO;
 	}
 
@@ -319,7 +323,7 @@ static int fxos8700_init(struct device *dev)
 				FXOS8700_REG_M_CTRLREG2,
 				FXOS8700_M_CTRLREG2_AUTOINC_MASK,
 				FXOS8700_M_CTRLREG2_AUTOINC_MASK)) {
-		SYS_LOG_ERR("Could not set hybrid autoincrement");
+		LOG_ERR("Could not set hybrid autoincrement");
 		return -EIO;
 	}
 
@@ -328,7 +332,7 @@ static int fxos8700_init(struct device *dev)
 				FXOS8700_REG_XYZ_DATA_CFG,
 				FXOS8700_XYZ_DATA_CFG_FS_MASK,
 				config->range)) {
-		SYS_LOG_ERR("Could not set range");
+		LOG_ERR("Could not set range");
 		return -EIO;
 	}
 
@@ -336,19 +340,19 @@ static int fxos8700_init(struct device *dev)
 
 #if CONFIG_FXOS8700_TRIGGER
 	if (fxos8700_trigger_init(dev)) {
-		SYS_LOG_ERR("Could not initialize interrupts");
+		LOG_ERR("Could not initialize interrupts");
 		return -EIO;
 	}
 #endif
 
 	/* Set active */
 	if (fxos8700_set_power(dev, FXOS8700_POWER_ACTIVE)) {
-		SYS_LOG_ERR("Could not set active");
+		LOG_ERR("Could not set active");
 		return -EIO;
 	}
 	k_sem_give(&data->sem);
 
-	SYS_LOG_DBG("Init complete");
+	LOG_DBG("Init complete");
 
 	return 0;
 }

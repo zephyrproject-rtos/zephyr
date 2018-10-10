@@ -12,8 +12,12 @@
 #include <init.h>
 #include <misc/byteorder.h>
 #include <misc/__assert.h>
+#include <logging/log.h>
 
 #include "lps22hb.h"
+
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+LOG_MODULE_REGISTER(LPS22HB);
 
 static inline int lps22hb_set_odr_raw(struct device *dev, u8_t odr)
 {
@@ -37,7 +41,7 @@ static int lps22hb_sample_fetch(struct device *dev,
 
 	if (i2c_burst_read(data->i2c_master, config->i2c_slave_addr,
 			   LPS22HB_REG_PRESS_OUT_XL, out, 5) < 0) {
-		SYS_LOG_DBG("Failed to read sample");
+		LOG_DBG("Failed to read sample");
 		return -EIO;
 	}
 
@@ -98,17 +102,17 @@ static int lps22hb_init_chip(struct device *dev)
 
 	if (i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
 			      LPS22HB_REG_WHO_AM_I, &chip_id) < 0) {
-		SYS_LOG_DBG("Failed reading chip id");
+		LOG_DBG("Failed reading chip id");
 		goto err_poweroff;
 	}
 
 	if (chip_id != LPS22HB_VAL_WHO_AM_I) {
-		SYS_LOG_DBG("Invalid chip id 0x%x", chip_id);
+		LOG_DBG("Invalid chip id 0x%x", chip_id);
 		goto err_poweroff;
 	}
 
 	if (lps22hb_set_odr_raw(dev, LPS22HB_DEFAULT_SAMPLING_RATE) < 0) {
-		SYS_LOG_DBG("Failed to set sampling rate");
+		LOG_DBG("Failed to set sampling rate");
 		goto err_poweroff;
 	}
 
@@ -116,7 +120,7 @@ static int lps22hb_init_chip(struct device *dev)
 				LPS22HB_REG_CTRL_REG1,
 				LPS22HB_MASK_CTRL_REG1_BDU,
 				(1 << LPS22HB_SHIFT_CTRL_REG1_BDU)) < 0) {
-		SYS_LOG_DBG("Failed to set BDU");
+		LOG_DBG("Failed to set BDU");
 		goto err_poweroff;
 	}
 
@@ -134,13 +138,13 @@ static int lps22hb_init(struct device *dev)
 	data->i2c_master = device_get_binding(config->i2c_master_dev_name);
 
 	if (!data->i2c_master) {
-		SYS_LOG_DBG("I2c master not found: %s",
+		LOG_DBG("I2c master not found: %s",
 			    config->i2c_master_dev_name);
 		return -EINVAL;
 	}
 
 	if (lps22hb_init_chip(dev) < 0) {
-		SYS_LOG_DBG("Failed to initialize chip");
+		LOG_DBG("Failed to initialize chip");
 		return -EIO;
 	}
 

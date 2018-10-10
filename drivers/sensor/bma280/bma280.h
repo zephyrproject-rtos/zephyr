@@ -155,7 +155,4 @@ int bma280_attr_set(struct device *dev,
 int bma280_init_interrupt(struct device *dev);
 #endif
 
-#define SYS_LOG_DOMAIN "BMA280"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <logging/sys_log.h>
 #endif /* ZEPHYR_DRIVERS_SENSOR_BMA280_BMA280_H_ */

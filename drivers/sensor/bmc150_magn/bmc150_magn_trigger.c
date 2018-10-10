@@ -12,6 +12,10 @@
 
 #include "bmc150_magn.h"
 
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_DECLARE(BMC150_MAGN);
+
 int bmc150_magn_trigger_set(struct device *dev,
 			    const struct sensor_trigger *trig,
 			    sensor_trigger_handler_t handler)
@@ -40,7 +44,7 @@ int bmc150_magn_trigger_set(struct device *dev,
 					BMC150_MAGN_MASK_DRDY_EN,
 					state << BMC150_MAGN_SHIFT_DRDY_EN)
 					< 0) {
-			SYS_LOG_DBG("failed to set DRDY interrupt");
+			LOG_DBG("failed to set DRDY interrupt");
 			return -EIO;
 		}
 
@@ -84,7 +88,7 @@ static void bmc150_magn_thread_main(void *arg1, void *arg2, void *arg3)
 					 config->i2c_slave_addr,
 					 BMC150_MAGN_REG_INT_STATUS,
 					 &reg_val) < 0) {
-			SYS_LOG_DBG("failed to clear data ready interrupt");
+			LOG_DBG("failed to clear data ready interrupt");
 		}
 
 		if (data->handler_drdy) {
@@ -119,7 +123,7 @@ int bmc150_magn_init_interrupt(struct device *dev)
 
 #if defined(CONFIG_BMC150_MAGN_TRIGGER_DRDY)
 	if (bmc150_magn_set_drdy_polarity(dev, 0) < 0) {
-		SYS_LOG_DBG("failed to set DR polarity");
+		LOG_DBG("failed to set DR polarity");
 		return -EIO;
 	}
 
@@ -127,7 +131,7 @@ int bmc150_magn_init_interrupt(struct device *dev)
 				BMC150_MAGN_REG_INT_DRDY,
 				BMC150_MAGN_MASK_DRDY_EN,
 				0 << BMC150_MAGN_SHIFT_DRDY_EN) < 0) {
-		SYS_LOG_DBG("failed to set data ready interrupt enabled bit");
+		LOG_DBG("failed to set data ready interrupt enabled bit");
 		return -EIO;
 	}
 #endif
@@ -143,7 +147,7 @@ int bmc150_magn_init_interrupt(struct device *dev)
 
 	data->gpio_drdy = device_get_binding(config->gpio_drdy_dev_name);
 	if (!data->gpio_drdy) {
-		SYS_LOG_DBG("gpio controller %s not found",
+		LOG_DBG("gpio controller %s not found",
 			    config->gpio_drdy_dev_name);
 		return -EINVAL;
 	}
@@ -157,7 +161,7 @@ int bmc150_magn_init_interrupt(struct device *dev)
 			   BIT(config->gpio_drdy_int_pin));
 
 	if (gpio_add_callback(data->gpio_drdy, &data->gpio_cb) < 0) {
-		SYS_LOG_DBG("failed to set gpio callback");
+		LOG_DBG("failed to set gpio callback");
 		return -EIO;
 	}
 

@@ -11,8 +11,12 @@
 #include <i2c.h>
 #include <sensor.h>
 #include <misc/__assert.h>
+#include <logging/log.h>
 
 #include "isl29035.h"
+
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+LOG_MODULE_REGISTER(ISL29035);
 
 static int isl29035_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
@@ -73,7 +77,7 @@ static int isl29035_init(struct device *dev)
 
 	drv_data->i2c = device_get_binding(CONFIG_ISL29035_I2C_MASTER_DEV_NAME);
 	if (drv_data->i2c == NULL) {
-		SYS_LOG_DBG("Failed to get I2C device.");
+		LOG_DBG("Failed to get I2C device.");
 		return -EINVAL;
 	}
 
@@ -82,20 +86,20 @@ static int isl29035_init(struct device *dev)
 	/* clear blownout status bit */
 	if (i2c_reg_update_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
 				ISL29035_ID_REG, ISL29035_BOUT_MASK, 0) < 0) {
-		SYS_LOG_DBG("Failed to clear blownout status bit.");
+		LOG_DBG("Failed to clear blownout status bit.");
 		return -EIO;
 	}
 
 	/* set command registers to set default attributes */
 	if (i2c_reg_write_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
 			       ISL29035_COMMAND_I_REG, 0) < 0) {
-		SYS_LOG_DBG("Failed to clear COMMAND-I.");
+		LOG_DBG("Failed to clear COMMAND-I.");
 		return -EIO;
 	}
 
 	if (i2c_reg_write_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
 				 ISL29035_COMMAND_II_REG, 0) < 0) {
-		SYS_LOG_DBG("Failed to clear COMMAND-II.");
+		LOG_DBG("Failed to clear COMMAND-II.");
 		return -EIO;
 	}
 
@@ -104,7 +108,7 @@ static int isl29035_init(struct device *dev)
 				  ISL29035_COMMAND_I_REG,
 				  ISL29035_OPMODE_MASK,
 				  ISL29035_ACTIVE_OPMODE_BITS) < 0) {
-		SYS_LOG_DBG("Failed to set opmode.");
+		LOG_DBG("Failed to set opmode.");
 		return -EIO;
 	}
 
@@ -113,7 +117,7 @@ static int isl29035_init(struct device *dev)
 				ISL29035_COMMAND_II_REG,
 				ISL29035_LUX_RANGE_MASK,
 				ISL29035_LUX_RANGE_BITS) < 0) {
-		SYS_LOG_DBG("Failed to set lux range.");
+		LOG_DBG("Failed to set lux range.");
 		return -EIO;
 	}
 
@@ -122,13 +126,13 @@ static int isl29035_init(struct device *dev)
 				ISL29035_COMMAND_II_REG,
 				ISL29035_ADC_RES_MASK,
 				ISL29035_ADC_RES_BITS) < 0) {
-		SYS_LOG_DBG("Failed to set ADC resolution.");
+		LOG_DBG("Failed to set ADC resolution.");
 		return -EIO;
 	}
 
 #ifdef CONFIG_ISL29035_TRIGGER
 	if (isl29035_init_interrupt(dev) < 0) {
-		SYS_LOG_DBG("Failed to initialize interrupt.");
+		LOG_DBG("Failed to initialize interrupt.");
 		return -EIO;
 	}
 #endif

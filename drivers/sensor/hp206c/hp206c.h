@@ -81,7 +81,4 @@ struct hp206c_device_data {
 	u8_t osr;
 };
 
-#define SYS_LOG_DOMAIN "HP206C"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <logging/sys_log.h>
 #endif /* ZEPHYR_DRIVERS_SENSOR_HP206C_HP206C_H_ */

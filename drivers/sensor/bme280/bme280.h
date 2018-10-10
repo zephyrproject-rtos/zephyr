@@ -143,7 +143,4 @@ struct bme280_data {
 	u8_t chip_id;
 };
 
-#define SYS_LOG_DOMAIN "BME280"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <logging/sys_log.h>
 #endif /* ZEPHYR_DRIVERS_SENSOR_BME280_BME280_H_ */

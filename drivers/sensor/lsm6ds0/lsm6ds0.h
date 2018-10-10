@@ -492,7 +492,4 @@ struct lsm6ds0_data {
 #endif
 };
 
-#define SYS_LOG_DOMAIN "LSM6DS0"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <logging/sys_log.h>
 #endif /* ZEPHYR_DRIVERS_SENSOR_LSM6DS0_LSM6DS0_H_ */

@@ -8,8 +8,12 @@
 #include <init.h>
 #include <sensor.h>
 #include <misc/__assert.h>
+#include <logging/log.h>
 
 #include "bma280.h"
+
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+LOG_MODULE_REGISTER(BMA280);
 
 static int bma280_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
@@ -25,7 +29,7 @@ static int bma280_sample_fetch(struct device *dev, enum sensor_channel chan)
 	 */
 	if (i2c_burst_read(drv_data->i2c, BMA280_I2C_ADDRESS,
 			   BMA280_REG_ACCEL_X_LSB, buf, 6) < 0) {
-		SYS_LOG_DBG("Could not read accel axis data");
+		LOG_DBG("Could not read accel axis data");
 		return -EIO;
 	}
 
@@ -41,7 +45,7 @@ static int bma280_sample_fetch(struct device *dev, enum sensor_channel chan)
 	if (i2c_reg_read_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
 			      BMA280_REG_TEMP,
 			      (u8_t *)&drv_data->temp_sample) < 0) {
-		SYS_LOG_DBG("Could not read temperature data");
+		LOG_DBG("Could not read temperature data");
 		return -EIO;
 	}
 
@@ -115,7 +119,7 @@ int bma280_init(struct device *dev)
 
 	drv_data->i2c = device_get_binding(CONFIG_BMA280_I2C_MASTER_DEV_NAME);
 	if (drv_data->i2c == NULL) {
-		SYS_LOG_DBG("Could not get pointer to %s device",
+		LOG_DBG("Could not get pointer to %s device",
 			    CONFIG_BMA280_I2C_MASTER_DEV_NAME);
 		return -EINVAL;
 	}
@@ -123,31 +127,31 @@ int bma280_init(struct device *dev)
 	/* read device ID */
 	if (i2c_reg_read_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
 			      BMA280_REG_CHIP_ID, &id) < 0) {
-		SYS_LOG_DBG("Could not read chip id");
+		LOG_DBG("Could not read chip id");
 		return -EIO;
 	}
 
 	if (id != BMA280_CHIP_ID) {
-		SYS_LOG_DBG("Unexpected chip id (%x)", id);
+		LOG_DBG("Unexpected chip id (%x)", id);
 		return -EIO;
 	}
 
 	if (i2c_reg_write_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
 			       BMA280_REG_PMU_BW, BMA280_PMU_BW) < 0) {
-		SYS_LOG_DBG("Could not set data filter bandwidth");
+		LOG_DBG("Could not set data filter bandwidth");
 		return -EIO;
 	}
 
 	/* set g-range */
 	if (i2c_reg_write_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
 			       BMA280_REG_PMU_RANGE, BMA280_PMU_RANGE) < 0) {
-		SYS_LOG_DBG("Could not set data g-range");
+		LOG_DBG("Could not set data g-range");
 		return -EIO;
 	}
 
 #ifdef CONFIG_BMA280_TRIGGER
 	if (bma280_init_interrupt(dev) < 0) {
-		SYS_LOG_DBG("Could not initialize interrupts");
+		LOG_DBG("Could not initialize interrupts");
 		return -EIO;
 	}
 #endif

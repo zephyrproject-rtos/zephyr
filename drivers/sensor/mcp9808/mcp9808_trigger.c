@@ -14,6 +14,10 @@
 
 #include "mcp9808.h"
 
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_DECLARE(MCP9808);
+
 static int mcp9808_reg_write(struct mcp9808_data *data, u8_t reg, u16_t val)
 {
 	u16_t be_val = sys_cpu_to_be16(val);

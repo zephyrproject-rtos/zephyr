@@ -52,8 +52,4 @@ struct mma8451q_data {
 	s16_t z;
 };
 
-#define SYS_LOG_DOMAIN "MMA8451Q"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <logging/sys_log.h>
-
 #endif /* _SENSOR_MMA8451Q_ */

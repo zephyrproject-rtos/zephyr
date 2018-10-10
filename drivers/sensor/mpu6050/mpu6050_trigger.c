@@ -12,6 +12,10 @@
 
 #include "mpu6050.h"
 
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_DECLARE(MPU6050);
+
 int mpu6050_trigger_set(struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
@@ -98,7 +102,7 @@ int mpu6050_init_interrupt(struct device *dev)
 	/* setup data ready gpio interrupt */
 	drv_data->gpio = device_get_binding(CONFIG_MPU6050_GPIO_DEV_NAME);
 	if (drv_data->gpio == NULL) {
-		SYS_LOG_ERR("Failed to get pointer to %s device",
+		LOG_ERR("Failed to get pointer to %s device",
 			    CONFIG_MPU6050_GPIO_DEV_NAME);
 		return -EINVAL;
 	}
@@ -112,14 +116,14 @@ int mpu6050_init_interrupt(struct device *dev)
 			   BIT(CONFIG_MPU6050_GPIO_PIN_NUM));
 
 	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
-		SYS_LOG_ERR("Failed to set gpio callback");
+		LOG_ERR("Failed to set gpio callback");
 		return -EIO;
 	}
 
 	/* enable data ready interrupt */
 	if (i2c_reg_write_byte(drv_data->i2c, CONFIG_MPU6050_I2C_ADDR,
 			       MPU6050_REG_INT_EN, MPU6050_DRDY_EN) < 0) {
-		SYS_LOG_ERR("Failed to enable data ready interrupt.");
+		LOG_ERR("Failed to enable data ready interrupt.");
 		return -EIO;
 	}
 

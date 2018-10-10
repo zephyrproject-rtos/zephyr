@@ -14,6 +14,10 @@
 
 extern struct apds9960_data apds9960_driver;
 
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_DECLARE(APDS9960);
+
 void apds9960_work_cb(struct k_work *work)
 {
 	struct apds9960_data *data = CONTAINER_OF(work,
@@ -85,7 +89,7 @@ int apds9960_trigger_set(struct device *dev,
 		}
 		break;
 	default:
-		SYS_LOG_ERR("Unsupported sensor trigger");
+		LOG_ERR("Unsupported sensor trigger");
 		return -ENOTSUP;
 	}
 

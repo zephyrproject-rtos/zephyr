@@ -12,10 +12,6 @@
 #include <zephyr/types.h>
 #include <gpio.h>
 
-#define SYS_LOG_DOMAIN "HMC5883L"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <logging/sys_log.h>
-
 #define HMC5883L_I2C_ADDR		0x1E
 
 #define HMC5883L_REG_CONFIG_A		0x00

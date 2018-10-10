@@ -13,9 +13,12 @@
 #include <init.h>
 #include <misc/byteorder.h>
 #include <misc/__assert.h>
+#include <logging/log.h>
 
 #include "mcp9808.h"
 
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+LOG_MODULE_REGISTER(MCP9808);
 
 int mcp9808_reg_read(struct mcp9808_data *data, u8_t reg, u16_t *val)
 {
@@ -83,7 +86,7 @@ int mcp9808_init(struct device *dev)
 
 	data->i2c_master = device_get_binding(CONFIG_MCP9808_I2C_DEV_NAME);
 	if (!data->i2c_master) {
-		SYS_LOG_DBG("mcp9808: i2c master not found: %s",
+		LOG_DBG("mcp9808: i2c master not found: %s",
 		    CONFIG_MCP9808_I2C_DEV_NAME);
 		return -EINVAL;
 	}

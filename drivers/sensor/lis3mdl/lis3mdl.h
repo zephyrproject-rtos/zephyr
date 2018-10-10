@@ -12,10 +12,6 @@
 #include <zephyr/types.h>
 #include <gpio.h>
 
-#define SYS_LOG_DOMAIN "LIS3MDL"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <logging/sys_log.h>
-
 #define LIS3MDL_I2C_ADDR_BASE           0x1C
 #define LIS3MDL_I2C_ADDR_MASK           (~BIT(1))
 

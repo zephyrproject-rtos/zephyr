@@ -10,8 +10,12 @@
 #include <misc/byteorder.h>
 #include <sensor.h>
 #include <string.h>
+#include <logging/log.h>
 
 #include "lis3mdl.h"
+
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+LOG_MODULE_REGISTER(LIS3MDL);
 
 static void lis3mdl_convert(struct sensor_value *val, s16_t raw_val,
 			    u16_t divider)
@@ -63,7 +67,7 @@ int lis3mdl_sample_fetch(struct device *dev, enum sensor_channel chan)
 	/* fetch magnetometer sample */
 	if (i2c_burst_read(drv_data->i2c, CONFIG_LIS3MDL_I2C_ADDR,
 			   LIS3MDL_REG_SAMPLE_START, (u8_t *)buf, 8) < 0) {
-		SYS_LOG_DBG("Failed to fetch megnetometer sample.");
+		LOG_DBG("Failed to fetch megnetometer sample.");
 		return -EIO;
 	}
 
@@ -75,7 +79,7 @@ int lis3mdl_sample_fetch(struct device *dev, enum sensor_channel chan)
 	if (i2c_burst_read(drv_data->i2c, CONFIG_LIS3MDL_I2C_ADDR,
 			   LIS3MDL_REG_SAMPLE_START + 6,
 			   (u8_t *)(buf + 3), 2) < 0) {
-		SYS_LOG_DBG("Failed to fetch temperature sample.");
+		LOG_DBG("Failed to fetch temperature sample.");
 		return -EIO;
 	};
 
@@ -104,7 +108,7 @@ int lis3mdl_init(struct device *dev)
 	drv_data->i2c = device_get_binding(CONFIG_LIS3MDL_I2C_MASTER_DEV_NAME);
 
 	if (drv_data->i2c == NULL) {
-		SYS_LOG_ERR("Could not get pointer to %s device.",
+		LOG_ERR("Could not get pointer to %s device.",
 			    CONFIG_LIS3MDL_I2C_MASTER_DEV_NAME);
 		return -EINVAL;
 	}
@@ -112,12 +116,12 @@ int lis3mdl_init(struct device *dev)
 	/* check chip ID */
 	if (i2c_reg_read_byte(drv_data->i2c, CONFIG_LIS3MDL_I2C_ADDR,
 			      LIS3MDL_REG_WHO_AM_I, &id) < 0) {
-		SYS_LOG_ERR("Failed to read chip ID.");
+		LOG_ERR("Failed to read chip ID.");
 		return -EIO;
 	}
 
 	if (id != LIS3MDL_CHIP_ID) {
-		SYS_LOG_ERR("Invalid chip ID.");
+		LOG_ERR("Invalid chip ID.");
 		return -EINVAL;
 	}
 
@@ -129,7 +133,7 @@ int lis3mdl_init(struct device *dev)
 	}
 
 	if (idx == ARRAY_SIZE(lis3mdl_odr_strings)) {
-		SYS_LOG_ERR("Invalid ODR value.");
+		LOG_ERR("Invalid ODR value.");
 		return -EINVAL;
 	}
 
@@ -145,13 +149,13 @@ int lis3mdl_init(struct device *dev)
 
 	if (i2c_write(drv_data->i2c,
 			    chip_cfg, 6, CONFIG_LIS3MDL_I2C_ADDR) < 0) {
-		SYS_LOG_DBG("Failed to configure chip.");
+		LOG_DBG("Failed to configure chip.");
 		return -EIO;
 	}
 
 #ifdef CONFIG_LIS3MDL_TRIGGER
 	if (lis3mdl_init_interrupt(dev) < 0) {
-		SYS_LOG_DBG("Failed to initialize interrupts.");
+		LOG_DBG("Failed to initialize interrupts.");
 		return -EIO;
 	}
 #endif

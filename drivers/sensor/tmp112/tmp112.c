@@ -11,10 +11,10 @@
 #include <kernel.h>
 #include <sensor.h>
 #include <misc/__assert.h>
+#include <logging/log.h>
 
-#define SYS_LOG_DOMAIN "TMP112"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+LOG_MODULE_REGISTER(TMP112);
 
 #define TMP112_I2C_ADDRESS		CONFIG_TMP112_I2C_ADDR
 
@@ -99,7 +99,7 @@ static int tmp112_attr_set(struct device *dev,
 
 		if (tmp112_reg_update(drv_data, TMP112_REG_CONFIG,
 				      TMP112_EM_BIT, value) < 0) {
-			SYS_LOG_DBG("Failed to set attribute!");
+			LOG_DBG("Failed to set attribute!");
 			return -EIO;
 		}
 
@@ -135,7 +135,7 @@ static int tmp112_attr_set(struct device *dev,
 		if (tmp112_reg_update(drv_data, TMP112_REG_CONFIG,
 				      TMP112_CR0_BIT | TMP112_CR1_BIT,
 				      value) < 0) {
-			SYS_LOG_DBG("Failed to set attribute!");
+			LOG_DBG("Failed to set attribute!");
 			return -EIO;
 		}
 
@@ -198,7 +198,7 @@ int tmp112_init(struct device *dev)
 
 	drv_data->i2c = device_get_binding(CONFIG_TMP112_I2C_MASTER_DEV_NAME);
 	if (drv_data->i2c == NULL) {
-		SYS_LOG_DBG("Failed to get pointer to %s device!",
+		LOG_DBG("Failed to get pointer to %s device!",
 			    CONFIG_TMP112_I2C_MASTER_DEV_NAME);
 		return -EINVAL;
 	}

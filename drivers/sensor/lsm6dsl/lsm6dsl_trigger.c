@@ -13,6 +13,10 @@
 
 #include "lsm6dsl.h"
 
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_DECLARE(LSM6DSL);
+
 int lsm6dsl_trigger_set(struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
@@ -97,7 +101,7 @@ int lsm6dsl_init_interrupt(struct device *dev)
 	/* setup data ready gpio interrupt */
 	drv_data->gpio = device_get_binding(CONFIG_LSM6DSL_GPIO_DEV_NAME);
 	if (drv_data->gpio == NULL) {
-		SYS_LOG_ERR("Cannot get pointer to %s device.",
+		LOG_ERR("Cannot get pointer to %s device.",
 			    CONFIG_LSM6DSL_GPIO_DEV_NAME);
 		return -EINVAL;
 	}
@@ -111,7 +115,7 @@ int lsm6dsl_init_interrupt(struct device *dev)
 			   BIT(CONFIG_LSM6DSL_GPIO_PIN_NUM));
 
 	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
-		SYS_LOG_ERR("Could not set gpio callback.");
+		LOG_ERR("Could not set gpio callback.");
 		return -EIO;
 	}
 
@@ -122,7 +126,7 @@ int lsm6dsl_init_interrupt(struct device *dev)
 			       LSM6DSL_SHIFT_INT1_CTRL_DRDY_G,
 			       (1 << LSM6DSL_SHIFT_INT1_CTRL_DRDY_XL) |
 			       (1 << LSM6DSL_SHIFT_INT1_CTRL_DRDY_G)) < 0) {
-		SYS_LOG_ERR("Could not enable data-ready interrupt.");
+		LOG_ERR("Could not enable data-ready interrupt.");
 		return -EIO;
 	}
 

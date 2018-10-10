@@ -18,10 +18,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <uart.h>
+#include <logging/log.h>
 
-#define SYS_LOG_DOMAIN "PMS7003"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+LOG_MODULE_REGISTER(PMS7003);
 
 /* wait serial output with 1000ms timeout */
 #define CFG_PMS7003_SERIAL_TIMEOUT 1000
@@ -116,7 +116,7 @@ static int pms7003_sample_fetch(struct device *dev, enum sensor_channel chan)
 	if (uart_wait_for(drv_data->uart_dev, pms7003_start_bytes,
 			  sizeof(pms7003_start_bytes),
 			  CFG_PMS7003_SERIAL_TIMEOUT) < 0) {
-		SYS_LOG_WRN("waiting for start bytes is timeout");
+		LOG_WRN("waiting for start bytes is timeout");
 		return -ETIME;
 	}
 
@@ -132,9 +132,9 @@ static int pms7003_sample_fetch(struct device *dev, enum sensor_channel chan)
 	drv_data->pm_10 =
 	    (pms7003_receive_buffer[12] << 8) + pms7003_receive_buffer[13];
 
-	SYS_LOG_DBG("pm1.0 = %d", drv_data->pm_1_0);
-	SYS_LOG_DBG("pm2.5 = %d", drv_data->pm_2_5);
-	SYS_LOG_DBG("pm10 = %d", drv_data->pm_10);
+	LOG_DBG("pm1.0 = %d", drv_data->pm_1_0);
+	LOG_DBG("pm2.5 = %d", drv_data->pm_2_5);
+	LOG_DBG("pm10 = %d", drv_data->pm_10);
 	return 0;
 }
 
@@ -170,7 +170,7 @@ static int pms7003_init(struct device *dev)
 	drv_data->uart_dev = device_get_binding(CONFIG_PMS7003_UART_DEVICE);
 
 	if (!drv_data->uart_dev) {
-		SYS_LOG_DBG("uart device is not found: %s",
+		LOG_DBG("uart device is not found: %s",
 			    CONFIG_PMS7003_UART_DEVICE);
 		return -EINVAL;
 	}

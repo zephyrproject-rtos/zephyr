@@ -77,8 +77,4 @@ struct ms5837_config {
 	u8_t i2c_address;
 };
 
-#define SYS_LOG_DOMAIN "MS5837"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <logging/sys_log.h>
-
 #endif /* __SENSOR_MS5837_H__ */

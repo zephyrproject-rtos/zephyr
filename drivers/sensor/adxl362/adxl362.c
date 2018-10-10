@@ -14,9 +14,12 @@
 #include <misc/byteorder.h>
 #include <misc/__assert.h>
 #include <spi.h>
+#include <logging/log.h>
 
 #include "adxl362.h"
 
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+LOG_MODULE_REGISTER(ADXL362);
 
 static struct adxl362_data adxl362_data;
 
@@ -213,7 +216,7 @@ static int axl362_acc_config(struct device *dev, enum sensor_channel chan,
 
 		range_reg = adxl362_range_to_reg_val(sensor_ms2_to_g(val));
 		if (range_reg < 0) {
-			SYS_LOG_DBG("invalid range requested.");
+			LOG_DBG("invalid range requested.");
 			return -ENOTSUP;
 		}
 
@@ -229,7 +232,7 @@ static int axl362_acc_config(struct device *dev, enum sensor_channel chan,
 		out_rate = adxl362_freq_to_odr_val(val->val1,
 						   val->val2 / 1000);
 		if (out_rate < 0) {
-			SYS_LOG_DBG("invalid output rate.");
+			LOG_DBG("invalid output rate.");
 			return -ENOTSUP;
 		}
 
@@ -238,7 +241,7 @@ static int axl362_acc_config(struct device *dev, enum sensor_channel chan,
 	break;
 #endif
 	default:
-		SYS_LOG_DBG("Accel attribute not supported.");
+		LOG_DBG("Accel attribute not supported.");
 		return -ENOTSUP;
 	}
 
@@ -256,7 +259,7 @@ static int adxl362_attr_set(struct device *dev, enum sensor_channel chan,
 		return axl362_acc_config(dev, chan, attr, val);
 
 	default:
-		SYS_LOG_DBG("attr_set() not supported on this channel.");
+		LOG_DBG("attr_set() not supported on this channel.");
 		return -ENOTSUP;
 	}
 
@@ -573,7 +576,7 @@ static int adxl362_init(struct device *dev)
 
 	data->spi = device_get_binding(CONFIG_ADXL362_SPI_DEV_NAME);
 	if (!data->spi) {
-		SYS_LOG_DBG("spi device not found: %s",
+		LOG_DBG("spi device not found: %s",
 			    CONFIG_ADXL362_SPI_DEV_NAME);
 		return -EINVAL;
 	}

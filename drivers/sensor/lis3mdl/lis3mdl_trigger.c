@@ -13,6 +13,10 @@
 
 #include "lis3mdl.h"
 
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_DECLARE(LIS3MDL);
+
 int lis3mdl_trigger_set(struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
@@ -97,7 +101,7 @@ int lis3mdl_init_interrupt(struct device *dev)
 	/* setup data ready gpio interrupt */
 	drv_data->gpio = device_get_binding(CONFIG_LIS3MDL_GPIO_DEV_NAME);
 	if (drv_data->gpio == NULL) {
-		SYS_LOG_DBG("Cannot get pointer to %s device.",
+		LOG_DBG("Cannot get pointer to %s device.",
 			    CONFIG_LIS3MDL_GPIO_DEV_NAME);
 		return -EINVAL;
 	}
@@ -111,20 +115,20 @@ int lis3mdl_init_interrupt(struct device *dev)
 			   BIT(CONFIG_LIS3MDL_GPIO_PIN_NUM));
 
 	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
-		SYS_LOG_DBG("Could not set gpio callback.");
+		LOG_DBG("Could not set gpio callback.");
 		return -EIO;
 	}
 
 	/* clear data ready interrupt line by reading sample data */
 	if (lis3mdl_sample_fetch(dev, SENSOR_CHAN_ALL) < 0) {
-		SYS_LOG_DBG("Could not clear data ready interrupt line.");
+		LOG_DBG("Could not clear data ready interrupt line.");
 		return -EIO;
 	}
 
 	/* enable interrupt */
 	if (i2c_reg_write_byte(drv_data->i2c, CONFIG_LIS3MDL_I2C_ADDR,
 			       LIS3MDL_REG_INT_CFG, LIS3MDL_INT_XYZ_EN) < 0) {
-		SYS_LOG_DBG("Could not enable interrupt.");
+		LOG_DBG("Could not enable interrupt.");
 		return -EIO;
 	}
 

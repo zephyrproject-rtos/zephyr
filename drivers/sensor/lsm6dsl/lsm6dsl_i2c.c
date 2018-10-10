@@ -9,9 +9,14 @@
 
 #include <string.h>
 #include <i2c.h>
+#include <logging/log.h>
+
 #include "lsm6dsl.h"
 
 static u16_t lsm6dsl_i2c_slave_addr = CONFIG_LSM6DSL_I2C_ADDR;
+
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+LOG_MODULE_DECLARE(LSM6DSL);
 
 static int lsm6dsl_i2c_read_data(struct lsm6dsl_data *data, u8_t reg_addr,
 				 u8_t *value, u8_t len)

@@ -13,10 +13,6 @@
 #include <misc/util.h>
 #include <i2c.h>
 
-#define SYS_LOG_DOMAIN "LIS2MDL"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <logging/sys_log.h>
-
 #define LIS2MDL_EN_BIT                  1
 #define LIS2MDL_DIS_BIT                 0
 #define LIS2MDL_I2C_ADDR(__x)           (__x << 1)
