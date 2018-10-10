@@ -49,7 +49,7 @@ SECTION_FUNC(TEXT,_arm_userspace_enter)
     pop {r1,r2,r3,lr}
 #endif
 
-    /* set stack to priviliged stack */
+    /* set stack to privileged stack */
     ldr r0, =_kernel
     ldr r0, [r0, #_kernel_offset_to_current]
     ldr r0, [r0, #_thread_offset_to_priv_stack_start]    /* priv stack ptr */
@@ -102,7 +102,7 @@ SECTION_FUNC(TEXT,_arm_userspace_enter)
     ldr r0, [r0, #_kernel_offset_to_current]
     bl configure_mpu_mem_domain
 
-    /* setup arguments configure_mpu_user_context */
+    /* setup arguments to configure_mpu_user_context */
     ldr r0, =_kernel
     ldr r0, [r0, #_kernel_offset_to_current]
     bl configure_mpu_user_context
@@ -178,7 +178,7 @@ SECTION_FUNC(TEXT, _arm_do_syscall)
     b dispatch_syscall
 
 valid_syscall:
-    /* setup priviliged stack */
+    /* setup privileged stack */
     push {r6}
     ldr r6, =_kernel
     ldr r6, [r6, #_kernel_offset_to_current]
