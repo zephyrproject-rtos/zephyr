@@ -79,7 +79,4 @@ int tmp007_trigger_set(struct device *dev,
 int tmp007_init_interrupt(struct device *dev);
 #endif
 
-#define SYS_LOG_DOMAIN "TMP007"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <logging/sys_log.h>
 #endif /* _SENSOR_TMP007_ */

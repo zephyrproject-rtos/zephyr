@@ -10,8 +10,12 @@
 #include <misc/byteorder.h>
 #include <sensor.h>
 #include <string.h>
+#include <logging/log.h>
 
 #include "hts221.h"
+
+#define LOG_LEVEL CONFIG_SENSOR_LEVEL
+LOG_MODULE_REGISTER(HTS221);
 
 static int hts221_channel_get(struct device *dev,
 			       enum sensor_channel chan,
@@ -61,7 +65,7 @@ static int hts221_sample_fetch(struct device *dev, enum sensor_channel chan)
 	if (i2c_burst_read(drv_data->i2c, HTS221_I2C_ADDR,
 			   HTS221_REG_DATA_START | HTS221_AUTOINCREMENT_ADDR,
 			   buf, 4) < 0) {
-		SYS_LOG_ERR("Failed to fetch data sample.");
+		LOG_ERR("Failed to fetch data sample.");
 		return -EIO;
 	}
 
@@ -78,7 +82,7 @@ static int hts221_read_conversion_data(struct hts221_data *drv_data)
 	if (i2c_burst_read(drv_data->i2c, HTS221_I2C_ADDR,
 			   HTS221_REG_CONVERSION_START |
 			   HTS221_AUTOINCREMENT_ADDR, buf, 16) < 0) {
-		SYS_LOG_ERR("Failed to read conversion data.");
+		LOG_ERR("Failed to read conversion data.");
 		return -EIO;
 	}
 
@@ -109,7 +113,7 @@ int hts221_init(struct device *dev)
 
 	drv_data->i2c = device_get_binding(CONFIG_HTS221_I2C_MASTER_DEV_NAME);
 	if (drv_data->i2c == NULL) {
-		SYS_LOG_ERR("Could not get pointer to %s device.",
+		LOG_ERR("Could not get pointer to %s device.",
 			    CONFIG_HTS221_I2C_MASTER_DEV_NAME);
 		return -EINVAL;
 	}
@@ -117,12 +121,12 @@ int hts221_init(struct device *dev)
 	/* check chip ID */
 	if (i2c_reg_read_byte(drv_data->i2c, HTS221_I2C_ADDR,
 			      HTS221_REG_WHO_AM_I, &id) < 0) {
-		SYS_LOG_ERR("Failed to read chip ID.");
+		LOG_ERR("Failed to read chip ID.");
 		return -EIO;
 	}
 
 	if (id != HTS221_CHIP_ID) {
-		SYS_LOG_ERR("Invalid chip ID.");
+		LOG_ERR("Invalid chip ID.");
 		return -EINVAL;
 	}
 
@@ -134,14 +138,14 @@ int hts221_init(struct device *dev)
 	}
 
 	if (idx == ARRAY_SIZE(hts221_odr_strings)) {
-		SYS_LOG_ERR("Invalid ODR value.");
+		LOG_ERR("Invalid ODR value.");
 		return -EINVAL;
 	}
 
 	if (i2c_reg_write_byte(drv_data->i2c, HTS221_I2C_ADDR, HTS221_REG_CTRL1,
 			       (idx + 1) << HTS221_ODR_SHIFT | HTS221_BDU_BIT |
 			       HTS221_PD_BIT) < 0) {
-		SYS_LOG_ERR("Failed to configure chip.");
+		LOG_ERR("Failed to configure chip.");
 		return -EIO;
 	}
 
@@ -152,13 +156,13 @@ int hts221_init(struct device *dev)
 	k_sleep(3);
 
 	if (hts221_read_conversion_data(drv_data) < 0) {
-		SYS_LOG_ERR("Failed to read conversion data.");
+		LOG_ERR("Failed to read conversion data.");
 		return -EINVAL;
 	}
 
 #ifdef CONFIG_HTS221_TRIGGER
 	if (hts221_init_interrupt(dev) < 0) {
-		SYS_LOG_ERR("Failed to initialize interrupt.");
+		LOG_ERR("Failed to initialize interrupt.");
 		return -EIO;
 	}
 #endif

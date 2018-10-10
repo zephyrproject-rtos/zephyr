@@ -10,7 +10,12 @@
 #include <misc/util.h>
 #include <kernel.h>
 #include <sensor.h>
+
 #include "adt7420.h"
+
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_DECLARE(ADT7420);
 
 static void adt7420_thread_cb(void *arg)
 {
@@ -84,7 +89,7 @@ int adt7420_trigger_set(struct device *dev,
 		drv_data->th_handler = handler;
 		drv_data->th_trigger = *trig;
 	} else {
-		SYS_LOG_ERR("Unsupported sensor trigger");
+		LOG_ERR("Unsupported sensor trigger");
 		return -ENOTSUP;
 	}
 
@@ -100,7 +105,7 @@ int adt7420_init_interrupt(struct device *dev)
 
 	drv_data->gpio = device_get_binding(cfg->gpio_port);
 	if (drv_data->gpio == NULL) {
-		SYS_LOG_DBG("Failed to get pointer to %s device!",
+		LOG_DBG("Failed to get pointer to %s device!",
 		    cfg->gpio_port);
 		return -EINVAL;
 	}
@@ -114,7 +119,7 @@ int adt7420_init_interrupt(struct device *dev)
 			   BIT(cfg->int_gpio));
 
 	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
-		SYS_LOG_DBG("Failed to set gpio callback!");
+		LOG_DBG("Failed to set gpio callback!");
 		return -EIO;
 	}
 

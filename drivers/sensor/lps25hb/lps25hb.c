@@ -12,8 +12,12 @@
 #include <init.h>
 #include <misc/byteorder.h>
 #include <misc/__assert.h>
+#include <logging/log.h>
 
 #include "lps25hb.h"
+
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+LOG_MODULE_REGISTER(LPS25HB);
 
 static inline int lps25hb_power_ctrl(struct device *dev, u8_t value)
 {
@@ -51,7 +55,7 @@ static int lps25hb_sample_fetch(struct device *dev,
 		if (i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
 				      LPS25HB_REG_PRESS_OUT_XL + offset,
 				      out + offset) < 0) {
-			SYS_LOG_DBG("failed to read sample");
+			LOG_DBG("failed to read sample");
 			return -EIO;
 		}
 	}
@@ -116,7 +120,7 @@ static int lps25hb_init_chip(struct device *dev)
 	k_busy_wait(50 * USEC_PER_MSEC);
 
 	if (lps25hb_power_ctrl(dev, 1) < 0) {
-		SYS_LOG_DBG("failed to power on device");
+		LOG_DBG("failed to power on device");
 		return -EIO;
 	}
 
@@ -124,19 +128,19 @@ static int lps25hb_init_chip(struct device *dev)
 
 	if (i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
 			      LPS25HB_REG_WHO_AM_I, &chip_id) < 0) {
-		SYS_LOG_DBG("failed reading chip id");
+		LOG_DBG("failed reading chip id");
 		goto err_poweroff;
 	}
 	if (chip_id != LPS25HB_VAL_WHO_AM_I) {
-		SYS_LOG_DBG("invalid chip id 0x%x", chip_id);
+		LOG_DBG("invalid chip id 0x%x", chip_id);
 		goto err_poweroff;
 	}
 
-	SYS_LOG_DBG("chip id 0x%x", chip_id);
+	LOG_DBG("chip id 0x%x", chip_id);
 
 	if (lps25hb_set_odr_raw(dev, LPS25HB_DEFAULT_SAMPLING_RATE)
 				< 0) {
-		SYS_LOG_DBG("failed to set sampling rate");
+		LOG_DBG("failed to set sampling rate");
 		goto err_poweroff;
 	}
 
@@ -144,7 +148,7 @@ static int lps25hb_init_chip(struct device *dev)
 				LPS25HB_REG_CTRL_REG1,
 				LPS25HB_MASK_CTRL_REG1_BDU,
 				(1 << LPS25HB_SHIFT_CTRL_REG1_BDU)) < 0) {
-		SYS_LOG_DBG("failed to set BDU");
+		LOG_DBG("failed to set BDU");
 		goto err_poweroff;
 	}
 
@@ -162,13 +166,13 @@ static int lps25hb_init(struct device *dev)
 
 	data->i2c_master = device_get_binding(config->i2c_master_dev_name);
 	if (!data->i2c_master) {
-		SYS_LOG_DBG("i2c master not found: %s",
+		LOG_DBG("i2c master not found: %s",
 			    config->i2c_master_dev_name);
 		return -EINVAL;
 	}
 
 	if (lps25hb_init_chip(dev) < 0) {
-		SYS_LOG_DBG("failed to initialize chip");
+		LOG_DBG("failed to initialize chip");
 		return -EIO;
 	}
 

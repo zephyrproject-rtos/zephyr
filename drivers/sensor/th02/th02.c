@@ -11,15 +11,19 @@
 #include <misc/util.h>
 #include <sensor.h>
 #include <misc/__assert.h>
+#include <logging/log.h>
 
 #include "th02.h"
+
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+LOG_MODULE_REGISTER(TH02);
 
 static u8_t read8(struct device *dev, u8_t d)
 {
 	u8_t buf;
 
 	if (i2c_reg_read_byte(dev, TH02_I2C_DEV_ID, d, &buf) < 0) {
-		SYS_LOG_ERR("Error reading register.");
+		LOG_ERR("Error reading register.");
 	}
 	return buf;
 }
@@ -31,7 +35,7 @@ static int is_ready(struct device *dev)
 
 	if (i2c_reg_read_byte(dev, TH02_I2C_DEV_ID,
 			      TH02_REG_STATUS, &status) < 0) {
-		SYS_LOG_ERR("error reading status register");
+		LOG_ERR("error reading status register");
 	}
 
 	if (status & TH02_STATUS_RDY_MASK) {
@@ -47,7 +51,7 @@ static u16_t get_humi(struct device *dev)
 
 	if (i2c_reg_write_byte(dev, TH02_I2C_DEV_ID,
 			       TH02_REG_CONFIG, TH02_CMD_MEASURE_HUMI) < 0) {
-		SYS_LOG_ERR("Error writing register");
+		LOG_ERR("Error writing register");
 		return 0;
 	}
 	while (!is_ready(dev)) {
@@ -67,7 +71,7 @@ u16_t get_temp(struct device *dev)
 
 	if (i2c_reg_write_byte(dev, TH02_I2C_DEV_ID,
 			       TH02_REG_CONFIG, TH02_CMD_MEASURE_TEMP) < 0) {
-		SYS_LOG_ERR("Error writing register");
+		LOG_ERR("Error writing register");
 		return 0;
 	}
 	while (!is_ready(dev)) {
@@ -88,9 +92,9 @@ static int th02_sample_fetch(struct device *dev, enum sensor_channel chan)
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_AMBIENT_TEMP);
 
 	drv_data->t_sample = get_temp(drv_data->i2c);
-	SYS_LOG_INF("temp: %u", drv_data->t_sample);
+	LOG_INF("temp: %u", drv_data->t_sample);
 	drv_data->rh_sample = get_humi(drv_data->i2c);
-	SYS_LOG_INF("rh: %u", drv_data->rh_sample);
+	LOG_INF("rh: %u", drv_data->rh_sample);
 
 	return 0;
 }
@@ -127,7 +131,7 @@ static int th02_init(struct device *dev)
 
 	drv_data->i2c = device_get_binding(CONFIG_TH02_I2C_MASTER_DEV_NAME);
 	if (drv_data->i2c == NULL) {
-		SYS_LOG_ERR("Failed to get pointer to %s device!",
+		LOG_ERR("Failed to get pointer to %s device!",
 			    CONFIG_TH02_I2C_MASTER_DEV_NAME);
 		return -EINVAL;
 	}

@@ -12,6 +12,10 @@
 
 #include "lis2mdl.h"
 
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_DECLARE(LIS2MDL);
+
 static int lis2mdl_enable_int(struct device *dev, int enable)
 {
 	struct lis2mdl_data *lis2mdl = dev->driver_data;
@@ -118,7 +122,7 @@ int lis2mdl_init_interrupt(struct device *dev)
 	/* setup data ready gpio interrupt */
 	lis2mdl->gpio = device_get_binding(config->gpio_name);
 	if (lis2mdl->gpio == NULL) {
-		SYS_LOG_DBG("Cannot get pointer to %s device",
+		LOG_DBG("Cannot get pointer to %s device",
 			    config->gpio_name);
 		return -EINVAL;
 	}
@@ -132,7 +136,7 @@ int lis2mdl_init_interrupt(struct device *dev)
 			   BIT(config->gpio_pin));
 
 	if (gpio_add_callback(lis2mdl->gpio, &lis2mdl->gpio_cb) < 0) {
-		SYS_LOG_DBG("Could not set gpio callback");
+		LOG_DBG("Could not set gpio callback");
 		return -EIO;
 	}
 

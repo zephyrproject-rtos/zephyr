@@ -31,7 +31,4 @@ struct th02_data {
 	u16_t rh_sample;
 };
 
-#define SYS_LOG_DOMAIN "TH02"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <logging/sys_log.h>
 #endif /* _SENSOR_TH02_ */

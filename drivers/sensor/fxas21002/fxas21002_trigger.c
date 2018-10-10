@@ -4,7 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <logging/log.h>
+
 #include "fxas21002.h"
+
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_DECLARE(FXAS21002);
 
 static void fxas21002_gpio_callback(struct device *dev,
 				   struct gpio_callback *cb,
@@ -54,7 +60,7 @@ static void fxas21002_handle_int(void *arg)
 	if (i2c_reg_read_byte(data->i2c, config->i2c_address,
 			      FXAS21002_REG_INT_SOURCE,
 			      &int_source)) {
-		SYS_LOG_ERR("Could not read interrupt source");
+		LOG_ERR("Could not read interrupt source");
 		int_source = 0;
 	}
 
@@ -112,7 +118,7 @@ int fxas21002_trigger_set(struct device *dev,
 		data->drdy_handler = handler;
 		break;
 	default:
-		SYS_LOG_ERR("Unsupported sensor trigger");
+		LOG_ERR("Unsupported sensor trigger");
 		ret = -ENOTSUP;
 		goto exit;
 	}
@@ -122,14 +128,14 @@ int fxas21002_trigger_set(struct device *dev,
 	 * can restore it later.
 	 */
 	if (fxas21002_get_power(dev, &power)) {
-		SYS_LOG_ERR("Could not get power mode");
+		LOG_ERR("Could not get power mode");
 		ret = -EIO;
 		goto exit;
 	}
 
 	/* Put the sensor in ready mode */
 	if (fxas21002_set_power(dev, FXAS21002_POWER_READY)) {
-		SYS_LOG_ERR("Could not set ready mode");
+		LOG_ERR("Could not set ready mode");
 		ret = -EIO;
 		goto exit;
 	}
@@ -139,14 +145,14 @@ int fxas21002_trigger_set(struct device *dev,
 				FXAS21002_REG_CTRLREG2,
 				mask,
 				handler ? mask : 0)) {
-		SYS_LOG_ERR("Could not configure interrupt");
+		LOG_ERR("Could not configure interrupt");
 		ret = -EIO;
 		goto exit;
 	}
 
 	/* Restore the previous power mode */
 	if (fxas21002_set_power(dev, power)) {
-		SYS_LOG_ERR("Could not restore power mode");
+		LOG_ERR("Could not restore power mode");
 		ret = -EIO;
 		goto exit;
 	}
@@ -188,14 +194,14 @@ int fxas21002_trigger_init(struct device *dev)
 
 	if (i2c_reg_write_byte(data->i2c, config->i2c_address,
 			       FXAS21002_REG_CTRLREG2, ctrl_reg2)) {
-		SYS_LOG_ERR("Could not configure interrupt pin routing");
+		LOG_ERR("Could not configure interrupt pin routing");
 		return -EIO;
 	}
 
 	/* Get the GPIO device */
 	data->gpio = device_get_binding(config->gpio_name);
 	if (data->gpio == NULL) {
-		SYS_LOG_ERR("Could not find GPIO device");
+		LOG_ERR("Could not find GPIO device");
 		return -EINVAL;
 	}
 

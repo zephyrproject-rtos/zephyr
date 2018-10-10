@@ -14,10 +14,13 @@
 #include <init.h>
 #include <i2c.h>
 #include <misc/byteorder.h>
-
 #include <gpio.h>
+#include <logging/log.h>
 
 #include "lsm9ds0_mfd.h"
+
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+LOG_MODULE_REGISTER(LSM9DS0_MFD);
 
 static inline int lsm9ds0_mfd_reboot_memory(struct device *dev)
 {
@@ -223,7 +226,7 @@ static inline int lsm9ds0_mfd_sample_fetch_accel(struct device *dev)
 			      LSM9DS0_MFD_REG_OUT_X_L_A, &out_l) < 0 ||
 	    i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
 			      LSM9DS0_MFD_REG_OUT_X_H_A, &out_h) < 0) {
-		SYS_LOG_DBG("failed to read accel sample (X axis)");
+		LOG_DBG("failed to read accel sample (X axis)");
 		return -EIO;
 	}
 
@@ -236,7 +239,7 @@ static inline int lsm9ds0_mfd_sample_fetch_accel(struct device *dev)
 			      LSM9DS0_MFD_REG_OUT_Y_L_A, &out_l) < 0 ||
 	    i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
 			      LSM9DS0_MFD_REG_OUT_Y_H_A, &out_h) < 0) {
-		SYS_LOG_DBG("failed to read accel sample (Y axis)");
+		LOG_DBG("failed to read accel sample (Y axis)");
 		return -EIO;
 	}
 
@@ -249,7 +252,7 @@ static inline int lsm9ds0_mfd_sample_fetch_accel(struct device *dev)
 			      LSM9DS0_MFD_REG_OUT_Z_L_A, &out_l) < 0 ||
 	    i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
 			      LSM9DS0_MFD_REG_OUT_Z_H_A, &out_h) < 0) {
-		SYS_LOG_DBG("failed to read accel sample (Z axis)");
+		LOG_DBG("failed to read accel sample (Z axis)");
 		return -EIO;
 	}
 
@@ -276,7 +279,7 @@ static inline int lsm9ds0_mfd_sample_fetch_magn(struct device *dev)
 			      LSM9DS0_MFD_REG_OUT_X_L_M, &out_l) < 0 ||
 	    i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
 			      LSM9DS0_MFD_REG_OUT_X_H_M, &out_h) < 0) {
-		SYS_LOG_DBG("failed to read magn sample (X axis)");
+		LOG_DBG("failed to read magn sample (X axis)");
 		return -EIO;
 	}
 
@@ -287,7 +290,7 @@ static inline int lsm9ds0_mfd_sample_fetch_magn(struct device *dev)
 			      LSM9DS0_MFD_REG_OUT_Y_L_M, &out_l) < 0 ||
 	    i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
 			      LSM9DS0_MFD_REG_OUT_Y_H_M, &out_h) < 0) {
-		SYS_LOG_DBG("failed to read magn sample (Y axis)");
+		LOG_DBG("failed to read magn sample (Y axis)");
 		return -EIO;
 	}
 
@@ -298,7 +301,7 @@ static inline int lsm9ds0_mfd_sample_fetch_magn(struct device *dev)
 			      LSM9DS0_MFD_REG_OUT_Z_L_M, &out_l) < 0 ||
 	    i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
 			      LSM9DS0_MFD_REG_OUT_Z_H_M, &out_h) < 0) {
-		SYS_LOG_DBG("failed to read magn sample (Z axis)");
+		LOG_DBG("failed to read magn sample (Z axis)");
 		return -EIO;
 	}
 
@@ -324,7 +327,7 @@ static inline int lsm9ds0_mfd_sample_fetch_temp(struct device *dev)
 			      LSM9DS0_MFD_REG_OUT_TEMP_L_XM, &out_l) < 0 ||
 	    i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
 			      LSM9DS0_MFD_REG_OUT_TEMP_H_XM, &out_h) < 0) {
-		SYS_LOG_DBG("failed to read temperature sample\n");
+		LOG_DBG("failed to read temperature sample\n");
 		return -EIO;
 	}
 
@@ -668,22 +671,22 @@ static int lsm9ds0_mfd_init_chip(struct device *dev)
 	u8_t chip_id;
 
 	if (lsm9ds0_mfd_reboot_memory(dev) < 0) {
-		SYS_LOG_DBG("failed to reset device");
+		LOG_DBG("failed to reset device");
 		return -EIO;
 	}
 
 	if (i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
 			      LSM9DS0_MFD_REG_WHO_AM_I_XM, &chip_id) < 0) {
-		SYS_LOG_DBG("failed reading chip id");
+		LOG_DBG("failed reading chip id");
 		return -EIO;
 	}
 
 	if (chip_id != LSM9DS0_MFD_VAL_WHO_AM_I_XM) {
-		SYS_LOG_DBG("invalid chip id 0x%x", chip_id);
+		LOG_DBG("invalid chip id 0x%x", chip_id);
 		return -EIO;
 	}
 
-	SYS_LOG_DBG("chip id 0x%x", chip_id);
+	LOG_DBG("chip id 0x%x", chip_id);
 
 #if !defined(LSM9DS0_MFD_ACCEL_DISABLED)
 	if (i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
@@ -693,12 +696,12 @@ static int lsm9ds0_mfd_init_chip(struct device *dev)
 				(1 << LSM9DS0_MFD_SHIFT_CTRL_REG1_XM_BDU) |
 				(LSM9DS0_MFD_ACCEL_DEFAULT_AODR <<
 				LSM9DS0_MFD_SHIFT_CTRL_REG1_XM_AODR))) {
-		SYS_LOG_DBG("failed to set AODR and BDU");
+		LOG_DBG("failed to set AODR and BDU");
 		return -EIO;
 	}
 
 	if (lsm9ds0_mfd_accel_set_fs_raw(dev, LSM9DS0_MFD_ACCEL_DEFAULT_FS)) {
-		SYS_LOG_DBG("failed to set accelerometer full-scale");
+		LOG_DBG("failed to set accelerometer full-scale");
 		return -EIO;
 	}
 
@@ -713,7 +716,7 @@ static int lsm9ds0_mfd_init_chip(struct device *dev)
 				LSM9DS0_MFD_SHIFT_CTRL_REG1_XM_AYEN) |
 				(LSM9DS0_MFD_ACCEL_ENABLE_Z <<
 				LSM9DS0_MFD_SHIFT_CTRL_REG1_XM_AZEN)) < 0) {
-		SYS_LOG_DBG("failed to set accelerometer axis enable bits\n");
+		LOG_DBG("failed to set accelerometer axis enable bits\n");
 		return -EIO;
 	}
 
@@ -723,7 +726,7 @@ static int lsm9ds0_mfd_init_chip(struct device *dev)
 				LSM9DS0_MFD_MASK_CTRL_REG1_XM_BDU,
 				1 << LSM9DS0_MFD_SHIFT_CTRL_REG1_XM_BDU)
 				< 0) {
-		SYS_LOG_DBG("failed to set BDU\n");
+		LOG_DBG("failed to set BDU\n");
 		return -EIO;
 	}
 #endif
@@ -734,17 +737,17 @@ static int lsm9ds0_mfd_init_chip(struct device *dev)
 				LSM9DS0_MFD_MASK_CTRL_REG7_XM_MD,
 				(0 << LSM9DS0_MFD_SHIFT_CTRL_REG7_XM_MD))
 				< 0) {
-		SYS_LOG_DBG("failed to power on magnetometer");
+		LOG_DBG("failed to power on magnetometer");
 		return -EIO;
 	}
 
 	if (lsm9ds0_mfd_magn_set_odr_raw(dev, LSM9DS0_MFD_MAGN_DEFAULT_M_ODR)) {
-		SYS_LOG_DBG("failed to set magnetometer sampling rate");
+		LOG_DBG("failed to set magnetometer sampling rate");
 		return -EIO;
 	}
 
 	if (lsm9ds0_mfd_magn_set_fs_raw(dev, LSM9DS0_MFD_MAGN_DEFAULT_FS)) {
-		SYS_LOG_DBG("failed to set magnetometer full-scale");
+		LOG_DBG("failed to set magnetometer full-scale");
 		return -EIO;
 	}
 #endif
@@ -755,7 +758,7 @@ static int lsm9ds0_mfd_init_chip(struct device *dev)
 				LSM9DS0_MFD_MASK_CTRL_REG5_XM_TEMP_EN,
 				1 << LSM9DS0_MFD_SHIFT_CTRL_REG5_XM_TEMP_EN)
 				< 0) {
-		SYS_LOG_DBG("failed to power on temperature sensor");
+		LOG_DBG("failed to power on temperature sensor");
 		return -EIO;
 	}
 #endif
@@ -771,13 +774,13 @@ int lsm9ds0_mfd_init(struct device *dev)
 
 	data->i2c_master = device_get_binding(config->i2c_master_dev_name);
 	if (!data->i2c_master) {
-		SYS_LOG_DBG("i2c master not found: %s",
+		LOG_DBG("i2c master not found: %s",
 			   config->i2c_master_dev_name);
 		return -EINVAL;
 	}
 
 	if (lsm9ds0_mfd_init_chip(dev) < 0) {
-		SYS_LOG_DBG("failed to initialize chip");
+		LOG_DBG("failed to initialize chip");
 		return -EIO;
 	}
 

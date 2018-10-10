@@ -11,8 +11,12 @@
 #include <sensor.h>
 #include <string.h>
 #include <zephyr.h>
+#include <logging/log.h>
 
 #include "dht.h"
+
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+LOG_MODULE_REGISTER(DHT);
 
 /**
  * @brief Measure duration of signal send by sensor
@@ -141,7 +145,7 @@ static int dht_sample_fetch(struct device *dev, enum sensor_channel chan)
 
 	/* verify checksum */
 	if (((buf[0] + buf[1] + buf[2] + buf[3]) & 0xFF) != buf[4]) {
-		SYS_LOG_DBG("Invalid checksum in fetched sample");
+		LOG_DBG("Invalid checksum in fetched sample");
 		ret = -EIO;
 	} else {
 		memcpy(drv_data->sample, buf, 4);
@@ -216,7 +220,7 @@ static int dht_init(struct device *dev)
 
 	drv_data->gpio = device_get_binding(CONFIG_DHT_GPIO_DEV_NAME);
 	if (drv_data->gpio == NULL) {
-		SYS_LOG_ERR("Failed to get GPIO device.");
+		LOG_ERR("Failed to get GPIO device.");
 		return -EINVAL;
 	}
 

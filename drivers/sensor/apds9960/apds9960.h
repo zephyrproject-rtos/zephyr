@@ -248,8 +248,4 @@ int apds9960_trigger_set(struct device *dev,
 			 sensor_trigger_handler_t handler);
 #endif /* CONFIG_APDS9960_TRIGGER */
 
-#define SYS_LOG_DOMAIN "APDS9960"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <logging/sys_log.h>
-
 #endif /* ZEPHYR_DRIVERS_SENSOR_APDS9960_APDS9960_H_*/

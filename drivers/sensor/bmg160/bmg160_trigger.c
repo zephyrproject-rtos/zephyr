@@ -15,6 +15,10 @@
 
 extern struct bmg160_device_data bmg160_data;
 
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_DECLARE(BMG160);
+
 static void bmg160_gpio_callback(struct device *port, struct gpio_callback *cb,
 				 u32_t pin)
 {
@@ -196,20 +200,20 @@ int bmg160_trigger_init(struct device *dev)
 
 	/* set INT1 pin to: push-pull, active low */
 	if (bmg160_write_byte(dev, BMG160_REG_INT_EN1, 0) < 0) {
-		SYS_LOG_DBG("Failed to select interrupt pins type.");
+		LOG_DBG("Failed to select interrupt pins type.");
 		return -EIO;
 	}
 
 	/* set interrupt mode to non-latched */
 	if (bmg160_write_byte(dev, BMG160_REG_INT_RST_LATCH, 0) < 0) {
-		SYS_LOG_DBG("Failed to set the interrupt mode.");
+		LOG_DBG("Failed to set the interrupt mode.");
 		return -EIO;
 	}
 
 	/* map anymotion and high rate interrupts to INT1 pin */
 	if (bmg160_write_byte(dev, BMG160_REG_INT_MAP0,
 			      BMG160_INT1_ANY | BMG160_INT1_HIGH) < 0) {
-		SYS_LOG_DBG("Unable to map interrupts.");
+		LOG_DBG("Unable to map interrupts.");
 		return -EIO;
 	}
 
@@ -217,13 +221,13 @@ int bmg160_trigger_init(struct device *dev)
 	if (bmg160_write_byte(dev, BMG160_REG_INT_MAP1,
 			      BMG160_INT1_DATA | BMG160_INT1_FIFO |
 			      BMG160_INT1_FAST_OFFSET) < 0) {
-		SYS_LOG_DBG("Unable to map interrupts.");
+		LOG_DBG("Unable to map interrupts.");
 		return -EIO;
 	}
 
 	bmg160->gpio = device_get_binding((char *)cfg->gpio_port);
 	if (!bmg160->gpio) {
-		SYS_LOG_DBG("Gpio controller %s not found", cfg->gpio_port);
+		LOG_DBG("Gpio controller %s not found", cfg->gpio_port);
 		return -EINVAL;
 	}
 

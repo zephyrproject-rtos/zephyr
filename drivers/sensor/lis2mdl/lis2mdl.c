@@ -16,6 +16,10 @@
 
 struct lis2mdl_data lis2mdl_device_data;
 
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(LIS2MDL);
+
 #ifdef CONFIG_LIS2MDL_MAG_ODR_RUNTIME
 static const struct {
 	u16_t odr;
@@ -161,7 +165,7 @@ static int lis2mdl_channel_get(struct device *dev, enum sensor_channel chan,
 		lis2mdl_channel_get_temp(dev, val);
 		break;
 	default:
-		SYS_LOG_DBG("Channel not supported");
+		LOG_DBG("Channel not supported");
 		return -ENOTSUP;
 	}
 
@@ -180,7 +184,7 @@ static int lis2mdl_config(struct device *dev, enum sensor_channel chan,
 	case SENSOR_ATTR_OFFSET:
 		return lis2mdl_set_hard_iron(dev, chan, val);
 	default:
-		SYS_LOG_DBG("Mag attribute not supported");
+		LOG_DBG("Mag attribute not supported");
 		return -ENOTSUP;
 	}
 
@@ -199,7 +203,7 @@ static int lis2mdl_attr_set(struct device *dev,
 	case SENSOR_CHAN_MAGN_XYZ:
 		return lis2mdl_config(dev, chan, attr, val);
 	default:
-		SYS_LOG_DBG("attr_set() not supported on %d channel", chan);
+		LOG_DBG("attr_set() not supported on %d channel", chan);
 		return -ENOTSUP;
 	}
 
@@ -221,7 +225,7 @@ static int lis2mdl_sample_fetch_mag(struct device *dev)
 	if (i2c_burst_read(lis2mdl->i2c, lis2mdl->i2c_addr,
 			   LIS2MDL_OUT_REG, buf.raw,
 			   sizeof(buf)) < 0) {
-		SYS_LOG_DBG("Failed to fetch raw mag sample");
+		LOG_DBG("Failed to fetch raw mag sample");
 		return -EIO;
 	}
 
@@ -244,7 +248,7 @@ static int lis2mdl_sample_fetch_temp(struct device *dev)
 			     LIS2MDL_TEMP_OUT_L_REG,
 			     (u8_t *)&temp_raw, sizeof(temp_raw));
 	if (ret < 0) {
-		SYS_LOG_DBG("Failed to fetch raw temp sample");
+		LOG_DBG("Failed to fetch raw temp sample");
 		return -EIO;
 	}
 
@@ -295,7 +299,7 @@ static int lis2mdl_init_interface(struct device *dev)
 
 	lis2mdl->i2c = device_get_binding(config->master_dev_name);
 	if (!lis2mdl->i2c) {
-		SYS_LOG_DBG("Could not get pointer to %s device",
+		LOG_DBG("Could not get pointer to %s device",
 			    config->master_dev_name);
 		return -EINVAL;
 	}
@@ -326,12 +330,12 @@ static int lis2mdl_init(struct device *dev)
 	/* check chip ID */
 	if (i2c_reg_read_byte(lis2mdl->i2c, lis2mdl->i2c_addr,
 			      LIS2MDL_WHO_AM_I_REG, &wai) < 0) {
-		SYS_LOG_DBG("Failed to read chip ID");
+		LOG_DBG("Failed to read chip ID");
 		return -EIO;
 	}
 
 	if (wai != LIS2MDL_WHOAMI_VAL) {
-		SYS_LOG_DBG("Invalid chip ID");
+		LOG_DBG("Invalid chip ID");
 		return -EINVAL;
 	}
 
@@ -362,7 +366,7 @@ static int lis2mdl_init(struct device *dev)
 
 #ifdef CONFIG_LIS2MDL_TRIGGER
 	if (lis2mdl_init_interrupt(dev) < 0) {
-		SYS_LOG_DBG("Failed to initialize interrupts");
+		LOG_DBG("Failed to initialize interrupts");
 		return -EIO;
 	}
 #endif

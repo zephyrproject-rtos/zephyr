@@ -104,7 +104,4 @@ int sht3xd_trigger_set(struct device *dev,
 int sht3xd_init_interrupt(struct device *dev);
 #endif
 
-#define SYS_LOG_DOMAIN "SHT3XD"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <logging/sys_log.h>
 #endif /* ZEPHYR_DRIVERS_SENSOR_SHT3XD_SHT3XD_H_ */

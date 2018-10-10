@@ -478,7 +478,4 @@ int bmi160_acc_slope_config(struct device *dev, enum sensor_attribute attr,
 s32_t bmi160_acc_reg_val_to_range(u8_t reg_val);
 s32_t bmi160_gyr_reg_val_to_range(u8_t reg_val);
 
-#define SYS_LOG_DOMAIN "BMI160"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <logging/sys_log.h>
 #endif /* ZEPHYR_DRIVERS_SENSOR_BMI160_BMI160_H_ */

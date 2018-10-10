@@ -14,6 +14,10 @@
 #define TRIGGED_INT1			BIT(4)
 #define TRIGGED_INT2			BIT(5)
 
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_DECLARE(lis2dh);
+
 static int lis2dh_trigger_drdy_set(struct device *dev, enum sensor_channel chan,
 				   sensor_trigger_handler_t handler)
 {
@@ -67,7 +71,7 @@ static int lis2dh_start_trigger_int1(struct device *dev)
 		return status;
 	}
 
-	SYS_LOG_DBG("ctrl1=0x%x @tick=%u", ctrl1, k_cycle_get_32());
+	LOG_DBG("ctrl1=0x%x @tick=%u", ctrl1, k_cycle_get_32());
 
 	/* empty output data */
 	status = lis2dh_burst_read(dev, LIS2DH_REG_STATUS, raw, sizeof(raw));
@@ -134,7 +138,7 @@ static int lis2dh_start_trigger_int2(struct device *dev)
 	status = gpio_pin_enable_callback(lis2dh->gpio,
 					  CONFIG_LIS2DH_INT2_GPIO_PIN);
 	if (unlikely(status < 0)) {
-		SYS_LOG_ERR("enable callback failed err=%d", status);
+		LOG_ERR("enable callback failed err=%d", status);
 	}
 
 	return lis2dh_reg_write_byte(dev, LIS2DH_REG_INT2_CFG,
@@ -183,7 +187,7 @@ int lis2dh_acc_slope_config(struct device *dev, enum sensor_attribute attr,
 		/* 7 bit full range value */
 		reg_val = 128 / range_g * (slope_th_ums2 - 1) / SENSOR_G;
 
-		SYS_LOG_INF("int2_ths=0x%x range_g=%d ums2=%u", reg_val,
+		LOG_INF("int2_ths=0x%x range_g=%d ums2=%u", reg_val,
 			    range_g, slope_th_ums2 - 1);
 
 		status = lis2dh_reg_write_byte(dev, LIS2DH_REG_INT2_THS,
@@ -197,7 +201,7 @@ int lis2dh_acc_slope_config(struct device *dev, enum sensor_attribute attr,
 			return -ENOTSUP;
 		}
 
-		SYS_LOG_INF("int2_dur=0x%x", val->val1);
+		LOG_INF("int2_dur=0x%x", val->val1);
 
 		status = lis2dh_reg_write_byte(dev, LIS2DH_REG_INT2_DUR,
 					       val->val1);
@@ -250,7 +254,7 @@ static void lis2dh_thread_cb(void *arg)
 		int status = lis2dh_start_trigger_int1(dev);
 
 		if (unlikely(status < 0)) {
-			SYS_LOG_ERR("lis2dh_start_trigger_int1: %d", status);
+			LOG_ERR("lis2dh_start_trigger_int1: %d", status);
 		}
 		return;
 	}
@@ -260,7 +264,7 @@ static void lis2dh_thread_cb(void *arg)
 		int status = lis2dh_start_trigger_int2(dev);
 
 		if (unlikely(status < 0)) {
-			SYS_LOG_ERR("lis2dh_start_trigger_int2: %d", status);
+			LOG_ERR("lis2dh_start_trigger_int2: %d", status);
 		}
 		return;
 	}
@@ -294,7 +298,7 @@ static void lis2dh_thread_cb(void *arg)
 			lis2dh->handler_anymotion(dev, &anym_trigger);
 		}
 
-		SYS_LOG_DBG("@tick=%u int2_src=0x%x", k_cycle_get_32(),
+		LOG_DBG("@tick=%u int2_src=0x%x", k_cycle_get_32(),
 			    reg_val);
 
 		return;
@@ -342,7 +346,7 @@ int lis2dh_init_interrupt(struct device *dev)
 	/* setup data ready gpio interrupt */
 	lis2dh->gpio = device_get_binding(CONFIG_LIS2DH_GPIO_DEV_NAME);
 	if (lis2dh->gpio == NULL) {
-		SYS_LOG_ERR("Cannot get pointer to %s device",
+		LOG_ERR("Cannot get pointer to %s device",
 			    CONFIG_LIS2DH_GPIO_DEV_NAME);
 		return -EINVAL;
 	}
@@ -351,7 +355,7 @@ int lis2dh_init_interrupt(struct device *dev)
 	status = gpio_pin_configure(lis2dh->gpio, CONFIG_LIS2DH_INT1_GPIO_PIN,
 				    LIS2DH_INT1_CFG);
 	if (status < 0) {
-		SYS_LOG_ERR("Could not configure gpio %d",
+		LOG_ERR("Could not configure gpio %d",
 			     CONFIG_LIS2DH_INT1_GPIO_PIN);
 		return status;
 	}
@@ -362,7 +366,7 @@ int lis2dh_init_interrupt(struct device *dev)
 
 	status = gpio_add_callback(lis2dh->gpio, &lis2dh->gpio_int1_cb);
 	if (status < 0) {
-		SYS_LOG_ERR("Could not add gpio int1 callback");
+		LOG_ERR("Could not add gpio int1 callback");
 		return status;
 	}
 
@@ -370,7 +374,7 @@ int lis2dh_init_interrupt(struct device *dev)
 	status = gpio_pin_configure(lis2dh->gpio, CONFIG_LIS2DH_INT2_GPIO_PIN,
 				    LIS2DH_INT2_CFG);
 	if (status < 0) {
-		SYS_LOG_ERR("Could not configure gpio %d",
+		LOG_ERR("Could not configure gpio %d",
 			     CONFIG_LIS2DH_INT2_GPIO_PIN);
 		return status;
 	}
@@ -382,7 +386,7 @@ int lis2dh_init_interrupt(struct device *dev)
 	/* callback is going to be enabled by trigger setting function */
 	status = gpio_add_callback(lis2dh->gpio, &lis2dh->gpio_int2_cb);
 	if (status < 0) {
-		SYS_LOG_ERR("Could not add gpio int2 callback (%d)", status);
+		LOG_ERR("Could not add gpio int2 callback (%d)", status);
 		return status;
 	}
 
@@ -400,7 +404,7 @@ int lis2dh_init_interrupt(struct device *dev)
 	/* disable interrupt 2 in case of warm (re)boot */
 	status = lis2dh_reg_write_byte(dev, LIS2DH_REG_INT2_CFG, 0);
 	if (status < 0) {
-		SYS_LOG_ERR("Interrupt 2 disable reg write failed (%d)",
+		LOG_ERR("Interrupt 2 disable reg write failed (%d)",
 			    status);
 		return status;
 	}
@@ -408,7 +412,7 @@ int lis2dh_init_interrupt(struct device *dev)
 	(void)memset(raw, 0, sizeof(raw));
 	status = lis2dh_burst_write(dev, LIS2DH_REG_INT2_THS, raw, sizeof(raw));
 	if (status < 0) {
-		SYS_LOG_ERR("Burst write to INT2 THS failed (%d)", status);
+		LOG_ERR("Burst write to INT2 THS failed (%d)", status);
 		return status;
 	}
 
@@ -416,11 +420,11 @@ int lis2dh_init_interrupt(struct device *dev)
 	status = lis2dh_reg_write_byte(dev, LIS2DH_REG_CTRL5,
 				       LIS2DH_EN_LIR_INT2);
 	if (status < 0) {
-		SYS_LOG_ERR("INT2 latch enable reg write failed (%d)", status);
+		LOG_ERR("INT2 latch enable reg write failed (%d)", status);
 		return status;
 	}
 
-	SYS_LOG_INF("int1 on pin=%d cfg=0x%x, int2 on pin=%d cfg=0x%x",
+	LOG_INF("int1 on pin=%d cfg=0x%x, int2 on pin=%d cfg=0x%x",
 		    CONFIG_LIS2DH_INT1_GPIO_PIN, LIS2DH_INT1_CFG,
 		    CONFIG_LIS2DH_INT2_GPIO_PIN, LIS2DH_INT2_CFG);
 

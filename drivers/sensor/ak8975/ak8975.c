@@ -11,8 +11,12 @@
 #include <misc/__assert.h>
 #include <misc/byteorder.h>
 #include <misc/util.h>
+#include <logging/log.h>
 
 #include "ak8975.h"
+
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+LOG_MODULE_REGISTER(AK8975);
 
 static int ak8975_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
@@ -23,7 +27,7 @@ static int ak8975_sample_fetch(struct device *dev, enum sensor_channel chan)
 
 	if (i2c_reg_write_byte(drv_data->i2c, CONFIG_AK8975_I2C_ADDR,
 			       AK8975_REG_CNTL, AK8975_MODE_MEASURE) < 0) {
-		SYS_LOG_ERR("Failed to start measurement.");
+		LOG_ERR("Failed to start measurement.");
 		return -EIO;
 	}
 
@@ -31,7 +35,7 @@ static int ak8975_sample_fetch(struct device *dev, enum sensor_channel chan)
 
 	if (i2c_burst_read(drv_data->i2c, CONFIG_AK8975_I2C_ADDR,
 			   AK8975_REG_DATA_START, buf, 6) < 0) {
-		SYS_LOG_ERR("Failed to read sample data.");
+		LOG_ERR("Failed to read sample data.");
 		return -EIO;
 	}
 
@@ -90,13 +94,13 @@ static int ak8975_read_adjustment_data(struct ak8975_data *drv_data)
 
 	if (i2c_reg_write_byte(drv_data->i2c, CONFIG_AK8975_I2C_ADDR,
 			       AK8975_REG_CNTL, AK8975_MODE_FUSE_ACCESS) < 0) {
-		SYS_LOG_ERR("Failed to set chip in fuse access mode.");
+		LOG_ERR("Failed to set chip in fuse access mode.");
 		return -EIO;
 	}
 
 	if (i2c_burst_read(drv_data->i2c, CONFIG_AK8975_I2C_ADDR,
 			   AK8975_REG_ADJ_DATA_START, buf, 3) < 0) {
-		SYS_LOG_ERR("Failed to read adjustment data.");
+		LOG_ERR("Failed to read adjustment data.");
 		return -EIO;
 	}
 
@@ -114,7 +118,7 @@ int ak8975_init(struct device *dev)
 
 	drv_data->i2c = device_get_binding(CONFIG_AK8975_I2C_MASTER_DEV_NAME);
 	if (drv_data->i2c == NULL) {
-		SYS_LOG_ERR("Failed to get pointer to %s device!",
+		LOG_ERR("Failed to get pointer to %s device!",
 			    CONFIG_AK8975_I2C_MASTER_DEV_NAME);
 		return -EINVAL;
 	}
@@ -124,7 +128,7 @@ int ak8975_init(struct device *dev)
 	if (i2c_reg_update_byte(drv_data->i2c, MPU9150_I2C_ADDR,
 				MPU9150_REG_PWR_MGMT1, MPU9150_SLEEP_EN,
 				0) < 0) {
-		SYS_LOG_ERR("Failed to wake up MPU9150 chip.");
+		LOG_ERR("Failed to wake up MPU9150 chip.");
 		return -EIO;
 	}
 
@@ -132,7 +136,7 @@ int ak8975_init(struct device *dev)
 	if (i2c_reg_update_byte(drv_data->i2c, MPU9150_I2C_ADDR,
 				MPU9150_REG_BYPASS_CFG, MPU9150_I2C_BYPASS_EN,
 				MPU9150_I2C_BYPASS_EN) < 0) {
-		SYS_LOG_ERR("Failed to enable pass-through mode for MPU9150.");
+		LOG_ERR("Failed to enable pass-through mode for MPU9150.");
 		return -EIO;
 	}
 #endif
@@ -140,12 +144,12 @@ int ak8975_init(struct device *dev)
 	/* check chip ID */
 	if (i2c_reg_read_byte(drv_data->i2c, CONFIG_AK8975_I2C_ADDR,
 			      AK8975_REG_CHIP_ID, &id) < 0) {
-		SYS_LOG_ERR("Failed to read chip ID.");
+		LOG_ERR("Failed to read chip ID.");
 		return -EIO;
 	}
 
 	if (id != AK8975_CHIP_ID) {
-		SYS_LOG_ERR("Invalid chip ID.");
+		LOG_ERR("Invalid chip ID.");
 		return -EINVAL;
 	}
 

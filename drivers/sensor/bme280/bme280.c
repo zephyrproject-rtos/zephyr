@@ -19,10 +19,15 @@
 #elif defined CONFIG_BME280_DEV_TYPE_SPI
 #include <spi.h>
 #endif
+#include <logging/log.h>
 
 #include "bme280.h"
 
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+LOG_MODULE_REGISTER(BME280);
+
 static int bm280_reg_read(struct bme280_data *data,
+
 			  u8_t start, u8_t *buf, int size)
 {
 #ifdef CONFIG_BME280_DEV_TYPE_I2C
@@ -58,7 +63,7 @@ static int bm280_reg_read(struct bme280_data *data,
 
 		ret = spi_transceive(data->spi, &data->spi_cfg, &tx, &rx);
 		if (ret) {
-			SYS_LOG_DBG("spi_transceive FAIL %d\n", ret);
+			LOG_DBG("spi_transceive FAIL %d\n", ret);
 			return ret;
 		}
 	}
@@ -85,7 +90,7 @@ static int bm280_reg_write(struct bme280_data *data, u8_t reg, u8_t val)
 
 	ret = spi_write(data->spi, &data->spi_cfg, &tx);
 	if (ret) {
-		SYS_LOG_DBG("spi_write FAIL %d\n", ret);
+		LOG_DBG("spi_write FAIL %d\n", ret);
 		return ret;
 	}
 #endif
@@ -293,12 +298,12 @@ static int bme280_chip_init(struct device *dev)
 	}
 
 	if (data->chip_id == BME280_CHIP_ID) {
-		SYS_LOG_DBG("BME280 chip detected");
+		LOG_DBG("BME280 chip detected");
 	} else if (data->chip_id == BMP280_CHIP_ID_MP ||
 		   data->chip_id == BMP280_CHIP_ID_SAMPLE_1) {
-		SYS_LOG_DBG("BMP280 chip detected");
+		LOG_DBG("BMP280 chip detected");
 	} else {
-		SYS_LOG_DBG("bad chip id 0x%x", data->chip_id);
+		LOG_DBG("bad chip id 0x%x", data->chip_id);
 		return -ENOTSUP;
 	}
 
@@ -333,7 +338,7 @@ static inline int bme280_spi_init(struct bme280_data *data)
 {
 	data->spi = device_get_binding(CONFIG_BME280_SPI_DEV_NAME);
 	if (!data->spi) {
-		SYS_LOG_DBG("spi device not found: %s",
+		LOG_DBG("spi device not found: %s",
 			    CONFIG_BME280_SPI_DEV_NAME);
 		return -EINVAL;
 	}
@@ -354,7 +359,7 @@ int bme280_init(struct device *dev)
 #ifdef CONFIG_BME280_DEV_TYPE_I2C
 	data->i2c_master = device_get_binding(CONFIG_BME280_I2C_MASTER_DEV_NAME);
 	if (!data->i2c_master) {
-		SYS_LOG_DBG("i2c master not found: %s",
+		LOG_DBG("i2c master not found: %s",
 			    CONFIG_BME280_I2C_MASTER_DEV_NAME);
 		return -EINVAL;
 	}
@@ -362,7 +367,7 @@ int bme280_init(struct device *dev)
 	data->i2c_slave_addr = BME280_I2C_ADDR;
 #elif defined CONFIG_BME280_DEV_TYPE_SPI
 	if (bme280_spi_init(data) < 0) {
-		SYS_LOG_DBG("spi master not found: %s",
+		LOG_DBG("spi master not found: %s",
 			    CONFIG_BME280_SPI_DEV_NAME);
 		return -EINVAL;
 	}

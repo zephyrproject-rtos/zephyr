@@ -25,7 +25,4 @@ struct hdc1008_data {
 	struct k_sem data_sem;
 };
 
-#define SYS_LOG_DOMAIN "HDC1008"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <logging/sys_log.h>
 #endif

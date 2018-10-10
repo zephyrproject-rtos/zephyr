@@ -8,10 +8,6 @@
 #include <i2c.h>
 #include <gpio.h>
 
-#define SYS_LOG_DOMAIN "FXAS21002"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <logging/sys_log.h>
-
 #define FXAS21002_REG_STATUS		0x00
 #define FXAS21002_REG_OUTXMSB		0x01
 #define FXAS21002_REG_INT_SOURCE	0x0b

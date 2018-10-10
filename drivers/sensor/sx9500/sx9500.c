@@ -14,8 +14,12 @@
 #include <init.h>
 #include <gpio.h>
 #include <misc/__assert.h>
+#include <logging/log.h>
 
 #include "sx9500.h"
+
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+LOG_MODULE_REGISTER(SX9500);
 
 static u8_t sx9500_reg_defaults[] = {
 	/*
@@ -109,7 +113,7 @@ int sx9500_init(struct device *dev)
 
 	data->i2c_master = device_get_binding(CONFIG_SX9500_I2C_DEV_NAME);
 	if (!data->i2c_master) {
-		SYS_LOG_DBG("sx9500: i2c master not found: %s",
+		LOG_DBG("sx9500: i2c master not found: %s",
 		    CONFIG_SX9500_I2C_DEV_NAME);
 		return -EINVAL;
 	}
@@ -117,12 +121,12 @@ int sx9500_init(struct device *dev)
 	data->i2c_slave_addr = CONFIG_SX9500_I2C_ADDR;
 
 	if (sx9500_init_chip(dev) < 0) {
-		SYS_LOG_DBG("sx9500: failed to initialize chip");
+		LOG_DBG("sx9500: failed to initialize chip");
 		return -EINVAL;
 	}
 
 	if (sx9500_setup_interrupt(dev) < 0) {
-		SYS_LOG_DBG("sx9500: failed to setup interrupt");
+		LOG_DBG("sx9500: failed to setup interrupt");
 		return -EINVAL;
 	}
 

@@ -14,8 +14,12 @@
 #include <misc/__assert.h>
 
 #include <gpio.h>
+#include <logging/log.h>
 
 #include "lsm9ds0_gyro.h"
+
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+LOG_MODULE_REGISTER(LSM9DS0_GYRO);
 
 static inline int lsm9ds0_gyro_power_ctrl(struct device *dev, int power,
 					  int x_en, int y_en, int z_en)
@@ -135,7 +139,7 @@ static int lsm9ds0_gyro_sample_fetch(struct device *dev,
 			      LSM9DS0_GYRO_REG_OUT_Z_L_G, &z_l) < 0 ||
 	    i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
 			      LSM9DS0_GYRO_REG_OUT_Z_H_G, &z_h) < 0) {
-		SYS_LOG_DBG("failed to read sample");
+		LOG_DBG("failed to read sample");
 		return -EIO;
 	}
 
@@ -222,7 +226,7 @@ static int lsm9ds0_gyro_attr_set(struct device *dev,
 #if defined(CONFIG_LSM9DS0_GYRO_FULLSCALE_RUNTIME)
 	case SENSOR_ATTR_FULL_SCALE:
 		if (lsm9ds0_gyro_set_fs(dev, sensor_rad_to_degrees(val)) < 0) {
-			SYS_LOG_DBG("full-scale value not supported");
+			LOG_DBG("full-scale value not supported");
 			return -EIO;
 		}
 		break;
@@ -230,7 +234,7 @@ static int lsm9ds0_gyro_attr_set(struct device *dev,
 #if defined(CONFIG_LSM9DS0_GYRO_SAMPLING_RATE_RUNTIME)
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		if (lsm9ds0_gyro_set_odr(dev, val->val1) < 0) {
-			SYS_LOG_DBG("sampling frequency value not supported");
+			LOG_DBG("sampling frequency value not supported");
 			return -EIO;
 		}
 		break;
@@ -261,34 +265,34 @@ static int lsm9ds0_gyro_init_chip(struct device *dev)
 	u8_t chip_id;
 
 	if (lsm9ds0_gyro_power_ctrl(dev, 0, 0, 0, 0) < 0) {
-		SYS_LOG_DBG("failed to power off device");
+		LOG_DBG("failed to power off device");
 		return -EIO;
 	}
 
 	if (lsm9ds0_gyro_power_ctrl(dev, 1, 1, 1, 1) < 0) {
-		SYS_LOG_DBG("failed to power on device");
+		LOG_DBG("failed to power on device");
 		return -EIO;
 	}
 
 	if (i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
 			      LSM9DS0_GYRO_REG_WHO_AM_I_G, &chip_id) < 0) {
-		SYS_LOG_DBG("failed reading chip id");
+		LOG_DBG("failed reading chip id");
 		goto err_poweroff;
 	}
 	if (chip_id != LSM9DS0_GYRO_VAL_WHO_AM_I_G) {
-		SYS_LOG_DBG("invalid chip id 0x%x", chip_id);
+		LOG_DBG("invalid chip id 0x%x", chip_id);
 		goto err_poweroff;
 	}
-	SYS_LOG_DBG("chip id 0x%x", chip_id);
+	LOG_DBG("chip id 0x%x", chip_id);
 
 	if (lsm9ds0_gyro_set_fs_raw(dev, LSM9DS0_GYRO_DEFAULT_FULLSCALE) < 0) {
-		SYS_LOG_DBG("failed to set full-scale");
+		LOG_DBG("failed to set full-scale");
 		goto err_poweroff;
 	}
 
 	if (lsm9ds0_gyro_set_odr_raw(dev, LSM9DS0_GYRO_DEFAULT_SAMPLING_RATE)
 				     < 0) {
-		SYS_LOG_DBG("failed to set sampling rate");
+		LOG_DBG("failed to set sampling rate");
 		goto err_poweroff;
 	}
 
@@ -299,7 +303,7 @@ static int lsm9ds0_gyro_init_chip(struct device *dev)
 				(1 << LSM9DS0_GYRO_SHIFT_CTRL_REG4_G_BDU) |
 				(0 << LSM9DS0_GYRO_SHIFT_CTRL_REG4_G_BLE))
 				< 0) {
-		SYS_LOG_DBG("failed to set BDU and BLE");
+		LOG_DBG("failed to set BDU and BLE");
 		goto err_poweroff;
 	}
 
@@ -318,19 +322,19 @@ static int lsm9ds0_gyro_init(struct device *dev)
 
 	data->i2c_master = device_get_binding(config->i2c_master_dev_name);
 	if (!data->i2c_master) {
-		SYS_LOG_DBG("i2c master not found: %s",
+		LOG_DBG("i2c master not found: %s",
 			    config->i2c_master_dev_name);
 		return -EINVAL;
 	}
 
 	if (lsm9ds0_gyro_init_chip(dev) < 0) {
-		SYS_LOG_DBG("failed to initialize chip");
+		LOG_DBG("failed to initialize chip");
 		return -EIO;
 	}
 
 #if defined(CONFIG_LSM9DS0_GYRO_TRIGGER_DRDY)
 	if (lsm9ds0_gyro_init_interrupt(dev) < 0) {
-		SYS_LOG_DBG("failed to initialize interrupts");
+		LOG_DBG("failed to initialize interrupts");
 		return -EIO;
 	}
 

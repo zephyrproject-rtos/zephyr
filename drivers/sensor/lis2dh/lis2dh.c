@@ -9,6 +9,10 @@
 #include <init.h>
 #include <misc/byteorder.h>
 #include <misc/__assert.h>
+#include <logging/log.h>
+
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+LOG_MODULE_REGISTER(lis2dh);
 
 #if defined(CONFIG_LIS2DH_BUS_SPI)
 int lis2dh_spi_access(struct lis2dh_data *ctx, u8_t cmd,
@@ -134,7 +138,7 @@ static int lis2dh_sample_fetch(struct device *dev, enum sensor_channel chan)
 				   lis2dh->sample.raw,
 				   sizeof(lis2dh->sample.raw));
 	if (status < 0) {
-		SYS_LOG_WRN("Could not read accel axis data");
+		LOG_WRN("Could not read accel axis data");
 		return status;
 	}
 
@@ -145,7 +149,7 @@ static int lis2dh_sample_fetch(struct device *dev, enum sensor_channel chan)
 		*sample = sys_le16_to_cpu(*sample);
 	}
 
-	SYS_LOG_INF("status=0x%x x=%d y=%d z=%d", lis2dh->sample.status,
+	LOG_INF("status=0x%x x=%d y=%d z=%d", lis2dh->sample.status,
 		    lis2dh->sample.xyz[0], lis2dh->sample.xyz[1],
 		    lis2dh->sample.xyz[2]);
 
@@ -273,7 +277,7 @@ static int lis2dh_acc_config(struct device *dev, enum sensor_channel chan,
 		return lis2dh_acc_slope_config(dev, attr, val);
 #endif
 	default:
-		SYS_LOG_DBG("Accel attribute not supported.");
+		LOG_DBG("Accel attribute not supported.");
 		return -ENOTSUP;
 	}
 
@@ -291,7 +295,7 @@ static int lis2dh_attr_set(struct device *dev, enum sensor_channel chan,
 	case SENSOR_CHAN_ACCEL_XYZ:
 		return lis2dh_acc_config(dev, chan, attr, val);
 	default:
-		SYS_LOG_WRN("attr_set() not supported on this channel.");
+		LOG_WRN("attr_set() not supported on this channel.");
 		return -ENOTSUP;
 	}
 
@@ -329,7 +333,7 @@ int lis2dh_init(struct device *dev)
 	status = lis2dh_burst_write(dev, LIS2DH_REG_CTRL1, raw,
 				    sizeof(raw));
 	if (status < 0) {
-		SYS_LOG_ERR("Failed to reset ctrl registers.");
+		LOG_ERR("Failed to reset ctrl registers.");
 		return status;
 	}
 
@@ -338,19 +342,19 @@ int lis2dh_init(struct device *dev)
 	status = lis2dh_reg_write_byte(dev, LIS2DH_REG_CTRL4,
 				       LIS2DH_FS_BITS);
 	if (status < 0) {
-		SYS_LOG_ERR("Failed to set full scale ctrl register.");
+		LOG_ERR("Failed to set full scale ctrl register.");
 		return status;
 	}
 
 #ifdef CONFIG_LIS2DH_TRIGGER
 	status = lis2dh_init_interrupt(dev);
 	if (status < 0) {
-		SYS_LOG_ERR("Failed to initialize interrupts.");
+		LOG_ERR("Failed to initialize interrupts.");
 		return status;
 	}
 #endif
 
-	SYS_LOG_INF("bus=%s fs=%d, odr=0x%x lp_en=0x%x scale=%d",
+	LOG_INF("bus=%s fs=%d, odr=0x%x lp_en=0x%x scale=%d",
 		    LIS2DH_BUS_DEV_NAME, 1 << (LIS2DH_FS_IDX + 1),
 		    LIS2DH_ODR_IDX, (u8_t)LIS2DH_LP_EN_BIT, lis2dh->scale);
 

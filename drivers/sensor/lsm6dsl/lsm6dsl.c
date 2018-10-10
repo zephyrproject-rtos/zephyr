@@ -15,8 +15,12 @@
 #include <string.h>
 #include <misc/byteorder.h>
 #include <misc/__assert.h>
+#include <logging/log.h>
 
 #include "lsm6dsl.h"
+
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+LOG_MODULE_REGISTER(LSM6DSL);
 
 static const u16_t lsm6dsl_odr_map[] = {0, 12, 26, 52, 104, 208, 416, 833,
 					1660, 3330, 6660};
@@ -179,7 +183,7 @@ static int lsm6dsl_accel_odr_set(struct device *dev, u16_t freq)
 	}
 
 	if (lsm6dsl_accel_set_odr_raw(dev, odr) < 0) {
-		SYS_LOG_DBG("failed to set accelerometer sampling rate");
+		LOG_DBG("failed to set accelerometer sampling rate");
 		return -EIO;
 	}
 
@@ -199,7 +203,7 @@ static int lsm6dsl_accel_range_set(struct device *dev, s32_t range)
 	}
 
 	if (lsm6dsl_accel_set_fs_raw(dev, fs) < 0) {
-		SYS_LOG_DBG("failed to set accelerometer full-scale");
+		LOG_DBG("failed to set accelerometer full-scale");
 		return -EIO;
 	}
 
@@ -223,7 +227,7 @@ static int lsm6dsl_accel_config(struct device *dev, enum sensor_channel chan,
 		return lsm6dsl_accel_odr_set(dev, val->val1);
 #endif
 	default:
-		SYS_LOG_DBG("Accel attribute not supported.");
+		LOG_DBG("Accel attribute not supported.");
 		return -ENOTSUP;
 	}
 
@@ -241,7 +245,7 @@ static int lsm6dsl_gyro_odr_set(struct device *dev, u16_t freq)
 	}
 
 	if (lsm6dsl_gyro_set_odr_raw(dev, odr) < 0) {
-		SYS_LOG_DBG("failed to set gyroscope sampling rate");
+		LOG_DBG("failed to set gyroscope sampling rate");
 		return -EIO;
 	}
 
@@ -261,7 +265,7 @@ static int lsm6dsl_gyro_range_set(struct device *dev, s32_t range)
 	}
 
 	if (lsm6dsl_gyro_set_fs_raw(dev, fs) < 0) {
-		SYS_LOG_DBG("failed to set gyroscope full-scale");
+		LOG_DBG("failed to set gyroscope full-scale");
 		return -EIO;
 	}
 
@@ -285,7 +289,7 @@ static int lsm6dsl_gyro_config(struct device *dev, enum sensor_channel chan,
 		return lsm6dsl_gyro_odr_set(dev, val->val1);
 #endif
 	default:
-		SYS_LOG_DBG("Gyro attribute not supported.");
+		LOG_DBG("Gyro attribute not supported.");
 		return -ENOTSUP;
 	}
 
@@ -302,7 +306,7 @@ static int lsm6dsl_attr_set(struct device *dev, enum sensor_channel chan,
 	case SENSOR_CHAN_GYRO_XYZ:
 		return lsm6dsl_gyro_config(dev, chan, attr, val);
 	default:
-		SYS_LOG_WRN("attr_set() not supported on this channel.");
+		LOG_WRN("attr_set() not supported on this channel.");
 		return -ENOTSUP;
 	}
 
@@ -316,7 +320,7 @@ static int lsm6dsl_sample_fetch_accel(struct device *dev)
 
 	if (data->hw_tf->read_data(data, LSM6DSL_REG_OUTX_L_XL,
 				   buf, sizeof(buf)) < 0) {
-		SYS_LOG_DBG("failed to read sample");
+		LOG_DBG("failed to read sample");
 		return -EIO;
 	}
 
@@ -337,7 +341,7 @@ static int lsm6dsl_sample_fetch_gyro(struct device *dev)
 
 	if (data->hw_tf->read_data(data, LSM6DSL_REG_OUTX_L_G,
 				   buf, sizeof(buf)) < 0) {
-		SYS_LOG_DBG("failed to read sample");
+		LOG_DBG("failed to read sample");
 		return -EIO;
 	}
 
@@ -359,7 +363,7 @@ static int lsm6dsl_sample_fetch_temp(struct device *dev)
 
 	if (data->hw_tf->read_data(data, LSM6DSL_REG_OUT_TEMP_L,
 				   buf, sizeof(buf)) < 0) {
-		SYS_LOG_DBG("failed to read sample");
+		LOG_DBG("failed to read sample");
 		return -EIO;
 	}
 
@@ -377,7 +381,7 @@ static int lsm6dsl_sample_fetch_magn(struct device *dev)
 	u8_t buf[6];
 
 	if (lsm6dsl_shub_read_external_chip(dev, buf, sizeof(buf)) < 0) {
-		SYS_LOG_DBG("failed to read ext mag sample");
+		LOG_DBG("failed to read ext mag sample");
 		return -EIO;
 	}
 
@@ -398,7 +402,7 @@ static int lsm6dsl_sample_fetch_press(struct device *dev)
 	u8_t buf[5];
 
 	if (lsm6dsl_shub_read_external_chip(dev, buf, sizeof(buf)) < 0) {
-		SYS_LOG_DBG("failed to read ext press sample");
+		LOG_DBG("failed to read ext press sample");
 		return -EIO;
 	}
 
@@ -705,43 +709,43 @@ static int lsm6dsl_init_chip(struct device *dev)
 	u8_t chip_id;
 
 	if (lsm6dsl_reboot(dev) < 0) {
-		SYS_LOG_DBG("failed to reboot device");
+		LOG_DBG("failed to reboot device");
 		return -EIO;
 	}
 
 	if (data->hw_tf->read_reg(data, LSM6DSL_REG_WHO_AM_I, &chip_id) < 0) {
-		SYS_LOG_DBG("failed reading chip id");
+		LOG_DBG("failed reading chip id");
 		return -EIO;
 	}
 	if (chip_id != LSM6DSL_VAL_WHO_AM_I) {
-		SYS_LOG_DBG("invalid chip id 0x%x", chip_id);
+		LOG_DBG("invalid chip id 0x%x", chip_id);
 		return -EIO;
 	}
 
-	SYS_LOG_DBG("chip id 0x%x", chip_id);
+	LOG_DBG("chip id 0x%x", chip_id);
 
 	if (lsm6dsl_accel_set_fs_raw(dev,
 				     LSM6DSL_DEFAULT_ACCEL_FULLSCALE) < 0) {
-		SYS_LOG_DBG("failed to set accelerometer full-scale");
+		LOG_DBG("failed to set accelerometer full-scale");
 		return -EIO;
 	}
 	data->accel_sensitivity = LSM6DSL_DEFAULT_ACCEL_SENSITIVITY;
 
 	data->accel_freq = lsm6dsl_odr_to_freq_val(CONFIG_LSM6DSL_ACCEL_ODR);
 	if (lsm6dsl_accel_set_odr_raw(dev, CONFIG_LSM6DSL_ACCEL_ODR) < 0) {
-		SYS_LOG_DBG("failed to set accelerometer sampling rate");
+		LOG_DBG("failed to set accelerometer sampling rate");
 		return -EIO;
 	}
 
 	if (lsm6dsl_gyro_set_fs_raw(dev, LSM6DSL_DEFAULT_GYRO_FULLSCALE) < 0) {
-		SYS_LOG_DBG("failed to set gyroscope full-scale");
+		LOG_DBG("failed to set gyroscope full-scale");
 		return -EIO;
 	}
 	data->gyro_sensitivity = LSM6DSL_DEFAULT_GYRO_SENSITIVITY;
 
 	data->gyro_freq = lsm6dsl_odr_to_freq_val(CONFIG_LSM6DSL_GYRO_ODR);
 	if (lsm6dsl_gyro_set_odr_raw(dev, CONFIG_LSM6DSL_GYRO_ODR) < 0) {
-		SYS_LOG_DBG("failed to set gyroscope sampling rate");
+		LOG_DBG("failed to set gyroscope sampling rate");
 		return -EIO;
 	}
 
@@ -749,7 +753,7 @@ static int lsm6dsl_init_chip(struct device *dev)
 				LSM6DSL_REG_FIFO_CTRL5,
 				LSM6DSL_MASK_FIFO_CTRL5_FIFO_MODE,
 				0 << LSM6DSL_SHIFT_FIFO_CTRL5_FIFO_MODE) < 0) {
-		SYS_LOG_DBG("failed to set FIFO mode");
+		LOG_DBG("failed to set FIFO mode");
 		return -EIO;
 	}
 
@@ -761,7 +765,7 @@ static int lsm6dsl_init_chip(struct device *dev)
 				    (1 << LSM6DSL_SHIFT_CTRL3_C_BDU) |
 				    (0 << LSM6DSL_SHIFT_CTRL3_C_BLE) |
 				    (1 << LSM6DSL_SHIFT_CTRL3_C_IF_INC)) < 0) {
-		SYS_LOG_DBG("failed to set BDU, BLE and burst");
+		LOG_DBG("failed to set BDU, BLE and burst");
 		return -EIO;
 	}
 
@@ -783,7 +787,7 @@ static int lsm6dsl_init(struct device *dev)
 
 	data->comm_master = device_get_binding(config->comm_master_dev_name);
 	if (!data->comm_master) {
-		SYS_LOG_DBG("master not found: %s",
+		LOG_DBG("master not found: %s",
 			    config->comm_master_dev_name);
 		return -EINVAL;
 	}
@@ -796,19 +800,19 @@ static int lsm6dsl_init(struct device *dev)
 
 #ifdef CONFIG_LSM6DSL_TRIGGER
 	if (lsm6dsl_init_interrupt(dev) < 0) {
-		SYS_LOG_ERR("Failed to initialize interrupt.");
+		LOG_ERR("Failed to initialize interrupt.");
 		return -EIO;
 	}
 #endif
 
 	if (lsm6dsl_init_chip(dev) < 0) {
-		SYS_LOG_DBG("failed to initialize chip");
+		LOG_DBG("failed to initialize chip");
 		return -EIO;
 	}
 
 #ifdef CONFIG_LSM6DSL_SENSORHUB
 	if (lsm6dsl_shub_init_external_chip(dev) < 0) {
-		SYS_LOG_DBG("failed to initialize external chip");
+		LOG_DBG("failed to initialize external chip");
 		return -EIO;
 	}
 #endif

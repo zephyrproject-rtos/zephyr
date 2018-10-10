@@ -13,8 +13,12 @@
 #include <kernel.h>
 #include <sensor.h>
 #include <misc/__assert.h>
+#include <logging/log.h>
 
 #include "amg88xx.h"
+
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+LOG_MODULE_REGISTER(AMG88XX);
 
 static int amg88xx_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
@@ -63,11 +67,11 @@ static int amg88xx_init_device(struct device *dev)
 	u8_t tmp;
 
 	if (amg88xx_reg_read(drv_data, AMG88XX_PCLT, &tmp)) {
-		SYS_LOG_ERR("Failed to read Power mode");
+		LOG_ERR("Failed to read Power mode");
 		return -EIO;
 	}
 
-	SYS_LOG_DBG("Power mode 0x%02x", tmp);
+	LOG_DBG("Power mode 0x%02x", tmp);
 	if (tmp != AMG88XX_PCLT_NORMAL_MODE) {
 		if (amg88xx_reg_write(drv_data, AMG88XX_PCLT,
 				       AMG88XX_PCLT_NORMAL_MODE)) {
@@ -87,7 +91,7 @@ static int amg88xx_init_device(struct device *dev)
 		return -EIO;
 	}
 
-	SYS_LOG_DBG("");
+	LOG_DBG("");
 
 	return 0;
 }
@@ -98,20 +102,20 @@ int amg88xx_init(struct device *dev)
 
 	drv_data->i2c = device_get_binding(CONFIG_AMG88XX_I2C_MASTER_DEV_NAME);
 	if (drv_data->i2c == NULL) {
-		SYS_LOG_ERR("Failed to get pointer to %s device!",
+		LOG_ERR("Failed to get pointer to %s device!",
 			    CONFIG_AMG88XX_I2C_MASTER_DEV_NAME);
 		return -EINVAL;
 	}
 
 	if (amg88xx_init_device(dev) < 0) {
-		SYS_LOG_ERR("Failed to initialize device!");
+		LOG_ERR("Failed to initialize device!");
 		return -EIO;
 	}
 
 
 #ifdef CONFIG_AMG88XX_TRIGGER
 	if (amg88xx_init_interrupt(dev) < 0) {
-		SYS_LOG_ERR("Failed to initialize interrupt!");
+		LOG_ERR("Failed to initialize interrupt!");
 		return -EIO;
 	}
 #endif

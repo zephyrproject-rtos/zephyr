@@ -10,8 +10,12 @@
 #include <kernel.h>
 #include <misc/util.h>
 #include <sensor.h>
+#include <logging/log.h>
 
 #include "mma8451q.h"
+
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+LOG_MODULE_REGISTER(MMA8451Q);
 
 /* Data-sheet: https://www.nxp.com/docs/en/data-sheet/MMA8451Q.pdf */
 
@@ -25,7 +29,7 @@ static int mma8451q_sample_fetch(struct device *dev, enum sensor_channel chan)
 	/* Read data from all three axes at the same time. */
 	if (i2c_burst_read(data->i2c, config->i2c_address,
 			   MMA8451Q_OUT_X_MSB, buf, 6) < 0) {
-		SYS_LOG_ERR("Could not read accelerometer data");
+		LOG_ERR("Could not read accelerometer data");
 		return -EIO;
 	}
 
@@ -108,7 +112,7 @@ int mma8451q_init(struct device *dev)
 
 	data->i2c = device_get_binding(config->i2c_name);
 	if (data->i2c == NULL) {
-		SYS_LOG_ERR("Failed to get pointer to %s device!",
+		LOG_ERR("Failed to get pointer to %s device!",
 				config->i2c_name);
 		return -EINVAL;
 	}
@@ -117,47 +121,47 @@ int mma8451q_init(struct device *dev)
 
 	if (i2c_reg_read_byte(data->i2c, config->i2c_address,
 			      MMA8451Q_REG_WHOAMI, &whoami)) {
-		SYS_LOG_ERR("Could not get WHOAMI value");
+		LOG_ERR("Could not get WHOAMI value");
 		return -EIO;
 	}
 
 	if (whoami != config->whoami) {
-		SYS_LOG_ERR("WHOAMI value received 0x%x, expected 0x%x",
+		LOG_ERR("WHOAMI value received 0x%x, expected 0x%x",
 			    whoami, MMA8451Q_REG_WHOAMI);
 		return -EIO;
 	}
 
 	if (i2c_reg_write_byte(data->i2c, config->i2c_address,
 				   MMA8451Q_CTRL_REG1, 0) < 0) {
-		SYS_LOG_ERR("Could not set accel in config mode");
+		LOG_ERR("Could not set accel in config mode");
 		return -EIO;
 	}
 
 	if (i2c_reg_write_byte(data->i2c, config->i2c_address,
 				   MMA8451Q_XYZ_DATA_CFG, config->range) < 0) {
-		SYS_LOG_ERR("Could not set range");
+		LOG_ERR("Could not set range");
 		return -EIO;
 	}
 
 	if (i2c_reg_write_byte(data->i2c, config->i2c_address,
 				   MMA8451Q_CTRL_REG2, 0) < 0) {
-		SYS_LOG_ERR("Could not set to normal mode");
+		LOG_ERR("Could not set to normal mode");
 		return -EIO;
 	}
 
 	if (i2c_reg_write_byte(data->i2c, config->i2c_address,
 				   MMA8451Q_CTRL_REG3, 0) < 0) {
-		SYS_LOG_ERR("Could not set to low polarity, push-pull output");
+		LOG_ERR("Could not set to low polarity, push-pull output");
 		return -EIO;
 	}
 
 	if (i2c_reg_write_byte(data->i2c, config->i2c_address,
 				   MMA8451Q_CTRL_REG1, 0x09) < 0) {
-		SYS_LOG_ERR("Could not set data rate to 800Hz");
+		LOG_ERR("Could not set data rate to 800Hz");
 		return -EIO;
 	}
 
-	SYS_LOG_DBG("Init complete");
+	LOG_DBG("Init complete");
 
 	return 0;
 }

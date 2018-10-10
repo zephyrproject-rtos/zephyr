@@ -16,7 +16,6 @@
 #include <gpio.h>
 #include <misc/util.h>
 
-
 #define LSM6DSL_REG_FUNC_CFG_ACCESS			0x01
 #define LSM6DSL_MASK_FUNC_CFG_EN			BIT(7)
 #define LSM6DSL_SHIFT_FUNC_CFG_EN			7
@@ -684,7 +683,4 @@ int lsm6dsl_trigger_set(struct device *dev,
 int lsm6dsl_init_interrupt(struct device *dev);
 #endif
 
-#define SYS_LOG_DOMAIN "LSM6DSL"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <logging/sys_log.h>
 #endif /* ZEPHYR_DRIVERS_SENSOR_LSM6DSL_LSM6DSL_H_ */

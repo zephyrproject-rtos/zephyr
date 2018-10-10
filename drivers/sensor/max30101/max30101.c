@@ -4,7 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <logging/log.h>
+
 #include "max30101.h"
+
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+LOG_MODULE_REGISTER(MAX30101);
 
 static int max30101_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
@@ -19,7 +24,7 @@ static int max30101_sample_fetch(struct device *dev, enum sensor_channel chan)
 	num_bytes = data->num_channels * MAX30101_BYTES_PER_CHANNEL;
 	if (i2c_burst_read(data->i2c, MAX30101_I2C_ADDRESS,
 			   MAX30101_REG_FIFO_DATA, buffer, num_bytes)) {
-		SYS_LOG_ERR("Could not fetch sample");
+		LOG_ERR("Could not fetch sample");
 		return -EIO;
 	}
 
@@ -58,7 +63,7 @@ static int max30101_channel_get(struct device *dev, enum sensor_channel chan,
 		break;
 
 	default:
-		SYS_LOG_ERR("Unsupported sensor channel");
+		LOG_ERR("Unsupported sensor channel");
 		return -ENOTSUP;
 	}
 
@@ -68,7 +73,7 @@ static int max30101_channel_get(struct device *dev, enum sensor_channel chan,
 	 */
 	fifo_chan = data->map[led_chan];
 	if (fifo_chan >= MAX30101_MAX_NUM_CHANNELS) {
-		SYS_LOG_ERR("Inactive sensor channel");
+		LOG_ERR("Inactive sensor channel");
 		return -ENOTSUP;
 	}
 
@@ -96,18 +101,18 @@ static int max30101_init(struct device *dev)
 	/* Get the I2C device */
 	data->i2c = device_get_binding(CONFIG_MAX30101_I2C_NAME);
 	if (!data->i2c) {
-		SYS_LOG_ERR("Could not find I2C device");
+		LOG_ERR("Could not find I2C device");
 		return -EINVAL;
 	}
 
 	/* Check the part id to make sure this is MAX30101 */
 	if (i2c_reg_read_byte(data->i2c, MAX30101_I2C_ADDRESS,
 			      MAX30101_REG_PART_ID, &part_id)) {
-		SYS_LOG_ERR("Could not get Part ID");
+		LOG_ERR("Could not get Part ID");
 		return -EIO;
 	}
 	if (part_id != MAX30101_PART_ID) {
-		SYS_LOG_ERR("Got Part ID 0x%02x, expected 0x%02x",
+		LOG_ERR("Got Part ID 0x%02x, expected 0x%02x",
 			    part_id, MAX30101_PART_ID);
 		return -EIO;
 	}
@@ -123,7 +128,7 @@ static int max30101_init(struct device *dev)
 	do {
 		if (i2c_reg_read_byte(data->i2c, MAX30101_I2C_ADDRESS,
 				      MAX30101_REG_MODE_CFG, &mode_cfg)) {
-			SYS_LOG_ERR("Could read mode cfg after reset");
+			LOG_ERR("Could read mode cfg after reset");
 			return -EIO;
 		}
 	} while (mode_cfg & MAX30101_MODE_CFG_RESET_MASK);

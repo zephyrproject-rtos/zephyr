@@ -557,7 +557,4 @@ struct lsm9ds0_mfd_data {
 #endif
 };
 
-#define SYS_LOG_DOMAIN "LSM9DS0_MFD"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <logging/sys_log.h>
 #endif /* ZEPHYR_DRIVERS_SENSOR_LSM9DS0_MFD_LSM9DS0_MFD_H_ */

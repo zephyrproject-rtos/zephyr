@@ -158,7 +158,4 @@ struct lps25hb_data {
 	s16_t sample_temp;
 };
 
-#define SYS_LOG_DOMAIN "LPS25HB"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <logging/sys_log.h>
 #endif /* ZEPHYR_DRIVERS_SENSOR_LPS25HB_LPS25HB_H_ */

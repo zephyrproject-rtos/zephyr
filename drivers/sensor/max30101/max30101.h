@@ -8,10 +8,6 @@
 #include <i2c.h>
 #include <gpio.h>
 
-#define SYS_LOG_DOMAIN "MAX30101"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
-#include <logging/sys_log.h>
-
 #define MAX30101_I2C_ADDRESS		0x57
 
 #define MAX30101_REG_INT_STS1		0x00
