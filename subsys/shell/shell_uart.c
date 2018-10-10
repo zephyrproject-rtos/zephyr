@@ -26,7 +26,7 @@ static int init(const struct shell_transport *transport,
 {
 	struct shell_uart *sh_uart = (struct shell_uart *)transport->ctx;
 
-	sh_uart->dev = device_get_binding(CONFIG_UART_CONSOLE_ON_DEV_NAME);
+	sh_uart->dev = device_get_binding(CONFIG_SHELL_SERIAL_LABEL);
 	sh_uart->handler = evt_handler;
 	sh_uart->context = context;
 

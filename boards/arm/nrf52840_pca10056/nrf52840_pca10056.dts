@@ -71,6 +71,7 @@
 		sw1 = &button1;
 		sw2 = &button2;
 		sw3 = &button3;
+		config-shell-serial = &uart0;
 	};
 };
 
