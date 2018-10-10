@@ -16,6 +16,8 @@
 #include "clk.h"
 #include "soc.h"
 
+#include <logging/log.h>
+LOG_MODULE_REGISTER(i2c_qmsi);
 #include "i2c-priv.h"
 
 /* Convenient macros to get the controller instance and the driver data. */
