@@ -22,8 +22,8 @@ Arduino 101 and Quark D2000 CRB
 You will need to connect the LED to ground and PWM0 via the shield.
 You may need a current limiting resistor. See your LED datasheet.
 
-Nucleo_F401RE, Nucleo_L476RG, and STM32F4_DISCOVERY
-===================================================
+Nucleo_F401RE, Nucleo_L476RG, STM32F4_DISCOVERY, Nucleo_F302R8
+==============================================================
 Connect PWM2(PA0) to LED
 
 Nucleo_F103RB
