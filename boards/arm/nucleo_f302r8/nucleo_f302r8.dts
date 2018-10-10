@@ -1,0 +1,84 @@
+/*
+ * Copyright (c) 2018 Seitz & Associates
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f3/stm32f302X8.dtsi>
+
+/ {
+	model = "STMicroelectronics STM32F302R8-NUCLEO board";
+	compatible = "st,stm32f302r8-nucleo", "st,stm32f302";
+
+	chosen {
+		zephyr,console = &usart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led_2: led_2 {
+			gpios = <&gpiob 13 GPIO_INT_ACTIVE_HIGH>;
+			label = "User LD2";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "User";
+			gpios = <&gpioc 13 GPIO_INT_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		led0 = &green_led_2;
+		sw0 = &user_button;
+	};
+};
+
+arduino_i2c: &i2c1 {};
+arduino_spi: &spi2 {};
+arduino_serial: &usart3 {};
+
+&i2c1 {
+      status = "ok";
+      clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&spi2 {
+	status = "ok";
+};
+
+&usart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_pins_b>;
+	pinctrl-names = "default";
+	status = "ok";
+};
+&usart2 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart2_pins_a>;
+	pinctrl-names = "default";
+	status = "ok";
+};
+&usart3 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart3_pins_a>;
+	pinctrl-names = "default";
+	status = "ok";
+};
+
+&timers2 {
+	status = "ok";
+
+	pwm {
+		status = "ok";
+	};
+};
+
+&rtc {
+	status = "ok";
+};
