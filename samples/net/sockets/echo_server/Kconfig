@@ -46,4 +46,4 @@ config NET_SAMPLE_IFACE3_VLAN_TAG
 	  Set VLAN (virtual LAN) tag (id) that is used in the sample
 	  application.
 
-source "$(ZEPHYR_BASE)/Kconfig.zephyr"
+source "Kconfig.zephyr"

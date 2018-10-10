@@ -15,4 +15,4 @@ source "subsys/logging/Kconfig.template.log_config"
 
 endmenu
 
-source "$(ZEPHYR_BASE)/Kconfig.zephyr"
+source "Kconfig.zephyr"
