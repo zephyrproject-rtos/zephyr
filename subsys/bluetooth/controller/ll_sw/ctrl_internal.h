@@ -210,7 +210,8 @@ struct connection {
 		u8_t  cmd:1;
 		u8_t  disabled:1;
 		u8_t  status;
-		u16_t interval;
+		u16_t interval_min;
+		u16_t interval_max;
 		u16_t latency;
 		u16_t timeout;
 		u8_t  preferred_periodicity;
