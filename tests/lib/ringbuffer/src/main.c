@@ -17,7 +17,9 @@
 #include <ztest.h>
 #include <irq_offload.h>
 #include <ring_buffer.h>
-#include <logging/sys_log.h>
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(test);
 
 /**
  * @addtogroup t_ringbuffer
@@ -61,10 +63,10 @@ void test_ring_buffer_main(void)
 		ret = ring_buf_item_put(&ring_buf1, TYPE, VALUE,
 				       (u32_t *)rb_data, dsize);
 		if (ret == -EMSGSIZE) {
-			SYS_LOG_DBG("ring buffer is full");
+			LOG_DBG("ring buffer is full");
 			break;
 		}
-		SYS_LOG_DBG("inserted %d chunks, %d remaining", dsize,
+		LOG_DBG("inserted %d chunks, %d remaining", dsize,
 			    ring_buf_space_get(&ring_buf1));
 		dsize = (dsize + 1) % SIZE32_OF(rb_data);
 		put_count++;
@@ -74,8 +76,10 @@ void test_ring_buffer_main(void)
 	ret = ring_buf_item_get(&ring_buf1, &gettype, &getval,
 				getdata, &getsize);
 	if (ret != -EMSGSIZE) {
-		SYS_LOG_DBG("Allowed retreival with insufficient destination buffer space");
-		zassert_true((getsize == INITIAL_SIZE), "Correct size wasn't reported back to the caller");
+		LOG_DBG("Allowed retreival with insufficient "
+			"destination buffer space");
+		zassert_true((getsize == INITIAL_SIZE),
+			     "Correct size wasn't reported back to the caller");
 	}
 
 	for (i = 0; i < put_count; i++) {
@@ -83,7 +87,7 @@ void test_ring_buffer_main(void)
 		ret = ring_buf_item_get(&ring_buf1, &gettype, &getval, getdata,
 				       &getsize);
 		zassert_true((ret == 0), "Couldn't retrieve a stored value");
-		SYS_LOG_DBG("got %u chunks of type %u and val %u, %u remaining",
+		LOG_DBG("got %u chunks of type %u and val %u, %u remaining",
 			    getsize, gettype, getval,
 			    ring_buf_space_get(&ring_buf1));
 
