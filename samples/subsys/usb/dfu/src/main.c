@@ -8,12 +8,13 @@
 /* Sample app for USB DFU class driver. */
 
 #include <zephyr.h>
-#include <logging/sys_log.h>
+#include <logging/log.h>
+LOG_MODULE_REGISTER(main);
 
 void main(void)
 {
 	/* Nothing to be done other than the selecting appropriate build
 	 * config options. Use dfu-util to update the device.
 	 */
-	SYS_LOG_INF("This device supports USB DFU class.\n");
+	LOG_INF("This device supports USB DFU class.\n");
 }
