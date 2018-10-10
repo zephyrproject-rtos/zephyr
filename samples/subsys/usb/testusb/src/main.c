@@ -5,10 +5,11 @@
  */
 
 #include <zephyr.h>
-#include <logging/sys_log.h>
+#include <logging/log.h>
+LOG_MODULE_REGISTER(main);
 
 void main(void)
 {
-	SYS_LOG_INF("");
+	LOG_INF("entered main.");
 }
 
