@@ -127,6 +127,7 @@ include/arch/arm/                        @MaureenHelm @galak
 include/arch/arm/cortex_m/irq.h          @andrewboie
 include/arch/nios2/                      @andrewboie
 include/arch/nios2/arch.h                @andrewboie
+include/arch/posix/                      @aescolar
 include/arch/riscv32                     @fractalclone @kgugala @pgielda
 include/arch/x86/                        @andrewboie @ramakrishnapallala
 include/arch/x86/arch.h                  @andrewboie
