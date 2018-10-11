@@ -26,6 +26,9 @@ def edts_insert_device_property(node_address, property_path, property_value):
     device_id = edts_device_id(node_address)
     edts.insert_device_property(device_id, property_path, property_value)
 
+def edts_insert_device_type(compatible, device_type):
+    edts.insert_device_type(compatible, device_type)
+
 ##
 # @brief Insert device parent-device property into EDTS
 #
