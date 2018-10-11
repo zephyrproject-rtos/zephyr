@@ -48,6 +48,24 @@ class DTHeuristics(object):
 
         # Check for <device>-device that is connected to a bus
         for compat in compatible:
+            # get device type list
+            try:
+                device_types = yaml[compat]['type']
+
+                if not isinstance(device_types, list):
+                    device_types = [device_types, ]
+                    if not isinstance(device_types, list):
+                        device_types = [device_types, ]
+
+                # inject device type in database
+                for j, device_type in enumerate(device_types):
+                    edts_insert_device_type(compat, device_type)
+                    edts_insert_device_property(node_address, 'device-type/{}'.format(j),
+                                        device_type)
+            except KeyError:
+                pass
+
+            # Proceed with bus preocessing
             if compat not in yaml:
                 continue
 
