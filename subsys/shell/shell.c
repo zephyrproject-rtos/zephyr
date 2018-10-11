@@ -698,8 +698,7 @@ static void shell_tab_handle(const struct shell *shell)
 #define SHELL_ASCII_MAX_CHAR (127u)
 static inline int ascii_filter(const char data)
 {
-	return (u8_t) data > SHELL_ASCII_MAX_CHAR ?
-			-EINVAL : 0;
+	return (u8_t) data > SHELL_ASCII_MAX_CHAR ? -EINVAL : 0;
 }
 
 static void metakeys_handle(const struct shell *shell, char data)
