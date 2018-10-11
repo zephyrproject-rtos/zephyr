@@ -14,10 +14,6 @@
 
 LOG_MODULE_REGISTER(app);
 
-SHELL_UART_DEFINE(shell_transport_uart);
-SHELL_DEFINE(uart_shell, "uart:~$ ", &shell_transport_uart, 10,
-	     SHELL_FLAG_OLF_CRLF);
-
 extern void foo(void);
 
 void timer_expired_handler(struct k_timer *timer)
@@ -139,5 +135,5 @@ SHELL_CMD_REGISTER(version, NULL, "Show kernel version", cmd_version);
 
 void main(void)
 {
-	(void)shell_init(&uart_shell, NULL, true, true, LOG_LEVEL_INF);
+
 }

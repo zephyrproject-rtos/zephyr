@@ -19,10 +19,6 @@
 
 LOG_MODULE_REGISTER(app);
 
-SHELL_UART_DEFINE(shell_transport_uart);
-SHELL_DEFINE(uart_shell, "uart:~$ ", &shell_transport_uart, 10,
-	     SHELL_FLAG_OLF_CRLF);
-
 #define PR_SHELL(shell, fmt, ...)				\
 	shell_fprintf(shell, SHELL_NORMAL, fmt, ##__VA_ARGS__)
 #define PR_ERROR(shell, fmt, ...)				\
@@ -629,8 +625,6 @@ void main(void)
 		printk("Run set_device <name> to specify one "
 		       "before using other commands.\n");
 	}
-
-	(void)shell_init(&uart_shell, NULL, true, true, LOG_LEVEL_INF);
 }
 
 

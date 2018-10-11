@@ -6,6 +6,11 @@
 
 #include <shell/shell_uart.h>
 #include <uart.h>
+#include <init.h>
+
+SHELL_UART_DEFINE(shell_transport_uart);
+SHELL_DEFINE(uart_shell, "uart:~$ ", &shell_transport_uart, 10,
+	     SHELL_FLAG_OLF_CRLF);
 
 static void timer_handler(struct k_timer *timer)
 {
@@ -87,3 +92,11 @@ const struct shell_transport_api shell_uart_transport_api = {
 	.write = write,
 	.read = read
 };
+
+static int enable_shell_uart(struct device *arg)
+{
+	ARG_UNUSED(arg);
+	shell_init(&uart_shell, NULL, true, true, LOG_LEVEL_INF);
+	return 0;
+}
+SYS_INIT(enable_shell_uart, POST_KERNEL, 0);
