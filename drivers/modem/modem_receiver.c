@@ -11,14 +11,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_DOMAIN "mdm_receiver"
-#define LOG_LEVEL CONFIG_LOG_MODEM_LEVEL
-
 #include <kernel.h>
 #include <init.h>
 #include <uart.h>
 
 #include <logging/log.h>
+#define LOG_DOMAIN mdm_receiver
+#define LOG_LEVEL CONFIG_LOG_MODEM_LEVEL
+LOG_MODULE_REGISTER(LOG_DOMAIN);
+
 #include <drivers/modem/modem_receiver.h>
 
 #define MAX_MDM_CTX	CONFIG_MODEM_RECEIVER_MAX_CONTEXTS
