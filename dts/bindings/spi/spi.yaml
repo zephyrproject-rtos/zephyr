@@ -5,6 +5,7 @@
 #
 ---
 title: SPI Base Structure
+type: spi
 version: 0.1
 
 description: >
