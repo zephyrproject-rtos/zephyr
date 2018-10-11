@@ -517,9 +517,20 @@ def yaml_traverse_inherited(node):
         for inherits in inherits_list:
             if 'inherits' in inherits:
                 inherits = yaml_traverse_inherited(inherits)
-            # title, description, version of inherited node
+            if 'type' in inherits:
+                if 'type' not in node:
+                    node['type'] = []
+                if not isinstance(node['type'], list):
+                    node['type'] = [node['type'],]
+                if isinstance(inherits['type'], list):
+                    node['type'].extend(inherits['type'])
+                else:
+                    node['type'].append(inherits['type'])
+
+            # type, title, description, version of inherited node
             # are overwritten by intention. Remove to prevent dct_merge to
             # complain about duplicates.
+            inherits.pop('type', None)
             inherits.pop('title', None)
             inherits.pop('version', None)
             inherits.pop('description', None)
