@@ -89,4 +89,6 @@ const struct log_backend_api log_backend_native_posix_api = {
 	.panic = panic,
 };
 
-LOG_BACKEND_DEFINE(log_backend_native_posix, log_backend_native_posix_api);
+LOG_BACKEND_DEFINE(log_backend_native_posix,
+		   log_backend_native_posix_api,
+		   true);

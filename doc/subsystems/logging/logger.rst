@@ -427,8 +427,8 @@ Example message formatted using :cpp:func:`log_output_msg_process`.
    }
 
 Logger backends are registered to the logger using
-:c:macro:`LOG_BACKEND_DEFINE` macro. The macro creates an instance in the dedicated
-memory section. Backends can be dynamically enabled
+:c:macro:`LOG_BACKEND_DEFINE` macro. The macro creates an instance in the
+dedicated memory section. Backends can be dynamically enabled
 (:cpp:func:`log_backend_enable`) and disabled.
 
 Limitations
