@@ -1,5 +1,6 @@
 ---
 title: Uart Base Structure
+type: serial
 version: 0.1
 
 description: >
