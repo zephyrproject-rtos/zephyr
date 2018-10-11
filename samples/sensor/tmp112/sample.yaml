@@ -2,6 +2,11 @@ sample:
   name: TMP112 Sensor Sample
 tests:
   test:
-    harness: sensor
+    harness: console
     tags: sensors
     depends_on: i2c
+    harness_config:
+        type: one_line
+        regex:
+            - "temp is (.*)"
+        fixture: fixture_i2c_tmp112

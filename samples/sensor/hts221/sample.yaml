@@ -2,6 +2,13 @@ sample:
   name: HTS221 Temperature and Humidity Monitor
 tests:
   test:
-    harness: sensor
+    harness: console
     tags: sensors
     depends_on: i2c hts221
+    harness_config:
+        type: multi_line
+        ordered: yes
+        regex:
+            - "Temperature: (.*)"
+            - "Relative Humidity: (.*)"
+        fixture: fixture_i2c_hts221
