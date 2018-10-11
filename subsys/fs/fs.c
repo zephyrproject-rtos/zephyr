@@ -12,10 +12,9 @@
 #include <fs.h>
 
 
-#define LOG_MODULE_NAME fs
-#define LOG_LEVEL CONFIG_LOG_FS_LEVEL
+#define LOG_LEVEL CONFIG_FS_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+LOG_MODULE_REGISTER(fs);
 
 /* list of mounted file systems */
 static sys_dlist_t fs_mnt_list;
