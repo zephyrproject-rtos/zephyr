@@ -91,9 +91,9 @@ static void eth_iface_init(struct net_if *iface)
 	ethernet_init(iface);
 }
 
-static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
+static int eth_tx(struct device *dev, struct net_pkt *pkt)
 {
-	struct eth_context *context = net_if_get_device(iface)->driver_data;
+	struct eth_context *context = dev->driver_data;
 
 	if (&eth_context_1 != context && &eth_context_2 != context) {
 		zassert_true(false, "Context pointers do not match\n");
@@ -105,11 +105,9 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 	}
 
 	if (test_started) {
-
 		k_sem_give(&wait_data);
 	}
 
-	net_pkt_unref(pkt);
 
 	return 0;
 }
@@ -128,10 +126,10 @@ static struct device *eth_get_ptp_clock(struct device *dev)
 
 static struct ethernet_api api_funcs = {
 	.iface_api.init = eth_iface_init,
-	.iface_api.send = eth_tx,
 
 	.get_capabilities = eth_capabilities,
 	.get_ptp_clock = eth_get_ptp_clock,
+	.send = eth_tx,
 };
 
 static void generate_mac(u8_t *mac_addr)

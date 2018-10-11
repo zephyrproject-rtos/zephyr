@@ -23,6 +23,7 @@
 #include <net/net_ip.h>
 #include <net/net_pkt.h>
 #include <net/ethernet.h>
+#include <net/dummy.h>
 #include <net/net_l2.h>
 
 #include "ipv6.h"
@@ -94,7 +95,7 @@ static void eth_iface_init(struct net_if *iface)
 	ethernet_init(iface);
 }
 
-static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
+static int eth_tx(struct device *dev, struct net_pkt *pkt)
 {
 	if (!pkt->frags) {
 		DBG("No data to send!\n");
@@ -112,7 +113,6 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 		}
 	}
 
-	net_pkt_unref(pkt);
 	test_started = false;
 
 	return 0;
@@ -125,9 +125,9 @@ static enum ethernet_hw_caps eth_get_capabilities(struct device *dev)
 
 static struct ethernet_api api_funcs = {
 	.iface_api.init = eth_iface_init,
-	.iface_api.send = eth_tx,
 
 	.get_capabilities = eth_get_capabilities,
+	.send = eth_tx,
 };
 
 static void generate_mac(u8_t *mac_addr)

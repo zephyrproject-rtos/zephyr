@@ -24,6 +24,7 @@
 #include <net/net_pkt.h>
 #include <net/net_ip.h>
 #include <net/tcp.h>
+#include <net/dummy.h>
 
 #include <tc_util.h>
 
@@ -95,8 +96,9 @@ static void net_tcp_iface_init(struct net_if *iface)
 	return;
 }
 
-static void v6_send_syn_ack(struct net_if *iface, struct net_pkt *req)
+static void v6_send_syn_ack(struct net_pkt *req)
 {
+	struct net_if *iface = net_pkt_iface(req);
 	struct net_pkt *rsp = NULL;
 	int ret;
 
@@ -138,7 +140,7 @@ static void v6_send_syn_ack(struct net_if *iface, struct net_pkt *req)
 
 static int send_status = -EINVAL;
 
-static int tester_send(struct net_if *iface, struct net_pkt *pkt)
+static int tester_send(struct device *dev, struct net_pkt *pkt)
 {
 	if (!pkt->frags) {
 		DBG("No data to send!\n");
@@ -147,17 +149,15 @@ static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 	if (syn_v6_sent && net_pkt_family(pkt) == AF_INET6) {
 		DBG("v6 SYN was sent successfully\n");
 		syn_v6_sent = false;
-		v6_send_syn_ack(iface, pkt);
+		v6_send_syn_ack(pkt);
 	}
-
-	net_pkt_unref(pkt);
 
 	send_status = 0;
 
 	return 0;
 }
 
-static int tester_send_peer(struct net_if *iface, struct net_pkt *pkt)
+static int tester_send_peer(struct device *dev, struct net_pkt *pkt)
 {
 	if (!pkt->frags) {
 		DBG("No data to send!\n");
@@ -165,8 +165,6 @@ static int tester_send_peer(struct net_if *iface, struct net_pkt *pkt)
 	}
 
 	DBG("Peer data was sent successfully\n");
-
-	net_pkt_unref(pkt);
 
 	return 0;
 }
@@ -1308,13 +1306,13 @@ static bool test_create_v6_data_packet(void)
 struct net_tcp_context net_tcp_context_data;
 struct net_tcp_context net_tcp_context_data_peer;
 
-static struct net_if_api net_tcp_if_api = {
-	.init = net_tcp_iface_init,
+static struct dummy_api net_tcp_if_api = {
+	.iface_api.init = net_tcp_iface_init,
 	.send = tester_send,
 };
 
-static struct net_if_api net_tcp_if_api_peer = {
-	.init = net_tcp_iface_init,
+static struct dummy_api net_tcp_if_api_peer = {
+	.iface_api.init = net_tcp_iface_init,
 	.send = tester_send_peer,
 };
 
@@ -1660,7 +1658,7 @@ static bool test_init(void)
 {
 	struct net_if *iface = net_if_get_default();
 	struct net_if_addr *ifaddr;
-	const struct net_if_api *api;
+	const struct dummy_api *api;
 
 	if (!iface) {
 		TC_ERROR("Interface is NULL\n");

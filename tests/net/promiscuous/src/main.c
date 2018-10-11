@@ -86,12 +86,11 @@ static void eth_fake_iface_init(struct net_if *iface)
 	ethernet_init(iface);
 }
 
-static int eth_fake_send(struct net_if *iface,
+static int eth_fake_send(struct device *dev,
 			 struct net_pkt *pkt)
 {
-	ARG_UNUSED(iface);
-
-	net_pkt_unref(pkt);
+	ARG_UNUSED(dev);
+	ARG_UNUSED(pkt);
 
 	return 0;
 }
@@ -126,10 +125,10 @@ static int eth_fake_set_config(struct device *dev,
 
 static struct ethernet_api eth_fake_api_funcs = {
 	.iface_api.init = eth_fake_iface_init,
-	.iface_api.send = eth_fake_send,
 
 	.get_capabilities = eth_fake_get_capabilities,
 	.set_config = eth_fake_set_config,
+	.send = eth_fake_send,
 };
 
 static int eth_fake_init(struct device *dev)

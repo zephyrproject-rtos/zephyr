@@ -22,6 +22,7 @@
 #include <net/net_core.h>
 #include <net/net_pkt.h>
 #include <net/net_ip.h>
+#include <net/dummy.h>
 
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
@@ -136,16 +137,15 @@ static void net_test_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, mac, 6, NET_LINK_ETHERNET);
 }
 
-static int tester_send(struct net_if *iface, struct net_pkt *pkt)
+static int tester_send(struct device *dev, struct net_pkt *pkt)
 {
-	net_pkt_unref(pkt);
 	return 0;
 }
 
 struct net_test_context net_test_context_data;
 
-static struct net_if_api net_test_if_api = {
-	.init = net_test_iface_init,
+static struct dummy_api net_test_if_api = {
+	.iface_api.init = net_test_iface_init,
 	.send = tester_send,
 };
 

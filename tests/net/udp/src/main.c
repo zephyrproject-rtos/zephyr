@@ -25,6 +25,7 @@
 #include <net/net_pkt.h>
 #include <net/net_ip.h>
 #include <net/ethernet.h>
+#include <net/dummy.h>
 #include <net/udp.h>
 
 #include <ztest.h>
@@ -87,7 +88,7 @@ static void net_udp_iface_init(struct net_if *iface)
 
 static int send_status = -EINVAL;
 
-static int tester_send(struct net_if *iface, struct net_pkt *pkt)
+static int tester_send(struct device *dev, struct net_pkt *pkt)
 {
 	if (!pkt->frags) {
 		DBG("No data to send!\n");
@@ -95,8 +96,6 @@ static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 	}
 
 	DBG("Data was sent successfully\n");
-
-	net_pkt_unref(pkt);
 
 	send_status = 0;
 
@@ -123,8 +122,8 @@ static inline struct in_addr *if_get_addr(struct net_if *iface)
 
 struct net_udp_context net_udp_context_data;
 
-static struct net_if_api net_udp_if_api = {
-	.init = net_udp_iface_init,
+static struct dummy_api net_udp_if_api = {
+	.iface_api.init = net_udp_iface_init,
 	.send = tester_send,
 };
 

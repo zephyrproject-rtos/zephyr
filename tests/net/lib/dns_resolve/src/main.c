@@ -17,6 +17,7 @@
 #include <ztest.h>
 
 #include <net/ethernet.h>
+#include <net/dummy.h>
 #include <net/buf.h>
 #include <net/net_ip.h>
 #include <net/net_if.h>
@@ -122,7 +123,7 @@ static inline int get_slot_by_id(struct dns_resolve_context *ctx,
 	return -1;
 }
 
-static int sender_iface(struct net_if *iface, struct net_pkt *pkt)
+static int sender_iface(struct device *dev, struct net_pkt *pkt)
 {
 	if (!pkt->frags) {
 		DBG("No data to send!\n");
@@ -130,23 +131,13 @@ static int sender_iface(struct net_if *iface, struct net_pkt *pkt)
 	}
 
 	if (!timeout_query) {
-		struct net_if_test *data =
-			net_if_get_device(iface)->driver_data;
+		struct net_if_test *data = dev->driver_data;
 		struct dns_resolve_context *ctx;
 		int slot;
 
-		DBG("Sending at iface %d %p\n", net_if_get_by_iface(iface),
-		    iface);
-
-		if (net_pkt_iface(pkt) != iface) {
-			DBG("Invalid interface %p, expecting %p\n",
-				 net_pkt_iface(pkt), iface);
-			test_failed = true;
-		}
-
-		if (net_if_get_by_iface(iface) != data->idx) {
+		if (net_if_get_by_iface(net_pkt_iface(pkt)) != data->idx) {
 			DBG("Invalid interface %d index, expecting %d\n",
-				 data->idx, net_if_get_by_iface(iface));
+			    data->idx, net_if_get_by_iface(net_pkt_iface(pkt)));
 			test_failed = true;
 		}
 
@@ -178,15 +169,13 @@ static int sender_iface(struct net_if *iface, struct net_pkt *pkt)
 	}
 
 out:
-	net_pkt_unref(pkt);
-
 	return 0;
 }
 
 struct net_if_test net_iface1_data;
 
-static struct net_if_api net_iface_api = {
-	.init = net_iface_init,
+static struct dummy_api net_iface_api = {
+	.iface_api.init = net_iface_init,
 	.send = sender_iface,
 };
 
