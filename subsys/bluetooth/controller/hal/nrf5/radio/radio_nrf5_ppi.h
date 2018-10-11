@@ -44,7 +44,7 @@ static inline void hal_radio_enable_on_tick_ppi_config_and_enable(u8_t trx)
 
 #else
 
-#define HAL_RADIO_ENABLE_ON_TICK_PPI 0
+#define HAL_RADIO_ENABLE_ON_TICK_PPI 1
 #define HAL_RADIO_ENABLE_TX_ON_TICK_PPI HAL_RADIO_ENABLE_ON_TICK_PPI
 #define HAL_RADIO_ENABLE_RX_ON_TICK_PPI HAL_RADIO_ENABLE_ON_TICK_PPI
 
@@ -60,35 +60,6 @@ static inline void hal_radio_enable_on_tick_ppi_config_and_enable(u8_t trx)
 }
 
 #endif /* (EVENT_TIMER_ID == 0) */
-
-/*******************************************************************************
- * Start event timer on RTC tick:
- * wire the RTC0 EVENTS_COMPARE[2] event to EVENT_TIMER  TASKS_START task.
- */
-#define HAL_EVENT_TIMER_START_PPI 1
-
-static inline void hal_event_timer_start_ppi_config(void)
-{
-	nrf_ppi_channel_endpoint_setup(
-		HAL_EVENT_TIMER_START_PPI,
-		(u32_t)&(NRF_RTC0->EVENTS_COMPARE[2]),
-		(u32_t)&(EVENT_TIMER->TASKS_START));
-}
-
-/*******************************************************************************
- * Capture event timer on Radio ready:
- * wire the RADIO EVENTS_READY event to the
- * EVENT_TIMER TASKS_CAPTURE[<radio ready timer>] task.
- */
-#define HAL_RADIO_READY_TIME_CAPTURE_PPI 2
-
-static inline void hal_radio_ready_time_capture_ppi_config(void)
-{
-	nrf_ppi_channel_endpoint_setup(
-		HAL_RADIO_READY_TIME_CAPTURE_PPI,
-		(u32_t)&(NRF_RADIO->EVENTS_READY),
-		(u32_t)&(EVENT_TIMER->TASKS_CAPTURE[0]));
-}
 
 /*******************************************************************************
  * Capture event timer on Address reception:
@@ -113,7 +84,7 @@ static inline void hal_radio_recv_timeout_cancel_ppi_config(void)
 
 #else
 
-#define HAL_RADIO_RECV_TIMEOUT_CANCEL_PPI 3
+#define HAL_RADIO_RECV_TIMEOUT_CANCEL_PPI 2
 
 static inline void hal_radio_recv_timeout_cancel_ppi_config(void)
 {
@@ -148,7 +119,7 @@ static inline void hal_radio_disable_on_hcto_ppi_config(void)
 
 #else
 
-#define HAL_RADIO_DISABLE_ON_HCTO_PPI 4
+#define HAL_RADIO_DISABLE_ON_HCTO_PPI 3
 
 static inline void hal_radio_disable_on_hcto_ppi_config(void)
 {
@@ -183,7 +154,7 @@ static inline void hal_radio_end_time_capture_ppi_config(void)
 
 #else
 
-#define HAL_RADIO_END_TIME_CAPTURE_PPI 5
+#define HAL_RADIO_END_TIME_CAPTURE_PPI 4
 
 static inline void hal_radio_end_time_capture_ppi_config(void)
 {
@@ -194,6 +165,35 @@ static inline void hal_radio_end_time_capture_ppi_config(void)
 }
 
 #endif /* (EVENT_TIMER_ID == 0) */
+
+/*******************************************************************************
+ * Start event timer on RTC tick:
+ * wire the RTC0 EVENTS_COMPARE[2] event to EVENT_TIMER  TASKS_START task.
+ */
+#define HAL_EVENT_TIMER_START_PPI 5
+
+static inline void hal_event_timer_start_ppi_config(void)
+{
+	nrf_ppi_channel_endpoint_setup(
+		HAL_EVENT_TIMER_START_PPI,
+		(u32_t)&(NRF_RTC0->EVENTS_COMPARE[2]),
+		(u32_t)&(EVENT_TIMER->TASKS_START));
+}
+
+/*******************************************************************************
+ * Capture event timer on Radio ready:
+ * wire the RADIO EVENTS_READY event to the
+ * EVENT_TIMER TASKS_CAPTURE[<radio ready timer>] task.
+ */
+#define HAL_RADIO_READY_TIME_CAPTURE_PPI 6
+
+static inline void hal_radio_ready_time_capture_ppi_config(void)
+{
+	nrf_ppi_channel_endpoint_setup(
+		HAL_RADIO_READY_TIME_CAPTURE_PPI,
+		(u32_t)&(NRF_RADIO->EVENTS_READY),
+		(u32_t)&(EVENT_TIMER->TASKS_CAPTURE[0]));
+}
 
 /*******************************************************************************
  * Trigger encryption task upon address reception:
