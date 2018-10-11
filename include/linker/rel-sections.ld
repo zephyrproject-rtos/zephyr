@@ -49,10 +49,19 @@
 #endif
 
 	*(.rel.devconfig.*)
-	*(.rel._k_alert.*)
-	*(.rel._k_mem_pool.*)
-	*(.rel._k_timer.*)
+
+	*(.rel._k_*)
+
+	*(.rel._bt_settings.*)
+
+	*(.rel.log_*)
+
+	*(.rel._net_buf_pool.*)
+	*(.rel.net_*)
+
 	*(.rel._static_thread_data.*)
+
+	*(.rel.usb.*)
 
 #if defined(CONFIG_X86)
 	*(.rel.ifunc)
@@ -88,13 +97,23 @@
 	*(.rela.init_PRE_KERNEL*)
 	*(.rela.init_POST_KERNEL*)
 	*(.rela.init_APPLICATION*)
-	*(.rela._k_alert.*)
-	*(.rela._k_mem_pool.*)
-	*(.rela._k_timer.*)
+
+	*(.rela.devconfig.*)
+
+	*(.rela._k_*)
+
+	*(.rela._bt_settings.*)
+
+	*(.rela.log_*)
+
+	*(.rela._net_buf_pool.*)
+	*(.rela.net_*)
+
 	*(.rela._static_thread_data.*)
 
+	*(.rela.usb.*)
+
 #if defined(CONFIG_RISCV32)
-	*(.rela.devconfig.*)
 	*(.rela.exception.*)
 	*(.rela.gnu.linkonce.sw_isr_table)
 	*(.rela.sdata.*)
