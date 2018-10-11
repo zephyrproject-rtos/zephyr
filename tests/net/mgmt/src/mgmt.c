@@ -13,6 +13,7 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 
+#include <net/dummy.h>
 #include <net/net_mgmt.h>
 #include <net/net_pkt.h>
 #include <ztest.h>
@@ -73,15 +74,13 @@ static void fake_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, mac, 8, NET_LINK_DUMMY);
 }
 
-static int fake_iface_send(struct net_if *iface, struct net_pkt *pkt)
+static int fake_iface_send(struct device *dev, struct net_pkt *pkt)
 {
-	net_pkt_unref(pkt);
-
-	return NET_OK;
+	return 0;
 }
 
-static struct net_if_api fake_iface_api = {
-	.init = fake_iface_init,
+static struct dummy_api fake_iface_api = {
+	.iface_api.init = fake_iface_init,
 	.send = fake_iface_send,
 };
 

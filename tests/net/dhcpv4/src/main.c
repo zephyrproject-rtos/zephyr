@@ -26,6 +26,7 @@
 #include <net/ethernet.h>
 #include <net/net_mgmt.h>
 #include <net/udp.h>
+#include <net/dummy.h>
 
 #include <tc_util.h>
 #include <ztest.h>
@@ -464,7 +465,7 @@ static int parse_dhcp_message(struct net_pkt *pkt, struct dhcp_msg *msg)
 	return 0;
 }
 
-static int tester_send(struct net_if *iface, struct net_pkt *pkt)
+static int tester_send(struct device *dev, struct net_pkt *pkt)
 {
 	struct net_pkt *rpkt;
 	struct dhcp_msg msg;
@@ -481,13 +482,13 @@ static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 
 	if (msg.type == DISCOVER) {
 		/* Reply with DHCPv4 offer message */
-		rpkt = prepare_dhcp_offer(iface, msg.xid);
+		rpkt = prepare_dhcp_offer(net_pkt_iface(pkt), msg.xid);
 		if (!rpkt) {
 			return -EINVAL;
 		}
 	} else if (msg.type == REQUEST) {
 		/* Reply with DHCPv4 ACK message */
-		rpkt = prepare_dhcp_ack(iface, msg.xid);
+		rpkt = prepare_dhcp_ack(net_pkt_iface(pkt), msg.xid);
 		if (!rpkt) {
 			return -EINVAL;
 		}
@@ -497,20 +498,19 @@ static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 		return -EINVAL;
 	}
 
-	if (net_recv_data(iface, rpkt)) {
+	if (net_recv_data(net_pkt_iface(rpkt), rpkt)) {
 		net_pkt_unref(rpkt);
 
 		return -EINVAL;
 	}
 
-	net_pkt_unref(pkt);
-	return NET_OK;
+	return 0;
 }
 
 struct net_dhcpv4_context net_dhcpv4_context_data;
 
-static struct net_if_api net_dhcpv4_if_api = {
-	.init = net_dhcpv4_iface_init,
+static struct dummy_api net_dhcpv4_if_api = {
+	.iface_api.init = net_dhcpv4_iface_init,
 	.send = tester_send,
 };
 

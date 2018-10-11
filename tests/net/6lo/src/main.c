@@ -23,6 +23,7 @@
 #include <net/net_core.h>
 #include <net/net_pkt.h>
 #include <net/net_ip.h>
+#include <net/dummy.h>
 
 #include <tc_util.h>
 
@@ -201,14 +202,13 @@ static void net_6lo_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, src_mac, 8, NET_LINK_IEEE802154);
 }
 
-static int tester_send(struct net_if *iface, struct net_pkt *pkt)
+static int tester_send(struct device *dev, struct net_pkt *pkt)
 {
-	net_pkt_unref(pkt);
-	return NET_OK;
+	return 0;
 }
 
-static struct net_if_api net_6lo_if_api = {
-	.init = net_6lo_iface_init,
+static struct dummy_api net_6lo_if_api = {
+	.iface_api.init = net_6lo_iface_init,
 	.send = tester_send,
 };
 

@@ -23,6 +23,7 @@
 #include <net/net_core.h>
 #include <net/net_pkt.h>
 #include <net/net_ip.h>
+#include <net/dummy.h>
 #include <ztest.h>
 
 #include "arp.h"
@@ -81,7 +82,7 @@ static void net_arp_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, mac, 6, NET_LINK_ETHERNET);
 }
 
-static int tester_send(struct net_if *iface, struct net_pkt *pkt)
+static int tester_send(struct device *dev, struct net_pkt *pkt)
 {
 	struct net_eth_hdr *hdr;
 
@@ -118,7 +119,7 @@ static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 					 net_sprint_ll_addr(
 						 (u8_t *)&hdr->dst,
 						 sizeof(struct net_eth_addr)));
-				printk("Invalid hwaddr %s, should be %s\n",
+				printk("Invalid dst hwaddr %s, should be %s\n",
 				       out,
 				       net_sprint_ll_addr(
 					       (u8_t *)&hwaddr,
@@ -136,7 +137,7 @@ static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 					 net_sprint_ll_addr(
 						 (u8_t *)&hdr->src,
 						 sizeof(struct net_eth_addr)));
-				printk("Invalid hwaddr %s, should be %s\n",
+				printk("Invalid src hwaddr %s, should be %s\n",
 				       out,
 				       net_sprint_ll_addr(
 					       (u8_t *)&hwaddr,
@@ -146,7 +147,6 @@ static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 			}
 		}
 	}
-	net_pkt_unref(pkt);
 
 	send_status = 0;
 
@@ -296,14 +296,14 @@ struct net_arp_context net_arp_context_data;
 #if defined(CONFIG_NET_ARP) && defined(CONFIG_NET_L2_ETHERNET)
 static const struct ethernet_api net_arp_if_api = {
 	.iface_api.init = net_arp_iface_init,
-	.iface_api.send = tester_send,
+	.send = tester_send,
 };
 
 #define _ETH_L2_LAYER ETHERNET_L2
 #define _ETH_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(ETHERNET_L2)
 #else
-static const struct net_if_api net_arp_if_api = {
-	.init = net_arp_iface_init,
+static const struct dummy_api net_arp_if_api = {
+	.iface_api.init = net_arp_iface_init,
 	.send = tester_send,
 };
 
@@ -337,7 +337,6 @@ void test_arp(void)
 	struct net_if_addr *ifaddr;
 	struct net_arp_hdr *arp_hdr;
 	struct net_ipv4_hdr *ipv4;
-	struct net_eth_hdr *eth_hdr;
 	int len;
 
 	struct in_addr dst = { { { 192, 168, 0, 2 } } };
@@ -374,9 +373,11 @@ void test_arp(void)
 
 	net_pkt_frag_add(pkt, frag);
 
+	net_pkt_set_family(pkt, AF_INET);
 	net_pkt_set_iface(pkt, iface);
 
-	setup_eth_header(iface, pkt, &hwaddr, NET_ETH_PTYPE_IP);
+	net_pkt_lladdr_src(pkt)->addr = (u8_t *)net_if_get_link_addr(iface);
+	net_pkt_lladdr_src(pkt)->len = sizeof(struct net_eth_addr);
 
 	len = strlen(app_data);
 
@@ -418,38 +419,7 @@ void test_arp(void)
 	pending_pkt = pkt;
 
 	/* pkt2 should contain the arp header, verify it */
-	if (memcmp(net_pkt_ll(pkt2), net_eth_broadcast_addr(),
-		   sizeof(struct net_eth_addr))) {
-		printk("ARP ETH dest address invalid\n");
-		net_hexdump("ETH dest wrong  ", net_pkt_ll(pkt2),
-			    sizeof(struct net_eth_addr));
-		net_hexdump("ETH dest correct",
-			    (u8_t *)net_eth_broadcast_addr(),
-			    sizeof(struct net_eth_addr));
-		zassert_true(0, "exiting");
-	}
-
-	if (memcmp(net_pkt_ll(pkt2) + sizeof(struct net_eth_addr),
-		   net_if_get_link_addr(iface)->addr,
-		   sizeof(struct net_eth_addr))) {
-		printk("ARP ETH source address invalid\n");
-		net_hexdump("ETH src correct",
-			    net_if_get_link_addr(iface)->addr,
-			    sizeof(struct net_eth_addr));
-		net_hexdump("ETH src wrong  ",
-			    net_pkt_ll(pkt2) +	sizeof(struct net_eth_addr),
-			    sizeof(struct net_eth_addr));
-		zassert_true(0, "exiting");
-	}
-
 	arp_hdr = NET_ARP_HDR(pkt2);
-	eth_hdr = NET_ETH_HDR(pkt2);
-
-	if (eth_hdr->type != htons(NET_ETH_PTYPE_ARP)) {
-		printk("ETH type 0x%x, should be 0x%x\n",
-		       eth_hdr->type, htons(NET_ETH_PTYPE_ARP));
-		zassert_true(0, "exiting");
-	}
 
 	if (arp_hdr->hwtype != htons(NET_ARP_HTYPE_ETH)) {
 		printk("ARP hwtype 0x%x, should be 0x%x\n",

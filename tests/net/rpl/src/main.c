@@ -21,6 +21,7 @@
 #include <tc_util.h>
 
 #include <net/ethernet.h>
+#include <net/dummy.h>
 #include <net/buf.h>
 #include <net/net_ip.h>
 #include <net/net_if.h>
@@ -125,14 +126,14 @@ static void set_pkt_ll_addr(struct device *dev, struct net_pkt *pkt)
 
 #define NET_ICMP_HDR(pkt) ((struct net_icmp_hdr *)net_pkt_icmp_data(pkt))
 
-static int tester_send(struct net_if *iface, struct net_pkt *pkt)
+static int tester_send(struct device *dev, struct net_pkt *pkt)
 {
 	if (!pkt->frags) {
 		TC_ERROR("No data to send!\n");
 		return -ENODATA;
 	}
 
-	set_pkt_ll_addr(net_if_get_device(iface), pkt);
+	set_pkt_ll_addr(dev, pkt);
 
 	/* By default we assume that the test is ok */
 	data_failure = false;
@@ -140,7 +141,8 @@ static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 	if (feed_data) {
 		net_pkt_lladdr_swap(pkt);
 
-		if (net_recv_data(iface, pkt) < 0) {
+		net_pkt_ref(pkt);
+		if (net_recv_data(net_pkt_iface(pkt), pkt) < 0) {
 			TC_ERROR("Data receive failed.");
 			net_pkt_unref(pkt);
 			test_failed = true;
@@ -177,18 +179,19 @@ static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 			if (msg_sending == NET_RPL_DODAG_INFO_OBJ) {
 				net_pkt_lladdr_swap(pkt);
 
-				if (!net_recv_data(iface, pkt)) {
+				net_pkt_ref(pkt);
+				if (!net_recv_data(net_pkt_iface(pkt), pkt)) {
 					/* We must not unref the msg,
 					 * as it should be unfreed by
 					 * the upper stack.
 					 */
 					goto out;
 				}
+
+				net_pkt_unref(pkt);
 			}
 		}
 	}
-
-	net_pkt_unref(pkt);
 
 out:
 	if (data_failure) {
@@ -204,8 +207,8 @@ out:
 
 struct net_rpl_test net_rpl_data;
 
-static struct net_if_api net_rpl_if_api = {
-	.init = net_rpl_iface_init,
+static struct dummy_api net_rpl_if_api = {
+	.iface_api.init = net_rpl_iface_init,
 	.send = tester_send,
 };
 

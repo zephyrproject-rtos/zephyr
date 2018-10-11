@@ -17,6 +17,7 @@
 
 #include <net/net_if.h>
 #include <net/net_pkt.h>
+#include <net/dummy.h>
 
 static struct offload_context {
 	void *none;
@@ -24,8 +25,8 @@ static struct offload_context {
 	.none = NULL
 };
 
-static struct net_if_api offload_if_api = {
-	.init = NULL,
+static struct dummy_api offload_if_api = {
+	.iface_api.init = NULL,
 	.send = NULL,
 };
 
