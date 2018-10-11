@@ -6,7 +6,7 @@
 
 #define LOG_LEVEL CONFIG_RTC_LOG_LEVEL
 #include <logging/log.h>
-LOG_DOMAIN_REGISTER(rtc_mcux);
+LOG_MODULE_REGISTER(rtc_mcux);
 
 #include <errno.h>
 #include <device.h>
