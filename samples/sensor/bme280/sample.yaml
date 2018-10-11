@@ -2,11 +2,21 @@ sample:
   name: BME280 Sensor sample
 tests:
   test:
-    harness: sensor
+    harness: console
     tags: sensors
     depends_on: i2c
+    harness_config:
+        type: one_line
+        regex:
+            - "temp: (.*); press: (.*); humidity: (.*)"
+        fixture: fixture_i2c_bme280
   test_spi:
-    harness: sensor
+    harness: console
     tags: sensors
     depends_on: spi
     extra_args: "CONF_FILE=prj_spi.conf"
+    harness_config:
+        type: one_line
+        regex:
+            - "temp: (.*); press: (.*); humidity: (.*)"
+        fixture: fixture_spi_bme280
