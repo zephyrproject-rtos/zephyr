@@ -430,7 +430,7 @@ void _thread_priority_set(struct k_thread *thread, int prio)
 	}
 }
 
-void _reschedule(int key)
+void _reschedule(u32_t key)
 {
 #ifdef CONFIG_SMP
 	if (!_current_cpu->swap_ok) {
