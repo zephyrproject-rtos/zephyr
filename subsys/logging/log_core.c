@@ -668,6 +668,8 @@ void log_free(void *str)
 
 static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 {
+	__ASSERT_NO_MSG(log_backend_count_get() > 0);
+
 	log_init();
 	thread_set(k_current_get());
 

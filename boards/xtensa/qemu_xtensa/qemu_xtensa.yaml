@@ -11,3 +11,4 @@ testing:
   ignore_tags:
      - net
      - bluetooth
+     - logging
