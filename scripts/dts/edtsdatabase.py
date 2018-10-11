@@ -101,6 +101,45 @@ class EDTSProviderMixin(object):
     def insert_chosen(self, chosen, device_id):
         self._edts['chosen'][chosen] = device_id
 
+    def _update_device_alias(self, device_id, alias):
+        if alias not in self._edts['aliases']:
+            self._edts['aliases'][alias] = list()
+        if device_id not in self._edts['aliases'][alias]:
+            self._edts['aliases'][alias].append(device_id)
+            self._edts['aliases'][alias].sort()
+
+
+    def _inject_cell(self, keys, property_access_point, property_value):
+
+        for i in range(0, len(keys)):
+            if i < len(keys) - 1:
+                # there are remaining keys
+                if keys[i] not in property_access_point:
+                    property_access_point[keys[i]] = dict()
+                property_access_point = property_access_point[keys[i]]
+            else:
+                # we have to set the property value
+                if keys[i] in property_access_point and \
+                   property_access_point[keys[i]] != property_value:
+                   # Property is already set and we're overwiting with a new
+                   # different value. Tigger an error
+                    raise Exception("Overwriting edts cell {} with different value\n \
+                                     Initial value: {} \n \
+                                     New value: {}".format(property_access_point,
+                                     property_access_point[keys[i]],
+                                     property_value
+                                     ))
+                property_access_point[keys[i]] = property_value
+
+
+    def insert_device_type(self, compatible, device_type):
+        if device_type not in self._edts['device-types']:
+            self._edts['device-types'][device_type] = list()
+        if compatible not in self._edts['device-types'][device_type]:
+            self._edts['device-types'][device_type].append(compatible)
+            self._edts['device-types'][device_type].sort()
+
+
     ##
     # @brief Insert property value for the device of the given device id.
     #
@@ -160,6 +199,7 @@ class EDTSProviderMixin(object):
 #   'chosen': dict(chosen),
 #   'devices':  dict(device-id :  device-struct),
 #   'compatibles':  dict(compatible : sorted list(device-id)),
+#   'device-types': dict(device-type : sorted list(compatible)),
 #   ...
 # )
 #
@@ -181,7 +221,8 @@ class EDTSDatabase(EDTSConsumerMixin, EDTSProviderMixin, Mapping):
     def __init__(self, *args, **kw):
         self._edts = dict(*args, **kw)
         # setup basic database schema
-        for edts_key in ('devices', 'compatibles', 'aliases', 'chosen'):
+        for edts_key in ('devices', 'compatibles', 'aliases', 'chosen',
+                         'device-types'):
             if not edts_key in self._edts:
                 self._edts[edts_key] = dict()
 
