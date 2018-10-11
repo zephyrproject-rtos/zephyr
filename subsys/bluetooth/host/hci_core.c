@@ -2919,7 +2919,7 @@ static void le_ltk_request(struct net_buf *buf)
 		goto done;
 	}
 
-#if !defined(CONFIG_BT_SMP_SC_ONLY)
+#if !defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
 	if (conn->le.keys && (conn->le.keys->keys & BT_KEYS_SLAVE_LTK) &&
 	    !memcmp(conn->le.keys->slave_ltk.rand, &evt->rand, 8) &&
 	    !memcmp(conn->le.keys->slave_ltk.ediv, &evt->ediv, 2)) {
@@ -2944,7 +2944,7 @@ static void le_ltk_request(struct net_buf *buf)
 		bt_hci_cmd_send(BT_HCI_OP_LE_LTK_REQ_REPLY, buf);
 		goto done;
 	}
-#endif /* !CONFIG_BT_SMP_SC_ONLY */
+#endif /* !CONFIG_BT_SMP_SC_PAIR_ONLY */
 
 	le_ltk_neg_reply(evt->handle);
 

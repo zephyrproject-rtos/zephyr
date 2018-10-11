@@ -284,8 +284,18 @@ config BT_SIGNING
 	  This option enables data signing which is used for transferring
 	  authenticated data in an unencrypted connection.
 
+config BT_SMP_SC_PAIR_ONLY
+	bool "Disable legacy pairing"
+	help
+	  This option disables LE legacy pairing and forces LE secure connection
+	  pairing. All Security Mode 1 levels can be used with legacy pairing
+	  disabled, but pairing with devices that do not support secure
+	  connections pairing will not be supported.
+	  To force a higher security level use "Secure Connections Only Mode"
+
 config BT_SMP_SC_ONLY
 	bool "Secure Connections Only Mode"
+	select BT_SMP_SC_PAIR_ONLY
 	help
 	  This option enables support for Secure Connection Only Mode. In this
 	  mode device shall only use Security Mode 1 Level 4 with exception
