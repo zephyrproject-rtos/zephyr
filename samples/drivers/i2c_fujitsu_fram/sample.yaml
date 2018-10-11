@@ -6,3 +6,9 @@ tests:
       arduino_due
     tags: drivers
     depends_on: i2c
+    harness: console
+    harness_config:
+        type: one_line
+        regex:
+            - "Data comparison successful."
+        fixture: fixture_i2c_FRAM
