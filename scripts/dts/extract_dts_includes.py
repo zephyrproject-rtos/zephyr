@@ -27,6 +27,7 @@ from extract.interrupts import interrupts
 from extract.reg import reg
 from extract.flash import flash
 from extract.pinctrl import pinctrl
+from extract.heuristics import heuristics
 from extract.default import default
 
 class Bindings(yaml.Loader):
@@ -419,6 +420,9 @@ def extract_node_include_info(reduced, root_node_address, sub_node_address,
         y_node = yaml[node_compat]
     else:
         y_node = y_sub
+
+    # do extra property definition based on heuristics
+    heuristics.extract(sub_node_address, yaml)
 
     # check to see if we need to process the properties
     for k, v in y_node['properties'].items():
