@@ -28,4 +28,7 @@ config SOC_STM32L475XG
 config SOC_STM32L4R5XI
 	bool "STM32L4R5XI"
 
+config SOC_STM32L471XX
+	bool "STM32L471XX"
+
 endchoice
