@@ -968,7 +968,8 @@ static int start_security(struct bt_conn *conn)
 
 		if (conn->required_sec_level > BT_SECURITY_HIGH &&
 		    !(conn->le.keys->flags & BT_KEYS_AUTHENTICATED) &&
-		    !(conn->le.keys->keys & BT_KEYS_LTK_P256)) {
+		    !(conn->le.keys->keys & BT_KEYS_LTK_P256) &&
+		    !(conn->le.keys->enc_size == BT_SMP_MAX_ENC_KEY_SIZE)) {
 			return bt_smp_send_pairing_req(conn);
 		}
 
