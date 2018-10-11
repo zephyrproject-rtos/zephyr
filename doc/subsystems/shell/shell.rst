@@ -416,36 +416,16 @@ The shell module supports the following meta keys:
 Usage
 *****
 
-Use the :c:macro:`SHELL_DEFINE` macro to create an instance of the shell.
-Pass expected `shell_flag` parameter to this macro.  Otherwise, the shell
-might not move the terminal cursor to a new line correctly.
-
-.. list-table:: Available shell flags
-   :widths: 10 30
-   :header-rows: 1
-
-   * - Flag
-     - Action
-   * - SHELL_FLAG_CRLF_DEFAULT
-     - Shell does not add LF or CR characters to an output string.
-   * - SHELL_FLAG_OLF_CRLF
-     - The shell parses an output string and it adds a CR character before each
-       found LF character.
+To create a new shell instance user needs to activate requested
+backend using `menuconfig`.
 
 The following code shows a simple use case of this library:
 
 .. code-block:: c
 
-	/* Defining shell backend */
-	SHELL_UART_DEFINE(shell_transport_uart);
-
-	/* Creating shell instance */
-	SHELL_DEFINE(uart_shell, "uart:~$ ", &shell_transport_uart, 10,
-		     SHELL_FLAG_OLF_CRLF);
-
 	void main(void)
 	{
-		(void)shell_init(&uart_shell, NULL, true, true, LOG_LEVEL_INF);
+
 	}
 
 	static int cmd_demo_ping(const struct shell *shell, size_t argc,
