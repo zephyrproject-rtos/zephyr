@@ -12,6 +12,8 @@
 #include <net/net_if.h>
 #include <net/net_pkt.h>
 
+#include <net/dummy.h>
+
 static inline enum net_verdict dummy_recv(struct net_if *iface,
 					  struct net_pkt *pkt)
 {
@@ -25,12 +27,18 @@ static inline enum net_verdict dummy_recv(struct net_if *iface,
 	return NET_CONTINUE;
 }
 
-static inline enum net_verdict dummy_send(struct net_if *iface,
-					  struct net_pkt *pkt)
+static inline int dummy_send(struct net_if *iface, struct net_pkt *pkt)
 {
-	net_if_queue_tx(iface, pkt);
+	const struct dummy_api *api = net_if_get_device(iface)->driver_api;
+	int ret;
 
-	return NET_OK;
+	ret = api->send(net_if_get_device(iface), pkt);
+	if (!ret) {
+		ret = net_pkt_get_len(pkt);
+		net_pkt_unref(pkt);
+	}
+
+	return ret;
 }
 
 static inline u16_t dummy_reserve(struct net_if *iface, void *unused)
