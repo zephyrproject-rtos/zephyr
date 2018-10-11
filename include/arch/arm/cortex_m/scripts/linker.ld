@@ -354,8 +354,6 @@ SECTIONS
 	KERNEL_INPUT_SECTION(COMMON)
 	*(".kernel_bss.*")
 
-#include <linker/priv_stacks-noinit.ld>
-
         /*
          * As memory is cleared in words only, it is simpler to ensure the BSS
          * section ends on a 4 byte boundary. This wastes a maximum of 3 bytes.
@@ -372,6 +370,8 @@ SECTIONS
         KERNEL_INPUT_SECTION(.noinit)
         KERNEL_INPUT_SECTION(".noinit.*")
 	*(".kernel_noinit.*")
+
+#include <linker/priv_stacks-noinit.ld>
 
 #ifdef CONFIG_SOC_NOINIT_LD
 #include <soc-noinit.ld>
