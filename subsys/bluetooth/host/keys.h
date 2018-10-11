@@ -56,9 +56,9 @@ struct bt_keys {
 	struct bt_csrk		local_csrk;
 	struct bt_csrk		remote_csrk;
 #endif /* BT_SIGNING */
-#if !defined(CONFIG_BT_SMP_SC_ONLY)
+#if !defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
 	struct bt_ltk		slave_ltk;
-#endif /* CONFIG_BT_SMP_SC_ONLY */
+#endif /* CONFIG_BT_SMP_SC_PAIR_ONLY */
 };
 
 #define BT_KEYS_STORAGE_LEN     (sizeof(struct bt_keys) - \
