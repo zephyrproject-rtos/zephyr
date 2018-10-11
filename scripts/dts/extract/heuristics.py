@@ -18,6 +18,16 @@ class DTHeuristics(object):
     def __init__(self):
         pass
 
+
+    def _generate_string(self, node_address):
+        node = str(node_address).split('/')[-1]
+        unique_id = get_node_compat(node_address) + '_' + str(node).split('@')[-1]
+        parent_addr = get_parent_address(node_address)
+        if parent_addr is not '' and parent_addr != '/soc' and parent_addr != '/cpus':
+            unique_id = self._generate_string(parent_addr) + '_' + unique_id
+
+        return unique_id
+
     ##
     # @brief Generate device tree information based on heuristics.
     #
@@ -30,6 +40,7 @@ class DTHeuristics(object):
     # @param yaml YAML definition for the owning node.
     #
     def extract(self, node_address, yaml):
+        compat = ''
 
         # Check aliases
         if node_address in aliases:
@@ -39,9 +50,20 @@ class DTHeuristics(object):
         # Process compatible related work
         try:
             compatible = reduced[node_address]['props']['compatible']
+            if isinstance(compatible, list):
+                compat = compatible[0]
+            else:
+                compat = compatible
         except KeyError:
             # No compat skip next part
             return
+
+        # Generat unique_id
+        unique_id = self._generate_string(node_address)
+        unique_id_str = unique_id.replace("-", "_").replace(",", "_"). \
+                                          replace("/","").upper()
+        edts_insert_device_property(node_address, 'unique_id', \
+                                            unique_id_str)
 
         if not isinstance(compatible, list):
             compatible = [compatible]
