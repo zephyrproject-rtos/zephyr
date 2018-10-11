@@ -121,6 +121,80 @@ static int pwm_nrfx_init(struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+
+static void pwm_nrfx_uninit(struct device *dev)
+{
+	const struct pwm_nrfx_config *pconfig = dev->config->config_info;
+
+	nrfx_pwm_uninit(&pconfig->pwm);
+}
+
+static int pwm_nrfx_set_power_state(u32_t new_state,
+				    u32_t current_state,
+				    struct device *dev)
+{
+	int err = 0;
+
+	switch (new_state) {
+	case DEVICE_PM_ACTIVE_STATE:
+		err = pwm_nrfx_init(dev);
+		break;
+	case DEVICE_PM_LOW_POWER_STATE:
+	case DEVICE_PM_SUSPEND_STATE:
+	case DEVICE_PM_FORCE_SUSPEND_STATE:
+	case DEVICE_PM_OFF_STATE:
+		if (current_state == DEVICE_PM_ACTIVE_STATE) {
+			pwm_nrfx_uninit(dev);
+		}
+		break;
+	default:
+		assert(false);
+		break;
+	}
+	return err;
+}
+
+static int pwm_nrfx_pm_control(struct device *dev,
+			       u32_t ctrl_command,
+			       void *context,
+			       u32_t *current_state)
+{
+	int err = 0;
+
+	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+		u32_t new_state = *((const u32_t *)context);
+
+		if (new_state != (*current_state)) {
+			err = pwm_nrfx_set_power_state(new_state,
+						       *current_state,
+						       dev);
+			if (!err) {
+				(*current_state) = new_state;
+			}
+		}
+	} else {
+		assert(ctrl_command == DEVICE_PM_GET_POWER_STATE);
+		*((u32_t *)context) = (*current_state);
+	}
+
+	return err;
+}
+
+#define PWM_NRFX_PM_CONTROL(idx)					\
+	static int pwm_##idx##_nrfx_pm_control(struct device *dev,	\
+					       u32_t ctrl_command,	\
+					       void *context)		\
+	{								\
+		static u32_t current_state = DEVICE_PM_ACTIVE_STATE;	\
+		return pwm_nrfx_pm_control(dev, ctrl_command, context,	\
+					   &current_state);		\
+	}
+#else
+
+#define PWM_NRFX_PM_CONTROL(idx)
+
+#endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
 
 #define PWM_NRFX_OUTPUT_PIN(dev_idx, ch_idx)		     \
 	(CONFIG_PWM_##dev_idx##_NRF_CH##ch_idx##_PIN |	     \
@@ -160,12 +234,13 @@ static int pwm_nrfx_init(struct device *dev)
 		.seq.values.p_raw = pwm_nrfx_##idx##_data.current,	      \
 		.seq.length = NRF_PWM_CHANNEL_COUNT			      \
 	};								      \
-									      \
-	DEVICE_AND_API_INIT(pwm_nrfx_##idx, CONFIG_PWM_##idx##_NAME,	      \
-			    pwm_nrfx_init, &pwm_nrfx_##idx##_data,	      \
-			    &pwm_nrfx_##idx##_config,			      \
-			    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,  \
-			    &pwm_nrfx_drv_api_funcs)
+	PWM_NRFX_PM_CONTROL(idx)					      \
+	DEVICE_DEFINE(pwm_nrfx_##idx, CONFIG_PWM_##idx##_NAME,		      \
+		      pwm_nrfx_init, pwm_##idx##_nrfx_pm_control,	      \
+		      &pwm_nrfx_##idx##_data,				      \
+		      &pwm_nrfx_##idx##_config,				      \
+		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	      \
+		      &pwm_nrfx_drv_api_funcs)
 
 #ifdef CONFIG_PWM_0
 #ifndef CONFIG_PWM_0_NRF_CH0_INVERTED
