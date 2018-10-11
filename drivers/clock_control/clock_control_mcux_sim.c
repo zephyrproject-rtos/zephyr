@@ -10,7 +10,8 @@
 #include <fsl_clock.h>
 
 #define LOG_LEVEL CONFIG_CLOCK_CONTROL_LOG_LEVEL
-#include <logging/sys_log.h>
+#include <logging/log.h>
+LOG_MODULE_REGISTER(clock_control);
 
 static int mcux_sim_on(struct device *dev, clock_control_subsys_t sub_system)
 {
