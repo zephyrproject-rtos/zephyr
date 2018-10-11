@@ -135,7 +135,7 @@ static void slip_writeb_esc(unsigned char c)
 	}
 }
 
-static int slip_send(struct net_if *iface, struct net_pkt *pkt)
+static int slip_send(struct device *dev, struct net_pkt *pkt)
 {
 	struct net_buf *frag;
 #if defined(CONFIG_SLIP_TAP)
@@ -145,6 +145,8 @@ static int slip_send(struct net_if *iface, struct net_pkt *pkt)
 	u8_t *ptr;
 	u16_t i;
 	u8_t c;
+
+	ARG_UNUSED(dev);
 
 	if (!pkt->frags) {
 		/* No data? */
@@ -164,7 +166,8 @@ static int slip_send(struct net_if *iface, struct net_pkt *pkt)
 			}
 		}
 
-		if (net_if_get_mtu(iface) > net_buf_headroom(frag)) {
+		if (net_if_get_mtu(net_pkt_iface(pkt)) >
+		    net_buf_headroom(frag)) {
 			/* Do not add link layer header if the mtu is bigger
 			 * than fragment size. The first packet needs the
 			 * link layer header always.
@@ -203,7 +206,6 @@ static int slip_send(struct net_if *iface, struct net_pkt *pkt)
 		}
 	}
 
-	net_pkt_unref(pkt);
 	slip_writeb(SLIP_END);
 
 	return 0;
@@ -507,9 +509,9 @@ static enum ethernet_hw_caps eth_capabilities(struct device *dev)
 #if defined(CONFIG_SLIP_TAP) && defined(CONFIG_NET_L2_ETHERNET)
 static const struct ethernet_api slip_if_api = {
 	.iface_api.init = slip_iface_init,
-	.iface_api.send = slip_send,
 
 	.get_capabilities = eth_capabilities,
+	.send = slip_send,
 };
 
 #define _SLIP_L2_LAYER ETHERNET_L2
@@ -521,8 +523,9 @@ ETH_NET_DEVICE_INIT(slip, CONFIG_SLIP_DRV_NAME, slip_init, &slip_context_data,
 		    _SLIP_MTU);
 #else
 
-static const struct net_if_api slip_if_api = {
-	.init = slip_iface_init,
+static const struct dummy_api slip_if_api = {
+	.iface_init.init = slip_iface_init,
+
 	.send = slip_send,
 };
 

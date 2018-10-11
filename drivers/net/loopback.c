@@ -22,8 +22,12 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/net_ip.h>
 #include <net/net_if.h>
 
+#include <net/dummy.h>
+
 int loopback_dev_init(struct device *dev)
 {
+	ARG_UNUSED(dev);
+
 	return 0;
 }
 
@@ -34,10 +38,12 @@ static void loopback_init(struct net_if *iface)
 			     NET_LINK_DUMMY);
 }
 
-static int loopback_send(struct net_if *iface, struct net_pkt *pkt)
+static int loopback_send(struct device *dev, struct net_pkt *pkt)
 {
 	struct net_pkt *cloned;
 	int res;
+
+	ARG_UNUSED(dev);
 
 	if (!pkt->frags) {
 		LOG_ERR("No data to send");
@@ -75,13 +81,10 @@ static int loopback_send(struct net_if *iface, struct net_pkt *pkt)
 		goto out;
 	}
 
-	res = net_recv_data(iface, cloned);
+	res = net_recv_data(net_pkt_iface(cloned), cloned);
 	if (res < 0) {
 		LOG_ERR("Data receive failed.");
-		goto out;
 	}
-
-	net_pkt_unref(pkt);
 
 out:
 	/* Let the receiving thread run now */
@@ -90,13 +93,14 @@ out:
 	return res;
 }
 
-static struct net_if_api loopback_if_api = {
-	.init = loopback_init,
+static struct dummy_api loopback_api = {
+	.iface_api.init = loopback_init,
+
 	.send = loopback_send,
 };
 
 NET_DEVICE_INIT(loopback, "lo",
 		loopback_dev_init, NULL, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		&loopback_if_api, DUMMY_L2,
+		&loopback_api, DUMMY_L2,
 		NET_L2_GET_CTX_TYPE(DUMMY_L2), 536);
