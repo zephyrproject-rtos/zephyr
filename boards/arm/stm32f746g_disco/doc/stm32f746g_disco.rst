@@ -118,10 +118,14 @@ For mode details please refer to `32F746G-DISCO board User Manual`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------
-- UART_1_TX : PA9
-- UART_1_RX : PB7
-- UART_6_TX : PC6
-- UART_6_RX : PC7
+
+The STM32F746G Discovery kit features an Arduino Uno V3 connector. Board is
+configured as follows
+
+- UART_1 TX/RX : PA9/PB7 (ST-Link Virtual Port Com)
+- UART_6 TX/RX : PC6/PC7 (Arduino Serial)
+- ETH : PA1, PA2, PA7, PC1, PC4, PC5, PG11, PG13, PG14
+- USER_PB : PI11
 - LD1 : PI1
 
 System Clock
