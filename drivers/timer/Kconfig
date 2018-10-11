@@ -242,4 +242,20 @@ config SYSTEM_CLOCK_INIT_PRIORITY
 	  the clock to be running already, you should let the default value as it
 	  is (0).
 
+config QEMU_TICKLESS_WORKAROUND
+	bool "Disable tickless on qemu due to asynchrony bug"
+	depends on QEMU_TARGET && TICKLESS_KERNEL
+	help
+	  Qemu (without -icount) has trouble keeping time when the
+	  host process needs to timeshare.  The host OS will routinely
+	  schedule out a process at timescales equivalent to the guest
+	  tick rate.  With traditional ticks delivered regularly by
+	  the hardware, that's mostly OK as it looks like a late
+	  interrupt.  But in tickless mode, the driver needs some CPU
+	  in order to schedule the tick in the first place.  If that
+	  gets delayed across a tick boundary, time gets wonky.  This
+	  tunable is a hint to the driver to disable tickless
+	  accounting on qemu.  Use it only on tests that are known to
+	  have problems.
+
 endmenu
