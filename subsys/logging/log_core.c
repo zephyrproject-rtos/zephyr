@@ -271,12 +271,14 @@ void log_init(void)
 		log_backend_id_set(backend,
 				   i + LOG_FILTER_FIRST_BACKEND_SLOT_IDX);
 
-		backend_filter_init(backend);
-		if (backend->api->init) {
-			backend->api->init();
-		}
+		if (backend->autostart) {
+			backend_filter_init(backend);
+			if (backend->api->init) {
+				backend->api->init();
+			}
 
-		log_backend_activate(backend, NULL);
+			log_backend_activate(backend, NULL);
+		}
 	}
 }
 

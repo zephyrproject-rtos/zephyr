@@ -101,10 +101,10 @@ const struct log_backend_api log_backend_test_api = {
 	.panic = panic,
 };
 
-LOG_BACKEND_DEFINE(backend1, log_backend_test_api);
+LOG_BACKEND_DEFINE(backend1, log_backend_test_api, true);
 struct backend_cb backend1_cb;
 
-LOG_BACKEND_DEFINE(backend2, log_backend_test_api);
+LOG_BACKEND_DEFINE(backend2, log_backend_test_api, true);
 struct backend_cb backend2_cb;
 
 static u32_t stamp;

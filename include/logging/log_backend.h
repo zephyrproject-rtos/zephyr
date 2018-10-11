@@ -49,6 +49,7 @@ struct log_backend {
 	const struct log_backend_api *api;
 	struct log_backend_control_block *cb;
 	const char *name;
+	bool autostart;
 };
 
 extern const struct log_backend __log_backends_start[0];
@@ -57,10 +58,12 @@ extern const struct log_backend __log_backends_end[0];
 /**
  * @brief Macro for creating a logger backend instance.
  *
- * @param _name  Name of the backend instance.
- * @param _api   Logger backend API.
+ * @param _name		Name of the backend instance.
+ * @param _api		Logger backend API.
+ * @param _autostart	If true backend is initialized and activated together
+ *			with the logger subsystem.
  */
-#define LOG_BACKEND_DEFINE(_name, _api)					       \
+#define LOG_BACKEND_DEFINE(_name, _api, _autostart)			       \
 	static struct log_backend_control_block UTIL_CAT(backend_cb_, _name) = \
 	{								       \
 		.active = false,					       \
@@ -71,7 +74,8 @@ extern const struct log_backend __log_backends_end[0];
 	{								       \
 		.api = &_api,						       \
 		.cb = &UTIL_CAT(backend_cb_, _name),			       \
-		.name = STRINGIFY(_name)				       \
+		.name = STRINGIFY(_name),				       \
+		.autostart = _autostart					       \
 	}
 
 

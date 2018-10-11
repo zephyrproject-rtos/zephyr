@@ -56,7 +56,7 @@ int shell_log_backend_output_func(u8_t *data, size_t length, void *ctx);
  */
 #if CONFIG_LOG
 #define SHELL_LOG_BACKEND_DEFINE(_name, _buf, _size)			     \
-	LOG_BACKEND_DEFINE(_name##_backend, log_backend_shell_api);	     \
+	LOG_BACKEND_DEFINE(_name##_backend, log_backend_shell_api, false);   \
 	K_FIFO_DEFINE(_name##_fifo);					     \
 	LOG_OUTPUT_DEFINE(_name##_log_output, shell_log_backend_output_func, \
 			  _buf, _size);					     \

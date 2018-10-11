@@ -68,4 +68,4 @@ const struct log_backend_api log_backend_uart_api = {
 	.init = log_backend_uart_init,
 };
 
-LOG_BACKEND_DEFINE(log_backend_uart, log_backend_uart_api);
+LOG_BACKEND_DEFINE(log_backend_uart, log_backend_uart_api, true);
