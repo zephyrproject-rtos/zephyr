@@ -5,6 +5,7 @@
 #
 ---
 title: I2C Base Structure
+type: i2c
 version: 0.1
 
 description: >

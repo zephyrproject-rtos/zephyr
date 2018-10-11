@@ -5,6 +5,7 @@
 #
 ---
 title: I2C Device Base Structure
+type: i2c-device
 version: 0.1
 
 description: >
