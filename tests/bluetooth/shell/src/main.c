@@ -33,10 +33,6 @@
 
 #define DEVICE_NAME CONFIG_BT_DEVICE_NAME
 
-SHELL_UART_DEFINE(shell_transport_uart);
-SHELL_DEFINE(uart_shell, "uart:~$ ", &shell_transport_uart, 10,
-	     SHELL_FLAG_CRLF_DEFAULT);
-
 #if defined(CONFIG_BT_CONN)
 static bool hrs_simulate;
 
@@ -104,11 +100,9 @@ SHELL_CMD_REGISTER(hrs, &hrs_cmds, "Heart Rate Service shell commands",
 
 void main(void)
 {
-	(void)shell_init(&uart_shell, NULL, true, true, LOG_LEVEL_INF);
-
-	print(&uart_shell, "Type \"help\" for supported commands.");
-	print(&uart_shell, "Before any Bluetooth commands you must `bt init`"
-	      " to initialize the stack.");
+	printk("Type \"help\" for supported commands.");
+	printk("Before any Bluetooth commands you must `bt init` to initialize"
+	       " the stack.\n");
 
 	while (1) {
 		k_sleep(MSEC_PER_SEC);
