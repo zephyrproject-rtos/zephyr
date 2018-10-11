@@ -166,7 +166,7 @@ struct bt_smp {
 	u8_t			mackey[16];
 
 	/* LE SC passkey */
-	u32_t		passkey;
+	u32_t			passkey;
 
 	/* LE SC passkey round */
 	u8_t			passkey_round;
@@ -178,7 +178,7 @@ struct bt_smp {
 	u8_t			remote_dist;
 
 	/* Delayed work for timeout handling */
-	struct k_delayed_work work;
+	struct k_delayed_work 	work;
 };
 
 static unsigned int fixed_passkey = BT_PASSKEY_INVALID;
@@ -240,10 +240,10 @@ struct bt_smp_br {
 	u8_t			remote_dist;
 
 	/* Encryption Key Size used for connection */
-	u8_t enc_key_size;
+	u8_t 			enc_key_size;
 
 	/* Delayed work for timeout handling */
-	struct k_delayed_work work;
+	struct k_delayed_work 	work;
 };
 
 static struct bt_smp_br bt_smp_br_pool[CONFIG_BT_MAX_CONN];
