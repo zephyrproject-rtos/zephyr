@@ -257,7 +257,7 @@ void log_init(void)
 	}
 
 	k_mem_slab_init(&log_strdup_pool, log_strdup_pool_buf,
-			CONFIG_LOG_STRDUP_MAX_STRING,
+			LOG_STRBUF_BUF_SIZE,
 			CONFIG_LOG_STRDUP_BUF_COUNT);
 
 	/* Set default timestamp. */
