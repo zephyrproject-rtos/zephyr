@@ -83,7 +83,7 @@ static void offload_function(void *param)
 
 	zassert_true(_is_in_isr(), "Not in IRQ context!");
 	k_timer_init(&timer, timer_handler, NULL);
-	k_busy_wait(K_SECONDS(25));
+	k_busy_wait(K_SECONDS(1));
 	k_timer_start(&timer, DURATION, 0);
 	zassert_not_equal(check_lock_new, check_lock_old,
 		"Interrupt locking didn't work properly");
