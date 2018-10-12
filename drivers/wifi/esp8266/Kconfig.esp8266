@@ -1,0 +1,51 @@
+#
+# Copyright (c) 2018 Linaro
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Kconfig - esp8266 driver options
+
+menuconfig WIFI_ESP8266
+	bool "ESP8266 driver support"
+	default n
+	depends on WIFI
+	select NET_SOCKETS
+	select NEWLIB_LIBC
+	select WIFI_OFFLOAD
+	select NET_L2_WIFI_MGMT
+	select MODEM
+	select MODEM_RECEIVER
+
+if WIFI_ESP8266
+
+config WIFI_ESP8266_UART_DEVICE
+	string "Serial device used for ESP8266 connection"
+	default "UART_0"
+	help
+	Specify the device name of the serial device to which ESP8266 is
+	connected.
+
+config WIFI_ESP8266_HAS_ENABLE_PIN
+	bool "ESP8266 device uses an enable pin"
+	default n
+	help
+	  This option defines whether or not the ESP8266 device utilizes a
+	  enable pin
+
+if WIFI_ESP8266_HAS_ENABLE_PIN
+
+config WIFI_ESP8266_GPIO_DEVICE
+	string "GPIO driver's name to use to drive ESP8266 enable"
+	default "GPIO_1"
+	help
+	  This option is mandatory to set which GPIO controller to use in
+	  order to drive the enable pin
+
+config WIFI_ESP8266_GPIO_ENABLE_PIN
+	int "GPIO PIN to use to drive ESP8266 enable"
+	help
+	  This option is mandatory to set which GPIO pin to use in order
+	  to enable the ESP8266
+endif
+
+endif
