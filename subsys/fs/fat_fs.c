@@ -104,6 +104,24 @@ static int fatfs_unlink(struct fs_mount_t *mountp, const char *path)
 	return translate_error(res);
 }
 
+static int fatfs_rename(struct fs_mount_t *mountp, const char *from,
+			const char *to)
+{
+	FRESULT res;
+	FILINFO fno;
+
+	/* Check if 'to' path exists; remove it if it does */
+	res = f_stat(&to[1], &fno);
+	if (FR_OK == res) {
+		res = f_unlink(&to[1]);
+		if (FR_OK != res)
+			return translate_error(res);
+	}
+
+	res = f_rename(&from[1], &to[1]);
+	return translate_error(res);
+}
+
 static ssize_t fatfs_read(struct fs_file_t *zfp, void *ptr, size_t size)
 {
 	FRESULT res;
@@ -351,6 +369,7 @@ static struct fs_file_system_t fatfs_fs = {
 	.closedir = fatfs_closedir,
 	.mount = fatfs_mount,
 	.unlink = fatfs_unlink,
+	.rename = fatfs_rename,
 	.mkdir = fatfs_mkdir,
 	.stat = fatfs_stat,
 	.statvfs = fatfs_statvfs,
