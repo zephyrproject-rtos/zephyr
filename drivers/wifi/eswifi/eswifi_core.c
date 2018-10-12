@@ -493,7 +493,6 @@ static int eswifi_init(struct device *dev)
 
 static const struct net_wifi_mgmt_offload eswifi_offload_api = {
 	.iface_api.init = eswifi_iface_init,
-	.iface_api.send = NULL,
 	.scan		= eswifi_mgmt_scan,
 	.connect	= eswifi_mgmt_connect,
 	.disconnect	= eswifi_mgmt_disconnect,
