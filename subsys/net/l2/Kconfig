@@ -48,13 +48,13 @@ config NET_L2_BT_SEC_LEVEL
 	  Level 3 (BT_SECURITY_HIGH) = Encryption and authentication required
 	  Level 4 (BT_SECURITY_FIPS) = Secure connection required
 
-config NET_DEBUG_L2_BT
-	bool "Debug Bluetooth L2 layer"
-	default y if NET_LOG_GLOBAL
-	depends on NET_LOG
-	depends on NET_L2_BT
-	help
-	  Enables Bluetooth L2 output debug messages
+if NET_L2_BT
+module = NET_L2_BT
+module-dep = NET_LOG
+module-str = Log level for Bluetooth L2 layer
+module-help = Enables Bluetooth L2 to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+endif
 
 config NET_L2_BT_MGMT
 	bool "Enable Bluetooth Network Management support"
@@ -84,12 +84,13 @@ config NET_L2_WIFI_MGMT
 	help
 	Add support for WiFi Management interface.
 
-config NET_DEBUG_L2_WIFI_MGMT
-	bool "Debug WiFi Management layer"
-	default y if NET_LOG_GLOBAL
-	depends on NET_LOG && NET_L2_WIFI_MGMT
-	help
-	Enables WiFi management interface to output debug messages
+if NET_L2_WIFI_MGMT
+module = NET_L2_WIFI_MGMT
+module-dep = NET_LOG
+module-str = Log level for WiFi management layer
+module-help = Enables WiFi management interface to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+endif # NET_L2_WIFI_MGMT
 
 config NET_L2_WIFI_SHELL
 	bool "Enable WiFi shell module"

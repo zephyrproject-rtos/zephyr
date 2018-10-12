@@ -10,8 +10,8 @@
  * @brief Header files included by kernel.h.
  */
 
-#ifndef _KERNEL_INCLUDES__H
-#define _KERNEL_INCLUDES__H
+#ifndef ZEPHYR_INCLUDE_KERNEL_INCLUDES_H_
+#define ZEPHYR_INCLUDE_KERNEL_INCLUDES_H_
 
 #include <stddef.h>
 #include <zephyr/types.h>
@@ -34,4 +34,4 @@
 #include <arch/cpu.h>
 #include <misc/rb.h>
 
-#endif /* _KERNEL_INCLUDES__H */
+#endif /* ZEPHYR_INCLUDE_KERNEL_INCLUDES_H_ */

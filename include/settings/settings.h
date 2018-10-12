@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __SETTINGS_H_
-#define __SETTINGS_H_
+#ifndef ZEPHYR_INCLUDE_SETTINGS_SETTINGS_H_
+#define ZEPHYR_INCLUDE_SETTINGS_SETTINGS_H_
 
 #include <misc/util.h>
 #include <misc/slist.h>
@@ -267,4 +267,4 @@ struct settings_store {
 }
 #endif
 
-#endif /* __SETTINGS_H_ */
+#endif /* ZEPHYR_INCLUDE_SETTINGS_SETTINGS_H_ */

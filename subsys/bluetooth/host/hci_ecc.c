@@ -113,8 +113,9 @@ static u8_t generate_keys(void)
 	/* make sure generated key isn't debug key */
 	} while (memcmp(ecc.private_key, debug_private_key, 32) == 0);
 #else
-	memcpy(&ecc.pk, debug_public_key, 64);
-	memcpy(ecc.private_key, debug_private_key, 32);
+	sys_memcpy_swap(&ecc.pk, debug_public_key, 32);
+	sys_memcpy_swap(&ecc.pk[32], &debug_public_key[32], 32);
+	sys_memcpy_swap(ecc.private_key, debug_private_key, 32);
 #endif
 	return 0;
 }
@@ -144,7 +145,7 @@ static void emulate_le_p256_public_key_cmd(void)
 	evt->status = status;
 
 	if (status) {
-		memset(evt->key, 0, sizeof(evt->key));
+		(void)memset(evt->key, 0, sizeof(evt->key));
 	} else {
 		/* Convert X and Y coordinates from big-endian (provided
 		 * by crypto API) to little endian HCI.
@@ -188,7 +189,7 @@ static void emulate_le_generate_dhkey(void)
 
 	if (ret == TC_CRYPTO_FAIL) {
 		evt->status = BT_HCI_ERR_UNSPECIFIED;
-		memset(evt->dhkey, 0, sizeof(evt->dhkey));
+		(void)memset(evt->dhkey, 0, sizeof(evt->dhkey));
 	} else {
 		evt->status = 0;
 		/* Convert from big-endian (provided by crypto API) to
@@ -223,7 +224,7 @@ static void clear_ecc_events(struct net_buf *buf)
 {
 	struct bt_hci_cp_le_set_event_mask *cmd;
 
-	cmd = (void *)buf->data  + sizeof(struct bt_hci_cmd_hdr);
+	cmd = (void *)(buf->data + sizeof(struct bt_hci_cmd_hdr));
 
 	/*
 	 * don't enable controller ECC events as those will be generated from

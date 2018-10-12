@@ -67,7 +67,7 @@ int prng_init(void)
 	int ret;
 
 	/* Check first that HCI_LE_Rand is supported */
-	if (!(bt_dev.supported_commands[27] & BIT(7))) {
+	if (!BT_CMD_TEST(bt_dev.supported_commands, 27, 7)) {
 		return -ENOTSUP;
 	}
 

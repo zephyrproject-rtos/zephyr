@@ -14,6 +14,7 @@
 #include "cmdline.h"
 #include "toolchain.h"
 #include "posix_trace.h"
+#include "native_tracing.h"
 
 static int s_argc, test_argc;
 static char **s_argv, **test_argv;
@@ -89,7 +90,6 @@ void native_add_testargs_option(void)
 		(void *)NULL, NULL,
 		"Any argument that follows will be ignored by the top level, "
 		"and made available for possible tests"},
-
 		ARG_TABLE_ENDMARKER};
 
 	native_add_command_line_opts(testargs_options);
@@ -104,6 +104,7 @@ void native_handle_cmd_line(int argc, char *argv[])
 {
 	int i;
 
+	native_add_tracing_options();
 	native_add_testargs_option();
 
 	s_argv = argv;

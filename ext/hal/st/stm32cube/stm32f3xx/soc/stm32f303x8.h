@@ -7,7 +7,7 @@
   *          This file contains:
   *           - Data structures and the address mapping for all peripherals
   *           - Peripheral's registers declarations and bits definition
-  *           - Macros to access peripheral’s registers hardware
+  *           - Macros to access peripheralÂ’s registers hardware
   *
   ******************************************************************************
   * @attention
@@ -11868,9 +11868,6 @@ typedef struct
    ((INSTANCE) == TIM3))
 
 /****************** TIM Instances : supporting Hall interface *****************/
-#define IS_TIM_HALL_INTERFACE_INSTANCE(INSTANCE)\
-  (((INSTANCE) == TIM1))
-
 #define IS_TIM_HALL_SENSOR_INTERFACE_INSTANCE(INSTANCE)\
   (((INSTANCE) == TIM1))
 
@@ -11903,13 +11900,7 @@ typedef struct
    ((INSTANCE) == TIM15))
 
 /****************** TIM Instances : supporting synchronization ****************/
-#define IS_TIM_SYNCHRO_INSTANCE(INSTANCE)\
-    (((INSTANCE) == TIM1)    || \
-     ((INSTANCE) == TIM2)    || \
-     ((INSTANCE) == TIM3)    || \
-     ((INSTANCE) == TIM6)    || \
-     ((INSTANCE) == TIM7)    || \
-     ((INSTANCE) == TIM15))
+#define IS_TIM_SYNCHRO_INSTANCE(INSTANCE)  IS_TIM_MASTER_INSTANCE(INSTANCE)
 
 /****************** TIM Instances : supporting 32 bits counter ****************/
 #define IS_TIM_32B_COUNTER_INSTANCE(INSTANCE)\
@@ -12113,9 +12104,9 @@ typedef struct
 #define ADC1_IRQn           ADC1_2_IRQn
 #define USB_LP_CAN_RX0_IRQn CAN_RX0_IRQn
 #define USB_HP_CAN_TX_IRQn  CAN_TX_IRQn
-#define COMP1_2_IRQn        COMP2_IRQn
-#define COMP1_2_3_IRQn      COMP2_IRQn
 #define COMP_IRQn           COMP2_IRQn
+#define COMP1_2_3_IRQn      COMP2_IRQn
+#define COMP1_2_IRQn        COMP2_IRQn
 #define COMP4_5_6_IRQn      COMP4_6_IRQn
 #define TIM15_IRQn          TIM1_BRK_TIM15_IRQn
 #define TIM18_DAC2_IRQn     TIM1_CC_IRQn
@@ -12129,9 +12120,9 @@ typedef struct
 #define ADC1_IRQHandler           ADC1_2_IRQHandler
 #define USB_LP_CAN_RX0_IRQHandler CAN_RX0_IRQHandler
 #define USB_HP_CAN_TX_IRQHandler  CAN_TX_IRQHandler
-#define COMP1_2_IRQHandler        COMP2_IRQHandler
-#define COMP1_2_3_IRQHandler      COMP2_IRQHandler
 #define COMP_IRQHandler           COMP2_IRQHandler
+#define COMP1_2_3_IRQHandler      COMP2_IRQHandler
+#define COMP1_2_IRQHandler        COMP2_IRQHandler
 #define COMP4_5_6_IRQHandler      COMP4_6_IRQHandler
 #define TIM15_IRQHandler          TIM1_BRK_TIM15_IRQHandler
 #define TIM18_DAC2_IRQHandler     TIM1_CC_IRQHandler

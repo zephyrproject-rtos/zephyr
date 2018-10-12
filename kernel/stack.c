@@ -62,7 +62,7 @@ int _impl_k_stack_alloc_init(struct k_stack *stack, unsigned int num_entries)
 	int ret;
 
 	buffer = z_thread_malloc(num_entries);
-	if (buffer) {
+	if (buffer != NULL) {
 		k_stack_init(stack, buffer, num_entries);
 		stack->flags = K_STACK_FLAG_ALLOC;
 		ret = 0;
@@ -105,7 +105,7 @@ void _impl_k_stack_push(struct k_stack *stack, u32_t data)
 
 	first_pending_thread = _unpend_first_thread(&stack->wait_q);
 
-	if (first_pending_thread) {
+	if (first_pending_thread != NULL) {
 		_ready_thread(first_pending_thread);
 
 		_set_thread_return_value_with_data(first_pending_thread,
@@ -154,11 +154,11 @@ int _impl_k_stack_pop(struct k_stack *stack, u32_t *data, s32_t timeout)
 	}
 
 	result = _pend_current_thread(key, &stack->wait_q, timeout);
+	if (result == -EAGAIN)
+		return -EAGAIN;
 
-	if (result == 0) {
-		*data = (u32_t)_current->base.swap_data;
-	}
-	return result;
+	*data = (u32_t)_current->base.swap_data;
+	return 0;
 }
 
 #ifdef CONFIG_USERSPACE

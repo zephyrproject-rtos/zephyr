@@ -4,10 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_promisc
-#define SYS_LOG_DOMAIN "promisc"
-#define NET_SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
-#define NET_LOG_ENABLED 1
+#define LOG_MODULE_NAME net_promisc_sample
+#define NET_LOG_LEVEL LOG_LEVEL_DBG
 
 #include <zephyr.h>
 #include <errno.h>
@@ -117,20 +115,24 @@ static void print_info(struct net_pkt *pkt)
 	if (family == AF_INET) {
 		if (next_hdr == IPPROTO_TCP || next_hdr == IPPROTO_UDP) {
 			NET_INFO("%s %s (%zd) %s:%u -> %s:%u",
-				 "IPv4", proto, len, src_addr, src_port,
-				 dst_addr, dst_port);
+				 "IPv4", proto, len,
+				 log_strdup(src_addr), src_port,
+				 log_strdup(dst_addr), dst_port);
 		} else {
 			NET_INFO("%s %s (%zd) %s -> %s", "IPv4", proto,
-				 len, src_addr, dst_addr);
+				 len, log_strdup(src_addr),
+				 log_strdup(dst_addr));
 		}
 	} else {
 		if (next_hdr == IPPROTO_TCP || next_hdr == IPPROTO_UDP) {
 			NET_INFO("%s %s (%zd) [%s]:%u -> [%s]:%u",
-				 "IPv6", proto, len, src_addr, src_port,
-				 dst_addr, dst_port);
+				 "IPv6", proto, len,
+				 log_strdup(src_addr), src_port,
+				 log_strdup(dst_addr), dst_port);
 		} else {
 			NET_INFO("%s %s (%zd) %s -> %s", "IPv6", proto,
-				 len, src_addr, dst_addr);
+				 len, log_strdup(src_addr),
+				 log_strdup(dst_addr));
 		}
 	}
 }

@@ -31,7 +31,7 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-  */ 
+  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __STM32L0xx_HAL_LPTIM_EX_H
@@ -50,7 +50,7 @@
 
 /** @defgroup LPTIMEx LPTIMEx
   * @{
-  */ 
+  */
 
 /* Exported constants --------------------------------------------------------*/
 

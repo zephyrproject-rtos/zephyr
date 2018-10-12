@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __CONSOLE_H__
-#define __CONSOLE_H__
+#ifndef ZEPHYR_INCLUDE_CONSOLE_H_
+#define ZEPHYR_INCLUDE_CONSOLE_H_
 
 #include <zephyr/types.h>
 #include <kernel.h>
@@ -13,6 +13,56 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+struct tty_serial {
+	struct device *uart_dev;
+
+	struct k_sem rx_sem;
+	u8_t *rx_ringbuf;
+	u32_t rx_ringbuf_sz;
+	u16_t rx_get, rx_put;
+
+	u8_t *tx_ringbuf;
+	u32_t tx_ringbuf_sz;
+	u16_t tx_get, tx_put;
+};
+
+/**
+ * @brief Initialize buffered serial port (classically known as tty).
+ *
+ * "tty" device provides buffered, interrupt-driver access to an
+ * underlying UART device.
+ *
+ * @param tty tty device structure to initialize
+ * @param uart_dev underlying UART device to use (should support
+ *                 interrupt-driven operation)
+ * @param rxbuf pointer to receive buffer
+ * @param rxbuf_sz size of receive buffer
+ * @param txbuf pointer to transmit buffer
+ * @param txbuf_sz size of transmit buffer
+ *
+ * @return N/A
+ */
+void tty_init(struct tty_serial *tty, struct device *uart_dev,
+	      u8_t *rxbuf, u16_t rxbuf_sz,
+	      u8_t *txbuf, u16_t txbuf_sz);
+
+
+/**
+ * @brief Input a character from a tty device.
+ *
+ * @param tty tty device structure
+ */
+u8_t tty_getchar(struct tty_serial *tty);
+
+/**
+ * @brief Output a character from to tty device.
+ *
+ * @param tty tty device structure
+ * @param c character to output
+ * @return 0 if ok, <0 if error
+ */
+int tty_putchar(struct tty_serial *tty, u8_t c);
 
 /** @brief Initialize console_getchar()/putchar() calls.
  *
@@ -102,4 +152,4 @@ void console_register_line_input(struct k_fifo *avail_queue,
 }
 #endif
 
-#endif /* __CONSOLE_H__ */
+#endif /* ZEPHYR_INCLUDE_CONSOLE_H_ */

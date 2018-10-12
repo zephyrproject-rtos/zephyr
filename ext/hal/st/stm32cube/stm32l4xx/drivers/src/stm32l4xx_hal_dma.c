@@ -387,7 +387,7 @@ HAL_StatusTypeDef HAL_DMA_DeInit(DMA_HandleTypeDef *hdma)
     /* Clear the DMAMUX request generator overrun flag */
     hdma->DMAmuxRequestGenStatus->RGCFR = hdma->DMAmuxRequestGenStatusMask;
   }
-  
+
   hdma->DMAmuxRequestGen = 0U;
   hdma->DMAmuxRequestGenStatus = 0U;
   hdma->DMAmuxRequestGenStatusMask = 0U;

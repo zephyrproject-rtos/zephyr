@@ -1,9 +1,10 @@
-/* Copyright (c) 2017 dXplore
+/*
+ * Copyright (c) 2017 Jan Van Winkel <jan.van_winkel@dxplore.eu>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ILI9340_H
-#define ILI9340_H
+#ifndef ZEPHYR_INCLUDE_DRIVERS_DISPLAY_ILI9340_H_
+#define ZEPHYR_INCLUDE_DRIVERS_DISPLAY_ILI9340_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,26 +36,21 @@ void ili9340_write_pixel(const struct device *dev, const u16_t x, const u16_t y,
  * @param rgb_data pointer to the RGB data array, the data array should be at
  * minimum w * h * 3 bytes
  */
-void ili9340_write_bitmap(const struct device *dev, const u16_t x,
-			  const u16_t y, const u16_t w, const u16_t h,
-			  const u8_t *rgb_data);
 
 /**
  * @brief Turn display on
  *
  * @param dev Pointer to device structure
  */
-void ili9340_display_on(struct  device *dev);
 
 /**
  * @brief Turn display off
  *
  * @param dev Pointer to device structure
  */
-void ili9340_display_off(struct device *dev);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* ILI9340_H */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_DISPLAY_ILI9340_H_ */

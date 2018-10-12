@@ -523,7 +523,7 @@ typedef struct
 #define LL_RCC_RTC_CLKSOURCE_NONE          (uint32_t)0x00000000U         /*!< No clock used as RTC clock */
 #define LL_RCC_RTC_CLKSOURCE_LSE           RCC_CSR_RTCSEL_LSE            /*!< LSE oscillator clock used as RTC clock */
 #define LL_RCC_RTC_CLKSOURCE_LSI           RCC_CSR_RTCSEL_LSI            /*!< LSI oscillator clock used as RTC clock */
-#define LL_RCC_RTC_CLKSOURCE_HSE           RCC_CSR_RTCSEL_HSE            /*!< HSE oscillator clock divided by a programmable prescaler 
+#define LL_RCC_RTC_CLKSOURCE_HSE           RCC_CSR_RTCSEL_HSE            /*!< HSE oscillator clock divided by a programmable prescaler
                                                                              (selection through @ref LL_RCC_SetRTC_HSEPrescaler function ) */
 /**
   * @}

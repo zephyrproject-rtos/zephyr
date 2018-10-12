@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __STM32_CLOCK_H
-#define __STM32_CLOCK_H
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32_CLOCK_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32_CLOCK_H_
 
 /* clock bus references */
 #define STM32_CLOCK_BUS_AHB1    0
@@ -15,4 +15,4 @@
 #define STM32_CLOCK_BUS_IOP     5
 
 
-#endif /* __STM32_CLOCK_H */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32_CLOCK_H_ */

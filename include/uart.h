@@ -9,8 +9,8 @@
  * @brief Public APIs for UART drivers
  */
 
-#ifndef __INCuarth
-#define __INCuarth
+#ifndef ZEPHYR_INCLUDE_UART_H_
+#define ZEPHYR_INCLUDE_UART_H_
 
 /**
  * @brief UART Interface
@@ -714,4 +714,4 @@ static inline int _impl_uart_drv_cmd(struct device *dev, u32_t cmd, u32_t p)
 
 #include <syscalls/uart.h>
 
-#endif /* __INCuarth */
+#endif /* ZEPHYR_INCLUDE_UART_H_ */

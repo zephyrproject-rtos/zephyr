@@ -8,8 +8,8 @@
  * @brief IPv4 Autoconfiguration
  */
 
-#ifndef __IPV4_AUTOCONF_H
-#define __IPV4_AUTOCONF_H
+#ifndef ZEPHYR_INCLUDE_NET_IPV4_AUTOCONF_H_
+#define ZEPHYR_INCLUDE_NET_IPV4_AUTOCONF_H_
 
 /** Current state of IPv4 Autoconfiguration */
 enum net_ipv4_autoconf_state {
@@ -29,4 +29,4 @@ void net_ipv4_autoconf_init(void);
 #define net_ipv4_autoconf_init(...)
 #endif
 
-#endif /* __IPV4_AUTOCONF_H */
+#endif /* ZEPHYR_INCLUDE_NET_IPV4_AUTOCONF_H_ */

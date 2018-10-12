@@ -4,15 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define LOG_MODULE_NAME net_native_posix
+#define NET_LOG_LEVEL LOG_LEVEL_DBG
+
 #include <zephyr.h>
-#include <logging/sys_log.h>
 #include <errno.h>
-#include <board.h>
+
+#include <net/net_core.h>
 
 /* This application itself does nothing as there is net-shell that can be used
  * to monitor things.
  */
 void main(void)
 {
-	SYS_LOG_INF("Start application");
+	NET_INFO("Start application");
 }

@@ -16,12 +16,13 @@
  *   section
  */
 
-#ifndef _LINKERDEFS_H
-#define _LINKERDEFS_H
+#ifndef ZEPHYR_INCLUDE_LINKER_LINKER_DEFS_H_
+#define ZEPHYR_INCLUDE_LINKER_LINKER_DEFS_H_
 
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <misc/util.h>
+#include <offsets.h>
 
 /* include platform dependent linker-defs */
 #ifdef CONFIG_X86
@@ -52,7 +53,7 @@
  */
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 #define DEVICE_COUNT \
-	((__device_init_end - __device_init_start) / _DEVICE_STRUCT_SIZE)
+	((__device_init_end - __device_init_start) / _DEVICE_STRUCT_SIZEOF)
 #define DEV_BUSY_SZ	(((DEVICE_COUNT + 31) / 32) * 4)
 #define DEVICE_BUSY_BITFIELD()			\
 		FILL(0x00) ;			\
@@ -272,4 +273,4 @@ extern char __sg_size[];
 
 #endif /* ! _ASMLANGUAGE */
 
-#endif /* _LINKERDEFS_H */
+#endif /* ZEPHYR_INCLUDE_LINKER_LINKER_DEFS_H_ */

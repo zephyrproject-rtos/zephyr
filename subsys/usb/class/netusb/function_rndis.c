@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_DEVICE_NETWORK_DEBUG_LEVEL
-#define SYS_LOG_DOMAIN "function/rndis"
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_USB_DEVICE_NETWORK_DEBUG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(usb_rndis)
 
 /* Enable verbose debug printing extra hexdumps */
 #define VERBOSE_DEBUG	0
@@ -16,6 +16,7 @@
 #include <net_private.h>
 
 #include <zephyr.h>
+#include <init.h>
 
 #include <usb_device.h>
 #include <usb_common.h>
@@ -51,6 +52,133 @@ static struct k_delayed_work notify_work;
  */
 static K_THREAD_STACK_DEFINE(cmd_stack, 2048);
 static struct k_thread cmd_thread_data;
+
+struct usb_rndis_config {
+#ifdef CONFIG_USB_COMPOSITE_DEVICE
+	struct usb_association_descriptor iad;
+#endif
+	struct usb_if_descriptor if0;
+	struct cdc_header_descriptor if0_header;
+	struct cdc_cm_descriptor if0_cm;
+	struct cdc_acm_descriptor if0_acm;
+	struct cdc_union_descriptor if0_union;
+	struct usb_ep_descriptor if0_int_ep;
+
+	struct usb_if_descriptor if1;
+	struct usb_ep_descriptor if1_in_ep;
+	struct usb_ep_descriptor if1_out_ep;
+} __packed;
+
+USBD_CLASS_DESCR_DEFINE(primary) struct usb_rndis_config rndis_cfg = {
+#ifdef CONFIG_USB_COMPOSITE_DEVICE
+	.iad = {
+		.bLength = sizeof(struct usb_association_descriptor),
+		.bDescriptorType = USB_ASSOCIATION_DESC,
+		.bFirstInterface = 0,
+		.bInterfaceCount = 0x02,
+		.bFunctionClass = COMMUNICATION_DEVICE_CLASS,
+		.bFunctionSubClass = 6,
+		.bFunctionProtocol = 0,
+		.iFunction = 0,
+	},
+#endif
+	/* Interface descriptor 0 */
+	/* CDC Communication interface */
+	.if0 = {
+		.bLength = sizeof(struct usb_if_descriptor),
+		.bDescriptorType = USB_INTERFACE_DESC,
+		.bInterfaceNumber = 0,
+		.bAlternateSetting = 0,
+		.bNumEndpoints = 1,
+		.bInterfaceClass = COMMUNICATION_DEVICE_CLASS,
+		.bInterfaceSubClass = ACM_SUBCLASS,
+		.bInterfaceProtocol = ACM_VENDOR_PROTOCOL,
+		.iInterface = 0,
+	},
+	/* Header Functional Descriptor */
+	.if0_header = {
+		.bFunctionLength = sizeof(struct cdc_header_descriptor),
+		.bDescriptorType = CS_INTERFACE,
+		.bDescriptorSubtype = HEADER_FUNC_DESC,
+		.bcdCDC = sys_cpu_to_le16(USB_1_1),
+	},
+	/* Call Management Functional Descriptor */
+	.if0_cm = {
+		.bFunctionLength = sizeof(struct cdc_cm_descriptor),
+		.bDescriptorType = CS_INTERFACE,
+		.bDescriptorSubtype = CALL_MANAGEMENT_FUNC_DESC,
+		.bmCapabilities = 0x00,
+		.bDataInterface = 1,
+	},
+	/* ACM Functional Descriptor */
+	.if0_acm = {
+		.bFunctionLength = sizeof(struct cdc_acm_descriptor),
+		.bDescriptorType = CS_INTERFACE,
+		.bDescriptorSubtype = ACM_FUNC_DESC,
+		/* Device supports the request combination of:
+		 *	Set_Line_Coding,
+		 *	Set_Control_Line_State,
+		 *	Get_Line_Coding
+		 *	and the notification Serial_State
+		 */
+		.bmCapabilities = 0x00,
+	},
+	/* Union Functional Descriptor */
+	.if0_union = {
+		.bFunctionLength = sizeof(struct cdc_union_descriptor),
+		.bDescriptorType = CS_INTERFACE,
+		.bDescriptorSubtype = UNION_FUNC_DESC,
+		.bControlInterface = 0,
+		.bSubordinateInterface0 = 1,
+	},
+	/* Notification EP Descriptor */
+	.if0_int_ep = {
+		.bLength = sizeof(struct usb_ep_descriptor),
+		.bDescriptorType = USB_ENDPOINT_DESC,
+		.bEndpointAddress = RNDIS_INT_EP_ADDR,
+		.bmAttributes = USB_DC_EP_INTERRUPT,
+		.wMaxPacketSize =
+			sys_cpu_to_le16(
+			CONFIG_RNDIS_INTERRUPT_EP_MPS),
+		.bInterval = 0x09,
+	},
+
+	/* Interface descriptor 1 */
+	/* CDC Data Interface */
+	.if1 = {
+		.bLength = sizeof(struct usb_if_descriptor),
+		.bDescriptorType = USB_INTERFACE_DESC,
+		.bInterfaceNumber = 1,
+		.bAlternateSetting = 0,
+		.bNumEndpoints = 2,
+		.bInterfaceClass = COMMUNICATION_DEVICE_CLASS_DATA,
+		.bInterfaceSubClass = 0,
+		.bInterfaceProtocol = 0,
+		.iInterface = 0,
+	},
+	/* Data Endpoint IN */
+	.if1_in_ep = {
+		.bLength = sizeof(struct usb_ep_descriptor),
+		.bDescriptorType = USB_ENDPOINT_DESC,
+		.bEndpointAddress = RNDIS_IN_EP_ADDR,
+		.bmAttributes = USB_DC_EP_BULK,
+		.wMaxPacketSize =
+			sys_cpu_to_le16(
+			CONFIG_RNDIS_BULK_EP_MPS),
+		.bInterval = 0x00,
+	},
+	/* Data Endpoint OUT */
+	.if1_out_ep = {
+		.bLength = sizeof(struct usb_ep_descriptor),
+		.bDescriptorType = USB_ENDPOINT_DESC,
+		.bEndpointAddress = RNDIS_OUT_EP_ADDR,
+		.bmAttributes = USB_DC_EP_BULK,
+		.wMaxPacketSize =
+			sys_cpu_to_le16(
+			CONFIG_RNDIS_BULK_EP_MPS),
+		.bInterval = 0x00,
+	},
+};
 
 /*
  * TLV structure is used for data encapsulation parsing
@@ -162,13 +290,13 @@ static int parse_rndis_header(const u8_t *buffer, u32_t buf_len)
 	u32_t len;
 
 	if (buf_len < sizeof(*hdr)) {
-		SYS_LOG_ERR("Too small packet len %u", buf_len);
+		USB_ERR("Too small packet len %u", buf_len);
 		return -EINVAL;
 	}
 
 	if (hdr->type != sys_cpu_to_le32(RNDIS_DATA_PACKET)) {
-		SYS_LOG_ERR("Wrong data packet type 0x%x",
-			    sys_le32_to_cpu(hdr->type));
+		USB_ERR("Wrong data packet type 0x%x",
+			sys_le32_to_cpu(hdr->type));
 		return -EINVAL;
 	}
 
@@ -180,20 +308,20 @@ static int parse_rndis_header(const u8_t *buffer, u32_t buf_len)
 	if (len < sys_le32_to_cpu(hdr->payload_offset) +
 	    sys_le32_to_cpu(hdr->payload_len) +
 	    offsetof(struct rndis_payload_packet, payload_offset)) {
-		SYS_LOG_ERR("Incorrect RNDIS packet");
+		USB_ERR("Incorrect RNDIS packet");
 		return -EINVAL;
 	}
 
-	SYS_LOG_DBG("Parsing packet: len %u payload offset %u payload len %u",
-		    len, sys_le32_to_cpu(hdr->payload_offset),
-		    sys_le32_to_cpu(hdr->payload_len));
+	USB_DBG("Parsing packet: len %u payload offset %u payload len %u",
+		len, sys_le32_to_cpu(hdr->payload_offset),
+		sys_le32_to_cpu(hdr->payload_len));
 
 	return len;
 }
 
 void rndis_clean(void)
 {
-	SYS_LOG_DBG("");
+	USB_DBG("");
 
 	if (rndis.in_pkt) {
 		net_pkt_unref(rndis.in_pkt);
@@ -214,17 +342,17 @@ static void rndis_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 
 	usb_read(ep, NULL, 0, &len);
 
-	SYS_LOG_DBG("EP 0x%x status %d len %u", ep, ep_status, len);
+	USB_DBG("EP 0x%x status %d len %u", ep, ep_status, len);
 
 	if (len > CONFIG_RNDIS_BULK_EP_MPS) {
-		SYS_LOG_WRN("Limit read len %u to MPS %u", len,
-			    CONFIG_RNDIS_BULK_EP_MPS);
+		USB_WRN("Limit read len %u to MPS %u", len,
+			CONFIG_RNDIS_BULK_EP_MPS);
 		len = CONFIG_RNDIS_BULK_EP_MPS;
 	}
 
 	usb_read(ep, buffer, len, &read);
 	if (len != read) {
-		SYS_LOG_ERR("Read %u instead of expected %u, skip the rest",
+		USB_ERR("Read %u instead of expected %u, skip the rest",
 			    read, len);
 		rndis.skip_bytes = len - read;
 		return;
@@ -234,19 +362,19 @@ static void rndis_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 	 * receiving frame delimeter
 	 */
 	if (len == 1 && !buffer[0]) {
-		SYS_LOG_DBG("Got frame delimeter, skip");
+		USB_DBG("Got frame delimeter, skip");
 		return;
 	}
 
 	/* Handle skip bytes */
 	if (rndis.skip_bytes) {
-		SYS_LOG_WRN("Skip %u bytes out of remaining %d bytes",
-			    len, rndis.skip_bytes);
+		USB_WRN("Skip %u bytes out of remaining %d bytes",
+			len, rndis.skip_bytes);
 
 		rndis.skip_bytes -= len;
 
 		if (rndis.skip_bytes < 0) {
-			SYS_LOG_ERR("Error skipping bytes");
+			USB_ERR("Error skipping bytes");
 
 			rndis.skip_bytes = 0;
 		}
@@ -261,7 +389,7 @@ static void rndis_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 
 		rndis.in_pkt_len = parse_rndis_header(buffer, len);
 		if (rndis.in_pkt_len < 0) {
-			SYS_LOG_ERR("Error parsing RNDIS header");
+			USB_ERR("Error parsing RNDIS header");
 
 			rndis.rx_err++;
 			return;
@@ -275,8 +403,8 @@ static void rndis_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 			rndis.skip_bytes = rndis.in_pkt_len - len;
 			rndis.rx_no_buf++;
 
-			SYS_LOG_ERR("Not enough pkt buffers, len %u, skip %u",
-				    rndis.in_pkt_len, rndis.skip_bytes);
+			USB_ERR("Not enough pkt buffers, len %u, skip %u",
+				rndis.in_pkt_len, rndis.skip_bytes);
 
 			return;
 		}
@@ -288,8 +416,8 @@ static void rndis_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 			 */
 			rndis.skip_bytes = rndis.in_pkt_len - len;
 
-			SYS_LOG_ERR("Not enough net buffers, len %u, skip %u",
-				    rndis.in_pkt_len, rndis.skip_bytes);
+			USB_ERR("Not enough net buffers, len %u, skip %u",
+				rndis.in_pkt_len, rndis.skip_bytes);
 
 			net_pkt_unref(pkt);
 			rndis.rx_no_buf++;
@@ -307,18 +435,18 @@ static void rndis_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 	ret = net_pkt_append_all(rndis.in_pkt, len - hdr_offset,
 				 buffer + hdr_offset, K_FOREVER);
 	if (ret < 0) {
-		SYS_LOG_ERR("Error appending data to pkt: %p", rndis.in_pkt);
+		USB_ERR("Error appending data to pkt: %p", rndis.in_pkt);
 		rndis_clean();
 		rndis.rx_err++;
 		return;
 	}
 
-	SYS_LOG_DBG("To asemble %d bytes, reading %u bytes",
-		    rndis.in_pkt_len, len);
+	USB_DBG("To asemble %d bytes, reading %u bytes",
+		rndis.in_pkt_len, len);
 
 	rndis.in_pkt_len -= len;
 	if (!rndis.in_pkt_len) {
-		SYS_LOG_DBG("Assembled full RNDIS packet");
+		USB_DBG("Assembled full RNDIS packet");
 
 		net_hexdump_frags(">", rndis.in_pkt, true);
 
@@ -328,7 +456,7 @@ static void rndis_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 		/* Start over for new packets */
 		rndis.in_pkt = NULL;
 	} else if (rndis.in_pkt_len < 0) {
-		SYS_LOG_ERR("Error assembling packet, drop and start over");
+		USB_ERR("Error assembling packet, drop and start over");
 		rndis_clean();
 	}
 }
@@ -336,14 +464,14 @@ static void rndis_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 static void rndis_int_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
 #ifdef VERBOSE_DEBUG
-	SYS_LOG_DBG("EP 0x%x status %d", ep, ep_status);
+	USB_DBG("EP 0x%x status %d", ep, ep_status);
 #endif
 }
 
 static void rndis_bulk_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
 #ifdef VERBOSE_DEBUG
-	SYS_LOG_DBG("EP 0x%x status %d", ep, ep_status);
+	USB_DBG("EP 0x%x status %d", ep, ep_status);
 #endif
 }
 
@@ -351,7 +479,7 @@ static void rndis_notify(struct k_work *work)
 {
 	u32_t buf[2];
 
-	SYS_LOG_DBG("count %u", atomic_get(&rndis.notify_count));
+	USB_DBG("count %u", atomic_get(&rndis.notify_count));
 
 	buf[0] = sys_cpu_to_le32(0x01);
 	buf[1] = sys_cpu_to_le32(0x00);
@@ -361,8 +489,8 @@ static void rndis_notify(struct k_work *work)
 
 	/* Decrement notify_count here */
 	if (atomic_dec(&rndis.notify_count) != 1) {
-		SYS_LOG_WRN("Queue next notification, count %u",
-			    atomic_get(&rndis.notify_count));
+		USB_WRN("Queue next notification, count %u",
+			atomic_get(&rndis.notify_count));
 
 		k_delayed_work_submit(&notify_work, K_NO_WAIT);
 	}
@@ -372,7 +500,7 @@ static void rndis_send_zero_frame(void)
 {
 	u8_t zero[] = { 0x00 };
 
-	SYS_LOG_DBG("Last packet, send zero frame");
+	USB_DBG("Last packet, send zero frame");
 
 	try_write(rndis_ep_data[RNDIS_IN_EP_IDX].ep_addr, zero, sizeof(zero));
 }
@@ -385,14 +513,14 @@ static void rndis_queue_rsp(struct net_buf *rsp)
 		struct net_buf *buf;
 
 		while ((buf = net_buf_get(&rndis_tx_queue, K_NO_WAIT))) {
-			SYS_LOG_ERR("Drop buffer %p", buf);
+			USB_ERR("Drop buffer %p", buf);
 			net_buf_unref(buf);
 		}
 #endif
-		SYS_LOG_WRN("Transmit response queue is not empty");
+		USB_WRN("Transmit response queue is not empty");
 	}
 
-	SYS_LOG_DBG("Queued response pkt %p", rsp);
+	USB_DBG("Queued response pkt %p", rsp);
 
 	net_buf_put(&rndis_tx_queue, rsp);
 }
@@ -402,12 +530,12 @@ static void rndis_notify_rsp(void)
 {
 	int ret;
 
-	SYS_LOG_DBG("count %u", atomic_get(&rndis.notify_count));
+	USB_DBG("count %u", atomic_get(&rndis.notify_count));
 
 	/* Keep track of number of notifies */
 	if (atomic_inc(&rndis.notify_count) != 0) {
-		SYS_LOG_WRN("Unhandled notify: count %u",
-			    atomic_get(&rndis.notify_count));
+		USB_WRN("Unhandled notify: count %u",
+			atomic_get(&rndis.notify_count));
 
 		return;
 	}
@@ -418,7 +546,7 @@ static void rndis_notify_rsp(void)
 	 */
 	ret = k_delayed_work_submit(&notify_work, K_NO_WAIT);
 	if (ret) {
-		SYS_LOG_ERR("Error submittinf delaying queue: %d", ret);
+		USB_ERR("Error submittinf delaying queue: %d", ret);
 	}
 }
 
@@ -428,11 +556,11 @@ static int rndis_init_handle(u8_t *data, u32_t len)
 	struct rndis_init_cmd_complete *rsp;
 	struct net_buf *buf;
 
-	SYS_LOG_DBG("req_id 0x%x", cmd->req_id);
+	USB_DBG("req_id 0x%x", cmd->req_id);
 
 	buf = net_buf_alloc(&rndis_tx_pool, K_NO_WAIT);
 	if (!buf) {
-		SYS_LOG_ERR("Cannot get free buffer");
+		USB_ERR("Cannot get free buffer");
 		return -ENOMEM;
 	}
 
@@ -454,7 +582,7 @@ static int rndis_init_handle(u8_t *data, u32_t len)
 							rndis_payload_packet));
 
 	rsp->pkt_align_factor = sys_cpu_to_le32(0);
-	memset(rsp->__reserved, 0, sizeof(rsp->__reserved));
+	(void)memset(rsp->__reserved, 0, sizeof(rsp->__reserved));
 
 	rndis.state = INITIALIZED;
 
@@ -468,7 +596,7 @@ static int rndis_init_handle(u8_t *data, u32_t len)
 
 static int rndis_halt_handle(void)
 {
-	SYS_LOG_DBG("");
+	USB_DBG("");
 
 	rndis.state = UNINITIALIZED;
 
@@ -495,17 +623,17 @@ static int rndis_query_handle(u8_t *data, u32_t len)
 
 	buf = net_buf_alloc(&rndis_tx_pool, K_NO_WAIT);
 	if (!buf) {
-		SYS_LOG_ERR("Cannot get free buffer");
+		USB_ERR("Cannot get free buffer");
 		return -ENOMEM;
 	}
 
 	object_id = sys_le32_to_cpu(cmd->object_id);
 
-	SYS_LOG_DBG("req_id 0x%x Object ID 0x%x buf_len %u buf_offset %u",
-		    sys_le32_to_cpu(cmd->req_id),
-		    object_id,
-		    sys_le32_to_cpu(cmd->buf_len),
-		    sys_le32_to_cpu(cmd->buf_offset));
+	USB_DBG("req_id 0x%x Object ID 0x%x buf_len %u buf_offset %u",
+		sys_le32_to_cpu(cmd->req_id),
+		object_id,
+		sys_le32_to_cpu(cmd->buf_len),
+		sys_le32_to_cpu(cmd->buf_offset));
 
 	rsp = net_buf_add(buf, sizeof(*rsp));
 	rsp->type = sys_cpu_to_le32(RNDIS_CMD_QUERY_COMPLETE);
@@ -516,19 +644,19 @@ static int rndis_query_handle(u8_t *data, u32_t len)
 
 	switch (object_id) {
 	case RNDIS_OBJECT_ID_GEN_SUPP_LIST:
-		SYS_LOG_DBG("RNDIS_OBJECT_ID_GEN_SUPP_LIST");
+		USB_DBG("RNDIS_OBJECT_ID_GEN_SUPP_LIST");
 		rndis_query_add_supp_list(buf);
 		break;
 	case RNDIS_OBJECT_ID_GEN_PHYSICAL_MEDIUM:
-		SYS_LOG_DBG("RNDIS_OBJECT_ID_GEN_PHYSICAL_MEDIUM");
+		USB_DBG("RNDIS_OBJECT_ID_GEN_PHYSICAL_MEDIUM");
 		net_buf_add_le32(buf, RNDIS_PHYSICAL_MEDIUM_TYPE_UNSPECIFIED);
 		break;
 	case RNDIS_OBJECT_ID_GEN_MAX_FRAME_SIZE:
-		SYS_LOG_DBG("RNDIS_OBJECT_ID_GEN_MAX_FRAME_SIZE");
+		USB_DBG("RNDIS_OBJECT_ID_GEN_MAX_FRAME_SIZE");
 		net_buf_add_le32(buf, rndis.mtu);
 		break;
 	case RNDIS_OBJECT_ID_GEN_LINK_SPEED:
-		SYS_LOG_DBG("RNDIS_OBJECT_ID_GEN_LINK_SPEED");
+		USB_DBG("RNDIS_OBJECT_ID_GEN_LINK_SPEED");
 		if (rndis.media_status == RNDIS_OBJECT_ID_MEDIA_DISCONNECTED) {
 			net_buf_add_le32(buf, 0);
 		} else {
@@ -536,73 +664,71 @@ static int rndis_query_handle(u8_t *data, u32_t len)
 		}
 		break;
 	case RNDIS_OBJECT_ID_GEN_CONN_MEDIA_STATUS:
-		SYS_LOG_DBG("RNDIS_OBJECT_ID_GEN_CONN_MEDIA_STATUS");
+		USB_DBG("RNDIS_OBJECT_ID_GEN_CONN_MEDIA_STATUS");
 		net_buf_add_le32(buf, rndis.media_status);
 		break;
 	case RNDIS_OBJECT_ID_GEN_MAX_TOTAL_SIZE:
-		SYS_LOG_DBG("RNDIS_OBJECT_ID_GEN_MAX_TOTAL_SIZE");
+		USB_DBG("RNDIS_OBJECT_ID_GEN_MAX_TOTAL_SIZE");
 		net_buf_add_le32(buf, RNDIS_GEN_MAX_TOTAL_SIZE);
 		break;
 
 		/* Statistics stuff */
 #if STATISTICS_ENABLED
 	case RNDIS_OBJECT_ID_GEN_TRANSMIT_OK:
-		SYS_LOG_DBG("RNDIS_OBJECT_ID_GEN_TRANSMIT_OK");
+		USB_DBG("RNDIS_OBJECT_ID_GEN_TRANSMIT_OK");
 		net_buf_add_le32(rndis.tx_pkts - rndis.tx_err);
 		break;
 #endif
 	case RNDIS_OBJECT_ID_GEN_TRANSMIT_ERROR:
-		SYS_LOG_DBG("RNDIS_OBJECT_ID_GEN_TRANSMIT_ERROR: %u",
-			    rndis.tx_err);
+		USB_DBG("RNDIS_OBJECT_ID_GEN_TRANSMIT_ERROR: %u", rndis.tx_err);
 		net_buf_add_le32(buf, rndis.tx_err);
 		break;
 	case RNDIS_OBJECT_ID_GEN_RECEIVE_ERROR:
-		SYS_LOG_DBG("RNDIS_OBJECT_ID_GEN_RECEIVE_ERROR: %u",
-			    rndis.rx_err);
+		USB_DBG("RNDIS_OBJECT_ID_GEN_RECEIVE_ERROR: %u", rndis.rx_err);
 		net_buf_add_le32(buf, rndis.rx_err);
 		break;
 	case RNDIS_OBJECT_ID_GEN_RECEIVE_NO_BUF:
-		SYS_LOG_DBG("RNDIS_OBJECT_ID_GEN_RECEIVE_NO_BUF: %u",
-			    rndis.rx_no_buf);
+		USB_DBG("RNDIS_OBJECT_ID_GEN_RECEIVE_NO_BUF: %u",
+			rndis.rx_no_buf);
 		net_buf_add_le32(buf, rndis.rx_no_buf);
 		break;
 
 		/* IEEE 802.3 */
 	case RNDIS_OBJECT_ID_802_3_PERMANENT_ADDRESS:
-		SYS_LOG_DBG("RNDIS_OBJECT_ID_802_3_PERMANENT_ADDRESS");
+		USB_DBG("RNDIS_OBJECT_ID_802_3_PERMANENT_ADDRESS");
 		memcpy(net_buf_add(buf, sizeof(rndis.mac)), rndis.mac,
 		       sizeof(rndis.mac));
 		break;
 	case RNDIS_OBJECT_ID_802_3_CURR_ADDRESS:
-		SYS_LOG_DBG("RNDIS_OBJECT_ID_802_3_CURR_ADDRESS");
+		USB_DBG("RNDIS_OBJECT_ID_802_3_CURR_ADDRESS");
 		memcpy(net_buf_add(buf, sizeof(rndis.mac)), rndis.mac,
 		       sizeof(rndis.mac));
 		break;
 	case RNDIS_OBJECT_ID_802_3_MCAST_LIST:
-		SYS_LOG_DBG("RNDIS_OBJECT_ID_802_3_MCAST_LIST");
+		USB_DBG("RNDIS_OBJECT_ID_802_3_MCAST_LIST");
 		net_buf_add_le32(buf, 0xE0000000); /* 224.0.0.0 */
 		break;
 	case RNDIS_OBJECT_ID_802_3_MAX_LIST_SIZE:
-		SYS_LOG_DBG("RNDIS_OBJECT_ID_802_3_MAX_LIST_SIZE");
+		USB_DBG("RNDIS_OBJECT_ID_802_3_MAX_LIST_SIZE");
 		net_buf_add_le32(buf, 1); /* one address */
 		break;
 
 		/* Vendor information */
 	case RNDIS_OBJECT_ID_GEN_VENDOR_ID:
-		SYS_LOG_DBG("RNDIS_OBJECT_ID_GEN_VENDOR_ID");
+		USB_DBG("RNDIS_OBJECT_ID_GEN_VENDOR_ID");
 		net_buf_add_le32(buf, CONFIG_USB_DEVICE_VID);
 		break;
 	case RNDIS_OBJECT_ID_GEN_VENDOR_DESC:
-		SYS_LOG_DBG("RNDIS_OBJECT_ID_GEN_VENDOR_DESC");
+		USB_DBG("RNDIS_OBJECT_ID_GEN_VENDOR_DESC");
 		memcpy(net_buf_add(buf, sizeof(manufacturer) - 1), manufacturer,
 		       sizeof(manufacturer) - 1);
 		break;
 	case RNDIS_OBJECT_ID_GEN_VENDOR_DRV_VER:
-		SYS_LOG_DBG("RNDIS_OBJECT_ID_GEN_VENDOR_DRV_VER");
+		USB_DBG("RNDIS_OBJECT_ID_GEN_VENDOR_DRV_VER");
 		net_buf_add_le32(buf, drv_version);
 		break;
 	default:
-		SYS_LOG_WRN("Unhandled query for Object ID 0x%x", object_id);
+		USB_WRN("Unhandled query for Object ID 0x%x", object_id);
 		break;
 	}
 
@@ -619,8 +745,8 @@ static int rndis_query_handle(u8_t *data, u32_t len)
 
 	rsp->len = sys_cpu_to_le32(buf_len + sizeof(*rsp));
 
-	SYS_LOG_DBG("buf_len %u rsp->len %u buf->len %u",
-		    buf_len, rsp->len, buf->len);
+	USB_DBG("buf_len %u rsp->len %u buf->len %u",
+		buf_len, rsp->len, buf->len);
 
 	rndis_queue_rsp(buf);
 
@@ -639,7 +765,7 @@ static int rndis_set_handle(u8_t *data, u32_t len)
 	u8_t *param;
 
 	if (len < sizeof(*cmd)) {
-		SYS_LOG_ERR("Packet is shorter then header");
+		USB_ERR("Packet is shorter then header");
 		return -EINVAL;
 	}
 
@@ -648,22 +774,22 @@ static int rndis_set_handle(u8_t *data, u32_t len)
 
 	if (len - ((u32_t)param - (u32_t)cmd) !=
 	    sys_le32_to_cpu(cmd->buf_len)) {
-		SYS_LOG_ERR("Packet parsing error");
+		USB_ERR("Packet parsing error");
 		return -EINVAL;
 	}
 
 	buf = net_buf_alloc(&rndis_tx_pool, K_NO_WAIT);
 	if (!buf) {
-		SYS_LOG_ERR("Cannot get free buffer");
+		USB_ERR("Cannot get free buffer");
 		return -ENOMEM;
 	}
 
 	object_id = sys_le32_to_cpu(cmd->object_id);
 
-	SYS_LOG_DBG("req_id 0x%x Object ID 0x%x buf_len %u buf_offset %u",
-		    sys_le32_to_cpu(cmd->req_id), object_id,
-		    sys_le32_to_cpu(cmd->buf_len),
-		    sys_le32_to_cpu(cmd->buf_offset));
+	USB_DBG("req_id 0x%x Object ID 0x%x buf_len %u buf_offset %u",
+		sys_le32_to_cpu(cmd->req_id), object_id,
+		sys_le32_to_cpu(cmd->buf_len),
+		sys_le32_to_cpu(cmd->buf_offset));
 
 	rsp = net_buf_add(buf, sizeof(*rsp));
 	rsp->type = sys_cpu_to_le32(RNDIS_CMD_SET_COMPLETE);
@@ -673,24 +799,24 @@ static int rndis_set_handle(u8_t *data, u32_t len)
 	switch (object_id) {
 	case RNDIS_OBJECT_ID_GEN_PKT_FILTER:
 		if (sys_le32_to_cpu(cmd->buf_len) < sizeof(rndis.net_filter)) {
-			SYS_LOG_ERR("Packet is too small");
+			USB_ERR("Packet is too small");
 			rsp->status = RNDIS_CMD_STATUS_INVALID_DATA;
 			break;
 		}
 
 		rndis.net_filter = sys_get_le32(param);
-		SYS_LOG_DBG("RNDIS_OBJECT_ID_GEN_PKT_FILTER 0x%x",
-			    rndis.net_filter);
+		USB_DBG("RNDIS_OBJECT_ID_GEN_PKT_FILTER 0x%x",
+			rndis.net_filter);
 		/* TODO: Start / Stop networking here */
 		rsp->status = sys_cpu_to_le32(RNDIS_CMD_STATUS_SUCCESS);
 		break;
 	case RNDIS_OBJECT_ID_802_3_MCAST_LIST:
-		SYS_LOG_DBG("RNDIS_OBJECT_ID_802_3_MCAST_LIST");
+		USB_DBG("RNDIS_OBJECT_ID_802_3_MCAST_LIST");
 		/* ignore for now */
 		rsp->status = sys_cpu_to_le32(RNDIS_CMD_STATUS_SUCCESS);
 		break;
 	default:
-		SYS_LOG_ERR("Unhandled object_id 0x%x", object_id);
+		USB_ERR("Unhandled object_id 0x%x", object_id);
 		rsp->status = sys_cpu_to_le32(RNDIS_CMD_STATUS_NOT_SUPP);
 		break;
 	}
@@ -710,11 +836,11 @@ static int rndis_reset_handle(u8_t *data, u32_t len)
 
 	buf = net_buf_alloc(&rndis_tx_pool, K_NO_WAIT);
 	if (!buf) {
-		SYS_LOG_ERR("Cannot get free buffer");
+		USB_ERR("Cannot get free buffer");
 		return -ENOMEM;
 	}
 
-	SYS_LOG_DBG("");
+	USB_DBG("");
 
 	rsp = net_buf_add(buf, sizeof(*rsp));
 	rsp->type = sys_cpu_to_le32(RNDIS_CMD_RESET_COMPLETE);
@@ -738,11 +864,11 @@ static int rndis_keepalive_handle(u8_t *data, u32_t len)
 
 	buf = net_buf_alloc(&rndis_tx_pool, K_NO_WAIT);
 	if (!buf) {
-		SYS_LOG_ERR("Cannot get free buffer");
+		USB_ERR("Cannot get free buffer");
 		return -ENOMEM;
 	}
 
-	SYS_LOG_DBG("");
+	USB_DBG("");
 
 	rsp = net_buf_add(buf, sizeof(*rsp));
 	rsp->type = sys_cpu_to_le32(RNDIS_CMD_KEEPALIVE_COMPLETE);
@@ -764,7 +890,7 @@ static int queue_encapsulated_cmd(u8_t *data, u32_t len)
 
 	buf = net_buf_alloc(&rndis_cmd_pool, K_NO_WAIT);
 	if (!buf) {
-		SYS_LOG_ERR("Cannot get free buffer");
+		USB_ERR("Cannot get free buffer");
 		return -ENOMEM;
 	}
 
@@ -772,7 +898,7 @@ static int queue_encapsulated_cmd(u8_t *data, u32_t len)
 
 	net_buf_put(&rndis_cmd_queue, buf);
 
-	SYS_LOG_DBG("queued buf %p", buf);
+	USB_DBG("queued buf %p", buf);
 
 	return 0;
 }
@@ -784,13 +910,13 @@ static int handle_encapsulated_cmd(u8_t *data, u32_t len)
 	net_hexdump("CMD >", data, len);
 
 	if (len != msg->len) {
-		SYS_LOG_WRN("Total len is different then command len %u %u",
-			    len, msg->len);
+		USB_WRN("Total len is different then command len %u %u",
+			len, msg->len);
 		/* TODO: need actions? */
 	}
 
-	SYS_LOG_DBG("RNDIS type 0x%x len %u total len %u",
-		    msg->type, msg->len, len);
+	USB_DBG("RNDIS type 0x%x len %u total len %u",
+		msg->type, msg->len, len);
 
 	switch (msg->type) {
 	case RNDIS_CMD_INITIALIZE:
@@ -806,7 +932,7 @@ static int handle_encapsulated_cmd(u8_t *data, u32_t len)
 	case RNDIS_CMD_KEEPALIVE:
 		return rndis_keepalive_handle(data, len);
 	default:
-		SYS_LOG_ERR("Message 0x%x unhandled", msg->type);
+		USB_ERR("Message 0x%x unhandled", msg->type);
 		return -ENOTSUP;
 	}
 
@@ -819,11 +945,11 @@ static int rndis_send_media_status(u32_t media_status)
 	struct rndis_media_status_indicate *ind;
 	struct net_buf *buf;
 
-	SYS_LOG_DBG("status %u", media_status);
+	USB_DBG("status %u", media_status);
 
 	buf = net_buf_alloc(&rndis_tx_pool, K_NO_WAIT);
 	if (!buf) {
-		SYS_LOG_ERR("Cannot get free buffer");
+		USB_ERR("Cannot get free buffer");
 		return -ENOMEM;
 	}
 
@@ -853,11 +979,11 @@ static int handle_encapsulated_rsp(u8_t **data, u32_t *len)
 {
 	struct net_buf *buf;
 
-	SYS_LOG_DBG("");
+	USB_DBG("");
 
 	buf = net_buf_get(&rndis_tx_queue, K_NO_WAIT);
 	if (!buf) {
-		SYS_LOG_ERR("Error getting response buffer");
+		USB_ERR("Error getting response buffer");
 		*len = 0;
 		return -ENODATA;
 	}
@@ -875,7 +1001,14 @@ static int handle_encapsulated_rsp(u8_t **data, u32_t *len)
 static int rndis_class_handler(struct usb_setup_packet *setup, s32_t *len,
 			       u8_t **data)
 {
-	SYS_LOG_DBG("");
+	USB_DBG("len %d req_type 0x%x req 0x%x enabled %u",
+		*len, setup->bmRequestType, setup->bRequest,
+		netusb_enabled());
+
+	if (!netusb_enabled()) {
+		USB_ERR("interface disabled");
+		return -ENODEV;
+	}
 
 	if (setup->bRequest == CDC_SEND_ENC_CMD &&
 	    REQTYPE_GET_DIR(setup->bmRequestType) == REQTYPE_DIR_TO_DEVICE) {
@@ -890,8 +1023,8 @@ static int rndis_class_handler(struct usb_setup_packet *setup, s32_t *len,
 		handle_encapsulated_rsp(data, len);
 	} else {
 		*len = 0; /* FIXME! */
-		SYS_LOG_WRN("Unknown USB packet req 0x%x type 0x%x",
-			    setup->bRequest, setup->bmRequestType);
+		USB_WRN("Unknown USB packet req 0x%x type 0x%x",
+			setup->bRequest, setup->bmRequestType);
 	}
 
 	return 0;
@@ -899,14 +1032,14 @@ static int rndis_class_handler(struct usb_setup_packet *setup, s32_t *len,
 
 static void cmd_thread(void)
 {
-	SYS_LOG_INF("Command thread started");
+	USB_INF("Command thread started");
 
 	while (true) {
 		struct net_buf *buf;
 
 		buf = net_buf_get(&rndis_cmd_queue, K_FOREVER);
 
-		SYS_LOG_DBG("got buf %p", buf);
+		USB_DBG("got buf %p", buf);
 
 		handle_encapsulated_cmd(buf->data, buf->len);
 
@@ -925,15 +1058,15 @@ static void rndis_hdr_add(u8_t *buf, u32_t len)
 	struct rndis_payload_packet *hdr = (void *)buf;
 	u32_t offset = offsetof(struct rndis_payload_packet, payload_offset);
 
-	memset(hdr, 0, sizeof(*hdr));
+	(void)memset(hdr, 0, sizeof(*hdr));
 
 	hdr->type = sys_cpu_to_le32(RNDIS_DATA_PACKET);
 	hdr->len = sys_cpu_to_le32(len + sizeof(*hdr));
 	hdr->payload_offset = sys_cpu_to_le32(sizeof(*hdr) - offset);
 	hdr->payload_len = sys_cpu_to_le32(len);
 
-	SYS_LOG_DBG("type %u len %u payload offset %u payload len %u",
-		    hdr->type, hdr->len, hdr->payload_offset, hdr->payload_len);
+	USB_DBG("type %u len %u payload offset %u payload len %u",
+		hdr->type, hdr->len, hdr->payload_offset, hdr->payload_len);
 }
 
 /*
@@ -950,8 +1083,7 @@ static int append_bytes(u8_t *out_buf, u16_t buf_len, u8_t *data,
 	do {
 		u16_t count = min(len, remaining);
 #if VERBOSE_DEBUG
-		SYS_LOG_DBG("len %u remaining %u count %u", len, remaining,
-			    count);
+		USB_DBG("len %u remaining %u count %u", len, remaining, count);
 #endif
 
 		memcpy(out_buf + (buf_len - remaining), data, count);
@@ -970,7 +1102,7 @@ static int append_bytes(u8_t *out_buf, u16_t buf_len, u8_t *data,
 					out_buf,
 					buf_len);
 			if (ret) {
-				SYS_LOG_ERR("Error sending data");
+				USB_ERR("Error sending data");
 				return ret;
 			}
 
@@ -994,14 +1126,14 @@ static int rndis_send(struct net_pkt *pkt)
 	int remaining = sizeof(buf);
 	struct net_buf *frag;
 
-	SYS_LOG_DBG("send pkt %p len %u", pkt, net_pkt_get_len(pkt));
+	USB_DBG("send pkt %p len %u", pkt, net_pkt_get_len(pkt));
 
 	if (rndis.media_status == RNDIS_OBJECT_ID_MEDIA_DISCONNECTED) {
-		SYS_LOG_DBG("Media disconnected, drop pkt %p", pkt);
+		USB_DBG("Media disconnected, drop pkt %p", pkt);
 		return -EPIPE;
 	}
 
-	net_hexdump_frags("<", pkt);
+	net_hexdump_frags("<", pkt, true);
 
 	if (!pkt->frags) {
 		return -ENODATA;
@@ -1019,8 +1151,8 @@ static int rndis_send(struct net_pkt *pkt)
 	}
 
 	for (frag = pkt->frags->frags; frag; frag = frag->frags) {
-		SYS_LOG_DBG("Fragment %p len %u remaining %u",
-			    frag, frag->len, remaining);
+		USB_DBG("Fragment %p len %u remaining %u",
+			frag, frag->len, remaining);
 		remaining = append_bytes(buf, sizeof(buf), frag->data,
 					 frag->len, remaining);
 		if (remaining < 0) {
@@ -1111,9 +1243,11 @@ static struct usb_os_descriptor os_desc = {
 };
 #endif /* CONFIG_USB_DEVICE_OS_DESC */
 
-static int rndis_init(void)
+static int rndis_init(struct device *arg)
 {
-	SYS_LOG_DBG("");
+	ARG_UNUSED(arg);
+
+	USB_DBG("RNDIS initialization");
 
 	/* Transmit queue init */
 	k_fifo_init(&rndis_tx_queue);
@@ -1148,17 +1282,22 @@ static int rndis_connect_media(bool status)
 #endif
 }
 
-static void rndis_status_cb(enum usb_dc_status_code status, u8_t *param)
+static struct netusb_function rndis_function = {
+	.connect_media = rndis_connect_media,
+	.send_pkt = rndis_send,
+};
+
+static void rndis_status_cb(enum usb_dc_status_code status, const u8_t *param)
 {
 	/* Check the USB status and do needed action if required */
 	switch (status) {
 	case USB_DC_CONFIGURED:
-		SYS_LOG_DBG("USB device configured");
-		netusb_enable();
+		USB_DBG("USB device configured");
+		netusb_enable(&rndis_function);
 		break;
 
 	case USB_DC_DISCONNECTED:
-		SYS_LOG_DBG("USB device disconnected");
+		USB_DBG("USB device disconnected");
 		netusb_disable();
 		break;
 
@@ -1168,22 +1307,41 @@ static void rndis_status_cb(enum usb_dc_status_code status, u8_t *param)
 	case USB_DC_SUSPEND:
 	case USB_DC_RESUME:
 	case USB_DC_INTERFACE:
-		SYS_LOG_DBG("USB unhandlded state: %d", status);
+		USB_DBG("USB unhandlded state: %d", status);
 		break;
 
 	case USB_DC_UNKNOWN:
 	default:
-		SYS_LOG_DBG("USB unknown state %d", status);
+		USB_DBG("USB unknown state %d", status);
 		break;
 	}
 }
 
-struct netusb_function rndis_function = {
-	.init = rndis_init,
-	.connect_media = rndis_connect_media,
-	.class_handler = rndis_class_handler,
-	.status_cb = rndis_status_cb,
-	.send_pkt = rndis_send,
-	.num_ep = ARRAY_SIZE(rndis_ep_data),
-	.ep = rndis_ep_data,
+static void netusb_interface_config(u8_t bInterfaceNumber)
+{
+	rndis_cfg.if0.bInterfaceNumber = bInterfaceNumber;
+	rndis_cfg.if0_union.bControlInterface = bInterfaceNumber;
+	rndis_cfg.if0_union.bSubordinateInterface0 = bInterfaceNumber + 1;
+	rndis_cfg.if1.bInterfaceNumber = bInterfaceNumber + 1;
+#ifdef CONFIG_USB_COMPOSITE_DEVICE
+	rndis_cfg.iad.bFirstInterface = bInterfaceNumber;
+#endif
+}
+
+USBD_CFG_DATA_DEFINE(netusb) struct usb_cfg_data netusb_config = {
+	.usb_device_description = NULL,
+	.interface_config = netusb_interface_config,
+	.interface_descriptor = &rndis_cfg.if0,
+	.cb_usb_status = rndis_status_cb,
+	.interface = {
+		.class_handler = rndis_class_handler,
+		.custom_handler = NULL,
+		.vendor_handler = NULL,
+		.payload_data = NULL,
+	},
+	.num_endpoints = ARRAY_SIZE(rndis_ep_data),
+	.endpoint = rndis_ep_data,
 };
+
+/* Initialize this before eth_netusb device init */
+SYS_INIT(rndis_init, POST_KERNEL, 0);

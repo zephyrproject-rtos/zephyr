@@ -25,6 +25,7 @@ enum power_states {
 	SYS_POWER_STATE_CPU_LPS_2,     /* C2LP state */
 	SYS_POWER_STATE_DEEP_SLEEP,    /* SLEEP state */
 	SYS_POWER_STATE_DEEP_SLEEP_1,  /* SLEEP state with LPMODE enabled */
+	SYS_POWER_STATE_DEEP_SLEEP_2,  /* Not Supported */
 
 	SYS_POWER_STATE_MAX
 };

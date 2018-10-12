@@ -11,8 +11,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __NET_SOCKET_H
-#define __NET_SOCKET_H
+#ifndef ZEPHYR_INCLUDE_NET_SOCKET_H_
+#define ZEPHYR_INCLUDE_NET_SOCKET_H_
 
 /**
  * @brief BSD Sockets compatible API
@@ -318,12 +318,39 @@ static inline int setsockopt(int sock, int level, int optname,
 #endif
 }
 
+static inline int getaddrinfo(const char *host, const char *service,
+			      const struct zsock_addrinfo *hints,
+			      struct zsock_addrinfo **res)
+{
+	return zsock_getaddrinfo(host, service, hints, res);
+}
+
+static inline void freeaddrinfo(struct zsock_addrinfo *ai)
+{
+	free(ai);
+}
+
+#define addrinfo zsock_addrinfo
+
 #else
+
+struct addrinfo {
+	int ai_flags;
+	int ai_family;
+	int ai_socktype;
+	int ai_protocol;
+	socklen_t ai_addrlen;
+	struct sockaddr *ai_addr;
+	char *ai_canonname;
+	struct addrinfo *ai_next;
+};
+
 #include <net/socket_offload.h>
 #endif /* !defined(CONFIG_NET_SOCKETS_OFFLOAD) */
 
 #define POLLIN ZSOCK_POLLIN
 #define POLLOUT ZSOCK_POLLOUT
+#define POLLERR ZSOCK_POLLERR
 
 #define MSG_PEEK ZSOCK_MSG_PEEK
 #define MSG_DONTWAIT ZSOCK_MSG_DONTWAIT
@@ -339,24 +366,14 @@ static inline int inet_pton(sa_family_t family, const char *src, void *dst)
 	return zsock_inet_pton(family, src, dst);
 }
 
-static inline int getaddrinfo(const char *host, const char *service,
-			      const struct zsock_addrinfo *hints,
-			      struct zsock_addrinfo **res)
-{
-	return zsock_getaddrinfo(host, service, hints, res);
-}
-
-static inline void freeaddrinfo(struct zsock_addrinfo *ai)
-{
-	free(ai);
-}
-
-#define addrinfo zsock_addrinfo
 #define EAI_BADFLAGS DNS_EAI_BADFLAGS
 #define EAI_NONAME DNS_EAI_NONAME
 #define EAI_AGAIN DNS_EAI_AGAIN
 #define EAI_FAIL DNS_EAI_FAIL
 #define EAI_NODATA DNS_EAI_NODATA
+#define EAI_MEMORY DNS_EAI_MEMORY
+#define EAI_SYSTEM DNS_EAI_SYSTEM
+#define EAI_SERVICE DNS_EAI_SERVICE
 #endif /* defined(CONFIG_NET_SOCKETS_POSIX_NAMES) */
 
 #ifdef __cplusplus
@@ -369,4 +386,4 @@ static inline void freeaddrinfo(struct zsock_addrinfo *ai)
  * @}
  */
 
-#endif /* __NET_SOCKET_H */
+#endif /* ZEPHYR_INCLUDE_NET_SOCKET_H_ */

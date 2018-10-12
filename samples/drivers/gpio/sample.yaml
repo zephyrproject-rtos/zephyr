@@ -5,4 +5,9 @@ tests:
     platform_whitelist: quark_se_c1000_devboard arduino_101
       arduino_101_sss arduino_due
     tags: drivers
+    harness: console
+    harness_config:
+        type: one_line
+        regex:
+            - "Toggling GPIO_(.*)"
     depends_on: gpio

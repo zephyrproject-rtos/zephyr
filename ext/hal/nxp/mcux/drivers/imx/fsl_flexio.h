@@ -1,31 +1,9 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
- *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * All rights reserved.
+ * 
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 #ifndef _FSL_FLEXIO_H_
 #define _FSL_FLEXIO_H_
@@ -43,8 +21,8 @@
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief FlexIO driver version 2.0.1. */
-#define FSL_FLEXIO_DRIVER_VERSION (MAKE_VERSION(2, 0, 1))
+/*! @brief FlexIO driver version 2.0.2. */
+#define FSL_FLEXIO_DRIVER_VERSION (MAKE_VERSION(2, 0, 2))
 /*@}*/
 
 /*! @brief Calculate FlexIO timer trigger.*/
@@ -185,11 +163,11 @@ typedef enum _flexio_shifter_mode
     kFLEXIO_ShifterModeTransmit = 0x2U,        /*!< Transmit mode. */
     kFLEXIO_ShifterModeMatchStore = 0x4U,      /*!< Match store mode. */
     kFLEXIO_ShifterModeMatchContinuous = 0x5U, /*!< Match continuous mode. */
-#if defined(FSL_FEATURE_FLEXIO_HAS_STATE_MODE) && FSL_FEATURE_FLEXIO_HAS_STATE_MODE
+#if FSL_FEATURE_FLEXIO_HAS_STATE_MODE
     kFLEXIO_ShifterModeState = 0x6U, /*!< SHIFTBUF contents are used for storing
                                       programmable state attributes. */
 #endif                               /* FSL_FEATURE_FLEXIO_HAS_STATE_MODE */
-#if defined(FSL_FEATURE_FLEXIO_HAS_LOGIC_MODE) && FSL_FEATURE_FLEXIO_HAS_LOGIC_MODE
+#if FSL_FEATURE_FLEXIO_HAS_LOGIC_MODE
     kFLEXIO_ShifterModeLogic = 0x7U, /*!< SHIFTBUF contents are used for implementing
                                      programmable logic look up table. */
 #endif                               /* FSL_FEATURE_FLEXIO_HAS_LOGIC_MODE */
@@ -290,7 +268,7 @@ typedef struct _flexio_shifter_config
     flexio_pin_polarity_t pinPolarity; /*!< Shifter Pin Polarity. */
     /* Shifter. */
     flexio_shifter_mode_t shifterMode; /*!< Configures the mode of the Shifter. */
-#if defined(FSL_FEATURE_FLEXIO_HAS_PARALLEL_WIDTH) && FSL_FEATURE_FLEXIO_HAS_PARALLEL_WIDTH
+#if FSL_FEATURE_FLEXIO_HAS_PARALLEL_WIDTH
     uint32_t parallelWidth;                    /*!< Configures the parallel width when using parallel mode.*/
 #endif                                         /* FSL_FEATURE_FLEXIO_HAS_PARALLEL_WIDTH */
     flexio_shifter_input_source_t inputSource; /*!< Selects the input source for the shifter. */
@@ -301,6 +279,16 @@ typedef struct _flexio_shifter_config
 /*! @brief typedef for FlexIO simulated driver interrupt handler.*/
 typedef void (*flexio_isr_t)(void *base, void *handle);
 
+/*******************************************************************************
+ * Variables
+ ******************************************************************************/
+/*! @brief Pointers to flexio bases for each instance. */
+extern FLEXIO_Type *const s_flexioBases[];
+
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
+/*! @brief Pointers to flexio clocks for each instance. */
+extern const clock_ip_name_t s_flexioClocks[];
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 /*******************************************************************************
  * API
  ******************************************************************************/
@@ -356,6 +344,13 @@ void FLEXIO_Init(FLEXIO_Type *base, const flexio_config_t *userConfig);
  * @param base FlexIO peripheral base address
 */
 void FLEXIO_Deinit(FLEXIO_Type *base);
+
+/*!
+ * @brief Get instance number for FLEXIO module.
+ *
+ * @param base FLEXIO peripheral base address.
+ */
+uint32_t FLEXIO_GetInstance(FLEXIO_Type *base);
 
 /* @} */
 

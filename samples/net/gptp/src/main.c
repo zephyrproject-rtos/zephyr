@@ -4,11 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if 1
-#define SYS_LOG_DOMAIN "gptp-app"
-#define NET_SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_gptp_app
+#define NET_LOG_LEVEL LOG_LEVEL_DBG
 
 #include <zephyr.h>
 #include <errno.h>
@@ -98,7 +95,7 @@ static int init_vlan(void)
 	struct ud ud;
 	int ret;
 
-	memset(&ud, 0, sizeof(ud));
+	(void)memset(&ud, 0, sizeof(ud));
 
 	net_if_foreach(iface_cb, &ud);
 
@@ -138,8 +135,8 @@ static void gptp_phase_dis_cb(u8_t *gm_identity,
 		memcpy(id, gm_identity, sizeof(id));
 
 		NET_DBG("GM %s last phase %d.%lld",
-			gptp_sprint_clock_id(gm_identity, output,
-					     sizeof(output)),
+			log_strdup(gptp_sprint_clock_id(gm_identity, output,
+							sizeof(output))),
 			last_gm_ph_change->high,
 			last_gm_ph_change->low);
 	}

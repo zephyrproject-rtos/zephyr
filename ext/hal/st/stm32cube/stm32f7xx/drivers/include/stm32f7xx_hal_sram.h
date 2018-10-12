@@ -31,7 +31,7 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-  */ 
+  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __STM32F7xx_HAL_SRAM_H
@@ -49,16 +49,16 @@
   */
 /** @addtogroup SRAM
   * @{
-  */ 
+  */
 
 /* Exported typedef ----------------------------------------------------------*/
 
 /** @defgroup SRAM_Exported_Types SRAM Exported Types
   * @{
   */
-/** 
-  * @brief  HAL SRAM State structures definition  
-  */ 
+/**
+  * @brief  HAL SRAM State structures definition
+  */
 typedef enum
 {
   HAL_SRAM_STATE_RESET     = 0x00U,  /*!< SRAM not yet initialized or disabled           */
@@ -66,27 +66,27 @@ typedef enum
   HAL_SRAM_STATE_BUSY      = 0x02U,  /*!< SRAM internal process is ongoing               */
   HAL_SRAM_STATE_ERROR     = 0x03U,  /*!< SRAM error state                               */
   HAL_SRAM_STATE_PROTECTED = 0x04U   /*!< SRAM peripheral NORSRAM device write protected */
-  
+
 }HAL_SRAM_StateTypeDef;
 
-/** 
-  * @brief  SRAM handle Structure definition  
-  */ 
+/**
+  * @brief  SRAM handle Structure definition
+  */
 typedef struct
 {
-  FMC_NORSRAM_TypeDef           *Instance;  /*!< Register base address                        */ 
-  
+  FMC_NORSRAM_TypeDef           *Instance;  /*!< Register base address                        */
+
   FMC_NORSRAM_EXTENDED_TypeDef  *Extended;  /*!< Extended mode register base address          */
-  
+
   FMC_NORSRAM_InitTypeDef       Init;       /*!< SRAM device control configuration parameters */
 
-  HAL_LockTypeDef               Lock;       /*!< SRAM locking object                          */ 
-  
+  HAL_LockTypeDef               Lock;       /*!< SRAM locking object                          */
+
   __IO HAL_SRAM_StateTypeDef    State;      /*!< SRAM device access state                     */
-  
+
   DMA_HandleTypeDef             *hdma;      /*!< Pointer DMA handler                          */
-  
-}SRAM_HandleTypeDef; 
+
+}SRAM_HandleTypeDef;
 
 /**
   * @}
@@ -148,7 +148,7 @@ void HAL_SRAM_DMA_XferErrorCallback(DMA_HandleTypeDef *hdma);
 /**
   * @}
   */
-  
+
 /** @addtogroup SRAM_Exported_Functions_Group3 Control functions
  * @{
  */
@@ -170,20 +170,20 @@ HAL_SRAM_StateTypeDef HAL_SRAM_GetState(SRAM_HandleTypeDef *hsram);
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
   */
-  
-/**
-  * @}
-  */ 
 
 /**
   * @}
   */
-  
+
+/**
+  * @}
+  */
+
 #ifdef __cplusplus
 }
 #endif

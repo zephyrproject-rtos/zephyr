@@ -8,6 +8,7 @@
 #include <kernel_structs.h>
 #include <inttypes.h>
 #include <misc/printk.h>
+#include <logging/log_ctrl.h>
 
 const NANO_ESF _default_esf = {
 	0xdeadbaad,
@@ -60,6 +61,8 @@ const NANO_ESF _default_esf = {
 FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 					  const NANO_ESF *esf)
 {
+	LOG_PANIC();
+
 	switch (reason) {
 	case _NANO_ERR_CPU_EXCEPTION:
 	case _NANO_ERR_SPURIOUS_INT:
@@ -134,6 +137,8 @@ FUNC_NORETURN __weak void _SysFatalErrorHandler(unsigned int reason,
 						const NANO_ESF *esf)
 {
 	ARG_UNUSED(esf);
+
+	LOG_PANIC();
 
 #if !defined(CONFIG_SIMPLE_FATAL_ERROR_HANDLER)
 #ifdef CONFIG_STACK_SENTINEL

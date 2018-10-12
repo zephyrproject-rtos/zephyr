@@ -9,6 +9,10 @@
 
 menu "General Kernel Options"
 
+module = KERNEL
+module-str = kernel
+source "subsys/logging/Kconfig.template.log_config"
+
 config MULTITHREADING
 	bool "Multi-threading"
 	default y
@@ -283,7 +287,7 @@ config INIT_STACKS
 	  This option instructs the kernel to initialize stack areas with a
 	  known value (0xaa) before they are first used, so that the high
 	  water mark can be easily determined. This applies to the stack areas
-	  for threads.
+	  for threads, as well as to the interrupt stack.
 
 config KERNEL_DEBUG
 	bool "Kernel debugging"
@@ -300,9 +304,7 @@ config BOOT_BANNER
 	select PRINTK
 	select EARLY_CONSOLE
 	help
-	  This option outputs a banner to the console device during boot up. It
-	  also embeds a date & time stamp in the kernel if the BUILD_TIMESTAMP
-	  option is enabled.
+	  This option outputs a banner to the console device during boot up.
 
 config BOOT_DELAY
 	int "Boot delay in milliseconds"
@@ -316,13 +318,6 @@ config BOOT_DELAY
 	  receive before it actually gets data. A similar effect can be
 	  achieved by waiting for DCD on the serial port--however, not
 	  all serial ports have DCD.
-
-config BUILD_TIMESTAMP
-	bool "Build Timestamp"
-	help
-	  Record a timestamp from the build and add it to the boot banner.
-	  Note that this will make the build unreproducible: building
-	  Zephyr twice will result in different binaries.
 
 config INT_LATENCY_BENCHMARK
 	bool "Interrupt latency metrics [EXPERIMENTAL]"
@@ -348,6 +343,11 @@ config THREAD_MONITOR
 	  This option instructs the kernel to maintain a list of all threads
 	  (excluding those that have not yet started or have already
 	  terminated).
+
+config THREAD_NAME
+	bool "Thread name [EXPERIMENTAL]"
+	help
+	  This option allows to set a name for a thread.
 endmenu
 
 menu "Work Queue Options"

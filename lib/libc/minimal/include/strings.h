@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __INC_strings_h__
-#define __INC_strings_h__
+#ifndef ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_STRINGS_H_
+#define ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_STRINGS_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,4 +19,4 @@ extern int strncasecmp(const char *s1, const char *s2, size_t n);
 }
 #endif
 
-#endif  /* __INC_strings_h__ */
+#endif  /* ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_STRINGS_H_ */

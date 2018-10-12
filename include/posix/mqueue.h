@@ -4,12 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __MQUEUE_H__
-#define __MQUEUE_H__
+#ifndef ZEPHYR_INCLUDE_POSIX_MQUEUE_H_
+#define ZEPHYR_INCLUDE_POSIX_MQUEUE_H_
 
 #include <kernel.h>
 #include <posix/time.h>
 #include "sys/types.h"
+#include "sys/stat.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,10 +39,6 @@ typedef struct mq_attr {
 
 #define O_NONBLOCK_POS	14
 #define O_NONBLOCK      (1 << O_NONBLOCK_POS)
-
-#define O_RDONLY        0
-#define O_WRONLY        1
-#define O_RDWR          2
 #endif /* _SYS_FCNTL_H_ */
 
 mqd_t mq_open(const char *name, int oflags, ...);
@@ -63,4 +60,4 @@ int mq_timedsend(mqd_t mqdes, const char *msg_ptr, size_t msg_len,
 }
 #endif
 
-#endif  /* __MQUEUE_H__ */
+#endif  /* ZEPHYR_INCLUDE_POSIX_MQUEUE_H_ */

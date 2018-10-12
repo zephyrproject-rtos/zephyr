@@ -22,39 +22,45 @@
 #include <zephyr.h>
 
 #include <shell/shell.h>
+#include <shell/shell_uart.h>
 
 #include <gatt/hrs.h>
 
-#define DEVICE_NAME CONFIG_BT_DEVICE_NAME
+#define print(_sh, _ft, ...) \
+	shell_fprintf(_sh, SHELL_NORMAL, _ft "\r\n", ##__VA_ARGS__)
+#define error(_sh, _ft, ...) \
+	shell_fprintf(_sh, SHELL_ERROR, _ft "\r\n", ##__VA_ARGS__)
 
-#define MY_SHELL_MODULE "btshell"
+#define DEVICE_NAME CONFIG_BT_DEVICE_NAME
 
 #if defined(CONFIG_BT_CONN)
 static bool hrs_simulate;
 
-static int cmd_hrs_simulate(int argc, char *argv[])
+static int cmd_hrs_simulate(const struct shell *shell,
+			    size_t argc, char *argv[])
 {
-	if (argc < 2) {
-		return -EINVAL;
+	if (!shell_cmd_precheck(shell, (argc == 2), NULL, 0)) {
+		return 0;
 	}
 
 	if (!strcmp(argv[1], "on")) {
 		static bool hrs_registered;
 
 		if (!hrs_registered) {
-			printk("Registering HRS Service\n");
+			print(shell, "Registering HRS Service");
 			hrs_init(0x01);
 			hrs_registered = true;
 		}
 
-		printk("Start HRS simulation\n");
+		print(shell, "Start HRS simulation");
 		hrs_simulate = true;
 	} else if (!strcmp(argv[1], "off")) {
-		printk("Stop HRS simulation\n");
+		print(shell, "Stop HRS simulation");
 		hrs_simulate = false;
 	} else {
-		printk("Incorrect value: %s\n", argv[1]);
-		return -EINVAL;
+		print(shell, "Incorrect value: %s", argv[1]);
+		shell_help_print(shell, NULL, 0);
+		return -ENOEXEC;
 	}
 
 	return 0;
@@ -64,22 +70,39 @@ static int cmd_hrs_simulate(int argc, char *argv[])
 #define HELP_NONE "[none]"
 #define HELP_ADDR_LE "<address: XX:XX:XX:XX:XX:XX> <type: (public|random)>"
 
-static const struct shell_cmd commands[] = {
+SHELL_CREATE_STATIC_SUBCMD_SET(hrs_cmds) {
 #if defined(CONFIG_BT_CONN)
-	{ "hrs-simulate", cmd_hrs_simulate,
-	  "register and simulate Heart Rate Service <value: on, off>" },
+	SHELL_CMD(hrs-simulate, NULL,
+		  "register and simulate Heart Rate Service <value: on, off>",
+		  cmd_hrs_simulate),
 #endif /* CONFIG_BT_CONN */
-	{ NULL, NULL }
+	SHELL_SUBCMD_SET_END
 };
+
+static int cmd_hrs(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		shell_help_print(shell, NULL, 0);
+		return 0;
+	}
+
+	if (!shell_cmd_precheck(shell, (argc == 2), NULL, 0)) {
+		return 0;
+	}
+
+	error(shell, "%s unknown parameter: %s", argv[0], argv[1]);
+
+	return -ENOEXEC;
+}
+
+SHELL_CMD_REGISTER(hrs, &hrs_cmds, "Heart Rate Service shell commands",
+		   cmd_hrs);
 
 void main(void)
 {
-	printk("Type \"help\" for supported commands.\n");
-	printk("Before any Bluetooth commands you must \"select bt\" and then "
-	       "run \"init\".\n");
-
-	SHELL_REGISTER(MY_SHELL_MODULE, commands);
-	shell_register_default_module(MY_SHELL_MODULE);
+	printk("Type \"help\" for supported commands.");
+	printk("Before any Bluetooth commands you must `bt init` to initialize"
+	       " the stack.\n");
 
 	while (1) {
 		k_sleep(MSEC_PER_SEC);

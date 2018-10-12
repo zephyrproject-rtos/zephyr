@@ -101,7 +101,7 @@ static void do_sem_give(struct k_sem *sem)
 {
 	struct k_thread *thread = _unpend_first_thread(&sem->wait_q);
 
-	if (thread) {
+	if (thread != NULL) {
 		_ready_thread(thread);
 		_set_thread_return_value(thread, 0);
 	} else {

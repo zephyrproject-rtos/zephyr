@@ -11,11 +11,12 @@
  * ARM-specific kernel error handling interface. Included by arm/arch.h.
  */
 
-#ifndef _ARCH_ARM_CORTEXM_ERROR_H_
-#define _ARCH_ARM_CORTEXM_ERROR_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_ERROR_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_ERROR_H_
 
 #include <arch/arm/syscall.h>
 #include <arch/arm/cortex_m/exc.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,7 +52,7 @@ extern void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *esf);
 		: [reason] "i" (reason_p), [id] "i" (_SVC_CALL_RUNTIME_EXCEPT) \
 		: "memory"); \
 	CODE_UNREACHABLE; \
-} while (0)
+} while (false)
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 #define _ARCH_EXCEPT(reason_p) do { \
 	__asm__ volatile ( \
@@ -63,7 +64,7 @@ extern void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *esf);
 		: [reason] "i" (reason_p), [id] "i" (_SVC_CALL_RUNTIME_EXCEPT) \
 		: "memory"); \
 	CODE_UNREACHABLE; \
-} while (0)
+} while (false)
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
@@ -72,4 +73,4 @@ extern void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *esf);
 }
 #endif
 
-#endif /* _ARCH_ARM_CORTEXM_ERROR_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_ERROR_H_ */

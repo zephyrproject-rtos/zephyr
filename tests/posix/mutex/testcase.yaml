@@ -1,5 +1,0 @@
-tests:
-  portability.posix.mutex:
-    arch_exclude: nios2 riscv32
-    tags: core posix
-

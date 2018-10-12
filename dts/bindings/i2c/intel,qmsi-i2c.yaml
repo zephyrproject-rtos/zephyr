@@ -5,7 +5,6 @@
 #
 ---
 title: Intel QMSI i2c
-id: intel,qmsi-i2c
 version: 0.1
 
 description: >
@@ -16,9 +15,6 @@ inherits:
 
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "intel,qmsi-i2c"
 
     reg:

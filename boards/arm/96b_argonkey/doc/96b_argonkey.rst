@@ -102,7 +102,7 @@ System Clock
 96Boards Argonkey can be driven by an internal oscillator as well as the main
 PLL clock. In default board configuration, the 16MHz external oscillator is
 used to drive the main PLL clock to generate a System Clock (SYSCLK) at 84MHz.
-On the bus side, AHB and APB2 clock runs at 84MHz, while APB1 runs at 42MHz.
+On the bus side, AHB clock runs at 84MHz, while APB1/APB2 clock runs at 42MHz.
 
 Serial Port
 ===========

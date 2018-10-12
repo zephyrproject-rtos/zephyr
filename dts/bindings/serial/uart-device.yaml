@@ -5,7 +5,6 @@
 #
 ---
 title: UART Device Base Structure
-id: uart-device
 version: 0.1
 
 description: >
@@ -19,6 +18,7 @@ properties:
       type: string
       category: required
       description: compatible strings
+      generation: define
     label:
       type: string
       category: required

@@ -9,6 +9,10 @@
 #include <soc.h>
 #include <i2c_imx.h>
 #include <misc/util.h>
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(i2c_imx);
+
 #include "i2c-priv.h"
 
 #define DEV_CFG(dev) \

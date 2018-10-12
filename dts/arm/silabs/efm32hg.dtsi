@@ -1,0 +1,106 @@
+#include <arm/armv6-m.dtsi>
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			compatible = "arm,cortex-m0+";
+			reg = <0>;
+		};
+	};
+
+	flash0: flash@0 {
+		compatible = "soc-nv-flash";
+		label = "FLASH_0";
+	};
+
+	sram0: memory@20000000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+	};
+
+	soc {
+		uart0: uart@4000c000 { /* USART0 */
+			compatible = "silabs,efm32-usart";
+			reg = <0x4000c000 0x400>;
+			interrupts = <17 0 18 0>;
+			status = "disabled";
+			label = "UART_0";
+		};
+
+		uart1: uart@4000c400 { /* USART1 */
+			compatible = "silabs,efm32-usart";
+			reg = <0x4000c400 0x400>;
+			interrupts = <8 0 9 0>;
+			status = "disabled";
+			label = "UART_1";
+		};
+
+		gpio@40006100 {
+			compatible = "silabs,efm32-gpio";
+			reg = <0x40006100 0xf00>;
+			interrupts = <1 0 6 0>;
+			interrupt-names = "GPIO_EVEN", "GPIO_ODD";
+			label = "GPIO";
+
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			gpioa: gpio@40006000 {
+				compatible = "silabs,efm32-gpio-port";
+				reg = <0x40006000 0x24>;
+				label = "GPIO_A";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+
+			gpiob: gpio@40006024 {
+				compatible = "silabs,efm32-gpio-port";
+				reg = <0x40006024 0x24>;
+				label = "GPIO_B";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+
+			gpioc: gpio@40006048 {
+				compatible = "silabs,efm32-gpio-port";
+				reg = <0x40006048 0x24>;
+				label = "GPIO_C";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+
+			gpiod: gpio@4000606c {
+				compatible = "silabs,efm32-gpio-port";
+				reg = <0x4000606c 0x24>;
+				label = "GPIO_D";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+
+			gpioe: gpio@40006090 {
+				compatible = "silabs,efm32-gpio-port";
+				reg = <0x40006090 0x24>;
+				label = "GPIO_E";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+
+			gpiof: gpio@400060b4 {
+				compatible = "silabs,efm32-gpio-port";
+				reg = <0x400060b4 0x24>;
+				label = "GPIO_F";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <2>;
+};

@@ -142,7 +142,7 @@ static void report_completed_packet(struct net_buf *buf)
 	net_buf_destroy(buf);
 
 	/* Do nothing if controller to host flow control is not supported */
-	if (!(bt_dev.supported_commands[10] & 0x20)) {
+	if (!BT_CMD_TEST(bt_dev.supported_commands, 10, 5)) {
 		return;
 	}
 
@@ -566,7 +566,7 @@ static int hci_le_create_conn(const struct bt_conn *conn)
 	}
 
 	cp = net_buf_add(buf, sizeof(*cp));
-	memset(cp, 0, sizeof(*cp));
+	(void)memset(cp, 0, sizeof(*cp));
 
 	/* Interval == window for continuous scanning */
 	cp->scan_interval = sys_cpu_to_le16(BT_GAP_SCAN_FAST_INTERVAL);
@@ -736,16 +736,23 @@ static int hci_le_set_phy(struct bt_conn *conn)
 	return 0;
 }
 
-static void update_conn_param(struct bt_conn *conn)
+static void slave_update_conn_param(struct bt_conn *conn)
 {
+	if (!IS_ENABLED(CONFIG_BT_PERIPHERAL)) {
+		return;
+	}
+
+	/* don't start timer again on PHY update etc */
+	if (atomic_test_bit(conn->flags, BT_CONN_SLAVE_PARAM_UPDATE)) {
+		return;
+	}
+
 	/*
 	 * Core 4.2 Vol 3, Part C, 9.3.12.2
 	 * The Peripheral device should not perform a Connection Parameter
 	 * Update procedure within 5 s after establishing a connection.
 	 */
-	k_delayed_work_submit(&conn->le.update_work,
-				 conn->role == BT_HCI_ROLE_MASTER ? K_NO_WAIT :
-				 CONN_UPDATE_TIMEOUT);
+	k_delayed_work_submit(&conn->le.update_work, CONN_UPDATE_TIMEOUT);
 }
 
 #if defined(CONFIG_BT_SMP)
@@ -822,13 +829,12 @@ static void le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 
 		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 
-		/* Drop the reference got by lookup call in CONNECT state.
-		 * We are now in DISCONNECTED state since no successful LE
-		 * link been made.
-		 */
-		bt_conn_unref(conn);
+		/* check if device is market for auto connect */
+		if (atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT)) {
+			bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
+		}
 
-		return;
+		goto done;
 	}
 
 	bt_addr_le_copy(&id_addr, &evt->peer_addr);
@@ -869,6 +875,7 @@ static void le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 	conn->le.latency = sys_le16_to_cpu(evt->latency);
 	conn->le.timeout = sys_le16_to_cpu(evt->supv_timeout);
 	conn->role = evt->role;
+	conn->err = 0;
 
 	/*
 	 * Use connection address (instead of identity address) as initiator
@@ -938,7 +945,10 @@ static void le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 		}
 	}
 
-	update_conn_param(conn);
+	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
+	    conn->role == BT_CONN_ROLE_SLAVE) {
+		slave_update_conn_param(conn);
+	}
 
 done:
 	bt_conn_unref(conn);
@@ -1029,7 +1039,10 @@ static void le_remote_feat_complete(struct net_buf *buf)
 		}
 	}
 
-	update_conn_param(conn);
+	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
+	    conn->role == BT_CONN_ROLE_SLAVE) {
+		slave_update_conn_param(conn);
+	}
 
 done:
 	bt_conn_unref(conn);
@@ -1058,7 +1071,10 @@ static void le_data_len_change(struct net_buf *buf)
 		goto done;
 	}
 
-	update_conn_param(conn);
+	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
+	    conn->role == BT_CONN_ROLE_SLAVE) {
+		slave_update_conn_param(conn);
+	}
 
 done:
 	bt_conn_unref(conn);
@@ -1095,7 +1111,10 @@ static void le_phy_update_complete(struct net_buf *buf)
 		}
 	}
 
-	update_conn_param(conn);
+	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
+	    conn->role == BT_CONN_ROLE_SLAVE) {
+		slave_update_conn_param(conn);
+	}
 
 done:
 	bt_conn_unref(conn);
@@ -1153,7 +1172,7 @@ static int le_conn_param_req_reply(u16_t handle,
 	}
 
 	cp = net_buf_add(buf, sizeof(*cp));
-	memset(cp, 0, sizeof(*cp));
+	(void)memset(cp, 0, sizeof(*cp));
 
 	cp->handle = sys_cpu_to_le16(handle);
 	cp->interval_min = sys_cpu_to_le16(param->interval_min);
@@ -1294,7 +1313,7 @@ static int set_flow_control(void)
 	int err;
 
 	/* Check if host flow control is actually supported */
-	if (!(bt_dev.supported_commands[10] & 0x20)) {
+	if (!BT_CMD_TEST(bt_dev.supported_commands, 10, 5)) {
 		BT_WARN("Controller to host flow control not supported");
 		return 0;
 	}
@@ -1306,7 +1325,7 @@ static int set_flow_control(void)
 	}
 
 	hbs = net_buf_add(buf, sizeof(*hbs));
-	memset(hbs, 0, sizeof(*hbs));
+	(void)memset(hbs, 0, sizeof(*hbs));
 	hbs->acl_mtu = sys_cpu_to_le16(CONFIG_BT_L2CAP_RX_MTU +
 				       sizeof(struct bt_l2cap_hdr));
 	hbs->acl_pkts = sys_cpu_to_le16(CONFIG_BT_ACL_RX_COUNT);
@@ -1594,6 +1613,7 @@ static void conn_complete(struct net_buf *buf)
 	}
 
 	conn->handle = handle;
+	conn->err = 0;
 	conn->encrypt = evt->encr_enabled;
 	update_sec_level_br(conn);
 	bt_conn_set_state(conn, BT_CONN_CONNECTED);
@@ -1690,8 +1710,8 @@ static void link_key_notify(struct net_buf *buf)
 		break;
 	default:
 		BT_WARN("Unsupported Link Key type %u", evt->key_type);
-		memset(conn->br.link_key->val, 0,
-		       sizeof(conn->br.link_key->val));
+		(void)memset(conn->br.link_key->val, 0,
+			     sizeof(conn->br.link_key->val));
 		break;
 	}
 
@@ -2137,7 +2157,7 @@ static void inquiry_result_with_rssi(struct net_buf *buf)
 		result->rssi = evt->rssi;
 
 		/* we could reuse slot so make sure EIR is cleared */
-		memset(result->eir, 0, sizeof(result->eir));
+		(void)memset(result->eir, 0, sizeof(result->eir));
 
 		/*
 		 * Get next report iteration by moving pointer to right offset
@@ -2467,7 +2487,7 @@ static int hci_id_add(const bt_addr_le_t *addr, u8_t val[16])
 #if defined(CONFIG_BT_PRIVACY)
 	memcpy(cp->local_irk, bt_dev.irk, 16);
 #else
-	memset(cp->local_irk, 0, 16);
+	(void)memset(cp->local_irk, 0, 16);
 #endif
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_ADD_DEV_TO_RL, buf, NULL);
@@ -2672,7 +2692,7 @@ static void update_sec_level(struct bt_conn *conn)
 	}
 
 	if (conn->le.keys && (conn->le.keys->flags & BT_KEYS_AUTHENTICATED)) {
-		if (conn->le.keys->keys & BT_KEYS_LTK_P256) {
+		if (conn->le.keys->flags & BT_KEYS_SC) {
 			conn->sec_level = BT_SECURITY_FIPS;
 		} else {
 			conn->sec_level = BT_SECURITY_HIGH;
@@ -2891,8 +2911,8 @@ static void le_ltk_request(struct net_buf *buf)
 		memcpy(cp->ltk, conn->le.keys->ltk.val,
 		       conn->le.keys->enc_size);
 		if (conn->le.keys->enc_size < sizeof(cp->ltk)) {
-			memset(cp->ltk + conn->le.keys->enc_size, 0,
-			       sizeof(cp->ltk) - conn->le.keys->enc_size);
+			(void)memset(cp->ltk + conn->le.keys->enc_size, 0,
+				     sizeof(cp->ltk) - conn->le.keys->enc_size);
 		}
 
 		bt_hci_cmd_send(BT_HCI_OP_LE_LTK_REQ_REPLY, buf);
@@ -2917,8 +2937,8 @@ static void le_ltk_request(struct net_buf *buf)
 		memcpy(cp->ltk, conn->le.keys->slave_ltk.val,
 		       conn->le.keys->enc_size);
 		if (conn->le.keys->enc_size < sizeof(cp->ltk)) {
-			memset(cp->ltk + conn->le.keys->enc_size, 0,
-			       sizeof(cp->ltk) - conn->le.keys->enc_size);
+			(void)memset(cp->ltk + conn->le.keys->enc_size, 0,
+				     sizeof(cp->ltk) - conn->le.keys->enc_size);
 		}
 
 		bt_hci_cmd_send(BT_HCI_OP_LE_LTK_REQ_REPLY, buf);
@@ -3058,7 +3078,7 @@ static int start_le_scan(u8_t scan_type, u16_t interval, u16_t window)
 	struct net_buf *buf;
 	int err;
 
-	memset(&set_param, 0, sizeof(set_param));
+	(void)memset(&set_param, 0, sizeof(set_param));
 
 	set_param.scan_type = scan_type;
 
@@ -3095,6 +3115,8 @@ static int start_le_scan(u8_t scan_type, u16_t interval, u16_t window)
 			}
 
 			set_param.addr_type = BT_ADDR_LE_RANDOM;
+		} else if (set_param.addr_type == BT_ADDR_LE_RANDOM) {
+			set_random_address(&bt_dev.id_addr[0].a);
 		}
 	}
 
@@ -3154,8 +3176,8 @@ int bt_le_scan_update(bool fast_scan)
 			interval = BT_GAP_SCAN_FAST_INTERVAL;
 			window = BT_GAP_SCAN_FAST_WINDOW;
 		} else {
-			interval = BT_GAP_SCAN_SLOW_INTERVAL_1;
-			window = BT_GAP_SCAN_SLOW_WINDOW_1;
+			interval = CONFIG_BT_BACKGROUND_SCAN_INTERVAL;
+			window = CONFIG_BT_BACKGROUND_SCAN_WINDOW;
 		}
 
 		return start_le_scan(BT_HCI_LE_SCAN_PASSIVE, interval, window);
@@ -3779,8 +3801,8 @@ static int le_set_event_mask(void)
 	 * If "LE Read Local P-256 Public Key" and "LE Generate DH Key" are
 	 * supported we need to enable events generated by those commands.
 	 */
-	if ((bt_dev.supported_commands[34] & 0x02) &&
-	    (bt_dev.supported_commands[34] & 0x04)) {
+	if ((BT_CMD_TEST(bt_dev.supported_commands, 34, 1)) &&
+	    (BT_CMD_TEST(bt_dev.supported_commands, 34, 2))) {
 		mask |= BT_EVT_MASK_LE_P256_PUBLIC_KEY_COMPLETE;
 		mask |= BT_EVT_MASK_LE_GENERATE_DHKEY_COMPLETE;
 	}
@@ -4209,49 +4231,6 @@ int bt_addr_le_create_static(bt_addr_le_t *addr)
 	BT_ADDR_SET_STATIC(&addr->a);
 
 	return 0;
-}
-
-int bt_setup_id_addr(void)
-{
-#if defined(CONFIG_BT_HCI_VS_EXT)
-	/* Check for VS_Read_Static_Addresses support. Only read the
-	 * addresses if the user has not already configured one or
-	 * more identities (!bt_dev.id_count).
-	 */
-	if (!bt_dev.id_count && (bt_dev.vs_commands[1] & BIT(0))) {
-		struct bt_hci_rp_vs_read_static_addrs *rp;
-		struct net_buf *rsp;
-		int err, i;
-
-		err = bt_hci_cmd_send_sync(BT_HCI_OP_VS_READ_STATIC_ADDRS,
-					   NULL, &rsp);
-		if (err) {
-			BT_WARN("Failed to read static addresses");
-			goto generate;
-		}
-
-		rp = (void *)rsp->data;
-		bt_dev.id_count = min(rp->num_addrs, CONFIG_BT_ID_MAX);
-		for (i = 0; i < bt_dev.id_count; i++) {
-			bt_dev.id_addr[i].type = BT_ADDR_LE_RANDOM;
-			bt_addr_copy(&bt_dev.id_addr[i].a, &rp->a[i].bdaddr);
-		}
-
-		net_buf_unref(rsp);
-
-		if (bt_dev.id_count) {
-			return set_random_address(&bt_dev.id_addr[0].a);
-		}
-
-		BT_WARN("No static addresses stored in controller");
-	} else {
-		BT_WARN("Read Static Addresses command not available");
-	}
-
-generate:
-#endif
-
-	return bt_id_create(NULL, NULL);
 }
 
 #if defined(CONFIG_BT_DEBUG)
@@ -4741,7 +4720,7 @@ static int set_ad(u16_t hci_op, const struct bt_ad *ad, size_t ad_len)
 
 	set_data = net_buf_add(buf, sizeof(*set_data));
 
-	memset(set_data, 0, sizeof(*set_data));
+	(void)memset(set_data, 0, sizeof(*set_data));
 
 	for (c = 0; c < ad_len; c++) {
 		const struct bt_data *data = ad[c].data;
@@ -4887,7 +4866,7 @@ static void id_create(u8_t id, bt_addr_le_t *addr, u8_t *irk)
 	}
 
 #if defined(CONFIG_BT_PRIVACY)
-	if (atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+	{
 		u8_t zero_irk[16] = { 0 };
 
 		if (irk && memcmp(irk, zero_irk, 16)) {
@@ -5009,7 +4988,7 @@ int bt_id_delete(u8_t id)
 	}
 
 #if defined(CONFIG_BT_PRIVACY)
-	memset(bt_dev.irk[id], 0, 16);
+	(void)memset(bt_dev.irk[id], 0, 16);
 #endif
 	bt_addr_le_copy(&bt_dev.id_addr[id], BT_ADDR_LE_ANY);
 
@@ -5023,6 +5002,64 @@ int bt_id_delete(u8_t id)
 	}
 
 	return 0;
+}
+
+#if defined(CONFIG_BT_HCI_VS_EXT)
+static uint8_t bt_read_static_addr(bt_addr_le_t *addr)
+{
+	struct bt_hci_rp_vs_read_static_addrs *rp;
+	struct net_buf *rsp;
+	int err, i;
+	u8_t cnt;
+	if (!(bt_dev.vs_commands[1] & BIT(0))) {
+		BT_WARN("Read Static Addresses command not available");
+		return 0;
+	}
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_VS_READ_STATIC_ADDRS, NULL, &rsp);
+	if (err) {
+		BT_WARN("Failed to read static addresses");
+		return 0;
+	}
+	rp = (void *)rsp->data;
+	cnt = min(rp->num_addrs, CONFIG_BT_ID_MAX);
+
+	for (i = 0; i < cnt; i++) {
+		addr[i].type = BT_ADDR_LE_RANDOM;
+		bt_addr_copy(&addr[i].a, &rp->a[i].bdaddr);
+	}
+	net_buf_unref(rsp);
+	if (!cnt) {
+		BT_WARN("No static addresses stored in controller");
+	}
+	return cnt;
+}
+#elif defined(CONFIG_BT_CTLR)
+uint8_t bt_read_static_addr(bt_addr_le_t *addr);
+#endif /* CONFIG_BT_HCI_VS_EXT */
+
+int bt_setup_id_addr(void)
+{
+#if defined(CONFIG_BT_HCI_VS_EXT) || defined(CONFIG_BT_CTLR)
+	/* Only read the addresses if the user has not already configured one or
+	 * more identities (!bt_dev.id_count).
+	 */
+	if (!bt_dev.id_count) {
+		bt_addr_le_t addrs[CONFIG_BT_ID_MAX];
+
+		bt_dev.id_count = bt_read_static_addr(addrs);
+		if (bt_dev.id_count) {
+			int i;
+
+			for (i = 0; i < bt_dev.id_count; i++) {
+				id_create(i, &addrs[i], NULL);
+			}
+
+			return set_random_address(&bt_dev.id_addr[0].a);
+		}
+	}
+#endif
+	return bt_id_create(NULL, NULL);
 }
 
 bool bt_addr_le_is_bonded(u8_t id, const bt_addr_le_t *addr)
@@ -5153,7 +5190,7 @@ int bt_le_adv_start_internal(const struct bt_le_adv_param *param,
 		}
 	}
 
-	memset(&set_param, 0, sizeof(set_param));
+	(void)memset(&set_param, 0, sizeof(set_param));
 
 	set_param.min_interval = sys_cpu_to_le16(param->interval_min);
 	set_param.max_interval = sys_cpu_to_le16(param->interval_max);
@@ -5372,6 +5409,36 @@ int bt_le_scan_stop(void)
 }
 #endif /* CONFIG_BT_OBSERVER */
 
+int bt_le_set_chan_map(u8_t chan_map[5])
+{
+	struct bt_hci_cp_le_set_host_chan_classif *cp;
+	struct net_buf *buf;
+
+	if (!IS_ENABLED(CONFIG_BT_CENTRAL)) {
+		return -ENOTSUP;
+	}
+
+	if (!BT_CMD_TEST(bt_dev.supported_commands, 27, 3)) {
+		BT_WARN("Set Host Channel Classification command is "
+			"not supported");
+		return -ENOTSUP;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_HOST_CHAN_CLASSIF,
+				sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+
+	memcpy(&cp->ch_map[0], &chan_map[0], 4);
+	cp->ch_map[4] = chan_map[4] & BIT_MASK(5);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_HOST_CHAN_CLASSIF,
+				    buf, NULL);
+}
+
 struct net_buf *bt_buf_get_rx(enum bt_buf_type type, s32_t timeout)
 {
 	struct net_buf *buf;
@@ -5482,7 +5549,7 @@ int bt_br_discovery_start(const struct bt_br_discovery_param *param,
 
 	atomic_set_bit(bt_dev.flags, BT_DEV_INQUIRY);
 
-	memset(results, 0, sizeof(*results) * cnt);
+	(void)memset(results, 0, sizeof(*results) * cnt);
 
 	discovery_cb = cb;
 	discovery_results = results;
@@ -5630,8 +5697,8 @@ int bt_pub_key_gen(struct bt_pub_key_cb *new_cb)
 	 * ECC support. If "LE Generate DH Key" is not supported then there
 	 * is no point in reading local public key.
 	 */
-	if (!(bt_dev.supported_commands[34] & 0x02) ||
-	    !(bt_dev.supported_commands[34] & 0x04)) {
+	if (!BT_CMD_TEST(bt_dev.supported_commands, 34, 1) ||
+	    !BT_CMD_TEST(bt_dev.supported_commands, 34, 2)) {
 		BT_WARN("ECC HCI commands not available");
 		return -ENOTSUP;
 	}

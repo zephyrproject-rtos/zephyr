@@ -8,7 +8,7 @@
 #include <zephyr.h>
 #include <flash.h>
 #include <misc/printk.h>
-#include <shell/shell.h>
+#include <shell/legacy_shell.h>
 
 /* Assumption: our devices have less than 64MB of memory */
 #define RESERVED_MEM_MAP (CONFIG_SRAM_BASE_ADDRESS + 0x4000000)

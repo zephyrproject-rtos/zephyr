@@ -12,7 +12,7 @@
 #define  MBEDTLS_PRINT printf
 #else
 #include <misc/printk.h>
-#define  MBEDTLS_PRINT printk
+#define  MBEDTLS_PRINT (int(*)(const char *, ...)) printk
 #endif /* CONFIG_STDOUT_CONSOLE */
 
 #include <string.h>
@@ -178,7 +178,7 @@ void test_mbedtls(void)
  * of a NULL pointer. We do however use that in our code for initializing
  * structures, which should work on every modern platform. Let's be sure.
  */
-	memset(&pointer, 0, sizeof(void *));
+	(void)memset(&pointer, 0, sizeof(void *));
 	if (pointer != NULL) {
 		mbedtls_printf("all-bits-zero is not a NULL pointer\n");
 		mbedtls_exit(MBEDTLS_EXIT_FAILURE);

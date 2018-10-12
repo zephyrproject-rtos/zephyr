@@ -8,8 +8,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __BYTEORDER_H__
-#define __BYTEORDER_H__
+#ifndef ZEPHYR_INCLUDE_MISC_BYTEORDER_H_
+#define ZEPHYR_INCLUDE_MISC_BYTEORDER_H_
 
 #include <zephyr/types.h>
 #include <stddef.h>
@@ -325,4 +325,4 @@ static inline void sys_mem_swap(void *buf, size_t length)
 	}
 }
 
-#endif /* __BYTEORDER_H__ */
+#endif /* ZEPHYR_INCLUDE_MISC_BYTEORDER_H_ */

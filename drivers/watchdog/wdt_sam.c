@@ -18,8 +18,9 @@
 #include <watchdog.h>
 #include <soc.h>
 
-#define SYS_LOG_DOMAIN "dev/wdt_sam"
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_WDT_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(wdt_sam);
 
 /* Device constant configuration parameters */
 struct wdt_sam_dev_cfg {
@@ -33,7 +34,7 @@ static void wdt_sam_enable(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	SYS_LOG_ERR("Function not implemented!");
+	LOG_ERR("Function not implemented!");
 }
 
 static int wdt_sam_disable(struct device *dev)
@@ -50,7 +51,7 @@ static int wdt_sam_set_config(struct device *dev, struct wdt_config *config)
 	ARG_UNUSED(dev);
 	ARG_UNUSED(config);
 
-	SYS_LOG_ERR("Function not implemented!");
+	LOG_ERR("Function not implemented!");
 
 	return -ENOTSUP;
 }
@@ -60,14 +61,14 @@ static void wdt_sam_get_config(struct device *dev, struct wdt_config *config)
 	ARG_UNUSED(dev);
 	ARG_UNUSED(config);
 
-	SYS_LOG_ERR("Function not implemented!");
+	LOG_ERR("Function not implemented!");
 }
 
 static void wdt_sam_reload(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	SYS_LOG_ERR("Function not implemented!");
+	LOG_ERR("Function not implemented!");
 }
 
 static const struct wdt_driver_api wdt_sam_api = {

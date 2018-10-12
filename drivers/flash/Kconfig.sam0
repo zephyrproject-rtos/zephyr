@@ -3,7 +3,7 @@
 # Copyright (c) 2018 Google LLC.
 # SPDX-License-Identifier: Apache-2.0
 
-if FLASH && SOC_FAMILY_SAM0
+if SOC_FAMILY_SAM0
 
 menuconfig SOC_FLASH_SAM0
 	bool "Atmel SAM0 flash driver"

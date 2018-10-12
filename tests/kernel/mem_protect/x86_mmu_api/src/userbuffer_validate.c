@@ -27,8 +27,8 @@ void reset_flag(void);
 void reset_multi_pte_page_flag(void);
 void reset_multi_pde_flag(void);
 
-#define ADDR_PAGE_1 ((void *)__bss_start + SKIP_SIZE * MMU_PAGE_SIZE)
-#define ADDR_PAGE_2 ((void *)__bss_start + (SKIP_SIZE + 1) * MMU_PAGE_SIZE)
+#define ADDR_PAGE_1 ((u8_t *)__bss_start + SKIP_SIZE * MMU_PAGE_SIZE)
+#define ADDR_PAGE_2 ((u8_t *)__bss_start + (SKIP_SIZE + 1) * MMU_PAGE_SIZE)
 #define PRESET_PAGE_1_VALUE (X86_MMU_GET_PTE(ADDR_PAGE_1)->p = 1)
 #define PRESET_PAGE_2_VALUE (X86_MMU_GET_PTE(ADDR_PAGE_2)->p = 1)
 

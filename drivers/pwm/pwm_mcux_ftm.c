@@ -10,8 +10,9 @@
 #include <fsl_ftm.h>
 #include <fsl_clock.h>
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_PWM_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_PWM_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(pwm_mcux_ftm);
 
 #define MAX_CHANNELS ARRAY_SIZE(FTM0->CONTROLS)
 
@@ -37,20 +38,20 @@ static int mcux_ftm_pin_set(struct device *dev, u32_t pwm,
 	u8_t duty_cycle;
 
 	if ((period_cycles == 0) || (pulse_cycles > period_cycles)) {
-		SYS_LOG_ERR("Invalid combination: period_cycles=%d, "
+		LOG_ERR("Invalid combination: period_cycles=%d, "
 			    "pulse_cycles=%d", period_cycles, pulse_cycles);
 		return -EINVAL;
 	}
 
 	if (pwm >= config->channel_count) {
-		SYS_LOG_ERR("Invalid channel");
+		LOG_ERR("Invalid channel");
 		return -ENOTSUP;
 	}
 
 	duty_cycle = 100 * pulse_cycles / period_cycles;
 	data->channel[pwm].dutyCyclePercent = duty_cycle;
 
-	SYS_LOG_DBG("pulse_cycles=%d, period_cycles=%d, duty_cycle=%d",
+	LOG_DBG("pulse_cycles=%d, period_cycles=%d, duty_cycle=%d",
 		    pulse_cycles, period_cycles, duty_cycle);
 
 	if (period_cycles != data->period_cycles) {
@@ -58,7 +59,7 @@ static int mcux_ftm_pin_set(struct device *dev, u32_t pwm,
 		u32_t pwm_freq;
 		status_t status;
 
-		SYS_LOG_WRN("Changing period cycles from %d to %d"
+		LOG_WRN("Changing period cycles from %d to %d"
 			    " affects all %d channels in %s",
 			    data->period_cycles, period_cycles,
 			    config->channel_count, dev->config->name);
@@ -68,10 +69,10 @@ static int mcux_ftm_pin_set(struct device *dev, u32_t pwm,
 		clock_freq = CLOCK_GetFreq(config->clock_source);
 		pwm_freq = (clock_freq >> config->prescale) / period_cycles;
 
-		SYS_LOG_DBG("pwm_freq=%d, clock_freq=%d", pwm_freq, clock_freq);
+		LOG_DBG("pwm_freq=%d, clock_freq=%d", pwm_freq, clock_freq);
 
 		if (pwm_freq == 0) {
-			SYS_LOG_ERR("Could not set up pwm_freq=%d", pwm_freq);
+			LOG_ERR("Could not set up pwm_freq=%d", pwm_freq);
 			return -EINVAL;
 		}
 
@@ -82,7 +83,7 @@ static int mcux_ftm_pin_set(struct device *dev, u32_t pwm,
 				      pwm_freq, clock_freq);
 
 		if (status != kStatus_Success) {
-			SYS_LOG_ERR("Could not set up pwm");
+			LOG_ERR("Could not set up pwm");
 			return -ENOTSUP;
 		}
 		FTM_SetSoftwareTrigger(config->base, true);
@@ -116,7 +117,7 @@ static int mcux_ftm_init(struct device *dev)
 	int i;
 
 	if (config->channel_count > ARRAY_SIZE(data->channel)) {
-		SYS_LOG_ERR("Invalid channel count");
+		LOG_ERR("Invalid channel count");
 		return -EINVAL;
 	}
 

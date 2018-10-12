@@ -1,32 +1,35 @@
 #
 # Copyright (c) 2017 Intel Corporation
+# Copyright (c) 2018 Phytec Messtechnik GmbH
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 
 menuconfig APDS9960
 	bool "APDS9960 Sensor"
-	depends on I2C
+	depends on I2C && HAS_DTS_I2C && HAS_DTS_GPIO
 	help
 	  Enable driver for APDS9960 sensors.
 
 if APDS9960
 
-if !HAS_DTS_I2C_DEVICE
-
-config  APDS9960_I2C_DEV_NAME
-	string "I2C Master"
-	default "I2C_0"
+choice
+	prompt "Trigger mode"
+	default APDS9960_TRIGGER_NONE
 	help
-	  The device name of the I2C master device to which the APDS9960
-	  chip is connected.
+	  Specify the type of triggering used by the driver.
 
-config APDS9960_DRV_NAME
-	string "Driver name"
-	default "APDS9960"
-	help
-	  Device name with which the APDS9960 is identified.
+config APDS9960_TRIGGER_NONE
+	bool "No trigger"
 
-endif # !HAS_DTS_I2C_DEVICE
+config APDS9960_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select APDS9960_TRIGGER
+
+endchoice
+
+config APDS9960_TRIGGER
+	bool
 
 endif # APDS9960

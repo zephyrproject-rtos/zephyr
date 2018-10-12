@@ -23,14 +23,21 @@
 
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
+typedef void (*custom_put_callback_t)(struct log_backend const *const backend,
+				      struct log_msg *msg, size_t counter);
 struct backend_cb {
 	size_t counter;
 	bool panic;
 	bool keep_msgs;
+	bool check_id;
+	u32_t exp_id[100];
 	bool check_timestamp;
 	u32_t exp_timestamps[100];
 	bool check_args;
 	u32_t exp_nargs[100];
+	bool check_strdup;
+	bool exp_strdup[100];
+	custom_put_callback_t callback;
 };
 
 static void put(struct log_backend const *const backend,
@@ -39,6 +46,13 @@ static void put(struct log_backend const *const backend,
 	log_msg_get(msg);
 	struct backend_cb *cb = (struct backend_cb *)backend->cb->ctx;
 
+	if (cb->check_id) {
+		u32_t exp_id = cb->exp_id[cb->counter];
+
+		zassert_equal(log_msg_source_id_get(msg),
+			      exp_id,
+			      "Unexpected source_id");
+	}
 	if (cb->check_timestamp) {
 		u32_t exp_timestamp = cb->exp_timestamps[cb->counter];
 
@@ -56,6 +70,16 @@ static void put(struct log_backend const *const backend,
 				      log_msg_arg_get(msg, i),
 				      "Unexpected argument in the message");
 		}
+	}
+
+	if (cb->check_strdup) {
+		zassert_false(cb->exp_strdup[cb->counter]
+				^ log_is_strdup((void *)log_msg_arg_get(msg, 0)),
+			      NULL);
+	}
+
+	if (cb->callback) {
+		cb->callback(backend, msg, cb->counter);
 	}
 
 	cb->counter++;
@@ -77,10 +101,10 @@ const struct log_backend_api log_backend_test_api = {
 	.panic = panic,
 };
 
-LOG_BACKEND_DEFINE(backend1, log_backend_test_api);
+LOG_BACKEND_DEFINE(backend1, log_backend_test_api, true);
 struct backend_cb backend1_cb;
 
-LOG_BACKEND_DEFINE(backend2, log_backend_test_api);
+LOG_BACKEND_DEFINE(backend2, log_backend_test_api, true);
 struct backend_cb backend2_cb;
 
 static u32_t stamp;
@@ -293,6 +317,91 @@ static void test_log_panic(void)
 		      "Unexpected amount of messages received by the backend.");
 }
 
+/* extern function comes from the file which is part of test module. It is
+ * expected that logs coming from it will have same source_id as current
+ * module (this file).
+ */
+extern void test_func(void);
+static void test_log_from_declared_module(void)
+{
+	log_setup(false);
+
+	/* Setup log backend to validate source_id of the message. */
+	backend1_cb.check_id = true;
+	backend1_cb.exp_id[0] = LOG_CURRENT_MODULE_ID();
+
+	test_func();
+
+	while (log_process(false)) {
+	}
+
+	zassert_equal(1, backend1_cb.counter,
+		      "Unexpected amount of messages received by the backend.");
+}
+
+static void test_log_strdup_gc(void)
+{
+	char test_str[] = "test string";
+
+	log_setup(false);
+
+	BUILD_ASSERT_MSG(CONFIG_LOG_STRDUP_BUF_COUNT == 1,
+			"Test assumes certain configuration");
+
+	backend1_cb.exp_strdup[0] = true;
+	backend1_cb.exp_strdup[1] = false;
+
+	LOG_INF("%s", log_strdup(test_str));
+	LOG_INF("%s", log_strdup(test_str));
+
+	while (log_process(false)) {
+	}
+
+	zassert_equal(2, backend1_cb.counter,
+		      "Unexpected amount of messages received by the backend.");
+
+	/* Processing should free strdup buffer. */
+	backend1_cb.exp_strdup[2] = true;
+	LOG_INF("%s", log_strdup(test_str));
+
+	while (log_process(false)) {
+	}
+
+	zassert_equal(3, backend1_cb.counter,
+		      "Unexpected amount of messages received by the backend.");
+
+}
+
+static void strdup_trim_callback(struct log_backend const *const backend,
+			  struct log_msg *msg, size_t counter)
+{
+	char *str = (char *)log_msg_arg_get(msg, 0);
+	size_t len = strlen(str);
+
+	zassert_equal(len, CONFIG_LOG_STRDUP_MAX_STRING,
+			"Expected trimmed string");
+}
+
+static void test_strdup_trimming(void)
+{
+	char test_str[] = "123456789";
+
+	BUILD_ASSERT_MSG(CONFIG_LOG_STRDUP_MAX_STRING == 8,
+			"Test assumes certain configuration");
+
+	log_setup(false);
+
+	backend1_cb.callback = strdup_trim_callback;
+
+	LOG_INF("%s", log_strdup(test_str));
+
+	while (log_process(false)) {
+	}
+
+	zassert_equal(1, backend1_cb.counter,
+		      "Unexpected amount of messages received by the backend.");
+}
+
 /*test case main entry*/
 void test_main(void)
 {
@@ -300,6 +409,9 @@ void test_main(void)
 			 ztest_unit_test(test_log_backend_runtime_filtering),
 			 ztest_unit_test(test_log_overflow),
 			 ztest_unit_test(test_log_arguments),
-			 ztest_unit_test(test_log_panic));
+			 ztest_unit_test(test_log_panic),
+			 ztest_unit_test(test_log_from_declared_module),
+			 ztest_unit_test(test_log_strdup_gc),
+			 ztest_unit_test(test_strdup_trimming));
 	ztest_run_test_suite(test_log_list);
 }

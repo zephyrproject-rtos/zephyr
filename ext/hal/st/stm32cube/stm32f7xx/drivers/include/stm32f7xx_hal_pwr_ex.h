@@ -31,7 +31,7 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-  */ 
+  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __STM32F7xx_HAL_PWR_EX_H
@@ -50,9 +50,9 @@
 
 /** @addtogroup PWREx
   * @{
-  */ 
+  */
 
-/* Exported types ------------------------------------------------------------*/ 
+/* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 /** @defgroup PWREx_Exported_Constants PWREx Exported Constants
   * @{
@@ -90,8 +90,8 @@
 #define PWR_LOWPOWERREGULATOR_UNDERDRIVE_ON                   ((uint32_t)(PWR_CR1_LPDS | PWR_CR1_LPUDS))
 /**
   * @}
-  */ 
-  
+  */
+
 /** @defgroup PWREx_Over_Under_Drive_Flag PWREx Over Under Drive Flag
   * @{
   */
@@ -117,8 +117,8 @@
 
 /**
   * @}
-  */ 
-  
+  */
+
 /* Exported macro ------------------------------------------------------------*/
 /** @defgroup PWREx_Exported_Macro PWREx Exported Macro
   *  @{
@@ -135,12 +135,12 @@
 
 /** @brief Macros to enable or disable the Under drive mode.
   * @note  This mode is enabled only with STOP low power mode.
-  *        In this mode, the 1.2V domain is preserved in reduced leakage mode. This 
-  *        mode is only available when the main regulator or the low power regulator 
-  *        is in low voltage mode.      
-  * @note  If the Under-drive mode was enabled, it is automatically disabled after 
-  *        exiting Stop mode. 
-  *        When the voltage regulator operates in Under-drive mode, an additional  
+  *        In this mode, the 1.2V domain is preserved in reduced leakage mode. This
+  *        mode is only available when the main regulator or the low power regulator
+  *        is in low voltage mode.
+  * @note  If the Under-drive mode was enabled, it is automatically disabled after
+  *        exiting Stop mode.
+  *        When the voltage regulator operates in Under-drive mode, an additional
   *        startup delay is induced when waking up from Stop mode.
   */
 #define __HAL_PWR_UNDERDRIVE_ENABLE() (PWR->CR1 |= (uint32_t)PWR_CR1_UDEN)
@@ -150,9 +150,9 @@
   * @param  __FLAG__ specifies the flag to check.
   *         This parameter can be one of the following values:
   *            @arg PWR_FLAG_ODRDY: This flag indicates that the Over-drive mode
-  *                                 is ready 
+  *                                 is ready
   *            @arg PWR_FLAG_ODSWRDY: This flag indicates that the Over-drive mode
-  *                                   switching is ready  
+  *                                   switching is ready
   *            @arg PWR_FLAG_UDRDY: This flag indicates that the Under-drive mode
   *                                 is enabled in Stop mode
   * @retval The new state of __FLAG__ (TRUE or FALSE).
@@ -171,7 +171,7 @@
   *            @arg PWR_WAKEUP_PIN_FLAG3: Wakeup Pin Flag for PC1
   *            @arg PWR_WAKEUP_PIN_FLAG4: Wakeup Pin Flag for PC13
   *            @arg PWR_WAKEUP_PIN_FLAG5: Wakeup Pin Flag for PI8
-  *            @arg PWR_WAKEUP_PIN_FLAG6: Wakeup Pin Flag for PI11          
+  *            @arg PWR_WAKEUP_PIN_FLAG6: Wakeup Pin Flag for PI11
   */
 #define __HAL_PWR_GET_WAKEUP_FLAG(__WUFLAG__) (PWR->CSR2 & (__WUFLAG__))
 
@@ -183,7 +183,7 @@
   *            @arg PWR_WAKEUP_PIN_FLAG3: Wakeup Pin Flag for PC1
   *            @arg PWR_WAKEUP_PIN_FLAG4: Wakeup Pin Flag for PC13
   *            @arg PWR_WAKEUP_PIN_FLAG5: Wakeup Pin Flag for PI8
-  *            @arg PWR_WAKEUP_PIN_FLAG6: Wakeup Pin Flag for PI11          
+  *            @arg PWR_WAKEUP_PIN_FLAG6: Wakeup Pin Flag for PI11
   */
 #define __HAL_PWR_CLEAR_WAKEUP_FLAG(__WUFLAG__) (PWR->CR2 |=  (__WUFLAG__))
 /**
@@ -193,7 +193,7 @@
 /** @addtogroup PWREx_Exported_Functions PWREx Exported Functions
   *  @{
   */
- 
+
 /** @addtogroup PWREx_Exported_Functions_Group1
   * @{
   */
@@ -201,9 +201,9 @@ uint32_t HAL_PWREx_GetVoltageRange(void);
 HAL_StatusTypeDef HAL_PWREx_ControlVoltageScaling(uint32_t VoltageScaling);
 
 void HAL_PWREx_EnableFlashPowerDown(void);
-void HAL_PWREx_DisableFlashPowerDown(void); 
+void HAL_PWREx_DisableFlashPowerDown(void);
 HAL_StatusTypeDef HAL_PWREx_EnableBkUpReg(void);
-HAL_StatusTypeDef HAL_PWREx_DisableBkUpReg(void); 
+HAL_StatusTypeDef HAL_PWREx_DisableBkUpReg(void);
 
 void HAL_PWREx_EnableMainRegulatorLowVoltage(void);
 void HAL_PWREx_DisableMainRegulatorLowVoltage(void);
@@ -262,12 +262,12 @@ HAL_StatusTypeDef HAL_PWREx_EnterUnderDriveSTOPMode(uint32_t Regulator, uint8_t 
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
   */
-  
+
 #ifdef __cplusplus
 }
 #endif

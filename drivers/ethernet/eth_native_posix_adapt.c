@@ -11,8 +11,6 @@
  * because there is naming conflicts between host and zephyr network stacks.
  */
 
-#define _DEFAULT_SOURCE
-
 /* Host include files */
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,6 +22,7 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
+#include <sys/select.h>
 #include <net/if.h>
 #include <time.h>
 #include "posix_trace.h"
@@ -35,12 +34,14 @@
 /* Zephyr include files. Be very careful here and only include minimum
  * things needed.
  */
-#define SYS_LOG_DOMAIN "eth-posix-adapt"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_ETHERNET_LEVEL
+#define LOG_MODULE_NAME eth_posix_adapt
+#define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <zephyr/types.h>
 #include <sys_clock.h>
-#include <logging/sys_log.h>
 
 #if defined(CONFIG_NET_GPTP)
 #include <net/gptp.h>
@@ -61,7 +62,7 @@ int eth_iface_create(const char *if_name, bool tun_only)
 		return -errno;
 	}
 
-	memset(&ifr, 0, sizeof(ifr));
+	(void)memset(&ifr, 0, sizeof(ifr));
 
 #ifdef __linux
 	ifr.ifr_flags = (tun_only ? IFF_TUN : IFF_TAP) | IFF_NO_PI;

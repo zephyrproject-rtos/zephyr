@@ -4,11 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_L2_IEEE802154) || \
-	defined(CONFIG_NET_DEBUG_L2_IEEE802154_DISPLAY_PACKET)
-#define SYS_LOG_DOMAIN "net/ieee802154"
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_ieee802154
+#define NET_LOG_LEVEL CONFIG_NET_L2_IEEE802154_LOG_LEVEL
 
 #include <net/net_core.h>
 #include <net/net_l2.h>
@@ -57,10 +54,6 @@ static inline void pkt_hexdump(const char *title, struct net_pkt *pkt,
 		net_hexdump_frags(title, pkt, full);
 	}
 }
-
-#ifndef CONFIG_NET_DEBUG_L2_IEEE802154
-#undef NET_LOG_ENABLED
-#endif /* CONFIG_NET_DEBUG_L2_IEEE802154 */
 
 #else
 #define pkt_hexdump(...)
@@ -233,7 +226,7 @@ static enum net_verdict ieee802154_recv(struct net_if *iface,
 
 	ieee802154_acknowledge(iface, &mpdu);
 
-	net_pkt_set_ll_reserve(pkt, mpdu.payload - (void *)net_pkt_ll(pkt));
+	net_pkt_set_ll_reserve(pkt, (u8_t *)mpdu.payload - net_pkt_ll(pkt));
 	net_buf_pull(pkt->frags, net_pkt_ll_reserve(pkt));
 
 	set_pkt_ll_addr(net_pkt_lladdr_src(pkt), mpdu.mhr.fs->fc.pan_id_comp,

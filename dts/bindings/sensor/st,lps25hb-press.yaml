@@ -5,7 +5,6 @@
 #
 ---
 title: STMicroelectronics MEMS sensors LPS25HB
-id: st,lps25hb-press
 version: 0.1
 
 description: >

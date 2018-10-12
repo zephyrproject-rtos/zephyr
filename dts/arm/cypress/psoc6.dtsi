@@ -1,0 +1,89 @@
+/*
+ * Copyright (c) 2018, Cypress
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m0+";
+			reg = <0>;
+		};
+		cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4f";
+			reg = <1>;
+		};
+	};
+
+	flash-controller@40250000 {
+			compatible = "cypress,psoc6-flash-controller";
+			reg = <0x40250000 0x10000>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			label="CYPRESS_FLASH_DRV_NAME";
+
+			flash0: flash@10000000 {
+				compatible = "soc-nv-flash";
+				label = "FLASH_0";
+				reg = <0x10000000 DT_SIZE_K(384)>;
+				write-block-size = <4>;
+			};
+
+			flash1: flash@10060000 {
+				compatible = "soc-nv-flash";
+				label = "FLASH_1";
+				reg = <0x10060000 DT_SIZE_K(640)>;
+				write-block-size = <4>;
+			};
+	};
+
+	sram0: memory@8000000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x08000000 DT_SIZE_K(140)>;
+	};
+
+	sram1: memory@8023000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x08023000 DT_SIZE_K(4)>;
+	};
+
+	sram2: memory@8024000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x08024000 DT_SIZE_K(112)>;
+	};
+
+	soc {
+		uart5: uart@40660000 {
+			compatible = "cypress,psoc6-uart";
+			reg = <0x40660000 0x10000>;
+			interrupts = <2 1>;
+			status = "disabled";
+			label = "uart_5";
+		};
+
+		uart6: uart@40670000 {
+			compatible = "cypress,psoc6-uart";
+			reg = <0x40670000 0x10000>;
+			interrupts = <2 1>;
+			status = "disabled";
+			label = "uart_6";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <2>;
+};

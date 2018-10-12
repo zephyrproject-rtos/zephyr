@@ -82,22 +82,22 @@ typedef struct
 {
   uint32_t PowerMode;                   /*!< Set comparator operating mode to adjust power and speed.
                                              This parameter can be a value of @ref COMP_LL_EC_POWERMODE
-                                             
+
                                              This feature can be modified afterwards using unitary function @ref LL_COMP_SetPowerMode(). */
 
   uint32_t InputPlus;                   /*!< Set comparator input plus (non-inverting input).
                                              This parameter can be a value of @ref COMP_LL_EC_INPUT_PLUS
-                                             
+
                                              This feature can be modified afterwards using unitary function @ref LL_COMP_SetInputPlus(). */
 
   uint32_t InputMinus;                  /*!< Set comparator input minus (inverting input).
                                              This parameter can be a value of @ref COMP_LL_EC_INPUT_MINUS
-                                             
+
                                              This feature can be modified afterwards using unitary function @ref LL_COMP_SetInputMinus(). */
 
   uint32_t OutputPolarity;              /*!< Set comparator output polarity.
                                              This parameter can be a value of @ref COMP_LL_EC_OUTPUT_POLARITY
-                                             
+
                                              This feature can be modified afterwards using unitary function @ref LL_COMP_SetOutputPolarity(). */
 
 } LL_COMP_InitTypeDef;
@@ -326,7 +326,7 @@ __STATIC_INLINE uint32_t LL_COMP_GetCommonWindowMode(COMP_Common_TypeDef *COMPxy
   * @param  PowerMode This parameter can be one of the following values:
   *         @arg @ref LL_COMP_POWERMODE_MEDIUMSPEED   (1)
   *         @arg @ref LL_COMP_POWERMODE_ULTRALOWPOWER (1)
-  *         
+  *
   *         (1) Available only on COMP instance: COMP2.
   * @retval None
   */
@@ -343,7 +343,7 @@ __STATIC_INLINE void LL_COMP_SetPowerMode(COMP_TypeDef *COMPx, uint32_t PowerMod
   * @retval Returned value can be one of the following values:
   *         @arg @ref LL_COMP_POWERMODE_MEDIUMSPEED   (1)
   *         @arg @ref LL_COMP_POWERMODE_ULTRALOWPOWER (1)
-  *         
+  *
   *         (1) Available only on COMP instance: COMP2.
   */
 __STATIC_INLINE uint32_t LL_COMP_GetPowerMode(COMP_TypeDef *COMPx)
@@ -468,7 +468,7 @@ __STATIC_INLINE uint32_t LL_COMP_GetInputPlus(COMP_TypeDef *COMPx)
   *         @arg @ref LL_COMP_INPUT_MINUS_1_2VREFINT (*)
   *         @arg @ref LL_COMP_INPUT_MINUS_3_4VREFINT (*)
   *         @arg @ref LL_COMP_INPUT_MINUS_IO2        (*)
-  *         
+  *
   *         (*) Available only on COMP instance: COMP2.
   * @retval None
   */
@@ -494,7 +494,7 @@ __STATIC_INLINE void LL_COMP_SetInputMinus(COMP_TypeDef *COMPx, uint32_t InputMi
   *         @arg @ref LL_COMP_INPUT_MINUS_1_2VREFINT (*)
   *         @arg @ref LL_COMP_INPUT_MINUS_3_4VREFINT (*)
   *         @arg @ref LL_COMP_INPUT_MINUS_IO2        (*)
-  *         
+  *
   *         (*) Available only on COMP instance: COMP2.
   */
 __STATIC_INLINE uint32_t LL_COMP_GetInputMinus(COMP_TypeDef *COMPx)
@@ -520,7 +520,7 @@ __STATIC_INLINE uint32_t LL_COMP_GetInputMinus(COMP_TypeDef *COMPx)
   *         @arg @ref LL_COMP_OUTPUT_LPTIM1_IN1_COMP1 (*)
   *         @arg @ref LL_COMP_OUTPUT_LPTIM1_IN1_COMP2 (**)
   *         @arg @ref LL_COMP_OUTPUT_LPTIM1_IN2_COMP2 (**)
-  *         
+  *
   *         (*)  Available only on COMP instance: COMP1.\n
   *         (**) Available only on COMP instance: COMP2.
   * @retval None
@@ -540,7 +540,7 @@ __STATIC_INLINE void LL_COMP_SetOutputLPTIM(COMP_TypeDef *COMPx, uint32_t Output
   *         @arg @ref LL_COMP_OUTPUT_LPTIM1_IN1_COMP1 (*)
   *         @arg @ref LL_COMP_OUTPUT_LPTIM1_IN1_COMP2 (**)
   *         @arg @ref LL_COMP_OUTPUT_LPTIM1_IN2_COMP2 (**)
-  *         
+  *
   *         (*)  Available only on COMP instance: COMP1.\n
   *         (**) Available only on COMP instance: COMP2.
   */

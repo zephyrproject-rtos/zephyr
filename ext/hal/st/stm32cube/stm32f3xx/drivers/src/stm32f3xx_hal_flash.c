@@ -171,7 +171,7 @@ extern void    FLASH_PageErase(uint32_t PageAddress);
   * @note   If an erase and a program operations are requested simultaneously,
   *         the erase operation is performed before the program one.
   *
-  * @note   FLASH should be previously erased before new programmation (only exception to this
+  * @note   FLASH should be previously erased before new programming (only exception to this
   *         is when 0x0000 is programmed)
   *
   * @param  TypeProgram   Indicate the way to program at a specified address.
@@ -224,7 +224,7 @@ HAL_StatusTypeDef HAL_FLASH_Program(uint32_t TypeProgram, uint32_t Address, uint
 
         /* If the program operation is completed, disable the PG Bit */
         CLEAR_BIT(FLASH->CR, FLASH_CR_PG);
-      /* In case of error, stop programation procedure */
+      /* In case of error, stop programming procedure */
       if (status != HAL_OK)
       {
         break;

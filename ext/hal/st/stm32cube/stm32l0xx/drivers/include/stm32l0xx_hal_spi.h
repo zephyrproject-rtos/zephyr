@@ -31,7 +31,7 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-  */ 
+  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __STM32L0xx_HAL_SPI_H
@@ -42,7 +42,7 @@
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32l0xx_hal_def.h"  
+#include "stm32l0xx_hal_def.h"
 
 /** @addtogroup STM32L0xx_HAL_Driver
   * @{
@@ -57,8 +57,8 @@
   * @{
   */
 
-/** 
-  * @brief  SPI Configuration Structure definition  
+/**
+  * @brief  SPI Configuration Structure definition
   */
 typedef struct
 {
@@ -113,10 +113,10 @@ typedef enum
   HAL_SPI_STATE_BUSY_RX    = 0x22U,  /*!< Data Reception process is ongoing                  */
   HAL_SPI_STATE_BUSY_TX_RX = 0x32U,  /*!< Data Transmission and Reception process is ongoing */
   HAL_SPI_STATE_ERROR      = 0x03U   /*!< SPI error state                                    */
-    
+
 }HAL_SPI_StateTypeDef;
 
-/** 
+/**
   * @brief  SPI handle Structure definition
   */
 typedef struct __SPI_HandleTypeDef
@@ -128,7 +128,7 @@ typedef struct __SPI_HandleTypeDef
   uint8_t                    *pTxBuffPtr;  /*!< Pointer to SPI Tx transfer Buffer */
 
   uint16_t                   TxXferSize;   /*!< SPI Tx transfer size */
-  
+
   __IO uint16_t              TxXferCount;  /*!< SPI Tx Transfer Counter */
 
   uint8_t                    *pRxBuffPtr;  /*!< Pointer to SPI Rx transfer Buffer */
@@ -207,7 +207,7 @@ typedef struct __SPI_HandleTypeDef
 
 /**
   * @}
-  */ 
+  */
 
 /** @defgroup SPI_Clock_Polarity SPI Clock Polarity
   * @{
@@ -238,7 +238,7 @@ typedef struct __SPI_HandleTypeDef
 
 /**
   * @}
-  */ 
+  */
 
 /** @defgroup SPI_BaudRate_Prescaler SPI BaudRate Prescaler
   * @{
@@ -254,7 +254,7 @@ typedef struct __SPI_HandleTypeDef
 
 /**
   * @}
-  */ 
+  */
 
 /** @defgroup SPI_MSB_LSB_transmission SPI MSB LSB transmission
   * @{
@@ -375,7 +375,7 @@ typedef struct __SPI_HandleTypeDef
   *            @arg SPI_FLAG_MODF: Mode fault flag
   *            @arg SPI_FLAG_OVR: Overrun flag
   *            @arg SPI_FLAG_BSY: Busy flag
-  *            @arg SPI_FLAG_FRE: Frame format error flag  
+  *            @arg SPI_FLAG_FRE: Frame format error flag
   * @retval The new state of __FLAG__ (TRUE or FALSE).
   */
 #define __HAL_SPI_GET_FLAG(__HANDLE__, __FLAG__) ((((__HANDLE__)->Instance->SR) & (__FLAG__)) == (__FLAG__))
@@ -389,9 +389,9 @@ typedef struct __SPI_HandleTypeDef
 
 /** @brief  Clear the SPI MODF pending flag.
   * @param  __HANDLE__: specifies the SPI handle.
-  *         This parameter can be SPIx where x: 1 or 2 to select the SPI peripheral. 
+  *         This parameter can be SPIx where x: 1 or 2 to select the SPI peripheral.
   * @retval None
-  */                                            
+  */
 #define __HAL_SPI_CLEAR_MODFFLAG(__HANDLE__)        \
    do{                                              \
      __IO uint32_t tmpreg_modf;                     \
@@ -402,7 +402,7 @@ typedef struct __SPI_HandleTypeDef
 
 /** @brief  Clear the SPI OVR pending flag.
   * @param  __HANDLE__: specifies the SPI handle.
-  *         This parameter can be SPIx where x: 1 or 2 to select the SPI peripheral. 
+  *         This parameter can be SPIx where x: 1 or 2 to select the SPI peripheral.
   * @retval None
   */
 #define __HAL_SPI_CLEAR_OVRFLAG(__HANDLE__)         \
@@ -429,14 +429,14 @@ typedef struct __SPI_HandleTypeDef
   * @param  __HANDLE__: specifies the SPI Handle.
   *         This parameter can be SPIx where x: 1 or 2 to select the SPI peripheral.
   * @retval None
-  */                                                 
+  */
 #define __HAL_SPI_ENABLE(__HANDLE__)  SET_BIT((__HANDLE__)->Instance->CR1, SPI_CR1_SPE)
-                                                 
+
 /** @brief  Disables the SPI.
   * @param  __HANDLE__: specifies the SPI Handle.
   *         This parameter can be SPIx where x: 1 or 2 to select the SPI peripheral.
   * @retval None
-  */                                           
+  */
 #define __HAL_SPI_DISABLE(__HANDLE__) CLEAR_BIT((__HANDLE__)->Instance->CR1, SPI_CR1_SPE)
 /**
   * @}
@@ -549,7 +549,7 @@ typedef struct __SPI_HandleTypeDef
 
 /** @brief  Checks if SPI polynomial value to be used for the CRC calculation, is in allowed range.
   * @param  __POLYNOMIAL__: specifies the SPI polynomial value to be used for the CRC calculation.
-  *         This parameter must be a number between Min_Data = 0 and Max_Data = 65535 
+  *         This parameter must be a number between Min_Data = 0 and Max_Data = 65535
   * @retval None
   */
 #define IS_SPI_CRC_POLYNOMIAL(__POLYNOMIAL__) (((__POLYNOMIAL__) >= 0x1U) && ((__POLYNOMIAL__) <= 0xFFFFU))
@@ -564,8 +564,8 @@ typedef struct __SPI_HandleTypeDef
   * @param  __HANDLE__: specifies the SPI Handle.
   *         This parameter can be SPIx where x: 1 or 2 to select the SPI peripheral.
   * @retval None
-  */               
-#define SPI_1LINE_RX(__HANDLE__)  CLEAR_BIT((__HANDLE__)->Instance->CR1, SPI_CR1_BIDIOE) 
+  */
+#define SPI_1LINE_RX(__HANDLE__)  CLEAR_BIT((__HANDLE__)->Instance->CR1, SPI_CR1_BIDIOE)
 
 /** @brief  Resets the CRC calculation of the SPI.
   * @param  __HANDLE__: specifies the SPI Handle.
@@ -660,12 +660,12 @@ uint32_t HAL_SPI_GetError(SPI_HandleTypeDef *hspi);
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
   */
-  
+
 #ifdef __cplusplus
 }
 #endif

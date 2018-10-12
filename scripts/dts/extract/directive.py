@@ -57,8 +57,7 @@ class DTDirective(object):
     # @param node_address Address of node issueuing the directive.
     # @param yaml YAML definition for the node.
     # @param prop Directive property name
-    # @param names Names assigned to directive.
     # @param def_label Define label string of node owning the directive.
     #
-    def extract(self, node_address, yaml, prop, names, def_label):
+    def extract(self, node_address, yaml, prop, def_label):
         pass

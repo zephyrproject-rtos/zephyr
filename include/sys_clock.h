@@ -13,8 +13,8 @@
  * components that use timer functionality.
  */
 
-#ifndef _SYS_CLOCK__H_
-#define _SYS_CLOCK__H_
+#ifndef ZEPHYR_INCLUDE_SYS_CLOCK_H_
+#define ZEPHYR_INCLUDE_SYS_CLOCK_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -128,4 +128,4 @@ extern volatile u64_t _sys_clock_tick_count;
 }
 #endif
 
-#endif /* _SYS_CLOCK__H_ */
+#endif /* ZEPHYR_INCLUDE_SYS_CLOCK_H_ */

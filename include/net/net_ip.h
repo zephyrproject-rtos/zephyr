@@ -10,8 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __NET_IP_H
-#define __NET_IP_H
+#ifndef ZEPHYR_INCLUDE_NET_NET_IP_H_
+#define ZEPHYR_INCLUDE_NET_NET_IP_H_
 
 /**
  * @brief IPv4/IPv6 primitives and helpers
@@ -79,27 +79,20 @@ enum net_sock_type {
 /** IPv6 address structure */
 struct in6_addr {
 	union {
-		u8_t		u6_addr8[16];
-		u16_t		u6_addr16[8]; /* In big endian */
-		u32_t		u6_addr32[4]; /* In big endian */
-	} in6_u;
-#define s6_addr			in6_u.u6_addr8
-#define s6_addr16		in6_u.u6_addr16
-#define s6_addr32		in6_u.u6_addr32
+		u8_t s6_addr[16];
+		u16_t s6_addr16[8]; /* In big endian */
+		u32_t s6_addr32[4]; /* In big endian */
+	};
 };
 
 /** IPv4 address */
 struct in_addr {
 	union {
-		u8_t		u4_addr8[4];
-		u16_t		u4_addr16[2]; /* In big endian */
-		u32_t		u4_addr32[1]; /* In big endian */
-	} in4_u;
-#define s4_addr			in4_u.u4_addr8
-#define s4_addr16		in4_u.u4_addr16
-#define s4_addr32		in4_u.u4_addr32
-
-#define s_addr			s4_addr32[0]
+		u8_t s4_addr[4];
+		u16_t s4_addr16[2]; /* In big endian */
+		u32_t s4_addr32[1]; /* In big endian */
+		u32_t s_addr; /* In big endian, for POSIX compatibility. */
+	};
 };
 
 typedef unsigned short int sa_family_t;
@@ -235,7 +228,6 @@ enum net_addr_type {
 	NET_ADDR_OVERRIDABLE,
 } __packed;
 
-#if NET_LOG_ENABLED > 0
 static inline const char *net_addr_type2str(enum net_addr_type type)
 {
 	switch (type) {
@@ -254,14 +246,6 @@ static inline const char *net_addr_type2str(enum net_addr_type type)
 
 	return "<unknown>";
 }
-#else /* NET_LOG_ENABLED */
-static inline const char *net_addr_type2str(enum net_addr_type type)
-{
-	ARG_UNUSED(type);
-
-	return NULL;
-}
-#endif /* NET_LOG_ENABLED */
 
 /** What is the current state of the network address */
 enum net_addr_state {
@@ -1054,4 +1038,4 @@ static inline u8_t net_priority2vlan(enum net_priority priority)
  */
 
 
-#endif /* __NET_IP_H */
+#endif /* ZEPHYR_INCLUDE_NET_NET_IP_H_ */

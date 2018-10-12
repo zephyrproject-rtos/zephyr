@@ -7,8 +7,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __BT_L2CAP_H
-#define __BT_L2CAP_H
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_L2CAP_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_L2CAP_H_
 
 /**
  * @brief L2CAP
@@ -81,7 +81,7 @@ struct bt_l2cap_chan {
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 	bt_l2cap_chan_state_t		state;
 	/** Remote PSM to be connected */
-	u16_t			psm;
+	u16_t				psm;
 	/** Helps match request context during CoC */
 	u8_t				ident;
 	bt_security_t			required_sec_level;
@@ -91,13 +91,13 @@ struct bt_l2cap_chan {
 /** @brief LE L2CAP Endpoint structure. */
 struct bt_l2cap_le_endpoint {
 	/** Endpoint CID */
-	u16_t			cid;
+	u16_t				cid;
 	/** Endpoint Maximum Transmission Unit */
-	u16_t			mtu;
+	u16_t				mtu;
 	/** Endpoint Maximum PDU payload Size */
-	u16_t			mps;
+	u16_t				mps;
 	/** Endpoint initial credits */
-	u16_t			init_credits;
+	u16_t				init_credits;
 	/** Endpoint credits */
 	struct k_sem			credits;
 };
@@ -133,9 +133,9 @@ struct bt_l2cap_le_chan {
 /** @brief BREDR L2CAP Endpoint structure. */
 struct bt_l2cap_br_endpoint {
 	/** Endpoint CID */
-	u16_t			cid;
+	u16_t				cid;
 	/** Endpoint Maximum Transmission Unit */
-	u16_t			mtu;
+	u16_t				mtu;
 };
 
 /** @brief BREDR L2CAP Channel structure. */
@@ -203,8 +203,14 @@ struct bt_l2cap_chan_ops {
 	 *
 	 *  @param chan The channel receiving data.
 	 *  @param buf Buffer containing incoming data.
+	 *
+	 *  @return 0 in case of success or negative value in case of error.
+	 *  If -EINPROGRESS is returned user has to confirm once the data has
+	 *  been processed by calling bt_l2cap_chan_recv_complete passing back
+	 *  the buffer received with its original user_data which contains the
+	 *  number of segments/credits used by the packet.
 	 */
-	void (*recv)(struct bt_l2cap_chan *chan, struct net_buf *buf);
+	int (*recv)(struct bt_l2cap_chan *chan, struct net_buf *buf);
 };
 
 /** @def BT_L2CAP_CHAN_SEND_RESERVE
@@ -324,6 +330,21 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan);
  */
 int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf);
 
+/** @brief Complete receiving L2CAP channel data
+ *
+ * Complete the reception of incoming data. This shall only be called if the
+ * channel recv callback has returned -EINPROGRESS to process some incoming
+ * data. The buffer shall contain the original user_data as that is used for
+ * storing the credits/segments used by the packet.
+ *
+ * @param chan Channel object.
+ * @param buf Buffer containing the data.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_l2cap_chan_recv_complete(struct bt_l2cap_chan *chan,
+				struct net_buf *buf);
+
 #ifdef __cplusplus
 }
 #endif
@@ -332,4 +353,4 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf);
  * @}
  */
 
-#endif /* __BT_L2CAP_H */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_L2CAP_H_ */

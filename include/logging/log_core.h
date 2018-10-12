@@ -3,12 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef LOG_FRONTEND_H
-#define LOG_FRONTEND_H
+#ifndef ZEPHYR_INCLUDE_LOGGING_LOG_CORE_H_
+#define ZEPHYR_INCLUDE_LOGGING_LOG_CORE_H_
 
 #include <logging/log_msg.h>
 #include <logging/log_instance.h>
 #include <misc/util.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -153,7 +154,7 @@ extern "C" {
 	do {							 \
 		u32_t args[] = {__LOG_ARGUMENTS(__VA_ARGS__)};	 \
 		log_n(_str, args, ARRAY_SIZE(args), _src_level); \
-	} while (0)
+	} while (false)
 
 #define _LOG_INTERNAL_4(_src_level, _str, ...) \
 		_LOG_INTERNAL_LONG(_src_level, _str, __VA_ARGS__)
@@ -206,7 +207,7 @@ extern "C" {
 			/* evaluated once when log is enabled.*/	    \
 			log_printf_arg_checker(__VA_ARGS__);		    \
 		}							    \
-	} while (0)
+	} while (false)
 
 #define _LOG(_level, ...)			       \
 	__LOG(_level,				       \
@@ -237,7 +238,7 @@ extern "C" {
 			};					      \
 			log_hexdump(_str, _data, _length, src_level); \
 		}						      \
-	} while (0)
+	} while (false)
 
 #define _LOG_HEXDUMP(_level, _data, _length, _str)	       \
 	__LOG_HEXDUMP(_level,				       \
@@ -286,7 +287,7 @@ extern "C" {
 				 LOG_FILTER_SLOT_SHIFT(_id));	     \
 		*(_filters) |= ((_filter) & LOG_FILTER_SLOT_MASK) << \
 			       LOG_FILTER_SLOT_SHIFT(_id);	     \
-	} while (0)
+	} while (false)
 
 #define LOG_FILTER_AGGR_SLOT_IDX 0
 
@@ -335,7 +336,7 @@ static inline u8_t log_compiled_level_get(u32_t source_id)
 static inline u32_t log_const_source_id(
 				const struct log_source_const_data *data)
 {
-	return ((void *)data - (void *)__log_const_start)/
+	return ((u8_t *)data - (u8_t *)__log_const_start)/
 			sizeof(struct log_source_const_data);
 }
 
@@ -377,7 +378,7 @@ static inline u32_t *log_dynamic_filters_get(u32_t source_id)
  */
 static inline u32_t log_dynamic_source_id(struct log_source_dynamic_data *data)
 {
-	return ((void *)data - (void *)__log_dynamic_start)/
+	return ((u8_t *)data - (u8_t *)__log_dynamic_start)/
 			sizeof(struct log_source_dynamic_data);
 }
 
@@ -471,8 +472,22 @@ int log_printk(const char *fmt, va_list ap);
  */
 void log_generic(struct log_msg_ids src_level, const char *fmt, va_list ap);
 
+/** @brief Check if address belongs to the memory pool used for transient.
+ *
+ * @param buf Buffer.
+ *
+ * @return True if address within the pool, false otherwise.
+ */
+bool log_is_strdup(void *buf);
+
+/** @brief Free allocated buffer.
+ *
+ * @param buf Buffer.
+ */
+void log_free(void *buf);
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* LOG_FRONTEND_H */
+#endif /* ZEPHYR_INCLUDE_LOGGING_LOG_CORE_H_ */

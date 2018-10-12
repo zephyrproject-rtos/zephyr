@@ -72,4 +72,11 @@ endif # UART_NS16550_PORT_3
 
 endif # UART_NS16550
 
+if GPIO
+
+config GPIO_INTEL_APL
+	def_bool y
+
+endif # GPIO
+
 endif # SOC_APOLLO_LAKE

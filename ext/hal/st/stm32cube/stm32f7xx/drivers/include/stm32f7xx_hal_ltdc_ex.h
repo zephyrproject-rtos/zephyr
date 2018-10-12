@@ -31,7 +31,7 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-  */ 
+  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __STM32F7xx_HAL_LTDC_EX_H
@@ -54,9 +54,9 @@
   * @{
   */
 
-/* Exported types ------------------------------------------------------------*/ 
+/* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
-   
+
 /** @defgroup LTDCEx_Exported_Constants   LTDCEx Exported Constants
   * @{
   */
@@ -82,8 +82,8 @@ HAL_StatusTypeDef HAL_LTDC_StructInitFromVideoConfig(LTDC_HandleTypeDef* hltdc, 
 HAL_StatusTypeDef HAL_LTDC_StructInitFromAdaptedCommandConfig(LTDC_HandleTypeDef* hltdc, DSI_CmdCfgTypeDef *CmdCfg);
 /**
   * @}
-  */ 
- 
+  */
+
 
  /* Private types -------------------------------------------------------------*/
 /** @defgroup LTDCEx_Private_Types LTDCEx Private Types
@@ -92,7 +92,7 @@ HAL_StatusTypeDef HAL_LTDC_StructInitFromAdaptedCommandConfig(LTDC_HandleTypeDef
 
 /**
   * @}
-  */ 
+  */
 
 /* Private variables ---------------------------------------------------------*/
 /** @defgroup LTDCEx_Private_Variables LTDCEx Private Variables
@@ -101,7 +101,7 @@ HAL_StatusTypeDef HAL_LTDC_StructInitFromAdaptedCommandConfig(LTDC_HandleTypeDef
 
 /**
   * @}
-  */ 
+  */
 
 /* Private constants ---------------------------------------------------------*/
 /** @defgroup LTDCEx_Private_Constants LTDCEx Private Constants
@@ -110,7 +110,7 @@ HAL_StatusTypeDef HAL_LTDC_StructInitFromAdaptedCommandConfig(LTDC_HandleTypeDef
 
 /**
   * @}
-  */ 
+  */
 
 /* Private macros ------------------------------------------------------------*/
 /** @defgroup LTDCEx_Private_Macros LTDCEx Private Macros
@@ -119,8 +119,8 @@ HAL_StatusTypeDef HAL_LTDC_StructInitFromAdaptedCommandConfig(LTDC_HandleTypeDef
 
  /**
   * @}
-  */ 
-  
+  */
+
 /* Private functions ---------------------------------------------------------*/
 /** @defgroup LTDCEx_Private_Functions LTDCEx Private Functions
   * @{
@@ -132,14 +132,14 @@ HAL_StatusTypeDef HAL_LTDC_StructInitFromAdaptedCommandConfig(LTDC_HandleTypeDef
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
   */
 
 #endif /*STM32F769xx | STM32F779xx */
-  
+
 #ifdef __cplusplus
 }
 #endif

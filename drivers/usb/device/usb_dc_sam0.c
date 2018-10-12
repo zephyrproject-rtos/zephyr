@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define SYS_LOG_DOMAIN "usb/dc"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_DRIVER_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(usb_dc_sam0);
 
-#include <drivers/usb/usb_dc.h>
+#include <usb/usb_device.h>
 #include <soc.h>
 #include <string.h>
 
@@ -197,7 +197,7 @@ int usb_dc_attach(void)
 	regs->CTRLA.reg = USB_CTRLA_MODE_DEVICE | USB_CTRLA_RUNSTDBY;
 	regs->CTRLB.reg = USB_DEVICE_CTRLB_SPDCONF_HS;
 
-	memset(data->descriptors, 0, sizeof(data->descriptors));
+	(void)memset(data->descriptors, 0, sizeof(data->descriptors));
 	regs->DESCADD.reg = (uintptr_t)&data->descriptors[0];
 
 	regs->INTENSET.reg = USB_DEVICE_INTENSET_EORST;
@@ -265,12 +265,12 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 	u8_t ep_idx = cfg->ep_addr & ~USB_EP_DIR_MASK;
 
 	if ((cfg->ep_type == USB_DC_EP_CONTROL) && ep_idx) {
-		SYS_LOG_ERR("invalid endpoint configuration");
+		USB_ERR("invalid endpoint configuration");
 		return -1;
 	}
 
 	if (ep_idx > CONFIG_USB_DC_SAM0_NUM_BIDIR_ENDPOINTS) {
-		SYS_LOG_ERR("endpoint index/address too high");
+		USB_ERR("endpoint index/address too high");
 		return -1;
 	}
 

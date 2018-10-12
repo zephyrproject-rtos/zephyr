@@ -18,6 +18,8 @@
 # Note: $ARCH and $BOARD_DIR might be glob patterns.
 source "$(BOARD_DIR)/Kconfig.defconfig"
 
+source "boards/shields/*/Kconfig.defconfig"
+
 source "$(SOC_DIR)/$(ARCH)/*/Kconfig.defconfig"
 
 source "boards/Kconfig"

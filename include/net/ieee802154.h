@@ -9,8 +9,8 @@
  * @brief IEEE 802.15.4 L2 stack public header
  */
 
-#ifndef __IEEE802154_H__
-#define __IEEE802154_H__
+#ifndef ZEPHYR_INCLUDE_NET_IEEE802154_H_
+#define ZEPHYR_INCLUDE_NET_IEEE802154_H_
 
 #include <limits.h>
 #include <net/net_mgmt.h>
@@ -83,4 +83,4 @@ struct ieee802154_context {
  * @}
  */
 
-#endif /* __IEEE802154_H__ */
+#endif /* ZEPHYR_INCLUDE_NET_IEEE802154_H_ */

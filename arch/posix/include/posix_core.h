@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef _POSIX_CORE_H
-#define _POSIX_CORE_H
+#ifndef ZEPHYR_ARCH_POSIX_INCLUDE_POSIX_CORE_H_
+#define ZEPHYR_ARCH_POSIX_INCLUDE_POSIX_CORE_H_
 
 #include "kernel.h"
 
@@ -48,4 +48,4 @@ void posix_irq_check_idle_exit(void);
 }
 #endif
 
-#endif /* _POSIX_CORE_H */
+#endif /* ZEPHYR_ARCH_POSIX_INCLUDE_POSIX_CORE_H_ */

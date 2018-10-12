@@ -4,10 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_COAP)
-#define SYS_LOG_DOMAIN "coap"
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_coap
+#define NET_LOG_LEVEL CONFIG_COAP_LOG_LEVEL
 
 #include <stdlib.h>
 #include <stddef.h>
@@ -409,7 +407,7 @@ int coap_packet_init(struct coap_packet *cpkt, struct net_pkt *pkt,
 		return -EINVAL;
 	}
 
-	memset(cpkt, 0, sizeof(*cpkt));
+	(void)memset(cpkt, 0, sizeof(*cpkt));
 	cpkt->pkt = pkt;
 	cpkt->frag = pkt->frags;
 	cpkt->offset = 0;
@@ -440,7 +438,7 @@ int coap_pending_init(struct coap_pending *pending,
 		      const struct coap_packet *request,
 		      const struct sockaddr *addr)
 {
-	memset(pending, 0, sizeof(*pending));
+	(void)memset(pending, 0, sizeof(*pending));
 	pending->id = coap_header_get_id(request);
 	memcpy(&pending->addr, addr, sizeof(*addr));
 
@@ -705,7 +703,7 @@ unsigned int coap_option_value_to_int(const struct coap_option *option)
 		return (option->value[2] << 0) | (option->value[1] << 8) |
 			(option->value[0] << 16);
 	case 4:
-		return (option->value[2] << 0) | (option->value[2] << 8) |
+		return (option->value[3] << 0) | (option->value[2] << 8) |
 			(option->value[1] << 16) | (option->value[0] << 24);
 	default:
 		return 0;
@@ -803,7 +801,7 @@ void coap_reply_init(struct coap_reply *reply,
 
 void coap_reply_clear(struct coap_reply *reply)
 {
-	memset(reply, 0, sizeof(*reply));
+	(void)memset(reply, 0, sizeof(*reply));
 }
 
 int coap_resource_notify(struct coap_resource *resource)
@@ -1060,8 +1058,8 @@ int coap_append_option_int(struct coap_packet *cpkt, u16_t code,
 		sys_put_be16(val, data);
 		len = 2;
 	} else if (val < 0xFFFFFF) {
-		sys_put_be16(val, data);
-		data[2] = val >> 16;
+		sys_put_be16(val, &data[1]);
+		data[0] = val >> 16;
 		len = 3;
 	} else {
 		sys_put_be32(val, data);

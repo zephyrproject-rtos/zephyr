@@ -17,8 +17,8 @@
  * necessary to instantiate instances of struct k_thread.
  */
 
-#ifndef _kernel_arch_thread_h_
-#define _kernel_arch_thread_h_
+#ifndef ZEPHYR_ARCH_ARM_INCLUDE_KERNEL_ARCH_THREAD_H_
+#define ZEPHYR_ARCH_ARM_INCLUDE_KERNEL_ARCH_THREAD_H_
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>

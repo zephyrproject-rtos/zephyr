@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _SENSOR_TMP007
-#define _SENSOR_TMP007
+#ifndef ZEPHYR_DRIVERS_SENSOR_TMP007_TMP007_H_
+#define ZEPHYR_DRIVERS_SENSOR_TMP007_TMP007_H_
 
 #include <device.h>
 #include <gpio.h>

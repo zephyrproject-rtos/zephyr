@@ -10,8 +10,8 @@
  * @see include/mgmt/serial.h
  */
 
-#ifndef H_UART_MCUMGR_
-#define H_UART_MCUMGR_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_CONSOLE_UART_MCUMGR_H_
+#define ZEPHYR_INCLUDE_DRIVERS_CONSOLE_UART_MCUMGR_H_
 
 #include <stdlib.h>
 #include <zephyr/types.h>

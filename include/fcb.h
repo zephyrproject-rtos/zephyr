@@ -4,8 +4,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __FCB_H_
-#define __FCB_H_
+#ifndef ZEPHYR_INCLUDE_FCB_H_
+#define ZEPHYR_INCLUDE_FCB_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -143,4 +143,4 @@ int fcb_flash_write(const struct fcb *fcb, const struct flash_sector *sector,
 }
 #endif
 
-#endif /* __FCB_H_ */
+#endif /* ZEPHYR_INCLUDE_FCB_H_ */

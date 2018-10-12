@@ -6,9 +6,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_IEEE802154_DRIVER_LEVEL
-#define SYS_LOG_DOMAIN "dev/nrf5_802154"
-#include <logging/sys_log.h>
+#define LOG_MODULE_NAME ieee802154_nrf5
+#define LOG_LEVEL CONFIG_IEEE802154_LOG_LEVEL
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <errno.h>
 
@@ -71,20 +73,20 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 	while (1) {
 		pkt = NULL;
 
-		SYS_LOG_DBG("Waiting for frame");
+		LOG_DBG("Waiting for frame");
 		k_sem_take(&nrf5_radio->rx_wait, K_FOREVER);
 
-		SYS_LOG_DBG("Frame received");
+		LOG_DBG("Frame received");
 
 		pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
 		if (!pkt) {
-			SYS_LOG_ERR("No pkt available");
+			LOG_ERR("No pkt available");
 			goto out;
 		}
 
 		frag = net_pkt_get_frag(pkt, K_NO_WAIT);
 		if (!frag) {
-			SYS_LOG_ERR("No frag available");
+			LOG_ERR("No frag available");
 			goto out;
 		}
 
@@ -111,11 +113,11 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 
 		nrf_drv_radio802154_buffer_free(nrf5_radio->rx_psdu);
 
-		SYS_LOG_DBG("Caught a packet (%u) (LQI: %u)",
+		LOG_DBG("Caught a packet (%u) (LQI: %u)",
 			    pkt_len, nrf5_radio->lqi);
 
 		if (net_recv_data(nrf5_radio->iface, pkt) < 0) {
-			SYS_LOG_DBG("Packet dropped by NET stack");
+			LOG_DBG("Packet dropped by NET stack");
 			goto out;
 		}
 
@@ -158,7 +160,7 @@ static int nrf5_cca(struct device *dev)
 	 * the ED function is done, thus unlocking the semaphore.
 	 */
 	k_sem_take(&nrf5_radio->cca_wait, K_FOREVER);
-	SYS_LOG_DBG("CCA: %d", nrf5_radio->channel_ed);
+	LOG_DBG("CCA: %d", nrf5_radio->channel_ed);
 
 	if (nrf5_radio->channel_ed > CONFIG_IEEE802154_NRF5_CCA_ED_THRESHOLD) {
 		return -EBUSY;
@@ -171,7 +173,7 @@ static int nrf5_set_channel(struct device *dev, u16_t channel)
 {
 	struct nrf5_802154_data *nrf5_radio = NRF5_802154_DATA(dev);
 
-	SYS_LOG_DBG("%u", channel);
+	LOG_DBG("%u", channel);
 
 	if (channel < 11 || channel > 26) {
 		return -EINVAL;
@@ -194,7 +196,7 @@ static int nrf5_set_pan_id(struct device *dev, u16_t pan_id)
 	sys_put_le16(pan_id, pan_id_le);
 	nrf_drv_radio802154_pan_id_set(pan_id_le);
 
-	SYS_LOG_DBG("0x%x", pan_id);
+	LOG_DBG("0x%x", pan_id);
 	return 0;
 }
 
@@ -207,7 +209,7 @@ static int nrf5_set_short_addr(struct device *dev, u16_t short_addr)
 	sys_put_le16(short_addr, short_addr_le);
 	nrf_drv_radio802154_short_address_set(short_addr_le);
 
-	SYS_LOG_DBG("0x%x", short_addr);
+	LOG_DBG("0x%x", short_addr);
 	return 0;
 }
 
@@ -215,7 +217,7 @@ static int nrf5_set_ieee_addr(struct device *dev, const u8_t *ieee_addr)
 {
 	ARG_UNUSED(dev);
 
-	SYS_LOG_DBG("IEEE address %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
+	LOG_DBG("IEEE address %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
 		    ieee_addr[7], ieee_addr[6], ieee_addr[5], ieee_addr[4],
 		    ieee_addr[3], ieee_addr[2], ieee_addr[1], ieee_addr[0]);
 
@@ -229,7 +231,7 @@ static int nrf5_filter(struct device *dev,
 		       enum ieee802154_filter_type type,
 		       const struct ieee802154_filter *filter)
 {
-	SYS_LOG_DBG("Applying filter %u", type);
+	LOG_DBG("Applying filter %u", type);
 
 	if (!set) {
 		return -ENOTSUP;
@@ -250,7 +252,7 @@ static int nrf5_set_txpower(struct device *dev, s16_t dbm)
 {
 	struct nrf5_802154_data *nrf5_radio = NRF5_802154_DATA(dev);
 
-	SYS_LOG_DBG("%d", dbm);
+	LOG_DBG("%d", dbm);
 	nrf5_radio->txpower = dbm;
 
 	return 0;
@@ -264,7 +266,7 @@ static int nrf5_tx(struct device *dev,
 	u8_t payload_len = net_pkt_ll_reserve(pkt) + frag->len;
 	u8_t *payload = frag->data - net_pkt_ll_reserve(pkt);
 
-	SYS_LOG_DBG("%p (%u)", payload, payload_len);
+	LOG_DBG("%p (%u)", payload, payload_len);
 
 	nrf5_radio->tx_success = false;
 	nrf5_radio->tx_psdu[0] = payload_len + NRF5_FCS_LENGTH;
@@ -277,23 +279,23 @@ static int nrf5_tx(struct device *dev,
 	if (!nrf_drv_radio802154_transmit(nrf5_radio->tx_psdu,
 					  nrf5_radio->channel,
 					  nrf5_radio->txpower)) {
-		SYS_LOG_ERR("Cannot send frame");
+		LOG_ERR("Cannot send frame");
 		return -EIO;
 	}
 
-	SYS_LOG_DBG("Sending frame (ch:%d, txpower:%d)",
+	LOG_DBG("Sending frame (ch:%d, txpower:%d)",
 		    nrf5_radio->channel,
 		    nrf5_radio->txpower);
 
 	/* Wait for ack to be received */
 	if (k_sem_take(&nrf5_radio->tx_wait, ACK_TIMEOUT)) {
-		SYS_LOG_DBG("ACK not received");
+		LOG_DBG("ACK not received");
 		nrf_drv_radio802154_receive(nrf5_radio->channel, true);
 
 		return -EIO;
 	}
 
-	SYS_LOG_DBG("Result: %d", nrf5_data.tx_success);
+	LOG_DBG("Result: %d", nrf5_data.tx_success);
 
 	return nrf5_radio->tx_success ? 0 : -EBUSY;
 }
@@ -303,7 +305,7 @@ static int nrf5_start(struct device *dev)
 	struct nrf5_802154_data *nrf5_radio = NRF5_802154_DATA(dev);
 
 	nrf_drv_radio802154_receive(nrf5_radio->channel, false);
-	SYS_LOG_DBG("nRF5 802154 radio started (channel: %d)",
+	LOG_DBG("nRF5 802154 radio started (channel: %d)",
 		    nrf5_radio->channel);
 
 	return 0;
@@ -314,11 +316,11 @@ static int nrf5_stop(struct device *dev)
 	ARG_UNUSED(dev);
 
 	if (!nrf_drv_radio802154_sleep()) {
-		SYS_LOG_ERR("Error while stopping radio");
+		LOG_ERR("Error while stopping radio");
 		return -EIO;
 	}
 
-	SYS_LOG_DBG("nRF5 802154 radio stopped");
+	LOG_DBG("nRF5 802154 radio stopped");
 
 	return 0;
 }
@@ -364,7 +366,7 @@ static int nrf5_init(struct device *dev)
 			nrf5_rx_thread, dev, NULL, NULL,
 			K_PRIO_COOP(2), 0, 0);
 
-	SYS_LOG_INF("nRF5 802154 radio initialized");
+	LOG_INF("nRF5 802154 radio initialized");
 
 	return 0;
 }
@@ -374,7 +376,7 @@ static void nrf5_iface_init(struct net_if *iface)
 	struct device *dev = net_if_get_device(iface);
 	struct nrf5_802154_data *nrf5_radio = NRF5_802154_DATA(dev);
 
-	SYS_LOG_DBG("");
+	LOG_DBG("");
 
 	nrf5_get_eui64(nrf5_radio->mac);
 	net_if_set_link_addr(iface,

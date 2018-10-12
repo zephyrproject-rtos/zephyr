@@ -13,8 +13,8 @@
  * (include/arch/syscall.h)
  */
 
-#ifndef _ARM_SYSCALL__H_
-#define _ARM_SYSCALL__H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_SYSCALL_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_SYSCALL_H_
 
 #define _SVC_CALL_IRQ_OFFLOAD		1
 #define _SVC_CALL_RUNTIME_EXCEPT	2
@@ -174,4 +174,4 @@ static inline int _arch_is_user_context(void)
 
 #endif /* _ASMLANGUAGE */
 #endif /* CONFIG_USERSPACE */
-#endif /* _ARM_SYSCALL__H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_SYSCALL_H_ */

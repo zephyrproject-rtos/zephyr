@@ -13,7 +13,7 @@ menuconfig PCA9633
 	  PCA9633 LED driver has 4 channels each with multi-programmable
 	  states. Each channel can drive up to 25 mA per LED.
 
-if !HAS_DTS_I2C_DEVICE
+if !HAS_DTS_I2C
 
 config PCA9633_DEV_NAME
 	string "PCA9633 device name"

@@ -3,9 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define SYS_LOG_DOMAIN "dev/eth_stm32_hal"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_ETHERNET_LEVEL
-#include <logging/sys_log.h>
+#define LOG_MODULE_NAME eth_stm32_hal
+#define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <kernel.h>
 #include <device.h>
@@ -79,7 +81,7 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 
 	total_len = net_pkt_ll_reserve(pkt) + net_pkt_get_len(pkt);
 	if (total_len > ETH_TX_BUF_SIZE) {
-		SYS_LOG_ERR("PKT to big\n");
+		LOG_ERR("PKT to big");
 		res = -EIO;
 		goto error;
 	}
@@ -103,7 +105,7 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 	}
 
 	if (HAL_ETH_TransmitFrame(heth, total_len) != HAL_OK) {
-		SYS_LOG_ERR("HAL_ETH_TransmitFrame failed\n");
+		LOG_ERR("HAL_ETH_TransmitFrame failed");
 		res = -EIO;
 		goto error;
 	}
@@ -157,12 +159,12 @@ static struct net_pkt *eth_rx(struct device *dev)
 
 	pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
 	if (!pkt) {
-		SYS_LOG_ERR("Failed to obtain RX buffer");
+		LOG_ERR("Failed to obtain RX buffer");
 		goto release_desc;
 	}
 
 	if (!net_pkt_append_all(pkt, total_len, dma_buffer, K_NO_WAIT)) {
-		SYS_LOG_ERR("Failed to append RX buffer to context buffer");
+		LOG_ERR("Failed to append RX buffer to context buffer");
 		net_pkt_unref(pkt);
 		pkt = NULL;
 		goto release_desc;
@@ -218,7 +220,7 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 			net_pkt_print_frags(pkt);
 			res = net_recv_data(dev_data->iface, pkt);
 			if (res < 0) {
-				SYS_LOG_ERR("Failed to enqueue frame "
+				LOG_ERR("Failed to enqueue frame "
 					"into RX queue: %d", res);
 				net_pkt_unref(pkt);
 			}
@@ -337,9 +339,9 @@ static void eth_iface_init(struct net_if *iface)
 		/* HAL Init time out. This could be linked to */
 		/* a recoverable error. Log the issue and continue */
 		/* dirver initialisation */
-		SYS_LOG_ERR("HAL_ETH_Init Timed out\n");
+		LOG_ERR("HAL_ETH_Init Timed out");
 	} else if (hal_ret != HAL_OK) {
-		SYS_LOG_ERR("HAL_ETH_Init failed: %d\n", hal_ret);
+		LOG_ERR("HAL_ETH_Init failed: %d", hal_ret);
 		return;
 	}
 
@@ -363,10 +365,10 @@ static void eth_iface_init(struct net_if *iface)
 
 	disable_mcast_filter(heth);
 
-	SYS_LOG_DBG("MAC %02x:%02x:%02x:%02x:%02x:%02x",
-		    dev_data->mac_addr[0], dev_data->mac_addr[1],
-		    dev_data->mac_addr[2], dev_data->mac_addr[3],
-		    dev_data->mac_addr[4], dev_data->mac_addr[5]);
+	LOG_DBG("MAC %02x:%02x:%02x:%02x:%02x:%02x",
+		dev_data->mac_addr[0], dev_data->mac_addr[1],
+		dev_data->mac_addr[2], dev_data->mac_addr[3],
+		dev_data->mac_addr[4], dev_data->mac_addr[5]);
 
 	/* Register Ethernet MAC Address with the upper layer */
 	net_if_set_link_addr(iface, dev_data->mac_addr,

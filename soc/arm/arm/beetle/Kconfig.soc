@@ -14,10 +14,3 @@ config SOC_BEETLE_R0
 	bool "ARM BEETLE R0"
 
 endchoice
-
-config ARM_MPU_ENABLE
-	bool "Enable MPU on ARM Beetle"
-	depends on CPU_HAS_MPU
-	select ARM_MPU
-	help
-	  Enable MPU support on ARM Beetle SoCs

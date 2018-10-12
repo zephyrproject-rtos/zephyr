@@ -5,7 +5,6 @@
 #
 ---
 title: MAX30101 heart rate sensor
-id: nxp,max30101
 version: 0.1
 
 description: >

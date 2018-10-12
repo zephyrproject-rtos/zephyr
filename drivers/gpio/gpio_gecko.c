@@ -294,10 +294,10 @@ DEVICE_AND_API_INIT(gpio_gecko_common, CONFIG_GPIO_GECKO_COMMON_NAME,
 static int gpio_gecko_common_init(struct device *dev)
 {
 	gpio_gecko_common_data.count = 0;
-	IRQ_CONNECT(GPIO_EVEN_IRQn, CONFIG_GPIO_GECKO_COMMON_PRI,
+	IRQ_CONNECT(GPIO_EVEN_IRQn, CONFIG_GPIO_GECKO_COMMON_EVEN_PRI,
 		    gpio_gecko_common_isr, DEVICE_GET(gpio_gecko_common), 0);
 
-	IRQ_CONNECT(GPIO_ODD_IRQn, CONFIG_GPIO_GECKO_COMMON_PRI,
+	IRQ_CONNECT(GPIO_ODD_IRQn, CONFIG_GPIO_GECKO_COMMON_ODD_PRI,
 		    gpio_gecko_common_isr, DEVICE_GET(gpio_gecko_common), 0);
 
 	irq_enable(GPIO_EVEN_IRQn);

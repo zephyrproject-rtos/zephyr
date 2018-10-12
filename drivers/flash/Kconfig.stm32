@@ -6,7 +6,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if FLASH && SOC_FAMILY_STM32
+if SOC_FAMILY_STM32
 
 menuconfig SOC_FLASH_STM32
 	bool "STM32 flash driver"

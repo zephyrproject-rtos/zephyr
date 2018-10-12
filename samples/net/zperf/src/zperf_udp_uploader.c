@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define LOG_MODULE_NAME net_zperf_udp_send
+#define NET_LOG_LEVEL LOG_LEVEL_DBG
+
 #include <zephyr.h>
 
 #include <misc/printk.h>
@@ -211,7 +214,7 @@ void zperf_udp_upload(struct net_context *context,
 	last_print_time = start_time;
 	last_loop_time = start_time;
 
-	memset(sample_packet, 'z', sizeof(sample_packet));
+	(void)memset(sample_packet, 'z', sizeof(sample_packet));
 
 	do {
 		struct zperf_udp_datagram datagram;

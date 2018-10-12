@@ -7,10 +7,7 @@
 /**
  * @file
  *
- * @brief Sample app to illustrate I2S transmission (playback) on Intel_S1000.
- *
- * Intel_S1000 - Xtensa
- * --------------------
+ * @brief Sample app to illustrate I2S transmission (playback) on Intel S1000 CRB.
  *
  * The i2s_cavs driver is being used.
  *

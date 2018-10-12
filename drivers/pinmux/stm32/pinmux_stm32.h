@@ -8,8 +8,8 @@
  * @file header for STM32 pin multiplexing
  */
 
-#ifndef _STM32_PINMUX_H_
-#define _STM32_PINMUX_H_
+#ifndef ZEPHYR_DRIVERS_PINMUX_STM32_PINMUX_STM32_H_
+#define ZEPHYR_DRIVERS_PINMUX_STM32_PINMUX_STM32_H_
 
 #include <zephyr/types.h>
 #include <stddef.h>
@@ -117,4 +117,4 @@ void stm32_setup_pins(const struct pin_config *pinconf,
 #include "pinmux_stm32l4x.h"
 #endif
 
-#endif	/* _STM32_PINMUX_H_ */
+#endif	/* ZEPHYR_DRIVERS_PINMUX_STM32_PINMUX_STM32_H_ */

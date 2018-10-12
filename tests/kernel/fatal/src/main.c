@@ -119,7 +119,7 @@ void blow_up_stack(void)
 	char buf[OVERFLOW_STACKSIZE];
 
 	TC_PRINT("posting %zu bytes of junk to stack...\n", sizeof(buf));
-	memset(buf, 0xbb, sizeof(buf));
+	(void)memset(buf, 0xbb, sizeof(buf));
 }
 
 void stack_thread1(void)
@@ -248,7 +248,7 @@ void test_fatal(void)
 			(k_thread_entry_t)stack_thread2,
 			NULL, NULL, NULL, K_PRIO_PREEMPT(PRIORITY), 0,
 			K_NO_WAIT);
-#ifdef CONFIG_NXP_MPU
+#ifdef CPU_HAS_NXP_MPU
 	/* FIXME: See #7706 */
 	zassert_true(crash_reason == _NANO_ERR_STACK_CHK_FAIL ||
 		     crash_reason == _NANO_ERR_HW_EXCEPTION, NULL);

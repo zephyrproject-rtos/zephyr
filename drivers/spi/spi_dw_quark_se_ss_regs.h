@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __SPI_DW_QUARK_SE_SS_H__
-#define __SPI_DW_QUARK_SE_SS_H__
+#ifndef ZEPHYR_DRIVERS_SPI_SPI_DW_QUARK_SE_SS_REGS_H_
+#define ZEPHYR_DRIVERS_SPI_SPI_DW_QUARK_SE_SS_REGS_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -150,4 +150,4 @@ static inline void _extra_clock_off(struct device *dev)
 }
 #endif
 
-#endif /* __SPI_DW_QUARK_SE_SS_H__ */
+#endif /* ZEPHYR_DRIVERS_SPI_SPI_DW_QUARK_SE_SS_REGS_H_ */

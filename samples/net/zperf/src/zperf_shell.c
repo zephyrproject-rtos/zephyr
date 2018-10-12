@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define SYS_LOG_DOMAIN "net/zperf"
+#define LOG_MODULE_NAME net_zperf_shell
+#define NET_LOG_LEVEL LOG_LEVEL_DBG
 
 #include <ctype.h>
 #include <stdio.h>
@@ -12,7 +13,7 @@
 
 #include <zephyr.h>
 #include <misc/printk.h>
-#include <shell/shell.h>
+#include <shell/legacy_shell.h>
 
 #include <net/net_ip.h>
 #include <net/net_core.h>

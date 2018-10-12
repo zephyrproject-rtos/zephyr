@@ -179,8 +179,8 @@ Follow these steps to install the SDK on your Linux host system.
      above shown example if the SDK installation location is not default.
 
 
-.. note:: In previous releases of Zephyr, the ``ZEPHYR_TOOLCHAIN_VARIANT``
-          variable was called ``ZEPHYR_GCC_VARIANT``.
+  .. note:: In previous releases of Zephyr, the ``ZEPHYR_TOOLCHAIN_VARIANT``
+            variable was called ``ZEPHYR_GCC_VARIANT``.
 
 .. _Zephyr Downloads:
     https://www.zephyrproject.org/developers/#downloads

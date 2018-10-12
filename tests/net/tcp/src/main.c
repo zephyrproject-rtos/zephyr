@@ -6,6 +6,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define LOG_MODULE_NAME net_test
+#define NET_LOG_LEVEL CONFIG_NET_TCP_LOG_LEVEL
+
 #include <zephyr.h>
 
 #include <zephyr/types.h>
@@ -24,7 +27,7 @@
 
 #include <tc_util.h>
 
-#if defined(CONFIG_NET_DEBUG_TCP)
+#if defined(CONFIG_NET_TCP_LOG_LEVEL_DBG)
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
 #define NET_LOG_ENABLED 1
 #else

@@ -20,24 +20,9 @@ config CRYPTO_INIT_PRIORITY
 	help
 	  Crypto devices initialization priority.
 
-config SYS_LOG_CRYPTO_LEVEL
-	int "Crypto drivers log level"
-	default 0
-	depends on SYS_LOG
-	help
-	  Sets log level for crypto drivers
-
-	  Levels are:
-
-	  - 0 OFF, do not write
-
-	  - 1 ERROR, only write SYS_LOG_ERR
-
-	  - 2 WARNING, write SYS_LOG_WRN in addition to previous level
-
-	  - 3 INFO, write SYS_LOG_INF in addition to previous levels
-
-	  - 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
+module = CRYPTO
+module-str = CRYPTO
+source "subsys/logging/Kconfig.template.log_config"
 
 config CRYPTO_TINYCRYPT_SHIM
 	bool "Enable TinyCrypt shim driver [EXPERIMENTAL]"

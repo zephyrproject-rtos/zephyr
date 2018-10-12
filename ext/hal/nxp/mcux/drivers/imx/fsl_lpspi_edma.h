@@ -1,31 +1,9 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 #ifndef _FSL_LPSPI_EDMA_H_
 #define _FSL_LPSPI_EDMA_H_
@@ -41,6 +19,11 @@
 /***********************************************************************************************************************
  * Definitions
  **********************************************************************************************************************/
+/*! @name Driver version */
+/*@{*/
+/*! @brief LPSPI EDMA driver version 2.0.2. */
+#define FSL_LPSPI_EDMA_DRIVER_VERSION (MAKE_VERSION(2, 0, 2))
+/*@}*/
 
 /*!
 * @brief Forward declaration of the _lpspi_master_edma_handle typedefs.
@@ -88,10 +71,10 @@ struct _lpspi_master_edma_handle
 
     volatile uint8_t rxWatermark; /*!< Rx watermark. */
 
-    volatile uint8_t bytesEachWrite; /*!< Bytes for each write TDR . */
-    volatile uint8_t bytesEachRead;  /*!< Bytes for each read RDR . */
+    volatile uint8_t bytesEachWrite; /*!< Bytes for each write TDR. */
+    volatile uint8_t bytesEachRead;  /*!< Bytes for each read RDR. */
 
-    volatile uint8_t bytesLastRead;       /*!< Bytes for last read RDR . */
+    volatile uint8_t bytesLastRead;       /*!< Bytes for last read RDR. */
     volatile uint8_t isThereExtraRxBytes; /*!< Is there extra RX byte. */
 
     uint8_t *volatile txData;             /*!< Send buffer. */
@@ -119,7 +102,7 @@ struct _lpspi_master_edma_handle
     edma_handle_t *edmaRxRegToRxDataHandle; /*!<edma_handle_t handle point used for RxReg to RxData buff*/
     edma_handle_t *edmaTxDataToTxRegHandle; /*!<edma_handle_t handle point used for TxData to TxReg buff*/
 
-    edma_tcd_t lpspiSoftwareTCD[3]; /*!<SoftwareTCD , internal used*/
+    edma_tcd_t lpspiSoftwareTCD[3]; /*!<SoftwareTCD, internal used*/
 };
 
 /*! @brief LPSPI slave eDMA transfer handle structure used for transactional API.*/
@@ -131,10 +114,10 @@ struct _lpspi_slave_edma_handle
 
     volatile uint8_t rxWatermark; /*!< Rx watermark. */
 
-    volatile uint8_t bytesEachWrite; /*!< Bytes for each write TDR . */
-    volatile uint8_t bytesEachRead;  /*!< Bytes for each read RDR . */
+    volatile uint8_t bytesEachWrite; /*!< Bytes for each write TDR. */
+    volatile uint8_t bytesEachRead;  /*!< Bytes for each read RDR. */
 
-    volatile uint8_t bytesLastRead;       /*!< Bytes for last read RDR . */
+    volatile uint8_t bytesLastRead;       /*!< Bytes for last read RDR. */
     volatile uint8_t isThereExtraRxBytes; /*!< Is there extra RX byte. */
 
     uint8_t nbytes; /*!< eDMA minor byte transfer count initially configured. */
@@ -144,8 +127,8 @@ struct _lpspi_slave_edma_handle
     volatile size_t txRemainingByteCount; /*!< Number of bytes remaining to send.*/
     volatile size_t rxRemainingByteCount; /*!< Number of bytes remaining to receive.*/
 
-    volatile uint32_t writeRegRemainingTimes; /*!< Write TDR register remaining times . */
-    volatile uint32_t readRegRemainingTimes;  /*!< Read RDR register remaining times . */
+    volatile uint32_t writeRegRemainingTimes; /*!< Write TDR register remaining times. */
+    volatile uint32_t readRegRemainingTimes;  /*!< Read RDR register remaining times. */
 
     uint32_t totalByteCount; /*!< Number of transfer bytes*/
 
@@ -162,7 +145,7 @@ struct _lpspi_slave_edma_handle
     edma_handle_t *edmaRxRegToRxDataHandle; /*!<edma_handle_t handle point used for RxReg to RxData buff*/
     edma_handle_t *edmaTxDataToTxRegHandle; /*!<edma_handle_t handle point used for TxData to TxReg*/
 
-    edma_tcd_t lpspiSoftwareTCD[2]; /*!<SoftwareTCD , internal used*/
+    edma_tcd_t lpspiSoftwareTCD[2]; /*!<SoftwareTCD, internal used*/
 };
 
 /***********************************************************************************************************************

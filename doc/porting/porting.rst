@@ -14,3 +14,4 @@ API interfaces supported by Zephyr.
    board_porting.rst
    ip-stack-migrate.rst
    porting_to_zephyr.rst
+   shields.rst

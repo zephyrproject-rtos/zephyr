@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __IEEE802154_CC1200_RF_H__
-#define __IEEE802154_CC1200_RF_H__
+#ifndef ZEPHYR_DRIVERS_IEEE802154_IEEE802154_CC1200_RF_H_
+#define ZEPHYR_DRIVERS_IEEE802154_IEEE802154_CC1200_RF_H_
 
 #include <ieee802154/cc1200.h>
 
@@ -355,4 +355,4 @@ const struct cc1200_rf_registers_set cc1200_rf_settings = {
 
 #endif /* CONFIG_IEEE802154_CC1200_RF_PRESET */
 
-#endif /* __IEEE802154_CC1200_RF_H__ */
+#endif /* ZEPHYR_DRIVERS_IEEE802154_IEEE802154_CC1200_RF_H_ */

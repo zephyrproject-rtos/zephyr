@@ -1,6 +1,5 @@
 ---
 title: STM32 TIMERS
-id: st,stm32-timers
 version: 0.1
 
 description: >
@@ -21,6 +20,7 @@ properties:
       category: required
       description: compatible strings
       constraint: "st,stm32-timers"
+      generation: define
 
     label:
       type: string

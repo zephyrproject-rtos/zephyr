@@ -16,6 +16,8 @@
 #include <unistd.h>
 
 #else
+#define LOG_MODULE_NAME net_dump_http_download
+#define NET_LOG_LEVEL LOG_LEVEL_DBG
 
 #include <net/socket.h>
 #include <kernel.h>

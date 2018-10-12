@@ -1,0 +1,47 @@
+# Kconfig - i.MX RT1062
+#
+# Copyright (c) 2018, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_MIMXRT1062
+
+config SOC
+	string
+	default "mimxrt1062"
+
+if CLOCK_CONTROL
+
+config CLOCK_CONTROL_MCUX_CCM
+	def_bool y
+
+endif # CLOCK_CONTROL
+
+config ARM_DIV
+	default 1
+
+config AHB_DIV
+	default 0
+
+config IPG_DIV
+	default 3
+
+config GPIO
+	def_bool y
+
+if GPIO
+
+config GPIO_MCUX_IGPIO
+	def_bool y
+
+endif # GPIO
+
+if SERIAL
+
+config UART_MCUX_LPUART
+	def_bool y
+
+endif # SERIAL
+
+endif # SOC_MIMXRT1062

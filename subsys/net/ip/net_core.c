@@ -11,10 +11,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_CORE)
-#define SYS_LOG_DOMAIN "net/core"
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_core
+#define NET_LOG_LEVEL CONFIG_NET_CORE_LOG_LEVEL
 
 #include <init.h>
 #include <kernel.h>
@@ -293,13 +291,12 @@ int net_send_data(struct net_pkt *pkt)
 
 static void net_rx(struct net_if *iface, struct net_pkt *pkt)
 {
-#if defined(CONFIG_NET_STATISTICS) || defined(CONFIG_NET_DEBUG_CORE)
 	size_t pkt_len;
+
 #if defined(CONFIG_NET_STATISTICS)
 	pkt_len = pkt->total_pkt_len;
 #else
 	pkt_len = net_pkt_get_len(pkt);
-#endif
 #endif
 
 	NET_DBG("Received pkt %p len %zu", pkt, pkt_len);

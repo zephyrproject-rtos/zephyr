@@ -189,12 +189,9 @@ message(STATUS "Selected BOARD ${BOARD}")
 # Store the selected board in the cache
 set(CACHED_BOARD ${BOARD} CACHE STRING "Selected board")
 
-# Use BOARD to search zephyr/boards/** for a _defconfig file,
-# e.g. zephyr/boards/arm/96b_carbon_nrf51/96b_carbon_nrf51_defconfig. When
-# found, use that path to infer the ARCH we are building for.
-if(NOT BOARD_ROOT)
-  set(BOARD_ROOT ${ZEPHYR_BASE})
-endif()
+# 'BOARD_ROOT' is a prioritized list of directories where boards may
+# be found. It always includes ${ZEPHYR_BASE} at the lowest priority.
+list(APPEND BOARD_ROOT ${ZEPHYR_BASE})
 
 if(NOT SOC_ROOT)
   set(SOC_DIR ${ZEPHYR_BASE}/soc)
@@ -202,13 +199,27 @@ else()
   set(SOC_DIR ${SOC_ROOT}/soc)
 endif()
 
-find_path(BOARD_DIR NAMES "${BOARD}_defconfig" PATHS ${BOARD_ROOT}/boards/*/* NO_DEFAULT_PATH)
+# Use BOARD to search for a '_defconfig' file.
+# e.g. zephyr/boards/arm/96b_carbon_nrf51/96b_carbon_nrf51_defconfig.
+# When found, use that path to infer the ARCH we are building for.
+foreach(root ${BOARD_ROOT})
+  # NB: find_path will return immediately if the output variable is
+  # already set
+  find_path(BOARD_DIR
+	NAMES ${BOARD}_defconfig
+	PATHS ${root}/boards/*/*
+	NO_DEFAULT_PATH
+	)
+  if(BOARD_DIR AND NOT (${root} STREQUAL ${ZEPHYR_BASE}))
+	set(USING_OUT_OF_TREE_BOARD 1)
+  endif()
+endforeach()
 
 assert_with_usage(BOARD_DIR "No board named '${BOARD}' found")
 
 get_filename_component(BOARD_ARCH_DIR ${BOARD_DIR} DIRECTORY)
-get_filename_component(ARCH ${BOARD_ARCH_DIR} NAME)
-get_filename_component(BOARD_FAMILY ${BOARD_DIR} NAME)
+get_filename_component(BOARD_FAMILY   ${BOARD_DIR} NAME     )
+get_filename_component(ARCH           ${BOARD_ARCH_DIR} NAME)
 
 if(CONF_FILE)
   # CONF_FILE has either been specified on the cmake CLI or is already
@@ -262,7 +273,16 @@ if(GIT_FOUND)
   execute_process(COMMAND ${GIT_EXECUTABLE} describe
     WORKING_DIRECTORY ${ZEPHYR_BASE}
     OUTPUT_VARIABLE BUILD_VERSION
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_STRIP_TRAILING_WHITESPACE
+    ERROR_VARIABLE stderr
+    RESULT_VARIABLE return_code
+    )
+  if(return_code)
+    message(STATUS "git describe failed: ${stderr}; ${KERNEL_VERSION_STRING} will be used instead")
+  elseif(CMAKE_VERBOSE_MAKEFILE)
+    message(STATUS "git describe stderr: ${stderr}")
+  endif()
 endif()
 
 set(SOC_NAME ${CONFIG_SOC})
@@ -330,20 +350,3 @@ foreach(boilerplate_lib ${ZEPHYR_INTERFACE_LIBS_PROPERTY})
     ${boilerplate_lib}
     )
 endforeach()
-
-
-if(NOT EXISTS ${ZEPHYR_BASE}/hide-defaults-note)
-    message(STATUS "\n\
-*******************************\n\
-*** NOTE TO KCONFIG AUTHORS ***\n\
-*******************************\n\
-\n\
-The behavior of Kconfig 'default' properties in Zephyr has changed. The \n\
-earliest default with a satisfied condition is now used, instead of the \n\
-last one. This is standard Kconfig behavior.\n\
-\n\
-See http://docs.zephyrproject.org/latest/porting/board_porting.html#old-zephyr-kconfig-behavior-for-defaults.\n\
-\n\
-To get rid of this note, create a file called 'hide-defaults-note' in the \n\
-Zephyr root directory. An empty file is fine.")
-endif()

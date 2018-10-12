@@ -10,10 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_LLMNR_RESPONDER)
-#define SYS_LOG_DOMAIN "llmnr"
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_llmnr_responder
+#define NET_LOG_LEVEL CONFIG_LLMNR_RESPONDER_LOG_LEVEL
 
 #include <zephyr.h>
 #include <init.h>
@@ -439,8 +437,10 @@ static int send_response(struct net_context *ctx, struct net_pkt *pkt,
 	if (ret < 0) {
 		NET_DBG("Cannot send LLMNR reply to %s (%d)",
 			net_pkt_family(pkt) == AF_INET ?
-			net_sprint_ipv4_addr(&net_sin(&dst)->sin_addr) :
-			net_sprint_ipv6_addr(&net_sin6(&dst)->sin6_addr),
+			log_strdup(net_sprint_ipv4_addr(
+					   &net_sin(&dst)->sin_addr)) :
+			log_strdup(net_sprint_ipv6_addr(
+					   &net_sin6(&dst)->sin6_addr)),
 			ret);
 
 		net_pkt_unref(reply);
@@ -500,14 +500,15 @@ static int dns_read(struct net_context *ctx,
 	NET_DBG("Received %d %s from %s (id 0x%04x)", queries,
 		queries > 1 ? "queries" : "query",
 		net_pkt_family(pkt) == AF_INET ?
-		net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src) :
-		net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src), dns_id);
+		log_strdup(net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src)) :
+		log_strdup(net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src)),
+		dns_id);
 
 	do {
 		enum dns_rr_type qtype;
 		enum dns_class qclass;
 
-		memset(result->data, 0, net_buf_tailroom(result));
+		(void)memset(result->data, 0, net_buf_tailroom(result));
 		result->len = 0;
 
 		ret = dns_unpack_query(&dns_msg, result, &qtype, &qclass);
@@ -517,7 +518,7 @@ static int dns_read(struct net_context *ctx,
 
 		NET_DBG("[%d] query %s/%s label %s (%d bytes)", queries,
 			qtype == DNS_RR_TYPE_A ? "A" : "AAAA", "IN",
-			result->data, ret);
+			log_strdup(result->data), ret);
 
 		/* If the query matches to our hostname, then send reply */
 		if (!strncasecmp(hostname, result->data + 1, hostname_len) &&
@@ -583,7 +584,7 @@ static void iface_ipv6_cb(struct net_if *iface, void *user_data)
 	ret = net_ipv6_mld_join(iface, addr);
 	if (ret < 0) {
 		NET_DBG("Cannot join %s IPv6 multicast group (%d)",
-			net_sprint_ipv6_addr(addr), ret);
+			log_strdup(net_sprint_ipv6_addr(addr)), ret);
 	}
 }
 

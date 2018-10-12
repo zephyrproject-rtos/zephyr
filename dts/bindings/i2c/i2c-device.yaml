@@ -5,7 +5,6 @@
 #
 ---
 title: I2C Device Base Structure
-id: i2c-device
 version: 0.1
 
 description: >
@@ -19,6 +18,7 @@ properties:
       type: string
       category: required
       description: compatible strings
+      generation: define
     reg:
       type: array
       description: address on i2c bus

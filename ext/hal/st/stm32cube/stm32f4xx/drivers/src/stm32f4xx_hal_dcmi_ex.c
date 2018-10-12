@@ -12,10 +12,10 @@
                ##### DCMI peripheral extension features  #####
   ==============================================================================
 
-  [..] Comparing to other previous devices, the DCMI interface for STM32F446xx 
+  [..] Comparing to other previous devices, the DCMI interface for STM32F446xx
        devices contains the following additional features :
 
-       (+) Support of Black and White cameras 
+       (+) Support of Black and White cameras
 
                      ##### How to use this driver #####
   ==============================================================================
@@ -136,7 +136,7 @@ HAL_StatusTypeDef HAL_DCMI_Init(DCMI_HandleTypeDef *hdcmi)
   hdcmi->Instance->CR |=  (uint32_t)(hdcmi->Init.SynchroMode | hdcmi->Init.CaptureRate |\
                                      hdcmi->Init.VSPolarity  | hdcmi->Init.HSPolarity  |\
                                      hdcmi->Init.PCKPolarity | hdcmi->Init.ExtendedDataMode |\
-                                     hdcmi->Init.JPEGMode 
+                                     hdcmi->Init.JPEGMode
 #if defined(STM32F446xx) || defined(STM32F469xx) || defined(STM32F479xx)
                                      | hdcmi->Init.ByteSelectMode |\
                                      hdcmi->Init.ByteSelectStart | hdcmi->Init.LineSelectMode |\
@@ -163,7 +163,7 @@ HAL_StatusTypeDef HAL_DCMI_Init(DCMI_HandleTypeDef *hdcmi)
 
   return HAL_OK;
 }
-  
+
 /**
   * @}
   */

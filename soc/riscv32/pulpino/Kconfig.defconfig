@@ -58,26 +58,6 @@ config UART_NS16550_PORT_0
 	bool
 	default y
 
-if UART_NS16550_PORT_0
-
-config UART_NS16550_PORT_0_NAME
-	string
-	default "UART_0"
-
-config UART_NS16550_PORT_0_IRQ_PRI
-	int
-	default 0
-
-config UART_NS16550_PORT_0_BAUD_RATE
-	int
-	default 115200
-
-config UART_NS16550_PORT_0_OPTIONS
-	int
-	default 0
-
-endif # UART_NS16550_PORT_0
-
 endif # UART_NS16550
 
 endif # SOC_RISCV32_PULPINO

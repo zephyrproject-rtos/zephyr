@@ -7,8 +7,8 @@
 #include <errno.h>
 #include <kernel.h>
 #include <limits.h>
-#include <posix/pthread.h>
 #include <posix/unistd.h>
+#include <posix/dirent.h>
 #include <string.h>
 
 BUILD_ASSERT_MSG(PATH_MAX > MAX_FILE_NAME,
@@ -106,7 +106,7 @@ int open(const char *name, int flags)
 		errno = ENFILE;
 		return -1;
 	}
-	memset(ptr, 0, sizeof(struct fs_file_t));
+	(void)memset(ptr, 0, sizeof(struct fs_file_t));
 
 	rc = fs_open(ptr, name);
 	if (rc < 0) {
@@ -151,7 +151,7 @@ int close(int fd)
  *
  * See IEEE 1003.1
  */
-ssize_t write(int fd, char *buffer, unsigned int count)
+ssize_t write(int fd, const void *buffer, size_t count)
 {
 	ssize_t rc;
 	struct fs_file_t *ptr = NULL;
@@ -175,7 +175,7 @@ ssize_t write(int fd, char *buffer, unsigned int count)
  *
  * See IEEE 1003.1
  */
-ssize_t read(int fd, char *buffer, unsigned int count)
+ssize_t read(int fd, void *buffer, size_t count)
 {
 	ssize_t rc;
 	struct fs_file_t *ptr = NULL;
@@ -199,7 +199,7 @@ ssize_t read(int fd, char *buffer, unsigned int count)
  *
  * See IEEE 1003.1
  */
-int lseek(int fd, int offset, int whence)
+off_t lseek(int fd, off_t offset, int whence)
 {
 	int rc;
 	struct fs_file_t *ptr = NULL;
@@ -233,7 +233,7 @@ DIR *opendir(const char *dirname)
 		errno = EMFILE;
 		return NULL;
 	}
-	memset(ptr, 0, sizeof(struct fs_dir_t));
+	(void)memset(ptr, 0, sizeof(struct fs_dir_t));
 
 	rc = fs_opendir(ptr, dirname);
 	if (rc < 0) {

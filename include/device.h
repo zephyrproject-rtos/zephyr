@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _DEVICE_H_
-#define _DEVICE_H_
+#ifndef ZEPHYR_INCLUDE_DEVICE_H_
+#define ZEPHYR_INCLUDE_DEVICE_H_
 
 #include <kernel.h>
 
@@ -28,10 +28,6 @@
 extern "C" {
 #endif
 
-static const int _INIT_LEVEL_PRE_KERNEL_1 = 1;
-static const int _INIT_LEVEL_PRE_KERNEL_2 = 1;
-static const int _INIT_LEVEL_POST_KERNEL = 1;
-static const int _INIT_LEVEL_APPLICATION = 1;
 
 /**
  * @def DEVICE_INIT
@@ -434,4 +430,4 @@ int device_busy_check(struct device *chk_dev);
 /**
  * @}
  */
-#endif /* _DEVICE_H_ */
+#endif /* ZEPHYR_INCLUDE_DEVICE_H_ */

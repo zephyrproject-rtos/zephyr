@@ -205,7 +205,7 @@ int ioapic_suspend(struct device *port)
 	u32_t rte_lo;
 
 	ARG_UNUSED(port);
-	memset(ioapic_suspend_buf, 0, (SUSPEND_BITS_REQD >> 3));
+	(void)memset(ioapic_suspend_buf, 0, (SUSPEND_BITS_REQD >> 3));
 	for (irq = 0; irq < CONFIG_IOAPIC_NUM_RTES; irq++) {
 		/*
 		 * The following check is to figure out the registered

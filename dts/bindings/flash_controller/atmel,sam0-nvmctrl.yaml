@@ -1,6 +1,5 @@
 ---
 title: Atmel SAM0 Non-Volatile Memory Controller
-id: atmel,sam0-nvmctrl
 version: 0.1
 
 description: >

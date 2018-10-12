@@ -5,7 +5,7 @@ compiler: gcc
 env:
     global:
         - SDK=0.9.3
-        - SANITYCHECK_OPTIONS=" --inline-logs --enable-coverage "
+        - SANITYCHECK_OPTIONS=" --inline-logs --enable-coverage -N"
         - SANITYCHECK_OPTIONS_RETRY="${SANITYCHECK_OPTIONS} --only-failed --outdir=out-2nd-pass"
         - ZEPHYR_SDK_INSTALL_DIR=/opt/sdk/zephyr-sdk-0.9.3
         - ZEPHYR_TOOLCHAIN_VARIANT=zephyr
@@ -19,7 +19,7 @@ env:
         - MATRIX_BUILD="5"
 
 build:
-    cache: true
+    cache: false
     cache_dir_list:
         - ${SHIPPABLE_BUILD_DIR}/ccache
     pre_ci_boot:
@@ -72,6 +72,11 @@ build:
       - rm test_file.txt
       - ccache -s
     on_failure:
+      - >
+         if [ -f "$HOME/.cache/zephyr/ToolchainCapabilityDatabase.cmake" ]; then
+           echo "Dumping the capability database in case we are affected by #9992"
+           cat $HOME/.cache/zephyr/ToolchainCapabilityDatabase.cmake
+         fi;
       - rm -rf ccache $HOME/.cache/zephyr
       - mkdir -p shippable/testresults
       - mkdir -p shippable/codecoverage

@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2017 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/f4/stm32f429.dtsi>
+
+/ {
+	soc {
+		usbotg_fs: usb@50000000 {
+			num-bidir-endpoints = <6>;
+		};
+
+		usbotg_hs: usb@40040000 {
+			num-bidir-endpoints = <9>;
+			ram-size = <4096>;
+		};
+	};
+};

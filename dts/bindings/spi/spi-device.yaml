@@ -5,7 +5,6 @@
 #
 ---
 title: SPI Device Base Structure
-id: spi-device
 version: 0.1
 
 description: >
@@ -19,6 +18,7 @@ properties:
       type: string
       category: required
       description: compatible strings
+      generation: define
     reg:
       type: array
       description: Chip select address of device

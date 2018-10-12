@@ -4,10 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_MGMT_EVENT)
-#define SYS_LOG_DOMAIN "net/mgmt"
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_mgmt
+#define NET_LOG_LEVEL CONFIG_NET_MGMT_EVENT_LOG_LEVEL
 
 #include <kernel.h>
 #include <toolchain.h>
@@ -69,7 +67,7 @@ static inline void mgmt_push_event(u32_t mgmt_event, struct net_if *iface,
 			memcpy(events[i_idx].info, info, length);
 			events[i_idx].info_length = length;
 		} else {
-			NET_ERR("Event info length %u > max size %u",
+			NET_ERR("Event info length %zu > max size %zu",
 				length, NET_EVENT_INFO_MAX_SIZE);
 			k_sem_give(&net_mgmt_lock);
 
@@ -376,9 +374,8 @@ void net_mgmt_event_init(void)
 	in_event = -1;
 	out_event = -1;
 
-	memset(events, 0,
-	       CONFIG_NET_MGMT_EVENT_QUEUE_SIZE *
-	       sizeof(struct mgmt_event_entry));
+	(void)memset(events, 0, CONFIG_NET_MGMT_EVENT_QUEUE_SIZE *
+			sizeof(struct mgmt_event_entry));
 
 	k_thread_create(&mgmt_thread_data, mgmt_stack,
 			K_THREAD_STACK_SIZEOF(mgmt_stack),

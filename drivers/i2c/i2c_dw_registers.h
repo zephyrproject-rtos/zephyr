@@ -5,8 +5,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __DRIVERS_I2C_DW_REGISTERS_H
-#define __DRIVERS_I2C_DW_REGISTERS_H
+#ifndef ZEPHYR_DRIVERS_I2C_I2C_DW_REGISTERS_H_
+#define ZEPHYR_DRIVERS_I2C_I2C_DW_REGISTERS_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -257,4 +257,4 @@ struct i2c_dw_registers {
 }
 #endif
 
-#endif /* __DRIVERS_I2C_DW_REGISTERS_H */
+#endif /* ZEPHYR_DRIVERS_I2C_I2C_DW_REGISTERS_H_ */

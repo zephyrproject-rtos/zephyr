@@ -12,17 +12,49 @@
 #include <stdlib.h>
 #include <string.h>
 #include <zephyr.h>
-#include <shell/shell.h>
-#include <misc/printk.h>
 
 #include <bluetooth/hci.h>
+#include <bluetooth/bluetooth.h>
+#include <bluetooth/conn.h>
+
+#include <shell/shell.h>
 
 #include "../controller/include/ll.h"
+
+#include "bt.h"
+
+int cmd_ll_addr_get(const struct shell *shell, size_t argc, char *argv[])
+{
+	u8_t addr_type;
+	const char *str_type;
+	bt_addr_t addr;
+	char str_addr[BT_ADDR_STR_LEN];
+
+	if (argc < 2) {
+		return -EINVAL;
+	}
+
+	str_type = argv[1];
+	if (!strcmp(str_type, "random")) {
+		addr_type = 1;
+	} else if (!strcmp(str_type, "public")) {
+		addr_type = 0;
+	} else {
+		return -EINVAL;
+	}
+
+	(void)ll_addr_get(addr_type, addr.val);
+	bt_addr_to_str(&addr, str_addr, sizeof(str_addr));
+
+	print(shell, "Current %s address: %s\n", str_type, str_addr);
+
+	return 0;
+}
 
 #if defined(CONFIG_BT_CTLR_DTM)
 #include "../controller/ll_sw/ll_test.h"
 
-int cmd_test_tx(int argc, char *argv[])
+int cmd_test_tx(const struct shell *shell, size_t  argc, char *argv[])
 {
 	u8_t chan, len, type, phy;
 	u32_t err;
@@ -41,12 +73,12 @@ int cmd_test_tx(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	printk("test_tx...\n");
+	print(shell, "test_tx...");
 
 	return 0;
 }
 
-int cmd_test_rx(int argc, char *argv[])
+int cmd_test_rx(const struct shell *shell, size_t  argc, char *argv[])
 {
 	u8_t chan, phy, mod_idx;
 	u32_t err;
@@ -64,12 +96,12 @@ int cmd_test_rx(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	printk("test_rx...\n");
+	print(shell, "test_rx...");
 
 	return 0;
 }
 
-int cmd_test_end(int argc, char *argv[])
+int cmd_test_end(const struct shell *shell, size_t  argc, char *argv[])
 {
 	u16_t num_rx;
 	u32_t err;
@@ -79,7 +111,7 @@ int cmd_test_end(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	printk("num_rx= %u.\n", num_rx);
+	print(shell, "num_rx= %u.", num_rx);
 
 	return 0;
 }
@@ -104,7 +136,7 @@ int cmd_test_end(int argc, char *argv[])
 #define SCAN_OWN_ADDR_TYPE 1
 #define SCAN_FILTER_POLICY 0
 
-int cmd_advx(int argc, char *argv[])
+int cmd_advx(const struct shell *shell, size_t argc, char *argv[])
 {
 	u16_t evt_prop;
 	u8_t enable;
@@ -159,7 +191,7 @@ int cmd_advx(int argc, char *argv[])
 		}
 	}
 
-	printk("adv param set...");
+	print(shell, "adv param set...");
 	err = ll_adv_params_set(0x00, evt_prop, ADV_INTERVAL, ADV_TYPE,
 				OWN_ADDR_TYPE, PEER_ADDR_TYPE, PEER_ADDR,
 				ADV_CHAN_MAP, FILTER_POLICY, ADV_TX_PWR,
@@ -170,19 +202,19 @@ int cmd_advx(int argc, char *argv[])
 	}
 
 disable:
-	printk("adv enable (%u)...", enable);
+	print(shell, "adv enable (%u)...", enable);
 	err = ll_adv_enable(enable);
 	if (err) {
 		goto exit;
 	}
 
 exit:
-	printk("done (err= %d).\n", err);
+	print(shell, "done (err= %d).", err);
 
 	return 0;
 }
 
-int cmd_scanx(int argc, char *argv[])
+int cmd_scanx(const struct shell *shell, size_t  argc, char *argv[])
 {
 	u8_t type = 0;
 	u8_t enable;
@@ -218,7 +250,7 @@ int cmd_scanx(int argc, char *argv[])
 		}
 	}
 
-	printk("scan param set...");
+	print(shell, "scan param set...");
 	err = ll_scan_params_set(type, SCAN_INTERVAL, SCAN_WINDOW,
 				 SCAN_OWN_ADDR_TYPE, SCAN_FILTER_POLICY);
 	if (err) {
@@ -226,15 +258,15 @@ int cmd_scanx(int argc, char *argv[])
 	}
 
 disable:
-	printk("scan enable (%u)...", enable);
+	print(shell, "scan enable (%u)...", enable);
 	err = ll_scan_enable(enable);
 	if (err) {
 		goto exit;
 	}
 
 exit:
-	printk("done (err= %d).\n", err);
+	print(shell, "done (err= %d).", err);
 
-	return 0;
+	return err;
 }
 #endif /* CONFIG_BT_CTLR_ADV_EXT */

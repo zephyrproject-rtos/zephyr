@@ -8,9 +8,9 @@
 #include <i2c.h>
 #include <nrfx_twi.h>
 
-#define SYS_LOG_DOMAIN "i2c_nrfx_twi"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_I2C_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(i2c_nrfx_twi);
 
 struct i2c_nrfx_twi_data {
 	struct k_sem sync;
@@ -36,6 +36,10 @@ static int i2c_nrfx_twi_transfer(struct device *dev, struct i2c_msg *msgs,
 				 u8_t num_msgs, u16_t addr)
 {
 	for (size_t i = 0; i < num_msgs; i++) {
+		if (I2C_MSG_ADDR_10_BITS & msgs[i].flags) {
+			return -ENOTSUP;
+		}
+
 		nrfx_twi_xfer_desc_t cur_xfer = {
 			.p_primary_buf  = msgs[i].buf,
 			.primary_length = msgs[i].len,
@@ -55,7 +59,7 @@ static int i2c_nrfx_twi_transfer(struct device *dev, struct i2c_msg *msgs,
 		k_sem_take(&(get_dev_data(dev)->sync), K_FOREVER);
 		res = get_dev_data(dev)->res;
 		if (res != NRFX_SUCCESS) {
-			SYS_LOG_ERR("Error %d occurred for message %d", res, i);
+			LOG_ERR("Error %d occurred for message %d", res, i);
 			return -EIO;
 		}
 	}
@@ -102,7 +106,7 @@ static int i2c_nrfx_twi_configure(struct device *dev, u32_t dev_config)
 		nrf_twi_frequency_set(inst->p_twi, NRF_TWI_FREQ_400K);
 		break;
 	default:
-		SYS_LOG_ERR("unsupported speed");
+		LOG_ERR("unsupported speed");
 		return -EINVAL;
 	}
 
@@ -119,7 +123,7 @@ static int init_twi(struct device *dev, const nrfx_twi_config_t *config)
 	nrfx_err_t result = nrfx_twi_init(&get_dev_config(dev)->twi, config,
 					  event_handler, dev);
 	if (result != NRFX_SUCCESS) {
-		SYS_LOG_ERR("Failed to initialize device: %s",
+		LOG_ERR("Failed to initialize device: %s",
 			    dev->config->name);
 		return -EBUSY;
 	}

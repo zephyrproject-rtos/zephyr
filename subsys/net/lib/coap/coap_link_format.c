@@ -4,10 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_COAP)
-#define SYS_LOG_DOMAIN "coap"
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_coap_utils
+#define NET_LOG_LEVEL CONFIG_COAP_LOG_LEVEL
 
 #include <stdlib.h>
 #include <stddef.h>
@@ -514,7 +512,7 @@ int coap_well_known_core_get(struct coap_resource *resource,
 end:
 	/* So it's a last block, reset context */
 	if (!more) {
-		memset(&ctx, 0, sizeof(ctx));
+		(void)memset(&ctx, 0, sizeof(ctx));
 	}
 
 	return r;

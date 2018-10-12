@@ -258,7 +258,7 @@ static int gpio_pulpino_init(struct device *dev)
 static void gpio_pulpino_cfg_0(void);
 
 static const struct gpio_pulpino_config gpio_pulpino_config0 = {
-	.gpio_base_addr    = PULP_GPIO_0_BASE,
+	.gpio_base_addr    = GPIO_0_BASE_ADDRESS,
 	.gpio_cfg_func     = gpio_pulpino_cfg_0,
 };
 
@@ -271,10 +271,10 @@ DEVICE_AND_API_INIT(gpio_pulpino_0, "gpio0", gpio_pulpino_init,
 
 static void gpio_pulpino_cfg_0(void)
 {
-	IRQ_CONNECT(PULP_GPIO_0_IRQ,
+	IRQ_CONNECT(GPIO_0_IRQ,
 		    0,
 		    gpio_pulpino_irq_handler,
 		    DEVICE_GET(gpio_pulpino_0),
 		    0);
-	irq_enable(PULP_GPIO_0_IRQ);
+	irq_enable(GPIO_0_IRQ);
 }

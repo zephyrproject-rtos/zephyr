@@ -9,8 +9,8 @@
  * @brief Network Management API public header
  */
 
-#ifndef __NET_MGMT_H__
-#define __NET_MGMT_H__
+#ifndef ZEPHYR_INCLUDE_NET_NET_MGMT_H_
+#define ZEPHYR_INCLUDE_NET_NET_MGMT_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -300,4 +300,4 @@ static inline int net_mgmt_event_wait_on_iface(struct net_if *iface,
 }
 #endif
 
-#endif /* __NET_MGMT_H__ */
+#endif /* ZEPHYR_INCLUDE_NET_NET_MGMT_H_ */

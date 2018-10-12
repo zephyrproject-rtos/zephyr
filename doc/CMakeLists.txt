@@ -5,9 +5,12 @@ set(ZEPHYR_BASE $ENV{ZEPHYR_BASE})
 
 message(STATUS "Zephyr base: ${ZEPHYR_BASE}")
 
+include(${ZEPHYR_BASE}/cmake/version.cmake)
+
 find_package(PythonInterp 3.4)
 set(DOXYGEN_SKIP_DOT True)
 find_package(Doxygen REQUIRED)
+find_package(LATEX)
 
 find_program(
   SPHINXBUILD
@@ -38,6 +41,8 @@ if(NOT DEFINED SPHINX_OUTPUT_DIR)
   set(SPHINX_OUTPUT_DIR_LATEX ${CMAKE_CURRENT_BINARY_DIR}/latex)
   set(SPHINX_OUTPUT_DIR_PDF ${CMAKE_CURRENT_BINARY_DIR}/pdf)
 else()
+  # SPHINX_OUTPUT_DIR is used to specify exactly where HTML (or other
+  # outputs) are placed, so no /html, /latex, /pdf suffixes are needed.
   set(SPHINX_OUTPUT_DIR_HTML ${SPHINX_OUTPUT_DIR})
   set(SPHINX_OUTPUT_DIR_LATEX ${SPHINX_OUTPUT_DIR})
   set(SPHINX_OUTPUT_DIR_PDF ${SPHINX_OUTPUT_DIR})
@@ -65,8 +70,75 @@ set(DOC_LOG ${CMAKE_CURRENT_BINARY_DIR}/doc.log)
 set(DOXY_LOG ${CMAKE_CURRENT_BINARY_DIR}/doxy.log)
 set(SPHINX_LOG ${CMAKE_CURRENT_BINARY_DIR}/sphinx.log)
 set(DOC_WARN ${CMAKE_CURRENT_BINARY_DIR}/doc.warnings)
+set(CONTENT_OUTPUTS ${CMAKE_CURRENT_BINARY_DIR}/extracted-content.txt)
 
 configure_file(${DOXYFILE_IN} ${DOXYFILE_OUT} @ONLY)
+
+# This command is used to copy all documentation source files into the
+# build directory. Sphinx requires a single documentation root, but
+# Zephyr's documentation is scattered around the tree in samples/,
+# boards/, and doc/, so we need to copy those files into a single
+# place in the build directory.
+set(EXTRACT_CONTENT_COMMAND
+  ${CMAKE_COMMAND} -E env
+  ${PYTHON_EXECUTABLE} scripts/extract_content.py
+  # Save the outputs for processing by this list file.
+  --outputs ${CONTENT_OUTPUTS}
+  # Ignore any files in the output directory.
+  --ignore ${CMAKE_CURRENT_BINARY_DIR}
+  # Copy all files in doc to the rst folder.
+  "*:doc:${RST_OUT}"
+  # Copy the .rst files in samples/ and boards/ to the rst folder, and
+  # also the doc folder inside rst.
+  #
+  # Some files refer to items in samples/ and boards/ relative to
+  # their actual position in the Zephyr tree. For example, in
+  # subsystems/sensor.rst:
+  #
+  # .. literalinclude:: ../../samples/sensor/mcp9808/src/main.c
+  #
+  # We make an additional copy as a hackaround so these references
+  # work.
+  "*.rst:samples:${RST_OUT}" "*.rst:boards:${RST_OUT}"
+  "*.rst:samples:${RST_OUT}/doc" "*.rst:boards:${RST_OUT}/doc")
+
+# Run the content extraction command at configure time in order to
+# produce lists of input and output files, which are respectively its
+# dependencies and outputs. This also causes the content files
+# to be copied for the first time.
+execute_process(
+  COMMAND ${EXTRACT_CONTENT_COMMAND}
+  WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+  RESULT_VARIABLE RET)
+
+if (NOT RET EQUAL 0)
+  message(FATAL_ERROR "Cannot prepare documentation content extraction")
+endif()
+
+# Load the outputs listing from extract_content.py. This is a file
+# where each pair of lines is a source file in the Zephyr tree and a
+# destination file in the build directory.
+file(STRINGS ${CONTENT_OUTPUTS} EXTRACT_CONTENT_RAW)
+
+# Build up a list of output files for later use in target/command
+# DEPENDS. Make sure each output file gets updated if the
+# corresponding input file changes.
+set(EXTRACT_CONTENT_OUTPUTS)
+while(EXTRACT_CONTENT_RAW)
+  list(GET EXTRACT_CONTENT_RAW 0 SRC)
+  list(GET EXTRACT_CONTENT_RAW 1 DST)
+
+  add_custom_command(
+    COMMAND ${CMAKE_COMMAND} -E copy ${SRC} ${DST}
+    DEPENDS ${SRC}
+    OUTPUT ${DST}
+    )
+
+  list(REMOVE_AT EXTRACT_CONTENT_RAW 0 1)
+  list(APPEND EXTRACT_CONTENT_OUTPUTS ${DST})
+endwhile()
+
+add_custom_target(content DEPENDS ${EXTRACT_CONTENT_OUTPUTS})
 
 set(ARGS ${DOXYFILE_OUT})
 
@@ -86,23 +158,6 @@ add_custom_target(
   COMMAND ${CMAKE_COMMAND} -P ${ZEPHYR_BASE}/cmake/pristine.cmake
 )
 
-add_custom_target(
-  content
-  # Copy all files in doc/ to the rst folder
-  COMMAND ${CMAKE_COMMAND} -E env
-  ZEPHYR_BUILD=${CMAKE_CURRENT_BINARY_DIR}
-  ${PYTHON_EXECUTABLE} scripts/extract_content.py -a ${RST_OUT} doc
-  # Copy the .rst files in samples/ and boards/ to the rst folder
-  COMMAND ${CMAKE_COMMAND} -E env
-  ZEPHYR_BUILD=${CMAKE_CURRENT_BINARY_DIR}
-  ${PYTHON_EXECUTABLE} scripts/extract_content.py ${RST_OUT} samples boards
-  # Copy the .rst files in samples/ and boards/ to the doc folder inside rst
-  COMMAND ${CMAKE_COMMAND} -E env
-  ZEPHYR_BUILD=${CMAKE_CURRENT_BINARY_DIR}
-  ${PYTHON_EXECUTABLE} scripts/extract_content.py ${RST_OUT}/doc samples boards
-  WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-)
-
 if(WIN32)
   set(SEP ;)
 else()
@@ -115,10 +170,10 @@ add_custom_target(
   COMMAND ${CMAKE_COMMAND} -E env
   PYTHONPATH="${ZEPHYR_BASE}/scripts/kconfig${SEP}$ENV{PYTHONPATH}"
   srctree=${ZEPHYR_BASE}
+  KERNELVERSION=${KERNELVERSION}
   BOARD_DIR=boards/*/*/
   ARCH=*
   SOC_DIR=soc/
-  KERNELVERSION=${PROJECT_VERSION}
   SRCARCH=x86
   ${PYTHON_EXECUTABLE} scripts/genrest.py Kconfig ${RST_OUT}/doc/reference/kconfig/
   WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
@@ -131,37 +186,68 @@ set(CONFIG_DIR ${ZEPHYR_BASE}/.known-issues/doc)
 #
 # HTML section
 #
+set(SPHINX_BUILD_HTML_COMMAND
+  ${CMAKE_COMMAND} -E env
+  ZEPHYR_BUILD=${CMAKE_CURRENT_BINARY_DIR}
+  ${SPHINXBUILD} -w ${SPHINX_LOG} -N -t ${DOC_TAG} -b html ${ALLSPHINXOPTS} ${RST_OUT}/doc ${SPHINX_OUTPUT_DIR_HTML})
+
+# The sphinx-html target is provided as a convenience for incremental
+# re-builds of content files without regenerating the entire docs
+# pipeline. It can be significantly faster than re-running the full
+# HTML build, but it has no idea if Doxygen, Kconfig, etc. need to be
+# regenerated. Use with caution.
+add_custom_target(
+  sphinx-html
+  COMMAND ${SPHINX_BUILD_HTML_COMMAND}
+  DEPENDS ${EXTRACT_CONTENT_OUTPUTS}
+  COMMENT "Just re-generating HTML (USE WITH CAUTION)"
+  USES_TERMINAL
+)
+
 add_custom_target(
   html
-  COMMAND ${CMAKE_COMMAND} -E env
-  ZEPHYR_BUILD=${CMAKE_CURRENT_BINARY_DIR}
-  ${SPHINXBUILD} -w ${SPHINX_LOG} -N -t ${DOC_TAG} -b html ${ALLSPHINXOPTS} ${RST_OUT}/doc ${SPHINX_OUTPUT_DIR_HTML}
+  COMMAND ${SPHINX_BUILD_HTML_COMMAND}
   # Merge the Doxygen and Sphinx logs into a single file
   COMMAND ${CMAKE_COMMAND} -P ${ZEPHYR_BASE}/cmake/util/fmerge.cmake ${DOC_LOG} ${DOXY_LOG} ${SPHINX_LOG}
   COMMAND ${PYTHON_EXECUTABLE} ${KI_SCRIPT} --config-dir ${CONFIG_DIR} --errors ${DOC_WARN} --warnings ${DOC_WARN} ${DOC_LOG}
   WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+  COMMENT "Generating HTML documentation"
   ${SPHINX_USES_TERMINAL}
 )
 
 #
 # LaTEX section
 #
+set(SPHINX_BUILD_LATEX_COMMAND
+  ${CMAKE_COMMAND} -E env
+  ZEPHYR_BUILD=${CMAKE_CURRENT_BINARY_DIR}
+  ${SPHINXBUILD} -w ${SPHINX_LOG} -N -t ${DOC_TAG} -b latex -t svgconvert ${ALLSPHINXOPTS} ${RST_OUT}/doc ${SPHINX_OUTPUT_DIR_LATEX})
+
+# The sphinx-latex target works similarly to sphinx-html, and carries
+# the same warnings.
+add_custom_target(
+  sphinx-latex
+  COMMAND ${SPHINX_BUILD_LATEX_COMMAND}
+  DEPENDS ${EXTRACT_CONTENT_OUTPUTS}
+  COMMENT "Just re-generating LaTeX (USE WITH CAUTION)"
+  USES_TERMINAL
+)
+
 add_custom_command(
   OUTPUT ${SPHINX_OUTPUT_DIR_LATEX}/zephyr.tex
-  COMMAND ${CMAKE_COMMAND} -E env
-  ZEPHYR_BUILD=${CMAKE_CURRENT_BINARY_DIR}
-  ${SPHINXBUILD} -w ${SPHINX_LOG} -N -t ${DOC_TAG} -b latex -t svgconvert ${ALLSPHINXOPTS} ${RST_OUT}/doc ${SPHINX_OUTPUT_DIR_LATEX}
+  COMMAND ${SPHINX_BUILD_LATEX_COMMAND}
   # Merge the Doxygen and Sphinx logs into a single file
   COMMAND ${CMAKE_COMMAND} -P ${ZEPHYR_BASE}/cmake/util/fmerge.cmake ${DOC_LOG} ${DOXY_LOG} ${SPHINX_LOG}
   COMMAND ${PYTHON_EXECUTABLE} ${KI_SCRIPT} --config-dir ${CONFIG_DIR} --errors ${DOC_WARN} --warnings ${DOC_WARN} ${DOC_LOG}
   COMMAND ${PYTHON_EXECUTABLE} ${FIX_TEX_SCRIPT} ${SPHINX_OUTPUT_DIR_LATEX}/zephyr.tex
   WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+  COMMENT "Generating LaTeX documentation"
+  ${SPHINX_USES_TERMINAL}
 )
 
 add_custom_target(
   latex
   DEPENDS ${SPHINX_OUTPUT_DIR_LATEX}/zephyr.tex
-  ${SPHINX_USES_TERMINAL}
 )
 
 #
@@ -173,9 +259,10 @@ add_custom_command(
   OUTPUT ${SPHINX_OUTPUT_DIR_LATEX}/zephyr.pdf
   DEPENDS latexdocs ${SPHINX_OUTPUT_DIR_LATEX}/zephyr.tex
   COMMAND ${CMAKE_COMMAND} -E env
-  LATEXOPTS='-halt-on-error -no-shell-escape'
+  LATEXOPTS="-halt-on-error -no-shell-escape"
   ${LATEXMK} -quiet -pdf -dvi- -ps-
   WORKING_DIRECTORY ${SPHINX_OUTPUT_DIR_LATEX}
+  COMMENT "Generating PDF documentation"
 )
 
 if(NOT DEFINED SPHINX_OUTPUT_DIR)
@@ -193,7 +280,6 @@ endif()
 add_custom_target(
   pdf
   DEPENDS ${SPHINX_OUTPUT_DIR_PDF}/zephyr.pdf
-  ${SPHINX_USES_TERMINAL}
 )
 
 endif()

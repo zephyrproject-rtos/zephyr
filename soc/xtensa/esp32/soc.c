@@ -39,7 +39,8 @@ void __attribute__((section(".iram1"))) __start(void)
 		: "r"(&_init_start));
 
 	/* Zero out BSS.  Clobber _bss_start to avoid memset() elision. */
-	memset(&_bss_start, 0, (&_bss_end - &_bss_start) * sizeof(_bss_start));
+	(void)memset(&_bss_start, 0,
+		     (&_bss_end - &_bss_start) * sizeof(_bss_start));
 	__asm__ __volatile__ (
 		""
 		:

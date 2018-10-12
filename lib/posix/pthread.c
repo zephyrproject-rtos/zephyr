@@ -86,12 +86,9 @@ int pthread_attr_setschedparam(pthread_attr_t *attr,
 {
 	int priority = schedparam->priority;
 
-	if (!attr || !attr->initialized) {
+	if (!attr || !attr->initialized ||
+	    (is_posix_prio_valid(priority, attr->schedpolicy) == false)) {
 		return EINVAL;
-	}
-
-	if (is_posix_prio_valid(priority, attr->schedpolicy) == false) {
-		return ENOTSUP;
 	}
 
 	attr->priority = priority;
@@ -143,19 +140,29 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
 	 * pointer and stack size. So even though POSIX 1003.1 spec accepts
 	 * attrib as NULL but zephyr needs it initialized with valid stack.
 	 */
-	if (!attr || !attr->initialized || !attr->stack || !attr->stacksize ||
-		(pthread_num >= CONFIG_MAX_PTHREAD_COUNT)) {
+	if (!attr || !attr->initialized || !attr->stack || !attr->stacksize) {
 		return EINVAL;
+	}
+
+	if (pthread_num >= CONFIG_MAX_PTHREAD_COUNT) {
+		return EAGAIN;
 	}
 
 	prio = posix_to_zephyr_priority(attr->priority, attr->schedpolicy);
 
 	thread = &posix_thread_pool[pthread_num];
-	thread->cancel_state = (1 << _PTHREAD_CANCEL_POS) & attr->flags;
-	thread->state = attr->detachstate;
-	thread->cancel_pending = 0;
 	pthread_mutex_init(&thread->state_lock, NULL);
 	pthread_mutex_init(&thread->cancel_lock, NULL);
+
+	pthread_mutex_lock(&thread->cancel_lock);
+	thread->cancel_state = (1 << _PTHREAD_CANCEL_POS) & attr->flags;
+	thread->cancel_pending = 0;
+	pthread_mutex_unlock(&thread->cancel_lock);
+
+	pthread_mutex_lock(&thread->state_lock);
+	thread->state = attr->detachstate;
+	pthread_mutex_unlock(&thread->state_lock);
+
 	pthread_cond_init(&thread->state_cond, &cond_attr);
 	sys_slist_init(&thread->key_list);
 	pthread_num++;
@@ -289,8 +296,14 @@ int pthread_attr_init(pthread_attr_t *attr)
 int pthread_getschedparam(pthread_t pthread, int *policy,
 			  struct sched_param *param)
 {
-	k_tid_t thread = (k_tid_t)pthread;
-	u32_t  priority = k_thread_priority_get(thread);
+	struct posix_thread *thread = (struct posix_thread *) pthread;
+	u32_t priority;
+
+	if (thread == NULL || thread->state == PTHREAD_TERMINATED) {
+		return ESRCH;
+	}
+
+	priority = k_thread_priority_get((k_tid_t) thread);
 
 	param->priority = zephyr_to_posix_priority(priority, policy);
 	return 0;
@@ -372,6 +385,10 @@ int pthread_join(pthread_t thread, void **status)
 
 	if (pthread == NULL) {
 		return ESRCH;
+	}
+
+	if (pthread == pthread_self()) {
+		return EDEADLK;
 	}
 
 	pthread_mutex_lock(&pthread->state_lock);

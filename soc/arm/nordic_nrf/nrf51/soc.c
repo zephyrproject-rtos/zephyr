@@ -24,6 +24,9 @@ extern void _NmiInit(void);
 #endif
 
 #include <system_nrf51.h>
+#define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(soc);
 
 static int nordicsemi_nrf51_init(struct device *arg)
 {

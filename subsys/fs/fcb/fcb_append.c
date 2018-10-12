@@ -119,7 +119,7 @@ fcb_append_finish(struct fcb *fcb, struct fcb_entry *loc)
 	u8_t crc8[fcb->f_align];
 	off_t off;
 
-	memset(crc8, 0xFF, sizeof(crc8));
+	(void)memset(crc8, 0xFF, sizeof(crc8));
 
 	rc = fcb_elem_crc8(fcb, loc, &crc8[0]);
 	if (rc) {

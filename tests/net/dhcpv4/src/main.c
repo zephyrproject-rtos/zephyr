@@ -6,6 +6,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define LOG_MODULE_NAME net_test
+#define NET_LOG_LEVEL CONFIG_NET_DHCPV4_LOG_LEVEL
+
 #include <zephyr.h>
 #include <linker/sections.h>
 
@@ -235,7 +238,7 @@ static void set_ipv4_header(struct net_pkt *pkt)
 
 	ipv4->len = htons(length);
 
-	memset(ipv4->id, 0, 4); /* id and offset */
+	(void)memset(ipv4->id, 0, 4); /* id and offset */
 
 	ipv4->ttl = 0xFF;
 	ipv4->proto = IPPROTO_UDP;
@@ -466,7 +469,7 @@ static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 	struct net_pkt *rpkt;
 	struct dhcp_msg msg;
 
-	memset(&msg, 0, sizeof(msg));
+	(void)memset(&msg, 0, sizeof(msg));
 
 	if (!pkt->frags) {
 		TC_PRINT("No data to send!\n");

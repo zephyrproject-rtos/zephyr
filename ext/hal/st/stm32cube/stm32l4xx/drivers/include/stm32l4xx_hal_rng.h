@@ -31,7 +31,7 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-  */ 
+  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __STM32L4xx_HAL_RNG_H
@@ -50,9 +50,9 @@
 
 /** @addtogroup RNG
   * @{
-  */ 
+  */
 
-/* Exported types ------------------------------------------------------------*/ 
+/* Exported types ------------------------------------------------------------*/
 /** @defgroup RNG_Exported_Types RNG Exported Types
   * @{
   */
@@ -67,22 +67,22 @@ typedef struct
 }RNG_InitTypeDef;
 #endif /* defined(RNG_CR_CED) */
 
-/** 
-  * @brief  RNG HAL State Structure definition  
-  */ 
+/**
+  * @brief  RNG HAL State Structure definition
+  */
 typedef enum
 {
   HAL_RNG_STATE_RESET     = 0x00,  /*!< RNG not yet initialized or disabled */
   HAL_RNG_STATE_READY     = 0x01,  /*!< RNG initialized and ready for use   */
-  HAL_RNG_STATE_BUSY      = 0x02,  /*!< RNG internal process is ongoing     */ 
+  HAL_RNG_STATE_BUSY      = 0x02,  /*!< RNG internal process is ongoing     */
   HAL_RNG_STATE_TIMEOUT   = 0x03,  /*!< RNG timeout state                   */
   HAL_RNG_STATE_ERROR     = 0x04   /*!< RNG error state                     */
 
 }HAL_RNG_StateTypeDef;
 
-/** 
-  * @brief  RNG Handle Structure definition  
-  */ 
+/**
+  * @brief  RNG Handle Structure definition
+  */
 typedef struct __RNG_HandleTypeDef
 {
   RNG_TypeDef                 *Instance;     /*!< Register base address        */
@@ -130,7 +130,7 @@ typedef  void (*pRNG_ReadyDataCallbackTypeDef)(RNG_HandleTypeDef * hrng, uint32_
 
 #endif /* USE_HAL_RNG_REGISTER_CALLBACKS */
 
-/** 
+/**
   * @}
   */
 
@@ -151,7 +151,7 @@ typedef  void (*pRNG_ReadyDataCallbackTypeDef)(RNG_HandleTypeDef * hrng, uint32_
 
 /** @defgroup RNG_Flag_definition  RNG Flags Definition
   * @{
-  */ 
+  */
 #define RNG_FLAG_DRDY   RNG_SR_DRDY  /*!< Data ready                 */
 #define RNG_FLAG_CECS   RNG_SR_CECS  /*!< Clock error current status */
 #define RNG_FLAG_SECS   RNG_SR_SECS  /*!< Seed error current status  */
@@ -183,8 +183,8 @@ typedef  void (*pRNG_ReadyDataCallbackTypeDef)(RNG_HandleTypeDef * hrng, uint32_
 
 /**
   * @}
-  */ 
-  
+  */
+
 /* Exported macros -----------------------------------------------------------*/
 /** @defgroup RNG_Exported_Macros RNG Exported Macros
   * @{
@@ -223,9 +223,9 @@ typedef  void (*pRNG_ReadyDataCallbackTypeDef)(RNG_HandleTypeDef * hrng, uint32_
   * @param  __HANDLE__: RNG Handle
   * @param  __FLAG__: RNG flag
   *          This parameter can be one of the following values:
-  *            @arg RNG_FLAG_DRDY:  Data ready                
+  *            @arg RNG_FLAG_DRDY:  Data ready
   *            @arg RNG_FLAG_CECS:  Clock error current status
-  *            @arg RNG_FLAG_SECS:  Seed error current status 
+  *            @arg RNG_FLAG_SECS:  Seed error current status
   * @retval The new state of __FLAG__ (SET or RESET).
   */
 #define __HAL_RNG_GET_FLAG(__HANDLE__, __FLAG__) (((__HANDLE__)->Instance->SR & (__FLAG__)) == (__FLAG__))
@@ -233,7 +233,7 @@ typedef  void (*pRNG_ReadyDataCallbackTypeDef)(RNG_HandleTypeDef * hrng, uint32_
 /**
   * @brief  Clear the selected RNG flag status.
   * @param  __HANDLE__: RNG handle
-  * @param  __FLAG__: RNG flag to clear  
+  * @param  __FLAG__: RNG flag to clear
   * @note   WARNING: This is a dummy macro for HAL code alignment,
   *         flags RNG_FLAG_DRDY, RNG_FLAG_CECS and RNG_FLAG_SECS are read-only.
   * @retval None
@@ -259,28 +259,28 @@ typedef  void (*pRNG_ReadyDataCallbackTypeDef)(RNG_HandleTypeDef * hrng, uint32_
   * @param  __HANDLE__: RNG Handle
   * @param  __INTERRUPT__: specifies the RNG interrupt status flag to check.
   *         This parameter can be one of the following values:
-  *            @arg RNG_IT_DRDY: Data ready interrupt              
+  *            @arg RNG_IT_DRDY: Data ready interrupt
   *            @arg RNG_IT_CEI: Clock error interrupt
   *            @arg RNG_IT_SEI: Seed error interrupt
   * @retval The new state of __INTERRUPT__ (SET or RESET).
   */
-#define __HAL_RNG_GET_IT(__HANDLE__, __INTERRUPT__) (((__HANDLE__)->Instance->SR & (__INTERRUPT__)) == (__INTERRUPT__))   
+#define __HAL_RNG_GET_IT(__HANDLE__, __INTERRUPT__) (((__HANDLE__)->Instance->SR & (__INTERRUPT__)) == (__INTERRUPT__))
 
 /**
   * @brief  Clear the RNG interrupt status flags.
   * @param  __HANDLE__: RNG Handle
   * @param  __INTERRUPT__: specifies the RNG interrupt status flag to clear.
-  *          This parameter can be one of the following values:            
+  *          This parameter can be one of the following values:
   *            @arg RNG_IT_CEI: Clock error interrupt
   *            @arg RNG_IT_SEI: Seed error interrupt
-  * @note   RNG_IT_DRDY flag is read-only, reading RNG_DR register automatically clears RNG_IT_DRDY.          
+  * @note   RNG_IT_DRDY flag is read-only, reading RNG_DR register automatically clears RNG_IT_DRDY.
   * @retval None
   */
 #define __HAL_RNG_CLEAR_IT(__HANDLE__, __INTERRUPT__) (((__HANDLE__)->Instance->SR) = ~(__INTERRUPT__))
 
 /**
   * @}
-  */ 
+  */
 
 
 /* Exported functions --------------------------------------------------------*/
@@ -291,7 +291,7 @@ typedef  void (*pRNG_ReadyDataCallbackTypeDef)(RNG_HandleTypeDef * hrng, uint32_
 /* Initialization and de-initialization functions  ******************************/
 /** @defgroup RNG_Exported_Functions_Group1 Initialization and de-initialization functions
   * @{
-  */  
+  */
 HAL_StatusTypeDef HAL_RNG_Init(RNG_HandleTypeDef *hrng);
 HAL_StatusTypeDef HAL_RNG_DeInit (RNG_HandleTypeDef *hrng);
 void HAL_RNG_MspInit(RNG_HandleTypeDef *hrng);
@@ -308,7 +308,7 @@ HAL_StatusTypeDef HAL_RNG_UnRegisterReadyDataCallback(RNG_HandleTypeDef *hrng);
 
 /**
   * @}
-  */ 
+  */
 
 /* Peripheral Control functions  ************************************************/
 /** @defgroup RNG_Exported_Functions_Group2 Peripheral Control functions
@@ -326,7 +326,7 @@ void HAL_RNG_ErrorCallback(RNG_HandleTypeDef *hrng);
 void HAL_RNG_ReadyDataCallback(RNG_HandleTypeDef* hrng, uint32_t random32bit);
 /**
   * @}
-  */ 
+  */
 
 /* Peripheral State functions  **************************************************/
 /** @defgroup RNG_Exported_Functions_Group3 Peripheral State and Error functions
@@ -337,7 +337,7 @@ uint32_t             HAL_RNG_GetError(RNG_HandleTypeDef *hrng);
 /**
   * @}
   */
-  
+
 /**
   * @}
   */
@@ -368,11 +368,11 @@ uint32_t             HAL_RNG_GetError(RNG_HandleTypeDef *hrng);
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
-  */ 
+  */
 
 #ifdef __cplusplus
 }

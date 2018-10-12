@@ -31,7 +31,7 @@ void k_poll_event_init(struct k_poll_event *event, u32_t type,
 	__ASSERT(mode == K_POLL_MODE_NOTIFY_ONLY,
 		 "only NOTIFY_ONLY mode is supported\n");
 	__ASSERT(type < (BIT(_POLL_NUM_TYPES)), "invalid type\n");
-	__ASSERT(obj, "must provide an object\n");
+	__ASSERT(obj != NULL, "must provide an object\n");
 
 	event->poller = NULL;
 	/* event->tag is left uninitialized: the user will set it if needed */
@@ -67,7 +67,7 @@ static inline int is_condition_met(struct k_poll_event *event, u32_t *state)
 	case K_POLL_TYPE_IGNORE:
 		return 0;
 	default:
-		__ASSERT(0, "invalid event type (0x%x)\n", event->type);
+		__ASSERT(false, "invalid event type (0x%x)\n", event->type);
 		break;
 	}
 
@@ -80,8 +80,9 @@ static inline void add_event(sys_dlist_t *events, struct k_poll_event *event,
 	struct k_poll_event *pending;
 
 	pending = (struct k_poll_event *)sys_dlist_peek_tail(events);
-	if (!pending || _is_t1_higher_prio_than_t2(pending->poller->thread,
-						   poller->thread)) {
+	if ((pending == NULL) ||
+		_is_t1_higher_prio_than_t2(pending->poller->thread,
+		poller->thread)) {
 		sys_dlist_append(events, &event->_node);
 		return;
 	}
@@ -104,22 +105,22 @@ static inline int register_event(struct k_poll_event *event,
 {
 	switch (event->type) {
 	case K_POLL_TYPE_SEM_AVAILABLE:
-		__ASSERT(event->sem, "invalid semaphore\n");
+		__ASSERT(event->sem != NULL, "invalid semaphore\n");
 		add_event(&event->sem->poll_events, event, poller);
 		break;
 	case K_POLL_TYPE_DATA_AVAILABLE:
-		__ASSERT(event->queue, "invalid queue\n");
+		__ASSERT(event->queue != NULL, "invalid queue\n");
 		add_event(&event->queue->poll_events, event, poller);
 		break;
 	case K_POLL_TYPE_SIGNAL:
-		__ASSERT(event->signal, "invalid poll signal\n");
+		__ASSERT(event->signal != NULL, "invalid poll signal\n");
 		add_event(&event->signal->poll_events, event, poller);
 		break;
 	case K_POLL_TYPE_IGNORE:
 		/* nothing to do */
 		break;
 	default:
-		__ASSERT(0, "invalid event type\n");
+		__ASSERT(false, "invalid event type\n");
 		break;
 	}
 
@@ -135,22 +136,22 @@ static inline void clear_event_registration(struct k_poll_event *event)
 
 	switch (event->type) {
 	case K_POLL_TYPE_SEM_AVAILABLE:
-		__ASSERT(event->sem, "invalid semaphore\n");
+		__ASSERT(event->sem != NULL, "invalid semaphore\n");
 		sys_dlist_remove(&event->_node);
 		break;
 	case K_POLL_TYPE_DATA_AVAILABLE:
-		__ASSERT(event->queue, "invalid queue\n");
+		__ASSERT(event->queue != NULL, "invalid queue\n");
 		sys_dlist_remove(&event->_node);
 		break;
 	case K_POLL_TYPE_SIGNAL:
-		__ASSERT(event->signal, "invalid poll signal\n");
+		__ASSERT(event->signal != NULL, "invalid poll signal\n");
 		sys_dlist_remove(&event->_node);
 		break;
 	case K_POLL_TYPE_IGNORE:
 		/* nothing to do */
 		break;
 	default:
-		__ASSERT(0, "invalid event type\n");
+		__ASSERT(false, "invalid event type\n");
 		break;
 	}
 }
@@ -176,7 +177,7 @@ static inline void set_event_ready(struct k_poll_event *event, u32_t state)
 int _impl_k_poll(struct k_poll_event *events, int num_events, s32_t timeout)
 {
 	__ASSERT(!_is_in_isr(), "");
-	__ASSERT(events, "NULL events\n");
+	__ASSERT(events != NULL, "NULL events\n");
 	__ASSERT(num_events > 0, "zero events\n");
 
 	int last_registered = -1, rc;
@@ -197,7 +198,7 @@ int _impl_k_poll(struct k_poll_event *events, int num_events, s32_t timeout)
 			if (rc == 0) {
 				++last_registered;
 			} else {
-				__ASSERT(0, "unexpected return code\n");
+				__ASSERT(false, "unexpected return code\n");
 			}
 		}
 		irq_unlock(key);
@@ -260,7 +261,8 @@ Z_SYSCALL_HANDLER(k_poll, events, num_events, timeout)
 	if (Z_SYSCALL_VERIFY_MSG(
 		!__builtin_umul_overflow(num_events,
 					sizeof(struct k_poll_event),
-					&bounds), "num_events too large")) {
+					&bounds),
+					"num_events too large")) {
 		ret = -EINVAL;
 		goto out;
 	}
@@ -326,7 +328,8 @@ static int signal_poll_event(struct k_poll_event *event, u32_t state)
 
 	struct k_thread *thread = event->poller->thread;
 
-	__ASSERT(event->poller->thread, "poller should have a thread\n");
+	__ASSERT(event->poller->thread != NULL,
+		 "poller should have a thread\n");
 
 	event->poller->is_polling = 0;
 
@@ -358,7 +361,7 @@ void _handle_obj_poll_events(sys_dlist_t *events, u32_t state)
 	struct k_poll_event *poll_event;
 
 	poll_event = (struct k_poll_event *)sys_dlist_get(events);
-	if (poll_event) {
+	if (poll_event != NULL) {
 		(void) signal_poll_event(poll_event, state);
 	}
 }
@@ -409,7 +412,7 @@ int _impl_k_poll_signal(struct k_poll_signal *signal, int result)
 	signal->signaled = 1;
 
 	poll_event = (struct k_poll_event *)sys_dlist_get(&signal->poll_events);
-	if (!poll_event) {
+	if (poll_event == NULL) {
 		irq_unlock(key);
 		return 0;
 	}

@@ -12,8 +12,8 @@
  * included by the generic kernel interface header (arch/cpu.h)
  */
 
-#ifndef _RISCV32_ARCH_H_
-#define _RISCV32_ARCH_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_RISCV32_ARCH_H_
+#define ZEPHYR_INCLUDE_ARCH_RISCV32_ARCH_H_
 
 #include "exp.h"
 #include "sys_io.h"

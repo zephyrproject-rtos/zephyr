@@ -32,11 +32,11 @@
 
 #include "i2c_dw.h"
 #include "i2c_dw_registers.h"
+#define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(i2c_dw);
 
 #include "i2c-priv.h"
-
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_I2C_LEVEL
-#include <logging/sys_log.h>
 
 static inline void _i2c_dw_data_ask(struct device *dev)
 {
@@ -221,7 +221,7 @@ static void i2c_dw_isr(void *arg)
 	 *   - Receive data is available (rx_avail)
 	 */
 
-	SYS_LOG_DBG("I2C: interrupt received");
+	LOG_DBG("I2C: interrupt received");
 
 	/* Check if we are configured as a master device */
 	if (regs->ic_con.bits.master_mode) {
@@ -299,7 +299,7 @@ static int _i2c_dw_setup(struct device *dev, u16_t slave_address)
 		 * Make sure to set both the master_mode and slave_disable_bit
 		 * to both 0 or both 1
 		 */
-		SYS_LOG_DBG("I2C: host configured as Master Device");
+		LOG_DBG("I2C: host configured as Master Device");
 		ic_con.bits.master_mode = 1;
 		ic_con.bits.slave_disable = 1;
 	} else {
@@ -310,7 +310,7 @@ static int _i2c_dw_setup(struct device *dev, u16_t slave_address)
 
 	/* Set addressing mode - (initialization = 7 bit) */
 	if (I2C_ADDR_10_BITS & dw->app_config) {
-		SYS_LOG_DBG("I2C: using 10-bit address");
+		LOG_DBG("I2C: using 10-bit address");
 		ic_con.bits.addr_master_10bit = 1;
 		ic_con.bits.addr_slave_10bit = 1;
 	}
@@ -318,7 +318,7 @@ static int _i2c_dw_setup(struct device *dev, u16_t slave_address)
 	/* Setup the clock frequency and speed mode */
 	switch (I2C_SPEED_GET(dw->app_config)) {
 	case I2C_SPEED_STANDARD:
-		SYS_LOG_DBG("I2C: speed set to STANDARD");
+		LOG_DBG("I2C: speed set to STANDARD");
 		regs->ic_ss_scl_lcnt = dw->lcnt;
 		regs->ic_ss_scl_hcnt = dw->hcnt;
 		ic_con.bits.speed = I2C_DW_SPEED_STANDARD;
@@ -327,7 +327,7 @@ static int _i2c_dw_setup(struct device *dev, u16_t slave_address)
 	case I2C_SPEED_FAST:
 		/* fall through */
 	case I2C_SPEED_FAST_PLUS:
-		SYS_LOG_DBG("I2C: speed set to FAST or FAST_PLUS");
+		LOG_DBG("I2C: speed set to FAST or FAST_PLUS");
 		regs->ic_fs_scl_lcnt = dw->lcnt;
 		regs->ic_fs_scl_hcnt = dw->hcnt;
 		ic_con.bits.speed = I2C_DW_SPEED_FAST;
@@ -338,19 +338,19 @@ static int _i2c_dw_setup(struct device *dev, u16_t slave_address)
 			return -EINVAL;
 		}
 
-		SYS_LOG_DBG("I2C: speed set to HIGH");
+		LOG_DBG("I2C: speed set to HIGH");
 		regs->ic_hs_scl_lcnt = dw->lcnt;
 		regs->ic_hs_scl_hcnt = dw->hcnt;
 		ic_con.bits.speed = I2C_DW_SPEED_HIGH;
 
 		break;
 	default:
-		SYS_LOG_DBG("I2C: invalid speed requested");
+		LOG_DBG("I2C: invalid speed requested");
 		return -EINVAL;
 	}
 
-	SYS_LOG_DBG("I2C: lcnt = %d", dw->lcnt);
-	SYS_LOG_DBG("I2C: hcnt = %d", dw->hcnt);
+	LOG_DBG("I2C: lcnt = %d", dw->lcnt);
+	LOG_DBG("I2C: hcnt = %d", dw->hcnt);
 
 	/* Set the IC_CON register */
 	regs->ic_con = ic_con;
@@ -629,7 +629,7 @@ static inline int i2c_dw_pci_setup(struct device *dev)
 	pci_bus_scan_init();
 
 	if (!pci_bus_scan(&dw->pci_dev)) {
-		SYS_LOG_DBG("Could not find device");
+		LOG_DBG("Could not find device");
 		return 0;
 	}
 
@@ -664,7 +664,7 @@ static int i2c_dw_initialize(struct device *dev)
 	/* verify that we have a valid DesignWare register first */
 	if (regs->ic_comp_type != I2C_DW_MAGIC_KEY) {
 		dev->driver_api = NULL;
-		SYS_LOG_DBG("I2C: DesignWare magic key not found, check base "
+		LOG_DBG("I2C: DesignWare magic key not found, check base "
 			    "address. Stopping initialization");
 		return -EIO;
 	}
@@ -675,10 +675,10 @@ static int i2c_dw_initialize(struct device *dev)
 	 * can move provide support for it
 	 */
 	if (regs->ic_con.bits.speed == I2C_DW_SPEED_HIGH) {
-		SYS_LOG_DBG("I2C: high speed supported");
+		LOG_DBG("I2C: high speed supported");
 		dw->support_hs_mode = true;
 	} else {
-		SYS_LOG_DBG("I2C: high speed NOT supported");
+		LOG_DBG("I2C: high speed NOT supported");
 		dw->support_hs_mode = false;
 	}
 
@@ -687,7 +687,7 @@ static int i2c_dw_initialize(struct device *dev)
 	dw->app_config = I2C_MODE_MASTER | _i2c_map_dt_bitrate(rom->bitrate);
 
 	if (i2c_dw_runtime_configure(dev, dw->app_config) != 0) {
-		SYS_LOG_DBG("I2C: Cannot set default configuration");
+		LOG_DBG("I2C: Cannot set default configuration");
 		return -EIO;
 	}
 

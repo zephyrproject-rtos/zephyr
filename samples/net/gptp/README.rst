@@ -108,5 +108,5 @@ If Zephyr syncs properly with gptp daemon, then this is printed:
     STATUS   : GPTP [13:01:25:965] AsCapable: Enabled
 
 By default gPTP in Zephyr will not print any gPTP debug messages to console.
-One can enable debug prints by setting :option:`CONFIG_NET_DEBUG_GPTP` in
-the config file.
+One can enable debug prints by setting
+:option:`CONFIG_NET_GPTP_LOG_LEVEL_DBG` in the config file.

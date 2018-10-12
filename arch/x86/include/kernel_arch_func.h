@@ -7,8 +7,8 @@
 
 /* this file is only meant to be included by kernel_structs.h */
 
-#ifndef _kernel_arch_func__h_
-#define _kernel_arch_func__h_
+#ifndef ZEPHYR_ARCH_X86_INCLUDE_KERNEL_ARCH_FUNC_H_
+#define ZEPHYR_ARCH_X86_INCLUDE_KERNEL_ARCH_FUNC_H_
 
 #ifndef _ASMLANGUAGE
 
@@ -65,7 +65,7 @@ _set_thread_return_value(struct k_thread *thread, unsigned int value)
 	*(unsigned int *)(thread->callee_saved.esp) = value;
 }
 
-extern void k_cpu_atomic_idle(unsigned int imask);
+extern void k_cpu_atomic_idle(unsigned int key);
 
 /**
  * @brief Write to a model specific register (MSR)
@@ -146,4 +146,4 @@ extern FUNC_NORETURN void _x86_userspace_enter(k_thread_entry_t user_entry,
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* _kernel_arch_func__h_ */
+#endif /* ZEPHYR_ARCH_X86_INCLUDE_KERNEL_ARCH_FUNC_H_ */

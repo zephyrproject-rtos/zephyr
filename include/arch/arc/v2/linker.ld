@@ -21,8 +21,6 @@
 #include <linker/linker-defs.h>
 #include <linker/linker-tool.h>
 
-#define KOBJECT_TEXT_AREA 256
-
 /* physical address of RAM */
 #ifdef CONFIG_HARVARD
 	#define ROMABLE_REGION ICCM
@@ -75,6 +73,9 @@ MEMORY {
 }
 
 SECTIONS {
+
+#include <linker/rel-sections.ld>
+
 	GROUP_START(ROMABLE_REGION)
 
 	SECTION_PROLOGUE(_TEXT_SECTION_NAME,,ALIGN(1024)) {
@@ -109,6 +110,10 @@ SECTIONS {
 		*(".rodata.*")
 		*(.gnu.linkonce.r.*)
 
+#ifdef CONFIG_SOC_RODATA_LD
+#include <soc-rodata.ld>
+#endif
+
 #ifdef CONFIG_CUSTOM_RODATA_LD
 /* Located in project source directory */
 #include <custom-rodata.ld>
@@ -128,22 +133,28 @@ SECTIONS {
 	GROUP_START(RAMABLE_REGION)
 
 #include <app_data_alignment.ld>
+
+#if defined(CONFIG_APP_SHARED_MEM)
+#if defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
+#define APP_SHARED_ALIGN MPU_MIN_SIZE_ALIGN
+		#include <app_smem.ld>
+#else
 	SECTION_PROLOGUE(_APP_SMEM_SECTION_NAME, (OPTIONAL),)
 	{
 		MPU_MIN_SIZE_ALIGN
 		_image_ram_start = .;
 		_app_smem_start = .;
-#if defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
-		#include <app_smem.ld>
-#else
 		APP_SMEM_SECTION()
-#endif
 		MPU_MIN_SIZE_ALIGN
 		_app_smem_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+#endif  /* CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT */
 
 	_app_smem_size = _app_smem_end - _app_smem_start;
 	_app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
+#endif /* CONFIG_APP_SHARED_MEM */
+
 #ifdef CONFIG_APPLICATION_MEMORY
 	SECTION_DATA_PROLOGUE(_APP_DATA_SECTION_NAME, (OPTIONAL),)
 	{
@@ -224,6 +235,10 @@ SECTIONS {
 		 KERNEL_INPUT_SECTION(".noinit.*")
 		 *(".kernel_noinit.*")
 
+#ifdef CONFIG_SOC_NOINIT_LD
+#include <soc-noinit.ld>
+#endif
+
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
 	SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,) {
@@ -233,6 +248,10 @@ SECTIONS {
 		KERNEL_INPUT_SECTION(.data)
 		KERNEL_INPUT_SECTION(".data.*")
 		*(".kernel.*")
+
+#ifdef CONFIG_SOC_RWDATA_LD
+#include <soc-rwdata.ld>
+#endif
 
 #ifdef CONFIG_CUSTOM_RWDATA_LD
 /* Located in project source directory */
@@ -267,4 +286,7 @@ SECTIONS {
 #ifdef CONFIG_GEN_ISR_TABLES
 #include <linker/intlist.ld>
 #endif
+
+#include <linker/debug-sections.ld>
+
 	}

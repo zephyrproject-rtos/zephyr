@@ -1,31 +1,9 @@
 /*
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fsl_usdhc.h"
@@ -36,15 +14,23 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
+
+/* Component ID definition, used by tools. */
+#ifndef FSL_COMPONENT_ID
+#define FSL_COMPONENT_ID "platform.drivers.usdhc"
+#endif
+
 /*! @brief Clock setting */
 /* Max SD clock divisor from base clock */
 #define USDHC_MAX_DVS ((USDHC_SYS_CTRL_DVS_MASK >> USDHC_SYS_CTRL_DVS_SHIFT) + 1U)
+#define USDHC_MAX_CLKFS ((USDHC_SYS_CTRL_SDCLKFS_MASK >> USDHC_SYS_CTRL_SDCLKFS_SHIFT) + 1U)
 #define USDHC_PREV_DVS(x) ((x) -= 1U)
 #define USDHC_PREV_CLKFS(x, y) ((x) >>= (y))
 
 /* Typedef for interrupt handler. */
 typedef void (*usdhc_isr_t)(USDHC_Type *base, usdhc_handle_t *handle);
-
+/*! @brief Dummy data buffer for mmc boot mode  */
+AT_NONCACHEABLE_SECTION_ALIGN(uint32_t s_usdhcBootDummy, USDHC_ADMA2_ADDRESS_ALIGN);
 /*******************************************************************************
  * Prototypes
  ******************************************************************************/
@@ -273,7 +259,7 @@ static status_t USDHC_SetDataTransferConfig(USDHC_Type *base, usdhc_data_t *data
             return kStatus_USDHC_BusyTransferring;
         }
         /* check transfer block count */
-        if ((data->blockCount > USDHC_MAX_BLOCK_COUNT))
+        if ((data->blockCount > USDHC_MAX_BLOCK_COUNT) || ((data->txData == NULL) && (data->rxData == NULL)))
         {
             return kStatus_InvalidArgument;
         }
@@ -331,6 +317,11 @@ static status_t USDHC_SetDataTransferConfig(USDHC_Type *base, usdhc_data_t *data
         /* clear data flags */
         mixCtrl &= ~(USDHC_MIX_CTRL_MSBSEL_MASK | USDHC_MIX_CTRL_BCEN_MASK | USDHC_MIX_CTRL_DTDSEL_MASK |
                      USDHC_MIX_CTRL_AC12EN_MASK);
+
+        if (base->PRES_STATE & kUSDHC_CommandInhibitFlag)
+        {
+            return kStatus_USDHC_BusyTransferring;
+        }
     }
 
     /* config the mix parameter */
@@ -453,16 +444,16 @@ static status_t USDHC_ReadByDataPortBlocking(USDHC_Type *base, usdhc_data_t *dat
 
     while ((error == kStatus_Success) && (transferredWords < totalWords))
     {
-        while (!(USDHC_GetInterruptStatusFlags(base) &
-                 (kUSDHC_BufferReadReadyFlag | kUSDHC_DataErrorFlag | kUSDHC_TuningErrorFlag)))
+        while (!(interruptStatus & (kUSDHC_BufferReadReadyFlag | kUSDHC_DataErrorFlag | kUSDHC_TuningErrorFlag)))
         {
+            interruptStatus = USDHC_GetInterruptStatusFlags(base);
         }
 
-        interruptStatus = USDHC_GetInterruptStatusFlags(base);
         /* during std tuning process, software do not need to read data, but wait BRR is enough */
         if ((data->dataType == kUSDHC_TransferDataTuning) && (interruptStatus & kUSDHC_BufferReadReadyFlag))
         {
             USDHC_ClearInterruptStatusFlags(base, kUSDHC_BufferReadReadyFlag | kUSDHC_TuningPassFlag);
+
             return kStatus_Success;
         }
         else if ((interruptStatus & kUSDHC_TuningErrorFlag) != 0U)
@@ -489,6 +480,7 @@ static status_t USDHC_ReadByDataPortBlocking(USDHC_Type *base, usdhc_data_t *dat
             transferredWords = USDHC_ReadDataPort(base, data, transferredWords);
             /* clear buffer read ready */
             USDHC_ClearInterruptStatusFlags(base, kUSDHC_BufferReadReadyFlag);
+            interruptStatus = 0U;
         }
     }
 
@@ -572,12 +564,10 @@ static status_t USDHC_WriteByDataPortBlocking(USDHC_Type *base, usdhc_data_t *da
 
     while ((error == kStatus_Success) && (transferredWords < totalWords))
     {
-        while (!(USDHC_GetInterruptStatusFlags(base) &
-                 (kUSDHC_BufferWriteReadyFlag | kUSDHC_DataErrorFlag | kUSDHC_TuningErrorFlag)))
+        while (!(interruptStatus & (kUSDHC_BufferWriteReadyFlag | kUSDHC_DataErrorFlag | kUSDHC_TuningErrorFlag)))
         {
+            interruptStatus = USDHC_GetInterruptStatusFlags(base);
         }
-
-        interruptStatus = USDHC_GetInterruptStatusFlags(base);
 
         if ((interruptStatus & kUSDHC_TuningErrorFlag) != 0U)
         {
@@ -603,15 +593,17 @@ static status_t USDHC_WriteByDataPortBlocking(USDHC_Type *base, usdhc_data_t *da
             transferredWords = USDHC_WriteDataPort(base, data, transferredWords);
             /* clear buffer write ready */
             USDHC_ClearInterruptStatusFlags(base, kUSDHC_BufferWriteReadyFlag);
+            interruptStatus = 0U;
         }
     }
 
     /* Wait write data complete or data transfer error after the last writing operation. */
-    while (!(USDHC_GetInterruptStatusFlags(base) & (kUSDHC_DataCompleteFlag | kUSDHC_DataErrorFlag)))
+    while (!(interruptStatus & (kUSDHC_DataCompleteFlag | kUSDHC_DataErrorFlag)))
     {
+        interruptStatus = USDHC_GetInterruptStatusFlags(base);
     }
 
-    if ((USDHC_GetInterruptStatusFlags(base) & kUSDHC_DataErrorFlag) != 0U)
+    if ((interruptStatus & kUSDHC_DataErrorFlag) != 0U)
     {
         if (!(data->enableIgnoreError))
         {
@@ -697,11 +689,10 @@ static status_t USDHC_WaitCommandDone(USDHC_Type *base, usdhc_command_t *command
     if (pollingCmdDone)
     {
         /* Wait command complete or USDHC encounters error. */
-        while (!(USDHC_GetInterruptStatusFlags(base) & (kUSDHC_CommandCompleteFlag | kUSDHC_CommandErrorFlag)))
+        while (!(interruptStatus & (kUSDHC_CommandCompleteFlag | kUSDHC_CommandErrorFlag)))
         {
+            interruptStatus = USDHC_GetInterruptStatusFlags(base);
         }
-
-        interruptStatus = USDHC_GetInterruptStatusFlags(base);
 
         if ((interruptStatus & kUSDHC_TuningErrorFlag) != 0U)
         {
@@ -735,18 +726,17 @@ static status_t USDHC_TransferDataBlocking(USDHC_Type *base, usdhc_data_t *data,
     if (enDMA)
     {
         /* Wait data complete or USDHC encounters error. */
-        while (!(USDHC_GetInterruptStatusFlags(base) &
-                 (kUSDHC_DataCompleteFlag | kUSDHC_DataErrorFlag | kUSDHC_DmaErrorFlag | kUSDHC_TuningErrorFlag)))
+        while (!((interruptStatus &
+                  (kUSDHC_DataCompleteFlag | kUSDHC_DataErrorFlag | kUSDHC_DmaErrorFlag | kUSDHC_TuningErrorFlag))))
         {
+            interruptStatus = USDHC_GetInterruptStatusFlags(base);
         }
-
-        interruptStatus = USDHC_GetInterruptStatusFlags(base);
 
         if ((interruptStatus & kUSDHC_TuningErrorFlag) != 0U)
         {
             error = kStatus_USDHC_TuningError;
         }
-        else if ((interruptStatus & (kUSDHC_DataErrorFlag | kUSDHC_DmaErrorFlag)) != 0U)
+        else if (((interruptStatus & (kUSDHC_DataErrorFlag | kUSDHC_DmaErrorFlag)) != 0U))
         {
             if ((!(data->enableIgnoreError)) || (interruptStatus & kUSDHC_DataTimeoutFlag))
             {
@@ -755,6 +745,11 @@ static status_t USDHC_TransferDataBlocking(USDHC_Type *base, usdhc_data_t *data,
         }
         else
         {
+        }
+        /* load dummy data */
+        if ((data->dataType == kUSDHC_TransferDataBootcontinous) && (error == kStatus_Success))
+        {
+            *(data->rxData) = s_usdhcBootDummy;
         }
 
         USDHC_ClearInterruptStatusFlags(base, (kUSDHC_DataCompleteFlag | kUSDHC_DataErrorFlag | kUSDHC_DmaErrorFlag |
@@ -772,15 +767,6 @@ static status_t USDHC_TransferDataBlocking(USDHC_Type *base, usdhc_data_t *data,
         }
     }
 
-#if defined(FSL_SDK_ENABLE_DRIVER_CACHE_CONTROL) && FSL_SDK_ENABLE_DRIVER_CACHE_CONTROL
-    /* invalidate cache for read */
-    if ((data != NULL) && (data->rxData != NULL) && (data->dataType != kUSDHC_TransferDataTuning))
-    {
-        /* invalidate the DCACHE */
-        DCACHE_InvalidateByRange((uint32_t)data->rxData, (data->blockSize) * (data->blockCount));
-    }
-#endif
-
     return error;
 }
 
@@ -793,8 +779,10 @@ void USDHC_Init(USDHC_Type *base, const usdhc_config_t *config)
 
     uint32_t proctl, sysctl, wml;
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Enable USDHC clock. */
     CLOCK_EnableClock(s_usdhcClock[USDHC_GetInstance(base)]);
+#endif
 
     /* Reset USDHC. */
     USDHC_Reset(base, kUSDHC_ResetAll, 100U);
@@ -833,8 +821,10 @@ void USDHC_Init(USDHC_Type *base, const usdhc_config_t *config)
 
 void USDHC_Deinit(USDHC_Type *base)
 {
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Disable clock. */
     CLOCK_DisableClock(s_usdhcClock[USDHC_GetInstance(base)]);
+#endif
 }
 
 bool USDHC_Reset(USDHC_Type *base, uint32_t mask, uint32_t timeout)
@@ -887,16 +877,12 @@ uint32_t USDHC_SetSdClock(USDHC_Type *base, uint32_t srcClock_Hz, uint32_t busCl
     uint32_t prescaler = 0U;
     uint32_t sysctl = 0U;
     uint32_t nearestFrequency = 0U;
-    uint32_t maxClKFS = ((USDHC_SYS_CTRL_SDCLKFS_MASK >> USDHC_SYS_CTRL_SDCLKFS_SHIFT) + 1U);
-    bool enDDR = false;
-    /* DDR mode max clkfs can reach 512 */
-    if ((base->MIX_CTRL & USDHC_MIX_CTRL_DDR_EN_MASK) != 0U)
-    {
-        enDDR = true;
-        maxClKFS *= 2U;
-    }
+
     /* calucate total divisor first */
-    totalDiv = srcClock_Hz / busClock_Hz;
+    if ((totalDiv = srcClock_Hz / busClock_Hz) > (USDHC_MAX_CLKFS * USDHC_MAX_DVS))
+    {
+        return 0U;
+    }
 
     if (totalDiv != 0U)
     {
@@ -911,7 +897,7 @@ uint32_t USDHC_SetSdClock(USDHC_Type *base, uint32_t srcClock_Hz, uint32_t busCl
         {
             prescaler = totalDiv / USDHC_MAX_DVS;
             /* prescaler must be a value which equal 2^n and smaller than SDHC_MAX_CLKFS */
-            while (((maxClKFS % prescaler) != 0U) || (prescaler == 1U))
+            while (((USDHC_MAX_CLKFS % prescaler) != 0U) || (prescaler == 1U))
             {
                 prescaler++;
             }
@@ -921,25 +907,32 @@ uint32_t USDHC_SetSdClock(USDHC_Type *base, uint32_t srcClock_Hz, uint32_t busCl
             while ((divisor * prescaler) < totalDiv)
             {
                 divisor++;
+                if (divisor > USDHC_MAX_DVS)
+                {
+                    if ((prescaler <<= 1U) > USDHC_MAX_CLKFS)
+                    {
+                        return 0;
+                    }
+                    divisor = totalDiv / prescaler;
+                }
             }
-            nearestFrequency = srcClock_Hz / divisor / prescaler;
         }
         else
         {
             /* in this situation , divsior and SDCLKFS can generate same clock
             use SDCLKFS*/
-            if ((USDHC_MAX_DVS % totalDiv) == 0U)
+            if (((totalDiv % 2U) != 0U) & (totalDiv != 1U))
             {
-                divisor = 0U;
-                prescaler = totalDiv;
+                divisor = totalDiv;
+                prescaler = 1U;
             }
             else
             {
-                divisor = totalDiv;
-                prescaler = 0U;
+                divisor = 1U;
+                prescaler = totalDiv;
             }
-            nearestFrequency = srcClock_Hz / totalDiv;
         }
+        nearestFrequency = srcClock_Hz / (divisor == 0U ? 1U : divisor) / prescaler;
     }
     /* in this condition , srcClock_Hz = busClock_Hz, */
     else
@@ -959,7 +952,7 @@ uint32_t USDHC_SetSdClock(USDHC_Type *base, uint32_t srcClock_Hz, uint32_t busCl
     /* calucate the value write to register */
     if (prescaler != 0U)
     {
-        USDHC_PREV_CLKFS(prescaler, (enDDR ? 2U : 1U));
+        USDHC_PREV_CLKFS(prescaler, 1U);
     }
 
     /* Set the SD clock frequency divisor, SD clock frequency select, data timeout counter value. */
@@ -990,6 +983,33 @@ bool USDHC_SetCardActive(USDHC_Type *base, uint32_t timeout)
     }
 
     return ((!timeout) ? false : true);
+}
+
+void USDHC_EnableDDRMode(USDHC_Type *base, bool enable, uint32_t nibblePos)
+{
+    uint32_t prescaler = (base->SYS_CTRL & USDHC_SYS_CTRL_SDCLKFS_MASK) >> USDHC_SYS_CTRL_SDCLKFS_SHIFT;
+
+    if (enable)
+    {
+        base->MIX_CTRL &= ~USDHC_MIX_CTRL_NIBBLE_POS_MASK;
+        base->MIX_CTRL |= (USDHC_MIX_CTRL_DDR_EN_MASK | USDHC_MIX_CTRL_NIBBLE_POS(nibblePos));
+        prescaler >>= 1U;
+    }
+    else
+    {
+        base->MIX_CTRL &= ~USDHC_MIX_CTRL_DDR_EN_MASK;
+
+        if (prescaler == 0U)
+        {
+            prescaler += 1U;
+        }
+        else
+        {
+            prescaler <<= 1U;
+        }
+    }
+
+    base->SYS_CTRL = (base->SYS_CTRL & (~USDHC_SYS_CTRL_SDCLKFS_MASK)) | USDHC_SYS_CTRL_SDCLKFS(prescaler);
 }
 
 void USDHC_SetMmcBootConfig(USDHC_Type *base, const usdhc_boot_config_t *config)
@@ -1040,6 +1060,11 @@ status_t USDHC_SetADMA1Descriptor(
     {
         return kStatus_USDHC_DMADataAddrNotAlign;
     }
+
+    if (flags == kUSDHC_AdmaDescriptorMultipleFlag)
+    {
+        return kStatus_USDHC_NotSupport;
+    }
     /*
     * Add non aligned access support ,user need make sure your buffer size is big
     * enough to hold the data,in other words,user need make sure the buffer size
@@ -1060,19 +1085,6 @@ status_t USDHC_SetADMA1Descriptor(
     {
         miniEntries = ((dataBytes / USDHC_ADMA1_DESCRIPTOR_MAX_LENGTH_PER_ENTRY) + 1U);
     }
-    /* calucate the start entry for multiple descriptor mode, ADMA engine is not stop, so update the descriptor
-    data adress and data size is enough */
-    if (flags == kUSDHC_AdmaDescriptorMultipleFlag)
-    {
-        for (i = 0U; i < maxEntries; i++)
-        {
-            if ((adma1EntryAddress[i] & kUSDHC_Adma1DescriptorValidFlag) == 0U)
-            {
-                startEntries = i;
-                break;
-            }
-        }
-    }
 
     /* ADMA1 needs two descriptors to finish a transfer */
     miniEntries <<= 1U;
@@ -1082,8 +1094,7 @@ status_t USDHC_SetADMA1Descriptor(
         return kStatus_OutOfRange;
     }
 
-    for (i = startEntries; i < (flags == kUSDHC_AdmaDescriptorSingleFlag ? (miniEntries + startEntries) : maxEntries);
-         i += 2U)
+    for (i = startEntries; i < (miniEntries + startEntries); i += 2U)
     {
         if (dataBytes > USDHC_ADMA1_DESCRIPTOR_MAX_LENGTH_PER_ENTRY)
         {
@@ -1091,29 +1102,18 @@ status_t USDHC_SetADMA1Descriptor(
         }
         else
         {
-            dmaBufferLen = (dataBytes == 0U ? sizeof(uint32_t) :
-                                              dataBytes); /* adma don't support 0 data length transfer descriptor */
+            dmaBufferLen = dataBytes;
         }
 
         adma1EntryAddress[i] = (dmaBufferLen << USDHC_ADMA1_DESCRIPTOR_LENGTH_SHIFT);
         adma1EntryAddress[i] |= kUSDHC_Adma1DescriptorTypeSetLength;
-        adma1EntryAddress[i + 1U] = ((uint32_t)(data) << USDHC_ADMA1_DESCRIPTOR_ADDRESS_SHIFT);
-        adma1EntryAddress[i + 1U] |= (dataBytes == 0U) ? 0U : kUSDHC_Adma1DescriptorTypeTransfer;
+        adma1EntryAddress[i + 1U] = (uint32_t)(data);
+        adma1EntryAddress[i + 1U] |= kUSDHC_Adma1DescriptorTypeTransfer;
         data += dmaBufferLen / sizeof(uint32_t);
-        if (dataBytes != 0U)
-        {
-            dataBytes -= dmaBufferLen;
-        }
+        dataBytes -= dmaBufferLen;
     }
     /* the end of the descriptor */
     adma1EntryAddress[i - 1U] |= kUSDHC_Adma1DescriptorEndFlag;
-    /* add a dummy valid ADMA descriptor for multiple descriptor mode, this is useful when transfer boot data, the ADMA
-    engine
-    will not stop at block gap */
-    if (flags == kUSDHC_AdmaDescriptorMultipleFlag)
-    {
-        adma1EntryAddress[miniEntries + startEntries] |= kUSDHC_Adma1DescriptorTypeTransfer;
-    }
 
     return kStatus_Success;
 }
@@ -1162,10 +1162,12 @@ status_t USDHC_SetADMA2Descriptor(
         {
             if ((adma2EntryAddress[i].attribute & kUSDHC_Adma2DescriptorValidFlag) == 0U)
             {
-                startEntries = i;
                 break;
             }
         }
+        startEntries = i;
+        /* add one entry for dummy entry */
+        miniEntries += 1U;
     }
 
     if ((miniEntries + startEntries) > maxEntries)
@@ -1173,8 +1175,7 @@ status_t USDHC_SetADMA2Descriptor(
         return kStatus_OutOfRange;
     }
 
-    for (i = startEntries; i < (flags == kUSDHC_AdmaDescriptorSingleFlag ? (miniEntries + startEntries) : maxEntries);
-         i++)
+    for (i = startEntries; i < (miniEntries + startEntries); i++)
     {
         if (dataBytes > USDHC_ADMA2_DESCRIPTOR_MAX_LENGTH_PER_ENTRY)
         {
@@ -1187,9 +1188,10 @@ status_t USDHC_SetADMA2Descriptor(
         }
 
         /* Each descriptor for ADMA2 is 64-bit in length */
-        adma2EntryAddress[i].address = data;
+        adma2EntryAddress[i].address = (dataBytes == 0U) ? &s_usdhcBootDummy : data;
         adma2EntryAddress[i].attribute = (dmaBufferLen << USDHC_ADMA2_DESCRIPTOR_LENGTH_SHIFT);
-        adma2EntryAddress[i].attribute |= (dataBytes == 0U) ? 0U : kUSDHC_Adma2DescriptorTypeTransfer;
+        adma2EntryAddress[i].attribute |=
+            (dataBytes == 0U) ? 0U : (kUSDHC_Adma2DescriptorTypeTransfer | kUSDHC_Adma2DescriptorInterruptFlag);
         data += (dmaBufferLen / sizeof(uint32_t));
 
         if (dataBytes != 0U)
@@ -1197,14 +1199,18 @@ status_t USDHC_SetADMA2Descriptor(
             dataBytes -= dmaBufferLen;
         }
     }
-    /* set the end bit */
-    adma2EntryAddress[i - 1U].attribute |= kUSDHC_Adma2DescriptorEndFlag;
+
     /* add a dummy valid ADMA descriptor for multiple descriptor mode, this is useful when transfer boot data, the ADMA
     engine
     will not stop at block gap */
     if (flags == kUSDHC_AdmaDescriptorMultipleFlag)
     {
-        adma2EntryAddress[miniEntries + startEntries].attribute |= kUSDHC_Adma2DescriptorTypeTransfer;
+        adma2EntryAddress[startEntries + 1U].attribute |= kUSDHC_Adma2DescriptorTypeTransfer;
+    }
+    else
+    {
+        /* set the end bit */
+        adma2EntryAddress[i - 1U].attribute |= kUSDHC_Adma2DescriptorEndFlag;
     }
 
     return kStatus_Success;
@@ -1267,7 +1273,11 @@ status_t USDHC_SetAdmaTableConfig(USDHC_Type *base,
     assert(NULL != dataConfig);
 
     status_t error = kStatus_Fail;
-    const uint32_t *data = (dataConfig->rxData == NULL) ? dataConfig->txData : dataConfig->rxData;
+    uint32_t bootDummyOffset = dataConfig->dataType == kUSDHC_TransferDataBootcontinous ? sizeof(uint32_t) : 0U;
+    const uint32_t *data =
+        (const uint32_t *)((uint32_t)((dataConfig->rxData == NULL) ? dataConfig->txData : dataConfig->rxData) +
+                           bootDummyOffset);
+    uint32_t blockSize = dataConfig->blockSize * dataConfig->blockCount - bootDummyOffset;
 
     switch (dmaConfig->dmaMode)
     {
@@ -1278,16 +1288,15 @@ status_t USDHC_SetAdmaTableConfig(USDHC_Type *base,
             break;
 #endif
         case kUSDHC_DmaModeSimple:
+            error = kStatus_Success;
             break;
 
         case kUSDHC_DmaModeAdma1:
-            error = USDHC_SetADMA1Descriptor(dmaConfig->admaTable, dmaConfig->admaTableWords, data,
-                                             dataConfig->blockSize * dataConfig->blockCount, flags);
+            error = USDHC_SetADMA1Descriptor(dmaConfig->admaTable, dmaConfig->admaTableWords, data, blockSize, flags);
             break;
 
         case kUSDHC_DmaModeAdma2:
-            error = USDHC_SetADMA2Descriptor(dmaConfig->admaTable, dmaConfig->admaTableWords, data,
-                                             dataConfig->blockSize * dataConfig->blockCount, flags);
+            error = USDHC_SetADMA2Descriptor(dmaConfig->admaTable, dmaConfig->admaTableWords, data, blockSize, flags);
             break;
         default:
             return kStatus_USDHC_PrepareAdmaDescriptorFailed;
@@ -1321,22 +1330,6 @@ status_t USDHC_TransferBlocking(USDHC_Type *base, usdhc_adma_config_t *dmaConfig
         return kStatus_USDHC_ReTuningRequest;
     }
 
-#if defined(FSL_SDK_ENABLE_DRIVER_CACHE_CONTROL) && FSL_SDK_ENABLE_DRIVER_CACHE_CONTROL
-    if ((data != NULL) && (!executeTuning))
-    {
-        if (data->txData != NULL)
-        {
-            /* clear the DCACHE */
-            DCACHE_CleanByRange((uint32_t)data->txData, (data->blockSize) * (data->blockCount));
-        }
-        else
-        {
-            /* clear the DCACHE */
-            DCACHE_CleanByRange((uint32_t)data->rxData, (data->blockSize) * (data->blockCount));
-        }
-    }
-#endif
-
     /* Update ADMA descriptor table according to different DMA mode(no DMA, ADMA1, ADMA2).*/
     if ((data != NULL) && (dmaConfig != NULL) && (!executeTuning))
     {
@@ -1352,11 +1345,27 @@ status_t USDHC_TransferBlocking(USDHC_Type *base, usdhc_adma_config_t *dmaConfig
         /* disable DMA, using polling mode in this situation */
         USDHC_EnableInternalDMA(base, false);
     }
+#if defined(FSL_SDK_ENABLE_DRIVER_CACHE_CONTROL) && FSL_SDK_ENABLE_DRIVER_CACHE_CONTROL
+    else
+    {
+        if (data->txData != NULL)
+        {
+            /* clear the DCACHE */
+            DCACHE_CleanByRange((uint32_t)data->txData, (data->blockSize) * (data->blockCount));
+        }
+        else
+        {
+            /* clear the DCACHE */
+            DCACHE_CleanInvalidateByRange((uint32_t)data->rxData, (data->blockSize) * (data->blockCount));
+        }
+    }
+#endif
 
     /* config the data transfer parameter */
-    if (kStatus_Success != USDHC_SetDataTransferConfig(base, data, &(command->flags)))
+    error = USDHC_SetDataTransferConfig(base, data, &(command->flags));
+    if (kStatus_Success != error)
     {
-        return kStatus_InvalidArgument;
+        return error;
     }
     /* send command first */
     USDHC_SendCommand(base, command);
@@ -1392,22 +1401,6 @@ status_t USDHC_TransferNonBlocking(USDHC_Type *base,
         return kStatus_USDHC_ReTuningRequest;
     }
 
-#if defined(FSL_SDK_ENABLE_DRIVER_CACHE_CONTROL) && FSL_SDK_ENABLE_DRIVER_CACHE_CONTROL
-    if ((data != NULL) && (!executeTuning))
-    {
-        if (data->txData != NULL)
-        {
-            /* clear the DCACHE */
-            DCACHE_CleanByRange((uint32_t)data->txData, (data->blockSize) * (data->blockCount));
-        }
-        else
-        {
-            /* clear the DCACHE */
-            DCACHE_CleanByRange((uint32_t)data->rxData, (data->blockSize) * (data->blockCount));
-        }
-    }
-#endif
-
     /* Save command and data into handle before transferring. */
     handle->command = command;
     handle->data = data;
@@ -1429,10 +1422,26 @@ status_t USDHC_TransferNonBlocking(USDHC_Type *base,
         /* disable DMA, using polling mode in this situation */
         USDHC_EnableInternalDMA(base, false);
     }
-
-    if (kStatus_Success != USDHC_SetDataTransferConfig(base, data, &(command->flags)))
+#if defined(FSL_SDK_ENABLE_DRIVER_CACHE_CONTROL) && FSL_SDK_ENABLE_DRIVER_CACHE_CONTROL
+    else
     {
-        return kStatus_InvalidArgument;
+        if (data->txData != NULL)
+        {
+            /* clear the DCACHE */
+            DCACHE_CleanByRange((uint32_t)data->txData, (data->blockSize) * (data->blockCount));
+        }
+        else
+        {
+            /* clear the DCACHE */
+            DCACHE_CleanInvalidateByRange((uint32_t)data->rxData, (data->blockSize) * (data->blockCount));
+        }
+    }
+#endif
+
+    error = USDHC_SetDataTransferConfig(base, data, &(command->flags));
+    if (kStatus_Success != error)
+    {
+        return error;
     }
 
     /* send command first */
@@ -1594,8 +1603,7 @@ static void USDHC_TransferHandleData(USDHC_Type *base, usdhc_handle_t *handle, u
 {
     assert(handle->data);
 
-    if (((!(handle->data->enableIgnoreError)) || (interruptFlags & kUSDHC_DataTimeoutFlag)) &&
-        (interruptFlags & (kUSDHC_DataErrorFlag | kUSDHC_DmaErrorFlag)))
+    if ((!(handle->data->enableIgnoreError)) && ((interruptFlags & (kUSDHC_DataErrorFlag | kUSDHC_DmaErrorFlag))))
     {
         if (handle->callback.TransferComplete)
         {
@@ -1623,27 +1631,19 @@ static void USDHC_TransferHandleData(USDHC_Type *base, usdhc_handle_t *handle, u
         {
             handle->transferredWords = USDHC_WriteDataPort(base, handle->data, handle->transferredWords);
         }
-        else if (interruptFlags & kUSDHC_DataCompleteFlag)
+        else
         {
-            if (handle->callback.TransferComplete)
+            if ((interruptFlags & kUSDHC_DmaCompleteFlag) &&
+                (handle->data->dataType == kUSDHC_TransferDataBootcontinous))
+            {
+                *(handle->data->rxData) = s_usdhcBootDummy;
+            }
+
+            if ((handle->callback.TransferComplete) && (interruptFlags & kUSDHC_DataCompleteFlag))
             {
                 handle->callback.TransferComplete(base, handle, kStatus_Success, handle->userData);
             }
         }
-        else
-        {
-            /* Do nothing when DMA complete flag is set. Wait until data complete flag is set. */
-        }
-#if defined(FSL_SDK_ENABLE_DRIVER_CACHE_CONTROL) && FSL_SDK_ENABLE_DRIVER_CACHE_CONTROL
-        /* invalidate cache for read */
-        if ((handle->data != NULL) && (handle->data->rxData != NULL) &&
-            (handle->data->dataType != kUSDHC_TransferDataTuning))
-        {
-            /* invalidate the DCACHE */
-            DCACHE_InvalidateByRange((uint32_t)handle->data->rxData,
-                                     (handle->data->blockSize) * (handle->data->blockCount));
-        }
-#endif
     }
 }
 

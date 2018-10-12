@@ -6,11 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_APP)
-#define SYS_LOG_DOMAIN "net/app"
-#define NET_SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_app_client
+#define NET_LOG_LEVEL CONFIG_NET_APP_LOG_LEVEL
 
 #include <zephyr.h>
 #include <string.h>
@@ -80,7 +77,8 @@ static int resolve_name(struct net_app_ctx *ctx,
 	ret = dns_get_addr_info(peer_addr_str, type, &ctx->client.dns_id,
 				dns_cb, ctx, timeout);
 	if (ret < 0) {
-		NET_ERR("Cannot resolve %s (%d)", peer_addr_str, ret);
+		NET_ERR("Cannot resolve %s (%d)", log_strdup(peer_addr_str),
+			ret);
 		ctx->client.dns_id = 0;
 		return ret;
 	}
@@ -89,7 +87,8 @@ static int resolve_name(struct net_app_ctx *ctx,
 	 * the DNS will timeout before the semaphore.
 	 */
 	if (k_sem_take(&ctx->client.dns_wait, timeout + K_SECONDS(1))) {
-		NET_ERR("Timeout while resolving %s", peer_addr_str);
+		NET_ERR("Timeout while resolving %s",
+			log_strdup(peer_addr_str));
 		ctx->client.dns_id = 0;
 		return -ETIMEDOUT;
 	}
@@ -110,14 +109,14 @@ static int try_resolve(struct net_app_ctx *ctx,
 		       s32_t timeout)
 {
 #if !defined(CONFIG_DNS_RESOLVER)
-	NET_ERR("Invalid IP address %s", peer_addr_str);
 	return -EINVAL;
 #else
 	int ret;
 
 	ret = resolve_name(ctx, peer_addr_str, type, timeout);
 	if (ret < 0) {
-		NET_ERR("Cannot resolve %s (%d)", peer_addr_str, ret);
+		NET_ERR("Cannot resolve %s (%d)",
+			log_strdup(peer_addr_str), ret);
 	}
 
 	return ret;
@@ -350,8 +349,8 @@ int net_app_init_client(struct net_app_ctx *ctx,
 		return -EALREADY;
 	}
 
-	memset(&addr, 0, sizeof(addr));
-	memset(&remote_addr, 0, sizeof(remote_addr));
+	(void)memset(&addr, 0, sizeof(addr));
+	(void)memset(&remote_addr, 0, sizeof(remote_addr));
 
 	if (peer_addr) {
 		memcpy(&remote_addr, peer_addr, sizeof(remote_addr));

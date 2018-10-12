@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __FLASH_IMG_H__
-#define __FLASH_IMG_H__
+#ifndef ZEPHYR_INCLUDE_DFU_FLASH_IMG_H_
+#define ZEPHYR_INCLUDE_DFU_FLASH_IMG_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,4 +60,4 @@ int flash_img_buffered_write(struct flash_img_context *ctx, u8_t *data,
 }
 #endif
 
-#endif	/* __FLASH_IMG_H__ */
+#endif	/* ZEPHYR_INCLUDE_DFU_FLASH_IMG_H_ */

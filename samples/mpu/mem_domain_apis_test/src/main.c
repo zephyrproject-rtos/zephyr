@@ -36,7 +36,10 @@ u8_t __aligned(4096) app1_buf[4096];
 
 K_MEM_PARTITION_DEFINE(app0_parts0, app0_buf, sizeof(app0_buf),
 		       K_MEM_PARTITION_P_RW_U_RW);
-#ifdef CONFIG_X86
+#if defined(CONFIG_X86) || \
+	((defined(CONFIG_ARMV8_M_BASELINE) || \
+		defined(CONFIG_ARMV8_M_MAINLINE)) \
+		&& defined(CONFIG_CPU_HAS_ARM_MPU))
 K_MEM_PARTITION_DEFINE(app0_parts1, app1_buf, sizeof(app1_buf),
 		       K_MEM_PARTITION_P_RO_U_RO);
 #else
@@ -51,7 +54,10 @@ struct k_mem_partition *app0_parts[] = {
 
 K_MEM_PARTITION_DEFINE(app1_parts0, app1_buf, sizeof(app1_buf),
 		       K_MEM_PARTITION_P_RW_U_RW);
-#ifdef CONFIG_X86
+#if defined(CONFIG_X86) || \
+	((defined(CONFIG_ARMV8_M_BASELINE) || \
+		defined(CONFIG_ARMV8_M_MAINLINE)) \
+		&& defined(CONFIG_CPU_HAS_ARM_MPU))
 K_MEM_PARTITION_DEFINE(app1_parts1, app0_buf, sizeof(app0_buf),
 		       K_MEM_PARTITION_P_RO_U_RO);
 #else

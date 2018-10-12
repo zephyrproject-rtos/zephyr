@@ -1,12 +1,8 @@
 /*
- * Copyright (c) 2016 Intel Corporation.
+ * Copyright (c) 2016-2018 Intel Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#define SYS_LOG_LEVEL 4
-#define SYS_LOG_DOMAIN "main"
-#include <logging/sys_log.h>
 
 #include <zephyr.h>
 #include <init.h>
@@ -14,8 +10,15 @@
 #include <usb/usb_device.h>
 #include <usb/class/usb_hid.h>
 
+#define LOG_LEVEL LOG_LEVEL_DBG
+LOG_MODULE_REGISTER(main)
+
 #define REPORT_ID_1	0x01
 #define REPORT_ID_2	0x02
+
+static struct k_delayed_work delayed_report_send;
+
+#define REPORT_TIMEOUT K_SECONDS(2)
 
 /* Some HID sample Report Descriptor */
 static const u8_t hid_report_desc[] = {
@@ -53,32 +56,62 @@ static const u8_t hid_report_desc[] = {
 	HID_MI_COLLECTION_END,
 };
 
-int debug_cb(struct usb_setup_packet *setup, s32_t *len,
-	     u8_t **data)
+static int debug_cb(struct usb_setup_packet *setup, s32_t *len,
+		    u8_t **data)
 {
-	SYS_LOG_DBG("Debug callback");
+	USB_DBG("Debug callback");
 
 	return -ENOTSUP;
 }
 
-int set_idle_cb(struct usb_setup_packet *setup, s32_t *len,
-		u8_t **data)
+static int set_idle_cb(struct usb_setup_packet *setup, s32_t *len,
+		       u8_t **data)
 {
-	SYS_LOG_DBG("Set Idle callback");
+	USB_DBG("Set Idle callback");
 
 	/* TODO: Do something */
 
 	return 0;
 }
 
-int get_report_cb(struct usb_setup_packet *setup, s32_t *len,
-		  u8_t **data)
+static int get_report_cb(struct usb_setup_packet *setup, s32_t *len,
+			 u8_t **data)
 {
-	SYS_LOG_DBG("Get report callback");
+	USB_DBG("Get report callback");
 
 	/* TODO: Do something */
 
 	return 0;
+}
+
+static void send_report(struct k_work *work)
+{
+	static u8_t report_1[2] = { REPORT_ID_1, 0x00 };
+	int ret, wrote;
+
+	ret = hid_int_ep_write(report_1, sizeof(report_1), &wrote);
+
+	USB_DBG("Wrote %d bytes with ret %d", wrote, ret);
+
+	/* Increment reported data */
+	report_1[1]++;
+}
+
+static void in_ready_cb(void)
+{
+	k_delayed_work_submit(&delayed_report_send, REPORT_TIMEOUT);
+}
+
+static void status_cb(enum usb_dc_status_code status, const u8_t *param)
+{
+	switch (status) {
+	case USB_DC_CONFIGURED:
+		in_ready_cb();
+		break;
+	default:
+		USB_DBG("status %u unhandled", status);
+		break;
+	}
 }
 
 static const struct hid_ops ops = {
@@ -88,29 +121,20 @@ static const struct hid_ops ops = {
 	.set_report = debug_cb,
 	.set_idle = set_idle_cb,
 	.set_protocol = debug_cb,
+	.int_in_ready = in_ready_cb,
+	.status_cb = status_cb,
 };
 
 void main(void)
 {
-	u8_t report_1[2] = { REPORT_ID_1, 0x00 };
+	USB_DBG("Starting application");
 
-	SYS_LOG_DBG("Starting application");
+	k_delayed_work_init(&delayed_report_send, send_report);
 
 #ifndef CONFIG_USB_COMPOSITE_DEVICE
 	usb_hid_register_device(hid_report_desc, sizeof(hid_report_desc), &ops);
 	usb_hid_init();
 #endif
-
-	while (true) {
-		int ret, wrote;
-
-		k_sleep(K_SECONDS(2));
-
-		report_1[1]++;
-
-		ret = hid_int_ep_write(report_1, sizeof(report_1), &wrote);
-		SYS_LOG_DBG("Wrote %d bytes with ret %d", wrote, ret);
-	}
 }
 
 #ifdef CONFIG_USB_COMPOSITE_DEVICE

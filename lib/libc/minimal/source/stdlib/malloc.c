@@ -10,7 +10,10 @@
 #include <errno.h>
 #include <misc/mempool.h>
 #include <string.h>
-#include <logging/sys_log.h>
+
+#define LOG_LEVEL CONFIG_KERNEL_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_DECLARE(os);
 
 #if (CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE > 0)
 K_MUTEX_DEFINE(malloc_mutex);
@@ -22,7 +25,7 @@ void *malloc(size_t size)
 	void *ret;
 
 	ret = sys_mem_pool_alloc(&z_malloc_mem_pool, size);
-	if (!ret) {
+	if (ret == NULL) {
 		errno = ENOMEM;
 	}
 
@@ -47,7 +50,7 @@ void *malloc(size_t size)
 {
 	ARG_UNUSED(size);
 
-	SYS_LOG_DBG("CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE is 0\n");
+	LOG_DBG("CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE is 0");
 	errno = ENOMEM;
 
 	return NULL;
@@ -82,8 +85,8 @@ void *calloc(size_t nmemb, size_t size)
 
 	ret = malloc(size);
 
-	if (ret) {
-		memset(ret, 0, size);
+	if (ret != NULL) {
+		(void)memset(ret, 0, size);
 	}
 
 	return ret;
@@ -120,7 +123,7 @@ void *realloc(void *ptr, size_t requested_size)
 	}
 
 	new_ptr = malloc(requested_size);
-	if (!new_ptr) {
+	if (new_ptr == NULL) {
 		return NULL;
 	}
 

@@ -7,11 +7,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if 1
-#define SYS_LOG_DOMAIN "ipv4ll"
-#define NET_SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_ipv4_autoconf_sample
+#define NET_LOG_LEVEL LOG_LEVEL_DBG
 
 #include <zephyr.h>
 #include <linker/sections.h>
@@ -49,9 +46,9 @@ static void handler(struct net_mgmt_event_callback *cb,
 		}
 
 		NET_INFO("Your address: %s",
-			 net_addr_ntop(AF_INET,
-				     &cfg->ip.ipv4->unicast[i].address.in_addr,
-				     buf, sizeof(buf)));
+			 log_strdup(net_addr_ntop(AF_INET,
+				    &cfg->ip.ipv4->unicast[i].address.in_addr,
+				    buf, sizeof(buf))));
 	}
 }
 

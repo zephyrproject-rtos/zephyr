@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "simplelink_log.h"
+LOG_MODULE_DECLARE(LOG_MODULE_NAME);
+
+#include <stdlib.h>
+#include <limits.h>
+
 #include <zephyr.h>
 /* Define sockaddr, etc, before simplelink.h */
 #include <net/socket_offload.h>
@@ -11,6 +17,9 @@
 #include <ti/drivers/net/wifi/simplelink.h>
 #include <ti/drivers/net/wifi/source/driver.h>
 #include "simplelink_support.h"
+
+/* Mutex for getaddrinfo() calls: */
+K_MUTEX_DEFINE(ga_mutex);
 
 static int simplelink_socket(int family, int type, int proto)
 {
@@ -76,7 +85,7 @@ static SlSockAddr_t *translate_z_to_sl_addrs(const struct sockaddr *addr,
 		*sl_addrlen = sizeof(SlSockAddrIn_t);
 		sl_addr_in->sin_family = AF_INET;
 		sl_addr_in->sin_port = z_sockaddr_in->sin_port;
-		sl_addr_in->sin_addr.S_un.S_addr =
+		sl_addr_in->sin_addr.s_addr =
 			z_sockaddr_in->sin_addr.s_addr;
 
 		sl_addr = (SlSockAddr_t *)sl_addr_in;
@@ -114,7 +123,7 @@ static void translate_sl_to_z_addr(SlSockAddr_t *sl_addr,
 			z_sockaddr_in->sin_family = AF_INET;
 			z_sockaddr_in->sin_port = sl_addr_in->sin_port;
 			z_sockaddr_in->sin_addr.s_addr =
-				sl_addr_in->sin_addr.S_un.S_addr;
+				sl_addr_in->sin_addr.s_addr;
 			*addrlen = sizeof(struct sockaddr_in);
 		} else {
 			*addrlen = sl_addrlen;
@@ -506,6 +515,123 @@ exit:
 	return _SlDrvSetErrno(retval);
 }
 
+/*
+ * Later SimpleLink SDK versions implement the full getaddrinfo semantics,
+ * returning potentially multiple IP addresses.
+ * This version implements a simple gethostbyname() API.
+ */
+static int simplelink_getaddrinfo(const char *node, const char *service,
+				  const struct addrinfo *hints,
+				  struct addrinfo **res)
+{
+	_u8 sl_family = SL_AF_INET;
+	unsigned long port = 0;
+	int socktype = SOCK_STREAM;
+	int proto = IPPROTO_TCP;
+	struct addrinfo *ai;
+	struct sockaddr *ai_addr;
+	_i16 retval;
+	_u32 ipaddr[4];
+
+	/* Check args: */
+	if (!node && !service) {
+		retval = EAI_NONAME;
+		goto exit;
+	}
+	if (service) {
+		port = strtol(service, NULL, 10);
+		if (port < 1 || port > USHRT_MAX) {
+			retval = EAI_SERVICE;
+			goto exit;
+		}
+	}
+	if (!res) {
+		retval = EAI_NONAME;
+		goto exit;
+	}
+
+	/* See if any hints for family; otherwise, default to AF_INET. */
+	if (hints) {
+		/* Note: SimpleLink SDK doesn't support AF_UNSPEC: */
+		sl_family = (hints->ai_family == AF_INET6 ?
+			     SL_AF_INET6 : SL_AF_INET);
+	}
+
+	/* Now, try to resolve host name: */
+	k_mutex_lock(&ga_mutex, K_FOREVER);
+	retval = sl_NetAppDnsGetHostByName((signed char *)node, strlen(node),
+					   ipaddr, sl_family);
+	k_mutex_unlock(&ga_mutex);
+
+	if (retval < 0) {
+		LOG_ERR("Could not resolve name: %s, retval: %d",
+			    node, retval);
+		retval = EAI_NONAME;
+		goto exit;
+	}
+
+	/* Allocate out res (addrinfo) struct.	Just one. */
+	*res = calloc(1, sizeof(struct addrinfo));
+	ai = *res;
+	if (!ai) {
+		retval = EAI_MEMORY;
+		goto exit;
+	} else {
+		/* Now, alloc the embedded sockaddr struct: */
+		ai_addr = calloc(1, sizeof(struct sockaddr));
+		if (!ai_addr) {
+			retval = EAI_MEMORY;
+			free(*res);
+			goto exit;
+		}
+	}
+
+	/* Now, fill in the fields of res (addrinfo struct): */
+	ai->ai_family = (sl_family == SL_AF_INET6 ? AF_INET6 : AF_INET);
+	if (hints) {
+		socktype = hints->ai_socktype;
+	}
+	ai->ai_socktype = socktype;
+
+	if (socktype == SOCK_DGRAM) {
+		proto = IPPROTO_UDP;
+	}
+	ai->ai_protocol = proto;
+
+	/* Fill sockaddr struct fields based on family: */
+	if (ai->ai_family == AF_INET) {
+		net_sin(ai_addr)->sin_family = ai->ai_family;
+		net_sin(ai_addr)->sin_addr.s_addr = htonl(ipaddr[0]);
+		net_sin(ai_addr)->sin_port = htons(port);
+		ai->ai_addrlen = sizeof(struct sockaddr_in);
+	} else {
+		net_sin6(ai_addr)->sin6_family = ai->ai_family;
+		net_sin6(ai_addr)->sin6_addr.s6_addr32[0] = htonl(ipaddr[0]);
+		net_sin6(ai_addr)->sin6_addr.s6_addr32[1] = htonl(ipaddr[1]);
+		net_sin6(ai_addr)->sin6_addr.s6_addr32[2] = htonl(ipaddr[2]);
+		net_sin6(ai_addr)->sin6_addr.s6_addr32[3] = htonl(ipaddr[3]);
+		net_sin6(ai_addr)->sin6_port = htons(port);
+		ai->ai_addrlen = sizeof(struct sockaddr_in6);
+	}
+	ai->ai_addr = ai_addr;
+
+exit:
+	return retval;
+}
+
+static void simplelink_freeaddrinfo(struct addrinfo *res)
+{
+	__ASSERT_NO_MSG(res);
+
+	free(res->ai_addr);
+	free(res);
+}
+
+void simplelink_sockets_init(void)
+{
+	k_mutex_init(&ga_mutex);
+}
+
 const struct socket_offload simplelink_ops = {
 	.socket = simplelink_socket,
 	.close = simplelink_close,
@@ -520,4 +646,6 @@ const struct socket_offload simplelink_ops = {
 	.recvfrom = simplelink_recvfrom,
 	.send = simplelink_send,
 	.sendto = simplelink_sendto,
+	.getaddrinfo = simplelink_getaddrinfo,
+	.freeaddrinfo = simplelink_freeaddrinfo,
 };

@@ -1,31 +1,9 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 #ifndef _FSL_LPSPI_H_
 #define _FSL_LPSPI_H_
@@ -51,6 +29,9 @@
 /*! @brief LPSPI dummy data if no Tx data.*/
 #define LPSPI_DUMMY_DATA (0x00U) /*!< Dummy data used for tx if there is not txData. */
 #endif
+
+/*! @brief Global variable for dummy data value setting. */
+extern volatile uint8_t g_lpspiDummyData[];
 
 /*! @brief Status for the LPSPI driver.*/
 enum _lpspi_status
@@ -223,17 +204,17 @@ enum _lpspi_transfer_config_flag_for_master
 
     kLPSPI_MasterByteSwap =
         1U << 22 /*!< Is master swap the byte.
-                 * For example, when want to send data 1 2 3 4 5 6 7 8 (suppose you set
-                 * lpspi_shift_direction_t to MSB).
-                 * 1. If you set bitPerFrame = 8 , no matter the kLPSPI_MasterByteSwapyou flag is used
-                 * or not, the waveform is 1 2 3 4 5 6 7 8.
-                 * 2. If you set bitPerFrame = 16 :
-                 * (1) the waveform is 2 1 4 3 6 5 8 7 if you do not use the kLPSPI_MasterByteSwap flag.
-                 * (2) the waveform is 1 2 3 4 5 6 7 8 if you use the kLPSPI_MasterByteSwap flag.
-                 * 3. If you set bitPerFrame = 32 :
-                 * (1) the waveform is 4 3 2 1 8 7 6 5 if you do not use the kLPSPI_MasterByteSwap flag.
-                 * (2) the waveform is 1 2 3 4 5 6 7 8 if you use the kLPSPI_MasterByteSwap flag.
-                 */
+                      * For example, when want to send data 1 2 3 4 5 6 7 8 (suppose you set
+                      * lpspi_shift_direction_t to MSB).
+                      * 1. If you set bitPerFrame = 8 , no matter the kLPSPI_MasterByteSwapyou flag is used
+                      * or not, the waveform is 1 2 3 4 5 6 7 8.
+                      * 2. If you set bitPerFrame = 16 :
+                      * (1) the waveform is 2 1 4 3 6 5 8 7 if you do not use the kLPSPI_MasterByteSwap flag.
+                      * (2) the waveform is 1 2 3 4 5 6 7 8 if you use the kLPSPI_MasterByteSwap flag.
+                      * 3. If you set bitPerFrame = 32 :
+                      * (1) the waveform is 4 3 2 1 8 7 6 5 if you do not use the kLPSPI_MasterByteSwap flag.
+                      * (2) the waveform is 1 2 3 4 5 6 7 8 if you use the kLPSPI_MasterByteSwap flag.
+                      */
 };
 
 #define LPSPI_SLAVE_PCS_SHIFT (4U)   /*!< LPSPI slave PCS shift macro , internal used. */
@@ -249,17 +230,17 @@ enum _lpspi_transfer_config_flag_for_slave
 
     kLPSPI_SlaveByteSwap =
         1U << 22 /*!< Is slave swap the byte.
-                  * For example, when want to send data 1 2 3 4 5 6 7 8 (suppose you set
-                  * lpspi_shift_direction_t to MSB).
-                  * 1. If you set bitPerFrame = 8 , no matter the kLPSPI_SlaveByteSwap flag is used
-                  * or not, the waveform is 1 2 3 4 5 6 7 8.
-                  * 2. If you set bitPerFrame = 16 :
-                  * (1) the waveform is 2 1 4 3 6 5 8 7 if you do not use the kLPSPI_SlaveByteSwap flag.
-                  * (2) the waveform is 1 2 3 4 5 6 7 8 if you use the kLPSPI_SlaveByteSwap flag.
-                  * 3. If you set bitPerFrame = 32 :
-                  * (1) the waveform is 4 3 2 1 8 7 6 5 if you do not use the kLPSPI_SlaveByteSwap flag.
-                  * (2) the waveform is 1 2 3 4 5 6 7 8 if you use the kLPSPI_SlaveByteSwap flag.
-                  */
+                       * For example, when want to send data 1 2 3 4 5 6 7 8 (suppose you set
+                       * lpspi_shift_direction_t to MSB).
+                       * 1. If you set bitPerFrame = 8 , no matter the kLPSPI_SlaveByteSwap flag is used
+                       * or not, the waveform is 1 2 3 4 5 6 7 8.
+                       * 2. If you set bitPerFrame = 16 :
+                       * (1) the waveform is 2 1 4 3 6 5 8 7 if you do not use the kLPSPI_SlaveByteSwap flag.
+                       * (2) the waveform is 1 2 3 4 5 6 7 8 if you use the kLPSPI_SlaveByteSwap flag.
+                       * 3. If you set bitPerFrame = 32 :
+                       * (1) the waveform is 4 3 2 1 8 7 6 5 if you do not use the kLPSPI_SlaveByteSwap flag.
+                       * (2) the waveform is 1 2 3 4 5 6 7 8 if you use the kLPSPI_SlaveByteSwap flag.
+                       */
 };
 
 /*! @brief LPSPI transfer state, which is used for LPSPI transactional API state machine. */
@@ -376,16 +357,16 @@ struct _lpspi_master_handle
 
     volatile uint8_t rxWatermark; /*!< Rx watermark. */
 
-    volatile uint8_t bytesEachWrite; /*!< Bytes for each write TDR . */
-    volatile uint8_t bytesEachRead;  /*!< Bytes for each read RDR . */
+    volatile uint8_t bytesEachWrite; /*!< Bytes for each write TDR. */
+    volatile uint8_t bytesEachRead;  /*!< Bytes for each read RDR. */
 
     uint8_t *volatile txData;             /*!< Send buffer. */
     uint8_t *volatile rxData;             /*!< Receive buffer. */
     volatile size_t txRemainingByteCount; /*!< Number of bytes remaining to send.*/
     volatile size_t rxRemainingByteCount; /*!< Number of bytes remaining to receive.*/
 
-    volatile uint32_t writeRegRemainingTimes; /*!< Write TDR register remaining times . */
-    volatile uint32_t readRegRemainingTimes;  /*!< Read RDR register remaining times . */
+    volatile uint32_t writeRegRemainingTimes; /*!< Write TDR register remaining times. */
+    volatile uint32_t readRegRemainingTimes;  /*!< Read RDR register remaining times. */
 
     uint32_t totalByteCount; /*!< Number of transfer bytes*/
 
@@ -406,8 +387,8 @@ struct _lpspi_slave_handle
 
     volatile uint8_t rxWatermark; /*!< Rx watermark. */
 
-    volatile uint8_t bytesEachWrite; /*!< Bytes for each write TDR . */
-    volatile uint8_t bytesEachRead;  /*!< Bytes for each read RDR . */
+    volatile uint8_t bytesEachWrite; /*!< Bytes for each write TDR. */
+    volatile uint8_t bytesEachRead;  /*!< Bytes for each read RDR. */
 
     uint8_t *volatile txData; /*!< Send buffer. */
     uint8_t *volatile rxData; /*!< Receive buffer. */
@@ -415,8 +396,8 @@ struct _lpspi_slave_handle
     volatile size_t txRemainingByteCount; /*!< Number of bytes remaining to send.*/
     volatile size_t rxRemainingByteCount; /*!< Number of bytes remaining to receive.*/
 
-    volatile uint32_t writeRegRemainingTimes; /*!< Write TDR register remaining times . */
-    volatile uint32_t readRegRemainingTimes;  /*!< Read RDR register remaining times . */
+    volatile uint32_t writeRegRemainingTimes; /*!< Write TDR register remaining times. */
+    volatile uint32_t readRegRemainingTimes;  /*!< Read RDR register remaining times. */
 
     uint32_t totalByteCount; /*!< Number of transfer bytes*/
 
@@ -719,6 +700,16 @@ static inline uint32_t LPSPI_GetRxRegisterAddress(LPSPI_Type *base)
  */
 
 /*!
+* @brief Check the argument for transfer .
+*
+* @param transfer the transfer struct to be used.
+* @param bitPerFrame The bit size of one frame.
+* @param bytePerFrame The byte size of one frame.
+* @return Return true for right and false for wrong.
+*/
+bool LPSPI_CheckTransferArgument(lpspi_transfer_t *transfer, uint32_t bitsPerFrame, uint32_t bytesPerFrame);
+
+/*!
  * @brief Configures the LPSPI for either master or slave.
  *
  * Note that the CFGR1 should only be written when the LPSPI is disabled (LPSPIx_CR_MEN = 0).
@@ -797,12 +788,12 @@ static inline void LPSPI_SetAllPcsPolarity(LPSPI_Type *base, uint32_t mask)
  * size is 32-bits for each word except the last (the last word contains the remainder bits if the frame size is not
  * divisible by 32). The minimum word size is 2-bits. A frame size of 33-bits (or similar) is not supported.
  *
- * Note 1 : The transmit command register should be initialized before enabling the LPSPI in slave mode, although
+ * Note 1: The transmit command register should be initialized before enabling the LPSPI in slave mode, although
  * the command register does not update until after the LPSPI is enabled. After it is enabled, the transmit command
  * register
  * should only be changed if the LPSPI is idle.
  *
- * Note 2 : The transmit and command FIFO is a combined FIFO that includes both transmit data and command words. That
+ * Note 2: The transmit and command FIFO is a combined FIFO that includes both transmit data and command words. That
  * means the TCR register should be written to when the Tx FIFO is not full.
  *
  * @param base LPSPI peripheral address.

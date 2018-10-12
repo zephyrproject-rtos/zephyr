@@ -48,8 +48,8 @@
  * E.g., "s0", "s1", etc.
  */
 
-#ifndef H_STATS_
-#define H_STATS_
+#ifndef ZEPHYR_INCLUDE_STATS_H_
+#define ZEPHYR_INCLUDE_STATS_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -383,4 +383,4 @@ struct stats_hdr *stats_group_find(const char *name);
 }
 #endif
 
-#endif /* H_STATS_ */
+#endif /* ZEPHYR_INCLUDE_STATS_H_ */

@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _kernel_version__h_
-#define _kernel_version__h_
+#ifndef ZEPHYR_INCLUDE_KERNEL_VERSION_H_
+#define ZEPHYR_INCLUDE_KERNEL_VERSION_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,4 +38,4 @@ extern u32_t sys_kernel_version_get(void);
 }
 #endif
 
-#endif /* _kernel_version__h_ */
+#endif /* ZEPHYR_INCLUDE_KERNEL_VERSION_H_ */

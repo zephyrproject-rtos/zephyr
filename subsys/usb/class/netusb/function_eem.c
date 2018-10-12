@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_DEVICE_NETWORK_DEBUG_LEVEL
-#define SYS_LOG_DOMAIN "function/eem"
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_USB_DEVICE_NETWORK_DEBUG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(usb_eem)
 
 #include <net_private.h>
 #include <zephyr.h>
@@ -16,9 +16,61 @@
 #include <net/net_pkt.h>
 
 #include <usb_descriptor.h>
+#include <class/usb_cdc.h>
 #include "netusb.h"
 
 static u8_t tx_buf[NETUSB_MTU], rx_buf[NETUSB_MTU];
+
+struct usb_cdc_eem_config {
+	struct usb_if_descriptor if0;
+	struct usb_ep_descriptor if0_in_ep;
+	struct usb_ep_descriptor if0_out_ep;
+} __packed;
+
+USBD_CLASS_DESCR_DEFINE(primary) struct usb_cdc_eem_config cdc_eem_cfg = {
+	/* Interface descriptor 0 */
+	/* CDC Communication interface */
+	.if0 = {
+		.bLength = sizeof(struct usb_if_descriptor),
+		.bDescriptorType = USB_INTERFACE_DESC,
+		.bInterfaceNumber = 0,
+		.bAlternateSetting = 0,
+		.bNumEndpoints = 2,
+		.bInterfaceClass = COMMUNICATION_DEVICE_CLASS,
+		.bInterfaceSubClass = EEM_SUBCLASS,
+		.bInterfaceProtocol = EEM_PROTOCOL,
+		.iInterface = 0,
+	},
+
+	/* Data Endpoint IN */
+	.if0_in_ep = {
+		.bLength = sizeof(struct usb_ep_descriptor),
+		.bDescriptorType = USB_ENDPOINT_DESC,
+		.bEndpointAddress = CDC_EEM_IN_EP_ADDR,
+		.bmAttributes = USB_DC_EP_BULK,
+		.wMaxPacketSize =
+			sys_cpu_to_le16(
+			CONFIG_CDC_EEM_BULK_EP_MPS),
+		.bInterval = 0x00,
+	},
+
+	/* Data Endpoint OUT */
+	.if0_out_ep = {
+		.bLength = sizeof(struct usb_ep_descriptor),
+		.bDescriptorType = USB_ENDPOINT_DESC,
+		.bEndpointAddress = CDC_EEM_OUT_EP_ADDR,
+		.bmAttributes = USB_DC_EP_BULK,
+		.wMaxPacketSize =
+			sys_cpu_to_le16(
+			CONFIG_CDC_EEM_BULK_EP_MPS),
+		.bInterval = 0x00,
+	},
+};
+
+static u8_t eem_get_first_iface_number(void)
+{
+	return cdc_eem_cfg.if0.bInterfaceNumber;
+}
 
 #define EEM_OUT_EP_IDX		0
 #define EEM_IN_EP_IDX		1
@@ -80,7 +132,7 @@ static int eem_send(struct net_pkt *pkt)
 				tx_buf, b_idx,
 				USB_TRANS_WRITE);
 	if (ret != b_idx) {
-		SYS_LOG_ERR("Transfer failure");
+		USB_ERR("Transfer failure");
 		return -EIO;
 	}
 
@@ -105,7 +157,7 @@ static void eem_read_cb(u8_t ep, int size, void *priv)
 
 		if (eem_size + sizeof(u16_t) > size) {
 			/* eem pkt greater than transferred data */
-			SYS_LOG_ERR("pkt size error");
+			USB_ERR("pkt size error");
 			break;
 		}
 
@@ -117,23 +169,23 @@ static void eem_read_cb(u8_t ep, int size, void *priv)
 			goto done;
 		}
 
-		SYS_LOG_DBG("hdr 0x%x, eem_size %d, size %d",
-			    eem_hdr, eem_size, size);
+		USB_DBG("hdr 0x%x, eem_size %d, size %d",
+			eem_hdr, eem_size, size);
 
 		if (!size || !eem_size) {
-			SYS_LOG_DBG("no payload");
+			USB_DBG("no payload");
 			break;
 		}
 
 		pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
 		if (!pkt) {
-			SYS_LOG_ERR("Unable to alloc pkt\n");
+			USB_ERR("Unable to alloc pkt\n");
 			break;
 		}
 
 		frag = net_pkt_get_frag(pkt, K_FOREVER);
 		if (!frag) {
-			SYS_LOG_ERR("Unable to alloc fragment");
+			USB_ERR("Unable to alloc fragment");
 			net_pkt_unref(pkt);
 			break;
 		}
@@ -142,7 +194,7 @@ static void eem_read_cb(u8_t ep, int size, void *priv)
 
 		/* copy payload and discard 32-bit sentinel */
 		if (!net_pkt_append_all(pkt, eem_size - 4, ptr, K_FOREVER)) {
-			SYS_LOG_ERR("Unable to append pkt\n");
+			USB_ERR("Unable to append pkt\n");
 			net_pkt_unref(pkt);
 			break;
 		}
@@ -171,28 +223,33 @@ static int eem_connect(bool connected)
 	return 0;
 }
 
-static inline void eem_status_interface(u8_t *iface)
-{
-	SYS_LOG_DBG("");
+static struct netusb_function eem_function = {
+	.connect_media = eem_connect,
+	.send_pkt = eem_send,
+};
 
-	if (*iface != netusb_get_first_iface_number()) {
+static inline void eem_status_interface(const u8_t *iface)
+{
+	USB_DBG("");
+
+	if (*iface != eem_get_first_iface_number()) {
 		return;
 	}
 
-	netusb_enable();
+	netusb_enable(&eem_function);
 }
 
-static void eem_status_cb(enum usb_dc_status_code status, u8_t *param)
+static void eem_status_cb(enum usb_dc_status_code status, const u8_t *param)
 {
 	/* Check the USB status and do needed action if required */
 	switch (status) {
 	case USB_DC_DISCONNECTED:
-		SYS_LOG_DBG("USB device disconnected");
+		USB_DBG("USB device disconnected");
 		netusb_disable();
 		break;
 
 	case USB_DC_INTERFACE:
-		SYS_LOG_DBG("USB interface selected");
+		USB_DBG("USB interface selected");
 		eem_status_interface(param);
 		break;
 
@@ -202,21 +259,32 @@ static void eem_status_cb(enum usb_dc_status_code status, u8_t *param)
 	case USB_DC_CONFIGURED:
 	case USB_DC_SUSPEND:
 	case USB_DC_RESUME:
-		SYS_LOG_DBG("USB unhandlded state: %d", status);
+		USB_DBG("USB unhandlded state: %d", status);
 		break;
 
 	case USB_DC_UNKNOWN:
 	default:
-		SYS_LOG_DBG("USB unknown state: %d", status);
+		USB_DBG("USB unknown state: %d", status);
 		break;
 	}
 }
 
-struct netusb_function eem_function = {
-	.connect_media = eem_connect,
-	.class_handler = NULL,
-	.status_cb = eem_status_cb,
-	.send_pkt = eem_send,
-	.num_ep = ARRAY_SIZE(eem_ep_data),
-	.ep = eem_ep_data,
+static void eem_interface_config(u8_t bInterfaceNumber)
+{
+	cdc_eem_cfg.if0.bInterfaceNumber = bInterfaceNumber;
+}
+
+USBD_CFG_DATA_DEFINE(netusb) struct usb_cfg_data netusb_config = {
+	.usb_device_description = NULL,
+	.interface_config = eem_interface_config,
+	.interface_descriptor = &cdc_eem_cfg.if0,
+	.cb_usb_status = eem_status_cb,
+	.interface = {
+		.class_handler = NULL,
+		.custom_handler = NULL,
+		.vendor_handler = NULL,
+		.payload_data = NULL,
+	},
+	.num_endpoints = ARRAY_SIZE(eem_ep_data),
+	.endpoint = eem_ep_data,
 };

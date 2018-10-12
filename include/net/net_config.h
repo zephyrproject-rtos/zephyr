@@ -8,8 +8,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __NET_CONFIG_H
-#define __NET_CONFIG_H
+#ifndef ZEPHYR_INCLUDE_NET_NET_CONFIG_H_
+#define ZEPHYR_INCLUDE_NET_NET_CONFIG_H_
 
 #include <zephyr/types.h>
 
@@ -49,4 +49,4 @@ int net_config_init(const char *app_info, u32_t flags, s32_t timeout);
 }
 #endif
 
-#endif /* __NET_CONFIG_H */
+#endif /* ZEPHYR_INCLUDE_NET_NET_CONFIG_H_ */

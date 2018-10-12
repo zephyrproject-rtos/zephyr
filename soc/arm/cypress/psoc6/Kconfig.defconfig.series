@@ -1,0 +1,29 @@
+# Kconfig.defconfig.series - Cypress Semiconductor PSoC6 series configuration
+# options
+#
+# Copyright (c) 2018, Cypress
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_PSOC62
+
+config SOC_SERIES
+	default "psoc6"
+
+config SOC_PART_NUMBER
+	string
+	default "CY8C6247BZI_D54" if SOC_PART_NUMBER_CY8C6247BZI_D54
+
+config NUM_IRQS
+	int
+# must be >= the highest interrupt number used
+	default 40
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 50000000
+
+source "soc/arm/cypress/psoc6/Kconfig.defconfig.psoc*"
+
+endif # SOC_SERIES_PSOC62

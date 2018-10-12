@@ -13,3 +13,5 @@ supported:
   - spi
   - gpio
   - pwm
+  - rtc
+  - usb_device

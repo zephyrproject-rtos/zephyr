@@ -6,9 +6,9 @@
 #include <nrfx_pwm.h>
 #include <pwm.h>
 
-#define SYS_LOG_DOMAIN "pwm_nrfx"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_PWM_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_PWM_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(pwm_nrfx);
 
 #define PWM_NRFX_CH_VALUE_NORMAL        (1UL << 15)
 #define PWM_NRFX_CH_VALUE_INVERTED      (0)
@@ -108,7 +108,7 @@ static int pwm_nrfx_init(struct device *dev)
 					  NULL);
 
 	if (result != NRFX_SUCCESS) {
-		SYS_LOG_ERR("Failed to initialize device: %s",
+		LOG_ERR("Failed to initialize device: %s",
 			    dev->config->name);
 		return -EBUSY;
 	}

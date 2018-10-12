@@ -4,11 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_SNTP)
-#define SYS_LOG_DOMAIN "net/sntp"
-#define NET_SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_sntp
+#define NET_LOG_LEVEL CONFIG_SNTP_LOG_LEVEL
 
 #include <net/sntp.h>
 #include "sntp_pkt.h"
@@ -168,7 +165,7 @@ int sntp_init(struct sntp_ctx *ctx, const char *srv_addr, u16_t srv_port,
 		return -EFAULT;
 	}
 
-	memset(ctx, 0, sizeof(struct sntp_ctx));
+	(void)memset(ctx, 0, sizeof(struct sntp_ctx));
 
 	rv = net_app_init_udp_client(&ctx->net_app_ctx, NULL, NULL, srv_addr,
 				     srv_port, timeout, ctx);

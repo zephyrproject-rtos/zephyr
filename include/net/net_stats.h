@@ -11,8 +11,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __NET_STATS_H
-#define __NET_STATS_H
+#ifndef ZEPHYR_INCLUDE_NET_NET_STATS_H_
+#define ZEPHYR_INCLUDE_NET_NET_STATS_H_
 
 #include <zephyr/types.h>
 #include <net/net_core.h>
@@ -480,4 +480,4 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_ETHERNET);
 }
 #endif
 
-#endif /* __NET_STATS_H */
+#endif /* ZEPHYR_INCLUDE_NET_NET_STATS_H_ */

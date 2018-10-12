@@ -8,8 +8,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __BT_CRYPTO_H
-#define __BT_CRYPTO_H
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_CRYPTO_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_CRYPTO_H_
 
 /**
  * @brief Cryptography
@@ -74,4 +74,4 @@ int bt_encrypt_be(const u8_t key[16], const u8_t plaintext[16],
  * @}
  */
 
-#endif /* __BT_CRYPTO_H */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_CRYPTO_H_ */

@@ -6,8 +6,6 @@
 
 import sys
 import argparse
-import pprint
-import os
 import struct
 from elf_helper import ElfHelper
 
@@ -108,7 +106,8 @@ def main():
     max_threads = syms["CONFIG_MAX_THREAD_BYTES"] * 8
     objs = eh.find_kobjects(syms)
 
-    if eh.get_thread_counter() > max_threads:
+    thread_counter = eh.get_thread_counter()
+    if thread_counter > max_threads:
         sys.stderr.write("Too many thread objects (%d)\n" % thread_counter)
         sys.stderr.write("Increase CONFIG_MAX_THREAD_BYTES to %d\n",
                          -(-thread_counter // 8))

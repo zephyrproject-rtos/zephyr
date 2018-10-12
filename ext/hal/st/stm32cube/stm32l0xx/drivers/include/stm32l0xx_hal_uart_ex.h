@@ -91,7 +91,7 @@ typedef struct
 /**
   * @}
   */
-  
+
 /** @defgroup UARTEx_WakeUp_Address_Length UART Extended WakeUp Address Length
   * @{
   */
@@ -398,7 +398,7 @@ void HAL_UARTEx_WakeupCallback(UART_HandleTypeDef *huart);
 
 /**
   * @brief Ensure that UART frame length is valid.
-  * @param __LENGTH__: UART frame length. 
+  * @param __LENGTH__: UART frame length.
   * @retval SET (__LENGTH__ is valid) or RESET (__LENGTH__ is invalid)
   */
 #define IS_UART_WORD_LENGTH(__LENGTH__) (((__LENGTH__) == UART_WORDLENGTH_7B) || \
@@ -407,7 +407,7 @@ void HAL_UARTEx_WakeupCallback(UART_HandleTypeDef *huart);
 
 /**
   * @brief Ensure that UART wake-up address length is valid.
-  * @param __ADDRESS__: UART wake-up address length. 
+  * @param __ADDRESS__: UART wake-up address length.
   * @retval SET (__ADDRESS__ is valid) or RESET (__ADDRESS__ is invalid)
   */
 #define IS_UART_ADDRESSLENGTH_DETECT(__ADDRESS__) (((__ADDRESS__) == UART_ADDRESS_DETECT_4B) || \

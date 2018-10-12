@@ -5,7 +5,6 @@
 #
 ---
 title: SiFive GPIO
-id: sifive,gpio0
 version: 0.1
 
 description: >
@@ -30,4 +29,9 @@ properties:
       generation: define
       category: required
 
+cell_string: GPIO
+
+"#cells":
+  - pin
+  - flags
 ...

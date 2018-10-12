@@ -16,7 +16,11 @@
 #include <syscall_handler.h>
 #include <device.h>
 #include <init.h>
-#include <logging/sys_log.h>
+
+#define LOG_LEVEL CONFIG_KERNEL_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_DECLARE(kernel);
+
 #if defined(CONFIG_NETWORKING) && defined (CONFIG_DYNAMIC_OBJECTS)
 /* Used by auto-generated obj_size_get() switch body, as we need to
  * know the size of struct net_context
@@ -74,7 +78,7 @@ extern struct _k_object *_k_object_gperf_find(void *obj);
 extern void _k_object_gperf_wordlist_foreach(_wordlist_cb_func_t func,
 					     void *context);
 
-static int node_lessthan(struct rbnode *a, struct rbnode *b);
+static bool node_lessthan(struct rbnode *a, struct rbnode *b);
 
 /*
  * Red/black tree of allocated kernel objects, for reasonably fast lookups
@@ -109,7 +113,7 @@ static size_t obj_size_get(enum k_objects otype)
 	return ret;
 }
 
-static int node_lessthan(struct rbnode *a, struct rbnode *b)
+static bool node_lessthan(struct rbnode *a, struct rbnode *b)
 {
 	return a < b;
 }
@@ -220,15 +224,15 @@ void *_impl_k_object_alloc(enum k_objects otype)
 		 "bad object type requested");
 
 	dyn_obj = z_thread_malloc(sizeof(*dyn_obj) + obj_size_get(otype));
-	if (!dyn_obj) {
-		SYS_LOG_WRN("could not allocate kernel object");
+	if (dyn_obj == NULL) {
+		LOG_WRN("could not allocate kernel object");
 		return NULL;
 	}
 
 	dyn_obj->kobj.name = (char *)&dyn_obj->data;
 	dyn_obj->kobj.type = otype;
 	dyn_obj->kobj.flags = K_OBJ_FLAG_ALLOC;
-	memset(dyn_obj->kobj.perms, 0, CONFIG_MAX_THREAD_BYTES);
+	(void)memset(dyn_obj->kobj.perms, 0, CONFIG_MAX_THREAD_BYTES);
 
 	/* Need to grab a new thread index for k_thread */
 	if (otype == K_OBJ_THREAD) {
@@ -265,7 +269,7 @@ void k_object_free(void *obj)
 
 	key = irq_lock();
 	dyn_obj = dyn_object_find(obj);
-	if (dyn_obj) {
+	if (dyn_obj != NULL) {
 		rb_remove(&obj_rb_tree, &dyn_obj->node);
 		sys_dlist_remove(&dyn_obj->obj_list);
 
@@ -275,7 +279,7 @@ void k_object_free(void *obj)
 	}
 	irq_unlock(key);
 
-	if (dyn_obj) {
+	if (dyn_obj != NULL) {
 		k_free(dyn_obj);
 	}
 }
@@ -286,11 +290,11 @@ struct _k_object *_k_object_find(void *obj)
 
 	ret = _k_object_gperf_find(obj);
 
-	if (!ret) {
+	if (ret == NULL) {
 		struct dyn_obj *dyn_obj;
 
 		dyn_obj = dyn_object_find(obj);
-		if (dyn_obj) {
+		if (dyn_obj != NULL) {
 			ret = &dyn_obj->kobj;
 		}
 	}
@@ -319,7 +323,7 @@ static int thread_index_get(struct k_thread *t)
 
 	ko = _k_object_find(t);
 
-	if (!ko) {
+	if (ko == NULL) {
 		return -1;
 	}
 
@@ -482,7 +486,7 @@ void _impl_k_object_access_grant(void *object, struct k_thread *thread)
 {
 	struct _k_object *ko = _k_object_find(object);
 
-	if (ko) {
+	if (ko != NULL) {
 		_thread_perms_set(ko, thread);
 	}
 }
@@ -491,7 +495,7 @@ void k_object_access_revoke(void *object, struct k_thread *thread)
 {
 	struct _k_object *ko = _k_object_find(object);
 
-	if (ko) {
+	if (ko != NULL) {
 		_thread_perms_clear(ko, thread);
 	}
 }
@@ -505,7 +509,7 @@ void k_object_access_all_grant(void *object)
 {
 	struct _k_object *ko = _k_object_find(object);
 
-	if (ko) {
+	if (ko != NULL) {
 		ko->flags |= K_OBJ_FLAG_PUBLIC;
 	}
 }
@@ -513,7 +517,8 @@ void k_object_access_all_grant(void *object)
 int _k_object_validate(struct _k_object *ko, enum k_objects otype,
 		       enum _obj_init_check init)
 {
-	if (unlikely(!ko || (otype != K_OBJ_ANY && ko->type != otype))) {
+	if (unlikely((ko == NULL) ||
+		(otype != K_OBJ_ANY && ko->type != otype))) {
 		return -EBADF;
 	}
 
@@ -535,6 +540,8 @@ int _k_object_validate(struct _k_object *ko, enum k_objects otype,
 		if (unlikely(ko->flags & K_OBJ_FLAG_INITIALIZED)) {
 			return -EADDRINUSE;
 		}
+	} else {
+		/* _OBJ_INIT_ANY */
 	}
 
 	return 0;
@@ -553,7 +560,7 @@ void _k_object_init(void *object)
 	 */
 
 	ko = _k_object_find(object);
-	if (!ko) {
+	if (ko == NULL) {
 		/* Supervisor threads can ignore rules about kernel objects
 		 * and may declare them on stacks, etc. Such objects will never
 		 * be usable from userspace, but we shouldn't explode.
@@ -569,8 +576,8 @@ void _k_object_recycle(void *object)
 {
 	struct _k_object *ko = _k_object_find(object);
 
-	if (ko) {
-		memset(ko->perms, 0, sizeof(ko->perms));
+	if (ko != NULL) {
+		(void)memset(ko->perms, 0, sizeof(ko->perms));
 		_thread_perms_set(ko, k_current_get());
 		ko->flags |= K_OBJ_FLAG_INITIALIZED;
 	}
@@ -582,7 +589,7 @@ void _k_object_uninit(void *object)
 
 	/* See comments in _k_object_init() */
 	ko = _k_object_find(object);
-	if (!ko) {
+	if (ko == NULL) {
 		return;
 	}
 
@@ -605,7 +612,7 @@ void *z_user_alloc_from_copy(void *src, size_t size)
 	}
 
 	dst = z_thread_malloc(size);
-	if (!dst) {
+	if (dst == NULL) {
 		printk("out of thread resource pool memory (%zu)", size);
 		goto out_err;
 	}

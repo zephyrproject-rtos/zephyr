@@ -23,5 +23,11 @@ zephyr_library_sources_if_kconfig(uart_stellaris.c)
 zephyr_library_sources_if_kconfig(uart_stm32.c)
 zephyr_library_sources_if_kconfig(uart_sam0.c)
 zephyr_library_sources_if_kconfig(usart_mcux_lpc.c)
+zephyr_library_sources_if_kconfig(uart_psoc6.c)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE   uart_handlers.c)
+
+if(CONFIG_UART_NATIVE_POSIX)
+  zephyr_library_compile_definitions(NO_POSIX_CHEATS)
+  zephyr_library_sources(uart_native_posix.c)
+endif()

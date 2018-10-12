@@ -42,7 +42,7 @@ Z_SYSCALL_HANDLER(k_object_access_grant, object, thread)
 
 	Z_OOPS(Z_SYSCALL_OBJ_INIT(thread, K_OBJ_THREAD));
 	ko = validate_any_object((void *)object);
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(ko, "object %p access denied",
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(ko != NULL, "object %p access denied",
 				    (void *)object));
 	_thread_perms_set(ko, (struct k_thread *)thread);
 
@@ -54,7 +54,7 @@ Z_SYSCALL_HANDLER(k_object_release, object)
 	struct _k_object *ko;
 
 	ko = validate_any_object((void *)object);
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(ko, "object %p access denied",
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(ko != NULL, "object %p access denied",
 				    (void *)object));
 	_thread_perms_clear(ko, _current);
 

@@ -19,8 +19,8 @@
  * and the Xtensa core configuration need not have a timer.
  */
 
-#ifndef XTENSA_TIMER_H
-#define XTENSA_TIMER_H
+#ifndef ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_TIMER_H_
+#define ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_TIMER_H_
 
 #ifdef __ASSEMBLER__
 #include    <xtensa/coreasm.h>
@@ -149,5 +149,5 @@ extern void _xt_tick_divisor_init(void);
 
 #endif // Internal/External timer
 
-#endif  /* XTENSA_TIMER_H */
+#endif  /* ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_TIMER_H_ */
 

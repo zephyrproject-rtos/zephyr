@@ -1,6 +1,5 @@
 ---
 title: APA102 SPI LED strip
-id: apa,apa102
 version: 0.1
 
 description: APA102 SPI LED strip binding
@@ -10,8 +9,5 @@ inherits:
 
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "apa,apa102"
 ...

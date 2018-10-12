@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2018 Endre Karlson <endre.karlson@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/stm32-pinctrl.h>
+
+/ {
+	soc {
+		pinctrl: pin-controller@50000000 {
+			usart1_pins_a: usart1_a {
+				rx_tx {
+					rx = <STM32_PIN_PB7 (STM32_PINMUX_ALT_FUNC_0 | STM32_PUPDR_NO_PULL)>;
+					tx = <STM32_PIN_PB6 (STM32_PINMUX_ALT_FUNC_0 | STM32_PUSHPULL_NOPULL)>;
+				};
+			};
+			usart2_pins_a: usart2_a {
+				rx_tx {
+					rx = <STM32_PIN_PA3 (STM32_PINMUX_ALT_FUNC_4 | STM32_PUPDR_NO_PULL)>;
+					tx = <STM32_PIN_PA2 (STM32_PINMUX_ALT_FUNC_4 | STM32_PUSHPULL_NOPULL)>;
+				};
+			};
+			lpuart1_pins_a: lpuart1_a {
+				rx_tx {
+					rx = <STM32_PIN_PA3 (STM32_PINMUX_ALT_FUNC_6 | STM32_PUPDR_NO_PULL)>;
+					tx = <STM32_PIN_PA2 (STM32_PINMUX_ALT_FUNC_6 | STM32_PUSHPULL_NOPULL)>;
+				};
+			};
+		};
+	};
+};

@@ -237,7 +237,7 @@ static int vl53l0x_init(struct device *dev)
 	drv_data->vl53l0x.I2cDevAddr = CONFIG_VL53L0X_I2C_ADDR;
 
 	/* Get info from sensor */
-	memset(&vl53l0x_dev_info, 0, sizeof(VL53L0X_DeviceInfo_t));
+	(void)memset(&vl53l0x_dev_info, 0, sizeof(VL53L0X_DeviceInfo_t));
 
 	ret = VL53L0X_GetDeviceInfo(&drv_data->vl53l0x, &vl53l0x_dev_info);
 	if (ret < 0) {

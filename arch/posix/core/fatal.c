@@ -10,6 +10,7 @@
 #include <kernel_structs.h>
 #include <misc/printk.h>
 #include <inttypes.h>
+#include <logging/log_ctrl.h>
 #include "posix_soc_if.h"
 
 const NANO_ESF _default_esf = {
@@ -34,6 +35,8 @@ const NANO_ESF _default_esf = {
 FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 		const NANO_ESF *esf)
 {
+	LOG_PANIC();
+
 #ifdef CONFIG_PRINTK
 	switch (reason) {
 	case _NANO_ERR_CPU_EXCEPTION:

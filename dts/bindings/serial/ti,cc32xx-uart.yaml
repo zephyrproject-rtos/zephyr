@@ -1,6 +1,5 @@
 ---
 title: TI CC32XX Uart
-id: ti,cc32xx-uart
 version: 0.1
 
 description: >
@@ -11,9 +10,6 @@ inherits:
 
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "ti,cc32xx-uart"
 
     reg:

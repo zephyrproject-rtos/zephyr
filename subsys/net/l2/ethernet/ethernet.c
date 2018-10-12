@@ -4,10 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_L2_ETHERNET)
-#define SYS_LOG_DOMAIN "net/ethernet"
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_ethernet
+#define NET_LOG_LEVEL CONFIG_NET_L2_ETHERNET_LOG_LEVEL
 
 #include <net/net_core.h>
 #include <net/net_l2.h>
@@ -50,9 +48,8 @@ void net_eth_ipv6_mcast_to_mac_addr(const struct in6_addr *ipv6_addr,
 	memcpy(mac_addr->addr + 2, &ipv6_addr->s6_addr[12], 4);
 }
 
-#if defined(CONFIG_NET_DEBUG_L2_ETHERNET)
 #define print_ll_addrs(pkt, type, len, src, dst)			   \
-	do {								   \
+	if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {				   \
 		char out[sizeof("xx:xx:xx:xx:xx:xx")];			   \
 									   \
 		snprintk(out, sizeof(out), "%s",			   \
@@ -60,14 +57,14 @@ void net_eth_ipv6_mcast_to_mac_addr(const struct in6_addr *ipv6_addr,
 					    sizeof(struct net_eth_addr))); \
 									   \
 		NET_DBG("iface %p src %s dst %s type 0x%x len %zu",	   \
-			net_pkt_iface(pkt), out,			   \
-			net_sprint_ll_addr((dst)->addr,			   \
-					   sizeof(struct net_eth_addr)),   \
+			net_pkt_iface(pkt), log_strdup(out),		   \
+			log_strdup(net_sprint_ll_addr((dst)->addr,	   \
+					    sizeof(struct net_eth_addr))), \
 			type, (size_t)len);				   \
-	} while (0)
+	}
 
 #define print_vlan_ll_addrs(pkt, type, tci, len, src, dst)		   \
-	do {								   \
+	if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {				   \
 		char out[sizeof("xx:xx:xx:xx:xx:xx")];			   \
 									   \
 		snprintk(out, sizeof(out), "%s",			   \
@@ -76,16 +73,12 @@ void net_eth_ipv6_mcast_to_mac_addr(const struct in6_addr *ipv6_addr,
 									   \
 		NET_DBG("iface %p src %s dst %s type 0x%x tag %d pri %d "  \
 			"len %zu",					   \
-			net_pkt_iface(pkt), out,			   \
-			net_sprint_ll_addr((dst)->addr,			   \
-					   sizeof(struct net_eth_addr)),   \
+			net_pkt_iface(pkt), log_strdup(out),		   \
+			log_strdup(net_sprint_ll_addr((dst)->addr,	   \
+					    sizeof(struct net_eth_addr))), \
 			type, net_eth_vlan_get_vid(tci),		   \
 			net_eth_vlan_get_pcp(tci), (size_t)len);	   \
-	} while (0)
-#else
-#define print_ll_addrs(...)
-#define print_vlan_ll_addrs(...)
-#endif /* CONFIG_NET_DEBUG_L2_ETHERNET */
+	}
 
 static inline void ethernet_update_length(struct net_if *iface,
 					  struct net_pkt *pkt)
@@ -208,8 +201,9 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		 * are different.
 		 */
 		NET_DBG("Dropping frame, not for me [%s]",
-			net_sprint_ll_addr(net_if_get_link_addr(iface)->addr,
-					   sizeof(struct net_eth_addr)));
+			log_strdup(net_sprint_ll_addr(
+					   net_if_get_link_addr(iface)->addr,
+					   sizeof(struct net_eth_addr))));
 
 		return NET_DROP;
 	}
@@ -220,8 +214,9 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 #ifdef CONFIG_NET_ARP
 	if (family == AF_INET && type == NET_ETH_PTYPE_ARP) {
 		NET_DBG("ARP packet from %s received",
-			net_sprint_ll_addr((u8_t *)hdr->src.addr,
-					   sizeof(struct net_eth_addr)));
+			log_strdup(net_sprint_ll_addr(
+					   (u8_t *)hdr->src.addr,
+					   sizeof(struct net_eth_addr))));
 #ifdef CONFIG_NET_IPV4_AUTO
 		if (net_ipv4_autoconf_input(iface, pkt) == NET_DROP) {
 			return NET_DROP;
@@ -529,8 +524,9 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 		net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_eth_addr);
 
 		NET_DBG("Destination address was not set, using %s",
-			net_sprint_ll_addr(net_pkt_lladdr_dst(pkt)->addr,
-					   net_pkt_lladdr_dst(pkt)->len));
+			log_strdup(net_sprint_ll_addr(
+					   net_pkt_lladdr_dst(pkt)->addr,
+					   net_pkt_lladdr_dst(pkt)->len)));
 	}
 
 setup_hdr:

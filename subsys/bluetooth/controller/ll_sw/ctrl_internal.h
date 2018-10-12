@@ -210,7 +210,8 @@ struct connection {
 		u8_t  cmd:1;
 		u8_t  disabled:1;
 		u8_t  status;
-		u16_t interval;
+		u16_t interval_min;
+		u16_t interval_max;
 		u16_t latency;
 		u16_t timeout;
 		u8_t  preferred_periodicity;
@@ -236,6 +237,7 @@ struct connection {
 #define LLCP_LENGTH_STATE_ACK_WAIT   1
 #define LLCP_LENGTH_STATE_RSP_WAIT   2
 #define LLCP_LENGTH_STATE_RESIZE     3
+		u8_t  pause_tx:1;
 		u16_t rx_octets;
 		u16_t tx_octets;
 #if defined(CONFIG_BT_CTLR_PHY)

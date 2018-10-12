@@ -42,7 +42,7 @@ void test_config_save_2_fcb(void)
 	zassert_true(rc == 0, "fcb write error");
 
 	val8 = 0;
-	memset(val_string[0], 0, sizeof(val_string[0]));
+	(void)memset(val_string[0], 0, sizeof(val_string[0]));
 	rc = settings_load();
 	zassert_true(rc == 0, "fcb read error");
 	zassert_true(val8 == 42, "bad value read");
@@ -63,7 +63,7 @@ void test_config_save_2_fcb(void)
 		rc = settings_save();
 		zassert_true(rc == 0, "fcb write error");
 
-		memset(val_string, 0, sizeof(val_string));
+		(void)memset(val_string, 0, sizeof(val_string));
 
 		val8 = 0;
 		rc = settings_load();

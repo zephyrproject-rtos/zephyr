@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __LWM2M_H__
-#define __LWM2M_H__
+#ifndef ZEPHYR_INCLUDE_NET_LWM2M_H_
+#define ZEPHYR_INCLUDE_NET_LWM2M_H_
 
 #include <net/net_app.h>
 #include <net/coap.h>
@@ -257,4 +257,4 @@ int lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx,
 			  const char *ep_name,
 			  lwm2m_ctx_event_cb_t event_cb);
 
-#endif	/* __LWM2M_H__ */
+#endif	/* ZEPHYR_INCLUDE_NET_LWM2M_H_ */

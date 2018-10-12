@@ -1,31 +1,9 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fsl_lpspi.h"
@@ -33,6 +11,12 @@
 /*******************************************************************************
 * Definitions
 ******************************************************************************/
+
+/* Component ID definition, used by tools. */
+#ifndef FSL_COMPONENT_ID
+#define FSL_COMPONENT_ID "platform.drivers.lpspi"
+#endif
+
 /*!
  * @brief Default watermark values.
  *
@@ -53,10 +37,12 @@ typedef void (*lpspi_slave_isr_t)(LPSPI_Type *base, lpspi_slave_handle_t *handle
 /*******************************************************************************
 * Prototypes
 ******************************************************************************/
+
 /*!
 * @brief Get instance number for LPSPI module.
 *
 * @param base LPSPI peripheral base address.
+* @return Return the value of LPSPI instance.
 */
 uint32_t LPSPI_GetInstance(LPSPI_Type *base);
 
@@ -115,12 +101,6 @@ static void LPSPI_SlaveTransferFillUpTxFifo(LPSPI_Type *base, lpspi_slave_handle
 static void LPSPI_SlaveTransferComplete(LPSPI_Type *base, lpspi_slave_handle_t *handle);
 
 /*!
-* @brief Check the argument for transfer .
-* This is not a public API. Not static because lpspi_edma.c will use this API.
-*/
-bool LPSPI_CheckTransferArgument(lpspi_transfer_t *transfer, uint32_t bitsPerFrame, uint32_t bytesPerFrame);
-
-/*!
 * @brief LPSPI common interrupt handler.
 *
 * @param handle pointer to s_lpspiHandle which stores the transfer state.
@@ -158,7 +138,7 @@ static lpspi_master_isr_t s_lpspiMasterIsr;
 /*! @brief Pointer to slave IRQ handler for each instance. */
 static lpspi_slave_isr_t s_lpspiSlaveIsr;
 /* @brief Dummy data for each instance. This data is used when user's tx buffer is NULL*/
-volatile uint8_t s_dummyData[ARRAY_SIZE(s_lpspiBases)] = {0};
+volatile uint8_t g_lpspiDummyData[ARRAY_SIZE(s_lpspiBases)] = {0};
 /**********************************************************************************************************************
 * Code
 *********************************************************************************************************************/
@@ -183,7 +163,7 @@ uint32_t LPSPI_GetInstance(LPSPI_Type *base)
 void LPSPI_SetDummyData(LPSPI_Type *base, uint8_t dummyData)
 {
     uint32_t instance = LPSPI_GetInstance(base);
-    s_dummyData[instance] = dummyData;
+    g_lpspiDummyData[instance] = dummyData;
 }
 
 void LPSPI_MasterInit(LPSPI_Type *base, const lpspi_master_config_t *masterConfig, uint32_t srcClock_Hz)
@@ -634,7 +614,7 @@ status_t LPSPI_MasterTransferBlocking(LPSPI_Type *base, lpspi_transfer_t *transf
     uint32_t bitsPerFrame = ((base->TCR & LPSPI_TCR_FRAMESZ_MASK) >> LPSPI_TCR_FRAMESZ_SHIFT) + 1;
     uint32_t bytesPerFrame = (bitsPerFrame + 7) / 8;
     uint32_t temp = 0U;
-    uint8_t dummyData = s_dummyData[LPSPI_GetInstance(base)];
+    uint8_t dummyData = g_lpspiDummyData[LPSPI_GetInstance(base)];
 
     if (!LPSPI_CheckTransferArgument(transfer, bitsPerFrame, bytesPerFrame))
     {
@@ -799,7 +779,7 @@ status_t LPSPI_MasterTransferNonBlocking(LPSPI_Type *base, lpspi_master_handle_t
     uint32_t bitsPerFrame = ((base->TCR & LPSPI_TCR_FRAMESZ_MASK) >> LPSPI_TCR_FRAMESZ_SHIFT) + 1;
     uint32_t bytesPerFrame = (bitsPerFrame + 7) / 8;
     uint32_t temp = 0U;
-    uint8_t dummyData = s_dummyData[LPSPI_GetInstance(base)];
+    uint8_t dummyData = g_lpspiDummyData[LPSPI_GetInstance(base)];
 
     if (!LPSPI_CheckTransferArgument(transfer, bitsPerFrame, bytesPerFrame))
     {
@@ -1818,5 +1798,36 @@ void DMA_SPI3_INT_DriverIRQHandler(void)
 {
     assert(s_lpspiHandle[LPSPI_GetInstance(DMA__LPSPI3)]);
     LPSPI_CommonIRQHandler(DMA__LPSPI3, s_lpspiHandle[LPSPI_GetInstance(DMA__LPSPI3)]);
+}
+#endif
+
+#if defined(ADMA__LPSPI0)
+void ADMA_SPI0_INT_DriverIRQHandler(void)
+{
+    assert(s_lpspiHandle[LPSPI_GetInstance(ADMA__LPSPI0)]);
+    LPSPI_CommonIRQHandler(ADMA__LPSPI0, s_lpspiHandle[LPSPI_GetInstance(ADMA__LPSPI0)]);
+}
+#endif
+
+#if defined(ADMA__LPSPI1)
+void ADMA_SPI1_INT_DriverIRQHandler(void)
+{
+    assert(s_lpspiHandle[LPSPI_GetInstance(ADMA__LPSPI1)]);
+    LPSPI_CommonIRQHandler(ADMA__LPSPI1, s_lpspiHandle[LPSPI_GetInstance(ADMA__LPSPI1)]);
+}
+#endif
+#if defined(ADMA__LPSPI2)
+void ADMA_SPI2_INT_DriverIRQHandler(void)
+{
+    assert(s_lpspiHandle[LPSPI_GetInstance(ADMA__LPSPI2)]);
+    LPSPI_CommonIRQHandler(ADMA__LPSPI2, s_lpspiHandle[LPSPI_GetInstance(ADMA__LPSPI2)]);
+}
+#endif
+
+#if defined(ADMA__LPSPI3)
+void ADMA_SPI3_INT_DriverIRQHandler(void)
+{
+    assert(s_lpspiHandle[LPSPI_GetInstance(ADMA__LPSPI3)]);
+    LPSPI_CommonIRQHandler(ADMA__LPSPI3, s_lpspiHandle[LPSPI_GetInstance(ADMA__LPSPI3)]);
 }
 #endif

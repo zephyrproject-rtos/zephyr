@@ -1,31 +1,9 @@
 /*
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 #ifndef _FSL_USDHC_H_
 #define _FSL_USDHC_H_
@@ -43,8 +21,8 @@
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief Driver version 2.2.1. */
-#define FSL_USDHC_DRIVER_VERSION (MAKE_VERSION(2U, 2U, 1U))
+/*! @brief Driver version 2.2.4. */
+#define FSL_USDHC_DRIVER_VERSION (MAKE_VERSION(2U, 2U, 4U))
 /*@}*/
 
 /*! @brief Maximum block count can be set one time */
@@ -60,7 +38,7 @@ enum _usdhc_status
     kStatus_USDHC_DMADataAddrNotAlign = MAKE_STATUS(kStatusGroup_USDHC, 4U),         /*!< data address not align */
     kStatus_USDHC_ReTuningRequest = MAKE_STATUS(kStatusGroup_USDHC, 5U),             /*!< re-tuning request */
     kStatus_USDHC_TuningError = MAKE_STATUS(kStatusGroup_USDHC, 6U),                 /*!< tuning error */
-
+    kStatus_USDHC_NotSupport = MAKE_STATUS(kStatusGroup_USDHC, 7U),                  /*!< not support */
 };
 
 /*! @brief Host controller capabilities flag mask */
@@ -261,13 +239,21 @@ enum _usdhc_adma_error_status_flag
  *
  * This state is the detail state when ADMA error has occurred.
  */
-typedef enum _usdhc_adma_error_state
+enum _usdhc_adma_error_state
 {
-    kUSDHC_AdmaErrorStateStopDma = 0x00U,         /*!< Stop DMA */
-    kUSDHC_AdmaErrorStateFetchDescriptor = 0x01U, /*!< Fetch descriptor */
-    kUSDHC_AdmaErrorStateChangeAddress = 0x02U,   /*!< Change address */
-    kUSDHC_AdmaErrorStateTransferData = 0x03U,    /*!< Transfer data */
-} usdhc_adma_error_state_t;
+    kUSDHC_AdmaErrorStateStopDma =
+        0x00U, /*!< Stop DMA, previous location set in the ADMA system address is error address */
+    kUSDHC_AdmaErrorStateFetchDescriptor =
+        0x01U, /*!< Fetch descriptor, current location set in the ADMA system address is error address */
+    kUSDHC_AdmaErrorStateChangeAddress = 0x02U, /*!< Change address, no DMA error is occured */
+    kUSDHC_AdmaErrorStateTransferData =
+        0x03U, /*!< Transfer data, previous location set in the ADMA system address is error address */
+    kUSDHC_AdmaErrorStateInvalidLength = 0x04U,     /*!< Invalid length in ADMA descriptor */
+    kUSDHC_AdmaErrorStateInvalidDescriptor = 0x08U, /*!< Invalid descriptor fetched by ADMA */
+
+    kUSDHC_AdmaErrorState = kUSDHC_AdmaErrorStateInvalidLength | kUSDHC_AdmaErrorStateInvalidDescriptor |
+                            kUSDHC_AdmaErrorStateFetchDescriptor, /*!< ADMA error state */
+};
 
 /*! @brief Force event mask */
 enum _usdhc_force_event
@@ -800,6 +786,7 @@ static inline void USDHC_EnableInternalDMA(USDHC_Type *base, bool enable)
     else
     {
         base->MIX_CTRL &= ~USDHC_MIX_CTRL_DMAEN_MASK;
+        base->PROT_CTRL &= ~USDHC_PROT_CTRL_DMASEL_MASK;
     }
 }
 
@@ -902,7 +889,7 @@ static inline uint32_t USDHC_GetAutoCommand12ErrorStatusFlags(USDHC_Type *base)
  */
 static inline uint32_t USDHC_GetAdmaErrorStatusFlags(USDHC_Type *base)
 {
-    return base->ADMA_ERR_STATUS;
+    return base->ADMA_ERR_STATUS & 0xFU;
 }
 
 /*!
@@ -1005,7 +992,7 @@ static inline void USDHC_SetDataBusWidth(USDHC_Type *base, usdhc_data_bus_width_
 }
 
 /*!
- * @brief Fills the the data port.
+ * @brief Fills the data port.
  *
  * This function is used to implement the data transfer by Data Port instead of DMA.
  *
@@ -1329,18 +1316,7 @@ static inline uint32_t USDHC_CheckTuningError(USDHC_Type *base)
  * @param enable/disable flag
  * @param nibble position
  */
-static inline void USDHC_EnableDDRMode(USDHC_Type *base, bool enable, uint32_t nibblePos)
-{
-    if (enable)
-    {
-        base->MIX_CTRL &= ~USDHC_MIX_CTRL_NIBBLE_POS_MASK;
-        base->MIX_CTRL |= (USDHC_MIX_CTRL_DDR_EN_MASK | USDHC_MIX_CTRL_NIBBLE_POS(nibblePos));
-    }
-    else
-    {
-        base->MIX_CTRL &= ~USDHC_MIX_CTRL_DDR_EN_MASK;
-    }
-}
+void USDHC_EnableDDRMode(USDHC_Type *base, bool enable, uint32_t nibblePos);
 
 /*!
  * @brief the enable/disable HS400 mode

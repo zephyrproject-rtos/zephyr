@@ -5,14 +5,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_SOCKETS)
-#define SYS_LOG_DOMAIN "net/tls"
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_sock_tls
+#define NET_LOG_LEVEL CONFIG_NET_SOCKETS_LOG_LEVEL
 
 #include <stdbool.h>
 
 #include <init.h>
+#include <entropy.h>
 #include <misc/util.h>
 #include <net/net_context.h>
 #include <net/socket.h>
@@ -144,7 +143,7 @@ static struct k_mutex context_lock;
 #define IS_LISTENING(context) (net_context_get_state(context) == \
 			       NET_CONTEXT_LISTENING)
 
-#if defined(MBEDTLS_DEBUG_C) && defined(CONFIG_NET_DEBUG_SOCKETS)
+#if defined(MBEDTLS_DEBUG_C) && (NET_LOG_LEVEL >= LOG_LEVEL_DBG)
 static void tls_debug(void *ctx, int level, const char *file,
 		      int line, const char *str)
 {
@@ -163,7 +162,8 @@ static void tls_debug(void *ctx, int level, const char *file,
 		}
 	}
 
-	NET_DBG("%s:%04d: |%d| %s", basename, line, level, str);
+	NET_DBG("%s:%04d: |%d| %s", basename, line, level,
+		log_strdup(str));
 }
 #endif /* defined(MBEDTLS_DEBUG_C) && defined(CONFIG_NET_TLS_DEBUG) */
 
@@ -264,7 +264,7 @@ static int tls_init(struct device *unused)
 		 "TLS communication may be insecure!");
 #endif /* defined(CONFIG_ENTROPY_HAS_DRIVER) */
 
-	memset(tls_contexts, 0, sizeof(tls_contexts));
+	(void)memset(tls_contexts, 0, sizeof(tls_contexts));
 
 	k_mutex_init(&context_lock);
 
@@ -278,7 +278,7 @@ static int tls_init(struct device *unused)
 		return -EFAULT;
 	}
 
-#if defined(MBEDTLS_DEBUG_C) && defined(CONFIG_NET_DEBUG_SOCKETS)
+#if defined(MBEDTLS_DEBUG_C) && (NET_LOG_LEVEL >= LOG_LEVEL_DBG)
 	mbedtls_debug_set_threshold(CONFIG_MBEDTLS_DEBUG_LEVEL);
 #endif
 
@@ -298,7 +298,7 @@ static struct tls_context *tls_alloc(void)
 	for (i = 0; i < ARRAY_SIZE(tls_contexts); i++) {
 		if (!tls_contexts[i].is_used) {
 			tls = &tls_contexts[i];
-			memset(tls, 0, sizeof(*tls));
+			(void)memset(tls, 0, sizeof(*tls));
 			tls->is_used = true;
 			tls->options.verify_level = -1;
 
@@ -321,7 +321,7 @@ static struct tls_context *tls_alloc(void)
 		mbedtls_pk_init(&tls->priv_key);
 #endif
 
-#if defined(MBEDTLS_DEBUG_C) && defined(CONFIG_NET_DEBUG_SOCKETS)
+#if defined(MBEDTLS_DEBUG_C) && (NET_LOG_LEVEL >= LOG_LEVEL_DBG)
 		mbedtls_ssl_conf_dbg(&tls->config, tls_debug, NULL);
 #endif
 	} else {
@@ -346,10 +346,12 @@ static struct tls_context *tls_clone(struct tls_context *source_tls)
 	memcpy(&target_tls->options, &source_tls->options,
 	       sizeof(target_tls->options));
 
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
 	if (target_tls->options.is_hostname_set) {
 		mbedtls_ssl_set_hostname(&target_tls->ssl,
 					 source_tls->ssl.hostname);
 	}
+#endif
 
 	return target_tls;
 }
@@ -746,8 +748,8 @@ static int tls_mbedtls_reset(struct net_context *context)
 
 	context->tls->tls_established = false;
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
-	memset(&context->tls->dtls_peer_addr, 0,
-	       sizeof(context->tls->dtls_peer_addr));
+	(void)memset(&context->tls->dtls_peer_addr, 0,
+		     sizeof(context->tls->dtls_peer_addr));
 	context->tls->dtls_peer_addrlen = 0;
 #endif
 
@@ -852,6 +854,7 @@ static int tls_mbedtls_init(struct net_context *context, bool is_server)
 	}
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
 	/* For TLS clients, set hostname to empty string to enforce it's
 	 * verification - only if hostname option was not set. Otherwise
 	 * depend on user configuration.
@@ -859,6 +862,7 @@ static int tls_mbedtls_init(struct net_context *context, bool is_server)
 	if (!is_server && !context->tls->options.is_hostname_set) {
 		mbedtls_ssl_set_hostname(&context->tls->ssl, "");
 	}
+#endif
 
 	/* If verification level was specified explicitly, set it. Otherwise,
 	 * use mbedTLS default values (required for client, none for server)
@@ -939,9 +943,13 @@ static int tls_opt_hostname_set(struct net_context *context,
 {
 	ARG_UNUSED(optlen);
 
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
 	if (mbedtls_ssl_set_hostname(&context->tls->ssl, optval) != 0) {
 		return -EINVAL;
 	}
+#else
+	return -ENOPROTOOPT;
+#endif
 
 	context->tls->options.is_hostname_set = true;
 

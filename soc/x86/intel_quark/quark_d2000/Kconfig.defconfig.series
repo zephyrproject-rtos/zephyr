@@ -144,8 +144,6 @@ config SPI_DW_FIFO_DEPTH
 	default 7
 config SPI_0
 	def_bool y
-config SPI_0_IRQ_PRI
-	default 0
 endif # SPI
 
 if SOC_FLASH_QMSI

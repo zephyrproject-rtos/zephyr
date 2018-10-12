@@ -6,6 +6,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define LOG_MODULE_NAME net_test
+#define NET_LOG_LEVEL CONFIG_NET_PKT_LOG_LEVEL
+
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <string.h>
@@ -17,7 +20,7 @@
 #include <net/net_pkt.h>
 #include <net/net_ip.h>
 
-#if defined(CONFIG_NET_DEBUG_NET_PKT)
+#if defined(CONFIG_NET_NET_PKT_LOG_LEVEL_DBG)
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
 #define NET_LOG_ENABLED 1
 #else
@@ -77,7 +80,7 @@ static void test_ipv6_multi_frags(void)
 	/* Place the IP + UDP header in the first fragment */
 	if (!net_buf_tailroom(frag)) {
 		ipv6 = (struct ipv6_hdr *)(frag->data);
-		udp = (struct udp_hdr *)((void *)ipv6 + sizeof(*ipv6));
+		udp = (struct udp_hdr *)((u8_t *)ipv6 + sizeof(*ipv6));
 		if (net_buf_tailroom(frag) < sizeof(ipv6)) {
 			printk("Not enough space for IPv6 header, "
 			       "needed %zd bytes, has %zd bytes\n",
@@ -93,7 +96,7 @@ static void test_ipv6_multi_frags(void)
 			zassert_true(false, "No space for UDP header");
 		}
 
-		net_pkt_set_appdata(pkt, (void *)udp + sizeof(*udp));
+		net_pkt_set_appdata(pkt, (u8_t *)udp + sizeof(*udp));
 		net_pkt_set_appdatalen(pkt, 0);
 	}
 
@@ -198,7 +201,7 @@ static void test_fragment_copy(void)
 	/* Place the IP + UDP header in the first fragment */
 	if (net_buf_tailroom(frag)) {
 		ipv6 = (struct ipv6_hdr *)(frag->data);
-		udp = (struct udp_hdr *)((void *)ipv6 + sizeof(*ipv6));
+		udp = (struct udp_hdr *)((u8_t *)ipv6 + sizeof(*ipv6));
 		if (net_buf_tailroom(frag) < sizeof(*ipv6)) {
 			printk("Not enough space for IPv6 header, "
 			       "needed %zd bytes, has %zd bytes\n",
@@ -218,7 +221,7 @@ static void test_fragment_copy(void)
 
 		memcpy(net_buf_add(frag, 15), example_data, 15);
 
-		net_pkt_set_appdata(pkt, (void *)udp + sizeof(*udp) + 15);
+		net_pkt_set_appdata(pkt, (u8_t *)udp + sizeof(*udp) + 15);
 		net_pkt_set_appdatalen(pkt, 0);
 	}
 
@@ -332,7 +335,7 @@ static void test_pkt_read_append(void)
 	/* Place the IP + UDP header in the first fragment */
 	if (!net_buf_tailroom(frag)) {
 		ipv6 = (struct ipv6_hdr *)(frag->data);
-		udp = (struct udp_hdr *)((void *)ipv6 + sizeof(*ipv6));
+		udp = (struct udp_hdr *)((u8_t *)ipv6 + sizeof(*ipv6));
 		if (net_buf_tailroom(frag) < sizeof(ipv6)) {
 			printk("Not enough space for IPv6 header, "
 			       "needed %zd bytes, has %zd bytes\n",
@@ -348,7 +351,7 @@ static void test_pkt_read_append(void)
 			zassert_true(false, "No space for UDP header");
 		}
 
-		net_pkt_set_appdata(pkt, (void *)udp + sizeof(*udp));
+		net_pkt_set_appdata(pkt, (u8_t *)udp + sizeof(*udp));
 		net_pkt_set_appdatalen(pkt, 0);
 	}
 
@@ -851,8 +854,8 @@ static void test_fragment_compact(void)
 		       test_data, sizeof(test_data));
 
 		/* Followed by bytes of zeroes */
-		memset(net_buf_add(frags[i], sizeof(test_data)), 0,
-		       sizeof(test_data));
+		(void)memset(net_buf_add(frags[i], sizeof(test_data)), 0,
+			     sizeof(test_data));
 
 		total++;
 	}

@@ -65,7 +65,7 @@ static void supported_commands(u8_t *data, u16_t len)
 	net_buf_simple_init(buf, 0);
 
 	/* 1st octet */
-	memset(net_buf_simple_add(buf, 1), 0, 1);
+	(void)memset(net_buf_simple_add(buf, 1), 0, 1);
 	tester_set_bit(buf->data, MESH_READ_SUPPORTED_COMMANDS);
 	tester_set_bit(buf->data, MESH_CONFIG_PROVISIONING);
 	tester_set_bit(buf->data, MESH_PROVISION_NODE);
@@ -83,7 +83,7 @@ static void supported_commands(u8_t *data, u16_t len)
 	tester_set_bit(buf->data, MESH_LPN_POLL);
 	tester_set_bit(buf->data, MESH_MODEL_SEND);
 	/* 3rd octet */
-	memset(net_buf_simple_add(buf, 1), 0, 1);
+	(void)memset(net_buf_simple_add(buf, 1), 0, 1);
 #if defined(CONFIG_BT_TESTING)
 	tester_set_bit(buf->data, MESH_LPN_SUBSCRIBE);
 	tester_set_bit(buf->data, MESH_LPN_UNSUBSCRIBE);
@@ -164,7 +164,7 @@ static int fault_clear(struct bt_mesh_model *model, uint16_t company_id)
 		return -EINVAL;
 	}
 
-	memset(reg_faults, 0, sizeof(reg_faults));
+	(void)memset(reg_faults, 0, sizeof(reg_faults));
 
 	return 0;
 }
@@ -627,8 +627,8 @@ static void health_clear_faults(u8_t *data, u16_t len)
 {
 	SYS_LOG_DBG("");
 
-	memset(cur_faults, 0, sizeof(cur_faults));
-	memset(reg_faults, 0, sizeof(reg_faults));
+	(void)memset(cur_faults, 0, sizeof(cur_faults));
+	(void)memset(reg_faults, 0, sizeof(reg_faults));
 
 	bt_mesh_fault_update(&elements[0]);
 

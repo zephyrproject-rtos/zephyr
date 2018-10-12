@@ -7,8 +7,8 @@
  */
 
 
-#ifndef __INCquark_se_mailboxh
-#define __INCquark_se_mailboxh
+#ifndef ZEPHYR_DRIVERS_IPM_IPM_QUARK_SE_H_
+#define ZEPHYR_DRIVERS_IPM_IPM_QUARK_SE_H_
 
 #include <kernel.h>
 #include <board.h> /* for SCSS_REGISTER_BASE */
@@ -128,4 +128,4 @@ int quark_se_ipm_controller_initialize(struct device *d);
 }
 #endif
 
-#endif /* __INCquark_se_mailboxh */
+#endif /* ZEPHYR_DRIVERS_IPM_IPM_QUARK_SE_H_ */

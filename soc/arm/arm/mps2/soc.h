@@ -7,6 +7,7 @@
 #ifndef _SOC_H_
 #define _SOC_H_
 
+#define __MPU_PRESENT 1
 #include <soc_devices.h>
 
 #endif /* _SOC_H_ */

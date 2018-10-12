@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef XTENSA_SYS_IO_H
-#define XTENSA_SYS_IO_H
+#ifndef ZEPHYR_INCLUDE_ARCH_XTENSA_SYS_IO_H_
+#define ZEPHYR_INCLUDE_ARCH_XTENSA_SYS_IO_H_
 
 #if !defined(_ASMLANGUAGE)
 
@@ -119,4 +119,4 @@ static ALWAYS_INLINE
 #endif /* !_ASMLANGUAGE */
 
 
-#endif /* XTENSA_SYS_IO_H */
+#endif /* ZEPHYR_INCLUDE_ARCH_XTENSA_SYS_IO_H_ */

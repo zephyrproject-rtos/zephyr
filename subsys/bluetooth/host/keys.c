@@ -56,6 +56,24 @@ struct bt_keys *bt_keys_get_addr(u8_t id, const bt_addr_le_t *addr)
 	return NULL;
 }
 
+void bt_foreach_bond(u8_t id, void (*func)(const struct bt_bond_info *info,
+					   void *user_data),
+		     void *user_data)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(key_pool); i++) {
+		struct bt_keys *keys = &key_pool[i];
+
+		if (keys->keys && keys->id == id) {
+			struct bt_bond_info info;
+
+			bt_addr_le_copy(&info.addr, &keys->addr);
+			func(&info, user_data);
+		}
+	}
+}
+
 void bt_keys_foreach(int type, void (*func)(struct bt_keys *keys, void *data),
 		     void *data)
 {
@@ -202,7 +220,7 @@ void bt_keys_clear(struct bt_keys *keys)
 		settings_save_one(key, NULL);
 	}
 
-	memset(keys, 0, sizeof(*keys));
+	(void)memset(keys, 0, sizeof(*keys));
 }
 
 static void keys_clear_id(struct bt_keys *keys, void *data)
@@ -285,7 +303,7 @@ static int keys_set(int argc, char **argv, char *val)
 	if (!val) {
 		keys = bt_keys_find(BT_KEYS_ALL, id, &addr);
 		if (keys) {
-			memset(keys, 0, sizeof(*keys));
+			(void)memset(keys, 0, sizeof(*keys));
 			BT_DBG("Cleared keys for %s", bt_addr_le_str(&addr));
 		} else {
 			BT_WARN("Unable to find deleted keys for %s",

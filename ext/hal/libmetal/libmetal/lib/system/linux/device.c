@@ -430,7 +430,7 @@ static int metal_linux_dev_open(struct metal_bus *bus,
 
 		/* Reset device data. */
 		memset(ldev, 0, sizeof(*ldev));
-		strncpy(ldev->dev_name, dev_name, sizeof(ldev->dev_name));
+		strncpy(ldev->dev_name, dev_name, sizeof(ldev->dev_name) - 1);
 		ldev->fd = -1;
 		ldev->ldrv = ldrv;
 		ldev->device.bus = bus;

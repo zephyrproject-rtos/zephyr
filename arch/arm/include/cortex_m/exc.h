@@ -11,8 +11,8 @@
  * Exception/interrupt context helpers.
  */
 
-#ifndef _ARM_CORTEXM_ISR__H_
-#define _ARM_CORTEXM_ISR__H_
+#ifndef ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_M_EXC_H_
+#define ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_M_EXC_H_
 
 #include <arch/cpu.h>
 
@@ -167,4 +167,4 @@ static ALWAYS_INLINE void _ClearFaults(void)
 #endif
 
 
-#endif /* _ARM_CORTEXM_ISR__H_ */
+#endif /* ZEPHYR_ARCH_ARM_INCLUDE_CORTEX_M_EXC_H_ */

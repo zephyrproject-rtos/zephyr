@@ -11,8 +11,8 @@
  * This file contains the Audio Codec APIs
  */
 
-#ifndef __AUDIO_CODEC_H__
-#define __AUDIO_CODEC_H__
+#ifndef ZEPHYR_INCLUDE_AUDIO_CODEC_H_
+#define ZEPHYR_INCLUDE_AUDIO_CODEC_H_
 
 #include <i2s.h>
 
@@ -212,4 +212,4 @@ static inline int audio_codec_apply_properties(struct device *dev)
 }
 #endif
 
-#endif /* __AUDIO_CODEC_H__ */
+#endif /* ZEPHYR_INCLUDE_AUDIO_CODEC_H_ */

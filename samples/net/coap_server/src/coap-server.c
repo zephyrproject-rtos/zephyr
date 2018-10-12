@@ -4,11 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if 1
-#define SYS_LOG_DOMAIN "coap-server"
-#define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_coap_server
+#define NET_LOG_LEVEL LOG_LEVEL_DBG
 
 #include <errno.h>
 #include <misc/printk.h>
@@ -121,7 +118,7 @@ static void payload_dump(const char *s, struct net_buf *frag,
 	printk("payload message = %s [%u]\n", s, len);
 
 	while (frag) {
-		_hexdump(frag->data + offset, frag->len - offset, 0);
+		net_hexdump("", frag->data + offset, frag->len - offset);
 		frag = frag->frags;
 		offset = 0;
 	}
@@ -497,7 +494,7 @@ static int query_get(struct coap_resource *resource,
 		memcpy(str, options[i].value, options[i].len);
 		str[options[i].len] = '\0';
 
-		NET_INFO("query[%d]: %s\n", i + 1, str);
+		NET_INFO("query[%d]: %s\n", i + 1, log_strdup(str));
 	}
 
 	NET_INFO("*******\n");
@@ -737,7 +734,7 @@ static int large_get(struct coap_resource *resource,
 	size = min(coap_block_size_to_bytes(ctx.block_size),
 		   ctx.total_size - ctx.current);
 
-	memset(payload, 'A', min(size, sizeof(payload)));
+	(void)memset(payload, 'A', min(size, sizeof(payload)));
 
 	r = coap_packet_append_payload(&response, (u8_t *)payload, size);
 	if (r < 0) {
@@ -748,7 +745,7 @@ static int large_get(struct coap_resource *resource,
 	r = coap_next_block(&response, &ctx);
 	if (!r) {
 		/* Will return 0 when it's the last block. */
-		memset(&ctx, 0, sizeof(ctx));
+		(void)memset(&ctx, 0, sizeof(ctx));
 	}
 
 	return net_context_sendto(pkt, (const struct sockaddr *)&from,
@@ -810,7 +807,7 @@ static int large_update_put(struct coap_resource *resource,
 	}
 
 	NET_INFO("**************\n");
-	NET_INFO("[ctx] current %u block_size %u total_size %u\n",
+	NET_INFO("[ctx] current %zu block_size %u total_size %zu\n",
 		 ctx.current, coap_block_size_to_bytes(ctx.block_size),
 		 ctx.total_size);
 	NET_INFO("**************\n");

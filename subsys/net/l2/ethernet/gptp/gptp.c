@@ -4,10 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_GPTP)
-#define SYS_LOG_DOMAIN "net/gptp"
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_gptp
+#define NET_LOG_LEVEL CONFIG_NET_GPTP_LOG_LEVEL
 
 #include <net/net_pkt.h>
 #include <ptp_clock.h>
@@ -89,7 +87,7 @@ static void gptp_compute_clock_identity(int port)
 }
 
 #define PRINT_INFO(msg, hdr, pkt)				\
-	NET_DBG("Received %s seq %d pkt %p", msg,		\
+	NET_DBG("Received %s seq %d pkt %p", log_strdup(msg),	\
 		ntohs(hdr->sequence_id), pkt)			\
 
 
@@ -367,21 +365,26 @@ static void gptp_init_clock_ds(void)
 	prop_ds = GPTP_PROPERTIES_DS();
 
 	/* Initialize global data set. */
-	memset(global_ds, 0, sizeof(struct gptp_global_ds));
+	(void)memset(global_ds, 0, sizeof(struct gptp_global_ds));
 
 	/* Initialize default data set. */
 
 	/* Compute the clock identity from the first port MAC address. */
 	gptp_compute_clock_identity(GPTP_PORT_START);
 
-	/* XXX GrandMaster capability is not supported. */
-	default_ds->gm_capable = false;
-	default_ds->clk_quality.clock_class = GPTP_CLASS_SLAVE_ONLY;
+	default_ds->gm_capable = IS_ENABLED(CONFIG_NET_GPTP_GM_CAPABLE);
+	default_ds->clk_quality.clock_class = GPTP_CLASS_OTHER;
 	default_ds->clk_quality.clock_accuracy =
-		GPTP_CLOCK_ACCURACY_UNKNOWN;
+		CONFIG_NET_GPTP_CLOCK_ACCURACY;
 	default_ds->clk_quality.offset_scaled_log_var =
 		GPTP_OFFSET_SCALED_LOG_VAR_UNKNOWN;
-	default_ds->priority1 = GPTP_PRIORITY1_NON_GM_CAPABLE;
+
+	if (default_ds->gm_capable) {
+		default_ds->priority1 = GPTP_PRIORITY1_GM_CAPABLE;
+	} else {
+		default_ds->priority1 = GPTP_PRIORITY1_NON_GM_CAPABLE;
+	}
+
 	default_ds->priority2 = GPTP_PRIORITY2_DEFAULT;
 
 	default_ds->cur_utc_offset = 37; /* Current leap seconds TAI - UTC */
@@ -390,7 +393,7 @@ static void gptp_init_clock_ds(void)
 	default_ds->time_source = GPTP_TS_INTERNAL_OSCILLATOR;
 
 	/* Initialize current data set. */
-	memset(current_ds, 0, sizeof(struct gptp_current_ds));
+	(void)memset(current_ds, 0, sizeof(struct gptp_current_ds));
 
 	/* Initialize parent data set. */
 
@@ -427,6 +430,8 @@ static void gptp_init_clock_ds(void)
 	global_ds->sys_flags.all = default_ds->flags.all;
 	global_ds->sys_current_utc_offset = default_ds->cur_utc_offset;
 	global_ds->sys_time_source = default_ds->time_source;
+	global_ds->clk_master_sync_itv =
+		NSEC_PER_SEC * GPTP_POW2(CONFIG_NET_GPTP_INIT_LOG_SYNC_ITV);
 }
 
 static void gptp_init_port_ds(int port)
@@ -488,7 +493,7 @@ static void gptp_init_port_ds(int port)
 
 #if defined(CONFIG_NET_GPTP_STATISTICS)
 	/* Initialize stats data set. */
-	memset(port_param_ds, 0, sizeof(struct gptp_port_param_ds));
+	(void)memset(port_param_ds, 0, sizeof(struct gptp_port_param_ds));
 #endif
 }
 

@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __INC_stdbool_h__
-#define __INC_stdbool_h__
+#ifndef ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_STDBOOL_H_
+#define ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_STDBOOL_H_
 
 #ifndef __cplusplus
 #define bool   _Bool
@@ -17,4 +17,4 @@
 
 #define __bool_true_false_are_defined  1
 
-#endif /* __INC_stdbool_h__ */
+#endif /* ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_STDBOOL_H_ */

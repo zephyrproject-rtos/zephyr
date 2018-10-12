@@ -10,10 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_MDNS_RESPONDER)
-#define SYS_LOG_DOMAIN "mdns"
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_mdns_responder
+#define NET_LOG_LEVEL CONFIG_MDNS_RESPONDER_LOG_LEVEL
 
 #include <zephyr.h>
 #include <init.h>
@@ -46,7 +44,7 @@ static struct net_context *ipv6;
 #define DNS_RESOLVER_BUF_CTR	(DNS_RESOLVER_MIN_BUF + \
 				 CONFIG_MDNS_RESOLVER_ADDITIONAL_BUF_CTR)
 
-NET_BUF_POOL_DEFINE(dns_msg_pool, DNS_RESOLVER_BUF_CTR,
+NET_BUF_POOL_DEFINE(mdns_msg_pool, DNS_RESOLVER_BUF_CTR,
 		    DNS_RESOLVER_MAX_BUF_SIZE, 0, NULL);
 
 #if defined(CONFIG_NET_IPV6)
@@ -228,10 +226,10 @@ static int send_response(struct net_context *ctx, struct net_pkt *pkt,
 
 	if (qtype == DNS_RR_TYPE_A) {
 #if defined(CONFIG_NET_IPV4)
-		struct in_addr *addr;
+		const struct in_addr *addr;
 
-		/* For IPv4 we take the first address in the interface */
-		addr = &net_pkt_iface(pkt)->ipv4.unicast[0].address.in_addr;
+		addr = net_if_ipv4_select_src_addr(net_pkt_iface(pkt),
+						   &NET_IPV4_HDR(pkt)->src);
 
 		create_ipv4_addr(net_sin(&dst));
 		dst_len = sizeof(struct sockaddr_in);
@@ -333,15 +331,15 @@ static int dns_read(struct net_context *ctx,
 	NET_DBG("Received %d %s from %s", queries,
 		queries > 1 ? "queries" : "query",
 		net_pkt_family(pkt) == AF_INET ?
-		net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src) :
-		net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src));
+		log_strdup(net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src)) :
+		log_strdup(net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src)));
 
 	do {
 		enum dns_rr_type qtype;
 		enum dns_class qclass;
 		u8_t *lquery;
 
-		memset(result->data, 0, net_buf_tailroom(result));
+		(void)memset(result->data, 0, net_buf_tailroom(result));
 		result->len = 0;
 
 		ret = dns_unpack_query(&dns_msg, result, &qtype, &qclass);
@@ -357,7 +355,7 @@ static int dns_read(struct net_context *ctx,
 
 		NET_DBG("[%d] query %s/%s label %s (%d bytes)", queries,
 			qtype == DNS_RR_TYPE_A ? "A" : "AAAA", "IN",
-			result->data, ret);
+			log_strdup(result->data), ret);
 
 		/* If the query matches to our hostname, then send reply.
 		 * We skip the first dot, and make sure there is dot after
@@ -403,7 +401,7 @@ static void recv_cb(struct net_context *net_ctx,
 		goto quit;
 	}
 
-	dns_data = net_buf_alloc(&dns_msg_pool, BUF_ALLOC_TIMEOUT);
+	dns_data = net_buf_alloc(&mdns_msg_pool, BUF_ALLOC_TIMEOUT);
 	if (!dns_data) {
 		goto quit;
 	}
@@ -428,7 +426,7 @@ static void iface_ipv6_cb(struct net_if *iface, void *user_data)
 	ret = net_ipv6_mld_join(iface, addr);
 	if (ret < 0) {
 		NET_DBG("Cannot join %s IPv6 multicast group (%d)",
-			net_sprint_ipv6_addr(addr), ret);
+			log_strdup(net_sprint_ipv6_addr(addr)), ret);
 	}
 }
 

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _ZEPHYR_EXC_HANDLE_H_
-#define _ZEPHYR_EXC_HANDLE_H_
+#ifndef ZEPHYR_INCLUDE_EXC_HANDLE_H_
+#define ZEPHYR_INCLUDE_EXC_HANDLE_H_
 
 /*
  * This is used by some architectures to define code ranges which may
@@ -42,4 +42,4 @@ struct z_exc_handle {
 	extern void (*name ## _fault_end)(void); \
 	extern void (*name ## _fixup)(void)
 
-#endif /* _ZEPHYR_EXC_HANDLE_H_ */
+#endif /* ZEPHYR_INCLUDE_EXC_HANDLE_H_ */

@@ -123,6 +123,16 @@ I2C
 - I2C3_SCL : PA8
 - I2C3_SCL : PB4
 
+SPI
+---
+
+96Boards Neonkey board has one SPI. The default SPI mapping for Zephyr is:
+
+- SPI1_NSS  : PA4
+- SPI1_SCK  : PA5
+- SPI1_MISO : PA6
+- SPI1_MOSI : PA7
+
 Programming and Debugging
 *************************
 

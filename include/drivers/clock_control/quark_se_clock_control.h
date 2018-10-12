@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __QUARK_SE_CLOCK_CONTROL_H__
-#define __QUARK_SE_CLOCK_CONTROL_H__
+#ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_QUARK_SE_CLOCK_CONTROL_H_
+#define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_QUARK_SE_CLOCK_CONTROL_H_
 
 enum quark_se_peripheral_clocks {
 	QUARK_SE_PERIPH_PCLK_EN = 0,
@@ -51,4 +51,4 @@ enum quark_se_sensor_clocks {
 	QUARK_SE_CCU_ADC_CLK_EN,
 };
 
-#endif /* __QUARK_SE_CLOCK_CONTROL_H__ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_QUARK_SE_CLOCK_CONTROL_H_ */

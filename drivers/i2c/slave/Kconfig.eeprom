@@ -17,46 +17,6 @@ config I2C_EEPROM_SLAVE_0
 	depends on I2C_EEPROM_SLAVE
 	default y
 
-config I2C_EEPROM_SLAVE_0_SIZE
-	int "I2C Slave EEPROM 0 Size in KiB"
-	depends on I2C_EEPROM_SLAVE_0
-	default 1
-
-config I2C_EEPROM_SLAVE_0_NAME
-	string "I2C Slave EEPROM 0 device name"
-	depends on I2C_EEPROM_SLAVE_0
-	default "EEPROM_SLAVE_0"
-
-config I2C_EEPROM_SLAVE_0_CONTROLLER_DEV_NAME
-	string "I2C Slave EEPROM 0 Controller device name"
-	depends on I2C_EEPROM_SLAVE_0
-	default "I2C_0"
-
-config I2C_EEPROM_SLAVE_0_ADDRESS
-	hex "I2C Slave EEPROM 0 address"
-	depends on I2C_EEPROM_SLAVE_0
-	default 0x54
-
 config I2C_EEPROM_SLAVE_1
 	bool "Enable I2C Slave EEPROM driver instance 1"
 	depends on I2C_EEPROM_SLAVE
-
-config I2C_EEPROM_SLAVE_1_SIZE
-	int "I2C Slave EEPROM 1 Size in KiB"
-	depends on I2C_EEPROM_SLAVE_1
-	default 1
-
-config I2C_EEPROM_SLAVE_1_NAME
-	string "I2C Slave EEPROM 1 device name"
-	depends on I2C_EEPROM_SLAVE_1
-	default "EEPROM_SLAVE_1"
-
-config I2C_EEPROM_SLAVE_1_CONTROLLER_DEV_NAME
-	string "I2C Slave EEPROM 1 Controller device name"
-	depends on I2C_EEPROM_SLAVE_1
-	default "I2C_1"
-
-config I2C_EEPROM_SLAVE_1_ADDRESS
-	hex "I2C Slave EEPROM 1 address"
-	depends on I2C_EEPROM_SLAVE_1
-	default 0x56

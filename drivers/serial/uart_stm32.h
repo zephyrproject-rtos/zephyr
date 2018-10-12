@@ -9,8 +9,8 @@
  *
  */
 
-#ifndef _STM32_UART_H_
-#define _STM32_UART_H_
+#ifndef ZEPHYR_DRIVERS_SERIAL_UART_STM32_H_
+#define ZEPHYR_DRIVERS_SERIAL_UART_STM32_H_
 
 /* device config */
 struct uart_stm32_config {
@@ -31,4 +31,4 @@ struct uart_stm32_data {
 #endif
 };
 
-#endif	/* _STM32_UART_H_ */
+#endif	/* ZEPHYR_DRIVERS_SERIAL_UART_STM32_H_ */

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _XCC_TOOLCHAIN_H_
-#define _XCC_TOOLCHAIN_H_
+#ifndef ZEPHYR_INCLUDE_TOOLCHAIN_XCC_H_
+#define ZEPHYR_INCLUDE_TOOLCHAIN_XCC_H_
 
 #include <toolchain/gcc.h>
 

@@ -6,7 +6,7 @@
   * @brief   This file provides firmware functions to manage voltage reference
   *          VrefInt that must be specifically controled for comparator
   *          instance COMP2.
-  @verbatim 
+  @verbatim
   ==============================================================================
                ##### COMP peripheral Extended features  #####
   ==============================================================================
@@ -47,7 +47,7 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-  */ 
+  */
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l0xx_hal.h"
@@ -104,10 +104,10 @@
 void HAL_COMPEx_EnableVREFINT(void)
 {
   __IO uint32_t wait_loop_index = 0U;
-  
+
   /* Enable the Buffer for the COMP by setting ENBUFLP_VREFINT_COMP bit in the CFGR3 register */
   SYSCFG->CFGR3 |= (SYSCFG_CFGR3_ENBUFLP_VREFINT_COMP);
-  
+
   /* Wait loop initialization and execution */
   /* Note: Variable divided by 2 to compensate partially              */
   /*       CPU processing cycles.                                     */
@@ -139,11 +139,11 @@ void HAL_COMPEx_DisableVREFINT(void)
 
 /**
   * @}
-  */ 
+  */
 
 #endif /* HAL_COMP_MODULE_ENABLED */
 
 /**
   * @}
-  */ 
+  */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

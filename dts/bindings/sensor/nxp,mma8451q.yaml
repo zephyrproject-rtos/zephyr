@@ -5,7 +5,6 @@
 #
 ---
 title: MMA8451Q 3-axis Accelerometer
-id: nxp,mma8451q
 version: 0.1
 
 description: >

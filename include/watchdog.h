@@ -10,8 +10,8 @@
  * @brief Public API for watchdog drivers.
  */
 
-#ifndef _WDT_H_
-#define _WDT_H_
+#ifndef ZEPHYR_INCLUDE_WATCHDOG_H_
+#define ZEPHYR_INCLUDE_WATCHDOG_H_
 
 /**
  * @brief Watchdog Interface
@@ -365,4 +365,4 @@ static inline void __deprecated wdt_reload(struct device *dev)
  * @}
  */
 
-#endif /* __WDT_H__ */
+#endif /* _ZEPHYR_WATCHDOG_H__ */

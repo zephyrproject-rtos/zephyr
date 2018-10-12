@@ -13,12 +13,11 @@ menuconfig NET_L2_ETHERNET
 
 if NET_L2_ETHERNET
 
-config NET_DEBUG_L2_ETHERNET
-	bool "Debug Ethernet L2 layer"
-	default y if NET_LOG_GLOBAL
-	depends on NET_LOG
-	help
-	  Enables Ethernet L2 output debug messages
+module = NET_L2_ETHERNET
+module-dep = NET_LOG
+module-str = Log level for Ethernet L2 layer
+module-help = Enables Ethernet L2 to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
 
 config NET_L2_ETHERNET_MGMT
 	bool "Enable Ethernet network management interface"
@@ -55,12 +54,26 @@ config NET_ARP_TABLE_SIZE
 	help
 	  Each entry in the ARP table consumes 22 bytes of memory.
 
-config NET_DEBUG_ARP
-	bool "Debug IPv4 ARP"
-	depends on NET_ARP && NET_LOG
-	default y if NET_LOG_GLOBAL
+config NET_ARP_GRATUITOUS
+	bool "Support gratuitous ARP requests/replies."
+	depends on NET_ARP
+	default y
 	help
-	  Enables core ARP code part to output debug messages
+	  Gratuitous in this case means a ARP request or reply that is not
+	  normally needed according to the ARP specification but could be used
+	  in some cases. A gratuitous ARP request is a ARP request packet where
+	  the source and destination IP are both set to the IP of the machine
+	  issuing the packet and the destination MAC is the broadcast address
+	  ff:ff:ff:ff:ff:ff. Ordinarily, no reply packet will occur.
+	  A gratuitous ARP reply is a reply to which no request has been made.
+
+if NET_ARP
+module = NET_ARP
+module-dep = NET_LOG
+module-str = Log level for IPv4 ARP
+module-help = Enables core ARP code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+endif # NET_ARP
 
 source "subsys/net/l2/ethernet/gptp/Kconfig"
 source "subsys/net/l2/ethernet/lldp/Kconfig"

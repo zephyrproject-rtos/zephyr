@@ -279,13 +279,13 @@ extern "C" {
   * @{
   */
 #if defined(SYSCFG_CFGR2_PVD_LOCK)
-#define LL_SYSCFG_TIMBREAK_PVD             SYSCFG_CFGR2_PVD_LOCK  /*!< Enables and locks the PVD connection 
-                                                                       with TIM1/15/16U/17 Break Input and also 
+#define LL_SYSCFG_TIMBREAK_PVD             SYSCFG_CFGR2_PVD_LOCK  /*!< Enables and locks the PVD connection
+                                                                       with TIM1/15/16U/17 Break Input and also
                                                                        the PVDE and PLS bits of the Power Control Interface */
 #endif /*SYSCFG_CFGR2_PVD_LOCK*/
-#define LL_SYSCFG_TIMBREAK_SRAM_PARITY     SYSCFG_CFGR2_SRAM_PARITY_LOCK   /*!< Enables and locks the SRAM_PARITY error signal 
+#define LL_SYSCFG_TIMBREAK_SRAM_PARITY     SYSCFG_CFGR2_SRAM_PARITY_LOCK   /*!< Enables and locks the SRAM_PARITY error signal
                                                                                 with Break Input of TIM1/15/16/17 */
-#define LL_SYSCFG_TIMBREAK_LOCKUP          SYSCFG_CFGR2_LOCKUP_LOCK   /*!< Enables and locks the LOCKUP (Hardfault) output of 
+#define LL_SYSCFG_TIMBREAK_LOCKUP          SYSCFG_CFGR2_LOCKUP_LOCK   /*!< Enables and locks the LOCKUP (Hardfault) output of
                                                                            CortexM0 with Break Input of TIM1/15/16/17 */
 /**
   * @}

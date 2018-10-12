@@ -12,8 +12,8 @@ simulating an enigma-like machine, but the implementation of the
 machine has not been validated and should not be used for any
 actual security purposes.
 
-Requirments
-***********
+Requirements
+************
 
 The sample is dependent on the subsystem app_memory, and it will
 not run on boards that do not support the subsystem.  The sample
@@ -34,7 +34,7 @@ just prints text to a console.
 After starting, the console will display multiple starting messages
 followed by two series of repeating messages.  The repeating messages
 are the input and output of the enigma-like machine.  The second
-message is the output of the first mesessage, and the resulting
+message is the output of the first message, and the resulting
 output is the first message without spaces.  The two messages are
 marked as 1 and 1' respectively.
 
@@ -49,7 +49,7 @@ message after sleeping.  To send the message the PT thread checks a
 flag, and if it is clear, writes the message to a buffer shared with
 the encrypt thread.  After writing the buffer, the flag is set. The
 encrypt thread copies the memory from the common buffer into the
-encrypted thead's private memory when the flag is set and then clears
+encrypted thread's private memory when the flag is set and then clears
 the flag.  Once the encrypted thread receives the text string, it
 performs a simulation of the enigma machine to produce cypher text(CT).
 The CT is copied to a shared memory partition connecting to the third

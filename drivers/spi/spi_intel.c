@@ -6,9 +6,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define SYS_LOG_DOMAIN "SPI Intel"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SPI_LEVEL
-#include <logging/sys_log.h>
+#define LOG_DOMAIN "SPI Intel"
+#define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(spi_intel);
 
 #include <errno.h>
 
@@ -47,7 +48,7 @@ out:
 
 	spi_context_cs_control(&spi->ctx, false);
 
-	SYS_LOG_DBG("SPI transaction completed %s error",
+	LOG_DBG("SPI transaction completed %s error",
 		    error ? "with" : "without");
 
 	spi_context_complete(&spi->ctx, error ? -EIO : 0);
@@ -120,7 +121,7 @@ static int spi_intel_configure(struct device *dev,
 {
 	struct spi_intel_data *spi = dev->driver_data;
 
-	SYS_LOG_DBG("%p (0x%x), %p", dev, spi->regs, config);
+	LOG_DBG("%p (0x%x), %p", dev, spi->regs, config);
 
 	if (spi_context_configured(&spi->ctx, config)) {
 		/* Nothing to do */
@@ -185,7 +186,7 @@ static int transceive(struct device *dev,
 
 	/* Check status */
 	if (test_bit_sscr0_sse(spi->regs) && test_bit_sssr_bsy(spi->regs)) {
-		SYS_LOG_DBG("Controller is busy");
+		LOG_DBG("Controller is busy");
 		return -EBUSY;
 	}
 
@@ -218,7 +219,7 @@ static int spi_intel_transceive(struct device *dev,
 				const struct spi_buf_set *tx_bufs,
 				const struct spi_buf_set *rx_bufs)
 {
-	SYS_LOG_DBG("%p, %p, %p", dev, tx_bufs, rx_bufs);
+	LOG_DBG("%p, %p, %p", dev, tx_bufs, rx_bufs);
 
 	return transceive(dev, config, tx_bufs, rx_bufs, false, NULL);
 }
@@ -230,7 +231,7 @@ static int spi_intel_transceive_async(struct device *dev,
 				      const struct spi_buf_set *rx_bufs,
 				      struct k_poll_signal *async)
 {
-	SYS_LOG_DBG("%p, %p, %p, %p", dev, tx_bufs, rx_bufs, async);
+	LOG_DBG("%p, %p, %p, %p", dev, tx_bufs, rx_bufs, async);
 
 	return transceive(dev, config, tx_bufs, rx_bufs, true, async);
 }
@@ -242,7 +243,7 @@ static int spi_intel_release(struct device *dev,
 	struct spi_intel_data *spi = dev->driver_data;
 
 	if (test_bit_sscr0_sse(spi->regs) && test_bit_sssr_bsy(spi->regs)) {
-		SYS_LOG_DBG("Controller is busy");
+		LOG_DBG("Controller is busy");
 		return -EBUSY;
 	}
 
@@ -257,7 +258,7 @@ void spi_intel_isr(struct device *dev)
 	u32_t error = 0;
 	u32_t status;
 
-	SYS_LOG_DBG("%p", dev);
+	LOG_DBG("%p", dev);
 
 	status = read_sssr(spi->regs);
 	if (status & INTEL_SPI_SSSR_ROR) {
@@ -296,7 +297,7 @@ static inline int spi_intel_setup(struct device *dev)
 	pci_bus_scan_init();
 
 	if (!pci_bus_scan(&spi->pci_dev)) {
-		SYS_LOG_DBG("Could not find device");
+		LOG_DBG("Could not find device");
 		return 0;
 	}
 
@@ -339,7 +340,7 @@ int spi_intel_init(struct device *dev)
 
 	irq_enable(info->irq);
 
-	SYS_LOG_DBG("SPI Intel Driver initialized on device: %p", dev);
+	LOG_DBG("SPI Intel Driver initialized on device: %p", dev);
 
 	return 0;
 }
@@ -358,7 +359,7 @@ static int spi_intel_suspend(struct device *dev)
 	const struct spi_intel_config *info = dev->config->config_info;
 	struct spi_intel_data *spi = dev->driver_data;
 
-	SYS_LOG_DBG("%p", dev);
+	LOG_DBG("%p", dev);
 
 	clear_bit_sscr0_sse(spi->regs);
 	irq_disable(info->irq);
@@ -373,7 +374,7 @@ static int spi_intel_resume_from_suspend(struct device *dev)
 	const struct spi_intel_config *info = dev->config->config_info;
 	struct spi_intel_data *spi = dev->driver_data;
 
-	SYS_LOG_DBG("%p", dev);
+	LOG_DBG("%p", dev);
 
 	set_bit_sscr0_sse(spi->regs);
 	irq_enable(info->irq);

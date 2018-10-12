@@ -11,8 +11,8 @@
  * ARC-specific kernel exception handling interface. Included by arc/arch.h.
  */
 
-#ifndef _ARCH_ARC_V2_EXC_H_
-#define _ARCH_ARC_V2_EXC_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARC_V2_EXC_H_
+#define ZEPHYR_INCLUDE_ARCH_ARC_V2_EXC_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,4 +28,4 @@ typedef struct  _irq_stack_frame NANO_ESF;
 #endif
 
 
-#endif /* _ARCH_ARC_V2_EXC_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARC_V2_EXC_H_ */

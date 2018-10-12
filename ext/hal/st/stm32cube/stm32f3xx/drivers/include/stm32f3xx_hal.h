@@ -900,6 +900,17 @@ HAL_StatusTypeDef HAL_InitTick (uint32_t TickPriority);
  * @}
  */
 
+/* Exported variables ---------------------------------------------------------*/
+/** @addtogroup HAL_Exported_Variables
+  * @{
+  */
+extern __IO uint32_t uwTick;
+extern uint32_t uwTickPrio;
+extern HAL_TickFreqTypeDef uwTickFreq;
+/**
+  * @}
+  */
+
 /** @addtogroup HAL_Exported_Functions_Group2 HAL Control functions
  *  @brief    HAL Control functions
  * @{

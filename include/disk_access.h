@@ -14,8 +14,8 @@
  * and Filesystems.
  */
 
-#ifndef _DISK_ACCESS_H_
-#define _DISK_ACCESS_H_
+#ifndef ZEPHYR_INCLUDE_DISK_ACCESS_H_
+#define ZEPHYR_INCLUDE_DISK_ACCESS_H_
 
 #include <kernel.h>
 #include <zephyr/types.h>
@@ -128,4 +128,4 @@ int disk_access_unregister(struct disk_info *disk);
 }
 #endif
 
-#endif /* _DISK_ACCESS_H_ */
+#endif /* ZEPHYR_INCLUDE_DISK_ACCESS_H_ */

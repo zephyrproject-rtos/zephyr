@@ -1,6 +1,5 @@
 ---
 title: ARM CMSDK GPIO
-id: arm,cmsdk-gpio
 version: 0.1
 
 description: >
@@ -12,6 +11,7 @@ properties:
       category: required
       description: compatible strings
       constraint: "arm,cmsdk-gpio"
+      generation: define
 
     reg:
       type: array

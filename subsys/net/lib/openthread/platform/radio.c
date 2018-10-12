@@ -11,14 +11,16 @@
  *
  */
 
+#define LOG_LEVEL CONFIG_OPENTHREAD_LOG_LEVEL
+#define LOG_MODULE_NAME net_otPlat_radio
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-
-#define SYS_LOG_LEVEL CONFIG_OPENTHREAD_LOG_LEVEL
-#define SYS_LOG_DOMAIN "otPlat/radio"
-#include <logging/sys_log.h>
 
 #include <kernel.h>
 #include <device.h>
@@ -276,7 +278,7 @@ bool otPlatRadioGetPromiscuous(otInstance *aInstance)
 	/* TODO: No API in Zephyr to get promiscuous mode. */
 	bool result = false;
 
-	SYS_LOG_DBG("PromiscuousMode=%d", result ? 1 : 0);
+	LOG_DBG("PromiscuousMode=%d", result ? 1 : 0);
 	return result;
 }
 
@@ -285,7 +287,7 @@ void otPlatRadioSetPromiscuous(otInstance *aInstance, bool aEnable)
 	ARG_UNUSED(aInstance);
 	ARG_UNUSED(aEnable);
 
-	SYS_LOG_DBG("PromiscuousMode=%d", aEnable ? 1 : 0);
+	LOG_DBG("PromiscuousMode=%d", aEnable ? 1 : 0);
 	/* TODO: No API in Zephyr to set promiscuous mode. */
 }
 

@@ -4,11 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _ksched__h_
-#define _ksched__h_
+#ifndef ZEPHYR_KERNEL_INCLUDE_KSCHED_H_
+#define ZEPHYR_KERNEL_INCLUDE_KSCHED_H_
 
 #include <kernel_structs.h>
 #include <tracing.h>
+#include <stdbool.h>
 
 #ifdef CONFIG_MULTITHREADING
 #define _VALID_PRIO(prio, entry_point) \
@@ -24,7 +25,7 @@
 		 (prio), \
 		 K_LOWEST_APPLICATION_THREAD_PRIO, \
 		 K_HIGHEST_APPLICATION_THREAD_PRIO); \
-	} while ((0))
+	} while (false)
 #else
 #define _VALID_PRIO(prio, entry_point) ((prio) == -1)
 #define _ASSERT_VALID_PRIO(prio, entry_point) __ASSERT((prio) == -1, "")
@@ -38,7 +39,7 @@ int _is_thread_time_slicing(struct k_thread *thread);
 void _unpend_thread_no_timeout(struct k_thread *thread);
 int _pend_current_thread(int key, _wait_q_t *wait_q, s32_t timeout);
 void _pend_thread(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout);
-int _reschedule(int key);
+void _reschedule(int key);
 struct k_thread *_unpend_first_thread(_wait_q_t *wait_q);
 void _unpend_thread(struct k_thread *thread);
 int _unpend_all(_wait_q_t *wait_q);
@@ -47,7 +48,10 @@ void *_get_next_switch_handle(void *interrupted);
 struct k_thread *_find_first_thread_to_unpend(_wait_q_t *wait_q,
 					      struct k_thread *from);
 void idle(void *a, void *b, void *c);
+
+#ifdef CONFIG_TIMESLICING
 void z_reset_timeslice(void);
+#endif
 
 /* find which one is the next thread to run */
 /* must be called with interrupts locked */
@@ -61,12 +65,12 @@ static ALWAYS_INLINE struct k_thread *_get_next_ready_thread(void)
 #endif
 
 
-static inline int _is_idle_thread(void *entry_point)
+static inline bool _is_idle_thread(void *entry_point)
 {
 	return entry_point == idle;
 }
 
-static inline int _is_thread_pending(struct k_thread *thread)
+static inline bool _is_thread_pending(struct k_thread *thread)
 {
 	return !!(thread->base.thread_state & _THREAD_PENDING);
 }
@@ -80,32 +84,32 @@ static inline int _is_thread_prevented_from_running(struct k_thread *thread)
 
 }
 
-static inline int _is_thread_timeout_active(struct k_thread *thread)
+static inline bool _is_thread_timeout_active(struct k_thread *thread)
 {
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 	return thread->base.timeout.delta_ticks_from_prev != _INACTIVE;
 #else
-	return 0;
+	return false;
 #endif
 }
 
-static inline int _is_thread_ready(struct k_thread *thread)
+static inline bool _is_thread_ready(struct k_thread *thread)
 {
-	return !(_is_thread_prevented_from_running(thread) ||
+	return !((_is_thread_prevented_from_running(thread)) != 0 ||
 		 _is_thread_timeout_active(thread));
 }
 
-static inline int _has_thread_started(struct k_thread *thread)
+static inline bool _has_thread_started(struct k_thread *thread)
 {
-	return !(thread->base.thread_state & _THREAD_PRESTART);
+	return (thread->base.thread_state & _THREAD_PRESTART) == 0;
 }
 
-static inline int _is_thread_state_set(struct k_thread *thread, u32_t state)
+static inline bool _is_thread_state_set(struct k_thread *thread, u32_t state)
 {
 	return !!(thread->base.thread_state & state);
 }
 
-static inline int _is_thread_queued(struct k_thread *thread)
+static inline bool _is_thread_queued(struct k_thread *thread)
 {
 	return _is_thread_state_set(thread, _THREAD_QUEUED);
 }
@@ -156,7 +160,7 @@ static inline void _mark_thread_as_not_queued(struct k_thread *thread)
 	_reset_thread_states(thread, _THREAD_QUEUED);
 }
 
-static inline int _is_under_prio_ceiling(int prio)
+static inline bool _is_under_prio_ceiling(int prio)
 {
 	return prio >= CONFIG_PRIORITY_CEILING;
 }
@@ -166,55 +170,55 @@ static inline int _get_new_prio_with_ceiling(int prio)
 	return _is_under_prio_ceiling(prio) ? prio : CONFIG_PRIORITY_CEILING;
 }
 
-static inline int _is_prio1_higher_than_or_equal_to_prio2(int prio1, int prio2)
+static inline bool _is_prio1_higher_than_or_equal_to_prio2(int prio1, int prio2)
 {
 	return prio1 <= prio2;
 }
 
-static inline int _is_prio_higher_or_equal(int prio1, int prio2)
+static inline bool _is_prio_higher_or_equal(int prio1, int prio2)
 {
 	return _is_prio1_higher_than_or_equal_to_prio2(prio1, prio2);
 }
 
-static inline int _is_prio1_lower_than_or_equal_to_prio2(int prio1, int prio2)
+static inline bool _is_prio1_lower_than_or_equal_to_prio2(int prio1, int prio2)
 {
 	return prio1 >= prio2;
 }
 
-static inline int _is_prio1_higher_than_prio2(int prio1, int prio2)
+static inline bool _is_prio1_higher_than_prio2(int prio1, int prio2)
 {
 	return prio1 < prio2;
 }
 
-static inline int _is_prio_higher(int prio, int test_prio)
+static inline bool _is_prio_higher(int prio, int test_prio)
 {
 	return _is_prio1_higher_than_prio2(prio, test_prio);
 }
 
-static inline int _is_prio_lower_or_equal(int prio1, int prio2)
+static inline bool _is_prio_lower_or_equal(int prio1, int prio2)
 {
 	return _is_prio1_lower_than_or_equal_to_prio2(prio1, prio2);
 }
 
-int _is_t1_higher_prio_than_t2(struct k_thread *t1, struct k_thread *t2);
+bool _is_t1_higher_prio_than_t2(struct k_thread *t1, struct k_thread *t2);
 
-static inline int _is_valid_prio(int prio, void *entry_point)
+static inline bool _is_valid_prio(int prio, void *entry_point)
 {
 	if (prio == K_IDLE_PRIO && _is_idle_thread(entry_point)) {
-		return 1;
+		return true;
 	}
 
 	if (!_is_prio_higher_or_equal(prio,
 				      K_LOWEST_APPLICATION_THREAD_PRIO)) {
-		return 0;
+		return false;
 	}
 
 	if (!_is_prio_lower_or_equal(prio,
 				     K_HIGHEST_APPLICATION_THREAD_PRIO)) {
-		return 0;
+		return false;
 	}
 
-	return 1;
+	return true;
 }
 
 static inline void _ready_thread(struct k_thread *thread)
@@ -223,7 +227,8 @@ static inline void _ready_thread(struct k_thread *thread)
 		_add_thread_to_ready_q(thread);
 	}
 
-#if defined(CONFIG_TICKLESS_KERNEL) && !defined(CONFIG_SMP)
+#if defined(CONFIG_TICKLESS_KERNEL) && !defined(CONFIG_SMP) && \
+    defined(CONFIG_TIMESLICING)
 	z_reset_timeslice();
 #endif
 
@@ -235,7 +240,7 @@ static inline void _ready_one_thread(_wait_q_t *wq)
 {
 	struct k_thread *th = _unpend_first_thread(wq);
 
-	if (th) {
+	if (th != NULL) {
 		_ready_thread(th);
 	}
 }
@@ -267,7 +272,7 @@ static ALWAYS_INLINE void _sched_unlock_no_reschedule(void)
 #endif
 }
 
-static ALWAYS_INLINE int _is_thread_timeout_expired(struct k_thread *thread)
+static ALWAYS_INLINE bool _is_thread_timeout_expired(struct k_thread *thread)
 {
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 	return thread->base.timeout.delta_ticks_from_prev == _EXPIRED;
@@ -280,11 +285,11 @@ static inline struct k_thread *_unpend1_no_timeout(_wait_q_t *wait_q)
 {
 	struct k_thread *thread = _find_first_thread_to_unpend(wait_q, NULL);
 
-	if (thread) {
+	if (thread != NULL) {
 		_unpend_thread_no_timeout(thread);
 	}
 
 	return thread;
 }
 
-#endif /* _ksched__h_ */
+#endif /* ZEPHYR_KERNEL_INCLUDE_KSCHED_H_ */

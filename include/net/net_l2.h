@@ -9,8 +9,8 @@
  * @brief Public API for network L2 interface
  */
 
-#ifndef __NET_L2_H__
-#define __NET_L2_H__
+#ifndef ZEPHYR_INCLUDE_NET_NET_L2_H_
+#define ZEPHYR_INCLUDE_NET_NET_L2_H_
 
 #include <net/buf.h>
 
@@ -128,4 +128,4 @@ NET_L2_DECLARE_PUBLIC(OPENTHREAD_L2);
 }
 #endif
 
-#endif /* __NET_L2_H__ */
+#endif /* ZEPHYR_INCLUDE_NET_NET_L2_H_ */

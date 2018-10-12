@@ -6,6 +6,9 @@
 
 #include <zephyr.h>
 #include <misc/printk.h>
+#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(main);
 
 #define IOMUX_BASE		0x00081C00
 #define IOMUX_CONTROL0		(IOMUX_BASE + 0x30)
@@ -58,7 +61,7 @@ void iomux_config_i2c(void)
 
 void main(void)
 {
-	printk("Sample app running on: %s Intel_S1000\n", CONFIG_ARCH);
+	printk("Sample app running on: %s Intel S1000 CRB\n", CONFIG_ARCH);
 
 	disable_ts_powergate();
 	iomux_config_i2c();

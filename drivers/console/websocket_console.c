@@ -13,9 +13,10 @@
  * a websocket connection.
  */
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_WEBSOCKET_CONSOLE_LEVEL
-#define SYS_LOG_DOMAIN "ws/console"
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_WEBSOCKET_CONSOLE_LOG_LEVEL
+#define LOG_DOMAIN ws_console
+#include <logging/log.h>
+LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 #include <zephyr.h>
 #include <init.h>
@@ -26,19 +27,19 @@
 #include <net/net_pkt.h>
 #include <net/websocket_console.h>
 
-#define NVT_NUL	0
-#define NVT_LF	10
-#define NVT_CR	13
+#define NVT_NUL 0
+#define NVT_LF  10
+#define NVT_CR  13
 
-#define WS_CONSOLE_STACK_SIZE	CONFIG_WEBSOCKET_CONSOLE_STACK_SIZE
-#define WS_CONSOLE_PRIORITY	CONFIG_WEBSOCKET_CONSOLE_PRIO
-#define WS_CONSOLE_TIMEOUT	K_MSEC(CONFIG_WEBSOCKET_CONSOLE_SEND_TIMEOUT)
-#define WS_CONSOLE_LINES	CONFIG_WEBSOCKET_CONSOLE_LINE_BUF_NUMBERS
-#define WS_CONSOLE_LINE_SIZE	CONFIG_WEBSOCKET_CONSOLE_LINE_BUF_SIZE
-#define WS_CONSOLE_TIMEOUT	K_MSEC(CONFIG_WEBSOCKET_CONSOLE_SEND_TIMEOUT)
-#define WS_CONSOLE_THRESHOLD	CONFIG_WEBSOCKET_CONSOLE_SEND_THRESHOLD
+#define WS_CONSOLE_STACK_SIZE   CONFIG_WEBSOCKET_CONSOLE_STACK_SIZE
+#define WS_CONSOLE_PRIORITY     CONFIG_WEBSOCKET_CONSOLE_PRIO
+#define WS_CONSOLE_TIMEOUT      K_MSEC(CONFIG_WEBSOCKET_CONSOLE_SEND_TIMEOUT)
+#define WS_CONSOLE_LINES        CONFIG_WEBSOCKET_CONSOLE_LINE_BUF_NUMBERS
+#define WS_CONSOLE_LINE_SIZE    CONFIG_WEBSOCKET_CONSOLE_LINE_BUF_SIZE
+#define WS_CONSOLE_TIMEOUT      K_MSEC(CONFIG_WEBSOCKET_CONSOLE_SEND_TIMEOUT)
+#define WS_CONSOLE_THRESHOLD    CONFIG_WEBSOCKET_CONSOLE_SEND_THRESHOLD
 
-#define WS_CONSOLE_MIN_MSG	2
+#define WS_CONSOLE_MIN_MSG      2
 
 /* These 2 structures below are used to store the console output
  * before sending it to the client. This is done to keep some
@@ -176,7 +177,7 @@ static int ws_console_out(int c)
 	lb->buf[lb->len++] = (char)c;
 
 	if (c == '\n' || lb->len == WS_CONSOLE_LINE_SIZE - 1) {
-		lb->buf[lb->len-1] = NVT_CR;
+		lb->buf[lb->len - 1] = NVT_CR;
 		lb->buf[lb->len++] = NVT_LF;
 		ws_rb_switch();
 		yield = true;
@@ -235,13 +236,13 @@ static inline void ws_handle_input(struct net_pkt *pkt)
 	input->line[len] = NVT_NUL;
 
 	/* LF/CR will be removed if only the line is not NUL terminated */
-	if (input->line[len-1] != NVT_NUL) {
-		if (input->line[len-1] == NVT_LF) {
-			input->line[len-1] = NVT_NUL;
+	if (input->line[len - 1] != NVT_NUL) {
+		if (input->line[len - 1] == NVT_LF) {
+			input->line[len - 1] = NVT_NUL;
 		}
 
-		if (input->line[len-2] == NVT_CR) {
-			input->line[len-2] = NVT_NUL;
+		if (input->line[len - 2] == NVT_CR) {
+			input->line[len - 2] = NVT_NUL;
 		}
 	}
 
@@ -328,7 +329,7 @@ static int ws_console_init(struct device *arg)
 			NULL, NULL, NULL,
 			K_PRIO_COOP(WS_CONSOLE_PRIORITY), 0, K_MSEC(10));
 
-	SYS_LOG_INF("Websocket console initialized");
+	LOG_INF("Websocket console initialized");
 
 	return 0;
 }

@@ -10,10 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_DNS_RESOLVE)
-#define SYS_LOG_DOMAIN "dns/resolve"
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_dns_resolve
+#define NET_LOG_LEVEL CONFIG_DNS_RESOLVER_LOG_LEVEL
 
 #include <zephyr/types.h>
 #include <string.h>
@@ -208,13 +206,13 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[],
 		return -ENOTEMPTY;
 	}
 
-	memset(ctx, 0, sizeof(*ctx));
+	(void)memset(ctx, 0, sizeof(*ctx));
 
 	if (servers) {
 		for (i = 0; idx < SERVER_COUNT && servers[i]; i++) {
 			struct sockaddr *addr = &ctx->servers[idx].dns_server;
 
-			memset(addr, 0, sizeof(*addr));
+			(void)memset(addr, 0, sizeof(*addr));
 
 			ret = net_ipaddr_parse(servers[i], strlen(servers[i]),
 					       addr);
@@ -224,7 +222,7 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[],
 
 			dns_postprocess_server(ctx, idx);
 
-			NET_DBG("[%d] %s", i, servers[i]);
+			NET_DBG("[%d] %s", i, log_strdup(servers[i]));
 
 			idx++;
 		}

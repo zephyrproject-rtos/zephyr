@@ -7,7 +7,7 @@
  */
 
 /dts-v1/;
-#include <nordic/nrf52832.dtsi>
+#include <nordic/nrf52832_qfaa.dtsi>
 
 / {
 	model = "Nordic PCA20020 Dev Kit";
@@ -18,6 +18,38 @@
 		zephyr,console = &uart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		sw0 = &button0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		/* Lightwell RGB */
+		led0: led_0 {
+			gpios = <&sx1509b 5 0>;
+			label = "Green LED";
+		};
+		led1: led_1 {
+			gpios = <&sx1509b 6 0>;
+			label = "Blue LED";
+		};
+		led2: led_2 {
+			gpios = <&sx1509b 7 0>;
+			label = "Red LED";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			/* gpio flags need validation */
+			gpios = <&gpio0 11 GPIO_INT_ACTIVE_LOW>;
+			label = "Button";
+		};
 	};
 };
 
@@ -51,6 +83,8 @@
 		compatible = "semtech,sx1509b";
 		reg = <0x3e>;
 		label = "GPIO_P0";
+		gpio-controller;
+		#gpio-cells = <2>;
 	};
 
 	lps22hb_press: lps22hb_press@5c {

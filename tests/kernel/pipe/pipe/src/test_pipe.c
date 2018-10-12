@@ -8,7 +8,7 @@
 #include <ztest.h>
 
 K_PIPE_DEFINE(test_pipe, 256, 4);
-#define STACK_SIZE (512)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define PIPE_SIZE (256)
 
 K_THREAD_STACK_DEFINE(stack_1, STACK_SIZE);
@@ -180,7 +180,7 @@ void pipe_get_single(void *p1, void *p2, void *p3)
 		k_sem_take(&get_sem, K_FOREVER);
 
 		/* reset the rx buffer for the next interation */
-		memset(rx_buffer, 0, sizeof(rx_buffer));
+		(void)memset(rx_buffer, 0, sizeof(rx_buffer));
 
 		min_xfer = (single_elements[index].min_size == ALL_BYTES ?
 			    single_elements[index].size :
@@ -258,7 +258,7 @@ void pipe_get_multiple(void *p1, void *p2, void *p3)
 
 
 		/* reset the rx buffer for the next interation */
-		memset(rx_buffer, 0, sizeof(rx_buffer));
+		(void)memset(rx_buffer, 0, sizeof(rx_buffer));
 
 		min_xfer = (multiple_elements[index].min_size == ALL_BYTES ?
 			    multiple_elements[index].size :

@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __ADC_CONTEXT_H__
-#define __ADC_CONTEXT_H__
+#ifndef ZEPHYR_DRIVERS_ADC_ADC_CONTEXT_H_
+#define ZEPHYR_DRIVERS_ADC_ADC_CONTEXT_H_
 
 #include <adc.h>
 #include <atomic.h>
@@ -265,4 +265,4 @@ static inline void adc_context_on_sampling_done(struct adc_context *ctx,
 }
 #endif
 
-#endif /* __ADC_CONTEXT_H__ */
+#endif /* ZEPHYR_DRIVERS_ADC_ADC_CONTEXT_H_ */

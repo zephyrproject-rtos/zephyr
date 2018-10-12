@@ -119,7 +119,7 @@
                                                            ((STREAM) == LL_DMA_STREAM_6) || \
                                                            ((STREAM) == LL_DMA_STREAM_7) || \
                                                            ((STREAM) == LL_DMA_STREAM_ALL))))
-                                                           
+
 #define IS_LL_DMA_FIFO_MODE_STATE(STATE) (((STATE) == LL_DMA_FIFOMODE_DISABLE ) || \
                                           ((STATE) == LL_DMA_FIFOMODE_ENABLE))
 
@@ -137,7 +137,7 @@
                                            ((BURST) == LL_DMA_PBURST_INC4)   || \
                                            ((BURST) == LL_DMA_PBURST_INC8)   || \
                                            ((BURST) == LL_DMA_PBURST_INC16))
-                                        
+
 /**
   * @}
   */
@@ -177,7 +177,7 @@ uint32_t LL_DMA_DeInit(DMA_TypeDef *DMAx, uint32_t Stream)
 
   /* Check the DMA Instance DMAx and Stream parameters*/
   assert_param(IS_LL_DMA_ALL_STREAM_INSTANCE(DMAx, Stream));
-  
+
   if (Stream == LL_DMA_STREAM_ALL)
   {
     if (DMAx == DMA1)
@@ -201,14 +201,14 @@ uint32_t LL_DMA_DeInit(DMA_TypeDef *DMAx, uint32_t Stream)
       status = ERROR;
     }
   }
-  else 
+  else
   {
     /* Disable the selected Stream */
     LL_DMA_DisableStream(DMAx,Stream);
 
     /* Get the DMA Stream Instance */
     tmp = (DMA_Stream_TypeDef *)(__LL_DMA_GET_STREAM_INSTANCE(DMAx, Stream));
-    
+
     /* Reset DMAx_Streamy configuration register */
     LL_DMA_WriteReg(tmp, CR, 0U);
 
@@ -220,16 +220,16 @@ uint32_t LL_DMA_DeInit(DMA_TypeDef *DMAx, uint32_t Stream)
 
     /* Reset DMAx_Streamy memory address register */
     LL_DMA_WriteReg(tmp, M0AR, 0U);
-    
+
     /* Reset DMAx_Streamy memory address register */
     LL_DMA_WriteReg(tmp, M1AR, 0U);
-    
+
     /* Reset DMAx_Streamy FIFO control register */
     LL_DMA_WriteReg(tmp, FCR, 0x00000021U);
-    
+
     /* Reset Channel register field for DMAx Stream*/
     LL_DMA_SetChannelSelection(DMAx, Stream, LL_DMA_CHANNEL_0);
-    
+
     if(Stream == LL_DMA_STREAM_0)
     {
        /* Reset the Stream0 pending flags */
@@ -252,7 +252,7 @@ uint32_t LL_DMA_DeInit(DMA_TypeDef *DMAx, uint32_t Stream)
     }
     else if(Stream == LL_DMA_STREAM_4)
     {
-       /* Reset the Stream4 pending flags */ 
+       /* Reset the Stream4 pending flags */
        DMAx->HIFCR = 0x0000003F ;
     }
     else if(Stream == LL_DMA_STREAM_5)
@@ -269,7 +269,7 @@ uint32_t LL_DMA_DeInit(DMA_TypeDef *DMAx, uint32_t Stream)
     {
        /* Reset the Stream7 pending flags */
        DMAx->HIFCR = 0x0F400000 ;
-    }    
+    }
     else
     {
       status = ERROR;
@@ -344,28 +344,28 @@ uint32_t LL_DMA_Init(DMA_TypeDef *DMAx, uint32_t Stream, LL_DMA_InitTypeDef *DMA
                         DMA_InitStruct->MemoryOrM2MDstDataSize | \
                         DMA_InitStruct->Priority
                         );
-                        
+
   if(DMA_InitStruct->FIFOMode != LL_DMA_FIFOMODE_DISABLE)
   {
     /*---------------------------- DMAx SxFCR Configuration ------------------------
      * Configure DMAx_Streamy:  fifo mode and fifo threshold with parameters :
      * - FIFOMode:                DMA_SxFCR_DMDIS bit
      * - FIFOThreshold:           DMA_SxFCR_FTH[1:0] bits
-     */                     
-    LL_DMA_ConfigFifo(DMAx, Stream, DMA_InitStruct->FIFOMode, DMA_InitStruct->FIFOThreshold);   
-  
+     */
+    LL_DMA_ConfigFifo(DMAx, Stream, DMA_InitStruct->FIFOMode, DMA_InitStruct->FIFOThreshold);
+
     /*---------------------------- DMAx SxCR Configuration --------------------------
      * Configure DMAx_Streamy:  memory burst transfer with parameters :
      * - MemBurst:                DMA_SxCR_MBURST[1:0] bits
      */
-    LL_DMA_SetMemoryBurstxfer(DMAx,Stream,DMA_InitStruct->MemBurst); 
-  
+    LL_DMA_SetMemoryBurstxfer(DMAx,Stream,DMA_InitStruct->MemBurst);
+
     /*---------------------------- DMAx SxCR Configuration --------------------------
      * Configure DMAx_Streamy:  peripheral burst transfer with parameters :
      * - PeriphBurst:                DMA_SxCR_PBURST[1:0] bits
      */
     LL_DMA_SetPeriphBurstxfer(DMAx,Stream,DMA_InitStruct->PeriphBurst);
-  }                 
+  }
 
   /*-------------------------- DMAx SxM0AR Configuration --------------------------
    * Configure the memory or destination base address with parameter :

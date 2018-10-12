@@ -1,0 +1,37 @@
+# Kconfig - ST Microelectronics STM32L4R5xx MCU
+#
+# Copyright (c) 2018 Pushpal Sidhu
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_STM32L4R5XI
+
+config SOC
+	string
+	default "stm32l4r5xx"
+
+config NUM_IRQS
+	int
+	default 95
+
+if GPIO_STM32
+
+config GPIO_STM32_PORTD
+	def_bool y
+
+config GPIO_STM32_PORTE
+	default y
+
+config GPIO_STM32_PORTF
+	default y
+
+config GPIO_STM32_PORTG
+	default y
+
+config GPIO_STM32_PORTH
+	default y
+
+endif # GPIO_STM32
+
+endif # SOC_STM32L4R5XI

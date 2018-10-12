@@ -6,6 +6,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define LOG_MODULE_NAME net_test
+#define NET_LOG_LEVEL CONFIG_NET_ICMPV6_LOG_LEVEL
+
 #include <errno.h>
 #include <zephyr/types.h>
 #include <stddef.h>

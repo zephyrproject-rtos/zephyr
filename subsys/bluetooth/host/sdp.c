@@ -180,7 +180,7 @@ static void bt_sdp_disconnected(struct bt_l2cap_chan *chan)
 
 	BT_DBG("chan %p cid 0x%04x", ch, ch->tx.cid);
 
-	memset(sdp, 0, sizeof(*sdp));
+	(void)memset(sdp, 0, sizeof(*sdp));
 }
 
 /* @brief Creates an SDP PDU
@@ -1333,7 +1333,7 @@ static const struct {
  *
  *  @return None
  */
-static void bt_sdp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
+static int bt_sdp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_l2cap_br_chan *ch = CONTAINER_OF(chan,
 			struct bt_l2cap_br_chan, chan);
@@ -1348,7 +1348,7 @@ static void bt_sdp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	if (buf->len < sizeof(*hdr)) {
 		BT_ERR("Too small SDP PDU received");
-		return;
+		return 0;
 	}
 
 	BT_DBG("Received SDP code 0x%02x len %u", hdr->op_code, buf->len);
@@ -1372,6 +1372,8 @@ static void bt_sdp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		BT_WARN("SDP error 0x%02x", err);
 		send_err_rsp(chan, err, hdr->tid);
 	}
+
+	return 0;
 }
 
 /* @brief Callback for SDP connection accept
@@ -1575,7 +1577,7 @@ static void sdp_client_params_iterator(struct bt_sdp_client *session)
 		/* Invalidate cached param in context */
 		session->param = NULL;
 		/* Reset continuation state in current context */
-		memset(&session->cstate, 0, sizeof(session->cstate));
+		(void)memset(&session->cstate, 0, sizeof(session->cstate));
 
 		/* Check if there's valid next UUID */
 		if (!sys_slist_is_empty(&session->reqs)) {
@@ -1713,7 +1715,7 @@ static void sdp_client_notify_result(struct bt_sdp_client *session,
 	}
 }
 
-static void sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
+static int sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_sdp_client *session = SDP_CLIENT_CHAN(chan);
 	struct bt_sdp_hdr *hdr = (void *)buf->data;
@@ -1725,12 +1727,12 @@ static void sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	if (buf->len < sizeof(*hdr)) {
 		BT_ERR("Too small SDP PDU");
-		return;
+		return 0;
 	}
 
 	if (hdr->op_code == BT_SDP_ERROR_RSP) {
 		BT_INFO("Error SDP PDU response");
-		return;
+		return 0;
 	}
 
 	len = sys_be16_to_cpu(hdr->param_len);
@@ -1741,12 +1743,12 @@ static void sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	if (buf->len != len) {
 		BT_ERR("SDP PDU length mismatch (%u != %u)", buf->len, len);
-		return;
+		return 0;
 	}
 
 	if (tid != session->tid) {
 		BT_ERR("Mismatch transaction ID value in SDP PDU");
-		return;
+		return 0;
 	}
 
 	switch (hdr->op_code) {
@@ -1756,12 +1758,12 @@ static void sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		/* Check valid buf len for attribute list and cont state */
 		if (buf->len < frame_len + SDP_CONT_STATE_LEN_SIZE) {
 			BT_ERR("Invalid frame payload length");
-			return;
+			return 0;
 		}
 		/* Check valid range of attributes length */
 		if (frame_len < 2) {
 			BT_ERR("Invalid attributes data length");
-			return;
+			return 0;
 		}
 
 		/* Get PDU continuation state */
@@ -1770,13 +1772,13 @@ static void sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		if (cstate->length > BT_SDP_MAX_PDU_CSTATE_LEN) {
 			BT_ERR("Invalid SDP PDU Continuation State length %u",
 			       cstate->length);
-			return;
+			return 0;
 		}
 
 		if ((frame_len + SDP_CONT_STATE_LEN_SIZE + cstate->length) >
 		     buf->len) {
 			BT_ERR("Invalid frame payload length");
-			return;
+			return 0;
 		}
 
 		/*
@@ -1834,6 +1836,8 @@ iterate:
 		BT_DBG("PDU 0x%0x response not handled", hdr->op_code);
 		break;
 	}
+
+	return 0;
 }
 
 static int sdp_client_chan_connect(struct bt_sdp_client *session)
@@ -1880,7 +1884,8 @@ static void sdp_client_disconnected(struct bt_l2cap_chan *chan)
 	 * Reset session excluding L2CAP channel member. Let's the channel
 	 * resets autonomous.
 	 */
-	memset(&session->reqs, 0, sizeof(*session) - sizeof(session->chan));
+	(void)memset(&session->reqs, 0,
+		     sizeof(*session) - sizeof(session->chan));
 }
 
 static struct bt_l2cap_chan_ops sdp_client_chan_ops = {
@@ -1910,7 +1915,7 @@ static struct bt_sdp_client *sdp_client_new_session(struct bt_conn *conn)
 
 		err = sdp_client_chan_connect(session);
 		if (err) {
-			memset(session, 0, sizeof(*session));
+			(void)memset(session, 0, sizeof(*session));
 			BT_ERR("Cannot connect %d", err);
 			return NULL;
 		}

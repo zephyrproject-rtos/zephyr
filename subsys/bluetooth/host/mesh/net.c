@@ -341,7 +341,7 @@ void friend_cred_clear(struct friend_cred *cred)
 	cred->addr = BT_MESH_ADDR_UNASSIGNED;
 	cred->lpn_counter = 0;
 	cred->frnd_counter = 0;
-	memset(cred->cred, 0, sizeof(cred->cred));
+	(void)memset(cred->cred, 0, sizeof(cred->cred));
 }
 
 int friend_cred_del(u16_t net_idx, u16_t addr)
@@ -451,7 +451,7 @@ int bt_mesh_net_create(u16_t idx, u8_t flags, const u8_t key[16],
 		return -EALREADY;
 	}
 
-	memset(msg_cache, 0, sizeof(msg_cache));
+	(void)memset(msg_cache, 0, sizeof(msg_cache));
 	msg_cache_next = 0;
 
 	sub = &bt_mesh.sub[0];
@@ -571,7 +571,7 @@ void bt_mesh_rpl_reset(void)
 
 		if (rpl->src) {
 			if (rpl->old_iv) {
-				memset(rpl, 0, sizeof(*rpl));
+				(void)memset(rpl, 0, sizeof(*rpl));
 			} else {
 				rpl->old_iv = true;
 			}
@@ -654,7 +654,7 @@ bool bt_mesh_net_iv_update(u32_t iv_index, bool iv_update)
 
 		if (iv_index > bt_mesh.iv_index + 1) {
 			BT_WARN("Performing IV Index Recovery");
-			memset(bt_mesh.rpl, 0, sizeof(bt_mesh.rpl));
+			(void)memset(bt_mesh.rpl, 0, sizeof(bt_mesh.rpl));
 			bt_mesh.iv_index = iv_index;
 			bt_mesh.seq = 0;
 			goto do_update;

@@ -10,8 +10,8 @@
  * @brief Public API for FLASH drivers
  */
 
-#ifndef __FLASH_H__
-#define __FLASH_H__
+#ifndef ZEPHYR_INCLUDE_FLASH_H_
+#define ZEPHYR_INCLUDE_FLASH_H_
 
 /**
  * @brief FLASH Interface
@@ -280,4 +280,4 @@ static inline size_t _impl_flash_get_write_block_size(struct device *dev)
 
 #include <syscalls/flash.h>
 
-#endif /* _FLASH_H_ */
+#endif /* ZEPHYR_INCLUDE_FLASH_H_ */

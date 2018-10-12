@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef _KERNEL_TRACE_H
-#define _KERNEL_TRACE_H
+#ifndef ZEPHYR_INCLUDE_TRACING_H_
+#define ZEPHYR_INCLUDE_TRACING_H_
 
 #include <kernel.h>
 

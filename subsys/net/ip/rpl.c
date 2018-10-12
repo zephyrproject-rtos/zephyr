@@ -38,10 +38,8 @@
  * SUCH DAMAGE.
  */
 
-#if defined(CONFIG_NET_DEBUG_RPL)
-#define SYS_LOG_DOMAIN "net/rpl"
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_rpl
+#define NET_LOG_LEVEL CONFIG_NET_RPL_LOG_LEVEL
 
 #include <kernel.h>
 #include <limits.h>
@@ -218,12 +216,13 @@ NET_NBR_POOL_INIT(net_rpl_neighbor_pool, CONFIG_NET_RPL_MAX_PARENTS,
 NET_NBR_TABLE_INIT(NET_NBR_LOCAL, rpl_parents, net_rpl_neighbor_pool,
 		   net_rpl_neighbor_table_clear);
 
-#if defined(CONFIG_NET_DEBUG_RPL)
 #define net_rpl_info(pkt, req)						\
 	do {								\
 		NET_DBG("Received %s from %s to %s", req,		\
-			net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src),	\
-			net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->dst));	\
+			log_strdup(net_sprint_ipv6_addr(		\
+					   &NET_IPV6_HDR(pkt)->src)),	\
+			log_strdup(net_sprint_ipv6_addr(		\
+					   &NET_IPV6_HDR(pkt)->dst)));	\
 	} while (0)
 
 #define net_rpl_dao_info(pkt, src, dst, prefix)				  \
@@ -236,13 +235,10 @@ NET_NBR_TABLE_INIT(NET_NBR_LOCAL, rpl_parents, net_rpl_neighbor_pool,
 		snprintk(prf, sizeof(prf), "%s",			  \
 			 net_sprint_ipv6_addr(prefix));			  \
 		NET_DBG("Send DAO with prefix %s from %s to %s",	  \
-			prf, net_sprint_ipv6_addr(src), out);		  \
+			log_strdup(prf),				  \
+			log_strdup(net_sprint_ipv6_addr(src)),		  \
+			log_strdup(out));				  \
 	} while (0)
-
-#else /* CONFIG_NET_DEBUG_RPL */
-#define net_rpl_info(...)
-#define net_rpl_dao_info(...)
-#endif /* CONFIG_NET_DEBUG_RPL */
 
 static void new_dio_interval(struct net_rpl_instance *instance);
 
@@ -316,8 +312,8 @@ static struct net_nbr *nbr_add(struct net_if *iface,
 	}
 
 	NET_DBG("[%d] nbr %p IPv6 %s ll %s iface %p",
-		nbr->idx, nbr, net_sprint_ipv6_addr(addr),
-		net_sprint_ll_addr(lladdr->addr, lladdr->len),
+		nbr->idx, nbr, log_strdup(net_sprint_ipv6_addr(addr)),
+		log_strdup(net_sprint_ll_addr(lladdr->addr, lladdr->len)),
 		nbr->iface);
 
 	return nbr;
@@ -356,7 +352,7 @@ int net_rpl_foreach_parent(net_rpl_parent_cb_t cb, void *user_data)
 	return ret;
 }
 
-#if defined(CONFIG_NET_DEBUG_RPL) && (CONFIG_SYS_LOG_NET_LEVEL > 3)
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 static void net_rpl_print_parents(void)
 {
 	struct net_rpl_parent *parent;
@@ -391,8 +387,9 @@ static void net_rpl_print_parents(void)
 
 		NET_DBG("[%d] nbr %s %5u %5u => %5u %c (last tx %u min ago)",
 			nbr->idx,
-			net_sprint_ll_addr(net_nbr_get_lladdr(nbr->idx)->addr,
-					   net_nbr_get_lladdr(nbr->idx)->len),
+			log_strdup(net_sprint_ll_addr(
+					   net_nbr_get_lladdr(nbr->idx)->addr,
+					   net_nbr_get_lladdr(nbr->idx)->len)),
 			parent->rank,
 			ipv6_nbr ?
 			net_ipv6_nbr_data(ipv6_nbr)->link_metric : 0,
@@ -405,7 +402,7 @@ static void net_rpl_print_parents(void)
 }
 #else
 #define net_rpl_print_parents(...)
-#endif /* CONFIG_NET_DEBUG_RPL */
+#endif
 
 struct net_route_entry *net_rpl_add_route(struct net_rpl_dag *dag,
 					  struct net_if *iface,
@@ -432,8 +429,8 @@ struct net_route_entry *net_rpl_add_route(struct net_rpl_dag *dag,
 	extra->route_source = NET_RPL_ROUTE_INTERNAL;
 
 	NET_DBG("Added route to %s via %s (iface %p)",
-		net_sprint_ipv6_addr(addr),
-		net_sprint_ipv6_addr(nexthop), route->iface);
+		log_strdup(net_sprint_ipv6_addr(addr)),
+		log_strdup(net_sprint_ipv6_addr(nexthop)), route->iface);
 
 	return route;
 }
@@ -699,12 +696,13 @@ static void new_dio_interval(struct net_rpl_instance *instance)
 	instance->dio_intervals++;
 	instance->dio_recv_pkt += instance->dio_counter;
 
-	NET_DBG("rank %u.%u (%u) stats %d/%d/%d/%d %s",
+	NET_DBG("rank %u.%u (%u)",
 		NET_RPL_DAG_RANK(instance->current_dag->rank, instance),
 		((10 * (instance->current_dag->rank %
 		       instance->min_hop_rank_inc)) /
 		 instance->min_hop_rank_inc),
-		instance->current_dag->version,
+		instance->current_dag->version);
+	NET_DBG("  stats %d/%d/%d/%d %s",
 		instance->dio_intervals,
 		instance->dio_send_pkt,
 		instance->dio_recv_pkt,
@@ -794,7 +792,7 @@ int net_rpl_dis_send(struct in6_addr *dst, struct net_if *iface)
 	if (ret >= 0) {
 		NET_DBG("Sent a %s DIS to %s (iface %p)",
 			dst ? "unicast" : "multicast",
-			net_sprint_ipv6_addr(dst_addr), iface);
+			log_strdup(net_sprint_ipv6_addr(dst_addr)), iface);
 
 		net_stats_update_icmp_sent(iface);
 		net_stats_update_rpl_dis_sent(iface);
@@ -964,8 +962,10 @@ static void rpl_probing_timer(struct k_work *work)
 
 		lladdr = net_nbr_get_lladdr(nbr->idx);
 
-		NET_DBG("Probing %s [%s]", net_sprint_ipv6_addr(dst),
-			net_sprint_ll_addr(lladdr->addr, lladdr->len));
+		NET_DBG("Probing %s [%s]",
+			log_strdup(net_sprint_ipv6_addr(dst)),
+			log_strdup(net_sprint_ll_addr(lladdr->addr,
+						      lladdr->len)));
 
 		src = (struct in6_addr *)
 			net_if_ipv6_select_src_addr(instance->iface, dst);
@@ -1067,7 +1067,7 @@ static void dao_retransmit_timer(struct k_work *work)
 static inline void net_rpl_instance_init(struct net_rpl_instance *instance,
 					 u8_t id)
 {
-	memset(instance, 0, sizeof(struct net_rpl_instance));
+	(void)memset(instance, 0, sizeof(struct net_rpl_instance));
 
 	instance->instance_id = id;
 	instance->default_route = NULL;
@@ -1135,7 +1135,7 @@ static struct net_rpl_dag *alloc_dag(struct net_if *iface,
 			continue;
 		}
 
-		memset(dag, 0, sizeof(*dag));
+		(void)memset(dag, 0, sizeof(*dag));
 
 		net_rpl_dag_set_used(dag);
 		dag->rank = NET_RPL_INFINITE_RANK;
@@ -1211,7 +1211,7 @@ static inline void set_ip_from_prefix(struct net_linkaddr *lladdr,
 				      struct net_rpl_prefix *prefix,
 				      struct in6_addr *addr)
 {
-	memset(addr, 0, sizeof(struct in6_addr));
+	(void)memset(addr, 0, sizeof(struct in6_addr));
 
 	net_ipv6_addr_create_iid(addr, lladdr);
 
@@ -1232,7 +1232,7 @@ static void check_prefix(struct net_if *iface,
 	    last_prefix->flags == new_prefix->flags) {
 		/* Nothing has changed. */
 		NET_DBG("Same prefix %s/%d flags 0x%x",
-			net_sprint_ipv6_addr(&new_prefix->prefix),
+			log_strdup(net_sprint_ipv6_addr(&new_prefix->prefix)),
 			new_prefix->length, new_prefix->flags);
 		return;
 	}
@@ -1243,7 +1243,7 @@ static void check_prefix(struct net_if *iface,
 
 		if (net_if_ipv6_addr_rm(iface, &addr)) {
 			NET_DBG("Removed global IP address %s",
-				net_sprint_ipv6_addr(&addr));
+				log_strdup(net_sprint_ipv6_addr(&addr)));
 		}
 	}
 
@@ -1253,7 +1253,7 @@ static void check_prefix(struct net_if *iface,
 
 		if (net_if_ipv6_addr_add(iface, &addr, NET_ADDR_AUTOCONF, 0)) {
 			NET_DBG("Added global IP address %s",
-				net_sprint_ipv6_addr(&addr));
+				log_strdup(net_sprint_ipv6_addr(&addr)));
 		}
 	}
 }
@@ -1262,7 +1262,7 @@ static void net_rpl_free_dag(struct net_if *iface, struct net_rpl_dag *dag)
 {
 	if (net_rpl_dag_is_joined(dag)) {
 		NET_DBG("Leaving the DAG %s",
-			net_sprint_ipv6_addr(&dag->dag_id));
+			log_strdup(net_sprint_ipv6_addr(&dag->dag_id)));
 
 		net_rpl_dag_unjoin(dag);
 
@@ -1288,13 +1288,14 @@ static void net_rpl_set_preferred_parent(struct net_if *iface,
 		struct in6_addr *addr = net_rpl_get_parent_addr(iface, parent);
 
 		NET_DBG("Preferred parent %s",
-			parent ? net_sprint_ipv6_addr(addr) : "not set");
+			parent ?
+			log_strdup(net_sprint_ipv6_addr(addr)) : "not set");
 
 		addr = net_rpl_get_parent_addr(iface, dag->preferred_parent);
 
 		NET_DBG("It used to be %s",
 			dag->preferred_parent ?
-			net_sprint_ipv6_addr(addr) : "not set");
+			log_strdup(net_sprint_ipv6_addr(addr)) : "not set");
 
 		dag->preferred_parent = parent;
 	}
@@ -1405,7 +1406,7 @@ struct net_rpl_dag *net_rpl_set_root_with_version(struct net_if *iface,
 	rpl_default_instance = instance;
 
 	NET_DBG("Node set to be a DAG root with DAG ID %s",
-		net_sprint_ipv6_addr(&dag->dag_id));
+		log_strdup(net_sprint_ipv6_addr(&dag->dag_id)));
 
 	instance->iface = iface;
 	net_rpl_reset_dio_timer(instance);
@@ -1469,8 +1470,8 @@ bool net_rpl_set_prefix(struct net_if *iface,
 		       sizeof(struct net_rpl_prefix));
 	}
 
-	memset(&dag->prefix_info.prefix, 0,
-	       sizeof(dag->prefix_info.prefix));
+	(void)memset(&dag->prefix_info.prefix, 0,
+		     sizeof(dag->prefix_info.prefix));
 	memcpy(&dag->prefix_info.prefix, prefix, (prefix_len + 7) / 8);
 	dag->prefix_info.length = prefix_len;
 	dag->prefix_info.flags = NET_ICMPV6_RA_FLAG_AUTONOMOUS;
@@ -1498,9 +1499,7 @@ static void net_rpl_nullify_parent(struct net_if *iface,
 				   struct net_rpl_parent *parent)
 {
 	struct net_rpl_dag *dag = parent->dag;
-#if defined(CONFIG_NET_DEBUG_RPL) && (CONFIG_SYS_LOG_NET_LEVEL > 3)
 	struct in6_addr *addr = net_rpl_get_parent_addr(iface, parent);
-#endif
 
 	/* This function can be called when the preferred parent is NULL,
 	 * so we need to handle this condition properly.
@@ -1514,7 +1513,7 @@ static void net_rpl_nullify_parent(struct net_if *iface,
 
 		if (dag->instance->default_route) {
 			NET_DBG("Removing default route %s",
-				net_sprint_ipv6_addr(addr));
+				log_strdup(net_sprint_ipv6_addr(addr)));
 
 			net_if_ipv6_router_rm(dag->instance->default_route);
 			dag->instance->default_route = NULL;
@@ -1527,18 +1526,13 @@ static void net_rpl_nullify_parent(struct net_if *iface,
 		}
 	}
 
-	NET_DBG("Nullifying parent %s", net_sprint_ipv6_addr(addr));
+	NET_DBG("Nullifying parent %s", log_strdup(net_sprint_ipv6_addr(addr)));
 }
 
 static void net_rpl_remove_parent(struct net_if *iface,
 				  struct net_rpl_parent *parent,
 				  struct net_nbr *nbr)
 {
-#if defined(CONFIG_NET_DEBUG_RPL)
-	struct in6_addr *addr;
-	struct net_linkaddr_storage *lladdr;
-#endif
-
 	NET_ASSERT(iface);
 
 	if (!nbr) {
@@ -1548,13 +1542,18 @@ static void net_rpl_remove_parent(struct net_if *iface,
 		}
 	}
 
-#if defined(CONFIG_NET_DEBUG_RPL)
-	addr = net_rpl_get_parent_addr(iface, parent);
-	lladdr = net_nbr_get_lladdr(nbr->idx);
+	if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {
+		struct in6_addr *addr;
+		struct net_linkaddr_storage *lladdr;
 
-	NET_DBG("Removing parent %s [%s]", net_sprint_ipv6_addr(addr),
-		net_sprint_ll_addr(lladdr->addr, lladdr->len));
-#endif /* CONFIG_NET_DEBUG_RPL */
+		addr = net_rpl_get_parent_addr(iface, parent);
+		lladdr = net_nbr_get_lladdr(nbr->idx);
+
+		NET_DBG("Removing parent %s [%s]",
+			log_strdup(net_sprint_ipv6_addr(addr)),
+			log_strdup(net_sprint_ll_addr(lladdr->addr,
+						      lladdr->len)));
+	}
 
 	net_rpl_nullify_parent(iface, parent);
 	nbr_free(nbr);
@@ -1611,8 +1610,9 @@ static struct net_rpl_parent *net_rpl_add_parent(struct net_if *iface,
 					 &lladdr);
 		if (!rpl_nbr) {
 			NET_DBG("Add parent %s [%s]",
-				net_sprint_ipv6_addr(addr),
-				net_sprint_ll_addr(lladdr.addr, lladdr.len));
+				log_strdup(net_sprint_ipv6_addr(addr)),
+				log_strdup(net_sprint_ll_addr(lladdr.addr,
+							      lladdr.len)));
 
 			rpl_nbr = nbr_add(iface, addr, &lladdr);
 			if (!rpl_nbr) {
@@ -1748,15 +1748,15 @@ static int net_rpl_set_default_route(struct net_if *iface,
 {
 	if (instance->default_route) {
 		NET_DBG("Removing default route through %s",
-			net_sprint_ipv6_addr(&instance->default_route->address.
-					     in6_addr));
+			log_strdup(net_sprint_ipv6_addr(
+				 &instance->default_route->address.in6_addr)));
 		net_if_ipv6_router_rm(instance->default_route);
 		instance->default_route = NULL;
 	}
 
 	if (from) {
 		NET_DBG("Adding default route through %s",
-			net_sprint_ipv6_addr(from));
+			log_strdup(net_sprint_ipv6_addr(from)));
 
 		instance->default_route =
 			net_if_ipv6_router_add(iface, from,
@@ -1768,9 +1768,8 @@ static int net_rpl_set_default_route(struct net_if *iface,
 	} else {
 		if (instance->default_route) {
 			NET_DBG("Removing default route through %s",
-				net_sprint_ipv6_addr(&instance->
-						     default_route->address.
-						     in6_addr));
+				log_strdup(net_sprint_ipv6_addr(
+				 &instance->default_route->address.in6_addr)));
 			net_if_ipv6_router_rm(instance->default_route);
 			instance->default_route = NULL;
 		} else {
@@ -1889,7 +1888,7 @@ struct net_rpl_dag *net_rpl_select_dag(struct net_if *iface,
 		net_rpl_remove_routes(instance->current_dag);
 
 		NET_DBG("New preferred DAG %s",
-			net_sprint_ipv6_addr(&best_dag->dag_id));
+			log_strdup(net_sprint_ipv6_addr(&best_dag->dag_id)));
 
 		if (best_dag->prefix_info.flags &
 		    NET_ICMPV6_RA_FLAG_AUTONOMOUS) {
@@ -2023,10 +2022,6 @@ static bool net_rpl_process_parent_event(struct net_if *iface,
 {
 	bool ret = true;
 
-#if defined(CONFIG_NET_DEBUG_RPL)
-	u16_t old_rank = instance->current_dag->rank;
-#endif
-
 	if (!acceptable_rank(parent->dag, parent->rank)) {
 		/* The candidate parent is no longer valid: the rank increase
 		 * resulting from the choice of it as a parent would be too
@@ -2052,29 +2047,30 @@ static bool net_rpl_process_parent_event(struct net_if *iface,
 		return false;
 	}
 
-#if defined(CONFIG_NET_DEBUG_RPL)
-	if (NET_RPL_DAG_RANK(old_rank, instance) !=
-	    NET_RPL_DAG_RANK(instance->current_dag->rank, instance)) {
-		NET_DBG("Moving in the instance from rank %u to %u",
-			NET_RPL_DAG_RANK(old_rank, instance),
-			NET_RPL_DAG_RANK(instance->current_dag->rank,
-					 instance));
+	if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {
+		u16_t old_rank = instance->current_dag->rank;
 
-		if (instance->current_dag->rank != NET_RPL_INFINITE_RANK) {
-			NET_DBG("The preferred parent is %s (rank %u)",
-				net_sprint_ipv6_addr(
-					net_rpl_get_parent_addr(iface,
-						instance->current_dag->
-						preferred_parent)),
-
-				NET_RPL_DAG_RANK(instance->current_dag->
-						 preferred_parent->rank,
+		if (NET_RPL_DAG_RANK(old_rank, instance) !=
+		    NET_RPL_DAG_RANK(instance->current_dag->rank, instance)) {
+			NET_DBG("Moving in the instance from rank %u to %u",
+				NET_RPL_DAG_RANK(old_rank, instance),
+				NET_RPL_DAG_RANK(instance->current_dag->rank,
 						 instance));
-		} else {
-			NET_DBG("We don't have any parent");
+
+			if (instance->current_dag->rank !=
+						       NET_RPL_INFINITE_RANK) {
+				NET_DBG("The preferred parent is %s (rank %u)",
+				 log_strdup(net_sprint_ipv6_addr(
+				 net_rpl_get_parent_addr(iface,
+				 instance->current_dag->preferred_parent))),
+				 NET_RPL_DAG_RANK(
+				 instance->current_dag->preferred_parent->rank,
+				 instance));
+			} else {
+				NET_DBG("We don't have any parent");
+			}
 		}
 	}
-#endif /* CONFIG_NET_DEBUG_RPL */
 
 	return ret;
 }
@@ -2178,8 +2174,8 @@ static void global_repair(struct net_if *iface,
 		NET_DBG("Preferred DAG %s rank %d min_rank %d "		\
 			"parent rank %d parent etx %d link metric %d "	\
 			"instance etx %d",				\
-			net_sprint_ipv6_addr(&(instance)->current_dag-> \
-					     dag_id),			\
+			log_strdup(net_sprint_ipv6_addr(		\
+				    &(instance)->current_dag->dag_id)), \
 			(instance)->current_dag->rank,			\
 			(instance)->current_dag->min_rank,		\
 			(parent)->rank, -1,				\
@@ -2248,12 +2244,12 @@ static void net_rpl_join_instance(struct net_if *iface,
 		instance->is_used = false;
 
 		NET_DBG("Cannot add %s as a parent",
-			net_sprint_ipv6_addr(from));
+			log_strdup(net_sprint_ipv6_addr(from)));
 
 		return;
 	}
 
-	NET_DBG("Add %s as a parent", net_sprint_ipv6_addr(from));
+	NET_DBG("Add %s as a parent", log_strdup(net_sprint_ipv6_addr(from)));
 
 	parent->dtsn = dio->dtsn;
 
@@ -2319,7 +2315,7 @@ static void net_rpl_join_instance(struct net_if *iface,
 
 	NET_DBG("Joined DAG with instance ID %d rank %d DAG ID %s",
 		dio->instance_id, dag->min_rank,
-		net_sprint_ipv6_addr(&dag->dag_id));
+		log_strdup(net_sprint_ipv6_addr(&dag->dag_id)));
 
 	net_rpl_reset_dio_timer(instance);
 	net_rpl_set_default_route(iface, instance, from);
@@ -2418,7 +2414,7 @@ static void net_rpl_move_parent(struct net_if *iface,
 		if (net_rpl_dag_is_joined(dag_src) &&
 		    dag_src->instance->default_route) {
 			NET_DBG("Removing default route %s",
-				net_sprint_ipv6_addr(addr));
+				log_strdup(net_sprint_ipv6_addr(addr)));
 
 			net_if_ipv6_router_rm(dag_src->instance->default_route);
 			dag_src->instance->default_route = NULL;
@@ -2431,7 +2427,7 @@ static void net_rpl_move_parent(struct net_if *iface,
 		net_route_del_by_nexthop_data(iface, addr, dag_src);
 	}
 
-	NET_DBG("Moving parent %s", net_sprint_ipv6_addr(addr));
+	NET_DBG("Moving parent %s", log_strdup(net_sprint_ipv6_addr(addr)));
 
 	parent->dag = dag_dst;
 }
@@ -2493,14 +2489,14 @@ static void net_rpl_add_dag(struct net_if *iface,
 		parent = net_rpl_add_parent(iface, dag, dio, from);
 		if (!parent) {
 			NET_DBG("Adding %s as a parent failed.",
-				net_sprint_ipv6_addr(from));
+				log_strdup(net_sprint_ipv6_addr(from)));
 
 			net_rpl_dag_set_not_used(dag);
 			return;
 		}
 
 		NET_DBG("Adding %s as a parent.",
-			net_sprint_ipv6_addr(from));
+			log_strdup(net_sprint_ipv6_addr(from)));
 	} else {
 		parent = find_parent(iface, previous_dag, from);
 		if (parent) {
@@ -2549,7 +2545,7 @@ static void net_rpl_add_dag(struct net_if *iface,
 
 	NET_DBG("Joined DAG with instance ID %d rank %d DAG ID %s",
 		dio->instance_id, dag->min_rank,
-		net_sprint_ipv6_addr(&dag->dag_id));
+		log_strdup(net_sprint_ipv6_addr(&dag->dag_id)));
 
 	net_rpl_process_parent_event(iface, instance, parent);
 	parent->dtsn = dio->dtsn;
@@ -2732,12 +2728,13 @@ static void net_rpl_process_dio(struct net_if *iface,
 			parent = net_rpl_add_parent(iface, dag, dio, from);
 			if (!parent) {
 				NET_DBG("Failed to add a new parent %s",
-					net_sprint_ipv6_addr(from));
+					log_strdup(net_sprint_ipv6_addr(from)));
 				return;
 			}
 
 			NET_DBG("New candidate parent %s with rank %d",
-				net_sprint_ipv6_addr(from), parent->rank);
+				log_strdup(net_sprint_ipv6_addr(from)),
+				parent->rank);
 		} else {
 			parent = find_parent(iface, previous_dag, from);
 			if (parent) {
@@ -2745,7 +2742,7 @@ static void net_rpl_process_dio(struct net_if *iface,
 						    dag, parent);
 			} else {
 				NET_DBG("No parent %s found",
-					net_sprint_ipv6_addr(from));
+					log_strdup(net_sprint_ipv6_addr(from)));
 				return;
 			}
 		}
@@ -3086,7 +3083,7 @@ int net_rpl_dao_send(struct net_if *iface,
 
 	if (net_ipv6_addr_cmp(src, net_ipv6_unspecified_address())) {
 		NET_DBG("Invalid src addr %s found",
-			net_sprint_ipv6_addr(src));
+			log_strdup(net_sprint_ipv6_addr(src)));
 		return -EINVAL;
 	}
 
@@ -3228,7 +3225,7 @@ static int dao_ack_send(struct in6_addr *src,
 	int ret;
 
 	NET_DBG("Sending a DAO ACK with sequence number %d to %s",
-		sequence, net_sprint_ipv6_addr(dst));
+		sequence, log_strdup(net_sprint_ipv6_addr(dst)));
 
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, dst),
 				     BUF_TIMEOUT);
@@ -3263,8 +3260,8 @@ static int dao_ack_send(struct in6_addr *src,
 
 		NET_DBG("Send DAO-ACK (id %d, seq %d) from %s to %s",
 			instance->instance_id, sequence,
-			net_sprint_ipv6_addr(src),
-			net_sprint_ipv6_addr(dst));
+			log_strdup(net_sprint_ipv6_addr(src)),
+			log_strdup(net_sprint_ipv6_addr(dst)));
 
 		net_stats_update_icmp_sent(iface);
 		net_stats_update_rpl_dao_ack_sent(iface);
@@ -3293,7 +3290,7 @@ static int forwarding_dao(struct net_rpl_instance *instance,
 	paddr = net_rpl_get_parent_addr(instance->iface,
 					dag->preferred_parent);
 	if (paddr) {
-		NET_DBG("%s %s", str, net_sprint_ipv6_addr(paddr));
+		NET_DBG("%s %s", str, log_strdup(net_sprint_ipv6_addr(paddr)));
 
 		net_ipaddr_copy(&src, &NET_IPV6_HDR(pkt)->src);
 		net_ipaddr_copy(&dst, &NET_IPV6_HDR(pkt)->dst);
@@ -3396,7 +3393,7 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 
 		if (memcmp(&dag->dag_id, &addr, sizeof(dag->dag_id))) {
 			NET_DBG("Ignoring DAO for a DAG %s different from ours",
-				net_sprint_ipv6_addr(&dag->dag_id));
+				log_strdup(net_sprint_ipv6_addr(&dag->dag_id)));
 			return NET_DROP;
 		}
 	}
@@ -3484,7 +3481,7 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 	}
 
 	NET_DBG("DAO lifetime %d addr %s/%d", lifetime,
-		net_sprint_ipv6_addr(&addr), target_len);
+		log_strdup(net_sprint_ipv6_addr(&addr)), target_len);
 
 #if NET_RPL_MULTICAST
 	if (net_is_ipv6_addr_mcast_global(&addr)) {
@@ -3520,7 +3517,7 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 		    route->prefix_len == target_len && nexthop &&
 		    net_ipv6_addr_cmp(nexthop, dao_sender)) {
 			NET_DBG("Setting expiration timer for target %s",
-				net_sprint_ipv6_addr(&addr));
+				log_strdup(net_sprint_ipv6_addr(&addr)));
 
 			extra->no_path_received = true;
 			extra->lifetime = NET_RPL_DAO_EXPIRATION_TIMEOUT;
@@ -3531,7 +3528,7 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 			if (dag->preferred_parent) {
 				r = forwarding_dao(instance, dag,
 						   pkt, sequence, flags,
-#if defined(CONFIG_NET_DEBUG_RPL)
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 						   "Forwarding no-path DAO to "
 						   "parent"
 #else
@@ -3548,7 +3545,8 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 		return NET_DROP;
 	}
 
-	NET_DBG("Adding DAO route to %s", net_sprint_ipv6_addr(dao_sender));
+	NET_DBG("Adding DAO route to %s",
+		log_strdup(net_sprint_ipv6_addr(dao_sender)));
 
 	ipv6_nbr = net_ipv6_nbr_lookup(net_pkt_iface(pkt), dao_sender);
 	if (ipv6_nbr) {
@@ -3556,9 +3554,10 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 		struct net_linkaddr *src_lladdr;
 
 		NET_DBG("Neighbor %s [%s] already in neighbor cache",
-			net_sprint_ipv6_addr(dao_sender),
-			net_sprint_ll_addr(net_pkt_lladdr_src(pkt)->addr,
-					   net_pkt_lladdr_src(pkt)->len));
+			log_strdup(net_sprint_ipv6_addr(dao_sender)),
+			log_strdup(net_sprint_ll_addr(
+					   net_pkt_lladdr_src(pkt)->addr,
+					   net_pkt_lladdr_src(pkt)->len)));
 
 		nbr_lladdr = net_nbr_get_lladdr(ipv6_nbr->idx);
 		if (!nbr_lladdr) {
@@ -3580,7 +3579,8 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 
 			if (!net_ipv6_nbr_rm(net_pkt_iface(pkt), dao_sender)) {
 				NET_ERR("Failed to remove %s, doesn't exist",
-					net_sprint_ipv6_addr(dao_sender));
+					log_strdup(net_sprint_ipv6_addr(
+							   dao_sender)));
 				return NET_DROP;
 			}
 
@@ -3598,16 +3598,16 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 							 ipv6_nbr);
 
 			NET_DBG("Neighbor %s [%s] added to neighbor cache",
-				net_sprint_ipv6_addr(dao_sender),
-				net_sprint_ll_addr(
+				log_strdup(net_sprint_ipv6_addr(dao_sender)),
+				log_strdup(net_sprint_ll_addr(
 					net_pkt_lladdr_src(pkt)->addr,
-					net_pkt_lladdr_src(pkt)->len));
+					net_pkt_lladdr_src(pkt)->len)));
 		} else {
 			NET_DBG("Out of memory, dropping DAO from %s [%s]",
-				net_sprint_ipv6_addr(dao_sender),
-				net_sprint_ll_addr(
+				log_strdup(net_sprint_ipv6_addr(dao_sender)),
+				log_strdup(net_sprint_ll_addr(
 					net_pkt_lladdr_src(pkt)->addr,
-					net_pkt_lladdr_src(pkt)->len));
+					net_pkt_lladdr_src(pkt)->len)));
 			return NET_DROP;
 		}
 	}
@@ -3651,7 +3651,8 @@ fwd_dao:
 	if (IS_ENABLED(CONFIG_NET_RPL_DAO_ACK) && (flags & NET_RPL_DAO_K_FLAG)
 	    && is_root(instance)) {
 		NET_DBG("Sending DAO-ACK to %s (iface %p)",
-			net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src),
+			log_strdup(net_sprint_ipv6_addr(
+					   &NET_IPV6_HDR(pkt)->src)),
 			net_pkt_iface(pkt));
 
 		r = dao_ack_send(&NET_IPV6_HDR(pkt)->dst,
@@ -3710,7 +3711,7 @@ static enum net_verdict handle_dao_ack(struct net_pkt *pkt)
 
 	NET_DBG("Received a DAO ACK with seq number %d(%d) status %d from %s",
 		sequence, rpl_dao_sequence, status,
-		net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src));
+		log_strdup(net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src)));
 
 	if (sequence == rpl_dao_sequence) {
 		NET_DBG("Status %s", status < 128 ? "ACK" : "NACK");
@@ -4304,7 +4305,7 @@ void net_rpl_init(void)
 		sizeof(net_rpl_neighbor_pool));
 
 #if defined(CONFIG_NET_STATISTICS_RPL)
-	memset(&net_stats.rpl, 0, sizeof(net_stats.rpl));
+	(void)memset(&net_stats.rpl, 0, sizeof(net_stats.rpl));
 #endif
 
 	rpl_dao_sequence = net_rpl_lollipop_init();

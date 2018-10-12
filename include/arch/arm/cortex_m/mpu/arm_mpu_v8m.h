@@ -89,7 +89,15 @@
 #define MPU_MAIR_ATTR_SRAM   MPU_CACHE_ATTRIBUTES_SRAM
 #define MPU_MAIR_INDEX_SRAM  1
 
-/* Some helper defines for common regions */
+/* Some helper defines for common regions.
+ *
+ * Note that the ARMv8-M MPU architecture requires that the
+ * enabled MPU regions are non-overlapping. Therefore, it is
+ * recommended to use these helper defines only for configuring
+ * fixed MPU regions at build-time (i.e. regions that are not
+ * expected to be re-programmed or re-adjusted at run-time so
+ * that they do not overlap with other MPU regions).
+ */
 #define REGION_RAM_ATTR(base, size) \
 	{\
 		.rbar = NOT_EXEC | \
@@ -130,3 +138,34 @@ struct arm_mpu_region_attr {
 };
 
  typedef struct arm_mpu_region_attr arm_mpu_region_attr_t;
+
+#ifdef CONFIG_USERSPACE
+#ifndef _ASMLANGUAGE
+/* Read-Write access permission attributes */
+#define K_MEM_PARTITION_P_RW_U_RW	(P_RW_U_RW_Msk | NOT_EXEC)
+#define K_MEM_PARTITION_P_RW_U_NA	(P_RW_U_NA_Msk | NOT_EXEC)
+#define K_MEM_PARTITION_P_RO_U_RO	(P_RO_U_RO_Msk | NOT_EXEC)
+#define K_MEM_PARTITION_P_RO_U_NA	(P_RO_U_NA_Msk | NOT_EXEC)
+
+/* Execution-allowed attributes */
+#define K_MEM_PARTITION_P_RWX_U_RWX	(P_RW_U_RW_Msk)
+#define K_MEM_PARTITION_P_RX_U_RX	(P_RO_U_RO_Msk)
+
+#define K_MEM_PARTITION_IS_WRITABLE(attr) \
+	({ \
+		int __is_writable__; \
+		switch (attr) { \
+		case P_RW_U_RW: \
+		case P_RW_U_NA: \
+			__is_writable__ = 1; \
+			break; \
+		default: \
+			__is_writable__ = 0; \
+		} \
+		__is_writable__; \
+	})
+
+#define K_MEM_PARTITION_IS_EXECUTABLE(attr) \
+	(!((attr) & (NOT_EXEC)))
+#endif /* _ASMLANGUAGE */
+#endif /* USERSPACE */

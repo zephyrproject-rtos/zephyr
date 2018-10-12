@@ -171,7 +171,7 @@ static u8_t discover_func(struct bt_conn *conn,
 
 	if (!attr) {
 		printk("Discover complete\n");
-		memset(&discov_param, 0, sizeof(discov_param));
+		(void)memset(&discov_param, 0, sizeof(discov_param));
 		return BT_GATT_ITER_STOP;
 	}
 

@@ -5,7 +5,6 @@
 #
 ---
 title: I2C Base Structure
-id: i2c
 version: 0.1
 
 description: >
@@ -15,6 +14,11 @@ child:
     bus: i2c
 
 properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      generation: define
     "#address-cells":
       type: int
       category: required

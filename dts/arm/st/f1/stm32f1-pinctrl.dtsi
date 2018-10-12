@@ -1,0 +1,44 @@
+/*
+ * Copyright (c) 2017 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/stm32-pinctrlf1.h>
+
+/ {
+	soc {
+		pinctrl: pin-controller@40010800 {
+			usart1_pins_a: usart1_a {
+				rx_tx {
+					rx = <STM32_PIN_PA10 STM32_PIN_USART_RX>;
+					tx = <STM32_PIN_PA9 STM32_PIN_USART_TX>;
+				};
+			};
+			usart2_pins_a: usart2_a {
+				rx_tx {
+					rx = <STM32_PIN_PA3 STM32_PIN_USART_RX>;
+					tx = <STM32_PIN_PA2 STM32_PIN_USART_TX>;
+				};
+			};
+			usart2_pins_b: usart2_b {
+				rx_tx {
+					rx = <STM32_PIN_PD6 STM32_PIN_USART_RX>;
+					tx = <STM32_PIN_PD5 STM32_PIN_USART_TX>;
+				};
+			};
+			usart3_pins_a: usart3_a {
+				rx_tx {
+					rx = <STM32_PIN_PB11 STM32_PIN_USART_RX>;
+					tx = <STM32_PIN_PB10 STM32_PIN_USART_TX>;
+				};
+			};
+			uart4_pins_a: uart4_a {
+				rx_tx {
+					rx = <STM32_PIN_PC11 STM32_PIN_USART_RX>;
+					tx = <STM32_PIN_PC10 STM32_PIN_USART_TX>;
+				};
+			};
+		};
+	};
+};

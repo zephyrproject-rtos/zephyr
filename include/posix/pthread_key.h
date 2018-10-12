@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __POSIX_THREAD_KEY_H__
-#define __POSIX_THREAD_KEY_H__
+#ifndef ZEPHYR_INCLUDE_POSIX_PTHREAD_KEY_H_
+#define ZEPHYR_INCLUDE_POSIX_PTHREAD_KEY_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,4 +49,4 @@ typedef struct pthread_key_data {
 }
 #endif
 
-#endif /* __POSIX_THREAD_KEY_H__ */
+#endif /* ZEPHYR_INCLUDE_POSIX_PTHREAD_KEY_H_*/

@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <st/stm32f723.dtsi>
+#include <st/f7/stm32f723Xe.dtsi>
 
 / {
 	model = "STMicroelectronics STM32F723E DISCOVERY board";
@@ -19,15 +19,15 @@
 
 	leds {
 		compatible = "gpio-leds";
-		blue_led: led@0 {
+		blue_led: led_1 {
 			gpios = <&gpioa 5 GPIO_INT_ACTIVE_HIGH>;
 			label = "User LD1";
 		};
-		red_led: led@1 {
+		red_led: led_2 {
 			gpios = <&gpioa 7 GPIO_INT_ACTIVE_HIGH>;
 			label = "User LD5";
 		};
-		green_led: led@2 {
+		green_led: led_3 {
 			gpios = <&gpiob 1 GPIO_INT_ACTIVE_HIGH>;
 			label = "User LD6";
 		};
@@ -35,7 +35,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
-		user_button: button@0 {
+		user_button: button {
 			label = "User";
 			gpios = <&gpioa 0 GPIO_INT_ACTIVE_HIGH>;
 		};

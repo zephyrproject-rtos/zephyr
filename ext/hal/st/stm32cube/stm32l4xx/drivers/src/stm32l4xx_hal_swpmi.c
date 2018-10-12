@@ -61,7 +61,7 @@
       (+) Receive an amount of data in non-blocking mode using HAL_SWPMI_Receive_IT()
       (+) At reception end of transfer HAL_SWPMI_RxCpltCallback() is executed and user can
           add his own code by customization of function pointer HAL_SWPMI_RxCpltCallback()
-      (+) In case of flag error, HAL_SWPMI_ErrorCallback() function is executed and user can 
+      (+) In case of flag error, HAL_SWPMI_ErrorCallback() function is executed and user can
           add his own code by customization of function pointer HAL_SWPMI_ErrorCallback()
 
     *** DMA mode IO operation ***
@@ -104,7 +104,7 @@
       The compilation define USE_HAL_SWPMI_REGISTER_CALLBACKS when set to 1
       allows the user to configure dynamically the driver callbacks.
     [..]
-      Use function HAL_SWPMI_RegisterCallback() to register a user callback. It allows 
+      Use function HAL_SWPMI_RegisterCallback() to register a user callback. It allows
       to register the following callbacks:
       (+) RxCpltCallback     : SWPMI receive complete.
       (+) RxHalfCpltCallback : SWPMI receive half complete.
@@ -1714,7 +1714,7 @@ static void SWPMI_DMATransmitCplt(DMA_HandleTypeDef *hdma)
     {
       /* Timeout occurred */
       hswpmi->ErrorCode |= HAL_SWPMI_ERROR_TXBEF_TIMEOUT;
-      
+
 #if (USE_HAL_SWPMI_REGISTER_CALLBACKS == 1)
       hswpmi->ErrorCallback(hswpmi);
 #else

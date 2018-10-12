@@ -23,7 +23,7 @@ if (CONFIG_ASAN)
 	zephyr_ld_options(-fsanitize=address)
 endif ()
 
-zephyr_compile_definitions(_POSIX_C_SOURCE=200809 _XOPEN_SOURCE _XOPEN_SOURCE_EXTENDED)
+zephyr_compile_definitions(_POSIX_C_SOURCE=200809 _XOPEN_SOURCE=600 _XOPEN_SOURCE_EXTENDED)
 
 zephyr_ld_options(
   -ldl

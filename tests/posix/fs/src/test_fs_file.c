@@ -32,30 +32,30 @@ static int test_file_open(void)
 
 int test_file_write(void)
 {
-	int brw;
-	int res;
+	ssize_t brw;
+	off_t res;
 
 	TC_PRINT("\nWrite tests:\n");
 
 	res = lseek(file, 0, SEEK_SET);
-	if (res) {
-		TC_PRINT("lseek failed [%d]\n", res);
+	if (res != 0) {
+		TC_PRINT("lseek failed [%d]\n", (int)res);
 		close(file);
-		return res;
+		return TC_FAIL;
 	}
 
 	TC_PRINT("Data written:\"%s\"\n\n", test_str);
 
 	brw = write(file, (char *)test_str, strlen(test_str));
 	if (brw < 0) {
-		TC_PRINT("Failed writing to file [%d]\n", brw);
+		TC_PRINT("Failed writing to file [%d]\n", (int)brw);
 		close(file);
-		return brw;
+		return TC_FAIL;
 	}
 
 	if (brw < strlen(test_str)) {
 		TC_PRINT("Unable to complete write. Volume full.\n");
-		TC_PRINT("Number of bytes written: [%d]\n", brw);
+		TC_PRINT("Number of bytes written: [%d]\n", (int)brw);
 		close(file);
 		return TC_FAIL;
 	}
@@ -67,25 +67,25 @@ int test_file_write(void)
 
 static int test_file_read(void)
 {
-	int brw;
-	int res;
+	ssize_t brw;
+	off_t res;
 	char read_buff[80];
 	size_t sz = strlen(test_str);
 
 	TC_PRINT("\nRead tests:\n");
 
 	res = lseek(file, 0, SEEK_SET);
-	if (res) {
-		TC_PRINT("lseek failed [%d]\n", res);
+	if (res != 0) {
+		TC_PRINT("lseek failed [%d]\n", (int)res);
 		close(file);
-		return res;
+		return TC_FAIL;
 	}
 
 	brw = read(file, read_buff, sz);
 	if (brw < 0) {
-		TC_PRINT("Failed reading file [%d]\n", brw);
+		TC_PRINT("Failed reading file [%d]\n", (int)brw);
 		close(file);
-		return brw;
+		return TC_FAIL;
 	}
 
 	read_buff[brw] = 0;

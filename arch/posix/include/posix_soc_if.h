@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef _POSIX_CORE_SOC_PROVIDED_IF_H
-#define _POSIX_CORE_SOC_PROVIDED_IF_H
+#ifndef ZEPHYR_ARCH_POSIX_INCLUDE_POSIX_SOC_IF_H_
+#define ZEPHYR_ARCH_POSIX_INCLUDE_POSIX_SOC_IF_H_
 
 /*
  * This file lists the functions the POSIX architecture core expects the
@@ -41,4 +41,4 @@ int  posix_get_current_irq(void);
 }
 #endif
 
-#endif /* _POSIX_CORE_SOC_PROVIDED_IF_H */
+#endif /* ZEPHYR_ARCH_POSIX_INCLUDE_POSIX_SOC_IF_H_ */

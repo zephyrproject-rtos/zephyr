@@ -5,7 +5,6 @@
 #
 ---
 title: GPIO KEYS
-id: gpio-keys
 version: 0.1
 
 description: >
@@ -17,6 +16,7 @@ properties:
       category: required
       description: compatible strings
       constraint: "gpio-keys"
+      generation: define
 
     gpios:
       type: compound

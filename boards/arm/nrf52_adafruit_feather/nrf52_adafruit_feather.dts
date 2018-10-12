@@ -6,7 +6,7 @@
  */
 
 /dts-v1/;
-#include <nordic/nrf52832.dtsi>
+#include <nordic/nrf52832_qfaa.dtsi>
 
 / {
 	model = "nRF52 Adafruit Feather";
@@ -20,6 +20,34 @@
 #endif
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		sw0 = &button0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio0 17 0>;
+			label = "Red LED";
+		};
+		led1: led_1 {
+			gpios = <&gpio0 19 0>;
+			label = "Blue LED";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&gpio0 20 (GPIO_PUD_PULL_UP |
+					    GPIO_INT_ACTIVE_LOW)>;
+			label = "Button";
+		};
 	};
 };
 

@@ -21,6 +21,7 @@ from devicetree import parse_file
 from extract.globals import *
 
 from extract.clocks import clocks
+from extract.compatible import compatible
 from extract.interrupts import interrupts
 from extract.reg import reg
 from extract.flash import flash
@@ -123,78 +124,6 @@ class Bindings(yaml.Loader):
             filepaths = files
         with open(filepaths[0], 'r') as f:
             return yaml.load(f, Bindings)
-
-
-def extract_reg_prop(node_address, names, def_label, div, post_label):
-
-    reg = reduced[node_address]['props']['reg']
-    if type(reg) is not list: reg = [ reg ]
-    props = list(reg)
-
-    address_cells = reduced['/']['props'].get('#address-cells')
-    size_cells = reduced['/']['props'].get('#size-cells')
-    address = ''
-    for comp in node_address.split('/')[1:-1]:
-        address += '/' + comp
-        address_cells = reduced[address]['props'].get(
-            '#address-cells', address_cells)
-        size_cells = reduced[address]['props'].get('#size-cells', size_cells)
-
-    if post_label is None:
-        post_label = "BASE_ADDRESS"
-
-    index = 0
-    l_base = def_label.split('/')
-    l_addr = [convert_string_to_label(post_label)]
-    l_size = ["SIZE"]
-
-    while props:
-        prop_def = {}
-        prop_alias = {}
-        addr = 0
-        size = 0
-        # Check is defined should be indexed (_0, _1)
-        if index == 0 and len(props) < 3:
-            # 1 element (len 2) or no element (len 0) in props
-            l_idx = []
-        else:
-            l_idx = [str(index)]
-
-        try:
-            name = [names.pop(0).upper()]
-        except:
-            name = []
-
-        for x in range(address_cells):
-            addr += props.pop(0) << (32 * x)
-        for x in range(size_cells):
-            size += props.pop(0) << (32 * x)
-
-        l_addr_fqn = '_'.join(l_base + l_addr + l_idx)
-        l_size_fqn = '_'.join(l_base + l_size + l_idx)
-        if address_cells:
-            prop_def[l_addr_fqn] = hex(addr)
-        if size_cells:
-            prop_def[l_size_fqn] = int(size / div)
-        if len(name):
-            if address_cells:
-                prop_alias['_'.join(l_base + name + l_addr)] = l_addr_fqn
-            if size_cells:
-                prop_alias['_'.join(l_base + name + l_size)] = l_size_fqn
-
-        # generate defs for node aliases
-        if node_address in aliases:
-            for i in aliases[node_address]:
-                alias_label = convert_string_to_label(i)
-                alias_addr = [alias_label] + l_addr
-                alias_size = [alias_label] + l_size
-                prop_alias['_'.join(alias_addr)] = '_'.join(l_base + l_addr)
-                prop_alias['_'.join(alias_size)] = '_'.join(l_base + l_size)
-
-        insert_defs(node_address, prop_def, prop_alias)
-
-        # increment index for definition creation
-        index += 1
 
 
 def extract_controller(node_address, yaml, prop, prop_values, index, def_label, generic):
@@ -394,9 +323,7 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names,
     if 'parent' in yaml[node_compat]:
         if 'bus' in yaml[node_compat]['parent']:
             # get parent label
-            parent_address = ''
-            for comp in node_address.split('/')[1:-1]:
-                parent_address += '/' + comp
+            parent_address = get_parent_address(node_address)
 
             #check parent has matching child bus value
             try:
@@ -438,15 +365,17 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names,
     if prop == 'reg':
         if 'partition@' in node_address:
             # reg in partition is covered by flash handling
-            flash.extract(node_address, yaml, prop, names, def_label)
+            flash.extract(node_address, yaml, prop, def_label)
         else:
-            reg.extract(node_address, yaml, prop, names, def_label)
+            reg.extract(node_address, yaml, names, def_label, 1)
     elif prop == 'interrupts' or prop == 'interrupts-extended':
         interrupts.extract(node_address, yaml, prop, names, def_label)
+    elif prop == 'compatible':
+        compatible.extract(node_address, yaml, prop, def_label)
     elif 'pinctrl-' in prop:
-        pinctrl.extract(node_address, yaml, prop, names, def_label)
+        pinctrl.extract(node_address, yaml, prop, def_label)
     elif 'clocks' in prop:
-        clocks.extract(node_address, yaml, prop, names, def_label)
+        clocks.extract(node_address, yaml, prop, def_label)
     elif 'gpios' in prop:
         try:
             prop_values = list(reduced[node_address]['props'].get(prop))
@@ -458,7 +387,7 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names,
         extract_cells(node_address, yaml, prop, prop_values,
                       names, 0, def_label, 'gpio')
     else:
-        default.extract(node_address, yaml, prop, names, def_label)
+        default.extract(node_address, yaml, prop, def_label)
 
 
 def extract_node_include_info(reduced, root_node_address, sub_node_address,
@@ -543,7 +472,6 @@ def yaml_traverse_inherited(node):
     """ Recursive overload procedure inside ``node``
     ``inherits`` section is searched for and used as node base when found.
     Base values are then overloaded by node values
-    Additionally, 'id' key of 'inherited' dict is converted to 'node_type'
     and some consistency checks are done.
     :param node:
     :return: node
@@ -555,14 +483,16 @@ def yaml_traverse_inherited(node):
         # If 'title' is missing, make fault finding more easy.
         # Give a hint what node we are looking at.
         print("extract_dts_includes.py: node without 'title' -", node)
-    for prop in ('title', 'id', 'version', 'description'):
+    for prop in ('title', 'version', 'description'):
         if prop not in node:
             node[prop] = "<unknown {}>".format(prop)
             print("extract_dts_includes.py: '{}' property missing".format(prop),
                   "in '{}' binding. Using '{}'.".format(node['title'], node[prop]))
 
-    if 'node_type' not in node:
-        node['node_type'] = [node['id'],]
+    # warn if we have an 'id' field
+    if 'id' in node:
+        print("extract_dts_includes.py: WARNING: id field set",
+              "in '{}', should be removed.".format(node['title']))
 
     if 'inherits' in node:
         if isinstance(node['inherits'], list):
@@ -573,21 +503,9 @@ def yaml_traverse_inherited(node):
         for inherits in inherits_list:
             if 'inherits' in inherits:
                 inherits = yaml_traverse_inherited(inherits)
-            if 'node_type' in inherits:
-                node['node_type'].extend(inherits['node_type'])
-            else:
-                if 'id' not in inherits:
-                    inherits['id'] = "<unknown id>"
-                    title = inherits.get('title', "<unknown title>")
-                    print("extract_dts_includes.py: 'id' property missing in",
-                          "'{}' binding. Using '{}'.".format(title,
-                                                             inherits['id']))
-                node['node_type'].append(inherits['id'])
-            # id, node_type, title, description, version of inherited node
+            # title, description, version of inherited node
             # are overwritten by intention. Remove to prevent dct_merge to
             # complain about duplicates.
-            inherits.pop('id')
-            inherits.pop('node_type', None)
             inherits.pop('title', None)
             inherits.pop('version', None)
             inherits.pop('description', None)
@@ -656,8 +574,8 @@ def output_include_lines(fd, fixups):
     fd.write(" *               DO NOT MODIFY\n")
     fd.write(" */\n")
     fd.write("\n")
-    fd.write("#ifndef _DEVICE_TREE_BOARD_H" + "\n")
-    fd.write("#define _DEVICE_TREE_BOARD_H" + "\n")
+    fd.write("#ifndef DEVICE_TREE_BOARD_H" + "\n")
+    fd.write("#define DEVICE_TREE_BOARD_H" + "\n")
     fd.write("\n")
 
     node_keys = sorted(defs.keys())
@@ -747,17 +665,16 @@ def generate_node_definitions(yaml_list):
 
     for k, v in regs_config.items():
         if k in chosen:
-            extract_reg_prop(chosen[k], None, v, 1024, None)
+            reg.extract(chosen[k], None, None, v, 1024)
 
     for k, v in name_config.items():
         if k in chosen:
             extract_string_prop(chosen[k], None, "label", v)
 
     node_address = chosen.get('zephyr,flash', 'dummy-flash')
-    flash.extract(node_address, yaml_list, 'zephyr,flash', None, 'FLASH')
+    flash.extract(node_address, yaml_list, 'zephyr,flash', 'FLASH')
     node_address = chosen.get('zephyr,code-partition', node_address)
-    flash.extract(node_address, yaml_list, 'zephyr,code-partition', None,
-                  'FLASH')
+    flash.extract(node_address, yaml_list, 'zephyr,code-partition', 'FLASH')
 
     return defs
 

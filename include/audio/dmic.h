@@ -7,8 +7,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __AUDIO_DMIC_H__
-#define __AUDIO_DMIC_H__
+#ifndef ZEPHYR_INCLUDE_AUDIO_DMIC_H_
+#define ZEPHYR_INCLUDE_AUDIO_DMIC_H_
 
 #include <kernel.h>
 #include <device.h>
@@ -273,4 +273,4 @@ static inline int dmic_read(struct device *dev, u8_t stream, void **buffer,
 }
 #endif
 
-#endif /* __AUDIO_DMIC_H__ */
+#endif /* ZEPHYR_INCLUDE_AUDIO_DMIC_H_ */

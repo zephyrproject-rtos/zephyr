@@ -9,8 +9,8 @@
  * @brief Public API for network interface
  */
 
-#ifndef __NET_IF_H__
-#define __NET_IF_H__
+#ifndef ZEPHYR_INCLUDE_NET_NET_IF_H_
+#define ZEPHYR_INCLUDE_NET_NET_IF_H_
 
 /**
  * @brief Network Interface abstraction layer
@@ -544,6 +544,13 @@ static inline bool net_if_is_ip_offloaded(struct net_if *iface)
 static inline struct net_offload *net_if_offload(struct net_if *iface)
 {
 	return iface->if_dev->offload;
+}
+#else
+static inline bool net_if_is_ip_offloaded(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+
+	return false;
 }
 #endif
 
@@ -1857,4 +1864,4 @@ struct net_if_api {
  * @}
  */
 
-#endif /* __NET_IF_H__ */
+#endif /* ZEPHYR_INCLUDE_NET_NET_IF_H_ */

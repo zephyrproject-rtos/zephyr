@@ -20,4 +20,14 @@ config I2C_1
 
 endif # I2C
 
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	# HPET Timer: 19.2MHz
+	default 19200000 if HPET_TIMER
+	# Atom E3940 TSC: 1593.600MHz
+	default 1593600000 if (LOAPIC_TIMER && BOARD_UP_SQUARED_ATOM)
+	# Celeron N3550 base core freq: 1.1GHz
+	default 1100000000 if (LOAPIC_TIMER && BOARD_UP_SQUARED_CELERON)
+	# Pentium N3550 base core freq: 1.1GHz
+	default 1100000000 if (LOAPIC_TIMER && BOARD_UP_SQUARED_PENTIUM)
+
 endif # BOARD_UP_SQUARED

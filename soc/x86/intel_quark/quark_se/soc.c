@@ -23,6 +23,9 @@
 #include "shared_mem.h"
 #include <mmustructs.h>
 
+#define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(soc);
 
 #ifdef CONFIG_X86_MMU
 /* loapic */
@@ -50,9 +53,6 @@ MMU_BOOT_REGION(0xB0500000, 256*1024, MMU_ENTRY_WRITE);
 #define SCSS_REG_VAL(offset) \
 	(*((volatile u32_t *)(SCSS_REGISTER_BASE+offset)))
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_ARC_INIT_LEVEL
-#include <logging/sys_log.h>
-
 /**
  *
  * @brief ARC Init
@@ -78,12 +78,12 @@ int _arc_init(struct device *arg)
 	 * we read the value and stick it in shared_mem->arc_start which is
 	 * the beginning of the address space at 0xA8000000 */
 	reset_vector = (u32_t *)RESET_VECTOR;
-	SYS_LOG_DBG("Reset vector address: %x", *reset_vector);
+	LOG_DBG("Reset vector address: %x", *reset_vector);
 	shared_data->arc_start = *reset_vector;
 	shared_data->flags = 0;
 	if (!shared_data->arc_start) {
 		/* Reset vector points to NULL => skip ARC init. */
-		SYS_LOG_DBG("Reset vector is NULL, skipping ARC init.");
+		LOG_DBG("Reset vector is NULL, skipping ARC init.");
 		goto skip_arc_init;
 	}
 
@@ -92,14 +92,14 @@ int _arc_init(struct device *arg)
 	SCSS_REG_VAL(SCSS_SS_CFG) |= ARC_RUN_REQ_A;
 #endif
 
-	SYS_LOG_DBG("Waiting for arc to start...");
+	LOG_DBG("Waiting for arc to start...");
 	/* Block until the ARC core actually starts up */
 	while (SCSS_REG_VAL(SCSS_SS_STS) & 0x4000) {
 	}
 
 	/* Block until ARC's quark_se_init() sets a flag indicating it is ready,
 	 * if we get stuck here ARC has run but has exploded very early */
-	SYS_LOG_DBG("Waiting for arc to init...");
+	LOG_DBG("Waiting for arc to init...");
 	while (!(shared_data->flags & ARC_READY)) {
 	}
 
