@@ -82,16 +82,14 @@ In future, we will try to make libmetal as a submodule to OpenAMP to make this
 flow easier.
 
 ### Example to compile OpenAMP for Zephyr
-You can compile OpenAMP library for Zephyr.
-As OpenAMP uses libmetal, please refer to libmetal README to build libmetal
-for Zephyr before building OpenAMP library for Zephyr.
-As Zephyr uses CMake, we build OpenAMP library as a target of Zephyr CMake
-project. Here is how to build libmetal for Zephyr:
-```
-    $ export ZEPHRY_GCC_VARIANT=zephyr
-    $ export ZEPHRY_SDK_INSTALL_DIR=<where Zephyr SDK is installed>
-    $ source <git_clone_zephyr_project_source_root>/zephyr-env.sh
 
+As OpenAMP uses libmetal, you will need to build libmetal for Zephyr before
+building OpenAMP.  You'll build OpenAMP as a CMake target to integrate with
+Zephyr's CMake build system. Here is how to build libmetal for Zephyr. It
+assumes you have the :ref:`ZEPHYR_SDK <zephyr_sdk>` installed and configured.
+Please refer to libmetal's README for additional details.
+
+```
     $ cmake <OpenAMP_source_root> \
       -DWITH_ZEPHYR=on -DBOARD=qemu_cortex_m3 \
       -DCMAKE_INCLUDE_PATH="<libmetal_zephyr_build_dir>/lib/include" \
