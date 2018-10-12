@@ -68,6 +68,16 @@ enum temperature {
 	IGNORE_TEMP
 };
 
+enum target_values {
+	ONOFF_TARGET = 0x01,
+	LEVEL_LIGHT_TARGET,
+	LIGHT_ACTUAL_TARGET,
+	LIGHT_LINEAR_TARGET,
+	LIGHT_CTL_TARGET,
+	LEVEL_TEMP_TARGET,
+	LIGHT_CTL_TEMP_TARGET
+};
+
 struct generic_onoff_state {
 	u8_t onoff;
 	u8_t target_onoff;
@@ -76,15 +86,7 @@ struct generic_onoff_state {
 	u16_t last_tx_addr;
 	s64_t last_msg_timestamp;
 
-	u8_t tt;
-	u8_t rt;
-	u32_t quo_tt;
-	u8_t delay;
-	u32_t tt_counter;
-
-	bool is_new_transition_start;
-	u32_t total_transition_duration;
-	s64_t transition_start_timestamp;
+	struct transition *transition;
 };
 
 struct generic_level_state {
@@ -99,15 +101,8 @@ struct generic_level_state {
 	s64_t last_msg_timestamp;
 
 	s32_t tt_delta;
-	u8_t tt;
-	u8_t rt;
-	u32_t quo_tt;
-	u8_t delay;
-	u32_t tt_counter;
 
-	bool is_new_transition_start;
-	u32_t total_transition_duration;
-	s64_t transition_start_timestamp;
+	struct transition *transition;
 };
 
 struct generic_onpowerup_state {
@@ -148,16 +143,8 @@ struct light_lightness_state {
 
 	s32_t tt_delta_actual;
 	s32_t tt_delta_linear;
-	u8_t tt;
-	u8_t rt;
-	u32_t quo_tt;
-	u8_t delay;
-	u32_t tt_counter_actual;
-	u32_t tt_counter_linear;
 
-	bool is_new_transition_start;
-	u32_t total_transition_duration;
-	s64_t transition_start_timestamp;
+	struct transition *transition;
 };
 
 struct light_ctl_state {
@@ -188,16 +175,8 @@ struct light_ctl_state {
 	s32_t tt_lightness_delta;
 	s32_t tt_temp_delta;
 	s32_t tt_duv_delta;
-	u8_t tt;
-	u8_t rt;
-	u32_t quo_tt;
-	u8_t delay;
-	u32_t tt_counter;
-	u32_t tt_counter_temp;
 
-	bool is_new_transition_start;
-	u32_t total_transition_duration;
-	s64_t transition_start_timestamp;
+	struct transition *transition;
 };
 
 extern struct generic_onoff_state gen_onoff_srv_root_user_data;

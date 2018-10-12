@@ -261,7 +261,7 @@ void update_light_state(void)
 		gpio_pin_write(led_device[3], LED3_GPIO_PIN, 1);
 	}
 
-	if (enable_transition == DISABLE_TRANSITION) {
+	if (*ptr_counter == 0) {
 		k_work_submit(&no_transition_work);
 	}
 }
