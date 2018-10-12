@@ -6,8 +6,10 @@
 
 #include <logging/log_output.h>
 #include <logging/log_ctrl.h>
+#include <logging/log.h>
 #include <assert.h>
 #include <ctype.h>
+#include <time.h>
 
 #define HEXDUMP_BYTES_IN_LINE 8
 
@@ -45,6 +47,38 @@ typedef int (*out_func_t)(int c, void *ctx);
 extern int _prf(int (*func)(), void *dest, char *format, va_list vargs);
 extern void _vprintk(out_func_t out, void *log_output,
 		     const char *fmt, va_list ap);
+
+/* The RFC 5424 allows very flexible mapping and suggest the value 0 being the
+ * highest severity and 7 to be the lowest (debugging level) severity.
+ *
+ *    0   Emergency      System is unusable
+ *    1   Alert          Action must be taken immediately
+ *    2   Critical       Critical conditions
+ *    3   Error          Error conditions
+ *    4   Warning        Warning conditions
+ *    5   Notice         Normal but significant condition
+ *    6   Informational  Informational messages
+ *    7   Debug          Debug-level messages
+ */
+static int level_to_rfc5424_severity(u32_t level)
+{
+	switch (level) {
+	case LOG_LEVEL_NONE:
+		return 7;
+	case LOG_LEVEL_ERR:
+		return 3;
+	case LOG_LEVEL_WRN:
+		return 4;
+	case LOG_LEVEL_INF:
+		return 6;
+	case LOG_LEVEL_DBG:
+		return 7;
+	default:
+		break;
+	}
+
+	return 7;
+}
 
 static int out_func(int c, void *ctx)
 {
@@ -98,10 +132,14 @@ void log_output_flush(const struct log_output *log_output)
 
 static int timestamp_print(struct log_msg *msg,
 			   const struct log_output *log_output,
-			   bool format)
+			   u32_t flags)
 {
 	int length;
 	u32_t timestamp = log_msg_timestamp_get(msg);
+	bool format =
+		(flags & LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP) |
+		(flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG);
+
 
 	if (!format) {
 		length = print_formatted(log_output, "[%08lu] ", timestamp);
@@ -124,9 +162,30 @@ static int timestamp_print(struct log_msg *msg,
 		ms = (remainder * 1000) / freq;
 		us = (1000 * (1000 * remainder - (ms * freq))) / freq;
 
-		length = print_formatted(log_output,
-					 "[%02d:%02d:%02d.%03d,%03d] ",
-					 hours, mins, seconds, ms, us);
+		if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
+		    flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) {
+#if defined(CONFIG_NEWLIB_LIBC)
+			char time_str[sizeof("1970-01-01T00:00:00")];
+			struct tm *tm;
+			time_t time;
+
+			time = seconds;
+			tm = gmtime(&time);
+
+			strftime(time_str, sizeof(time_str), "%FT%T", tm);
+
+			length = print_formatted(log_output, "%s.%06dZ ",
+						 time_str, ms * 1000 + us);
+#else
+			length = print_formatted(log_output,
+					"1970-01-01T%02d:%02d:%02d.%06dZ ",
+					hours, mins, seconds, ms * 1000 + us);
+#endif
+		} else {
+			length = print_formatted(log_output,
+						 "[%02d:%02d:%02d.%03d,%03d] ",
+						 hours, mins, seconds, ms, us);
+		}
 	} else {
 		length = 0;
 	}
@@ -188,6 +247,10 @@ static int ids_print(struct log_msg *msg,
 
 static void newline_print(const struct log_output *ctx, u32_t flags)
 {
+	if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
+	    flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) {
+		return;
+	}
 
 	if (flags & LOG_OUTPUT_FLAG_CRLF_NONE) {
 		return;
@@ -391,16 +454,39 @@ static int prefix_print(struct log_msg *msg,
 		bool colors_on = flags & LOG_OUTPUT_FLAG_COLORS;
 		bool level_on = flags & LOG_OUTPUT_FLAG_LEVEL;
 
-		if (stamp) {
-			bool stamp_format =
-				flags & LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
+		if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
+		    flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) {
+			/* TODO: As there is no way to figure out the
+			 * facility at this point, use a pre-defined value.
+			 * Change this to use the real facility of the
+			 * logging call when that info is available.
+			 */
+			static const int facility = 16; /* local0 */
 
-			length += timestamp_print(msg, log_output,
-						  stamp_format);
+			length += print_formatted(
+				log_output,
+				"<%d>1 ",
+				facility * 8 +
+				level_to_rfc5424_severity(
+					log_msg_level_get(msg)));
 		}
 
-		color_prefix(msg, log_output, colors_on);
-		length += ids_print(msg, log_output, level_on);
+		if (stamp) {
+			length += timestamp_print(msg, log_output, flags);
+		}
+
+		if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
+		    flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) {
+			length += print_formatted(
+				log_output, "%s - - - - ",
+				log_output->control_block->hostname ?
+				log_output->control_block->hostname :
+				"zephyr");
+
+		} else {
+			color_prefix(msg, log_output, colors_on);
+			length += ids_print(msg, log_output, level_on);
+		}
 	}
 
 	return length;

@@ -25,6 +25,11 @@ zephyr_sources_ifdef(
   )
 
 zephyr_sources_ifdef(
+  CONFIG_LOG_BACKEND_NET
+  log_backend_net.c
+  )
+
+zephyr_sources_ifdef(
   CONFIG_LOG_BACKEND_RTT
   log_backend_rtt.c
 )
