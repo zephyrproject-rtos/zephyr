@@ -72,6 +72,35 @@ config BIG_ENDIAN
          is used to select linker script OUTPUT_FORMAT and command
          line option for gen_isr_tables.py.
 
+if ARCH_HAS_TRUSTED_EXECUTION
+
+config TRUSTED_EXECUTION_SECURE
+	bool "Trusted Execution: Secure firmware image"
+	help
+	  Select this option to enable building a Secure firmware
+	  image for a platform that supports Trusted Execution. A
+	  Secure firmware image will execute in Secure state. It may
+	  allow the CPU to execute in Non-Secure (Normal) state.
+	  Therefore, a Secure firmware image shall be able to
+	  configure security attributions of CPU resources (memory
+	  areas, peripherals, interrupts, etc.) as well as to handle
+	  faults, related to security violations. It may optionally
+	  allow certain functions to be called from the Non-Secure
+	  (Normal) domain.
+
+config TRUSTED_EXECUTION_NONSECURE
+	depends on !TRUSTED_EXECUTION_SECURE
+	bool "Trusted Execution: Non-Secure firmware image"
+	help
+	  Select this option to enable building a Non-Secure
+	  firmware image for a platform that supports Trusted
+	  Execution. A Non-Secure firmware image will execute
+	  in Non-Secure (Normal) state. Therefore, it shall not
+	  access CPU resources (memory areas, peripherals,
+	  interrupts etc.) belonging to the Secure domain.
+
+endif # ARCH_HAS_TRUSTED_EXECUTION
+
 config HW_STACK_PROTECTION
 	bool "Hardware Stack Protection"
 	depends on ARCH_HAS_STACK_PROTECTION
@@ -228,6 +257,9 @@ endmenu
 #
 # Architecture Capabilities
 #
+config ARCH_HAS_TRUSTED_EXECUTION
+	bool
+
 config ARCH_HAS_STACK_PROTECTION
 	bool
 
@@ -314,6 +346,13 @@ config BOOTLOADER_CONTEXT_RESTORE_SUPPORTED
 
 # End hidden CPU family configs
 #
+
+config CPU_HAS_TEE
+	bool
+	help
+	  This option is enabled when the CPU has support for Trusted
+	  Execution Environment (e.g. when it has a security attribution
+	  unit).
 
 config CPU_HAS_FPU
 	bool
