@@ -336,6 +336,7 @@ static int openthread_init(struct net_if *iface)
 				 openthread_process,
 				 ot_context, NULL, NULL,
 				 OT_PRIORITY, 0, K_NO_WAIT);
+	k_thread_name_set(&ot_thread_data, "openthread");
 
 	return 0;
 }
