@@ -4043,6 +4043,8 @@ static int lwm2m_engine_init(struct device *dev)
 			/* Lowest priority cooperative thread */
 			K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1),
 			0, K_NO_WAIT);
+	k_thread_name_set(&engine_thread_data, "lwm2m");
+
 	LOG_DBG("LWM2M engine thread started");
 	return 0;
 }
