@@ -132,6 +132,7 @@ config CORTEX_M_SYSTICK
 	bool "Cortex-M SYSTICK timer"
 	default y
 	depends on CPU_HAS_SYSTICK
+	select TICKLESS_CAPABLE
 	help
 	  This module implements a kernel device driver for the Cortex-M processor
 	  SYSTICK timer and provides the standard "system clock driver" interfaces.
@@ -241,6 +242,16 @@ config SYSTEM_CLOCK_INIT_PRIORITY
 	  value for the system clock driver. As driver initialization  might need
 	  the clock to be running already, you should let the default value as it
 	  is (0).
+
+config TICKLESS_CAPABLE
+	bool "Timer driver supports tickless operation"
+	help
+	  Timer drivers should select this flag if they are capable of
+	  supporting tickless operation.  That is, a call to
+	  z_clock_set_timeout() with a number of ticks greater than
+	  one should be expected not to produce a call to
+	  z_clock_announce() (really, not to produce an interrupt at
+	  all) until the specified expiration.
 
 config QEMU_TICKLESS_WORKAROUND
 	bool "Disable tickless on qemu due to asynchrony bug"
