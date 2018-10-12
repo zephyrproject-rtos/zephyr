@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <stdlib.h>
 
+#include <logging/log_backend.h>
 #include <net/net_core.h>
 #include <net/net_ip.h>
 #include <net/net_if.h>
@@ -26,6 +27,8 @@
 
 #include "ieee802154_settings.h"
 #include "bt_settings.h"
+
+extern const struct log_backend *log_backend_net_get(void);
 
 static K_SEM_DEFINE(waiter, 0, 1);
 static struct k_sem counter;
@@ -375,6 +378,17 @@ static int init_net_app(struct device *device)
 			      K_SECONDS(CONFIG_NET_CONFIG_INIT_TIMEOUT));
 	if (ret < 0) {
 		NET_ERR("Network initialization failed (%d)", ret);
+	}
+
+	/* This is activated late as it requires the network stack to be up
+	 * and running before syslog messages can be sent to network.
+	 */
+	if (IS_ENABLED(CONFIG_LOG_BACKEND_NET)) {
+		const struct log_backend *backend = log_backend_net_get();
+
+		if (!log_backend_is_active(backend)) {
+			log_backend_activate(backend, NULL);
+		}
 	}
 
 	return ret;
