@@ -7,10 +7,4 @@ config BUILD_OUTPUT_BIN
 config BOARD
 	default "qemu_cortex_m3"
 
-config TICKLESS_IDLE
-       default y
-
-config TICKLESS_KERNEL
-       default y
-
 endif # BOARD_QEMU_CORTEX_M3
