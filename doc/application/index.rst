@@ -6,11 +6,11 @@ Developer Guides
 .. toctree::
    :maxdepth: 1
 
-   ../porting/porting.rst
    application.rst
    ../samples/samples.rst
    ../reference/kconfig/index.rst
    ../api/api.rst
+   ../porting/porting.rst
    ../README.rst
    ../west/index.rst
    coccinelle.rst
