@@ -7,16 +7,14 @@
 
 #include <errno.h>
 #include <string.h>
-
-#define LOG_LEVEL 4
 #include <logging/log.h>
-LOG_MODULE_REGISTER(main);
-
 #include <zephyr.h>
 #include <led_strip.h>
 #include <device.h>
 #include <spi.h>
 #include <misc/util.h>
+
+LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
 /*
  * Number of RGB LEDs in the LED strip, adjust as needed.

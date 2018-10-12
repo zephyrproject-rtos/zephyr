@@ -4,20 +4,17 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#define LOG_DOMAIN flash_stm32l4
-#define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_DOMAIN);
-
 #include <kernel.h>
 #include <device.h>
 #include <string.h>
 #include <flash.h>
 #include <init.h>
 #include <soc.h>
+#include <logging/log.h>
 
 #include "flash_stm32.h"
+
+LOG_MODULE_REGISTER(flash_stm32l4, CONFIG_FLASH_LOG_LEVEL);
 
 #if !defined (STM32L4R5xx) && !defined (STM32L4R7xx) && !defined (STM32L4R9xx) && !defined (STM32L4S5xx) && !defined (STM32L4S7xx) && !defined (STM32L4S9xx)
 #define STM32L4X_PAGE_SHIFT	11

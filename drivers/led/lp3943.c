@@ -21,10 +21,9 @@
 #include <led.h>
 #include <misc/util.h>
 #include <zephyr.h>
-
-#define LOG_LEVEL CONFIG_LED_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(lp3943);
+
+LOG_MODULE_REGISTER(lp3943, CONFIG_LED_LOG_LEVEL);
 
 #include "led_context.h"
 

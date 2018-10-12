@@ -8,13 +8,14 @@
 #include <device.h>
 #include <i2c.h>
 #include <soc.h>
+#include <logging/log.h>
 
 #include "qm_ss_i2c.h"
 #include "qm_ss_isr.h"
 #include "ss_clk.h"
 
-#include <logging/log.h>
-LOG_MODULE_REGISTER(i2c_qmsi_ss);
+LOG_MODULE_REGISTER(i2c_qmsi_ss, CONFIG_I2C_LOG_LEVEL);
+
 #include "i2c-priv.h"
 
 /* Convenient macros to get the controller instance and the driver data. */

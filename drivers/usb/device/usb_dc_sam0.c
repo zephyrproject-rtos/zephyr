@@ -3,14 +3,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(usb_dc_sam0);
-
 #include <usb/usb_device.h>
 #include <soc.h>
 #include <string.h>
+#include <logging/log.h>
+
+LOG_MODULE_REGISTER(usb_dc_sam0, CONFIG_USB_DRIVER_LOG_LEVEL);
 
 #define NVM_USB_PAD_TRANSN_POS 45
 #define NVM_USB_PAD_TRANSN_SIZE 5

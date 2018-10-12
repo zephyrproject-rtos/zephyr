@@ -9,10 +9,9 @@
 #include <soc.h>
 #include <fsl_ftm.h>
 #include <fsl_clock.h>
-
-#define LOG_LEVEL CONFIG_PWM_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(pwm_mcux_ftm);
+
+LOG_MODULE_REGISTER(pwm_mcux_ftm, CONFIG_PWM_LOG_LEVEL);
 
 #define MAX_CHANNELS ARRAY_SIZE(FTM0->CONTROLS)
 

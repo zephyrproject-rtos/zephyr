@@ -22,12 +22,11 @@
 
 #include <mbedtls/ccm.h>
 #include <mbedtls/aes.h>
+#include <logging/log.h>
 
 #define MTLS_SUPPORT (CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS)
 
-#define LOG_LEVEL CONFIG_CRYPTO_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(mbedtls);
+LOG_MODULE_REGISTER(mbedtls, CONFIG_CRYPTO_LOG_LEVEL);
 
 struct mtls_shim_session {
 	mbedtls_ccm_context mtls;

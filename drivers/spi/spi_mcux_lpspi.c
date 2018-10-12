@@ -8,10 +8,9 @@
 #include <spi.h>
 #include <clock_control.h>
 #include <fsl_lpspi.h>
-
-#define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(spi_mcux_lpspi);
+
+LOG_MODULE_REGISTER(spi_mcux_lpspi, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_context.h"
 

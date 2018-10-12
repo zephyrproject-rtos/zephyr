@@ -9,10 +9,9 @@
 #include <kernel.h>
 #include <soc.h>
 #include <arch/arc/v2/mpu/arc_core_mpu.h>
-
-#define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(mpu);
+
+LOG_MODULE_REGISTER(mpu, CONFIG_MPU_LOG_LEVEL);
 
 /*
  * @brief Configure MPU for the thread

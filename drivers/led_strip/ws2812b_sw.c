@@ -7,16 +7,14 @@
 #include <led_strip.h>
 
 #include <string.h>
-
-#define LOG_LEVEL CONFIG_LED_STRIP_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(ws2812b_sw);
-
 #include <zephyr.h>
 #include <soc.h>
 #include <gpio.h>
 #include <device.h>
 #include <clock_control.h>
+#include <logging/log.h>
+
+LOG_MODULE_REGISTER(ws2812b_sw, CONFIG_LED_STRIP_LOG_LEVEL);
 
 #define BLOCKING ((void *)1)
 

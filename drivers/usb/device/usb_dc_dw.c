@@ -20,13 +20,12 @@
 #include <usb/usb_device.h>
 #include "usb_dw_registers.h"
 #include <soc.h>
+#include <logging/log.h>
 #ifdef CONFIG_QMSI
 #include "clk.h"
 #endif
 
-#define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(usb_dc_dw);
+LOG_MODULE_REGISTER(usb_dc_dw, CONFIG_USB_DRIVER_LOG_LEVEL);
 
 /* convert from endpoint address to hardware endpoint index */
 #define USB_DW_EP_ADDR2IDX(ep)  ((ep) & ~USB_EP_DIR_MASK)

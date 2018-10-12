@@ -10,10 +10,9 @@
 #include <errno.h>
 #include <misc/mempool.h>
 #include <string.h>
-
-#define LOG_LEVEL CONFIG_KERNEL_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_DECLARE(os);
+
+LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #if (CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE > 0)
 K_MUTEX_DEFINE(malloc_mutex);

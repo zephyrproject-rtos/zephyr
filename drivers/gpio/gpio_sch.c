@@ -13,13 +13,12 @@
 #include <init.h>
 #include <sys_io.h>
 #include <misc/util.h>
+#include <logging/log.h>
 
 #include "gpio_sch.h"
 #include "gpio_utils.h"
 
-#define LOG_LEVEL CONFIG_GPIO_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(gpio_sch)
+LOG_MODULE_REGISTER(gpio_sch, CONFIG_GPIO_LOG_LEVEL);
 
 /* Define GPIO_SCH_LEGACY_IO_PORTS_ACCESS
  * inside soc.h if the GPIO controller

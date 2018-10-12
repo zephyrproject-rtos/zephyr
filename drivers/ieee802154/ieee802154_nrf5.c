@@ -6,12 +6,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME ieee802154_nrf5
-#define LOG_LEVEL CONFIG_IEEE802154_LOG_LEVEL
-
-#include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
-
 #include <errno.h>
 
 #include <kernel.h>
@@ -34,10 +28,13 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/ieee802154_radio.h>
 #include <drivers/clock_control/nrf5_clock_control.h>
 #include <clock_control.h>
+#include <logging/log.h>
 
 #include "nrf52840.h"
 #include "ieee802154_nrf5.h"
 #include "nrf_drv_radio802154.h"
+
+LOG_MODULE_REGISTER(ieee802154_nrf5, CONFIG_IEEE802154_LOG_LEVEL);
 
 struct nrf5_802154_config {
 	void (*irq_config_func)(struct device *dev);

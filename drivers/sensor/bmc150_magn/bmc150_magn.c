@@ -21,8 +21,7 @@
 
 #include "bmc150_magn.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(BMC150_MAGN)
+LOG_MODULE_REGISTER(BMC150_MAGN, CONFIG_SENSOR_LOG_LEVEL);
 
 static const struct {
 	int freq;

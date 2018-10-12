@@ -10,14 +10,13 @@
 #include <string.h>
 #include <misc/byteorder.h>
 #include <misc/__assert.h>
+#include <logging/log.h>
 #include <usb/usbstruct.h>
 #include <usb/usb_device.h>
 #include <usb/usb_common.h>
 #include "usb_descriptor.h"
 
-#define LOG_LEVEL CONFIG_USB_DEVICE_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(usb_descriptor);
+LOG_MODULE_REGISTER(usb_descriptor, CONFIG_USB_DEVICE_LOG_LEVEL);
 
 /*
  * The last index of the initializer_string without null character is:

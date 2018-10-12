@@ -10,14 +10,15 @@
 #include <i2c.h>
 #include <ioapic.h>
 #include <power.h>
+#include <logging/log.h>
 
 #include "qm_i2c.h"
 #include "qm_isr.h"
 #include "clk.h"
 #include "soc.h"
 
-#include <logging/log.h>
-LOG_MODULE_REGISTER(i2c_qmsi);
+LOG_MODULE_REGISTER(i2c_qmsi, CONFIG_I2C_LOG_LEVEL);
+
 #include "i2c-priv.h"
 
 /* Convenient macros to get the controller instance and the driver data. */

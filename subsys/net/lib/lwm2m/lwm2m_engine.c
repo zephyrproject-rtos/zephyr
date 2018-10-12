@@ -22,12 +22,6 @@
  * - Handle Resource ObjLink type
  */
 
-#define LOG_MODULE_NAME net_lwm2m_engine
-#define LOG_LEVEL CONFIG_LWM2M_LOG_LEVEL
-
-#include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
-
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -37,6 +31,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <errno.h>
 #include <init.h>
 #include <misc/printk.h>
+#include <logging/log.h>
 #include <net/net_app.h>
 #include <net/net_ip.h>
 #include <net/net_pkt.h>
@@ -54,6 +49,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #ifdef CONFIG_LWM2M_RD_CLIENT_SUPPORT
 #include "lwm2m_rd_client.h"
 #endif
+
+LOG_MODULE_REGISTER(net_lwm2m_engine, CONFIG_LWM2M_LOG_LEVEL);
 
 #define ENGINE_UPDATE_INTERVAL K_MSEC(500)
 

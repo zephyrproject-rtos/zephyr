@@ -3,16 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#define LOG_MODULE_NAME net_lwm2m_obj_firmware_pull
-#define LOG_LEVEL CONFIG_LWM2M_LOG_LEVEL
-
-#include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
-
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
+#include <logging/log.h>
 #include <net/coap.h>
 #include <net/net_app.h>
 #include <net/net_core.h>
@@ -22,6 +16,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
+
+LOG_MODULE_REGISTER(net_lwm2m_obj_firmware_pull, CONFIG_LWM2M_LOG_LEVEL);
 
 #define URI_LEN		255
 

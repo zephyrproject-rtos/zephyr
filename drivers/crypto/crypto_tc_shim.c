@@ -16,10 +16,9 @@
 #include <string.h>
 #include <crypto/cipher.h>
 #include "crypto_tc_shim_priv.h"
-
-#define LOG_LEVEL CONFIG_CRYPTO_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(tinycrypt);
+
+LOG_MODULE_REGISTER(tinycrypt, CONFIG_CRYPTO_LOG_LEVEL);
 
 #define CRYPTO_MAX_SESSION CONFIG_CRYPTO_TINYCRYPT_SHIM_MAX_SESSION
 

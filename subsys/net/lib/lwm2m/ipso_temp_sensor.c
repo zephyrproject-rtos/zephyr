@@ -9,19 +9,15 @@
  * https://github.com/IPSO-Alliance/pub/blob/master/docs/IPSO-Smart-Objects.pdf
  * Section: "10. IPSO Object: Temperature"
  */
-
-#define LOG_MODULE_NAME net_ipso_temp_sensor
-#define LOG_LEVEL CONFIG_LWM2M_LOG_LEVEL
-
-#include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
-
 #include <stdint.h>
 #include <init.h>
+#include <logging/log.h>
 #include <net/lwm2m.h>
 
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
+
+LOG_MODULE_REGISTER(net_ipso_temp_sensor, CONFIG_LWM2M_LOG_LEVEL);
 
 /* Server resource IDs */
 #define TEMP_SENSOR_VALUE_ID			5700

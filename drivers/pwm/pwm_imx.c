@@ -8,10 +8,9 @@
 #include <pwm.h>
 #include <soc.h>
 #include <device_imx.h>
-
-#define LOG_LEVEL CONFIG_PWM_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(pwm_imx);
+
+LOG_MODULE_REGISTER(pwm_imx, CONFIG_PWM_LOG_LEVEL);
 
 #define PWM_PWMSR_FIFOAV_4WORDS	0x4
 

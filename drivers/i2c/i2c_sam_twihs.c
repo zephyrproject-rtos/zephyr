@@ -18,10 +18,9 @@
 #include <init.h>
 #include <soc.h>
 #include <i2c.h>
-
-#define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(i2c_sam_twihs)
+
+LOG_MODULE_REGISTER(i2c_sam_twihs, CONFIG_I2C_LOG_LEVEL);
 
 #include "i2c-priv.h"
 

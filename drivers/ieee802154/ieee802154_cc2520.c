@@ -6,11 +6,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME ieee802154_cc2520
-#define LOG_LEVEL CONFIG_IEEE802154_LOG_LEVEL
-
 #include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+LOG_MODULE_REGISTER(ieee802154_cc2520, CONFIG_IEEE802154_LOG_LEVEL);
+
+/* This prevents log module registration in net_core.h */
+#define LOG_LEVEL	0
 
 #include <errno.h>
 
@@ -38,6 +38,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/ieee802154_radio.h>
 
 #include "ieee802154_cc2520.h"
+
 
 /**
  * Content is split as follows:

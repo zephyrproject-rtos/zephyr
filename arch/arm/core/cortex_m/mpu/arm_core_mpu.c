@@ -10,10 +10,9 @@
 #include <soc.h>
 #include <arch/arm/cortex_m/cmsis.h>
 #include <arch/arm/cortex_m/mpu/arm_core_mpu.h>
-
-#define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(mpu);
+
+LOG_MODULE_REGISTER(mpu, CONFIG_MPU_LOG_LEVEL);
 
 #if defined(CONFIG_MPU_STACK_GUARD)
 /*

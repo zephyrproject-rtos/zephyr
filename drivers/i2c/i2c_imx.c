@@ -9,9 +9,9 @@
 #include <soc.h>
 #include <i2c_imx.h>
 #include <misc/util.h>
-
 #include <logging/log.h>
-LOG_MODULE_REGISTER(i2c_imx);
+
+LOG_MODULE_REGISTER(i2c_imx, CONFIG_I2C_LOG_LEVEL);
 
 #include "i2c-priv.h"
 

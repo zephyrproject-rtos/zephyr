@@ -7,13 +7,11 @@
 #include <kernel.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <logging/log.h>
 
 #include <openthread/platform/logging.h>
 
-#define LOG_MODULE_NAME net_openthread
-#define LOG_LEVEL LOG_LEVEL_DBG
-#include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+LOG_MODULE_REGISTER(net_openthread, LOG_LEVEL_DBG);
 
 #include "platform-zephyr.h"
 

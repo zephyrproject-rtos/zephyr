@@ -33,11 +33,11 @@
 #include <logging/log_ctrl.h>
 #include <tracing.h>
 #include <stdbool.h>
+#include <logging/log.h>
 
 #define IDLE_THREAD_NAME	"idle"
-#define LOG_LEVEL CONFIG_KERNEL_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(kernel);
+
+LOG_MODULE_REGISTER(kernel, CONFIG_KERNEL_LOG_LEVEL);
 
 /* boot banner items */
 #if defined(CONFIG_BOOT_DELAY) && CONFIG_BOOT_DELAY > 0

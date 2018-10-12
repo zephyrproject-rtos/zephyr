@@ -5,30 +5,26 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#define LOG_DOMAIN "SPI Intel"
-#define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(spi_intel);
-
 #include <errno.h>
 
 #include <kernel.h>
 #include <arch/cpu.h>
-
 #include <misc/__assert.h>
 #include <soc.h>
 #include <init.h>
-
 #include <sys_io.h>
 #include <power.h>
+#include <logging/log.h>
 
 #include <spi.h>
-#include "spi_intel.h"
 
 #ifdef CONFIG_IOAPIC
 #include <drivers/ioapic.h>
 #endif
+
+LOG_MODULE_REGISTER(spi_intel, CONFIG_SPI_LOG_LEVEL);
+
+#include "spi_intel.h"
 
 static void completed(struct device *dev, u32_t error)
 {

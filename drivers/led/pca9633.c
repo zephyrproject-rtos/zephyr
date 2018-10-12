@@ -13,10 +13,9 @@
 #include <led.h>
 #include <misc/util.h>
 #include <zephyr.h>
-
-#define LOG_LEVEL CONFIG_LED_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(pca9633);
+
+LOG_MODULE_REGISTER(pca9633, CONFIG_LED_LOG_LEVEL);
 
 #include "led_context.h"
 

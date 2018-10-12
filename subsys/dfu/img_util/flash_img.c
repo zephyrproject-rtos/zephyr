@@ -5,11 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME fota_flash_block
-#define LOG_LEVEL CONFIG_IMG_MANAGER_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
-
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -18,6 +13,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <flash.h>
 #include <dfu/flash_img.h>
 #include <inttypes.h>
+#include <logging/log.h>
+
+LOG_MODULE_REGISTER(fota_flash_block, CONFIG_IMG_MANAGER_LOG_LEVEL);
 
 BUILD_ASSERT_MSG((CONFIG_IMG_BLOCK_BUF_SIZE % FLASH_WRITE_BLOCK_SIZE == 0),
 		 "CONFIG_IMG_BLOCK_BUF_SIZE is not a multiple of "

@@ -3,11 +3,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(spi_ll_stm32);
-
 #include <misc/util.h>
 #include <kernel.h>
 #include <soc.h>
@@ -17,6 +12,9 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 
 #include <clock_control/stm32_clock_control.h>
 #include <clock_control.h>
+#include <logging/log.h>
+
+LOG_MODULE_REGISTER(spi_ll_stm32, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_ll_stm32.h"
 

@@ -13,11 +13,11 @@
  * error behaviour.
  */
 
-#define LOG_MODULE_NAME eth_mcux
-#define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
-
+LOG_MODULE_REGISTER(eth_mcux, CONFIG_ETHERNET_LOG_LEVEL);
 #include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+
+/* This prevents log module registration in net_core.h */
+#define LOG_LEVEL	0
 
 #include <device.h>
 #include <misc/util.h>

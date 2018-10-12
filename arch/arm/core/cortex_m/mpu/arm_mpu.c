@@ -12,10 +12,9 @@
 #include <arch/arm/cortex_m/mpu/arm_mpu.h>
 #include <arch/arm/cortex_m/mpu/arm_core_mpu.h>
 #include <linker/linker-defs.h>
-
-#define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_DECLARE(mpu);
+
+LOG_MODULE_DECLARE(mpu, CONFIG_MPU_LOG_LEVEL);
 
 #if defined(CONFIG_CPU_CORTEX_M0PLUS) || \
 	defined(CONFIG_CPU_CORTEX_M3) || \

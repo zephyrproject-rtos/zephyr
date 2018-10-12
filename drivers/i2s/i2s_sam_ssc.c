@@ -26,11 +26,9 @@
 #include <dma.h>
 #include <i2s.h>
 #include <soc.h>
-
-#define LOG_DOMAIN dev_i2s_sam_ssc
-#define LOG_LEVEL CONFIG_I2S_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_DOMAIN);
+
+LOG_MODULE_REGISTER(dev_i2s_sam_ssc, CONFIG_I2S_LOG_LEVEL);
 
 /* FIXME change to
  * #if __DCACHE_PRESENT == 1

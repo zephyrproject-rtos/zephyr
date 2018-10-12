@@ -6,12 +6,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_buf
-#define LOG_LEVEL CONFIG_NET_BUF_LOG_LEVEL
-
-#include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
-
 #include <stdio.h>
 #include <errno.h>
 #include <stddef.h>
@@ -21,6 +15,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/buf.h>
 
 #if defined(CONFIG_NET_BUF_LOG)
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_buf, CONFIG_NET_BUF_LOG_LEVEL);
+
 #define NET_BUF_DBG(fmt, ...) LOG_DBG("(%p) " fmt, k_current_get(), \
 				      ##__VA_ARGS__)
 #define NET_BUF_ERR(fmt, ...) LOG_ERR(fmt, ##__VA_ARGS__)

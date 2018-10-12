@@ -32,10 +32,9 @@
 #include <led.h>
 #include <device.h>
 #include <zephyr.h>
-
-#define LOG_LEVEL CONFIG_LED_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(lp5562);
+
+LOG_MODULE_REGISTER(lp5562, CONFIG_LED_LOG_LEVEL);
 
 #include "led_context.h"
 

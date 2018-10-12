@@ -13,10 +13,9 @@
 #include <errno.h>
 #include <stdbool.h>
 #include "stm32_can.h"
-
-#define LOG_LEVEL CONFIG_CAN_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(stm32_can);
+
+LOG_MODULE_REGISTER(stm32_can, CONFIG_CAN_LOG_LEVEL);
 
 static void can_stm32_signal_tx_complete(struct can_mailbox *mb)
 {

@@ -19,13 +19,12 @@
 #include <init.h>
 #include <soc.h>
 #include <adc.h>
+#include <logging/log.h>
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
 
-#define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(adc_sam_afec);
+LOG_MODULE_REGISTER(adc_sam_afec, CONFIG_ADC_LOG_LEVEL);
 
 #define NUM_CHANNELS 12
 

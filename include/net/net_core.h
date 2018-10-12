@@ -51,7 +51,7 @@ extern "C" {
 #if defined(NET_LOG_LEVEL)
 #include <logging/log.h>
 
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 #endif /* NET_LOG_LEVEL */
 
 #if defined(CONFIG_LOG_FUNCTION_NAME)

@@ -55,22 +55,18 @@
  * - Type cleanups
  * - Cleanup integer parsing
  */
-
-#define LOG_MODULE_NAME net_lwm2m_plain_text
-#define LOG_LEVEL CONFIG_LWM2M_LOG_LEVEL
-
-#include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
-
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <logging/log.h>
 
 #include "lwm2m_object.h"
 #include "lwm2m_rw_plain_text.h"
 #include "lwm2m_engine.h"
+
+LOG_MODULE_REGISTER(net_lwm2m_plain_text, CONFIG_LWM2M_LOG_LEVEL);
 
 /* some temporary buffer space for format conversions */
 static char pt_buffer[42]; /* can handle float64 format */

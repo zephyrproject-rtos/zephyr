@@ -3,15 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
-#include <logging/log.h>
-LOG_MODULE_DECLARE(main);
-
 #include <zephyr.h>
+#include <logging/log.h>
 
 #include <usb/usb_device.h>
 #include <usb/class/usb_hid.h>
+
+LOG_MODULE_DECLARE(main);
 
 #define REPORT_ID_1	0x01
 #define REPORT_ID_2	0x02

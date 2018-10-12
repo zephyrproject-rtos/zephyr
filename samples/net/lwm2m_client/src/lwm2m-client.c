@@ -5,15 +5,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_lwm2m_client_app
-#define LOG_LEVEL LOG_LEVEL_DBG
-
 #include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
-
 #include <zephyr.h>
 #include <gpio.h>
 #include <net/lwm2m.h>
+
+LOG_MODULE_REGISTER(net_lwm2m_client_app, LOG_LEVEL_DBG);
 
 #define APP_BANNER "Run LWM2M client"
 

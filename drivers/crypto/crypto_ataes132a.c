@@ -11,6 +11,7 @@
 #include <i2c.h>
 #include <assert.h>
 #include <crypto/cipher.h>
+#include <logging/log.h>
 
 #include "crypto_ataes132a_priv.h"
 
@@ -21,9 +22,7 @@
 /* ATAES132A can store up to 16 different crypto keys */
 #define CRYPTO_MAX_SESSION 16
 
-#define LOG_LEVEL CONFIG_CRYPTO_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(ataes132a);
+LOG_MODULE_REGISTER(ataes132a, CONFIG_CRYPTO_LOG_LEVEL);
 
 static struct ataes132a_driver_state ataes132a_state[CRYPTO_MAX_SESSION];
 

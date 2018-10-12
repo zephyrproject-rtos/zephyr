@@ -3,17 +3,16 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(spi_sam0);
-
-#include "spi_context.h"
 #include <errno.h>
 #include <device.h>
 #include <spi.h>
 #include <soc.h>
 #include <board.h>
+#include <logging/log.h>
+
+LOG_MODULE_REGISTER(spi_sam0, CONFIG_SPI_LOG_LEVEL);
+
+#include "spi_context.h"
 
 /* Device constant configuration parameters */
 struct spi_sam0_config {

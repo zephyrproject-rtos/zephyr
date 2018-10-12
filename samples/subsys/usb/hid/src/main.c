@@ -10,8 +10,7 @@
 #include <usb/usb_device.h>
 #include <usb/class/usb_hid.h>
 
-#define LOG_LEVEL LOG_LEVEL_DBG
-LOG_MODULE_REGISTER(main)
+LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG)
 
 #define REPORT_ID_1	0x01
 #define REPORT_ID_2	0x02

@@ -3,9 +3,11 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
 #include "simplelink_log.h"
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
+
+/* This prevents log module registration in net_core.h */
+#define LOG_LEVEL	0
 
 #include <zephyr.h>
 #include <kernel.h>

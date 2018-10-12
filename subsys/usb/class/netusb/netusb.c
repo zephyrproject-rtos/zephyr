@@ -6,15 +6,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_LEVEL CONFIG_USB_DEVICE_NETWORK_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(usb_net)
+LOG_MODULE_REGISTER(usb_net, CONFIG_USB_DEVICE_NETWORK_LOG_LEVEL);
 
 /* Enable verbose debug printing extra hexdumps */
 #define VERBOSE_DEBUG	0
 
-/* This enables basic hexdumps */
-#define NET_LOG_ENABLED	0
+/* This prevents log module registration in net_core.h */
+#define LOG_LEVEL	0
 #include <net_private.h>
 
 #include <init.h>

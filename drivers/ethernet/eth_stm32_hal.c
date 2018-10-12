@@ -2,13 +2,6 @@
  * Copyright (c) 2017 Erwin Rol <erwin@erwinrol.com>
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#define LOG_MODULE_NAME eth_stm32_hal
-#define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
-
-#include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
-
 #include <kernel.h>
 #include <device.h>
 #include <misc/__assert.h>
@@ -22,8 +15,11 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <misc/printk.h>
 #include <clock_control.h>
 #include <clock_control/stm32_clock_control.h>
+#include <logging/log.h>
 
 #include "eth_stm32_hal_priv.h"
+
+LOG_MODULE_REGISTER(eth_stm32_hal, CONFIG_ETHERNET_LOG_LEVEL);
 
 static ETH_DMADescTypeDef dma_rx_desc_tab[ETH_RXBUFNB] __aligned(4);
 static ETH_DMADescTypeDef dma_tx_desc_tab[ETH_TXBUFNB] __aligned(4);

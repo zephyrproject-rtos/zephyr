@@ -13,10 +13,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <misc/util.h>
-
-#define LOG_LEVEL CONFIG_DMA_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(dma_stm32f4x)
+
+LOG_MODULE_REGISTER(dma_stm32f4x, CONFIG_DMA_LOG_LEVEL);
 
 #include <clock_control/stm32_clock_control.h>
 

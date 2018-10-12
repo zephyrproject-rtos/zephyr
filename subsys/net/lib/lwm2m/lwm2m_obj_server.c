@@ -3,15 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#define LOG_MODULE_NAME net_lwm2m_obj_server
-#define LOG_LEVEL CONFIG_LWM2M_LOG_LEVEL
-
-#include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
-
 #include <stdint.h>
 #include <init.h>
+#include <logging/log.h>
 #include <net/lwm2m.h>
 
 #include "lwm2m_object.h"
@@ -19,6 +13,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #ifdef CONFIG_LWM2M_RD_CLIENT_SUPPORT
 #include "lwm2m_rd_client.h"
 #endif
+
+LOG_MODULE_REGISTER(net_lwm2m_obj_server, CONFIG_LWM2M_LOG_LEVEL);
 
 /* Server resource IDs */
 #define SERVER_SHORT_SERVER_ID		0

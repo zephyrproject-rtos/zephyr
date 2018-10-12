@@ -8,10 +8,9 @@
 #include <clock_control.h>
 #include <dt-bindings/clock/imx_ccm.h>
 #include <fsl_clock.h>
-
-#define LOG_LEVEL CONFIG_CLOCK_CONTROL_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(clock_control);
+
+LOG_MODULE_REGISTER(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
 static const clock_name_t lpspi_clocks[] = {
 	kCLOCK_Usb1PllPfd1Clk,

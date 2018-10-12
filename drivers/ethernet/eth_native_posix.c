@@ -12,10 +12,7 @@
  */
 
 #define LOG_MODULE_NAME eth_posix
-#define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
-
-#include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+#define NET_LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
 
 #include <stdio.h>
 

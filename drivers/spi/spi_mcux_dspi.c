@@ -9,10 +9,9 @@
 #include <spi.h>
 #include <clock_control.h>
 #include <fsl_dspi.h>
-
-#define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(spi_mcux_dspi);
+
+LOG_MODULE_REGISTER(spi_mcux_dspi, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_context.h"
 

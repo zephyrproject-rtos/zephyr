@@ -21,12 +21,10 @@
 #include <dma.h>
 #include <i2s.h>
 #include <soc.h>
+#include <logging/log.h>
 #include "i2s_cavs.h"
 
-#define LOG_DOMAIN dev_i2s_cavs
-#define LOG_LEVEL CONFIG_I2S_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_DOMAIN);
+LOG_MODULE_REGISTER(dev_i2s_cavs, CONFIG_I2S_LOG_LEVEL);
 
 #ifdef CONFIG_DCACHE_WRITEBACK
 #define DCACHE_INVALIDATE(addr, size) \

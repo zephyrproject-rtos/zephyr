@@ -3,11 +3,11 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#define LOG_LEVEL CONFIG_USB_DEVICE_NETWORK_DEBUG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(usb_eem)
+LOG_MODULE_REGISTER(usb_eem, CONFIG_USB_DEVICE_NETWORK_DEBUG_LEVEL);
 
+/* This prevents log module registration in net_core.h */
+#define LOG_LEVEL	0
 #include <net_private.h>
 #include <zephyr.h>
 #include <usb_device.h>
@@ -18,6 +18,7 @@ LOG_MODULE_REGISTER(usb_eem)
 #include <usb_descriptor.h>
 #include <class/usb_cdc.h>
 #include "netusb.h"
+
 
 static u8_t tx_buf[NETUSB_MTU], rx_buf[NETUSB_MTU];
 

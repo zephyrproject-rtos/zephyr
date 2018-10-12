@@ -10,13 +10,6 @@
  * SLIP driver using uart_pipe. This is meant for network connectivity between
  * host and qemu. The host will need to run tunslip process.
  */
-
-#define LOG_MODULE_NAME slip
-#define LOG_LEVEL CONFIG_SLIP_LOG_LEVEL
-
-#include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
-
 #include <stdio.h>
 
 #include <kernel.h>
@@ -33,6 +26,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/lldp.h>
 #include <console/uart_pipe.h>
 #include <net/ethernet.h>
+#include <logging/log.h>
+
+LOG_MODULE_REGISTER(slip, CONFIG_SLIP_LOG_LEVEL);
 
 #define SLIP_END     0300
 #define SLIP_ESC     0333

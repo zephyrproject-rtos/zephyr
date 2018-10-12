@@ -10,9 +10,9 @@
 #include <fsl_i2c.h>
 #include <fsl_clock.h>
 #include <misc/util.h>
-
 #include <logging/log.h>
-LOG_MODULE_REGISTER(i2c_mcux);
+
+LOG_MODULE_REGISTER(i2c_mcux, CONFIG_I2C_LOG_LEVEL);
 
 #include "i2c-priv.h"
 

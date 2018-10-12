@@ -12,11 +12,10 @@
 #include <misc/util.h>
 #include <string.h>
 #include <init.h>
-
-#include "adc_ti_adc108s102.h"
-#define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(adc_ti_adc108s102);
+#include "adc_ti_adc108s102.h"
+
+LOG_MODULE_REGISTER(adc_ti_adc108s102, CONFIG_ADC_LOG_LEVEL);
 
 static inline int _ti_adc108s102_sampling(struct device *dev)
 {

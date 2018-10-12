@@ -12,12 +12,10 @@
 #include <device.h>
 #include <init.h>
 #include <dma.h>
-
+#include <logging/log.h>
 #include "dma_cavs.h"
 
-#define LOG_LEVEL CONFIG_DMA_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(dma_cavs)
+LOG_MODULE_REGISTER(dma_cavs, CONFIG_DMA_LOG_LEVEL);
 
 #define BYTE				(1)
 #define WORD				(2)

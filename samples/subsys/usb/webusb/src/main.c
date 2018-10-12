@@ -12,22 +12,20 @@
  * data is echoed back to the WebUSB based application running in
  * the browser at host.
  */
-
-#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(main);
-
 #include <stdio.h>
 #include <string.h>
 #include <device.h>
 #include <uart.h>
 #include <zephyr.h>
+#include <logging/log.h>
 #include <misc/byteorder.h>
 #include <usb/usb_common.h>
 #include <usb/usb_device.h>
 #include <usb/bos.h>
 
 #include "webusb_serial.h"
+
+LOG_MODULE_REGISTER(main);
 
 /* Predefined response to control commands related to MS OS 2.0 descriptors */
 static const u8_t msos2_descriptor[] = {

@@ -17,13 +17,12 @@
 #include <init.h>
 #include <soc.h>
 #include <misc/util.h>
+#include <logging/log.h>
 #include "flash_priv.h"
 #include "altera_generic_quad_spi_controller2_regs.h"
 #include "altera_generic_quad_spi_controller2.h"
 
-#define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(flash_nios2_qspi);
+LOG_MODULE_REGISTER(flash_nios2_qspi, CONFIG_FLASH_LOG_LEVEL);
 
 /*
  * Remove the following macros once the Altera HAL

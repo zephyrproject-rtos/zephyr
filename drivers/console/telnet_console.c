@@ -16,15 +16,14 @@
  * RFC 854 - https://tools.ietf.org/html/rfc854
  */
 
-#define LOG_LEVEL CONFIG_TELNET_CONSOLE_LOG_LEVEL
-#define LOG_DOMAIN net_telnet
 #include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_DOMAIN);
+LOG_MODULE_REGISTER(net_telnet, CONFIG_TELNET_CONSOLE_LOG_LEVEL);
 
+/* This prevents log module registration in net_core.h */
+#define LOG_LEVEL	0
 #include <zephyr.h>
 #include <init.h>
 #include <misc/printk.h>
-
 #include <console/console.h>
 #include <net/buf.h>
 #include <net/net_pkt.h>
@@ -32,6 +31,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include <net/net_context.h>
 
 #include "telnet_protocol.h"
+
 
 /* Various definitions mapping the telnet service configuration options */
 #define TELNET_PORT             CONFIG_TELNET_CONSOLE_PORT

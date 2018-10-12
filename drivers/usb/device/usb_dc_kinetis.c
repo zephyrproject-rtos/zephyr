@@ -13,10 +13,9 @@
 #include <misc/byteorder.h>
 #include <usb/usb_device.h>
 #include <device.h>
-
-#define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(usb_dc_kinetis);
+
+LOG_MODULE_REGISTER(usb_dc_kinetis, CONFIG_USB_DRIVER_LOG_LEVEL);
 
 #define NUM_OF_EP_MAX		CONFIG_USBD_KINETIS_NUM_BIDIR_EP
 

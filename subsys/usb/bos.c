@@ -3,17 +3,15 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#define LOG_LEVEL CONFIG_USB_DEVICE_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(usb_bos)
-
 #include <zephyr.h>
+#include <logging/log.h>
 
 #include <usb/usb_device.h>
 #include <usb/usb_common.h>
 
 #include <usb/bos.h>
+
+LOG_MODULE_REGISTER(usb_bos, CONFIG_USB_DEVICE_LOG_LEVEL);
 
 extern const u8_t __usb_bos_desc_start[];
 extern const u8_t __usb_bos_desc_end[];

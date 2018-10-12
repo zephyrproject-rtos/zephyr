@@ -61,6 +61,7 @@
 #include <misc/util.h>
 #include <misc/__assert.h>
 #include <init.h>
+#include <logging/log.h>
 #if defined(USB_VUSB_EN_GPIO)
 #include <gpio.h>
 #endif
@@ -69,9 +70,7 @@
 #include <usb/usb_common.h>
 #include <usb_descriptor.h>
 
-#define LOG_LEVEL CONFIG_USB_DEVICE_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(usb_device)
+LOG_MODULE_REGISTER(usb_device, CONFIG_USB_DEVICE_LOG_LEVEL);
 
 #include <usb/bos.h>
 #include <os_desc.h>

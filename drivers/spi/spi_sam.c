@@ -4,17 +4,16 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(spi_sam);
-
-#include "spi_context.h"
 #include <errno.h>
 #include <device.h>
 #include <spi.h>
 #include <soc.h>
 #include <board.h>
+#include <logging/log.h>
+
+LOG_MODULE_REGISTER(spi_sam, CONFIG_SPI_LOG_LEVEL);
+
+#include "spi_context.h"
 
 #define SAM_SPI_CHIP_SELECT_COUNT			4
 

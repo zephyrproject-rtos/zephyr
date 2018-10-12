@@ -9,7 +9,7 @@
 #include <string.h>
 
 #include "simplelink_log.h"
-LOG_MODULE_DECLARE(LOG_MODULE_NAME);
+LOG_MODULE_DECLARE(LOG_MODULE_NAME, LOG_LEVEL);
 
 #include <zephyr.h>
 #include <stdint.h>

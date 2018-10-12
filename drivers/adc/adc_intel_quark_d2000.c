@@ -13,10 +13,9 @@
 #include <soc.h>
 #include <adc.h>
 #include <arch/cpu.h>
-
-#define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(adc_intel_quark_d2000);
+
+LOG_MODULE_REGISTER(adc_intel_quark_d2000, CONFIG_ADC_LOG_LEVEL);
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"

@@ -5,11 +5,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#define LOG_DOMAIN "SPI DW"
-#define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(spi_dw);
-
 #if (CONFIG_SPI_LOG_LEVEL == 4)
 #define DBG_COUNTER_INIT()	\
 	u32_t __cnt = 0
@@ -35,12 +30,15 @@ LOG_MODULE_REGISTER(spi_dw);
 #include <sys_io.h>
 #include <clock_control.h>
 #include <misc/util.h>
+#include <logging/log.h>
 
 #ifdef CONFIG_IOAPIC
 #include <drivers/ioapic.h>
 #endif
 
 #include <spi.h>
+
+LOG_MODULE_REGISTER(spi_dw, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_dw.h"
 #include "spi_context.h"

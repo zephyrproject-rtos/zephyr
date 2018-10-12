@@ -6,15 +6,13 @@
 
 #include "display_ili9340.h"
 #include <display.h>
-
-#define LOG_LEVEL CONFIG_DISPLAY_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(display_ili9340);
-
 #include <gpio.h>
 #include <misc/byteorder.h>
 #include <spi.h>
 #include <string.h>
+#include <logging/log.h>
+
+LOG_MODULE_REGISTER(display_ili9340, CONFIG_DISPLAY_LOG_LEVEL);
 
 struct ili9340_data {
 	struct device *reset_gpio;

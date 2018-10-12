@@ -15,14 +15,13 @@
 #include <soc.h>
 #include <adc.h>
 #include <arch/cpu.h>
+#include <logging/log.h>
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
 #include "adc_dw.h"
 
-#define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(adc_dw);
+LOG_MODULE_REGISTER(adc_dw, CONFIG_ADC_LOG_LEVEL);
 
 #define ADC_CLOCK_GATE      (1 << 31)
 #define ADC_DEEP_POWER_DOWN  0x01

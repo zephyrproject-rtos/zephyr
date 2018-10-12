@@ -10,10 +10,9 @@
 #include <misc/util.h>
 #include <altera_common.h>
 #include "altera_avalon_i2c.h"
-
-#define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(i2c_nios2);
+
+LOG_MODULE_REGISTER(i2c_nios2, CONFIG_I2C_LOG_LEVEL);
 
 #define NIOS2_I2C_TIMEOUT_USEC		1000
 

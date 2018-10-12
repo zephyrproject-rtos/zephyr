@@ -17,10 +17,9 @@
 #include <driverlib/rom.h>
 #include <driverlib/rom_map.h>
 #include <driverlib/i2c.h>
-
-#define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(i2c_cc32xx)
+
+LOG_MODULE_REGISTER(i2c_cc32xx, CONFIG_I2C_LOG_LEVEL);
 
 #include "i2c-priv.h"
 

@@ -11,6 +11,12 @@
  * because there is naming conflicts between host and zephyr network stacks.
  */
 
+#include <logging/log.h>
+LOG_MODULE_REGISTER(eth_posix_adapt, CONFIG_ETHERNET_LOG_LEVEL);
+
+/* This prevents log module registration in net_core.h */
+#define LOG_LEVEL	0
+
 /* Host include files */
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,12 +40,6 @@
 /* Zephyr include files. Be very careful here and only include minimum
  * things needed.
  */
-#define LOG_MODULE_NAME eth_posix_adapt
-#define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
-
-#include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
-
 #include <zephyr/types.h>
 #include <sys_clock.h>
 
@@ -48,6 +48,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #endif
 
 #include "eth_native_posix_priv.h"
+
 
 /* Note that we cannot create the TUN/TAP device from the setup script
  * as we need to get a file descriptor to communicate with the interface.

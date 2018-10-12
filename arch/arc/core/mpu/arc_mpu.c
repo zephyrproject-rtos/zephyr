@@ -12,10 +12,9 @@
 #include <arch/arc/v2/mpu/arc_mpu.h>
 #include <arch/arc/v2/mpu/arc_core_mpu.h>
 #include <linker/linker-defs.h>
-
-#define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_DECLARE(mpu);
+
+LOG_MODULE_DECLARE(mpu, CONFIG_MPU_LOG_LEVEL);
 
 #define AUX_MPU_RDB_VALID_MASK (0x1)
 #define AUX_MPU_EN_ENABLE   (0x40000000)

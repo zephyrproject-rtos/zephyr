@@ -7,15 +7,13 @@
 #include <led_strip.h>
 
 #include <string.h>
-
-#define LOG_LEVEL CONFIG_LED_STRIP_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(ws2812);
-
 #include <zephyr.h>
 #include <device.h>
 #include <spi.h>
 #include <misc/util.h>
+#include <logging/log.h>
+
+LOG_MODULE_REGISTER(ws2812, CONFIG_LED_STRIP_LOG_LEVEL);
 
 /*
  * WS2812-ish SPI master configuration:

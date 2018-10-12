@@ -6,12 +6,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME ieee802154_cc1200
-#define LOG_LEVEL CONFIG_IEEE802154_LOG_LEVEL
-
-#include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
-
 #include <errno.h>
 
 #include <kernel.h>
@@ -30,6 +24,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <gpio.h>
 
 #include <net/ieee802154_radio.h>
+#include <logging/log.h>
+
+LOG_MODULE_REGISTER(ieee802154_cc1200, CONFIG_IEEE802154_LOG_LEVEL);
 
 #include "ieee802154_cc1200.h"
 #include "ieee802154_cc1200_rf.h"

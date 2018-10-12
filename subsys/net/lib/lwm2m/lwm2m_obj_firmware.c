@@ -3,19 +3,15 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#define LOG_MODULE_NAME net_lwm2m_obj_firmware
-#define LOG_LEVEL CONFIG_LWM2M_LOG_LEVEL
-
-#include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
-
 #include <net/coap.h>
 #include <string.h>
 #include <init.h>
+#include <logging/log.h>
 
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
+
+LOG_MODULE_REGISTER(net_lwm2m_obj_firmware, CONFIG_LWM2M_LOG_LEVEL);
 
 /* Firmware resource IDs */
 #define FIRMWARE_PACKAGE_ID			0

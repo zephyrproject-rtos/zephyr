@@ -6,10 +6,9 @@
 #include <zephyr.h>
 #include <soc_power.h>
 #include <nrf_power.h>
-
-#define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_DECLARE(soc);
+
+LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
 #if defined(CONFIG_SYS_POWER_DEEP_SLEEP)
 /* System_OFF is deepest Power state available, On exiting from this

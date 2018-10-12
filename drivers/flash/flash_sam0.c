@@ -3,18 +3,15 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(flash_sam0);
-
 #include <device.h>
 #include <flash.h>
 #include <init.h>
 #include <kernel.h>
 #include <soc.h>
 #include <string.h>
+#include <logging/log.h>
 
+LOG_MODULE_REGISTER(flash_sam0, CONFIG_FLASH_LOG_LEVEL);
 /*
  * Zephyr and the SAM0 series use different and conflicting names for
  * the erasable units and programmable units:

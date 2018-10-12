@@ -3,12 +3,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#define LOG_DOMAIN modem_wncm14a2a
-#define LOG_LEVEL CONFIG_MODEM_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_DOMAIN);
-
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -18,6 +12,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include <gpio.h>
 #include <device.h>
 #include <init.h>
+#include <logging/log.h>
 
 #include <net/net_context.h>
 #include <net/net_if.h>
@@ -31,6 +26,8 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #endif
 
 #include <drivers/modem/modem_receiver.h>
+
+LOG_MODULE_REGISTER(modem_wncm14a2a, CONFIG_MODEM_LOG_LEVEL);
 
 /* Uncomment the #define below to enable a hexdump of all incoming
  * data from the modem receiver

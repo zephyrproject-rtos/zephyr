@@ -12,10 +12,9 @@
 #include <arch/arm/cortex_m/mpu/nxp_mpu.h>
 #include <misc/__assert.h>
 #include <linker/linker-defs.h>
-
-#define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_DECLARE(mpu);
+
+LOG_MODULE_DECLARE(mpu, CONFIG_MPU_LOG_LEVEL);
 
 /* NXP MPU Enabled state */
 static u8_t nxp_mpu_enabled;

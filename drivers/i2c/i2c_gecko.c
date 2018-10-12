@@ -12,9 +12,8 @@
 #include <em_gpio.h>
 #include <soc.h>
 
-#define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(i2c_gecko)
+LOG_MODULE_REGISTER(i2c_gecko, CONFIG_I2C_LOG_LEVEL);
 
 #include "i2c-priv.h"
 

@@ -56,23 +56,19 @@
  * - Replace magic #'s with defines
  * - Research using Zephyr JSON lib for json_next_token()
  */
-
-#define LOG_MODULE_NAME net_lwm2m_json
-#define LOG_LEVEL CONFIG_LWM2M_LOG_LEVEL
-
-#include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
-
 #include <stdio.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <inttypes.h>
 #include <ctype.h>
+#include <logging/log.h>
 
 #include "lwm2m_object.h"
 #include "lwm2m_rw_json.h"
 #include "lwm2m_rw_plain_text.h"
 #include "lwm2m_engine.h"
+
+LOG_MODULE_REGISTER(net_lwm2m_json, CONFIG_LWM2M_LOG_LEVEL);
 
 #define T_NONE		0
 #define T_STRING_B	1

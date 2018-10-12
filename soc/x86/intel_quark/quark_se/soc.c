@@ -22,10 +22,9 @@
 #include <init.h>
 #include "shared_mem.h"
 #include <mmustructs.h>
-
-#define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(soc);
+
+LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
 #ifdef CONFIG_X86_MMU
 /* loapic */

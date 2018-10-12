@@ -7,9 +7,6 @@
 #define LOG_MODULE_NAME wifi_winc1500
 #define LOG_LEVEL CONFIG_WIFI_LOG_LEVEL
 
-#include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
-
 #include <zephyr.h>
 #include <kernel.h>
 #include <device.h>
@@ -23,6 +20,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/wifi_mgmt.h>
 
 #include <misc/printk.h>
+#include <logging/log.h>
+
+LOG_MODULE_REGISTER(wifi_winc1500, CONFIG_WIFI_LOG_LEVEL);
 
 /* We do not need <socket/include/socket.h>
  * It seems there is a bug in ASF side: if OS is already defining sockaddr

@@ -10,13 +10,11 @@
 
 #include <device.h>
 #include <i2c.h>
-
 #include <audio/codec.h>
+#include <logging/log.h>
 #include "tlv320dac310x.h"
 
-#define LOG_LEVEL CONFIG_AUDIO_CODEC_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(tlv320dac310x);
+LOG_MODULE_REGISTER(tlv320dac310x, CONFIG_AUDIO_CODEC_LOG_LEVEL);
 
 #define CODEC_OUTPUT_VOLUME_MAX		0
 #define CODEC_OUTPUT_VOLUME_MIN		(-78 * 2)

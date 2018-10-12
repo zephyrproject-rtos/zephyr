@@ -4,15 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_LEVEL CONFIG_USB_DEVICE_NETWORK_DEBUG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(usb_ecm)
+LOG_MODULE_REGISTER(usb_ecm, CONFIG_USB_DEVICE_NETWORK_LOG_LEVEL);
 
 /* Enable verbose debug printing extra hexdumps */
 #define VERBOSE_DEBUG	0
 
-/* This enables basic hexdumps */
-#define NET_LOG_ENABLED	0
+/* This prevents log module registration in net_core.h */
+#define LOG_LEVEL	0
 #include <net_private.h>
 
 #include <zephyr.h>
@@ -26,6 +25,7 @@ LOG_MODULE_REGISTER(usb_ecm)
 #include <usb_descriptor.h>
 #include <class/usb_cdc.h>
 #include "netusb.h"
+
 
 #define USB_CDC_ECM_REQ_TYPE		0x21
 #define USB_CDC_SET_ETH_PKT_FILTER	0x43

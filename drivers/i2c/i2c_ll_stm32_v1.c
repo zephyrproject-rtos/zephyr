@@ -16,10 +16,9 @@
 #include <errno.h>
 #include <i2c.h>
 #include "i2c_ll_stm32.h"
-
-#define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(i2c_ll_stm32_v1);
+
+LOG_MODULE_REGISTER(i2c_ll_stm32_v1, CONFIG_I2C_LOG_LEVEL);
 
 #define I2C_REQUEST_WRITE	0x00
 #define I2C_REQUEST_READ	0x01

@@ -10,13 +10,10 @@
 #include <errno.h>
 #include <kernel.h>
 #include <net/mii.h>
+#include <logging/log.h>
 #include "phy_sam_gmac.h"
 
-#define LOG_MODULE_NAME eth_sam_phy
-#define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
-
-#include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+LOG_MODULE_REGISTER(eth_sam_phy, CONFIG_ETHERNET_LOG_LEVEL);
 
 /* Maximum time to establish a link through auto-negotiation for
  * 10BASE-T, 100BASE-TX is 3.7s, to add an extra margin the timeout

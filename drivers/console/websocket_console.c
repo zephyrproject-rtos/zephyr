@@ -13,10 +13,8 @@
  * a websocket connection.
  */
 
-#define LOG_LEVEL CONFIG_WEBSOCKET_CONSOLE_LOG_LEVEL
-#define LOG_DOMAIN ws_console
-#include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_DOMAIN);
+#define LOG_MODULE_NAME ws_console
+#define NET_LOG_LEVEL CONFIG_WEBSOCKET_CONSOLE_LOG_LEVEL
 
 #include <zephyr.h>
 #include <init.h>
@@ -26,6 +24,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include <net/buf.h>
 #include <net/net_pkt.h>
 #include <net/websocket_console.h>
+#include <logging/log.h>
 
 #define NVT_NUL 0
 #define NVT_LF  10

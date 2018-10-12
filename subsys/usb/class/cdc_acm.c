@@ -42,6 +42,7 @@
 #include <uart.h>
 #include <string.h>
 #include <misc/byteorder.h>
+#include <logging/log.h>
 #include <usb/class/usb_cdc.h>
 #include <usb/usb_device.h>
 #include <usb/usb_common.h>
@@ -53,9 +54,7 @@
 
 /* definitions */
 
-#define LOG_LEVEL CONFIG_USB_CDC_ACM_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(usb_cdc_acm)
+LOG_MODULE_REGISTER(usb_cdc_acm, CONFIG_USB_CDC_ACM_LOG_LEVEL);
 
 #define DEV_DATA(dev)						\
 	((struct cdc_acm_dev_data_t * const)(dev)->driver_data)

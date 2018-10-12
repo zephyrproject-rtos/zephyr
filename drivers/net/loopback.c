@@ -10,17 +10,13 @@
  *
  * Network loopback interface implementation.
  */
-
-#define LOG_MODULE_NAME netlo
-#define LOG_LEVEL CONFIG_NET_LOOPBACK_LOG_LEVEL
-
-#include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
-
 #include <net/net_pkt.h>
 #include <net/buf.h>
 #include <net/net_ip.h>
 #include <net/net_if.h>
+#include <logging/log.h>
+
+LOG_MODULE_REGISTER(netlo, CONFIG_NET_LOOPBACK_LOG_LEVEL);
 
 int loopback_dev_init(struct device *dev)
 {

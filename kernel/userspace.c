@@ -16,10 +16,9 @@
 #include <syscall_handler.h>
 #include <device.h>
 #include <init.h>
-
-#define LOG_LEVEL CONFIG_KERNEL_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_DECLARE(kernel);
+
+LOG_MODULE_DECLARE(kernel, CONFIG_KERNEL_LOG_LEVEL);
 
 #if defined(CONFIG_NETWORKING) && defined (CONFIG_DYNAMIC_OBJECTS)
 /* Used by auto-generated obj_size_get() switch body, as we need to

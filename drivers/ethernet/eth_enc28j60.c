@@ -4,12 +4,11 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#define LOG_MODULE_NAME eth_enc28j60
-#define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
-
 #include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+LOG_MODULE_REGISTER(eth_enc28j60, CONFIG_ETHERNET_LOG_LEVEL);
+
+/* This prevents log module registration in net_core.h */
+#define LOG_LEVEL	0
 
 #include <zephyr.h>
 #include <device.h>
@@ -22,6 +21,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/ethernet.h>
 
 #include "eth_enc28j60_priv.h"
+
 
 #define D10D24S 11
 

@@ -3,16 +3,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#define LOG_LEVEL CONFIG_WIFI_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(winc1500);
-
 #include <stdio.h>
 #include <stdint.h>
 
 #include <device.h>
 #include <spi.h>
+#include <logging/log.h>
 
 #include "wifi_winc1500_nm_bsp_internal.h"
 
@@ -21,6 +17,8 @@ LOG_MODULE_REGISTER(winc1500);
 #include <bus_wrapper/include/nm_bus_wrapper.h>
 
 #include "wifi_winc1500_config.h"
+
+LOG_MODULE_DECLARE(winc1500, CONFIG_WIFI_LOG_LEVEL);
 
 #define NM_BUS_MAX_TRX_SZ	256
 

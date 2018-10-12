@@ -7,10 +7,9 @@
 #include <soc.h>
 
 #include "pwm.h"
-
-#define LOG_LEVEL CONFIG_PWM_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(pwm_nrf5_sw);
+
+LOG_MODULE_REGISTER(pwm_nrf5_sw, CONFIG_PWM_LOG_LEVEL);
 
 struct pwm_config {
 	NRF_TIMER_Type *timer;

@@ -50,10 +50,9 @@
 #include <clock_control/stm32_clock_control.h>
 #include <misc/util.h>
 #include <gpio.h>
-
-#define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(usb_dc_stm32);
+
+LOG_MODULE_REGISTER(usb_dc_stm32, CONFIG_USB_DRIVER_LOG_LEVEL);
 
 #if defined(CONFIG_USB_BASE_ADDRESS) && defined(CONFIG_USB_HS_BASE_ADDRES)
 #error "Only one interface should be enabled at a time, OTG FS or OTG HS"

@@ -6,11 +6,9 @@
 
 #include <spi.h>
 #include <nrfx_spi.h>
-
-#define LOG_DOMAIN "spi_nrfx_spi"
-#define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(spi_nrfx_spi);
+
+LOG_MODULE_REGISTER(spi_nrfx_spi, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_context.h"
 

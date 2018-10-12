@@ -6,8 +6,8 @@
 
 #include <zephyr.h>
 #include <misc/printk.h>
-#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include <logging/log.h>
+
 LOG_MODULE_REGISTER(main);
 
 /* This semaphore is used to serialize the UART prints dumped by various

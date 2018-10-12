@@ -10,13 +10,6 @@
  *   for radio communication.
  *
  */
-
-#define LOG_LEVEL CONFIG_OPENTHREAD_LOG_LEVEL
-#define LOG_MODULE_NAME net_otPlat_radio
-
-#include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
-
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -27,6 +20,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/ieee802154_radio.h>
 #include <net/net_pkt.h>
 #include <misc/__assert.h>
+#include <logging/log.h>
 
 #include <openthread/platform/radio.h>
 #include <openthread/platform/diag.h>
@@ -35,6 +29,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <openthread/types.h>
 
 #include "platform-zephyr.h"
+
+LOG_MODULE_REGISTER(net_otPlat_radio, CONFIG_OPENTHREAD_LOG_LEVEL);
 
 #define FCS_SIZE 2
 

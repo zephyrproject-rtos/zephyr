@@ -3,16 +3,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#define LOG_MODULE_NAME net_openthread_alarm
-#define LOG_LEVEL CONFIG_OPENTHREAD_LOG_LEVEL
-
-#include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
-
 #include <kernel.h>
 #include <string.h>
 #include <inttypes.h>
+#include <logging/log.h>
 
 #include <openthread/platform/alarm-milli.h>
 #include <platform.h>
@@ -20,6 +14,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <stdio.h>
 
 #include "platform-zephyr.h"
+
+LOG_MODULE_REGISTER(net_openthread_alarm, CONFIG_OPENTHREAD_LOG_LEVEL);
 
 static bool timer_fired;
 

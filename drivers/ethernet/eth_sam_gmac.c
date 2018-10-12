@@ -19,13 +19,6 @@
  * - no support for devices with DCache enabled due to missing non-cacheable
  *   RAM regions in Zephyr.
  */
-
-#define LOG_MODULE_NAME eth_sam
-#define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
-
-#include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
-
 #include <kernel.h>
 #include <device.h>
 #include <misc/__assert.h>
@@ -37,6 +30,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/ethernet.h>
 #include <i2c.h>
 #include <soc.h>
+#include <logging/log.h>
 #include "phy_sam_gmac.h"
 #include "eth_sam_gmac_priv.h"
 
@@ -44,6 +38,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <ptp_clock.h>
 #include <net/gptp.h>
 #endif
+
+LOG_MODULE_REGISTER(eth_sam, CONFIG_ETHERNET_LOG_LEVEL);
 
 /*
  * Verify Kconfig configuration

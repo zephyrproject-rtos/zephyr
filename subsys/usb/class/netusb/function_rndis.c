@@ -4,15 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_LEVEL CONFIG_USB_DEVICE_NETWORK_DEBUG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(usb_rndis)
-
+LOG_MODULE_REGISTER(usb_rndis, CONFIG_USB_DEVICE_NETWORK_LOG_LEVEL);
 /* Enable verbose debug printing extra hexdumps */
 #define VERBOSE_DEBUG	0
 
-/* This enables basic hexdumps */
-#define NET_LOG_ENABLED	0
+/* This prevents log module registration in net_core.h */
+#define LOG_LEVEL 0
 #include <net_private.h>
 
 #include <zephyr.h>
@@ -30,6 +28,7 @@ LOG_MODULE_REGISTER(usb_rndis)
 
 #include "netusb.h"
 #include "function_rndis.h"
+
 
 /* RNDIS handling */
 #define CFG_RNDIS_TX_BUF_COUNT	5

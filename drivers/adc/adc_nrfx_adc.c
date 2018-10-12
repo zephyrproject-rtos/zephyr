@@ -7,10 +7,9 @@
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
 #include <nrfx_adc.h>
-
-#define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(adc_mcux_adc16);
+
+LOG_MODULE_REGISTER(adc_mcux_adc16, CONFIG_ADC_LOG_LEVEL);
 
 struct driver_data {
 	struct adc_context ctx;

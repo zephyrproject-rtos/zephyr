@@ -46,14 +46,13 @@
 #include <dfu/mcuboot.h>
 #include <dfu/flash_img.h>
 #include <misc/byteorder.h>
+#include <logging/log.h>
 #include <usb/usb_device.h>
 #include <usb/usb_common.h>
 #include <usb/class/usb_dfu.h>
 #include <usb_descriptor.h>
 
-#define LOG_LEVEL CONFIG_USB_DEVICE_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(usb_dfu)
+LOG_MODULE_REGISTER(usb_dfu, CONFIG_USB_DEVICE_LOG_LEVEL);
 
 #define NUMOF_ALTERNATE_SETTINGS	2
 

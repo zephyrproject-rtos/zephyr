@@ -8,10 +8,9 @@
 #include <watchdog.h>
 #include <clock_control.h>
 #include <fsl_wdog.h>
-
-#define LOG_LEVEL CONFIG_WDT_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(wdt_mcux_wdog)
+
+LOG_MODULE_REGISTER(wdt_mcux_wdog, CONFIG_WDT_LOG_LEVEL);
 
 #define MIN_TIMEOUT 4
 

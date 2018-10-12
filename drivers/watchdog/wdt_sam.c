@@ -17,10 +17,9 @@
 
 #include <watchdog.h>
 #include <soc.h>
-
-#define LOG_LEVEL CONFIG_WDT_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(wdt_sam);
+
+LOG_MODULE_REGISTER(wdt_sam, CONFIG_WDT_LOG_LEVEL);
 
 /* Device constant configuration parameters */
 struct wdt_sam_dev_cfg {

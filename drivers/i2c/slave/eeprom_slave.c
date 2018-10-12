@@ -10,10 +10,9 @@
 #include <i2c.h>
 #include <string.h>
 #include <drivers/i2c/slave/eeprom.h>
-
-#define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(i2c_slave)
+
+LOG_MODULE_REGISTER(i2c_slave, CONFIG_I2C_LOG_LEVEL);
 
 struct i2c_eeprom_slave_data {
 	struct device *i2c_controller;

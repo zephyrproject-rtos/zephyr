@@ -56,19 +56,15 @@
  * - Var / parameter type cleanup
  * - Replace magic #'s with defines
  */
-
-#define LOG_MODULE_NAME net_lwm2m_oma_tlv
-#define LOG_LEVEL CONFIG_LWM2M_LOG_LEVEL
-
-#include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
-
 #include <string.h>
 #include <stdint.h>
 #include <misc/byteorder.h>
+#include <logging/log.h>
 
 #include "lwm2m_rw_oma_tlv.h"
 #include "lwm2m_engine.h"
+
+LOG_MODULE_REGISTER(net_lwm2m_oma_tlv, CONFIG_LWM2M_LOG_LEVEL);
 
 enum {
 	OMA_TLV_TYPE_OBJECT_INSTANCE   = 0,

@@ -8,10 +8,9 @@
 #include <kernel.h>
 #include <soc.h>
 #include "pm_policy.h"
-
-#define LOG_LEVEL CONFIG_PM_LOG_LEVEL /* From power module Kconfig */
 #include <logging/log.h>
-LOG_MODULE_DECLARE(power);
+
+LOG_MODULE_DECLARE(power, CONFIG_PM_LOG_LEVEL);
 
 #define SECS_TO_TICKS		CONFIG_SYS_CLOCK_TICKS_PER_SEC
 

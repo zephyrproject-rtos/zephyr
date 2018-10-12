@@ -9,10 +9,9 @@
 #include <led.h>
 #include <misc/util.h>
 #include <zephyr.h>
-
-#define LOG_LEVEL 4
 #include <logging/log.h>
-LOG_MODULE_REGISTER(main);
+
+LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
 #define LED_DEV_NAME CONFIG_LP5562_DEV_NAME
 #define NUM_LEDS 4

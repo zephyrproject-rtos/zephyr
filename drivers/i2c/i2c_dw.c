@@ -21,6 +21,7 @@
 #include <sys_io.h>
 
 #include <misc/util.h>
+#include <logging/log.h>
 
 #ifdef CONFIG_SHARED_IRQ
 #include <shared_irq.h>
@@ -32,9 +33,7 @@
 
 #include "i2c_dw.h"
 #include "i2c_dw_registers.h"
-#define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(i2c_dw);
+LOG_MODULE_REGISTER(i2c_dw, CONFIG_I2C_LOG_LEVEL);
 
 #include "i2c-priv.h"
 

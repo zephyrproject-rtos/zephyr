@@ -10,10 +10,9 @@
 #include <kernel.h>
 #include <errno.h>
 #include <i2c.h>
-
-#define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_DECLARE(main);
+
+LOG_MODULE_DECLARE(main, CONFIG_I2C_LOG_LEVEL);
 
 #define DEV_DATA(dev) ((struct i2c_virtual_data * const)(dev)->driver_data)
 

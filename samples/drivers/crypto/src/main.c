@@ -12,10 +12,9 @@
 #include <zephyr.h>
 #include <string.h>
 #include <crypto/cipher.h>
-
-#define LOG_LEVEL CONFIG_CRYPTO_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(main);
+
+LOG_MODULE_REGISTER(main, CONFIG_CRYPTO_LOG_LEVEL);
 
 #ifdef CONFIG_CRYPTO_TINYCRYPT_SHIM
 #define CRYPTO_DRV_NAME CONFIG_CRYPTO_TINYCRYPT_SHIM_DRV_NAME

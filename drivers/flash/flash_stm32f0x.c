@@ -3,20 +3,16 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#define LOG_DOMAIN flash_stm32f0
-#define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_DOMAIN);
-
 #include <kernel.h>
 #include <device.h>
 #include <string.h>
 #include <flash.h>
 #include <init.h>
 #include <soc.h>
-
+#include <logging/log.h>
 #include "flash_stm32.h"
+
+LOG_MODULE_REGISTER(flash_stm32f0, CONFIG_FLASH_LOG_LEVEL);
 
 /* offset and len must be aligned on 2 for write
  * positive and not beyond end of flash

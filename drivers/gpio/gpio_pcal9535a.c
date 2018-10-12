@@ -16,12 +16,11 @@
 #include <misc/util.h>
 #include <gpio.h>
 #include <i2c.h>
+#include <logging/log.h>
 
 #include "gpio_pcal9535a.h"
 
-#define LOG_LEVEL CONFIG_GPIO_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(gpio_pcal9535a);
+LOG_MODULE_REGISTER(gpio_pcal9535a, CONFIG_GPIO_LOG_LEVEL);
 
 /* Register definitions */
 #define REG_INPUT_PORT0			0x00

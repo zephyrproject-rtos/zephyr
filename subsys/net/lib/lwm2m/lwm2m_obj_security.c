@@ -3,18 +3,14 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#define LOG_MODULE_NAME net_lwm2m_obj_security
-#define LOG_LEVEL CONFIG_LWM2M_LOG_LEVEL
-
-#include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
-
 #include <stdint.h>
 #include <init.h>
+#include <logging/log.h>
 
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
+
+LOG_MODULE_REGISTER(net_lwm2m_obj_security, CONFIG_LWM2M_LOG_LEVEL);
 
 /* Security resource IDs */
 #define SECURITY_SERVER_URI_ID			0

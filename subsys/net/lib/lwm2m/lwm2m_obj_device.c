@@ -9,19 +9,15 @@
  * - Implement UTC_OFFSET & TIMEZONE
  * - Configurable CURRENT_TIME notification delay
  */
-
-#define LOG_MODULE_NAME net_lwm2m_obj_device
-#define LOG_LEVEL CONFIG_LWM2M_LOG_LEVEL
-
-#include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
-
 #include <string.h>
 #include <stdio.h>
 #include <init.h>
+#include <logging/log.h>
 
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
+
+LOG_MODULE_REGISTER(net_lwm2m_obj_device, CONFIG_LWM2M_LOG_LEVEL);
 
 /* Device resource IDs */
 #define DEVICE_MANUFACTURER_ID			0

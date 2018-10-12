@@ -18,10 +18,9 @@
 #include <bluetooth/buf.h>
 #include <bluetooth/hci_raw.h>
 #include <bluetooth/l2cap.h>
-
-#define LOG_LEVEL CONFIG_USB_DEVICE_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(usb_bluetooth)
+
+LOG_MODULE_REGISTER(usb_bluetooth, CONFIG_USB_DEVICE_LOG_LEVEL);
 
 #if !defined(CONFIG_USB_COMPOSITE_DEVICE)
 static u8_t interface_data[64];

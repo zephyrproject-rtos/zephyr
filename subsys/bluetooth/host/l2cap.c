@@ -219,6 +219,11 @@ void bt_l2cap_chan_set_state_debug(struct bt_l2cap_chan *chan,
 	chan->state = state;
 }
 #else
+const char *bt_l2cap_chan_state_str(bt_l2cap_chan_state_t state)
+{
+	return NULL;
+}
+
 void bt_l2cap_chan_set_state(struct bt_l2cap_chan *chan,
 			     bt_l2cap_chan_state_t state)
 {

@@ -5,17 +5,15 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#define LOG_LEVEL CONFIG_USB_DEVICE_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(usb_hid)
-
 #include <misc/byteorder.h>
+#include <logging/log.h>
 #include <usb_device.h>
 #include <usb_common.h>
 
 #include <usb_descriptor.h>
 #include <class/usb_hid.h>
+
+LOG_MODULE_REGISTER(usb_hid, CONFIG_USB_DEVICE_LOG_LEVEL);
 
 #define HID_INT_IN_EP_ADDR				0x81
 #define HID_INT_OUT_EP_ADDR				0x01

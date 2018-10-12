@@ -3,16 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#define LOG_MODULE_NAME eth_e1000
-#define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
-
 #include <zephyr.h>
 #include <net/ethernet.h>
 #include <pci/pci.h>
+#include <logging/log.h>
 #include "eth_e1000_priv.h"
+
+LOG_MODULE_REGISTER(eth_e1000, CONFIG_ETHERNET_LOG_LEVEL);
 
 #define dev_dbg(fmt, args...) LOG_DBG("%s() " fmt, __func__, ## args)
 #define dev_err(fmt, args...) LOG_ERR("%s() " "Error: " fmt, __func__, ## args)

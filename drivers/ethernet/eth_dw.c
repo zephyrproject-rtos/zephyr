@@ -3,12 +3,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#define LOG_MODULE_NAME eth_dw
-#define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
-
-#include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
-
 #include <soc.h>
 #include <device.h>
 #include <errno.h>
@@ -22,12 +16,15 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <string.h>
 #include <sys_io.h>
 #include <net/ethernet.h>
+#include <logging/log.h>
 
 #include "eth_dw_priv.h"
 
 #ifdef CONFIG_SHARED_IRQ
 #include <shared_irq.h>
 #endif
+
+LOG_MODULE_REGISTER(eth_dw, CONFIG_ETHERNET_LOG_LEVEL);
 
 #define TX_BUSY_LOOP_SPINS 20
 

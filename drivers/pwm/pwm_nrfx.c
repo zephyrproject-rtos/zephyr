@@ -5,10 +5,9 @@
  */
 #include <nrfx_pwm.h>
 #include <pwm.h>
-
-#define LOG_LEVEL CONFIG_PWM_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(pwm_nrfx);
+
+LOG_MODULE_REGISTER(pwm_nrfx, CONFIG_PWM_LOG_LEVEL);
 
 #define PWM_NRFX_CH_VALUE_NORMAL        (1UL << 15)
 #define PWM_NRFX_CH_VALUE_INVERTED      (0)

@@ -6,10 +6,9 @@
 
 #include <nrfx_wdt.h>
 #include <watchdog.h>
-
-#define LOG_LEVEL CONFIG_WDT_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(wdt_nrfx);
+
+LOG_MODULE_REGISTER(wdt_nrfx, CONFIG_WDT_LOG_LEVEL);
 
 DEVICE_DECLARE(wdt_nrfx);
 

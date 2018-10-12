@@ -15,11 +15,10 @@
 #include <string.h>
 #include <soc.h>
 #include <dma.h>
+#include <logging/log.h>
 #include "dma_sam_xdmac.h"
 
-#define LOG_LEVEL CONFIG_DMA_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_REGISTER(dma_sam_xdmac)
+LOG_MODULE_REGISTER(dma_sam_xdmac, CONFIG_DMA_LOG_LEVEL);
 
 #define XDMAC_INT_ERR (XDMAC_CIE_RBIE | XDMAC_CIE_WBIE | XDMAC_CIE_ROIE)
 #define DMA_CHANNELS_NO  XDMACCHID_NUMBER

@@ -3,13 +3,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#define LOG_MODULE_NAME ieee802154_uart_pipe
-#define LOG_LEVEL CONFIG_IEEE802154_LOG_LEVEL
-
-#include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
-
 #include <errno.h>
 
 #include <kernel.h>
@@ -19,11 +12,14 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <init.h>
 #include <net/net_if.h>
 #include <net/net_pkt.h>
+#include <logging/log.h>
 
 #include <console/uart_pipe.h>
 #include <net/ieee802154_radio.h>
 
 #include "ieee802154_uart_pipe.h"
+
+LOG_MODULE_REGISTER(ieee802154_uart_pipe, CONFIG_IEEE802154_LOG_LEVEL);
 
 #define PAN_ID_OFFSET           3 /* Pan Id offset */
 #define DEST_ADDR_OFFSET        5 /* Destination offset address*/
