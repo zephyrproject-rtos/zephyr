@@ -57,8 +57,8 @@ static void save_lightness_temp_def_state(void)
 			 light_ctl_srv_user_data.temp_def);
 
 	settings_str_from_bytes(&light_ctl_srv_user_data.lightness_temp_def,
-				sizeof(light_ctl_srv_user_data.
-				       lightness_temp_def), buf, sizeof(buf));
+				sizeof(light_ctl_srv_user_data.lightness_temp_def),
+				buf, sizeof(buf));
 
 	settings_save_one("ps/ltd", buf);
 }
@@ -72,8 +72,8 @@ static void save_lightness_temp_last_state(void)
 			 light_ctl_srv_user_data.temp);
 
 	settings_str_from_bytes(&light_ctl_srv_user_data.lightness_temp_last,
-				sizeof(light_ctl_srv_user_data.
-				       lightness_temp_last), buf, sizeof(buf));
+				sizeof(light_ctl_srv_user_data.lightness_temp_last),
+				buf, sizeof(buf));
 
 	settings_save_one("ps/ltl", buf);
 
@@ -136,8 +136,7 @@ static int ps_set(int argc, char **argv, char *val)
 		}
 
 		if (!strcmp(argv[0], "ltd")) {
-			len = sizeof(light_ctl_srv_user_data.
-				     lightness_temp_def);
+			len = sizeof(light_ctl_srv_user_data.lightness_temp_def);
 
 			return settings_bytes_from_str(val,
 				&light_ctl_srv_user_data.lightness_temp_def,
