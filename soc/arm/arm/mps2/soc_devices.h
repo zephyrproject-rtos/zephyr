@@ -9,7 +9,9 @@
 
 #ifndef _ASMLANGUAGE
 
+#include <stddef.h>
 #include "soc_registers.h"
+
 
 /* FPGA system control block (FPGAIO) */
 #define FPGAIO_BASE_ADDR	 (0x40028000)

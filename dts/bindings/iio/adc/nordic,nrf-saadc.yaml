@@ -5,7 +5,6 @@
 #
 ---
 title: Nordic Semiconductor nRF Family SAADC
-id: nordic,nrf-saadc
 version: 0.1
 
 description: >

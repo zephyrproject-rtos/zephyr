@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _UART_CONSOLE__H_
-#define _UART_CONSOLE__H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_CONSOLE_UART_CONSOLE_H_
+#define ZEPHYR_INCLUDE_DRIVERS_CONSOLE_UART_CONSOLE_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,4 +54,4 @@ void uart_console_in_debug_hook_install(uart_console_in_debug_hook_t hook);
 }
 #endif
 
-#endif /* _UART_CONSOLE__H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_CONSOLE_UART_CONSOLE_H_ */

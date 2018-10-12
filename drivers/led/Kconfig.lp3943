@@ -14,7 +14,7 @@ menuconfig LP3943
 	  states at a specified rate. Each channel can drive up to 25 mA
 	  per LED.
 
-if !HAS_DTS_I2C_DEVICE
+if !HAS_DTS_I2C
 
 config LP3943_DEV_NAME
 	string "LP3943 device name"

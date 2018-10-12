@@ -3,11 +3,11 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef RING_BUFFER_DEP_H__
-#define RING_BUFFER_DEP_H__
+#ifndef ZEPHYR_INCLUDE_MISC_RING_BUFFER_H_
+#define ZEPHYR_INCLUDE_MISC_RING_BUFFER_H_
 
 #warning "This header file has moved, include <ring_buffer.h> instead."
 
 #include <ring_buffer.h>
 
-#endif /* RING_BUFFER_DEP_H__ */
+#endif /* ZEPHYR_INCLUDE_MISC_RING_BUFFER_H_ */

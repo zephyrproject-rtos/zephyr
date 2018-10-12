@@ -437,11 +437,21 @@ static void usart1_sam_irq_config_func(struct device *port)
 /* USART2 */
 
 #ifdef CONFIG_USART_SAM_PORT_2
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+/* Forward declare function */
+static void usart2_sam_irq_config_func(struct device *port);
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+
 static const struct usart_sam_dev_cfg usart2_sam_config = {
 	.regs = USART2,
-	.periph_id = CONFIG_USART_SAM_PORT_3_PERIPHERAL_ID,
+	.periph_id = CONFIG_USART_SAM_PORT_2_PERIPHERAL_ID,
 	.pin_rx = PIN_USART2_RXD,
 	.pin_tx = PIN_USART2_TXD,
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	.irq_config_func = usart2_sam_irq_config_func,
+#endif
 };
 
 static struct usart_sam_dev_data usart2_sam_data = {
@@ -451,4 +461,16 @@ static struct usart_sam_dev_data usart2_sam_data = {
 DEVICE_AND_API_INIT(usart2_sam, CONFIG_USART_SAM_PORT_2_NAME, &usart_sam_init,
 		    &usart2_sam_data, &usart2_sam_config, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &usart_sam_driver_api);
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void usart2_sam_irq_config_func(struct device *port)
+{
+	IRQ_CONNECT(CONFIG_USART_SAM_PORT_2_IRQ,
+		    CONFIG_USART_SAM_PORT_2_IRQ_PRIO,
+		    usart_sam_isr,
+		    DEVICE_GET(usart2_sam), 0);
+	irq_enable(CONFIG_USART_SAM_PORT_2_IRQ);
+}
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+
 #endif

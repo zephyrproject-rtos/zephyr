@@ -1204,7 +1204,7 @@ HAL_StatusTypeDef HAL_USART_Abort(USART_HandleTypeDef *husart)
     /* Abort the USART DMA Tx channel : use blocking DMA Abort API (no callback) */
     if(husart->hdmatx != NULL)
     {
-      /* Set the USART DMA Abort callback to Null. 
+      /* Set the USART DMA Abort callback to Null.
          No call back execution at end of DMA abort procedure */
       husart->hdmatx->XferAbortCallback = NULL;
 
@@ -1220,7 +1220,7 @@ HAL_StatusTypeDef HAL_USART_Abort(USART_HandleTypeDef *husart)
     /* Abort the USART DMA Rx channel : use blocking DMA Abort API (no callback) */
     if(husart->hdmarx != NULL)
     {
-      /* Set the USART DMA Abort callback to Null. 
+      /* Set the USART DMA Abort callback to Null.
          No call back execution at end of DMA abort procedure */
       husart->hdmarx->XferAbortCallback = NULL;
 
@@ -1229,8 +1229,8 @@ HAL_StatusTypeDef HAL_USART_Abort(USART_HandleTypeDef *husart)
   }
 
   /* Reset Tx and Rx transfer counters */
-  husart->TxXferCount = 0x00U; 
-  husart->RxXferCount = 0x00U; 
+  husart->TxXferCount = 0x00U;
+  husart->RxXferCount = 0x00U;
 
   /* Restore husart->State to Ready */
   husart->State  = HAL_USART_STATE_READY;
@@ -1259,7 +1259,7 @@ HAL_StatusTypeDef HAL_USART_Abort(USART_HandleTypeDef *husart)
 HAL_StatusTypeDef HAL_USART_Abort_IT(USART_HandleTypeDef *husart)
 {
   uint32_t AbortCplt = 0x01U;
-  
+
   /* Disable TXEIE, TCIE, RXNE, PE and ERR (Frame error, noise error, overrun error) interrupts */
   CLEAR_BIT(husart->Instance->CR1, (USART_CR1_RXNEIE | USART_CR1_PEIE | USART_CR1_TXEIE | USART_CR1_TCIE));
   CLEAR_BIT(husart->Instance->CR3, USART_CR3_EIE);
@@ -1294,7 +1294,7 @@ HAL_StatusTypeDef HAL_USART_Abort_IT(USART_HandleTypeDef *husart)
       husart->hdmarx->XferAbortCallback = NULL;
     }
   }
-  
+
   /* Disable the USART DMA Tx request if enabled */
   if(HAL_IS_BIT_SET(husart->Instance->CR3, USART_CR3_DMAT))
   {
@@ -1304,7 +1304,7 @@ HAL_StatusTypeDef HAL_USART_Abort_IT(USART_HandleTypeDef *husart)
     /* Abort the USART DMA Tx channel : use non blocking DMA Abort API (callback) */
     if(husart->hdmatx != NULL)
     {
-      /* USART Tx DMA Abort callback has already been initialised : 
+      /* USART Tx DMA Abort callback has already been initialised :
          will lead to call HAL_USART_AbortCpltCallback() at end of DMA abort procedure */
 
       /* Abort DMA TX */
@@ -1327,7 +1327,7 @@ HAL_StatusTypeDef HAL_USART_Abort_IT(USART_HandleTypeDef *husart)
     /* Abort the USART DMA Rx channel : use non blocking DMA Abort API (callback) */
     if(husart->hdmarx != NULL)
     {
-      /* USART Rx DMA Abort callback has already been initialised : 
+      /* USART Rx DMA Abort callback has already been initialised :
          will lead to call HAL_USART_AbortCpltCallback() at end of DMA abort procedure */
 
       /* Abort DMA RX */
@@ -1347,7 +1347,7 @@ HAL_StatusTypeDef HAL_USART_Abort_IT(USART_HandleTypeDef *husart)
   if(AbortCplt  == 0x01U)
   {
     /* Reset Tx and Rx transfer counters */
-    husart->TxXferCount = 0x00U; 
+    husart->TxXferCount = 0x00U;
     husart->RxXferCount = 0x00U;
 
     /* Reset errorCode */
@@ -1903,7 +1903,7 @@ static void USART_DMAAbortOnError(DMA_HandleTypeDef *hdma)
 static void USART_DMATxAbortCallback(DMA_HandleTypeDef *hdma)
 {
   USART_HandleTypeDef* husart = ( USART_HandleTypeDef* )((DMA_HandleTypeDef* )hdma)->Parent;
-  
+
   husart->hdmatx->XferAbortCallback = NULL;
 
   /* Check if an Abort process is still ongoing */
@@ -1914,7 +1914,7 @@ static void USART_DMATxAbortCallback(DMA_HandleTypeDef *hdma)
       return;
     }
   }
-  
+
   /* No Abort process still ongoing : All DMA channels are aborted, call user Abort Complete callback */
   husart->TxXferCount = 0x00U;
   husart->RxXferCount = 0x00U;
@@ -1940,7 +1940,7 @@ static void USART_DMATxAbortCallback(DMA_HandleTypeDef *hdma)
 static void USART_DMARxAbortCallback(DMA_HandleTypeDef *hdma)
 {
   USART_HandleTypeDef* husart = ( USART_HandleTypeDef* )((DMA_HandleTypeDef* )hdma)->Parent;
-  
+
   husart->hdmarx->XferAbortCallback = NULL;
 
   /* Check if an Abort process is still ongoing */
@@ -1951,7 +1951,7 @@ static void USART_DMARxAbortCallback(DMA_HandleTypeDef *hdma)
       return;
     }
   }
-  
+
   /* No Abort process still ongoing : All DMA channels are aborted, call user Abort Complete callback */
   husart->TxXferCount = 0x00U;
   husart->RxXferCount = 0x00U;

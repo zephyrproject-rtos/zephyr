@@ -41,7 +41,7 @@
  extern "C" {
 #endif
 
-#if !defined(STM32F030x6) && !defined(STM32F030x8) && !defined(STM32F070x6) && !defined(STM32F070xB) && !defined(STM32F030xC) 
+#if !defined(STM32F030x6) && !defined(STM32F030x8) && !defined(STM32F070x6) && !defined(STM32F070xB) && !defined(STM32F030xC)
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f0xx_hal_def.h"
@@ -59,7 +59,7 @@
 /** @defgroup IRDAEx_Exported_Constants IRDAEx Exported Constants
   * @{
   */
-  
+
 /** @defgroup IRDAEx_Word_Length IRDA Word Length
   * @{
   */
@@ -78,10 +78,10 @@
 /**
   * @}
   */
-    
+
 /**
   * @}
-  */  
+  */
 
 /* Exported macros -----------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/
@@ -387,9 +387,9 @@
 
 /**
   * @brief Ensure that IRDA frame length is valid.
-  * @param __LENGTH__ IRDA frame length. 
+  * @param __LENGTH__ IRDA frame length.
   * @retval SET (__LENGTH__ is valid) or RESET (__LENGTH__ is invalid)
-  */ 
+  */
 #if defined (STM32F042x6) || defined (STM32F048xx) || \
     defined (STM32F071xB) || defined (STM32F072xB) || defined (STM32F078xx) || \
     defined (STM32F091xC) || defined (STM32F098xx)
@@ -418,7 +418,7 @@
   */
 
 #endif /* !defined(STM32F030x6) && !defined(STM32F030x8) && !defined(STM32F070x6) && !defined(STM32F070xB) && !defined(STM32F030xC)  */
-  
+
 #ifdef __cplusplus
 }
 #endif

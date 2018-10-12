@@ -4,15 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if 1
 #if defined(CONFIG_HTTPS)
-#define SYS_LOG_DOMAIN "https-server"
+#define LOG_MODULE_NAME net_https_server_sample
 #else
-#define SYS_LOG_DOMAIN "http-server"
+#define LOG_MODULE_NAME net_http_server_sample
 #endif
-#define NET_SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
-#define NET_LOG_ENABLED 1
-#endif
+#define NET_LOG_LEVEL LOG_LEVEL_DBG
 
 #include <zephyr.h>
 #include <stdio.h>
@@ -405,7 +402,7 @@ void main(void)
 
 #elif ADDR_OPTION == 2
 	/* Accept any local listening address */
-	memset(&addr, 0, sizeof(addr));
+	(void)memset(&addr, 0, sizeof(addr));
 
 	net_sin(&addr)->sin_port = htons(ZEPHYR_PORT);
 
@@ -416,7 +413,7 @@ void main(void)
 
 #elif ADDR_OPTION == 3
 	/* Set the bind address according to your configuration */
-	memset(&addr, 0, sizeof(addr));
+	(void)memset(&addr, 0, sizeof(addr));
 
 	/* In this example, listen only IPv6 */
 	addr.family = AF_INET6;

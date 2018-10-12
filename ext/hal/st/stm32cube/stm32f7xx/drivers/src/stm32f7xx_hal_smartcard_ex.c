@@ -4,7 +4,7 @@
   * @author  MCD Application Team
   * @brief   SMARTCARD HAL module driver.
   *
-  *          This file provides extended firmware functions to manage the following 
+  *          This file provides extended firmware functions to manage the following
   *          functionalities of the SmartCard.
   *           + Initialization and de-initialization functions
   *           + Peripheral Control functions
@@ -15,8 +15,8 @@
     [..]
     The Extended SMARTCARD HAL driver can be used as follow:
 
-    (#) After having configured the SMARTCARD basic features with HAL_SMARTCARD_Init(), 
-        then if required, program SMARTCARD advanced features (TX/RX pins swap, TimeOut, 
+    (#) After having configured the SMARTCARD basic features with HAL_SMARTCARD_Init(),
+        then if required, program SMARTCARD advanced features (TX/RX pins swap, TimeOut,
         auto-retry counter,...) in the hsc AdvancedInit structure.
 
   @endverbatim
@@ -62,7 +62,7 @@
   * @{
   */
 #ifdef HAL_SMARTCARD_MODULE_ENABLED
-    
+
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
@@ -77,14 +77,14 @@
 /** @defgroup SMARTCARDEx_Group1 Extended Peripheral Control functions
   * @brief    Extended control functions
   *
-@verbatim   
+@verbatim
  ===============================================================================
                       ##### Peripheral Control functions #####
  ===============================================================================
     [..]
     This subsection provides a set of functions allowing to initialize the SMARTCARD.
-     (+) HAL_SMARTCARDEx_BlockLength_Config() API allows to configure the Block Length on the fly 
-     (+) HAL_SMARTCARDEx_TimeOut_Config() API allows to configure the receiver timeout value on the fly  
+     (+) HAL_SMARTCARDEx_BlockLength_Config() API allows to configure the Block Length on the fly
+     (+) HAL_SMARTCARDEx_TimeOut_Config() API allows to configure the receiver timeout value on the fly
      (+) HAL_SMARTCARDEx_EnableReceiverTimeOut() API enables the receiver timeout feature
      (+) HAL_SMARTCARDEx_DisableReceiverTimeOut() API disables the receiver timeout feature
 
@@ -95,7 +95,7 @@
 /**
   * @brief Update on the fly the SMARTCARD block length in RTOR register
   * @param hsc SMARTCARD handle
-  * @param BlockLength SMARTCARD block length (8-bit long at most)  
+  * @param BlockLength SMARTCARD block length (8-bit long at most)
   * @retval None
   */
 void HAL_SMARTCARDEx_BlockLength_Config(SMARTCARD_HandleTypeDef *hsc, uint8_t BlockLength)
@@ -107,13 +107,13 @@ void HAL_SMARTCARDEx_BlockLength_Config(SMARTCARD_HandleTypeDef *hsc, uint8_t Bl
   * @brief Update on the fly the receiver timeout value in RTOR register
   * @param hsc SMARTCARD handle
   * @param TimeOutValue receiver timeout value in number of baud blocks. The timeout
-  *                     value must be less or equal to 0x0FFFFFFFF. 
+  *                     value must be less or equal to 0x0FFFFFFFF.
   * @retval None
   */
 void HAL_SMARTCARDEx_TimeOut_Config(SMARTCARD_HandleTypeDef *hsc, uint32_t TimeOutValue)
 {
   assert_param(IS_SMARTCARD_TIMEOUT_VALUE(hsc->Init.TimeOutValue));
-  MODIFY_REG(hsc->Instance->RTOR, USART_RTOR_RTO, TimeOutValue); 
+  MODIFY_REG(hsc->Instance->RTOR, USART_RTOR_RTO, TimeOutValue);
 }
 
 /**

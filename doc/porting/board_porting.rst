@@ -178,11 +178,13 @@ Here are some examples of visible and invisible symbols:
     	default FOO
 
     config VISIBLE_1
-    	bool "Enable stuff"
-
-    config VISIBLE_2
     	string
     	prompt "Foo value"
+
+    config VISIBLE_2
+    	# Shorthand for giving a type and a prompt at the same time. This is
+    	# the preferred style in Zephyr.
+    	bool "Enable stuff"
 
 
 Configuring visible Kconfig symbols

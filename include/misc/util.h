@@ -11,12 +11,13 @@
  * Misc utilities usable by the kernel and application code.
  */
 
-#ifndef _UTIL__H_
-#define _UTIL__H_
+#ifndef ZEPHYR_INCLUDE_MISC_UTIL_H_
+#define ZEPHYR_INCLUDE_MISC_UTIL_H_
 
 #ifndef _ASMLANGUAGE
 
 #include <zephyr/types.h>
+#include <stdbool.h>
 
 /* Helper to pass a int as a pointer or vice-versa.
  * Those are available for 32 bits architectures:
@@ -181,7 +182,7 @@ static inline s64_t arithmetic_shift_right(s64_t value, u8_t shift)
  *   ENABLED:   _IS_ENABLED3(_YYYY,    1,    0)
  *   DISABLED   _IS_ENABLED3(_XXXX 1,  0)
  */
-#define _IS_ENABLED2(one_or_two_args) _IS_ENABLED3(one_or_two_args 1, 0)
+#define _IS_ENABLED2(one_or_two_args) _IS_ENABLED3(one_or_two_args true, false)
 
 /* And our second argument is thus now cooked to be 1 in the case
  * where the value is defined to 1, and 0 if not:
@@ -441,4 +442,4 @@ static inline s64_t arithmetic_shift_right(s64_t value, u8_t shift)
 	_for_10, _for_9, _for_8, _for_7, _for_6, _for_5, \
 	_for_4, _for_3, _for_2, _for_1, _for_0)(x, ##__VA_ARGS__)
 
-#endif /* _UTIL__H_ */
+#endif /* ZEPHYR_INCLUDE_MISC_UTIL_H_ */

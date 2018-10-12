@@ -10,7 +10,10 @@
 #include <soc.h>
 #include <arch/arm/cortex_m/cmsis.h>
 #include <arch/arm/cortex_m/mpu/arm_core_mpu.h>
-#include <logging/sys_log.h>
+
+#define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(mpu);
 
 #if defined(CONFIG_MPU_STACK_GUARD)
 /*
@@ -50,7 +53,7 @@ void configure_mpu_stack_guard(struct k_thread *thread)
  */
 void configure_mpu_user_context(struct k_thread *thread)
 {
-	SYS_LOG_DBG("configure user thread %p's context", thread);
+	LOG_DBG("configure user thread %p's context", thread);
 	arm_core_mpu_disable();
 	arm_core_mpu_configure_user_context(thread);
 	arm_core_mpu_enable();
@@ -66,7 +69,7 @@ void configure_mpu_user_context(struct k_thread *thread)
  */
 void configure_mpu_mem_domain(struct k_thread *thread)
 {
-	SYS_LOG_DBG("configure thread %p's domain", thread);
+	LOG_DBG("configure thread %p's domain", thread);
 	arm_core_mpu_disable();
 	arm_core_mpu_configure_mem_domain(thread->mem_domain_info.mem_domain);
 	arm_core_mpu_enable();

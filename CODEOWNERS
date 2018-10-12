@@ -10,6 +10,7 @@ soc/arm/                                 @MaureenHelm @galak
 soc/arm/arm/mps2/                        @fvincenzo
 soc/arm/atmel_sam/sam4s                  @fallrisk
 soc/arm/nxp*/                            @MaureenHelm
+soc/arm/nordic_nrf/                      @ioannisg
 soc/arm/st_stm32/                        @erwango
 soc/arm/st_stm32/stm32f4/                @rsalveti @idlethread
 soc/arm/ti_simplelink/cc32xx             @GAnthony
@@ -50,7 +51,12 @@ boards/arm/mimxrt*/doc/                  @MaureenHelm @MeganHansen
 boards/arm/mps2_an385/                   @fvincenzo
 boards/arm/msp_exp432p401r_launchxl/     @Mani-Sadhasivam
 boards/arm/nrf51_blenano/                @rsalveti
+boards/arm/nrf51_pca10028/               @carlescufi
 boards/arm/nrf52_pca10040/               @carlescufi
+boards/arm/nrf52_pca20020/               @tkln
+boards/arm/nrf52810_pca10040/            @carlescufi
+boards/arm/nrf52840_pca10056/            @carlescufi
+boards/arm/nrf52840_pca10059/            @lemrey
 boards/arm/nucleo_f401re/                @rsalveti @idlethread
 boards/arm/sam4s_xplained/               @fallrisk
 boards/arm/v2m_beetle/                   @fvincenzo
@@ -104,6 +110,7 @@ drivers/usb/                             @jfischer-phytec-iot @finikorg
 drivers/usb/device/usb_dc_stm32.c        @ydamigos @loicpoulain
 drivers/i2c/i2c_ll_stm32*                @ldts @ydamigos
 dts/arm/st/                              @erwango
+dts/arm/nordic/                          @ioannisg @carlescufi
 ext/fs/                                  @nashif @ramakrishnapallala
 ext/hal/cmsis/                           @MaureenHelm @galak
 ext/hal/nordic/                          @carlescufi @anangl
@@ -120,6 +127,7 @@ include/arch/arm/                        @MaureenHelm @galak
 include/arch/arm/cortex_m/irq.h          @andrewboie
 include/arch/nios2/                      @andrewboie
 include/arch/nios2/arch.h                @andrewboie
+include/arch/posix/                      @aescolar
 include/arch/riscv32                     @fractalclone @kgugala @pgielda
 include/arch/x86/                        @andrewboie @ramakrishnapallala
 include/arch/x86/arch.h                  @andrewboie
@@ -193,6 +201,7 @@ subsys/net/lib/lwm2m/                    @mike-scott
 subsys/net/lib/mqtt/                     @jukkar @tbursztyka
 subsys/net/lib/coap/                     @rveerama1
 subsys/net/lib/sockets/                  @jukkar @tbursztyka @pfalcon
+subsys/*/*native_posix*/                 @aescolar
 subsys/usb/                              @jfischer-phytec-iot @finikorg
 tests/boards/native_posix/               @aescolar
 tests/bluetooth/                         @sjanc @jhedberg @Vudentz @tarunkum

@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _INIT_H_
-#define _INIT_H_
+#ifndef ZEPHYR_INCLUDE_INIT_H_
+#define ZEPHYR_INCLUDE_INIT_H_
 
 #include <device.h>
 #include <toolchain.h>
@@ -74,4 +74,4 @@ extern "C" {
 }
 #endif
 
-#endif /* _INIT_H_ */
+#endif /* ZEPHYR_INCLUDE_INIT_H_ */

@@ -5,7 +5,6 @@
 #
 ---
 title: AMS (Austria Mikro Systeme) Digital Air Quality Sensor CCS811
-id: ams,ccs811
 version: 0.1
 
 description: >

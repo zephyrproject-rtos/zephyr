@@ -14,8 +14,8 @@
  */
 
 
-#ifndef _ARCH_IFACE_H
-#define _ARCH_IFACE_H
+#ifndef ZEPHYR_INCLUDE_ARCH_POSIX_ARCH_H_
+#define ZEPHYR_INCLUDE_ARCH_POSIX_ARCH_H_
 
 #include <toolchain.h>
 #include <irq.h>
@@ -58,4 +58,4 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 }
 #endif
 
-#endif /* _ARCH_IFACE_H */
+#endif /* ZEPHYR_INCLUDE_ARCH_POSIX_ARCH_H_ */

@@ -168,10 +168,10 @@ static HAL_StatusTypeDef USART_TransmitReceive_IT(USART_HandleTypeDef *husart);
 
 @endverbatim
 
-  Depending on the frame length defined by the M1 and M0 bits (7-bit, 
-  8-bit or 9-bit), the possible USART formats are listed in the 
+  Depending on the frame length defined by the M1 and M0 bits (7-bit,
+  8-bit or 9-bit), the possible USART formats are listed in the
   following table.
-  
+
     Table 1. USART frame format.
     +-----------------------------------------------------------------------+
     |  M1 bit |  M0 bit |  PCE bit  |            USART frame                |
@@ -372,7 +372,7 @@ __weak void HAL_USART_MspDeInit(USART_HandleTypeDef *husart)
 
     (#) In Non-Blocking mode transfers, possible errors are split into 2 categories.
         Errors are handled as follows :
-       (+) Error is considered as Recoverable and non blocking : Transfer could go till end, but error severity is 
+       (+) Error is considered as Recoverable and non blocking : Transfer could go till end, but error severity is
            to be evaluated by user : this concerns Frame Error, Parity Error or Noise Error in Interrupt mode reception .
            Received character is then retrieved and stored in Rx buffer, Error code is set to allow user to identify error type,
            and HAL_USART_ErrorCallback() user callback is executed. Transfer is kept ongoing on USART side.
@@ -409,8 +409,8 @@ HAL_StatusTypeDef HAL_USART_Transmit(USART_HandleTypeDef *husart, uint8_t *pTxDa
       return  HAL_ERROR;
     }
 
-    /* In case of 9bits/No Parity transfer, pTxData buffer provided as input paramter 
-       should be aligned on a u16 frontier, as data to be filled into TDR will be 
+    /* In case of 9bits/No Parity transfer, pTxData buffer provided as input paramter
+       should be aligned on a u16 frontier, as data to be filled into TDR will be
        handled through a u16 cast. */
     if ((husart->Init.WordLength == USART_WORDLENGTH_9B) && (husart->Init.Parity == USART_PARITY_NONE))
     {
@@ -497,8 +497,8 @@ HAL_StatusTypeDef HAL_USART_Receive(USART_HandleTypeDef *husart, uint8_t *pRxDat
       return  HAL_ERROR;
     }
 
-    /* In case of 9bits/No Parity transfer, pTxData buffer provided as input paramter 
-       should be aligned on a u16 frontier, as data to be filled into TDR will be 
+    /* In case of 9bits/No Parity transfer, pTxData buffer provided as input paramter
+       should be aligned on a u16 frontier, as data to be filled into TDR will be
        handled through a u16 cast. */
     if ((husart->Init.WordLength == USART_WORDLENGTH_9B) && (husart->Init.Parity == USART_PARITY_NONE))
     {
@@ -597,8 +597,8 @@ HAL_StatusTypeDef HAL_USART_TransmitReceive(USART_HandleTypeDef *husart, uint8_t
       return  HAL_ERROR;
     }
 
-    /* In case of 9bits/No Parity transfer, pTxData and pRxData buffers provided as input paramter 
-       should be aligned on a u16 frontier, as data to be filled into TDR/retrieved from RDR will be 
+    /* In case of 9bits/No Parity transfer, pTxData and pRxData buffers provided as input paramter
+       should be aligned on a u16 frontier, as data to be filled into TDR/retrieved from RDR will be
        handled through a u16 cast. */
     if ((husart->Init.WordLength == USART_WORDLENGTH_9B) && (husart->Init.Parity == USART_PARITY_NONE))
     {
@@ -700,8 +700,8 @@ HAL_StatusTypeDef HAL_USART_Transmit_IT(USART_HandleTypeDef *husart, uint8_t *pT
       return HAL_ERROR;
     }
 
-    /* In case of 9bits/No Parity transfer, pTxData buffer provided as input paramter 
-       should be aligned on a u16 frontier, as data to be filled into TDR will be 
+    /* In case of 9bits/No Parity transfer, pTxData buffer provided as input paramter
+       should be aligned on a u16 frontier, as data to be filled into TDR will be
        handled through a u16 cast. */
     if ((husart->Init.WordLength == USART_WORDLENGTH_9B) && (husart->Init.Parity == USART_PARITY_NONE))
     {
@@ -762,8 +762,8 @@ HAL_StatusTypeDef HAL_USART_Receive_IT(USART_HandleTypeDef *husart, uint8_t *pRx
       return HAL_ERROR;
     }
 
-    /* In case of 9bits/No Parity transfer, pTxData buffer provided as input paramter 
-       should be aligned on a u16 frontier, as data to be filled into TDR will be 
+    /* In case of 9bits/No Parity transfer, pTxData buffer provided as input paramter
+       should be aligned on a u16 frontier, as data to be filled into TDR will be
        handled through a u16 cast. */
     if ((husart->Init.WordLength == USART_WORDLENGTH_9B) && (husart->Init.Parity == USART_PARITY_NONE))
     {
@@ -816,7 +816,7 @@ HAL_StatusTypeDef HAL_USART_Receive_IT(USART_HandleTypeDef *husart, uint8_t *pRx
   * @brief  Full-Duplex Send and Receive an amount of data in interrupt mode.
   * @param  husart USART handle.
   * @param  pTxData pointer to TX data buffer.
-  * @param  pRxData pointer to RX data buffer.                         
+  * @param  pRxData pointer to RX data buffer.
   * @param  Size amount of data to be sent (same amount to be received).
   * @note   When UART parity is not enabled (PCE = 0), and Word Length is configured to 9 bits (M1-M0 = 01),
   *         address of user data buffer containing data to be sent, should be aligned on a half word frontier (16 bits)
@@ -834,8 +834,8 @@ HAL_StatusTypeDef HAL_USART_TransmitReceive_IT(USART_HandleTypeDef *husart, uint
       return HAL_ERROR;
     }
 
-    /* In case of 9bits/No Parity transfer, pTxData and pRxData buffers provided as input paramter 
-       should be aligned on a u16 frontier, as data to be filled into TDR/retrieved from RDR will be 
+    /* In case of 9bits/No Parity transfer, pTxData and pRxData buffers provided as input paramter
+       should be aligned on a u16 frontier, as data to be filled into TDR/retrieved from RDR will be
        handled through a u16 cast. */
     if ((husart->Init.WordLength == USART_WORDLENGTH_9B) && (husart->Init.Parity == USART_PARITY_NONE))
     {
@@ -903,8 +903,8 @@ HAL_StatusTypeDef HAL_USART_Transmit_DMA(USART_HandleTypeDef *husart, uint8_t *p
       return HAL_ERROR;
     }
 
-    /* In case of 9bits/No Parity transfer, pTxData buffer provided as input paramter 
-       should be aligned on a u16 frontier, as data to be filled into TDR will be 
+    /* In case of 9bits/No Parity transfer, pTxData buffer provided as input paramter
+       should be aligned on a u16 frontier, as data to be filled into TDR will be
        handled through a u16 cast. */
     if ((husart->Init.WordLength == USART_WORDLENGTH_9B) && (husart->Init.Parity == USART_PARITY_NONE))
     {
@@ -962,7 +962,7 @@ HAL_StatusTypeDef HAL_USART_Transmit_DMA(USART_HandleTypeDef *husart, uint8_t *p
   * @param  Size amount of data to be received.
   * @note   When the USART parity is enabled (PCE = 1), the received data contain
   *         the parity bit (MSB position).
-  * @note   The USART DMA transmit channel must be configured in order to generate the clock for the slave.  
+  * @note   The USART DMA transmit channel must be configured in order to generate the clock for the slave.
   * @note   When UART parity is not enabled (PCE = 0), and Word Length is configured to 9 bits (M1-M0 = 01),
   *         address of user data buffer containing data to be sent, should be aligned on a half word frontier (16 bits)
   *         (as sent data will be handled using u16 pointer cast). Depending on compilation chain,
@@ -981,8 +981,8 @@ HAL_StatusTypeDef HAL_USART_Receive_DMA(USART_HandleTypeDef *husart, uint8_t *pR
       return HAL_ERROR;
     }
 
-    /* In case of 9bits/No Parity transfer, pTxData buffer provided as input paramter 
-       should be aligned on a u16 frontier, as data to be filled into TDR will be 
+    /* In case of 9bits/No Parity transfer, pTxData buffer provided as input paramter
+       should be aligned on a u16 frontier, as data to be filled into TDR will be
        handled through a u16 cast. */
     if ((husart->Init.WordLength == USART_WORDLENGTH_9B) && (husart->Init.Parity == USART_PARITY_NONE))
     {
@@ -1075,8 +1075,8 @@ HAL_StatusTypeDef HAL_USART_TransmitReceive_DMA(USART_HandleTypeDef *husart, uin
       return HAL_ERROR;
     }
 
-    /* In case of 9bits/No Parity transfer, pTxData and pRxData buffers provided as input paramter 
-       should be aligned on a u16 frontier, as data to be filled into TDR/retrieved from RDR will be 
+    /* In case of 9bits/No Parity transfer, pTxData and pRxData buffers provided as input paramter
+       should be aligned on a u16 frontier, as data to be filled into TDR/retrieved from RDR will be
        handled through a u16 cast. */
     if ((husart->Init.WordLength == USART_WORDLENGTH_9B) && (husart->Init.Parity == USART_PARITY_NONE))
     {
@@ -1242,9 +1242,9 @@ HAL_StatusTypeDef HAL_USART_DMAStop(USART_HandleTypeDef *husart)
 {
   /* The Lock is not implemented on this API to allow the user application
      to call the HAL USART API under callbacks HAL_USART_TxCpltCallback() / HAL_USART_RxCpltCallback() /
-     HAL_USART_TxHalfCpltCallback / HAL_USART_RxHalfCpltCallback: 
-     indeed, when HAL_DMA_Abort() API is called, the DMA TX/RX Transfer or Half Transfer complete  
-     interrupt is generated if the DMA transfer interruption occurs at the middle or at the end of 
+     HAL_USART_TxHalfCpltCallback / HAL_USART_RxHalfCpltCallback:
+     indeed, when HAL_DMA_Abort() API is called, the DMA TX/RX Transfer or Half Transfer complete
+     interrupt is generated if the DMA transfer interruption occurs at the middle or at the end of
      the stream and the corresponding call back is executed. */
 
   /* Disable the USART Tx/Rx DMA requests */
@@ -1271,7 +1271,7 @@ HAL_StatusTypeDef HAL_USART_DMAStop(USART_HandleTypeDef *husart)
 /**
   * @brief  Abort ongoing transfers (blocking mode).
   * @param  husart USART handle.
-  * @note   This procedure could be used for aborting any ongoing transfer started in Interrupt or DMA mode. 
+  * @note   This procedure could be used for aborting any ongoing transfer started in Interrupt or DMA mode.
   *         This procedure performs following operations :
   *           - Disable USART Interrupts (Tx and Rx)
   *           - Disable the DMA transfer in the peripheral register (if enabled)
@@ -1294,7 +1294,7 @@ HAL_StatusTypeDef HAL_USART_Abort(USART_HandleTypeDef *husart)
     /* Abort the USART DMA Tx channel : use blocking DMA Abort API (no callback) */
     if(husart->hdmatx != NULL)
     {
-      /* Set the USART DMA Abort callback to Null. 
+      /* Set the USART DMA Abort callback to Null.
          No call back execution at end of DMA abort procedure */
       husart->hdmatx->XferAbortCallback = NULL;
 
@@ -1310,7 +1310,7 @@ HAL_StatusTypeDef HAL_USART_Abort(USART_HandleTypeDef *husart)
     /* Abort the USART DMA Rx channel : use blocking DMA Abort API (no callback) */
     if(husart->hdmarx != NULL)
     {
-      /* Set the USART DMA Abort callback to Null. 
+      /* Set the USART DMA Abort callback to Null.
          No call back execution at end of DMA abort procedure */
       husart->hdmarx->XferAbortCallback = NULL;
 
@@ -1319,8 +1319,8 @@ HAL_StatusTypeDef HAL_USART_Abort(USART_HandleTypeDef *husart)
   }
 
   /* Reset Tx and Rx transfer counters */
-  husart->TxXferCount = 0; 
-  husart->RxXferCount = 0; 
+  husart->TxXferCount = 0;
+  husart->RxXferCount = 0;
 
   /* Clear the Error flags in the ICR register */
   __HAL_USART_CLEAR_FLAG(husart, USART_CLEAR_OREF | USART_CLEAR_NEF | USART_CLEAR_PEF | USART_CLEAR_FEF);
@@ -1337,7 +1337,7 @@ HAL_StatusTypeDef HAL_USART_Abort(USART_HandleTypeDef *husart)
 /**
   * @brief  Abort ongoing transfers (Interrupt mode).
   * @param  husart USART handle.
-  * @note   This procedure could be used for aborting any ongoing transfer started in Interrupt or DMA mode. 
+  * @note   This procedure could be used for aborting any ongoing transfer started in Interrupt or DMA mode.
   *         This procedure performs following operations :
   *           - Disable USART Interrupts (Tx and Rx)
   *           - Disable the DMA transfer in the peripheral register (if enabled)
@@ -1351,7 +1351,7 @@ HAL_StatusTypeDef HAL_USART_Abort(USART_HandleTypeDef *husart)
 HAL_StatusTypeDef HAL_USART_Abort_IT(USART_HandleTypeDef *husart)
 {
   uint32_t abortcplt = 1;
-  
+
   /* Disable TXEIE, TCIE, RXNE, PE and ERR (Frame error, noise error, overrun error) interrupts */
   CLEAR_BIT(husart->Instance->CR1, (USART_CR1_RXNEIE | USART_CR1_PEIE | USART_CR1_TXEIE | USART_CR1_TCIE));
   CLEAR_BIT(husart->Instance->CR3, USART_CR3_EIE);
@@ -1386,7 +1386,7 @@ HAL_StatusTypeDef HAL_USART_Abort_IT(USART_HandleTypeDef *husart)
       husart->hdmarx->XferAbortCallback = NULL;
     }
   }
-  
+
   /* Disable the USART DMA Tx request if enabled */
   if(HAL_IS_BIT_SET(husart->Instance->CR3, USART_CR3_DMAT))
   {
@@ -1396,7 +1396,7 @@ HAL_StatusTypeDef HAL_USART_Abort_IT(USART_HandleTypeDef *husart)
     /* Abort the USART DMA Tx channel : use non blocking DMA Abort API (callback) */
     if(husart->hdmatx != NULL)
     {
-      /* USART Tx DMA Abort callback has already been initialised : 
+      /* USART Tx DMA Abort callback has already been initialised :
          will lead to call HAL_USART_AbortCpltCallback() at end of DMA abort procedure */
 
       /* Abort DMA TX */
@@ -1419,7 +1419,7 @@ HAL_StatusTypeDef HAL_USART_Abort_IT(USART_HandleTypeDef *husart)
     /* Abort the USART DMA Rx channel : use non blocking DMA Abort API (callback) */
     if(husart->hdmarx != NULL)
     {
-      /* USART Rx DMA Abort callback has already been initialised : 
+      /* USART Rx DMA Abort callback has already been initialised :
          will lead to call HAL_USART_AbortCpltCallback() at end of DMA abort procedure */
 
       /* Abort DMA RX */
@@ -1439,7 +1439,7 @@ HAL_StatusTypeDef HAL_USART_Abort_IT(USART_HandleTypeDef *husart)
   if (abortcplt == 1)
   {
     /* Reset Tx and Rx transfer counters */
-    husart->TxXferCount = 0; 
+    husart->TxXferCount = 0;
     husart->RxXferCount = 0;
 
     /* Reset errorCode */
@@ -1548,7 +1548,7 @@ void HAL_USART_IRQHandler(USART_HandleTypeDef *husart)
          consider error as blocking */
       if (((husart->ErrorCode & HAL_USART_ERROR_ORE) != RESET) ||
           (HAL_IS_BIT_SET(husart->Instance->CR3, USART_CR3_DMAR)))
-      {  
+      {
         /* Blocking error : transfer is aborted
            Set the USART state ready to be able to start again the process,
            Disable Interrupts, and disable DMA requests, if ongoing */
@@ -1565,7 +1565,7 @@ void HAL_USART_IRQHandler(USART_HandleTypeDef *husart)
             /* Set the USART Tx DMA Abort callback to NULL : no callback
                executed at end of DMA abort procedure */
             husart->hdmatx->XferAbortCallback = NULL;
-            
+
             /* Abort DMA TX */
             HAL_DMA_Abort_IT(husart->hdmatx);
           }
@@ -1573,7 +1573,7 @@ void HAL_USART_IRQHandler(USART_HandleTypeDef *husart)
           /* Abort the USART DMA Rx channel */
           if(husart->hdmarx != NULL)
           {
-            /* Set the USART Rx DMA Abort callback : 
+            /* Set the USART Rx DMA Abort callback :
                will lead to call HAL_USART_ErrorCallback() at end of DMA abort procedure */
             husart->hdmarx->XferAbortCallback = USART_DMAAbortOnError;
 
@@ -1598,7 +1598,7 @@ void HAL_USART_IRQHandler(USART_HandleTypeDef *husart)
       }
       else
       {
-        /* Non Blocking error : transfer could go on. 
+        /* Non Blocking error : transfer could go on.
            Error is notified to user through user error callback */
         HAL_USART_ErrorCallback(husart);
         husart->ErrorCode = HAL_USART_ERROR_NONE;
@@ -1902,7 +1902,7 @@ static void USART_DMAReceiveCplt(DMA_HandleTypeDef *hdma)
     {
       HAL_USART_TxRxCpltCallback(husart);
     }
-  }    
+  }
 
 }
 
@@ -1963,7 +1963,7 @@ static void USART_DMAAbortOnError(DMA_HandleTypeDef *hdma)
 static void USART_DMATxAbortCallback(DMA_HandleTypeDef *hdma)
 {
   USART_HandleTypeDef* husart = (USART_HandleTypeDef* )(hdma->Parent);
-  
+
   husart->hdmatx->XferAbortCallback = NULL;
 
   /* Check if an Abort process is still ongoing */
@@ -1974,7 +1974,7 @@ static void USART_DMATxAbortCallback(DMA_HandleTypeDef *hdma)
       return;
     }
   }
-  
+
   /* No Abort process still ongoing : All DMA channels are aborted, call user Abort Complete callback */
   husart->TxXferCount = 0;
   husart->RxXferCount = 0;
@@ -2004,7 +2004,7 @@ static void USART_DMATxAbortCallback(DMA_HandleTypeDef *hdma)
 static void USART_DMARxAbortCallback(DMA_HandleTypeDef *hdma)
 {
   USART_HandleTypeDef* husart = (USART_HandleTypeDef* )(hdma->Parent);
-  
+
   husart->hdmarx->XferAbortCallback = NULL;
 
   /* Check if an Abort process is still ongoing */
@@ -2015,7 +2015,7 @@ static void USART_DMARxAbortCallback(DMA_HandleTypeDef *hdma)
       return;
     }
   }
-  
+
   /* No Abort process still ongoing : All DMA channels are aborted, call user Abort Complete callback */
   husart->TxXferCount = 0;
   husart->RxXferCount = 0;
@@ -2099,7 +2099,7 @@ static HAL_StatusTypeDef USART_SetConfig(USART_HandleTypeDef *husart)
    *  the USART Word Length, Parity and Mode:
    *  set the M bits according to husart->Init.WordLength value
    *  set PCE and PS bits according to husart->Init.Parity value
-   *  set TE and RE bits according to husart->Init.Mode value 
+   *  set TE and RE bits according to husart->Init.Mode value
    *  force OVER8 to 1 to allow to reach the maximum speed (Fclock/8)  */
   tmpreg = (uint32_t)husart->Init.WordLength | husart->Init.Parity | husart->Init.Mode | USART_CR1_OVER8;
   MODIFY_REG(husart->Instance->CR1, USART_CR1_FIELDS, tmpreg);
@@ -2119,7 +2119,7 @@ static HAL_StatusTypeDef USART_SetConfig(USART_HandleTypeDef *husart)
   /* no CR3 register configuration                                            */
 
   /*-------------------------- USART BRR Configuration -----------------------*/
-  /* BRR is filled-up according to OVER8 bit setting which is forced to 1     */ 
+  /* BRR is filled-up according to OVER8 bit setting which is forced to 1     */
   USART_GETCLOCKSOURCE(husart, clocksource);
   switch (clocksource)
   {
@@ -2143,7 +2143,7 @@ static HAL_StatusTypeDef USART_SetConfig(USART_HandleTypeDef *husart)
       ret = HAL_ERROR;
       break;
   }
-  
+
   brrtemp = usartdiv & 0xFFF0U;
   brrtemp |= (uint16_t)((usartdiv & (uint16_t)0x000FU) >> 1U);
   husart->Instance->BRR = brrtemp;

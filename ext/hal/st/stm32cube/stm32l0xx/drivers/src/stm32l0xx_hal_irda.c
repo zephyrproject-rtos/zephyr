@@ -26,13 +26,13 @@
             (+++) Enable the clock for the USARTx/UARTx GPIOs.
             (+++) Configure these USARTx/UARTx pins (TX as alternate function pull-up, RX as alternate function Input).
         (++) NVIC configuration if you need to use interrupt process (HAL_IRDA_Transmit_IT()
-             and HAL_IRDA_Receive_IT() APIs): 
+             and HAL_IRDA_Receive_IT() APIs):
             (+++) Configure the USARTx/UARTx interrupt priority.
-            (+++) Enable the NVIC USARTx/UARTx IRQ handle.            
+            (+++) Enable the NVIC USARTx/UARTx IRQ handle.
             (+++) The specific IRDA interrupts (Transmission complete interrupt,
                   RXNE interrupt and Error Interrupts) will be managed using the macros
                   __HAL_IRDA_ENABLE_IT() and __HAL_IRDA_DISABLE_IT() inside the transmit and receive process.
-                
+
         (++) DMA Configuration if you need to use DMA process (HAL_IRDA_Transmit_DMA()
              and HAL_IRDA_Receive_DMA() APIs):
             (+++) Declare a DMA handle structure for the Tx/Rx channel.
@@ -48,11 +48,11 @@
     (#) Initialize the IRDA registers by calling the HAL_IRDA_Init() API:
         (++) This API configures also the low level Hardware GPIO, CLOCK, CORTEX...etc)
              by calling the customized HAL_IRDA_MspInit() API.
-        
+
          -@@- The specific IRDA interrupts (Transmission complete interrupt,
              RXNE interrupt and Error Interrupts) will be managed using the macros
              __HAL_IRDA_ENABLE_IT() and __HAL_IRDA_DISABLE_IT() inside the transmit and receive process.
-     
+
     (#) Three operation modes are available within this driver :
 
      *** Polling mode IO operation ***
@@ -221,10 +221,10 @@ static HAL_StatusTypeDef IRDA_Receive_IT(IRDA_HandleTypeDef *hirda);
 
 @endverbatim
 
-  Depending on the frame length defined by the M1 and M0 bits (7-bit, 
-  8-bit or 9-bit), the possible IRDA frame formats are listed in the 
+  Depending on the frame length defined by the M1 and M0 bits (7-bit,
+  8-bit or 9-bit), the possible IRDA frame formats are listed in the
   following table.
-  
+
     Table 1. IRDA frame format.
     +-----------------------------------------------------------------------+
     |  M1 bit |  M0 bit |  PCE bit  |             IRDA frame                |
@@ -437,7 +437,7 @@ __weak void HAL_IRDA_MspDeInit(IRDA_HandleTypeDef *hirda)
 
     (#) In Non-Blocking mode transfers, possible errors are split into 2 categories.
         Errors are handled as follows :
-       (+) Error is considered as Recoverable and non blocking : Transfer could go till end, but error severity is 
+       (+) Error is considered as Recoverable and non blocking : Transfer could go till end, but error severity is
            to be evaluated by user : this concerns Frame Error, Parity Error or Noise Error in Interrupt mode reception .
            Received character is then retrieved and stored in Rx buffer, Error code is set to allow user to identify error type,
            and HAL_IRDA_ErrorCallback() user callback is executed. Transfer is kept ongoing on IRDA side.
@@ -476,8 +476,8 @@ HAL_StatusTypeDef HAL_IRDA_Transmit(IRDA_HandleTypeDef *hirda, uint8_t *pData, u
       return  HAL_ERROR;
     }
 
-    /* In case of 9bits/No Parity transfer, pData buffer provided as input paramter 
-       should be aligned on a u16 frontier, as data to be filled into TDR will be 
+    /* In case of 9bits/No Parity transfer, pData buffer provided as input paramter
+       should be aligned on a u16 frontier, as data to be filled into TDR will be
        handled through a u16 cast. */
     if ((hirda->Init.WordLength == UART_WORDLENGTH_9B) && (hirda->Init.Parity == UART_PARITY_NONE))
     {
@@ -564,8 +564,8 @@ HAL_StatusTypeDef HAL_IRDA_Receive(IRDA_HandleTypeDef *hirda, uint8_t *pData, ui
       return  HAL_ERROR;
     }
 
-    /* In case of 9bits/No Parity transfer, pData buffer provided as input paramter 
-       should be aligned on a u16 frontier, as data to be received from RDR will be 
+    /* In case of 9bits/No Parity transfer, pData buffer provided as input paramter
+       should be aligned on a u16 frontier, as data to be received from RDR will be
        handled through a u16 cast. */
     if ((hirda->Init.WordLength == UART_WORDLENGTH_9B) && (hirda->Init.Parity == UART_PARITY_NONE))
     {
@@ -649,8 +649,8 @@ HAL_StatusTypeDef HAL_IRDA_Transmit_IT(IRDA_HandleTypeDef *hirda, uint8_t *pData
       return HAL_ERROR;
     }
 
-    /* In case of 9bits/No Parity transfer, pData buffer provided as input paramter 
-       should be aligned on a u16 frontier, as data to be filled into TDR will be 
+    /* In case of 9bits/No Parity transfer, pData buffer provided as input paramter
+       should be aligned on a u16 frontier, as data to be filled into TDR will be
        handled through a u16 cast. */
     if ((hirda->Init.WordLength == UART_WORDLENGTH_9B) && (hirda->Init.Parity == UART_PARITY_NONE))
     {
@@ -709,8 +709,8 @@ HAL_StatusTypeDef HAL_IRDA_Receive_IT(IRDA_HandleTypeDef *hirda, uint8_t *pData,
     /* Process Locked */
     __HAL_LOCK(hirda);
 
-    /* In case of 9bits/No Parity transfer, pData buffer provided as input paramter 
-       should be aligned on a u16 frontier, as data to be filled into TDR will be 
+    /* In case of 9bits/No Parity transfer, pData buffer provided as input paramter
+       should be aligned on a u16 frontier, as data to be filled into TDR will be
        handled through a u16 cast. */
     if ((hirda->Init.WordLength == UART_WORDLENGTH_9B) && (hirda->Init.Parity == UART_PARITY_NONE))
     {
@@ -770,8 +770,8 @@ HAL_StatusTypeDef HAL_IRDA_Transmit_DMA(IRDA_HandleTypeDef *hirda, uint8_t *pDat
       return HAL_ERROR;
     }
 
-    /* In case of 9bits/No Parity transfer, pData buffer provided as input paramter 
-       should be aligned on a u16 frontier, as data to be filled into TDR will be 
+    /* In case of 9bits/No Parity transfer, pData buffer provided as input paramter
+       should be aligned on a u16 frontier, as data to be filled into TDR will be
        handled through a u16 cast. */
     if ((hirda->Init.WordLength == UART_WORDLENGTH_9B) && (hirda->Init.Parity == UART_PARITY_NONE))
     {
@@ -848,8 +848,8 @@ HAL_StatusTypeDef HAL_IRDA_Receive_DMA(IRDA_HandleTypeDef *hirda, uint8_t *pData
       return HAL_ERROR;
     }
 
-    /* In case of 9bits/No Parity transfer, pData buffer provided as input paramter 
-       should be aligned on a u16 frontier, as data to be filled into TDR will be 
+    /* In case of 9bits/No Parity transfer, pData buffer provided as input paramter
+       should be aligned on a u16 frontier, as data to be filled into TDR will be
        handled through a u16 cast. */
     if ((hirda->Init.WordLength == UART_WORDLENGTH_9B) && (hirda->Init.Parity == UART_PARITY_NONE))
     {
@@ -984,9 +984,9 @@ HAL_StatusTypeDef HAL_IRDA_DMAStop(IRDA_HandleTypeDef *hirda)
 {
   /* The Lock is not implemented on this API to allow the user application
      to call the HAL IRDA API under callbacks HAL_IRDA_TxCpltCallback() / HAL_IRDA_RxCpltCallback() /
-     HAL_IRDA_TxHalfCpltCallback / HAL_IRDA_RxHalfCpltCallback: 
-     indeed, when HAL_DMA_Abort() API is called, the DMA TX/RX Transfer or Half Transfer complete  
-     interrupt is generated if the DMA transfer interruption occurs at the middle or at the end of 
+     HAL_IRDA_TxHalfCpltCallback / HAL_IRDA_RxHalfCpltCallback:
+     indeed, when HAL_DMA_Abort() API is called, the DMA TX/RX Transfer or Half Transfer complete
+     interrupt is generated if the DMA transfer interruption occurs at the middle or at the end of
      the stream and the corresponding call back is executed. */
 
   /* Stop IRDA DMA Tx request if ongoing */
@@ -1026,7 +1026,7 @@ HAL_StatusTypeDef HAL_IRDA_DMAStop(IRDA_HandleTypeDef *hirda)
   * @brief  Abort ongoing transfers (blocking mode).
   * @param  hirda Pointer to a IRDA_HandleTypeDef structure that contains
   *               the configuration information for the specified UART module.
-  * @note   This procedure could be used for aborting any ongoing transfer started in Interrupt or DMA mode. 
+  * @note   This procedure could be used for aborting any ongoing transfer started in Interrupt or DMA mode.
   *         This procedure performs following operations :
   *           - Disable IRDA Interrupts (Tx and Rx)
   *           - Disable the DMA transfer in the peripheral register (if enabled)
@@ -1049,7 +1049,7 @@ HAL_StatusTypeDef HAL_IRDA_Abort(IRDA_HandleTypeDef *hirda)
     /* Abort the IRDA DMA Tx channel : use blocking DMA Abort API (no callback) */
     if(hirda->hdmatx != NULL)
     {
-      /* Set the IRDA DMA Abort callback to Null. 
+      /* Set the IRDA DMA Abort callback to Null.
          No call back execution at end of DMA abort procedure */
       hirda->hdmatx->XferAbortCallback = NULL;
 
@@ -1065,7 +1065,7 @@ HAL_StatusTypeDef HAL_IRDA_Abort(IRDA_HandleTypeDef *hirda)
     /* Abort the IRDA DMA Rx channel : use blocking DMA Abort API (no callback) */
     if(hirda->hdmarx != NULL)
     {
-      /* Set the IRDA DMA Abort callback to Null. 
+      /* Set the IRDA DMA Abort callback to Null.
          No call back execution at end of DMA abort procedure */
       hirda->hdmarx->XferAbortCallback = NULL;
 
@@ -1074,8 +1074,8 @@ HAL_StatusTypeDef HAL_IRDA_Abort(IRDA_HandleTypeDef *hirda)
   }
 
   /* Reset Tx and Rx transfer counters */
-  hirda->TxXferCount = 0; 
-  hirda->RxXferCount = 0; 
+  hirda->TxXferCount = 0;
+  hirda->RxXferCount = 0;
 
   /* Clear the Error flags in the ICR register */
   __HAL_IRDA_CLEAR_FLAG(hirda, IRDA_CLEAR_OREF | IRDA_CLEAR_NEF | IRDA_CLEAR_PEF | IRDA_CLEAR_FEF);
@@ -1094,7 +1094,7 @@ HAL_StatusTypeDef HAL_IRDA_Abort(IRDA_HandleTypeDef *hirda)
   * @brief  Abort ongoing Transmit transfer (blocking mode).
   * @param  hirda Pointer to a IRDA_HandleTypeDef structure that contains
   *               the configuration information for the specified UART module.
-  * @note   This procedure could be used for aborting any ongoing Tx transfer started in Interrupt or DMA mode. 
+  * @note   This procedure could be used for aborting any ongoing Tx transfer started in Interrupt or DMA mode.
   *         This procedure performs following operations :
   *           - Disable IRDA Interrupts (Tx)
   *           - Disable the DMA transfer in the peripheral register (if enabled)
@@ -1116,7 +1116,7 @@ HAL_StatusTypeDef HAL_IRDA_AbortTransmit(IRDA_HandleTypeDef *hirda)
     /* Abort the IRDA DMA Tx channel : use blocking DMA Abort API (no callback) */
     if(hirda->hdmatx != NULL)
     {
-      /* Set the IRDA DMA Abort callback to Null. 
+      /* Set the IRDA DMA Abort callback to Null.
          No call back execution at end of DMA abort procedure */
       hirda->hdmatx->XferAbortCallback = NULL;
 
@@ -1125,7 +1125,7 @@ HAL_StatusTypeDef HAL_IRDA_AbortTransmit(IRDA_HandleTypeDef *hirda)
   }
 
   /* Reset Tx transfer counter */
-  hirda->TxXferCount = 0; 
+  hirda->TxXferCount = 0;
 
   /* Restore hirda->gState to Ready */
   hirda->gState = HAL_IRDA_STATE_READY;
@@ -1137,7 +1137,7 @@ HAL_StatusTypeDef HAL_IRDA_AbortTransmit(IRDA_HandleTypeDef *hirda)
   * @brief  Abort ongoing Receive transfer (blocking mode).
   * @param  hirda Pointer to a IRDA_HandleTypeDef structure that contains
   *               the configuration information for the specified UART module.
-  * @note   This procedure could be used for aborting any ongoing Rx transfer started in Interrupt or DMA mode. 
+  * @note   This procedure could be used for aborting any ongoing Rx transfer started in Interrupt or DMA mode.
   *         This procedure performs following operations :
   *           - Disable IRDA Interrupts (Rx)
   *           - Disable the DMA transfer in the peripheral register (if enabled)
@@ -1160,7 +1160,7 @@ HAL_StatusTypeDef HAL_IRDA_AbortReceive(IRDA_HandleTypeDef *hirda)
     /* Abort the IRDA DMA Rx channel : use blocking DMA Abort API (no callback) */
     if(hirda->hdmarx != NULL)
     {
-      /* Set the IRDA DMA Abort callback to Null. 
+      /* Set the IRDA DMA Abort callback to Null.
          No call back execution at end of DMA abort procedure */
       hirda->hdmarx->XferAbortCallback = NULL;
 
@@ -1169,7 +1169,7 @@ HAL_StatusTypeDef HAL_IRDA_AbortReceive(IRDA_HandleTypeDef *hirda)
   }
 
   /* Reset Rx transfer counter */
-  hirda->RxXferCount = 0; 
+  hirda->RxXferCount = 0;
 
   /* Clear the Error flags in the ICR register */
   __HAL_IRDA_CLEAR_FLAG(hirda, IRDA_CLEAR_OREF | IRDA_CLEAR_NEF | IRDA_CLEAR_PEF | IRDA_CLEAR_FEF);
@@ -1184,7 +1184,7 @@ HAL_StatusTypeDef HAL_IRDA_AbortReceive(IRDA_HandleTypeDef *hirda)
   * @brief  Abort ongoing transfers (Interrupt mode).
   * @param  hirda Pointer to a IRDA_HandleTypeDef structure that contains
   *               the configuration information for the specified UART module.
-  * @note   This procedure could be used for aborting any ongoing transfer started in Interrupt or DMA mode. 
+  * @note   This procedure could be used for aborting any ongoing transfer started in Interrupt or DMA mode.
   *         This procedure performs following operations :
   *           - Disable IRDA Interrupts (Tx and Rx)
   *           - Disable the DMA transfer in the peripheral register (if enabled)
@@ -1198,7 +1198,7 @@ HAL_StatusTypeDef HAL_IRDA_AbortReceive(IRDA_HandleTypeDef *hirda)
 HAL_StatusTypeDef HAL_IRDA_Abort_IT(IRDA_HandleTypeDef *hirda)
 {
   uint32_t abortcplt = 1;
-  
+
   /* Disable TXEIE, TCIE, RXNE, PE and ERR (Frame error, noise error, overrun error) interrupts */
   CLEAR_BIT(hirda->Instance->CR1, (USART_CR1_RXNEIE | USART_CR1_PEIE | USART_CR1_TXEIE | USART_CR1_TCIE));
   CLEAR_BIT(hirda->Instance->CR3, USART_CR3_EIE);
@@ -1233,7 +1233,7 @@ HAL_StatusTypeDef HAL_IRDA_Abort_IT(IRDA_HandleTypeDef *hirda)
       hirda->hdmarx->XferAbortCallback = NULL;
     }
   }
-  
+
   /* Disable the IRDA DMA Tx request if enabled */
   if(HAL_IS_BIT_SET(hirda->Instance->CR3, USART_CR3_DMAT))
   {
@@ -1243,7 +1243,7 @@ HAL_StatusTypeDef HAL_IRDA_Abort_IT(IRDA_HandleTypeDef *hirda)
     /* Abort the IRDA DMA Tx channel : use non blocking DMA Abort API (callback) */
     if(hirda->hdmatx != NULL)
     {
-      /* IRDA Tx DMA Abort callback has already been initialised : 
+      /* IRDA Tx DMA Abort callback has already been initialised :
          will lead to call HAL_IRDA_AbortCpltCallback() at end of DMA abort procedure */
 
       /* Abort DMA TX */
@@ -1266,7 +1266,7 @@ HAL_StatusTypeDef HAL_IRDA_Abort_IT(IRDA_HandleTypeDef *hirda)
     /* Abort the IRDA DMA Rx channel : use non blocking DMA Abort API (callback) */
     if(hirda->hdmarx != NULL)
     {
-      /* IRDA Rx DMA Abort callback has already been initialised : 
+      /* IRDA Rx DMA Abort callback has already been initialised :
          will lead to call HAL_IRDA_AbortCpltCallback() at end of DMA abort procedure */
 
       /* Abort DMA RX */
@@ -1286,7 +1286,7 @@ HAL_StatusTypeDef HAL_IRDA_Abort_IT(IRDA_HandleTypeDef *hirda)
   if (abortcplt == 1)
   {
     /* Reset Tx and Rx transfer counters */
-    hirda->TxXferCount = 0; 
+    hirda->TxXferCount = 0;
     hirda->RxXferCount = 0;
 
     /* Reset errorCode */
@@ -1310,7 +1310,7 @@ HAL_StatusTypeDef HAL_IRDA_Abort_IT(IRDA_HandleTypeDef *hirda)
   * @brief  Abort ongoing Transmit transfer (Interrupt mode).
   * @param  hirda Pointer to a IRDA_HandleTypeDef structure that contains
   *               the configuration information for the specified UART module.
-  * @note   This procedure could be used for aborting any ongoing Tx transfer started in Interrupt or DMA mode. 
+  * @note   This procedure could be used for aborting any ongoing Tx transfer started in Interrupt or DMA mode.
   *         This procedure performs following operations :
   *           - Disable IRDA Interrupts (Tx)
   *           - Disable the DMA transfer in the peripheral register (if enabled)
@@ -1334,7 +1334,7 @@ HAL_StatusTypeDef HAL_IRDA_AbortTransmit_IT(IRDA_HandleTypeDef *hirda)
     /* Abort the IRDA DMA Tx channel : use non blocking DMA Abort API (callback) */
     if(hirda->hdmatx != NULL)
     {
-      /* Set the IRDA DMA Abort callback : 
+      /* Set the IRDA DMA Abort callback :
          will lead to call HAL_IRDA_AbortCpltCallback() at end of DMA abort procedure */
       hirda->hdmatx->XferAbortCallback = IRDA_DMATxOnlyAbortCallback;
 
@@ -1348,7 +1348,7 @@ HAL_StatusTypeDef HAL_IRDA_AbortTransmit_IT(IRDA_HandleTypeDef *hirda)
     else
     {
       /* Reset Tx transfer counter */
-      hirda->TxXferCount = 0; 
+      hirda->TxXferCount = 0;
 
       /* Restore hirda->gState to Ready */
       hirda->gState = HAL_IRDA_STATE_READY;
@@ -1360,7 +1360,7 @@ HAL_StatusTypeDef HAL_IRDA_AbortTransmit_IT(IRDA_HandleTypeDef *hirda)
   else
   {
     /* Reset Tx transfer counter */
-    hirda->TxXferCount = 0; 
+    hirda->TxXferCount = 0;
 
     /* Restore hirda->gState to Ready */
     hirda->gState = HAL_IRDA_STATE_READY;
@@ -1376,7 +1376,7 @@ HAL_StatusTypeDef HAL_IRDA_AbortTransmit_IT(IRDA_HandleTypeDef *hirda)
   * @brief  Abort ongoing Receive transfer (Interrupt mode).
   * @param  hirda Pointer to a IRDA_HandleTypeDef structure that contains
   *               the configuration information for the specified UART module.
-  * @note   This procedure could be used for aborting any ongoing Rx transfer started in Interrupt or DMA mode. 
+  * @note   This procedure could be used for aborting any ongoing Rx transfer started in Interrupt or DMA mode.
   *         This procedure performs following operations :
   *           - Disable IRDA Interrupts (Rx)
   *           - Disable the DMA transfer in the peripheral register (if enabled)
@@ -1401,7 +1401,7 @@ HAL_StatusTypeDef HAL_IRDA_AbortReceive_IT(IRDA_HandleTypeDef *hirda)
     /* Abort the IRDA DMA Rx channel : use non blocking DMA Abort API (callback) */
     if(hirda->hdmarx != NULL)
     {
-      /* Set the IRDA DMA Abort callback : 
+      /* Set the IRDA DMA Abort callback :
          will lead to call HAL_IRDA_AbortCpltCallback() at end of DMA abort procedure */
       hirda->hdmarx->XferAbortCallback = IRDA_DMARxOnlyAbortCallback;
 
@@ -1415,7 +1415,7 @@ HAL_StatusTypeDef HAL_IRDA_AbortReceive_IT(IRDA_HandleTypeDef *hirda)
     else
     {
       /* Reset Rx transfer counter */
-      hirda->RxXferCount = 0; 
+      hirda->RxXferCount = 0;
 
       /* Clear the Error flags in the ICR register */
       __HAL_IRDA_CLEAR_FLAG(hirda, IRDA_CLEAR_OREF | IRDA_CLEAR_NEF | IRDA_CLEAR_PEF | IRDA_CLEAR_FEF);
@@ -1430,7 +1430,7 @@ HAL_StatusTypeDef HAL_IRDA_AbortReceive_IT(IRDA_HandleTypeDef *hirda)
   else
   {
     /* Reset Rx transfer counter */
-    hirda->RxXferCount = 0; 
+    hirda->RxXferCount = 0;
 
     /* Clear the Error flags in the ICR register */
     __HAL_IRDA_CLEAR_FLAG(hirda, IRDA_CLEAR_OREF | IRDA_CLEAR_NEF | IRDA_CLEAR_PEF | IRDA_CLEAR_FEF);
@@ -1468,11 +1468,11 @@ void HAL_IRDA_IRQHandler(IRDA_HandleTypeDef *hirda)
       IRDA_Receive_IT(hirda);
       return;
     }
-  }  
+  }
 
   /* If some errors occur */
   cr3its = READ_REG(hirda->Instance->CR3);
-  if(   (errorflags != RESET) 
+  if(   (errorflags != RESET)
      && (    ((cr3its & USART_CR3_EIE) != RESET)
           || ((cr1its & (USART_CR1_RXNEIE | USART_CR1_PEIE)) != RESET)) )
   {
@@ -1522,7 +1522,7 @@ void HAL_IRDA_IRQHandler(IRDA_HandleTypeDef *hirda)
          consider error as blocking */
       if (((hirda->ErrorCode & HAL_IRDA_ERROR_ORE) != RESET) ||
           (HAL_IS_BIT_SET(hirda->Instance->CR3, USART_CR3_DMAR)))
-      {  
+      {
         /* Blocking error : transfer is aborted
            Set the IRDA state ready to be able to start again the process,
            Disable Rx Interrupts, and disable Rx DMA request, if ongoing */
@@ -1536,7 +1536,7 @@ void HAL_IRDA_IRQHandler(IRDA_HandleTypeDef *hirda)
           /* Abort the IRDA DMA Rx channel */
           if(hirda->hdmarx != NULL)
           {
-            /* Set the IRDA DMA Abort callback : 
+            /* Set the IRDA DMA Abort callback :
                will lead to call HAL_IRDA_ErrorCallback() at end of DMA abort procedure */
             hirda->hdmarx->XferAbortCallback = IRDA_DMAAbortOnError;
 
@@ -1561,7 +1561,7 @@ void HAL_IRDA_IRQHandler(IRDA_HandleTypeDef *hirda)
       }
       else
       {
-        /* Non Blocking error : transfer could go on. 
+        /* Non Blocking error : transfer could go on.
            Error is notified to user through user error callback */
         HAL_IRDA_ErrorCallback(hirda);
         hirda->ErrorCode = HAL_IRDA_ERROR_NONE;
@@ -2099,7 +2099,7 @@ static void IRDA_DMAAbortOnError(DMA_HandleTypeDef *hdma)
 static void IRDA_DMATxAbortCallback(DMA_HandleTypeDef *hdma)
 {
   IRDA_HandleTypeDef* hirda = (IRDA_HandleTypeDef* )(hdma->Parent);
-  
+
   hirda->hdmatx->XferAbortCallback = NULL;
 
   /* Check if an Abort process is still ongoing */
@@ -2110,7 +2110,7 @@ static void IRDA_DMATxAbortCallback(DMA_HandleTypeDef *hdma)
       return;
     }
   }
-  
+
   /* No Abort process still ongoing : All DMA channels are aborted, call user Abort Complete callback */
   hirda->TxXferCount = 0;
   hirda->RxXferCount = 0;
@@ -2141,7 +2141,7 @@ static void IRDA_DMATxAbortCallback(DMA_HandleTypeDef *hdma)
 static void IRDA_DMARxAbortCallback(DMA_HandleTypeDef *hdma)
 {
   IRDA_HandleTypeDef* hirda = (IRDA_HandleTypeDef* )(hdma->Parent);
-  
+
   hirda->hdmarx->XferAbortCallback = NULL;
 
   /* Check if an Abort process is still ongoing */
@@ -2152,7 +2152,7 @@ static void IRDA_DMARxAbortCallback(DMA_HandleTypeDef *hdma)
       return;
     }
   }
-  
+
   /* No Abort process still ongoing : All DMA channels are aborted, call user Abort Complete callback */
   hirda->TxXferCount = 0;
   hirda->RxXferCount = 0;

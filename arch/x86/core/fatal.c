@@ -22,6 +22,7 @@
 #include <exception.h>
 #include <inttypes.h>
 #include <exc_handle.h>
+#include <logging/log_ctrl.h>
 
 __weak void _debug_fatal_hook(const NANO_ESF *esf) { ARG_UNUSED(esf); }
 
@@ -83,6 +84,8 @@ static void unwind_stack(u32_t base_ptr)
 FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 					  const NANO_ESF *pEsf)
 {
+	LOG_PANIC();
+
 	_debug_fatal_hook(pEsf);
 
 #ifdef CONFIG_PRINTK
@@ -405,7 +408,7 @@ static FUNC_NORETURN __used void _df_handler_bottom(void)
 	 * one byte, since if a single push operation caused the fault ESP
 	 * wouldn't be decremented
 	 */
-	_x86_mmu_get_flags((void *)_df_esf.esp - 1, &pde_flags, &pte_flags);
+	_x86_mmu_get_flags((u8_t *)_df_esf.esp - 1, &pde_flags, &pte_flags);
 	if (pte_flags & MMU_ENTRY_PRESENT) {
 		printk("***** Double Fault *****\n");
 		reason = _NANO_ERR_CPU_EXCEPTION;

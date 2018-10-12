@@ -1,8 +1,10 @@
 /dts-v1/;
 
-#define DT_FLASH_SIZE		__SIZE_K(128)
-#define DT_SRAM_SIZE		__SIZE_K(24)
-#define DT_DCCM_SIZE		__SIZE_K(8)
+#include <mem.h>
+
+#define DT_FLASH_SIZE		DT_SIZE_K(128)
+#define DT_SRAM_SIZE		DT_SIZE_K(24)
+#define DT_DCCM_SIZE		DT_SIZE_K(8)
 
 #define DT_FLASH_ADDR		0x40034000
 
@@ -13,6 +15,7 @@
 	compatible = "intel,arduino_101_sss", "intel,quark_se_c1000";
 
 	aliases {
+		led0 = &led0;
 		uart-0 = &uart0;
 		uart-1 = &uart1;
 	};
@@ -21,6 +24,14 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,console = &uart1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio0 8 0>;
+			label = "LED";
+		};
 	};
 };
 
@@ -46,5 +57,13 @@
 };
 
 &adc0 {
+	status = "ok";
+};
+
+&spi0 {
+	status = "ok";
+};
+
+&spi1 {
 	status = "ok";
 };

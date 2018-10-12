@@ -1,6 +1,5 @@
 ---
 title: ARM CMSDK UART
-id: arm,cmsdk-uart
 version: 0.1
 
 description: >
@@ -11,9 +10,6 @@ inherits:
 
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "arm,cmsdk-uart"
 
     reg:

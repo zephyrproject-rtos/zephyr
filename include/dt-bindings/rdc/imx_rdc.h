@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __IMX_RDC_H
-#define __IMX_RDC_H
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_RDC_IMX_RDC_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_RDC_IMX_RDC_H_
 
 #define A7_DOMAIN_ID	0
 #define A9_DOMAIN_ID	0
@@ -18,4 +18,4 @@
 
 #define RDC_DOMAIN_PERM(domain, perm) (perm << (domain * 2))
 
-#endif /* __IMX_RDC_H */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_RDC_IMX_RDC_H_ */

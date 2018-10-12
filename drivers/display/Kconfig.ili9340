@@ -1,7 +1,7 @@
 # Kconfig - ILI9340 display driver configuration options
 
 #
-# Copyright (c) 2017 dXplore
+# Copyright (c) 2017 Jan Van Winkel <jan.van_winkel@dxplore.eu>
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -37,20 +37,6 @@ config ILI9340_SPI_FREQ
 	default 15151515
 	help
 	Frequency to be used to communicate with the ILI9340.
-
-config SYS_LOG_ILI9340_LEVEL
-	int "ILI9340 Sys Log level"
-	depends on SYS_LOG
-	default 0
-	range 0 4
-	help
-	Sets log level for ILI9340 display driver.
-	Levels are:
-	- 0 OFF: do not write
-	- 1 ERROR: only write SYS_LOG_ERR
-	- 2 WARNING: write SYS_LOG_WRN in addition to previous level
-	- 3 INFO: write SYS_LOG_INF in addition to previous levels
-	- 4 DEBUG: write SYS_LOG_DBG in addition to previous levels
 
 config ILI9340_RESET_GPIO_PORT_NAME
 	string "Reset GPIO controller port name"

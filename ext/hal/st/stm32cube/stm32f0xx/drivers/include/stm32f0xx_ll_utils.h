@@ -113,14 +113,14 @@ typedef struct
 
 #if defined(RCC_PLLSRC_PREDIV1_SUPPORT)
   uint32_t PLLDiv;   /*!< Division factor for PLL VCO output clock.
-                          This parameter can be a value of @ref RCC_LL_EC_PREDIV_DIV 
-  
+                          This parameter can be a value of @ref RCC_LL_EC_PREDIV_DIV
+
                           This feature can be modified afterwards using unitary function
                           @ref LL_RCC_PLL_ConfigDomain_SYS(). */
 #else
   uint32_t Prediv;   /*!< Division factor for HSE used as PLL clock source.
-                          This parameter can be a value of @ref RCC_LL_EC_PREDIV_DIV 
-  
+                          This parameter can be a value of @ref RCC_LL_EC_PREDIV_DIV
+
                           This feature can be modified afterwards using unitary function
                           @ref LL_RCC_PLL_ConfigDomain_SYS(). */
 #endif /* RCC_PLLSRC_PREDIV1_SUPPORT */
@@ -227,7 +227,7 @@ __STATIC_INLINE uint32_t LL_GetFlashSize(void)
 /**
   * @brief  This function configures the Cortex-M SysTick source of the time base.
   * @param  HCLKFrequency HCLK frequency in Hz (can be calculated thanks to RCC helper macro)
-  * @note   When a RTOS is used, it is recommended to avoid changing the SysTick 
+  * @note   When a RTOS is used, it is recommended to avoid changing the SysTick
   *         configuration by calling this function, for a delay use rather osDelay RTOS service.
   * @param  Ticks Number of ticks
   * @retval None

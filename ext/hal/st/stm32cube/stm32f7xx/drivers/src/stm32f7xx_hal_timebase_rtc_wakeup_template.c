@@ -1,14 +1,14 @@
 /**
   ******************************************************************************
-  * @file    stm32f7xx_hal_timebase_rtc_wakeup_template.c 
+  * @file    stm32f7xx_hal_timebase_rtc_wakeup_template.c
   * @author  MCD Application Team
   * @brief   HAL time base based on the hardware RTC_WAKEUP Template.
-  *    
+  *
   *          This file overrides the native HAL time base functions (defined as weak)
   *          to use the RTC WAKEUP for the time base generation:
   *           + Intializes the RTC peripheral and configures the wakeup timer to be
   *             incremented each 1ms
-  *           + The wakeup feature is configured to assert an interrupt each 1ms 
+  *           + The wakeup feature is configured to assert an interrupt each 1ms
   *           + HAL_IncTick is called inside the HAL_RTCEx_WakeUpTimerEventCallback
   *           + HSE (default), LSE or LSI can be selected as RTC clock source
  @verbatim
@@ -19,13 +19,13 @@
     This file must be copied to the application folder and modified as follows:
     (#) Rename it to 'stm32f7xx_hal_timebase_rtc_wakeup.c'
     (#) Add this file and the RTC HAL drivers to your project and uncomment
-       HAL_RTC_MODULE_ENABLED define in stm32f7xx_hal_conf.h 
+       HAL_RTC_MODULE_ENABLED define in stm32f7xx_hal_conf.h
 
     [..]
     (@) HAL RTC alarm and HAL RTC wakeup drivers cant be used with low power modes:
         The wake up capability of the RTC may be intrusive in case of prior low power mode
         configuration requiring different wake up sources.
-        Application/Example behavior is no more guaranteed 
+        Application/Example behavior is no more guaranteed
     (@) The stm32f7xx_hal_timebase_tim use is recommended for the Applications/Examples
           requiring low power modes
 
@@ -68,12 +68,12 @@
 
 /** @defgroup HAL_TimeBase_RTC_WakeUp_Template  HAL TimeBase RTC WakeUp Template
   * @{
-  */ 
+  */
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 
-/* Uncomment the line below to select the appropriate RTC Clock source for your application: 
+/* Uncomment the line below to select the appropriate RTC Clock source for your application:
   + RTC_CLOCK_SOURCE_HSE: can be selected for applications requiring timing precision.
   + RTC_CLOCK_SOURCE_LSE: can be selected for applications with low constraint on timing
                           precision.
@@ -103,15 +103,15 @@ void RTC_WKUP_IRQHandler(void);
 /* Private functions ---------------------------------------------------------*/
 
 /**
-  * @brief  This function configures the RTC_WKUP as a time base source. 
-  *         The time source is configured  to have 1ms time base with a dedicated 
-  *         Tick interrupt priority. 
-  *         Wakeup Time base = ((RTC_ASYNCH_PREDIV + 1) * (RTC_SYNCH_PREDIV + 1)) / RTC_CLOCK 
+  * @brief  This function configures the RTC_WKUP as a time base source.
+  *         The time source is configured  to have 1ms time base with a dedicated
+  *         Tick interrupt priority.
+  *         Wakeup Time base = ((RTC_ASYNCH_PREDIV + 1) * (RTC_SYNCH_PREDIV + 1)) / RTC_CLOCK
                              = 1ms
-  *         Wakeup Time = WakeupTimebase * WakeUpCounter (0 + 1) 
+  *         Wakeup Time = WakeupTimebase * WakeUpCounter (0 + 1)
                         = 1 ms
   * @note   This function is called  automatically at the beginning of program after
-  *         reset by HAL_Init() or at any time when clock is configured, by HAL_RCC_ClockConfig(). 
+  *         reset by HAL_Init() or at any time when clock is configured, by HAL_RCC_ClockConfig().
   * @param  TickPriority Tick interrupt priority.
   * @retval HAL status
   */
@@ -146,21 +146,21 @@ HAL_StatusTypeDef HAL_InitTick (uint32_t TickPriority)
 #endif /* RTC_CLOCK_SOURCE_LSE */
 
   if(HAL_RCC_OscConfig(&RCC_OscInitStruct) == HAL_OK)
-  { 
+  {
     PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_RTC;
     if(HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) == HAL_OK)
     {
       /* Enable RTC Clock */
       __HAL_RCC_RTC_ENABLE();
-      /* The time base should be 1ms 
-         Time base = ((RTC_ASYNCH_PREDIV + 1) * (RTC_SYNCH_PREDIV + 1)) / RTC_CLOCK 
-         HSE as RTC clock 
+      /* The time base should be 1ms
+         Time base = ((RTC_ASYNCH_PREDIV + 1) * (RTC_SYNCH_PREDIV + 1)) / RTC_CLOCK
+         HSE as RTC clock
            Time base = ((99 + 1) * (9 + 1)) / 1Mhz
                      = 1ms
-         LSE as RTC clock 
+         LSE as RTC clock
            Time base = ((31 + 1) * (0 + 1)) / 32.768Khz
                      = ~1ms
-         LSI as RTC clock 
+         LSI as RTC clock
            Time base = ((31 + 1) * (0 + 1)) / 32Khz
                      = 1ms
       */
@@ -179,13 +179,13 @@ HAL_StatusTypeDef HAL_InitTick (uint32_t TickPriority)
       /* Disable the Wake-up Timer */
       __HAL_RTC_WAKEUPTIMER_DISABLE(&hRTC_Handle);
 
-      /* In case of interrupt mode is used, the interrupt source must disabled */ 
+      /* In case of interrupt mode is used, the interrupt source must disabled */
       __HAL_RTC_WAKEUPTIMER_DISABLE_IT(&hRTC_Handle,RTC_IT_WUT);
 
       /* Wait till RTC WUTWF flag is set  */
       while(__HAL_RTC_WAKEUPTIMER_GET_FLAG(&hRTC_Handle, RTC_FLAG_WUTWF) == RESET)
       {
-        if(counter++ == (SystemCoreClock /48U)) 
+        if(counter++ == (SystemCoreClock /48U))
         {
           return HAL_ERROR;
         }
@@ -221,7 +221,7 @@ HAL_StatusTypeDef HAL_InitTick (uint32_t TickPriority)
       __HAL_RTC_WRITEPROTECTION_ENABLE(&hRTC_Handle);
 
       HAL_NVIC_SetPriority(RTC_WKUP_IRQn, TickPriority, 0U);
-      HAL_NVIC_EnableIRQ(RTC_WKUP_IRQn); 
+      HAL_NVIC_EnableIRQ(RTC_WKUP_IRQn);
       return HAL_OK;
     }
   }

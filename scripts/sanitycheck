@@ -654,7 +654,7 @@ class SizeCalculator:
                    "kobject_data", "mmu_tables", "app_pad", "priv_stacks",
                    "ccm_data", "usb_descriptor", "usb_data", "usb_bos_desc",
                    'log_backends_sections', 'log_dynamic_sections',
-                   'log_const_sections',"app_smem"]
+                   'log_const_sections',"app_smem", 'shell_root_cmds_sections']
     # These get copied into RAM only on non-XIP
     ro_sections = ["text", "ctors", "init_array", "reset", "object_access",
                    "rodata", "devconfig", "net_l2", "vector", "_bt_settings_area"]
@@ -1172,7 +1172,7 @@ testcase_valid_keys = {"tags": {"type": "set", "required": False},
                        "toolchain_whitelist": {"type": "set"},
                        "filter": {"type": "str"},
                        "harness": {"type": "str"},
-                       "harness_config": {"type": "map"}
+                       "harness_config": {"type": "map", "default": {}}
                        }
 
 
@@ -2254,7 +2254,9 @@ class TestSuite:
                 if os.path.exists(bl):
                     with open(bl, "rb") as f:
                         log = f.read().decode("utf-8")
-                        failure.text = log
+                        ansi_escape = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
+                        failure.text = ansi_escape.sub('', log)
+                        f.close()
 
         result = ET.tostring(eleTestsuites)
         f = open(filename, 'wb')

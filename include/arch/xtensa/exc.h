@@ -12,8 +12,8 @@
  * arch/xtensa/arch.h.
  */
 
-#ifndef _ARCH_XTENSA_EXC_H_
-#define _ARCH_XTENSA_EXC_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_XTENSA_EXC_H_
+#define ZEPHYR_INCLUDE_ARCH_XTENSA_EXC_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,4 +42,4 @@ extern const NANO_ESF _default_esf;
 #endif
 
 
-#endif /* _ARCH_XTENSA_EXC_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_XTENSA_EXC_H_ */

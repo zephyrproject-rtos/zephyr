@@ -5,7 +5,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef ZEPHYR_ARCH_ARM_CORE_CORTEX_M_MPU_ARM_MPU_V8_INTERNAL_H_
+#define ZEPHYR_ARCH_ARM_CORE_CORTEX_M_MPU_ARM_MPU_V8_INTERNAL_H_
+
 #include <cmse.h>
+#define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
+#include <logging/log.h>
 
 /* Global MPU configuration at system initialization. */
 static void _mpu_init(void)
@@ -46,7 +51,7 @@ static void _region_init(u32_t index, struct arm_mpu_region *region_conf)
 		| MPU_RLAR_EN_Msk
 	);
 
-	SYS_LOG_DBG("[%d] 0x%08x 0x%08x 0x%08x 0x%08x",
+	LOG_DBG("[%d] 0x%08x 0x%08x 0x%08x 0x%08x",
 			index, region_conf->base, region_conf->attr.rbar,
 			region_conf->attr.mair_idx, region_conf->attr.r_limit);
 }
@@ -137,3 +142,5 @@ static inline int _mpu_buffer_validate(void *addr, size_t size, int write)
 	return -EPERM;
 }
 #endif /* USERSPACE || MPU_STACK_GUARD || APPLICATION_MEMORY */
+
+#endif	/* ZEPHYR_ARCH_ARM_CORE_CORTEX_M_MPU_ARM_MPU_V8_INTERNAL_H_ */

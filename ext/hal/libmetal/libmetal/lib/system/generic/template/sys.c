@@ -14,13 +14,15 @@
 #include <metal/utilities.h>
 #include <stdint.h>
 
-void sys_irq_restore_enable(void)
+void sys_irq_restore_enable(unsigned int flags)
 {
+	metal_unused(flags);
 	/* Add implementation here */
 }
 
-void sys_irq_save_disable(void)
+unsigned int sys_irq_save_disable(void)
 {
+	return 0;
 	/* Add implementation here */
 }
 

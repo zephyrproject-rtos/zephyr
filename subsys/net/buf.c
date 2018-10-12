@@ -15,15 +15,17 @@
 #include <net/buf.h>
 
 #if defined(CONFIG_NET_BUF_LOG)
-#define SYS_LOG_DOMAIN "net/buf"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_NET_BUF_LEVEL
-#include <logging/sys_log.h>
+#define LOG_MODULE_NAME net_buf
+#define NET_LOG_LEVEL CONFIG_NET_BUF_LOG_LEVEL
 
-#define NET_BUF_DBG(fmt, ...) SYS_LOG_DBG("(%p) " fmt, k_current_get(), \
-					  ##__VA_ARGS__)
-#define NET_BUF_ERR(fmt, ...) SYS_LOG_ERR(fmt, ##__VA_ARGS__)
-#define NET_BUF_WARN(fmt, ...) SYS_LOG_WRN(fmt,	##__VA_ARGS__)
-#define NET_BUF_INFO(fmt, ...) SYS_LOG_INF(fmt,  ##__VA_ARGS__)
+#include <logging/log.h>
+LOG_MODULE_REGISTER();
+
+#define NET_BUF_DBG(fmt, ...) LOG_DBG("(%p) " fmt, k_current_get(), \
+				      ##__VA_ARGS__)
+#define NET_BUF_ERR(fmt, ...) LOG_ERR(fmt, ##__VA_ARGS__)
+#define NET_BUF_WARN(fmt, ...) LOG_WRN(fmt, ##__VA_ARGS__)
+#define NET_BUF_INFO(fmt, ...) LOG_INF(fmt, ##__VA_ARGS__)
 #define NET_BUF_ASSERT(cond) do { if (!(cond)) {			  \
 			NET_BUF_ERR("assert: '" #cond "' failed"); \
 		} } while (0)
@@ -686,7 +688,7 @@ int net_buf_linearize(void *dst, size_t dst_len, struct net_buf *src,
 	frag = src;
 
 	/* clear dst */
-	memset(dst, 0, dst_len);
+	(void)memset(dst, 0, dst_len);
 
 	/* find the right fragment to start copying from */
 	while (frag && offset >= frag->len) {
@@ -698,7 +700,7 @@ int net_buf_linearize(void *dst, size_t dst_len, struct net_buf *src,
 	copied = 0;
 	while (frag && len > 0) {
 		to_copy = min(len, frag->len - offset);
-		memcpy(dst + copied, frag->data + offset, to_copy);
+		memcpy((u8_t *)dst + copied, frag->data + offset, to_copy);
 
 		copied += to_copy;
 
@@ -727,15 +729,15 @@ size_t net_buf_append_bytes(struct net_buf *buf, size_t len,
 {
 	struct net_buf *frag = net_buf_frag_last(buf);
 	size_t added_len = 0;
+	const u8_t *value8 = value;
 
 	do {
 		u16_t count = min(len, net_buf_tailroom(frag));
-		void *data = net_buf_add(frag, count);
 
-		memcpy(data, value, count);
+		net_buf_add_mem(frag, value8, count);
 		len -= count;
 		added_len += count;
-		value += count;
+		value8 += count;
 
 		if (len == 0) {
 			return added_len;

@@ -76,8 +76,8 @@ static u64_t event_mask_page_2 = DEFAULT_EVENT_MASK_PAGE_2;
 static u64_t le_event_mask = DEFAULT_LE_EVENT_MASK;
 
 #if defined(CONFIG_BT_CONN)
-static void le_conn_complete(u8_t status, struct radio_le_conn_cmplt *radio_cc,
-			     u16_t handle, struct net_buf *buf);
+static void le_conn_complete(struct pdu_data *pdu_data, u16_t handle,
+			     struct net_buf *buf);
 #endif /* CONFIG_BT_CONN */
 
 static void evt_create(struct net_buf *buf, u8_t evt, u8_t len)
@@ -221,7 +221,7 @@ static void reset(struct net_buf *buf, struct net_buf **evt)
 	hci_hbuf_total = 0;
 	hci_hbuf_sent = 0;
 	hci_hbuf_acked = 0;
-	memset(hci_hbuf_pend, 0, sizeof(hci_hbuf_pend));
+	(void)memset(hci_hbuf_pend, 0, sizeof(hci_hbuf_pend));
 	conn_count = 0;
 	if (buf) {
 		atomic_set_bit(&hci_state_mask, HCI_STATE_BIT_RESET);
@@ -269,7 +269,7 @@ static void set_ctl_to_host_flow(struct net_buf *buf, struct net_buf **evt)
 
 	hci_hbuf_sent = 0;
 	hci_hbuf_acked = 0;
-	memset(hci_hbuf_pend, 0, sizeof(hci_hbuf_pend));
+	(void)memset(hci_hbuf_pend, 0, sizeof(hci_hbuf_pend));
 	hci_hbuf_total = -hci_hbuf_total;
 }
 
@@ -468,7 +468,7 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	rp = cmd_complete(evt, sizeof(*rp));
 
 	rp->status = 0x00;
-	memset(&rp->commands[0], 0, sizeof(rp->commands));
+	(void)memset(&rp->commands[0], 0, sizeof(rp->commands));
 
 	/* Read Remote Version Info. */
 	rp->commands[2] |= BIT(7);
@@ -611,7 +611,7 @@ static void read_local_features(struct net_buf *buf, struct net_buf **evt)
 	rp = cmd_complete(evt, sizeof(*rp));
 
 	rp->status = 0x00;
-	memset(&rp->features[0], 0x00, sizeof(rp->features));
+	(void)memset(&rp->features[0], 0x00, sizeof(rp->features));
 	/* BR/EDR not supported and LE supported */
 	rp->features[4] = (1 << 5) | (1 << 6);
 }
@@ -722,7 +722,7 @@ static void le_read_local_features(struct net_buf *buf, struct net_buf **evt)
 
 	rp->status = 0x00;
 
-	memset(&rp->features[0], 0x00, sizeof(rp->features));
+	(void)memset(&rp->features[0], 0x00, sizeof(rp->features));
 	rp->features[0] = RADIO_BLE_FEAT & 0xFF;
 	rp->features[1] = (RADIO_BLE_FEAT >> 8)  & 0xFF;
 	rp->features[2] = (RADIO_BLE_FEAT >> 16)  & 0xFF;
@@ -1008,32 +1008,16 @@ static void le_create_connection(struct net_buf *buf, struct net_buf **evt)
 	*evt = cmd_status((!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED);
 }
 
-static void le_create_conn_cancel(struct net_buf *buf, struct net_buf **evt)
+static void le_create_conn_cancel(struct net_buf *buf, struct net_buf **evt,
+				  void **node_rx)
 {
 	struct bt_hci_evt_cc_status *ccst;
-	struct net_buf *cc;
-	u8_t cmd_status;
 	u32_t status;
 
-	status = ll_connect_disable();
-	cmd_status = status ? BT_HCI_ERR_CMD_DISALLOWED : 0x00;
-
-	if (!cmd_status) {
-		*evt = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
-		le_conn_complete(BT_HCI_ERR_UNKNOWN_CONN_ID, NULL, 0x0000,
-				 *evt);
-		if ((*evt)->len) {
-			ccst = cmd_complete(&cc, sizeof(*ccst));
-			ccst->status = cmd_status;
-			bt_recv_prio(cc);
-			return;
-		} else {
-			net_buf_unref(*evt);
-		}
-	}
+	status = ll_connect_disable(node_rx);
 
 	ccst = cmd_complete(evt, sizeof(*ccst));
-	ccst->status = cmd_status;
+	ccst->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
 }
 
 static void le_set_host_chan_classif(struct net_buf *buf, struct net_buf **evt)
@@ -1513,7 +1497,7 @@ static void le_enh_tx_test(struct net_buf *buf, struct net_buf **evt)
 #endif /* CONFIG_BT_CTLR_DTM_HCI */
 
 static int controller_cmd_handle(u16_t  ocf, struct net_buf *cmd,
-				 struct net_buf **evt)
+				 struct net_buf **evt, void **node_rx)
 {
 	switch (ocf) {
 	case BT_OCF(BT_HCI_OP_LE_SET_EVENT_MASK):
@@ -1601,7 +1585,7 @@ static int controller_cmd_handle(u16_t  ocf, struct net_buf *cmd,
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_CREATE_CONN_CANCEL):
-		le_create_conn_cancel(cmd, evt);
+		le_create_conn_cancel(cmd, evt, node_rx);
 		break;
 
 	case BT_OCF(BT_HCI_OP_LE_SET_HOST_CHAN_CLASSIF):
@@ -1741,6 +1725,7 @@ static int controller_cmd_handle(u16_t  ocf, struct net_buf *cmd,
 	return 0;
 }
 
+#if defined(CONFIG_BT_HCI_VS)
 static void vs_read_version_info(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_rp_vs_read_version_info *rp;
@@ -1765,7 +1750,7 @@ static void vs_read_supported_commands(struct net_buf *buf,
 	rp = cmd_complete(evt, sizeof(*rp));
 
 	rp->status = 0x00;
-	memset(&rp->commands[0], 0, sizeof(rp->commands));
+	(void)memset(&rp->commands[0], 0, sizeof(rp->commands));
 
 	/* Set Version Information, Supported Commands, Supported Features. */
 	rp->commands[0] |= BIT(0) | BIT(1) | BIT(2);
@@ -1785,7 +1770,7 @@ static void vs_read_supported_features(struct net_buf *buf,
 	rp = cmd_complete(evt, sizeof(*rp));
 
 	rp->status = 0x00;
-	memset(&rp->features[0], 0x00, sizeof(rp->features));
+	(void)memset(&rp->features[0], 0x00, sizeof(rp->features));
 }
 
 #if defined(CONFIG_BT_HCI_VS_EXT)
@@ -1804,10 +1789,8 @@ static void vs_read_build_info(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_rp_vs_read_build_info *rp;
 
-#define BUILD_TIMESTAMP " " __DATE__ " " __TIME__
-
 #define HCI_VS_BUILD_INFO "Zephyr OS v" \
-	KERNEL_VERSION_STRING BUILD_TIMESTAMP CONFIG_BT_CTLR_HCI_VS_BUILD_INFO
+	KERNEL_VERSION_STRING CONFIG_BT_CTLR_HCI_VS_BUILD_INFO
 
 	const char build_info[] = HCI_VS_BUILD_INFO;
 
@@ -1852,7 +1835,7 @@ static void vs_read_static_addrs(struct net_buf *buf, struct net_buf **evt)
 		BT_ADDR_SET_STATIC(&addr->bdaddr);
 
 		/* Mark IR as invalid */
-		memset(addr->ir, 0x00, sizeof(addr->ir));
+		(void)memset(addr->ir, 0x00, sizeof(addr->ir));
 
 		return;
 	}
@@ -1883,7 +1866,7 @@ static void vs_read_key_hierarchy_roots(struct net_buf *buf,
 		sys_put_le32(NRF_FICR->IR[3], &rp->ir[12]);
 	} else {
 		/* Mark IR as invalid */
-		memset(rp->ir, 0x00, sizeof(rp->ir));
+		(void)memset(rp->ir, 0x00, sizeof(rp->ir));
 	}
 
 	/* Fill in ER if present */
@@ -1897,15 +1880,15 @@ static void vs_read_key_hierarchy_roots(struct net_buf *buf,
 		sys_put_le32(NRF_FICR->ER[3], &rp->er[12]);
 	} else {
 		/* Mark ER as invalid */
-		memset(rp->er, 0x00, sizeof(rp->er));
+		(void)memset(rp->er, 0x00, sizeof(rp->er));
 	}
 
 	return;
 #else
 	/* Mark IR as invalid */
-	memset(rp->ir, 0x00, sizeof(rp->ir));
+	(void)memset(rp->ir, 0x00, sizeof(rp->ir));
 	/* Mark ER as invalid */
-	memset(rp->er, 0x00, sizeof(rp->er));
+	(void)memset(rp->er, 0x00, sizeof(rp->er));
 #endif /* CONFIG_SOC_FAMILY_NRF */
 }
 
@@ -1951,6 +1934,31 @@ static int vendor_cmd_handle(u16_t ocf, struct net_buf *cmd,
 
 	return 0;
 }
+#endif
+
+#if !defined(CONFIG_BT_HCI_VS_EXT)
+uint8_t bt_read_static_addr(bt_addr_le_t *addr)
+{
+#if defined(CONFIG_SOC_FAMILY_NRF)
+	if (((NRF_FICR->DEVICEADDR[0] != UINT32_MAX) ||
+	    ((NRF_FICR->DEVICEADDR[1] & UINT16_MAX) != UINT16_MAX)) &&
+	     (NRF_FICR->DEVICEADDRTYPE & 0x01)) {
+		sys_put_le32(NRF_FICR->DEVICEADDR[0], &addr->a.val[0]);
+		sys_put_le16(NRF_FICR->DEVICEADDR[1], &addr->a.val[4]);
+
+		/* The FICR value is a just a random number, with no knowledge
+		 * of the Bluetooth Specification requirements for random
+		 * static addresses.
+		 */
+		BT_ADDR_SET_STATIC(&addr->a);
+
+		addr->type = BT_ADDR_LE_RANDOM;
+		return 1;
+	}
+#endif /* CONFIG_SOC_FAMILY_NRF */
+	return 0;
+}
+#endif /* !CONFIG_BT_HCI_VS_EXT */
 
 static void data_buf_overflow(struct net_buf **buf)
 {
@@ -1967,7 +1975,7 @@ static void data_buf_overflow(struct net_buf **buf)
 	ep->link_type = BT_OVERFLOW_LINK_ACL;
 }
 
-struct net_buf *hci_cmd_handle(struct net_buf *cmd)
+struct net_buf *hci_cmd_handle(struct net_buf *cmd, void **node_rx)
 {
 	struct bt_hci_evt_cc_status *ccst;
 	struct bt_hci_cmd_hdr *chdr;
@@ -2007,11 +2015,13 @@ struct net_buf *hci_cmd_handle(struct net_buf *cmd)
 		err = status_cmd_handle(ocf, cmd, &evt);
 		break;
 	case BT_OGF_LE:
-		err = controller_cmd_handle(ocf, cmd, &evt);
+		err = controller_cmd_handle(ocf, cmd, &evt, node_rx);
 		break;
+#if defined(CONFIG_BT_HCI_VS)
 	case BT_OGF_VS:
 		err = vendor_cmd_handle(ocf, cmd, &evt);
 		break;
+#endif
 	default:
 		err = -EINVAL;
 		break;
@@ -2379,10 +2389,12 @@ static void le_scan_req_received(struct pdu_data *pdu_data, u8_t *b,
 #endif /* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY */
 
 #if defined(CONFIG_BT_CONN)
-static void le_conn_complete(u8_t status, struct radio_le_conn_cmplt *radio_cc,
-			     u16_t handle, struct net_buf *buf)
+static void le_conn_complete(struct pdu_data *pdu_data, u16_t handle,
+			     struct net_buf *buf)
 {
+	struct radio_le_conn_cmplt *radio_cc = (void *)pdu_data;
 	struct bt_hci_evt_le_conn_complete *lecc;
+	u8_t status = radio_cc->status;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	if (!status) {
@@ -2415,7 +2427,7 @@ static void le_conn_complete(u8_t status, struct radio_le_conn_cmplt *radio_cc,
 				 sizeof(*leecc));
 
 		if (status) {
-			memset(leecc, 0x00, sizeof(*leecc));
+			(void)memset(leecc, 0x00, sizeof(*leecc));
 			leecc->status = status;
 			return;
 		}
@@ -2436,7 +2448,8 @@ static void le_conn_complete(u8_t status, struct radio_le_conn_cmplt *radio_cc,
 			memcpy(&leecc->local_rpa.val[0], &radio_cc->own_addr[0],
 			       BDADDR_SIZE);
 		} else {
-			memset(&leecc->local_rpa.val[0], 0x0, BDADDR_SIZE);
+			(void)memset(&leecc->local_rpa.val[0], 0x0,
+				     BDADDR_SIZE);
 		}
 
 		memcpy(&leecc->peer_rpa.val[0], &radio_cc->peer_rpa[0],
@@ -2453,7 +2466,7 @@ static void le_conn_complete(u8_t status, struct radio_le_conn_cmplt *radio_cc,
 	lecc = meta_evt(buf, BT_HCI_EVT_LE_CONN_COMPLETE, sizeof(*lecc));
 
 	if (status) {
-		memset(lecc, 0x00, sizeof(*lecc));
+		(void)memset(lecc, 0x00, sizeof(*lecc));
 		lecc->status = status;
 		return;
 	}
@@ -2506,7 +2519,7 @@ static void le_conn_update_complete(struct pdu_data *pdu_data, u16_t handle,
 		return;
 	}
 
-	radio_cu = (void *)pdu_data->lldata;
+	radio_cu = (void *)pdu_data;
 
 	sep = meta_evt(buf, BT_HCI_EVT_LE_CONN_UPDATE_COMPLETE, sizeof(*sep));
 
@@ -2564,7 +2577,7 @@ static void le_chan_sel_algo(struct pdu_data *pdu_data, u16_t handle,
 		return;
 	}
 
-	radio_le_chan_sel_algo = (void *)pdu_data->lldata;
+	radio_le_chan_sel_algo = (void *)pdu_data;
 
 	sep = meta_evt(buf, BT_HCI_EVT_LE_CHAN_SEL_ALGO, sizeof(*sep));
 
@@ -2580,7 +2593,7 @@ static void le_phy_upd_complete(struct pdu_data *pdu_data, u16_t handle,
 	struct bt_hci_evt_le_phy_update_complete *sep;
 	struct radio_le_phy_upd_cmplt *radio_le_phy_upd_cmplt;
 
-	radio_le_phy_upd_cmplt = (void *)pdu_data->lldata;
+	radio_le_phy_upd_cmplt = (void *)pdu_data;
 
 	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
 	    !(le_event_mask & BT_EVT_MASK_LE_PHY_UPDATE_COMPLETE)) {
@@ -2632,12 +2645,7 @@ static void encode_control(struct radio_pdu_node_rx *node_rx,
 
 #if defined(CONFIG_BT_CONN)
 	case NODE_RX_TYPE_CONNECTION:
-		{
-			struct radio_le_conn_cmplt *cc;
-
-			cc = (void *)pdu_data->lldata;
-			le_conn_complete(cc->status, cc, handle, buf);
-		}
+		le_conn_complete(pdu_data, handle, buf);
 		break;
 
 	case NODE_RX_TYPE_TERMINATE:
@@ -2759,7 +2767,7 @@ static void le_remote_feat_complete(u8_t status, struct pdu_data *pdu_data,
 		       &pdu_data->llctrl.feature_rsp.features[0],
 		       sizeof(sep->features));
 	} else {
-		memset(&sep->features[0], 0x00, sizeof(sep->features));
+		(void)memset(&sep->features[0], 0x00, sizeof(sep->features));
 	}
 }
 

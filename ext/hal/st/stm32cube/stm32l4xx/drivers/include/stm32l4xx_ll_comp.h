@@ -82,32 +82,32 @@ typedef struct
 {
   uint32_t PowerMode;                   /*!< Set comparator operating mode to adjust power and speed.
                                              This parameter can be a value of @ref COMP_LL_EC_POWERMODE
-                                             
+
                                              This feature can be modified afterwards using unitary function @ref LL_COMP_SetPowerMode(). */
 
   uint32_t InputPlus;                   /*!< Set comparator input plus (non-inverting input).
                                              This parameter can be a value of @ref COMP_LL_EC_INPUT_PLUS
-                                             
+
                                              This feature can be modified afterwards using unitary function @ref LL_COMP_SetInputPlus(). */
 
   uint32_t InputMinus;                  /*!< Set comparator input minus (inverting input).
                                              This parameter can be a value of @ref COMP_LL_EC_INPUT_MINUS
-                                             
+
                                              This feature can be modified afterwards using unitary function @ref LL_COMP_SetInputMinus(). */
 
   uint32_t InputHysteresis;             /*!< Set comparator hysteresis mode of the input minus.
                                              This parameter can be a value of @ref COMP_LL_EC_INPUT_HYSTERESIS
-                                             
+
                                              This feature can be modified afterwards using unitary function @ref LL_COMP_SetInputHysteresis(). */
 
   uint32_t OutputPolarity;              /*!< Set comparator output polarity.
                                              This parameter can be a value of @ref COMP_LL_EC_OUTPUT_POLARITY
-                                             
+
                                              This feature can be modified afterwards using unitary function @ref LL_COMP_SetOutputPolarity(). */
 
   uint32_t OutputBlankingSource;        /*!< Set comparator blanking source.
                                              This parameter can be a value of @ref COMP_LL_EC_OUTPUT_BLANKING_SOURCE
-                                             
+
                                              This feature can be modified afterwards using unitary function @ref LL_COMP_SetOutputBlankingSource(). */
 
 } LL_COMP_InitTypeDef;
@@ -438,7 +438,7 @@ __STATIC_INLINE uint32_t LL_COMP_GetPowerMode(COMP_TypeDef *COMPx)
   *         voltage scaler bridge only when required
   *         (when selecting comparator input based on VrefInt: VrefInt or
   *         subdivision of VrefInt).
-  *         - For scaler bridge power consumption values, 
+  *         - For scaler bridge power consumption values,
   *           refer to device datasheet, parameter "IDDA(SCALER)".
   *         - Voltage scaler requires a delay for voltage stabilization.
   *           Refer to device datasheet, parameter "tSTART_SCALER".
@@ -462,13 +462,13 @@ __STATIC_INLINE uint32_t LL_COMP_GetPowerMode(COMP_TypeDef *COMPx)
   *         @arg @ref LL_COMP_INPUT_MINUS_IO3 (*)
   *         @arg @ref LL_COMP_INPUT_MINUS_IO4 (*)
   *         @arg @ref LL_COMP_INPUT_MINUS_IO5 (*)
-  *         
+  *
   *         (*) Parameter not available on all devices.
   * @param  InputPlus This parameter can be one of the following values:
   *         @arg @ref LL_COMP_INPUT_PLUS_IO1
   *         @arg @ref LL_COMP_INPUT_PLUS_IO2
   *         @arg @ref LL_COMP_INPUT_PLUS_IO3 (*)
-  *         
+  *
   *         (*) Parameter not available on all devices.
   * @retval None
   */
@@ -496,7 +496,7 @@ __STATIC_INLINE void LL_COMP_ConfigInputs(COMP_TypeDef *COMPx, uint32_t InputMin
   *         @arg @ref LL_COMP_INPUT_PLUS_IO1
   *         @arg @ref LL_COMP_INPUT_PLUS_IO2
   *         @arg @ref LL_COMP_INPUT_PLUS_IO3 (*)
-  *         
+  *
   *         (*) Parameter not available on all devices.
   * @retval None
   */
@@ -516,7 +516,7 @@ __STATIC_INLINE void LL_COMP_SetInputPlus(COMP_TypeDef *COMPx, uint32_t InputPlu
   *         @arg @ref LL_COMP_INPUT_PLUS_IO1
   *         @arg @ref LL_COMP_INPUT_PLUS_IO2
   *         @arg @ref LL_COMP_INPUT_PLUS_IO3 (*)
-  *         
+  *
   *         (*) Parameter not available on all devices.
   */
 __STATIC_INLINE uint32_t LL_COMP_GetInputPlus(COMP_TypeDef *COMPx)
@@ -534,7 +534,7 @@ __STATIC_INLINE uint32_t LL_COMP_GetInputPlus(COMP_TypeDef *COMPx)
   *         voltage scaler bridge only when required
   *         (when selecting comparator input based on VrefInt: VrefInt or
   *         subdivision of VrefInt).
-  *         - For scaler bridge power consumption values, 
+  *         - For scaler bridge power consumption values,
   *           refer to device datasheet, parameter "IDDA(SCALER)".
   *         - Voltage scaler requires a delay for voltage stabilization.
   *           Refer to device datasheet, parameter "tSTART_SCALER".
@@ -557,7 +557,7 @@ __STATIC_INLINE uint32_t LL_COMP_GetInputPlus(COMP_TypeDef *COMPx)
   *         @arg @ref LL_COMP_INPUT_MINUS_IO3 (*)
   *         @arg @ref LL_COMP_INPUT_MINUS_IO4 (*)
   *         @arg @ref LL_COMP_INPUT_MINUS_IO5 (*)
-  *         
+  *
   *         (*) Parameter not available on all devices.
   * @retval None
   */
@@ -591,7 +591,7 @@ __STATIC_INLINE void LL_COMP_SetInputMinus(COMP_TypeDef *COMPx, uint32_t InputMi
   *         @arg @ref LL_COMP_INPUT_MINUS_IO3 (*)
   *         @arg @ref LL_COMP_INPUT_MINUS_IO4 (*)
   *         @arg @ref LL_COMP_INPUT_MINUS_IO5 (*)
-  *         
+  *
   *         (*) Parameter not available on all devices.
   */
 __STATIC_INLINE uint32_t LL_COMP_GetInputMinus(COMP_TypeDef *COMPx)
@@ -685,7 +685,7 @@ __STATIC_INLINE uint32_t LL_COMP_GetOutputPolarity(COMP_TypeDef *COMPx)
   *         @arg @ref LL_COMP_BLANKINGSRC_TIM3_OC4_COMP2  (1)(3)
   *         @arg @ref LL_COMP_BLANKINGSRC_TIM8_OC5_COMP2  (1)(3)
   *         @arg @ref LL_COMP_BLANKINGSRC_TIM15_OC1_COMP2 (1)(3)
-  *         
+  *
   *         (1) Parameter availability depending on timer availability
   *             on the selected device.
   *         (2) On STM32L4, parameter available only on comparator instance: COMP1.
@@ -713,7 +713,7 @@ __STATIC_INLINE void LL_COMP_SetOutputBlankingSource(COMP_TypeDef *COMPx, uint32
   *         @arg @ref LL_COMP_BLANKINGSRC_TIM3_OC4_COMP2  (1)(3)
   *         @arg @ref LL_COMP_BLANKINGSRC_TIM8_OC5_COMP2  (1)(3)
   *         @arg @ref LL_COMP_BLANKINGSRC_TIM15_OC1_COMP2 (1)(3)
-  *         
+  *
   *         (1) Parameter availability depending on timer availability
   *             on the selected device.
   *         (2) On STM32L4, parameter available only on comparator instance: COMP1.

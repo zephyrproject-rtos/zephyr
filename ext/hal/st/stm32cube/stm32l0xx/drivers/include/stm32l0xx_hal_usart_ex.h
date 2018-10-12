@@ -57,13 +57,13 @@
 /** @defgroup USARTEx_Exported_Constants USARTEx Exported Constants
   * @{
   */
-  
+
 /** @defgroup USARTEx_Word_Length USARTEx Word Length
   * @{
   */
-#define USART_WORDLENGTH_7B                  ((uint32_t)USART_CR1_M1)   /*!< 7-bit long USART frame */ 
-#define USART_WORDLENGTH_8B                  ((uint32_t)0x00000000U)    /*!< 8-bit long USART frame */ 
-#define USART_WORDLENGTH_9B                  ((uint32_t)USART_CR1_M0)   /*!< 9-bit long USART frame */ 
+#define USART_WORDLENGTH_7B                  ((uint32_t)USART_CR1_M1)   /*!< 7-bit long USART frame */
+#define USART_WORDLENGTH_8B                  ((uint32_t)0x00000000U)    /*!< 8-bit long USART frame */
+#define USART_WORDLENGTH_9B                  ((uint32_t)USART_CR1_M0)   /*!< 9-bit long USART frame */
 /**
   * @}
   */
@@ -266,7 +266,7 @@
 
 /**
   * @brief Ensure that USART frame length is valid.
-  * @param __LENGTH__: USART frame length. 
+  * @param __LENGTH__: USART frame length.
   * @retval SET (__LENGTH__ is valid) or RESET (__LENGTH__ is invalid)
   */
 #define IS_USART_WORD_LENGTH(__LENGTH__) (((__LENGTH__) == USART_WORDLENGTH_7B) || \

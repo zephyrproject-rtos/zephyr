@@ -7,7 +7,7 @@
   *          functionalities of the Power Controller (PWR) peripheral:
   *           + Extended Initialization and de-initialization functions
   *           + Extended Peripheral Control functions
-  *         
+  *
   ******************************************************************************
   * @attention
   *
@@ -35,7 +35,7 @@
   * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
-  ******************************************************************************  
+  ******************************************************************************
   */
 
 /* Includes ------------------------------------------------------------------*/
@@ -64,7 +64,7 @@
 /**
   * @}
   */
- 
+
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
@@ -82,7 +82,7 @@
  ===============================================================================
                  ##### Peripheral extended control functions #####
  ===============================================================================
-    
+
     *** PVD configuration ***
     =========================
     [..]
@@ -98,13 +98,13 @@
     *** VDDIO2 Monitor Configuration ***
     ====================================
     [..]
-      (+) VDDIO2 monitor is used to monitor the VDDIO2 power supply by comparing it 
+      (+) VDDIO2 monitor is used to monitor the VDDIO2 power supply by comparing it
           to VREFInt Voltage
       (+) This monitor is internally connected to the EXTI line31
           and can generate an interrupt if enabled. This is done through
           HAL_PWREx_EnableVddio2Monitor() function.
       -@- VDDIO2 is available on STM32F07x/09x/04x
-                    
+
 @endverbatim
   * @{
   */
@@ -129,7 +129,7 @@ void HAL_PWR_ConfigPVD(PWR_PVDTypeDef *sConfigPVD)
 
   /* Set PLS[7:5] bits according to PVDLevel value */
   MODIFY_REG(PWR->CR, PWR_CR_PLS, sConfigPVD->PVDLevel);
-  
+
   /* Clear any previous config. Keep it clear if no event or IT mode is selected */
   __HAL_PWR_PVD_EXTI_DISABLE_EVENT();
   __HAL_PWR_PVD_EXTI_DISABLE_IT();
@@ -140,19 +140,19 @@ void HAL_PWR_ConfigPVD(PWR_PVDTypeDef *sConfigPVD)
   {
     __HAL_PWR_PVD_EXTI_ENABLE_IT();
   }
-  
+
   /* Configure event mode */
   if((sConfigPVD->Mode & PVD_MODE_EVT) == PVD_MODE_EVT)
   {
     __HAL_PWR_PVD_EXTI_ENABLE_EVENT();
   }
-  
+
   /* Configure the edge */
   if((sConfigPVD->Mode & PVD_RISING_EDGE) == PVD_RISING_EDGE)
   {
     __HAL_PWR_PVD_EXTI_ENABLE_RISING_EDGE();
   }
-  
+
   if((sConfigPVD->Mode & PVD_FALLING_EDGE) == PVD_FALLING_EDGE)
   {
     __HAL_PWR_PVD_EXTI_ENABLE_FALLING_EDGE();

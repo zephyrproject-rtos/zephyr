@@ -281,5 +281,5 @@ stats_init_and_reg(struct stats_hdr *shdr, u8_t size, u8_t cnt,
 void
 stats_reset(struct stats_hdr *hdr)
 {
-	memset(hdr + 1, 0, hdr->s_size * hdr->s_cnt);
+	(void)memset(hdr + 1, 0, hdr->s_size * hdr->s_cnt);
 }

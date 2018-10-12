@@ -1,6 +1,5 @@
 ---
 title: Atmel SAM Family USART
-id: atmel,sam-usart
 version: 0.1
 
 description: >
@@ -11,9 +10,6 @@ inherits:
 
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "atmel,sam-usart"
 
     reg:

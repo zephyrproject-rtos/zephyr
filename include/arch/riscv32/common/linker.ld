@@ -46,6 +46,22 @@ ENTRY(CONFIG_KERNEL_ENTRY)
 SECTIONS
     {
 
+#include <linker/rel-sections.ld>
+
+    /*
+     * The .plt and .iplt are here according to
+     * 'riscv32-zephyr-elf-ld --verbose', before text section.
+     */
+    SECTION_PROLOGUE(.plt,,)
+	{
+		*(.plt)
+	}
+
+    SECTION_PROLOGUE(.iplt,,)
+	{
+		*(.iplt)
+	}
+
     GROUP_START(ROM)
     _image_rom_start = .;
 
@@ -96,6 +112,11 @@ SECTIONS
 		 *(.rodata)
 		 *(".rodata.*")
 		 *(.gnu.linkonce.r.*)
+
+#ifdef CONFIG_SOC_RODATA_LD
+#include <soc-rodata.ld>
+#endif
+
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
     _image_rom_end = .;
@@ -116,6 +137,10 @@ SECTIONS
 
 		 *(.sdata .sdata.* .gnu.linkonce.s.*)
 		 *(.sdata2 .sdata2.* .gnu.linkonce.s2.*)
+
+#ifdef CONFIG_SOC_RWDATA_LD
+#include <soc-rwdata.ld>
+#endif
 
 	}  GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
@@ -151,6 +176,11 @@ SECTIONS
 		 */
 		 *(.noinit)
 		 *(".noinit.*")
+
+#ifdef CONFIG_SOC_NOINIT_LD
+#include <soc-noinit.ld>
+#endif
+
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
      _image_ram_end = .;
@@ -161,4 +191,7 @@ SECTIONS
 #endif
 
      GROUP_END(RAMABLE_REGION)
+
+#include <linker/debug-sections.ld>
+
 }

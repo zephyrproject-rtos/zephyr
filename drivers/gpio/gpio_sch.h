@@ -7,8 +7,8 @@
  */
 
 
-#ifndef __GPIO_SCH_H__
-#define __GPIO_SCH_H__
+#ifndef ZEPHYR_DRIVERS_GPIO_GPIO_SCH_H_
+#define ZEPHYR_DRIVERS_GPIO_GPIO_SCH_H_
 
 #include <zephyr/types.h>
 #include <kernel.h>
@@ -48,4 +48,4 @@ struct gpio_sch_data {
 	u8_t stride[3];
 };
 
-#endif /* __GPIO_SCH_H__ */
+#endif /* ZEPHYR_DRIVERS_GPIO_GPIO_SCH_H_ */

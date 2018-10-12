@@ -1,7 +1,9 @@
 /dts-v1/;
 
-#define DT_FLASH_SIZE		__SIZE_K(144)
-#define DT_SRAM_SIZE		__SIZE_K(52)
+#include <mem.h>
+
+#define DT_FLASH_SIZE		DT_SIZE_K(144)
+#define DT_SRAM_SIZE		DT_SIZE_K(52)
 
 #include "intel_curie.dtsi"
 
@@ -10,6 +12,9 @@
 	compatible = "intel,quark_se_c1000_devboard", "intel,quark_se_c1000";
 
 	aliases {
+		led0 = &led0;
+		sw0 = &button0;
+		sw1 = &button1;
 		uart-0 = &uart0;
 		uart-1 = &uart1;
 	};
@@ -25,6 +30,29 @@
 		zephyr,bt-uart = &uart0;
 		zephyr,uart-pipe = &uart1;
 		zephyr,bt-mon-uart = &uart1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpio0 25 0>;
+			label = "LED";
+		};
+	};
+
+	buttons {
+		/* Push button switch 0 KEY1 */
+		compatible = "gpio-keys";
+		button0: button_0 {
+			/* gpio flags need validation */
+			gpios = <&gpio1 4 GPIO_INT_ACTIVE_LOW>;
+			label = "Push button switch 0";
+		};
+		button1: button_1 {
+			/* gpio flags need validation */
+			gpios = <&gpio0 5 GPIO_INT_ACTIVE_LOW>;
+			label = "Push button switch 1";
+		};
 	};
 };
 
@@ -46,4 +74,12 @@
 &i2c1 {
 	status = "ok";
 	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&spi0 {
+	status = "ok";
+};
+
+&spi1 {
+	status = "ok";
 };

@@ -12,8 +12,8 @@
  * utilize toolchain specific attributes and/or pragmas.
  */
 
-#ifndef _TOOLCHAIN_H
-#define _TOOLCHAIN_H
+#ifndef ZEPHYR_INCLUDE_TOOLCHAIN_H_
+#define ZEPHYR_INCLUDE_TOOLCHAIN_H_
 
 #if defined(__XCC__)
 #include <toolchain/xcc.h>
@@ -23,4 +23,4 @@
 #include <toolchain/other.h>
 #endif
 
-#endif /* _TOOLCHAIN_H */
+#endif /* ZEPHYR_INCLUDE_TOOLCHAIN_H_ */

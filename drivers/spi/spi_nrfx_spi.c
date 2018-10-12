@@ -7,9 +7,10 @@
 #include <spi.h>
 #include <nrfx_spi.h>
 
-#define SYS_LOG_DOMAIN "spi_nrfx_spi"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SPI_LEVEL
-#include <logging/sys_log.h>
+#define LOG_DOMAIN "spi_nrfx_spi"
+#define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(spi_nrfx_spi);
 
 #include "spi_context.h"
 
@@ -92,29 +93,29 @@ static int configure(struct device *dev,
 	}
 
 	if (SPI_OP_MODE_GET(spi_cfg->operation) != SPI_OP_MODE_MASTER) {
-		SYS_LOG_ERR("Slave mode is not supported on %s",
+		LOG_ERR("Slave mode is not supported on %s",
 			    dev->config->name);
 		return -EINVAL;
 	}
 
 	if (spi_cfg->operation & SPI_MODE_LOOP) {
-		SYS_LOG_ERR("Loopback mode is not supported");
+		LOG_ERR("Loopback mode is not supported");
 		return -EINVAL;
 	}
 
 	if ((spi_cfg->operation & SPI_LINES_MASK) != SPI_LINES_SINGLE) {
-		SYS_LOG_ERR("Only single line mode is supported");
+		LOG_ERR("Only single line mode is supported");
 		return -EINVAL;
 	}
 
 	if (SPI_WORD_SIZE_GET(spi_cfg->operation) != 8) {
-		SYS_LOG_ERR("Word sizes other than 8 bits"
+		LOG_ERR("Word sizes other than 8 bits"
 			    " are not supported");
 		return -EINVAL;
 	}
 
 	if (spi_cfg->frequency < 125000) {
-		SYS_LOG_ERR("Frequencies lower than 125 kHz are not supported");
+		LOG_ERR("Frequencies lower than 125 kHz are not supported");
 		return -EINVAL;
 	}
 
@@ -158,7 +159,7 @@ static void transfer_next_chunk(struct device *dev)
 
 	spi_context_cs_control(ctx, false);
 
-	SYS_LOG_DBG("Transaction finished with status %d", error);
+	LOG_DBG("Transaction finished with status %d", error);
 
 	spi_context_complete(ctx, error);
 	dev_data->busy = false;
@@ -260,7 +261,7 @@ static int init_spi(struct device *dev, const nrfx_spi_config_t *config)
 					  event_handler,
 					  dev);
 	if (result != NRFX_SUCCESS) {
-		SYS_LOG_ERR("Failed to initialize device: %s",
+		LOG_ERR("Failed to initialize device: %s",
 			    dev->config->name);
 		return -EBUSY;
 	}

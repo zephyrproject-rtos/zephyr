@@ -194,6 +194,30 @@ System Clock
 nRF52 has two external oscillators. The frequency of the slow clock is
 32.768 kHz. The frequency of the main clock is 32 MHz.
 
+Serial Port
+-----------
+
+96Boards Nitrogen has one UART, which is used as Zephyr console.
+Default settings is 115200 8N1.
+
+I2C
+---
+
+96Boards Nitrogen has one I2C. The default I2C mapping for Zephyr is:
+
+- I2C0_SCL : P0.22
+- I2C0_SDA : P0.20
+
+SPI
+---
+
+96Boards Nitrogen has one SPI. The default SPI mapping for Zephyr is:
+
+- SPI0_NSS  : P0.24
+- SPI0_SCK  : P0.26
+- SPI0_MISO : P0.25
+- SPI0_MOSI : P0.23
+
 Flashing Zephyr onto 96Boards Nitrogen
 **************************************
 

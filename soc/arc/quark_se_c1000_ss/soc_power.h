@@ -22,6 +22,7 @@ extern "C" {
 enum power_states {
 	SYS_POWER_STATE_CPU_LPS,       /* SS1 state with Timer ON */
 	SYS_POWER_STATE_CPU_LPS_1,     /* SS2 state */
+	SYS_POWER_STATE_CPU_LPS_2,     /* Not supported*/
 	SYS_POWER_STATE_DEEP_SLEEP,    /* SS2 with LPSS enabled state */
 	SYS_POWER_STATE_DEEP_SLEEP_1,  /* SLEEP state */
 	SYS_POWER_STATE_DEEP_SLEEP_2,  /* SLEEP state with LPMODE enabled */

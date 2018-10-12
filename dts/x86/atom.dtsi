@@ -7,8 +7,6 @@
 #include "skeleton.dtsi"
 #include <dt-bindings/interrupt-controller/intel-ioapic.h>
 
-#define __SIZE_K(x) (x * 1024)
-
 / {
 	cpus {
 		#address-cells = <1>;
@@ -29,6 +27,7 @@
 	};
 
 	flash0: flash@100000{
+		compatible = "soc-nv-flash";
 		reg = <0x00100000 DT_FLASH_SIZE>;
 	};
 
@@ -46,7 +45,7 @@
 		ranges;
 
 
-		uart0: uart@000003f8 {
+		uart0: uart@3f8 {
 			compatible = "ns16550";
 			reg = <0x000003f8 0x100>;
 			label = "UART_0";
@@ -57,7 +56,7 @@
 			status = "disabled";
 		};
 
-		uart1: uart@000002f8 {
+		uart1: uart@2f8 {
 			compatible = "ns16550";
 			reg = <0x000002f8 0x100>;
 			label = "UART_1";

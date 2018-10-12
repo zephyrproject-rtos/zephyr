@@ -125,24 +125,24 @@ typedef struct
 {
   uint32_t PowerMode;                   /*!< Set OPAMP power mode.
                                              This parameter can be a value of @ref OPAMP_LL_EC_POWERMODE
-                                             
+
                                              This feature can be modified afterwards using unitary function @ref LL_OPAMP_SetPowerMode(). */
 
   uint32_t FunctionalMode;              /*!< Set OPAMP functional mode by setting internal connections: OPAMP operation in standalone, follower, ...
                                              This parameter can be a value of @ref OPAMP_LL_EC_FUNCTIONAL_MODE
                                              @note If OPAMP is configured in mode PGA, the gain can be configured using function @ref LL_OPAMP_SetPGAGain().
-                                             
+
                                              This feature can be modified afterwards using unitary function @ref LL_OPAMP_SetFunctionalMode(). */
 
   uint32_t InputNonInverting;           /*!< Set OPAMP input non-inverting connection.
                                              This parameter can be a value of @ref OPAMP_LL_EC_INPUT_NONINVERTING
-                                             
+
                                              This feature can be modified afterwards using unitary function @ref LL_OPAMP_SetInputNonInverting(). */
 
   uint32_t InputInverting;              /*!< Set OPAMP inverting input connection.
                                              This parameter can be a value of @ref OPAMP_LL_EC_INPUT_INVERTING
                                              @note OPAMP inverting input is used with OPAMP in mode standalone or PGA with external capacitors for filtering circuit. Otherwise (OPAMP in mode follower), OPAMP inverting input is not used (not connected to GPIO pin), this parameter is discarded.
-                                             
+
                                              This feature can be modified afterwards using unitary function @ref LL_OPAMP_SetInputInverting(). */
 
 } LL_OPAMP_InitTypeDef;
@@ -444,7 +444,7 @@ __STATIC_INLINE void LL_OPAMP_SetPowerMode(OPAMP_TypeDef *OPAMPx, uint32_t Power
 __STATIC_INLINE uint32_t LL_OPAMP_GetPowerMode(OPAMP_TypeDef *OPAMPx)
 {
   register uint32_t power_mode = (READ_BIT(OPAMPx->CSR, OPAMP_CSR_OPALPM));
-  
+
   return (uint32_t)(power_mode | (power_mode >> (POSITION_VAL(OPAMP_CSR_OPALPM))));
 }
 
@@ -718,7 +718,7 @@ __STATIC_INLINE void LL_OPAMP_SetCalibrationSelection(OPAMP_TypeDef *OPAMPx, uin
 __STATIC_INLINE uint32_t LL_OPAMP_GetCalibrationSelection(OPAMP_TypeDef *OPAMPx)
 {
   register uint32_t CalibrationSelection = (uint32_t)(READ_BIT(OPAMPx->CSR, OPAMP_CSR_CALSEL));
-  
+
   return (CalibrationSelection |
           ((OPAMP_OTR_TRIMOFFSETN) << (POSITION_VAL(OPAMP_OTR_TRIMOFFSETP) * (CalibrationSelection && OPAMP_CSR_CALSEL))));
 }
@@ -758,7 +758,7 @@ __STATIC_INLINE uint32_t LL_OPAMP_IsCalibrationOutputSet(OPAMP_TypeDef *OPAMPx)
 __STATIC_INLINE void LL_OPAMP_SetTrimmingValue(OPAMP_TypeDef* OPAMPx, uint32_t PowerMode, uint32_t TransistorsDiffPair, uint32_t TrimmingValue)
 {
   register uint32_t *preg = __OPAMP_PTR_REG_OFFSET(OPAMPx->OTR, (PowerMode & OPAMP_POWERMODE_OTR_REGOFFSET_MASK));
-  
+
   /* Set bits with position in register depending on parameter                */
   /* "TransistorsDiffPair".                                                   */
   /* Parameter used with mask "OPAMP_TRIMMING_VALUE_MASK" because             */
@@ -788,7 +788,7 @@ __STATIC_INLINE void LL_OPAMP_SetTrimmingValue(OPAMP_TypeDef* OPAMPx, uint32_t P
 __STATIC_INLINE uint32_t LL_OPAMP_GetTrimmingValue(OPAMP_TypeDef* OPAMPx, uint32_t PowerMode, uint32_t TransistorsDiffPair)
 {
   register uint32_t *preg = __OPAMP_PTR_REG_OFFSET(OPAMPx->OTR, (PowerMode & OPAMP_POWERMODE_OTR_REGOFFSET_MASK));
-  
+
   /* Retrieve bits with position in register depending on parameter           */
   /* "TransistorsDiffPair".                                                   */
   /* Parameter used with mask "OPAMP_TRIMMING_VALUE_MASK" because             */

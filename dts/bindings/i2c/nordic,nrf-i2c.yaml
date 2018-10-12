@@ -6,7 +6,6 @@
 #
 ---
 title: Nordic nRF Family I2C Master node
-id: nordic,nrf-i2c
 version: 0.1
 
 description: >

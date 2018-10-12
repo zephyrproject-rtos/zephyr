@@ -6,6 +6,7 @@
 #
 
 from collections import defaultdict
+from copy import deepcopy
 
 # globals
 phandles = {}
@@ -121,6 +122,11 @@ def get_phandles(root, name, handles):
 
 
 def insert_defs(node_address, new_defs, new_aliases):
+
+    for key in new_defs.keys():
+        if key.startswith('CONFIG_DT_COMPAT_'):
+            node_address = 'Compatibles'
+
     if node_address in defs:
         if 'aliases' in defs[node_address]:
             defs[node_address]['aliases'].update(new_aliases)
@@ -162,18 +168,32 @@ def get_reduced(nodes, path):
 def get_node_label(node_compat, node_address):
     def_label = convert_string_to_label(node_compat)
     if '@' in node_address:
-        def_label += '_' + \
-                convert_string_to_label(node_address.split('@')[-1])
+        # See if we have number we can convert
+        try:
+            unit_addr = int(node_address.split('@')[-1], 16)
+            (nr_addr_cells, nr_size_cells) = get_addr_size_cells(node_address)
+            unit_addr += translate_addr(unit_addr, node_address,
+                         nr_addr_cells, nr_size_cells)
+            unit_addr = "%x" % unit_addr
+        except:
+            unit_addr = node_address.split('@')[-1]
+        def_label += '_' + convert_string_to_label(unit_addr)
     else:
-        def_label += convert_string_to_label(node_address)
-
+        def_label += '_' + \
+                convert_string_to_label(node_address.split('/')[-1])
     return def_label
 
-def find_parent_prop(node_address, prop):
+def get_parent_address(node_address):
     parent_address = ''
 
     for comp in node_address.split('/')[1:-1]:
         parent_address += '/' + comp
+
+    return parent_address
+
+
+def find_parent_prop(node_address, prop):
+    parent_address = get_parent_address(node_address)
 
     if prop in reduced[parent_address]['props']:
         parent_prop = reduced[parent_address]['props'].get(prop)
@@ -182,3 +202,52 @@ def find_parent_prop(node_address, prop):
                         " has no " + prop + " property")
 
     return parent_prop
+
+# Get the #{address,size}-cells for a given node
+def get_addr_size_cells(node_address):
+    parent_addr = get_parent_address(node_address)
+    if parent_addr == '':
+        parent_addr = '/'
+
+    # The DT spec says that if #address-cells is missing default to 2
+    # if #size-cells is missing default to 1
+    nr_addr = reduced[parent_addr]['props'].get('#address-cells', 2)
+    nr_size = reduced[parent_addr]['props'].get('#size-cells', 1)
+
+    return (nr_addr, nr_size)
+
+def translate_addr(addr, node_address, nr_addr_cells, nr_size_cells):
+
+    try:
+        ranges = deepcopy(find_parent_prop(node_address, 'ranges'))
+        if type(ranges) is not list: ranges = [ ]
+    except:
+        return 0
+
+    parent_address = get_parent_address(node_address)
+
+    (nr_p_addr_cells, nr_p_size_cells) = get_addr_size_cells(parent_address)
+
+    range_offset = 0
+    while ranges:
+        child_bus_addr = 0
+        parent_bus_addr = 0
+        range_len = 0
+        for x in range(nr_addr_cells):
+            val = ranges.pop(0) << (32 * (nr_addr_cells - x - 1))
+            child_bus_addr += val
+        for x in range(nr_p_addr_cells):
+            val = ranges.pop(0) << (32 * (nr_p_addr_cells - x - 1))
+            parent_bus_addr += val
+        for x in range(nr_size_cells):
+            range_len += ranges.pop(0) << (32 * (nr_size_cells - x - 1))
+        # if we are outside of the range we don't need to translate
+        if child_bus_addr <= addr <= (child_bus_addr + range_len):
+            range_offset = parent_bus_addr - child_bus_addr
+            break
+
+    parent_range_offset = translate_addr(addr + range_offset,
+            parent_address, nr_p_addr_cells, nr_p_size_cells)
+    range_offset += parent_range_offset
+
+    return range_offset

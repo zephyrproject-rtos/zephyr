@@ -41,6 +41,11 @@ static void configure_nonsecure_control(u32_t spsel_ns, u32_t npriv_ns)
 }
 
 #if defined(CONFIG_ARMV8_M_MAINLINE)
+
+/* Only ARMv8-M Mainline implementations have Non-Secure instances of
+ * Stack Pointer Limit registers.
+ */
+
 void tz_nonsecure_msplim_set(u32_t val)
 {
 	__TZ_set_MSPLIM_NS(val);

@@ -10,6 +10,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define LOG_MODULE_NAME net_test
+#define NET_LOG_LEVEL LOG_LEVEL_DBG
+
 #include <ztest.h>
 
 #include <net/net_if.h>

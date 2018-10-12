@@ -35,8 +35,9 @@
 
 #include <misc/util.h>
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_I2C_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(i2c_atmel_sam3)
 
 #define TWI_IRQ_PDC \
 	(TWI_SR_ENDRX | TWI_SR_ENDTX | TWI_SR_RXBUFF | TWI_SR_TXBUFE)
@@ -587,7 +588,7 @@ static int __deprecated i2c_sam3_init(struct device *dev)
 
 	if (i2c_sam3_runtime_configure(dev, dev_data->dev_config)
 	    != 0) {
-		SYS_LOG_DBG("I2C: Cannot set default configuration 0x%x",
+		LOG_DBG("I2C: Cannot set default configuration 0x%x",
 		    dev_data->dev_config);
 		return -EINVAL;
 	}

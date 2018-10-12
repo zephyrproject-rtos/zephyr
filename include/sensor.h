@@ -9,8 +9,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __SENSOR_H__
-#define __SENSOR_H__
+#ifndef ZEPHYR_INCLUDE_SENSOR_H_
+#define ZEPHYR_INCLUDE_SENSOR_H_
 
 /**
  * @brief Sensor Interface
@@ -526,4 +526,4 @@ static inline double sensor_value_to_double(struct sensor_value *val)
  * @}
  */
 
-#endif /* __SENSOR_H__ */
+#endif /* ZEPHYR_INCLUDE_SENSOR_H_ */

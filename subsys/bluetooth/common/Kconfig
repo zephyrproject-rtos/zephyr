@@ -8,12 +8,22 @@
 
 if BT_HCI
 
+config BT_HCI_VS
+	bool "Zephyr HCI Vendor-Specific Commands"
+	default y
+	help
+	  Enable support for the Zephyr HCI Vendor-Specific Commmands in the
+	  Host and/or Controller. This enables Set Version Information,
+	  Supported Commands, Supported Features vendor commands.
+
 config BT_HCI_VS_EXT
 	bool "Zephyr HCI Vendor-Specific Extensions"
+	depends on BT_HCI_VS
 	default y
 	help
 	  Enable support for the Zephyr HCI Vendor-Specific Extensions in the
-	  Host and/or Controller.
+	  Host and/or Controller. This enables  Write BD_ADDR, Read Build Info,
+	  Read Static Addresses and Read Key Hierarchy Roots vendor commands.
 
 config BT_HCI_VS_EXT_DETECT
 	bool "Use heuristics to guess HCI vendor extensions support in advance"

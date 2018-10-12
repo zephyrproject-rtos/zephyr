@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _SENSOR_HDC1008
-#define _SENSOR_HDC1008
+#ifndef ZEPHYR_DRIVERS_SENSOR_HDC1008_HDC1008_H_
+#define ZEPHYR_DRIVERS_SENSOR_HDC1008_HDC1008_H_
 
 #include <kernel.h>
 

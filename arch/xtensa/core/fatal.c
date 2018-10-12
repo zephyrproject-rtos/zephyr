@@ -10,6 +10,7 @@
 #include <kernel_arch_data.h>
 #include <misc/printk.h>
 #include <xtensa/specreg.h>
+#include <logging/log_ctrl.h>
 
 #ifdef XT_SIMULATOR
 #include <xtensa/simcall.h>
@@ -51,6 +52,8 @@ const NANO_ESF _default_esf = {
 XTENSA_ERR_NORET void _NanoFatalErrorHandler(unsigned int reason,
 					     const NANO_ESF *pEsf)
 {
+	LOG_PANIC();
+
 	switch (reason) {
 	case _NANO_ERR_HW_EXCEPTION:
 	case _NANO_ERR_RESERVED_IRQ:

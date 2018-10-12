@@ -30,7 +30,7 @@
   * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
-  ******************************************************************************  
+  ******************************************************************************
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
@@ -43,7 +43,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f0xx_hal_def.h"
-   
+
 /** @addtogroup STM32F0xx_HAL_Driver
   * @{
   */
@@ -51,7 +51,7 @@
 /** @addtogroup FLASH
   * @{
   */
-  
+
 /** @addtogroup FLASH_Private_Constants
   * @{
   */
@@ -66,26 +66,26 @@
 
 #define IS_FLASH_TYPEPROGRAM(VALUE)  (((VALUE) == FLASH_TYPEPROGRAM_HALFWORD) || \
                                       ((VALUE) == FLASH_TYPEPROGRAM_WORD)     || \
-                                      ((VALUE) == FLASH_TYPEPROGRAM_DOUBLEWORD))  
+                                      ((VALUE) == FLASH_TYPEPROGRAM_DOUBLEWORD))
 
 #define IS_FLASH_LATENCY(__LATENCY__) (((__LATENCY__) == FLASH_LATENCY_0) || \
                                        ((__LATENCY__) == FLASH_LATENCY_1))
 
 /**
   * @}
-  */  
+  */
 
-/* Exported types ------------------------------------------------------------*/ 
+/* Exported types ------------------------------------------------------------*/
 /** @defgroup FLASH_Exported_Types FLASH Exported Types
   * @{
-  */  
+  */
 
 /**
   * @brief  FLASH Procedure structure definition
   */
-typedef enum 
+typedef enum
 {
-  FLASH_PROC_NONE              = 0U, 
+  FLASH_PROC_NONE              = 0U,
   FLASH_PROC_PAGEERASE         = 1U,
   FLASH_PROC_MASSERASE         = 2U,
   FLASH_PROC_PROGRAMHALFWORD   = 3U,
@@ -93,13 +93,13 @@ typedef enum
   FLASH_PROC_PROGRAMDOUBLEWORD = 5U
 } FLASH_ProcedureTypeDef;
 
-/** 
-  * @brief  FLASH handle Structure definition  
+/**
+  * @brief  FLASH handle Structure definition
   */
 typedef struct
 {
   __IO FLASH_ProcedureTypeDef ProcedureOnGoing; /*!< Internal variable to indicate which procedure is ongoing or not in IT context */
-  
+
   __IO uint32_t               DataRemaining;    /*!< Internal variable to save the remaining pages to erase or half-word to program in IT context */
 
   __IO uint32_t               Address;          /*!< Internal variable to save address selected for program or erase */
@@ -108,7 +108,7 @@ typedef struct
 
   HAL_LockTypeDef             Lock;             /*!< FLASH locking object                */
 
-  __IO uint32_t               ErrorCode;        /*!< FLASH error code                    
+  __IO uint32_t               ErrorCode;        /*!< FLASH error code
                                                      This parameter can be a value of @ref FLASH_Error_Codes  */
 } FLASH_ProcessTypeDef;
 
@@ -119,7 +119,7 @@ typedef struct
 /* Exported constants --------------------------------------------------------*/
 /** @defgroup FLASH_Exported_Constants FLASH Exported Constants
   * @{
-  */  
+  */
 
 /** @defgroup FLASH_Error_Codes FLASH Error Codes
   * @{
@@ -135,7 +135,7 @@ typedef struct
 
 /** @defgroup FLASH_Type_Program FLASH Type Program
   * @{
-  */ 
+  */
 #define FLASH_TYPEPROGRAM_HALFWORD   (0x01U)  /*!<Program a half-word (16-bit) at a specified address.*/
 #define FLASH_TYPEPROGRAM_WORD       (0x02U)  /*!<Program a word (32-bit) at a specified address.*/
 #define FLASH_TYPEPROGRAM_DOUBLEWORD (0x03U)  /*!<Program a double word (64-bit) at a specified address*/
@@ -146,7 +146,7 @@ typedef struct
 
 /** @defgroup FLASH_Latency FLASH Latency
   * @{
-  */ 
+  */
 #define FLASH_LATENCY_0            (0x00000000U)    /*!< FLASH Zero Latency cycle */
 #define FLASH_LATENCY_1            FLASH_ACR_LATENCY         /*!< FLASH One Latency cycle */
 
@@ -157,55 +157,55 @@ typedef struct
 
 /** @defgroup FLASH_Flag_definition FLASH Flag definition
   * @{
-  */ 
-#define FLASH_FLAG_BSY             FLASH_SR_BSY            /*!< FLASH Busy flag                           */ 
+  */
+#define FLASH_FLAG_BSY             FLASH_SR_BSY            /*!< FLASH Busy flag                           */
 #define FLASH_FLAG_PGERR           FLASH_SR_PGERR          /*!< FLASH Programming error flag    */
 #define FLASH_FLAG_WRPERR          FLASH_SR_WRPERR         /*!< FLASH Write protected error flag          */
 #define FLASH_FLAG_EOP             FLASH_SR_EOP            /*!< FLASH End of Operation flag               */
 /**
   * @}
   */
-  
+
 /** @defgroup FLASH_Interrupt_definition FLASH Interrupt definition
   * @{
-  */ 
+  */
 #define FLASH_IT_EOP               FLASH_CR_EOPIE          /*!< End of FLASH Operation Interrupt source */
 #define FLASH_IT_ERR               FLASH_CR_ERRIE  /*!< Error Interrupt source */
 /**
   * @}
-  */  
+  */
 
 /**
   * @}
-  */  
-  
+  */
+
 /* Exported macro ------------------------------------------------------------*/
 
 /** @defgroup FLASH_Exported_Macros FLASH Exported Macros
- *  @brief macros to control FLASH features 
+ *  @brief macros to control FLASH features
  *  @{
  */
- 
+
 
 /** @defgroup FLASH_EM_Latency FLASH Latency
  *  @brief macros to handle FLASH Latency
  * @{
- */ 
-  
+ */
+
 /**
   * @brief  Set the FLASH Latency.
-  * @param  __LATENCY__ FLASH Latency                   
+  * @param  __LATENCY__ FLASH Latency
   *         The value of this parameter depend on device used within the same series
   * @retval None
-  */ 
+  */
 #define __HAL_FLASH_SET_LATENCY(__LATENCY__)    (FLASH->ACR = (FLASH->ACR&(~FLASH_ACR_LATENCY)) | (__LATENCY__))
 
 
 /**
   * @brief  Get the FLASH Latency.
-  * @retval FLASH Latency                   
+  * @retval FLASH Latency
   *         The value of this parameter depend on device used within the same series
-  */ 
+  */
 #define __HAL_FLASH_GET_LATENCY()     (READ_BIT((FLASH->ACR), FLASH_ACR_LATENCY))
 
 /**
@@ -215,11 +215,11 @@ typedef struct
 /** @defgroup FLASH_Prefetch FLASH Prefetch
  *  @brief macros to handle FLASH Prefetch buffer
  * @{
- */   
+ */
 /**
   * @brief  Enable the FLASH prefetch buffer.
   * @retval None
-  */ 
+  */
 #define __HAL_FLASH_PREFETCH_BUFFER_ENABLE()    (FLASH->ACR |= FLASH_ACR_PRFTBE)
 
 /**
@@ -231,39 +231,39 @@ typedef struct
 /**
   * @}
   */
-  
+
 /** @defgroup FLASH_Interrupt FLASH Interrupts
  *  @brief macros to handle FLASH interrupts
  * @{
- */ 
+ */
 
 /**
   * @brief  Enable the specified FLASH interrupt.
-  * @param  __INTERRUPT__  FLASH interrupt 
+  * @param  __INTERRUPT__  FLASH interrupt
   *         This parameter can be any combination of the following values:
   *     @arg @ref FLASH_IT_EOP End of FLASH Operation Interrupt
-  *     @arg @ref FLASH_IT_ERR Error Interrupt    
+  *     @arg @ref FLASH_IT_ERR Error Interrupt
   * @retval none
-  */  
+  */
 #define __HAL_FLASH_ENABLE_IT(__INTERRUPT__)  SET_BIT((FLASH->CR), (__INTERRUPT__))
 
 /**
   * @brief  Disable the specified FLASH interrupt.
-  * @param  __INTERRUPT__  FLASH interrupt 
+  * @param  __INTERRUPT__  FLASH interrupt
   *         This parameter can be any combination of the following values:
   *     @arg @ref FLASH_IT_EOP End of FLASH Operation Interrupt
-  *     @arg @ref FLASH_IT_ERR Error Interrupt    
+  *     @arg @ref FLASH_IT_ERR Error Interrupt
   * @retval none
-  */  
+  */
 #define __HAL_FLASH_DISABLE_IT(__INTERRUPT__)  CLEAR_BIT((FLASH->CR), (uint32_t)(__INTERRUPT__))
 
 /**
-  * @brief  Get the specified FLASH flag status. 
+  * @brief  Get the specified FLASH flag status.
   * @param  __FLAG__ specifies the FLASH flag to check.
   *          This parameter can be one of the following values:
   *            @arg @ref FLASH_FLAG_BSY         FLASH Busy flag
-  *            @arg @ref FLASH_FLAG_EOP         FLASH End of Operation flag 
-  *            @arg @ref FLASH_FLAG_WRPERR      FLASH Write protected error flag 
+  *            @arg @ref FLASH_FLAG_EOP         FLASH End of Operation flag
+  *            @arg @ref FLASH_FLAG_WRPERR      FLASH Write protected error flag
   *            @arg @ref FLASH_FLAG_PGERR       FLASH Programming error flag
   * @retval The new state of __FLAG__ (SET or RESET).
   */
@@ -273,8 +273,8 @@ typedef struct
   * @brief  Clear the specified FLASH flag.
   * @param  __FLAG__ specifies the FLASH flags to clear.
   *          This parameter can be any combination of the following values:
-  *            @arg @ref FLASH_FLAG_EOP         FLASH End of Operation flag 
-  *            @arg @ref FLASH_FLAG_WRPERR      FLASH Write protected error flag 
+  *            @arg @ref FLASH_FLAG_EOP         FLASH End of Operation flag
+  *            @arg @ref FLASH_FLAG_WRPERR      FLASH Write protected error flag
   *            @arg @ref FLASH_FLAG_PGERR       FLASH Programming error flag
   * @retval none
   */
@@ -282,20 +282,20 @@ typedef struct
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
-  */ 
+  */
 
 /* Include FLASH HAL Extended module */
-#include "stm32f0xx_hal_flash_ex.h"  
+#include "stm32f0xx_hal_flash_ex.h"
 
 /* Exported functions --------------------------------------------------------*/
 /** @addtogroup FLASH_Exported_Functions
   * @{
   */
-  
+
 /** @addtogroup FLASH_Exported_Functions_Group1
   * @{
   */
@@ -305,7 +305,7 @@ HAL_StatusTypeDef HAL_FLASH_Program_IT(uint32_t TypeProgram, uint32_t Address, u
 
 /* FLASH IRQ handler function */
 void       HAL_FLASH_IRQHandler(void);
-/* Callbacks in non blocking modes */ 
+/* Callbacks in non blocking modes */
 void       HAL_FLASH_EndOfOperationCallback(uint32_t ReturnValue);
 void       HAL_FLASH_OperationErrorCallback(uint32_t ReturnValue);
 

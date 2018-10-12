@@ -7,8 +7,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __BT_MESH_PROXY_H
-#define __BT_MESH_PROXY_H
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_PROXY_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_MESH_PROXY_H_
 
 /**
  * @brief Bluetooth Mesh Proxy
@@ -32,4 +32,4 @@ int bt_mesh_proxy_identity_enable(void);
  * @}
  */
 
-#endif /* __BT_MESH_PROXY_H */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_MESH_PROXY_H_ */

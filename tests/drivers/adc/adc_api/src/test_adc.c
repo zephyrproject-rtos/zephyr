@@ -168,7 +168,7 @@ static struct device *init_adc(void)
 		"Setting up of the second channel failed with code %d", ret);
 #endif /* defined(ADC_2ND_CHANNEL_ID) */
 
-	memset(m_sample_buffer, 0, sizeof(m_sample_buffer));
+	(void)memset(m_sample_buffer, 0, sizeof(m_sample_buffer));
 
 	return adc_dev;
 }
@@ -297,7 +297,7 @@ static int test_task_asynchronous_call(void)
 	int ret;
 	const struct adc_sequence_options options = {
 		.extra_samplings = 4,
-		.interval_us = 10,
+		.interval_us = 30,
 	};
 	const struct adc_sequence sequence = {
 		.options     = &options,

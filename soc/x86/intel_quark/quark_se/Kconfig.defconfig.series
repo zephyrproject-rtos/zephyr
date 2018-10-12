@@ -118,14 +118,8 @@ config SPI_DW
 config SPI_0
 	def_bool y
 
-config SPI_0_IRQ_PRI
-	default 2
-
 config SPI_1
 	def_bool y
-
-config SPI_1_IRQ_PRI
-	default 2
 
 config SPI_DW_FIFO_DEPTH
 	default 7
@@ -136,9 +130,6 @@ config SPI_2
 	def_bool y
 
 config SPI_2_OP_MODES
-	default 2
-
-config SPI_2_IRQ_PRI
 	default 2
 
 endif # SPI_SLAVE

@@ -14,6 +14,8 @@
 
 #if defined(__GNUC__)
 # include <metal/compiler/gcc/compiler.h>
+#elif defined(__ICCARM__)
+# include <metal/compiler/iar/compiler.h>
 #else
 # error "Missing compiler support"
 #endif

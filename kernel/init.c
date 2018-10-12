@@ -32,9 +32,12 @@
 #include <entropy.h>
 #include <logging/log_ctrl.h>
 #include <tracing.h>
+#include <stdbool.h>
 
-/* kernel build timestamp items */
-#define BUILD_TIMESTAMP "BUILD: " __DATE__ " " __TIME__
+#define IDLE_THREAD_NAME	"idle"
+#define LOG_LEVEL CONFIG_KERNEL_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(kernel);
 
 /* boot banner items */
 #if defined(CONFIG_BOOT_DELAY) && CONFIG_BOOT_DELAY > 0
@@ -55,7 +58,7 @@ static const unsigned int boot_delay;
 #endif
 
 #if !defined(CONFIG_BOOT_BANNER)
-#define PRINT_BOOT_BANNER() do { } while (0)
+#define PRINT_BOOT_BANNER() do { } while (false)
 #else
 #define PRINT_BOOT_BANNER() printk("***** " BOOT_BANNER " *****\n")
 #endif
@@ -122,31 +125,13 @@ K_THREAD_STACK_DEFINE(_interrupt_stack3, CONFIG_ISR_STACK_SIZE);
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 	#define initialize_timeouts() do { \
 		sys_dlist_init(&_timeout_q); \
-	} while ((0))
+	} while (false)
 #else
 	#define initialize_timeouts() do { } while ((0))
 #endif
 
 extern void idle(void *unused1, void *unused2, void *unused3);
 
-/* LCOV_EXCL_START */
-#if defined(CONFIG_INIT_STACKS) && defined(CONFIG_PRINTK)
-extern K_THREAD_STACK_DEFINE(sys_work_q_stack,
-			     CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE);
-
-
-void k_call_stacks_analyze(void)
-{
-	printk("Kernel stacks:\n");
-	STACK_ANALYZE("main     ", _main_stack);
-	STACK_ANALYZE("idle     ", _idle_stack);
-	STACK_ANALYZE("interrupt", _interrupt_stack);
-	STACK_ANALYZE("workqueue", sys_work_q_stack);
-}
-#else
-void k_call_stacks_analyze(void) { }
-#endif
-/* LCOV_EXCL_STOP */
 
 /**
  *
@@ -158,15 +143,15 @@ void k_call_stacks_analyze(void) { }
  */
 void _bss_zero(void)
 {
-	memset(&__bss_start, 0,
-		 ((u32_t) &__bss_end - (u32_t) &__bss_start));
+	(void)memset(&__bss_start, 0,
+		     ((u32_t) &__bss_end - (u32_t) &__bss_start));
 #ifdef CONFIG_CCM_BASE_ADDRESS
-	memset(&__ccm_bss_start, 0,
-		((u32_t) &__ccm_bss_end - (u32_t) &__ccm_bss_start));
+	(void)memset(&__ccm_bss_start, 0,
+		     ((u32_t) &__ccm_bss_end - (u32_t) &__ccm_bss_start));
 #endif
 #ifdef CONFIG_APPLICATION_MEMORY
-	memset(&__app_bss_start, 0,
-		 ((u32_t) &__app_bss_end - (u32_t) &__app_bss_start));
+	(void)memset(&__app_bss_start, 0,
+		     ((u32_t) &__app_bss_end - (u32_t) &__app_bss_start));
 #endif
 }
 
@@ -271,7 +256,7 @@ static void init_idle_thread(struct k_thread *thr, k_thread_stack_t *stack)
 
 	_setup_new_thread(thr, stack,
 			  IDLE_STACK_SIZE, idle, NULL, NULL, NULL,
-			  K_LOWEST_THREAD_PRIO, K_ESSENTIAL);
+			  K_LOWEST_THREAD_PRIO, K_ESSENTIAL, IDLE_THREAD_NAME);
 	_mark_thread_as_started(thr);
 }
 #endif
@@ -334,8 +319,7 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 	_setup_new_thread(_main_thread, _main_stack,
 			  MAIN_STACK_SIZE, bg_thread_main,
 			  NULL, NULL, NULL,
-			  CONFIG_MAIN_THREAD_PRIORITY, K_ESSENTIAL);
-
+			  CONFIG_MAIN_THREAD_PRIORITY, K_ESSENTIAL, "main");
 	sys_trace_thread_create(_main_thread);
 
 	_mark_thread_as_started(_main_thread);
@@ -387,7 +371,7 @@ static void switch_to_main_thread(void)
 	 * will never be rescheduled in.
 	 */
 
-	_Swap(irq_lock());
+	(void)_Swap(irq_lock());
 #endif
 }
 #endif /* CONFIG_MULTITHREDING */
@@ -458,7 +442,7 @@ FUNC_NORETURN void _Cstart(void)
 	char dummy_thread_memory[sizeof(struct k_thread)];
 	struct k_thread *dummy_thread = (struct k_thread *)&dummy_thread_memory;
 
-	memset(dummy_thread_memory, 0, sizeof(dummy_thread_memory));
+	(void)memset(dummy_thread_memory, 0, sizeof(dummy_thread_memory));
 #endif
 #endif
 	/*
@@ -493,7 +477,7 @@ FUNC_NORETURN void _Cstart(void)
 	bg_thread_main(NULL, NULL, NULL);
 
 	irq_lock();
-	while (1) {
+	while (true) {
 	}
 #endif
 

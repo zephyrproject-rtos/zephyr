@@ -9,8 +9,8 @@
  * @brief Public API for counter and timer drivers
  */
 
-#ifndef __COUNTER_H__
-#define __COUNTER_H__
+#ifndef ZEPHYR_INCLUDE_COUNTER_H_
+#define ZEPHYR_INCLUDE_COUNTER_H_
 
 /**
  * @brief Counter Interface
@@ -155,4 +155,4 @@ static inline int _impl_counter_get_pending_int(struct device *dev)
 
 #include <syscalls/counter.h>
 
-#endif /* __COUNTER_H__ */
+#endif /* ZEPHYR_INCLUDE_COUNTER_H_ */

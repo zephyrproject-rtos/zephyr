@@ -31,7 +31,7 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-  */ 
+  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __STM32F0xx_HAL_GPIO_EX_H
@@ -50,20 +50,20 @@
 
 /** @defgroup GPIOEx GPIOEx
   * @{
-  */ 
+  */
 
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 /** @defgroup GPIOEx_Exported_Constants GPIOEx Exported Constants
   * @{
-  */ 
-  
+  */
+
 /** @defgroup GPIOEx_Alternate_function_selection GPIOEx Alternate function selection
   * @{
   */
-  
+
 #if defined (STM32F030x6)
-/*------------------------- STM32F030x6---------------------------*/ 
+/*------------------------- STM32F030x6---------------------------*/
 /* AF 0 */
 #define GPIO_AF0_EVENTOUT     ((uint8_t)0x00U)  /*!< AF0: EVENTOUT Alternate Function mapping  */
 #define GPIO_AF0_MCO          ((uint8_t)0x00U)  /*!< AF0: MCO Alternate Function mapping       */
@@ -265,7 +265,7 @@
 
 #if defined (STM32F071xB)
 /*--------------------------- STM32F071xB ---------------------------*/
-/* AF 0 */ 
+/* AF 0 */
 #define GPIO_AF0_EVENTOUT     ((uint8_t)0x00U)  /*!< AF0: AEVENTOUT Alternate Function mapping */
 #define GPIO_AF0_SWDIO        ((uint8_t)0x00U)  /*!< AF0: SWDIO Alternate Function mapping     */
 #define GPIO_AF0_SWCLK        ((uint8_t)0x00U)  /*!< AF0: SWCLK Alternate Function mapping     */
@@ -633,7 +633,7 @@
 #define GPIO_AF6_EVENTOUT     ((uint8_t)0x06U)  /*!< AF6: EVENTOUT Alternate Function mapping  */
 
 #define IS_GPIO_AF(AF)        ((AF) <= (uint8_t)0x06U)
-   
+
 #endif /* STM32F070xB */
 
 #if defined (STM32F042x6) || defined (STM32F048xx)
@@ -680,7 +680,7 @@
 #define GPIO_AF4_CRS          ((uint8_t)0x04U)  /*!< AF4: CRS Alternate Function mapping       */
 #define GPIO_AF4_I2C1         ((uint8_t)0x04U)  /*!< AF4: I2C1 Alternate Function mapping      */
 
-/* AF 5 */ 
+/* AF 5 */
 #define GPIO_AF5_MCO          ((uint8_t)0x05U)  /*!< AF5: MCO Alternate Function mapping       */
 #define GPIO_AF5_I2C1         ((uint8_t)0x05U)  /*!< AF5: I2C1 Alternate Function mapping      */
 #define GPIO_AF5_I2C2         ((uint8_t)0x05U)  /*!< AF5: I2C2 Alternate Function mapping      */
@@ -689,7 +689,7 @@
 #define GPIO_AF5_TIM17        ((uint8_t)0x05U)  /*!< AF5: TIM17 Alternate Function mapping     */
 #define GPIO_AF5_USB          ((uint8_t)0x05U)  /*!< AF5: USB Alternate Function mapping       */
 
-/* AF 6 */ 
+/* AF 6 */
 #define GPIO_AF6_EVENTOUT     ((uint8_t)0x06U)  /*!< AF6: EVENTOUT Alternate Function mapping  */
 
 #define IS_GPIO_AF(AF)        ((AF) <= (uint8_t)0x06U)
@@ -732,14 +732,14 @@
 #define GPIO_AF4_TIM14        ((uint8_t)0x04U)  /*!< AF4: TIM14 Alternate Function mapping     */
 #define GPIO_AF4_I2C1         ((uint8_t)0x04U)  /*!< AF4: I2C1 Alternate Function mapping      */
 
-/* AF 5 */ 
+/* AF 5 */
 #define GPIO_AF5_MCO          ((uint8_t)0x05U)  /*!< AF5: MCO Alternate Function mapping       */
 #define GPIO_AF5_I2C1         ((uint8_t)0x05U)  /*!< AF5: I2C1 Alternate Function mapping      */
 #define GPIO_AF5_TIM16        ((uint8_t)0x05U)  /*!< AF5: TIM16 Alternate Function mapping     */
 #define GPIO_AF5_TIM17        ((uint8_t)0x05U)  /*!< AF5: TIM17 Alternate Function mapping     */
 #define GPIO_AF5_USB          ((uint8_t)0x05U)  /*!< AF5: USB Alternate Function mapping       */
 
-/* AF 6 */ 
+/* AF 6 */
 #define GPIO_AF6_EVENTOUT     ((uint8_t)0x06U)  /*!< AF6: EVENTOUT Alternate Function mapping  */
 
 #define IS_GPIO_AF(AF)        ((AF) <= (uint8_t)0x06U)
@@ -747,7 +747,7 @@
 #endif /* STM32F070x6 */
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
@@ -797,15 +797,15 @@
   * @}
   */
 
-/* Exported functions --------------------------------------------------------*/ 
+/* Exported functions --------------------------------------------------------*/
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
-  */ 
-  
+  */
+
 #ifdef __cplusplus
 }
 #endif

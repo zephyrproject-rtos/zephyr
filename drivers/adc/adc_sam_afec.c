@@ -23,9 +23,9 @@
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
 
-#define SYS_LOG_DOMAIN "dev/adc_sam_afec"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_ADC_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(adc_sam_afec);
 
 #define NUM_CHANNELS 12
 
@@ -88,22 +88,22 @@ static int adc_sam_channel_setup(struct device *dev,
 		afec->AFEC_CGR |= (2 << (channel_id * 2));
 		break;
 	default:
-		SYS_LOG_ERR("Selected ADC gain is not valid");
+		LOG_ERR("Selected ADC gain is not valid");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		SYS_LOG_ERR("Selected ADC acquisition time is not valid");
+		LOG_ERR("Selected ADC acquisition time is not valid");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->reference != ADC_REF_EXTERNAL0) {
-		SYS_LOG_ERR("Selected reference is not valid");
+		LOG_ERR("Selected reference is not valid");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->differential) {
-		SYS_LOG_ERR("Differential input is not supported");
+		LOG_ERR("Differential input is not supported");
 		return -EINVAL;
 	}
 
@@ -124,7 +124,7 @@ static void adc_sam_start_conversion(struct device *dev)
 
 	data->channel_id = find_lsb_set(data->channels) - 1;
 
-	SYS_LOG_DBG("Starting channel %d", data->channel_id);
+	LOG_DBG("Starting channel %d", data->channel_id);
 
 	/* Disable all channels. */
 	afec->AFEC_CHDR = 0xfff;
@@ -174,7 +174,7 @@ static int check_buffer_size(const struct adc_sequence *sequence,
 		needed_buffer_size *= (1 + sequence->options->extra_samplings);
 	}
 	if (sequence->buffer_size < needed_buffer_size) {
-		SYS_LOG_ERR("Provided buffer is too small (%u/%u)",
+		LOG_ERR("Provided buffer is too small (%u/%u)",
 				sequence->buffer_size, needed_buffer_size);
 		return -ENOMEM;
 	}
@@ -194,12 +194,12 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 	 */
 	if (channels == 0 ||
 	   (channels & (~0UL << NUM_CHANNELS))) {
-		SYS_LOG_ERR("Invalid selection of channels");
+		LOG_ERR("Invalid selection of channels");
 		return -EINVAL;
 	}
 
 	if (sequence->oversampling != 0) {
-		SYS_LOG_ERR("Oversampling is not supported");
+		LOG_ERR("Oversampling is not supported");
 		return -EINVAL;
 	}
 
@@ -207,7 +207,7 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 		/* TODO JKW: Support the Enhanced Resolution Mode 50.6.3 page
 		 * 1544.
 		 */
-		SYS_LOG_ERR("ADC resolution value %d is not valid",
+		LOG_ERR("ADC resolution value %d is not valid",
 			    sequence->resolution);
 		return -EINVAL;
 	}

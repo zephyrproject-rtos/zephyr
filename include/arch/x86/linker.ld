@@ -66,6 +66,9 @@ ENTRY(CONFIG_KERNEL_ENTRY)
 /* SECTIONS definitions */
 SECTIONS
 	{
+
+#include <linker/rel-sections.ld>
+
 	GROUP_START(ROMABLE_REGION)
 #ifdef CONFIG_REALMODE
 	/* 16-bit sections */
@@ -130,6 +133,10 @@ SECTIONS
 #else
 	. += CONFIG_MAX_IRQ_LINES;
 #endif
+#endif
+
+#ifdef CONFIG_SOC_RODATA_LD
+#include <soc-rodata.ld>
 #endif
 
 #ifdef CONFIG_CUSTOM_RODATA_LD
@@ -244,6 +251,10 @@ SECTIONS
 	KERNEL_INPUT_SECTION(".noinit.*")
 	*(".kernel_noinit.*")
 
+#ifdef CONFIG_SOC_NOINIT_LD
+#include <soc-noinit.ld>
+#endif
+
 	MMU_PAGE_ALIGN
 
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
@@ -256,6 +267,10 @@ SECTIONS
 	KERNEL_INPUT_SECTION(.data)
 	KERNEL_INPUT_SECTION(".data.*")
 	*(".kernel.*")
+
+#ifdef CONFIG_SOC_RWDATA_LD
+#include <soc-rwdata.ld>
+#endif
 
 #ifdef CONFIG_CUSTOM_RWDATA_LD
 /* Located in project source directory */
@@ -365,6 +380,8 @@ SECTIONS
 /* Located in project source directory */
 #include <custom-sections.ld>
 #endif
+
+#include <linker/debug-sections.ld>
 
 	}
 

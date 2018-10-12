@@ -8,15 +8,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_IPV6)
-#define SYS_LOG_DOMAIN "net/ipv6-mld"
-#define NET_LOG_ENABLED 1
-
-/* By default this prints too much data, set the value to 1 to see
- * neighbor cache contents.
- */
-#define NET_DEBUG_NBR 0
-#endif
+#define LOG_MODULE_NAME net_ipv6_mld
+#define NET_LOG_LEVEL CONFIG_NET_IPV6_LOG_LEVEL
 
 #include <errno.h>
 #include <net/net_core.h>
@@ -300,20 +293,15 @@ drop:
 	net_pkt_unref(pkt);
 }
 
-#if defined(CONFIG_NET_DEBUG_IPV6)
 #define dbg_addr(action, pkt_str, src, dst)				\
 	do {								\
 		NET_DBG("%s %s from %s to %s", action, pkt_str,         \
-			net_sprint_ipv6_addr(src),                      \
-			net_sprint_ipv6_addr(dst));                     \
+			log_strdup(net_sprint_ipv6_addr(src)),		\
+			log_strdup(net_sprint_ipv6_addr(dst)));		\
 	} while (0)
 
 #define dbg_addr_recv(pkt_str, src, dst)	\
 	dbg_addr("Received", pkt_str, src, dst)
-#else
-#define dbg_addr(...)
-#define dbg_addr_recv(...)
-#endif /* CONFIG_NET_DEBUG_IPV6 */
 
 static enum net_verdict handle_mld_query(struct net_pkt *pkt)
 {
@@ -366,7 +354,7 @@ static enum net_verdict handle_mld_query(struct net_pkt *pkt)
 	/* Currently we only support a unspecified address query. */
 	if (!net_ipv6_addr_cmp(&mcast, net_ipv6_unspecified_address())) {
 		NET_DBG("Only supporting unspecified address query (%s)",
-			net_sprint_ipv6_addr(&mcast));
+			log_strdup(net_sprint_ipv6_addr(&mcast)));
 		goto drop;
 	}
 

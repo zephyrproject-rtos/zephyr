@@ -70,7 +70,7 @@
 
 #define IS_LL_RCC_LPUART_CLKSOURCE(__VALUE__) (((__VALUE__) == LL_RCC_LPUART1_CLKSOURCE))
 
-#if defined(RCC_CCIPR_I2C3SEL) 
+#if defined(RCC_CCIPR_I2C3SEL)
 #define IS_LL_RCC_I2C_CLKSOURCE(__VALUE__)    (((__VALUE__) == LL_RCC_I2C1_CLKSOURCE) \
                                             || ((__VALUE__) == LL_RCC_I2C3_CLKSOURCE))
 #else
@@ -155,11 +155,11 @@ ErrorStatus LL_RCC_DeInit(void)
   vl_mask = LL_RCC_ReadReg(CR);
 #if defined(RCC_CR_HSIOUTEN)  	
   CLEAR_BIT(vl_mask, RCC_CR_HSION| RCC_CR_HSIKERON| RCC_CR_HSIDIVEN | RCC_CR_HSIOUTEN | \
-                     RCC_CR_HSEON | RCC_CR_PLLON); 
+                     RCC_CR_HSEON | RCC_CR_PLLON);
 #else
   CLEAR_BIT(vl_mask, RCC_CR_HSION| RCC_CR_HSIKERON| RCC_CR_HSIDIVEN | \
-                     RCC_CR_HSEON | RCC_CR_PLLON); 
-#endif					 
+                     RCC_CR_HSEON | RCC_CR_PLLON);
+#endif					
   LL_RCC_WriteReg(CR, vl_mask);
   /* Delay after an RCC peripheral clock */
   vl_mask = LL_RCC_ReadReg(CR);
@@ -168,7 +168,7 @@ ErrorStatus LL_RCC_DeInit(void)
   LL_RCC_HSE_DisableBypass();
 
   /* Set RCC_CR_RTCPRE to 0b00*/
-  CLEAR_BIT(vl_mask, RCC_CR_RTCPRE); 
+  CLEAR_BIT(vl_mask, RCC_CR_RTCPRE);
   LL_RCC_WriteReg(CR, vl_mask);
 
   /* Reset CFGR register */
@@ -199,11 +199,11 @@ ErrorStatus LL_RCC_DeInit(void)
   * @note   If SYSCLK source is MSI, function returns values based on MSI clock(*)
   * @note   If SYSCLK source is HSI, function returns values based on HSI_VALUE(**)
   * @note   If SYSCLK source is HSE, function returns values based on HSE_VALUE(***)
-  * @note   If SYSCLK source is PLL, function returns values based on 
+  * @note   If SYSCLK source is PLL, function returns values based on
   *         HSI_VALUE(**) or HSE_VALUE(***) multiplied/divided by the PLL factors.
   * @note   (*) MSI clock depends on the selected MSI range but the real value
-  *             may vary depending on the variations in voltage and temperature. 
-  * @note   (**) HSI_VALUE is a defined constant but the real value may vary 
+  *             may vary depending on the variations in voltage and temperature.
+  * @note   (**) HSI_VALUE is a defined constant but the real value may vary
   *              depending on the variations in voltage and temperature.
   * @note   (***) HSE_VALUE is a defined constant, user has to ensure that
   *               HSE_VALUE is same as the real frequency of the crystal used.

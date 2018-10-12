@@ -147,13 +147,13 @@ SECTION_FUNC(TEXT, k_cpu_idle)
  *    if this requirement is not met.
  *
  * 2) After waking up from the low-power mode, the interrupt lockout state
- *    must be restored as indicated in the 'imask' input parameter.
+ *    must be restored as indicated in the 'key' input parameter.
  *
  * @return N/A
  *
  * C function prototype:
  *
- * void k_cpu_atomic_idle (unsigned int imask);
+ * void k_cpu_atomic_idle (unsigned int key);
  */
 
 SECTION_FUNC(TEXT, k_cpu_atomic_idle)

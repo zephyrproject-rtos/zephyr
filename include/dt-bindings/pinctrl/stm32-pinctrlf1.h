@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _STM32_PINCTRLF1_H_
-#define _STM32_PINCTRLF1_H_
+#ifndef ZEPHYR_STM32_PINCTRLF1_H_
+#define ZEPHYR_STM32_PINCTRLF1_H_
 
 #include <dt-bindings/pinctrl/stm32-pinctrl-common.h>
 
@@ -107,4 +107,4 @@
 #define STM32_PIN_SPI_SLAVE_NSS		(STM32_MODE_INPUT | STM32_CNF_IN_FLOAT)
 #define STM32_PIN_USB			(STM32_MODE_INPUT | STM32_CNF_IN_PUPD)
 
-#endif	/* _STM32_PINCTRLF1_H_ */
+#endif	/* ZEPHYR_STM32_PINCTRLF1_H_ */

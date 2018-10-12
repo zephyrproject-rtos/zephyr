@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _MQTT_H_
-#define _MQTT_H_
+#ifndef ZEPHYR_INCLUDE_NET_MQTT_H_
+#define ZEPHYR_INCLUDE_NET_MQTT_H_
 
 #include <net/mqtt_types.h>
 #include <net/net_context.h>
@@ -471,4 +471,4 @@ int mqtt_rx_publish(struct mqtt_ctx *ctx, struct net_buf *rx);
 }
 #endif
 
-#endif /* _MQTT_H_ */
+#endif /* ZEPHYR_INCLUDE_NET_MQTT_H_ */

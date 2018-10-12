@@ -38,10 +38,8 @@
  * SUCH DAMAGE.
  */
 
-#if defined(CONFIG_NET_DEBUG_RPL)
-#define SYS_LOG_DOMAIN "net/rpl"
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_rpl_mrhof
+#define NET_LOG_LEVEL CONFIG_NET_RPL_LOG_LEVEL
 
 #include <kernel.h>
 #include <limits.h>

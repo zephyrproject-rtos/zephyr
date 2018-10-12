@@ -10,8 +10,8 @@
  * @brief HTTP server and client implementation for Zephyr.
  */
 
-#ifndef __HTTP_H__
-#define __HTTP_H__
+#ifndef ZEPHYR_INCLUDE_NET_HTTP_H_
+#define ZEPHYR_INCLUDE_NET_HTTP_H_
 
 #include <net/net_app.h>
 #include <net/http_parser.h>
@@ -1122,4 +1122,4 @@ void http_server_conn_del(struct http_ctx *ctx);
 }
 #endif
 
-#endif /* __HTTP_H__ */
+#endif /* ZEPHYR_INCLUDE_NET_HTTP_H_ */

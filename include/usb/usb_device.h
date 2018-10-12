@@ -33,15 +33,22 @@
  * This file contains the USB device core layer APIs and structures.
  */
 
-#ifndef USB_DEVICE_H_
-#define USB_DEVICE_H_
+#ifndef ZEPHYR_INCLUDE_USB_USB_DEVICE_H_
+#define ZEPHYR_INCLUDE_USB_USB_DEVICE_H_
 
 #include <drivers/usb/usb_dc.h>
 #include <usb/usbstruct.h>
+#include <logging/log.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define USB_DBG(fmt, ...) LOG_DBG("(%p): %s: " fmt, k_current_get(), \
+				  __func__, ##__VA_ARGS__)
+#define USB_ERR(fmt, ...) LOG_ERR(fmt, ##__VA_ARGS__)
+#define USB_WRN(fmt, ...) LOG_WRN(fmt, ##__VA_ARGS__)
+#define USB_INF(fmt, ...) LOG_INF(fmt, ##__VA_ARGS__)
 
 /*
  * These macros should be used to place the USB descriptors
@@ -91,12 +98,6 @@ struct usb_setup_packet {
  * @defgroup _usb_device_core_api USB Device Core API
  * @{
  */
-
-/**
- * @brief Callback function signature for the device
- */
-typedef void (*usb_status_callback)(enum usb_dc_status_code status_code,
-				    u8_t *param);
 
 /**
  * @brief Callback function signature for the USB Endpoint status
@@ -180,7 +181,7 @@ struct usb_interface_cfg_data {
  *
  * The Application instantiates this with given parameters added
  * using the "usb_set_config" function. Once this function is called
- * changes to this structure will result in undefined behaviour. This structure
+ * changes to this structure will result in undefined behavior. This structure
  * may only be updated after calls to usb_deconfig
  */
 struct usb_cfg_data {
@@ -194,7 +195,7 @@ struct usb_cfg_data {
 	/** Function for interface runtime configuration */
 	usb_interface_config interface_config;
 	/** Callback to be notified on USB connection status change */
-	usb_status_callback cb_usb_status;
+	usb_dc_status_callback cb_usb_status;
 	/** USB interface (Class) handler and storage space */
 	struct usb_interface_cfg_data interface;
 	/** Number of individual endpoints in the device configuration */
@@ -294,7 +295,7 @@ int usb_read(u8_t ep, u8_t *data, u32_t max_data_len, u32_t *ret_bytes);
  * @brief Set STALL condition on the specified endpoint
  *
  * This function is called by USB device class handler code to set stall
- * conditionin on endpoint.
+ * condition on endpoint.
  *
  * @param[in]  ep           Endpoint address corresponding to the one listed in
  *                          the device configuration table
@@ -307,7 +308,7 @@ int usb_ep_set_stall(u8_t ep);
  * @brief Clears STALL condition on the specified endpoint
  *
  * This function is called by USB device class handler code to clear stall
- * conditionin on endpoint.
+ * condition on endpoint.
  *
  * @param[in]  ep           Endpoint address corresponding to the one listed in
  *                          the device configuration table
@@ -425,4 +426,4 @@ void usb_cancel_transfer(u8_t ep);
 }
 #endif
 
-#endif /* USB_DEVICE_H_ */
+#endif /* ZEPHYR_INCLUDE_USB_USB_DEVICE_H_ */

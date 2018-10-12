@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __WS_CONSOLE_H__
-#define __WS_CONSOLE_H__
+#ifndef ZEPHYR_INCLUDE_DRIVERS_CONSOLE_WEBSOCKET_CONSOLE_H_
+#define ZEPHYR_INCLUDE_DRIVERS_CONSOLE_WEBSOCKET_CONSOLE_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,4 +34,4 @@ void ws_register_input(struct k_fifo *avail, struct k_fifo *lines,
 }
 #endif
 
-#endif /* __WS_CONSOLE_H__ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_CONSOLE_WEBSOCKET_CONSOLE_H_ */

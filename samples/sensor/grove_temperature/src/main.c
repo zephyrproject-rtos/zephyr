@@ -54,7 +54,7 @@ void main(void)
 		char row[16];
 
 		/* clear LCD */
-		memset(row, ' ', sizeof(row));
+		(void)memset(row, ' ', sizeof(row));
 		glcd_cursor_pos_set(glcd, 0, 0);
 		glcd_print(glcd, row, sizeof(row));
 		glcd_cursor_pos_set(glcd, 0, 1);

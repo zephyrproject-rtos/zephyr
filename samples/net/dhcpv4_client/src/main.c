@@ -7,11 +7,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if 1
-#define SYS_LOG_DOMAIN "dhcpv4"
-#define NET_SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_dhcpv4_client
+#define NET_LOG_LEVEL LOG_LEVEL_DBG
 
 #include <zephyr.h>
 #include <linker/sections.h>
@@ -44,18 +41,19 @@ static void handler(struct net_mgmt_event_callback *cb,
 		}
 
 		NET_INFO("Your address: %s",
-			 net_addr_ntop(AF_INET,
+			 log_strdup(net_addr_ntop(AF_INET,
 			    &iface->config.ip.ipv4->unicast[i].address.in_addr,
-				       buf, sizeof(buf)));
+						  buf, sizeof(buf))));
 		NET_INFO("Lease time: %u seconds",
 			 iface->config.dhcpv4.lease_time);
 		NET_INFO("Subnet: %s",
-			 net_addr_ntop(AF_INET,
+			 log_strdup(net_addr_ntop(AF_INET,
 				       &iface->config.ip.ipv4->netmask,
-				       buf, sizeof(buf)));
+				       buf, sizeof(buf))));
 		NET_INFO("Router: %s",
-			 net_addr_ntop(AF_INET, &iface->config.ip.ipv4->gw,
-				       buf, sizeof(buf)));
+			 log_strdup(net_addr_ntop(AF_INET,
+						  &iface->config.ip.ipv4->gw,
+						  buf, sizeof(buf))));
 	}
 }
 

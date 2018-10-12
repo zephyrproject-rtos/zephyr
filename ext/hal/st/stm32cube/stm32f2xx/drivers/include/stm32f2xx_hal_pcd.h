@@ -31,7 +31,7 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-  */ 
+  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __STM32F2xx_HAL_PCD_H
@@ -43,24 +43,24 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f2xx_ll_usb.h"
-   
+
 /** @addtogroup STM32F2xx_HAL_Driver
   * @{
   */
 
 /** @addtogroup PCD
   * @{
-  */ 
+  */
 
-/* Exported types ------------------------------------------------------------*/ 
+/* Exported types ------------------------------------------------------------*/
 /** @defgroup PCD_Exported_Types PCD Exported Types
   * @{
   */
-   
+
 /**
   * @brief  PCD State structure definition
   */
-typedef enum 
+typedef enum
 {
   HAL_PCD_STATE_RESET   = 0x00U,
   HAL_PCD_STATE_READY   = 0x01U,
@@ -73,9 +73,9 @@ typedef USB_OTG_GlobalTypeDef  PCD_TypeDef;
 typedef USB_OTG_CfgTypeDef     PCD_InitTypeDef;
 typedef USB_OTG_EPTypeDef      PCD_EPTypeDef ;
 
-/** 
-  * @brief  PCD Handle Structure definition  
-  */ 
+/**
+  * @brief  PCD Handle Structure definition
+  */
 typedef struct
 {
   PCD_TypeDef             *Instance;    /*!< Register base address              */
@@ -109,7 +109,7 @@ typedef struct
 /**
   * @}
   */
-  
+
 /** @defgroup PCD_PHY_Module PCD PHY Module
   * @{
   */
@@ -185,7 +185,7 @@ typedef struct
                                                                        EXTI->FTSR |= USB_OTG_HS_WAKEUP_EXTI_LINE;\
                                                                       }while(0U)
 
-#define __HAL_USB_OTG_HS_WAKEUP_EXTI_GENERATE_SWIT()   (EXTI->SWIER |= USB_OTG_FS_WAKEUP_EXTI_LINE) 
+#define __HAL_USB_OTG_HS_WAKEUP_EXTI_GENERATE_SWIT()   (EXTI->SWIER |= USB_OTG_FS_WAKEUP_EXTI_LINE)
 
 #define __HAL_USB_OTG_FS_WAKEUP_EXTI_ENABLE_IT()    EXTI->IMR |= USB_OTG_FS_WAKEUP_EXTI_LINE
 #define __HAL_USB_OTG_FS_WAKEUP_EXTI_DISABLE_IT()   EXTI->IMR &= ~(USB_OTG_FS_WAKEUP_EXTI_LINE)
@@ -206,7 +206,7 @@ typedef struct
                                                                       EXTI->FTSR |= USB_OTG_FS_WAKEUP_EXTI_LINE;\
                                                                      }while(0U)
 
-#define __HAL_USB_OTG_FS_WAKEUP_EXTI_GENERATE_SWIT()  (EXTI->SWIER |= USB_OTG_FS_WAKEUP_EXTI_LINE) 
+#define __HAL_USB_OTG_FS_WAKEUP_EXTI_GENERATE_SWIT()  (EXTI->SWIER |= USB_OTG_FS_WAKEUP_EXTI_LINE)
 /**
   * @}
   */
@@ -281,12 +281,12 @@ HAL_StatusTypeDef HAL_PCD_DeActivateRemoteWakeup(PCD_HandleTypeDef *hpcd);
 PCD_StateTypeDef HAL_PCD_GetState(PCD_HandleTypeDef *hpcd);
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
   */
- 
+
 /* Private macros ------------------------------------------------------------*/
 /** @defgroup PCD_Private_Macros PCD Private Macros
  * @{
@@ -298,18 +298,18 @@ PCD_StateTypeDef HAL_PCD_GetState(PCD_HandleTypeDef *hpcd);
                                         ((INSTANCE) == USB_OTG_HS))
 /**
   * @}
-  */ 
+  */
 /**
   * @}
   */
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
-  */ 
+  */
 
 #ifdef __cplusplus
 }

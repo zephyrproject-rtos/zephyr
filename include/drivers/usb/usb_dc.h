@@ -14,8 +14,8 @@
  * drivers should implement the APIs described in this file.
  */
 
-#ifndef __USB_DC_H__
-#define __USB_DC_H__
+#ifndef ZEPHYR_INCLUDE_DRIVERS_USB_USB_DC_H_
+#define ZEPHYR_INCLUDE_DRIVERS_USB_USB_DC_H_
 
 #include <device.h>
 
@@ -121,7 +121,7 @@ typedef void (*usb_dc_ep_callback)(u8_t ep,
  * Callback function signature for the device
  */
 typedef void (*usb_dc_status_callback)(enum usb_dc_status_code cb_status,
-				       u8_t *param);
+				       const u8_t *param);
 
 /**
  * @brief Attach USB for device connection
@@ -394,4 +394,4 @@ int usb_dc_ep_mps(u8_t ep);
  * @}
  */
 
-#endif /* __USB_DC_H__ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_USB_USB_DC_H_ */

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _GPIO_DW_H_
-#define _GPIO_DW_H_
+#ifndef ZEPHYR_DRIVERS_GPIO_GPIO_DW_H_
+#define ZEPHYR_DRIVERS_GPIO_GPIO_DW_H_
 
 #include <zephyr/types.h>
 #include <gpio.h>
@@ -55,4 +55,4 @@ struct gpio_dw_runtime {
 }
 #endif
 
-#endif /* _GPIO_DW_H_ */
+#endif /* ZEPHYR_DRIVERS_GPIO_GPIO_DW_H_ */

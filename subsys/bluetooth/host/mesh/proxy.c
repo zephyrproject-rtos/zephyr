@@ -141,11 +141,11 @@ static int filter_set(struct bt_mesh_proxy_client *client,
 
 	switch (type) {
 	case 0x00:
-		memset(client->filter, 0, sizeof(client->filter));
+		(void)memset(client->filter, 0, sizeof(client->filter));
 		client->filter_type = WHITELIST;
 		break;
 	case 0x01:
-		memset(client->filter, 0, sizeof(client->filter));
+		(void)memset(client->filter, 0, sizeof(client->filter));
 		client->filter_type = BLACKLIST;
 		break;
 	default:
@@ -544,7 +544,7 @@ static void proxy_connected(struct bt_conn *conn, u8_t err)
 
 	client->conn = bt_conn_ref(conn);
 	client->filter_type = NONE;
-	memset(client->filter, 0, sizeof(client->filter));
+	(void)memset(client->filter, 0, sizeof(client->filter));
 	net_buf_simple_reset(&client->buf);
 }
 
@@ -998,7 +998,7 @@ static int node_id_adv(struct bt_mesh_subnet *sub)
 		return err;
 	}
 
-	memset(tmp, 0, 6);
+	(void)memset(tmp, 0, 6);
 	memcpy(tmp + 6, proxy_svc_data + 11, 8);
 	sys_put_be16(bt_mesh_primary_addr(), tmp + 14);
 

@@ -4,10 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_GPTP)
-#define SYS_LOG_DOMAIN "net/gptp"
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_gptp_md
+#define NET_LOG_LEVEL CONFIG_NET_GPTP_LOG_LEVEL
 
 #include "gptp_messages.h"
 #include "gptp_md.h"
@@ -15,19 +13,24 @@
 #include "gptp_private.h"
 
 static void gptp_md_sync_prepare(struct net_pkt *pkt,
-		struct gptp_md_sync_info *sync_send)
+				 struct gptp_md_sync_info *sync_send,
+				 int port_number)
 {
 	struct gptp_hdr *hdr;
 
 	hdr = GPTP_HDR(pkt);
 
-	memcpy(&hdr->port_id, &sync_send->src_port_id,
-	       sizeof(struct gptp_port_identity));
+	memcpy(&hdr->port_id.clk_id, &sync_send->src_port_id.clk_id,
+	       GPTP_CLOCK_ID_LEN);
+
+	hdr->port_id.port_number = htons(port_number);
+
 	hdr->log_msg_interval = sync_send->log_msg_interval;
 }
 
 static void gptp_md_follow_up_prepare(struct net_pkt *pkt,
-				      struct gptp_md_sync_info *sync_send)
+				      struct gptp_md_sync_info *sync_send,
+				      int port_number)
 {
 	struct gptp_hdr *hdr;
 	struct gptp_follow_up *fup;
@@ -50,8 +53,11 @@ static void gptp_md_follow_up_prepare(struct net_pkt *pkt,
 	hdr->correction_field += sync_send->follow_up_correction_field;
 	hdr->correction_field <<= 16;
 
-	memcpy(&hdr->port_id, &sync_send->src_port_id,
-	       sizeof(struct gptp_port_identity));
+	memcpy(&hdr->port_id.clk_id, &sync_send->src_port_id.clk_id,
+	       GPTP_CLOCK_ID_LEN);
+
+	hdr->port_id.port_number = htons(port_number);
+
 	hdr->log_msg_interval = sync_send->log_msg_interval;
 
 	fup->prec_orig_ts_secs_high =
@@ -819,7 +825,8 @@ static void gptp_md_sync_send_state_machine(int port)
 				/* Reference message to track timestamp info */
 				state->sync_ptr = net_pkt_ref(pkt);
 				gptp_md_sync_prepare(pkt,
-						     state->sync_send_ptr);
+						     state->sync_send_ptr,
+						     port);
 				gptp_send_sync(port, pkt);
 			}
 
@@ -841,7 +848,8 @@ static void gptp_md_sync_send_state_machine(int port)
 			pkt = gptp_prepare_follow_up(port, state->sync_ptr);
 			if (pkt) {
 				gptp_md_follow_up_prepare(pkt,
-							 state->sync_send_ptr);
+							 state->sync_send_ptr,
+							 port);
 				gptp_send_follow_up(port, pkt);
 			}
 

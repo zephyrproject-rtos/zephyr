@@ -5,9 +5,9 @@
 
 #include <init.h>
 #include <pinmux.h>
-#include <pin_mux.h>
 #include <fsl_common.h>
-#include <fsl_lpc_iocon.h>
+#include <fsl_iocon.h>
+#include <soc.h>
 
 static int lpcxpresso_54114_pinmux_init(struct device *dev)
 {

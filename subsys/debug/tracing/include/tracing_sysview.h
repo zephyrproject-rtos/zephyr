@@ -6,7 +6,6 @@
 #ifndef _TRACE_SYSVIEW_H
 #define _TRACE_SYSVIEW_H
 #include <kernel.h>
-#include <kernel_structs.h>
 #include <init.h>
 
 #include <systemview/SEGGER_SYSVIEW.h>

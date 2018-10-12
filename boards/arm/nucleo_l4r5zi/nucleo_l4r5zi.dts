@@ -1,0 +1,116 @@
+/*
+ * Copyright (c) 2018 Pushpal Sidhu
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/l4/stm32l4r5Xi.dtsi>
+
+/ {
+	model = "STMicroelectronics STM32L4R5ZI-NUCLEO board";
+	compatible = "st,stm32l4r5zi-nucleo", "st,stm32l4r5";
+
+	chosen {
+		zephyr,console = &usart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led_0: led_0 {
+			gpios = <&gpioc 7 GPIO_INT_ACTIVE_HIGH>;
+			label = "User LD1";
+		};
+
+		blue_led_0: led_1 {
+			gpios = <&gpiob 7 GPIO_INT_ACTIVE_HIGH>;
+			label = "User LD2";
+		};
+
+		red_led_0: led_2 {
+			gpios = <&gpiob 14 GPIO_INT_ACTIVE_HIGH>;
+			label = "User LD3";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "User";
+			gpios = <&gpioc 13 GPIO_INT_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		led0 = &green_led_0;
+		led1 = &blue_led_0;
+		led2 = &red_led_0;
+		sw0 = &user_button;
+	};
+};
+
+arduino_i2c: &i2c1 {};
+arduino_spi: &spi1 {};
+arduino_serial: &usart3 {};
+
+&usart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_pins_b>;
+	pinctrl-names = "default";
+	status = "ok";
+};
+
+&usart2 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart2_pins_a>;
+	pinctrl-names = "default";
+	status = "ok";
+};
+
+&usart3 {
+	current-speed = <115200>;
+	pinctrl-names = "default";
+	status = "ok";
+};
+
+&i2c1 {
+	status = "ok";
+};
+
+&spi1 {
+	status = "ok";
+};
+
+&usbotg_fs {
+	status = "ok";
+};
+
+&timers2 {
+	status = "ok";
+
+	pwm {
+		status = "ok";
+	};
+};
+
+&rtc {
+	status = "ok";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+#if defined(CONFIG_FS_FLASH_STORAGE_PARTITION)
+		/* Reserve last 16KiB for property storage */
+		storage_partition: partition@1FB000 {
+			label = "storage";
+			reg = <0x001FB000 0x00004000>;
+		};
+#endif
+	};
+};

@@ -2,7 +2,7 @@
   ******************************************************************************
   * @file    stm32l0xx_hal_tsc.h
   * @author  MCD Application Team
-  * @brief   This file contains all the functions prototypes for the TSC firmware 
+  * @brief   This file contains all the functions prototypes for the TSC firmware
   *          library.
   ******************************************************************************
   * @attention
@@ -43,7 +43,7 @@
 #endif
 
 #if !defined (STM32L011xx) && !defined (STM32L021xx) && !defined (STM32L031xx) && !defined (STM32L041xx) && !defined (STM32L051xx) && !defined (STM32L061xx) && !defined (STM32L071xx) && !defined (STM32L081xx)
-   
+
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l0xx_hal_def.h"
 
@@ -53,16 +53,16 @@
 
 /** @defgroup TSC TSC
   * @{
-  */ 
+  */
 
    /** @defgroup TSC_Exported_Types TSC Exported Types
   * @{
   */
 /* Exported types ------------------------------------------------------------*/
-   
-/** 
-  * @brief TSC state structure definition  
-  */ 
+
+/**
+  * @brief TSC state structure definition
+  */
 typedef enum
 {
   HAL_TSC_STATE_RESET  = 0x00U, /*!< TSC registers have their reset value */
@@ -71,18 +71,18 @@ typedef enum
   HAL_TSC_STATE_ERROR  = 0x03U  /*!< Acquisition is completed with max count error */
 } HAL_TSC_StateTypeDef;
 
-/** 
-  * @brief TSC group status structure definition  
-  */ 
+/**
+  * @brief TSC group status structure definition
+  */
 typedef enum
 {
   TSC_GROUP_ONGOING   = 0x00U, /*!< Acquisition on group is on-going or not started */
   TSC_GROUP_COMPLETED = 0x01U  /*!< Acquisition on group is completed with success (no max count error) */
 } TSC_GroupStatusTypeDef;
 
-/** 
-  * @brief TSC init structure definition  
-  */ 
+/**
+  * @brief TSC init structure definition
+  */
 typedef struct
 {
   uint32_t CTPulseHighLength;       /*!< Charge-transfer high pulse length */
@@ -101,9 +101,9 @@ typedef struct
   uint32_t SamplingIOs;             /*!< Sampling IOs mask */
 } TSC_InitTypeDef;
 
-/** 
-  * @brief TSC IOs configuration structure definition  
-  */ 
+/**
+  * @brief TSC IOs configuration structure definition
+  */
 typedef struct
 {
   uint32_t ChannelIOs;  /*!< Channel IOs mask */
@@ -111,9 +111,9 @@ typedef struct
   uint32_t SamplingIOs; /*!< Sampling IOs mask */
 } TSC_IOConfigTypeDef;
 
-/** 
-  * @brief  TSC handle Structure definition  
-  */ 
+/**
+  * @brief  TSC handle Structure definition
+  */
 typedef struct
 {
   TSC_TypeDef               *Instance; /*!< Register base address */
@@ -131,7 +131,7 @@ typedef struct
 
 /** @defgroup TSC_Exported_Constants TSC Exported Constants
   * @{
-  */ 
+  */
 
 
 #define TSC_CTPH_1CYCLE   ((uint32_t)((uint32_t) 0U << 28U))
@@ -168,8 +168,8 @@ typedef struct
 #define TSC_CTPL_15CYCLES ((uint32_t)((uint32_t)14U << 24U))
 #define TSC_CTPL_16CYCLES ((uint32_t)((uint32_t)15U << 24U))
 
-#define TSC_SS_PRESC_DIV1 ((uint32_t)0U)  
-#define TSC_SS_PRESC_DIV2  (TSC_CR_SSPSC) 
+#define TSC_SS_PRESC_DIV1 ((uint32_t)0U)
+#define TSC_SS_PRESC_DIV2  (TSC_CR_SSPSC)
 
 #define TSC_PG_PRESC_DIV1   ((uint32_t)(0U << 12U))
 #define TSC_PG_PRESC_DIV2   ((uint32_t)(1U << 12U))
@@ -204,15 +204,15 @@ typedef struct
 /** @defgroup TSC_interrupts_definition TSC Interrupts Definition
   * @{
   */
-#define TSC_IT_EOA ((uint32_t)TSC_IER_EOAIE)  
-#define TSC_IT_MCE ((uint32_t)TSC_IER_MCEIE) 
+#define TSC_IT_EOA ((uint32_t)TSC_IER_EOAIE)
+#define TSC_IT_MCE ((uint32_t)TSC_IER_MCEIE)
 /**
   * @}
-  */ 
+  */
 
 /** @defgroup TSC_flags_definition TSC Flags Definition
   * @{
-  */ 
+  */
 #define TSC_FLAG_EOA ((uint32_t)TSC_ISR_EOAF)
 #define TSC_FLAG_MCE ((uint32_t)TSC_ISR_MCEF)
 /**
@@ -292,7 +292,7 @@ typedef struct
 
 /**
   * @}
-  */ 
+  */
 
 /* Exported macros -----------------------------------------------------------*/
 
@@ -568,7 +568,7 @@ typedef struct
   * @}
   */
 
-/* Exported functions --------------------------------------------------------*/  
+/* Exported functions --------------------------------------------------------*/
 
 /** @defgroup TSC_Exported_Functions TSC Exported Functions
   * @{
@@ -642,7 +642,7 @@ void HAL_TSC_ErrorCallback(TSC_HandleTypeDef* htsc);
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}

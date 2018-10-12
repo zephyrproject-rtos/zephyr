@@ -141,7 +141,8 @@ int pthread_mutex_unlock(pthread_mutex_t *m)
 			m->lock_count++;
 			_ready_thread(thread);
 			_set_thread_return_value(thread, 0);
-			return _reschedule(key);
+			_reschedule(key);
+			return 0;
 		}
 		m->owner = NULL;
 

@@ -6,3 +6,5 @@ toolchain:
   - zephyr
   - gnuarmemb
 ram: 32
+supported:
+  - rtc

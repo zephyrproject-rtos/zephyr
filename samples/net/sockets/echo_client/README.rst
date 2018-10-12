@@ -1,7 +1,7 @@
 .. _sockets-echo-client-sample:
 
-Echo Client
-###########
+Socket Echo Client
+##################
 
 Overview
 ********
@@ -42,6 +42,28 @@ will need to consult its documentation for application deployment
 instructions. You can read about Zephyr support for specific boards in
 the documentation at :ref:`boards`.
 
+Enabling TLS support
+=================================
+
+Enable TLS support in the sample by building the project with the
+``overlay-tls.conf`` overlay file enabled, for example, using these commands:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/sockets/echo_client
+   :board: qemu_x86
+   :conf: "prj.conf overlay-tls.conf"
+   :goals: build
+   :compact:
+
+An alternative way is to specify ``-DOVERLAY_CONFIG=overlay-tls.conf`` when
+running cmake.
+
+The certificate and private key used by the sample can be found in the sample's
+``src`` directory. The default certificates used by Socket Echo Client and
+:ref:`sockets-echo-server-sample` enable establishing a secure connection
+between the samples.
+
+
 Running echo-server in Linux Host
 =================================
 
@@ -67,6 +89,10 @@ Run echo-client application in QEMU:
 
 Note that echo-server must be running in the Linux host terminal window
 before you start the echo-client application in QEMU.
+
+You can verify TLS communication with a Linux host as well. See
+https://github.com/zephyrproject-rtos/net-tools documentation for information
+on how to test TLS with Linux host samples.
 
 See the :ref:`sockets-echo-server-sample` documentation for an alternate
 way of running, with the echo-client on the Linux host and the echo-server

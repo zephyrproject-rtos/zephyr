@@ -5,7 +5,6 @@
 #
 ---
 title: i.MX Clock Controller Module (CCM)
-id: nxp,imx-ccm
 version: 0.1
 
 description: >
@@ -17,6 +16,7 @@ properties:
       category: required
       description: compatible strings
       constraint: "nxp,imx-ccm"
+      generation: define
 
     reg:
       type: int

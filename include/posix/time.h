@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __POSIX_TIME_H__
-#define __POSIX_TIME_H__
+#ifndef ZEPHYR_INCLUDE_POSIX_TIME_H_
+#define ZEPHYR_INCLUDE_POSIX_TIME_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,8 +27,8 @@ struct timeval {
 
 #include <kernel.h>
 #include <errno.h>
-#include "sys/types.h"
-#include "signal.h"
+#include <sys/types.h>
+#include <posix/signal.h>
 
 #ifndef CLOCK_REALTIME
 #define CLOCK_REALTIME 0
@@ -64,4 +64,4 @@ int gettimeofday(struct timeval *tv, const void *tz);
 }
 #endif
 
-#endif /* __POSIX_TIME_H__ */
+#endif /* ZEPHYR_INCLUDE_POSIX_TIME_H_ */

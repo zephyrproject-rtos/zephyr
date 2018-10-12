@@ -300,7 +300,7 @@ HAL_StatusTypeDef HAL_COMP_Init(COMP_HandleTypeDef *hcomp)
   HAL_StatusTypeDef status = HAL_OK;
 
   /* Check the COMP handle allocation and lock status */
-  if((hcomp == NULL) || ((hcomp->State & COMP_STATE_BIT_LOCK) != RESET))
+  if ((hcomp == NULL) || ((hcomp->State & COMP_STATE_BIT_LOCK) != RESET))
   {
     status = HAL_ERROR;
   }
@@ -320,7 +320,7 @@ HAL_StatusTypeDef HAL_COMP_Init(COMP_HandleTypeDef *hcomp)
     assert_param(IS_COMP_BLANKINGSRCE_INSTANCE(hcomp->Instance, hcomp->Init.BlankingSrce));
     assert_param(IS_COMP_TRIGGERMODE(hcomp->Init.TriggerMode));
 
-    if(hcomp->Init.WindowMode != COMP_WINDOWMODE_DISABLE)
+    if (hcomp->Init.WindowMode != COMP_WINDOWMODE_DISABLE)
     {
       assert_param(IS_COMP_WINDOWMODE_INSTANCE(hcomp->Instance));
       assert_param(IS_COMP_WINDOWMODE(hcomp->Init.WindowMode));
@@ -331,7 +331,7 @@ HAL_StatusTypeDef HAL_COMP_Init(COMP_HandleTypeDef *hcomp)
     /* Init the low level hardware : SYSCFG to access comparators */
     HAL_COMP_MspInit(hcomp);
 
-    if(hcomp->State == HAL_COMP_STATE_RESET)
+    if (hcomp->State == HAL_COMP_STATE_RESET)
     {
       /* Allocate lock resource and initialize it */
       hcomp->Lock = HAL_UNLOCKED;
@@ -370,7 +370,7 @@ HAL_StatusTypeDef HAL_COMP_DeInit(COMP_HandleTypeDef *hcomp)
   HAL_StatusTypeDef status = HAL_OK;
 
   /* Check the COMP handle allocation and lock status */
-  if((hcomp == NULL) || ((hcomp->State & COMP_STATE_BIT_LOCK) != RESET))
+  if ((hcomp == NULL) || ((hcomp->State & COMP_STATE_BIT_LOCK) != RESET))
   {
     status = HAL_ERROR;
   }
@@ -457,7 +457,7 @@ HAL_StatusTypeDef HAL_COMP_Start(COMP_HandleTypeDef *hcomp)
   uint32_t extiline = 0U;
 
   /* Check the COMP handle allocation and lock status */
-  if((hcomp == NULL) || ((hcomp->State & COMP_STATE_BIT_LOCK) != RESET))
+  if ((hcomp == NULL) || ((hcomp->State & COMP_STATE_BIT_LOCK) != RESET))
   {
     status = HAL_ERROR;
   }
@@ -466,16 +466,16 @@ HAL_StatusTypeDef HAL_COMP_Start(COMP_HandleTypeDef *hcomp)
     /* Check the parameter */
     assert_param(IS_COMP_ALL_INSTANCE(hcomp->Instance));
 
-    if(hcomp->State == HAL_COMP_STATE_READY)
+    if (hcomp->State == HAL_COMP_STATE_READY)
     {
       /* Get the EXTI Line output configuration */
       extiline = COMP_GET_EXTI_LINE(hcomp->Instance);
 
       /* Configure the event generation */
-      if((hcomp->Init.TriggerMode & (COMP_TRIGGERMODE_EVENT_RISING|COMP_TRIGGERMODE_EVENT_FALLING)) != RESET)
+      if ((hcomp->Init.TriggerMode & (COMP_TRIGGERMODE_EVENT_RISING | COMP_TRIGGERMODE_EVENT_FALLING)) != RESET)
       {
         /* Configure the event trigger rising edge */
-        if((hcomp->Init.TriggerMode & COMP_TRIGGERMODE_EVENT_RISING) != RESET)
+        if ((hcomp->Init.TriggerMode & COMP_TRIGGERMODE_EVENT_RISING) != RESET)
         {
           COMP_EXTI_RISING_ENABLE(extiline);
         }
@@ -485,7 +485,7 @@ HAL_StatusTypeDef HAL_COMP_Start(COMP_HandleTypeDef *hcomp)
         }
 
         /* Configure the trigger falling edge */
-        if((hcomp->Init.TriggerMode & COMP_TRIGGERMODE_EVENT_FALLING) != RESET)
+        if ((hcomp->Init.TriggerMode & COMP_TRIGGERMODE_EVENT_FALLING) != RESET)
         {
           COMP_EXTI_FALLING_ENABLE(extiline);
         }
@@ -525,7 +525,7 @@ HAL_StatusTypeDef HAL_COMP_Stop(COMP_HandleTypeDef *hcomp)
   HAL_StatusTypeDef status = HAL_OK;
 
   /* Check the COMP handle allocation and lock status */
-  if((hcomp == NULL) || ((hcomp->State & COMP_STATE_BIT_LOCK) != RESET))
+  if ((hcomp == NULL) || ((hcomp->State & COMP_STATE_BIT_LOCK) != RESET))
   {
     status = HAL_ERROR;
   }
@@ -534,7 +534,7 @@ HAL_StatusTypeDef HAL_COMP_Stop(COMP_HandleTypeDef *hcomp)
     /* Check the parameter */
     assert_param(IS_COMP_ALL_INSTANCE(hcomp->Instance));
 
-    if(hcomp->State == HAL_COMP_STATE_BUSY)
+    if (hcomp->State == HAL_COMP_STATE_BUSY)
     {
       /* Disable the EXTI Line event mode if any */
       COMP_EXTI_DISABLE_EVENT(COMP_GET_EXTI_LINE(hcomp->Instance));
@@ -564,7 +564,7 @@ HAL_StatusTypeDef HAL_COMP_Start_IT(COMP_HandleTypeDef *hcomp)
   uint32_t extiline = 0U;
 
   /* Check the COMP handle allocation and lock status */
-  if((hcomp == NULL) || ((hcomp->State & COMP_STATE_BIT_LOCK) != RESET))
+  if ((hcomp == NULL) || ((hcomp->State & COMP_STATE_BIT_LOCK) != RESET))
   {
     status = HAL_ERROR;
   }
@@ -573,16 +573,16 @@ HAL_StatusTypeDef HAL_COMP_Start_IT(COMP_HandleTypeDef *hcomp)
     /* Check the parameter */
     assert_param(IS_COMP_ALL_INSTANCE(hcomp->Instance));
 
-    if(hcomp->State == HAL_COMP_STATE_READY)
+    if (hcomp->State == HAL_COMP_STATE_READY)
     {
       /* Configure the EXTI event generation */
-      if((hcomp->Init.TriggerMode & (COMP_TRIGGERMODE_IT_RISING|COMP_TRIGGERMODE_IT_FALLING)) != RESET)
+      if ((hcomp->Init.TriggerMode & (COMP_TRIGGERMODE_IT_RISING | COMP_TRIGGERMODE_IT_FALLING)) != RESET)
       {
         /* Get the EXTI Line output configuration */
         extiline = COMP_GET_EXTI_LINE(hcomp->Instance);
 
         /* Configure the trigger rising edge */
-        if((hcomp->Init.TriggerMode & COMP_TRIGGERMODE_IT_RISING) != RESET)
+        if ((hcomp->Init.TriggerMode & COMP_TRIGGERMODE_IT_RISING) != RESET)
         {
           COMP_EXTI_RISING_ENABLE(extiline);
         }
@@ -591,7 +591,7 @@ HAL_StatusTypeDef HAL_COMP_Start_IT(COMP_HandleTypeDef *hcomp)
           COMP_EXTI_RISING_DISABLE(extiline);
         }
         /* Configure the trigger falling edge */
-        if((hcomp->Init.TriggerMode & COMP_TRIGGERMODE_IT_FALLING) != RESET)
+        if ((hcomp->Init.TriggerMode & COMP_TRIGGERMODE_IT_FALLING) != RESET)
         {
           COMP_EXTI_FALLING_ENABLE(extiline);
         }
@@ -652,7 +652,7 @@ void HAL_COMP_IRQHandler(COMP_HandleTypeDef *hcomp)
   uint32_t extiline = COMP_GET_EXTI_LINE(hcomp->Instance);
 
   /* Check COMP EXTI flag */
-  if(COMP_EXTI_GET_FLAG(extiline) != RESET)
+  if (COMP_EXTI_GET_FLAG(extiline) != RESET)
   {
     /* Clear COMP EXTI pending bit */
     COMP_EXTI_CLEAR_FLAG(extiline);
@@ -706,7 +706,7 @@ HAL_StatusTypeDef HAL_COMP_Lock(COMP_HandleTypeDef *hcomp)
   HAL_StatusTypeDef status = HAL_OK;
 
   /* Check the COMP handle allocation and lock status */
-  if((hcomp == NULL) || ((hcomp->State & COMP_STATE_BIT_LOCK) != RESET))
+  if ((hcomp == NULL) || ((hcomp->State & COMP_STATE_BIT_LOCK) != RESET))
   {
     status = HAL_ERROR;
   }
@@ -716,22 +716,22 @@ HAL_StatusTypeDef HAL_COMP_Lock(COMP_HandleTypeDef *hcomp)
     assert_param(IS_COMP_ALL_INSTANCE(hcomp->Instance));
 
     /* Set lock flag on state */
-    switch(hcomp->State)
+    switch (hcomp->State)
     {
-    case HAL_COMP_STATE_BUSY:
-      hcomp->State = HAL_COMP_STATE_BUSY_LOCKED;
-      break;
-    case HAL_COMP_STATE_READY:
-      hcomp->State = HAL_COMP_STATE_READY_LOCKED;
-      break;
-    default:
-      /* unexpected state */
-      status = HAL_ERROR;
-      break;
+      case HAL_COMP_STATE_BUSY:
+        hcomp->State = HAL_COMP_STATE_BUSY_LOCKED;
+        break;
+      case HAL_COMP_STATE_READY:
+        hcomp->State = HAL_COMP_STATE_READY_LOCKED;
+        break;
+      default:
+        /* unexpected state */
+        status = HAL_ERROR;
+        break;
     }
   }
 
-  if(status == HAL_OK)
+  if (status == HAL_OK)
   {
     /* Set the lock bit corresponding to selected comparator */
     __HAL_COMP_LOCK(hcomp);
@@ -761,18 +761,18 @@ HAL_StatusTypeDef HAL_COMP_Lock(COMP_HandleTypeDef *hcomp)
   */
 uint32_t HAL_COMP_GetOutputLevel(COMP_HandleTypeDef *hcomp)
 {
-  uint32_t level=0U;
+  uint32_t level = 0U;
 
   /* Check the parameter */
   assert_param(IS_COMP_ALL_INSTANCE(hcomp->Instance));
 
   level = READ_BIT(hcomp->Instance->CSR, COMP_CSR_COMPxOUT);
 
-  if(level != 0U)
+  if (level != 0U)
   {
-    return(COMP_OUTPUTLEVEL_HIGH);
+    return (COMP_OUTPUTLEVEL_HIGH);
   }
-  return(COMP_OUTPUTLEVEL_LOW);
+  return (COMP_OUTPUTLEVEL_LOW);
 }
 
 /**
@@ -801,7 +801,7 @@ uint32_t HAL_COMP_GetOutputLevel(COMP_HandleTypeDef *hcomp)
 HAL_COMP_StateTypeDef HAL_COMP_GetState(COMP_HandleTypeDef *hcomp)
 {
   /* Check the COMP handle allocation */
-  if(hcomp == NULL)
+  if (hcomp == NULL)
   {
     return HAL_COMP_STATE_RESET;
   }

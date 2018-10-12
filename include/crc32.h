@@ -10,8 +10,8 @@
  * @brief CRC 32 computation function
  */
 
-#ifndef __CRC32_H
-#define __CRC32_H
+#ifndef ZEPHYR_INCLUDE_CRC32_H_
+#define ZEPHYR_INCLUDE_CRC32_H_
 
 #include <zephyr/types.h>
 #include <stdbool.h>

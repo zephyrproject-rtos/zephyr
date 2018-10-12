@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _kernel_structs__h_
-#define _kernel_structs__h_
+#ifndef ZEPHYR_KERNEL_INCLUDE_KERNEL_STRUCTS_H_
+#define ZEPHYR_KERNEL_INCLUDE_KERNEL_STRUCTS_H_
 
 #include <kernel.h>
 
@@ -236,6 +236,10 @@ static ALWAYS_INLINE void _new_thread_init(struct k_thread *thread,
 	thread->custom_data = NULL;
 #endif
 
+#ifdef CONFIG_THREAD_NAME
+	thread->name = NULL;
+#endif
+
 #if defined(CONFIG_USERSPACE)
 	thread->mem_domain_info.mem_domain = NULL;
 #endif /* CONFIG_USERSPACE */
@@ -248,4 +252,4 @@ static ALWAYS_INLINE void _new_thread_init(struct k_thread *thread,
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* _kernel_structs__h_ */
+#endif /* ZEPHYR_KERNEL_INCLUDE_KERNEL_STRUCTS_H_ */

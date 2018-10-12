@@ -4,13 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define LOG_MODULE_NAME net_bt_shell
+#define NET_LOG_LEVEL LOG_LEVEL_DBG
+
 #include <kernel.h>
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <string.h>
 #include <errno.h>
 
-#include <shell/shell.h>
+#include <shell/legacy_shell.h>
 #include <misc/printk.h>
 
 #include <net/net_core.h>

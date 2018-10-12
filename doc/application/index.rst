@@ -13,3 +13,4 @@ Developer Guides
    ../api/api.rst
    ../README.rst
    ../west/index.rst
+   coccinelle.rst

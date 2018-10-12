@@ -455,7 +455,7 @@ int mqtt_unpack_connect(u8_t *buf, u16_t length,
 	u8_t offset;
 	int rc;
 
-	memset(msg, 0x00, sizeof(struct mqtt_connect_msg));
+	(void)memset(msg, 0x00, sizeof(struct mqtt_connect_msg));
 
 	/* MQTT CONNECT packet min size, assuming no payload:
 	 * packet type + min rem length size + var size len

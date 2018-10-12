@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _MQTT_TYPES_H_
-#define _MQTT_TYPES_H_
+#ifndef ZEPHYR_INCLUDE_NET_MQTT_TYPES_H_
+#define ZEPHYR_INCLUDE_NET_MQTT_TYPES_H_
 
 #include <zephyr/types.h>
 
@@ -96,4 +96,4 @@ struct mqtt_publish_msg {
 }
 #endif
 
-#endif /* _MQTT_TYPES_H_ */
+#endif /* ZEPHYR_INCLUDE_NET_MQTT_TYPES_H_ */

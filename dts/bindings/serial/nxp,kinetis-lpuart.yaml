@@ -1,6 +1,5 @@
 ---
 title: Kinetis LPUART
-id: nxp,kinetis-lpuart
 version: 0.1
 
 description: >
@@ -11,9 +10,6 @@ inherits:
 
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "nxp,kinetis-lpuart"
 
     reg:

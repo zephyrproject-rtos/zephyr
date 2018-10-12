@@ -9,8 +9,8 @@
  * @brief WiFi L2 stack public header
  */
 
-#ifndef __WIFI_MGMT_H__
-#define __WIFI_MGMT_H__
+#ifndef ZEPHYR_INCLUDE_NET_WIFI_MGMT_H_
+#define ZEPHYR_INCLUDE_NET_WIFI_MGMT_H_
 
 #include <net/net_mgmt.h>
 #include <net/wifi.h>
@@ -92,8 +92,6 @@ struct wifi_status {
 	int status;
 };
 
-#ifdef CONFIG_WIFI_OFFLOAD
-
 #include <net/net_if.h>
 
 typedef void (*scan_result_cb_t)(struct net_if *iface, int status,
@@ -118,9 +116,11 @@ struct net_wifi_mgmt_offload {
 	int (*disconnect)(struct device *dev);
 };
 
+#ifdef CONFIG_WIFI_OFFLOAD
+
 void wifi_mgmt_raise_connect_result_event(struct net_if *iface, int status);
 void wifi_mgmt_raise_disconnect_result_event(struct net_if *iface, int status);
 
 #endif /* CONFIG_WIFI_OFFLOAD */
 
-#endif /* __WIFI_MGMT_H__ */
+#endif /* ZEPHYR_INCLUDE_NET_WIFI_MGMT_H_ */

@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <st/stm32f429.dtsi>
+#include <st/f4/stm32f429Xi.dtsi>
 
 / {
 	model = "STMicroelectronics STM32F429I_DISC1 board";
@@ -19,11 +19,11 @@
 
 	leds {
 		compatible = "gpio-leds";
-		orange_led_3: led@0 {
+		orange_led_3: led_3 {
 			gpios = <&gpiog 13 GPIO_INT_ACTIVE_HIGH>;
 			label = "User LD3";
 		};
-		green_led_4: led@1 {
+		green_led_4: led_4 {
 			gpios = <&gpiog 14 GPIO_INT_ACTIVE_HIGH>;
 			label = "User LD4";
 		};
@@ -31,7 +31,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
-		user_button: button@0 {
+		user_button: button {
 			label = "User";
 			gpios = <&gpioa 0 GPIO_INT_ACTIVE_LOW>;
 		};
@@ -54,5 +54,9 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&usart2_pins_a>;
 	pinctrl-names = "default";
+	status = "ok";
+};
+
+&rtc {
 	status = "ok";
 };

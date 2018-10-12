@@ -385,6 +385,63 @@ extra_sections: <list of extra binary sections>
     extra, unexpected sections in the Zephyr binary unless they are named
     here. They will not be included in the size calculation.
 
+harness: <string>
+    A harness string needed to run the tests successfully. This can be as simple as
+    a loopback wiring or a complete hardware test setup for sensor and IO testing.
+    Usually pertains to external dependency domains but can be anything such as
+    console, sensor, net, keyboard, or Bluetooth.
+
+harness_config: <harness configuration options>
+    Extra harness configuration options to be used to select a board and/or
+    for handling generic Console with regex matching. Config can announce
+    what features it supports. This option will enable the test to run on
+    only those platforms that fulfill this external dependency.
+
+    The following options are currently supported:
+
+    type: <one_line|multi_line> (required)
+        Depends on the regex string to be matched
+
+    regex: <expression> (required)
+        Any string that the particular test case prints to confirm test
+        runs as expected.
+
+    ordered: <True|False> (default False)
+        Check the regular expression strings in orderly or randomly fashion
+
+    repeat: <integer>
+        Number of times to validate the repeated regex expression
+
+    fixture: <expression>
+        Specify a test case dependency on an external device(e.g., sensor),
+        and identify setups that fulfill this dependency. It depends on
+        specific test setup and board selection logic to pick the particular
+        board(s) out of multiple boards that fulfill the dependency in an
+        automation setup based on "fixture" keyword. Some sample fixture names
+        are fixture_i2c_hts221, fixture_i2c_bme280, fixture_i2c_FRAM,
+        fixture_ble_fw and fixture_gpio_loop.
+
+    The following is an example yaml file with a few harness_config options.
+
+    ::
+
+         sample:
+           name: HTS221 Temperature and Humidity Monitor
+         common:
+           tags: sensor
+           harness: console
+           harness_config:
+             type: multi_line
+             ordered: false
+             regex:
+               - "Temperature:(.*)C"
+               - "Relative Humidity:(.*)%"
+             fixture: fixture_i2c_hts221
+         tests:
+           test:
+             tags: samples sensor
+             depends_on: i2c
+
 filter: <expression>
     Filter whether the testcase should be run by evaluating an expression
     against an environment containing the following values:

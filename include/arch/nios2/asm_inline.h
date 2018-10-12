@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _ASM_INLINE_PUBLIC_H
-#define _ASM_INLINE_PUBLIC_H
+#ifndef ZEPHYR_INCLUDE_ARCH_NIOS2_ASM_INLINE_H_
+#define ZEPHYR_INCLUDE_ARCH_NIOS2_ASM_INLINE_H_
 
 /*
  * The file must not be included directly
@@ -18,4 +18,4 @@
 #include <arch/nios2/asm_inline_other.h>
 #endif
 
-#endif /* _ASM_INLINE_PUBLIC_H */
+#endif /* ZEPHYR_INCLUDE_ARCH_NIOS2_ASM_INLINE_H_ */

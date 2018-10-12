@@ -1,0 +1,15 @@
+config CPU_HAS_ARM_MPU
+	bool
+	# Omit prompt to signify "hidden" option
+	select CPU_HAS_MPU
+	help
+	  This option is enabled when the CPU has a Memory Protection Unit (MPU)
+	  in ARM flavour.
+
+config CPU_HAS_NXP_MPU
+	bool
+	# Omit prompt to signify "hidden" option
+	select CPU_HAS_MPU
+	help
+	  This option is enabled when the CPU has a Memory Protection Unit (MPU)
+	  in NXP flavour.

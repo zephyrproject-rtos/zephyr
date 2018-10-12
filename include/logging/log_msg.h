@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef LOG_MSG_H
-#define LOG_MSG_H
+#ifndef ZEPHYR_INCLUDE_LOGGING_LOG_MSG_H_
+#define ZEPHYR_INCLUDE_LOGGING_LOG_MSG_H_
 
 #include <kernel.h>
 #include <atomic.h>
@@ -23,7 +23,7 @@ extern "C" {
  */
 
 /** @brief Maximum number of arguments in the standard log entry. */
-#define LOG_MAX_NARGS 6
+#define LOG_MAX_NARGS 9
 
 /** @brief Number of arguments in the log entry which fits in one chunk.*/
 #define LOG_MSG_NARGS_SINGLE_CHUNK 3
@@ -347,7 +347,7 @@ static inline struct log_msg *_log_msg_std_alloc(void)
 {
 	struct  log_msg *msg = (struct  log_msg *)log_msg_chunk_alloc();
 
-	if (msg) {
+	if (msg != NULL) {
 		/* all fields reset to 0, reference counter to 1 */
 		msg->hdr.ref_cnt = 1;
 		msg->hdr.params.raw = 0;
@@ -522,4 +522,4 @@ struct log_msg *log_msg_create_n(const char *str,
 }
 #endif
 
-#endif /* LOG_MSG_H */
+#endif /* ZEPHYR_INCLUDE_LOGGING_LOG_MSG_H_ */

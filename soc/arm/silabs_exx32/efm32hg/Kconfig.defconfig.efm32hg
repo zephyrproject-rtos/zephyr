@@ -1,0 +1,32 @@
+# Kconfig - Silicon Labs EFM32HG-SLSTK3400A platform configuration options
+
+#
+# Copyright (c) 2018 Marcio Montenegro
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_EFM32HG
+
+config SOC
+	string
+	default "efm32hg"
+
+config GPIO
+	def_bool y
+
+if GPIO
+
+config GPIO_GECKO
+	def_bool y
+
+endif # GPIO
+
+if SERIAL
+
+config UART_GECKO
+	def_bool y
+
+endif # SERIAL
+
+endif # SOC_EFM32HG

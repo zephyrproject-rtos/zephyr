@@ -50,39 +50,39 @@
 
 /** @addtogroup SMARTCARDEx
   * @{
-  */ 
+  */
 
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
-   
+
 /** @addtogroup SMARTCARDEx_Exported_Constants  SMARTCARD Extended Exported Constants
   * @{
   */
-  
+
 /** @defgroup SMARTCARDEx_Transmission_Completion_Indication SMARTCARD Transmission Completion Indication
   * @{
   */
 #if defined(USART_TCBGT_SUPPORT)
 #define SMARTCARD_TCBGT      SMARTCARD_IT_TCBGT /*!< SMARTCARD transmission complete before guard time */
-#endif /* USART_TCBGT_SUPPORT */  
+#endif /* USART_TCBGT_SUPPORT */
 #define SMARTCARD_TC         SMARTCARD_IT_TC    /*!< SMARTCARD transmission complete (flag raised when guard time has elapsed) */
 /**
   * @}
-  */    
-  
+  */
+
 /** @defgroup SMARTCARDEx_Advanced_Features_Initialization_Type SMARTCARD advanced feature initialization type
   * @{
   */
 #if defined(USART_TCBGT_SUPPORT)
 #define SMARTCARD_ADVFEATURE_TXCOMPLETION            ((uint32_t)0x00000100)    /*!< TX completion indication before of after guard time */
-#endif /* USART_TCBGT_SUPPORT */   
+#endif /* USART_TCBGT_SUPPORT */
 /**
   * @}
   */
 
 
-  
-  
+
+
 /** @defgroup SMARTCARDEx_Flags SMARTCARD Flags
   *        Elements values convention: 0xXXXX
   *           - 0xXXXX  : Flag mask in the ISR register
@@ -94,7 +94,7 @@
 /**
   * @}
   */
-  
+
 /** @defgroup SMARTCARDEx_Interrupt_definition SMARTCARD Interrupts Definition
   *        Elements values convention: 000ZZZZZ0XXYYYYYb
   *           - YYYYY  : Interrupt source position in the XX register (5 bits)
@@ -108,11 +108,11 @@
 
 #if defined(USART_TCBGT_SUPPORT)
 #define SMARTCARD_IT_TCBGT                  ((uint16_t)0x1978)        /*!< SMARTCARD transmission complete before guard time completion interruption */
-#endif /* USART_TCBGT_SUPPORT */ 
+#endif /* USART_TCBGT_SUPPORT */
 /**
   * @}
   */
-  
+
 /** @defgroup SMARTCARDEx_IT_CLEAR_Flags SMARTCARD Interruption Clear Flags
   * @{
   */
@@ -124,7 +124,7 @@
 #define SMARTCARD_CLEAR_TCF                 USART_ICR_TCCF    /*!< SMARTCARD transmission complete clear flag */
 #if defined(USART_TCBGT_SUPPORT)
 #define SMARTCARD_CLEAR_TCBGTF              USART_ICR_TCBGTCF /*!< SMARTCARD transmission complete before guard time completion clear flag */
-#endif /* USART_TCBGT_SUPPORT */ 
+#endif /* USART_TCBGT_SUPPORT */
 #define SMARTCARD_CLEAR_RTOF                USART_ICR_RTOCF   /*!< SMARTCARD receiver time out clear flag     */
 #define SMARTCARD_CLEAR_EOBF                USART_ICR_EOBCF   /*!< SMARTCARD end of block clear flag          */
 /**
@@ -132,10 +132,10 @@
   */
 
 /* Exported macro ------------------------------------------------------------*/
-   
+
 /** @brief  Reports the SMARTCARD clock source.
   * @param  __HANDLE__ specifies the USART Handle
-  * @param  __CLOCKSOURCE__  output variable   
+  * @param  __CLOCKSOURCE__  output variable
   * @retval the USART clocking source, written in __CLOCKSOURCE__.
   */
 #define SMARTCARD_GETCLOCKSOURCE(__HANDLE__,__CLOCKSOURCE__) \
@@ -224,9 +224,9 @@
 
 /** @brief  Set the Transmission Completion flag
   * @param  __HANDLE__ specifies the SMARTCARD Handle.
-  * @note  If TCBGT (Transmission Complete Before Guard Time) flag is not available or if 
-  *        AdvancedInit.TxCompletionIndication is not already filled, the latter is forced 
-  *        to SMARTCARD_TC (transmission completion indication when guard time has elapsed).     
+  * @note  If TCBGT (Transmission Complete Before Guard Time) flag is not available or if
+  *        AdvancedInit.TxCompletionIndication is not already filled, the latter is forced
+  *        to SMARTCARD_TC (transmission completion indication when guard time has elapsed).
   * @retval None
   */
 #if defined(USART_TCBGT_SUPPORT)
@@ -245,14 +245,14 @@
 #define SMARTCARD_TRANSMISSION_COMPLETION_SETTING(__HANDLE__)         \
   do {                                                                \
     (__HANDLE__)->AdvancedInit.TxCompletionIndication = SMARTCARD_TC; \
-  } while(0)  
-#endif 
+  } while(0)
+#endif
 
 /** @brief  Return the transmission completion flag.
   * @param  __HANDLE__ specifies the SMARTCARD Handle.
   * @note  Based on AdvancedInit.TxCompletionIndication setting, return TC or TCBGT flag.
   *        When TCBGT flag (Transmission Complete Before Guard Time) is not available, TC flag is
-  *        reported.       
+  *        reported.
   * @retval Transmission completion flag
   */
 #if defined(USART_TCBGT_SUPPORT)
@@ -261,12 +261,12 @@
 #else
 #define SMARTCARD_TRANSMISSION_COMPLETION_FLAG(__HANDLE__)    (SMARTCARD_FLAG_TC)
 #endif
-  
+
 /**
   * @brief Ensure that SMARTCARD frame transmission completion used flag is valid.
-  * @param __TXCOMPLETE__ SMARTCARD frame transmission completion used flag. 
+  * @param __TXCOMPLETE__ SMARTCARD frame transmission completion used flag.
   * @retval SET (__TXCOMPLETE__ is valid) or RESET (__TXCOMPLETE__ is invalid)
-  */ 
+  */
 #if defined(USART_TCBGT_SUPPORT)
 #define IS_SMARTCARD_TRANSMISSION_COMPLETION(__TXCOMPLETE__) (((__TXCOMPLETE__) == SMARTCARD_TCBGT) ||\
                                                               ((__TXCOMPLETE__) == SMARTCARD_TC))
@@ -276,7 +276,7 @@
 
 /**
   * @}
-  */ 
+  */
 
 /* Exported functions --------------------------------------------------------*/
 /* Initialization and de-initialization functions  ****************************/
@@ -291,12 +291,12 @@ HAL_StatusTypeDef HAL_SMARTCARDEx_DisableReceiverTimeOut(SMARTCARD_HandleTypeDef
 
 /**
   * @}
-  */ 
+  */
 
 /**
   * @}
   */
-  
+
 #ifdef __cplusplus
 }
 #endif

@@ -6,6 +6,7 @@
 
 menuconfig I2C_DW
 	bool "Design Ware I2C support"
+	select HAS_DTS_I2C
 	help
 	  Enable Design Ware I2C support on the selected board
 

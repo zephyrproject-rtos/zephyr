@@ -8,10 +8,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_6LO)
-#define SYS_LOG_DOMAIN "net/6lo"
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_6lo
+#define NET_LOG_LEVEL CONFIG_NET_6LO_LOG_LEVEL
 
 #include <errno.h>
 #include <net/net_core.h>
@@ -1262,8 +1260,8 @@ static inline bool uncompress_IPHC_header(struct net_pkt *pkt)
 	offset = uncompress_hoplimit(pkt, ipv6, offset);
 
 	/* First set to zero and copy relevant bits */
-	memset(&ipv6->src.s6_addr[0], 0, 16);
-	memset(&ipv6->dst.s6_addr[0], 0, 16);
+	(void)memset(&ipv6->src.s6_addr[0], 0, 16);
+	(void)memset(&ipv6->dst.s6_addr[0], 0, 16);
 
 	/* Uncompress Source Address */
 	if (CIPHC[1] & NET_6LO_IPHC_SAC_1) {

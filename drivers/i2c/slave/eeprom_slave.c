@@ -11,8 +11,9 @@
 #include <string.h>
 #include <drivers/i2c/slave/eeprom.h>
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_I2C_SLAVE_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(i2c_slave)
 
 struct i2c_eeprom_slave_data {
 	struct device *i2c_controller;
@@ -71,7 +72,7 @@ static int eeprom_slave_write_requested(struct i2c_slave_config *config)
 						struct i2c_eeprom_slave_data,
 						config);
 
-	SYS_LOG_DBG("eeprom: write req");
+	LOG_DBG("eeprom: write req");
 
 	data->first_write = true;
 
@@ -87,7 +88,7 @@ static int eeprom_slave_read_requested(struct i2c_slave_config *config,
 
 	*val = data->buffer[data->buffer_idx];
 
-	SYS_LOG_DBG("eeprom: read req, val=0x%x", *val);
+	LOG_DBG("eeprom: read req, val=0x%x", *val);
 
 	/* Increment will be done in the read_processed callback */
 
@@ -101,7 +102,7 @@ static int eeprom_slave_write_received(struct i2c_slave_config *config,
 						struct i2c_eeprom_slave_data,
 						config);
 
-	SYS_LOG_DBG("eeprom: write done, val=0x%x", val);
+	LOG_DBG("eeprom: write done, val=0x%x", val);
 
 	/* In case EEPROM wants to be R/O, return !0 here could trigger
 	 * a NACK to the I2C controller, support depends on the
@@ -132,7 +133,7 @@ static int eeprom_slave_read_processed(struct i2c_slave_config *config,
 
 	*val = data->buffer[data->buffer_idx];
 
-	SYS_LOG_DBG("eeprom: read done, val=0x%x", *val);
+	LOG_DBG("eeprom: read done, val=0x%x", *val);
 
 	/* Increment will be done in the next read_processed callback
 	 * In case of STOP, the byte won't be taken in account
@@ -147,7 +148,7 @@ static int eeprom_slave_stop(struct i2c_slave_config *config)
 						struct i2c_eeprom_slave_data,
 						config);
 
-	SYS_LOG_DBG("eeprom: stop");
+	LOG_DBG("eeprom: stop");
 
 	data->first_write = true;
 
@@ -189,7 +190,7 @@ static int i2c_eeprom_slave_init(struct device *dev)
 	data->i2c_controller =
 		device_get_binding(cfg->controller_dev_name);
 	if (!data->i2c_controller) {
-		SYS_LOG_ERR("i2c controller not found: %s",
+		LOG_ERR("i2c controller not found: %s",
 			    cfg->controller_dev_name);
 		return -EINVAL;
 	}
@@ -206,16 +207,16 @@ static int i2c_eeprom_slave_init(struct device *dev)
 
 static struct i2c_eeprom_slave_data i2c_eeprom_slave_0_dev_data;
 
-static u8_t i2c_eeprom_slave_0_buffer[(CONFIG_I2C_EEPROM_SLAVE_0_SIZE * 1024)];
+static u8_t i2c_eeprom_slave_0_buffer[(EEPROM_SLAVE_0_SIZE * 1024)];
 
 static const struct i2c_eeprom_slave_config i2c_eeprom_slave_0_cfg = {
-	.controller_dev_name = CONFIG_I2C_EEPROM_SLAVE_0_CONTROLLER_DEV_NAME,
-	.address = CONFIG_I2C_EEPROM_SLAVE_0_ADDRESS,
-	.buffer_size = (CONFIG_I2C_EEPROM_SLAVE_0_SIZE * 1024),
+	.controller_dev_name = EEPROM_SLAVE_0_BUS_NAME,
+	.address = EEPROM_SLAVE_0_BASE_ADDRESS,
+	.buffer_size = (EEPROM_SLAVE_0_SIZE * 1024),
 	.buffer = i2c_eeprom_slave_0_buffer
 };
 
-DEVICE_AND_API_INIT(i2c_eeprom_slave_0, CONFIG_I2C_EEPROM_SLAVE_0_NAME,
+DEVICE_AND_API_INIT(i2c_eeprom_slave_0, EEPROM_SLAVE_0_LABEL,
 		    &i2c_eeprom_slave_init,
 		    &i2c_eeprom_slave_0_dev_data, &i2c_eeprom_slave_0_cfg,
 		    POST_KERNEL, CONFIG_I2C_SLAVE_INIT_PRIORITY,
@@ -227,16 +228,16 @@ DEVICE_AND_API_INIT(i2c_eeprom_slave_0, CONFIG_I2C_EEPROM_SLAVE_0_NAME,
 
 static struct i2c_eeprom_slave_data i2c_eeprom_slave_1_dev_data;
 
-static u8_t i2c_eeprom_slave_1_buffer[(CONFIG_I2C_EEPROM_SLAVE_1_SIZE * 1024)];
+static u8_t i2c_eeprom_slave_1_buffer[(EEPROM_SLAVE_1_SIZE * 1024)];
 
 static const struct i2c_eeprom_slave_config i2c_eeprom_slave_1_cfg = {
-	.controller_dev_name = CONFIG_I2C_EEPROM_SLAVE_1_CONTROLLER_DEV_NAME,
-	.address = CONFIG_I2C_EEPROM_SLAVE_1_ADDRESS,
-	.buffer_size = (CONFIG_I2C_EEPROM_SLAVE_1_SIZE * 1024),
+	.controller_dev_name = EEPROM_SLAVE_1_BUS_NAME,
+	.address = EEPROM_SLAVE_1_BASE_ADDRESS,
+	.buffer_size = (EEPROM_SLAVE_1_SIZE * 1024),
 	.buffer = i2c_eeprom_slave_1_buffer
 };
 
-DEVICE_AND_API_INIT(i2c_eeprom_slave_1, CONFIG_I2C_EEPROM_SLAVE_1_NAME,
+DEVICE_AND_API_INIT(i2c_eeprom_slave_1, EEPROM_SLAVE_1_LABEL,
 		    &i2c_eeprom_slave_init,
 		    &i2c_eeprom_slave_1_dev_data, &i2c_eeprom_slave_1_cfg,
 		    POST_KERNEL, CONFIG_I2C_SLAVE_INIT_PRIORITY,

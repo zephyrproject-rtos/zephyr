@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _ZEPHYR_SYSCALL_HANDLER_H_
-#define _ZEPHYR_SYSCALL_HANDLER_H_
+#ifndef ZEPHYR_KERNEL_INCLUDE_SYSCALL_HANDLER_H_
+#define ZEPHYR_KERNEL_INCLUDE_SYSCALL_HANDLER_H_
 
 #ifdef CONFIG_USERSPACE
 
@@ -14,6 +14,7 @@
 #include <kernel.h>
 #include <misc/printk.h>
 #include <kernel_internal.h>
+#include <stdbool.h>
 
 extern const _k_syscall_handler_t _k_syscall_table[K_SYSCALL_LIMIT];
 
@@ -259,7 +260,7 @@ extern int z_user_string_copy(char *dst, char *src, size_t maxlen);
 		if (expr) { \
 			_arch_syscall_oops(ssf); \
 		} \
-	} while (0)
+	} while (false)
 
 static inline __attribute__((warn_unused_result)) __printf_like(2, 3)
 bool z_syscall_verify_msg(bool expr, const char *fmt, ...)
@@ -305,7 +306,8 @@ bool z_syscall_verify_msg(bool expr, const char *fmt, ...)
 #define Z_SYSCALL_VERIFY(expr) Z_SYSCALL_VERIFY_MSG(expr, #expr)
 
 #define Z_SYSCALL_MEMORY(ptr, size, write) \
-	Z_SYSCALL_VERIFY_MSG(!_arch_buffer_validate((void *)ptr, size, write), \
+	Z_SYSCALL_VERIFY_MSG(_arch_buffer_validate((void *)ptr, size, write) \
+			     == 0, \
 			     "Memory region %p (size %u) %s access denied", \
 			     (void *)(ptr), (u32_t)(size), \
 			     write ? "write" : "read")
@@ -494,7 +496,7 @@ static inline int _obj_validation_check(struct _k_object *ko,
  */
 
 #define __SYSCALL_HANDLER0(name_) \
-	u32_t _handler_ ## name_(u32_t arg1 __unused, \
+	u32_t hdlr_ ## name_(u32_t arg1 __unused, \
 				 u32_t arg2 __unused, \
 				 u32_t arg3 __unused, \
 				 u32_t arg4 __unused, \
@@ -503,7 +505,7 @@ static inline int _obj_validation_check(struct _k_object *ko,
 				 void *ssf)
 
 #define __SYSCALL_HANDLER1(name_, arg1_) \
-	u32_t _handler_ ## name_(u32_t arg1_, \
+	u32_t hdlr_ ## name_(u32_t arg1_, \
 				 u32_t arg2 __unused, \
 				 u32_t arg3 __unused, \
 				 u32_t arg4 __unused, \
@@ -512,7 +514,7 @@ static inline int _obj_validation_check(struct _k_object *ko,
 				 void *ssf)
 
 #define __SYSCALL_HANDLER2(name_, arg1_, arg2_) \
-	u32_t _handler_ ## name_(u32_t arg1_, \
+	u32_t hdlr_ ## name_(u32_t arg1_, \
 				 u32_t arg2_, \
 				 u32_t arg3 __unused, \
 				 u32_t arg4 __unused, \
@@ -521,7 +523,7 @@ static inline int _obj_validation_check(struct _k_object *ko,
 				 void *ssf)
 
 #define __SYSCALL_HANDLER3(name_, arg1_, arg2_, arg3_) \
-	u32_t _handler_ ## name_(u32_t arg1_, \
+	u32_t hdlr_ ## name_(u32_t arg1_, \
 				 u32_t arg2_, \
 				 u32_t arg3_, \
 				 u32_t arg4 __unused, \
@@ -530,7 +532,7 @@ static inline int _obj_validation_check(struct _k_object *ko,
 				 void *ssf)
 
 #define __SYSCALL_HANDLER4(name_, arg1_, arg2_, arg3_, arg4_) \
-	u32_t _handler_ ## name_(u32_t arg1_, \
+	u32_t hdlr_ ## name_(u32_t arg1_, \
 				 u32_t arg2_, \
 				 u32_t arg3_, \
 				 u32_t arg4_, \
@@ -539,7 +541,7 @@ static inline int _obj_validation_check(struct _k_object *ko,
 				 void *ssf)
 
 #define __SYSCALL_HANDLER5(name_, arg1_, arg2_, arg3_, arg4_, arg5_) \
-	u32_t _handler_ ## name_(u32_t arg1_, \
+	u32_t hdlr_ ## name_(u32_t arg1_, \
 				 u32_t arg2_, \
 				 u32_t arg3_, \
 				 u32_t arg4_, \
@@ -548,7 +550,7 @@ static inline int _obj_validation_check(struct _k_object *ko,
 				 void *ssf)
 
 #define __SYSCALL_HANDLER6(name_, arg1_, arg2_, arg3_, arg4_, arg5_, arg6_) \
-	u32_t _handler_ ## name_(u32_t arg1_, \
+	u32_t hdlr_ ## name_(u32_t arg1_, \
 				 u32_t arg2_, \
 				 u32_t arg3_, \
 				 u32_t arg4_, \
@@ -605,4 +607,4 @@ static inline int _obj_validation_check(struct _k_object *ko,
 
 #endif /* CONFIG_USERSPACE */
 
-#endif /* _ZEPHYR_SYSCALL_H_ */
+#endif /* ZEPHYR_KERNEL_INCLUDE_SYSCALL_HANDLER_H_ */

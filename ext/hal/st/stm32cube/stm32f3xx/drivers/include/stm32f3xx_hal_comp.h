@@ -38,7 +38,7 @@
 #define __STM32F3xx_HAL_COMP_H
 
 #ifdef __cplusplus
- extern "C" {
+extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
@@ -94,7 +94,7 @@ typedef struct
   uint32_t TriggerMode;        /*!< Selects the trigger mode of the comparator (interrupt mode).
                                     This parameter can be a value of @ref COMP_TriggerMode */
 
-}COMP_InitTypeDef;
+} COMP_InitTypeDef;
 
 /**
   * @brief  HAL State structures definition
@@ -106,7 +106,7 @@ typedef enum
   HAL_COMP_STATE_READY_LOCKED      = 0x11U,    /*!< COMP initialized but the configuration is locked */
   HAL_COMP_STATE_BUSY              = 0x02U,    /*!< COMP is running                                  */
   HAL_COMP_STATE_BUSY_LOCKED       = 0x12     /*!< COMP is running and the configuration is locked  */
-}HAL_COMP_StateTypeDef;
+} HAL_COMP_StateTypeDef;
 
 /**
   * @brief  COMP Handle Structure definition
@@ -117,7 +117,7 @@ typedef struct
   COMP_InitTypeDef            Init;      /*!< COMP required parameters */
   HAL_LockTypeDef             Lock;      /*!< Locking object           */
   __IO HAL_COMP_StateTypeDef  State;     /*!< COMP communication state */
-}COMP_HandleTypeDef;
+} COMP_HandleTypeDef;
 
 /**
   * @}
@@ -202,7 +202,7 @@ typedef struct
  */
 /* Initialization and de-initialization functions  ****************************/
 HAL_StatusTypeDef HAL_COMP_Init(COMP_HandleTypeDef *hcomp);
-HAL_StatusTypeDef HAL_COMP_DeInit (COMP_HandleTypeDef *hcomp);
+HAL_StatusTypeDef HAL_COMP_DeInit(COMP_HandleTypeDef *hcomp);
 void              HAL_COMP_MspInit(COMP_HandleTypeDef *hcomp);
 void              HAL_COMP_MspDeInit(COMP_HandleTypeDef *hcomp);
 /**

@@ -8,8 +8,8 @@
  * @brief Definitions for IEEE 802.3, Section 2 MII compatible PHY transceivers
  */
 
-#ifndef _MII_H_
-#define _MII_H_
+#ifndef ZEPHYR_INCLUDE_NET_MII_H_
+#define ZEPHYR_INCLUDE_NET_MII_H_
 
 /**
  * @addtogroup ethernet
@@ -85,4 +85,4 @@
  * @}
  */
 
-#endif /* _MII_H_ */
+#endif /* ZEPHYR_INCLUDE_NET_MII_H_ */

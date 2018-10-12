@@ -5,7 +5,6 @@
 #
 ---
 title: STMicroelectronics MEMS sensors LSM6DSL SPI
-id: st,lsm6dsl-spi
 version: 0.1
 
 description: >

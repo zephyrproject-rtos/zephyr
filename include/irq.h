@@ -8,8 +8,8 @@
  * @file
  * @brief Public interface for configuring interrupts
  */
-#ifndef _IRQ_H_
-#define _IRQ_H_
+#ifndef ZEPHYR_INCLUDE_IRQ_H_
+#define ZEPHYR_INCLUDE_IRQ_H_
 
 /* Pull in the arch-specific implementations */
 #include <arch/cpu.h>
@@ -260,4 +260,4 @@ void _smp_global_unlock(unsigned int key);
 #endif
 
 #endif /* ASMLANGUAGE */
-#endif /* _IRQ_H_ */
+#endif /* ZEPHYR_INCLUDE_IRQ_H_ */

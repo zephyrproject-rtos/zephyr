@@ -183,7 +183,7 @@ static inline void handle_timeouts(s32_t ticks)
 	K_DEBUG("head: %p, delta: %d\n",
 		timeout, timeout ? timeout->delta_ticks_from_prev : -2112);
 
-	if (!next) {
+	if (next == NULL) {
 		irq_unlock(key);
 		return;
 	}
@@ -196,7 +196,7 @@ static inline void handle_timeouts(s32_t ticks)
 	 * prohibited.
 	 */
 
-	while (next) {
+	while (next != NULL) {
 
 		/*
 		 * In the case where ticks number is greater than the first
@@ -237,7 +237,7 @@ static inline void handle_timeouts(s32_t ticks)
 
 			timeout->delta_ticks_from_prev = _EXPIRED;
 
-		} else if (ticks <= 0) {
+		} else {
 			break;
 		}
 
@@ -252,7 +252,7 @@ static inline void handle_timeouts(s32_t ticks)
 	_handle_expired_timeouts(&expired);
 }
 #else
-	#define handle_timeouts(ticks) do { } while ((0))
+	#define handle_timeouts(ticks) do { } while (false)
 #endif
 
 #ifdef CONFIG_TIMESLICING
@@ -295,7 +295,7 @@ static void handle_time_slicing(s32_t ticks)
 #endif
 }
 #else
-#define handle_time_slicing(ticks) do { } while (0)
+#define handle_time_slicing(ticks) do { } while (false)
 #endif
 
 /**

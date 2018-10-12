@@ -14,8 +14,8 @@
  * calls to functions must be protected with synchronization primitives.
  */
 
-#ifndef __SFLIST_H__
-#define __SFLIST_H__
+#ifndef ZEPHYR_INCLUDE_MISC_SFLIST_H_
+#define ZEPHYR_INCLUDE_MISC_SFLIST_H_
 
 #include <stddef.h>
 #include <stdbool.h>
@@ -281,7 +281,7 @@ static inline u8_t sys_sfnode_flags_get(sys_sfnode_t *node)
  */
 static inline void sys_sfnode_init(sys_sfnode_t *node, u8_t flags)
 {
-	__ASSERT(!(flags & ~SYS_SFLIST_FLAGS_MASK), "flags too large");
+	__ASSERT((flags & ~SYS_SFLIST_FLAGS_MASK) == 0, "flags too large");
 	node->next_and_flags = flags;
 }
 
@@ -297,7 +297,7 @@ static inline void sys_sfnode_init(sys_sfnode_t *node, u8_t flags)
  */
 static inline void sys_sfnode_flags_set(sys_sfnode_t *node, u8_t flags)
 {
-	__ASSERT(!(flags & ~SYS_SFLIST_FLAGS_MASK), "flags too large");
+	__ASSERT((flags & ~SYS_SFLIST_FLAGS_MASK) == 0, "flags too large");
 	node->next_and_flags = (unative_t)(z_sfnode_next_peek(node)) | flags;
 }
 
@@ -314,7 +314,7 @@ static inline void sys_sfnode_flags_set(sys_sfnode_t *node, u8_t flags)
  */
 static inline bool sys_sflist_is_empty(sys_sflist_t *list);
 
-Z_GENLIST_IS_EMPTY(sflist);
+Z_GENLIST_IS_EMPTY(sflist)
 
 /**
  * @brief Peek the next node from current node, node is not NULL
@@ -327,7 +327,7 @@ Z_GENLIST_IS_EMPTY(sflist);
  */
 static inline sys_sfnode_t *sys_sflist_peek_next_no_check(sys_sfnode_t *node);
 
-Z_GENLIST_PEEK_NEXT_NO_CHECK(sflist, sfnode);
+Z_GENLIST_PEEK_NEXT_NO_CHECK(sflist, sfnode)
 
 /**
  * @brief Peek the next node from current node
@@ -338,7 +338,7 @@ Z_GENLIST_PEEK_NEXT_NO_CHECK(sflist, sfnode);
  */
 static inline sys_sfnode_t *sys_sflist_peek_next(sys_sfnode_t *node);
 
-Z_GENLIST_PEEK_NEXT(sflist, sfnode);
+Z_GENLIST_PEEK_NEXT(sflist, sfnode)
 
 /**
  * @brief Prepend a node to the given list
@@ -351,7 +351,7 @@ Z_GENLIST_PEEK_NEXT(sflist, sfnode);
 static inline void sys_sflist_prepend(sys_sflist_t *list,
 				      sys_sfnode_t *node);
 
-Z_GENLIST_PREPEND(sflist, sfnode);
+Z_GENLIST_PREPEND(sflist, sfnode)
 
 /**
  * @brief Append a node to the given list
@@ -364,7 +364,7 @@ Z_GENLIST_PREPEND(sflist, sfnode);
 static inline void sys_sflist_append(sys_sflist_t *list,
 				     sys_sfnode_t *node);
 
-Z_GENLIST_APPEND(sflist, sfnode);
+Z_GENLIST_APPEND(sflist, sfnode)
 
 /**
  * @brief Append a list to the given list
@@ -382,7 +382,7 @@ Z_GENLIST_APPEND(sflist, sfnode);
 static inline void sys_sflist_append_list(sys_sflist_t *list,
 					  void *head, void *tail);
 
-Z_GENLIST_APPEND_LIST(sflist, sfnode);
+Z_GENLIST_APPEND_LIST(sflist, sfnode)
 
 /**
  * @brief merge two sflists, appending the second one to the first
@@ -396,7 +396,7 @@ Z_GENLIST_APPEND_LIST(sflist, sfnode);
 static inline void sys_sflist_merge_sflist(sys_sflist_t *list,
 					   sys_sflist_t *list_to_append);
 
-Z_GENLIST_MERGE_LIST(sflist);
+Z_GENLIST_MERGE_LIST(sflist)
 
 /**
  * @brief Insert a node to the given list
@@ -411,7 +411,7 @@ static inline void sys_sflist_insert(sys_sflist_t *list,
 				     sys_sfnode_t *prev,
 				     sys_sfnode_t *node);
 
-Z_GENLIST_INSERT(sflist, sfnode);
+Z_GENLIST_INSERT(sflist, sfnode)
 
 /**
  * @brief Fetch and remove the first node of the given list
@@ -425,7 +425,7 @@ Z_GENLIST_INSERT(sflist, sfnode);
  */
 static inline sys_sfnode_t *sys_sflist_get_not_empty(sys_sflist_t *list);
 
-Z_GENLIST_GET_NOT_EMPTY(sflist, sfnode);
+Z_GENLIST_GET_NOT_EMPTY(sflist, sfnode)
 
 /**
  * @brief Fetch and remove the first node of the given list
@@ -438,7 +438,7 @@ Z_GENLIST_GET_NOT_EMPTY(sflist, sfnode);
  */
 static inline sys_sfnode_t *sys_sflist_get(sys_sflist_t *list);
 
-Z_GENLIST_GET(sflist, sfnode);
+Z_GENLIST_GET(sflist, sfnode)
 
 /**
  * @brief Remove a node
@@ -454,7 +454,7 @@ static inline void sys_sflist_remove(sys_sflist_t *list,
 				     sys_sfnode_t *prev_node,
 				     sys_sfnode_t *node);
 
-Z_GENLIST_REMOVE(sflist, sfnode);
+Z_GENLIST_REMOVE(sflist, sfnode)
 
 /**
  * @brief Find and remove a node from a list
@@ -469,10 +469,10 @@ Z_GENLIST_REMOVE(sflist, sfnode);
 static inline bool sys_sflist_find_and_remove(sys_sflist_t *list,
 					      sys_sfnode_t *node);
 
-Z_GENLIST_FIND_AND_REMOVE(sflist, sfnode);
+Z_GENLIST_FIND_AND_REMOVE(sflist, sfnode)
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __SFLIST_H__ */
+#endif /* ZEPHYR_INCLUDE_MISC_SFLIST_H_ */

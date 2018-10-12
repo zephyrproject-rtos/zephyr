@@ -296,7 +296,7 @@ fcb_offset_last_n(struct fcb *fcb, u8_t entries,
 	}
 
 	i = 0;
-	memset(&loc, 0, sizeof(loc));
+	(void)memset(&loc, 0, sizeof(loc));
 	while (!fcb_getnext(fcb, &loc)) {
 		if (i == 0) {
 			/* Start from the beginning of fcb entries */

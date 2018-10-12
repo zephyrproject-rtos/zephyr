@@ -106,7 +106,7 @@ void fcb_tc_pretest(int sectors)
 
 	fcb_test_wipe();
 	fcb = &test_fcb;
-	memset(fcb, 0, sizeof(*fcb));
+	(void)memset(fcb, 0, sizeof(*fcb));
 	fcb->f_sector_cnt = sectors;
 	fcb->f_sectors = test_fcb_sector; /* XXX */
 

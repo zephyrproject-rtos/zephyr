@@ -34,7 +34,7 @@
  *
  */
 
-unsigned int __swap(unsigned int key)
+int __swap(unsigned int key)
 {
 /*
  * struct k_thread * _kernel.current is the currently runnig thread

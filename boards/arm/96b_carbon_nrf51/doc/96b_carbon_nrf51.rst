@@ -56,6 +56,17 @@ The default configuration can be found in the defconfig file:
 Connections and IOs
 ===================
 
+SPI
+---
+
+96Boards Carbon nRF51 has one SPI, which for providing Bluetooth
+communication. The default SPI mapping for Zephyr is:
+
+- SPI1_NSS  : P0.25
+- SPI1_SCK  : P0.07
+- SPI1_MISO : P0.30
+- SPI1_MOSI : P0.00
+
 The SWD debug pins are broken out to an external header; all other
 connected pins are to the main STM32F401RET chip.
 

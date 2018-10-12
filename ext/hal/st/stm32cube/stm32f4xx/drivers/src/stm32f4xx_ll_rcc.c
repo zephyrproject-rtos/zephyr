@@ -482,7 +482,7 @@ uint32_t LL_RCC_GetI2SClockFreq(uint32_t I2SxSource)
       default:
         i2s_frequency = EXTERNAL_CLOCK_VALUE;
         break;
-    } 
+    }
   }
 #endif /* RCC_DCKCFGR_I2S2SRC */
 

@@ -5,15 +5,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import sys
-import argparse
-import pprint
 import os
 import struct
 from distutils.version import LooseVersion
 
 import elftools
 from elftools.elf.elffile import ELFFile
-from elftools.dwarf import descriptions
 from elftools.elf.sections import SymbolTableSection
 
 if LooseVersion(elftools.__version__) < LooseVersion('0.24'):
@@ -146,13 +143,14 @@ class AggregateTypeMember:
         if isinstance(member_offset, list):
             # DWARF v2, location encoded as set of operations
             # only "DW_OP_plus_uconst" with ULEB128 argument supported
-            if member_offset[0]==0x23:
+            if member_offset[0] == 0x23:
                 self.member_offset = member_offset[1] & 0x7f
                 for i in range(1, len(member_offset)-1):
                     if (member_offset[i] & 0x80):
-                        self.member_offset += (member_offset[i+1] & 0x7f) << i*7
+                        self.member_offset += (
+                            member_offset[i+1] & 0x7f) << i*7
             else:
-                debug_die("not yet supported location operation")
+                self.debug_die("not yet supported location operation")
         else:
             self.member_offset = member_offset
 
@@ -385,9 +383,6 @@ class ElfHelper:
 
         # Step 1: collect all type information.
         for CU in di.iter_CUs():
-            CU_path = CU.get_top_DIE().get_full_path()
-            lp = di.line_program_for_CU(CU)
-
             for idx, die in enumerate(CU.iter_DIEs()):
                 # Unions are disregarded, kernel objects should never be union
                 # members since the memory is not dedicated to that object and
@@ -454,7 +449,7 @@ class ElfHelper:
                 # Check if frame pointer offset DW_OP_fbreg
                 if opcode == DW_OP_fbreg:
                     self.debug_die(die, "kernel object '%s' found on stack" %
-                              name)
+                                   name)
                 else:
                     self.debug_die(
                         die,
@@ -470,7 +465,7 @@ class ElfHelper:
                 continue
 
             if ((addr < kram_start or addr >= kram_end) and
-               (addr < krom_start or addr >= krom_end)):
+                    (addr < krom_start or addr >= krom_end)):
 
                 self.debug_die(die,
                                "object '%s' found in invalid location %s"
@@ -481,8 +476,8 @@ class ElfHelper:
             objs = type_obj.get_kobjects(addr)
             all_objs.update(objs)
 
-            self.debug("symbol '%s' at %s contains %d object(s)" % (name,
-                       hex(addr), len(objs)))
+            self.debug("symbol '%s' at %s contains %d object(s)"
+                       % (name, hex(addr), len(objs)))
 
         # Step 4: objs is a dictionary mapping variable memory addresses to
         # their associated type objects. Now that we have seen all variables
@@ -541,6 +536,3 @@ class ElfHelper:
 
     def get_thread_counter(self):
         return thread_counter
-
-if __name__ == '__main__':
-    sys.exit(main(sys.argv))

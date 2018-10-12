@@ -1502,7 +1502,7 @@ static HAL_StatusTypeDef I2S_WaitFlagStateUntilTimeout(I2S_HandleTypeDef *hi2s, 
                                                        uint32_t Timeout)
 {
   uint32_t tickstart = HAL_GetTick();
-  
+
    /* Wait until flag is set to status*/
   while(((__HAL_I2S_GET_FLAG(hi2s, Flag)) ? SET : RESET) != State)
   {

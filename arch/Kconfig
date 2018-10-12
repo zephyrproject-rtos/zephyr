@@ -53,6 +53,25 @@ endchoice
 
 menu "General Architecture Options"
 
+module = ARCH
+module-str = arch
+source "subsys/logging/Kconfig.template.log_config"
+
+module = MPU
+module-str = mpu
+source "subsys/logging/Kconfig.template.log_config"
+
+config BIG_ENDIAN
+       bool
+       help
+         This option tells the build system that the target system is
+         big-endian.  Little-endian architecture is the default and
+         should leave this option unselected.  This option is selected
+         by arch/$ARCH/Kconfig, soc/**/Kconfig, or boards/**/Kconfig
+         and the user should generally avoid modifying it.  The option
+         is used to select linker script OUTPUT_FORMAT and command
+         line option for gen_isr_tables.py.
+
 config HW_STACK_PROTECTION
 	bool "Hardware Stack Protection"
 	depends on ARCH_HAS_STACK_PROTECTION
@@ -94,6 +113,22 @@ config PRIVILEGED_STACK_SIZE
 	  in addition to the user mode thread stack.  During normal execution,
 	  this region will be inaccessible from user mode.  During system calls,
 	  this region will be utilized by the system call.
+
+config PRIVILEGED_STACK_TEXT_AREA
+	int "Privileged stacks text area"
+	default 256 if (DEBUG || STACK_CANARIES)
+	default 128
+	depends on ARCH_HAS_USERSPACE
+	help
+	  Stack text area size for privileged stacks.
+
+config KOBJECT_TEXT_AREA
+	int "Size if kobject text area"
+	default 256 if (!SIZE_OPTIMIZATIONS || STACK_CANARIES || ARC)
+	default 128
+	depends on ARCH_HAS_USERSPACE
+	help
+	  Size of kernel object text area. Used in linker script.
 
 config STACK_GROWS_UP
 	bool "Stack grows towards higher memory addresses"
@@ -219,11 +254,53 @@ config SYS_POWER_LOW_POWER_STATE_SUPPORTED
 	  This option signifies that the target supports the SYS_POWER_LOW_POWER_STATE
 	  configuration option.
 
+config SYS_POWER_STATE_CPU_LPS_SUPPORTED
+	# Hidden
+	bool
+	help
+	  This option signifies that the target supports the SYS_POWER_STATE_CPU_LPS
+	  configuration option.
+
+config SYS_POWER_STATE_CPU_LPS_1_SUPPORTED
+	# Hidden
+	bool
+	help
+	  This option signifies that the target supports the SYS_POWER_STATE_CPU_LPS_1
+	  configuration option.
+
+config SYS_POWER_STATE_CPU_LPS_2_SUPPORTED
+	# Hidden
+	bool
+	help
+	  This option signifies that the target supports the SYS_POWER_STATE_CPU_LPS_2
+	  configuration option.
+
 config SYS_POWER_DEEP_SLEEP_SUPPORTED
 	# Hidden
 	bool
 	help
 	  This option signifies that the target supports the SYS_POWER_DEEP_SLEEP
+	  configuration option.
+
+config SYS_POWER_STATE_DEEP_SLEEP_SUPPORTED
+	# Hidden
+	bool
+	help
+	  This option signifies that the target supports the SYS_POWER_STATE_DEEP_SLEEP
+	  configuration option.
+
+config SYS_POWER_STATE_DEEP_SLEEP_1_SUPPORTED
+	# Hidden
+	bool
+	help
+	  This option signifies that the target supports the SYS_POWER_STATE_DEEP_SLEEP_1
+	  configuration option.
+
+config SYS_POWER_STATE_DEEP_SLEEP_2_SUPPORTED
+	# Hidden
+	bool
+	help
+	  This option signifies that the target supports the SYS_POWER_STATE_DEEP_SLEEP_2
 	  configuration option.
 
 config BOOTLOADER_CONTEXT_RESTORE_SUPPORTED

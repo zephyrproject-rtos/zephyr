@@ -84,24 +84,9 @@ config TELNET_CONSOLE_PRIO
 	help
 	  This option helps to fine-tune telnet's inner thread priority.
 
-config SYS_LOG_TELNET_CONSOLE_LEVEL
-	int "Telnet console log level"
-	default 0
-	depends on SYS_LOG
-	help
-	  Sets log level for telnet console (for telnet console dev only)
-
-	  Levels are:
-
-	  - 0 OFF, do not write
-
-	  - 1 ERROR, only write SYS_LOG_ERR
-
-	  - 2 WARNING, write SYS_LOG_WRN in addition to previous level
-
-	  - 3 INFO, write SYS_LOG_INF in addition to previous levels
-
-	  - 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
+module = TELNET_CONSOLE
+module-str = telnet console
+source "subsys/logging/Kconfig.template.log_config"
 
 config TELNET_CONSOLE_DEBUG_DEEP
 	bool "Forward output to original console handler"

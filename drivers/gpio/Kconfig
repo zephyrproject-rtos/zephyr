@@ -13,24 +13,9 @@ menuconfig GPIO
 
 if GPIO
 
-config SYS_LOG_GPIO_LEVEL
-	int "GPIO drivers log level"
-	default 0
-	depends on SYS_LOG
-	help
-	  Sets log level for GPIO drivers
-
-	  Levels are:
-
-	  - 0 OFF, do not write
-
-	  - 1 ERROR, only write SYS_LOG_ERR
-
-	  - 2 WARNING, write SYS_LOG_WRN in addition to previous level
-
-	  - 3 INFO, write SYS_LOG_INF in addition to previous levels
-
-	  - 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
+module = GPIO
+module-str = gpio
+source "subsys/logging/Kconfig.template.log_config"
 
 source "drivers/gpio/Kconfig.dw"
 
@@ -77,5 +62,7 @@ source "drivers/gpio/Kconfig.sam"
 source "drivers/gpio/Kconfig.sx1509b"
 
 source "drivers/gpio/Kconfig.imx"
+
+source "drivers/gpio/Kconfig.intel"
 
 endif # GPIO

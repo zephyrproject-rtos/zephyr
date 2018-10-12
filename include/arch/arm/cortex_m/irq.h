@@ -11,11 +11,12 @@
  * ARM-specific kernel interrupt handling interface. Included by arm/arch.h.
  */
 
-#ifndef _ARCH_ARM_CORTEXM_IRQ_H_
-#define _ARCH_ARM_CORTEXM_IRQ_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_IRQ_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_IRQ_H_
 
 #include <irq.h>
 #include <sw_isr_table.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -104,7 +105,7 @@ extern void _irq_priority_set(unsigned int irq, unsigned int prio,
 extern void _arch_isr_direct_pm(void);
 #define _ARCH_ISR_DIRECT_PM() _arch_isr_direct_pm()
 #else
-#define _ARCH_ISR_DIRECT_PM() do { } while (0)
+#define _ARCH_ISR_DIRECT_PM() do { } while (false)
 #endif
 
 #define _ARCH_ISR_DIRECT_HEADER() _arch_isr_direct_header()
@@ -158,4 +159,4 @@ extern void _isr_wrapper(void);
 }
 #endif
 
-#endif /* _ARCH_ARM_CORTEXM_IRQ_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_IRQ_H_ */

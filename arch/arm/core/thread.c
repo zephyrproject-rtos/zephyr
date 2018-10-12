@@ -15,9 +15,6 @@
 #include <toolchain.h>
 #include <kernel_structs.h>
 #include <wait_q.h>
-#ifdef CONFIG_INIT_STACKS
-#include <string.h>
-#endif /* CONFIG_INIT_STACKS */
 
 #ifdef CONFIG_USERSPACE
 extern u8_t *_k_priv_stack_find(void *obj);
@@ -125,7 +122,7 @@ FUNC_NORETURN void _arch_user_mode_enter(k_thread_entry_t user_entry,
 	_current->arch.priv_stack_size =
 		(u32_t)CONFIG_PRIVILEGED_STACK_SIZE;
 
-	/* FIXME: Need a general API for aligning stacks so thet the initial
+	/* FIXME: Need a general API for aligning stacks so that the initial
 	 * user thread stack pointer doesn't overshoot the granularity of MPU
 	 * regions, that works for ARM/NXP/QEMU.
 	 */

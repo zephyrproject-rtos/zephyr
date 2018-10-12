@@ -8,10 +8,13 @@
  * @brief IEEE 802.15.4 shell module
  */
 
+#define LOG_MODULE_NAME net_ieee802154_shell
+#define NET_LOG_LEVEL CONFIG_NET_L2_IEEE802154_LOG_LEVEL
+
 #include <zephyr.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <shell/shell.h>
+#include <shell/legacy_shell.h>
 #include <misc/printk.h>
 
 #include <net/net_if.h>
@@ -186,7 +189,7 @@ static int shell_cmd_scan(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	memset(&params, 0, sizeof(struct ieee802154_req_params));
+	(void)memset(&params, 0, sizeof(struct ieee802154_req_params));
 
 	net_mgmt_init_event_callback(&scan_cb, scan_result_cb,
 				     NET_EVENT_IEEE802154_SCAN_RESULT);

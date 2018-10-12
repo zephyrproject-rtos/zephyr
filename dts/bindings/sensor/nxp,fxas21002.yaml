@@ -5,7 +5,6 @@
 #
 ---
 title: FXAS21002 3-axis gyroscope
-id: nxp,fxas21002
 version: 0.1
 
 description: >

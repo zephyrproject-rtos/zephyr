@@ -3,7 +3,7 @@
   * @file    stm32f7xx_hal_dma_ex.c
   * @author  MCD Application Team
   * @brief   DMA Extension HAL module driver
-  *         This file provides firmware functions to manage the following 
+  *         This file provides firmware functions to manage the following
   *         functionalities of the DMA Extension peripheral:
   *           + Extended features functions
   *
@@ -18,9 +18,9 @@
 
      -@-  In Memory-to-Memory transfer mode, Multi (Double) Buffer mode is not allowed.
      -@-  When Multi (Double) Buffer mode is enabled, the transfer is circular by default.
-     -@-  In Multi (Double) buffer mode, it is possible to update the base address for 
+     -@-  In Multi (Double) buffer mode, it is possible to update the base address for
           the AHB memory port on the fly (DMA_SxM0AR or DMA_SxM1AR) when the stream is enabled.
-  
+
   @endverbatim
   ******************************************************************************
   * @attention
@@ -93,14 +93,14 @@ static void DMA_MultiBufferSetConfig(DMA_HandleTypeDef *hdma, uint32_t SrcAddres
 @verbatim
  ===============================================================================
                 #####  Extended features functions  #####
- ===============================================================================  
+ ===============================================================================
     [..]  This section provides functions allowing to:
-      (+) Configure the source, destination address and data length and 
+      (+) Configure the source, destination address and data length and
           Start MultiBuffer DMA transfer
-      (+) Configure the source, destination address and data length and 
+      (+) Configure the source, destination address and data length and
           Start MultiBuffer DMA transfer with interrupt
       (+) Change on the fly the memory0 or memory1 address.
-      
+
 @endverbatim
   * @{
   */
@@ -109,20 +109,20 @@ static void DMA_MultiBufferSetConfig(DMA_HandleTypeDef *hdma, uint32_t SrcAddres
 /**
   * @brief  Starts the multi_buffer DMA Transfer.
   * @param  hdma       pointer to a DMA_HandleTypeDef structure that contains
-  *                     the configuration information for the specified DMA Stream.  
+  *                     the configuration information for the specified DMA Stream.
   * @param  SrcAddress The source memory Buffer address
   * @param  DstAddress The destination memory Buffer address
-  * @param  SecondMemAddress The second memory Buffer address in case of multi buffer Transfer  
+  * @param  SecondMemAddress The second memory Buffer address in case of multi buffer Transfer
   * @param  DataLength The length of data to be transferred from source to destination
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_DMAEx_MultiBufferStart(DMA_HandleTypeDef *hdma, uint32_t SrcAddress, uint32_t DstAddress, uint32_t SecondMemAddress, uint32_t DataLength)
 {
   HAL_StatusTypeDef status = HAL_OK;
-  
+
   /* Check the parameters */
   assert_param(IS_DMA_BUFFER_SIZE(DataLength));
-  
+
   /* Memory-to-memory transfer not supported in double buffering mode */
   if (hdma->Init.Direction == DMA_MEMORY_TO_MEMORY)
   {
@@ -133,21 +133,21 @@ HAL_StatusTypeDef HAL_DMAEx_MultiBufferStart(DMA_HandleTypeDef *hdma, uint32_t S
   {
     /* Process Locked */
     __HAL_LOCK(hdma);
-    
+
     if(HAL_DMA_STATE_READY == hdma->State)
     {
       /* Change DMA peripheral state */
-      hdma->State = HAL_DMA_STATE_BUSY; 
-      
+      hdma->State = HAL_DMA_STATE_BUSY;
+
       /* Enable the double buffer mode */
       hdma->Instance->CR |= (uint32_t)DMA_SxCR_DBM;
-      
+
       /* Configure DMA Stream destination address */
       hdma->Instance->M1AR = SecondMemAddress;
-      
+
       /* Configure the source, destination address and the data length */
       DMA_MultiBufferSetConfig(hdma, SrcAddress, DstAddress, DataLength);
-      
+
       /* Enable the peripheral */
       __HAL_DMA_ENABLE(hdma);
     }
@@ -163,88 +163,88 @@ HAL_StatusTypeDef HAL_DMAEx_MultiBufferStart(DMA_HandleTypeDef *hdma, uint32_t S
 /**
   * @brief  Starts the multi_buffer DMA Transfer with interrupt enabled.
   * @param  hdma       pointer to a DMA_HandleTypeDef structure that contains
-  *                     the configuration information for the specified DMA Stream.  
+  *                     the configuration information for the specified DMA Stream.
   * @param  SrcAddress The source memory Buffer address
   * @param  DstAddress The destination memory Buffer address
-  * @param  SecondMemAddress The second memory Buffer address in case of multi buffer Transfer  
+  * @param  SecondMemAddress The second memory Buffer address in case of multi buffer Transfer
   * @param  DataLength The length of data to be transferred from source to destination
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_DMAEx_MultiBufferStart_IT(DMA_HandleTypeDef *hdma, uint32_t SrcAddress, uint32_t DstAddress, uint32_t SecondMemAddress, uint32_t DataLength)
 {
   HAL_StatusTypeDef status = HAL_OK;
-  
+
   /* Check the parameters */
   assert_param(IS_DMA_BUFFER_SIZE(DataLength));
-  
+
   /* Memory-to-memory transfer not supported in double buffering mode */
   if (hdma->Init.Direction == DMA_MEMORY_TO_MEMORY)
   {
     hdma->ErrorCode = HAL_DMA_ERROR_NOT_SUPPORTED;
     return HAL_ERROR;
   }
-  
+
   /* Process locked */
   __HAL_LOCK(hdma);
-  
+
   if(HAL_DMA_STATE_READY == hdma->State)
   {
     /* Change DMA peripheral state */
     hdma->State = HAL_DMA_STATE_BUSY;
-    
+
     /* Initialize the error code */
     hdma->ErrorCode = HAL_DMA_ERROR_NONE;
-    
+
     /* Enable the Double buffer mode */
     hdma->Instance->CR |= (uint32_t)DMA_SxCR_DBM;
-    
+
     /* Configure DMA Stream destination address */
     hdma->Instance->M1AR = SecondMemAddress;
-    
+
     /* Configure the source, destination address and the data length */
-    DMA_MultiBufferSetConfig(hdma, SrcAddress, DstAddress, DataLength); 
-    
+    DMA_MultiBufferSetConfig(hdma, SrcAddress, DstAddress, DataLength);
+
     /* Clear all flags */
     __HAL_DMA_CLEAR_FLAG (hdma, __HAL_DMA_GET_TC_FLAG_INDEX(hdma));
     __HAL_DMA_CLEAR_FLAG (hdma, __HAL_DMA_GET_HT_FLAG_INDEX(hdma));
     __HAL_DMA_CLEAR_FLAG (hdma, __HAL_DMA_GET_TE_FLAG_INDEX(hdma));
     __HAL_DMA_CLEAR_FLAG (hdma, __HAL_DMA_GET_DME_FLAG_INDEX(hdma));
     __HAL_DMA_CLEAR_FLAG (hdma, __HAL_DMA_GET_FE_FLAG_INDEX(hdma));
-    
+
     /* Enable Common interrupts*/
     hdma->Instance->CR  |= DMA_IT_TC | DMA_IT_TE | DMA_IT_DME;
     hdma->Instance->FCR |= DMA_IT_FE;
-    
+
     if((hdma->XferHalfCpltCallback != NULL) || (hdma->XferM1HalfCpltCallback != NULL))
     {
       hdma->Instance->CR  |= DMA_IT_HT;
     }
-    
+
     /* Enable the peripheral */
-    __HAL_DMA_ENABLE(hdma); 
+    __HAL_DMA_ENABLE(hdma);
   }
   else
-  {     
+  {
     /* Process unlocked */
-    __HAL_UNLOCK(hdma);	  
-    
+    __HAL_UNLOCK(hdma);	
+
     /* Return error status */
     status = HAL_BUSY;
-  }  
-  return status; 
+  }
+  return status;
 }
 
 /**
   * @brief  Change the memory0 or memory1 address on the fly.
   * @param  hdma       pointer to a DMA_HandleTypeDef structure that contains
-  *                     the configuration information for the specified DMA Stream.  
+  *                     the configuration information for the specified DMA Stream.
   * @param  Address    The new address
-  * @param  memory     the memory to be changed, This parameter can be one of 
+  * @param  memory     the memory to be changed, This parameter can be one of
   *                     the following values:
   *                      MEMORY0 /
   *                      MEMORY1
   * @note   The MEMORY0 address can be changed only when the current transfer use
-  *         MEMORY1 and the MEMORY1 address can be changed only when the current 
+  *         MEMORY1 and the MEMORY1 address can be changed only when the current
   *         transfer use MEMORY0.
   * @retval HAL status
   */
@@ -260,7 +260,7 @@ HAL_StatusTypeDef HAL_DMAEx_ChangeMemory(DMA_HandleTypeDef *hdma, uint32_t Addre
     /* change the memory1 address */
     hdma->Instance->M1AR = Address;
   }
-  
+
   return HAL_OK;
 }
 
@@ -279,7 +279,7 @@ HAL_StatusTypeDef HAL_DMAEx_ChangeMemory(DMA_HandleTypeDef *hdma, uint32_t Addre
 /**
   * @brief  Set the DMA Transfer parameter.
   * @param  hdma       pointer to a DMA_HandleTypeDef structure that contains
-  *                     the configuration information for the specified DMA Stream.  
+  *                     the configuration information for the specified DMA Stream.
   * @param  SrcAddress The source memory Buffer address
   * @param  DstAddress The destination memory Buffer address
   * @param  DataLength The length of data to be transferred from source to destination
@@ -289,13 +289,13 @@ static void DMA_MultiBufferSetConfig(DMA_HandleTypeDef *hdma, uint32_t SrcAddres
 {
   /* Configure DMA Stream data length */
   hdma->Instance->NDTR = DataLength;
-  
+
   /* Peripheral to Memory */
   if((hdma->Init.Direction) == DMA_MEMORY_TO_PERIPH)
   {
     /* Configure DMA Stream destination address */
     hdma->Instance->PAR = DstAddress;
-    
+
     /* Configure DMA Stream source address */
     hdma->Instance->M0AR = SrcAddress;
   }
@@ -304,7 +304,7 @@ static void DMA_MultiBufferSetConfig(DMA_HandleTypeDef *hdma, uint32_t SrcAddres
   {
     /* Configure DMA Stream source address */
     hdma->Instance->PAR = SrcAddress;
-    
+
     /* Configure DMA Stream destination address */
     hdma->Instance->M0AR = DstAddress;
   }

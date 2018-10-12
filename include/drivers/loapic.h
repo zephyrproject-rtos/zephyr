@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __INCloapich
-#define __INCloapich
+#ifndef ZEPHYR_INCLUDE_DRIVERS_LOAPIC_H_
+#define ZEPHYR_INCLUDE_DRIVERS_LOAPIC_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,4 +60,4 @@ extern void _lakemont_eoi(void);
 }
 #endif
 
-#endif /* __INCloapich */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_LOAPIC_H_ */

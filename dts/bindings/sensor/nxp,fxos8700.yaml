@@ -5,7 +5,6 @@
 #
 ---
 title: FXOS8700 6-axis accelerometer/magnetometer
-id: nxp,fxos8700
 version: 0.1
 
 description: >

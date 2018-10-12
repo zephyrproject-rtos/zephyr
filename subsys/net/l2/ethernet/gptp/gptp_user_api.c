@@ -4,9 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_GPTP)
-#define SYS_LOG_DOMAIN "net/gptp"
-#endif
+#define LOG_MODULE_NAME net_gptp_api
+#define NET_LOG_LEVEL CONFIG_NET_GPTP_LOG_LEVEL
 
 #include <ptp_clock.h>
 #include <net/gptp.h>
@@ -80,4 +79,16 @@ int gptp_event_capture(struct net_ptp_time *slave_time, bool *gm_present)
 char *gptp_sprint_clock_id(const u8_t *clk_id, char *output, size_t output_len)
 {
 	return net_sprint_ll_addr_buf(clk_id, 8, output, output_len);
+}
+
+void gptp_clk_src_time_invoke(struct gptp_clk_src_time_invoke_params *arg)
+{
+	struct gptp_clk_master_sync_rcv_state *state;
+
+	state = &GPTP_STATE()->clk_master_sync_receive;
+
+	memcpy(&state->rcvd_clk_src_req, arg,
+	       sizeof(struct gptp_clk_src_time_invoke_params));
+
+	state->rcvd_clock_source_req = true;
 }

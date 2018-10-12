@@ -81,12 +81,12 @@
         (++) MspInitCallback : WWDG MspInit.
 
     When calling @ref HAL_WWDG_Init function, callbacks are reset to the
-    corresponding legacy weak (surcharged) functions: 
+    corresponding legacy weak (surcharged) functions:
     @ref HAL_WWDG_EarlyWakeupCallback() and HAL_WWDG_MspInit() only if they have
     not been registered before.
 
     When compilation define USE_HAL_WWDG_REGISTER_CALLBACKS is set to 0 or
-    not defined, the callback registering feature is not available 
+    not defined, the callback registering feature is not available
     and weak (surcharged) callbacks are used.
 
     *** WWDG HAL driver macros list ***
@@ -286,7 +286,7 @@ HAL_StatusTypeDef HAL_WWDG_RegisterCallback(WWDG_HandleTypeDef *hwwdg, HAL_WWDG_
 
 /**
   * @brief  Unregister a WWDG Callback
-  *         WWDG Callback is redirected to the weak (surcharged) predefined callback 
+  *         WWDG Callback is redirected to the weak (surcharged) predefined callback
   * @param  hwwdg WWDG handle
   * @param  CallbackID ID of the callback to be registered
   *         This parameter can be one of the following values:

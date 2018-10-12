@@ -966,19 +966,19 @@ __STATIC_INLINE bool nrf_power_dcdcen_get(void)
 #if NRF_POWER_HAS_RAMPOWER_REGS
 __STATIC_INLINE void nrf_power_rampower_mask_on(uint8_t block, uint32_t section_mask)
 {
-    NRFX_ASSERT(block < ARRAY_SIZE(NRF_POWER->RAM));
+    NRFX_ASSERT(block < NRFX_ARRAY_SIZE(NRF_POWER->RAM));
     NRF_POWER->RAM[block].POWERSET = section_mask;
 }
 
 __STATIC_INLINE void nrf_power_rampower_mask_off(uint8_t block, uint32_t section_mask)
 {
-    NRFX_ASSERT(block < ARRAY_SIZE(NRF_POWER->RAM));
+    NRFX_ASSERT(block < NRFX_ARRAY_SIZE(NRF_POWER->RAM));
     NRF_POWER->RAM[block].POWERCLR = section_mask;
 }
 
 __STATIC_INLINE uint32_t nrf_power_rampower_mask_get(uint8_t block)
 {
-    NRFX_ASSERT(block < ARRAY_SIZE(NRF_POWER->RAM));
+    NRFX_ASSERT(block < NRFX_ARRAY_SIZE(NRF_POWER->RAM));
     return NRF_POWER->RAM[block].POWER;
 }
 #endif /* NRF_POWER_HAS_RAMPOWER_REGS */

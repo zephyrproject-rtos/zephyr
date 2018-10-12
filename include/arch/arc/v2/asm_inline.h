@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __ASM_INLINE_H__
-#define __ASM_INLINE_H__
+#ifndef ZEPHYR_INCLUDE_ARCH_ARC_V2_ASM_INLINE_H_
+#define ZEPHYR_INCLUDE_ARCH_ARC_V2_ASM_INLINE_H_
 
 /*
  * The file must not be included directly
@@ -20,4 +20,4 @@
 #erro "you need to provide an asm_inline.h for your compiler"
 #endif
 
-#endif /* __ASM_INLINE_H__ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARC_V2_ASM_INLINE_H_ */

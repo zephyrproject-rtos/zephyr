@@ -71,6 +71,8 @@ source "drivers/serial/Kconfig.imx"
 
 source "drivers/serial/Kconfig.stellaris"
 
+source "drivers/serial/Kconfig.native_posix"
+
 source "drivers/serial/Kconfig.nsim"
 
 source "drivers/serial/Kconfig.usart_sam"
@@ -100,5 +102,7 @@ source "drivers/serial/Kconfig.gecko"
 source "drivers/serial/Kconfig.msp432p4xx"
 
 source "drivers/serial/Kconfig.sam0"
+
+source "drivers/serial/Kconfig.psoc6"
 
 endif

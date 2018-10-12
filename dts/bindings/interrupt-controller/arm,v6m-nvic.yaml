@@ -1,6 +1,5 @@
 ---
 title: ARMv6-M NVIC Interrupt Controller
-id: arm,v6m-nvic
 version: 0.1
 
 description: >
@@ -12,6 +11,7 @@ properties:
       type: string
       description: compatible strings
       constraint: "arm,v6m-nvic"
+      generation: define
 
     reg:
       category: required

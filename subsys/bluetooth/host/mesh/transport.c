@@ -1443,7 +1443,7 @@ void bt_mesh_rx_reset(void)
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		bt_mesh_clear_rpl();
 	} else {
-		memset(bt_mesh.rpl, 0, sizeof(bt_mesh.rpl));
+		(void)memset(bt_mesh.rpl, 0, sizeof(bt_mesh.rpl));
 	}
 }
 
@@ -1477,5 +1477,5 @@ void bt_mesh_trans_init(void)
 void bt_mesh_rpl_clear(void)
 {
 	BT_DBG("");
-	memset(bt_mesh.rpl, 0, sizeof(bt_mesh.rpl));
+	(void)memset(bt_mesh.rpl, 0, sizeof(bt_mesh.rpl));
 }

@@ -1,7 +1,7 @@
 .. _usb_hid-mouse:
 
 USB HID mouse Sample Application
-####################################
+################################
 
 Overview
 ********

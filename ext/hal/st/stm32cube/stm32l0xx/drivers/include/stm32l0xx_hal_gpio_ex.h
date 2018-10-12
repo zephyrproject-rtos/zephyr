@@ -31,7 +31,7 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-  */ 
+  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __STM32L0xx_HAL_GPIO_EX_H
@@ -58,8 +58,8 @@
 
 /** @defgroup GPIOEx_Exported_Constants GPIOEx Exported Constants
   * @{
-  */ 
-  
+  */
+
 
 /*----------------------------------------------------------------------------*/
 /*------------------------- STM32L083xx/STM32L073xx---------------------------*/
@@ -1659,7 +1659,7 @@
                             ((__AF__) == GPIO_AF5_TIM21)    || ((__AF__) == GPIO_AF5_TIM22)    || \
                             ((__AF__) == GPIO_AF6_I2C2)     || ((__AF__) == GPIO_AF6_TIM21))
 
-                         
+
 
    #define IS_GPIO_AF_AVAILABLE(__INSTANCE__,__AF__)  \
         ((((__INSTANCE__) == GPIOA) && (((__AF__) ==  GPIO_AF0_EVENTOUT)  ||   \
@@ -1875,7 +1875,7 @@
                               ((__AF__) == GPIO_AF6_EVENTOUT  ) || \
                               ((__AF__) == GPIO_AF7_COMP1     ) || \
                               ((__AF__) == GPIO_AF7_COMP2     ))
-                                      
+
 
  #define IS_GPIO_AF_AVAILABLE(__INSTANCE__,__AF__)  \
         ((((__INSTANCE__) == GPIOA) && (((__AF__) ==  GPIO_AF0_EVENTOUT)   ||   \
@@ -2076,7 +2076,7 @@
                               ((__AF__) == GPIO_AF6_EVENTOUT  ) || \
                               ((__AF__) == GPIO_AF7_COMP1     ) || \
                               ((__AF__) == GPIO_AF7_COMP2     ))
-                                      
+
 
  #define IS_GPIO_AF_AVAILABLE(__INSTANCE__,__AF__)  \
         ((((__INSTANCE__) == GPIOA) && (((__AF__) ==  GPIO_AF0_EVENTOUT)   ||   \

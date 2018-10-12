@@ -47,7 +47,7 @@
 #include <stm32f4xx_ll_i2c.h>
 #endif
 
-#ifdef CONFIG_SPI_STM32
+#if defined(CONFIG_SPI_STM32) || defined(CONFIG_I2S_STM32)
 #include <stm32f4xx_ll_spi.h>
 #endif
 
@@ -57,6 +57,12 @@
 
 #ifdef CONFIG_IWDG_STM32
 #include <stm32f4xx_ll_iwdg.h>
+#endif
+
+#ifdef CONFIG_RTC_STM32
+#include <stm32f4xx_ll_rtc.h>
+#include <stm32f4xx_ll_exti.h>
+#include <stm32f4xx_ll_pwr.h>
 #endif
 
 #endif /* !_ASMLANGUAGE */

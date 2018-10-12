@@ -143,24 +143,24 @@ extern "C" {
   * @note The reset value of the RELOAD field corresponds to a target frequency of 48 MHz
   *       and a synchronization signal frequency of 1 kHz (SOF signal from USB)
   */
-#define LL_CRS_RELOADVALUE_DEFAULT         ((uint32_t)0xBB7FU)      
+#define LL_CRS_RELOADVALUE_DEFAULT         ((uint32_t)0xBB7FU)
 
 /**
   * @brief Reset value of Frequency error limit.
   */
-#define LL_CRS_ERRORLIMIT_DEFAULT          ((uint32_t)0x22U)      
+#define LL_CRS_ERRORLIMIT_DEFAULT          ((uint32_t)0x22U)
 
 /**
   * @brief Reset value of the HSI48 Calibration field
-  * @note The default value is 32, which corresponds to the middle of the trimming interval. 
-  *       The trimming step is around 67 kHz between two consecutive TRIM steps. 
+  * @note The default value is 32, which corresponds to the middle of the trimming interval.
+  *       The trimming step is around 67 kHz between two consecutive TRIM steps.
   *       A higher TRIM value corresponds to a higher output frequency
   */
-#define LL_CRS_HSI48CALIBRATION_DEFAULT    ((uint32_t)0x20U)      
+#define LL_CRS_HSI48CALIBRATION_DEFAULT    ((uint32_t)0x20U)
 /**
   * @}
-  */ 
-  
+  */
+
 /**
   * @}
   */
@@ -200,7 +200,7 @@ extern "C" {
 
 /**
   * @brief  Macro to calculate reload value to be set in CRS register according to target and sync frequencies
-  * @note   The RELOAD value should be selected according to the ratio between 
+  * @note   The RELOAD value should be selected according to the ratio between
   *         the target frequency and the frequency of the synchronization source after
   *         prescaling. It is then decreased by one in order to reach the expected
   *         synchronization on the zero value. The formula is the following:
@@ -294,7 +294,7 @@ __STATIC_INLINE uint32_t LL_CRS_IsEnabledAutoTrimming(void)
   * @note   When the AUTOTRIMEN bit is set, this field is controlled by hardware and is read-only
   * @rmtoll CR           TRIM          LL_CRS_SetHSI48SmoothTrimming
   * @param  Value a number between Min_Data = 0 and Max_Data = 63
-  * @note   Default value can be set thanks to @ref LL_CRS_HSI48CALIBRATION_DEFAULT 
+  * @note   Default value can be set thanks to @ref LL_CRS_HSI48CALIBRATION_DEFAULT
   * @retval None
   */
 __STATIC_INLINE void LL_CRS_SetHSI48SmoothTrimming(uint32_t Value)
@@ -316,7 +316,7 @@ __STATIC_INLINE uint32_t LL_CRS_GetHSI48SmoothTrimming(void)
   * @brief  Set counter reload value
   * @rmtoll CFGR         RELOAD        LL_CRS_SetReloadCounter
   * @param  Value a number between Min_Data = 0 and Max_Data = 0xFFFF
-  * @note   Default value can be set thanks to @ref LL_CRS_RELOADVALUE_DEFAULT 
+  * @note   Default value can be set thanks to @ref LL_CRS_RELOADVALUE_DEFAULT
   *         Otherwise it can be calculated in using macro @ref __LL_CRS_CALC_CALCULATE_RELOADVALUE (_FTARGET_, _FSYNC_)
   * @retval None
   */
@@ -339,7 +339,7 @@ __STATIC_INLINE uint32_t LL_CRS_GetReloadCounter(void)
   * @brief  Set frequency error limit
   * @rmtoll CFGR         FELIM         LL_CRS_SetFreqErrorLimit
   * @param  Value a number between Min_Data = 0 and Max_Data = 255
-  * @note   Default value can be set thanks to @ref LL_CRS_ERRORLIMIT_DEFAULT 
+  * @note   Default value can be set thanks to @ref LL_CRS_ERRORLIMIT_DEFAULT
   * @retval None
   */
 __STATIC_INLINE void LL_CRS_SetFreqErrorLimit(uint32_t Value)
@@ -467,8 +467,8 @@ __STATIC_INLINE uint32_t LL_CRS_GetSyncPolarity(void)
 __STATIC_INLINE void LL_CRS_ConfigSynchronization(uint32_t HSI48CalibrationValue, uint32_t ErrorLimitValue, uint32_t ReloadValue, uint32_t Settings)
 {
   MODIFY_REG(CRS->CR, CRS_CR_TRIM, HSI48CalibrationValue << CRS_CR_TRIM_Pos);
-  MODIFY_REG(CRS->CFGR, 
-             CRS_CFGR_RELOAD | CRS_CFGR_FELIM | CRS_CFGR_SYNCDIV | CRS_CFGR_SYNCSRC | CRS_CFGR_SYNCPOL, 
+  MODIFY_REG(CRS->CFGR,
+             CRS_CFGR_RELOAD | CRS_CFGR_FELIM | CRS_CFGR_SYNCDIV | CRS_CFGR_SYNCSRC | CRS_CFGR_SYNCPOL,
              ReloadValue | (ErrorLimitValue << CRS_CFGR_FELIM_Pos) | Settings);
 }
 
@@ -491,7 +491,7 @@ __STATIC_INLINE void LL_CRS_GenerateEvent_SWSYNC(void)
 }
 
 /**
-  * @brief  Get the frequency error direction latched in the time of the last 
+  * @brief  Get the frequency error direction latched in the time of the last
   * SYNC event
   * @rmtoll ISR          FEDIR         LL_CRS_GetFreqErrorDirection
   * @retval Returned value can be one of the following values:
@@ -612,7 +612,7 @@ __STATIC_INLINE void LL_CRS_ClearFlag_SYNCWARN(void)
 }
 
 /**
-  * @brief  Clear TRIMOVF, SYNCMISS and SYNCERR bits and consequently also 
+  * @brief  Clear TRIMOVF, SYNCMISS and SYNCERR bits and consequently also
   * the ERR flag
   * @rmtoll ICR          ERRC          LL_CRS_ClearFlag_ERR
   * @retval None
@@ -768,7 +768,7 @@ __STATIC_INLINE uint32_t LL_CRS_IsEnabledIT_ESYNC(void)
 /** @defgroup CRS_LL_EF_Init Initialization and de-initialization functions
   * @{
   */
-  
+
 ErrorStatus LL_CRS_DeInit(void);
 
 /**

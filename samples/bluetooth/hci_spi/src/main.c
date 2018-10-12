@@ -182,7 +182,7 @@ static void bt_tx_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
-	memset(txmsg, 0xFF, SPI_MAX_MSG_LEN);
+	(void)memset(txmsg, 0xFF, SPI_MAX_MSG_LEN);
 
 	while (1) {
 		tx.buf = header_slave;

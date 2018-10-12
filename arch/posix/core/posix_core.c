@@ -347,9 +347,8 @@ static int ttable_get_empty_slot(void)
 	}
 
 	/* Clear new piece of table */
-	memset(&threads_table[threads_table_size],
-		0,
-		PC_ALLOC_CHUNK_SIZE * sizeof(struct threads_table_el));
+	(void)memset(&threads_table[threads_table_size], 0,
+		     PC_ALLOC_CHUNK_SIZE * sizeof(struct threads_table_el));
 
 	threads_table_size += PC_ALLOC_CHUNK_SIZE;
 
@@ -511,7 +510,7 @@ void _impl_k_thread_abort(k_tid_t thread)
 			thread_idx,
 			__func__);
 
-		_Swap(key);
+		(void)_Swap(key);
 		CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 	}
 

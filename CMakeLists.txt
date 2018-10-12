@@ -264,6 +264,9 @@ zephyr_system_include_directories(${NOSTDINC})
 # Force an error when things like SYS_INIT(foo, ...) occur with a missing header.
 zephyr_cc_option(-Werror=implicit-int)
 
+# Prohibit void pointer arithmetic. Illegal in C99
+zephyr_cc_option(-Wpointer-arith)
+
 # Prohibit date/time macros, which would make the build non-deterministic
 # cc-option(-Werror=date-time)
 
@@ -282,6 +285,13 @@ endif()
 zephyr_ld_options(
   ${LINKERFLAGPREFIX},--gc-sections
   ${LINKERFLAGPREFIX},--build-id=none
+  )
+
+# Funny thing is if this is set to =error, some architectures will
+# skip this flag even though the compiler flag check passes
+# (e.g. ARC and Xtensa). So keep it at =warn, for now.
+zephyr_ld_options(
+  ${LINKERFLAGPREFIX},--orphan-handling=warn
   )
 
 if(CONFIG_HAVE_CUSTOM_LINKER_SCRIPT)
@@ -762,6 +772,7 @@ if(CONFIG_GEN_ISR_TABLES)
     --output-source isr_tables.c
     --kernel $<TARGET_FILE:zephyr_prebuilt>
     --intlist isrList.bin
+    $<$<BOOL:${CONFIG_BIG_ENDIAN}>:--big-endian>
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--debug>
     ${GEN_ISR_TABLE_EXTRA_ARG}
     DEPENDS zephyr_prebuilt
@@ -1029,7 +1040,7 @@ if(CONFIG_CPU_HAS_MPU AND CONFIG_USERSPACE)
         add_custom_target(
           ${APP_SMEM_DEP} ALL
           DEPENDS app
-          DEPENDS ${PRIV_STACK_DEP}
+          kernel
          )
 
         add_custom_command(
@@ -1057,6 +1068,7 @@ if(CONFIG_CPU_HAS_MPU AND CONFIG_USERSPACE)
       DEPENDS
       linker_app_sizing.cmd
       offsets_h
+      ${APP_SMEM_DEP}
     )
 
     set_property(TARGET
@@ -1095,7 +1107,7 @@ if(CONFIG_ARM)
   add_custom_target(
     linker_priv_stacks_script
     DEPENDS
-    ${ALIGN_SIZING_DEP}
+    ${ALIGN_SIZING_DEP} ${APP_SMEM_DEP}
     linker_priv_stacks.cmd
     offsets_h
     )

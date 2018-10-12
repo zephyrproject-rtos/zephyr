@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <nordic/nrf51822.dtsi>
+#include <nordic/nrf51822_qfac.dtsi>
 
 / {
 	model = "Seeed Studio Carbon nRF51 96board";
@@ -25,6 +25,12 @@
 
 &gpio0 {
 	status ="ok";
+};
+
+&i2c0 {
+	status = "ok";
+	sda-pin = <28>;
+	scl-pin = <2>;
 };
 
 &uart0 {

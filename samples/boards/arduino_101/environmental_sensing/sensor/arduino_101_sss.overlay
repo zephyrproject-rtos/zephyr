@@ -1,0 +1,16 @@
+/*
+ *
+ * Copyright (c) 2018, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+
+	hdc1008: hdc1008@40 {
+		compatible = "ti,hdc1008";
+		reg = <0x40>;
+		label = "HDC1008";
+		drdy-gpios = <&gpio0 3 0>;
+	};
+};

@@ -31,7 +31,7 @@ void test_config_compress_reset(void)
 		     "can't register FCB as configuration destination");
 
 	c2_var_count = 1;
-	memset(elems, 0, sizeof(elems));
+	(void)memset(elems, 0, sizeof(elems));
 
 	for (i = 0; ; i++) {
 		test_config_fill_area(test_ref_value, i);
@@ -46,7 +46,7 @@ void test_config_compress_reset(void)
 			 */
 			break;
 		}
-		memset(val_string, 0, sizeof(val_string));
+		(void)memset(val_string, 0, sizeof(val_string));
 
 		rc = settings_load();
 		zassert_true(rc == 0, "fcb read error");
@@ -65,7 +65,7 @@ void test_config_compress_reset(void)
 
 	config_wipe_srcs();
 
-	memset(&cf, 0, sizeof(cf));
+	(void)memset(&cf, 0, sizeof(cf));
 
 	cf.cf_fcb.f_magic = CONFIG_SETTINGS_FCB_MAGIC;
 	cf.cf_fcb.f_sectors = fcb_sectors;

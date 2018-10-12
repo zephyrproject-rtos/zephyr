@@ -1,8 +1,8 @@
-Title: Intel_S1000 tests
+Title: Intel S1000 CRB tests
 
 Description:
 
-This test illustrates the various features enabled on Intel_S1000.
+This test illustrates the various features enabled on Intel S1000 CRB.
 
 Features exhibited in this test set
 ============================
@@ -15,7 +15,7 @@ GPIO toggling
     also calls its callback function if interrupt is configured
 
 I2C slave communication
-  - Intel_S1000 I2C configured as master, 7 bit mode, standard speed
+  - Intel S1000 CRB I2C configured as master, 7 bit mode, standard speed
   - 2 LED matrices are configured as slaves
   - The LED matrices are written over I2C to emit blue light and red
     light alternately
@@ -35,7 +35,7 @@ UART prints
 Building and Running Project:
 
 This project outputs to the console.  It can be built and executed
-on Intel_S1000 using the flyswatter2 as follows:
+on Intel S1000 CRB using the flyswatter2 as follows:
 
     make flash
 
@@ -57,7 +57,7 @@ or
 Sample Output:
 
 ***** BOOTING ZEPHYR OS v1.9.99-intel_internal - BUILD: Oct 31 2017 14:48:57 *****
-Sample app running on: xtensa Intel_S1000
+Sample app running on: xtensa Intel S1000 CRB
 Reading GPIO_24 = 0
 LED0 = 10
 GPIO_24 triggered

@@ -1488,9 +1488,12 @@ __STATIC_INLINE uint32_t LL_TIM_GetOnePulseMode(TIM_TypeDef *TIMx)
 
 /**
   * @brief  Set the timer counter counting mode.
-  * @note Macro @ref IS_TIM_COUNTER_MODE_SELECT_INSTANCE(TIMx) can be used to
-  *       check whether or not the counter mode selection feature is supported
-  *       by a timer instance.
+  * @note   Macro @ref IS_TIM_COUNTER_MODE_SELECT_INSTANCE(TIMx) can be used to
+  *         check whether or not the counter mode selection feature is supported
+  *         by a timer instance.
+  * @note   Switching from Center Aligned counter mode to Edge counter mode (or reverse)
+  *         requires a timer reset to avoid unexpected direction
+  *         due to DIR bit readonly in center aligned mode.
   * @rmtoll CR1          DIR           LL_TIM_SetCounterMode\n
   *         CR1          CMS           LL_TIM_SetCounterMode
   * @param  TIMx Timer instance

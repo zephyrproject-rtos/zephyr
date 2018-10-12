@@ -4,11 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if 1
-#define SYS_LOG_DOMAIN "rpl-br/rpl"
-#define NET_SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_rpl_br_rpl
+#define NET_LOG_LEVEL LOG_LEVEL_DBG
 
 #include <zephyr.h>
 #include <stdio.h>
@@ -44,18 +41,21 @@ static bool br_join_dag(struct net_rpl_dio *dio)
 			rpl.dag_init_version = dio->version;
 			rpl.dag_has_version = true;
 		}
-#if CONFIG_SYS_LOG_NET_LEVEL > 3
 	} else {
-		char me[NET_IPV6_ADDR_LEN];
-		char other[NET_IPV6_ADDR_LEN];
+		if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {
+			char me[NET_IPV6_ADDR_LEN];
+			char other[NET_IPV6_ADDR_LEN];
 
-		net_addr_ntop(AF_INET6, &dio->dag_id, other,
-			      NET_IPV6_ADDR_LEN);
-		net_addr_ntop(AF_INET6, &rpl.dag_id, me, NET_IPV6_ADDR_LEN);
+			net_addr_ntop(AF_INET6, &dio->dag_id, other,
+				      NET_IPV6_ADDR_LEN);
+			net_addr_ntop(AF_INET6, &rpl.dag_id, me,
+				      NET_IPV6_ADDR_LEN);
 
-		NET_DBG("Other root %s, me %s, DIO version %d instance %d",
-			other, me, dio->version, dio->instance_id);
-#endif
+			NET_DBG("Other root %s, me %s, "
+				"DIO version %d instance %d",
+				log_strdup(other), log_strdup(me),
+				dio->version, dio->instance_id);
+		}
 	}
 
 	return 0;
@@ -71,7 +71,7 @@ bool setup_rpl(struct net_if *iface, const char *addr_prefix)
 	/* As the addr_prefix is Kconfig option we need to copy it to temporary
 	 * buffer in order to be able to manipulate it.
 	 */
-	memset(prefix, 0, sizeof(prefix));
+	(void)memset(prefix, 0, sizeof(prefix));
 	memcpy(prefix, addr_prefix, min(strlen(addr_prefix),
 					NET_IPV6_ADDR_LEN));
 
@@ -84,12 +84,12 @@ bool setup_rpl(struct net_if *iface, const char *addr_prefix)
 	}
 
 	if (rpl.prefix_len == 0) {
-		NET_ERR("Invalid prefix length %s", slash + 1);
+		NET_ERR("Invalid prefix length %s", log_strdup(slash + 1));
 		return false;
 	}
 
 	if (net_addr_pton(AF_INET6, prefix, &rpl.prefix) < 0) {
-		NET_ERR("Invalid IPv6 prefix %s", prefix);
+		NET_ERR("Invalid IPv6 prefix %s", log_strdup(prefix));
 		return false;
 	}
 
@@ -114,27 +114,27 @@ bool setup_rpl(struct net_if *iface, const char *addr_prefix)
 
 	ret = net_rpl_set_prefix(iface, dag, &rpl.prefix, rpl.prefix_len);
 	if (!ret) {
-		NET_ERR("Cannot set prefix %s/%d", prefix, rpl.prefix_len);
+		NET_ERR("Cannot set prefix %s/%d", log_strdup(prefix),
+			rpl.prefix_len);
 		return false;
 	}
 
-#if CONFIG_SYS_LOG_NET_LEVEL > 3
-	{
+	if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {
 		char out[NET_IPV6_ADDR_LEN];
 
 		if (net_addr_ntop(AF_INET6, &rpl.prefix, out,
 				  NET_IPV6_ADDR_LEN)) {
 			if (rpl.dag_has_version) {
 				NET_DBG("New RPL dag %s/%d version %u created",
-					out, rpl.prefix_len,
+					log_strdup(out), rpl.prefix_len,
 					rpl.dag_init_version);
 			} else {
-				NET_DBG("New RPL dag %s/%d created", out,
+				NET_DBG("New RPL dag %s/%d created",
+					log_strdup(out),
 					rpl.prefix_len);
 			}
 		}
 	}
-#endif
 
 	return true;
 }

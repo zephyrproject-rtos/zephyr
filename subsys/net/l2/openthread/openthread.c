@@ -4,12 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define NET_SYS_LOG_LEVEL CONFIG_OPENTHREAD_L2_LOG_LEVEL
-
-#if defined(CONFIG_OPENTHREAD_L2_DEBUG)
-#define NET_DOMAIN "net/openthread_l2"
-#define NET_LOG_ENABLED 1
-#endif
+#define NET_LOG_LEVEL CONFIG_OPENTHREAD_L2_LOG_LEVEL
+#define LOG_MODULE_NAME net_l2_openthread
 
 #include <net/net_core.h>
 #include <net/net_pkt.h>
@@ -315,7 +311,7 @@ static int openthread_init(struct net_if *iface)
 
 	otThreadSetNetworkName(ot_context->instance, CONFIG_OPENTHREAD_NETWORK_NAME);
 	NET_INFO("Network name:   %s",
-		    otThreadGetNetworkName(ot_context->instance));
+		 log_strdup(otThreadGetNetworkName(ot_context->instance)));
 
 	otLinkSetChannel(ot_context->instance, CONFIG_OPENTHREAD_CHANNEL);
 	otLinkSetPanId(ot_context->instance, CONFIG_OPENTHREAD_PANID);

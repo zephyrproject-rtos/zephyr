@@ -14,9 +14,9 @@
 #include <adc.h>
 #include <arch/cpu.h>
 
-#define SYS_LOG_DOMAIN "dev/adc_quark_d2000"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_ADC_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(adc_intel_quark_d2000);
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
@@ -201,27 +201,27 @@ static int adc_quark_d2000_channel_setup(struct device *dev,
 	u8_t channel_id = channel_cfg->channel_id;
 
 	if (channel_id > MAX_CHANNELS) {
-		SYS_LOG_ERR("Channel %d is not valid", channel_id);
+		LOG_ERR("Channel %d is not valid", channel_id);
 		return -EINVAL;
 	}
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
-		SYS_LOG_ERR("Invalid channel acquisition time");
+		LOG_ERR("Invalid channel acquisition time");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->differential) {
-		SYS_LOG_ERR("Differential channels are not supported");
+		LOG_ERR("Differential channels are not supported");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
-		SYS_LOG_ERR("Invalid channel gain");
+		LOG_ERR("Invalid channel gain");
 		return -EINVAL;
 	}
 
 	if (channel_cfg->reference != ADC_REF_INTERNAL) {
-		SYS_LOG_ERR("Invalid channel reference");
+		LOG_ERR("Invalid channel reference");
 		return -EINVAL;
 	}
 

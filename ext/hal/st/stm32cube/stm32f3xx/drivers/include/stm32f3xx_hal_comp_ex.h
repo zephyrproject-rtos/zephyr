@@ -38,7 +38,7 @@
 #define __STM32F3xx_HAL_COMP_EX_H
 
 #ifdef __cplusplus
- extern "C" {
+extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
@@ -89,7 +89,9 @@
 #define COMP_INVERTINGINPUT_3_4VREFINT     COMP_CSR_COMPxINSEL_1                         /*!< 3U/4 VREFINT connected to comparator inverting input */
 #define COMP_INVERTINGINPUT_VREFINT        (COMP_CSR_COMPxINSEL_1|COMP_CSR_COMPxINSEL_0) /*!< VREFINT connected to comparator inverting input */
 #define COMP_INVERTINGINPUT_DAC1_CH1       COMP_CSR_COMPxINSEL_2                         /*!< DAC1_CH1_OUT (PA4) connected to comparator inverting input */
-#define COMP_INVERTINGINPUT_IO1            (COMP_CSR_COMPxINSEL_2|COMP_CSR_COMPxINSEL_1) /*!< IO1 (PA2 for COMP2, PB2 for COMP4, PB15 for COMP6)
+#define COMP_INVERTINGINPUT_IO1            (COMP_CSR_COMPxINSEL_2|COMP_CSR_COMPxINSEL_1) /*!< IO1 (PA2 for COMP2),
+                                                                                              connected to comparator inverting input */
+#define COMP_INVERTINGINPUT_IO2            COMP_CSR_COMPxINSEL                           /*!< IO2 (PB2 for COMP4, PB15 for COMP6)
                                                                                               connected to comparator inverting input */
 /* Aliases for compatibility */
 #define COMP_INVERTINGINPUT_DAC1           COMP_INVERTINGINPUT_DAC1_CH1
@@ -112,7 +114,7 @@
 #define COMP_INVERTINGINPUT_DAC1_CH2       (COMP_CSR_COMPxINSEL_2|COMP_CSR_COMPxINSEL_0) /*!< DAC1_CH2_OUT (PA5) connected to comparator inverting input */
 #define COMP_INVERTINGINPUT_IO1            (COMP_CSR_COMPxINSEL_2|COMP_CSR_COMPxINSEL_1) /*!< IO1 (PA2 for COMP2),
                                                                                               connected to comparator inverting input */
-#define COMP_INVERTINGINPUT_IO2            (COMP_CSR_COMPxINSEL_2|COMP_CSR_COMPxINSEL_1|COMP_CSR_COMPxINSEL_0) /*!< IO2 (PB2 for COMP4, PB15 for COMP6)
+#define COMP_INVERTINGINPUT_IO2            COMP_CSR_COMPxINSEL                           /*!< IO2 (PB2 for COMP4, PB15 for COMP6)
                                                                                               connected to comparator inverting input */
 #define COMP_INVERTINGINPUT_DAC2_CH1       COMP_CSR_COMPxINSEL_3                         /*!< DAC2_CH1_OUT connected to comparator inverting input */
 
@@ -674,9 +676,9 @@
   *            @arg @ref COMP_FLAG_LOCK   lock flag
   * @retval The new state of __FLAG__ (TRUE or FALSE).
   */
-#define __HAL_COMP_GET_FLAG(__HANDLE__, __FLAG__)                              \
-        (((__HANDLE__)->Instance == COMP1) ? (((__HANDLE__)->Instance->CSR & (__FLAG__)) == (__FLAG__)) \
-         (((__HANDLE__)->Instance->CSR & (uint32_t)((__FLAG__) << COMP_CSR_COMP2_SHIFT) == (__FLAG__))))
+#define __HAL_COMP_GET_FLAG(__HANDLE__, __FLAG__)                                                 \
+  (((__HANDLE__)->Instance == COMP1) ? (((__HANDLE__)->Instance->CSR & (__FLAG__)) == (__FLAG__)) \
+   (((__HANDLE__)->Instance->CSR & (uint32_t)((__FLAG__) << COMP_CSR_COMP2_SHIFT) == (__FLAG__))))
 
 #else
 
@@ -745,18 +747,18 @@
   * @retval None
   */
 #define __HAL_COMP_COMP1_EXTI_ENABLE_RISING_FALLING_EDGE()   do { \
-                                                               __HAL_COMP_COMP1_EXTI_ENABLE_RISING_EDGE(); \
-                                                               __HAL_COMP_COMP1_EXTI_ENABLE_FALLING_EDGE(); \
-                                                             } while(0U)
+    __HAL_COMP_COMP1_EXTI_ENABLE_RISING_EDGE(); \
+    __HAL_COMP_COMP1_EXTI_ENABLE_FALLING_EDGE(); \
+  } while(0U)
 
 /**
   * @brief  Disable the COMP1 EXTI line rising & falling edge trigger.
   * @retval None
   */
 #define __HAL_COMP_COMP1_EXTI_DISABLE_RISING_FALLING_EDGE()  do { \
-                                                               __HAL_COMP_COMP1_EXTI_DISABLE_RISING_EDGE(); \
-                                                               __HAL_COMP_COMP1_EXTI_DISABLE_FALLING_EDGE(); \
-                                                             } while(0U)
+    __HAL_COMP_COMP1_EXTI_DISABLE_RISING_EDGE(); \
+    __HAL_COMP_COMP1_EXTI_DISABLE_FALLING_EDGE(); \
+  } while(0U)
 
 /**
   * @brief  Enable the COMP1 EXTI line in interrupt mode.
@@ -833,18 +835,18 @@
   * @retval None
   */
 #define __HAL_COMP_COMP2_EXTI_ENABLE_RISING_FALLING_EDGE()   do { \
-                                                               __HAL_COMP_COMP2_EXTI_ENABLE_RISING_EDGE(); \
-                                                               __HAL_COMP_COMP2_EXTI_ENABLE_FALLING_EDGE(); \
-                                                             } while(0U)
+    __HAL_COMP_COMP2_EXTI_ENABLE_RISING_EDGE(); \
+    __HAL_COMP_COMP2_EXTI_ENABLE_FALLING_EDGE(); \
+  } while(0U)
 
 /**
   * @brief  Disable the COMP2 EXTI line rising & falling edge trigger.
   * @retval None
   */
 #define __HAL_COMP_COMP2_EXTI_DISABLE_RISING_FALLING_EDGE()   do { \
-                                                               __HAL_COMP_COMP2_EXTI_DISABLE_RISING_EDGE(); \
-                                                               __HAL_COMP_COMP2_EXTI_DISABLE_FALLING_EDGE(); \
-                                                             } while(0U)
+    __HAL_COMP_COMP2_EXTI_DISABLE_RISING_EDGE(); \
+    __HAL_COMP_COMP2_EXTI_DISABLE_FALLING_EDGE(); \
+  } while(0U)
 
 /**
   * @brief  Enable the COMP2 EXTI line in interrupt mode.
@@ -920,18 +922,18 @@
   * @retval None
   */
 #define __HAL_COMP_COMP3_EXTI_ENABLE_RISING_FALLING_EDGE()   do { \
-                                                               __HAL_COMP_COMP3_EXTI_ENABLE_RISING_EDGE(); \
-                                                               __HAL_COMP_COMP3_EXTI_ENABLE_FALLING_EDGE(); \
-                                                             } while(0U)
+    __HAL_COMP_COMP3_EXTI_ENABLE_RISING_EDGE(); \
+    __HAL_COMP_COMP3_EXTI_ENABLE_FALLING_EDGE(); \
+  } while(0U)
 
 /**
   * @brief  Disable the COMP3 EXTI line rising & falling edge trigger.
   * @retval None
   */
 #define __HAL_COMP_COMP3_EXTI_DISABLE_RISING_FALLING_EDGE()   do { \
-                                                               __HAL_COMP_COMP3_EXTI_DISABLE_RISING_EDGE(); \
-                                                               __HAL_COMP_COMP3_EXTI_DISABLE_FALLING_EDGE(); \
-                                                             } while(0U)
+    __HAL_COMP_COMP3_EXTI_DISABLE_RISING_EDGE(); \
+    __HAL_COMP_COMP3_EXTI_DISABLE_FALLING_EDGE(); \
+  } while(0U)
 
 /**
   * @brief  Enable the COMP3 EXTI line in interrupt mode.
@@ -1012,18 +1014,18 @@
   * @retval None
   */
 #define __HAL_COMP_COMP4_EXTI_ENABLE_RISING_FALLING_EDGE()   do { \
-                                                               __HAL_COMP_COMP4_EXTI_ENABLE_RISING_EDGE(); \
-                                                               __HAL_COMP_COMP4_EXTI_ENABLE_FALLING_EDGE(); \
-                                                             } while(0U)
+    __HAL_COMP_COMP4_EXTI_ENABLE_RISING_EDGE(); \
+    __HAL_COMP_COMP4_EXTI_ENABLE_FALLING_EDGE(); \
+  } while(0U)
 
 /**
   * @brief  Disable the COMP4 EXTI line rising & falling edge trigger.
   * @retval None
   */
 #define __HAL_COMP_COMP4_EXTI_DISABLE_RISING_FALLING_EDGE()   do { \
-                                                               __HAL_COMP_COMP4_EXTI_DISABLE_RISING_EDGE(); \
-                                                               __HAL_COMP_COMP4_EXTI_DISABLE_FALLING_EDGE(); \
-                                                             } while(0U)
+    __HAL_COMP_COMP4_EXTI_DISABLE_RISING_EDGE(); \
+    __HAL_COMP_COMP4_EXTI_DISABLE_FALLING_EDGE(); \
+  } while(0U)
 
 /**
   * @brief  Enable the COMP4 EXTI line in interrupt mode.
@@ -1104,18 +1106,18 @@
   * @retval None
   */
 #define __HAL_COMP_COMP5_EXTI_ENABLE_RISING_FALLING_EDGE()   do { \
-                                                               __HAL_COMP_COMP5_EXTI_ENABLE_RISING_EDGE(); \
-                                                               __HAL_COMP_COMP5_EXTI_ENABLE_FALLING_EDGE(); \
-                                                             } while(0U)
+    __HAL_COMP_COMP5_EXTI_ENABLE_RISING_EDGE(); \
+    __HAL_COMP_COMP5_EXTI_ENABLE_FALLING_EDGE(); \
+  } while(0U)
 
 /**
   * @brief  Disable the COMP5 EXTI line rising & falling edge trigger.
   * @retval None
   */
 #define __HAL_COMP_COMP5_EXTI_DISABLE_RISING_FALLING_EDGE()   do { \
-                                                               __HAL_COMP_COMP5_EXTI_DISABLE_RISING_EDGE(); \
-                                                               __HAL_COMP_COMP5_EXTI_DISABLE_FALLING_EDGE(); \
-                                                             } while(0U)
+    __HAL_COMP_COMP5_EXTI_DISABLE_RISING_EDGE(); \
+    __HAL_COMP_COMP5_EXTI_DISABLE_FALLING_EDGE(); \
+  } while(0U)
 
 /**
   * @brief  Enable the COMP5 EXTI line in interrupt mode.
@@ -1196,18 +1198,18 @@
   * @retval None
   */
 #define __HAL_COMP_COMP6_EXTI_ENABLE_RISING_FALLING_EDGE()   do { \
-                                                               __HAL_COMP_COMP6_EXTI_ENABLE_RISING_EDGE(); \
-                                                               __HAL_COMP_COMP6_EXTI_ENABLE_FALLING_EDGE(); \
-                                                             } while(0U)
+    __HAL_COMP_COMP6_EXTI_ENABLE_RISING_EDGE(); \
+    __HAL_COMP_COMP6_EXTI_ENABLE_FALLING_EDGE(); \
+  } while(0U)
 
 /**
   * @brief  Disable the COMP6 EXTI line rising & falling edge trigger.
   * @retval None
   */
 #define __HAL_COMP_COMP6_EXTI_DISABLE_RISING_FALLING_EDGE()   do { \
-                                                               __HAL_COMP_COMP6_EXTI_DISABLE_RISING_EDGE(); \
-                                                               __HAL_COMP_COMP6_EXTI_DISABLE_FALLING_EDGE(); \
-                                                             } while(0U)
+    __HAL_COMP_COMP6_EXTI_DISABLE_RISING_EDGE(); \
+    __HAL_COMP_COMP6_EXTI_DISABLE_FALLING_EDGE(); \
+  } while(0U)
 
 /**
   * @brief  Enable the COMP6 EXTI line in interrupt mode.
@@ -1287,18 +1289,18 @@
   * @retval None
   */
 #define __HAL_COMP_COMP7_EXTI_ENABLE_RISING_FALLING_EDGE()   do { \
-                                                               __HAL_COMP_COMP7_EXTI_ENABLE_RISING_EDGE(); \
-                                                               __HAL_COMP_COMP7_EXTI_ENABLE_FALLING_EDGE(); \
-                                                             } while(0U)
+    __HAL_COMP_COMP7_EXTI_ENABLE_RISING_EDGE(); \
+    __HAL_COMP_COMP7_EXTI_ENABLE_FALLING_EDGE(); \
+  } while(0U)
 
 /**
   * @brief  Disable the COMP7 EXTI line rising & falling edge trigger.
   * @retval None
   */
 #define __HAL_COMP_COMP7_EXTI_DISABLE_RISING_FALLING_EDGE()   do { \
-                                                               __HAL_COMP_COMP7_EXTI_DISABLE_RISING_EDGE(); \
-                                                               __HAL_COMP_COMP7_EXTI_DISABLE_FALLING_EDGE(); \
-                                                             } while(0U)
+    __HAL_COMP_COMP7_EXTI_DISABLE_RISING_EDGE(); \
+    __HAL_COMP_COMP7_EXTI_DISABLE_FALLING_EDGE(); \
+  } while(0U)
 
 /**
   * @brief  Enable the COMP7 EXTI line in interrupt mode.
@@ -1554,7 +1556,6 @@
   * @note   The common output selection is checked versus the COMP instance to set the right output configuration
   * @retval None.
   */
-
 #define COMP_INIT(__HANDLE__)                                                          \
         do {                                                                           \
           uint32_t regshift = COMP_CSR_COMP1_SHIFT;                                    \
@@ -1691,7 +1692,7 @@
   */
 #define COMP_INIT(__HANDLE__)                                                                                   \
         do {                                                                                                    \
-          __IO uint32_t     csrreg = 0U;                                                                         \
+          __IO uint32_t     csrreg = 0U;                                                                        \
                                                                                                                 \
           csrreg = READ_REG((__HANDLE__)->Instance->CSR);                                                       \
           MODIFY_REG(csrreg, COMP_CSR_COMPxINSEL_MASK, (__HANDLE__)->Init.InvertingInput);                      \

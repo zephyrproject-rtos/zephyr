@@ -164,7 +164,7 @@ static int user_chan_open(u16_t index)
 		return -errno;
 	}
 
-	memset(&addr, 0, sizeof(addr));
+	(void)memset(&addr, 0, sizeof(addr));
 	addr.hci_family = AF_BLUETOOTH;
 	addr.hci_dev = index;
 	addr.hci_channel = HCI_CHANNEL_USER;

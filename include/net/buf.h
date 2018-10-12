@@ -7,8 +7,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __NET_BUF_H
-#define __NET_BUF_H
+#ifndef ZEPHYR_INCLUDE_NET_BUF_H_
+#define ZEPHYR_INCLUDE_NET_BUF_H_
 
 #include <stddef.h>
 #include <zephyr/types.h>
@@ -1412,4 +1412,4 @@ static inline size_t net_buf_frags_len(struct net_buf *buf)
 }
 #endif
 
-#endif /* __NET_BUF_H */
+#endif /* ZEPHYR_INCLUDE_NET_BUF_H_ */

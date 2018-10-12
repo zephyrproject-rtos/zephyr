@@ -156,10 +156,10 @@ typedef struct
                                         This parameter can be a value of @ref DMA_LL_EC_PRIORITY
 
                                         This feature can be modified afterwards using unitary function @ref LL_DMA_SetStreamPriorityLevel(). */
-                                        
+
   uint32_t FIFOMode;               /*!< Specifies if the FIFO mode or Direct mode will be used for the specified stream.
                                         This parameter can be a value of @ref DMA_LL_FIFOMODE
-                                        @note The Direct mode (FIFO mode disabled) cannot be used if the 
+                                        @note The Direct mode (FIFO mode disabled) cannot be used if the
                                         memory-to-memory data transfer is configured on the selected stream
 
                                         This feature can be modified afterwards using unitary functions @ref LL_DMA_EnableFifoMode() or @ref LL_DMA_EnableFifoMode() . */
@@ -169,19 +169,19 @@ typedef struct
 
                                         This feature can be modified afterwards using unitary function @ref LL_DMA_SetFIFOThreshold(). */
 
-  uint32_t MemBurst;               /*!< Specifies the Burst transfer configuration for the memory transfers. 
+  uint32_t MemBurst;               /*!< Specifies the Burst transfer configuration for the memory transfers.
                                         It specifies the amount of data to be transferred in a single non interruptible
                                         transaction.
-                                        This parameter can be a value of @ref DMA_LL_EC_MBURST 
-                                        @note The burst mode is possible only if the address Increment mode is enabled. 
+                                        This parameter can be a value of @ref DMA_LL_EC_MBURST
+                                        @note The burst mode is possible only if the address Increment mode is enabled.
 
                                         This feature can be modified afterwards using unitary function @ref LL_DMA_SetMemoryBurstxfer(). */
 
-  uint32_t PeriphBurst;            /*!< Specifies the Burst transfer configuration for the peripheral transfers. 
-                                        It specifies the amount of data to be transferred in a single non interruptible 
-                                        transaction. 
+  uint32_t PeriphBurst;            /*!< Specifies the Burst transfer configuration for the peripheral transfers.
+                                        It specifies the amount of data to be transferred in a single non interruptible
+                                        transaction.
                                         This parameter can be a value of @ref DMA_LL_EC_PBURST
-                                        @note The burst mode is possible only if the address Increment mode is enabled. 
+                                        @note The burst mode is possible only if the address Increment mode is enabled.
 
                                         This feature can be modified afterwards using unitary function @ref LL_DMA_SetPeriphBurstxfer(). */
 
@@ -334,7 +334,7 @@ typedef struct
 /**
   * @}
   */
-  
+
 /** @defgroup DMA_LL_FIFOMODE DMA_LL_FIFOMODE
   * @{
   */
@@ -342,7 +342,7 @@ typedef struct
 #define LL_DMA_FIFOMODE_ENABLE            DMA_SxFCR_DMDIS                         /*!< FIFO mode enable  */
 /**
   * @}
-  */  
+  */
 
 /** @defgroup DMA_LL_EC_FIFOSTATUS_0 FIFOSTATUS 0
   * @{
@@ -367,7 +367,7 @@ typedef struct
 /**
   * @}
   */
-    
+
 /** @defgroup DMA_LL_EC_CURRENTTARGETMEM CURRENTTARGETMEM
   * @{
   */
@@ -1156,7 +1156,7 @@ __STATIC_INLINE uint32_t LL_DMA_GetPeriphBurstxfer(DMA_TypeDef *DMAx, uint32_t S
 
 /**
   * @brief Set Current target (only in double buffer mode) to Memory 1 or Memory 0.
-  * @rmtoll CR          CT           LL_DMA_SetCurrentTargetMem 
+  * @rmtoll CR          CT           LL_DMA_SetCurrentTargetMem
   * @param  DMAx DMAx Instance
   * @param  Stream This parameter can be one of the following values:
   *         @arg @ref LL_DMA_STREAM_0
@@ -1179,7 +1179,7 @@ __STATIC_INLINE void LL_DMA_SetCurrentTargetMem(DMA_TypeDef *DMAx, uint32_t Stre
 
 /**
   * @brief Set Current target (only in double buffer mode) to Memory 1 or Memory 0.
-  * @rmtoll CR          CT           LL_DMA_GetCurrentTargetMem 
+  * @rmtoll CR          CT           LL_DMA_GetCurrentTargetMem
   * @param  DMAx DMAx Instance
   * @param  Stream This parameter can be one of the following values:
   *         @arg @ref LL_DMA_STREAM_0
@@ -1221,7 +1221,7 @@ __STATIC_INLINE void LL_DMA_EnableDoubleBufferMode(DMA_TypeDef *DMAx, uint32_t S
 
 /**
   * @brief Disable the double buffer mode.
-  * @rmtoll CR          DBM           LL_DMA_DisableDoubleBufferMode 
+  * @rmtoll CR          DBM           LL_DMA_DisableDoubleBufferMode
   * @param  DMAx DMAx Instance
   * @param  Stream This parameter can be one of the following values:
   *         @arg @ref LL_DMA_STREAM_0
@@ -1287,7 +1287,7 @@ __STATIC_INLINE void LL_DMA_DisableFifoMode(DMA_TypeDef *DMAx, uint32_t Stream)
 
 /**
   * @brief Enable Fifo mode.
-  * @rmtoll FCR          DMDIS          LL_DMA_EnableFifoMode 
+  * @rmtoll FCR          DMDIS          LL_DMA_EnableFifoMode
   * @param  DMAx DMAx Instance
   * @param  Stream This parameter can be one of the following values:
   *         @arg @ref LL_DMA_STREAM_0
@@ -1386,7 +1386,7 @@ __STATIC_INLINE void LL_DMA_ConfigFifo(DMA_TypeDef *DMAx, uint32_t Stream, uint3
 /**
   * @brief Configure the Source and Destination addresses.
   * @note   This API must not be called when the DMA stream is enabled.
-  * @rmtoll M0AR        M0A         LL_DMA_ConfigAddresses\n 
+  * @rmtoll M0AR        M0A         LL_DMA_ConfigAddresses\n
   *         PAR         PA          LL_DMA_ConfigAddresses
   * @param  DMAx DMAx Instance
   * @param  Stream This parameter can be one of the following values:
@@ -1733,7 +1733,7 @@ __STATIC_INLINE uint32_t LL_DMA_IsActiveFlag_HT6(DMA_TypeDef *DMAx)
 __STATIC_INLINE uint32_t LL_DMA_IsActiveFlag_HT7(DMA_TypeDef *DMAx)
 {
   return (READ_BIT(DMAx->HISR ,DMA_HISR_HTIF7)==(DMA_HISR_HTIF7));
-} 
+}
 
 /**
   * @brief Get Stream 0 transfer complete flag.
@@ -1821,7 +1821,7 @@ __STATIC_INLINE uint32_t LL_DMA_IsActiveFlag_TC6(DMA_TypeDef *DMAx)
 __STATIC_INLINE uint32_t LL_DMA_IsActiveFlag_TC7(DMA_TypeDef *DMAx)
 {
   return (READ_BIT(DMAx->HISR ,DMA_HISR_TCIF7)==(DMA_HISR_TCIF7));
-} 
+}
 
 /**
   * @brief Get Stream 0 transfer error flag.
@@ -1909,7 +1909,7 @@ __STATIC_INLINE uint32_t LL_DMA_IsActiveFlag_TE6(DMA_TypeDef *DMAx)
 __STATIC_INLINE uint32_t LL_DMA_IsActiveFlag_TE7(DMA_TypeDef *DMAx)
 {
   return (READ_BIT(DMAx->HISR ,DMA_HISR_TEIF7)==(DMA_HISR_TEIF7));
-} 
+}
 
 /**
   * @brief Get Stream 0 direct mode error flag.

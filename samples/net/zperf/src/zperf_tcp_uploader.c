@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define LOG_MODULE_NAME net_zperf_tcp_send
+#define NET_LOG_LEVEL LOG_LEVEL_DBG
+
 #include <zephyr.h>
 
 #include <errno.h>
@@ -42,7 +45,7 @@ void zperf_tcp_upload(struct net_context *ctx,
 	last_loop_time = start_time;
 	printk(TAG "New session started\n");
 
-	memset(sample_packet, 'z', sizeof(sample_packet));
+	(void)memset(sample_packet, 'z', sizeof(sample_packet));
 
 	do {
 		int ret = 0;

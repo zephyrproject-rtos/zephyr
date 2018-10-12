@@ -9,8 +9,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _MISC_STACK_H_
-#define _MISC_STACK_H_
+#ifndef ZEPHYR_INCLUDE_MISC_STACK_H_
+#define ZEPHYR_INCLUDE_MISC_STACK_H_
 
 #include <misc/printk.h>
 
@@ -94,4 +94,4 @@ static inline void stack_analyze(const char *name, const char *stack,
 	stack_analyze(name, K_THREAD_STACK_BUFFER(sym), \
 		      K_THREAD_STACK_SIZEOF(sym))
 
-#endif /* _MISC_STACK_H_ */
+#endif /* ZEPHYR_INCLUDE_MISC_STACK_H_ */

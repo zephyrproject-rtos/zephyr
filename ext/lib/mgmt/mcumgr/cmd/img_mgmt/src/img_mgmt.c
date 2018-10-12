@@ -232,6 +232,11 @@ img_mgmt_erase(struct mgmt_ctxt *ctxt)
     CborError err;
     int rc;
 
+    if (img_mgmt_slot_in_use(1)) {
+        /* No free slot. */
+        return MGMT_ERR_EBADSTATE;
+    }
+
     rc = img_mgmt_impl_erase_slot();
 
     err = 0;

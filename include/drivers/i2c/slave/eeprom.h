@@ -9,8 +9,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef I2C_EEPROM_SLAVE_H
-#define I2C_EEPROM_SLAVE_H
+#ifndef ZEPHYR_INCLUDE_DRIVERS_I2C_SLAVE_EEPROM_H_
+#define ZEPHYR_INCLUDE_DRIVERS_I2C_SLAVE_EEPROM_H_
 
 /**
  * @brief I2C EEPROM Slave Driver API
@@ -49,4 +49,4 @@ int eeprom_slave_read(struct device *dev, u8_t *eeprom_data,
  * @}
  */
 
-#endif /* I2C_EEPROM_SLAVE_H */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_I2C_SLAVE_EEPROM_H_ */

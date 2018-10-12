@@ -4,11 +4,5 @@ sample:
 tests:
   test:
     harness: net
-    platform_whitelist: quark_se_c1000_devboard galileo
-      frdm_k64f
-    tags: net
-  test_bt:
-    harness: net
-    extra_args: CONF_FILE="prj_bt.conf"
-    platform_whitelist: qemu_x86
-    tags: net bluetooth
+    platform_whitelist: qemu_x86 native_posix
+    tags: net coap

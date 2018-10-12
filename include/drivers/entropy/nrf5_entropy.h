@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _NRF5_ENTROPY_H_
-#define _NRF5_ENTROPY_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_ENTROPY_NRF5_ENTROPY_H_
+#define ZEPHYR_INCLUDE_DRIVERS_ENTROPY_NRF5_ENTROPY_H_
 
 /**
  * @brief Fills a buffer with entropy in a non-blocking manner.
@@ -18,4 +18,4 @@
  */
 u8_t entropy_nrf_get_entropy_isr(struct device *dev, u8_t *buf, u8_t len);
 
-#endif /* _NRF5_ENTROPY_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_ENTROPY_NRF5_ENTROPY_H_ */

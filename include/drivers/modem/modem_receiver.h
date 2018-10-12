@@ -11,8 +11,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _MODEM_RECEIVER_H_
-#define _MODEM_RECEIVER_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_MODEM_MODEM_RECEIVER_H_
+#define ZEPHYR_INCLUDE_DRIVERS_MODEM_MODEM_RECEIVER_H_
 
 #include <stdlib.h>
 #include <kernel.h>
@@ -52,4 +52,4 @@ int mdm_receiver_register(struct mdm_receiver_context *ctx,
 }
 #endif
 
-#endif /* _MODEM_RECEIVER_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_MODEM_MODEM_RECEIVER_H_ */

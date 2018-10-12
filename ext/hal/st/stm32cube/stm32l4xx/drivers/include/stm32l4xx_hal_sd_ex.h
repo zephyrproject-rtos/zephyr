@@ -31,7 +31,7 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-  */ 
+  */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef STM32L4xx_HAL_SD_EX_H
@@ -61,7 +61,7 @@
 
 /** @defgroup SDEx_Exported_Types_Group1 SD Card Internal DMA Buffer structure
   * @{
-  */ 
+  */
 typedef enum
 {
   SD_DMA_BUFFER0      = 0x00U,    /*!< selects SD internal DMA Buffer 0     */
@@ -70,20 +70,20 @@ typedef enum
 }HAL_SDEx_DMABuffer_MemoryTypeDef;
 
 
-/** 
+/**
   * @}
   */
-  
-/** 
+
+/**
   * @}
-  */  
+  */
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions --------------------------------------------------------*/
 /** @defgroup SDEx_Exported_Functions SDEx Exported Functions
   * @{
   */
-  
+
 /** @defgroup SDEx_Exported_Functions_Group1 HighSpeed functions
   * @{
   */
@@ -111,11 +111,11 @@ void HAL_SDEx_Write_DMADoubleBuffer1CpltCallback(SD_HandleTypeDef *hsd);
 /**
   * @}
   */
-  
+
 /**
   * @}
   */
-  
+
 /* Private types -------------------------------------------------------------*/
 /* Private defines -----------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -123,7 +123,7 @@ void HAL_SDEx_Write_DMADoubleBuffer1CpltCallback(SD_HandleTypeDef *hsd);
 /* Private macros ------------------------------------------------------------*/
 /* Private functions prototypes ----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
-  
+
 /**
   * @}
   */
@@ -139,6 +139,6 @@ void HAL_SDEx_Write_DMADoubleBuffer1CpltCallback(SD_HandleTypeDef *hsd);
 #endif
 
 
-#endif /* STM32L4xx_HAL_SDEx_H */ 
+#endif /* STM32L4xx_HAL_SDEx_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

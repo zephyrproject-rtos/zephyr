@@ -1,0 +1,59 @@
+/*
+ * Copyright (c) 2017 Christian Taedcke
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/efm32hg322f64.dtsi>
+
+/ {
+	model = "Silicon Labs EFM32HG SLSTK3400A board";
+	compatible = "silabs,efm32hg_slstk3400a", "silabs,efm32hg";
+
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		sw0 = &button0;
+		sw1 = &button1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpiof 4 0>;
+			label = "LED 0";
+		};
+		led1: led_1 {
+			gpios = <&gpiof 5 0>;
+			label = "LED 1";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			/* gpio flags need validation */
+			gpios = <&gpioc 9 GPIO_INT_ACTIVE_LOW>;
+			label = "User Push Button 0";
+		};
+		button1: button_1 {
+			/* gpio flags need validation */
+			gpios = <&gpioc 10 GPIO_INT_ACTIVE_LOW>;
+			label = "User Push Button 1";
+		};
+	};
+
+};
+
+&uart1 {
+	current-speed = <115200>;
+	status = "ok";
+};

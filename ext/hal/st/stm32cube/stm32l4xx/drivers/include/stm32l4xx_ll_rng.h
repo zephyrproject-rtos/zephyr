@@ -64,7 +64,7 @@ extern "C" {
 /** @defgroup RNG_LL_ES_Init_Struct RNG Exported Init structures
   * @{
   */
-  
+
 
 #if defined(RNG_CR_CED)
 /**
@@ -74,7 +74,7 @@ typedef struct
 {
   uint32_t         ClockErrorDetection; /*!< Clock error detection.
                                       This parameter can be one value of @ref RNG_LL_CED.
-                                      
+
                                       This parameter can be modified using unitary functions @ref LL_RNG_EnableClkErrorDetect(). */
 }LL_RNG_InitTypeDef;
 #endif /* defined(RNG_CR_CED) */
@@ -83,12 +83,12 @@ typedef struct
   * @}
   */
 #endif /* USE_FULL_LL_DRIVER */
-  
+
 /* Exported constants --------------------------------------------------------*/
 /** @defgroup RNG_LL_Exported_Constants RNG Exported Constants
   * @{
   */
-  
+
 #if defined(RNG_CR_CED)
 /** @defgroup RNG_LL_CED Clock Error Detection
   * @{
@@ -100,7 +100,7 @@ typedef struct
   */
 #endif /* defined(RNG_CR_CED) */
 
-  
+
 /** @defgroup RNG_LL_EC_GET_FLAG Get Flags Defines
   * @brief    Flags defines which can be used with LL_RNG_ReadReg function
   * @{

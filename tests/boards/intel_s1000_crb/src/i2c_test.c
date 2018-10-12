@@ -7,14 +7,14 @@
 /**
  * @file
  *
- * @brief Sample app to illustrate i2c master-slave communication on Intel_S1000.
+ * @brief Sample app to illustrate i2c master-slave communication on Intel S1000 CRB.
  *
- * Intel_S1000 - Xtensa
- * --------------------
+ * Intel S1000 CRB
+ * ---------------
  *
  * The i2c_dw driver is being used.
  *
- * In this sample app, the Intel_S1000 master I2C communicates with 2 slave
+ * In this sample app, the Intel S1000 CRB master I2C communicates with 2 slave
  * LED I2C matrices driving them to emit blue light and red light alternately.
  * While this validates the write functionality, the read functionality is
  * verified by reading the LED0 values after each write. It would display

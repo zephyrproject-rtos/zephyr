@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef DRIVERS_FLASH_STM32_H
-#define DRIVERS_FLASH_STM32_H
+#ifndef ZEPHYR_DRIVERS_FLASH_FLASH_STM32_H_
+#define ZEPHYR_DRIVERS_FLASH_FLASH_STM32_H_
 
 #include <flash_registers.h>
 
@@ -63,4 +63,4 @@ void flash_stm32_page_layout(struct device *dev,
 			     size_t *layout_size);
 #endif
 
-#endif /* DRIVERS_FLASH_STM32_H */
+#endif /* ZEPHYR_DRIVERS_FLASH_FLASH_STM32_H_ */

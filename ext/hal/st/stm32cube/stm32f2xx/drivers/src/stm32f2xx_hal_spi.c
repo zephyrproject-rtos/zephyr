@@ -566,7 +566,7 @@ HAL_StatusTypeDef HAL_SPI_Transmit(SPI_HandleTypeDef *hspi, uint8_t *pData, uint
     errorcode = HAL_TIMEOUT;
     goto error;
   }
-  
+
   /* Check Busy flag */
   if(SPI_CheckFlag_BSY(hspi, Timeout, tickstart) != HAL_OK)
   {
@@ -824,10 +824,10 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive(SPI_HandleTypeDef *hspi, uint8_t *pTxD
 
   /* Init tickstart for timeout management*/
   tickstart = HAL_GetTick();
-  
+
   tmp  = hspi->State;
   tmp1 = hspi->Init.Mode;
-  
+
   if(!((tmp == HAL_SPI_STATE_READY) || \
     ((tmp1 == SPI_MODE_MASTER) && (hspi->Init.Direction == SPI_DIRECTION_2LINES) && (tmp == HAL_SPI_STATE_BUSY_RX))))
   {
@@ -892,7 +892,7 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive(SPI_HandleTypeDef *hspi, uint8_t *pTxD
         hspi->Instance->DR = *((uint16_t *)pTxData);
         pTxData += sizeof(uint16_t);
         hspi->TxXferCount--;
-        /* Next Data is a reception (Rx). Tx not allowed */ 
+        /* Next Data is a reception (Rx). Tx not allowed */
         txallowed = 0U;
 
 #if (USE_SPI_CRC != 0U)
@@ -910,7 +910,7 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive(SPI_HandleTypeDef *hspi, uint8_t *pTxD
         *((uint16_t *)pRxData) = hspi->Instance->DR;
         pRxData += sizeof(uint16_t);
         hspi->RxXferCount--;
-        /* Next Data is a Transmission (Tx). Tx is allowed */ 
+        /* Next Data is a Transmission (Tx). Tx is allowed */
         txallowed = 1U;
       }
       if((Timeout != HAL_MAX_DELAY) && ((HAL_GetTick()-tickstart) >=  Timeout))
@@ -936,7 +936,7 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive(SPI_HandleTypeDef *hspi, uint8_t *pTxD
       {
         *(__IO uint8_t *)&hspi->Instance->DR = (*pTxData++);
         hspi->TxXferCount--;
-        /* Next Data is a reception (Rx). Tx not allowed */ 
+        /* Next Data is a reception (Rx). Tx not allowed */
         txallowed = 0U;
 
 #if (USE_SPI_CRC != 0U)
@@ -953,7 +953,7 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive(SPI_HandleTypeDef *hspi, uint8_t *pTxD
       {
         (*(uint8_t *)pRxData++) = hspi->Instance->DR;
         hspi->RxXferCount--;
-        /* Next Data is a Transmission (Tx). Tx is allowed */ 
+        /* Next Data is a Transmission (Tx). Tx is allowed */
         txallowed = 1U;
       }
       if((Timeout != HAL_MAX_DELAY) && ((HAL_GetTick()-tickstart) >=  Timeout))
@@ -999,7 +999,7 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive(SPI_HandleTypeDef *hspi, uint8_t *pTxD
     errorcode = HAL_TIMEOUT;
     goto error;
   }
-  
+
   /* Check Busy flag */
   if(SPI_CheckFlag_BSY(hspi, Timeout, tickstart) != HAL_OK)
   {
@@ -1013,7 +1013,7 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive(SPI_HandleTypeDef *hspi, uint8_t *pTxD
   {
     __HAL_SPI_CLEAR_OVRFLAG(hspi);
   }
-  
+
 error :
   hspi->State = HAL_SPI_STATE_READY;
   __HAL_UNLOCK(hspi);
@@ -1223,7 +1223,7 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive_IT(SPI_HandleTypeDef *hspi, uint8_t *p
 
   tmp  = hspi->State;
   tmp1 = hspi->Init.Mode;
-  
+
   if(!((tmp == HAL_SPI_STATE_READY) || \
     ((tmp1 == SPI_MODE_MASTER) && (hspi->Init.Direction == SPI_DIRECTION_2LINES) && (tmp == HAL_SPI_STATE_BUSY_RX))))
   {
@@ -2571,7 +2571,7 @@ static void SPI_CloseRxTx_ISR(SPI_HandleTypeDef *hspi)
     }
   }
   while((hspi->Instance->SR & SPI_FLAG_TXE) == RESET);
-  
+
   /* Check the end of the transaction */
   if(SPI_CheckFlag_BSY(hspi, SPI_DEFAULT_TIMEOUT, tickstart)!=HAL_OK)
   {

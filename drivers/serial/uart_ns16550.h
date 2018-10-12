@@ -8,9 +8,9 @@
  * @file Header file for the NS16550 UART
  */
 
-#ifndef _UART_NS16550_H_
-#define _UART_NS16550_H_
+#ifndef ZEPHYR_DRIVERS_SERIAL_UART_NS16550_H_
+#define ZEPHYR_DRIVERS_SERIAL_UART_NS16550_H_
 
 #define CMD_SET_DLF	0x01
 
-#endif /* _UART_NS16550_H_ */
+#endif /* ZEPHYR_DRIVERS_SERIAL_UART_NS16550_H_ */

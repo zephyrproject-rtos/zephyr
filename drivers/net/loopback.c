@@ -11,11 +11,11 @@
  * Network loopback interface implementation.
  */
 
-#define SYS_LOG_DOMAIN "netlo"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_NET_LOOPBACK_LEVEL
-#include <logging/sys_log.h>
+#define LOG_MODULE_NAME netlo
+#define LOG_LEVEL CONFIG_NET_LOOPBACK_LOG_LEVEL
 
-#include <misc/printk.h>
+#include <logging/log.h>
+LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <net/net_pkt.h>
 #include <net/buf.h>
@@ -40,7 +40,7 @@ static int loopback_send(struct net_if *iface, struct net_pkt *pkt)
 	int res;
 
 	if (!pkt->frags) {
-		SYS_LOG_ERR("No data to send");
+		LOG_ERR("No data to send");
 		return -ENODATA;
 	}
 
@@ -77,7 +77,7 @@ static int loopback_send(struct net_if *iface, struct net_pkt *pkt)
 
 	res = net_recv_data(iface, cloned);
 	if (res < 0) {
-		SYS_LOG_ERR("Data receive failed.");
+		LOG_ERR("Data receive failed.");
 		goto out;
 	}
 

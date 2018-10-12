@@ -48,7 +48,7 @@ osTimerId osTimerCreate(const osTimerDef_t *timer_def, os_timer_type type,
 	}
 
 	if (k_mem_slab_alloc(&cmsis_timer_slab, (void **)&timer, 100) == 0) {
-		memset(timer, 0, sizeof(struct timer_obj));
+		(void)memset(timer, 0, sizeof(struct timer_obj));
 	} else {
 		return NULL;
 	}

@@ -16,6 +16,7 @@
 #include <ztest.h>
 #include <kernel_structs.h>
 #include <kernel.h>
+#include <string.h>
 
 extern void test_threads_spawn_params(void);
 extern void test_threads_spawn_priority(void);
@@ -39,7 +40,9 @@ K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 
 /*local variables*/
 static K_THREAD_STACK_DEFINE(tstack_custom, STACK_SIZE);
+static K_THREAD_STACK_DEFINE(tstack_name, STACK_SIZE);
 __kernel static struct k_thread tdata_custom;
+__kernel static struct k_thread tdata_name;
 
 static int main_prio;
 
@@ -62,6 +65,10 @@ void test_systhreads_idle(void)
 	/** TESTPOINT: check working thread priority should */
 	zassert_true(k_thread_priority_get(k_current_get()) <
 		     K_IDLE_PRIO, NULL);
+}
+
+static void thread_name_entry(void)
+{
 }
 
 static void customdata_entry(void *p1, void *p2, void *p3)
@@ -92,6 +99,35 @@ void test_customdata_get_set_coop(void)
 				      K_PRIO_COOP(1), 0, 0);
 
 	k_sleep(500);
+
+	/* cleanup environment */
+	k_thread_abort(tid);
+}
+
+
+/**
+ * @ingroup kernel_thread_tests
+ * @brief test thread name get/set from preempt thread
+ * @see k_thread_name_get(), k_thread_name_set()
+ */
+void test_thread_name_get_set(void)
+{
+	int ret;
+	const char *thread_name;
+
+	k_tid_t tid = k_thread_create(&tdata_name, tstack_name, STACK_SIZE,
+				      (k_thread_entry_t)thread_name_entry,
+				      NULL, NULL, NULL,
+				      K_PRIO_COOP(1), 0, 0);
+
+	k_thread_name_set(tid, "customdata");
+
+	k_sleep(500);
+
+	thread_name = k_thread_name_get(tid);
+
+	ret = strcmp(thread_name, "customdata");
+	zassert_equal(ret, 0, "thread name does not match");
 
 	/* cleanup environment */
 	k_thread_abort(tid);
@@ -153,6 +189,7 @@ void test_user_mode(void)
 }
 #endif
 
+
 void test_main(void)
 {
 	k_thread_access_grant(k_current_get(), &tdata, tstack, NULL);
@@ -179,6 +216,7 @@ void test_main(void)
 			 ztest_unit_test(test_customdata_get_set_coop),
 			 ztest_user_unit_test(test_customdata_get_set_preempt),
 			 ztest_unit_test(test_k_thread_foreach),
+			 ztest_unit_test(test_thread_name_get_set),
 			 ztest_unit_test(test_user_mode)
 			 );
 

@@ -10,10 +10,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define LOG_MODULE_NAME net_shell
+
 #include <zephyr.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <shell/shell.h>
+#include <shell/legacy_shell.h>
 
 #include <net/net_if.h>
 #include <net/dns_resolve.h>
@@ -68,12 +70,6 @@
 
 #include "net_shell.h"
 #include "net_stats.h"
-
-/*
- * Set NET_LOG_ENABLED in order to activate address printing functions
- * in net_private.h
- */
-#define NET_LOG_ENABLED 1
 #include "net_private.h"
 
 #define NET_SHELL_MODULE "net"
@@ -880,7 +876,7 @@ static void context_cb(struct net_context *context, void *user_data)
 	(*count)++;
 }
 
-#if defined(CONFIG_NET_DEBUG_CONN)
+#if CONFIG_NET_CONN_LOG_LEVEL >= LOG_LEVEL_DBG
 static void conn_handler_cb(struct net_conn *conn, void *user_data)
 {
 #if defined(CONFIG_NET_IPV6) && !defined(CONFIG_NET_IPV4)
@@ -933,7 +929,7 @@ static void conn_handler_cb(struct net_conn *conn, void *user_data)
 
 	(*count)++;
 }
-#endif /* CONFIG_NET_DEBUG_CONN */
+#endif /* CONFIG_NET_CONN_LOG_LEVEL >= LOG_LEVEL_DBG */
 
 #if defined(CONFIG_NET_TCP)
 static void tcp_cb(struct net_tcp *tcp, void *user_data)
@@ -951,7 +947,7 @@ static void tcp_cb(struct net_tcp *tcp, void *user_data)
 	(*count)++;
 }
 
-#if defined(CONFIG_NET_DEBUG_TCP)
+#if CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG
 static void tcp_sent_list_cb(struct net_tcp *tcp, void *user_data)
 {
 	int *printed = user_data;
@@ -1000,7 +996,7 @@ static void tcp_sent_list_cb(struct net_tcp *tcp, void *user_data)
 
 	*printed = true;
 }
-#endif /* CONFIG_NET_DEBUG_TCP */
+#endif /* CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG */
 #endif
 
 #if defined(CONFIG_NET_IPV6_FRAGMENT)
@@ -1044,7 +1040,7 @@ static void ipv6_frag_cb(struct net_ipv6_reassembly *reass,
 }
 #endif /* CONFIG_NET_IPV6_FRAGMENT */
 
-#if defined(CONFIG_NET_DEBUG_NET_PKT)
+#if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
 static void allocs_cb(struct net_pkt *pkt,
 		      struct net_buf *buf,
 		      const char *func_alloc,
@@ -1098,7 +1094,7 @@ buf:
 		}
 	}
 }
-#endif /* CONFIG_NET_DEBUG_NET_PKT */
+#endif /* CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG */
 
 /* Put the actual shell commands after this */
 
@@ -1107,18 +1103,18 @@ int net_shell_cmd_allocs(int argc, char *argv[])
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-#if defined(CONFIG_NET_DEBUG_NET_PKT)
+#if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
 	printk("Network memory allocations\n\n");
 	printk("memory\t\tStatus\tPool\tFunction alloc -> freed\n");
 	net_pkt_allocs_foreach(allocs_cb, NULL);
 #else
-	printk("Enable CONFIG_NET_DEBUG_NET_PKT to see allocations.\n");
-#endif /* CONFIG_NET_DEBUG_NET_PKT */
+	printk("Set CONFIG_NET_PKT_LOG_LEVEL_DBG=y to see allocations.\n");
+#endif /* CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG */
 
 	return 0;
 }
 
-#if defined(CONFIG_NET_DEBUG_APP) && \
+#if (CONFIG_NET_APP_LOG_LEVEL >= LOG_LEVEL_DBG) && \
 	(defined(CONFIG_NET_APP_SERVER) || defined(CONFIG_NET_APP_CLIENT))
 
 #if defined(CONFIG_NET_APP_TLS) || defined(CONFIG_NET_APP_DTLS)
@@ -1314,8 +1310,6 @@ static void net_app_cb(struct net_app_ctx *ctx, void *user_data)
 
 	return;
 }
-#elif defined(CONFIG_NET_DEBUG_APP)
-static void net_app_cb(struct net_app_ctx *ctx, void *user_data) {}
 #endif
 
 int net_shell_cmd_app(int argc, char *argv[])
@@ -1323,7 +1317,7 @@ int net_shell_cmd_app(int argc, char *argv[])
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-#if defined(CONFIG_NET_DEBUG_APP)
+#if CONFIG_NET_APP_LOG_LEVEL >= LOG_LEVEL_DBG
 	int i = 0;
 
 	if (IS_ENABLED(CONFIG_NET_APP_SERVER)) {
@@ -1348,7 +1342,7 @@ int net_shell_cmd_app(int argc, char *argv[])
 		}
 	}
 #else
-	printk("Enable CONFIG_NET_DEBUG_APP and either CONFIG_NET_APP_CLIENT "
+	printk("Enable CONFIG_NET_APP_LOG_LEVEL_DBG and either CONFIG_NET_APP_CLIENT "
 	       "or CONFIG_NET_APP_SERVER to see client/server instance "
 	       "information.\n");
 #endif
@@ -1421,7 +1415,7 @@ int net_shell_cmd_conn(int argc, char *argv[])
 		printk("No connections\n");
 	}
 
-#if defined(CONFIG_NET_DEBUG_CONN)
+#if CONFIG_NET_CONN_LOG_LEVEL >= LOG_LEVEL_DBG
 	printk("\n     Handler    Callback  \tProto\t"
 	       "Local           \tRemote\n");
 
@@ -1445,16 +1439,16 @@ int net_shell_cmd_conn(int argc, char *argv[])
 	if (count == 0) {
 		printk("No TCP connections\n");
 	} else {
-#if defined(CONFIG_NET_DEBUG_TCP)
+#if CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG
 		/* Print information about pending packets */
 		count = 0;
 		net_tcp_foreach(tcp_sent_list_cb, &count);
-#endif /* CONFIG_NET_DEBUG_TCP */
+#endif /* CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG */
 	}
 
-#if !defined(CONFIG_NET_DEBUG_TCP)
-	printk("\nEnable CONFIG_NET_DEBUG_TCP for additional info\n");
-#endif /* CONFIG_NET_DEBUG_TCP */
+#if CONFIG_NET_TCP_LOG_LEVEL < LOG_LEVEL_DBG
+	printk("\nSet CONFIG_NET_TCP_LOG_LEVEL_DBG=y for additional info\n");
+#endif /* CONFIG_NET_TCP_LOG_LEVEL < LOG_LEVEL_DBG */
 
 #endif
 
@@ -2078,9 +2072,6 @@ static void gptp_print_port_info(int port)
 	       port_state->pss_send.last_follow_up_correction_field);
 	printk("\tUpstream Tx Time of the last recv PortSyncSync   "
 	       ": %llu\n", port_state->pss_send.last_upstream_tx_time);
-	printk("\tSync Receipt Timeout Time of last recv PSS       "
-	       ": %llu\n",
-	       port_state->pss_send.last_sync_receipt_timeout_time);
 	printf("\tRate Ratio of the last received PortSyncSync     "
 	       ": %f\n",
 	       port_state->pss_send.last_rate_ratio);
@@ -2244,7 +2235,7 @@ static char *http_str_output(char *output, int outlen, const char *str, int len)
 	}
 
 	if (len == 0) {
-		memset(output, 0, outlen);
+		(void)memset(output, 0, outlen);
 	} else {
 		memcpy(output, str, len);
 		output[len] = '\0';
@@ -2568,6 +2559,26 @@ static bool slab_pool_found_already(struct ctx_info *info,
 }
 #endif
 
+#if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
+static s16_t get_frees(struct net_buf_pool *pool)
+{
+#if defined(CONFIG_NET_BUF_POOL_USAGE)
+	return pool->avail_count;
+#else
+	return 0;
+#endif
+}
+
+static const char *get_name(struct net_buf_pool *pool)
+{
+#if defined(CONFIG_NET_BUF_POOL_USAGE)
+	return pool->name;
+#else
+	return "?";
+#endif
+}
+#endif /* CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG */
+
 static void context_info(struct net_context *context, void *user_data)
 {
 #if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
@@ -2586,7 +2597,7 @@ static void context_info(struct net_context *context, void *user_data)
 			return;
 		}
 
-#if defined(CONFIG_NET_DEBUG_NET_PKT)
+#if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
 		printk("%p\t%u\t%u\tETX\n",
 		       slab, slab->num_blocks, k_mem_slab_num_free_get(slab));
 #else
@@ -2603,10 +2614,10 @@ static void context_info(struct net_context *context, void *user_data)
 			return;
 		}
 
-#if defined(CONFIG_NET_DEBUG_NET_PKT)
+#if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
 		printk("%p\t%d\t%d\tEDATA (%s)\n",
 		       pool, pool->buf_count,
-		       pool->avail_count, pool->name);
+		       get_frees(pool), get_name(pool));
 #else
 		printk("%p\t%d\tEDATA\n", pool, pool->buf_count);
 #endif
@@ -2661,7 +2672,7 @@ int net_shell_cmd_mem(int argc, char *argv[])
 	if (IS_ENABLED(CONFIG_NET_CONTEXT_NET_PKT_POOL)) {
 		struct ctx_info info;
 
-		memset(&info, 0, sizeof(info));
+		(void)memset(&info, 0, sizeof(info));
 		net_context_foreach(context_info, &info);
 
 		if (!info.are_external_pools) {

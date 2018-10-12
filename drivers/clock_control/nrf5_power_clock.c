@@ -261,9 +261,9 @@ lf_already_started:
 #if defined(CONFIG_USB) && defined(CONFIG_SOC_NRF52840)
 static inline void power_event_cb(nrf_power_event_t event)
 {
-	extern void nrf5_usbd_power_event_callback(nrf_power_event_t event);
+	extern void usb_dc_nrfx_power_event_callback(nrf_power_event_t event);
 
-	nrf5_usbd_power_event_callback(event);
+	usb_dc_nrfx_power_event_callback(event);
 }
 #endif
 
@@ -414,9 +414,11 @@ DEVICE_AND_API_INIT(clock_nrf5_k32src,
 		    &_k32src_clock_control_api);
 
 #if defined(CONFIG_USB) && defined(CONFIG_SOC_NRF52840)
-static void power_int_enable(bool enable)
+
+void nrf5_power_usb_power_int_enable(bool enable)
 {
 	u32_t mask;
+
 
 	mask = NRF_POWER_INT_USBDETECTED_MASK |
 	       NRF_POWER_INT_USBREMOVED_MASK |
@@ -424,60 +426,10 @@ static void power_int_enable(bool enable)
 
 	if (enable) {
 		nrf_power_int_enable(mask);
+		irq_enable(POWER_CLOCK_IRQn);
 	} else {
 		nrf_power_int_disable(mask);
 	}
 }
 
-static bool usbregstatus_vbusdet_get(void)
-{
-	return nrf_power_usbregstatus_vbusdet_get();
-}
-
-static bool usbregstatus_outrdy_get(void)
-{
-	return nrf_power_usbregstatus_outrdy_get();
-}
-
-static const struct usbd_power_nrf5_api usbd_power_api = {
-	.usb_power_int_enable = power_int_enable,
-	.vbusdet_get = usbregstatus_vbusdet_get,
-	.outrdy_get = usbregstatus_outrdy_get,
-};
-
-static int usbd_power_init(struct device *dev)
-{
-	irq_enable(POWER_CLOCK_IRQn);
-
-	return 0;
-}
-
-void nrf5_power_usb_power_int_enable(struct device *dev, bool enable)
-{
-	const struct usbd_power_nrf5_api *api = dev->driver_api;
-
-	api->usb_power_int_enable(enable);
-}
-
-bool nrf5_power_clock_usb_vbusdet(struct device *dev)
-{
-	const struct usbd_power_nrf5_api *api = dev->driver_api;
-
-	return api->vbusdet_get();
-}
-
-bool nrf5_power_clock_usb_outrdy(struct device *dev)
-{
-	const struct usbd_power_nrf5_api *api = dev->driver_api;
-
-	return api->outrdy_get();
-}
-
-DEVICE_AND_API_INIT(usbd_power_nrf5,
-		    CONFIG_USBD_NRF5_NAME,
-		    usbd_power_init,
-		    NULL, NULL,
-		    PRE_KERNEL_2,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &usbd_power_api);
 #endif

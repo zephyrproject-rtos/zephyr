@@ -6,8 +6,8 @@
 
 /* this file is only meant to be included by kernel_structs.h */
 
-#ifndef _kernel_arch_func__h_
-#define _kernel_arch_func__h_
+#ifndef ZEPHYR_ARCH_XTENSA_INCLUDE_KERNEL_ARCH_FUNC_H_
+#define ZEPHYR_ARCH_XTENSA_INCLUDE_KERNEL_ARCH_FUNC_H_
 
 #ifndef _ASMLANGUAGE
 #include <string.h>
@@ -106,7 +106,7 @@ _set_thread_return_value(struct k_thread *thread, unsigned int value)
 }
 #endif
 
-extern void k_cpu_atomic_idle(unsigned int imask);
+extern void k_cpu_atomic_idle(unsigned int key);
 
 /*
  * Required by the core kernel even though we don't have to do anything on this
@@ -126,4 +126,4 @@ static inline void _IntLibInit(void)
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* _kernel_arch_func__h_ */
+#endif /* ZEPHYR_ARCH_XTENSA_INCLUDE_KERNEL_ARCH_FUNC_H_ */

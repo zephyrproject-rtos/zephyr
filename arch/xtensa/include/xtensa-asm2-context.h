@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef _XTENSA_ASM2_CONTEXT_H
-#define _XTENSA_ASM2_CONTEXT_H
+#ifndef ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_ASM2_CONTEXT_H_
+#define ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_ASM2_CONTEXT_H_
 
 #include <xtensa/corebits.h>
 #include <xtensa/config/core-isa.h>
@@ -79,4 +79,4 @@
 #define BSA_LEND_OFF	(BASE_SAVE_AREA_SIZE - 52)
 #define BSA_LCOUNT_OFF	(BASE_SAVE_AREA_SIZE - 56)
 
-#endif /* _XTENSA_ASM2_CONTEXT_H */
+#endif /* ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_ASM2_CONTEXT_H_ */

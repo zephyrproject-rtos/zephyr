@@ -8,14 +8,15 @@ dist: trusty
 
 env:
   global:
-    - ZEPHYR_GCC_VARIANT=zephyr
+    - ZEPHYR_TOOLCHAIN_VARIANT=zephyr
     - ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdk
     - ZEPHYR_BASE=$TRAVIS_BUILD_DIR/deps/zephyr
-    - ZEPHYR_SDK_VERSION=0.9.2
+    - ZEPHYR_SDK_VERSION=0.9.3
     - ZEPHYR_SDK_DOWNLOAD_FOLDER=https://github.com/zephyrproject-rtos/meta-zephyr-sdk/releases/download/$ZEPHYR_SDK_VERSION
     - ZEPHYR_SDK_SETUP_BINARY=zephyr-sdk-$ZEPHYR_SDK_VERSION-setup.run
     - ZEPHYR_SDK_DOWNLOAD_URL=$ZEPHYR_SDK_DOWNLOAD_FOLDER/$ZEPHYR_SDK_SETUP_BINARY
-    - FREERTOS_ZIP_URL=https://downloads.sourceforge.net/project/freertos/FreeRTOS/V10.0.1/FreeRTOSv10.0.1.zip
+    - FREERTOS_ZIP_URL=https://cfhcable.dl.sourceforge.net/project/freertos/FreeRTOS/V10.0.1/FreeRTOSv10.0.1.zip
+    - GCC_ARM_COMPILER_PACKAGE=gcc-arm-embedded_7-2018q2-1~trusty1_amd64.deb
 
 matrix:
   fast_finish: true
@@ -47,8 +48,8 @@ before_install:
     fi
 # This is to kick start CI on generic platform. Will need to have a proper way to get the required packages
   - if [[ "$TARGET" == "generic" || "$TARGET" == "freertos" ]]; then
-      wget http://ppa.launchpad.net/team-gcc-arm-embedded/ppa/ubuntu/pool/main/g/gcc-arm-none-eabi/gcc-arm-embedded_7-2017q4-1~trusty3_amd64.deb &&
-      sudo dpkg -i gcc-arm-embedded_7-2017q4-1~trusty3_amd64.deb;
+      wget http://ppa.launchpad.net/team-gcc-arm-embedded/ppa/ubuntu/pool/main/g/gcc-arm-none-eabi/${GCC_ARM_COMPILER_PACKAGE} &&
+      sudo dpkg -i ${GCC_ARM_COMPILER_PACKAGE};
     fi
   - if [[ "$TARGET" == "freertos" ]]; then
       wget $FREERTOS_ZIP_URL &&

@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2017 Florian Vaussard, HEIG-VD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/stm32-pinctrl.h>
+
+/ {
+	soc {
+		pinctrl: pin-controller@40020000 {
+			usart3_pins_a: usart3_a {
+				rx_tx {
+					rx = <STM32_PIN_PB11 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUSHPULL_PULLUP)>;
+					tx = <STM32_PIN_PB10 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUSHPULL_PULLUP)>;
+				};
+			};
+			usart3_pins_b: usart3_b {
+				rx_tx {
+					rx = <STM32_PIN_PD9 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUSHPULL_PULLUP)>;
+					tx = <STM32_PIN_PD8 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUSHPULL_PULLUP)>;
+				};
+			};
+		};
+	};
+};

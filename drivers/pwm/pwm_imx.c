@@ -9,8 +9,9 @@
 #include <soc.h>
 #include <device_imx.h>
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_PWM_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_PWM_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(pwm_imx);
 
 #define PWM_PWMSR_FIFOAV_4WORDS	0x4
 
@@ -63,12 +64,12 @@ static int imx_pwm_pin_set(struct device *dev, u32_t pwm,
 
 
 	if ((period_cycles == 0) || (pulse_cycles > period_cycles)) {
-		SYS_LOG_ERR("Invalid combination: period_cycles=%d, "
+		LOG_ERR("Invalid combination: period_cycles=%d, "
 			    "pulse_cycles=%d", period_cycles, pulse_cycles);
 		return -EINVAL;
 	}
 
-	SYS_LOG_DBG("enabled=%d, pulse_cycles=%d, period_cycles=%d,"
+	LOG_DBG("enabled=%d, pulse_cycles=%d, period_cycles=%d,"
 		    " duty_cycle=%d\n", enabled, pulse_cycles, period_cycles,
 		    (100 * pulse_cycles / period_cycles));
 
@@ -89,7 +90,7 @@ static int imx_pwm_pin_set(struct device *dev, u32_t pwm,
 
 			sr = PWM_PWMSR_REG(base);
 			if (fifoav == PWM_PWMSR_FIFOAV(sr)) {
-				SYS_LOG_WRN("there is no free FIFO slot\n");
+				LOG_WRN("there is no free FIFO slot\n");
 			}
 		}
 	} else {
@@ -101,7 +102,7 @@ static int imx_pwm_pin_set(struct device *dev, u32_t pwm,
 			 (++wait_count < CONFIG_PWM_PWMSWR_LOOP));
 
 		if (PWM_PWMCR_SWR(cr)) {
-			SYS_LOG_WRN("software reset timeout\n");
+			LOG_WRN("software reset timeout\n");
 		}
 
 	}
@@ -119,7 +120,7 @@ static int imx_pwm_pin_set(struct device *dev, u32_t pwm,
 	PWM_PWMSAR_REG(base) = pulse_cycles;
 
 	if (data->period_cycles != period_cycles) {
-		SYS_LOG_WRN("Changing period cycles from %d to %d in %s",
+		LOG_WRN("Changing period cycles from %d to %d in %s",
 			    data->period_cycles, period_cycles,
 			    dev->config->name);
 

@@ -34,24 +34,9 @@ config CDC_ACM_BULK_EP_MPS
 	help
 	  CDC ACM class bulk endpoints size
 
-config SYS_LOG_USB_CDC_ACM_LEVEL
-	int "USB CDC ACM device class driver log level"
-	depends on USB_CDC_ACM && SYS_LOG
-	default 0
-	help
-	  Sets log level for USB CDC ACM device class driver
-
-	  Levels are:
-
-	  - 0 OFF, do not write
-
-	  - 1 ERROR, only write SYS_LOG_ERR
-
-	  - 2 WARNING, write SYS_LOG_WRN in addition to previous level
-
-	  - 3 INFO, write SYS_LOG_INF in addition to previous levels
-
-	  - 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
+module = USB_CDC_ACM
+module-str = usb cdc acm
+source "subsys/logging/Kconfig.template.log_config"
 
 config USB_MASS_STORAGE
 	bool "USB Mass Storage Device Class Driver"
@@ -74,24 +59,9 @@ config MASS_STORAGE_BULK_EP_MPS
 	help
 	  Mass storage device class bulk endpoints size
 
-config SYS_LOG_USB_MASS_STORAGE_LEVEL
-	int "USB Mass Storage device class driver log level"
-	depends on USB_MASS_STORAGE && SYS_LOG
-	default 0
-	help
-	  Sets log level for USB Mass Storage device class driver
-
-	  Levels are:
-
-	  - 0 OFF, do not write
-
-	  - 1 ERROR, only write SYS_LOG_ERR
-
-	  - 2 WARNING, write SYS_LOG_WRN in addition to previous level
-
-	  - 3 INFO, write SYS_LOG_INF in addition to previous levels
-
-	  - 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
+module = USB_MASS_STORAGE
+module-str = usb mass storage
+source "subsys/logging/Kconfig.template.log_config"
 
 config USB_DEVICE_BLUETOOTH
 	bool "USB Bluetooth Device Class Driver"

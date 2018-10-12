@@ -8,10 +8,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_ARP)
-#define SYS_LOG_DOMAIN "net/arp"
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_arp
+#define NET_LOG_LEVEL CONFIG_NET_ARP_LOG_LEVEL
 
 #include <errno.h>
 #include <net/net_core.h>
@@ -47,8 +45,8 @@ static void arp_entry_cleanup(struct arp_entry *entry, bool pending)
 
 	entry->iface = NULL;
 
-	memset(&entry->ip, 0, sizeof(struct in_addr));
-	memset(&entry->eth, 0, sizeof(struct net_eth_addr));
+	(void)memset(&entry->ip, 0, sizeof(struct in_addr));
+	(void)memset(&entry->eth, 0, sizeof(struct net_eth_addr));
 }
 
 static struct arp_entry *arp_entry_find(sys_slist_t *list,
@@ -60,7 +58,7 @@ static struct arp_entry *arp_entry_find(sys_slist_t *list,
 
 	SYS_SLIST_FOR_EACH_CONTAINER(list, entry, node) {
 		NET_DBG("iface %p dst %s",
-			iface, net_sprint_ipv4_addr(&entry->ip));
+			iface, log_strdup(net_sprint_ipv4_addr(&entry->ip)));
 
 		if (entry->iface == iface &&
 		    net_ipv4_addr_cmp(&entry->ip, dst)) {
@@ -81,7 +79,7 @@ static inline struct arp_entry *arp_entry_find_move_first(struct net_if *iface,
 	sys_snode_t *prev = NULL;
 	struct arp_entry *entry;
 
-	NET_DBG("dst %s", net_sprint_ipv4_addr(dst));
+	NET_DBG("dst %s", log_strdup(net_sprint_ipv4_addr(dst)));
 
 	entry = arp_entry_find(&arp_table, iface, dst, &prev);
 	if (entry) {
@@ -103,7 +101,7 @@ static inline
 struct arp_entry *arp_entry_find_pending(struct net_if *iface,
 					 struct in_addr *dst)
 {
-	NET_DBG("dst %s", net_sprint_ipv4_addr(dst));
+	NET_DBG("dst %s", log_strdup(net_sprint_ipv4_addr(dst)));
 
 	return arp_entry_find(&arp_pending_entries, iface, dst, NULL);
 }
@@ -114,7 +112,7 @@ static struct arp_entry *arp_entry_get_pending(struct net_if *iface,
 	sys_snode_t *prev = NULL;
 	struct arp_entry *entry;
 
-	NET_DBG("dst %s", net_sprint_ipv4_addr(dst));
+	NET_DBG("dst %s", log_strdup(net_sprint_ipv4_addr(dst)));
 
 	entry = arp_entry_find(&arp_pending_entries, iface, dst, &prev);
 	if (entry) {
@@ -165,7 +163,7 @@ static struct arp_entry *arp_entry_get_last_from_table(void)
 
 static void arp_entry_register_pending(struct arp_entry *entry)
 {
-	NET_DBG("dst %s", net_sprint_ipv4_addr(&entry->ip));
+	NET_DBG("dst %s", log_strdup(net_sprint_ipv4_addr(&entry->ip)));
 
 	sys_slist_append(&arp_pending_entries, &entry->node);
 
@@ -310,7 +308,7 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 		       sizeof(struct net_eth_addr));
 	}
 
-	memset(&eth->dst.addr, 0xff, sizeof(struct net_eth_addr));
+	(void)memset(&eth->dst.addr, 0xff, sizeof(struct net_eth_addr));
 
 	hdr->hwtype = htons(NET_ARP_HTYPE_ETH);
 	hdr->protocol = htons(NET_ETH_PTYPE_IP);
@@ -318,7 +316,7 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 	hdr->protolen = sizeof(struct in_addr);
 	hdr->opcode = htons(NET_ARP_REQUEST);
 
-	memset(&hdr->dst_hwaddr.addr, 0x00, sizeof(struct net_eth_addr));
+	(void)memset(&hdr->dst_hwaddr.addr, 0x00, sizeof(struct net_eth_addr));
 
 	net_ipaddr_copy(&hdr->dst_ipaddr, next_addr);
 
@@ -334,7 +332,7 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 	if (my_addr) {
 		net_ipaddr_copy(&hdr->src_ipaddr, my_addr);
 	} else {
-		memset(&hdr->src_ipaddr, 0, sizeof(struct in_addr));
+		(void)memset(&hdr->src_ipaddr, 0, sizeof(struct in_addr));
 	}
 
 	return pkt;
@@ -435,8 +433,9 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 	ll = net_if_get_link_addr(entry->iface);
 
 	NET_DBG("ARP using ll %s for IP %s",
-		net_sprint_ll_addr(ll->addr, sizeof(struct net_eth_addr)),
-		net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src));
+		log_strdup(net_sprint_ll_addr(ll->addr,
+					      sizeof(struct net_eth_addr))),
+		log_strdup(net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src)));
 
 	net_eth_fill_header(ctx, pkt,
 			    current_ip == NULL ? htons(NET_ETH_PTYPE_IP) :
@@ -446,17 +445,43 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 	return pkt;
 }
 
-static inline void arp_update(struct net_if *iface,
-			      struct in_addr *src,
-			      struct net_eth_addr *hwaddr)
+static void arp_gratuitous(struct net_if *iface,
+			   struct in_addr *src,
+			   struct net_eth_addr *hwaddr)
+{
+	sys_snode_t *prev = NULL;
+	struct arp_entry *entry;
+
+	entry = arp_entry_find(&arp_table, iface, src, &prev);
+	if (entry) {
+		NET_DBG("Gratuitous ARP hwaddr %s -> %s",
+			log_strdup(net_sprint_ll_addr(
+					   (const u8_t *)&entry->eth,
+					   sizeof(struct net_eth_addr))),
+			log_strdup(net_sprint_ll_addr(
+					   (const u8_t *)hwaddr,
+					   sizeof(struct net_eth_addr))));
+
+		memcpy(&entry->eth, hwaddr, sizeof(struct net_eth_addr));
+	}
+}
+
+static void arp_update(struct net_if *iface,
+		       struct in_addr *src,
+		       struct net_eth_addr *hwaddr,
+		       bool gratuitous)
 {
 	struct arp_entry *entry;
 	struct net_pkt *pkt;
 
-	NET_DBG("src %s", net_sprint_ipv4_addr(src));
+	NET_DBG("src %s", log_strdup(net_sprint_ipv4_addr(src)));
 
 	entry = arp_entry_get_pending(iface, src);
 	if (!entry) {
+		if (IS_ENABLED(CONFIG_NET_ARP_GRATUITOUS) && gratuitous) {
+			arp_gratuitous(iface, src, hwaddr);
+		}
+
 		return;
 	}
 
@@ -466,7 +491,7 @@ static inline void arp_update(struct net_if *iface,
 		(u8_t *) &NET_ETH_HDR(entry->pending)->dst.addr;
 
 	NET_DBG("dst %s pending %p frag %p",
-		net_sprint_ipv4_addr(&entry->ip),
+		log_strdup(net_sprint_ipv4_addr(&entry->ip)),
 		entry->pending, entry->pending->frags);
 
 	pkt = entry->pending;
@@ -568,6 +593,28 @@ enum net_verdict net_arp_input(struct net_pkt *pkt)
 
 	switch (ntohs(arp_hdr->opcode)) {
 	case NET_ARP_REQUEST:
+		if (IS_ENABLED(CONFIG_NET_ARP_GRATUITOUS)) {
+			struct net_eth_hdr *eth_hdr = NET_ETH_HDR(pkt);
+
+			if (memcmp(&eth_hdr->dst,
+				   net_eth_broadcast_addr(),
+				   sizeof(struct net_eth_addr)) == 0 &&
+			    memcmp(&arp_hdr->dst_hwaddr,
+				   net_eth_broadcast_addr(),
+				   sizeof(struct net_eth_addr)) == 0 &&
+			    memcmp(&arp_hdr->dst_ipaddr, &arp_hdr->src_ipaddr,
+				   sizeof(struct in_addr)) == 0) {
+				/* If the IP address is in our cache,
+				 * then update it here.
+				 */
+				arp_update(net_pkt_iface(pkt),
+					   &arp_hdr->src_ipaddr,
+					   &arp_hdr->src_hwaddr,
+					   true);
+				break;
+			}
+		}
+
 		/* Someone wants to know our ll address */
 		addr = if_get_addr(net_pkt_iface(pkt), &arp_hdr->dst_ipaddr);
 		if (!addr) {
@@ -576,10 +623,12 @@ enum net_verdict net_arp_input(struct net_pkt *pkt)
 		}
 
 		NET_DBG("ARP request from %s [%s] for %s",
-			net_sprint_ipv4_addr(&arp_hdr->src_ipaddr),
-			net_sprint_ll_addr((u8_t *)&arp_hdr->src_hwaddr,
-						arp_hdr->hwlen),
-			net_sprint_ipv4_addr(&arp_hdr->dst_ipaddr));
+			log_strdup(net_sprint_ipv4_addr(&arp_hdr->src_ipaddr)),
+			log_strdup(net_sprint_ll_addr(
+					   (u8_t *)&arp_hdr->src_hwaddr,
+					   arp_hdr->hwlen)),
+			log_strdup(net_sprint_ipv4_addr(
+					   &arp_hdr->dst_ipaddr)));
 
 		/* Send reply */
 		reply = arp_prepare_reply(net_pkt_iface(pkt), pkt);
@@ -594,8 +643,10 @@ enum net_verdict net_arp_input(struct net_pkt *pkt)
 		if (net_is_my_ipv4_addr(&arp_hdr->dst_ipaddr)) {
 			arp_update(net_pkt_iface(pkt),
 				   &arp_hdr->src_ipaddr,
-				   &arp_hdr->src_hwaddr);
+				   &arp_hdr->src_hwaddr,
+				   false);
 		}
+
 		break;
 	}
 

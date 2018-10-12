@@ -2,7 +2,7 @@
   ******************************************************************************
   * @file    stm32f0xx_hal_irda.h
   * @author  MCD Application Team
-  * @brief   This file contains all the functions prototypes for the IRDA 
+  * @brief   This file contains all the functions prototypes for the IRDA
   *          firmware library.
   ******************************************************************************
   * @attention
@@ -42,7 +42,7 @@
  extern "C" {
 #endif
 
-#if !defined(STM32F030x6) && !defined(STM32F030x8) && !defined(STM32F070x6) && !defined(STM32F070xB) && !defined(STM32F030xC) 
+#if !defined(STM32F030x6) && !defined(STM32F030x8) && !defined(STM32F070x6) && !defined(STM32F070xB) && !defined(STM32F030xC)
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f0xx_hal_def.h"
@@ -93,10 +93,10 @@ typedef struct
 /**
   * @brief HAL IRDA State structures definition
   * @note  HAL IRDA State value is a combination of 2 different substates: gState and RxState.
-  *        - gState contains IRDA state information related to global Handle management 
+  *        - gState contains IRDA state information related to global Handle management
   *          and also information related to Tx operations.
   *          gState value coding follow below described bitmap :
-  *          b7-b6  Error information 
+  *          b7-b6  Error information
   *             00 : No Error
   *             01 : (Not Used)
   *             10 : Timeout
@@ -135,7 +135,7 @@ typedef enum
                                                    Value is allowed for gState and RxState */
   HAL_IRDA_STATE_READY             = 0x20U,   /*!< Peripheral Initialized and ready for use
                                                    Value is allowed for gState and RxState */
-  HAL_IRDA_STATE_BUSY              = 0x24U,   /*!< an internal process is ongoing 
+  HAL_IRDA_STATE_BUSY              = 0x24U,   /*!< an internal process is ongoing
                                                    Value is allowed for gState only */
   HAL_IRDA_STATE_BUSY_TX           = 0x21U,   /*!< Data Transmission process is ongoing
                                                    Value is allowed for gState only */
@@ -191,7 +191,7 @@ typedef struct
 
   HAL_LockTypeDef          Lock;             /*!< Locking object                     */
 
-  __IO HAL_IRDA_StateTypeDef    gState;      /*!< IRDA state information related to global Handle management 
+  __IO HAL_IRDA_StateTypeDef    gState;      /*!< IRDA state information related to global Handle management
                                                   and also related to Tx operations.
                                                   This parameter can be a value of @ref HAL_IRDA_StateTypeDef */
 
@@ -225,7 +225,7 @@ typedef enum
   * @{
   */
 
-/** @defgroup IRDA_Error IRDA Error 
+/** @defgroup IRDA_Error IRDA Error
   * @{
   */
 #define HAL_IRDA_ERROR_NONE      (0x00000000U)    /*!< No error            */
@@ -262,8 +262,8 @@ typedef enum
 /** @defgroup IRDA_Low_Power IRDA Low Power
   * @{
   */
-#define IRDA_POWERMODE_NORMAL               (0x00000000U)                /*!< IRDA normal power mode */ 
-#define IRDA_POWERMODE_LOWPOWER             ((uint32_t)USART_CR3_IRLP)   /*!< IRDA low power mode    */ 
+#define IRDA_POWERMODE_NORMAL               (0x00000000U)                /*!< IRDA normal power mode */
+#define IRDA_POWERMODE_LOWPOWER             ((uint32_t)USART_CR3_IRLP)   /*!< IRDA low power mode    */
 /**
   * @}
   */
@@ -271,8 +271,8 @@ typedef enum
 /** @defgroup IRDA_State IRDA State
   * @{
   */
-#define IRDA_STATE_DISABLE                  (0x00000000U)              /*!< IRDA disabled  */ 
-#define IRDA_STATE_ENABLE                   ((uint32_t)USART_CR1_UE)   /*!< IRDA enabled   */ 
+#define IRDA_STATE_DISABLE                  (0x00000000U)              /*!< IRDA disabled  */
+#define IRDA_STATE_ENABLE                   ((uint32_t)USART_CR1_UE)   /*!< IRDA enabled   */
 /**
   * @}
   */
@@ -298,8 +298,8 @@ typedef enum
 /** @defgroup IRDA_DMA_Tx IRDA DMA Tx
   * @{
   */
-#define IRDA_DMA_TX_DISABLE                 (0x00000000U)                /*!< IRDA DMA TX disabled */ 
-#define IRDA_DMA_TX_ENABLE                  ((uint32_t)USART_CR3_DMAT)   /*!< IRDA DMA TX enabled  */ 
+#define IRDA_DMA_TX_DISABLE                 (0x00000000U)                /*!< IRDA DMA TX disabled */
+#define IRDA_DMA_TX_ENABLE                  ((uint32_t)USART_CR3_DMAT)   /*!< IRDA DMA TX enabled  */
 /**
   * @}
   */
@@ -576,13 +576,13 @@ typedef enum
 #define __HAL_IRDA_SEND_REQ(__HANDLE__, __REQ__) ((__HANDLE__)->Instance->RQR |= (uint16_t)(__REQ__))
 
 /** @brief  Enable the IRDA one bit sample method.
-  * @param  __HANDLE__ specifies the IRDA Handle.  
+  * @param  __HANDLE__ specifies the IRDA Handle.
   * @retval None
   */
 #define __HAL_IRDA_ONE_BIT_SAMPLE_ENABLE(__HANDLE__) ((__HANDLE__)->Instance->CR3|= USART_CR3_ONEBIT)
 
 /** @brief  Disable the IRDA one bit sample method.
-  * @param  __HANDLE__ specifies the IRDA Handle.  
+  * @param  __HANDLE__ specifies the IRDA Handle.
   * @retval None
   */
 #define __HAL_IRDA_ONE_BIT_SAMPLE_DISABLE(__HANDLE__) ((__HANDLE__)->Instance->CR3 &= (uint32_t)~((uint32_t)USART_CR3_ONEBIT))
@@ -622,73 +622,73 @@ typedef enum
 
 /**
   * @brief Ensure that IRDA frame parity is valid.
-  * @param __PARITY__ IRDA frame parity. 
+  * @param __PARITY__ IRDA frame parity.
   * @retval SET (__PARITY__ is valid) or RESET (__PARITY__ is invalid)
-  */ 
+  */
 #define IS_IRDA_PARITY(__PARITY__) (((__PARITY__) == IRDA_PARITY_NONE) || \
                                     ((__PARITY__) == IRDA_PARITY_EVEN) || \
                                     ((__PARITY__) == IRDA_PARITY_ODD))
 
 /**
   * @brief Ensure that IRDA communication mode is valid.
-  * @param __MODE__ IRDA communication mode. 
+  * @param __MODE__ IRDA communication mode.
   * @retval SET (__MODE__ is valid) or RESET (__MODE__ is invalid)
-  */ 
+  */
 #define IS_IRDA_TX_RX_MODE(__MODE__) ((((__MODE__) & (~((uint32_t)(IRDA_MODE_TX_RX)))) == 0x00U) && ((__MODE__) != 0x00U))
 
 /**
   * @brief Ensure that IRDA power mode is valid.
-  * @param __MODE__ IRDA power mode. 
+  * @param __MODE__ IRDA power mode.
   * @retval SET (__MODE__ is valid) or RESET (__MODE__ is invalid)
-  */ 
+  */
 #define IS_IRDA_POWERMODE(__MODE__) (((__MODE__) == IRDA_POWERMODE_LOWPOWER) || \
                                      ((__MODE__) == IRDA_POWERMODE_NORMAL))
 
 /**
   * @brief Ensure that IRDA state is valid.
-  * @param __STATE__ IRDA state mode. 
+  * @param __STATE__ IRDA state mode.
   * @retval SET (__STATE__ is valid) or RESET (__STATE__ is invalid)
-  */ 
+  */
 #define IS_IRDA_STATE(__STATE__) (((__STATE__) == IRDA_STATE_DISABLE) || \
                                   ((__STATE__) == IRDA_STATE_ENABLE))
 
 /**
   * @brief Ensure that IRDA associated UART/USART mode is valid.
-  * @param __MODE__ IRDA associated UART/USART mode. 
+  * @param __MODE__ IRDA associated UART/USART mode.
   * @retval SET (__MODE__ is valid) or RESET (__MODE__ is invalid)
-  */ 
+  */
 #define IS_IRDA_MODE(__MODE__)  (((__MODE__) == IRDA_MODE_DISABLE) || \
                                  ((__MODE__) == IRDA_MODE_ENABLE))
 
 /**
   * @brief Ensure that IRDA sampling rate is valid.
-  * @param __ONEBIT__ IRDA sampling rate. 
+  * @param __ONEBIT__ IRDA sampling rate.
   * @retval SET (__ONEBIT__ is valid) or RESET (__ONEBIT__ is invalid)
-  */ 
+  */
 #define IS_IRDA_ONE_BIT_SAMPLE(__ONEBIT__)      (((__ONEBIT__) == IRDA_ONE_BIT_SAMPLE_DISABLE) || \
                                                  ((__ONEBIT__) == IRDA_ONE_BIT_SAMPLE_ENABLE))
 
 /**
   * @brief Ensure that IRDA DMA TX mode is valid.
-  * @param __DMATX__ IRDA DMA TX mode. 
+  * @param __DMATX__ IRDA DMA TX mode.
   * @retval SET (__DMATX__ is valid) or RESET (__DMATX__ is invalid)
-  */ 
+  */
 #define IS_IRDA_DMA_TX(__DMATX__)     (((__DMATX__) == IRDA_DMA_TX_DISABLE) || \
                                        ((__DMATX__) == IRDA_DMA_TX_ENABLE))
 
 /**
   * @brief Ensure that IRDA DMA RX mode is valid.
-  * @param __DMARX__ IRDA DMA RX mode. 
+  * @param __DMARX__ IRDA DMA RX mode.
   * @retval SET (__DMARX__ is valid) or RESET (__DMARX__ is invalid)
-  */ 
+  */
 #define IS_IRDA_DMA_RX(__DMARX__) (((__DMARX__) == IRDA_DMA_RX_DISABLE) || \
                                    ((__DMARX__) == IRDA_DMA_RX_ENABLE))
 
 /**
   * @brief Ensure that IRDA request is valid.
-  * @param __PARAM__ IRDA request. 
+  * @param __PARAM__ IRDA request.
   * @retval SET (__PARAM__ is valid) or RESET (__PARAM__ is invalid)
-  */ 
+  */
 #define IS_IRDA_REQUEST_PARAMETER(__PARAM__) (((__PARAM__) == IRDA_AUTOBAUD_REQUEST) || \
                                               ((__PARAM__) == IRDA_RXDATA_FLUSH_REQUEST) || \
                                               ((__PARAM__) == IRDA_TXDATA_FLUSH_REQUEST))
@@ -780,7 +780,7 @@ uint32_t              HAL_IRDA_GetError(IRDA_HandleTypeDef *hirda);
   * @}
   */
 
-#endif /* !defined(STM32F030x6) && !defined(STM32F030x8) && !defined(STM32F070x6) && !defined(STM32F070xB) && !defined(STM32F030xC)  */  
+#endif /* !defined(STM32F030x6) && !defined(STM32F030x8) && !defined(STM32F070x6) && !defined(STM32F070xB) && !defined(STM32F030xC)  */
 
 #ifdef __cplusplus
 }

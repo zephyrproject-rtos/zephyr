@@ -4,8 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SPI_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(spi_sam0);
 
 #include "spi_context.h"
 #include <errno.h>
@@ -157,7 +158,7 @@ static void spi_sam0_finish(SercomSpi *regs)
 static void spi_sam0_fast_tx(SercomSpi *regs, const struct spi_buf *tx_buf)
 {
 	const u8_t *p = tx_buf->buf;
-	const u8_t *pend = tx_buf->buf + tx_buf->len;
+	const u8_t *pend = (u8_t *)tx_buf->buf + tx_buf->len;
 	u8_t ch;
 
 	while (p != pend) {
@@ -215,7 +216,7 @@ static void spi_sam0_fast_txrx(SercomSpi *regs,
 			       const struct spi_buf *rx_buf)
 {
 	const u8_t *tx = tx_buf->buf;
-	const u8_t *txend = tx_buf->buf + tx_buf->len;
+	const u8_t *txend = (u8_t *)tx_buf->buf + tx_buf->len;
 	u8_t *rx = rx_buf->buf;
 	size_t len = rx_buf->len;
 

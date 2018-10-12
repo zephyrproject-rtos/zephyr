@@ -10,10 +10,13 @@ The EFM32 Wonder Gecko Starter Kit EFM32WG-STK3800 contains a MCU from the
 EFM32WG family built on ARM® Cortex®-M4F processor with excellent low
 power capabilities.
 
-.. image:: efm32wg_stk3800.jpg
+.. figure:: efm32wg_stk3800.jpg
    :width: 375px
    :align: center
    :alt: EFM32WG-STK3800
+
+   EFM32WG-STK3800 (image courtesy of Silicon Labs)
+
 
 Hardware
 ********
@@ -75,9 +78,9 @@ means Pin number 2 on PORTE, as used in the board's datasheets and manuals.
 +-------+-------------+-------------------------------------+
 | PE3   | GPIO        | LED1                                |
 +-------+-------------+-------------------------------------+
-| PB0   | GPIO        | Push Button PB0                     |
+| PB9   | GPIO        | Push Button PB0                     |
 +-------+-------------+-------------------------------------+
-| PB1   | GPIO        | Push Button PB1                     |
+| PB10  | GPIO        | Push Button PB1                     |
 +-------+-------------+-------------------------------------+
 | PF7   | GPIO        | Board Controller Enable             |
 |       |             | EFM_BC_EN                           |

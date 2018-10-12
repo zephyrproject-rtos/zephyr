@@ -556,7 +556,7 @@ void bt_mesh_app_key_del(struct bt_mesh_app_key *key, bool store)
 	}
 
 	key->net_idx = BT_MESH_KEY_UNUSED;
-	memset(key->keys, 0, sizeof(key->keys));
+	(void)memset(key->keys, 0, sizeof(key->keys));
 }
 
 static void app_key_del(struct bt_mesh_model *model,
@@ -1020,7 +1020,7 @@ static void send_mod_pub_status(struct bt_mesh_model *cfg_mod,
 	net_buf_simple_add_le16(&msg, elem_addr);
 
 	if (status != STATUS_SUCCESS) {
-		memset(net_buf_simple_add(&msg, 7), 0, 7);
+		(void)memset(net_buf_simple_add(&msg, 7), 0, 7);
 	} else {
 		u16_t idx_cred;
 
@@ -1230,7 +1230,7 @@ static void mod_sub_list_clear(struct bt_mesh_model *mod)
 	}
 
 	/* Clear all subscriptions (0x0000 is the unassigned address) */
-	memset(mod->groups, 0, sizeof(mod->groups));
+	(void)memset(mod->groups, 0, sizeof(mod->groups));
 }
 
 static void mod_pub_va_set(struct bt_mesh_model *model,
@@ -1305,7 +1305,7 @@ send_status:
 static void mod_sub_list_clear(struct bt_mesh_model *mod)
 {
 	/* Clear all subscriptions (0x0000 is the unassigned address) */
-	memset(mod->groups, 0, sizeof(mod->groups));
+	(void)memset(mod->groups, 0, sizeof(mod->groups));
 }
 
 static void mod_pub_va_set(struct bt_mesh_model *model,
@@ -3360,7 +3360,7 @@ void bt_mesh_cfg_reset(void)
 
 	bt_mesh_model_foreach(mod_reset, NULL);
 
-	memset(labels, 0, sizeof(labels));
+	(void)memset(labels, 0, sizeof(labels));
 }
 
 void bt_mesh_heartbeat(u16_t src, u16_t dst, u8_t hops, u16_t feat)
@@ -3527,6 +3527,6 @@ void bt_mesh_subnet_del(struct bt_mesh_subnet *sub, bool store)
 		bt_mesh_clear_subnet(sub);
 	}
 
-	memset(sub, 0, sizeof(*sub));
+	(void)memset(sub, 0, sizeof(*sub));
 	sub->net_idx = BT_MESH_KEY_UNUSED;
 }

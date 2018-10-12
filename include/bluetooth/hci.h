@@ -5,8 +5,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __BT_HCI_H
-#define __BT_HCI_H
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_HCI_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_HCI_H_
 
 #include <toolchain.h>
 #include <zephyr/types.h>
@@ -1902,4 +1902,4 @@ int bt_hci_cmd_send_sync(u16_t opcode, struct net_buf *buf,
 }
 #endif
 
-#endif /* __BT_HCI_H */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_HCI_H_ */

@@ -263,6 +263,26 @@ Make sure to unset the ZEPHYR_SDK_INSTALL_DIR if you don't use the SDK's host
 tools. See `Building without the Zephyr SDK`_ and `Set Up the Development
 Environment`_ for more details.
 
+Using Custom Cmake Toolchains
+=============================
+
+To use a custom toolchain defined in an external cmake file, export the
+following environment variables:
+
+   .. code-block:: console
+
+      export ZEPHYR_TOOLCHAIN_VARIANT=<toolchain name>
+      export TOOLCHAIN_ROOT=<path to toolchain>
+
+or set them as cmake variables:
+
+  .. code-block:: console
+
+      cmake -DZEPHYR_TOOLCHAIN_VARIANT=... -DTOOLCHAIN_ROOT=...
+
+Zephyr will then include the toolchain cmake file located in:
+``<path to toolchain>/cmake/toolchain/<toolchain name>.cmake``
+
 Running a Sample Application in QEMU
 ====================================
 

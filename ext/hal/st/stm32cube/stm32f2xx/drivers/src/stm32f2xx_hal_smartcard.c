@@ -3,19 +3,19 @@
   * @file    stm32f2xx_hal_smartcard.c
   * @author  MCD Application Team
   * @brief   SMARTCARD HAL module driver.
-  *          This file provides firmware functions to manage the following 
+  *          This file provides firmware functions to manage the following
   *          functionalities of the SMARTCARD peripheral:
   *           + Initialization and de-initialization functions
   *           + IO operation functions
-  *           + Peripheral State and Errors functions 
-  *           
-  @verbatim       
+  *           + Peripheral State and Errors functions
+  *
+  @verbatim
   ==============================================================================
                      ##### How to use this driver #####
   ==============================================================================
     [..]
       The SMARTCARD HAL driver can be used as follows:
-    
+
     (#) Declare a SMARTCARD_HandleTypeDef handle structure.
     (#) Initialize the SMARTCARD low level resources by implementing the HAL_SMARTCARD_MspInit() API:
         (##) Enable the USARTx interface clock.
@@ -30,70 +30,70 @@
              and HAL_SMARTCARD_Receive_DMA() APIs):
             (+++) Declare a DMA handle structure for the Tx/Rx stream.
             (+++) Enable the DMAx interface clock.
-            (+++) Configure the declared DMA handle structure with the required Tx/Rx parameters.                
+            (+++) Configure the declared DMA handle structure with the required Tx/Rx parameters.
             (+++) Configure the DMA Tx/Rx Stream.
             (+++) Associate the initialized DMA handle to the SMARTCARD DMA Tx/Rx handle.
             (+++) Configure the priority and enable the NVIC for the transfer complete interrupt on the DMA Tx/Rx Stream.
 
-    (#) Program the Baud Rate, Word Length , Stop Bit, Parity, Hardware 
+    (#) Program the Baud Rate, Word Length , Stop Bit, Parity, Hardware
         flow control and Mode(Receiver/Transmitter) in the SMARTCARD Init structure.
 
     (#) Initialize the SMARTCARD registers by calling the HAL_SMARTCARD_Init() API:
         (++) These APIs configure also the low level Hardware GPIO, CLOCK, CORTEX...etc)
              by calling the customized HAL_SMARTCARD_MspInit() API.
-    [..]  
-    (@) The specific SMARTCARD interrupts (Transmission complete interrupt, 
+    [..]
+    (@) The specific SMARTCARD interrupts (Transmission complete interrupt,
         RXNE interrupt and Error Interrupts) will be managed using the macros
         __HAL_SMARTCARD_ENABLE_IT() and __HAL_SMARTCARD_DISABLE_IT() inside the transmit and receive process.
-                   
-    [..]   
-    Three operation modes are available within this driver :     
-  
+
+    [..]
+    Three operation modes are available within this driver :
+
     *** Polling mode IO operation ***
     =================================
-    [..]    
-      (+) Send an amount of data in blocking mode using HAL_SMARTCARD_Transmit() 
+    [..]
+      (+) Send an amount of data in blocking mode using HAL_SMARTCARD_Transmit()
       (+) Receive an amount of data in blocking mode using HAL_SMARTCARD_Receive()
-       
-    *** Interrupt mode IO operation ***    
+
+    *** Interrupt mode IO operation ***
     ===================================
-    [..]    
-      (+) Send an amount of data in non blocking mode using HAL_SMARTCARD_Transmit_IT() 
-      (+) At transmission end of transfer HAL_SMARTCARD_TxCpltCallback is executed and user can 
+    [..]
+      (+) Send an amount of data in non blocking mode using HAL_SMARTCARD_Transmit_IT()
+      (+) At transmission end of transfer HAL_SMARTCARD_TxCpltCallback is executed and user can
           add his own code by customization of function pointer HAL_SMARTCARD_TxCpltCallback
-      (+) Receive an amount of data in non blocking mode using HAL_SMARTCARD_Receive_IT() 
-      (+) At reception end of transfer HAL_SMARTCARD_RxCpltCallback is executed and user can 
+      (+) Receive an amount of data in non blocking mode using HAL_SMARTCARD_Receive_IT()
+      (+) At reception end of transfer HAL_SMARTCARD_RxCpltCallback is executed and user can
           add his own code by customization of function pointer HAL_SMARTCARD_RxCpltCallback
-      (+) In case of transfer Error, HAL_SMARTCARD_ErrorCallback() function is executed and user can 
+      (+) In case of transfer Error, HAL_SMARTCARD_ErrorCallback() function is executed and user can
           add his own code by customization of function pointer HAL_SMARTCARD_ErrorCallback
 
-    *** DMA mode IO operation ***    
+    *** DMA mode IO operation ***
     ==============================
-    [..] 
-      (+) Send an amount of data in non blocking mode (DMA) using HAL_SMARTCARD_Transmit_DMA() 
-      (+) At transmission end of transfer HAL_SMARTCARD_TxCpltCallback is executed and user can 
+    [..]
+      (+) Send an amount of data in non blocking mode (DMA) using HAL_SMARTCARD_Transmit_DMA()
+      (+) At transmission end of transfer HAL_SMARTCARD_TxCpltCallback is executed and user can
           add his own code by customization of function pointer HAL_SMARTCARD_TxCpltCallback
-      (+) Receive an amount of data in non blocking mode (DMA) using HAL_SMARTCARD_Receive_DMA() 
-      (+) At reception end of transfer HAL_SMARTCARD_RxCpltCallback is executed and user can 
+      (+) Receive an amount of data in non blocking mode (DMA) using HAL_SMARTCARD_Receive_DMA()
+      (+) At reception end of transfer HAL_SMARTCARD_RxCpltCallback is executed and user can
           add his own code by customization of function pointer HAL_SMARTCARD_RxCpltCallback
-      (+) In case of transfer Error, HAL_SMARTCARD_ErrorCallback() function is executed and user can 
-          add his own code by customization of function pointer HAL_SMARTCARD_ErrorCallback    
+      (+) In case of transfer Error, HAL_SMARTCARD_ErrorCallback() function is executed and user can
+          add his own code by customization of function pointer HAL_SMARTCARD_ErrorCallback
 
     *** SMARTCARD HAL driver macros list ***
-    ============================================= 
+    =============================================
     [..]
       Below the list of most used macros in SMARTCARD HAL driver.
-       
-      (+) __HAL_SMARTCARD_ENABLE: Enable the SMARTCARD peripheral 
-      (+) __HAL_SMARTCARD_DISABLE: Disable the SMARTCARD peripheral     
+
+      (+) __HAL_SMARTCARD_ENABLE: Enable the SMARTCARD peripheral
+      (+) __HAL_SMARTCARD_DISABLE: Disable the SMARTCARD peripheral
       (+) __HAL_SMARTCARD_GET_FLAG : Check whether the specified SMARTCARD flag is set or not
       (+) __HAL_SMARTCARD_CLEAR_FLAG : Clear the specified SMARTCARD pending flag
       (+) __HAL_SMARTCARD_ENABLE_IT: Enable the specified SMARTCARD interrupt
       (+) __HAL_SMARTCARD_DISABLE_IT: Disable the specified SMARTCARD interrupt
-    
-    [..]  
+
+    [..]
       (@) You can refer to the SMARTCARD HAL driver header file for more useful macros
-          
+
   @endverbatim
   ******************************************************************************
   * @attention
@@ -123,7 +123,7 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-  */ 
+  */
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f2xx_hal.h"
@@ -174,22 +174,22 @@ static HAL_StatusTypeDef SMARTCARD_WaitOnFlagUntilTimeout(SMARTCARD_HandleTypeDe
   * @{
   */
 
-/** @defgroup SMARTCARD_Exported_Functions_Group1 SmartCard Initialization and de-initialization functions 
-  *  @brief    Initialization and Configuration functions 
+/** @defgroup SMARTCARD_Exported_Functions_Group1 SmartCard Initialization and de-initialization functions
+  *  @brief    Initialization and Configuration functions
   *
-@verbatim 
+@verbatim
   ==============================================================================
               ##### Initialization and Configuration functions #####
   ==============================================================================
   [..]
-  This subsection provides a set of functions allowing to initialize the USART 
+  This subsection provides a set of functions allowing to initialize the USART
   in Smartcard mode.
   [..]
   The Smartcard interface is designed to support asynchronous protocol Smartcards as
   defined in the ISO 7816-3 standard.
   [..]
   The USART can provide a clock to the smartcard through the SCLK output.
-  In smartcard mode, SCLK is not associated to the communication but is simply derived 
+  In smartcard mode, SCLK is not associated to the communication but is simply derived
   from the internal peripheral input clock through a 5-bit prescaler.
   [..]
   (+) For the Smartcard mode only these parameters can be configured:
@@ -221,11 +221,11 @@ static HAL_StatusTypeDef SMARTCARD_WaitOnFlagUntilTimeout(SMARTCARD_HandleTypeDe
   [..]
   Please refer to the ISO 7816-3 specification for more details.
 
-    -@- It is also possible to choose 0.5 stop bit for receiving but it is recommended 
-        to use 1.5 stop bits for both transmitting and receiving to avoid switching 
+    -@- It is also possible to choose 0.5 stop bit for receiving but it is recommended
+        to use 1.5 stop bits for both transmitting and receiving to avoid switching
         between the two configurations.
   [..]
-    The HAL_SMARTCARD_Init() function follows the USART  SmartCard configuration 
+    The HAL_SMARTCARD_Init() function follows the USART  SmartCard configuration
     procedure (details for the procedure are available in reference manual (RM0329)).
 
 @endverbatim
@@ -252,13 +252,13 @@ HAL_StatusTypeDef HAL_SMARTCARD_Init(SMARTCARD_HandleTypeDef *hsc)
   assert_param(IS_SMARTCARD_NACK_STATE(hsc->Init.NACKState));
 
   if(hsc->gState == HAL_SMARTCARD_STATE_RESET)
-  {  
+  {
     /* Allocate lock resource and initialize it */
     hsc->Lock = HAL_UNLOCKED;
     /* Init the low level hardware : GPIO, CLOCK, CORTEX...etc */
     HAL_SMARTCARD_MspInit(hsc);
   }
-  
+
   hsc->gState = HAL_SMARTCARD_STATE_BUSY;
 
   /* Set the Prescaler */
@@ -270,7 +270,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_Init(SMARTCARD_HandleTypeDef *hsc)
   /* Set the Smartcard Communication parameters */
   SMARTCARD_SetConfig(hsc);
 
-  /* In SmartCard mode, the following bits must be kept cleared: 
+  /* In SmartCard mode, the following bits must be kept cleared:
   - LINEN bit in the USART_CR2 register
   - HDSEL and IREN bits in the USART_CR3 register.*/
   CLEAR_BIT(hsc->Instance->CR2, USART_CR2_LINEN);
@@ -300,7 +300,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_Init(SMARTCARD_HandleTypeDef *hsc)
 }
 
 /**
-  * @brief DeInitializes the USART SmartCard peripheral 
+  * @brief DeInitializes the USART SmartCard peripheral
   * @param  hsc pointer to a SMARTCARD_HandleTypeDef structure that contains
   *                the configuration information for SMARTCARD module.
   * @retval HAL status
@@ -368,39 +368,39 @@ HAL_StatusTypeDef HAL_SMARTCARD_DeInit(SMARTCARD_HandleTypeDef *hsc)
   * @}
   */
 
-/** @defgroup SMARTCARD_Exported_Functions_Group2 IO operation functions 
-  *  @brief   SMARTCARD Transmit and Receive functions 
+/** @defgroup SMARTCARD_Exported_Functions_Group2 IO operation functions
+  *  @brief   SMARTCARD Transmit and Receive functions
   *
-@verbatim   
+@verbatim
  ===============================================================================
                       ##### IO operation functions #####
  ===============================================================================
  [..]  This subsection provides a set of functions allowing to manage the SMARTCARD data transfers.
 
  [..]
-    (#) Smartcard is a single wire half duplex communication protocol. 
+    (#) Smartcard is a single wire half duplex communication protocol.
     The Smartcard interface is designed to support asynchronous protocol Smartcards as
-    defined in the ISO 7816-3 standard. 
+    defined in the ISO 7816-3 standard.
     (#) The USART should be configured as:
        (++) 8 bits plus parity: where M=1 and PCE=1 in the USART_CR1 register
        (++) 1.5 stop bits when transmitting and receiving: where STOP=11 in the USART_CR2 register.
 
     (#) There are two modes of transfer:
-       (++) Blocking mode: The communication is performed in polling mode. 
-            The HAL status of all data processing is returned by the same function 
-            after finishing transfer.  
-       (++) Non Blocking mode: The communication is performed using Interrupts 
+       (++) Blocking mode: The communication is performed in polling mode.
+            The HAL status of all data processing is returned by the same function
+            after finishing transfer.
+       (++) Non Blocking mode: The communication is performed using Interrupts
            or DMA, These APIs return the HAL status.
-           The end of the data processing will be indicated through the 
-           dedicated SMARTCARD IRQ when using Interrupt mode or the DMA IRQ when 
+           The end of the data processing will be indicated through the
+           dedicated SMARTCARD IRQ when using Interrupt mode or the DMA IRQ when
            using DMA mode.
-           The HAL_SMARTCARD_TxCpltCallback(), HAL_SMARTCARD_RxCpltCallback() user callbacks 
+           The HAL_SMARTCARD_TxCpltCallback(), HAL_SMARTCARD_RxCpltCallback() user callbacks
            will be executed respectively at the end of the Transmit or Receive process
            The HAL_SMARTCARD_ErrorCallback() user callback will be executed when a communication error is detected
 
     (#) Blocking mode APIs are :
         (++) HAL_SMARTCARD_Transmit()
-        (++) HAL_SMARTCARD_Receive() 
+        (++) HAL_SMARTCARD_Receive()
 
     (#) Non Blocking mode APIs with Interrupt are :
         (++) HAL_SMARTCARD_Transmit_IT()
@@ -421,22 +421,22 @@ HAL_StatusTypeDef HAL_SMARTCARD_DeInit(SMARTCARD_HandleTypeDef *hsc)
   */
 
 /**
-  * @brief Send an amount of data in blocking mode 
+  * @brief Send an amount of data in blocking mode
   * @param  hsc pointer to a SMARTCARD_HandleTypeDef structure that contains
   *                the configuration information for SMARTCARD module.
   * @param  pData pointer to data buffer
   * @param  Size amount of data to be sent
-  * @param  Timeout Timeout duration 
+  * @param  Timeout Timeout duration
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SMARTCARD_Transmit(SMARTCARD_HandleTypeDef *hsc, uint8_t *pData, uint16_t Size, uint32_t Timeout)
 {
   uint16_t* tmp;
   uint32_t tickstart = 0U;
-  
-  if(hsc->gState == HAL_SMARTCARD_STATE_READY) 
+
+  if(hsc->gState == HAL_SMARTCARD_STATE_READY)
   {
-    if((pData == NULL) || (Size == 0)) 
+    if((pData == NULL) || (Size == 0))
     {
       return  HAL_ERROR;
     }
@@ -446,10 +446,10 @@ HAL_StatusTypeDef HAL_SMARTCARD_Transmit(SMARTCARD_HandleTypeDef *hsc, uint8_t *
 
     hsc->ErrorCode = HAL_SMARTCARD_ERROR_NONE;
     hsc->gState = HAL_SMARTCARD_STATE_BUSY_TX;
-       
-    /* Init tickstart for timeout managment */ 
+
+    /* Init tickstart for timeout managment */
     tickstart = HAL_GetTick();
-    
+
     hsc->TxXferSize = Size;
     hsc->TxXferCount = Size;
     while(hsc->TxXferCount > 0)
@@ -463,7 +463,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_Transmit(SMARTCARD_HandleTypeDef *hsc, uint8_t *
       hsc->Instance->DR = (*tmp & (uint16_t)0x01FF);
       pData +=1U;
     }
-    
+
     if(SMARTCARD_WaitOnFlagUntilTimeout(hsc, SMARTCARD_FLAG_TC, RESET, tickstart, Timeout) != HAL_OK)
     {
       return HAL_TIMEOUT;
@@ -471,7 +471,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_Transmit(SMARTCARD_HandleTypeDef *hsc, uint8_t *
 
 	/* At end of Tx process, restore hsc->gState to Ready */
     hsc->gState = HAL_SMARTCARD_STATE_READY;
-    
+
     /* Process Unlocked */
     __HAL_UNLOCK(hsc);
 
@@ -484,35 +484,35 @@ HAL_StatusTypeDef HAL_SMARTCARD_Transmit(SMARTCARD_HandleTypeDef *hsc, uint8_t *
 }
 
 /**
-  * @brief Receive an amount of data in blocking mode 
+  * @brief Receive an amount of data in blocking mode
   * @param  hsc pointer to a SMARTCARD_HandleTypeDef structure that contains
   *                the configuration information for SMARTCARD module.
   * @param  pData pointer to data buffer
   * @param  Size amount of data to be received
-  * @param  Timeout Timeout duration   
+  * @param  Timeout Timeout duration
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SMARTCARD_Receive(SMARTCARD_HandleTypeDef *hsc, uint8_t *pData, uint16_t Size, uint32_t Timeout)
 {
   uint16_t* tmp;
   uint32_t tickstart = 0U;
-  
-  if(hsc->RxState == HAL_SMARTCARD_STATE_READY) 
+
+  if(hsc->RxState == HAL_SMARTCARD_STATE_READY)
   {
-    if((pData == NULL) || (Size == 0)) 
+    if((pData == NULL) || (Size == 0))
     {
       return  HAL_ERROR;
     }
 
     /* Process Locked */
     __HAL_LOCK(hsc);
-    
+
     hsc->ErrorCode = HAL_SMARTCARD_ERROR_NONE;
     hsc->RxState = HAL_SMARTCARD_STATE_BUSY_RX;
-    
-    /* Init tickstart for timeout managment */ 
+
+    /* Init tickstart for timeout managment */
     tickstart = HAL_GetTick();
-  
+
     hsc->RxXferSize = Size;
     hsc->RxXferCount = Size;
 
@@ -531,7 +531,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_Receive(SMARTCARD_HandleTypeDef *hsc, uint8_t *p
 
     /* At end of Rx process, restore hsc->RxState to Ready */
     hsc->RxState = HAL_SMARTCARD_STATE_READY;
-    
+
     /* Process Unlocked */
     __HAL_UNLOCK(hsc);
 
@@ -544,7 +544,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_Receive(SMARTCARD_HandleTypeDef *hsc, uint8_t *p
 }
 
 /**
-  * @brief Send an amount of data in non blocking mode 
+  * @brief Send an amount of data in non blocking mode
   * @param  hsc pointer to a SMARTCARD_HandleTypeDef structure that contains
   *                the configuration information for SMARTCARD module.
   * @param  pData pointer to data buffer
@@ -554,9 +554,9 @@ HAL_StatusTypeDef HAL_SMARTCARD_Receive(SMARTCARD_HandleTypeDef *hsc, uint8_t *p
 HAL_StatusTypeDef HAL_SMARTCARD_Transmit_IT(SMARTCARD_HandleTypeDef *hsc, uint8_t *pData, uint16_t Size)
 {
   /* Check that a Tx process is not already ongoing */
-  if(hsc->gState == HAL_SMARTCARD_STATE_READY) 
+  if(hsc->gState == HAL_SMARTCARD_STATE_READY)
   {
-    if((pData == NULL) || (Size == 0)) 
+    if((pData == NULL) || (Size == 0))
     {
       return HAL_ERROR;
     }
@@ -570,10 +570,10 @@ HAL_StatusTypeDef HAL_SMARTCARD_Transmit_IT(SMARTCARD_HandleTypeDef *hsc, uint8_
 
     hsc->ErrorCode = HAL_SMARTCARD_ERROR_NONE;
     hsc->gState = HAL_SMARTCARD_STATE_BUSY_TX;
-    
+
     /* Process Unlocked */
     __HAL_UNLOCK(hsc);
-    
+
     /* Enable the SMARTCARD Parity Error Interrupt */
     SET_BIT(hsc->Instance->CR1, USART_CR1_PEIE);
 
@@ -592,7 +592,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_Transmit_IT(SMARTCARD_HandleTypeDef *hsc, uint8_
 }
 
 /**
-  * @brief Receive an amount of data in non blocking mode 
+  * @brief Receive an amount of data in non blocking mode
   * @param  hsc pointer to a SMARTCARD_HandleTypeDef structure that contains
   *                the configuration information for SMARTCARD module.
   * @param  pData pointer to data buffer
@@ -601,10 +601,10 @@ HAL_StatusTypeDef HAL_SMARTCARD_Transmit_IT(SMARTCARD_HandleTypeDef *hsc, uint8_
   */
 HAL_StatusTypeDef HAL_SMARTCARD_Receive_IT(SMARTCARD_HandleTypeDef *hsc, uint8_t *pData, uint16_t Size)
 {
-  /* Check that a Rx process is not already ongoing */ 
-  if(hsc->RxState == HAL_SMARTCARD_STATE_READY) 
+  /* Check that a Rx process is not already ongoing */
+  if(hsc->RxState == HAL_SMARTCARD_STATE_READY)
   {
-    if((pData == NULL) || (Size == 0)) 
+    if((pData == NULL) || (Size == 0))
     {
       return HAL_ERROR;
     }
@@ -618,7 +618,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_Receive_IT(SMARTCARD_HandleTypeDef *hsc, uint8_t
 
     hsc->ErrorCode = HAL_SMARTCARD_ERROR_NONE;
     hsc->RxState = HAL_SMARTCARD_STATE_BUSY_RX;
-    
+
     /* Process Unlocked */
     __HAL_UNLOCK(hsc);
 
@@ -637,7 +637,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_Receive_IT(SMARTCARD_HandleTypeDef *hsc, uint8_t
 }
 
 /**
-  * @brief Send an amount of data in non blocking mode 
+  * @brief Send an amount of data in non blocking mode
   * @param  hsc pointer to a SMARTCARD_HandleTypeDef structure that contains
   *                the configuration information for SMARTCARD module.
   * @param  pData pointer to data buffer
@@ -647,11 +647,11 @@ HAL_StatusTypeDef HAL_SMARTCARD_Receive_IT(SMARTCARD_HandleTypeDef *hsc, uint8_t
 HAL_StatusTypeDef HAL_SMARTCARD_Transmit_DMA(SMARTCARD_HandleTypeDef *hsc, uint8_t *pData, uint16_t Size)
 {
   uint32_t *tmp;
-  
+
   /* Check that a Tx process is not already ongoing */
   if(hsc->gState == HAL_SMARTCARD_STATE_READY)
   {
-    if((pData == NULL) || (Size == 0)) 
+    if((pData == NULL) || (Size == 0))
     {
       return HAL_ERROR;
     }
@@ -665,13 +665,13 @@ HAL_StatusTypeDef HAL_SMARTCARD_Transmit_DMA(SMARTCARD_HandleTypeDef *hsc, uint8
 
     hsc->ErrorCode = HAL_SMARTCARD_ERROR_NONE;
     hsc->gState = HAL_SMARTCARD_STATE_BUSY_TX;
-    
+
     /* Set the SMARTCARD DMA transfer complete callback */
     hsc->hdmatx->XferCpltCallback = SMARTCARD_DMATransmitCplt;
 
     /* Set the DMA error callback */
     hsc->hdmatx->XferErrorCallback = SMARTCARD_DMAError;
-    
+
     /* Set the DMA abort callback */
     hsc->hdmatx->XferAbortCallback = NULL;
 
@@ -684,7 +684,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_Transmit_DMA(SMARTCARD_HandleTypeDef *hsc, uint8
 
     /* Process Unlocked */
     __HAL_UNLOCK(hsc);
-    
+
     /* Enable the DMA transfer for transmit request by setting the DMAT bit
     in the SMARTCARD CR3 register */
     SET_BIT(hsc->Instance->CR3, USART_CR3_DMAT);
@@ -698,7 +698,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_Transmit_DMA(SMARTCARD_HandleTypeDef *hsc, uint8
 }
 
 /**
-  * @brief Receive an amount of data in non blocking mode 
+  * @brief Receive an amount of data in non blocking mode
   * @param  hsc pointer to a SMARTCARD_HandleTypeDef structure that contains
   *                the configuration information for SMARTCARD module.
   * @param  pData pointer to data buffer
@@ -709,11 +709,11 @@ HAL_StatusTypeDef HAL_SMARTCARD_Transmit_DMA(SMARTCARD_HandleTypeDef *hsc, uint8
 HAL_StatusTypeDef HAL_SMARTCARD_Receive_DMA(SMARTCARD_HandleTypeDef *hsc, uint8_t *pData, uint16_t Size)
 {
   uint32_t *tmp;
-  
+
   /* Check that a Rx process is not already ongoing */
-  if(hsc->RxState == HAL_SMARTCARD_STATE_READY) 
+  if(hsc->RxState == HAL_SMARTCARD_STATE_READY)
   {
-    if((pData == NULL) || (Size == 0)) 
+    if((pData == NULL) || (Size == 0))
     {
       return HAL_ERROR;
     }
@@ -726,13 +726,13 @@ HAL_StatusTypeDef HAL_SMARTCARD_Receive_DMA(SMARTCARD_HandleTypeDef *hsc, uint8_
 
     hsc->ErrorCode = HAL_SMARTCARD_ERROR_NONE;
     hsc->RxState = HAL_SMARTCARD_STATE_BUSY_RX;
-    
+
     /* Set the SMARTCARD DMA transfer complete callback */
     hsc->hdmarx->XferCpltCallback = SMARTCARD_DMAReceiveCplt;
 
     /* Set the DMA error callback */
     hsc->hdmarx->XferErrorCallback = SMARTCARD_DMAError;
-    
+
     /* Set the DMA abort callback */
     hsc->hdmatx->XferAbortCallback = NULL;
 
@@ -745,14 +745,14 @@ HAL_StatusTypeDef HAL_SMARTCARD_Receive_DMA(SMARTCARD_HandleTypeDef *hsc, uint8_
 
     /* Process Unlocked */
     __HAL_UNLOCK(hsc);
-    
+
     /* Enable the SMARTCARD Parity Error Interrupt */
     SET_BIT(hsc->Instance->CR1, USART_CR1_PEIE);
 
     /* Enable the SMARTCARD Error Interrupt: (Frame error, noise error, overrun error) */
     SET_BIT(hsc->Instance->CR3, USART_CR3_EIE);
-    
-    /* Enable the DMA transfer for the receiver request by setting the DMAR bit 
+
+    /* Enable the DMA transfer for the receiver request by setting the DMAR bit
     in the SMARTCARD CR3 register */
     SET_BIT(hsc->Instance->CR3, USART_CR3_DMAR);
 
@@ -767,7 +767,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_Receive_DMA(SMARTCARD_HandleTypeDef *hsc, uint8_
 /**
   * @brief  Abort ongoing transfers (blocking mode).
   * @param  hsc SMARTCARD handle.
-  * @note   This procedure could be used for aborting any ongoing transfer started in Interrupt or DMA mode. 
+  * @note   This procedure could be used for aborting any ongoing transfer started in Interrupt or DMA mode.
   *         This procedure performs following operations :
   *           - Disable PPP Interrupts
   *           - Disable the DMA transfer in the peripheral register (if enabled)
@@ -781,7 +781,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_Abort(SMARTCARD_HandleTypeDef *hsc)
   /* Disable TXEIE, TCIE, RXNE, PE and ERR (Frame error, noise error, overrun error) interrupts */
   CLEAR_BIT(hsc->Instance->CR1, (USART_CR1_RXNEIE | USART_CR1_PEIE | USART_CR1_TXEIE | USART_CR1_TCIE));
   CLEAR_BIT(hsc->Instance->CR3, USART_CR3_EIE);
-  
+
   /* Disable the SMARTCARD DMA Tx request if enabled */
   if(HAL_IS_BIT_SET(hsc->Instance->CR3, USART_CR3_DMAT))
   {
@@ -790,7 +790,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_Abort(SMARTCARD_HandleTypeDef *hsc)
     /* Abort the SMARTCARD DMA Tx channel : use blocking DMA Abort API (no callback) */
     if(hsc->hdmatx != NULL)
     {
-      /* Set the SMARTCARD DMA Abort callback to Null. 
+      /* Set the SMARTCARD DMA Abort callback to Null.
          No call back execution at end of DMA abort procedure */
       hsc->hdmatx->XferAbortCallback = NULL;
 
@@ -806,7 +806,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_Abort(SMARTCARD_HandleTypeDef *hsc)
     /* Abort the SMARTCARD DMA Rx channel : use blocking DMA Abort API (no callback) */
     if(hsc->hdmarx != NULL)
     {
-      /* Set the SMARTCARD DMA Abort callback to Null. 
+      /* Set the SMARTCARD DMA Abort callback to Null.
          No call back execution at end of DMA abort procedure */
       hsc->hdmarx->XferAbortCallback = NULL;
 
@@ -831,7 +831,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_Abort(SMARTCARD_HandleTypeDef *hsc)
 /**
   * @brief  Abort ongoing Transmit transfer (blocking mode).
   * @param  hsc SMARTCARD handle.
-  * @note   This procedure could be used for aborting any ongoing transfer started in Interrupt or DMA mode. 
+  * @note   This procedure could be used for aborting any ongoing transfer started in Interrupt or DMA mode.
   *         This procedure performs following operations :
   *           - Disable PPP Interrupts
   *           - Disable the DMA transfer in the peripheral register (if enabled)
@@ -853,7 +853,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_AbortTransmit(SMARTCARD_HandleTypeDef *hsc)
     /* Abort the SMARTCARD DMA Tx channel : use blocking DMA Abort API (no callback) */
     if(hsc->hdmatx != NULL)
     {
-      /* Set the SMARTCARD DMA Abort callback to Null. 
+      /* Set the SMARTCARD DMA Abort callback to Null.
          No call back execution at end of DMA abort procedure */
       hsc->hdmatx->XferAbortCallback = NULL;
 
@@ -873,7 +873,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_AbortTransmit(SMARTCARD_HandleTypeDef *hsc)
 /**
   * @brief  Abort ongoing Receive transfer (blocking mode).
   * @param  hsc SMARTCARD handle.
-  * @note   This procedure could be used for aborting any ongoing transfer started in Interrupt or DMA mode. 
+  * @note   This procedure could be used for aborting any ongoing transfer started in Interrupt or DMA mode.
   *         This procedure performs following operations :
   *           - Disable PPP Interrupts
   *           - Disable the DMA transfer in the peripheral register (if enabled)
@@ -896,7 +896,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_AbortReceive(SMARTCARD_HandleTypeDef *hsc)
     /* Abort the SMARTCARD DMA Rx channel : use blocking DMA Abort API (no callback) */
     if(hsc->hdmarx != NULL)
     {
-      /* Set the SMARTCARD DMA Abort callback to Null. 
+      /* Set the SMARTCARD DMA Abort callback to Null.
          No call back execution at end of DMA abort procedure */
       hsc->hdmarx->XferAbortCallback = NULL;
 
@@ -916,7 +916,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_AbortReceive(SMARTCARD_HandleTypeDef *hsc)
 /**
   * @brief  Abort ongoing transfers (Interrupt mode).
   * @param  hsc SMARTCARD handle.
-  * @note   This procedure could be used for aborting any ongoing transfer started in Interrupt or DMA mode. 
+  * @note   This procedure could be used for aborting any ongoing transfer started in Interrupt or DMA mode.
   *         This procedure performs following operations :
   *           - Disable PPP Interrupts
   *           - Disable the DMA transfer in the peripheral register (if enabled)
@@ -975,7 +975,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_Abort_IT(SMARTCARD_HandleTypeDef *hsc)
     /* Abort the SMARTCARD DMA Tx channel : use non blocking DMA Abort API (callback) */
     if(hsc->hdmatx != NULL)
     {
-      /* SMARTCARD Tx DMA Abort callback has already been initialised : 
+      /* SMARTCARD Tx DMA Abort callback has already been initialised :
          will lead to call HAL_SMARTCARD_AbortCpltCallback() at end of DMA abort procedure */
 
       /* Abort DMA TX */
@@ -998,7 +998,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_Abort_IT(SMARTCARD_HandleTypeDef *hsc)
     /* Abort the SMARTCARD DMA Rx channel : use non blocking DMA Abort API (callback) */
     if(hsc->hdmarx != NULL)
     {
-      /* SMARTCARD Rx DMA Abort callback has already been initialised : 
+      /* SMARTCARD Rx DMA Abort callback has already been initialised :
          will lead to call HAL_SMARTCARD_AbortCpltCallback() at end of DMA abort procedure */
 
       /* Abort DMA RX */
@@ -1018,7 +1018,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_Abort_IT(SMARTCARD_HandleTypeDef *hsc)
   if(AbortCplt == 0x01U)
   {
     /* Reset Tx and Rx transfer counters */
-    hsc->TxXferCount = 0x00U; 
+    hsc->TxXferCount = 0x00U;
     hsc->RxXferCount = 0x00U;
 
     /* Reset ErrorCode */
@@ -1037,7 +1037,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_Abort_IT(SMARTCARD_HandleTypeDef *hsc)
 /**
   * @brief  Abort ongoing Transmit transfer (Interrupt mode).
   * @param  hsc SMARTCARD handle.
-  * @note   This procedure could be used for aborting any ongoing transfer started in Interrupt or DMA mode. 
+  * @note   This procedure could be used for aborting any ongoing transfer started in Interrupt or DMA mode.
   *         This procedure performs following operations :
   *           - Disable PPP Interrupts
   *           - Disable the DMA transfer in the peripheral register (if enabled)
@@ -1061,7 +1061,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_AbortTransmit_IT(SMARTCARD_HandleTypeDef *hsc)
     /* Abort the SMARTCARD DMA Tx channel : use blocking DMA Abort API (no callback) */
     if(hsc->hdmatx != NULL)
     {
-      /* Set the SMARTCARD DMA Abort callback : 
+      /* Set the SMARTCARD DMA Abort callback :
          will lead to call HAL_SMARTCARD_AbortCpltCallback() at end of DMA abort procedure */
       hsc->hdmatx->XferAbortCallback = SMARTCARD_DMATxOnlyAbortCallback;
 
@@ -1102,7 +1102,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_AbortTransmit_IT(SMARTCARD_HandleTypeDef *hsc)
 /**
   * @brief  Abort ongoing Receive transfer (Interrupt mode).
   * @param  hsc SMARTCARD handle.
-  * @note   This procedure could be used for aborting any ongoing transfer started in Interrupt or DMA mode. 
+  * @note   This procedure could be used for aborting any ongoing transfer started in Interrupt or DMA mode.
   *         This procedure performs following operations :
   *           - Disable PPP Interrupts
   *           - Disable the DMA transfer in the peripheral register (if enabled)
@@ -1127,7 +1127,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_AbortReceive_IT(SMARTCARD_HandleTypeDef *hsc)
     /* Abort the SMARTCARD DMA Rx channel : use blocking DMA Abort API (no callback) */
     if(hsc->hdmarx != NULL)
     {
-      /* Set the SMARTCARD DMA Abort callback : 
+      /* Set the SMARTCARD DMA Abort callback :
          will lead to call HAL_SMARTCARD_AbortCpltCallback() at end of DMA abort procedure */
       hsc->hdmarx->XferAbortCallback = SMARTCARD_DMARxOnlyAbortCallback;
 
@@ -1196,25 +1196,25 @@ void HAL_SMARTCARD_IRQHandler(SMARTCARD_HandleTypeDef *hsc)
   {
     /* SMARTCARD parity error interrupt occurred ---------------------------*/
     if(((isrflags & SMARTCARD_FLAG_PE) != RESET) && ((cr1its & USART_CR1_PEIE) != RESET))
-    { 
+    {
       hsc->ErrorCode |= HAL_SMARTCARD_ERROR_PE;
     }
 
     /* SMARTCARD frame error interrupt occurred ----------------------------*/
     if(((isrflags & SMARTCARD_FLAG_FE) != RESET) && ((cr3its & USART_CR3_EIE) != RESET))
-    { 
+    {
       hsc->ErrorCode |= HAL_SMARTCARD_ERROR_FE;
     }
 
     /* SMARTCARD noise error interrupt occurred ----------------------------*/
     if(((isrflags & SMARTCARD_FLAG_NE) != RESET) && ((cr3its & USART_CR3_EIE) != RESET))
-    { 
+    {
       hsc->ErrorCode |= HAL_SMARTCARD_ERROR_NE;
     }
 
     /* SMARTCARD Over-Run interrupt occurred -------------------------------*/
     if(((isrflags & SMARTCARD_FLAG_ORE) != RESET) && ((cr3its & USART_CR3_EIE) != RESET))
-    { 
+    {
       hsc->ErrorCode |= HAL_SMARTCARD_ERROR_ORE;
     }
     /* Call the Error call Back in case of Errors */
@@ -1243,7 +1243,7 @@ void HAL_SMARTCARD_IRQHandler(SMARTCARD_HandleTypeDef *hsc)
           /* Abort the SMARTCARD DMA Rx channel */
           if(hsc->hdmarx != NULL)
           {
-            /* Set the SMARTCARD DMA Abort callback : 
+            /* Set the SMARTCARD DMA Abort callback :
               will lead to call HAL_SMARTCARD_ErrorCallback() at end of DMA abort procedure */
             hsc->hdmarx->XferAbortCallback = SMARTCARD_DMAAbortOnError;
 
@@ -1274,14 +1274,14 @@ void HAL_SMARTCARD_IRQHandler(SMARTCARD_HandleTypeDef *hsc)
     }
     return;
   } /* End if some error occurs */
-  
+
   /* SMARTCARD in mode Transmitter -------------------------------------------*/
   if(((isrflags & SMARTCARD_FLAG_TXE) != RESET) && ((cr1its & USART_CR1_TXEIE) != RESET))
   {
     SMARTCARD_Transmit_IT(hsc);
     return;
   }
-  
+
   /* SMARTCARD in mode Transmitter (transmission end) ------------------------*/
   if(((isrflags & SMARTCARD_FLAG_TC) != RESET) && ((cr1its & USART_CR1_TCIE) != RESET))
   {
@@ -1302,7 +1302,7 @@ void HAL_SMARTCARD_IRQHandler(SMARTCARD_HandleTypeDef *hsc)
   UNUSED(hsc);
   /* NOTE : This function Should not be modified, when the callback is needed,
             the HAL_SMARTCARD_TxCpltCallback could be implemented in the user file
-   */ 
+   */
 }
 
 /**
@@ -1384,17 +1384,17 @@ __weak void HAL_SMARTCARD_AbortReceiveCpltCallback (SMARTCARD_HandleTypeDef *hsc
   * @}
   */
 
-/** @defgroup SMARTCARD_Exported_Functions_Group3 Peripheral State and Errors functions 
-  *  @brief   SMARTCARD State and Errors functions 
+/** @defgroup SMARTCARD_Exported_Functions_Group3 Peripheral State and Errors functions
+  *  @brief   SMARTCARD State and Errors functions
   *
-@verbatim   
+@verbatim
  ===============================================================================
                 ##### Peripheral State and Errors functions #####
- ===============================================================================  
+ ===============================================================================
     [..]
     This subsection provides a set of functions allowing to control the SmartCard.
      (+) HAL_SMARTCARD_GetState() API can be helpful to check in run-time the state of the SmartCard peripheral.
-     (+) HAL_SMARTCARD_GetError() check in run-time errors that could be occurred during communication. 
+     (+) HAL_SMARTCARD_GetError() check in run-time errors that could be occurred during communication.
 @endverbatim
   * @{
   */
@@ -1410,7 +1410,7 @@ HAL_SMARTCARD_StateTypeDef HAL_SMARTCARD_GetState(SMARTCARD_HandleTypeDef *hsc)
   uint32_t temp1= 0x00U, temp2 = 0x00U;
   temp1 = hsc->gState;
   temp2 = hsc->RxState;
-  
+
   return (HAL_SMARTCARD_StateTypeDef)(temp1 | temp2);
 }
 
@@ -1430,7 +1430,7 @@ uint32_t HAL_SMARTCARD_GetError(SMARTCARD_HandleTypeDef *hsc)
   */
 
 /**
-  * @brief DMA SMARTCARD transmit process complete callback 
+  * @brief DMA SMARTCARD transmit process complete callback
   * @param  hdma pointer to a DMA_HandleTypeDef structure that contains
   *                the configuration information for the specified DMA module.
   * @retval None
@@ -1438,57 +1438,57 @@ uint32_t HAL_SMARTCARD_GetError(SMARTCARD_HandleTypeDef *hsc)
 static void SMARTCARD_DMATransmitCplt(DMA_HandleTypeDef *hdma)
 {
   SMARTCARD_HandleTypeDef* hsc = ( SMARTCARD_HandleTypeDef* )((DMA_HandleTypeDef* )hdma)->Parent;
-  
+
   hsc->TxXferCount = 0;
-  
+
   /* Disable the DMA transfer for transmit request by setting the DMAT bit
   in the USART CR3 register */
   CLEAR_BIT(hsc->Instance->CR3, USART_CR3_DMAT);
 
-  /* Enable the SMARTCARD Transmit Complete Interrupt */   
+  /* Enable the SMARTCARD Transmit Complete Interrupt */
   SET_BIT(hsc->Instance->CR1, USART_CR1_TCIE);
 }
 
 /**
-  * @brief DMA SMARTCARD receive process complete callback 
+  * @brief DMA SMARTCARD receive process complete callback
   * @param  hdma pointer to a DMA_HandleTypeDef structure that contains
   *                the configuration information for the specified DMA module.
   * @retval None
   */
-static void SMARTCARD_DMAReceiveCplt(DMA_HandleTypeDef *hdma)   
+static void SMARTCARD_DMAReceiveCplt(DMA_HandleTypeDef *hdma)
 {
   SMARTCARD_HandleTypeDef* hsc = ( SMARTCARD_HandleTypeDef* )((DMA_HandleTypeDef* )hdma)->Parent;
 
   hsc->RxXferCount = 0;
-  
+
   /* Disable RXNE, PE and ERR (Frame error, noise error, overrun error) interrupts */
   CLEAR_BIT(hsc->Instance->CR1, (USART_CR1_RXNEIE | USART_CR1_PEIE));
   CLEAR_BIT(hsc->Instance->CR3, USART_CR3_EIE);
-  
-  /* Disable the DMA transfer for the receiver request by setting the DMAR bit 
+
+  /* Disable the DMA transfer for the receiver request by setting the DMAR bit
   in the USART CR3 register */
   CLEAR_BIT(hsc->Instance->CR3, USART_CR3_DMAR);
-  
+
   /* At end of Rx process, restore hsc->RxState to Ready */
   hsc->RxState = HAL_SMARTCARD_STATE_READY;
-    
+
   HAL_SMARTCARD_RxCpltCallback(hsc);
 }
 
 /**
-  * @brief DMA SMARTCARD communication error callback 
+  * @brief DMA SMARTCARD communication error callback
   * @param  hdma pointer to a DMA_HandleTypeDef structure that contains
   *                the configuration information for the specified DMA module.
   * @retval None
   */
-static void SMARTCARD_DMAError(DMA_HandleTypeDef *hdma)   
+static void SMARTCARD_DMAError(DMA_HandleTypeDef *hdma)
 {
   uint32_t dmarequest = 0x00U;
   SMARTCARD_HandleTypeDef* hsc = ( SMARTCARD_HandleTypeDef* )((DMA_HandleTypeDef* )hdma)->Parent;
   hsc->RxXferCount = 0;
   hsc->TxXferCount = 0;
   hsc->ErrorCode = HAL_SMARTCARD_ERROR_DMA;
-  
+
   /* Stop SMARTCARD DMA Tx request if ongoing */
   dmarequest = HAL_IS_BIT_SET(hsc->Instance->CR3, USART_CR3_DMAT);
   if((hsc->gState == HAL_SMARTCARD_STATE_BUSY_TX) && dmarequest)
@@ -1517,7 +1517,7 @@ static void SMARTCARD_DMAError(DMA_HandleTypeDef *hdma)
   */
 static HAL_StatusTypeDef SMARTCARD_WaitOnFlagUntilTimeout(SMARTCARD_HandleTypeDef *hsc, uint32_t Flag, FlagStatus Status, uint32_t Tickstart, uint32_t Timeout)
 {
-  /* Wait until flag is set */   
+  /* Wait until flag is set */
   while((__HAL_SMARTCARD_GET_FLAG(hsc, Flag) ? SET : RESET) == Status)
   {
     /* Check for the Timeout */
@@ -1528,13 +1528,13 @@ static HAL_StatusTypeDef SMARTCARD_WaitOnFlagUntilTimeout(SMARTCARD_HandleTypeDe
         /* Disable TXE and RXNE interrupts for the interrupt process */
         CLEAR_BIT(hsc->Instance->CR1, USART_CR1_TXEIE);
         CLEAR_BIT(hsc->Instance->CR1, USART_CR1_RXNEIE);
-        
+
         hsc->gState= HAL_SMARTCARD_STATE_READY;
         hsc->RxState= HAL_SMARTCARD_STATE_READY;
-        
+
         /* Process Unlocked */
         __HAL_UNLOCK(hsc);
-        
+
         return HAL_TIMEOUT;
       }
     }
@@ -1573,7 +1573,7 @@ static void SMARTCARD_EndRxTransfer(SMARTCARD_HandleTypeDef *hsc)
 }
 
 /**
-  * @brief Send an amount of data in non blocking mode 
+  * @brief Send an amount of data in non blocking mode
   * @param  hsc pointer to a SMARTCARD_HandleTypeDef structure that contains
   *                the configuration information for SMARTCARD module.
   * @retval HAL status
@@ -1581,23 +1581,23 @@ static void SMARTCARD_EndRxTransfer(SMARTCARD_HandleTypeDef *hsc)
 static HAL_StatusTypeDef SMARTCARD_Transmit_IT(SMARTCARD_HandleTypeDef *hsc)
 {
   uint16_t* tmp;
-  
+
   /* Check that a Tx process is ongoing */
-  if(hsc->gState == HAL_SMARTCARD_STATE_BUSY_TX) 
+  if(hsc->gState == HAL_SMARTCARD_STATE_BUSY_TX)
   {
     tmp = (uint16_t*) hsc->pTxBuffPtr;
     hsc->Instance->DR = (uint16_t)(*tmp & (uint16_t)0x01FF);
-    hsc->pTxBuffPtr += 1;    
-    
+    hsc->pTxBuffPtr += 1;
+
     if(--hsc->TxXferCount == 0)
     {
       /* Disable the SMARTCARD Transmit data register empty Interrupt */
       CLEAR_BIT(hsc->Instance->CR1, USART_CR1_TXEIE);
-      
+
       /* Enable the SMARTCARD Transmit Complete Interrupt */
       SET_BIT(hsc->Instance->CR1, USART_CR1_TCIE);
     }
-    
+
     return HAL_OK;
   }
   else
@@ -1614,22 +1614,22 @@ static HAL_StatusTypeDef SMARTCARD_Transmit_IT(SMARTCARD_HandleTypeDef *hsc)
   */
 static HAL_StatusTypeDef SMARTCARD_EndTransmit_IT(SMARTCARD_HandleTypeDef *hsmartcard)
 {
-  /* Disable the SMARTCARD Transmit Complete Interrupt */   
+  /* Disable the SMARTCARD Transmit Complete Interrupt */
   CLEAR_BIT(hsmartcard->Instance->CR1, USART_CR1_TCIE);
-  
+
   /* Disable the SMARTCARD Error Interrupt: (Frame error, noise error, overrun error) */
   CLEAR_BIT(hsmartcard->Instance->CR3, USART_CR3_EIE);
-    
+
   /* Tx process is ended, restore hsmartcard->gState to Ready */
   hsmartcard->gState = HAL_SMARTCARD_STATE_READY;
-  
+
   HAL_SMARTCARD_TxCpltCallback(hsmartcard);
-  
+
   return HAL_OK;
 }
 
 /**
-  * @brief Receive an amount of data in non blocking mode 
+  * @brief Receive an amount of data in non blocking mode
   * @param  hsc pointer to a SMARTCARD_HandleTypeDef structure that contains
   *                the configuration information for SMARTCARD module.
   * @retval HAL status
@@ -1637,29 +1637,29 @@ static HAL_StatusTypeDef SMARTCARD_EndTransmit_IT(SMARTCARD_HandleTypeDef *hsmar
 static HAL_StatusTypeDef SMARTCARD_Receive_IT(SMARTCARD_HandleTypeDef *hsc)
 {
   uint16_t* tmp;
-  
+
   /* Check that a Rx process is ongoing */
-  if(hsc->RxState == HAL_SMARTCARD_STATE_BUSY_RX) 
+  if(hsc->RxState == HAL_SMARTCARD_STATE_BUSY_RX)
   {
     tmp = (uint16_t*) hsc->pRxBuffPtr;
     *tmp = (uint8_t)(hsc->Instance->DR & (uint8_t)0x00FF);
     hsc->pRxBuffPtr += 1;
-    
+
     if(--hsc->RxXferCount == 0)
     {
       CLEAR_BIT(hsc->Instance->CR1, USART_CR1_RXNEIE);
-      
+
       /* Disable the SMARTCARD Parity Error Interrupt */
       CLEAR_BIT(hsc->Instance->CR1, USART_CR1_PEIE);
-      
+
       /* Disable the SMARTCARD Error Interrupt: (Frame error, noise error, overrun error) */
       CLEAR_BIT(hsc->Instance->CR3, USART_CR3_EIE);
-      
+
 	  /* Rx process is completed, restore hsc->RxState to Ready */
       hsc->RxState = HAL_SMARTCARD_STATE_READY;
-            
+
       HAL_SMARTCARD_RxCpltCallback(hsc);
-      
+
       return HAL_OK;
     }
     return HAL_OK;
@@ -1696,7 +1696,7 @@ static void SMARTCARD_DMAAbortOnError(DMA_HandleTypeDef *hdma)
 static void SMARTCARD_DMATxAbortCallback(DMA_HandleTypeDef *hdma)
 {
   SMARTCARD_HandleTypeDef* hsc = ( SMARTCARD_HandleTypeDef* )((DMA_HandleTypeDef* )hdma)->Parent;
-  
+
   hsc->hdmatx->XferAbortCallback = NULL;
 
   /* Check if an Abort process is still ongoing */
@@ -1707,7 +1707,7 @@ static void SMARTCARD_DMATxAbortCallback(DMA_HandleTypeDef *hdma)
       return;
     }
   }
-  
+
   /* No Abort process still ongoing : All DMA channels are aborted, call user Abort Complete callback */
   hsc->TxXferCount = 0x00U;
   hsc->RxXferCount = 0x00U;
@@ -1734,7 +1734,7 @@ static void SMARTCARD_DMATxAbortCallback(DMA_HandleTypeDef *hdma)
 static void SMARTCARD_DMARxAbortCallback(DMA_HandleTypeDef *hdma)
 {
   SMARTCARD_HandleTypeDef* hsc = ( SMARTCARD_HandleTypeDef* )((DMA_HandleTypeDef* )hdma)->Parent;
-  
+
   hsc->hdmarx->XferAbortCallback = NULL;
 
   /* Check if an Abort process is still ongoing */
@@ -1745,7 +1745,7 @@ static void SMARTCARD_DMARxAbortCallback(DMA_HandleTypeDef *hdma)
       return;
     }
   }
-  
+
   /* No Abort process still ongoing : All DMA channels are aborted, call user Abort Complete callback */
   hsc->TxXferCount = 0x00U;
   hsc->RxXferCount = 0x00U;
@@ -1804,7 +1804,7 @@ static void SMARTCARD_DMARxOnlyAbortCallback(DMA_HandleTypeDef *hdma)
 }
 
 /**
-  * @brief Configure the SMARTCARD peripheral 
+  * @brief Configure the SMARTCARD peripheral
   * @param  hsc pointer to a SMARTCARD_HandleTypeDef structure that contains
   *                the configuration information for SMARTCARD module.
   * @retval None
@@ -1812,13 +1812,13 @@ static void SMARTCARD_DMARxOnlyAbortCallback(DMA_HandleTypeDef *hdma)
 static void SMARTCARD_SetConfig(SMARTCARD_HandleTypeDef *hsc)
 {
   uint32_t tmpreg = 0x00U;
-  
+
   /* Check the parameters */
   assert_param(IS_SMARTCARD_INSTANCE(hsc->Instance));
   assert_param(IS_SMARTCARD_POLARITY(hsc->Init.CLKPolarity));
   assert_param(IS_SMARTCARD_PHASE(hsc->Init.CLKPhase));
   assert_param(IS_SMARTCARD_LASTBIT(hsc->Init.CLKLastBit));
-  assert_param(IS_SMARTCARD_BAUDRATE(hsc->Init.BaudRate));  
+  assert_param(IS_SMARTCARD_BAUDRATE(hsc->Init.BaudRate));
   assert_param(IS_SMARTCARD_WORD_LENGTH(hsc->Init.WordLength));
   assert_param(IS_SMARTCARD_STOPBITS(hsc->Init.StopBits));
   assert_param(IS_SMARTCARD_PARITY(hsc->Init.Parity));
@@ -1828,7 +1828,7 @@ static void SMARTCARD_SetConfig(SMARTCARD_HandleTypeDef *hsc)
   /* The LBCL, CPOL and CPHA bits have to be selected when both the transmitter and the
      receiver are disabled (TE=RE=0) to ensure that the clock pulses function correctly. */
   CLEAR_BIT(hsc->Instance->CR1, (USART_CR1_TE | USART_CR1_RE));
-  
+
   /*---------------------------- USART CR2 Configuration ---------------------*/
   tmpreg = hsc->Instance->CR2;
   /* Clear CLKEN, CPOL, CPHA and LBCL bits */
@@ -1838,11 +1838,11 @@ static void SMARTCARD_SetConfig(SMARTCARD_HandleTypeDef *hsc)
   /* Set CPHA bit according to hsc->Init.CLKPhase value */
   /* Set LBCL bit according to hsc->Init.CLKLastBit value */
   /* Set Stop Bits: Set STOP[13:12] bits according to hsc->Init.StopBits value */
-  tmpreg |= (uint32_t)(USART_CR2_CLKEN | hsc->Init.CLKPolarity | 
+  tmpreg |= (uint32_t)(USART_CR2_CLKEN | hsc->Init.CLKPolarity |
                       hsc->Init.CLKPhase| hsc->Init.CLKLastBit | hsc->Init.StopBits);
   /* Write to USART CR2 */
   WRITE_REG(hsc->Instance->CR2, (uint32_t)tmpreg);
-  
+
   tmpreg = hsc->Instance->CR2;
 
   /* Clear STOP[13:12] bits */
@@ -1850,7 +1850,7 @@ static void SMARTCARD_SetConfig(SMARTCARD_HandleTypeDef *hsc)
 
   /* Set Stop Bits: Set STOP[13:12] bits according to hsc->Init.StopBits value */
   tmpreg |= (uint32_t)(hsc->Init.StopBits);
-  
+
   /* Write to USART CR2 */
   WRITE_REG(hsc->Instance->CR2, (uint32_t)tmpreg);
 
@@ -1861,16 +1861,16 @@ static void SMARTCARD_SetConfig(SMARTCARD_HandleTypeDef *hsc)
   tmpreg &= (uint32_t)~((uint32_t)(USART_CR1_M | USART_CR1_PCE | USART_CR1_PS | USART_CR1_TE | \
                                    USART_CR1_RE));
 
-  /* Configure the SMARTCARD Word Length, Parity and mode: 
-     Set the M bits according to hsc->Init.WordLength value 
+  /* Configure the SMARTCARD Word Length, Parity and mode:
+     Set the M bits according to hsc->Init.WordLength value
      Set PCE and PS bits according to hsc->Init.Parity value
      Set TE and RE bits according to hsc->Init.Mode value */
   tmpreg |= (uint32_t)hsc->Init.WordLength | hsc->Init.Parity | hsc->Init.Mode;
 
   /* Write to USART CR1 */
-  WRITE_REG(hsc->Instance->CR1, (uint32_t)tmpreg);  
+  WRITE_REG(hsc->Instance->CR1, (uint32_t)tmpreg);
 
-  /*-------------------------- USART CR3 Configuration -----------------------*/  
+  /*-------------------------- USART CR3 Configuration -----------------------*/
   /* Clear CTSE and RTSE bits */
   CLEAR_BIT(hsc->Instance->CR3, (USART_CR3_RTSE | USART_CR3_CTSE));
 

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _ASM_INLINE_GCC_H
-#define _ASM_INLINE_GCC_H
+#ifndef ZEPHYR_INCLUDE_ARCH_RISCV32_PULPINO_ASM_INLINE_GCC_H_
+#define ZEPHYR_INCLUDE_ARCH_RISCV32_PULPINO_ASM_INLINE_GCC_H_
 
 #ifdef __cplusplus
 extern "C" {

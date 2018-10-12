@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _STM32F2_PINMUX_H_
-#define _STM32F2_PINMUX_H_
+#ifndef ZEPHYR_DRIVERS_PINMUX_STM32_PINMUX_STM32F2_H_
+#define ZEPHYR_DRIVERS_PINMUX_STM32_PINMUX_STM32F2_H_
 
 /**
  * @file Header for STM32F2 pin multiplexing helper
@@ -145,4 +145,4 @@
 
 /* Port H */
 
-#endif /* _STM32F2_PINMUX_H_ */
+#endif /* ZEPHYR_DRIVERS_PINMUX_STM32_PINMUX_STM32F2_H_ */

@@ -8,8 +8,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __MB_DISPLAY_H
-#define __MB_DISPLAY_H
+#ifndef ZEPHYR_INCLUDE_DISPLAY_MB_DISPLAY_H_
+#define ZEPHYR_INCLUDE_DISPLAY_MB_DISPLAY_H_
 
 /**
  * @brief BBC micro:bit display APIs
@@ -166,4 +166,4 @@ void mb_display_stop(struct mb_display *disp);
  * @}
  */
 
-#endif /* __MB_DISPLAY_H */
+#endif /* ZEPHYR_INCLUDE_DISPLAY_MB_DISPLAY_H_ */

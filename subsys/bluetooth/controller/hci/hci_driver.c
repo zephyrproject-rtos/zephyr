@@ -348,17 +348,17 @@ static void recv_thread(void *p1, void *p2, void *p3)
 
 static int cmd_handle(struct net_buf *buf)
 {
-	struct bt_hci_evt_hdr *hdr;
+	void *node_rx = NULL;
 	struct net_buf *evt;
 
-	evt = hci_cmd_handle(buf);
+	evt = hci_cmd_handle(buf, &node_rx);
 	if (evt) {
-		hdr = (void *)evt->data;
 		BT_DBG("Replying with event of %u bytes", evt->len);
-		if (unlikely(!bt_hci_evt_is_prio(hdr->evt))) {
-			bt_recv(evt);
-		} else {
-			bt_recv_prio(evt);
+		bt_recv_prio(evt);
+
+		if (node_rx) {
+			BT_DBG("RX node enqueue");
+			k_fifo_put(&recv_fifo, node_rx);
 		}
 	}
 

@@ -1,7 +1,9 @@
 /dts-v1/;
 
-#define DT_FLASH_SIZE		__SIZE_K(1024)
-#define DT_SRAM_SIZE		__SIZE_K(32768)
+#include <mem.h>
+
+#define DT_FLASH_SIZE		DT_SIZE_K(1024)
+#define DT_SRAM_SIZE		DT_SIZE_M(32)
 
 #include <quark_x1000.dtsi>
 

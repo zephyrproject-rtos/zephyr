@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __XTENSA_API_H__
-#define __XTENSA_API_H__
+#ifndef ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_API_H_
+#define ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_API_H_
 
 #include <xtensa/hal.h>
 #include "xtensa_rtos.h"
@@ -64,5 +64,5 @@ static inline void _xt_set_intclear(unsigned int arg)
 	xthal_set_intclear(arg);
 }
 
-#endif /* __XTENSA_API_H__ */
+#endif /* ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_API_H_ */
 

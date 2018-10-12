@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define LOG_MODULE_NAME net_openthread_alarm
+#define LOG_LEVEL CONFIG_OPENTHREAD_LOG_LEVEL
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+
 #include <kernel.h>
 #include <string.h>
 #include <inttypes.h>
@@ -11,9 +17,6 @@
 #include <openthread/platform/alarm-milli.h>
 #include <platform.h>
 
-#define SYS_LOG_DOMAIN "openthread-plat"
-#define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
-#include <logging/sys_log.h>
 #include <stdio.h>
 
 #include "platform-zephyr.h"

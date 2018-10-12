@@ -1,6 +1,7 @@
 # Kconfig - Atmel SAM4S MCU series configuration options
 #
 # Copyright (c) 2017 Justin Watson
+# Copyright (c) 2018 Vincent van der Locht
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -14,6 +15,15 @@ config SOC_SERIES
 config SOC_PART_NUMBER
 	string
 	default "sam4s16c" if SOC_PART_NUMBER_SAM4S16C
+	default "sam4s16b" if SOC_PART_NUMBER_SAM4S16B
+	default "sam4s8c" if SOC_PART_NUMBER_SAM4S8C
+	default "sam4s8b" if SOC_PART_NUMBER_SAM4S8B
+	default "sam4s4c" if SOC_PART_NUMBER_SAM4S4C
+	default "sam4s4b" if SOC_PART_NUMBER_SAM4S4B
+	default "sam4s4a" if SOC_PART_NUMBER_SAM4S4A
+	default "sam4s2c" if SOC_PART_NUMBER_SAM4S2C
+	default "sam4s2b" if SOC_PART_NUMBER_SAM4S2B
+	default "sam4s2a" if SOC_PART_NUMBER_SAM4S2A
 
 #
 # SAM4S family has total 35 peripherals capable of

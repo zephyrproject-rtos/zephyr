@@ -5,7 +5,6 @@
 #
 ---
 title: Nordic Semiconductor nRF Family ADC
-id: nordic,nrf-adc
 version: 0.1
 
 description: >

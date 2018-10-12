@@ -13,3 +13,5 @@ toolchain:
   - gnuarmemb
 ram: 128
 flash: 128
+supported:
+  - spi

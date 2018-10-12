@@ -6,9 +6,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_IEEE802154_DRIVER_LEVEL
-#define SYS_LOG_DOMAIN "dev/mcr20a"
-#include <logging/sys_log.h>
+#define LOG_MODULE_NAME ieee802154_mcr20a
+#define LOG_LEVEL CONFIG_IEEE802154_LOG_LEVEL
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <errno.h>
 
@@ -40,7 +42,7 @@
  */
 #define _MAX_PKT_TX_DURATION		(133 + 9 + 8 + 9)
 
-#if (SYS_LOG_LEVEL == 4)
+#if LOG_LEVEL == LOG_LEVEL_DBG
 /* Prevent timer overflow during SYS_LOG_* output */
 #define _MACACKWAITDURATION		(864 / 16 + 11625)
 #define MCR20A_SEQ_SYNC_TIMEOUT		(200)
@@ -173,7 +175,7 @@ u8_t _mcr20a_read_reg(struct mcr20a_context *dev, bool dreg, u8_t addr)
 		return cmd_buf[len - 1];
 	}
 
-	SYS_LOG_ERR("Failed");
+	LOG_ERR("Failed");
 
 	return 0;
 }
@@ -287,7 +289,7 @@ static int mcr20a_timer_set(struct mcr20a_context *mcr20a,
 
 	now = sys_le32_to_cpu(now);
 	next = now + timeout;
-	SYS_LOG_DBG("now: 0x%x set 0x%x", now, next);
+	LOG_DBG("now: 0x%x set 0x%x", now, next);
 	next = sys_cpu_to_le32(next);
 
 	switch (cmp_reg) {
@@ -314,7 +316,7 @@ static int mcr20a_timer_set(struct mcr20a_context *mcr20a,
 	return 0;
 
 error:
-	SYS_LOG_ERR("Failed");
+	LOG_ERR("Failed");
 	return -EIO;
 }
 
@@ -339,11 +341,11 @@ static int mcr20a_timer_init(struct device *dev, u8_t tb)
 		goto error;
 	}
 
-	SYS_LOG_DBG("done, timebase %d", tb);
+	LOG_DBG("done, timebase %d", tb);
 	return 0;
 
 error:
-	SYS_LOG_ERR("Failed");
+	LOG_ERR("Failed");
 	return -EIO;
 }
 
@@ -375,7 +377,7 @@ static int mcr20a_t4cmp_set(struct mcr20a_context *mcr20a,
 	return 0;
 
 error:
-	SYS_LOG_DBG("Failed");
+	LOG_DBG("Failed");
 	return -EIO;
 }
 
@@ -400,7 +402,7 @@ static int mcr20a_t4cmp_clear(struct mcr20a_context *mcr20a)
 	return 0;
 
 error:
-	SYS_LOG_DBG("Failed");
+	LOG_DBG("Failed");
 	return -EIO;
 }
 
@@ -415,7 +417,7 @@ static inline void _xcvseq_wait_until_idle(struct mcr20a_context *mcr20a)
 	} while ((state & MCR20A_SEQ_STATE_MASK) && retries);
 
 	if (state & MCR20A_SEQ_STATE_MASK) {
-		SYS_LOG_ERR("Timeout");
+		LOG_ERR("Timeout");
 	}
 }
 
@@ -425,7 +427,7 @@ static inline int mcr20a_abort_sequence(struct mcr20a_context *mcr20a,
 	u8_t ctrl1;
 
 	ctrl1 = read_reg_phy_ctrl1(mcr20a);
-	SYS_LOG_DBG("CTRL1 0x%02x", ctrl1);
+	LOG_DBG("CTRL1 0x%02x", ctrl1);
 
 	if (((ctrl1 & MCR20A_PHY_CTRL1_XCVSEQ_MASK) == MCR20A_XCVSEQ_TX) ||
 	    ((ctrl1 & MCR20A_PHY_CTRL1_XCVSEQ_MASK) == MCR20A_XCVSEQ_TX_RX)) {
@@ -548,25 +550,25 @@ static inline void mcr20a_rx(struct mcr20a_context *mcr20a, u8_t len)
 
 	pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
 	if (!pkt) {
-		SYS_LOG_ERR("No buf available");
+		LOG_ERR("No buf available");
 		goto out;
 	}
 
 	frag = net_pkt_get_frag(pkt, K_NO_WAIT);
 	if (!frag) {
-		SYS_LOG_ERR("No frag available");
+		LOG_ERR("No frag available");
 		goto out;
 	}
 
 	net_pkt_frag_insert(pkt, frag);
 
 	if (!read_rxfifo_content(mcr20a, frag, pkt_len)) {
-		SYS_LOG_ERR("No content read");
+		LOG_ERR("No content read");
 		goto out;
 	}
 
 	if (ieee802154_radio_handle_ack(mcr20a->iface, pkt) == NET_OK) {
-		SYS_LOG_DBG("ACK packet handled");
+		LOG_DBG("ACK packet handled");
 		goto out;
 	}
 
@@ -574,12 +576,12 @@ static inline void mcr20a_rx(struct mcr20a_context *mcr20a, u8_t len)
 	net_pkt_set_ieee802154_rssi(pkt, mcr20a_get_rssi(
 					    net_pkt_ieee802154_lqi(pkt)));
 
-	SYS_LOG_DBG("Caught a packet (%u) (LQI: %u, RSSI: %u)",
+	LOG_DBG("Caught a packet (%u) (LQI: %u, RSSI: %u)",
 		    pkt_len, net_pkt_ieee802154_lqi(pkt),
 		    net_pkt_ieee802154_rssi(pkt));
 
 	if (net_recv_data(mcr20a->iface, pkt) < 0) {
-		SYS_LOG_DBG("Packet dropped by NET stack");
+		LOG_DBG("Packet dropped by NET stack");
 		goto out;
 	}
 
@@ -610,9 +612,9 @@ static inline bool _irqsts1_event(struct mcr20a_context *mcr20a,
 	case MCR20A_XCVSEQ_RECEIVE:
 		if ((dregs[MCR20A_IRQSTS1] & MCR20A_IRQSTS1_RXIRQ)) {
 			if ((dregs[MCR20A_IRQSTS1] & MCR20A_IRQSTS1_TXIRQ)) {
-				SYS_LOG_DBG("Finished RxSeq + TxAck");
+				LOG_DBG("Finished RxSeq + TxAck");
 			} else {
-				SYS_LOG_DBG("Finished RxSeq");
+				LOG_DBG("Finished RxSeq");
 			}
 
 			mcr20a_rx(mcr20a, dregs[MCR20A_RX_FRM_LEN]);
@@ -623,7 +625,7 @@ static inline bool _irqsts1_event(struct mcr20a_context *mcr20a,
 	case MCR20A_XCVSEQ_TX_RX:
 		if (dregs[MCR20A_IRQSTS1] & MCR20A_IRQSTS1_CCAIRQ) {
 			if (dregs[MCR20A_IRQSTS2] & MCR20A_IRQSTS2_CCA) {
-				SYS_LOG_DBG("Finished CCA, CH busy");
+				LOG_DBG("Finished CCA, CH busy");
 				atomic_set(&mcr20a->seq_retval, -EBUSY);
 				retval = true;
 				break;
@@ -634,11 +636,11 @@ static inline bool _irqsts1_event(struct mcr20a_context *mcr20a,
 			atomic_set(&mcr20a->seq_retval, 0);
 
 			if ((dregs[MCR20A_IRQSTS1] & MCR20A_IRQSTS1_RXIRQ)) {
-				SYS_LOG_DBG("Finished TxSeq + RxAck");
+				LOG_DBG("Finished TxSeq + RxAck");
 				/* Got Ack, timer should be disabled. */
 				mcr20a_t4cmp_clear(mcr20a);
 			} else {
-				SYS_LOG_DBG("Finished TxSeq");
+				LOG_DBG("Finished TxSeq");
 			}
 
 			retval = true;
@@ -652,7 +654,7 @@ static inline bool _irqsts1_event(struct mcr20a_context *mcr20a,
 			/* mcr20a_t4cmp_clear(mcr20a); */
 
 			if (dregs[MCR20A_IRQSTS2] & MCR20A_IRQSTS2_CCA) {
-				SYS_LOG_DBG("Finished CCA, CH busy");
+				LOG_DBG("Finished CCA, CH busy");
 				atomic_set(&mcr20a->seq_retval, -EBUSY);
 			} else {
 				/**
@@ -660,7 +662,7 @@ static inline bool _irqsts1_event(struct mcr20a_context *mcr20a,
 				 * a transmit sequence follows and
 				 * set here the sequence manager to Idle.
 				 */
-				SYS_LOG_DBG("Finished CCA, CH idle");
+				LOG_DBG("Finished CCA, CH idle");
 				new_seq = MCR20A_XCVSEQ_IDLE;
 				atomic_set(&mcr20a->seq_retval, 0);
 			}
@@ -670,8 +672,8 @@ static inline bool _irqsts1_event(struct mcr20a_context *mcr20a,
 		break;
 	case MCR20A_XCVSEQ_IDLE:
 	default:
-		SYS_LOG_ERR("SEQ triggered, but XCVSEQ is in the Idle state");
-		SYS_LOG_ERR("IRQSTS: 0x%02x", dregs[MCR20A_IRQSTS1]);
+		LOG_ERR("SEQ triggered, but XCVSEQ is in the Idle state");
+		LOG_ERR("IRQSTS: 0x%02x", dregs[MCR20A_IRQSTS1]);
 		break;
 	}
 
@@ -692,7 +694,7 @@ static inline bool _irqsts3_event(struct mcr20a_context *mcr20a,
 	bool retval = false;
 
 	if (dregs[MCR20A_IRQSTS3] & MCR20A_IRQSTS3_TMR4IRQ) {
-		SYS_LOG_DBG("Sequence timeout, IRQSTSs 0x%02x 0x%02x 0x%02x",
+		LOG_DBG("Sequence timeout, IRQSTSs 0x%02x 0x%02x 0x%02x",
 			    dregs[MCR20A_IRQSTS1],
 			    dregs[MCR20A_IRQSTS2],
 			    dregs[MCR20A_IRQSTS3]);
@@ -706,7 +708,7 @@ static inline bool _irqsts3_event(struct mcr20a_context *mcr20a,
 		dregs[MCR20A_IRQSTS1] = MCR20A_IRQSTS1_IRQ_MASK;
 		retval = true;
 	} else {
-		SYS_LOG_ERR("IRQSTS3 contains untreated IRQs: 0x%02x",
+		LOG_ERR("IRQSTS3 contains untreated IRQs: 0x%02x",
 			    dregs[MCR20A_IRQSTS3]);
 	}
 
@@ -728,13 +730,13 @@ static void mcr20a_thread_main(void *arg)
 		set_new_seq = false;
 
 		if (!mcr20a_mask_irqb(mcr20a, true)) {
-			SYS_LOG_ERR("Failed to mask IRQ_B");
+			LOG_ERR("Failed to mask IRQ_B");
 			goto unmask_irqb;
 		}
 
 		/* Read the register from IRQSTS1 until CTRL4 */
 		if (!read_burst_irqsts1_ctrl4(mcr20a, dregs)) {
-			SYS_LOG_ERR("Failed to read register");
+			LOG_ERR("Failed to read register");
 			goto unmask_irqb;
 		}
 		/* make backup from PHY_CTRL1 register */
@@ -747,11 +749,11 @@ static void mcr20a_thread_main(void *arg)
 		}
 
 		if (dregs[MCR20A_IRQSTS2] & MCR20A_IRQSTS2_IRQ_MASK) {
-			SYS_LOG_ERR("IRQSTS2 contains untreated IRQs: 0x%02x",
+			LOG_ERR("IRQSTS2 contains untreated IRQs: 0x%02x",
 				    dregs[MCR20A_IRQSTS2]);
 		}
 
-		SYS_LOG_DBG("WB: 0x%02x | 0x%02x | 0x%02x",
+		LOG_DBG("WB: 0x%02x | 0x%02x | 0x%02x",
 			     dregs[MCR20A_IRQSTS1],
 			     dregs[MCR20A_IRQSTS2],
 			     dregs[MCR20A_IRQSTS3]);
@@ -761,23 +763,23 @@ static void mcr20a_thread_main(void *arg)
 			/* Reset sequence manager */
 			ctrl1 &= ~MCR20A_PHY_CTRL1_XCVSEQ_MASK;
 			if (!write_reg_phy_ctrl1(mcr20a, ctrl1)) {
-				SYS_LOG_ERR("Failed to reset SEQ manager");
+				LOG_ERR("Failed to reset SEQ manager");
 			}
 
 			_xcvseq_wait_until_idle(mcr20a);
 
 			if (!write_burst_irqsts1_ctrl1(mcr20a, dregs)) {
-				SYS_LOG_ERR("Failed to write CTRL1");
+				LOG_ERR("Failed to write CTRL1");
 			}
 		} else {
 			if (!write_burst_irqsts1_irqsts3(mcr20a, dregs)) {
-				SYS_LOG_ERR("Failed to write IRQSTS3");
+				LOG_ERR("Failed to write IRQSTS3");
 			}
 		}
 
 unmask_irqb:
 		if (!mcr20a_mask_irqb(mcr20a, false)) {
-			SYS_LOG_ERR("Failed to unmask IRQ_B");
+			LOG_ERR("Failed to unmask IRQ_B");
 		}
 
 		k_mutex_unlock(&mcr20a->phy_mutex);
@@ -835,7 +837,7 @@ static int mcr20a_set_cca_mode(struct device *dev, u8_t mode)
 	ctrl4 |= set_bits_phy_ctrl4_ccatype(mode);
 
 	if (!write_reg_phy_ctrl4(mcr20a, ctrl4)) {
-		SYS_LOG_ERR("Failed");
+		LOG_ERR("Failed");
 		return -EIO;
 	}
 
@@ -859,37 +861,37 @@ static int mcr20a_cca(struct device *dev)
 	k_mutex_lock(&mcr20a->phy_mutex, K_FOREVER);
 
 	if (!mcr20a_mask_irqb(mcr20a, true)) {
-		SYS_LOG_ERR("Failed to mask IRQ_B");
+		LOG_ERR("Failed to mask IRQ_B");
 		goto error;
 	}
 
 	k_sem_init(&mcr20a->seq_sync, 0, 1);
 
 	if (mcr20a_abort_sequence(mcr20a, false)) {
-		SYS_LOG_ERR("Failed to reset XCV sequence");
+		LOG_ERR("Failed to reset XCV sequence");
 		goto error;
 	}
 
-	SYS_LOG_DBG("start CCA sequence");
+	LOG_DBG("start CCA sequence");
 
 	if (mcr20a_set_sequence(mcr20a, MCR20A_XCVSEQ_CCA)) {
-		SYS_LOG_ERR("Failed to reset XCV sequence");
+		LOG_ERR("Failed to reset XCV sequence");
 		goto error;
 	}
 
 	if (!mcr20a_mask_irqb(mcr20a, false)) {
-		SYS_LOG_ERR("Failed to unmask IRQ_B");
+		LOG_ERR("Failed to unmask IRQ_B");
 		goto error;
 	}
 
 	k_mutex_unlock(&mcr20a->phy_mutex);
 	retval = k_sem_take(&mcr20a->seq_sync, MCR20A_SEQ_SYNC_TIMEOUT);
 	if (retval) {
-		SYS_LOG_ERR("Timeout occurred, %d", retval);
+		LOG_ERR("Timeout occurred, %d", retval);
 		return retval;
 	}
 
-	SYS_LOG_DBG("done");
+	LOG_DBG("done");
 
 	return mcr20a->seq_retval;
 
@@ -906,37 +908,37 @@ static int mcr20a_set_channel(struct device *dev, u16_t channel)
 	int retval = -EIO;
 
 	if (channel < 11 || channel > 26) {
-		SYS_LOG_ERR("Unsupported channel %u", channel);
+		LOG_ERR("Unsupported channel %u", channel);
 		return -EINVAL;
 	}
 
 	k_mutex_lock(&mcr20a->phy_mutex, K_FOREVER);
 
 	if (!mcr20a_mask_irqb(mcr20a, true)) {
-		SYS_LOG_ERR("Failed to mask IRQ_B");
+		LOG_ERR("Failed to mask IRQ_B");
 		goto out;
 	}
 
 	ctrl1 = read_reg_phy_ctrl1(mcr20a);
 
 	if (mcr20a_abort_sequence(mcr20a, true)) {
-		SYS_LOG_ERR("Failed to reset XCV sequence");
+		LOG_ERR("Failed to reset XCV sequence");
 		goto out;
 	}
 
-	SYS_LOG_DBG("%u", channel);
+	LOG_DBG("%u", channel);
 	channel -= 11;
 	buf[0] = set_bits_pll_int0_val(pll_int_lt[channel]);
 	buf[1] = (u8_t)pll_frac_lt[channel];
 	buf[2] = (u8_t)(pll_frac_lt[channel] >> 8);
 
 	if (!write_burst_pll_int0(mcr20a, buf)) {
-		SYS_LOG_ERR("Failed to set PLL");
+		LOG_ERR("Failed to set PLL");
 		goto out;
 	}
 
 	if (mcr20a_set_sequence(mcr20a, ctrl1)) {
-		SYS_LOG_ERR("Failed to restore XCV sequence");
+		LOG_ERR("Failed to restore XCV sequence");
 		goto out;
 	}
 
@@ -944,7 +946,7 @@ static int mcr20a_set_channel(struct device *dev, u16_t channel)
 
 out:
 	if (!mcr20a_mask_irqb(mcr20a, false)) {
-		SYS_LOG_ERR("Failed to unmask IRQ_B");
+		LOG_ERR("Failed to unmask IRQ_B");
 		retval = -EIO;
 	}
 
@@ -961,13 +963,13 @@ static int mcr20a_set_pan_id(struct device *dev, u16_t pan_id)
 	k_mutex_lock(&mcr20a->phy_mutex, K_FOREVER);
 
 	if (!write_burst_pan_id(mcr20a, (u8_t *) &pan_id)) {
-		SYS_LOG_ERR("Failed");
+		LOG_ERR("Failed");
 		k_mutex_unlock(&mcr20a->phy_mutex);
 		return -EIO;
 	}
 
 	k_mutex_unlock(&mcr20a->phy_mutex);
-	SYS_LOG_DBG("0x%x", pan_id);
+	LOG_DBG("0x%x", pan_id);
 
 	return 0;
 }
@@ -980,13 +982,13 @@ static int mcr20a_set_short_addr(struct device *dev, u16_t short_addr)
 	k_mutex_lock(&mcr20a->phy_mutex, K_FOREVER);
 
 	if (!write_burst_short_addr(mcr20a, (u8_t *) &short_addr)) {
-		SYS_LOG_ERR("Failed");
+		LOG_ERR("Failed");
 		k_mutex_unlock(&mcr20a->phy_mutex);
 		return -EIO;
 	}
 
 	k_mutex_unlock(&mcr20a->phy_mutex);
-	SYS_LOG_DBG("0x%x", short_addr);
+	LOG_DBG("0x%x", short_addr);
 
 	return 0;
 }
@@ -998,13 +1000,13 @@ static int mcr20a_set_ieee_addr(struct device *dev, const u8_t *ieee_addr)
 	k_mutex_lock(&mcr20a->phy_mutex, K_FOREVER);
 
 	if (!write_burst_ext_addr(mcr20a, (void *)ieee_addr)) {
-		SYS_LOG_ERR("Failed");
+		LOG_ERR("Failed");
 		k_mutex_unlock(&mcr20a->phy_mutex);
 		return -EIO;
 	}
 
 	k_mutex_unlock(&mcr20a->phy_mutex);
-	SYS_LOG_DBG("IEEE address %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
+	LOG_DBG("IEEE address %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
 		    ieee_addr[7], ieee_addr[6], ieee_addr[5], ieee_addr[4],
 		    ieee_addr[3], ieee_addr[2], ieee_addr[1], ieee_addr[0]);
 
@@ -1016,7 +1018,7 @@ static int mcr20a_filter(struct device *dev,
 			 enum ieee802154_filter_type type,
 			 const struct ieee802154_filter *filter)
 {
-	SYS_LOG_DBG("Applying filter %u", type);
+	LOG_DBG("Applying filter %u", type);
 
 	if (!set) {
 		return -ENOTSUP;
@@ -1039,7 +1041,7 @@ static int mcr20a_set_txpower(struct device *dev, s16_t dbm)
 	u8_t pwr;
 
 	k_mutex_lock(&mcr20a->phy_mutex, K_FOREVER);
-	SYS_LOG_DBG("%d", dbm);
+	LOG_DBG("%d", dbm);
 
 	if ((dbm > MCR20A_OUTPUT_POWER_MAX) ||
 	    (dbm < MCR20A_OUTPUT_POWER_MIN)) {
@@ -1056,7 +1058,7 @@ static int mcr20a_set_txpower(struct device *dev, s16_t dbm)
 
 error:
 	k_mutex_unlock(&mcr20a->phy_mutex);
-	SYS_LOG_DBG("Failed");
+	LOG_DBG("Failed");
 	return -EIO;
 }
 
@@ -1085,7 +1087,7 @@ static inline bool write_txfifo_content(struct mcr20a_context *dev,
 	};
 
 	if (payload_len > MCR20A_PSDU_LENGTH) {
-		SYS_LOG_ERR("Payload too long");
+		LOG_ERR("Payload too long");
 		return 0;
 	}
 
@@ -1103,44 +1105,44 @@ static int mcr20a_tx(struct device *dev,
 
 	k_mutex_lock(&mcr20a->phy_mutex, K_FOREVER);
 
-	SYS_LOG_DBG("%p (%u)",
+	LOG_DBG("%p (%u)",
 		    frag, net_pkt_ll_reserve(pkt) + frag->len);
 
 	if (!mcr20a_mask_irqb(mcr20a, true)) {
-		SYS_LOG_ERR("Failed to mask IRQ_B");
+		LOG_ERR("Failed to mask IRQ_B");
 		goto error;
 	}
 
 	if (mcr20a_abort_sequence(mcr20a, false)) {
-		SYS_LOG_ERR("Failed to reset XCV sequence");
+		LOG_ERR("Failed to reset XCV sequence");
 		goto error;
 	}
 
 	if (!write_txfifo_content(mcr20a, pkt, frag)) {
-		SYS_LOG_ERR("Did not write properly into TX FIFO");
+		LOG_ERR("Did not write properly into TX FIFO");
 		goto error;
 	}
 
 	k_sem_init(&mcr20a->seq_sync, 0, 1);
 
 	if (mcr20a_set_sequence(mcr20a, seq)) {
-		SYS_LOG_ERR("Cannot start transmission");
+		LOG_ERR("Cannot start transmission");
 		goto error;
 	}
 
 	if (!mcr20a_mask_irqb(mcr20a, false)) {
-		SYS_LOG_ERR("Failed to unmask IRQ_B");
+		LOG_ERR("Failed to unmask IRQ_B");
 		goto error;
 	}
 
 	k_mutex_unlock(&mcr20a->phy_mutex);
 	retval = k_sem_take(&mcr20a->seq_sync, MCR20A_SEQ_SYNC_TIMEOUT);
 	if (retval) {
-		SYS_LOG_ERR("Timeout occurred, %d", retval);
+		LOG_ERR("Timeout occurred, %d", retval);
 		return retval;
 	}
 
-	SYS_LOG_DBG("done");
+	LOG_DBG("done");
 
 	return mcr20a->seq_retval;
 
@@ -1159,7 +1161,7 @@ static int mcr20a_start(struct device *dev)
 	enable_irqb_interrupt(mcr20a, false);
 
 	if (!write_reg_pwr_modes(mcr20a, MCR20A_PM_AUTODOZE)) {
-		SYS_LOG_ERR("Error starting MCR20A");
+		LOG_ERR("Error starting MCR20A");
 		goto error;
 	}
 
@@ -1170,7 +1172,7 @@ static int mcr20a_start(struct device *dev)
 	} while (!(status & MCR20A_PWR_MODES_XTAL_READY) && timeout);
 
 	if (!(status & MCR20A_PWR_MODES_XTAL_READY)) {
-		SYS_LOG_ERR("Timeout, failed to wake up");
+		LOG_ERR("Timeout, failed to wake up");
 		goto error;
 	}
 
@@ -1181,24 +1183,24 @@ static int mcr20a_start(struct device *dev)
 			  MCR20A_IRQSTS3_TMR_MASK);
 
 	if (mcr20a_abort_sequence(mcr20a, true)) {
-		SYS_LOG_ERR("Failed to reset XCV sequence");
+		LOG_ERR("Failed to reset XCV sequence");
 		goto error;
 	}
 
 	if (mcr20a_set_sequence(mcr20a, MCR20A_XCVSEQ_RECEIVE)) {
-		SYS_LOG_ERR("Failed to set XCV sequence");
+		LOG_ERR("Failed to set XCV sequence");
 		goto error;
 	}
 
 	enable_irqb_interrupt(mcr20a, true);
 
 	if (!mcr20a_mask_irqb(mcr20a, false)) {
-		SYS_LOG_ERR("Failed to unmask IRQ_B");
+		LOG_ERR("Failed to unmask IRQ_B");
 		goto error;
 	}
 
 	k_mutex_unlock(&mcr20a->phy_mutex);
-	SYS_LOG_DBG("started");
+	LOG_DBG("started");
 
 	return 0;
 
@@ -1215,12 +1217,12 @@ static int mcr20a_stop(struct device *dev)
 	k_mutex_lock(&mcr20a->phy_mutex, K_FOREVER);
 
 	if (!mcr20a_mask_irqb(mcr20a, true)) {
-		SYS_LOG_ERR("Failed to mask IRQ_B");
+		LOG_ERR("Failed to mask IRQ_B");
 		goto error;
 	}
 
 	if (mcr20a_abort_sequence(mcr20a, true)) {
-		SYS_LOG_ERR("Failed to reset XCV sequence");
+		LOG_ERR("Failed to reset XCV sequence");
 		goto error;
 	}
 
@@ -1236,14 +1238,14 @@ static int mcr20a_stop(struct device *dev)
 		goto error;
 	}
 
-	SYS_LOG_DBG("stopped");
+	LOG_DBG("stopped");
 	k_mutex_unlock(&mcr20a->phy_mutex);
 
 	return 0;
 
 error:
 	k_mutex_unlock(&mcr20a->phy_mutex);
-	SYS_LOG_ERR("Error stopping MCR20A");
+	LOG_ERR("Error stopping MCR20A");
 	return -EIO;
 }
 
@@ -1267,7 +1269,7 @@ static int mcr20a_update_overwrites(struct mcr20a_context *dev)
 	return 0;
 
 error:
-	SYS_LOG_ERR("Error update overwrites");
+	LOG_ERR("Error update overwrites");
 	return -EIO;
 }
 
@@ -1291,7 +1293,7 @@ static int power_on_and_setup(struct device *dev)
 		} while (status && timeout);
 
 		if (status) {
-			SYS_LOG_ERR("Timeout, failed to get WAKE IRQ");
+			LOG_ERR("Timeout, failed to get WAKE IRQ");
 			return -EIO;
 		}
 
@@ -1301,7 +1303,7 @@ static int power_on_and_setup(struct device *dev)
 	write_reg_clk_out_ctrl(mcr20a, tmp);
 
 	if (read_reg_clk_out_ctrl(mcr20a) != tmp) {
-		SYS_LOG_ERR("Failed to get device up");
+		LOG_ERR("Failed to get device up");
 		return -EIO;
 	}
 
@@ -1342,7 +1344,7 @@ static inline int configure_gpios(struct device *dev)
 	/* setup gpio for the modem interrupt */
 	mcr20a->irq_gpio = device_get_binding(CONFIG_MCR20A_GPIO_IRQ_B_NAME);
 	if (mcr20a->irq_gpio == NULL) {
-		SYS_LOG_ERR("Failed to get pointer to %s device",
+		LOG_ERR("Failed to get pointer to %s device",
 			    CONFIG_MCR20A_GPIO_IRQ_B_NAME);
 		return -EINVAL;
 	}
@@ -1356,7 +1358,7 @@ static inline int configure_gpios(struct device *dev)
 	/* setup gpio for the modems reset */
 	mcr20a->reset_gpio = device_get_binding(CONFIG_MCR20A_GPIO_RESET_NAME);
 	if (mcr20a->reset_gpio == NULL) {
-		SYS_LOG_ERR("Failed to get pointer to %s device",
+		LOG_ERR("Failed to get pointer to %s device",
 			    CONFIG_MCR20A_GPIO_RESET_NAME);
 		return -EINVAL;
 	}
@@ -1375,7 +1377,7 @@ static inline int configure_spi(struct device *dev)
 	mcr20a->spi = device_get_binding(
 			CONFIG_IEEE802154_MCR20A_SPI_DRV_NAME);
 	if (!mcr20a->spi) {
-		SYS_LOG_ERR("Unable to get SPI device");
+		LOG_ERR("Unable to get SPI device");
 		return -ENODEV;
 	}
 
@@ -1383,7 +1385,7 @@ static inline int configure_spi(struct device *dev)
 	mcr20a->cs_ctrl.gpio_dev = device_get_binding(
 		CONFIG_IEEE802154_MCR20A_GPIO_SPI_CS_DRV_NAME);
 	if (!mcr20a->cs_ctrl.gpio_dev) {
-		SYS_LOG_ERR("Unable to get GPIO SPI CS device");
+		LOG_ERR("Unable to get GPIO SPI CS device");
 		return -ENODEV;
 	}
 
@@ -1392,7 +1394,7 @@ static inline int configure_spi(struct device *dev)
 
 	mcr20a->spi_cfg.cs = &mcr20a->cs_ctrl;
 
-	SYS_LOG_DBG("SPI GPIO CS configured on %s:%u",
+	LOG_DBG("SPI GPIO CS configured on %s:%u",
 		    CONFIG_IEEE802154_MCR20A_GPIO_SPI_CS_DRV_NAME,
 		    CONFIG_IEEE802154_MCR20A_GPIO_SPI_CS_PIN);
 #endif /* CONFIG_IEEE802154_MCR20A_GPIO_SPI_CS */
@@ -1401,7 +1403,7 @@ static inline int configure_spi(struct device *dev)
 	mcr20a->spi_cfg.operation = SPI_WORD_SET(8);
 	mcr20a->spi_cfg.slave = CONFIG_IEEE802154_MCR20A_SPI_SLAVE;
 
-	SYS_LOG_DBG("SPI configured %s, %d",
+	LOG_DBG("SPI configured %s, %d",
 		    CONFIG_IEEE802154_MCR20A_SPI_DRV_NAME,
 		    CONFIG_IEEE802154_MCR20A_SPI_SLAVE);
 
@@ -1415,22 +1417,22 @@ static int mcr20a_init(struct device *dev)
 	k_mutex_init(&mcr20a->phy_mutex);
 	k_sem_init(&mcr20a->isr_sem, 0, 1);
 
-	SYS_LOG_DBG("\nInitialize MCR20A Transceiver\n");
+	LOG_DBG("\nInitialize MCR20A Transceiver\n");
 
 	if (configure_gpios(dev) != 0) {
-		SYS_LOG_ERR("Configuring GPIOS failed");
+		LOG_ERR("Configuring GPIOS failed");
 		return -EIO;
 	}
 
 	if (configure_spi(dev) != 0) {
-		SYS_LOG_ERR("Configuring SPI failed");
+		LOG_ERR("Configuring SPI failed");
 		return -EIO;
 	}
 
-	SYS_LOG_DBG("GPIO and SPI configured");
+	LOG_DBG("GPIO and SPI configured");
 
 	if (power_on_and_setup(dev) != 0) {
-		SYS_LOG_ERR("Configuring MCR20A failed");
+		LOG_ERR("Configuring MCR20A failed");
 		return -EIO;
 	}
 
@@ -1454,7 +1456,7 @@ static void mcr20a_iface_init(struct net_if *iface)
 
 	ieee802154_init(iface);
 
-	SYS_LOG_DBG("done");
+	LOG_DBG("done");
 }
 
 static struct mcr20a_context mcr20a_context_data;

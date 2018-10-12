@@ -4,12 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define NET_SYS_LOG_LEVEL CONFIG_OPENTHREAD_L2_LOG_LEVEL
-
-#if defined(CONFIG_OPENTHREAD_L2_DEBUG)
-#define NET_DOMAIN "net/openthread_l2"
-#define NET_LOG_ENABLED 1
-#endif
+#define NET_LOG_LEVEL CONFIG_OPENTHREAD_L2_LOG_LEVEL
+#define LOG_MODULE_NAME net_l2_openthread_utils
 
 #include <net/net_core.h>
 #include <net/net_pkt.h>
@@ -78,9 +74,9 @@ void add_ipv6_addr_to_zephyr(struct openthread_context *context)
 		char buf[NET_IPV6_ADDR_LEN];
 
 		NET_DBG("Adding %s",
-			net_addr_ntop(AF_INET6,
-				      (struct in6_addr *)(&address->mAddress),
-				      buf, sizeof(buf)));
+			log_strdup(net_addr_ntop(AF_INET6,
+				       (struct in6_addr *)(&address->mAddress),
+				       buf, sizeof(buf))));
 #endif
 		net_if_ipv6_addr_add(context->iface,
 				     (struct in6_addr *)(&address->mAddress),
@@ -95,7 +91,7 @@ void add_ipv6_addr_to_ot(struct openthread_context *context)
 	struct net_if_ipv6 *ipv6;
 	int i;
 
-	memset(&addr, 0, sizeof(addr));
+	(void)memset(&addr, 0, sizeof(addr));
 
 	if (net_if_config_ipv6_get(iface, &ipv6) < 0) {
 		NET_DBG("Cannot allocate IPv6 address");
@@ -122,9 +118,10 @@ void add_ipv6_addr_to_ot(struct openthread_context *context)
 	{
 		char buf[NET_IPV6_ADDR_LEN];
 
-		NET_DBG("Added %s", net_addr_ntop(AF_INET6,
-						  &addr.mAddress, buf,
-						  sizeof(buf)));
+		NET_DBG("Added %s",
+			log_strdup(net_addr_ntop(AF_INET6,
+						 &addr.mAddress, buf,
+						 sizeof(buf))));
 	}
 #endif
 }
@@ -157,8 +154,8 @@ void add_ipv6_maddr_to_ot(struct openthread_context *context)
 		char buf[NET_IPV6_ADDR_LEN];
 
 		NET_DBG("Added multicast %s",
-			net_addr_ntop(AF_INET6, &addr,
-				      buf, sizeof(buf)));
+			log_strdup(net_addr_ntop(AF_INET6, &addr,
+						 buf, sizeof(buf))));
 	}
 #endif
 }
@@ -179,9 +176,9 @@ void add_ipv6_maddr_to_zephyr(struct openthread_context *context)
 		char buf[NET_IPV6_ADDR_LEN];
 
 		NET_DBG("Adding multicast %s",
-			net_addr_ntop(AF_INET6,
+			log_strdup(net_addr_ntop(AF_INET6,
 				      (struct in6_addr *)(&maddress->mAddress),
-				      buf, sizeof(buf)));
+				      buf, sizeof(buf))));
 #endif
 		net_if_ipv6_maddr_add(context->iface,
 				      (struct in6_addr *)(&maddress->mAddress));
@@ -225,9 +222,9 @@ void rm_ipv6_addr_from_zephyr(struct openthread_context *context)
 			char buf[NET_IPV6_ADDR_LEN];
 
 			NET_DBG("Removing %s",
-				net_addr_ntop(AF_INET6,
+				log_strdup(net_addr_ntop(AF_INET6,
 					      &zephyr_addr->address.in6_addr,
-					      buf, sizeof(buf)));
+					      buf, sizeof(buf))));
 #endif
 			net_if_ipv6_addr_rm(context->iface,
 					    &zephyr_addr->address.in6_addr);
@@ -272,9 +269,9 @@ void rm_ipv6_maddr_from_zephyr(struct openthread_context *context)
 			char buf[NET_IPV6_ADDR_LEN];
 
 			NET_DBG("Removing multicast %s",
-				net_addr_ntop(AF_INET6,
+				log_strdup(net_addr_ntop(AF_INET6,
 					      &zephyr_addr->address.in6_addr,
-					      buf, sizeof(buf)));
+					      buf, sizeof(buf))));
 #endif
 			net_if_ipv6_maddr_rm(context->iface,
 					     &zephyr_addr->address.in6_addr);

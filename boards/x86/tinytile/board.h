@@ -9,11 +9,6 @@
 
 #include <soc.h>
 
-#if CONFIG_GPIO
-#define LED0_GPIO_PORT  CONFIG_GPIO_QMSI_0_NAME
-#define LED0_GPIO_PIN   8
-#endif
-
 #if defined(CONFIG_USB)
 /* GPIO driver name */
 #define USB_GPIO_DRV_NAME	CONFIG_GPIO_QMSI_0_NAME

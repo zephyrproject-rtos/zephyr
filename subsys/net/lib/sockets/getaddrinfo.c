@@ -4,10 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_SOCKETS)
-#define SYS_LOG_DOMAIN "net/sock"
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_sock_addr
+#define NET_LOG_LEVEL CONFIG_NET_SOCKETS_LOG_LEVEL
 
 /* libc headers */
 #include <stdlib.h>

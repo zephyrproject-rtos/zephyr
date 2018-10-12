@@ -1,0 +1,16 @@
+identifier: nucleo_l4r5zi
+name: NUCLEO-L4R5ZI
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
+supported:
+  - pwm
+  - spi
+  - i2c
+  - gpio
+  - usb device
+  - nvs
+ram: 640
+flash: 2048

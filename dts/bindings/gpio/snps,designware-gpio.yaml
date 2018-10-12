@@ -5,7 +5,6 @@
 #
 ---
 title: Synopsys Designware GPIO controller
-id: snps,designware-gpio
 version: 0.1
 
 description: >
@@ -17,6 +16,7 @@ properties:
       category: required
       description: compatible strings
       constraint: "snps,designware-gpio"
+      generation: define
 
     reg:
       type: int

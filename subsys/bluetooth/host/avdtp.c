@@ -142,7 +142,7 @@ void bt_avdtp_l2cap_encrypt_changed(struct bt_l2cap_chan *chan, u8_t status)
 	BT_DBG("");
 }
 
-void bt_avdtp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
+int bt_avdtp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_avdtp_single_sig_hdr *hdr = (void *)buf->data;
 	struct bt_avdtp *session = AVDTP_CHAN(chan);
@@ -150,7 +150,7 @@ void bt_avdtp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	if (buf->len < sizeof(*hdr)) {
 		BT_ERR("Recvd Wrong AVDTP Header");
-		return;
+		return 0;
 	}
 
 	msgtype = AVDTP_GET_MSG_TYPE(hdr->hdr);
@@ -165,7 +165,7 @@ void bt_avdtp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	if (msgtype != BT_AVDTP_CMD) {
 		if (session->req == NULL) {
 			BT_DBG("Unexpected peer response");
-			return;
+			return 0;
 		}
 
 		if (session->req->sig != sigid ||
@@ -173,16 +173,18 @@ void bt_avdtp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 			BT_DBG("Peer mismatch resp, expected sig[0x%02x]"
 				"tid[0x%02x]", session->req->sig,
 				session->req->tid);
-			return;
+			return 0;
 		}
 	}
 
 	for (i = 0; i < ARRAY_SIZE(handler); i++) {
 		if (sigid == handler[i].sig_id) {
 			handler[i].func(session, buf, msgtype);
-			return;
+			return 0;
 		}
 	}
+
+	return 0;
 }
 
 /*A2DP Layer interface */

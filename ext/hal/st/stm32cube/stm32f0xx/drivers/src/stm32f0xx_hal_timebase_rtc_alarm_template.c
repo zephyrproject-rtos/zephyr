@@ -6,9 +6,9 @@
   *          This file override the native HAL time base functions (defined as weak)
   *          to use the RTC ALARM for time base generation:
   *           + Intializes the RTC peripheral to increment the seconds registers each 1ms
-  *           + The alarm is configured to assert an interrupt when the RTC reaches 1ms 
+  *           + The alarm is configured to assert an interrupt when the RTC reaches 1ms
   *           + HAL_IncTick is called at each Alarm event and the time is reset to 00:00:00
-  *           + HSE (default), LSE or LSI can be selected as RTC clock source  
+  *           + HSE (default), LSE or LSI can be selected as RTC clock source
  @verbatim
   ==============================================================================
                         ##### How to use this driver #####
@@ -17,13 +17,13 @@
     This file must be copied to the application folder and modified as follows:
     (#) Rename it to 'stm32f0xx_hal_timebase_rtc_alarm.c'
     (#) Add this file and the RTC HAL drivers to your project and uncomment
-       HAL_RTC_MODULE_ENABLED define in stm32f0xx_hal_conf.h 
+       HAL_RTC_MODULE_ENABLED define in stm32f0xx_hal_conf.h
 
     [..]
     (@) HAL RTC alarm and HAL RTC wakeup drivers can’t be used with low power modes:
         The wake up capability of the RTC may be intrusive in case of prior low power mode
         configuration requiring different wake up sources.
-        Application/Example behavior is no more guaranteed 
+        Application/Example behavior is no more guaranteed
     (@) The stm32f0xx_hal_timebase_tim use is recommended for the Applications/Examples
           requiring low power modes
 
@@ -66,19 +66,19 @@
 
 /** @defgroup HAL_TimeBase_RTC_Alarm_Template  HAL TimeBase RTC Alarm Template
   * @{
-  */ 
+  */
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 
-/* Uncomment the line below to select the appropriate RTC Clock source for your application: 
+/* Uncomment the line below to select the appropriate RTC Clock source for your application:
   + RTC_CLOCK_SOURCE_HSE: can be selected for applications requiring timing precision.
   + RTC_CLOCK_SOURCE_LSE: can be selected for applications with low constraint on timing
                           precision.
   + RTC_CLOCK_SOURCE_LSI: can be selected for applications with low constraint on timing
                           precision.
   */
-#define RTC_CLOCK_SOURCE_HSE 
+#define RTC_CLOCK_SOURCE_HSE
 /* #define RTC_CLOCK_SOURCE_LSE */
 /* #define RTC_CLOCK_SOURCE_LSI */
 
@@ -101,9 +101,9 @@ void RTC_IRQHandler(void);
 /* Private functions ---------------------------------------------------------*/
 
 /**
-  * @brief  This function configures the RTC_ALARMA as a time base source. 
-  *         The time source is configured  to have 1ms time base with a dedicated 
-  *         Tick interrupt priority. 
+  * @brief  This function configures the RTC_ALARMA as a time base source.
+  *         The time source is configured  to have 1ms time base with a dedicated
+  *         Tick interrupt priority.
   * @note   This function is called  automatically at the beginning of program after
   *         reset by HAL_Init() or at any time when clock is configured, by HAL_RCC_ClockConfig().
   * @param  TickPriority Tick interrupt priority.
@@ -146,14 +146,14 @@ HAL_StatusTypeDef HAL_InitTick (uint32_t TickPriority)
       /* Enable RTC Clock */
       __HAL_RCC_RTC_ENABLE();
       /* The time base should be 1ms
-         Time base = ((RTC_ASYNCH_PREDIV + 1) * (RTC_SYNCH_PREDIV + 1)) / RTC_CLOCK 
+         Time base = ((RTC_ASYNCH_PREDIV + 1) * (RTC_SYNCH_PREDIV + 1)) / RTC_CLOCK
          HSE/32 as RTC clock and HSE 8MHz
            Time base = ((49 + 1) * (4 + 1)) / 250kHz
                      = 1ms
-         LSE as RTC clock 
+         LSE as RTC clock
            Time base = ((31 + 1) * (0 + 1)) / 32.768KHz
                      = ~1ms
-         LSI as RTC clock 
+         LSI as RTC clock
            Time base = ((39 + 1) * (0 + 1)) / 40KHz
                      = 1ms
       */

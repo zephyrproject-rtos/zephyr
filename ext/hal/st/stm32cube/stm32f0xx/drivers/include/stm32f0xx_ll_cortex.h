@@ -282,7 +282,7 @@ __STATIC_INLINE uint32_t LL_CPUID_GetVariant(void)
 }
 
 /**
-  * @brief  Get Architecture number 
+  * @brief  Get Architecture number
   * @rmtoll SCB_CPUID    ARCHITECTURE  LL_CPUID_GetArchitecture
   * @retval Value should be equal to 0xC for Cortex-M0 devices
   */

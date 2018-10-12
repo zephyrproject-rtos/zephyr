@@ -37,6 +37,7 @@
 
 #if NRFX_CHECK(NRFX_CLOCK_ENABLED)
 extern bool nrfx_clock_irq_enabled;
+extern void nrfx_clock_irq_handler(void);
 #endif
 
 /**
@@ -293,5 +294,23 @@ void nrfx_power_irq_handler(void)
     }
 #endif
 }
+
+#if NRFX_CHECK(NRFX_CLOCK_ENABLED)
+/*
+ * If both POWER and CLOCK drivers are used, a common IRQ handler function must
+ * be used that calls the handlers in these two drivers. This is because these
+ * two peripherals share one interrupt.
+ * This function is located here, not in a separate nrfx_power_clock.c file,
+ * so that it does not end up as the only symbol in a separate object when
+ * a library with nrfx is created. In such case, forcing a linker to use this
+ * function instead of another one defined as weak will require additional
+ * actions, and might be even impossible.
+ */
+void nrfx_power_clock_irq_handler(void)
+{
+    nrfx_power_irq_handler();
+    nrfx_clock_irq_handler();
+}
+#endif
 
 #endif // NRFX_CHECK(NRFX_POWER_ENABLED)

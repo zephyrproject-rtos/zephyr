@@ -117,6 +117,10 @@ the PDF file is available at ``doc/_build/pdf/zephyr.pdf``.
 If you want to build the documentation from scratch just delete the contents
 of the build folder and run ``cmake`` and then ``ninja`` again.
 
+.. note::
+
+   If you add or remove a file from the documentation, you need to re-run CMake.
+
 On Unix platforms a convenience :file:`Makefile` at the root folder
 of the Zephyr repository can be used to build the documentation directly from
 there:

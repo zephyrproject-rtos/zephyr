@@ -13,7 +13,7 @@ menuconfig LP5562
 	  LP5562 LED driver has 4 channels (RGBW). Each channel can drive up to
 	  25.5 mA per LED.
 
-if !HAS_DTS_I2C_DEVICE && LP5562
+if !HAS_DTS_I2C && LP5562
 
 config LP5562_DEV_NAME
 	string "LP5562 device name"

@@ -120,7 +120,7 @@ int hmc5883l_init_interrupt(struct device *dev)
 
 	k_thread_create(&drv_data->thread, drv_data->thread_stack,
 			CONFIG_HMC5883L_THREAD_STACK_SIZE,
-			(k_thread_entry_t)hmc5883l_thread, POINTER_TO_INT(dev),
+			(k_thread_entry_t)hmc5883l_thread, dev,
 			0, NULL, K_PRIO_COOP(CONFIG_HMC5883L_THREAD_PRIORITY),
 			0, 0);
 #elif defined(CONFIG_HMC5883L_TRIGGER_GLOBAL_THREAD)

@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <device.h>
-#include <shell/shell.h>
+#include <shell/legacy_shell.h>
 
 #include <misc/printk.h>
 

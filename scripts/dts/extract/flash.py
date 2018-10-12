@@ -19,7 +19,7 @@ class DTFlash(DTDirective):
         # Node of the flash
         self._flash_node = None
 
-    def _extract_partition(self, node_address, yaml, prop, names, def_label):
+    def _extract_partition(self, node_address, yaml, prop, def_label):
         prop_def = {}
         prop_alias = {}
         node = reduced[node_address]
@@ -53,7 +53,7 @@ class DTFlash(DTDirective):
 
         insert_defs(node_address, prop_def, prop_alias)
 
-    def _extract_flash(self, node_address, yaml, prop, names, def_label):
+    def _extract_flash(self, node_address, yaml, prop, def_label):
         load_defs = {}
 
         if node_address == 'dummy-flash':
@@ -72,14 +72,14 @@ class DTFlash(DTDirective):
         flash_props = ["label", "write-block-size", "erase-block-size"]
         for prop in flash_props:
             if prop in self._flash_node['props']:
-                default.extract(node_address, None, prop, None, def_label)
+                default.extract(node_address, None, prop, def_label)
         insert_defs(node_address, load_defs, {})
 
         #for address in reduced:
         #    if address.startswith(node_address) and 'partition@' in address:
         #        self._extract_partition(address, yaml, 'partition', None, def_label)
 
-    def _extract_code_partition(self, node_address, yaml, prop, names, def_label):
+    def _extract_code_partition(self, node_address, yaml, prop, def_label):
         load_defs = {}
 
         if node_address == 'dummy-flash':
@@ -95,8 +95,7 @@ class DTFlash(DTDirective):
         if node and node is not self._flash_node:
             # only compute the load offset if the code partition
             # is not the same as the flash base address
-            load_offset = str(int(node['props']['reg'][0]) \
-                              - int(self._flash_node['props']['reg'][0]))
+            load_offset = node['props']['reg'][0]
             load_defs['CONFIG_FLASH_LOAD_OFFSET'] = load_offset
             load_size = node['props']['reg'][1]
             load_defs['CONFIG_FLASH_LOAD_SIZE'] = load_size
@@ -113,21 +112,20 @@ class DTFlash(DTDirective):
     #                     flash definition.
     # @param yaml YAML definition for the owning node.
     # @param prop compatible property name
-    # @param names (unused)
     # @param def_label Define label string of node owning the
     #                  compatible definition.
     #
-    def extract(self, node_address, yaml, prop, names, def_label):
+    def extract(self, node_address, yaml, prop, def_label):
 
         if prop == 'zephyr,flash':
             # indicator for flash
-            self._extract_flash(node_address, yaml, prop, names, def_label)
+            self._extract_flash(node_address, yaml, prop, def_label)
         elif prop == 'zephyr,code-partition':
             # indicator for code_partition
-            self._extract_code_partition(node_address, yaml, prop, names, def_label)
+            self._extract_code_partition(node_address, yaml, prop, def_label)
         elif prop == 'reg':
             # indicator for partition
-            self._extract_partition(node_address, yaml, prop, names, def_label)
+            self._extract_partition(node_address, yaml, prop, def_label)
         else:
             raise Exception(
                 "DTFlash.extract called with unexpected directive ({})."

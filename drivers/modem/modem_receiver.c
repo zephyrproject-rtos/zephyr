@@ -11,14 +11,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define SYS_LOG_DOMAIN "mdm_receiver"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_MODEM_LEVEL
+#define LOG_DOMAIN "mdm_receiver"
+#define LOG_LEVEL CONFIG_LOG_MODEM_LEVEL
 
 #include <kernel.h>
 #include <init.h>
 #include <uart.h>
 
-#include <logging/sys_log.h>
+#include <logging/log.h>
 #include <drivers/modem/modem_receiver.h>
 
 #define MAX_MDM_CTX	CONFIG_MODEM_RECEIVER_MAX_CONTEXTS
@@ -101,7 +101,7 @@ static void mdm_receiver_isr(struct device *uart_dev)
 			ret = k_pipe_put(&ctx->uart_pipe, read_buf, rx,
 					 &bytes_written, rx, K_NO_WAIT);
 			if (ret < 0) {
-				SYS_LOG_ERR("UART buffer write error (%d)! "
+				LOG_ERR("UART buffer write error (%d)! "
 					    "Flushing UART!", ret);
 				mdm_receiver_flush(ctx);
 				return;

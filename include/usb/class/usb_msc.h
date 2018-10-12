@@ -43,8 +43,8 @@
  * Header is limited to Bulk-Only Transfer protocol.
  */
 
-#ifndef __USB_MSC_H__
-#define __USB_MSC_H__
+#ifndef ZEPHYR_INCLUDE_USB_CLASS_USB_MSC_H_
+#define ZEPHYR_INCLUDE_USB_CLASS_USB_MSC_H_
 
 /** MSC Subclass and Protocol Codes */
 #define SCSI_TRANSPARENT_SUBCLASS	0x06
@@ -106,4 +106,4 @@ struct CSW {
 #define MODE_SELECT10			0x55
 #define MODE_SENSE10			0x5A
 
-#endif /* __USB_MSC_H__ */
+#endif /* ZEPHYR_INCLUDE_USB_CLASS_USB_MSC_H_ */

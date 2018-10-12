@@ -18,13 +18,6 @@ config HAS_DTS_GPIO
 	  This option specifies that the target platform supports device tree
 	  configuration for GPIO.
 
-config HAS_DTS_GPIO_DEVICE
-	bool
-	depends on HAS_DTS_GPIO
-	help
-	  This option specifies that the target platform supports device tree
-	  configuration for GPIO on the driver/consumer side.
-
 config HAS_DTS_I2C
 	bool
 	depends on HAS_DTS
@@ -32,33 +25,12 @@ config HAS_DTS_I2C
 	  This option specifies that the target platform supports device tree
 	  configuration for I2c.
 
-config HAS_DTS_I2C_DEVICE
-	bool
-	depends on HAS_DTS_I2C
-	help
-	  This option specifies that the target platform supports device tree
-	  configuration for sensors.
-
 config HAS_DTS_SPI
 	bool
 	depends on HAS_DTS
 	help
 	  This option specifies that the target platform supports device tree
 	  configuration for SPI.
-
-config HAS_DTS_SPI_DEVICE
-	bool
-	depends on HAS_DTS_SPI
-	help
-	  This option specifies that the target platform supports device tree
-	  configuration for spi devices, like sensors or RF modules.
-
-config HAS_DTS_SPI_PINS
-	bool
-	help
-	  This option specifies that the target platform supports device tree
-	  configuration for pin definition of spi devices, like sensors or
-	  RF modules.
 
 config HAS_DTS_USB
 	bool
@@ -73,3 +45,10 @@ config HAS_DTS_WDT
 	help
 	  This option specifies that the target platform supports device tree
 	  configuration for WDT.
+
+config HAS_DTS_ETHERNET
+	bool
+	depends on HAS_DTS
+	help
+	  This option specifies that the target platform supports device tree
+	  configuration for Ethernet.

@@ -1,0 +1,38 @@
+#
+# Copyright (c) 2018, STMicroelectronics
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: STM32 I2S
+version: 0.1
+
+description: >
+    This binding gives a base representation of the STM32 I2S controller
+
+inherits:
+    !include i2s.yaml
+
+properties:
+    compatible:
+      constraint: "st,stm32-i2s"
+
+    reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+    interrupts:
+      type: array
+      category: required
+      description: required interrupts
+      generation: define
+
+    interrupt-names:
+      type: stringlist
+      category: optional
+      description: readable string describing the interrupts
+      generation: define
+
+...

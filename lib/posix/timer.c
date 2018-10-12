@@ -59,7 +59,7 @@ int timer_create(clockid_t clockid, struct sigevent *evp, timer_t *timerid)
 	}
 
 	if (k_mem_slab_alloc(&posix_timer_slab, (void **)&timer, 100) == 0) {
-		memset(timer, 0, sizeof(struct timer_obj));
+		(void)memset(timer, 0, sizeof(struct timer_obj));
 	} else {
 		errno = ENOMEM;
 		return -1;

@@ -7,8 +7,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __BT_CONN_H
-#define __BT_CONN_H
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_CONN_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_CONN_H_
 
 /**
  * @brief Connection management
@@ -209,7 +209,7 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
  *
  *  @return Zero on success or error code otherwise.
  */
-int bt_le_set_auto_conn(bt_addr_le_t *addr,
+int bt_le_set_auto_conn(const bt_addr_le_t *addr,
 			const struct bt_le_conn_param *param);
 
 /** @brief Initiate directed advertising to a remote device
@@ -385,6 +385,18 @@ struct bt_conn_cb {
  *  @param cb Callback struct.
  */
 void bt_conn_cb_register(struct bt_conn_cb *cb);
+
+/** Enable/disable bonding.
+ *
+ *  Set/clear the Bonding flag in the Authentication Requirements of
+ *  SMP Pairing Request/Response data.
+ *  The initial value of this flag depends on BT_BONDABLE Kconfig setting.
+ *  For the vast majority of applications calling this function shouldn't be
+ *  needed.
+ *
+ *  @param enable Value allowing/disallowing to be bondable.
+ */
+void bt_set_bondable(bool enable);
 
 /** @def BT_PASSKEY_INVALID
  *
@@ -665,4 +677,4 @@ struct bt_conn *bt_conn_create_sco(const bt_addr_t *peer);
  * @}
  */
 
-#endif /* __BT_CONN_H */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_CONN_H_ */

@@ -10,8 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __ETHERNET_H
-#define __ETHERNET_H
+#ifndef ZEPHYR_INCLUDE_NET_ETHERNET_H_
+#define ZEPHYR_INCLUDE_NET_ETHERNET_H_
 
 #include <zephyr/types.h>
 #include <stdbool.h>
@@ -656,4 +656,4 @@ static inline void net_eth_unset_lldpdu(struct net_if *iface)
  * @}
  */
 
-#endif /* __ETHERNET_H */
+#endif /* ZEPHYR_INCLUDE_NET_ETHERNET_H_ */

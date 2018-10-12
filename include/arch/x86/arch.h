@@ -11,14 +11,15 @@
  * by the generic kernel interface header (include/arch/cpu.h)
  */
 
-#ifndef _ARCH_IFACE_H
-#define _ARCH_IFACE_H
+#ifndef ZEPHYR_INCLUDE_ARCH_X86_ARCH_H_
+#define ZEPHYR_INCLUDE_ARCH_X86_ARCH_H_
 
 #include <irq.h>
 #include <arch/x86/irq_controller.h>
 #include <kernel_arch_thread.h>
 #include <generated_dts_board.h>
 #include <mmustructs.h>
+#include <stdbool.h>
 
 #ifndef _ASMLANGUAGE
 #include <arch/x86/asm_inline.h>
@@ -48,8 +49,8 @@ extern "C" {
 void _int_latency_start(void);
 void _int_latency_stop(void);
 #else
-#define _int_latency_start()  do { } while (0)
-#define _int_latency_stop()   do { } while (0)
+#define _int_latency_start()  do { } while (false)
+#define _int_latency_stop()   do { } while (false)
 #endif
 
 /* interrupt/exception/error related definitions */
@@ -266,7 +267,7 @@ extern unsigned char _irq_to_interrupt_vector[];
 extern void _arch_irq_direct_pm(void);
 #define _ARCH_ISR_DIRECT_PM() _arch_irq_direct_pm()
 #else
-#define _ARCH_ISR_DIRECT_PM() do { } while (0)
+#define _ARCH_ISR_DIRECT_PM() do { } while (false)
 #endif
 
 #define _ARCH_ISR_DIRECT_HEADER() _arch_isr_direct_header()
@@ -470,7 +471,6 @@ extern void	_arch_irq_disable(unsigned int irq);
  */
 
 struct k_thread;
-typedef struct k_thread *k_tid_t;
 
 /**
  * @brief Enable preservation of floating point context information.
@@ -501,7 +501,7 @@ typedef struct k_thread *k_tid_t;
  *
  * @return N/A
  */
-extern void k_float_enable(k_tid_t thread, unsigned int options);
+extern void k_float_enable(struct k_thread *thread, unsigned int options);
 
 /**
  * @brief Disable preservation of floating point context information.
@@ -517,7 +517,7 @@ extern void k_float_enable(k_tid_t thread, unsigned int options);
  *
  * @return N/A
  */
-extern void k_float_disable(k_tid_t thread);
+extern void k_float_disable(struct k_thread *thread);
 
 /**
  * @}
@@ -624,7 +624,7 @@ extern struct task_state_segment _main_tss;
 		: [vector] "i" (CONFIG_X86_KERNEL_OOPS_VECTOR), \
 		  [reason] "i" (reason_p)); \
 	CODE_UNREACHABLE; \
-} while (0)
+} while (false)
 #endif
 
 /** Dummy ESF for fatal errors that would otherwise not have an ESF */
@@ -693,4 +693,4 @@ void _x86_mmu_set_flags(void *ptr,
 }
 #endif
 
-#endif /* _ARCH_IFACE_H */
+#endif /* ZEPHYR_INCLUDE_ARCH_X86_ARCH_H_ */

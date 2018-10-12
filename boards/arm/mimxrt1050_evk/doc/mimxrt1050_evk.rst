@@ -95,6 +95,8 @@ features:
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
@@ -113,11 +115,23 @@ The MIMXRT1050 SoC has five pairs of pinmux/gpio controllers.
 +---------------+-----------------+---------------------------+
 | Name          | Function        | Usage                     |
 +===============+=================+===========================+
+| GPIO_AD_B0_00 | LPSPI3_SCK      | SPI                       |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B0_01 | LPSPI3_SDO      | SPI                       |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B0_02 | LPSPI3_SDI      | SPI                       |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B0_03 | LPSPI3_PCS0     | SPI                       |
++---------------+-----------------+---------------------------+
 | GPIO_AD_B0_09 | GPIO            | LED                       |
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B0_12 | LPUART1_TX      | UART Console              |
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B0_13 | LPUART1_RX      | UART Console              |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_06 | LPUART3_TX      | UART BT HCI               |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_07 | LPUART3_RX      | UART BT HCI               |
 +---------------+-----------------+---------------------------+
 | WAKEUP        | GPIO            | SW0                       |
 +---------------+-----------------+---------------------------+
@@ -131,7 +145,8 @@ board with the on-chip PLL to generate a 600 MHz core clock.
 Serial Port
 ===========
 
-The MIMXRT1050 SoC has eight UARTs. One is configured for the console and the
+The MIMXRT1050 SoC has eight UARTs. ``LPUART1`` is configured for the console,
+``LPUART3`` for the Bluetooth Host Controller Interface (BT HCI), and the
 remaining are not used.
 
 Programming and Debugging

@@ -7,8 +7,8 @@
 /** @file sys_log.h
  *  @brief Logging macros.
  */
-#ifndef __SYS_LOG_H
-#define __SYS_LOG_H
+#ifndef ZEPHYR_INCLUDE_LOGGING_SYS_LOG_H_
+#define ZEPHYR_INCLUDE_LOGGING_SYS_LOG_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -190,4 +190,4 @@ void syslog_hook_install(void (*hook)(const char *, ...));
 }
 #endif
 
-#endif /* __SYS_LOG_H */
+#endif /* ZEPHYR_INCLUDE_LOGGING_SYS_LOG_H_ */

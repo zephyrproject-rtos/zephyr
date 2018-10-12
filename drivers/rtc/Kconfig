@@ -16,6 +16,10 @@ menuconfig RTC
 
 if RTC
 
+module = RTC
+module-str = rtc
+source "subsys/logging/Kconfig.template.log_config"
+
 config RTC_0_NAME
 	string "Driver instance name"
 	default "RTC_0"

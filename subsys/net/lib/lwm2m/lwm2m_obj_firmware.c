@@ -4,9 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define SYS_LOG_DOMAIN "lwm2m_obj_firmware"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_LWM2M_LEVEL
-#include <logging/sys_log.h>
+#define LOG_MODULE_NAME net_lwm2m_obj_firmware
+#define LOG_LEVEL CONFIG_LWM2M_LOG_LEVEL
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+
 #include <net/coap.h>
 #include <string.h>
 #include <init.h>
@@ -93,18 +96,18 @@ void lwm2m_firmware_set_update_state(u8_t state)
 	case STATE_IDLE:
 		break;
 	default:
-		SYS_LOG_ERR("Unhandled state: %u", state);
+		LOG_ERR("Unhandled state: %u", state);
 		return;
 	}
 
 	if (error) {
-		SYS_LOG_ERR("Invalid state transition: %u -> %u",
-			    update_state, state);
+		LOG_ERR("Invalid state transition: %u -> %u",
+			update_state, state);
 	}
 
 	update_state = state;
 	NOTIFY_OBSERVER(LWM2M_OBJECT_FIRMWARE_ID, 0, FIRMWARE_STATE_ID);
-	SYS_LOG_DBG("Update state = %d", update_state);
+	LOG_DBG("Update state = %d", update_state);
 }
 
 u8_t lwm2m_firmware_get_update_result(void)
@@ -161,18 +164,18 @@ void lwm2m_firmware_set_update_result(u8_t result)
 		/* Next state could be idle or downloaded */
 		break;
 	default:
-		SYS_LOG_ERR("Unhandled result: %u", result);
+		LOG_ERR("Unhandled result: %u", result);
 		return;
 	}
 
 	if (error) {
-		SYS_LOG_ERR("Unexpected result(%u) set while state is %u",
-			    result, state);
+		LOG_ERR("Unexpected result(%u) set while state is %u",
+			result, state);
 	}
 
 	update_result = result;
 	NOTIFY_OBSERVER(LWM2M_OBJECT_FIRMWARE_ID, 0, FIRMWARE_UPDATE_RESULT_ID);
-	SYS_LOG_DBG("Update result = %d", update_result);
+	LOG_DBG("Update result = %d", update_result);
 }
 
 static int package_write_cb(u16_t obj_inst_id,
@@ -195,7 +198,7 @@ static int package_write_cb(u16_t obj_inst_id,
 			return 0;
 		}
 
-		SYS_LOG_DBG("Cannot download: state = %d", state);
+		LOG_DBG("Cannot download: state = %d", state);
 		return -EPERM;
 	}
 
@@ -227,7 +230,7 @@ static int package_uri_write_cb(u16_t obj_inst_id,
 				u8_t *data, u16_t data_len,
 				bool last_block, size_t total_size)
 {
-	SYS_LOG_DBG("PACKAGE_URI WRITE: %s", package_uri);
+	LOG_DBG("PACKAGE_URI WRITE: %s", package_uri);
 
 #ifdef CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
 	u8_t state = lwm2m_firmware_get_update_state();
@@ -274,7 +277,7 @@ static int firmware_update_cb(u16_t obj_inst_id)
 
 	state = lwm2m_firmware_get_update_state();
 	if (state != STATE_DOWNLOADED) {
-		SYS_LOG_ERR("State other than downloaded: %d", state);
+		LOG_ERR("State other than downloaded: %d", state);
 		return -EPERM;
 	}
 
@@ -284,7 +287,7 @@ static int firmware_update_cb(u16_t obj_inst_id)
 	if (callback) {
 		ret = callback(obj_inst_id);
 		if (ret < 0) {
-			SYS_LOG_ERR("Failed to update firmware: %d", ret);
+			LOG_ERR("Failed to update firmware: %d", ret);
 			lwm2m_firmware_set_update_result(
 				ret == -EINVAL ? RESULT_INTEGRITY_FAILED :
 						 RESULT_UPDATE_FAILED);
@@ -316,7 +319,7 @@ static struct lwm2m_engine_obj_inst *firmware_create(u16_t obj_inst_id)
 
 	inst.resources = res;
 	inst.resource_count = i;
-	SYS_LOG_DBG("Create LWM2M firmware instance: %d", obj_inst_id);
+	LOG_DBG("Create LWM2M firmware instance: %d", obj_inst_id);
 	return &inst;
 }
 
@@ -347,7 +350,7 @@ static int lwm2m_firmware_init(struct device *dev)
 	/* auto create the only instance */
 	ret = lwm2m_create_obj_inst(LWM2M_OBJECT_FIRMWARE_ID, 0, &obj_inst);
 	if (ret < 0) {
-		SYS_LOG_DBG("Create LWM2M instance 0 error: %d", ret);
+		LOG_DBG("Create LWM2M instance 0 error: %d", ret);
 	}
 
 	return ret;

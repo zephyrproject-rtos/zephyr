@@ -9,10 +9,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_NET_DEBUG_ROUTE)
-#define SYS_LOG_DOMAIN "net/route"
-#define NET_LOG_ENABLED 1
-#endif
+#define LOG_MODULE_NAME net_route
+#define NET_LOG_LEVEL CONFIG_NET_ROUTE_LOG_LEVEL
 
 #include <kernel.h>
 #include <limits.h>
@@ -65,7 +63,7 @@ static inline struct net_nbr *get_nexthop_nbr(struct net_nbr *start, int idx)
 	NET_ASSERT_INFO(idx < CONFIG_NET_MAX_NEXTHOPS, "idx %d >= max %d",
 			idx, CONFIG_NET_MAX_NEXTHOPS);
 
-	return (struct net_nbr *)((void *)start +
+	return (struct net_nbr *)((u8_t *)start +
 			((sizeof(struct net_nbr) + start->size) * idx));
 }
 
@@ -146,7 +144,6 @@ struct net_nbr *net_route_get_nbr(struct net_route_entry *route)
 	return NULL;
 }
 
-#if defined(CONFIG_NET_DEBUG_ROUTE)
 void net_routes_print(void)
 {
 	int i;
@@ -158,21 +155,19 @@ void net_routes_print(void)
 			continue;
 		}
 
-		NET_DBG("[%d] %p %d addr %s/%d iface %p idx %d "
-			"ll %s",
+		NET_DBG("[%d] %p %d addr %s/%d",
 			i, nbr, nbr->ref,
-			net_sprint_ipv6_addr(&net_route_data(nbr)->addr),
-			net_route_data(nbr)->prefix_len,
+			log_strdup(net_sprint_ipv6_addr(
+					   &net_route_data(nbr)->addr)),
+			net_route_data(nbr)->prefix_len);
+		NET_DBG("    iface %p idx %d ll %s",
 			nbr->iface, nbr->idx,
 			nbr->idx == NET_NBR_LLADDR_UNKNOWN ? "?" :
-			net_sprint_ll_addr(
+			log_strdup(net_sprint_ll_addr(
 				net_nbr_get_lladdr(nbr->idx)->addr,
-				net_nbr_get_lladdr(nbr->idx)->len));
+				net_nbr_get_lladdr(nbr->idx)->len)));
 	}
 }
-#else
-#define net_routes_print(...)
-#endif /* CONFIG_NET_DEBUG_ROUTE */
 
 static inline void nbr_free(struct net_nbr *nbr)
 {
@@ -198,7 +193,7 @@ static struct net_nbr *nbr_new(struct net_if *iface,
 
 	NET_DBG("[%d] nbr %p iface %p IPv6 %s/%d",
 		nbr->idx, nbr, iface,
-		net_sprint_ipv6_addr(&net_route_data(nbr)->addr),
+		log_strdup(net_sprint_ipv6_addr(&net_route_data(nbr)->addr)),
 		prefix_len);
 
 	return nbr;
@@ -215,12 +210,13 @@ static struct net_nbr *nbr_nexthop_get(struct net_if *iface,
 	NET_ASSERT_INFO(nbr, "Next hop neighbor not found!");
 	NET_ASSERT_INFO(nbr->idx != NET_NBR_LLADDR_UNKNOWN,
 			"Nexthop %s not in neighbor cache!",
-			net_sprint_ipv6_addr(addr));
+			log_strdup(net_sprint_ipv6_addr(addr)));
 
 	net_nbr_ref(nbr);
 
 	NET_DBG("[%d] nbr %p iface %p IPv6 %s",
-		nbr->idx, nbr, iface, net_sprint_ipv6_addr(addr));
+		nbr->idx, nbr, iface,
+		log_strdup(net_sprint_ipv6_addr(addr)));
 
 	return nbr;
 }
@@ -236,20 +232,18 @@ static int nbr_nexthop_put(struct net_nbr *nbr)
 	return 0;
 }
 
-#if defined(CONFIG_NET_DEBUG_ROUTE)
+
 #define net_route_info(str, route, dst)					\
-	do {								\
+	if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {				\
 		struct in6_addr *naddr = net_route_get_nexthop(route);	\
 									\
 		NET_ASSERT_INFO(naddr, "Unknown nexthop address");	\
 									\
 		NET_DBG("%s route to %s via %s (iface %p)", str,	\
-			net_sprint_ipv6_addr(dst),			\
-			net_sprint_ipv6_addr(naddr), route->iface);	\
+			log_strdup(net_sprint_ipv6_addr(dst)),		\
+			log_strdup(net_sprint_ipv6_addr(naddr)),	\
+			route->iface);					\
 	} while (0)
-#else
-#define net_route_info(...)
-#endif /* CONFIG_NET_DEBUG_ROUTE */
 
 /* Route was accessed, so place it in front of the routes list */
 static inline void update_route_access(struct net_route_entry *route)
@@ -321,7 +315,7 @@ struct net_route_entry *net_route_add(struct net_if *iface,
 	nbr_nexthop = net_ipv6_nbr_lookup(iface, nexthop);
 	if (!nbr_nexthop) {
 		NET_DBG("No such neighbor %s found",
-			net_sprint_ipv6_addr(nexthop));
+			log_strdup(net_sprint_ipv6_addr(nexthop)));
 		return NULL;
 	}
 
@@ -329,8 +323,10 @@ struct net_route_entry *net_route_add(struct net_if *iface,
 
 	NET_ASSERT(nexthop_lladdr);
 
-	NET_DBG("Nexthop %s lladdr is %s", net_sprint_ipv6_addr(nexthop),
-		net_sprint_ll_addr(nexthop_lladdr->addr, nexthop_lladdr->len));
+	NET_DBG("Nexthop %s lladdr is %s",
+		log_strdup(net_sprint_ipv6_addr(nexthop)),
+		log_strdup(net_sprint_ll_addr(nexthop_lladdr->addr,
+					      nexthop_lladdr->len)));
 
 	route = net_route_lookup(iface, addr);
 	if (route) {
@@ -344,7 +340,7 @@ struct net_route_entry *net_route_add(struct net_if *iface,
 		}
 
 		NET_DBG("Old route to %s found",
-			net_sprint_ipv6_addr(nexthop_addr));
+			log_strdup(net_sprint_ipv6_addr(nexthop_addr)));
 
 		net_route_del(route);
 	}
@@ -359,22 +355,26 @@ struct net_route_entry *net_route_add(struct net_if *iface,
 		route = CONTAINER_OF(last,
 				     struct net_route_entry,
 				     node);
-#if defined(CONFIG_NET_DEBUG_ROUTE)
-		do {
+
+		if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {
 			struct in6_addr *tmp;
 			struct net_linkaddr_storage *llstorage;
 
 			tmp = net_route_get_nexthop(route);
 			nbr = net_ipv6_nbr_lookup(iface, tmp);
-			llstorage = net_nbr_get_lladdr(nbr->idx);
+			if (nbr) {
+				llstorage = net_nbr_get_lladdr(nbr->idx);
 
-			NET_DBG("Removing the oldest route %s via %s [%s]",
-				net_sprint_ipv6_addr(&route->addr),
-				net_sprint_ipv6_addr(tmp),
-				net_sprint_ll_addr(llstorage->addr,
-						   llstorage->len));
-		} while (0);
-#endif /* CONFIG_NET_DEBUG_ROUTE */
+				NET_DBG("Removing the oldest route %s "
+					"via %s [%s]",
+					log_strdup(net_sprint_ipv6_addr(
+							   &route->addr)),
+					log_strdup(net_sprint_ipv6_addr(tmp)),
+					log_strdup(net_sprint_ll_addr(
+							   llstorage->addr,
+							   llstorage->len)));
+			}
+		}
 
 		net_route_del(route);
 
@@ -528,6 +528,9 @@ int net_route_del_by_nexthop_data(struct net_if *iface,
 	NET_ASSERT(nexthop);
 
 	nbr_nexthop = net_ipv6_nbr_lookup(iface, nexthop);
+	if (!nbr_nexthop) {
+		return -EINVAL;
+	}
 
 	for (i = 0; i < CONFIG_NET_MAX_ROUTES; i++) {
 		struct net_nbr *nbr = get_nbr(i);
@@ -689,7 +692,7 @@ bool net_route_mcast_del(struct net_route_entry_mcast *route)
 
 	NET_ASSERT_INFO(route->is_used,
 			"Multicast route %p to %s was already removed", route,
-			net_sprint_ipv6_addr(&route->group));
+			log_strdup(net_sprint_ipv6_addr(&route->group)));
 
 	route->is_used = false;
 
@@ -764,14 +767,14 @@ int net_route_packet(struct net_pkt *pkt, struct in6_addr *nexthop)
 	nbr = net_ipv6_nbr_lookup(NULL, nexthop);
 	if (!nbr) {
 		NET_DBG("Cannot find %s neighbor",
-			net_sprint_ipv6_addr(nexthop));
+			log_strdup(net_sprint_ipv6_addr(nexthop)));
 		return -ENOENT;
 	}
 
 	lladdr = net_nbr_get_lladdr(nbr->idx);
 	if (!lladdr) {
 		NET_DBG("Cannot find %s neighbor link layer address.",
-			net_sprint_ipv6_addr(nexthop));
+			log_strdup(net_sprint_ipv6_addr(nexthop)));
 		return -ESRCH;
 	}
 

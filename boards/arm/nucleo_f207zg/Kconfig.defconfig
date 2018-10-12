@@ -27,4 +27,11 @@ config ETH_STM32_HAL
 
 endif # NETWORKING
 
+if SERIAL
+
+config UART_STM32_PORT_6
+	default y
+
+endif # SERIAL
+
 endif # BOARD_NUCLEO_F207ZG

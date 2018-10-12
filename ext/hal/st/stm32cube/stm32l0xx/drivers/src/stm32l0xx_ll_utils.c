@@ -254,7 +254,7 @@ void LL_SetSystemCoreClock(uint32_t HCLKFrequency)
   *           - 96 MHz as PLLVCO when the product is in range 1,
   *           - 48 MHz as PLLVCO when the product is in range 2,
   *           - 24 MHz when the product is in range 3
-  * @note   FLASH latency can be modified through this function. 
+  * @note   FLASH latency can be modified through this function.
   * @param  UTILS_PLLInitStruct pointer to a @ref LL_UTILS_PLLInitTypeDef structure that contains
   *                             the configuration information for the PLL.
   * @param  UTILS_ClkInitStruct pointer to a @ref LL_UTILS_ClkInitTypeDef structure that contains
@@ -309,7 +309,7 @@ ErrorStatus LL_PLL_ConfigSystemClock_HSI(LL_UTILS_PLLInitTypeDef *UTILS_PLLInitS
   *           - 96 MHz as PLLVCO when the product is in range 1,
   *           - 48 MHz as PLLVCO when the product is in range 2,
   *           - 24 MHz when the product is in range 3
-  * @note   FLASH latency can be modified through this function. 
+  * @note   FLASH latency can be modified through this function.
   * @param  HSEFrequency Value between Min_Data = 1000000 and Max_Data = 24000000
   * @param  HSEBypass This parameter can be one of the following values:
   *         @arg @ref LL_UTILS_HSEBYPASS_ON
@@ -469,7 +469,7 @@ static uint32_t UTILS_GetPLLOutputFrequency(uint32_t PLL_InputFrequency, LL_UTIL
   pllfreq = PLL_InputFrequency * (PLLMulTable[UTILS_PLLInitStruct->PLLMul >> RCC_POSITION_PLLMUL]);
   assert_param(IS_LL_UTILS_PLLVCO_OUTPUT(pllfreq));
 
-  /* The application software must set correctly the PLL multiplication factor to avoid exceeding 
+  /* The application software must set correctly the PLL multiplication factor to avoid exceeding
      maximum frequency 32000000 in range 1 */
   pllfreq = pllfreq / ((UTILS_PLLInitStruct->PLLDiv >> RCC_POSITION_PLLDIV)+1U);
   assert_param(IS_LL_UTILS_PLL_FREQUENCY(pllfreq));

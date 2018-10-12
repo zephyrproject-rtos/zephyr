@@ -1,31 +1,9 @@
 /*
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #ifndef _FSL_ADC_ETC_H_
@@ -42,7 +20,7 @@
 * Definitions
 ******************************************************************************/
 /*! @brief ADC_ETC driver version */
-#define FSL_ADC_ETC_DRIVER_VERSION (MAKE_VERSION(2, 0, 0)) /*!< Version 2.0.0. */
+#define FSL_ADC_ETC_DRIVER_VERSION (MAKE_VERSION(2, 0, 1)) /*!< Version 2.0.1. */
 /*! @brief The mask of status flags cleared by writing 1. */
 #define ADC_ETC_DMA_CTRL_TRGn_REQ_MASK 0xFF0000U
 
@@ -87,23 +65,38 @@ typedef enum _adc_etc_interrupt_enable
     kADC_ETC_Done2InterruptEnable = 3U, /* Enable the DONE2 interrupt when ADC conversions complete. */
 } adc_etc_interrupt_enable_t;
 
+#if defined(FSL_FEATURE_ADC_ETC_HAS_CTRL_DMA_MODE_SEL) && FSL_FEATURE_ADC_ETC_HAS_CTRL_DMA_MODE_SEL
+/*!
+* @brief DMA mode selection.
+*/
+typedef enum _adc_etc_dma_mode_selection
+{
+    kADC_ETC_TrigDMAWithLatchedSignal =
+        0U, /* Trig DMA_REQ with latched signal, REQ will be cleared when ACK and source request cleared. */
+    kADC_ETC_TrigDMAWithPulsedSignal = 1U, /* Trig DMA_REQ with pulsed signal, REQ will be cleared by ACK only. */
+} adc_etc_dma_mode_selection_t;
+#endif /*FSL_FEATURE_ADC_ETC_HAS_CTRL_DMA_MODE_SEL*/
+
 /*!
  * @brief ADC_ETC configuration.
  */
 typedef struct _adc_etc_config
 {
-    bool enableTSCBypass;         /* If bypass TSC, TSC would trigger ADC directly.
-                                     Otherwise TSC would trigger ADC through ADC_ETC. */
-    bool enableTSC0Trigger;       /* Enable external TSC0 trigger. It is valid when enableTSCBypass = false. */
-    bool enableTSC1Trigger;       /* Enable external TSC1 trigger. It is valid when enableTSCBypass = false.*/
-    uint32_t TSC0triggerPriority; /* External TSC0 trigger priority, 7 is highest, 0 is lowest. */
-    uint32_t TSC1triggerPriority; /* External TSC1 trigger priority, 7 is highest, 0 is lowest. */
-    uint32_t clockPreDivider;     /* Pre-divider for trig delay and interval. Available range is 0-255.
-                                    Clock would be divided by (clockPreDivider+1). */
-    uint32_t XBARtriggerMask;     /* Enable the corresponding trigger source. Available range is trigger0:0x01 to
-                                     trigger7:0x80
-                                     For example, XBARtriggerMask = 0x7U, which means trigger0, trigger1 and trigger2 is
-                                     enabled. */
+    bool enableTSCBypass;   /* If bypass TSC, TSC would trigger ADC directly.
+                               Otherwise TSC would trigger ADC through ADC_ETC. */
+    bool enableTSC0Trigger; /* Enable external TSC0 trigger. It is valid when enableTSCBypass = false. */
+    bool enableTSC1Trigger; /* Enable external TSC1 trigger. It is valid when enableTSCBypass = false.*/
+#if defined(FSL_FEATURE_ADC_ETC_HAS_CTRL_DMA_MODE_SEL) && FSL_FEATURE_ADC_ETC_HAS_CTRL_DMA_MODE_SEL
+    adc_etc_dma_mode_selection_t dmaMode; /* Select the ADC_ETC DMA mode. */
+#endif                                    /*FSL_FEATURE_ADC_ETC_HAS_CTRL_DMA_MODE_SEL*/
+    uint32_t TSC0triggerPriority;         /* External TSC0 trigger priority, 7 is highest, 0 is lowest. */
+    uint32_t TSC1triggerPriority;         /* External TSC1 trigger priority, 7 is highest, 0 is lowest. */
+    uint32_t clockPreDivider;             /* Pre-divider for trig delay and interval. Available range is 0-255.
+                                            Clock would be divided by (clockPreDivider+1). */
+    uint32_t XBARtriggerMask; /* Enable the corresponding trigger source. Available range is trigger0:0x01 to
+                                 trigger7:0x80
+                                 For example, XBARtriggerMask = 0x7U, which means trigger0, trigger1 and trigger2 is
+                                 enabled. */
 } adc_etc_config_t;
 
 /*!

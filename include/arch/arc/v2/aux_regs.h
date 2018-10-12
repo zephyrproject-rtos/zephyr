@@ -12,8 +12,8 @@
  * Definitions for auxiliary registers.
  */
 
-#ifndef _ARC_V2_AUX_REGS__H_
-#define _ARC_V2_AUX_REGS__H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARC_V2_AUX_REGS_H_
+#define ZEPHYR_INCLUDE_ARCH_ARC_V2_AUX_REGS_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -181,4 +181,4 @@ extern "C" {
 }
 #endif
 
-#endif /* _ARC_V2_AUX_REGS__H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARC_V2_AUX_REGS_H_ */

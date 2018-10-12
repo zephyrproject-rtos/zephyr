@@ -18,7 +18,7 @@ to applications.
    networking/networking.rst
    power_management.rst
    sensor
-   shell
+   shell/shell
    test/index
    usb/usb.rst
    settings/settings.rst

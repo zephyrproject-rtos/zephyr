@@ -53,7 +53,7 @@
        STM32F4 devices :
        (+@) For STM32F446xx devices, the configuration is managed through RCCEx_PeriphCLKConfig()
             function in the HAL RCC drivers
-       (+@) For STM32F439xx/STM32F437xx/STM32F429xx/STM32F427xx devices, the configuration 
+       (+@) For STM32F439xx/STM32F437xx/STM32F429xx/STM32F427xx devices, the configuration
             is managed within HAL SAI drivers through HAL_SAI_Init() function using
             ClockSource field of SAI_InitTypeDef structure.
   [..]
@@ -96,7 +96,7 @@
       (+) Receive an amount of data in non-blocking mode using HAL_SAI_Receive_IT()
       (+) At reception end of transfer HAL_SAI_RxCpltCallback() is executed and user can
           add his own code by customization of function pointer HAL_SAI_RxCpltCallback()
-      (+) In case of flag error, HAL_SAI_ErrorCallback() function is executed and user can 
+      (+) In case of flag error, HAL_SAI_ErrorCallback() function is executed and user can
           add his own code by customization of function pointer HAL_SAI_ErrorCallback()
 
     *** DMA mode IO operation ***
@@ -312,7 +312,7 @@ HAL_StatusTypeDef HAL_SAI_InitProtocol(SAI_HandleTypeDef *hsai, uint32_t protoco
     status = HAL_ERROR;
     break;
   }
-  
+
   if(status == HAL_OK)
   {
     status = HAL_SAI_Init(hsai);
@@ -329,7 +329,7 @@ HAL_StatusTypeDef HAL_SAI_InitProtocol(SAI_HandleTypeDef *hsai, uint32_t protoco
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SAI_Init(SAI_HandleTypeDef *hsai)
-{ 
+{
   uint32_t tmpregisterGCR = 0U;
 
   /* This variable used to store the SAI_CK_x (value in Hz) */
@@ -400,7 +400,7 @@ HAL_StatusTypeDef HAL_SAI_Init(SAI_HandleTypeDef *hsai)
      FS = SAI_CK_x / (MCKDIV[3:0] * 2) * 256
      MCKDIV[3:0] = SAI_CK_x / FS * 512 */
   if(hsai->Init.AudioFrequency != SAI_AUDIO_FREQUENCY_MCKDIV)
-  { 
+  {
     /* Get SAI clock source based on Source clock selection from RCC */
     freq = SAI_GetInputClock(hsai);
 
@@ -410,7 +410,7 @@ HAL_StatusTypeDef HAL_SAI_Init(SAI_HandleTypeDef *hsai)
     hsai->Init.Mckdiv = tmpregisterGCR / 10U;
 
     /* Round result to the nearest integer */
-    if((tmpregisterGCR % 10U) > 8U) 
+    if((tmpregisterGCR % 10U) > 8U)
     {
       hsai->Init.Mckdiv+= 1U;
     }
@@ -725,7 +725,7 @@ HAL_StatusTypeDef HAL_SAI_Receive(SAI_HandleTypeDef *hsai, uint8_t *pData, uint1
 {
   uint32_t tickstart = HAL_GetTick();
 
-  if((pData == NULL ) || (Size == 0)) 
+  if((pData == NULL ) || (Size == 0))
   {
     return  HAL_ERROR;
   }
@@ -1115,7 +1115,7 @@ HAL_StatusTypeDef HAL_SAI_Abort(SAI_HandleTypeDef *hsai)
   */
 HAL_StatusTypeDef HAL_SAI_Transmit_DMA(SAI_HandleTypeDef *hsai, uint8_t *pData, uint16_t Size)
 {
-  if((pData == NULL) || (Size == 0)) 
+  if((pData == NULL) || (Size == 0))
   {
     return  HAL_ERROR;
   }
@@ -1400,7 +1400,7 @@ void HAL_SAI_IRQHandler(SAI_HandleTypeDef *hsai)
       }
       else
       {
-        /* Abort SAI */ 
+        /* Abort SAI */
         HAL_SAI_Abort(hsai);
 
         /* Set error callback */
@@ -1887,7 +1887,7 @@ static HAL_StatusTypeDef SAI_Disable(SAI_HandleTypeDef *hsai)
   {
     /* Check for the Timeout */
     if (count-- == 0U)
-    {         
+    {
       /* Update error code */
       hsai->ErrorCode |= HAL_SAI_ERROR_TIMEOUT;
       status = HAL_TIMEOUT;
@@ -2114,7 +2114,7 @@ static void SAI_DMARxCplt(DMA_HandleTypeDef *hdma)
 }
 
 /**
-  * @brief DMA SAI receive process half complete callback 
+  * @brief DMA SAI receive process half complete callback
   * @param  hdma pointer to a DMA_HandleTypeDef structure that contains
   *               the configuration information for the specified DMA module.
   * @retval None
@@ -2146,14 +2146,14 @@ static void SAI_DMAError(DMA_HandleTypeDef *hdma)
 
     /* Disable SAI peripheral */
     SAI_Disable(hsai);
-    
+
     /* Set the SAI state ready to be able to start again the process */
     hsai->State = HAL_SAI_STATE_READY;
 
     /* Initialize XferCount */
     hsai->XferCount = 0U;
   }
-  /* SAI error Callback */ 
+  /* SAI error Callback */
   HAL_SAI_ErrorCallback(hsai);
 }
 
@@ -2163,7 +2163,7 @@ static void SAI_DMAError(DMA_HandleTypeDef *hdma)
   *               the configuration information for the specified DMA module.
   * @retval None
   */
-static void SAI_DMAAbort(DMA_HandleTypeDef *hdma)   
+static void SAI_DMAAbort(DMA_HandleTypeDef *hdma)
 {
   SAI_HandleTypeDef* hsai = ( SAI_HandleTypeDef* )((DMA_HandleTypeDef* )hdma)->Parent;
 
@@ -2184,11 +2184,11 @@ static void SAI_DMAAbort(DMA_HandleTypeDef *hdma)
   }
   /* Set the SAI state to ready to be able to start again the process */
   hsai->State = HAL_SAI_STATE_READY;
-  
-  /* Initialize XferCount */
-  hsai->XferCount = 0U;  
 
-  /* SAI error Callback */ 
+  /* Initialize XferCount */
+  hsai->XferCount = 0U;
+
+  /* SAI error Callback */
   HAL_SAI_ErrorCallback(hsai);
 }
 

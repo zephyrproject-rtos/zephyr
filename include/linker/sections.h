@@ -12,8 +12,8 @@
  * files.
  */
 
-#ifndef _SECTIONS_H
-#define _SECTIONS_H
+#ifndef ZEPHYR_INCLUDE_LINKER_SECTIONS_H_
+#define ZEPHYR_INCLUDE_LINKER_SECTIONS_H_
 
 #define _TEXT_SECTION_NAME text
 #define _RODATA_SECTION_NAME rodata
@@ -53,12 +53,12 @@
 #define KINETIS_FLASH_CONFIG  kinetis_flash_config
 #define TI_CCFG	.ti_ccfg
 
-#define _CCM_DATA_SECTION_NAME		ccm_data
-#define _CCM_BSS_SECTION_NAME		ccm_bss
-#define _CCM_NOINIT_SECTION_NAME	ccm_noinit
+#define _CCM_DATA_SECTION_NAME		.ccm_data
+#define _CCM_BSS_SECTION_NAME		.ccm_bss
+#define _CCM_NOINIT_SECTION_NAME	.ccm_noinit
 
 #endif
 
 #include <linker/section_tags.h>
 
-#endif /* _SECTIONS_H */
+#endif /* ZEPHYR_INCLUDE_LINKER_SECTIONS_H_ */

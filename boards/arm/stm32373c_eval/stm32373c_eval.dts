@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <st/stm32f373.dtsi>
+#include <st/f3/stm32f373Xc.dtsi>
 
 / {
 	model = "STMicroelectronics STM32373C-EVAL board";
@@ -19,7 +19,7 @@
 
 	leds {
 		compatible = "gpio-leds";
-		green_led_2: led@0 {
+		green_led_2: led_2 {
 			gpios = <&gpioc 1 GPIO_INT_ACTIVE_HIGH>;
 			label = "User LD2";
 		};
@@ -27,7 +27,7 @@
 
 	gpio_keys {
 		compatible = "gpio-keys";
-		user_button: button@0 {
+		user_button: button {
 			label = "Key";
 			gpios = <&gpioa 2 GPIO_INT_ACTIVE_LOW>;
 		};
@@ -43,5 +43,9 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&usart2_pins_d>;
 	pinctrl-names = "default";
+	status = "ok";
+};
+
+&rtc {
 	status = "ok";
 };

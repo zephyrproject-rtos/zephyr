@@ -131,6 +131,8 @@ For more details please refer to `STM32 Nucleo-144 board User Manual`_.
 Default Zephyr Peripheral Mapping:
 ----------------------------------
 
+- UART_3 TX/RX : PD8/PD9 (ST-Link Virtual Port Com)
+- UART_6 TX/RX : PG14/PG9 (Arduino Serial)
 - ETH : PA1, PA2, PA7, PB13, PC1, PC4, PC5, PG11, PG13
 - USB_DM : PA11
 - USB_DP : PA12

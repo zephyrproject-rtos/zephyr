@@ -8,8 +8,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __DHCPV4_H
-#define __DHCPV4_H
+#ifndef ZEPHYR_INCLUDE_NET_DHCPV4_H_
+#define ZEPHYR_INCLUDE_NET_DHCPV4_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -77,4 +77,4 @@ const char *net_dhcpv4_state_name(enum net_dhcpv4_state state);
 }
 #endif
 
-#endif /* __DHCPV4_H */
+#endif /* ZEPHYR_INCLUDE_NET_DHCPV4_H_ */

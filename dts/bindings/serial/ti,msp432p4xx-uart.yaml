@@ -1,6 +1,5 @@
 ---
 title: TI MSP432P4XX UART
-id: ti,msp432p4xx-uart
 version: 0.1
 
 description: >
@@ -11,9 +10,6 @@ inherits:
 
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "ti,msp432p4xx-uart"
 
     reg:

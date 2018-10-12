@@ -2,17 +2,17 @@
   ******************************************************************************
   * @file    stm32f0xx.h
   * @author  MCD Application Team
-  * @brief   CMSIS STM32F0xx Device Peripheral Access Layer Header File.           
-  *            
+  * @brief   CMSIS STM32F0xx Device Peripheral Access Layer Header File.
+  *
   *          The file is the unique include file that the application programmer
   *          is using in the C source code, usually in main.c. This file contains:
   *           - Configuration section that allows to select:
   *              - The STM32F0xx device used in the target application
-  *              - To use or not the peripheral’s drivers in application code(i.e. 
-  *                code will be based on direct access to peripheral’s registers 
-  *                rather than drivers API), this option is controlled by 
+  *              - To use or not the peripheral’s drivers in application code(i.e.
+  *                code will be based on direct access to peripheral’s registers
+  *                rather than drivers API), this option is controlled by
   *                "#define USE_HAL_DRIVER"
-  *  
+  *
   ******************************************************************************
   * @attention
   *
@@ -50,18 +50,18 @@
 /** @addtogroup stm32f0xx
   * @{
   */
-    
+
 #ifndef __STM32F0xx_H
 #define __STM32F0xx_H
 
 #ifdef __cplusplus
  extern "C" {
 #endif /* __cplusplus */
-   
+
 /** @addtogroup Library_configuration_section
   * @{
   */
-  
+
 /**
   * @brief STM32 Family
   */
@@ -70,7 +70,7 @@
 #endif /* STM32F0 */
 
 /* Uncomment the line below according to the target STM32 device used in your
-   application 
+   application
   */
 
 #if !defined (STM32F030x6) && !defined (STM32F030x8) &&                           \
@@ -92,19 +92,19 @@
   /* #define STM32F071xB */  /*!< STM32F071x8, STM32F071xB Devices (STM32F071xx microcontrollers where the Flash memory ranges between 64 and 128 Kbytes)             */
   /* #define STM32F072xB */  /*!< STM32F072x8, STM32F072xB Devices (STM32F072xx microcontrollers where the Flash memory ranges between 64 and 128 Kbytes)             */
   /* #define STM32F078xx */  /*!< STM32F078xx Devices (STM32F078xx microcontrollers where the Flash memory is 128 Kbytes)                                             */
-  /* #define STM32F030xC */  /*!< STM32F030xC Devices (STM32F030xC microcontrollers where the Flash memory is 256 Kbytes)                                             */  
+  /* #define STM32F030xC */  /*!< STM32F030xC Devices (STM32F030xC microcontrollers where the Flash memory is 256 Kbytes)                                             */
   /* #define STM32F091xC */  /*!< STM32F091xB, STM32F091xC Devices (STM32F091xx microcontrollers where the Flash memory ranges between 128 and 256 Kbytes)            */
   /* #define STM32F098xx */  /*!< STM32F098xx Devices (STM32F098xx microcontrollers where the Flash memory is 256 Kbytes)                                             */
 #endif
-   
+
 /*  Tip: To avoid modifying this file each time you need to switch between these
         devices, you can define the device in your toolchain compiler preprocessor.
   */
 #if !defined  (USE_HAL_DRIVER)
 /**
  * @brief Comment the line below if you will not use the peripherals drivers.
-   In this case, these drivers will not be included and the application code will 
-   be based on direct access to peripherals registers 
+   In this case, these drivers will not be included and the application code will
+   be based on direct access to peripherals registers
    */
   /*#define USE_HAL_DRIVER */
 #endif /* USE_HAL_DRIVER */
@@ -115,12 +115,12 @@
 #define __STM32F0_DEVICE_VERSION_MAIN   (0x02) /*!< [31:24] main version */
 #define __STM32F0_DEVICE_VERSION_SUB1   (0x03) /*!< [23:16] sub1 version */
 #define __STM32F0_DEVICE_VERSION_SUB2   (0x03) /*!< [15:8]  sub2 version */
-#define __STM32F0_DEVICE_VERSION_RC     (0x00) /*!< [7:0]  release candidate */ 
+#define __STM32F0_DEVICE_VERSION_RC     (0x00) /*!< [7:0]  release candidate */
 #define __STM32F0_DEVICE_VERSION        ((__STM32F0_DEVICE_VERSION_MAIN << 24)\
                                         |(__STM32F0_DEVICE_VERSION_SUB1 << 16)\
                                         |(__STM32F0_DEVICE_VERSION_SUB2 << 8 )\
                                         |(__STM32F0_DEVICE_VERSION_RC))
-                                             
+
 /**
   * @}
   */
@@ -160,7 +160,7 @@
 #elif defined(STM32F098xx)
   #include "stm32f098xx.h"
 #elif defined(STM32F030xC)
-  #include "stm32f030xc.h"    
+  #include "stm32f030xc.h"
 #else
  #error "Please select first the target STM32F0xx device used in your application (in stm32f0xx.h file)"
 #endif
@@ -171,23 +171,23 @@
 
 /** @addtogroup Exported_types
   * @{
-  */ 
-typedef enum 
+  */
+typedef enum
 {
-  RESET = 0, 
+  RESET = 0,
   SET = !RESET
 } FlagStatus, ITStatus;
 
-typedef enum 
+typedef enum
 {
-  DISABLE = 0, 
+  DISABLE = 0,
   ENABLE = !DISABLE
 } FunctionalState;
 #define IS_FUNCTIONAL_STATE(STATE) (((STATE) == DISABLE) || ((STATE) == ENABLE))
 
-typedef enum 
+typedef enum
 {
-  ERROR = 0, 
+  ERROR = 0,
   SUCCESS = !ERROR
 } ErrorStatus;
 
@@ -235,7 +235,7 @@ typedef enum
 /**
   * @}
   */
-  
+
 
 
 
