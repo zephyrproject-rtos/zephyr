@@ -5,8 +5,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-
-config ARM_SAU
-	bool "ARM Security Attribution Unit"
+config ARM_TRUSTZONE_M
+	bool "ARM TrustZone-M support"
+	depends on CPU_HAS_TEE
+	depends on ARMV8_M_SE
 	help
-	  MCU implements the ARM Security Attribution Unit (SAU).
+	  Platform has support for ARM TrustZone-M.

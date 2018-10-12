@@ -20,6 +20,7 @@ config CPU_CORTEX_M
 	select HAS_CMSIS
 	select HAS_FLASH_LOAD_OFFSET
 	select HAS_DTS
+	select ARCH_HAS_TRUSTED_EXECUTION if ARM_TRUSTZONE_M
 	select ARCH_HAS_STACK_PROTECTION if ARM_MPU || CPU_CORTEX_M_HAS_SPLIM
 	select ARCH_HAS_USERSPACE if ARM_MPU
 	help
@@ -57,6 +58,7 @@ config ARM_STACK_PROTECTION
 config ARM_SECURE_FIRMWARE
 	bool
 	depends on ARMV8_M_SE
+	default y if TRUSTED_EXECUTION_SECURE
 	help
 	  This option indicates that we are building a Zephyr image that
 	  is intended to execute in Secure state. The option is only
@@ -78,6 +80,7 @@ config ARM_NONSECURE_FIRMWARE
 	bool
 	depends on !ARM_SECURE_FIRMWARE
 	depends on ARMV8_M_SE
+	default y if TRUSTED_EXECUTION_NONSECURE
 	help
 	  This option indicates that we are building a Zephyr image that
 	  is intended to execute in Non-Secure state. Execution of this
@@ -163,4 +166,8 @@ source "arch/arm/core/cortex_m/Kconfig"
 
 if CPU_HAS_MPU
 source "arch/arm/core/cortex_m/mpu/Kconfig"
+endif
+
+if CPU_HAS_TEE
+source "arch/arm/core/cortex_m/tz/Kconfig"
 endif
