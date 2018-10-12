@@ -358,8 +358,13 @@ static void _test_kernel_interrupts(disable_int_func disable_int,
 	 */
 	enable_int(imask);
 
-	zassert_equal(tick2, tick,
-		      "tick advanced with interrupts locked");
+	/* In TICKLESS, current time is retrieved from a hardware
+	 * counter and ticks DO advance with interrupts locked!
+	 */
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		zassert_equal(tick2, tick,
+			      "tick advanced with interrupts locked");
+	}
 
 	/* Now repeat with interrupts unlocked. */
 	for (i = 0; i < count; i++) {
