@@ -1705,6 +1705,9 @@ class TestSuite:
         toolchain = os.environ.get("ZEPHYR_TOOLCHAIN_VARIANT", None) or \
                     os.environ.get("ZEPHYR_GCC_VARIANT", None)
 
+        if toolchain == "gccarmemb":
+            # Remove this translation when gccarmemb is no longer supported.
+            toolchain = "gnuarmemb"
 
         try:
             if not toolchain:
