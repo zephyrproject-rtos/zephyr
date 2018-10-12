@@ -35,7 +35,9 @@
 
 MEMORY
 {
+#ifdef CONFIG_XIP
     ROM (rx)  : ORIGIN = CONFIG_RISCV_ROM_BASE_ADDR, LENGTH = CONFIG_RISCV_ROM_SIZE
+#endif
     RAM (rwx) : ORIGIN = CONFIG_RISCV_RAM_BASE_ADDR, LENGTH = RISCV_RAM_SIZE
     /* Used by and documented in include/linker/intlist.ld */
     IDT_LIST  (wx)      : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
@@ -53,25 +55,25 @@ SECTIONS
      * 'riscv32-zephyr-elf-ld --verbose', before text section.
      */
     SECTION_PROLOGUE(.plt,,)
-	{
-		*(.plt)
-	}
+    {
+		 *(.plt)
+    }
 
     SECTION_PROLOGUE(.iplt,,)
-	{
-		*(.iplt)
-	}
+    {
+		 *(.iplt)
+    }
 
-    GROUP_START(ROM)
+    GROUP_START(ROMABLE_REGION)
     _image_rom_start = .;
 
     SECTION_PROLOGUE(_VECTOR_SECTION_NAME,,)
     {
 		. = ALIGN(4);
 		KEEP(*(.vectors.*))
-    } GROUP_LINK_IN(ROM)
+    } GROUP_LINK_IN(ROMABLE_REGION)
 
-    GROUP_END(ROM)
+    GROUP_END(ROMABLE_REGION)
 
     GROUP_START(ROMABLE_REGION)
 
