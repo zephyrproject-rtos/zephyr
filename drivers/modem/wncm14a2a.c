@@ -1821,7 +1821,6 @@ static void offload_iface_init(struct net_if *iface)
 
 static struct net_if_api api_funcs = {
 	.init	= offload_iface_init,
-	.send	= NULL,
 };
 
 NET_DEVICE_OFFLOAD_INIT(modem_wncm14a2a, "MODEM_WNCM14A2A",

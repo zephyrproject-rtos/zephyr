@@ -1808,7 +1808,6 @@ bool net_if_is_promisc(struct net_if *iface);
 
 struct net_if_api {
 	void (*init)(struct net_if *iface);
-	int (*send)(struct net_if *iface, struct net_pkt *pkt);
 };
 
 #if defined(CONFIG_NET_DHCPV4)
