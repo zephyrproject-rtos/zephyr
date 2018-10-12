@@ -238,7 +238,6 @@ static int soc_init(struct device *dev)
 {
 	soc_read_bootstraps();
 
-	ref_clk_freq = soc_get_ref_clk_freq();
 	LOG_INF("Reference clock frequency: %u Hz", ref_clk_freq);
 
 	soc_set_resource_ownership();
