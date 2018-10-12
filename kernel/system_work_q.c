@@ -26,6 +26,7 @@ static int k_sys_work_q_init(struct device *dev)
 		       sys_work_q_stack,
 		       K_THREAD_STACK_SIZEOF(sys_work_q_stack),
 		       CONFIG_SYSTEM_WORKQUEUE_PRIORITY);
+	k_thread_name_set(&k_sys_work_q.thread, "sysworkq");
 
 	return 0;
 }
