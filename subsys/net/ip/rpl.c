@@ -650,12 +650,18 @@ static void dio_timer(struct k_work *work)
 				net_if_ipv6_get_ll(rpl_default_iface,
 						   NET_ADDR_PREFERRED);
 
-			net_rpl_dio_send(rpl_default_iface, instance, addr,
-					 NULL);
-
+			if (addr) {
+				net_rpl_dio_send(rpl_default_iface, instance,
+						 addr, NULL);
 #if defined(CONFIG_NET_STATISTICS_RPL)
-			instance->dio_send_pkt++;
+				instance->dio_send_pkt++;
 #endif
+			} else {
+				NET_ERR("Cannot send DIO, IPv6 link local "
+					"address is NULL");
+				return;
+			}
+
 		} else {
 			NET_DBG("Supressing DIO transmission as %d >= %d",
 				instance->dio_counter,
