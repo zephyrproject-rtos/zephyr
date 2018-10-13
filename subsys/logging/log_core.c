@@ -21,7 +21,7 @@
 	(CONFIG_LOG_STRDUP_MAX_STRING + 1) /* additional byte for termination */
 
 #define LOG_STRBUF_BUF_SIZE \
-	ROUND_UP(LOG_STRBUF_STR_SIZE + 1, sizeof(u32_t))
+	ROUND_UP(LOG_STRBUF_STR_SIZE + sizeof(u32_t), sizeof(u32_t))
 
 #define LOG_STRDUP_POOL_BUFFER_SIZE \
 	(LOG_STRBUF_BUF_SIZE * CONFIG_LOG_STRDUP_BUF_COUNT)
