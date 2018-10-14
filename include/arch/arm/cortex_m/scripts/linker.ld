@@ -114,8 +114,6 @@ SECTIONS
 
 	KEEP(*(IRQ_VECTOR_TABLE))
 
-	KEEP(*(.vectors))
-
 	KEEP(*(.openocd_dbg))
 	KEEP(*(".openocd_dbg.*"))
 
