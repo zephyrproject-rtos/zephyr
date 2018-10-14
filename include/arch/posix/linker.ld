@@ -21,42 +21,15 @@
 #include <linker/linker-defs.h>
 #include <linker/linker-tool.h>
 
-SECTIONS
- {
-	SECTION_PROLOGUE(.note.ABI-tag,,)
-	{
-	*(.note.ABI-tag)
-	}
-
- } INSERT AFTER .interp;
 
 SECTIONS
  {
-
-#include <linker/rel-sections.ld>
 
 #include <linker/common-rom.ld>
 
 #include <linker/common-ram.ld>
 
-	SECTION_PROLOGUE(_NOINIT_SECTION_NAME, (NOLOAD OPTIONAL),)
-	{
-	/*
-	 * This section is used for non-initialized objects that
-	 * will not be cleared during the boot process.
-	 */
-	KERNEL_INPUT_SECTION(.noinit)
-	KERNEL_INPUT_SECTION(".noinit.*")
-	*(".kernel_noinit.*")
-	}
-
 #include <arch/posix/native_tasks.ld>
-
-	/* Related to transactional memory */
-	SECTION_PROLOGUE(.tm_clone_table,,)
-	{
-	*(.tm_clone_table)
-	}
 
  __data_ram_end = .;
 

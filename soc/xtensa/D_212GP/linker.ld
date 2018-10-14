@@ -178,8 +178,6 @@ PROVIDE(_memmap_cacheattr_reset = _memmap_cacheattr_wb_trapnull);
 SECTIONS
 {
 
-#include <linker/rel-sections.ld>
-
   .dport0.rodata : ALIGN(4)
   {
     _dport0_rodata_start = ABSOLUTE(.);
@@ -571,7 +569,6 @@ SECTIONS
   } >sram19_seg :sram19_bss_phdr
   __stack = 0x64000000;
   _heap_sentry = 0x64000000;
-  .comment  0 :  { *(.comment) }
   .debug  0 :  { *(.debug) }
   .line  0 :  { *(.line) }
   .debug_srcinfo  0 :  { *(.debug_srcinfo) }
@@ -589,8 +586,6 @@ SECTIONS
   .debug_funcnames  0 :  { *(.debug_funcnames) }
   .debug_typenames  0 :  { *(.debug_typenames) }
   .debug_varnames  0 :  { *(.debug_varnames) }
-  .debug_ranges  0 :  { *(.debug_ranges) }
-  .xtensa.info  0 :  { *(.xtensa.info) }
   .xt.insn 0 :
   {
     KEEP (*(.xt.insn))

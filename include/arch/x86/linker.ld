@@ -66,9 +66,6 @@ ENTRY(CONFIG_KERNEL_ENTRY)
 /* SECTIONS definitions */
 SECTIONS
 	{
-
-#include <linker/rel-sections.ld>
-
 	GROUP_START(ROMABLE_REGION)
 #ifdef CONFIG_REALMODE
 	/* 16-bit sections */
@@ -380,8 +377,6 @@ SECTIONS
 /* Located in project source directory */
 #include <custom-sections.ld>
 #endif
-
-#include <linker/debug-sections.ld>
 
 	}
 

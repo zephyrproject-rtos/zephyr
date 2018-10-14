@@ -287,13 +287,6 @@ zephyr_ld_options(
   ${LINKERFLAGPREFIX},--build-id=none
   )
 
-# Funny thing is if this is set to =error, some architectures will
-# skip this flag even though the compiler flag check passes
-# (e.g. ARC and Xtensa). So keep it at =warn, for now.
-zephyr_ld_options(
-  ${LINKERFLAGPREFIX},--orphan-handling=warn
-  )
-
 if(CONFIG_HAVE_CUSTOM_LINKER_SCRIPT)
   set(LINKER_SCRIPT ${APPLICATION_SOURCE_DIR}/${CONFIG_CUSTOM_LINKER_SCRIPT})
   if(NOT EXISTS ${LINKER_SCRIPT})

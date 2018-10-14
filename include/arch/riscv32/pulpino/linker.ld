@@ -41,23 +41,6 @@ ENTRY(CONFIG_KERNEL_ENTRY)
 
 SECTIONS
     {
-
-#include <linker/rel-sections.ld>
-
-    /*
-     * .plt and .iplt are here according to
-     * 'riscv32-zephyr-elf-ld --verbose', before text section.
-     */
-    SECTION_PROLOGUE(.plt,,)
-	{
-		*(.plt)
-	}
-
-    SECTION_PROLOGUE(.iplt,,)
-	{
-		*(.iplt)
-	}
-
     GROUP_START(INSTRRAM)
 
     SECTION_PROLOGUE(_VECTOR_SECTION_NAME,,)
@@ -88,7 +71,6 @@ SECTIONS
 		*(.text)
 		*(".text.*")
 		*(.gnu.linkonce.t.*)
-		*(.eh_frame)
 	} GROUP_LINK_IN(INSTRRAM)
 
     _image_text_end = .;
@@ -178,7 +160,4 @@ SECTIONS
 #endif
 
      GROUP_END(RAMABLE_REGION)
-
-#include <linker/debug-sections.ld>
-
 }
