@@ -73,9 +73,6 @@ MEMORY {
 }
 
 SECTIONS {
-
-#include <linker/rel-sections.ld>
-
 	GROUP_START(ROMABLE_REGION)
 
 	SECTION_PROLOGUE(_TEXT_SECTION_NAME,,ALIGN(1024)) {
@@ -286,7 +283,4 @@ SECTIONS {
 #ifdef CONFIG_GEN_ISR_TABLES
 #include <linker/intlist.ld>
 #endif
-
-#include <linker/debug-sections.ld>
-
 	}

@@ -64,9 +64,6 @@ PROVIDE(_memmap_reset_vector = 0x40000400);
 
 SECTIONS
 {
-
-#include <linker/rel-sections.ld>
-
   /* RTC fast memory holds RTC wake stub code,
      including from any source file named rtc_wake_stub*.c
   */
@@ -244,12 +241,4 @@ SECTIONS
 #ifdef CONFIG_GEN_ISR_TABLES
 #include <linker/intlist.ld>
 #endif
-
-#include <linker/debug-sections.ld>
-
-  SECTION_PROLOGUE(.xtensa.info, 0,)
-  {
-    *(.xtensa.info)
-  }
-
 }
