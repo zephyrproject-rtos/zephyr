@@ -132,10 +132,6 @@ SECTIONS
 #endif
 #endif
 
-#ifdef CONFIG_SOC_RODATA_LD
-#include <soc-rodata.ld>
-#endif
-
 #ifdef CONFIG_CUSTOM_RODATA_LD
 /* Located in project source directory */
 #include <custom-rodata.ld>
@@ -248,10 +244,6 @@ SECTIONS
 	KERNEL_INPUT_SECTION(".noinit.*")
 	*(".kernel_noinit.*")
 
-#ifdef CONFIG_SOC_NOINIT_LD
-#include <soc-noinit.ld>
-#endif
-
 	MMU_PAGE_ALIGN
 
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
@@ -264,10 +256,6 @@ SECTIONS
 	KERNEL_INPUT_SECTION(.data)
 	KERNEL_INPUT_SECTION(".data.*")
 	*(".kernel.*")
-
-#ifdef CONFIG_SOC_RWDATA_LD
-#include <soc-rwdata.ld>
-#endif
 
 #ifdef CONFIG_CUSTOM_RWDATA_LD
 /* Located in project source directory */
