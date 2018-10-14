@@ -11,7 +11,5 @@ config SOC_SERIES_PSOC62
 	select SYS_POWER_LOW_POWER_STATE_SUPPORTED
 	select CPU_HAS_SYSTICK
 	select HAS_CYPRESS_DRIVERS
-	select SOC_NOINIT_LD
-	select SOC_RWDATA_LD
 	help
 	  Enable support for Cypress PSoC6 MCU series
