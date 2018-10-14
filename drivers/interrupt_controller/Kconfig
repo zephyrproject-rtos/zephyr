@@ -115,7 +115,7 @@ config ARCV2_INTERRUPT_UNIT
 config PLIC
 	bool "Platform Level Interrupt Controller (PLIC)"
 	default y
-	depends on SOC_FAMILY_RISCV_PRIVILEGE && !QEMU_TARGET
+	depends on SOC_FAMILY_RISCV_PRIVILEGE
 	select RISCV_HAS_PLIC
 	help
 	  Platform Level Interrupt Controller provides support

@@ -122,8 +122,6 @@ extern u32_t _timer_cycle_get_32(void);
 
 #if defined(CONFIG_SOC_RISCV32_PULPINO)
 #include <arch/riscv32/pulpino/asm_inline.h>
-#elif defined(CONFIG_SOC_RISCV32_QEMU)
-#include <arch/riscv32/riscv32-qemu/asm_inline.h>
 #elif defined(CONFIG_SOC_FAMILY_RISCV_PRIVILEGE)
 #include <arch/riscv32/riscv-privilege/asm_inline.h>
 #endif
