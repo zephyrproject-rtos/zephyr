@@ -19,7 +19,7 @@ tests:
         - ".*main: CTR Mode"
         - ".*main: CCM Mode"
   test-micro:
-    tags: micro
+    tags: crypto
     harness_config:
       type: multi_line
       regex:
