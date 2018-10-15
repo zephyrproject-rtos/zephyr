@@ -223,9 +223,12 @@ static void reset_time_slice(void)
 
 void k_sched_time_slice_set(s32_t duration_in_ms, int prio)
 {
-	slice_time = _ms_to_ticks(duration_in_ms);
-	slice_max_prio = prio;
-	reset_time_slice();
+	LOCKED(&sched_lock) {
+		_current_cpu->slice_ticks = 0;
+		slice_time = _ms_to_ticks(duration_in_ms);
+		slice_max_prio = prio;
+		reset_time_slice();
+	}
 }
 
 static inline int sliceable(struct k_thread *t)
