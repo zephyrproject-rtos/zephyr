@@ -1,4 +1,4 @@
 tests:
-  crypto.hmac_prng:
+  crypto.tinycrypt:
     min_ram: 48
-    tags: crypto sha256 hmac prng
+    tags: tinycrypt crypto sha256 hmac prng
