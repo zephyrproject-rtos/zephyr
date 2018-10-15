@@ -22,8 +22,8 @@ inspired by Vi:
 
 The mconf feature where pressing a key jumps to a menu entry with that
 character in it in the current menu isn't supported. A jump-to feature for
-jumping directly to any symbol (including invisible symbols) is available
-instead.
+jumping directly to any symbol (including invisible symbols), choice, menu or
+comment (as in a Kconfig 'comment "Foo"') is available instead.
 
 Space and Enter are "smart" and try to do what you'd expect for the given
 menu entry.
@@ -226,7 +226,7 @@ _MAIN_HELP_LINES = """
 
 # Lines of help text shown at the bottom of the information dialog
 _INFO_HELP_LINES = """
-[ESC/q] Return to menu
+[ESC/q] Return to menu       [/] Jump to symbol
 """[1:-1].split("\n")
 
 # Lines of help text shown at the bottom of the search dialog
@@ -658,7 +658,21 @@ def menuconfig(kconf):
     if _CONVERT_C_LC_CTYPE_TO_UTF8:
         _convert_c_lc_ctype_to_utf8()
 
-    # Get rid of the delay between pressing ESC and jumping to the parent menu
+    # Get rid of the delay between pressing ESC and jumping to the parent menu,
+    # unless the user has set ESCDELAY (see ncurses(3)). This makes the UI much
+    # smoother to work with.
+    #
+    # Note: This is strictly pretty iffy, since escape codes for e.g. cursor
+    # keys start with ESC, but I've never seen it cause problems in practice
+    # (probably because it's unlikely that the escape code for a key would get
+    # split up across read()s, at least with a terminal emulator). Please
+    # report if you run into issues. Some suitable small default value could be
+    # used here instead in that case. Maybe it's silly to not put in the
+    # smallest imperceptible delay here already, though I don't like guessing.
+    #
+    # (From a quick glance at the ncurses source code, ESCDELAY might only be
+    # relevant for mouse events there, so maybe escapes are assumed to arrive
+    # in one piece already...)
     os.environ.setdefault("ESCDELAY", "0")
 
     # Enter curses mode. _menuconfig() returns a string to print on exit, after
@@ -1019,17 +1033,32 @@ def _jump_to(node):
     # parent menus before.
     _parent_screen_rows = []
 
-    _cur_menu = _parent_menu(node)
+    old_show_all = _show_all
+    jump_into = (isinstance(node.item, Choice) or node.item == MENU) and \
+                node.list
+
+    # If we're jumping to a non-empty choice or menu, jump to the first entry
+    # in it instead of jumping to its menu node
+    if jump_into:
+        _cur_menu = node
+        node = node.list
+    else:
+        _cur_menu = _parent_menu(node)
+
     _shown = _shown_nodes(_cur_menu)
     if node not in _shown:
-        # Turn on show-all mode if the node wouldn't be shown. Checking whether
-        # the node is visible instead would needlessly turn on show-all mode in
-        # an obscure case: when jumping to an invisible symbol with visible
-        # children from an implicit submenu.
+        # The node wouldn't be shown. Turn on show-all to show it.
         _show_all = True
         _shown = _shown_nodes(_cur_menu)
 
     _sel_node_i = _shown.index(node)
+
+    if jump_into and not old_show_all and _show_all:
+        # If we're jumping into a choice or menu and were forced to turn on
+        # show-all because the first entry wasn't visible, try turning it off.
+        # That will land us at the first visible node if there are visible
+        # nodes, and is a no-op otherwise.
+        _toggle_show_all()
 
     _center_vertically()
 
@@ -1115,7 +1144,8 @@ def _select_first_menu_entry():
     _sel_node_i = _menu_scroll = 0
 
 def _toggle_show_all():
-    # Toggles show-all mode on/off
+    # Toggles show-all mode on/off. If turning it off would give no visible
+    # items in the current menu, it is left on.
 
     global _show_all
     global _shown
@@ -1179,46 +1209,6 @@ def _draw_main():
 
 
     #
-    # Update the top row with the menu path
-    #
-
-    _path_win.erase()
-
-    # Draw the menu path ("(top menu) -> menu -> submenu -> ...")
-
-    menu_prompts = []
-
-    menu = _cur_menu
-    while menu is not _kconf.top_node:
-        # Promptless choices can be entered in show-all mode. Use
-        # standard_sc_expr_str() for them, so they show up as
-        # '<choice (name if any)>'.
-        menu_prompts.append(menu.prompt[0] if menu.prompt else
-                            standard_sc_expr_str(menu.item))
-        menu = _parent_menu(menu)
-    menu_prompts.append("(top menu)")
-    menu_prompts.reverse()
-
-    # Hack: We can't put ACS_RARROW directly in the string. Temporarily
-    # represent it with NULL. Maybe using a Unicode character would be better.
-    menu_path_str = " \0 ".join(menu_prompts)
-
-    # Scroll the menu path to the right if needed to make the current menu's
-    # title visible
-    if len(menu_path_str) > term_width:
-        menu_path_str = menu_path_str[len(menu_path_str) - term_width:]
-
-    # Print the path with the arrows reinserted
-    split_path = menu_path_str.split("\0")
-    _safe_addstr(_path_win, split_path[0])
-    for s in split_path[1:]:
-        _safe_addch(_path_win, curses.ACS_RARROW)
-        _safe_addstr(_path_win, s)
-
-    _path_win.noutrefresh()
-
-
-    #
     # Update the separator row below the menu path
     #
 
@@ -1236,6 +1226,7 @@ def _draw_main():
 
     _top_sep_win.noutrefresh()
 
+    # Note: The menu path at the top is deliberately updated last. See below.
 
     #
     # Update the symbol window
@@ -1297,6 +1288,51 @@ def _draw_main():
         _safe_addstr(_help_win, i, 0, line)
 
     _help_win.noutrefresh()
+
+
+    #
+    # Update the top row with the menu path.
+    #
+    # Doing this last leaves the cursor on the top row, which avoids some minor
+    # annoying jumpiness in gnome-terminal when reducing the height of the
+    # terminal. It seems to happen whenever the row with the cursor on it
+    # disappears.
+    #
+
+    _path_win.erase()
+
+    # Draw the menu path ("(top menu) -> menu -> submenu -> ...")
+
+    menu_prompts = []
+
+    menu = _cur_menu
+    while menu is not _kconf.top_node:
+        # Promptless choices can be entered in show-all mode. Use
+        # standard_sc_expr_str() for them, so they show up as
+        # '<choice (name if any)>'.
+        menu_prompts.append(menu.prompt[0] if menu.prompt else
+                            standard_sc_expr_str(menu.item))
+        menu = _parent_menu(menu)
+    menu_prompts.append("(top menu)")
+    menu_prompts.reverse()
+
+    # Hack: We can't put ACS_RARROW directly in the string. Temporarily
+    # represent it with NULL. Maybe using a Unicode character would be better.
+    menu_path_str = " \0 ".join(menu_prompts)
+
+    # Scroll the menu path to the right if needed to make the current menu's
+    # title visible
+    if len(menu_path_str) > term_width:
+        menu_path_str = menu_path_str[len(menu_path_str) - term_width:]
+
+    # Print the path with the arrows reinserted
+    split_path = menu_path_str.split("\0")
+    _safe_addstr(_path_win, split_path[0])
+    for s in split_path[1:]:
+        _safe_addch(_path_win, curses.ACS_RARROW)
+        _safe_addstr(_path_win, s)
+
+    _path_win.noutrefresh()
 
 def _parent_menu(node):
     # Returns the menu node of the menu that contains 'node'. In addition to
@@ -1854,19 +1890,35 @@ def _jump_to_dialog():
                 # List of matching nodes
                 matches = []
 
-                for node in _searched_nodes():
+                # Search symbols and choices
+
+                for node in _sorted_sc_nodes():
+                    # Symbol/choice
+                    sc = node.item
+
                     for search in regex_searches:
+                        # Both the name and the prompt might be missing, since
+                        # we're searching both symbols and choices
+
                         # Does the regex match either the symbol name or the
                         # prompt (if any)?
-                        if not (search(node.item.name.lower()) or
-                                (node.prompt and
-                                 search(node.prompt[0].lower()))):
+                        if not (sc.name and search(sc.name.lower()) or
+                                node.prompt and search(node.prompt[0].lower())):
 
                             # Give up on the first regex that doesn't match, to
                             # speed things up a bit when multiple regexes are
                             # entered
                             break
 
+                    else:
+                        matches.append(node)
+
+                # Search menus and comments
+
+                for node in _sorted_menu_comment_nodes():
+                    for search in regex_searches:
+                        if not search(node.prompt[0].lower()):
+                            break
                     else:
                         matches.append(node)
 
@@ -1909,13 +1961,14 @@ def _jump_to_dialog():
                 sel_node_i, scroll)
 
         elif c == "\x06":  # \x06 = Ctrl-F
-            _safe_curs_set(0)
-            _info_dialog(matches[sel_node_i], True)
-            _safe_curs_set(1)
+            if matches:
+                _safe_curs_set(0)
+                _info_dialog(matches[sel_node_i], True)
+                _safe_curs_set(2)
 
-            scroll = _resize_jump_to_dialog(
-                edit_box, matches_win, bot_sep_win, help_win,
-                sel_node_i, scroll)
+                scroll = _resize_jump_to_dialog(
+                    edit_box, matches_win, bot_sep_win, help_win,
+                    sel_node_i, scroll)
 
         elif c == curses.KEY_DOWN:
             select_next_match()
@@ -1937,20 +1990,45 @@ def _jump_to_dialog():
             s, s_i, hscroll = _edit_text(c, s, s_i, hscroll,
                                          edit_box.getmaxyx()[1] - 2)
 
-# Obscure Python: We never pass a value for cached_search_nodes, and it keeps
-# pointing to the same list. This avoids a global.
-def _searched_nodes(cached_search_nodes=[]):
-    # Returns a list of menu nodes to search, sorted by symbol name
+# Obscure Python: We never pass a value for cached_nodes, and it keeps pointing
+# to the same list. This avoids a global.
+def _sorted_sc_nodes(cached_nodes=[]):
+    # Returns a sorted list of symbol and choice nodes to search. The symbol
+    # nodes appear first, sorted by name, and then the choice nodes, sorted by
+    # prompt and (secondarily) name.
 
-    if not cached_search_nodes:
-        # Sort symbols by name, then add all nodes for each symbol
+    if not cached_nodes:
+        # Add symbol nodes
         for sym in sorted(_kconf.unique_defined_syms,
                           key=lambda sym: sym.name):
-
             # += is in-place for lists
-            cached_search_nodes += sym.nodes
+            cached_nodes += sym.nodes
 
-    return cached_search_nodes
+        # Add choice nodes
+
+        choices = sorted(_kconf.unique_choices,
+                         key=lambda choice: choice.name or "")
+
+        cached_nodes += sorted(
+            [node
+             for choice in choices
+                 for node in choice.nodes],
+            key=lambda node: node.prompt[0] if node.prompt else "")
+
+    return cached_nodes
+
+def _sorted_menu_comment_nodes(cached_nodes=[]):
+    # Returns a list of menu and comment nodes to search, sorted by prompt,
+    # with the menus first
+
+    if not cached_nodes:
+        def prompt_text(mc):
+            return mc.prompt[0]
+
+        cached_nodes += sorted(_kconf.menus, key=prompt_text) + \
+                        sorted(_kconf.comments, key=prompt_text)
+
+    return cached_nodes
 
 def _resize_jump_to_dialog(edit_box, matches_win, bot_sep_win, help_win,
                            sel_node_i, scroll):
@@ -2009,13 +2087,18 @@ def _draw_jump_to_dialog(edit_box, matches_win, bot_sep_win, help_win,
         for i in range(scroll,
                        min(scroll + matches_win.getmaxyx()[0], len(matches))):
 
-            sym = matches[i].item
+            node = matches[i]
 
-            sym_str = _name_and_val_str(sym)
-            if matches[i].prompt:
-                sym_str += ' "{}"'.format(matches[i].prompt[0])
+            if isinstance(node.item, (Symbol, Choice)):
+                node_str = _name_and_val_str(node.item)
+                if node.prompt:
+                    node_str += ' "{}"'.format(node.prompt[0])
+            elif node.item == MENU:
+                node_str = 'menu "{}"'.format(node.prompt[0])
+            else:  # node.item == COMMENT
+                node_str = 'comment "{}"'.format(node.prompt[0])
 
-            _safe_addstr(matches_win, i - scroll, 0, sym_str,
+            _safe_addstr(matches_win, i - scroll, 0, node_str,
                          _style["selection" if i == sel_node_i else "list"])
 
     else:
@@ -2189,27 +2272,7 @@ def _draw_info_dialog(node, lines, scroll, top_line_win, text_win,
     text_win_height, text_win_width = text_win.getmaxyx()
 
 
-    #
-    # Update top row
-    #
-
-    top_line_win.erase()
-
-    # Draw arrows pointing up if the information window is scrolled down. Draw
-    # them before drawing the title, so the title ends up on top for small
-    # windows.
-    if scroll > 0:
-        _safe_hline(top_line_win, 0, 4, curses.ACS_UARROW, _N_SCROLL_ARROWS)
-
-    title = ("Symbol" if isinstance(node.item, Symbol) else
-             "Choice" if isinstance(node.item, Choice) else
-             "Menu"   if node.item == MENU else
-             "Comment") + " information"
-    _safe_addstr(top_line_win, 0, max((text_win_width - len(title))//2, 0),
-                 title)
-
-    top_line_win.noutrefresh()
-
+    # Note: The top row is deliberately updated last. See _draw_main().
 
     #
     # Update text display
@@ -2246,6 +2309,28 @@ def _draw_info_dialog(node, lines, scroll, top_line_win, text_win,
         _safe_addstr(help_win, i, 0, line)
 
     help_win.noutrefresh()
+
+
+    #
+    # Update top row
+    #
+
+    top_line_win.erase()
+
+    # Draw arrows pointing up if the information window is scrolled down. Draw
+    # them before drawing the title, so the title ends up on top for small
+    # windows.
+    if scroll > 0:
+        _safe_hline(top_line_win, 0, 4, curses.ACS_UARROW, _N_SCROLL_ARROWS)
+
+    title = ("Symbol" if isinstance(node.item, Symbol) else
+             "Choice" if isinstance(node.item, Choice) else
+             "Menu"   if node.item == MENU else
+             "Comment") + " information"
+    _safe_addstr(top_line_win, 0, max((text_win_width - len(title))//2, 0),
+                 title)
+
+    top_line_win.noutrefresh()
 
 def _info_str(node):
     # Returns information about the menu node 'node' as a string.
@@ -2503,24 +2588,20 @@ def _menu_path_info(node):
     return "(top menu)" + path
 
 def _name_and_val_str(sc):
-    # Custom symbol printer that shows the symbol value after the symbol, used
-    # for the information display
+    # Custom symbol/choice printer that shows symbol values after symbols
 
     # Show the values of non-constant (non-quoted) symbols that don't look like
     # numbers. Things like 123 are actually symbol references, and only work as
     # expected due to undefined symbols getting their name as their value.
     # Showing the symbol value for those isn't helpful though.
-    if isinstance(sc, Symbol) and \
-       not sc.is_constant and \
-       not _is_num(sc.name):
-
+    if isinstance(sc, Symbol) and not sc.is_constant and not _is_num(sc.name):
         if not sc.nodes:
             # Undefined symbol reference
             return "{}(undefined/n)".format(sc.name)
 
         return '{}(={})'.format(sc.name, sc.str_value)
 
-    # For other symbols, use the standard format
+    # For other items, use the standard format
     return standard_sc_expr_str(sc)
 
 def _expr_str(expr):
@@ -2662,11 +2743,10 @@ def _node_str(node):
             s += " " + standard_sc_expr_str(node.item)
 
     if node.prompt:
-        s += " "
         if node.item == COMMENT:
-            s += "*** {} ***".format(node.prompt[0])
+            s += " *** {} ***".format(node.prompt[0])
         else:
-            s += node.prompt[0]
+            s += " " + node.prompt[0]
 
         if isinstance(node.item, Symbol):
             sym = node.item
@@ -2678,14 +2758,14 @@ def _node_str(node):
 
                 s += " (NEW)"
 
-        if isinstance(node.item, Choice) and node.item.tri_value == 2:
-            # Print the prompt of the selected symbol after the choice for
-            # choices in y mode
-            sym = node.item.selection
-            if sym:
-                for node_ in sym.nodes:
-                    if node_.prompt:
-                        s += " ({})".format(node_.prompt[0])
+    if isinstance(node.item, Choice) and node.item.tri_value == 2:
+        # Print the prompt of the selected symbol after the choice for
+        # choices in y mode
+        sym = node.item.selection
+        if sym:
+            for node_ in sym.nodes:
+                if node_.prompt:
+                    s += " ({})".format(node_.prompt[0])
 
     # Print "--->" next to nodes that have menus that can potentially be
     # entered. Add "(empty)" if the menu is empty. We don't allow those to be
@@ -2779,16 +2859,14 @@ def _check_validity(sym, s):
 
 def _range_info(sym):
     # Returns a string with information about the valid range for the symbol
-    # 'sym', or None if 'sym' isn't an int/hex symbol
+    # 'sym', or None if 'sym' doesn't have a range
 
-    if sym.type not in (INT, HEX):
-        return None
+    if sym.type in (INT, HEX):
+        for low, high, cond in sym.ranges:
+            if expr_value(cond):
+                return "Range: {}-{}".format(low.str_value, high.str_value)
 
-    for low, high, cond in sym.ranges:
-        if expr_value(cond):
-            return "Range: {}-{}".format(low.str_value, high.str_value)
-
-    return "No range constraints."
+    return None
 
 def _is_num(name):
     # Heuristic to see if a symbol name looks like a number, for nicer output
