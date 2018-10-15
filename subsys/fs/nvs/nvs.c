@@ -790,6 +790,29 @@ int nvs_delete(struct nvs_fs *fs, u16_t id)
 	return nvs_write(fs, id, NULL, 0);
 }
 
+static inline int _nvs_prev_ate_with_id(struct nvs_fs *fs, u32_t *wlk_addr,
+			u32_t *rd_addr, struct nvs_ate *wlk_ate, u16_t id)
+{
+	int rc;
+
+	do {
+		*rd_addr = *wlk_addr;
+		rc = _nvs_prev_ate(fs, wlk_addr, wlk_ate);
+		if (rc) {
+			break;
+		}
+		if ((wlk_ate->id == id) &&  (!_nvs_ate_crc8_check(wlk_ate))
+			&& wlk_ate->len != 0) {
+			break;
+		}
+	} while (*wlk_addr != fs->ate_wra);
+
+	if (*wlk_addr == fs->ate_wra) {
+		rc = -ENOENT;
+	}
+	return rc;
+}
+
 ssize_t nvs_read_hist_more(struct nvs_fs *fs, u16_t id, void *data, size_t len,
 		      u16_t cnt, bool *more)
 {
@@ -812,22 +835,11 @@ ssize_t nvs_read_hist_more(struct nvs_fs *fs, u16_t id, void *data, size_t len,
 	rd_addr = wlk_addr;
 
 	while (cnt_his <= cnt) {
-		rd_addr = wlk_addr;
-		rc = _nvs_prev_ate(fs, &wlk_addr, &wlk_ate);
+		rc = _nvs_prev_ate_with_id(fs, &wlk_addr, &rd_addr, &wlk_ate, id);
 		if (rc) {
 			goto err;
 		}
-		if ((wlk_ate.id == id) &&  (!_nvs_ate_crc8_check(&wlk_ate))) {
-			cnt_his++;
-		}
-		if (wlk_addr == fs->ate_wra) {
-			break;
-		}
-	}
-
-	if (((wlk_addr == fs->ate_wra) && (wlk_ate.id != id)) ||
-	    (wlk_ate.len == 0) || (cnt_his < cnt)) {
-		return -ENOENT;
+		cnt_his++;
 	}
 
 	rd_addr &= ADDR_SECT_MASK;
@@ -840,8 +852,7 @@ ssize_t nvs_read_hist_more(struct nvs_fs *fs, u16_t id, void *data, size_t len,
 	ret = wlk_ate.len;
 
 	if (more != NULL) {
-		(void) _nvs_prev_ate(fs, &wlk_addr, &wlk_ate); //save to ignore?
-		*more = (wlk_ate.id == id) &&  (!_nvs_ate_crc8_check(&wlk_ate));
+		*more = (_nvs_prev_ate_with_id(fs, &wlk_addr, &rd_addr, &wlk_ate, id) == 0);
 	}
 
 	return ret;
