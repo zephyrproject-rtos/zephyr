@@ -5,5 +5,5 @@ tests:
   test:
     arch_whitelist: x86 arm
     filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
-    tags: apps
+    tags: nfc
     harness: nfc

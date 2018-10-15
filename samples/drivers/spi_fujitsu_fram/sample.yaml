@@ -3,5 +3,5 @@ sample:
 tests:
   test:
     platform_whitelist: arduino_101
-    tags: apps
+    tags: drivers fram
     harness: fram
