@@ -155,12 +155,14 @@ include/linker/linker-tool-gcc.h         @andrewboie @andyross
 include/linker/linker-tool.h             @andrewboie @andyross
 include/linker/section_tags.h            @andrewboie @andyross
 include/linker/sections.h                @andrewboie @andyross
+include/logging/                         @nordic-krch
 include/misc/                            @andrewboie @andyross
 include/net/                             @jukkar @tbursztyka @pfalcon
 include/net/buf.h                        @jukkar @jhedberg @tbursztyka @pfalcon
 include/power.h                          @ramakrishnapallala @nashif
 include/sensor.h                         @bogdan-davidoaia
 include/shared_irq.h                     @andrewboie @andyross
+include/shell/                           @jarz-nordic @nordic-krch
 include/spi.h                            @tbursztyka
 include/sw_isr_table.h                   @andrewboie @andyross
 include/sys_clock.h                      @andrewboie @andyross
@@ -192,6 +194,7 @@ scripts/support/runner/                  @mbolivar
 subsys/bluetooth/                        @sjanc @jhedberg @Vudentz
 subsys/bluetooth/controller/             @carlescufi @cvinayak
 subsys/fs/                               @nashif
+subsys/logging/                          @nordic-krch
 subsys/net/buf.c                         @jukkar @jhedberg @tbursztyka @pfalcon
 subsys/net/ip/                           @jukkar @tbursztyka @pfalcon
 subsys/net/lib/                          @jukkar @tbursztyka @pfalcon
@@ -201,6 +204,7 @@ subsys/net/lib/lwm2m/                    @mike-scott
 subsys/net/lib/mqtt/                     @jukkar @tbursztyka
 subsys/net/lib/coap/                     @rveerama1
 subsys/net/lib/sockets/                  @jukkar @tbursztyka @pfalcon
+subsys/shell/                            @jarz-nordic @nordic-krch
 subsys/*/*native_posix*/                 @aescolar
 subsys/usb/                              @jfischer-phytec-iot @finikorg
 tests/boards/native_posix/               @aescolar
