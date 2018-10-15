@@ -63,7 +63,7 @@ set_property(GLOBAL PROPERTY GENERATED_KERNEL_OBJECT_FILES "")
 define_property(GLOBAL PROPERTY GENERATED_KERNEL_SOURCE_FILES
   BRIEF_DOCS "Source files that are generated after Zephyr has been linked once."
   FULL_DOCS "\
-Object files that are generated after Zephyr has been linked once.\
+Source files that are generated after Zephyr has been linked once.\
 May include isr_tables.c etc."
   )
 set_property(GLOBAL PROPERTY GENERATED_KERNEL_SOURCE_FILES "")
