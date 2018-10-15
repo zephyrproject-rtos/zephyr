@@ -159,6 +159,7 @@ Most everyday users will run with no arguments.
 """
 
 import contextlib
+import string
 import mmap
 import argparse
 import os
@@ -2274,8 +2275,8 @@ class TestSuite:
                 if os.path.exists(bl):
                     with open(bl, "rb") as f:
                         log = f.read().decode("utf-8")
-                        ansi_escape = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
-                        failure.text = ansi_escape.sub('', log)
+                        filtered_string = ''.join(filter(lambda x: x in string.printable, log))
+                        failure.text = filtered_string
                         f.close()
 
         result = ET.tostring(eleTestsuites)
