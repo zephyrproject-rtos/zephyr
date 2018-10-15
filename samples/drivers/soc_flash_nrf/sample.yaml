@@ -3,4 +3,4 @@ sample:
 tests:
   test:
     platform_whitelist: nrf52_pca10040
-    tags: apps
+    tags: flash nrf52

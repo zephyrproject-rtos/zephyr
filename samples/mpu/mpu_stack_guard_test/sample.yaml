@@ -2,7 +2,7 @@ sample:
   name: MPU Stack Guard
 tests:
   test:
-    tags: apps
+    tags: mpu stackguard
     harness: console
     # We do not handle segfaults here
     arch_exclude: posix riscv32 nios2 xtensa
@@ -18,7 +18,7 @@ tests:
     arch_whitelist: arm
     extra_args: CONF_FILE=prj_stack_guard.conf
     filter: CONFIG_MPU_STACK_GUARD
-    tags: apps
+    tags: mpu stackguard
     harness: console
     harness_config:
       type: multi_line

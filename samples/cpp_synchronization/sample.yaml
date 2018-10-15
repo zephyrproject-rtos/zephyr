@@ -2,7 +2,7 @@ sample:
   name: Syncronisation (C++)
 tests:
   test:
-    tags: apps
+    tags: cpp
     toolchain_exclude: issm
     arch_exclude: posix
     harness: console

@@ -3,6 +3,6 @@ sample:
 tests:
   test:
     platform_whitelist: frdm_k64f quark_d2000_crb
-    tags: apps
+    tags: sensors
     harness: sensor
     depends_on: i2c

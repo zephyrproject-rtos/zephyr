@@ -2,24 +2,25 @@ tests:
   test_debug:
     build_only: true
     extra_args: CONF_FILE=debug.conf
-    tags: apps
+    tags: build_test
   test_newlib:
     build_only: true
     extra_args: CONF_FILE=newlib.conf
-    tags: apps
+    tags: build_test
     platform_exclude: esp32
   test_runtime_nmi:
     arch_whitelist: arm
     build_only: true
     extra_args: CONF_FILE=runtime_nmi.conf
-    tags: apps
+    tags: build_test
   test_mcuboot_bootloader:
+    tags: build_test
     build_only: true
     platform_whitelist: nrf51_pca10028 nrf52_pca10040
     extra_configs:
       - CONFIG_BOOTLOADER_MCUBOOT=y
   test_utf8_in_kconfig_values:
     build_only: true
-    tags: apps
+    tags: build_test
     extra_configs:
       - CONFIG_KERNEL_BIN_NAME="A_kconfig_value_with_a_utf8_char_in_it_Bøe_"

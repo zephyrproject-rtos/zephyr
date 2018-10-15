@@ -5,5 +5,5 @@ sample:
 tests:
   test:
     platform_whitelist: 96b_carbon frdm_k64f frdm_kw41z frdm_kl25z
-    tags: apps
+    tags: flash shell
     harness: keyboard
