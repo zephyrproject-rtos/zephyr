@@ -59,15 +59,17 @@ Host Tools and Firmware
 Download and install the `Segger J-Link Software and Documentation Pack`_ to
 get the J-Link GDB server for your host computer.
 
+To make OpenOCD use the J-Link tools, open a new terminal and use::
+
+    export OPENOCD_INTERFACE=jlink
+
+before flashing and debugging.
+
 Flashing
 ========
 
-Use the CMake ``flash`` target with the argument ``STLINK_FW=jlink`` to
-build your Zephyr application.
-
   .. zephyr-app-commands::
      :zephyr-app: samples/hello_world
-     :gen-args: -DSTLINK_FW=jlink
      :goals: flash
 
 Debugging
@@ -79,7 +81,6 @@ program your Zephyr application to flash. It will leave you at a GDB prompt.
 
   .. zephyr-app-commands::
      :zephyr-app: samples/hello_world
-     :gen-args: -DSTLINK_FW=jlink
      :goals: debug
 
 Console
