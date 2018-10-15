@@ -1,4 +1,4 @@
 tests:
   kernel.common:
-    tags: core bat_commit
+    tags: kernel
     min_ram: 16

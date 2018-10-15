@@ -1,5 +1,5 @@
 tests:
   kernel.memory_protection.userspace:
     filter: CONFIG_ARCH_HAS_USERSPACE
-    tags: core security userspace ignore_faults
+    tags: kernel security userspace ignore_faults
     extra_sections: app_smem
