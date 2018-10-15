@@ -258,14 +258,14 @@ static int usb_dc_stm32_clock_enable(void)
 #ifdef DT_USB_HS_BASE_ADDRESS
 
 
-#ifdef USB_HS_PHYC
+#ifdef DT_COMPAT_ST_STM32_USBPHYC
 	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_OTGPHYC);
 #else
 	/* Disable ULPI interface (for external high-speed PHY) clock */
 	LL_AHB1_GRP1_DisableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
 	LL_AHB1_GRP1_DisableClockLowPower(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
-#endif /* USB_HS_PHYC */
+#endif /* DT_COMPAT_ST_STM32_USBPHYC */
 
 #endif /* DT_USB_HS_BASE_ADDRESS */
 
@@ -279,22 +279,22 @@ static u32_t usb_dc_stm32_get_maximum_speed(void)
 	 * If max-speed is not passed via DT, set it to USB controller's
 	 * maximum hardware capability.
 	 */
-#if defined(USB_HS_PHYC) && defined(DT_USB_HS_BASE_ADDRESS)
+#if defined(DT_COMPAT_ST_STM32_USBPHYC) && defined(DT_USB_HS_BASE_ADDRESS)
 	u32_t speed = USB_OTG_SPEED_HIGH;
 #else
 	u32_t speed = USB_OTG_SPEED_FULL;
-#endif /* USB_HS_PHYC && DT_USB_HS_BASE_ADDRESS */
+#endif /* DT_COMPAT_ST_STM32_USBPHYC && DT_USB_HS_BASE_ADDRESS */
 
 #ifdef DT_USB_MAXIMUM_SPEED
 
 	if (!strncmp(DT_USB_MAXIMUM_SPEED, "high-speed", 10)) {
 		speed = USB_OTG_SPEED_HIGH;
 	} else if (!strncmp(DT_USB_MAXIMUM_SPEED, "full-speed", 10)) {
-#if defined(USB_HS_PHYC) && defined(DT_USB_HS_BASE_ADDRESS)
+#if defined(DT_COMPAT_ST_STM32_USBPHYC) && defined(DT_USB_HS_BASE_ADDRESS)
 		speed = USB_OTG_SPEED_HIGH_IN_FULL;
 #else
 		speed = USB_OTG_SPEED_FULL;
-#endif /* USB_HS_PHYC && DT_USB_HS_BASE_ADDRESS */
+#endif /* DT_COMPAT_ST_STM32_USBPHYC && DT_USB_HS_BASE_ADDRESS */
 	} else if (!strncmp(DT_USB_MAXIMUM_SPEED, "low-speed", 9)) {
 		speed = USB_OTG_SPEED_LOW;
 	} else {
@@ -328,11 +328,11 @@ static int usb_dc_stm32_init(void)
 #endif
 	usb_dc_stm32_state.pcd.Init.dev_endpoints = DT_USB_NUM_BIDIR_ENDPOINTS;
 	usb_dc_stm32_state.pcd.Init.speed = usb_dc_stm32_get_maximum_speed();
-#if defined(USB_HS_PHYC) && defined(DT_USB_HS_BASE_ADDRESS)
+#if defined(DT_COMPAT_ST_STM32_USBPHYC) && defined(DT_USB_HS_BASE_ADDRESS)
 	usb_dc_stm32_state.pcd.Init.phy_itface = USB_OTG_HS_EMBEDDED_PHY;
 #else
 	usb_dc_stm32_state.pcd.Init.phy_itface = PCD_PHY_EMBEDDED;
-#endif /* USB_HS_PHYC */
+#endif /* DT_COMPAT_ST_STM32_USBPHYC */
 	usb_dc_stm32_state.pcd.Init.ep0_mps = USB_OTG_MAX_EP0_SIZE;
 	usb_dc_stm32_state.pcd.Init.vbus_sensing_enable = DISABLE;
 
