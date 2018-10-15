@@ -3,4 +3,4 @@ sample:
 tests:
   test:
     platform_whitelist: bbc_microbit
-    tags: samples
+    tags: microbit mesh bluetooth
