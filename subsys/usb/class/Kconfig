@@ -34,9 +34,11 @@ config CDC_ACM_BULK_EP_MPS
 	help
 	  CDC ACM class bulk endpoints size
 
+if USB_CDC_ACM
 module = USB_CDC_ACM
 module-str = usb cdc acm
 source "subsys/logging/Kconfig.template.log_config"
+endif
 
 config USB_MASS_STORAGE
 	bool "USB Mass Storage Device Class Driver"
@@ -59,9 +61,11 @@ config MASS_STORAGE_BULK_EP_MPS
 	help
 	  Mass storage device class bulk endpoints size
 
+if USB_MASS_STORAGE
 module = USB_MASS_STORAGE
 module-str = usb mass storage
 source "subsys/logging/Kconfig.template.log_config"
+endif
 
 config USB_DEVICE_BLUETOOTH
 	bool "USB Bluetooth Device Class Driver"
