@@ -81,6 +81,18 @@
 			status = "disabled";
 			label = "uart_6";
 		};
+
+		psoc6_ipm0: mailbox@40230100 {
+			compatible = "cypress,psoc6-mailbox";
+			reg = <0x40230100 0x40>;
+			channels = <8 9>;
+			channel-names = "cm0_cm4_ipc_chn", "cm4_cm0_ipc_chn";
+			interrupts = <23 2>, <8 2>, <9 2>;
+			interrupt-names = "cm0_mux_irq", "cm0_ipc_int_numb", \
+					"cm4_ipc_int_numb";
+			status = "disabled";
+			label = "psoc6_ipm0";
+		};
 	};
 };
 

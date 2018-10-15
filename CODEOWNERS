@@ -104,6 +104,7 @@
 /drivers/*/*mcux*                         @MaureenHelm
 /drivers/*/*qmsi*                         @nashif
 /drivers/*/*stm32*                        @erwango
+/drivers/*/*psoc6*                        @OlegKapshii
 /drivers/*/*native_posix*                 @aescolar
 /drivers/adc/                             @anangl
 /drivers/bluetooth/                       @sjanc @jhedberg @Vudentz
@@ -157,6 +158,7 @@
 /dts/bindings/*/nordic*                   @anangl
 /dts/bindings/*/nxp*                      @MaureenHelm
 /dts/bindings/*/st,stm32*                 @erwango
+/dts/bindings/*/cypress*                  @OlegKapshii
 /dts/bindings/sensor/ams,ens210.yaml      @alexanderwachter
 /dts/bindings/sensor/ams,iaqcore.yaml     @alexanderwachter
 /dts/common/sim-flash.dtsi                @nvlsianpu

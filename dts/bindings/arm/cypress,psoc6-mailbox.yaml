@@ -1,0 +1,45 @@
+#
+# Copyright (c) 2018, Cypress Semiconductor
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: PSOC6 MAILBOX
+version: 0.1
+
+description: >
+    This binding gives a base representation of the PSOC6 MAILBOX
+
+properties:
+  compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "cypress,psoc6-mailbox"
+      generation: define
+
+  reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+  channels:
+      type: array
+      category: required
+      description: used IPC channels
+      generation: define
+
+  interrupts:
+      type: array
+      category: required
+      description: required interrupts
+      generation: define
+
+  label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+
+...

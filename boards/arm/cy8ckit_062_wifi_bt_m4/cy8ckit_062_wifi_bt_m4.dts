@@ -14,6 +14,7 @@
 
 	aliases {
 		uart-5 = &uart5;
+		psoc6-ipm0 = &psoc6_ipm0;
 	};
 
 	chosen {
@@ -27,4 +28,8 @@
 &uart5 {
 	status = "ok";
 	current-speed = <115200>;
+};
+
+&psoc6_ipm0 {
+	status = "ok";
 };
