@@ -715,15 +715,6 @@ static inline void isr_radio_state_tx(void)
 		break;
 
 	case ROLE_MASTER:
-
-#if defined(CONFIG_BT_CTLR_CONN_RSSI)
-		if (_radio.packet_counter == 0) {
-			radio_rssi_measure();
-		}
-#endif /* CONFIG_BT_CTLR_CONN_RSSI */
-
-		/* fall thru */
-
 	case ROLE_SLAVE:
 
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -752,6 +743,13 @@ static inline void isr_radio_state_tx(void)
 #endif /* !CONFIG_BT_CTLR_PHY */
 
 		radio_tmr_hcto_configure(hcto);
+
+#if defined(CONFIG_BT_CTLR_CONN_RSSI)
+		if ((_radio.role == ROLE_MASTER) &&
+		    (_radio.packet_counter == 0)) {
+			radio_rssi_measure();
+		}
+#endif /* CONFIG_BT_CTLR_CONN_RSSI */
 
 #if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
 #if defined(CONFIG_BT_CTLR_PHY)
