@@ -3,84 +3,163 @@
 Getting Started Guide
 #####################
 
-Use this guide to get started with your :ref:`Zephyr <introducing_zephyr>`
-development.
+Follow this guide to set up a :ref:`Zephyr <introducing_zephyr>` development
+environment on your system, and then build and run a sample application.
 
-Checking Out the Source Code Anonymously
-****************************************
+.. _host_setup:
 
-The Zephyr source code is hosted in a GitHub repo that supports
-anonymous cloning via git. There are scripts and such in this repo that
-you'll need to set up your development environment, and we'll be using
-Git to get this repo.  (If you don't have Git installed, see the
-beginning of the OS-specific instructions below for help.)
+Set Up a Development System
+***************************
 
-We'll begin by
-using Git to clone the repository anonymously. Enter:
-
-.. code-block:: console
-
-   # On Linux/macOS
-   cd ~
-   # On Windows
-   cd %userprofile%
-
-   git clone https://github.com/zephyrproject-rtos/zephyr.git
-
-You have successfully checked out a copy of the source code to your local
-machine in a ``zephyr`` folder in your home directory.
-
-.. _getting_started_cmake:
-
-A brief note on the Zephyr build system
-***************************************
-
-The Zephyr project uses `CMake`_ as a tool for managing the building of the
-project. CMake is able to generate build files in different formats (also
-known as "generators"), and the following ones are currently supported
-by Zephyr:
-
- * ``make``: Supported on UNIX-like platforms (Linux, macOS).
- * ``ninja``: Supported on all platforms.
-
-Most of the examples in the Zephyr documentation use ``ninja`` as a build tool,
-but you should be able to use any generator on any of the examples listed.
-
-Set Up the Development Environment
-**********************************
-
-The Zephyr project supports these operating systems:
-
-* Linux
-* macOS
-* Microsoft Windows
-
-Use the following procedures to create a new development environment.
+Follow one of the following guides for your host operating system.
 
 .. toctree::
    :maxdepth: 1
 
-   installation_linux.rst
-   installation_mac.rst
-   installation_win.rst
+   Linux <installation_linux.rst>
+   macOS <installation_mac.rst>
+   Windows <installation_win.rst>
 
+Clone the Zephyr Repository
+***************************
+
+To clone the Zephyr source code repository from GitHub:
+
+.. code-block:: console
+
+   git clone https://github.com/zephyrproject-rtos/zephyr
+
+.. warning::
+
+   Don't clone Zephyr to a directory with spaces anywhere in the path.
+   For example, on Windows, :file:`C:\\Users\\YourName\\zephyr` will
+   work, but :file:`C:\\Users\\Your Name\\zephyr` will cause cryptic
+   errors when you try to build an application.
+
+Install Python Dependencies
+***************************
+
+Next, install additional Python packages required by Zephyr in a shell or
+``cmd.exe`` prompt:
+
+.. code-block:: console
+
+   # Linux
+   pip3 install -r --user zephyr/scripts/requirements.txt
+
+   # macOS and Windows
+   pip3 install -r zephyr/scripts/requirements.txt
+
+Some notes on pip's ``--user`` option:
+
+- Installing with ``--user`` is the default behavior on Debian-based
+  distributions and is generally recommended on Linux to avoid conflicts with
+  Python packages installed using the system package manager.
+
+- On macOS, Homebrew disables the ``--user`` flag\ [#homebrew_user]_.
+
+- On Windows using ``cmd.exe``, although it's possible to use the ``--user``
+  flag, it makes it harder for the command prompt to find executables installed
+  by pip.
+
+Set Up a Toolchain
+******************
+
+.. note::
+
+   On Linux, you can skip this step if you installed the :ref:`Zephyr SDK
+   <zephyr_sdk>`, which includes toolchains for all supported Zephyr
+   architectures.
+
+   If you want, you can use the SDK host tools (such as OpenOCD) with a
+   different toolchain by keeping the :envvar:`ZEPHYR_SDK_INSTALL_DIR`
+   environment variable set to the Zephyr SDK installation directory, while
+   setting :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` appropriately for a non-SDK
+   toolchain.
+
+Zephyr binaries are compiled using software called a *toolchain*. You need to
+*install* and *configure* a toolchain to develop Zephyr applications\
+[#tools_native_posix]_.
+
+Toolchains can be *installed* in different ways, including using installer
+programs, system package managers, or simply downloading a zip file or other
+archive and extracting the files somewhere on your computer.  You *configure*
+the toolchain by setting the environment variable
+:envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to a recognized value, along with some
+additional variable(s) specific to that toolchain (usually, this is just one
+more variable which contains the path where you installed the toolchain on your
+file system).
+
+.. note::
+
+   In previous releases of Zephyr, the ``ZEPHYR_TOOLCHAIN_VARIANT`` variable
+   was called ``ZEPHYR_GCC_VARIANT``.
+
+The following toolchain installation options are available. The right choice
+for you depends on where you want to run Zephyr and any other requirements you
+may have. Check your :ref:`board-level documentation <boards>` if you are
+unsure about what choice to use.
+
+.. toctree::
+   :maxdepth: 2
+
+   toolchain_3rd_party_x_compilers.rst
+   toolchain_other_x_compilers.rst
+   toolchain_custom_cmake.rst
+
+
+To use the same toolchain in new sessions in the future you can make
+sure the variables are set persistently.
+
+On macOS and Linux, you can set the variables by putting the ``export`` lines
+setting environment variables in a file :file:`~/.zephyrrc`. On Windows, you
+can put the ``set`` lines in :file:`%userprofile%\\zephyrrc.cmd`. These files
+are used to modify your environment when you run ``zephyr-env.sh`` (Linux,
+macOS) and ``zephyr-env.cmd`` (Windows), which you will learn about in the next
+step.
 
 .. _getting_started_run_sample:
 
-Building and Running an Application
-***********************************
+Build and Run an Application
+****************************
 
-Next, build a sample Zephyr application. You can then run it either in
-emulation or using POSIX APIs available on your host.
+Next, build a sample Zephyr application. You can then flash and run it on real
+hardware using any supported host system. Depending on your operating system,
+you can also run it in emulation with QEMU or as a native POSIX application.
 
-If your board is supported by Zephyr (see :ref:`boards` for a list),
-consult its documentation for flashing and running instructions.
+.. _getting_started_cmake:
 
-Building a Sample Application
-=============================
+A Brief Note on the Zephyr Build System
+=======================================
 
-Follow these steps to build the :ref:`hello_world` sample application
-provided with Zephyr.
+The Zephyr build system uses `CMake`_. CMake creates build systems in different
+formats, called `generators`_. Zephyr supports the following generators:
+
+ * ``Unix Makefiles``: Supported on UNIX-like platforms (Linux, macOS).
+ * ``Ninja``: Supported on all platforms.
+
+This documentation and Zephyr's continuous integration system mainly use
+``Ninja``, but you should be able to use any supported generator to build
+Zephyr applications.
+
+Build the Application
+=====================
+
+Follow these steps to build the :ref:`hello_world` sample application provided
+with Zephyr.
+
+Zephyr applications have to be configured and built to run on some hardware
+configuration, which is called a "board"\ [#board_misnomer]_. These steps show
+how to build the Hello World application for the :ref:`arduino_101` board.  You
+can build for a different board by changing ``arduino_101`` to another
+supported value. See :ref:`boards` for more information, or run ``ninja usage``
+from the build directory (once you've run ``cmake``) to get a list.
+
+.. note::
+
+   If you want to re-use your existing build directory to build for another
+   board, you must delete that directory's contents first by running ``ninja
+   pristine``.
 
 #. Navigate to the main project directory:
 
@@ -97,203 +176,53 @@ provided with Zephyr.
       # On Windows
       zephyr-env.cmd
 
-#. Build the :ref:`hello_world` example for the `arduino_101` board, enter:
+#. Build the Hello World sample for the ``arduino_101``:
+
+   .. Note: we don't use :zephyr-app: here because we just told the user to cd
+      to ZEPHYR_BASE, so it's not necessary for clarity and would clutter the
+      instructions a bit.
 
    .. zephyr-app-commands::
-      :zephyr-app: samples/hello_world
+      :app: samples/hello_world
       :board: arduino_101
-      :build-dir: arduino_101
       :goals: build
 
    On Linux/macOS you can also build with ``make`` instead of ``ninja``:
 
    .. zephyr-app-commands::
-      :zephyr-app: samples/hello_world
+      :app: samples/hello_world
       :generator: make
       :host-os: unix
       :board: arduino_101
-      :build-dir: arduino_101
       :goals: build
 
-You can build for a different board by defining the variable BOARD
-with another of the supported boards, for example:
+The main build products are in :file:`zephyr/samples/hello_world/build/zephyr`.
+The final application binary in ELF format is named :file:`zephyr.elf` by
+default. Other binary formats and byproducts such as disassembly and map files
+will be present depending on the target and build system configuration.
 
-   .. zephyr-app-commands::
-      :zephyr-app: samples/hello_world
-      :board: arduino_due
-      :build-dir: arduino_due
-      :goals: build
+Other sample projects demonstrating Zephyr's features are located in
+:file:`zephyr/samples` and are documented in :ref:`samples-and-demos`.
 
-For further information on the supported boards go see
-:ref:`here <boards>`. Alternatively, run the following command to obtain a list
-of the supported boards:
+Run the Application by Flashing to Another Board
+================================================
 
-.. code-block:: console
+Most "real hardware" boards supported by Zephyr can be flashed by running
+``ninja flash`` from the build directory. However, this may require
+board-specific tool installation and configuration to work properly.
 
-   ninja usage
+See :ref:`application_run` in the Application Development Primer and the
+documentation provided with your board at :ref:`boards` for additional details
+if you get an error.
 
-Sample projects for different features of the project are available at
-at :file:`ZEPHYR_BASE/samples`.
-After building an application successfully, the results can be found in the
-directory where cmake was invoked.
+Run the Application in QEMU
+===========================
 
-The ELF binaries generated by the build system are named by default
-:file:`zephyr.elf`. This value can be overridden in the application
-configuration The build system generates different names for different use cases
-depending on the hardware and boards used.
+On Linux and macOS, you can run Zephyr applications in emulation on your host
+system using QEMU when targeting either the X86 or ARM Cortex-M3 architectures.
 
-.. _sdkless_builds:
-
-Building without the Zephyr SDK
-===============================
-
-The Zephyr SDK is provided for convenience and ease of use. It provides
-cross-compilers for all ports supported by the Zephyr OS and does not require
-any extra flags when building applications or running tests. In addition to
-cross-compilers, the Zephyr SDK also provides prebuilt host tools.
-
-It is, however, possible to build without the SDK.  If you are using 3rd party
-cross compilers, jump forward to `Using 3rd Party Cross Compilers`_ for
-details.  A "3rd party cross compiler" is a toolchain that the Zephyr build
-system already knows about, such as `GNU ARM Embedded`_ that we use in this
-document.
-
-If you are going to use custom compilers, check `Using Custom Cross Compilers`_
-for more detail.  A "custom compiler" would be the one your Linux distribution
-packaged, the one you compiled on your own, or the one you downloaded from the
-net.  The Zephyr build system doesn't know about them and doesn't officially
-support them.
-
-As already noted above, the SDK also includes prebuilt host tools.  To use the
-SDK's prebuilt host tools alongside a 3rd party or custom cross-compiler, keep
-the ZEPHYR_SDK_INSTALL_DIR environment variable set to the Zephyr SDK
-installation directory. To build without the Zephyr SDK's prebuilt host tools,
-the ZEPHYR_SDK_INSTALL_DIR environment variable must be unset
-
-Follow the steps below to build without the Zephyr SDK:
-
-   .. code-block:: console
-
-      # On Linux/macOS
-      unset ZEPHYR_SDK_INSTALL_DIR
-      cd <zephyr git clone location>
-      source zephyr-env.sh
-      # On Windows
-      set ZEPHYR_SDK_INSTALL_DIR=
-      cd <zephyr git clone location>
-      zephyr-env.cmd
-
-.. _third_party_x_compilers:
-
-Using 3rd Party Cross Compilers
-===============================
-
-To use a 3rd party cross compiler that is not provided by the Zephyr
-SDK, follow the steps below.
-
-#. We will use the `GNU ARM Embedded`_ compiler for this example, download the
-   package suitable for your operating system from the `GNU ARM Embedded`_ website
-   and extract it on your file system. This example assumes the compiler was
-   extracted to: :file:`<user folder>/gcc-arm-none-eabi-7-2018-q2-update/`.
-
-#. Build the example :ref:`hello_world` project, enter:
-
-   .. code-block:: console
-
-      # On Linux/macOS
-      export GNUARMEMB_TOOLCHAIN_PATH="~/gcc-arm-none-eabi-7-2018-q2-update/"
-      export ZEPHYR_TOOLCHAIN_VARIANT=gnuarmemb
-      # On Windows
-      set GNUARMEMB_TOOLCHAIN_PATH="%userprofile%\gcc-arm-none-eabi-7-2018-q2-update\"
-      set ZEPHYR_TOOLCHAIN_VARIANT=gnuarmemb
-
-   .. zephyr-app-commands::
-      :zephyr-app: samples/hello_world
-      :board: arduino_due
-      :goals: build
-
-Make sure to unset the ZEPHYR_SDK_INSTALL_DIR if you don't use the
-SDK's host tools. See `Building without the Zephyr SDK`_ for details.
-
-It is possible to use the Zephyr SDK's host tools along with a 3rd
-party cross compiler. To do that, keep the ZEPHYR_SDK_INSTALL_DIR
-environment variable set to the Zephyr SDK installation directory.
-See `Set Up the Development Environment`_ for more details on the
-ZEPHYR_SDK_INSTALL_DIR environment variable.
-
-Using Custom Cross Compilers
-============================
-
-To use a custom cross compiler, follow the steps below.
-
-#. Install a cross compiler suitable for your system. We will use the
-   gcc-arm-none-eabi compiler on Debian system for this example.
-
-   .. code-block:: console
-
-      # On Debian or Ubuntu
-      sudo apt-get install gcc-arm-none-eabi
-      # On Fedora or Red hat
-      sudo dnf install arm-none-eabi-newlib
-
-#. Build the example :ref:`hello_world` project, enter:
-
-   .. code-block:: console
-
-      # On Linux
-      unset GNUARMEMB_TOOLCHAIN_PATH
-      export ZEPHYR_TOOLCHAIN_VARIANT=cross-compile
-      export CROSS_COMPILE=/usr/bin/arm-none-eabi-
-
-   .. zephyr-app-commands::
-      :zephyr-app: samples/hello_world
-      :board: arduino_zero
-      :goals: build
-
-Note that the Zephyr build system assumes that all the tools within your
-toolchain used to compile and link your code, reside in the same directory and
-have a common prefix.  Set the ``CROSS_COMPILE`` environment variable to the
-path of your toolchain's location and that common prefix. In the example above,
-gcc-arm-none-eabi is installed in ``/usr/bin/`` with the common prefix of
-``arm-none-eabi-``.  If your toolchain is at ``/opt/mytoolchain/bin`` with the
-prefix of ``myarch-none-elf-``, it would be
-``CROSS_COMPILE=/opt/mytoolchain/bin/arch-none-elf-``.
-
-Make sure to unset the ZEPHYR_SDK_INSTALL_DIR if you don't use the SDK's host
-tools. See `Building without the Zephyr SDK`_ and `Set Up the Development
-Environment`_ for more details.
-
-Using Custom Cmake Toolchains
-=============================
-
-To use a custom toolchain defined in an external cmake file, export the
-following environment variables:
-
-   .. code-block:: console
-
-      export ZEPHYR_TOOLCHAIN_VARIANT=<toolchain name>
-      export TOOLCHAIN_ROOT=<path to toolchain>
-
-or set them as cmake variables:
-
-  .. code-block:: console
-
-      cmake -DZEPHYR_TOOLCHAIN_VARIANT=... -DTOOLCHAIN_ROOT=...
-
-Zephyr will then include the toolchain cmake file located in:
-``<path to toolchain>/cmake/toolchain/<toolchain name>.cmake``
-
-Running a Sample Application in QEMU
-====================================
-
-To perform rapid testing of an application in the development environment you
-can use the QEMU emulation board configuration available for both X86 and ARM
-Cortex-M3 architectures. This can be easily accomplished by calling a special
-target when building an application that invokes QEMU once the build process is
-completed.
-
-To run an application using the x86 emulation board configuration (qemu_x86),
-type:
+To build and run Hello World using the x86 emulation board configuration
+(``qemu_x86``), type:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -301,24 +230,22 @@ type:
    :board: qemu_x86
    :goals: build run
 
-To exit the qemu emulator, press ``Ctrl-a``, followed by ``x``.
+To exit, type :kbd:`Ctrl-a`, then :kbd:`x`.
 
-Use the ``qemu_cortex_m3`` board configuration to test the ARM build.
-
-QEMU is not supported on all boards and SoCs. When developing for a specific
-hardware target you should always test on the actual hardware and should not
-rely on testing in the QEMU emulation environment only.
+Use the ``qemu_cortex_m3`` board configuration to run on an emulated Arm
+Cortex-M3.
 
 Running a Sample Application natively (POSIX OS)
 ================================================
 
-It is also possible to compile some of the sample and test applications to run
-as native process on a POSIX OS (e.g. Linux).
-To be able to do this, remember to have installed the 32 bit libC if your OS is
-natively 64bit. See the :ref:`native_posix` section on host dependencies
-for more information.
+Finally, it is also possible to compile some samples to run as native processes
+on a POSIX OS. This is currently only tested on Linux hosts.
 
-To compile and run an application in this way, type:
+On 64 bit host operating systems, you will also need a 32 bit C library
+installed. See the :ref:`native_posix` section on host dependencies for more
+information.
+
+To compile and run Hello World in this way, type:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
@@ -339,9 +266,38 @@ and then:
 You can run ``zephyr/zephyr.exe --help`` to get a list of available
 options.  See the :ref:`native_posix` document for more information.
 
-This executable can be instrumented like any other Linux process. For ex. with gdb
-or valgrind.
-Note that the native port is currently only tested in Linux.
+This executable can be instrumented using standard tools, such as gdb or
+valgrind.
 
-.. _GNU ARM Embedded: https://developer.arm.com/open-source/gnu-toolchain/gnu-rm
+.. rubric:: Footnotes
+
+.. [#homebrew_user]
+
+   For details, see
+   https://docs.brew.sh/Homebrew-and-Python#note-on-pip-install---user.
+
+.. [#tools_native_posix]
+
+   Usually, the toolchain is a cross-compiler and related tools which are
+   different than the host compilers and other programs available for
+   developing software to run natively on your operating system.
+
+   One exception is when building Zephyr as a host binary to run on a POSIX
+   operating system. In this case, you still need to set up a toolchain, but it
+   will provide host compilers instead of cross compilers. For details on this
+   option, see :ref:`native_posix`.
+
+.. [#board_misnomer]
+
+   This has become something of a misnomer over time. While the target can be,
+   and often is, a microprocessor running on its own dedicated hardware
+   board, Zephyr also supports using QEMU to run targets built for other
+   architectures in emulation, targets which produce native host system
+   binaries that implement Zephyr's driver interfaces with POSIX APIs, and even
+   running different Zephyr-based binaries on CPU cores of differing
+   architectures on the same physical chip. Each of these hardware
+   configurations is called a "board," even though that doesn't always make
+   perfect sense in context.
+
 .. _CMake: https://cmake.org
+.. _generators: https://cmake.org/cmake/help/v3.8/manual/cmake-generators.7.html
