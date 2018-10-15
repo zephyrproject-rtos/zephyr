@@ -35,7 +35,13 @@ int sem_destroy(sem_t *semaphore)
  */
 int sem_getvalue(sem_t *semaphore, int *value)
 {
+	if (semaphore == NULL) {
+		errno = EINVAL;
+		return -1;
+	}
+
 	*value = (int) k_sem_count_get(semaphore);
+
 	return 0;
 }
 /**
