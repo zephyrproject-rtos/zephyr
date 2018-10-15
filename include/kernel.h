@@ -2300,7 +2300,7 @@ struct k_lifo {
 /**
  * @cond INTERNAL_HIDDEN
  */
-#define K_STACK_FLAG_ALLOC	BIT(0)	/* Buffer was allocated */
+#define K_STACK_FLAG_ALLOC	((u8_t)1)	/* Buffer was allocated */
 
 struct k_stack {
 	_wait_q_t wait_q;
@@ -2344,7 +2344,7 @@ struct k_stack {
  * @req K-STACK-001
  */
 void k_stack_init(struct k_stack *stack,
-		  u32_t *buffer, unsigned int num_entries);
+		  u32_t *buffer, u32_t num_entries);
 
 
 /**
@@ -2362,8 +2362,8 @@ void k_stack_init(struct k_stack *stack,
  * @req K-STACK-001
  */
 
-__syscall int k_stack_alloc_init(struct k_stack *stack,
-				 unsigned int num_entries);
+__syscall s32_t k_stack_alloc_init(struct k_stack *stack,
+				   u32_t num_entries);
 
 /**
  * @brief Release a stack's allocated buffer
