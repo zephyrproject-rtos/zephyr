@@ -4,5 +4,5 @@ tests:
   test:
     harness: sensor
     platform_whitelist: frdm_kl25z
-    tags: samples sensor
+    tags: sensors
     depends_on: i2c

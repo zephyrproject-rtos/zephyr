@@ -3,12 +3,12 @@ sample:
 tests:
   test:
     filter: ( CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_INTERRUPT )
-    tags: samples shell
+    tags: shell
     harness: keyboard
     min_ram: 40
   test_minimal:
     filter: ( CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_INTERRUPT )
-    tags: samples shell
+    tags: shell
     harness: keyboard
     extra_args: CONF_FILE="prj_minimal.conf"
 

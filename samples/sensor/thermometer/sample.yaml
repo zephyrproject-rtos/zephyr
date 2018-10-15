@@ -2,5 +2,5 @@ sample:
   name: Temperature Sensor
 tests:
   test:
-    tags: samples
+    tags: sensors
     harness: sensor

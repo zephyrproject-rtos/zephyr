@@ -2,7 +2,7 @@ sample:
   name: Dining Philosophers
 common:
   extra_args: "-DDEBUG_PRINTF=1"
-  tags: samples
+  tags: introduction
   harness: console
   harness_config:
     type: multi_line
@@ -14,7 +14,7 @@ common:
       - ".*EATING.*"
 tests:
   sample.philosopher:
-    tags: samples
+    tags: introduction
   sample.philosopher.tracing:
     min_ram: 32
     extra_configs:

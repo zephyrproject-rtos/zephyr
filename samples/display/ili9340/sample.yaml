@@ -5,4 +5,4 @@ tests:
   test:
     build_only: true
     platform_whitelist: nucleo_l476rg
-    tags: samples display
+    tags: display

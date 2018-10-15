@@ -3,7 +3,7 @@ sample:
 tests:
   kernel.memory_protection.memory_domains:
     filter: CONFIG_ARCH_HAS_USERSPACE
-    tags: samples
+    tags: userspace mpu
     harness: console
     timeout: 120
     harness_config:

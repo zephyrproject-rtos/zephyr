@@ -5,5 +5,5 @@ sample:
 tests:
   test:
     platform_whitelist: arduino_101_sss
-    tags: samples sensor
+    tags: sensors
     harness: sensor

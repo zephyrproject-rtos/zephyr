@@ -2,7 +2,7 @@ sample:
   name: Sample for the entropy gathering driver
 tests:
   test:
-    tags: samples
+    tags: crypto
     filter: CONFIG_ENTROPY_HAS_DRIVER
     harness: console
     harness_config:

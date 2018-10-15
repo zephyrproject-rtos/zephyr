@@ -3,5 +3,5 @@ sample:
 tests:
   test:
     harness: sensor
-    tags: samples
+    tags: sensors
     depends_on: i2c

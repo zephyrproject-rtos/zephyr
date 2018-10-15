@@ -4,5 +4,5 @@ tests:
   test:
     harness: sensor
     platform_whitelist: frdm_k64f hexiwear_k64 warp7_m4
-    tags: samples sensor
+    tags: sensors
     depends_on: i2c

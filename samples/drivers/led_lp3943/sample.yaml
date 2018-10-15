@@ -5,4 +5,4 @@ sample:
 tests:
   test:
     platform_whitelist: 96b_neonkey
-    tags: samples
+    tags: LED

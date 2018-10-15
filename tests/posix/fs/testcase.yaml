@@ -2,5 +2,5 @@ tests:
   portability.posix:
     arch_exclude: nios2
     min_ram: 128
-    tags: posix fs
+    tags: posix filesystem
 
