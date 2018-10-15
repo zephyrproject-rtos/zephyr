@@ -256,6 +256,7 @@
 /samples/net/sockets/coap_server/         @rveerama1
 /samples/net/sockets/                     @jukkar @tbursztyka @pfalcon
 /samples/sensor/                          @bogdan-davidoaia
+/samples/subsys/ipc/ipm_psoc6/            @OlegKapshii
 /samples/subsys/logging/                  @nordic-krch @jarz-nordic
 /samples/subsys/shell/                    @jarz-nordic @nordic-krch
 /samples/subsys/usb/                      @jfischer-phytec-iot @finikorg

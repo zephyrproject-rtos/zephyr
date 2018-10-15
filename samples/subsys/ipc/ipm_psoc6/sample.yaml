@@ -1,0 +1,9 @@
+sample:
+    description: Sample app that sends messages between the two cores on
+        the cy8ckit_062_wifi_bt using a mailbox. Server part running on
+        the cy8ckit_062_wifi_bt_m0.
+    name: IPM PSoC6 Mailbox Sample
+tests:
+    test:
+        platform_whitelist: cy8ckit_062_wifi_bt_m0
+        tags: ipm
