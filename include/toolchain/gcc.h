@@ -115,6 +115,11 @@ do {                                                                    \
 
 #define __in_section_unique(seg) ___in_section(seg, __FILE__, __COUNTER__)
 
+/* Using this places a function in RAM instead of FLASH.
+ */
+#define __ramfunc	__attribute__((noinline))			\
+			__attribute__((long_call,section(".ramfunc")))
+
 #ifdef CONFIG_APPLICATION_MEMORY
 #define __kernel	__in_section_unique(kernel)
 #define __kernel_noinit	__in_section_unique(kernel_noinit)

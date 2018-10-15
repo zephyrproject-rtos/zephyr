@@ -348,6 +348,16 @@ SECTIONS
 
     __data_rom_start = LOADADDR(_DATA_SECTION_NAME);
 
+    SECTION_DATA_PROLOGUE(.ramfunc,,)
+        {
+        __ramfunc_ram_start = .;
+        KERNEL_INPUT_SECTION(.ramfunc)
+        KERNEL_INPUT_SECTION(".ramfunc.*")
+        __ramfunc_ram_end = .;
+        } GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+    __ramfunc_rom_start = LOADADDR(.ramfunc);
+
 #include <linker/common-ram.ld>
 #include <linker/priv_stacks.ld>
 #include <linker/kobject.ld>
