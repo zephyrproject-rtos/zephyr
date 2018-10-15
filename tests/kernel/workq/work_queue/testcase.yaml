@@ -1,7 +1,7 @@
 tests:
   kernel.workqueue:
-    tags: core bat_commit
+    tags: kernel
   kernel.workqueue.poll:
-    tags: core bat_commit
+    tags: kernel
     extra_configs:
       - CONFIG_POLL=y
