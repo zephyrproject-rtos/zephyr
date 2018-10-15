@@ -1,4 +1,4 @@
 tests:
   filesystem.fat:
     platform_whitelist: qemu_x86
-    tags: fs
+    tags: filesystem

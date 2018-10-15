@@ -4,5 +4,5 @@ tests:
   test:
     arch_whitelist: arm
     filter: CONFIG_CPU_HAS_MPU
-    tags: samples
+    tags: mpu
     harness: keyboard

@@ -3,5 +3,5 @@ sample:
 
 tests:
   test:
-    tags: samples
+    tags: settings
     depends_on: nvs

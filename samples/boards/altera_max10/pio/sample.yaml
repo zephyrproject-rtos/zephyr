@@ -4,6 +4,5 @@ sample:
   name: Nios-II Parallel Input/Output (PIO)
 tests:
   test:
-    build_only: true
     platform_whitelist: altera_max10
-    tags: samples pio
+    tags: pio

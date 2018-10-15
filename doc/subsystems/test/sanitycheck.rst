@@ -293,13 +293,13 @@ related to the sample and what is being demonstrated:
         tests:
           test:
             build_only: true
-            tags: samples tests
+            tags: tests
             min_ram: 16
           singlethread:
             build_only: true
             extra_args: CONF_FILE=prj_single.conf
             filter: not CONFIG_BT and not CONFIG_GPIO_SCH
-            tags: samples tests
+            tags: tests
             min_ram: 16
 
 The full canonical name for each test case is:
@@ -439,7 +439,7 @@ harness_config: <harness configuration options>
              fixture: fixture_i2c_hts221
          tests:
            test:
-             tags: samples sensor
+             tags: sensors
              depends_on: i2c
 
 filter: <expression>

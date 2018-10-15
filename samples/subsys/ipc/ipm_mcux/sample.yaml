@@ -5,4 +5,4 @@ sample:
 tests:
     test:
         platform_whitelist: lpcxpresso54114_m4
-        tags: samples ipm
+        tags: ipm

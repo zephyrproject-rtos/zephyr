@@ -3,6 +3,6 @@ sample:
 tests:
   test:
     platform_whitelist: arduino_due
-    tags: samples
+    tags: display
     harness: display
     depends_on: gpio

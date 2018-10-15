@@ -5,4 +5,4 @@ sample:
 tests:
   test:
     platform_whitelist: stm32373c_eval
-    tags: samples
+    tags: LED

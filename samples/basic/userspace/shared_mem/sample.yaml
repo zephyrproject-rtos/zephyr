@@ -4,7 +4,7 @@ sample:
   name: protected memory
   platforms: all
 common:
-    tags: samples
+    tags: userspace
     harness: console
     harness_config:
       type: one_line
@@ -13,5 +13,3 @@ common:
 tests:
   kernel.memory_protection.userspace:
     filter: CONFIG_ARCH_HAS_USERSPACE
-    tags: userspace samples
-

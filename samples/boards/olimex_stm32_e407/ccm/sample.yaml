@@ -2,7 +2,6 @@ sample:
   name: CCM usages example on Olimex STM32-E407
 tests:
   test:
-    build_only: true
     platform_whitelist: olimex_stm32_e407
-    tags: samples
+    tags: board
 

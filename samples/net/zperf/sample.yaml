@@ -14,7 +14,7 @@ tests:
     extra_configs:
       - CONFIG_NET_TCP=n
     platform_whitelist: quark_se_c1000_devboard 96b_carbon
-    tags: samples usb net zperf
+    tags: usb net zperf
   test_netusb_eem:
     extra_args: OVERLAY_CONFIG="overlay-netusb.conf"
     extra_configs:
@@ -22,7 +22,7 @@ tests:
       - CONFIG_USB_DEVICE_NETWORK_EEM=y
       - CONFIG_NET_TCP=n
     platform_whitelist: quark_se_c1000_devboard 96b_carbon
-    tags: samples usb net zperf
+    tags: usb net zperf
   test_netusb_rndis:
     extra_args: OVERLAY_CONFIG="overlay-netusb.conf"
     extra_configs:
@@ -32,4 +32,4 @@ tests:
       - CONFIG_NET_PKT_TX_COUNT=32
       - CONFIG_NET_TCP=n
     platform_whitelist: quark_se_c1000_devboard 96b_carbon
-    tags: samples usb net zperf
+    tags: usb net zperf

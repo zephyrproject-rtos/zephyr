@@ -5,4 +5,4 @@ tests:
   test:
     build_only: true
     depends_on: i2c
-    tags: samples sensor
+    tags: sensors

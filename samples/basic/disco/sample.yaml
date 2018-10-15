@@ -3,5 +3,5 @@ sample:
 tests:
   test:
     platform_whitelist: nucleo_f103rb nucleo_f401re
-    tags: samples
+    tags: LED gpio
     depends_on: gpio

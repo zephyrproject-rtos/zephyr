@@ -6,4 +6,4 @@ tests:
     test:
         build_only: true
         platform_whitelist: lpcxpresso54114_m4
-        tags: samples ipm
+        tags: ipm

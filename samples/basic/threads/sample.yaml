@@ -5,5 +5,5 @@ sample:
 tests:
   test:
     platform_whitelist: 96b_carbon
-    tags: samples
+    tags: kernel threads gpio
     depends_on: gpio
