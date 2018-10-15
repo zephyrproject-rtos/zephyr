@@ -1,0 +1,60 @@
+#include <arm/armv7-m.dtsi>
+
+#include <unisoc/mem.h>
+
+#define INT_UART0	35          // UART0 Rx and Tx
+#define INT_UART1	36          // UART1 Rx and Tx
+#define INT_UART2	7           // UART2 Rx and Tx (Connect EIC0(7))
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4";
+			reg = <0>;
+		};
+	};
+
+	sram0: memory@100000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <DT_SRAM_START DT_SRAM_SIZE>;
+		   };
+	flash0: flash@200000 {
+		compatible = "serial-flash";
+		reg = <DT_FLASH_START DT_FLASH_SIZE>;
+	};
+
+	soc {
+		uart0: uart@40038000 {
+			compatible = "unisoc,uart";
+			reg = <DT_UART0_START DT_UART_SIZE>;
+			interrupts = <INT_UART0 3>;
+			status = "disabled";
+			label = "UART_0";
+		};
+
+		uart1: uart@40040000 {
+			compatible = "unisoc,uart";
+			reg = <DT_UART1_START DT_UART_SIZE>;
+			interrupts = <INT_UART1 3>;
+			status = "disabled";
+			label = "UART_1";
+		};
+
+		uart2: uart@40838000 {
+			compatible = "unisoc,uart";
+			reg = <DT_UART2_START DT_UART_SIZE>;
+			interrupts = <INT_UART2 3>;
+			status = "disabled";
+			label = "UART_2";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

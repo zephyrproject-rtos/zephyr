@@ -1,0 +1,15 @@
+config HAS_UWP566x
+	bool
+	depends on SOC_FAMILY_UWP
+
+if HAS_UWP566x
+
+config USE_UWP566x_HAL_UART
+	bool
+	default y
+
+config USE_UWP566x_HAL_SFC
+   bool
+   default y
+
+endif

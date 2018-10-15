@@ -1,0 +1,61 @@
+#
+# Copyright (c) 2018, UNISOC Incorporated
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig INTC_UWP
+	bool "UNISOC UWP Interrupt Controller Driver"
+	depends on SOC_FAMILY_UWP
+	default n
+	help
+	  Enable INTC driver for UNISOC UWP MCU.
+
+config INTC_UWP_DEVICE_NAME
+	string "Device name for Interrupt Controller"
+	depends on INTC_UWP
+	default "UWP_INTC"
+	help
+	  Set the name used by INTC device during registration.
+
+menuconfig AON_INTC_UWP
+	bool "UNISOC UWP AON Interrupt Controller Driver"
+	depends on SOC_FAMILY_UWP
+	default n
+	help
+	  Enable AON INTC driver for UNISOC UWP MCU.
+
+config AON_INTC_UWP_DEVICE_NAME
+	string "Device name for AON Interrupt Controller"
+	depends on INTC_UWP
+	default "UWP_AON_INTC"
+	help
+	  Set the name used by AON INTC device during registration.
+
+menuconfig EIC_UWP
+	bool "UNISOC UWP Interrupt Controller Driver"
+	depends on SOC_FAMILY_UWP
+	default n
+	help
+	  Enable EIC driver for UNISOC UWP MCU.
+
+config EIC_UWP_DEVICE_NAME
+	string "Device name for Interrupt Controller"
+	depends on EIC_UWP
+	default "UWP_EIC"
+	help
+	  Set the name used by EIC device during registration.
+
+menuconfig IPI_UWP
+	bool "UNISOC UWP IPI Interrupt Controller Driver"
+	depends on SOC_FAMILY_UWP
+	default n
+	help
+	  Enable IPI driver for UNISOC UWP MCU.
+
+config IPI_UWP_DEVICE_NAME
+	string "Device name for IPI Interrupt Controller"
+	depends on IPI_UWP
+	default "UWP_IPI"
+	help
+	  Set the name used by IPI device during registration.

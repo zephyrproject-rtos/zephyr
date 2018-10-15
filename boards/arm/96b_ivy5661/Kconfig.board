@@ -1,0 +1,6 @@
+# Kconfig - 96boards IVY5661 board configuration
+#
+
+config BOARD_96B_IVY5661
+	bool "96Boards IVY5661"
+	depends on SOC_UWP5661

@@ -1,0 +1,12 @@
+# Kconfig.defconfig.series - UNISOC UWP Family
+#
+
+if SOC_SERIES_UWP566X
+
+source "soc/arm/unisoc_uwp/uwp566x/Kconfig.defconfig.uwp5661"
+
+config SOC_SERIES
+	string
+	default "uwp566x"
+
+endif # SOC_SERIES_UWP566X

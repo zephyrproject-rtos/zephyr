@@ -1,0 +1,19 @@
+#
+# Copyright (c) 2018, UNISOC Incorporated
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig WDT_UWP
+	bool "UNISOC UWP Watchdog Driver"
+	depends on SOC_FAMILY_UWP
+	default y
+	help
+	  Enable WDT driver for UNISOC UWP MCU.
+
+config WDT_UWP_DEVICE_NAME
+	string "Device name for Watchdog"
+	depends on WDT_UWP
+	default "UWP_WDT"
+	help
+	  Set the name used by WDT device during registration.
