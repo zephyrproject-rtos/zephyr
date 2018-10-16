@@ -377,7 +377,7 @@ void z_thread_timeout(struct _timeout *to)
 }
 #endif
 
-int _pend_current_thread(int key, _wait_q_t *wait_q, s32_t timeout)
+int _pend_current_thread(u32_t key, _wait_q_t *wait_q, s32_t timeout)
 {
 	pend(_current, wait_q, timeout);
 	return _Swap(key);
