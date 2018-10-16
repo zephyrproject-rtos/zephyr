@@ -23,6 +23,7 @@ struct spi_sam_config {
 	Spi *regs;
 	u32_t periph_id;
 	struct soc_gpio_pin pins;
+	struct soc_gpio_pin cs[SAM_SPI_CHIP_SELECT_COUNT];
 };
 
 /* Device run time data */
@@ -413,9 +414,16 @@ static int spi_sam_init(struct device *dev)
 {
 	const struct spi_sam_config *cfg = dev->config->config_info;
 	struct spi_sam_data *data = dev->driver_data;
+	int i;
 
 	soc_pmc_peripheral_enable(cfg->periph_id);
 	soc_gpio_configure(&cfg->pins);
+
+	for (i = 0; i < SAM_SPI_CHIP_SELECT_COUNT; i++) {
+		if (cfg->cs[i].regs) {
+			soc_gpio_configure(&cfg->cs[i]);
+		}
+	}
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
@@ -434,11 +442,20 @@ static const struct spi_driver_api spi_sam_driver_api = {
 	.release = spi_sam_release,
 };
 
+#ifndef PINS_SPI0_CS
+#define PINS_SPI0_CS { {0, (Pio *)0, 0, 0}, }
+#endif
+
+#ifndef PINS_SPI1_CS
+#define PINS_SPI1_CS { {0, (Pio *)0, 0, 0}, }
+#endif
+
 #define SPI_SAM_DEFINE_CONFIG(n)					\
 	static const struct spi_sam_config spi_sam_config_##n = {	\
 		.regs = (Spi *)CONFIG_SPI_##n##_BASE_ADDRESS,		\
 		.periph_id = CONFIG_SPI_##n##_PERIPHERAL_ID,		\
 		.pins = PINS_SPI##n,					\
+		.cs = PINS_SPI##n##_CS,					\
 	}
 
 #define SPI_SAM_DEVICE_INIT(n)						\
