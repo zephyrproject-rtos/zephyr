@@ -13,19 +13,9 @@ menuconfig GROVE
 	  Check this box to enable the Seeed Grove device drivers
 
 
-config SYS_LOG_GROVE_LEVEL
-	int "Grove Log level"
-	depends on SYS_LOG && GROVE
-	default 0
-	range 0 4
-	help
-	  Sets log level for Grove Device Drivers.
-	  Levels are:
-	  0 OFF, do not write
-	  1 ERROR, only write SYS_LOG_ERR
-	  2 WARNING, write SYS_LOG_WRN in addition to previous level
-	  3 INFO, write SYS_LOG_INF in addition to previous levels
-	  4 DEBUG, write SYS_LOG_DBG in addition to previous levels
+module = GROVE
+module-str = grove
+source "subsys/logging/Kconfig.template.log_config"
 
 config GROVE_LCD_RGB
 	bool "Enable the Seeed Grove LCD RGB Backlight"
