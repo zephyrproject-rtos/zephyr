@@ -34,14 +34,12 @@
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __STM32L4xx_HAL_HASH_EX_H
-#define __STM32L4xx_HAL_HASH_EX_H
+#ifndef STM32L4xx_HAL_HASH_EX_H
+#define STM32L4xx_HAL_HASH_EX_H
 
 #ifdef __cplusplus
  extern "C" {
 #endif
-
-#if defined (STM32L4A6xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined (STM32L4S9xx)
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l4xx_hal_def.h"
@@ -49,7 +47,7 @@
 /** @addtogroup STM32L4xx_HAL_Driver
   * @{
   */
-
+#if defined (HASH)
 /** @addtogroup HASHEx
   * @{
   */
@@ -143,7 +141,6 @@ HAL_StatusTypeDef HAL_HMACEx_MD5_Step2_3_DMA(HASH_HandleTypeDef *hhash, uint8_t 
 HAL_StatusTypeDef HAL_HMACEx_SHA1_Step1_2_DMA(HASH_HandleTypeDef *hhash, uint8_t *pInBuffer, uint32_t Size);
 HAL_StatusTypeDef HAL_HMACEx_SHA1_Step2_DMA(HASH_HandleTypeDef *hhash, uint8_t *pInBuffer, uint32_t Size);
 HAL_StatusTypeDef HAL_HMACEx_SHA1_Step2_3_DMA(HASH_HandleTypeDef *hhash, uint8_t *pInBuffer, uint32_t Size);
-
 HAL_StatusTypeDef HAL_HMACEx_SHA224_Step1_2_DMA(HASH_HandleTypeDef *hhash, uint8_t *pInBuffer, uint32_t Size);
 HAL_StatusTypeDef HAL_HMACEx_SHA224_Step2_DMA(HASH_HandleTypeDef *hhash, uint8_t *pInBuffer, uint32_t Size);
 HAL_StatusTypeDef HAL_HMACEx_SHA224_Step2_3_DMA(HASH_HandleTypeDef *hhash, uint8_t *pInBuffer, uint32_t Size);
@@ -151,7 +148,6 @@ HAL_StatusTypeDef HAL_HMACEx_SHA224_Step2_3_DMA(HASH_HandleTypeDef *hhash, uint8
 HAL_StatusTypeDef HAL_HMACEx_SHA256_Step1_2_DMA(HASH_HandleTypeDef *hhash, uint8_t *pInBuffer, uint32_t Size);
 HAL_StatusTypeDef HAL_HMACEx_SHA256_Step2_DMA(HASH_HandleTypeDef *hhash, uint8_t *pInBuffer, uint32_t Size);
 HAL_StatusTypeDef HAL_HMACEx_SHA256_Step2_3_DMA(HASH_HandleTypeDef *hhash, uint8_t *pInBuffer, uint32_t Size);
-
 /**
   * @}
   */
@@ -163,18 +159,17 @@ HAL_StatusTypeDef HAL_HMACEx_SHA256_Step2_3_DMA(HASH_HandleTypeDef *hhash, uint8
 /**
   * @}
   */
-
+#endif /*  HASH*/
 /**
   * @}
   */
 
-#endif /* defined (STM32L4A6xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined (STM32L4S9xx) */
 
 #ifdef __cplusplus
 }
 #endif
 
 
-#endif /* __STM32L4xx_HAL_HASH_EX_H */
+#endif /* STM32L4xx_HAL_HASH_EX_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

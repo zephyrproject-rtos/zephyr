@@ -34,8 +34,8 @@
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __STM32L4xx_HAL_USART_H
-#define __STM32L4xx_HAL_USART_H
+#ifndef STM32L4xx_HAL_USART_H
+#define STM32L4xx_HAL_USART_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -67,7 +67,7 @@ typedef struct
                                               Baud Rate Register[15:4] = ((2 * fclk_pres) / ((huart->Init.BaudRate)))[15:4]
                                               Baud Rate Register[3]    = 0
                                               Baud Rate Register[2:0]  =  (((2 * fclk_pres) / ((huart->Init.BaudRate)))[3:0]) >> 1
-                                              where fclk_pres is the USART input clock frequency (fclk) divided by a prescaler.
+                                              where fclk_pres is the USART input clock frequency (fclk) (divided by a prescaler if applicable)
                                            @note  Oversampling by 8 is systematically applied to achieve high baud rates. */
 
   uint32_t WordLength;                /*!< Specifies the number of data bits transmitted or received in a frame.
@@ -130,13 +130,12 @@ typedef enum
   USART_CLOCKSOURCE_UNDEFINED  = 0x10U     /*!< Undefined clock source */
 } USART_ClockSourceTypeDef;
 
-
 /**
   * @brief  USART handle Structure definition
   */
 typedef struct __USART_HandleTypeDef
 {
-  USART_TypeDef                 *Instance;               /*!<  USART registers base address       */
+  USART_TypeDef                 *Instance;               /*!< USART registers base address        */
 
   USART_InitTypeDef             Init;                    /*!< USART communication parameters      */
 
@@ -158,31 +157,31 @@ typedef struct __USART_HandleTypeDef
   uint16_t                      NbRxDataToProcess;       /*!< Number of data to process during RX ISR execution */
 
   uint16_t                      NbTxDataToProcess;       /*!< Number of data to process during TX ISR execution */
-#endif
 
+#endif
 #if defined(USART_CR2_SLVEN)
   uint32_t                      SlaveMode;               /*!< Enable/Disable UART SPI Slave Mode. This parameter can be a value
                                                               of @ref USARTEx_Slave_Mode */
-#endif
 
+#endif
 #if defined(USART_CR1_FIFOEN)
   uint32_t                      FifoMode;                /*!< Specifies if the FIFO mode will be used. This parameter can be a value
                                                               of @ref USARTEx_FIFO_mode. */
+
 #endif
+  void (*RxISR)(struct __USART_HandleTypeDef *husart);   /*!< Function pointer on Rx IRQ handler  */
 
-  void (*RxISR)(struct __USART_HandleTypeDef *husart);   /*!< Function pointer on Rx IRQ handler   */
+  void (*TxISR)(struct __USART_HandleTypeDef *husart);   /*!< Function pointer on Tx IRQ handler  */
 
-  void (*TxISR)(struct __USART_HandleTypeDef *husart);   /*!< Function pointer on Tx IRQ handler   */
+  DMA_HandleTypeDef             *hdmatx;                 /*!< USART Tx DMA Handle parameters      */
 
-  DMA_HandleTypeDef             *hdmatx;                 /*!< USART Tx DMA Handle parameters       */
+  DMA_HandleTypeDef             *hdmarx;                 /*!< USART Rx DMA Handle parameters      */
 
-  DMA_HandleTypeDef             *hdmarx;                 /*!< USART Rx DMA Handle parameters       */
+  HAL_LockTypeDef               Lock;                    /*!< Locking object                      */
 
-  HAL_LockTypeDef               Lock;                    /*!<  Locking object                      */
+  __IO HAL_USART_StateTypeDef   State;                   /*!< USART communication state           */
 
-  __IO HAL_USART_StateTypeDef   State;                   /*!< USART communication state            */
-
-  __IO uint32_t                 ErrorCode;               /*!< USART Error code                     */
+  __IO uint32_t                 ErrorCode;               /*!< USART Error code                    */
 
 #if (USE_HAL_USART_REGISTER_CALLBACKS == 1)
   void (* TxHalfCpltCallback)(struct __USART_HandleTypeDef *husart);        /*!< USART Tx Half Complete Callback        */
@@ -467,6 +466,10 @@ typedef  void (*pUSART_CallbackTypeDef)(USART_HandleTypeDef *husart);  /*!< poin
   * @{
   */
 #define USART_IT_MASK                             0x001FU     /*!< USART interruptions flags mask */
+#define USART_CR_MASK                             0x00E0U     /*!< USART control register mask */
+#define USART_CR_POS                              5U          /*!< USART control register position */
+#define USART_ISR_MASK                            0x1F00U     /*!< USART ISR register mask         */
+#define USART_ISR_POS                             8U          /*!< USART ISR register position     */
 /**
   * @}
   */
@@ -600,9 +603,9 @@ typedef  void (*pUSART_CallbackTypeDef)(USART_HandleTypeDef *husart);  /*!< poin
   *            @arg @ref USART_IT_ERR   Error interrupt(Frame error, noise error, overrun error)
   * @retval None
   */
-#define __HAL_USART_ENABLE_IT(__HANDLE__, __INTERRUPT__)   (((((uint8_t)(__INTERRUPT__)) >> 5U) == 1)? ((__HANDLE__)->Instance->CR1 |= (1U << ((__INTERRUPT__) & USART_IT_MASK))): \
-                                                            ((((uint8_t)(__INTERRUPT__)) >> 5U) == 2)? ((__HANDLE__)->Instance->CR2 |= (1U << ((__INTERRUPT__) & USART_IT_MASK))): \
-                                                            ((__HANDLE__)->Instance->CR3 |= (1U << ((__INTERRUPT__) & USART_IT_MASK))))
+#define __HAL_USART_ENABLE_IT(__HANDLE__, __INTERRUPT__)   (((((__INTERRUPT__) & USART_CR_MASK) >> USART_CR_POS) == 1U)? ((__HANDLE__)->Instance->CR1 |= ((uint32_t)1U << ((__INTERRUPT__) & USART_IT_MASK))): \
+                                                            ((((__INTERRUPT__) & USART_CR_MASK) >> USART_CR_POS) == 2U)? ((__HANDLE__)->Instance->CR2 |= ((uint32_t)1U << ((__INTERRUPT__) & USART_IT_MASK))): \
+                                                            ((__HANDLE__)->Instance->CR3 |= ((uint32_t)1U << ((__INTERRUPT__) & USART_IT_MASK))))
 
 /** @brief  Disable the specified USART interrupt.
   * @param  __HANDLE__ specifies the USART Handle.
@@ -622,9 +625,9 @@ typedef  void (*pUSART_CallbackTypeDef)(USART_HandleTypeDef *husart);  /*!< poin
   *            @arg @ref USART_IT_ERR   Error interrupt(Frame error, noise error, overrun error)
   * @retval None
   */
-#define __HAL_USART_DISABLE_IT(__HANDLE__, __INTERRUPT__)  (((((uint8_t)(__INTERRUPT__)) >> 5U) == 1)? ((__HANDLE__)->Instance->CR1 &= ~ (1U << ((__INTERRUPT__) & USART_IT_MASK))): \
-                                                            ((((uint8_t)(__INTERRUPT__)) >> 5U) == 2)? ((__HANDLE__)->Instance->CR2 &= ~ (1U << ((__INTERRUPT__) & USART_IT_MASK))): \
-                                                            ((__HANDLE__)->Instance->CR3 &= ~ (1U << ((__INTERRUPT__) & USART_IT_MASK))))
+#define __HAL_USART_DISABLE_IT(__HANDLE__, __INTERRUPT__)  (((((__INTERRUPT__) & USART_CR_MASK) >> USART_CR_POS) == 1U)? ((__HANDLE__)->Instance->CR1 &= ~ ((uint32_t)1U << ((__INTERRUPT__) & USART_IT_MASK))): \
+                                                            ((((__INTERRUPT__) & USART_CR_MASK) >> USART_CR_POS) == 2U)? ((__HANDLE__)->Instance->CR2 &= ~ ((uint32_t)1U << ((__INTERRUPT__) & USART_IT_MASK))): \
+                                                            ((__HANDLE__)->Instance->CR3 &= ~ ((uint32_t)1U << ((__INTERRUPT__) & USART_IT_MASK))))
 
 
 /** @brief  Check whether the specified USART interrupt has occurred or not.
@@ -647,7 +650,7 @@ typedef  void (*pUSART_CallbackTypeDef)(USART_HandleTypeDef *husart);  /*!< poin
   *            @arg @ref USART_IT_PE    Parity Error interrupt
   * @retval The new state of __INTERRUPT__ (SET or RESET).
   */
-#define __HAL_USART_GET_IT(__HANDLE__, __INTERRUPT__) ((((__HANDLE__)->Instance->ISR & ((uint32_t)1 << ((__INTERRUPT__)>> 0x08))) != RESET) ? SET : RESET)
+#define __HAL_USART_GET_IT(__HANDLE__, __INTERRUPT__) ((((__HANDLE__)->Instance->ISR & ((uint32_t)0x01U << (((__INTERRUPT__) & USART_ISR_MASK)>> USART_ISR_POS))) != 0U) ? SET : RESET)
 
 /** @brief  Check whether the specified USART interrupt source is enabled or not.
   * @param  __HANDLE__ specifies the USART Handle.
@@ -671,7 +674,7 @@ typedef  void (*pUSART_CallbackTypeDef)(USART_HandleTypeDef *husart);  /*!< poin
   */
 #define __HAL_USART_GET_IT_SOURCE(__HANDLE__, __INTERRUPT__) ((((((((uint8_t)(__INTERRUPT__)) >> 0x05U) == 0x01U) ? (__HANDLE__)->Instance->CR1 : \
                                                                 (((((uint8_t)(__INTERRUPT__)) >> 0x05U) == 0x02U) ? (__HANDLE__)->Instance->CR2 : \
-                                                                (__HANDLE__)->Instance->CR3)) & (0x01U << (((uint16_t)(__INTERRUPT__)) & USART_IT_MASK)))  != RESET) ? SET : RESET)
+                                                                (__HANDLE__)->Instance->CR3)) & (0x01U << (((uint16_t)(__INTERRUPT__)) & USART_IT_MASK)))  != 0U) ? SET : RESET)
 
 
 /** @brief  Clear the specified USART ISR flag, in setting the proper ICR register flag.
@@ -968,6 +971,6 @@ uint32_t               HAL_USART_GetError(USART_HandleTypeDef *husart);
 }
 #endif
 
-#endif /* __STM32L4xx_HAL_USART_H */
+#endif /* STM32L4xx_HAL_USART_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

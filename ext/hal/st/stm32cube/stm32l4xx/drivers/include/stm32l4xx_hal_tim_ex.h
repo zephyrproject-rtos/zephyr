@@ -118,7 +118,9 @@ TIMEx_BreakInputConfigTypeDef;
 #define TIM_TIM1_TI1_COMP1          TIM1_OR1_TI1_RMP                                      /* !< TIM1 TI1 is connected to COMP1 */
 #define TIM_TIM1_ETR_GPIO           0x00000000U                                           /* !< TIM1_ETR is connected to GPIO */
 #define TIM_TIM1_ETR_COMP1          TIM1_OR2_ETRSEL_0                                     /* !< TIM1_ETR is connected to COMP1 output */
+#if defined(COMP2)
 #define TIM_TIM1_ETR_COMP2          TIM1_OR2_ETRSEL_1                                     /* !< TIM1_ETR is connected to COMP2 output */
+#endif /* COMP2 */
 
 #if defined (USB_OTG_FS)
 #define TIM_TIM2_ITR1_TIM8_TRGO     0x00000000U                                           /* !< TIM2_ITR1 is connected to TIM8_TRGO */
@@ -135,11 +137,15 @@ TIMEx_BreakInputConfigTypeDef;
 #define TIM_TIM2_ETR_GPIO           0x00000000U                                           /* !< TIM2_ETR is connected to GPIO */
 #define TIM_TIM2_ETR_LSE            TIM2_OR1_ETR1_RMP                                     /* !< TIM2_ETR is connected to LSE */
 #define TIM_TIM2_ETR_COMP1          TIM2_OR2_ETRSEL_0                                     /* !< TIM2_ETR is connected to COMP1 output */
+#if defined(COMP2)
 #define TIM_TIM2_ETR_COMP2          TIM2_OR2_ETRSEL_1                                     /* !< TIM2_ETR is connected to COMP2 output */
+#endif /* COMP2 */
 #define TIM_TIM2_TI4_GPIO           0x00000000U                                           /* !< TIM2 TI4 is connected to GPIO */
 #define TIM_TIM2_TI4_COMP1          TIM2_OR1_TI4_RMP_0                                    /* !< TIM2 TI4 is connected to COMP1 output */
+#if defined(COMP2)
 #define TIM_TIM2_TI4_COMP2          TIM2_OR1_TI4_RMP_1                                    /* !< TIM2 TI4 is connected to COMP2 output */
 #define TIM_TIM2_TI4_COMP1_COMP2    (TIM2_OR1_TI4_RMP_1| TIM2_OR1_TI4_RMP_0)              /* !< TIM2 TI4 is connected to logical OR between COMP1 and COMP2 output2 */
+#endif /* COMP2 */
 
 #if defined (TIM3)
 #define TIM_TIM3_TI1_GPIO           0x00000000U                                           /* !< TIM3 TI1 is connected to GPIO */

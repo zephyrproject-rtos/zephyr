@@ -632,8 +632,8 @@ void                  HAL_QSPI_TimeOutCallback      (QSPI_HandleTypeDef *hqspi);
 
 #if (USE_HAL_QSPI_REGISTER_CALLBACKS == 1)
 /* QSPI callback registering/unregistering */
-HAL_StatusTypeDef     HAL_QSPI_RegisterCallback     (QSPI_HandleTypeDef *hqspi, HAL_QSPI_CallbackIDTypeDef CallbackID, pQSPI_CallbackTypeDef pCallback);
-HAL_StatusTypeDef     HAL_QSPI_UnRegisterCallback   (QSPI_HandleTypeDef *hqspi, HAL_QSPI_CallbackIDTypeDef CallbackID);
+HAL_StatusTypeDef     HAL_QSPI_RegisterCallback     (QSPI_HandleTypeDef *hqspi, HAL_QSPI_CallbackIDTypeDef CallbackId, pQSPI_CallbackTypeDef pCallback);
+HAL_StatusTypeDef     HAL_QSPI_UnRegisterCallback   (QSPI_HandleTypeDef *hqspi, HAL_QSPI_CallbackIDTypeDef CallbackId);
 #endif
 /**
   * @}

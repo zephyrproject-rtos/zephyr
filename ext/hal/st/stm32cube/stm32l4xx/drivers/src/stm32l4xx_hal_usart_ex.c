@@ -98,8 +98,8 @@ static void USARTEx_SetNbDataToProcess(USART_HandleTypeDef *husart);
   * @{
   */
 
-/** @defgroup USARTEx_Exported_Functions_Group2 IO operation functions
-  *  @brief Extended USART Transmit/Receive functions
+/** @defgroup USARTEx_Exported_Functions_Group1 IO operation functions
+  * @brief Extended USART Transmit/Receive functions
   *
 @verbatim
  ===============================================================================
@@ -151,9 +151,9 @@ __weak void HAL_USARTEx_TxFifoEmptyCallback(USART_HandleTypeDef *husart)
   * @}
   */
 
-/** @defgroup USARTEx_Exported_Functions_Group3 Peripheral Control functions
+/** @defgroup USARTEx_Exported_Functions_Group2 Peripheral Control functions
   * @brief    Extended Peripheral Control functions
- *
+  *
 @verbatim
  ===============================================================================
                       ##### Peripheral Control functions #####
@@ -190,7 +190,7 @@ __weak void HAL_USARTEx_TxFifoEmptyCallback(USART_HandleTypeDef *husart)
   */
 HAL_StatusTypeDef HAL_USARTEx_EnableSlaveMode(USART_HandleTypeDef *husart)
 {
-  uint32_t tmpcr1 = 0U;
+  uint32_t tmpcr1;
 
   /* Check parameters */
   assert_param(IS_UART_SPI_SLAVE_INSTANCE(husart->Instance));
@@ -238,7 +238,7 @@ HAL_StatusTypeDef HAL_USARTEx_EnableSlaveMode(USART_HandleTypeDef *husart)
   */
 HAL_StatusTypeDef HAL_USARTEx_DisableSlaveMode(USART_HandleTypeDef *husart)
 {
-  uint32_t tmpcr1 = 0U;
+  uint32_t tmpcr1;
 
   /* Check parameters */
   assert_param(IS_UART_SPI_SLAVE_INSTANCE(husart->Instance));
@@ -286,7 +286,7 @@ HAL_StatusTypeDef HAL_USARTEx_DisableSlaveMode(USART_HandleTypeDef *husart)
   */
 HAL_StatusTypeDef HAL_USARTEx_ConfigNSS(USART_HandleTypeDef *husart, uint32_t NSSConfig)
 {
-  uint32_t tmpcr1 = 0U;
+  uint32_t tmpcr1;
 
   /* Check parameters */
   assert_param(IS_UART_SPI_SLAVE_INSTANCE(husart->Instance));
@@ -326,7 +326,7 @@ HAL_StatusTypeDef HAL_USARTEx_ConfigNSS(USART_HandleTypeDef *husart, uint32_t NS
   */
 HAL_StatusTypeDef HAL_USARTEx_EnableFifoMode(USART_HandleTypeDef *husart)
 {
-  uint32_t tmpcr1 = 0U;
+  uint32_t tmpcr1;
 
   /* Check parameters */
   assert_param(IS_UART_FIFO_INSTANCE(husart->Instance));
@@ -367,7 +367,7 @@ HAL_StatusTypeDef HAL_USARTEx_EnableFifoMode(USART_HandleTypeDef *husart)
   */
 HAL_StatusTypeDef HAL_USARTEx_DisableFifoMode(USART_HandleTypeDef *husart)
 {
-  uint32_t tmpcr1 = 0U;
+  uint32_t tmpcr1;
 
   /* Check parameters */
   assert_param(IS_UART_FIFO_INSTANCE(husart->Instance));
@@ -413,7 +413,7 @@ HAL_StatusTypeDef HAL_USARTEx_DisableFifoMode(USART_HandleTypeDef *husart)
   */
 HAL_StatusTypeDef HAL_USARTEx_SetTxFifoThreshold(USART_HandleTypeDef *husart, uint32_t Threshold)
 {
-  uint32_t tmpcr1 = 0U;
+  uint32_t tmpcr1;
 
   /* Check parameters */
   assert_param(IS_UART_FIFO_INSTANCE(husart->Instance));
@@ -462,7 +462,7 @@ HAL_StatusTypeDef HAL_USARTEx_SetTxFifoThreshold(USART_HandleTypeDef *husart, ui
   */
 HAL_StatusTypeDef HAL_USARTEx_SetRxFifoThreshold(USART_HandleTypeDef *husart, uint32_t Threshold)
 {
-  uint32_t tmpcr1 = 0U;
+  uint32_t tmpcr1;
 
   /* Check the parameters */
   assert_param(IS_UART_FIFO_INSTANCE(husart->Instance));
@@ -523,8 +523,9 @@ static void USARTEx_SetNbDataToProcess(USART_HandleTypeDef *husart)
   uint8_t tx_fifo_depth;
   uint8_t rx_fifo_threshold;
   uint8_t tx_fifo_threshold;
-  uint8_t numerator[] = {1, 1, 1, 3, 7, 1};
-  uint8_t denominator[] = {8, 4, 2, 4, 8, 1};
+  /* 2 0U/1U added for MISRAC2012-Rule-18.1_b and MISRAC2012-Rule-18.1_d */
+  uint8_t numerator[]   = {1U, 1U, 1U, 3U, 7U, 1U, 0U, 0U};
+  uint8_t denominator[] = {8U, 4U, 2U, 4U, 8U, 1U, 1U, 1U};
 
   if (husart->FifoMode == USART_FIFOMODE_DISABLE)
   {
@@ -535,10 +536,10 @@ static void USARTEx_SetNbDataToProcess(USART_HandleTypeDef *husart)
   {
     rx_fifo_depth = RX_FIFO_DEPTH;
     tx_fifo_depth = TX_FIFO_DEPTH;
-    rx_fifo_threshold = (READ_BIT(husart->Instance->CR3, USART_CR3_RXFTCFG) >> USART_CR3_RXFTCFG_Pos);
-    tx_fifo_threshold = (READ_BIT(husart->Instance->CR3, USART_CR3_TXFTCFG) >> USART_CR3_TXFTCFG_Pos);
-    husart->NbTxDataToProcess = (tx_fifo_depth * numerator[tx_fifo_threshold]) / denominator[tx_fifo_threshold];
-    husart->NbRxDataToProcess = (rx_fifo_depth * numerator[rx_fifo_threshold]) / denominator[rx_fifo_threshold];
+    rx_fifo_threshold = (uint8_t)((READ_BIT(husart->Instance->CR3, USART_CR3_RXFTCFG) >> USART_CR3_RXFTCFG_Pos) & 0xFFU);
+    tx_fifo_threshold = (uint8_t)((READ_BIT(husart->Instance->CR3, USART_CR3_TXFTCFG) >> USART_CR3_TXFTCFG_Pos) & 0xFFU);
+    husart->NbTxDataToProcess = ((uint16_t)tx_fifo_depth * numerator[tx_fifo_threshold]) / (uint16_t)denominator[tx_fifo_threshold];
+    husart->NbRxDataToProcess = ((uint16_t)rx_fifo_depth * numerator[rx_fifo_threshold]) / (uint16_t)denominator[rx_fifo_threshold];
   }
 }
 #endif

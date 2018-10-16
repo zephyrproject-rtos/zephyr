@@ -6,7 +6,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -176,7 +176,7 @@
   *          - SUCCESS: DMA registers are de-initialized
   *          - ERROR: DMA registers are not de-initialized
   */
-uint32_t LL_DMA_DeInit(DMA_TypeDef *DMAx, uint32_t Channel)
+ErrorStatus LL_DMA_DeInit(DMA_TypeDef *DMAx, uint32_t Channel)
 {
   DMA_Channel_TypeDef *tmp = (DMA_Channel_TypeDef *)DMA1_Channel1;
   ErrorStatus status = SUCCESS;
@@ -230,7 +230,7 @@ uint32_t LL_DMA_DeInit(DMA_TypeDef *DMAx, uint32_t Channel)
 
 #if defined(DMAMUX1)
     /* Reset Request register field for DMAx Channel */
-    LL_DMA_SetPeriphRequest(DMAx, Channel, LL_DMAMUX_REQUEST_MEM2MEM);
+    LL_DMA_SetPeriphRequest(DMAx, Channel, LL_DMAMUX_REQ_MEM2MEM);
 #else
     /* Reset Request register field for DMAx Channel */
     LL_DMA_SetPeriphRequest(DMAx, Channel, LL_DMA_REQUEST_0);
@@ -300,7 +300,7 @@ uint32_t LL_DMA_DeInit(DMA_TypeDef *DMAx, uint32_t Channel)
   *          - SUCCESS: DMA registers are initialized
   *          - ERROR: Not applicable
   */
-uint32_t LL_DMA_Init(DMA_TypeDef *DMAx, uint32_t Channel, LL_DMA_InitTypeDef *DMA_InitStruct)
+ErrorStatus LL_DMA_Init(DMA_TypeDef *DMAx, uint32_t Channel, LL_DMA_InitTypeDef *DMA_InitStruct)
 {
   /* Check the DMA Instance DMAx and Channel parameters*/
   assert_param(IS_LL_DMA_ALL_CHANNEL_INSTANCE(DMAx, Channel));
@@ -389,7 +389,7 @@ void LL_DMA_StructInit(LL_DMA_InitTypeDef *DMA_InitStruct)
   DMA_InitStruct->MemoryOrM2MDstDataSize = LL_DMA_MDATAALIGN_BYTE;
   DMA_InitStruct->NbData                 = 0x00000000U;
 #if defined(DMAMUX1)
-  DMA_InitStruct->PeriphRequest          = LL_DMAMUX_REQUEST_MEM2MEM;
+  DMA_InitStruct->PeriphRequest          = LL_DMAMUX_REQ_MEM2MEM;
 #else
   DMA_InitStruct->PeriphRequest          = LL_DMA_REQUEST_0;
 #endif /* DMAMUX1 */

@@ -51,8 +51,8 @@
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __STM32L4xx_LL_BUS_H
-#define __STM32L4xx_LL_BUS_H
+#ifndef STM32L4xx_LL_BUS_H
+#define STM32L4xx_LL_BUS_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -373,7 +373,7 @@ __STATIC_INLINE void LL_AHB1_GRP1_EnableClock(uint32_t Periphs)
 */
 __STATIC_INLINE uint32_t LL_AHB1_GRP1_IsEnabledClock(uint32_t Periphs)
 {
-  return (READ_BIT(RCC->AHB1ENR, Periphs) == Periphs);
+  return ((READ_BIT(RCC->AHB1ENR, Periphs) == Periphs) ? 1UL : 0UL);
 }
 
 /**
@@ -627,7 +627,7 @@ __STATIC_INLINE void LL_AHB2_GRP1_EnableClock(uint32_t Periphs)
 */
 __STATIC_INLINE uint32_t LL_AHB2_GRP1_IsEnabledClock(uint32_t Periphs)
 {
-  return (READ_BIT(RCC->AHB2ENR, Periphs) == Periphs);
+  return ((READ_BIT(RCC->AHB2ENR, Periphs) == Periphs) ? 1UL : 0UL);
 }
 
 /**
@@ -923,7 +923,7 @@ __STATIC_INLINE void LL_AHB3_GRP1_EnableClock(uint32_t Periphs)
 */
 __STATIC_INLINE uint32_t LL_AHB3_GRP1_IsEnabledClock(uint32_t Periphs)
 {
-  return (READ_BIT(RCC->AHB3ENR, Periphs) == Periphs);
+  return ((READ_BIT(RCC->AHB3ENR, Periphs) == Periphs) ? 1UL : 0UL);
 }
 
 /**
@@ -1193,7 +1193,7 @@ __STATIC_INLINE void LL_APB1_GRP2_EnableClock(uint32_t Periphs)
 */
 __STATIC_INLINE uint32_t LL_APB1_GRP1_IsEnabledClock(uint32_t Periphs)
 {
-  return (READ_BIT(RCC->APB1ENR1, Periphs) == Periphs);
+  return ((READ_BIT(RCC->APB1ENR1, Periphs) == Periphs) ? 1UL : 0UL);
 }
 
 /**
@@ -1213,7 +1213,7 @@ __STATIC_INLINE uint32_t LL_APB1_GRP1_IsEnabledClock(uint32_t Periphs)
 */
 __STATIC_INLINE uint32_t LL_APB1_GRP2_IsEnabledClock(uint32_t Periphs)
 {
-  return (READ_BIT(RCC->APB1ENR2, Periphs) == Periphs);
+  return ((READ_BIT(RCC->APB1ENR2, Periphs) == Periphs) ? 1UL : 0UL);
 }
 
 /**
@@ -1733,7 +1733,7 @@ __STATIC_INLINE void LL_APB2_GRP1_EnableClock(uint32_t Periphs)
 */
 __STATIC_INLINE uint32_t LL_APB2_GRP1_IsEnabledClock(uint32_t Periphs)
 {
-  return (READ_BIT(RCC->APB2ENR, Periphs) == Periphs);
+  return ((READ_BIT(RCC->APB2ENR, Periphs) == Periphs) ? 1UL : 0UL);
 }
 
 /**
@@ -1965,6 +1965,6 @@ __STATIC_INLINE void LL_APB2_GRP1_DisableClockStopSleep(uint32_t Periphs)
 }
 #endif
 
-#endif /* __STM32L4xx_LL_BUS_H */
+#endif /* STM32L4xx_LL_BUS_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

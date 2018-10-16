@@ -41,6 +41,8 @@
 extern "C" {
 #endif
 
+#if !defined(STM32L412xx) && !defined(STM32L422xx)
+
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l4xx_hal_def.h"
 
@@ -137,10 +139,11 @@ typedef struct
   uint32_t AudioFrequency;      /*!< Specifies the audio frequency sampling.
                                      This parameter can be a value of @ref SAI_Audio_Frequency */
 
-  uint32_t Mckdiv;              /*!< Specifies the master clock divider, the parameter will be used if for
-                                     AudioFrequency the user choice
+  uint32_t Mckdiv;              /*!< Specifies the master clock divider.
                                      This parameter must be a number between Min_Data = 0 and Max_Data = 63 on STM32L4Rx/STM32L4Sx devices.
-                                     This parameter must be a number between Min_Data = 0 and Max_Data = 15 on other devices. */
+                                     This parameter must be a number between Min_Data = 0 and Max_Data = 15 on other devices.
+                                     @note This parameter is used only if AudioFrequency is set to
+                                           SAI_AUDIO_FREQUENCY_MCKDIV otherwise it is internally computed. */
 
 #if defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
   uint32_t MckOverSampling;     /*!< Specifies the master clock oversampling.
@@ -842,7 +845,7 @@ uint32_t HAL_SAI_GetError(SAI_HandleTypeDef *hsai);
   */
 
 /* Private macros ------------------------------------------------------------*/
-/** @addtogroup SAI_Private_Macros
+/** @defgroup SAI_Private_Macros SAI Private Macros
   * @{
   */
 #define IS_SAI_BLOCK_SYNCEXT(STATE) (((STATE) == SAI_SYNCEXT_DISABLE) ||\
@@ -951,7 +954,11 @@ uint32_t HAL_SAI_GetError(SAI_HandleTypeDef *hsai);
 #define IS_SAI_BLOCK_FS_DEFINITION(DEFINITION) (((DEFINITION) == SAI_FS_STARTFRAME) || \
                                                 ((DEFINITION) == SAI_FS_CHANNEL_IDENTIFICATION))
 
-#define IS_SAI_BLOCK_MASTER_DIVIDER(DIVIDER) ((DIVIDER) <= 15)
+#if defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
+#define IS_SAI_BLOCK_MASTER_DIVIDER(DIVIDER) ((DIVIDER) <= 63U)
+#else
+#define IS_SAI_BLOCK_MASTER_DIVIDER(DIVIDER) ((DIVIDER) <= 15U)
+#endif
 
 #define IS_SAI_BLOCK_FRAME_LENGTH(LENGTH) ((8U <= (LENGTH)) && ((LENGTH) <= 256U))
 
@@ -977,6 +984,8 @@ uint32_t HAL_SAI_GetError(SAI_HandleTypeDef *hsai);
 /**
   * @}
   */
+
+#endif /* !STM32L412xx && !STM32L422xx */
 
 #ifdef __cplusplus
 }

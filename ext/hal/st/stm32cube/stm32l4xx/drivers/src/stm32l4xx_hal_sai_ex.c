@@ -54,9 +54,15 @@
 /* Private types -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 /* Private constants ---------------------------------------------------------*/
+/** @defgroup SAIEx_Private_Defines SAIEx Extended Private Defines
+  * @{
+  */
 #define SAI_PDM_DELAY_MASK          0x77U
 #define SAI_PDM_DELAY_OFFSET        8U
 #define SAI_PDM_RIGHT_DELAY_OFFSET  4U
+/**
+  * @}
+  */
 
 /* Private macros ------------------------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/

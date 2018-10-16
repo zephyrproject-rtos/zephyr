@@ -197,8 +197,8 @@ HAL_StatusTypeDef HAL_IWDG_Init(IWDG_HandleTypeDef *hiwdg)
   /* Check pending flag, if previous update not done, return timeout */
   tickstart = HAL_GetTick();
 
-   /* Wait for register to be updated */
-  while(hiwdg->Instance->SR != RESET)
+  /* Wait for register to be updated */
+  while (hiwdg->Instance->SR != 0x00u)
   {
     if((HAL_GetTick() - tickstart ) > HAL_IWDG_DEFAULT_TIMEOUT)
     {

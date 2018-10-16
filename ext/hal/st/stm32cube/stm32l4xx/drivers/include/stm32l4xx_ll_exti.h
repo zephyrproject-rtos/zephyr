@@ -204,6 +204,8 @@ typedef struct
 /**
   * @}
   */
+
+
 #if defined(USE_FULL_LL_DRIVER)
 
 /** @defgroup EXTI_LL_EC_MODE Mode
@@ -468,7 +470,7 @@ __STATIC_INLINE void LL_EXTI_DisableIT_32_63(uint32_t ExtiLine)
   */
 __STATIC_INLINE uint32_t LL_EXTI_IsEnabledIT_0_31(uint32_t ExtiLine)
 {
-  return (READ_BIT(EXTI->IMR1, ExtiLine) == (ExtiLine));
+  return ((READ_BIT(EXTI->IMR1, ExtiLine) == (ExtiLine)) ? 1UL : 0UL);
 }
 
 /**
@@ -493,7 +495,7 @@ __STATIC_INLINE uint32_t LL_EXTI_IsEnabledIT_0_31(uint32_t ExtiLine)
   */
 __STATIC_INLINE uint32_t LL_EXTI_IsEnabledIT_32_63(uint32_t ExtiLine)
 {
-  return (READ_BIT(EXTI->IMR2, ExtiLine) == (ExtiLine));
+  return ((READ_BIT(EXTI->IMR2, ExtiLine) == (ExtiLine)) ? 1UL : 0UL);
 }
 
 /**
@@ -681,7 +683,7 @@ __STATIC_INLINE void LL_EXTI_DisableEvent_32_63(uint32_t ExtiLine)
   */
 __STATIC_INLINE uint32_t LL_EXTI_IsEnabledEvent_0_31(uint32_t ExtiLine)
 {
-  return (READ_BIT(EXTI->EMR1, ExtiLine) == (ExtiLine));
+  return ((READ_BIT(EXTI->EMR1, ExtiLine) == (ExtiLine)) ? 1UL : 0UL);
 
 }
 
@@ -704,7 +706,7 @@ __STATIC_INLINE uint32_t LL_EXTI_IsEnabledEvent_0_31(uint32_t ExtiLine)
   */
 __STATIC_INLINE uint32_t LL_EXTI_IsEnabledEvent_32_63(uint32_t ExtiLine)
 {
-  return (READ_BIT(EXTI->EMR2, ExtiLine) == (ExtiLine));
+  return ((READ_BIT(EXTI->EMR2, ExtiLine) == (ExtiLine)) ? 1UL : 0UL);
 }
 
 /**
@@ -882,7 +884,7 @@ __STATIC_INLINE void LL_EXTI_DisableRisingTrig_32_63(uint32_t ExtiLine)
   */
 __STATIC_INLINE uint32_t LL_EXTI_IsEnabledRisingTrig_0_31(uint32_t ExtiLine)
 {
-  return (READ_BIT(EXTI->RTSR1, ExtiLine) == (ExtiLine));
+  return ((READ_BIT(EXTI->RTSR1, ExtiLine) == (ExtiLine)) ? 1UL : 0UL);
 }
 
 /**
@@ -897,7 +899,7 @@ __STATIC_INLINE uint32_t LL_EXTI_IsEnabledRisingTrig_0_31(uint32_t ExtiLine)
   */
 __STATIC_INLINE uint32_t LL_EXTI_IsEnabledRisingTrig_32_63(uint32_t ExtiLine)
 {
-  return (READ_BIT(EXTI->RTSR2, ExtiLine) == (ExtiLine));
+  return ((READ_BIT(EXTI->RTSR2, ExtiLine) == (ExtiLine)) ? 1UL : 0UL);
 }
 
 /**
@@ -1072,7 +1074,7 @@ __STATIC_INLINE void LL_EXTI_DisableFallingTrig_32_63(uint32_t ExtiLine)
   */
 __STATIC_INLINE uint32_t LL_EXTI_IsEnabledFallingTrig_0_31(uint32_t ExtiLine)
 {
-  return (READ_BIT(EXTI->FTSR1, ExtiLine) == (ExtiLine));
+  return ((READ_BIT(EXTI->FTSR1, ExtiLine) == (ExtiLine)) ? 1UL : 0UL);
 }
 
 /**
@@ -1087,7 +1089,7 @@ __STATIC_INLINE uint32_t LL_EXTI_IsEnabledFallingTrig_0_31(uint32_t ExtiLine)
   */
 __STATIC_INLINE uint32_t LL_EXTI_IsEnabledFallingTrig_32_63(uint32_t ExtiLine)
 {
-  return (READ_BIT(EXTI->FTSR2, ExtiLine) == (ExtiLine));
+  return ((READ_BIT(EXTI->FTSR2, ExtiLine) == (ExtiLine)) ? 1UL : 0UL);
 }
 
 /**
@@ -1204,7 +1206,7 @@ __STATIC_INLINE void LL_EXTI_GenerateSWI_32_63(uint32_t ExtiLine)
   */
 __STATIC_INLINE uint32_t LL_EXTI_IsActiveFlag_0_31(uint32_t ExtiLine)
 {
-  return (READ_BIT(EXTI->PR1, ExtiLine) == (ExtiLine));
+  return ((READ_BIT(EXTI->PR1, ExtiLine) == (ExtiLine)) ? 1UL : 0UL);
 }
 
 /**
@@ -1221,7 +1223,7 @@ __STATIC_INLINE uint32_t LL_EXTI_IsActiveFlag_0_31(uint32_t ExtiLine)
   */
 __STATIC_INLINE uint32_t LL_EXTI_IsActiveFlag_32_63(uint32_t ExtiLine)
 {
-  return (READ_BIT(EXTI->PR2, ExtiLine) == (ExtiLine));
+  return ((READ_BIT(EXTI->PR2, ExtiLine) == (ExtiLine)) ? 1UL : 0UL);
 }
 
 /**
@@ -1262,7 +1264,6 @@ __STATIC_INLINE uint32_t LL_EXTI_ReadFlag_0_31(uint32_t ExtiLine)
 {
   return (uint32_t)(READ_BIT(EXTI->PR1, ExtiLine));
 }
-
 
 /**
   * @brief  Read ExtLine Combination Flag for  Lines in range 32 to 63
@@ -1336,6 +1337,7 @@ __STATIC_INLINE void LL_EXTI_ClearFlag_32_63(uint32_t ExtiLine)
 {
   WRITE_REG(EXTI->PR2, ExtiLine);
 }
+
 
 /**
   * @}

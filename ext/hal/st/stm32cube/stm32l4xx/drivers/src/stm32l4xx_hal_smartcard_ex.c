@@ -283,7 +283,7 @@ __weak void HAL_SMARTCARDEx_TxFifoEmptyCallback(SMARTCARD_HandleTypeDef *hsmartc
   */
 HAL_StatusTypeDef HAL_SMARTCARDEx_EnableFifoMode(SMARTCARD_HandleTypeDef *hsmartcard)
 {
-  uint32_t tmpcr1 = 0U;
+  uint32_t tmpcr1;
 
   /* Check parameters */
   assert_param(IS_UART_FIFO_INSTANCE(hsmartcard->Instance));
@@ -324,7 +324,7 @@ HAL_StatusTypeDef HAL_SMARTCARDEx_EnableFifoMode(SMARTCARD_HandleTypeDef *hsmart
   */
 HAL_StatusTypeDef HAL_SMARTCARDEx_DisableFifoMode(SMARTCARD_HandleTypeDef *hsmartcard)
 {
-  uint32_t tmpcr1 = 0U;
+  uint32_t tmpcr1;
 
   /* Check parameters */
   assert_param(IS_UART_FIFO_INSTANCE(hsmartcard->Instance));
@@ -370,7 +370,7 @@ HAL_StatusTypeDef HAL_SMARTCARDEx_DisableFifoMode(SMARTCARD_HandleTypeDef *hsmar
   */
 HAL_StatusTypeDef HAL_SMARTCARDEx_SetTxFifoThreshold(SMARTCARD_HandleTypeDef *hsmartcard, uint32_t Threshold)
 {
-  uint32_t tmpcr1 = 0U;
+  uint32_t tmpcr1;
 
   /* Check parameters */
   assert_param(IS_UART_FIFO_INSTANCE(hsmartcard->Instance));
@@ -419,7 +419,7 @@ HAL_StatusTypeDef HAL_SMARTCARDEx_SetTxFifoThreshold(SMARTCARD_HandleTypeDef *hs
   */
 HAL_StatusTypeDef HAL_SMARTCARDEx_SetRxFifoThreshold(SMARTCARD_HandleTypeDef *hsmartcard, uint32_t Threshold)
 {
-  uint32_t tmpcr1 = 0U;
+  uint32_t tmpcr1;
 
   /* Check parameters */
   assert_param(IS_UART_FIFO_INSTANCE(hsmartcard->Instance));
@@ -480,8 +480,9 @@ static void SMARTCARDEx_SetNbDataToProcess(SMARTCARD_HandleTypeDef *hsmartcard)
   uint8_t tx_fifo_depth;
   uint8_t rx_fifo_threshold;
   uint8_t tx_fifo_threshold;
-  uint8_t numerator[] = {1, 1, 1, 3, 7, 1};
-  uint8_t denominator[] = {8, 4, 2, 4, 8, 1};
+  /* 2 0U/1U added for MISRAC2012-Rule-18.1_b and MISRAC2012-Rule-18.1_d */
+  uint8_t numerator[]   = {1U, 1U, 1U, 3U, 7U, 1U, 0U, 0U};
+  uint8_t denominator[] = {8U, 4U, 2U, 4U, 8U, 1U, 1U, 1U};
 
   if (hsmartcard->FifoMode == SMARTCARD_FIFOMODE_DISABLE)
   {
@@ -492,10 +493,10 @@ static void SMARTCARDEx_SetNbDataToProcess(SMARTCARD_HandleTypeDef *hsmartcard)
   {
     rx_fifo_depth = RX_FIFO_DEPTH;
     tx_fifo_depth = TX_FIFO_DEPTH;
-    rx_fifo_threshold = (READ_BIT(hsmartcard->Instance->CR3, USART_CR3_RXFTCFG) >> USART_CR3_RXFTCFG_Pos);
-    tx_fifo_threshold = (READ_BIT(hsmartcard->Instance->CR3, USART_CR3_TXFTCFG) >> USART_CR3_TXFTCFG_Pos);
-    hsmartcard->NbTxDataToProcess = (tx_fifo_depth * numerator[tx_fifo_threshold]) / denominator[tx_fifo_threshold];
-    hsmartcard->NbRxDataToProcess = (rx_fifo_depth * numerator[rx_fifo_threshold]) / denominator[rx_fifo_threshold];
+    rx_fifo_threshold = (uint8_t)(READ_BIT(hsmartcard->Instance->CR3, USART_CR3_RXFTCFG) >> USART_CR3_RXFTCFG_Pos);
+    tx_fifo_threshold = (uint8_t)(READ_BIT(hsmartcard->Instance->CR3, USART_CR3_TXFTCFG) >> USART_CR3_TXFTCFG_Pos);
+    hsmartcard->NbTxDataToProcess = ((uint16_t)tx_fifo_depth * numerator[tx_fifo_threshold]) / (uint16_t)denominator[tx_fifo_threshold];
+    hsmartcard->NbRxDataToProcess = ((uint16_t)rx_fifo_depth * numerator[rx_fifo_threshold]) / (uint16_t)denominator[rx_fifo_threshold];
   }
 }
 #endif

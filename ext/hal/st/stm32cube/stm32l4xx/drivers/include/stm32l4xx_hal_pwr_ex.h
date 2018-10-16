@@ -207,24 +207,24 @@ typedef struct
 /** @defgroup PWREx_GPIO GPIO port
   * @{
   */
-#define PWR_GPIO_A   0x00000000      /*!< GPIO port A */
-#define PWR_GPIO_B   0x00000001      /*!< GPIO port B */
-#define PWR_GPIO_C   0x00000002      /*!< GPIO port C */
+#define PWR_GPIO_A   0x00000000U      /*!< GPIO port A */
+#define PWR_GPIO_B   0x00000001U      /*!< GPIO port B */
+#define PWR_GPIO_C   0x00000002U      /*!< GPIO port C */
 #if defined(GPIOD_BASE)
-#define PWR_GPIO_D   0x00000003      /*!< GPIO port D */
+#define PWR_GPIO_D   0x00000003U      /*!< GPIO port D */
 #endif
 #if defined(GPIOE_BASE)
-#define PWR_GPIO_E   0x00000004      /*!< GPIO port E */
+#define PWR_GPIO_E   0x00000004U      /*!< GPIO port E */
 #endif
 #if defined(GPIOF_BASE)
-#define PWR_GPIO_F   0x00000005      /*!< GPIO port F */
+#define PWR_GPIO_F   0x00000005U      /*!< GPIO port F */
 #endif
 #if defined(GPIOG_BASE)
-#define PWR_GPIO_G   0x00000006      /*!< GPIO port G */
+#define PWR_GPIO_G   0x00000006U      /*!< GPIO port G */
 #endif
-#define PWR_GPIO_H   0x00000007      /*!< GPIO port H */
+#define PWR_GPIO_H   0x00000007U      /*!< GPIO port H */
 #if defined(GPIOI_BASE)
-#define PWR_GPIO_I   0x00000008      /*!< GPIO port I */
+#define PWR_GPIO_I   0x00000008U      /*!< GPIO port I */
 #endif
 /**
   * @}
@@ -277,6 +277,9 @@ typedef struct
 #define PWR_FLAG_WUF5                       ((uint32_t)0x0024)   /*!< Wakeup event on wakeup pin 5 */
 #define PWR_FLAG_WU                         PWR_SR1_WUF          /*!< Encompass wakeup event on all wakeup pins */
 #define PWR_FLAG_SB                         ((uint32_t)0x0028)   /*!< Standby flag */
+#if defined(PWR_SR1_EXT_SMPS_RDY)
+#define PWR_FLAG_EXT_SMPS                   ((uint32_t)0x002D)   /*!< Switching to external SMPS ready flag */
+#endif /* PWR_SR1_EXT_SMPS_RDY */
 #define PWR_FLAG_WUFI                       ((uint32_t)0x002F)   /*!< Wakeup on internal wakeup line */
 
 #define PWR_FLAG_REGLPS                     ((uint32_t)0x0048)   /*!< Low-power regulator start flag */
@@ -730,7 +733,7 @@ typedef struct
                                ((TYPE) == PWR_PVM_4))
 #endif
 
-#if defined (STM32L433xx) || defined (STM32L443xx) || defined (STM32L452xx) || defined (STM32L462xx)
+#if defined (STM32L412xx) || defined (STM32L422xx) || defined (STM32L433xx) || defined (STM32L443xx) || defined (STM32L452xx) || defined (STM32L462xx)
 #define IS_PWR_PVM_TYPE(TYPE) (((TYPE) == PWR_PVM_1) ||\
                                ((TYPE) == PWR_PVM_3) ||\
                                ((TYPE) == PWR_PVM_4))
@@ -766,8 +769,14 @@ typedef struct
 #define IS_PWR_GPIO_BIT_NUMBER(BIT_NUMBER) (((BIT_NUMBER) & GPIO_PIN_MASK) != (uint32_t)0x00)
 
 
-#if defined (STM32L431xx) || defined (STM32L433xx) || defined (STM32L443xx) || \
-    defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
+#if defined (STM32L412xx) || defined (STM32L422xx)
+#define IS_PWR_GPIO(GPIO) (((GPIO) == PWR_GPIO_A) ||\
+                           ((GPIO) == PWR_GPIO_B) ||\
+                           ((GPIO) == PWR_GPIO_C) ||\
+                           ((GPIO) == PWR_GPIO_D) ||\
+                           ((GPIO) == PWR_GPIO_H))
+#elif defined (STM32L431xx) || defined (STM32L433xx) || defined (STM32L443xx) || \
+      defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
 #define IS_PWR_GPIO(GPIO) (((GPIO) == PWR_GPIO_A) ||\
                            ((GPIO) == PWR_GPIO_B) ||\
                            ((GPIO) == PWR_GPIO_C) ||\
@@ -860,6 +869,14 @@ void HAL_PWREx_DisablePVM3(void);
 void HAL_PWREx_EnablePVM4(void);
 void HAL_PWREx_DisablePVM4(void);
 HAL_StatusTypeDef HAL_PWREx_ConfigPVM(PWR_PVMTypeDef *sConfigPVM);
+#if defined(PWR_CR3_EN_ULP)
+void HAL_PWREx_EnableBORPVD_ULP(void);
+void HAL_PWREx_DisableBORPVD_ULP(void);
+#endif /* PWR_CR3_EN_ULP */
+#if defined(PWR_CR4_EXT_SMPS_ON)
+void HAL_PWREx_EnableExtSMPS_0V95(void);
+void HAL_PWREx_DisableExtSMPS_0V95(void);
+#endif /* PWR_CR4_EXT_SMPS_ON */
 
 
 /* Low Power modes configuration functions ************************************/

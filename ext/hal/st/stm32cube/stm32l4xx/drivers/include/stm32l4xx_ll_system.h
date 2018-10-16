@@ -47,8 +47,8 @@
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __STM32L4xx_LL_SYSTEM_H
-#define __STM32L4xx_LL_SYSTEM_H
+#ifndef STM32L4xx_LL_SYSTEM_H
+#define STM32L4xx_LL_SYSTEM_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -1639,6 +1639,6 @@ __STATIC_INLINE void LL_FLASH_DisableSleepPowerDown(void)
 }
 #endif
 
-#endif /* __STM32L4xx_LL_SYSTEM_H */
+#endif /* STM32L4xx_LL_SYSTEM_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

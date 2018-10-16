@@ -182,6 +182,9 @@ typedef struct
   *                  was received from the WKUP pin 5.
   *            @arg @ref PWR_FLAG_SB StandBy Flag. Indicates that the system
   *                  entered StandBy mode.
+  *            @arg @ref PWR_FLAG_EXT_SMPS External SMPS Ready Flag. When available on device, indicates
+  *                 that external switch can be closed to connect to the external SMPS, when the Range 2
+  *                 of internal regulator is ready.
   *            @arg @ref PWR_FLAG_WUFI Wake-Up Flag Internal. Set when a wakeup is detected on
   *                 the internal wakeup line.
   *            @arg @ref PWR_FLAG_REGLPS Low Power Regulator Started. Indicates whether or not the

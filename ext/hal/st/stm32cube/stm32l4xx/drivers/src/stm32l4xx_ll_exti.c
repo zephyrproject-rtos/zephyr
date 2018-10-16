@@ -91,8 +91,7 @@
 /**
   * @brief  De-initialize the EXTI registers to their default reset values.
   * @retval An ErrorStatus enumeration value:
-  *          - SUCCESS: EXTI registers are de-initialized
-  *          - ERROR: not applicable
+  *          - 0x00: EXTI registers are de-initialized
   */
 uint32_t LL_EXTI_DeInit(void)
 {
@@ -126,19 +125,20 @@ uint32_t LL_EXTI_DeInit(void)
   /* Pending register 2 clear */
   LL_EXTI_WriteReg(PR2,         0x00000078U);
 
-  return SUCCESS;
+  return 0x00u;
 }
 
 /**
   * @brief  Initialize the EXTI registers according to the specified parameters in EXTI_InitStruct.
   * @param  EXTI_InitStruct pointer to a @ref LL_EXTI_InitTypeDef structure.
   * @retval An ErrorStatus enumeration value:
-  *          - SUCCESS: EXTI registers are initialized
-  *          - ERROR: not applicable
+  *          - 0x00: EXTI registers are initialized
+  *          - any other calue : wrong configuration
   */
 uint32_t LL_EXTI_Init(LL_EXTI_InitTypeDef *EXTI_InitStruct)
 {
-  ErrorStatus status = SUCCESS;
+  uint32_t status = 0x00u;
+
   /* Check the parameters */
   assert_param(IS_LL_EXTI_LINE_0_31(EXTI_InitStruct->Line_0_31));
   assert_param(IS_LL_EXTI_LINE_32_63(EXTI_InitStruct->Line_32_63));
@@ -173,7 +173,7 @@ uint32_t LL_EXTI_Init(LL_EXTI_InitTypeDef *EXTI_InitStruct)
           LL_EXTI_EnableEvent_0_31(EXTI_InitStruct->Line_0_31);
           break;
         default:
-          status = ERROR;
+          status = 0x01u;
           break;
       }
       if (EXTI_InitStruct->Trigger != LL_EXTI_TRIGGER_NONE)
@@ -197,7 +197,7 @@ uint32_t LL_EXTI_Init(LL_EXTI_InitTypeDef *EXTI_InitStruct)
             LL_EXTI_EnableFallingTrig_0_31(EXTI_InitStruct->Line_0_31);
             break;
           default:
-            status = ERROR;
+            status |= 0x02u;
             break;
         }
       }
@@ -225,7 +225,7 @@ uint32_t LL_EXTI_Init(LL_EXTI_InitTypeDef *EXTI_InitStruct)
           LL_EXTI_EnableEvent_32_63(EXTI_InitStruct->Line_32_63);
           break;
         default:
-          status = ERROR;
+          status |= 0x04u;
           break;
       }
       if (EXTI_InitStruct->Trigger != LL_EXTI_TRIGGER_NONE)
@@ -265,6 +265,7 @@ uint32_t LL_EXTI_Init(LL_EXTI_InitTypeDef *EXTI_InitStruct)
     LL_EXTI_DisableIT_32_63(EXTI_InitStruct->Line_32_63);
     LL_EXTI_DisableEvent_32_63(EXTI_InitStruct->Line_32_63);
   }
+
   return status;
 }
 

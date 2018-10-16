@@ -470,7 +470,10 @@ void HAL_PWR_EnterSLEEPMode(uint32_t Regulator, uint8_t SLEEPEntry)
     /* If in low-power run mode at this point, exit it */
     if (HAL_IS_BIT_SET(PWR->SR2, PWR_SR2_REGLPF))
     {
-      HAL_PWREx_DisableLowPowerRunMode();
+      if (HAL_PWREx_DisableLowPowerRunMode() != HAL_OK)
+      {
+        return ;
+      }
     }
     /* Regulator now in main mode. */
   }

@@ -133,8 +133,8 @@ HAL_StatusTypeDef HAL_DMAEx_ConfigMuxSync(DMA_HandleTypeDef *hdma, HAL_DMA_MuxSy
     MODIFY_REG( hdma->DMAmuxChannel->CCR, \
                (~DMAMUX_CxCR_DMAREQ_ID) , \
                ((pSyncConfig->SyncSignalID) << DMAMUX_CxCR_SYNC_ID_Pos) | ((pSyncConfig->RequestNumber - 1U) << DMAMUX_CxCR_NBREQ_Pos) | \
-               pSyncConfig->SyncPolarity | (pSyncConfig->SyncEnable << DMAMUX_CxCR_SE_Pos) | \
-                 (pSyncConfig->EventEnable << DMAMUX_CxCR_EGE_Pos));
+               pSyncConfig->SyncPolarity | ((uint32_t)pSyncConfig->SyncEnable << DMAMUX_CxCR_SE_Pos) | \
+                 ((uint32_t)pSyncConfig->EventEnable << DMAMUX_CxCR_EGE_Pos));
 
     /* Process UnLocked */
     __HAL_UNLOCK(hdma);

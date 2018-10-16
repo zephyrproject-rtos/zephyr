@@ -95,27 +95,27 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l4xx_hal.h"
 
-#ifdef HAL_HASH_MODULE_ENABLED
 
-#if defined (STM32L4A6xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined (STM32L4S9xx)
+
 
 /** @addtogroup STM32L4xx_HAL_Driver
   * @{
   */
+#if defined (HASH)
 
 /** @defgroup HASHEx HASHEx
   * @brief HASH HAL extended module driver.
   * @{
   */
-
+#ifdef HAL_HASH_MODULE_ENABLED
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
+#if defined (HASH_CR_MDMAT)
 
 /** @defgroup HASHEx_Exported_Functions HASH Extended Exported Functions
   * @{
   */
-
 
 /** @defgroup HASHEx_Exported_Functions_Group1 HASH extended processing functions in polling mode
  *  @brief   HASH extended processing functions using polling mode.
@@ -599,6 +599,7 @@ HAL_StatusTypeDef HAL_HMACEx_SHA256_Start_DMA(HASH_HandleTypeDef *hhash, uint8_t
          (++) HAL_HMACEx_SHA1_Step1_2_DMA()
          (++) HAL_HMACEx_SHA1_Step2_DMA()
          (++) HAL_HMACEx_SHA1_Step2_3_DMA()
+
       (+) SHA256
          (++) HAL_HMACEx_SHA224_Step1_2_DMA()
          (++) HAL_HMACEx_SHA224_Step2_DMA()
@@ -912,21 +913,20 @@ HAL_StatusTypeDef HAL_HMACEx_SHA256_Step2_3_DMA(HASH_HandleTypeDef *hhash, uint8
   * @}
   */
 
-
+#endif /* MDMA defined*/
 /**
   * @}
   */
-
-/**
-  * @}
-  */
-
-/**
-  * @}
-  */
-
-#endif /* defined (STM32L4A6xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined (STM32L4S9xx) */
-
 #endif /* HAL_HASH_MODULE_ENABLED */
+
+/**
+  * @}
+  */
+#endif /*  HASH*/
+/**
+  * @}
+  */
+
+
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

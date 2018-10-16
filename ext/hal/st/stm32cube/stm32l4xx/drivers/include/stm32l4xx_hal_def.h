@@ -35,8 +35,8 @@
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __STM32L4xx_HAL_DEF
-#define __STM32L4xx_HAL_DEF
+#ifndef STM32L4xx_HAL_DEF_H
+#define STM32L4xx_HAL_DEF_H
 
 #ifdef __cplusplus
  extern "C" {
@@ -45,7 +45,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l4xx.h"
 #include "Legacy/stm32_hal_legacy.h"  /* Aliases file for old names compatibility */
-#include <stdio.h>
+#include <stddef.h>
 
 /* Exported types ------------------------------------------------------------*/
 
@@ -208,6 +208,6 @@ typedef enum
 }
 #endif
 
-#endif /* ___STM32L4xx_HAL_DEF */
+#endif /* STM32L4xx_HAL_DEF_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

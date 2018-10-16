@@ -34,8 +34,8 @@
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __STM32L4xx_HAL_USART_EX_H
-#define __STM32L4xx_HAL_USART_EX_H
+#ifndef STM32L4xx_HAL_USART_EX_H
+#define STM32L4xx_HAL_USART_EX_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -189,6 +189,10 @@ extern "C" {
           break;                                               \
        }                                                       \
     }                                                          \
+    else                                                       \
+    {                                                          \
+      (__CLOCKSOURCE__) = USART_CLOCKSOURCE_UNDEFINED;         \
+    }                                                          \
   } while(0)
 #else
 #define USART_GETCLOCKSOURCE(__HANDLE__,__CLOCKSOURCE__)       \
@@ -256,6 +260,10 @@ extern "C" {
           break;                                               \
        }                                                       \
     }                                                          \
+    else                                                       \
+    {                                                          \
+      (__CLOCKSOURCE__) = USART_CLOCKSOURCE_UNDEFINED;         \
+    }                                                          \
   } while(0)
 #endif /* STM32L432xx || STM32L442xx */
 
@@ -302,6 +310,10 @@ extern "C" {
      {                                                                \
         (__HANDLE__)->Mask = 0x003FU;                                 \
      }                                                                \
+  }                                                                   \
+  else                                                                \
+  {                                                                   \
+    (__HANDLE__)->Mask = 0x0000U;                                     \
   }                                                                   \
 } while(0U)
 
@@ -375,7 +387,7 @@ extern "C" {
   * @{
   */
 
-/** @addtogroup USARTEx_Exported_Functions_Group2
+/** @addtogroup USARTEx_Exported_Functions_Group1
   * @{
   */
 
@@ -389,7 +401,7 @@ void HAL_USARTEx_TxFifoEmptyCallback(USART_HandleTypeDef *husart);
   * @}
   */
 
-/** @addtogroup USARTEx_Exported_Functions_Group3
+/** @addtogroup USARTEx_Exported_Functions_Group2
   * @{
   */
 
@@ -426,6 +438,6 @@ HAL_StatusTypeDef HAL_USARTEx_SetRxFifoThreshold(USART_HandleTypeDef *husart, ui
 }
 #endif
 
-#endif /* __STM32L4xx_HAL_USART_EX_H */
+#endif /* STM32L4xx_HAL_USART_EX_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

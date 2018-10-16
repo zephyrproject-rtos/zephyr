@@ -132,7 +132,7 @@
                                         || ((__VALUE__) == LL_RCC_PLLM_DIV_7) \
                                         || ((__VALUE__) == LL_RCC_PLLM_DIV_8))
 
-#define IS_LL_UTILS_PLLN_VALUE(__VALUE__) ((8 <= (__VALUE__)) && ((__VALUE__) <= 86))
+#define IS_LL_UTILS_PLLN_VALUE(__VALUE__) ((8U <= (__VALUE__)) && ((__VALUE__) <= 86U))
 
 #define IS_LL_UTILS_PLLR_VALUE(__VALUE__) (((__VALUE__) == LL_RCC_PLLR_DIV_2) \
                                         || ((__VALUE__) == LL_RCC_PLLR_DIV_4) \
@@ -202,20 +202,22 @@ void LL_Init1msTick(uint32_t HCLKFrequency)
 void LL_mDelay(uint32_t Delay)
 {
   __IO uint32_t  tmp = SysTick->CTRL;  /* Clear the COUNTFLAG first */
+  uint32_t tmpDelay = Delay;
+
   /* Add this code to indicate that local variable is not used */
   ((void)tmp);
 
   /* Add a period to guaranty minimum wait */
-  if(Delay < LL_MAX_DELAY)
+  if(tmpDelay < LL_MAX_DELAY)
   {
-    Delay++;
+    tmpDelay++;
   }
 
-  while (Delay)
+  while (tmpDelay != 0U)
   {
     if((SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk) != 0U)
     {
-      Delay--;
+      tmpDelay--;
     }
   }
 }
@@ -315,16 +317,16 @@ ErrorStatus LL_PLL_ConfigSystemClock_MSI(LL_UTILS_PLLInitTypeDef *UTILS_PLLInitS
                                          LL_UTILS_ClkInitTypeDef *UTILS_ClkInitStruct)
 {
   ErrorStatus status = SUCCESS;
-  uint32_t pllfreq = 0U, msi_range = 0U;
+  uint32_t pllfreq, msi_range;
 #if defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
-  uint32_t hpre = 0U;
+  uint32_t hpre = 0U;  /* Set default value */
 #endif
 
   /* Check if one of the PLL is enabled */
   if(UTILS_PLL_IsBusy() == SUCCESS)
   {
     /* Get the current MSI range */
-    if(LL_RCC_MSI_IsEnabledRangeSelect())
+    if(LL_RCC_MSI_IsEnabledRangeSelect() != 0U)
     {
       msi_range =  LL_RCC_MSI_GetRange();
       switch (msi_range)
@@ -440,10 +442,10 @@ ErrorStatus LL_PLL_ConfigSystemClock_MSI(LL_UTILS_PLLInitTypeDef *UTILS_PLLInitS
 ErrorStatus LL_PLL_ConfigSystemClock_HSI(LL_UTILS_PLLInitTypeDef *UTILS_PLLInitStruct,
                                          LL_UTILS_ClkInitTypeDef *UTILS_ClkInitStruct)
 {
-  ErrorStatus status = SUCCESS;
-  uint32_t pllfreq = 0U;
+  ErrorStatus status;
+  uint32_t pllfreq;
 #if defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
-  uint32_t hpre = 0U;
+  uint32_t hpre = 0U;  /* Set default value */
 #endif
 
   /* Check if one of the PLL is enabled */
@@ -521,10 +523,10 @@ ErrorStatus LL_PLL_ConfigSystemClock_HSI(LL_UTILS_PLLInitTypeDef *UTILS_PLLInitS
 ErrorStatus LL_PLL_ConfigSystemClock_HSE(uint32_t HSEFrequency, uint32_t HSEBypass,
                                          LL_UTILS_PLLInitTypeDef *UTILS_PLLInitStruct, LL_UTILS_ClkInitTypeDef *UTILS_ClkInitStruct)
 {
-  ErrorStatus status = SUCCESS;
-  uint32_t pllfreq = 0U;
+  ErrorStatus status;
+  uint32_t pllfreq;
 #if defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
-  uint32_t hpre = 0U;
+  uint32_t hpre = 0U;  /* Set default value */
 #endif
 
   /* Check the parameters */
@@ -746,7 +748,7 @@ static ErrorStatus UTILS_SetFlashLatency(uint32_t HCLK_Frequency)
   */
 static uint32_t UTILS_GetPLLOutputFrequency(uint32_t PLL_InputFrequency, LL_UTILS_PLLInitTypeDef *UTILS_PLLInitStruct)
 {
-  uint32_t pllfreq = 0U;
+  uint32_t pllfreq;
 
   /* Check the parameters */
   assert_param(IS_LL_UTILS_PLLM_VALUE(UTILS_PLLInitStruct->PLLM));
@@ -755,7 +757,7 @@ static uint32_t UTILS_GetPLLOutputFrequency(uint32_t PLL_InputFrequency, LL_UTIL
 
   /* Check different PLL parameters according to RM                          */
   /*  - PLLM: ensure that the VCO input frequency ranges from 4 to 16 MHz.   */
-  pllfreq = PLL_InputFrequency / (((UTILS_PLLInitStruct->PLLM >> RCC_PLLCFGR_PLLM_Pos) + 1));
+  pllfreq = PLL_InputFrequency / (((UTILS_PLLInitStruct->PLLM >> RCC_PLLCFGR_PLLM_Pos) + 1U));
   assert_param(IS_LL_UTILS_PLLVCO_INPUT(pllfreq));
 
   /*  - PLLN: ensure that the VCO output frequency is between 64 and 344 MHz.*/
@@ -763,7 +765,7 @@ static uint32_t UTILS_GetPLLOutputFrequency(uint32_t PLL_InputFrequency, LL_UTIL
   assert_param(IS_LL_UTILS_PLLVCO_OUTPUT(pllfreq));
 
   /*  - PLLR: ensure that max frequency at 120000000 Hz is reached                   */
-  pllfreq = pllfreq / (((UTILS_PLLInitStruct->PLLR >> RCC_PLLCFGR_PLLR_Pos) + 1) * 2);
+  pllfreq = pllfreq / (((UTILS_PLLInitStruct->PLLR >> RCC_PLLCFGR_PLLR_Pos) + 1U) * 2U);
   assert_param(IS_LL_UTILS_PLL_FREQUENCY(pllfreq));
 
   return pllfreq;
@@ -786,12 +788,14 @@ static ErrorStatus UTILS_PLL_IsBusy(void)
     status = ERROR;
   }
 
+#if defined(RCC_PLLSAI1_SUPPORT)
   /* Check if PLLSAI1 is busy*/
   if(LL_RCC_PLLSAI1_IsReady() != 0U)
   {
     /* PLLSAI1 configuration cannot be modified */
     status = ERROR;
   }
+#endif /*RCC_PLLSAI1_SUPPORT*/
 #if defined(RCC_PLLSAI2_SUPPORT)
 
   /* Check if PLLSAI2 is busy*/
@@ -817,7 +821,7 @@ static ErrorStatus UTILS_PLL_IsBusy(void)
 static ErrorStatus UTILS_EnablePLLAndSwitchSystem(uint32_t SYSCLK_Frequency, LL_UTILS_ClkInitTypeDef *UTILS_ClkInitStruct)
 {
   ErrorStatus status = SUCCESS;
-  uint32_t hclk_frequency = 0U;
+  uint32_t hclk_frequency;
 
   assert_param(IS_LL_UTILS_SYSCLK_DIV(UTILS_ClkInitStruct->AHBCLKDivider));
   assert_param(IS_LL_UTILS_APB1_DIV(UTILS_ClkInitStruct->APB1CLKDivider));

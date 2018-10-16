@@ -34,8 +34,8 @@
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __STM32L4xx_HAL_SWPMI_H
-#define __STM32L4xx_HAL_SWPMI_H
+#ifndef STM32L4xx_HAL_SWPMI_H
+#define STM32L4xx_HAL_SWPMI_H
 
 #ifdef __cplusplus
  extern "C" {
@@ -68,7 +68,7 @@ typedef struct
                                           This parameter can be a value of @ref SWPMI_Voltage_Class */
 
   uint32_t BitRate;                  /*!< Specifies the SWPMI Bitrate.
-                                          This parameter must be a number between 0 and 63.
+                                          This parameter must be a number between 0 and 63U.
                                           The Bitrate is computed using the following formula:
                                           SWPMI_freq = SWPMI_clk / (((BitRate) + 1)  * 4)
                                           */
@@ -478,7 +478,7 @@ uint32_t               HAL_SWPMI_GetError(SWPMI_HandleTypeDef *hswpmi);
 #define IS_SWPMI_VOLTAGE_CLASS(__CLASS__)    (((__CLASS__) == SWPMI_VOLTAGE_CLASS_C) || \
                                               ((__CLASS__) == SWPMI_VOLTAGE_CLASS_B))
 
-#define IS_SWPMI_BITRATE_VALUE(__VALUE__)    (((__VALUE__) <= 63))
+#define IS_SWPMI_BITRATE_VALUE(__VALUE__)    (((__VALUE__) <= 63U))
 
 
 #define IS_SWPMI_TX_BUFFERING_MODE(__MODE__) (((__MODE__) == SWPMI_TX_NO_SOFTWAREBUFFER) || \
@@ -506,6 +506,6 @@ uint32_t               HAL_SWPMI_GetError(SWPMI_HandleTypeDef *hswpmi);
 }
 #endif
 
-#endif /* __STM32L4xx_HAL_SWPMI_H */
+#endif /* STM32L4xx_HAL_SWPMI_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

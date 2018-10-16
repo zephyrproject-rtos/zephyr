@@ -241,7 +241,7 @@ HAL_StatusTypeDef HAL_DMA_Init(DMA_HandleTypeDef *hdma)
   /* Clear the DMAMUX synchro overrun flag */
   hdma->DMAmuxChannelStatus->CFR = hdma->DMAmuxChannelStatusMask;
 
-  if(((hdma->Init.Request > 0UL) && (hdma->Init.Request <= DMA_REQUEST_GENERATOR3)))
+  if(((hdma->Init.Request > 0U) && (hdma->Init.Request <= DMA_REQUEST_GENERATOR3)))
   {
     /* Initialize parameters for DMAMUX request generator :
        DMAmuxRequestGen, DMAmuxRequestGenStatus and DMAmuxRequestGenStatusMask
@@ -374,7 +374,7 @@ HAL_StatusTypeDef HAL_DMA_DeInit(DMA_HandleTypeDef *hdma)
   hdma->DMAmuxChannelStatus->CFR = hdma->DMAmuxChannelStatusMask;
 
   /* Reset Request generator parameters if any */
-  if(((hdma->Init.Request >  0UL) && (hdma->Init.Request <= DMA_REQUEST_GENERATOR3)))
+  if(((hdma->Init.Request >  0U) && (hdma->Init.Request <= DMA_REQUEST_GENERATOR3)))
   {
     /* Initialize parameters for DMAMUX request generator :
        DMAmuxRequestGen, DMAmuxRequestGenStatus and DMAmuxRequestGenStatusMask
@@ -1115,9 +1115,9 @@ static void DMA_SetConfig(DMA_HandleTypeDef *hdma, uint32_t SrcAddress, uint32_t
 #if defined(DMAMUX1)
 
 /**
-  * @brief  Updates the DMA handle with the DMAMUX  channel and status mask depending on stream number
+  * @brief  Updates the DMA handle with the DMAMUX  channel and status mask depending on channel number
   * @param  hdma        pointer to a DMA_HandleTypeDef structure that contains
-  *                     the configuration information for the specified DMA Stream.
+  *                     the configuration information for the specified DMA Channel.
   * @retval None
   */
 static void DMA_CalcDMAMUXChannelBaseAndMask(DMA_HandleTypeDef *hdma)
@@ -1145,7 +1145,7 @@ static void DMA_CalcDMAMUXChannelBaseAndMask(DMA_HandleTypeDef *hdma)
 /**
   * @brief  Updates the DMA handle with the DMAMUX  request generator params
   * @param  hdma        pointer to a DMA_HandleTypeDef structure that contains
-  *                     the configuration information for the specified DMA Stream.
+  *                     the configuration information for the specified DMA Channel.
   * @retval None
   */
 
@@ -1160,7 +1160,6 @@ static void DMA_CalcDMAMUXRequestGenBaseAndMask(DMA_HandleTypeDef *hdma)
 
   /* here "Request" is either DMA_REQUEST_GENERATOR0 to 4, i.e. <= 4*/
   hdma->DMAmuxRequestGenStatusMask = 1UL << ((request - 1U) & 0x3U);
-
 }
 
 #endif /* DMAMUX1 */
