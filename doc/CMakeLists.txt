@@ -74,22 +74,33 @@ set(CONTENT_OUTPUTS ${CMAKE_CURRENT_BINARY_DIR}/extracted-content.txt)
 
 configure_file(${DOXYFILE_IN} ${DOXYFILE_OUT} @ONLY)
 
-# This command is used to copy all documentation source files into the
-# build directory. Sphinx requires a single documentation root, but
-# Zephyr's documentation is scattered around the tree in samples/,
-# boards/, and doc/, so we need to copy those files into a single
-# place in the build directory.
+# This command is used to find all documentation source files so they
+# can be copied into the build directory, and the copies can be
+# properly tracked by CMake as built files.
+#
+# We need to make copies because Sphinx requires a single
+# documentation root directory, but Zephyr's documentation is
+# scattered around the tree in samples/, boards/, and doc/. Putting
+# them into a single rooted tree in the build directory is a
+# workaround for this limitation.
+#
+# This command does NOT cause the content files to be copied; we leave
+# that up to an add_custom_command() below. (Ninja will copy them during
+# the first build regardless of if they exist already or not, so
+# --just-outputs means the copy only happens once. The build system
+# has to know about the relationship between sources and copies to
+# track dependencies properly, for the "clean" target, etc.)
 set(EXTRACT_CONTENT_COMMAND
   ${CMAKE_COMMAND} -E env
   ${PYTHON_EXECUTABLE} scripts/extract_content.py
-  # Save the outputs for processing by this list file.
-  --outputs ${CONTENT_OUTPUTS}
+  # Just save the outputs for processing by this list file.
+  --outputs ${CONTENT_OUTPUTS} --just-outputs
   # Ignore any files in the output directory.
   --ignore ${CMAKE_CURRENT_BINARY_DIR}
   # Copy all files in doc to the rst folder.
   "*:doc:${RST_OUT}"
-  # Copy the .rst files in samples/ and boards/ to the rst folder, and
-  # also the doc folder inside rst.
+  # We want to copy the .rst files in samples/ and boards/ to the rst
+  # folder, and also the doc folder inside rst.
   #
   # Some files refer to items in samples/ and boards/ relative to
   # their actual position in the Zephyr tree. For example, in
@@ -97,15 +108,13 @@ set(EXTRACT_CONTENT_COMMAND
   #
   # .. literalinclude:: ../../samples/sensor/mcp9808/src/main.c
   #
-  # We make an additional copy as a hackaround so these references
-  # work.
+  # The additional copy is a hackaround so these references work.
   "*.rst:samples:${RST_OUT}" "*.rst:boards:${RST_OUT}"
   "*.rst:samples:${RST_OUT}/doc" "*.rst:boards:${RST_OUT}/doc")
 
 # Run the content extraction command at configure time in order to
 # produce lists of input and output files, which are respectively its
-# dependencies and outputs. This also causes the content files
-# to be copied for the first time.
+# dependencies and outputs.
 execute_process(
   COMMAND ${EXTRACT_CONTENT_COMMAND}
   WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
