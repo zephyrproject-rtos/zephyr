@@ -1216,7 +1216,7 @@ list_append_ifdef(
 list_append_ifdef(
   CONFIG_BUILD_OUTPUT_EXE
   post_build_commands
-  COMMAND ${CMAKE_COMMAND} -E rename ${KERNEL_ELF_NAME}    ${KERNEL_EXE_NAME}
+  COMMAND ${CMAKE_COMMAND} -E copy ${KERNEL_ELF_NAME}    ${KERNEL_EXE_NAME}
   )
 
 add_custom_command(
