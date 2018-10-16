@@ -43,7 +43,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define _MAX_PKT_TX_DURATION		(133 + 9 + 8 + 9)
 
 #if LOG_LEVEL == LOG_LEVEL_DBG
-/* Prevent timer overflow during SYS_LOG_* output */
+/* Prevent timer overflow during LOG_* output */
 #define _MACACKWAITDURATION		(864 / 16 + 11625)
 #define MCR20A_SEQ_SYNC_TIMEOUT		(200)
 #else
