@@ -12,7 +12,7 @@
 	compatible = "silabs,efm32hg_slstk3400a", "silabs,efm32hg";
 
 	chosen {
-		zephyr,console = &uart1;
+		zephyr,console = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
@@ -23,6 +23,7 @@
 		led1 = &led1;
 		sw0 = &button0;
 		sw1 = &button1;
+		usart-1 = &usart1;
 	};
 
 	leds {
@@ -53,7 +54,8 @@
 
 };
 
-&uart1 {
+&usart1 {
 	current-speed = <115200>;
+	location = <4>;
 	status = "ok";
 };

@@ -1,16 +1,16 @@
 ---
-title: EFM32 UART
+title: GECKO UART
 version: 0.1
 
 description: >
-    This binding gives a base representation of the EFM32 UART
+    This binding gives a base representation of the GECKO UART
 
 inherits:
     !include uart.yaml
 
 properties:
     compatible:
-      constraint: "silabs,efm32-uart"
+      constraint: "silabs,gecko-uart"
 
     reg:
       type: array
@@ -19,8 +19,14 @@ properties:
       category: required
 
     interrupts:
-      type: array
+      type: compound
       category: required
       description: required interrupts
       generation: define
+
+    location:
+     type: int
+     category: required
+     description: PIN location
+     generation: define
 ...
