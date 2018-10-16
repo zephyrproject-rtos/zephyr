@@ -142,7 +142,7 @@ extern FUNC_NORETURN void _x86_userspace_enter(k_thread_entry_t user_entry,
 }
 #endif
 
-#define _is_in_isr() (_kernel.nested != 0)
+#define _is_in_isr() (_kernel.nested != 0U)
 
 #endif /* _ASMLANGUAGE */
 
