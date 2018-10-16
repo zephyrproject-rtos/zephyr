@@ -27,15 +27,18 @@
 				NET_EVENT_WIFI_CONNECT_RESULT |		\
 				NET_EVENT_WIFI_DISCONNECT_RESULT)
 
-static union {
-	struct {
-		const struct shell *shell;
+static struct {
+	const struct shell *shell;
 
-		u8_t connecting		: 1;
-		u8_t disconnecting	: 1;
-		u8_t _unused		: 6;
+	union {
+		struct {
+
+			u8_t connecting		: 1;
+			u8_t disconnecting	: 1;
+			u8_t _unused		: 6;
+		};
+		u8_t all;
 	};
-	u8_t all;
 } context;
 
 static u32_t scan_result;
@@ -138,15 +141,16 @@ static int cmd_wifi_connect(const struct shell *shell, size_t argc,
 {
 	struct net_if *iface = net_if_get_default();
 	static struct wifi_connect_req_params cnx_params;
+	char *endptr;
 	int idx = 3;
 
-	if (shell_help_requested(shell) || argc < 2) {
+	if (shell_help_requested(shell) || argc < 3) {
 		shell_help_print(shell, NULL, 0);
 		return -ENOEXEC;
 	}
 
-	cnx_params.ssid_length = atoi(argv[2]);
-	if (cnx_params.ssid_length <= 2) {
+	cnx_params.ssid_length = strtol(argv[2], &endptr, 10);
+	if (*endptr != '\0' || cnx_params.ssid_length <= 2) {
 		shell_help_print(shell, NULL, 0);
 		return -ENOEXEC;
 	}
@@ -156,7 +160,12 @@ static int cmd_wifi_connect(const struct shell *shell, size_t argc,
 	argv[1][cnx_params.ssid_length + 1] = '\0';
 
 	if ((idx < argc) && (strlen(argv[idx]) <= 2)) {
-		cnx_params.channel = atoi(argv[2]);
+		cnx_params.channel = strtol(argv[idx], &endptr, 10);
+		if (*endptr != '\0') {
+			shell_help_print(shell, NULL, 0);
+			return -ENOEXEC;
+		}
+
 		if (cnx_params.channel == 0) {
 			cnx_params.channel = WIFI_CHANNEL_ANY;
 		}
