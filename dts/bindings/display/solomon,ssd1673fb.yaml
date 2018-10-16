@@ -5,7 +5,6 @@
 #
 ---
 title: SSD1673 250x150 EPD Display Controller
-id: solomon,ssd1673fb-spi
 version: 0.1
 
 description: >

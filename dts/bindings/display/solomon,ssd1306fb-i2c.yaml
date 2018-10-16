@@ -5,7 +5,6 @@
 #
 ---
 title: SSD1306 128x64 Dot Matrix Display Controller
-id: solomon,ssd1306fb-i2c
 version: 0.1
 
 description: >

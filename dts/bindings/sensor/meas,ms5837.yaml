@@ -5,7 +5,6 @@
 #
 ---
 title: TE Connectivity digital pressure sensor MS5837
-id: meas,ms5837
 version: 0.1
 
 description: >
