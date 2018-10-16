@@ -2889,7 +2889,7 @@ static void context_info(struct net_context *context, void *user_data)
 			return;
 		}
 
-#if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
+#if defined(CONFIG_NET_BUF_POOL_USAGE)
 		PR("%p\t%d\t%d\tEDATA (%s)\n",
 		   pool, pool->buf_count,
 		   pool->avail_count, pool->name);
