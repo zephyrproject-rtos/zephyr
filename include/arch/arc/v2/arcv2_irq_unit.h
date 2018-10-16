@@ -133,13 +133,13 @@ void _arc_v2_irq_unit_sensitivity_set(int irq, int s)
  * @return N/A
  */
 static ALWAYS_INLINE
-int _arc_v2_irq_unit_is_in_isr(void)
+bool _arc_v2_irq_unit_is_in_isr(void)
 {
-	unsigned int act = _arc_v2_aux_reg_read(_ARC_V2_AUX_IRQ_ACT);
+	u32_t act = _arc_v2_aux_reg_read(_ARC_V2_AUX_IRQ_ACT);
 
 	/* in exception ?*/
 	if (_arc_v2_aux_reg_read(_ARC_V2_STATUS32) & _ARC_V2_STATUS32_AE) {
-		return 1;
+		return true;
 	}
 
 	return ((act & 0xffff) != 0);
