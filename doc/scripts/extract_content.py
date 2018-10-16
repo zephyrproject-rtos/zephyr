@@ -162,6 +162,9 @@ def main():
 
     parser.add_argument('--outputs',
                         help='If given, save input/output files to this path')
+    parser.add_argument('--just-outputs', action='store_true',
+                        help='''Skip extraction and just list outputs.
+                        Cannot be given without --outputs.''')
     parser.add_argument('--ignore', action='append',
                         help='''Source directories to ignore when copying
                         files. This may be given multiple times.''')
@@ -182,11 +185,15 @@ def main():
     else:
         ignore = tuple(path.normpath(ign) for ign in args.ignore)
 
+    if args.just_outputs and not args.outputs:
+        sys.exit('--just-outputs cannot be given without --outputs')
+
     content_config = [cfg.split(':', 2) for cfg in args.content_config]
     outputs = set()
     for fnfilter, source, dest in content_config:
         content = find_content(zephyr_base, source, dest, fnfilter, ignore)
-        extract_content(content)
+        if not args.just_outputs:
+            extract_content(content)
         outputs |= set(content.outputs)
     if args.outputs:
         with open(args.outputs, 'w') as f:
