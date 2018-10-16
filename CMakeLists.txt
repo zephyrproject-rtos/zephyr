@@ -27,7 +27,7 @@ enable_language(C CXX ASM)
 check_c_compiler_flag("" toolchain_is_ok)
 assert(toolchain_is_ok "The toolchain is unable to build a dummy C file. See CMakeError.log.")
 
-set(CMAKE_EXECUTABLE_SUFFIX .elf)
+set(CMAKE_EXECUTABLE_SUFFIX ${KERNEL_EXECUTABLE_SUFFIX})
 
 if(NOT PROPERTY_LINKER_SCRIPT_DEFINES)
   set_property(GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES -D__GCC_LINKER_CMD__)
@@ -1215,12 +1215,6 @@ list_append_ifdef(
   CONFIG_BUILD_OUTPUT_STRIPPED
   post_build_commands
   COMMAND ${CMAKE_STRIP}   --strip-all ${KERNEL_ELF_NAME} -o ${KERNEL_STRIP_NAME}
-  )
-
-list_append_ifdef(
-  CONFIG_BUILD_OUTPUT_EXE
-  post_build_commands
-  COMMAND ${CMAKE_COMMAND} -E rename ${KERNEL_ELF_NAME}    ${KERNEL_EXE_NAME}
   )
 
 add_custom_command(
