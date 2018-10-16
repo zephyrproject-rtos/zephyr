@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2018 Zelin <zelin@makerdiary.com>
- * Copyright (c) 2018 makerdiary.com.
+ * Copyright (c) 2017 Linaro Limited
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -59,6 +58,10 @@
 
 };
 
+&adc {
+	status ="ok";
+};
+
 &gpiote {
 	status ="ok";
 };
@@ -87,6 +90,27 @@
 	status = "ok";
 	sda-pin = <30>;
 	scl-pin = <31>;
+};
+
+&spi0 {
+	status = "ok";
+	sck-pin = <27>;
+	mosi-pin = <26>;
+	miso-pin = <25>;
+};
+
+&spi1 {
+	status = "ok";
+	sck-pin = <31>;
+	mosi-pin = <30>;
+	miso-pin = <29>;
+};
+
+&spi2 {
+	status = "ok";
+	sck-pin = <12>;
+	mosi-pin = <11>;
+	miso-pin = <13>;
 };
 
 &flash0 {
