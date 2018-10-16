@@ -7,7 +7,10 @@
 #include <i2c.h>
 #include <init.h>
 #include <sensor.h>
-#include <logging/sys_log.h>
+
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(lsm303dlhc_magn);
 
 #include "lsm303dlhc_magn.h"
 
@@ -24,12 +27,12 @@ static int lsm303dlhc_sample_fetch(struct device *dev,
 			      config->i2c_address,
 			      LSM303DLHC_SR_REG_M,
 			      &status) < 0) {
-		SYS_LOG_ERR("Failed to read status register.");
+		LOG_ERR("Failed to read status register.");
 		return -EIO;
 	}
 
 	if (!(status & LSM303DLHC_MAGN_DRDY)) {
-		SYS_LOG_ERR("Sensor data not available.");
+		LOG_ERR("Sensor data not available.");
 		return -EIO;
 	}
 
@@ -37,7 +40,7 @@ static int lsm303dlhc_sample_fetch(struct device *dev,
 			   config->i2c_address,
 			   LSM303DLHC_REG_MAGN_X_LSB,
 			   magn_buf, 6) < 0) {
-		SYS_LOG_ERR("Could not read magn axis data.");
+		LOG_ERR("Could not read magn axis data.");
 		return -EIO;
 	}
 
@@ -94,7 +97,7 @@ static int lsm303dlhc_magn_init(struct device *dev)
 
 	drv_data->i2c = device_get_binding(config->i2c_name);
 	if (drv_data->i2c == NULL) {
-		SYS_LOG_ERR("Could not get pointer to %s device",
+		LOG_ERR("Could not get pointer to %s device",
 			    config->i2c_name);
 		return -ENODEV;
 	}
@@ -104,7 +107,7 @@ static int lsm303dlhc_magn_init(struct device *dev)
 			       config->i2c_address,
 			       LSM303DLHC_CRA_REG_M,
 			       LSM303DLHC_MAGN_ODR_BITS) < 0) {
-		SYS_LOG_ERR("Failed to configure chip.");
+		LOG_ERR("Failed to configure chip.");
 		return -EIO;
 	}
 
@@ -113,7 +116,7 @@ static int lsm303dlhc_magn_init(struct device *dev)
 			       config->i2c_address,
 			       LSM303DLHC_CRB_REG_M,
 			       LSM303DLHC_MAGN_FS_BITS) < 0) {
-		SYS_LOG_ERR("Failed to set magnetometer full scale range.");
+		LOG_ERR("Failed to set magnetometer full scale range.");
 		return -EIO;
 	}
 
@@ -122,7 +125,7 @@ static int lsm303dlhc_magn_init(struct device *dev)
 			       config->i2c_address,
 			       LSM303DLHC_MR_REG_M,
 			       LSM303DLHC_MAGN_CONT_UPDATE) < 0) {
-		SYS_LOG_ERR("Failed to enable continuous data update.");
+		LOG_ERR("Failed to enable continuous data update.");
 		return -EIO;
 	}
 	return 0;
