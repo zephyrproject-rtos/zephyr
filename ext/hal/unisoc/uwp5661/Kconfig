@@ -1,0 +1,28 @@
+config HAS_UWP
+	bool "Enable uwp hal library"
+	help
+	  Enable UNISOC uwp5 hal libraries with register definitions
+	  and helper functions.
+
+if HAS_UWP
+
+config USE_UWP_HAL_CACHE
+	bool
+	default y
+	help
+	  Provide interfaces to enable or disable icache/dcache in
+	  CM4.
+
+config USE_UWP_HAL_GNSS
+	bool
+	default y
+	help
+	  Provide interfaces to initial cp2.
+	  
+config USE_UWP_HAL_FW
+	bool
+	default y
+	help
+	  Provice interfaces to download firmware for another CM4._
+
+endif
