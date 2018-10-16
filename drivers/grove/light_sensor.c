@@ -10,9 +10,9 @@
 #include <sensor.h>
 #include <zephyr.h>
 
-#define SYS_LOG_DOMAIN "GROVE_LIGHT_SENSOR"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_GROVE_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_GROVE_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(grove_light);
 
 struct gls_data {
 	struct device *adc;
@@ -77,7 +77,7 @@ static int gls_init(struct device *dev)
 	drv_data->adc =
 		device_get_binding(CONFIG_GROVE_LIGHT_SENSOR_ADC_DEV_NAME);
 	if (drv_data->adc == NULL) {
-		SYS_LOG_ERR("Failed to get ADC device.");
+		LOG_ERR("Failed to get ADC device.");
 		return -EINVAL;
 	}
 
