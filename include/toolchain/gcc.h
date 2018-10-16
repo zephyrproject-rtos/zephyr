@@ -139,8 +139,8 @@ do {                                                                    \
 #define __deprecated	__attribute__((deprecated))
 #define ARG_UNUSED(x) (void)(x)
 
-#define likely(x)   __builtin_expect((long)!!(x), true)
-#define unlikely(x) __builtin_expect((long)!!(x), false)
+#define likely(x)   __builtin_expect((bool)!!(x), true)
+#define unlikely(x) __builtin_expect((bool)!!(x), false)
 
 #define popcount(x) __builtin_popcount(x)
 
