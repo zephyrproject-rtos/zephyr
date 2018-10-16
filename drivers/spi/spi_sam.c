@@ -241,7 +241,7 @@ static void spi_sam_fast_transceive(struct device *dev,
 	size_t tx_count = 0;
 	size_t rx_count = 0;
 	Spi *regs = cfg->regs;
-	struct spi_buf *tx = NULL, *rx = NULL;
+	const struct spi_buf *tx = NULL, *rx = NULL;
 
 	if (tx_bufs) {
 		tx = tx_bufs->buffers;
