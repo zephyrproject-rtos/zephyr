@@ -474,6 +474,15 @@
 			status = "disabled";
 			label= "OTGHS";
 		};
+
+		rtc: rtc@40002800 {
+			compatible = "st,stm32-rtc";
+			reg = <0x40002800 0x300>;
+			interrupts = <41 0>;
+			prescaler = <32768>;
+			status = "disabled";
+			label = "RTC_0";
+		};
 	};
 };
 
