@@ -36,6 +36,13 @@ config CLOCK_CONTROL_MCUX_SIM
 
 endif # CLOCK_CONTROL
 
+if COUNTER
+
+config COUNTER_MCUX_RTC
+	def_bool y
+
+endif # COUNTER
+
 if PINMUX
 
 config PINMUX_MCUX
