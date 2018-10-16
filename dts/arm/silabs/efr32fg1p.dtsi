@@ -23,20 +23,22 @@
 	};
 
 	soc {
-		uart0: uart@40010000 { /* USART0 */
-			compatible = "silabs,efm32-usart";
+		usart0: usart@40010000 { /* USART0 */
+			compatible = "silabs,gecko-usart";
 			reg = <0x40010000 0x400>;
-			interrupts = <11 0 12 0>;
+			interrupts = <11 0>, <12 0>;
+			interrupt-names = "rx", "tx";
 			status = "disabled";
-			label = "UART_0";
+			label = "USART_0";
 		};
 
-		uart1: uart@40010400 { /* USART1 */
-			compatible = "silabs,efm32-usart";
+		usart1: usart@40010400 { /* USART1 */
+			compatible = "silabs,gecko-usart";
 			reg = <0x40010400 0x400>;
-			interrupts = <19 0 20 0>;
+			interrupts = <19 0>, <20 0>;
+			interrupt-names = "rx", "tx";
 			status = "disabled";
-			label = "UART_1";
+			label = "USART_1";
 		};
 
 		gpio@4000a400 {

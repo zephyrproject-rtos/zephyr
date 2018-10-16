@@ -43,9 +43,6 @@ if UART_GECKO
 config USART_GECKO_1
 	def_bool y
 
-config USART_GECKO_1_GPIO_LOC
-	default 4
-
 endif # UART_GECKO
 
 endif # BOARD_EFM32HG_SLSTK3400A

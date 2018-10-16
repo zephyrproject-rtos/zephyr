@@ -43,9 +43,6 @@ if UART_GECKO
 config USART_GECKO_0
 	def_bool y
 
-config USART_GECKO_0_GPIO_LOC
-	default 0
-
 endif # UART_GECKO
 
 endif # BOARD_EFR32_SLWSTK6061A
