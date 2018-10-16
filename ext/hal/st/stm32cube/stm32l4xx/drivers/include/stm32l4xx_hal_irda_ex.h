@@ -34,8 +34,8 @@
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __STM32L4xx_HAL_IRDA_EX_H
-#define __STM32L4xx_HAL_IRDA_EX_H
+#ifndef STM32L4xx_HAL_IRDA_EX_H
+#define STM32L4xx_HAL_IRDA_EX_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -178,8 +178,12 @@ extern "C" {
           break;                                              \
        }                                                      \
     }                                                         \
+    else                                                      \
+    {                                                         \
+      (__CLOCKSOURCE__) = IRDA_CLOCKSOURCE_UNDEFINED;         \
+    }                                                         \
   } while(0)
-#elif defined (STM32L431xx) || defined (STM32L433xx) || defined (STM32L443xx)
+#elif defined (STM32L412xx) || defined (STM32L422xx) || defined (STM32L431xx) || defined (STM32L433xx) || defined (STM32L443xx)
 #define IRDA_GETCLOCKSOURCE(__HANDLE__,__CLOCKSOURCE__)       \
   do {                                                        \
     if((__HANDLE__)->Instance == USART1)                      \
@@ -245,6 +249,10 @@ extern "C" {
           break;                                              \
        }                                                      \
     }                                                         \
+    else                                                      \
+    {                                                         \
+      (__CLOCKSOURCE__) = IRDA_CLOCKSOURCE_UNDEFINED;         \
+    }                                                         \
   } while(0)
 #elif defined (STM32L432xx) || defined (STM32L442xx)
 #define IRDA_GETCLOCKSOURCE(__HANDLE__,__CLOCKSOURCE__)       \
@@ -290,6 +298,10 @@ extern "C" {
           (__CLOCKSOURCE__) = IRDA_CLOCKSOURCE_UNDEFINED;     \
           break;                                              \
        }                                                      \
+    }                                                         \
+    else                                                      \
+    {                                                         \
+      (__CLOCKSOURCE__) = IRDA_CLOCKSOURCE_UNDEFINED;         \
     }                                                         \
   } while(0)
 #elif defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
@@ -379,6 +391,10 @@ extern "C" {
           break;                                              \
        }                                                      \
     }                                                         \
+    else                                                      \
+    {                                                         \
+      (__CLOCKSOURCE__) = IRDA_CLOCKSOURCE_UNDEFINED;         \
+    }                                                         \
   } while(0)
 #endif
 
@@ -400,6 +416,6 @@ extern "C" {
 }
 #endif
 
-#endif /* __STM32L4xx_HAL_IRDA_EX_H */
+#endif /* STM32L4xx_HAL_IRDA_EX_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

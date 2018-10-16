@@ -34,8 +34,8 @@
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __STM32L4xx_HAL_DMA_H
-#define __STM32L4xx_HAL_DMA_H
+#ifndef STM32L4xx_HAL_DMA_H
+#define STM32L4xx_HAL_DMA_H
 
 #ifdef __cplusplus
  extern "C" {
@@ -367,9 +367,9 @@ typedef struct __DMA_HandleTypeDef
 /** @defgroup DMA_Peripheral_data_size DMA Peripheral data size
   * @{
   */
-#define DMA_PDATAALIGN_BYTE          ((uint32_t)0x00000000)       /*!< Peripheral data alignment : Byte     */
-#define DMA_PDATAALIGN_HALFWORD      ((uint32_t)DMA_CCR_PSIZE_0)  /*!< Peripheral data alignment : HalfWord */
-#define DMA_PDATAALIGN_WORD          ((uint32_t)DMA_CCR_PSIZE_1)  /*!< Peripheral data alignment : Word     */
+#define DMA_PDATAALIGN_BYTE          0x00000000U     /*!< Peripheral data alignment : Byte     */
+#define DMA_PDATAALIGN_HALFWORD      DMA_CCR_PSIZE_0 /*!< Peripheral data alignment : HalfWord */
+#define DMA_PDATAALIGN_WORD          DMA_CCR_PSIZE_1 /*!< Peripheral data alignment : Word     */
 /**
   * @}
   */
@@ -377,9 +377,9 @@ typedef struct __DMA_HandleTypeDef
 /** @defgroup DMA_Memory_data_size DMA Memory data size
   * @{
   */
-#define DMA_MDATAALIGN_BYTE          ((uint32_t)0x00000000)       /*!< Memory data alignment : Byte     */
-#define DMA_MDATAALIGN_HALFWORD      ((uint32_t)DMA_CCR_MSIZE_0)  /*!< Memory data alignment : HalfWord */
-#define DMA_MDATAALIGN_WORD          ((uint32_t)DMA_CCR_MSIZE_1)  /*!< Memory data alignment : Word     */
+#define DMA_MDATAALIGN_BYTE          0x00000000U     /*!< Memory data alignment : Byte     */
+#define DMA_MDATAALIGN_HALFWORD      DMA_CCR_MSIZE_0 /*!< Memory data alignment : HalfWord */
+#define DMA_MDATAALIGN_WORD          DMA_CCR_MSIZE_1 /*!< Memory data alignment : Word     */
 /**
   * @}
   */
@@ -387,8 +387,8 @@ typedef struct __DMA_HandleTypeDef
 /** @defgroup DMA_mode DMA mode
   * @{
   */
-#define DMA_NORMAL         ((uint32_t)0x00000000)       /*!< Normal mode                  */
-#define DMA_CIRCULAR       ((uint32_t)DMA_CCR_CIRC)     /*!< Circular mode                */
+#define DMA_NORMAL                   0x00000000U     /*!< Normal mode                  */
+#define DMA_CIRCULAR                 DMA_CCR_CIRC    /*!< Circular mode                */
 /**
   * @}
   */
@@ -396,10 +396,10 @@ typedef struct __DMA_HandleTypeDef
 /** @defgroup DMA_Priority_level DMA Priority level
   * @{
   */
-#define DMA_PRIORITY_LOW             ((uint32_t)0x00000000)    /*!< Priority level : Low       */
-#define DMA_PRIORITY_MEDIUM          ((uint32_t)DMA_CCR_PL_0)  /*!< Priority level : Medium    */
-#define DMA_PRIORITY_HIGH            ((uint32_t)DMA_CCR_PL_1)  /*!< Priority level : High      */
-#define DMA_PRIORITY_VERY_HIGH       ((uint32_t)DMA_CCR_PL)    /*!< Priority level : Very_High */
+#define DMA_PRIORITY_LOW             0x00000000U      /*!< Priority level : Low       */
+#define DMA_PRIORITY_MEDIUM          DMA_CCR_PL_0     /*!< Priority level : Medium    */
+#define DMA_PRIORITY_HIGH            DMA_CCR_PL_1     /*!< Priority level : High      */
+#define DMA_PRIORITY_VERY_HIGH       DMA_CCR_PL       /*!< Priority level : Very_High */
 /**
   * @}
   */
@@ -408,9 +408,9 @@ typedef struct __DMA_HandleTypeDef
 /** @defgroup DMA_interrupt_enable_definitions DMA interrupt enable definitions
   * @{
   */
-#define DMA_IT_TC                         ((uint32_t)DMA_CCR_TCIE)
-#define DMA_IT_HT                         ((uint32_t)DMA_CCR_HTIE)
-#define DMA_IT_TE                         ((uint32_t)DMA_CCR_TEIE)
+#define DMA_IT_TC                         DMA_CCR_TCIE
+#define DMA_IT_HT                         DMA_CCR_HTIE
+#define DMA_IT_TE                         DMA_CCR_TEIE
 /**
   * @}
   */
@@ -418,34 +418,34 @@ typedef struct __DMA_HandleTypeDef
 /** @defgroup DMA_flag_definitions DMA flag definitions
   * @{
   */
-#define DMA_FLAG_GL1                      ((uint32_t)0x00000001)
-#define DMA_FLAG_TC1                      ((uint32_t)0x00000002)
-#define DMA_FLAG_HT1                      ((uint32_t)0x00000004)
-#define DMA_FLAG_TE1                      ((uint32_t)0x00000008)
-#define DMA_FLAG_GL2                      ((uint32_t)0x00000010)
-#define DMA_FLAG_TC2                      ((uint32_t)0x00000020)
-#define DMA_FLAG_HT2                      ((uint32_t)0x00000040)
-#define DMA_FLAG_TE2                      ((uint32_t)0x00000080)
-#define DMA_FLAG_GL3                      ((uint32_t)0x00000100)
-#define DMA_FLAG_TC3                      ((uint32_t)0x00000200)
-#define DMA_FLAG_HT3                      ((uint32_t)0x00000400)
-#define DMA_FLAG_TE3                      ((uint32_t)0x00000800)
-#define DMA_FLAG_GL4                      ((uint32_t)0x00001000)
-#define DMA_FLAG_TC4                      ((uint32_t)0x00002000)
-#define DMA_FLAG_HT4                      ((uint32_t)0x00004000)
-#define DMA_FLAG_TE4                      ((uint32_t)0x00008000)
-#define DMA_FLAG_GL5                      ((uint32_t)0x00010000)
-#define DMA_FLAG_TC5                      ((uint32_t)0x00020000)
-#define DMA_FLAG_HT5                      ((uint32_t)0x00040000)
-#define DMA_FLAG_TE5                      ((uint32_t)0x00080000)
-#define DMA_FLAG_GL6                      ((uint32_t)0x00100000)
-#define DMA_FLAG_TC6                      ((uint32_t)0x00200000)
-#define DMA_FLAG_HT6                      ((uint32_t)0x00400000)
-#define DMA_FLAG_TE6                      ((uint32_t)0x00800000)
-#define DMA_FLAG_GL7                      ((uint32_t)0x01000000)
-#define DMA_FLAG_TC7                      ((uint32_t)0x02000000)
-#define DMA_FLAG_HT7                      ((uint32_t)0x04000000)
-#define DMA_FLAG_TE7                      ((uint32_t)0x08000000)
+#define DMA_FLAG_GL1                      DMA_ISR_GIF1
+#define DMA_FLAG_TC1                      DMA_ISR_TCIF1
+#define DMA_FLAG_HT1                      DMA_ISR_HTIF1
+#define DMA_FLAG_TE1                      DMA_ISR_TEIF1
+#define DMA_FLAG_GL2                      DMA_ISR_GIF2
+#define DMA_FLAG_TC2                      DMA_ISR_TCIF2
+#define DMA_FLAG_HT2                      DMA_ISR_HTIF2
+#define DMA_FLAG_TE2                      DMA_ISR_TEIF2
+#define DMA_FLAG_GL3                      DMA_ISR_GIF3
+#define DMA_FLAG_TC3                      DMA_ISR_TCIF3
+#define DMA_FLAG_HT3                      DMA_ISR_HTIF3
+#define DMA_FLAG_TE3                      DMA_ISR_TEIF3
+#define DMA_FLAG_GL4                      DMA_ISR_GIF4
+#define DMA_FLAG_TC4                      DMA_ISR_TCIF4
+#define DMA_FLAG_HT4                      DMA_ISR_HTIF4
+#define DMA_FLAG_TE4                      DMA_ISR_TEIF4
+#define DMA_FLAG_GL5                      DMA_ISR_GIF5
+#define DMA_FLAG_TC5                      DMA_ISR_TCIF5
+#define DMA_FLAG_HT5                      DMA_ISR_HTIF5
+#define DMA_FLAG_TE5                      DMA_ISR_TEIF5
+#define DMA_FLAG_GL6                      DMA_ISR_GIF6
+#define DMA_FLAG_TC6                      DMA_ISR_TCIF6
+#define DMA_FLAG_HT6                      DMA_ISR_HTIF6
+#define DMA_FLAG_TE6                      DMA_ISR_TEIF6
+#define DMA_FLAG_GL7                      DMA_ISR_GIF7
+#define DMA_FLAG_TC7                      DMA_ISR_TCIF7
+#define DMA_FLAG_HT7                      DMA_ISR_HTIF7
+#define DMA_FLAG_TE7                      DMA_ISR_TEIF7
 /**
   * @}
   */
@@ -761,6 +761,6 @@ uint32_t             HAL_DMA_GetError(DMA_HandleTypeDef *hdma);
 }
 #endif
 
-#endif /* __STM32L4xx_HAL_DMA_H */
+#endif /* STM32L4xx_HAL_DMA_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

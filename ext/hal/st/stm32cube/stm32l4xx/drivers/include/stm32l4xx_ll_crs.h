@@ -152,11 +152,16 @@ extern "C" {
 
 /**
   * @brief Reset value of the HSI48 Calibration field
-  * @note The default value is 32, which corresponds to the middle of the trimming interval.
+  * @note The default value is 64 for STM32L412xx/L422xx, 32 otherwise, which corresponds
+  *       to the middle of the trimming interval.
   *       The trimming step is around 67 kHz between two consecutive TRIM steps.
   *       A higher TRIM value corresponds to a higher output frequency
   */
-#define LL_CRS_HSI48CALIBRATION_DEFAULT    ((uint32_t)0x20U)
+#if defined (STM32L412xx) || defined (STM32L422xx)
+#define LL_CRS_HSI48CALIBRATION_DEFAULT    ((uint32_t)64U)
+#else
+#define LL_CRS_HSI48CALIBRATION_DEFAULT    ((uint32_t)32U)
+#endif
 /**
   * @}
   */
@@ -293,7 +298,7 @@ __STATIC_INLINE uint32_t LL_CRS_IsEnabledAutoTrimming(void)
   * @brief  Set HSI48 oscillator smooth trimming
   * @note   When the AUTOTRIMEN bit is set, this field is controlled by hardware and is read-only
   * @rmtoll CR           TRIM          LL_CRS_SetHSI48SmoothTrimming
-  * @param  Value a number between Min_Data = 0 and Max_Data = 63
+  * @param  Value a number between Min_Data = 0 and Max_Data = 127 for STM32L412xx/L422xx or 63 otherwise
   * @note   Default value can be set thanks to @ref LL_CRS_HSI48CALIBRATION_DEFAULT
   * @retval None
   */
@@ -305,7 +310,7 @@ __STATIC_INLINE void LL_CRS_SetHSI48SmoothTrimming(uint32_t Value)
 /**
   * @brief  Get HSI48 oscillator smooth trimming
   * @rmtoll CR           TRIM          LL_CRS_GetHSI48SmoothTrimming
-  * @retval a number between Min_Data = 0 and Max_Data = 63
+  * @retval a number between Min_Data = 0 and Max_Data = 127 for STM32L412xx/L422xx or 63 otherwise
   */
 __STATIC_INLINE uint32_t LL_CRS_GetHSI48SmoothTrimming(void)
 {

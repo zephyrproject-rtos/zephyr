@@ -727,7 +727,6 @@ typedef struct
   __IO uint32_t BKP31R;      /*!< RTC backup register 31,                                    Address offset: 0xCC */
 } RTC_TypeDef;
 
-
 /**
   * @brief Serial Audio Interface
   */
@@ -5731,7 +5730,7 @@ typedef struct
 
 /*******************  Bit definition for CRC_IDR register  ********************/
 #define CRC_IDR_IDR_Pos          (0U)
-#define CRC_IDR_IDR_Msk          (0xFFUL << CRC_IDR_IDR_Pos)                   /*!< 0x000000FF */
+#define CRC_IDR_IDR_Msk          (0xFFU << CRC_IDR_IDR_Pos)                    /*!< 0x000000FF */
 #define CRC_IDR_IDR              CRC_IDR_IDR_Msk                               /*!< General-purpose 8-bit data register bits */
 
 /********************  Bit definition for CRC_CR register  ********************/
@@ -7118,7 +7117,7 @@ typedef struct
 #define FLASH_WRP1AR_WRP1A_STRT_Msk       (0xFFUL << FLASH_WRP1AR_WRP1A_STRT_Pos) /*!< 0x000000FF */
 #define FLASH_WRP1AR_WRP1A_STRT           FLASH_WRP1AR_WRP1A_STRT_Msk
 #define FLASH_WRP1AR_WRP1A_END_Pos        (16U)
-#define FLASH_WRP1AR_WRP1A_END_Msk        (0xFFUL << FLASH_WRP1AR_WRP1A_END_Pos) /*!< 0x00FF0000 */
+#define FLASH_WRP1AR_WRP1A_END_Msk        (0xFFUL << FLASH_WRP1AR_WRP1A_END_Pos)  /*!< 0x00FF0000 */
 #define FLASH_WRP1AR_WRP1A_END            FLASH_WRP1AR_WRP1A_END_Msk
 
 /******************  Bits definition for FLASH_WRPB1R register  ***************/
@@ -7126,7 +7125,7 @@ typedef struct
 #define FLASH_WRP1BR_WRP1B_STRT_Msk       (0xFFUL << FLASH_WRP1BR_WRP1B_STRT_Pos) /*!< 0x000000FF */
 #define FLASH_WRP1BR_WRP1B_STRT           FLASH_WRP1BR_WRP1B_STRT_Msk
 #define FLASH_WRP1BR_WRP1B_END_Pos        (16U)
-#define FLASH_WRP1BR_WRP1B_END_Msk        (0xFFUL << FLASH_WRP1BR_WRP1B_END_Pos) /*!< 0x00FF0000 */
+#define FLASH_WRP1BR_WRP1B_END_Msk        (0xFFUL << FLASH_WRP1BR_WRP1B_END_Pos)  /*!< 0x00FF0000 */
 #define FLASH_WRP1BR_WRP1B_END            FLASH_WRP1BR_WRP1B_END_Msk
 
 
@@ -9254,6 +9253,8 @@ typedef struct
 /*
 * @brief Specific device feature definitions  (not present on all devices in the STM32L4 serie)
 */
+#define RCC_PLLSAI1_SUPPORT
+#define RCC_PLLP_SUPPORT
 #define RCC_HSI48_SUPPORT
 #define RCC_PLLP_DIV_2_31_SUPPORT
 #define RCC_PLLSAI1P_DIV_2_31_SUPPORT
@@ -15935,6 +15936,7 @@ typedef struct
 /******************************************************************************/
 
 /* Aliases for __IRQn */
+#define TIM6_IRQn                      TIM6_DAC_IRQn
 #define ADC1_2_IRQn                    ADC1_IRQn
 #define TIM1_TRG_COM_TIM17_IRQn        TIM1_TRG_COM_IRQn
 #define HASH_RNG_IRQn                  RNG_IRQn
@@ -15942,6 +15944,7 @@ typedef struct
 #define USB_FS_IRQn                    USB_IRQn
 
 /* Aliases for __IRQHandler */
+#define TIM6_IRQHandler                TIM6_DAC_IRQHandler
 #define ADC1_2_IRQHandler              ADC1_IRQHandler
 #define TIM1_TRG_COM_TIM17_IRQHandler  TIM1_TRG_COM_IRQHandler
 #define HASH_RNG_IRQHandler            RNG_IRQHandler

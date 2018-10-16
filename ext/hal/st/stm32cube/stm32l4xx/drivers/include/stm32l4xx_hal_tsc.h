@@ -34,8 +34,8 @@
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __STM32L4xx_HAL_TSC_H
-#define __STM32L4xx_HAL_TSC_H
+#ifndef STM32L4xx_HAL_TSC_H
+#define STM32L4xx_HAL_TSC_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -62,10 +62,10 @@ extern "C" {
   */
 typedef enum
 {
-  HAL_TSC_STATE_RESET  = 0x00U, /*!< TSC registers have their reset value */
-  HAL_TSC_STATE_READY  = 0x01U, /*!< TSC registers are initialized or acquisition is completed with success */
-  HAL_TSC_STATE_BUSY   = 0x02U, /*!< TSC initialization or acquisition is on-going */
-  HAL_TSC_STATE_ERROR  = 0x03U  /*!< Acquisition is completed with max count error */
+  HAL_TSC_STATE_RESET  = 0x00UL, /*!< TSC registers have their reset value */
+  HAL_TSC_STATE_READY  = 0x01UL, /*!< TSC registers are initialized or acquisition is completed with success */
+  HAL_TSC_STATE_BUSY   = 0x02UL, /*!< TSC initialization or acquisition is on-going */
+  HAL_TSC_STATE_ERROR  = 0x03UL  /*!< Acquisition is completed with max count error */
 } HAL_TSC_StateTypeDef;
 
 /**
@@ -73,8 +73,8 @@ typedef enum
   */
 typedef enum
 {
-  TSC_GROUP_ONGOING   = 0x00U, /*!< Acquisition on group is on-going or not started */
-  TSC_GROUP_COMPLETED = 0x01U  /*!< Acquisition on group is completed with success (no max count error) */
+  TSC_GROUP_ONGOING   = 0x00UL, /*!< Acquisition on group is on-going or not started */
+  TSC_GROUP_COMPLETED = 0x01UL /*!< Acquisition on group is completed with success (no max count error) */
 } TSC_GroupStatusTypeDef;
 
 /**
@@ -145,7 +145,7 @@ typedef struct __TSC_HandleTypeDef
   */
 typedef enum
 {
-  TSC_GROUP1_IDX = 0x00U,
+  TSC_GROUP1_IDX = 0x00UL,
   TSC_GROUP2_IDX,
   TSC_GROUP3_IDX,
   TSC_GROUP4_IDX,
@@ -170,11 +170,11 @@ typedef enum
   */
 typedef enum
 {
-  HAL_TSC_CONV_COMPLETE_CB_ID           = 0x00U,    /*!< TSC Conversion completed callback ID  */
-  HAL_TSC_ERROR_CB_ID                   = 0x01U,    /*!< TSC Error callback ID                 */
+  HAL_TSC_CONV_COMPLETE_CB_ID           = 0x00UL,  /*!< TSC Conversion completed callback ID  */
+  HAL_TSC_ERROR_CB_ID                   = 0x01UL,  /*!< TSC Error callback ID                 */
 
-  HAL_TSC_MSPINIT_CB_ID                 = 0x02U,    /*!< TSC Msp Init callback ID              */
-  HAL_TSC_MSPDEINIT_CB_ID               = 0x03U     /*!< TSC Msp DeInit callback ID            */
+  HAL_TSC_MSPINIT_CB_ID                 = 0x02UL,  /*!< TSC Msp Init callback ID              */
+  HAL_TSC_MSPDEINIT_CB_ID               = 0x03UL   /*!< TSC Msp DeInit callback ID            */
 
 } HAL_TSC_CallbackIDTypeDef;
 
@@ -198,9 +198,9 @@ typedef  void (*pTSC_CallbackTypeDef)(TSC_HandleTypeDef *htsc); /*!< pointer to 
   * @brief  TSC Error Code definition
   * @{
   */
-#define HAL_TSC_ERROR_NONE      0x00000000U    /*!< No error              */
+#define HAL_TSC_ERROR_NONE      0x00000000UL    /*!< No error              */
 #if (USE_HAL_TSC_REGISTER_CALLBACKS == 1)
-#define HAL_TSC_ERROR_INVALID_CALLBACK  (0x00000001U)    /*!< Invalid Callback error */
+#define HAL_TSC_ERROR_INVALID_CALLBACK  0x00000001UL    /*!< Invalid Callback error */
 #endif /* USE_HAL_TSC_REGISTER_CALLBACKS */
 /**
   * @}
@@ -209,7 +209,7 @@ typedef  void (*pTSC_CallbackTypeDef)(TSC_HandleTypeDef *htsc); /*!< pointer to 
 /** @defgroup TSC_CTPulseHL_Config CTPulse High Length
   * @{
   */
-#define TSC_CTPH_1CYCLE         0x00000000U                                                     /*!< Charge transfer pulse high during 1 cycle (PGCLK)   */
+#define TSC_CTPH_1CYCLE         0x00000000UL                                                    /*!< Charge transfer pulse high during 1 cycle (PGCLK)   */
 #define TSC_CTPH_2CYCLES        TSC_CR_CTPH_0                                                   /*!< Charge transfer pulse high during 2 cycles (PGCLK)  */
 #define TSC_CTPH_3CYCLES        TSC_CR_CTPH_1                                                   /*!< Charge transfer pulse high during 3 cycles (PGCLK)  */
 #define TSC_CTPH_4CYCLES        (TSC_CR_CTPH_1 | TSC_CR_CTPH_0)                                 /*!< Charge transfer pulse high during 4 cycles (PGCLK)  */
@@ -232,7 +232,7 @@ typedef  void (*pTSC_CallbackTypeDef)(TSC_HandleTypeDef *htsc); /*!< pointer to 
 /** @defgroup TSC_CTPulseLL_Config CTPulse Low Length
   * @{
   */
-#define TSC_CTPL_1CYCLE         0x00000000U                                                      /*!< Charge transfer pulse low during 1 cycle (PGCLK)   */
+#define TSC_CTPL_1CYCLE         0x00000000UL                                                     /*!< Charge transfer pulse low during 1 cycle (PGCLK)   */
 #define TSC_CTPL_2CYCLES        TSC_CR_CTPL_0                                                    /*!< Charge transfer pulse low during 2 cycles (PGCLK)  */
 #define TSC_CTPL_3CYCLES        TSC_CR_CTPL_1                                                    /*!< Charge transfer pulse low during 3 cycles (PGCLK)  */
 #define TSC_CTPL_4CYCLES        (TSC_CR_CTPL_1 | TSC_CR_CTPL_0)                                  /*!< Charge transfer pulse low during 4 cycles (PGCLK)  */
@@ -255,7 +255,7 @@ typedef  void (*pTSC_CallbackTypeDef)(TSC_HandleTypeDef *htsc); /*!< pointer to 
 /** @defgroup TSC_SpreadSpec_Prescaler Spread Spectrum Prescaler
   * @{
   */
-#define TSC_SS_PRESC_DIV1       0x00000000U   /*!< Spread Spectrum Prescaler Div1 */
+#define TSC_SS_PRESC_DIV1       0x00000000UL  /*!< Spread Spectrum Prescaler Div1 */
 #define TSC_SS_PRESC_DIV2       TSC_CR_SSPSC  /*!< Spread Spectrum Prescaler Div2 */
 /**
   * @}
@@ -264,7 +264,7 @@ typedef  void (*pTSC_CallbackTypeDef)(TSC_HandleTypeDef *htsc); /*!< pointer to 
 /** @defgroup TSC_PulseGenerator_Prescaler Pulse Generator Prescaler
   * @{
   */
-#define TSC_PG_PRESC_DIV1       0x00000000U                                         /*!< Pulse Generator HCLK Div1   */
+#define TSC_PG_PRESC_DIV1       0x00000000UL                                        /*!< Pulse Generator HCLK Div1   */
 #define TSC_PG_PRESC_DIV2       TSC_CR_PGPSC_0                                      /*!< Pulse Generator HCLK Div2   */
 #define TSC_PG_PRESC_DIV4       TSC_CR_PGPSC_1                                      /*!< Pulse Generator HCLK Div4   */
 #define TSC_PG_PRESC_DIV8       (TSC_CR_PGPSC_1 | TSC_CR_PGPSC_0)                   /*!< Pulse Generator HCLK Div8   */
@@ -279,7 +279,7 @@ typedef  void (*pTSC_CallbackTypeDef)(TSC_HandleTypeDef *htsc); /*!< pointer to 
 /** @defgroup TSC_MaxCount_Value Max Count Value
   * @{
   */
-#define TSC_MCV_255             0x00000000U                    /*!< 255 maximum number of charge transfer pulses   */
+#define TSC_MCV_255             0x00000000UL                   /*!< 255 maximum number of charge transfer pulses   */
 #define TSC_MCV_511             TSC_CR_MCV_0                   /*!< 511 maximum number of charge transfer pulses   */
 #define TSC_MCV_1023            TSC_CR_MCV_1                   /*!< 1023 maximum number of charge transfer pulses  */
 #define TSC_MCV_2047            (TSC_CR_MCV_1 | TSC_CR_MCV_0)  /*!< 2047 maximum number of charge transfer pulses  */
@@ -293,7 +293,7 @@ typedef  void (*pTSC_CallbackTypeDef)(TSC_HandleTypeDef *htsc); /*!< pointer to 
 /** @defgroup TSC_IO_Default_Mode IO Default Mode
   * @{
   */
-#define TSC_IODEF_OUT_PP_LOW    0x00000000U  /*!< I/Os are forced to output push-pull low */
+#define TSC_IODEF_OUT_PP_LOW    0x00000000UL /*!< I/Os are forced to output push-pull low */
 #define TSC_IODEF_IN_FLOAT      TSC_CR_IODEF /*!< I/Os are in input floating              */
 /**
   * @}
@@ -302,7 +302,7 @@ typedef  void (*pTSC_CallbackTypeDef)(TSC_HandleTypeDef *htsc); /*!< pointer to 
 /** @defgroup TSC_Synchro_Pin_Polarity Synchro Pin Polarity
   * @{
   */
-#define TSC_SYNC_POLARITY_FALLING  0x00000000U    /*!< Falling edge only           */
+#define TSC_SYNC_POLARITY_FALLING  0x00000000UL   /*!< Falling edge only           */
 #define TSC_SYNC_POLARITY_RISING   TSC_CR_SYNCPOL /*!< Rising edge and high level  */
 /**
   * @}
@@ -311,8 +311,8 @@ typedef  void (*pTSC_CallbackTypeDef)(TSC_HandleTypeDef *htsc); /*!< pointer to 
 /** @defgroup TSC_Acquisition_Mode Acquisition Mode
   * @{
   */
-#define TSC_ACQ_MODE_NORMAL     0x00000000U /*!< Normal acquisition mode (acquisition starts as soon as START bit is set)                                                              */
-#define TSC_ACQ_MODE_SYNCHRO    TSC_CR_AM   /*!< Synchronized acquisition mode (acquisition starts if START bit is set and when the selected signal is detected on the SYNC input pin) */
+#define TSC_ACQ_MODE_NORMAL     0x00000000UL  /*!< Normal acquisition mode (acquisition starts as soon as START bit is set)                                                              */
+#define TSC_ACQ_MODE_SYNCHRO    TSC_CR_AM     /*!< Synchronized acquisition mode (acquisition starts if START bit is set and when the selected signal is detected on the SYNC input pin) */
 /**
   * @}
   */
@@ -338,24 +338,24 @@ typedef  void (*pTSC_CallbackTypeDef)(TSC_HandleTypeDef *htsc); /*!< pointer to 
 /** @defgroup TSC_Group_definition Group definition
   * @{
   */
-#define TSC_GROUP1              (uint32_t)(0x1U << TSC_GROUP1_IDX)
-#define TSC_GROUP2              (uint32_t)(0x1U << TSC_GROUP2_IDX)
-#define TSC_GROUP3              (uint32_t)(0x1U << TSC_GROUP3_IDX)
-#define TSC_GROUP4              (uint32_t)(0x1U << TSC_GROUP4_IDX)
+#define TSC_GROUP1              (uint32_t)(0x1UL << TSC_GROUP1_IDX)
+#define TSC_GROUP2              (uint32_t)(0x1UL << TSC_GROUP2_IDX)
+#define TSC_GROUP3              (uint32_t)(0x1UL << TSC_GROUP3_IDX)
+#define TSC_GROUP4              (uint32_t)(0x1UL << TSC_GROUP4_IDX)
 #if defined(TSC_IOCCR_G5_IO1)
-#define TSC_GROUP5              (uint32_t)(0x1U << TSC_GROUP5_IDX)
+#define TSC_GROUP5              (uint32_t)(0x1UL << TSC_GROUP5_IDX)
 #endif
 #if defined(TSC_IOCCR_G6_IO1)
-#define TSC_GROUP6              (uint32_t)(0x1U << TSC_GROUP6_IDX)
+#define TSC_GROUP6              (uint32_t)(0x1UL << TSC_GROUP6_IDX)
 #endif
 #if defined(TSC_IOCCR_G7_IO1)
-#define TSC_GROUP7              (uint32_t)(0x1U << TSC_GROUP7_IDX)
+#define TSC_GROUP7              (uint32_t)(0x1UL << TSC_GROUP7_IDX)
 #endif
 #if defined(TSC_IOCCR_G8_IO1)
-#define TSC_GROUP8              (uint32_t)(0x1U << TSC_GROUP8_IDX)
+#define TSC_GROUP8              (uint32_t)(0x1UL << TSC_GROUP8_IDX)
 #endif
 
-#define TSC_GROUPX_NOT_SUPPORTED        0xFF000000U     /*!< TSC GroupX not supported       */
+#define TSC_GROUPX_NOT_SUPPORTED        0xFF000000UL    /*!< TSC GroupX not supported       */
 
 #define TSC_GROUP1_IO1          TSC_IOCCR_G1_IO1 /*!< TSC Group1 IO1 */
 #define TSC_GROUP1_IO2          TSC_IOCCR_G1_IO2 /*!< TSC Group1 IO2 */
@@ -384,7 +384,7 @@ typedef  void (*pTSC_CallbackTypeDef)(TSC_HandleTypeDef *htsc); /*!< pointer to 
 #define TSC_GROUP5_IO4          TSC_IOCCR_G5_IO4 /*!< TSC Group5 IO4 */
 #else
 
-#define TSC_GROUP5_IO1          (uint32_t)(0x00000010U | TSC_GROUPX_NOT_SUPPORTED)      /*!< TSC Group5 IO1 not supported   */
+#define TSC_GROUP5_IO1          (uint32_t)(0x00000010UL | TSC_GROUPX_NOT_SUPPORTED)     /*!< TSC Group5 IO1 not supported   */
 #define TSC_GROUP5_IO2          TSC_GROUP5_IO1                                          /*!< TSC Group5 IO2 not supported   */
 #define TSC_GROUP5_IO3          TSC_GROUP5_IO1                                          /*!< TSC Group5 IO3 not supported   */
 #define TSC_GROUP5_IO4          TSC_GROUP5_IO1                                          /*!< TSC Group5 IO4 not supported   */
@@ -397,7 +397,7 @@ typedef  void (*pTSC_CallbackTypeDef)(TSC_HandleTypeDef *htsc); /*!< pointer to 
 #define TSC_GROUP6_IO4          TSC_IOCCR_G6_IO4 /*!< TSC Group6 IO4 */
 #else
 
-#define TSC_GROUP6_IO1          (uint32_t)(0x00000020U | TSC_GROUPX_NOT_SUPPORTED)      /*!< TSC Group6 IO1 not supported   */
+#define TSC_GROUP6_IO1          (uint32_t)(0x00000020UL | TSC_GROUPX_NOT_SUPPORTED)     /*!< TSC Group6 IO1 not supported   */
 #define TSC_GROUP6_IO2          TSC_GROUP6_IO1                                          /*!< TSC Group6 IO2 not supported   */
 #define TSC_GROUP6_IO3          TSC_GROUP6_IO1                                          /*!< TSC Group6 IO3 not supported   */
 #define TSC_GROUP6_IO4          TSC_GROUP6_IO1                                          /*!< TSC Group6 IO4 not supported   */
@@ -410,7 +410,7 @@ typedef  void (*pTSC_CallbackTypeDef)(TSC_HandleTypeDef *htsc); /*!< pointer to 
 #define TSC_GROUP7_IO4          TSC_IOCCR_G7_IO4 /*!< TSC Group7 IO4 */
 #else
 
-#define TSC_GROUP7_IO1          (uint32_t)(0x00000040U | TSC_GROUPX_NOT_SUPPORTED)      /*!< TSC Group7 IO1 not supported   */
+#define TSC_GROUP7_IO1          (uint32_t)(0x00000040UL | TSC_GROUPX_NOT_SUPPORTED)     /*!< TSC Group7 IO1 not supported   */
 #define TSC_GROUP7_IO2          TSC_GROUP7_IO1                                          /*!< TSC Group7 IO2 not supported   */
 #define TSC_GROUP7_IO3          TSC_GROUP7_IO1                                          /*!< TSC Group7 IO3 not supported   */
 #define TSC_GROUP7_IO4          TSC_GROUP7_IO1                                          /*!< TSC Group7 IO4 not supported   */
@@ -423,7 +423,7 @@ typedef  void (*pTSC_CallbackTypeDef)(TSC_HandleTypeDef *htsc); /*!< pointer to 
 #define TSC_GROUP8_IO4          TSC_IOCCR_G8_IO4 /*!< TSC Group8 IO4 */
 #else
 
-#define TSC_GROUP8_IO1          (uint32_t)(0x00000080U | TSC_GROUPX_NOT_SUPPORTED)      /*!< TSC Group8 IO1 not supported   */
+#define TSC_GROUP8_IO1          (uint32_t)(0x00000080UL | TSC_GROUPX_NOT_SUPPORTED)     /*!< TSC Group8 IO1 not supported   */
 #define TSC_GROUP8_IO2          TSC_GROUP8_IO1                                          /*!< TSC Group8 IO2 not supported   */
 #define TSC_GROUP8_IO3          TSC_GROUP8_IO1                                          /*!< TSC Group8 IO3 not supported   */
 #define TSC_GROUP8_IO4          TSC_GROUP8_IO1                                          /*!< TSC Group8 IO4 not supported   */
@@ -637,7 +637,7 @@ typedef  void (*pTSC_CallbackTypeDef)(TSC_HandleTypeDef *htsc); /*!< pointer to 
   * @retval SET or RESET
   */
 #define __HAL_TSC_GET_GROUP_STATUS(__HANDLE__, __GX_INDEX__) \
-((((__HANDLE__)->Instance->IOGCSR & (uint32_t)((uint32_t)1U << ((__GX_INDEX__) + (uint32_t)16U))) == (uint32_t)((uint32_t)1U << ((__GX_INDEX__) + (uint32_t)16U))) ? TSC_GROUP_COMPLETED : TSC_GROUP_ONGOING)
+((((__HANDLE__)->Instance->IOGCSR & (uint32_t)(1UL << (((__GX_INDEX__) & (uint32_t)TSC_NB_OF_GROUPS) + 16UL))) == (uint32_t)(1UL << (((__GX_INDEX__) & (uint32_t)TSC_NB_OF_GROUPS) + 16UL))) ? TSC_GROUP_COMPLETED : TSC_GROUP_ONGOING)
 
 /**
   * @}
@@ -683,9 +683,9 @@ typedef  void (*pTSC_CallbackTypeDef)(TSC_HandleTypeDef *htsc); /*!< pointer to 
                                          ((__VALUE__) == TSC_CTPL_15CYCLES) || \
                                          ((__VALUE__) == TSC_CTPL_16CYCLES))
 
-#define IS_TSC_SS(__VALUE__)            (((__VALUE__) == DISABLE) || ((__VALUE__) == ENABLE))
+#define IS_TSC_SS(__VALUE__)            (((FunctionalState)(__VALUE__) == DISABLE) || ((FunctionalState)(__VALUE__) == ENABLE))
 
-#define IS_TSC_SSD(__VALUE__)           (((__VALUE__) == 0U) || (((__VALUE__) > 0U) && ((__VALUE__) < 128U)))
+#define IS_TSC_SSD(__VALUE__)           (((__VALUE__) == 0UL) || (((__VALUE__) > 0UL) && ((__VALUE__) < 128UL)))
 
 #define IS_TSC_SS_PRESC(__VALUE__)      (((__VALUE__) == TSC_SS_PRESC_DIV1) || ((__VALUE__) == TSC_SS_PRESC_DIV2))
 
@@ -712,9 +712,9 @@ typedef  void (*pTSC_CallbackTypeDef)(TSC_HandleTypeDef *htsc); /*!< pointer to 
 
 #define IS_TSC_ACQ_MODE(__VALUE__)      (((__VALUE__) == TSC_ACQ_MODE_NORMAL) || ((__VALUE__) == TSC_ACQ_MODE_SYNCHRO))
 
-#define IS_TSC_MCE_IT(__VALUE__)        (((__VALUE__) == DISABLE) || ((__VALUE__) == ENABLE))
+#define IS_TSC_MCE_IT(__VALUE__)        (((FunctionalState)(__VALUE__) == DISABLE) || ((FunctionalState)(__VALUE__) == ENABLE))
 
-#define IS_TSC_GROUP_INDEX(__VALUE__)   (((__VALUE__) == 0U) || (((__VALUE__) > 0U) && ((__VALUE__) < TSC_NB_OF_GROUPS)))
+#define IS_TSC_GROUP_INDEX(__VALUE__)   (((__VALUE__) == 0UL) || (((__VALUE__) > 0UL) && ((__VALUE__) < (uint32_t)TSC_NB_OF_GROUPS)))
 
 
 #define IS_TSC_GROUP(__VALUE__)        ((((__VALUE__) & TSC_GROUPX_NOT_SUPPORTED) != TSC_GROUPX_NOT_SUPPORTED) && \
@@ -839,6 +839,6 @@ void HAL_TSC_ErrorCallback(TSC_HandleTypeDef *htsc);
 }
 #endif
 
-#endif /* __STM32L4xx_HAL_TSC_H */
+#endif /* STM32L4xx_HAL_TSC_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

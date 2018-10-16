@@ -347,7 +347,8 @@ HAL_StatusTypeDef HAL_UARTEx_SetRxFifoThreshold(UART_HandleTypeDef *huart, uint3
        }                                                      \
     }                                                         \
   } while(0U)
-#elif defined (STM32L431xx) || defined (STM32L433xx) || defined (STM32L443xx)
+#elif defined (STM32L412xx) || defined (STM32L422xx) || defined (STM32L431xx) \
+   || defined (STM32L433xx) || defined (STM32L443xx)
 #define UART_GETCLOCKSOURCE(__HANDLE__,__CLOCKSOURCE__)       \
   do {                                                        \
     if((__HANDLE__)->Instance == USART1)                      \

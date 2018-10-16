@@ -1845,6 +1845,21 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigBreakInput(TIM_HandleTypeDef *htim,
   * @brief  Configures the TIMx Remapping input capabilities.
   * @param  htim TIM handle.
   * @param  Remap specifies the TIM remapping source.
+  *
+  @if STM32L422xx
+  *         For TIM1, the parameter is a combination of 2 fields (field1 | field2):
+  *
+  *                   field1 can have the following values:
+  *            @arg TIM_TIM1_ETR_ADC1_NONE:           TIM1_ETR is not connected to any ADC1 AWD (analog watchdog)
+  *            @arg TIM_TIM1_ETR_ADC1_AWD1:           TIM1_ETR is connected to ADC1 AWD1
+  *            @arg TIM_TIM1_ETR_ADC1_AWD2:           TIM1_ETR is connected to ADC1 AWD2
+  *            @arg TIM_TIM1_ETR_ADC1_AWD3:           TIM1_ETR is connected to ADC1 AWD3
+  *
+  *                   field2 can have the following values:
+  *            @arg TIM_TIM1_TI1_GPIO:                TIM1 TI1 is connected to GPIO
+  *            @arg TIM_TIM1_TI1_COMP1:               TIM1 TI1 is connected to COMP1 output
+  *
+  @endif
   @if STM32L486xx
   *         For TIM1, the parameter is a combination of 4 fields (field1 | field2 | field3 | field4):
   *
@@ -1908,6 +1923,23 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigBreakInput(TIM_HandleTypeDef *htim,
   *            @arg TIM_TIM2_TI4_COMP2:               TIM2 TI4 is connected to COMP2 output
   *            @arg TIM_TIM2_TI4_COMP1_COMP2:         TIM2 TI4 is connected to logical OR between COMP1 and COMP2 output
   @endif
+  @if STM32L422xx
+  *         For TIM2, the parameter is a combination of 3 fields (field1 | field2 | field3):
+  *
+  *                   field1 can have the following values:
+  *            @arg TIM_TIM2_ITR1_NONE:               No internal trigger on TIM2_ITR1
+  *            @arg TIM_TIM2_ITR1_USB_SOF:            TIM2_ITR1 is connected to USB SOF
+  *
+  *                   field2 can have the following values:
+  *            @arg TIM_TIM2_ETR_GPIO:                TIM2_ETR is connected to GPIO
+  *            @arg TIM_TIM2_ETR_LSE:                 TIM2_ETR is connected to LSE
+  *            @arg TIM_TIM2_ETR_COMP1:               TIM2_ETR is connected to COMP1 output
+  *
+  *                   field3 can have the following values:
+  *            @arg TIM_TIM2_TI4_GPIO:                TIM2 TI4 is connected to GPIO
+  *            @arg TIM_TIM2_TI4_COMP1:               TIM2 TI4 is connected to COMP1 output
+  *
+  @endif
   @if STM32L443xx
   *         For TIM2, the parameter is a combination of 3 fields (field1 | field2 | field3):
   *
@@ -1967,7 +1999,20 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigBreakInput(TIM_HandleTypeDef *htim,
   *            @note  When field4 is set to TIM_TIM8_ETR_COMP1 or TIM_TIM8_ETR_COMP2 field1 and field2 values are not significant
   *
   @endif
-  *         For TIM15, the parameter is a combination of 3 fields (field1 | field2):
+  @if STM32L422xx
+  *         For TIM15, the parameter is a combination of 2 fields (field1 | field2):
+  *
+  *                   field1 can have the following values:
+  *            @arg TIM_TIM15_TI1_GPIO:              TIM15 TI1 is connected to GPIO
+  *            @arg TIM_TIM15_TI1_LSE:               TIM15 TI1 is connected to LSE
+  *
+  *                   field2 can have the following values:
+  *            @arg TIM_TIM15_ENCODERMODE_NONE:      No redirection
+  *            @arg TIM_TIM15_ENCODERMODE_TIM2:      TIM2 IC1 and TIM2 IC2 are connected to TIM15 IC1 and TIM15 IC2 respectively
+  *
+  @endif
+  @if STM32L443xx
+  *         For TIM15, the parameter is a combination of 2 fields (field1 | field2):
   *
   *                   field1 can have the following values:
   *            @arg TIM_TIM15_TI1_GPIO:              TIM15 TI1 is connected to GPIO
@@ -1979,11 +2024,37 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigBreakInput(TIM_HandleTypeDef *htim,
   *            @arg TIM_TIM15_ENCODERMODE_TIM3:      TIM3 IC1 and TIM3 IC2 are connected to TIM15 IC1 and TIM15 IC2 respectively
   *            @arg TIM_TIM15_ENCODERMODE_TIM4:      TIM4 IC1 and TIM4 IC2 are connected to TIM15 IC1 and TIM15 IC2 respectively
   *
+  @endif
+  @if STM32L486xx
+  *         For TIM15, the parameter is a combination of 2 fields (field1 | field2):
+  *
+  *                   field1 can have the following values:
+  *            @arg TIM_TIM15_TI1_GPIO:              TIM15 TI1 is connected to GPIO
+  *            @arg TIM_TIM15_TI1_LSE:               TIM15 TI1 is connected to LSE
+  *
+  *                   field2 can have the following values:
+  *            @arg TIM_TIM15_ENCODERMODE_NONE:      No redirection
+  *            @arg TIM_TIM15_ENCODERMODE_TIM2:      TIM2 IC1 and TIM2 IC2 are connected to TIM15 IC1 and TIM15 IC2 respectively
+  *            @arg TIM_TIM15_ENCODERMODE_TIM3:      TIM3 IC1 and TIM3 IC2 are connected to TIM15 IC1 and TIM15 IC2 respectively
+  *            @arg TIM_TIM15_ENCODERMODE_TIM4:      TIM4 IC1 and TIM4 IC2 are connected to TIM15 IC1 and TIM15 IC2 respectively
+  *
+  @endif
   @if STM32L486xx
   *            @arg TIM_TIM16_TI1_GPIO:              TIM16 TI1 is connected to GPIO
   *            @arg TIM_TIM16_TI1_LSI:               TIM16 TI1 is connected to LSI
   *            @arg TIM_TIM16_TI1_LSE:               TIM16 TI1 is connected to LSE
   *            @arg TIM_TIM16_TI1_RTC:               TIM16 TI1 is connected to RTC wakeup interrupt
+  *
+  @endif
+  @if STM32L422xx
+  *         For TIM16, the parameter can have the following values:
+  *            @arg TIM_TIM16_TI1_GPIO:              TIM16 TI1 is connected to GPIO
+  *            @arg TIM_TIM16_TI1_LSI:               TIM16 TI1 is connected to LSI
+  *            @arg TIM_TIM16_TI1_LSE:               TIM16 TI1 is connected to LSE
+  *            @arg TIM_TIM16_TI1_RTC:               TIM16 TI1 is connected to RTC wakeup interrupt
+  *            @arg TIM_TIM16_TI1_MSI:               TIM16 TI1 is connected to MSI  (contraints: MSI clock < 1/4 TIM APB clock)
+  *            @arg TIM_TIM16_TI1_HSE_32:            TIM16 TI1 is connected to HSE div 32  (note that HSE div 32 must be selected as RTC clock source)
+  *            @arg TIM_TIM16_TI1_MCO:               TIM16 TI1 is connected to MCO
   *
   @endif
   @if STM32L443xx

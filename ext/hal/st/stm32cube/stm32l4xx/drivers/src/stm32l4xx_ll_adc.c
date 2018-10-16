@@ -41,7 +41,7 @@
 #ifdef  USE_FULL_ASSERT
   #include "stm32_assert.h"
 #else
-  #define assert_param(expr) ((void)0U)
+  #define assert_param(expr) ((void)0UL)
 #endif
 
 /** @addtogroup STM32L4xx_LL_Driver
@@ -80,9 +80,9 @@
 /*          with highest ratio CPU clock frequency vs HSI clock frequency:    */
 /*          CPU clock frequency max 72MHz, PLLSAI freq min 26MHz: ratio 4.    */
 /* Unit: CPU cycles.                                                          */
-#define ADC_CLOCK_RATIO_VS_CPU_HIGHEST          ((uint32_t) 512U * 16U * 4U)
-#define ADC_TIMEOUT_DISABLE_CPU_CYCLES          (ADC_CLOCK_RATIO_VS_CPU_HIGHEST * 1U)
-#define ADC_TIMEOUT_STOP_CONVERSION_CPU_CYCLES  (ADC_CLOCK_RATIO_VS_CPU_HIGHEST * 1U)
+#define ADC_CLOCK_RATIO_VS_CPU_HIGHEST          (512UL * 16UL * 4UL)
+#define ADC_TIMEOUT_DISABLE_CPU_CYCLES          (ADC_CLOCK_RATIO_VS_CPU_HIGHEST * 1UL)
+#define ADC_TIMEOUT_STOP_CONVERSION_CPU_CYCLES  (ADC_CLOCK_RATIO_VS_CPU_HIGHEST * 1UL)
 
 /**
   * @}
@@ -374,7 +374,7 @@ ErrorStatus LL_ADC_CommonInit(ADC_Common_TypeDef *ADCxy_COMMON, LL_ADC_CommonIni
   /*       On this STM32 serie, setting of these features is conditioned to   */
   /*       ADC state:                                                         */
   /*       All ADC instances of the ADC common group must be disabled.        */
-  if(__LL_ADC_IS_ENABLED_ALL_COMMON_INSTANCE(ADCxy_COMMON) == 0U)
+  if(__LL_ADC_IS_ENABLED_ALL_COMMON_INSTANCE(ADCxy_COMMON) == 0UL)
   {
     /* Configuration of ADC hierarchical scope:                               */
     /*  - common to several ADC                                               */
@@ -471,13 +471,13 @@ ErrorStatus LL_ADC_DeInit(ADC_TypeDef *ADCx)
 {
   ErrorStatus status = SUCCESS;
 
-  __IO uint32_t timeout_cpu_cycles = 0U;
+  __IO uint32_t timeout_cpu_cycles = 0UL;
 
   /* Check the parameters */
   assert_param(IS_ADC_ALL_INSTANCE(ADCx));
 
   /* Disable ADC instance if not already disabled.                            */
-  if(LL_ADC_IsEnabled(ADCx) == 1U)
+  if(LL_ADC_IsEnabled(ADCx) == 1UL)
   {
     /* Set ADC group regular trigger source to SW start to ensure to not      */
     /* have an external trigger event occurring during the conversion stop    */
@@ -485,9 +485,9 @@ ErrorStatus LL_ADC_DeInit(ADC_TypeDef *ADCx)
     LL_ADC_REG_SetTriggerSource(ADCx, LL_ADC_REG_TRIG_SOFTWARE);
 
     /* Stop potential ADC conversion on going on ADC group regular.           */
-    if(LL_ADC_REG_IsConversionOngoing(ADCx) != 0U)
+    if(LL_ADC_REG_IsConversionOngoing(ADCx) != 0UL)
     {
-      if(LL_ADC_REG_IsStopConversionOngoing(ADCx) == 0U)
+      if(LL_ADC_REG_IsStopConversionOngoing(ADCx) == 0UL)
       {
         LL_ADC_REG_StopConversion(ADCx);
       }
@@ -499,9 +499,9 @@ ErrorStatus LL_ADC_DeInit(ADC_TypeDef *ADCx)
     LL_ADC_INJ_SetTriggerSource(ADCx, LL_ADC_INJ_TRIG_SOFTWARE);
 
     /* Stop potential ADC conversion on going on ADC group injected.          */
-    if(LL_ADC_INJ_IsConversionOngoing(ADCx) != 0U)
+    if(LL_ADC_INJ_IsConversionOngoing(ADCx) != 0UL)
     {
-      if(LL_ADC_INJ_IsStopConversionOngoing(ADCx) == 0U)
+      if(LL_ADC_INJ_IsStopConversionOngoing(ADCx) == 0UL)
       {
         LL_ADC_INJ_StopConversion(ADCx);
       }
@@ -510,10 +510,10 @@ ErrorStatus LL_ADC_DeInit(ADC_TypeDef *ADCx)
     /* Wait for ADC conversions are effectively stopped                       */
     timeout_cpu_cycles = ADC_TIMEOUT_STOP_CONVERSION_CPU_CYCLES;
     while ((  LL_ADC_REG_IsStopConversionOngoing(ADCx)
-            | LL_ADC_INJ_IsStopConversionOngoing(ADCx)) == 1U)
+            | LL_ADC_INJ_IsStopConversionOngoing(ADCx)) == 1UL)
     {
       timeout_cpu_cycles--;
-      if(timeout_cpu_cycles == 0U)
+      if(timeout_cpu_cycles == 0UL)
       {
         /* Time-out error */
         status = ERROR;
@@ -530,10 +530,10 @@ ErrorStatus LL_ADC_DeInit(ADC_TypeDef *ADCx)
 
     /* Wait for ADC instance is effectively disabled */
     timeout_cpu_cycles = ADC_TIMEOUT_DISABLE_CPU_CYCLES;
-    while (LL_ADC_IsDisableOngoing(ADCx) == 1U)
+    while (LL_ADC_IsDisableOngoing(ADCx) == 1UL)
     {
       timeout_cpu_cycles--;
-      if(timeout_cpu_cycles == 0U)
+      if(timeout_cpu_cycles == 0UL)
       {
         /* Time-out error */
         status = ERROR;
@@ -546,7 +546,7 @@ ErrorStatus LL_ADC_DeInit(ADC_TypeDef *ADCx)
               (  ADC_CR_JADSTP | ADC_CR_ADSTP | ADC_CR_JADSTART | ADC_CR_ADSTART
                | ADC_CR_ADDIS | ADC_CR_ADEN                                     )
              )
-     == 0U)
+     == 0UL)
   {
     /* ========== Reset ADC registers ========== */
     /* Reset register IER */
@@ -561,7 +561,8 @@ ErrorStatus LL_ADC_DeInit(ADC_TypeDef *ADCx)
                | LL_ADC_IT_JQOVF
                | LL_ADC_IT_AWD1
                | LL_ADC_IT_AWD2
-               | LL_ADC_IT_AWD3 )
+               | LL_ADC_IT_AWD3
+              )
              );
 
     /* Reset register ISR */
@@ -576,7 +577,8 @@ ErrorStatus LL_ADC_DeInit(ADC_TypeDef *ADCx)
              | LL_ADC_FLAG_JQOVF
              | LL_ADC_FLAG_AWD1
              | LL_ADC_FLAG_AWD2
-             | LL_ADC_FLAG_AWD3 )
+             | LL_ADC_FLAG_AWD3
+            )
            );
 
     /* Reset register CR */
@@ -751,7 +753,7 @@ ErrorStatus LL_ADC_Init(ADC_TypeDef *ADCx, LL_ADC_InitTypeDef *ADC_InitStruct)
 
   /* Note: Hardware constraint (refer to description of this function):       */
   /*       ADC instance must be disabled.                                     */
-  if(LL_ADC_IsEnabled(ADCx) == 0U)
+  if(LL_ADC_IsEnabled(ADCx) == 0UL)
   {
     /* Configuration of ADC hierarchical scope:                               */
     /*  - ADC instance                                                        */
@@ -843,7 +845,7 @@ ErrorStatus LL_ADC_REG_Init(ADC_TypeDef *ADCx, LL_ADC_REG_InitTypeDef *ADC_REG_I
 
   /* Note: Hardware constraint (refer to description of this function):       */
   /*       ADC instance must be disabled.                                     */
-  if(LL_ADC_IsEnabled(ADCx) == 0U)
+  if(LL_ADC_IsEnabled(ADCx) == 0UL)
   {
     /* Configuration of ADC hierarchical scope:                               */
     /*  - ADC group regular                                                   */
@@ -974,7 +976,7 @@ ErrorStatus LL_ADC_INJ_Init(ADC_TypeDef *ADCx, LL_ADC_INJ_InitTypeDef *ADC_INJ_I
 
   /* Note: Hardware constraint (refer to description of this function):       */
   /*       ADC instance must be disabled.                                     */
-  if(LL_ADC_IsEnabled(ADCx) == 0U)
+  if(LL_ADC_IsEnabled(ADCx) == 0UL)
   {
     /* Configuration of ADC hierarchical scope:                               */
     /*  - ADC group injected                                                  */

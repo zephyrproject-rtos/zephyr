@@ -7,7 +7,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2018 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -444,12 +444,16 @@
 #define OB_RDP_LEVEL0                 OB_RDP_LEVEL_0
 #define OB_RDP_LEVEL1                 OB_RDP_LEVEL_1
 #define OB_RDP_LEVEL2                 OB_RDP_LEVEL_2
-#if defined(STM32G0)
-#define OB_BOOT_LOCK_DISABLE          OB_BOOT_ENTRY_FORCED_NONE
-#define OB_BOOT_LOCK_ENABLE           OB_BOOT_ENTRY_FORCED_FLASH
-#else
 #define OB_BOOT_ENTRY_FORCED_NONE     OB_BOOT_LOCK_DISABLE
 #define OB_BOOT_ENTRY_FORCED_FLASH    OB_BOOT_LOCK_ENABLE
+
+#if defined(STM32H7)
+#define FLASH_FLAG_SNECCE_BANK1RR FLASH_FLAG_SNECCERR_BANK1
+#define FLASH_FLAG_DBECCE_BANK1RR FLASH_FLAG_DBECCERR_BANK1
+#define FLASH_FLAG_STRBER_BANK1R  FLASH_FLAG_STRBERR_BANK1
+#define FLASH_FLAG_SNECCE_BANK2RR FLASH_FLAG_SNECCERR_BANK2
+#define FLASH_FLAG_DBECCE_BANK2RR FLASH_FLAG_DBECCERR_BANK2
+#define FLASH_FLAG_STRBER_BANK2R  FLASH_FLAG_STRBERR_BANK2
 #endif
 
 /**
@@ -494,12 +498,12 @@
 /** @defgroup LL_FMC_Aliased_Defines LL FMC Aliased Defines maintained for compatibility purpose
   * @{
   */
-#if defined(STM32L4) || defined(STM32F7) || defined(STM32H7) || defined(STM32G4)
+#if defined(STM32L4) || defined(STM32F7) || defined(STM32H7)
 #define FMC_NAND_PCC_WAIT_FEATURE_DISABLE       FMC_NAND_WAIT_FEATURE_DISABLE
 #define FMC_NAND_PCC_WAIT_FEATURE_ENABLE        FMC_NAND_WAIT_FEATURE_ENABLE
 #define FMC_NAND_PCC_MEM_BUS_WIDTH_8            FMC_NAND_MEM_BUS_WIDTH_8
 #define FMC_NAND_PCC_MEM_BUS_WIDTH_16           FMC_NAND_MEM_BUS_WIDTH_16
-#else
+#elif defined(STM32F1) || defined(STM32F2) || defined(STM32F3) || defined(STM32F4)
 #define FMC_NAND_WAIT_FEATURE_DISABLE           FMC_NAND_PCC_WAIT_FEATURE_DISABLE
 #define FMC_NAND_WAIT_FEATURE_ENABLE            FMC_NAND_PCC_WAIT_FEATURE_ENABLE
 #define FMC_NAND_MEM_BUS_WIDTH_8                FMC_NAND_PCC_MEM_BUS_WIDTH_8
@@ -540,16 +544,25 @@
 #define GPIO_AF12_SDMMC                           GPIO_AF12_SDMMC1
 #endif
 
+#if defined(STM32H7)
+#define GPIO_AF7_SDIO1                            GPIO_AF7_SDMMC1
+#define GPIO_AF8_SDIO1                            GPIO_AF8_SDMMC1
+#define GPIO_AF12_SDIO1                           GPIO_AF12_SDMMC1
+#define GPIO_AF9_SDIO2                            GPIO_AF9_SDMMC2
+#define GPIO_AF10_SDIO2                           GPIO_AF10_SDMMC2
+#define GPIO_AF11_SDIO2                           GPIO_AF11_SDMMC2
+#endif
+
 #define GPIO_AF0_LPTIM                            GPIO_AF0_LPTIM1
 #define GPIO_AF1_LPTIM                            GPIO_AF1_LPTIM1
 #define GPIO_AF2_LPTIM                            GPIO_AF2_LPTIM1
 
-#if defined(STM32L0) || defined(STM32L4) || defined(STM32F4) || defined(STM32F2) || defined(STM32F7) || defined(STM32G4)
+#if defined(STM32L0) || defined(STM32L4) || defined(STM32F4) || defined(STM32F2) || defined(STM32F7) || defined(STM32H7)
 #define  GPIO_SPEED_LOW                           GPIO_SPEED_FREQ_LOW
 #define  GPIO_SPEED_MEDIUM                        GPIO_SPEED_FREQ_MEDIUM
 #define  GPIO_SPEED_FAST                          GPIO_SPEED_FREQ_HIGH
 #define  GPIO_SPEED_HIGH                          GPIO_SPEED_FREQ_VERY_HIGH
-#endif /* STM32L0 || STM32L4 || STM32F4 || STM32F2 || STM32F7 || STM32G4 */
+#endif /* STM32L0 || STM32L4 || STM32F4 || STM32F2 || STM32F7 || STM32H7*/
 
 #if defined(STM32L1)
  #define  GPIO_SPEED_VERY_LOW    GPIO_SPEED_FREQ_LOW
@@ -605,7 +618,7 @@
 #define I2C_NOSTRETCH_ENABLED                   I2C_NOSTRETCH_ENABLE
 #define I2C_ANALOGFILTER_ENABLED                I2C_ANALOGFILTER_ENABLE
 #define I2C_ANALOGFILTER_DISABLED               I2C_ANALOGFILTER_DISABLE
-#if defined(STM32F0) || defined(STM32F1) || defined(STM32F3) || defined(STM32G0) || defined(STM32L4) || defined(STM32L1) || defined(STM32F7)
+#if defined(STM32F0) || defined(STM32F1) || defined(STM32F3) || defined(STM32L4) || defined(STM32L1) || defined(STM32F7)
 #define HAL_I2C_STATE_MEM_BUSY_TX               HAL_I2C_STATE_BUSY_TX
 #define HAL_I2C_STATE_MEM_BUSY_RX               HAL_I2C_STATE_BUSY_RX
 #define HAL_I2C_STATE_MASTER_BUSY_TX            HAL_I2C_STATE_BUSY_TX
@@ -737,6 +750,16 @@
   * @{
   */
 #define I2S_STANDARD_PHILLIPS      I2S_STANDARD_PHILIPS
+
+#if defined(STM32H7)
+  #define I2S_IT_TXE               I2S_IT_TXP
+  #define I2S_IT_RXNE              I2S_IT_RXP
+
+  #define I2S_FLAG_TXE             I2S_FLAG_TXP
+  #define I2S_FLAG_RXNE            I2S_FLAG_RXP
+  #define I2S_FLAG_FRE             I2S_FLAG_TIFRE
+#endif
+
 #if defined(STM32F7)
   #define I2S_CLOCK_SYSCLK           I2S_CLOCK_PLL
 #endif
@@ -861,6 +884,21 @@
 #define SPI_NSS_PULSE_DISABLED          SPI_NSS_PULSE_DISABLE
 #define SPI_NSS_PULSE_ENABLED           SPI_NSS_PULSE_ENABLE
 
+#if defined(STM32H7)
+
+ #define SPI_FLAG_TXE                    SPI_FLAG_TXP
+ #define SPI_FLAG_RXNE                   SPI_FLAG_RXP
+
+ #define SPI_IT_TXE                      SPI_IT_TXP
+ #define SPI_IT_RXNE                     SPI_IT_RXP
+
+ #define SPI_FRLVL_EMPTY                 SPI_RX_FIFO_0PACKET
+ #define SPI_FRLVL_QUARTER_FULL          SPI_RX_FIFO_1PACKET
+ #define SPI_FRLVL_HALF_FULL             SPI_RX_FIFO_2PACKET
+ #define SPI_FRLVL_FULL                  SPI_RX_FIFO_3PACKET
+
+#endif /* STM32H7 */
+
 /**
   * @}
   */
@@ -931,6 +969,10 @@
 #if defined(STM32L0)
 #define TIM22_TI1_GPIO1   TIM22_TI1_GPIO
 #define TIM22_TI1_GPIO2   TIM22_TI1_GPIO
+#endif
+
+#if defined(STM32F3)
+#define IS_TIM_HALL_INTERFACE_INSTANCE   IS_TIM_HALL_SENSOR_INTERFACE_INSTANCE
 #endif
 /**
   * @}
@@ -1288,6 +1330,14 @@
 #define HAL_TIM_DMAError                                TIM_DMAError
 #define HAL_TIM_DMACaptureCplt                          TIM_DMACaptureCplt
 #define HAL_TIMEx_DMACommutationCplt                    TIMEx_DMACommutationCplt
+#if defined(STM32H7)
+#define HAL_TIM_SlaveConfigSynchronization              HAL_TIM_SlaveConfigSynchro
+#define HAL_TIM_SlaveConfigSynchronization_IT           HAL_TIM_SlaveConfigSynchro_IT
+#define HAL_TIMEx_CommutationCallback                   HAL_TIMEx_CommutCallback
+#define HAL_TIMEx_ConfigCommutationEvent                HAL_TIMEx_ConfigCommutEvent
+#define HAL_TIMEx_ConfigCommutationEvent_IT             HAL_TIMEx_ConfigCommutEvent_IT
+#define HAL_TIMEx_ConfigCommutationEvent_DMA            HAL_TIMEx_ConfigCommutEvent_DMA
+#endif /* STM32H7 */
 /**
   * @}
   */
@@ -1770,6 +1820,10 @@
 #define IS_I2S_INSTANCE                 IS_I2S_ALL_INSTANCE
 #define IS_I2S_INSTANCE_EXT             IS_I2S_ALL_INSTANCE_EXT
 
+#if defined(STM32H7)
+  #define __HAL_I2S_CLEAR_FREFLAG       __HAL_I2S_CLEAR_TIFREFLAG
+#endif
+
 /**
   * @}
   */
@@ -2165,19 +2219,6 @@
 #define __QSPI_FORCE_RESET __HAL_RCC_QSPI_FORCE_RESET
 #define __QSPI_RELEASE_RESET __HAL_RCC_QSPI_RELEASE_RESET
 
-#if defined(STM32WB)
-#define __HAL_RCC_QSPI_CLK_DISABLE            __HAL_RCC_QUADSPI_CLK_DISABLE
-#define __HAL_RCC_QSPI_CLK_ENABLE             __HAL_RCC_QUADSPI_CLK_ENABLE
-#define __HAL_RCC_QSPI_CLK_SLEEP_DISABLE      __HAL_RCC_QUADSPI_CLK_SLEEP_DISABLE
-#define __HAL_RCC_QSPI_CLK_SLEEP_ENABLE       __HAL_RCC_QUADSPI_CLK_SLEEP_ENABLE
-#define __HAL_RCC_QSPI_FORCE_RESET            __HAL_RCC_QUADSPI_FORCE_RESET
-#define __HAL_RCC_QSPI_RELEASE_RESET          __HAL_RCC_QUADSPI_RELEASE_RESET
-#define __HAL_RCC_QSPI_IS_CLK_ENABLED         __HAL_RCC_QUADSPI_IS_CLK_ENABLED
-#define __HAL_RCC_QSPI_IS_CLK_DISABLED        __HAL_RCC_QUADSPI_IS_CLK_DISABLED
-#define __HAL_RCC_QSPI_IS_CLK_SLEEP_ENABLED   __HAL_RCC_QUADSPI_IS_CLK_SLEEP_ENABLED
-#define __HAL_RCC_QSPI_IS_CLK_SLEEP_DISABLED  __HAL_RCC_QUADSPI_IS_CLK_SLEEP_DISABLED
-#define QSPI_IRQHandler QUADSPI_IRQHandler
-#endif /* __HAL_RCC_QUADSPI_CLK_ENABLE */
 
 #define __RNG_CLK_DISABLE __HAL_RCC_RNG_CLK_DISABLE
 #define __RNG_CLK_ENABLE __HAL_RCC_RNG_CLK_ENABLE
@@ -2849,7 +2890,6 @@
 
 #if defined(STM32L4)
 #define RCC_RTCCLKSOURCE_NO_CLK     RCC_RTCCLKSOURCE_NONE
-#elif defined(STM32WB) || defined(STM32G0) || defined(STM32G4)
 #else
 #define RCC_RTCCLKSOURCE_NONE       RCC_RTCCLKSOURCE_NO_CLK
 #endif
@@ -2977,7 +3017,7 @@
 /** @defgroup HAL_RTC_Aliased_Macros HAL RTC Aliased Macros maintained for legacy purpose
   * @{
   */
-#if defined (STM32G0)
+#if defined (STM32L412xx) || defined (STM32L422xx)
 #else
 #define __HAL_RTC_CLEAR_FLAG                      __HAL_RTC_EXTI_CLEAR_FLAG
 #endif
@@ -3109,6 +3149,7 @@
 #define HAL_SDEx_Read_DMADoubleBuffer1CpltCallback    HAL_SDEx_Read_DMADoubleBuf1CpltCallback
 #define HAL_SDEx_Write_DMADoubleBuffer0CpltCallback   HAL_SDEx_Write_DMADoubleBuf0CpltCallback
 #define HAL_SDEx_Write_DMADoubleBuffer1CpltCallback   HAL_SDEx_Write_DMADoubleBuf1CpltCallback
+#define HAL_SD_DriveTransciver_1_8V_Callback          HAL_SD_DriveTransceiver_1_8V_Callback
 #endif
 /**
   * @}
@@ -3298,10 +3339,7 @@
   * @{
   */
 #define __HAL_LTDC_LAYER LTDC_LAYER
-#if defined(STM32F7)
-#else
 #define __HAL_LTDC_RELOAD_CONFIG  __HAL_LTDC_RELOAD_IMMEDIATE_CONFIG
-#endif
 /**
   * @}
   */

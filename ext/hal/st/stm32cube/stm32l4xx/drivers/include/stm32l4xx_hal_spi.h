@@ -34,8 +34,8 @@
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __STM32L4xx_HAL_SPI_H
-#define __STM32L4xx_HAL_SPI_H
+#ifndef STM32L4xx_HAL_SPI_H
+#define STM32L4xx_HAL_SPI_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -367,13 +367,12 @@ typedef  void (*pSPI_CallbackTypeDef)(SPI_HandleTypeDef *hspi); /*!< pointer to 
   * This parameter can be one of the following values:
   *     SPI_RXFIFO_THRESHOLD or SPI_RXFIFO_THRESHOLD_QF :
   *          RXNE event is generated if the FIFO
-  *          level is greater or equal to 1/2(16-bits).
+  *          level is greater or equal to 1/4(8-bits).
   *     SPI_RXFIFO_THRESHOLD_HF: RXNE event is generated if the FIFO
-  *          level is greater or equal to 1/4(8 bits). */
+  *          level is greater or equal to 1/2(16 bits). */
 #define SPI_RXFIFO_THRESHOLD            SPI_CR2_FRXTH
 #define SPI_RXFIFO_THRESHOLD_QF         SPI_CR2_FRXTH
 #define SPI_RXFIFO_THRESHOLD_HF         (0x00000000U)
-
 /**
   * @}
   */
@@ -400,6 +399,7 @@ typedef  void (*pSPI_CallbackTypeDef)(SPI_HandleTypeDef *hspi); /*!< pointer to 
 #define SPI_FLAG_FRE                    SPI_SR_FRE    /* SPI Error flag: TI mode frame format error flag */
 #define SPI_FLAG_FTLVL                  SPI_SR_FTLVL  /* SPI fifo transmission level                     */
 #define SPI_FLAG_FRLVL                  SPI_SR_FRLVL  /* SPI fifo reception level                        */
+#define SPI_FLAG_MASK                   (SPI_SR_RXNE | SPI_SR_TXE | SPI_SR_BSY | SPI_SR_CRCERR | SPI_SR_MODF | SPI_SR_OVR | SPI_SR_FRE | SPI_SR_FTLVL | SPI_SR_FRLVL)
 /**
   * @}
   */
@@ -594,6 +594,34 @@ typedef  void (*pSPI_CallbackTypeDef)(SPI_HandleTypeDef *hspi); /*!< pointer to 
   */
 #define SPI_RESET_CRC(__HANDLE__) do{CLEAR_BIT((__HANDLE__)->Instance->CR1, SPI_CR1_CRCEN);\
                                        SET_BIT((__HANDLE__)->Instance->CR1, SPI_CR1_CRCEN);}while(0U)
+
+/** @brief  Check whether the specified SPI flag is set or not.
+  * @param  __SR__  copy of SPI SR regsiter.
+  * @param  __FLAG__ specifies the flag to check.
+  *         This parameter can be one of the following values:
+  *            @arg SPI_FLAG_RXNE: Receive buffer not empty flag
+  *            @arg SPI_FLAG_TXE: Transmit buffer empty flag
+  *            @arg SPI_FLAG_CRCERR: CRC error flag
+  *            @arg SPI_FLAG_MODF: Mode fault flag
+  *            @arg SPI_FLAG_OVR: Overrun flag
+  *            @arg SPI_FLAG_BSY: Busy flag
+  *            @arg SPI_FLAG_FRE: Frame format error flag
+  *            @arg SPI_FLAG_FTLVL: SPI fifo transmission level
+  *            @arg SPI_FLAG_FRLVL: SPI fifo reception level
+  * @retval SET or RESET.
+  */
+#define SPI_CHECK_FLAG(__SR__, __FLAG__)         ((((__SR__) & ((__FLAG__) & SPI_FLAG_MASK)) == ((__FLAG__) & SPI_FLAG_MASK)) ? SET : RESET)
+
+/** @brief  Check whether the specified SPI Interrupt is set or not.
+  * @param  __CR2__  copy of SPI CR2 regsiter.
+  * @param  __INTERRUPT__ specifies the SPI interrupt source to check.
+  *         This parameter can be one of the following values:
+  *            @arg SPI_IT_TXE: Tx buffer empty interrupt enable
+  *            @arg SPI_IT_RXNE: RX buffer not empty interrupt enable
+  *            @arg SPI_IT_ERR: Error interrupt enable
+  * @retval SET or RESET.
+  */
+#define SPI_CHECK_IT_SOURCE(__CR2__, __INTERRUPT__)      ((((__CR2__) & (__INTERRUPT__)) == (__INTERRUPT__)) ? SET : RESET)
 
 /** @brief  Checks if SPI Mode parameter is in allowed range.
   * @param  __MODE__ specifies the SPI Mode.
@@ -829,6 +857,6 @@ uint32_t             HAL_SPI_GetError(SPI_HandleTypeDef *hspi);
 }
 #endif
 
-#endif /* __STM32L4xx_HAL_SPI_H */
+#endif /* STM32L4xx_HAL_SPI_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

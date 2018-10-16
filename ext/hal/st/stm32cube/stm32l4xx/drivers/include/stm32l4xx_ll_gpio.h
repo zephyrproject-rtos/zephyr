@@ -53,6 +53,14 @@ extern "C" {
 /** @defgroup GPIO_LL GPIO
   * @{
   */
+/** MISRA C:2012 deviation rule has been granted for following rules:
+  * Rule-18.1_d - Medium: Array pointer `GPIOx' is accessed with index [..,..]
+  * which may be out of array bounds [..,UNKNOWN] in following APIs:
+  * LL_GPIO_GetAFPin_0_7
+  * LL_GPIO_SetAFPin_0_7
+  * LL_GPIO_SetAFPin_8_15
+  * LL_GPIO_GetAFPin_8_15
+  */
 
 /* Private types -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -823,7 +831,7 @@ __STATIC_INLINE void LL_GPIO_LockPin(GPIO_TypeDef *GPIOx, uint32_t PinMask)
   */
 __STATIC_INLINE uint32_t LL_GPIO_IsPinLocked(GPIO_TypeDef *GPIOx, uint32_t PinMask)
 {
-  return (READ_BIT(GPIOx->LCKR, PinMask) == (PinMask));
+  return ((READ_BIT(GPIOx->LCKR, PinMask) == (PinMask)) ? 1UL : 0UL);
 }
 
 /**
@@ -834,7 +842,7 @@ __STATIC_INLINE uint32_t LL_GPIO_IsPinLocked(GPIO_TypeDef *GPIOx, uint32_t PinMa
   */
 __STATIC_INLINE uint32_t LL_GPIO_IsAnyPinLocked(GPIO_TypeDef *GPIOx)
 {
-  return (READ_BIT(GPIOx->LCKR, GPIO_LCKR_LCKK) == (GPIO_LCKR_LCKK));
+  return ((READ_BIT(GPIOx->LCKR, GPIO_LCKR_LCKK) == (GPIO_LCKR_LCKK)) ? 1UL : 0UL);
 }
 
 /**
@@ -882,7 +890,7 @@ __STATIC_INLINE uint32_t LL_GPIO_ReadInputPort(GPIO_TypeDef *GPIOx)
   */
 __STATIC_INLINE uint32_t LL_GPIO_IsInputPinSet(GPIO_TypeDef *GPIOx, uint32_t PinMask)
 {
-  return (READ_BIT(GPIOx->IDR, PinMask) == (PinMask));
+  return ((READ_BIT(GPIOx->IDR, PinMask) == (PinMask)) ? 1UL : 0UL);
 }
 
 /**
@@ -934,7 +942,7 @@ __STATIC_INLINE uint32_t LL_GPIO_ReadOutputPort(GPIO_TypeDef *GPIOx)
   */
 __STATIC_INLINE uint32_t LL_GPIO_IsOutputPinSet(GPIO_TypeDef *GPIOx, uint32_t PinMask)
 {
-  return (READ_BIT(GPIOx->ODR, PinMask) == (PinMask));
+  return ((READ_BIT(GPIOx->ODR, PinMask) == (PinMask)) ? 1UL : 0UL);
 }
 
 /**

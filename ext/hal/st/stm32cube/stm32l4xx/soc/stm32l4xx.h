@@ -73,11 +73,14 @@
    application
   */
 
-#if !defined (STM32L431xx) && !defined (STM32L432xx) && !defined (STM32L433xx) && !defined (STM32L442xx) && !defined (STM32L443xx) && \
+#if !defined (STM32L412xx) && !defined (STM32L422xx) && \
+    !defined (STM32L431xx) && !defined (STM32L432xx) && !defined (STM32L433xx) && !defined (STM32L442xx) && !defined (STM32L443xx) && \
     !defined (STM32L451xx) && !defined (STM32L452xx) && !defined (STM32L462xx) && \
     !defined (STM32L471xx) && !defined (STM32L475xx) && !defined (STM32L476xx) && !defined (STM32L485xx) && !defined (STM32L486xx) && \
     !defined (STM32L496xx) && !defined (STM32L4A6xx) && \
     !defined (STM32L4R5xx) && !defined (STM32L4R7xx) && !defined (STM32L4R9xx) && !defined (STM32L4S5xx) && !defined (STM32L4S7xx) && !defined (STM32L4S9xx)
+  /* #define STM32L412xx */   /*!< STM32L412xx Devices */
+  /* #define STM32L422xx */   /*!< STM32L422xx Devices */
   /* #define STM32L431xx */   /*!< STM32L431xx Devices */
   /* #define STM32L432xx */   /*!< STM32L432xx Devices */
   /* #define STM32L433xx */   /*!< STM32L433xx Devices */
@@ -117,8 +120,8 @@
   * @brief CMSIS Device version number
   */
 #define __STM32L4_CMSIS_VERSION_MAIN   (0x01) /*!< [31:24] main version */
-#define __STM32L4_CMSIS_VERSION_SUB1   (0x04) /*!< [23:16] sub1 version */
-#define __STM32L4_CMSIS_VERSION_SUB2   (0x03) /*!< [15:8]  sub2 version */
+#define __STM32L4_CMSIS_VERSION_SUB1   (0x05) /*!< [23:16] sub1 version */
+#define __STM32L4_CMSIS_VERSION_SUB2   (0x00) /*!< [15:8]  sub2 version */
 #define __STM32L4_CMSIS_VERSION_RC     (0x00) /*!< [7:0]  release candidate */
 #define __STM32L4_CMSIS_VERSION        ((__STM32L4_CMSIS_VERSION_MAIN << 24)\
                                        |(__STM32L4_CMSIS_VERSION_SUB1 << 16)\
@@ -133,7 +136,11 @@
   * @{
   */
 
-#if defined(STM32L431xx)
+#if defined(STM32L412xx)
+  #include "stm32l412xx.h"
+#elif defined(STM32L422xx)
+  #include "stm32l422xx.h"
+#elif defined(STM32L431xx)
   #include "stm32l431xx.h"
 #elif defined(STM32L432xx)
   #include "stm32l432xx.h"

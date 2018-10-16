@@ -34,8 +34,8 @@
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __STM32L4xx_HAL_SMARTCARD_H
-#define __STM32L4xx_HAL_SMARTCARD_H
+#ifndef STM32L4xx_HAL_SMARTCARD_H
+#define STM32L4xx_HAL_SMARTCARD_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -165,8 +165,8 @@ typedef struct
 } SMARTCARD_AdvFeatureInitTypeDef;
 
 /**
-  * @brief HAL SMARTCARD State structures definition
-  * @note  HAL SMARTCARD State value is a combination of 2 different substates: gState and RxState.
+  * @brief HAL SMARTCARD State definition
+  * @note  HAL SMARTCARD State value is a combination of 2 different substates: gState and RxState (see @ref SMARTCARD_State_Definition).
   *        - gState contains SMARTCARD state information related to global Handle management
   *          and also information related to Tx operations.
   *          gState value coding follow below described bitmap :
@@ -203,26 +203,7 @@ typedef struct
   *          b0     (not used)
   *             x  : Should be set to 0.
   */
-typedef enum
-{
-  HAL_SMARTCARD_STATE_RESET             = 0x00U,   /*!< Peripheral is not initialized
-                                                        Value is allowed for gState and RxState */
-  HAL_SMARTCARD_STATE_READY             = 0x20U,   /*!< Peripheral Initialized and ready for use
-                                                        Value is allowed for gState and RxState */
-  HAL_SMARTCARD_STATE_BUSY              = 0x24U,   /*!< an internal process is ongoing
-                                                        Value is allowed for gState only */
-  HAL_SMARTCARD_STATE_BUSY_TX           = 0x21U,   /*!< Data Transmission process is ongoing
-                                                        Value is allowed for gState only */
-  HAL_SMARTCARD_STATE_BUSY_RX           = 0x22U,   /*!< Data Reception process is ongoing
-                                                        Value is allowed for RxState only */
-  HAL_SMARTCARD_STATE_BUSY_TX_RX        = 0x23U,   /*!< Data Transmission and Reception process is ongoing
-                                                        Not to be used for neither gState nor RxState.
-                                                        Value is result of combination (Or) between gState and RxState values */
-  HAL_SMARTCARD_STATE_TIMEOUT           = 0xA0U,   /*!< Timeout state
-                                                        Value is allowed for gState only */
-  HAL_SMARTCARD_STATE_ERROR             = 0xE0U    /*!< Error
-                                                        Value is allowed for gState only */
-} HAL_SMARTCARD_StateTypeDef;
+typedef uint32_t HAL_SMARTCARD_StateTypeDef;
 
 /**
   * @brief  SMARTCARD handle Structure definition
@@ -347,6 +328,30 @@ typedef enum
 /* Exported constants --------------------------------------------------------*/
 /** @defgroup SMARTCARD_Exported_Constants  SMARTCARD Exported Constants
   * @{
+  */
+
+/** @defgroup SMARTCARD_State_Definition SMARTCARD State Code Definition
+  * @{
+  */
+#define HAL_SMARTCARD_STATE_RESET            0x00000000U                     /*!< Peripheral is not initialized
+                                                                                  Value is allowed for gState and RxState */
+#define HAL_SMARTCARD_STATE_READY            0x00000020U                     /*!< Peripheral Initialized and ready for use
+                                                                                  Value is allowed for gState and RxState */
+#define HAL_SMARTCARD_STATE_BUSY             0x00000024U                     /*!< an internal process is ongoing
+                                                                                  Value is allowed for gState only */
+#define HAL_SMARTCARD_STATE_BUSY_TX          0x00000021U                     /*!< Data Transmission process is ongoing
+                                                                                  Value is allowed for gState only */
+#define HAL_SMARTCARD_STATE_BUSY_RX          0x00000022U                     /*!< Data Reception process is ongoing
+                                                                                  Value is allowed for RxState only */
+#define HAL_SMARTCARD_STATE_BUSY_TX_RX       0x00000023U                     /*!< Data Transmission and Reception process is ongoing
+                                                                                  Not to be used for neither gState nor RxState.
+                                                                                  Value is result of combination (Or) between gState and RxState values */
+#define HAL_SMARTCARD_STATE_TIMEOUT          0x000000A0U                     /*!< Timeout state
+                                                                                  Value is allowed for gState only */
+#define HAL_SMARTCARD_STATE_ERROR            0x000000E0U                     /*!< Error
+                                                                                  Value is allowed for gState only */
+/**
+  * @}
   */
 
 /** @defgroup SMARTCARD_Error_Definition SMARTCARD Error Code Definition
@@ -554,7 +559,11 @@ typedef enum
 /** @defgroup SMARTCARD_Interruption_Mask SMARTCARD interruptions flags mask
   * @{
   */
-#define SMARTCARD_IT_MASK                   0x001FU   /*!< SMARTCARD interruptions flags mask */
+#define SMARTCARD_IT_MASK                   0x001FU   /*!< SMARTCARD interruptions flags mask  */
+#define SMARTCARD_CR_MASK                   0x00E0U   /*!< SMARTCARD control register mask     */
+#define SMARTCARD_CR_POS                    5U        /*!< SMARTCARD control register position */
+#define SMARTCARD_ISR_MASK                  0x1F00U   /*!< SMARTCARD ISR register mask         */
+#define SMARTCARD_ISR_POS                   8U        /*!< SMARTCARD ISR register position     */
 /**
   * @}
   */
@@ -694,9 +703,9 @@ typedef enum
   *            @arg @ref SMARTCARD_IT_TXFT   TXFIFO threshold reached interruption
   * @retval None
   */
-#define __HAL_SMARTCARD_ENABLE_IT(__HANDLE__, __INTERRUPT__)   (((((uint8_t)(__INTERRUPT__)) >> 5U) == 1)? ((__HANDLE__)->Instance->CR1 |= (1U << ((__INTERRUPT__) & SMARTCARD_IT_MASK))): \
-                                                                ((((uint8_t)(__INTERRUPT__)) >> 5U) == 2)? ((__HANDLE__)->Instance->CR2 |= (1U << ((__INTERRUPT__) & SMARTCARD_IT_MASK))): \
-                                                                ((__HANDLE__)->Instance->CR3 |= (1U << ((__INTERRUPT__) & SMARTCARD_IT_MASK))))
+#define __HAL_SMARTCARD_ENABLE_IT(__HANDLE__, __INTERRUPT__)   (((((__INTERRUPT__) & SMARTCARD_CR_MASK) >> SMARTCARD_CR_POS) == 1U)? ((__HANDLE__)->Instance->CR1 |= ((uint32_t)1U << ((__INTERRUPT__) & SMARTCARD_IT_MASK))): \
+                                                                ((((__INTERRUPT__) & SMARTCARD_CR_MASK) >> SMARTCARD_CR_POS) == 2U)? ((__HANDLE__)->Instance->CR2 |= ((uint32_t)1U << ((__INTERRUPT__) & SMARTCARD_IT_MASK))): \
+                                                                ((__HANDLE__)->Instance->CR3 |= ((uint32_t)1U << ((__INTERRUPT__) & SMARTCARD_IT_MASK))))
 
 /** @brief  Disable the specified SmartCard interrupt.
   * @param  __HANDLE__ specifies the SMARTCARD Handle.
@@ -719,9 +728,9 @@ typedef enum
   *            @arg @ref SMARTCARD_IT_TXFT   TXFIFO threshold reached interruption
   * @retval None
   */
-#define __HAL_SMARTCARD_DISABLE_IT(__HANDLE__, __INTERRUPT__)  (((((uint8_t)(__INTERRUPT__)) >> 5U) == 1)? ((__HANDLE__)->Instance->CR1 &= ~ (1U << ((__INTERRUPT__) & SMARTCARD_IT_MASK))): \
-                                                                ((((uint8_t)(__INTERRUPT__)) >> 5U) == 2)? ((__HANDLE__)->Instance->CR2 &= ~ (1U << ((__INTERRUPT__) & SMARTCARD_IT_MASK))): \
-                                                                ((__HANDLE__)->Instance->CR3 &= ~ (1U << ((__INTERRUPT__) & SMARTCARD_IT_MASK))))
+#define __HAL_SMARTCARD_DISABLE_IT(__HANDLE__, __INTERRUPT__)  (((((__INTERRUPT__) & SMARTCARD_CR_MASK) >> SMARTCARD_CR_POS) == 1U)? ((__HANDLE__)->Instance->CR1 &= ~ ((uint32_t)1U << ((__INTERRUPT__) & SMARTCARD_IT_MASK))): \
+                                                                ((((__INTERRUPT__) & SMARTCARD_CR_MASK) >> SMARTCARD_CR_POS) == 2U)? ((__HANDLE__)->Instance->CR2 &= ~ ((uint32_t)1U << ((__INTERRUPT__) & SMARTCARD_IT_MASK))): \
+                                                                ((__HANDLE__)->Instance->CR3 &= ~ ((uint32_t)1U << ((__INTERRUPT__) & SMARTCARD_IT_MASK))))
 
 
 /** @brief  Check whether the specified SmartCard interrupt has occurred or not.
@@ -745,7 +754,7 @@ typedef enum
   *            @arg @ref SMARTCARD_IT_TXFT   TXFIFO threshold reached interruption
   * @retval The new state of __INTERRUPT__ (SET or RESET).
   */
-#define __HAL_SMARTCARD_GET_IT(__HANDLE__, __INTERRUPT__) ((((__HANDLE__)->Instance->ISR & (0x01U << ((__INTERRUPT__)>> 0x08U))) != RESET) ? SET : RESET)
+#define __HAL_SMARTCARD_GET_IT(__HANDLE__, __INTERRUPT__) ((((__HANDLE__)->Instance->ISR & ((uint32_t)0x01U << (((__INTERRUPT__) & SMARTCARD_ISR_MASK)>> SMARTCARD_ISR_POS))) != 0U) ? SET : RESET)
 
 /** @brief  Check whether the specified SmartCard interrupt source is enabled or not.
   * @param  __HANDLE__ specifies the SMARTCARD Handle.
@@ -768,9 +777,9 @@ typedef enum
   *            @arg @ref SMARTCARD_IT_TXFT   TXFIFO threshold reached interruption
   * @retval The new state of __INTERRUPT__ (SET or RESET).
   */
-#define __HAL_SMARTCARD_GET_IT_SOURCE(__HANDLE__, __INTERRUPT__) ((((((((uint8_t)(__INTERRUPT__)) >> 0x05U) == 0x01U)? (__HANDLE__)->Instance->CR1 : \
-                                                             (((((uint8_t)(__INTERRUPT__)) >> 0x05U) == 0x01U)? (__HANDLE__)->Instance->CR2 : \
-                                                             (__HANDLE__)->Instance->CR3)) & (0x01U << (((uint16_t)(__INTERRUPT__)) & SMARTCARD_IT_MASK)))  != RESET) ? SET : RESET)
+#define __HAL_SMARTCARD_GET_IT_SOURCE(__HANDLE__, __INTERRUPT__) ((((((((__INTERRUPT__) & SMARTCARD_CR_MASK) >> SMARTCARD_CR_POS) == 0x01U)? (__HANDLE__)->Instance->CR1 : \
+                                                                    (((((__INTERRUPT__) & SMARTCARD_CR_MASK) >> SMARTCARD_CR_POS) == 0x02U)? (__HANDLE__)->Instance->CR2 : \
+                                                                    (__HANDLE__)->Instance->CR3)) & ((uint32_t)0x01U << (((uint16_t)(__INTERRUPT__)) & SMARTCARD_IT_MASK)))  != 0U) ? SET : RESET)
 
 
 /** @brief  Clear the specified SMARTCARD ISR flag, in setting the proper ICR register flag.
@@ -886,6 +895,10 @@ typedef enum
           break;                                               \
        }                                                       \
     }                                                          \
+    else                                                       \
+    {                                                          \
+      (__CLOCKSOURCE__) = SMARTCARD_CLOCKSOURCE_UNDEFINED;     \
+    }                                                          \
   } while(0)
 #else
 #define SMARTCARD_GETCLOCKSOURCE(__HANDLE__,__CLOCKSOURCE__)   \
@@ -952,6 +965,10 @@ typedef enum
           (__CLOCKSOURCE__) = SMARTCARD_CLOCKSOURCE_UNDEFINED; \
           break;                                               \
        }                                                       \
+    }                                                          \
+    else                                                       \
+    {                                                          \
+      (__CLOCKSOURCE__) = SMARTCARD_CLOCKSOURCE_UNDEFINED;     \
     }                                                          \
   } while(0)
 #endif /* STM32L432xx || STM32L442xx */
@@ -1251,6 +1268,6 @@ uint32_t                   HAL_SMARTCARD_GetError(SMARTCARD_HandleTypeDef *hsmar
 }
 #endif
 
-#endif /* __STM32L4xx_HAL_SMARTCARD_H */
+#endif /* STM32L4xx_HAL_SMARTCARD_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

@@ -1081,6 +1081,11 @@ void HAL_PCD_IRQHandler(PCD_HandleTypeDef *hpcd)
               }
               else
               {
+                if ((USBx_OUTEP(0U)->DOEPINT & (1U << 5)) != 0U)
+                {
+                  CLEAR_OUT_EP_INTR(epnum, (1U << 5));
+                }
+
 #if (USE_HAL_PCD_REGISTER_CALLBACKS == 1U)
                 hpcd->DataOutStageCallback(hpcd, (uint8_t)epnum);
 #else
