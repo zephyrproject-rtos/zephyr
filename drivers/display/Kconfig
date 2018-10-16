@@ -20,8 +20,8 @@ source "subsys/logging/Kconfig.template.log_config"
 source "drivers/display/Kconfig.grove"
 
 source "drivers/display/Kconfig.microbit"
-
 source "drivers/display/Kconfig.ili9340"
+source "drivers/display/Kconfig.sdl"
 
 source "drivers/display/Kconfig.ssd1306"
 

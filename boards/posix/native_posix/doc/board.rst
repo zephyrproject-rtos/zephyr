@@ -519,6 +519,23 @@ The following peripherals are currently provided with this board:
   must be powered down and support Bluetooth Low Energy (i.e. support the
   Bluetooth specification version 4.0 or greater).
 
+**Display driver**:
+  A display driver is provided that creates a window on the host machine to
+  render display content.
+
+  This driver requires a 32-bit version of the `SDL2`_ library on the host
+  machine and ``pkg-config`` settings to correctly pickup the SDL2 install path
+  and compiler flags.
+
+  On a Ubuntu 18.04 host system, for example, install the ``pkg-config`` and
+  ``libsdl2-dev:i386`` packages, and configure the pkg-config search path with
+  these commands::
+
+    $ sudo apt-get install pkg-config libsdl2-dev:i386
+    $ export PKG_CONFIG_PATH=/usr/lib/i386-linux-gnu/pkgconfig
+
+.. _SDL2:
+   https://www.libsdl.org/download-2.0.php
 
 UART
 *****
