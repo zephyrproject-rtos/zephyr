@@ -72,8 +72,10 @@ endif()
 # pass data between them. The QEMU flags are not set for standalone
 # tests defined by CONFIG_NET_TEST.
 if(CONFIG_NETWORKING)
-  if(CONFIG_NET_SLIP_TAP)
-    set(QEMU_NET_STACK 1)
+  if(CONFIG_NET_QEMU_SLIP)
+    if(CONFIG_NET_SLIP_TAP)
+      set(QEMU_NET_STACK 1)
+    endif()
   endif()
 endif()
 

@@ -35,6 +35,7 @@
 #
 menuconfig SLIP
 	bool "SLIP driver"
+	depends on (!QEMU_TARGET || NET_QEMU_SLIP)
 	select UART_PIPE
 	select UART_INTERRUPT_DRIVEN
 

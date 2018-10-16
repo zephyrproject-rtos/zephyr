@@ -12,3 +12,12 @@ menuconfig ETH_E1000
 	depends on NET_L2_ETHERNET && PCI_ENUMERATION
 	help
 	  Enable Intel(R) PRO/1000 Gigabit Ethernet driver.
+
+# Hidden option
+config ETH_NIC_MODEL
+	string
+	default "e1000"
+	depends on ETH_E1000
+	help
+	  Tells what Qemu network model to use. This value is given as
+	  a parameter to -nic qemu command line option.
