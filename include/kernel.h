@@ -2866,8 +2866,8 @@ __syscall void k_mutex_unlock(struct k_mutex *mutex);
 
 struct k_sem {
 	_wait_q_t wait_q;
-	unsigned int count;
-	unsigned int limit;
+	u32_t count;
+	u32_t limit;
 	_POLL_EVENT;
 
 	_OBJECT_TRACING_NEXT_PTR(k_sem);
