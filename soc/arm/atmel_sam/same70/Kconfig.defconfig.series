@@ -43,9 +43,29 @@ config DMA_SAM_XDMAC
 	default y
 endif # DMA
 
+if GPIO
+config GPIO_SAM
+	default y
+endif # GPIO
+
+if ADC
+config ADC_SAM_AFEC
+	default y
+endif # ADC
+
+if I2C
+config I2C_SAM_TWIHS
+	default y
+endif # I2C
+
+if I2S
+config I2S_SAM_SSC
+	default y
+endif # I2S
+
 if SPI
 config SPI_SAM
-	def_bool y
+	default y
 endif # SPI
 
 endif # SOC_SERIES_SAME70
