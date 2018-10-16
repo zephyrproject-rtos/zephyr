@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "lis2dh.h"
 
 #include <init.h>
 #include <misc/byteorder.h>
@@ -13,6 +12,7 @@
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 LOG_MODULE_REGISTER(lis2dh);
+#include "lis2dh.h"
 
 #if defined(CONFIG_LIS2DH_BUS_SPI)
 int lis2dh_spi_access(struct lis2dh_data *ctx, u8_t cmd,
