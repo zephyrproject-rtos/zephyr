@@ -49,7 +49,7 @@ extern volatile irq_offload_routine_t offload_routine;
  *
  * @return 1 if in ISR, 0 if not.
  */
-static ALWAYS_INLINE int _IsInIsr(void)
+static ALWAYS_INLINE bool _IsInIsr(void)
 {
 	u32_t vector = __get_IPSR();
 
