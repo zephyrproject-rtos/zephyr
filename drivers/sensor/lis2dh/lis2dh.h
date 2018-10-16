@@ -14,9 +14,7 @@
 #include <gpio.h>
 #include <sensor.h>
 #include <string.h>
-#include <logging/log.h>
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 #if defined(CONFIG_LIS2DH_BUS_SPI)
 #include <spi.h>
 
@@ -226,8 +224,6 @@ int lis2dh_spi_access(struct lis2dh_data *ctx, u8_t cmd,
 static inline int lis2dh_bus_configure(struct device *dev)
 {
 	struct lis2dh_data *lis2dh = dev->driver_data;
-
-	LOG_MODULE_DECLARE(lis2dh);
 
 #if defined(CONFIG_LIS2DH_BUS_SPI)
 	lis2dh->spi = device_get_binding(LIS2DH_BUS_DEV_NAME);

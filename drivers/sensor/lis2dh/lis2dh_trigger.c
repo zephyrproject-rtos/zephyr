@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "lis2dh.h"
-
 #include <misc/util.h>
 #include <kernel.h>
 
@@ -17,6 +15,7 @@
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_DECLARE(lis2dh);
+#include "lis2dh.h"
 
 static int lis2dh_trigger_drdy_set(struct device *dev, enum sensor_channel chan,
 				   sensor_trigger_handler_t handler)
