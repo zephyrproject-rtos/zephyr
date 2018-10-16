@@ -9,7 +9,7 @@
 
 / {
 	model = "nRF52840-MDK Dev Kit";
-	compatible = "nordic,pca10056-dk", "nordic,nrf52840-qiaa",
+	compatible = "makerdiary,nrf52840-mdk", "nordic,nrf52840-qiaa",
 		     "nordic,nrf52840";
 
 	chosen {
@@ -57,6 +57,10 @@
 	};
 };
 
+&adc {
+	status ="ok";
+};
+
 &gpiote {
 	status ="ok";
 };
@@ -92,11 +96,11 @@
 	wncm14a2a {
 		compatible = "wnc,m14a2a";
 		label = "wncm14a2a";
-		mdm-boot-mode-sel-gpios = <&gpio1 2 0>;
-		mdm-power-gpios = <&gpio1 3 0>;
-		mdm-keep-awake-gpios = <&gpio1 7 0>;
-		mdm-reset-gpios = <&gpio1 10 0>;
-		mdm-shld-trans-ena-gpios = <&gpio1 11 0>;
+		mdm-boot-mode-sel-gpios = <&gpio0 6 0>;
+		mdm-power-gpios = <&gpio0 8 0>;
+		mdm-keep-awake-gpios = <&gpio0 21 0>;
+		mdm-reset-gpios = <&gpio0 25 0>;
+		mdm-shld-trans-ena-gpios = <&gpio0 28 0>;
 		status = "ok";
 	};
 #endif
@@ -113,6 +117,34 @@
 	status = "ok";
 	sda-pin = <30>;
 	scl-pin = <31>;
+};
+
+&spi0 {
+	status = "ok";
+	sck-pin = <27>;
+	mosi-pin = <26>;
+	miso-pin = <29>;
+};
+
+&spi1 {
+	status = "ok";
+	sck-pin = <31>;
+	mosi-pin = <30>;
+	miso-pin = <29>;
+};
+
+&spi2 {
+	status = "ok";
+	sck-pin = <2>;
+	mosi-pin = <3>;
+	miso-pin = <4>;
+};
+
+&spi3 {
+	status = "ok";
+	sck-pin = <12>;
+	mosi-pin = <11>;
+	miso-pin = <13>;
 };
 
 &flash0 {
