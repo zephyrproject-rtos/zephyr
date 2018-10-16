@@ -7,7 +7,8 @@
 #include <i2c.h>
 #include <init.h>
 #include <sensor.h>
-#include <logging/sys_log.h>
+#include <logging/log.h>
+LOG_MODULE_REGISTER(lsm303dlhc_accel);
 
 #include "lsm303dlhc_accel.h"
 
@@ -22,7 +23,7 @@ static int lsm303dlhc_sample_fetch(struct device *dev,
 			   config->i2c_address,
 			   LSM303DLHC_REG_ACCEL_X_LSB,
 			   accel_buf, 6) < 0) {
-		SYS_LOG_ERR("Could not read accel axis data.");
+		LOG_ERR("Could not read accel axis data.");
 		return -EIO;
 	}
 
@@ -81,7 +82,7 @@ static int lsm303dlhc_accel_init(struct device *dev)
 
 	drv_data->i2c = device_get_binding(config->i2c_name);
 	if (drv_data->i2c == NULL) {
-		SYS_LOG_ERR("Could not get pointer to %s device",
+		LOG_ERR("Could not get pointer to %s device",
 			    config->i2c_name);
 		return -ENODEV;
 	}
@@ -93,7 +94,7 @@ static int lsm303dlhc_accel_init(struct device *dev)
 			       LSM303DLHC_ACCEL_EN_BITS |
 			       LSM303DLHC_LP_EN_BIT |
 			       LSM303DLHC_ACCEL_ODR_BITS) < 0) {
-		SYS_LOG_ERR("Failed to configure chip.");
+		LOG_ERR("Failed to configure chip.");
 		return -EIO;
 	}
 
@@ -102,7 +103,7 @@ static int lsm303dlhc_accel_init(struct device *dev)
 			       config->i2c_address,
 			       LSM303DLHC_REG_CTRL_4,
 			       LSM303DLHC_ACCEL_FS_BITS) < 0) {
-		SYS_LOG_ERR("Failed to set accelerometer full scale range.");
+		LOG_ERR("Failed to set accelerometer full scale range.");
 		return -EIO;
 	}
 
