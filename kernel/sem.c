@@ -58,7 +58,7 @@ SYS_INIT(init_sem_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 void _impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 		      unsigned int limit)
 {
-	__ASSERT(limit != 0, "limit cannot be zero");
+	__ASSERT(limit != 0U, "limit cannot be zero");
 	__ASSERT(initial_count <= limit, "count cannot be greater than limit");
 
 	sys_trace_void(SYS_TRACE_ID_SEMA_INIT);
@@ -89,12 +89,14 @@ static inline void handle_poll_events(struct k_sem *sem)
 {
 #ifdef CONFIG_POLL
 	_handle_obj_poll_events(&sem->poll_events, K_POLL_STATE_SEM_AVAILABLE);
+#else
+	ARG_UNUSED(sem);
 #endif
 }
 
 static inline void increment_count_up_to_limit(struct k_sem *sem)
 {
-	sem->count += (sem->count != sem->limit);
+	sem->count += (sem->count != sem->limit) ? 1U : 0U;
 }
 
 static void do_sem_give(struct k_sem *sem)
@@ -112,7 +114,7 @@ static void do_sem_give(struct k_sem *sem)
 
 void _impl_k_sem_give(struct k_sem *sem)
 {
-	unsigned int key = irq_lock();
+	u32_t key = irq_lock();
 
 	sys_trace_void(SYS_TRACE_ID_SEMA_GIVE);
 	do_sem_give(sem);
@@ -126,12 +128,12 @@ Z_SYSCALL_HANDLER1_SIMPLE_VOID(k_sem_give, K_OBJ_SEM, struct k_sem *);
 
 int _impl_k_sem_take(struct k_sem *sem, s32_t timeout)
 {
-	__ASSERT(!_is_in_isr() || timeout == K_NO_WAIT, "");
+	__ASSERT(((_is_in_isr() == false) || (timeout == K_NO_WAIT)), "");
 
 	sys_trace_void(SYS_TRACE_ID_SEMA_TAKE);
-	unsigned int key = irq_lock();
+	u32_t key = irq_lock();
 
-	if (likely(sem->count > 0)) {
+	if (likely(sem->count > 0U)) {
 		sem->count--;
 		irq_unlock(key);
 		sys_trace_end_call(SYS_TRACE_ID_SEMA_TAKE);
