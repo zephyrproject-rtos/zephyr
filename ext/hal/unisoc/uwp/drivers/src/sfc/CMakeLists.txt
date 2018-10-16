@@ -1,0 +1,4 @@
+zephyr_include_directories(.)
+
+zephyr_sources_ifdef(CONFIG_USE_UWP_HAL_SFC hal_sfc_phy.c)
+zephyr_sources_ifdef(CONFIG_USE_UWP_HAL_SFC hal_sfc.c)

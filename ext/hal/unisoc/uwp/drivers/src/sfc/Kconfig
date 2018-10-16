@@ -1,0 +1,5 @@
+config USE_UWP_HAL_SFC
+	bool
+	default y
+	help
+	  Provide interfaces to operate SFC.
