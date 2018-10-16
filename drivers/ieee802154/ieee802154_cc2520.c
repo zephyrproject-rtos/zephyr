@@ -122,7 +122,7 @@ static inline void _cc2520_print_exceptions(struct cc2520_context *cc2520)
 
 	flag = read_reg_excflag1(cc2520);
 
-	SYS_LOG_DBG("EXCFLAG1:");
+	LOG_DBG("EXCFLAG1:");
 
 	if (flag & EXCFLAG1_RX_FRM_DONE) {
 		LOG_DBG(" RX_FRM_DONE");
@@ -161,7 +161,7 @@ static inline void _cc2520_print_errors(struct cc2520_context *cc2520)
 {
 	u8_t flag = read_reg_excflag2(cc2520);
 
-	SYS_LOG_DBG("EXCFLAG2:");
+	LOG_DBG("EXCFLAG2:");
 
 	if (flag & EXCFLAG2_MEMADDR_ERROR) {
 		LOG_DBG(" MEMADDR_ERROR");
