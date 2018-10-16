@@ -37,7 +37,7 @@ void _move_thread_to_end_of_prio_q(struct k_thread *thread);
 void _remove_thread_from_ready_q(struct k_thread *thread);
 int _is_thread_time_slicing(struct k_thread *thread);
 void _unpend_thread_no_timeout(struct k_thread *thread);
-int _pend_current_thread(int key, _wait_q_t *wait_q, s32_t timeout);
+int _pend_current_thread(u32_t key, _wait_q_t *wait_q, s32_t timeout);
 void _pend_thread(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout);
 void _reschedule(u32_t key);
 struct k_thread *_unpend_first_thread(_wait_q_t *wait_q);
