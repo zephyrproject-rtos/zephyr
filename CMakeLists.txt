@@ -1166,6 +1166,10 @@ else()
   # generation stage.
 endif()
 
+# Export the variable to the application's scope to allow the
+# application to know what the name of the final elf target is.
+set(logical_target_for_zephyr_elf ${logical_target_for_zephyr_elf} PARENT_SCOPE)
+
 # To avoid having the same logical target name for the zephyr lib and
 # the zephyr elf, we set the kernel_elf file name to zephyr.elf.
 set_target_properties(${logical_target_for_zephyr_elf} PROPERTIES OUTPUT_NAME ${KERNEL_NAME})
