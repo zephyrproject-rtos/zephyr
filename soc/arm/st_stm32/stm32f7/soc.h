@@ -46,6 +46,10 @@
 #include <stm32f7xx_ll_i2c.h>
 #endif
 
+#if defined(CONFIG_SPI_STM32) || defined(CONFIG_I2S_STM32)
+#include <stm32f7xx_ll_spi.h>
+#endif
+
 #ifdef CONFIG_ENTROPY_STM32_RNG
 #include <stm32f7xx_ll_rng.h>
 #endif
