@@ -20,6 +20,28 @@ config NET_RAW_MODE
 
 if !NET_RAW_MODE
 
+choice
+	prompt "Qemu networking"
+	default NET_QEMU_SLIP
+	depends on QEMU_TARGET
+	help
+	  Can be used to select how the network connectivity is established
+	  from inside qemu to host system. This can be done either via
+	  serial connection (SLIP) or via Qemu ethernet driver.
+
+config NET_QEMU_SLIP
+	bool "SLIP"
+	help
+	  Connect to host or to another Qemu via SLIP.
+
+config NET_QEMU_ETHERNET
+	bool "Ethernet"
+	help
+	  Connect to host system via Qemu ethernet driver support. One such
+	  driver that Zephyr supports is Intel e1000 ethernet driver.
+
+endchoice
+
 config NET_INIT_PRIO
 	int
 	default 90
@@ -355,6 +377,7 @@ config NET_TEST
 
 config NET_SLIP_TAP
 	bool "TAP SLIP driver"
+	depends on NET_QEMU_SLIP
 	select SLIP
 	select UART_PIPE
 	select UART_INTERRUPT_DRIVEN

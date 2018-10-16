@@ -13,7 +13,6 @@ set(QEMU_FLAGS_${ARCH}
   -nographic
   -vga none
   -display none
-  -net none
   -no-acpi
   -machine type=pc-0.14
   )

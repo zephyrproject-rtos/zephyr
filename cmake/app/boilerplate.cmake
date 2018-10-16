@@ -327,6 +327,28 @@ message(STATUS "Cache files will be written to: ${USER_CACHE_DIR}")
 
 include(${BOARD_DIR}/board.cmake OPTIONAL)
 
+# If we are using a suitable ethernet driver inside qemu, then these options
+# must be set, otherwise a zephyr instance cannot receive any network packets.
+# The Qemu supported ethernet driver should define CONFIG_ETH_NIC_MODEL
+# string that tells what nic model Qemu should use.
+if(CONFIG_QEMU_TARGET)
+  if(CONFIG_NET_QEMU_ETHERNET)
+    if(CONFIG_ETH_NIC_MODEL)
+      list(APPEND QEMU_FLAGS_${ARCH}
+	-nic tap,model=${CONFIG_ETH_NIC_MODEL},script=no,downscript=no,ifname=zeth
+	)
+    else()
+      message(FATAL_ERROR
+	"No Qemu ethernet driver configured!
+Enable Qemu supported ethernet driver like e1000 at drivers/ethernet")
+    endif()
+  else()
+    list(APPEND QEMU_FLAGS_${ARCH}
+      -net none
+      )
+  endif()
+endif()
+
 zephyr_library_named(app)
 
 add_subdirectory(${ZEPHYR_BASE} ${__build_dir})
