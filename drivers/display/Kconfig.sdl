@@ -1,0 +1,30 @@
+# Kconfig - SDL based emulated display configuration options
+
+#
+# Copyright (c) 2018 Jan Van Winkel <jan.van_winkel@dxplore.eu>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig SDL_DISPLAY
+	bool "SDL based emulated display"
+	depends on BOARD_NATIVE_POSIX
+	select HAS_SDL
+	help
+	  Enable SDL based emulated display compliant with display driver API.
+
+if SDL_DISPLAY
+
+config SDL_DISPLAY_DEV_NAME
+	string "SDL display device name"
+	default "SDL_DISPLAY"
+
+config SDL_DISPLAY_X_RES
+	int "X resolution for SDL display"
+	default 320
+
+config SDL_DISPLAY_Y_RES
+	int "Y resolution for SDL display"
+	default 240
+
+endif #SDL_DISPLAY

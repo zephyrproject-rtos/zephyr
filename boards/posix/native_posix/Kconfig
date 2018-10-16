@@ -15,4 +15,9 @@ config NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME
 	  case the zephyr kernel and application cannot tell the difference unless they
 	  interact with some other driver/device which runs at real time.
 
+config HAS_SDL
+	bool
+	help
+	  This option specifies that the target board has SDL support
+
 endif

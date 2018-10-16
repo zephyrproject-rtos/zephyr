@@ -72,4 +72,11 @@ config UART_CONSOLE
 
 endif #CONSOLE
 
+if DISPLAY
+
+config SDL_DISPLAY
+	default y
+
+endif # DISPLAY
+
 endif # BOARD_NATIVE_POSIX
