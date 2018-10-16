@@ -16,6 +16,8 @@ LOG_MODULE_REGISTER(spi_sam);
 #include <soc.h>
 #include <board.h>
 
+#define SAM_SPI_CHIP_SELECT_COUNT			4
+
 /* Device constant configuration parameters */
 struct spi_sam_config {
 	Spi *regs;
@@ -27,6 +29,22 @@ struct spi_sam_config {
 struct spi_sam_data {
 	struct spi_context ctx;
 };
+
+static int spi_slave_to_mr_pcs(int slave)
+{
+	int pcs[SAM_SPI_CHIP_SELECT_COUNT] = {0x0, 0x1, 0x3, 0x7};
+
+	/* SPI worked in fixed perieral mode(SPI_MR.PS = 0) and disabled chip
+	 * select decode(SPI_MR.PCSDEC = 0), based on Atmel | SMART ARM-based
+	 * Flash MCU DATASHEET 40.8.2 SPI Mode Register:
+	 * PCS = xxx0    NPCS[3:0] = 1110
+	 * PCS = xx01    NPCS[3:0] = 1101
+	 * PCS = x011    NPCS[3:0] = 1011
+	 * PCS = 0111    NPCS[3:0] = 0111
+	 */
+
+	return pcs[slave];
+}
 
 static int spi_sam_configure(struct device *dev,
 			     const struct spi_config *config)
@@ -41,10 +59,17 @@ static int spi_sam_configure(struct device *dev,
 		return -ENOTSUP;
 	}
 
+	if (config->slave > (SAM_SPI_CHIP_SELECT_COUNT - 1)) {
+		LOG_ERR("Slave %d is greater than %d",
+			config->slave, SAM_SPI_CHIP_SELECT_COUNT - 1);
+		return -EINVAL;
+	}
+
 	/* Set master mode, disable mode fault detection, set fixed peripheral
 	 * select mode.
 	 */
-	spi_mr |= (SPI_MR_MSTR | SPI_MR_MODFDIS | SPI_MR_PCS(config->slave));
+	spi_mr |= (SPI_MR_MSTR | SPI_MR_MODFDIS);
+	spi_mr |= SPI_MR_PCS(spi_slave_to_mr_pcs(config->slave));
 
 	if ((config->operation & SPI_MODE_CPOL) != 0) {
 		spi_csr |= SPI_CSR_CPOL;
