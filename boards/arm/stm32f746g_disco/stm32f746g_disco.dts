@@ -39,6 +39,19 @@
 	};
 };
 
+arduino_i2c: &i2c1 {};
+arduino_spi: &spi2 {};
+arduino_serial: &usart6 {};
+
+&i2c1 {
+	status = "ok";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&spi2 {
+	status = "ok";
+};
+
 &usart1 {
 	current-speed = <115200>;
 	pinctrl-names = "default";
@@ -48,5 +61,21 @@
 &usart6 {
 	current-speed = <115200>;
 	pinctrl-names = "default";
+	status = "ok";
+};
+
+&usbotg_fs {
+	status = "ok";
+};
+
+&timers1 {
+	status = "ok";
+
+	pwm {
+		status = "ok";
+	};
+};
+
+&rtc {
 	status = "ok";
 };

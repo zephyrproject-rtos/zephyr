@@ -102,6 +102,14 @@ The Zephyr stm32f746g_disco board configuration supports the following hardware 
 +-----------+------------+-------------------------------------+
 | ETHERNET  | on-chip    | Ethernet                            |
 +-----------+------------+-------------------------------------+
+| PWM       | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
+| USB       | on-chip    | usb                                 |
++-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
 
@@ -124,9 +132,14 @@ configured as follows
 
 - UART_1 TX/RX : PA9/PB7 (ST-Link Virtual Port Com)
 - UART_6 TX/RX : PC6/PC7 (Arduino Serial)
+- I2C1 SCL/SDA : PB8/PB9 (Arduino I2C)
+- SPI2 NSS/SCK/MISO/MOSI : PI0/PI1/PB14/PB15 (Arduino SPI)
+- PWM_3_CH1 : PB4
 - ETH : PA1, PA2, PA7, PC1, PC4, PC5, PG11, PG13, PG14
 - USER_PB : PI11
 - LD1 : PI1
+- USB DM : PA11
+- USB DP : PA12
 
 System Clock
 ============

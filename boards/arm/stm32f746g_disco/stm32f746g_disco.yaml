@@ -9,4 +9,9 @@ ram: 320
 flash: 1024
 supported:
   - netif:eth
+  - i2c
+  - spi
   - gpio
+  - pwm
+  - rtc
+  - usb_device
