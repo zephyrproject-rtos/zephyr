@@ -1,0 +1,33 @@
+{
+    "compatibles": {
+        "refsoc,uart": [
+            "/soc/serial@41000000",
+            "/soc/serial@43000000"
+        ],
+        "refsoc2,uart": [
+            "/soc/serial@42000000",
+            "/soc/serial@43000000"
+        ]
+    },
+    "devices": {
+        "/soc/serial@41000000": {
+            "compatible": {
+                "0": "refsoc,uart"
+            },
+            "device-id": "/soc/serial@41000000"
+        },
+        "/soc/serial@42000000": {
+            "compatible": {
+                "0": "refsoc2,uart"
+            },
+            "device-id": "/soc/serial@42000000"
+        },
+        "/soc/serial@43000000": {
+            "compatible": {
+                "0": "refsoc,uart",
+                "1": "refsoc2,uart"
+            },
+            "device-id": "/soc/serial@43000000"
+        }
+    }
+}
