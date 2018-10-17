@@ -22,6 +22,14 @@ class EDTSConsumerMixin(object):
     __slots__ = []
 
     ##
+    # @brief Get compatibles
+    #
+    # @param None
+    # @return edts 'compatibles' dict
+    def get_compatibles(self):
+        return self._edts['compatibles']
+
+    ##
     # @brief Get device ids of all activated compatible devices.
     #
     # @param compatibles compatible(s)
