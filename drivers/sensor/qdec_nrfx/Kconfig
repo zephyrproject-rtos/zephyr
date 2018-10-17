@@ -1,0 +1,29 @@
+# Copyright (c) 2018, Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig QDEC_NRFX
+	bool "Nordic QDEC nrfx driver"
+	depends on HAS_HW_NRF_QDEC
+	select NRFX_QDEC
+	select HAS_DTS_QDEC
+	help
+	  Enable support for nrfx QDEC driver for nRF MCU series.
+
+if QDEC_NRFX
+
+config SYS_LOG_QDEC_NRFX_LEVEL
+	int "QDEC log level"
+	depends on SYS_LOG
+	default 0
+	help
+	  Sets log level for QDEC driver.
+	  Levels are:
+	  - 0 OFF, do not write
+	  - 1 ERROR, only write SYS_LOG_ERR
+	  - 2 WARNING, write SYS_LOG_WRN in addition to previous level
+	  - 3 INFO, write SYS_LOG_INF in addition to previous levels
+	  - 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
+
+endif
