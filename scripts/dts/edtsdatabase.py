@@ -36,6 +36,16 @@ class EDTSConsumerMixin(object):
         return list(device_ids.keys())
 
     ##
+    # @brief Get device id of activated device with given label.
+    #
+    # @return device id
+    def get_device_id_by_label(self, label):
+        for device_id, device in self._edts['devices'].items():
+            if label == device.get('label', None):
+                return device_id
+        return None
+
+    ##
     # @brief Get the device dict matching a device_id.
     #
     # @param device_id
