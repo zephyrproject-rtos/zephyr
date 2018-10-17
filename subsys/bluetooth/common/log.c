@@ -19,23 +19,14 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 
-#if defined(CONFIG_BT_DEBUG)
-const char *bt_hex(const void *buf, size_t len)
+const char *bt_hex_real(const void *buf, size_t len)
 {
 	static const char hex[] = "0123456789abcdef";
-	static char hexbufs[4][129];
-	static u8_t curbuf;
+	static char str[129];
 	const u8_t *b = buf;
-	unsigned int mask;
-	char *str;
 	int i;
 
-	mask = irq_lock();
-	str = hexbufs[curbuf++];
-	curbuf %= ARRAY_SIZE(hexbufs);
-	irq_unlock(mask);
-
-	len = min(len, (sizeof(hexbufs[0]) - 1) / 2);
+	len = min(len, (sizeof(hex) - 1) / 2);
 
 	for (i = 0; i < len; i++) {
 		str[i * 2]     = hex[b[i] >> 4];
@@ -47,38 +38,20 @@ const char *bt_hex(const void *buf, size_t len)
 	return str;
 }
 
-const char *bt_addr_str(const bt_addr_t *addr)
+const char *bt_addr_str_real(const bt_addr_t *addr)
 {
-	static char bufs[4][BT_ADDR_STR_LEN];
-	unsigned int mask;
-	static u8_t cur;
-	char *str;
+	static char str[BT_ADDR_STR_LEN];
 
-	mask = irq_lock();
-	str = bufs[cur++];
-	cur %= ARRAY_SIZE(bufs);
-	irq_unlock(mask);
-
-	bt_addr_to_str(addr, str, sizeof(bufs[cur]));
+	bt_addr_to_str(addr, str, sizeof(str));
 
 	return str;
 }
 
-const char *bt_addr_le_str(const bt_addr_le_t *addr)
+const char *bt_addr_le_str_real(const bt_addr_le_t *addr)
 {
-	static char bufs[8][BT_ADDR_LE_STR_LEN];
-	unsigned int mask;
-	static u8_t cur;
-	char *str;
+	static char str[BT_ADDR_LE_STR_LEN];
 
-	mask = irq_lock();
-	str = bufs[cur++];
-	cur %= ARRAY_SIZE(bufs);
-	irq_unlock(mask);
-
-	bt_addr_le_to_str(addr, str, sizeof(bufs[cur]));
+	bt_addr_le_to_str(addr, str, sizeof(str));
 
 	return str;
 }
-#endif /* CONFIG_BT_DEBUG */
-
