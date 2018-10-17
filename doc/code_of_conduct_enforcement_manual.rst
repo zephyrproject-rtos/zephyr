@@ -9,7 +9,7 @@ The Code of Conduct Working Group
 *********************************
 
 All responses to reports of conduct violations will be managed by a Code of Conduct Working Group ("the CoC WG").
-The Zephyr Project’s Governing Board ("the board") will establish this working group, comprised of at least five members. One member will be designated chair of the group and will be responsible for all reports back to the board. The board will review membership of the CoC WG on an annual basis. The CoC WG will consist of the project leadership ( Governing Board Chair, TSC chair, Marketing Committee Chair,  Community Representative and Project Director) 
+The Zephyr Project’s Governing Board ("the board") will establish this working group, comprised of at least five members. One member will be designated chair of the group and will be responsible for all reports back to the board. The board will review membership of the CoC WG on an annual basis. The CoC WG will consist of the project leadership (Governing Board Chair, TSC chair, Marketing Committee Chair, Community Representative and Project Director). 
 
 How the Code of Conduct Working Group Will Respond to Reports
 *************************************************************
@@ -57,5 +57,4 @@ Conflicts of Interest
 In the event of any conflict of interest a working group member must immediately notify the other members, and recuse themselves if necessary.
 
 *Editor's note: Writing this document posed a unique challenge. Most similar guides are written on the assumption of an in-person event. However, the Zephyr community doesn't exist in one place, and most of the time we're spread out across the world and interact online. This makes trying to define and enforce community standards a different type of challenge. This document is adapted from the Django community, who adopted it from the Ada Initiative template and the PyCon 2013 Procedure for Handling Harassment Incidents, but changed to reflect the nature of our community. It is our expectation that this will be a living document and change as we grow to understand how to meet this challenge and best serve our community and ideals.*
-
 
