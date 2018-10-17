@@ -46,6 +46,14 @@ class EDTSConsumerMixin(object):
         return self._edts['chosen']
 
     ##
+    # @brief Get device types
+    #
+    # @param None
+    # @return edts device types dict
+    def get_device_types(self):
+        return self._edts['device-types']
+
+    ##
     # @brief Get device ids of all activated compatible devices.
     #
     # @param compatibles compatible(s)
