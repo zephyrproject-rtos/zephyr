@@ -1,0 +1,44 @@
+/dts-v1/;
+
+/ {
+	#address-cells = <0x1>;
+	#size-cells = <0x1>;
+	model = "Reference SoC board";
+	compatible = "refsoc,refboard";
+
+	soc {
+		#address-cells = <0x1>;
+		#size-cells = <0x1>;
+		compatible = "simple-bus";
+		ranges;
+
+		/* Node w/no compat */
+		serial@40000000 {
+		};
+
+		/* Node with one compat - has matching binding */
+		serial@41000000 {
+			compatible = "refsoc,uart";
+		};
+
+		/* Node with one compat - has other matching binding */
+		serial@42000000 {
+			compatible = "refsoc2,uart";
+		};
+
+		/* Node with one compat - binding doesn't match */
+		serial@43000000 {
+			compatible = "refsoc,usart";
+		};
+
+		/* Node with two compats, one matches has binding, one doesnt */
+		serial@44000000 {
+			compatible = "refsoc,uart", "refsoc,usart";
+		};
+
+		/* Node with two compats, both compats have binding */
+		serial@45000000 {
+			compatible = "refsoc,uart", "refsoc2,uart";
+		};
+	};
+};
