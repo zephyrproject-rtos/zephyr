@@ -75,6 +75,21 @@ def get_aliases(root):
         if reduced[k].get('alt_name', None) is not None:
             aliases[k].append(reduced[k]['alt_name'])
 
+def get_node_compats(node_address):
+    compat = None
+
+    try:
+        if 'props' in reduced[node_address].keys():
+            compat = reduced[node_address]['props'].get('compatible')
+
+        if not isinstance(compat, list):
+            compat = [compat, ]
+
+    except:
+        pass
+
+    return compat
+
 def get_compat(node_address):
     compat = None
 
