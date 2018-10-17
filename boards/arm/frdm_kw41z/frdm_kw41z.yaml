@@ -9,6 +9,7 @@ toolchain:
 supported:
   - ieee802154
   - adc
+  - counter
   - i2c
   - spi
   - gpio
