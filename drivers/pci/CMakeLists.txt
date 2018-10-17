@@ -4,3 +4,4 @@ zephyr_sources(
 	pci_interface.c
 	)
 zephyr_sources_ifdef(CONFIG_PCI_LEGACY_BRIDGE pci_legacy_bridge.c)
+zephyr_sources_ifdef(CONFIG_PCI_SHELL pci_shell.c)
