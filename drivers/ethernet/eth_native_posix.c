@@ -444,7 +444,7 @@ static void eth_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, ll_addr->addr, ll_addr->len,
 			     NET_LINK_ETHERNET);
 
-	ctx->if_name = CONFIG_ETH_NATIVE_POSIX_DRV_NAME;
+	ctx->if_name = ETH_NATIVE_POSIX_DRV_NAME;
 
 	ctx->dev_fd = eth_iface_create(ctx->if_name, false);
 	if (ctx->dev_fd < 0) {
@@ -583,7 +583,7 @@ static const struct ethernet_api eth_if_api = {
 #endif
 };
 
-ETH_NET_DEVICE_INIT(eth_native_posix, CONFIG_ETH_NATIVE_POSIX_DRV_NAME,
+ETH_NET_DEVICE_INIT(eth_native_posix, ETH_NATIVE_POSIX_DRV_NAME,
 		    eth_init, &eth_context_data, NULL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &eth_if_api,
 		    _ETH_MTU);

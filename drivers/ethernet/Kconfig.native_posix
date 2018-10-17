@@ -12,6 +12,19 @@ menuconfig ETH_NATIVE_POSIX
 	  a process in your host system.
 
 if ETH_NATIVE_POSIX
+config ETH_NATIVE_POSIX_STARTUP_AUTOMATIC
+	bool "Start network interface automatically"
+	help
+	  If set, the native_posix ethernet driver will set up the network
+	  interface, requiring ``zephyr.exe`` to be run with root privileges
+	  (needed to create and configure the TAP device).
+	  If not set (the default and recommended way), the network interface
+	  must be set up manually using ``net-setup.sh`` (from the net-tools
+	  project repo). The ``zephyr.exe`` program can then be run as a
+	  non-root user.
+
+if ETH_NATIVE_POSIX_STARTUP_AUTOMATIC
+
 config ETH_NATIVE_POSIX_SETUP_SCRIPT
 	string "Host setup script"
 	default "${ZEPHYR_BASE}/samples/net/eth_native_posix/net_setup_host"
@@ -50,6 +63,8 @@ config ETH_NATIVE_POSIX_STARTUP_SCRIPT_USER
 	  desired. Note that this setting is only for startup script and not
 	  for the setup script. The setup script needs to be run always as
 	  a root user.
+
+endif # ETH_NATIVE_POSIX_STARTUP_AUTOMATIC
 
 config ETH_NATIVE_POSIX_DRV_NAME
 	string "Ethernet driver name"
