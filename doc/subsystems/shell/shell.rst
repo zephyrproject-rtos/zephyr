@@ -31,6 +31,7 @@ The module can be connected to any transport for command input and output.
 At this point, the following transport layers are implemented:
 
 * UART
+* DUMMY - not a physical transport layer
 
 See the :ref:`shell_api` documentation for more information.
 
@@ -167,6 +168,27 @@ Each command or subcommand may have a handler. The shell executes the handler
 that is found deepest in the command tree and further subcommands (without a
 handler) are passed as arguments. Characters within parentheses are treated
 as one argument. If shell wont find a handler it will display an error message.
+
+Commands can be also executed from a user application using any active backend
+and a function :cpp:func:`shell_execute_cmd`, as shown in this example:
+
+.. code-block:: c
+
+	void main(void)
+	{
+		/* Below code will execute "clear" command on a DUMMY backend */
+		shell_execute_cmd(NULL, "clear");
+
+		/* Below code will execute "shell colors off" command on
+		 * an UART backend
+		 */
+		shell_execute_cmd(shell_backend_uart_get_ptr(),
+				  "shell colors off");
+	}
+
+Enable the DUMMY backend by setting the Kconfig
+:option:`CONFIG_SHELL_BACKEND_DUMMY` option.
+
 
 Command handler
 ----------------

@@ -31,8 +31,8 @@ static int uninit(const struct shell_transport *transport)
 {
 	struct shell_dummy *sh_dummy = (struct shell_dummy *)transport->ctx;
 
-	if (sh_dummy->initialized == false) {
-		return -EINVAL;
+	if (!sh_dummy->initialized) {
+		return -ENODEV;
 	}
 
 	sh_dummy->initialized = false;
@@ -44,8 +44,8 @@ static int enable(const struct shell_transport *transport, bool blocking)
 {
 	struct shell_dummy *sh_dummy = (struct shell_dummy *)transport->ctx;
 
-	if (sh_dummy->initialized == false) {
-		return -EINVAL;
+	if (!sh_dummy->initialized) {
+		return -ENODEV;
 	}
 
 	return 0;
@@ -58,7 +58,7 @@ static int write(const struct shell_transport *transport,
 
 	if (!sh_dummy->initialized) {
 		*cnt = 0;
-		return -EINVAL;
+		return -ENODEV;
 	}
 
 	*cnt = length;
@@ -70,9 +70,8 @@ static int read(const struct shell_transport *transport,
 {
 	struct shell_dummy *sh_dummy = (struct shell_dummy *)transport->ctx;
 
-
-	if (sh_dummy->initialized) {
-		return -EINVAL;
+	if (!sh_dummy->initialized) {
+		return -ENODEV;
 	}
 
 	*cnt = 0;
