@@ -36,15 +36,14 @@ static void wait(void)
 
 static int rtt_console_out(int character)
 {
-	unsigned int key;
 	char c = (char)character;
 	unsigned int cnt;
 	int max_cnt = CONFIG_RTT_TX_RETRY_CNT;
 
 	do {
-		key = irq_lock();
+		SEGGER_RTT_LOCK();
 		cnt = SEGGER_RTT_WriteNoLock(0, &c, 1);
-		irq_unlock(key);
+		SEGGER_RTT_UNLOCK();
 
 		/* There are two possible reasons for not writing any data to
 		 * RTT:
