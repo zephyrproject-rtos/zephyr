@@ -313,11 +313,11 @@ choice
     default LOG_BACKEND_RTT_MODE_BLOCK
 
 config LOG_BACKEND_RTT_MODE_DROP
-	bool "Drop message that does not fits in up-buffer."
+	bool "Drop messages that do not fit in up-buffer."
 	help
 	    If there is not enough space in up-buffer for a message, drop it.
 	    Number of dropped messages will be logged.
-	    Increase up-buffer size helps to reduce dropping of messages
+	    Increase up-buffer size helps to reduce dropping of messages.
 
 config LOG_BACKEND_RTT_MODE_BLOCK
     bool "Block until message is transferred to host."
