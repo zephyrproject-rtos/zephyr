@@ -14,7 +14,11 @@ The development kit comes with a fully integrated debugger
 (also known as `DAPLink`_) that provides USB drag-and-drop
 programming, USB Virtual COM port, and a CMSIS-DAP interface.
 
-The kit contains a Microchip USB 2.0 Hi-Speed hub controller with two downstream ports: one for DAPLink interface and one for nRF52840 USB device controller. The kit also features ultra-low power 64-Mb QSPI FLASH memory, programmable user button, RGB LED, up to 24 GPIOs, antenna selection for custom applications.
+The kit contains a Microchip USB 2.0 Hi-Speed hub controller with
+two downstream ports: one for the DAPLink interface and one for
+the nRF52840 USB device controller. The kit also features ultra-low power
+64-Mb QSPI FLASH memory, programmable user button, RGB LED,
+up to 24 GPIOs, and antenna selection for custom applications.
 
 See `nRF52840-MDK website`_ for more information about the development board and `nRF52840 website`_ for the official reference on the IC itself.
 
