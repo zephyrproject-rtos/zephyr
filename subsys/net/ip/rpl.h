@@ -24,6 +24,10 @@ extern "C" {
 
 #include "route.h"
 
+/*
+ * RPL is deprecated.
+ */
+
 #define NET_ICMPV6_RPL			155  /* RPL Control Message */
 
 #define NET_RPL_DODAG_SOLICIT		0x00
@@ -135,7 +139,7 @@ extern "C" {
  * mode, nodes do not forward data for others, but are reachable by
  * others.
  */
-enum net_rpl_mode {
+__deprecated enum net_rpl_mode {
 	NET_RPL_MODE_MESH,
 	NET_RPL_MODE_FEATHER,
 	NET_RPL_MODE_LEAF,
@@ -153,13 +157,15 @@ enum net_rpl_mode {
 
 #if defined(CONFIG_NET_RPL)
 
-static inline u8_t net_rpl_lollipop_init(void)
+/** Deprecated functions */
+
+__deprecated static inline u8_t net_rpl_lollipop_init(void)
 {
 	return NET_RPL_LOLLIPOP_MAX_VALUE -
 		NET_RPL_LOLLIPOP_SEQUENCE_WINDOWS + 1;
 }
 
-static inline void net_rpl_lollipop_increment(u8_t *counter)
+__deprecated static inline void net_rpl_lollipop_increment(u8_t *counter)
 {
 	if (*counter > NET_RPL_LOLLIPOP_CIRCULAR_REGION) {
 		*counter = (*counter + 1) & NET_RPL_LOLLIPOP_MAX_VALUE;
@@ -168,18 +174,18 @@ static inline void net_rpl_lollipop_increment(u8_t *counter)
 	}
 }
 
-static inline bool net_rpl_lollipop_is_init(u8_t counter)
+__deprecated static inline bool net_rpl_lollipop_is_init(u8_t counter)
 {
 	return counter > NET_RPL_LOLLIPOP_CIRCULAR_REGION;
 }
 
-struct net_rpl_instance;
-struct net_rpl_dag;
+__deprecated struct net_rpl_instance;
+__deprecated struct net_rpl_dag;
 
 /**
  * @brief DIO prefix suboption.
  */
-struct net_rpl_prefix {
+__deprecated struct net_rpl_prefix {
 	/** IPv6 address prefix */
 	struct in6_addr prefix;
 
@@ -196,7 +202,7 @@ struct net_rpl_prefix {
 /**
  * @brief Node energy object, RFC 6551, ch 3.2
  */
-struct net_rpl_node_energy_object {
+__deprecated struct net_rpl_node_energy_object {
 	/** Energy node flags */
 	u8_t flags;
 
@@ -207,7 +213,7 @@ struct net_rpl_node_energy_object {
 /**
  * @brief DAG Metric Container. RFC 6551, ch 2.1
  */
-struct net_rpl_metric_container {
+__deprecated struct net_rpl_metric_container {
 	/** Metric container information */
 	union metric_object {
 		struct net_rpl_node_energy_object energy;
@@ -236,7 +242,7 @@ struct net_rpl_metric_container {
 /**
  * @brief Parent information.
  */
-struct net_rpl_parent {
+__deprecated struct net_rpl_parent {
 	/** Used DAG */
 	struct net_rpl_dag *dag;
 
@@ -259,7 +265,7 @@ struct net_rpl_parent {
 /**
  * @brief Directed Acyclic Graph (DAG)
  */
-struct net_rpl_dag {
+__deprecated struct net_rpl_dag {
 	/** DAG id */
 	struct in6_addr dag_id;
 
@@ -303,7 +309,7 @@ struct net_rpl_dag {
  *
  * @return Neighbor pointer if found, NULL if neighbor is not found.
  */
-struct net_nbr *net_rpl_get_nbr(struct net_rpl_parent *data);
+__deprecated struct net_nbr *net_rpl_get_nbr(struct net_rpl_parent *data);
 
 /**
  * @brief Get related neighbor data from parent pointer.
@@ -312,7 +318,7 @@ struct net_nbr *net_rpl_get_nbr(struct net_rpl_parent *data);
  *
  * @return Neighbor data pointer if found, NULL if neighbor is not found.
  */
-struct net_ipv6_nbr_data *
+__deprecated struct net_ipv6_nbr_data *
 net_rpl_get_ipv6_nbr_data(struct net_rpl_parent *parent);
 
 /**
@@ -323,7 +329,7 @@ net_rpl_get_ipv6_nbr_data(struct net_rpl_parent *parent);
  *
  * @param dag Pointer to DAG object
  */
-extern void net_rpl_of_reset(struct net_rpl_dag *dag);
+__deprecated extern void net_rpl_of_reset(struct net_rpl_dag *dag);
 
 /**
  * @brief RPL object function (OF) neighbor link callback.
@@ -338,7 +344,7 @@ extern void net_rpl_of_reset(struct net_rpl_dag *dag);
  *
  * @return 0 if ok, < 0 if error
  */
-extern int net_rpl_of_neighbor_link_cb(struct net_if *iface,
+__deprecated extern int net_rpl_of_neighbor_link_cb(struct net_if *iface,
 				       struct net_rpl_parent *parent,
 				       int status, int etx);
 
@@ -353,7 +359,7 @@ extern int net_rpl_of_neighbor_link_cb(struct net_if *iface,
  *
  * @return Best parent is returned.
  */
-extern struct net_rpl_parent *
+__deprecated extern struct net_rpl_parent *
 net_rpl_of_best_parent(struct net_if *iface,
 		       struct net_rpl_parent *parentA,
 		       struct net_rpl_parent *parentB);
@@ -368,8 +374,9 @@ net_rpl_of_best_parent(struct net_if *iface,
  *
  * @return Best DAG.
  */
-extern struct net_rpl_dag *net_rpl_of_best_dag(struct net_rpl_dag *dagA,
-					       struct net_rpl_dag *dagB);
+__deprecated extern struct net_rpl_dag *net_rpl_of_best_dag(
+						struct net_rpl_dag *dagA,
+						struct net_rpl_dag *dagB);
 
 /**
  * @brief RPL object function (OF) calculate rank.
@@ -379,7 +386,7 @@ extern struct net_rpl_dag *net_rpl_of_best_dag(struct net_rpl_dag *dagA,
  * added to the base rank. Otherwise, the OF uses information known
  * about parent to select an increment to the base rank.
  */
-extern u16_t net_rpl_of_calc_rank(struct net_rpl_parent *parent,
+__deprecated extern u16_t net_rpl_of_calc_rank(struct net_rpl_parent *parent,
 				  u16_t rank);
 
 /**
@@ -391,7 +398,7 @@ extern u16_t net_rpl_of_calc_rank(struct net_rpl_parent *parent,
  *
  * @param instance Pointer to RPL instance.
  */
-extern int net_rpl_of_update_mc(struct net_rpl_instance *instance);
+__deprecated extern int net_rpl_of_update_mc(struct net_rpl_instance *instance);
 
 /**
  * @brief RPL object function (OF) objective code point used.
@@ -402,21 +409,21 @@ extern int net_rpl_of_update_mc(struct net_rpl_instance *instance);
  *
  * @return true if OF is supported, false otherwise.
  */
-extern bool net_rpl_of_find(u16_t ocp);
+__deprecated extern bool net_rpl_of_find(u16_t ocp);
 
 /**
  * @brief Return RPL object function (OF) objective code point used.
  *
  * @return OCP (Objective Code Point) value used.
  */
-extern u16_t net_rpl_of_get(void);
+__deprecated extern u16_t net_rpl_of_get(void);
 
 /**
  * @brief RPL instance structure
  *
  * Describe RPL instance.
  */
-struct net_rpl_instance {
+__deprecated struct net_rpl_instance {
 	/** Routing metric information */
 	struct net_rpl_metric_container mc;
 
@@ -535,7 +542,7 @@ struct net_rpl_instance {
  *
  * Describe RPL DAG Information Object.
  */
-struct net_rpl_dio {
+__deprecated struct net_rpl_dio {
 	/** Routing metric information */
 	struct net_rpl_metric_container mc;
 
@@ -608,7 +615,7 @@ struct net_rpl_dio {
 /**
  * @brief RPL route information source
  */
-enum net_rpl_route_source {
+__deprecated enum net_rpl_route_source {
 	NET_RPL_ROUTE_INTERNAL,
 	NET_RPL_ROUTE_UNICAST_DAO,
 	NET_RPL_ROUTE_MULTICAST_DAO,
@@ -620,7 +627,7 @@ enum net_rpl_route_source {
  *
  * Stores extra information for RPL route.
  */
-struct net_rpl_route_entry {
+__deprecated struct net_rpl_route_entry {
 	/** Dag info for this route */
 	struct net_rpl_dag *dag;
 
@@ -647,7 +654,8 @@ struct net_rpl_route_entry {
  *
  * @return True if address is RPL multicast address, False otherwise.
  */
-static inline bool net_rpl_is_ipv6_addr_mcast(const struct in6_addr *addr)
+__deprecated static inline bool net_rpl_is_ipv6_addr_mcast(
+						const struct in6_addr *addr)
 {
 	return UNALIGNED_GET(&addr->s6_addr32[0]) == htonl(0xff020000) &&
 		UNALIGNED_GET(&addr->s6_addr32[1]) == 0x00000000 &&
@@ -662,7 +670,7 @@ static inline bool net_rpl_is_ipv6_addr_mcast(const struct in6_addr *addr)
  *
  *  @return Pointer to given IPv6 address.
  */
-static inline
+__deprecated static inline
 struct in6_addr *net_rpl_create_mcast_address(struct in6_addr *addr)
 {
 	addr->s6_addr[0]   = 0xFF;
@@ -686,7 +694,7 @@ struct in6_addr *net_rpl_create_mcast_address(struct in6_addr *addr)
  *
  * @return true if in use, false otherwise
  */
-static inline bool net_rpl_dag_is_used(struct net_rpl_dag *dag)
+__deprecated static inline bool net_rpl_dag_is_used(struct net_rpl_dag *dag)
 {
 	NET_ASSERT(dag);
 
@@ -698,7 +706,8 @@ static inline bool net_rpl_dag_is_used(struct net_rpl_dag *dag)
  *
  * @param dag Pointer to DAG.
  */
-static inline void net_rpl_dag_set_not_used(struct net_rpl_dag *dag)
+__deprecated static inline void net_rpl_dag_set_not_used(
+						struct net_rpl_dag *dag)
 {
 	NET_ASSERT(dag);
 
@@ -710,7 +719,7 @@ static inline void net_rpl_dag_set_not_used(struct net_rpl_dag *dag)
  *
  * @param dag Pointer to DAG.
  */
-static inline void net_rpl_dag_set_used(struct net_rpl_dag *dag)
+__deprecated static inline void net_rpl_dag_set_used(struct net_rpl_dag *dag)
 {
 	NET_ASSERT(dag);
 
@@ -724,7 +733,7 @@ static inline void net_rpl_dag_set_used(struct net_rpl_dag *dag)
  *
  * @return true if grounded, false if floating
  */
-static inline bool net_rpl_dag_is_grounded(struct net_rpl_dag *dag)
+__deprecated static inline bool net_rpl_dag_is_grounded(struct net_rpl_dag *dag)
 {
 	NET_ASSERT(dag);
 
@@ -736,8 +745,9 @@ static inline bool net_rpl_dag_is_grounded(struct net_rpl_dag *dag)
  *
  * @param dag Pointer to DAG.
  */
-static inline void net_rpl_dag_set_grounded_status(struct net_rpl_dag *dag,
-						   bool grounded)
+__deprecated static inline void net_rpl_dag_set_grounded_status(
+						struct net_rpl_dag *dag,
+						bool grounded)
 {
 	NET_ASSERT(dag);
 
@@ -751,7 +761,7 @@ static inline void net_rpl_dag_set_grounded_status(struct net_rpl_dag *dag,
  *
  * @return true if joined, false otherwise
  */
-static inline bool net_rpl_dag_is_joined(struct net_rpl_dag *dag)
+__deprecated static inline bool net_rpl_dag_is_joined(struct net_rpl_dag *dag)
 {
 	NET_ASSERT(dag);
 
@@ -763,7 +773,7 @@ static inline bool net_rpl_dag_is_joined(struct net_rpl_dag *dag)
  *
  * @param dag Pointer to DAG.
  */
-static inline void net_rpl_dag_join(struct net_rpl_dag *dag)
+__deprecated static inline void net_rpl_dag_join(struct net_rpl_dag *dag)
 {
 	NET_ASSERT(dag);
 
@@ -775,7 +785,7 @@ static inline void net_rpl_dag_join(struct net_rpl_dag *dag)
  *
  * @param dag Pointer to DAG.
  */
-static inline void net_rpl_dag_unjoin(struct net_rpl_dag *dag)
+__deprecated static inline void net_rpl_dag_unjoin(struct net_rpl_dag *dag)
 {
 	NET_ASSERT(dag);
 
@@ -791,7 +801,7 @@ static inline void net_rpl_dag_unjoin(struct net_rpl_dag *dag)
  *
  * @return preference value
  */
-static inline
+__deprecated static inline
 u8_t net_rpl_dag_get_preference(struct net_rpl_dag *dag)
 {
 	NET_ASSERT(dag);
@@ -807,7 +817,7 @@ u8_t net_rpl_dag_get_preference(struct net_rpl_dag *dag)
  * @param dag Pointer to DAG.
  * @param preference New preference value.
  */
-static inline
+__deprecated static inline
 void net_rpl_dag_set_preference(struct net_rpl_dag *dag,
 				u8_t preference)
 {
@@ -822,7 +832,7 @@ void net_rpl_dag_set_preference(struct net_rpl_dag *dag,
  * @param dio Pointer to DIO.
  * @return True if the network is to be joined, false otherwise.
  */
-typedef bool (*net_rpl_join_callback_t)(struct net_rpl_dio *dio);
+__deprecated typedef bool (*net_rpl_join_callback_t)(struct net_rpl_dio *dio);
 
 /**
  * @brief Register a callback that determines if the network is to be
@@ -830,7 +840,7 @@ typedef bool (*net_rpl_join_callback_t)(struct net_rpl_dio *dio);
  *
  * @param cb Callback function
  */
-void net_rpl_set_join_callback(net_rpl_join_callback_t cb);
+__deprecated void net_rpl_set_join_callback(net_rpl_join_callback_t cb);
 
 /**
  * @brief Send a DODAG Information Solicitation message.
@@ -840,7 +850,7 @@ void net_rpl_set_join_callback(net_rpl_join_callback_t cb);
  *
  * @return 0 message was sent ok, <0 otherwise
  */
-int net_rpl_dis_send(struct in6_addr *dst, struct net_if *iface);
+__deprecated int net_rpl_dis_send(struct in6_addr *dst, struct net_if *iface);
 
 /**
  * @brief Send a Destination Advertisement Object message.
@@ -853,10 +863,10 @@ int net_rpl_dis_send(struct in6_addr *dst, struct net_if *iface);
  *
  * @return 0 message was sent ok, <0 otherwise
  */
-int net_rpl_dao_send(struct net_if *iface,
-		     struct net_rpl_parent *parent,
-		     struct in6_addr *prefix,
-		     u8_t lifetime);
+__deprecated int net_rpl_dao_send(struct net_if *iface,
+				  struct net_rpl_parent *parent,
+				  struct in6_addr *prefix,
+				  u8_t lifetime);
 
 /**
  * @brief Send a DODAG Information Object message.
@@ -869,10 +879,10 @@ int net_rpl_dao_send(struct net_if *iface,
  *
  * @return 0 message was sent ok, <0 otherwise
  */
-int net_rpl_dio_send(struct net_if *iface,
-		     struct net_rpl_instance *instance,
-		     struct in6_addr *src,
-		     struct in6_addr *dst);
+__deprecated int net_rpl_dio_send(struct net_if *iface,
+				  struct net_rpl_instance *instance,
+				  struct in6_addr *src,
+				  struct in6_addr *dst);
 
 /**
  * @brief Set the root DAG.
@@ -883,9 +893,9 @@ int net_rpl_dio_send(struct net_if *iface,
  *
  * @return DAG object or NULL if creation failed.
  */
-struct net_rpl_dag *net_rpl_set_root(struct net_if *iface,
-				     u8_t instance_id,
-				     struct in6_addr *dag_id);
+__deprecated struct net_rpl_dag *net_rpl_set_root(struct net_if *iface,
+						  u8_t instance_id,
+						  struct in6_addr *dag_id);
 
 /**
  * @brief Set the root DAG with version.
@@ -897,17 +907,18 @@ struct net_rpl_dag *net_rpl_set_root(struct net_if *iface,
  *
  * @return DAG object or NULL if creation failed.
  */
-struct net_rpl_dag *net_rpl_set_root_with_version(struct net_if *iface,
-						  u8_t instance_id,
-						  struct in6_addr *dag_id,
-						  u8_t version);
+__deprecated struct net_rpl_dag *net_rpl_set_root_with_version(
+						struct net_if *iface,
+						u8_t instance_id,
+						struct in6_addr *dag_id,
+						u8_t version);
 
 /**
  * @brief Get first available DAG.
  *
  * @return First available DAG or NULL if none found.
  */
-struct net_rpl_dag *net_rpl_get_any_dag(void);
+__deprecated struct net_rpl_dag *net_rpl_get_any_dag(void);
 
 /**
  * @brief Set IPv6 prefix we are using.
@@ -919,30 +930,30 @@ struct net_rpl_dag *net_rpl_get_any_dag(void);
  *
  * @return True if prefix could be set, false otherwise.
  */
-bool net_rpl_set_prefix(struct net_if *iface,
-			struct net_rpl_dag *dag,
-			struct in6_addr *prefix,
-			u8_t prefix_len);
+__deprecated bool net_rpl_set_prefix(struct net_if *iface,
+				     struct net_rpl_dag *dag,
+				     struct in6_addr *prefix,
+				     u8_t prefix_len);
 
 /**
  * @brief Do global repair for this route.
  *
  * @param route IPv6 route entry.
  */
-void net_rpl_global_repair(struct net_route_entry *route);
+__deprecated void net_rpl_global_repair(struct net_route_entry *route);
 
 /**
  * @brief Do global repair for this instance.
  *
  * @param instance RPL instance id.
  */
-bool net_rpl_repair_root(u8_t instance_id);
+__deprecated bool net_rpl_repair_root(u8_t instance_id);
 
 /**
  * @brief Get the default RPL interface.
  *
  */
-struct net_if *net_rpl_get_interface(void);
+__deprecated struct net_if *net_rpl_get_interface(void);
 
 /**
  * @brief Update RPL headers in IPv6 packet.
@@ -952,7 +963,8 @@ struct net_if *net_rpl_get_interface(void);
  *
  * @return 0 if ok, < 0 if error
  */
-int net_rpl_update_header(struct net_pkt *pkt, struct in6_addr *addr);
+__deprecated int net_rpl_update_header(struct net_pkt *pkt,
+				       struct in6_addr *addr);
 
 /**
  * @brief Verify RPL header in IPv6 packet.
@@ -965,9 +977,10 @@ int net_rpl_update_header(struct net_pkt *pkt, struct in6_addr *addr);
  *
  * @return frag Returns the fragment where this call finished reading.
  */
-struct net_buf *net_rpl_verify_header(struct net_pkt *pkt, struct net_buf *frag,
-				      u16_t offset, u16_t *pos,
-				      bool *result);
+__deprecated struct net_buf *net_rpl_verify_header(struct net_pkt *pkt,
+						   struct net_buf *frag,
+						   u16_t offset, u16_t *pos,
+						   bool *result);
 
 /**
  * @brief Insert RPL extension header to IPv6 packet.
@@ -976,7 +989,7 @@ struct net_buf *net_rpl_verify_header(struct net_pkt *pkt, struct net_buf *frag,
  *
  * @return 0 if ok, <0 if error.
  */
-int net_rpl_insert_header(struct net_pkt *pkt);
+__deprecated int net_rpl_insert_header(struct net_pkt *pkt);
 
 /**
  * @brief Revert RPL extension header to IPv6 packet.
@@ -988,7 +1001,8 @@ int net_rpl_insert_header(struct net_pkt *pkt);
  *
  * @return 0 if ok, <0 if error.
  */
-int net_rpl_revert_header(struct net_pkt *pkt, u16_t offset, u16_t *pos);
+__deprecated int net_rpl_revert_header(struct net_pkt *pkt, u16_t offset,
+				       u16_t *pos);
 
 /**
  * @brief Get parent IPv6 address.
@@ -998,11 +1012,11 @@ int net_rpl_revert_header(struct net_pkt *pkt, u16_t offset, u16_t *pos);
  *
  * @return Parent IPv6 address, or NULL if no such parent.
  */
-struct in6_addr *net_rpl_get_parent_addr(struct net_if *iface,
-					 struct net_rpl_parent *parent);
+__deprecated struct in6_addr *net_rpl_get_parent_addr(struct net_if *iface,
+					      struct net_rpl_parent *parent);
 
-typedef void (*net_rpl_parent_cb_t)(struct net_rpl_parent *parent,
-				    void *user_data);
+__deprecated typedef void (*net_rpl_parent_cb_t)(struct net_rpl_parent *parent,
+						 void *user_data);
 
 /**
  * @brief Go through all the parents entries and call callback
@@ -1013,7 +1027,8 @@ typedef void (*net_rpl_parent_cb_t)(struct net_rpl_parent *parent,
  *
  * @return Total number of parents found.
  */
-int net_rpl_foreach_parent(net_rpl_parent_cb_t cb, void *user_data);
+__deprecated int net_rpl_foreach_parent(net_rpl_parent_cb_t cb,
+					void *user_data);
 
 /**
  * @brief Set the RPL mode (mesh or leaf) of this node.
@@ -1022,28 +1037,28 @@ int net_rpl_foreach_parent(net_rpl_parent_cb_t cb, void *user_data);
  * NET_RPL_MODE_FEATHER or NET_RPL_MODE_LEAF. The NET_RPL_MODE_MESH is
  * the default mode.
  */
-void net_rpl_set_mode(enum net_rpl_mode new_mode);
+__deprecated void net_rpl_set_mode(enum net_rpl_mode new_mode);
 
 /**
  * @brief Get the RPL mode (mesh or leaf) of this node.
  *
  * @return Current RPL mode.
  */
-enum net_rpl_mode net_rpl_get_mode(void);
+__deprecated enum net_rpl_mode net_rpl_get_mode(void);
 
 /**
  * @brief Get the default RPL instance.
  *
  * @return Current default RPL instance.
  */
-struct net_rpl_instance *net_rpl_get_default_instance(void);
+__deprecated struct net_rpl_instance *net_rpl_get_default_instance(void);
 
 void net_rpl_init(void);
 #else
 #define net_rpl_init(...)
 #define net_rpl_global_repair(...)
 #define net_rpl_update_header(...) 0
-static inline struct net_if *net_rpl_get_interface(void)
+__deprecated static inline struct net_if *net_rpl_get_interface(void)
 {
 	return NULL;
 }

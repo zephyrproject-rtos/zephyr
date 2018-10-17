@@ -7,7 +7,7 @@
 #
 
 menuconfig NET_RPL
-	bool "Enable RPL (Ripple) support"
+	bool "Enable RPL (Ripple) support [Deprecated]"
 	select NET_IPV6
 	select NET_IPV6_NBR_CACHE
 	select NET_ROUTE
