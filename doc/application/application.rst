@@ -513,7 +513,7 @@ In the ``soc`` directory you will need a top-level Kconfig file pointing to the
 custom SOC definitions:
 
 
-.. code-block: console
+.. code-block:: console
 
 	choice
 		prompt "SoC/CPU/Configuration Selection"
