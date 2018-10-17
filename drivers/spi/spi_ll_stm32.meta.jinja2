@@ -1,0 +1,36 @@
+{# Copyright (c) 2018 Nordic Semiconductor ASA #}
+{# SPDX-License-Identifier: Apache-2.0         #}
+
+{% extends 'device_declare.jinja2' %}
+
+{% block init_params %}
+        {% do params.update({'irq_flag':'CONFIG_SPI_STM32_INTERRUPT'}) %}
+        {% do params.update({'config_struct':'spi_stm32_config'}) %}
+        {% do params.update({'data_struct':'spi_stm32_data'}) %}
+        {% do params.update({'api_struct':'api_funcs'}) %}
+        {% do params.update({'init_function':'spi_stm32_init'}) %}
+{% endblock %}
+
+{# Because these blocks are "scoped" all variables in the macro from the
+   base template can be accessed in these blocks #}
+{% block config_struct_body %}
+
+       .spi = (SPI_TypeDef *){{ "%x"|format(device['reg']['0']['address']['0']) }},
+       .pclken.bus = {{ device['clocks']['0']['bus'] }},
+       .pclken.enr = {{ device['clocks']['0']['bits'] }},
+#ifdef CONFIG_SPI_STM32_INTERRUPT
+       .irq_config = {{ irq_config_function_name }},
+#endif
+{% endblock %}
+
+{% block data_struct_body %}
+    SPI_CONTEXT_INIT_LOCK({{ data_struct_name }}, ctx),
+    SPI_CONTEXT_INIT_SYNC({{ data_struct_name }}, ctx),
+{% endblock %}
+
+{% block irq_config_function_body %}
+        {# The irq_connect macro will check if there is an irq with the name
+           (parameter 2) and only generate IRQ_CONNECT code for irqs that
+           exist in the devicetree metadata #}
+	{{ gen_irq_connect(device, '0', 'spi_stm32_isr') }}
+{% endblock %}
