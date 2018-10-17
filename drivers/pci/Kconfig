@@ -14,6 +14,13 @@ menuconfig PCI
 	  This options enables support of PCI bus for device drivers.
 
 if PCI
+
+config PCI_SHELL
+	bool "Enable PCI Shell"
+	select PCI_ENUMERATION
+	help
+	  Enable commands for debugging PCI using the built-in shell.
+
 config PCI_ENUMERATION
 	bool "Enable PCI device enumeration"
 	help
