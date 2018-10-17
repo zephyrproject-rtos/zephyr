@@ -296,7 +296,7 @@ config LOG_BACKEND_UART
 
 config LOG_BACKEND_RTT
 	bool "Enable Segger J-Link RTT backend"
-	depends on HAS_SEGGER_RTT
+	depends on USE_SEGGER_RTT
 	default y
 	help
 	  When enabled backend will use RTT for logging. This backend works on per

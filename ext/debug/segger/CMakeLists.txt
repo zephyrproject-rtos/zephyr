@@ -1,6 +1,6 @@
 
-zephyr_include_directories_ifdef(CONFIG_HAS_SEGGER_RTT .)
-zephyr_sources_ifdef(CONFIG_HAS_SEGGER_RTT
+zephyr_include_directories_ifdef(CONFIG_USE_SEGGER_RTT .)
+zephyr_sources_ifdef(CONFIG_USE_SEGGER_RTT
 	rtt/SEGGER_RTT.c
 	rtt/SEGGER_RTT_zephyr.c
 	)
