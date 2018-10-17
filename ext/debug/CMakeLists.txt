@@ -1,1 +1,1 @@
-add_subdirectory_ifdef(CONFIG_RTT_CONSOLE segger)
+add_subdirectory(segger)
