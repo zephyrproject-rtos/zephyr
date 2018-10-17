@@ -117,7 +117,7 @@ config RAM_CONSOLE_BUFFER_SIZE
 
 config RTT_CONSOLE
 	bool "Use RTT console"
-	depends on HAS_SEGGER_RTT
+	depends on USE_SEGGER_RTT
 	select CONSOLE_HAS_DRIVER
 	help
 	  Emit console messages to a RAM buffer that is then read by the

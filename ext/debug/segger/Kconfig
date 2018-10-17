@@ -7,7 +7,16 @@
 config HAS_SEGGER_RTT
 	bool
 
-if HAS_SEGGER_RTT
+config USE_SEGGER_RTT
+    bool "Enable SEGGER RTT libraries."
+    depends on HAS_SEGGER_RTT
+    default n
+    help
+        Enable Segger J-Link RTT libraries for platforms that support it.
+        Selection of this option enable use of RTT for various subsytems.
+        Note that by enabling this option, RTT buffers consumes more RAM.
+
+if USE_SEGGER_RTT
 
 config SEGGER_SYSTEMVIEW
 	bool "Segger SystemView support"
