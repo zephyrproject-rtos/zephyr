@@ -26,7 +26,16 @@ static int drop_warn = 0;
 #endif /* CONFIG_LOG_BACKEND_RTT_MODE_DROP */
 
 #if CONFIG_LOG_BACKEND_RTT_BUFFER > 0
+
+#define RTT_LOCK()
+#define RTT_UNLOCK()
 static u8_t rtt_buf[CONFIG_LOG_BACKEND_RTT_BUFFER_SIZE];
+
+#else
+
+#define RTT_LOCK() SEGGER_RTT_LOCK()
+#define RTT_UNLOCK() SEGGER_RTT_UNLOCK()
+
 #endif /* CONFIG_LOG_BACKEND_RTT_BUFFER > 0 */
 
 static u8_t line_buf[CONFIG_LOG_BACKEND_RTT_MESSAGE_SIZE + DROP_MESSAGE_LEN];
@@ -107,8 +116,10 @@ static int log_backend_rtt_write(void)
 		}
 	}
 
+	RTT_LOCK();
 	int ret = SEGGER_RTT_WriteSkipNoLock(CONFIG_LOG_BACKEND_RTT_BUFFER,
 					     line_buf, line_pos - line_buf + 1);
+	RTT_UNLOCK();
 
 	if (!ret) {
 		drop_cnt++;
@@ -124,9 +135,15 @@ static int log_backend_rtt_write(void)
 
 static int log_backend_rtt_write(void)
 {
+	unsigned int ret;
 	*line_pos = '\r';
-	if (SEGGER_RTT_WriteSkipNoLock(CONFIG_LOG_BACKEND_RTT_BUFFER, line_buf,
-				       line_pos - line_buf + 1)) {
+
+	RTT_LOCK();
+	ret = SEGGER_RTT_WriteSkipNoLock(CONFIG_LOG_BACKEND_RTT_BUFFER,
+					 line_buf, line_pos - line_buf + 1);
+	RTT_UNLOCK();
+
+	if (ret) {
 		log_backend_rtt_flush();
 		return 0;
 	}
@@ -139,6 +156,7 @@ static int log_backend_rtt_panic(u8_t *data, size_t length)
 {
 	unsigned int written;
 
+	/* do not respect mutex, take it over */
 	written = SEGGER_RTT_WriteNoLock(CONFIG_LOG_BACKEND_RTT_BUFFER, data,
 					 length);
 	log_backend_rtt_flush();

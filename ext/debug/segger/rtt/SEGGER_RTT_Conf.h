@@ -138,7 +138,12 @@ Revision: $Rev: 9599 $
 *       Rowley CrossStudio and GCC
 */
 #if (defined __SES_ARM) || (defined __CROSSWORKS_ARM) || (defined __GNUC__)
-  #ifdef __ARM_ARCH_6M__
+  #ifdef __ZEPHYR__
+    #include <kernel.h>
+    extern struct k_mutex rtt_term_mutex;
+    #define SEGGER_RTT_LOCK() k_mutex_lock(&rtt_term_mutex, K_FOREVER);
+    #define SEGGER_RTT_UNLOCK() k_mutex_unlock(&rtt_term_mutex);
+  #elif __ARM_ARCH_6M__
     #define SEGGER_RTT_LOCK()   {                                                                   \
                                     unsigned int LockState;                                         \
                                   __asm volatile ("mrs   %0, primask  \n\t"                         \
