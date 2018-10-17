@@ -144,18 +144,12 @@ static void log_setup(bool backend2_enable)
 	zassert_equal(0, log_set_timestamp_func(timestamp_get, 0),
 		      "Expects successful timestamp function setting.");
 
-	backend1_cb.counter = 0;
-	backend1_cb.panic = false;
-	backend1_cb.check_args = false;
-	backend1_cb.check_timestamp = false;
+	memset(&backend1_cb, 0, sizeof(backend1_cb));
 
 	log_backend_enable(&backend1, &backend1_cb, LOG_LEVEL_DBG);
 
 	if (backend2_enable) {
-		backend2_cb.counter = 0;
-		backend2_cb.panic = false;
-		backend2_cb.check_args = false;
-		backend2_cb.check_timestamp = false;
+		memset(&backend2_cb, 0, sizeof(backend2_cb));
 
 		log_backend_enable(&backend2, &backend2_cb, LOG_LEVEL_DBG);
 	}
