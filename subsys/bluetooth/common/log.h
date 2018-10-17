@@ -92,15 +92,13 @@ static inline __printf_like(1, 2) void _bt_log_dummy(const char *fmt, ...) {};
 				k_oops(); \
 			}
 
-/* This helper is only available when BT_DEBUG is enabled */
-const char *bt_hex(const void *buf, size_t len);
+const char *bt_hex_real(const void *buf, size_t len);
+const char *bt_addr_str_real(const bt_addr_t *addr);
+const char *bt_addr_le_str_real(const bt_addr_le_t *addr);
 
-/* These helpers are only safe to be called from internal threads as they're
- * not multi-threading safe
- */
-const char *bt_addr_str(const bt_addr_t *addr);
-const char *bt_addr_le_str(const bt_addr_le_t *addr);
-
+#define bt_hex(buf, len) log_strdup(bt_hex_real(buf, len))
+#define bt_addr_str(addr) log_strdup(bt_addr_str_real(addr))
+#define bt_addr_le_str(addr) log_strdup(bt_addr_le_str_real(addr))
 
 #ifdef __cplusplus
 }
