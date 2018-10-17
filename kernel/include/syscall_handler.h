@@ -437,7 +437,7 @@ static inline int _obj_validation_check(struct _k_object *ko,
 /**
  * @brief Runtime check kernel object pointer for non-init functions
  *
- * Calls _k_object_validate and triggers a kernel oops if the check files.
+ * Calls _k_object_validate and triggers a kernel oops if the check fails.
  * For use in system call handlers which are not init functions; a fatal
  * error will occur if the object is not initialized.
  *
