@@ -120,3 +120,11 @@ class EDTSDevice:
     def get_irq_prop_types(self):
         irqs = self.device['interrupts']['0']
         return list(irqs.keys())
+
+    ##
+    #
+    # @note: Unique id has the following format:
+    #        <PARENT>_<COMPAT_PARENT>_<ADDRESS_NODE>_<COMPAT_NODE_ADDRESS>
+    # @return device unique id string
+    def get_unique_id(self):
+        return self.get_property('unique_id')
