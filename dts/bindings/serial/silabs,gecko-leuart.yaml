@@ -1,0 +1,35 @@
+---
+title: GECKO LEUART
+version: 0.1
+
+description: >
+    This binding gives a base representation of the Gecko LEUART
+
+inherits:
+    !include uart.yaml
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "silabs,gecko-leuart"
+
+    reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+    interrupts:
+      type: array
+      category: required
+      description: required interrupts
+      generation: define
+
+    location:
+      type: int
+      category: required
+      description: PIN location
+      generation: define
+...

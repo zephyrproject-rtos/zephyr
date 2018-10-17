@@ -1,0 +1,40 @@
+#
+# Copyright (c) 2018 Diego Sueiro <diego.sueiro@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: Silabs Gecko I2C Controller
+version: 0.1
+
+description: >
+    This is a representation of the Silabs Gecko I2C nodes
+
+inherits:
+    !include i2c.yaml
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "silabs,gecko-i2c"
+
+    reg:
+      type: int
+      description: mmio register space
+      generation: define
+      category: required
+
+    interrupts:
+      type: compound
+      category: required
+      description: required interrupts
+      generation: define
+
+    location:
+     type: int
+     category: required
+     description: PIN location
+     generation: define
+...
