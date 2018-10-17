@@ -294,6 +294,66 @@ config LOG_BACKEND_UART
 	help
 	  When enabled backend is using UART to output logs.
 
+config LOG_BACKEND_RTT
+	bool "Enable Segger J-Link RTT backend"
+	depends on HAS_SEGGER_RTT
+	default y
+	help
+	  When enabled backend will use RTT for logging. This backend works on per
+	  message basis. Only whole message (terminated with carrier return '\r')
+	  is transferred to up-buffer at once depending on available space and
+	  selected mode.
+	  In panic mode backend always blocks and waits until there will be space
+	  in up-buffer for a message and message is transferred to host.
+
+if LOG_BACKEND_RTT
+
+choice
+    prompt "Logger behaviour"
+    default LOG_BACKEND_RTT_MODE_BLOCK
+
+config LOG_BACKEND_RTT_MODE_DROP
+	bool "Drop message that does not fits in up-buffer."
+	help
+	    If there is not enough space in up-buffer for a message, drop it.
+	    Number of dropped messages will be logged.
+	    Increase up-buffer size helps to reduce dropping of messages
+
+config LOG_BACKEND_RTT_MODE_BLOCK
+    bool "Block until message is transferred to host."
+    help
+        Waits until there will be enough space in the up-buffer for a message
+        and until the message is completely transferred to the host.
+
+endchoice
+
+config LOG_BACKEND_RTT_MESSAGE_SIZE
+	int "Size of internal buffer for storing messages."
+	range 32 256
+	default 128
+	help
+	    This option defines maximum message size transferable to up-buffer.
+
+config LOG_BACKEND_RTT_BUFFER
+	int "Buffer number used for logger output."
+	range 0 SEGGER_RTT_MAX_NUM_UP_BUFFERS
+	default 0
+	help
+	  Select index of up-buffer used for logger output, by default is uses
+	  terminal up-buffer and its settings.
+
+if LOG_BACKEND_RTT_BUFFER > 0
+
+config LOG_BACKEND_RTT_BUFFER_SIZE
+	int "Size of reserved up-buffer for logger output."
+	default 1024
+	help
+	  Specify reserved size of up-buffer used for logger output.
+
+endif # LOG_BACKEND_RTT_BUFFER
+endif # LOG_BACKEND_RTT
+
+
 config LOG_BACKEND_NATIVE_POSIX
 	bool "Enable native backend"
 	depends on ARCH_POSIX
@@ -303,14 +363,14 @@ config LOG_BACKEND_NATIVE_POSIX
 
 config LOG_BACKEND_SHOW_COLOR
 	bool "Enable colors in the backend"
-	depends on LOG_BACKEND_UART || LOG_BACKEND_NATIVE_POSIX
+	depends on LOG_BACKEND_UART || LOG_BACKEND_NATIVE_POSIX || LOG_BACKEND_RTT
 	default y
 	help
-	  When enabled UART backend prints errors in red and warning in yellow.
+	  When enabled selected backend prints errors in red and warning in yellow.
 
 config LOG_BACKEND_FORMAT_TIMESTAMP
 	bool "Enable timestamp formatting in the backend"
-	depends on LOG_BACKEND_UART || LOG_BACKEND_NATIVE_POSIX
+	depends on LOG_BACKEND_UART || LOG_BACKEND_NATIVE_POSIX || LOG_BACKEND_RTT
 	default y
 	help
 	  When enabled timestamp is formatted to hh:mm:ss:ms,us.
