@@ -30,6 +30,14 @@ class EDTSConsumerMixin(object):
         return self._edts['compatibles']
 
     ##
+    # @brief Get aliases
+    #
+    # @param None
+    # @return edts 'aliases' dict
+    def get_aliases(self):
+        return self._edts['aliases']
+
+    ##
     # @brief Get device ids of all activated compatible devices.
     #
     # @param compatibles compatible(s)
