@@ -62,3 +62,30 @@ class EDTSDevice:
         flattened = dict()
         self._properties_flattened(self.device, '', flattened, path_prefix)
         return flattened
+
+    def get_reg_addr(self, index=0):
+        return self.device['reg'][str(index)]['address']
+
+    def get_reg_size(self, index=0):
+        return self.device['reg'][str(index)]['size']
+
+    def _find_reg_idx_by_name(self, name):
+        regs = self.device['reg']
+        for idx, reg in regs.items():
+            if reg['name'] == name:
+                return int(idx)
+        return None
+
+    def get_reg_addr_by_name(self, name):
+        try:
+            idx = self._find_reg_idx_by_name(name)
+            return self.get_reg_addr(idx)
+        except:
+            return None
+
+    def get_reg_size_by_name(self, name):
+        try:
+            idx = self._find_reg_idx_by_name(name)
+            return self.get_reg_size(idx)
+        except:
+            return None
