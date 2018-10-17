@@ -54,6 +54,14 @@ class EDTSConsumerMixin(object):
         return self._edts['device-types']
 
     ##
+    # @brief Get controllers
+    #
+    # @param  None
+    # @return compatible generic device type
+    def get_controllers(self):
+        return self._edts['controllers']
+
+    ##
     # @brief Get device ids of all activated compatible devices.
     #
     # @param compatibles compatible(s)
