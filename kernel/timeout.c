@@ -44,7 +44,7 @@ static struct _timeout *next(struct _timeout *t)
 	return n == NULL ? NULL : CONTAINER_OF(n, struct _timeout, node);
 }
 
-static void remove(struct _timeout *t)
+static void remove_timeout(struct _timeout *t)
 {
 	if (next(t) != NULL) {
 		next(t)->dticks += t->dticks;
@@ -95,7 +95,7 @@ int _abort_timeout(struct _timeout *to)
 
 	LOCKED(&timeout_lock) {
 		if (to->dticks != _INACTIVE) {
-			remove(to);
+			remove_timeout(to);
 			ret = 0;
 		}
 	}
@@ -140,7 +140,7 @@ void z_clock_announce(s32_t ticks)
 					announce_remaining -= t->dticks;
 					curr_tick += t->dticks;
 					t->dticks = 0;
-					remove(t);
+					remove_timeout(t);
 				} else {
 					t->dticks -= announce_remaining;
 					t = NULL;
