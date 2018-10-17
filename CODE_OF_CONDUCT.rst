@@ -67,7 +67,7 @@ Reporting
 
 We strive to maintain a respectful and professional environment in the Zephyr
 Community. If you experience or witness Code of Conduct violations and wish to
-report the incident please contact us at info@zephyrproject.org.  
+report the incident please contact us at report@zephyrproject.org.
 
 Attribution
 ***********
