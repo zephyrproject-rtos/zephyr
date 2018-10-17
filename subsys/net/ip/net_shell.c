@@ -3286,6 +3286,8 @@ wait_reply:
 		PR_INFO("Ping timeout\n");
 		_remove_ipv6_ping_handler();
 		_remove_ipv4_ping_handler();
+
+		return -ETIMEDOUT;
 	}
 
 	return 0;
