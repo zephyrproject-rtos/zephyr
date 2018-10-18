@@ -13,15 +13,15 @@
 
 #if CONFIG_LOG_BACKEND_RTT_MODE_DROP
 
-#define DROP_MESSAGE "\nmessages dropped: 99 \r"
-#define DROP_MESSAGE_LEN (sizeof(DROP_MESSAGE) - 1)
-static const char *drop_msg = DROP_MESSAGE;
-static int drop_cnt = 0;
-static int drop_warn = 0;
+#define DROP_MSG "\nmessages dropped: 99 \r"
+#define DROP_MSG_LEN (sizeof(DROP_MSG) - 1)
+static const char *drop_msg = DROP_MSG;
+static int drop_cnt;
+static int drop_warn;
 
 #else
 
-#define DROP_MESSAGE_LEN 0
+#define DROP_MSG_LEN 0
 
 #endif /* CONFIG_LOG_BACKEND_RTT_MODE_DROP */
 
@@ -38,7 +38,7 @@ static u8_t rtt_buf[CONFIG_LOG_BACKEND_RTT_BUFFER_SIZE];
 
 #endif /* CONFIG_LOG_BACKEND_RTT_BUFFER > 0 */
 
-static u8_t line_buf[CONFIG_LOG_BACKEND_RTT_MESSAGE_SIZE + DROP_MESSAGE_LEN];
+static u8_t line_buf[CONFIG_LOG_BACKEND_RTT_MESSAGE_SIZE + DROP_MSG_LEN];
 static u8_t *line_pos;
 static u8_t char_buf;
 static int panic_mode;
@@ -96,23 +96,24 @@ static int log_backend_rtt_write(void)
 	*line_pos = '\r';
 
 	if (drop_cnt > 0 && !drop_warn) {
-		memmove(line_buf + DROP_MESSAGE_LEN, line_buf,
+		memmove(line_buf + DROP_MSG_LEN, line_buf,
 			line_pos - line_buf);
-		memcpy(line_buf, drop_msg, DROP_MESSAGE_LEN);
-		line_pos += DROP_MESSAGE_LEN;
+		memcpy(line_buf, drop_msg, DROP_MSG_LEN);
+		line_pos += DROP_MSG_LEN;
 		drop_warn = 1;
 	}
 
 	if (drop_warn) {
 		int cnt = min(drop_cnt, 99);
+
 		if (cnt < 10) {
-			line_buf[DROP_MESSAGE_LEN - 2] = ' ';
-			line_buf[DROP_MESSAGE_LEN - 3] = (u8_t) ('0' + cnt);
-			line_buf[DROP_MESSAGE_LEN - 4] = ' ';
+			line_buf[DROP_MSG_LEN - 2] = ' ';
+			line_buf[DROP_MSG_LEN - 3] = (u8_t) ('0' + cnt);
+			line_buf[DROP_MSG_LEN - 4] = ' ';
 		} else {
-			line_buf[DROP_MESSAGE_LEN - 2] = (u8_t) ('0' + cnt % 10);
-			line_buf[DROP_MESSAGE_LEN - 3] = (u8_t) ('0' + cnt / 10);
-			line_buf[DROP_MESSAGE_LEN - 4] = '>';
+			line_buf[DROP_MSG_LEN - 2] = (u8_t) ('0' + cnt % 10);
+			line_buf[DROP_MSG_LEN - 3] = (u8_t) ('0' + cnt / 10);
+			line_buf[DROP_MSG_LEN - 4] = '>';
 		}
 	}
 
