@@ -1,116 +1,135 @@
 /*
- * Copyright (c) 2017 Jean-Paul Etienne <fractalclone@gmail.com>
+ * Copyright (c) 2018 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <drivers/system_timer.h>
+#include <sys_clock.h>
+#include <spinlock.h>
+#include <soc.h>
 
-#include <kernel.h>
-#include <arch/cpu.h>
-#include <device.h>
-#include <system_timer.h>
+#define CYC_PER_TICK ((u32_t)((u64_t)CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC	\
+			      / (u64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
+#define MAX_TICKS ((0xffffffffu - CYC_PER_TICK) / CYC_PER_TICK)
+#define MIN_DELAY 1000
 
-#include "legacy_api.h"
+#define TICKLESS (IS_ENABLED(CONFIG_TICKLESS_KERNEL) &&		\
+		  !IS_ENABLED(CONFIG_QEMU_TICKLESS_WORKAROUND))
 
-typedef struct {
-	u32_t val_low;
-	u32_t val_high;
-} riscv_machine_timer_t;
+static struct k_spinlock lock;
+static u64_t last_count;
 
-static volatile riscv_machine_timer_t *mtime =
-	(riscv_machine_timer_t *)RISCV_MTIME_BASE;
-static volatile riscv_machine_timer_t *mtimecmp =
-	(riscv_machine_timer_t *)RISCV_MTIMECMP_BASE;
-
-/*
- * The RISCV machine-mode timer is a one shot timer that needs to be rearm upon
- * every interrupt. Timer clock is a 64-bits ART.
- * To arm timer, we need to read the RTC value and update the
- * timer compare register by the RTC value + time interval we want timer
- * to interrupt.
- */
-static ALWAYS_INLINE void riscv_machine_rearm_timer(void)
+static void set_mtimecmp(u64_t time)
 {
-	u64_t rtc;
+	volatile u32_t *r = (u32_t *)RISCV_MTIMECMP_BASE;
 
-	/*
-	 * Disable timer interrupt while rearming the timer
-	 * to avoid generation of interrupts while setting
-	 * the mtimecmp->val_low register.
+	/* Per spec, the RISC-V MTIME/MTIMECMP registers are 64 bit,
+	 * but are NOT internally latched for multiword transfers.  So
+	 * we have to be careful about sequencing to avoid triggering
+	 * spurious interrupts: always set the high word to a max
+	 * value first.
 	 */
-	irq_disable(RISCV_MACHINE_TIMER_IRQ);
-
-	/*
-	 * Following machine-mode timer implementation in QEMU, the actual
-	 * RTC read is performed when reading low timer value register.
-	 * Reading high timer value just reads the most significant 32-bits
-	 * of a cache value, obtained from a previous read to the low
-	 * timer value register. Hence, always read timer->val_low first.
-	 * This also works for other implementations.
-	 */
-	rtc = mtime->val_low;
-	rtc |= ((u64_t)mtime->val_high << 32);
-
-	/*
-	 * Rearm timer to generate an interrupt after
-	 * sys_clock_hw_cycles_per_tick()
-	 */
-	rtc += sys_clock_hw_cycles_per_tick();
-	mtimecmp->val_low = (u32_t)(rtc & 0xffffffff);
-	mtimecmp->val_high = (u32_t)((rtc >> 32) & 0xffffffff);
-
-	/* Enable timer interrupt */
-	irq_enable(RISCV_MACHINE_TIMER_IRQ);
+	r[1] = 0xffffffff;
+	r[0] = (u32_t)time;
+	r[1] = (u32_t)(time >> 32);
 }
 
-static void riscv_machine_timer_irq_handler(void *unused)
+static u64_t mtime(void)
 {
-	ARG_UNUSED(unused);
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	extern void read_timer_start_of_tick_handler(void);
-	read_timer_start_of_tick_handler();
-#endif
+	volatile u32_t *r = (u32_t *)RISCV_MTIME_BASE;
+	u32_t lo, hi;
 
-	z_clock_announce(1);
+	/* Likewise, must guard against rollover when reading */
+	do {
+		hi = r[1];
+		lo = r[0];
+	} while (r[1] != hi);
 
-	/* Rearm timer */
-	riscv_machine_rearm_timer();
-
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	extern void read_timer_end_of_tick_handler(void);
-	read_timer_end_of_tick_handler();
-#endif
+	return (((u64_t)hi) << 32) | lo;
 }
 
-#ifdef CONFIG_TICKLESS_IDLE
-#error "Tickless idle not yet implemented for riscv-machine timer"
-#endif
+static void timer_isr(void *arg)
+{
+	ARG_UNUSED(arg);
+
+	k_spinlock_key_t key = k_spin_lock(&lock);
+	u64_t now = mtime();
+	u32_t dticks = (u32_t)((now - last_count) / CYC_PER_TICK);
+
+	last_count += dticks * CYC_PER_TICK;
+
+	if (!TICKLESS) {
+		u64_t next = last_count + CYC_PER_TICK;
+
+		if ((s64_t)(next - now) < MIN_DELAY) {
+			next += CYC_PER_TICK;
+		}
+		set_mtimecmp(next);
+	}
+
+	k_spin_unlock(&lock, key);
+	z_clock_announce(dticks);
+}
 
 int z_clock_driver_init(struct device *device)
 {
-	ARG_UNUSED(device);
-
-	IRQ_CONNECT(RISCV_MACHINE_TIMER_IRQ, 0,
-		    riscv_machine_timer_irq_handler, NULL, 0);
-
-	/* Initialize timer, just call riscv_machine_rearm_timer */
-	riscv_machine_rearm_timer();
-
+	IRQ_CONNECT(RISCV_MACHINE_TIMER_IRQ, 0, timer_isr, NULL, 0);
+	set_mtimecmp(mtime() + CYC_PER_TICK);
+	irq_enable(RISCV_MACHINE_TIMER_IRQ);
 	return 0;
 }
 
-/**
- *
- * @brief Read the platform's timer hardware
- *
- * This routine returns the current time in terms of timer hardware clock
- * cycles.
- *
- * @return up counter of elapsed clock cycles
- */
+void z_clock_set_timeout(s32_t ticks, bool idle)
+{
+	ARG_UNUSED(idle);
+
+#if defined(CONFIG_TICKLESS_KERNEL) && !defined(CONFIG_QEMU_TICKLESS_WORKAROUND)
+	/* RISCV has no idle handler yet, so if we try to spin on the
+	 * logic below to reset the comparator, we'll always bump it
+	 * forward to the "next tick" due to MIN_DELAY handling and
+	 * the interrupt will never fire!  Just rely on the fact that
+	 * the OS gave us the proper timeout already.
+	 */
+	if (idle) {
+		return;
+	}
+
+	ticks = ticks == K_FOREVER ? MAX_TICKS : ticks;
+	ticks = max(min(ticks - 1, (s32_t)MAX_TICKS), 0);
+
+	k_spinlock_key_t key = k_spin_lock(&lock);
+	u64_t now = mtime();
+	u32_t cyc = ticks * CYC_PER_TICK;
+
+	/* Round up to next tick boundary.  Note use of 32 bit math,
+	 * max_ticks is calibrated to permit this.
+	 */
+	cyc += (u32_t)(now - last_count) + (CYC_PER_TICK - 1);
+	cyc = (cyc / CYC_PER_TICK) * CYC_PER_TICK;
+
+	if ((s32_t)(cyc + last_count - now) < MIN_DELAY) {
+		cyc += CYC_PER_TICK;
+	}
+
+	set_mtimecmp(cyc + last_count);
+	k_spin_unlock(&lock, key);
+#endif
+}
+
+u32_t z_clock_elapsed(void)
+{
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		return 0;
+	}
+
+	k_spinlock_key_t key = k_spin_lock(&lock);
+	u32_t ret = ((u32_t)mtime() - (u32_t)last_count) / CYC_PER_TICK;
+
+	k_spin_unlock(&lock, key);
+	return ret;
+}
+
 u32_t _timer_cycle_get_32(void)
 {
-	/* We just want a cycle count so just post what's in the low 32
-	 * bits of the mtime real-time counter
-	 */
-	return mtime->val_low;
+	return (u32_t)mtime();
 }
