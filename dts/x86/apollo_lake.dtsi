@@ -44,7 +44,7 @@
 		compatible = "simple-bus";
 		ranges;
 
-		gpio: gpio@0 {
+		gpio: gpio@d0c50000 {
 			compatible = "intel,apl-gpio";
 			reg = <0xd0c50000 0x1000>,
 			      <0xd0c40000 0x1000>,
