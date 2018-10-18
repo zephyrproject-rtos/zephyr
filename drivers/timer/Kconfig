@@ -169,6 +169,7 @@ config PULPINO_TIMER
 config RISCV_MACHINE_TIMER
 	bool "RISCV Machine Timer"
 	depends on SOC_FAMILY_RISCV_PRIVILEGE
+	select TICKLESS_CAPABLE
 	help
 	  This module implements a kernel device driver for the generic RISCV machine
 	  timer driver. It provides the standard "system clock driver" interfaces.
