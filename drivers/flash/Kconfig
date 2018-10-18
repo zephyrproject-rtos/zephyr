@@ -31,6 +31,13 @@ module = FLASH
 module-str = flash
 source "subsys/logging/Kconfig.template.log_config"
 
+config FLASH_SHELL
+	bool "Enable Flash shell"
+	depends on FLASH_HAS_PAGE_LAYOUT
+	help
+	  Enable the flash shell with flash related commands such as test,
+	  write, read and erase.
+
 config FLASH_PAGE_LAYOUT
 	bool "API for retrieving the layout of pages"
 	depends on FLASH_HAS_PAGE_LAYOUT
