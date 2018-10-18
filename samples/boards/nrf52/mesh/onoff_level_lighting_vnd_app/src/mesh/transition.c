@@ -18,7 +18,7 @@ u8_t transition_type, default_tt;
 u32_t *ptr_counter;
 struct k_timer *ptr_timer = &dummy_timer;
 
-struct transition lightness_transition, temp_transition, demo_transition;
+struct transition lightness_transition, temp_transition;
 
 /* Function to calculate Remaining Time (Start) */
 
@@ -96,9 +96,7 @@ static void tt_values_calculator(struct transition *transition)
 
 void onoff_tt_values(struct generic_onoff_state *state)
 {
-	if (state == &gen_onoff_srv_root_user_data) {
-		light_ctl_srv_user_data.transition = &lightness_transition;
-	}
+	light_ctl_srv_user_data.transition = &lightness_transition;
 
 	tt_values_calculator(state->transition);
 
@@ -108,9 +106,7 @@ void onoff_tt_values(struct generic_onoff_state *state)
 		state->transition->quo_tt = state->transition->total_duration /
 						state->transition->counter;
 
-		if (state == &gen_onoff_srv_root_user_data) {
-			calculate_lightness_target_values(ONOFF_TARGET);
-		}
+		calculate_lightness_target_values(ONOFF_TARGET);
 	}
 }
 

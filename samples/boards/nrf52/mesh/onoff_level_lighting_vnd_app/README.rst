@@ -26,8 +26,6 @@ which Root element has following models
 
 And Secondary element has following models
 
-- Generic OnOff Server
-- Generic OnOff Client
 - Generic Level Server
 - Generic Level Client
 - Light CTL Temperature Server
