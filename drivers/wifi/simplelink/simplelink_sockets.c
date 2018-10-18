@@ -18,15 +18,29 @@ LOG_MODULE_DECLARE(LOG_MODULE_NAME);
 #include <ti/drivers/net/wifi/source/driver.h>
 #include "simplelink_support.h"
 
+#include "tls_internal.h"
+
 /* Mutex for getaddrinfo() calls: */
 K_MUTEX_DEFINE(ga_mutex);
 
 static int simplelink_socket(int family, int type, int proto)
 {
-	int retval;
+	uint8_t sec_method = SL_SO_SEC_METHOD_SSLv3_TLSV1_2;
+	int sd;
+	int retval = 0;
+	int sl_proto = proto;
 
 	/* Map Zephyr socket.h AF_INET6 to SimpleLink's: */
 	family = (family == AF_INET6 ? SL_AF_INET6 : family);
+
+	/* Map Zephyr TLS protocols to TI's values: */
+	if (proto >= IPPROTO_TLS_1_0 && proto <= IPPROTO_TLS_1_2) {
+		sl_proto = SL_SEC_SOCKET;
+	} else if (proto >= IPPROTO_DTLS_1_0 && proto <= IPPROTO_DTLS_1_2) {
+		/* SimpleLink doesn't handle DTLS yet! */
+		retval = EPROTONOSUPPORT;
+		goto exit;
+	}
 
 	/* Ensure other Zephyr definitions match SimpleLink's: */
 	__ASSERT(family == SL_AF_INET || family == SL_AF_INET6 \
@@ -35,12 +49,29 @@ static int simplelink_socket(int family, int type, int proto)
 	__ASSERT(type == SL_SOCK_STREAM || type == SL_SOCK_DGRAM || \
 		 type == SL_SOCK_RAW,				    \
 		 "unrecognized type: %d", type);
-	__ASSERT(proto == SL_IPPROTO_TCP || proto == SL_IPPROTO_UDP || \
-		 proto == SL_IPPROTO_RAW || proto == SL_SEC_SOCKET,    \
-		 "unrecognized proto: %d", proto);
+	__ASSERT(sl_proto == SL_IPPROTO_TCP || sl_proto == SL_IPPROTO_UDP || \
+		 sl_proto == SL_IPPROTO_RAW || sl_proto == SL_SEC_SOCKET,    \
+		 "unrecognized proto: %d", sl_proto);
 
-	retval = sl_Socket(family, type, proto);
+	sd = sl_Socket(family, type, sl_proto);
+	if (sd < 0) {
+		retval = sd;
+		goto exit;
+	}
 
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	    && sl_proto == SL_SEC_SOCKET) {
+		/* Now, set specific TLS version via setsockopt(): */
+		sec_method = (proto - IPPROTO_TLS_1_0) + SL_SO_SEC_METHOD_TLSV1;
+		retval = sl_SetSockOpt(sd, SL_SOL_SOCKET, SL_SO_SECMETHOD,
+				       &sec_method, sizeof(sec_method));
+		if (retval < 0) {
+			retval = EPROTONOSUPPORT;
+			(void)sl_Close(sd);
+		}
+	}
+
+exit:
 	return _SlDrvSetErrno(retval);
 }
 
@@ -241,6 +272,14 @@ static int simplelink_connect(int sd, const struct sockaddr *addr,
 
 	retval = sl_Connect(sd, sl_addr, sl_addrlen);
 
+	/* TBD: Until we have a good way to get correct date from Zephyr,
+	 * log a date validation error as a warning, but continue connection:
+	 */
+	if (retval == SL_ERROR_BSD_ESECDATEERROR) {
+		LOG_WRN("Failed certificate date validation: %d", retval);
+		retval = 0;
+	}
+
 exit:
 	return _SlDrvSetErrno(retval);
 }
@@ -307,6 +346,72 @@ exit:
 	return _SlDrvSetErrno(retval);
 }
 
+#ifdef CONFIG_NET_SOCKETS_SOCKOPT_TLS
+
+/* Iterate through the list of Zephyr's credential types, and
+ * map to SimpleLink values, then set stored filenames
+ * via SimpleLink's sl_SetSockOpt()
+ */
+static int map_credentials(int sd, const void *optval, socklen_t optlen)
+{
+	sec_tag_t *sec_tags = (sec_tag_t *)optval;
+	int retval = 0;
+	int sec_tags_len;
+	sec_tag_t tag;
+	int opt;
+	int i;
+	struct tls_credential *cert;
+
+	if ((optlen % sizeof(sec_tag_t)) != 0 || (optlen == 0)) {
+		retval = EINVAL;
+		goto exit;
+	} else {
+		sec_tags_len = optlen / sizeof(sec_tag_t);
+	}
+
+	/* For each tag, retrieve the credentials value and type: */
+	for (i = 0; i < sec_tags_len; i++) {
+		tag = sec_tags[i];
+		cert = credential_next_get(tag, NULL);
+		while (cert != NULL) {
+			/* Map Zephyr cert types to Simplelink cert options: */
+			switch (cert->type) {
+			case TLS_CREDENTIAL_CA_CERTIFICATE:
+				opt = SL_SO_SECURE_FILES_CA_FILE_NAME;
+				break;
+			case TLS_CREDENTIAL_SERVER_CERTIFICATE:
+				opt = SL_SO_SECURE_FILES_CERTIFICATE_FILE_NAME;
+				break;
+			case TLS_CREDENTIAL_PRIVATE_KEY:
+				opt = SL_SO_SECURE_FILES_PRIVATE_KEY_FILE_NAME;
+				break;
+			case TLS_CREDENTIAL_NONE:
+			case TLS_CREDENTIAL_PSK:
+			case TLS_CREDENTIAL_PSK_ID:
+			default:
+				/* Not handled by SimpleLink: */
+				retval = EINVAL;
+				goto exit;
+			}
+			retval = sl_SetSockOpt(sd, SL_SOL_SOCKET, opt,
+					       cert->buf,
+					       (SlSocklen_t)cert->len);
+			if (retval < 0) {
+				break;
+			}
+			cert = credential_next_get(tag, cert);
+		}
+	}
+
+exit:
+	return retval;
+}
+#else
+static int map_credentials(int sd, const void *optval, socklen_t optlen)
+{
+	return 0;
+}
+#endif  /* CONFIG_NET_SOCKETS_SOCKOPT_TLS */
 
 /* Excerpted from SimpleLink's socket.h:
  * "Unsupported: these are only placeholders to not break BSD code."
@@ -317,38 +422,67 @@ exit:
 #define SO_SNDBUF     (202)
 #define TCP_NODELAY   (203)
 
+/* Needed to keep line lengths < 80: */
+#define _SEC_DOMAIN_VERIF SL_SO_SECURE_DOMAIN_NAME_VERIFICATION
+
 static int simplelink_setsockopt(int sd, int level, int optname,
 				 const void *optval, socklen_t optlen)
 {
 	int retval;
 
-	/* Note: this logic should match SimpleLink SDK's socket.c: */
-	switch (optname) {
-	/* TCP_NODELAY is always set by the NWP; true always succeeds */
-	case TCP_NODELAY:
-		if (optval) {
-			/* if user wishes to have TCP_NODELAY = FALSE,
-			 * we return EINVAL and fail in the cases below.
-			 */
-			if (*(u32_t *)optval) {
-				retval = 0;
-				goto exit;
-			}
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS) && level == SOL_TLS) {
+		/* Handle Zephyr's SOL_TLS secure socket options: */
+		switch (optname) {
+		case TLS_SEC_TAG_LIST:
+			/* Bind credential filenames to this socket: */
+			retval = map_credentials(sd, optval, optlen);
+			break;
+		case TLS_HOSTNAME:
+			retval = sl_SetSockOpt(sd, SL_SOL_SOCKET,
+					       _SEC_DOMAIN_VERIF,
+					       (const char *)optval, optlen);
+			break;
+		case TLS_CIPHERSUITE_LIST:
+		case TLS_PEER_VERIFY:
+		case TLS_DTLS_ROLE:
+			/* Not yet supported: */
+			retval = ENOTSUP;
+			break;
+		default:
+			retval = EINVAL;
+			break;
 		}
-	/* These sock opts aren't supported by the cc32xx network stack,
-	 * so we ignore them and set errno to EINVAL
-	 * in order to not break "off-the-shelf" BSD code.
-	 */
-	case SO_BROADCAST:
-	case SO_REUSEADDR:
-	case SO_SNDBUF:
-		retval = EINVAL;
-		goto exit;
-	default:
-		break;
-	}
+	} else {
+		/* Can be SOL_SOCKET or TI specific: */
 
-	retval = sl_SetSockOpt(sd, level, optname, optval, (SlSocklen_t)optlen);
+		/* Note: this logic should match SimpleLink SDK's socket.c: */
+		switch (optname) {
+		case TCP_NODELAY:
+			if (optval) {
+				/* if user wishes to have TCP_NODELAY = FALSE,
+				 * we return EINVAL and fail in the cases below.
+				 */
+				if (*(u32_t *)optval) {
+					retval = 0;
+					goto exit;
+				}
+			}
+			/* These sock opts aren't supported by the cc32xx
+			 * network stack, so we ignore them and set errno to
+			 * EINVAL in order to not break "off-the-shelf" BSD
+			 * code.
+			 */
+		case SO_BROADCAST:
+		case SO_REUSEADDR:
+		case SO_SNDBUF:
+			retval = EINVAL;
+			goto exit;
+		default:
+			break;
+		}
+		retval = sl_SetSockOpt(sd, SL_SOL_SOCKET, optname, optval,
+				       (SlSocklen_t)optlen);
+	}
 
 exit:
 	return _SlDrvSetErrno(retval);
@@ -359,31 +493,47 @@ static int simplelink_getsockopt(int sd, int level, int optname,
 {
 	int retval;
 
-	/* Note: this logic should match SimpleLink SDK's socket.c: */
-	switch (optname) {
-	/* TCP_NODELAY is always set by the NWP, so we return True */
-	case TCP_NODELAY:
-		if (optval) {
-			(*(_u32 *)optval) = TRUE;
-			retval = 0;
-			goto exit;
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS) && level == SOL_TLS) {
+		/* Handle Zephyr's SOL_TLS secure socket options: */
+		switch (optname) {
+		case TLS_SEC_TAG_LIST:
+		case TLS_CIPHERSUITE_LIST:
+		case TLS_CIPHERSUITE_USED:
+			/* Not yet supported: */
+			retval = ENOTSUP;
+			break;
+		default:
+			retval = EINVAL;
+			break;
 		}
-	/* These sock opts aren't supported by the cc32xx network stack,
-	 * so we silently ignore them and set errno to EINVAL
-	 * in order to not break "off-the-shelf" BSD code.
-	 */
-	case SO_BROADCAST:
-	case SO_REUSEADDR:
-	case SO_SNDBUF:
-	retval = EINVAL;
-		goto exit;
-	default:
-		break;
+	} else {
+		/* Can be SOL_SOCKET or TI specific: */
+
+		/* Note: this logic should match SimpleLink SDK's socket.c: */
+		switch (optname) {
+			/* TCP_NODELAY always set by the NWP, so return True */
+		case TCP_NODELAY:
+			if (optval) {
+				(*(_u32 *)optval) = TRUE;
+				retval = 0;
+				goto exit;
+			}
+			/* These sock opts aren't supported by the cc32xx
+			 * network stack, so we silently ignore them and set
+			 * errno to EINVAL in order to not break "off-the-shelf"
+			 * BSD code.
+			 */
+		case SO_BROADCAST:
+		case SO_REUSEADDR:
+		case SO_SNDBUF:
+			retval = EINVAL;
+			goto exit;
+		default:
+			break;
+		}
+		retval = sl_GetSockOpt(sd, SL_SOL_SOCKET, optname, optval,
+				       (SlSocklen_t *)optlen);
 	}
-
-	retval = sl_GetSockOpt(sd, level, optname, optval,
-			       (SlSocklen_t *)optlen);
-
 exit:
 	return _SlDrvSetErrno(retval);
 }
