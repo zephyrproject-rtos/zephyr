@@ -1700,29 +1700,29 @@ int shell_prompt_change(const struct shell *shell, char *prompt)
 	return -1;
 }
 
-bool shell_cmd_precheck(const struct shell *shell,
-			bool arg_cnt_ok,
-			const struct shell_getopt_option *opt,
-			size_t opt_len)
+int shell_cmd_precheck(const struct shell *shell,
+		       bool arg_cnt_ok,
+		       const struct shell_getopt_option *opt,
+		       size_t opt_len)
 {
 	if (shell_help_requested(shell)) {
 		shell_help_print(shell, opt, opt_len);
-		return false;
+		return 1; /* help printed */
 	}
 
 	if (!arg_cnt_ok) {
 		shell_fprintf(shell, SHELL_ERROR,
-			      "%s: wrong parameter count\r\n",
+			      "%s: wrong parameter count\n",
 			      shell->ctx->active_cmd.syntax);
 
-		if (IS_ENABLED(SHELL_HELP_ON_WRONG_ARGUMENT_COUNT)) {
+		if (IS_ENABLED(CONFIG_SHELL_HELP_ON_WRONG_ARGUMENT_COUNT)) {
 			shell_help_print(shell, opt, opt_len);
 		}
 
-		return false;
+		return -EINVAL;
 	}
 
-	return true;
+	return 0;
 }
 
 int shell_execute_cmd(const struct shell *shell, const char *cmd)

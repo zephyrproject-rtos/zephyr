@@ -572,12 +572,14 @@ int shell_prompt_change(const struct shell *shell, char *prompt);
  * @param[in] opt	  Pointer to the optional option array.
  * @param[in] opt_len	  Option array size.
  *
- * @return True if check passed, false otherwise or help was requested.
+ * @return 0		  if check passed
+ * @return 1		  if help was requested
+ * @return -EINVAL	  if wrong argument count
  */
-bool shell_cmd_precheck(const struct shell *shell,
-			bool arg_cnt_ok,
-			const struct shell_getopt_option *opt,
-			size_t opt_len);
+int shell_cmd_precheck(const struct shell *shell,
+		       bool arg_cnt_ok,
+		       const struct shell_getopt_option *opt,
+		       size_t opt_len);
 
 /**
  * @internal @brief This function shall not be used directly, it is required by
