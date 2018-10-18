@@ -29,8 +29,12 @@ K_TIMER_DEFINE(log_timer, timer_expired_handler, NULL);
 static int cmd_log_test_start(const struct shell *shell, size_t argc,
 			      char **argv, u32_t period)
 {
-	if (!shell_cmd_precheck(shell, argc == 1, NULL, 0)) {
-		return 0;
+	ARG_UNUSED(argv);
+
+	int err = shell_cmd_precheck(shell, argc == 1, NULL, 0);
+
+	if (err) {
+		return err;
 	}
 
 	k_timer_start(&log_timer, period, period);
@@ -58,8 +62,10 @@ static int cmd_log_test_stop(const struct shell *shell, size_t argc,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	if (!shell_cmd_precheck(shell, argc == 1, NULL, 0)) {
-		return 0;
+	int err = shell_cmd_precheck(shell, argc == 1, NULL, 0);
+
+	if (err) {
+		return err;
 	}
 
 	k_timer_stop(&log_timer);
@@ -127,7 +133,6 @@ SHELL_CREATE_STATIC_SUBCMD_SET(sub_demo)
 	SHELL_CMD(ping, NULL, "Ping command.", cmd_demo_ping),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 };
-
 SHELL_CMD_REGISTER(demo, &sub_demo, "Demo commands", NULL);
 
 SHELL_CMD_REGISTER(version, NULL, "Show kernel version", cmd_version);

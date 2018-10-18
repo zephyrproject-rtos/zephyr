@@ -239,12 +239,14 @@ static int cmd_flash(const struct shell *shell, size_t argc, char **argv)
 
 
 static int cmd_write_block_size(const struct shell *shell, size_t argc,
-					 char **argv)
+				char **argv)
 {
-	int err;
+	ARG_UNUSED(argv);
 
-	if (!shell_cmd_precheck(shell, argc == 1, NULL, 0)) {
-		return 0;
+	int err = shell_cmd_precheck(shell, (argc == 1), NULL, 0);
+
+	if (err) {
+		return err;
 	}
 
 	err = check_flash_device(shell);
@@ -258,11 +260,12 @@ static int cmd_write_block_size(const struct shell *shell, size_t argc,
 
 static int cmd_read(const struct shell *shell, size_t argc, char **argv)
 {
-	unsigned long int offset, len;
-	int err;
 
-	if (!shell_cmd_precheck(shell, argc == 3, NULL, 0)) {
-		return 0;
+	int err = shell_cmd_precheck(shell, (argc == 3), NULL, 0);
+	unsigned long int offset, len;
+
+	if (err) {
+		goto exit;
 	}
 
 	err = check_flash_device(shell);
@@ -284,11 +287,11 @@ exit:
 
 static int cmd_erase(const struct shell *shell, size_t argc, char **argv)
 {
+	int err = shell_cmd_precheck(shell, (argc == 3), NULL, 0);
 	unsigned long int offset, size;
-	int err;
 
-	if (!shell_cmd_precheck(shell, argc == 3, NULL, 0)) {
-		return 0 ;
+	if (err) {
+		goto exit;
 	}
 
 	err = check_flash_device(shell);
@@ -309,12 +312,12 @@ exit:
 
 static int cmd_write(const struct shell *shell, size_t argc, char **argv)
 {
+	int err = shell_cmd_precheck(shell, (argc > 2), NULL, 0);
 	unsigned long int i, offset;
 	u8_t buf[ARGC_MAX];
-	int err = 0;
 
-	if (!shell_cmd_precheck(shell, argc > 2, NULL, 0)) {
-		return 0;
+	if (err) {
+		goto exit;
 	}
 
 	err = check_flash_device(shell);
@@ -361,11 +364,13 @@ exit:
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 static int cmd_page_count(const struct shell *shell, size_t argc, char **argv)
 {
-	size_t page_count;
-	int err;
+	ARG_UNUSED(argv);
 
-	if (!shell_cmd_precheck(shell, argc == 1, NULL, 0)) {
-		return 0;
+	int err = shell_cmd_precheck(shell, (argc == 1), NULL, 0);
+	size_t page_count;
+
+	if (err) {
+		return err;
 	}
 
 	err = check_flash_device(shell);
@@ -404,12 +409,12 @@ static bool page_layout_cb(const struct flash_pages_info *info, void *datav)
 
 static int cmd_page_layout(const struct shell *shell, size_t argc, char **argv)
 {
+	int err = shell_cmd_precheck(shell, (argc <= 3), NULL, 0);
 	unsigned long int start_page, end_page;
 	struct page_layout_data data;
-	int err = 0;
 
-	if (!shell_cmd_precheck(shell, argc <= 3, NULL, 0)) {
-		return 0 ;
+	if (err) {
+		return err;
 	}
 
 	err = check_flash_device(shell);
@@ -458,13 +463,15 @@ static int cmd_page_read(const struct shell *shell, size_t argc, char **argv)
 	struct flash_pages_info info;
 	int ret;
 
-	ret = check_flash_device(shell);
+
+	ret = shell_cmd_precheck(shell, (argc == 3) || (argc == 4), NULL, 0);
 	if (ret) {
 		return ret;
 	}
 
-	if (!shell_cmd_precheck(shell, (argc == 3) || (argc == 4), NULL, 0)) {
-		return 0;
+	ret = check_flash_device(shell);
+	if (ret) {
+		return ret;
 	}
 
 	if (argc == 3) {
@@ -505,8 +512,9 @@ static int cmd_page_erase(const struct shell *shell, size_t argc, char **argv)
 		return ret;
 	}
 
-	if (!shell_cmd_precheck(shell, (argc == 2) || (argc == 3), NULL, 0)) {
-		return 0;
+	ret = shell_cmd_precheck(shell, (argc == 2) || (argc == 3), NULL, 0);
+	if (ret) {
+		return ret;
 	}
 
 	if (parse_ul(argv[1], &page)) {
@@ -555,8 +563,9 @@ static int cmd_page_write(const struct shell *shell, size_t argc, char **argv)
 		return ret;
 	}
 
-	if (!shell_cmd_precheck(shell, (argc > 2), NULL, 0)) {
-		return 0;
+	ret = shell_cmd_precheck(shell, (argc > 2), NULL, 0);
+	if (ret) {
+		return ret;
 	}
 
 	if (argc < 2 || parse_ul(argv[1], &page) || parse_ul(argv[2], &off)) {
@@ -592,9 +601,11 @@ static int cmd_set_dev(const struct shell *shell, size_t argc, char **argv)
 {
 	struct device *dev;
 	const char *name;
+	int ret;
 
-	if (!shell_cmd_precheck(shell, (argc == 2), NULL, 0)) {
-		return 0;
+	ret = shell_cmd_precheck(shell, (argc = 2), NULL, 0);
+	if (ret) {
+		return ret;
 	}
 
 	name = argv[1];

@@ -228,9 +228,10 @@ static int log_enable(const struct shell *shell,
 		      char **argv)
 {
 	int severity_level;
+	int err = shell_cmd_precheck(shell, (argc > 1), NULL, 0);
 
-	if (!shell_cmd_precheck(shell, (argc > 1), NULL, 0)) {
-		return 0;
+	if (err) {
+		return err;
 	}
 
 	severity_level = severity_level_get(argv[1]);
@@ -267,8 +268,10 @@ static int log_disable(const struct shell *shell,
 		       size_t argc,
 		       char **argv)
 {
-	if (!shell_cmd_precheck(shell, (argc > 1), NULL, 0)) {
-		return 0;
+	int err = shell_cmd_precheck(shell, (argc > 1), NULL, 0);
+
+	if (err) {
+		return err;
 	}
 
 	filters_set(shell, backend, argc - 1, &argv[1], LOG_LEVEL_NONE);
@@ -372,9 +375,10 @@ static int cmd_log_backends_list(const struct shell *shell,
 				 size_t argc, char **argv)
 {
 	int backend_count;
+	int err = shell_cmd_precheck(shell, (argc == 1), NULL, 0);
 
-	if (!shell_cmd_precheck(shell, (argc == 1), NULL, 0)) {
-		return 0;
+	if (err) {
+		return err;
 	}
 
 	backend_count = log_backend_count_get();

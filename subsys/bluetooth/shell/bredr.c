@@ -50,6 +50,7 @@ static int cmd_auth_pincode(const struct shell *shell,
 {
 	struct bt_conn *conn;
 	u8_t max = 16;
+	int err;
 
 	if (default_conn) {
 		conn = default_conn;
@@ -64,8 +65,9 @@ static int cmd_auth_pincode(const struct shell *shell,
 		return 0;
 	}
 
-	if (!shell_cmd_precheck(shell, argc == 2, NULL, 0)) {
-		return 0;
+	err = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
+	if (err) {
+		return err;
 	}
 
 	if (strlen(argv[1]) > max) {
@@ -87,8 +89,9 @@ static int cmd_connect(const struct shell *shell, size_t argc, char *argv[])
 	bt_addr_t addr;
 	int err;
 
-	if (!shell_cmd_precheck(shell, argc == 2, NULL, 0)) {
-		return 0;
+	err = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
+	if (err) {
+		return err;
 	}
 
 	err = str2bt_addr(argv[1], &addr);
@@ -176,9 +179,11 @@ static void br_discovery_complete(struct bt_br_discovery_result *results,
 static int cmd_discovery(const struct shell *shell, size_t argc, char *argv[])
 {
 	const char *action;
+	int err;
 
-	if (!shell_cmd_precheck(shell, argc >= 2, NULL, 0)) {
-		return 0;
+	err = shell_cmd_precheck(shell, (argc >= 2), NULL, 0);
+	if (err) {
+		return err;
 	}
 
 	action = argv[1];
@@ -276,8 +281,10 @@ static struct bt_l2cap_server br_server = {
 static int cmd_l2cap_register(const struct shell *shell,
 			      size_t argc, char *argv[])
 {
-	if (!shell_cmd_precheck(shell, argc == 2, NULL, 0)) {
-		return 0;
+	int err = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
+
+	if (err) {
+		return err;
 	}
 
 	if (br_server.psm) {
@@ -304,8 +311,9 @@ static int cmd_discoverable(const struct shell *shell,
 	int err;
 	const char *action;
 
-	if (!shell_cmd_precheck(shell, argc == 2, NULL, 0)) {
-		return 0;
+	err = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
+	if (err) {
+		return err;
 	}
 
 	action = argv[1];
@@ -336,8 +344,9 @@ static int cmd_connectable(const struct shell *shell,
 	int err;
 	const char *action;
 
-	if (!shell_cmd_precheck(shell, argc == 2, NULL, 0)) {
-		return 0;
+	err = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
+	if (err) {
+		return err;
 	}
 
 	action = argv[1];
@@ -513,7 +522,7 @@ static struct bt_sdp_discover_params discov;
 static int cmd_sdp_find_record(const struct shell *shell,
 			       size_t argc, char *argv[])
 {
-	int err = 0, res;
+	int err, res;
 	const char *action;
 
 	if (!default_conn) {
@@ -521,8 +530,9 @@ static int cmd_sdp_find_record(const struct shell *shell,
 		return 0;
 	}
 
-	if (!shell_cmd_precheck(shell, argc == 2, NULL, 0)) {
-		return 0;
+	err = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
+	if (err) {
+		return err;
 	}
 
 	action = argv[1];
@@ -574,13 +584,17 @@ SHELL_CREATE_STATIC_SUBCMD_SET(br_cmds) {
 
 static int cmd_br(const struct shell *shell, size_t argc, char **argv)
 {
+	int err;
+
 	if (argc == 1) {
 		shell_help_print(shell, NULL, 0);
-		return 0;
+		/* shell_cmd_precheck returns 1 when help is printed */
+		return 1;
 	}
 
-	if (!shell_cmd_precheck(shell, (argc == 2), NULL, 0)) {
-		return 0;
+	err = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
+	if (err) {
+		return err;
 	}
 
 	error(shell, "%s unknown parameter: %s", argv[0], argv[1]);
