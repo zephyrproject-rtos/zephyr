@@ -1029,7 +1029,7 @@ static void gptp_compute_gm_rate_ratio(void)
 	local_time_n.high -= local_time_0.high;
 
 	if (local_time_n.low >= local_time_0.low) {
-		local_time_n.low -= local_time_n.low;
+		local_time_n.low -= local_time_0.low;
 	} else {
 		local_time_n.high -= 1;
 		local_time_n.low = UINT64_MAX - local_time_0.low;
