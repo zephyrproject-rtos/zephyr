@@ -54,3 +54,12 @@ Patch List:
      CMakeLists.txt
      drivers/include/stm32l4xx_hal_conf.h
      drivers/src/Legacy/stm32l4_hal_can.c
+
+
+   *Fix LL_EXTI_LINE_18 and LL_EXTI_LINE_20 declarations
+     LL_EXTI_LINE_18 and LL_EXTI_LINE_20 are declared in stm32l4xx_hal_pcd.h
+     and in stm32l4xx_ll_exti.h which generates warnings. Set #ifndef
+     in stm32l4xx_ll_exti.h around declarations.
+    Impacted files:
+     drivers/include/stm32l4xx_ll_exti.h
+    ST Bug tracker ID: 55275

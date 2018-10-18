@@ -124,11 +124,15 @@ typedef struct
 #endif
 #define LL_EXTI_LINE_17                EXTI_IMR1_IM17          /*!< Extended line 17 */
 #if defined(EXTI_IMR1_IM18)
+#ifndef LL_EXTI_LINE_18
 #define LL_EXTI_LINE_18                EXTI_IMR1_IM18          /*!< Extended line 18 */
+#endif
 #endif
 #define LL_EXTI_LINE_19                EXTI_IMR1_IM19          /*!< Extended line 19 */
 #if defined(EXTI_IMR1_IM20)
+#ifndef LL_EXTI_LINE_20
 #define LL_EXTI_LINE_20                EXTI_IMR1_IM20          /*!< Extended line 20 */
+#endif
 #endif
 #if defined(EXTI_IMR1_IM21)
 #define LL_EXTI_LINE_21                EXTI_IMR1_IM21          /*!< Extended line 21 */
