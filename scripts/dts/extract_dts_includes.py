@@ -392,6 +392,11 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names,
 
 def extract_node_include_info(reduced, root_node_address, sub_node_address,
                               yaml, y_sub):
+
+    filter_list = ['interrupt-names',
+                    'reg-names',
+                    'phandle',
+                    'linux,phandle']
     node = reduced[sub_node_address]
     node_compat = get_compat(root_node_address)
     label_override = None
@@ -422,8 +427,9 @@ def extract_node_include_info(reduced, root_node_address, sub_node_address,
 
                 match = False
                 for c in node['props'].keys():
-                    if c.endswith("-names"):
-                        pass
+                    # if prop is in filter list - ignore it
+                    if c in filter_list:
+                        continue
 
                     if re.match(k + '$', c):
 
@@ -437,8 +443,6 @@ def extract_node_include_info(reduced, root_node_address, sub_node_address,
                                 if not names:
                                     names = deepcopy(node['props'].get(
                                                             c + '-names', []))
-                            else:
-                                names = []
                         if not isinstance(names, list):
                             names = [names]
 
