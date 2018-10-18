@@ -11,6 +11,7 @@
  */
 
 #include <xtensa/config/core-isa.h>
+#include <misc/util.h>
 #include <sw_isr_table.h>
 
 #if !defined(XCHAL_INT0_LEVEL) || XCHAL_INT0_LEVEL != 1
@@ -58,15 +59,6 @@
 #if !defined(XCHAL_INT18_LEVEL) || XCHAL_INT18_LEVEL != 1
 #error core-isa.h interrupt level does not match dispatcher!
 #endif
-#if !defined(XCHAL_INT19_LEVEL) || XCHAL_INT19_LEVEL != 2
-#error core-isa.h interrupt level does not match dispatcher!
-#endif
-#if !defined(XCHAL_INT20_LEVEL) || XCHAL_INT20_LEVEL != 2
-#error core-isa.h interrupt level does not match dispatcher!
-#endif
-#if !defined(XCHAL_INT21_LEVEL) || XCHAL_INT21_LEVEL != 2
-#error core-isa.h interrupt level does not match dispatcher!
-#endif
 #if !defined(XCHAL_INT11_LEVEL) || XCHAL_INT11_LEVEL != 3
 #error core-isa.h interrupt level does not match dispatcher!
 #endif
@@ -85,6 +77,27 @@
 #if !defined(XCHAL_INT29_LEVEL) || XCHAL_INT29_LEVEL != 3
 #error core-isa.h interrupt level does not match dispatcher!
 #endif
+#if !defined(XCHAL_INT14_LEVEL) || XCHAL_INT14_LEVEL != 7
+#error core-isa.h interrupt level does not match dispatcher!
+#endif
+#if !defined(XCHAL_INT16_LEVEL) || XCHAL_INT16_LEVEL != 5
+#error core-isa.h interrupt level does not match dispatcher!
+#endif
+#if !defined(XCHAL_INT26_LEVEL) || XCHAL_INT26_LEVEL != 5
+#error core-isa.h interrupt level does not match dispatcher!
+#endif
+#if !defined(XCHAL_INT31_LEVEL) || XCHAL_INT31_LEVEL != 5
+#error core-isa.h interrupt level does not match dispatcher!
+#endif
+#if !defined(XCHAL_INT19_LEVEL) || XCHAL_INT19_LEVEL != 2
+#error core-isa.h interrupt level does not match dispatcher!
+#endif
+#if !defined(XCHAL_INT20_LEVEL) || XCHAL_INT20_LEVEL != 2
+#error core-isa.h interrupt level does not match dispatcher!
+#endif
+#if !defined(XCHAL_INT21_LEVEL) || XCHAL_INT21_LEVEL != 2
+#error core-isa.h interrupt level does not match dispatcher!
+#endif
 #if !defined(XCHAL_INT24_LEVEL) || XCHAL_INT24_LEVEL != 4
 #error core-isa.h interrupt level does not match dispatcher!
 #endif
@@ -97,272 +110,268 @@
 #if !defined(XCHAL_INT30_LEVEL) || XCHAL_INT30_LEVEL != 4
 #error core-isa.h interrupt level does not match dispatcher!
 #endif
-#if !defined(XCHAL_INT16_LEVEL) || XCHAL_INT16_LEVEL != 5
-#error core-isa.h interrupt level does not match dispatcher!
-#endif
-#if !defined(XCHAL_INT26_LEVEL) || XCHAL_INT26_LEVEL != 5
-#error core-isa.h interrupt level does not match dispatcher!
-#endif
-#if !defined(XCHAL_INT31_LEVEL) || XCHAL_INT31_LEVEL != 5
-#error core-isa.h interrupt level does not match dispatcher!
-#endif
-#if !defined(XCHAL_INT14_LEVEL) || XCHAL_INT14_LEVEL != 7
-#error core-isa.h interrupt level does not match dispatcher!
-#endif
-
-static inline int _xtensa_handle_one_int0(unsigned int mask)
-{
-	return 0;
-}
 
 static inline int _xtensa_handle_one_int1(unsigned int mask)
 {
+	int irq;
+
 	if (mask & 0x7f) {
 		if (mask & 0x7) {
-			if (mask & (1 << 0)) {
-				struct _isr_table_entry *e = &_sw_isr_table[0];
-
-				e->isr(e->arg);
-				return 1 << 0;
+			if (mask & BIT(0)) {
+				mask = BIT(0);
+				irq = 0;
+				goto handle_irq;
 			}
-			if (mask & (1 << 1)) {
-				struct _isr_table_entry *e = &_sw_isr_table[1];
-
-				e->isr(e->arg);
-				return 1 << 1;
+			if (mask & BIT(1)) {
+				mask = BIT(1);
+				irq = 1;
+				goto handle_irq;
 			}
-			if (mask & (1 << 2)) {
-				struct _isr_table_entry *e = &_sw_isr_table[2];
-
-				e->isr(e->arg);
-				return 1 << 2;
+			if (mask & BIT(2)) {
+				mask = BIT(2);
+				irq = 2;
+				goto handle_irq;
 			}
 		} else {
 			if (mask & 0x18) {
-				if (mask & (1 << 3)) {
-					struct _isr_table_entry *e = &_sw_isr_table[3];
-
-					e->isr(e->arg);
-					return 1 << 3;
+				if (mask & BIT(3)) {
+					mask = BIT(3);
+					irq = 3;
+					goto handle_irq;
 				}
-				if (mask & (1 << 4)) {
-					struct _isr_table_entry *e = &_sw_isr_table[4];
-
-					e->isr(e->arg);
-					return 1 << 4;
+				if (mask & BIT(4)) {
+					mask = BIT(4);
+					irq = 4;
+					goto handle_irq;
 				}
 			} else {
-				if (mask & (1 << 5)) {
-					struct _isr_table_entry *e = &_sw_isr_table[5];
-
-					e->isr(e->arg);
-					return 1 << 5;
+				if (mask & BIT(5)) {
+					mask = BIT(5);
+					irq = 5;
+					goto handle_irq;
 				}
-				if (mask & (1 << 6)) {
-					struct _isr_table_entry *e = &_sw_isr_table[6];
-
-					e->isr(e->arg);
-					return 1 << 6;
+				if (mask & BIT(6)) {
+					mask = BIT(6);
+					irq = 6;
+					goto handle_irq;
 				}
 			}
 		}
 	} else {
 		if (mask & 0x780) {
 			if (mask & 0x180) {
-				if (mask & (1 << 7)) {
-					struct _isr_table_entry *e = &_sw_isr_table[7];
-
-					e->isr(e->arg);
-					return 1 << 7;
+				if (mask & BIT(7)) {
+					mask = BIT(7);
+					irq = 7;
+					goto handle_irq;
 				}
-				if (mask & (1 << 8)) {
-					struct _isr_table_entry *e = &_sw_isr_table[8];
-
-					e->isr(e->arg);
-					return 1 << 8;
+				if (mask & BIT(8)) {
+					mask = BIT(8);
+					irq = 8;
+					goto handle_irq;
 				}
 			} else {
-				if (mask & (1 << 9)) {
-					struct _isr_table_entry *e = &_sw_isr_table[9];
-
-					e->isr(e->arg);
-					return 1 << 9;
+				if (mask & BIT(9)) {
+					mask = BIT(9);
+					irq = 9;
+					goto handle_irq;
 				}
-				if (mask & (1 << 10)) {
-					struct _isr_table_entry *e = &_sw_isr_table[10];
-
-					e->isr(e->arg);
-					return 1 << 10;
+				if (mask & BIT(10)) {
+					mask = BIT(10);
+					irq = 10;
+					goto handle_irq;
 				}
 			}
 		} else {
 			if (mask & 0x3000) {
-				if (mask & (1 << 12)) {
-					struct _isr_table_entry *e = &_sw_isr_table[12];
-
-					e->isr(e->arg);
-					return 1 << 12;
+				if (mask & BIT(12)) {
+					mask = BIT(12);
+					irq = 12;
+					goto handle_irq;
 				}
-				if (mask & (1 << 13)) {
-					struct _isr_table_entry *e = &_sw_isr_table[13];
-
-					e->isr(e->arg);
-					return 1 << 13;
+				if (mask & BIT(13)) {
+					mask = BIT(13);
+					irq = 13;
+					goto handle_irq;
 				}
 			} else {
-				if (mask & (1 << 17)) {
-					struct _isr_table_entry *e = &_sw_isr_table[17];
-
-					e->isr(e->arg);
-					return 1 << 17;
+				if (mask & BIT(17)) {
+					mask = BIT(17);
+					irq = 17;
+					goto handle_irq;
 				}
-				if (mask & (1 << 18)) {
-					struct _isr_table_entry *e = &_sw_isr_table[18];
-
-					e->isr(e->arg);
-					return 1 << 18;
+				if (mask & BIT(18)) {
+					mask = BIT(18);
+					irq = 18;
+					goto handle_irq;
 				}
 			}
 		}
 	}
 	return 0;
-}
-
-static inline int _xtensa_handle_one_int2(unsigned int mask)
-{
-	if (mask & (1 << 19)) {
-		struct _isr_table_entry *e = &_sw_isr_table[19];
-
-		e->isr(e->arg);
-		return 1 << 19;
-	}
-	if (mask & (1 << 20)) {
-		struct _isr_table_entry *e = &_sw_isr_table[20];
-
-		e->isr(e->arg);
-		return 1 << 20;
-	}
-	if (mask & (1 << 21)) {
-		struct _isr_table_entry *e = &_sw_isr_table[21];
-
-		e->isr(e->arg);
-		return 1 << 21;
-	}
-	return 0;
+handle_irq:
+	_sw_isr_table[irq].isr(_sw_isr_table[irq].arg);
+	return mask;
 }
 
 static inline int _xtensa_handle_one_int3(unsigned int mask)
 {
+	int irq;
+
 	if (mask & 0x408800) {
-		if (mask & (1 << 11)) {
-			struct _isr_table_entry *e = &_sw_isr_table[11];
-
-			e->isr(e->arg);
-			return 1 << 11;
+		if (mask & BIT(11)) {
+			mask = BIT(11);
+			irq = 11;
+			goto handle_irq;
 		}
-		if (mask & (1 << 15)) {
-			struct _isr_table_entry *e = &_sw_isr_table[15];
-
-			e->isr(e->arg);
-			return 1 << 15;
+		if (mask & BIT(15)) {
+			mask = BIT(15);
+			irq = 15;
+			goto handle_irq;
 		}
-		if (mask & (1 << 22)) {
-			struct _isr_table_entry *e = &_sw_isr_table[22];
-
-			e->isr(e->arg);
-			return 1 << 22;
+		if (mask & BIT(22)) {
+			mask = BIT(22);
+			irq = 22;
+			goto handle_irq;
 		}
 	} else {
-		if (mask & (1 << 23)) {
-			struct _isr_table_entry *e = &_sw_isr_table[23];
-
-			e->isr(e->arg);
-			return 1 << 23;
+		if (mask & BIT(23)) {
+			mask = BIT(23);
+			irq = 23;
+			goto handle_irq;
 		}
-		if (mask & (1 << 27)) {
-			struct _isr_table_entry *e = &_sw_isr_table[27];
-
-			e->isr(e->arg);
-			return 1 << 27;
+		if (mask & BIT(27)) {
+			mask = BIT(27);
+			irq = 27;
+			goto handle_irq;
 		}
-		if (mask & (1 << 29)) {
-			struct _isr_table_entry *e = &_sw_isr_table[29];
-
-			e->isr(e->arg);
-			return 1 << 29;
+		if (mask & BIT(29)) {
+			mask = BIT(29);
+			irq = 29;
+			goto handle_irq;
 		}
 	}
 	return 0;
-}
-
-static inline int _xtensa_handle_one_int4(unsigned int mask)
-{
-	if (mask & 0x3000000) {
-		if (mask & (1 << 24)) {
-			struct _isr_table_entry *e = &_sw_isr_table[24];
-
-			e->isr(e->arg);
-			return 1 << 24;
-		}
-		if (mask & (1 << 25)) {
-			struct _isr_table_entry *e = &_sw_isr_table[25];
-
-			e->isr(e->arg);
-			return 1 << 25;
-		}
-	} else {
-		if (mask & (1 << 28)) {
-			struct _isr_table_entry *e = &_sw_isr_table[28];
-
-			e->isr(e->arg);
-			return 1 << 28;
-		}
-		if (mask & (1 << 30)) {
-			struct _isr_table_entry *e = &_sw_isr_table[30];
-
-			e->isr(e->arg);
-			return 1 << 30;
-		}
-	}
-	return 0;
-}
-
-static inline int _xtensa_handle_one_int5(unsigned int mask)
-{
-	if (mask & (1 << 16)) {
-		struct _isr_table_entry *e = &_sw_isr_table[16];
-
-		e->isr(e->arg);
-		return 1 << 16;
-	}
-	if (mask & (1 << 26)) {
-		struct _isr_table_entry *e = &_sw_isr_table[26];
-
-		e->isr(e->arg);
-		return 1 << 26;
-	}
-	if (mask & (1 << 31)) {
-		struct _isr_table_entry *e = &_sw_isr_table[31];
-
-		e->isr(e->arg);
-		return 1 << 31;
-	}
-	return 0;
-}
-
-static inline int _xtensa_handle_one_int6(unsigned int mask)
-{
-	return 0;
+handle_irq:
+	_sw_isr_table[irq].isr(_sw_isr_table[irq].arg);
+	return mask;
 }
 
 static inline int _xtensa_handle_one_int7(unsigned int mask)
 {
-	if (mask & (1 << 14)) {
-		struct _isr_table_entry *e = &_sw_isr_table[14];
+	int irq;
 
-		e->isr(e->arg);
-		return 1 << 14;
+	if (mask & BIT(14)) {
+		mask = BIT(14);
+		irq = 14;
+		goto handle_irq;
 	}
 	return 0;
+handle_irq:
+	_sw_isr_table[irq].isr(_sw_isr_table[irq].arg);
+	return mask;
+}
+
+static inline int _xtensa_handle_one_int5(unsigned int mask)
+{
+	int irq;
+
+	if (mask & BIT(16)) {
+		mask = BIT(16);
+		irq = 16;
+		goto handle_irq;
+	}
+	if (mask & BIT(26)) {
+		mask = BIT(26);
+		irq = 26;
+		goto handle_irq;
+	}
+	if (mask & BIT(31)) {
+		mask = BIT(31);
+		irq = 31;
+		goto handle_irq;
+	}
+	return 0;
+handle_irq:
+	_sw_isr_table[irq].isr(_sw_isr_table[irq].arg);
+	return mask;
+}
+
+static inline int _xtensa_handle_one_int2(unsigned int mask)
+{
+	int irq;
+
+	if (mask & BIT(19)) {
+		mask = BIT(19);
+		irq = 19;
+		goto handle_irq;
+	}
+	if (mask & BIT(20)) {
+		mask = BIT(20);
+		irq = 20;
+		goto handle_irq;
+	}
+	if (mask & BIT(21)) {
+		mask = BIT(21);
+		irq = 21;
+		goto handle_irq;
+	}
+	return 0;
+handle_irq:
+	_sw_isr_table[irq].isr(_sw_isr_table[irq].arg);
+	return mask;
+}
+
+static inline int _xtensa_handle_one_int4(unsigned int mask)
+{
+	int irq;
+
+	if (mask & 0x3000000) {
+		if (mask & BIT(24)) {
+			mask = BIT(24);
+			irq = 24;
+			goto handle_irq;
+		}
+		if (mask & BIT(25)) {
+			mask = BIT(25);
+			irq = 25;
+			goto handle_irq;
+		}
+	} else {
+		if (mask & BIT(28)) {
+			mask = BIT(28);
+			irq = 28;
+			goto handle_irq;
+		}
+		if (mask & BIT(30)) {
+			mask = BIT(30);
+			irq = 30;
+			goto handle_irq;
+		}
+	}
+	return 0;
+handle_irq:
+	_sw_isr_table[irq].isr(_sw_isr_table[irq].arg);
+	return mask;
+}
+
+static inline int _xtensa_handle_one_int0(unsigned int mask)
+{
+	int irq;
+
+	return 0;
+handle_irq:
+	_sw_isr_table[irq].isr(_sw_isr_table[irq].arg);
+	return mask;
+}
+
+static inline int _xtensa_handle_one_int6(unsigned int mask)
+{
+	int irq;
+
+	return 0;
+handle_irq:
+	_sw_isr_table[irq].isr(_sw_isr_table[irq].arg);
+	return mask;
 }
 
