@@ -309,21 +309,21 @@ config LOG_BACKEND_RTT
 if LOG_BACKEND_RTT
 
 choice
-    prompt "Logger behaviour"
-    default LOG_BACKEND_RTT_MODE_BLOCK
+	prompt "Logger behaviour"
+	default LOG_BACKEND_RTT_MODE_BLOCK
 
 config LOG_BACKEND_RTT_MODE_DROP
 	bool "Drop messages that do not fit in up-buffer."
 	help
-	    If there is not enough space in up-buffer for a message, drop it.
-	    Number of dropped messages will be logged.
-	    Increase up-buffer size helps to reduce dropping of messages.
+	  If there is not enough space in up-buffer for a message, drop it.
+	  Number of dropped messages will be logged.
+	  Increase up-buffer size helps to reduce dropping of messages.
 
 config LOG_BACKEND_RTT_MODE_BLOCK
-    bool "Block until message is transferred to host."
-    help
-        Waits until there is enough space in the up-buffer for a message
-        and until the message is completely transferred to the host.
+	bool "Block until message is transferred to host."
+	help
+	  Waits until there is enough space in the up-buffer for a message
+	  and until the message is completely transferred to the host.
 
 endchoice
 
@@ -332,7 +332,7 @@ config LOG_BACKEND_RTT_MESSAGE_SIZE
 	range 32 256
 	default 128
 	help
-	    This option defines maximum message size transferable to up-buffer.
+	  This option defines maximum message size transferable to up-buffer.
 
 config LOG_BACKEND_RTT_BUFFER
 	int "Buffer number used for logger output."
