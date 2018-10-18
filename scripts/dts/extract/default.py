@@ -21,12 +21,20 @@ class DTDefault(DTDirective):
     # @param node_address Address of node owning the clockxxx definition.
     # @param yaml YAML definition for the owning node.
     # @param prop property name
+    # @param prop type (string, boolean, etc)
     # @param def_label Define label string of node owning the directive.
     #
-    def extract(self, node_address, yaml, prop, def_label):
+    def extract(self, node_address, yaml, prop, prop_type, def_label):
         prop_def = {}
         prop_alias = {}
-        prop_values = reduced[node_address]['props'][prop]
+
+        if prop_type == 'boolean':
+            if prop in reduced[node_address]['props'].keys():
+                prop_values = 1
+            else:
+                prop_values = 0
+        else:
+            prop_values = reduced[node_address]['props'][prop]
 
         if isinstance(prop_values, list):
             for i, prop_value in enumerate(prop_values):
