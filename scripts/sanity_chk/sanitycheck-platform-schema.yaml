@@ -28,6 +28,11 @@ mapping:
     seq:
       -
         type: str
+  "env":
+    type: seq
+    seq:
+      -
+        type: str
   "ram":
     type: int
   "flash":
