@@ -64,9 +64,6 @@ BT_MESH_MODEL_PUB_DEFINE(light_ctl_cli_pub, NULL, 2 + 9);
 
 BT_MESH_MODEL_PUB_DEFINE(vnd_pub, NULL, 3 + 6);
 
-BT_MESH_MODEL_PUB_DEFINE(gen_onoff_srv_pub_s0, NULL, 2 + 3);
-BT_MESH_MODEL_PUB_DEFINE(gen_onoff_cli_pub_s0, NULL, 2 + 4);
-
 BT_MESH_MODEL_PUB_DEFINE(gen_level_srv_pub_s0, NULL, 2 + 5);
 BT_MESH_MODEL_PUB_DEFINE(gen_level_cli_pub_s0, NULL, 2 + 7);
 /* Definitions of models publication context (End) */
@@ -93,10 +90,6 @@ struct light_ctl_state light_ctl_srv_user_data = {
 };
 
 struct vendor_state vnd_user_data;
-
-struct generic_onoff_state gen_onoff_srv_s0_user_data = {
-	.transition = &demo_transition,
-};
 
 struct generic_level_state gen_level_srv_s0_user_data = {
 	.transition = &temp_transition,
@@ -129,7 +122,7 @@ static void gen_onoff_get(struct bt_mesh_model *model,
 
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
 		printk("Unable to send GEN_ONOFF_SRV Status response\n");
-	} else if (bt_mesh_model_elem(model)->addr == elements[0].addr) {
+	} else {
 		last_get_msg = get_msg;
 		get_msg = ONOFF_GET;
 	}
@@ -218,13 +211,7 @@ static bool gen_onoff_setunack(struct bt_mesh_model *model,
 		state->onoff = state->target_onoff;
 	}
 
-	if (bt_mesh_model_elem(model)->addr == elements[0].addr) {
-		/* Root element */
-		onoff_handler(state);
-	} else if (bt_mesh_model_elem(model)->addr == elements[1].addr) {
-		/* Secondary element */
-		printk("Hello World\n");
-	}
+	onoff_handler(state);
 
 	gen_onoff_publisher(model);
 
@@ -2095,13 +2082,6 @@ struct bt_mesh_model vnd_models[] = {
 };
 
 struct bt_mesh_model s0_models[] = {
-	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_ONOFF_SRV,
-		      gen_onoff_srv_op, &gen_onoff_srv_pub_s0,
-		      &gen_onoff_srv_s0_user_data),
-	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_ONOFF_CLI,
-		      gen_onoff_cli_op, &gen_onoff_cli_pub_s0,
-		      NULL),
-
 	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_LEVEL_SRV,
 		      gen_level_srv_op, &gen_level_srv_pub_s0,
 		      &gen_level_srv_s0_user_data),
