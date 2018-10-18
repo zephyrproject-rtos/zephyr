@@ -22,7 +22,28 @@ struct fd_entry {
 	const struct fd_op_vtable *vtable;
 };
 
-static struct fd_entry fdtable[CONFIG_POSIX_MAX_FDS];
+/* A few magic values for fd_entry::obj used in the code. */
+#define FD_OBJ_RESERVED (void *)1
+#define FD_OBJ_STDIN  (void *)0x10
+#define FD_OBJ_STDOUT (void *)0x11
+#define FD_OBJ_STDERR (void *)0x12
+
+#ifdef CONFIG_POSIX_API
+static struct fd_op_vtable stdinout_fd_op_vtable;
+#endif
+
+static struct fd_entry fdtable[CONFIG_POSIX_MAX_FDS] = {
+#ifdef CONFIG_POSIX_API
+	/*
+	 * Predefine entries for stdin/stdout/stderr. Object pointer
+	 * is unused and just should be !0 (random different values
+	 * are used to posisbly help with debugging).
+	 */
+	{FD_OBJ_STDIN,  &stdinout_fd_op_vtable},
+	{FD_OBJ_STDOUT, &stdinout_fd_op_vtable},
+	{FD_OBJ_STDERR, &stdinout_fd_op_vtable},
+#endif
+};
 
 static K_MUTEX_DEFINE(fdtable_lock);
 
@@ -167,5 +188,38 @@ off_t lseek(int fd, off_t offset, int whence)
 	return fdtable[fd].vtable->ioctl(fdtable[fd].obj, ZFD_IOCTL_LSEEK,
 					 offset, whence);
 }
+
+/*
+ * fd operations for stdio/stdout/stderr
+ */
+
+int _impl__zephyr_write(const char *buf, int nbytes);
+
+static ssize_t stdinout_read_vmeth(void *obj, void *buffer, size_t count)
+{
+	return 0;
+}
+
+static ssize_t stdinout_write_vmeth(void *obj, const void *buffer, size_t count)
+{
+#ifdef CONFIG_BOARD_NATIVE_POSIX
+	return write(1, buffer, count);
+#else
+	return _impl__zephyr_write(buffer, count);
+#endif
+}
+
+static int stdinout_ioctl_vmeth(void *obj, unsigned int request, ...)
+{
+	errno = EINVAL;
+	return -1;
+}
+
+
+static struct fd_op_vtable stdinout_fd_op_vtable = {
+	.read = stdinout_read_vmeth,
+	.write = stdinout_write_vmeth,
+	.ioctl = stdinout_ioctl_vmeth,
+};
 
 #endif /* CONFIG_POSIX_API */
