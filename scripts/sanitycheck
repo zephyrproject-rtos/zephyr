@@ -1150,7 +1150,9 @@ class MakeGenerator:
 # XXX Be sure to update __doc__ if you change any of this!!
 
 platform_valid_keys = {"qemu_support": {"type": "bool", "default": False},
-                       "supported_toolchains": {"type": "list", "default": []}}
+                       "supported_toolchains": {"type": "list", "default": []},
+                       "env": {"type": "list", "default": []}
+                       }
 
 testcase_valid_keys = {"tags": {"type": "set", "required": False},
                        "type": {"type": "str", "default": "integration"},
@@ -1343,6 +1345,11 @@ class Platform:
         self.type = data.get('type', "na")
         self.simulation = data.get('simulation', "na")
         self.supported_toolchains = data.get("toolchain", [])
+        self.env = data.get("env", [])
+        self.env_satisfied = True
+        for env in self.env:
+            if os.environ.get(env, None) == None:
+                self.env_satisfied = False
         self.defconfig = None
         pass
 
@@ -1817,7 +1824,8 @@ class TestSuite:
                     if tc.toolchain_whitelist and toolchain not in tc.toolchain_whitelist:
                         continue
 
-                    if (tc.tc_filter and (plat.default or all_plats or platform_filter)
+                    if (plat.env_satisfied and tc.tc_filter
+                            and (plat.default or all_plats or platform_filter)
                             and (toolchain in plat.supported_toolchains or options.force_toolchain)):
                         args = tc.extra_args[:]
                         args.append("BOARD={}".format(plat.name))
@@ -1928,7 +1936,13 @@ class TestSuite:
                         discards[instance] = "Not in testcase toolchain whitelist"
                         continue
 
-                    if not options.force_toolchain and toolchain and toolchain not in plat.supported_toolchains and tc.type != 'unit':
+                    if not plat.env_satisfied:
+                        discards[instance] = "Environment ({}) not satisfied".format(", ".join(plat.env))
+                        continue
+
+                    if not options.force_toolchain \
+                        and toolchain and (toolchain not in plat.supported_toolchains) \
+                        and tc.type != 'unit':
                         discards[instance] = "Not supported by the toolchain"
                         continue
 
