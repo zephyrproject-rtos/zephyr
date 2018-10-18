@@ -359,7 +359,7 @@ int net_conn_unregister(struct net_conn_handle *handle)
 	cache_remove(conn);
 
 	NET_DBG("[%zu] connection handler %p removed",
-		(conn - conns) / sizeof(*conn), conn);
+		conn - conns, conn);
 
 	(void)memset(conn, 0, sizeof(*conn));
 
@@ -380,7 +380,7 @@ int net_conn_change_callback(struct net_conn_handle *handle,
 	}
 
 	NET_DBG("[%zu] connection handler %p changed callback",
-		(conn - conns) / sizeof(*conn), conn);
+		conn - conns, conn);
 
 	conn->cb = cb;
 	conn->user_data = user_data;
