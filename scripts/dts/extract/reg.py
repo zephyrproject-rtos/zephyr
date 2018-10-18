@@ -49,6 +49,13 @@ class DTReg(DTDirective):
 
         index = 0
         props = list(reg)
+
+        # Newer versions of dtc might have the reg propertly look like
+        # reg = <1 2>, <3 4>;
+        # So we need to flatten the list in that case
+        if isinstance(props[0], list):
+            props = [item for sublist in props for item in sublist]
+
         while props:
             prop_def = {}
             prop_alias = {}
