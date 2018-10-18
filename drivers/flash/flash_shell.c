@@ -1,19 +1,11 @@
-/** @file
- * @brief Bluetooth Controller and flash co-operation
- *
- */
-
 /*
  * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2018 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr.h>
-
-#include <bluetooth/hci.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
 
 #include <shell/shell.h>
 
@@ -22,7 +14,14 @@
 #include "flash.h"
 #include <soc.h>
 
-#include "bt.h"
+extern const struct shell *ctx_shell;
+
+#define print(_sh, _ft, ...) \
+	shell_fprintf(_sh ? _sh : ctx_shell, SHELL_NORMAL, _ft "\r\n", \
+		      ##__VA_ARGS__)
+#define error(_sh, _ft, ...) \
+	shell_fprintf(_sh ? _sh : ctx_shell, SHELL_ERROR, _ft "\r\n", \
+		      ##__VA_ARGS__)
 
 #define FLASH_SHELL_MODULE "flash"
 #define BUF_ARRAY_CNT 16
@@ -39,7 +38,7 @@ static int cmd_erase(const struct shell *shell, size_t argc, char *argv[])
 
 	flash_dev = device_get_binding(FLASH_DEV_NAME);
 	if (!flash_dev) {
-		error(shell, "Nordic nRF5 flash driver was not found!");
+		error(shell, "Flash driver was not found!");
 		return -ENODEV;
 	}
 
@@ -79,7 +78,7 @@ static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 
 	flash_dev = device_get_binding(FLASH_DEV_NAME);
 	if (!flash_dev) {
-		error(shell, "Nordic nRF5 flash driver was not found!");
+		error(shell, "Flash driver was not found!");
 		return -ENODEV;
 	}
 
@@ -131,7 +130,7 @@ static int cmd_read(const struct shell *shell, size_t argc, char *argv[])
 
 	flash_dev = device_get_binding(FLASH_DEV_NAME);
 	if (!flash_dev) {
-		error(shell, "Nordic nRF5 flash driver was not found!");
+		error(shell, "Flash driver was not found!");
 		return -ENODEV;
 	}
 
@@ -171,7 +170,7 @@ static int cmd_test(const struct shell *shell, size_t argc, char *argv[])
 
 	flash_dev = device_get_binding(FLASH_DEV_NAME);
 	if (!flash_dev) {
-		error(shell, "Nordic nRF5 flash driver was not found!");
+		error(shell, "Flash driver was not found!");
 		return -ENODEV;
 	}
 
@@ -242,5 +241,5 @@ static int cmd_flash(const struct shell *shell, size_t argc, char **argv)
 	return -ENOEXEC;
 }
 
-SHELL_CMD_REGISTER(flash, &flash_cmds, "Bluetooth flash shell commands",
+SHELL_CMD_REGISTER(flash, &flash_cmds, "Flash shell commands",
 		   cmd_flash);

@@ -23,7 +23,3 @@ zephyr_library_sources_ifdef(
   ll.c
   ticker.c
   )
-zephyr_library_sources_ifdef(
-  CONFIG_SOC_FLASH_NRF
-  flash.c
-  )
