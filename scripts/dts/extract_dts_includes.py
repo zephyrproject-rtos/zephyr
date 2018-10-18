@@ -387,7 +387,7 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names,
         extract_cells(node_address, yaml, prop, prop_values,
                       names, 0, def_label, 'gpio')
     else:
-        default.extract(node_address, yaml, prop, def_label)
+        default.extract(node_address, yaml, prop, prop_val['type'], def_label)
 
 
 def extract_node_include_info(reduced, root_node_address, sub_node_address,
@@ -420,6 +420,7 @@ def extract_node_include_info(reduced, root_node_address, sub_node_address,
                             reduced, root_node_address, c, yaml, v)
             if 'generation' in v:
 
+                match = False
                 for c in node['props'].keys():
                     if c.endswith("-names"):
                         pass
@@ -444,7 +445,15 @@ def extract_node_include_info(reduced, root_node_address, sub_node_address,
                         extract_property(
                             node_compat, yaml, sub_node_address, c, v, names,
                             label_override)
+                        match = True
 
+                # Handle the case that we have a boolean property, but its not
+                # in the dts
+                if not match:
+                    if v['type'] == "boolean":
+                        extract_property(
+                            node_compat, yaml, sub_node_address, k, v, None,
+                            label_override)
 
 def dict_merge(dct, merge_dct):
     # from https://gist.github.com/angstwad/bf22d1822c38a92ec0a9

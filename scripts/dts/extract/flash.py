@@ -72,7 +72,7 @@ class DTFlash(DTDirective):
         flash_props = ["label", "write-block-size", "erase-block-size"]
         for prop in flash_props:
             if prop in self._flash_node['props']:
-                default.extract(node_address, None, prop, def_label)
+                default.extract(node_address, None, prop, None, def_label)
         insert_defs(node_address, load_defs, {})
 
         #for address in reduced:
