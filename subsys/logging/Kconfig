@@ -299,11 +299,11 @@ config LOG_BACKEND_RTT
 	depends on USE_SEGGER_RTT
 	default y
 	help
-	  When enabled backend will use RTT for logging. This backend works on per
-	  message basis. Only whole message (terminated with carrier return '\r')
+	  When enabled, backend will use RTT for logging. This backend works on a per
+	  message basis. Only a whole message (terminated with a carriage return: '\r')
 	  is transferred to up-buffer at once depending on available space and
 	  selected mode.
-	  In panic mode backend always blocks and waits until there will be space
+	  In panic mode backend always blocks and waits until there is space
 	  in up-buffer for a message and message is transferred to host.
 
 if LOG_BACKEND_RTT
@@ -322,7 +322,7 @@ config LOG_BACKEND_RTT_MODE_DROP
 config LOG_BACKEND_RTT_MODE_BLOCK
     bool "Block until message is transferred to host."
     help
-        Waits until there will be enough space in the up-buffer for a message
+        Waits until there is enough space in the up-buffer for a message
         and until the message is completely transferred to the host.
 
 endchoice
@@ -339,7 +339,7 @@ config LOG_BACKEND_RTT_BUFFER
 	range 0 SEGGER_RTT_MAX_NUM_UP_BUFFERS
 	default 0
 	help
-	  Select index of up-buffer used for logger output, by default is uses
+	  Select index of up-buffer used for logger output, by default it uses
 	  terminal up-buffer and its settings.
 
 if LOG_BACKEND_RTT_BUFFER > 0
