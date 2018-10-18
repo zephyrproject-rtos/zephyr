@@ -159,6 +159,7 @@ static int cmd_mtest(const struct shell *shell, size_t argc, char *argv[])
 {
 	u32_t *mem;
 	u32_t val;
+	int err;
 
 	if (argc > 3) {
 		PR_ERROR(shell, "mtest accepts 1 (Read) or 2 (Write)"
@@ -166,8 +167,9 @@ static int cmd_mtest(const struct shell *shell, size_t argc, char *argv[])
 		return -EINVAL;
 	}
 
-	if (!shell_cmd_precheck(shell, (argc >= 2) && (argc <= 3), NULL, 0)) {
-		return 0;
+	err = shell_cmd_precheck(shell, (argc >= 2) && (argc <= 3), NULL, 0);
+	if (err) {
+		return err;
 	}
 
 	val = (u32_t)strtol(argv[1], NULL, 16);

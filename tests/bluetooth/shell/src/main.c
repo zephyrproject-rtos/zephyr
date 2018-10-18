@@ -39,8 +39,10 @@ static bool hrs_simulate;
 static int cmd_hrs_simulate(const struct shell *shell,
 			    size_t argc, char *argv[])
 {
-	if (!shell_cmd_precheck(shell, (argc == 2), NULL, 0)) {
-		return 0;
+	int err = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
+
+	if (err) {
+		return err;
 	}
 
 	if (!strcmp(argv[1], "on")) {
@@ -81,13 +83,16 @@ SHELL_CREATE_STATIC_SUBCMD_SET(hrs_cmds) {
 
 static int cmd_hrs(const struct shell *shell, size_t argc, char **argv)
 {
+	int err = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
+
 	if (argc == 1) {
 		shell_help_print(shell, NULL, 0);
-		return 0;
+		/* shell_cmd_precheck returns 1 when help is printed */
+		return 1;
 	}
 
-	if (!shell_cmd_precheck(shell, (argc == 2), NULL, 0)) {
-		return 0;
+	if (err) {
+		return err;
 	}
 
 	error(shell, "%s unknown parameter: %s", argv[0], argv[1]);

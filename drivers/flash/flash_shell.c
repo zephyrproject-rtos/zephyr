@@ -228,17 +228,21 @@ SHELL_CREATE_STATIC_SUBCMD_SET(flash_cmds) {
 
 static int cmd_flash(const struct shell *shell, size_t argc, char **argv)
 {
+	int err;
+
 	if (argc == 1) {
 		shell_help_print(shell, NULL, 0);
-		return 0;
+		/* shell_cmd_precheck returns 1 when help is printed */
+		return 1;
 	}
 
-	if (!shell_cmd_precheck(shell, (argc == 2), NULL, 0)) {
-		return 0;
+	err = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
+	if (err) {
+		return err;
 	}
 
 	error(shell, "%s:%s%s", argv[0], "unknown parameter: ", argv[1]);
-	return -ENOEXEC;
+	return -EINVAL;
 }
 
 SHELL_CMD_REGISTER(flash, &flash_cmds, "Flash shell commands",

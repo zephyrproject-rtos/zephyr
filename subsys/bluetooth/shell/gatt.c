@@ -225,8 +225,9 @@ static int cmd_read(const struct shell *shell, size_t argc, char *argv[])
 
 	read_params.func = read_func;
 
-	if (!shell_cmd_precheck(shell, (argc >= 2), NULL, 0)) {
-		return 0;
+	err = shell_cmd_precheck(shell, (argc >= 2), NULL, 0);
+	if (err) {
+		return err;
 	}
 
 	read_params.handle_count = 1;
@@ -257,14 +258,15 @@ static int cmd_mread(const struct shell *shell, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	if (!shell_cmd_precheck(shell, (argc >= 3), NULL, 0)) {
-		return 0;
+	err = shell_cmd_precheck(shell, (argc >= 3), NULL, 0);
+	if (err) {
+		return err;
 	}
 
-	if (argc - 1 >  ARRAY_SIZE(h)) {
+	if ((argc - 1) >  ARRAY_SIZE(h)) {
 		print(shell, "Enter max %lu handle items to read",
 		      ARRAY_SIZE(h));
-		return -ENOEXEC;
+		return -EINVAL;
 	}
 
 	for (i = 0; i < argc - 1; i++) {
@@ -311,8 +313,9 @@ static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 	}
 
 
-	if (!shell_cmd_precheck(shell, (argc >= 4), NULL, 0)) {
-		return 0;
+	err = shell_cmd_precheck(shell, (argc >= 4), NULL, 0);
+	if (err) {
+		return err;
 	}
 
 	handle = strtoul(argv[1], NULL, 16);
@@ -353,7 +356,7 @@ static int cmd_write_without_rsp(const struct shell *shell,
 {
 	u16_t handle;
 	u16_t repeat;
-	int err = 0;
+	int err;
 	u16_t len;
 	bool sign;
 
@@ -362,8 +365,9 @@ static int cmd_write_without_rsp(const struct shell *shell,
 		return -ENOEXEC;
 	}
 
-	if (!shell_cmd_precheck(shell, (argc >= 3), NULL, 0)) {
-		return 0;
+	err = shell_cmd_precheck(shell, (argc >= 3), NULL, 0);
+	if (err) {
+		return err;
 	}
 
 	sign = !strcmp(argv[0], "signed-write");
@@ -435,8 +439,8 @@ static int cmd_subscribe(const struct shell *shell, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	if (!shell_cmd_precheck(shell, (argc >= 3), NULL, 0)) {
-		return 0;
+	err = shell_cmd_precheck(shell, (argc >= 3), NULL, 0); {
+		return err;
 	}
 
 	subscribe_params.ccc_handle = strtoul(argv[1], NULL, 16);
@@ -814,18 +818,22 @@ SHELL_CREATE_STATIC_SUBCMD_SET(gatt_cmds) {
 
 static int cmd_gatt(const struct shell *shell, size_t argc, char **argv)
 {
+	int err;
+
 	if (argc == 1) {
 		shell_help_print(shell, NULL, 0);
-		return 0;
+		/* shell_cmd_precheck returns 1 when help is printed */
+		return 1;
 	}
 
-	if (!shell_cmd_precheck(shell, (argc == 2), NULL, 0)) {
-		return 0;
+	err = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
+	if (err) {
+		return err;
 	}
 
 	error(shell, "%s unknown parameter: %s", argv[0], argv[1]);
 
-	return -ENOEXEC;
+	return -EINVAL;
 }
 
 SHELL_CMD_REGISTER(gatt, &gatt_cmds, "Bluetooth GATT shell commands", cmd_gatt);

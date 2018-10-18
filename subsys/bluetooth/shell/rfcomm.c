@@ -181,8 +181,9 @@ static int cmd_connect(const struct shell *shell, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	if (!shell_cmd_precheck(shell, argc == 2, NULL, 0)) {
-		return 0;
+	err = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
+	if (err) {
+		return err;
 	}
 
 	channel = strtoul(argv[1], NULL, 16);
@@ -250,13 +251,17 @@ SHELL_CREATE_STATIC_SUBCMD_SET(rfcomm_cmds) {
 
 static int cmd_rfcomm(const struct shell *shell, size_t argc, char **argv)
 {
+	int err;
+
 	if (argc == 1) {
 		shell_help_print(shell, NULL, 0);
-		return 0;
+		/* shell_cmd_precheck returns 1 when help is printed */
+		return 1;
 	}
 
-	if (!shell_cmd_precheck(shell, (argc == 2), NULL, 0)) {
-		return 0;
+	err = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
+	if (err) {
+		return err;
 	}
 
 	error(shell, "%s unknown parameter: %s", argv[0], argv[1]);
