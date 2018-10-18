@@ -10,17 +10,14 @@
 #include <logging/log_output.h>
 #include <rtt/SEGGER_RTT.h>
 
-
 #if CONFIG_LOG_BACKEND_RTT_MODE_DROP
 
 #define DROP_MSG "\nmessages dropped: 99 \r"
 #define DROP_MSG_LEN (sizeof(DROP_MSG) - 1)
-static const char *drop_msg = DROP_MSG;
-static int drop_cnt;
-static int drop_warn;
 
 #else
 
+#define DROP_MSG NULL
 #define DROP_MSG_LEN 0
 
 #endif /* CONFIG_LOG_BACKEND_RTT_MODE_DROP */
@@ -29,18 +26,23 @@ static int drop_warn;
 
 #define RTT_LOCK()
 #define RTT_UNLOCK()
-static u8_t rtt_buf[CONFIG_LOG_BACKEND_RTT_BUFFER_SIZE];
+#define RTT_BUFFER_SIZE CONFIG_LOG_BACKEND_RTT_BUFFER_SIZE
 
 #else
 
 #define RTT_LOCK() SEGGER_RTT_LOCK()
 #define RTT_UNLOCK() SEGGER_RTT_UNLOCK()
+#define RTT_BUFFER_SIZE 0
 
 #endif /* CONFIG_LOG_BACKEND_RTT_BUFFER > 0 */
 
+static const char *drop_msg = DROP_MSG;
+static u8_t rtt_buf[RTT_BUFFER_SIZE];
 static u8_t line_buf[CONFIG_LOG_BACKEND_RTT_MESSAGE_SIZE + DROP_MSG_LEN];
 static u8_t *line_pos;
 static u8_t char_buf;
+static int drop_cnt;
+static int drop_warn;
 static int panic_mode;
 
 static int msg_out(u8_t *data, size_t length, void *ctx);
@@ -50,6 +52,10 @@ static int line_out(u8_t data);
 static void log_backend_rtt_flush(void);
 
 static int log_backend_rtt_write(void);
+
+static int log_backend_rtt_write_drop(void);
+
+static int log_backend_rtt_write_block(void);
 
 static int log_backend_rtt_panic(u8_t *data, size_t length);
 
@@ -89,9 +95,8 @@ static int line_out(u8_t data)
 	return 0;
 }
 
-#if CONFIG_LOG_BACKEND_RTT_MODE_DROP
 
-static int log_backend_rtt_write(void)
+static int log_backend_rtt_write_drop(void)
 {
 	*line_pos = '\r';
 
@@ -132,9 +137,7 @@ static int log_backend_rtt_write(void)
 	return 0;
 }
 
-#elif CONFIG_LOG_BACKEND_RTT_MODE_BLOCK
-
-static int log_backend_rtt_write(void)
+static int log_backend_rtt_write_block(void)
 {
 	unsigned int ret;
 	*line_pos = '\r';
@@ -151,7 +154,14 @@ static int log_backend_rtt_write(void)
 	return 1;
 }
 
-#endif
+static int log_backend_rtt_write(void)
+{
+	if (IS_ENABLED(CONFIG_LOG_BACKEND_RTT_MODE_BLOCK)) {
+		return log_backend_rtt_write_block();
+	} else if (IS_ENABLED(CONFIG_LOG_BACKEND_RTT_MODE_DROP)) {
+		return log_backend_rtt_write_drop();
+	}
+}
 
 static int log_backend_rtt_panic(u8_t *data, size_t length)
 {
@@ -188,14 +198,21 @@ static void put(const struct log_backend *const backend,
 
 }
 
-static void log_backend_rtt_init(void)
+static void log_backend_rtt_cfg(void)
 {
-	SEGGER_RTT_Init();
-#if CONFIG_LOG_BACKEND_RTT_BUFFER > 0
 	SEGGER_RTT_ConfigUpBuffer(CONFIG_LOG_BACKEND_RTT_BUFFER, "Logger",
 				  rtt_buf, sizeof(rtt_buf),
 				  SEGGER_RTT_MODE_NO_BLOCK_SKIP);
-#endif
+}
+
+static void log_backend_rtt_init(void)
+{
+	SEGGER_RTT_Init();
+
+	if (CONFIG_LOG_BACKEND_RTT_BUFFER > 0) {
+		log_backend_rtt_cfg();
+	}
+
 	panic_mode = 0;
 	line_pos = line_buf;
 }
