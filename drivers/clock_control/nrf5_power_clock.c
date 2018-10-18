@@ -326,8 +326,6 @@ static void _power_clock_isr(void *arg)
 
 	if (lf) {
 		NRF_CLOCK->EVENTS_LFCLKSTARTED = 0;
-
-		__ASSERT_NO_MSG(0);
 	}
 
 	if (done) {
@@ -345,7 +343,7 @@ static void _power_clock_isr(void *arg)
 
 		/* Calibration done, stop 16M Xtal. */
 		err = _m16src_stop(dev, NULL);
-		__ASSERT_NO_MSG(!err);
+		__ASSERT_NO_MSG(!err || err == -EBUSY);
 
 		/* Start timer for next calibration. */
 		NRF_CLOCK->TASKS_CTSTART = 1;
