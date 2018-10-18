@@ -105,7 +105,7 @@ Revision: $Rev: 9599 $
 */
 #if defined(CONFIG_SEGGER_RTT_MEMCPY_USE_BYTELOOP)
 #define SEGGER_RTT_MEMCPY_USE_BYTELOOP              1 // 1: Use a simple byte-loop
-else
+#else
 #define SEGGER_RTT_MEMCPY_USE_BYTELOOP              0 // 0: Use memcpy/SEGGER_RTT_MEMCPY
 #endif
 //
