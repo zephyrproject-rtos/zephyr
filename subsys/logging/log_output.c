@@ -183,9 +183,18 @@ static int ids_print(struct log_msg *msg,
 	return total;
 }
 
-static void newline_print(const struct log_output *ctx)
+static void newline_print(const struct log_output *ctx, u32_t flags)
 {
-	print_formatted(ctx, "\r\n");
+
+	if (flags & LOG_OUTPUT_FLAG_CRLF_NONE) {
+		return;
+	}
+
+	if (flags & LOG_OUTPUT_FLAG_CRLF_LFONLY) {
+		print_formatted(ctx, "\n");
+	} else {
+		print_formatted(ctx, "\r\n");
+	}
 }
 
 static void std_print(struct log_msg *msg,
@@ -277,7 +286,7 @@ static void std_print(struct log_msg *msg,
 static u32_t hexdump_line_print(struct log_msg *msg,
 				const struct log_output *log_output,
 				int prefix_offset,
-				u32_t offset)
+				u32_t offset, u32_t flags)
 {
 	u8_t buf[HEXDUMP_BYTES_IN_LINE];
 	size_t length = sizeof(buf);
@@ -285,7 +294,7 @@ static u32_t hexdump_line_print(struct log_msg *msg,
 	log_msg_hexdump_data_get(msg, buf, &length, offset);
 
 	if (length > 0) {
-		newline_print(log_output);
+		newline_print(log_output, flags);
 
 		for (int i = 0; i < prefix_offset; i++) {
 			print_formatted(log_output, " ");
@@ -318,7 +327,7 @@ static u32_t hexdump_line_print(struct log_msg *msg,
 
 static void hexdump_print(struct log_msg *msg,
 			  const struct log_output *log_output,
-			  int prefix_offset)
+			  int prefix_offset, u32_t flags)
 {
 	u32_t offset = 0;
 	u32_t length;
@@ -327,7 +336,7 @@ static void hexdump_print(struct log_msg *msg,
 
 	do {
 		length = hexdump_line_print(msg, log_output, prefix_offset,
-					    offset);
+					    offset, flags);
 
 		if (length < HEXDUMP_BYTES_IN_LINE) {
 			break;
@@ -390,7 +399,7 @@ static void postfix_print(struct log_msg *msg,
 	if (!log_msg_is_raw_string(msg)) {
 		color_postfix(msg, log_output,
 			      (flags & LOG_OUTPUT_FLAG_COLORS));
-		newline_print(log_output);
+		newline_print(log_output, flags);
 	}
 }
 
@@ -405,7 +414,7 @@ void log_output_msg_process(const struct log_output *log_output,
 	} else if (log_msg_is_raw_string(msg)) {
 		raw_string_print(msg, log_output);
 	} else {
-		hexdump_print(msg, log_output, prefix_offset);
+		hexdump_print(msg, log_output, prefix_offset, flags);
 	}
 
 	postfix_print(msg, log_output, flags);

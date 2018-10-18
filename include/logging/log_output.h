@@ -33,6 +33,12 @@ extern "C" {
 /** @brief Flag forcing severity level prefix. */
 #define LOG_OUTPUT_FLAG_LEVEL			BIT(3)
 
+/** @brief Flag preventing the logger from adding CR and LF characters. */
+#define LOG_OUTPUT_FLAG_CRLF_NONE		BIT(4)
+
+/** @brief Flag forcing a single LF character for line breaks. */
+#define LOG_OUTPUT_FLAG_CRLF_LFONLY		BIT(5)
+
 /**
  * @brief Prototype of the function processing output data.
  *
