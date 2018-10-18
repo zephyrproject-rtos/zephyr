@@ -48,6 +48,7 @@ Patch List:
      drivers/include/stm32f7xx_ll_spi.h
     ST Bug tracker ID: 13359
 
+
    *Add correct shifting to I2SR field in PLLI2SCFGR register
      The I2SR field should be shifted by RCC_PLLI2SCFGR_PLLI2SR_Pos when the PLLI2SCFGR register
      is read or written.
@@ -65,3 +66,11 @@ Patch List:
      CMakeLists.txt
      drivers/include/stm32f7xx_hal_conf.h
      drivers/src/Legacy/stm32f7_hal_can.c
+
+   *Fix LL_EXTI_LINE_18 and LL_EXTI_LINE_20 declarations
+     LL_EXTI_LINE_18 and LL_EXTI_LINE_20 are declared in stm32f7xx_hal_pcd.h
+     and in stm32f7xx_ll_exti.h which generates warnings. Set #ifndef
+     in stm32f7xx_ll_exti.h around declarations.
+    Impacted files:
+     drivers/include/stm32f7xx_ll_exti.h
+    ST Bug tracker ID: 55274
