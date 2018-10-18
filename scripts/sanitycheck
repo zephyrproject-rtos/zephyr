@@ -1717,6 +1717,7 @@ class TestSuite:
             print(str(e))
             sys.exit(2)
 
+        bsim_present = os.environ.get("BSIM_OUT_PATH", None)
 
         instances = []
         discards = {}
@@ -1815,6 +1816,9 @@ class TestSuite:
                         continue
 
                     if tc.toolchain_whitelist and toolchain not in tc.toolchain_whitelist:
+                        continue
+
+                    if bsim_present == None and plat.name.endswith("_bsim"):
                         continue
 
                     if (tc.tc_filter and (plat.default or all_plats or platform_filter)
@@ -1948,6 +1952,10 @@ class TestSuite:
 
                     if set(plat.ignore_tags) & tc.tags:
                         discards[instance] = "Excluded tags per platform"
+                        continue
+
+                    if bsim_present == None and plat.name.endswith("_bsim"):
+                        discards[instance] = "BabbleSim not found"
                         continue
 
                     defconfig = {
