@@ -16,8 +16,12 @@
 #include <init.h>
 #include <drivers/console/uart_pipe.h>
 #include <misc/byteorder.h>
-#include <misc/printk.h>
 #include <uart.h>
+
+#include <logging/log_backend.h>
+#include <logging/log_output.h>
+#include <logging/log_ctrl.h>
+#include <logging/log.h>
 
 #include <bluetooth/buf.h>
 
@@ -28,6 +32,18 @@
  * clear need arises.
  */
 #define MONITOR_INIT_PRIORITY 60
+
+/* These defines follow the values used by syslog(2) */
+#define BT_LOG_ERR      3
+#define BT_LOG_WARN     4
+#define BT_LOG_INFO     6
+#define BT_LOG_DBG      7
+
+/* TS resolution is 1/10th of a millisecond */
+#define MONITOR_TS_FREQ 10000
+
+/* Maximum (string) length of a log message */
+#define MONITOR_MSG_MAX 128
 
 static struct device *monitor_dev;
 
@@ -74,8 +90,14 @@ static void encode_drops(struct bt_monitor_hdr *hdr, u8_t type,
 	}
 }
 
-static inline void encode_hdr(struct bt_monitor_hdr *hdr, u16_t opcode,
-			      u16_t len)
+static u32_t monitor_ts_get(void)
+{
+	return (k_cycle_get_32() /
+		(sys_clock_hw_cycles_per_sec() / MONITOR_TS_FREQ));
+}
+
+static inline void encode_hdr(struct bt_monitor_hdr *hdr, u32_t timestamp,
+			      u16_t opcode, u16_t len)
 {
 	struct bt_monitor_ts32 *ts;
 
@@ -84,7 +106,7 @@ static inline void encode_hdr(struct bt_monitor_hdr *hdr, u16_t opcode,
 
 	ts = (void *)hdr->ext;
 	ts->type = BT_MONITOR_TS32;
-	ts->ts32 = sys_cpu_to_le32(k_uptime_get() * 10);
+	ts->ts32 = timestamp;
 	hdr->hdr_len = sizeof(*ts);
 
 	encode_drops(hdr, BT_MONITOR_COMMAND_DROPS, &drops.cmd);
@@ -98,12 +120,6 @@ static inline void encode_hdr(struct bt_monitor_hdr *hdr, u16_t opcode,
 	encode_drops(hdr, BT_MONITOR_OTHER_DROPS, &drops.other);
 
 	hdr->data_len = sys_cpu_to_le16(4 + hdr->hdr_len + len);
-}
-
-static int log_out(int c, void *unused)
-{
-	uart_poll_out(monitor_dev, c);
-	return 0;
 }
 
 static void drop_add(u16_t opcode)
@@ -135,47 +151,6 @@ static void drop_add(u16_t opcode)
 	}
 }
 
-void bt_log(int prio, const char *fmt, ...)
-{
-	struct bt_monitor_user_logging log;
-	struct bt_monitor_hdr hdr;
-	const char id[] = "bt";
-	va_list ap;
-	int len;
-
-	va_start(ap, fmt);
-	len = vsnprintk(NULL, 0, fmt, ap);
-	va_end(ap);
-
-	if (len < 0) {
-		return;
-	}
-
-	log.priority = prio;
-	log.ident_len = sizeof(id);
-
-	if (atomic_test_and_set_bit(&flags, BT_LOG_BUSY)) {
-		drop_add(BT_MONITOR_USER_LOGGING);
-		return;
-	}
-
-	encode_hdr(&hdr, BT_MONITOR_USER_LOGGING,
-		   sizeof(log) + sizeof(id) + len + 1);
-
-	monitor_send(&hdr, BT_MONITOR_BASE_HDR_LEN + hdr.hdr_len);
-	monitor_send(&log, sizeof(log));
-	monitor_send(id, sizeof(id));
-
-	va_start(ap, fmt);
-	_vprintk(log_out, NULL, fmt, ap);
-	va_end(ap);
-
-	/* Terminate the string with null */
-	uart_poll_out(monitor_dev, '\0');
-
-	atomic_clear_bit(&flags, BT_LOG_BUSY);
-}
-
 void bt_monitor_send(u16_t opcode, const void *data, size_t len)
 {
 	struct bt_monitor_hdr hdr;
@@ -185,7 +160,7 @@ void bt_monitor_send(u16_t opcode, const void *data, size_t len)
 		return;
 	}
 
-	encode_hdr(&hdr, opcode, len);
+	encode_hdr(&hdr, monitor_ts_get(), opcode, len);
 
 	monitor_send(&hdr, BT_MONITOR_BASE_HDR_LEN + hdr.hdr_len);
 	monitor_send(data, len);
@@ -207,10 +182,10 @@ void bt_monitor_new_index(u8_t type, u8_t bus, bt_addr_t *addr,
 	bt_monitor_send(BT_MONITOR_NEW_INDEX, &pkt, sizeof(pkt));
 }
 
-#if !defined(CONFIG_UART_CONSOLE)
+#if !defined(CONFIG_UART_CONSOLE) && !defined(CONFIG_LOG_PRINTK)
 static int monitor_console_out(int c)
 {
-	static char buf[128];
+	static char buf[MONITOR_MSG_MAX];
 	static size_t len;
 
 	if (atomic_test_and_set_bit(&flags, BT_CONSOLE_BUSY)) {
@@ -241,6 +216,110 @@ extern void __stdout_hook_install(int (*fn)(int));
 #define CONFIG_BT_MONITOR_ON_DEV_NAME CONFIG_UART_CONSOLE_ON_DEV_NAME
 #endif
 
+struct monitor_log_ctx {
+	size_t total_len;
+	char msg[MONITOR_MSG_MAX];
+};
+
+static int monitor_log_out(u8_t *data, size_t length, void *user_data)
+{
+	struct monitor_log_ctx *ctx = user_data;
+	size_t i;
+
+	for (i = 0; i < length && ctx->total_len < sizeof(ctx->msg); i++) {
+		/* With CONFIG_LOG_PRINTK the line terminator will come as
+		 * as part of messages.
+		 */
+		if (IS_ENABLED(CONFIG_LOG_PRINTK) &&
+		    (data[i] == '\r' || data[i] == '\n')) {
+			break;
+		}
+
+		ctx->msg[ctx->total_len++] = data[i];
+	}
+
+	return length;
+}
+
+static u8_t buf;
+
+LOG_OUTPUT_DEFINE(monitor_log_output, monitor_log_out, &buf, 1);
+
+static inline u8_t monitor_priority_get(u8_t log_level)
+{
+	static const u8_t prios[] = {
+		[LOG_LEVEL_NONE]  = 0,
+		[LOG_LEVEL_ERR]   = BT_LOG_ERR,
+		[LOG_LEVEL_WRN]   = BT_LOG_WARN,
+		[LOG_LEVEL_INF]   = BT_LOG_INFO,
+		[LOG_LEVEL_DBG]   = BT_LOG_DBG,
+	};
+
+	if (log_level < ARRAY_SIZE(prios)) {
+		return prios[log_level];
+	}
+
+	return BT_LOG_DBG;
+}
+
+static void monitor_log_put(const struct log_backend *const backend,
+			    struct log_msg *msg)
+{
+	struct bt_monitor_user_logging log;
+	struct monitor_log_ctx ctx;
+	struct bt_monitor_hdr hdr;
+	const char id[] = "bt";
+
+	log_msg_get(msg);
+
+	log_output_ctx_set(&monitor_log_output, &ctx);
+
+	ctx.total_len = 0;
+	log_output_msg_process(&monitor_log_output, msg,
+			       LOG_OUTPUT_FLAG_CRLF_NONE);
+
+	if (atomic_test_and_set_bit(&flags, BT_LOG_BUSY)) {
+		drop_add(BT_MONITOR_USER_LOGGING);
+		log_msg_put(msg);
+		return;
+	}
+
+	encode_hdr(&hdr, msg->hdr.timestamp, BT_MONITOR_USER_LOGGING,
+		   sizeof(log) + sizeof(id) + ctx.total_len + 1);
+
+	log.priority = monitor_priority_get(msg->hdr.ids.level);
+	log.ident_len = sizeof(id);
+
+	log_msg_put(msg);
+
+	monitor_send(&hdr, BT_MONITOR_BASE_HDR_LEN + hdr.hdr_len);
+	monitor_send(&log, sizeof(log));
+	monitor_send(id, sizeof(id));
+	monitor_send(ctx.msg, ctx.total_len);
+
+	/* Terminate the string with null */
+	uart_poll_out(monitor_dev, '\0');
+
+	atomic_clear_bit(&flags, BT_LOG_BUSY);
+}
+
+static void monitor_log_panic(const struct log_backend *const backend)
+{
+}
+
+static void monitor_log_init(void)
+{
+	log_set_timestamp_func(monitor_ts_get, MONITOR_TS_FREQ);
+}
+
+static const struct log_backend_api monitor_log_api = {
+	.put = monitor_log_put,
+	.panic = monitor_log_panic,
+	.init = monitor_log_init,
+};
+
+LOG_BACKEND_DEFINE(bt_monitor, monitor_log_api, true);
+
 static int bt_monitor_init(struct device *d)
 {
 	ARG_UNUSED(d);
@@ -252,7 +331,7 @@ static int bt_monitor_init(struct device *d)
 	uart_irq_tx_disable(monitor_dev);
 #endif
 
-#if !defined(CONFIG_UART_CONSOLE)
+#if !defined(CONFIG_UART_CONSOLE) && !defined(CONFIG_LOG_PRINTK)
 	__printk_hook_install(monitor_console_out);
 	__stdout_hook_install(monitor_console_out);
 #endif

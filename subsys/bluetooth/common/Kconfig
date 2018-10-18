@@ -58,7 +58,6 @@ config BT_DEBUG_NONE
 config BT_DEBUG_LOG
 	bool "Normal printf-style to console"
 	select BT_DEBUG
-	select PRINTK
 	select LOG
 	help
 	  This option enables Bluetooth debug going to standard
@@ -67,7 +66,7 @@ config BT_DEBUG_LOG
 config BT_DEBUG_MONITOR
 	bool "Monitor protocol over UART"
 	select BT_DEBUG
-	select PRINTK
+	select LOG
 	select CONSOLE_HAS_DRIVER
 	help
 	  Use a custom logging protocol over the console UART
