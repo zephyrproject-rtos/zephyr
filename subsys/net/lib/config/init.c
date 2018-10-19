@@ -337,15 +337,6 @@ int net_config_init(const char *app_info, u32_t flags, s32_t timeout)
 	return 0;
 }
 
-/* From subsys/logging/sys_log_net.c */
-extern void syslog_net_hook_install(void);
-static inline void syslog_net_init(void)
-{
-#if defined(CONFIG_SYS_LOG_BACKEND_NET)
-	syslog_net_hook_install();
-#endif
-}
-
 #if defined(CONFIG_NET_CONFIG_AUTO_INIT)
 static int init_net_app(struct device *device)
 {
@@ -385,11 +376,6 @@ static int init_net_app(struct device *device)
 	if (ret < 0) {
 		NET_ERR("Network initialization failed (%d)", ret);
 	}
-
-	/* This is activated late as it requires the network stack to be up
-	 * and running before syslog messages can be sent to network.
-	 */
-	syslog_net_init();
 
 	return ret;
 }
