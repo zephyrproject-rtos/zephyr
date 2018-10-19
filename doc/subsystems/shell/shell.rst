@@ -31,9 +31,32 @@ The module can be connected to any transport for command input and output.
 At this point, the following transport layers are implemented:
 
 * UART
+* Segger RTT
 * DUMMY - not a physical transport layer
 
 See the :ref:`shell_api` documentation for more information.
+
+Connecting to Segger RTT via TCP (on macOS, for example)
+========================================================
+
+On macOS JLinkRTTClient won't let you enter input. Instead, please use following procedure:
+
+* Open up a first Terminal window and enter:
+
+  .. code-block:: none
+
+     JLinkRTTLogger -Device NRF52840_XXAA -RTTChannel 1 -if SWD -Speed 4000 ~/rtt.log
+
+  (change device if required)
+
+* Open up a second Terminal window and enter:
+
+  .. code-block:: none
+
+     nc localhost 19021
+
+* Now you should have a network connection to RTT that will let you enter input to the shell.
+
 
 Commands
 ********
