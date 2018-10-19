@@ -30,6 +30,7 @@ static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
 static struct bt_gatt_discover_params discover_params;
 static struct bt_gatt_subscribe_params subscribe_params;
 
+static bool encrypt_link;
 /*
  * Basic connection test:
  *   We expect to find a connectable peripheral (a Zephyr's
@@ -49,6 +50,12 @@ static void test_con1_init(void)
 {
 	bst_ticker_set_next_tick_absolute(WAIT_TIME*1e6);
 	bst_result = In_progress;
+}
+
+static void test_con_encrypted_init(void)
+{
+	encrypt_link = true;
+	test_con1_init();
 }
 
 static void test_con1_tick(bs_time_t HW_device_time)
@@ -152,6 +159,16 @@ static void connected(struct bt_conn *conn, u8_t conn_err)
 
 	if (conn != default_conn) {
 		return;
+	}
+
+	if (encrypt_link) {
+		k_sleep(500);
+		bt_conn_auth_cb_register(NULL);
+		err = bt_conn_security(conn, BT_SECURITY_MEDIUM);
+		if (err) {
+			printk("bt_conn_security failed (err %d)\n", err);
+			return;
+		}
 	}
 
 	memcpy(&uuid, BT_UUID_HRS, sizeof(uuid));
@@ -308,7 +325,7 @@ static void test_con1_main(void)
 	printk("Scanning successfully started\n");
 }
 
-static const struct bst_test_instance test_def[] = {
+static const struct bst_test_instance test_connect[] = {
 	{
 		.test_id = "connect",
 		.test_descr = "Basic connection test. It expects that another "
@@ -320,11 +337,18 @@ static const struct bst_test_instance test_def[] = {
 		.test_tick_f = test_con1_tick,
 		.test_main_f = test_con1_main
 	},
+	{
+		.test_id = "connect_encrypted",
+		.test_descr = "Same as connect but with an encrypted link",
+		.test_post_init_f = test_con_encrypted_init,
+		.test_tick_f = test_con1_tick,
+		.test_main_f = test_con1_main
+	},
 	BSTEST_END_MARKER
 };
 
 struct bst_test_list *test_connect1_install(struct bst_test_list *tests)
 {
-	tests = bst_add_tests(tests, test_def);
+	tests = bst_add_tests(tests, test_connect);
 	return tests;
 }
