@@ -177,7 +177,9 @@ static int ids_print(struct log_msg *msg,
 		total += print_formatted(log_output, "<%s> ", severity[level]);
 	}
 
-	total += print_formatted(log_output, "%s: ",
+	total += print_formatted(log_output,
+				IS_ENABLED(CONFIG_LOG_FUNCTION_NAME) ?
+				"%s." : "%s: ",
 				log_source_name_get(domain_id, source_id));
 
 	return total;

@@ -100,6 +100,8 @@ it is not set or set lower than the override value.
 :option:`CONFIG_LOG_MAX_LEVEL`: Maximal (lowest severity) level which is
 compiled in.
 
+:option:`CONFIG_LOG_FUNCTION_NAME`: Prepend log message with function name.
+
 :option:`CONFIG_LOG_PRINTK`: Redirect printk calls to the logger.
 
 :option:`CONFIG_LOG_PRINTK_MAX_STRING_LENGTH`: Maximal string length that can
