@@ -54,8 +54,13 @@ extern "C" {
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #endif /* NET_LOG_LEVEL */
 
-#define NET_DBG(fmt, ...) LOG_DBG("(%p): %s: " fmt, k_current_get(), \
-				  __func__, ##__VA_ARGS__)
+#if defined(CONFIG_LOG_FUNCTION_NAME)
+#define NET_DBG(fmt, ...) LOG_DBG("(%p): " fmt, k_current_get(), \
+				  ##__VA_ARGS__)
+#else
+#define NET_DBG(fmt, ...) LOG_DBG("%s(): (%p): " fmt, __func__, \
+				  k_current_get(), ##__VA_ARGS__)
+#endif /* CONFIG_LOG_FUNCTION_NAME */
 #define NET_ERR(fmt, ...) LOG_ERR(fmt, ##__VA_ARGS__)
 #define NET_WARN(fmt, ...) LOG_WRN(fmt, ##__VA_ARGS__)
 #define NET_INFO(fmt, ...) LOG_INF(fmt,  ##__VA_ARGS__)
