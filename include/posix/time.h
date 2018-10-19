@@ -14,11 +14,18 @@ struct timespec {
 	signed int  tv_sec;
 	signed int  tv_nsec;
 };
+#define __timespec_defined
 
+/*
+ * riscv32 toolchain's sys/types.h defines struct itimerspec without any
+ * define guard, so little we can do except testing it like this.
+ */
+#ifndef CONFIG_RISCV32
 struct itimerspec {
 	struct timespec it_interval;  /* Timer interval */
 	struct timespec it_value;     /* Timer expiration */
 };
+#endif
 
 struct timeval {
 	signed int  tv_sec;
