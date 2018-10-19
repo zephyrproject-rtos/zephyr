@@ -29,6 +29,11 @@ zephyr_sources_ifdef(
 )
 
 zephyr_sources_ifdef(
+  CONFIG_SHELL_BACKEND_RTT
+  shell_rtt.c
+)
+
+zephyr_sources_ifdef(
   CONFIG_SHELL_CMDS
   shell_cmds.c
 )

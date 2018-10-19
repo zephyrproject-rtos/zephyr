@@ -21,6 +21,12 @@ config SHELL_BACKEND_SERIAL
 	help
 	  Enable serial backends.
 
+config SHELL_BACKEND_RTT
+	bool "Enable RTT backend."
+	select RTT_CONSOLE
+	help
+	  Enable RTT backend.
+
 config SHELL_BACKEND_DUMMY
 	bool "Enable dummy backend."
 	help
