@@ -1,6 +1,7 @@
 choice
 	prompt "Max compiled-in log level for $(module-str)"
 	default $(module)_LOG_LEVEL_INF
+	depends on LOG
 
 config $(module)_LOG_LEVEL_OFF
 	bool "Off"
@@ -21,6 +22,7 @@ endchoice
 
 config $(module)_LOG_LEVEL
 	int
+	depends on LOG
 	default 0 if $(module)_LOG_LEVEL_OFF
 	default 1 if $(module)_LOG_LEVEL_ERR
 	default 2 if $(module)_LOG_LEVEL_WRN
