@@ -87,6 +87,23 @@ ENTRY(CONFIG_KERNEL_ENTRY)
 
 SECTIONS
     {
+
+#include <linker/rel-sections.ld>
+
+    /*
+     * .plt and .iplt are here according to 'arm-zephyr-elf-ld --verbose',
+     * before text section.
+     */
+    SECTION_PROLOGUE(.plt,,)
+	{
+	*(.plt)
+	}
+
+    SECTION_PROLOGUE(.iplt,,)
+	{
+	*(.iplt)
+	}
+
     GROUP_START(ROMABLE_REGION)
 
 	_image_rom_start = ROM_ADDR;
@@ -132,6 +149,12 @@ SECTIONS
 	*(.text)
 	*(".text.*")
 	*(.gnu.linkonce.t.*)
+
+	/*
+	 * These are here according to 'arm-zephyr-elf-ld --verbose',
+	 * after .gnu.linkonce.t.*
+	 */
+	*(.glue_7t) *(.glue_7) *(.vfp11_veneer) *(.v4_bx)
 
 #include <linker/priv_stacks-text.ld>
 #include <linker/kobject-text.ld>
@@ -218,6 +241,18 @@ SECTIONS
     KEEP(*(TI_CCFG))
     } > FLASH_CCFG
 #endif
+
+    /*
+     * These are here according to 'arm-zephyr-elf-ld --verbose',
+     * before data section.
+     */
+    SECTION_PROLOGUE(.got,,)
+	{
+	*(.got.plt)
+	*(.igot.plt)
+	*(.got)
+	*(.igot)
+	}
 
     GROUP_START(RAMABLE_REGION)
 
@@ -428,5 +463,13 @@ SECTIONS
 #ifdef CONFIG_GEN_ISR_TABLES
 #include <linker/intlist.ld>
 #endif
+
+#include <linker/debug-sections.ld>
+
+    SECTION_PROLOGUE(.ARM.attributes, 0,)
+	{
+	KEEP(*(.ARM.attributes))
+	KEEP(*(.gnu.attributes))
+	}
 
     }
