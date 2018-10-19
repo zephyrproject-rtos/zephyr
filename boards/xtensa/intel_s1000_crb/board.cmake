@@ -7,3 +7,7 @@ board_finalize_runner_args(intel_s1000
   "--ocd-jtag-instr=dsp0_gdb.txt"
   "--gdb-flash-file=load_elf.txt"
 )
+
+if(NOT "${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "xcc")
+  message(FATAL_ERROR "ZEPHYR_TOOLCHAIN_VARIANT != xcc. This requires xcc to build!")
+endif()
