@@ -1,3 +1,5 @@
+
+zephyr_sources_ifdef(CONFIG_GROVE_LCD_RGB grove_lcd_rgb.c)
 zephyr_sources_ifdef(CONFIG_MICROBIT_DISPLAY
 	mb_display.c
 	mb_font.c

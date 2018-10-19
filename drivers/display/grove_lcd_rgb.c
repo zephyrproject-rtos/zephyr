@@ -13,7 +13,7 @@
 #include <display/grove_lcd.h>
 #include <misc/util.h>
 
-#define LOG_LEVEL CONFIG_GROVE_LOG_LEVEL
+#define LOG_LEVEL CONFIG_DISPLAY_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(grove_lcd);
 
