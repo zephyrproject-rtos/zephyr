@@ -59,6 +59,7 @@ config MCUMGR_SMP_UART_MTU
 
 endif
 
+if MCUMGR
 config MCUMGR_BUF_COUNT
 	int "Number of mcumgr buffers"
 	default 4
@@ -82,4 +83,5 @@ config MCUMGR_BUF_USER_DATA_SIZE
 	  Different mcumgr transports impose different requirements for this
 	  setting.  A value of 4 is sufficient for UART, shell, and bluetooth.
 
+endif # MCUMGR
 endmenu
