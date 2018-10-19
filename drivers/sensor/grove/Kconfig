@@ -5,26 +5,23 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
-
-
-
+if SENSOR
 config GROVE_LIGHT_SENSOR
 	bool "Enable the Seeed Grove Light Sensor"
-	depends on SENSOR && GROVE && ADC && NEWLIB_LIBC
+	depends on ADC && NEWLIB_LIBC
 	help
 	  Setting this value will enable driver support for the Grove Light
 	  Sensor.
 
+if GROVE_LIGHT_SENSOR
 config GROVE_LIGHT_SENSOR_NAME
 	string "Driver name"
-	depends on GROVE_LIGHT_SENSOR
 	default "GROVE_LIGHT_SENSOR"
 	help
 	  Specify the device name with which the sensor is identified.
 
 config GROVE_LIGHT_SENSOR_ADC_DEV_NAME
 	string "ADC where Grove Light Sensor is connected"
-	depends on GROVE_LIGHT_SENSOR
 	default "ADC_0"
 	help
 	  Specify the device name of the ADC to which the Grove Light Sensor
@@ -32,22 +29,22 @@ config GROVE_LIGHT_SENSOR_ADC_DEV_NAME
 
 config GROVE_LIGHT_SENSOR_ADC_CHANNEL
 	int "ADC channel used by Grove Light Sensor"
-	depends on GROVE_LIGHT_SENSOR
 	default 10
 	help
 	  Specify the channel of the ADC to which the Grove Light Sensor is
 	  connected.
+endif
 
 config GROVE_TEMPERATURE_SENSOR
 	bool "Enable the Seeed Grove Temperature Sensor"
-	depends on SENSOR && GROVE && ADC && NEWLIB_LIBC
+	depends on ADC && NEWLIB_LIBC
 	help
 	  Setting this value will enable driver support for the Grove
 	  Temperature Sensor.
 
+if GROVE_TEMPERATURE_SENSOR
 config GROVE_TEMPERATURE_SENSOR_NAME
 	string "Driver name"
-	depends on GROVE_TEMPERATURE_SENSOR
 	default "GROVE_TEMPERATURE_SENSOR"
 	help
 	  Specify the device name with which the Grove Temperature Sensor
@@ -55,7 +52,6 @@ config GROVE_TEMPERATURE_SENSOR_NAME
 
 choice
 	prompt "Sensor version"
-	depends on GROVE_TEMPERATURE_SENSOR
 	default GROVE_TEMPERATURE_SENSOR_V1_0
 	help
 	  Choose the version of the Grove Temperature Sensor.
@@ -74,7 +70,6 @@ endchoice
 
 config GROVE_TEMPERATURE_SENSOR_ADC_DEV_NAME
 	string "ADC where Grove Temperature Sensor is connected"
-	depends on GROVE_TEMPERATURE_SENSOR
 	default "ADC_0"
 	help
 	  Specify the device name of the ADC to which the Grove Temperature
@@ -82,8 +77,11 @@ config GROVE_TEMPERATURE_SENSOR_ADC_DEV_NAME
 
 config GROVE_TEMPERATURE_SENSOR_ADC_CHANNEL
 	int "ADC channel used by Grove Temperature Sensor"
-	depends on GROVE_TEMPERATURE_SENSOR
 	default 10
 	help
 	  Specify the channel of the ADC to which the Grove Temperature Sensor
 	  is connected.
+
+endif
+
+endif
