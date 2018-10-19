@@ -744,6 +744,8 @@ struct bt_gatt_indicate_params {
 	const struct bt_gatt_attr *attr;
 	/** Indicate Value callback */
 	bt_gatt_indicate_func_t func;
+	/** User data */
+	void *user_data;
 	/** Indicate Value data*/
 	const void *data;
 	/** Indicate Value length*/
@@ -839,6 +841,8 @@ struct bt_gatt_discover_params {
 	struct bt_uuid *uuid;
 	/** Discover attribute callback */
 	bt_gatt_discover_func_t func;
+	/** User data */
+	void *user_data;
 	union {
 		struct {
 			/** Include service attribute declaration handle */
@@ -900,24 +904,27 @@ typedef u8_t (*bt_gatt_read_func_t)(struct bt_conn *conn, u8_t err,
 				    struct bt_gatt_read_params *params,
 				    const void *data, u16_t length);
 
-/** @brief GATT Read parameters
- *  @param func Read attribute callback
- *  @param handle_count If equals to 1 single.handle and single.offset
- *                      are used.  If >1 Read Multiple Characteristic
- *                      Values is performed and handles are used.
- *  @param handle Attribute handle
- *  @param offset Attribute data offset
- *  @param handles Handles to read in Read Multiple Characteristic Values
- */
+/** @brief GATT Read parameters */
 struct bt_gatt_read_params {
 	struct bt_att_req _req;
+	/** Read attribute callback */
 	bt_gatt_read_func_t func;
+	/** User data */
+	void *user_data;
+	/** If equals to 1 single.handle and single.offset are used.
+	 *  If >1 Read Multiple Characteristic
+	 *  Values is performed and handles are used. */
 	size_t handle_count;
 	union {
+		/** Handle to read when single read is used. */
 		struct {
+			/** Attribute handle */
 			u16_t handle;
+			/** Attribute data offset */
 			u16_t offset;
 		} single;
+		/** Handles to read in
+		 *  Read Multiple Characteristic Values */
 		u16_t *handles;
 	};
 };
@@ -953,6 +960,8 @@ struct bt_gatt_write_params {
 	struct bt_att_req _req;
 	/** Response callback */
 	bt_gatt_write_func_t func;
+	/** User data */
+	void *user_data;
 	/** Attribute handle */
 	u16_t handle;
 	/** Attribute data offset */
@@ -1029,6 +1038,8 @@ struct bt_gatt_subscribe_params {
 	bt_addr_le_t _peer;
 	/** Notification value callback */
 	bt_gatt_notify_func_t notify;
+	/** User data */
+	void *user_data;
 	/** Subscribe value handle */
 	u16_t value_handle;
 	/** Subscribe CCC handle */
