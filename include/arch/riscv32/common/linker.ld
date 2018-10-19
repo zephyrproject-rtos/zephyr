@@ -46,6 +46,22 @@ ENTRY(CONFIG_KERNEL_ENTRY)
 SECTIONS
     {
 
+#include <linker/rel-sections.ld>
+
+    /*
+     * The .plt and .iplt are here according to
+     * 'riscv32-zephyr-elf-ld --verbose', before text section.
+     */
+    SECTION_PROLOGUE(.plt,,)
+	{
+		*(.plt)
+	}
+
+    SECTION_PROLOGUE(.iplt,,)
+	{
+		*(.iplt)
+	}
+
     GROUP_START(ROM)
     _image_rom_start = .;
 
@@ -175,4 +191,7 @@ SECTIONS
 #endif
 
      GROUP_END(RAMABLE_REGION)
+
+#include <linker/debug-sections.ld>
+
 }

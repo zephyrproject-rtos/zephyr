@@ -43,3 +43,26 @@ source "subsys/Kconfig"
 source "ext/Kconfig"
 
 source "tests/Kconfig"
+
+choice
+	prompt "Linker Orphan Section Handling"
+	default LINKER_ORPHAN_SECTION_WARN
+
+config LINKER_ORPHAN_SECTION_PLACE
+	bool "Place"
+	help
+	  Linker puts orphan sections in place without warnings
+	  or errors.
+
+config LINKER_ORPHAN_SECTION_WARN
+	bool "Warn"
+	help
+	  Linker places the orphan sections in ouput and issues
+	  warning about those sections.
+
+config LINKER_ORPHAN_SECTION_ERROR
+	bool "Error"
+	help
+	  Linker exits with error when an orphan section is found.
+
+endchoice
