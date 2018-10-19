@@ -366,6 +366,8 @@ SECTIONS
 #include <linker/priv_stacks.ld>
 #include <linker/kobject.ld>
 
+#include <linker/priv_stacks-noinit.ld>
+
     __data_ram_end = .;
 
 
