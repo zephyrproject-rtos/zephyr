@@ -41,7 +41,8 @@ config MODEM_SHELL
 
 config MODEM_WNCM14A2A
 	bool "Enable Wistron LTE-M modem driver"
-	depends on UART_INTERRUPT_DRIVEN
+	depends on SERIAL_SUPPORT_INTERRUPT
+	select UART_INTERRUPT_DRIVEN
 	select MODEM_RECEIVER
 	select NET_OFFLOAD
 	select UART_MCUX_2 if BOARD_FRDM_K64F
