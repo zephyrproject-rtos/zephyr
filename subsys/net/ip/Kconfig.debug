@@ -17,8 +17,8 @@ menuconfig NET_LOG
 module = NET_DEFAULT
 module-dep = NET_LOG
 module-def = LOG_LEVEL_ERR
-module-str=Default network stack logging level
-module-help=Default log level if the user has not specified one.
+module-str = Default network stack logging level
+module-help = Default log level if the user has not specified one.
 source "subsys/net/Kconfig.template.log_config.default.net"
 
 module = NET_MAX
