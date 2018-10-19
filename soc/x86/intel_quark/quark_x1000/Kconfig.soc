@@ -8,6 +8,7 @@ config SOC_QUARK_X1000
 	select PCI
 	select SYS_POWER_LOW_POWER_STATE_SUPPORTED
 	select SYS_POWER_DEEP_SLEEP_SUPPORTED
+	select HAS_I2C_DW
 	depends on SOC_SERIES_QUARK_X1000
 	help
 	  Intel Quark X1000 SoC.

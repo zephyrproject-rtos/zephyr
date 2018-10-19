@@ -7,3 +7,4 @@
 
 config SOC_EMSK
 	bool "Synopsys ARC EM Starter Kit SoC"
+	select HAS_I2C_DW
