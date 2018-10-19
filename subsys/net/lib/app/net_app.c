@@ -42,17 +42,21 @@
 
 #if CONFIG_NET_APP_LOG_LEVEL >= LOG_LEVEL_DBG
 static sys_slist_t _net_app_instances;
+#endif
 
 void _net_app_register(struct net_app_ctx *ctx)
 {
+#if CONFIG_NET_APP_LOG_LEVEL >= LOG_LEVEL_DBG
 	sys_slist_prepend(&_net_app_instances, &ctx->node);
+#endif
 }
 
 void _net_app_unregister(struct net_app_ctx *ctx)
 {
+#if CONFIG_NET_APP_LOG_LEVEL >= LOG_LEVEL_DBG
 	sys_slist_find_and_remove(&_net_app_instances, &ctx->node);
-}
 #endif
+}
 
 static void net_app_foreach(net_app_ctx_cb_t cb, enum net_app_type type,
 			    void *user_data)

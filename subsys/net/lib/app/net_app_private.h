@@ -112,12 +112,7 @@ enum net_verdict _net_app_dtls_established(struct net_conn *conn,
 					   void *user_data);
 #endif /* CONFIG_NET_APP_DTLS */
 
-#if defined(CONFIG_NET_APP_LOG_LEVEL_DBG)
 void _net_app_register(struct net_app_ctx *ctx);
 void _net_app_unregister(struct net_app_ctx *ctx);
-#else
-#define _net_app_register(...)
-#define _net_app_unregister(...)
-#endif
 
 #endif /* CONFIG_NET_APP_SERVER || CONFIG_NET_APP_CLIENT */
