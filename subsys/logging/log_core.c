@@ -10,6 +10,7 @@
 #include <logging/log_ctrl.h>
 #include <logging/log_output.h>
 #include <misc/printk.h>
+#include <init.h>
 #include <assert.h>
 #include <atomic.h>
 
@@ -584,16 +585,24 @@ static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 	}
 }
 
-K_THREAD_DEFINE(logging, CONFIG_LOG_PROCESS_THREAD_STACK_SIZE,
-		log_process_thread_func, NULL, NULL, NULL,
-		CONFIG_LOG_PROCESS_THREAD_PRIO, 0, K_NO_WAIT);
-#else
-#include <init.h>
+K_THREAD_STACK_DEFINE(logging_stack, CONFIG_LOG_PROCESS_THREAD_STACK_SIZE);
+struct k_thread logging_thread;
+#endif /* CONFIG_LOG_PROCESS_THREAD */
+
 static int enable_logger(struct device *arg)
 {
 	ARG_UNUSED(arg);
+#ifdef CONFIG_LOG_PROCESS_THREAD
+	/* start logging thread */
+	k_thread_create(&logging_thread, logging_stack,
+			K_THREAD_STACK_SIZEOF(logging_stack),
+			log_process_thread_func, NULL, NULL, NULL,
+			CONFIG_LOG_PROCESS_THREAD_PRIO, 0, K_NO_WAIT);
+	k_thread_name_set(&logging_thread, "logging");
+#else
 	log_init();
+#endif
 	return 0;
 }
+
 SYS_INIT(enable_logger, POST_KERNEL, 0);
-#endif /* CONFIG_LOG_PROCESS_THREAD */
