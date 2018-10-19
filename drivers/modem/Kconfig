@@ -34,7 +34,7 @@ config MODEM_RECEIVER_MAX_CONTEXTS
 
 config MODEM_SHELL
 	bool "Enable modem shell utilities"
-	select CONSOLE_SHELL
+	select SHELL
 	help
 	  Activate shell module that provides modem utilities like
 	  sending a command to the modem UART.
