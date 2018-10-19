@@ -115,3 +115,4 @@ else()
 endif()
 
 target_link_libraries(mbedTLS INTERFACE zephyr_interface)
+target_link_libraries(zephyr_interface INTERFACE mbedTLS)
