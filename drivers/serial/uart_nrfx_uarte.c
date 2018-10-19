@@ -621,10 +621,10 @@ static int uarte_instance_init(struct device *dev,
 	#ifdef CONFIG_UART_1_NRF_FLOW_CONTROL
 		#define UARTE_1_NRF_HWFC_CONFIG	       UARTE_NRF_HWFC_ENABLED(1)
 		#ifndef CONFIG_UART_1_RTS_PIN
-		#error Flow control for UARTE0 is enabled, but RTS pin is not defined.
+		#error Flow control for UARTE1 is enabled, but RTS pin is not defined.
 		#endif
 		#ifndef CONFIG_UART_1_CTS_PIN
-		#error Flow control for UARTE0 is enabled, but CTS pin is not defined.
+		#error Flow control for UARTE1 is enabled, but CTS pin is not defined.
 		#endif
 	#else
 		#define UARTE_1_NRF_HWFC_CONFIG	       UARTE_NRF_HWFC_DISABLED
