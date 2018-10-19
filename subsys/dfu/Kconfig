@@ -16,6 +16,8 @@ config IMG_MANAGER
 	help
 	  Enable support for managing DFU image.
 
+if IMG_MANAGER
+
 choice
 	prompt "Image manager"
 	default MCUBOOT_IMG_MANAGER
@@ -41,5 +43,7 @@ config IMG_BLOCK_BUF_SIZE
 module = IMG_MANAGER
 module-str = image manager
 source "subsys/logging/Kconfig.template.log_config"
+
+endif # IMG_MANAGER
 
 endmenu
