@@ -88,7 +88,7 @@ static void *gatt_buf_add(const void *data, size_t len)
 
 	gatt_buf.len += len;
 
-	SYS_LOG_DBG("%d/%d used", gatt_buf.len, MAX_BUFFER_SIZE);
+	LOG_DBG("%d/%d used", gatt_buf.len, MAX_BUFFER_SIZE);
 
 	return ptr;
 }
@@ -139,7 +139,7 @@ static struct bt_gatt_attr *gatt_db_add(const struct bt_gatt_attr *pattern,
 		memcpy(attr->user_data, pattern->user_data, user_data_len);
 	}
 
-	SYS_LOG_DBG("handle 0x%04x", attr->handle);
+	LOG_DBG("handle 0x%04x", attr->handle);
 
 	attr_count++;
 	svc_attr_count++;
@@ -725,9 +725,9 @@ static void indicate_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			u8_t err)
 {
 	if (err != 0) {
-		SYS_LOG_ERR("Indication fail");
+		LOG_ERR("Indication fail");
 	} else {
-		SYS_LOG_DBG("Indication success");
+		LOG_DBG("Indication success");
 	}
 }
 
@@ -1564,7 +1564,7 @@ static u8_t notify_func(struct bt_conn *conn,
 	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
 
 	if (!data) {
-		SYS_LOG_DBG("Unsubscribed");
+		LOG_DBG("Unsubscribed");
 		(void)memset(params, 0, sizeof(*params));
 		return BT_GATT_ITER_STOP;
 	}
@@ -1634,7 +1634,7 @@ static int enable_subscription(struct bt_conn *conn, u16_t ccc_handle,
 {
 	/* Fail if there is another subscription enabled */
 	if (subscribe_params.ccc_handle) {
-		SYS_LOG_ERR("Another subscription already enabled");
+		LOG_ERR("Another subscription already enabled");
 		return -EEXIST;
 	}
 
@@ -1655,7 +1655,7 @@ static int disable_subscription(struct bt_conn *conn, u16_t ccc_handle)
 {
 	/* Fail if CCC handle doesn't match */
 	if (ccc_handle != subscribe_params.ccc_handle) {
-		SYS_LOG_ERR("CCC handle doesn't match");
+		LOG_ERR("CCC handle doesn't match");
 		return -EINVAL;
 	}
 
@@ -1706,7 +1706,7 @@ static void config_subscription(u8_t *data, u16_t len, u16_t op)
 		}
 	}
 
-	SYS_LOG_DBG("Config subscription (op %u) status %u", op, status);
+	LOG_DBG("Config subscription (op %u) status %u", op, status);
 
 	bt_conn_unref(conn);
 	tester_rsp(BTP_SERVICE_ID_GATT, op, CONTROLLER_INDEX, status);
@@ -1765,12 +1765,12 @@ static void get_attrs(u8_t *data, u16_t len)
 			goto fail;
 		}
 
-		SYS_LOG_DBG("start 0x%04x end 0x%04x, uuid %s", start_handle,
-			    end_handle, bt_uuid_str(&uuid.uuid));
+		LOG_DBG("start 0x%04x end 0x%04x, uuid %s", start_handle,
+			end_handle, bt_uuid_str(&uuid.uuid));
 
 		foreach.uuid = &uuid.uuid;
 	} else {
-		SYS_LOG_DBG("start 0x%04x end 0x%04x", start_handle, end_handle);
+		LOG_DBG("start 0x%04x end 0x%04x", start_handle, end_handle);
 
 		foreach.uuid = NULL;
 	}

@@ -218,7 +218,7 @@ static void start_advertising(const u8_t *data, u16_t len)
 
 	for (i = 0, adv_len = 1; i < cmd->adv_data_len; adv_len++) {
 		if (adv_len >= ARRAY_SIZE(ad)) {
-			SYS_LOG_ERR("ad[] Out of memory");
+			LOG_ERR("ad[] Out of memory");
 			goto fail;
 		}
 
@@ -230,7 +230,7 @@ static void start_advertising(const u8_t *data, u16_t len)
 
 	for (i = 0, sd_len = 0; i < cmd->scan_rsp_len; sd_len++) {
 		if (sd_len >= ARRAY_SIZE(sd)) {
-			SYS_LOG_ERR("sd[] Out of memory");
+			LOG_ERR("sd[] Out of memory");
 			goto fail;
 		}
 
@@ -245,7 +245,7 @@ static void start_advertising(const u8_t *data, u16_t len)
 	/* BTP API don't allow to set empty scan response data. */
 	if (bt_le_adv_start(adv_conn ? BT_LE_ADV_CONN : BT_LE_ADV_NCONN,
 			    ad, adv_len, sd_len ? sd : NULL, sd_len) < 0) {
-		SYS_LOG_ERR("Failed to start advertising");
+		LOG_ERR("Failed to start advertising");
 		goto fail;
 	}
 
@@ -335,14 +335,14 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t evtype,
 
 		/* ignore non-discoverable devices */
 		if (!(flags & BT_LE_AD_DISCOV_MASK)) {
-			SYS_LOG_DBG("Non discoverable, skipping");
+			LOG_DBG("Non discoverable, skipping");
 			return;
 		}
 
 		/* if Limited Discovery - ignore general discoverable devices */
 		if ((discovery_flags & GAP_DISCOVERY_FLAG_LIMITED) &&
 		    !(flags & BT_LE_AD_LIMITED)) {
-			SYS_LOG_DBG("General discoverable, skipping");
+			LOG_DBG("General discoverable, skipping");
 			return;
 		}
 	}
@@ -354,7 +354,7 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t evtype,
 
 		/* skip if there is no pending advertisement */
 		if (!adv_buf->len) {
-			SYS_LOG_INF("No pending advertisement, skipping");
+			LOG_INF("No pending advertisement, skipping");
 			return;
 		}
 
@@ -368,7 +368,7 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t evtype,
 		 * this one
 		 */
 		if (bt_addr_le_cmp(addr, &a)) {
-			SYS_LOG_INF("Address does not match, skipping");
+			LOG_INF("Address does not match, skipping");
 			goto done;
 		}
 
@@ -394,7 +394,7 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t evtype,
 	/* if Active Scan and scannable event - wait for Scan Response */
 	if ((discovery_flags & GAP_DISCOVERY_FLAG_LE_ACTIVE_SCAN) &&
 	    (evtype == BT_LE_ADV_IND || evtype == BT_LE_ADV_SCAN_IND)) {
-		SYS_LOG_DBG("Waiting for scan response");
+		LOG_DBG("Waiting for scan response");
 		return;
 	}
 done:

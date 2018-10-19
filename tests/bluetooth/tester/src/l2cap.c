@@ -213,7 +213,7 @@ static void send_data(u8_t *data, u16_t len)
 	net_buf_add_mem(buf, cmd->data, data_len);
 	ret = bt_l2cap_chan_send(&chan->le.chan, buf);
 	if (ret < 0) {
-		SYS_LOG_ERR("Unable to send data: %d", -ret);
+		LOG_ERR("Unable to send data: %d", -ret);
 		net_buf_unref(buf);
 		goto fail;
 	}
