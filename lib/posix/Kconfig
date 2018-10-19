@@ -6,6 +6,8 @@
 
 config POSIX_API
 	bool "POSIX APIs"
+	# decent libc is part of POSIX
+	select NEWLIB_LIBC
 	help
 	  Enable mostly-standards-compliant implementations of
 	  various POSIX (IEEE 1003.1) APIs.

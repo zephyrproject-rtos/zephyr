@@ -20,7 +20,7 @@ extern "C" {
 typedef unsigned long useconds_t;
 
 /* time related attributes */
-#ifndef CONFIG_NEWLIB_LIBC
+#if !defined(CONFIG_NEWLIB_LIBC) || defined(CONFIG_ARCH_POSIX)
 typedef u32_t clockid_t;
 #endif /*CONFIG_NEWLIB_LIBC */
 typedef unsigned long timer_t;
