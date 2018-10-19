@@ -29,3 +29,39 @@ config SOC_COMPATIBLE_NRF52X
 
 config SOC_COMPATIBLE_NRF52832
 	bool
+
+#
+# SOC_*_LD: SoC specific Linker script additions
+#
+config SOC_NOINIT_LD
+	bool
+	depends on (ARC || ARM || X86 || NIOS2 || RISCV32)
+	help
+	  Include an SoC specific linker script fragment named soc-noinit.ld
+	  for inserting additional data and linker directives into
+	  the noinit section.
+
+	  This only has effect if the SoC uses the common linker script
+	  under include/arch/.
+
+config SOC_RODATA_LD
+	bool
+	depends on (ARC || ARM || X86 || NIOS2 || RISCV32)
+	help
+	  Include an SoC specific linker script fragment named soc-rodata.ld
+	  for inserting additional data and linker directives into
+	  the rodata section.
+
+	  This only has effect if the SoC uses the common linker script
+	  under include/arch/.
+
+config SOC_RWDATA_LD
+	bool
+	depends on (ARC || ARM || X86 || NIOS2 || RISCV32)
+	help
+	  Include an SoC specific linker script fragment named soc-rwdata.ld
+	  for inserting additional data and linker directives into
+	  the data section.
+
+	  This only has effect if the SoC uses the common linker script
+	  under include/arch/.

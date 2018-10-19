@@ -90,6 +90,11 @@ SECTIONS
 		*(.rodata)
 		*(".rodata.*")
 		*(.gnu.linkonce.r.*)
+
+#ifdef CONFIG_SOC_RODATA_LD
+#include <soc-rodata.ld>
+#endif
+
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
     _image_ram_start = .;
@@ -105,6 +110,10 @@ SECTIONS
 
 		 *(.sdata .sdata.* .gnu.linkonce.s.*)
 		 *(.sdata2 .sdata2.* .gnu.linkonce.s2.*)
+
+#ifdef CONFIG_SOC_RWDATA_LD
+#include <soc-rwdata.ld>
+#endif
 
 	}  GROUP_LINK_IN(RAMABLE_REGION)
 
@@ -136,6 +145,11 @@ SECTIONS
 		 */
 		 *(.noinit)
 		 *(".noinit.*")
+
+#ifdef CONFIG_SOC_NOINIT_LD
+#include <soc-noinit.ld>
+#endif
+
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
      _image_ram_end = .;
