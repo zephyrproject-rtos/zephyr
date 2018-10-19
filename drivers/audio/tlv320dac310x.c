@@ -138,7 +138,8 @@ static int codec_set_property(struct device *dev,
 {
 	/* individual channel control not currently supported */
 	if (channel != AUDIO_CHANNEL_ALL) {
-		LOG_ERR("channel %u invalid. must be AUDIO_CHANNEL_ALL");
+		LOG_ERR("channel %u invalid. must be AUDIO_CHANNEL_ALL",
+			channel);
 		return -EINVAL;
 	}
 
