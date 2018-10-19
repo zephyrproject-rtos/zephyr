@@ -1810,7 +1810,7 @@ static inline u8_t *wncm14a2a_get_mac(struct device *dev)
 	ctx->mac_addr[1] = 0x10;
 
 	UNALIGNED_PUT(sys_cpu_to_be32(sys_rand32_get()),
-		      (u32_t *) ((void *)ctx->mac_addr+2));
+		      (u32_t *)(ctx->mac_addr + 2));
 
 	return ctx->mac_addr;
 }
