@@ -315,6 +315,7 @@ SECTIONS
     _text_start = ABSOLUTE(.);
     *(.entry.text)
     *(.init.literal)
+    *(.iram0.text)
     KEEP(*(.init))
     *(.literal .text .literal.* .text.* .stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
     *(.fini.literal)
