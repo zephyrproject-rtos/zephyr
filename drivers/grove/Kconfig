@@ -7,30 +7,6 @@
 #
 
 
-menuconfig GROVE
-	bool "Grove Device Drivers"
-	help
-	  Check this box to enable the Seeed Grove device drivers
-
-
-module = GROVE
-module-str = grove
-source "subsys/logging/Kconfig.template.log_config"
-
-config GROVE_LCD_RGB
-	bool "Enable the Seeed Grove LCD RGB Backlight"
-	depends on GROVE
-	help
-	  Setting this value will enable driver support for the Groove-LCD RGB
-	  Backlight.
-
-config GROVE_LCD_RGB_I2C_MASTER_DEV_NAME
-	string "I2C Master where Grove LCD is connected"
-	depends on GROVE_LCD_RGB
-	default "I2C_0"
-	help
-	  Specify the device name of the I2C master device to which the
-	  Grove LCD is connected.
 
 config GROVE_LIGHT_SENSOR
 	bool "Enable the Seeed Grove Light Sensor"
