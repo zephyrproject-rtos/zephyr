@@ -236,7 +236,7 @@ _switch_restore_pc:
  */
 .align 4
 _handle_excint:
-	EXCINT_HANDLER MISC0, ___cpu_t_nested_OFFSET, ___cpu_t_irq_stack_OFFSET
+	EXCINT_HANDLER CONFIG_XTENSA_KERNEL_CPU_PTR_SR, ___cpu_t_nested_OFFSET, ___cpu_t_irq_stack_OFFSET
 
 /* Define the actual vectors for the hardware-defined levels with
  * DEF_EXCINT.  These load a C handler address and jump to our handler

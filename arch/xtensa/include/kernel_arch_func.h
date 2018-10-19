@@ -11,6 +11,7 @@
 
 #ifndef _ASMLANGUAGE
 #include <string.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,6 +21,16 @@ extern "C" {
 
 #define STACK_ROUND_UP(x) ROUND_UP(x, STACK_ALIGN_SIZE)
 #define STACK_ROUND_DOWN(x) ROUND_DOWN(x, STACK_ALIGN_SIZE)
+
+#define RSR(sr) \
+	({u32_t v; \
+	 __asm__ volatile ("rsr." sr " %0" : "=a"(v)); \
+	 v; })
+
+#define WSR(sr, v) \
+	do { \
+		__asm__ volatile ("wsr." sr " %0" : : "r"(v)); \
+	} while (false)
 
 extern void FatalErrorHandler(void);
 extern void ReservedInterruptHandler(unsigned int intNo);
@@ -34,7 +45,7 @@ static ALWAYS_INLINE _cpu_t *_arch_curr_cpu(void)
 #ifdef CONFIG_XTENSA_ASM2
 	void *val;
 
-	__asm__ volatile("rsr.misc0 %0" : "=r"(val));
+	val = (void *)RSR(CONFIG_XTENSA_KERNEL_CPU_PTR_SR);
 
 	return val;
 #else
@@ -68,8 +79,7 @@ static ALWAYS_INLINE void kernel_arch_init(void)
 	 * this record is a per-CPU thing and having it stored in a SR
 	 * already is a big win.
 	 */
-	__asm__ volatile("wsr.MISC0 %0; rsync" : : "r"(cpu0));
-
+	WSR(CONFIG_XTENSA_KERNEL_CPU_PTR_SR, cpu0);
 #endif
 
 #if !defined(CONFIG_XTENSA_ASM2) && XCHAL_CP_NUM > 0
