@@ -229,7 +229,7 @@ static u8_t *recv_cb(u8_t *buf, size_t *off)
 
 	len = sys_le16_to_cpu(cmd->len);
 	if (len > BTP_MTU - sizeof(*cmd)) {
-		SYS_LOG_ERR("BT tester: invalid packet length");
+		LOG_ERR("BT tester: invalid packet length");
 		*off = 0;
 		return buf;
 	}
@@ -240,7 +240,7 @@ static u8_t *recv_cb(u8_t *buf, size_t *off)
 
 	new_buf =  k_fifo_get(&avail_queue, K_NO_WAIT);
 	if (!new_buf) {
-		SYS_LOG_ERR("BT tester: RX overflow");
+		LOG_ERR("BT tester: RX overflow");
 		*off = 0;
 		return buf;
 	}
