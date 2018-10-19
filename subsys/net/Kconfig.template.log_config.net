@@ -8,7 +8,7 @@
 
 choice
 	prompt "$(module-str)"
-	default $(module)_LOG_LEVEL_WRN
+	default $(module)_LOG_LEVEL_DEFAULT
 	depends on $(module-dep)
 # If we ever get help text macro expansion, then just uncomment
 # the following lines.
@@ -40,6 +40,11 @@ config $(module)_LOG_LEVEL_DBG
 	help
 	  Write to log with NET_DBG or LOG_DBG in addition to previous levels.
 
+config $(module)_LOG_LEVEL_DEFAULT
+	bool "Default"
+	help
+	  Use default log level.
+
 endchoice
 
 config $(module)_LOG_LEVEL
@@ -49,3 +54,4 @@ config $(module)_LOG_LEVEL
 	default 2 if $(module)_LOG_LEVEL_WRN
 	default 3 if $(module)_LOG_LEVEL_INF
 	default 4 if $(module)_LOG_LEVEL_DBG
+	default NET_DEFAULT_LOG_LEVEL if $(module)_LOG_LEVEL_DEFAULT
