@@ -6,9 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define SYS_LOG_DOMAIN "ipsp"
-#define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
-#include <logging/sys_log.h>
+#include <logging/log.h>
 
 #include <zephyr.h>
 #include <linker/sections.h>
@@ -20,6 +18,9 @@
 #include <net/net_core.h>
 #include <net/net_context.h>
 #include <net/udp.h>
+
+#define LOG_MODULE_NAME ipsp
+LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 /* admin-local, dynamically allocated multicast address */
 #define MCAST_IP6ADDR { { { 0xff, 0x02, 0, 0, 0, 0, 0, 0, \
@@ -64,15 +65,15 @@ static inline void quit(void)
 
 static inline void init_app(void)
 {
-	SYS_LOG_INF("Run IPSP sample");
+	LOG_INF("Run IPSP sample");
 
 	k_sem_init(&quit_lock, 0, UINT_MAX);
 
 	if (net_addr_pton(AF_INET6,
 			  CONFIG_NET_CONFIG_MY_IPV6_ADDR,
 			  &in6addr_my) < 0) {
-		SYS_LOG_ERR("Invalid IPv6 address %s",
-			    CONFIG_NET_CONFIG_MY_IPV6_ADDR);
+		LOG_ERR("Invalid IPv6 address %s",
+			CONFIG_NET_CONFIG_MY_IPV6_ADDR);
 	}
 
 	do {
@@ -101,37 +102,35 @@ static inline bool get_context(struct net_context **udp_recv6,
 
 	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP, udp_recv6);
 	if (ret < 0) {
-		SYS_LOG_ERR("Cannot get network context for IPv6 UDP (%d)",
-			    ret);
+		LOG_ERR("Cannot get network context for IPv6 UDP (%d)", ret);
 		return false;
 	}
 
 	ret = net_context_bind(*udp_recv6, (struct sockaddr *)&my_addr6,
 			       sizeof(struct sockaddr_in6));
 	if (ret < 0) {
-		SYS_LOG_ERR("Cannot bind IPv6 UDP port %d (%d)",
-			    ntohs(my_addr6.sin6_port), ret);
+		LOG_ERR("Cannot bind IPv6 UDP port %d (%d)",
+			ntohs(my_addr6.sin6_port), ret);
 		return false;
 	}
 
 	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP, mcast_recv6);
 	if (ret < 0) {
-		SYS_LOG_ERR("Cannot get receiving IPv6 mcast network context"
-			    "(%d)", ret);
+		LOG_ERR("Cannot get receiving IPv6 mcast network context (%d)",
+			ret);
 		return false;
 	}
 
 	ret = net_context_bind(*mcast_recv6, (struct sockaddr *)&mcast_addr6,
 			       sizeof(struct sockaddr_in6));
 	if (ret < 0) {
-		SYS_LOG_ERR("Cannot bind IPv6 mcast (%d)", ret);
+		LOG_ERR("Cannot bind IPv6 mcast (%d)", ret);
 		return false;
 	}
 
 	ret = net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP, tcp_recv6);
 	if (ret < 0) {
-		SYS_LOG_ERR("Cannot get network context for IPv6 TCP (%d)",
-			    ret);
+		LOG_ERR("Cannot get network context for IPv6 TCP (%d)", ret);
 		return false;
 	}
 
@@ -140,14 +139,14 @@ static inline bool get_context(struct net_context **udp_recv6,
 	ret = net_context_bind(*tcp_recv6, (struct sockaddr *)&my_addr6,
 			       sizeof(struct sockaddr_in6));
 	if (ret < 0) {
-		SYS_LOG_ERR("Cannot bind IPv6 TCP port %d (%d)",
-			    ntohs(my_addr6.sin6_port), ret);
+		LOG_ERR("Cannot bind IPv6 TCP port %d (%d)",
+			ntohs(my_addr6.sin6_port), ret);
 		return false;
 	}
 
 	ret = net_context_listen(*tcp_recv6, 0);
 	if (ret < 0) {
-		SYS_LOG_ERR("Cannot listen IPv6 TCP (%d)", ret);
+		LOG_ERR("Cannot listen IPv6 TCP (%d)", ret);
 		return false;
 	}
 
@@ -162,7 +161,7 @@ static struct net_pkt *build_reply_pkt(const char *name,
 	struct net_buf *tmp;
 	int header_len, recv_len, reply_len;
 
-	SYS_LOG_DBG("%s received %d bytes", name, net_pkt_appdatalen(pkt));
+	LOG_DBG("%s received %d bytes", name, net_pkt_appdatalen(pkt));
 
 	reply_pkt = net_pkt_get_tx(context, K_FOREVER);
 
@@ -187,8 +186,8 @@ static struct net_pkt *build_reply_pkt(const char *name,
 
 	reply_len = net_pkt_get_len(reply_pkt);
 
-	SYS_LOG_DBG("Received %d bytes, sending %d bytes",
-		    recv_len - header_len, reply_len);
+	LOG_DBG("Received %d bytes, sending %d bytes",
+		recv_len - header_len, reply_len);
 
 	return reply_pkt;
 }
@@ -199,7 +198,7 @@ static inline void pkt_sent(struct net_context *context,
 			    void *user_data)
 {
 	if (!status) {
-		SYS_LOG_DBG("Sent %d bytes", POINTER_TO_UINT(token));
+		LOG_DBG("Sent %d bytes", POINTER_TO_UINT(token));
 	}
 }
 
@@ -211,7 +210,7 @@ static inline void set_dst_addr(sa_family_t family,
 
 	udp_hdr = net_udp_get_hdr(pkt, &hdr);
 	if (!udp_hdr) {
-		SYS_LOG_ERR("Invalid UDP data");
+		LOG_ERR("Invalid UDP data");
 		return;
 	}
 
@@ -249,7 +248,7 @@ static void udp_received(struct net_context *context,
 				 UINT_TO_POINTER(net_pkt_get_len(reply_pkt)),
 				 user_data);
 	if (ret < 0) {
-		SYS_LOG_ERR("Cannot send data to peer (%d)", ret);
+		LOG_ERR("Cannot send data to peer (%d)", ret);
 		net_pkt_unref(reply_pkt);
 	}
 }
@@ -260,7 +259,7 @@ static void setup_udp_recv(struct net_context *udp_recv6)
 
 	ret = net_context_recv(udp_recv6, udp_received, 0, NULL);
 	if (ret < 0) {
-		SYS_LOG_ERR("Cannot receive IPv6 UDP packets");
+		LOG_ERR("Cannot receive IPv6 UDP packets");
 	}
 }
 
@@ -292,7 +291,7 @@ static void tcp_received(struct net_context *context,
 			       UINT_TO_POINTER(net_pkt_get_len(reply_pkt)),
 			       NULL);
 	if (ret < 0) {
-		SYS_LOG_ERR("Cannot send data to peer (%d)", ret);
+		LOG_ERR("Cannot send data to peer (%d)", ret);
 		net_pkt_unref(reply_pkt);
 
 		quit();
@@ -311,8 +310,8 @@ static void tcp_accepted(struct net_context *context,
 
 	ret = net_context_recv(context, tcp_received, 0, NULL);
 	if (ret < 0) {
-		SYS_LOG_ERR("Cannot receive TCP packet (family %d)",
-			    net_context_get_family(context));
+		LOG_ERR("Cannot receive TCP packet (family %d)",
+			net_context_get_family(context));
 	}
 }
 
@@ -322,7 +321,7 @@ static void setup_tcp_accept(struct net_context *tcp_recv6)
 
 	ret = net_context_accept(tcp_recv6, tcp_accepted, K_NO_WAIT, NULL);
 	if (ret < 0) {
-		SYS_LOG_ERR("Cannot receive IPv6 TCP packets (%d)", ret);
+		LOG_ERR("Cannot receive IPv6 TCP packets (%d)", ret);
 	}
 }
 
@@ -333,18 +332,18 @@ static void listen(void)
 	struct net_context *mcast_recv6 = { 0 };
 
 	if (!get_context(&udp_recv6, &tcp_recv6, &mcast_recv6)) {
-		SYS_LOG_ERR("Cannot get network contexts");
+		LOG_ERR("Cannot get network contexts");
 		return;
 	}
 
-	SYS_LOG_INF("Starting to wait");
+	LOG_INF("Starting to wait");
 
 	setup_tcp_accept(tcp_recv6);
 	setup_udp_recv(udp_recv6);
 
 	k_sem_take(&quit_lock, K_FOREVER);
 
-	SYS_LOG_INF("Stopping...");
+	LOG_INF("Stopping...");
 
 	net_context_put(udp_recv6);
 	net_context_put(mcast_recv6);
