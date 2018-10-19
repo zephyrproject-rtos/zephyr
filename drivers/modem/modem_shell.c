@@ -10,30 +10,32 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define LOG_MODULE_NAME modem_shell
+
 #include <zephyr.h>
 #include <stdlib.h>
 #include <string.h>
 #include <device.h>
-#include <shell/legacy_shell.h>
+#include <shell/shell.h>
 
 #include <misc/printk.h>
 
 #include <drivers/modem/modem_receiver.h>
 
-#define MODEM_SHELL_MODULE "modem"
-
-int modem_shell_cmd_list(int argc, char *argv[])
+static int cmd_modem_list(const struct shell *shell, size_t argc,
+			  char *argv[])
 {
 	struct mdm_receiver_context *mdm_ctx;
 	int i, count = 0;
 
-	printk("Modem receivers:\n");
+	shell_fprintf(shell, SHELL_NORMAL, "Modem receivers:\n");
 
 	for (i = 0; i < CONFIG_MODEM_RECEIVER_MAX_CONTEXTS; i++) {
 		mdm_ctx = mdm_receiver_context_from_id(i);
 		if (mdm_ctx) {
 			count++;
-			printk("%d:\tUART Name:    %s\n"
+			shell_fprintf(shell, SHELL_NORMAL,
+				"%d:\tUART Name:    %s\n"
 				"\tManufacturer: %s\n"
 				"\tModel:        %s\n"
 				"\tRevision:     %s\n"
@@ -49,13 +51,14 @@ int modem_shell_cmd_list(int argc, char *argv[])
 	}
 
 	if (!count) {
-		printk("None found.\n");
+		shell_fprintf(shell, SHELL_NORMAL, "None found.\n");
 	}
 
 	return 0;
 }
 
-int modem_shell_cmd_send(int argc, char *argv[])
+static int cmd_modem_send(const struct shell *shell, size_t argc,
+			  char *argv[])
 {
 	struct mdm_receiver_context *mdm_ctx;
 	char *endptr;
@@ -63,27 +66,30 @@ int modem_shell_cmd_send(int argc, char *argv[])
 
 	/* list */
 	if (!argv[arg]) {
-		printk("Please enter a modem index\n");
+		shell_fprintf(shell, SHELL_ERROR,
+			      "Please enter a modem index\n");
 		return -EINVAL;
 	}
 
 	/* <index> of modem receiver */
 	i = (int)strtol(argv[arg], &endptr, 10);
 	if (*endptr != '\0') {
-		printk("Please enter a modem index\n");
+		shell_fprintf(shell, SHELL_ERROR,
+			      "Please enter a modem index\n");
 		return -EINVAL;
 	}
 
 	mdm_ctx = mdm_receiver_context_from_id(i);
 	if (!mdm_ctx) {
-		printk("Modem receiver not found!");
+		shell_fprintf(shell, SHELL_ERROR, "Modem receiver not found!");
 		return 0;
 	}
 
 	for (i = arg + 1; i < argc; i++) {
 		ret = mdm_receiver_send(mdm_ctx, argv[i], strlen(argv[i]));
 		if (ret < 0) {
-			printk("Error sending '%s': %d\n", argv[i], ret);
+			shell_fprintf(shell, SHELL_ERROR,
+				      "Error sending '%s': %d\n", argv[i], ret);
 			return 0;
 		}
 
@@ -94,7 +100,9 @@ int modem_shell_cmd_send(int argc, char *argv[])
 		}
 
 		if (ret < 0) {
-			printk("Error sending (CRLF or space): %d\n", ret);
+			shell_fprintf(shell, SHELL_ERROR,
+				      "Error sending (CRLF or space): %d\n",
+				      ret);
 			return 0;
 		}
 	}
@@ -102,13 +110,12 @@ int modem_shell_cmd_send(int argc, char *argv[])
 	return 0;
 }
 
-static struct shell_cmd modem_commands[] = {
-	/* Keep the commands in alphabetical order */
-	{ "list", modem_shell_cmd_list, "\n\tList registered modems" },
-	{ "send", modem_shell_cmd_send,
-		"\n\tSend an AT <command> to a registered modem receiver:"
-		"\n\tsend <index> <command>" },
-	{ NULL, NULL, NULL }
+SHELL_CREATE_STATIC_SUBCMD_SET(sub_modem) {
+	/* Alphabetically sorted. */
+	SHELL_CMD(list, NULL, "List registered modems", cmd_modem_list),
+	SHELL_CMD(send, NULL, "Send an AT <command> to a registered modem "
+			      "receiver", cmd_modem_send),
+	SHELL_SUBCMD_SET_END /* Array terminated. */
 };
 
-SHELL_REGISTER(MODEM_SHELL_MODULE, modem_commands);
+SHELL_CMD_REGISTER(modem, &sub_modem, "Modem commands", NULL);
