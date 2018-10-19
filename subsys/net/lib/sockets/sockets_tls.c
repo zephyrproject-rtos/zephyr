@@ -635,7 +635,7 @@ static int tls_set_psk(struct tls_context *tls,
 	int err = mbedtls_ssl_conf_psk(&tls->config,
 				       psk->buf, psk->len,
 				       (const unsigned char *)psk_id->buf,
-				       psk_id->len - 1);
+				       psk_id->len);
 	if (err != 0) {
 		return -EINVAL;
 	}
