@@ -185,6 +185,7 @@ config LOG_MAX_LEVEL
 
 config LOG_PRINTK
 	bool "Enable processing of printk messages."
+	default y
 	help
 	  LOG_PRINTK messages are formatted in place and logged unconditionally.
 
