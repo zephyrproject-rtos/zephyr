@@ -20,17 +20,20 @@ properties:
     height:
       type: int
       category: required
-      generation: Height in pixel of the panel driven by the controller
+      description: Height in pixel of the panel driven by the controller
+      generation: define
 
     width:
       type: int
       category: required
-      generation: Width in pixel of the panel driven by the controller
+      description: Width in pixel of the panel driven by the controller
+      generation: define
 
     orientation-flipped:
-      type: string
+      type: boolean
       category: optional
-      generation: Last column address is mapped to first segment
+      description: Last column address is mapped to first segment
+      generation: define
 
     reset-gpios:
       type: compound
@@ -46,7 +49,5 @@ properties:
       type: compound
       category: required
       generation: define, use-prop-name
-
-base_label: SSD1673
 
 ...
