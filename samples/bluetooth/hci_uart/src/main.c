@@ -13,7 +13,7 @@
 #include <zephyr.h>
 #include <arch/cpu.h>
 #include <misc/byteorder.h>
-#include <logging/sys_log.h>
+#include <logging/log.h>
 #include <misc/util.h>
 
 #include <device.h>
@@ -28,7 +28,7 @@
 #include <bluetooth/hci_raw.h>
 
 #define LOG_MODULE_NAME hci_uart
-#include "common/log.h"
+LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 static struct device *hci_uart_dev;
 static K_THREAD_STACK_DEFINE(tx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
@@ -83,14 +83,14 @@ static int h4_read(struct device *uart, u8_t *buf,
 
 		rx = uart_fifo_read(uart, buf, len);
 		if (rx == 0) {
-			SYS_LOG_DBG("Got zero bytes from UART");
+			LOG_DBG("Got zero bytes from UART");
 			if (total < min) {
 				continue;
 			}
 			break;
 		}
 
-		SYS_LOG_DBG("read %d remaining %d", rx, len - rx);
+		LOG_DBG("read %d remaining %d", rx, len - rx);
 		len -= rx;
 		total += rx;
 		buf += rx;
@@ -121,10 +121,10 @@ static struct net_buf *h4_cmd_recv(int *remaining)
 		bt_buf_set_type(buf, BT_BUF_CMD);
 		net_buf_add_mem(buf, &hdr, sizeof(hdr));
 	} else {
-		SYS_LOG_ERR("No available command buffers!");
+		LOG_ERR("No available command buffers!");
 	}
 
-	SYS_LOG_DBG("len %u", hdr.param_len);
+	LOG_DBG("len %u", hdr.param_len);
 
 	return buf;
 }
@@ -142,12 +142,12 @@ static struct net_buf *h4_acl_recv(int *remaining)
 		bt_buf_set_type(buf, BT_BUF_ACL_OUT);
 		net_buf_add_mem(buf, &hdr, sizeof(hdr));
 	} else {
-		SYS_LOG_ERR("No available ACL buffers!");
+		LOG_ERR("No available ACL buffers!");
 	}
 
 	*remaining = sys_le16_to_cpu(hdr.len);
 
-	SYS_LOG_DBG("len %u", *remaining);
+	LOG_DBG("len %u", *remaining);
 
 	return buf;
 }
@@ -165,9 +165,9 @@ static void bt_uart_isr(struct device *unused)
 
 		if (!uart_irq_rx_ready(hci_uart_dev)) {
 			if (uart_irq_tx_ready(hci_uart_dev)) {
-				SYS_LOG_DBG("transmit ready");
+				LOG_DBG("transmit ready");
 			} else {
-				SYS_LOG_DBG("spurious interrupt");
+				LOG_DBG("spurious interrupt");
 			}
 			/* Only the UART RX path is interrupt-enabled */
 			break;
@@ -180,7 +180,7 @@ static void bt_uart_isr(struct device *unused)
 			/* Get packet type */
 			read = h4_read(hci_uart_dev, &type, sizeof(type), 0);
 			if (read != sizeof(type)) {
-				SYS_LOG_WRN("Unable to read H4 packet type");
+				LOG_WRN("Unable to read H4 packet type");
 				continue;
 			}
 
@@ -192,14 +192,14 @@ static void bt_uart_isr(struct device *unused)
 				buf = h4_acl_recv(&remaining);
 				break;
 			default:
-				SYS_LOG_ERR("Unknown H4 type %u", type);
+				LOG_ERR("Unknown H4 type %u", type);
 				return;
 			}
 
-			SYS_LOG_DBG("need to get %u bytes", remaining);
+			LOG_DBG("need to get %u bytes", remaining);
 
 			if (buf && remaining > net_buf_tailroom(buf)) {
-				SYS_LOG_ERR("Not enough space in buffer");
+				LOG_ERR("Not enough space in buffer");
 				net_buf_unref(buf);
 				buf = NULL;
 			}
@@ -207,7 +207,7 @@ static void bt_uart_isr(struct device *unused)
 
 		if (!buf) {
 			read = h4_discard(hci_uart_dev, remaining);
-			SYS_LOG_WRN("Discarded %d bytes", read);
+			LOG_WRN("Discarded %d bytes", read);
 			remaining -= read;
 			continue;
 		}
@@ -217,10 +217,10 @@ static void bt_uart_isr(struct device *unused)
 		buf->len += read;
 		remaining -= read;
 
-		SYS_LOG_DBG("received %d bytes", read);
+		LOG_DBG("received %d bytes", read);
 
 		if (!remaining) {
-			SYS_LOG_DBG("full packet received");
+			LOG_DBG("full packet received");
 
 			/* Put buffer into TX queue, thread will dequeue */
 			net_buf_put(&tx_queue, buf);
@@ -240,7 +240,7 @@ static void tx_thread(void *p1, void *p2, void *p3)
 		/* Pass buffer to the stack */
 		err = bt_send(buf);
 		if (err) {
-			SYS_LOG_ERR("Unable to send (err %d)", err);
+			LOG_ERR("Unable to send (err %d)", err);
 			net_buf_unref(buf);
 		}
 
@@ -253,7 +253,7 @@ static void tx_thread(void *p1, void *p2, void *p3)
 
 static int h4_send(struct net_buf *buf)
 {
-	SYS_LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf),
+	LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf),
 		    buf->len);
 
 	switch (bt_buf_get_type(buf)) {
@@ -264,7 +264,7 @@ static int h4_send(struct net_buf *buf)
 		uart_poll_out(hci_uart_dev, H4_EVT);
 		break;
 	default:
-		SYS_LOG_ERR("Unknown type %u", bt_buf_get_type(buf));
+		LOG_ERR("Unknown type %u", bt_buf_get_type(buf));
 		net_buf_unref(buf);
 		return -EINVAL;
 	}
@@ -327,7 +327,7 @@ void bt_ctlr_assert_handle(char *file, u32_t line)
 
 static int hci_uart_init(struct device *unused)
 {
-	SYS_LOG_DBG("");
+	LOG_DBG("");
 
 	hci_uart_dev = device_get_binding(CONFIG_BT_CTLR_TO_HOST_UART_DEV_NAME);
 	if (!hci_uart_dev) {
@@ -353,7 +353,7 @@ void main(void)
 	static K_FIFO_DEFINE(rx_queue);
 	int err;
 
-	SYS_LOG_DBG("Start");
+	LOG_DBG("Start");
 
 	/* Enable the raw interface, this will in turn open the HCI driver */
 	bt_enable_raw(&rx_queue);
@@ -370,7 +370,7 @@ void main(void)
 		buf = net_buf_get(&rx_queue, K_FOREVER);
 		err = h4_send(buf);
 		if (err) {
-			SYS_LOG_ERR("Failed to send");
+			LOG_ERR("Failed to send");
 		}
 	}
 }
