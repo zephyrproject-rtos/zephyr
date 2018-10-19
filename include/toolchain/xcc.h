@@ -43,5 +43,7 @@
  */
 #define __builtin_add_overflow(a, b, output)	({ *output = (a) + (b); 0; })
 #define __builtin_mul_overflow(a, b, output)	({ *output = (a) * (b); 0; })
+#define __builtin_umul_overflow(a, b, output)	({ *output = (a) * (b); 0; })
+#define __builtin_umulll_overflow(a, b, output)	({ *output = (a) * (b); 0; })
 
 #endif
