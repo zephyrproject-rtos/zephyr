@@ -31,13 +31,13 @@ config NET_BUF_LOG
 	help
 	  Enable logs and checks for the generic network buffers.
 
-if NET_BUF_LOG
-
 module = NET_BUF
 module-dep = LOG
 module-str = Log level for network buffer handling
 module-help = Sets log level for network buffers.
 source "subsys/net/Kconfig.template.log_config.net"
+
+if NET_BUF_LOG
 
 config NET_BUF_WARN_ALLOC_INTERVAL
 	int "Interval of Network buffer allocation warnings"
