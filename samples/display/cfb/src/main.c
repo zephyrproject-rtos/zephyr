@@ -17,6 +17,10 @@
 #define DISPLAY_DRIVER				"SSD1306"
 #endif
 
+#ifndef DISPLAY_DRIVER
+#define DISPLAY_DRIVER "DISPLAY"
+#endif
+
 void main(void)
 {
 	struct device *dev;
@@ -33,6 +37,11 @@ void main(void)
 		return;
 	}
 
+	if (display_set_pixel_format(dev, PIXEL_FORMAT_MONO10) != 0) {
+		printf("Failed to set required pixel format\n");
+		return;
+	}
+
 	printf("initialized %s\n", DISPLAY_DRIVER);
 
 	if (cfb_framebuffer_init(dev)) {
@@ -42,6 +51,8 @@ void main(void)
 
 	api = dev->driver_api;
 	cfb_framebuffer_clear(dev, true);
+
+	display_blanking_off(dev);
 
 	rows = cfb_get_display_parameter(dev, CFB_DISPLAY_ROWS);
 	ppt = cfb_get_display_parameter(dev, CFB_DISPLAY_PPT);
@@ -73,6 +84,9 @@ void main(void)
 			}
 
 			cfb_framebuffer_finalize(dev);
+#if defined(CONFIG_ARCH_POSIX)
+			k_sleep(100);
+#endif
 		}
 	}
 }
