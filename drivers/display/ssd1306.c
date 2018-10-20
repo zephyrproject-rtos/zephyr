@@ -337,6 +337,14 @@ static void ssd1306_get_capabilities(const struct device *dev,
 	caps->screen_info = SCREEN_INFO_MONO_VTILED;
 }
 
+static int ssd1306_set_orientation(const struct device *dev,
+				   const enum display_orientation
+				   orientation)
+{
+	LOG_ERR("Unsupported");
+	return -ENOTSUP;
+}
+
 static int ssd1306_set_pixel_format(const struct device *dev,
 				    const enum display_pixel_format pf)
 {
@@ -427,6 +435,7 @@ static struct display_driver_api ssd1306_driver_api = {
 	.set_contrast = ssd1306_set_contrast,
 	.get_capabilities = ssd1306_get_capabilities,
 	.set_pixel_format = ssd1306_set_pixel_format,
+	.set_orientation = ssd1306_set_orientation,
 };
 
 DEVICE_AND_API_INIT(ssd1306, DT_SSD1306_DEV_NAME, ssd1306_init,
