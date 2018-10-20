@@ -340,6 +340,9 @@ static void ssd1306_get_capabilities(const struct device *dev,
 static int ssd1306_set_pixel_format(const struct device *dev,
 				    const enum display_pixel_format pf)
 {
+	if (pf == PIXEL_FORMAT_MONO10) {
+		return 0;
+	}
 	LOG_ERR("Unsupported");
 	return -ENOTSUP;
 }
