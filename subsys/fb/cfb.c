@@ -171,9 +171,9 @@ int cfb_framebuffer_clear(struct device *dev, bool clear_display)
 	}
 
 	desc.buf_size = fb->size;
-	desc.width = 0;
-	desc.height = 0;
-	desc.pitch = 0;
+	desc.width = fb->x_res;
+	desc.height = fb->y_res;
+	desc.pitch = fb->x_res;
 	memset(fb->buf, 0, fb->size);
 
 	if (clear_display && (fb->screen_info & SCREEN_INFO_EPD)) {
@@ -210,9 +210,9 @@ int cfb_framebuffer_finalize(struct device *dev)
 	}
 
 	desc.buf_size = fb->size;
-	desc.width = 0;
-	desc.height = 0;
-	desc.pitch = 0;
+	desc.width = fb->x_res;
+	desc.height = fb->y_res;
+	desc.pitch = fb->x_res;
 
 	if (!(fb->pixel_format & PIXEL_FORMAT_MONO10) != !(fb->inverted)) {
 		cfb_invert(fb);
