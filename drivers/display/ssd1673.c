@@ -133,7 +133,7 @@ static inline int ssd1673_set_ram_ptr(struct ssd1673_data *driver,
 	return 0;
 }
 
-static inline void ssd1673_set_orientation(struct ssd1673_data *driver)
+static void ssd1673_set_orientation_internall(struct ssd1673_data *driver)
 
 {
 #if DT_SSD1673_ORIENTATION_FLIPPED == 1
@@ -383,6 +383,14 @@ static void ssd1673_get_capabilities(const struct device *dev,
 			    SCREEN_INFO_EPD;
 }
 
+static int ssd1673_set_orientation(const struct device *dev,
+				   const enum display_orientation
+				   orientation)
+{
+	LOG_ERR("Unsupported");
+	return -ENOTSUP;
+}
+
 static int ssd1673_set_pixel_format(const struct device *dev,
 				    const enum display_pixel_format pf)
 {
@@ -444,7 +452,7 @@ static int ssd1673_controller_init(struct device *dev)
 		return -1;
 	}
 
-	ssd1673_set_orientation(driver);
+	ssd1673_set_orientation_internall(driver);
 	driver->numof_part_cycles = 0U;
 	driver->last_lut = SSD1673_LAST_LUT_INITIAL;
 	driver->contrast = 0U;
@@ -526,7 +534,7 @@ static struct display_driver_api ssd1673_driver_api = {
 	.set_contrast = ssd1673_set_contrast,
 	.get_capabilities = ssd1673_get_capabilities,
 	.set_pixel_format = ssd1673_set_pixel_format,
-	.set_orientation = NULL,
+	.set_orientation = ssd1673_set_orientation,
 };
 
 
