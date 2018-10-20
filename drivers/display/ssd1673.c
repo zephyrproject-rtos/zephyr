@@ -386,6 +386,10 @@ static void ssd1673_get_capabilities(const struct device *dev,
 static int ssd1673_set_pixel_format(const struct device *dev,
 				    const enum display_pixel_format pf)
 {
+	if (pf == PIXEL_FORMAT_MONO10) {
+		return 0;
+	}
+
 	LOG_ERR("not supported");
 	return -ENOTSUP;
 }
