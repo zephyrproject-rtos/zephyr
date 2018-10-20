@@ -658,8 +658,8 @@ static const struct bt_data ad_discov[] = {
 static int cmd_advertise(const struct shell *shell, size_t argc, char *argv[])
 {
 	struct bt_le_adv_param param;
-	const struct bt_data *ad, *scan_rsp;
-	size_t ad_len, scan_rsp_len;
+	const struct bt_data *ad;
+	size_t ad_len;
 	int err;
 
 	err = shell_cmd_precheck(shell, (argc >= 2), NULL, 0);
@@ -689,8 +689,6 @@ static int cmd_advertise(const struct shell *shell, size_t argc, char *argv[])
 		param.options = BT_LE_ADV_OPT_USE_NAME;
 	} else if (!strcmp(argv[1], "nconn")) {
 		param.options = 0;
-		scan_rsp = NULL;
-		scan_rsp_len = 0;
 	} else {
 		goto fail;
 	}
@@ -713,7 +711,7 @@ static int cmd_advertise(const struct shell *shell, size_t argc, char *argv[])
 		ad_len = ARRAY_SIZE(ad_discov);
 	}
 
-	err = bt_le_adv_start(&param, ad, ad_len, scan_rsp, scan_rsp_len);
+	err = bt_le_adv_start(&param, ad, ad_len, NULL, 0);
 	if (err < 0) {
 		error(shell, "Failed to start advertising (err %d)",
 			    err);
@@ -1011,7 +1009,7 @@ static int cmd_clear(const struct shell *shell, size_t argc, char *argv[])
 
 static int cmd_chan_map(const struct shell *shell, size_t argc, char *argv[])
 {
-	u8_t chan_map[5];
+	u8_t chan_map[5] = {};
 	int err;
 
 	err = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
