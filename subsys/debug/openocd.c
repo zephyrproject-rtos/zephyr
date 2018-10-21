@@ -17,6 +17,7 @@ enum {
 	OPENOCD_OFFSET_T_USER_OPTIONS,
 	OPENOCD_OFFSET_T_PRIO,
 	OPENOCD_OFFSET_T_STACK_PTR,
+	OPENOCD_OFFSET_T_NAME,
 };
 
 /* Forward-compatibility notes: 1) Increment OPENOCD_OFFSET_VERSION element
@@ -27,7 +28,7 @@ enum {
 __attribute__((used, section(".openocd_dbg")))
 size_t _kernel_openocd_offsets[] = {
 	/* Version 0 starts */
-	[OPENOCD_OFFSET_VERSION] = 0,
+	[OPENOCD_OFFSET_VERSION] = 1,
 	[OPENOCD_OFFSET_K_CURR_THREAD] = offsetof(struct _kernel, current),
 	[OPENOCD_OFFSET_K_THREADS] = offsetof(struct _kernel, threads),
 	[OPENOCD_OFFSET_T_ENTRY] = offsetof(struct k_thread, entry),
@@ -60,6 +61,8 @@ size_t _kernel_openocd_offsets[] = {
 	[OPENOCD_OFFSET_T_STACK_PTR] = 0xffffffff,
 #endif
 	/* Version 0 ends */
+
+	[OPENOCD_OFFSET_T_NAME] = offsetof(struct k_thread, name),
 };
 
 __attribute__((used, section(".openocd_dbg")))
