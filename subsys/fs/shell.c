@@ -166,7 +166,7 @@ static int cmd_trunc(const struct shell *shell, size_t argc, char **argv)
 	int length;
 	int err;
 
-	err = hell_cmd_precheck(shell, (argc >= 2), NULL, 0);
+	err = shell_cmd_precheck(shell, (argc >= 2), NULL, 0);
 	if (err) {
 		return err;
 	}
