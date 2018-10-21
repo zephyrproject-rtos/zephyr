@@ -322,7 +322,7 @@ static inline int gpio_pin_disable_callback(struct device *port, u32_t pin)
  */
 static inline int gpio_port_configure(struct device *port, int flags)
 {
-	return gpio_config(port, GPIO_ACCESS_BY_PORT, 0, flags);
+	return gpio_config(port, GPIO_ACCESS_BY_PORT, 0xFFFFFFFF, flags);
 }
 
 /**
@@ -340,7 +340,7 @@ static inline int gpio_port_configure(struct device *port, int flags)
  */
 static inline int gpio_port_write(struct device *port, u32_t value)
 {
-	return gpio_write(port, GPIO_ACCESS_BY_PORT, 0, value);
+	return gpio_write(port, GPIO_ACCESS_BY_PORT, 0xFFFFFFFF, value);
 }
 
 /**
@@ -358,7 +358,7 @@ static inline int gpio_port_write(struct device *port, u32_t value)
  */
 static inline int gpio_port_read(struct device *port, u32_t *value)
 {
-	return gpio_read(port, GPIO_ACCESS_BY_PORT, 0, value);
+	return gpio_read(port, GPIO_ACCESS_BY_PORT, 0xFFFFFFFF, value);
 }
 
 /**
@@ -373,7 +373,7 @@ static inline int gpio_port_read(struct device *port, u32_t *value)
  */
 static inline int gpio_port_enable_callback(struct device *port)
 {
-	return gpio_enable_callback(port, GPIO_ACCESS_BY_PORT, 0);
+	return gpio_enable_callback(port, GPIO_ACCESS_BY_PORT, 0xFFFFFFFF);
 }
 
 /**
@@ -383,7 +383,7 @@ static inline int gpio_port_enable_callback(struct device *port)
  */
 static inline int gpio_port_disable_callback(struct device *port)
 {
-	return gpio_disable_callback(port, GPIO_ACCESS_BY_PORT, 0);
+	return gpio_disable_callback(port, GPIO_ACCESS_BY_PORT, 0xFFFFFFFF);
 }
 
 /**
