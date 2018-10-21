@@ -35,6 +35,7 @@ extern "C" {
 /** @cond INTERNAL_HIDDEN */
 #define GPIO_ACCESS_BY_PIN 0
 #define GPIO_ACCESS_BY_PORT 1
+#define GPIO_ACCESS_BY_PORT_MASK 2
 /**
  * @endcond
  */
@@ -383,6 +384,51 @@ static inline int gpio_port_enable_callback(struct device *port)
 static inline int gpio_port_disable_callback(struct device *port)
 {
 	return gpio_disable_callback(port, GPIO_ACCESS_BY_PORT, 0);
+}
+
+/**
+ * @brief Configure all the masked pins the same way in the port.
+ *
+ * Only configure the pins that are enabled by the mask.
+ *
+ * The state of each pin is
+ * represented by one bit in the flags.  Pin 0 corresponds to the
+ * least significant bit, pin 31 corresponds to the most significant
+ * bit.  For ports with less that 32 physical pins the most significant
+ * bits which do not correspond to a physical pin are ignored.
+ *
+ * @param port Pointer to the device structure for the driver instance.
+ * @param mask Mask.
+ * @param flags Flags to configure the port.
+ * @return 0 if successful, negative errno code on failure.
+ */
+static inline int gpio_port_configure_masked(struct device *port,
+					     u32_t mask, int flags)
+{
+	return gpio_config(port, GPIO_ACCESS_BY_PORT_MASK, mask, flags);
+}
+
+/**
+ * @brief Write a data value to the port.
+ *
+ * Write the output state of a port. Only write the state to the pins
+ * that are enabled by the mask.
+ *
+ * The state of each pin is
+ * represented by one bit in the value.  Pin 0 corresponds to the
+ * least significant bit, pin 31 corresponds to the most significant
+ * bit.  For ports with less that 32 physical pins the most significant
+ * bits which do not correspond to a physical pin are ignored.
+ *
+ * @param port Pointer to the device structure for the driver instance.
+ * @param mask Mask.
+ * @param value Value to set on the port.
+ * @return 0 if successful, negative errno code on failure.
+ */
+static inline int gpio_port_write_masked(struct device *port,
+					 u32_t mask, u32_t value)
+{
+	return gpio_write(port, GPIO_ACCESS_BY_PORT_MASK, mask, value);
 }
 
 /**
