@@ -6,6 +6,8 @@
 
 #include <kernel_structs.h>
 
+#define OPENOCD_UNIMPLEMENTED	0xffffffff
+
 #if defined(CONFIG_OPENOCD_SUPPORT) && defined(CONFIG_THREAD_MONITOR)
 enum {
 	OPENOCD_OFFSET_VERSION,
@@ -18,6 +20,9 @@ enum {
 	OPENOCD_OFFSET_T_PRIO,
 	OPENOCD_OFFSET_T_STACK_PTR,
 	OPENOCD_OFFSET_T_NAME,
+	OPENOCD_OFFSET_T_ARCH,
+	OPENOCD_OFFSET_T_PREEMPT_FLOAT,
+	OPENOCD_OFFSET_T_COOP_FLOAT,
 };
 
 /* Forward-compatibility notes: 1) Increment OPENOCD_OFFSET_VERSION element
@@ -53,16 +58,29 @@ size_t _kernel_openocd_offsets[] = {
 	[OPENOCD_OFFSET_T_STACK_PTR] = offsetof(struct k_thread,
 						callee_saved.sp),
 #else
-	/* Use 0xffffffff as a special value so that OpenOCD knows that
-	 * obtaining the stack pointer is not possible on this particular
-	 * architecture.
+	/* Use a special value so that OpenOCD knows that obtaining the stack
+	 * pointer is not possible on this particular architecture.
 	 */
 #warning Please define OPENOCD_OFFSET_T_STACK_PTR for this architecture
-	[OPENOCD_OFFSET_T_STACK_PTR] = 0xffffffff,
+	[OPENOCD_OFFSET_T_STACK_PTR] = OPENOCD_UNIMPLEMENTED,
 #endif
 	/* Version 0 ends */
 
 	[OPENOCD_OFFSET_T_NAME] = offsetof(struct k_thread, name),
+	[OPENOCD_OFFSET_T_ARCH] = offsetof(struct k_thread, arch),
+#if defined(CONFIG_FLOAT) && defined(CONFIG_ARM)
+	[OPENOCD_OFFSET_T_PREEMPT_FLOAT] = offsetof(struct _thread_arch,
+						    preempt_float),
+	[OPENOCD_OFFSET_T_COOP_FLOAT] = OPENOCD_UNIMPLEMENTED,
+#elif defined(CONFIG_FLOAT) && defined(CONFIG_X86)
+	[OPENOCD_OFFSET_T_PREEMPT_FLOAT] = offsetof(struct _thread_arch,
+						    preempFloatReg),
+	[OPENOCD_OFFSET_T_COOP_FLOAT] = offsetof(struct _thread_arch,
+						 coopFloatReg),
+#else
+	[OPENOCD_OFFSET_T_PREEMPT_FLOAT] = OPENOCD_UNIMPLEMENTED,
+	[OPENOCD_OFFSET_T_COOP_FLOAT] = OPENOCD_UNIMPLEMENTED,
+#endif
 };
 
 __attribute__((used, section(".openocd_dbg")))
