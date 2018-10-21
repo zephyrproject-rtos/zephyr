@@ -118,11 +118,15 @@ static int gpio_sam_config(struct device *dev, int access_op, u32_t pin,
 	case GPIO_ACCESS_BY_PIN:
 		gpio_sam_config_pin(pio, BIT(pin), flags);
 		break;
+	case GPIO_ACCESS_BY_PORT_MASK:
 	case GPIO_ACCESS_BY_PORT:
 		for (i = 0; i < 32; i++) {
-			result = gpio_sam_config_pin(pio, BIT(i), flags);
-			if (result < 0) {
-				return result;
+			if (pin & BIT(i)) {
+				result = gpio_sam_config_pin(pio, BIT(i),
+							     flags);
+				if (result < 0) {
+					return result;
+				}
 			}
 		}
 		break;
@@ -138,20 +142,23 @@ static int gpio_sam_write(struct device *dev, int access_op, u32_t pin,
 {
 	const struct gpio_sam_config * const cfg = DEV_CFG(dev);
 	Pio *const pio = cfg->regs;
-	u32_t mask = 1 << pin;
+	u32_t write_mask;
 
 	switch (access_op) {
 	case GPIO_ACCESS_BY_PIN:
 		if (value) {
 			/* Set the pin. */
-			pio->PIO_SODR = mask;
+			pio->PIO_SODR = (1 << pin);
 		} else {
 			/* Clear the pin. */
-			pio->PIO_CODR = mask;
+			pio->PIO_CODR = (1 << pin);
 		}
 		break;
+	case GPIO_ACCESS_BY_PORT_MASK:
 	case GPIO_ACCESS_BY_PORT:
-		pio->PIO_OWER = pio->PIO_OSR; /* Write those out pin only */
+		/* Write those output pin and which masked in 'pin' only */
+		write_mask = pio->PIO_OSR & pin;
+		pio->PIO_OWER = write_mask;
 		pio->PIO_ODSR = value;
 		pio->PIO_OWDR = 0xffffffff;   /* Disable write ODSR */
 		break;
