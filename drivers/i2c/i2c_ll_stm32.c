@@ -3,6 +3,7 @@
 /*
  * Copyright (c) 2016 BayLibre, SAS
  * Copyright (c) 2017 Linaro Ltd
+ * Copyright (c) 2018 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
