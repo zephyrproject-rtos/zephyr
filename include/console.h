@@ -21,6 +21,7 @@ struct tty_serial {
 	u8_t *rx_ringbuf;
 	u32_t rx_ringbuf_sz;
 	u16_t rx_get, rx_put;
+	s32_t rx_timeout;
 
 	u8_t *tx_ringbuf;
 	u32_t tx_ringbuf_sz;
@@ -47,13 +48,28 @@ void tty_init(struct tty_serial *tty, struct device *uart_dev,
 	      u8_t *rxbuf, u16_t rxbuf_sz,
 	      u8_t *txbuf, u16_t txbuf_sz);
 
+/**
+ * @brief Set receive timeout for tty device.
+ *
+ * Set timeout for getchar() operation. Default timeout after
+ * device initialization is K_FOREVER.
+ *
+ * @param tty tty device structure
+ * @param timeout timeout in milliseconds, or K_FOREVER, or K_NO_WAIT
+ */
+static inline void tty_set_rx_timeout(struct tty_serial *tty, s32_t timeout)
+{
+	tty->rx_timeout = timeout;
+}
 
 /**
  * @brief Input a character from a tty device.
  *
  * @param tty tty device structure
+ * @return >=0, an input character
+ *         <0, an error (e.g. -EAGAIN if timeout expired)
  */
-u8_t tty_getchar(struct tty_serial *tty);
+int tty_getchar(struct tty_serial *tty);
 
 /**
  * @brief Output a character from to tty device.
