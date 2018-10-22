@@ -20,7 +20,8 @@ int console_putchar(char c)
 
 u8_t console_getchar(void)
 {
-	return tty_getchar(&console_serial);
+	/* Console works in blocking mode, so we don't expect an error here */
+	return (u8_t)tty_getchar(&console_serial);
 }
 
 void console_init(void)
