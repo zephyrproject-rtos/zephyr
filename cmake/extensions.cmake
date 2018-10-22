@@ -388,7 +388,7 @@ function(target_sources_codegen
 
   message(${CODEGEN_SEARCH_PATH})
 
-  # Get all the files that make up codegen for dependency
+  # Get all the files that make up jinjagen for dependency reasons
   file(GLOB CODEGEN_SOURCES
     ${ZEPHYR_BASE}/scripts/codegen/*.py
     ${ZEPHYR_BASE}/scripts/render_template.py)
