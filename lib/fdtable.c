@@ -202,10 +202,12 @@ static ssize_t stdinout_read_vmeth(void *obj, void *buffer, size_t count)
 
 static ssize_t stdinout_write_vmeth(void *obj, const void *buffer, size_t count)
 {
-#ifdef CONFIG_BOARD_NATIVE_POSIX
+#if defined(CONFIG_BOARD_NATIVE_POSIX)
 	return write(1, buffer, count);
-#else
+#elif defined(CONFIG_NEWLIB_LIBC)
 	return _impl__zephyr_write(buffer, count);
+#else
+	return 0;
 #endif
 }
 
