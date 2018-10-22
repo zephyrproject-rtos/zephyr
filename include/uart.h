@@ -388,7 +388,7 @@ static inline int uart_irq_tx_ready(struct device *dev)
 }
 
 /**
- * @brief Enable RX interrupt in IER.
+ * @brief Enable RX interrupt.
  *
  * @param dev UART device structure.
  *
@@ -407,7 +407,7 @@ static inline void _impl_uart_irq_rx_enable(struct device *dev)
 }
 
 /**
- * @brief Disable RX interrupt in IER.
+ * @brief Disable RX interrupt.
  *
  * @param dev UART device structure.
  *
@@ -441,6 +441,7 @@ static inline void _impl_uart_irq_rx_disable(struct device *dev)
  *
  * @retval 1 If nothing remains to be transmitted.
  * @retval 0 Otherwise.
+ * @retval -ENOTSUP if this function is not supported
  */
 static inline int uart_irq_tx_complete(struct device *dev)
 {
@@ -451,7 +452,7 @@ static inline int uart_irq_tx_complete(struct device *dev)
 		return api->irq_tx_complete(dev);
 	}
 
-	return 0;
+	return -ENOTSUP;
 }
 
 /**
@@ -471,6 +472,7 @@ static inline int uart_irq_tx_complete(struct device *dev)
  *
  * @retval 1 If a received char is ready.
  * @retval 0 Otherwise.
+ * @retval -ENOTSUP if this function is not supported
  */
 static inline int uart_irq_rx_ready(struct device *dev)
 {
@@ -484,7 +486,7 @@ static inline int uart_irq_rx_ready(struct device *dev)
 	return 0;
 }
 /**
- * @brief Enable error interrupt in IER.
+ * @brief Enable error interrupt.
  *
  * @param dev UART device structure.
  *
@@ -503,7 +505,7 @@ static inline void _impl_uart_irq_err_enable(struct device *dev)
 }
 
 /**
- * @brief Disable error interrupt in IER.
+ * @brief Disable error interrupt.
  *
  * @param dev UART device structure.
  *
@@ -545,7 +547,23 @@ static inline int _impl_uart_irq_is_pending(struct device *dev)
 }
 
 /**
- * @brief Update cached contents of IIR.
+ * @brief Start processing interrupts in ISR.
+ *
+ * This function should be called the first thing in the ISR. Calling
+ * uart_irq_rx_ready(), uart_irq_tx_ready(), uart_irq_tx_complete()
+ * allowed only after this.
+ *
+ * The purpose of this function is:
+ *
+ * * For devices with auto-acknowledge of interrupt status on register
+ *   read to cache the value of this register (rx_ready, etc. then use
+ *   this case).
+ * * For devices with explicit acknowledgement of interrupts, to ack
+ *   any pending interrupts and likewise to cache the original value.
+ * * For devices with implicit acknowledgement, this function will be
+ *   empty. But the ISR must perform the actions needs to ack the
+ *   interrupts (usually, call uart_fifo_read() on rx_ready, and
+ *   uart_fifo_fill() on tx_ready).
  *
  * @param dev UART device structure.
  *
@@ -570,6 +588,7 @@ static inline int _impl_uart_irq_update(struct device *dev)
  *
  * This sets up the callback for IRQ. When an IRQ is triggered,
  * the specified function will be called with specified user data.
+ * See description of uart_irq_update() for the requirements on ISR.
  *
  * @param dev UART device structure.
  * @param cb Pointer to the callback function.
