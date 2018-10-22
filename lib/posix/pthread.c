@@ -108,6 +108,10 @@ int pthread_attr_setstack(pthread_attr_t *attr, void *stackaddr,
 	}
 
 	attr->stack = stackaddr;
+
+	if (stacksize < PTHREAD_STACK_MIN)
+		return EINVAL;
+
 	attr->stacksize = stacksize;
 	return 0;
 }

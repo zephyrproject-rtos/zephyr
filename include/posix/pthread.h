@@ -48,6 +48,8 @@ struct posix_thread {
 	pthread_cond_t state_cond;
 };
 
+#define PTHREAD_STACK_MIN 256
+
 /* Pthread detach/joinable */
 #define PTHREAD_CREATE_JOINABLE     0
 #define PTHREAD_CREATE_DETACHED     1
