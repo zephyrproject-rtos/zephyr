@@ -75,7 +75,7 @@ void test_posix_mqueue(void)
 	for (i = 0; i < N_THR; i++) {
 		/* Creating threads */
 		if (pthread_attr_init(&attr[i]) != 0) {
-			pthread_attr_destroy(&attr[i]);
+			zassert_equal(pthread_attr_destroy(&attr[i]), 0, NULL);
 			zassert_false(pthread_attr_init(&attr[i]),
 				      "pthread attr init failed");
 		}
@@ -92,7 +92,7 @@ void test_posix_mqueue(void)
 		}
 
 		zassert_false(ret, "Not enough space to create new thread");
-		pthread_attr_destroy(&attr[i]);
+		zassert_equal(pthread_attr_destroy(&attr[i]), 0, NULL);
 	}
 
 	usleep(10 * USEC_PER_MSEC);
