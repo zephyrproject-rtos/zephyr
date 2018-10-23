@@ -23,9 +23,11 @@ struct tty_serial {
 	u16_t rx_get, rx_put;
 	s32_t rx_timeout;
 
+	struct k_sem tx_sem;
 	u8_t *tx_ringbuf;
 	u32_t tx_ringbuf_sz;
 	u16_t tx_get, tx_put;
+	s32_t tx_timeout;
 };
 
 /**
@@ -60,6 +62,20 @@ void tty_init(struct tty_serial *tty, struct device *uart_dev,
 static inline void tty_set_rx_timeout(struct tty_serial *tty, s32_t timeout)
 {
 	tty->rx_timeout = timeout;
+}
+
+/**
+ * @brief Set transmit timeout for tty device.
+ *
+ * Set timeout for putchar() operation, for a case when output buffer is full.
+ * Default timeout after device initialization is K_FOREVER.
+ *
+ * @param tty tty device structure
+ * @param timeout timeout in milliseconds, or K_FOREVER, or K_NO_WAIT
+ */
+static inline void tty_set_tx_timeout(struct tty_serial *tty, s32_t timeout)
+{
+	tty->tx_timeout = timeout;
 }
 
 /**

@@ -42,6 +42,7 @@ static void tty_uart_isr(void *user_data)
 			if (tty->tx_get >= tty->tx_ringbuf_sz) {
 				tty->tx_get = 0;
 			}
+			k_sem_give(&tty->tx_sem);
 		}
 	}
 }
@@ -72,6 +73,12 @@ int tty_putchar(struct tty_serial *tty, u8_t c)
 {
 	unsigned int key;
 	int tx_next;
+	int res;
+
+	res = k_sem_take(&tty->tx_sem, tty->tx_timeout);
+	if (res < 0) {
+		return res;
+	}
 
 	key = irq_lock();
 	tx_next = tty->tx_put + 1;
@@ -123,8 +130,10 @@ void tty_init(struct tty_serial *tty, struct device *uart_dev,
 	tty->tx_ringbuf_sz = txbuf_sz;
 	tty->rx_get = tty->rx_put = tty->tx_get = tty->tx_put = 0;
 	k_sem_init(&tty->rx_sem, 0, UINT_MAX);
+	k_sem_init(&tty->tx_sem, txbuf_sz - 1, UINT_MAX);
 
 	tty->rx_timeout = K_FOREVER;
+	tty->tx_timeout = K_FOREVER;
 
 	uart_irq_callback_user_data_set(uart_dev, tty_uart_isr, tty);
 	uart_irq_rx_enable(uart_dev);
