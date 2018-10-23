@@ -51,6 +51,7 @@
 
 arduino_serial: &usart6 {};
 arduino_i2c: &i2c1 {};
+arduino_spi: &spi1 {};
 
 &usart3 {
 	current-speed = <115200>;
@@ -81,4 +82,8 @@ arduino_i2c: &i2c1 {};
 	pwm {
 		status = "ok";
 	};
+};
+
+&spi1 {
+	status = "ok";
 };
