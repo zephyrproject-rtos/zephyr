@@ -112,7 +112,7 @@ static int usart_sam_init(struct device *dev)
 			      SOC_ATMEL_SAM_MCK_FREQ_HZ);
 	if (retval != 0) {
 		return retval;
-	};
+	}
 
 	/* Enable receiver and transmitter */
 	usart->US_CR = US_CR_RXEN | US_CR_TXEN;
@@ -186,7 +186,7 @@ static int baudrate_set(Usart *const usart, u32_t baudrate,
 
 	if (divisor > 0xFFFF) {
 		return -EINVAL;
-	};
+	}
 
 	usart->US_BRGR = US_BRGR_CD(divisor);
 

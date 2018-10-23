@@ -140,7 +140,7 @@ static int i2c_stm32_transfer(struct device *dev, struct i2c_msg *msg,
 
 		current++;
 		num_msgs--;
-	};
+	}
 #if defined(CONFIG_I2C_STM32_V1)
 	LL_I2C_Disable(i2c);
 #endif
