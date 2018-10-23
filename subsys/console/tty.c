@@ -69,7 +69,7 @@ static int tty_irq_input_hook(struct tty_serial *tty, u8_t c)
 	return 1;
 }
 
-int tty_putchar(struct tty_serial *tty, u8_t c)
+static int tty_putchar(struct tty_serial *tty, u8_t c)
 {
 	unsigned int key;
 	int tx_next;
@@ -87,7 +87,7 @@ int tty_putchar(struct tty_serial *tty, u8_t c)
 	}
 	if (tx_next == tty->tx_get) {
 		irq_unlock(key);
-		return -1;
+		return -ENOSPC;
 	}
 
 	tty->tx_ringbuf[tty->tx_put] = c;
@@ -98,7 +98,37 @@ int tty_putchar(struct tty_serial *tty, u8_t c)
 	return 0;
 }
 
-int tty_getchar(struct tty_serial *tty)
+ssize_t tty_write(struct tty_serial *tty, const void *buf, size_t size)
+{
+	const u8_t *p = buf;
+	size_t out_size = 0;
+	int res = 0;
+
+	while (size--) {
+		res = tty_putchar(tty, *p++);
+		if (res < 0) {
+			/* If we didn't transmit anything, return the error. */
+			if (out_size == 0) {
+				errno = -res;
+				return res;
+			}
+
+			/*
+			 * Otherwise, return how much we transmitted. If error
+			 * was transient (like EAGAIN), on next call user might
+			 * not even get it. And if it's non-transient, they'll
+			 * get it on the next call.
+			 */
+			return out_size;
+		}
+
+		out_size++;
+	}
+
+	return out_size;
+}
+
+static int tty_getchar(struct tty_serial *tty)
 {
 	unsigned int key;
 	u8_t c;
@@ -117,6 +147,37 @@ int tty_getchar(struct tty_serial *tty)
 	irq_unlock(key);
 
 	return c;
+}
+
+ssize_t tty_read(struct tty_serial *tty, void *buf, size_t size)
+{
+	u8_t *p = buf;
+	size_t out_size = 0;
+	int res = 0;
+
+	while (size--) {
+		res = tty_getchar(tty);
+		if (res < 0) {
+			/* If we didn't transmit anything, return the error. */
+			if (out_size == 0) {
+				errno = -res;
+				return res;
+			}
+
+			/*
+			 * Otherwise, return how much we transmitted. If error
+			 * was transient (like EAGAIN), on next call user might
+			 * not even get it. And if it's non-transient, they'll
+			 * get it on the next call.
+			 */
+			return out_size;
+		}
+
+		*p++ = (u8_t)res;
+		out_size++;
+	}
+
+	return out_size;
 }
 
 void tty_init(struct tty_serial *tty, struct device *uart_dev,

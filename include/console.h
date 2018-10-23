@@ -7,6 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_CONSOLE_H_
 #define ZEPHYR_INCLUDE_CONSOLE_H_
 
+#include <sys/types.h>
 #include <zephyr/types.h>
 #include <kernel.h>
 
@@ -79,24 +80,31 @@ static inline void tty_set_tx_timeout(struct tty_serial *tty, s32_t timeout)
 }
 
 /**
- * @brief Input a character from a tty device.
+ * @brief Read data from a tty device.
  *
  * @param tty tty device structure
- * @return >=0, an input character
- *         <0, an error (e.g. -EAGAIN if timeout expired)
+ * @param buf buffer to read data to
+ * @param size maximum number of bytes to read
+ * @return >0, number of actually read bytes (can be less than size param)
+ *         =0, for EOF-like condition (e.g., break signalled)
+ *         <0, in case of error (e.g. -EAGAIN if timeout expired). errno
+ *             variable is also set.
  */
-int tty_getchar(struct tty_serial *tty);
+ssize_t tty_read(struct tty_serial *tty, void *buf, size_t size);
 
 /**
- * @brief Output a character from to tty device.
+ * @brief Write data to tty device.
  *
  * @param tty tty device structure
- * @param c character to output
- * @return 0 if ok, <0 if error
+ * @param buf buffer containg data
+ * @param size maximum number of bytes to write
+ * @return =>0, number of actually written bytes (can be less than size param)
+ *         <0, in case of error (e.g. -EAGAIN if timeout expired). errno
+ *             variable is also set.
  */
-int tty_putchar(struct tty_serial *tty, u8_t c);
+ssize_t tty_write(struct tty_serial *tty, const void *buf, size_t size);
 
-/** @brief Initialize console_getchar()/putchar() calls.
+/** @brief Initialize console device.
  *
  *  This function should be called once to initialize pull-style
  *  access to console via console_getchar() function and buffered
@@ -108,6 +116,31 @@ int tty_putchar(struct tty_serial *tty, u8_t c);
  */
 void console_init(void);
 
+/**
+ * @brief Read data from console.
+ *
+ * @param dummy ignored, present to follow read() prototype
+ * @param buf buffer to read data to
+ * @param size maximum number of bytes to read
+ * @return >0, number of actually read bytes (can be less than size param)
+ *         =0, in case of EOF
+ *         <0, in case of error (e.g. -EAGAIN if timeout expired). errno
+ *             variable is also set.
+ */
+ssize_t console_read(void *dummy, void *buf, size_t size);
+
+/**
+ * @brief Write data to console.
+ *
+ * @param dummy ignored, present to follow write() prototype
+ * @param buf buffer to write data to
+ * @param size maximum number of bytes to write
+ * @return =>0, number of actually written bytes (can be less than size param)
+ *         <0, in case of error (e.g. -EAGAIN if timeout expired). errno
+ *             variable is also set.
+ */
+ssize_t console_write(void *dummy, const void *buf, size_t size);
+
 /** @brief Get next char from console input buffer.
  *
  *  Return next input character from console. If no characters available,
@@ -118,16 +151,17 @@ void console_init(void);
  *  Zephyr callback-based console input processing, shell subsystem,
  *  or console_getline().
  *
- *  @return A character read, including control characters.
+ *  @return 0-255: a character read, including control characters.
+ *          <0: error occured.
  */
-u8_t console_getchar(void);
+int console_getchar(void);
 
 /** @brief Output a char to console (buffered).
  *
  *  Puts a character into console output buffer. It will be sent
  *  to a console asynchronously, e.g. using an IRQ handler.
  *
- *  @return -1 on output buffer overflow, otherwise 0.
+ *  @return <0 on error, otherwise 0.
  */
 int console_putchar(char c);
 
