@@ -22,8 +22,11 @@ extern "C" {
  * @{
  */
 
-/** @brief Maximum number of arguments in the standard log entry. */
-#define LOG_MAX_NARGS 9
+/** @brief Maximum number of arguments in the standard log entry.
+ *
+ * It is limited by 4 bit nargs field in the log message.
+ */
+#define LOG_MAX_NARGS 15
 
 /** @brief Number of arguments in the log entry which fits in one chunk.*/
 #define LOG_MSG_NARGS_SINGLE_CHUNK 3
@@ -352,36 +355,6 @@ static inline struct log_msg *_log_msg_std_alloc(void)
 		msg->hdr.ref_cnt = 1;
 		msg->hdr.params.raw = 0;
 		msg->hdr.params.std.type = LOG_MSG_TYPE_STD;
-	}
-
-	return msg;
-}
-
-/** @brief Allocate chunk for extended standard log message.
- *
- *  @details Extended standard log message is used when number of arguments
- *           exceeds capacity of one chunk. Extended message consists of two
- *           chunks. Such approach is taken to optimize memory usage and
- *           performance assuming that log messages with more arguments
- *           (@ref LOG_MSG_NARGS_SINGLE_CHUNK) are less common.
- *
- *  @return Allocated chunk of NULL.
- */
-static inline struct log_msg *_log_msg_ext_std_alloc(void)
-{
-	struct log_msg_cont *cont;
-	struct  log_msg *msg = _log_msg_std_alloc();
-
-	if (msg != NULL) {
-		cont = (struct log_msg_cont *)log_msg_chunk_alloc();
-		if (cont == NULL) {
-			k_mem_slab_free(&log_msg_pool, (void **)&msg);
-			return NULL;
-		}
-
-		msg->hdr.params.generic.ext = 1;
-		msg->payload.ext.next = cont;
-		cont->next = NULL;
 	}
 
 	return msg;

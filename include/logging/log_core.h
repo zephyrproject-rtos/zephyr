@@ -174,6 +174,9 @@ extern "C" {
 #define _LOG_INTERNAL_9(_src_level, _str, ...) \
 		_LOG_INTERNAL_LONG(_src_level, _str, __VA_ARGS__)
 
+#define _LOG_INTERNAL_10(_src_level, _str, ...) \
+		_LOG_INTERNAL_LONG(_src_level, _str, __VA_ARGS__)
+
 #define _LOG_LEVEL_CHECK(_level, _check_level, _default_level) \
 	(_level <= _LOG_RESOLVED_LEVEL(_check_level, _default_level))
 
