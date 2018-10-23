@@ -723,6 +723,20 @@ static void l2cap_chan_destroy(struct bt_l2cap_chan *chan)
 	}
 }
 
+static u16_t le_err_to_result(int err)
+{
+	switch (err) {
+	case -ENOMEM:
+		return BT_L2CAP_LE_ERR_NO_RESOURCES;
+	case -EACCES:
+		return BT_L2CAP_LE_ERR_AUTHORIZATION;
+	case -EKEYREJECTED:
+		return BT_L2CAP_LE_ERR_KEY_SIZE;
+	default:
+		return BT_L2CAP_LE_ERR_UNACCEPT_PARAMS;
+	}
+}
+
 static void le_conn_req(struct bt_l2cap *l2cap, u8_t ident,
 			struct net_buf *buf)
 {
@@ -732,6 +746,7 @@ static void le_conn_req(struct bt_l2cap *l2cap, u8_t ident,
 	struct bt_l2cap_le_conn_req *req = (void *)buf->data;
 	struct bt_l2cap_le_conn_rsp *rsp;
 	u16_t psm, scid, mtu, mps, credits;
+	int err;
 
 	if (buf->len < sizeof(*req)) {
 		BT_ERR("Too small LE conn req packet size");
@@ -784,11 +799,10 @@ static void le_conn_req(struct bt_l2cap *l2cap, u8_t ident,
 
 	/* Request server to accept the new connection and allocate the
 	 * channel.
-	 *
-	 * TODO: Handle different errors, it may be required to respond async.
 	 */
-	if (server->accept(conn, &chan) < 0) {
-		rsp->result = sys_cpu_to_le16(BT_L2CAP_LE_ERR_NO_RESOURCES);
+	err = server->accept(conn, &chan);
+	if (err < 0) {
+		rsp->result = sys_cpu_to_le16(le_err_to_result(err));
 		goto rsp;
 	}
 
