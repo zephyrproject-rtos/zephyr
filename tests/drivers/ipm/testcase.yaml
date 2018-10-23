@@ -1,5 +1,5 @@
 tests:
   peripheral.mailbox:
     filter: not CONFIG_SOC_QUARK_SE_C1000_SS
-    arch_exclude: posix
+    arch_exclude: posix xtensa
     tags: drivers ipc
