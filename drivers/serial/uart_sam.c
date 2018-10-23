@@ -127,7 +127,7 @@ static int uart_sam_init(struct device *dev)
 			      SOC_ATMEL_SAM_MCK_FREQ_HZ);
 	if (retval != 0) {
 		return retval;
-	};
+	}
 
 	/* Enable receiver and transmitter */
 	uart->UART_CR = UART_CR_RXEN | UART_CR_TXEN;
@@ -200,7 +200,7 @@ static int baudrate_set(Uart *const uart, u32_t baudrate,
 
 	if (divisor > 0xFFFF) {
 		return -EINVAL;
-	};
+	}
 
 	uart->UART_BRGR = UART_BRGR_CD(divisor);
 

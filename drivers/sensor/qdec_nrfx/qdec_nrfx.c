@@ -156,7 +156,7 @@ static void qdec_nrfx_event_handler(nrfx_qdec_event_t event)
 	default:
 		LOG_ERR("unhandled event (0x%x)", event.type);
 		break;
-	};
+	}
 }
 
 static void qdec_nrfx_gpio_ctrl(bool enable)

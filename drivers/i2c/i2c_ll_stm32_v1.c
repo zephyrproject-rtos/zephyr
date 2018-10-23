@@ -359,7 +359,7 @@ s32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 
 				return -EIO;
 			}
-		};
+		}
 		LL_I2C_TransmitData8(i2c, *buf);
 		buf++;
 		len--;
