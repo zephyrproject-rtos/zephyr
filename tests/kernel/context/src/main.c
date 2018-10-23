@@ -57,8 +57,9 @@
 #define TICK_IRQ CONFIG_MVIC_TIMER_IRQ
 #endif
 #elif defined(CONFIG_XTENSA)
-#include <xtensa_timer.h>
-#define TICK_IRQ XT_TIMER_INTNUM
+#define TICK_IRQ UTIL_CAT(XCHAL_TIMER,		\
+			  UTIL_CAT(CONFIG_XTENSA_TIMER_ID, _INTERRUPT))
+
 #elif defined(CONFIG_ALTERA_AVALON_TIMER)
 #define TICK_IRQ TIMER_0_IRQ
 #elif defined(CONFIG_ARCV2_TIMER)

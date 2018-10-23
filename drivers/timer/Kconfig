@@ -186,43 +186,23 @@ config XTENSA_TIMER
 	bool "Xtensa timer support"
 	depends on XTENSA
 	default y
+	select TICKLESS_CAPABLE
 	help
-	  This module implements a kernel device driver for the Xtensa processor and
-	  provides the standard "system clock driver" interfaces.
-	  If unchecked, no timer will be used.
-	  If checked it will use either an internal timer (default option) or an
-	  external timer. In that case one shall unselect XTENSA_INTERNAL_TIMER and
-	  define XTENSA_TIMER_IRQ and XTENSA_TIMER_IRQ_PRIORITY.
+	  Enables a system timer driver for Xtensa based on the CCOUNT
+	  and CCOMPARE special registers.
 
-config XTENSA_INTERNAL_TIMER
-	bool "Xtensa internal timer"
-	depends on XTENSA_TIMER
-	default y
-	help
-	  This module implements a kernel device driver for the Xtensa processor
-	  internal timer and provides the standard "system clock driver" interfaces.
-	  If unchecked, an external timer will be used. It will rely on a tick
-	  interrupt connected to an IRQ line. In this case one shall define
-	  both XTENSA_TIMER_IRQ and XTENSA_TIMER_IRQ_PRIORITY.
-
-config XTENSA_TIMER_IRQ
-	int "Xtensa external timer interrupt number"
-	depends on XTENSA_TIMER && !XTENSA_INTERNAL_TIMER
-	range -1 31
-	default -1
-	help
-	  This is the number of interrupt line used by the external timer.
-	  The special value of -1 allows using the internal timer in order to
-	  emulate an external timer. This is generally useful for running the project on
-	  a simulator	where it is hard to emulate an external interrupt.
-
-config XTENSA_TIMER_IRQ_PRIORITY
-	int "Xtensa external timer interrupt priority"
-	depends on XTENSA_TIMER && !XTENSA_INTERNAL_TIMER
-	range 1 6
+config XTENSA_TIMER_ID
+	int "System timer CCOMPAREn register index"
 	default 1
+	depends on XTENSA_TIMER
 	help
-	  This is the priority of interrupt line.
+	  Index of the CCOMPARE register (and associated interrupt)
+	  used for the system timer.  Xtensa CPUs have hard-configured
+	  interrupt priorities associated with each timer, and some of
+	  them can be unmaskable (and thus not usable by OS code that
+	  need synchronization, like the timer subsystem!).  Choose
+	  carefully.  Generally you want the timer with the highest
+	  priority maskable interrupt.
 
 config SYSTEM_CLOCK_DISABLE
 	bool "API to disable system clock"
