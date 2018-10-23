@@ -32,6 +32,13 @@
 /* Initial cursor position is: (1, 1). */
 #define SHELL_INITIAL_CURS_POS		(1u)
 
+#define EXIT_HISTORY(shell)					\
+		((shell)->ctx->internal.flags.history_exit)
+#define EXIT_HISTORY_REQUEST(shell)				\
+		((shell)->ctx->internal.flags.history_exit = 1)
+#define EXIT_HISTORY_CLEAR(shell)				\
+		((shell)->ctx->internal.flags.history_exit = 0)
+
 static int shell_execute(const struct shell *shell);
 
 extern const struct shell_cmd_entry __shell_root_cmds_start[0];
@@ -288,6 +295,7 @@ static void history_mode_exit(const struct shell *shell)
 		return;
 	}
 
+	EXIT_HISTORY_CLEAR(shell);
 	shell_history_mode_exit(shell->history);
 }
 
@@ -310,6 +318,12 @@ static void history_handle(const struct shell *shell, bool up)
 		return;
 	}
 
+	/* Checking if history process has been stopped */
+	if (EXIT_HISTORY(shell)) {
+		EXIT_HISTORY_CLEAR(shell);
+		shell_history_mode_exit(shell->history);
+	}
+
 	/* Backup command if history is entered */
 	if (!shell_history_active(shell->history)) {
 		if (up) {
@@ -328,7 +342,7 @@ static void history_handle(const struct shell *shell, bool up)
 	}
 
 	/* Start by checking if history is not empty. */
-	history_mode = shell_history_get(shell->history, true,
+	history_mode = shell_history_get(shell->history, up,
 					 shell->ctx->cmd_buff, &len);
 
 	/* On exiting history mode print backed up command. */
@@ -337,14 +351,12 @@ static void history_handle(const struct shell *shell, bool up)
 		len = shell_strlen(shell->ctx->cmd_buff);
 	}
 
-	if (len) {
-		shell_op_cursor_home_move(shell);
-		clear_eos(shell);
-		shell_fprintf(shell, SHELL_NORMAL, "%s", shell->ctx->cmd_buff);
-		shell->ctx->cmd_buff_pos = len;
-		shell->ctx->cmd_buff_len = len;
-		shell_op_cond_next_line(shell);
-	}
+	shell_op_cursor_home_move(shell);
+	clear_eos(shell);
+	shell_fprintf(shell, SHELL_NORMAL, "%s", shell->ctx->cmd_buff);
+	shell->ctx->cmd_buff_pos = len;
+	shell->ctx->cmd_buff_len = len;
+	shell_op_cond_next_line(shell);
 }
 
 static const struct shell_static_entry *find_cmd(
@@ -424,11 +436,6 @@ static bool shell_tab_prepare(const struct shell *shell,
 	if (compl_space == 0) {
 		return false;
 	}
-
-	/* If the Tab key is pressed, "history mode" must be terminated because
-	 * tab and history handlers are sharing the same array: temp_buff.
-	 */
-	history_mode_exit(shell);
 
 	/* Copy command from its beginning to cursor position. */
 	memcpy(shell->ctx->temp_buff, shell->ctx->cmd_buff,
@@ -711,6 +718,7 @@ static void metakeys_handle(const struct shell *shell, char data)
 		if (!shell_cursor_in_empty_line(shell)) {
 			cursor_next_line_move(shell);
 		}
+		EXIT_HISTORY_REQUEST(shell);
 		shell_state_set(shell, SHELL_STATE_ACTIVE);
 		break;
 
@@ -732,11 +740,13 @@ static void metakeys_handle(const struct shell *shell, char data)
 	case SHELL_VT100_ASCII_CTRL_U: /* CTRL + U */
 		shell_op_cursor_home_move(shell);
 		shell_cmd_buffer_clear(shell);
+		EXIT_HISTORY_REQUEST(shell);
 		clear_eos(shell);
 		break;
 
 	case SHELL_VT100_ASCII_CTRL_W: /* CTRL + W */
 		shell_op_word_remove(shell);
+		EXIT_HISTORY_REQUEST(shell);
 		break;
 
 	default:
@@ -786,18 +796,26 @@ static void shell_state_collect(const struct shell *shell)
 
 			case '\t': /* TAB */
 				if (flag_echo_is_set(shell)) {
+					/* If the Tab key is pressed, "history
+					 * mode" must be terminated because
+					 * tab and history handlers are sharing
+					 * the same array: temp_buff.
+					 */
+					EXIT_HISTORY_REQUEST(shell);
 					shell_tab_handle(shell);
 				}
 				break;
 
 			case SHELL_VT100_ASCII_BSPACE: /* BACKSPACE */
 				if (flag_echo_is_set(shell)) {
+					EXIT_HISTORY_REQUEST(shell);
 					shell_op_char_backspace(shell);
 				}
 				break;
 
 			case SHELL_VT100_ASCII_DEL: /* DELETE */
 				if (flag_echo_is_set(shell)) {
+					EXIT_HISTORY_REQUEST(shell);
 					if (flag_delete_mode_set(shell)) {
 						shell_op_char_backspace(shell);
 
@@ -809,6 +827,7 @@ static void shell_state_collect(const struct shell *shell)
 
 			default:
 				if (isprint((int) data)) {
+					EXIT_HISTORY_REQUEST(shell);
 					shell_op_char_insert(shell, data);
 				} else {
 					metakeys_handle(shell, data);
