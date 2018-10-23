@@ -586,6 +586,27 @@ static inline bool net_ipv4_addr_mask_cmp(struct net_if *iface,
 	return net_if_ipv4_addr_mask_cmp(iface, addr);
 }
 
+extern bool net_if_ipv4_is_addr_bcast(struct net_if *iface,
+				      const struct in_addr *addr);
+
+/**
+ * @brief Check if the given IPv4 address is a broadcast address.
+ *
+ * @param iface Interface to use. Must be a valid pointer to an interface.
+ * @param addr IPv4 address
+ *
+ * @return True if address is a broadcast address, false otherwise.
+ */
+static inline bool net_is_ipv4_addr_bcast(struct net_if *iface,
+					  const struct in_addr *addr)
+{
+	if (net_ipv4_addr_cmp(addr, net_ipv4_broadcast_address())) {
+		return true;
+	}
+
+	return net_if_ipv4_is_addr_bcast(iface, addr);
+}
+
 /**
  *  @brief Check if the IPv6 address is unspecified (all bits zero)
  *

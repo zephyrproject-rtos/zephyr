@@ -1431,6 +1431,17 @@ bool net_if_ipv4_addr_mask_cmp(struct net_if *iface,
 			       const struct in_addr *addr);
 
 /**
+ * @brief Check if the given IPv4 address is a broadcast address.
+ *
+ * @param iface Interface to use. Must be a valid pointer to an interface.
+ * @param addr IPv4 address, this should be in network byte order
+ *
+ * @return True if address is a broadcast address, false otherwise.
+ */
+bool net_if_ipv4_is_addr_bcast(struct net_if *iface,
+			       const struct in_addr *addr);
+
+/**
  * @brief Get a network interface that should be used when sending
  * IPv4 network data to destination.
  *
