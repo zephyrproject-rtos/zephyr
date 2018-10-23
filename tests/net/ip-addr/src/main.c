@@ -371,8 +371,14 @@ static void test_ipv4_addresses(void)
 	struct in_addr match_addr = { { { 192, 168, 0, 2 } } };
 	struct in_addr fail_addr = { { { 10, 1, 0, 2 } } };
 	struct in_addr netmask = { { { 255, 255, 255, 0 } } };
+	struct in_addr netmask2 = { { { 255, 255, 0, 0 } } };
 	struct in_addr gw = { { { 192, 168, 0, 42 } } };
 	struct in_addr loopback4 = { { { 127, 0, 0, 1 } } };
+	struct in_addr bcast_addr1 = { { { 255, 255, 255, 255 } } };
+	struct in_addr bcast_addr2 = { { { 192, 168, 1, 255 } } };
+	struct in_addr bcast_addr3 = { { { 192, 168, 255, 255 } } };
+	struct in_addr bcast_addr4 = { { { 192, 0, 2, 255 } } };
+	struct in_addr bcast_addr5 = { { { 192, 168, 0, 255 } } };
 	struct net_if *iface, *iface1, *iface2;
 	int i, ret;
 
@@ -458,7 +464,7 @@ static void test_ipv4_addresses(void)
 		"IPv4 wrong match failed");
 
 	zassert_true(net_ipv4_addr_mask_cmp(iface, &match_addr),
-		"IPv4 match failed");
+		     "IPv4 match failed");
 
 	zassert_true(net_is_ipv4_addr_mcast(&maddr4a),
 		     "IPv4 multicast address");
@@ -504,6 +510,29 @@ static void test_ipv4_addresses(void)
 
 	ifmaddr1 = net_if_ipv4_maddr_lookup(&maddr4b, &iface1);
 	zassert_is_null(ifmaddr1, "IPv4 multicast address lookup succeed");
+
+	ret = net_is_ipv4_addr_bcast(iface, &bcast_addr1);
+	zassert_true(ret, "IPv4 address 1 is not broadcast address");
+
+	ret = net_is_ipv4_addr_bcast(iface, &bcast_addr2);
+	zassert_false(ret, "IPv4 address 2 is broadcast address");
+
+	ret = net_is_ipv4_addr_bcast(iface, &bcast_addr4);
+	zassert_false(ret, "IPv4 address 4 is broadcast address");
+
+	ret = net_is_ipv4_addr_bcast(iface, &maddr4b);
+	zassert_false(ret, "IPv4 address is broadcast address");
+
+	ret = net_is_ipv4_addr_bcast(iface, &bcast_addr5);
+	zassert_true(ret, "IPv4 address 5 is not broadcast address");
+
+	net_if_ipv4_set_netmask(iface, &netmask2);
+
+	ret = net_is_ipv4_addr_bcast(iface, &bcast_addr2);
+	zassert_false(ret, "IPv4 address 2 is broadcast address");
+
+	ret = net_is_ipv4_addr_bcast(iface, &bcast_addr3);
+	zassert_true(ret, "IPv4 address 3 is not broadcast address");
 }
 
 void test_main(void)
