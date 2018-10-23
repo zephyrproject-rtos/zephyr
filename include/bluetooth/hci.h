@@ -95,6 +95,9 @@ static inline bool bt_addr_le_is_identity(const bt_addr_le_t *addr)
 	return BT_ADDR_IS_STATIC(&addr->a);
 }
 
+#define BT_ENC_KEY_SIZE_MIN                     0x07
+#define BT_ENC_KEY_SIZE_MAX                     0x10
+
 /* HCI Error Codes */
 #define BT_HCI_ERR_SUCCESS                      0x00
 #define BT_HCI_ERR_UNKNOWN_CMD                  0x01

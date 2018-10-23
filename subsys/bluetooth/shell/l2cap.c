@@ -34,8 +34,15 @@
 #define CREDITS			10
 #define DATA_MTU		(23 * CREDITS)
 
+#define L2CAP_POLICY_NONE		0x00
+#define L2CAP_POLICY_WHITELIST		0x01
+#define L2CAP_POLICY_16BYTE_KEY		0x02
+
 NET_BUF_POOL_DEFINE(data_tx_pool, 1, DATA_MTU, BT_BUF_USER_DATA_MIN, NULL);
 NET_BUF_POOL_DEFINE(data_rx_pool, 1, DATA_MTU, BT_BUF_USER_DATA_MIN, NULL);
+
+static u8_t l2cap_policy;
+static struct bt_conn *l2cap_whitelist[CONFIG_BT_MAX_CONN];
 
 static u32_t l2cap_rate;
 static u32_t l2cap_recv_delay;
@@ -139,15 +146,60 @@ static struct bt_l2cap_chan_ops l2cap_ops = {
 	.disconnected	= l2cap_disconnected,
 };
 
-
 static struct l2ch l2ch_chan = {
 	.ch.chan.ops	= &l2cap_ops,
 	.ch.rx.mtu	= DATA_MTU,
 };
 
+static void l2cap_whitelist_remove(struct bt_conn *conn, u8_t reason)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(l2cap_whitelist); i++) {
+		if (l2cap_whitelist[i] == conn) {
+			bt_conn_unref(l2cap_whitelist[i]);
+			l2cap_whitelist[i] = NULL;
+		}
+	}
+}
+
+static struct bt_conn_cb l2cap_conn_callbacks = {
+	.disconnected = l2cap_whitelist_remove,
+};
+
+static int l2cap_accept_policy(struct bt_conn *conn)
+{
+	int i;
+
+	if (l2cap_policy == L2CAP_POLICY_16BYTE_KEY) {
+		u8_t enc_key_size = bt_conn_enc_key_size(conn);
+
+		if (enc_key_size && enc_key_size < BT_ENC_KEY_SIZE_MAX) {
+			return -EKEYREJECTED;
+		}
+	} else if (l2cap_policy == L2CAP_POLICY_WHITELIST) {
+		for (i = 0; i < ARRAY_SIZE(l2cap_whitelist); i++) {
+			if (l2cap_whitelist[i] == conn) {
+				return 0;
+			}
+		}
+
+		return -EACCES;
+	}
+
+	return 0;
+}
+
 static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 {
+	int err;
+
 	print(ctx_shell, "Incoming conn %p", conn);
+
+	err = l2cap_accept_policy(conn);
+	if (err < 0) {
+		return err;
+	}
 
 	if (l2ch_chan.ch.chan.conn) {
 		print(ctx_shell, "No channels available");
@@ -166,6 +218,7 @@ static struct bt_l2cap_server server = {
 static int cmd_register(const struct shell *shell, size_t argc, char *argv[])
 {
 	int err;
+	const char *policy;
 
 	err = shell_cmd_precheck(shell, (argc >= 2), NULL, 0);
 	if (err) {
@@ -183,11 +236,25 @@ static int cmd_register(const struct shell *shell, size_t argc, char *argv[])
 		server.sec_level = strtoul(argv[2], NULL, 10);
 	}
 
+	if (argc > 3) {
+		policy = argv[3];
+
+		if (!strcmp(policy, "whitelist")) {
+			l2cap_policy = L2CAP_POLICY_WHITELIST;
+		} else if (!strcmp(policy, "16byte_key")) {
+			l2cap_policy = L2CAP_POLICY_16BYTE_KEY;
+		} else {
+			return -EINVAL;
+		}
+	}
+
 	if (bt_l2cap_server_register(&server) < 0) {
 		error(shell, "Unable to register psm");
 		server.psm = 0;
 		return -ENOEXEC;
 	} else {
+		bt_conn_cb_register(&l2cap_conn_callbacks);
+
 		print(shell, "L2CAP psm %u sec_level %u registered",
 		      server.psm, server.sec_level);
 	}
@@ -305,15 +372,54 @@ static int cmd_metrics(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_whitelist_add(const struct shell *shell, size_t argc, char *argv[])
+{
+	int i;
+
+	if (!default_conn) {
+		error(shell, "Not connected\n");
+		return 0;
+	}
+
+	for (i = 0; i < ARRAY_SIZE(l2cap_whitelist); i++) {
+		if (l2cap_whitelist[i] == NULL) {
+			l2cap_whitelist[i] = bt_conn_ref(default_conn);
+			return 0;
+		}
+	}
+
+	return -ENOMEM;
+}
+
+static int cmd_whitelist_remove(const struct shell *shell, size_t argc, char *argv[])
+{
+	if (!default_conn) {
+		error(shell, "Not connected\n");
+		return 0;
+	}
+
+	l2cap_whitelist_remove(default_conn, 0);
+
+	return 0;
+}
+
 #define HELP_NONE "[none]"
+
+SHELL_CREATE_STATIC_SUBCMD_SET(whitelist_cmds) {
+	SHELL_CMD(add, NULL, HELP_NONE, cmd_whitelist_add),
+	SHELL_CMD(remove, NULL, HELP_NONE, cmd_whitelist_remove),
+	SHELL_SUBCMD_SET_END
+};
 
 SHELL_CREATE_STATIC_SUBCMD_SET(l2cap_cmds) {
 	SHELL_CMD(connect, NULL, "<psm>", cmd_connect),
 	SHELL_CMD(disconnect, NULL, HELP_NONE, cmd_disconnect),
 	SHELL_CMD(metrics, NULL, "<value on, off>", cmd_metrics),
 	SHELL_CMD(recv, NULL, "[delay (in miliseconds)", cmd_recv),
-	SHELL_CMD(register, NULL, "<psm> [sec_level]", cmd_register),
+	SHELL_CMD(register, NULL, "<psm> [sec_level] "
+		  "[policy: whitelist, 16byte_key]", cmd_register),
 	SHELL_CMD(send, NULL, "<number of packets>", cmd_send),
+	SHELL_CMD(whitelist, &whitelist_cmds, HELP_NONE, NULL),
 	SHELL_SUBCMD_SET_END
 };
 
