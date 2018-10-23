@@ -13,3 +13,4 @@ supported:
   - netif:eth
   - usb_device
   - i2c
+  - pwm
