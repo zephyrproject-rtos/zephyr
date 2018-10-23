@@ -246,6 +246,10 @@ struct bt_l2cap_server {
 	 *  @param chan Pointer to received the allocated channel
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
+	 *  Possible return values:
+	 *  -ENOMEM if no available space for new channel.
+	 *  -EACCES if application did not authorize the connection.
+	 *  -EKEYREJECTED if encryption key size is too short.
 	 */
 	int (*accept)(struct bt_conn *conn, struct bt_l2cap_chan **chan);
 
