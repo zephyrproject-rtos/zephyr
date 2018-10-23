@@ -83,7 +83,7 @@ static int line_out(u8_t data)
 		if (log_backend_rtt_write()) {
 			return 1;
 		}
-		line_pos = line_buf;
+		line_pos = drop_cnt > 0 ? line_buf + DROP_MSG_LEN : line_buf;
 		return 0;
 	}
 
