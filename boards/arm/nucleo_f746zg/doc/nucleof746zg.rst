@@ -104,6 +104,8 @@ features:
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
+| ETHERNET  | on-chip    | ethernet                            |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -125,6 +127,7 @@ and a ST morpho connector. Board is configured as follows:
 - LD1 : PB0
 - LD2 : PB7
 - LD3 : PB14
+- ETH : PA1, PA2, PA7, PB13, PC1, PC4, PC5, PG11, PG13
 
 System Clock
 ------------
