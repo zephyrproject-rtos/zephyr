@@ -1428,7 +1428,7 @@ struct net_if_router *net_if_ipv4_router_add(struct net_if *iface,
  * @return True if address is part of local subnet, false otherwise.
  */
 bool net_if_ipv4_addr_mask_cmp(struct net_if *iface,
-			       struct in_addr *addr);
+			       const struct in_addr *addr);
 
 /**
  * @brief Get a network interface that should be used when sending
@@ -1474,7 +1474,7 @@ struct in_addr *net_if_ipv4_get_ll(struct net_if *iface,
  * @param netmask IPv4 netmask
  */
 static inline void net_if_ipv4_set_netmask(struct net_if *iface,
-					   struct in_addr *netmask)
+					   const struct in_addr *netmask)
 {
 	if (net_if_config_ipv4_get(iface, NULL) < 0) {
 		return;

@@ -2128,7 +2128,7 @@ struct net_if_router *net_if_ipv4_router_add(struct net_if *iface,
 }
 
 bool net_if_ipv4_addr_mask_cmp(struct net_if *iface,
-			       struct in_addr *addr)
+			       const struct in_addr *addr)
 {
 	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
 	u32_t subnet;
@@ -2138,8 +2138,7 @@ bool net_if_ipv4_addr_mask_cmp(struct net_if *iface,
 		return false;
 	}
 
-	subnet = ntohl(UNALIGNED_GET(&addr->s_addr)) &
-		ntohl(ipv4->netmask.s_addr);
+	subnet = UNALIGNED_GET(&addr->s_addr) & ipv4->netmask.s_addr;
 
 	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
 		if (!ipv4->unicast[i].is_used ||
@@ -2147,8 +2146,8 @@ bool net_if_ipv4_addr_mask_cmp(struct net_if *iface,
 			continue;
 		}
 
-		if ((ntohl(ipv4->unicast[i].address.in_addr.s_addr) &
-		     ntohl(ipv4->netmask.s_addr)) == subnet) {
+		if ((ipv4->unicast[i].address.in_addr.s_addr &
+		     ipv4->netmask.s_addr) == subnet) {
 			return true;
 		}
 	}
