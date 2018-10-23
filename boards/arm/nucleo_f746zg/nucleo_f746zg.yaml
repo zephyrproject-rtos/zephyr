@@ -11,3 +11,4 @@ supported:
   - uart
   - gpio
   - netif:eth
+  - usb_device
