@@ -225,7 +225,7 @@ void test_posix_pthread_execution(void)
 {
 	int i, ret, min_prio, max_prio;
 	int dstate, policy;
-	pthread_attr_t attr[N_THR_E];
+	pthread_attr_t attr[N_THR_E] = {};
 	struct sched_param schedparam, getschedparam;
 	pthread_t newthread[N_THR_E];
 	int schedpolicy = SCHED_FIFO;
