@@ -74,3 +74,11 @@ arduino_i2c: &i2c1 {};
 	status = "ok";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
+
+&timers1 {
+	status = "ok";
+
+	pwm {
+		status = "ok";
+	};
+};
