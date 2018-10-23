@@ -569,19 +569,19 @@ const struct in_addr *net_ipv4_broadcast_address(void);
 
 struct net_if;
 extern bool net_if_ipv4_addr_mask_cmp(struct net_if *iface,
-				      struct in_addr *addr);
+				      const struct in_addr *addr);
 
 /**
  * @brief Check if the given address belongs to same subnet that
  * has been configured for the interface.
  *
  * @param iface A valid pointer on an interface
- * @param addr pointer on an address
+ * @param addr IPv4 address
  *
  * @return True if address is in same subnet, false otherwise.
  */
 static inline bool net_ipv4_addr_mask_cmp(struct net_if *iface,
-					  struct in_addr *addr)
+					  const struct in_addr *addr)
 {
 	return net_if_ipv4_addr_mask_cmp(iface, addr);
 }
