@@ -441,8 +441,9 @@ static void test_pkt_read_append(void)
 	tfrag = tfrag->frags;
 	off = tfrag->len;
 	tfrag = net_frag_read(tfrag, off + 10, &tpos, 10, data);
-	if (!tfrag ||
-	    memcmp(sample_data + off + 10, data, 10)) {
+	zassert_not_null(tfrag, "Fail offset read");
+
+	if (memcmp(sample_data + off + 10, data, 10)) {
 		printk("Failed to read from offset %d, frag length %d "
 		       "read length %d\n",
 		       tfrag->len + 10, tfrag->len, 10);
