@@ -50,6 +50,7 @@
 };
 
 arduino_serial: &usart6 {};
+arduino_i2c: &i2c1 {};
 
 &usart3 {
 	current-speed = <115200>;
@@ -67,4 +68,9 @@ arduino_serial: &usart6 {};
 
 &usbotg_fs {
 	status = "ok";
+};
+
+&i2c1 {
+	status = "ok";
+	clock-frequency = <I2C_BITRATE_FAST>;
 };
