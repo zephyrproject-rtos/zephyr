@@ -11,6 +11,12 @@ if(CONFIG_HAS_NRFX)
   zephyr_include_directories(nrfx/mdk)
   zephyr_include_directories(.)
 
+  # Define MDK defines globally
+  zephyr_compile_definitions_ifdef(CONFIG_SOC_SERIES_NRF51X NRF51)
+  zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF52810      NRF52810_XXAA)
+  zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF52832      NRF52832_XXAA)
+  zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF52840      NRF52840_XXAA)
+
   zephyr_sources_ifdef(CONFIG_SOC_SERIES_NRF51X nrfx/mdk/system_nrf51.c)
   zephyr_sources_ifdef(CONFIG_SOC_NRF52810      nrfx/mdk/system_nrf52810.c)
   zephyr_sources_ifdef(CONFIG_SOC_NRF52832      nrfx/mdk/system_nrf52.c)
