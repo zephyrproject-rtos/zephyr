@@ -2155,6 +2155,46 @@ bool net_if_ipv4_addr_mask_cmp(struct net_if *iface,
 	return false;
 }
 
+static bool ipv4_is_broadcast_address(struct net_if *iface,
+				      const struct in_addr *addr)
+{
+	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
+
+	if (!ipv4) {
+		return false;
+	}
+
+	if (!net_if_ipv4_addr_mask_cmp(iface, addr)) {
+		return false;
+	}
+
+	if ((UNALIGNED_GET(&addr->s_addr) & ~ipv4->netmask.s_addr) ==
+	    ~ipv4->netmask.s_addr) {
+		return true;
+	}
+
+	return false;
+}
+
+bool net_if_ipv4_is_addr_bcast(struct net_if *iface,
+			       const struct in_addr *addr)
+{
+	if (iface) {
+		return ipv4_is_broadcast_address(iface, addr);
+	}
+
+	for (iface = __net_if_start; iface != __net_if_end; iface++) {
+		bool ret;
+
+		ret = ipv4_is_broadcast_address(iface, addr);
+		if (ret) {
+			return ret;
+		}
+	}
+
+	return false;
+}
+
 struct net_if *net_if_ipv4_select_src_iface(struct in_addr *dst)
 {
 	struct net_if *iface;
