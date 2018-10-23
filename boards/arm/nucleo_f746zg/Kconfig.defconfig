@@ -1,0 +1,27 @@
+# Kconfig - STM32F746ZG Nucleo board configuration
+#
+# Copyright (c) 2018 AJ Palmer
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_NUCLEO_F746ZG
+
+config BOARD
+	default "nucleo_f746zg"
+
+if UART_CONSOLE
+
+config UART_STM32_PORT_3
+	default y
+
+endif # UART_CONSOLE
+
+if SERIAL
+
+config UART_STM32_PORT_6
+	default y
+
+endif # SERIAL
+
+endif # BOARD_NUCLEO_F746ZG

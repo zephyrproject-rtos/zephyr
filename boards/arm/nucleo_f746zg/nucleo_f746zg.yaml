@@ -1,0 +1,12 @@
+identifier: nucleo_f746zg
+name: NUCLEO-F746ZG
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 320
+flash: 1024
+supported:
+  - uart
+  - gpio
