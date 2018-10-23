@@ -92,6 +92,26 @@ u32_t log_msg_nargs_get(struct log_msg *msg)
 	return msg->hdr.params.std.nargs;
 }
 
+static u32_t cont_arg_get(struct log_msg *msg, u32_t arg_idx)
+{
+	struct log_msg_cont *cont;
+
+	if (arg_idx < LOG_MSG_NARGS_HEAD_CHUNK) {
+		return msg->payload.ext.data.args[arg_idx];
+	}
+
+
+	cont = msg->payload.ext.next;
+	arg_idx -= LOG_MSG_NARGS_HEAD_CHUNK;
+
+	while (arg_idx >= ARGS_CONT_MSG) {
+		arg_idx -= ARGS_CONT_MSG;
+		cont = cont->next;
+	}
+
+	return cont->payload.args[arg_idx];
+}
+
 u32_t log_msg_arg_get(struct log_msg *msg, u32_t arg_idx)
 {
 	u32_t arg;
@@ -99,12 +119,7 @@ u32_t log_msg_arg_get(struct log_msg *msg, u32_t arg_idx)
 	if (msg->hdr.params.std.nargs <= LOG_MSG_NARGS_SINGLE_CHUNK) {
 		arg = msg->payload.single.args[arg_idx];
 	} else {
-		if (arg_idx < LOG_MSG_NARGS_HEAD_CHUNK) {
-			arg = msg->payload.ext.data.args[arg_idx];
-		} else {
-			arg_idx -= LOG_MSG_NARGS_HEAD_CHUNK;
-			arg = msg->payload.ext.next->payload.args[arg_idx];
-		}
+		arg = cont_arg_get(msg, arg_idx);
 	}
 
 	return arg;
@@ -115,35 +130,86 @@ const char *log_msg_str_get(struct log_msg *msg)
 	return msg->str;
 }
 
-struct log_msg *log_msg_create_n(const char *str,
-					       u32_t *args,
-					       u32_t nargs)
+/** @brief Allocate chunk for extended standard log message.
+ *
+ *  @details Extended standard log message is used when number of arguments
+ *           exceeds capacity of one chunk. Extended message consists of two
+ *           chunks. Such approach is taken to optimize memory usage and
+ *           performance assuming that log messages with more arguments
+ *           (@ref LOG_MSG_NARGS_SINGLE_CHUNK) are less common.
+ *
+ *  @return Allocated chunk of NULL.
+ */
+static struct log_msg *msg_alloc(u32_t nargs)
 {
+	struct log_msg_cont *cont;
+	struct log_msg_cont **next;
+	struct  log_msg *msg = _log_msg_std_alloc();
+	int n = (int)nargs;
+
+	if (!msg) {
+		return msg;
+	}
+
+	msg->hdr.params.std.nargs = 0;
+	msg->hdr.params.generic.ext = 1;
+	n -= LOG_MSG_NARGS_HEAD_CHUNK;
+	next = &msg->payload.ext.next;
+	*next = NULL;
+
+	while (n > 0) {
+		cont = (struct log_msg_cont *)log_msg_chunk_alloc();
+
+		if (!cont) {
+			msg_free(msg);
+		}
+		*next = cont;
+		cont->next = NULL;
+		next = &cont->next;
+		n -= ARGS_CONT_MSG;
+	}
+
+	return msg;
+}
+
+static void copy_args_to_msg(struct  log_msg *msg, u32_t *args, u32_t nargs)
+{
+	struct log_msg_cont *cont = msg->payload.ext.next;
+
+	if (nargs > LOG_MSG_NARGS_SINGLE_CHUNK) {
+		memcpy(msg->payload.ext.data.args, args,
+		       LOG_MSG_NARGS_HEAD_CHUNK * sizeof(u32_t));
+		nargs -= LOG_MSG_NARGS_HEAD_CHUNK;
+		args += LOG_MSG_NARGS_HEAD_CHUNK;
+	} else {
+		memcpy(msg->payload.single.args, args, nargs * sizeof(u32_t));
+		nargs  = 0;
+	}
+
+	while (nargs) {
+		u32_t cpy_args = min(nargs, ARGS_CONT_MSG);
+
+		memcpy(cont->payload.args, args, cpy_args * sizeof(u32_t));
+		nargs -= cpy_args;
+		args += cpy_args;
+		cont = cont->next;
+	}
+}
+
+struct log_msg *log_msg_create_n(const char *str, u32_t *args, u32_t nargs)
+{
+	__ASSERT_NO_MSG(nargs < LOG_MAX_NARGS);
+
 	struct  log_msg *msg = NULL;
 
-	if (nargs <= LOG_MSG_NARGS_SINGLE_CHUNK) {
-		msg = _log_msg_std_alloc();
+	msg = msg_alloc(nargs);
 
-		if (msg != NULL) {
-			msg->hdr.params.std.nargs = nargs;
-			memcpy(msg->payload.single.args, args, nargs);
-		}
-	} else {
-		msg = _log_msg_ext_std_alloc();
-
-		if (msg != NULL) {
-			msg->hdr.params.std.nargs = nargs;
-			/* Direct assignment will be faster than memcpy. */
-			msg->payload.ext.data.args[0] = args[0];
-			msg->payload.ext.data.args[1] = args[1];
-			memcpy(msg->payload.ext.next->payload.args,
-			      &args[LOG_MSG_NARGS_HEAD_CHUNK],
-			      (nargs - LOG_MSG_NARGS_HEAD_CHUNK)*sizeof(u32_t));
-		}
-	}
-	if (msg != NULL) {
+	if (msg) {
 		msg->str = str;
+		msg->hdr.params.std.nargs = nargs;
+		copy_args_to_msg(msg, args, nargs);
 	}
+
 	return msg;
 }
 

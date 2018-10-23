@@ -44,6 +44,7 @@ static void put(struct log_backend const *const backend,
 		struct log_msg *msg)
 {
 	log_msg_get(msg);
+	u32_t nargs = log_msg_nargs_get(msg);
 	struct backend_cb *cb = (struct backend_cb *)backend->cb->ctx;
 
 	if (cb->check_id) {
@@ -62,19 +63,18 @@ static void put(struct log_backend const *const backend,
 	}
 
 	/* Arguments in the test are fixed, 1,2,3,4,5,... */
-	if (cb->check_args &&
-	    log_msg_is_std(msg) &&
-	    log_msg_nargs_get(msg) > 0) {
-		for (int i = 0; i < log_msg_nargs_get(msg); i++) {
-			zassert_equal(i+1,
-				      log_msg_arg_get(msg, i),
+	if (cb->check_args && log_msg_is_std(msg) && nargs > 0) {
+		for (int i = 0; i < nargs; i++) {
+			u32_t arg = log_msg_arg_get(msg, i);
+
+			zassert_equal(i+1, arg,
 				      "Unexpected argument in the message");
 		}
 	}
 
 	if (cb->check_strdup) {
 		zassert_false(cb->exp_strdup[cb->counter]
-				^ log_is_strdup((void *)log_msg_arg_get(msg, 0)),
+			      ^ log_is_strdup((void *)log_msg_arg_get(msg, 0)),
 			      NULL);
 	}
 
@@ -259,13 +259,14 @@ static void test_log_arguments(void)
 	log_setup(false);
 	backend1_cb.check_args = true;
 
-	backend1_cb.exp_nargs[0] = 0;
+	backend1_cb.exp_nargs[0] = 10;
 	backend1_cb.exp_nargs[1] = 1;
 	backend1_cb.exp_nargs[2] = 2;
 	backend1_cb.exp_nargs[3] = 3;
 	backend1_cb.exp_nargs[4] = 4;
 	backend1_cb.exp_nargs[5] = 5;
 	backend1_cb.exp_nargs[6] = 6;
+	backend1_cb.exp_nargs[7] = 10;
 
 	LOG_INF("test");
 	LOG_INF("test %d", 1);
@@ -274,11 +275,13 @@ static void test_log_arguments(void)
 	LOG_INF("test %d %d %d %d", 1, 2, 3, 4);
 	LOG_INF("test %d %d %d %d %d", 1, 2, 3, 4, 5);
 	LOG_INF("test %d %d %d %d %d %d", 1, 2, 3, 4, 5, 6);
+	LOG_INF("test %d %d %d %d %d %d %d %d %d %d",
+			1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
 
 	while (log_process(false)) {
 	}
 
-	zassert_equal(7,
+	zassert_equal(8,
 		      backend1_cb.counter,
 		      "Unexpected amount of messages received by the backend.");
 }

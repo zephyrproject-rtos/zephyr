@@ -541,7 +541,8 @@ bool log_is_strdup(void *buf)
 	 * pool.
 	 */
 	static const void *start = log_strdup_pool_buf + sizeof(u32_t);
-	static const void *end = &log_strdup_pool_buf[LOG_STRDUP_POOL_BUFFER_SIZE
+	static const void *end = &log_strdup_pool_buf[
+						 LOG_STRDUP_POOL_BUFFER_SIZE
 					       - LOG_STRBUF_BUF_SIZE
 					       + sizeof(u32_t)];
 	return (buf >= start) && (buf <= end);
