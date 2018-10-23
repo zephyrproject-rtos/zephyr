@@ -57,7 +57,7 @@ bool shell_history_get(struct shell_history *history, bool up,
 	}
 
 	*len = 0;
-	return up;
+	return false;
 }
 
 static void add_to_head(struct shell_history *history,
