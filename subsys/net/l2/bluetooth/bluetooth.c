@@ -82,9 +82,10 @@ static int net_bt_send(struct net_if *iface, struct net_pkt *pkt)
 		return -EINVAL;
 	}
 
-	if (!net_6lo_compress(pkt, true, NULL)) {
+	ret = net_6lo_compress(pkt, true);
+	if (ret < 0) {
 		NET_DBG("Packet compression failed");
-		return -ENOBUFS;
+		return ret;
 	}
 
 	length = net_pkt_get_len(pkt);
