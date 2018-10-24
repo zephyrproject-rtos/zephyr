@@ -445,7 +445,8 @@ void _reschedule(u32_t key)
 	}
 
 #ifdef CONFIG_SMP
-	return _Swap(key);
+	(void)_Swap(key);
+	return;
 #else
 	if (_get_next_ready_thread() != _current) {
 		(void)_Swap(key);
