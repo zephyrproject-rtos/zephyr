@@ -122,6 +122,10 @@ enum net_verdict net_ipv4_process_pkt(struct net_pkt *pkt)
 		goto drop;
 	}
 
+	if (net_is_ipv4_addr_bcast(net_pkt_iface(pkt), &hdr->src)) {
+		goto drop;
+	}
+
 	NET_DBG("IPv4 packet received from %s to %s",
 		log_strdup(net_sprint_ipv4_addr(&hdr->src)),
 		log_strdup(net_sprint_ipv4_addr(&hdr->dst)));
