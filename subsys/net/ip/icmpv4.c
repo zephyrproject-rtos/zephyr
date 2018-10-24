@@ -340,6 +340,11 @@ enum net_verdict net_icmpv4_input(struct net_pkt *pkt)
 		return NET_DROP;
 	}
 
+	if (!icmp_hdr.chksum) {
+		NET_DBG("Invalid zero ICMPv4 checksum - dropping");
+		goto drop;
+	}
+
 	if (net_is_ipv4_addr_bcast(net_pkt_iface(pkt),
 				   &NET_IPV4_HDR(pkt)->dst)) {
 		if (!IS_ENABLED(CONFIG_NET_ICMPV4_ACCEPT_BROADCAST) ||
