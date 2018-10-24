@@ -37,6 +37,13 @@ config NET_IF_MCAST_IPV4_ADDR_COUNT
 	int "Max number of multicast IPv4 addresses per network interface"
 	default 1
 
+config NET_ICMPV4_ACCEPT_BROADCAST
+	bool "Accept broadcast ICMPv4 echo-request"
+	default y
+	help
+	  If set, then respond to ICMPv4 echo-request that is sent to
+	  broadcast address.
+
 config NET_DHCPV4
 	bool "Enable DHCPv4 client"
 	depends on NET_IPV4

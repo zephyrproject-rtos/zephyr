@@ -153,6 +153,11 @@ enum net_verdict net_ipv4_process_pkt(struct net_pkt *pkt)
 		verdict = net_icmpv4_input(pkt);
 		break;
 	case IPPROTO_TCP:
+		if (net_is_ipv4_addr_bcast(net_pkt_iface(pkt), &hdr->dst)) {
+			goto drop;
+		}
+
+		/* Fall through */
 	case IPPROTO_UDP:
 		verdict = net_conn_input(hdr->proto, pkt);
 		break;

@@ -242,8 +242,7 @@ static inline bool check_if_dst_is_broadcast_or_mcast(struct net_if *iface,
 {
 	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
 
-	if (net_ipv4_addr_cmp(&NET_IPV4_HDR(pkt)->dst,
-			      net_ipv4_broadcast_address())) {
+	if (net_is_ipv4_addr_bcast(iface, &NET_IPV4_HDR(pkt)->dst)) {
 		/* Broadcast address */
 		net_pkt_lladdr_dst(pkt)->addr = (u8_t *)broadcast_eth_addr.addr;
 		net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_eth_addr);
