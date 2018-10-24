@@ -218,7 +218,7 @@ int ataes132a_aes_ccm_decrypt(struct device *dev,
 	expected_out_len = aead_op->pkt->out_len;
 
 	/*The KeyConfig[EKeyID].ExternalCrypto bit must be 1b.*/
-	if (!ataes132a_state[key_id].key_config & ATAES_KEYCONFIG_EXTERNAL) {
+	if (!(ataes132a_state[key_id].key_config & ATAES_KEYCONFIG_EXTERNAL)) {
 		LOG_ERR("key %x external mode disabled", key_id);
 		return -EINVAL;
 	}
@@ -416,7 +416,7 @@ int ataes132a_aes_ccm_encrypt(struct device *dev,
 	buf_len = aead_op->pkt->in_len;
 
 	/*The KeyConfig[EKeyID].ExternalCrypto bit must be 1b.*/
-	if (!ataes132a_state[key_id].key_config & ATAES_KEYCONFIG_EXTERNAL) {
+	if (!(ataes132a_state[key_id].key_config & ATAES_KEYCONFIG_EXTERNAL)) {
 		LOG_ERR("key %x external mode disabled", key_id);
 		return -EINVAL;
 	}
@@ -601,7 +601,7 @@ int ataes132a_aes_ecb_block(struct device *dev,
 	/* AES ECB can only be executed if the ChipConfig.LegacyE configuration
 	 * is set to 1 and if KeyConfig[key_id].LegacyOK is set to 1.
 	 */
-	if (!ataes132a_state[key_id].chip_config & ATAES_CHIPCONFIG_LEGACYE) {
+	if (!(ataes132a_state[key_id].chip_config & ATAES_CHIPCONFIG_LEGACYE)) {
 		LOG_ERR("legacy mode disabled");
 		return -EINVAL;
 	}
