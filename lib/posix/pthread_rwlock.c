@@ -25,6 +25,9 @@ static u32_t write_lock_acquire(pthread_rwlock_t *rwlock, s32_t timeout);
 int pthread_rwlock_init(pthread_rwlock_t *rwlock,
 			const pthread_rwlockattr_t *attr)
 {
+	if (rwlock == NULL)
+		return ENOMEM;
+
 	k_sem_init(&rwlock->rd_sem, CONCURRENT_READER_LIMIT,
 		   CONCURRENT_READER_LIMIT);
 	k_sem_init(&rwlock->wr_sem, 1, 1);
