@@ -312,8 +312,15 @@ def extract_string_prop(node_address, yaml, key, label):
         defs[node_address] = prop_def
 
 
-def extract_property(node_compat, yaml, node_address, prop, prop_val, names,
-                     label_override):
+def extract_property(node_compat, yaml, node_address, prop, prop_val, names):
+
+    node = reduced[node_address]
+    label_override = None
+    if yaml[node_compat].get('use-property-label', False):
+        try:
+            label_override = convert_string_to_label(node['props']['label'])
+        except KeyError:
+            pass
 
     if 'base_label' in yaml[node_compat]:
         def_label = yaml[node_compat].get('base_label')
@@ -399,7 +406,6 @@ def extract_node_include_info(reduced, root_node_address, sub_node_address,
                     'linux,phandle']
     node = reduced[sub_node_address]
     node_compat = get_compat(root_node_address)
-    label_override = None
 
     if node_compat not in yaml.keys():
         return {}, {}
@@ -408,13 +414,6 @@ def extract_node_include_info(reduced, root_node_address, sub_node_address,
         y_node = yaml[node_compat]
     else:
         y_node = y_sub
-
-    if yaml[node_compat].get('use-property-label', False):
-        try:
-            label = y_node['properties']['label']
-            label_override = convert_string_to_label(node['props']['label'])
-        except KeyError:
-            pass
 
     # check to see if we need to process the properties
     for k, v in y_node['properties'].items():
@@ -447,8 +446,7 @@ def extract_node_include_info(reduced, root_node_address, sub_node_address,
                             names = [names]
 
                         extract_property(
-                            node_compat, yaml, sub_node_address, c, v, names,
-                            label_override)
+                            node_compat, yaml, sub_node_address, c, v, names)
                         match = True
 
                 # Handle the case that we have a boolean property, but its not
@@ -456,8 +454,7 @@ def extract_node_include_info(reduced, root_node_address, sub_node_address,
                 if not match:
                     if v['type'] == "boolean":
                         extract_property(
-                            node_compat, yaml, sub_node_address, k, v, None,
-                            label_override)
+                            node_compat, yaml, sub_node_address, k, v, None)
 
 def dict_merge(dct, merge_dct):
     # from https://gist.github.com/angstwad/bf22d1822c38a92ec0a9
