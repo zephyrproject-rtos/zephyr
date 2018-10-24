@@ -67,7 +67,7 @@ USBD_CLASS_DESCR_DEFINE(primary) struct usb_hid_config hid_cfg = {
 		.bmAttributes = USB_DC_EP_INTERRUPT,
 		.wMaxPacketSize =
 			sys_cpu_to_le16(CONFIG_HID_INTERRUPT_EP_MPS),
-		.bInterval = 0x09,
+		.bInterval = CONFIG_USB_HID_POLL_INTERVAL_MS,
 	},
 #ifdef CONFIG_ENABLE_HID_INT_OUT_EP
 	.if0_int_out_ep = {
@@ -77,7 +77,7 @@ USBD_CLASS_DESCR_DEFINE(primary) struct usb_hid_config hid_cfg = {
 		.bmAttributes = USB_DC_EP_INTERRUPT,
 		.wMaxPacketSize =
 			sys_cpu_to_le16(CONFIG_HID_INTERRUPT_EP_MPS),
-		.bInterval = 0x09,
+		.bInterval = CONFIG_USB_HID_POLL_INTERVAL_MS,
 	},
 #endif
 };
