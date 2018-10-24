@@ -178,19 +178,19 @@ out:
 static inline bool ieee802154_manage_send_packet(struct net_if *iface,
 						 struct net_pkt *pkt)
 {
-	bool ret;
+	int ret;
 
 	pkt_hexdump(TX_PKT_TITLE " (before 6lo)", pkt, false, false);
 
-#ifdef CONFIG_NET_L2_IEEE802154_FRAGMENT
-	ret = net_6lo_compress(pkt, true, ieee802154_fragment);
-#else
-	ret = net_6lo_compress(pkt, true, NULL);
-#endif
+	ret = net_6lo_compress(pkt, true);
 
 	pkt_hexdump(TX_PKT_TITLE " (after 6lo)", pkt, false, false);
 
-	return ret;
+	if (ret >= 0 && IS_ENABLED(CONFIG_NET_L2_IEEE802154_FRAGMENT)) {
+		return ieee802154_fragment(pkt, ret);
+	}
+
+	return (ret >= 0);
 }
 
 #else /* CONFIG_NET_6LO */

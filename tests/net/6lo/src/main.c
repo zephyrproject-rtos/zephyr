@@ -866,7 +866,7 @@ static void test_6lo(struct net_6lo_data *data)
 	net_hexdump_frags("before-compression", pkt, false);
 #endif
 
-	zassert_true(net_6lo_compress(pkt, data->iphc, NULL),
+	zassert_true((net_6lo_compress(pkt, data->iphc) >= 0),
 		     "compression failed");
 
 #if DEBUG > 0
