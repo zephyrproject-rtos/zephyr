@@ -410,10 +410,10 @@ bool ieee802154_validate_frame(u8_t *buf, u8_t length,
 	return validate_payload_and_mfr(mpdu, buf, p_buf, length);
 }
 
-u16_t ieee802154_compute_header_size(struct net_if *iface,
-				     struct in6_addr *dst)
+u8_t ieee802154_compute_header_size(struct net_if *iface,
+				    struct in6_addr *dst)
 {
-	u16_t hdr_len = sizeof(struct ieee802154_fcf_seq);
+	u8_t hdr_len = sizeof(struct ieee802154_fcf_seq);
 #ifdef CONFIG_NET_L2_IEEE802154_SECURITY
 	struct ieee802154_security_ctx *sec_ctx =
 		&((struct ieee802154_context *)net_if_l2_data(iface))->sec_ctx;
@@ -473,14 +473,13 @@ u16_t ieee802154_compute_header_size(struct net_if *iface,
 		hdr_len += IEEE8021254_KEY_ID_FIELD_SRC_8_INDEX_LENGTH;
 	}
 
-	/* This is a _HACK_: as net pkt do not let the possibility to
-	 * reserve tailroom - here for authentication tag - it reserves
+	/* This is a _HACK_: as net_buf do not let the possibility to
+	 * reserve tailroom - here for authentication tag - it "reserves"
 	 * it in headroom so the payload won't occupy all the left space
 	 * and then when it will come to finalize the data frame it will
-	 * reduce the reserve space by the tag size, move the payload
-	 * backward accordingly, and only then:
-	 * run the encryption/authentication which will fill the tag
-	 * space in the end.
+	 * reduce the reserved space by the tag size, move the payload
+	 * backward accordingly, and only then: run the
+	 * encryption/authentication which will fill the tag space in the end.
 	 */
 	if (sec_ctx->level < IEEE802154_SECURITY_LEVEL_ENC) {
 		hdr_len += level_2_tag_size[sec_ctx->level];
@@ -656,11 +655,11 @@ u8_t *generate_aux_security_hdr(struct ieee802154_security_ctx *sec_ctx,
 bool ieee802154_create_data_frame(struct ieee802154_context *ctx,
 				  struct net_linkaddr *dst,
 				  struct net_buf *frag,
-				  u8_t reserved_len)
+				  u8_t hdr_size)
 {
 	struct ieee802154_frame_params params;
 	struct ieee802154_fcf_seq *fs;
-	u8_t *p_buf = frag->data - reserved_len;
+	u8_t *p_buf = frag->data;
 	u8_t *frag_start = p_buf;
 	bool broadcast;
 
@@ -687,7 +686,7 @@ bool ieee802154_create_data_frame(struct ieee802154_context *ctx,
 
 	p_buf = generate_aux_security_hdr(&ctx->sec_ctx, p_buf);
 
-	/* If tagged, let's retrieve tag space from ll reserved space.
+	/* If tagged, let's retrieve tag space from hdr reserved space.
 	 * See comment in ieee802154_compute_header_size()
 	 */
 	if (ctx->sec_ctx.level != IEEE802154_SECURITY_LEVEL_NONE &&
@@ -701,18 +700,18 @@ bool ieee802154_create_data_frame(struct ieee802154_context *ctx,
 
 		/* p_buf should point to the right place */
 		memmove(p_buf, frag->data, frag->len);
-		reserved_len -= level_2_tag_size[level];
+		hdr_size -= level_2_tag_size[level];
 	}
 
 no_security_hdr:
 #endif /* CONFIG_NET_L2_IEEE802154_SECURITY */
 
-	if ((p_buf - frag_start) != reserved_len) {
-		/* ll reserve was too small? We probably overwrote
+	if ((p_buf - frag_start) != hdr_size) {
+		/* hdr_size was too small? We probably overwrote
 		 * payload bytes
 		 */
 		NET_ERR("Could not generate data frame %zu vs %u",
-			(p_buf - frag_start), reserved_len);
+			(p_buf - frag_start), hdr_size);
 		return false;
 	}
 
@@ -720,7 +719,7 @@ no_security_hdr:
 
 	/* Let's encrypt/auth only in the end, is needed */
 	return ieee802154_encrypt_auth(broadcast ? NULL : &ctx->sec_ctx,
-				       frag_start, reserved_len, frag->len,
+				       frag_start, hdr_size, frag->len,
 				       ctx->ext_addr);
 }
 
@@ -789,25 +788,25 @@ static inline bool cfi_to_fs_settings(enum ieee802154_cfi cfi,
 
 static inline u8_t mac_command_length(enum ieee802154_cfi cfi)
 {
-	u8_t reserve = 1U; /* cfi is at least present */
+	u8_t length = 1U; /* cfi is at least present */
 
 	switch (cfi) {
 	case IEEE802154_CFI_ASSOCIATION_REQUEST:
 	case IEEE802154_CFI_DISASSOCIATION_NOTIFICATION:
 	case IEEE802154_CFI_GTS_REQUEST:
-		reserve += 1;
+		length += 1;
 		break;
 	case IEEE802154_CFI_ASSOCIATION_RESPONSE:
-		reserve += 3;
+		length += 3;
 		break;
 	case IEEE802154_CFI_COORDINATOR_REALIGNEMENT:
-		reserve += 8;
+		length += 8;
 		break;
 	default:
 		break;
 	}
 
-	return reserve;
+	return length;
 }
 
 struct net_pkt *
@@ -846,22 +845,10 @@ ieee802154_create_mac_cmd_frame(struct ieee802154_context *ctx,
 
 	p_buf = generate_addressing_fields(ctx, fs, params, p_buf);
 
+	net_buf_add(frag, p_buf - net_pkt_ll(pkt));
+
 	/* Let's insert the cfi */
 	((struct ieee802154_command *)p_buf)->cfi = type;
-
-	/* In MAC command, we consider ll header being the mhr.
-	 * Rest will be the MAC command itself. This will proove
-	 * to be easy to handle afterwards to point directly to MAC
-	 * command space, in order to fill-in its content.
-	 */
-	net_pkt_set_ll_reserve(pkt, p_buf - net_pkt_ll(pkt));
-	net_buf_pull(frag, net_pkt_ll_reserve(pkt));
-
-	/* Thus setting the right MAC command length
-	 * Now up to the caller to fill-in this space relevantly.
-	 * See ieee802154_mac_command() helper.
-	 */
-	frag->len = mac_command_length(type);
 
 	dbg_print_fs(fs);
 
@@ -871,6 +858,13 @@ error:
 
 	return NULL;
 }
+
+void ieee802154_mac_cmd_finalize(struct net_pkt *pkt,
+				 enum ieee802154_cfi type)
+{
+	net_buf_add(pkt->frags, mac_command_length(type));
+}
+
 #endif /* CONFIG_NET_L2_IEEE802154_RFD */
 
 #ifdef CONFIG_NET_L2_IEEE802154_ACK_REPLY
@@ -920,7 +914,7 @@ bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_pkt *pkt,
 	 * in order to get the extended address related to it
 	 */
 	if (!ieee802154_decrypt_auth(&ctx->sec_ctx, net_pkt_ll(pkt),
-				     net_pkt_ll_reserve(pkt),
+				     (u8_t *)mpdu->payload - net_pkt_ll(pkt),
 				     net_pkt_get_len(pkt),
 				     net_pkt_lladdr_src(pkt)->addr,
 				     sys_le32_to_cpu(
