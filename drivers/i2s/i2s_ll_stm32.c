@@ -447,7 +447,7 @@ static void rx_stream_disable(struct stream *stream, struct device *dev);
 static void tx_stream_disable(struct stream *stream, struct device *dev);
 
 /* This function is executed in the interrupt context */
-static void dma_rx_callback(struct device *dev_dma, u32_t channel, int status)
+static void dma_rx_callback(void *arg, u32_t channel, int status)
 {
 	struct device *dev = get_dev_from_rx_dma_channel(channel);
 	const struct i2s_stm32_cfg *cfg = DEV_CFG(dev);
@@ -513,7 +513,7 @@ rx_disable:
 	rx_stream_disable(stream, dev);
 }
 
-static void dma_tx_callback(struct device *dev_dma, u32_t channel, int status)
+static void dma_tx_callback(void *arg, u32_t channel, int status)
 {
 	struct device *dev = get_dev_from_tx_dma_channel(channel);
 	const struct i2s_stm32_cfg *cfg = DEV_CFG(dev);
