@@ -211,7 +211,9 @@ static inline int check_ip_addr(struct net_pkt *pkt)
 		 * back to us.
 		 */
 		if (net_is_ipv4_addr_loopback(&NET_IPV4_HDR(pkt)->dst) ||
-		    net_is_my_ipv4_addr(&NET_IPV4_HDR(pkt)->dst)) {
+		    (net_is_ipv4_addr_bcast(net_pkt_iface(pkt),
+				     &NET_IPV4_HDR(pkt)->dst) == false &&
+		     net_is_my_ipv4_addr(&NET_IPV4_HDR(pkt)->dst))) {
 			struct in_addr addr;
 
 			/* Swap the addresses so that in receiving side

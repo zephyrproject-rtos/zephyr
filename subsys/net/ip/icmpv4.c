@@ -110,7 +110,8 @@ static inline enum net_verdict icmpv4_handle_echo_request(struct net_pkt *pkt)
 
 	net_ipaddr_copy(&addr, &NET_IPV4_HDR(pkt)->src);
 	net_ipaddr_copy(&NET_IPV4_HDR(pkt)->src,
-			&NET_IPV4_HDR(pkt)->dst);
+			net_if_ipv4_select_src_addr(net_pkt_iface(pkt),
+						    &addr));
 	net_ipaddr_copy(&NET_IPV4_HDR(pkt)->dst, &addr);
 
 	icmp_hdr.type = NET_ICMPV4_ECHO_REPLY;
@@ -121,10 +122,7 @@ static inline enum net_verdict icmpv4_handle_echo_request(struct net_pkt *pkt)
 		return NET_DROP;
 	}
 
-	ret = net_icmpv4_set_chksum(pkt);
-	if (ret < 0) {
-		return NET_DROP;
-	}
+	net_ipv4_finalize(pkt, IPPROTO_ICMP);
 
 	NET_DBG("Sending Echo Reply from %s to %s",
 		log_strdup(net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src)),
@@ -342,6 +340,15 @@ enum net_verdict net_icmpv4_input(struct net_pkt *pkt)
 		return NET_DROP;
 	}
 
+	if (net_is_ipv4_addr_bcast(net_pkt_iface(pkt),
+				   &NET_IPV4_HDR(pkt)->dst)) {
+		if (!IS_ENABLED(CONFIG_NET_ICMPV4_ACCEPT_BROADCAST) ||
+		    icmp_hdr.type != NET_ICMPV4_ECHO_REQUEST) {
+			NET_DBG("Dropping broadcast pkt");
+			goto drop;
+		}
+	}
+
 	NET_DBG("ICMPv4 packet received type %d code %d",
 		icmp_hdr.type, icmp_hdr.code);
 
@@ -354,6 +361,7 @@ enum net_verdict net_icmpv4_input(struct net_pkt *pkt)
 		}
 	}
 
+drop:
 	net_stats_update_icmp_drop(net_pkt_iface(pkt));
 
 	return NET_DROP;
