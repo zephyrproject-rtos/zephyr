@@ -172,9 +172,9 @@ struct light_ctl_state {
 	u16_t last_tx_addr;
 	s64_t last_msg_timestamp;
 
-	s32_t tt_lightness_delta;
-	s32_t tt_temp_delta;
-	s32_t tt_duv_delta;
+	s32_t tt_delta_lightness;
+	s32_t tt_delta_temp;
+	s32_t tt_delta_duv;
 
 	struct transition *transition;
 };

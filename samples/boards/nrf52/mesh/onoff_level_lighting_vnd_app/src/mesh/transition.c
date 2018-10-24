@@ -210,15 +210,15 @@ void light_ctl_tt_values(struct light_ctl_state *state)
 		calculate_lightness_target_values(LIGHT_CTL_TARGET);
 	}
 
-	state->tt_lightness_delta =
+	state->tt_delta_lightness =
 		((float) (state->lightness - state->target_lightness) /
 		 counter);
 
-	state->tt_temp_delta =
+	state->tt_delta_temp =
 		((float) (state->temp - state->target_temp) /
 		 counter);
 
-	state->tt_duv_delta =
+	state->tt_delta_duv =
 		((float) (state->delta_uv - state->target_delta_uv) /
 		 counter);
 }
@@ -243,10 +243,10 @@ void light_ctl_temp_tt_values(struct light_ctl_state *state)
 		calculate_temp_target_values(LIGHT_CTL_TEMP_TARGET);
 	}
 
-	state->tt_temp_delta = ((float) (state->temp - state->target_temp) /
+	state->tt_delta_temp = ((float) (state->temp - state->target_temp) /
 				counter);
 
-	state->tt_duv_delta =
+	state->tt_delta_duv =
 		((float) (state->delta_uv - state->target_delta_uv) /
 		 counter);
 }
@@ -493,13 +493,13 @@ static void light_ctl_work_handler(struct k_work *work)
 		state->transition->counter--;
 
 		/* Lightness */
-		state->lightness -= state->tt_lightness_delta;
+		state->lightness -= state->tt_delta_lightness;
 
 		/* Temperature */
-		state->temp -= state->tt_temp_delta;
+		state->temp -= state->tt_delta_temp;
 
 		/* Delta_UV */
-		state->delta_uv -= state->tt_duv_delta;
+		state->delta_uv -= state->tt_delta_duv;
 
 		state_binding(CTL, CTL_TEMP);
 		update_light_state();
@@ -540,10 +540,10 @@ static void light_ctl_temp_work_handler(struct k_work *work)
 		state->transition->counter--;
 
 		/* Temperature */
-		state->temp -= state->tt_temp_delta;
+		state->temp -= state->tt_delta_temp;
 
 		/* Delta UV */
-		state->delta_uv -= state->tt_duv_delta;
+		state->delta_uv -= state->tt_delta_duv;
 
 		state_binding(IGNORE, CTL_TEMP);
 		update_light_state();
