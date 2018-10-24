@@ -72,6 +72,10 @@ UART to the Linux machine, and then attach it with this command:
    connected to.
 
 .. note::
+   If using the BBC micro:bit you will need to modify the baudrate argument
+   from ``1000000`` to ``115200``.
+
+.. note::
    The ``-R`` flag passed to ``btattach`` instructs the kernel to avoid
    interacting with the controller and instead just be aware of it in order
    to proxy it to QEMU later.
@@ -99,6 +103,10 @@ UART to the Linux machine, and then attach it with this command:
    Depending on the serial port you are using you will need to modify the
    ``/dev/ttyACM0`` string to point to the serial device your controller is
    connected to.
+
+.. note::
+   If using the BBC micro:bit you will need to modify the baudrate argument
+   from ``1000000`` to ``115200``.
 
 If you are running :file:`btmon` you should see a comprehensive log showing how
 BlueZ loads and initializes the attached controller.
