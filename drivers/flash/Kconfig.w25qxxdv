@@ -82,4 +82,12 @@ config SPI_FLASH_W25QXXDV_DEVICE_ID
 	  This is the device ID of the flash chip to use, which is 0x00ef4015 for
           the W25QXXDV
 
+config SPI_FLASH_W25QXXDV_PAGE_PROGRAM_SIZE
+	int "Page Program Size in bytes"
+	default 256
+	help
+	  This is the maximum size of a page program operation. Writing data
+	  over this page boundary will split the write operation into two
+	  pages.
+
 endif # SPI_FLASH_W25QXXDV

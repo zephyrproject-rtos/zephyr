@@ -179,24 +179,20 @@ static int spi_flash_wb_write_protection_set(struct device *dev, bool enable)
 	return spi_flash_wb_write_protection_set_with_lock(dev, enable, true);
 }
 
-static int spi_flash_wb_write(struct device *dev, off_t offset,
-			      const void *data, size_t len)
+static int spi_flash_wb_program_page(struct device *dev, off_t offset,
+		const void *data, size_t len)
 {
-	struct spi_flash_data *const driver_data = dev->driver_data;
 	u8_t reg;
-	int ret;
+	struct spi_flash_data *const driver_data = dev->driver_data;
 
-	if (offset < 0) {
-		return -ENOTSUP;
-	}
-
-	SYNC_LOCK();
+	__ASSERT(len <= CONFIG_SPI_FLASH_W25QXXDV_PAGE_PROGRAM_SIZE,
+		 "Maximum length is %d for page programming (actual:%d)",
+		 CONFIG_SPI_FLASH_W25QXXDV_PAGE_PROGRAM_SIZE, len);
 
 	wait_for_flash_idle(dev);
 
 	reg = spi_flash_wb_reg_read(dev, W25QXXDV_CMD_RDSR);
 	if (!(reg & W25QXXDV_WEL_BIT)) {
-		SYNC_UNLOCK();
 		return -EIO;
 	}
 
@@ -206,9 +202,67 @@ static int spi_flash_wb_write(struct device *dev, off_t offset,
 	 * flash automatically turns on write protection at the completion
 	 * of each write or erase transaction.
 	 */
-	ret = spi_flash_wb_access(driver_data, W25QXXDV_CMD_PP,
+	return spi_flash_wb_access(driver_data, W25QXXDV_CMD_PP,
 				  true, offset, (void *)data, len, true);
 
+}
+
+static int spi_flash_wb_write(struct device *dev, off_t offset,
+			      const void *data, size_t len)
+{
+	int ret;
+	off_t page_offset;
+	/* Cast `data`  to prevent `void*` arithmetic */
+	const u8_t *data_ptr = data;
+	struct spi_flash_data *const driver_data = dev->driver_data;
+
+	if (offset < 0) {
+		return -ENOTSUP;
+	}
+
+	SYNC_LOCK();
+
+	/* Calculate the offset in the first page we write */
+	page_offset = offset % CONFIG_SPI_FLASH_W25QXXDV_PAGE_PROGRAM_SIZE;
+
+	/*
+	 * Write all data that does not fit into a single programmable page.
+	 * By doing this logic, we can safely disable lock protection in
+	 * between pages as in case the user did not disable protection then
+	 * it will fail on the first write.
+	 */
+	while ((page_offset + len) >
+			CONFIG_SPI_FLASH_W25QXXDV_PAGE_PROGRAM_SIZE) {
+		size_t len_to_write_in_page =
+			CONFIG_SPI_FLASH_W25QXXDV_PAGE_PROGRAM_SIZE -
+			page_offset;
+
+		ret = spi_flash_wb_program_page(dev, offset,
+						data_ptr, len_to_write_in_page);
+		if (ret) {
+			goto end;
+		}
+
+		ret = spi_flash_wb_write_protection_set_with_lock(dev,
+				false, false);
+		if (ret) {
+			goto end;
+		}
+
+		len -= len_to_write_in_page;
+		offset += len_to_write_in_page;
+		data_ptr += len_to_write_in_page;
+
+		/*
+		 * For the subsequent pages we always start at the beginning
+		 * of a page
+		 */
+		page_offset = 0;
+	}
+
+	ret = spi_flash_wb_program_page(dev, offset, data_ptr, len);
+
+end:
 	SYNC_UNLOCK();
 
 	return ret;
