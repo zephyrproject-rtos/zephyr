@@ -80,28 +80,6 @@ static struct frag_cache cache[REASS_CACHE_SIZE];
  *  +-+-+-+-+-+-+-+-+
  */
 
-static inline struct net_buf *prepare_new_fragment(struct net_pkt *pkt,
-						   u8_t offset)
-{
-	struct net_buf *frag;
-
-	frag = net_pkt_get_frag(pkt, BUF_TIMEOUT);
-	if (!frag) {
-		return NULL;
-	}
-
-	/* Reserve space for fragmentation header */
-	if (!offset) {
-		net_buf_add(frag, NET_6LO_FRAG1_HDR_LEN);
-	} else {
-		net_buf_add(frag, NET_6LO_FRAGN_HDR_LEN);
-	}
-
-	net_pkt_frag_add(pkt, frag);
-
-	return frag;
-}
-
 static inline void set_datagram_size(u8_t *ptr, u16_t size)
 {
 	ptr[0] |= ((size & 0x7FF) >> 8);
@@ -117,15 +95,17 @@ static inline void set_datagram_tag(u8_t *ptr, u16_t tag)
 static inline void set_up_frag_hdr(struct net_buf *frag, u16_t size,
 				   u8_t offset)
 {
-	u8_t pos = 0U;
+	u8_t pos = frag->len > 0 ? (u8_t) frag->len - 1 : 0U;
 
-	if (offset) {
-		frag->data[pos] = NET_6LO_DISPATCH_FRAGN;
-	} else {
+	if (!offset) {
+		net_buf_add(frag, NET_6LO_FRAG1_HDR_LEN);
 		frag->data[pos] = NET_6LO_DISPATCH_FRAG1;
+	} else {
+		net_buf_add(frag, NET_6LO_FRAGN_HDR_LEN);
+		frag->data[pos] = NET_6LO_DISPATCH_FRAGN;
 	}
 
-	set_datagram_size(frag->data, size);
+	set_datagram_size(frag->data + pos, size);
 	pos += NET_6LO_FRAG_DATAGRAM_SIZE_LEN;
 
 	set_datagram_tag(frag->data + pos, datagram_tag);
@@ -136,68 +116,38 @@ static inline void set_up_frag_hdr(struct net_buf *frag, u16_t size,
 	}
 }
 
-static inline u8_t calc_max_payload(struct net_pkt *pkt,
-				    struct net_buf *frag,
-				    u8_t offset)
+static inline u8_t calc_max_payload(struct net_buf *frag, u8_t offset)
 {
-	u8_t max;
-
-	max = frag->size - net_pkt_ll_reserve(pkt);
-	max -= offset ? NET_6LO_FRAGN_HDR_LEN : NET_6LO_FRAG1_HDR_LEN;
+	u8_t max = frag->size - frag->len;
 
 	return (max & 0xF8);
 }
 
-static inline u8_t move_frag_data(struct net_buf *frag,
-				  struct net_buf *next,
-				  u8_t max,
-				  bool first,
-				  int hdr_diff,
-				  u8_t *room_left)
+static inline u8_t copy_data(struct ieee802154_fragment_ctx *ctx,
+			     struct net_buf *frame_buf, u8_t max)
 {
-	u8_t room;
-	u8_t move;
-	u8_t occupied;
+	u8_t move = ctx->frag->len - (ctx->pos - ctx->frag->data);
 
-	/* First fragment */
-	if (first) {
-		occupied = frag->len - NET_6LO_FRAG1_HDR_LEN;
-	} else {
-		occupied = frag->len - NET_6LO_FRAGN_HDR_LEN;
-	}
+	move = min(move, max);
 
-	/* Remaining room for data */
-	room = max - occupied;
+	memcpy(frame_buf->data + frame_buf->len, ctx->pos, move);
 
-	if (first) {
-		room -= hdr_diff;
-	}
-
-	/* Calculate remaining room space for data to move */
-	move = next->len > room ? room : next->len;
-
-	memmove(frag->data + frag->len, next->data, move);
-
-	net_buf_add(frag, move);
-
-	/* Room left in current fragment */
-	*room_left = room - move;
+	net_buf_add(frame_buf, move);
 
 	return move;
 }
 
-static inline void compact_frag(struct net_buf *frag, u8_t moved)
+static inline void update_fragment_ctx(struct ieee802154_fragment_ctx *ctx,
+				       u8_t move)
 {
-	u8_t remaining = frag->len - moved;
-
-	/* Move remaining data next to fragmentation header,
-	 * (leave space for header).
-	 */
-	if (remaining) {
-		memmove(frag->data, frag->data + moved, remaining);
+	if (move == (ctx->frag->len - (ctx->pos - ctx->frag->data))) {
+		ctx->frag = ctx->frag->frags;
+		if (ctx->frag) {
+			ctx->pos = ctx->frag->data;
+		}
+	} else {
+		ctx->pos += move;
 	}
-
-	frag->len = remaining;
 }
 
 /**
@@ -205,97 +155,60 @@ static inline void compact_frag(struct net_buf *frag, u8_t moved)
  *  fh  : fragment header (dispatch + size + tag + [offset])
  *  p   : payload (first fragment holds IPv6 hdr as payload)
  *  e   : empty space
+ *  ll  : link layer
  *
- *  Input to ieee802154_fragment() buf chain looks like below
+ *  Input frame_buf to ieee802154_fragment() looks like below
  *
- *  | ch + p | p | p | p | p | p + e |
+ *  | ll |
  *
- *  After complete fragmentation buf chain looks like below
+ *  After fragment creation, frame_buf will look like:
  *
- *  |fh + p + e | fh + p + e | fh + p + e | fh + p + e | fh + p + e |
+ *  | ll + fh + p + e |
+ *
+ *  p being taken from current pkt buffer and position.
  *
  *  Space in every fragment is because fragment payload should be multiple
  *  of 8 octets (we have predefined packets at compile time, data packet mtu
  *  is set already).
  *
- *  Create the first fragment, add fragmentation header and insert
- *  fragment at beginning of pkt, move data from next fragments to
- *  previous one, from here on insert fragmentation header and adjust
- *  data on subsequent packets.
+ *  If it's the first fragment being created, fh will not own any offset
+ *  (so it will be 1 byte smaller)
  */
-bool ieee802154_fragment(struct net_pkt *pkt, int hdr_diff)
+void ieee802154_fragment(struct ieee802154_fragment_ctx *ctx,
+			 struct net_buf *frame_buf, bool iphc)
 {
-	struct net_buf *frag;
-	struct net_buf *next;
-	u16_t processed;
-	u16_t offset;
-	u16_t size;
-	u8_t room;
-	u8_t move;
 	u8_t max;
-	bool first;
 
-	if (!pkt || !pkt->frags) {
-		return false;
+	if (!ctx->offset) {
+		datagram_tag++;
 	}
 
-	/* If it is a single fragment do not add fragmentation header */
-	if (!pkt->frags->frags) {
-		return true;
-	}
+	set_up_frag_hdr(frame_buf, ctx->pkt_size, ctx->offset);
+	max = calc_max_payload(frame_buf, ctx->offset);
 
-	/* Datagram_size: total length before compression */
-	size = net_pkt_get_len(pkt) + hdr_diff;
+	ctx->processed += max;
 
-	room = 0U;
-	offset = 0U;
-	processed = 0U;
-	first = true;
-	datagram_tag++;
-
-	next = pkt->frags;
-	pkt->frags = NULL;
-
-	/* First fragment has compressed header, but SIZE and OFFSET
-	 * values in fragmentation header are based on uncompressed
-	 * IP packet.
-	 */
-	while (1) {
-		if (!room) {
-			/* Prepare new fragment based on offset */
-			frag = prepare_new_fragment(pkt, offset);
-			if (!frag) {
-				return false;
-			}
-
-			/* Set fragmentation header in the beginning */
-			set_up_frag_hdr(frag, size, offset);
-
-			/* Calculate max payload in multiples of 8 bytes */
-			max = calc_max_payload(pkt, frag, offset);
-
-			/* Calculate how much data is processed */
-			processed += max;
-
-			offset = processed >> 3;
-		}
-
-		/* Move data from next fragment to current fragment */
-		move = move_frag_data(frag, next, max, first, hdr_diff, &room);
-		first = false;
-
-		/* Compact the next fragment */
-		compact_frag(next, move);
-
-		if (!next->len) {
-			next = net_pkt_frag_del(pkt, NULL, next);
-			if (!next) {
-				break;
-			}
+	if (!ctx->offset) {
+		/* First fragment needs to take into account 6lo */
+		if (iphc) {
+			max -= ctx->hdr_diff;
+		} else {
+			/* Adding IPv6 dispatch header */
+			max += 1;
 		}
 	}
 
-	return true;
+	while (max && ctx->frag) {
+		u8_t move;
+
+		move = copy_data(ctx, frame_buf, max);
+
+		update_fragment_ctx(ctx, move);
+
+		max -= move;
+	}
+
+	ctx->offset = ctx->processed >> 3;
 }
 
 static inline u16_t get_datagram_size(u8_t *ptr)
@@ -519,7 +432,7 @@ static inline enum net_verdict add_frag_to_cache(struct net_pkt *pkt,
 		if (!copy_frag(cache->pkt, frag, offset)) {
 			pkt->frags = frag;
 
-			/* Initialize to NULL to prevent duble free. It's only
+			/* Initialize to NULL to prevent double free. It's only
 			 * needed here because this is the first fragment.
 			 */
 			cache->pkt = NULL;

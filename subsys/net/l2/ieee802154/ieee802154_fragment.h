@@ -18,6 +18,38 @@
 
 #include <net/net_pkt.h>
 
+#include "ieee802154_frame.h"
+
+#ifdef CONFIG_NET_L2_IEEE802154_FRAGMENT
+
+struct ieee802154_fragment_ctx {
+	struct net_buf *frag;
+	u8_t *pos;
+	u16_t pkt_size;
+	u16_t processed;
+	u8_t hdr_diff;
+	u8_t offset;
+};
+
+static inline bool ieee802154_fragment_is_needed(struct net_pkt *pkt,
+						 u8_t ll_hdr_size)
+{
+	return (net_pkt_get_len(pkt) + ll_hdr_size > IEEE802154_MTU);
+}
+
+static inline
+void ieee802154_fragment_ctx_init(struct ieee802154_fragment_ctx *ctx,
+				  struct net_pkt *pkt, u16_t hdr_diff,
+				  bool iphc)
+{
+	ctx->frag = pkt->frags;
+	ctx->pos = ctx->frag->data;
+	ctx->hdr_diff = hdr_diff;
+	ctx->pkt_size = net_pkt_get_len(pkt) + (iphc ? hdr_diff : -1);
+	ctx->offset = 0;
+	ctx->processed = 0;
+}
+
 /**
  *  @brief Fragment IPv6 packet as per RFC 6282
  *
@@ -25,12 +57,14 @@
  *  needs to be fragmented. Every fragment will have fragmentation header
  *  data size, data offset, data tag and payload.
  *
- *  @param Pointer to network packet
- *  @param Header difference between original IPv6 header and compressed header
+ *  @param Pointer to valid fragmentation context
+ *  @param Pointer to valid buffer where to write the fragment
+ *  @param bool true for IPHC compression, false for IPv6 dispatch header
  *
  *  @return True in case of success, false otherwise
  */
-bool ieee802154_fragment(struct net_pkt *pkt, int hdr_diff);
+void ieee802154_fragment(struct ieee802154_fragment_ctx *ctx,
+			 struct net_buf *frame_buf, bool iphc);
 
 /**
  *  @brief Reassemble 802.15.4 fragments as per RFC 6282
@@ -47,7 +81,18 @@ bool ieee802154_fragment(struct net_pkt *pkt, int hdr_diff);
  *          NET_OK waiting for other fragments,
  *          NET_DROP invalid fragment.
  */
-
 enum net_verdict ieee802154_reassemble(struct net_pkt *pkt);
+
+#else /* CONFIG_NET_L2_IEEE802154_FRAGMENT */
+
+struct ieee802154_fragment_ctx {
+	struct net_buf *frag;
+};
+
+#define ieee802154_fragment_is_needed(...) false
+#define ieee802154_fragment_ctx_init(...)
+#define ieee802154_fragment(...)
+
+#endif /* CONFIG_NET_L2_IEEE802154_FRAGMENT */
 
 #endif /* __NET_IEEE802154_FRAGMENT_H__ */
