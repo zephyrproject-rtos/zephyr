@@ -267,9 +267,9 @@ static int upipe_tx(struct device *dev,
 		    struct net_pkt *pkt,
 		    struct net_buf *frag)
 {
-	u8_t *pkt_buf = frag->data - net_pkt_ll_reserve(pkt);
-	u8_t len = net_pkt_ll_reserve(pkt) + frag->len;
 	struct upipe_context *upipe = dev->driver_data;
+	u8_t *pkt_buf = frag->data;
+	u8_t len = frag->len;
 	u8_t i, data;
 
 	LOG_DBG("%p (%u)", frag, len);
