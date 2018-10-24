@@ -20,6 +20,5 @@ properties:
       category: required
 
 base_label: CCM
-use-property-label: yes
 
 ...
