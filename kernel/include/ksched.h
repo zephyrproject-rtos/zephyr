@@ -57,7 +57,7 @@ extern struct k_thread *_get_next_ready_thread(void);
 #else
 static ALWAYS_INLINE struct k_thread *_get_next_ready_thread(void)
 {
-	return _ready_q.cache;
+	return _kernel.ready_q.cache;
 }
 #endif
 

@@ -319,7 +319,7 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 	 *   contain garbage, which would prevent the cache loading algorithm
 	 *   to work as intended
 	 */
-	_ready_q.cache = _main_thread;
+	_kernel.ready_q.cache = _main_thread;
 #endif
 
 	_setup_new_thread(_main_thread, _main_stack,
