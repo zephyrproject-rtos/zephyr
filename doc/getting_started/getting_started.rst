@@ -45,7 +45,7 @@ Next, install additional Python packages required by Zephyr in a shell or
 .. code-block:: console
 
    # Linux
-   pip3 install -r --user zephyr/scripts/requirements.txt
+   pip3 install --user -r zephyr/scripts/requirements.txt
 
    # macOS and Windows
    pip3 install -r zephyr/scripts/requirements.txt
