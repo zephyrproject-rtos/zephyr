@@ -133,7 +133,7 @@ Zephyr-based controller:
 
    .. code-block:: console
 
-      sudo btmgmt --index 0
+      sudo tools/btmgmt --index 0
       [hci0]# auto-power
       [hci0]# find -l
 
