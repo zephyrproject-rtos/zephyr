@@ -325,7 +325,7 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names):
     if 'base_label' in yaml[node_compat]:
         def_label = yaml[node_compat].get('base_label')
     else:
-        def_label = get_node_label(node_compat, node_address)
+        def_label = get_node_label(node_address)
 
     if 'parent' in yaml[node_compat]:
         if 'bus' in yaml[node_compat]['parent']:
@@ -358,8 +358,7 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names):
                     aliases[node_address].append(node_alias)
 
             # Use parent label to generate label
-            parent_label = get_node_label(
-                find_parent_prop(node_address,'compatible') , parent_address)
+            parent_label = get_node_label(parent_address)
             def_label = parent_label + '_' + def_label
 
             # Generate bus-name define
