@@ -140,7 +140,7 @@ def insert_defs(node_address, new_defs, new_aliases):
 
     for key in new_defs.keys():
         if key.startswith('DT_COMPAT_'):
-            node_address = 'Compatibles'
+            node_address = 'compatibles'
 
     if node_address in defs:
         if 'aliases' in defs[node_address]:
