@@ -4,5 +4,10 @@ menu "OS Power Management"
 
 source "subsys/power/policy/Kconfig"
 
+config PM_CONTROL_OS_DEBUG
+	bool "Enable OS Power Management debug hooks"
+	help
+	  Enable OS Power Management debugging hooks.
+
 endmenu
 endif # PM_CONTROL_OS
