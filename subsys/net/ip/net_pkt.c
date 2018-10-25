@@ -1793,13 +1793,7 @@ static int net_pkt_get_addr(struct net_pkt *pkt, bool is_src,
 	addr->sa_family = family;
 
 	/* Examine the transport protocol */
-	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
-		proto = NET_IPV6_HDR(pkt)->nexthdr;
-	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
-		proto = NET_IPV4_HDR(pkt)->proto;
-	} else {
-		return -ENOTSUP;
-	}
+	proto = net_pkt_transport_proto(pkt);
 
 	/* Get the source port from transport protocol header */
 	if (IS_ENABLED(CONFIG_NET_TCP) && proto == IPPROTO_TCP) {

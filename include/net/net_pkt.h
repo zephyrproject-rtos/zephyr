@@ -99,6 +99,12 @@ struct net_pkt {
 	u16_t appdatalen;
 	u8_t ll_reserve;	/* link layer header length */
 	u8_t ip_hdr_len;	/* pre-filled in order to avoid func call */
+	u8_t transport_proto;	/* Transport protol of data, like
+				 * IPPROTO_TCP or IPPROTO_UDP. This value is
+				 * saved so that we do not need to traverse
+				 * through extension headers (this is mainly
+				 * issue in IPv6).
+				 */
 
 #if defined(CONFIG_NET_TCP)
 	sys_snode_t sent_list;
@@ -261,6 +267,16 @@ static inline u8_t net_pkt_ip_hdr_len(struct net_pkt *pkt)
 static inline void net_pkt_set_ip_hdr_len(struct net_pkt *pkt, u8_t len)
 {
 	pkt->ip_hdr_len = len;
+}
+
+static inline u8_t net_pkt_transport_proto(struct net_pkt *pkt)
+{
+	return pkt->transport_proto;
+}
+
+static inline void net_pkt_set_transport_proto(struct net_pkt *pkt, u8_t proto)
+{
+	pkt->transport_proto = proto;
 }
 
 static inline u8_t *net_pkt_next_hdr(struct net_pkt *pkt)
