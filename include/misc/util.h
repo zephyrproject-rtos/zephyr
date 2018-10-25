@@ -58,7 +58,7 @@ constexpr size_t ARRAY_SIZE(T(&)[N]) { return N; }
 	((ptr) && ((ptr) >= &array[0] && (ptr) < &array[ARRAY_SIZE(array)]))
 
 #define CONTAINER_OF(ptr, type, field) \
-	((type *)(((char *)(ptr)) - offsetof(type, field)))
+	((type *)(((char *)(ptr)) - (offsetof(type, field))))
 
 /* round "x" up/down to next multiple of "align" (which must be a power of 2) */
 #define ROUND_UP(x, align)                                   \
@@ -122,6 +122,14 @@ static inline s64_t arithmetic_shift_right(s64_t value, u8_t shift)
 #define BIT(n)  (1 << (n))
 #else
 #define BIT(n)  (1UL << (n))
+#endif
+#endif
+
+#ifndef BIT_U8
+#if defined(_ASMLANGUAGE)
+#define BIT_U8(n)  (1 << (n))
+#else
+#define BIT_U8(n)  ((u8_t)1 << (n))
 #endif
 #endif
 
