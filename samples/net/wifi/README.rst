@@ -30,10 +30,9 @@ Sample console interaction
 
 .. code-block:: console
 
-   shell> select wifi
-   wifi> scan
+   shell> wifi scan
    Scan requested
-   wifi>
+   shell>
    Num  | SSID                             (len) | Chan | RSSI | Sec
    1    | kapoueh!                         8     | 1    | -93  | WPA/WPA2
    2    | mooooooh                         8     | 6    | -89  | WPA/WPA2
@@ -42,8 +41,8 @@ Sample console interaction
    ----------
    Scan request done
 
-   wifi> connect "gksu" 4 SecretStuff
+   shell> wifi connect "gksu" 4 SecretStuff
    Connection requested
-   wifi>
+   shell>
    Connected
-   wifi>
+   shell>
