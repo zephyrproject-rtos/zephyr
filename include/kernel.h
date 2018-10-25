@@ -1755,7 +1755,7 @@ extern void k_queue_append(struct k_queue *queue, void *data);
  * @retval 0 on success
  * @retval -ENOMEM if there isn't sufficient RAM in the caller's resource pool
  */
-__syscall int k_queue_alloc_append(struct k_queue *queue, void *data);
+__syscall s32_t k_queue_alloc_append(struct k_queue *queue, void *data);
 
 /**
  * @brief Prepend an element to a queue.
@@ -1788,7 +1788,7 @@ extern void k_queue_prepend(struct k_queue *queue, void *data);
  * @retval 0 on success
  * @retval -ENOMEM if there isn't sufficient RAM in the caller's resource pool
  */
-__syscall int k_queue_alloc_prepend(struct k_queue *queue, void *data);
+__syscall s32_t k_queue_alloc_prepend(struct k_queue *queue, void *data);
 
 /**
  * @brief Inserts an element to a queue.
