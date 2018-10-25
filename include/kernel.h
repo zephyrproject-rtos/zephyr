@@ -787,9 +787,11 @@ void k_thread_system_pool_assign(struct k_thread *thread);
  *
  * @param duration Number of milliseconds to sleep.
  *
- * @return N/A
+ * @return Zero if the requested time has elapsed or the number of milliseconds
+ * left to sleep, if thread was woken up by \ref k_wakeup call.
+ *
  */
-__syscall void k_sleep(s32_t duration);
+__syscall s32_t k_sleep(s32_t duration);
 
 /**
  * @brief Cause the current thread to busy wait.
