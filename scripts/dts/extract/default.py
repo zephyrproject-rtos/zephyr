@@ -5,6 +5,7 @@
 #
 
 from extract.globals import *
+from extract.edts import *
 from extract.directive import DTDirective
 
 ##
@@ -18,7 +19,7 @@ class DTDefault(DTDirective):
     ##
     # @brief Extract directives in a default way
     #
-    # @param node_address Address of node owning the clockxxx definition.
+    # @param node_address Address of node owning the directive definition.
     # @param yaml YAML definition for the owning node.
     # @param prop property name
     # @param prop type (string, boolean, etc)
@@ -36,6 +37,12 @@ class DTDefault(DTDirective):
         else:
             prop_values = reduced[node_address]['props'][prop]
 
+        # generate EDTS
+        edts_insert_device_property(node_address, prop, prop_values)
+
+        # generate defines
+        prop_def = {}
+        prop_alias = {}
         if isinstance(prop_values, list):
             for i, prop_value in enumerate(prop_values):
                 prop_name = convert_string_to_label(prop)
