@@ -43,7 +43,8 @@ static u32_t timestamp_div;
 typedef int (*out_func_t)(int c, void *ctx);
 
 extern int _prf(int (*func)(), void *dest, char *format, va_list vargs);
-extern void _vprintk(out_func_t out, void *log_output, const char *fmt, va_list ap);
+extern void _vprintk(out_func_t out, void *log_output,
+		     const char *fmt, va_list ap);
 
 static int out_func(int c, void *ctx)
 {
@@ -203,94 +204,83 @@ static void std_print(struct log_msg *msg,
 		      const struct log_output *log_output)
 {
 	const char *str = log_msg_str_get(msg);
+	u32_t nargs = log_msg_nargs_get(msg);
+	u32_t *args = alloca(sizeof(u32_t)*nargs);
+	int i;
+
+	for (i = 0; i < nargs; i++) {
+		args[i] = log_msg_arg_get(msg, i);
+	}
 
 	switch (log_msg_nargs_get(msg)) {
 	case 0:
 		print_formatted(log_output, str);
 		break;
 	case 1:
-		print_formatted(log_output, str, log_msg_arg_get(msg, 0));
+		print_formatted(log_output, str, args[0]);
 		break;
 	case 2:
-		print_formatted(log_output, str,
-		      log_msg_arg_get(msg, 0),
-		      log_msg_arg_get(msg, 1));
+		print_formatted(log_output, str, args[0], args[1]);
 		break;
 	case 3:
-		print_formatted(log_output, str,
-		      log_msg_arg_get(msg, 0),
-		      log_msg_arg_get(msg, 1),
-		      log_msg_arg_get(msg, 2));
+		print_formatted(log_output, str, args[0], args[1], args[2]);
 		break;
 	case 4:
-		print_formatted(log_output, str,
-		      log_msg_arg_get(msg, 0),
-		      log_msg_arg_get(msg, 1),
-		      log_msg_arg_get(msg, 2),
-		      log_msg_arg_get(msg, 3));
+		print_formatted(log_output, str, args[0], args[1], args[2],
+				args[3]);
 		break;
 	case 5:
-		print_formatted(log_output, str,
-		      log_msg_arg_get(msg, 0),
-		      log_msg_arg_get(msg, 1),
-		      log_msg_arg_get(msg, 2),
-		      log_msg_arg_get(msg, 3),
-		      log_msg_arg_get(msg, 4));
+		print_formatted(log_output, str, args[0], args[1], args[2],
+				args[3], args[4]);
 		break;
 	case 6:
-		print_formatted(log_output, str,
-		      log_msg_arg_get(msg, 0),
-		      log_msg_arg_get(msg, 1),
-		      log_msg_arg_get(msg, 2),
-		      log_msg_arg_get(msg, 3),
-		      log_msg_arg_get(msg, 4),
-		      log_msg_arg_get(msg, 5));
+		print_formatted(log_output, str, args[0], args[1], args[2],
+				args[3], args[4], args[5]);
 		break;
 	case 7:
-		print_formatted(log_output, str,
-		      log_msg_arg_get(msg, 0),
-		      log_msg_arg_get(msg, 1),
-		      log_msg_arg_get(msg, 2),
-		      log_msg_arg_get(msg, 3),
-		      log_msg_arg_get(msg, 4),
-		      log_msg_arg_get(msg, 5),
-		      log_msg_arg_get(msg, 6));
+		print_formatted(log_output, str, args[0], args[1], args[2],
+				args[3], args[4], args[5], args[6]);
 		break;
 	case 8:
-		print_formatted(log_output, str,
-		      log_msg_arg_get(msg, 0),
-		      log_msg_arg_get(msg, 1),
-		      log_msg_arg_get(msg, 2),
-		      log_msg_arg_get(msg, 3),
-		      log_msg_arg_get(msg, 4),
-		      log_msg_arg_get(msg, 5),
-		      log_msg_arg_get(msg, 6),
-		      log_msg_arg_get(msg, 7));
+		print_formatted(log_output, str, args[0], args[1], args[2],
+				args[3], args[4], args[5], args[6], args[7]);
 		break;
 	case 9:
-		print_formatted(log_output, str,
-		      log_msg_arg_get(msg, 0),
-		      log_msg_arg_get(msg, 1),
-		      log_msg_arg_get(msg, 2),
-		      log_msg_arg_get(msg, 3),
-		      log_msg_arg_get(msg, 4),
-		      log_msg_arg_get(msg, 5),
-		      log_msg_arg_get(msg, 6),
-		      log_msg_arg_get(msg, 7),
-		      log_msg_arg_get(msg, 8));
+		print_formatted(log_output, str, args[0], args[1], args[2],
+				args[3], args[4], args[5], args[6],  args[7],
+				args[8]);
 		break;
 	case 10:
-		print_formatted(log_output, str,
-		      log_msg_arg_get(msg, 0),
-		      log_msg_arg_get(msg, 1),
-		      log_msg_arg_get(msg, 2),
-		      log_msg_arg_get(msg, 3),
-		      log_msg_arg_get(msg, 4),
-		      log_msg_arg_get(msg, 5),
-		      log_msg_arg_get(msg, 6),
-		      log_msg_arg_get(msg, 7),
-		      log_msg_arg_get(msg, 8),
-		      log_msg_arg_get(msg, 9));
+		print_formatted(log_output, str, args[0], args[1], args[2],
+				args[3], args[4], args[5], args[6],  args[7],
+				args[8], args[9]);
+		break;
+	case 11:
+		print_formatted(log_output, str, args[0], args[1], args[2],
+				args[3], args[4], args[5], args[6],  args[7],
+				args[8], args[9], args[10]);
+		break;
+	case 12:
+		print_formatted(log_output, str, args[0], args[1], args[2],
+				args[3], args[4], args[5], args[6],  args[7],
+				args[8], args[9], args[10], args[11]);
+		break;
+	case 13:
+		print_formatted(log_output, str, args[0], args[1], args[2],
+				args[3], args[4], args[5], args[6],  args[7],
+				args[8], args[9], args[10], args[11], args[12]);
+		break;
+	case 14:
+		print_formatted(log_output, str, args[0], args[1], args[2],
+				args[3], args[4], args[5], args[6],  args[7],
+				args[8], args[9], args[10], args[11], args[12],
+				args[13]);
+		break;
+	case 15:
+		print_formatted(log_output, str, args[0], args[1], args[2],
+				args[3], args[4], args[5], args[6],  args[7],
+				args[8], args[9], args[10], args[11], args[12],
+				args[13], args[14]);
 		break;
 	default:
 		/* Unsupported number of arguments. */

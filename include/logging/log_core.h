@@ -171,10 +171,28 @@ extern "C" {
 /******************************************************************************/
 /****************** Internal macros for log frontend **************************/
 /******************************************************************************/
+/**@brief Second stage for _LOG_NARGS_POSTFIX */
+#define _LOG_NARGS_POSTFIX_IMPL(				\
+	_ignored,						\
+	_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10,		\
+	_11, _12, _13, _14, N, ...) N
+
+/**@brief Macro to get the postfix for further log message processing.
+ *
+ * Logs with more than 3 arguments are processed in a generic way.
+ *
+ * param[in]    ...     List of arguments
+ *
+ * @retval  Postfix, number of arguments or _LONG when more than 3 arguments.
+ */
+#define _LOG_NARGS_POSTFIX(...) \
+	_LOG_NARGS_POSTFIX_IMPL(__VA_ARGS__, LONG, LONG, LONG, LONG, LONG, \
+			LONG, LONG, LONG, LONG, LONG, LONG, LONG, 3, 2, 1, 0, ~)
+
 #define _LOG_INTERNAL_X(N, ...)  UTIL_CAT(_LOG_INTERNAL_, N)(__VA_ARGS__)
 
 #define __LOG_INTERNAL(_src_level, ...)			 \
-	_LOG_INTERNAL_X(NUM_VA_ARGS_LESS_1(__VA_ARGS__), \
+	_LOG_INTERNAL_X(_LOG_NARGS_POSTFIX(__VA_ARGS__), \
 			_src_level, __VA_ARGS__)
 
 #define _LOG_INTERNAL_0(_src_level, _str) \
@@ -198,27 +216,6 @@ extern "C" {
 		u32_t args[] = {__LOG_ARGUMENTS(__VA_ARGS__)};	 \
 		log_n(_str, args, ARRAY_SIZE(args), _src_level); \
 	} while (false)
-
-#define _LOG_INTERNAL_4(_src_level, _str, ...) \
-		_LOG_INTERNAL_LONG(_src_level, _str, __VA_ARGS__)
-
-#define _LOG_INTERNAL_5(_src_level, _str, ...) \
-		_LOG_INTERNAL_LONG(_src_level, _str, __VA_ARGS__)
-
-#define _LOG_INTERNAL_6(_src_level, _str, ...) \
-		_LOG_INTERNAL_LONG(_src_level, _str, __VA_ARGS__)
-
-#define _LOG_INTERNAL_7(_src_level, _str, ...) \
-		_LOG_INTERNAL_LONG(_src_level, _str, __VA_ARGS__)
-
-#define _LOG_INTERNAL_8(_src_level, _str, ...) \
-		_LOG_INTERNAL_LONG(_src_level, _str, __VA_ARGS__)
-
-#define _LOG_INTERNAL_9(_src_level, _str, ...) \
-		_LOG_INTERNAL_LONG(_src_level, _str, __VA_ARGS__)
-
-#define _LOG_INTERNAL_10(_src_level, _str, ...) \
-		_LOG_INTERNAL_LONG(_src_level, _str, __VA_ARGS__)
 
 #define _LOG_LEVEL_CHECK(_level, _check_level, _default_level) \
 	(_level <= _LOG_RESOLVED_LEVEL(_check_level, _default_level))
