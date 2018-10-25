@@ -695,6 +695,7 @@ def generate_node_definitions(yaml_list):
         compatible.populate_edts(k, compats)
         if compats:
             reg.populate_edts(k)
+            interrupts.populate_edts(k, yaml_list)
 
     if defs == {}:
         raise Exception("No information parsed from dts file.")
