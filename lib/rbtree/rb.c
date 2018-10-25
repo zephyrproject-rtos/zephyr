@@ -498,7 +498,7 @@ int _rb_is_black(struct rbnode *node)
 	return is_black(node);
 }
 
-int rb_contains(struct rbtree *tree, struct rbnode *node)
+bool rb_contains(struct rbtree *tree, struct rbnode *node)
 {
 	struct rbnode *n = tree->root;
 
