@@ -395,15 +395,16 @@ function(target_sources_codegen
   # Otherwise this would trigger CMake issue #14633:
   # https://gitlab.kitware.com/cmake/cmake/issues/14633
   foreach(arg ${CODEGEN_UNPARSED_ARGUMENTS})
+    get_filename_component(generated_file_name ${arg} NAME_WE)
     if(IS_ABSOLUTE ${arg})
       set(template_file ${arg})
-      get_filename_component(generated_file_name ${arg} NAME)
-      set(generated_file ${CMAKE_CURRENT_BINARY_DIR}/${generated_file_name})
+      set(generated_file ${CMAKE_CURRENT_BINARY_DIR}/${generated_file_name}_devices.c)
     else()
-      set(template_file ${CMAKE_CURRENT_SOURCE_DIR}/${arg})
-      set(generated_file ${CMAKE_CURRENT_BINARY_DIR}/${arg})
+      set(template_file ${CMAKE_CURRENT_SOURCE_DIR}/${generated_file_name}_devices.c.in)
+      set(generated_file ${CMAKE_CURRENT_BINARY_DIR}/${generated_file_name}_devices.c)
     endif()
     get_filename_component(template_dir ${template_file} DIRECTORY)
+    get_filename_component(generated_dir ${generated_file} DIRECTORY)
 
     if(IS_DIRECTORY ${template_file})
       message(FATAL_ERROR "target_sources_codegen() was called on a directory")
@@ -412,13 +413,7 @@ function(target_sources_codegen
     # Generate file from template
     message(STATUS " from '${template_file}'")
     message(STATUS " to   '${generated_file}'")
-    add_custom_command(
-      COMMENT "CodeGen ${generated_file}"
-      OUTPUT ${generated_file}
-      MAIN_DEPENDENCY ${template_file}
-      DEPENDS
-      ${CODEGEN_DEPENDS}
-      ${CODEGEN_SOURCES}
+    execute_process(
       COMMAND
       ${PYTHON_EXECUTABLE}
       ${ZEPHYR_BASE}/scripts/gen_code.py
@@ -464,7 +459,9 @@ function(target_sources_codegen
       # relative path in generated file to work
       zephyr_include_directories(${template_dir})
     else()
-      target_sources(${target} PRIVATE ${generated_file})
+      zephyr_include_directories(${generated_dir})
+      target_sources(${target} PRIVATE ${arg})
+
       # Add template directory to include path to allow includes with
       # relative path in generated file to work
       target_include_directories(${target} PRIVATE ${template_dir})
