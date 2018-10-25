@@ -330,7 +330,9 @@ typedef enum
   emuPeripheralRetention_LETIMER0 = _EMU_EM23PERNORETAINCTRL_LETIMER0DIS_MASK,      /* Select LETIMER0 retention control  */
   emuPeripheralRetention_ADC0     = _EMU_EM23PERNORETAINCTRL_ADC0DIS_MASK,          /* Select ADC0 retention control  */
   emuPeripheralRetention_IDAC0    = _EMU_EM23PERNORETAINCTRL_IDAC0DIS_MASK,         /* Select IDAC0 retention control  */
+#ifdef _EMU_EM23PERNORETAINCTRL_VDAC0DIS_MASK  
   emuPeripheralRetention_VDAC0    = _EMU_EM23PERNORETAINCTRL_VDAC0DIS_MASK,         /* Select VDAC0 retention control  */
+#endif // _EMU_EM23PERNORETAINCTRL_VDAC0DIS_MASK
   emuPeripheralRetention_I2C1     = _EMU_EM23PERNORETAINCTRL_I2C1DIS_MASK,          /* Select I2C1 retention control  */
   emuPeripheralRetention_I2C0     = _EMU_EM23PERNORETAINCTRL_I2C0DIS_MASK,          /* Select I2C0 retention control  */
   emuPeripheralRetention_ACMP1    = _EMU_EM23PERNORETAINCTRL_ACMP1DIS_MASK,         /* Select ACMP1 retention control  */
@@ -348,7 +350,9 @@ typedef enum
                                         | _EMU_EM23PERNORETAINCTRL_LESENSE0DIS_MASK,/* Select all peripherals in domain 1 */
   emuPeripheralRetention_D2       = _EMU_EM23PERNORETAINCTRL_ACMP1DIS_MASK
                                         | _EMU_EM23PERNORETAINCTRL_IDAC0DIS_MASK
+#ifdef _EMU_EM23PERNORETAINCTRL_VDAC0DIS_MASK
                                         | _EMU_EM23PERNORETAINCTRL_VDAC0DIS_MASK
+#endif // _EMU_EM23PERNORETAINCTRL_VDAC0DIS_MASK
                                         | _EMU_EM23PERNORETAINCTRL_CSENDIS_MASK
                                         | _EMU_EM23PERNORETAINCTRL_LEUART0DIS_MASK
 #if defined( _EMU_EM23PERNORETAINCTRL_PCNT1DIS_MASK )
