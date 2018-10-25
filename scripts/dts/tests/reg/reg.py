@@ -40,10 +40,15 @@ if not edts_file.is_file():
 edts = EDTSDatabase()
 edts.load(str(edts_file))
 
-x = edts.get_device_by_device_id("/soc/sub_range/serial@1000000")
+x = edts.get_device_by_device_id("/soc/spi@10014000")
 print("reg %x" % x.get_reg_addr())
 print("foo %s" % x.get_property('reg/0'))
 print("bar %s" % x.properties_flattened())
+
+print("x %x" % x.get_reg_addr_by_name("control"))
+print("x %x" % x.get_reg_size_by_name("control"))
+print("x %x" % x.get_reg_addr_by_name("mem"))
+print("y %s" % x.get_reg_addr_by_name("conl"))
 
 # Test 1: 
 
