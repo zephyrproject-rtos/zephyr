@@ -56,7 +56,7 @@ int _k_object_validate(struct _k_object *ko, enum k_objects otype,
  * @param ko If retval=-EPERM, struct _k_object * that was looked up, or NULL
  * @param otype Expected type of the kernel object
  */
-extern void _dump_object_error(int retval, void *obj, struct _k_object *ko,
+extern void _dump_object_error(s32_t retval, void *obj, struct _k_object *ko,
 			enum k_objects otype);
 
 /**
@@ -169,7 +169,7 @@ void _k_object_recycle(void *obj);
  *	first maxlen bytes.
  */
 static inline size_t z_user_string_nlen(const char *src, size_t maxlen,
-					int *err)
+					s32_t *err)
 {
 	return z_arch_user_string_nlen(src, maxlen, err);
 }

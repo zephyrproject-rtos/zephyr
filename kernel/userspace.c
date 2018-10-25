@@ -28,15 +28,13 @@ LOG_MODULE_DECLARE(kernel);
 #include <net/net_context.h>
 #endif
 
-#define MAX_THREAD_BITS		(CONFIG_MAX_THREAD_BYTES * 8)
-
 #ifdef CONFIG_DYNAMIC_OBJECTS
 extern u8_t _thread_idx_map[CONFIG_MAX_THREAD_BYTES];
 #endif
 
 static void clear_perms_cb(struct _k_object *ko, void *ctx_ptr);
 
-const char *otype_to_str(enum k_objects otype)
+static const char *otype_to_str(enum k_objects otype)
 {
 	const char *ret;
 	/* -fdata-sections doesn't work right except in very very recent
@@ -61,8 +59,8 @@ const char *otype_to_str(enum k_objects otype)
 }
 
 struct perm_ctx {
-	int parent_id;
-	int child_id;
+	u32_t parent_id;
+	u32_t child_id;
 	struct k_thread *parent;
 };
 
@@ -113,9 +111,9 @@ static size_t obj_size_get(enum k_objects otype)
 	return ret;
 }
 
-static bool node_lessthan(struct rbnode *a, struct rbnode *b)
+static bool node_lessthan(struct rbnode *node_a, struct rbnode *node_b)
 {
-	return a < b;
+	return node_a < node_b;
 }
 
 static inline struct dyn_obj *node_to_dyn_obj(struct rbnode *node)
@@ -127,7 +125,7 @@ static struct dyn_obj *dyn_object_find(void *obj)
 {
 	struct rbnode *node;
 	struct dyn_obj *ret;
-	unsigned int key;
+	u32_t key;
 
 	/* For any dynamically allocated kernel object, the object
 	 * pointer is just a member of the conatining struct dyn_obj,
@@ -161,20 +159,20 @@ static struct dyn_obj *dyn_object_find(void *obj)
  *
  * @param tidx The new thread index if successful
  *
- * @return 1 if successful, 0 if failed
+ * @return true if successful, false if failed
  **/
-static int _thread_idx_alloc(u32_t *tidx)
+static bool _thread_idx_alloc(u32_t *tidx)
 {
-	int i;
-	int idx;
-	int base;
+	u32_t i;
+	u32_t idx;
+	u32_t base;
 
-	base = 0;
-	for (i = 0; i < CONFIG_MAX_THREAD_BYTES; i++) {
+	base = 0U;
+	for (i = 0U; i < (u32_t)CONFIG_MAX_THREAD_BYTES; i++) {
 		idx = find_lsb_set(_thread_idx_map[i]);
 
-		if (idx) {
-			*tidx = base + (idx - 1);
+		if (idx != 0U) {
+			*tidx = base + (idx - 1U);
 
 			sys_bitfield_clear_bit((mem_addr_t)_thread_idx_map,
 					       *tidx);
@@ -183,13 +181,13 @@ static int _thread_idx_alloc(u32_t *tidx)
 			_k_object_wordlist_foreach(clear_perms_cb,
 						   (void *)*tidx);
 
-			return 1;
+			return true;
 		}
 
-		base += 8;
+		base += 8U;
 	}
 
-	return 0;
+	return false;
 }
 
 /**
@@ -212,55 +210,55 @@ static void _thread_idx_free(u32_t tidx)
 
 void *_impl_k_object_alloc(enum k_objects otype)
 {
-	struct dyn_obj *dyn_obj;
-	unsigned int key;
+	struct dyn_obj *dyn_object;
+	u32_t key;
 	u32_t tidx;
 
 	/* Stacks are not supported, we don't yet have mem pool APIs
 	 * to request memory that is aligned
 	 */
-	__ASSERT(otype > K_OBJ_ANY && otype < K_OBJ_LAST &&
-		 otype != K_OBJ__THREAD_STACK_ELEMENT,
+	__ASSERT(((otype > K_OBJ_ANY) && (otype < K_OBJ_LAST) &&
+		 (otype != K_OBJ__THREAD_STACK_ELEMENT)),
 		 "bad object type requested");
 
-	dyn_obj = z_thread_malloc(sizeof(*dyn_obj) + obj_size_get(otype));
-	if (dyn_obj == NULL) {
+	dyn_object = z_thread_malloc(sizeof(*dyn_object) + obj_size_get(otype));
+	if (dyn_object == NULL) {
 		LOG_WRN("could not allocate kernel object");
 		return NULL;
 	}
 
-	dyn_obj->kobj.name = (char *)&dyn_obj->data;
-	dyn_obj->kobj.type = otype;
-	dyn_obj->kobj.flags = K_OBJ_FLAG_ALLOC;
-	(void)memset(dyn_obj->kobj.perms, 0, CONFIG_MAX_THREAD_BYTES);
+	dyn_object->kobj.name = (char *)&dyn_object->data;
+	dyn_object->kobj.type = (u8_t)otype;
+	dyn_object->kobj.flags = K_OBJ_FLAG_ALLOC;
+	(void)memset(dyn_object->kobj.perms, 0, CONFIG_MAX_THREAD_BYTES);
 
 	/* Need to grab a new thread index for k_thread */
 	if (otype == K_OBJ_THREAD) {
 		if (!_thread_idx_alloc(&tidx)) {
-			k_free(dyn_obj);
+			k_free(dyn_object);
 			return NULL;
 		}
 
-		dyn_obj->kobj.data = tidx;
+		dyn_object->kobj.data = tidx;
 	}
 
 	/* The allocating thread implicitly gets permission on kernel objects
 	 * that it allocates
 	 */
-	_thread_perms_set(&dyn_obj->kobj, _current);
+	_thread_perms_set(&dyn_object->kobj, _current);
 
 	key = irq_lock();
-	rb_insert(&obj_rb_tree, &dyn_obj->node);
-	sys_dlist_append(&obj_list, &dyn_obj->obj_list);
+	rb_insert(&obj_rb_tree, &dyn_object->node);
+	sys_dlist_append(&obj_list, &dyn_object->obj_list);
 	irq_unlock(key);
 
-	return dyn_obj->kobj.name;
+	return dyn_object->kobj.name;
 }
 
 void k_object_free(void *obj)
 {
-	struct dyn_obj *dyn_obj;
-	unsigned int key;
+	struct dyn_obj *dyn_object;
+	u32_t key;
 
 	/* This function is intentionally not exposed to user mode.
 	 * There's currently no robust way to track that an object isn't
@@ -268,19 +266,19 @@ void k_object_free(void *obj)
 	 */
 
 	key = irq_lock();
-	dyn_obj = dyn_object_find(obj);
-	if (dyn_obj != NULL) {
-		rb_remove(&obj_rb_tree, &dyn_obj->node);
-		sys_dlist_remove(&dyn_obj->obj_list);
+	dyn_object = dyn_object_find(obj);
+	if (dyn_object != NULL) {
+		rb_remove(&obj_rb_tree, &dyn_object->node);
+		sys_dlist_remove(&dyn_object->obj_list);
 
-		if (dyn_obj->kobj.type == K_OBJ_THREAD) {
-			_thread_idx_free(dyn_obj->kobj.data);
+		if (dyn_object->kobj.type == (u8_t)K_OBJ_THREAD) {
+			_thread_idx_free(dyn_object->kobj.data);
 		}
 	}
 	irq_unlock(key);
 
-	if (dyn_obj != NULL) {
-		k_free(dyn_obj);
+	if (dyn_object != NULL) {
+		k_free(dyn_object);
 	}
 }
 
@@ -291,11 +289,11 @@ struct _k_object *_k_object_find(void *obj)
 	ret = _k_object_gperf_find(obj);
 
 	if (ret == NULL) {
-		struct dyn_obj *dyn_obj;
+		struct dyn_obj *dyn_object;
 
-		dyn_obj = dyn_object_find(obj);
-		if (dyn_obj != NULL) {
-			ret = &dyn_obj->kobj;
+		dyn_object = dyn_object_find(obj);
+		if (dyn_object != NULL) {
+			ret = &dyn_object->kobj;
 		}
 	}
 
@@ -304,7 +302,7 @@ struct _k_object *_k_object_find(void *obj)
 
 void _k_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 {
-	unsigned int key;
+	u32_t key;
 	struct dyn_obj *obj, *next;
 
 	_k_object_gperf_wordlist_foreach(func, context);
@@ -317,23 +315,27 @@ void _k_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 }
 #endif /* CONFIG_DYNAMIC_OBJECTS */
 
-static int thread_index_get(struct k_thread *t)
+static bool thread_index_get(struct k_thread *thread, u32_t *thread_index)
 {
 	struct _k_object *ko;
+	bool index_get_status = false;
 
-	ko = _k_object_find(t);
+	ko = _k_object_find(thread);
 
-	if (ko == NULL) {
-		return -1;
+	if (ko != NULL) {
+		*thread_index = ko->data;
+		index_get_status = true;
 	}
 
-	return ko->data;
+	return index_get_status;
 }
 
 static void unref_check(struct _k_object *ko)
 {
-	for (int i = 0; i < CONFIG_MAX_THREAD_BYTES; i++) {
-		if (ko->perms[i]) {
+	s32_t i;
+
+	for (i = 0; i < CONFIG_MAX_THREAD_BYTES; i++) {
+		if (ko->perms[i] != (u8_t)0) {
 			return;
 		}
 	}
@@ -359,12 +361,12 @@ static void unref_check(struct _k_object *ko)
 	}
 
 #ifdef CONFIG_DYNAMIC_OBJECTS
-	if (ko->flags & K_OBJ_FLAG_ALLOC) {
-		struct dyn_obj *dyn_obj =
+	if ((ko->flags & K_OBJ_FLAG_ALLOC) != (u8_t)0) {
+		struct dyn_obj *dyn_object =
 			CONTAINER_OF(ko, struct dyn_obj, kobj);
-		rb_remove(&obj_rb_tree, &dyn_obj->node);
-		sys_dlist_remove(&dyn_obj->obj_list);
-		k_free(dyn_obj);
+		rb_remove(&obj_rb_tree, &dyn_object->node);
+		sys_dlist_remove(&dyn_object->obj_list);
+		k_free(dyn_object);
 	}
 #endif
 }
@@ -381,32 +383,46 @@ static void wordlist_cb(struct _k_object *ko, void *ctx_ptr)
 
 void _thread_perms_inherit(struct k_thread *parent, struct k_thread *child)
 {
-	struct perm_ctx ctx = {
-		thread_index_get(parent),
-		thread_index_get(child),
-		parent
-	};
+	bool parent_id_status;
+	bool child_id_status;
+	u32_t parent_id = 0U;
+	u32_t child_id = 0U;
 
-	if ((ctx.parent_id != -1) && (ctx.child_id != -1)) {
+	parent_id_status = thread_index_get(parent, &parent_id);
+	child_id_status = thread_index_get(child, &child_id);
+
+	if (parent_id_status && child_id_status) {
+		struct perm_ctx ctx = {
+			.parent_id = parent_id,
+			.child_id = child_id,
+			.parent = parent
+		};
+
 		_k_object_wordlist_foreach(wordlist_cb, &ctx);
 	}
 }
 
 void _thread_perms_set(struct _k_object *ko, struct k_thread *thread)
 {
-	int index = thread_index_get(thread);
+	u32_t index;
+	bool status;
 
-	if (index != -1) {
+	status = thread_index_get(thread, &index);
+
+	if (status) {
 		sys_bitfield_set_bit((mem_addr_t)&ko->perms, index);
 	}
 }
 
 void _thread_perms_clear(struct _k_object *ko, struct k_thread *thread)
 {
-	int index = thread_index_get(thread);
+	u32_t index;
+	bool status;
 
-	if (index != -1) {
-		unsigned int key = irq_lock();
+	status = thread_index_get(thread, &index);
+
+	if (status) {
+		u32_t key = irq_lock();
 
 		sys_bitfield_clear_bit((mem_addr_t)&ko->perms, index);
 		unref_check(ko);
@@ -416,8 +432,8 @@ void _thread_perms_clear(struct _k_object *ko, struct k_thread *thread)
 
 static void clear_perms_cb(struct _k_object *ko, void *ctx_ptr)
 {
-	int id = (int)ctx_ptr;
-	unsigned int key = irq_lock();
+	u32_t id = (u32_t)ctx_ptr;
+	u32_t key = irq_lock();
 
 	sys_bitfield_clear_bit((mem_addr_t)&ko->perms, id);
 	unref_check(ko);
@@ -426,41 +442,49 @@ static void clear_perms_cb(struct _k_object *ko, void *ctx_ptr)
 
 void _thread_perms_all_clear(struct k_thread *thread)
 {
-	int index = thread_index_get(thread);
+	u32_t index;
+	bool status;
 
-	if (index != -1) {
+	status = thread_index_get(thread, &index);
+
+	if (status) {
 		_k_object_wordlist_foreach(clear_perms_cb, (void *)index);
 	}
 }
 
-static int thread_perms_test(struct _k_object *ko)
+static bool thread_perms_test(struct _k_object *ko)
 {
-	int index;
+	u32_t thread_index;
+	bool status;
 
-	if (ko->flags & K_OBJ_FLAG_PUBLIC) {
-		return 1;
+	if ((ko->flags & K_OBJ_FLAG_PUBLIC) != (u8_t)0) {
+		return true;
 	}
 
-	index = thread_index_get(_current);
-	if (index != -1) {
-		return sys_bitfield_test_bit((mem_addr_t)&ko->perms, index);
+	status = thread_index_get(_current, &thread_index);
+	if (status) {
+		return (sys_bitfield_test_bit((mem_addr_t)&ko->perms,
+					      thread_index) != 0);
 	}
-	return 0;
+	return false;
 }
 
 static void dump_permission_error(struct _k_object *ko)
 {
-	int index = thread_index_get(_current);
+	u32_t index;
+	s32_t i;
+
+	(void)thread_index_get(_current, &index);
 	printk("thread %p (%d) does not have permission on %s %p [",
 	       _current, index,
 	       otype_to_str(ko->type), ko->name);
-	for (int i = CONFIG_MAX_THREAD_BYTES - 1; i >= 0; i--) {
+	for (i = CONFIG_MAX_THREAD_BYTES - 1; i >= 0; i--) {
 		printk("%02x", ko->perms[i]);
 	}
 	printk("]\n");
 }
 
-void _dump_object_error(int retval, void *obj, struct _k_object *ko,
+void _dump_object_error(s32_t retval, void *obj, struct _k_object *ko,
 			enum k_objects otype)
 {
 	switch (retval) {
@@ -518,7 +542,7 @@ int _k_object_validate(struct _k_object *ko, enum k_objects otype,
 		       enum _obj_init_check init)
 {
 	if (unlikely((ko == NULL) ||
-		(otype != K_OBJ_ANY && ko->type != otype))) {
+		     ((otype != K_OBJ_ANY) && (ko->type != (u8_t)otype)))) {
 		return -EBADF;
 	}
 
@@ -532,12 +556,12 @@ int _k_object_validate(struct _k_object *ko, enum k_objects otype,
 	/* Initialization state checks. _OBJ_INIT_ANY, we don't care */
 	if (likely(init == _OBJ_INIT_TRUE)) {
 		/* Object MUST be intialized */
-		if (unlikely(!(ko->flags & K_OBJ_FLAG_INITIALIZED))) {
+		if (unlikely((ko->flags & K_OBJ_FLAG_INITIALIZED) == (u8_t)0)) {
 			return -EINVAL;
 		}
 	} else if (init < _OBJ_INIT_TRUE) { /* _OBJ_INIT_FALSE case */
 		/* Object MUST NOT be initialized */
-		if (unlikely(ko->flags & K_OBJ_FLAG_INITIALIZED)) {
+		if (unlikely((ko->flags & K_OBJ_FLAG_INITIALIZED) != (u8_t)0)) {
 			return -EADDRINUSE;
 		}
 	} else {
@@ -602,7 +626,7 @@ void _k_object_uninit(void *object)
 void *z_user_alloc_from_copy(void *src, size_t size)
 {
 	void *dst = NULL;
-	unsigned int key;
+	u32_t key;
 
 	key = irq_lock();
 
@@ -626,7 +650,7 @@ out_err:
 static int user_copy(void *dst, void *src, size_t size, bool to_user)
 {
 	int ret = EFAULT;
-	unsigned int key;
+	u32_t key;
 
 	key = irq_lock();
 
@@ -655,19 +679,19 @@ int z_user_to_copy(void *dst, void *src, size_t size)
 
 char *z_user_string_alloc_copy(char *src, size_t maxlen)
 {
-	unsigned long actual_len;
-	int err;
-	unsigned int key;
+	size_t actual_len;
+	s32_t err;
+	u32_t key;
 	char *ret = NULL;
 
 	key = irq_lock();
 	actual_len = z_user_string_nlen(src, maxlen, &err);
-	if (err) {
+	if (err != 0) {
 		goto out;
 	}
 	if (actual_len == maxlen) {
 		/* Not NULL terminated */
-		printk("string too long %p (%lu)\n", src, actual_len);
+		printk("string too long %p (%u)\n", src, actual_len);
 		goto out;
 	}
 	if (__builtin_uaddl_overflow(actual_len, 1, &actual_len)) {
@@ -683,19 +707,19 @@ out:
 
 int z_user_string_copy(char *dst, char *src, size_t maxlen)
 {
-	unsigned long actual_len;
-	int ret, err;
-	unsigned int key;
+	size_t actual_len;
+	s32_t ret, err;
+	u32_t key;
 
 	key = irq_lock();
 	actual_len = z_user_string_nlen(src, maxlen, &err);
-	if (err) {
+	if (err != 0) {
 		ret = EFAULT;
 		goto out;
 	}
 	if (actual_len == maxlen) {
 		/* Not NULL terminated */
-		printk("string too long %p (%lu)\n", src, actual_len);
+		printk("string too long %p (%u)\n", src, actual_len);
 		ret = EINVAL;
 		goto out;
 	}
@@ -718,6 +742,11 @@ out:
 static u32_t handler_bad_syscall(u32_t bad_id, u32_t arg2, u32_t arg3,
 				  u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
 {
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
+	ARG_UNUSED(arg4);
+	ARG_UNUSED(arg5);
+	ARG_UNUSED(arg6);
 	printk("Bad system call id %u invoked\n", bad_id);
 	_arch_syscall_oops(ssf);
 	CODE_UNREACHABLE;
@@ -726,6 +755,12 @@ static u32_t handler_bad_syscall(u32_t bad_id, u32_t arg2, u32_t arg3,
 static u32_t handler_no_syscall(u32_t arg1, u32_t arg2, u32_t arg3,
 				 u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
 {
+	ARG_UNUSED(arg1);
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
+	ARG_UNUSED(arg4);
+	ARG_UNUSED(arg5);
+	ARG_UNUSED(arg6);
 	printk("Unimplemented system call\n");
 	_arch_syscall_oops(ssf);
 	CODE_UNREACHABLE;

@@ -188,9 +188,9 @@ struct _k_object_assignment {
 			{ (&_k_thread_obj_ ## name_), \
 			  (_CONCAT(_object_list_, name_)) }
 
-#define K_OBJ_FLAG_INITIALIZED	BIT(0)
-#define K_OBJ_FLAG_PUBLIC	BIT(1)
-#define K_OBJ_FLAG_ALLOC	BIT(2)
+#define K_OBJ_FLAG_INITIALIZED	BIT_U8(0)
+#define K_OBJ_FLAG_PUBLIC	BIT_U8(1)
+#define K_OBJ_FLAG_ALLOC	BIT_U8(2)
 
 /**
  * Lookup a kernel object and init its metadata if it exists
