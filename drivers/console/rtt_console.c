@@ -82,8 +82,6 @@ static int rtt_console_init(struct device *d)
 {
 	ARG_UNUSED(d);
 
-	SEGGER_RTT_Init();
-
 	__printk_hook_install(rtt_console_out);
 	__stdout_hook_install(rtt_console_out);
 
