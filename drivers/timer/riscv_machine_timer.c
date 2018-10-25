@@ -39,15 +39,19 @@ static ALWAYS_INLINE void riscv_machine_rearm_timer(void)
 	irq_disable(RISCV_MACHINE_TIMER_IRQ);
 
 	/*
-	 * Following machine-mode timer implementation in QEMU, the actual
-	 * RTC read is performed when reading low timer value register.
-	 * Reading high timer value just reads the most significant 32-bits
-	 * of a cache value, obtained from a previous read to the low
-	 * timer value register. Hence, always read timer->val_low first.
-	 * This also works for other implementations.
+	 * Read mtime.
+	 * As mtime is 64 bits and the read isn't atomic,
+	 * it is required to check that mtimeh hasn't changed.
 	 */
-	rtc = mtime->val_low;
-	rtc |= ((u64_t)mtime->val_high << 32);
+	u32_t mtime_low, mtime_high;
+
+	do {
+		mtime_high = mtime->val_high;
+		mtime_low = mtime->val_low;
+	} while (mtime_high != mtime->val_high);
+
+	rtc = mtime_low;
+	rtc |= ((u64_t)mtime_high << 32);
 
 	/*
 	 * Rearm timer to generate an interrupt after
