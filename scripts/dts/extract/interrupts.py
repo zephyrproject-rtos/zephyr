@@ -6,6 +6,7 @@
 
 from extract.globals import *
 from extract.directive import DTDirective
+from extract.edts import *
 
 ##
 # @brief Manage interrupts directives.
@@ -25,6 +26,56 @@ class DTInterrupts(DTDirective):
                     'interrupt-parent')
 
         return phandles[interrupt_parent]
+
+    def populate_edts(self, node_address, yaml):
+        device_id = edts_device_id(node_address)
+        node = reduced[node_address]
+
+        try:
+            props = reduced[node_address]['props']['interrupts']
+        except:
+            return
+
+        props = deepcopy(props)
+        # if we only have on reg we get a scalar
+        if type(props) is not list: props = [ props, ]
+
+        # Newer versions of dtc might have the interrupt propertly look like
+        # interrupts = <1 2>, <3 4>;
+        # So we need to flatten the list in that case
+        if isinstance(props[0], list):
+            props = [item for sublist in props for item in sublist]
+
+        irq_parent = self._find_parent_irq_node(node_address)
+        irq_nr_cells = reduced[irq_parent]['props']['#interrupt-cells']
+        irq_cell_yaml = yaml[get_compat(irq_parent)]
+        irq_cell_names = irq_cell_yaml.get('#cells', [])
+
+        try:
+            irq_names = node['props']['interrupt-names']
+            if not isinstance(irq_names, list):
+                irq_names = [irq_names, ]
+        except:
+            irq_names = None
+
+        # generate EDTS
+        irq_index = 0
+        irq_cell_index = 0
+        for cell in props:
+            irq_cell_name = irq_cell_names[irq_cell_index]
+            edts_insert_device_property(device_id,
+                'interrupts/{}/parent'.format(irq_index),
+                edts_device_id(irq_parent))
+            edts_insert_device_property(device_id,
+                'interrupts/{}/{}'.format(irq_index, irq_cell_name),
+                cell)
+            if irq_names is not None:
+                edts_insert_device_property(device_id,
+                    'interrupts/{}/name'.format(irq_index), irq_names[irq_index])
+            irq_cell_index += 1
+            if irq_cell_index >= irq_nr_cells:
+                irq_cell_index = 0
+                irq_index += 1
 
     ##
     # @brief Extract interrupts
