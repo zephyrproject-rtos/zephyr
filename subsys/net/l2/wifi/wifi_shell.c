@@ -162,9 +162,7 @@ static int cmd_wifi_connect(const struct shell *shell, size_t argc,
 		return -ENOEXEC;
 	}
 
-	cnx_params.ssid = &argv[1][1];
-
-	argv[1][cnx_params.ssid_length + 1] = '\0';
+	cnx_params.ssid = argv[1];
 
 	if ((idx < argc) && (strlen(argv[idx]) <= 2)) {
 		cnx_params.channel = strtol(argv[idx], &endptr, 10);
