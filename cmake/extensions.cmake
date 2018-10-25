@@ -374,19 +374,19 @@ function(target_sources_codegen
     target          # The cmake target that depends on the generated file
     )
   set(options)
-  set(oneValueArgs)
+  set(oneValueArgs CODEGEN_OUTPUT)
   set(multiValueArgs CODEGEN_DEFINES SEARCH_PATH)
-  
+
+
   cmake_parse_arguments(CODEGEN "${options}" "${oneValueArgs}"
                         "${multiValueArgs}" ${ARGN})
+
   # prepend -D to all defines
   string(REGEX REPLACE "([^;]+)" "-D;\\1"
          CODEGEN_CODEGEN_DEFINES "${CODEGEN_CODEGEN_DEFINES}")
 
   string(REGEX REPLACE "([^;]+)" "-I;\\1"
          CODEGEN_SEARCH_PATH "${CODEGEN_SEARCH_PATH}")
-
-  message(${CODEGEN_SEARCH_PATH})
 
   # Get all the files that make up jinjagen for dependency reasons
   file(GLOB CODEGEN_SOURCES
@@ -400,14 +400,14 @@ function(target_sources_codegen
   foreach(arg ${CODEGEN_UNPARSED_ARGUMENTS})
     if(IS_ABSOLUTE ${arg})
       set(template_file ${arg})
-      get_filename_component(generated_file_name ${arg} NAME_WE)
-      set(generated_file ${CMAKE_CURRENT_BINARY_DIR}/${generated_file_name}.c)
+      set(generated_file ${CMAKE_CURRENT_BINARY_DIR}/${CODEGEN_CODEGEN_OUTPUT})
     else()
       set(template_file ${CMAKE_CURRENT_SOURCE_DIR}/${arg})
-      get_filename_component(generated_file_name ${arg} NAME_WE)
-      set(generated_file ${CMAKE_CURRENT_BINARY_DIR}/${generated_file_name}.c)
+      set(generated_file ${CMAKE_CURRENT_BINARY_DIR}/${CODEGEN_CODEGEN_OUTPUT})
     endif()
     get_filename_component(template_dir ${template_file} DIRECTORY)
+
+    include_directories( ${CMAKE_CURRENT_BINARY_DIR} )
 
     if(IS_DIRECTORY ${template_file})
       message(FATAL_ERROR "target_sources_codegen() was called on a directory")
@@ -488,7 +488,7 @@ function(zephyr_sources_codegen_ifdef feature_toggle)
 endfunction()
 
 function(zephyr_library_sources_codegen)
-  target_sources_codegen(${ZEPHYR_CURRENT_LIBRARY} ${ARGN})
+ target_sources_codegen(${ZEPHYR_CURRENT_LIBRARY} ${ARGN})
 endfunction()
 
 function(zephyr_library_sources_codegen_ifdef feature_toggle)
