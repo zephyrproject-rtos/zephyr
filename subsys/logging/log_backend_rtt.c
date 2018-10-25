@@ -208,8 +208,6 @@ static void log_backend_rtt_cfg(void)
 
 static void log_backend_rtt_init(void)
 {
-	SEGGER_RTT_Init();
-
 	if (CONFIG_LOG_BACKEND_RTT_BUFFER > 0) {
 		log_backend_rtt_cfg();
 	}

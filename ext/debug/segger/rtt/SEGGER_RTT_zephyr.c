@@ -5,6 +5,8 @@
  */
 
 #include <kernel.h>
+#include <init.h>
+#include "SEGGER_RTT.h"
 
 /*
  * Common mutex for locking access to terminal buffer.
@@ -18,3 +20,12 @@
  */
 
 K_MUTEX_DEFINE(rtt_term_mutex);
+
+static int rtt_init(struct device *unused)
+{
+	ARG_UNUSED(unused);
+
+	SEGGER_RTT_Init();
+}
+
+SYS_INIT(rtt_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
