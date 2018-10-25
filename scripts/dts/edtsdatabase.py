@@ -11,7 +11,10 @@ from collections.abc import Mapping
 import argparse
 import json
 import pprint
-from edtsdevice import EDTSDevice
+try:
+    from dts.edtsdevice import EDTSDevice
+except:
+    from edtsdevice import EDTSDevice
 
 ##
 # @brief ETDS Database consumer
