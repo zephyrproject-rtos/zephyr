@@ -19,7 +19,7 @@ documentation.
 
 * The Developer Certificate of Origin (DCO) process is followed to
   ensure developers are following licensing criteria for their
-  contributions, and documented with a ``Signed-of-by`` line in commits.
+  contributions, and documented with a ``Signed-off-by`` line in commits.
 
 * Zephyr development workflow is supported on Linux, macOS, and Windows,
   (with a few exceptions).
