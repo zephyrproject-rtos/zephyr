@@ -99,6 +99,12 @@ On Arch:
    sudo pacman -S git cmake ninja gperf ccache dfu-util dtc wget \
        python-pip python-setuptools python-wheel xz file make
 
+On Arch, you also need the following packages to flash a board from the AUR. The install differs, depending on the tool you use to access the AUR.
+
+.. code-block:: console
+   python-pykwalify
+   pyocd
+
 CMake version 3.8.2 or higher is required. Check what version you have using
 ``cmake --version``; if you have an older version, check the backports or
 install a more recent version manually. For example, to install version
