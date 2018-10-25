@@ -48,5 +48,5 @@ struct winc1500_gpio_configuration *winc1500_configure_gpios(void)
 
 void main(void)
 {
-	k_sleep(K_FOREVER);
+
 }
