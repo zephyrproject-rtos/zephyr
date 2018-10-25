@@ -348,6 +348,20 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		    const struct bt_data *ad, size_t ad_len,
 		    const struct bt_data *sd, size_t sd_len);
 
+/** @brief Update advertising
+ *
+ *  Update advertisement and scan response data.
+ *
+ *  @param ad Data to be used in advertisement packets.
+ *  @param ad_len Number of elements in ad
+ *  @param sd Data to be used in scan response packets.
+ *  @param sd_len Number of elements in sd
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_le_adv_update_data(const struct bt_data *ad, size_t ad_len,
+			  const struct bt_data *sd, size_t sd_len);
+
 /** @brief Stop advertising
  *
  *  Stops ongoing advertising.
