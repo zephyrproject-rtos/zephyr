@@ -127,61 +127,7 @@ static int uart_qmsi_device_ctrl(struct device *dev, u32_t ctrl_command,
 }
 #endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
 
-#ifdef CONFIG_UART_QMSI_0
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void irq_config_func_0(struct device *dev);
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static const struct uart_qmsi_config_info config_info_0 = {
-	.instance = QM_UART_0,
-	.clock_gate = CLK_PERIPH_UARTA_REGISTER | CLK_PERIPH_CLK,
-	.baud_divisor = QM_UART_CFG_BAUD_DL_PACK(
-				DIVISOR_HIGH(CONFIG_UART_QMSI_0_BAUDRATE),
-				DIVISOR_LOW(CONFIG_UART_QMSI_0_BAUDRATE),
-				0),
-#ifdef CONFIG_UART_QMSI_0_HW_FC
-	.hw_fc = true,
-#endif
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	.irq_config_func = irq_config_func_0,
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
-};
-
-static struct uart_qmsi_drv_data drv_data_0;
-
-DEVICE_DEFINE(uart_0, CONFIG_UART_QMSI_0_NAME, &uart_qmsi_init,
-	      uart_qmsi_device_ctrl, &drv_data_0, &config_info_0, PRE_KERNEL_1,
-	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
-#endif /* CONFIG_UART_QMSI_0 */
-
-#ifdef CONFIG_UART_QMSI_1
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void irq_config_func_1(struct device *dev);
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
-
-static const struct uart_qmsi_config_info config_info_1 = {
-	.instance = QM_UART_1,
-	.clock_gate = CLK_PERIPH_UARTB_REGISTER | CLK_PERIPH_CLK,
-	.baud_divisor = QM_UART_CFG_BAUD_DL_PACK(
-				DIVISOR_HIGH(CONFIG_UART_QMSI_1_BAUDRATE),
-				DIVISOR_LOW(CONFIG_UART_QMSI_1_BAUDRATE),
-				0),
-#ifdef CONFIG_UART_QMSI_1_HW_FC
-	.hw_fc = true,
-#endif
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	.irq_config_func = irq_config_func_1,
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
-};
-
-static struct uart_qmsi_drv_data drv_data_1;
-
-DEVICE_DEFINE(uart_1, CONFIG_UART_QMSI_1_NAME, &uart_qmsi_init,
-	      uart_qmsi_device_ctrl, &drv_data_1, &config_info_1, PRE_KERNEL_1,
-	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
-#endif /* CONFIG_UART_QMSI_1 */
 
 static int uart_qmsi_poll_in(struct device *dev, unsigned char *data)
 {
@@ -264,6 +210,7 @@ static int uart_qmsi_fifo_read(struct device *dev, u8_t *rx_data,
 
 	return i;
 }
+
 
 static void uart_qmsi_irq_tx_enable(struct device *dev)
 {
@@ -370,33 +317,7 @@ static void uart_qmsi_isr(void *arg)
 	device_busy_clear(dev);
 }
 
-#ifdef CONFIG_UART_QMSI_0
-static void irq_config_func_0(struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	IRQ_CONNECT(CONFIG_UART_QMSI_0_IRQ,
-		    CONFIG_UART_QMSI_0_IRQ_PRI, uart_qmsi_isr,
-		    DEVICE_GET(uart_0), CONFIG_UART_QMSI_0_IRQ_FLAGS);
-	irq_enable(CONFIG_UART_QMSI_0_IRQ);
-	QM_IR_UNMASK_INTERRUPTS(QM_INTERRUPT_ROUTER->uart_0_int_mask);
-}
-#endif /* CONFIG_UART_QMSI_0 */
-
-#ifdef CONFIG_UART_QMSI_1
-static void irq_config_func_1(struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	IRQ_CONNECT(CONFIG_UART_QMSI_1_IRQ,
-		    CONFIG_UART_QMSI_1_IRQ_PRI, uart_qmsi_isr,
-		    DEVICE_GET(uart_1), CONFIG_UART_QMSI_1_IRQ_FLAGS);
-	irq_enable(CONFIG_UART_QMSI_1_IRQ);
-	QM_IR_UNMASK_INTERRUPTS(QM_INTERRUPT_ROUTER->uart_1_int_mask);
-}
-#endif /* CONFIG_UART_QMSI_1 */
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
-
+#endif
 #ifdef CONFIG_UART_LINE_CTRL
 static int uart_qmsi_line_ctrl_set(struct device *dev, u32_t ctrl, u32_t val)
 {
@@ -477,8 +398,60 @@ static int uart_qmsi_init(struct device *dev)
 	config->irq_config_func(dev);
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-	dev->driver_api = &api;
 	uart_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
 
 	return 0;
 }
+
+/**
+ * @code{.codegen}
+ * codegen.import_module('devicedeclare')
+ *
+ * device_configs = ['CONFIG_UART_QMSI_0', 'CONFIG_UART_QMSI_1']
+ * driver_names = ['UART_0', 'UART_1']
+ * device_inits = 'uart_qmsi_init'
+ * device_levels = 'PRE_KERNEL_1'
+ * device_prios = 'CONFIG_KERNEL_INIT_PRIORITY_DEVICE'
+ * device_api = 'api'
+ * device_info = \
+ * """
+ * #if CONFIG_UART_INTERRUPT_DRIVEN
+ * DEVICE_DECLARE(${device-name});
+ * static void ${device-config-irq}(struct device *dev)
+ * {
+ *         IRQ_CONNECT(${interrupts/0/irq}, ${interrupts/0/priority}, \\
+ *                     uart_qmsi_isr, \\
+ *                     DEVICE_GET(${device-name}), 0);
+ *         irq_enable(${interrupts/0/irq});
+ * }
+ * #endif
+ * static const struct uart_qmsi_config_info ${device-config-info} = {
+ *         .instance = QM_${label},
+ * #ifdef CONFIG_UART_INTERRUPT_DRIVEN
+ *         .irq_config_func = ${device-config-irq},
+ * #endif
+ *         .clock_gate = CLK_PERIPH_UARTA_REGISTER | CLK_PERIPH_CLK,
+ *         .baud_divisor = QM_UART_CFG_BAUD_DL_PACK(
+ *                               DIVISOR_HIGH(${current-speed}),
+ *                               DIVISOR_LOW(${current-speed}),
+ *                               0),
+ *
+ * #ifdef CONFIG_UART_QMSI_1_HW_FC
+ *	.hw_fc = true,
+ * #endif
+ *
+ *
+ * };
+ * static struct uart_qmsi_drv_data ${device-data};
+ * """
+ * devicedeclare.device_declare_multi( \
+ *     device_configs,
+ *     driver_names,
+ *     device_inits,
+ *     device_levels,
+ *     device_prios,
+ *     device_api,
+ *     device_info)
+ * @endcode{.codegen}
+ */
+/** @code{.codeins}@endcode */
