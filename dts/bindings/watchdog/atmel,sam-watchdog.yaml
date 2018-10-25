@@ -1,0 +1,44 @@
+#
+# Copyright (c) 2018, Atmel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: Atmel SAM watchdog driver
+id: atmel,sam-watchdog
+version: 0.1
+
+description: >
+    This is a representation of the SAM0 watchdog
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "atmel,sam-watchdog"
+
+    reg:
+      type: int
+      description: mmio register space
+      generation: define
+      category: required
+
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+
+    interrupts:
+      type: array
+      category: required
+      description: required interrupts
+      generation: define
+
+    peripheral-id:
+      type: int
+      description: peripheral ID
+      generation: define
+      category: required
+...

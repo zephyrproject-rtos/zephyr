@@ -32,6 +32,15 @@
 	};
 
 	soc {
+		wdog: watchdog@400E1A50 {
+			compatible = "atmel,sam-watchdog";
+			reg = <0x400E1A50 0xc>;
+			interrupts = <4 0>;
+			peripheral-id = <4>;
+			label = "WATCHDOG_0";
+			status = "disabled";
+		};
+
 		i2c0: i2c@4008C000 {
 			compatible = "atmel,sam-i2c-twi";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
