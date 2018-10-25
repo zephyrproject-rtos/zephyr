@@ -15,9 +15,28 @@
 #include <string.h>
 
 #include <bluetooth/bluetooth.h>
+#include <bluetooth/mesh/access.h>
 
 #include "mesh.h"
 #include "board.h"
+
+enum font_size {
+	FONT_BIG = 0,
+	FONT_MEDIUM = 1,
+	FONT_SMALL = 2,
+};
+
+struct font_info {
+	u8_t columns;
+} fonts[] = {
+	[FONT_BIG] =    { .columns = 12 },
+	[FONT_MEDIUM] = { .columns = 16 },
+	[FONT_SMALL] =  { .columns = 25 },
+};
+
+#define LONG_PRESS_TIMEOUT K_SECONDS(1)
+
+#define STAT_COUNT 128
 
 #define EDGE (GPIO_INT_EDGE | GPIO_INT_DOUBLE_EDGE)
 
@@ -27,12 +46,12 @@
 #define PULL_UP 0
 #endif
 
-#define LINE_MAX 12
-
 static struct device *epd_dev;
 static bool pressed;
+static bool stats_view;
 static struct device *gpio;
 static struct k_delayed_work epd_work;
+static struct k_delayed_work long_press_work;
 
 static struct {
 	struct device *dev;
@@ -47,23 +66,26 @@ static struct {
 
 struct k_delayed_work led_timer;
 
-static size_t print_line(int row, const char *text, size_t len, bool center)
+static size_t print_line(enum font_size font_size, int row, const char *text,
+			 size_t len, bool center)
 {
 	u8_t font_height, font_width;
-	u8_t line[LINE_MAX + 1];
+	u8_t line[fonts[FONT_SMALL].columns + 1];
 	int pad;
 
-	len = min(len, LINE_MAX);
+	cfb_framebuffer_set_font(epd_dev, font_size);
+
+	len = min(len, fonts[font_size].columns);
 	memcpy(line, text, len);
 	line[len] = '\0';
 
 	if (center) {
-		pad = (LINE_MAX - len) / 2;
+		pad = (fonts[font_size].columns - len) / 2;
 	} else {
 		pad = 0;
 	}
 
-	cfb_get_font_size(epd_dev, 0, &font_width, &font_height);
+	cfb_get_font_size(epd_dev, font_size, &font_width, &font_height);
 
 	if (cfb_print(epd_dev, line, font_width * pad, font_height * row)) {
 		printk("Failed to print a string\n");
@@ -72,12 +94,12 @@ static size_t print_line(int row, const char *text, size_t len, bool center)
 	return len;
 }
 
-static size_t get_len(const char *text)
+static size_t get_len(enum font_size font, const char *text)
 {
 	const char *space = NULL;
 	size_t i;
 
-	for (i = 0; i <= LINE_MAX; i++) {
+	for (i = 0; i <= fonts[font].columns; i++) {
 		switch (text[i]) {
 		case '\n':
 		case '\0':
@@ -97,7 +119,7 @@ static size_t get_len(const char *text)
 		return space - text;
 	}
 
-	return LINE_MAX;
+	return fonts[font].columns;
 }
 
 void board_blink_leds(void)
@@ -109,7 +131,6 @@ void board_show_text(const char *text, bool center, s32_t duration)
 {
 	int i;
 
-	cfb_framebuffer_set_font(epd_dev, 0);
 	cfb_framebuffer_clear(epd_dev, false);
 
 	for (i = 0; i < 3; i++) {
@@ -119,12 +140,12 @@ void board_show_text(const char *text, bool center, s32_t duration)
 			text++;
 		}
 
-		len = get_len(text);
+		len = get_len(FONT_BIG, text);
 		if (!len) {
 			break;
 		}
 
-		text += print_line(i, text, len, center);
+		text += print_line(FONT_BIG, i, text, len, center);
 		if (!*text) {
 			break;
 		}
@@ -137,10 +158,190 @@ void board_show_text(const char *text, bool center, s32_t duration)
 	}
 }
 
+static struct stat {
+	u16_t addr;
+	char name[9];
+	u8_t min_hops;
+	u8_t max_hops;
+	u16_t hello_count;
+	u16_t heartbeat_count;
+} stats[STAT_COUNT] = {
+	[0 ... (STAT_COUNT - 1)] = {
+		.min_hops = BT_MESH_TTL_MAX,
+		.max_hops = 0,
+	},
+};
+
+static u32_t stat_count;
+
+#define NO_UPDATE -1
+
+static int add_hello(u16_t addr, const char *name)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(stats); i++) {
+		struct stat *stat = &stats[i];
+
+		if (!stat->addr) {
+			stat->addr = addr;
+			strncpy(stat->name, name, sizeof(stat->name) - 1);
+			stat->hello_count = 1;
+			stat_count++;
+			return i;
+		}
+
+		if (stat->addr == addr) {
+			/* Update name, incase it has changed */
+			strncpy(stat->name, name, sizeof(stat->name) - 1);
+
+			if (stat->hello_count < 0xffff) {
+				stat->hello_count++;
+				return i;
+			}
+
+			return NO_UPDATE;
+		}
+	}
+
+	return NO_UPDATE;
+}
+
+static int add_heartbeat(u16_t addr, u8_t hops)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(stats); i++) {
+		struct stat *stat = &stats[i];
+
+		if (!stat->addr) {
+			stat->addr = addr;
+			stat->heartbeat_count = 1;
+			stat->min_hops = hops;
+			stat->max_hops = hops;
+			stat_count++;
+			return i;
+		}
+
+		if (stat->addr == addr) {
+			if (hops < stat->min_hops) {
+				stat->min_hops = hops;
+			} else if (hops > stat->max_hops) {
+				stat->max_hops = hops;
+			}
+
+			if (stat->heartbeat_count < 0xffff) {
+				stat->heartbeat_count++;
+				return i;
+			}
+
+			return NO_UPDATE;
+		}
+	}
+
+	return NO_UPDATE;
+}
+
+void board_add_hello(u16_t addr, const char *name)
+{
+	u32_t sort_i;
+
+	sort_i = add_hello(addr, name);
+	if (sort_i != NO_UPDATE) {
+	}
+}
+
+void board_add_heartbeat(u16_t addr, u8_t hops)
+{
+	u32_t sort_i;
+
+	sort_i = add_heartbeat(addr, hops);
+	if (sort_i != NO_UPDATE) {
+	}
+}
+
+static void show_statistics(void)
+{
+	int top[4] = { -1, -1, -1, -1 };
+	int len, i, line = 0;
+	struct stat *stat;
+	char str[32];
+
+	cfb_framebuffer_clear(epd_dev, false);
+
+	len = snprintk(str, sizeof(str),
+		       "Own Address: 0x%04x", mesh_get_addr());
+	print_line(FONT_SMALL, line++, str, len, false);
+
+	len = snprintk(str, sizeof(str),
+		       "Node Count:  %u", stat_count + 1);
+	print_line(FONT_SMALL, line++, str, len, false);
+
+	/* Find the top sender */
+	for (i = 0; i < ARRAY_SIZE(stats); i++) {
+		int j;
+
+		stat = &stats[i];
+		if (!stat->addr) {
+			break;
+		}
+
+		if (!stat->hello_count) {
+			continue;
+		}
+
+		for (j = 0; j < ARRAY_SIZE(top); j++) {
+			if (top[j] < 0) {
+				top[j] = i;
+				break;
+			}
+
+			if (stat->hello_count <= stats[top[j]].hello_count) {
+				continue;
+			}
+
+			/* Move other elements down the list */
+			if (j < ARRAY_SIZE(top) - 1) {
+				memmove(&top[j + 1], &top[j],
+					((ARRAY_SIZE(top) - j - 1) *
+					 sizeof(top[j])));
+			}
+
+			top[j] = i;
+			break;
+		}
+	}
+
+	if (stat_count >= 0) {
+		len = snprintk(str, sizeof(str), "Most messages from:");
+		print_line(FONT_SMALL, line++, str, len, false);
+
+		for (i = 0; i < ARRAY_SIZE(top); i++) {
+			if (top[i] < 0) {
+				break;
+			}
+
+			stat = &stats[top[i]];
+
+			len = snprintk(str, sizeof(str), "%-3u 0x%04x %s",
+				       stat->hello_count, stat->addr,
+				       stat->name);
+			print_line(FONT_SMALL, line++, str, len, false);
+		}
+	}
+
+	cfb_framebuffer_finalize(epd_dev);
+}
+
 static void epd_update(struct k_work *work)
 {
 	char buf[CONFIG_BT_DEVICE_NAME_MAX];
 	int i;
+
+	if (stats_view) {
+		show_statistics();
+		return;
+	}
 
 	strncpy(buf, bt_get_name(), sizeof(buf));
 
@@ -152,6 +353,14 @@ static void epd_update(struct k_work *work)
 	}
 
 	board_show_text(buf, true, K_FOREVER);
+}
+
+static void long_press(struct k_work *work)
+{
+	/* Treat as release so actual release doesn't send messages */
+	pressed = false;
+	stats_view = !stats_view;
+	board_refresh_display();
 }
 
 static bool button_is_pressed(void)
@@ -173,17 +382,24 @@ static void button_interrupt(struct device *dev, struct gpio_callback *cb,
 	pressed = !pressed;
 	printk("Button %s\n", pressed ? "pressed" : "released");
 
-	/* We only care about button release for now */
 	if (pressed) {
+		k_delayed_work_submit(&long_press_work, LONG_PRESS_TIMEOUT);
 		return;
 	}
+
+	k_delayed_work_cancel(&long_press_work);
 
 	if (!mesh_is_initialized()) {
 		return;
 	}
 
+	/* Short press does currently nothing in statistics view */
+	if (stats_view) {
+		return;
+	}
+
 	if (pins & BIT(SW0_GPIO_PIN)) {
-		mesh_publish();
+		mesh_send_hello();
 	}
 }
 
@@ -291,6 +507,7 @@ int board_init(void)
 	}
 
 	k_delayed_work_init(&epd_work, epd_update);
+	k_delayed_work_init(&long_press_work, long_press);
 
 	pressed = button_is_pressed();
 	if (pressed) {
