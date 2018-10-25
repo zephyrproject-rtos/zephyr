@@ -110,18 +110,6 @@ struct __packed task_state_segment {
 	u16_t iomap;
 };
 
-/* Section 3.4.2 of IA architecture SW developer manual, Vol 3. */
-struct __packed segment_selector {
-	union {
-		struct {
-			u8_t rpl:2;
-			u8_t table:1; /* 0=gdt 1=ldt */
-			u16_t index:13;
-		};
-		u16_t val;
-	};
-};
-
 #define SEG_SELECTOR(index, table, dpl) (index << 3 | table << 2 | dpl)
 
 /* References
