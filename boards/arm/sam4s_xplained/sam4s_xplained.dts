@@ -17,6 +17,7 @@
 		led0 = &yellow_led_1;
 		led1 = &yellow_led_2;
 		sw0 = &user_button;
+		wdog = &wdog;
 	};
 
 	chosen {
@@ -58,5 +59,9 @@
 
 &uart1 {
 	current-speed = <115200>;
+	status = "ok";
+};
+
+&wdog {
 	status = "ok";
 };

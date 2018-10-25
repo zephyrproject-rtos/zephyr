@@ -10,3 +10,4 @@ supported:
   - adc
   - gpio
   - spi
+  - watchdog

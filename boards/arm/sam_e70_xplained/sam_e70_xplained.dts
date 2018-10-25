@@ -19,6 +19,7 @@
 		i2c-2 = &i2c2;
 		led0 = &green_led;
 		sw0 = &sw0_user_button;
+		wdog = &wdog;
 	};
 
 	chosen {
@@ -71,6 +72,10 @@
 
 &usart1 {
 	current-speed = <115200>;
+	status = "ok";
+};
+
+&wdog {
 	status = "ok";
 };
 

@@ -49,6 +49,8 @@ The arduino_due board configuration supports the following hardware features:
 +-----------+------------+----------------------+
 | I2C       | on-chip    | i2c                  |
 +-----------+------------+----------------------+
+| Watchdog  | on-chip    | watchdog             |
++-----------+------------+----------------------+
 
 Other hardware features are not currently supported by the Zephyr kernel.
 See `Arduino Due website`_ and `Atmel SAM3X8E Datasheet`_ for a complete
