@@ -71,6 +71,12 @@ endif # I2S
 
 if DMA
 
+config DMA_LOG_LEVEL
+	default 0
+
+config DMA_0_IRQ_PRI
+	default 0
+
 config DMA_STM32F4X
 	def_bool y
 

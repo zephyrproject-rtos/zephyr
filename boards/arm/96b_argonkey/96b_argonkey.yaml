@@ -12,3 +12,4 @@ supported:
   - i2c
   - rtc
   - spi
+  - i2s
