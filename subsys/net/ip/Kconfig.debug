@@ -26,7 +26,7 @@ module-dep = NET_LOG
 module-def = LOG_LEVEL_DBG
 module-str = Max network stack logging level
 module-help = Max log level. This overrides individual networking log levels.
-source "subsys/net/Kconfig.template.log_config.net"
+source "subsys/net/Kconfig.template.log_config.default.net"
 
 module = NET_CORE
 module-dep = NET_LOG
