@@ -429,7 +429,7 @@ static void codec_configure_output(struct device *dev)
 static int codec_set_output_volume(struct device *dev, int vol)
 {
 	u8_t vol_val;
-	int vol_index, vol_count;
+	int vol_index;
 	u8_t vol_array[] = {
 		107, 108, 110, 113, 116, 120, 125, 128, 132, 138, 144
 	};
@@ -449,8 +449,7 @@ static int codec_set_output_volume(struct device *dev, int vol)
 		vol_val = HPX_ANA_VOL_FLOOR;
 	} else if (vol > HPX_ANA_VOL_LOW_THRESH) {
 		/* lookup low volume values */
-		vol_count = sizeof(vol_array)/sizeof(u8_t);
-		for (vol_index = 0; vol_index < vol_count; vol_index++) {
+		for (vol_index = 0; vol_index < ARRAY_SIZE(vol_array); vol_index++) {
 			if (vol_array[vol_index] >= vol) {
 				break;
 			}
