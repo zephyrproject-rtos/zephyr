@@ -12,7 +12,8 @@
 
 #if CONFIG_LOG_BACKEND_RTT_MODE_DROP
 
-#define DROP_MSG "\nmessages dropped: 99 \r"
+#define DROP_MAX 99
+#define DROP_MSG "\nmessages dropped:    \r"
 #define DROP_MSG_LEN (sizeof(DROP_MSG) - 1)
 
 #else
@@ -109,7 +110,7 @@ static int log_backend_rtt_write_drop(void)
 	}
 
 	if (drop_warn) {
-		int cnt = min(drop_cnt, 99);
+		int cnt = min(drop_cnt, DROP_MAX);
 
 		if (cnt < 10) {
 			line_buf[DROP_MSG_LEN - 2] = ' ';
