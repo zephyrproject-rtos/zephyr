@@ -40,15 +40,16 @@ if not edts_file.is_file():
 edts = EDTSDatabase()
 edts.load(str(edts_file))
 
-x = edts.get_device_by_device_id("/soc/spi@10014000")
-print("reg %x" % x.get_reg_addr())
-print("foo %s" % x.get_property('reg/0'))
-print("bar %s" % x.properties_flattened())
+x = edts.get_device_by_device_id("/soc/i2c@40005400")
 
-print("x %x" % x.get_reg_addr_by_name("control"))
-print("x %x" % x.get_reg_size_by_name("control"))
-print("x %x" % x.get_reg_addr_by_name("mem"))
-print("y %s" % x.get_reg_addr_by_name("conl"))
+print("irq %d" % x.get_irq())
+print("irq event %d" % x.get_irq_by_name('event'))
+print("irq name %s" % x.get_irq_prop(0, 'name'))
+print("irq name %s" % x.get_irq_prop_by_name('event', 'priority'))
+print("irq name %s" % x.get_irq_prop_by_name('event', 'name'))
+p = x.get_irq_prop_types()
+print("irq props %s" % p)
+
 
 # Test 1: 
 
