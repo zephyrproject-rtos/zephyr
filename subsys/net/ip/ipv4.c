@@ -146,6 +146,8 @@ enum net_verdict net_ipv4_process_pkt(struct net_pkt *pkt)
 		goto drop;
 	}
 
+	net_pkt_set_transport_proto(pkt, hdr->proto);
+
 	switch (hdr->proto) {
 	case IPPROTO_ICMP:
 		verdict = net_icmpv4_input(pkt);

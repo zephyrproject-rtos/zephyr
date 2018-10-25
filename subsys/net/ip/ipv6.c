@@ -612,6 +612,7 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt)
 upper_proto:
 
 	net_pkt_set_ipv6_ext_len(pkt, total_len);
+	net_pkt_set_transport_proto(pkt, next);
 
 	switch (next) {
 	case IPPROTO_ICMPV6:
