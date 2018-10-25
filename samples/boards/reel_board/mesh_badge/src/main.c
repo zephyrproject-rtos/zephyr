@@ -21,22 +21,6 @@ static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, BT_LE_AD_NO_BREDR),
 };
 
-static size_t first_name_len(const char *name)
-{
-	size_t len;
-
-	for (len = 0; *name; name++, len++) {
-		switch (*name) {
-		case ' ':
-		case ',':
-		case '\n':
-			return len;
-		}
-	}
-
-	return len;
-}
-
 static ssize_t read_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 void *buf, u16_t len, u16_t offset)
 {
@@ -69,7 +53,6 @@ static ssize_t write_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
 	}
 
-	mesh_set_name(name, first_name_len(name));
 	board_refresh_display();
 
 	return len;
@@ -202,11 +185,7 @@ static void bt_ready(int err)
 			return;
 		}
 	} else {
-		const char *name = bt_get_name();
-
 		printk("Already provisioned\n");
-
-		mesh_set_name(name, first_name_len(name));
 	}
 
 	board_refresh_display();
