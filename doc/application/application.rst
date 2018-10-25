@@ -119,7 +119,7 @@ Follow these steps to create a new application directory. (Refer to
       # Boilerplate code, which pulls in the Zephyr build system.
       cmake_minimum_required(VERSION 3.8.2)
       include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
-      project(NONE)
+      project(my_zephyr_app)
 
       # Add your source file to the "app" target. This must come after
       # the boilerplate code, which defines the target.
@@ -733,7 +733,7 @@ Create a Debugger Configuration
 
    - In the Main tab:
 
-     - Project: NONE@build
+     - Project: my_zephyr_app@build
      - C/C++ Application: :file:`zephyr/zephyr.elf`
 
    - In the Debugger tab:
@@ -910,7 +910,7 @@ Make sure to follow these steps in order.
    .. code-block:: cmake
 
       include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
-      project(NONE)
+      project(my_zephyr_app)
 
 #. Now add any application source files to the 'app' target
    library, each on their own line, like so:
@@ -926,7 +926,7 @@ Below is a simple example :file:`CMakeList.txt`:
    set(BOARD qemu_x86)
 
    include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
-   project(NONE)
+   project(my_zephyr_app)
 
    target_sources(app PRIVATE src/main.c)
 
