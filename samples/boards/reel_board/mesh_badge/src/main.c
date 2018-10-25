@@ -72,6 +72,8 @@ static ssize_t write_name(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	mesh_set_name(name, first_name_len(name));
 	board_refresh_display();
 
+	bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+
 	return len;
 }
 
