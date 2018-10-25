@@ -123,11 +123,15 @@ for lvl in ints_by_lvl:
     cprint("static inline int _xtensa_handle_one_int" + str(lvl) + "(unsigned int mask)")
     cprint("{")
 
+    if not ints_by_lvl[lvl]:
+        cprint("return 0;")
+        cprint("}")
+        continue
+
     cprint("int irq;")
     print("")
 
-    ints_by_lvl[lvl].sort()
-    emit_int_handler(ints_by_lvl[lvl])
+    emit_int_handler(sorted(ints_by_lvl[lvl]))
 
     cprint("return 0;")
     cprint("handle_irq:")
