@@ -1,5 +1,3 @@
-{% import 'spi_ll_stm32.meta.jinja2' as spi_stm32 %}
-
 /*
  * Copyright (c) 2016 BayLibre, SAS
  * Copyright (c) 2018 Nordic Semiconductor ASA
@@ -480,4 +478,5 @@ static int spi_stm32_init(struct device *dev)
 	return 0;
 }
 
-{{ spi_stm32.device(data, ['st,stm32-spi', 'st,stm32-spi-fifo']) }}
+#include "spi_ll_stm32_device.h"
+
