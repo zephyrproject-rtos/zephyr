@@ -357,21 +357,9 @@ handle_irq:
 
 static inline int _xtensa_handle_one_int0(unsigned int mask)
 {
-	int irq;
-
 	return 0;
-handle_irq:
-	_sw_isr_table[irq].isr(_sw_isr_table[irq].arg);
-	return mask;
 }
-
 static inline int _xtensa_handle_one_int6(unsigned int mask)
 {
-	int irq;
-
 	return 0;
-handle_irq:
-	_sw_isr_table[irq].isr(_sw_isr_table[irq].arg);
-	return mask;
 }
-
