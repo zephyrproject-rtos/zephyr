@@ -1,6 +1,6 @@
 tests:
   kernel.sched:
-    min_ram: 20
+    min_ram: 32
     tags: kernel threads sched
   kernel.sched.native_posix:
     extra_args: CONF_FILE=prj_native_posix.conf
