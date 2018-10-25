@@ -2,7 +2,7 @@ zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_SPI_DW		spi_dw.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_INTEL		spi_intel.c)
-zephyr_library_sources_codegen_ifdef(CONFIG_SPI_STM32	spi_ll_stm32.c.jinja2 SEARCH_PATH ${PROJECT_SOURCE_DIR}"/templates/")
+zephyr_library_sources_codegen_ifdef(CONFIG_SPI_STM32	spi_ll_stm32_device_template.h CODEGEN_OUTPUT spi_ll_stm32_device.h SEARCH_PATH ${PROJECT_SOURCE_DIR}"/templates/")
 zephyr_library_sources_ifdef(CONFIG_SPI_MCUX_DSPI	spi_mcux_dspi.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_MCUX_LPSPI	spi_mcux_lpspi.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_SAM		spi_sam.c)
