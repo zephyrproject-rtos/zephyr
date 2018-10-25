@@ -6,7 +6,7 @@ reel board
 Overview
 ********
 
-reel board is a evaluation board based on the Nordic Semiconductor
+`reel board`_ is a evaluation board based on the Nordic Semiconductor
 nRF52840 SoC. The board was developed by PHYTEC Messtechnik GmbH in
 cooperation with Zephyr Project for the Hackathon - "Get Connected".
 The board has a built-in debug adapter based on the DAPLink interface
@@ -428,6 +428,9 @@ References
 **********
 
 .. target-notes::
+
+.. _reel board:
+   https://www.phytec.de/reelboard/
 
 .. _DAPLink reel board Firmware:
    https://github.com/jfischer-phytec-iot/DAPLink/tree/reel-board
