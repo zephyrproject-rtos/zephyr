@@ -377,6 +377,21 @@ and :ref:`application_run` for more details).
 Flashing
 ========
 
+If you use Linux, create a udev rule to fix a permission issue when not using
+root for flashing.
+
+.. code-block:: console
+
+   $ echo 'ATTR{idProduct}=="0204", ATTR{idVendor}=="0d28", MODE="0666", GROUP="plugdev"' > /etc/udev/rules.d/50-cmsis-dap.rules
+
+Reload the rules and replug the device.
+
+.. code-block:: console
+
+   $ sudo udevadm control --reload-rules
+
+Finally, unplug and plug the board again for the rules to take effect.
+
 Build and flash
 applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
