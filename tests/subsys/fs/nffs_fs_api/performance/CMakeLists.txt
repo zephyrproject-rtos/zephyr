@@ -8,7 +8,7 @@ elseif(BOARD STREQUAL nrf52840_pca10056)
 endif()
 
 include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
-project(NONE)
+project(performance)
 
 if(BOARD STREQUAL qemu_x86)
     zephyr_compile_definitions(

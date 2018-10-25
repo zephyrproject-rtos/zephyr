@@ -10,7 +10,7 @@ cmake_minimum_required(VERSION 3.8.2)
 
 # Standard Zephyr application boilerplate.
 include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
-project(NONE)
+project(smp_svr)
 
 target_sources(app PRIVATE
     src/main.c

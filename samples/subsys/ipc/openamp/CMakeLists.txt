@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 3.8.2)
 set(BOARD lpcxpresso54114_m4)
 
 include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
-project(NONE)
+project(openamp)
 
 enable_language(C ASM)
 

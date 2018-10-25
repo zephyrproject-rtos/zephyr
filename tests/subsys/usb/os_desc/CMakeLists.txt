@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.8.2)
 include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
-project(NONE)
+project(os_desc)
 
 zephyr_library_include_directories(
 	${ZEPHYR_BASE}/subsys/usb/

@@ -5,7 +5,7 @@ set(CONF_FILE prj_qemu.conf)
 set(QEMU_PIPE_STACK 1)
 
 include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
-project(NONE)
+project(rpl_mesh_qemu_root)
 
 target_include_directories(app PRIVATE $ENV{ZEPHYR_BASE}/subsys/net/ip)
 

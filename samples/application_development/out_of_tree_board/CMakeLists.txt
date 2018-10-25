@@ -9,6 +9,6 @@ set(BOARD_ROOT ${CMAKE_CURRENT_LIST_DIR})
 set(BOARD nrf52840_pca10056)
 
 include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
-project(NONE)
+project(out_of_tree_board)
 
 target_sources(app PRIVATE src/main.c)
