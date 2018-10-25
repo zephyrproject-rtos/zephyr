@@ -5,6 +5,7 @@
 #
 
 from extract.globals import *
+from extract.edts import *
 from extract.directive import DTDirective
 
 ##
@@ -13,6 +14,8 @@ from extract.directive import DTDirective
 # Handles:
 # - compatible
 #
+# Generates in EDTS:
+# - compatible/<index> : compatible
 class DTCompatible(DTDirective):
 
     def __init__(self):
@@ -43,7 +46,11 @@ class DTCompatible(DTDirective):
                 compat_defs: "1",
             }
             insert_defs(node_address, load_defs, {})
-
+        # generate EDTS
+        device_id = edts_device_id(node_address)
+        for i, comp in enumerate(compatible):
+            edts_insert_device_property(device_id, 'compatible/{}'.format(i),
+					comp)
 ##
 # @brief Management information for compatible.
 compatible = DTCompatible()
