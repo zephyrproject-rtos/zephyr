@@ -89,3 +89,34 @@ class EDTSDevice:
             return self.get_reg_size(idx)
         except:
             return None
+
+    def get_irq(self, index=0):
+        return self.device['interrupts'][str(index)]['irq']
+
+    def get_irq_prop(self, index=0, prop='irq'):
+        return self.device['interrupts'][str(index)][prop]
+
+    def _find_irq_idx_by_name(self, name):
+        irqs = self.device['interrupts']
+        for idx, irq in irqs.items():
+            if irq['name'] == name:
+                return int(idx)
+        return None
+
+    def get_irq_by_name(self, name):
+        try:
+            idx = self._find_irq_idx_by_name(name)
+            return self.get_irq(idx)
+        except:
+            return None
+
+    def get_irq_prop_by_name(self, name, prop):
+        try:
+            idx = self._find_irq_idx_by_name(name)
+            return self.get_irq_prop(idx, prop)
+        except:
+            return None
+
+    def get_irq_prop_types(self):
+        irqs = self.device['interrupts']['0']
+        return list(irqs.keys())
