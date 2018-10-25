@@ -30,6 +30,8 @@ support for the Nordic Semiconductor nRF52840 ARM |reg| Cortex |reg|-M4F SoC
 with an integrated 2.4 GHz transceiver supporting Bluetooth |reg| Low Energy
 and IEEE |reg| 802.15.4.
 
+The schematic can be found on the `reel board website`_.
+
 Hardware
 ********
 
@@ -441,6 +443,9 @@ your board.
 
 References
 **********
+
+.. _reel board Website:
+   https://www.phytec.de/reelboard/
 
 .. target-notes::
 
