@@ -39,6 +39,11 @@ void z_sys_trace_thread_switched_in(void)
 	sys_trace_thread_switched_in();
 }
 
+void z_sys_trace_thread_switched_out(void)
+{
+	sys_trace_thread_switched_out();
+}
+
 static void send_task_list_cb(void)
 {
 	struct k_thread *thread;

@@ -279,6 +279,15 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	ARG_UNUSED(dummy_thread);
 #else
+
+#ifdef CONFIG_TRACING
+	sys_trace_thread_switched_out();
+#endif
+	_current = dummy_thread;
+#ifdef CONFIG_TRACING
+	sys_trace_thread_switched_in();
+#endif
+
 	/*
 	 * Initialize the current execution thread to permit a level of
 	 * debugging output if an exception should happen during kernel
@@ -286,9 +295,6 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 	 * fields of the dummy thread beyond those needed to identify it as a
 	 * dummy thread.
 	 */
-
-	_current = dummy_thread;
-
 	dummy_thread->base.user_options = K_ESSENTIAL;
 	dummy_thread->base.thread_state = _THREAD_DUMMY;
 #ifdef CONFIG_THREAD_STACK_INFO
