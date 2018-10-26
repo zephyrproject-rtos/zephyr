@@ -508,12 +508,24 @@ void *_get_next_switch_handle(void *interrupted)
 		if (_current != th) {
 			reset_time_slice();
 			_current_cpu->swap_ok = 0;
+#ifdef CONFIG_TRACING
+			sys_trace_thread_switched_out();
+#endif
 			_current = th;
+#ifdef CONFIG_TRACING
+			sys_trace_thread_switched_in();
+#endif
 		}
 	}
 
 #else
+#ifdef CONFIG_TRACING
+	sys_trace_thread_switched_out();
+#endif
 	_current = _get_next_ready_thread();
+#ifdef CONFIG_TRACING
+	sys_trace_thread_switched_in();
+#endif
 #endif
 
 	_check_stack_sentinel();

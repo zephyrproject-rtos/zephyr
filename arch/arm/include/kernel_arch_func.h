@@ -55,7 +55,13 @@ _arch_switch_to_main_thread(struct k_thread *main_thread,
 #endif
 	start_of_main_stack = (void *)STACK_ROUND_DOWN(start_of_main_stack);
 
+#ifdef CONFIG_TRACING
+	z_sys_trace_thread_switched_out();
+#endif
 	_current = main_thread;
+#ifdef CONFIG_TRACING
+	z_sys_trace_thread_switched_in();
+#endif
 
 	/* the ready queue cache already contains the main thread */
 
