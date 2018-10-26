@@ -26,30 +26,6 @@
 #define CANNOT_SET_RANGE_MIN		0x01
 #define CANNOT_SET_RANGE_MAX		0x02
 
-enum get_messages {
-	NULL_GET = 0x00,
-	ONOFF_GET,
-	LEVEL_GET,
-	LIGHT_LIGHTNESS_ACTUAL_GET,
-	LIGHT_LIGHTNESS_LINEAR_GET,
-	LIGHT_CTL_GET
-};
-
-enum status {
-	PUB_ONOFF_1 = 0x0301,
-	PUB_ONOFF_2 = 0x0401,
-	PUB_ONOFF_3 = 0x0501,
-	PUB_LEVEL_1 = 0x0302,
-	PUB_LEVEL_2 = 0x0402,
-	PUB_LEVEL_3 = 0x0502,
-	PUB_LIGHT_ACTUAL_1 = 0x0403,
-	PUB_LIGHT_ACTUAL_2 = 0x0503,
-	PUB_LIGHT_LINEAR_1 = 0x0304,
-	PUB_LIGHT_LINEAR_2 = 0x0504,
-	PUB_LIGHT_CTL_1 = 0x0305,
-	PUB_LIGHT_CTL_2 = 0x0405
-};
-
 enum lightness {
 	ONPOWERUP = 0x01,
 	ONOFF,
@@ -193,14 +169,11 @@ extern struct bt_mesh_model s0_models[];
 
 extern const struct bt_mesh_comp comp;
 
-extern u8_t get_msg, last_get_msg;
-extern bool is_light_lightness_actual_state_published;
-extern bool is_light_ctl_state_published;
-
 void gen_onoff_publisher(struct bt_mesh_model *model);
 void gen_level_publisher(struct bt_mesh_model *model);
 void light_lightness_publisher(struct bt_mesh_model *model);
 void light_lightness_linear_publisher(struct bt_mesh_model *model);
 void light_ctl_publisher(struct bt_mesh_model *model);
+void light_ctl_temp_publisher(struct bt_mesh_model *model);
 
 #endif
