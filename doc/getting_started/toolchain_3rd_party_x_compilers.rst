@@ -35,7 +35,7 @@ GNU ARM Embedded
 
       # Windows in cmd.exe
       set ZEPHYR_TOOLCHAIN_VARIANT=gnuarmemb
-      set GNUARMEMB_TOOLCHAIN_PATH="C:\gnu_arm_embedded"
+      set GNUARMEMB_TOOLCHAIN_PATH=C:\gnu_arm_embedded
 
 Intel ISSM
 **********
