@@ -175,7 +175,7 @@ static int l2cap_accept_policy(struct bt_conn *conn)
 		u8_t enc_key_size = bt_conn_enc_key_size(conn);
 
 		if (enc_key_size && enc_key_size < BT_ENC_KEY_SIZE_MAX) {
-			return -EKEYREJECTED;
+			return -EPERM;
 		}
 	} else if (l2cap_policy == L2CAP_POLICY_WHITELIST) {
 		for (i = 0; i < ARRAY_SIZE(l2cap_whitelist); i++) {
