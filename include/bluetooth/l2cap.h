@@ -249,7 +249,7 @@ struct bt_l2cap_server {
 	 *  Possible return values:
 	 *  -ENOMEM if no available space for new channel.
 	 *  -EACCES if application did not authorize the connection.
-	 *  -EKEYREJECTED if encryption key size is too short.
+	 *  -EPERM if encryption key size is too short.
 	 */
 	int (*accept)(struct bt_conn *conn, struct bt_l2cap_chan **chan);
 

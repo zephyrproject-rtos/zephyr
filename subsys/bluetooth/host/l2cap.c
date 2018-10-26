@@ -730,7 +730,7 @@ static u16_t le_err_to_result(int err)
 		return BT_L2CAP_LE_ERR_NO_RESOURCES;
 	case -EACCES:
 		return BT_L2CAP_LE_ERR_AUTHORIZATION;
-	case -EKEYREJECTED:
+	case -EPERM:
 		return BT_L2CAP_LE_ERR_KEY_SIZE;
 	default:
 		return BT_L2CAP_LE_ERR_UNACCEPT_PARAMS;
