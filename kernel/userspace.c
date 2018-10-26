@@ -691,10 +691,10 @@ char *z_user_string_alloc_copy(char *src, size_t maxlen)
 	}
 	if (actual_len == maxlen) {
 		/* Not NULL terminated */
-		printk("string too long %p (%u)\n", src, actual_len);
+		printk("string too long %p (%u)\n", src, (u32_t)actual_len);
 		goto out;
 	}
-	if (__builtin_uaddl_overflow(actual_len, 1, &actual_len)) {
+	if (__builtin_uadd_overflow(actual_len, 1, (u32_t *)&actual_len)) {
 		printk("overflow\n");
 		goto out;
 	}
@@ -719,11 +719,11 @@ int z_user_string_copy(char *dst, char *src, size_t maxlen)
 	}
 	if (actual_len == maxlen) {
 		/* Not NULL terminated */
-		printk("string too long %p (%u)\n", src, actual_len);
+		printk("string too long %p (%u)\n", src, (u32_t)actual_len);
 		ret = EINVAL;
 		goto out;
 	}
-	if (__builtin_uaddl_overflow(actual_len, 1, &actual_len)) {
+	if (__builtin_uadd_overflow(actual_len, 1, (u32_t *)&actual_len)) {
 		printk("overflow\n");
 		ret = EINVAL;
 		goto out;
