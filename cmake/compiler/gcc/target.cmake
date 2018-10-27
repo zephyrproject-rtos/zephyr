@@ -149,5 +149,13 @@ endif()
 foreach(isystem_include_dir ${NOSTDINC})
   list(APPEND isystem_include_flags -isystem "\"${isystem_include_dir}\"")
 endforeach()
-set(CMAKE_REQUIRED_FLAGS -nostartfiles -nostdlib ${isystem_include_flags} -Wl,--unresolved-symbols=ignore-in-object-files)
+# The CMAKE_REQUIRED_FLAGS variable is used by check_c_compiler_flag()
+# (and other commands which end up calling check_c_source_compiles())
+# to add additional compiler flags used during checking. These flags
+# are unused during "real" builds of Zephyr source files linked into
+# the final executable.
+#
+# Appending onto any existing values lets users specify
+# toolchain-specific flags at generation time.
+list(APPEND CMAKE_REQUIRED_FLAGS -nostartfiles -nostdlib ${isystem_include_flags} -Wl,--unresolved-symbols=ignore-in-object-files)
 string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
