@@ -11,6 +11,7 @@
 #include "common.h"
 #include "ble_mesh.h"
 #include "device_composition.h"
+#include "state_binding.h"
 #include "transition.h"
 
 #define MINDIFF 2.25e-308
@@ -256,7 +257,7 @@ void calculate_lightness_target_values(u8_t type)
 	set_light_ctl_temp_target_value = true;
 
 	switch (type) {
-	case ONOFF_TARGET:
+	case ONOFF:
 		if (gen_onoff_srv_root_user_data.target_onoff == 0) {
 			tmp16 = 0;
 		} else {
@@ -264,19 +265,19 @@ void calculate_lightness_target_values(u8_t type)
 		}
 
 		break;
-	case LEVEL_LIGHT_TARGET:
+	case LEVEL:
 		tmp16 = gen_level_srv_root_user_data.target_level + 32768;
 		break;
-	case LIGHT_ACTUAL_TARGET:
+	case ACTUAL:
 		tmp16 = light_lightness_srv_user_data.target_actual;
 		break;
-	case LIGHT_LINEAR_TARGET:
+	case LINEAR:
 		tmp16 = (u16_t) 65535 *
 			sqrt(((float)
 			      light_lightness_srv_user_data.target_linear /
 			      65535));
 		break;
-	case LIGHT_CTL_TARGET:
+	case CTL:
 		set_light_ctl_temp_target_value = false;
 
 		tmp16 = light_ctl_srv_user_data.target_lightness;
@@ -322,11 +323,11 @@ void calculate_temp_target_values(u8_t type)
 	set_light_ctl_delta_uv_target_value = true;
 
 	switch (type) {
-	case LEVEL_TEMP_TARGET:
+	case LEVEL_TEMP:
 		light_ctl_srv_user_data.target_temp =
 			level_to_light_ctl_temp(gen_level_srv_s0_user_data.target_level);
 		break;
-	case LIGHT_CTL_TEMP_TARGET:
+	case CTL_TEMP:
 		set_light_ctl_delta_uv_target_value = false;
 
 		gen_level_srv_s0_user_data.target_level = (s16_t)

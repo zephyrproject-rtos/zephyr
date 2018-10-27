@@ -106,7 +106,7 @@ void onoff_tt_values(struct generic_onoff_state *state)
 		state->transition->quo_tt = state->transition->total_duration /
 						state->transition->counter;
 
-		calculate_lightness_target_values(ONOFF_TARGET);
+		calculate_lightness_target_values(ONOFF);
 	}
 }
 
@@ -132,9 +132,9 @@ void level_tt_values(struct generic_level_state *state)
 						counter;
 
 		if (state == &gen_level_srv_root_user_data) {
-			calculate_lightness_target_values(LEVEL_LIGHT_TARGET);
+			calculate_lightness_target_values(LEVEL);
 		} else if (state == &gen_level_srv_s0_user_data) {
-			calculate_temp_target_values(LEVEL_TEMP_TARGET);
+			calculate_temp_target_values(LEVEL_TEMP);
 		}
 	}
 
@@ -158,7 +158,7 @@ void light_lightness_actual_tt_values(struct light_lightness_state *state)
 		state->transition->quo_tt = state->transition->total_duration /
 						counter;
 
-		calculate_lightness_target_values(LIGHT_ACTUAL_TARGET);
+		calculate_lightness_target_values(ACTUAL);
 	}
 
 	state->tt_delta_actual =
@@ -182,7 +182,7 @@ void light_lightness_linear_tt_values(struct light_lightness_state *state)
 		state->transition->quo_tt = state->transition->total_duration /
 						counter;
 
-		calculate_lightness_target_values(LIGHT_LINEAR_TARGET);
+		calculate_lightness_target_values(LINEAR);
 	}
 
 	state->tt_delta_linear =
@@ -207,7 +207,7 @@ void light_ctl_tt_values(struct light_ctl_state *state)
 		state->transition->quo_tt = state->transition->total_duration /
 						counter;
 
-		calculate_lightness_target_values(LIGHT_CTL_TARGET);
+		calculate_lightness_target_values(CTL);
 	}
 
 	state->tt_delta_lightness =
@@ -240,7 +240,7 @@ void light_ctl_temp_tt_values(struct light_ctl_state *state)
 		state->transition->quo_tt = state->transition->total_duration /
 						counter;
 
-		calculate_temp_target_values(LIGHT_CTL_TEMP_TARGET);
+		calculate_temp_target_values(CTL_TEMP);
 	}
 
 	state->tt_delta_temp = ((float) (state->temp - state->target_temp) /
