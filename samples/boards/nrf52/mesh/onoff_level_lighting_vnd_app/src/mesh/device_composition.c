@@ -292,9 +292,26 @@ void gen_level_publisher(struct bt_mesh_model *model)
 		net_buf_simple_add_le16(msg, state->level);
 
 		if (state->transition->counter) {
-			calculate_rt(state->transition);
-			net_buf_simple_add_le16(msg, state->target_level);
-			net_buf_simple_add_u8(msg, state->transition->rt);
+
+			if (transition_type == LEVEL_TT_MOVE ||
+			    transition_type == LEVEL_TEMP_TT_MOVE) {
+
+				if (state->last_delta < 0) {
+					net_buf_simple_add_le16(msg, INT16_MIN);
+				} else if (state->last_delta > 0) {
+					net_buf_simple_add_le16(msg, INT16_MAX);
+				}
+
+				/* This is as per PTS requirement */
+				net_buf_simple_add_u8(msg, 0x3F);
+
+			} else {
+				calculate_rt(state->transition);
+				net_buf_simple_add_le16(msg,
+							state->target_level);
+				net_buf_simple_add_u8(msg,
+						      state->transition->rt);
+			}
 		}
 
 		err = bt_mesh_model_publish(model);
@@ -502,7 +519,6 @@ static bool gen_move_setunack(struct bt_mesh_model *model,
 	s16_t delta;
 	s32_t tmp32;
 	s64_t now;
-	struct net_buf_simple *msg = model->pub->msg;
 	struct generic_level_state *state = model->user_data;
 
 	delta = (s16_t) net_buf_simple_pull_le16(buf);
@@ -576,29 +592,7 @@ static bool gen_move_setunack(struct bt_mesh_model *model,
 	}
 
 jump:
-	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
-		int err;
-
-		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_GEN_LEVEL_STATUS);
-		net_buf_simple_add_le16(msg, state->level);
-
-		if (state->transition->counter) {
-
-			if (state->last_delta < 0) {
-				net_buf_simple_add_le16(msg, INT16_MIN);
-			} else if (state->last_delta > 0) {
-				net_buf_simple_add_le16(msg, INT16_MAX);
-			}
-
-			/* This is as per PTS requirement */
-			net_buf_simple_add_u8(msg, 0x3F);
-		}
-
-		err = bt_mesh_model_publish(model);
-		if (err) {
-			printk("bt_mesh_model_publish err %d\n", err);
-		}
-	}
+	gen_level_publisher(model);
 
 	return true;
 }
