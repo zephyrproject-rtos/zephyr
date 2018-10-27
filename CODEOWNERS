@@ -87,6 +87,7 @@ drivers/adc/                             @anangl
 drivers/bluetooth/                       @sjanc @jhedberg @Vudentz
 drivers/clock_control/*stm32f4*          @rsalveti @idlethread
 drivers/counter/                         @anangl
+drivers/display/                         @vanwinkeljan
 drivers/ethernet/                        @jukkar @tbursztyka @pfalcon
 drivers/flash/                           @nashif
 drivers/flash/*stm32*                    @superna9999
@@ -137,6 +138,8 @@ include/bluetooth/                       @sjanc @jhedberg @Vudentz
 include/cache.h                          @andrewboie @andyross
 include/counter.h                        @anangl
 include/device.h                         @ramakrishnapallala @nashif
+include/display.h                        @vanwinkeljan
+include/display/                         @vanwinkeljan
 include/drivers/bluetooth/               @sjanc @jhedberg @Vudentz
 include/drivers/ioapic.h                 @andrewboie
 include/drivers/loapic.h                 @andrewboie
@@ -176,6 +179,7 @@ kernel/device.c                          @ramakrishnapallala @nashif
 kernel/idle.c                            @ramakrishnapallala @nashif
 samples/bluetooth/                       @sjanc @jhedberg @Vudentz
 samples/boards/quark_se_c1000/power*/    @ramakrishnapallala @nashif
+samples/display/                         @vanwinkeljan
 samples/net/                             @jukkar @tbursztyka @pfalcon
 samples/net/dns_resolve/                 @jukkar @tbursztyka @pfalcon
 samples/net/http_server/                 @jukkar @tbursztyka
