@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2017, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_lpc54xxx_m0.dtsi>
+#include "lpcxpresso54114.dtsi"
+
+/ {
+	model = "NXP LPCXPRESSO54114 board";
+	compatible = "nxp,lpc54xxx","nxp,lpc";
+
+	chosen {
+		zephyr,sram = &sram2;
+		zephyr,flash = &sram1;
+		/*zephyr,console = &usart0; uncomment to use console on M0  */
+	};
+};
+
+&mailbox0 {
+	status = "ok";
+};

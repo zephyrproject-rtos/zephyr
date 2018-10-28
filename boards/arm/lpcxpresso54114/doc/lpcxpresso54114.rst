@@ -1,7 +1,7 @@
 .. _lpcxpresso54114:
 
-NXP LPCXPRESSO54114 (M4 Core)
-#############################
+NXP LPCXPRESSO54114
+###################
 
 Overview
 ********
@@ -65,9 +65,10 @@ features:
 | USART     | on-chip    | serial port-polling                 |
 +-----------+------------+-------------------------------------+
 
-The default configuration can be found in the defconfig file:
+The default configuration for each core can be found in the defconfig files:
 
-	``boards/arm/lpcxpresso54114_m4/lpcxpresso54114_m4_defconfig``
+	``boards/arm/lpcxpresso54114/lpcxpresso54114_m4_defconfig``
+	``boards/arm/lpcxpresso54114/lpcxpresso54114_m0_defconfig``
 
 Other hardware features are not currently supported by the port.
 

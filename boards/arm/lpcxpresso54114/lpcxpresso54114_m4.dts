@@ -7,39 +7,16 @@
 /dts-v1/;
 
 #include <nxp/nxp_lpc54xxx_m4.dtsi>
+#include "lpcxpresso54114.dtsi"
 
 / {
 	model = "NXP LPCXpresso54114 board";
 	compatible = "nxp,lpc54xxx", "nxp,lpc";
 
-	aliases{
-		usart-0 = &usart0;
-		mailbox-0 = &mailbox0;
-		led0 = &red_led;
-		led1 = &green_led;
-		led2 = &blue_led;
-	};
-
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,console = &usart0;
-	};
-
-	leds {
-		compatible = "gpio-leds";
-		red_led: led_0 {
-			gpios = <&gpio0 29 0>;
-			label = "User LD1";
-		};
-		green_led: led_1 {
-			gpios = <&gpio1 10 0>;
-			label = "User LD2";
-		};
-		blue_led: led_2 {
-			gpios = <&gpio1 9 0>;
-			label = "User LD3";
-		};
 	};
 };
 
@@ -49,5 +26,17 @@
 };
 
 &mailbox0 {
+	status = "ok";
+};
+
+&red_led {
+	status = "ok";
+};
+
+&green_led {
+	status = "ok";
+};
+
+&blue_led {
 	status = "ok";
 };
