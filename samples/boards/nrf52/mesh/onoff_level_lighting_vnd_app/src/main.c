@@ -15,6 +15,8 @@
 #include "transition.h"
 #include "storage.h"
 
+static bool reset;
+
 struct device *led_device[4];
 struct device *button_device[4];
 
@@ -161,21 +163,54 @@ static void light_default_status_init(void)
 	default_tt = gen_def_trans_time_srv_user_data.tt;
 }
 
-static void save_lightness_temp_last_state_timer_handler(struct k_timer *dummy)
+/* unsolicitedly_publish_states_timer related things (Start) */
+
+static void unsolicitedly_publish_states_work_handler(struct k_work *work)
+{
+	gen_onoff_publisher(&root_models[2]);
+	gen_level_publisher(&root_models[4]);
+	light_lightness_publisher(&root_models[11]);
+	light_lightness_linear_publisher(&root_models[11]);
+	light_ctl_publisher(&root_models[14]);
+
+	gen_level_publisher(&s0_models[0]);
+	light_ctl_temp_publisher(&s0_models[2]);
+}
+
+K_WORK_DEFINE(unsolicitedly_publish_states_work,
+	      unsolicitedly_publish_states_work_handler);
+
+static void unsolicitedly_publish_states_timer_handler(struct k_timer *dummy)
+{
+	k_work_submit(&unsolicitedly_publish_states_work);
+}
+
+K_TIMER_DEFINE(unsolicitedly_publish_states_timer,
+	       unsolicitedly_publish_states_timer_handler, NULL);
+
+/* unsolicitedly_publish_states_timer related things (End) */
+
+/* save_lightness_temp_last_values_timer related things (Start) */
+
+static void save_lightness_temp_last_values_timer_handler(struct k_timer *dummy)
 {
 	save_on_flash(LIGHTNESS_TEMP_LAST_STATE);
 }
 
-K_TIMER_DEFINE(save_lightness_temp_last_state_timer,
-	       save_lightness_temp_last_state_timer_handler, NULL);
+K_TIMER_DEFINE(save_lightness_temp_last_values_timer,
+	       save_lightness_temp_last_values_timer_handler, NULL);
+
+/* save_lightness_temp_last_values_timer related things (End) */
 
 static void no_transition_work_handler(struct k_work *work)
 {
+	k_timer_start(&unsolicitedly_publish_states_timer, K_MSEC(5000), 0);
+
 	/* If Lightness & Temperature values remains stable for
 	 * 10 Seconds then & then only get stored on SoC flash.
 	 */
 	if (gen_power_onoff_srv_user_data.onpowerup == STATE_RESTORE) {
-		k_timer_start(&save_lightness_temp_last_state_timer,
+		k_timer_start(&save_lightness_temp_last_values_timer,
 			      K_MSEC(10000), 0);
 	}
 }
@@ -216,7 +251,8 @@ void update_light_state(void)
 		gpio_pin_write(led_device[3], LED3_GPIO_PIN, 1);
 	}
 
-	if (*ptr_counter == 0) {
+	if (*ptr_counter == 0 || reset == false) {
+		reset = true;
 		k_work_submit(&no_transition_work);
 	}
 }
