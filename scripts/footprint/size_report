@@ -425,25 +425,25 @@ def main():
     stat_file = os.path.join(args.outdir, args.binary + ".stat")
     elf_file = os.path.join(args.outdir, args.binary + ".elf")
 
+    if not os.path.exists(elf_file):
+        print("%s does not exist." % (elf_file))
+        return
+
     if not os.path.exists(bin_file):
         FNULL = open(os.devnull, 'w')
         subprocess.call([args.bin_objcopy,"-S", "-Obinary", "-R", ".comment", "-R",
                        "COMMON", "-R", ".eh_frame", elf_file, bin_file],
                        stdout=FNULL, stderr=subprocess.STDOUT)
 
-    if args.outdir and os.path.exists(elf_file):
-        fp = get_footprint_from_bin_and_statfile(bin_file, stat_file, 0, 0)
-        base = os.environ['ZEPHYR_BASE']
-        ram, data = generate_target_memory_section(
-            args.bin_objdump, args.bin_nm, args.outdir, args.binary,
-            base + '/', None)
-        if args.rom:
-            print_tree(data, fp['total_flash'], args.depth)
-        if args.ram:
-            print_tree(ram, fp['total_ram'], args.depth)
-
-    else:
-        print("%s does not exist." % (elf_file))
+    fp = get_footprint_from_bin_and_statfile(bin_file, stat_file, 0, 0)
+    base = os.environ['ZEPHYR_BASE']
+    ram, data = generate_target_memory_section(
+        args.bin_objdump, args.bin_nm, args.outdir, args.binary,
+        base + '/', None)
+    if args.rom:
+        print_tree(data, fp['total_flash'], args.depth)
+    if args.ram:
+        print_tree(ram, fp['total_ram'], args.depth)
 
 
 if __name__ == "__main__":
