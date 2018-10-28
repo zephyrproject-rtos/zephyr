@@ -402,7 +402,7 @@ def main():
 
     parser.add_argument("-d", "--depth", dest="depth", type=int,
                       help="How deep should we go into the tree", metavar="DEPTH")
-    parser.add_argument("-o", "--outdir", dest="outdir",
+    parser.add_argument("-o", "--outdir", dest="outdir", required=True,
                       help="read files from directory OUT", metavar="OUT")
     parser.add_argument("-k", "--kernel-name", dest="binary", default="zephyr",
                       help="kernel binary name")
@@ -412,11 +412,11 @@ def main():
     parser.add_argument("-F", "--rom",
                       action="store_true", dest="rom", default=False,
                       help="print ROM statistics")
-    parser.add_argument("-s", "--objdump", dest="bin_objdump",
+    parser.add_argument("-s", "--objdump", dest="bin_objdump", required=True,
                       help="Path to the GNU binary utility objdump")
     parser.add_argument("-c", "--objcopy", dest="bin_objcopy",
                       help="Path to the GNU binary utility objcopy")
-    parser.add_argument("-n", "--nm", dest="bin_nm",
+    parser.add_argument("-n", "--nm", dest="bin_nm", required=True,
                       help="Path to the GNU binary utility nm")
 
     args = parser.parse_args()
