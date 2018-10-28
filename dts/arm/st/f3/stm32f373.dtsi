@@ -8,6 +8,17 @@
 
 / {
 	soc {
+		pinctrl: pin-controller@48000000 {
+			gpioe: gpio@48001000 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x48001000 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00200000>;
+				label = "GPIOE";
+			};
+		};
+
 		i2c2: i2c@40005800 {
 			compatible = "st,stm32-i2c-v2";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
