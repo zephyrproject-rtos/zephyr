@@ -62,18 +62,15 @@ SECTIONS
 		*(.iplt)
 	}
 
-    GROUP_START(ROM)
+    GROUP_START(ROMABLE_REGION)
+
     _image_rom_start = .;
 
     SECTION_PROLOGUE(_VECTOR_SECTION_NAME,,)
     {
 		. = ALIGN(4);
 		KEEP(*(.vectors.*))
-    } GROUP_LINK_IN(ROM)
-
-    GROUP_END(ROM)
-
-    GROUP_START(ROMABLE_REGION)
+    } GROUP_LINK_IN(ROMABLE_REGION)
 
     SECTION_PROLOGUE(_RESET_SECTION_NAME,,)
     {
