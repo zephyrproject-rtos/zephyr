@@ -96,9 +96,6 @@ struct generic_level_state gen_level_srv_s0_user_data = {
 };
 /* Definitions of models user data (End) */
 
-u8_t get_msg, last_get_msg;
-bool is_light_lightness_actual_state_published;
-bool is_light_ctl_state_published;
 static struct bt_mesh_elem elements[];
 
 /* message handlers (Start) */
@@ -898,8 +895,6 @@ void light_lightness_publisher(struct bt_mesh_model *model)
 		err = bt_mesh_model_publish(model);
 		if (err) {
 			printk("bt_mesh_model_publish err %d\n", err);
-		} else {
-			is_light_lightness_actual_state_published = true;
 		}
 	}
 }
