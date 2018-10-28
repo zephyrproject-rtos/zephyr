@@ -9,7 +9,7 @@
 
 import os
 import re
-from optparse import OptionParser
+import argparse
 import subprocess
 import json
 import operator
@@ -395,48 +395,52 @@ def print_tree(data, total, depth):
 
 
 def main():
-    parser = OptionParser()
-    parser.add_option("-d", "--depth", dest="depth", type="int",
+
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+
+    parser.add_argument("-d", "--depth", dest="depth", type=int,
                       help="How deep should we go into the tree", metavar="DEPTH")
-    parser.add_option("-o", "--outdir", dest="outdir",
+    parser.add_argument("-o", "--outdir", dest="outdir",
                       help="read files from directory OUT", metavar="OUT")
-    parser.add_option("-k", "--kernel-name", dest="binary", default="zephyr",
+    parser.add_argument("-k", "--kernel-name", dest="binary", default="zephyr",
                       help="kernel binary name")
-    parser.add_option("-r", "--ram",
+    parser.add_argument("-r", "--ram",
                       action="store_true", dest="ram", default=False,
                       help="print RAM statistics")
-    parser.add_option("-F", "--rom",
+    parser.add_argument("-F", "--rom",
                       action="store_true", dest="rom", default=False,
                       help="print ROM statistics")
-    parser.add_option("-s", "--objdump", type="string", dest="bin_objdump",
+    parser.add_argument("-s", "--objdump", dest="bin_objdump",
                       help="Path to the GNU binary utility objdump")
-    parser.add_option("-c", "--objcopy", type="string", dest="bin_objcopy",
+    parser.add_argument("-c", "--objcopy", dest="bin_objcopy",
                       help="Path to the GNU binary utility objcopy")
-    parser.add_option("-n", "--nm", type="string", dest="bin_nm",
+    parser.add_argument("-n", "--nm", dest="bin_nm",
                       help="Path to the GNU binary utility nm")
 
-    (options, args) = parser.parse_args()
+    args = parser.parse_args()
 
-    bin_file = os.path.join(options.outdir, options.binary + ".bin")
-    stat_file = os.path.join(options.outdir, options.binary + ".stat")
-    elf_file = os.path.join(options.outdir, options.binary + ".elf")
+    bin_file = os.path.join(args.outdir, args.binary + ".bin")
+    stat_file = os.path.join(args.outdir, args.binary + ".stat")
+    elf_file = os.path.join(args.outdir, args.binary + ".elf")
 
     if not os.path.exists(bin_file):
         FNULL = open(os.devnull, 'w')
-        subprocess.call([options.bin_objcopy,"-S", "-Obinary", "-R", ".comment", "-R",
+        subprocess.call([args.bin_objcopy,"-S", "-Obinary", "-R", ".comment", "-R",
                        "COMMON", "-R", ".eh_frame", elf_file, bin_file],
                        stdout=FNULL, stderr=subprocess.STDOUT)
 
-    if options.outdir and os.path.exists(elf_file):
+    if args.outdir and os.path.exists(elf_file):
         fp = get_footprint_from_bin_and_statfile(bin_file, stat_file, 0, 0)
         base = os.environ['ZEPHYR_BASE']
         ram, data = generate_target_memory_section(
-            options.bin_objdump, options.bin_nm, options.outdir, options.binary,
+            args.bin_objdump, args.bin_nm, args.outdir, args.binary,
             base + '/', None)
-        if options.rom:
-            print_tree(data, fp['total_flash'], options.depth)
-        if options.ram:
-            print_tree(ram, fp['total_ram'], options.depth)
+        if args.rom:
+            print_tree(data, fp['total_flash'], args.depth)
+        if args.ram:
+            print_tree(ram, fp['total_ram'], args.depth)
 
     else:
         print("%s does not exist." % (elf_file))
