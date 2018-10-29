@@ -30,15 +30,6 @@
 				label = "GPIOG";
 			};
 
-			gpioh: gpio@40021c00 {
-				compatible = "st,stm32-gpio";
-				gpio-controller;
-				#gpio-cells = <2>;
-				reg = <0x40021c00 0x400>;
-				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000040>;
-				label = "GPIOH";
-			};
-
 			gpioi: gpio@40022000 {
 				compatible = "st,stm32-gpio";
 				gpio-controller;
