@@ -377,7 +377,6 @@ function(target_sources_codegen
   set(oneValueArgs CODEGEN_OUTPUT)
   set(multiValueArgs CODEGEN_DEFINES SEARCH_PATH)
 
-
   cmake_parse_arguments(CODEGEN "${options}" "${oneValueArgs}"
                         "${multiValueArgs}" ${ARGN})
 
@@ -397,13 +396,19 @@ function(target_sources_codegen
   # Generated file must be generated to the current binary directory.
   # Otherwise this would trigger CMake issue #14633:
   # https://gitlab.kitware.com/cmake/cmake/issues/14633
-  foreach(arg ${CODEGEN_UNPARSED_ARGUMENTS})
+  foreach(arg ${CODEGEN_UNPARSED_ARGUMENTS})	  
+    string(REGEX REPLACE "\\.[^.]*$" "" FILE_WITHOUT_EXT ${arg})
     if(IS_ABSOLUTE ${arg})
       set(template_file ${arg})
-      set(generated_file ${CMAKE_CURRENT_BINARY_DIR}/${CODEGEN_CODEGEN_OUTPUT})
+      string(COMPARE EQUAL ${CODEGEN_CODEGEN_OUTPUT} "" result)
+      if(result)
+        set(generated_file ${CMAKE_CURRENT_BINARY_DIR}/${FILE_WITHOUT_EXT}) 
+      else()
+        set(generated_file ${CMAKE_CURRENT_BINARY_DIR}/${CODEGEN_CODEGEN_OUTPUT})
+      endif()
     else()
       set(template_file ${CMAKE_CURRENT_SOURCE_DIR}/${arg})
-      set(generated_file ${CMAKE_CURRENT_BINARY_DIR}/${CODEGEN_CODEGEN_OUTPUT})
+      set(generated_file ${CMAKE_CURRENT_BINARY_DIR}/${FILE_WITHOUT_EXT}) 
     endif()
     get_filename_component(template_dir ${template_file} DIRECTORY)
 
