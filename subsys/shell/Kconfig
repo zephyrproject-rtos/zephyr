@@ -99,8 +99,9 @@ config SHELL_ARGC_MAX
 config SHELL_WILDCARD
 	bool "Enable wildcard support in shell"
 	select FNMATCH
+	default y
 	help
-	  Enables using * in shell.
+	  Enables using wildcards: * and ? in the shell.
 
 config SHELL_ECHO_STATUS
 	bool "Enable echo on shell"
