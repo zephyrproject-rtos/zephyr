@@ -1,0 +1,12 @@
+&spi1 {
+	status = "ok";
+
+	ili9340@0 {
+		compatible = "ilitek,ili9340";
+		label = "DISPLAY";
+		spi-max-frequency = <15151515>;
+		reg = <0>;
+		reset-gpios = <&gpioa 9 0>;
+		cmd-data-gpios = <&gpioa 8 0>;
+	};
+};
