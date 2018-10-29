@@ -20,3 +20,5 @@
 		};
 	};
 };
+
+/delete-node/ &spi1;

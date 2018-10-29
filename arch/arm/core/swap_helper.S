@@ -190,14 +190,6 @@ _thread_irq_disabled:
     pop {r2, lr}
 #endif /* CONFIG_MPU_STACK_GUARD */
 
-#ifdef CONFIG_BUILTIN_STACK_GUARD
-    /* r2 contains k_thread */
-    add r0, r2, #0
-    push {r2, lr}
-    blx configure_builtin_stack_guard
-    pop {r2, lr}
-#endif /* CONFIG_BUILTIN_STACK_GUARD */
-
 #ifdef CONFIG_USERSPACE
     /* restore mode */
     ldr r0, [r2, #_thread_offset_to_mode]
@@ -231,7 +223,23 @@ _thread_irq_disabled:
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 
+#ifdef CONFIG_BUILTIN_STACK_GUARD
+    /* clear stack pointer limit before setting the PSP */
+    push {r3}
+    mov r3, #0
+    msr PSPLIM, r3
+    pop {r3}
+#endif
+
     msr PSP, ip
+
+#ifdef CONFIG_BUILTIN_STACK_GUARD
+    /* r2 contains k_thread */
+    add r0, r2, #0
+    push {r2, lr}
+    blx configure_builtin_stack_guard
+    pop {r2, lr}
+#endif /* CONFIG_BUILTIN_STACK_GUARD */
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
     stm sp!,{r0-r3} /* Save regs r0 to r4 on stack */

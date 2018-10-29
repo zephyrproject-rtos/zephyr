@@ -40,11 +40,11 @@ Display is controlled by the nRF52840 via SPI and 3 GPIOs.
 
 On the back side of the board are all other components such as nRF52840,
 circuit for the Debug Adapter, On/Off and power source switch, battery holder,
-buttons and MMA8652 (accelerometer) sensor.
+buttons and MMA8652FC (accelerometer) sensor.
 
 ADPS9960 is Digital Proximity, Ambient Light, RGB and Gesture sensor.
 HDC1010 is a digital humidity and temperature sensor.
-MMA8652 is a 12-bit Digital Accelerometer.
+MMA8652FC is a 12-bit Digital Accelerometer.
 All sensors are connected to the I2C bus and one GPIO pin each,
 which can be used as an interrupt source.
 
@@ -110,7 +110,7 @@ hardware features:
 +-----------+------------+----------------------+
 | RADIO     | on-chip    | Bluetooth            |
 +-----------+------------+----------------------+
-| SENSOR    | off-chip   | MMA8652 polling:     |
+| SENSOR    | off-chip   | MMA8652FC polling:   |
 |           |            | ADPS9960 polling:    |
 |           |            | HDC1010 polling      |
 +-----------+------------+----------------------+
@@ -126,27 +126,27 @@ Port P0
 +-------+-----------------------+---------------------------+
 | Name  | Function              | Usage                     |
 +=======+=======================+===========================+
-| P0.0  | XL1                   | 32.768 kHz oscillator     |
+| P0.00 | XL1                   | 32.768 kHz oscillator     |
 +-------+-----------------------+---------------------------+
-| P0.1  | XL2                   | 32.768 kHz oscillator     |
+| P0.01 | XL2                   | 32.768 kHz oscillator     |
 +-------+-----------------------+---------------------------+
-| P0.2  | edge connector pin 25 | None                      |
+| P0.02 | edge connector pin 30 | None                      |
 +-------+-----------------------+---------------------------+
-| P0.3  | edge connector pin 27 | None                      |
+| P0.03 | edge connector pin 31 | None                      |
 +-------+-----------------------+---------------------------+
-| P0.4  | edge connector pin 29 | None                      |
+| P0.04 | edge connector pin 19 | None                      |
 +-------+-----------------------+---------------------------+
-| P0.5  | edge connector pin 31 | None                      |
+| P0.05 | edge connector pin 11 | None                      |
 +-------+-----------------------+---------------------------+
-| P0.6  | UART0_TX              | UART Console over USB     |
+| P0.06 | UART0_TX              | UART Console over USB     |
 +-------+-----------------------+---------------------------+
-| P0.7  | Button                | user button (S5)          |
+| P0.07 | Button                | user button (S5)          |
 +-------+-----------------------+---------------------------+
-| P0.8  | UART0_RX              | UART Console over USB     |
+| P0.08 | UART0_RX              | UART Console over USB     |
 +-------+-----------------------+---------------------------+
-| P0.9  | edge connector pin 42 | None                      |
+| P0.09 | edge connector pin 27 | None                      |
 +-------+-----------------------+---------------------------+
-| P0.10 | edge connector pin 40 | None                      |
+| P0.10 | edge connector pin 29 | None                      |
 +-------+-----------------------+---------------------------+
 | P0.11 | RGB LED (red)         | GPIO                      |
 +-------+-----------------------+---------------------------+
@@ -174,21 +174,21 @@ Port P0
 +-------+-----------------------+---------------------------+
 | P0.23 | APDS9960 INT          | GPIO                      |
 +-------+-----------------------+---------------------------+
-| P0.24 | MMA8652 INT1          | GPIO                      |
+| P0.24 | MMA8652FC INT1        | GPIO                      |
 +-------+-----------------------+---------------------------+
-| P0.25 | reserved              | None                      |
+| P0.25 | MMA8652FC INT2        | GPIO                      |
 +-------+-----------------------+---------------------------+
 | P0.26 | I2C_0                 | I2C                       |
 +-------+-----------------------+---------------------------+
 | P0.27 | I2C_0                 | I2C                       |
 +-------+-----------------------+---------------------------+
-| P0.28 | edge connector pin 35 | None                      |
+| P0.28 | edge connector pin 3  | None                      |
 +-------+-----------------------+---------------------------+
-| P0.29 | edge connector pin 37 | None                      |
+| P0.29 | edge connector pin 52 | None                      |
 +-------+-----------------------+---------------------------+
-| P0.30 | edge connector pin 39 | None                      |
+| P0.30 | edge connector pin 1  | None                      |
 +-------+-----------------------+---------------------------+
-| P0.31 | edge connector pin 41 | None                      |
+| P0.31 | edge connector pin 37 | None                      |
 +-------+-----------------------+---------------------------+
 
 Port P1
@@ -197,37 +197,37 @@ Port P1
 +-------+-----------------------+---------------------------+
 | Name  | Function              | Usage                     |
 +=======+=======================+===========================+
-| P1.0  | peripheral power on   | GPIO                      |
+| P1.00 | peripheral power on   | GPIO                      |
 +-------+-----------------------+---------------------------+
-| P1.1  | edge connector pin 38 | None                      |
+| P1.01 | edge connector pin 32 | None                      |
 +-------+-----------------------+---------------------------+
-| P1.2  | edge connector pin 36 | None                      |
+| P1.02 | edge connector pin 34 | None                      |
 +-------+-----------------------+---------------------------+
-| P1.3  | edge connector pin 32 | None                      |
+| P1.03 | edge connector pin 17 | None                      |
 +-------+-----------------------+---------------------------+
-| P1.4  | edge connector pin 30 | None                      |
+| P1.04 | edge connector pin 15 | None                      |
 +-------+-----------------------+---------------------------+
-| P1.5  | edge connector pin 28 | None                      |
+| P1.05 | edge connector pin 13 | None                      |
 +-------+-----------------------+---------------------------+
-| P1.6  | edge connector pin 26 | None                      |
+| P1.06 | edge connector pin 33 | None                      |
 +-------+-----------------------+---------------------------+
-| P1.7  | edge connector pin 20 | None                      |
+| P1.07 | edge connector pin 35 | None                      |
 +-------+-----------------------+---------------------------+
-| P1.8  | edge connector pin 18 | None                      |
+| P1.08 | edge connector pin 45 | None                      |
 +-------+-----------------------+---------------------------+
-| P1.9  | RGB LED (blue)        | GPIO                      |
+| P1.09 | RGB LED (blue)        | GPIO                      |
 +-------+-----------------------+---------------------------+
-| P1.10 | edge connector pin 16 | None                      |
+| P1.10 | edge connector pin 47 | None                      |
 +-------+-----------------------+---------------------------+
-| P1.11 | edge connector pin 14 | None                      |
+| P1.11 | edge connector pin 49 | None                      |
 +-------+-----------------------+---------------------------+
-| P1.12 | edge connector pin 10 | None                      |
+| P1.12 | edge connector pin 51 | None                      |
 +-------+-----------------------+---------------------------+
-| P1.13 | edge connector pin 8  | None                      |
+| P1.13 | edge connector pin 36 | None                      |
 +-------+-----------------------+---------------------------+
-| P1.14 | edge connector pin 6  | None                      |
+| P1.14 | edge connector pin 48 | None                      |
 +-------+-----------------------+---------------------------+
-| P1.15 | edge connector pin 4  | None                      |
+| P1.15 | edge connector pin 50 | None                      |
 +-------+-----------------------+---------------------------+
 
 Edge Connector
@@ -264,7 +264,9 @@ I2C bus and sensors testpoints
 +-------+-----------------------+---------------------------+
 | J20   | closed solder jumper  | testpoint I2C SCL         |
 +-------+-----------------------+---------------------------+
-| J7    | closed solder jumper  | testpoint INT1 MMA8652    |
+| J7    | closed solder jumper  | testpoint INT1 MMA8652FC  |
++-------+-----------------------+---------------------------+
+| J24   | closed solder jumper  | testpoint INT2 MMA8652FC  |
 +-------+-----------------------+---------------------------+
 | J11   | closed solder jumper  | testpoint INT APDS9960    |
 +-------+-----------------------+---------------------------+

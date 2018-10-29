@@ -167,9 +167,13 @@ void bst_post_init(void)
 void bst_tick(bs_time_t time)
 {
 
-	if (current_test && current_test->test_tick_f) {
+	if (current_test == NULL) {
+		return;
+	}
+
+	if (current_test->test_tick_f) {
 		current_test->test_tick_f(time);
-	} else {
+	} else if (current_test->test_id) {
 		bs_trace_error_line("the test id %s doesn't have a tick handler"
 				    " (how come did we arrive here?)\n",
 				    current_test->test_id);

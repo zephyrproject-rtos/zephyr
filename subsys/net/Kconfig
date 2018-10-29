@@ -33,9 +33,10 @@ config NET_BUF_LOG
 
 module = NET_BUF
 module-dep = LOG
+module-def = LOG_LEVEL_WRN
 module-str = Log level for network buffer handling
 module-help = Sets log level for network buffers.
-source "subsys/net/Kconfig.template.log_config.net"
+source "subsys/net/Kconfig.template.log_config.default.net"
 
 if NET_BUF_LOG
 

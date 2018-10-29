@@ -28,15 +28,43 @@ below.
    :compact:
 
 Normally one needs extra privileges to create and configure the TAP device in
-the host system. Use sudo to execute the Zephyr process with admin privileges,
-like this:
+the host system. If the user has set the
+:option:`CONFIG_ETH_NATIVE_POSIX_STARTUP_AUTOMATIC` option (this is disabled
+by default), then the user needs to use ``sudo`` to execute the Zephyr process
+with admin privileges, like this:
 
 .. code-block:: console
 
     sudo --preserve-env=ZEPHYR_BASE make run
 
 If the ``sudo --preserve-env=ZEPHYR_BASE`` gives an error,
-just use ``sudo --preserve-env`` instead:
+just use ``sudo --preserve-env`` instead.
+
+If the :option:`CONFIG_ETH_NATIVE_POSIX_STARTUP_AUTOMATIC` option
+is not enabled (this is the default), then the user should
+execute the ``net-setup.sh`` script from Zephyr `net-tools`_ repository.
+The script should be run before executing the Zephyr process. The script
+will create the zeth interface and set up IP addresses and routes.
+While running ``net-setup.sh`` requires root access, afterwards Zephyr
+process can be run as a non-root user.
+
+You can run the ``net-setup.sh`` script like this::
+
+   cd net-tools
+   sudo ./net-setup.sh
+
+or::
+
+   sudo ./net-setup.sh --config ./zeth-vlan.conf
+
+See also other command line options by typing ``net-setup.sh --help``.
+
+When the network interface is set up manually, you can leave the wireshark
+to monitor the interface, and then start and stop the zephyr process without
+stopping the wireshark.
+
+Setting things manually works the same as working with SLIP connectivity
+in QEMU.
 
 If you want to connect two Zephyr instances together, you can do it like this:
 
@@ -116,3 +144,5 @@ Note that in this setup you cannot access these two Zephyr devices from
 your host. If you want to do that, then you could create a new network
 interface with proper IP addresses and add that interface to the Zephyr
 bridge.
+
+.. _`net-tools`: https://github.com/zephyrproject-rtos/net-tools

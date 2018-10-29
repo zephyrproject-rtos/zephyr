@@ -307,12 +307,12 @@ static int cmd_udp_download(const struct shell *shell, size_t argc,
 
 		do_init(shell);
 
-		if (argc < 2 || shell_help_requested(shell)) {
+		if (shell_help_requested(shell)) {
 			shell_help_print(shell, NULL, 0);
 			return -ENOEXEC;
 		}
 
-		if (argc > 1) {
+		if (argc >= 2) {
 			port = strtoul(argv[start + 1], NULL, 10);
 		} else {
 			port = DEF_PORT;
@@ -975,12 +975,12 @@ static int cmd_tcp_download(const struct shell *shell, size_t argc,
 
 		do_init(shell);
 
-		if (argc < 2 || shell_help_requested(shell)) {
+		if (shell_help_requested(shell)) {
 			shell_help_print(shell, NULL, 0);
 			return -ENOEXEC;
 		}
 
-		if (argc > 1) {
+		if (argc >= 2) {
 			port = strtoul(argv[1], NULL, 10);
 		} else {
 			port = DEF_PORT;
@@ -1108,7 +1108,7 @@ SHELL_CREATE_STATIC_SUBCMD_SET(zperf_cmd_tcp)
 		  ,
 		  cmd_tcp_upload2),
 	SHELL_CMD(download, NULL,
-		  "<port>\n"
+		  "[<port>]\n"
 		  "Example: tcp download 5001\n",
 		  cmd_tcp_download),
 	SHELL_SUBCMD_SET_END
@@ -1148,7 +1148,7 @@ SHELL_CREATE_STATIC_SUBCMD_SET(zperf_cmd_udp)
 		  ,
 		  cmd_udp_upload2),
 	SHELL_CMD(download, NULL,
-		  "<port>\n"
+		  "[<port>]\n"
 		  "Example: udp download 5001\n",
 		  cmd_udp_download),
 	SHELL_SUBCMD_SET_END

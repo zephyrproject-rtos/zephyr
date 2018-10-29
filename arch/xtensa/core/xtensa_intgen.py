@@ -24,6 +24,9 @@ ints_by_lvl = {}
 cindent = 0
 def cprint(s):
     global cindent
+    if s.endswith(":"):
+        print(s)
+        return
     if s.find("}") >= 0:
         cindent -= 1
     for xx in range(cindent):
@@ -39,11 +42,10 @@ def emit_int_handler(ints):
             # handler pointer and argument as literals, saving a few
             # instructions and avoiding the need to link in
             # _sw_isr_table entirely.
-            cprint("if (mask & (1 << " + str(i) + ")) {")
-            cprint("struct _isr_table_entry *e = &_sw_isr_table[" + str(i) + "];")
-            print("");
-            cprint("e->isr(e->arg);")
-            cprint("return 1 << " + str(i) + ";")
+            cprint("if (mask & BIT(%d)) {" % i)
+            cprint("mask = BIT(%d);" % i)
+            cprint("irq = %d;" % i)
+            cprint("goto handle_irq;")
             cprint("}")
     else:
         half = int(len(ints)/2)
@@ -93,6 +95,7 @@ cprint("")
 
 # Re-include the core-isa header and be sure our definitions match, for sanity
 cprint("#include <xtensa/config/core-isa.h>")
+cprint("#include <misc/util.h>")
 cprint("#include <sw_isr_table.h>")
 cprint("")
 for l in ints_by_lvl:
@@ -120,10 +123,16 @@ for lvl in ints_by_lvl:
     cprint("static inline int _xtensa_handle_one_int" + str(lvl) + "(unsigned int mask)")
     cprint("{")
 
+    cprint("int irq;")
+    print("")
+
     ints_by_lvl[lvl].sort()
     emit_int_handler(ints_by_lvl[lvl])
 
     cprint("return 0;")
+    cprint("handle_irq:")
+    cprint("_sw_isr_table[irq].isr(_sw_isr_table[irq].arg);")
+    cprint("return mask;")
     cprint("}")
     cprint("")
 
