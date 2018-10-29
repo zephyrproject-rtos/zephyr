@@ -1,14 +1,20 @@
 {# Copyright (c) 2018 Nordic Semiconductor ASA #}
 {# SPDX-License-Identifier: Apache-2.0         #}
 
-{%- macro get_param(param_list, param) -%}
-	{%- for key, value in param_list.items() -%}
+{%- set params = {} -%} 
+
+{%- macro set_param(param) -%}
+	{%- do params.update(param) -%}
+{%- endmacro -%}
+
+{%- macro get_param(param) -%}
+	{%- for key, value in params.items() -%}
 		{%- if key == param -%}
 			{{ value }}
 			{%- break -%}
 		{%- endif -%}
 	{%- endfor -%}
-{%- endmacro -%}
+{%- endmacro %}
 
 {%- macro gen_device_name(device) -%}
 	{%- set name = device['compatible']['0']|replace(',','_')|replace('-','_') -%}
@@ -16,20 +22,16 @@
 	{{ name }}
 {%- endmacro -%}
 
-{%- macro gen_irq_connect(device, irq_name, isr_name) -%}
-{%- for irq in device['interrupts'] -%}
-	{%- if irq_name == irq -%}
+{%- macro gen_irq_connect(device) -%}
+{% for irq in device['interrupts'] %}
 	IRQ_CONNECT({{ device['interrupts'][irq]['irq'] }}, \
 		    {{ device['interrupts'][irq]['priority'] }}, \
-		    {{ isr_name }}, \
-		    DEVICE_GET({{ device_name }}, \
+		    {{ get_param('irq_func') }}_{{ irq }}, \
+		    DEVICE_GET({{ gen_device_name(device) }}, \
 		    0);
 	irq_enable({{ device['interrupts'][irq]['irq'] }});
-	{% endif -%}
-{%- endfor -%}
+{% endfor %}
 {%- endmacro -%}
-
-
 
 {# Input paramters 
 	data               The data variable in the main template is not automatically carried over to this macro
@@ -38,9 +40,6 @@
 	kernel_levels      Defaults to the value "POST_KERNEL" if omitted
 	#}
 {%- macro device(data, compatibles, init_priority_flag='CONFIG_KERNEL_INIT_PRIORITY_DEVICE', kernel_level='POST_KERNEL') -%}
-
-{# Empty params dictionary that can be filled by the init_params block #}
-{%- set params = {} -%}
 
 {# Meta block just to fetch the parameters initialized in the meta template file #}
 {%- block init_params scoped -%}
@@ -65,26 +64,25 @@
 {%- set device_label             = device['label'] -%}
 
 #ifdef CONFIG_{{ device_label }}
-#ifdef {{ get_param(params, 'irq_flag') }}
+#ifdef {{ get_param('irq_flag') }}
 
 DEVICE_DECLARE({{ device_name }});
 static void {{ irq_config_function_name }}(struct device *dev)
 {
-{%- block irq_config_function_body scoped -%}
-{%- endblock -%}
+{{ gen_irq_connect(device) }}
 }
 
 #endif
 
-{% if get_param(params, 'config_struct') != "" -%}
-static const struct {{ get_param(params, 'config_struct') }} {{ config_struct_name }} = {
+{% if get_param('config_struct') != "" -%}
+static const struct {{ get_param('config_struct') }} {{ config_struct_name }} = {
 {%- block config_struct_body scoped -%}
 {%- endblock -%}
 };
 {%- endif %}
 
-{% if get_param(params, 'data_struct') != "" -%}
-static struct {{ get_param(params, 'data_struct') }} {{ data_struct_name }} = {
+{% if get_param('data_struct') != "" -%}
+static struct {{ get_param('data_struct') }} {{ data_struct_name }} = {
 {%- block data_struct_body scoped -%}
 {%- endblock -%}
 };
@@ -92,12 +90,12 @@ static struct {{ get_param(params, 'data_struct') }} {{ data_struct_name }} = {
 
 DEVICE_AND_API_INIT({{ device_name }}, \
                     "{{ device_label }}", \
-                    &{{ get_param(params, 'init_function') }}, \
-                    {{'NULL' if get_param(params, 'data_struct') == '' else '&'+data_struct_name }}, \
-                    {{'NULL' if get_param(params, 'config_struct') == '' else '&'+config_struct_name }}, \
+                    &{{ get_param('init_function') }}, \
+                    {{'NULL' if get_param('data_struct') == '' else '&'+data_struct_name }}, \
+                    {{'NULL' if get_param('config_struct') == '' else '&'+config_struct_name }}, \
                     {{ kernel_level }}, \
                     {{ init_priority_flag }}, \
-                    &{{ get_param(params, 'api_struct') }});
+                    &{{ get_param('api_struct') }});
 
 #endif // CONFIG_{{ device_label }}
 {%- endfor -%}
