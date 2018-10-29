@@ -37,9 +37,14 @@ const struct i2c_nrfx_twim_config *get_dev_config(struct device *dev)
 static int i2c_nrfx_twim_transfer(struct device *dev, struct i2c_msg *msgs,
 				  u8_t num_msgs, u16_t addr)
 {
+	int ret = 0;
+
+	nrfx_twim_enable(&get_dev_config(dev)->twim);
+
 	for (size_t i = 0; i < num_msgs; i++) {
 		if (I2C_MSG_ADDR_10_BITS & msgs[i].flags) {
-			return -ENOTSUP;
+			ret = -ENOTSUP;
+			break;
 		}
 
 		nrfx_twim_xfer_desc_t cur_xfer = {
@@ -56,9 +61,11 @@ static int i2c_nrfx_twim_transfer(struct device *dev, struct i2c_msg *msgs,
 					       0 : NRFX_TWIM_FLAG_TX_NO_STOP);
 		if (res != NRFX_SUCCESS) {
 			if (res == NRFX_ERROR_BUSY) {
-				return -EBUSY;
+				ret = -EBUSY;
+				break;
 			} else {
-				return -EIO;
+				ret = -EIO;
+				break;
 			}
 		}
 
@@ -66,11 +73,14 @@ static int i2c_nrfx_twim_transfer(struct device *dev, struct i2c_msg *msgs,
 		res = get_dev_data(dev)->res;
 		if (res != NRFX_SUCCESS) {
 			LOG_ERR("Error %d occurred for message %d", res, i);
-			return -EIO;
+			ret = -EIO;
+			break;
 		}
 	}
 
-	return 0;
+	nrfx_twim_disable(&get_dev_config(dev)->twim);
+
+	return ret;
 }
 
 static void event_handler(nrfx_twim_evt_t const *p_event, void *p_context)
@@ -135,7 +145,6 @@ static int init_twim(struct device *dev, const nrfx_twim_config_t *config)
 		return -EBUSY;
 	}
 
-	nrfx_twim_enable(&get_dev_config(dev)->twim);
 	return 0;
 }
 

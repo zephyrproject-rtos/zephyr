@@ -36,9 +36,14 @@ const struct i2c_nrfx_twi_config *get_dev_config(struct device *dev)
 static int i2c_nrfx_twi_transfer(struct device *dev, struct i2c_msg *msgs,
 				 u8_t num_msgs, u16_t addr)
 {
+	int ret = 0;
+
+	nrfx_twi_enable(&get_dev_config(dev)->twi);
+
 	for (size_t i = 0; i < num_msgs; i++) {
 		if (I2C_MSG_ADDR_10_BITS & msgs[i].flags) {
-			return -ENOTSUP;
+			ret = -ENOTSUP;
+			break;
 		}
 
 		nrfx_twi_xfer_desc_t cur_xfer = {
@@ -55,9 +60,11 @@ static int i2c_nrfx_twi_transfer(struct device *dev, struct i2c_msg *msgs,
 					       0 : NRFX_TWI_FLAG_TX_NO_STOP);
 		if (res != NRFX_SUCCESS) {
 			if (res == NRFX_ERROR_BUSY) {
-				return -EBUSY;
+				ret = -EBUSY;
+				break;
 			} else {
-				return -EIO;
+				ret = -EIO;
+				break;
 			}
 		}
 
@@ -65,11 +72,14 @@ static int i2c_nrfx_twi_transfer(struct device *dev, struct i2c_msg *msgs,
 		res = get_dev_data(dev)->res;
 		if (res != NRFX_SUCCESS) {
 			LOG_ERR("Error %d occurred for message %d", res, i);
-			return -EIO;
+			ret = -EIO;
+			break;
 		}
 	}
 
-	return 0;
+	nrfx_twi_disable(&get_dev_config(dev)->twi);
+
+	return ret;
 }
 
 static void event_handler(nrfx_twi_evt_t const *p_event, void *p_context)
@@ -133,7 +143,6 @@ static int init_twi(struct device *dev, const nrfx_twi_config_t *config)
 		return -EBUSY;
 	}
 
-	nrfx_twi_enable(&get_dev_config(dev)->twi);
 	return 0;
 }
 #define I2C_NRFX_TWI_INVALID_FREQUENCY  ((nrf_twi_frequency_t)-1)
