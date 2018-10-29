@@ -455,14 +455,6 @@ static inline int uart_irq_tx_complete(struct device *dev)
 }
 
 /**
- * @deprecated This API is deprecated.
- */
-static inline int __deprecated uart_irq_tx_empty(struct device *dev)
-{
-	return uart_irq_tx_complete(dev);
-}
-
-/**
  * @brief Check if UART RX buffer has a received char
  *
  * @details Check if UART RX buffer has at least one pending character
