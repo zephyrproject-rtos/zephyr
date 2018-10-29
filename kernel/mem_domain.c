@@ -118,7 +118,9 @@ void k_mem_domain_destroy(struct k_mem_domain *domain)
 
 	key = irq_lock();
 
-	/* Handle architecture specifc destroy only if it is the current thread*/
+	/* Handle architecture-specific destroy
+	 * only if it is the current thread.
+	 */
 	if (_current->mem_domain_info.mem_domain == domain) {
 		_arch_mem_domain_destroy(domain);
 	}
@@ -191,7 +193,9 @@ void k_mem_domain_remove_partition(struct k_mem_domain *domain,
 	/* Assert if not found */
 	__ASSERT(p_idx < max_partitions, "");
 
-	/* Handle architecture specifc remove only if it is the current thread*/
+	/* Handle architecture-specific remove
+	 * only if it is the current thread.
+	 */
 	if (_current->mem_domain_info.mem_domain == domain) {
 		_arch_mem_domain_partition_remove(domain, p_idx);
 	}
