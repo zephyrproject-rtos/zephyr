@@ -329,6 +329,7 @@ static int create_ipv4_answer(struct net_context *ctx,
 
 		addr_len = sizeof(struct in6_addr);
 #else
+		addr = NULL;
 		addr_len = 0;
 #endif
 	} else {
