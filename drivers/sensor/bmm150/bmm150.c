@@ -297,7 +297,7 @@ static int bmm150_sample_fetch(struct device *dev, enum sensor_channel chan)
 	u16_t rhall;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL ||
-			chan == SENSOR_CHAN_MAGN_ANY);
+			chan == SENSOR_CHAN_MAGN_XYZ);
 
 	if (i2c_burst_read(drv_data->i2c, config->i2c_slave_addr,
 			   BMM150_REG_X_L, (u8_t *)values,
@@ -353,7 +353,7 @@ static int bmm150_channel_get(struct device *dev,
 	case SENSOR_CHAN_MAGN_Z:
 		bmm150_convert(val, drv_data->sample_x);
 		break;
-	case SENSOR_CHAN_MAGN_ANY:
+	case SENSOR_CHAN_MAGN_XYZ:
 		bmm150_convert(val, drv_data->sample_x);
 		bmm150_convert(val + 1, drv_data->sample_y);
 		bmm150_convert(val + 2, drv_data->sample_z);
