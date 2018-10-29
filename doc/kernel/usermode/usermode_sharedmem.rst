@@ -27,11 +27,11 @@ partitions available to a thread.  Specifically processors with MPU's
 cannot support the same number of partitions as a MMU.
 
 This specific implementation adds a wrapper to simplify the programmers
-task of using the app_memmory subsystem through the use of macros and
-a python script to generate the linker script.  The linker script provides
+task of using the app_memory subsystem through the use of macros and
+a python script to generate the linker script. The linker script provides
 the proper alignment for processors requiring power of two boundaries.
 Without the wrapper, a developer is required to implement custom
-linker scripts for each processor the project.
+linker scripts for each processor in the project.
 
 The general usage is as follows. Define CONFIG_APP_SHARED_MEM=y in the
 proj.conf file in the project folder.  Include app_memory/app_memdomain.h
