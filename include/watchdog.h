@@ -29,19 +29,6 @@ extern "C" {
 #endif
 
 /**
- * @name Deprecated Watchdog API types.
- * @{
- */
-#define WDT_MODE		(BIT(1))
-#define WDT_MODE_OFFSET		(1)
-#define WDT_TIMEOUT_MASK	(0xF)
-
-enum wdt_mode {
-	WDT_MODE_RESET = 0,
-	WDT_MODE_INTERRUPT_RESET
-};
-
-/**
  * WDT clock cycles for timeout type.
  */
 enum wdt_clock_timeout_cycles {
@@ -68,7 +55,6 @@ enum wdt_clock_timeout_cycles {
  */
 struct wdt_config {
 	u32_t timeout;
-	enum wdt_mode mode;
 	void (*interrupt_fn)(struct device *dev);
 };
 /**
@@ -182,51 +168,12 @@ typedef int (*wdt_api_install_timeout)(struct device *dev,
  */
 typedef int (*wdt_api_feed)(struct device *dev, int channel_id);
 
-/**
- * @typedef wdt_api_enable
- * @brief Callback API for enabling watchdog.
- * See wdt_enable() for argument descriptions. Please note that this function
- * is deprecated.
- */
-typedef void (*wdt_api_enable)(struct device *dev);
-
-/**
- * @typedef wdt_api_get_config
- * @brief Callback API for getting current watchdog configuration.
- * See wdt_get_config() for argument descriptions. Please note that this
- * function is deprecated.
- */
-typedef void (*wdt_api_get_config)(struct device *dev,
-				   struct wdt_config *config);
-
-/**
- * @typedef wdt_api_set_config
- * @brief Callback API for setting current watchdog configuration.
- * See wdt_set_config() for argument descriptions. Please note that this
- * function is deprecated.
- */
-typedef int (*wdt_api_set_config)(struct device *dev,
-				  struct wdt_config *config);
-
-/**
- * @typedef wdt_api_reload
- * @brief Callback API for reloading watchdog.
- * See wdt_reload() for argument descriptions. Please note that this function
- * is deprecated.
- */
-typedef void (*wdt_api_reload)(struct device *dev);
-
 /** @cond INTERNAL_HIDDEN */
 struct wdt_driver_api {
 	wdt_api_setup setup;
 	wdt_api_disable disable;
 	wdt_api_install_timeout install_timeout;
 	wdt_api_feed feed;
-	/** Deprecated functions */
-	wdt_api_enable enable;
-	wdt_api_get_config get_config;
-	wdt_api_set_config set_config;
-	wdt_api_reload reload;
 };
 /**
  * @endcond
@@ -324,39 +271,6 @@ static inline int wdt_feed(struct device *dev, int channel_id)
 	return api->feed(dev, channel_id);
 }
 
-static inline void __deprecated wdt_enable(struct device *dev)
-{
-	const struct wdt_driver_api *api =
-		(const struct wdt_driver_api *)dev->driver_api;
-
-	api->enable(dev);
-}
-
-static inline void __deprecated wdt_get_config(struct device *dev,
-				  struct wdt_config *config)
-{
-	const struct wdt_driver_api *api =
-		(const struct wdt_driver_api *)dev->driver_api;
-
-	api->get_config(dev, config);
-}
-
-static inline int __deprecated wdt_set_config(struct device *dev,
-				 struct wdt_config *config)
-{
-	const struct wdt_driver_api *api =
-		(const struct wdt_driver_api *)dev->driver_api;
-
-	return api->set_config(dev, config);
-}
-
-static inline void __deprecated wdt_reload(struct device *dev)
-{
-	const struct wdt_driver_api *api =
-		(const struct wdt_driver_api *)dev->driver_api;
-
-	api->reload(dev);
-}
 #ifdef __cplusplus
 }
 #endif

@@ -13,6 +13,11 @@
 #include <watchdog.h>
 #include <device.h>
 
+enum wdt_mode {
+	WDT_MODE_RESET = 0,
+	WDT_MODE_INTERRUPT_RESET
+};
+
 struct wdt_esp32_data {
 	u32_t timeout;
 	enum wdt_mode mode;

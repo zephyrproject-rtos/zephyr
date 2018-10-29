@@ -126,46 +126,11 @@ static int wdt_nrf_feed(struct device *dev, int channel_id)
 	return 0;
 }
 
-static void wdt_nrf_enable(struct device *dev)
-{
-	ARG_UNUSED(dev);
-	/* Deprecated function. No implementation needed. */
-	LOG_ERR("Function not implemented!");
-}
-
-static int wdt_nrf_set_config(struct device *dev, struct wdt_config *config)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(config);
-	/* Deprecated function. No implementation needed. */
-	LOG_ERR("Function not implemented!");
-	return 0;
-}
-
-static void wdt_nrf_get_config(struct device *dev, struct wdt_config *config)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(config);
-	/* Deprecated function. No implementation needed. */
-	LOG_ERR("Function not implemented!");
-}
-
-static void wdt_nrf_reload(struct device *dev)
-{
-	ARG_UNUSED(dev);
-	/* Deprecated function. No implementation needed. */
-	LOG_ERR("Function not implemented!");
-}
-
 static const struct wdt_driver_api wdt_nrf_api = {
 	.setup = wdt_nrf_setup,
 	.disable = wdt_nrf_disable,
 	.install_timeout = wdt_nrf_install_timeout,
 	.feed = wdt_nrf_feed,
-	.enable = wdt_nrf_enable,
-	.get_config = wdt_nrf_get_config,
-	.set_config = wdt_nrf_set_config,
-	.reload = wdt_nrf_reload,
 };
 
 static void wdt_event_handler(void)
