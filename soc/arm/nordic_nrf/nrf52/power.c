@@ -115,3 +115,11 @@ bool _sys_soc_is_valid_power_state(enum power_states state)
 
 	return false;
 }
+
+/* Overrides the weak ARM implementation:
+   Set general purpose retention register and reboot */
+void sys_arch_reboot(int type)
+{
+	nrf_power_gpregret_set((uint8_t)type);
+	NVIC_SystemReset();
+}

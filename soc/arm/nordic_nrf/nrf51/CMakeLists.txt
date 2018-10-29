@@ -5,5 +5,6 @@ zephyr_compile_definitions_ifdef(
   )
 
 zephyr_sources(
+  power.c
   soc.c
   )
