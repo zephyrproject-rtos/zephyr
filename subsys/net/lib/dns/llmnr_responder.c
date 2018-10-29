@@ -35,7 +35,10 @@
 #define LLMNR_TTL CONFIG_LLMNR_RESPONDER_TTL /* In seconds */
 
 static struct net_context *ipv4;
+
+#if defined(CONFIG_NET_IPV6)
 static struct net_context *ipv6;
+#endif
 
 #define BUF_ALLOC_TIMEOUT K_MSEC(100)
 
