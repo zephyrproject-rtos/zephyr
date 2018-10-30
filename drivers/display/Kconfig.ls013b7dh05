@@ -1,0 +1,41 @@
+# Kconfig - LS013B7DH05 display driver configuration options
+
+#
+# Copyright (c) 2018 Miras Absar
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig LS013B7DH05
+	bool "LS013B7DH05 display driver"
+	depends on SPI
+	help
+	Enable the LS013B7DH05 display driver.
+
+if LS013B7DH05
+
+config LS013B7DH05_DEV_NAME
+	string "LS013B7DH05 device name"
+	default "LS013B7DH05"
+
+config LS013B7DH05_SPI_DEV_NAME
+	string "SPI master device name where an LS013B7DH05 is connected"
+	default "SPI_0"
+
+config LS013B7DH05_SPI_DEV_NUM
+	int "SPI slave device number where an LS013B7DH05 is connected"
+	default 0
+
+config LS013B7DH05_SPI_DEV_FREQ
+	int "SPI device frequency where an LS013B7DH05 is connected"
+	default 1000000
+
+config LS013B7DH05_SCS_GPIO_PORT_NAME
+	string "GPIO port name where an LS013B7DH05's chip select is connected"
+	default "GPIO_0"
+
+config LS013B7DH05_SCS_GPIO_PIN_NUM
+	int "GPIO pin number where an LS013B7DH05's chip select is connected"
+	default 1
+
+endif #LS013B7DH05
