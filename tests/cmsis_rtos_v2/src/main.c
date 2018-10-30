@@ -10,12 +10,14 @@
 
 extern void test_thread_apis(void);
 extern void test_thread_prio(void);
+extern void test_timer(void);
 
 void test_main(void)
 {
 	ztest_test_suite(test_cmsis_v2_apis,
 			ztest_unit_test(test_thread_apis),
-			ztest_unit_test(test_thread_prio));
+			ztest_unit_test(test_thread_prio),
+			ztest_unit_test(test_timer));
 
 	ztest_run_test_suite(test_cmsis_v2_apis);
 }
