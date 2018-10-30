@@ -29,4 +29,5 @@ config BASE64
 source "lib/posix/Kconfig"
 
 source "lib/cmsis_rtos_v1/Kconfig"
+source "lib/cmsis_rtos_v2/Kconfig"
 endmenu
