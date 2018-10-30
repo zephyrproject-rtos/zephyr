@@ -13,6 +13,7 @@ zephyr_library_sources_ifdef(
   semaphore.c
   mempool.c
   msgq.c
+  event_flags.c
 )
 
 zephyr_library_link_libraries(CMSIS)
