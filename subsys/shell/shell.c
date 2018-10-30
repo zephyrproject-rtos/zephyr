@@ -97,6 +97,19 @@ static void shell_cmd_buffer_clear(const struct shell *shell)
 	shell->ctx->cmd_buff_len = 0;
 }
 
+static void shell_pend_on_txdone(const struct shell *shell)
+{
+	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+		k_poll(&shell->ctx->events[SHELL_SIGNAL_TXDONE], 1, K_FOREVER);
+		k_poll_signal_reset(&shell->ctx->signals[SHELL_SIGNAL_TXDONE]);
+	} else {
+		/* Blocking wait in case of bare metal. */
+		while (!shell->ctx->internal.flags.tx_rdy) {
+		}
+		shell->ctx->internal.flags.tx_rdy = 0;
+	}
+}
+
 /* Function sends data stream to the shell instance. Each time before the
  * shell_write function is called, it must be ensured that IO buffer of fprintf
  * is flushed to avoid synchronization issues.
@@ -121,17 +134,7 @@ static void shell_write(const struct shell *shell, const void *data,
 		length -= tmp_cnt;
 		if (tmp_cnt == 0 &&
 		    (shell->ctx->state != SHELL_STATE_PANIC_MODE_ACTIVE)) {
-			/* todo  semaphore pend*/
-			if (IS_ENABLED(CONFIG_MULTITHREADING)) {
-				k_poll(&shell->ctx->events[SHELL_SIGNAL_TXDONE],
-				1, K_FOREVER);
-			} else {
-				/* Blocking wait in case of bare metal. */
-				while (!shell->ctx->internal.flags.tx_rdy) {
-
-				}
-				shell->ctx->internal.flags.tx_rdy = 0;
-			}
+			shell_pend_on_txdone(shell);
 		}
 	}
 }
