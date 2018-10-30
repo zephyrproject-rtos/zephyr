@@ -117,3 +117,34 @@ uint32_t osKernelGetSysTimerFreq(void)
 {
 	return sys_clock_hw_cycles_per_sec();
 }
+
+/**
+ * @brief Wait for Timeout (Time Delay).
+ */
+osStatus_t osDelay(uint32_t ticks)
+{
+	if (k_is_in_isr()) {
+		return osErrorISR;
+	}
+
+	k_sleep(__ticks_to_ms(ticks));
+
+	return osOK;
+}
+
+/**
+ * @brief Wait until specified time.
+ */
+osStatus_t osDelayUntil(uint32_t ticks)
+{
+	u32_t ticks_elapsed;
+
+	if (k_is_in_isr()) {
+		return osErrorISR;
+	}
+
+	ticks_elapsed = osKernelGetTickCount();
+	k_sleep(__ticks_to_ms(ticks - ticks_elapsed));
+
+	return osOK;
+}
