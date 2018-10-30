@@ -74,7 +74,8 @@ On Ubuntu:
 
    sudo apt-get install --no-install-recommends git cmake ninja-build gperf \
      ccache dfu-util device-tree-compiler wget \
-     python3-pip python3-setuptools python3-wheel xz-utils file make
+     python3-pip python3-setuptools python3-wheel xz-utils file make gcc \
+     gcc-multilib
 
 On Fedora:
 
