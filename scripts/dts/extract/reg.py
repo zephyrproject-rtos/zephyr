@@ -36,15 +36,8 @@ class DTReg(DTDirective):
         (nr_address_cells, nr_size_cells) = get_addr_size_cells(node_address)
 
         # generate defines
-        post_label = "BASE_ADDRESS"
-        if def_label not in regs_config.values():
-            if yaml[node_compat].get('use-property-label', False):
-                label = node['props'].get('label', None)
-                if label:
-                    post_label = label
-
         l_base = def_label.split('/')
-        l_addr = [convert_string_to_label(post_label)]
+        l_addr = [convert_string_to_label("BASE_ADDRESS")]
         l_size = ["SIZE"]
 
         index = 0
