@@ -55,6 +55,13 @@ struct cv2_msgq {
 	char name[16];
 };
 
+struct cv2_event_flags {
+	struct k_poll_signal poll_signal;
+	struct k_poll_event  poll_event;
+	u32_t            signal_results;
+	char name[16];
+};
+
 extern osThreadId_t get_cmsis_thread_id(k_tid_t tid);
 extern void *is_cmsis_rtos_v2_thread(void *thread_id);
 

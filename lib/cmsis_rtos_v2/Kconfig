@@ -66,4 +66,11 @@ config CMSIS_V2_MSGQ_MAX_COUNT
 	range 0 255
 	help
 	  Mention maximum number of message queues in CMSIS RTOS V2 compliant application.
+
+config CMSIS_V2_EVT_FLAGS_MAX_COUNT
+	int "Maximum event flags count in CMSIS RTOS V2 application"
+	default 5
+	range 0 255
+	help
+	  Mention maximum number of event flags in CMSIS RTOS V2 compliant application.
 endif
