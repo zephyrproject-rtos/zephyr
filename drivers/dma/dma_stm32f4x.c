@@ -13,6 +13,7 @@
 #include <init.h>
 #include <stdio.h>
 #include <string.h>
+#include <misc/util.h>
 
 #define LOG_LEVEL CONFIG_DMA_LOG_LEVEL
 #include <logging/log.h>
@@ -87,9 +88,6 @@ struct dma_stm32_config {
 
 /* Maximum data sent in single transfer (Bytes) */
 #define DMA_STM32_MAX_DATA_ITEMS		0xffff
-
-#define BITS_PER_LONG		32
-#define GENMASK(h, l) (((~0UL) << (l)) & (~0UL >> (BITS_PER_LONG - 1 - (h))))
 
 #define DMA_STM32_1_BASE	0x40026000
 #define DMA_STM32_2_BASE	0x40026400
