@@ -52,4 +52,11 @@ config CMSIS_V2_SEMAPHORE_MAX_COUNT
 	range 0 255
 	help
 	  Mention max number of semaphores in CMSIS RTOS V2 compliant application.
+
+config CMSIS_V2_MEM_SLAB_MAX_COUNT
+	int "Maximum mem slab count in CMSIS RTOS V2 application"
+	default 5
+	range 0 255
+	help
+	  Mention maximum number of memory slabs in CMSIS RTOS V2 compliant application.
 endif
