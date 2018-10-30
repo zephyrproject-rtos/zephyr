@@ -48,6 +48,13 @@ struct cv2_mslab {
 	char name[16];
 };
 
+struct cv2_msgq {
+	struct k_msgq z_msgq;
+	void *pool;
+	char is_dynamic_allocation;
+	char name[16];
+};
+
 extern osThreadId_t get_cmsis_thread_id(k_tid_t tid);
 extern void *is_cmsis_rtos_v2_thread(void *thread_id);
 
