@@ -107,7 +107,7 @@ struct i2s_cavs_dev_data {
 	((struct i2s_cavs_dev_data *const)(dev)->driver_data)
 
 static struct device *get_dev_from_dma_channel(u32_t dma_channel);
-static void dma_tx_callback(struct device *, u32_t, int);
+static void dma_tx_callback(void *, u32_t, int);
 static void tx_stream_disable(struct stream *,
 			      volatile struct i2s_cavs_ssp *const, struct device *);
 
@@ -224,7 +224,7 @@ static int start_dma(struct device *dev_dma, u32_t channel,
 }
 
 /* This function is executed in the interrupt context */
-static void dma_tx_callback(struct device *dev_dma, u32_t channel, int status)
+static void dma_tx_callback(void *dev_dma, u32_t channel, int status)
 {
 	struct device *dev = get_dev_from_dma_channel(channel);
 	const struct i2s_cavs_config *const dev_cfg = DEV_CFG(dev);
@@ -235,6 +235,8 @@ static void dma_tx_callback(struct device *dev_dma, u32_t channel, int status)
 	int ret;
 
 	__ASSERT_NO_MSG(strm->mem_block != NULL);
+
+	ARG_UNUSED(dev_dma);
 
 	if ((strm->cfg.options & I2S_OPT_PINGPONG) != I2S_OPT_PINGPONG) {
 		/* All block data sent */
