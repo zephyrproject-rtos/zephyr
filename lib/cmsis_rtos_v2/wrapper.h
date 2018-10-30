@@ -38,6 +38,11 @@ struct cv2_mutex {
 	u32_t state;
 };
 
+struct cv2_sem {
+	struct k_sem z_semaphore;
+	char name[16];
+};
+
 extern osThreadId_t get_cmsis_thread_id(k_tid_t tid);
 extern void *is_cmsis_rtos_v2_thread(void *thread_id);
 
