@@ -27,6 +27,17 @@
 #define POINTER_TO_INT(x)  ((s32_t) (x))
 #define INT_TO_POINTER(x)  ((void *) (x))
 
+#if !(defined (__CHAR_BIT__) && defined (__SIZEOF_LONG__))
+#	error Missing required predefined macros for BITS_PER_LONG calculation
+#endif
+
+#define BITS_PER_LONG	(__CHAR_BIT__ * __SIZEOF_LONG__)
+/* Create a contiguous bitmask starting at bit position @l and ending at
+ * position @h.
+ */
+#define GENMASK(h, l) \
+	(((~0UL) - (1UL << (l)) + 1) & (~0UL >> (BITS_PER_LONG - 1 - (h))))
+
 /* Evaluates to 0 if cond is true-ish; compile error otherwise */
 #define ZERO_OR_COMPILE_ERROR(cond) ((int) sizeof(char[1 - 2 * !(cond)]) - 1)
 
