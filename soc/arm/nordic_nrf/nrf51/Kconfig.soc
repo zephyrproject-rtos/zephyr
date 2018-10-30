@@ -17,6 +17,7 @@ config SOC_NRF51822_QFAA
 	select HAS_HW_NRF_GPIO0
 	select HAS_HW_NRF_GPIOTE
 	select HAS_HW_NRF_LPCOMP
+	select HAS_HW_NRF_MPU
 	select HAS_HW_NRF_QDEC
 	select HAS_HW_NRF_PPI
 	select HAS_HW_NRF_RNG
@@ -42,6 +43,7 @@ config SOC_NRF51822_QFAB
 	select HAS_HW_NRF_GPIO0
 	select HAS_HW_NRF_GPIOTE
 	select HAS_HW_NRF_LPCOMP
+	select HAS_HW_NRF_MPU
 	select HAS_HW_NRF_QDEC
 	select HAS_HW_NRF_PPI
 	select HAS_HW_NRF_RNG
@@ -67,6 +69,7 @@ config SOC_NRF51822_QFAC
 	select HAS_HW_NRF_GPIO0
 	select HAS_HW_NRF_GPIOTE
 	select HAS_HW_NRF_LPCOMP
+	select HAS_HW_NRF_MPU
 	select HAS_HW_NRF_QDEC
 	select HAS_HW_NRF_PPI
 	select HAS_HW_NRF_RNG
