@@ -235,6 +235,8 @@ def parse_args():
                         help="Output file mapping IRQ lines to IDT vectors")
     parser.add_argument("-o", "--output-idt", required=True,
                         help="Output file containing IDT binary")
+    parser.add_argument("-a", "--output-vectors-alloc", required=False,
+                        help="Output file indicating allocated vectors")
     parser.add_argument("-k", "--kernel", required=True,
                         help="Zephyr kernel image")
     parser.add_argument("-v", "--verbose", action="store_true",
@@ -242,6 +244,27 @@ def parse_args():
     args = parser.parse_args()
     if "VERBOSE" in os.environ:
         args.verbose = 1
+
+
+def create_irq_vectors_allocated(vectors, spur_code, spur_nocode, filename):
+    # Construct a bitfield over all the IDT vectors, where if bit n is 1,
+    # that vector is free. those vectors have either of the two spurious
+    # interrupt handlers installed, they are free for runtime installation
+    # of interrupts
+    num_chars = (len(vectors) + 7) // 8
+    vbits = [0 for i in range(num_chars)]
+    for i in range(len(vectors)):
+        handler, _, _ = vectors[i]
+        if handler != spur_code and handler != spur_nocode:
+            continue
+
+        vbit_index = i // 8
+        vbit_val = 1 << (i % 8)
+        vbits[vbit_index] = vbits[vbit_index] | vbit_val
+
+    with open(filename, "wb") as fp:
+        for char in vbits:
+            fp.write(struct.pack("<B", char))
 
 
 def main():
@@ -261,6 +284,9 @@ def main():
 
     create_idt_binary(vectors, args.output_idt)
     create_irq_vec_map_binary(irq_vec_map, args.vector_map)
+    if args.output_vectors_alloc:
+        create_irq_vectors_allocated(vectors, spur_code, spur_nocode,
+                                     args.output_vectors_alloc)
 
 
 if __name__ == "__main__":

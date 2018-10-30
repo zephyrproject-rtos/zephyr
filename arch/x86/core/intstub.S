@@ -26,6 +26,7 @@
 	GTEXT(_SpuriousIntNoErrCodeHandler)
 	GTEXT(_SpuriousIntHandler)
 	GTEXT(_irq_sw_handler)
+	GTEXT(z_dynamic_stubs_begin)
 
 	/* externs */
 
@@ -464,3 +465,62 @@ SECTION_FUNC(TEXT, _irq_sw_handler)
 	jmp _interrupt_enter
 
 #endif
+
+#if CONFIG_X86_DYNAMIC_IRQ_STUBS > 0
+z_dynamic_irq_stub_common:
+	/* stub number already pushed */
+	push $z_x86_dynamic_irq_handler
+	jmp _interrupt_enter
+
+/* Create all the dynamic IRQ stubs
+ *
+ * NOTE: Please update DYN_STUB_SIZE in include/arch/x86/arch.h if you change
+ * how large the generated stubs are, otherwise _get_dynamic_stub() will
+ * be unable to correctly determine the offset
+ */
+
+/*
+ * Create nice labels for all the stubs so we can see where we
+ * are in a debugger
+ */
+.altmacro
+.macro __INT_STUB_NUM id
+z_dynamic_irq_stub_\id:
+.endm
+.macro INT_STUB_NUM id
+__INT_STUB_NUM %id
+.endm
+
+z_dynamic_stubs_begin:
+stub_num = 0
+.rept ((CONFIG_X86_DYNAMIC_IRQ_STUBS + Z_DYN_STUB_PER_BLOCK - 1) / Z_DYN_STUB_PER_BLOCK)
+	block_counter = 0
+	.rept Z_DYN_STUB_PER_BLOCK
+		.if stub_num < CONFIG_X86_DYNAMIC_IRQ_STUBS
+			INT_STUB_NUM stub_num
+			/*
+			 * 2-byte push imm8.
+			 */
+			push $stub_num
+
+			/*
+			 * Check to make sure this isn't the last stub in
+			 * a block, in which case we just fall through
+			 */
+			.if (block_counter <> (Z_DYN_STUB_PER_BLOCK - 1) && \
+			     (stub_num <> CONFIG_X86_DYNAMIC_IRQ_STUBS - 1))
+				/* This should always be a 2-byte jmp rel8 */
+				jmp 1f
+			.endif
+			stub_num = stub_num + 1
+			block_counter = block_counter + 1
+		.endif
+	.endr
+	/*
+	 * This must a 5-bvte jump rel32, which is why z_dynamic_irq_stub_common
+	 * is before the actual stubs
+	 */
+1:	jmp z_dynamic_irq_stub_common
+.endr
+#endif /* CONFIG_X86_DYNAMIC_IRQ_STUBS > 0 */
+
