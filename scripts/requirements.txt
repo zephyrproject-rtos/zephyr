@@ -17,3 +17,4 @@ pykwalify
 windows-curses; sys_platform == "win32"
 colorama
 Pillow
+intelhex
