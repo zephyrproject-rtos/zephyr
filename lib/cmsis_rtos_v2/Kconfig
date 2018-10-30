@@ -31,4 +31,11 @@ config CMSIS_V2_THREAD_MAX_STACK_SIZE
 	default 512
 	help
 	  Mention max stack size threads can be allocated in CMSIS RTOS V2 application.
+
+config CMSIS_V2_TIMER_MAX_COUNT
+	int "Maximum timer count in CMSIS RTOS V2 application"
+	default 5
+	range 0 255
+	help
+	  Mention maximum number of timers in CMSIS RTOS V2 compliant application.
 endif

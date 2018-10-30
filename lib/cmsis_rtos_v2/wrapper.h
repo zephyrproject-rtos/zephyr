@@ -23,6 +23,15 @@ struct cv2_thread {
 	u32_t state;
 };
 
+struct cv2_timer {
+	struct k_timer z_timer;
+	osTimerType_t type;
+	u32_t status;
+	char name[16];
+	void (*callback_function)(void *argument);
+	void *arg;
+};
+
 extern osThreadId_t get_cmsis_thread_id(k_tid_t tid);
 extern void *is_cmsis_rtos_v2_thread(void *thread_id);
 
