@@ -15,14 +15,14 @@
 {# Because these blocks are "scoped" all variables in the macro from the
    base template can be accessed in these blocks #}
 {% block config_struct_body %}
-        .i2c = (I2C_TypeDef *){{ "%x"|format(device['reg']['0']['address']) }},
+        .i2c = (I2C_TypeDef *){{ "%x"|format(device.get_reg_addr()) }},
         .pclken = {
-                .enr = {{ device['clocks']['0']['bits'] }},
-                .bus = {{ device['clocks']['0']['bus'] }},
+                .enr = {{ device.get_property('clocks/0/bits') }},
+                .bus = {{ device.get_property('clocks/0/bus') }},
         },
 #ifdef CONFIG_I2C_STM32_INTERRUPT
         .irq_config_func = {{ irq_config_function_name }},
 #endif
-        .bitrate = {{ device['clock-frequency'] }},
+        .bitrate = {{ device.get_property('clock-frequency') }},
 {% endblock %}
 
