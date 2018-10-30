@@ -1,3 +1,5 @@
+{% import 'i2c_ll_stm32.meta.jinja2' as i2c_stm32 %}
+
 /*
  * Copyright (c) 2016 BayLibre, SAS
  * Copyright (c) 2017 Linaro Ltd
@@ -212,5 +214,4 @@ static int i2c_stm32_init(struct device *dev)
 	return 0;
 }
 
-#include "i2c_ll_stm32_device.h"
-
+{{ i2c_stm32.device(data, ['st,stm32-i2c-v1', 'st,stm32-i2c-v2']) }}

@@ -57,6 +57,7 @@ class CodeGen():
     def render(self):
         return self.template_handle.render(data=self.data) 
 
+
     def main(self, argv):
 
         argv = argv[1:]
@@ -70,11 +71,14 @@ class CodeGen():
         include_paths.append(input_path)
         include_paths.extend(self.data['runtime']['include_path'])
  
+        print(json.dumps(self.data, sort_keys=True, indent=4))
+
         loader = FileSystemLoader(include_paths)
         env = Environment(loader=loader, extensions=['jinja2.ext.do','jinja2.ext.loopcontrols'])
         self.template_handle = env.get_template(input_filename)
 
         self.write_generated_output(self.render())
+
 
 if __name__ == '__main__':
 
