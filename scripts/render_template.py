@@ -5,21 +5,25 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from jinja2 import Environment, FileSystemLoader, BaseLoader, DictLoader
-import ntpath
-import os
-import json
 import sys
+import os
+sys.path.append(os.path.dirname(sys.argv[0])+'/dts/')
+from dts.edtsdatabase import EDTSConsumerMixin
+import ntpath
+import json
 from codegen.options import Options
 
 # Capture our current directory
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
-class CodeGen():
+class CodeGen(EDTSConsumerMixin):
 
     def __init__(self):
         self.data = dict()
         self.options = Options(self.data)
         self.template_handle = None
+        self.edts_api = {}
+        self.device = None
 
     def create_datacontext(self):
         self.create_config_context()
@@ -44,10 +48,33 @@ class CodeGen():
                         self.data["config"].update({config_item[0]: config_item[1].strip().replace('"','')})
                         
     def load_edts_database(self):
+
+        self.load(self.data['runtime']['defines']['GENERATED_EDTS'])
+
         with open(self.data['runtime']['defines']['GENERATED_EDTS']) as f:
             dts = json.load(f)
 
         self.data['devicetree'] = dts
+
+    def setup_template_env(self):
+        input_path, input_filename = ntpath.split(self.data['runtime']['input_file'])
+
+        self.include_paths = []
+        self.include_paths.append(input_path)
+        self.include_paths.extend(self.data['runtime']['include_path'])
+ 
+        self.loader = FileSystemLoader(self.include_paths)
+        self.template_env = Environment(loader=self.loader, extensions=['jinja2.ext.do','jinja2.ext.loopcontrols'])
+
+        self.template_handle = self.template_env.get_template(input_filename)
+ 
+    def setup_edts_database_api(self):
+        self.edts_api.update({'get_compatibles':self.get_compatibles})
+        self.edts_api.update({'get_device_ids_by_compatible':self.get_device_ids_by_compatible})
+        self.edts_api.update({'get_device_by_device_id':self.get_device_by_device_id})
+
+        self.template_env.globals.update(edts_api=self.edts_api)
+
 
     def write_generated_output(self, output_str):
         output_handle = open(self.data['runtime']['output_name'], "w")
@@ -55,7 +82,7 @@ class CodeGen():
         output_handle.close()
 
     def render(self):
-        return self.template_handle.render(data=self.data) 
+        return self.template_handle.render(data=self.data, edts_api=self.edts_api) 
 
     def main(self, argv):
 
@@ -63,17 +90,9 @@ class CodeGen():
 
         self.options.parse_args(argv)
         self.create_datacontext()
+        self.setup_template_env()
+        self.setup_edts_database_api()
      
-        input_path, input_filename = ntpath.split(self.data['runtime']['input_file'])
-
-        include_paths = []
-        include_paths.append(input_path)
-        include_paths.extend(self.data['runtime']['include_path'])
- 
-        loader = FileSystemLoader(include_paths)
-        env = Environment(loader=loader, extensions=['jinja2.ext.do','jinja2.ext.loopcontrols'])
-        self.template_handle = env.get_template(input_filename)
-
         self.write_generated_output(self.render())
 
 if __name__ == '__main__':
