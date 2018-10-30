@@ -99,6 +99,8 @@ source "drivers/serial/Kconfig.esp32"
 
 source "drivers/serial/Kconfig.gecko"
 
+source "drivers/serial/Kconfig.leuart_gecko"
+
 source "drivers/serial/Kconfig.msp432p4xx"
 
 source "drivers/serial/Kconfig.sam0"
