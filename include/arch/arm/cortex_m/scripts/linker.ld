@@ -163,6 +163,16 @@ SECTIONS
 
 	_image_text_end = .;
 
+#if defined (CONFIG_CPLUSPLUS)
+	SECTION_PROLOGUE(.ARM.extab,,)
+	{
+	/*
+	 * .ARM.extab section containing exception unwinding information.
+	 */
+	*(.ARM.extab* .gnu.linkonce.armextab.*)
+	} GROUP_LINK_IN(ROMABLE_REGION)
+#endif
+
 	SECTION_PROLOGUE(.ARM.exidx,,)
 	{
 	/*
