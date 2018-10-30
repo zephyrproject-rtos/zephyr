@@ -1162,6 +1162,13 @@ static void shell_log_process(const struct shell *shell)
 		processed = shell_log_backend_process(shell->log_backend);
 		shell_current_command_print(shell);
 
+		/* Arbitrary delay added to ensure that prompt is readable and
+		 * can be used to enter further commands.
+		 */
+		if (shell->ctx->cmd_buff_len) {
+			k_sleep(K_MSEC(15));
+		}
+
 		k_poll_signal_check(&shell->ctx->signals[SHELL_SIGNAL_RXRDY],
 						    &signaled, &result);
 
@@ -1211,9 +1218,12 @@ static int shell_instance_init(const struct shell *shell, const void *p_config,
 
 static int shell_instance_uninit(const struct shell *shell);
 
-void shell_thread(void *shell_handle, void *dummy1, void *dummy2)
+void shell_thread(void *shell_handle, void *arg_log_backend,
+		  void *arg_log_level)
 {
 	struct shell *shell = (struct shell *)shell_handle;
+	bool log_backend = (bool)arg_log_backend;
+	u32_t log_level = (u32_t)arg_log_level;
 	int err;
 	int i;
 
@@ -1228,6 +1238,11 @@ void shell_thread(void *shell_handle, void *dummy1, void *dummy2)
 	err = shell_start(shell);
 	if (err != 0) {
 		return;
+	}
+
+	if (log_backend && IS_ENABLED(CONFIG_LOG)) {
+		shell_log_backend_enable(shell->log_backend, (void *)shell,
+					 log_level);
 	}
 
 	while (true) {
@@ -1278,19 +1293,14 @@ int shell_init(const struct shell *shell, const void *transport_config,
 		return err;
 	}
 
-	if (log_backend) {
-		if (IS_ENABLED(CONFIG_LOG)) {
-			shell_log_backend_enable(shell->log_backend,
-						 (void *)shell, init_log_level);
-		}
-	}
-
 	k_tid_t tid = k_thread_create(shell->thread,
 			      shell->stack, CONFIG_SHELL_STACK_SIZE,
-			      shell_thread, (void *)shell, NULL, NULL,
+			      shell_thread, (void *)shell, (void *)log_backend,
+			      (void *)init_log_level,
 			      CONFIG_SHELL_THREAD_PRIO, 0, K_NO_WAIT);
 
 	k_thread_name_set(tid, "shell");
+
 	return 0;
 }
 
