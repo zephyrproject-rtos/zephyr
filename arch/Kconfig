@@ -206,6 +206,14 @@ menu "Interrupt Configuration"
 #
 # Interrupt related configs
 #
+config DYNAMIC_INTERRUPTS
+	bool "Enable installation of IRQs at runtime"
+	default n
+	help
+	  Enable installation of interrupts at runtime, which will move some
+	  interrupt-related data structures to RAM instead of ROM, and
+	  on some architectures increase code size.
+
 config GEN_ISR_TABLES
 	bool "Use generated IRQ tables"
 	help
