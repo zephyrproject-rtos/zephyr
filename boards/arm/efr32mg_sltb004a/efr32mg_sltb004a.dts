@@ -1,0 +1,78 @@
+/*
+ * Copyright (c) 2018 Diego Sueiro
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/efr32mg12p332f1024gl125.dtsi>
+
+/ {
+	model = "Silabs EFR32MG SLTB004A board (aka Thunderboard Sense 2)";
+	compatible = "silabs,efr32mg_sltb004a", "silabs,efr32mg";
+
+	aliases {
+		i2c-0  = &i2c0;
+		i2c-1  = &i2c1;
+		usart-0 = &usart0;
+		leuart-0 = &leuart0;
+		led0 = &led0;
+		led1 = &led1;
+		sw0 = &button0;
+		sw1 = &button1;
+	};
+
+	chosen {
+		zephyr,console = &usart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpiod 8 0>;
+			label = "LED 0";
+		};
+		led1: led_1 {
+			gpios = <&gpiod 9 0>;
+			label = "LED 1";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			/* gpio flags need validation */
+			gpios = <&gpiod 14 GPIO_INT_ACTIVE_LOW>;
+			label = "User Push Button 0";
+		};
+		button1: button_1 {
+			/* gpio flags need validation */
+			gpios = <&gpiod 15 GPIO_INT_ACTIVE_LOW>;
+			label = "User Push Button 1";
+		};
+	};
+};
+
+&usart0 {
+	current-speed = <115200>;
+	location = <0>;
+	status = "ok";
+};
+
+&leuart0 {
+	current-speed = <9600>;
+	location = <27>;
+	status = "ok";
+};
+
+&i2c0 {
+	location = <15>;
+	status = "ok";
+};
+
+&i2c1 {
+	location = <17>;
+	status = "ok";
+};
