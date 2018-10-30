@@ -24,7 +24,7 @@
 
 	GDATA(_idt_base_address)
 	GDATA(_interrupt_stack)
-	GDATA(_Idt)
+	GDATA(z_x86_idt)
 #ifndef CONFIG_GDT_DYNAMIC
 	GDATA(_gdt)
 #endif
@@ -173,7 +173,6 @@ SECTION_FUNC(TEXT_START, __start)
 #if CONFIG_SET_GDT
 	lgdt	_gdt_rom		/* load 32-bit operand size GDT */
 #endif
-	lidt	_Idt		/* load 32-bit operand size IDT */
 
 
 
@@ -379,6 +378,8 @@ __csSet:
 	mov $MAIN_TSS, %ax
 	ltr %ax
 #endif
+	lidt	z_x86_idt		/* load 32-bit operand size IDT */
+
 	/* Jump to C portion of kernel initialization and never return */
 
 	jmp	_Cstart
@@ -458,7 +459,7 @@ _sse_mxcsr_default_value:
 
 	 /* Interrupt Descriptor Table (IDT) definition */
 
-_Idt:
+z_x86_idt:
 	.word	(CONFIG_IDT_NUM_VECTORS * 8) - 1 /* limit: size of IDT-1 */
 
 	/*

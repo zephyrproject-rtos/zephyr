@@ -377,6 +377,8 @@ struct __packed far_ptr {
 extern struct pseudo_descriptor _gdt;
 #endif
 
+extern const struct pseudo_descriptor z_idt;
+
 /**
  * Properly set the segment descriptor segment and offset
  *

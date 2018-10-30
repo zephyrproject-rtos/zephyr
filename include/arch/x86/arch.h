@@ -43,6 +43,12 @@ extern "C" {
  */
 #define MK_ISR_NAME(x) __isr__##x
 
+#define Z_DYN_STUB_SIZE			4
+#define Z_DYN_STUB_OFFSET		0
+#define Z_DYN_STUB_LONG_JMP_EXTRA_SIZE	3
+#define Z_DYN_STUB_PER_BLOCK		32
+
+
 #ifndef _ASMLANGUAGE
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
@@ -54,6 +60,7 @@ void _int_latency_stop(void);
 #endif
 
 /* interrupt/exception/error related definitions */
+
 
 /*
  * The TCS must be aligned to the same boundary as that used by the floating

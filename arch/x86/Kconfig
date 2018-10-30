@@ -285,6 +285,14 @@ config IRQ_OFFLOAD_VECTOR
 	  where there is a fixed IRQ-to-vector mapping another value may be
 	  needed to avoid collision.
 
+config X86_DYNAMIC_IRQ_STUBS
+	int "Number of dynamic interrupt stubs"
+	depends on DYNAMIC_INTERRUPTS
+	default 4
+	help
+	  Installing interrupt handlers with irq_connect_dynamic() requires
+	  some stub code to be generated at build time, one stub per dynamic
+	  interrupt.
 
 config XIP
 	default n

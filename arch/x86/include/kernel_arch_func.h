@@ -128,9 +128,6 @@ static inline void _IntLibInit(void)
 {
 }
 
-/* the _idt_base_address symbol is generated via a linker script */
-extern unsigned char _idt_base_address[];
-
 extern FUNC_NORETURN void _x86_userspace_enter(k_thread_entry_t user_entry,
 					       void *p1, void *p2, void *p3,
 					       u32_t stack_end,

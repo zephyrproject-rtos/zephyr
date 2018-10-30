@@ -117,13 +117,15 @@ SECTIONS
 	*(.rodata)
 	*(".rodata.*")
 	*(.gnu.linkonce.r.*)
+
+#ifndef CONFIG_DYNAMIC_INTERRUPTS
 	. = ALIGN(8);
 	_idt_base_address = .;
 #ifdef LINKER_PASS2
 	KEEP(*(staticIdt))
 #else
 	. += CONFIG_IDT_NUM_VECTORS * 8;
-#endif
+#endif /* LINKER_PASS2 */
 
 #ifndef CONFIG_X86_FIXED_IRQ_MAPPING
 	. = ALIGN(4);
@@ -133,7 +135,8 @@ SECTIONS
 #else
 	. += CONFIG_MAX_IRQ_LINES;
 #endif
-#endif
+#endif /* CONFIG_X86_FIXED_IRQ_MAPPING */
+#endif /* CONFIG_DYNAMIC_INTERRUPTS */
 
 #ifdef CONFIG_SOC_RODATA_LD
 #include <soc-rodata.ld>
@@ -267,6 +270,34 @@ SECTIONS
 	KERNEL_INPUT_SECTION(.data)
 	KERNEL_INPUT_SECTION(".data.*")
 	*(".kernel.*")
+
+#ifdef CONFIG_DYNAMIC_INTERRUPTS
+	. = ALIGN(8);
+	_idt_base_address = .;
+#ifdef LINKER_PASS2
+	KEEP(*(staticIdt))
+#else
+	. += CONFIG_IDT_NUM_VECTORS * 8;
+#endif /* LINKER_PASS2 */
+
+#ifndef CONFIG_X86_FIXED_IRQ_MAPPING
+	. = ALIGN(4);
+	_irq_to_interrupt_vector = .;
+#ifdef LINKER_PASS2
+	KEEP(*(irq_int_vector_map))
+#else
+	. += CONFIG_MAX_IRQ_LINES;
+#endif /* LINKER_PASS2 */
+#endif /* CONFIG_X86_FIXED_IRQ_MAPPING */
+
+	z_interrupt_vectors_allocated = .;
+#ifdef LINKER_PASS2
+	KEEP(*(irq_vectors_alloc_data))
+#else
+	. += (CONFIG_IDT_NUM_VECTORS + 7) / 8;
+#endif /* LINKER_PASS2 */
+#endif /* CONFIG_DYNAMIC_INTERRUPTS */
+
 
 #ifdef CONFIG_SOC_RWDATA_LD
 #include <soc-rwdata.ld>
