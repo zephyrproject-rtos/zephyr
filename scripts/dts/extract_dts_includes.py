@@ -315,13 +315,6 @@ def extract_string_prop(node_address, yaml, key, label):
 def extract_property(node_compat, yaml, node_address, prop, prop_val, names):
 
     node = reduced[node_address]
-    label_override = None
-    if yaml[node_compat].get('use-property-label', False):
-        try:
-            label_override = convert_string_to_label(node['props']['label'])
-        except KeyError:
-            pass
-
     if 'base_label' in yaml[node_compat]:
         def_label = yaml[node_compat].get('base_label')
     else:
@@ -370,15 +363,8 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names):
             extract_single(node_address, yaml, 'parent-label',
                            'bus-name', def_label)
 
-    if label_override is not None:
-        def_label += '_' + label_override
-
     if prop == 'reg':
-        if 'partition@' in node_address:
-            # reg in partition is covered by flash handling
-            flash.extract(node_address, yaml, prop, def_label)
-        else:
-            reg.extract(node_address, yaml, names, def_label, 1)
+        reg.extract(node_address, yaml, names, def_label, 1)
     elif prop == 'interrupts' or prop == 'interrupts-extended':
         interrupts.extract(node_address, yaml, prop, names, def_label)
     elif prop == 'compatible':
@@ -437,6 +423,17 @@ def extract_node_include_info(reduced, root_node_address, sub_node_address,
             if 'generation' in v:
 
                 match = False
+
+                # Handle any per node extraction first.  For example we
+                # extract a few different defines for a flash partition so its
+                # easier to handle the partition node in one step
+                if 'partition@' in sub_node_address:
+                    flash.extract(sub_node_address, yaml, 'reg', None)
+                    continue
+
+                # Handle each property individually, this ends up handling common
+                # patterns for things like reg, interrupts, etc that we don't need
+                # any special case handling at a node level
                 for c in node['props'].keys():
                     # if prop is in filter list - ignore it
                     if c in filter_list:
