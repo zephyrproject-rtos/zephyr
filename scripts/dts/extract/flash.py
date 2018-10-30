@@ -19,7 +19,7 @@ class DTFlash(DTDirective):
         # Node of the flash
         self._flash_node = None
 
-    def _extract_partition(self, node_address, yaml, prop):
+    def extract_partition(self, node_address):
         prop_def = {}
         prop_alias = {}
         node = reduced[node_address]
@@ -129,9 +129,6 @@ class DTFlash(DTDirective):
         elif prop == 'zephyr,code-partition':
             # indicator for code_partition
             self._extract_code_partition(node_address, yaml, prop, def_label)
-        elif prop == 'reg':
-            # indicator for partition
-            self._extract_partition(node_address, yaml, prop)
         else:
             raise Exception(
                 "DTFlash.extract called with unexpected directive ({})."

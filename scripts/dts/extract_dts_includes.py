@@ -428,7 +428,7 @@ def extract_node_include_info(reduced, root_node_address, sub_node_address,
                 # extract a few different defines for a flash partition so its
                 # easier to handle the partition node in one step
                 if 'partition@' in sub_node_address:
-                    flash.extract(sub_node_address, yaml, 'reg', None)
+                    flash.extract_partition(sub_node_address)
                     continue
 
                 # Handle each property individually, this ends up handling common
