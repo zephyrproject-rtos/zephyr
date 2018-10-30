@@ -32,6 +32,12 @@ struct cv2_timer {
 	void *arg;
 };
 
+struct cv2_mutex {
+	struct k_mutex z_mutex;
+	char name[16];
+	u32_t state;
+};
+
 extern osThreadId_t get_cmsis_thread_id(k_tid_t tid);
 extern void *is_cmsis_rtos_v2_thread(void *thread_id);
 

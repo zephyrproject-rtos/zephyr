@@ -38,4 +38,11 @@ config CMSIS_V2_TIMER_MAX_COUNT
 	range 0 255
 	help
 	  Mention maximum number of timers in CMSIS RTOS V2 compliant application.
+
+config CMSIS_V2_MUTEX_MAX_COUNT
+	int "Maximum mutex count in CMSIS RTOS V2 application"
+	default 5
+	range 0 255
+	help
+	  Mention max number of mutexes in CMSIS RTOS V2 compliant application.
 endif
