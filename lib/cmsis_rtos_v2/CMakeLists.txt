@@ -9,6 +9,7 @@ zephyr_library_sources_ifdef(
   thread.c
   kernel.c
   timer.c
+  mutex.c
 )
 
 zephyr_library_link_libraries(CMSIS)
