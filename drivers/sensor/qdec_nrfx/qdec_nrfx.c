@@ -9,9 +9,9 @@
 #include <nrfx_qdec.h>
 #include <hal/nrf_gpio.h>
 
-#define SYS_LOG_DOMAIN "qdec_nrfx"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_QDEC_NRFX_LEVEL
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(qdec_nrfx)
 
 
 #define FULL_ANGLE 360
@@ -58,7 +58,7 @@ static int qdec_nrfx_sample_fetch(struct device *dev, enum sensor_channel chan)
 
 	ARG_UNUSED(dev);
 
-	SYS_LOG_DBG("");
+	LOG_DBG("");
 
 	if ((chan != SENSOR_CHAN_ALL) && (chan != SENSOR_CHAN_ROTATION)) {
 		return -ENOTSUP;
@@ -80,8 +80,7 @@ static int qdec_nrfx_channel_get(struct device       *dev,
 	s32_t acc;
 
 	ARG_UNUSED(dev);
-
-	SYS_LOG_DBG("");
+	LOG_DBG("");
 
 	if (chan != SENSOR_CHAN_ROTATION) {
 		return -ENOTSUP;
@@ -113,8 +112,7 @@ static int qdec_nrfx_trigger_set(struct device               *dev,
 	unsigned int key;
 
 	ARG_UNUSED(dev);
-
-	SYS_LOG_DBG("");
+	LOG_DBG("");
 
 	if (trig->type != SENSOR_TRIG_DATA_READY) {
 		return -ENOTSUP;
@@ -156,7 +154,7 @@ static void qdec_nrfx_event_handler(nrfx_qdec_event_t event)
 		break;
 
 	default:
-		SYS_LOG_ERR("unhandled event (0x%x)", event.type);
+		LOG_ERR("unhandled event (0x%x)", event.type);
 		break;
 	};
 }
@@ -192,17 +190,17 @@ static int qdec_nrfx_init(struct device *dev)
 
 	nrfx_err_t nerr;
 
-	SYS_LOG_DBG("");
+	LOG_DBG("");
 
 	IRQ_CONNECT(CONFIG_QDEC_IRQ, CONFIG_QDEC_IRQ_PRI,
 		    nrfx_isr, nrfx_qdec_irq_handler, 0);
 
 	nerr = nrfx_qdec_init(&config, qdec_nrfx_event_handler);
 	if (nerr == NRFX_ERROR_INVALID_STATE) {
-		SYS_LOG_ERR("qdec already in use");
+		LOG_ERR("qdec already in use");
 		return -EBUSY;
 	} else if (nerr != NRFX_SUCCESS) {
-		SYS_LOG_ERR("failed to initialize qdec");
+		LOG_ERR("failed to initialize qdec");
 		return -EFAULT;
 	}
 
@@ -276,7 +274,7 @@ static int qdec_nrfx_pm_control(struct device *dev,
 	struct qdec_nrfx_data *data = &qdec_nrfx_data;
 	int err;
 
-	SYS_LOG_DBG("");
+	LOG_DBG("");
 
 	switch (ctrl_command) {
 	case DEVICE_PM_GET_POWER_STATE:
