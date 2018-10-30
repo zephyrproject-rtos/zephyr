@@ -17,18 +17,19 @@
 {%- endmacro %}
 
 {%- macro gen_device_name(device) -%}
-	{%- set name = device.get_property('compatible/0')|replace(',','_')|replace('-','_') -%}
-	{{ name + "_%x"|format(device.get_reg_addr()) }}
+	{%- set name = device['compatible']['0']|replace(',','_')|replace('-','_') -%}
+	{%- set name = name + "_%x"|format(device['reg']['0']['address']) -%}
+	{{ name }}
 {%- endmacro -%}
 
 {%- macro gen_irq_connect(device) -%}
-{% for irq in device.get_property('interrupts') %}
-	IRQ_CONNECT({{ device.get_irq(irq) }}, \
-		    {{ device.get_irq_prop(irq, 'priority') }}, \
+{% for irq in device['interrupts'] %}
+	IRQ_CONNECT({{ device['interrupts'][irq]['irq'] }}, \
+		    {{ device['interrupts'][irq]['priority'] }}, \
 		    {{ get_param('irq_func') }}_{{ irq }}, \
 		    DEVICE_GET({{ gen_device_name(device) }}, \
 		    0);
-	irq_enable({{ device.get_irq(irq) }});
+	irq_enable({{ device['interrupts'][irq]['irq'] }});
 {% endfor %}
 {%- endmacro -%}
 
@@ -49,10 +50,10 @@
 {%- for compa in compatibles -%}
 
 {# Will copy the device reference in the compatibles lookup table in to a variable #}
-{%- for device_id in edts_api.get_device_ids_by_compatible(compa) -%}
+{%- for device_ref in data['devicetree']['compatibles'][compa] -%}
 
 {# Create a variable pointing to the devicetree metadata for the current intance #}
-{%- set device = edts_api.get_device_by_device_id(device_id)  %}
+{%- set device = data['devicetree']['devices'][device_ref] %}
 
 {# Create some helper variable for information used multiple times,
    can also  be used by overloaded blocks #}
@@ -60,7 +61,7 @@
 {%- set config_struct_name       = device_name + "_config" -%}
 {%- set data_struct_name         = device_name + "_data" -%}
 {%- set irq_config_function_name = device_name + "_config_irq" -%} 
-{%- set device_label             = device.get_property('label') -%}
+{%- set device_label             = device['label'] -%}
 
 #ifdef CONFIG_{{ device_label }}
 #ifdef {{ get_param('irq_flag') }}
