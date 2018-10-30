@@ -13,7 +13,7 @@ tests:
     min_ram: 32
     platform_exclude: zedboard_pulpino frdm_kw41z
     tags: drivers footprint
-    depends_on: adc spi
+    depends_on: spi netif
   test_build_sensors_trigger_a_h:
     build_only: true
     extra_args: CONF_FILE=sensors_trigger_a_h.conf
