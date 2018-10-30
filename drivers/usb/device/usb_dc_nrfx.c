@@ -1192,6 +1192,13 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const ep_cfg)
 	ep_ctx->cfg.type = ep_cfg->ep_type;
 	ep_ctx->cfg.max_sz = ep_cfg->ep_mps;
 
+	if ((ep_cfg->ep_mps & (ep_cfg->ep_mps - 1)) != 0) {
+		LOG_ERR("EP max packet size must be a power of 2.");
+		return -EINVAL;
+	}
+	nrfx_usbd_ep_max_packet_size_set(ep_addr_to_nrfx(ep_cfg->ep_addr),
+					 ep_cfg->ep_mps);
+
 	return 0;
 }
 
