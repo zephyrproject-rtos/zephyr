@@ -624,6 +624,17 @@ typedef struct
   * @brief  ETH Handle Structure definition
   */
 
+/*ptp TimeStam struct*/
+typedef struct
+{
+  uint64_t sec;
+  uint32_t nsec;
+}ETH_PTP_TIMESTAM;
+
+/** 
+  * @brief  ETH Handle Structure definition  
+  */
+  
 typedef struct
 {
   ETH_TypeDef                *Instance;     /*!< Register base address       */
@@ -635,6 +646,10 @@ typedef struct
   ETH_DMADescTypeDef         *RxDesc;       /*!< Rx descriptor to Get        */
 
   ETH_DMADescTypeDef         *TxDesc;       /*!< Tx descriptor to Set        */
+ 
+  ETH_DMADescTypeDef         *PtpRxDesc;    /*!< ptp Rx descriptor to Get        */
+  
+  ETH_DMADescTypeDef         *PtpTxDesc;    /*!< ptp Tx descriptor to Set        */
 
   ETH_DMARxFrameInfos        RxFrameInfos;  /*!< last Rx frame infos         */
 
@@ -1576,9 +1591,71 @@ typedef struct
   * @}
   */
 
+/** @defgroup ETH_PTP_time_update_method 
+  * @{
+  */ 
+#define ETH_PTP_FineUpdate        ((uint32_t)0x00000001)  /*!< Fine Update method */
+#define ETH_PTP_CoarseUpdate      ((uint32_t)0x00000000)  /*!< Coarse Update method */
+#define IS_ETH_PTP_UPDATE(UPDATE) (((UPDATE) == ETH_PTP_FineUpdate) || \
+                                   ((UPDATE) == ETH_PTP_CoarseUpdate))
+
 /**
   * @}
-  */
+  */ 
+
+
+/** @defgroup ETH_PTP_Flags 
+  * @{
+  */ 
+#define ETH_PTP_FLAG_TSARU        ((uint32_t)0x00000020)  /*!< Addend Register Update */
+#define ETH_PTP_FLAG_TSITE        ((uint32_t)0x00000010)  /*!< Time Stamp Interrupt Trigger */
+#define ETH_PTP_FLAG_TSSTU        ((uint32_t)0x00000008)  /*!< Time Stamp Update */
+#define ETH_PTP_FLAG_TSSTI        ((uint32_t)0x00000004)  /*!< Time Stamp Initialize */
+#define IS_ETH_PTP_GET_FLAG(FLAG) (((FLAG) == ETH_PTP_FLAG_TSARU) || \
+                                   ((FLAG) == ETH_PTP_FLAG_TSITE) || \
+                                   ((FLAG) == ETH_PTP_FLAG_TSSTU) || \
+                                   ((FLAG) == ETH_PTP_FLAG_TSSTI))
+/** 
+  * @brief  ETH PTP subsecond increment  
+  */ 
+#define IS_ETH_PTP_SUBSECOND_INCREMENT(SUBSECOND) ((SUBSECOND) <= 0xFF)
+
+/**
+  * @}
+  */ 
+
+
+/** @defgroup ETH_PTP_time_sign 
+  * @{
+  */ 
+#define ETH_PTP_PositiveTime      ((uint32_t)0x00000000)  /*!< Positive time value */
+#define ETH_PTP_NegativeTime      ((uint32_t)0x80000000)  /*!< Negative time value */
+#define IS_ETH_PTP_TIME_SIGN(SIGN) (((SIGN) == ETH_PTP_PositiveTime) || \
+                                    ((SIGN) == ETH_PTP_NegativeTime))
+
+/** 
+  * @brief  ETH PTP time stamp low update  
+  */ 
+#define IS_ETH_PTP_TIME_STAMP_UPDATE_SUBSECOND(SUBSECOND) ((SUBSECOND) <= 0x7FFFFFFF)
+
+/** 
+  * @brief  ETH PTP registers  
+  */ 
+#define ETH_PTPTSCR     ((uint32_t)0x00000700)  /*!< PTP TSCR register */
+#define ETH_PTPSSIR     ((uint32_t)0x00000704)  /*!< PTP SSIR register */
+#define ETH_PTPTSHR     ((uint32_t)0x00000708)  /*!< PTP TSHR register */
+#define ETH_PTPTSLR     ((uint32_t)0x0000070C)  /*!< PTP TSLR register */
+#define ETH_PTPTSHUR    ((uint32_t)0x00000710)  /*!< PTP TSHUR register */
+#define ETH_PTPTSLUR    ((uint32_t)0x00000714)  /*!< PTP TSLUR register */
+#define ETH_PTPTSAR     ((uint32_t)0x00000718)  /*!< PTP TSAR register */
+#define ETH_PTPTTHR     ((uint32_t)0x0000071C)  /*!< PTP TTHR register */
+#define ETH_PTPTTLR     ((uint32_t)0x00000720)  /* PTP TTLR register */
+#define IS_ETH_PTP_REGISTER(REG) (((REG) == ETH_PTPTSCR) || ((REG) == ETH_PTPSSIR) || \
+                                  ((REG) == ETH_PTPTSHR) || ((REG) == ETH_PTPTSLR) || \
+                                  ((REG) == ETH_PTPTSHUR) || ((REG) == ETH_PTPTSLUR) || \
+                                  ((REG) == ETH_PTPTSAR) || ((REG) == ETH_PTPTTHR) || \
+                                  ((REG) == ETH_PTPTTLR)) 
+
 
 /* Exported macro ------------------------------------------------------------*/
 /** @defgroup ETH_Exported_Macros ETH Exported Macros
@@ -2105,7 +2182,7 @@ HAL_StatusTypeDef HAL_ETH_Init(ETH_HandleTypeDef *heth);
 HAL_StatusTypeDef HAL_ETH_DeInit(ETH_HandleTypeDef *heth);
 void HAL_ETH_MspInit(ETH_HandleTypeDef *heth);
 void HAL_ETH_MspDeInit(ETH_HandleTypeDef *heth);
-HAL_StatusTypeDef HAL_ETH_DMATxDescListInit(ETH_HandleTypeDef *heth, ETH_DMADescTypeDef *DMATxDescTab, uint8_t* TxBuff, uint32_t TxBuffCount);
+HAL_StatusTypeDef HAL_ETH_DMATxDescListInit(ETH_HandleTypeDef *heth, ETH_DMADescTypeDef *DMATxDescTab, uint8_t* TxBuff, uint32_t TxBuffCount, bool IsPtp);
 HAL_StatusTypeDef HAL_ETH_DMARxDescListInit(ETH_HandleTypeDef *heth, ETH_DMADescTypeDef *DMARxDescTab, uint8_t *RxBuff, uint32_t RxBuffCount);
 
 /**
@@ -2159,10 +2236,27 @@ HAL_ETH_StateTypeDef HAL_ETH_GetState(ETH_HandleTypeDef *heth);
 /**
   * @}
   */
+void ETH_MACITConfig(ETH_HandleTypeDef *heth, uint32_t ETH_MAC_IT, FunctionalState NewState);
 
-/**
-  * @}
-  */
+/** 
+  * @brief  PTP  
+  */ 
+void ETH_EnablePTPTimeStampAddend(ETH_HandleTypeDef *heth);   
+void ETH_EnablePTPTimeStampInterruptTrigger(ETH_HandleTypeDef *heth);   
+void ETH_EnablePTPTimeStampUpdate(ETH_HandleTypeDef *heth);  
+void ETH_InitializePTPTimeStamp(ETH_HandleTypeDef *heth);   
+void ETH_PTPUpdateMethodConfig(ETH_HandleTypeDef *heth, uint32_t UpdateMethod); 
+void ETH_PTPTimeStampCmd(ETH_HandleTypeDef *heth, FunctionalState NewState);     
+FlagStatus ETH_GetPTPFlagStatus(ETH_HandleTypeDef *heth, uint32_t ETH_PTP_FLAG); 
+void ETH_SetPTPSubSecondIncrement(ETH_HandleTypeDef *heth, uint32_t SubSecondValue);
+void ETH_SetPTPTimeStampUpdate(ETH_HandleTypeDef *heth, uint32_t Sign, uint32_t SecondValue, uint32_t SubSecondValue);  
+void ETH_SetPTPTimeStampAddend(ETH_HandleTypeDef *heth, uint32_t Value);   
+void ETH_SetPTPTargetTime(ETH_HandleTypeDef *heth, uint32_t HighValue, uint32_t LowValue);   
+uint32_t ETH_GetPTPRegister(ETH_HandleTypeDef *heth, uint32_t ETH_PTPReg);
+HAL_StatusTypeDef HAL_ETH_PtpGetReceivedFrame_IT(ETH_HandleTypeDef *heth, ETH_PTP_TIMESTAM *time_stamp);
+HAL_StatusTypeDef HAL_ETH_PtpTransmitFrame(ETH_HandleTypeDef *heth, uint32_t FrameLength, ETH_PTP_TIMESTAM *time_stamp);
+uint32_t ETH_PTPSubSecond2NanoSecond(uint32_t SubSecondValue);
+uint32_t ETH_PTPNanoSecond2SubSecond(uint32_t SubSecondValue);
 
 /**
   * @}

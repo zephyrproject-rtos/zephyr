@@ -25,10 +25,17 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "eth_stm32_hal_priv.h"
 
+#if defined(CONFIG_PTP_CLOCK_STM32)
+#include <ptp_clock.h>
+#include <net/gptp.h>
+#endif
+
+
 static ETH_DMADescTypeDef dma_rx_desc_tab[ETH_RXBUFNB] __aligned(4);
 static ETH_DMADescTypeDef dma_tx_desc_tab[ETH_TXBUFNB] __aligned(4);
 static u8_t dma_rx_buffer[ETH_RXBUFNB][ETH_RX_BUF_SIZE] __aligned(4);
 static u8_t dma_tx_buffer[ETH_TXBUFNB][ETH_TX_BUF_SIZE] __aligned(4);
+
 
 static inline void disable_mcast_filter(ETH_HandleTypeDef *heth)
 {
@@ -54,6 +61,36 @@ static inline void disable_mcast_filter(ETH_HandleTypeDef *heth)
 	heth->Instance->MACFFR = tmp;
 }
 
+#if defined(CONFIG_PTP_CLOCK_STM32)
+static bool eth_get_ptp_data(struct net_if *iface, struct net_pkt *pkt)
+{
+#if defined(CONFIG_NET_VLAN)
+	struct net_eth_vlan_hdr *hdr_vlan;
+	struct ethernet_context *eth_ctx;
+	bool vlan_enabled = false;
+
+	eth_ctx = net_if_l2_data(iface);
+	if (net_eth_is_vlan_enabled(eth_ctx, iface)) {
+		hdr_vlan = (struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
+		vlan_enabled = true;
+
+		if (ntohs(hdr_vlan->type) != NET_ETH_PTYPE_PTP) {
+			return false;
+		}
+	} else
+#endif
+	{
+		if (ntohs(NET_ETH_HDR(pkt)->type) != NET_ETH_PTYPE_PTP) {
+			return false;
+		}
+	}
+
+	net_pkt_set_priority(pkt, NET_PRIORITY_CA);
+
+	return true;
+}
+#endif
+
 static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct device *dev;
@@ -64,6 +101,10 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 	struct net_buf *frag;
 	u16_t total_len;
 	__IO ETH_DMADescTypeDef *dma_tx_desc;
+#if defined(CONFIG_PTP_CLOCK_STM32)
+        ETH_PTP_TIMESTAM time_stamp;
+	bool timestamped_frame;
+#endif
 
 	__ASSERT_NO_MSG(iface != NULL);
 	__ASSERT_NO_MSG(pkt != NULL);
@@ -90,7 +131,7 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 	while ((dma_tx_desc->Status & ETH_DMATXDESC_OWN) != (u32_t)RESET) {
 		k_yield();
 	}
-
+        
 	dma_buffer = (u8_t *)(dma_tx_desc->Buffer1Addr);
 
 	memcpy(dma_buffer, net_pkt_ll(pkt),
@@ -104,11 +145,28 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 		frag = frag->frags;
 	}
 
-	if (HAL_ETH_TransmitFrame(heth, total_len) != HAL_OK) {
+
+#if defined(CONFIG_PTP_CLOCK_STM32)
+        if(HAL_ETH_PtpTransmitFrame(heth, total_len, &time_stamp) == HAL_OK){
+                timestamped_frame = eth_get_ptp_data(iface, pkt);
+                if (timestamped_frame) {
+                        pkt->timestamp.nanosecond = time_stamp.nsec;
+		        pkt->timestamp.second = time_stamp.sec;
+                        net_if_add_tx_timestamp(pkt);
+                }
+        }
+        else{
+                LOG_ERR("HAL_ETH_TransmitFrame failed");
+		res = -EIO;
+		goto error;
+        }
+#else
+        if (HAL_ETH_TransmitFrame(heth, total_len) != HAL_OK) {
 		LOG_ERR("HAL_ETH_TransmitFrame failed");
 		res = -EIO;
 		goto error;
 	}
+#endif
 
 	/* When Transmit Underflow flag is set, clear it and issue a
 	 * Transmit Poll Demand to resume transmission.
@@ -140,6 +198,9 @@ static struct net_pkt *eth_rx(struct device *dev)
 	u16_t total_len;
 	u8_t *dma_buffer;
 	int i;
+#if defined(CONFIG_PTP_CLOCK_STM32)
+        ETH_PTP_TIMESTAM time_stamp;
+#endif
 
 	__ASSERT_NO_MSG(dev != NULL);
 
@@ -149,10 +210,15 @@ static struct net_pkt *eth_rx(struct device *dev)
 
 	heth = &dev_data->heth;
 
-	if (HAL_ETH_GetReceivedFrame_IT(heth) != HAL_OK) {
-		/* no frame available */
+#if defined(CONFIG_PTP_CLOCK_STM32)
+        if (HAL_ETH_PtpGetReceivedFrame_IT(heth, &time_stamp) != HAL_OK) {
+		return NULL;
+        }
+#else
+        if (HAL_ETH_GetReceivedFrame_IT(heth) != HAL_OK) {
 		return NULL;
 	}
+#endif
 
 	total_len = heth->RxFrameInfos.length;
 	dma_buffer = (u8_t *)heth->RxFrameInfos.buffer;
@@ -162,7 +228,10 @@ static struct net_pkt *eth_rx(struct device *dev)
 		LOG_ERR("Failed to obtain RX buffer");
 		goto release_desc;
 	}
-
+#if defined(CONFIG_PTP_CLOCK_STM32)
+        pkt->timestamp.nanosecond = time_stamp.nsec;
+        pkt->timestamp.second = time_stamp.sec;    
+#endif
 	if (!net_pkt_append_all(pkt, total_len, dma_buffer, K_NO_WAIT)) {
 		LOG_ERR("Failed to append RX buffer to context buffer");
 		net_pkt_unref(pkt);
@@ -294,6 +363,41 @@ static int eth_initialize(struct device *dev)
 	return 0;
 }
 
+#if defined(CONFIG_PTP_CLOCK_STM32)
+static void ETH_PTPStart(ETH_HandleTypeDef *heth, uint32_t UpdateMethod) 
+{
+        
+        /* Check the parameters */
+        assert_param(IS_ETH_PTP_UPDATE(UpdateMethod));
+
+        /* Mask the Time stamp trigger interrupt by setting bit 9 in the MACIMR register. */
+        ETH_MACITConfig(heth, ETH_MAC_IT_TST, DISABLE);
+        
+        ETH_PTPTimeStampCmd(heth, ENABLE);
+
+        /* Program the Subsecond increment register based on the PTP clock frequency. */
+        ETH_SetPTPSubSecondIncrement(heth, ETH_STM32_PTP_INCREMENT);
+
+        if (UpdateMethod == ETH_PTP_FineUpdate) {
+                /* If you are using the Fine correction method, program the Time stamp addend register
+                * and set Time stamp control register bit 5 (addend register update). */
+                ETH_SetPTPTimeStampAddend(heth, ETH_STM32_PTP_ADDEND);
+                ETH_EnablePTPTimeStampAddend(heth);
+                /* Poll the Time stamp control register until bit 5 is cleared. */
+                while(ETH_GetPTPFlagStatus(heth, ETH_PTP_FLAG_TSARU) == SET);
+        }
+
+        /* To select the Fine correction method (if required),
+        * program Time stamp control register  bit 1. */
+        ETH_PTPUpdateMethodConfig(heth, UpdateMethod);
+        /* Program the Time stamp high update and Time stamp low update registers
+        * with the appropriate time value. */
+        ETH_SetPTPTimeStampUpdate(heth, ETH_PTP_PositiveTime, 0, 0);
+        /* Set Time stamp control register bit 2 (Time stamp init). */
+        ETH_InitializePTPTimeStamp(heth);
+}
+#endif
+
 #if defined(CONFIG_ETH_STM32_HAL_RANDOM_MAC)
 static void generate_mac(u8_t *mac_addr)
 {
@@ -356,10 +460,17 @@ static void eth_iface_init(struct net_if *iface)
 			K_PRIO_COOP(CONFIG_ETH_STM32_HAL_RX_THREAD_PRIO),
 			0, K_NO_WAIT);
 
-	HAL_ETH_DMATxDescListInit(heth, dma_tx_desc_tab,
-		&dma_tx_buffer[0][0], ETH_TXBUFNB);
+
 	HAL_ETH_DMARxDescListInit(heth, dma_rx_desc_tab,
 		&dma_rx_buffer[0][0], ETH_RXBUFNB);
+#if defined(CONFIG_PTP_CLOCK_STM32)
+	HAL_ETH_DMATxDescListInit(heth, dma_tx_desc_tab,
+		&dma_tx_buffer[0][0], ETH_TXBUFNB, true);
+        ETH_PTPStart(heth, ETH_PTP_FineUpdate); 
+#else
+        HAL_ETH_DMATxDescListInit(heth, dma_tx_desc_tab,
+	        &dma_tx_buffer[0][0], ETH_TXBUFNB, false);
+#endif
 
 	HAL_ETH_Start(heth);
 
@@ -382,14 +493,33 @@ static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T;
+	return ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T 
+#if defined(CONFIG_PTP_CLOCK_STM32)
+	        |ETHERNET_PTP;
+#else
+                ;
+#endif
 }
+
+
+#if defined(CONFIG_PTP_CLOCK_STM32)
+static struct device *eth_stm32_get_ptp_clock(struct device *dev)
+{
+        struct eth_stm32_hal_dev_data *dev_data  = dev->driver_data;
+
+	return dev_data->ptp_clock;
+}
+#endif
 
 static const struct ethernet_api eth_api = {
 	.iface_api.init = eth_iface_init,
 	.iface_api.send = eth_tx,
 
 	.get_capabilities = eth_stm32_hal_get_capabilities,
+
+#if defined(CONFIG_PTP_CLOCK_STM32)
+	.get_ptp_clock = eth_stm32_get_ptp_clock,
+#endif
 };
 
 static struct device DEVICE_NAME_GET(eth0_stm32_hal);
@@ -440,3 +570,146 @@ static struct eth_stm32_hal_dev_data eth0_data = {
 NET_DEVICE_INIT(eth0_stm32_hal, CONFIG_ETH_STM32_HAL_NAME, eth_initialize,
 	&eth0_data, &eth0_config, CONFIG_ETH_INIT_PRIORITY, &eth_api,
 	ETHERNET_L2, NET_L2_GET_CTX_TYPE(ETHERNET_L2), ETH_STM32_HAL_MTU);
+
+#if defined(CONFIG_PTP_CLOCK_STM32)
+struct ptp_eth_stm32_hal_dev_data {
+	struct eth_stm32_hal_dev_data *eth_dev_data;
+};
+
+static struct ptp_eth_stm32_hal_dev_data ptp_stm32_0_dev_data;
+
+static int ptp_clock_stm32_set(struct device *dev, struct net_ptp_time *tm)
+{
+        struct ptp_eth_stm32_hal_dev_data *ptp_dev_data = dev->driver_data;
+        struct eth_stm32_hal_dev_data *dev_data = ptp_dev_data->eth_dev_data;
+        ETH_HandleTypeDef *heth;
+        uint32_t SubSecondValue;
+
+        heth = &dev_data->heth; 
+        
+        /* convert nanosecond to subseconds */
+        SubSecondValue = ETH_PTPNanoSecond2SubSecond(tm->nanosecond);
+
+        ETH_SetPTPTimeStampUpdate(heth, ETH_PTP_PositiveTime, tm->second, SubSecondValue);
+        ETH_InitializePTPTimeStamp(heth);
+        
+        while(ETH_GetPTPFlagStatus(heth, ETH_PTP_FLAG_TSSTI) == SET);
+
+        return 0;
+}
+
+static int ptp_clock_stm32_get(struct device *dev, struct net_ptp_time *tm)
+{
+        struct ptp_eth_stm32_hal_dev_data *ptp_dev_data = dev->driver_data;
+        struct eth_stm32_hal_dev_data *dev_data = ptp_dev_data->eth_dev_data;
+        ETH_HandleTypeDef *heth;
+
+        heth = &dev_data->heth;
+
+        tm->nanosecond = ETH_PTPSubSecond2NanoSecond(ETH_GetPTPRegister(heth, ETH_PTPTSLR));
+        tm->second = ETH_GetPTPRegister(heth, ETH_PTPTSHR);
+
+	return 0;
+}
+
+static int ptp_clock_stm32_adjust(struct device *dev, int increment)
+{
+        uint32_t Sign;
+        uint32_t SecondValue;
+        uint32_t NanoSecondValue;
+        uint32_t SubSecondValue;
+        uint32_t addend;
+        struct ptp_eth_stm32_hal_dev_data *ptp_dev_data = dev->driver_data;
+        struct eth_stm32_hal_dev_data *dev_data = ptp_dev_data->eth_dev_data;
+        ETH_HandleTypeDef *heth;
+
+        heth = &dev_data->heth;
+
+        if ((increment <= -NSEC_PER_SEC) || (increment >= NSEC_PER_SEC))
+		return -EINVAL;
+
+        if(increment < 0) {
+                Sign = ETH_PTP_NegativeTime;
+                SecondValue = 0;
+                NanoSecondValue = -increment;
+        } else {
+                Sign = ETH_PTP_PositiveTime;
+                SecondValue = 0;
+                NanoSecondValue = increment;
+        }
+
+        SubSecondValue = ETH_PTPNanoSecond2SubSecond(NanoSecondValue);
+ 
+        addend = ETH_GetPTPRegister(heth, ETH_PTPTSAR);
+
+        while(ETH_GetPTPFlagStatus(heth, ETH_PTP_FLAG_TSSTU) == SET);
+        while(ETH_GetPTPFlagStatus(heth, ETH_PTP_FLAG_TSSTI) == SET);
+
+        ETH_SetPTPTimeStampUpdate(heth, Sign, SecondValue, SubSecondValue);
+        ETH_EnablePTPTimeStampUpdate(heth);
+        while(ETH_GetPTPFlagStatus(heth, ETH_PTP_FLAG_TSSTU) == SET);      
+        
+        ETH_SetPTPTimeStampAddend(heth, addend);
+        ETH_EnablePTPTimeStampAddend(heth);
+       
+	return 0;
+}
+
+static int ptp_clock_stm32_rate_adjust(struct device *dev, float ratio)
+{
+        /*uint32_t addend_old addend_new;
+        struct ptp_eth_stm32_hal_dev_data *ptp_dev_data = dev->driver_data;
+        struct eth_stm32_hal_dev_data *dev_data = ptp_dev_data->eth_dev_data;
+        ETH_HandleTypeDef *heth;
+
+        heth = &dev_data->heth;
+
+	if (ratio == 1) {
+		return 0;
+	}
+
+	if (ratio < 0) {
+		return -EINVAL;
+	}
+
+	if (ratio < 0.5) {
+		ratio = 0.5;
+	} else if (ratio > 1.5) {
+		ratio = 1.5;
+	}
+
+        addend = ETH_GetPTPRegister(heth, ETH_PTPTSAR);
+        addend *= ratio;
+
+        ETH_SetPTPTimeStampAddend(heth, increment);
+        ETH_EnablePTPTimeStampAddend(heth);
+
+	return 0;*/
+ 
+        return -ENOTSUP; 
+}
+
+static const struct ptp_clock_driver_api api = {
+	.set = ptp_clock_stm32_set,
+	.get = ptp_clock_stm32_get,
+	.adjust = ptp_clock_stm32_adjust,
+	.rate_adjust = ptp_clock_stm32_rate_adjust,
+};
+
+static int ptp_stm32_init(struct device *port)
+{
+	struct device *eth_dev = DEVICE_GET(eth0_stm32_hal);
+	struct eth_stm32_hal_dev_data *dev_data = eth_dev->driver_data;
+	struct ptp_eth_stm32_hal_dev_data *ptp_dev_data = port->driver_data;
+
+	dev_data->ptp_clock = port;
+	ptp_dev_data->eth_dev_data = dev_data;
+
+	return 0;
+}
+
+DEVICE_AND_API_INIT(stm32_ptp_clock_0, PTP_CLOCK_NAME, ptp_stm32_init,
+		    &ptp_stm32_0_dev_data, NULL, POST_KERNEL,
+		    CONFIG_APPLICATION_INIT_PRIORITY, &api);
+
+#endif

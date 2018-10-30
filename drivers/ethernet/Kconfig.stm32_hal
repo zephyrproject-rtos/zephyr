@@ -79,5 +79,14 @@ config ETH_STM32_HAL_MAC5
 	  This is the byte 5 of the MAC address.
 endif
 
+config PTP_CLOCK_STM32
+	bool "STM32 PTP clock driver support"
+	default y
+	depends on PTP_CLOCK && NET_PKT_TIMESTAMP
+	help
+	  Enable STM32 PTP clock support.
+
+
+
 endif # ETH_STM32_HAL
 

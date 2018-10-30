@@ -16,6 +16,10 @@
 #define ETH_RX_BUF_SIZE	ETH_MAX_PACKET_SIZE /* buffer size for receive */
 #define ETH_TX_BUF_SIZE	ETH_MAX_PACKET_SIZE /* buffer size for transmit */
 
+/*Definition of zhe ptp */
+#define ETH_STM32_PTP_ADDEND    0x4C19EF00
+#define ETH_STM32_PTP_INCREMENT 43
+
 /* Device constant configuration parameters */
 struct eth_stm32_hal_dev_cfg {
 	void (*config_func)(void);
@@ -32,6 +36,9 @@ struct eth_stm32_hal_dev_data {
 	ETH_HandleTypeDef heth;
 	/* clock device */
 	struct device *clock;
+#if defined(CONFIG_PTP_CLOCK_STM32)
+	struct device *ptp_clock;
+#endif
 	struct k_mutex tx_mutex;
 	struct k_sem rx_int_sem;
 	K_THREAD_STACK_MEMBER(rx_thread_stack,
