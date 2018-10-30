@@ -23,8 +23,8 @@ zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V1        i2c_ll_stm32.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V2        i2c_ll_stm32.c)
 
 
-zephyr_library_sources_codegen_ifdef(CONFIG_I2C_STM32_V1 i2c_ll_stm32_device.h.jinja2 SEARCH_PATH ${PROJECT_SOURCE_DIR}"/templates/")
-zephyr_library_sources_codegen_ifdef(CONFIG_I2C_STM32_V2 i2c_ll_stm32_device.h.jinja2 SEARCH_PATH ${PROJECT_SOURCE_DIR}"/templates/")
+zephyr_library_sources_codegen_ifdef(CONFIG_I2C_STM32_V1 i2c_ll_stm32_device_template.h CODEGEN_OUTPUT i2c_ll_stm32_device.h SEARCH_PATH ${PROJECT_SOURCE_DIR}"/templates/")
+zephyr_library_sources_codegen_ifdef(CONFIG_I2C_STM32_V2 i2c_ll_stm32_device_template.h CODEGEN_OUTPUT i2c_ll_stm32_device.h SEARCH_PATH ${PROJECT_SOURCE_DIR}"/templates/")
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE		i2c_handlers.c)
 
