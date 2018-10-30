@@ -19,7 +19,7 @@ class DTFlash(DTDirective):
         # Node of the flash
         self._flash_node = None
 
-    def _extract_partition(self, node_address, yaml, prop, def_label):
+    def _extract_partition(self, node_address, yaml, prop):
         prop_def = {}
         prop_alias = {}
         node = reduced[node_address]
@@ -30,6 +30,12 @@ class DTFlash(DTDirective):
         label_prefix = ["FLASH_AREA", partition_name]
         label = self.get_label_string(label_prefix + ["LABEL",])
         prop_def[label] = '"{}"'.format(partition_name)
+
+        label = self.get_label_string(label_prefix + ["READ_ONLY",])
+        if node['props'].get('read-only'):
+            prop_def[label] = 1
+        else:
+            prop_def[label] = 0
 
         index = 0
         while index < len(partition_sectors):
@@ -125,7 +131,7 @@ class DTFlash(DTDirective):
             self._extract_code_partition(node_address, yaml, prop, def_label)
         elif prop == 'reg':
             # indicator for partition
-            self._extract_partition(node_address, yaml, prop, def_label)
+            self._extract_partition(node_address, yaml, prop)
         else:
             raise Exception(
                 "DTFlash.extract called with unexpected directive ({})."
