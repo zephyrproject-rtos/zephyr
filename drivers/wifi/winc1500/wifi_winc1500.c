@@ -822,8 +822,11 @@ static bool handle_socket_msg_recv(SOCKET sock,
 		return false;
 	}
 
-	recv(sock, sd->pkt_buf->data,
-	     CONFIG_WIFI_WINC1500_MAX_PACKET_SIZE, K_NO_WAIT);
+	if (recv(sock, sd->pkt_buf->data,
+	     CONFIG_WIFI_WINC1500_MAX_PACKET_SIZE, K_NO_WAIT)) {
+		LOG_ERR("Could not receive packet in the buffer");
+		return false;
+	}
 
 	return true;
 }
