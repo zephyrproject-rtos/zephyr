@@ -218,6 +218,27 @@ The following code defines and enables an ISR.
        ...
     }
 
+Since the :c:macro:`IRQ_CONNECT` macro requires that all its parameters be
+known at build time, in some cases this may not be acceptable. It is also
+possible to install interrupts at runtime with
+:cpp:func:`irq_connect_dynamic()`. It is used in exactly the same way as
+:c:macro:`IRQ_CONNECT`:
+
+.. code-block:: c
+
+    void my_isr_installer(void)
+    {
+       ...
+       irq_connect_dynamic(MY_DEV_IRQ, MY_DEV_PRIO, my_isr, MY_ISR_ARG,
+                           MY_IRQ_FLAGS);
+       irq_enable(MY_DEV_IRQ);
+       ...
+    }
+
+Dynamic interrupts require the :option:`CONFIG_DYNAMIC_INTERRUPTS` option to
+be enabled. Removing or re-configuring a dynamic interrupt is currently
+unsupported.
+
 Defining a 'direct' ISR
 =======================
 
@@ -264,6 +285,8 @@ The following code demonstrates a direct ISR:
        irq_enable(MY_DEV_IRQ);
        ...
     }
+
+Installation of dynamic direct interrupts is currently unsupported.
 
 Implementation Details
 ======================
@@ -389,6 +412,13 @@ creates an _irq_to_interrupt_vector array which maps an IRQ line to its
 configured vector in the IDT. This is used at runtime by :c:macro:`IRQ_CONNECT`
 to program the IRQ-to-vector association in the interrupt controller.
 
+For dynamic interrupts, the build must generate some 4-byte dynamic interrupt
+stubs, one stub per dynamic interrupt in use. The number of stubs is controlled
+by the :option:`CONFIG_X86_DYNAMIC_IRQ_STUBS` option. Each stub pushes an
+unique identifier which is then used to fetch the appropriate handler function
+and parameter out of a table populated when the dynamic interrupt was
+connected.
+
 Suggested Uses
 **************
 
@@ -426,6 +456,7 @@ The following interrupt-related APIs are provided by :file:`irq.h`:
 * :cpp:func:`irq_enable()`
 * :cpp:func:`irq_disable()`
 * :cpp:func:`irq_is_enabled()`
+* :cpp:func:`irq_connect_dynamic()`
 
 The following interrupt-related APIs are provided by :file:`kernel.h`:
 
