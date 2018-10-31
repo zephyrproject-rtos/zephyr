@@ -107,7 +107,7 @@ int calc_rev_wheel(BYTE *wheel, BYTE *backpath)
 	int i;
 
 	for (i = 0; i < WHEEL_SIZE; i++) {
-		if (wheel[i] >= WHEEL_SIZE || wheel[i] < 0) {
+		if (wheel[i] >= WHEEL_SIZE) {
 			return -1;
 		}
 		backpath[wheel[i]] = i;
