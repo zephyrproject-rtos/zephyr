@@ -25,6 +25,13 @@ extern "C" {
  */
 int smp_bt_register(void);
 
+/**
+ * @brief Unregisters the SMP Bluetooth service.
+ *
+ * @return 0 on success; negative error code on failure.
+ */
+int smp_bt_unregister(void);
+
 #ifdef __cplusplus
 }
 #endif
