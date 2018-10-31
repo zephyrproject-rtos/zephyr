@@ -56,17 +56,17 @@ class CodeGen(EDTSConsumerMixin):
 
         self.data['devicetree'] = dts
 
-    def setup_template_env(self):
-        input_path, input_filename = ntpath.split(self.data['runtime']['input_file'])
+        self.template_env.globals.update(data=self.data)
 
+    def setup_template_env(self, current_path):
         self.include_paths = []
-        self.include_paths.append(input_path)
+        self.include_paths.append(current_path)
         self.include_paths.extend(self.data['runtime']['include_path'])
  
         self.loader = FileSystemLoader(self.include_paths)
         self.template_env = Environment(loader=self.loader, extensions=['jinja2.ext.do','jinja2.ext.loopcontrols'])
 
-        self.template_handle = self.template_env.get_template(input_filename)
+        self.template_env.globals.update({'render_string':self.render_string})
  
     def setup_edts_database_api(self):
         self.edts_api.update({'get_compatibles':self.get_compatibles})
@@ -75,25 +75,32 @@ class CodeGen(EDTSConsumerMixin):
 
         self.template_env.globals.update(edts_api=self.edts_api)
 
-
     def write_generated_output(self, output_str):
         output_handle = open(self.data['runtime']['output_name'], "w")
         output_handle.write(output_str)
         output_handle.close()
 
-    def render(self):
-        return self.template_handle.render(data=self.data, edts_api=self.edts_api) 
+    def render_main_template(self, template_file):
+        template_handle = self.template_env.get_template(template_file)
+        return template_handle.render() 
+
+    def render_string(self, tpl_str, context):
+        template_handle = self.template_env.from_string(tpl_str)
+        return template_handle.render(data=context)
 
     def main(self, argv):
 
         argv = argv[1:]
 
         self.options.parse_args(argv)
+
+        current_path, main_template = ntpath.split(self.data['runtime']['input_file'])
+
+        self.setup_template_env(current_path)
         self.create_datacontext()
-        self.setup_template_env()
         self.setup_edts_database_api()
      
-        self.write_generated_output(self.render())
+        self.write_generated_output(self.render_main_template(main_template))
 
 if __name__ == '__main__':
 

@@ -1,15 +1,23 @@
-{% import 'i2c_ll_stm32.meta.jinja2' as i2c_stm32 %}
+{% import 'device_declare.jinja2' as i2c_stm32 %}
 
-#ifndef _I2C_LL_STM32_DEVICE_H_
-#define _I2C_LL_STM32_DEVICE_H_
+{% set config_struct_body = """
+        .i2c = (I2C_TypeDef *){{ '%x'|format(data.device.get_reg_addr()) }},
+        .pclken = {
+                .enr = {{ data.device.get_property('clocks/0/bits') }},
+                .bus = {{ data.device.get_property('clocks/0/bus') }},
+        },
+#ifdef CONFIG_I2C_STM32_INTERRUPT
+        .irq_config_func = {{ data.gen_variables.irq_config_function_name }},
+#endif
+        .bitrate = {{ data.device.get_property('clock-frequency') }},""" %} 
 
-{% set params = {'irq_flag'     :'CONFIG_I2C_STM32_INTERRUPT',
-                 'irq_func'     :'stm32_i2c_isr',
-                 'config_struct': 'i2c_stm32_config',
-                 'data_struct'  :'i2c_stm32_data',
-                 'api_struct'   :'api_funcs',
-                 'init_function':'i2c_stm32_init'} %}
+{% set params = {'irq_flag'           : 'CONFIG_I2C_STM32_INTERRUPT',
+                 'irq_func'           : 'stm32_i2c_isr',
+                 'config_struct'      : 'i2c_stm32_config',
+                 'data_struct'        : 'i2c_stm32_data',
+                 'api_struct'         : 'api_funcs',
+                 'init_function'      : 'i2c_stm32_init',
+		 'config_struct_body' :  config_struct_body} %}
 
 {{ i2c_stm32.device(data, ['st,stm32-i2c-v1', 'st,stm32-i2c-v2'], params) }}
 
-#endif
