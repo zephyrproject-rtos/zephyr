@@ -1113,6 +1113,96 @@ static void test_dad_timeout(void)
 #endif
 }
 
+#define NET_UDP_HDR(pkt)  ((struct net_udp_hdr *)(net_pkt_udp_data(pkt)))
+
+static void setup_ipv6_udp(struct net_pkt *pkt,
+			   struct in6_addr *local_addr,
+			   struct in6_addr *remote_addr,
+			   u16_t local_port,
+			   u16_t remote_port)
+{
+	static const char payload[] = "foobar";
+
+	NET_IPV6_HDR(pkt)->vtc = 0x60;
+	NET_IPV6_HDR(pkt)->tcflow = 0;
+	NET_IPV6_HDR(pkt)->flow = 0;
+	NET_IPV6_HDR(pkt)->len = htons(NET_UDPH_LEN + strlen(payload));
+
+	NET_IPV6_HDR(pkt)->nexthdr = IPPROTO_UDP;
+	NET_IPV6_HDR(pkt)->hop_limit = 255;
+
+	net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src, local_addr);
+	net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst, remote_addr);
+
+	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
+	net_pkt_set_ipv6_ext_len(pkt, 0);
+
+	net_buf_add(pkt->frags, net_pkt_ip_hdr_len(pkt) +
+				sizeof(struct net_udp_hdr));
+
+	NET_UDP_HDR(pkt)->src_port = htons(local_port);
+	NET_UDP_HDR(pkt)->dst_port = htons(remote_port);
+
+	net_buf_add_mem(pkt->frags, payload, strlen(payload));
+}
+
+static enum net_verdict recv_msg(struct in6_addr *src, struct in6_addr *dst)
+{
+	struct net_pkt *pkt;
+	struct net_buf *frag;
+	struct net_if *iface;
+
+	iface = net_if_get_default();
+
+	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
+				     K_FOREVER);
+
+	NET_ASSERT_INFO(pkt, "Out of TX packets");
+
+	frag = net_pkt_get_frag(pkt, K_FOREVER);
+
+	net_pkt_frag_add(pkt, frag);
+
+	net_pkt_set_iface(pkt, iface);
+	net_pkt_set_family(pkt, AF_INET6);
+	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
+
+	net_pkt_ll_clear(pkt);
+
+	setup_ipv6_udp(pkt, src, dst, 1234, 4321);
+
+	/* We by-pass the normal packet receiving flow in this case in order
+	 * to simplify the testing.
+	 */
+	return net_ipv6_process_pkt(pkt, false);
+}
+
+static void test_src_localaddr_recv(void)
+{
+	struct in6_addr localaddr = { { { 0, 0, 0, 0, 0, 0, 0, 0,
+					  0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+	struct in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+				     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+	enum net_verdict verdict;
+
+	verdict = recv_msg(&localaddr, &addr);
+	zassert_equal(verdict, NET_DROP,
+		      "Local address packet was not dropped");
+}
+
+static void test_dst_localaddr_recv(void)
+{
+	struct in6_addr localaddr = { { { 0, 0, 0, 0, 0, 0, 0, 0,
+					  0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+	struct in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+				     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+	enum net_verdict verdict;
+
+	verdict = recv_msg(&addr, &localaddr);
+	zassert_equal(verdict, NET_DROP,
+		      "Local address packet was not dropped");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(test_ipv6_fn,
@@ -1133,7 +1223,9 @@ void test_main(void)
 			 ztest_unit_test(test_change_ll_addr),
 			 ztest_unit_test(test_prefix_timeout),
 			 ztest_unit_test(test_prefix_timeout_long),
-			 ztest_unit_test(test_dad_timeout)
+			 ztest_unit_test(test_dad_timeout),
+			 ztest_unit_test(test_src_localaddr_recv),
+			 ztest_unit_test(test_dst_localaddr_recv)
 			 );
 	ztest_run_test_suite(test_ipv6_fn);
 }
