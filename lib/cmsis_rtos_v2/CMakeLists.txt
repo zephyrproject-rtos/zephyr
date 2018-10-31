@@ -7,6 +7,7 @@ zephyr_library()
 zephyr_library_sources_ifdef(
   CONFIG_CMSIS_RTOS_V2
   thread.c
+  kernel.c
 )
 
 zephyr_library_link_libraries(CMSIS)
