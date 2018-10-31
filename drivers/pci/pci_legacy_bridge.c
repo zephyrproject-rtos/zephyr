@@ -17,7 +17,7 @@
 
 #include <drivers/pci/pci_mgr.h>
 #include <drivers/pci/pci.h>
-#include <board.h>
+#include <soc.h>
 
 #define PCI_LEGACY_BRIDGE_REG (0xF0 / 4) /* RCBA offset in 32-bit words */
 #define PCI_ADDR_IRQAGENT0 0x3140

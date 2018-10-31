@@ -75,7 +75,7 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 
-#include <board.h>
+#include <soc.h>
 
 #include <pci/pci_mgr.h>
 #include <pci/pci.h>

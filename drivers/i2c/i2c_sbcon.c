@@ -12,7 +12,6 @@
  * hardware state of two-bit serial interfaces like I2C.
  */
 
-#include <board.h>
 #include <device.h>
 #include <errno.h>
 #include <i2c.h>

@@ -13,7 +13,7 @@
 LOG_MODULE_REGISTER(ws2812b_sw);
 
 #include <zephyr.h>
-#include <board.h>
+#include <soc.h>
 #include <gpio.h>
 #include <device.h>
 #include <clock_control.h>

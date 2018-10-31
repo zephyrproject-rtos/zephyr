@@ -14,7 +14,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <zephyr.h>
 #include <kernel.h>
-#include <board.h>
 #include <device.h>
 #include <init.h>
 #include <irq.h>

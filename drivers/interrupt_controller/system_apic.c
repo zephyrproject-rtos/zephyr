@@ -11,7 +11,6 @@
  */
 
 #include <misc/__assert.h>
-#include "board.h"
 #include <kernel.h>
 #include <arch/cpu.h>
 #include <drivers/ioapic.h>

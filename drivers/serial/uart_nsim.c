@@ -13,7 +13,6 @@
 #include <zephyr/types.h>
 #include <misc/util.h>
 #include <string.h>
-#include <board.h>
 #include <init.h>
 #include <uart.h>
 

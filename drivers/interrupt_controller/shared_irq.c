@@ -10,7 +10,6 @@
 #include <device.h>
 #include <shared_irq.h>
 #include <init.h>
-#include <board.h>
 #include <sys_io.h>
 
 #ifdef CONFIG_IOAPIC

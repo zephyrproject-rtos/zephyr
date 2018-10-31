@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(spi_dw);
 #include <kernel.h>
 #include <arch/cpu.h>
 
-#include <board.h>
+#include <soc.h>
 #include <device.h>
 #include <init.h>
 

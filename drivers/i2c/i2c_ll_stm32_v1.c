@@ -12,7 +12,7 @@
 #include <clock_control.h>
 #include <misc/util.h>
 #include <kernel.h>
-#include <board.h>
+#include <soc.h>
 #include <errno.h>
 #include <i2c.h>
 #include "i2c_ll_stm32.h"

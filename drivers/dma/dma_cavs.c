@@ -9,7 +9,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <kernel.h>
-#include <board.h>
 #include <device.h>
 #include <init.h>
 #include <dma.h>

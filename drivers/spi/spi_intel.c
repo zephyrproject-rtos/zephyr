@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(spi_intel);
 #include <arch/cpu.h>
 
 #include <misc/__assert.h>
-#include <board.h>
+#include <soc.h>
 #include <init.h>
 
 #include <sys_io.h>

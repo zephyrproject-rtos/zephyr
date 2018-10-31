@@ -10,7 +10,7 @@
 #include <em_cmu.h>
 #include <em_i2c.h>
 #include <em_gpio.h>
-#include <board.h>
+#include <soc.h>
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <logging/log.h>

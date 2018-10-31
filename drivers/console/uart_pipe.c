@@ -13,7 +13,6 @@
 
 #include <kernel.h>
 
-#include <board.h>
 #include <uart.h>
 
 #include <console/uart_pipe.h>

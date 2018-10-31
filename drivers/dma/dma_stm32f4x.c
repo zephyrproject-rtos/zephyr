@@ -6,7 +6,6 @@
  */
 
 
-#include <board.h>
 #include <device.h>
 #include <dma.h>
 #include <errno.h>

@@ -14,7 +14,6 @@
 #include <arch/cpu.h>
 #include <clock_control/arm_clock_control.h>
 #include <misc/__assert.h>
-#include <board.h>
 #include <init.h>
 #include <uart.h>
 #include <linker/sections.h>

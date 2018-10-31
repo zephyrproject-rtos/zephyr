@@ -9,7 +9,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#include <board.h>
+#include <soc.h>
 #include <device.h>
 #include <errno.h>
 #include <init.h>

@@ -8,7 +8,6 @@
 #include <arch/cpu.h>
 #include <device.h>
 #include <system_timer.h>
-#include <board.h>
 
 /* Timer Ctrl Bitfields */
 #define TIMER_CTRL_EN              (1 << 0)            /* Timer Enable Bit */

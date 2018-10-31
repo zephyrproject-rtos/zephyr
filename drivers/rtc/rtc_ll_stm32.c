@@ -14,7 +14,7 @@
 #include <clock_control.h>
 #include <misc/util.h>
 #include <kernel.h>
-#include <board.h>
+#include <soc.h>
 #include <rtc.h>
 
 #if defined(CONFIG_SOC_SERIES_STM32L4X)

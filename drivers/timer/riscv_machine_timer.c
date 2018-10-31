@@ -8,7 +8,6 @@
 #include <arch/cpu.h>
 #include <device.h>
 #include <system_timer.h>
-#include <board.h>
 
 #include "legacy_api.h"
 

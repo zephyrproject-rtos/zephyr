@@ -49,8 +49,6 @@
 #include <drivers/system_timer.h>
 #include <kernel_structs.h>
 
-#include <board.h>
-
 #include "legacy_api.h"
 
 /* HPET register offsets */
