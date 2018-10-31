@@ -1324,6 +1324,10 @@ else()
     )
 endif()
 
+# Set overridable variables used by cmake/flash/CMakeLists.txt
+set_ifndef(HEX_FILE   ${PROJECT_BINARY_DIR}/${KERNEL_HEX_NAME})
+set_ifndef(BIN_FILE   ${PROJECT_BINARY_DIR}/${KERNEL_BIN_NAME})
+
 add_subdirectory(cmake/flash)
 
 add_subdirectory(cmake/usage)

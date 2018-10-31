@@ -15,7 +15,7 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
 
     def __init__(self, cfg, family, softreset, snr, erase=False):
         super(NrfJprogBinaryRunner, self).__init__(cfg)
-        self.hex_ = cfg.kernel_hex
+        self.hex_ = cfg.hex_file
         self.family = family
         self.softreset = softreset
         self.snr = snr

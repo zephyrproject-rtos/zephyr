@@ -30,7 +30,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
         self.gdbserver = gdbserver
         self.gdb_port = gdb_port
         self.tui_args = ['-tui'] if tui else []
-        self.bin_name = cfg.kernel_bin
+        self.bin_name = cfg.bin_file
         self.elf_name = cfg.kernel_elf
 
         board_args = []

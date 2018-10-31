@@ -76,10 +76,10 @@ def add_parser_common(parser_adder, command):
                        help='Zephyr board directory')
     group.add_argument('--kernel-elf',
                        help='Path to kernel binary in .elf format')
-    group.add_argument('--kernel-hex',
-                       help='Path to kernel binary in .hex format')
-    group.add_argument('--kernel-bin',
-                       help='Path to kernel binary in .bin format')
+    group.add_argument('--hex-file',
+                       help='Path to hex file')
+    group.add_argument('--bin-file',
+                       help='Path to binary file')
     group.add_argument('--gdb',
                        help='Path to GDB, if applicable')
     group.add_argument('--openocd',
@@ -109,14 +109,14 @@ def cached_runner_config(build_dir, cache):
     '''Parse the RunnerConfig from a build directory and CMake Cache.'''
     board_dir = cache['ZEPHYR_RUNNER_CONFIG_BOARD_DIR']
     kernel_elf = cache['ZEPHYR_RUNNER_CONFIG_KERNEL_ELF']
-    kernel_hex = cache['ZEPHYR_RUNNER_CONFIG_KERNEL_HEX']
-    kernel_bin = cache['ZEPHYR_RUNNER_CONFIG_KERNEL_BIN']
+    hex_file   = cache['ZEPHYR_RUNNER_CONFIG_HEX_FILE']
+    bin_file   = cache['ZEPHYR_RUNNER_CONFIG_BIN_FILE']
     gdb = cache.get('ZEPHYR_RUNNER_CONFIG_GDB')
     openocd = cache.get('ZEPHYR_RUNNER_CONFIG_OPENOCD')
     openocd_search = cache.get('ZEPHYR_RUNNER_CONFIG_OPENOCD_SEARCH')
 
     return RunnerConfig(build_dir, board_dir,
-                        kernel_elf, kernel_hex, kernel_bin,
+                        kernel_elf, hex_file, bin_file,
                         gdb=gdb, openocd=openocd,
                         openocd_search=openocd_search)
 

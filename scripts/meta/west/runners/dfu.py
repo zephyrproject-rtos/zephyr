@@ -69,7 +69,7 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def create(cls, cfg, args):
         if args.img is None:
-            args.img = cfg.kernel_bin
+            args.img = cfg.bin_file
 
         if args.dfuse:
             args.dt_flash = True  # --dfuse implies --dt-flash.
