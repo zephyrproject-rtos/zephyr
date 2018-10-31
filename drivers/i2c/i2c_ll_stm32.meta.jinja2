@@ -3,15 +3,6 @@
 
 {% extends 'device_declare.jinja2' %}
 
-{% block init_params %}
-        {{ set_param({'irq_flag':'CONFIG_I2C_STM32_INTERRUPT'}) }}
-	{{ set_param({'irq_func':'stm32_i2c_isr'}) }}
-        {{ set_param({'config_struct':'i2c_stm32_config'}) }}
-        {{ set_param({'data_struct':'i2c_stm32_data'}) }}
-        {{ set_param({'api_struct':'api_funcs'}) }}
-        {{ set_param({'init_function':'i2c_stm32_init'}) }}
-{% endblock %}
-
 {# Because these blocks are "scoped" all variables in the macro from the
    base template can be accessed in these blocks #}
 {% block config_struct_body %}
