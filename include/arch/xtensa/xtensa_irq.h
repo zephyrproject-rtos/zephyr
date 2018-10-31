@@ -8,7 +8,6 @@
 
 #include <xtensa_api.h>
 #include <xtensa/xtruntime.h>
-#include <board.h>
 
 #define CONFIG_GEN_IRQ_START_VECTOR 0
 
