@@ -176,6 +176,11 @@ int smp_bt_register(void)
 	return bt_gatt_service_register(&smp_bt_svc);
 }
 
+int smp_bt_unregister(void)
+{
+	return bt_gatt_service_unregister(&smp_bt_svc);
+}
+
 static int smp_bt_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
