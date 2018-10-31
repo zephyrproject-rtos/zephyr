@@ -238,6 +238,20 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 		};
+
+		usbhs: usbd@40038000 {
+			compatible = "atmel,sam-usbhs";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40038000 0x4000>;
+			interrupts = <34 0>;
+			interrupt-names = "usbhs";
+			maximum-speed = "full-speed";
+			num-bidir-endpoints = <10>;
+			peripheral-id = <34>;
+			status = "disabled";
+			label = "USBHS";
+		};
 	};
 };
 

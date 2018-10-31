@@ -48,6 +48,14 @@ config USB_DC_SAM0
 	help
 	  SAM0 family USB device controller Driver.
 
+config USB_DC_SAM
+	bool "SAM series USB HS Device Controller driver"
+	depends on SOC_SERIES_SAME70
+	select USB_DEVICE_DRIVER
+	select HAS_DTS_USB
+	help
+	  SAM family USB HS device controller Driver.
+
 config USB_NRF52840
 	bool "Nordic Semiconductor nRF52840 USB Device Controller Driver"
 	depends on SOC_NRF52840
