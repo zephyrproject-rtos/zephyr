@@ -29,7 +29,6 @@
 
 #include <kernel.h>
 
-#include <board.h>
 #include <i2c.h>
 #include <sys_clock.h>
 

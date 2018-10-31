@@ -6,7 +6,7 @@
 
 #include <errno.h>
 
-#include <board.h>
+#include <soc.h>
 #include <pwm.h>
 #include <device.h>
 #include <kernel.h>

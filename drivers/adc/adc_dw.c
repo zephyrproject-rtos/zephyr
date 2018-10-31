@@ -12,7 +12,7 @@
 #include <kernel.h>
 #include <string.h>
 #include <stdlib.h>
-#include <board.h>
+#include <soc.h>
 #include <adc.h>
 #include <arch/cpu.h>
 

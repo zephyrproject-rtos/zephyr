@@ -57,7 +57,7 @@
  * to build the ARC CPU with Timer0.
  */
 
-#include <board.h>
+#include <soc.h>
 
 #include "legacy_api.h"
 

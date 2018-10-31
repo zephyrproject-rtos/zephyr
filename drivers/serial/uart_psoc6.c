@@ -16,7 +16,6 @@
 #include <misc/__assert.h>
 #include <soc.h>
 #include <uart.h>
-#include <board.h>
 
 #include "cy_syslib.h"
 #include "cy_sysclk.h"

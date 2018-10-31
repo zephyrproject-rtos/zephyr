@@ -53,8 +53,6 @@
 #include <kernel.h>
 #include <arch/cpu.h>
 
-#include "board.h"
-
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <init.h>

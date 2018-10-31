@@ -13,7 +13,6 @@
 
 #include <soc.h>
 #include <errno.h>
-#include <board.h>
 #include <pwm.h>
 #include <kernel.h>
 #include <gpio.h>

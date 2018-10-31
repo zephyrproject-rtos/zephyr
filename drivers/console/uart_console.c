@@ -24,7 +24,6 @@
 #include <device.h>
 #include <init.h>
 
-#include <board.h>
 #include <uart.h>
 #include <console/console.h>
 #include <console/uart_console.h>

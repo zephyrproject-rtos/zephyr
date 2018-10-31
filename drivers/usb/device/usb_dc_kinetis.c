@@ -12,7 +12,6 @@
 #include <kernel.h>
 #include <misc/byteorder.h>
 #include <usb/usb_device.h>
-#include <board.h>
 #include <device.h>
 
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL

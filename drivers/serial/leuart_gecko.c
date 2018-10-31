@@ -9,7 +9,7 @@
 #include <em_leuart.h>
 #include <em_gpio.h>
 #include <em_cmu.h>
-#include <board.h>
+#include <soc.h>
 
 #define DEV_CFG(dev) \
 	((const struct leuart_gecko_config * const)(dev)->config->config_info)

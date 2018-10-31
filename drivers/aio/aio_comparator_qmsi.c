@@ -8,7 +8,7 @@
 
 #include <stdio.h>
 #include <kernel.h>
-#include <board.h>
+#include <soc.h>
 #include <device.h>
 #include <init.h>
 #include <aio_comparator.h>

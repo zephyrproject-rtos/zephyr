@@ -84,7 +84,6 @@
 #include <string.h>
 #include <misc/__assert.h>
 
-#include "board.h"
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <drivers/loapic.h> /* public API declarations */

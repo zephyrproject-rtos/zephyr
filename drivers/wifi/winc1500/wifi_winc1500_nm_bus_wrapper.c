@@ -11,7 +11,6 @@ LOG_MODULE_REGISTER(winc1500);
 #include <stdio.h>
 #include <stdint.h>
 
-#include <board.h>
 #include <device.h>
 #include <spi.h>
 

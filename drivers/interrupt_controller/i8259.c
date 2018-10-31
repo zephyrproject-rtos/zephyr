@@ -20,8 +20,6 @@
 #include <device.h>
 #include <init.h>
 
-#include <board.h>
-
 /* programmable interrupt controller info (pair of cascaded 8259A devices) */
 #define PIC_MASTER_BASE_ADRS 0x20
 #define PIC_SLAVE_BASE_ADRS 0xa0

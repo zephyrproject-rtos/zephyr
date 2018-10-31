@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <board.h>
-
 #include "wifi_winc1500_nm_bsp_internal.h"
 
 #include <bsp/include/nm_bsp.h>

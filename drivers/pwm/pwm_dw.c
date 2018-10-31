@@ -20,7 +20,6 @@
 #include <errno.h>
 
 #include <kernel.h>
-#include <board.h>
 #include <pwm.h>
 
 /* Register for component version */

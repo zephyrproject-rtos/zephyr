@@ -9,7 +9,7 @@
 #include <misc/util.h>
 #include <string.h>
 #include <kernel.h>
-#include <board.h>
+#include <soc.h>
 #include <errno.h>
 #include <stdbool.h>
 #include "stm32_can.h"

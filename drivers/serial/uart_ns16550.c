@@ -27,7 +27,6 @@
 #include <zephyr/types.h>
 #include <soc.h>
 
-#include <board.h>
 #include <init.h>
 #include <toolchain.h>
 #include <linker/sections.h>

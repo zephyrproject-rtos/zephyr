@@ -12,7 +12,6 @@
  */
 
 #include <device.h>
-#include <board.h>
 #include <irq_nextlevel.h>
 #include "dw_ictl.h"
 

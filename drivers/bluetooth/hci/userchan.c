@@ -9,7 +9,6 @@
 #include <zephyr.h>
 #include <device.h>
 #include <init.h>
-#include <board.h>
 #include <misc/util.h>
 #include <misc/byteorder.h>
 

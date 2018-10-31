@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <kernel.h>
 #include <arch/cpu.h>
 
-#include <board.h>
+#include <soc.h>
 #include <device.h>
 #include <init.h>
 #include <net/net_if.h>
