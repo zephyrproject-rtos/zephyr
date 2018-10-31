@@ -1,0 +1,11 @@
+identifier: nucleo_l496zg
+name: NUCLEO-L496ZG
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 320
+flash: 1024
+supported:
+  - gpio
