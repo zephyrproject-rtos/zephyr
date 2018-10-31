@@ -5,6 +5,7 @@ zephyr_cc_option(-ffunction-sections -fdata-sections)
 zephyr_sources_ifdef(
   CONFIG_GEN_ISR_TABLES
   isr_tables.c
+  sw_isr_common.c
   )
 
 zephyr_sources_ifdef(
