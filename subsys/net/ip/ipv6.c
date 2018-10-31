@@ -458,6 +458,12 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt, bool is_loopback)
 		goto drop;
 	}
 
+	if (!is_loopback && net_is_ipv6_addr_mcast_iface(&hdr->dst)) {
+		NET_DBG("Dropping interface scope multicast packet");
+		net_stats_update_ipv6_drop(net_pkt_iface(pkt));
+		goto drop;
+	}
+
 	/* Check extension headers */
 	net_pkt_set_next_hdr(pkt, &hdr->nexthdr);
 	net_pkt_set_ipv6_ext_len(pkt, 0);
