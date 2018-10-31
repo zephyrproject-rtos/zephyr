@@ -1169,7 +1169,7 @@ static enum net_verdict recv_msg(struct in6_addr *src, struct in6_addr *dst)
 
 	net_pkt_ll_clear(pkt);
 
-	setup_ipv6_udp(pkt, src, dst, 1234, 4321);
+	setup_ipv6_udp(pkt, src, dst, 4242, 4321);
 
 	/* We by-pass the normal packet receiving flow in this case in order
 	 * to simplify the testing.
@@ -1229,6 +1229,104 @@ static void test_dst_zero_scope_mcast_recv(void)
 		      "Zero scope multicast packet was not dropped");
 }
 
+static void test_dst_site_scope_mcast_recv_drop(void)
+{
+	struct in6_addr mcast_site = { { { 0xff, 0x05, 0, 0, 0, 0, 0, 0,
+					   0, 0, 0, 0, 0, 0, 0, 0 } } };
+	struct in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+				     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+	enum net_verdict verdict;
+
+	verdict = recv_msg(&addr, &mcast_site);
+	zassert_equal(verdict, NET_DROP,
+		      "Site scope multicast packet was not dropped");
+}
+
+static void net_ctx_create(struct net_context **ctx)
+{
+	int ret;
+
+	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP, ctx);
+	zassert_equal(ret, 0,
+		      "Context create IPv6 UDP test failed");
+}
+
+static void net_ctx_bind_mcast(struct net_context *ctx, struct in6_addr *maddr)
+{
+	struct sockaddr_in6 addr = {
+		.sin6_family = AF_INET6,
+		.sin6_port = htons(4321),
+		.sin6_addr = { { { 0 } } },
+	};
+	int ret;
+
+	net_ipaddr_copy(&addr.sin6_addr, maddr);
+
+	ret = net_context_bind(ctx, (struct sockaddr *)&addr,
+			       sizeof(struct sockaddr_in6));
+	zassert_equal(ret, 0, "Context bind test failed (%d)", ret);
+}
+
+static void net_ctx_listen(struct net_context *ctx)
+{
+	zassert_true(net_context_listen(ctx, 0),
+		     "Context listen IPv6 UDP test failed");
+}
+
+static void recv_cb(struct net_context *context,
+		    struct net_pkt *pkt,
+		    int status,
+		    void *user_data)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(status);
+	ARG_UNUSED(user_data);
+}
+
+static void net_ctx_recv(struct net_context *ctx)
+{
+	int ret;
+
+	ret = net_context_recv(ctx, recv_cb, 0, NULL);
+	zassert_equal(ret, 0, "Context recv IPv6 UDP failed");
+}
+
+static void join_group(struct in6_addr *mcast_addr)
+{
+	int ret;
+
+	ret = net_ipv6_mld_join(net_if_get_default(), mcast_addr);
+	zassert_equal(ret, 0, "Cannot join IPv6 multicast group");
+}
+
+static void test_dst_site_scope_mcast_recv_ok(void)
+{
+	struct in6_addr mcast_all_dhcp = { { { 0xff, 0x05, 0, 0, 0, 0, 0, 0,
+					    0, 0, 0, 0x01, 0, 0, 0, 0x03 } } };
+	struct in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+				     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+	enum net_verdict verdict;
+	struct net_context *ctx;
+
+	/* The packet will be dropped unless we have a listener and joined the
+	 * group.
+	 */
+	join_group(&mcast_all_dhcp);
+
+	net_ctx_create(&ctx);
+	net_ctx_bind_mcast(ctx, &mcast_all_dhcp);
+	net_ctx_listen(ctx);
+	net_ctx_recv(ctx);
+
+	verdict = recv_msg(&addr, &mcast_all_dhcp);
+	zassert_equal(verdict, NET_OK,
+		      "All DHCP site scope multicast packet was dropped (%d)",
+		      verdict);
+
+	net_context_put(ctx);
+}
+
 void test_main(void)
 {
 	ztest_test_suite(test_ipv6_fn,
@@ -1253,7 +1351,9 @@ void test_main(void)
 			 ztest_unit_test(test_src_localaddr_recv),
 			 ztest_unit_test(test_dst_localaddr_recv),
 			 ztest_unit_test(test_dst_iface_scope_mcast_recv),
-			 ztest_unit_test(test_dst_zero_scope_mcast_recv)
+			 ztest_unit_test(test_dst_zero_scope_mcast_recv),
+			 ztest_unit_test(test_dst_site_scope_mcast_recv_drop),
+			 ztest_unit_test(test_dst_site_scope_mcast_recv_ok)
 			 );
 	ztest_run_test_suite(test_ipv6_fn);
 }
