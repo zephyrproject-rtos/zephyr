@@ -647,6 +647,22 @@ static inline bool net_is_ipv6_addr_solicited_node(const struct in6_addr *addr)
 }
 
 /**
+ * @brief Check if the IPv6 address is a given scope multicast
+ * address (FFyx::).
+ *
+ * @param addr IPv6 address
+ * @param scope Scope to check
+ *
+ * @return True if the address is in given scope multicast address,
+ * false otherwise.
+ */
+static inline bool net_is_ipv6_addr_mcast_scope(const struct in6_addr *addr,
+						int scope)
+{
+	return (addr->s6_addr[0] == 0xff) && (addr->s6_addr[1] == scope);
+}
+
+/**
  * @brief Check if the IPv6 address is a global multicast address (FFxE::/16).
  *
  * @param addr IPv6 address.
@@ -655,8 +671,21 @@ static inline bool net_is_ipv6_addr_solicited_node(const struct in6_addr *addr)
 */
 static inline bool net_is_ipv6_addr_mcast_global(const struct in6_addr *addr)
 {
-	return addr->s6_addr[0] == 0xff &&
-		(addr->s6_addr[1] & 0x0e) == 0x0e;
+	return net_is_ipv6_addr_mcast_scope(addr, 0x0e);
+}
+
+/**
+ * @brief Check if the IPv6 address is a interface scope multicast
+ * address (FFx1::).
+ *
+ * @param addr IPv6 address.
+ *
+ * @return True if the address is a interface scope multicast address,
+ * false otherwise.
+ */
+static inline bool net_is_ipv6_addr_mcast_iface(const struct in6_addr *addr)
+{
+	return net_is_ipv6_addr_mcast_scope(addr, 0x01);
 }
 
 /**
