@@ -71,6 +71,10 @@ struct _isr_list {
 
 #define IRQ_TABLE_SIZE (CONFIG_NUM_IRQS - CONFIG_GEN_IRQ_START_VECTOR)
 
+#ifdef CONFIG_DYNAMIC_INTERRUPTS
+void z_isr_install(unsigned int irq, void (*routine)(void *), void *param);
+#endif
+
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus
