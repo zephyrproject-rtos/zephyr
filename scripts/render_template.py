@@ -11,12 +11,12 @@ sys.path.append(os.path.dirname(sys.argv[0])+'/dts/')
 from dts.edtsdatabase import EDTSConsumerMixin
 import ntpath
 import json
-from codegen.options import Options
+from jinjagen.options import Options
 
 # Capture our current directory
 THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
-class CodeGen(EDTSConsumerMixin):
+class JinjaGen(EDTSConsumerMixin):
 
     def __init__(self):
         self.data = dict()
@@ -104,5 +104,5 @@ class CodeGen(EDTSConsumerMixin):
 
 if __name__ == '__main__':
 
-    ret = CodeGen().main(sys.argv)
+    ret = JinjaGen().main(sys.argv)
 

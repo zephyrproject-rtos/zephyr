@@ -370,41 +370,41 @@ function(generate_inc_file_for_target
                                    ${generated_target_name} ${ARGN})
 endfunction()
 
-function(target_sources_codegen
+function(target_sources_jinjagen
     target          # The cmake target that depends on the generated file
     )
   set(options)
-  set(oneValueArgs CODEGEN_OUTPUT)
-  set(multiValueArgs CODEGEN_DEFINES SEARCH_PATH)
+  set(oneValueArgs JINJAGEN_OUTPUT)
+  set(multiValueArgs JINJAGEN_DEFINES SEARCH_PATH)
 
-  cmake_parse_arguments(CODEGEN "${options}" "${oneValueArgs}"
+  cmake_parse_arguments(JINJAGEN "${options}" "${oneValueArgs}"
                         "${multiValueArgs}" ${ARGN})
 
   # prepend -D to all defines
   string(REGEX REPLACE "([^;]+)" "-D;\\1"
-         CODEGEN_CODEGEN_DEFINES "${CODEGEN_CODEGEN_DEFINES}")
+	  JINJAGEN_JINJAGEN_DEFINES "${JINJAGEN_JINJAGEN_DEFINES}")
 
   string(REGEX REPLACE "([^;]+)" "-I;\\1"
-         CODEGEN_SEARCH_PATH "${CODEGEN_SEARCH_PATH}")
+	  JINJAGEN_SEARCH_PATH "${JINJAGEN_SEARCH_PATH}")
 
   # Get all the files that make up jinjagen for dependency reasons
-  file(GLOB CODEGEN_SOURCES
-    ${ZEPHYR_BASE}/scripts/codegen/*.py
+  file(GLOB JINJAGEN_SOURCES
+    ${ZEPHYR_BASE}/scripts/jinjagen/*.py
     ${ZEPHYR_BASE}/scripts/render_template.py)
 
   message(STATUS "Will generate for target ${target}")
   # Generated file must be generated to the current binary directory.
   # Otherwise this would trigger CMake issue #14633:
   # https://gitlab.kitware.com/cmake/cmake/issues/14633
-  foreach(arg ${CODEGEN_UNPARSED_ARGUMENTS})	  
+  foreach(arg ${JINJAGEN_UNPARSED_ARGUMENTS})	  
     string(REGEX REPLACE "\\.[^.]*$" "" FILE_WITHOUT_EXT ${arg})
     if(IS_ABSOLUTE ${arg})
       set(template_file ${arg})
-      string(COMPARE EQUAL ${CODEGEN_CODEGEN_OUTPUT} "" result)
+      string(COMPARE EQUAL ${JINJAGEN_JINJAGEN_OUTPUT} "" result)
       if(result)
         set(generated_file ${CMAKE_CURRENT_BINARY_DIR}/${FILE_WITHOUT_EXT}) 
       else()
-        set(generated_file ${CMAKE_CURRENT_BINARY_DIR}/${CODEGEN_CODEGEN_OUTPUT})
+        set(generated_file ${CMAKE_CURRENT_BINARY_DIR}/${JINJAGEN_JINJAGEN_OUTPUT})
       endif()
     else()
       set(template_file ${CMAKE_CURRENT_SOURCE_DIR}/${arg})
@@ -422,16 +422,16 @@ function(target_sources_codegen
     message(STATUS " from '${template_file}'")
     message(STATUS " to   '${generated_file}'")
     add_custom_command(
-      COMMENT "CodeGen ${generated_file}"
+      COMMENT "JinjaGen ${generated_file}"
       OUTPUT ${generated_file}
       MAIN_DEPENDENCY ${template_file}
       DEPENDS
-      ${CODEGEN_SOURCES}
+      ${JINJAGEN_SOURCES}
       COMMAND
       ${PYTHON_EXECUTABLE}
       ${ZEPHYR_BASE}/scripts/render_template.py
-      ${CODEGEN_CODEGEN_DEFINES}
-      ${CODEGEN_SEARCH_PATH}
+      ${JINJAGEN_JINJAGEN_DEFINES}
+      ${JINJAGEN_SEARCH_PATH}
       -D "PROJECT_NAME=${PROJECT_NAME}"
       -D "PROJECT_SOURCE_DIR=${PROJECT_SOURCE_DIR}"
       -D "PROJECT_BINARY_DIR=${PROJECT_BINARY_DIR}"
@@ -456,7 +456,7 @@ function(target_sources_codegen
       -I "${ZEPHYR_BASE}/templates"
       --input "${template_file}"
       --output "${generated_file}"
-      --log "${CMAKE_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/CodeGen.log"
+      --log "${CMAKE_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/JinjaGen.log"
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
     if("${target}" STREQUAL "zephyr")
@@ -482,23 +482,23 @@ function(target_sources_codegen
   endforeach()
 endfunction()
 
-function(zephyr_sources_codegen)
-  target_sources_codegen(zephyr ${ARGN})
+function(zephyr_sources_jinjagen)
+  target_sources_jinjagen(zephyr ${ARGN})
 endfunction()
 
-function(zephyr_sources_codegen_ifdef feature_toggle)
+function(zephyr_sources_jinjagen_ifdef feature_toggle)
   if(${${feature_toggle}})
-    zephyr_sources_codegen(${ARGN})
+    zephyr_sources_jinjagen(${ARGN})
   endif()
 endfunction()
 
-function(zephyr_library_sources_codegen)
- target_sources_codegen(${ZEPHYR_CURRENT_LIBRARY} ${ARGN})
+function(zephyr_library_sources_jinjagen)
+ target_sources_jinjagen(${ZEPHYR_CURRENT_LIBRARY} ${ARGN})
 endfunction()
 
-function(zephyr_library_sources_codegen_ifdef feature_toggle)
+function(zephyr_library_sources_jinjagen_ifdef feature_toggle)
   if(${${feature_toggle}})
-    zephyr_library_sources_codegen(${ARGN})
+    zephyr_library_sources_jinjagen(${ARGN})
   endif()
 endfunction()
 
