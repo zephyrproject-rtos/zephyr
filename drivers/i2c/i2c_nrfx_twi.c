@@ -53,7 +53,11 @@ static int i2c_nrfx_twi_transfer(struct device *dev, struct i2c_msg *msgs,
 					       (msgs[i].flags & I2C_MSG_STOP) ?
 					       0 : NRFX_TWI_FLAG_TX_NO_STOP);
 		if (res != NRFX_SUCCESS) {
-			return -EIO;
+			if (res == NRFX_ERROR_BUSY) {
+				return -EBUSY;
+			} else {
+				return -EIO;
+			}
 		}
 
 		k_sem_take(&(get_dev_data(dev)->sync), K_FOREVER);
