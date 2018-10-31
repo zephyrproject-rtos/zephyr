@@ -88,12 +88,22 @@ class DTReg(DTDirective):
 
             # generate defs for node aliases
             if node_address in aliases:
-                for i in aliases[node_address]:
-                    alias_label = convert_string_to_label(i)
-                    alias_addr = [alias_label] + l_addr + l_idx
-                    alias_size = [alias_label] + l_size + l_idx
-                    prop_alias['_'.join(alias_addr)] = '_'.join(l_base + l_addr + l_idx)
-                    prop_alias['_'.join(alias_size)] = '_'.join(l_base + l_size + l_idx)
+                add_prop_aliases(
+                    node_address,
+                    yaml,
+                    lambda alias:
+                        '_'.join([convert_string_to_label(alias)] +
+                                 l_addr + l_idx),
+                    l_addr_fqn,
+                    prop_alias)
+                add_prop_aliases(
+                    node_address,
+                    yaml,
+                    lambda alias:
+                        '_'.join([convert_string_to_label(alias)] +
+                                 l_size + l_idx),
+                    l_size_fqn,
+                    prop_alias)
 
             insert_defs(node_address, prop_def, prop_alias)
 

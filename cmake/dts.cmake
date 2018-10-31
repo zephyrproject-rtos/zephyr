@@ -170,6 +170,7 @@ if(CONFIG_HAS_DTS)
     ${DTS_FIXUPS_WITH_FLAG}
     --keyvalue ${GENERATED_DTS_BOARD_CONF}
     --include ${GENERATED_DTS_BOARD_H}
+    --old-alias-names
     )
 
   # Run extract_dts_includes.py to create a .conf and a header file that can be
