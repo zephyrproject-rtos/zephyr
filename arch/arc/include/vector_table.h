@@ -29,7 +29,6 @@ extern "C" {
 
 #ifdef _ASMLANGUAGE
 
-#include <board.h>
 #include <toolchain.h>
 #include <linker/sections.h>
 

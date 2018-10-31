@@ -16,7 +16,6 @@
  * rest should not be triggered until the kernel is ready to handle them.
  */
 
-#include <board.h>
 #include <toolchain.h>
 #include <linker/sections.h>
 #include "vector_table.h"

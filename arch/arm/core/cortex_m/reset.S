@@ -11,7 +11,6 @@
  * Reset handler that prepares the system for running C code.
  */
 
-#include <board.h>
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <arch/cpu.h>
