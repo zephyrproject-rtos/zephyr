@@ -1203,6 +1203,19 @@ static void test_dst_localaddr_recv(void)
 		      "Local address packet was not dropped");
 }
 
+static void test_dst_iface_scope_mcast_recv(void)
+{
+	struct in6_addr mcast_iface = { { { 0xff, 0x01, 0, 0, 0, 0, 0, 0,
+					    0, 0, 0, 0, 0, 0, 0, 0 } } };
+	struct in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+				     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+	enum net_verdict verdict;
+
+	verdict = recv_msg(&addr, &mcast_iface);
+	zassert_equal(verdict, NET_DROP,
+		      "Interface scope multicast packet was not dropped");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(test_ipv6_fn,
@@ -1225,7 +1238,8 @@ void test_main(void)
 			 ztest_unit_test(test_prefix_timeout_long),
 			 ztest_unit_test(test_dad_timeout),
 			 ztest_unit_test(test_src_localaddr_recv),
-			 ztest_unit_test(test_dst_localaddr_recv)
+			 ztest_unit_test(test_dst_localaddr_recv),
+			 ztest_unit_test(test_dst_iface_scope_mcast_recv)
 			 );
 	ztest_run_test_suite(test_ipv6_fn);
 }
