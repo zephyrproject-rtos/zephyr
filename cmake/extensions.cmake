@@ -355,17 +355,7 @@ function(generate_inc_file_for_target
   # targets
 
   # But first create a unique name for the custom target
-  string(
-    RANDOM
-    LENGTH 8
-    random_chars
-    )
-
-  get_filename_component(basename ${generated_file} NAME)
-  string(REPLACE "." "_" basename ${basename})
-  string(REPLACE "@" "_" basename ${basename})
-
-  set(generated_target_name "gen_${basename}_${random_chars}")
+  generate_unique_target_name_from_filename(${generated_file} generated_target_name)
 
   add_custom_target(${generated_target_name} DEPENDS ${generated_file})
   generate_inc_file_for_gen_target(${target} ${source_file} ${generated_file} ${generated_target_name} ${ARGN})
@@ -1201,4 +1191,17 @@ function(find_appropriate_cache_directory dir)
   endif()
 
   set(${dir} ${local_dir} PARENT_SCOPE)
+endfunction()
+
+function(generate_unique_target_name_from_filename
+	filename
+	target_name
+	)
+  get_filename_component(basename ${filename} NAME)
+  string(REPLACE "." "_" x ${basename})
+  string(REPLACE "@" "_" x ${x})
+
+  string(RANDOM LENGTH 8 random_chars)
+
+  set(${target_name} gen_${x}_${random_chars} PARENT_SCOPE)
 endfunction()
