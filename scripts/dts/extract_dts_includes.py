@@ -176,11 +176,13 @@ def extract_controller(node_address, yaml, prop, prop_values, index, def_label, 
 
         #generate defs also if node is referenced as an alias in dts
         if node_address in aliases:
-            for i in aliases[node_address]:
-                alias_label = \
-                    convert_string_to_label(i)
-                alias = [alias_label] + label[1:]
-                prop_alias['_'.join(alias)] = '_'.join(label)
+            add_prop_aliases(
+                node_address,
+                yaml,
+                lambda alias:
+                    '_'.join([convert_string_to_label(alias)] + label[1:]),
+                '_'.join(label),
+                prop_alias)
 
         insert_defs(node_address, prop_def, prop_alias)
 
@@ -251,10 +253,13 @@ def extract_cells(node_address, yaml, prop, prop_values, names, index,
 
         # generate defs for node aliases
         if node_address in aliases:
-            for i in aliases[node_address]:
-                alias_label = convert_string_to_label(i)
-                alias = [alias_label] + label[1:]
-                prop_alias['_'.join(alias)] = '_'.join(label)
+            add_prop_aliases(
+                node_address,
+                yaml,
+                lambda alias:
+                    '_'.join([convert_string_to_label(alias)] + label[1:]),
+                '_'.join(label),
+                prop_alias)
 
         insert_defs(node_address, prop_def, prop_alias)
 
@@ -289,10 +294,13 @@ def extract_single(node_address, yaml, prop, key, def_label):
 
         # generate defs for node aliases
         if node_address in aliases:
-            for i in aliases[node_address]:
-                alias_label = convert_string_to_label(i)
-                alias = alias_label + '_' + k
-                prop_alias[alias] = label
+            add_prop_aliases(
+                node_address,
+                yaml,
+                lambda alias:
+                    convert_string_to_label(alias) + '_' + k,
+                label,
+                prop_alias)
 
     insert_defs(node_address, prop_def, prop_alias)
 
@@ -361,7 +369,10 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names):
 
             # Generate bus-name define
             extract_single(node_address, yaml, 'parent-label',
-                           'bus-name', def_label)
+                           'bus-name', 'DT_' + def_label)
+
+    if 'base_label' not in yaml[node_compat]:
+        def_label = 'DT_' + def_label
 
     if prop == 'reg':
         reg.extract(node_address, yaml, names, def_label, 1)
@@ -711,11 +722,15 @@ def parse_arguments():
                         help="Generate include file for the build system")
     parser.add_argument("-k", "--keyvalue", nargs=1, required=True,
                         help="Generate config file for the build system")
+    parser.add_argument("--old-alias-names", action='store_true',
+                        help="Generate aliases also in the old way, without "
+                             "compatibility information in their labels")
     return parser.parse_args()
 
 
 def main():
     args = parse_arguments()
+    enable_old_alias_names(args.old_alias_names)
 
     dts = load_and_parse_dts(args.dts[0])
 

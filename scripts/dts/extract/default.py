@@ -56,10 +56,13 @@ class DTDefault(DTDirective):
 
             # generate defs for node aliases
             if node_address in aliases:
-                for i in aliases[node_address]:
-                    alias_label = convert_string_to_label(i)
-                    alias = alias_label + '_' + prop_name
-                    prop_alias[alias] = label
+                add_prop_aliases(
+                    node_address,
+                    yaml,
+                    lambda alias:
+                        convert_string_to_label(alias) + '_' + prop_name,
+                    label,
+                    prop_alias)
 
         insert_defs(node_address, prop_def, prop_alias)
 

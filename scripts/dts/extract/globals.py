@@ -15,6 +15,7 @@ chosen = {}
 reduced = {}
 defs = {}
 structs = {}
+old_alias_names = False
 
 regs_config = {
     'zephyr,flash' : 'CONFIG_FLASH',
@@ -267,3 +268,21 @@ def translate_addr(addr, node_address, nr_addr_cells, nr_size_cells):
     range_offset += parent_range_offset
 
     return range_offset
+
+def enable_old_alias_names(enable):
+    global old_alias_names
+    old_alias_names = enable
+
+def add_prop_aliases(node_address, yaml,
+                     alias_label_function, prop_label, prop_aliases):
+    node_compat = get_compat(node_address)
+    new_alias_prefix = 'DT_' + convert_string_to_label(node_compat)
+
+    for alias in aliases[node_address]:
+        old_alias_label = alias_label_function(alias)
+        new_alias_label = new_alias_prefix + '_' + old_alias_label
+
+        if (new_alias_label != prop_label):
+            prop_aliases[new_alias_label] = prop_label
+        if (old_alias_names and old_alias_label != prop_label):
+            prop_aliases[old_alias_label] = prop_label

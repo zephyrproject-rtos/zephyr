@@ -24,7 +24,7 @@ class DTClocks(DTDirective):
         clock_consumer = reduced[node_address]
         clock_consumer_compat = get_compat(node_address)
         clock_consumer_bindings = yaml[clock_consumer_compat]
-        clock_consumer_label = get_node_label(node_address)
+        clock_consumer_label = 'DT_' + get_node_label(node_address)
 
         clock_index = 0
         clock_cell_index = 0
@@ -83,15 +83,29 @@ class DTClocks(DTDirective):
                     else:
                         index = str(clock_index)
                     if node_address in aliases:
-                        for alias in aliases[node_address]:
-                            if clock_cells_string == clock_cell_name:
-                                clock_alias_label = self.get_label_string([
-                                    alias, clock_cells_string, index])
-                            else:
-                                clock_alias_label = self.get_label_string([
-                                    alias, clock_cells_string,
-                                    clock_cell_name, index])
-                            prop_alias[clock_alias_label] = clock_label
+                        if clock_cells_string == clock_cell_name:
+                            add_prop_aliases(
+                                node_address,
+                                yaml,
+                                lambda alias:
+                                    self.get_label_string([
+                                        alias,
+                                        clock_cells_string,
+                                        index]),
+                                clock_label,
+                                prop_alias)
+                        else:
+                            add_prop_aliases(
+                                node_address,
+                                yaml,
+                                lambda alias:
+                                    self.get_label_string([
+                                        alias,
+                                        clock_cells_string,
+                                        clock_cell_name,
+                                        index]),
+                                clock_label,
+                                prop_alias)
                     # alias
                     if i < nr_clock_cells:
                         # clocks info for first clock
@@ -122,10 +136,16 @@ class DTClocks(DTDirective):
                                                          index])
                     prop_def[clock_label] = '"' + clock_provider_label_str + '"'
                     if node_address in aliases:
-                        for alias in aliases[node_address]:
-                            clock_alias_label = self.get_label_string([
-                                alias, clock_cell_name, index])
-                            prop_alias[clock_alias_label] = clock_label
+                        add_prop_aliases(
+                            node_address,
+                            yaml,
+                            lambda alias:
+                                self.get_label_string([
+                                    alias,
+                                    clock_cell_name,
+                                    index]),
+                            clock_label,
+                            prop_alias)
 
                 insert_defs(node_address, prop_def, prop_alias)
 

@@ -82,10 +82,14 @@ class DTInterrupts(DTDirective):
                     prop_alias['_'.join(alias_list)] = l_fqn
 
                 if node_address in aliases:
-                    for i in aliases[node_address]:
-                        alias_label = convert_string_to_label(i)
-                        alias_list = [alias_label] + l_cell_prefix + name + l_cell_name
-                        prop_alias['_'.join(alias_list)] = l_fqn
+                    add_prop_aliases(
+                        node_address,
+                        yaml,
+                        lambda alias:
+                            '_'.join([convert_string_to_label(alias)] +
+                                     l_cell_prefix + name + l_cell_name),
+                        l_fqn,
+                        prop_alias)
 
             index += 1
             insert_defs(node_address, prop_def, prop_alias)
