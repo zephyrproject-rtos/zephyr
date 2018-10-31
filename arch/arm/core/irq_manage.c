@@ -238,3 +238,13 @@ int irq_target_state_is_secure(unsigned int irq)
 
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
 
+#ifdef CONFIG_DYNAMIC_INTERRUPTS
+int _arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
+			      void (*routine)(void *parameter), void *parameter,
+			      u32_t flags)
+{
+	z_isr_install(irq, routine, parameter);
+	_irq_priority_set(irq, priority, flags);
+	return irq;
+}
+#endif /* CONFIG_DYNAMIC_INTERRUPTS */
