@@ -60,6 +60,8 @@ features:
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | ADC via AFEC                        |
 +-----------+------------+-------------------------------------+
+| USB       | on-chip    | USB device                          |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by Zephyr.
 

@@ -79,6 +79,10 @@
 	status = "ok";
 };
 
+&usbhs {
+	status = "ok";
+};
+
 &flash0 {
 	/*
 	 * If chosen's zephyr,code-partition
