@@ -452,8 +452,9 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt, bool is_loopback)
 		goto drop;
 	}
 
-	if (net_is_ipv6_addr_mcast(&hdr->src)) {
-		NET_DBG("Dropping src multicast packet");
+	if (net_is_ipv6_addr_mcast(&hdr->src) ||
+	    net_is_ipv6_addr_mcast_scope(&hdr->dst, 0)) {
+		NET_DBG("Dropping multicast packet");
 		net_stats_update_ipv6_drop(net_pkt_iface(pkt));
 		goto drop;
 	}
