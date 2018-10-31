@@ -689,6 +689,41 @@ static inline bool net_is_ipv6_addr_mcast_iface(const struct in6_addr *addr)
 }
 
 /**
+ * @brief Check if the IPv6 address is a site scope multicast
+ * address (FFx5::).
+ *
+ * @param addr IPv6 address.
+ *
+ * @return True if the address is a site scope multicast address,
+ * false otherwise.
+ */
+static inline bool net_is_ipv6_addr_mcast_site(const struct in6_addr *addr)
+{
+	return net_is_ipv6_addr_mcast_scope(addr, 0x05);
+}
+
+/**
+ * @brief Check if the IPv6 address belongs to certain multicast group
+ *
+ * @param addr IPv6 address.
+ * @param group Group id IPv6 address, the values must be in network
+ * byte order
+ *
+ * @return True if the IPv6 multicast address belongs to given multicast
+ * group, false otherwise.
+ */
+static inline bool net_is_ipv6_addr_mcast_group(const struct in6_addr *addr,
+						const struct in6_addr *group)
+{
+	return UNALIGNED_GET(&addr->s6_addr16[1]) == group->s6_addr16[1] &&
+		UNALIGNED_GET(&addr->s6_addr16[2]) == group->s6_addr16[2] &&
+		UNALIGNED_GET(&addr->s6_addr16[3]) == group->s6_addr16[3] &&
+		UNALIGNED_GET(&addr->s6_addr32[1]) == group->s6_addr32[1] &&
+		UNALIGNED_GET(&addr->s6_addr32[2]) == group->s6_addr32[1] &&
+		UNALIGNED_GET(&addr->s6_addr32[3]) == group->s6_addr32[3];
+}
+
+/**
  *  @brief Create solicited node IPv6 multicast address
  *  FF02:0:0:0:0:1:FFXX:XXXX defined in RFC 3513
  *
