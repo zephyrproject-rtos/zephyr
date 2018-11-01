@@ -1,0 +1,34 @@
+# Kconfig - ST STM32F756XX MCU configuration options
+#
+# Copyright (c) 2018 AJ Palmer
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_STM32F756XX
+
+config SOC
+	string
+	default "stm32f756xx"
+
+if GPIO_STM32
+
+config GPIO_STM32_PORTF
+	default y
+
+config GPIO_STM32_PORTG
+	default y
+
+config GPIO_STM32_PORTJ
+	default y
+
+config GPIO_STM32_PORTK
+	default y
+
+endif # GPIO_STM32
+
+config NUM_IRQS
+	int
+	default 98
+
+endif # SOC_STM32F756XX
