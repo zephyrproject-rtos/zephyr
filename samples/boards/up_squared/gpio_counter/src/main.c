@@ -63,6 +63,8 @@ K_SEM_DEFINE(counter_sem, 0, 1);
 #define NUM_PINS	ARRAY_SIZE(counter_pins)
 #define MASK		(BIT(NUM_PINS) - 1)
 
+#define GPIO_DEV	CONFIG_APL_GPIO_LABEL
+
 void button_cb(struct device *gpiodev, struct gpio_callback *cb, u32_t pin)
 {
 	counter++;
@@ -71,13 +73,13 @@ void button_cb(struct device *gpiodev, struct gpio_callback *cb, u32_t pin)
 
 void main(void)
 {
-	struct device *gpiodev = device_get_binding(INTEL_APL_GPIO_0_LABEL);
+	struct device *gpiodev = device_get_binding(GPIO_DEV);
 	u32_t val;
 	int i, ret;
 
 	if (!gpiodev) {
 		printk("ERROR: cannot get device binding for %s\n",
-		       INTEL_APL_GPIO_0_LABEL);
+		       GPIO_DEV);
 		return;
 	}
 
