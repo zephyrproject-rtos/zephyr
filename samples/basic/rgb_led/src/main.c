@@ -14,7 +14,6 @@
 #include <misc/printk.h>
 #include <device.h>
 #include <pwm.h>
-#include <board.h>
 
 #if defined(CONFIG_SOC_QUARK_SE_C1000)
 #define PWM_DEV0	CONFIG_PWM_QMSI_DEV_NAME
@@ -24,6 +23,7 @@
 #define PWM_DEV2	CONFIG_PWM_QMSI_DEV_NAME
 #define PWM_CH2		2
 #elif defined(CONFIG_BOARD_HEXIWEAR_K64)
+#include <board.h>
 #define PWM_DEV0	RED_PWM_NAME
 #define PWM_CH0		RED_PWM_CHANNEL
 #define PWM_DEV1	GREEN_PWM_NAME
