@@ -211,11 +211,11 @@ static struct net_pkt *eth_rx(struct device *dev)
 	heth = &dev_data->heth;
 
 #if defined(CONFIG_PTP_CLOCK_STM32)
-        if (HAL_ETH_PtpGetReceivedFrame_IT(heth, &time_stamp) != HAL_OK) {
+	if (HAL_ETH_PtpGetReceivedFrame_IT(heth, &time_stamp) != HAL_OK) {
 		return NULL;
-        }
+	}
 #else
-        if (HAL_ETH_GetReceivedFrame_IT(heth) != HAL_OK) {
+	if (HAL_ETH_GetReceivedFrame_IT(heth) != HAL_OK) {
 		return NULL;
 	}
 #endif
@@ -504,7 +504,7 @@ static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(struct device *dev)
 #if defined(CONFIG_PTP_CLOCK_STM32)
 	        | ETHERNET_PTP
 #endif
-                ;
+		;
 }
 
 #if defined(CONFIG_PTP_CLOCK_STM32)
@@ -654,8 +654,8 @@ static int ptp_clock_stm32_adjust(struct device *dev, int increment)
 	ETH_SetPTPTimeStampUpdate(heth, Sign, SecondValue, SubSecondValue);
 	ETH_EnablePTPTimeStampUpdate(heth);
 	while(ETH_GetPTPFlagStatus(heth, ETH_PTP_FLAG_TSSTU) == SET);      
-        
-        ETH_SetPTPTimeStampAddend(heth, addend);
+
+	ETH_SetPTPTimeStampAddend(heth, addend);
 	ETH_EnablePTPTimeStampAddend(heth);
        
 	return 0;
