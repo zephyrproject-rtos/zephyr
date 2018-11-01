@@ -23,7 +23,6 @@
 #include <bluetooth/gatt.h>
 
 #include <gatt/hrs.h>
-#include <gatt/dis.h>
 #include <gatt/bas.h>
 #include <gatt/cts.h>
 
@@ -230,7 +229,6 @@ static void bt_ready(int err)
 	hrs_init(0x01);
 	bas_init();
 	cts_init();
-	dis_init(CONFIG_SOC, "Manufacturer");
 	bt_gatt_service_register(&vnd_svc);
 
 	if (IS_ENABLED(CONFIG_SETTINGS)) {

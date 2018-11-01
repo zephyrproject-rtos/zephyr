@@ -6,7 +6,6 @@ FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE
   ${app_sources}
   ../gatt/hrs.c
-  ../gatt/dis.c
   ../gatt/bas.c
   )
 

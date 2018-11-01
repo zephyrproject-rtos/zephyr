@@ -21,7 +21,6 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 
-#include <gatt/dis.h>
 #include <gatt/bas.h>
 
 #define SENSOR_1_NAME				"Temperature Sensor 1"
@@ -392,7 +391,6 @@ static void bt_ready(int err)
 
 	bt_gatt_service_register(&ess_svc);
 	bas_init();
-	dis_init(CONFIG_SOC, "ACME");
 
 	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
