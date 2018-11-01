@@ -9,7 +9,6 @@
 #include <gpio.h>
 #include <misc/printk.h>
 #include <misc/__assert.h>
-#include <board.h>
 #include <string.h>
 
 /* size of stack area used by each thread */

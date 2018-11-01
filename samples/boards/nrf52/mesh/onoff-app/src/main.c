@@ -49,8 +49,6 @@
 #include <bluetooth/mesh.h>
 #include <stdio.h>
 
-#include <board.h>
-
 /* Model Operation Codes */
 #define BT_MESH_MODEL_OP_GEN_ONOFF_GET		BT_MESH_MODEL_OP_2(0x82, 0x01)
 #define BT_MESH_MODEL_OP_GEN_ONOFF_SET		BT_MESH_MODEL_OP_2(0x82, 0x02)

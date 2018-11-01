@@ -40,7 +40,6 @@
 
 #include <zephyr.h>
 #include <misc/reboot.h>
-#include <board.h>
 #include <device.h>
 #include <string.h>
 #include <nvs/nvs.h>
