@@ -102,7 +102,7 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 	u16_t total_len;
 	__IO ETH_DMADescTypeDef *dma_tx_desc;
 #if defined(CONFIG_PTP_CLOCK_STM32)
-        ETH_PTP_TIMESTAM time_stamp;
+	ETH_PTP_TIMESTAM time_stamp;
 	bool timestamped_frame;
 #endif
 
@@ -131,7 +131,7 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 	while ((dma_tx_desc->Status & ETH_DMATXDESC_OWN) != (u32_t)RESET) {
 		k_yield();
 	}
-        
+
 	dma_buffer = (u8_t *)(dma_tx_desc->Buffer1Addr);
 
 	memcpy(dma_buffer, net_pkt_ll(pkt),
@@ -150,9 +150,9 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
         if(HAL_ETH_PtpTransmitFrame(heth, total_len, &time_stamp) == HAL_OK){
                 timestamped_frame = eth_get_ptp_data(iface, pkt);
                 if (timestamped_frame) {
-                        pkt->timestamp.nanosecond = time_stamp.nsec;
-		        pkt->timestamp.second = time_stamp.sec;
-                        net_if_add_tx_timestamp(pkt);
+			pkt->timestamp.nanosecond = time_stamp.nsec;
+			pkt->timestamp.second = time_stamp.sec;
+			net_if_add_tx_timestamp(pkt);
                 }
         }
         else{
@@ -228,10 +228,12 @@ static struct net_pkt *eth_rx(struct device *dev)
 		LOG_ERR("Failed to obtain RX buffer");
 		goto release_desc;
 	}
+
 #if defined(CONFIG_PTP_CLOCK_STM32)
         pkt->timestamp.nanosecond = time_stamp.nsec;
         pkt->timestamp.second = time_stamp.sec;    
 #endif
+
 	if (!net_pkt_append_all(pkt, total_len, dma_buffer, K_NO_WAIT)) {
 		LOG_ERR("Failed to append RX buffer to context buffer");
 		net_pkt_unref(pkt);
@@ -379,8 +381,10 @@ static void ETH_PTPStart(ETH_HandleTypeDef *heth, uint32_t UpdateMethod)
         ETH_SetPTPSubSecondIncrement(heth, ETH_STM32_PTP_INCREMENT);
 
         if (UpdateMethod == ETH_PTP_FineUpdate) {
-                /* If you are using the Fine correction method, program the Time stamp addend register
-                * and set Time stamp control register bit 5 (addend register update). */
+                /* If you are using the Fine correction method, 
+		 * program the Time stamp addend register
+		 * and set Time stamp control register bit 5 (addend register update). 
+		 */
                 ETH_SetPTPTimeStampAddend(heth, ETH_STM32_PTP_ADDEND);
                 ETH_EnablePTPTimeStampAddend(heth);
                 /* Poll the Time stamp control register until bit 5 is cleared. */
@@ -388,10 +392,12 @@ static void ETH_PTPStart(ETH_HandleTypeDef *heth, uint32_t UpdateMethod)
         }
 
         /* To select the Fine correction method (if required),
-        * program Time stamp control register  bit 1. */
+         * program Time stamp control register  bit 1. 
+         */
         ETH_PTPUpdateMethodConfig(heth, UpdateMethod);
         /* Program the Time stamp high update and Time stamp low update registers
-        * with the appropriate time value. */
+         * with the appropriate time value. 
+         */
         ETH_SetPTPTimeStampUpdate(heth, ETH_PTP_PositiveTime, 0, 0);
         /* Set Time stamp control register bit 2 (Time stamp init). */
         ETH_InitializePTPTimeStamp(heth);
@@ -462,14 +468,15 @@ static void eth_iface_init(struct net_if *iface)
 
 
 	HAL_ETH_DMARxDescListInit(heth, dma_rx_desc_tab,
-		&dma_rx_buffer[0][0], ETH_RXBUFNB);
+				  &dma_rx_buffer[0][0], ETH_RXBUFNB);
+	
 #if defined(CONFIG_PTP_CLOCK_STM32)
 	HAL_ETH_DMATxDescListInit(heth, dma_tx_desc_tab,
-		&dma_tx_buffer[0][0], ETH_TXBUFNB, true);
+				  &dma_tx_buffer[0][0], ETH_TXBUFNB, true);
         ETH_PTPStart(heth, ETH_PTP_FineUpdate); 
 #else
         HAL_ETH_DMATxDescListInit(heth, dma_tx_desc_tab,
-	        &dma_tx_buffer[0][0], ETH_TXBUFNB, false);
+	        		  &dma_tx_buffer[0][0], ETH_TXBUFNB, false);
 #endif
 
 	HAL_ETH_Start(heth);
@@ -495,17 +502,15 @@ static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(struct device *dev)
 
 	return ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T 
 #if defined(CONFIG_PTP_CLOCK_STM32)
-	        |ETHERNET_PTP;
-#else
-                ;
+	        | ETHERNET_PTP
 #endif
+                ;
 }
-
 
 #if defined(CONFIG_PTP_CLOCK_STM32)
 static struct device *eth_stm32_get_ptp_clock(struct device *dev)
 {
-        struct eth_stm32_hal_dev_data *dev_data  = dev->driver_data;
+	struct eth_stm32_hal_dev_data *dev_data = dev->driver_data;
 
 	return dev_data->ptp_clock;
 }
@@ -625,10 +630,11 @@ static int ptp_clock_stm32_adjust(struct device *dev, int increment)
 
         heth = &dev_data->heth;
 
-        if ((increment <= -NSEC_PER_SEC) || (increment >= NSEC_PER_SEC))
+        if ((increment <= -NSEC_PER_SEC) || (increment >= NSEC_PER_SEC)) {
 		return -EINVAL;
+        }
 
-        if(increment < 0) {
+        if (increment < 0) {
                 Sign = ETH_PTP_NegativeTime;
                 SecondValue = 0;
                 NanoSecondValue = -increment;
@@ -657,36 +663,7 @@ static int ptp_clock_stm32_adjust(struct device *dev, int increment)
 
 static int ptp_clock_stm32_rate_adjust(struct device *dev, float ratio)
 {
-        /*uint32_t addend_old addend_new;
-        struct ptp_eth_stm32_hal_dev_data *ptp_dev_data = dev->driver_data;
-        struct eth_stm32_hal_dev_data *dev_data = ptp_dev_data->eth_dev_data;
-        ETH_HandleTypeDef *heth;
-
-        heth = &dev_data->heth;
-
-	if (ratio == 1) {
-		return 0;
-	}
-
-	if (ratio < 0) {
-		return -EINVAL;
-	}
-
-	if (ratio < 0.5) {
-		ratio = 0.5;
-	} else if (ratio > 1.5) {
-		ratio = 1.5;
-	}
-
-        addend = ETH_GetPTPRegister(heth, ETH_PTPTSAR);
-        addend *= ratio;
-
-        ETH_SetPTPTimeStampAddend(heth, increment);
-        ETH_EnablePTPTimeStampAddend(heth);
-
-	return 0;*/
- 
-        return -ENOTSUP; 
+	return -ENOTSUP;
 }
 
 static const struct ptp_clock_driver_api api = {
