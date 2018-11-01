@@ -40,9 +40,6 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,console = &uart0;
-#ifdef CONFIG_BT
-		zephyr,bt-uart = &uart3;
-#endif
 		zephyr,uart-pipe = &uart0;
 	};
 
@@ -74,6 +71,8 @@
 		};
 	};
 };
+
+arduino_serial: &uart3 {};
 
 &adc0 {
 	status = "ok";
@@ -137,13 +136,6 @@
 		status = "ok";
 	};
 #endif
-};
-#endif
-
-#ifdef CONFIG_BT
-&uart3 {
-	status = "ok";
-	current-speed = <115200>;
 };
 #endif
 
