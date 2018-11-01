@@ -150,11 +150,22 @@ static inline enum net_verdict process_icmpv6_pkt(struct net_pkt *pkt,
 						  struct net_ipv6_hdr *ipv6)
 {
 	struct net_icmp_hdr icmp_hdr;
+	u16_t chksum;
 	int ret;
 
 	ret = net_icmpv6_get_hdr(pkt, &icmp_hdr);
 	if (ret < 0) {
 		NET_DBG("NULL ICMPv6 header - dropping");
+		return NET_DROP;
+	}
+
+	chksum = icmp_hdr.chksum;
+	net_icmpv6_set_chksum(pkt);
+	(void)net_icmpv6_get_hdr(pkt, &icmp_hdr);
+
+	if (chksum != icmp_hdr.chksum) {
+		NET_DBG("ICMPv6 invalid checksum (0x%04x instead of 0x%04x)",
+			ntohs(chksum), ntohs(icmp_hdr.chksum));
 		return NET_DROP;
 	}
 
