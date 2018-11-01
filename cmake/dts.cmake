@@ -92,7 +92,8 @@ if(CONFIG_HAS_DTS)
     -include ${AUTOCONF_H}
     ${DTC_INCLUDE_FLAG_FOR_DTS}  # include the DTS source and overlays
     -I${ZEPHYR_BASE}/dts/common
-    -undef -D__DTS__
+    ${NOSYSDEF_CFLAG}
+    -D__DTS__
     -P
     -E ${ZEPHYR_BASE}/misc/empty_file.c
     -o ${BOARD}.dts.pre.tmp
