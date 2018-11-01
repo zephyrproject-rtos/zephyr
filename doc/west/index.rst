@@ -24,6 +24,7 @@ pages.
 .. toctree::
 
    flash-debug.rst
+   repo-tool.rst
 
 (This list will expand as additional features are developed.)
 
