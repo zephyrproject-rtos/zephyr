@@ -11,6 +11,8 @@
 #include <xtensa/hal.h>
 #include <init.h>
 
+#include "soc.h"
+
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(soc);
