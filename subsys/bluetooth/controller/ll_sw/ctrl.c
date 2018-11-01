@@ -4882,9 +4882,15 @@ static void mayfly_xtal_stop_calc(void *params)
 
 	/* Compensate for next ticker in reduced prepare */
 	if (hdr_next->ticks_xtal_to_start & XON_BITMASK) {
-		ticks_to_expire -=
-			(hdr_next->ticks_xtal_to_start &
-			 ~XON_BITMASK) - ticks_prepare_to_start_next;
+		u32_t ticks_reduced = (hdr_next->ticks_xtal_to_start &
+				       ~XON_BITMASK) -
+				      ticks_prepare_to_start_next;
+
+		if (ticks_to_expire > ticks_reduced) {
+			ticks_to_expire -= ticks_reduced;
+		} else {
+			ticks_to_expire = 0;
+		}
 	}
 
 	/* If beyond the xtal threshold reset to normal the next prepare,
