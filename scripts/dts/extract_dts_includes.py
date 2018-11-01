@@ -387,7 +387,9 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names):
         pinctrl.extract(node_address, yaml, prop, def_label)
     elif 'clocks' in prop:
         clocks.extract(node_address, yaml, prop, def_label)
-    elif 'gpios' in prop:
+    elif 'pwms' in prop or 'gpios' in prop:
+        # drop the 's' from the prop
+        generic = prop[:-1]
         try:
             prop_values = list(reduced[node_address]['props'].get(prop))
         except:
@@ -400,9 +402,9 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names):
             prop_values = [item for sublist in prop_values for item in sublist]
 
         extract_controller(node_address, yaml, prop, prop_values, 0,
-                           def_label, 'gpio')
+                           def_label, generic)
         extract_cells(node_address, yaml, prop, prop_values,
-                      names, 0, def_label, 'gpio')
+                      names, 0, def_label, generic)
     else:
         default.extract(node_address, yaml, prop, prop_val['type'], def_label)
 
