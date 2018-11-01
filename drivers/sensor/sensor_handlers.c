@@ -15,7 +15,7 @@ Z_SYSCALL_HANDLER(sensor_attr_set, dev, chan, attr, val)
 				     (const struct sensor_value *)val);
 }
 
-Z_SYSCALL_HANDLER(sensor_sample_sample_fetch, dev)
+Z_SYSCALL_HANDLER(sensor_sample_fetch, dev)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_SENSOR(dev, sample_fetch));
 	return _impl_sensor_sample_fetch((struct device *)dev);
