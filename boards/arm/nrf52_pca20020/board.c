@@ -5,7 +5,6 @@
  */
 
 #include <init.h>
-#include <board.h>
 #include <gpio.h>
 #include <misc/printk.h>
 
