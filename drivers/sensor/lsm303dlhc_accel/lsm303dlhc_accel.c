@@ -70,9 +70,81 @@ static int lsm303dlhc_channel_get(struct device *dev,
 	return 0;
 }
 
+static int lsm303dlhc_set_sampling_frequency(struct device *dev,
+					     const struct sensor_value *val)
+{
+	struct lsm303dlhc_accel_data *drv_data = dev->driver_data;
+	const struct lsm303dlhc_accel_config *config = dev->config->config_info;
+	u8_t freq_value;
+	int status;
+
+	switch (val->val1) {
+	case 1:
+		freq_value = LSM303DLHC_ACCEL_ODR_1HZ;
+		break;
+	case 10:
+		freq_value = LSM303DLHC_ACCEL_ODR_10HZ;
+		break;
+	case 25:
+		freq_value = LSM303DLHC_ACCEL_ODR_25HZ;
+		break;
+	case 50:
+		freq_value = LSM303DLHC_ACCEL_ODR_50HZ;
+		break;
+	case 100:
+		freq_value = LSM303DLHC_ACCEL_ODR_100HZ;
+		break;
+	case 200:
+		freq_value = LSM303DLHC_ACCEL_ODR_200HZ;
+		break;
+	case 400:
+		freq_value = LSM303DLHC_ACCEL_ODR_400HZ;
+		break;
+#if CONFIG_LSM303DLHC_ACCEL_POWER_MODE == 0
+	case 1620:
+		freq_value = LSM303DLHC_ACCEL_ODR_1620HZ;
+		break;
+#else
+	case 1344:
+		freq_value = LSM303DLHC_ACCEL_ODR_1344HZ;
+		break;
+	case 5376:
+		freq_value = LSM303DLHC_ACCEL_ODR_5376HZ;
+		break;
+#endif
+	default:
+		return -ENOTSUP;
+	}
+
+	status = i2c_reg_update_byte(drv_data->i2c, config->i2c_address,
+				     LSM303DLHC_REG_CTRL_1,
+				     LSM303DLHC_ACCEL_ODR_MASK,
+				     freq_value << LSM303DLHC_ACCEL_ODR_SHIFT);
+	if (status < 0) {
+		LOG_ERR("Could not update sampling frequency.");
+		return -EIO;
+	}
+
+	return 0;
+}
+
+
+static int lsm303dlhc_attr_set(struct device *dev, enum sensor_channel chan,
+			       enum sensor_attribute attr,
+			       const struct sensor_value *val)
+{
+	switch (attr) {
+	case SENSOR_ATTR_SAMPLING_FREQUENCY:
+		return lsm303dlhc_set_sampling_frequency(dev, val);
+	default:
+		return -ENOTSUP;
+	}
+}
+
 static const struct sensor_driver_api lsm303dlhc_accel_driver_api = {
 	.sample_fetch = lsm303dlhc_sample_fetch,
 	.channel_get = lsm303dlhc_channel_get,
+	.attr_set = lsm303dlhc_attr_set,
 };
 
 static int lsm303dlhc_accel_init(struct device *dev)
