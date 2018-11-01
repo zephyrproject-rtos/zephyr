@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <board.h>
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <arch/cpu.h>
