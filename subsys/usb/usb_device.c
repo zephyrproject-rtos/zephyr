@@ -61,6 +61,7 @@
 #include <misc/util.h>
 #include <misc/__assert.h>
 #include <init.h>
+#include <board.h>
 #if defined(USB_VUSB_EN_GPIO)
 #include <gpio.h>
 #endif
