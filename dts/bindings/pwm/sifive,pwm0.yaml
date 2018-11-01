@@ -33,4 +33,8 @@ properties:
       description: required interrupts
       generation: define
 
+"#cells":
+  - channel
+# period in terms of nanoseconds
+  - period
 ...
