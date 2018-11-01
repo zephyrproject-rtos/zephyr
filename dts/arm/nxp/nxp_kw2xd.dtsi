@@ -287,8 +287,8 @@
 			reg = <0x40038000 0x98>;
 			interrupts = <42 0>;
 			label = "PWM_0";
-			/* channel information needed - fixme */
 			status = "disabled";
+			#pwm-cells = <2>;
 		};
 
 		pwm1: pwm@40039000{
@@ -296,8 +296,8 @@
 			reg = <0x40039000 0x98>;
 			interrupts = <43 0>;
 			label = "PWM_1";
-			/* channel information needed - fixme */
 			status = "disabled";
+			#pwm-cells = <2>;
 		};
 
 		pwm2: pwm@4003a000{
@@ -305,8 +305,8 @@
 			reg = <0x4003a000 0x98>;
 			interrupts = <44 0>;
 			label = "PWM_2";
-			/* channel information needed - fixme */
 			status = "disabled";
+			#pwm-cells = <2>;
 		};
 
 		adc0: adc@4003b000{
