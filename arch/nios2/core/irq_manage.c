@@ -107,3 +107,15 @@ void _enter_irq(u32_t ipending)
 #endif
 }
 
+#ifdef CONFIG_DYNAMIC_INTERRUPTS
+int _arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
+			      void (*routine)(void *parameter), void *parameter,
+			      u32_t flags)
+{
+	ARG_UNUSED(flags);
+	ARG_UNUSED(priority);
+
+	z_isr_install(irq, routine, parameter);
+	return irq;
+}
+#endif /* CONFIG_DYNAMIC_INTERRUPTS */
