@@ -9,7 +9,7 @@
 #include <soc_power.h>
 #include <misc/printk.h>
 #include <string.h>
-#include <board.h>
+#include <soc.h>
 #include <device.h>
 #include <gpio.h>
 
