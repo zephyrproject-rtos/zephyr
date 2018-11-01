@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Adam Palmer
+ * Copyright (c) 2018 AJ Palmer
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +12,13 @@
 
 #include <pinmux/stm32/pinmux_stm32.h>
 
-/* NUCLEO-F746ZG pin configurations  */
+/* NUCLEO-F746ZG pin configurations
+ *
+ * WARNING: The pin PA7 will conflict on selection of SPI_1 and ETH_STM32_HAL.
+ *          If you require both peripherals, and you do not need Arduino Uno v3
+ *          comaptability, the pin PB5 (also on ST Zio connector) can be used
+ *          for the SPI_1 MOSI signal.
+ */
 static const struct pin_config pinconf[] = {
 #ifdef CONFIG_UART_2
 	{ STM32_PIN_PD5, STM32F7_PINMUX_FUNC_PD5_USART2_TX },

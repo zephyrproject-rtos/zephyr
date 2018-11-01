@@ -86,5 +86,9 @@ arduino_spi: &spi1 {};
 };
 
 &spi1 {
+	/*
+	 * WARNING: The pin PA7 will conflict on selection of SPI_1 and
+	 *          ETH_STM32_HAL. See pinmux.c for further details.
+	 */
 	status = "ok";
 };
