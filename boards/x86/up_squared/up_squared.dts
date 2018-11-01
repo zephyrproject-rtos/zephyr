@@ -130,12 +130,12 @@
 			status = "ok";
 		};
 
-		i2c6: i2c@9158000 {
+		i2c6: i2c@91528000 {
 			compatible = "snps,designware-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x9158000 0x1000>;
+			reg = <0x91528000 0x1000>;
 			interrupts = <33 IRQ_TYPE_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 			label = "I2C_6";
