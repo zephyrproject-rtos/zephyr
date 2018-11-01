@@ -31,6 +31,10 @@
 		led0 = &green_led;
 		led1 = &blue_led;
 		led2 = &red_led;
+		pwm-led0 = &green_pwm_led;
+		red-pwm-led = &red_pwm_led;
+		green-pwm-led = &green_pwm_led;
+		blue_pwm-led = &blue_pwm_led;
 	};
 
 	chosen {
@@ -53,6 +57,20 @@
 		blue_led: led_2 {
 			gpios = <&gpioc 9 0>;
 			label = "User LD3";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		red_pwm_led: red_pwm_led {
+			pwms = <&pwm3 4 15625000>;
+		};
+		green_pwm_led: green_pwm_led {
+			pwms = <&pwm3 0 15625000>;
+		};
+		blue_pwm_led: blue_pwm_led {
+			pwms = <&pwm3 5 15625000>;
 		};
 	};
 };
