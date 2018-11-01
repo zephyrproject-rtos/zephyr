@@ -7,12 +7,13 @@
 #include <zephyr.h>
 #include <misc/printk.h>
 
-#include <board.h>
 #include <gpio.h>
 #include <led.h>
 #include <i2c.h>
 #include <spi.h>
 #include <sensor.h>
+
+#include <stdio.h>
 
 /* #define ARGONKEY_TEST_LOG 1 */
 
