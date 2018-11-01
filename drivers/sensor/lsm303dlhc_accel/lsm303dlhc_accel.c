@@ -100,7 +100,7 @@ static int lsm303dlhc_set_sampling_frequency(struct device *dev,
 	case 400:
 		freq_value = LSM303DLHC_ACCEL_ODR_400HZ;
 		break;
-#if LSM303DLHC_LP_EN_BIT == 0
+#if CONFIG_LSM303DLHC_ACCEL_POWER_MODE == 0
 	case 1620:
 		freq_value = LSM303DLHC_ACCEL_ODR_1620HZ;
 		break;
