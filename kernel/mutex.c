@@ -209,6 +209,7 @@ Z_SYSCALL_HANDLER(k_mutex_lock, mutex, timeout)
 void _impl_k_mutex_unlock(struct k_mutex *mutex)
 {
 	u32_t key;
+	struct k_thread *new_owner;
 
 	__ASSERT(mutex->lock_count > 0U, "");
 	__ASSERT(mutex->owner == _current, "");
@@ -230,7 +231,7 @@ void _impl_k_mutex_unlock(struct k_mutex *mutex)
 
 	adjust_owner_prio(mutex, mutex->owner_orig_prio);
 
-	struct k_thread *new_owner = _unpend_first_thread(&mutex->wait_q);
+	new_owner = _unpend_first_thread(&mutex->wait_q);
 
 	mutex->owner = new_owner;
 
