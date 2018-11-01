@@ -1327,6 +1327,19 @@ static void test_dst_site_scope_mcast_recv_ok(void)
 	net_context_put(ctx);
 }
 
+static void test_dst_org_scope_mcast_recv(void)
+{
+	struct in6_addr mcast_org = { { { 0xff, 0x08, 0, 0, 0, 0, 0, 0,
+					  0, 0, 0, 0, 0, 0, 0, 0 } } };
+	struct in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+				     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+	enum net_verdict verdict;
+
+	verdict = recv_msg(&addr, &mcast_org);
+	zassert_equal(verdict, NET_DROP,
+		      "Organisation scope multicast packet was not dropped");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(test_ipv6_fn,
@@ -1353,7 +1366,8 @@ void test_main(void)
 			 ztest_unit_test(test_dst_iface_scope_mcast_recv),
 			 ztest_unit_test(test_dst_zero_scope_mcast_recv),
 			 ztest_unit_test(test_dst_site_scope_mcast_recv_drop),
-			 ztest_unit_test(test_dst_site_scope_mcast_recv_ok)
+			 ztest_unit_test(test_dst_site_scope_mcast_recv_ok),
+			 ztest_unit_test(test_dst_org_scope_mcast_recv)
 			 );
 	ztest_run_test_suite(test_ipv6_fn);
 }
