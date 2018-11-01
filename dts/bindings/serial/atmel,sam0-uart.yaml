@@ -23,4 +23,16 @@ properties:
       category: required
       description: required interrupts
       generation: define
+
+    rxpo:
+      type: int
+      category: required
+      description: Receive Data Pinout
+      generation: define
+
+    txpo:
+      type: int
+      category: required
+      description: Transmit Data Pinout
+      generation: define
 ...

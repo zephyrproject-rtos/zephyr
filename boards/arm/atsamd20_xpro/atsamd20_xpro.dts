@@ -48,12 +48,16 @@
 	status = "ok";
 	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
+	rxpo = <3>;
+	txpo = <2>;
 };
 
 &sercom4 {
 	status = "ok";
 	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
+	rxpo = <1>;
+	txpo = <0>;
 };
 
 &flash0 {
