@@ -11,16 +11,32 @@ config COAP
 	help
 	  This option enables the CoAP implementation.
 
+
+if COAP
+
+choice COAP_CHOICE
+	prompt "CoAP Implementation"
+	default COAP_SOCK
+	help
+	  Select the CoAP implmentation. CoAP based on net_pkt is deprecated.
+	  Please use the socket based implmenetation for new applications.
+
+config COAP_SOCK
+	bool "CoAP based on Sockets"
+
+config COAP_NET_PKT
+	bool "CoaP based on net_pkt"
+
+endchoice
+
 # This setting is only used by unit test. Do not enable it in applications
 config COAP_TEST_API_ENABLE
 	bool "Enable test API for CoAP unit tests"
-	depends on COAP
 	help
 	  Do not enable this for normal use.
 
 config COAP_WELL_KNOWN_BLOCK_WISE
 	bool "CoAP ./well-known/core services block wise support"
-	depends on COAP
 	help
 	  This option enables the block wise support of CoAP response
 	  to ./well-known/core request. Without this option all resource's
@@ -38,7 +54,6 @@ config COAP_WELL_KNOWN_BLOCK_WISE_SIZE
 
 config COAP_EXTENDED_OPTIONS_LEN
 	bool "Support for CoAP extended options"
-	depends on COAP
 	help
 	  This option enables the parsing of extended CoAP options length.
 	  CoAP extended options length can be 2 byte value, which
@@ -62,10 +77,10 @@ config COAP_INIT_ACK_TIMEOUT_MS
 	help
 	  This value is used as a base value to retry pending CoAP packets.
 
-if COAP
 module = COAP
 module-dep = NET_LOG
 module-str = Log level for CoAP
 module-help = Enables CoAP debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
+
 endif # COAP
