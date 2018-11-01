@@ -7,8 +7,6 @@
 #ifndef __INC_BOARD_H
 #define __INC_BOARD_H
 
-#include <soc.h>
-
 /* External edge connector pin mappings to nRF52 GPIO pin numbers.
  * More information:
  * https://learn.adafruit.com/bluefruit-nrf52-feather-learning-guide?view=all#device-pinout

@@ -7,8 +7,6 @@
 #ifndef __BOARD_H__
 #define __BOARD_H__
 
-#include <soc.h>
-
 #if defined(CONFIG_IEEE802154_CC2520)
 
 /* GPIO numbers where the TI cc2520 chip is connected to */

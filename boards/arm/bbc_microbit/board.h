@@ -7,8 +7,6 @@
 #ifndef __INC_BOARD_H
 #define __INC_BOARD_H
 
-#include <soc.h>
-
 /* External edge connector pin mappings to nRF51 GPIO pin numbers.
  * More information:
  * https://www.microbit.co.uk/device/pins

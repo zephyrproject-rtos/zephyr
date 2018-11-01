@@ -7,8 +7,6 @@
 #ifndef __INC_BOARD_H
 #define __INC_BOARD_H
 
-#include <soc.h>
-
 /* Map APL GPIO pins to pins on UP Squared HAT */
 #define UP2_HAT_PIN_3  APL_GPIO_28
 #define UP2_HAT_PIN_5  APL_GPIO_29
