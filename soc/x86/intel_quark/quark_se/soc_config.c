@@ -9,7 +9,6 @@
 #include <device.h>
 #include <init.h>
 
-#include "board.h"
 #include <kernel.h>
 #include <arch/cpu.h>
 

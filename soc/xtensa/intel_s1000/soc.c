@@ -7,7 +7,6 @@
 #include <device.h>
 #include <xtensa_api.h>
 #include <xtensa/xtruntime.h>
-#include <board.h>
 #include <irq_nextlevel.h>
 #include <xtensa/hal.h>
 #include <init.h>
