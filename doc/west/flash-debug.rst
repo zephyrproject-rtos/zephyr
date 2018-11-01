@@ -1,7 +1,7 @@
 .. _west-flash-debug:
 
-West: Flashing and Debugging
-############################
+Flashing and Debugging
+######################
 
 West provides three commands for running and interacting with Zephyr
 programs running on a board: ``flash``, ``debug``, and
