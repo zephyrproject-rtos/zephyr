@@ -52,6 +52,8 @@
 &sercom1 {
 	status = "ok";
 	compatible = "atmel,sam0-spi";
+	dipo = <2>;
+	dopo = <0>;
 	#address-cells = <1>;
 	#size-cells = <0>;
 

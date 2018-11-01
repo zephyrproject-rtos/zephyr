@@ -42,6 +42,8 @@
 &sercom0 {
 	status = "ok";
 	compatible = "atmel,sam0-spi";
+	dipo = <0>;
+	dopo = <2>;
 };
 
 &sercom3 {
