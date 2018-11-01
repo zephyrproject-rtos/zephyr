@@ -6,3 +6,8 @@ tests:
     harness: bluetooth
     platform_whitelist: qemu_cortex_m3 qemu_x86
     tags: bluetooth
+  test.overlay-shield_frdm_kw41z:
+    harness: bluetooth
+    extra_args: OVERLAY_CONFIG=overlay-shield_frdm_kw41z.conf
+    platform_whitelist: mimxrt1050_evk frdm_k64f
+    tags: bluetooth
