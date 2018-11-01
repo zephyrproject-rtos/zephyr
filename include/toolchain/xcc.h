@@ -36,7 +36,8 @@
 
 #endif /* __GCC_LINKER_CMD__ */
 
-#define __builtin_unreachable() __ASSERT(0, "Unreachable code")
+#define __builtin_unreachable() do { __ASSERT(0, "Unreachable code"); } \
+	while (true)
 
 /* TODO: XCC doesn't define the below macros which are useful for checking
  * overflows. This needs to be fixed.
