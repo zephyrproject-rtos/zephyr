@@ -13,7 +13,6 @@ LOG_MODULE_REGISTER(spi_sam0);
 #include <device.h>
 #include <spi.h>
 #include <soc.h>
-#include <board.h>
 
 /* Device constant configuration parameters */
 struct spi_sam0_config {
@@ -452,12 +451,16 @@ static const struct spi_driver_api spi_sam0_driver_api = {
 	.release = spi_sam0_release,
 };
 
+#define CONFIG_SPI_SAM0_SERCOM_PADS(n) \
+	SERCOM_SPI_CTRLA_DIPO(CONFIG_SPI_SAM0_SERCOM##n##_DIPO) | \
+	SERCOM_SPI_CTRLA_DOPO(CONFIG_SPI_SAM0_SERCOM##n##_DOPO)
+
 #define SPI_SAM0_DEFINE_CONFIG(n)                                            \
 	static const struct spi_sam0_config spi_sam0_config_##n = {          \
 		.regs = (SercomSpi *)CONFIG_SPI_SAM0_SERCOM##n##_BASE_ADDRESS, \
 		.pm_apbcmask = PM_APBCMASK_SERCOM##n,                        \
 		.gclk_clkctrl_id = GCLK_CLKCTRL_ID_SERCOM##n##_CORE,         \
-		.pads = CONFIG_SPI_SAM0_SERCOM##n##_PADS                     \
+		.pads = CONFIG_SPI_SAM0_SERCOM_PADS(n)                       \
 	}
 
 #define SPI_SAM0_DEVICE_INIT(n)                                              \

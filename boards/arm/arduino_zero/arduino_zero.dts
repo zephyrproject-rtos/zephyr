@@ -61,6 +61,8 @@
 &sercom4 {
 	status = "ok";
 	compatible = "atmel,sam0-spi";
+	dipo = <0>;
+	dopo = <1>;
 };
 
 &flash0 {

@@ -22,4 +22,16 @@ properties:
       description: mmio register space
       generation: define
       category: required
+
+    dipo:
+      type: int
+      category: required
+      description: Data In Pinout
+      generation: define
+
+    dopo:
+      type: int
+      category: required
+      description: Data Out Pinout
+      generation: define
 ...

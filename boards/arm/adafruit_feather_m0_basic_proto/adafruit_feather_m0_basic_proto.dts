@@ -46,6 +46,8 @@
 	compatible = "atmel,sam0-spi";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	dipo = <0>;
+	dopo = <1>;
 };
 
 &flash0 {
