@@ -37,6 +37,8 @@
 	status = "ok";
 	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
+	rxpo = <3>;
+	txpo = <1>;
 };
 
 &sercom4 {
