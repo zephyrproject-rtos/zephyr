@@ -16,7 +16,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <string.h>
 #include <errno.h>
 #include <flash.h>
-#include <board.h>
 #include <dfu/flash_img.h>
 #include <inttypes.h>
 
