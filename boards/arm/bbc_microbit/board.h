@@ -9,14 +9,6 @@
 
 #include <soc.h>
 
-/* Push button switch 0 (BTN_A) */
-#define SW0_GPIO_PIN	17
-#define SW0_GPIO_NAME	CONFIG_GPIO_P0_DEV_NAME
-
-/* Push button switch 1 (BTN_B) */
-#define SW1_GPIO_PIN	26
-#define SW1_GPIO_NAME	CONFIG_GPIO_P0_DEV_NAME
-
 /* Onboard LED Row 1 */
 #define LED_ROW1_GPIO_PIN   13
 #define LED_ROW1_GPIO_PORT  CONFIG_GPIO_P0_DEV_NAME
