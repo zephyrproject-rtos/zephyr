@@ -7,6 +7,7 @@
 #include <zephyr.h>
 
 #include <board.h>
+#include <soc.h>
 #include <gpio.h>
 
 #include <misc/printk.h>

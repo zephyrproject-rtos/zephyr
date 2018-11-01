@@ -7,8 +7,6 @@
 #ifndef _INC_BOARD_H_
 #define _INC_BOARD_H_
 
-#include <soc.h>
-
 #define PINS_SPI0_CS {PIN_SPI0_CS3_PD27}
 
 #endif /* _INC_BOARD_H_ */
