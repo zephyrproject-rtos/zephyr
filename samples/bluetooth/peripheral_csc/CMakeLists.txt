@@ -5,7 +5,6 @@ project(peripheral_csc)
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE
   ${app_sources}
-  ../gatt/dis.c
   ../gatt/bas.c
   )
 

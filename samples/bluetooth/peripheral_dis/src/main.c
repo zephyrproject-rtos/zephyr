@@ -20,8 +20,6 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 
-#include <gatt/dis.h>
-
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 	BT_DATA_BYTES(BT_DATA_UUID16_ALL, 0x0a, 0x18),
@@ -57,8 +55,6 @@ void main(void)
 	}
 
 	printk("Bluetooth initialized\n");
-
-	dis_init(CONFIG_SOC, "Manufacturer");
 
 	bt_conn_cb_register(&conn_callbacks);
 
