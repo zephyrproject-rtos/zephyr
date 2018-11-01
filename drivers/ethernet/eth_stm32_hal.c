@@ -156,7 +156,7 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
                 }
         }
         else{
-                LOG_ERR("HAL_ETH_TransmitFrame failed");
+		LOG_ERR("HAL_ETH_TransmitFrame failed");
 		res = -EIO;
 		goto error;
         }
@@ -199,7 +199,7 @@ static struct net_pkt *eth_rx(struct device *dev)
 	u8_t *dma_buffer;
 	int i;
 #if defined(CONFIG_PTP_CLOCK_STM32)
-        ETH_PTP_TIMESTAM time_stamp;
+	ETH_PTP_TIMESTAM time_stamp;
 #endif
 
 	__ASSERT_NO_MSG(dev != NULL);
@@ -473,9 +473,9 @@ static void eth_iface_init(struct net_if *iface)
 #if defined(CONFIG_PTP_CLOCK_STM32)
 	HAL_ETH_DMATxDescListInit(heth, dma_tx_desc_tab,
 				  &dma_tx_buffer[0][0], ETH_TXBUFNB, true);
-        ETH_PTPStart(heth, ETH_PTP_FineUpdate); 
+	ETH_PTPStart(heth, ETH_PTP_FineUpdate); 
 #else
-        HAL_ETH_DMATxDescListInit(heth, dma_tx_desc_tab,
+	HAL_ETH_DMATxDescListInit(heth, dma_tx_desc_tab,
 	        		  &dma_tx_buffer[0][0], ETH_TXBUFNB, false);
 #endif
 
@@ -605,58 +605,58 @@ static int ptp_clock_stm32_set(struct device *dev, struct net_ptp_time *tm)
 
 static int ptp_clock_stm32_get(struct device *dev, struct net_ptp_time *tm)
 {
-        struct ptp_eth_stm32_hal_dev_data *ptp_dev_data = dev->driver_data;
-        struct eth_stm32_hal_dev_data *dev_data = ptp_dev_data->eth_dev_data;
-        ETH_HandleTypeDef *heth;
+	struct ptp_eth_stm32_hal_dev_data *ptp_dev_data = dev->driver_data;
+	struct eth_stm32_hal_dev_data *dev_data = ptp_dev_data->eth_dev_data;
+	ETH_HandleTypeDef *heth;
 
-        heth = &dev_data->heth;
+	heth = &dev_data->heth;
 
-        tm->nanosecond = ETH_PTPSubSecond2NanoSecond(ETH_GetPTPRegister(heth, ETH_PTPTSLR));
-        tm->second = ETH_GetPTPRegister(heth, ETH_PTPTSHR);
+	tm->nanosecond = ETH_PTPSubSecond2NanoSecond(ETH_GetPTPRegister(heth, ETH_PTPTSLR));
+	tm->second = ETH_GetPTPRegister(heth, ETH_PTPTSHR);
 
 	return 0;
 }
 
 static int ptp_clock_stm32_adjust(struct device *dev, int increment)
 {
-        uint32_t Sign;
-        uint32_t SecondValue;
-        uint32_t NanoSecondValue;
-        uint32_t SubSecondValue;
-        uint32_t addend;
-        struct ptp_eth_stm32_hal_dev_data *ptp_dev_data = dev->driver_data;
-        struct eth_stm32_hal_dev_data *dev_data = ptp_dev_data->eth_dev_data;
-        ETH_HandleTypeDef *heth;
+	uint32_t Sign;
+	uint32_t SecondValue;
+	uint32_t NanoSecondValue;
+	uint32_t SubSecondValue;
+	uint32_t addend;
+	struct ptp_eth_stm32_hal_dev_data *ptp_dev_data = dev->driver_data;
+	struct eth_stm32_hal_dev_data *dev_data = ptp_dev_data->eth_dev_data;
+	ETH_HandleTypeDef *heth;
 
-        heth = &dev_data->heth;
+	heth = &dev_data->heth;
 
-        if ((increment <= -NSEC_PER_SEC) || (increment >= NSEC_PER_SEC)) {
+	if ((increment <= -NSEC_PER_SEC) || (increment >= NSEC_PER_SEC)) {
 		return -EINVAL;
-        }
+	}
 
-        if (increment < 0) {
-                Sign = ETH_PTP_NegativeTime;
-                SecondValue = 0;
-                NanoSecondValue = -increment;
-        } else {
-                Sign = ETH_PTP_PositiveTime;
-                SecondValue = 0;
-                NanoSecondValue = increment;
-        }
+	if (increment < 0) {
+	        Sign = ETH_PTP_NegativeTime;
+	        SecondValue = 0;
+	        NanoSecondValue = -increment;
+	} else {
+	        Sign = ETH_PTP_PositiveTime;
+	        SecondValue = 0;
+	        NanoSecondValue = increment;
+	}
 
-        SubSecondValue = ETH_PTPNanoSecond2SubSecond(NanoSecondValue);
- 
-        addend = ETH_GetPTPRegister(heth, ETH_PTPTSAR);
+	SubSecondValue = ETH_PTPNanoSecond2SubSecond(NanoSecondValue);
 
-        while(ETH_GetPTPFlagStatus(heth, ETH_PTP_FLAG_TSSTU) == SET);
-        while(ETH_GetPTPFlagStatus(heth, ETH_PTP_FLAG_TSSTI) == SET);
+	addend = ETH_GetPTPRegister(heth, ETH_PTPTSAR);
 
-        ETH_SetPTPTimeStampUpdate(heth, Sign, SecondValue, SubSecondValue);
-        ETH_EnablePTPTimeStampUpdate(heth);
-        while(ETH_GetPTPFlagStatus(heth, ETH_PTP_FLAG_TSSTU) == SET);      
+	while(ETH_GetPTPFlagStatus(heth, ETH_PTP_FLAG_TSSTU) == SET);
+	while(ETH_GetPTPFlagStatus(heth, ETH_PTP_FLAG_TSSTI) == SET);
+
+	ETH_SetPTPTimeStampUpdate(heth, Sign, SecondValue, SubSecondValue);
+	ETH_EnablePTPTimeStampUpdate(heth);
+	while(ETH_GetPTPFlagStatus(heth, ETH_PTP_FLAG_TSSTU) == SET);      
         
         ETH_SetPTPTimeStampAddend(heth, addend);
-        ETH_EnablePTPTimeStampAddend(heth);
+	ETH_EnablePTPTimeStampAddend(heth);
        
 	return 0;
 }
