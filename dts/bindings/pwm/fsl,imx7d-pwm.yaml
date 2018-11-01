@@ -41,4 +41,8 @@ properties:
      description: Set the RDC permission for this peripheral
      generation: define
 
+"#cells":
+  - channel
+# period in terms of nanoseconds
+  - period
 ...

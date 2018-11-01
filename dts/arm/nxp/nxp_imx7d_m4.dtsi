@@ -331,6 +331,7 @@
 					       RDC_DOMAIN_PERM_RW))>;
 			label = "PWM_1";
 			status = "disabled";
+			#pwm-cells = <2>;
 		};
 
 		pwm2: pwm@30670000 {
@@ -344,6 +345,7 @@
 					       RDC_DOMAIN_PERM_RW))>;
 			label = "PWM_2";
 			status = "disabled";
+			#pwm-cells = <2>;
 		};
 
 		pwm3: pwm@30680000 {
@@ -357,6 +359,7 @@
 					       RDC_DOMAIN_PERM_RW))>;
 			label = "PWM_3";
 			status = "disabled";
+			#pwm-cells = <2>;
 		};
 
 		pwm4: pwm@30690000 {
@@ -370,6 +373,7 @@
 					       RDC_DOMAIN_PERM_RW))>;
 			label = "PWM_4";
 			status = "disabled";
+			#pwm-cells = <2>;
 		};
 	};
 };
