@@ -10,3 +10,7 @@ supported:
   - adc
   - ble
   - nvs
+testing:
+  default: true
+  ignore_tags:
+    - net
