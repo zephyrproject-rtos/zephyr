@@ -53,6 +53,12 @@ find_program(CMAKE_CXX_COMPILER ${cplusplus_compiler} PATH ${TOOLCHAIN_HOME} NO_
 
 set(NOSTDINC "")
 
+# Note that NOSYSDEF_CFLAG may be an empty string, and
+# set_ifndef() does not work with empty string.
+if(NOT DEFINED NOSYSDEF_CFLAG)
+  set(NOSYSDEF_CFLAG -undef)
+endif()
+
 foreach(file_name include include-fixed)
   execute_process(
     COMMAND ${CMAKE_C_COMPILER} --print-file-name=${file_name}

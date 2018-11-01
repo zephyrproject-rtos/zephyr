@@ -165,8 +165,6 @@ endif()
 
 if(NOT CONFIG_NATIVE_APPLICATION)
 zephyr_ld_options(
-  -nostartfiles
-  -nodefaultlibs
   -nostdlib
   -static
   -no-pie
@@ -748,7 +746,7 @@ function(construct_add_custom_command_for_linker_pass linker_output_name output_
     COMMAND ${CMAKE_C_COMPILER}
     -x assembler-with-cpp
     ${NOSTDINC_F}
-    -undef
+    ${NOSYSDEF_CFLAG}
     -MD -MF ${linker_cmd_file_name}.dep -MT ${BASE_NAME}/${linker_cmd_file_name}
     ${ZEPHYR_INCLUDES}
     ${LINKER_SCRIPT_DEFINES}

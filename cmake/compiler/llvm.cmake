@@ -3,6 +3,12 @@
 
 set(NOSTDINC "")
 
+# Note that NOSYSDEF_CFLAG may be an empty string, and
+# set_ifndef() does not work with empty string.
+if(NOT DEFINED NOSYSDEF_CFLAG)
+  set(NOSYSDEF_CFLAG -undef)
+endif()
+
 foreach(file_name include include-fixed)
   execute_process(
     COMMAND ${CMAKE_C_COMPILER} --print-file-name=${file_name}
@@ -19,4 +25,3 @@ endforeach()
 
 set(CMAKE_REQUIRED_FLAGS -nostartfiles -nostdlib ${isystem_include_flags} -Wl,--unresolved-symbols=ignore-in-object-files)
 string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
-
