@@ -703,6 +703,20 @@ static inline bool net_is_ipv6_addr_mcast_site(const struct in6_addr *addr)
 }
 
 /**
+ * @brief Check if the IPv6 address is an organisation scope multicast
+ * address (FFx8::).
+ *
+ * @param addr IPv6 address.
+ *
+ * @return True if the address is an organisation scope multicast address,
+ * false otherwise.
+ */
+static inline bool net_is_ipv6_addr_mcast_org(const struct in6_addr *addr)
+{
+	return net_is_ipv6_addr_mcast_scope(addr, 0x08);
+}
+
+/**
  * @brief Check if the IPv6 address belongs to certain multicast group
  *
  * @param addr IPv6 address.
