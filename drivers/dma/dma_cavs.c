@@ -12,7 +12,7 @@
 #include <device.h>
 #include <init.h>
 #include <dma.h>
-
+#include <soc.h>
 #include "dma_cavs.h"
 
 #define LOG_LEVEL CONFIG_DMA_LOG_LEVEL
