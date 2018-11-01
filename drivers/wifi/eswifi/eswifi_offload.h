@@ -22,6 +22,7 @@ enum eswifi_transport_type {
 
 enum eswifi_socket_state {
 	ESWIFI_SOCKET_STATE_NONE,
+	ESWIFI_SOCKET_STATE_CONNECTING,
 	ESWIFI_SOCKET_STATE_CONNECTED,
 };
 
@@ -31,7 +32,14 @@ struct eswifi_off_socket {
 	enum eswifi_socket_state state;
 	struct net_context *context;
 	net_context_recv_cb_t recv_cb;
+	net_context_connect_cb_t conn_cb;
+	net_context_send_cb_t send_cb;
 	void *user_data;
+	void *tx_token;
+	struct net_pkt *tx_pkt;
+	struct k_work connect_work;
+	struct k_work send_work;
+	struct sockaddr peer_addr;
 };
 
 #endif
