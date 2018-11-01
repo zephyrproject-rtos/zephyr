@@ -5,7 +5,6 @@
  */
 
 #include <zephyr.h>
-#include <board.h>
 #include <device.h>
 #include <gpio.h>
 #include <misc/util.h>

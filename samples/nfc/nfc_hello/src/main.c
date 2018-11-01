@@ -8,7 +8,6 @@
 #include <stdio.h>
 #include <zephyr/types.h>
 #include <string.h>
-#include <board.h>
 #include <uart.h>
 #include <misc/byteorder.h>
 
