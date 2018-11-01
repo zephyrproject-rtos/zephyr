@@ -20,4 +20,9 @@ properties:
       category: required
       description: Clock prescaler at the input of the timer
       generation: define
+
+"#cells":
+  - channel
+# period in terms of nanoseconds
+  - period
 ...

@@ -20,6 +20,7 @@
 				status = "disabled";
 				st,prescaler = <10000>;
 				label = "PWM_1";
+				#pwm-cells = <2>;
 			};
 		};
 	};
