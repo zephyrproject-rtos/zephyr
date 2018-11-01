@@ -6,7 +6,6 @@
  */
 
 #include <init.h>
-#include <board.h>
 #include "prci.h"
 
 /* Selects the 16MHz oscilator on the HiFive1 board, which provides a clock

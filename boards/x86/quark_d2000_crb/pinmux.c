@@ -14,7 +14,7 @@
  */
 
 #include <kernel.h>
-#include <board.h>
+#include <soc.h>
 #include <device.h>
 #include <init.h>
 #include <pinmux.h>

@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <kernel.h>
-#include <board.h>
+#include "board.h"
 #include <device.h>
 #include <init.h>
 #include <pinmux.h>

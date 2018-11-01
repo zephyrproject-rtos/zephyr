@@ -5,7 +5,6 @@
  */
 
 #include <init.h>
-#include <board.h>
 #include <nrf_power.h>
 
 static int board_nrf52840_pca10059_init(struct device *dev)
