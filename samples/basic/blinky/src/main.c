@@ -5,18 +5,10 @@
  */
 
 #include <zephyr.h>
-#include <board.h>
 #include <device.h>
 #include <gpio.h>
 
-/* Change this if you have an LED connected to a custom port */
-#ifndef LED0_GPIO_CONTROLLER
-#define LED0_GPIO_CONTROLLER 	LED0_GPIO_PORT
-#endif
-
 #define LED_PORT LED0_GPIO_CONTROLLER
-
-/* Change this if you have an LED connected to a custom pin */
 #define LED	LED0_GPIO_PIN
 
 /* 1000 msec = 1 sec */
