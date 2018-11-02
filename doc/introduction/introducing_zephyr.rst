@@ -30,7 +30,7 @@ as described in :ref:`Zephyr_Licensing`.
 Distinguishing Features
 ***********************
 
-Zephyr offers a large and evergrowing number of features including:
+Zephyr offers a large and ever growing number of features including:
 
 **Extensive suite of Kernel services**
    Zephyr offers a number of familiar services for development:
