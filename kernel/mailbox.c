@@ -26,9 +26,6 @@ struct k_mbox_async {
 	struct k_mbox_msg tx_msg;	/* transmit message descriptor */
 };
 
-/* array of asynchronous message descriptors */
-static struct k_mbox_async __noinit async_msg[CONFIG_NUM_MBOX_ASYNC_MSGS];
-
 /* stack of unused asynchronous message descriptors */
 K_STACK_DEFINE(async_msg_free, CONFIG_NUM_MBOX_ASYNC_MSGS);
 
@@ -62,6 +59,9 @@ struct k_mbox *_trace_list_k_mbox;
 static int init_mbox_module(struct device *dev)
 {
 	ARG_UNUSED(dev);
+
+	/* array of asynchronous message descriptors */
+	static struct k_mbox_async __noinit async_msg[CONFIG_NUM_MBOX_ASYNC_MSGS];
 
 #if (CONFIG_NUM_MBOX_ASYNC_MSGS > 0)
 	/*
