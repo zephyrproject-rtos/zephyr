@@ -51,4 +51,11 @@ config PWM_STM32_1
 
 endif # PWM
 
+if SPI
+
+config SPI_1
+	default y
+
+endif # SPI
+
 endif # BOARD_NUCLEO_F756ZG

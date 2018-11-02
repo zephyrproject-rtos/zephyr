@@ -12,7 +12,13 @@
 
 #include <pinmux/stm32/pinmux_stm32.h>
 
-/* NUCLEO-F756ZG pin configurations  */
+/* NUCLEO-F756ZG pin configurations
+ *
+ * WARNING: The pin PA7 will conflict on selection of SPI_1 and ETH_STM32_HAL.
+ *          If you require both peripherals, and you do not need Arduino Uno v3
+ *          comaptability, the pin PB5 (also on ST Zio connector) can be used
+ *          for the SPI_1 MOSI signal.
+ */
 static const struct pin_config pinconf[] = {
 #ifdef CONFIG_UART_2
 	{ STM32_PIN_PD5, STM32F7_PINMUX_FUNC_PD5_USART2_TX },
@@ -50,6 +56,12 @@ static const struct pin_config pinconf[] = {
 #ifdef CONFIG_PWM_STM32_1
 	{ STM32_PIN_PE13, STM32F7_PINMUX_FUNC_PE13_PWM1_CH3 },
 #endif /* CONFIG_PWM_STM32_1 */
+#ifdef CONFIG_SPI_1
+	{ STM32_PIN_PA4, STM32F7_PINMUX_FUNC_PA4_SPI1_NSS },
+	{ STM32_PIN_PA5, STM32F7_PINMUX_FUNC_PA5_SPI1_SCK },
+	{ STM32_PIN_PA6, STM32F7_PINMUX_FUNC_PA6_SPI1_MISO },
+	{ STM32_PIN_PA7, STM32F7_PINMUX_FUNC_PA7_SPI1_MOSI },
+#endif	/* CONFIG_SPI_1 */
 };
 
 static int pinmux_stm32_init(struct device *port)
