@@ -433,11 +433,16 @@ void _zxt_tick_timer_init(void)
 	int val;
 
 	__asm__ volatile("rsr.intenable %0" : "=r"(val));
+
+	/*
+	 * Since CCOMPARE* registers have undefined values after reset,
+	 * set compare value first beforing enabling timer interrupt.
+	 */
+	SET_TIMER_FIRE_TIME(GET_TIMER_CURRENT_TIME() + _xt_tick_divisor);
+
 	val |= 1 << TIMER_IRQ;
 	__asm__ volatile("wsr.intenable %0" : : "r"(val));
 	__asm__ volatile("rsync");
-
-	SET_TIMER_FIRE_TIME(GET_TIMER_CURRENT_TIME() + _xt_tick_divisor);
 }
 #endif
 
