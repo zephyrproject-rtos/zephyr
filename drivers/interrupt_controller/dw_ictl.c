@@ -14,6 +14,7 @@
 #include <device.h>
 #include <irq_nextlevel.h>
 #include "dw_ictl.h"
+#include <soc.h>
 
 static ALWAYS_INLINE void dw_ictl_dispatch_child_isrs(u32_t intr_status,
 						      u32_t isr_base_offset)
