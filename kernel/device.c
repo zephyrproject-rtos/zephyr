@@ -17,14 +17,6 @@ extern struct device __device_POST_KERNEL_start[];
 extern struct device __device_APPLICATION_start[];
 extern struct device __device_init_end[];
 
-static struct device *config_levels[] = {
-	__device_PRE_KERNEL_1_start,
-	__device_PRE_KERNEL_2_start,
-	__device_POST_KERNEL_start,
-	__device_APPLICATION_start,
-	/* End marker */
-	__device_init_end,
-};
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 extern u32_t __device_busy_start[];
@@ -46,6 +38,14 @@ extern u32_t __device_busy_end[];
 void _sys_device_do_config_level(s32_t level)
 {
 	struct device *info;
+	static struct device *config_levels[] = {
+		__device_PRE_KERNEL_1_start,
+		__device_PRE_KERNEL_2_start,
+		__device_POST_KERNEL_start,
+		__device_APPLICATION_start,
+		/* End marker */
+		__device_init_end,
+	};
 
 	for (info = config_levels[level]; info < config_levels[level+1];
 								info++) {

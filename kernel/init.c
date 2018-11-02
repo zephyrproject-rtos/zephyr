@@ -43,10 +43,8 @@ LOG_MODULE_REGISTER(kernel);
 #if defined(CONFIG_BOOT_DELAY) && CONFIG_BOOT_DELAY > 0
 #define BOOT_DELAY_BANNER " (delayed boot "	\
 	STRINGIFY(CONFIG_BOOT_DELAY) "ms)"
-static const unsigned int boot_delay = CONFIG_BOOT_DELAY;
 #else
 #define BOOT_DELAY_BANNER ""
-static const unsigned int boot_delay;
 #endif
 
 #ifdef BUILD_VERSION
@@ -198,6 +196,12 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	ARG_UNUSED(unused1);
 	ARG_UNUSED(unused2);
 	ARG_UNUSED(unused3);
+
+#if defined(CONFIG_BOOT_DELAY) && CONFIG_BOOT_DELAY > 0
+	static const unsigned int boot_delay = CONFIG_BOOT_DELAY;
+#else
+	static const unsigned int boot_delay;
+#endif
 
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_POST_KERNEL);
 #if CONFIG_STACK_POINTER_RANDOM

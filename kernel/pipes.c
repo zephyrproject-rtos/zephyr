@@ -45,9 +45,6 @@ struct k_pipe *_trace_list_k_pipe;
 
 #if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0)
 
-/* Array of asynchronous message descriptors */
-static struct k_pipe_async __noinit async_msg[CONFIG_NUM_PIPE_ASYNC_MSGS];
-
 /* stack of unused asynchronous message descriptors */
 K_STACK_DEFINE(pipe_async_msgs, CONFIG_NUM_PIPE_ASYNC_MSGS);
 
@@ -90,6 +87,9 @@ static void pipe_async_finish(struct k_pipe_async *async_desc)
 static int init_pipes_module(struct device *dev)
 {
 	ARG_UNUSED(dev);
+
+	/* Array of asynchronous message descriptors */
+	static struct k_pipe_async __noinit async_msg[CONFIG_NUM_PIPE_ASYNC_MSGS];
 
 #if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0)
 	/*
