@@ -144,24 +144,26 @@ static inline void pool_irq_unlock(struct sys_mem_pool_base *p, int key)
 static void *block_alloc(struct sys_mem_pool_base *p, int l, size_t lsz)
 {
 	sys_dnode_t *block;
-	int key = pool_irq_lock(p);
 
 	block = sys_dlist_get(&p->levels[l].free_list);
 	if (block != NULL) {
 		clear_free_bit(p, l, block_num(p, block, lsz));
 	}
-	pool_irq_unlock(p, key);
 
 	return block;
 }
 
 static void block_free(struct sys_mem_pool_base *p, int level,
-			      size_t *lsizes, int bn)
+			      size_t *lsizes, int bn, bool entry, int _key)
 {
 	int i, key, lsz = lsizes[level];
 	void *block = block_ptr(p, lsz, bn);
 
-	key = pool_irq_lock(p);
+	if (entry) {
+		key = pool_irq_lock(p);
+	} else {
+		key = _key;
+	}
 
 	set_free_bit(p, level, bn);
 
@@ -176,10 +178,8 @@ static void block_free(struct sys_mem_pool_base *p, int level,
 			}
 		}
 
-		pool_irq_unlock(p, key);
-
 		/* tail recursion! */
-		block_free(p, level-1, lsizes, bn / 4);
+		block_free(p, level-1, lsizes, bn / 4, false, key);
 		return;
 	}
 
@@ -228,6 +228,8 @@ int _sys_mem_pool_block_alloc(struct sys_mem_pool_base *p, size_t size,
 	void *data;
 	size_t lsizes[p->n_levels];
 
+	int key = pool_irq_lock(p);
+
 	/* Walk down through levels, finding the one from which we
 	 * want to allocate and the smallest one with a free entry
 	 * from which we can split an allocation if needed.  Along the
@@ -252,6 +254,7 @@ int _sys_mem_pool_block_alloc(struct sys_mem_pool_base *p, size_t size,
 
 	if (alloc_l < 0 || free_l < 0) {
 		*data_p = NULL;
+		pool_irq_unlock(p, key);
 		return -ENOMEM;
 	}
 
@@ -269,6 +272,7 @@ int _sys_mem_pool_block_alloc(struct sys_mem_pool_base *p, size_t size,
 		 * This doesn't happen for user mode memory pools as this
 		 * entire function runs with a semaphore held.
 		 */
+		pool_irq_unlock(p, key);
 		return -EAGAIN;
 	}
 
@@ -279,6 +283,8 @@ int _sys_mem_pool_block_alloc(struct sys_mem_pool_base *p, size_t size,
 	*level_p = alloc_l;
 	*block_p = block_num(p, data, lsizes[alloc_l]);
 	*data_p = data;
+
+	pool_irq_unlock(p, key);
 
 	return 0;
 }
@@ -300,7 +306,7 @@ void _sys_mem_pool_block_free(struct sys_mem_pool_base *p, u32_t level,
 		lsizes[i] = _ALIGN4(lsizes[i-1] / 4);
 	}
 
-	block_free(p, level, lsizes, block);
+	block_free(p, level, lsizes, block, true, 0);
 }
 
 /*
