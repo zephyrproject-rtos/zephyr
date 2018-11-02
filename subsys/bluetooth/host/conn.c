@@ -1507,7 +1507,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		}
 		k_fifo_init(&conn->tx_queue);
 		k_fifo_init(&conn->tx_notify);
-		k_poll_signal(&conn_change, 0);
+		k_poll_signal_raise(&conn_change, 0);
 
 		sys_slist_init(&conn->channels);
 
@@ -1536,7 +1536,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			}
 
 			atomic_set_bit(conn->flags, BT_CONN_CLEANUP);
-			k_poll_signal(&conn_change, 0);
+			k_poll_signal_raise(&conn_change, 0);
 			/* The last ref will be dropped by the tx_thread */
 		} else if (old_state == BT_CONN_CONNECT) {
 			/* conn->err will be set in this case */

@@ -114,7 +114,7 @@ static void put(const struct log_backend *const backend, struct log_msg *msg)
 
 		if (IS_ENABLED(CONFIG_MULTITHREADING)) {
 			signal = &shell->ctx->signals[SHELL_SIGNAL_LOG_MSG];
-			k_poll_signal(signal, 0);
+			k_poll_signal_raise(signal, 0);
 		}
 
 		break;

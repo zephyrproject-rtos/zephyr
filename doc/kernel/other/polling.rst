@@ -172,8 +172,8 @@ to :c:macro:`K_POLL_STATE_NOT_READY` by the user.
         }
     }
 
-Using k_poll_signal()
-=====================
+Using k_poll_signal_raise()
+===========================
 
 One of the types of events is :c:macro:`K_POLL_TYPE_SIGNAL`: this is a "direct"
 signal to a poll event. This can be seen as a lightweight binary semaphore only
@@ -192,7 +192,7 @@ first be initialized either via :c:macro:`K_POLL_SIGNAL_INITIALIZER()` or
         k_poll_signal_init(&signal);
     }
 
-It is signaled via the :cpp:func:`k_poll_signal()` function. This function
+It is signaled via the :cpp:func:`k_poll_signal_raise()` function. This function
 takes a user **result** parameter that is opaque to the API and can be used to
 pass extra information to the thread waiting on the event.
 
@@ -223,7 +223,7 @@ pass extra information to the thread waiting on the event.
     // thread B
     void signal_do_stuff(void)
     {
-        k_poll_signal(&signal, 0x1337);
+        k_poll_signal_raise(&signal, 0x1337);
     }
 
 If the signal is to be polled in a loop, *both* its event state and its
@@ -290,4 +290,4 @@ The following polling APIs are provided by :file:`kernel.h`:
 * :cpp:func:`k_poll_event_init()`
 * :cpp:func:`k_poll()`
 * :cpp:func:`k_poll_signal_init()`
-* :cpp:func:`k_poll_signal()`
+* :cpp:func:`k_poll_signal_raise()`

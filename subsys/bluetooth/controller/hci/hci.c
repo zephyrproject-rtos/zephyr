@@ -226,7 +226,7 @@ static void reset(struct net_buf *buf, struct net_buf **evt)
 	conn_count = 0;
 	if (buf) {
 		atomic_set_bit(&hci_state_mask, HCI_STATE_BIT_RESET);
-		k_poll_signal(hbuf_signal, 0x0);
+		k_poll_signal_raise(hbuf_signal, 0x0);
 	}
 #endif
 }
@@ -336,7 +336,7 @@ static void host_num_completed_packets(struct net_buf *buf,
 
 	BT_DBG("FC: acked: %d", count);
 	hci_hbuf_acked += count;
-	k_poll_signal(hbuf_signal, 0x0);
+	k_poll_signal_raise(hbuf_signal, 0x0);
 }
 #endif
 

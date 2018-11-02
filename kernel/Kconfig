@@ -434,7 +434,7 @@ config POLL
 	bool "Async I/O Framework"
 	help
 	  Asynchronous notification framework. Enable the k_poll() and
-	  k_poll_signal() APIs.  The former can wait on multiple events
+	  k_poll_signal_raise() APIs.  The former can wait on multiple events
 	  concurrently, which can be either directly triggered or triggered by
 	  the availability of some kernel objects (semaphores and fifos).
 

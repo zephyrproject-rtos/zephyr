@@ -38,7 +38,7 @@ static __kernel struct k_poll_signal no_wait_signal;
  * @ingroup kernel_poll_tests
  *
  * @see K_POLL_EVENT_INITIALIZER(), k_poll_signal_init(),
- * k_poll_signal(), k_poll_signal_check()
+ * k_poll_signal_raise(), k_poll_signal_check()
  */
 void test_poll_no_wait(void)
 {
@@ -67,7 +67,7 @@ void test_poll_no_wait(void)
 
 	/* test polling events that are already ready */
 	zassert_false(k_fifo_alloc_put(&no_wait_fifo, &msg), NULL);
-	k_poll_signal(&no_wait_signal, SIGNAL_RESULT);
+	k_poll_signal_raise(&no_wait_signal, SIGNAL_RESULT);
 
 	zassert_equal(k_poll(events, ARRAY_SIZE(events), 0), 0, "");
 
@@ -147,7 +147,7 @@ static void poll_wait_helper(void *use_fifo, void *p2, void *p3)
 		k_fifo_alloc_put(&wait_fifo, &wait_msg);
 	}
 
-	k_poll_signal(&wait_signal, SIGNAL_RESULT);
+	k_poll_signal_raise(&wait_signal, SIGNAL_RESULT);
 }
 
 /**
@@ -537,7 +537,7 @@ static void threadstate(void *p1, void *p2, void *p3)
 	/* Update polling thread state explicitly to improve code coverage */
 	k_thread_suspend(p1);
 	/* Enable polling thread by signalling */
-	k_poll_signal(&signal, SIGNAL_RESULT);
+	k_poll_signal_raise(&signal, SIGNAL_RESULT);
 	k_thread_resume(p1);
 }
 
@@ -551,7 +551,7 @@ static void threadstate(void *p1, void *p2, void *p3)
  * @ingroup kernel_poll_tests
  *
  * @see K_POLL_EVENT_INITIALIZER(), k_poll(), k_poll_signal_init(),
- * k_poll_signal_check(), k_poll_signal()
+ * k_poll_signal_check(), k_poll_signal_raise()
  */
 void test_poll_threadstate(void)
 {
