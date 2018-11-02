@@ -153,8 +153,6 @@ static struct usb_dev_priv {
 	const u8_t *descriptors;
 	/** Array of installed request handler callbacks */
 	usb_request_handler req_handlers[MAX_NUM_REQ_HANDLERS];
-	/** Array of installed request data pointers */
-	u8_t *data_store[MAX_NUM_REQ_HANDLERS];
 	/* Buffer used for storing standard, class and vendor request data */
 	u8_t req_data[CONFIG_USB_REQUEST_BUFFER_SIZE];
 
@@ -272,14 +270,7 @@ static void usb_handle_control_transfer(u8_t ep,
 
 		/* Defaults for data pointer and residue */
 		type = REQTYPE_GET_TYPE(setup->bmRequestType);
-		usb_dev.data_buf = usb_dev.data_store[type];
-		if (!usb_dev.data_buf) {
-			USB_DBG("buffer not available");
-			usb_dc_ep_set_stall(USB_CONTROL_OUT_EP0);
-			usb_dc_ep_set_stall(USB_CONTROL_IN_EP0);
-			return;
-		}
-
+		usb_dev.data_buf = usb_dev.req_data;
 		usb_dev.data_buf_residue = setup->wLength;
 		usb_dev.data_buf_len = setup->wLength;
 
@@ -329,7 +320,7 @@ static void usb_handle_control_transfer(u8_t ep,
 		if (usb_dev.data_buf_residue == 0) {
 			/* Received all, send data to handler */
 			type = REQTYPE_GET_TYPE(setup->bmRequestType);
-			usb_dev.data_buf = usb_dev.data_store[type];
+			usb_dev.data_buf = usb_dev.req_data;
 			if (!usb_handle_request(setup,
 						&usb_dev.data_buf_len,
 						&usb_dev.data_buf)) {
@@ -357,16 +348,13 @@ static void usb_handle_control_transfer(u8_t ep,
  *
  * @param [in] type       Type of request, e.g. REQTYPE_TYPE_STANDARD
  * @param [in] handler    Callback function pointer
- * @param [in] data_store Data storage area for this type of request
  *
  * @return N/A
  */
 static void usb_register_request_handler(s32_t type,
-					 usb_request_handler handler,
-					 u8_t *data_store)
+					 usb_request_handler handler)
 {
 	usb_dev.req_handlers[type] = handler;
-	usb_dev.data_store[type] = data_store;
 }
 
 /*
@@ -927,21 +915,18 @@ int usb_set_config(struct usb_cfg_data *config)
 
 	/* register standard request handler */
 	usb_register_request_handler(REQTYPE_TYPE_STANDARD,
-				     usb_handle_standard_request,
-				     usb_dev.req_data);
+				     usb_handle_standard_request);
 
 	/* register class request handlers for each interface*/
 	if (config->interface.class_handler != NULL) {
 		usb_register_request_handler(REQTYPE_TYPE_CLASS,
-					     config->interface.class_handler,
-					     usb_dev.req_data);
+					     config->interface.class_handler);
 	}
 
 	/* register vendor request handler */
 	if (config->interface.vendor_handler || usb_os_desc_enabled()) {
 		usb_register_request_handler(REQTYPE_TYPE_VENDOR,
-					     usb_handle_vendor_request,
-					     usb_dev.req_data);
+					     usb_handle_vendor_request);
 
 		if (config->interface.vendor_handler) {
 			usb_dev.vendor_req_handler =
@@ -969,10 +954,10 @@ int usb_deconfig(void)
 	usb_register_descriptors(NULL);
 
 	/* unegister standard request handler */
-	usb_register_request_handler(REQTYPE_TYPE_STANDARD, NULL, NULL);
+	usb_register_request_handler(REQTYPE_TYPE_STANDARD, NULL);
 
 	/* unregister class request handlers for each interface*/
-	usb_register_request_handler(REQTYPE_TYPE_CLASS, NULL, NULL);
+	usb_register_request_handler(REQTYPE_TYPE_CLASS, NULL);
 
 	/* unregister class request handlers for each interface*/
 	usb_register_custom_req_handler(NULL);
@@ -1497,18 +1482,15 @@ static int usb_composite_init(struct device *dev)
 
 	/* register standard request handler */
 	usb_register_request_handler(REQTYPE_TYPE_STANDARD,
-				     &(usb_handle_standard_request),
-				     usb_dev.req_data);
+				     &(usb_handle_standard_request));
 
 	/* register class request handlers for each interface*/
 	usb_register_request_handler(REQTYPE_TYPE_CLASS,
-				     class_handler,
-				     usb_dev.req_data);
+				     class_handler);
 
 	/* register vendor request handlers */
 	usb_register_request_handler(REQTYPE_TYPE_VENDOR,
-				     vendor_handler,
-				     usb_dev.req_data);
+				     vendor_handler);
 
 	/* register class request handlers for each interface*/
 	usb_register_custom_req_handler(custom_handler);
