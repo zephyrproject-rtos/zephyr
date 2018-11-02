@@ -174,7 +174,7 @@ static struct net_pkt *prepare_ra_message(void)
 	struct net_linkaddr lladdr_src;
 	struct net_linkaddr lladdr_dst;
 	struct net_pkt *pkt;
-	struct net_buf *frag;
+	struct net_buf *frag, *frag_ll;
 	struct net_if *iface;
 
 	iface = net_if_get_default();
@@ -189,23 +189,37 @@ static struct net_pkt *prepare_ra_message(void)
 
 	net_pkt_frag_add(pkt, frag);
 
+	net_pkt_set_iface(pkt, iface);
+	net_pkt_set_family(pkt, AF_INET6);
+	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
+	net_pkt_set_ipv6_ext_len(pkt, 0);
+
+	/* First fragment contains now IPv6 header and not ethernet frame
+	 * because ICMPv6 calculation function does not understand ethernet
+	 * header.
+	 */
+	memcpy(net_buf_add(frag, sizeof(icmpv6_ra)),
+	       icmpv6_ra, sizeof(icmpv6_ra));
+
+	zassert_false(net_icmpv6_set_chksum(pkt) < 0, "Cannot set checksum");
+
+	/* Then create ethernet fragment */
+	frag_ll = net_pkt_get_frag(pkt, K_FOREVER);
+
 	lladdr_dst.addr = iface->if_dev->link_addr.addr;
 	lladdr_dst.len = 6;
 
 	lladdr_src.addr = NULL;
 	lladdr_src.len = 0;
 
+	net_pkt_frag_insert(pkt, frag_ll);
+
 	net_eth_fill_header(ctx, pkt, htons(NET_ETH_PTYPE_IPV6),
 			    lladdr_src.addr, lladdr_dst.addr);
 
-	net_buf_add(frag, net_pkt_ll_reserve(pkt));
+	net_buf_add(frag_ll, net_pkt_ll_reserve(pkt));
 
-	net_pkt_set_iface(pkt, iface);
-	net_pkt_set_family(pkt, AF_INET6);
-	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
-
-	memcpy(net_buf_add(frag, sizeof(icmpv6_ra)),
-	       icmpv6_ra, sizeof(icmpv6_ra));
+	net_pkt_compact(pkt);
 
 	return pkt;
 }
