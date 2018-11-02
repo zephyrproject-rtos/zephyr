@@ -72,3 +72,7 @@ arduino_serial: &usart6 {};
 	pinctrl-names = "default";
 	status = "ok";
 };
+
+&usbotg_fs {
+	status = "ok";
+};
