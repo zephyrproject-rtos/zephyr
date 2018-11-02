@@ -1,0 +1,166 @@
+# Kconfig.bme680 - BME680 temperature/pressure/gas sensor configuration options
+
+#
+# Copyright (c) 2018 Laird
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+menuconfig BME680
+	bool "BME680 sensor"
+	depends on I2C
+	default	n
+	help
+	 Enable driver for BME680 I2C-based temperature, humidity,
+	 gas and pressure sensor.
+
+if BME680
+
+config BME680_DEV_NAME
+	string "BME680 device name"
+	default "BME680"
+
+choice
+	prompt "BME680 device select"
+	default BME680_DEV_TYPE_I2C
+	help
+	  Select interface to communicate with BME680 sensor. This sensor can
+	  communicate with I2C.
+
+config BME680_DEV_TYPE_I2C
+	depends on I2C
+	bool "I2C"
+endchoice
+
+config BME680_I2C_ADDR
+	hex "BME680 I2C slave address"
+	default 0x76
+	depends on BME680_DEV_TYPE_I2C
+	help
+	  Specify the I2C slave address for the BME680.
+
+	  0x76: Ground
+	  0x77: VCC
+
+config BME680_I2C_MASTER_DEV_NAME
+	string "I2C master where BME680 is connected"
+	depends on BME680_DEV_TYPE_I2C
+	default "I2C_0"
+	help
+	 Specify the device name of the I2C master device to which BME680 is
+	 connected.
+
+menu "Attributes"
+
+choice
+	prompt "BME680 temperature oversampling"
+	default BME680_TEMP_OVER_4X
+	help
+	  Select temperature oversampling for the BME680 sensor. Higher values
+	  lead to more accurate readings, but higher power consumption.
+config BME680_TEMP_OVER_1X
+	bool "x1"
+config BME680_TEMP_OVER_2X
+	bool "x2"
+config BME680_TEMP_OVER_4X
+	bool "x4"
+config BME680_TEMP_OVER_8X
+	bool "x8"
+config BME680_TEMP_OVER_16X
+	bool "x16"
+endchoice
+
+choice
+	prompt "BME680 pressure oversampling"
+	default BME680_PRESS_OVER_8X
+	help
+	  Select pressure oversampling for the BME680 sensor. Higher values
+	  lead to more accurate readings, but higher power consumption.
+config BME680_PRESS_OVER_1X
+	bool "x1"
+config BME680_PRESS_OVER_2X
+	bool "x2"
+config BME680_PRESS_OVER_4X
+	bool "x4"
+config BME680_PRESS_OVER_8X
+	bool "x8"
+config BME680_PRESS_OVER_16X
+	bool "x16"
+endchoice
+
+choice
+	prompt "BME680 humidity oversampling"
+	default BME680_HUMIDITY_OVER_8X
+	help
+	  Select humidity oversampling for the BME680 sensor. Higher values
+	  lead to more accurate readings, but higher power consumption.
+config BME680_HUMIDITY_OVER_1X
+	bool "x1"
+config BME680_HUMIDITY_OVER_2X
+	bool "x2"
+config BME680_HUMIDITY_OVER_4X
+	bool "x4"
+config BME680_HUMIDITY_OVER_8X
+	bool "x8"
+config BME680_HUMIDITY_OVER_16X
+	bool "x16"
+endchoice
+
+choice
+	prompt "BME680 filter coefficient"
+	default BME680_FILTER_7
+	help
+	  Select the filter coefficient for the BME680 sensor.
+config BME680_FILTER_OFF
+	bool "filter off"
+config BME680_FILTER_1
+	bool "1"
+config BME680_FILTER_3
+	bool "3"
+config BME680_FILTER_7
+	bool "7"
+config BME680_FILTER_15
+	bool "15"
+config BME680_FILTER_31
+	bool "31"
+config BME680_FILTER_63
+	bool "63"
+config BME680_FILTER_127
+	bool "127"
+endchoice
+
+config BME680_ENABLE_GAS_SENSOR
+	bool "Enable gas sensor"
+	default n
+	help
+	  This will enable the gas sensor.
+
+if BME680_ENABLE_GAS_SENSOR
+
+config BME680_ENABLE_GAS_SENSOR_HEATER
+	bool "Enable gas sensor heater"
+	default y
+	help
+	  This will enable the heater in the gas sensor.
+
+if BME680_ENABLE_GAS_SENSOR_HEATER
+
+config BME680_GAS_HEATER_TEMPERATUE
+	int "Heater temperature (C)"
+	default 200
+	help
+	  This sets the gas sensor matrix heater to heat to the specified
+	  temperature in celsius.
+
+config BME680_GAS_HEATER_DURATION
+	int "Heater duration (ms)"
+	default 10
+	help
+	  This sets how long the gas sensor matrix heater will be on in ms
+
+endif # BME680_ENABLE_GAS_SENSOR_HEATER
+
+endif # BME680_ENABLE_GAS_SENSOR
+
+endmenu
+
+endif # BME680

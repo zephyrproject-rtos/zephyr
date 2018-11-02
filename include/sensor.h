@@ -123,6 +123,9 @@ enum sensor_channel {
 	/** Angular rotation, in degrees */
 	SENSOR_CHAN_ROTATION,
 
+	/** VOC gas detection, in ohms */
+	SENSOR_CHAN_GAS,
+
 	/** All channels. */
 	SENSOR_CHAN_ALL,
 };
