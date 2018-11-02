@@ -508,7 +508,7 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 						 dfu_data.flash_addr -
 						 FLASH_BASE_ADDRESS +
 						 dfu_data.bytes_sent,
-						 dfu_data.buffer, len);
+						 *data, len);
 				if (ret) {
 					dfu_data.state = dfuERROR;
 					dfu_data.status = errFILE;
@@ -516,7 +516,6 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 				}
 			}
 			*data_len = len;
-			*data = dfu_data.buffer;
 
 			dfu_data.bytes_sent += len;
 			dfu_data.block_nr++;
