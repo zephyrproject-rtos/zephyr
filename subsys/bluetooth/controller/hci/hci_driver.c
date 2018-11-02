@@ -228,7 +228,7 @@ static inline struct net_buf *process_hbuf(struct radio_pdu_node_rx *n)
 		    (class == HCI_CLASS_ACL_DATA && hbuf_count)) {
 			/* node to process later, schedule an iteration */
 			BT_DBG("FC: signalling");
-			k_poll_signal(&hbuf_signal, 0x0);
+			k_poll_signal_raise(&hbuf_signal, 0x0);
 		}
 		return NULL;
 	}
@@ -270,7 +270,7 @@ static inline struct net_buf *process_hbuf(struct radio_pdu_node_rx *n)
 				 * iteration
 				 */
 				BT_DBG("FC: signalling");
-				k_poll_signal(&hbuf_signal, 0x0);
+				k_poll_signal_raise(&hbuf_signal, 0x0);
 			}
 		}
 	}

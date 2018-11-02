@@ -141,7 +141,7 @@ static inline void spi_context_complete(struct spi_context *ctx, int status)
 				status = ctx->recv_frames;
 			}
 #endif /* CONFIG_SPI_SLAVE */
-			k_poll_signal(ctx->signal, status);
+			k_poll_signal_raise(ctx->signal, status);
 		}
 
 		if (!(ctx->config->operation & SPI_LOCK_ON)) {

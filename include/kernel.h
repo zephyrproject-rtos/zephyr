@@ -4141,7 +4141,7 @@ enum _poll_types_bits {
 	/* can be used to ignore an event */
 	_POLL_TYPE_IGNORE,
 
-	/* to be signaled by k_poll_signal() */
+	/* to be signaled by k_poll_signal_raise() */
 	_POLL_TYPE_SIGNAL,
 
 	/* semaphore availability */
@@ -4160,7 +4160,7 @@ enum _poll_states_bits {
 	/* default state when creating event */
 	_POLL_STATE_NOT_READY,
 
-	/* signaled by k_poll_signal() */
+	/* signaled by k_poll_signal_raise() */
 	_POLL_STATE_SIGNALED,
 
 	/* semaphore is available */
@@ -4230,7 +4230,7 @@ struct k_poll_signal {
 	 */
 	unsigned int signaled;
 
-	/* custom result value passed to k_poll_signal() if needed */
+	/* custom result value passed to k_poll_signal_raise() if needed */
 	int result;
 };
 
@@ -4365,7 +4365,7 @@ __syscall int k_poll(struct k_poll_event *events, int num_events,
 /**
  * @brief Initialize a poll signal object.
  *
- * Ready a poll signal object to be signaled via k_poll_signal().
+ * Ready a poll signal object to be signaled via k_poll_signal_raise().
  *
  * @param signal A poll signal.
  *
@@ -4410,7 +4410,7 @@ __syscall void k_poll_signal_check(struct k_poll_signal *signal,
  * made ready to run. A @a result value can be specified.
  *
  * The poll signal contains a 'signaled' field that, when set by
- * k_poll_signal(), stays set until the user sets it back to 0 with
+ * k_poll_signal_raise(), stays set until the user sets it back to 0 with
  * k_poll_signal_reset(). It thus has to be reset by the user before being
  * passed again to k_poll() or k_poll() will consider it being signaled, and
  * will return immediately.
@@ -4423,7 +4423,7 @@ __syscall void k_poll_signal_check(struct k_poll_signal *signal,
  * @req K-POLL-001
  */
 
-__syscall int k_poll_signal(struct k_poll_signal *signal, int result);
+__syscall int k_poll_signal_raise(struct k_poll_signal *signal, int result);
 
 /**
  * @internal

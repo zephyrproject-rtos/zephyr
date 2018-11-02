@@ -1130,7 +1130,7 @@ static void shell_transport_evt_handler(enum shell_transport_evt evt_type,
 	signal = (evt_type == SHELL_TRANSPORT_EVT_RX_RDY) ?
 			&shell->ctx->signals[SHELL_SIGNAL_RXRDY] :
 			&shell->ctx->signals[SHELL_SIGNAL_TXDONE];
-	k_poll_signal(signal, 0);
+	k_poll_signal_raise(signal, 0);
 }
 
 static void shell_current_command_erase(const struct shell *shell)
@@ -1338,7 +1338,7 @@ int shell_uninit(const struct shell *shell)
 {
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
 		/* signal kill message */
-		(void)k_poll_signal(&shell->ctx->signals[SHELL_SIGNAL_KILL], 0);
+		(void)k_poll_signal_raise(&shell->ctx->signals[SHELL_SIGNAL_KILL], 0);
 
 		return 0;
 	} else {

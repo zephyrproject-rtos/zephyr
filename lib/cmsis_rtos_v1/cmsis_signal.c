@@ -36,7 +36,7 @@ int32_t osSignalSet(osThreadId thread_id, int32_t signals)
 	thread_def->signal_results |= signals;
 	irq_unlock(key);
 
-	k_poll_signal(thread_def->poll_signal, signals);
+	k_poll_signal_raise(thread_def->poll_signal, signals);
 
 	return sig;
 }
