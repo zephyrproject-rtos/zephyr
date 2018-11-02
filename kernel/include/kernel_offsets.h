@@ -46,7 +46,7 @@ GEN_OFFSET_SYM(_ready_q_t, cache);
 GEN_OFFSET_SYM(_kernel_t, current_fp);
 #endif
 
-GEN_ABSOLUTE_SYM(_STRUCT_KERNEL_SIZE, sizeof(struct _kernel));
+GEN_ABSOLUTE_SYM(_STRUCT_KERNEL_SIZE, sizeof(struct z_kernel));
 
 GEN_OFFSET_SYM(_thread_base_t, user_options);
 GEN_OFFSET_SYM(_thread_base_t, thread_state);

@@ -34,8 +34,8 @@ __attribute__((used, section(".openocd_dbg")))
 size_t _kernel_openocd_offsets[] = {
 	/* Version 0 starts */
 	[OPENOCD_OFFSET_VERSION] = 1,
-	[OPENOCD_OFFSET_K_CURR_THREAD] = offsetof(struct _kernel, current),
-	[OPENOCD_OFFSET_K_THREADS] = offsetof(struct _kernel, threads),
+	[OPENOCD_OFFSET_K_CURR_THREAD] = offsetof(struct z_kernel, current),
+	[OPENOCD_OFFSET_K_THREADS] = offsetof(struct z_kernel, threads),
 	[OPENOCD_OFFSET_T_ENTRY] = offsetof(struct k_thread, entry),
 	[OPENOCD_OFFSET_T_NEXT_THREAD] = offsetof(struct k_thread, next_thread),
 	[OPENOCD_OFFSET_T_STATE] = offsetof(struct _thread_base, thread_state),
