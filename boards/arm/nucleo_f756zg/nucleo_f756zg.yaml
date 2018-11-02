@@ -10,3 +10,4 @@ flash: 1024
 supported:
   - uart
   - gpio
+  - netif:eth
