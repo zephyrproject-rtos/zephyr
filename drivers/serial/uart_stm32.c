@@ -36,6 +36,11 @@ static int uart_stm32_poll_in(struct device *dev, unsigned char *c)
 {
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 
+	/* Clear overrun error flag */
+	if (LL_USART_IsActiveFlag_ORE(UartInstance)) {
+		LL_USART_ClearFlag_ORE(UartInstance);
+	}
+
 	if (!LL_USART_IsActiveFlag_RXNE(UartInstance)) {
 		return -1;
 	}
@@ -107,6 +112,12 @@ static int uart_stm32_fifo_read(struct device *dev, u8_t *rx_data,
 
 		/* Receive a character (8bit , parity none) */
 		rx_data[num_rx++] = LL_USART_ReceiveData8(UartInstance);
+
+		/* Clear overrun error flag */
+		if (LL_USART_IsActiveFlag_ORE(UartInstance)) {
+			LL_USART_ClearFlag_ORE(UartInstance);
+		}
+
 	}
 	return num_rx;
 }
