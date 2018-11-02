@@ -246,11 +246,6 @@ static inline void init_iface(struct net_if *iface)
 	if (!net_if_is_ip_offloaded(iface)) {
 		NET_ASSERT(api->send);
 	}
-
-	/* In many places it's assumed that link address was set with
-	 * net_if_set_link_addr(). Better check that now.
-	 */
-	NET_ASSERT(net_if_get_link_addr(iface)->addr != NULL);
 }
 
 enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
@@ -2763,6 +2758,11 @@ int net_if_up(struct net_if *iface)
 	}
 
 done:
+	/* In many places it's assumed that link address was set with
+	 * net_if_set_link_addr(). Better check that now.
+	 */
+	NET_ASSERT(net_if_get_link_addr(iface)->addr != NULL);
+
 	atomic_set_bit(iface->if_dev->flags, NET_IF_UP);
 
 #if defined(CONFIG_NET_IPV6_DAD)
