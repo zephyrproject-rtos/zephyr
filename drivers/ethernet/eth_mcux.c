@@ -33,7 +33,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "fsl_enet.h"
 #include "fsl_phy.h"
-#include "fsl_port.h"
 
 enum eth_mcux_phy_state {
 	eth_mcux_phy_state_initial,
@@ -194,6 +193,7 @@ static void eth_mcux_phy_enter_reset(struct eth_context *context)
 
 static void eth_mcux_phy_start(struct eth_context *context)
 {
+	const u32_t phy_addr = 0;
 #ifdef CONFIG_ETH_MCUX_PHY_EXTRA_DEBUG
 	LOG_DBG("phy_state=%s", phy_state_name(context->phy_state));
 #endif
@@ -203,9 +203,15 @@ static void eth_mcux_phy_start(struct eth_context *context)
 	switch (context->phy_state) {
 	case eth_mcux_phy_state_initial:
 		ENET_ActiveRead(ENET);
-		eth_mcux_phy_enter_reset(context);
+		/* Reset the PHY. */
+		ENET_StartSMIWrite(ENET, phy_addr, PHY_BASICCONTROL_REG,
+			   kENET_MiiWriteValidFrame,
+			   PHY_BCTL_RESET_MASK);
+		context->phy_state = eth_mcux_phy_state_initial;
 		break;
 	case eth_mcux_phy_state_reset:
+		eth_mcux_phy_enter_reset(context);
+		break;
 	case eth_mcux_phy_state_autoneg:
 	case eth_mcux_phy_state_restart:
 	case eth_mcux_phy_state_read_status:
@@ -260,6 +266,13 @@ static void eth_mcux_phy_event(struct eth_context *context)
 #endif
 	switch (context->phy_state) {
 	case eth_mcux_phy_state_initial:
+#ifdef CONFIG_SOC_SERIES_IMX_RT
+		ENET_StartSMIRead(ENET, phy_addr, PHY_CONTROL2_REG,
+			kENET_MiiReadValidFrame);
+		ENET_StartSMIWrite(ENET, phy_addr, PHY_CONTROL2_REG,
+			kENET_MiiWriteValidFrame, PHY_CTL2_REFCLK_SELECT_MASK);
+		context->phy_state = eth_mcux_phy_state_reset;
+#endif
 		break;
 	case eth_mcux_phy_state_closing:
 		if (context->enabled) {
@@ -754,7 +767,12 @@ static void generate_mac(u8_t *mac_addr)
 static void generate_mac(u8_t *mac_addr)
 {
 	/* Trivially "hash" up to 128 bits of MCU unique identifier */
+#ifdef CONFIG_SOC_SERIES_IMX_RT
+	u32_t id = OCOTP->CFG1 ^ OCOTP->CFG2;
+#endif
+#ifdef CONFIG_SOC_SERIES_KINETIS_K6X
 	u32_t id = SIM->UIDH ^ SIM->UIDMH ^ SIM->UIDML ^ SIM->UIDL;
+#endif
 
 	mac_addr[3] = id >> 8;
 	mac_addr[4] = id >> 16;
@@ -931,6 +949,30 @@ static void eth_mcux_ptp_isr(void *p)
 }
 #endif
 
+#if defined(ETH_IRQ_COMMON)
+static void eth_mcux_dispacher_isr(void *p)
+{
+	struct device *dev = p;
+	struct eth_context *context = dev->driver_data;
+	u32_t EIR = ENET_GetInterruptStatus(ENET);
+	int irq_lock_key = irq_lock();
+
+	if (EIR & (kENET_RxBufferInterrupt | kENET_RxFrameInterrupt)) {
+		ENET_ReceiveIRQHandler(ENET, &context->enet_handle);
+	} else if (EIR & (kENET_TxBufferInterrupt | kENET_TxFrameInterrupt)) {
+		ENET_TransmitIRQHandler(ENET, &context->enet_handle);
+	} else if (EIR & ENET_EIR_MII_MASK) {
+		k_work_submit(&context->phy_work);
+		ENET_ClearInterruptStatus(ENET, kENET_MiiInterrupt);
+	} else if (EIR) {
+		ENET_ClearInterruptStatus(ENET, 0xFFFFFFFF);
+	}
+
+	irq_unlock(irq_lock_key);
+}
+#endif
+
+#if defined(ETH_IRQ_RX)
 static void eth_mcux_rx_isr(void *p)
 {
 	struct device *dev = p;
@@ -938,7 +980,9 @@ static void eth_mcux_rx_isr(void *p)
 
 	ENET_ReceiveIRQHandler(ENET, &context->enet_handle);
 }
+#endif
 
+#if defined(ETH_IRQ_TX)
 static void eth_mcux_tx_isr(void *p)
 {
 	struct device *dev = p;
@@ -946,7 +990,9 @@ static void eth_mcux_tx_isr(void *p)
 
 	ENET_TransmitIRQHandler(ENET, &context->enet_handle);
 }
+#endif
 
+#if defined(ETH_IRQ_ERR_MISC)
 static void eth_mcux_error_isr(void *p)
 {
 	struct device *dev = p;
@@ -958,6 +1004,7 @@ static void eth_mcux_error_isr(void *p)
 		ENET_ClearInterruptStatus(ENET, kENET_MiiInterrupt);
 	}
 }
+#endif
 
 static struct eth_context eth_0_context = {
 	.phy_duplex = kPHY_FullDuplex,
@@ -981,17 +1028,29 @@ ETH_NET_DEVICE_INIT(eth_mcux_0, DT_ETH_MCUX_0_NAME, eth_0_init,
 
 static void eth_0_config_func(void)
 {
+#if defined(ETH_IRQ_RX)
 	IRQ_CONNECT(DT_IRQ_ETH_RX, DT_ETH_MCUX_0_IRQ_PRI,
 		    eth_mcux_rx_isr, DEVICE_GET(eth_mcux_0), 0);
 	irq_enable(DT_IRQ_ETH_RX);
+#endif
 
+#if defined(ETH_IRQ_TX)
 	IRQ_CONNECT(DT_IRQ_ETH_TX, DT_ETH_MCUX_0_IRQ_PRI,
 		    eth_mcux_tx_isr, DEVICE_GET(eth_mcux_0), 0);
 	irq_enable(DT_IRQ_ETH_TX);
+#endif
 
+#if defined(ETH_IRQ_ERR_MISC)
 	IRQ_CONNECT(DT_IRQ_ETH_ERR_MISC, DT_ETH_MCUX_0_IRQ_PRI,
 		    eth_mcux_error_isr, DEVICE_GET(eth_mcux_0), 0);
 	irq_enable(DT_IRQ_ETH_ERR_MISC);
+#endif
+
+#if defined(ETH_IRQ_COMMON)
+	IRQ_CONNECT(DT_IRQ_ETH_COMMON, DT_ETH_MCUX_0_IRQ_PRI,
+		    eth_mcux_dispacher_isr, DEVICE_GET(eth_mcux_0), 0);
+	irq_enable(DT_IRQ_ETH_COMMON);
+#endif
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 	IRQ_CONNECT(DT_IRQ_ETH_IEEE1588_TMR, DT_ETH_MCUX_0_IRQ_PRI,
