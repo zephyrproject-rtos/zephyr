@@ -25,10 +25,14 @@
 #include "syscfg/syscfg.h"
 
 #define OS_MGMT_RESET_MS    MYNEWT_VAL(OS_MGMT_RESET_MS)
+#define OS_MGMT_TASKSTAT    MYNEWT_VAL(OS_MGMT_TASKSTAT)
+#define OS_MGMT_ECHO        MYNEWT_VAL(OS_MGMT_ECHO)
 
 #elif defined __ZEPHYR__
 
 #define OS_MGMT_RESET_MS    CONFIG_OS_MGMT_RESET_MS
+#define OS_MGMT_TASKSTAT    CONFIG_OS_MGMT_TASKSTAT
+#define OS_MGMT_ECHO        CONFIG_OS_MGMT_ECHO
 
 #else
 
