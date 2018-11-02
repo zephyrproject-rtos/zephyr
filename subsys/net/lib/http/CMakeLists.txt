@@ -7,7 +7,7 @@ endif()
 zephyr_library_sources_if_kconfig(http_parser.c)
 zephyr_library_sources_if_kconfig(http_parser_url.c)
 
-zephyr_library_sources(http.c)
+zephyr_library_sources_if_kconfig(http.c)
 
 zephyr_library_sources_ifdef(CONFIG_HTTP_SERVER http_server.c)
 zephyr_library_sources_ifdef(CONFIG_HTTP_CLIENT http_client.c)

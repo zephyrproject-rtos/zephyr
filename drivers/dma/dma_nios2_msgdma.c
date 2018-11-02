@@ -17,7 +17,7 @@
 
 #define LOG_LEVEL CONFIG_DMA_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(dma_nios2)
+LOG_MODULE_REGISTER(dma_nios2);
 
 /* Device configuration parameters */
 struct nios2_msgdma_dev_cfg {

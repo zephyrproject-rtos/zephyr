@@ -11,7 +11,7 @@
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(qdec_nrfx)
+LOG_MODULE_REGISTER(qdec_nrfx);
 
 
 #define FULL_ANGLE 360

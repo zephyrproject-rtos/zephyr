@@ -53,7 +53,7 @@
 
 #define LOG_LEVEL CONFIG_USB_DEVICE_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(usb_dfu)
+LOG_MODULE_REGISTER(usb_dfu);
 
 #define NUMOF_ALTERNATE_SETTINGS	2
 

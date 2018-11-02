@@ -508,6 +508,14 @@ config NET_PROMISCUOUS_MODE
 	  device driver supports promiscuous mode. The user application
 	  also needs to read the promiscuous mode data.
 
+if NET_PROMISCUOUS_MODE
+module = NET_PROMISC
+module-dep = NET_LOG
+module-str = Log level for promiscuous mode
+module-help = Enables promiscuous mode to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+endif # NET_PROMISCUOUS_MODE
+
 source "subsys/net/ip/Kconfig.stack"
 
 source "subsys/net/ip/Kconfig.mgmt"

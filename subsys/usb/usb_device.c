@@ -72,7 +72,7 @@
 
 #define LOG_LEVEL CONFIG_USB_DEVICE_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(usb_device)
+LOG_MODULE_REGISTER(usb_device);
 
 #include <usb/bos.h>
 #include <os_desc.h>

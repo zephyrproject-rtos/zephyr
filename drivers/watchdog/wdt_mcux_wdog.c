@@ -11,7 +11,7 @@
 
 #define LOG_LEVEL CONFIG_WDT_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(wdt_mcux_wdog)
+LOG_MODULE_REGISTER(wdt_mcux_wdog);
 
 #define MIN_TIMEOUT 4
 

@@ -17,7 +17,7 @@
 
 #define LOG_LEVEL CONFIG_DMA_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(dma_stm32f4x)
+LOG_MODULE_REGISTER(dma_stm32f4x);
 
 #include <clock_control/stm32_clock_control.h>
 

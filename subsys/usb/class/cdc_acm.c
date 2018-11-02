@@ -55,7 +55,7 @@
 
 #define LOG_LEVEL CONFIG_USB_CDC_ACM_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(usb_cdc_acm)
+LOG_MODULE_REGISTER(usb_cdc_acm);
 
 #define DEV_DATA(dev)						\
 	((struct cdc_acm_dev_data_t * const)(dev)->driver_data)

@@ -8,6 +8,12 @@
 
 #include <logging/log.h>
 
+#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
+LOG_MODULE_REGISTER(ipsp);
+
+/* Preventing log module registration in net_core.h */
+#define NET_LOG_ENABLED	0
+
 #include <zephyr.h>
 #include <linker/sections.h>
 #include <errno.h>
@@ -18,9 +24,6 @@
 #include <net/net_core.h>
 #include <net/net_context.h>
 #include <net/udp.h>
-
-#define LOG_MODULE_NAME ipsp
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 /* admin-local, dynamically allocated multicast address */
 #define MCAST_IP6ADDR { { { 0xff, 0x02, 0, 0, 0, 0, 0, 0, \
