@@ -1,0 +1,72 @@
+#
+# Copyright (c) 2018 Bobby Noelte
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# -- Assigned clock parents and rates --
+# Some platforms may require initial configuration of default parent clocks
+# and clock frequencies. Such a configuration can be specified in a device tree
+# node through assigned-clocks, assigned-clock-parents and assigned-clock-rates
+# properties.
+---
+title: Clock Consumer Base Structure
+type: clock-consumer
+version: 0.1
+
+description: >
+    This binding gives the base structures for all clock consumers.
+
+properties:
+
+    clocks:
+      type: array
+      category: required
+      description: >
+        List of phandle and clock specifier pairs, one pair for each clock
+        input to the device. Note - if the clock provider specifies '0' for
+        clock-cells, then only the phandle portion of the pair will appear.
+      generation: define
+
+    clock-names:
+      type: array
+      category: optional
+      description: >
+        List of clock input name strings sorted in the same order as the clocks
+        property.
+      generation: define
+
+    clock-ranges:
+      type: empty
+      category: optional
+      description: >
+        Empty property indicating that child nodes can inherit named clocks from
+        this node. Useful for bus nodes to provide a clock to their children.
+      generation: define
+
+    assigned-clocks:
+      type: array
+      category: optional
+      description: >
+        List of phandle and clock specifier pairs, one pair for each assigned
+        clock input. Note - if the clock provider specifies '0' for
+        clock-cells, then only the phandle portion of the pair will appear.
+      generation: define
+
+    assigned-clock-parents:
+      type: array
+      category: optional
+      description: >
+        List of parent clocks in the form of a phandle and clock
+        specifier pair. The list shall correspond to the clocks listed in the
+        assigned-clocks directive.
+      generation: define
+
+    assigned-clock-rates:
+      type: array
+      category: optional
+      description: >
+        List of frequencies in Hz. The list shall correspond to the clocks
+        listed in the assigned-clocks directive.
+      generation: define
+...

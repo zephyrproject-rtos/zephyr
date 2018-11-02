@@ -1,0 +1,32 @@
+#
+# Copyright (c) 2018 Bobby Noelte
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: PWM Client Base Structure
+id: pwm-client
+version: 0.1
+
+description: >
+    This binding gives the base structures for all pwm clients.
+
+properties:
+
+    pwms:
+      type: array
+      category: required
+      description: >
+        List of phandle and pwm specifiers, one set for each pwm
+        input to the device. Note - The number of pwm specifiers is
+        given by the pwm-cells property of the pwm provider.
+      generation: define
+
+    pwm-names:
+      type: array
+      category: optional
+      description: >
+        List of strings to label each of the PWM devices sorted in the same
+        order as the pwms property.
+      generation: define
+...

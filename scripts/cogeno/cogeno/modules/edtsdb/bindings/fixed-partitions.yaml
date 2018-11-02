@@ -1,0 +1,20 @@
+#
+# Copyright (c) 2018 Bobby Noelte
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: Fixed Partitions Base Structure
+type: fixed-partitions
+version: 0.1
+
+description: >
+    This binding gives the base structures for all fixed partitions.
+
+inherits:
+    !include partitions.yaml
+
+properties:
+    compatible:
+      constraint: "fixed-partitions"
+...

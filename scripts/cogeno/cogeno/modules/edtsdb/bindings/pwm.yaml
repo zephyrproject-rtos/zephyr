@@ -1,0 +1,43 @@
+#
+# Copyright (c) 2017, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: PWM Base Structure
+version: 0.1
+
+description: >
+    This binding gives the base structures for all PWM devices
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      generation: define
+
+    "#pwm-cells":
+      type: int
+      category: required
+      description: >
+        Number of cells used to specify a PWM.
+
+    clocks:
+      type: array
+      category: required
+      description: Clock gate information
+      generation: define
+
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+
+    pinctrl-\d+:
+      type: array
+      category: optional
+      description: pinmux information for PWMx output
+      generation: define
+...

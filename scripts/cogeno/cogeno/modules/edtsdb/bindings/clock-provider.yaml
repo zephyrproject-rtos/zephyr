@@ -1,0 +1,51 @@
+#
+# Copyright (c) 2018 Bobby Noelte
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: Clock Provider Base Structure
+type: clock-provider
+version: 0.1
+
+description: >
+    This binding gives the base structures for all clock providers.
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      generation: define
+
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the clock (used by Zephyr for API name)
+      generation: define
+
+    "#clock-cells":
+      type: int
+      category: required
+      description: >
+        This device is providing controllable clocks, the
+        clock_cells property needs to be specified.
+      generation: define
+
+    clock-output-names:
+      type: array
+      category: optional
+      description: >
+        A list of strings of clock output signal names indexed by the first
+        cell in the clock specifier.
+      generation: define
+
+    clock-indices:
+      type: array
+      category: optional
+      description: >
+        The identifying number for the clocks in the node. If it is not linear
+        from zero, then this allows the mapping of identifiers into the
+        clock-output-names array.
+      generation: define
+...

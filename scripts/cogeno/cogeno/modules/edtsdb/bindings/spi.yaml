@@ -1,0 +1,50 @@
+#
+# Copyright (c) 2018, I-SENSE group of ICCS
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: SPI Base Structure
+type: spi
+version: 0.1
+
+description: >
+    This binding gives the base structures for all SPI devices
+
+child:
+    bus: spi
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      generation: define
+    "#address-cells":
+      type: int
+      category: required
+      description: should be 1.
+    "#size-cells":
+      type: int
+      category: required
+      description: should be 0.
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+    clocks:
+      type: array
+      category: optional
+      description: Clock gate information
+      generation: define
+    cs-gpios:
+      type: compound
+      category: optional
+      generation: define, use-prop-name
+    pinctrl-\d+:
+      type: array
+      category: optional
+      description: pinmux information for SCK, MOSI, MISO
+      generation: define
+...

@@ -1,0 +1,41 @@
+#
+# Copyright (c) 2018 Bobby Noelte
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: DMA Client Base Structure
+type: dma-client
+version: 0.1
+
+description: >
+    This binding gives the base structures for all DMA clients.
+
+properties:
+
+    dmas:
+      type: array
+      category: required
+      description: >
+        List of one or more DMA specifiers, each consisting of
+        - A phandle pointing to DMA controller node
+        - A number of integer cells, as determined by the
+        dma-cells property in the node referenced by phandle
+        containing DMA controller specific information. This
+        typically contains a DMA request line number or a
+        channel number, but can contain any data that is
+        required for configuring a channel..
+      generation: define
+
+    dma-names:
+      type: array
+      category: optional
+      description: >
+        Contains one identifier string for each DMA specifier in
+        the dmas property. The specific strings that can be used
+        are defined in the binding of the DMA client device.
+        Multiple DMA specifiers can be used to represent
+        alternatives and in this case the dma-names for those
+        DMA specifiers must be identical (see examples).
+      generation: define
+...

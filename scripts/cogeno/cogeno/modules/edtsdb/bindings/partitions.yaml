@@ -1,0 +1,50 @@
+#
+# Copyright (c) 2018 Bobby Noelte
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: Partitions Base Structure
+type: partitions
+version: 0.1
+
+description: >
+    This binding gives the base structures for all partitions.
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      generation: define
+
+    "#address-cells":
+      type: int
+      category: required
+      description: >
+        <1>: for partitions that require a single 32-bit cell to represent their
+            size/address (aka the value is below 4 GiB)
+        <2>: for partitions that require two 32-bit cells to represent their
+            size/address (aka the value is 4 GiB or greater).
+
+    "#size-cells":
+      type: int
+      category: required
+      description: >
+        <1>: for partitions that require a single 32-bit cell to represent their
+            size/address (aka the value is below 4 GiB)
+        <2>: for partitions that require two 32-bit cells to represent their
+            size/address (aka the value is 4 GiB or greater).
+
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+
+    reg:
+      type: array
+      description: partition sectors address/ size
+      generation: define
+      category: required
+...

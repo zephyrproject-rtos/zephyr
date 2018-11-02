@@ -1,0 +1,20 @@
+#
+# Copyright (c) 2018 Bobby Noelte
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: SoC Non Volatile Flash Base Structure
+type: soc-nv-flash
+version: 0.1
+
+description: >
+    This binding gives the base structures for all SoC flashes.
+
+inherits:
+    !include flash.yaml
+
+properties:
+    compatible:
+      constraint: "soc-nv-flash"
+...

@@ -1,0 +1,53 @@
+---
+title: GPIO with PINCTRL base structure
+type: gpio-pinctrl
+version: 0.1
+
+description: >
+    This binding gives the base structures for all GPIO devices node using a PINCTRL backend
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      generation: define
+
+    gpio-controller:
+      type: string
+      category: required
+      description: device controller identification
+      generation: define
+
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+
+    "#gpio-cells":
+      type: int
+      category: required
+      description: should be 2.
+
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for device name)
+      generation: define
+
+    gpio-ranges:
+      type: array
+      category: optional
+      description: gpio range in pin controller
+      generation: define
+
+    pinctrl-\d+:
+      type: array
+      category: optional
+      description: pinmux information for GPIO I/0
+      generation: structure
+
+"#cells":
+  - pin
+  - flags
+...
