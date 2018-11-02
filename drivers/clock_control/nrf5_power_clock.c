@@ -233,6 +233,12 @@ static int _k32src_start(struct device *dev, clock_control_subsys_t sub_system)
 		nrf_clock_int_enable(NRF_CLOCK_INT_DONE_MASK |
 				     NRF_CLOCK_INT_CTTO_MASK);
 
+		/* If non-blocking LF clock start, then start HF clock in ISR */
+		if ((NRF_CLOCK->LFCLKSTAT & CLOCK_LFCLKSTAT_STATE_Msk) == 0) {
+			nrf_clock_int_enable(NRF_CLOCK_INT_LF_STARTED_MASK);
+			goto lf_already_started;
+		}
+
 		/* Start HF clock, if already started then explicitly
 		 * assert IRQ.
 		 * NOTE: The INTENSET is used as state flag to start
@@ -269,7 +275,7 @@ static inline void power_event_cb(nrf_power_event_t event)
 
 static void _power_clock_isr(void *arg)
 {
-	u8_t pof, hf_intenset, hf_stat, hf, lf, done, ctto;
+	u8_t pof, hf_intenset, hf, lf_intenset, lf, done, ctto;
 #if defined(CONFIG_USB) && defined(CONFIG_SOC_NRF52840)
 	bool usb_detected, usb_pwr_rdy, usb_removed;
 #endif
@@ -277,11 +283,12 @@ static void _power_clock_isr(void *arg)
 
 	pof = (NRF_POWER->EVENTS_POFWARN != 0);
 
-	hf_intenset =
-	    ((NRF_CLOCK->INTENSET & CLOCK_INTENSET_HFCLKSTARTED_Msk) != 0);
-	hf_stat = ((NRF_CLOCK->HFCLKSTAT & CLOCK_HFCLKSTAT_STATE_Msk) != 0);
+	hf_intenset = ((NRF_CLOCK->INTENSET &
+		       CLOCK_INTENSET_HFCLKSTARTED_Msk) != 0);
 	hf = (NRF_CLOCK->EVENTS_HFCLKSTARTED != 0);
 
+	lf_intenset = ((NRF_CLOCK->INTENSET &
+		       CLOCK_INTENSET_LFCLKSTARTED_Msk) != 0);
 	lf = (NRF_CLOCK->EVENTS_LFCLKSTARTED != 0);
 
 	done = (NRF_CLOCK->EVENTS_DONE != 0);
@@ -306,7 +313,11 @@ static void _power_clock_isr(void *arg)
 		NRF_CLOCK->EVENTS_HFCLKSTARTED = 0;
 	}
 
-	if (hf_intenset && hf_stat) {
+	if (hf_intenset && (hf || ((NRF_CLOCK->HFCLKSTAT &
+				    (CLOCK_HFCLKSTAT_STATE_Msk |
+				     CLOCK_HFCLKSTAT_SRC_Msk)) ==
+				   (CLOCK_HFCLKSTAT_STATE_Msk |
+				    CLOCK_HFCLKSTAT_SRC_Msk)))){
 		/* INTENSET is used as state flag to start calibration,
 		 * hence clear it here.
 		 */
@@ -326,6 +337,16 @@ static void _power_clock_isr(void *arg)
 
 	if (lf) {
 		NRF_CLOCK->EVENTS_LFCLKSTARTED = 0;
+
+		if (lf_intenset) {
+			/* INTENSET is used as state flag to start calibration,
+			 * hence clear it here.
+			 */
+			NRF_CLOCK->INTENCLR = CLOCK_INTENCLR_LFCLKSTARTED_Msk;
+
+			/* Start HF Clock */
+			ctto = 1;
+		}
 	}
 
 	if (done) {
