@@ -14,3 +14,4 @@ supported:
   - usb_device
   - i2c
   - pwm
+  - spi
