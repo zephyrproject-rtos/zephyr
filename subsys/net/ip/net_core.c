@@ -174,8 +174,8 @@ static inline int check_ip_addr(struct net_pkt *pkt)
 		/* If the destination address is our own, then route it
 		 * back to us.
 		 */
-		if (net_is_ipv6_addr_loopback(&NET_IPV6_HDR(pkt)->dst) ||
-		    net_is_my_ipv6_addr(&NET_IPV6_HDR(pkt)->dst)) {
+		if (net_ipv6_is_addr_loopback(&NET_IPV6_HDR(pkt)->dst) ||
+		    net_ipv6_is_my_addr(&NET_IPV6_HDR(pkt)->dst)) {
 			struct in6_addr addr;
 
 			/* Swap the addresses so that in receiving side
@@ -192,7 +192,7 @@ static inline int check_ip_addr(struct net_pkt *pkt)
 		/* The source check must be done after the destination check
 		 * as having src ::1 is perfectly ok if dst is ::1 too.
 		 */
-		if (net_is_ipv6_addr_loopback(&NET_IPV6_HDR(pkt)->src)) {
+		if (net_ipv6_is_addr_loopback(&NET_IPV6_HDR(pkt)->src)) {
 			NET_DBG("IPv6 loopback src address");
 			return -EADDRNOTAVAIL;
 		}
@@ -210,10 +210,10 @@ static inline int check_ip_addr(struct net_pkt *pkt)
 		/* If the destination address is our own, then route it
 		 * back to us.
 		 */
-		if (net_is_ipv4_addr_loopback(&NET_IPV4_HDR(pkt)->dst) ||
-		    (net_is_ipv4_addr_bcast(net_pkt_iface(pkt),
+		if (net_ipv4_is_addr_loopback(&NET_IPV4_HDR(pkt)->dst) ||
+		    (net_ipv4_is_addr_bcast(net_pkt_iface(pkt),
 				     &NET_IPV4_HDR(pkt)->dst) == false &&
-		     net_is_my_ipv4_addr(&NET_IPV4_HDR(pkt)->dst))) {
+		     net_ipv4_is_my_addr(&NET_IPV4_HDR(pkt)->dst))) {
 			struct in_addr addr;
 
 			/* Swap the addresses so that in receiving side
@@ -231,7 +231,7 @@ static inline int check_ip_addr(struct net_pkt *pkt)
 		 * as having src 127.0.0.0/8 is perfectly ok if dst is in
 		 * localhost subnet too.
 		 */
-		if (net_is_ipv4_addr_loopback(&NET_IPV4_HDR(pkt)->src)) {
+		if (net_ipv4_is_addr_loopback(&NET_IPV4_HDR(pkt)->src)) {
 			NET_DBG("IPv4 loopback src address");
 			return -EADDRNOTAVAIL;
 		}

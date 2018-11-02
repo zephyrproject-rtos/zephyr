@@ -849,13 +849,13 @@ static int shell_cmd_upload2(const struct shell *shell, size_t argc,
 	}
 
 	if (family == AF_INET6) {
-		if (net_is_ipv6_addr_unspecified(&in6_addr_my.sin6_addr)) {
+		if (net_ipv6_is_addr_unspecified(&in6_addr_my.sin6_addr)) {
 			shell_fprintf(shell, SHELL_WARNING,
 				      "Invalid local IPv6 address.\n");
 			return -ENOEXEC;
 		}
 
-		if (net_is_ipv6_addr_unspecified(&in6_addr_dst.sin6_addr)) {
+		if (net_ipv6_is_addr_unspecified(&in6_addr_dst.sin6_addr)) {
 			shell_fprintf(shell, SHELL_WARNING,
 				      "Invalid destination IPv6 address.\n");
 			return -ENOEXEC;
@@ -865,13 +865,13 @@ static int shell_cmd_upload2(const struct shell *shell, size_t argc,
 			      "Connecting to %s\n",
 			      net_sprint_ipv6_addr(&in6_addr_dst.sin6_addr));
 	} else {
-		if (net_is_ipv4_addr_unspecified(&in4_addr_my.sin_addr)) {
+		if (net_ipv4_is_addr_unspecified(&in4_addr_my.sin_addr)) {
 			shell_fprintf(shell, SHELL_WARNING,
 				      "Invalid local IPv4 address.\n");
 			return -ENOEXEC;
 		}
 
-		if (net_is_ipv4_addr_unspecified(&in4_addr_dst.sin_addr)) {
+		if (net_ipv4_is_addr_unspecified(&in4_addr_dst.sin_addr)) {
 			shell_fprintf(shell, SHELL_WARNING,
 				      "Invalid destination IPv4 address.\n");
 			return -ENOEXEC;

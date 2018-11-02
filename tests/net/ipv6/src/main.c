@@ -361,36 +361,36 @@ static void test_cmp_prefix(void)
 	struct in6_addr prefix2 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x2 } } };
 
-	st = net_is_ipv6_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 64);
+	st = net_ipv6_is_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 64);
 	zassert_true(st, "Prefix /64  compare failed");
 
-	st = net_is_ipv6_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 65);
+	st = net_ipv6_is_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 65);
 	zassert_true(st, "Prefix /65 compare failed");
 
 	/* Set one extra bit in the other prefix for testing /65 */
 	prefix1.s6_addr[8] = 0x80;
 
-	st = net_is_ipv6_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 65);
+	st = net_ipv6_is_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 65);
 	zassert_false(st, "Prefix /65 compare should have failed");
 
 	/* Set two bits in prefix2, it is now /66 */
 	prefix2.s6_addr[8] = 0xc0;
 
-	st = net_is_ipv6_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 65);
+	st = net_ipv6_is_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 65);
 	zassert_true(st, "Prefix /65 compare failed");
 
 	/* Set all remaining bits in prefix2, it is now /128 */
 	(void)memset(&prefix2.s6_addr[8], 0xff, 8);
 
-	st = net_is_ipv6_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 65);
+	st = net_ipv6_is_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 65);
 	zassert_true(st, "Prefix /65 compare failed");
 
 	/* Comparing /64 should be still ok */
-	st = net_is_ipv6_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 64);
+	st = net_ipv6_is_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 64);
 	zassert_true(st, "Prefix /64 compare failed");
 
 	/* But comparing /66 should should fail */
-	st = net_is_ipv6_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 66);
+	st = net_ipv6_is_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 66);
 	zassert_false(st, "Prefix /66 compare should have failed");
 
 }

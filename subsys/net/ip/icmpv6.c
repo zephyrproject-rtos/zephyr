@@ -334,7 +334,7 @@ static enum net_verdict handle_echo_request(struct net_pkt *orig)
 	NET_IPV6_HDR(pkt)->flow = 0;
 	NET_IPV6_HDR(pkt)->hop_limit = net_if_ipv6_get_hop_limit(iface);
 
-	if (net_is_ipv6_addr_mcast(&NET_IPV6_HDR(pkt)->dst)) {
+	if (net_ipv6_is_addr_mcast(&NET_IPV6_HDR(pkt)->dst)) {
 		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst,
 				&NET_IPV6_HDR(orig)->src);
 
@@ -480,7 +480,7 @@ int net_icmpv6_send_error(struct net_pkt *orig, u8_t type, u8_t code,
 			     sizeof(struct net_icmp_hdr));
 	}
 
-	if (net_is_ipv6_addr_mcast(&NET_IPV6_HDR(orig)->dst)) {
+	if (net_ipv6_is_addr_mcast(&NET_IPV6_HDR(orig)->dst)) {
 		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst,
 				&NET_IPV6_HDR(orig)->src);
 

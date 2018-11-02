@@ -142,7 +142,7 @@ static void initialize_network(void)
 	NET_INFO("Waiting for DHCP ...");
 	do {
 		k_sleep(K_SECONDS(1));
-	} while (net_is_ipv4_addr_unspecified(&iface->dhcpv4.requested_ip));
+	} while (net_ipv4_is_addr_unspecified(&iface->dhcpv4.requested_ip));
 
 	NET_INFO("Done!");
 
@@ -150,7 +150,7 @@ static void initialize_network(void)
 	NET_INFO("Waiting for IP assginment ...");
 	do {
 		k_sleep(K_SECONDS(1));
-	} while (!net_is_my_ipv4_addr(&iface->dhcpv4.requested_ip));
+	} while (!net_ipv4_is_my_addr(&iface->dhcpv4.requested_ip));
 
 	NET_INFO("Done!");
 #else

@@ -273,7 +273,7 @@ struct net_route_entry *net_route_lookup(struct net_if *iface,
 		route = net_route_data(nbr);
 
 		if (route->prefix_len >= longest_match &&
-		    net_is_ipv6_prefix((u8_t *)dst,
+		    net_ipv6_is_prefix((u8_t *)dst,
 				       (u8_t *)&route->addr,
 				       route->prefix_len)) {
 			found = route;
