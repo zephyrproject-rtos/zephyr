@@ -111,7 +111,7 @@ struct _cpu {
 
 typedef struct _cpu _cpu_t;
 
-struct _kernel {
+struct z_kernel {
 	/* For compatibility with pre-SMP code, union the first CPU
 	 * record with the legacy fields so code can continue to use
 	 * the "_kernel.XXX" expressions and assembly offsets.
@@ -169,9 +169,9 @@ struct _kernel {
 	struct _kernel_arch arch;
 };
 
-typedef struct _kernel _kernel_t;
+typedef struct z_kernel _kernel_t;
 
-extern struct _kernel _kernel;
+extern struct z_kernel _kernel;
 
 #ifdef CONFIG_SMP
 #define _current_cpu (_arch_curr_cpu())

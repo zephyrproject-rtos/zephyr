@@ -37,8 +37,8 @@
 #define _priq_wait_best		_priq_dumb_best
 #endif
 
-/* the only struct _kernel instance */
-struct _kernel _kernel;
+/* the only struct z_kernel instance */
+struct z_kernel _kernel;
 
 static struct k_spinlock sched_lock;
 
