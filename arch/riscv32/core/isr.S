@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Jean-Paul Etienne <fractalclone@gmail.com>
+ * Copyright (c) 2018 Foundries.io Ltd
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,11 +12,13 @@
 
 /* imports */
 GDATA(_sw_isr_table)
-GTEXT(__soc_save_context)
-GTEXT(__soc_restore_context)
 GTEXT(__soc_is_irq)
 GTEXT(__soc_handle_irq)
 GTEXT(_Fault)
+#ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
+GTEXT(__soc_save_context)
+GTEXT(__soc_restore_context)
+#endif /* CONFIG_RISCV_SOC_CONTEXT_SAVE */
 
 GTEXT(_k_neg_eagain)
 GTEXT(_is_next_thread_current)
@@ -36,23 +39,24 @@ GTEXT(__irq_wrapper)
 /* use ABI name of registers for the sake of simplicity */
 
 /*
- * ISR is handled at both ARCH and SOC levels.
- * At the ARCH level, ISR handles basic context saving/restore of registers
- * onto/from the thread stack and calls corresponding IRQ function registered
- * at driver level.
-
- * At SOC level, ISR handles saving/restoring of SOC-specific registers
- * onto/from the thread stack (handled via __soc_save_context and
- * __soc_restore_context functions). SOC level save/restore context
- * is accounted for only if CONFIG_RISCV_SOC_CONTEXT_SAVE variable is set
+ * Generic architecture-level IRQ handling, along with callouts to
+ * SoC-specific routines.
  *
- * Moreover, given that RISC-V architecture does not provide a clear ISA
- * specification about interrupt handling, each RISC-V SOC handles it in
- * its own way. Hence, the generic RISC-V ISR handler expects the following
- * functions to be provided at the SOC level:
- * __soc_is_irq: to check if the exception is the result of an interrupt or not.
- * __soc_handle_irq: handle pending IRQ at SOC level (ex: clear pending IRQ in
- * SOC-specific IRQ register)
+ * Architecture level IRQ handling includes basic context save/restore
+ * of standard registers and calling ISRs registered at Zephyr's driver
+ * level.
+ *
+ * Since RISC-V does not completely prescribe IRQ handling behavior,
+ * implementations vary (some implementations also deviate from
+ * what standard behavior is defined). Hence, the arch level code expects
+ * the following functions to be provided at the SOC level:
+ *
+ *     - __soc_is_irq: decide if we're handling an interrupt or an exception
+ *     - __soc_handle_irq: handle SoC-specific details for a pending IRQ
+ *       (e.g. clear a pending bit in a SoC-specific register)
+ *
+ * If CONFIG_RISCV_SOC_CONTEXT=y, calls to SoC-level context save/restore
+ * routines are also made here. For details, see the Kconfig help text.
  */
 
 /*
@@ -99,6 +103,7 @@ SECTION_FUNC(exception.entry, __irq_wrapper)
 
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 	/* Handle context saving at SOC level. */
+	addi a0, sp, __NANO_ESF_soc_context_OFFSET
 	jal ra, __soc_save_context
 #endif /* CONFIG_RISCV_SOC_CONTEXT_SAVE */
 
@@ -409,6 +414,7 @@ reschedule:
 no_reschedule:
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 	/* Restore context at SOC level */
+	addi a0, sp, __NANO_ESF_soc_context_OFFSET
 	jal ra, __soc_restore_context
 #endif /* CONFIG_RISCV_SOC_CONTEXT_SAVE */
 
