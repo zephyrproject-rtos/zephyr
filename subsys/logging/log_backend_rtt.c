@@ -224,7 +224,9 @@ static void panic(struct log_backend const *const backend)
 static void log_backend_rtt_flush(void)
 {
 	while (SEGGER_RTT_HasDataUp(CONFIG_LOG_BACKEND_RTT_BUFFER)) {
-		/* pass */
+		if (!panic_mode) {
+			k_yield();
+		}
 	}
 }
 
