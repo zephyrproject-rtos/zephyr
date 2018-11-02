@@ -163,8 +163,6 @@ static struct {
 	u32_t ticks_anchor;
 	u32_t remainder_anchor;
 
-	u8_t  is_k32src_stable;
-
 	u8_t  volatile ticker_id_prepare;
 	u8_t  volatile ticker_id_event;
 	u8_t  volatile ticker_id_stop;
@@ -4648,27 +4646,26 @@ static void mayfly_xtal_stop(void *params)
 	DEBUG_RADIO_CLOSE(0);
 }
 
-#define DRV_NAME CONFIG_CLOCK_CONTROL_NRF5_K32SRC_DRV_NAME
-#define K32SRC   CLOCK_CONTROL_NRF5_K32SRC
 static void k32src_wait(void)
 {
-	if (!_radio.is_k32src_stable) {
-		struct device *clk_k32;
+	static bool done;
 
-		_radio.is_k32src_stable = 1;
+	if (done) {
+		return;
+	}
+	done = true;
 
-		clk_k32 = device_get_binding(DRV_NAME);
-		LL_ASSERT(clk_k32);
+	struct device *lf_clock = device_get_binding(
+		CONFIG_CLOCK_CONTROL_NRF5_K32SRC_DRV_NAME);
 
-		while (clock_control_on(clk_k32, (void *)K32SRC)) {
-			DEBUG_CPU_SLEEP(1);
-			cpu_sleep();
-			DEBUG_CPU_SLEEP(0);
-		}
+	LL_ASSERT(lf_clock);
+
+	while (clock_control_on(lf_clock, (void *)CLOCK_CONTROL_NRF5_K32SRC)) {
+		DEBUG_CPU_SLEEP(1);
+		cpu_sleep();
+		DEBUG_CPU_SLEEP(0);
 	}
 }
-#undef K32SRC
-#undef DRV_NAME
 
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
 #define XON_BITMASK BIT(31) /* XTAL has been retained from previous prepare */
