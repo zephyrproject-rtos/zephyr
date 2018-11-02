@@ -56,11 +56,16 @@ Some notes on pip's ``--user`` option:
   distributions and is generally recommended on Linux to avoid conflicts with
   Python packages installed using the system package manager.
 
+- On Linux, verify the Python user install directory ``~/.local/bin`` is at the front of
+  your PATH environment variable, otherwise installed packages won't be
+  found.
+
 - On macOS, Homebrew disables the ``--user`` flag\ [#homebrew_user]_.
 
 - On Windows using ``cmd.exe``, although it's possible to use the ``--user``
   flag, it makes it harder for the command prompt to find executables installed
   by pip.
+
 
 Set Up a Toolchain
 ******************
