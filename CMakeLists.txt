@@ -492,6 +492,17 @@ if(EXISTS ${CMAKE_BINARY_DIR}/zephyr_modules.txt)
   set(ZEPHYR_CURRENT_MODULE_DIR)
 endif()
 
+# Add all generated zephyr sources in the same context as the zephyr library
+# is created.
+# Note: Assure all sub directories that might invoke source file generation
+#       are processed before.
+# The ZEPHYR_GENERATED_SOURCE_FILES property is for generated files of the
+# zepyhr library that can be added on the first build run. For files that are
+# dependent on a previous build run see GENERATED_KERNEL_SOURCE_FILES below.
+get_property(zephyr_generated_sources GLOBAL PROPERTY ZEPHYR_GENERATED_SOURCE_FILES)
+set_source_files_properties(${zephyr_generated_sources} PROPERTIES GENERATED 1)
+target_sources(zephyr PRIVATE ${zephyr_generated_sources})
+
 set(syscall_list_h ${CMAKE_CURRENT_BINARY_DIR}/include/generated/syscall_list.h)
 set(syscalls_json  ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/syscalls.json)
 

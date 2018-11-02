@@ -584,6 +584,13 @@ function(generate_inc_file_for_target
   generate_inc_file_for_gen_target(${target} ${source_file} ${generated_file} ${generated_target_name} ${ARGN})
 endfunction()
 
+# Code generation using cogeno provides:
+# - zephyr_sources_cogeno
+# - zephyr_sources_cogeno_ifdef
+# - zephyr_library_sources_cogeno
+# - zephyr_library_sources_cogeno_ifdef
+include(${ZEPHYR_BASE}/cmake/cogeno.cmake)
+
 # 1.4. board_*
 #
 # This section is for extensions which control Zephyr's board runners
