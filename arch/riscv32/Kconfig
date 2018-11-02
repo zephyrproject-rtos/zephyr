@@ -20,7 +20,8 @@ menu "RISCV32 Processor Options"
 config INCLUDE_RESET_VECTOR
 	bool "Include Reset vector"
 	help
-	  Include the reset vector stub that inits CPU and then jumps to __start
+	  Include the reset vector stub, which initializes the stack and
+	  prepares for running C code.
 
 config RISCV_SOC_CONTEXT_SAVE
 	bool "Enable SOC-based context saving in IRQ handler"
