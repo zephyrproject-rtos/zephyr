@@ -155,10 +155,8 @@ static struct usb_dev_priv {
 	usb_request_handler req_handlers[MAX_NUM_REQ_HANDLERS];
 	/** Array of installed request data pointers */
 	u8_t *data_store[MAX_NUM_REQ_HANDLERS];
-	/* Buffer used for storing standard usb request data */
-	u8_t std_req_data[MAX_STD_REQ_MSG_SIZE];
-	/* Buffer used for storing class and vendor request data */
-	u8_t class_vendor_req_data[CONFIG_USB_REQUEST_BUFFER_SIZE];
+	/* Buffer used for storing standard, class and vendor request data */
+	u8_t req_data[CONFIG_USB_REQUEST_BUFFER_SIZE];
 
 	/** Variable to check whether the usb has been enabled */
 	bool enabled;
@@ -930,20 +928,20 @@ int usb_set_config(struct usb_cfg_data *config)
 	/* register standard request handler */
 	usb_register_request_handler(REQTYPE_TYPE_STANDARD,
 				     usb_handle_standard_request,
-				     usb_dev.std_req_data);
+				     usb_dev.req_data);
 
 	/* register class request handlers for each interface*/
 	if (config->interface.class_handler != NULL) {
 		usb_register_request_handler(REQTYPE_TYPE_CLASS,
 					     config->interface.class_handler,
-					     usb_dev.class_vendor_req_data);
+					     usb_dev.req_data);
 	}
 
 	/* register vendor request handler */
 	if (config->interface.vendor_handler || usb_os_desc_enabled()) {
 		usb_register_request_handler(REQTYPE_TYPE_VENDOR,
 					     usb_handle_vendor_request,
-					     usb_dev.class_vendor_req_data);
+					     usb_dev.req_data);
 
 		if (config->interface.vendor_handler) {
 			usb_dev.vendor_req_handler =
@@ -1500,17 +1498,17 @@ static int usb_composite_init(struct device *dev)
 	/* register standard request handler */
 	usb_register_request_handler(REQTYPE_TYPE_STANDARD,
 				     &(usb_handle_standard_request),
-				     usb_dev.std_req_data);
+				     usb_dev.req_data);
 
 	/* register class request handlers for each interface*/
 	usb_register_request_handler(REQTYPE_TYPE_CLASS,
 				     class_handler,
-				     usb_dev.class_vendor_req_data);
+				     usb_dev.req_data);
 
 	/* register vendor request handlers */
 	usb_register_request_handler(REQTYPE_TYPE_VENDOR,
 				     vendor_handler,
-				     usb_dev.class_vendor_req_data);
+				     usb_dev.req_data);
 
 	/* register class request handlers for each interface*/
 	usb_register_custom_req_handler(custom_handler);
