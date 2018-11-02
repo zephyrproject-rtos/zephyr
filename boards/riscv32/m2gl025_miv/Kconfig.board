@@ -1,3 +1,4 @@
 config BOARD_M2GL025_MIV
 	bool "Microsemi M2GL025 IGLOO2 dev board with Mi-V CPU"
 	depends on SOC_RISCV32_MIV
+	select HAS_DTS
