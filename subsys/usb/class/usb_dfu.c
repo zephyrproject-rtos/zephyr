@@ -480,7 +480,8 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 
 			if (len) {
 				ret = flash_read(dfu_data.flash_dev,
-						 dfu_data.flash_addr +
+						 dfu_data.flash_addr -
+						 CONFIG_FLASH_BASE_ADDRESS +
 						 dfu_data.bytes_sent,
 						 dfu_data.buffer, len);
 				if (ret) {
