@@ -123,6 +123,7 @@ static bool expecting_dad;
 static u32_t dad_time[3];
 static bool test_failed;
 static struct k_sem wait_data;
+static bool recv_cb_called;
 
 #define WAIT_TIME 250
 #define WAIT_TIME_LONG MSEC_PER_SEC
@@ -1191,6 +1192,34 @@ static enum net_verdict recv_msg(struct in6_addr *src, struct in6_addr *dst)
 	return net_ipv6_process_pkt(pkt, false);
 }
 
+static int send_msg(struct in6_addr *src, struct in6_addr *dst)
+{
+	struct net_pkt *pkt;
+	struct net_buf *frag;
+	struct net_if *iface;
+
+	iface = net_if_get_default();
+
+	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
+				     K_FOREVER);
+
+	NET_ASSERT_INFO(pkt, "Out of TX packets");
+
+	frag = net_pkt_get_frag(pkt, K_FOREVER);
+
+	net_pkt_frag_add(pkt, frag);
+
+	net_pkt_set_iface(pkt, iface);
+	net_pkt_set_family(pkt, AF_INET6);
+	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
+
+	net_pkt_ll_clear(pkt);
+
+	setup_ipv6_udp(pkt, src, dst, 4242, 4321);
+
+	return net_send_data(pkt);
+}
+
 static void test_src_localaddr_recv(void)
 {
 	struct in6_addr localaddr = { { { 0, 0, 0, 0, 0, 0, 0, 0,
@@ -1296,6 +1325,10 @@ static void recv_cb(struct net_context *context,
 	ARG_UNUSED(pkt);
 	ARG_UNUSED(status);
 	ARG_UNUSED(user_data);
+
+	recv_cb_called = true;
+
+	k_sem_give(&wait_data);
 }
 
 static void net_ctx_recv(struct net_context *ctx)
@@ -1354,6 +1387,43 @@ static void test_dst_org_scope_mcast_recv(void)
 		      "Organisation scope multicast packet was not dropped");
 }
 
+static void test_dst_iface_scope_mcast_send(void)
+{
+	struct in6_addr mcast_iface = { { { 0xff, 0x01, 0, 0, 0, 0, 0, 0,
+					    0, 0, 0, 0, 0, 0, 0, 0 } } };
+	struct in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+				     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+	struct net_if_mcast_addr *maddr;
+	struct net_context *ctx;
+	int ret;
+
+	/* Note that there is no need to join the multicast group as the
+	 * interface local scope multicast address packet will not leave the
+	 * device. But we will still need to add proper multicast address to
+	 * the network interface.
+	 */
+	maddr = net_if_ipv6_maddr_add(net_if_get_default(), &mcast_iface);
+	zassert_not_null(maddr, "Cannot add multicast address to interface");
+
+	net_ctx_create(&ctx);
+	net_ctx_bind_mcast(ctx, &mcast_iface);
+	net_ctx_listen(ctx);
+	net_ctx_recv(ctx);
+
+	ret = send_msg(&addr, &mcast_iface);
+	zassert_equal(ret, 0,
+		      "Interface local scope multicast packet was dropped (%d)",
+		      ret);
+
+	k_sem_take(&wait_data, WAIT_TIME);
+
+	zassert_true(recv_cb_called, "No data received on time, "
+		     "IPv6 recv test failed");
+	recv_cb_called = false;
+
+	net_context_put(ctx);
+}
+
 void test_main(void)
 {
 	ztest_test_suite(test_ipv6_fn,
@@ -1378,6 +1448,7 @@ void test_main(void)
 			 ztest_unit_test(test_src_localaddr_recv),
 			 ztest_unit_test(test_dst_localaddr_recv),
 			 ztest_unit_test(test_dst_iface_scope_mcast_recv),
+			 ztest_unit_test(test_dst_iface_scope_mcast_send),
 			 ztest_unit_test(test_dst_zero_scope_mcast_recv),
 			 ztest_unit_test(test_dst_site_scope_mcast_recv_drop),
 			 ztest_unit_test(test_dst_site_scope_mcast_recv_ok),
