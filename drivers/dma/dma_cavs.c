@@ -17,7 +17,7 @@
 
 #define LOG_LEVEL CONFIG_DMA_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(dma_cavs)
+LOG_MODULE_REGISTER(dma_cavs);
 
 #define BYTE				(1)
 #define WORD				(2)

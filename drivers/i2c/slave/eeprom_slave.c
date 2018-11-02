@@ -13,7 +13,7 @@
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(i2c_slave)
+LOG_MODULE_REGISTER(i2c_slave);
 
 struct i2c_eeprom_slave_data {
 	struct device *i2c_controller;

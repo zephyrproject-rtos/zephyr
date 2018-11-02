@@ -6,7 +6,7 @@
 
 #define LOG_LEVEL CONFIG_USB_DEVICE_NETWORK_DEBUG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(usb_eem)
+LOG_MODULE_REGISTER(usb_eem);
 
 #include <net_private.h>
 #include <zephyr.h>

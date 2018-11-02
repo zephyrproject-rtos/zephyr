@@ -46,7 +46,7 @@
 
 #define LOG_LEVEL CONFIG_USB_MASS_STORAGE_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(usb_msc)
+LOG_MODULE_REGISTER(usb_msc);
 
 /* max USB packet size */
 #define MAX_PACKET	CONFIG_MASS_STORAGE_BULK_EP_MPS

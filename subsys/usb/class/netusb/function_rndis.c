@@ -6,7 +6,7 @@
 
 #define LOG_LEVEL CONFIG_USB_DEVICE_NETWORK_DEBUG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(usb_rndis)
+LOG_MODULE_REGISTER(usb_rndis);
 
 /* Enable verbose debug printing extra hexdumps */
 #define VERBOSE_DEBUG	0

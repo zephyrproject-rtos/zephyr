@@ -6,7 +6,7 @@
 
 #define LOG_LEVEL CONFIG_USB_DEVICE_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(usb_os_desc)
+LOG_MODULE_REGISTER(usb_os_desc);
 
 #include <zephyr.h>
 

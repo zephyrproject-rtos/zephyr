@@ -36,7 +36,7 @@
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(i2c_atmel_sam3)
+LOG_MODULE_REGISTER(i2c_atmel_sam3);
 
 #define TWI_IRQ_PDC \
 	(TWI_SR_ENDRX | TWI_SR_ENDTX | TWI_SR_RXBUFF | TWI_SR_TXBUFE)
