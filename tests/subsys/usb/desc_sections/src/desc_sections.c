@@ -101,8 +101,6 @@ struct usb_test_config {
 		.class_handler = NULL,				\
 		.custom_handler = NULL,				\
 		.vendor_handler = NULL,				\
-		.vendor_data = NULL,				\
-		.payload_data = NULL,				\
 	},							\
 	.num_endpoints = ARRAY_SIZE(ep_cfg_##x),		\
 	.endpoint = ep_cfg_##x,					\

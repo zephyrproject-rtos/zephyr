@@ -71,18 +71,13 @@ config USB_DW_USB_2_0
 	default y
 
 if USB_DEVICE_HID
-config USB_HID_MAX_PAYLOAD_SIZE
+config USB_REQUEST_BUFFER_SIZE
 	default 128
 endif
 
-config USB_COMPOSITE_BUFFER_SIZE
-	default 128
-
 if USB_DFU_CLASS
-
-config USB_DFU_MAX_XFER_SIZE
+config USB_REQUEST_BUFFER_SIZE
 	default 4096
-
 endif
 
 config USB_DEVICE_STACK
