@@ -24,10 +24,6 @@
 #define BTP_STATUS_UNKNOWN_CMD	0x02
 #define BTP_STATUS_NOT_READY	0x03
 
-#include <logging/log.h>
-#define LOG_MODULE_NAME bttester
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
-
 struct btp_hdr {
 	u8_t  service;
 	u8_t  opcode;
