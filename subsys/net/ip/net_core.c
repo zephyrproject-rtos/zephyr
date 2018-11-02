@@ -189,6 +189,17 @@ static inline int check_ip_addr(struct net_pkt *pkt)
 			return 1;
 		}
 
+		/* If the destination address is interface local scope
+		 * multicast address, then loop the data back to us.
+		 * The FF01:: multicast addresses are only meant to be used
+		 * in local host, so this is similar as how ::1 unicast
+		 * addresses are handled. See RFC 3513 ch 2.7 for details.
+		 */
+		if (net_ipv6_is_addr_mcast_iface(&NET_IPV6_HDR(pkt)->dst)) {
+			NET_DBG("IPv6 interface scope mcast dst address");
+			return 1;
+		}
+
 		/* The source check must be done after the destination check
 		 * as having src ::1 is perfectly ok if dst is ::1 too.
 		 */
