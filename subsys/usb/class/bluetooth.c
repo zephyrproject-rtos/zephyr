@@ -23,10 +23,6 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(usb_bluetooth)
 
-#if !defined(CONFIG_USB_COMPOSITE_DEVICE)
-static u8_t interface_data[64];
-#endif
-
 static K_FIFO_DEFINE(rx_queue);
 static K_FIFO_DEFINE(tx_queue);
 
@@ -280,7 +276,6 @@ USBD_CFG_DATA_DEFINE(hci) struct usb_cfg_data bluetooth_config = {
 		.class_handler = bluetooth_class_handler,
 		.custom_handler = NULL,
 		.vendor_handler = NULL,
-		.payload_data = NULL,
 	},
 	.num_endpoints = ARRAY_SIZE(bluetooth_ep_data),
 	.endpoint = bluetooth_ep_data,
@@ -299,7 +294,6 @@ static int bluetooth_init(struct device *dev)
 	}
 
 #ifndef CONFIG_USB_COMPOSITE_DEVICE
-	bluetooth_config.interface.payload_data = interface_data;
 	bluetooth_config.usb_device_description =
 		usb_get_device_descriptor();
 	/* Initialize the USB driver with the right configuration */

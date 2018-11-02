@@ -833,7 +833,6 @@ USBD_CFG_DATA_DEFINE(msd) struct usb_cfg_data mass_storage_config = {
 	.interface = {
 		.class_handler = mass_storage_class_handle_req,
 		.custom_handler = NULL,
-		.payload_data = NULL,
 	},
 	.num_endpoints = ARRAY_SIZE(mass_ep_data),
 	.endpoint = mass_ep_data
@@ -871,10 +870,6 @@ static void mass_thread_main(int arg1, int unused)
 		}
 	}
 }
-
-#ifndef CONFIG_USB_COMPOSITE_DEVICE
-static u8_t interface_data[64];
-#endif
 
 /**
  * @brief Initialize USB mass storage setup
@@ -928,7 +923,6 @@ static int mass_storage_init(struct device *dev)
 #ifndef CONFIG_USB_COMPOSITE_DEVICE
 	int ret;
 
-	mass_storage_config.interface.payload_data = interface_data;
 	mass_storage_config.usb_device_description =
 		usb_get_device_descriptor();
 	/* Initialize the USB driver with the right configuration */

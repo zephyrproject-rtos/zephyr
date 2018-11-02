@@ -1337,7 +1337,6 @@ USBD_CFG_DATA_DEFINE(netusb) struct usb_cfg_data netusb_config = {
 		.class_handler = rndis_class_handler,
 		.custom_handler = NULL,
 		.vendor_handler = NULL,
-		.payload_data = NULL,
 	},
 	.num_endpoints = ARRAY_SIZE(rndis_ep_data),
 	.endpoint = rndis_ep_data,

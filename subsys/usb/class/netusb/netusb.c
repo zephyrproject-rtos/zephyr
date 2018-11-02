@@ -31,11 +31,6 @@ static struct __netusb {
 	const struct netusb_function *func;
 } netusb;
 
-#if !defined(CONFIG_USB_COMPOSITE_DEVICE)
-/* TODO: FIXME: correct buffer size */
-static u8_t interface_data[300];
-#endif
-
 static int netusb_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	int ret;
@@ -201,7 +196,6 @@ static void netusb_init(struct net_if *iface)
 
 		USB_DBG("Registering function %u", i);
 
-		cfg->interface.payload_data = interface_data;
 		cfg->usb_device_description = usb_get_device_descriptor();
 
 		ret = usb_set_config(cfg);

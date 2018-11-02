@@ -51,7 +51,6 @@ static struct k_thread tx_thread_data;
 struct wpanusb_dev_data_t {
 	/* USB device status code */
 	enum usb_dc_status_code usb_status;
-	u8_t interface_data[WPANUSB_CLASS_MAX_DATA_SIZE];
 };
 
 static const struct dev_common_descriptor {
@@ -390,15 +389,11 @@ static void tx_thread(void)
 	}
 }
 
-/* TODO: FIXME: correct buffer size */
-static u8_t buffer[300];
-
 static struct usb_cfg_data wpanusb_config = {
 	.usb_device_description = (u8_t *)&wpanusb_desc,
 	.cb_usb_status = wpanusb_status_cb,
 	.interface = {
 		.vendor_handler = wpanusb_vendor_handler,
-		.vendor_data = buffer,
 		.class_handler = NULL,
 		.custom_handler = NULL,
 	},
@@ -408,12 +403,10 @@ static struct usb_cfg_data wpanusb_config = {
 
 static int wpanusb_init(struct device *dev)
 {
-	struct wpanusb_dev_data_t * const dev_data = DEV_DATA(dev);
 	int ret;
 
 	USB_DBG("");
 
-	wpanusb_config.interface.payload_data = dev_data->interface_data;
 	wpanusb_dev = dev;
 
 	/* Initialize the USB driver with the right configuration */

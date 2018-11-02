@@ -161,19 +161,6 @@ struct usb_interface_cfg_data {
 	 * handler.
 	 */
 	usb_request_handler custom_handler;
-	/**
-	 * This data area, allocated by the application, is used to store
-	 * Class specific command data and must be large enough to store the
-	 * largest payload associated with the largest supported Class'
-	 * command set. This data area may be used for USB IN or OUT
-	 * communications.
-	 */
-	u8_t *payload_data;
-	/**
-	 * This data area, allocated by the application, is used to store
-	 * Vendor specific payload.
-	 */
-	u8_t *vendor_data;
 };
 
 /**

@@ -260,15 +260,10 @@ USBD_CFG_DATA_DEFINE(hid) struct usb_cfg_data hid_config = {
 	.interface = {
 		.class_handler = hid_class_handle_req,
 		.custom_handler = hid_custom_handle_req,
-		.payload_data = NULL,
 	},
 	.num_endpoints = ARRAY_SIZE(hid_ep_data),
 	.endpoint = hid_ep_data,
 };
-
-#if !defined(CONFIG_USB_COMPOSITE_DEVICE)
-static u8_t interface_data[CONFIG_USB_HID_MAX_PAYLOAD_SIZE];
-#endif
 
 int usb_hid_init(void)
 {
@@ -282,7 +277,6 @@ int usb_hid_init(void)
 #ifndef CONFIG_USB_COMPOSITE_DEVICE
 	int ret;
 
-	hid_config.interface.payload_data = interface_data;
 	hid_config.usb_device_description = usb_get_device_descriptor();
 
 	/* Initialize the USB driver with the right configuration */

@@ -283,7 +283,6 @@ USBD_CFG_DATA_DEFINE(netusb) struct usb_cfg_data netusb_config = {
 		.class_handler = NULL,
 		.custom_handler = NULL,
 		.vendor_handler = NULL,
-		.payload_data = NULL,
 	},
 	.num_endpoints = ARRAY_SIZE(eem_ep_data),
 	.endpoint = eem_ep_data,

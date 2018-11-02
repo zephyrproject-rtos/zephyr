@@ -113,11 +113,6 @@ config USB_DFU_CLASS
 	help
 	  USB DFU class driver
 
-config USB_DFU_MAX_XFER_SIZE
-	int
-	depends on USB_DFU_CLASS
-	default 64
-
 config USB_DFU_DETACH_TIMEOUT
 	int
 	depends on USB_DFU_CLASS
