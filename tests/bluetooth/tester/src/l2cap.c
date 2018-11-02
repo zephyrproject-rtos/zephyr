@@ -11,6 +11,11 @@
 #include <errno.h>
 #include <bluetooth/l2cap.h>
 #include <misc/byteorder.h>
+
+#include <logging/log.h>
+#define LOG_MODULE_NAME bttester_l2cap
+LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+
 #include "bttester.h"
 
 #define CONTROLLER_INDEX 0

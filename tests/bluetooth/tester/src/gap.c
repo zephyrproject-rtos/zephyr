@@ -17,6 +17,10 @@
 #include <misc/byteorder.h>
 #include <net/buf.h>
 
+#include <logging/log.h>
+#define LOG_MODULE_NAME bttester_gap
+LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+
 #include "bttester.h"
 
 #define CONTROLLER_INDEX 0
