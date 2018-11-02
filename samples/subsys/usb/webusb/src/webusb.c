@@ -24,8 +24,6 @@ LOG_MODULE_REGISTER(webusb);
 
 /* Max packet size for Bulk endpoints */
 #define CDC_BULK_EP_MPS			64
-/* Max CDC ACM class request max data size */
-#define CDC_CLASS_REQ_MAX_DATA_SIZE	8
 /* Number of interfaces */
 #define WEBUSB_NUM_ITF			0x01
 /* Number of Endpoints in the custom interface */
@@ -34,8 +32,6 @@ LOG_MODULE_REGISTER(webusb);
 #define WEBUSB_ENDP_IN			0x83
 
 static struct webusb_req_handlers *req_handlers;
-
-u8_t interface_data[CDC_CLASS_REQ_MAX_DATA_SIZE];
 
 u8_t rx_buf[64];
 
@@ -312,8 +308,6 @@ USBD_CFG_DATA_DEFINE(webusb) struct usb_cfg_data webusb_config = {
 		.class_handler = NULL,
 		.custom_handler = webusb_custom_handle_req,
 		.vendor_handler = webusb_vendor_handle_req,
-		.vendor_data = interface_data,
-		.payload_data = interface_data,
 	},
 	.num_endpoints = ARRAY_SIZE(webusb_ep_data),
 	.endpoint = webusb_ep_data

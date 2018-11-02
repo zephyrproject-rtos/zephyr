@@ -58,12 +58,7 @@ LOG_MODULE_REGISTER(usb_dfu);
 
 #define NUMOF_ALTERNATE_SETTINGS	2
 
-#ifdef CONFIG_USB_COMPOSITE_DEVICE
-#define USB_DFU_MAX_XFER_SIZE		(MIN(CONFIG_USB_COMPOSITE_BUFFER_SIZE, \
-					     CONFIG_USB_DFU_MAX_XFER_SIZE))
-#else
-#define USB_DFU_MAX_XFER_SIZE		CONFIG_USB_DFU_MAX_XFER_SIZE
-#endif
+#define USB_DFU_MAX_XFER_SIZE		CONFIG_USB_REQUEST_BUFFER_SIZE
 
 #define FIRMWARE_IMAGE_0_LABEL "image-1"
 #define FIRMWARE_IMAGE_1_LABEL "image-0"
@@ -711,7 +706,6 @@ USBD_CFG_DATA_DEFINE(dfu) struct usb_cfg_data dfu_config = {
 	.interface = {
 		.class_handler = dfu_class_handle_req,
 		.custom_handler = dfu_custom_handle_req,
-		.payload_data = dfu_data.buffer,
 	},
 	.num_endpoints = 0,
 };
@@ -728,7 +722,6 @@ USBD_CFG_DATA_DEFINE(dfu_mode) struct usb_cfg_data dfu_mode_config = {
 	.interface = {
 		.class_handler = dfu_class_handle_req,
 		.custom_handler = dfu_custom_handle_req,
-		.payload_data = dfu_data.buffer,
 	},
 	.num_endpoints = 0,
 };

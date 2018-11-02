@@ -141,11 +141,6 @@ config USB_DFU_WAIT_DELAY_MS
 	help
 	  A thread can wait for a prescribed time (in ms) for DFU to begin
 
-config USB_DFU_MAX_XFER_SIZE
-	int
-	depends on USB_DFU_CLASS
-	default 64
-
 config USB_DFU_DETACH_TIMEOUT
 	int
 	depends on USB_DFU_CLASS

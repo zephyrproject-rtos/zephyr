@@ -158,6 +158,9 @@ static struct usb_dev_priv {
 	u8_t *data_store[MAX_NUM_REQ_HANDLERS];
 	/* Buffer used for storing standard usb request data */
 	u8_t std_req_data[MAX_STD_REQ_MSG_SIZE];
+	/* Buffer used for storing class and vendor request data */
+	u8_t class_vendor_req_data[CONFIG_USB_REQUEST_BUFFER_SIZE];
+
 	/** Variable to check whether the usb has been enabled */
 	bool enabled;
 	/** Variable to check whether the usb has been configured */
@@ -1043,14 +1046,14 @@ int usb_set_config(struct usb_cfg_data *config)
 	if (config->interface.class_handler != NULL) {
 		usb_register_request_handler(REQTYPE_TYPE_CLASS,
 					     config->interface.class_handler,
-					     config->interface.payload_data);
+					     usb_dev.class_vendor_req_data);
 	}
 
 	/* register vendor request handler */
 	if (config->interface.vendor_handler || usb_os_desc_enabled()) {
 		usb_register_request_handler(REQTYPE_TYPE_VENDOR,
 					     usb_handle_vendor_request,
-					     config->interface.vendor_data);
+					     usb_dev.class_vendor_req_data);
 
 		if (config->interface.vendor_handler) {
 			usb_dev.vendor_req_handler =
@@ -1522,8 +1525,6 @@ int usb_wakeup_request(void)
 
 #ifdef CONFIG_USB_COMPOSITE_DEVICE
 
-static u8_t iface_data_buf[CONFIG_USB_COMPOSITE_BUFFER_SIZE];
-
 /*
  * The functions class_handler(), custom_handler() and vendor_handler()
  * go through the interfaces one after the other and compare the
@@ -1659,12 +1660,12 @@ static int usb_composite_init(struct device *dev)
 	/* register class request handlers for each interface*/
 	usb_register_request_handler(REQTYPE_TYPE_CLASS,
 				     class_handler,
-				     iface_data_buf);
+				     usb_dev.class_vendor_req_data);
 
 	/* register vendor request handlers */
 	usb_register_request_handler(REQTYPE_TYPE_VENDOR,
 				     vendor_handler,
-				     iface_data_buf);
+				     usb_dev.class_vendor_req_data);
 
 	/* register class request handlers for each interface*/
 	usb_register_custom_req_handler(custom_handler);

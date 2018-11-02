@@ -67,9 +67,6 @@ LOG_MODULE_REGISTER(usb_cdc_acm);
 /* Size of the internal buffer used for storing received data */
 #define CDC_ACM_BUFFER_SIZE (CONFIG_CDC_ACM_BULK_EP_MPS)
 
-/* Max CDC ACM class request max data size */
-#define CDC_CLASS_REQ_MAX_DATA_SIZE	8
-
 /* Serial state notification timeout */
 #define CDC_CONTROL_SERIAL_STATE_TIMEOUT_US 100000
 
@@ -189,9 +186,6 @@ struct cdc_acm_dev_data_t {
 	struct ring_buf *rx_ringbuf;
 	struct ring_buf *tx_ringbuf;
 	/* Interface data buffer */
-#ifndef CONFIG_USB_COMPOSITE_DEVICE
-	u8_t interface_data[CDC_CLASS_REQ_MAX_DATA_SIZE];
-#endif
 	/* CDC ACM line coding properties. LE order */
 	struct cdc_acm_line_coding line_coding;
 	/* CDC ACM line state bitmap, DTE side */
@@ -531,7 +525,6 @@ static int cdc_acm_init(struct device *dev)
 #ifndef CONFIG_USB_COMPOSITE_DEVICE
 	struct usb_cfg_data *cfg = (void *)dev->config->config_info;
 
-	cfg->interface.payload_data = dev_data->interface_data;
 	cfg->usb_device_description = usb_get_device_descriptor();
 
 	/* Initialize the USB driver with the right configuration */
@@ -1001,7 +994,6 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 		.interface = {						\
 			.class_handler = cdc_acm_class_handle_req,	\
 			.custom_handler = NULL,				\
-			.payload_data = NULL,				\
 		},							\
 		.num_endpoints = ARRAY_SIZE(cdc_acm_ep_data_##x),	\
 		.endpoint = cdc_acm_ep_data_##x,			\

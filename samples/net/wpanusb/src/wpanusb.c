@@ -24,9 +24,6 @@ LOG_MODULE_REGISTER(wpanusb);
 /* Max packet size for endpoints */
 #define WPANUSB_BULK_EP_MPS		64
 
-/* Max wpanusb command data size */
-#define WPANUSB_CLASS_MAX_DATA_SIZE	100
-
 #define WPANUSB_ENDP_BULK_IN		0x81
 
 static struct ieee802154_radio_api *radio_api;
@@ -36,8 +33,6 @@ static struct k_fifo tx_queue;
 
 /* IEEE802.15.4 frame + 1 byte len + 1 byte LQI */
 u8_t tx_buf[IEEE802154_MTU + 1 + 1];
-
-u8_t interface_data[WPANUSB_CLASS_MAX_DATA_SIZE];
 
 /**
  * Stack for the tx thread.
@@ -359,16 +354,11 @@ static void tx_thread(void)
 	}
 }
 
-/* TODO: FIXME: correct buffer size */
-static u8_t buffer[300];
-
 static struct usb_cfg_data wpanusb_config = {
 	.usb_device_description = (u8_t *)&wpanusb_desc,
 	.cb_usb_status = wpanusb_status_cb,
 	.interface = {
 		.vendor_handler = wpanusb_vendor_handler,
-		.vendor_data = buffer,
-		.payload_data = interface_data,
 		.class_handler = NULL,
 		.custom_handler = NULL,
 	},
