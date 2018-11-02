@@ -6,6 +6,48 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+menu "System Monitoring Options"
+
+config PERFORMANCE_METRICS
+	bool "Enable performance metrics [EXPERIMENTAL]"
+	help
+	  Enable Performance Metrics.
+
+config BOOT_TIME_MEASUREMENT
+	bool "Boot time measurements [EXPERIMENTAL]"
+	depends on PERFORMANCE_METRICS
+	help
+	  This option enables the recording of timestamps during system start
+	  up. The global variable __start_time_stamp records the time kernel begins
+	  executing, while __main_time_stamp records when main() begins executing,
+	  and __idle_time_stamp records when the CPU becomes idle. All values are
+	  recorded in terms of CPU clock cycles since system reset.
+
+config CPU_CLOCK_FREQ_MHZ
+	int "CPU Clock Frequency in MHz"
+	default 20
+	depends on BOOT_TIME_MEASUREMENT
+	help
+	  This option specifies the CPU Clock Frequency in MHz in order to
+	  convert Intel RDTSC timestamp to microseconds.
+
+config STATS
+	bool "Statistics support"
+	help
+	  Enable per-module event counters for troubleshooting, maintenance,
+	  and usage monitoring.  Statistics can be retrieved with the mcumgr
+	  management subsystem.
+
+config STATS_NAMES
+	bool "Statistic names"
+	depends on STATS
+	help
+	  Include a full name string for each statistic in the build.  If this
+	  setting is disabled, statistics are assigned generic names of the
+	  form "s0", "s1", etc.  Enabling this setting simplifies debugging,
+	  but results in a larger code size.
+endmenu
+
 menu "Debugging Options"
 
 config DEBUG
