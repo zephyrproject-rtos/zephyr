@@ -155,8 +155,9 @@ int _impl_k_stack_pop(struct k_stack *stack, u32_t *data, s32_t timeout)
 	}
 
 	result = _pend_current_thread(key, &stack->wait_q, timeout);
-	if (result == -EAGAIN)
+	if (result == -EAGAIN) {
 		return -EAGAIN;
+	}
 
 	*data = (u32_t)_current->base.swap_data;
 	return 0;
