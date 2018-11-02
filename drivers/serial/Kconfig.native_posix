@@ -5,7 +5,7 @@ config UART_NATIVE_POSIX
 	help
 	  This enables a UART driver for the POSIX ARCH. The driver can be configured
 	  to either connect to the terminal from which native_posix was run, or into
-	  one decicated pseudoterminal for this UART.
+	  one dedicated pseudoterminal for this UART.
 
 if UART_NATIVE_POSIX
 

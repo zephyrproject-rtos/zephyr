@@ -12,7 +12,7 @@ config BT_HCI_VS
 	bool "Zephyr HCI Vendor-Specific Commands"
 	default y
 	help
-	  Enable support for the Zephyr HCI Vendor-Specific Commmands in the
+	  Enable support for the Zephyr HCI Vendor-Specific Commands in the
 	  Host and/or Controller. This enables Set Version Information,
 	  Supported Commands, Supported Features vendor commands.
 

@@ -4,7 +4,7 @@ config CPU_HAS_ARM_MPU
 	select CPU_HAS_MPU
 	help
 	  This option is enabled when the CPU has a Memory Protection Unit (MPU)
-	  in ARM flavour.
+	  in ARM flavor.
 
 config CPU_HAS_NXP_MPU
 	bool
@@ -12,7 +12,7 @@ config CPU_HAS_NXP_MPU
 	select CPU_HAS_MPU
 	help
 	  This option is enabled when the CPU has a Memory Protection Unit (MPU)
-	  in NXP flavour.
+	  in NXP flavor.
 
 config CPU_HAS_ARM_SAU
 	bool
