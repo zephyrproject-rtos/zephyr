@@ -38,7 +38,6 @@
 #define MIV_GPIO_31_IRQ          (RISCV_MAX_GENERIC_IRQ + 31)
 
 /* UART Configuration */
-#define MIV_UART_0_BASE_ADDR         0x70001000
 #define MIV_UART_0_LINECFG           0x1
 
 /* GPIO Configuration */
