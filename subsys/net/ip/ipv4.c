@@ -122,7 +122,7 @@ enum net_verdict net_ipv4_process_pkt(struct net_pkt *pkt)
 		goto drop;
 	}
 
-	if (net_is_ipv4_addr_bcast(net_pkt_iface(pkt), &hdr->src)) {
+	if (net_ipv4_is_addr_bcast(net_pkt_iface(pkt), &hdr->src)) {
 		goto drop;
 	}
 
@@ -133,8 +133,8 @@ enum net_verdict net_ipv4_process_pkt(struct net_pkt *pkt)
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
 	net_pkt_set_ipv4_ttl(pkt, NET_IPV4_HDR(pkt)->ttl);
 
-	if (!net_is_my_ipv4_addr(&hdr->dst) &&
-	    !net_is_ipv4_addr_mcast(&hdr->dst)) {
+	if (!net_ipv4_is_my_addr(&hdr->dst) &&
+	    !net_ipv4_is_addr_mcast(&hdr->dst)) {
 		if (IS_ENABLED(CONFIG_NET_DHCPV4) &&
 		    hdr->proto == IPPROTO_UDP &&
 		    net_ipv4_addr_cmp(&hdr->dst,
@@ -157,7 +157,7 @@ enum net_verdict net_ipv4_process_pkt(struct net_pkt *pkt)
 		verdict = net_icmpv4_input(pkt);
 		break;
 	case IPPROTO_TCP:
-		if (net_is_ipv4_addr_bcast(net_pkt_iface(pkt), &hdr->dst)) {
+		if (net_ipv4_is_addr_bcast(net_pkt_iface(pkt), &hdr->dst)) {
 			goto drop;
 		}
 

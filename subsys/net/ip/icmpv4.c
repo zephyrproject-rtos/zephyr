@@ -345,7 +345,7 @@ enum net_verdict net_icmpv4_input(struct net_pkt *pkt)
 		goto drop;
 	}
 
-	if (net_is_ipv4_addr_bcast(net_pkt_iface(pkt),
+	if (net_ipv4_is_addr_bcast(net_pkt_iface(pkt),
 				   &NET_IPV4_HDR(pkt)->dst)) {
 		if (!IS_ENABLED(CONFIG_NET_ICMPV4_ACCEPT_BROADCAST) ||
 		    icmp_hdr.type != NET_ICMPV4_ECHO_REQUEST) {

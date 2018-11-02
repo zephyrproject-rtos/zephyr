@@ -383,7 +383,7 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 
 		if (ipv4) {
 			addr = &ipv4->gw;
-			if (net_is_ipv4_addr_unspecified(addr)) {
+			if (net_ipv4_is_addr_unspecified(addr)) {
 				NET_ERR("Gateway not set for iface %p",
 					net_pkt_iface(pkt));
 
@@ -640,7 +640,7 @@ enum net_verdict net_arp_input(struct net_pkt *pkt)
 		break;
 
 	case NET_ARP_REPLY:
-		if (net_is_my_ipv4_addr(&arp_hdr->dst_ipaddr)) {
+		if (net_ipv4_is_my_addr(&arp_hdr->dst_ipaddr)) {
 			arp_update(net_pkt_iface(pkt),
 				   &arp_hdr->src_ipaddr,
 				   &arp_hdr->src_hwaddr,

@@ -723,7 +723,7 @@ struct net_if_addr *net_if_ipv6_addr_lookup(const struct in6_addr *addr,
 				continue;
 			}
 
-			if (net_is_ipv6_prefix(
+			if (net_ipv6_is_prefix(
 				    addr->s6_addr,
 				    ipv6->unicast[i].address.in6_addr.s6_addr,
 				    128)) {
@@ -756,7 +756,7 @@ struct net_if_addr *net_if_ipv6_addr_lookup_by_iface(struct net_if *iface,
 			continue;
 		}
 
-		if (net_is_ipv6_prefix(
+		if (net_ipv6_is_prefix(
 			    addr->s6_addr,
 			    ipv6->unicast[i].address.in6_addr.s6_addr,
 			    128)) {
@@ -986,7 +986,7 @@ static inline struct in6_addr *check_global_addr(struct net_if *iface)
 			continue;
 		}
 
-		if (!net_is_ipv6_ll_addr(&ipv6->unicast[i].address.in6_addr)) {
+		if (!net_ipv6_is_ll_addr(&ipv6->unicast[i].address.in6_addr)) {
 			return &ipv6->unicast[i].address.in6_addr;
 		}
 	}
@@ -1134,7 +1134,7 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 		return NULL;
 	}
 
-	if (!net_is_ipv6_addr_mcast(addr)) {
+	if (!net_ipv6_is_addr_mcast(addr)) {
 		NET_DBG("Address %s is not a multicast address.",
 			log_strdup(net_sprint_ipv6_addr(addr)));
 		return NULL;
@@ -1215,7 +1215,7 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(const struct in6_addr *maddr,
 				continue;
 			}
 
-			if (net_is_ipv6_prefix(
+			if (net_ipv6_is_prefix(
 				    maddr->s6_addr,
 				    ipv6->mcast[i].address.in6_addr.s6_addr,
 				    128)) {
@@ -1275,7 +1275,7 @@ static void remove_prefix_addresses(struct net_if *iface,
 			continue;
 		}
 
-		if (net_is_ipv6_prefix(
+		if (net_ipv6_is_prefix(
 				addr->s6_addr,
 				ipv6->unicast[i].address.in6_addr.s6_addr,
 				len)) {
@@ -1567,7 +1567,7 @@ struct net_if_ipv6_prefix *net_if_ipv6_prefix_get(struct net_if *iface,
 			continue;
 		}
 
-		if (net_is_ipv6_prefix(ipv6->prefix[i].prefix.s6_addr,
+		if (net_ipv6_is_prefix(ipv6->prefix[i].prefix.s6_addr,
 				       addr->s6_addr,
 				       ipv6->prefix[i].len)) {
 			if (!prefix || prefix->len > ipv6->prefix[i].len) {
@@ -1595,7 +1595,7 @@ struct net_if_ipv6_prefix *net_if_ipv6_prefix_lookup(struct net_if *iface,
 			continue;
 		}
 
-		if (net_is_ipv6_prefix(ipv6->prefix[i].prefix.s6_addr,
+		if (net_ipv6_is_prefix(ipv6->prefix[i].prefix.s6_addr,
 				       addr->s6_addr, len)) {
 			return &ipv6->prefix[i];
 		}
@@ -1622,7 +1622,7 @@ bool net_if_ipv6_addr_onlink(struct net_if **iface, struct in6_addr *addr)
 
 		for (i = 0; i < NET_IF_MAX_IPV6_PREFIX; i++) {
 			if (ipv6->prefix[i].is_used &&
-			    net_is_ipv6_prefix(ipv6->prefix[i].prefix.s6_addr,
+			    net_ipv6_is_prefix(ipv6->prefix[i].prefix.s6_addr,
 					       addr->s6_addr,
 					       ipv6->prefix[i].len)) {
 				if (iface) {
@@ -1825,7 +1825,7 @@ struct in6_addr *net_if_ipv6_get_ll(struct net_if *iface,
 			continue;
 		}
 
-		if (net_is_ipv6_ll_addr(&ipv6->unicast[i].address.in6_addr)) {
+		if (net_ipv6_is_ll_addr(&ipv6->unicast[i].address.in6_addr)) {
 			return &ipv6->unicast[i].address.in6_addr;
 		}
 	}
@@ -1888,7 +1888,7 @@ static inline bool is_proper_ipv6_address(struct net_if_addr *addr)
 {
 	if (addr->is_used && addr->addr_state == NET_ADDR_PREFERRED &&
 	    addr->address.family == AF_INET6 &&
-	    !net_is_ipv6_ll_addr(&addr->address.in6_addr)) {
+	    !net_ipv6_is_ll_addr(&addr->address.in6_addr)) {
 		return true;
 	}
 
@@ -1930,7 +1930,7 @@ const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *dst_iface,
 	u8_t best_match = 0;
 	struct net_if *iface;
 
-	if (!net_is_ipv6_ll_addr(dst) && !net_is_ipv6_addr_mcast(dst)) {
+	if (!net_ipv6_is_ll_addr(dst) && !net_ipv6_is_addr_mcast(dst)) {
 
 		for (iface = __net_if_start;
 		     !dst_iface && iface != __net_if_end;
@@ -2221,7 +2221,7 @@ static inline bool is_proper_ipv4_address(struct net_if_addr *addr)
 {
 	if (addr->is_used && addr->addr_state == NET_ADDR_PREFERRED &&
 	    addr->address.family == AF_INET &&
-	    !net_is_ipv4_ll_addr(&addr->address.in_addr)) {
+	    !net_ipv4_is_ll_addr(&addr->address.in_addr)) {
 		return true;
 	}
 
@@ -2274,7 +2274,7 @@ struct in_addr *net_if_ipv4_get_ll(struct net_if *iface,
 			continue;
 		}
 
-		if (net_is_ipv4_ll_addr(&ipv4->unicast[i].address.in_addr)) {
+		if (net_ipv4_is_ll_addr(&ipv4->unicast[i].address.in_addr)) {
 			return &ipv4->unicast[i].address.in_addr;
 		}
 	}
@@ -2289,7 +2289,7 @@ const struct in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
 	u8_t best_match = 0;
 	struct net_if *iface;
 
-	if (!net_is_ipv4_ll_addr(dst) && !net_is_ipv4_addr_mcast(dst)) {
+	if (!net_ipv4_is_ll_addr(dst) && !net_ipv4_is_addr_mcast(dst)) {
 
 		for (iface = __net_if_start;
 		     !dst_iface && iface != __net_if_end;
@@ -2525,7 +2525,7 @@ struct net_if_mcast_addr *net_if_ipv4_maddr_add(struct net_if *iface,
 		return NULL;
 	}
 
-	if (!net_is_ipv4_addr_mcast(addr)) {
+	if (!net_ipv4_is_addr_mcast(addr)) {
 		NET_DBG("Address %s is not a multicast address.",
 			log_strdup(net_sprint_ipv4_addr(addr)));
 		return NULL;

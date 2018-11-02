@@ -224,11 +224,11 @@ static void test_ipv6_addresses(void)
 	int i;
 
 	/**TESTPOINT: Check if the IPv6 address is a loopback address*/
-	zassert_true(net_is_ipv6_addr_loopback(&loopback),
+	zassert_true(net_ipv6_is_addr_loopback(&loopback),
 		     "IPv6 loopback address check failed.");
 
 	/**TESTPOINT: Check if the IPv6 address is a multicast address*/
-	zassert_true(net_is_ipv6_addr_mcast(&mcast),
+	zassert_true(net_ipv6_is_addr_mcast(&mcast),
 		     "IPv6 multicast address check failed.");
 
 	ifaddr1 = net_if_ipv6_addr_add(net_if_get_default(),
@@ -245,27 +245,27 @@ static void test_ipv6_addresses(void)
 			  "IPv6 interface address mismatch");
 
 	/**TESTPOINT: Check if the IPv6 address is a loopback address*/
-	zassert_false(net_is_my_ipv6_addr(&loopback),
+	zassert_false(net_ipv6_is_my_addr(&loopback),
 		      "My IPv6 loopback address check failed");
 
 	/**TESTPOINT: Check IPv6 address*/
-	zassert_true(net_is_my_ipv6_addr(&addr6),
+	zassert_true(net_ipv6_is_my_addr(&addr6),
 		     "My IPv6 address check failed");
 
 	/**TESTPOINTS: Check IPv6 prefix*/
-	zassert_true(net_is_ipv6_prefix((u8_t *)&addr6_pref1,
+	zassert_true(net_ipv6_is_prefix((u8_t *)&addr6_pref1,
 					(u8_t *)&addr6_pref2, 64),
 		     "Same IPv6 prefix test failed");
 
-	zassert_false(net_is_ipv6_prefix((u8_t *)&addr6_pref1,
+	zassert_false(net_ipv6_is_prefix((u8_t *)&addr6_pref1,
 					 (u8_t *)&addr6_pref3, 64),
 		      "Different IPv6 prefix test failed");
 
-	zassert_false(net_is_ipv6_prefix((u8_t *)&addr6_pref1,
+	zassert_false(net_ipv6_is_prefix((u8_t *)&addr6_pref1,
 					 (u8_t *)&addr6_pref2, 128),
 		      "Different full IPv6 prefix test failed");
 
-	zassert_false(net_is_ipv6_prefix((u8_t *)&addr6_pref1,
+	zassert_false(net_ipv6_is_prefix((u8_t *)&addr6_pref1,
 					 (u8_t *)&addr6_pref3, 255),
 		      "Too long prefix test failed");
 
@@ -388,7 +388,7 @@ static void test_ipv4_addresses(void)
 				       0);
 	zassert_not_null(ifaddr1, "IPv4 interface address add failed");
 
-	zassert_true(net_is_my_ipv4_addr(&addr4),
+	zassert_true(net_ipv4_is_my_addr(&addr4),
 		     "My IPv4 address check failed");
 
 	ifaddr1 = net_if_ipv4_addr_add(net_if_get_default(),
@@ -397,10 +397,10 @@ static void test_ipv4_addresses(void)
 				       0);
 	zassert_not_null(ifaddr1, "IPv4 interface address add failed");
 
-	zassert_true(net_is_my_ipv4_addr(&lladdr4),
+	zassert_true(net_ipv4_is_my_addr(&lladdr4),
 		     "My IPv4 address check failed");
 
-	zassert_false(net_is_my_ipv4_addr(&loopback4),
+	zassert_false(net_ipv4_is_my_addr(&loopback4),
 		      "My IPv4 loopback address check failed");
 
 	/* Two tests for IPv4, first with interface given, then when
@@ -466,13 +466,13 @@ static void test_ipv4_addresses(void)
 	zassert_true(net_ipv4_addr_mask_cmp(iface, &match_addr),
 		     "IPv4 match failed");
 
-	zassert_true(net_is_ipv4_addr_mcast(&maddr4a),
+	zassert_true(net_ipv4_is_addr_mcast(&maddr4a),
 		     "IPv4 multicast address");
 
-	zassert_true(net_is_ipv4_addr_mcast(&maddr4b),
+	zassert_true(net_ipv4_is_addr_mcast(&maddr4b),
 		     "IPv4 multicast address");
 
-	zassert_false(net_is_ipv4_addr_mcast(&addr4), "IPv4 address");
+	zassert_false(net_ipv4_is_addr_mcast(&addr4), "IPv4 address");
 
 	ifmaddr1 = net_if_ipv4_maddr_add(net_if_get_default(), &maddr4a);
 	zassert_not_null(ifmaddr1, "IPv4 multicast address add failed");
@@ -511,27 +511,27 @@ static void test_ipv4_addresses(void)
 	ifmaddr1 = net_if_ipv4_maddr_lookup(&maddr4b, &iface1);
 	zassert_is_null(ifmaddr1, "IPv4 multicast address lookup succeed");
 
-	ret = net_is_ipv4_addr_bcast(iface, &bcast_addr1);
+	ret = net_ipv4_is_addr_bcast(iface, &bcast_addr1);
 	zassert_true(ret, "IPv4 address 1 is not broadcast address");
 
-	ret = net_is_ipv4_addr_bcast(iface, &bcast_addr2);
+	ret = net_ipv4_is_addr_bcast(iface, &bcast_addr2);
 	zassert_false(ret, "IPv4 address 2 is broadcast address");
 
-	ret = net_is_ipv4_addr_bcast(iface, &bcast_addr4);
+	ret = net_ipv4_is_addr_bcast(iface, &bcast_addr4);
 	zassert_false(ret, "IPv4 address 4 is broadcast address");
 
-	ret = net_is_ipv4_addr_bcast(iface, &maddr4b);
+	ret = net_ipv4_is_addr_bcast(iface, &maddr4b);
 	zassert_false(ret, "IPv4 address is broadcast address");
 
-	ret = net_is_ipv4_addr_bcast(iface, &bcast_addr5);
+	ret = net_ipv4_is_addr_bcast(iface, &bcast_addr5);
 	zassert_true(ret, "IPv4 address 5 is not broadcast address");
 
 	net_if_ipv4_set_netmask(iface, &netmask2);
 
-	ret = net_is_ipv4_addr_bcast(iface, &bcast_addr2);
+	ret = net_ipv4_is_addr_bcast(iface, &bcast_addr2);
 	zassert_false(ret, "IPv4 address 2 is broadcast address");
 
-	ret = net_is_ipv4_addr_bcast(iface, &bcast_addr3);
+	ret = net_ipv4_is_addr_bcast(iface, &bcast_addr3);
 	zassert_true(ret, "IPv4 address 3 is not broadcast address");
 }
 

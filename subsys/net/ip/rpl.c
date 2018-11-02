@@ -825,7 +825,7 @@ static enum net_verdict handle_dis(struct net_pkt *pkt)
 			continue;
 		}
 
-		if (net_is_ipv6_addr_mcast(&NET_IPV6_HDR(pkt)->dst)) {
+		if (net_ipv6_is_addr_mcast(&NET_IPV6_HDR(pkt)->dst)) {
 			net_rpl_dio_reset_timer(instance);
 		} else {
 			net_rpl_dio_send(net_pkt_iface(pkt),
@@ -1232,7 +1232,7 @@ static void check_prefix(struct net_if *iface,
 
 	if (last_prefix && new_prefix &&
 	    last_prefix->length == new_prefix->length &&
-	    net_is_ipv6_prefix(last_prefix->prefix.s6_addr,
+	    net_ipv6_is_prefix(last_prefix->prefix.s6_addr,
 			       new_prefix->prefix.s6_addr,
 			       new_prefix->length) &&
 	    last_prefix->flags == new_prefix->flags) {
@@ -2215,7 +2215,7 @@ static void send_mcast_dao(struct net_rpl_instance *instance)
 		   &instance->iface->config.ip.ipv6->mcast[i].address.in6_addr;
 
 		if (instance->iface->config.ip.ipv6->mcast[i].is_used &&
-		    net_is_ipv6_addr_mcast_global(addr)) {
+		    net_ipv6_is_addr_mcast_global(addr)) {
 
 			net_rpl_dao_send(instance->iface,
 				       instance->current_dag->preferred_parent,
@@ -3404,7 +3404,7 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 		}
 	}
 
-	learned_from = net_is_ipv6_addr_mcast(dao_sender) ?
+	learned_from = net_ipv6_is_addr_mcast(dao_sender) ?
 		NET_RPL_ROUTE_MULTICAST_DAO :
 		NET_RPL_ROUTE_UNICAST_DAO;
 
@@ -3490,7 +3490,7 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 		log_strdup(net_sprint_ipv6_addr(&addr)), target_len);
 
 #if NET_RPL_MULTICAST
-	if (net_is_ipv6_addr_mcast_global(&addr)) {
+	if (net_ipv6_is_addr_mcast_global(&addr)) {
 		struct net_route_entry_mcast *mcast_group;
 
 		mcast_group = net_route_mcast_add(net_pkt_iface(pkt), &addr);
@@ -4246,7 +4246,7 @@ int net_rpl_insert_header(struct net_pkt *pkt)
 {
 #if defined(CONFIG_NET_RPL_INSERT_HBH_OPTION)
 	if (rpl_default_instance &&
-	    !net_is_ipv6_addr_mcast(&NET_IPV6_HDR(pkt)->dst)) {
+	    !net_ipv6_is_addr_mcast(&NET_IPV6_HDR(pkt)->dst)) {
 		return net_rpl_update_header_empty(pkt);
 	}
 #endif
