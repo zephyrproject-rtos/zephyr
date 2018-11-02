@@ -106,6 +106,8 @@
 
 #define fork(x) (forks[x])
 
+K_MUTEX_DEFINE(print_state_mutex);
+
 static void set_phil_state_pos(int id)
 {
 #if !DEBUG_PRINTF
@@ -117,6 +119,8 @@ static void set_phil_state_pos(int id)
 static void print_phil_state(int id, const char *fmt, s32_t delay)
 {
 	int prio = k_thread_priority_get(k_current_get());
+
+	k_mutex_lock(&print_state_mutex, K_FOREVER);
 
 	set_phil_state_pos(id);
 
@@ -132,6 +136,8 @@ static void print_phil_state(int id, const char *fmt, s32_t delay)
 	}
 
 	PRINTF("\n");
+
+	k_mutex_unlock(&print_state_mutex);
 }
 
 static s32_t get_random_delay(int id, int period_in_ms)
