@@ -412,6 +412,13 @@ add_subdirectory(subsys)
 add_subdirectory(drivers)
 add_subdirectory(tests)
 
+# Add all generated zephyr sources in the same context as the zephyr library
+# is created. Assure all sub directories that might invoke code generation
+# are processed before.
+get_property(zephyr_generated_sources GLOBAL PROPERTY zephyr_generated_sources_property)
+set_source_files_properties(${zephyr_generated_sources} PROPERTIES GENERATED 1)
+target_sources(zephyr PRIVATE ${zephyr_generated_sources})
+
 set(syscall_macros_h ${ZEPHYR_BINARY_DIR}/include/generated/syscall_macros.h)
 
 add_custom_target(syscall_macros_h_target DEPENDS ${syscall_macros_h})

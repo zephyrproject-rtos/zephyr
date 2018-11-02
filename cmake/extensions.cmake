@@ -357,6 +357,13 @@ macro(zephyr_library_named name)
   # This is a macro because we need add_library() to be executed
   # within the scope of the caller.
   set(ZEPHYR_CURRENT_LIBRARY ${name})
+
+  if("${name}" STREQUAL "zephyr")
+    # We have to mark all the generated files "GENERATED" in this context
+    get_property(zephyr_generated_files GLOBAL PROPERTY zephyr_generated_files_property)
+    set_source_files_properties(${zephyr_generated_files} PROPERTIES GENERATED 1)
+  endif()
+
   add_library(${name} STATIC "")
 
   zephyr_append_cmake_library(${name})
@@ -514,6 +521,150 @@ function(generate_inc_file_for_target
 
   add_custom_target(${generated_target_name} DEPENDS ${generated_file})
   generate_inc_file_for_gen_target(${target} ${source_file} ${generated_file} ${generated_target_name} ${ARGN})
+endfunction()
+
+function(target_sources_codegen
+    target          # The cmake target that depends on the generated file
+    )
+
+  set(options)
+  set(oneValueArgs)
+  set(multiValueArgs CODEGEN_DEFINES DEPENDS)
+  cmake_parse_arguments(CODEGEN "${options}" "${oneValueArgs}"
+                        "${multiValueArgs}" ${ARGN})
+  # prepend -D to all defines
+  string(REGEX REPLACE "([^;]+)" "-D;\\1"
+         CODEGEN_CODEGEN_DEFINES "${CODEGEN_CODEGEN_DEFINES}")
+  # Get all the files that make up cogeno for dependency reasons.
+  file(GLOB CODEGEN_SOURCES
+    ${ZEPHYR_BASE}/scripts/cogeno/cogeno/modules/*.py
+    ${ZEPHYR_BASE}/scripts/cogeno/cogeno/modules/edtsdb/*.py
+    ${ZEPHYR_BASE}/scripts/cogeno/cogeno/modules/edtsdb/extractors/*.py
+    ${ZEPHYR_BASE}/scripts/cogeno/cogeno/modules/edtsdb/devicetree/*.py
+    ${ZEPHYR_BASE}/scripts/cogeno/cogeno/modules/edtsdb/bindings/*.yaml
+    ${ZEPHYR_BASE}/scripts/cogeno/cogeno/templates/*.c
+    ${ZEPHYR_BASE}/scripts/cogeno/cogeno/templates/*.jinja2
+    ${ZEPHYR_BASE}/scripts/cogeno/cogeno/templates/zephyr/*.c
+    ${ZEPHYR_BASE}/scripts/cogeno/cogeno/templates/zephyr/*.jinja2
+    ${ZEPHYR_BASE}/scripts/cogeno/cogeno/*.py)
+
+  message(STATUS "Will generate for target ${target}")
+  # Generated file must be generated to the current binary directory.
+  # Otherwise this would trigger CMake issue #14633:
+  # https://gitlab.kitware.com/cmake/cmake/issues/14633
+  foreach(arg ${CODEGEN_UNPARSED_ARGUMENTS})
+    if(IS_ABSOLUTE ${arg})
+      set(template_file ${arg})
+      get_filename_component(generated_file_name ${arg} NAME)
+      set(generated_file ${CMAKE_CURRENT_BINARY_DIR}/${generated_file_name})
+    else()
+      set(template_file ${CMAKE_CURRENT_SOURCE_DIR}/${arg})
+      set(generated_file ${CMAKE_CURRENT_BINARY_DIR}/${arg})
+    endif()
+    get_filename_component(template_dir ${template_file} DIRECTORY)
+    get_filename_component(generated_dir ${generated_file} DIRECTORY)
+
+    if(IS_DIRECTORY ${template_file})
+      message(FATAL_ERROR "target_sources_codegen() was called on a directory")
+    endif()
+
+    # Generate file from template
+    message(STATUS " from '${template_file}'")
+    message(STATUS " to   '${generated_file}'")
+    add_custom_command(
+      COMMENT "codegen ${generated_file}"
+      OUTPUT ${generated_file}
+      MAIN_DEPENDENCY ${template_file}
+      DEPENDS
+      ${CODEGEN_DEPENDS}
+      ${CODEGEN_SOURCES}
+      COMMAND
+      ${PYTHON_EXECUTABLE}
+      ${ZEPHYR_BASE}/scripts/gen_code.py
+      ${CODEGEN_CODEGEN_DEFINES}
+      -D "\"BOARD=${BOARD}\""
+      -D "\"APPLICATION_SOURCE_DIR=${APPLICATION_SOURCE_DIR}\""
+      -D "\"APPLICATION_BINARY_DIR=${APPLICATION_BINARY_DIR}\""
+      -D "\"PROJECT_NAME=${PROJECT_NAME}\""
+      -D "\"PROJECT_SOURCE_DIR=${PROJECT_SOURCE_DIR}\""
+      -D "\"PROJECT_BINARY_DIR=${PROJECT_BINARY_DIR}\""
+      -D "\"CMAKE_SOURCE_DIR=${CMAKE_SOURCE_DIR}\""
+      -D "\"CMAKE_BINARY_DIR=${CMAKE_BINARY_DIR}\""
+      -D "\"CMAKE_CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}\""
+      -D "\"CMAKE_CURRENT_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}\""
+      -D "\"CMAKE_CURRENT_LIST_DIR=${CMAKE_CURRENT_LIST_DIR}\""
+      -D "\"CMAKE_FILES_DIRECTORY=${CMAKE_FILES_DIRECTORY}\""
+      -D "\"CMAKE_PROJECT_NAME=${CMAKE_PROJECT_NAME}\""
+      -D "\"CMAKE_SYSTEM=${CMAKE_SYSTEM}\""
+      -D "\"CMAKE_SYSTEM_NAME=${CMAKE_SYSTEM_NAME}\""
+      -D "\"CMAKE_SYSTEM_VERSION=${CMAKE_SYSTEM_VERSION}\""
+      -D "\"CMAKE_SYSTEM_PROCESSOR=${CMAKE_SYSTEM_PROCESSOR}\""
+      -D "\"CMAKE_C_COMPILER=${CMAKE_C_COMPILER}\""
+      -D "\"CMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}\""
+      -D "\"CMAKE_COMPILER_IS_GNUCC=${CMAKE_COMPILER_IS_GNUCC}\""
+      -D "\"CMAKE_COMPILER_IS_GNUCXX=${CMAKE_COMPILER_IS_GNUCXX}\""
+      -D "\"GENERATED_DTS_BOARD_H=${GENERATED_DTS_BOARD_H}\""
+      -D "\"GENERATED_DTS_BOARD_CONF=${GENERATED_DTS_BOARD_CONF}\""
+      --config "${PROJECT_BINARY_DIR}/.config"
+      --cmakecache "${CMAKE_BINARY_DIR}/CMakeCache.txt"
+      --dts "${PROJECT_BINARY_DIR}/${BOARD}.dts_compiled"
+      --bindings "${DTS_APP_BINDINGS}" "${PROJECT_SOURCE_DIR}/dts/bindings"
+      --edts "${PROJECT_BINARY_DIR}/edts.json"
+      --modules "${APPLICATION_SOURCE_DIR}/templates" "${PROJECT_SOURCE_DIR}/templates"
+      --templates "${APPLICATION_SOURCE_DIR}/templates" "${PROJECT_SOURCE_DIR}/templates"
+      --input "${template_file}"
+      --output "${generated_file}"
+      --log "${CMAKE_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/codegen.log"
+      --lock "${CMAKE_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/codegen.lock"
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    if("${target}" STREQUAL "zephyr")
+      # zephyr is special
+      generate_unique_target_name_from_filename(${generated_file} generated_target_name)
+      add_custom_target(${generated_target_name} DEPENDS ${generated_file})
+      add_dependencies(zephyr ${generated_target_name})
+      # Remember all the files that are generated for zephyr.
+      # target_sources(zephyr PRIVATE ${zephyr_generated_sources})
+      # is executed in the top level CMakeFile.txt context.
+      get_property(zephyr_generated_sources GLOBAL PROPERTY zephyr_generated_sources_property)
+      list(APPEND zephyr_generated_sources ${generated_file})
+      set_property(GLOBAL PROPERTY zephyr_generated_sources_property "${zephyr_generated_sources}")
+      # Add template directory to include path to allow includes with
+      # relative path in generated file to work
+      zephyr_include_directories(${template_dir})
+      # Add directory of generated file to include path to allow includes
+      # of generated header file with relative path.
+      zephyr_include_directories(${generated_dir})
+    else()
+      target_sources(${target} PRIVATE ${generated_file})
+      # Add template directory to include path to allow includes with
+      # relative path in generated file to work
+      target_include_directories(${target} PRIVATE ${template_dir})
+      # Add directory of generated file to include path to allow includes
+      # of generated header file with relative path.
+      target_include_directories(${target} PRIVATE ${generated_dir})
+    endif()
+  endforeach()
+endfunction()
+
+function(zephyr_sources_codegen)
+  target_sources_codegen(zephyr ${ARGN})
+endfunction()
+
+function(zephyr_sources_codegen_ifdef feature_toggle)
+  if(${${feature_toggle}})
+    zephyr_sources_codegen(${ARGN})
+  endif()
+endfunction()
+
+function(zephyr_library_sources_codegen)
+  target_sources_codegen(${ZEPHYR_CURRENT_LIBRARY} ${ARGN})
+endfunction()
+
+function(zephyr_library_sources_codegen_ifdef feature_toggle)
+  if(${${feature_toggle}})
+    zephyr_library_sources_codegen(${ARGN})
+  endif()
 endfunction()
 
 # 1.4. board_*

@@ -13,6 +13,7 @@ pyelftools==0.24
 pyocd==0.12.0
 pyserial
 pykwalify
+Jinja2
 # "win32" is used for 64-bit Windows as well
 windows-curses; sys_platform == "win32"
 colorama
