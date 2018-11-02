@@ -26,6 +26,8 @@ static int rtt_init(struct device *unused)
 	ARG_UNUSED(unused);
 
 	SEGGER_RTT_Init();
+
+	return 0;
 }
 
 SYS_INIT(rtt_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
