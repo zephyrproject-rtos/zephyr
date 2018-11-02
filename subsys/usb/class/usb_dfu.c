@@ -58,7 +58,8 @@ LOG_MODULE_REGISTER(usb_dfu)
 #define NUMOF_ALTERNATE_SETTINGS	2
 
 #ifdef CONFIG_USB_COMPOSITE_DEVICE
-#define USB_DFU_MAX_XFER_SIZE		CONFIG_USB_COMPOSITE_BUFFER_SIZE
+#define USB_DFU_MAX_XFER_SIZE		(min(CONFIG_USB_COMPOSITE_BUFFER_SIZE, \
+					     CONFIG_USB_DFU_MAX_XFER_SIZE))
 #else
 #define USB_DFU_MAX_XFER_SIZE		CONFIG_USB_DFU_MAX_XFER_SIZE
 #endif
@@ -90,7 +91,7 @@ USBD_CLASS_DESCR_DEFINE(primary) struct usb_dfu_config dfu_cfg = {
 		.wDetachTimeOut =
 			sys_cpu_to_le16(CONFIG_USB_DFU_DETACH_TIMEOUT),
 		.wTransferSize =
-			sys_cpu_to_le16(CONFIG_USB_DFU_MAX_XFER_SIZE),
+			sys_cpu_to_le16(USB_DFU_MAX_XFER_SIZE),
 		.bcdDFUVersion =
 			sys_cpu_to_le16(DFU_VERSION),
 	},
