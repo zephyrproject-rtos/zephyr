@@ -1,0 +1,56 @@
+config ZFFS_AREA_MAX
+	int "todo"
+	depends on FILE_SYSTEM_ZFFS
+	default 12
+	help
+	    todo
+
+config ZFFS_AREA_BUF_SIZE
+	int "todo"
+	depends on FILE_SYSTEM_ZFFS
+	default 256
+	help
+	    todo
+
+config ZFFS_AREA_ALIGNED_SIZE
+	int "todo"
+	depends on FILE_SYSTEM_ZFFS
+	range 1 4
+	default 1
+	help
+	    todo
+
+config ZFFS_TREE_T
+	int "todo"
+	depends on FILE_SYSTEM_ZFFS
+	default 8
+	help
+	    todo
+
+config ZFFS_TREE_CACHE_NODE_MAX
+	int "todo"
+	depends on FILE_SYSTEM_ZFFS
+	default 16
+	help
+	    todo
+
+config ZFFS_NAME_MAX
+	int "todo"
+	depends on FILE_SYSTEM_ZFFS
+	default 63
+	help
+	    todo
+
+config ZFFS_MISC_ID_STEP
+	int "todo"
+	depends on FILE_SYSTEM_ZFFS
+	default 1024
+	help
+	    todo
+
+config ZFFS_BLOCK_SIZE
+	int "todo"
+	depends on FILE_SYSTEM_ZFFS
+	default 1024
+	help
+	    todo

@@ -43,6 +43,7 @@ enum fs_dir_entry_type {
 enum fs_type {
 	FS_FATFS = 0,
 	FS_NFFS,
+	FS_ZFFS,
 	FS_TYPE_END,
 };
 

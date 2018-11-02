@@ -44,6 +44,14 @@ config FILE_SYSTEM_NFFS
 	  Note: NFFS requires 1-byte unaligned access to flash thus it
 	  will not work on devices that support only aligned flash access.
 
+config FILE_SYSTEM_ZFFS
+	bool "ZFFS file system support"
+	depends on FLASH
+	select FLASH_PAGE_LAYOUT
+	select FLASH_MAP
+	help
+	  Enables ZFFS file system support.
+
 config FILE_SYSTEM_SHELL
 	bool "Enable file system shell"
 	depends on SHELL
@@ -100,6 +108,21 @@ config FS_NFFS_NUM_CACHE_BLOCKS
 	default 64
 
 source "ext/fs/nffs/Kconfig"
+
+endmenu
+
+menu "ZFFS Settings"
+	visible if FILE_SYSTEM_ZFFS
+
+config FS_ZFFS_NUM_FILES
+	int "Maximum number of opened files"
+	default 4
+
+config FS_ZFFS_NUM_DIRS
+	int "Maximum number of opened directories"
+	default 4
+
+source "subsys/fs/zffs/Kconfig"
 
 endmenu
 

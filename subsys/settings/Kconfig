@@ -6,9 +6,9 @@
 
 menuconfig SETTINGS
 	bool "Enable settings subsystem with non-volatile storage"
-	# Only NFFS is currently supported as FS.
+	# NFFS and ZFFS is currently supported as FS.
 	# The reason in that FatFs doesn't implement the fs_rename() API
-	depends on (FILE_SYSTEM && FILE_SYSTEM_NFFS) || (FCB && FLASH_PAGE_LAYOUT)
+	depends on (FILE_SYSTEM && (FILE_SYSTEM_NFFS || FILE_SYSTEM_ZFFS)) || (FCB && FLASH_PAGE_LAYOUT)
 	select BASE64
 	help
 	  The settings subsystem allows its users to serialize and
