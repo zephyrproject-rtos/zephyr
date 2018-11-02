@@ -37,4 +37,11 @@ config ETH_STM32_HAL
 
 endif # NETWORKING
 
+if I2C
+
+config I2C_1
+	default y
+
+endif # I2C
+
 endif # BOARD_NUCLEO_F756ZG
