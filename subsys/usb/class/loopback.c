@@ -137,6 +137,7 @@ static int loopback_vendor_handler(struct usb_setup_packet *setup,
 
 	if (REQTYPE_GET_DIR(setup->bmRequestType) == REQTYPE_DIR_TO_DEVICE &&
 	    setup->bRequest == 0x5b) {
+		memcpy(loopback_buf, *data, *len);
 		USB_DBG("Host-to-Device, data %p", *data);
 		return 0;
 	}
