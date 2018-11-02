@@ -25,6 +25,8 @@ tests:
     harness: net
     extra_args: OVERLAY_CONFIG="overlay-netusb.conf"
     platform_whitelist: quark_se_c1000_devboard 96b_carbon
+    extra_configs:
+      - CONFIG_NET_SHELL=n
     tags: net usb
   test_usbnet_composite:
     harness: net
