@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Jean-Paul Etienne <fractalclone@gmail.com>
+ * Copyright (c) 2018 Foundries.io Ltd
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +22,24 @@ extern "C" {
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
 #include <toolchain.h>
+
+#ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
+#include <soc_context.h>
+#endif
+
+/*
+ * The name of the structure which contains soc-specific state, if
+ * any, as well as the soc_esf_t typedef below, are part of the RISC-V
+ * arch API.
+ *
+ * The contents of the struct are provided by a SOC-specific
+ * definition in soc_context.h.
+ */
+#ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
+struct soc_esf {
+	SOC_ESF_MEMBERS;
+};
+#endif
 
 struct __esf {
 	u32_t ra;       /* return address */
@@ -47,18 +66,15 @@ struct __esf {
 	u32_t mepc;      /* machine exception program counter */
 	u32_t mstatus;   /* machine status register */
 
-#if defined(CONFIG_SOC_RISCV32_PULPINO)
-	/* pulpino hardware loop registers */
-	u32_t lpstart0;
-	u32_t lpend0;
-	u32_t lpcount0;
-	u32_t lpstart1;
-	u32_t lpend1;
-	u32_t lpcount1;
+#ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
+	struct soc_esf soc_context;
 #endif
 };
 
 typedef struct __esf NANO_ESF;
+#ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
+typedef struct soc_esf soc_esf_t;
+#endif
 extern const NANO_ESF _default_esf;
 
 extern FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,

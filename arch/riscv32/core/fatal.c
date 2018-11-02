@@ -31,13 +31,10 @@ const NANO_ESF _default_esf = {
 	0xdeadbaad,
 	0xdeadbaad,
 	0xdeadbaad,
-#if defined(CONFIG_SOC_RISCV32_PULPINO)
-	0xdeadbaad,
-	0xdeadbaad,
-	0xdeadbaad,
-	0xdeadbaad,
-	0xdeadbaad,
-	0xdeadbaad,
+#if defined(CONFIG_RISCV_SOC_CONTEXT_SAVE)
+	{
+		SOC_ESF_INIT,
+	},
 #endif
 };
 
