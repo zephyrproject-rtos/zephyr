@@ -275,11 +275,7 @@ struct dfu_data_t {
 	/* Number of bytes sent during upload */
 	u32_t bytes_sent;
 	u32_t alt_setting;              /* DFU alternate setting */
-#ifdef CONFIG_USB_COMPOSITE_DEVICE
-	u8_t *buffer;
-#else
 	u8_t buffer[USB_DFU_MAX_XFER_SIZE]; /* DFU data buffer */
-#endif
 	struct flash_img_context ctx;
 	enum dfu_state state;              /* State of the DFU device */
 	enum dfu_status status;            /* Status of the DFU device */
@@ -656,7 +652,7 @@ USBD_CFG_DATA_DEFINE(dfu) struct usb_cfg_data dfu_config = {
 	.interface = {
 		.class_handler = dfu_class_handle_req,
 		.custom_handler = dfu_custom_handle_req,
-		.payload_data = NULL,
+		.payload_data = dfu_data.buffer,
 	},
 	.num_endpoints = 0,
 };
@@ -673,7 +669,7 @@ USBD_CFG_DATA_DEFINE(dfu_mode) struct usb_cfg_data dfu_mode_config = {
 	.interface = {
 		.class_handler = dfu_class_handle_req,
 		.custom_handler = dfu_custom_handle_req,
-		.payload_data = NULL,
+		.payload_data = dfu_data.buffer,
 	},
 	.num_endpoints = 0,
 };
@@ -691,7 +687,6 @@ static int usb_dfu_init(struct device *dev)
 	}
 
 #ifndef CONFIG_USB_COMPOSITE_DEVICE
-	dfu_config.interface.payload_data = dfu_data.buffer;
 	dfu_config.usb_device_description = usb_get_device_descriptor();
 
 	/* Initialize the USB driver with the right configuration */
