@@ -36,6 +36,7 @@ config NIOS2
 
 config RISCV32
 	bool "RISCV32 architecture"
+	select HAS_DTS
 
 config XTENSA
 	bool "Xtensa architecture"
