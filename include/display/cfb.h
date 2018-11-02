@@ -60,7 +60,7 @@ struct cfb_font {
  *
  * @param _name   Name of the font entry.
  * @param _width  Width of the font in pixels
- * @param _height Heigth of the font in pixels.
+ * @param _height Height of the font in pixels.
  * @param _caps   Font capabilities.
  * @param _data   Raw data of the font.
  * @param _fc     Character mapped to first font element.
