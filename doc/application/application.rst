@@ -653,6 +653,21 @@ Both commands execute the :abbr:`gdb (GNU Debugger)`. The command name might
 change depending on the toolchain you are using and your cross-development
 tools.
 
+Semihosting
+===========
+
+On ARM boards, the system console can be redirected through the debugger
+interface. This option can be enabled by setting
+:option:`CONFIG_SEMIHOSTING_CONSOLE` to ``y``.
+
+To enable semihosting output, run the following in your GDB session:
+
+.. code-block:: console
+
+    (gdb) monitor arm semihosting enable
+    semihosting is enabled
+
+
 Eclipse Debugging
 *****************
 
