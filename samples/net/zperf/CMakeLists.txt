@@ -26,5 +26,4 @@ target_sources(app PRIVATE
 
 target_include_directories(app PRIVATE
   $ENV{ZEPHYR_BASE}/subsys/net/ip
-  $ENV{ZEPHYR_BASE}/samples/task_profiler/profiler/src
   )
