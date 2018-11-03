@@ -17,6 +17,7 @@ menuconfig ENTROPY_MCUX_TRNG
 	bool "MCUX TRNG driver"
 	depends on ENTROPY_GENERATOR && HAS_MCUX_TRNG
 	select ENTROPY_HAS_DRIVER
+	select HAS_DTS_ENTROPY
 	help
 	  This option enables the true random number generator (TRNG)
 	  driver based on the MCUX TRNG driver.
