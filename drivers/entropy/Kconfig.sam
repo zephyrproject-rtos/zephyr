@@ -1,0 +1,14 @@
+# Kconfig.sam - Atmel SAM TRNG configuration
+#
+# Copyright (c) 2018 Aurelien Jarno
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ENTROPY_SAM_RNG
+	bool "Atmel SAM MCU Family True Random Number Generator (TRNG) Driver"
+	depends on SOC_FAMILY_SAM
+	depends on ENTROPY_GENERATOR
+	select ENTROPY_HAS_DRIVER
+	select HAS_DTS_ENTROPY
+	help
+	  Enable True Random Number Generator (TRNG) driver for Atmel SAM MCUs.
