@@ -409,6 +409,14 @@
 				interrupts-names = "IEEE1588_TMR";
 			};
 		};
+
+		rnga: random@40029000 {
+			compatible = "nxp,kinetis-rnga";
+			reg = <0x40029000 0x1000>;
+			status = "ok";
+			interrupts = <23 0>;
+			label = "RNGA";
+		};
 	};
 };
 
