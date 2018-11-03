@@ -289,4 +289,11 @@ SECTIONS {
 
 #include <linker/debug-sections.ld>
 
+
+    SECTION_PROLOGUE(.ARC.attributes, 0,)
+	{
+	KEEP(*(.ARC.attributes))
+	KEEP(*(.gnu.attributes))
+	}
+
 	}
