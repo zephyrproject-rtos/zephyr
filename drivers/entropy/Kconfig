@@ -25,10 +25,13 @@ config ENTROPY_HAS_DRIVER
 	  This is an option to be enabled by individual entropy driver
 	  to signal that there is a true entropy driver.
 
+if !HAS_DTS_ENTROPY
+
 config ENTROPY_NAME
 	string "Entropy Device Name"
 	default "ENTROPY_0"
 	help
 	  Specify the device name to be used for the ENTROPY driver.
+endif
 
 endif
