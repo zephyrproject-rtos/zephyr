@@ -252,6 +252,15 @@
 			status = "disabled";
 			label = "USBHS";
 		};
+
+		trng: random@40070000 {
+			compatible = "atmel,sam-trng";
+			reg = <0x40070000 0x4000>;
+			interrupts = <57 0>;
+			peripheral-id = <57>;
+			status = "ok";
+			label = "TRNG";
+		};
 	};
 };
 

@@ -1,0 +1,45 @@
+#
+# Copyright (c) 2018, Aurelien Jarno
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: Atmel SAM TRNG (True Random Number Generator)
+version: 0.1
+
+description: >
+    This binding gives a base representation of the Atmel SAM RNG
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "atmel,sam-trng"
+      generation: define
+
+    reg:
+      type: int
+      description: mmio register space
+      generation: define
+      category: required
+
+    interrupts:
+      type: compound
+      category: required
+      description: required interrupts
+      generation: define
+
+    peripheral-id:
+      type: int
+      description: peripheral ID
+      generation: define
+      category: required
+
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+
+...
