@@ -7,7 +7,6 @@
 config BOARD_NSIM_EM
 	bool "ARC EM Nsim simulator"
 	depends on SOC_NSIM
-	select HAS_DTS
 	help
 	  The DesignWare ARC Nsim EM board is a virtual board based on
 	  nsim simulator. It's used to show the ARC EM core features.

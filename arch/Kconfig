@@ -25,14 +25,17 @@ config ARC
 config ARM
 	bool "ARM architecture"
 	select ARCH_HAS_THREAD_ABORT
+	select HAS_DTS
 
 config X86
 	bool "x86 architecture"
 	select ATOMIC_OPERATIONS_BUILTIN
+	select HAS_DTS
 
 config NIOS2
 	bool "Nios II Gen 2 architecture"
 	select ATOMIC_OPERATIONS_C
+	select HAS_DTS
 
 config RISCV32
 	bool "RISCV32 architecture"
