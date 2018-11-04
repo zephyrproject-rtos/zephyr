@@ -100,8 +100,9 @@ struct rbnode *_rb_get_minmax(struct rbtree *tree, int side)
 {
 	struct rbnode *n;
 
-	for (n = tree->root; n && get_child(n, side); n = get_child(n, side))
+	for (n = tree->root; n && get_child(n, side); n = get_child(n, side)) {
 		;
+	}
 	return n;
 }
 
