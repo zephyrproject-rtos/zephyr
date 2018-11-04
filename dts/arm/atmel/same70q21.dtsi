@@ -8,11 +8,15 @@
 #include <atmel/same70.dtsi>
 
 / {
-	flash0: flash@400000 {
-		reg = <0x00400000 DT_SIZE_K(2048)>;
-	};
-
 	sram0: memory@20400000 {
 		reg = <0x20400000 DT_SIZE_K(384)>;
+	};
+
+	soc {
+		flash-controller@400e0c00 {
+			flash0: flash@400000 {
+				reg = <0x00400000 DT_SIZE_K(2048)>;
+			};
+		};
 	};
 };

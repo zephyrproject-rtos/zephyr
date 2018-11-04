@@ -1,0 +1,25 @@
+#
+# Copyright (c) 2018, Aurelien Jarno
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: Atmel SAM Flash Controller
+version: 0.1
+
+description: >
+    This binding gives a base representation of the Atmel SAM Enhanced Embedded Flash Controller
+
+inherits:
+    !include flash-controller.yaml
+
+properties:
+    compatible:
+      constraint: "atmel,sam-flash-controller"
+
+    peripheral-id:
+      type: int
+      description: peripheral ID
+      generation: define
+      category: required
+...
