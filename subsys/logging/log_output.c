@@ -285,6 +285,7 @@ static void std_print(struct log_msg *msg,
 	default:
 		/* Unsupported number of arguments. */
 		assert(true);
+		break;
 	}
 }
 
