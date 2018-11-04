@@ -68,8 +68,9 @@ size_t _impl__zephyr_fwrite(const void *_MLIBC_RESTRICT ptr, size_t size,
 	do {
 		j = size;
 		do {
-			if (_stdout_hook((int) *p++) == EOF)
+			if (_stdout_hook((int) *p++) == EOF) {
 				goto done;
+			}
 			j--;
 		} while (j > 0);
 
