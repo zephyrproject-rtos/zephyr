@@ -1000,7 +1000,7 @@ def _prefer_toggle(item):
            (isinstance(item, Choice) and len(item.assignable) > 1)
 
 def _enter_menu(menu):
-    # Makes 'menu' the currently displayed menu
+    # Makes 'menu' the currently displayed menu. "Menu" here includes choices.
 
     global _cur_menu
     global _shown
@@ -1018,6 +1018,25 @@ def _enter_menu(menu):
         _cur_menu = menu
         _shown = shown_sub
         _sel_node_i = _menu_scroll = 0
+
+        if isinstance(menu.item, Choice):
+            _select_selected_choice_sym()
+
+def _select_selected_choice_sym():
+    # Puts the cursor on the currently selected (y-valued) choice symbol, if
+    # any. Does nothing if if the choice has no selection (is not visible/in y
+    # mode).
+
+    global _sel_node_i
+
+    choice = _cur_menu.item
+    if choice.selection:
+        # Search through all menu nodes to handle choice symbols being defined
+        # in multiple locations
+        for node in choice.selection.nodes:
+            if node in _shown:
+                _sel_node_i = _shown.index(node)
+                _center_vertically()
 
 def _jump_to(node):
     # Jumps directly to the menu node 'node'
@@ -1061,6 +1080,11 @@ def _jump_to(node):
         _toggle_show_all()
 
     _center_vertically()
+
+    # If we're jumping to a non-empty choice, jump to the selected symbol, if
+    # any
+    if jump_into and isinstance(_cur_menu.item, Choice):
+        _select_selected_choice_sym()
 
 def _leave_menu():
     # Jumps to the parent menu of the current menu. Does nothing if we're in
@@ -1196,7 +1220,8 @@ def _center_vertically():
 
     global _menu_scroll
 
-    _menu_scroll = max(_sel_node_i - _menu_win_height()//2, 0)
+    _menu_scroll = min(max(_sel_node_i - _menu_win_height()//2, 0),
+                       _max_scroll(_shown, _menu_win))
 
 def _draw_main():
     # Draws the "main" display, with the list of symbols, the header, and the
@@ -1446,7 +1471,7 @@ def _change_node(node):
         # case: .assignable can be (2,) while .tri_value is 0.
         _set_val(sc, sc.assignable[0])
 
-    else:
+    elif sc.assignable:
         # Set the symbol to the value after the current value in
         # sc.assignable, with wrapping
         val_index = sc.assignable.index(sc.tri_value)
@@ -1646,22 +1671,12 @@ def _try_load(filename):
     # filename:
     #   Configuration file to load
 
-    # Hack: strerror and errno are lost after we raise the custom IOError with
-    # troubleshooting help in Kconfig.load_config(). Adding them back to the
-    # exception loses the custom message. As a workaround, try opening the file
-    # separately first and report any errors.
-    try:
-        open(filename).close()
-    except OSError as e:
-        _error("Error loading {}\n\n{} (errno: {})"
-               .format(filename, e.strerror, errno.errorcode[e.errno]))
-        return False
-
     try:
         _kconf.load_config(filename)
         return True
     except OSError as e:
-        _error("Error loading {}\n\nUnknown error".format(filename))
+        _error("Error loading '{}'\n\n{} (errno: {})"
+               .format(filename, e.strerror, errno.errorcode[e.errno]))
         return False
 
 def _save_dialog(save_fn, default_filename, description):
@@ -2752,8 +2767,10 @@ def _node_str(node):
             sym = node.item
 
             # Print "(NEW)" next to symbols without a user value (from e.g. a
-            # .config), but skip it for choice symbols in choices in y mode
+            # .config), but skip it for choice symbols in choices in y mode,
+            # and for symbols of UNKNOWN type (which generate a warning though)
             if sym.user_value is None and \
+               sym.type != UNKNOWN and \
                not (sym.choice and sym.choice.tri_value == 2):
 
                 s += " (NEW)"
