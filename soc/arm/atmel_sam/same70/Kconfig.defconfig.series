@@ -73,4 +73,9 @@ config USB_DC_SAM
 	default y
 endif # USB
 
+if FLASH
+config SOC_FLASH_SAM
+	default y
+endif # FLASH
+
 endif # SOC_SERIES_SAME70
