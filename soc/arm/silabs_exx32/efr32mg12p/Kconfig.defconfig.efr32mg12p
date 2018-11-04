@@ -44,6 +44,11 @@ if FLASH
 config SOC_FLASH_GECKO
 	default y
 
+config FLASH_PAGE_SIZE
+        hex
+        default 0x800
+
+
 endif # FLASH
 
 endif # SOC_EFR32MG12P
