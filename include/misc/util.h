@@ -343,7 +343,7 @@ static inline s64_t arithmetic_shift_right(s64_t value, u8_t shift)
  *
  *    \#define FOO(i, _) NRF_PWM ## i ,
  *    { UTIL_LISTIFY(PWM_COUNT, FOO) }
- *    // The above two lines will generate the below:
+ *    The above two lines will generate the below:
  *    { NRF_PWM0 , NRF_PWM1 , }
  *
  * @note Calling UTIL_LISTIFY with undefined arguments has undefined
