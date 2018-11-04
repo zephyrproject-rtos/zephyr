@@ -131,7 +131,7 @@ struct gna_driver_api {
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param cfg Device configuration information
- * 
+ *
  * @retval 0 If the configuration is successful
  * @retval A negative erro code in case of a failure.
  */
@@ -151,7 +151,7 @@ static inline int gna_configure(struct device *dev, struct gna_config *cfg)
  * @param dev Pointer to the device structure for the driver instance.
  * @param model Information about the neural network model
  * @param model_handle Handle to the registered model if registration succeeds
- * 
+ *
  * @retval 0 If registration of the model is successful.
  * @retval A negative erro code in case of a failure.
  */
@@ -172,7 +172,7 @@ static inline int gna_register_model(struct device *dev,
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param model Model handle output by gna_register_model API
- * 
+ *
  * @retval 0 If de-registration of the model is successful.
  * @retval A negative erro code in case of a failure.
  */
@@ -193,7 +193,7 @@ static inline int gna_deregister_model(struct device *dev, void *model)
  * @param dev Pointer to the device structure for the driver instance.
  * @param req Information required to perform inference on a neural network
  * @param callback A callback function to notify inference completion
- * 
+ *
  * @retval 0 If the request is accepted
  * @retval A negative erro code in case of a failure.
  */
