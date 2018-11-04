@@ -382,6 +382,8 @@ SECTIONS
     *(.sdata2.*)
     *(.gnu.linkonce.s2.*)
     KEEP(*(.jcr))
+    . = ALIGN(4096);
+    *(.gna_model)
     _data_end = ABSOLUTE(.);
   } >data :data_phdr
   .lit4 : ALIGN(4)
