@@ -89,9 +89,6 @@ SECTION_FUNC(exception.entry, __irq_wrapper)
 	sw a6, __NANO_ESF_a6_OFFSET(sp)
 	sw a7, __NANO_ESF_a7_OFFSET(sp)
 
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	call read_timer_start_of_isr
-#endif
 	/* Save MEPC register */
 	csrr t0, mepc
 	sw t0, __NANO_ESF_mepc_OFFSET(sp)
@@ -104,6 +101,10 @@ SECTION_FUNC(exception.entry, __irq_wrapper)
 	/* Handle context saving at SOC level. */
 	jal ra, __soc_save_context
 #endif /* CONFIG_RISCV_SOC_CONTEXT_SAVE */
+
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	call read_timer_start_of_isr
+#endif
 
 	/*
 	 * Check if exception is the result of an interrupt or not.
@@ -250,7 +251,13 @@ call_irq:
 	lw t1, 0x04(t0)
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
+	addi sp, sp, -16
+	sw a0, 0x00(sp)
+	sw t1, 0x04(sp)
 	call read_timer_end_of_isr
+	lw t1, 0x04(sp)
+	lw a0, 0x00(sp)
+	addi sp, sp, 16
 #endif
 	/* Call ISR function */
 	jalr ra, t1
