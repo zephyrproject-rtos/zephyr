@@ -152,6 +152,15 @@ int cfb_framebuffer_set_font(struct device *dev, u8_t idx);
 int cfb_get_font_size(struct device *dev, u8_t idx, u8_t *width, u8_t *height);
 
 /**
+ * @brief Get number of fonts.
+ *
+ * @param dev Pointer to device structure for driver instance
+ *
+ * @return number of fonts
+ */
+int cfb_get_numof_fonts(struct device *dev);
+
+/**
  * @brief Initialize Character Framebuffer.
  *
  * @param dev Pointer to device structure for driver instance
