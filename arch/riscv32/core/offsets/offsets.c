@@ -70,7 +70,7 @@ GEN_OFFSET_SYM(NANO_ESF, lpcount1);
 /*
  * RISC-V requires the stack to be 16-bytes aligned, hence SP needs to grow or
  * shrink by a size, which follows the RISC-V stack alignment requirements
- * Hence, ensure that __tTCS_NOFLOAT_SIZEOF and __tTCS_NOFLOAT_SIZEOF sizes
+ * Hence, ensure that __NANO_ESF_SIZEOF and _K_THREAD_NO_FLOAT_SIZEOF sizes
  * are aligned accordingly.
  */
 GEN_ABSOLUTE_SYM(__NANO_ESF_SIZEOF, STACK_ROUND_UP(sizeof(NANO_ESF)));
