@@ -78,4 +78,9 @@ config ENTROPY_SAM_RNG
 	default y
 endif # ENTROPY_GENERATOR
 
+if FLASH
+config SOC_FLASH_SAM
+	default y
+endif # FLASH
+
 endif # SOC_SERIES_SAME70
