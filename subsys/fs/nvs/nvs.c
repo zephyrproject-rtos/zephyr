@@ -655,6 +655,12 @@ int nvs_init(struct nvs_fs *fs, const char *dev_name)
 
 	fs->write_block_size = flash_get_write_block_size(fs->flash_device);
 
+	/* check that the write block size is supported */
+	if (fs->write_block_size > NVS_BLOCK_SIZE) {
+		LOG_ERR("Unsupported write block size");
+		return -EINVAL;
+	}
+
 	/* check the number of sectors, it should be at least 2 */
 	if (fs->sector_count < 2) {
 		LOG_ERR("Configuration error - sector count");
