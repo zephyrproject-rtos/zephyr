@@ -15,6 +15,7 @@ config NET_L2_DUMMY
 
 config NET_L2_BT
 	bool "Enable Bluetooth support"
+	depends on NET_IPV6
 	select BT
 	select BT_PERIPHERAL
 	select BT_CENTRAL
@@ -26,9 +27,9 @@ config NET_L2_BT
 	  does header compression on it and writes it to the
 	  Bluetooth stack via L2CAP channel.
 
+if NET_L2_BT
 config NET_L2_BT_ZEP1656
 	bool "***Workaround to work with Linux.***"
-	depends on NET_L2_BT
 	help
 	  This workaround is necessary to interoperate with Linux up to 4.10 but
 	  it might not be compliant with RFC 7668 as it cause the stack to skip
@@ -38,7 +39,6 @@ config NET_L2_BT_ZEP1656
 
 config NET_L2_BT_SEC_LEVEL
 	int "Security level of Bluetooth Link"
-	depends on NET_L2_BT
 	default 1
 	range 1 4
 	help
@@ -48,7 +48,6 @@ config NET_L2_BT_SEC_LEVEL
 	  Level 3 (BT_SECURITY_HIGH) = Encryption and authentication required
 	  Level 4 (BT_SECURITY_FIPS) = Secure connection required
 
-if NET_L2_BT
 module = NET_L2_BT
 module-dep = NET_LOG
 module-str = Log level for Bluetooth L2 layer
