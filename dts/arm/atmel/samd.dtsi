@@ -134,6 +134,15 @@
 			num-bidir-endpoints = <8>;
 			label = "USB0";
 		};
+
+		rtc: rtc@40001400 {
+			compatible = "atmel,sam0-rtc";
+			reg = <0x40001400 0x1C>;
+			interrupts = <3 0>;
+			clock-generator = <0>;
+			status = "disabled";
+			label = "RTC";
+		};
 	};
 };
 

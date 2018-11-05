@@ -205,6 +205,15 @@ config XTENSA_TIMER_ID
 	  carefully.  Generally you want the timer with the highest
 	  priority maskable interrupt.
 
+config SAM0_RTC_TIMER
+	bool "Atmel SAM0 series RTC timer"
+	depends on SOC_FAMILY_SAM0
+	select TICKLESS_CAPABLE
+	help
+	  This module implements a kernel device driver for the Atmel SAM0
+	  series Real Time Counter and provides the standard "system clock
+	  driver" interfaces.
+
 config SYSTEM_CLOCK_DISABLE
 	bool "API to disable system clock"
 	help
