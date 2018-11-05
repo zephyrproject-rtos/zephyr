@@ -539,7 +539,7 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 		}
 		break;
 	default:
-		USB_WRN("DFU UNKNOWN STATE: %d", pSetup->bRequest);
+		LOG_WRN("DFU UNKNOWN STATE: %d", pSetup->bRequest);
 		return -EINVAL;
 	}
 
@@ -628,7 +628,7 @@ static int dfu_custom_handle_req(struct usb_setup_packet *pSetup,
 					FLASH_AREA_IMAGE_1_SIZE;
 				break;
 			default:
-				USB_WRN("Invalid DFU alternate setting");
+				LOG_WRN("Invalid DFU alternate setting");
 				return -ENOTSUP;
 			}
 			dfu_data.alt_setting = pSetup->wValue;

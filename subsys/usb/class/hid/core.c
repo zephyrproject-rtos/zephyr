@@ -195,7 +195,7 @@ static int hid_custom_handle_req(struct usb_setup_packet *setup,
 			 * already tell it the right descriptor size.
 			 * So truncated wLength if it doesn't match. */
 			if (*len != hid_device.report_size) {
-				USB_WRN("len %d doesn't match "
+				LOG_WRN("len %d doesn't match "
 					"Report Descriptor size", *len);
 				*len = min(*len, hid_device.report_size);
 			}

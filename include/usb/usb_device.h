@@ -44,8 +44,6 @@
 extern "C" {
 #endif
 
-#define USB_WRN(fmt, ...) LOG_WRN(fmt, ##__VA_ARGS__)
-
 /*
  * These macros should be used to place the USB descriptors
  * in predetermined order in the RAM.

@@ -244,7 +244,7 @@ static int mass_storage_class_handle_req(struct usb_setup_packet *pSetup,
 		break;
 
 	default:
-		USB_WRN("Unknown request 0x%x, value 0x%x",
+		LOG_WRN("Unknown request 0x%x, value 0x%x",
 			pSetup->bRequest, pSetup->wValue);
 		return -EINVAL;
 	}
@@ -256,10 +256,10 @@ static void testUnitReady(void)
 {
 	if (cbw.DataLength != 0) {
 		if ((cbw.Flags & 0x80) != 0) {
-			USB_WRN("Stall IN endpoint");
+			LOG_WRN("Stall IN endpoint");
 			usb_ep_set_stall(mass_ep_data[MSD_IN_EP_IDX].ep_addr);
 		} else {
-			USB_WRN("Stall OUT endpoint");
+			LOG_WRN("Stall OUT endpoint");
 			usb_ep_set_stall(mass_ep_data[MSD_OUT_EP_IDX].ep_addr);
 		}
 	}
@@ -435,7 +435,7 @@ static bool infoTransfer(void)
 	length = n * BLOCK_SIZE;
 
 	if (!cbw.DataLength) {              /* host requests no data*/
-		USB_WRN("Zero length in CBW");
+		LOG_WRN("Zero length in CBW");
 		csw.Status = CSW_FAILED;
 		sendCSW();
 		return false;
@@ -443,10 +443,10 @@ static bool infoTransfer(void)
 
 	if (cbw.DataLength != length) {
 		if ((cbw.Flags & 0x80) != 0) {
-			USB_WRN("Stall IN endpoint");
+			LOG_WRN("Stall IN endpoint");
 			usb_ep_set_stall(mass_ep_data[MSD_IN_EP_IDX].ep_addr);
 		} else {
-			USB_WRN("Stall OUT endpoint");
+			LOG_WRN("Stall OUT endpoint");
 			usb_ep_set_stall(mass_ep_data[MSD_OUT_EP_IDX].ep_addr);
 		}
 
@@ -481,7 +481,7 @@ static void CBWDecode(u8_t *buf, u16_t size)
 	csw.DataResidue = cbw.DataLength;
 
 	if ((cbw.CBLength <  1) || (cbw.CBLength > 16) || (cbw.LUN != 0)) {
-		USB_WRN("cbw.CBLength %d", cbw.CBLength);
+		LOG_WRN("cbw.CBLength %d", cbw.CBLength);
 		fail();
 	} else {
 		switch (cbw.CB[0]) {
@@ -519,7 +519,7 @@ static void CBWDecode(u8_t *buf, u16_t size)
 				} else {
 					usb_ep_set_stall(
 					  mass_ep_data[MSD_OUT_EP_IDX].ep_addr);
-					USB_WRN("Stall OUT endpoint");
+					LOG_WRN("Stall OUT endpoint");
 					csw.Status = CSW_ERROR;
 					sendCSW();
 				}
@@ -534,7 +534,7 @@ static void CBWDecode(u8_t *buf, u16_t size)
 				} else {
 					usb_ep_set_stall(
 					  mass_ep_data[MSD_IN_EP_IDX].ep_addr);
-					USB_WRN("Stall IN endpoint");
+					LOG_WRN("Stall IN endpoint");
 					csw.Status = CSW_ERROR;
 					sendCSW();
 				}
@@ -554,7 +554,7 @@ static void CBWDecode(u8_t *buf, u16_t size)
 				} else {
 					usb_ep_set_stall(
 					  mass_ep_data[MSD_IN_EP_IDX].ep_addr);
-					USB_WRN("Stall IN endpoint");
+					LOG_WRN("Stall IN endpoint");
 					csw.Status = CSW_ERROR;
 					sendCSW();
 				}
@@ -566,7 +566,7 @@ static void CBWDecode(u8_t *buf, u16_t size)
 			sendCSW();
 			break;
 		default:
-			USB_WRN(">> default CB[0] %x", cbw.CB[0]);
+			LOG_WRN(">> default CB[0] %x", cbw.CB[0]);
 			fail();
 			break;
 		}		/*switch(cbw.CB[0])*/
@@ -582,7 +582,7 @@ static void memoryVerify(u8_t *buf, u16_t size)
 		size = memory_size - addr;
 		stage = ERROR;
 		usb_ep_set_stall(mass_ep_data[MSD_OUT_EP_IDX].ep_addr);
-		USB_WRN("Stall OUT endpoint");
+		LOG_WRN("Stall OUT endpoint");
 	}
 
 	/* beginning of a new block -> load a whole block in RAM */
@@ -620,7 +620,7 @@ static void memoryWrite(u8_t *buf, u16_t size)
 		size = memory_size - addr;
 		stage = ERROR;
 		usb_ep_set_stall(mass_ep_data[MSD_OUT_EP_IDX].ep_addr);
-		USB_WRN("Stall OUT endpoint");
+		LOG_WRN("Stall OUT endpoint");
 	}
 
 	/* we fill an array in RAM of 1 block before writing it in memory */
@@ -689,7 +689,7 @@ static void mass_storage_bulk_out(u8_t ep,
 
 	/*an error has occurred: stall endpoint and send CSW*/
 	default:
-		USB_WRN("Stall OUT endpoint, stage: %d", stage);
+		LOG_WRN("Stall OUT endpoint, stage: %d", stage);
 		usb_ep_set_stall(ep);
 		csw.Status = CSW_ERROR;
 		sendCSW();
@@ -766,7 +766,7 @@ static void mass_storage_bulk_in(u8_t ep,
 
 	/*an error has occurred*/
 	default:
-		USB_WRN("Stall IN endpoint, stage: %d", stage);
+		LOG_WRN("Stall IN endpoint, stage: %d", stage);
 		usb_ep_set_stall(mass_ep_data[MSD_IN_EP_IDX].ep_addr);
 		sendCSW();
 		break;
