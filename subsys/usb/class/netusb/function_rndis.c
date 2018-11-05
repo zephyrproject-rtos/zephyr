@@ -1032,7 +1032,7 @@ static int rndis_class_handler(struct usb_setup_packet *setup, s32_t *len,
 
 static void cmd_thread(void)
 {
-	USB_INF("Command thread started");
+	LOG_INF("Command thread started");
 
 	while (true) {
 		struct net_buf *buf;
