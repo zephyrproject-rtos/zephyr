@@ -10728,8 +10728,8 @@ u32_t ll_connect_disable(void **node_rx)
 	return status;
 }
 
-u32_t ll_conn_update(u16_t handle, u8_t cmd, u8_t status, u16_t interval,
-		     u16_t latency, u16_t timeout)
+u32_t ll_conn_update(u16_t handle, u8_t cmd, u8_t status, u16_t interval_min,
+		     u16_t interval_max, u16_t latency, u16_t timeout)
 {
 	struct connection *conn;
 
@@ -10762,7 +10762,7 @@ u32_t ll_conn_update(u16_t handle, u8_t cmd, u8_t status, u16_t interval,
 
 		conn->llcp.conn_upd.win_size = 1;
 		conn->llcp.conn_upd.win_offset_us = 0;
-		conn->llcp.conn_upd.interval = interval;
+		conn->llcp.conn_upd.interval = interval_max;
 		conn->llcp.conn_upd.latency = latency;
 		conn->llcp.conn_upd.timeout = timeout;
 		/* conn->llcp.conn_upd.instant     = 0; */
@@ -10793,8 +10793,8 @@ u32_t ll_conn_update(u16_t handle, u8_t cmd, u8_t status, u16_t interval,
 			}
 
 			conn->llcp_conn_param.status = 0;
-			conn->llcp_conn_param.interval_min = interval;
-			conn->llcp_conn_param.interval_max = interval;
+			conn->llcp_conn_param.interval_min = interval_min;
+			conn->llcp_conn_param.interval_max = interval_max;
 			conn->llcp_conn_param.latency = latency;
 			conn->llcp_conn_param.timeout = timeout;
 			conn->llcp_conn_param.state = cmd;
