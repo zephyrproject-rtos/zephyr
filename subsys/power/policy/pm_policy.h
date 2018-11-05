@@ -62,6 +62,27 @@ extern void sys_pm_notify_lps_exit(enum power_states state);
  */
 extern void sys_pm_dump_debug_info(void);
 
+/**
+ * @brief Disable system PM state
+ *
+ * Disable system Low power states like LPS or Deep Sleep states.
+ */
+extern void sys_pm_ctrl_disable_state(int state);
+
+/**
+ * @brief Enable system PM state
+ *
+ * Enable system Low power states like LPS or Deep Sleep states.
+ */
+extern void sys_pm_ctrl_enable_state(int state);
+
+/**
+ * @brief Get enable status of a PM state
+ *
+ * Get enable status of a system PM state.
+ */
+extern bool sys_pm_ctrl_is_state_enabled(int state);
+
 #ifdef __cplusplus
 }
 #endif
