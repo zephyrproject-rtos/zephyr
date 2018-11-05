@@ -279,7 +279,7 @@ static int ecm_send(struct net_pkt *pkt)
 	ret = usb_transfer_sync(ecm_ep_data[ECM_IN_EP_IDX].ep_addr,
 				tx_buf, b_idx, USB_TRANS_WRITE);
 	if (ret != b_idx) {
-		USB_ERR("Transfer failure");
+		LOG_ERR("Transfer failure");
 		return -EINVAL;
 	}
 
@@ -309,13 +309,13 @@ static void ecm_read_cb(u8_t ep, int size, void *priv)
 
 	pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
 	if (!pkt) {
-		USB_ERR("no memory for network packet\n");
+		LOG_ERR("no memory for network packet\n");
 		goto done;
 	}
 
 	frag = net_pkt_get_frag(pkt, K_FOREVER);
 	if (!frag) {
-		USB_ERR("no memory for network packet\n");
+		LOG_ERR("no memory for network packet\n");
 		net_pkt_unref(pkt);
 		goto done;
 	}
@@ -323,7 +323,7 @@ static void ecm_read_cb(u8_t ep, int size, void *priv)
 	net_pkt_frag_insert(pkt, frag);
 
 	if (!net_pkt_append_all(pkt, size, rx_buf, K_FOREVER)) {
-		USB_ERR("no memory for network packet\n");
+		LOG_ERR("no memory for network packet\n");
 		net_pkt_unref(pkt);
 		goto done;
 	}

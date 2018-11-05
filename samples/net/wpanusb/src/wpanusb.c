@@ -290,7 +290,7 @@ static int tx(struct net_pkt *pkt)
 	} while (ret && retries--);
 
 	if (ret) {
-		USB_ERR("Error sending data, seq %u", seq);
+		LOG_ERR("Error sending data, seq %u", seq);
 		/* Send seq = 0 for unsuccessful send */
 		seq = 0;
 	}
@@ -380,7 +380,7 @@ static void tx_thread(void)
 			set_pan_id(buf->data, buf->len);
 			break;
 		default:
-			USB_ERR("%x: Not handled for now", cmd);
+			LOG_ERR("%x: Not handled for now", cmd);
 			break;
 		}
 
@@ -419,14 +419,14 @@ static int wpanusb_init(struct device *dev)
 	/* Initialize the USB driver with the right configuration */
 	ret = usb_set_config(&wpanusb_config);
 	if (ret < 0) {
-		USB_ERR("Failed to configure USB");
+		LOG_ERR("Failed to configure USB");
 		return ret;
 	}
 
 	/* Enable USB driver */
 	ret = usb_enable(&wpanusb_config);
 	if (ret < 0) {
-		USB_ERR("Failed to enable USB");
+		LOG_ERR("Failed to enable USB");
 		return ret;
 	}
 
@@ -502,7 +502,7 @@ void main(void)
 
 	ieee802154_dev = device_get_binding(CONFIG_NET_CONFIG_IEEE802154_DEV_NAME);
 	if (!ieee802154_dev) {
-		USB_ERR("Cannot get IEEE802.15.4 device");
+		LOG_ERR("Cannot get IEEE802.15.4 device");
 		return;
 	}
 

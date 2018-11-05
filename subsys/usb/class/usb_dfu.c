@@ -329,7 +329,7 @@ static void dfu_flash_write(u8_t *data, size_t len)
 	}
 
 	if (flash_img_buffered_write(&dfu_data.ctx, data, len, flush)) {
-		USB_ERR("flash write error");
+		LOG_ERR("flash write error");
 		dfu_data.state = dfuERROR;
 		dfu_data.status = errWRITE;
 	} else if (!len) {
@@ -426,7 +426,7 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 						+ FLASH_AREA_IMAGE_1_OFFSET) {
 				dfu_data.status = errWRITE;
 				dfu_data.state = dfuERROR;
-				USB_ERR("This area can not be overwritten");
+				LOG_ERR("This area can not be overwritten");
 				break;
 			}
 
@@ -439,7 +439,7 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 			dfu_flash_write(*data, pSetup->wLength);
 			break;
 		default:
-			USB_ERR("DFU_DNLOAD wrong state %d", dfu_data.state);
+			LOG_ERR("DFU_DNLOAD wrong state %d", dfu_data.state);
 			dfu_data.state = dfuERROR;
 			dfu_data.status = errUNKNOWN;
 			dfu_reset_counters();
@@ -507,7 +507,7 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 
 			break;
 		default:
-			USB_ERR("DFU_UPLOAD wrong state %d", dfu_data.state);
+			LOG_ERR("DFU_UPLOAD wrong state %d", dfu_data.state);
 			dfu_data.state = dfuERROR;
 			dfu_data.status = errUNKNOWN;
 			dfu_reset_counters();
@@ -534,7 +534,7 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 		/* Set the DFU mode descriptors to be used after reset */
 		dfu_config.usb_device_description = (u8_t *) &dfu_mode_desc;
 		if (usb_set_config(&dfu_config) != 0) {
-			USB_ERR("usb_set_config failed in DFU_DETACH");
+			LOG_ERR("usb_set_config failed in DFU_DETACH");
 			return -EIO;
 		}
 		break;
@@ -685,7 +685,7 @@ static int usb_dfu_init(struct device *dev)
 
 	dfu_data.flash_dev = device_get_binding(FLASH_DEV_NAME);
 	if (!dfu_data.flash_dev) {
-		USB_ERR("Flash device not found\n");
+		LOG_ERR("Flash device not found\n");
 		return -ENODEV;
 	}
 
@@ -696,14 +696,14 @@ static int usb_dfu_init(struct device *dev)
 	/* Initialize the USB driver with the right configuration */
 	ret = usb_set_config(&dfu_config);
 	if (ret < 0) {
-		USB_ERR("Failed to config USB");
+		LOG_ERR("Failed to config USB");
 		return ret;
 	}
 
 	/* Enable USB driver */
 	ret = usb_enable(&dfu_config);
 	if (ret < 0) {
-		USB_ERR("Failed to enable USB");
+		LOG_ERR("Failed to enable USB");
 		return ret;
 	}
 #endif

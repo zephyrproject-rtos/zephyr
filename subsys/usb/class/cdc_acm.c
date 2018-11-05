@@ -351,7 +351,7 @@ static void cdc_acm_bulk_out(u8_t ep,
 			if (((buf_head + 1) % CDC_ACM_BUFFER_SIZE) ==
 			    dev_data->rx_buf_tail) {
 				/* FIFO full, discard data */
-				USB_ERR("CDC buffer full!");
+				LOG_ERR("CDC buffer full!");
 			} else {
 				dev_data->rx_buf[buf_head] = tmp_buf[j];
 				buf_head = (buf_head + 1) % CDC_ACM_BUFFER_SIZE;
@@ -514,14 +514,14 @@ static int cdc_acm_init(struct device *dev)
 	/* Initialize the USB driver with the right configuration */
 	ret = usb_set_config(&cdc_acm_config);
 	if (ret < 0) {
-		USB_ERR("Failed to config USB");
+		LOG_ERR("Failed to config USB");
 		return ret;
 	}
 
 	/* Enable USB driver */
 	ret = usb_enable(&cdc_acm_config);
 	if (ret < 0) {
-		USB_ERR("Failed to enable USB");
+		LOG_ERR("Failed to enable USB");
 		return ret;
 	}
 #endif

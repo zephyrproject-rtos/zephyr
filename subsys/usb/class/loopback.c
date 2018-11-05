@@ -192,7 +192,7 @@ static int loopback_init(struct device *dev)
 	/* usb.rst configure USB controller start */
 	ret = usb_set_config(&loopback_config);
 	if (ret < 0) {
-		USB_ERR("Failed to config USB");
+		LOG_ERR("Failed to config USB");
 		return ret;
 	}
 	/* usb.rst configure USB controller end */
@@ -200,7 +200,7 @@ static int loopback_init(struct device *dev)
 	/* usb.rst enable USB controller start */
 	ret = usb_enable(&loopback_config);
 	if (ret < 0) {
-		USB_ERR("Failed to enable USB");
+		LOG_ERR("Failed to enable USB");
 		return ret;
 	}
 	/* usb.rst enable USB controller end */

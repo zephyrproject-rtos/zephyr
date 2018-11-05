@@ -233,7 +233,7 @@ static int usb_dc_stm32_clock_enable(void)
 	if (LL_APB2_GRP1_IsEnabledClock(LL_APB2_GRP1_PERIPH_SYSCFG)) {
 		LL_SYSCFG_VREFINT_EnableHSI48();
 	} else {
-		USB_ERR("System Configuration Controller clock is "
+		LOG_ERR("System Configuration Controller clock is "
 			"disabled. Unable to enable VREFINT which "
 			"is required by HSI48.");
 	}
@@ -249,7 +249,7 @@ static int usb_dc_stm32_clock_enable(void)
 	if (LL_RCC_PLL_IsReady()) {
 		LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_PLL);
 	} else {
-		USB_ERR("Unable to set USB clock source to PLL.");
+		LOG_ERR("Unable to set USB clock source to PLL.");
 	}
 #endif /* RCC_HSI48_SUPPORT / LL_RCC_USB_CLKSOURCE_NONE */
 
@@ -345,14 +345,14 @@ static int usb_dc_stm32_init(void)
 	LOG_DBG("HAL_PCD_Init");
 	status = HAL_PCD_Init(&usb_dc_stm32_state.pcd);
 	if (status != HAL_OK) {
-		USB_ERR("PCD_Init failed, %d", (int)status);
+		LOG_ERR("PCD_Init failed, %d", (int)status);
 		return -EIO;
 	}
 
 	LOG_DBG("HAL_PCD_Start");
 	status = HAL_PCD_Start(&usb_dc_stm32_state.pcd);
 	if (status != HAL_OK) {
-		USB_ERR("PCD_Start failed, %d", (int)status);
+		LOG_ERR("PCD_Start failed, %d", (int)status);
 		return -EIO;
 	}
 
@@ -400,7 +400,7 @@ int usb_dc_attach(void)
 	if (LL_APB1_GRP2_IsEnabledClock(LL_APB1_GRP2_PERIPH_SYSCFG)) {
 		LL_SYSCFG_EnablePinRemap();
 	} else {
-		USB_ERR("System Configuration Controller clock is "
+		LOG_ERR("System Configuration Controller clock is "
 			"disable. Unable to enable pin remapping."
 	}
 #endif
@@ -466,7 +466,7 @@ int usb_dc_set_address(const u8_t addr)
 
 	status = HAL_PCD_SetAddress(&usb_dc_stm32_state.pcd, addr);
 	if (status != HAL_OK) {
-		USB_ERR("HAL_PCD_SetAddress failed(0x%02x), %d", addr,
+		LOG_ERR("HAL_PCD_SetAddress failed(0x%02x), %d", addr,
 			(int)status);
 		return -EIO;
 	}
@@ -482,7 +482,7 @@ int usb_dc_ep_start_read(u8_t ep, u8_t *data, u32_t max_data_len)
 
 	/* we flush EP0_IN by doing a 0 length receive on it */
 	if (!EP_IS_OUT(ep) && (ep != EP0_IN || max_data_len)) {
-		USB_ERR("invalid ep 0x%02x", ep);
+		LOG_ERR("invalid ep 0x%02x", ep);
 		return -EINVAL;
 	}
 
@@ -494,7 +494,7 @@ int usb_dc_ep_start_read(u8_t ep, u8_t *data, u32_t max_data_len)
 				    usb_dc_stm32_state.ep_buf[EP_IDX(ep)],
 				    max_data_len);
 	if (status != HAL_OK) {
-		USB_ERR("HAL_PCD_EP_Receive failed(0x%02x), %d", ep,
+		LOG_ERR("HAL_PCD_EP_Receive failed(0x%02x), %d", ep,
 			(int)status);
 		return -EIO;
 	}
@@ -505,7 +505,7 @@ int usb_dc_ep_start_read(u8_t ep, u8_t *data, u32_t max_data_len)
 int usb_dc_ep_get_read_count(u8_t ep, u32_t *read_bytes)
 {
 	if (!EP_IS_OUT(ep)) {
-		USB_ERR("invalid ep 0x%02x", ep);
+		LOG_ERR("invalid ep 0x%02x", ep);
 		return -EINVAL;
 	}
 
@@ -522,12 +522,12 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 		cfg->ep_type);
 
 	if ((cfg->ep_type == USB_DC_EP_CONTROL) && ep_idx) {
-		USB_ERR("invalid endpoint configuration");
+		LOG_ERR("invalid endpoint configuration");
 		return -1;
 	}
 
 	if (ep_idx > CONFIG_USB_NUM_BIDIR_ENDPOINTS) {
-		USB_ERR("endpoint index/address out of range");
+		LOG_ERR("endpoint index/address out of range");
 		return -1;
 	}
 
@@ -590,7 +590,7 @@ int usb_dc_ep_set_stall(const u8_t ep)
 
 	status = HAL_PCD_EP_SetStall(&usb_dc_stm32_state.pcd, ep);
 	if (status != HAL_OK) {
-		USB_ERR("HAL_PCD_EP_SetStall failed(0x%02x), %d", ep,
+		LOG_ERR("HAL_PCD_EP_SetStall failed(0x%02x), %d", ep,
 			(int)status);
 		return -EIO;
 	}
@@ -613,7 +613,7 @@ int usb_dc_ep_clear_stall(const u8_t ep)
 
 	status = HAL_PCD_EP_ClrStall(&usb_dc_stm32_state.pcd, ep);
 	if (status != HAL_OK) {
-		USB_ERR("HAL_PCD_EP_ClrStall failed(0x%02x), %d", ep,
+		LOG_ERR("HAL_PCD_EP_ClrStall failed(0x%02x), %d", ep,
 			(int)status);
 		return -EIO;
 	}
@@ -656,7 +656,7 @@ int usb_dc_ep_enable(const u8_t ep)
 	status = HAL_PCD_EP_Open(&usb_dc_stm32_state.pcd, ep,
 				 ep_state->ep_mps, ep_state->ep_type);
 	if (status != HAL_OK) {
-		USB_ERR("HAL_PCD_EP_Open failed(0x%02x), %d", ep,
+		LOG_ERR("HAL_PCD_EP_Open failed(0x%02x), %d", ep,
 			(int)status);
 		return -EIO;
 	}
@@ -683,7 +683,7 @@ int usb_dc_ep_disable(const u8_t ep)
 
 	status = HAL_PCD_EP_Close(&usb_dc_stm32_state.pcd, ep);
 	if (status != HAL_OK) {
-		USB_ERR("HAL_PCD_EP_Close failed(0x%02x), %d", ep,
+		LOG_ERR("HAL_PCD_EP_Close failed(0x%02x), %d", ep,
 			(int)status);
 		return -EIO;
 	}
@@ -702,13 +702,13 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 	LOG_DBG("ep 0x%02x, len %u", ep, data_len);
 
 	if (!EP_IS_IN(ep)) {
-		USB_ERR("invalid ep 0x%02x", ep);
+		LOG_ERR("invalid ep 0x%02x", ep);
 		return -EINVAL;
 	}
 
 	ret = k_sem_take(&ep_state->write_sem, K_NO_WAIT);
 	if (ret) {
-		USB_ERR("Unable to write ep 0x%02x (%d)", ep, ret);
+		LOG_ERR("Unable to write ep 0x%02x (%d)", ep, ret);
 		return ret;
 	}
 
@@ -723,7 +723,7 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 	status = HAL_PCD_EP_Transmit(&usb_dc_stm32_state.pcd, ep,
 				     (void *)data, len);
 	if (status != HAL_OK) {
-		USB_ERR("HAL_PCD_EP_Transmit failed(0x%02x), %d", ep,
+		LOG_ERR("HAL_PCD_EP_Transmit failed(0x%02x), %d", ep,
 			(int)status);
 		k_sem_give(&ep_state->write_sem);
 		ret = -EIO;
@@ -757,7 +757,7 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 		ep_state->read_offset, read_count, data);
 
 	if (!EP_IS_OUT(ep)) { /* check if OUT ep */
-		USB_ERR("Wrong endpoint direction: 0x%02x", ep);
+		LOG_ERR("Wrong endpoint direction: 0x%02x", ep);
 		return -EINVAL;
 	}
 
@@ -772,7 +772,7 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 		ep_state->read_count -= read_count;
 		ep_state->read_offset += read_count;
 	} else if (max_data_len) {
-		USB_ERR("Wrong arguments");
+		LOG_ERR("Wrong arguments");
 	}
 
 	if (read_bytes) {
@@ -787,7 +787,7 @@ int usb_dc_ep_read_continue(u8_t ep)
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 
 	if (!EP_IS_OUT(ep)) { /* Check if OUT ep */
-		USB_ERR("Not valid endpoint: %02x", ep);
+		LOG_ERR("Not valid endpoint: %02x", ep);
 		return -EINVAL;
 	}
 

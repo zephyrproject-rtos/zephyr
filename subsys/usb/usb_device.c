@@ -1233,7 +1233,7 @@ void usb_transfer_ep_callback(u8_t ep, enum usb_dc_ep_cb_status_code status)
 				usb_dc_ep_read_wait(ep, &data, 1, &bytes);
 			} while (bytes);
 
-			USB_ERR("RX data lost, no transfer");
+			LOG_ERR("RX data lost, no transfer");
 		}
 		return;
 	}
@@ -1265,7 +1265,7 @@ int usb_transfer(u8_t ep, u8_t *data, size_t dlen, unsigned int flags,
 	}
 
 	if (!trans) {
-		USB_ERR("no transfer slot available");
+		LOG_ERR("no transfer slot available");
 		ret = -ENOMEM;
 		goto done;
 	}
@@ -1492,7 +1492,7 @@ static int usb_composite_init(struct device *dev)
 	/* register device descriptor */
 	device_descriptor = usb_get_device_descriptor();
 	if (!device_descriptor) {
-		USB_ERR("Failed to configure USB device stack");
+		LOG_ERR("Failed to configure USB device stack");
 		return -1;
 	}
 

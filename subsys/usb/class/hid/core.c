@@ -144,12 +144,12 @@ static int hid_class_handle_req(struct usb_setup_packet *setup,
 				return hid_device.ops->get_report(setup, len,
 								  data);
 			} else {
-				USB_ERR("Mandatory request not supported");
+				LOG_ERR("Mandatory request not supported");
 				return -EINVAL;
 			}
 			break;
 		default:
-			USB_ERR("Unhandled request 0x%x", setup->bRequest);
+			LOG_ERR("Unhandled request 0x%x", setup->bRequest);
 			break;
 		}
 	} else {
@@ -163,12 +163,12 @@ static int hid_class_handle_req(struct usb_setup_packet *setup,
 			break;
 		case HID_SET_REPORT:
 			if (hid_device.ops->set_report == NULL) {
-				USB_ERR("set_report not implemented");
+				LOG_ERR("set_report not implemented");
 				return -EINVAL;
 			}
 			return hid_device.ops->set_report(setup, len, data);
 		default:
-			USB_ERR("Unhandled request 0x%x", setup->bRequest);
+			LOG_ERR("Unhandled request 0x%x", setup->bRequest);
 			break;
 		}
 	}
@@ -288,14 +288,14 @@ int usb_hid_init(void)
 	/* Initialize the USB driver with the right configuration */
 	ret = usb_set_config(&hid_config);
 	if (ret < 0) {
-		USB_ERR("Failed to config USB");
+		LOG_ERR("Failed to config USB");
 		return ret;
 	}
 
 	/* Enable USB driver */
 	ret = usb_enable(&hid_config);
 	if (ret < 0) {
-		USB_ERR("Failed to enable USB");
+		LOG_ERR("Failed to enable USB");
 		return ret;
 	}
 #endif
