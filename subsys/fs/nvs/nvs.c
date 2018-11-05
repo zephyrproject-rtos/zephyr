@@ -331,11 +331,11 @@ static int _nvs_prev_ate(struct nvs_fs *fs, u32_t *addr, struct nvs_ate *ate)
 		(*addr) -= (1 << ADDR_SECT_SHIFT);
 		while (1) {
 			*addr -= ate_size;
-			rc = _nvs_flash_cmp_const(fs, *addr, 0xff, ate_size);
+			rc = _nvs_flash_cmp_const(fs, *addr, 0xff, sizeof(struct nvs_ate));
 			if (!rc) {
 				break;
 			}
-			rc = _nvs_flash_cmp_const(fs, *addr, 0x00, ate_size);
+			rc = _nvs_flash_cmp_const(fs, *addr, 0x00, sizeof(struct nvs_ate));
 			if (!rc) {
 				break;
 			}
@@ -370,11 +370,11 @@ static int _nvs_sector_close(struct nvs_fs *fs)
 	u8_t buf[sizeof(struct nvs_ate)];
 	size_t ate_size;
 
-	ate_size = sizeof(struct nvs_ate);
+	ate_size = _nvs_al_size(fs, sizeof(struct nvs_ate));
 
 	(void)memset(buf, 0, ate_size);
 
-	rc = _nvs_flash_al_wrt(fs, fs->ate_wra, buf, ate_size);
+	rc = _nvs_flash_al_wrt(fs, fs->ate_wra, buf, sizeof(struct nvs_ate));
 	if (rc) {
 		return rc;
 	}
@@ -408,12 +408,12 @@ static int _nvs_gc(struct nvs_fs *fs)
 
 	while (1) {
 		/* if the sector is empty don't do gc */
-		rc = _nvs_flash_cmp_const(fs, gc_addr, 0xff, ate_size);
+		rc = _nvs_flash_cmp_const(fs, gc_addr, 0xff, sizeof(struct nvs_ate));
 		if (!rc) {
 			break;
 		}
 		/* if sector end is reached stop gc */
-		rc = _nvs_flash_cmp_const(fs, gc_addr, 0x00, ate_size);
+		rc = _nvs_flash_cmp_const(fs, gc_addr, 0x00, sizeof(struct nvs_ate));
 		if (!rc) {
 			break;
 		}
@@ -555,12 +555,12 @@ int nvs_reinit(struct nvs_fs *fs)
 		if (rc) {
 			goto end;
 		}
-		rc = _nvs_flash_cmp_const(fs, addr - ate_size, 0x00, ate_size);
+		rc = _nvs_flash_cmp_const(fs, addr - ate_size, 0x00, sizeof(struct nvs_ate));
 		if (!rc) {
 			/* we are just before (or after) sector end */
 			continue;
 		}
-		rc = _nvs_flash_cmp_const(fs, addr - ate_size, 0xff, ate_size);
+		rc = _nvs_flash_cmp_const(fs, addr - ate_size, 0xff, sizeof(struct nvs_ate));
 		if (!rc) {
 			break;
 		}
@@ -574,7 +574,7 @@ int nvs_reinit(struct nvs_fs *fs)
 	 * exception, when addr is the very end of a sector; then we keep
 	 * fs->ate_wra.
 	 */
-	rc = _nvs_flash_cmp_const(fs, addr, 0xff, ate_size);
+	rc = _nvs_flash_cmp_const(fs, addr, 0xff, sizeof(struct nvs_ate));
 	if (rc < 0) {
 		goto end;
 	}
