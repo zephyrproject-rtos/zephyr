@@ -231,6 +231,10 @@ struct net_if_ipv6 {
 #if defined(CONFIG_NET_IPV4)
 #define NET_IF_MAX_IPV4_ADDR CONFIG_NET_IF_UNICAST_IPV4_ADDR_COUNT
 #define NET_IF_MAX_IPV4_MADDR CONFIG_NET_IF_MCAST_IPV4_ADDR_COUNT
+#else
+#define NET_IF_MAX_IPV4_ADDR 0
+#define NET_IF_MAX_IPV4_MADDR 0
+#endif
 
 struct net_if_ipv4 {
 	/** Unicast IP addresses */
@@ -248,7 +252,6 @@ struct net_if_ipv4 {
 	/** IPv4 time-to-live */
 	u8_t ttl;
 };
-#endif /* CONFIG_NET_IPV4 */
 
 #if defined(CONFIG_NET_DHCPV4)
 struct net_if_dhcpv4 {
@@ -1301,7 +1304,6 @@ void net_if_ipv6_dad_failed(struct net_if *iface, const struct in6_addr *addr);
  */
 struct in6_addr *net_if_ipv6_get_global_addr(struct net_if **iface);
 
-#if defined(CONFIG_NET_IPV4)
 /**
  * @brief Allocate network interface IPv4 config.
  *
@@ -1333,11 +1335,15 @@ int net_if_config_ipv4_put(struct net_if *iface);
  */
 static inline u8_t net_if_ipv4_get_ttl(struct net_if *iface)
 {
+#if defined(CONFIG_NET_IPV4)
 	if (!iface->config.ip.ipv4) {
 		return 0;
 	}
 
 	return iface->config.ip.ipv4->ttl;
+#else
+	return 0;
+#endif
 }
 
 /**
@@ -1481,7 +1487,7 @@ struct net_if *net_if_ipv4_select_src_iface(struct in_addr *dst);
  * @return Pointer to IPv4 address to use, NULL if no IPv4 address
  * could be found.
  */
-const struct in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
+const struct in_addr *net_if_ipv4_select_src_addr(struct net_if *iface,
 						  struct in_addr *dst);
 
 /**
@@ -1505,6 +1511,7 @@ struct in_addr *net_if_ipv4_get_ll(struct net_if *iface,
 static inline void net_if_ipv4_set_netmask(struct net_if *iface,
 					   const struct in_addr *netmask)
 {
+#if defined(CONFIG_NET_IPV4)
 	if (net_if_config_ipv4_get(iface, NULL) < 0) {
 		return;
 	}
@@ -1514,6 +1521,7 @@ static inline void net_if_ipv4_set_netmask(struct net_if *iface,
 	}
 
 	net_ipaddr_copy(&iface->config.ip.ipv4->netmask, netmask);
+#endif
 }
 
 /**
@@ -1525,6 +1533,7 @@ static inline void net_if_ipv4_set_netmask(struct net_if *iface,
 static inline void net_if_ipv4_set_gw(struct net_if *iface,
 				      struct in_addr *gw)
 {
+#if defined(CONFIG_NET_IPV4)
 	if (net_if_config_ipv4_get(iface, NULL) < 0) {
 		return;
 	}
@@ -1534,10 +1543,8 @@ static inline void net_if_ipv4_set_gw(struct net_if *iface,
 	}
 
 	net_ipaddr_copy(&iface->config.ip.ipv4->gw, gw);
+#endif
 }
-#else
-#define net_if_ipv4_select_src_iface(...) NULL
-#endif /* CONFIG_NET_IPV4 */
 
 /**
  * @brief Get a network interface that should be used when sending
