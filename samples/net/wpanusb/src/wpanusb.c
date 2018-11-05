@@ -264,14 +264,14 @@ static int set_pan_id(void *data, int len)
 
 static int start(void)
 {
-	USB_INF("Start IEEE 802.15.4 device");
+	LOG_INF("Start IEEE 802.15.4 device");
 
 	return radio_api->start(ieee802154_dev);
 }
 
 static int stop(void)
 {
-	USB_INF("Stop IEEE 802.15.4 device");
+	LOG_INF("Stop IEEE 802.15.4 device");
 
 	return radio_api->stop(ieee802154_dev);
 }
@@ -498,7 +498,7 @@ void main(void)
 {
 	wpanusb_start(&__dev);
 
-	USB_INF("Start");
+	LOG_INF("Start");
 
 	ieee802154_dev = device_get_binding(CONFIG_NET_CONFIG_IEEE802154_DEV_NAME);
 	if (!ieee802154_dev) {

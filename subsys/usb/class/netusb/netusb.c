@@ -218,7 +218,7 @@ static void netusb_init(struct net_if *iface)
 	}
 #endif /* CONFIG_USB_COMPOSITE_DEVICE */
 
-	USB_INF("netusb initialized");
+	LOG_INF("netusb initialized");
 }
 
 static const struct ethernet_api netusb_api_funcs = {

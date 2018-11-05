@@ -918,9 +918,9 @@ static int mass_storage_init(struct device *dev)
 	}
 
 
-	USB_INF("Sect Count %d", block_count);
+	LOG_INF("Sect Count %d", block_count);
 	memory_size = block_count * BLOCK_SIZE;
-	USB_INF("Memory Size %d", memory_size);
+	LOG_INF("Memory Size %d", memory_size);
 
 	msd_state_machine_reset();
 	msd_init();

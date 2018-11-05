@@ -751,7 +751,7 @@ static bool usb_handle_std_endpoint_req(struct usb_setup_packet *setup,
 	case REQ_CLEAR_FEATURE:
 		if (setup->wValue == FEA_ENDPOINT_HALT) {
 			/* clear HALT by unstalling */
-			USB_INF("... EP clear halt %x", ep);
+			LOG_INF("... EP clear halt %x", ep);
 			usb_dc_ep_clear_stall(ep);
 			if (usb_dev.status_callback) {
 				usb_dev.status_callback(USB_DC_CLEAR_HALT, &ep);
@@ -764,7 +764,7 @@ static bool usb_handle_std_endpoint_req(struct usb_setup_packet *setup,
 	case REQ_SET_FEATURE:
 		if (setup->wValue == FEA_ENDPOINT_HALT) {
 			/* set HALT by stalling */
-			USB_INF("--- EP SET halt %x", ep);
+			LOG_INF("--- EP SET halt %x", ep);
 			usb_dc_ep_set_stall(ep);
 			if (usb_dev.status_callback) {
 				usb_dev.status_callback(USB_DC_SET_HALT, &ep);

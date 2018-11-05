@@ -283,12 +283,12 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 
 	if (ep_idx & BIT(0)) {
 		if (EP_ADDR2DIR(cfg->ep_addr) != USB_EP_DIR_IN) {
-			USB_INF("pre-selected as IN endpoint");
+			LOG_INF("pre-selected as IN endpoint");
 			return -1;
 		}
 	} else {
 		if (EP_ADDR2DIR(cfg->ep_addr) != USB_EP_DIR_OUT) {
-			USB_INF("pre-selected as OUT endpoint");
+			LOG_INF("pre-selected as OUT endpoint");
 			return -1;
 		}
 	}
@@ -340,9 +340,9 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const cfg)
 	}
 
 	bdt[idx_even].buf_addr = (u32_t)block->data;
-	USB_INF("idx_even %x", (u32_t)block->data);
+	LOG_INF("idx_even %x", (u32_t)block->data);
 	bdt[idx_odd].buf_addr = (u32_t)((u8_t *)block->data + cfg->ep_mps);
-	USB_INF("idx_odd %x", (u32_t)((u8_t *)block->data + cfg->ep_mps));
+	LOG_INF("idx_odd %x", (u32_t)((u8_t *)block->data + cfg->ep_mps));
 
 	if (cfg->ep_addr & USB_EP_DIR_IN) {
 		dev_data.ep_ctrl[ep_idx].mps_in = cfg->ep_mps;
@@ -518,7 +518,7 @@ int usb_dc_ep_enable(const u8_t ep)
 		dev_data.ep_ctrl[ep_idx].status.in_enabled = true;
 	}
 
-	USB_INF("ep 0x%x, ep_idx %d", ep, ep_idx);
+	LOG_INF("ep 0x%x, ep_idx %d", ep, ep_idx);
 
 	return 0;
 }
@@ -534,7 +534,7 @@ int usb_dc_ep_disable(const u8_t ep)
 		return -EINVAL;
 	}
 
-	USB_INF("ep %x, idx %d", ep_idx, ep);
+	LOG_INF("ep %x, idx %d", ep_idx, ep);
 
 	bdt[idx_even].bd_fields = 0;
 	bdt[idx_odd].bd_fields = 0;
