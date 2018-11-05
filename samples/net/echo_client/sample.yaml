@@ -16,9 +16,6 @@ tests:
     extra_args: OVERLAY_CONFIG="overlay-bt.conf"
     platform_whitelist: qemu_x86
     tags: bluetooth
-  test_cc2520:
-    extra_args: OVERLAY_CONFIG="overlay-frdm_k64f_cc2520.conf"
-    platform_whitelist: frdm_k64f
   test_nrf:
     platform_whitelist: nrf52840_pca10056
   test_nrf_openthread:
