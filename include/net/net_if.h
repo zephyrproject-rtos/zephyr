@@ -96,7 +96,6 @@ struct net_if_mcast_addr {
 	u8_t _unused : 6;
 };
 
-#if defined(CONFIG_NET_IPV6)
 /**
  * @brief Network Interface IPv6 prefixes
  *
@@ -123,7 +122,6 @@ struct net_if_ipv6_prefix {
 
 	u8_t _unused : 6;
 };
-#endif /* CONFIG_NET_IPV6 */
 
 /**
  * @brief Information about routers in the system.
@@ -190,6 +188,11 @@ struct net_offload;
 #define NET_IF_MAX_IPV6_ADDR CONFIG_NET_IF_UNICAST_IPV6_ADDR_COUNT
 #define NET_IF_MAX_IPV6_MADDR CONFIG_NET_IF_MCAST_IPV6_ADDR_COUNT
 #define NET_IF_MAX_IPV6_PREFIX CONFIG_NET_IF_IPV6_PREFIX_COUNT
+#else
+#define NET_IF_MAX_IPV6_ADDR 0
+#define NET_IF_MAX_IPV6_MADDR 0
+#define NET_IF_MAX_IPV6_PREFIX 0
+#endif
 
 struct net_if_ipv6 {
 	/** Unicast IP addresses */
@@ -224,7 +227,6 @@ struct net_if_ipv6 {
 	/** RS count */
 	u8_t rs_count;
 };
-#endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
 #define NET_IF_MAX_IPV4_ADDR CONFIG_NET_IF_UNICAST_IPV4_ADDR_COUNT
@@ -732,7 +734,6 @@ static inline struct net_if *net_if_get_ieee802154(void)
 }
 #endif /* CONFIG_NET_L2_IEEE802154 */
 
-#if defined(CONFIG_NET_IPV6)
 /**
  * @brief Allocate network interface IPv6 config.
  *
@@ -1103,11 +1104,15 @@ bool net_if_ipv6_router_rm(struct net_if_router *router);
  */
 static inline u8_t net_if_ipv6_get_hop_limit(struct net_if *iface)
 {
+#if defined(CONFIG_NET_IPV6)
 	if (!iface->config.ip.ipv6) {
 		return 0;
 	}
 
 	return iface->config.ip.ipv6->hop_limit;
+#else
+	return 0;
+#endif
 }
 
 /**
@@ -1119,11 +1124,13 @@ static inline u8_t net_if_ipv6_get_hop_limit(struct net_if *iface)
 static inline void net_ipv6_set_hop_limit(struct net_if *iface,
 					  u8_t hop_limit)
 {
+#if defined(CONFIG_NET_IPV6)
 	if (!iface->config.ip.ipv6) {
 		return;
 	}
 
 	iface->config.ip.ipv6->hop_limit = hop_limit;
+#endif
 }
 
 /**
@@ -1135,11 +1142,13 @@ static inline void net_ipv6_set_hop_limit(struct net_if *iface,
 static inline void net_if_ipv6_set_base_reachable_time(struct net_if *iface,
 						       u32_t reachable_time)
 {
+#if defined(CONFIG_NET_IPV6)
 	if (!iface->config.ip.ipv6) {
 		return;
 	}
 
 	iface->config.ip.ipv6->base_reachable_time = reachable_time;
+#endif
 }
 
 /**
@@ -1151,11 +1160,15 @@ static inline void net_if_ipv6_set_base_reachable_time(struct net_if *iface,
  */
 static inline u32_t net_if_ipv6_get_reachable_time(struct net_if *iface)
 {
+#if defined(CONFIG_NET_IPV6)
 	if (!iface->config.ip.ipv6) {
 		return 0;
 	}
 
 	return iface->config.ip.ipv6->reachable_time;
+#else
+	return 0;
+#endif
 }
 
 /**
@@ -1175,7 +1188,9 @@ u32_t net_if_ipv6_calc_reachable_time(struct net_if_ipv6 *ipv6);
  */
 static inline void net_if_ipv6_set_reachable_time(struct net_if_ipv6 *ipv6)
 {
+#if defined(CONFIG_NET_IPV6)
 	ipv6->reachable_time = net_if_ipv6_calc_reachable_time(ipv6);
+#endif
 }
 
 /**
@@ -1187,11 +1202,13 @@ static inline void net_if_ipv6_set_reachable_time(struct net_if_ipv6 *ipv6)
 static inline void net_if_ipv6_set_retrans_timer(struct net_if *iface,
 						 u32_t retrans_timer)
 {
+#if defined(CONFIG_NET_IPV6)
 	if (!iface->config.ip.ipv6) {
 		return;
 	}
 
 	iface->config.ip.ipv6->retrans_timer = retrans_timer;
+#endif
 }
 
 /**
@@ -1203,11 +1220,15 @@ static inline void net_if_ipv6_set_retrans_timer(struct net_if *iface,
  */
 static inline u32_t net_if_ipv6_get_retrans_timer(struct net_if *iface)
 {
+#if defined(CONFIG_NET_IPV6)
 	if (!iface->config.ip.ipv6) {
 		return 0;
 	}
 
 	return iface->config.ip.ipv6->retrans_timer;
+#else
+	return 0;
+#endif
 }
 
 /**
@@ -1279,10 +1300,6 @@ void net_if_ipv6_dad_failed(struct net_if *iface, const struct in6_addr *addr);
  * @return Pointer to IPv6 address, NULL if not found.
  */
 struct in6_addr *net_if_ipv6_get_global_addr(struct net_if **iface);
-#else
-#define net_if_ipv6_select_src_addr(...)
-#define net_if_ipv6_select_src_iface(...) NULL
-#endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
 /**
