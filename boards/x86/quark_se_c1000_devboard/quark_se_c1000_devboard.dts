@@ -78,4 +78,5 @@
 
 &spi1 {
 	status = "ok";
+
 };

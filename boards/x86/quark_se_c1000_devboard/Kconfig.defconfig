@@ -16,19 +16,8 @@ config SPI
 config GPIO
 	default y
 
-config IEEE802154_CC2520_SPI_DRV_NAME
-	default SPI_1_NAME
-config IEEE802154_CC2520_SPI_FREQ
-	default 8000000
-config IEEE802154_CC2520_SPI_SLAVE
-	default 1
-
 config IEEE802154_CC2520_GPIO_SPI_CS
 	default y
-config IEEE802154_CC2520_GPIO_SPI_CS_DRV_NAME
-	default "GPIO_0"
-config IEEE802154_CC2520_GPIO_SPI_CS_PIN
-	default 11
 
 config IEEE802154_CC2520_GPIO_0_NAME
 	string
