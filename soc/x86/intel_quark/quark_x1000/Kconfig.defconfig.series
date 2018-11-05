@@ -137,38 +137,11 @@ config SPI_INTEL
 
 if SPI_INTEL
 
-config SPI_CS_GPIO
-	def_bool y
-
 config SPI_0
 	def_bool y
 
-if SPI_0
-
-config SPI_0_IRQ_PRI
-	default 2
-config SPI_0_CS_GPIO_PORT
-	default "GPIO_0"
-config SPI_0_CS_GPIO_PIN
-	default 0
-
-endif # SPI_0
-
 config SPI_1
 	def_bool n
-
-if SPI_1
-
-config SPI_1_NAME
-	default "SPI_1"
-config SPI_1_IRQ_PRI
-	default 2
-config SPI_1_CS_GPIO_PORT
-	default "GPIO_0"
-config SPI_1_CS_GPIO_PIN
-	default 2
-
-endif # SPI_1
 
 endif # SPI_INTEL
 
