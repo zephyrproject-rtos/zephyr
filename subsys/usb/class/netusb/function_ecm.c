@@ -212,7 +212,7 @@ static int ecm_class_handler(struct usb_setup_packet *setup, s32_t *len,
 
 	switch (setup->bRequest) {
 	case USB_CDC_SET_ETH_PKT_FILTER:
-		USB_DBG("intf 0x%x filter 0x%x", setup->wIndex, setup->wValue);
+		LOG_DBG("intf 0x%x filter 0x%x", setup->wIndex, setup->wValue);
 		break;
 	default:
 		break;
@@ -223,7 +223,7 @@ static int ecm_class_handler(struct usb_setup_packet *setup, s32_t *len,
 
 static void ecm_int_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
-	USB_DBG("EP 0x%x status %d", ep, ep_status);
+	LOG_DBG("EP 0x%x status %d", ep, ep_status);
 }
 
 /* Retrieve expected pkt size from ethernet/ip header */
@@ -247,7 +247,7 @@ static size_t ecm_eth_size(void *ecm_pkt, size_t len)
 		ip_len = ntohs(((struct net_ipv6_hdr *)ip_data)->len);
 		break;
 	default:
-		USB_DBG("Unknown hdr type 0x%04x", hdr->type);
+		LOG_DBG("Unknown hdr type 0x%04x", hdr->type);
 		return 0;
 	}
 
@@ -355,7 +355,7 @@ static struct netusb_function ecm_function = {
 
 static inline void ecm_status_interface(const u8_t *iface)
 {
-	USB_DBG("iface %u", *iface);
+	LOG_DBG("iface %u", *iface);
 
 	/* First interface is CDC Comm interface */
 	if (*iface != ecm_get_first_iface_number() + 1) {
@@ -370,12 +370,12 @@ static void ecm_status_cb(enum usb_dc_status_code status, const u8_t *param)
 	/* Check the USB status and do needed action if required */
 	switch (status) {
 	case USB_DC_DISCONNECTED:
-		USB_DBG("USB device disconnected");
+		LOG_DBG("USB device disconnected");
 		netusb_disable();
 		break;
 
 	case USB_DC_INTERFACE:
-		USB_DBG("USB interface selected");
+		LOG_DBG("USB interface selected");
 		ecm_status_interface(param);
 		break;
 
@@ -385,12 +385,12 @@ static void ecm_status_cb(enum usb_dc_status_code status, const u8_t *param)
 	case USB_DC_CONFIGURED:
 	case USB_DC_SUSPEND:
 	case USB_DC_RESUME:
-		USB_DBG("USB unhandlded state: %d", status);
+		LOG_DBG("USB unhandlded state: %d", status);
 		break;
 
 	case USB_DC_UNKNOWN:
 	default:
-		USB_DBG("USB unknown state: %d", status);
+		LOG_DBG("USB unknown state: %d", status);
 		break;
 	}
 }

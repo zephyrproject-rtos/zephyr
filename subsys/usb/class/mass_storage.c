@@ -232,12 +232,12 @@ static int mass_storage_class_handle_req(struct usb_setup_packet *pSetup,
 
 	switch (pSetup->bRequest) {
 	case MSC_REQUEST_RESET:
-		USB_DBG("MSC_REQUEST_RESET");
+		LOG_DBG("MSC_REQUEST_RESET");
 		msd_state_machine_reset();
 		break;
 
 	case MSC_REQUEST_GET_MAX_LUN:
-		USB_DBG("MSC_REQUEST_GET_MAX_LUN");
+		LOG_DBG("MSC_REQUEST_GET_MAX_LUN");
 		max_lun_count = 0;
 		*data = (u8_t *)(&max_lun_count);
 		*len = 1;
@@ -388,7 +388,7 @@ static void memoryRead(void)
 	/* we read an entire block */
 	if (!(addr % BLOCK_SIZE)) {
 		thread_op = THREAD_OP_READ_QUEUED;
-		USB_DBG("Signal thread for %d", (addr/BLOCK_SIZE));
+		LOG_DBG("Signal thread for %d", (addr/BLOCK_SIZE));
 		k_sem_give(&disk_wait_sem);
 		return;
 	}
@@ -413,7 +413,7 @@ static bool infoTransfer(void)
 	n = (cbw.CB[2] << 24) | (cbw.CB[3] << 16) | (cbw.CB[4] <<  8) |
 				 (cbw.CB[5] <<  0);
 
-	USB_DBG("LBA (block) : 0x%x ", n);
+	LOG_DBG("LBA (block) : 0x%x ", n);
 	addr = n * BLOCK_SIZE;
 
 	/* Number of Blocks to transfer */
@@ -431,7 +431,7 @@ static bool infoTransfer(void)
 		break;
 	}
 
-	USB_DBG("Size (block) : 0x%x ", n);
+	LOG_DBG("Size (block) : 0x%x ", n);
 	length = n * BLOCK_SIZE;
 
 	if (!cbw.DataLength) {              /* host requests no data*/
@@ -486,32 +486,32 @@ static void CBWDecode(u8_t *buf, u16_t size)
 	} else {
 		switch (cbw.CB[0]) {
 		case TEST_UNIT_READY:
-			USB_DBG(">> TUR");
+			LOG_DBG(">> TUR");
 			testUnitReady();
 			break;
 		case REQUEST_SENSE:
-			USB_DBG(">> REQ_SENSE");
+			LOG_DBG(">> REQ_SENSE");
 			requestSense();
 			break;
 		case INQUIRY:
-			USB_DBG(">> INQ");
+			LOG_DBG(">> INQ");
 			inquiryRequest();
 			break;
 		case MODE_SENSE6:
-			USB_DBG(">> MODE_SENSE6");
+			LOG_DBG(">> MODE_SENSE6");
 			modeSense6();
 			break;
 		case READ_FORMAT_CAPACITIES:
-			USB_DBG(">> READ_FORMAT_CAPACITY");
+			LOG_DBG(">> READ_FORMAT_CAPACITY");
 			readFormatCapacity();
 			break;
 		case READ_CAPACITY:
-			USB_DBG(">> READ_CAPACITY");
+			LOG_DBG(">> READ_CAPACITY");
 			readCapacity();
 			break;
 		case READ10:
 		case READ12:
-			USB_DBG(">> READ");
+			LOG_DBG(">> READ");
 			if (infoTransfer()) {
 				if ((cbw.Flags & 0x80)) {
 					stage = PROCESS_CBW;
@@ -527,7 +527,7 @@ static void CBWDecode(u8_t *buf, u16_t size)
 			break;
 		case WRITE10:
 		case WRITE12:
-			USB_DBG(">> WRITE");
+			LOG_DBG(">> WRITE");
 			if (infoTransfer()) {
 				if (!(cbw.Flags & 0x80)) {
 					stage = PROCESS_CBW;
@@ -541,7 +541,7 @@ static void CBWDecode(u8_t *buf, u16_t size)
 			}
 			break;
 		case VERIFY10:
-			USB_DBG(">> VERIFY10");
+			LOG_DBG(">> VERIFY10");
 			if (!(cbw.CB[1] & 0x02)) {
 				csw.Status = CSW_PASSED;
 				sendCSW();
@@ -561,7 +561,7 @@ static void CBWDecode(u8_t *buf, u16_t size)
 			}
 			break;
 		case MEDIA_REMOVAL:
-			USB_DBG(">> MEDIA_REMOVAL");
+			LOG_DBG(">> MEDIA_REMOVAL");
 			csw.Status = CSW_PASSED;
 			sendCSW();
 			break;
@@ -587,7 +587,7 @@ static void memoryVerify(u8_t *buf, u16_t size)
 
 	/* beginning of a new block -> load a whole block in RAM */
 	if (!(addr % BLOCK_SIZE)) {
-		USB_DBG("Disk READ sector %d", addr/BLOCK_SIZE);
+		LOG_DBG("Disk READ sector %d", addr/BLOCK_SIZE);
 		if (disk_access_read(disk_pdrv, page, addr/BLOCK_SIZE, 1)) {
 			USB_ERR("---- Disk Read Error %d", addr/BLOCK_SIZE);
 		}
@@ -596,7 +596,7 @@ static void memoryVerify(u8_t *buf, u16_t size)
 	/* info are in RAM -> no need to re-read memory */
 	for (n = 0; n < size; n++) {
 		if (page[addr%BLOCK_SIZE + n] != buf[n]) {
-			USB_DBG("Mismatch sector %d offset %d",
+			LOG_DBG("Mismatch sector %d offset %d",
 				addr/BLOCK_SIZE, n);
 			memOK = false;
 			break;
@@ -632,7 +632,7 @@ static void memoryWrite(u8_t *buf, u16_t size)
 	if (!((addr + size) % BLOCK_SIZE)) {
 		if (!(disk_access_status(disk_pdrv) &
 					DISK_STATUS_WR_PROTECT)) {
-			USB_DBG("Disk WRITE Qd %d", (addr/BLOCK_SIZE));
+			LOG_DBG("Disk WRITE Qd %d", (addr/BLOCK_SIZE));
 			thread_op = THREAD_OP_WRITE_QUEUED;  /* write_queued */
 			defered_wr_sz = size;
 			k_sem_give(&disk_wait_sem);
@@ -665,7 +665,7 @@ static void mass_storage_bulk_out(u8_t ep,
 	switch (stage) {
 	/*the device has to decode the CBW received*/
 	case READ_CBW:
-		USB_DBG("> BO - READ_CBW");
+		LOG_DBG("> BO - READ_CBW");
 		CBWDecode(bo_buf, bytes_read);
 		break;
 
@@ -674,11 +674,11 @@ static void mass_storage_bulk_out(u8_t ep,
 		switch (cbw.CB[0]) {
 		case WRITE10:
 		case WRITE12:
-			/* USB_DBG("> BO - PROC_CBW WR");*/
+			/* LOG_DBG("> BO - PROC_CBW WR");*/
 			memoryWrite(bo_buf, bytes_read);
 			break;
 		case VERIFY10:
-			USB_DBG("> BO - PROC_CBW VER");
+			LOG_DBG("> BO - PROC_CBW VER");
 			memoryVerify(bo_buf, bytes_read);
 			break;
 		default:
@@ -699,7 +699,7 @@ static void mass_storage_bulk_out(u8_t ep,
 	if (thread_op != THREAD_OP_WRITE_QUEUED) {
 		usb_ep_read_continue(ep);
 	} else {
-		USB_DBG("> BO not clearing NAKs yet");
+		LOG_DBG("> BO not clearing NAKs yet");
 	}
 
 }
@@ -743,7 +743,7 @@ static void mass_storage_bulk_in(u8_t ep,
 		switch (cbw.CB[0]) {
 		case READ10:
 		case READ12:
-			/* USB_DBG("< BI - PROC_CBW  READ"); */
+			/* LOG_DBG("< BI - PROC_CBW  READ"); */
 			memoryRead();
 			break;
 		default:
@@ -754,13 +754,13 @@ static void mass_storage_bulk_in(u8_t ep,
 
 	/*the device has to send a CSW*/
 	case SEND_CSW:
-		USB_DBG("< BI - SEND_CSW");
+		LOG_DBG("< BI - SEND_CSW");
 		sendCSW();
 		break;
 
 	/*the host has received the CSW -> we wait a CBW*/
 	case WAIT_CSW:
-		USB_DBG("< BI - WAIT_CSW");
+		LOG_DBG("< BI - WAIT_CSW");
 		stage = READ_CBW;
 		break;
 
@@ -790,31 +790,31 @@ static void mass_storage_status_cb(enum usb_dc_status_code status,
 	/* Check the USB status and do needed action if required */
 	switch (status) {
 	case USB_DC_ERROR:
-		USB_DBG("USB device error");
+		LOG_DBG("USB device error");
 		break;
 	case USB_DC_RESET:
-		USB_DBG("USB device reset detected");
+		LOG_DBG("USB device reset detected");
 		msd_state_machine_reset();
 		msd_init();
 		break;
 	case USB_DC_CONNECTED:
-		USB_DBG("USB device connected");
+		LOG_DBG("USB device connected");
 		break;
 	case USB_DC_CONFIGURED:
-		USB_DBG("USB device configured");
+		LOG_DBG("USB device configured");
 		break;
 	case USB_DC_DISCONNECTED:
-		USB_DBG("USB device disconnected");
+		LOG_DBG("USB device disconnected");
 		break;
 	case USB_DC_SUSPEND:
-		USB_DBG("USB device supended");
+		LOG_DBG("USB device supended");
 		break;
 	case USB_DC_RESUME:
-		USB_DBG("USB device resumed");
+		LOG_DBG("USB device resumed");
 		break;
 	case USB_DC_UNKNOWN:
 	default:
-		USB_DBG("USB unknown state");
+		LOG_DBG("USB unknown state");
 		break;
 	}
 }
@@ -846,7 +846,7 @@ static void mass_thread_main(int arg1, int unused)
 
 	while (1) {
 		k_sem_take(&disk_wait_sem, K_FOREVER);
-		USB_DBG("sem %d", thread_op);
+		LOG_DBG("sem %d", thread_op);
 
 		switch (thread_op) {
 		case THREAD_OP_READ_QUEUED:

@@ -182,7 +182,7 @@ static int kinetis_usb_init(void)
 
 	irq_enable(CONFIG_USBD_KINETIS_IRQ);
 
-	USB_DBG("");
+	LOG_DBG("");
 
 	return 0;
 }
@@ -215,7 +215,7 @@ int usb_dc_reset(void)
 		       USB_INTEN_STALLEN_MASK |
 		       USB_INTEN_ERROREN_MASK);
 
-	USB_DBG("");
+	LOG_DBG("");
 
 	return 0;
 }
@@ -235,7 +235,7 @@ int usb_dc_attach(void)
 	usb_dc_reset();
 
 	dev_data.attached = 1;
-	USB_DBG("attached");
+	LOG_DBG("attached");
 
 	/* non-OTG device mode, enable DP Pullup */
 	USB0->CONTROL = USB_CONTROL_DPPULLUPNONOTG_MASK;
@@ -245,7 +245,7 @@ int usb_dc_attach(void)
 
 int usb_dc_detach(void)
 {
-	USB_DBG("");
+	LOG_DBG("");
 	/* disable USB and DP Pullup */
 	USB0->CTL  &= ~USB_CTL_USBENSOFEN_MASK;
 	USB0->CONTROL &= ~USB_CONTROL_DPPULLUPNONOTG_MASK;
@@ -255,7 +255,7 @@ int usb_dc_detach(void)
 
 int usb_dc_set_address(const u8_t addr)
 {
-	USB_DBG("");
+	LOG_DBG("");
 	/*
 	 * The device stack tries to set the address before
 	 * sending the ACK with ZLP, which is totally stupid,
@@ -315,7 +315,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const cfg)
 		return -EBUSY;
 	}
 
-	USB_DBG("ep %x, mps %d, type %d", cfg->ep_addr, cfg->ep_mps,
+	LOG_DBG("ep %x, mps %d, type %d", cfg->ep_addr, cfg->ep_mps,
 		cfg->ep_type);
 
 	if (EP_ADDR2DIR(cfg->ep_addr) == USB_EP_DIR_OUT) {
@@ -358,7 +358,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const cfg)
 
 	switch (cfg->ep_type) {
 	case USB_DC_EP_CONTROL:
-		USB_DBG("configure control endpoint");
+		LOG_DBG("configure control endpoint");
 		USB0->ENDPOINT[ep_idx].ENDPT |= (USB_ENDPT_EPHSHK_MASK |
 						 USB_ENDPT_EPRXEN_MASK |
 						 USB_ENDPT_EPTXEN_MASK);
@@ -396,7 +396,7 @@ int usb_dc_ep_set_stall(const u8_t ep)
 		return -EINVAL;
 	}
 
-	USB_DBG("ep %x, idx %d", ep, ep_idx);
+	LOG_DBG("ep %x, idx %d", ep, ep_idx);
 
 	if (EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
 		dev_data.ep_ctrl[ep_idx].status.out_stalled = 1;
@@ -423,7 +423,7 @@ int usb_dc_ep_clear_stall(const u8_t ep)
 		return -EINVAL;
 	}
 
-	USB_DBG("ep %x, idx %d", ep, ep_idx);
+	LOG_DBG("ep %x, idx %d", ep, ep_idx);
 	USB0->ENDPOINT[ep_idx].ENDPT &= ~USB_ENDPT_EPSTALL_MASK;
 
 	if (EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
@@ -458,7 +458,7 @@ int usb_dc_ep_is_stalled(const u8_t ep, u8_t *const stalled)
 		return -EINVAL;
 	}
 
-	USB_DBG("ep %x, idx %d", ep_idx, ep);
+	LOG_DBG("ep %x, idx %d", ep_idx, ep);
 	if (!stalled) {
 		return -EINVAL;
 	}
@@ -556,7 +556,7 @@ int usb_dc_ep_flush(const u8_t ep)
 		return -EINVAL;
 	}
 
-	USB_DBG("ep %x, idx %d", ep_idx, ep);
+	LOG_DBG("ep %x, idx %d", ep_idx, ep);
 
 	return 0;
 }
@@ -586,11 +586,11 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 	}
 
 	while (bdt[bd_idx].get.own) {
-		USB_DBG("ep 0x%x is busy", ep);
+		LOG_DBG("ep 0x%x is busy", ep);
 		k_yield();
 	}
 
-	USB_DBG("bd idx %x bufp %p odd %d", bd_idx, bufp, odd);
+	LOG_DBG("bd idx %x bufp %p odd %d", bd_idx, bufp, odd);
 
 	if (data_len > dev_data.ep_ctrl[ep_idx].mps_in) {
 		len_to_send = dev_data.ep_ctrl[ep_idx].mps_in;
@@ -614,7 +614,7 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 	/* Toggle next Data1 */
 	dev_data.ep_ctrl[ep_idx].status.in_data1 ^= 1;
 
-	USB_DBG("ep 0x%x write %d bytes from %d", ep, len_to_send, data_len);
+	LOG_DBG("ep 0x%x write %d bytes from %d", ep, len_to_send, data_len);
 
 	if (ret_bytes) {
 		*ret_bytes = len_to_send;
@@ -682,7 +682,7 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 		}
 	}
 
-	USB_DBG("Read idx %d, req %d, read %d bytes", bd_idx, max_data_len,
+	LOG_DBG("Read idx %d, req %d, read %d bytes", bd_idx, max_data_len,
 		data_len);
 
 	if (read_bytes) {
@@ -734,7 +734,7 @@ int usb_dc_ep_read_continue(u8_t ep)
 		USB0->CTL &= ~USB_CTL_TXSUSPENDTOKENBUSY_MASK;
 	}
 
-	USB_DBG("idx next %x", bd_idx);
+	LOG_DBG("idx next %x", bd_idx);
 
 	return 0;
 }
@@ -759,7 +759,7 @@ int usb_dc_ep_read(const u8_t ep, u8_t *const data,
 		return -EINVAL;
 	}
 
-	USB_DBG("");
+	LOG_DBG("");
 
 	return 0;
 }
@@ -777,7 +777,7 @@ int usb_dc_ep_set_callback(const u8_t ep, const usb_dc_ep_callback cb)
 	} else {
 		dev_data.ep_ctrl[ep_idx].cb_out = cb;
 	}
-	USB_DBG("ep_idx %x", ep_idx);
+	LOG_DBG("ep_idx %x", ep_idx);
 
 	return 0;
 }
@@ -785,7 +785,7 @@ int usb_dc_ep_set_callback(const u8_t ep, const usb_dc_ep_callback cb)
 int usb_dc_set_status_callback(const usb_dc_status_callback cb)
 {
 	dev_data.status_cb = cb;
-	USB_DBG("");
+	LOG_DBG("");
 
 	return 0;
 }

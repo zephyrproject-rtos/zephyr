@@ -129,7 +129,7 @@ static struct usb_ep_cfg_data bluetooth_ep_data[] = {
 
 static void hci_rx_thread(void)
 {
-	USB_DBG("Start USB Bluetooth thread");
+	LOG_DBG("Start USB Bluetooth thread");
 
 	while (true) {
 		struct net_buf *buf;
@@ -205,35 +205,35 @@ static void bluetooth_status_cb(enum usb_dc_status_code status,
 	/* Check the USB status and do needed action if required */
 	switch (status) {
 	case USB_DC_ERROR:
-		USB_DBG("USB device error");
+		LOG_DBG("USB device error");
 		break;
 	case USB_DC_RESET:
-		USB_DBG("USB device reset detected");
+		LOG_DBG("USB device reset detected");
 		break;
 	case USB_DC_CONNECTED:
-		USB_DBG("USB device connected");
+		LOG_DBG("USB device connected");
 		break;
 	case USB_DC_CONFIGURED:
-		USB_DBG("USB device configured");
+		LOG_DBG("USB device configured");
 		/* Start reading */
 		acl_read_cb(bluetooth_ep_data[HCI_OUT_EP_IDX].ep_addr, 0, NULL);
 		break;
 	case USB_DC_DISCONNECTED:
-		USB_DBG("USB device disconnected");
+		LOG_DBG("USB device disconnected");
 		/* Cancel any transfer */
 		usb_cancel_transfer(bluetooth_ep_data[HCI_INT_EP_IDX].ep_addr);
 		usb_cancel_transfer(bluetooth_ep_data[HCI_IN_EP_IDX].ep_addr);
 		usb_cancel_transfer(bluetooth_ep_data[HCI_OUT_EP_IDX].ep_addr);
 		break;
 	case USB_DC_SUSPEND:
-		USB_DBG("USB device suspended");
+		LOG_DBG("USB device suspended");
 		break;
 	case USB_DC_RESUME:
-		USB_DBG("USB device resumed");
+		LOG_DBG("USB device resumed");
 		break;
 	case USB_DC_UNKNOWN:
 	default:
-		USB_DBG("USB unknown state");
+		LOG_DBG("USB unknown state");
 		break;
 	}
 }
@@ -243,7 +243,7 @@ static int bluetooth_class_handler(struct usb_setup_packet *setup,
 {
 	struct net_buf *buf;
 
-	USB_DBG("len %u", *len);
+	LOG_DBG("len %u", *len);
 
 	if (!*len || *len > CMD_BUF_SIZE) {
 		USB_ERR("Incorrect length: %d\n", *len);
@@ -290,7 +290,7 @@ static int bluetooth_init(struct device *dev)
 {
 	int ret;
 
-	USB_DBG("Initialization");
+	LOG_DBG("Initialization");
 
 	ret = bt_enable_raw(&rx_queue);
 	if (ret) {
