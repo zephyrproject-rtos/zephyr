@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <init.h>
 #include <stdio.h>
+#include <soc.h>
 #include <string.h>
 #include <misc/util.h>
 
