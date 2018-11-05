@@ -71,6 +71,15 @@ int _sys_soc_suspend(s32_t ticks)
 
 	sys_state = sys_pm_policy_next_state(ticks, &pm_state);
 
+#ifdef CONFIG_PM_CONTROL_STATE_LOCK
+	/* Check if PM state is locked */
+	if ((sys_state != SYS_PM_NOT_HANDLED) &&
+			!sys_pm_ctrl_is_state_enabled(sys_state)) {
+		LOG_DBG("PM state locked %d\n", sys_state);
+		return SYS_PM_NOT_HANDLED;
+	}
+#endif
+
 	switch (sys_state) {
 	case SYS_PM_LOW_POWER_STATE:
 		sys_pm_notify_lps_entry(pm_state);
