@@ -68,9 +68,11 @@ if NETWORKING
 # if it's enabled
 
 config NET_L2_BT
+	depends on NET_IPV6
 	def_bool y
 
 config NET_L2_BT_ZEP1656
+	depends on NET_IPV6
 	def_bool y
 
 endif # NETWORKING
