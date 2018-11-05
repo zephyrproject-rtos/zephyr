@@ -6,7 +6,6 @@
 menuconfig SPI_NRFX
 	bool "nRF SPI nrfx drivers"
 	depends on SOC_FAMILY_NRF
-	select HAS_DTS_SPI
 	help
 	  Enable support for nrfx SPI drivers for nRF MCU series.
 	  Peripherals with the same instance ID cannot be used together,
