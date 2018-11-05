@@ -20,12 +20,14 @@ config IEEE802154_CC2520_DRV_NAME
 
 config IEEE802154_CC2520_SPI_DRV_NAME
 	string "SPI driver's name to use to access CC2520"
+	depends on !HAS_DTS_SPI
 	help
 	  This option is mandatory to set which SPI controller to use in order
 	  to actually control the CC2520 chip.
 
 config IEEE802154_CC2520_SPI_FREQ
 	int "SPI system frequency"
+	depends on !HAS_DTS_SPI
 	default 0
 	help
 	  This option sets the SPI controller's frequency. Beware this value
@@ -34,6 +36,7 @@ config IEEE802154_CC2520_SPI_FREQ
 
 config IEEE802154_CC2520_SPI_SLAVE
 	int "SPI slave linked to CC2520"
+	depends on !HAS_DTS_SPI
 	default 0
 	help
 	  This option sets the SPI slave number SPI controller has to switch
@@ -47,7 +50,7 @@ config IEEE802154_CC2520_GPIO_SPI_CS
 
 config IEEE802154_CC2520_GPIO_SPI_CS_DRV_NAME
 	string "GPIO driver's name to use to drive SPI CS through"
-	depends on IEEE802154_CC2520_GPIO_SPI_CS
+	depends on IEEE802154_CC2520_GPIO_SPI_CS && !HAS_DTS_SPI
 	help
 	This option is mandatory to set which GPIO controller to use in order
 	to actually emulate the SPI CS.
@@ -55,7 +58,7 @@ config IEEE802154_CC2520_GPIO_SPI_CS_DRV_NAME
 config IEEE802154_CC2520_GPIO_SPI_CS_PIN
 	int "GPIO PIN to use to drive SPI CS through"
 	default 0
-	depends on IEEE802154_CC2520_GPIO_SPI_CS
+	depends on IEEE802154_CC2520_GPIO_SPI_CS && !HAS_DTS_SPI
 	help
 	This option is mandatory to set which GPIO pin to use in order
 	to actually emulate the SPI CS.
