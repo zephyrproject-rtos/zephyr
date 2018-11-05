@@ -416,7 +416,7 @@ void spi_config_0_irq(void);
 struct spi_intel_data spi_intel_data_port_0 = {
 	SPI_CONTEXT_INIT_LOCK(spi_intel_data_port_0, ctx),
 	SPI_CONTEXT_INIT_SYNC(spi_intel_data_port_0, ctx),
-	.regs = SPI_INTEL_PORT_0_REGS,
+	.regs = CONFIG_SPI_0_BASE_ADDRESS,
 #if CONFIG_PCI
 	.pci_dev.class_type = SPI_INTEL_CLASS,
 	.pci_dev.bus = SPI_INTEL_PORT_0_BUS,
@@ -428,7 +428,7 @@ struct spi_intel_data spi_intel_data_port_0 = {
 };
 
 const struct spi_intel_config spi_intel_config_0 = {
-	.irq = SPI_INTEL_PORT_0_IRQ,
+	.irq = CONFIG_SPI_0_IRQ,
 	.config_func = spi_config_0_irq
 };
 
@@ -439,9 +439,9 @@ DEVICE_DEFINE(spi_intel_port_0, CONFIG_SPI_0_NAME, spi_intel_init,
 
 void spi_config_0_irq(void)
 {
-	IRQ_CONNECT(SPI_INTEL_PORT_0_IRQ, CONFIG_SPI_0_IRQ_PRI,
+	IRQ_CONNECT(CONFIG_SPI_0_IRQ, CONFIG_SPI_0_IRQ_PRI,
 		    spi_intel_isr, DEVICE_GET(spi_intel_port_0),
-		    SPI_INTEL_IRQ_FLAGS);
+		    CONFIG_SPI_0_IRQ_FLAGS);
 }
 
 #endif /* CONFIG_SPI_0 */
@@ -452,7 +452,7 @@ void spi_config_1_irq(void);
 struct spi_intel_data spi_intel_data_port_1 = {
 	SPI_CONTEXT_INIT_LOCK(spi_intel_data_port_1, ctx),
 	SPI_CONTEXT_INIT_SYNC(spi_intel_data_port_1, ctx),
-	.regs = SPI_INTEL_PORT_1_REGS,
+	.regs = CONFIG_SPI_1_BASE_ADDRESS,
 #if CONFIG_PCI
 	.pci_dev.class_type = SPI_INTEL_CLASS,
 	.pci_dev.bus = SPI_INTEL_PORT_1_BUS,
@@ -464,7 +464,7 @@ struct spi_intel_data spi_intel_data_port_1 = {
 };
 
 const struct spi_intel_config spi_intel_config_1 = {
-	.irq = SPI_INTEL_PORT_1_IRQ,
+	.irq = CONFIG_SPI_1_IRQ,
 	.config_func = spi_config_1_irq
 };
 
@@ -475,9 +475,9 @@ DEVICE_DEFINE(spi_intel_port_1, CONFIG_SPI_1_NAME, spi_intel_init,
 
 void spi_config_1_irq(void)
 {
-	IRQ_CONNECT(SPI_INTEL_PORT_1_IRQ, CONFIG_SPI_1_IRQ_PRI,
+	IRQ_CONNECT(CONFIG_SPI_1_IRQ, CONFIG_SPI_1_IRQ_PRI,
 		    spi_intel_isr, DEVICE_GET(spi_intel_port_1),
-		    SPI_INTEL_IRQ_FLAGS);
+		    CONFIG_SPI_1_IRQ_FLAGS);
 }
 
 #endif /* CONFIG_SPI_1 */

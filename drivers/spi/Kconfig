@@ -238,6 +238,7 @@ endif # SPI_5
 config SPI_INTEL
 	bool "Intel SPI controller driver"
 	depends on CPU_MINUTEIA
+	select HAS_DTS_SPI
 	help
 	  Enable support for Intel's SPI controllers. Such controller
 	  was formerly found on XScale chips. It can be found nowadays
