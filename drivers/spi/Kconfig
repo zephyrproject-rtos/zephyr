@@ -66,16 +66,6 @@ config SPI_0_IRQ_PRI
 	int "Port 0 interrupt priority"
 	depends on !HAS_DTS_SPI
 
-config SPI_0_CS_GPIO_PORT
-	string "The GPIO port which is used to control CS"
-	depends on SPI_CS_GPIO
-	default "GPIO_0"
-
-config SPI_0_CS_GPIO_PIN
-	int "The GPIO PIN which is used to act as a CS pin"
-	depends on SPI_CS_GPIO
-	default 0
-
 endif # SPI_0
 
 config SPI_1
@@ -105,16 +95,6 @@ config SPI_1_IRQ_PRI
 	int "Port 1 interrupt priority"
 	depends on !HAS_DTS_SPI
 
-config SPI_1_CS_GPIO_PORT
-	string "The GPIO port which is used to control CS"
-	depends on SPI_CS_GPIO
-	default "GPIO_0"
-
-config SPI_1_CS_GPIO_PIN
-	int "The GPIO PIN which is used to act as a CS pin"
-	depends on SPI_CS_GPIO
-	default 0
-
 endif # SPI_1
 
 config SPI_2
@@ -143,16 +123,6 @@ config SPI_2_OP_MODES
 config SPI_2_IRQ_PRI
 	int "Port 2 interrupt priority"
 	depends on !HAS_DTS_SPI
-
-config SPI_2_CS_GPIO_PORT
-	string "The GPIO port which is used to control CS"
-	depends on SPI_CS_GPIO
-	default "GPIO_0"
-
-config SPI_2_CS_GPIO_PIN
-	int "The GPIO PIN which is used to act as a CS pin"
-	depends on SPI_CS_GPIO
-	default 0
 
 endif # SPI_2
 
