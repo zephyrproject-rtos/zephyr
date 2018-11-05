@@ -15,6 +15,10 @@
 extern "C" {
 #endif
 
+#if UINTPTR_MAX == 0xFFFFFFFFFFFFFFFFUL
+#error "Logger does not support 64 bit architecture."
+#endif
+
 #if !CONFIG_LOG
 #define CONFIG_LOG_DEFAULT_LEVEL 0
 #define CONFIG_LOG_DOMAIN_ID 0
