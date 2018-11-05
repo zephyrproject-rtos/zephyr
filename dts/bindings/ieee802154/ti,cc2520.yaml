@@ -1,0 +1,23 @@
+#
+# Copyright (c) 2018, Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: CC2520 802.15.4 Wireless Transceiver
+version: 0.1
+
+description: >
+    This is a representation of the CC2520 wireless transceiver.
+
+inherits:
+    !include spi-device.yaml
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "ti,cc2520"
+
+...
