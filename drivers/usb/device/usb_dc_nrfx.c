@@ -1085,10 +1085,9 @@ int usb_dc_detach(void)
 	if (ret) {
 		return ret;
 	}
+
 	nrf5_power_usb_power_int_enable(false);
-	if (ret) {
-		return ret;
-	}
+
 	ctx->attached = false;
 	return ret;
 }
