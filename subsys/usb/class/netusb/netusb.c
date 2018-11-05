@@ -147,7 +147,7 @@ int try_write(u8_t ep, u8_t *data, u16_t len)
 			 * error from the controller, try only several times.
 			 */
 			if (tries--) {
-				USB_WRN("Error: EAGAIN. Another try");
+				LOG_WRN("Error: EAGAIN. Another try");
 				continue;
 			}
 
@@ -157,7 +157,7 @@ int try_write(u8_t ep, u8_t *data, u16_t len)
 			break;
 		/* TODO: Handle other error codes */
 		default:
-			USB_WRN("Error writing to ep 0x%x ret %d", ep, ret);
+			LOG_WRN("Error writing to ep 0x%x ret %d", ep, ret);
 			return ret;
 		}
 
@@ -168,7 +168,7 @@ int try_write(u8_t ep, u8_t *data, u16_t len)
 #endif
 
 		if (len) {
-			USB_WRN("Remaining bytes %d wrote %d", len, wrote);
+			LOG_WRN("Remaining bytes %d wrote %d", len, wrote);
 		}
 	}
 

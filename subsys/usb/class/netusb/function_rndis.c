@@ -345,7 +345,7 @@ static void rndis_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 	LOG_DBG("EP 0x%x status %d len %u", ep, ep_status, len);
 
 	if (len > CONFIG_RNDIS_BULK_EP_MPS) {
-		USB_WRN("Limit read len %u to MPS %u", len,
+		LOG_WRN("Limit read len %u to MPS %u", len,
 			CONFIG_RNDIS_BULK_EP_MPS);
 		len = CONFIG_RNDIS_BULK_EP_MPS;
 	}
@@ -368,7 +368,7 @@ static void rndis_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 
 	/* Handle skip bytes */
 	if (rndis.skip_bytes) {
-		USB_WRN("Skip %u bytes out of remaining %d bytes",
+		LOG_WRN("Skip %u bytes out of remaining %d bytes",
 			len, rndis.skip_bytes);
 
 		rndis.skip_bytes -= len;
@@ -489,7 +489,7 @@ static void rndis_notify(struct k_work *work)
 
 	/* Decrement notify_count here */
 	if (atomic_dec(&rndis.notify_count) != 1) {
-		USB_WRN("Queue next notification, count %u",
+		LOG_WRN("Queue next notification, count %u",
 			atomic_get(&rndis.notify_count));
 
 		k_delayed_work_submit(&notify_work, K_NO_WAIT);
@@ -517,7 +517,7 @@ static void rndis_queue_rsp(struct net_buf *rsp)
 			net_buf_unref(buf);
 		}
 #endif
-		USB_WRN("Transmit response queue is not empty");
+		LOG_WRN("Transmit response queue is not empty");
 	}
 
 	LOG_DBG("Queued response pkt %p", rsp);
@@ -534,7 +534,7 @@ static void rndis_notify_rsp(void)
 
 	/* Keep track of number of notifies */
 	if (atomic_inc(&rndis.notify_count) != 0) {
-		USB_WRN("Unhandled notify: count %u",
+		LOG_WRN("Unhandled notify: count %u",
 			atomic_get(&rndis.notify_count));
 
 		return;
@@ -728,7 +728,7 @@ static int rndis_query_handle(u8_t *data, u32_t len)
 		net_buf_add_le32(buf, drv_version);
 		break;
 	default:
-		USB_WRN("Unhandled query for Object ID 0x%x", object_id);
+		LOG_WRN("Unhandled query for Object ID 0x%x", object_id);
 		break;
 	}
 
@@ -910,7 +910,7 @@ static int handle_encapsulated_cmd(u8_t *data, u32_t len)
 	net_hexdump("CMD >", data, len);
 
 	if (len != msg->len) {
-		USB_WRN("Total len is different then command len %u %u",
+		LOG_WRN("Total len is different then command len %u %u",
 			len, msg->len);
 		/* TODO: need actions? */
 	}
@@ -1023,7 +1023,7 @@ static int rndis_class_handler(struct usb_setup_packet *setup, s32_t *len,
 		handle_encapsulated_rsp(data, len);
 	} else {
 		*len = 0; /* FIXME! */
-		USB_WRN("Unknown USB packet req 0x%x type 0x%x",
+		LOG_WRN("Unknown USB packet req 0x%x type 0x%x",
 			setup->bRequest, setup->bmRequestType);
 	}
 

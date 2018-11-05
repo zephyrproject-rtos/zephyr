@@ -206,7 +206,7 @@ static int ecm_class_handler(struct usb_setup_packet *setup, s32_t *len,
 	}
 
 	if (setup->bmRequestType != USB_CDC_ECM_REQ_TYPE) {
-		USB_WRN("Unhandled req_type 0x%x", setup->bmRequestType);
+		LOG_WRN("Unhandled req_type 0x%x", setup->bmRequestType);
 		return 0;
 	}
 

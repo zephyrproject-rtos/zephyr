@@ -436,7 +436,7 @@ static int usb_dw_tx(u8_t ep, const u8_t *const data,
 
 		/* Check if transfer len is too big */
 		if (data_len > max_xfer_size) {
-			USB_WRN("USB IN EP%d len too big (%d->%d)", ep_idx,
+			LOG_WRN("USB IN EP%d len too big (%d->%d)", ep_idx,
 				data_len, max_xfer_size);
 			data_len = max_xfer_size;
 		}
@@ -451,7 +451,7 @@ static int usb_dw_tx(u8_t ep, const u8_t *const data,
 		pkt_cnt = (data_len + ep_mps - 1) / ep_mps;
 
 		if (pkt_cnt > max_pkt_cnt) {
-			USB_WRN("USB IN EP%d pkt count too big (%d->%d)",
+			LOG_WRN("USB IN EP%d pkt count too big (%d->%d)",
 				ep_idx, pkt_cnt, pkt_cnt);
 			pkt_cnt = max_pkt_cnt;
 			data_len = pkt_cnt * ep_mps;
@@ -814,19 +814,19 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 	}
 
 	if (cfg->ep_mps > DW_USB_MAX_PACKET_SIZE) {
-		USB_WRN("unsupported packet size");
+		LOG_WRN("unsupported packet size");
 		return -1;
 	}
 
 	if ((USB_DW_EP_ADDR2DIR(cfg->ep_addr) == USB_EP_DIR_OUT) &&
 	    (ep_idx >= DW_USB_OUT_EP_NUM)) {
-		USB_WRN("OUT endpoint address out of range");
+		LOG_WRN("OUT endpoint address out of range");
 		return -1;
 	}
 
 	if ((USB_DW_EP_ADDR2DIR(cfg->ep_addr) == USB_EP_DIR_IN) &&
 	    (ep_idx >= DW_USB_IN_EP_NUM)) {
-		USB_WRN("IN endpoint address out of range");
+		LOG_WRN("IN endpoint address out of range");
 		return -1;
 	}
 

@@ -223,7 +223,7 @@ int usb_dc_reset(void)
 int usb_dc_attach(void)
 {
 	if (dev_data.attached) {
-		USB_WRN("already attached");
+		LOG_WRN("already attached");
 	}
 
 	kinetis_usb_init();
@@ -311,7 +311,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const cfg)
 
 	if (ep_idx && (dev_data.ep_ctrl[ep_idx].status.in_enabled ||
 	    dev_data.ep_ctrl[ep_idx].status.out_enabled)) {
-		USB_WRN("endpoint already configured");
+		LOG_WRN("endpoint already configured");
 		return -EBUSY;
 	}
 
@@ -472,10 +472,10 @@ int usb_dc_ep_is_stalled(const u8_t ep, u8_t *const stalled)
 
 	u8_t bd_idx = get_bdt_idx(ep,
 			dev_data.ep_ctrl[ep_idx].status.in_odd);
-	USB_WRN("active bd ctrl: %x", bdt[bd_idx].set.bd_ctrl);
+	LOG_WRN("active bd ctrl: %x", bdt[bd_idx].set.bd_ctrl);
 	bd_idx = get_bdt_idx(ep,
 			~dev_data.ep_ctrl[ep_idx].status.in_odd);
-	USB_WRN("next bd ctrl: %x", bdt[bd_idx].set.bd_ctrl);
+	LOG_WRN("next bd ctrl: %x", bdt[bd_idx].set.bd_ctrl);
 
 	return 0;
 }
@@ -498,7 +498,7 @@ int usb_dc_ep_enable(const u8_t ep)
 
 	if (ep_idx && (dev_data.ep_ctrl[ep_idx].status.in_enabled ||
 	    dev_data.ep_ctrl[ep_idx].status.out_enabled)) {
-		USB_WRN("endpoint 0x%x already enabled", ep);
+		LOG_WRN("endpoint 0x%x already enabled", ep);
 		return -EBUSY;
 	}
 
@@ -581,7 +581,7 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 	}
 
 	if (dev_data.ep_ctrl[ep_idx].status.in_stalled) {
-		USB_WRN("endpoint is stalled");
+		LOG_WRN("endpoint is stalled");
 		return -EBUSY;
 	}
 
@@ -643,7 +643,7 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 	}
 
 	if (dev_data.ep_ctrl[ep_idx].status.out_stalled) {
-		USB_WRN("endpoint is stalled");
+		LOG_WRN("endpoint is stalled");
 		return -EBUSY;
 	}
 
@@ -672,7 +672,7 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 	}
 
 	if (data_len > max_data_len) {
-		USB_WRN("Not enough room to copy all the data!");
+		LOG_WRN("Not enough room to copy all the data!");
 		data_len = max_data_len;
 	}
 
@@ -710,7 +710,7 @@ int usb_dc_ep_read_continue(u8_t ep)
 
 	if (bdt[bd_idx].get.own) {
 		/* May occur when usb_transfer initializes the OUT transfer */
-		USB_WRN("Current buffer is claimed by the controller");
+		LOG_WRN("Current buffer is claimed by the controller");
 		return 0;
 	}
 
