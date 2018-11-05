@@ -1,0 +1,4 @@
+zephyr_library()
+
+zephyr_library_sources_ifdef(CONFIG_SI1133 si1133.c)
+zephyr_library_sources_ifdef(CONFIG_SI1133_TRIGGER si1133_trigger.c)
