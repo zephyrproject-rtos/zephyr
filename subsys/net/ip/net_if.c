@@ -428,9 +428,9 @@ static u8_t get_ipaddr_diff(const u8_t *src, const u8_t *dst, int addr_len)
 	return len;
 }
 
-#if defined(CONFIG_NET_IPV6)
 int net_if_config_ipv6_get(struct net_if *iface, struct net_if_ipv6 **ipv6)
 {
+#if defined(CONFIG_NET_IPV6)
 	int i;
 
 	if (iface->config.ip.ipv6) {
@@ -455,12 +455,14 @@ int net_if_config_ipv6_get(struct net_if *iface, struct net_if_ipv6 **ipv6)
 
 		return 0;
 	}
+#endif
 
 	return -ESRCH;
 }
 
 int net_if_config_ipv6_put(struct net_if *iface)
 {
+#if defined(CONFIG_NET_IPV6)
 	int i;
 
 	if (!iface->config.ip.ipv6) {
@@ -477,6 +479,7 @@ int net_if_config_ipv6_put(struct net_if *iface)
 
 		return 0;
 	}
+#endif
 
 	return -ESRCH;
 }
@@ -707,6 +710,7 @@ void net_if_start_rs(struct net_if *iface)
 struct net_if_addr *net_if_ipv6_addr_lookup(const struct in6_addr *addr,
 					    struct net_if **ret)
 {
+#if defined(CONFIG_NET_IPV6)
 	struct net_if *iface;
 
 	for (iface = __net_if_start; iface != __net_if_end; iface++) {
@@ -736,6 +740,7 @@ struct net_if_addr *net_if_ipv6_addr_lookup(const struct in6_addr *addr,
 			}
 		}
 	}
+#endif
 
 	return NULL;
 }
@@ -743,6 +748,7 @@ struct net_if_addr *net_if_ipv6_addr_lookup(const struct in6_addr *addr,
 struct net_if_addr *net_if_ipv6_addr_lookup_by_iface(struct net_if *iface,
 						     struct in6_addr *addr)
 {
+#if defined(CONFIG_NET_IPV6)
 	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
 	int i;
 
@@ -763,10 +769,12 @@ struct net_if_addr *net_if_ipv6_addr_lookup_by_iface(struct net_if *iface,
 			return &ipv6->unicast[i];
 		}
 	}
+#endif
 
 	return NULL;
 }
 
+#if defined(CONFIG_NET_IPV6)
 static bool check_timeout(u32_t start, s32_t timeout, u32_t counter,
 			  u32_t current_time)
 {
@@ -906,10 +914,12 @@ static void address_start_timer(struct net_if_addr *ifaddr, u32_t vlifetime)
 
 	address_submit_work(ifaddr);
 }
+#endif
 
 void net_if_ipv6_addr_update_lifetime(struct net_if_addr *ifaddr,
 				      u32_t vlifetime)
 {
+#if defined(CONFIG_NET_IPV6)
 	NET_DBG("Updating expire time of %s by %u secs",
 		log_strdup(net_sprint_ipv6_addr(&ifaddr->address.in6_addr)),
 		vlifetime);
@@ -917,8 +927,10 @@ void net_if_ipv6_addr_update_lifetime(struct net_if_addr *ifaddr,
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
 
 	address_start_timer(ifaddr, vlifetime);
+#endif
 }
 
+#if defined(CONFIG_NET_IPV6)
 static struct net_if_addr *ipv6_addr_find(struct net_if *iface,
 					  struct in6_addr *addr)
 {
@@ -1010,12 +1022,19 @@ static void join_mcast_nodes(struct net_if *iface, struct in6_addr *addr)
 		}
 	}
 }
+#else /* CONFIG_NET_IPV6 */
+#define join_mcast_allnodes(...)
+#define join_mcast_solicit_node(...)
+#define leave_mcast_all(...)
+#define join_mcast_nodes(...)
+#endif /* CONFIG_NET_IPV6 */
 
 struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 					 struct in6_addr *addr,
 					 enum net_addr_type addr_type,
 					 u32_t vlifetime)
 {
+#if defined(CONFIG_NET_IPV6)
 	struct net_if_addr *ifaddr;
 	struct net_if_ipv6 *ipv6;
 	int i;
@@ -1068,12 +1087,14 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 
 		return &ipv6->unicast[i];
 	}
+#endif
 
 	return NULL;
 }
 
 bool net_if_ipv6_addr_rm(struct net_if *iface, const struct in6_addr *addr)
 {
+#if defined(CONFIG_NET_IPV6)
 	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
 	int i;
 
@@ -1120,6 +1141,7 @@ bool net_if_ipv6_addr_rm(struct net_if *iface, const struct in6_addr *addr)
 
 		return true;
 	}
+#endif
 
 	return false;
 }
@@ -1127,6 +1149,7 @@ bool net_if_ipv6_addr_rm(struct net_if *iface, const struct in6_addr *addr)
 struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 						const struct in6_addr *addr)
 {
+#if defined(CONFIG_NET_IPV6)
 	struct net_if_ipv6 *ipv6;
 	int i;
 
@@ -1156,12 +1179,14 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 
 		return &ipv6->mcast[i];
 	}
+#endif
 
 	return NULL;
 }
 
 bool net_if_ipv6_maddr_rm(struct net_if *iface, const struct in6_addr *addr)
 {
+#if defined(CONFIG_NET_IPV6)
 	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
 	int i;
 
@@ -1188,6 +1213,7 @@ bool net_if_ipv6_maddr_rm(struct net_if *iface, const struct in6_addr *addr)
 
 		return true;
 	}
+#endif
 
 	return false;
 }
@@ -1195,6 +1221,7 @@ bool net_if_ipv6_maddr_rm(struct net_if *iface, const struct in6_addr *addr)
 struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(const struct in6_addr *maddr,
 						   struct net_if **ret)
 {
+#if defined(CONFIG_NET_IPV6)
 	struct net_if *iface;
 
 	for (iface = __net_if_start; iface != __net_if_end; iface++) {
@@ -1227,6 +1254,7 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(const struct in6_addr *maddr,
 			}
 		}
 	}
+#endif
 
 	return NULL;
 }
@@ -1235,22 +1263,27 @@ void net_if_mcast_mon_register(struct net_if_mcast_monitor *mon,
 			       struct net_if *iface,
 			       net_if_mcast_callback_t cb)
 {
+#if defined(CONFIG_NET_IPV6)
 	sys_slist_find_and_remove(&mcast_monitor_callbacks, &mon->node);
 	sys_slist_prepend(&mcast_monitor_callbacks, &mon->node);
 
 	mon->iface = iface;
 	mon->cb = cb;
+#endif
 }
 
 void net_if_mcast_mon_unregister(struct net_if_mcast_monitor *mon)
 {
+#if defined(CONFIG_NET_IPV6)
 	sys_slist_find_and_remove(&mcast_monitor_callbacks, &mon->node);
+#endif
 }
 
 void net_if_mcast_monitor(struct net_if *iface,
 			  const struct in6_addr *addr,
 			  bool is_joined)
 {
+#if defined(CONFIG_NET_IPV6)
 	struct net_if_mcast_monitor *mon, *tmp;
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&mcast_monitor_callbacks,
@@ -1259,8 +1292,10 @@ void net_if_mcast_monitor(struct net_if *iface,
 			mon->cb(iface, addr, is_joined);
 		}
 	}
+#endif
 }
 
+#if defined(CONFIG_NET_IPV6)
 static void remove_prefix_addresses(struct net_if *iface,
 				    struct net_if_ipv6 *ipv6,
 				    struct in6_addr *addr,
@@ -1467,12 +1502,14 @@ static void net_if_ipv6_prefix_init(struct net_if *iface,
 		ifprefix->is_infinite = false;
 	}
 }
+#endif /* CONFIG_NET_IPV6 */
 
 struct net_if_ipv6_prefix *net_if_ipv6_prefix_add(struct net_if *iface,
 						  struct in6_addr *prefix,
 						  u8_t len,
 						  u32_t lifetime)
 {
+#if defined(CONFIG_NET_IPV6)
 	struct net_if_ipv6_prefix *ifprefix;
 	struct net_if_ipv6 *ipv6;
 	int i;
@@ -1505,6 +1542,7 @@ struct net_if_ipv6_prefix *net_if_ipv6_prefix_add(struct net_if *iface,
 
 		return &ipv6->prefix[i];
 	}
+#endif
 
 	return NULL;
 }
@@ -1512,6 +1550,7 @@ struct net_if_ipv6_prefix *net_if_ipv6_prefix_add(struct net_if *iface,
 bool net_if_ipv6_prefix_rm(struct net_if *iface, struct in6_addr *addr,
 			   u8_t len)
 {
+#if defined(CONFIG_NET_IPV6)
 	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
 	int i;
 
@@ -1542,6 +1581,7 @@ bool net_if_ipv6_prefix_rm(struct net_if *iface, struct in6_addr *addr,
 
 		return true;
 	}
+#endif
 
 	return false;
 }
@@ -1549,6 +1589,7 @@ bool net_if_ipv6_prefix_rm(struct net_if *iface, struct in6_addr *addr,
 struct net_if_ipv6_prefix *net_if_ipv6_prefix_get(struct net_if *iface,
 						  struct in6_addr *addr)
 {
+#if defined(CONFIG_NET_IPV6)
 	struct net_if_ipv6_prefix *prefix = NULL;
 	struct net_if_ipv6 *ipv6;
 	int i;
@@ -1577,12 +1618,16 @@ struct net_if_ipv6_prefix *net_if_ipv6_prefix_get(struct net_if *iface,
 	}
 
 	return prefix;
+#else
+	return NULL;
+#endif
 }
 
 struct net_if_ipv6_prefix *net_if_ipv6_prefix_lookup(struct net_if *iface,
 						     struct in6_addr *addr,
 						     u8_t len)
 {
+#if defined(CONFIG_NET_IPV6)
 	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
 	int i;
 
@@ -1600,12 +1645,14 @@ struct net_if_ipv6_prefix *net_if_ipv6_prefix_lookup(struct net_if *iface,
 			return &ipv6->prefix[i];
 		}
 	}
+#endif
 
 	return NULL;
 }
 
 bool net_if_ipv6_addr_onlink(struct net_if **iface, struct in6_addr *addr)
 {
+#if defined(CONFIG_NET_IPV6)
 	struct net_if *tmp;
 
 	for (tmp = __net_if_start; tmp != __net_if_end; tmp++) {
@@ -1633,6 +1680,7 @@ bool net_if_ipv6_addr_onlink(struct net_if **iface, struct in6_addr *addr)
 			}
 		}
 	}
+#endif
 
 	return false;
 }
@@ -1640,6 +1688,7 @@ bool net_if_ipv6_addr_onlink(struct net_if **iface, struct in6_addr *addr)
 void net_if_ipv6_prefix_set_timer(struct net_if_ipv6_prefix *prefix,
 				  u32_t lifetime)
 {
+#if defined(CONFIG_NET_IPV6)
 	/* No need to set a timer for infinite timeout */
 	if (lifetime == 0xffffffff) {
 		return;
@@ -1648,20 +1697,24 @@ void net_if_ipv6_prefix_set_timer(struct net_if_ipv6_prefix *prefix,
 	NET_DBG("Prefix lifetime %u sec", lifetime);
 
 	prefix_start_timer(prefix, lifetime);
+#endif
 }
 
 void net_if_ipv6_prefix_unset_timer(struct net_if_ipv6_prefix *prefix)
 {
+#if defined(CONFIG_NET_IPV6)
 	if (!prefix->is_used) {
 		return;
 	}
 
 	prefix_timer_remove(prefix);
+#endif
 }
 
 struct net_if_router *net_if_ipv6_router_lookup(struct net_if *iface,
 						struct in6_addr *addr)
 {
+#if defined(CONFIG_NET_IPV6)
 	int i;
 
 	for (i = 0; i < CONFIG_NET_MAX_ROUTERS; i++) {
@@ -1675,6 +1728,7 @@ struct net_if_router *net_if_ipv6_router_lookup(struct net_if *iface,
 			return &routers[i];
 		}
 	}
+#endif
 
 	return NULL;
 }
@@ -1682,6 +1736,7 @@ struct net_if_router *net_if_ipv6_router_lookup(struct net_if *iface,
 struct net_if_router *net_if_ipv6_router_find_default(struct net_if *iface,
 						      struct in6_addr *addr)
 {
+#if defined(CONFIG_NET_IPV6)
 	int i;
 
 	for (i = 0; i < CONFIG_NET_MAX_ROUTERS; i++) {
@@ -1697,10 +1752,12 @@ struct net_if_router *net_if_ipv6_router_find_default(struct net_if *iface,
 
 		return &routers[i];
 	}
+#endif
 
 	return NULL;
 }
 
+#if defined(CONFIG_NET_IPV6)
 static void ipv6_router_expired(struct k_work *work)
 {
 	struct net_if_router *router = CONTAINER_OF(work,
@@ -1712,17 +1769,21 @@ static void ipv6_router_expired(struct k_work *work)
 
 	router->is_used = false;
 }
+#endif /* CONFIG_NET_IPV6 */
 
 void net_if_ipv6_router_update_lifetime(struct net_if_router *router,
 					u32_t lifetime)
 {
+#if defined(CONFIG_NET_IPV6)
 	NET_DBG("Updating expire time of %s by %u secs",
 		log_strdup(net_sprint_ipv6_addr(&router->address.in6_addr)),
 		lifetime);
 
 	k_delayed_work_submit(&router->lifetime, K_SECONDS(lifetime));
+#endif
 }
 
+#if defined(CONFIG_NET_IPV6)
 static inline void net_if_router_init(struct net_if_router *router,
 				      struct net_if *iface,
 				      struct in6_addr *addr, u16_t lifetime)
@@ -1750,11 +1811,13 @@ static inline void net_if_router_init(struct net_if_router *router,
 		router->is_infinite = true;
 	}
 }
+#endif /* CONFIG_NET_IPV6 */
 
 struct net_if_router *net_if_ipv6_router_add(struct net_if *iface,
 					     struct in6_addr *addr,
 					     u16_t lifetime)
 {
+#if defined(CONFIG_NET_IPV6)
 	int i;
 
 	for (i = 0; i < CONFIG_NET_MAX_ROUTERS; i++) {
@@ -1773,12 +1836,14 @@ struct net_if_router *net_if_ipv6_router_add(struct net_if *iface,
 
 		return &routers[i];
 	}
+#endif
 
 	return NULL;
 }
 
 bool net_if_ipv6_router_rm(struct net_if_router *router)
 {
+#if defined(CONFIG_NET_IPV6)
 	int i;
 
 	for (i = 0; i < CONFIG_NET_MAX_ROUTERS; i++) {
@@ -1803,6 +1868,7 @@ bool net_if_ipv6_router_rm(struct net_if_router *router)
 
 		return true;
 	}
+#endif
 
 	return false;
 }
@@ -1810,6 +1876,7 @@ bool net_if_ipv6_router_rm(struct net_if_router *router)
 struct in6_addr *net_if_ipv6_get_ll(struct net_if *iface,
 				    enum net_addr_state addr_state)
 {
+#if defined(CONFIG_NET_IPV6)
 	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
 	int i;
 
@@ -1829,6 +1896,7 @@ struct in6_addr *net_if_ipv6_get_ll(struct net_if *iface,
 			return &ipv6->unicast[i].address.in6_addr;
 		}
 	}
+#endif
 
 	return NULL;
 }
@@ -1836,6 +1904,7 @@ struct in6_addr *net_if_ipv6_get_ll(struct net_if *iface,
 struct in6_addr *net_if_ipv6_get_ll_addr(enum net_addr_state state,
 					 struct net_if **iface)
 {
+#if defined(CONFIG_NET_IPV6)
 	struct net_if *tmp;
 
 	for (tmp = __net_if_start; tmp != __net_if_end; tmp++) {
@@ -1850,12 +1919,14 @@ struct in6_addr *net_if_ipv6_get_ll_addr(enum net_addr_state state,
 			return addr;
 		}
 	}
+#endif
 
 	return NULL;
 }
 
 struct in6_addr *net_if_ipv6_get_global_addr(struct net_if **iface)
 {
+#if defined(CONFIG_NET_IPV6)
 	struct net_if *tmp;
 
 	for (tmp = __net_if_start; tmp != __net_if_end; tmp++) {
@@ -1874,10 +1945,12 @@ struct in6_addr *net_if_ipv6_get_global_addr(struct net_if **iface)
 			return addr;
 		}
 	}
+#endif
 
 	return NULL;
 }
 
+#if defined(CONFIG_NET_IPV6)
 static u8_t get_diff_ipv6(const struct in6_addr *src,
 			  const struct in6_addr *dst)
 {
@@ -1922,10 +1995,12 @@ static inline struct in6_addr *net_if_ipv6_get_best_match(struct net_if *iface,
 
 	return src;
 }
+#endif /* CONFIG_NET_IPV6 */
 
 const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *dst_iface,
 						   struct in6_addr *dst)
 {
+#if defined(CONFIG_NET_IPV6)
 	struct in6_addr *src = NULL;
 	u8_t best_match = 0;
 	struct net_if *iface;
@@ -1973,10 +2048,14 @@ const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *dst_iface,
 	}
 
 	return src;
+#else
+	return NULL;
+#endif
 }
 
 struct net_if *net_if_ipv6_select_src_iface(struct in6_addr *dst)
 {
+#if defined(CONFIG_NET_IPV6)
 	const struct in6_addr *src;
 	struct net_if *iface;
 
@@ -1990,10 +2069,14 @@ struct net_if *net_if_ipv6_select_src_iface(struct in6_addr *dst)
 	}
 
 	return iface;
+#else
+	return NULL;
+#endif
 }
 
 u32_t net_if_ipv6_calc_reachable_time(struct net_if_ipv6 *ipv6)
 {
+#if defined(CONFIG_NET_IPV6)
 	u32_t min_reachable, max_reachable;
 
 	min_reachable = (MIN_RANDOM_NUMER * ipv6->base_reachable_time)
@@ -2006,14 +2089,10 @@ u32_t net_if_ipv6_calc_reachable_time(struct net_if_ipv6 *ipv6)
 
 	return min_reachable +
 	       sys_rand32_get() % (max_reachable - min_reachable);
+#else
+	return 0;
+#endif
 }
-
-#else /* CONFIG_NET_IPV6 */
-#define join_mcast_allnodes(...)
-#define join_mcast_solicit_node(...)
-#define leave_mcast_all(...)
-#define join_mcast_nodes(...)
-#endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
 int net_if_config_ipv4_get(struct net_if *iface, struct net_if_ipv4 **ipv4)
