@@ -600,7 +600,8 @@ void net_if_start_rs(struct net_if *iface);
  * @brief Set a network interface's link address
  *
  * @param iface Pointer to a network interface structure
- * @param addr a pointer to a u8_t buffer representing the address
+ * @param addr A pointer to a u8_t buffer representing the address. The buffer
+ *             must remain valid throughout interface lifetime.
  * @param len length of the address buffer
  * @param type network bearer type of this link address
  *
