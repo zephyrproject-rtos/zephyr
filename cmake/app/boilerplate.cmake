@@ -96,7 +96,10 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${AUTOCONF_H})
 
 include(${ZEPHYR_BASE}/cmake/extensions.cmake)
 
-find_package(PythonInterp 3.4)
+find_package(
+  PythonInterp 3.4
+  REQUIRED
+  )
 
 include(${ZEPHYR_BASE}/cmake/ccache.cmake)
 
