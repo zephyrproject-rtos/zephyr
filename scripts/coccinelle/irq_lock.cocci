@@ -1,47 +1,45 @@
+/// Use unsigned int as the return value for irq_lock()
+///
+// Confidence: High
 // Copyright (c) 2017 Intel Corporation
 //
 // SPDX-License-Identifier: Apache-2.0
 
-@find@
+virtual patch
+
+@find depends on !(file in "ext")@
 type T;
-position p;
 identifier i;
+typedef uint32_t,u32_t;
 @@
 
-T@p i = irq_lock();
-
-@script:python raise_error@
-t << find.T;
-@@
-if t in ["uint32_t", "unsigned int", "u32_t"]:
-   cocci.include_match(False)
-
-@replacement@
-type find.T;
-position find.p;
-@@
-- T@p
+(
+ uint32_t i = irq_lock();
+|
+ unsigned int i = irq_lock();
+|
+ u32_t i = irq_lock();
+|
+- T
 + unsigned int
+  i = irq_lock();
+)
 
-@find2@
+@find2 depends on !(file in "ext") exists@
 type T;
-position p;
 identifier i;
 @@
 
-T@p i;
-...
-i = irq_lock();
-
-@script:python raise_error2@
-t << find2.T;
-@@
-if t in ["uint32_t", "unsigned int", "u32_t"]:
-   cocci.include_match(False)
-
-@replacement2@
-type find2.T;
-identifier find2.i;
-@@
--  T i;
-+  unsigned int i;
+(
+ uint32_t i;
+|
+ unsigned int i;
+|
+ u32_t i;
+|
+- T
++ unsigned int
+  i;
+  ...
+  i = irq_lock();
+)
