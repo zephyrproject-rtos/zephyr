@@ -77,7 +77,7 @@ static void loopback_out_cb(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 	u32_t bytes_to_read;
 
 	usb_read(ep, NULL, 0, &bytes_to_read);
-	USB_DBG("ep 0x%x, bytes to read %d ", ep, bytes_to_read);
+	LOG_DBG("ep 0x%x, bytes to read %d ", ep, bytes_to_read);
 	usb_read(ep, loopback_buf, bytes_to_read, NULL);
 }
 
@@ -85,7 +85,7 @@ static void loopback_in_cb(u8_t ep,
 				enum usb_dc_ep_cb_status_code ep_status)
 {
 	if (usb_write(ep, loopback_buf, CONFIG_LOOPBACK_BULK_EP_MPS, NULL)) {
-		USB_DBG("ep 0x%x", ep);
+		LOG_DBG("ep 0x%x", ep);
 	}
 }
 
@@ -108,13 +108,13 @@ static void loopback_status_cb(enum usb_dc_status_code status,
 	switch (status) {
 	case USB_DC_CONFIGURED:
 		loopback_in_cb(ep_cfg[LOOPBACK_IN_EP_IDX].ep_addr, 0);
-		USB_DBG("USB device configured");
+		LOG_DBG("USB device configured");
 		break;
 	case USB_DC_SET_HALT:
-		USB_DBG("Set Feature ENDPOINT_HALT");
+		LOG_DBG("Set Feature ENDPOINT_HALT");
 		break;
 	case USB_DC_CLEAR_HALT:
-		USB_DBG("Clear Feature ENDPOINT_HALT");
+		LOG_DBG("Clear Feature ENDPOINT_HALT");
 		if (*param == ep_cfg[LOOPBACK_IN_EP_IDX].ep_addr) {
 			loopback_in_cb(ep_cfg[LOOPBACK_IN_EP_IDX].ep_addr, 0);
 		}
@@ -128,7 +128,7 @@ static void loopback_status_cb(enum usb_dc_status_code status,
 static int loopback_vendor_handler(struct usb_setup_packet *setup,
 				   s32_t *len, u8_t **data)
 {
-	USB_DBG("Class request: bRequest 0x%x bmRequestType 0x%x len %d",
+	LOG_DBG("Class request: bRequest 0x%x bmRequestType 0x%x len %d",
 		setup->bRequest, setup->bmRequestType, *len);
 
 	if (REQTYPE_GET_RECIP(setup->bmRequestType) != REQTYPE_RECIP_DEVICE) {
@@ -137,7 +137,7 @@ static int loopback_vendor_handler(struct usb_setup_packet *setup,
 
 	if (REQTYPE_GET_DIR(setup->bmRequestType) == REQTYPE_DIR_TO_DEVICE &&
 	    setup->bRequest == 0x5b) {
-		USB_DBG("Host-to-Device, data %p", *data);
+		LOG_DBG("Host-to-Device, data %p", *data);
 		return 0;
 	}
 
@@ -149,7 +149,7 @@ static int loopback_vendor_handler(struct usb_setup_packet *setup,
 
 		*data = loopback_buf;
 		*len = setup->wLength;
-		USB_DBG("Device-to-Host, wLength %d, data %p",
+		LOG_DBG("Device-to-Host, wLength %d, data %p",
 			setup->wLength, *data);
 		return 0;
 	}
@@ -205,7 +205,7 @@ static int loopback_init(struct device *dev)
 	}
 	/* usb.rst enable USB controller end */
 #endif
-	USB_DBG("");
+	LOG_DBG("");
 
 	return 0;
 }

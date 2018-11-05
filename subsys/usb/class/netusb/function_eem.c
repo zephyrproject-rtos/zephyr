@@ -169,11 +169,11 @@ static void eem_read_cb(u8_t ep, int size, void *priv)
 			goto done;
 		}
 
-		USB_DBG("hdr 0x%x, eem_size %d, size %d",
+		LOG_DBG("hdr 0x%x, eem_size %d, size %d",
 			eem_hdr, eem_size, size);
 
 		if (!size || !eem_size) {
-			USB_DBG("no payload");
+			LOG_DBG("no payload");
 			break;
 		}
 
@@ -230,7 +230,7 @@ static struct netusb_function eem_function = {
 
 static inline void eem_status_interface(const u8_t *iface)
 {
-	USB_DBG("");
+	LOG_DBG("");
 
 	if (*iface != eem_get_first_iface_number()) {
 		return;
@@ -244,12 +244,12 @@ static void eem_status_cb(enum usb_dc_status_code status, const u8_t *param)
 	/* Check the USB status and do needed action if required */
 	switch (status) {
 	case USB_DC_DISCONNECTED:
-		USB_DBG("USB device disconnected");
+		LOG_DBG("USB device disconnected");
 		netusb_disable();
 		break;
 
 	case USB_DC_INTERFACE:
-		USB_DBG("USB interface selected");
+		LOG_DBG("USB interface selected");
 		eem_status_interface(param);
 		break;
 
@@ -259,12 +259,12 @@ static void eem_status_cb(enum usb_dc_status_code status, const u8_t *param)
 	case USB_DC_CONFIGURED:
 	case USB_DC_SUSPEND:
 	case USB_DC_RESUME:
-		USB_DBG("USB unhandlded state: %d", status);
+		LOG_DBG("USB unhandlded state: %d", status);
 		break;
 
 	case USB_DC_UNKNOWN:
 	default:
-		USB_DBG("USB unknown state: %d", status);
+		LOG_DBG("USB unknown state: %d", status);
 		break;
 	}
 }

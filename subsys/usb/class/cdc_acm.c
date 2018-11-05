@@ -258,7 +258,7 @@ int cdc_acm_class_handle_req(struct usb_setup_packet *pSetup,
 	case SET_LINE_CODING:
 		memcpy(&dev_data->line_coding,
 		       *data, sizeof(dev_data->line_coding));
-		USB_DBG("\nCDC_SET_LINE_CODING %d %d %d %d",
+		LOG_DBG("\nCDC_SET_LINE_CODING %d %d %d %d",
 			sys_le32_to_cpu(dev_data->line_coding.dwDTERate),
 			dev_data->line_coding.bCharFormat,
 			dev_data->line_coding.bParityType,
@@ -267,14 +267,14 @@ int cdc_acm_class_handle_req(struct usb_setup_packet *pSetup,
 
 	case SET_CONTROL_LINE_STATE:
 		dev_data->line_state = (u8_t)sys_le16_to_cpu(pSetup->wValue);
-		USB_DBG("CDC_SET_CONTROL_LINE_STATE 0x%x",
+		LOG_DBG("CDC_SET_CONTROL_LINE_STATE 0x%x",
 			dev_data->line_state);
 		break;
 
 	case GET_LINE_CODING:
 		*data = (u8_t *)(&dev_data->line_coding);
 		*len = sizeof(dev_data->line_coding);
-		USB_DBG("\nCDC_GET_LINE_CODING %d %d %d %d",
+		LOG_DBG("\nCDC_GET_LINE_CODING %d %d %d %d",
 			sys_le32_to_cpu(dev_data->line_coding.dwDTERate),
 			dev_data->line_coding.bCharFormat,
 			dev_data->line_coding.bParityType,
@@ -282,7 +282,7 @@ int cdc_acm_class_handle_req(struct usb_setup_packet *pSetup,
 		break;
 
 	default:
-		USB_DBG("CDC ACM request 0x%x, value 0x%x",
+		LOG_DBG("CDC ACM request 0x%x, value 0x%x",
 			pSetup->bRequest, pSetup->wValue);
 		return -EINVAL;
 	}
@@ -382,7 +382,7 @@ static void cdc_acm_int_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 	ARG_UNUSED(ep_status);
 
 	dev_data->notification_sent = 1;
-	USB_DBG("CDC_IntIN EP[%x]\r", ep);
+	LOG_DBG("CDC_IntIN EP[%x]\r", ep);
 }
 
 /**
@@ -405,29 +405,29 @@ static void cdc_acm_dev_status_cb(enum usb_dc_status_code status,
 	/* Check the USB status and do needed action if required */
 	switch (status) {
 	case USB_DC_ERROR:
-		USB_DBG("USB device error");
+		LOG_DBG("USB device error");
 		break;
 	case USB_DC_RESET:
-		USB_DBG("USB device reset detected");
+		LOG_DBG("USB device reset detected");
 		break;
 	case USB_DC_CONNECTED:
-		USB_DBG("USB device connected");
+		LOG_DBG("USB device connected");
 		break;
 	case USB_DC_CONFIGURED:
-		USB_DBG("USB device configured");
+		LOG_DBG("USB device configured");
 		break;
 	case USB_DC_DISCONNECTED:
-		USB_DBG("USB device disconnected");
+		LOG_DBG("USB device disconnected");
 		break;
 	case USB_DC_SUSPEND:
-		USB_DBG("USB device suspended");
+		LOG_DBG("USB device suspended");
 		break;
 	case USB_DC_RESUME:
-		USB_DBG("USB device resumed");
+		LOG_DBG("USB device resumed");
 		break;
 	case USB_DC_UNKNOWN:
 	default:
-		USB_DBG("USB unknown state");
+		LOG_DBG("USB unknown state");
 		break;
 	}
 }
@@ -791,7 +791,7 @@ static int cdc_acm_send_notification(struct device *dev, u16_t serial_state)
 		k_busy_wait(1);
 
 		if (++cnt > CDC_CONTROL_SERIAL_STATE_TIMEOUT_US) {
-			USB_DBG("CDC ACM notification timeout!");
+			LOG_DBG("CDC ACM notification timeout!");
 			return -EIO;
 		}
 	}

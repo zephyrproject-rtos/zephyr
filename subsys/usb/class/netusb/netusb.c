@@ -40,7 +40,7 @@ static int netusb_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	int ret;
 
-	USB_DBG("Send pkt, len %u", net_pkt_get_len(pkt));
+	LOG_DBG("Send pkt, len %u", net_pkt_get_len(pkt));
 
 	if (!netusb_enabled()) {
 		USB_ERR("interface disabled");
@@ -58,7 +58,7 @@ static int netusb_send(struct net_if *iface, struct net_pkt *pkt)
 
 void netusb_recv(struct net_pkt *pkt)
 {
-	USB_DBG("Recv pkt, len %u", net_pkt_get_len(pkt));
+	LOG_DBG("Recv pkt, len %u", net_pkt_get_len(pkt));
 
 	if (net_recv_data(netusb.iface, pkt) < 0) {
 		USB_ERR("Packet %p dropped by NET stack", pkt);
@@ -68,7 +68,7 @@ void netusb_recv(struct net_pkt *pkt)
 
 static int netusb_connect_media(void)
 {
-	USB_DBG("");
+	LOG_DBG("");
 
 	if (!netusb_enabled()) {
 		USB_ERR("interface disabled");
@@ -84,7 +84,7 @@ static int netusb_connect_media(void)
 
 static int netusb_disconnect_media(void)
 {
-	USB_DBG("");
+	LOG_DBG("");
 
 	if (!netusb_enabled()) {
 		USB_ERR("interface disabled");
@@ -100,7 +100,7 @@ static int netusb_disconnect_media(void)
 
 void netusb_enable(const struct netusb_function *func)
 {
-	USB_DBG("");
+	LOG_DBG("");
 
 	netusb.func = func;
 
@@ -110,7 +110,7 @@ void netusb_enable(const struct netusb_function *func)
 
 void netusb_disable(void)
 {
-	USB_DBG("");
+	LOG_DBG("");
 
 	if (!netusb_enabled()) {
 		return;
@@ -164,7 +164,7 @@ int try_write(u8_t ep, u8_t *data, u16_t len)
 		len -= wrote;
 		data += wrote;
 #if VERBOSE_DEBUG
-		USB_DBG("Wrote %u bytes, remaining %u", wrote, len);
+		LOG_DBG("Wrote %u bytes, remaining %u", wrote, len);
 #endif
 
 		if (len) {
@@ -179,7 +179,7 @@ static void netusb_init(struct net_if *iface)
 {
 	static u8_t mac[6] = { 0x00, 0x00, 0x5E, 0x00, 0x53, 0x00 };
 
-	USB_DBG("netusb device initialization");
+	LOG_DBG("netusb device initialization");
 
 	netusb.iface = iface;
 
@@ -199,7 +199,7 @@ static void netusb_init(struct net_if *iface)
 		struct usb_cfg_data *cfg = &(__usb_data_start[i]);
 		int ret;
 
-		USB_DBG("Registering function %u", i);
+		LOG_DBG("Registering function %u", i);
 
 		cfg->interface.payload_data = interface_data;
 		cfg->usb_device_description = usb_get_device_descriptor();

@@ -44,13 +44,6 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_LOG_FUNCTION_NAME)
-#define USB_DBG(fmt, ...) LOG_DBG("(%p): " fmt, k_current_get(), \
-				##__VA_ARGS__)
-#else
-#define USB_DBG(fmt, ...) LOG_DBG("(%p): %s: " fmt, k_current_get(), \
-				  __func__, ##__VA_ARGS__)
-#endif /* CONFIG_LOG_FUNCTION_NAME */
 #define USB_ERR(fmt, ...) LOG_ERR(fmt, ##__VA_ARGS__)
 #define USB_WRN(fmt, ...) LOG_WRN(fmt, ##__VA_ARGS__)
 #define USB_INF(fmt, ...) LOG_INF(fmt, ##__VA_ARGS__)

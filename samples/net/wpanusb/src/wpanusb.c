@@ -148,29 +148,29 @@ static void wpanusb_status_cb(enum usb_dc_status_code status, const u8_t *param)
 	/* Check the USB status and do needed action if required */
 	switch (status) {
 	case USB_DC_ERROR:
-		USB_DBG("USB device error");
+		LOG_DBG("USB device error");
 		break;
 	case USB_DC_RESET:
-		USB_DBG("USB device reset detected");
+		LOG_DBG("USB device reset detected");
 		break;
 	case USB_DC_CONNECTED:
-		USB_DBG("USB device connected");
+		LOG_DBG("USB device connected");
 		break;
 	case USB_DC_CONFIGURED:
-		USB_DBG("USB device configured");
+		LOG_DBG("USB device configured");
 		break;
 	case USB_DC_DISCONNECTED:
-		USB_DBG("USB device disconnected");
+		LOG_DBG("USB device disconnected");
 		break;
 	case USB_DC_SUSPEND:
-		USB_DBG("USB device suspended");
+		LOG_DBG("USB device suspended");
 		break;
 	case USB_DC_RESUME:
-		USB_DBG("USB device resumed");
+		LOG_DBG("USB device resumed");
 		break;
 	case USB_DC_UNKNOWN:
 	default:
-		USB_DBG("USB unknown state");
+		LOG_DBG("USB unknown state");
 		break;
 		}
 }
@@ -196,7 +196,7 @@ static int set_channel(void *data, int len)
 {
 	struct set_channel *req = data;
 
-	USB_DBG("page %u channel %u", req->page, req->channel);
+	LOG_DBG("page %u channel %u", req->page, req->channel);
 
 	return radio_api->set_channel(ieee802154_dev, req->channel);
 }
@@ -205,7 +205,7 @@ static int set_ieee_addr(void *data, int len)
 {
 	struct set_ieee_addr *req = data;
 
-	USB_DBG("len %u", len);
+	LOG_DBG("len %u", len);
 
 	if (IEEE802154_HW_FILTER &
 	    radio_api->get_capabilities(ieee802154_dev)) {
@@ -225,7 +225,7 @@ static int set_short_addr(void *data, int len)
 {
 	struct set_short_addr *req = data;
 
-	USB_DBG("len %u", len);
+	LOG_DBG("len %u", len);
 
 
 	if (IEEE802154_HW_FILTER &
@@ -246,7 +246,7 @@ static int set_pan_id(void *data, int len)
 {
 	struct set_pan_id *req = data;
 
-	USB_DBG("len %u", len);
+	LOG_DBG("len %u", len);
 
 	if (IEEE802154_HW_FILTER &
 	    radio_api->get_capabilities(ieee802154_dev)) {
@@ -283,7 +283,7 @@ static int tx(struct net_pkt *pkt)
 	int retries = 3;
 	int ret;
 
-	USB_DBG("len %d seq %u", buf->len, seq);
+	LOG_DBG("len %d seq %u", buf->len, seq);
 
 	do {
 		ret = radio_api->tx(ieee802154_dev, pkt, buf);
@@ -332,7 +332,7 @@ static int wpanusb_vendor_handler(struct usb_setup_packet *setup,
 
 	memcpy(net_buf_add(buf, *len), *data, *len);
 
-	USB_DBG("len %u seq %u", *len, setup->wIndex);
+	LOG_DBG("len %u seq %u", *len, setup->wIndex);
 
 	k_fifo_put(&tx_queue, pkt);
 
@@ -341,7 +341,7 @@ static int wpanusb_vendor_handler(struct usb_setup_packet *setup,
 
 static void tx_thread(void)
 {
-	USB_DBG("Tx thread started");
+	LOG_DBG("Tx thread started");
 
 	while (1) {
 		u8_t cmd;
@@ -356,7 +356,7 @@ static void tx_thread(void)
 
 		switch (cmd) {
 		case RESET:
-			USB_DBG("Reset device");
+			LOG_DBG("Reset device");
 			break;
 		case TX:
 			tx(pkt);
@@ -411,7 +411,7 @@ static int wpanusb_init(struct device *dev)
 	struct wpanusb_dev_data_t * const dev_data = DEV_DATA(dev);
 	int ret;
 
-	USB_DBG("");
+	LOG_DBG("");
 
 	wpanusb_config.interface.payload_data = dev_data->interface_data;
 	wpanusb_dev = dev;
@@ -471,7 +471,7 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct net_buf *frag;
 
-	USB_DBG("Got data, pkt %p, len %d", pkt, net_pkt_get_len(pkt));
+	LOG_DBG("Got data, pkt %p, len %d", pkt, net_pkt_get_len(pkt));
 
 	frag = net_buf_frag_last(pkt->frags);
 
@@ -516,5 +516,5 @@ void main(void)
 
 	/* TODO: Initialize more */
 
-	USB_DBG("radio_api %p initialized", radio_api);
+	LOG_DBG("radio_api %p initialized", radio_api);
 }

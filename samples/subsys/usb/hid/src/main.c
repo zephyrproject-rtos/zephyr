@@ -59,7 +59,7 @@ static const u8_t hid_report_desc[] = {
 static int debug_cb(struct usb_setup_packet *setup, s32_t *len,
 		    u8_t **data)
 {
-	USB_DBG("Debug callback");
+	LOG_DBG("Debug callback");
 
 	return -ENOTSUP;
 }
@@ -67,7 +67,7 @@ static int debug_cb(struct usb_setup_packet *setup, s32_t *len,
 static int set_idle_cb(struct usb_setup_packet *setup, s32_t *len,
 		       u8_t **data)
 {
-	USB_DBG("Set Idle callback");
+	LOG_DBG("Set Idle callback");
 
 	/* TODO: Do something */
 
@@ -77,7 +77,7 @@ static int set_idle_cb(struct usb_setup_packet *setup, s32_t *len,
 static int get_report_cb(struct usb_setup_packet *setup, s32_t *len,
 			 u8_t **data)
 {
-	USB_DBG("Get report callback");
+	LOG_DBG("Get report callback");
 
 	/* TODO: Do something */
 
@@ -91,7 +91,7 @@ static void send_report(struct k_work *work)
 
 	ret = hid_int_ep_write(report_1, sizeof(report_1), &wrote);
 
-	USB_DBG("Wrote %d bytes with ret %d", wrote, ret);
+	LOG_DBG("Wrote %d bytes with ret %d", wrote, ret);
 
 	/* Increment reported data */
 	report_1[1]++;
@@ -109,7 +109,7 @@ static void status_cb(enum usb_dc_status_code status, const u8_t *param)
 		in_ready_cb();
 		break;
 	default:
-		USB_DBG("status %u unhandled", status);
+		LOG_DBG("status %u unhandled", status);
 		break;
 	}
 }
@@ -127,7 +127,7 @@ static const struct hid_ops ops = {
 
 void main(void)
 {
-	USB_DBG("Starting application");
+	LOG_DBG("Starting application");
 
 	k_delayed_work_init(&delayed_report_send, send_report);
 

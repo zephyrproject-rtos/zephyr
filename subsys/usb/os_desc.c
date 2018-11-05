@@ -18,7 +18,7 @@ static struct usb_os_descriptor *os_desc;
 int usb_handle_os_desc(struct usb_setup_packet *setup,
 		       s32_t *len, u8_t **data)
 {
-	USB_DBG("wValue 0x%x", setup->wValue);
+	LOG_DBG("wValue 0x%x", setup->wValue);
 
 	if (!os_desc) {
 		return -ENOTSUP;
@@ -26,7 +26,7 @@ int usb_handle_os_desc(struct usb_setup_packet *setup,
 
 	if (GET_DESC_TYPE(setup->wValue) == DESC_STRING &&
 	    GET_DESC_INDEX(setup->wValue) == USB_OSDESC_STRING_DESC_INDEX) {
-		USB_DBG("MS OS Descriptor string read");
+		LOG_DBG("MS OS Descriptor string read");
 		*data = os_desc->string;
 		*len = os_desc->string_len;
 
@@ -39,7 +39,7 @@ int usb_handle_os_desc(struct usb_setup_packet *setup,
 int usb_handle_os_desc_feature(struct usb_setup_packet *setup,
 			       s32_t *len, u8_t **data)
 {
-	USB_DBG("bRequest 0x%x", setup->bRequest);
+	LOG_DBG("bRequest 0x%x", setup->bRequest);
 
 	if (!os_desc) {
 		return -ENOTSUP;
@@ -48,7 +48,7 @@ int usb_handle_os_desc_feature(struct usb_setup_packet *setup,
 	if (setup->bRequest == os_desc->vendor_code) {
 		switch (setup->wIndex) {
 		case USB_OSDESC_EXTENDED_COMPAT_ID:
-			USB_DBG("Handle Compat ID");
+			LOG_DBG("Handle Compat ID");
 			*data = os_desc->compat_id;
 			*len = os_desc->compat_id_len;
 

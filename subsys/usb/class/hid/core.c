@@ -102,29 +102,29 @@ static void hid_status_cb(enum usb_dc_status_code status, const u8_t *param)
 	} else {
 		switch (status) {
 		case USB_DC_ERROR:
-			USB_DBG("USB device error");
+			LOG_DBG("USB device error");
 			break;
 		case USB_DC_RESET:
-			USB_DBG("USB device reset detected");
+			LOG_DBG("USB device reset detected");
 			break;
 		case USB_DC_CONNECTED:
-			USB_DBG("USB device connected");
+			LOG_DBG("USB device connected");
 			break;
 		case USB_DC_CONFIGURED:
-			USB_DBG("USB device configured");
+			LOG_DBG("USB device configured");
 			break;
 		case USB_DC_DISCONNECTED:
-			USB_DBG("USB device disconnected");
+			LOG_DBG("USB device disconnected");
 			break;
 		case USB_DC_SUSPEND:
-			USB_DBG("USB device suspended");
+			LOG_DBG("USB device suspended");
 			break;
 		case USB_DC_RESUME:
-			USB_DBG("USB device resumed");
+			LOG_DBG("USB device resumed");
 			break;
 		case USB_DC_UNKNOWN:
 		default:
-			USB_DBG("USB unknown state");
+			LOG_DBG("USB unknown state");
 			break;
 		}
 	}
@@ -133,13 +133,13 @@ static void hid_status_cb(enum usb_dc_status_code status, const u8_t *param)
 static int hid_class_handle_req(struct usb_setup_packet *setup,
 				s32_t *len, u8_t **data)
 {
-	USB_DBG("Class request: bRequest 0x%x bmRequestType 0x%x len %d",
+	LOG_DBG("Class request: bRequest 0x%x bmRequestType 0x%x len %d",
 		setup->bRequest, setup->bmRequestType, *len);
 
 	if (REQTYPE_GET_DIR(setup->bmRequestType) == REQTYPE_DIR_TO_HOST) {
 		switch (setup->bRequest) {
 		case HID_GET_REPORT:
-			USB_DBG("Get Report");
+			LOG_DBG("Get Report");
 			if (hid_device.ops->get_report) {
 				return hid_device.ops->get_report(setup, len,
 								  data);
@@ -155,7 +155,7 @@ static int hid_class_handle_req(struct usb_setup_packet *setup,
 	} else {
 		switch (setup->bRequest) {
 		case HID_SET_IDLE:
-			USB_DBG("Set Idle");
+			LOG_DBG("Set Idle");
 			if (hid_device.ops->set_idle) {
 				return hid_device.ops->set_idle(setup, len,
 								data);
@@ -179,7 +179,7 @@ static int hid_class_handle_req(struct usb_setup_packet *setup,
 static int hid_custom_handle_req(struct usb_setup_packet *setup,
 				 s32_t *len, u8_t **data)
 {
-	USB_DBG("Standard request: bRequest 0x%x bmRequestType 0x%x len %d",
+	LOG_DBG("Standard request: bRequest 0x%x bmRequestType 0x%x len %d",
 		setup->bRequest, setup->bmRequestType, *len);
 
 	if (REQTYPE_GET_DIR(setup->bmRequestType) == REQTYPE_DIR_TO_HOST &&
@@ -188,7 +188,7 @@ static int hid_custom_handle_req(struct usb_setup_packet *setup,
 					setup->bRequest == REQ_GET_DESCRIPTOR) {
 		switch (setup->wValue) {
 		case 0x2200:
-			USB_DBG("Return Report Descriptor");
+			LOG_DBG("Return Report Descriptor");
 
 			/* Some buggy system may be pass a larger wLength when
 			 * it try read HID report descriptor, although we had
@@ -272,7 +272,7 @@ static u8_t interface_data[CONFIG_USB_HID_MAX_PAYLOAD_SIZE];
 
 int usb_hid_init(void)
 {
-	USB_DBG("Iinitializing HID Device");
+	LOG_DBG("Iinitializing HID Device");
 
 	/*
 	 * Modify Report Descriptor Size
