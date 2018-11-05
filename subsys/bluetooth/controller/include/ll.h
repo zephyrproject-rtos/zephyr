@@ -55,9 +55,8 @@ u32_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 			   u16_t interval, u16_t latency,
 			   u16_t timeout);
 u32_t ll_connect_disable(void **node_rx);
-u32_t ll_conn_update(u16_t handle, u8_t cmd, u8_t status,
-		     u16_t interval, u16_t latency,
-		     u16_t timeout);
+u32_t ll_conn_update(u16_t handle, u8_t cmd, u8_t status, u16_t interval_min,
+		     u16_t interval_max, u16_t latency, u16_t timeout);
 u32_t ll_chm_update(u8_t *chm);
 u32_t ll_chm_get(u16_t handle, u8_t *chm);
 u32_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv,

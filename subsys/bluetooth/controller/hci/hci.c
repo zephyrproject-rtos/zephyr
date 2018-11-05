@@ -1116,18 +1116,21 @@ static void le_conn_update(struct net_buf *buf, struct net_buf **evt)
 {
 	struct hci_cp_le_conn_update *cmd = (void *)buf->data;
 	u16_t supervision_timeout;
+	u16_t conn_interval_min;
 	u16_t conn_interval_max;
 	u16_t conn_latency;
 	u32_t status;
 	u16_t handle;
 
 	handle = sys_le16_to_cpu(cmd->handle);
+	conn_interval_min = sys_le16_to_cpu(cmd->conn_interval_min);
 	conn_interval_max = sys_le16_to_cpu(cmd->conn_interval_max);
 	conn_latency = sys_le16_to_cpu(cmd->conn_latency);
 	supervision_timeout = sys_le16_to_cpu(cmd->supervision_timeout);
 
-	status = ll_conn_update(handle, 0, 0, conn_interval_max,
-				conn_latency, supervision_timeout);
+	status = ll_conn_update(handle, 0, 0, conn_interval_min,
+				conn_interval_max, conn_latency,
+				supervision_timeout);
 
 	*evt = cmd_status(status);
 }
@@ -1137,6 +1140,7 @@ static void le_conn_param_req_reply(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_conn_param_req_reply *cmd = (void *)buf->data;
 	struct bt_hci_rp_le_conn_param_req_reply *rp;
+	u16_t interval_min;
 	u16_t interval_max;
 	u16_t latency;
 	u16_t timeout;
@@ -1144,12 +1148,13 @@ static void le_conn_param_req_reply(struct net_buf *buf, struct net_buf **evt)
 	u16_t handle;
 
 	handle = sys_le16_to_cpu(cmd->handle);
+	interval_min = sys_le16_to_cpu(cmd->interval_min);
 	interval_max = sys_le16_to_cpu(cmd->interval_max);
 	latency = sys_le16_to_cpu(cmd->latency);
 	timeout = sys_le16_to_cpu(cmd->timeout);
 
-	status = ll_conn_update(handle, 2, 0, interval_max, latency,
-				timeout);
+	status = ll_conn_update(handle, 2, 0, interval_min, interval_max,
+				latency, timeout);
 
 	rp = cmd_complete(evt, sizeof(*rp));
 	rp->status = status;
@@ -1165,7 +1170,7 @@ static void le_conn_param_req_neg_reply(struct net_buf *buf,
 	u16_t handle;
 
 	handle = sys_le16_to_cpu(cmd->handle);
-	status = ll_conn_update(handle, 2, cmd->reason, 0, 0, 0);
+	status = ll_conn_update(handle, 2, cmd->reason, 0, 0, 0, 0);
 
 	rp = cmd_complete(evt, sizeof(*rp));
 	rp->status = status;
@@ -2818,7 +2823,7 @@ static void le_conn_param_req(struct pdu_data *pdu_data, u16_t handle,
 	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
 	    !(le_event_mask & BT_EVT_MASK_LE_CONN_PARAM_REQ)) {
 		/* event masked, reject the conn param req */
-		ll_conn_update(handle, 2, BT_HCI_ERR_UNSUPP_REMOTE_FEATURE,
+		ll_conn_update(handle, 2, BT_HCI_ERR_UNSUPP_REMOTE_FEATURE, 0,
 			       0, 0, 0);
 
 		return;
