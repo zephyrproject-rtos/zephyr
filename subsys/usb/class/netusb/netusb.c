@@ -43,7 +43,7 @@ static int netusb_send(struct net_if *iface, struct net_pkt *pkt)
 	LOG_DBG("Send pkt, len %u", net_pkt_get_len(pkt));
 
 	if (!netusb_enabled()) {
-		USB_ERR("interface disabled");
+		LOG_ERR("interface disabled");
 		return -ENODEV;
 	}
 
@@ -61,7 +61,7 @@ void netusb_recv(struct net_pkt *pkt)
 	LOG_DBG("Recv pkt, len %u", net_pkt_get_len(pkt));
 
 	if (net_recv_data(netusb.iface, pkt) < 0) {
-		USB_ERR("Packet %p dropped by NET stack", pkt);
+		LOG_ERR("Packet %p dropped by NET stack", pkt);
 		net_pkt_unref(pkt);
 	}
 }
@@ -71,7 +71,7 @@ static int netusb_connect_media(void)
 	LOG_DBG("");
 
 	if (!netusb_enabled()) {
-		USB_ERR("interface disabled");
+		LOG_ERR("interface disabled");
 		return -ENODEV;
 	}
 
@@ -87,7 +87,7 @@ static int netusb_disconnect_media(void)
 	LOG_DBG("");
 
 	if (!netusb_enabled()) {
-		USB_ERR("interface disabled");
+		LOG_ERR("interface disabled");
 		return -ENODEV;
 	}
 
@@ -206,13 +206,13 @@ static void netusb_init(struct net_if *iface)
 
 		ret = usb_set_config(cfg);
 		if (ret < 0) {
-			USB_ERR("Failed to configure USB device");
+			LOG_ERR("Failed to configure USB device");
 			return;
 		}
 
 		ret = usb_enable(cfg);
 		if (ret < 0) {
-			USB_ERR("Failed to enable USB");
+			LOG_ERR("Failed to enable USB");
 			return;
 		}
 	}

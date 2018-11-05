@@ -150,7 +150,7 @@ static void hci_rx_thread(void)
 				USB_TRANS_WRITE);
 			break;
 		default:
-			USB_ERR("Unknown type %u", bt_buf_get_type(buf));
+			LOG_ERR("Unknown type %u", bt_buf_get_type(buf));
 			break;
 		}
 
@@ -166,7 +166,7 @@ static void hci_tx_thread(void)
 		buf = net_buf_get(&tx_queue, K_FOREVER);
 
 		if (bt_send(buf)) {
-			USB_ERR("Error sending to driver");
+			LOG_ERR("Error sending to driver");
 			net_buf_unref(buf);
 		}
 	}
@@ -189,7 +189,7 @@ static void acl_read_cb(u8_t ep, int size, void *priv)
 
 	buf = net_buf_alloc(&acl_tx_pool, K_NO_WAIT);
 	if (!buf) {
-		USB_ERR("Cannot get free buffer\n");
+		LOG_ERR("Cannot get free buffer\n");
 		return;
 	}
 	net_buf_reserve(buf, CONFIG_BT_HCI_RESERVE);
@@ -246,13 +246,13 @@ static int bluetooth_class_handler(struct usb_setup_packet *setup,
 	LOG_DBG("len %u", *len);
 
 	if (!*len || *len > CMD_BUF_SIZE) {
-		USB_ERR("Incorrect length: %d\n", *len);
+		LOG_ERR("Incorrect length: %d\n", *len);
 		return -EINVAL;
 	}
 
 	buf = net_buf_alloc(&tx_pool, K_NO_WAIT);
 	if (!buf) {
-		USB_ERR("Cannot get free buffer\n");
+		LOG_ERR("Cannot get free buffer\n");
 		return -ENOMEM;
 	}
 
@@ -294,7 +294,7 @@ static int bluetooth_init(struct device *dev)
 
 	ret = bt_enable_raw(&rx_queue);
 	if (ret) {
-		USB_ERR("Failed to open Bluetooth raw channel: %d", ret);
+		LOG_ERR("Failed to open Bluetooth raw channel: %d", ret);
 		return ret;
 	}
 
@@ -305,14 +305,14 @@ static int bluetooth_init(struct device *dev)
 	/* Initialize the USB driver with the right configuration */
 	ret = usb_set_config(&bluetooth_config);
 	if (ret < 0) {
-		USB_ERR("Failed to config USB");
+		LOG_ERR("Failed to config USB");
 		return ret;
 	}
 
 	/* Enable USB driver */
 	ret = usb_enable(&bluetooth_config);
 	if (ret < 0) {
-		USB_ERR("Failed to enable USB");
+		LOG_ERR("Failed to enable USB");
 		return ret;
 	}
 #endif

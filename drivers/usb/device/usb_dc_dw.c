@@ -148,7 +148,7 @@ static int usb_dw_reset(void)
 	while (!(USB_DW->grstctl & USB_DW_GRSTCTL_AHB_IDLE)) {
 		usb_dw_udelay(1);
 		if (++cnt > USB_DW_CORE_RST_TIMEOUT_US) {
-			USB_ERR("USB reset HANG! AHB Idle GRSTCTL=0x%08x",
+			LOG_ERR("USB reset HANG! AHB Idle GRSTCTL=0x%08x",
 				USB_DW->grstctl);
 			return -EIO;
 		}
@@ -400,7 +400,7 @@ static int usb_dw_tx(u8_t ep, const u8_t *const data,
 
 	avail_space *= 4;
 	if (!avail_space) {
-		USB_ERR("USB IN EP%d no space available, DTXFSTS %x", ep_idx,
+		LOG_ERR("USB IN EP%d no space available, DTXFSTS %x", ep_idx,
 			USB_DW->in_ep_reg[ep_idx].dtxfsts);
 		irq_unlock(key);
 		return -EAGAIN;
@@ -809,7 +809,7 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 		cfg->ep_type);
 
 	if ((cfg->ep_type == USB_DC_EP_CONTROL) && ep_idx) {
-		USB_ERR("invalid endpoint configuration");
+		LOG_ERR("invalid endpoint configuration");
 		return -1;
 	}
 
@@ -1026,7 +1026,7 @@ int usb_dc_ep_flush(const u8_t ep)
 	cnt = 0;
 	do {
 		if (++cnt > USB_DW_CORE_RST_TIMEOUT_US) {
-			USB_ERR("USB TX FIFO flush HANG!");
+			LOG_ERR("USB TX FIFO flush HANG!");
 			return -EIO;
 		}
 		usb_dw_udelay(1);
@@ -1073,25 +1073,25 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 	u32_t i, j, data_len, bytes_to_copy;
 
 	if (!usb_dw_ctrl.attached && !usb_dw_ep_is_valid(ep)) {
-		USB_ERR("No valid endpoint");
+		LOG_ERR("No valid endpoint");
 		return -EINVAL;
 	}
 
 	/* Check if OUT ep */
 	if (USB_DW_EP_ADDR2DIR(ep) != USB_EP_DIR_OUT) {
-		USB_ERR("Wrong endpoint direction");
+		LOG_ERR("Wrong endpoint direction");
 		return -EINVAL;
 	}
 
 	/* Allow to read 0 bytes */
 	if (!data && max_data_len) {
-		USB_ERR("Wrong arguments");
+		LOG_ERR("Wrong arguments");
 		return -EINVAL;
 	}
 
 	/* Check if ep enabled */
 	if (!usb_dw_ep_is_enabled(ep)) {
-		USB_ERR("Not enabled endpoint");
+		LOG_ERR("Not enabled endpoint");
 		return -EINVAL;
 	}
 
@@ -1109,7 +1109,7 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 
 
 	if (data_len > max_data_len) {
-		USB_ERR("Not enough room to copy all the rcvd data!");
+		LOG_ERR("Not enough room to copy all the rcvd data!");
 		bytes_to_copy = max_data_len;
 	} else {
 		bytes_to_copy = data_len;
@@ -1147,13 +1147,13 @@ int usb_dc_ep_read_continue(u8_t ep)
 	u8_t ep_idx = USB_DW_EP_ADDR2IDX(ep);
 
 	if (!usb_dw_ctrl.attached && !usb_dw_ep_is_valid(ep)) {
-		USB_ERR("No valid endpoint");
+		LOG_ERR("No valid endpoint");
 		return -EINVAL;
 	}
 
 	/* Check if OUT ep */
 	if (USB_DW_EP_ADDR2DIR(ep) != USB_EP_DIR_OUT) {
-		USB_ERR("Wrong endpoint direction");
+		LOG_ERR("Wrong endpoint direction");
 		return -EINVAL;
 	}
 

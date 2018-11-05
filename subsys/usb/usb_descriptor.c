@@ -313,7 +313,7 @@ usb_fix_ascii_sn_string_descriptor(struct usb_sn_descriptor *sn)
 	default_sn_len = strlen(CONFIG_USB_DEVICE_SN);
 
 	if (runtime_sn_len != default_sn_len) {
-		USB_ERR("the new SN descriptor doesn't has the same "
+		LOG_ERR("the new SN descriptor doesn't has the same "
 			"length as CONFIG_USB_DEVICE_SN");
 		return;
 	}
@@ -361,7 +361,7 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 			if (if_descr->bInterfaceNumber == 0) {
 				cfg_data = usb_get_cfg_data(if_descr);
 				if (!cfg_data) {
-					USB_ERR("There is no usb_cfg_data "
+					LOG_ERR("There is no usb_cfg_data "
 						"for %p", head);
 					return -1;
 				}
@@ -380,7 +380,7 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 			if (usb_validate_ep_cfg_data(ep_descr,
 						     cfg_data,
 						     &requested_ep)) {
-				USB_ERR("Failed to validate endpoints");
+				LOG_ERR("Failed to validate endpoints");
 				return -1;
 			}
 
@@ -403,7 +403,7 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 				ascii7_to_utf16le(head);
 			} else {
 				if (!cfg_descr) {
-					USB_ERR("Incomplete device descriptor");
+					LOG_ERR("Incomplete device descriptor");
 					return -1;
 				}
 
@@ -441,7 +441,7 @@ u8_t *usb_get_device_descriptor(void)
 	LOG_DBG("__usb_descriptor_end %p", __usb_descriptor_end);
 
 	if (usb_fix_descriptor(__usb_descriptor_start)) {
-		USB_ERR("Failed to fixup USB descriptor");
+		LOG_ERR("Failed to fixup USB descriptor");
 		return NULL;
 	}
 

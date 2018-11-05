@@ -191,7 +191,7 @@ static void sendCSW(void)
 	csw.Signature = CSW_Signature;
 	if (usb_write(mass_ep_data[MSD_IN_EP_IDX].ep_addr, (u8_t *)&csw,
 		      sizeof(struct CSW), NULL) != 0) {
-		USB_ERR("usb write failure");
+		LOG_ERR("usb write failure");
 	}
 	stage = WAIT_CSW;
 }
@@ -208,7 +208,7 @@ static bool write(u8_t *buf, u16_t size)
 	stage = SEND_CSW;
 
 	if (usb_write(mass_ep_data[MSD_IN_EP_IDX].ep_addr, buf, size, NULL)) {
-		USB_ERR("USB write failed");
+		LOG_ERR("USB write failed");
 		return false;
 	}
 
@@ -360,7 +360,7 @@ static void thread_memory_read_done(void)
 
 	if (usb_write(mass_ep_data[MSD_IN_EP_IDX].ep_addr,
 		&page[addr % BLOCK_SIZE], n, NULL) != 0) {
-		USB_ERR("Failed to write EP 0x%x",
+		LOG_ERR("Failed to write EP 0x%x",
 			mass_ep_data[MSD_IN_EP_IDX].ep_addr);
 	}
 	addr += n;
@@ -467,13 +467,13 @@ static void fail(void)
 static void CBWDecode(u8_t *buf, u16_t size)
 {
 	if (size != sizeof(cbw)) {
-		USB_ERR("size != sizeof(cbw)");
+		LOG_ERR("size != sizeof(cbw)");
 		return;
 	}
 
 	memcpy((u8_t *)&cbw, buf, size);
 	if (cbw.Signature != CBW_Signature) {
-		USB_ERR("CBW Signature Mismatch");
+		LOG_ERR("CBW Signature Mismatch");
 		return;
 	}
 
@@ -589,7 +589,7 @@ static void memoryVerify(u8_t *buf, u16_t size)
 	if (!(addr % BLOCK_SIZE)) {
 		LOG_DBG("Disk READ sector %d", addr/BLOCK_SIZE);
 		if (disk_access_read(disk_pdrv, page, addr/BLOCK_SIZE, 1)) {
-			USB_ERR("---- Disk Read Error %d", addr/BLOCK_SIZE);
+			LOG_ERR("---- Disk Read Error %d", addr/BLOCK_SIZE);
 		}
 	}
 
@@ -682,7 +682,7 @@ static void mass_storage_bulk_out(u8_t ep,
 			memoryVerify(bo_buf, bytes_read);
 			break;
 		default:
-			USB_ERR("> BO - PROC_CBW default <<ERROR!!!>>");
+			LOG_ERR("> BO - PROC_CBW default <<ERROR!!!>>");
 			break;
 		}
 		break;
@@ -747,7 +747,7 @@ static void mass_storage_bulk_in(u8_t ep,
 			memoryRead();
 			break;
 		default:
-			USB_ERR("< BI-PROC_CBW default <<ERROR!!>>");
+			LOG_ERR("< BI-PROC_CBW default <<ERROR!!>>");
 			break;
 		}
 		break;
@@ -852,7 +852,7 @@ static void mass_thread_main(int arg1, int unused)
 		case THREAD_OP_READ_QUEUED:
 			if (disk_access_read(disk_pdrv,
 						page, (addr/BLOCK_SIZE), 1)) {
-				USB_ERR("!! Disk Read Error %d !",
+				LOG_ERR("!! Disk Read Error %d !",
 					addr/BLOCK_SIZE);
 			}
 
@@ -861,13 +861,13 @@ static void mass_thread_main(int arg1, int unused)
 		case THREAD_OP_WRITE_QUEUED:
 			if (disk_access_write(disk_pdrv,
 						page, (addr/BLOCK_SIZE), 1)) {
-				USB_ERR("!!!!! Disk Write Error %d !!!!!",
+				LOG_ERR("!!!!! Disk Write Error %d !!!!!",
 					addr/BLOCK_SIZE);
 			}
 			thread_memory_write_done();
 			break;
 		default:
-			USB_ERR("XXXXXX thread_op  %d ! XXXXX", thread_op);
+			LOG_ERR("XXXXXX thread_op  %d ! XXXXX", thread_op);
 		}
 	}
 }
@@ -894,24 +894,24 @@ static int mass_storage_init(struct device *dev)
 	ARG_UNUSED(dev);
 
 	if (disk_access_init(disk_pdrv) != 0) {
-		USB_ERR("Storage init ERROR !!!! - Aborting USB init");
+		LOG_ERR("Storage init ERROR !!!! - Aborting USB init");
 		return 0;
 	}
 
 	if (disk_access_ioctl(disk_pdrv,
 				DISK_IOCTL_GET_SECTOR_COUNT, &block_count)) {
-		USB_ERR("Unable to get sector count - Aborting USB init");
+		LOG_ERR("Unable to get sector count - Aborting USB init");
 		return 0;
 	}
 
 	if (disk_access_ioctl(disk_pdrv,
 				DISK_IOCTL_GET_SECTOR_SIZE, &block_size)) {
-		USB_ERR("Unable to get sector size - Aborting USB init");
+		LOG_ERR("Unable to get sector size - Aborting USB init");
 		return 0;
 	}
 
 	if (block_size != BLOCK_SIZE) {
-		USB_ERR("Block Size reported by the storage side is "
+		LOG_ERR("Block Size reported by the storage side is "
 			"different from Mass Storgae Class page Buffer - "
 			"Aborting");
 		return 0;
@@ -934,14 +934,14 @@ static int mass_storage_init(struct device *dev)
 	/* Initialize the USB driver with the right configuration */
 	ret = usb_set_config(&mass_storage_config);
 	if (ret < 0) {
-		USB_ERR("Failed to config USB");
+		LOG_ERR("Failed to config USB");
 		return ret;
 	}
 
 	/* Enable USB driver */
 	ret = usb_enable(&mass_storage_config);
 	if (ret < 0) {
-		USB_ERR("Failed to enable USB");
+		LOG_ERR("Failed to enable USB");
 		return ret;
 	}
 #endif

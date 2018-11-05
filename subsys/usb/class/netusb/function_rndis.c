@@ -290,12 +290,12 @@ static int parse_rndis_header(const u8_t *buffer, u32_t buf_len)
 	u32_t len;
 
 	if (buf_len < sizeof(*hdr)) {
-		USB_ERR("Too small packet len %u", buf_len);
+		LOG_ERR("Too small packet len %u", buf_len);
 		return -EINVAL;
 	}
 
 	if (hdr->type != sys_cpu_to_le32(RNDIS_DATA_PACKET)) {
-		USB_ERR("Wrong data packet type 0x%x",
+		LOG_ERR("Wrong data packet type 0x%x",
 			sys_le32_to_cpu(hdr->type));
 		return -EINVAL;
 	}
@@ -308,7 +308,7 @@ static int parse_rndis_header(const u8_t *buffer, u32_t buf_len)
 	if (len < sys_le32_to_cpu(hdr->payload_offset) +
 	    sys_le32_to_cpu(hdr->payload_len) +
 	    offsetof(struct rndis_payload_packet, payload_offset)) {
-		USB_ERR("Incorrect RNDIS packet");
+		LOG_ERR("Incorrect RNDIS packet");
 		return -EINVAL;
 	}
 
@@ -352,7 +352,7 @@ static void rndis_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 
 	usb_read(ep, buffer, len, &read);
 	if (len != read) {
-		USB_ERR("Read %u instead of expected %u, skip the rest",
+		LOG_ERR("Read %u instead of expected %u, skip the rest",
 			    read, len);
 		rndis.skip_bytes = len - read;
 		return;
@@ -374,7 +374,7 @@ static void rndis_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 		rndis.skip_bytes -= len;
 
 		if (rndis.skip_bytes < 0) {
-			USB_ERR("Error skipping bytes");
+			LOG_ERR("Error skipping bytes");
 
 			rndis.skip_bytes = 0;
 		}
@@ -389,7 +389,7 @@ static void rndis_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 
 		rndis.in_pkt_len = parse_rndis_header(buffer, len);
 		if (rndis.in_pkt_len < 0) {
-			USB_ERR("Error parsing RNDIS header");
+			LOG_ERR("Error parsing RNDIS header");
 
 			rndis.rx_err++;
 			return;
@@ -403,7 +403,7 @@ static void rndis_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 			rndis.skip_bytes = rndis.in_pkt_len - len;
 			rndis.rx_no_buf++;
 
-			USB_ERR("Not enough pkt buffers, len %u, skip %u",
+			LOG_ERR("Not enough pkt buffers, len %u, skip %u",
 				rndis.in_pkt_len, rndis.skip_bytes);
 
 			return;
@@ -416,7 +416,7 @@ static void rndis_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 			 */
 			rndis.skip_bytes = rndis.in_pkt_len - len;
 
-			USB_ERR("Not enough net buffers, len %u, skip %u",
+			LOG_ERR("Not enough net buffers, len %u, skip %u",
 				rndis.in_pkt_len, rndis.skip_bytes);
 
 			net_pkt_unref(pkt);
@@ -435,7 +435,7 @@ static void rndis_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 	ret = net_pkt_append_all(rndis.in_pkt, len - hdr_offset,
 				 buffer + hdr_offset, K_FOREVER);
 	if (ret < 0) {
-		USB_ERR("Error appending data to pkt: %p", rndis.in_pkt);
+		LOG_ERR("Error appending data to pkt: %p", rndis.in_pkt);
 		rndis_clean();
 		rndis.rx_err++;
 		return;
@@ -456,7 +456,7 @@ static void rndis_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 		/* Start over for new packets */
 		rndis.in_pkt = NULL;
 	} else if (rndis.in_pkt_len < 0) {
-		USB_ERR("Error assembling packet, drop and start over");
+		LOG_ERR("Error assembling packet, drop and start over");
 		rndis_clean();
 	}
 }
@@ -513,7 +513,7 @@ static void rndis_queue_rsp(struct net_buf *rsp)
 		struct net_buf *buf;
 
 		while ((buf = net_buf_get(&rndis_tx_queue, K_NO_WAIT))) {
-			USB_ERR("Drop buffer %p", buf);
+			LOG_ERR("Drop buffer %p", buf);
 			net_buf_unref(buf);
 		}
 #endif
@@ -546,7 +546,7 @@ static void rndis_notify_rsp(void)
 	 */
 	ret = k_delayed_work_submit(&notify_work, K_NO_WAIT);
 	if (ret) {
-		USB_ERR("Error submittinf delaying queue: %d", ret);
+		LOG_ERR("Error submittinf delaying queue: %d", ret);
 	}
 }
 
@@ -560,7 +560,7 @@ static int rndis_init_handle(u8_t *data, u32_t len)
 
 	buf = net_buf_alloc(&rndis_tx_pool, K_NO_WAIT);
 	if (!buf) {
-		USB_ERR("Cannot get free buffer");
+		LOG_ERR("Cannot get free buffer");
 		return -ENOMEM;
 	}
 
@@ -623,7 +623,7 @@ static int rndis_query_handle(u8_t *data, u32_t len)
 
 	buf = net_buf_alloc(&rndis_tx_pool, K_NO_WAIT);
 	if (!buf) {
-		USB_ERR("Cannot get free buffer");
+		LOG_ERR("Cannot get free buffer");
 		return -ENOMEM;
 	}
 
@@ -765,7 +765,7 @@ static int rndis_set_handle(u8_t *data, u32_t len)
 	u8_t *param;
 
 	if (len < sizeof(*cmd)) {
-		USB_ERR("Packet is shorter then header");
+		LOG_ERR("Packet is shorter then header");
 		return -EINVAL;
 	}
 
@@ -774,13 +774,13 @@ static int rndis_set_handle(u8_t *data, u32_t len)
 
 	if (len - ((u32_t)param - (u32_t)cmd) !=
 	    sys_le32_to_cpu(cmd->buf_len)) {
-		USB_ERR("Packet parsing error");
+		LOG_ERR("Packet parsing error");
 		return -EINVAL;
 	}
 
 	buf = net_buf_alloc(&rndis_tx_pool, K_NO_WAIT);
 	if (!buf) {
-		USB_ERR("Cannot get free buffer");
+		LOG_ERR("Cannot get free buffer");
 		return -ENOMEM;
 	}
 
@@ -799,7 +799,7 @@ static int rndis_set_handle(u8_t *data, u32_t len)
 	switch (object_id) {
 	case RNDIS_OBJECT_ID_GEN_PKT_FILTER:
 		if (sys_le32_to_cpu(cmd->buf_len) < sizeof(rndis.net_filter)) {
-			USB_ERR("Packet is too small");
+			LOG_ERR("Packet is too small");
 			rsp->status = RNDIS_CMD_STATUS_INVALID_DATA;
 			break;
 		}
@@ -816,7 +816,7 @@ static int rndis_set_handle(u8_t *data, u32_t len)
 		rsp->status = sys_cpu_to_le32(RNDIS_CMD_STATUS_SUCCESS);
 		break;
 	default:
-		USB_ERR("Unhandled object_id 0x%x", object_id);
+		LOG_ERR("Unhandled object_id 0x%x", object_id);
 		rsp->status = sys_cpu_to_le32(RNDIS_CMD_STATUS_NOT_SUPP);
 		break;
 	}
@@ -836,7 +836,7 @@ static int rndis_reset_handle(u8_t *data, u32_t len)
 
 	buf = net_buf_alloc(&rndis_tx_pool, K_NO_WAIT);
 	if (!buf) {
-		USB_ERR("Cannot get free buffer");
+		LOG_ERR("Cannot get free buffer");
 		return -ENOMEM;
 	}
 
@@ -864,7 +864,7 @@ static int rndis_keepalive_handle(u8_t *data, u32_t len)
 
 	buf = net_buf_alloc(&rndis_tx_pool, K_NO_WAIT);
 	if (!buf) {
-		USB_ERR("Cannot get free buffer");
+		LOG_ERR("Cannot get free buffer");
 		return -ENOMEM;
 	}
 
@@ -890,7 +890,7 @@ static int queue_encapsulated_cmd(u8_t *data, u32_t len)
 
 	buf = net_buf_alloc(&rndis_cmd_pool, K_NO_WAIT);
 	if (!buf) {
-		USB_ERR("Cannot get free buffer");
+		LOG_ERR("Cannot get free buffer");
 		return -ENOMEM;
 	}
 
@@ -932,7 +932,7 @@ static int handle_encapsulated_cmd(u8_t *data, u32_t len)
 	case RNDIS_CMD_KEEPALIVE:
 		return rndis_keepalive_handle(data, len);
 	default:
-		USB_ERR("Message 0x%x unhandled", msg->type);
+		LOG_ERR("Message 0x%x unhandled", msg->type);
 		return -ENOTSUP;
 	}
 
@@ -949,7 +949,7 @@ static int rndis_send_media_status(u32_t media_status)
 
 	buf = net_buf_alloc(&rndis_tx_pool, K_NO_WAIT);
 	if (!buf) {
-		USB_ERR("Cannot get free buffer");
+		LOG_ERR("Cannot get free buffer");
 		return -ENOMEM;
 	}
 
@@ -983,7 +983,7 @@ static int handle_encapsulated_rsp(u8_t **data, u32_t *len)
 
 	buf = net_buf_get(&rndis_tx_queue, K_NO_WAIT);
 	if (!buf) {
-		USB_ERR("Error getting response buffer");
+		LOG_ERR("Error getting response buffer");
 		*len = 0;
 		return -ENODATA;
 	}
@@ -1006,7 +1006,7 @@ static int rndis_class_handler(struct usb_setup_packet *setup, s32_t *len,
 		netusb_enabled());
 
 	if (!netusb_enabled()) {
-		USB_ERR("interface disabled");
+		LOG_ERR("interface disabled");
 		return -ENODEV;
 	}
 
@@ -1102,7 +1102,7 @@ static int append_bytes(u8_t *out_buf, u16_t buf_len, u8_t *data,
 					out_buf,
 					buf_len);
 			if (ret) {
-				USB_ERR("Error sending data");
+				LOG_ERR("Error sending data");
 				return ret;
 			}
 
