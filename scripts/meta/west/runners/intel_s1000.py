@@ -1,4 +1,5 @@
 # Copyright (c) 2018 Intel Corporation.
+# Copyright 2018 Open Source Foundries Limited.
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -72,7 +73,7 @@ class IntelS1000BinaryRunner(ZephyrBinaryRunner):
         elif command == 'debugserver':
             self.debugserver(**kwargs)
         else:
-            self.do_debug()
+            self.do_debug(**kwargs)
 
     def flash(self, **kwargs):
         topology_file = kwargs['ocd-topology']
@@ -85,18 +86,19 @@ class IntelS1000BinaryRunner(ZephyrBinaryRunner):
                       '-I', jtag_instr_file]
 
         # Start the server
-        # Note that XTOCD always fails the first time. It has to be
-        # relaunched the second time to work.
-        self.popen_ignore_int(server_cmd)
-        time.sleep(3)
+        # Note that XTOCD takes a few seconds to execute and always fails the
+        # first time. It has to be relaunched the second time to work.
         server_proc = self.popen_ignore_int(server_cmd)
-        time.sleep(3)
+        time.sleep(6)
+        server_proc.terminate()
+        server_proc = self.popen_ignore_int(server_cmd)
+        time.sleep(6)
 
         # Start the client
         gdb_cmd = [self.gdb_cmd, '-x', gdb_flash_file]
         client_proc = self.popen_ignore_int(gdb_cmd)
 
-        # Wait for 3 seconds (waiting for XTGDB to finish)
+        # Wait for 3 seconds (waiting for XTGDB to finish loading the image)
         time.sleep(3)
 
         # At this point, the ELF image is loaded and the program is in
@@ -106,16 +108,34 @@ class IntelS1000BinaryRunner(ZephyrBinaryRunner):
         client_proc.terminate()
         server_proc.terminate()
 
-    def do_debug(self):
+    def do_debug(self, **kwargs):
         if self.elf_name is None:
             raise ValueError('Cannot debug; elf is missing')
         if self.gdb_cmd is None:
             raise ValueError('Cannot debug; no gdb specified')
 
+        topology_file = kwargs['ocd-topology']
+        jtag_instr_file = kwargs['ocd-jtag-instr']
+
+        self.print_gdbserver_message(self.gdb_port)
+        server_cmd = [self.xt_ocd_dir,
+                      '-c', topology_file,
+                      '-I', jtag_instr_file]
+
+        # Start the server
+        # Note that XTOCD takes a few seconds to execute and always fails the
+        # first time. It has to be relaunched the second time to work.
+        server_proc = self.popen_ignore_int(server_cmd)
+        time.sleep(6)
+        server_proc.terminate()
+        server_proc = self.popen_ignore_int(server_cmd)
+        time.sleep(6)
+
         gdb_cmd = [self.gdb_cmd,
                    '-ex', 'target remote :{}'.format(self.gdb_port),
                    self.elf_name]
 
+        # Start the client
         # The below statement will consume the "^C" keypress ensuring
         # the python main application doesn't exit. This is important
         # since ^C in gdb means a "halt" operation.
@@ -124,6 +144,8 @@ class IntelS1000BinaryRunner(ZephyrBinaryRunner):
             self.check_call(gdb_cmd)
         finally:
             signal.signal(signal.SIGINT, previous)
+            server_proc.terminate()
+            server_proc.wait()
 
     def print_gdbserver_message(self, gdb_port):
         log.inf('Intel S1000 GDB server running on port {}'.format(gdb_port))
@@ -137,8 +159,9 @@ class IntelS1000BinaryRunner(ZephyrBinaryRunner):
                       '-c', topology_file,
                       '-I', jtag_instr_file]
 
-        # Note that XTOCD always fails the first time. It has to be
-        # relaunched the second time to work.
-        self.popen_ignore_int(server_cmd)
-        time.sleep(3)
+        # Note that XTOCD takes a few seconds to execute and always fails the
+        # first time. It has to be relaunched the second time to work.
+        server_proc = self.popen_ignore_int(server_cmd)
+        time.sleep(6)
+        server_proc.terminate()
         self.check_call(server_cmd)
