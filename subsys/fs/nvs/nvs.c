@@ -38,7 +38,7 @@ static int _nvs_flash_al_wrt(struct nvs_fs *fs, u32_t addr, const void *data,
 	int rc = 0;
 	off_t offset;
 	size_t blen;
-	u8_t buf[fs->write_block_size];
+	u8_t buf[NVS_BLOCK_SIZE];
 
 	if (!len) {
 		/* Nothing to write, avoid changing the flash protection */
