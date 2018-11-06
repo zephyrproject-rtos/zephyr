@@ -119,6 +119,10 @@ _idle_state_cleared:
 #endif
 	blx r3		/* call ISR */
 
+#ifdef CONFIG_TRACING
+	bl z_sys_trace_isr_exit
+#endif
+
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	pop {r3}
 	mov lr, r3
