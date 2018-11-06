@@ -76,6 +76,7 @@ boards/xtensa/                           @andrewboie @ramakrishnapallala
 cmake/                                   @nashif @SebastianBoe
 /CMakeLists.txt                          @nashif @SebastianBoe
 doc/                                     @dbkinder
+doc/application/coccinelle.rst           @himanshujha199640 @JuliaLawall
 doc/CMakeLists.txt                       @carlescufi
 doc/scripts/                             @carlescufi
 doc/subsystems/bluetooth/                @sjanc @jhedberg @Vudentz
@@ -192,6 +193,7 @@ samples/net/coap_server/                 @rveerama1
 samples/net/sockets/                     @jukkar @tbursztyka @pfalcon
 samples/sensor/                          @bogdan-davidoaia
 samples/subsys/usb                       @jfischer-phytec-iot @finikorg
+scripts/coccicheck                       @himanshujha199640 @JuliaLawall
 scripts/expr_parser.py                   @andrewboie @nashif
 scripts/sanity_chk/                      @andrewboie @nashif
 scripts/sanitycheck                      @andrewboie @nashif
