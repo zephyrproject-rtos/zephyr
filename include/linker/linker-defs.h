@@ -172,9 +172,15 @@ GDATA(__data_num_words)
 
 #include <zephyr/types.h>
 /*
- * The following are externs symbols from the linker. This enables
+ * Memory owned by the kernel, to be used as shared memory between
+ * application threads.
+ *
+ * The following are extern symbols from the linker. This enables
  * the dynamic k_mem_domain and k_mem_partition creation and alignment
  * to the section produced in the linker.
+
+ * The policy for this memory will be to initially configure all of it as
+ * kernel / supervisor thread accessible.
  */
 extern char _app_smem_start[];
 extern char _app_smem_end[];
@@ -194,7 +200,7 @@ extern char __app_ram_size[];
 #endif
 
 /* Memory owned by the kernel. Start and end will be aligned for memory
- * management/protection hardware for the target architecture..
+ * management/protection hardware for the target architecture.
  *
  * Consists of all kernel-side globals, all kernel objects, all thread stacks,
  * and all currently unused RAM.  If CONFIG_APPLICATION_MEMORY is not enabled,
