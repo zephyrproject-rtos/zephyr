@@ -5,6 +5,7 @@
 
 config SOC_FAMILY_SAM0
 	bool
+	select HAS_SEGGER_RTT
 
 if SOC_FAMILY_SAM0
 
