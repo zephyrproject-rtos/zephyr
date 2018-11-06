@@ -19,39 +19,40 @@ set(dts_files
   ${DTS_COMMON_OVERLAYS}
   )
 
-#Parse boards/shields to generate the shield list
+# Parse boards/shields of each board root to generate the shield list
+foreach(board_root ${BOARD_ROOT})
+  set(shield_dir ${board_root}/boards/shields)
 
-set(shield_dir ${ZEPHYR_BASE}/boards/shields)
+  # Match the .overlay files in the shield directories to make sure we are
+  # finding shields, e.g. x_nucleo_iks01a1/x_nucleo_iks01a1.overlay
+  file(GLOB_RECURSE shields_refs_list
+    RELATIVE ${shield_dir}
+    ${shield_dir}/*/*.overlay
+    )
 
-# Match the .overlay files in the shield directories to make sure we are
-# finding shields, e.g. x_nucleo_iks01a1/x_nucleo_iks01a1.overlay
-file(GLOB_RECURSE shields_refs_list
-     RELATIVE ${shield_dir}
-     ${shield_dir}/*/*.overlay
-     )
+  # The above gives a list like
+  # x_nucleo_iks01a1/x_nucleo_iks01a1.overlay;x_nucleo_iks01a2/x_nucleo_iks01a2.overlay
+  # we construct a list of shield names by extracting file name and
+  # removing the extension.
+  foreach(shield_path ${shields_refs_list})
+	get_filename_component(shield ${shield_path} NAME_WE)
 
-# The above gives a list like
-# x_nucleo_iks01a1/x_nucleo_iks01a1.overlay;x_nucleo_iks01a2/x_nucleo_iks01a2.overlay
-# we construct a list of shield names by extracting file name and
-# removing the extension.
-foreach(shield_path ${shields_refs_list})
-  get_filename_component(shield ${shield_path} NAME_WE)
+	# Generate CONFIG flags matching each shield
+	string(TOUPPER "CONFIG_SHIELD_${shield}" shield_config)
 
-  # Generate CONFIG flags matching each shield
-  string(TOUPPER "CONFIG_SHIELD_${shield}" shield_config)
-
-  if(${shield_config})
-    # if shield config flag is on, add shield overlay to the shield overlays
-    # list and dts_fixup file to the shield fixup file
-    list(APPEND
-      dts_files
-      ${shield_dir}/${shield_path}
-      )
-    list(APPEND
-      dts_fixups
-      ${shield_dir}/${shield}/dts_fixup.h
-      )
-  endif()
+	if(${shield_config})
+      # if shield config flag is on, add shield overlay to the shield overlays
+      # list and dts_fixup file to the shield fixup file
+      list(APPEND
+		dts_files
+		${shield_dir}/${shield_path}
+		)
+      list(APPEND
+		dts_fixups
+		${shield_dir}/${shield}/dts_fixup.h
+		)
+	endif()
+  endforeach()
 endforeach()
 
 message(STATUS "Generating zephyr/include/generated/generated_dts_board.h")
