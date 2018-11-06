@@ -1241,6 +1241,18 @@ static void le_conn_update_complete(struct net_buf *buf)
 		conn->le.latency = sys_le16_to_cpu(evt->latency);
 		conn->le.timeout = sys_le16_to_cpu(evt->supv_timeout);
 		notify_le_param_updated(conn);
+	} else if (evt->status == BT_HCI_ERR_UNSUPP_REMOTE_FEATURE &&
+		   conn->role == BT_HCI_ROLE_SLAVE &&
+		   !atomic_test_and_set_bit(conn->flags,
+					    BT_CONN_SLAVE_PARAM_L2CAP)) {
+		struct bt_le_conn_param param;
+
+		param.interval_min = conn->le.interval_min;
+		param.interval_max = conn->le.interval_max;
+		param.latency = conn->le.pending_latency;
+		param.timeout = conn->le.pending_timeout;
+
+		bt_l2cap_update_conn_param(conn, &param);
 	}
 
 	bt_conn_unref(conn);
