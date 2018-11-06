@@ -55,6 +55,10 @@ echo-server directory:
   This overlay config enables support for two QEMU's when simulating
   IEEE 802.15.4 network that are connected together.
 
+- :file:`overlay-reel_board-15_4.conf`
+  This overlay config enables support for IEEE 802.15.4 chip on the
+  reel_board.
+
 - :file:`overlay-tls.conf`
   This overlay config enables support for TLS.
 
