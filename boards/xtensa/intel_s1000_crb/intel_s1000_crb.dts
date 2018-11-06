@@ -31,3 +31,14 @@
 		label = "TLV320DAC";
 	};
 };
+
+&spi0 {
+	status = "ok";
+
+	mx25um512@0 {
+		compatible = "spi,flash";
+		label = "MX25UM512";
+		reg = <0x00>;
+		spi-max-frequency = <2000000>;
+	};
+};
