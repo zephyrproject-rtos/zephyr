@@ -29,6 +29,11 @@ void z_sys_trace_isr_enter(void)
 	sys_trace_isr_enter();
 }
 
+void z_sys_trace_isr_exit(void)
+{
+	sys_trace_isr_exit();
+}
+
 void z_sys_trace_isr_exit_to_scheduler(void)
 {
 	sys_trace_isr_exit_to_scheduler();
