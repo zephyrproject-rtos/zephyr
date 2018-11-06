@@ -617,7 +617,9 @@ static int execute_upload(const struct shell *shell,
 			/* We either upload using IPv4 or IPv6, not both at
 			 * the same time.
 			 */
-			net_context_put(context4);
+			if (IS_ENABLED(CONFIG_NET_IPV4)) {
+				net_context_put(context4);
+			}
 
 			zperf_tcp_upload(shell, context6, duration_in_ms,
 					 packet_size, &results);
@@ -641,7 +643,9 @@ static int execute_upload(const struct shell *shell,
 				goto out;
 			}
 
-			net_context_put(context6);
+			if (IS_ENABLED(CONFIG_NET_IPV6)) {
+				net_context_put(context6);
+			}
 
 			zperf_tcp_upload(shell, context4, duration_in_ms,
 					 packet_size, &results);
@@ -658,8 +662,12 @@ static int execute_upload(const struct shell *shell,
 	}
 
 out:
-	net_context_put(context6);
-	net_context_put(context4);
+	if (IS_ENABLED(CONFIG_NET_IPV6)) {
+		net_context_put(context6);
+	}
+	if (IS_ENABLED(CONFIG_NET_IPV4)) {
+		net_context_put(context4);
+	}
 
 	return 0;
 }
