@@ -3,5 +3,6 @@ sample:
 tests:
   test:
     harness: sensor
+    platform_whitelist: arduino_101_sss
     tags: sensors
     depends_on: spi gpio
