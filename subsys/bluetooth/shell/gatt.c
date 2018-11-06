@@ -439,7 +439,8 @@ static int cmd_subscribe(const struct shell *shell, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	err = shell_cmd_precheck(shell, (argc >= 3), NULL, 0); {
+	err = shell_cmd_precheck(shell, (argc >= 3), NULL, 0);
+	if (err) {
 		return err;
 	}
 
