@@ -15,9 +15,9 @@
 
 static
 struct winc1500_gpio_configuration winc1500_gpios[WINC1500_GPIO_IDX_MAX] = {
-	{ .dev = NULL, .pin = CONFIG_WINC1500_GPIO_CHIP_EN },
-	{ .dev = NULL, .pin = CONFIG_WINC1500_GPIO_IRQN },
-	{ .dev = NULL, .pin = CONFIG_WINC1500_GPIO_RESET_N },
+	{ .dev = NULL, .pin = DT_WINC1500_GPIO_CHIP_EN },
+	{ .dev = NULL, .pin = DT_WINC1500_GPIO_IRQN },
+	{ .dev = NULL, .pin = DT_WINC1500_GPIO_RESET_N },
 };
 
 struct winc1500_gpio_configuration *winc1500_configure_gpios(void)
@@ -28,7 +28,7 @@ struct winc1500_gpio_configuration *winc1500_configure_gpios(void)
 	const int flags_noint_out = GPIO_DIR_OUT;
 	struct device *gpio;
 
-	gpio = device_get_binding(CONFIG_WINC1500_GPIO_DRV_NAME);
+	gpio = device_get_binding(DT_WINC1500_GPIO_DRV_NAME);
 
 	gpio_pin_configure(gpio, winc1500_gpios[WINC1500_GPIO_IDX_CHIP_EN].pin,
 			   flags_noint_out);
