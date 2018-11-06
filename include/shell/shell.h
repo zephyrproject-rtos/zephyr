@@ -72,6 +72,22 @@ struct shell_cmd_entry {
 struct shell;
 
 /**
+ * @brief Initializes a shell command arguments
+ *
+ * @param[in] _mandatory Number of mandatory arguments.
+ * @param[in] _optional  Number of optional arguments.
+ */
+#define SHELL_ARG(_mandatory, _optional) {				\
+	.mandatory = _mandatory,					\
+	.optional = _optional,						\
+}
+
+struct shell_static_args {
+	u8_t mandatory; /*!< Number of mandatory arguments. */
+	u8_t optional; /*!< Number of optional arguments. */
+};
+
+/**
  * @brief Shell command handler prototype.
  */
 typedef int (*shell_cmd_handler)(const struct shell *shell,
@@ -85,10 +101,37 @@ struct shell_static_entry {
 	const char *help; /*!< Command help string. */
 	const struct shell_cmd_entry *subcmd; /*!< Pointer to subcommand. */
 	shell_cmd_handler handler; /*!< Command handler. */
+	const struct shell_static_args *args; /*!< Command arguments. */
 };
 
 /**
- * @brief Macro for defining and adding a root command (level 0).
+ * @brief Macro for defining and adding a root command (level 0) with
+ * arguments.
+ *
+ * @note Each root command shall have unique syntax.
+ *
+ * @param[in] syntax  Command syntax (for example: history).
+ * @param[in] subcmd  Pointer to a subcommands array.
+ * @param[in] help    Pointer to a command help string.
+ * @param[in] handler Pointer to a function handler.
+ * @param[in] mandatory Number of mandatory arguments.
+ * @param[in] optional  Number of optional arguments.
+ */
+#define SHELL_CMD_ARG_REGISTER(syntax, subcmd, help, handler,		   \
+			       mandatory, optional)			   \
+	static const struct shell_static_entry UTIL_CAT(shell_, syntax) =  \
+	SHELL_CMD_ARG(syntax, subcmd, help, handler, mandatory, optional); \
+	static const struct shell_cmd_entry UTIL_CAT(shell_cmd_, syntax)   \
+	__attribute__ ((section("."					   \
+			STRINGIFY(UTIL_CAT(shell_root_cmd_, syntax)))))	   \
+	__attribute__((used)) = {					   \
+		.is_dynamic = false,					   \
+		.u.entry = &UTIL_CAT(shell_, syntax)			   \
+	}
+
+/**
+ * @brief Macro for defining and adding a root command (level 0) with
+ * arguments.
  *
  * @note Each root command shall have unique syntax.
  *
@@ -97,7 +140,7 @@ struct shell_static_entry {
  * @param[in] help    Pointer to a command help string.
  * @param[in] handler Pointer to a function handler.
  */
-#define SHELL_CMD_REGISTER(syntax, subcmd, help, handler)		   \
+#define SHELL_CMD_REGISTER(syntax, subcmd, help, handler) \
 	static const struct shell_static_entry UTIL_CAT(shell_, syntax) =  \
 	SHELL_CMD(syntax, subcmd, help, handler);			   \
 	static const struct shell_cmd_entry UTIL_CAT(shell_cmd_, syntax)   \
@@ -141,6 +184,26 @@ struct shell_static_entry {
 	}
 
 /**
+ * @brief Initializes a shell command with arguments
+ *
+ * @param[in] _syntax  Command syntax (for example: history).
+ * @param[in] _subcmd  Pointer to a subcommands array.
+ * @param[in] _help    Pointer to a command help string.
+ * @param[in] _handler Pointer to a function handler.
+ * @param[in] _mandatory Number of mandatory arguments.
+ * @param[in] _optional Number of optional arguments.
+ */
+#define SHELL_CMD_ARG(_syntax, _subcmd, _help, _handler,		\
+		      _mandatory, _optional) {				\
+	.syntax = (const char *)STRINGIFY(_syntax),			\
+	.subcmd = _subcmd,						\
+	.help  = (const char *)_help,					\
+	.handler = _handler,						\
+	.args = _mandatory ?						\
+	(&(struct shell_static_args) SHELL_ARG(_mandatory, _optional)) : NULL\
+}
+
+/**
  * @brief Initializes a shell command.
  *
  * @param[in] _syntax  Command syntax (for example: history).
@@ -148,12 +211,9 @@ struct shell_static_entry {
  * @param[in] _help    Pointer to a command help string.
  * @param[in] _handler Pointer to a function handler.
  */
-#define SHELL_CMD(_syntax, _subcmd, _help, _handler) {	\
-	.syntax = (const char *)STRINGIFY(_syntax),	\
-	.subcmd = _subcmd,				\
-	.help  = (const char *)_help,			\
-	.handler = _handler				\
-}
+#define SHELL_CMD(_syntax, _subcmd, _help, _handler) \
+	SHELL_CMD_ARG(_syntax, _subcmd, _help, _handler, 0, 0)
+
 
 /**
  * @internal @brief Internal shell state in response to data received from the

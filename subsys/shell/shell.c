@@ -946,6 +946,53 @@ static const struct shell_cmd_entry *root_cmd_find(const char *syntax)
 	return NULL;
 }
 
+static int exec_cmd(const struct shell *shell, size_t argc, char **argv)
+{
+	int ret_val = 0;
+
+	if (shell->ctx->active_cmd.handler == NULL) {
+		if (shell->ctx->active_cmd.help) {
+			shell_help_print(shell, NULL, 0);
+		} else {
+			shell_fprintf(shell, SHELL_ERROR,
+				      SHELL_MSG_SPECIFY_SUBCOMMAND);
+			ret_val = -ENOEXEC;
+			goto clear;
+		}
+	}
+
+	if (shell->ctx->active_cmd.args) {
+		const struct shell_static_args *args;
+
+		args = shell->ctx->active_cmd.args;
+
+		if (args->optional > 0) {
+			/* Check if argc is within allowed range */
+			ret_val = shell_cmd_precheck(shell,
+						     ((argc >= args->mandatory)
+						      &&
+						     (argc <= args->mandatory +
+						     args->optional)),
+						     NULL, 0);
+		} else {
+			/* Perform exact match if there are no optional args */
+			ret_val = shell_cmd_precheck(shell,
+						     (args->mandatory == argc),
+						     NULL, 0);
+		}
+	}
+
+	if (!ret_val) {
+		ret_val = shell->ctx->active_cmd.handler(shell, argc, argv);
+	}
+
+clear:
+	help_flag_clear(shell);
+
+	return ret_val;
+}
+
+
 /* Function is analyzing the command buffer to find matching commands. Next, it
  * invokes the  last recognized command which has a handler and passes the rest
  * of command buffer as arguments.
@@ -959,7 +1006,6 @@ static int shell_execute(const struct shell *shell)
 	size_t cmd_lvl = SHELL_CMD_ROOT_LVL;
 	size_t cmd_with_handler_lvl = 0;
 	bool wildcard_found = false;
-	int ret_val = 0;
 	size_t cmd_idx;
 	size_t argc;
 	char quote;
@@ -1102,23 +1148,8 @@ static int shell_execute(const struct shell *shell)
 	}
 
 	/* Executing the deepest found handler. */
-	if (shell->ctx->active_cmd.handler == NULL) {
-		if (shell->ctx->active_cmd.help) {
-			shell_help_print(shell, NULL, 0);
-		} else {
-			shell_fprintf(shell, SHELL_ERROR,
-				      SHELL_MSG_SPECIFY_SUBCOMMAND);
-			ret_val = -ENOEXEC;
-		}
-	} else {
-		ret_val = shell->ctx->active_cmd.handler(shell,
-						   argc - cmd_with_handler_lvl,
-						   &argv[cmd_with_handler_lvl]);
-	}
-
-	help_flag_clear(shell);
-
-	return ret_val;
+	return exec_cmd(shell, argc - cmd_with_handler_lvl,
+			&argv[cmd_with_handler_lvl]);
 }
 
 static void shell_transport_evt_handler(enum shell_transport_evt evt_type,
