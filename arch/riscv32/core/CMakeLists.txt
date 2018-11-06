@@ -13,3 +13,4 @@ zephyr_sources(
 
 # SMP-only sources
 zephyr_sources_ifdef(CONFIG_SMP curr_cpu.c)
+zephyr_sources_ifdef(CONFIG_SMP start_cpu.c)
