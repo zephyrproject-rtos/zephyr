@@ -364,18 +364,10 @@ static int arm_mpu_init(struct device *arg)
 	}
 
 #if defined(CONFIG_APPLICATION_MEMORY)
-	u32_t index, size;
-	struct arm_mpu_region region_conf;
-
 	/* configure app data portion */
-	index = _get_region_index_by_type(THREAD_APP_DATA_REGION);
-	size = (u32_t)&__app_ram_end - (u32_t)&__app_ram_start;
-	_get_region_attr_by_type(&region_conf.attr, THREAD_APP_DATA_REGION,
-			(u32_t)&__app_ram_start, size);
-	region_conf.base = (u32_t)&__app_ram_start;
-	if (size > 0) {
-		_region_init(index, &region_conf);
-	}
+	_mpu_configure_by_type(THREAD_APP_DATA_REGION,
+		(u32_t)&__app_ram_start,
+		(u32_t)&__app_ram_end - (u32_t)&__app_ram_start);
 #endif
 
 	arm_core_mpu_enable();
