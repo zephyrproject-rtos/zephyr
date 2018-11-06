@@ -199,9 +199,20 @@ static int send_conn_le_param_update(struct bt_conn *conn,
 	 * it; or if local role is master then use LE connection update.
 	 */
 	if ((BT_FEAT_LE_CONN_PARAM_REQ_PROC(bt_dev.le.features) &&
-	     BT_FEAT_LE_CONN_PARAM_REQ_PROC(conn->le.features)) ||
-	    (conn->role == BT_HCI_ROLE_MASTER)) {
-		return bt_conn_le_conn_update(conn, param);
+	     BT_FEAT_LE_CONN_PARAM_REQ_PROC(conn->le.features) &&
+	     !atomic_test_bit(conn->flags, BT_CONN_SLAVE_PARAM_L2CAP)) ||
+	     (conn->role == BT_HCI_ROLE_MASTER)) {
+		int rc;
+
+		rc = bt_conn_le_conn_update(conn, param);
+
+		/* store those in case of fallback to L2CAP */
+		if (rc == 0) {
+			conn->le.pending_latency = param->latency;
+			conn->le.pending_timeout = param->timeout;
+		}
+
+		return rc;
 	}
 
 	/* If remote master does not support LL Connection Parameters Request
@@ -234,8 +245,8 @@ static void conn_le_update_timeout(struct k_work *work)
 	if (atomic_test_and_clear_bit(conn->flags, BT_CONN_SLAVE_PARAM_SET)) {
 		param = BT_LE_CONN_PARAM(conn->le.interval_min,
 					 conn->le.interval_max,
-					 conn->le.latency,
-					 conn->le.timeout);
+					 conn->le.pending_latency,
+					 conn->le.pending_timeout);
 
 		send_conn_le_param_update(conn, param);
 	} else {
@@ -1801,13 +1812,11 @@ int bt_conn_le_param_update(struct bt_conn *conn,
 			return send_conn_le_param_update(conn, param);
 		}
 
-		/* store new conn params to be used by update timer
-		 * TODO this overwrites current latency and timeout
-		 */
+		/* store new conn params to be used by update timer */
 		conn->le.interval_min = param->interval_min;
 		conn->le.interval_max = param->interval_max;
-		conn->le.latency = param->latency;
-		conn->le.timeout = param->timeout;
+		conn->le.pending_latency = param->latency;
+		conn->le.pending_timeout = param->timeout;
 		atomic_set_bit(conn->flags, BT_CONN_SLAVE_PARAM_SET);
 	}
 
