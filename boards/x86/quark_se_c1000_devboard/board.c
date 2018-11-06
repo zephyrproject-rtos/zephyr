@@ -60,31 +60,3 @@ struct cc2520_gpio_configuration *cc2520_configure_gpios(void)
 }
 
 #endif /* CONFIG_IEEE802154_CC2520 */
-
-#if defined(CONFIG_IEEE802154_CC1200)
-
-#include <ieee802154/cc1200.h>
-#include <gpio.h>
-
-static struct cc1200_gpio_configuration cc1200_gpios[CC1200_GPIO_IDX_MAX] = {
-	{ .dev = NULL, .pin = CC1200_GPIO_GPIO0, },
-};
-
-struct cc1200_gpio_configuration *cc1200_configure_gpios(void)
-{
-	const int flags_int_in = (GPIO_DIR_IN | GPIO_INT |
-				  GPIO_INT_EDGE |
-				  GPIO_INT_DOUBLE_EDGE |
-				  GPIO_INT_DEBOUNCE);
-	struct device *gpio;
-
-	gpio = device_get_binding(CONFIG_IEEE802154_CC1200_GPIO_0_NAME);
-	gpio_pin_configure(gpio, cc1200_gpios[CC1200_GPIO_IDX_GPIO0].pin,
-			   flags_int_in);
-
-	cc1200_gpios[CC1200_GPIO_IDX_GPIO0].dev = gpio;
-
-	return cc1200_gpios;
-}
-
-#endif /* CONFIG_IEEE802154_CC1200 */
