@@ -10,3 +10,6 @@ zephyr_sources(
   thread_entry_wrapper.S
   thread.c
 )
+
+# SMP-only sources
+zephyr_sources_ifdef(CONFIG_SMP curr_cpu.c)
