@@ -348,6 +348,11 @@ void arm_core_mpu_configure(u8_t type, u32_t base, u32_t size)
 #if defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS)
 void arm_core_mpu_kernel_ram_region_reset(void)
 {
+#if defined(CONFIG_APP_SHARED_MEM)
+	_mpu_configure_by_type(APP_SHARED_MEM_BKGND_REGION,
+		(u32_t)&_app_smem_start,
+		(u32_t)&_app_smem_end - (u32_t)&_app_smem_start);
+#endif
 	_mpu_configure_by_type(KERNEL_BKGND_REGION,
 		(u32_t)&__kernel_ram_start,
 		(u32_t)&__kernel_ram_end - (u32_t)&__kernel_ram_start);
@@ -416,6 +421,16 @@ void arm_core_mpu_configure_mem_domain(struct k_mem_domain *mem_domain)
 		num_partitions = 0;
 		pparts = NULL;
 	}
+
+#if defined(CONFIG_APP_SHARED_MEM) \
+	&& defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS)
+	if (num_partitions) {
+		/* Domain partitions have been configured.
+		 * Disable background region for APP shared mem.
+		 */
+		_disable_region_by_type(APP_SHARED_MEM_BKGND_REGION);
+	}
+#endif /* APP_SHARED_MEM && MPU_REQUIRES_NON_OVERLAPPING_REGIONS */
 
 	for (; region_index < _get_num_regions(); region_index++) {
 		if (num_partitions && pparts->size) {
