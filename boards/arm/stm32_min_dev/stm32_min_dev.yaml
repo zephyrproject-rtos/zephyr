@@ -6,3 +6,5 @@ toolchain:
   - zephyr
   - gnuarmemb
 ram: 20
+supported:
+  - i2c
