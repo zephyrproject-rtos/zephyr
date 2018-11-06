@@ -27,6 +27,9 @@
 #define APP_IDX           0x000
 #define FLAGS             0
 
+/* Maximum characters in "hello" message */
+#define HELLO_MAX         8
+
 static struct k_work hello_work;
 static struct k_work mesh_start_work;
 
@@ -82,7 +85,6 @@ static void vnd_hello(struct bt_mesh_model *model,
 		      struct net_buf_simple *buf)
 {
 	char str[32];
-	size_t len;
 
 	printk("Hello message from 0x%04x\n", ctx->addr);
 
@@ -91,14 +93,12 @@ static void vnd_hello(struct bt_mesh_model *model,
 		return;
 	}
 
-	len = min(buf->len, 8);
-	memcpy(str, buf->data, len);
-	str[len] = '\0';
+	strncpy(str, buf->data, HELLO_MAX);
+	str[HELLO_MAX] = '\0';
 
 	board_add_hello(ctx->addr, str);
 
-	strcpy(str + len, " says hi!");
-
+	strcat(str, " says hi!");
 	board_show_text(str, false, K_SECONDS(3));
 
 	board_blink_leds();
@@ -176,7 +176,7 @@ static size_t first_name_len(const char *name)
 
 static void send_hello(struct k_work *work)
 {
-	NET_BUF_SIMPLE_DEFINE(msg, 3 + 8 + 4);
+	NET_BUF_SIMPLE_DEFINE(msg, 3 + HELLO_MAX + 4);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = NET_IDX,
 		.app_idx = APP_IDX,
