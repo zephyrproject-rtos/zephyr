@@ -220,8 +220,8 @@ static void i2c_stm32_irq_config_func_1(struct device *port);
 static const struct i2c_stm32_config i2c_stm32_cfg_1 = {
 	.i2c = (I2C_TypeDef *)CONFIG_I2C_1_BASE_ADDRESS,
 	.pclken = {
-		.enr = LL_APB1_GRP1_PERIPH_I2C1,
-		.bus = STM32_CLOCK_BUS_APB1,
+		.enr = CONFIG_I2C_1_CLOCK_BITS,
+		.bus = CONFIG_I2C_1_CLOCK_BUS,
 	},
 #ifdef CONFIG_I2C_STM32_INTERRUPT
 	.irq_config_func = i2c_stm32_irq_config_func_1,
@@ -266,8 +266,8 @@ static void i2c_stm32_irq_config_func_2(struct device *port);
 static const struct i2c_stm32_config i2c_stm32_cfg_2 = {
 	.i2c = (I2C_TypeDef *)CONFIG_I2C_2_BASE_ADDRESS,
 	.pclken = {
-		.enr = LL_APB1_GRP1_PERIPH_I2C2,
-		.bus = STM32_CLOCK_BUS_APB1,
+		.enr = CONFIG_I2C_2_CLOCK_BITS,
+		.bus = CONFIG_I2C_2_CLOCK_BUS,
 	},
 #ifdef CONFIG_I2C_STM32_INTERRUPT
 	.irq_config_func = i2c_stm32_irq_config_func_2,
@@ -316,8 +316,8 @@ static void i2c_stm32_irq_config_func_3(struct device *port);
 static const struct i2c_stm32_config i2c_stm32_cfg_3 = {
 	.i2c = (I2C_TypeDef *)CONFIG_I2C_3_BASE_ADDRESS,
 	.pclken = {
-		.enr = LL_APB1_GRP1_PERIPH_I2C3,
-		.bus = STM32_CLOCK_BUS_APB1,
+		.enr = CONFIG_I2C_3_CLOCK_BITS,
+		.bus = CONFIG_I2C_3_CLOCK_BUS,
 	},
 #ifdef CONFIG_I2C_STM32_INTERRUPT
 	.irq_config_func = i2c_stm32_irq_config_func_3,
@@ -360,8 +360,8 @@ static void i2c_stm32_irq_config_func_4(struct device *port);
 static const struct i2c_stm32_config i2c_stm32_cfg_4 = {
 	.i2c = (I2C_TypeDef *)CONFIG_I2C_4_BASE_ADDRESS,
 	.pclken = {
-		.enr = LL_APB1_GRP2_PERIPH_I2C4,
-		.bus = STM32_CLOCK_BUS_APB1_2,
+		.enr = CONFIG_I2C_4_CLOCK_BITS,
+		.bus = CONFIG_I2C_4_CLOCK_BUS,
 	},
 #ifdef CONFIG_I2C_STM32_INTERRUPT
 	.irq_config_func = i2c_stm32_irq_config_func_4,
@@ -390,4 +390,3 @@ static void i2c_stm32_irq_config_func_4(struct device *dev)
 #endif
 
 #endif /* CONFIG_I2C_4 */
-
