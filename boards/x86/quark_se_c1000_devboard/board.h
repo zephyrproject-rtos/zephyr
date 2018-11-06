@@ -21,13 +21,6 @@
 
 #endif /* CONFIG_IEEE802154_CC2520 */
 
-#if defined(CONFIG_IEEE802154_CC1200)
-
-/* GPIO numbers where the TI cc1200 chip is connected to */
-#define CC1200_GPIO_GPIO0		18  /* GPIO18 (in) */
-
-#endif /* CONFIG_IEEE802154_CC1200 */
-
 #if defined(CONFIG_USB)
 /* GPIO driver name */
 #define USB_GPIO_DRV_NAME	CONFIG_GPIO_QMSI_0_NAME

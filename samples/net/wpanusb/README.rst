@@ -28,9 +28,6 @@ There are configuration files for various setups in the
     This is the standard default config.  This can be used by itself for
     hardware which has native 802.15.4 support.
 
-- :file:`overlay-cc1200.conf`
-    This overlay config enables support for CC1200
-
 - :file:`overlay-cc2520.conf`
     This overlay config enables support for CC2520
 
