@@ -343,7 +343,8 @@ static void epd_update(struct k_work *work)
 		return;
 	}
 
-	strncpy(buf, bt_get_name(), sizeof(buf));
+	strncpy(buf, bt_get_name(), sizeof(buf) - 1);
+	buf[sizeof(buf) - 1] = '\0';
 
 	/* Convert commas to newlines */
 	for (i = 0; buf[i] != '\0'; i++) {
