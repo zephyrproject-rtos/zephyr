@@ -1,0 +1,11 @@
+identifier: arty_bm310
+name: CloudBEAR Arty BM-310
+type: mcu
+arch: riscv32
+toolchain:
+  - zephyr
+ram: 128
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

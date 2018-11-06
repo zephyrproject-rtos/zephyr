@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2018 CloudBEAR
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <riscv32-bm310.dtsi>
+
+/ {
+	model = "Arty BM-310";
+	compatible = "arty_bm310";
+
+	chosen {
+		zephyr,console = &uart0;
+	};
+};
+
+&uart0 {
+	status = "ok";
+	current-speed = <115200>;
+	clock-frequency = <25000000>;
+};

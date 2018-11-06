@@ -1,0 +1,3 @@
+config BOARD_ARTY_BM310
+	bool "Arty BM-310 target"
+	depends on SOC_RISCV32_CLOUDBEAR_BM310

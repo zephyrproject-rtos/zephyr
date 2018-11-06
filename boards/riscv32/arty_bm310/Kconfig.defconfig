@@ -1,0 +1,14 @@
+if BOARD_ARTY_BM310
+
+config BOARD
+	default "arty_bm310"
+
+config BEAR_PERIPH_CLK_FREQ
+	int
+	default 25000000
+
+config BEAR_UART_IRQ_PRIORITY
+	int
+	default 1
+
+endif
