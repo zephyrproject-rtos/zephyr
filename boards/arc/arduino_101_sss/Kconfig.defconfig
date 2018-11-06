@@ -4,13 +4,6 @@ if BOARD_ARDUINO_101_SSS
 config BOARD
 	default "arduino_101_sss"
 
-if GPIO_QMSI && BMI160 && BMI160_TRIGGER
-
-config BMI160_GPIO_DEV_NAME
-	default "GPIO_1"
-
-endif # GPIO_QMSI && BMI160 && BMI160_TRIGGER
-
 if FLASH && SPI
 
 config SPI_FLASH_W25QXXDV
@@ -23,11 +16,5 @@ config SPI_FLASH_W25QXXDV_SPI_SLAVE
 	default 1
 
 endif # FLASH && SPI
-
-if BMI160
-
-config BMI160_SPI_PORT_NAME
-	default "SPI_1"
-endif
 
 endif # BOARD_ARDUINO_101_SSS

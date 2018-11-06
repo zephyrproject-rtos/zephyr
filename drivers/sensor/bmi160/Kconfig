@@ -15,28 +15,6 @@ menuconfig BMI160
 
 if BMI160
 
-config BMI160_NAME
-	string "Driver's name"
-	default "BMI160"
-
-config BMI160_SPI_PORT_NAME
-	string "SPI master controller port name"
-	help
-	  Master SPI port name through which BMI160 chip is accessed.
-
-config BMI160_SLAVE
-	hex "BMI160 SPI slave select pin"
-	default 0
-	help
-	  BMI160 chip select pin.
-
-config BMI160_SPI_BUS_FREQ
-	int "BMI160 SPI bus speed in Hz"
-	default 640000
-	help
-	  This is the maximum supported SPI bus frequency. The chip supports a
-	  frequency up to 10MHz.
-
 choice
 	prompt "Trigger mode"
 	default BMI160_TRIGGER_GLOBAL_THREAD
@@ -71,21 +49,6 @@ config BMI160_THREAD_STACK_SIZE
 	default 1024
 	help
 	  The thread stack size.
-
-config BMI160_GPIO_DEV_NAME
-	string "Gpio device"
-	default "GPIO_1"
-	depends on BMI160_TRIGGER
-	help
-	  The name of the GPIO device to which the BMI160 interrupt pin is
-	  connected.
-
-config BMI160_GPIO_PIN_NUM
-	int "Interrupt GPIO pin number"
-	default 4
-	depends on BMI160_TRIGGER
-	help
-	  The number of the GPIO pin which is connected to BMI160 interrupt pin.
 
 choice
 	prompt "Accelerometer power mode"
