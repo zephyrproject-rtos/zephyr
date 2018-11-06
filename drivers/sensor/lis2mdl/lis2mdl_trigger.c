@@ -39,9 +39,12 @@ int lis2mdl_trigger_set(struct device *dev,
 		lis2mdl->handler_drdy = handler;
 		if (handler) {
 			/* fetch raw data sample: re-trigger lost interrupt */
-			i2c_burst_read(lis2mdl->i2c, lis2mdl->i2c_addr,
-				       LIS2MDL_OUT_REG,
-				       raw, sizeof(raw));
+			if (i2c_burst_read(lis2mdl->i2c, lis2mdl->i2c_addr,
+					   LIS2MDL_OUT_REG, raw,
+					   sizeof(raw)) < 0) {
+				LOG_ERR("Failed to fetch raw data sample.");
+				return -EIO;
+			}
 			return lis2mdl_enable_int(dev, 1);
 		} else {
 			return lis2mdl_enable_int(dev, 0);
