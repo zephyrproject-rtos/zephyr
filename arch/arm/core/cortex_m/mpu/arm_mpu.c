@@ -553,6 +553,12 @@ static int arm_mpu_init(struct device *arg)
 	_mpu_configure_by_type(KERNEL_BKGND_REGION,
 		(u32_t)&__kernel_ram_start,
 		(u32_t)&__kernel_ram_end - (u32_t)&__kernel_ram_start);
+#if defined(CONFIG_APP_SHARED_MEM)
+	/* Set access permissions for Application shared memory at init. */
+	_mpu_configure_by_type(APP_SHARED_MEM_BKGND_REGION,
+		(u32_t)&_app_smem_start,
+		(u32_t)&_app_smem_end - (u32_t)&_app_smem_start);
+#endif /* CONFIG_APP_SHARED_MEM */
 #endif /* CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS */
 
 	arm_core_mpu_enable();
