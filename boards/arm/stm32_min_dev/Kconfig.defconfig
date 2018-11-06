@@ -17,4 +17,11 @@ config UART_STM32_PORT_1
 
 endif # UART_CONSOLE
 
+if I2C
+
+config I2C_1
+	default y
+
+endif # I2C
+
 endif # BOARD_STM32_MIN_DEV
