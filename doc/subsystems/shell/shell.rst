@@ -78,7 +78,10 @@ Use the following macros for adding shell commands:
 
 * :c:macro:`SHELL_CMD_REGISTER` - Create root command. All root commands must
   have different name.
+* :c:macro:`SHELL_CMD_ARG_REGISTER` - Create root command with arguments.
+  All root commands must have different name.
 * :c:macro:`SHELL_CMD` - Initialize a command.
+* :c:macro:`SHELL_CMD_ARG` - Initialize a command with arguments.
 * :c:macro:`SHELL_CREATE_STATIC_SUBCMD_SET` - Create a static subcommands
   array.
 * :c:macro:`SHELL_SUBCMD_SET_END` - shall be placed as last in
