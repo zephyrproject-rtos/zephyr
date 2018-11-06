@@ -12,9 +12,9 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <zephyr.h>
-#include <shell/legacy_shell.h>
 #include <misc/printk.h>
 
+#include <shell/shell.h>
 #include <settings/settings.h>
 
 #include <bluetooth/bluetooth.h>
@@ -27,6 +27,8 @@
 #include "foundation.h"
 
 #define CID_NVAL   0xffff
+
+static const struct shell *ctx_shell;
 
 /* Default net, app & dev key values, unless otherwise specified */
 static const u8_t default_key[16] = {
@@ -85,7 +87,7 @@ static void get_faults(u8_t *faults, u8_t faults_size, u8_t *dst, u8_t *count)
 static int fault_get_cur(struct bt_mesh_model *model, u8_t *test_id,
 			 u16_t *company_id, u8_t *faults, u8_t *fault_count)
 {
-	printk("Sending current faults\n");
+	shell_print(ctx_shell, "Sending current faults");
 
 	*test_id = 0x00;
 	*company_id = BT_COMP_ID_LF;
@@ -99,11 +101,12 @@ static int fault_get_reg(struct bt_mesh_model *model, u16_t cid,
 			 u8_t *test_id, u8_t *faults, u8_t *fault_count)
 {
 	if (cid != BT_COMP_ID_LF) {
-		printk("Faults requested for unknown Company ID 0x%04x\n", cid);
+		shell_print(ctx_shell, "Faults requested for unknown Company ID"
+			    " 0x%04x", cid);
 		return -EINVAL;
 	}
 
-	printk("Sending registered faults\n");
+	shell_print(ctx_shell, "Sending registered faults");
 
 	*test_id = 0x00;
 
@@ -158,16 +161,16 @@ void show_faults(u8_t test_id, u16_t cid, u8_t *faults, size_t fault_count)
 	size_t i;
 
 	if (!fault_count) {
-		printk("Health Test ID 0x%02x Company ID 0x%04x: no faults\n",
-		       test_id, cid);
+		shell_print(ctx_shell, "Health Test ID 0x%02x Company ID "
+			    "0x%04x: no faults", test_id, cid);
 		return;
 	}
 
-	printk("Health Test ID 0x%02x Company ID 0x%04x Fault Count %zu:\n",
-	       test_id, cid, fault_count);
+	shell_print(ctx_shell, "Health Test ID 0x%02x Company ID 0x%04x Fault "
+		    "Count %zu:", test_id, cid, fault_count);
 
 	for (i = 0; i < fault_count; i++) {
-		printk("\t0x%02x\n", faults[i]);
+		shell_print(ctx_shell, "\t0x%02x", faults[i]);
 	}
 }
 
@@ -175,7 +178,7 @@ static void health_current_status(struct bt_mesh_health_cli *cli, u16_t addr,
 				  u8_t test_id, u16_t cid, u8_t *faults,
 				  size_t fault_count)
 {
-	printk("Health Current Status from 0x%04x\n", addr);
+	shell_print(ctx_shell, "Health Current Status from 0x%04x", addr);
 	show_faults(test_id, cid, faults, fault_count);
 }
 
@@ -235,8 +238,8 @@ static size_t hex2bin(const char *hex, u8_t *bin, size_t bin_len)
 
 static void prov_complete(u16_t net_idx, u16_t addr)
 {
-	printk("Local node provisioned, net_idx 0x%04x address 0x%04x\n",
-	       net_idx, addr);
+	shell_print(ctx_shell, "Local node provisioned, net_idx 0x%04x address "
+		    "0x%04x", net_idx, addr);
 	net.net_idx = net_idx,
 	net.local = addr;
 	net.dst = addr;
@@ -244,25 +247,26 @@ static void prov_complete(u16_t net_idx, u16_t addr)
 
 static void prov_reset(void)
 {
-	printk("The local node has been reset and needs reprovisioning\n");
+	shell_print(ctx_shell, "The local node has been reset and needs "
+		    "reprovisioning");
 }
 
 static int output_number(bt_mesh_output_action_t action, u32_t number)
 {
-	printk("OOB Number: %u\n", number);
+	shell_print(ctx_shell, "OOB Number: %u", number);
 	return 0;
 }
 
 static int output_string(const char *str)
 {
-	printk("OOB String: %s\n", str);
+	shell_print(ctx_shell, "OOB String: %s", str);
 	return 0;
 }
 
 static bt_mesh_input_action_t input_act;
 static u8_t input_size;
 
-static int cmd_input_num(int argc, char *argv[])
+static int cmd_input_num(const struct shell *shell, size_t argc, char *argv[])
 {
 	int err;
 
@@ -271,19 +275,19 @@ static int cmd_input_num(int argc, char *argv[])
 	}
 
 	if (input_act != BT_MESH_ENTER_NUMBER) {
-		printk("A number hasn't been requested!\n");
+		shell_print(shell, "A number hasn't been requested!");
 		return 0;
 	}
 
 	if (strlen(argv[1]) < input_size) {
-		printk("Too short input (%u digits required)\n",
-		       input_size);
+		shell_print(shell, "Too short input (%u digits required)",
+			    input_size);
 		return 0;
 	}
 
 	err = bt_mesh_input_number(strtoul(argv[1], NULL, 10));
 	if (err) {
-		printk("Numeric input failed (err %d)\n", err);
+		shell_error(shell, "Numeric input failed (err %d)", err);
 		return 0;
 	}
 
@@ -291,7 +295,7 @@ static int cmd_input_num(int argc, char *argv[])
 	return 0;
 }
 
-static int cmd_input_str(int argc, char *argv[])
+static int cmd_input_str(const struct shell *shell, size_t argc, char *argv[])
 {
 	int err;
 
@@ -300,19 +304,19 @@ static int cmd_input_str(int argc, char *argv[])
 	}
 
 	if (input_act != BT_MESH_ENTER_STRING) {
-		printk("A string hasn't been requested!\n");
+		shell_print(shell, "A string hasn't been requested!");
 		return 0;
 	}
 
 	if (strlen(argv[1]) < input_size) {
-		printk("Too short input (%u characters required)\n",
+		shell_print(shell, "Too short input (%u characters required)",
 		       input_size);
 		return 0;
 	}
 
 	err = bt_mesh_input_string(argv[1]);
 	if (err) {
-		printk("String input failed (err %d)\n", err);
+		shell_error(shell, "String input failed (err %d)", err);
 		return 0;
 	}
 
@@ -324,16 +328,16 @@ static int input(bt_mesh_input_action_t act, u8_t size)
 {
 	switch (act) {
 	case BT_MESH_ENTER_NUMBER:
-		printk("Enter a number (max %u digits) with: input-num <num>\n",
-		       size);
+		shell_print(ctx_shell, "Enter a number (max %u digits) with: "
+			    "input-num <num>", size);
 		break;
 	case BT_MESH_ENTER_STRING:
-		printk("Enter a string (max %u chars) with: input-str <str>\n",
-		       size);
+		shell_print(ctx_shell, "Enter a string (max %u chars) with: "
+			    "input-str <str>", size);
 		break;
 	default:
-		printk("Unknown input action %u (size %u) requested!\n",
-		       act, size);
+		shell_error(ctx_shell, "Unknown input action %u (size %u) "
+			    "requested!", act, size);
 		return -EINVAL;
 	}
 
@@ -356,12 +360,14 @@ static const char *bearer2str(bt_mesh_prov_bearer_t bearer)
 
 static void link_open(bt_mesh_prov_bearer_t bearer)
 {
-	printk("Provisioning link opened on %s\n", bearer2str(bearer));
+	shell_print(ctx_shell, "Provisioning link opened on %s",
+		    bearer2str(bearer));
 }
 
 static void link_close(bt_mesh_prov_bearer_t bearer)
 {
-	printk("Provisioning link closed on %s\n", bearer2str(bearer));
+	shell_print(ctx_shell, "Provisioning link closed on %s",
+		    bearer2str(bearer));
 }
 
 static u8_t static_val[16];
@@ -383,7 +389,7 @@ static struct bt_mesh_prov prov = {
 	.input = input,
 };
 
-static int cmd_static_oob(int argc, char *argv[])
+static int cmd_static_oob(const struct shell *shell, size_t argc, char *argv[])
 {
 	if (argc < 2) {
 		prov.static_val = NULL;
@@ -398,16 +404,16 @@ static int cmd_static_oob(int argc, char *argv[])
 	}
 
 	if (prov.static_val) {
-		printk("Static OOB value set (length %u)\n",
-		       prov.static_val_len);
+		shell_print(shell, "Static OOB value set (length %u)",
+			    prov.static_val_len);
 	} else {
-		printk("Static OOB value cleared\n");
+		shell_print(shell, "Static OOB value cleared");
 	}
 
 	return 0;
 }
 
-static int cmd_uuid(int argc, char *argv[])
+static int cmd_uuid(const struct shell *shell, size_t argc, char *argv[])
 {
 	u8_t uuid[16];
 	size_t len;
@@ -424,15 +430,15 @@ static int cmd_uuid(int argc, char *argv[])
 	memcpy(dev_uuid, uuid, len);
 	(void)memset(dev_uuid + len, 0, sizeof(dev_uuid) - len);
 
-	printk("Device UUID set\n");
+	shell_print(shell, "Device UUID set");
 
 	return 0;
 }
 
-static int cmd_reset(int argc, char *argv[])
+static int cmd_reset(const struct shell *shell, size_t argc, char *argv[])
 {
 	bt_mesh_reset();
-	printk("Local node reset complete\n");
+	shell_print(shell, "Local node reset complete");
 	return 0;
 }
 
@@ -451,37 +457,37 @@ static bool str2bool(const char *str)
 }
 
 #if defined(CONFIG_BT_MESH_LOW_POWER)
-static int cmd_lpn(int argc, char *argv[])
+static int cmd_lpn(const struct shell *shell, size_t argc, char *argv[])
 {
 	static bool enabled;
 	int err;
 
 	if (argc < 2) {
-		printk("%s\n", enabled ? "enabled" : "disabled");
+		shell_print(shell, "%s", enabled ? "enabled" : "disabled");
 		return 0;
 	}
 
 	if (str2bool(argv[1])) {
 		if (enabled) {
-			printk("LPN already enabled\n");
+			shell_print(shell, "LPN already enabled");
 			return 0;
 		}
 
 		err = bt_mesh_lpn_set(true);
 		if (err) {
-			printk("Enabling LPN failed (err %d)\n", err);
+			shell_error(shell, "Enabling LPN failed (err %d)", err);
 		} else {
 			enabled = true;
 		}
 	} else {
 		if (!enabled) {
-			printk("LPN already disabled\n");
+			shell_print(shell, "LPN already disabled");
 			return 0;
 		}
 
 		err = bt_mesh_lpn_set(false);
 		if (err) {
-			printk("Enabling LPN failed (err %d)\n", err);
+			shell_error(shell, "Enabling LPN failed (err %d)", err);
 		} else {
 			enabled = false;
 		}
@@ -490,13 +496,13 @@ static int cmd_lpn(int argc, char *argv[])
 	return 0;
 }
 
-static int cmd_poll(int argc, char *argv[])
+static int cmd_poll(const struct shell *shell, size_t argc, char *argv[])
 {
 	int err;
 
 	err = bt_mesh_lpn_poll();
 	if (err) {
-		printk("Friend Poll failed (err %d)\n", err);
+		shell_error(shell, "Friend Poll failed (err %d)", err);
 	}
 
 	return 0;
@@ -505,44 +511,46 @@ static int cmd_poll(int argc, char *argv[])
 static void lpn_cb(u16_t friend_addr, bool established)
 {
 	if (established) {
-		printk("Friendship (as LPN) established to Friend 0x%04x\n",
-		       friend_addr);
+		shell_print(ctx_shell, "Friendship (as LPN) established to "
+			    "Friend 0x%04x", friend_addr);
 	} else {
-		printk("Friendship (as LPN) lost with Friend 0x%04x\n",
-		       friend_addr);
+		shell_print(ctx_shell, "Friendship (as LPN) lost with Friend "
+			    "0x%04x", friend_addr);
 	}
 }
 
 #endif /* MESH_LOW_POWER */
 
-static int cmd_init(int argc, char *argv[])
+static int cmd_init(const struct shell *shell, size_t argc, char *argv[])
 {
 	int err;
 
 	err = bt_enable(NULL);
 	if (err && err != -EALREADY) {
-		printk("Bluetooth init failed (err %d)\n", err);
+		shell_error(shell, "Bluetooth init failed (err %d)", err);
 		return 0;
 	} else if (!err) {
-		printk("Bluetooth initialized\n");
+		shell_print(shell, "Bluetooth initialized");
 	}
 
 	err = bt_mesh_init(&prov, &comp);
 	if (err) {
-		printk("Mesh initialization failed (err %d)\n", err);
+		shell_error(shell, "Mesh initialization failed (err %d)", err);
 	}
 
-	printk("Mesh initialized\n");
+	shell_print(shell, "Mesh initialized");
+
+	ctx_shell = shell;
 
 	if (IS_ENABLED(CONFIG_SETTINGS)) {
 		settings_load();
 	}
 
 	if (bt_mesh_is_provisioned()) {
-		printk("Mesh network restored from flash\n");
+		shell_print(shell, "Mesh network restored from flash");
 	} else {
-		printk("Use \"pb-adv on\" or \"pb-gatt on\" to enable"
-		       " advertising\n");
+		shell_print(shell, "Use \"pb-adv on\" or \"pb-gatt on\" to "
+			    "enable advertising");
 	}
 
 #if IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)
@@ -553,20 +561,21 @@ static int cmd_init(int argc, char *argv[])
 }
 
 #if defined(CONFIG_BT_MESH_GATT_PROXY)
-static int cmd_ident(int argc, char *argv[])
+static int cmd_ident(const struct shell *shell, size_t argc, char *argv[])
 {
 	int err;
 
 	err = bt_mesh_proxy_identity_enable();
 	if (err) {
-		printk("Failed advertise using Node Identity (err %d)\n", err);
+		shell_error(shell, "Failed advertise using Node Identity (err "
+			    "%d)", err);
 	}
 
 	return 0;
 }
 #endif /* MESH_GATT_PROXY */
 
-static int cmd_get_comp(int argc, char *argv[])
+static int cmd_get_comp(const struct shell *shell, size_t argc, char *argv[])
 {
 	NET_BUF_SIMPLE_DEFINE(comp, 32);
 	u8_t status, page = 0x00;
@@ -579,21 +588,26 @@ static int cmd_get_comp(int argc, char *argv[])
 	err = bt_mesh_cfg_comp_data_get(net.net_idx, net.dst, page,
 					&status, &comp);
 	if (err) {
-		printk("Getting composition failed (err %d)\n", err);
+		shell_error(shell, "Getting composition failed (err %d)", err);
 		return 0;
 	}
 
 	if (status != 0x00) {
-		printk("Got non-success status 0x%02x\n", status);
+		shell_print(shell, "Got non-success status 0x%02x", status);
 		return 0;
 	}
 
-	printk("Got Composition Data for 0x%04x:\n", net.dst);
-	printk("\tCID      0x%04x\n", net_buf_simple_pull_le16(&comp));
-	printk("\tPID      0x%04x\n", net_buf_simple_pull_le16(&comp));
-	printk("\tVID      0x%04x\n", net_buf_simple_pull_le16(&comp));
-	printk("\tCRPL     0x%04x\n", net_buf_simple_pull_le16(&comp));
-	printk("\tFeatures 0x%04x\n", net_buf_simple_pull_le16(&comp));
+	shell_print(shell, "Got Composition Data for 0x%04x:", net.dst);
+	shell_print(shell, "\tCID      0x%04x",
+		    net_buf_simple_pull_le16(&comp));
+	shell_print(shell, "\tPID      0x%04x",
+		    net_buf_simple_pull_le16(&comp));
+	shell_print(shell, "\tVID      0x%04x",
+		    net_buf_simple_pull_le16(&comp));
+	shell_print(shell, "\tCRPL     0x%04x",
+		    net_buf_simple_pull_le16(&comp));
+	shell_print(shell, "\tFeatures 0x%04x",
+		    net_buf_simple_pull_le16(&comp));
 
 	while (comp.len > 4) {
 		u8_t sig, vnd;
@@ -604,47 +618,48 @@ static int cmd_get_comp(int argc, char *argv[])
 		sig = net_buf_simple_pull_u8(&comp);
 		vnd = net_buf_simple_pull_u8(&comp);
 
-		printk("\n\tElement @ 0x%04x:\n", loc);
+		shell_print(shell, "\tElement @ 0x%04x:", loc);
 
 		if (comp.len < ((sig * 2) + (vnd * 4))) {
-			printk("\t\t...truncated data!\n");
+			shell_print(shell, "\t\t...truncated data!");
 			break;
 		}
 
 		if (sig) {
-			printk("\t\tSIG Models:\n");
+			shell_print(shell, "\t\tSIG Models:");
 		} else {
-			printk("\t\tNo SIG Models\n");
+			shell_print(shell, "\t\tNo SIG Models");
 		}
 
 		for (i = 0; i < sig; i++) {
 			u16_t mod_id = net_buf_simple_pull_le16(&comp);
 
-			printk("\t\t\t0x%04x\n", mod_id);
+			shell_print(shell, "\t\t\t0x%04x", mod_id);
 		}
 
 		if (vnd) {
-			printk("\t\tVendor Models:\n");
+			shell_print(shell, "\t\tVendor Models:");
 		} else {
-			printk("\t\tNo Vendor Models\n");
+			shell_print(shell, "\t\tNo Vendor Models");
 		}
 
 		for (i = 0; i < vnd; i++) {
 			u16_t cid = net_buf_simple_pull_le16(&comp);
 			u16_t mod_id = net_buf_simple_pull_le16(&comp);
 
-			printk("\t\t\tCompany 0x%04x: 0x%04x\n", cid, mod_id);
+			shell_print(shell, "\t\t\tCompany 0x%04x: 0x%04x", cid,
+				    mod_id);
 		}
 	}
 
 	return 0;
 }
 
-static int cmd_dst(int argc, char *argv[])
+static int cmd_dst(const struct shell *shell, size_t argc, char *argv[])
 {
 	if (argc < 2) {
-		printk("Destination address: 0x%04x%s\n", net.dst,
-		       net.dst == net.local ? " (local)" : "");
+		shell_print(shell, "Destination address: 0x%04x%s", net.dst,
+			    net.dst == net.local ? " (local)" : "");
 		return 0;
 	}
 
@@ -654,36 +669,36 @@ static int cmd_dst(int argc, char *argv[])
 		net.dst = strtoul(argv[1], NULL, 0);
 	}
 
-	printk("Destination address set to 0x%04x%s\n", net.dst,
-	       net.dst == net.local ? " (local)" : "");
+	shell_print(shell, "Destination address set to 0x%04x%s", net.dst,
+		    net.dst == net.local ? " (local)" : "");
 	return 0;
 }
 
-static int cmd_netidx(int argc, char *argv[])
+static int cmd_netidx(const struct shell *shell, size_t argc, char *argv[])
 {
 	if (argc < 2) {
-		printk("NetIdx: 0x%04x\n", net.net_idx);
+		shell_print(shell, "NetIdx: 0x%04x", net.net_idx);
 		return 0;
 	}
 
 	net.net_idx = strtoul(argv[1], NULL, 0);
-	printk("NetIdx set to 0x%04x\n", net.net_idx);
+	shell_print(shell, "NetIdx set to 0x%04x", net.net_idx);
 	return 0;
 }
 
-static int cmd_appidx(int argc, char *argv[])
+static int cmd_appidx(const struct shell *shell, size_t argc, char *argv[])
 {
 	if (argc < 2) {
-		printk("AppIdx: 0x%04x\n", net.app_idx);
+		shell_print(shell, "AppIdx: 0x%04x", net.app_idx);
 		return 0;
 	}
 
 	net.app_idx = strtoul(argv[1], NULL, 0);
-	printk("AppIdx set to 0x%04x\n", net.app_idx);
+	shell_print(shell, "AppIdx set to 0x%04x", net.app_idx);
 	return 0;
 }
 
-static int cmd_net_send(int argc, char *argv[])
+static int cmd_net_send(const struct shell *shell, size_t argc, char *argv[])
 {
 	NET_BUF_SIMPLE_DEFINE(msg, 32);
 	struct bt_mesh_msg_ctx ctx = {
@@ -707,8 +722,8 @@ static int cmd_net_send(int argc, char *argv[])
 	}
 
 	if (!tx.sub) {
-		printk("No matching subnet for NetKey Index 0x%04x\n",
-		       net.net_idx);
+		shell_print(shell, "No matching subnet for NetKey Index 0x%04x",
+			    net.net_idx);
 		return 0;
 	}
 
@@ -717,26 +732,28 @@ static int cmd_net_send(int argc, char *argv[])
 
 	err = bt_mesh_trans_send(&tx, &msg, NULL, NULL);
 	if (err) {
-		printk("Failed to send (err %d)\n", err);
+		shell_error(shell, "Failed to send (err %d)", err);
 	}
 
 	return 0;
 }
 
-static int cmd_iv_update(int argc, char *argv[])
+static int cmd_iv_update(const struct shell *shell, size_t argc, char *argv[])
 {
 	if (bt_mesh_iv_update()) {
-		printk("Transitioned to IV Update In Progress state\n");
+		shell_print(shell, "Transitioned to IV Update In Progress "
+			    "state");
 	} else {
-		printk("Transitioned to IV Update Normal state\n");
+		shell_print(shell, "Transitioned to IV Update Normal state");
 	}
 
-	printk("IV Index is 0x%08x\n", bt_mesh.iv_index);
+	shell_print(shell, "IV Index is 0x%08x", bt_mesh.iv_index);
 
 	return 0;
 }
 
-static int cmd_iv_update_test(int argc, char *argv[])
+static int cmd_iv_update_test(const struct shell *shell, size_t argc,
+			      char *argv[])
 {
 	bool enable;
 
@@ -746,9 +763,9 @@ static int cmd_iv_update_test(int argc, char *argv[])
 
 	enable = str2bool(argv[1]);
 	if (enable) {
-		printk("Enabling IV Update test mode\n");
+		shell_print(shell, "Enabling IV Update test mode");
 	} else {
-		printk("Disabling IV Update test mode\n");
+		shell_print(shell, "Disabling IV Update test mode");
 	}
 
 	bt_mesh_iv_update_test(enable);
@@ -756,13 +773,13 @@ static int cmd_iv_update_test(int argc, char *argv[])
 	return 0;
 }
 
-static int cmd_rpl_clear(int argc, char *argv[])
+static int cmd_rpl_clear(const struct shell *shell, size_t argc, char *argv[])
 {
 	bt_mesh_rpl_clear();
 	return 0;
 }
 
-static int cmd_beacon(int argc, char *argv[])
+static int cmd_beacon(const struct shell *shell, size_t argc, char *argv[])
 {
 	u8_t status;
 	int err;
@@ -777,16 +794,17 @@ static int cmd_beacon(int argc, char *argv[])
 	}
 
 	if (err) {
-		printk("Unable to send Beacon Get/Set message (err %d)\n", err);
+		shell_error(shell, "Unable to send Beacon Get/Set message "
+			    "(err %d)", err);
 		return 0;
 	}
 
-	printk("Beacon state is 0x%02x\n", status);
+	shell_print(shell, "Beacon state is 0x%02x", status);
 
 	return 0;
 }
 
-static int cmd_ttl(int argc, char *argv[])
+static int cmd_ttl(const struct shell *shell, size_t argc, char *argv[])
 {
 	u8_t ttl;
 	int err;
@@ -800,16 +818,17 @@ static int cmd_ttl(int argc, char *argv[])
 	}
 
 	if (err) {
-		printk("Unable to send Default TTL Get/Set (err %d)\n", err);
+		shell_error(shell, "Unable to send Default TTL Get/Set "
+			    "(err %d)", err);
 		return 0;
 	}
 
-	printk("Default TTL is 0x%02x\n", ttl);
+	shell_print(shell, "Default TTL is 0x%02x", ttl);
 
 	return 0;
 }
 
-static int cmd_friend(int argc, char *argv[])
+static int cmd_friend(const struct shell *shell, size_t argc, char *argv[])
 {
 	u8_t frnd;
 	int err;
@@ -823,16 +842,17 @@ static int cmd_friend(int argc, char *argv[])
 	}
 
 	if (err) {
-		printk("Unable to send Friend Get/Set (err %d)\n", err);
+		shell_error(shell, "Unable to send Friend Get/Set (err %d)",
+			    err);
 		return 0;
 	}
 
-	printk("Friend is set to 0x%02x\n", frnd);
+	shell_print(shell, "Friend is set to 0x%02x", frnd);
 
 	return 0;
 }
 
-static int cmd_gatt_proxy(int argc, char *argv[])
+static int cmd_gatt_proxy(const struct shell *shell, size_t argc, char *argv[])
 {
 	u8_t proxy;
 	int err;
@@ -847,16 +867,17 @@ static int cmd_gatt_proxy(int argc, char *argv[])
 	}
 
 	if (err) {
-		printk("Unable to send GATT Proxy Get/Set (err %d)\n", err);
+		shell_print(shell, "Unable to send GATT Proxy Get/Set "
+			    "(err %d)", err);
 		return 0;
 	}
 
-	printk("GATT Proxy is set to 0x%02x\n", proxy);
+	shell_print(shell, "GATT Proxy is set to 0x%02x", proxy);
 
 	return 0;
 }
 
-static int cmd_relay(int argc, char *argv[])
+static int cmd_relay(const struct shell *shell, size_t argc, char *argv[])
 {
 	u8_t relay, transmit;
 	int err;
@@ -891,18 +912,19 @@ static int cmd_relay(int argc, char *argv[])
 	}
 
 	if (err) {
-		printk("Unable to send Relay Get/Set (err %d)\n", err);
+		shell_error(shell, "Unable to send Relay Get/Set (err %d)",
+			    err);
 		return 0;
 	}
 
-	printk("Relay is 0x%02x, Transmit 0x%02x (count %u interval %ums)\n",
-	       relay, transmit, BT_MESH_TRANSMIT_COUNT(transmit),
-	       BT_MESH_TRANSMIT_INT(transmit));
+	shell_print(shell, "Relay is 0x%02x, Transmit 0x%02x (count %u interval"
+		    " %ums)", relay, transmit, BT_MESH_TRANSMIT_COUNT(transmit),
+		    BT_MESH_TRANSMIT_INT(transmit));
 
 	return 0;
 }
 
-static int cmd_net_key_add(int argc, char *argv[])
+static int cmd_net_key_add(const struct shell *shell, size_t argc, char *argv[])
 {
 	u8_t key_val[16];
 	u16_t key_net_idx;
@@ -927,20 +949,22 @@ static int cmd_net_key_add(int argc, char *argv[])
 	err = bt_mesh_cfg_net_key_add(net.net_idx, net.dst, key_net_idx,
 				      key_val, &status);
 	if (err) {
-		printk("Unable to send NetKey Add (err %d)\n", err);
+		shell_print(shell, "Unable to send NetKey Add (err %d)", err);
 		return 0;
 	}
 
 	if (status) {
-		printk("NetKeyAdd failed with status 0x%02x\n", status);
+		shell_print(shell, "NetKeyAdd failed with status 0x%02x",
+			    status);
 	} else {
-		printk("NetKey added with NetKey Index 0x%03x\n", key_net_idx);
+		shell_print(shell, "NetKey added with NetKey Index 0x%03x",
+			    key_net_idx);
 	}
 
 	return 0;
 }
 
-static int cmd_app_key_add(int argc, char *argv[])
+static int cmd_app_key_add(const struct shell *shell, size_t argc, char *argv[])
 {
 	u8_t key_val[16];
 	u16_t key_net_idx, key_app_idx;
@@ -966,21 +990,23 @@ static int cmd_app_key_add(int argc, char *argv[])
 	err = bt_mesh_cfg_app_key_add(net.net_idx, net.dst, key_net_idx,
 				      key_app_idx, key_val, &status);
 	if (err) {
-		printk("Unable to send App Key Add (err %d)\n", err);
+		shell_error(shell, "Unable to send App Key Add (err %d)", err);
 		return 0;
 	}
 
 	if (status) {
-		printk("AppKeyAdd failed with status 0x%02x\n", status);
+		shell_print(shell, "AppKeyAdd failed with status 0x%02x",
+			    status);
 	} else {
-		printk("AppKey added, NetKeyIndex 0x%04x AppKeyIndex 0x%04x\n",
-		       key_net_idx, key_app_idx);
+		shell_print(shell, "AppKey added, NetKeyIndex 0x%04x "
+			    "AppKeyIndex 0x%04x", key_net_idx, key_app_idx);
 	}
 
 	return 0;
 }
 
-static int cmd_mod_app_bind(int argc, char *argv[])
+static int cmd_mod_app_bind(const struct shell *shell, size_t argc,
+			    char *argv[])
 {
 	u16_t elem_addr, mod_app_idx, mod_id, cid;
 	u8_t status;
@@ -1005,20 +1031,22 @@ static int cmd_mod_app_bind(int argc, char *argv[])
 	}
 
 	if (err) {
-		printk("Unable to send Model App Bind (err %d)\n", err);
+		shell_error(shell, "Unable to send Model App Bind (err %d)",
+			    err);
 		return 0;
 	}
 
 	if (status) {
-		printk("Model App Bind failed with status 0x%02x\n", status);
+		shell_print(shell, "Model App Bind failed with status 0x%02x",
+			    status);
 	} else {
-		printk("AppKey successfully bound\n");
+		shell_print(shell, "AppKey successfully bound");
 	}
 
 	return 0;
 }
 
-static int cmd_mod_sub_add(int argc, char *argv[])
+static int cmd_mod_sub_add(const struct shell *shell, size_t argc, char *argv[])
 {
 	u16_t elem_addr, sub_addr, mod_id, cid;
 	u8_t status;
@@ -1043,21 +1071,22 @@ static int cmd_mod_sub_add(int argc, char *argv[])
 	}
 
 	if (err) {
-		printk("Unable to send Model Subscription Add (err %d)\n", err);
+		shell_error(shell, "Unable to send Model Subscription Add "
+			    "(err %d)", err);
 		return 0;
 	}
 
 	if (status) {
-		printk("Model Subscription Add failed with status 0x%02x\n",
-		       status);
+		shell_print(shell, "Model Subscription Add failed with status "
+			    "0x%02x", status);
 	} else {
-		printk("Model subscription was successful\n");
+		shell_print(shell, "Model subscription was successful");
 	}
 
 	return 0;
 }
 
-static int cmd_mod_sub_del(int argc, char *argv[])
+static int cmd_mod_sub_del(const struct shell *shell, size_t argc, char *argv[])
 {
 	u16_t elem_addr, sub_addr, mod_id, cid;
 	u8_t status;
@@ -1082,22 +1111,23 @@ static int cmd_mod_sub_del(int argc, char *argv[])
 	}
 
 	if (err) {
-		printk("Unable to send Model Subscription Delete (err %d)\n",
-		       err);
+		shell_error(shell, "Unable to send Model Subscription Delete "
+			    "(err %d)", err);
 		return 0;
 	}
 
 	if (status) {
-		printk("Model Subscription Delete failed with status 0x%02x\n",
-		       status);
+		shell_print(shell, "Model Subscription Delete failed with "
+			    "status 0x%02x", status);
 	} else {
-		printk("Model subscription deltion was successful\n");
+		shell_print(shell, "Model subscription deltion was successful");
 	}
 
 	return 0;
 }
 
-static int cmd_mod_sub_add_va(int argc, char *argv[])
+static int cmd_mod_sub_add_va(const struct shell *shell, size_t argc,
+			      char *argv[])
 {
 	u16_t elem_addr, sub_addr, mod_id, cid;
 	u8_t label[16];
@@ -1128,22 +1158,24 @@ static int cmd_mod_sub_add_va(int argc, char *argv[])
 	}
 
 	if (err) {
-		printk("Unable to send Mod Sub VA Add (err %d)\n", err);
+		shell_error(shell, "Unable to send Mod Sub VA Add (err %d)",
+			    err);
 		return 0;
 	}
 
 	if (status) {
-		printk("Mod Sub VA Add failed with status 0x%02x\n",
-		       status);
+		shell_print(shell, "Mod Sub VA Add failed with status 0x%02x",
+			    status);
 	} else {
-		printk("0x%04x subscribed to Label UUID %s (va 0x%04x)\n",
-		       elem_addr, argv[2], sub_addr);
+		shell_print(shell, "0x%04x subscribed to Label UUID %s "
+			    "(va 0x%04x)", elem_addr, argv[2], sub_addr);
 	}
 
 	return 0;
 }
 
-static int cmd_mod_sub_del_va(int argc, char *argv[])
+static int cmd_mod_sub_del_va(const struct shell *shell, size_t argc,
+			      char *argv[])
 {
 	u16_t elem_addr, sub_addr, mod_id, cid;
 	u8_t label[16];
@@ -1174,23 +1206,24 @@ static int cmd_mod_sub_del_va(int argc, char *argv[])
 	}
 
 	if (err) {
-		printk("Unable to send Model Subscription Delete (err %d)\n",
-		       err);
+		shell_error(shell, "Unable to send Model Subscription Delete "
+			    "(err %d)", err);
 		return 0;
 	}
 
 	if (status) {
-		printk("Model Subscription Delete failed with status 0x%02x\n",
-		       status);
+		shell_print(shell, "Model Subscription Delete failed with "
+			    "status 0x%02x", status);
 	} else {
-		printk("0x%04x unsubscribed from Label UUID %s (va 0x%04x)\n",
-		       elem_addr, argv[2], sub_addr);
+		shell_print(shell, "0x%04x unsubscribed from Label UUID %s "
+			    "(va 0x%04x)", elem_addr, argv[2], sub_addr);
 	}
 
 	return 0;
 }
 
-static int mod_pub_get(u16_t addr, u16_t mod_id, u16_t cid)
+static int mod_pub_get(const struct shell *shell, u16_t addr, u16_t mod_id,
+		       u16_t cid)
 {
 	struct bt_mesh_cfg_mod_pub pub;
 	u8_t status;
@@ -1205,32 +1238,34 @@ static int mod_pub_get(u16_t addr, u16_t mod_id, u16_t cid)
 	}
 
 	if (err) {
-		printk("Model Publication Get failed (err %d)\n", err);
+		shell_error(shell, "Model Publication Get failed (err %d)",
+			    err);
 		return 0;
 	}
 
 	if (status) {
-		printk("Model Publication Get failed (status 0x%02x)\n",
-		       status);
+		shell_print(shell, "Model Publication Get failed "
+			    "(status 0x%02x)", status);
 		return 0;
 	}
 
-	printk("Model Publication for Element 0x%04x, Model 0x%04x:\n"
-	       "\tPublish Address:                0x%04x\n"
-	       "\tAppKeyIndex:                    0x%04x\n"
-	       "\tCredential Flag:                %u\n"
-	       "\tPublishTTL:                     %u\n"
-	       "\tPublishPeriod:                  0x%02x\n"
-	       "\tPublishRetransmitCount:         %u\n"
-	       "\tPublishRetransmitInterval:      %ums\n",
-	       addr, mod_id, pub.addr, pub.app_idx, pub.cred_flag, pub.ttl,
-	       pub.period, BT_MESH_PUB_TRANSMIT_COUNT(pub.transmit),
-	       BT_MESH_PUB_TRANSMIT_INT(pub.transmit));
+	shell_print(shell, "Model Publication for Element 0x%04x, Model 0x%04x:"
+		    "\tPublish Address:                0x%04x"
+		    "\tAppKeyIndex:                    0x%04x"
+		    "\tCredential Flag:                %u"
+		    "\tPublishTTL:                     %u"
+		    "\tPublishPeriod:                  0x%02x"
+		    "\tPublishRetransmitCount:         %u"
+		    "\tPublishRetransmitInterval:      %ums",
+		    addr, mod_id, pub.addr, pub.app_idx, pub.cred_flag, pub.ttl,
+		    pub.period, BT_MESH_PUB_TRANSMIT_COUNT(pub.transmit),
+		    BT_MESH_PUB_TRANSMIT_INT(pub.transmit));
 
 	return 0;
 }
 
-static int mod_pub_set(u16_t addr, u16_t mod_id, u16_t cid, char *argv[])
+static int mod_pub_set(const struct shell *shell, u16_t addr, u16_t mod_id,
+		       u16_t cid, char *argv[])
 {
 	struct bt_mesh_cfg_mod_pub pub;
 	u8_t status, count;
@@ -1245,13 +1280,13 @@ static int mod_pub_set(u16_t addr, u16_t mod_id, u16_t cid, char *argv[])
 
 	count = strtoul(argv[5], NULL, 0);
 	if (count > 7) {
-		printk("Invalid retransmit count\n");
+		shell_print(shell, "Invalid retransmit count");
 		return -EINVAL;
 	}
 
 	interval = strtoul(argv[6], NULL, 0);
 	if (interval > (31 * 50) || (interval % 50)) {
-		printk("Invalid retransmit interval %u\n", interval);
+		shell_print(shell, "Invalid retransmit interval %u", interval);
 		return -EINVAL;
 	}
 
@@ -1266,21 +1301,22 @@ static int mod_pub_set(u16_t addr, u16_t mod_id, u16_t cid, char *argv[])
 	}
 
 	if (err) {
-		printk("Model Publication Set failed (err %d)\n", err);
+		shell_error(shell, "Model Publication Set failed (err %d)",
+			    err);
 		return 0;
 	}
 
 	if (status) {
-		printk("Model Publication Set failed (status 0x%02x)\n",
-		       status);
+		shell_print(shell, "Model Publication Set failed "
+			    "(status 0x%02x)", status);
 	} else {
-		printk("Model Publication successfully set\n");
+		shell_print(shell, "Model Publication successfully set");
 	}
 
 	return 0;
 }
 
-static int cmd_mod_pub(int argc, char *argv[])
+static int cmd_mod_pub(const struct shell *shell, size_t argc, char *argv[])
 {
 	u16_t addr, mod_id, cid;
 
@@ -1307,26 +1343,27 @@ static int cmd_mod_pub(int argc, char *argv[])
 			return -EINVAL;
 		}
 
-		return mod_pub_set(addr, mod_id, cid, argv);
+		return mod_pub_set(shell, addr, mod_id, cid, argv);
 	} else {
-		return mod_pub_get(addr, mod_id, cid);
+		return mod_pub_get(shell, addr, mod_id, cid);
 	}
 }
 
-static void hb_sub_print(struct bt_mesh_cfg_hb_sub *sub)
+static void hb_sub_print(const struct shell *shell,
+			 struct bt_mesh_cfg_hb_sub *sub)
 {
-	printk("Heartbeat Subscription:\n"
-	       "\tSource:      0x%04x\n"
-	       "\tDestination: 0x%04x\n"
-	       "\tPeriodLog:   0x%02x\n"
-	       "\tCountLog:    0x%02x\n"
-	       "\tMinHops:     %u\n"
-	       "\tMaxHops:     %u\n",
-	       sub->src, sub->dst, sub->period, sub->count,
-	       sub->min, sub->max);
+	shell_print(shell, "Heartbeat Subscription:"
+		    "\tSource:      0x%04x"
+		    "\tDestination: 0x%04x"
+		    "\tPeriodLog:   0x%02x"
+		    "\tCountLog:    0x%02x"
+		    "\tMinHops:     %u"
+		    "\tMaxHops:     %u",
+		    sub->src, sub->dst, sub->period, sub->count,
+		    sub->min, sub->max);
 }
 
-static int hb_sub_get(int argc, char *argv[])
+static int hb_sub_get(const struct shell *shell, size_t argc, char *argv[])
 {
 	struct bt_mesh_cfg_hb_sub sub;
 	u8_t status;
@@ -1334,21 +1371,22 @@ static int hb_sub_get(int argc, char *argv[])
 
 	err = bt_mesh_cfg_hb_sub_get(net.net_idx, net.dst, &sub, &status);
 	if (err) {
-		printk("Heartbeat Subscription Get failed (err %d)\n", err);
+		shell_error(shell, "Heartbeat Subscription Get failed (err %d)",
+			    err);
 		return 0;
 	}
 
 	if (status) {
-		printk("Heartbeat Subscription Get failed (status 0x%02x)\n",
-		       status);
+		shell_print(shell, "Heartbeat Subscription Get failed "
+			    "(status 0x%02x)", status);
 	} else {
-		hb_sub_print(&sub);
+		hb_sub_print(shell, &sub);
 	}
 
 	return 0;
 }
 
-static int hb_sub_set(int argc, char *argv[])
+static int hb_sub_set(const struct shell *shell, size_t argc, char *argv[])
 {
 	struct bt_mesh_cfg_hb_sub sub;
 	u8_t status;
@@ -1360,34 +1398,35 @@ static int hb_sub_set(int argc, char *argv[])
 
 	err = bt_mesh_cfg_hb_sub_set(net.net_idx, net.dst, &sub, &status);
 	if (err) {
-		printk("Heartbeat Subscription Set failed (err %d)\n", err);
+		shell_error(shell, "Heartbeat Subscription Set failed (err %d)",
+			    err);
 		return 0;
 	}
 
 	if (status) {
-		printk("Heartbeat Subscription Set failed (status 0x%02x)\n",
-		       status);
+		shell_print(shell, "Heartbeat Subscription Set failed "
+			    "(status 0x%02x)", status);
 	} else {
-		hb_sub_print(&sub);
+		hb_sub_print(shell, &sub);
 	}
 
 	return 0;
 }
 
-static int cmd_hb_sub(int argc, char *argv[])
+static int cmd_hb_sub(const struct shell *shell, size_t argc, char *argv[])
 {
 	if (argc > 1) {
 		if (argc < 4) {
 			return -EINVAL;
 		}
 
-		return hb_sub_set(argc, argv);
+		return hb_sub_set(shell, argc, argv);
 	} else {
-		return hb_sub_get(argc, argv);
+		return hb_sub_get(shell, argc, argv);
 	}
 }
 
-static int hb_pub_get(int argc, char *argv[])
+static int hb_pub_get(const struct shell *shell, size_t argc, char *argv[])
 {
 	struct bt_mesh_cfg_hb_pub pub;
 	u8_t status;
@@ -1395,26 +1434,27 @@ static int hb_pub_get(int argc, char *argv[])
 
 	err = bt_mesh_cfg_hb_pub_get(net.net_idx, net.dst, &pub, &status);
 	if (err) {
-		printk("Heartbeat Publication Get failed (err %d)\n", err);
+		shell_error(shell, "Heartbeat Publication Get failed (err %d)",
+			    err);
 		return 0;
 	}
 
 	if (status) {
-		printk("Heartbeat Publication Get failed (status 0x%02x)\n",
-		       status);
+		shell_print(shell, "Heartbeat Publication Get failed "
+			    "(status 0x%02x)", status);
 		return 0;
 	}
 
-	printk("Heartbeat publication:\n");
-	printk("\tdst 0x%04x count 0x%02x period 0x%02x\n",
-	       pub.dst, pub.count, pub.period);
-	printk("\tttl 0x%02x feat 0x%04x net_idx 0x%04x\n",
-	       pub.ttl, pub.feat, pub.net_idx);
+	shell_print(shell, "Heartbeat publication:");
+	shell_print(shell, "\tdst 0x%04x count 0x%02x period 0x%02x",
+		    pub.dst, pub.count, pub.period);
+	shell_print(shell, "\tttl 0x%02x feat 0x%04x net_idx 0x%04x",
+		    pub.ttl, pub.feat, pub.net_idx);
 
 	return 0;
 }
 
-static int hb_pub_set(int argc, char *argv[])
+static int hb_pub_set(const struct shell *shell, size_t argc, char *argv[])
 {
 	struct bt_mesh_cfg_hb_pub pub;
 	u8_t status;
@@ -1429,35 +1469,37 @@ static int hb_pub_set(int argc, char *argv[])
 
 	err = bt_mesh_cfg_hb_pub_set(net.net_idx, net.dst, &pub, &status);
 	if (err) {
-		printk("Heartbeat Publication Set failed (err %d)\n", err);
+		shell_error(shell, "Heartbeat Publication Set failed (err %d)",
+			    err);
 		return 0;
 	}
 
 	if (status) {
-		printk("Heartbeat Publication Set failed (status 0x%02x)\n",
-		       status);
+		shell_print(shell, "Heartbeat Publication Set failed "
+			    "(status 0x%02x)", status);
 	} else {
-		printk("Heartbeat publication successfully set\n");
+		shell_print(shell, "Heartbeat publication successfully set");
 	}
 
 	return 0;
 }
 
-static int cmd_hb_pub(int argc, char *argv[])
+static int cmd_hb_pub(const struct shell *shell, size_t argc, char *argv[])
 {
 	if (argc > 1) {
 		if (argc < 7) {
 			return -EINVAL;
 		}
 
-		return hb_pub_set(argc, argv);
+		return hb_pub_set(shell, argc, argv);
 	} else {
-		return hb_pub_get(argc, argv);
+		return hb_pub_get(shell, argc, argv);
 	}
 }
 
 #if defined(CONFIG_BT_MESH_PROV)
-static int cmd_pb(bt_mesh_prov_bearer_t bearer, int argc, char *argv[])
+static int cmd_pb(bt_mesh_prov_bearer_t bearer, const struct shell *shell,
+		  size_t argc, char *argv[])
 {
 	int err;
 
@@ -1468,18 +1510,18 @@ static int cmd_pb(bt_mesh_prov_bearer_t bearer, int argc, char *argv[])
 	if (str2bool(argv[1])) {
 		err = bt_mesh_prov_enable(bearer);
 		if (err) {
-			printk("Failed to enable %s (err %d)\n",
-			       bearer2str(bearer), err);
+			shell_error(shell, "Failed to enable %s (err %d)",
+				    bearer2str(bearer), err);
 		} else {
-			printk("%s enabled\n", bearer2str(bearer));
+			shell_print(shell, "%s enabled", bearer2str(bearer));
 		}
 	} else {
 		err = bt_mesh_prov_disable(bearer);
 		if (err) {
-			printk("Failed to disable %s (err %d)\n",
-			       bearer2str(bearer), err);
+			shell_error(shell, "Failed to disable %s (err %d)",
+				    bearer2str(bearer), err);
 		} else {
-			printk("%s disabled\n", bearer2str(bearer));
+			shell_print(shell, "%s disabled", bearer2str(bearer));
 		}
 	}
 
@@ -1488,20 +1530,20 @@ static int cmd_pb(bt_mesh_prov_bearer_t bearer, int argc, char *argv[])
 #endif
 
 #if defined(CONFIG_BT_MESH_PB_ADV)
-static int cmd_pb_adv(int argc, char *argv[])
+static int cmd_pb_adv(const struct shell *shell, size_t argc, char *argv[])
 {
-	return cmd_pb(BT_MESH_PROV_ADV, argc, argv);
+	return cmd_pb(BT_MESH_PROV_ADV, shell, argc, argv);
 }
 #endif /* CONFIG_BT_MESH_PB_ADV */
 
 #if defined(CONFIG_BT_MESH_PB_GATT)
-static int cmd_pb_gatt(int argc, char *argv[])
+static int cmd_pb_gatt(const struct shell *shell, size_t argc, char *argv[])
 {
-	return cmd_pb(BT_MESH_PROV_GATT, argc, argv);
+	return cmd_pb(BT_MESH_PROV_GATT, shell, argc, argv);
 }
 #endif /* CONFIG_BT_MESH_PB_GATT */
 
-static int cmd_provision(int argc, char *argv[])
+static int cmd_provision(const struct shell *shell, size_t argc, char *argv[])
 {
 	u16_t net_idx, addr;
 	u32_t iv_index;
@@ -1523,23 +1565,29 @@ static int cmd_provision(int argc, char *argv[])
 	err = bt_mesh_provision(default_key, net_idx, 0, iv_index, addr,
 				default_key);
 	if (err) {
-		printk("Provisioning failed (err %d)\n", err);
+		shell_error(shell, "Provisioning failed (err %d)", err);
 	}
 
 	return 0;
 }
 
-int cmd_timeout(int argc, char *argv[])
+int cmd_timeout(const struct shell *shell, size_t argc, char *argv[])
 {
 	s32_t timeout;
+	int err;
+
+	err = shell_cmd_precheck(shell, (argc >= 1), NULL, 0);
+	if (err) {
+		return err;
+	}
 
 	if (argc < 2) {
 		timeout = bt_mesh_cfg_cli_timeout_get();
 		if (timeout == K_FOREVER) {
-			printk("Message timeout: forever\n");
+			shell_print(shell, "Message timeout: forever");
 		} else {
-			printk("Message timeout: %u seconds\n",
-			       timeout / 1000);
+			shell_print(shell, "Message timeout: %u seconds",
+				    timeout / 1000);
 		}
 
 		return 0;
@@ -1554,16 +1602,16 @@ int cmd_timeout(int argc, char *argv[])
 
 	bt_mesh_cfg_cli_timeout_set(timeout);
 	if (timeout == K_FOREVER) {
-		printk("Message timeout: forever\n");
+		shell_print(shell, "Message timeout: forever");
 	} else {
-		printk("Message timeout: %u seconds\n",
-		       timeout / 1000);
+		shell_print(shell, "Message timeout: %u seconds",
+			    timeout / 1000);
 	}
 
 	return 0;
 }
 
-static int cmd_fault_get(int argc, char *argv[])
+static int cmd_fault_get(const struct shell *shell, size_t argc, char *argv[])
 {
 	u8_t faults[32];
 	size_t fault_count;
@@ -1571,8 +1619,9 @@ static int cmd_fault_get(int argc, char *argv[])
 	u16_t cid;
 	int err;
 
-	if (argc < 2) {
-		return -EINVAL;
+	err = shell_cmd_precheck(shell, (argc == 1), NULL, 0);
+	if (err) {
+		return err;
 	}
 
 	cid = strtoul(argv[1], NULL, 0);
@@ -1581,7 +1630,8 @@ static int cmd_fault_get(int argc, char *argv[])
 	err = bt_mesh_health_fault_get(net.net_idx, net.dst, net.app_idx, cid,
 				       &test_id, faults, &fault_count);
 	if (err) {
-		printk("Failed to send Health Fault Get (err %d)\n", err);
+		shell_error(shell, "Failed to send Health Fault Get (err %d)",
+			    err);
 	} else {
 		show_faults(test_id, cid, faults, fault_count);
 	}
@@ -1589,7 +1639,8 @@ static int cmd_fault_get(int argc, char *argv[])
 	return 0;
 }
 
-static int cmd_fault_clear(int argc, char *argv[])
+static int cmd_fault_clear(const struct shell *shell, size_t argc,
+			   char *argv[])
 {
 	u8_t faults[32];
 	size_t fault_count;
@@ -1607,7 +1658,8 @@ static int cmd_fault_clear(int argc, char *argv[])
 	err = bt_mesh_health_fault_clear(net.net_idx, net.dst, net.app_idx,
 					 cid, &test_id, faults, &fault_count);
 	if (err) {
-		printk("Failed to send Health Fault Clear (err %d)\n", err);
+		shell_error(shell, "Failed to send Health Fault Clear (err %d)",
+			    err);
 	} else {
 		show_faults(test_id, cid, faults, fault_count);
 	}
@@ -1615,7 +1667,8 @@ static int cmd_fault_clear(int argc, char *argv[])
 	return 0;
 }
 
-static int cmd_fault_clear_unack(int argc, char *argv[])
+static int cmd_fault_clear_unack(const struct shell *shell, size_t argc,
+				 char *argv[])
 {
 	u16_t cid;
 	int err;
@@ -1629,14 +1682,14 @@ static int cmd_fault_clear_unack(int argc, char *argv[])
 	err = bt_mesh_health_fault_clear(net.net_idx, net.dst, net.app_idx,
 					 cid, NULL, NULL, NULL);
 	if (err) {
-		printk("Health Fault Clear Unacknowledged failed (err %d)\n",
-		       err);
+		shell_error(shell, "Health Fault Clear Unacknowledged failed "
+			    "(err %d)", err);
 	}
 
 	return 0;
 }
 
-static int cmd_fault_test(int argc, char *argv[])
+static int cmd_fault_test(const struct shell *shell, size_t argc, char *argv[])
 {
 	u8_t faults[32];
 	size_t fault_count;
@@ -1655,7 +1708,8 @@ static int cmd_fault_test(int argc, char *argv[])
 	err = bt_mesh_health_fault_test(net.net_idx, net.dst, net.app_idx,
 					cid, test_id, faults, &fault_count);
 	if (err) {
-		printk("Failed to send Health Fault Test (err %d)\n", err);
+		shell_error(shell, "Failed to send Health Fault Test (err %d)",
+			    err);
 	} else {
 		show_faults(test_id, cid, faults, fault_count);
 	}
@@ -1663,7 +1717,8 @@ static int cmd_fault_test(int argc, char *argv[])
 	return 0;
 }
 
-static int cmd_fault_test_unack(int argc, char *argv[])
+static int cmd_fault_test_unack(const struct shell *shell, size_t argc,
+				char *argv[])
 {
 	u16_t cid;
 	u8_t test_id;
@@ -1679,14 +1734,14 @@ static int cmd_fault_test_unack(int argc, char *argv[])
 	err = bt_mesh_health_fault_test(net.net_idx, net.dst, net.app_idx,
 					cid, test_id, NULL, NULL);
 	if (err) {
-		printk("Health Fault Test Unacknowledged failed (err %d)\n",
-		       err);
+		shell_error(shell, "Health Fault Test Unacknowledged failed "
+			    "(err %d)", err);
 	}
 
 	return 0;
 }
 
-static int cmd_period_get(int argc, char *argv[])
+static int cmd_period_get(const struct shell *shell, size_t argc, char *argv[])
 {
 	u8_t divisor;
 	int err;
@@ -1694,15 +1749,16 @@ static int cmd_period_get(int argc, char *argv[])
 	err = bt_mesh_health_period_get(net.net_idx, net.dst, net.app_idx,
 					&divisor);
 	if (err) {
-		printk("Failed to send Health Period Get (err %d)\n", err);
+		shell_error(shell, "Failed to send Health Period Get (err %d)",
+			    err);
 	} else {
-		printk("Health FastPeriodDivisor: %u\n", divisor);
+		shell_print(shell, "Health FastPeriodDivisor: %u", divisor);
 	}
 
 	return 0;
 }
 
-static int cmd_period_set(int argc, char *argv[])
+static int cmd_period_set(const struct shell *shell, size_t argc, char *argv[])
 {
 	u8_t divisor, updated_divisor;
 	int err;
@@ -1716,15 +1772,18 @@ static int cmd_period_set(int argc, char *argv[])
 	err = bt_mesh_health_period_set(net.net_idx, net.dst, net.app_idx,
 					divisor, &updated_divisor);
 	if (err) {
-		printk("Failed to send Health Period Set (err %d)\n", err);
+		shell_error(shell, "Failed to send Health Period Set (err %d)",
+			    err);
 	} else {
-		printk("Health FastPeriodDivisor: %u\n", updated_divisor);
+		shell_print(shell, "Health FastPeriodDivisor: %u",
+			    updated_divisor);
 	}
 
 	return 0;
 }
 
-static int cmd_period_set_unack(int argc, char *argv[])
+static int cmd_period_set_unack(const struct shell *shell, size_t argc,
+				char *argv[])
 {
 	u8_t divisor;
 	int err;
@@ -1738,13 +1797,15 @@ static int cmd_period_set_unack(int argc, char *argv[])
 	err = bt_mesh_health_period_set(net.net_idx, net.dst, net.app_idx,
 					divisor, NULL);
 	if (err) {
-		printk("Failed to send Health Period Set (err %d)\n", err);
+		shell_print(shell, "Failed to send Health Period Set (err %d)",
+			    err);
 	}
 
 	return 0;
 }
 
-static int cmd_attention_get(int argc, char *argv[])
+static int cmd_attention_get(const struct shell *shell, size_t argc,
+			     char *argv[])
 {
 	u8_t attention;
 	int err;
@@ -1752,15 +1813,17 @@ static int cmd_attention_get(int argc, char *argv[])
 	err = bt_mesh_health_attention_get(net.net_idx, net.dst, net.app_idx,
 					   &attention);
 	if (err) {
-		printk("Failed to send Health Attention Get (err %d)\n", err);
+		shell_error(shell, "Failed to send Health Attention Get "
+			    "(err %d)", err);
 	} else {
-		printk("Health Attention Timer: %u\n", attention);
+		shell_print(shell, "Health Attention Timer: %u", attention);
 	}
 
 	return 0;
 }
 
-static int cmd_attention_set(int argc, char *argv[])
+static int cmd_attention_set(const struct shell *shell, size_t argc,
+			     char *argv[])
 {
 	u8_t attention, updated_attention;
 	int err;
@@ -1774,15 +1837,18 @@ static int cmd_attention_set(int argc, char *argv[])
 	err = bt_mesh_health_attention_set(net.net_idx, net.dst, net.app_idx,
 					   attention, &updated_attention);
 	if (err) {
-		printk("Failed to send Health Attention Set (err %d)\n", err);
+		shell_error(shell, "Failed to send Health Attention Set "
+			    "(err %d)", err);
 	} else {
-		printk("Health Attention Timer: %u\n", updated_attention);
+		shell_print(shell, "Health Attention Timer: %u",
+			    updated_attention);
 	}
 
 	return 0;
 }
 
-static int cmd_attention_set_unack(int argc, char *argv[])
+static int cmd_attention_set_unack(const struct shell *shell, size_t argc,
+				   char *argv[])
 {
 	u8_t attention;
 	int err;
@@ -1796,13 +1862,14 @@ static int cmd_attention_set_unack(int argc, char *argv[])
 	err = bt_mesh_health_attention_set(net.net_idx, net.dst, net.app_idx,
 					   attention, NULL);
 	if (err) {
-		printk("Failed to send Health Attention Set (err %d)\n", err);
+		shell_error(shell, "Failed to send Health Attention Set "
+			    "(err %d)", err);
 	}
 
 	return 0;
 }
 
-static int cmd_add_fault(int argc, char *argv[])
+static int cmd_add_fault(const struct shell *shell, size_t argc, char *argv[])
 {
 	u8_t fault_id;
 	u8_t i;
@@ -1813,7 +1880,7 @@ static int cmd_add_fault(int argc, char *argv[])
 
 	fault_id = strtoul(argv[1], NULL, 0);
 	if (!fault_id) {
-		printk("The Fault ID must be non-zero!\n");
+		shell_print(shell, "The Fault ID must be non-zero!");
 		return -EINVAL;
 	}
 
@@ -1825,7 +1892,8 @@ static int cmd_add_fault(int argc, char *argv[])
 	}
 
 	if (i == sizeof(cur_faults)) {
-		printk("Fault array is full. Use \"del-fault\" to clear it\n");
+		shell_print(shell, "Fault array is full. Use \"del-fault\" to "
+			    "clear it");
 		return 0;
 	}
 
@@ -1837,7 +1905,7 @@ static int cmd_add_fault(int argc, char *argv[])
 	}
 
 	if (i == sizeof(reg_faults)) {
-		printk("No space to store more registered faults\n");
+		shell_print(shell, "No space to store more registered faults");
 	}
 
 	bt_mesh_fault_update(&elements[0]);
@@ -1845,28 +1913,28 @@ static int cmd_add_fault(int argc, char *argv[])
 	return 0;
 }
 
-static int cmd_del_fault(int argc, char *argv[])
+static int cmd_del_fault(const struct shell *shell, size_t argc, char *argv[])
 {
 	u8_t fault_id;
 	u8_t i;
 
 	if (argc < 2) {
 		(void)memset(cur_faults, 0, sizeof(cur_faults));
-		printk("All current faults cleared\n");
+		shell_print(shell, "All current faults cleared");
 		bt_mesh_fault_update(&elements[0]);
 		return 0;
 	}
 
 	fault_id = strtoul(argv[1], NULL, 0);
 	if (!fault_id) {
-		printk("The Fault ID must be non-zero!\n");
+		shell_print(shell, "The Fault ID must be non-zero!");
 		return -EINVAL;
 	}
 
 	for (i = 0; i < sizeof(cur_faults); i++) {
 		if (cur_faults[i] == fault_id) {
 			cur_faults[i] = 0;
-			printk("Fault cleared\n");
+			shell_print(shell, "Fault cleared");
 		}
 	}
 
@@ -1875,82 +1943,114 @@ static int cmd_del_fault(int argc, char *argv[])
 	return 0;
 }
 
-static const struct shell_cmd mesh_commands[] = {
-	{ "init", cmd_init, NULL },
-	{ "timeout", cmd_timeout, "[timeout in seconds]" },
+SHELL_CREATE_STATIC_SUBCMD_SET(mesh_cmds) {
+	SHELL_CMD_ARG(init, NULL, NULL, cmd_init, 1, 0),
+	SHELL_CMD_ARG(timeout, NULL, "[timeout in seconds]", cmd_timeout, 1, 1),
 #if defined(CONFIG_BT_MESH_PB_ADV)
-	{ "pb-adv", cmd_pb_adv, "<val: off, on>" },
+	SHELL_CMD_ARG(pb-adv, NULL, "<val: off, on>", cmd_pb_adv, 2, 0),
 #endif
 #if defined(CONFIG_BT_MESH_PB_GATT)
-	{ "pb-gatt", cmd_pb_gatt, "<val: off, on>" },
+	SHELL_CMD_ARG(pb-gatt, NULL, "<val: off, on>", cmd_pb_gatt, 2, 0),
 #endif
-	{ "reset", cmd_reset, NULL },
-	{ "uuid", cmd_uuid, "<UUID: 1-16 hex values>" },
-	{ "input-num", cmd_input_num, "<number>" },
-	{ "input-str", cmd_input_str, "<string>" },
-	{ "static-oob", cmd_static_oob, "[val: 1-16 hex values]" },
-
-	{ "provision", cmd_provision, "<NetKeyIndex> <addr> [IVIndex]" },
+	SHELL_CMD_ARG(reset, NULL, NULL, cmd_reset, 1, 0),
+	SHELL_CMD_ARG(uuid, NULL, "<UUID: 1-16 hex values>", cmd_uuid, 2, 0),
+	SHELL_CMD_ARG(input-num, NULL, "<number>", cmd_input_num, 2, 0),
+	SHELL_CMD_ARG(input-str, NULL, "<string>", cmd_input_str, 2, 0),
+	SHELL_CMD_ARG(static-oob, NULL, "[val: 1-16 hex values]",
+		      cmd_static_oob, 2, 1),
+	SHELL_CMD_ARG(provision, NULL, "<NetKeyIndex> <addr> [IVIndex]",
+		      cmd_provision, 3, 1),
 #if defined(CONFIG_BT_MESH_LOW_POWER)
-	{ "lpn", cmd_lpn, "<value: off, on>" },
-	{ "poll", cmd_poll, NULL },
+	SHELL_CMD_ARG(lpn, NULL, "<value: off, on>", cmd_lpn, 2, 0),
+	SHELL_CMD_ARG(poll, NULL, NULL, cmd_poll, 1, 0),
 #endif
 #if defined(CONFIG_BT_MESH_GATT_PROXY)
-	{ "ident", cmd_ident, NULL },
+	SHELL_CMD_ARG(ident, NULL, NULL, cmd_ident, 1, 0),
 #endif
-	{ "dst", cmd_dst, "[destination address]" },
-	{ "netidx", cmd_netidx, "[NetIdx]" },
-	{ "appidx", cmd_appidx, "[AppIdx]" },
+	SHELL_CMD_ARG(dst, NULL, "[destination address]", cmd_dst, 1, 1),
+	SHELL_CMD_ARG(netidx, NULL, "[NetIdx]", cmd_netidx, 1, 1),
+	SHELL_CMD_ARG(appidx, NULL, "[AppIdx]", cmd_appidx, 1, 1),
 
 	/* Commands which access internal APIs, for testing only */
-	{ "net-send", cmd_net_send, "<hex string>" },
-	{ "iv-update", cmd_iv_update, NULL },
-	{ "iv-update-test", cmd_iv_update_test, "<value: off, on>" },
-	{ "rpl-clear", cmd_rpl_clear, NULL },
+	SHELL_CMD_ARG(net-send, NULL, "<hex string>", cmd_net_send, 2, 0),
+	SHELL_CMD_ARG(iv-update, NULL, NULL, cmd_iv_update, 1, 0),
+	SHELL_CMD_ARG(iv-update-test, NULL, "<value: off, on>",
+		      cmd_iv_update_test, 2, 0),
+	SHELL_CMD_ARG(rpl-clear, NULL, NULL, cmd_rpl_clear, 1, 0),
 
 	/* Configuration Client Model operations */
-	{ "get-comp", cmd_get_comp, "[page]" },
-	{ "beacon", cmd_beacon, "[val: off, on]" },
-	{ "ttl", cmd_ttl, "[ttl: 0x00, 0x02-0x7f]" },
-	{ "friend", cmd_friend, "[val: off, on]" },
-	{ "gatt-proxy", cmd_gatt_proxy, "[val: off, on]" },
-	{ "relay", cmd_relay, "[val: off, on] [count: 0-7] [interval: 0-32]" },
-	{ "net-key-add", cmd_net_key_add, "<NetKeyIndex> [val]" },
-	{ "app-key-add", cmd_app_key_add, "<NetKeyIndex> <AppKeyIndex> [val]" },
-	{ "mod-app-bind", cmd_mod_app_bind,
-		"<addr> <AppIndex> <Model ID> [Company ID]" },
-	{ "mod-pub", cmd_mod_pub, "<addr> <mod id> [cid] [<PubAddr> "
-		"<AppKeyIndex> <cred> <ttl> <period> <count> <interval>]" },
-	{ "mod-sub-add", cmd_mod_sub_add,
-		"<elem addr> <sub addr> <Model ID> [Company ID]" },
-	{ "mod-sub-del", cmd_mod_sub_del,
-		"<elem addr> <sub addr> <Model ID> [Company ID]" },
-	{ "mod-sub-add-va", cmd_mod_sub_add_va,
-		"<elem addr> <Label UUID> <Model ID> [Company ID]" },
-	{ "mod-sub-del-va", cmd_mod_sub_del_va,
-		"<elem addr> <Label UUID> <Model ID> [Company ID]" },
-	{ "hb-sub", cmd_hb_sub, "[<src> <dst> <period>]" },
-	{ "hb-pub", cmd_hb_pub,
-		"[<dst> <count> <period> <ttl> <features> <NetKeyIndex>]" },
+	SHELL_CMD_ARG(get-comp, NULL, "[page]", cmd_get_comp, 1, 1),
+	SHELL_CMD_ARG(beacon, NULL, "[val: off, on]", cmd_beacon, 2, 1),
+	SHELL_CMD_ARG(ttl, NULL, "[ttl: 0x00, 0x02-0x7f]", cmd_ttl, 1, 1),
+	SHELL_CMD_ARG(friend, NULL, "[val: off, on]", cmd_friend, 1, 1),
+	SHELL_CMD_ARG(gatt-proxy, NULL, "[val: off, on]", cmd_gatt_proxy, 1, 1),
+	SHELL_CMD_ARG(relay, NULL,
+		      "[val: off, on] [count: 0-7] [interval: 0-32]", cmd_relay,
+		      1, 3),
+	SHELL_CMD_ARG(net-key-add, NULL, "<NetKeyIndex> [val]", cmd_net_key_add,
+		      2, 1),
+	SHELL_CMD_ARG(app-key-add, NULL, "<NetKeyIndex> <AppKeyIndex> [val]",
+		      cmd_app_key_add, 3, 1),
+	SHELL_CMD_ARG(mod-app-bind, NULL,
+		      "<addr> <AppIndex> <Model ID> [Company ID]",
+		      cmd_mod_app_bind, 4, 1),
+	SHELL_CMD_ARG(mod-pub, NULL, "<addr> <mod id> [cid] [<PubAddr> "
+		      "<AppKeyIndex> <cred> <ttl> <period> <count> <interval>]",
+		      cmd_mod_pub, 3, 1 + 7),
+	SHELL_CMD_ARG(mod-sub-add, NULL,
+		      "<elem addr> <sub addr> <Model ID> [Company ID]",
+		      cmd_mod_sub_add, 4, 1),
+	SHELL_CMD_ARG(mod-sub-del, NULL,
+		      "<elem addr> <sub addr> <Model ID> [Company ID]",
+		      cmd_mod_sub_del, 4, 1),
+	SHELL_CMD_ARG(mod-sub-add-va, NULL,
+		      "<elem addr> <Label UUID> <Model ID> [Company ID]",
+		      cmd_mod_sub_add_va, 4, 1),
+	SHELL_CMD_ARG(mod-sub-del-va, NULL,
+		      "<elem addr> <Label UUID> <Model ID> [Company ID]",
+		      cmd_mod_sub_del_va, 4, 1),
+	SHELL_CMD_ARG(hb-sub, NULL, "[<src> <dst> <period>]", cmd_hb_sub, 1, 3),
+	SHELL_CMD_ARG(hb-pub, NULL,
+		      "[<dst> <count> <period> <ttl> <features> <NetKeyIndex>]",
+		      cmd_hb_pub, 1, 6),
 
 	/* Health Client Model Operations */
-	{ "fault-get", cmd_fault_get, "<Company ID>" },
-	{ "fault-clear", cmd_fault_clear, "<Company ID>" },
-	{ "fault-clear-unack", cmd_fault_clear_unack, "<Company ID>" },
-	{ "fault-test", cmd_fault_test, "<Company ID> <Test ID>" },
-	{ "fault-test-unack", cmd_fault_test_unack, "<Company ID> <Test ID>" },
-	{ "period-get", cmd_period_get, NULL },
-	{ "period-set", cmd_period_set, "<divisor>" },
-	{ "period-set-unack", cmd_period_set_unack, "<divisor>" },
-	{ "attention-get", cmd_attention_get, NULL },
-	{ "attention-set", cmd_attention_set, "<timer>" },
-	{ "attention-set-unack", cmd_attention_set_unack, "<timer>" },
+	SHELL_CMD_ARG(fault-get, NULL, "<Company ID>", cmd_fault_get, 2, 0),
+	SHELL_CMD_ARG(fault-clear, NULL, "<Company ID>", cmd_fault_clear, 2, 0),
+	SHELL_CMD_ARG(fault-clear-unack, NULL, "<Company ID>",
+		      cmd_fault_clear_unack, 2, 0),
+	SHELL_CMD_ARG(fault-test, NULL, "<Company ID> <Test ID>",
+		      cmd_fault_test, 3, 0),
+	SHELL_CMD_ARG(fault-test-unack, NULL, "<Company ID> <Test ID>",
+		      cmd_fault_test_unack, 3, 0),
+	SHELL_CMD_ARG(period-get, NULL, NULL, cmd_period_get, 1, 0),
+	SHELL_CMD_ARG(period-set, NULL, "<divisor>", cmd_period_set, 2, 0),
+	SHELL_CMD_ARG(period-set-unack, NULL, "<divisor>", cmd_period_set_unack,
+		      2, 0),
+	SHELL_CMD_ARG(attention-get, NULL, NULL, cmd_attention_get, 1, 0),
+	SHELL_CMD_ARG(attention-set, NULL, "<timer>", cmd_attention_set, 2, 0),
+	SHELL_CMD_ARG(attention-set-unack, NULL, "<timer>",
+		      cmd_attention_set_unack, 2, 0),
 
 	/* Health Server Model Operations */
-	{ "add-fault", cmd_add_fault, "<Fault ID>" },
-	{ "del-fault", cmd_del_fault, "[Fault ID]" },
+	SHELL_CMD_ARG(add-fault, NULL, "<Fault ID>", cmd_add_fault, 2, 0),
+	SHELL_CMD_ARG(del-fault, NULL, "[Fault ID]", cmd_del_fault, 1, 1),
 
-	{ NULL, NULL, NULL}
+	SHELL_SUBCMD_SET_END
 };
 
-SHELL_REGISTER("mesh", mesh_commands);
+static int cmd_mesh(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc == 1) {
+		shell_help_print(shell, NULL, 0);
+		/* shell_cmd_precheck returns 1 when help is printed */
+		return 1;
+	}
+
+	shell_error(shell, "%s unknown parameter: %s", argv[0], argv[1]);
+
+	return -EINVAL;
+}
+
+SHELL_CMD_ARG_REGISTER(mesh, &mesh_cmds, "Bluetooth Mesh shell commands",
+		       cmd_mesh, 1, 1);
