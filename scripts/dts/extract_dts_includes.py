@@ -23,6 +23,7 @@ from extract.edts import edts
 
 from extract.clocks import clocks
 from extract.gpios import gpios
+from extract.pwms import pwms
 from extract.compatible import compatible
 from extract.interrupts import interrupts
 from extract.reg import reg
@@ -240,6 +241,8 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names):
         clocks.extract(node_address, yaml, prop, def_label)
     elif 'gpios' in prop:
         gpios.extract(node_address, yaml, prop, def_label)
+    elif 'pwms' in prop:
+        pwms.extract(node_address, yaml, prop, def_label)
     else:
         default.extract(node_address, yaml, prop, prop_val['type'], def_label)
 
