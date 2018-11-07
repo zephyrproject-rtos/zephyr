@@ -42,6 +42,12 @@ class DTReg(DTDirective):
         # if we only have on reg we get a scalar
         if type(reg) is not list: reg = [ reg, ]
 
+        # Newer versions of dtc might have the reg propertly look like
+        # reg = <1 2>, <3 4>;
+        # So we need to flatten the list in that case
+        if isinstance(props[0], list):
+            props = [item for sublist in props for item in sublist]
+
         (nr_address_cells, nr_size_cells) = get_addr_size_cells(node_address)
 
         index = 0
