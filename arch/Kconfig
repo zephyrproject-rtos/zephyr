@@ -202,6 +202,18 @@ config SIMPLE_FATAL_ERROR_HANDLER
 	  for footprint-concerned systems. Only enable this option if you do not
 	  want debug capabilities in case of system fatal error.
 
+if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+
+config NOCACHE_MEMORY
+	bool "Support for uncached memory"
+	help
+	  Add a "nocache" read-write memory section that is configured to
+	  not be cached. This memory section can be used to perform DMA
+	  transfers when cache coherence issues are not optimal or can not
+	  be solved using cache maintenance operations.
+
+endif # ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+
 menu "Interrupt Configuration"
 #
 # Interrupt related configs
@@ -279,6 +291,9 @@ config ARCH_HAS_USERSPACE
 	bool
 
 config ARCH_HAS_EXECUTABLE_PAGE_BIT
+	bool
+
+config ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	bool
 
 #

@@ -25,6 +25,10 @@
 #define __ccm_noinit_section _GENERIC_SECTION(_CCM_NOINIT_SECTION_NAME)
 #endif /* CONFIG_ARM */
 
+#if defined(CONFIG_NOCACHE_MEMORY)
+#define __nocache __in_section_unique(_NOCACHE_SECTION_NAME)
+#endif /* CONFIG_NOCACHE_MEMORY */
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* ZEPHYR_INCLUDE_LINKER_SECTION_TAGS_H_ */

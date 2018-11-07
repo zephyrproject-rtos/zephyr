@@ -32,6 +32,9 @@ extern "C" {
  *
  */
 enum {
+#ifdef CONFIG_NOCACHE_MEMORY
+	NOCACHE_MEMORY_REGION,
+#endif
 #ifdef CONFIG_APPLICATION_MEMORY
 	THREAD_APP_DATA_REGION,
 #endif

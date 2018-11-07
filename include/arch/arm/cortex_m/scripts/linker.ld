@@ -348,6 +348,20 @@ SECTIONS
 	__app_ram_size = __app_ram_end - __app_ram_start;
 #endif /* CONFIG_APPLICATION_MEMORY */
 
+#if defined(CONFIG_NOCACHE_MEMORY)
+	/* Non-cached region of RAM */
+	SECTION_PROLOGUE(_NOCACHE_SECTION_NAME,(NOLOAD),)
+	{
+		MPU_ALIGN(_nocache_ram_size);
+		_nocache_ram_start = .;
+		KERNEL_INPUT_SECTION(.nocache)
+		KERNEL_INPUT_SECTION(".nocache.*")
+		MPU_ALIGN(_nocache_ram_size);
+		_nocache_ram_end = .;
+	} GROUP_LINK_IN(RAMABLE_REGION)
+	_nocache_ram_size = _nocache_ram_end - _nocache_ram_start;
+#endif /* CONFIG_NOCACHE_MEMORY */
+
 #if defined(CONFIG_APP_SHARED_MEM)
 #define APP_SHARED_ALIGN . = ALIGN(_region_min_align);
 #if defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
@@ -370,7 +384,6 @@ SECTIONS
 	_app_smem_size = _app_smem_end - _app_smem_start;
 	_app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
 #endif  /* CONFIG_APP_SHARED_MEM */
-
 
     SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
 	{

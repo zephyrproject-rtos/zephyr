@@ -80,7 +80,7 @@ void arm_core_mpu_disable(void)
 }
 
 #if defined(CONFIG_USERSPACE) || defined(CONFIG_MPU_STACK_GUARD) || \
-	defined(CONFIG_APPLICATION_MEMORY)
+	defined(CONFIG_APPLICATION_MEMORY) || defined(CONFIG_NOCACHE_MEMORY)
 
 /**
  * This internal function is utilized by the MPU driver to parse the intent
@@ -93,6 +93,11 @@ static inline int _get_region_attr_by_type(arm_mpu_region_attr_t *p_attr,
 	u32_t type, u32_t base, u32_t size)
 {
 	switch (type) {
+#ifdef CONFIG_NOCACHE_MEMORY
+	case NOCACHE_MEMORY_REGION:
+		_get_mpu_ram_nocache_region_attr(p_attr, P_RW_U_NA, base, size);
+		return 0;
+#endif
 #ifdef CONFIG_USERSPACE
 	case THREAD_STACK_REGION:
 		_get_mpu_ram_region_attr(p_attr, P_RW_U_RW, base, size);
@@ -313,7 +318,7 @@ int arm_core_mpu_buffer_validate(void *addr, size_t size, int write)
 	return _mpu_buffer_validate(addr, size, write);
 }
 #endif /* CONFIG_USERSPACE */
-#endif /* USERSPACE || MPU_STACK_GUARD || APPLICATION_MEMORY */
+#endif /* USERSPACE || MPU_STACK_GUARD || APPLICATION_MEMORY || NOCACHE_MEMORY */
 
 /* ARM MPU Driver Initial Setup */
 
@@ -354,10 +359,24 @@ static int arm_mpu_init(struct device *arg)
 		_region_init(r_index, &mpu_config.mpu_regions[r_index]);
 	}
 
-#if defined(CONFIG_APPLICATION_MEMORY)
+#if defined(CONFIG_NOCACHE_MEMORY) || defined(CONFIG_APPLICATION_MEMORY)
 	u32_t index, size;
 	struct arm_mpu_region region_conf;
+#endif
 
+#if defined(CONFIG_NOCACHE_MEMORY)
+	/* configure non-cached memory */
+	index = _get_region_index_by_type(NOCACHE_MEMORY_REGION);
+	size = (u32_t)&_nocache_ram_end - (u32_t)&_nocache_ram_start;
+	_get_region_attr_by_type(&region_conf.attr, NOCACHE_MEMORY_REGION,
+			(u32_t)&_nocache_ram_start, size);
+	region_conf.base = (u32_t)&_nocache_ram_start;
+	if (size > 0) {
+		_region_init(index, &region_conf);
+	}
+#endif /* CONFIG_NOCACHE_MEMORY */
+
+#if defined(CONFIG_APPLICATION_MEMORY)
 	/* configure app data portion */
 	index = _get_region_index_by_type(THREAD_APP_DATA_REGION);
 	size = (u32_t)&__app_ram_end - (u32_t)&__app_ram_start;

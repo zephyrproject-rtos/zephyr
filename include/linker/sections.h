@@ -56,7 +56,10 @@
 #define _CCM_DATA_SECTION_NAME		.ccm_data
 #define _CCM_BSS_SECTION_NAME		.ccm_bss
 #define _CCM_NOINIT_SECTION_NAME	.ccm_noinit
+#endif
 
+#ifdef CONFIG_NOCACHE_MEMORY
+#define _NOCACHE_SECTION_NAME nocache
 #endif
 
 #include <linker/section_tags.h>
