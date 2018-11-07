@@ -115,10 +115,12 @@ For mode details please refer to `32F469IDISCOVERY board User Manual`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------
-- UART_3_TX : PB10
-- UART_3_RX : PB11
-- UART_6_TX : PG14
-- UART_6_RX : PG9
+- UART_3 TX/RX : PB10/PB11 (ST-Link Virtual Port Com)
+- UART_6 TX/RX : PG14/PG9 (Arduino Serial)
+- I2C1 SCL/SDA : PB8/PB9 (Arduino I2C)
+- SPI2 SCK/MISO/MOSI : PD3/PB14/PB15 (Arduino SPI)
+- USB DM : PA11
+- USB DP : PA12
 - USER_PB : PA0
 - LD1 : PG6
 - LD2 : PD4
