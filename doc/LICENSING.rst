@@ -47,20 +47,20 @@ licensing in this document.
     by use of this software.
 
 *ext/hal/cmsis/*
-  *Origin:* https://github.com/ARM-software/CMSIS.git
+  *Origin:* https://github.com/ARM-software/CMSIS_5.git
 
-  *Licensing*: `CMSIS END USER LICENCE AGREEMENT`_
+  *Licensing*: Apache 2.0 (see `ext/hal/cmsis source`_)
 
-.. _CMSIS END USER LICENCE AGREEMENT:
-   https://github.com/zephyrproject-rtos/zephyr/blob/master/ext/hal/cmsis/CMSIS_END_USER_LICENCE_AGREEMENT.pdf
+.. _ext/hal/cmsis source:
+   https://github.com/zephyrproject-rtos/zephyr/blob/master/ext/hal/cmsis/Include/cmsis_version.h
 
 *ext/hal/nordic/*
-  *Origin:*
+  *Origin:* https://github.com/NordicSemiconductor/nrfx.git
 
   *Licensing*: 3-clause BSD (see `ext/hal/nordic source`_)
 
 .. _ext/hal/nordic source:
-   https://github.com/zephyrproject-rtos/zephyr/blob/master/ext/hal/nordic/mdk/nrf51.h
+   https://github.com/zephyrproject-rtos/zephyr/blob/master/ext/hal/nordic/nrfx/nrfx.h
 
 *ext/hal/nxp/mcux/*
   *Origin:* http://mcux.nxp.com
@@ -68,7 +68,7 @@ licensing in this document.
   *Licensing*: 3-clause BSD (see `ext/hal/nxp/mcux source`_)
 
 .. _ext/hal/nxp/mcux source:
-   https://github.com/zephyrproject-rtos/zephyr/blob/master/ext/hal/nxp/mcux/drivers/fsl_rtc.h
+   https://github.com/zephyrproject-rtos/zephyr/blob/master/ext/hal/nxp/mcux/drivers/kinetis/fsl_rtc.h
 
 *ext/hal/qmsi/*
   *Origin:* https://github.com/quark-mcu/qmsi/releases
