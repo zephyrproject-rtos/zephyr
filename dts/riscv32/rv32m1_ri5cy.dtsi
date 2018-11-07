@@ -4,6 +4,7 @@
  */
 
 #include <dt-bindings/interrupt-controller/openisa-intmux.h>
+#include <dt-bindings/gpio/gpio.h>
 
 / {
 	#address-cells = <1>;
@@ -19,6 +20,11 @@
 		pinmux-c = &pinmux_c;
 		pinmux-d = &pinmux_d;
 		pinmux-e = &pinmux_e;
+		gpio-a = &gpioa;
+		gpio-b = &gpiob;
+		gpio-c = &gpioc;
+		gpio-d = &gpiod;
+		gpio-e = &gpioe;
 	};
 
 	cpus {
@@ -142,6 +148,57 @@
 			compatible = "openisa,rv32m1-pinmux";
 			reg = <0x41037000 0xd0>;
 			clocks = <&pcc1 0xdc>;
+		};
+
+		gpioa: gpio@48020000 {
+			compatible = "openisa,rv32m1-gpio";
+			reg = <0x48020000 0x14>;
+			interrupt-parent = <&event>;
+			interrupts = <18>;
+			label = "GPIO_0";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpiob: gpio@48020040 {
+			compatible = "openisa,rv32m1-gpio";
+			reg = <0x48020040 0x14>;
+			interrupt-parent = <&intmux>;
+			interrupts = <INTMUX_LEVEL2_IRQ(INTMUX_CH1, 15)>;
+			label = "GPIO_1";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpioc: gpio@48020080 {
+			compatible = "openisa,rv32m1-gpio";
+			reg = <0x48020080 0x14>;
+			interrupt-parent = <&intmux>;
+			interrupts = <INTMUX_LEVEL2_IRQ(INTMUX_CH1, 16)>;
+			label = "GPIO_2";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpiod: gpio@480200c0 {
+			compatible = "openisa,rv32m1-gpio";
+			reg = <0x480200c0 0x14>;
+			interrupt-parent = <&intmux>;
+			interrupts = <INTMUX_LEVEL2_IRQ(INTMUX_CH1, 17)>;
+			label = "GPIO_3";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpioe: gpio@4100f000 {
+			compatible = "openisa,rv32m1-gpio";
+			reg = <0x4100f000 0x14>;
+			interrupt-parent = <&intmux>;
+			interrupts = <INTMUX_LEVEL2_IRQ(INTMUX_CH1, 27)>;
+			label = "GPIO_4";
+			gpio-controller;
+			#gpio-cells = <2>;
+			clocks = <&pcc1 0x3c>;
 		};
 	};
 };

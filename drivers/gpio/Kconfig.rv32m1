@@ -1,0 +1,47 @@
+# Kconfig.rv32m1 - RV32M1 GPIO configuration options
+#
+# Copyright (c) 2018 Foundries.io
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig GPIO_RV32M1
+	bool "RV32M1 GPIO driver"
+	depends on GPIO && SOC_OPENISA_RV32M1_RISCV32
+	select HAS_DTS_GPIO
+	help
+	  Enable the RV32M1 GPIO driver.
+
+if GPIO_RV32M1
+
+config GPIO_RV32M1_PORTA
+	bool "Port A"
+	depends on PINMUX_RV32M1_PORTA
+	help
+	  Enable Port A.
+
+config GPIO_RV32M1_PORTB
+	bool "Port B"
+	depends on RV32M1_INTMUX && PINMUX_RV32M1_PORTB
+	help
+	  Enable Port B.
+
+config GPIO_RV32M1_PORTC
+	bool "Port C"
+	depends on RV32M1_INTMUX && PINMUX_RV32M1_PORTC
+	help
+	  Enable Port C.
+
+config GPIO_RV32M1_PORTD
+	bool "Port D"
+	depends on RV32M1_INTMUX && PINMUX_RV32M1_PORTD
+	help
+	  Enable Port D.
+
+config GPIO_RV32M1_PORTE
+	bool "Port E"
+	depends on RV32M1_INTMUX && PINMUX_RV32M1_PORTE
+	help
+	  Enable Port E.
+
+endif # GPIO_RV32M1
