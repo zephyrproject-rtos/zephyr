@@ -4,6 +4,8 @@ zephyr_sources_ifdef(CONFIG_IEEE802154_UPIPE ieee802154_uart_pipe.c)
 zephyr_sources_ifdef(CONFIG_IEEE802154_MCR20A ieee802154_mcr20a.c)
 zephyr_sources_ifdef(CONFIG_IEEE802154_NRF5 ieee802154_nrf5.c)
 zephyr_sources_ifdef(CONFIG_IEEE802154_CC1200 ieee802154_cc1200.c)
+zephyr_sources_ifdef(CONFIG_IEEE802154_EFR32 ieee802154_efr32.c)
+
 
 if(CONFIG_NET_L2_OPENTHREAD)
   # This driver calls DEVICE_INIT with the context of openthread. The

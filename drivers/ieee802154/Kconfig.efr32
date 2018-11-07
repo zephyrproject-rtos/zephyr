@@ -1,0 +1,43 @@
+# Kconfig.efr32 - EFR32 Options
+#
+#
+# Copyright (c) 2018 Evry ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig  IEEE802154_EFR32
+	bool "Silabs EFR32 Driver support"
+	depends on NETWORKING
+	select NEWLIB_LIBC
+	select HAS_SILABS_RAIL
+
+config HAS_SILABS_RAIL
+	bool "Enable Silabs RAIL SDK"
+	default n
+	depends on IEEE802154_EFR32
+
+if IEEE802154_EFR32
+
+config IEEE802154_EFR32_DRV_NAME
+	string "Silabs EFR32 Driver's name"
+	default "EFR32"
+	help
+	  This option sets the driver name. Do not change it unless
+	  you know what you are doing.
+
+config IEEE802154_EFR32_RX_STACK_SIZE
+	int "Driver's internal RX thread stack size"
+	default 6400
+	help
+	  This option sets the driver's stack size for its internal RX thread.
+	  The default value should be sufficient, but in case it proves to be
+	  a too little one, this option makes it easy to play with the size.
+
+config IEEE802154_EFR32_INIT_PRIO
+	int "EFR32 initialization priority"
+	default 80
+	help
+	  Set the initialization priority number.
+
+endif

@@ -34,6 +34,8 @@ source "drivers/ieee802154/Kconfig.nrf5"
 
 source "drivers/ieee802154/Kconfig.cc1200"
 
+source "drivers/ieee802154/Kconfig.efr32"
+
 menuconfig IEEE802154_UPIPE
 	bool "UART PIPE fake radio driver support for QEMU"
 	depends on (BOARD_QEMU_X86 || BOARD_QEMU_CORTEX_M3) && NETWORKING
