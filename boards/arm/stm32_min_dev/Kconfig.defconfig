@@ -24,4 +24,11 @@ config I2C_1
 
 endif # I2C
 
+if PWM
+
+config PWM_STM32_1
+	default y
+
+endif # PWM
+
 endif # BOARD_STM32_MIN_DEV

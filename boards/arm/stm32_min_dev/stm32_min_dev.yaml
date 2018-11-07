@@ -8,3 +8,4 @@ toolchain:
 ram: 20
 supported:
   - i2c
+  - pwm
