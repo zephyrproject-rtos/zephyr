@@ -72,6 +72,9 @@ void arm_core_mpu_enable(void)
  */
 void arm_core_mpu_disable(void)
 {
+	/* Force any outstanding transfers to complete before disabling MPU */
+	__DMB();
+
 	/* Disable MPU */
 	MPU->CTRL = 0;
 }
