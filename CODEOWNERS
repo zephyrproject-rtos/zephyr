@@ -194,6 +194,7 @@ samples/net/sockets/                     @jukkar @tbursztyka @pfalcon
 samples/sensor/                          @bogdan-davidoaia
 samples/subsys/usb                       @jfischer-phytec-iot @finikorg
 scripts/coccicheck                       @himanshujha199640 @JuliaLawall
+scripts/coccinelle/                      @himanshujha199640 @JuliaLawall
 scripts/expr_parser.py                   @andrewboie @nashif
 scripts/sanity_chk/                      @andrewboie @nashif
 scripts/sanitycheck                      @andrewboie @nashif
