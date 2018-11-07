@@ -401,6 +401,7 @@ static int fxos8700_init(struct device *dev)
 				    data->whoami);
 			return -EIO;
 		}
+		break;
 	case WHOAMI_ID_FXOS8700:
 		LOG_DBG("Device ID 0x%x", data->whoami);
 		break;
