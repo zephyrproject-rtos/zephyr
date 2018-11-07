@@ -26,6 +26,7 @@ zephyr_library_sources_ifdef(CONFIG_GPIO_SAM        gpio_sam.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_SX1509B    gpio_sx1509b.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_INTEL_APL  gpio_intel_apl.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_STELLARIS  gpio_stellaris.c)
+zephyr_library_sources_ifdef(CONFIG_GPIO_RV32M1     gpio_rv32m1.c)
 
 zephyr_library_sources_ifdef(CONFIG_GPIO_SHELL      gpio_shell.c)
 

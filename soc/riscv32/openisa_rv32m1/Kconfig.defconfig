@@ -170,4 +170,11 @@ endif # MULTI_LEVEL_INTERRUPTS
 config PINMUX_RV32M1
 	def_bool y
 
+if GPIO
+
+config GPIO_RV32M1
+	def_bool y
+
+endif # GPIO
+
 endif # SOC_OPENISA_RV32M1_RISCV32

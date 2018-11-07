@@ -1,0 +1,37 @@
+---
+title: OpenISA GPIO
+version: 0.1
+
+description: >
+    This is a representation of the OpenISA GPIO nodes
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "openisa,rv32m1-gpio"
+      generation: define
+
+    reg:
+      type: int
+      description: mmio register space
+      generation: define
+      category: required
+
+    interrupts:
+      type: compound
+      category: required
+      description: required interrupts
+      generation: define
+
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+
+"#cells":
+  - pin
+  - flags
+...
