@@ -193,6 +193,11 @@
 			label = "USBD";
 		};
 
+		usb_cdc: virtualcom {
+			compatible = "nordic,nrf-usbd";
+			label = "CDC_ACM";
+		};
+
 		wdt: watchdog@40010000 {
 			compatible = "nordic,nrf-watchdog";
 			reg = <0x40010000 0x1000>;
