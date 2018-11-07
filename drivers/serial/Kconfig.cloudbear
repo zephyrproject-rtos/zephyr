@@ -1,0 +1,14 @@
+# Kconfig.cloudbear - CloudBEAR UART configuration option
+#
+# Copyright (c) 2018 Vitaly Gaiduk <vitaly.gaiduk@cloudbear.ru>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig UART_CLOUDBEAR
+	bool "CloudBEAR serial driver"
+	depends on SOC_RISCV32_CLOUDBEAR_BM310
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  This option enables the CloudBEAR serial driver.
