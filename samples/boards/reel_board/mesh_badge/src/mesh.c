@@ -12,6 +12,8 @@
 #include <bluetooth/mesh.h>
 #include <bluetooth/hci.h>
 
+#include <sensor.h>
+
 #include "mesh.h"
 #include "board.h"
 
