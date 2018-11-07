@@ -35,4 +35,6 @@ source "drivers/clock_control/Kconfig.mcux_ccm"
 
 source "drivers/clock_control/Kconfig.mcux_sim"
 
+source "drivers/clock_control/Kconfig.rv32m1"
+
 endif # CLOCK_CONTROL
