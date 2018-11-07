@@ -15,6 +15,7 @@ config SOC_OPENISA_RV32M1_RISCV32
 	select ATOMIC_OPERATIONS_C
 	select VEGA_SDK_HAL
 	select RISCV_SOC_INTERRUPT_INIT
+	select CLOCK_CONTROL
 	help
 	  Enable support for OpenISA RV32M1 RISC-V processors. Choose
 	  this option to target the RI5CY or ZERO-RISCY core. This
