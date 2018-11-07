@@ -36,7 +36,7 @@ static void _region_init(u32_t index, const struct arm_mpu_region *region_conf)
 }
 
 #if defined(CONFIG_USERSPACE) || defined(CONFIG_MPU_STACK_GUARD) || \
-	defined(CONFIG_APPLICATION_MEMORY)
+	defined(CONFIG_APPLICATION_MEMORY) || defined(CONFIG_NOCACHE_MEMORY)
 
 static inline u8_t _get_num_regions(void);
 static inline u32_t _get_region_index_by_type(u32_t type);
@@ -90,6 +90,8 @@ static inline u32_t _get_region_attr(u32_t xn, u32_t ap, u32_t tex,
 		| (size));
 }
 
+#if defined(CONFIG_USERSPACE) || defined(CONFIG_MPU_STACK_GUARD) || \
+	defined(CONFIG_APPLICATION_MEMORY)
 /**
  * This internal function allocates default RAM cache-ability, share-ability,
  * and execution allowance attributes along with the requested access
@@ -105,6 +107,24 @@ static inline void _get_mpu_ram_region_attr(arm_mpu_region_attr_t *p_attr,
 
 	p_attr->rasr = _get_region_attr(1, ap, 1, 1, 1, 0, 0, size);
 }
+#endif /* USERSPACE || MPU_STACK_GUARD || APPLICATION_MEMORY */
+
+#if defined(CONFIG_NOCACHE_MEMORY)
+/**
+ * This internal function allocates non-cached, shareable, non-executable
+ * memory along with the requested access permissions ans size.
+ */
+static inline void _get_mpu_ram_nocache_region_attr(arm_mpu_region_attr_t *p_attr,
+	u32_t ap, u32_t base, u32_t size)
+{
+	/* in ARMv7-M MPU the base address is not required
+	 * to determine region attributes.
+	 */
+	(void) base;
+
+	p_attr->rasr = _get_region_attr(1, ap, 1, 0, 0, 1, 0, size);
+}
+#endif /* CONFIG_NO_CACHE_MEMORY */
 
 /**
  * This internal function is utilized by the MPU driver to combine a given
@@ -233,6 +253,7 @@ static inline int _mpu_buffer_validate(void *addr, size_t size, int write)
 }
 #endif /* CONFIG_USERSPACE */
 
-#endif /* USERSPACE || MPU_STACK_GUARD || APPLICATION_MEMORY */
+#endif /* USERSPACE || MPU_STACK_GUARD || APPLICATION_MEMORY
+		|| NOCACHE_MEMORY */
 
 #endif	/* ZEPHYR_ARCH_ARM_CORE_CORTEX_M_MPU_ARM_MPU_V7_INTERNAL_H_ */
