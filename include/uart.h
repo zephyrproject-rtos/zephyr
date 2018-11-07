@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2018 Nordic Semiconductor ASA
  * Copyright (c) 2015 Wind River Systems, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -65,6 +66,62 @@ extern "C" {
 #define UART_ERROR_BREAK    (1 << 3)
 
 /**
+ * @brief UART controller configuration structure
+ *
+ * @param baudrate  Baudrate setting in bps
+ * @param parity    Parity bit, use @ref uart_config_parity
+ * @param stop_bits Stop bits, use @ref uart_config_stop_bits
+ * @param data_bits Data bits, use @ref uart_config_data_bits
+ * @param flow_ctrl Flow control setting, use @ref uart_config_flow_control
+ */
+struct uart_config {
+	u32_t baudrate;
+	u8_t parity;
+	u8_t stop_bits;
+	u8_t data_bits;
+	u8_t flow_ctrl;
+};
+
+/** @brief Parity modes */
+enum uart_config_parity {
+	UART_CFG_PARITY_NONE,
+	UART_CFG_PARITY_ODD,
+	UART_CFG_PARITY_EVEN,
+	UART_CFG_PARITY_MARK,
+	UART_CFG_PARITY_SPACE,
+};
+
+/** @brief Number of stop bits. */
+enum uart_config_stop_bits {
+	UART_CFG_STOP_BITS_0_5,
+	UART_CFG_STOP_BITS_1,
+	UART_CFG_STOP_BITS_1_5,
+	UART_CFG_STOP_BITS_2,
+};
+
+/** @brief Number of data bits. */
+enum uart_config_data_bits {
+	UART_CFG_DATA_BITS_5,
+	UART_CFG_DATA_BITS_6,
+	UART_CFG_DATA_BITS_7,
+	UART_CFG_DATA_BITS_8,
+};
+
+/**
+ * @brief Hardware flow control options.
+ *
+ * With flow control set to none, any operations related to flow control
+ * signals can be managed by user with uart_line_ctrl functions.
+ * In other cases, flow control is managed by hardware/driver.
+ */
+enum uart_config_flow_control {
+	UART_CFG_FLOW_CTRL_NONE,
+	UART_CFG_FLOW_CTRL_RTS_CTS,
+	UART_CFG_FLOW_CTRL_DTR_DSR,
+};
+
+
+/**
  * @typedef uart_irq_callback_user_data_t
  * @brief Define the application callback function signature for
  * uart_irq_callback_user_data_set() function.
@@ -124,6 +181,10 @@ struct uart_driver_api {
 
 	/** Console I/O function */
 	int (*err_check)(struct device *dev);
+
+	/** UART configuration functions */
+	int (*configure)(struct device *dev, const struct uart_config *cfg);
+	int (*config_get)(struct device *dev, struct uart_config *cfg);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
@@ -257,6 +318,60 @@ static inline unsigned char _impl_uart_poll_out(struct device *dev,
 	return api->poll_out(dev, out_char);
 }
 
+/**
+ * @brief Set UART configuration.
+ *
+ * Sets UART configuration using data from *cfg.
+ *
+ * @param dev UART device structure.
+ * @param cfg UART configuration structure.
+ *
+ *
+ * @retval -ENOTSUP If configuration is not supported by device.
+ *                  or driver does not support setting configuration in runtime.
+ * @retval 0 If successful, negative errno code otherwise.
+ */
+__syscall int uart_configure(struct device *dev, const struct uart_config *cfg);
+
+static inline int _impl_uart_configure(struct device *dev,
+				       const struct uart_config *cfg)
+{
+	const struct uart_driver_api *api =
+				(const struct uart_driver_api *)dev->driver_api;
+
+	if (api->configure) {
+		return api->configure(dev, cfg);
+	}
+
+	return -ENOTSUP;
+}
+
+/**
+ * @brief Get UART configuration.
+ *
+ * Stores current UART configuration to *cfg, can be used to retrieve initial
+ * configuration after device was initialized using data from DTS.
+ *
+ * @param dev UART device structure.
+ * @param cfg UART configuration structure.
+ *
+ * @retval -ENOTSUP If driver does not support getting current configuration.
+ * @retval 0 If successful, negative errno code otherwise.
+ */
+__syscall int uart_config_get(struct device *dev, struct uart_config *cfg);
+
+static inline int _impl_uart_config_get(struct device *dev,
+				     struct uart_config *cfg)
+{
+	const struct uart_driver_api *api =
+				(const struct uart_driver_api *)dev->driver_api;
+
+	if (api->config_get) {
+		return api->config_get(dev, cfg);
+	}
+
+	return -ENOTSUP;
+}
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
