@@ -10,9 +10,10 @@
 #include <logging/log_output.h>
 #include <rtt/SEGGER_RTT.h>
 
+#define DROP_MAX 99
+
 #if CONFIG_LOG_BACKEND_RTT_MODE_DROP
 
-#define DROP_MAX 99
 #define DROP_MSG "\nmessages dropped:    \r"
 #define DROP_MSG_LEN (sizeof(DROP_MSG) - 1)
 
