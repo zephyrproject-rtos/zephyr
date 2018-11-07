@@ -1,11 +1,11 @@
-# Kconfig - ST STM32F413XH MCU configuration options
+# Kconfig - ST STM32F413XX MCU configuration options
 #
 # Copyright (c) 2017 Florian Vaussard, HEIG-VD
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if SOC_STM32F413XH
+if SOC_STM32F413XX
 
 config SOC
 	string
@@ -32,4 +32,4 @@ config ENTROPY_STM32_RNG
 
 endif # ENTROPY_GENERATOR
 
-endif # SOC_STM32F413XH
+endif # SOC_STM32F413XX
