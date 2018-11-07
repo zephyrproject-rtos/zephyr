@@ -1,7 +1,7 @@
 zephyr_library()
 
 zephyr_library_sources(
-  exc_exit.S
+  isr_wrapper_and_exc_exit.S
   irq_init.c
   swap.c
   swap_helper.S
@@ -15,7 +15,6 @@ zephyr_library_sources(
   thread_abort.c
 )
 
-zephyr_library_sources_ifdef(CONFIG_GEN_SW_ISR_TABLE isr_wrapper.S)
 zephyr_library_sources_ifdef(CONFIG_CPLUSPLUS __aeabi_atexit.c)
 zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
 zephyr_library_sources_ifdef(CONFIG_CPU_CORTEX_M0 irq_relay.S)
