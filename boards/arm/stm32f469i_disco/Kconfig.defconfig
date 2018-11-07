@@ -17,4 +17,28 @@ config UART_STM32_PORT_3
 
 endif # UART_CONSOLE
 
+if SERIAL
+
+config UART_STM32_PORT_6
+	default y
+
+endif # SERIAL
+
+if SPI
+
+config SPI_STM32_INTERRUPT
+	default y
+
+config SPI_2
+	default y
+
+endif # SPI
+
+if I2C
+
+config I2C_1
+	default y
+
+endif # I2C
+
 endif # BOARD_STM32F469I_DISCO
