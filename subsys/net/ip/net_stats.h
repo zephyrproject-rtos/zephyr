@@ -287,6 +287,52 @@ static inline void net_stats_update_per_proto_drop(struct net_if *iface,
 	}
 }
 
+static inline void net_stats_update_l2_proto_recv(struct net_if *iface,
+						  int count)
+{
+#if defined(CONFIG_NET_SOCKET_RAW)
+	UPDATE_STAT(iface, stats.raw.recv += count);
+#else
+	ARG_UNUSED(iface);
+	ARG_UNUSED(count);
+#endif
+}
+
+static inline void net_stats_update_l2_proto_drop(struct net_if *iface,
+						  int count)
+{
+#if defined(CONFIG_NET_SOCKET_RAW)
+	UPDATE_STAT(iface, stats.raw.drop += count);
+#else
+	ARG_UNUSED(iface);
+	ARG_UNUSED(count);
+#endif
+}
+
+static inline void net_stats_update_per_l2_proto_recv(struct net_if *iface,
+						      u16_t proto,
+						      int count)
+{
+	/* Ignore the protocol for time being */
+	ARG_UNUSED(proto);
+
+	if (IS_ENABLED(CONFIG_NET_SOCKET_RAW)) {
+		net_stats_update_l2_proto_recv(iface, count);
+	}
+}
+
+static inline void net_stats_update_per_l2_proto_drop(struct net_if *iface,
+						      u16_t proto,
+						      int count)
+{
+	/* Ignore the protocol for time being */
+	ARG_UNUSED(proto);
+
+	if (IS_ENABLED(CONFIG_NET_SOCKET_RAW)) {
+		net_stats_update_l2_proto_drop(iface, count);
+	}
+}
+
 #if defined(CONFIG_NET_STATISTICS_RPL)
 /* RPL stats */
 static inline void net_stats_update_rpl_resets(struct net_if *iface)

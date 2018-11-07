@@ -45,21 +45,31 @@ enum net_context_state {
 	NET_CONTEXT_LISTENING = 3,
 };
 
+
+enum {
+	NET_CONTEXT_AF_INET = 0,
+	NET_CONTEXT_AF_INET6,
+	NET_CONTEXT_AF_PACKET,
+} __packed;
+
+enum {
+	NET_CONTEXT_SOCK_DGRAM = 0,
+	NET_CONTEXT_SOCK_STREAM,
+	NET_CONTEXT_SOCK_RAW,
+} __packed;
+
 /**
  * The address family, connection type and IP protocol are
  * stored into a bit field to save space.
  */
 /** Protocol family of this connection */
-#define NET_CONTEXT_FAMILY BIT(4)
+#define NET_CONTEXT_FAMILY (BIT(4) | BIT(5))
 
-/** Type of the connection (datagram / stream) */
-#define NET_CONTEXT_TYPE   BIT(5)
-
-/** IP protocol (like UDP or TCP) */
-#define NET_CONTEXT_PROTO  BIT(6)
+/** Type of the connection (datagram / stream / raw) */
+#define NET_CONTEXT_TYPE   (BIT(6) | BIT(7))
 
 /** Remote address set */
-#define NET_CONTEXT_REMOTE_ADDR_SET  BIT(7)
+#define NET_CONTEXT_REMOTE_ADDR_SET  BIT(8)
 
 struct net_context;
 
@@ -204,16 +214,21 @@ struct net_context {
 	 */
 	atomic_t refcount;
 
-	/** Local IP address. Note that the values are in network byte order.
+	/** Local endpoint address. Note that the values are in network byte
+	 * order.
 	 */
 	struct sockaddr_ptr local;
 
-	/** Remote IP address. Note that the values are in network byte order.
+	/** Remote endpoint address. Note that the values are in network byte
+	 * order.
 	 */
 	struct sockaddr remote;
 
 	/** Connection handle */
-	struct net_conn_handle *conn_handler;
+	union {
+		struct net_conn_handle *conn_handler;
+		struct net_conn_raw_handle *conn_raw_handler;
+	};
 
 	/** Receive callback to be called when desired packet
 	 * has been received.
@@ -283,11 +298,14 @@ struct net_context {
 #endif
 	} options;
 
-	/** Network interface assigned to this context */
-	u8_t iface;
+	/** Protocol (UDP, TCP or IEEE 802.3 protocol value */
+	u16_t proto;
 
 	/** Flags for the context */
-	u8_t flags;
+	u16_t flags;
+
+	/** Network interface assigned to this context */
+	u8_t iface;
 };
 
 static inline bool net_context_is_used(struct net_context *context)
@@ -348,41 +366,52 @@ static inline void net_context_set_state(struct net_context *context,
  */
 static inline sa_family_t net_context_get_family(struct net_context *context)
 {
+	int family = (context->flags & NET_CONTEXT_FAMILY) >> 4;
+
 	NET_ASSERT(context);
 
-	if (context->flags & NET_CONTEXT_FAMILY) {
+	if (family == NET_CONTEXT_AF_INET) {
+		return AF_INET;
+	} else if (family == NET_CONTEXT_AF_INET6) {
 		return AF_INET6;
+	} else if (family == NET_CONTEXT_AF_PACKET) {
+		return AF_PACKET;
 	}
 
-	return AF_INET;
+	return 0;
 }
 
 /**
  * @brief Set address family for this network context.
  *
- * @details This function sets the address family (IPv4 or IPv6)
+ * @details This function sets the address family (IPv4, IPv6, packet)
  * of the context.
  *
  * @param context Network context.
- * @param family Address family (AF_INET or AF_INET6)
+ * @param family Address family (AF_INET, AF_INET6 or AF_PACKET)
  */
 static inline void net_context_set_family(struct net_context *context,
 					  sa_family_t family)
 {
+	u16_t flag = 0;
+
 	NET_ASSERT(context);
 
-	if (family == AF_INET6) {
-		context->flags |= NET_CONTEXT_FAMILY;
-		return;
+	if (family == AF_INET) {
+		flag = NET_CONTEXT_AF_INET << 4;
+	} else if (family == AF_INET6) {
+		flag = NET_CONTEXT_AF_INET6 << 4;
+	} else if (family == AF_PACKET) {
+		flag = NET_CONTEXT_AF_PACKET << 4;
 	}
 
-	context->flags &= ~NET_CONTEXT_FAMILY;
+	context->flags |= flag;
 }
 
 /**
  * @brief Get context type for this network context.
  *
- * @details This function returns the context type (stream or datagram)
+ * @details This function returns the context type (stream, datagram or raw)
  * of the context.
  *
  * @param context Network context.
@@ -392,13 +421,19 @@ static inline void net_context_set_family(struct net_context *context,
 static inline
 enum net_sock_type net_context_get_type(struct net_context *context)
 {
+	int type = (context->flags & NET_CONTEXT_TYPE) >> 6;
+
 	NET_ASSERT(context);
 
-	if (context->flags & NET_CONTEXT_TYPE) {
+	if (type == NET_CONTEXT_SOCK_DGRAM) {
+		return SOCK_DGRAM;
+	} else if (type == NET_CONTEXT_SOCK_STREAM) {
 		return SOCK_STREAM;
+	} else if (type == NET_CONTEXT_SOCK_RAW) {
+		return SOCK_RAW;
 	}
 
-	return SOCK_DGRAM;
+	return 0;
 }
 
 /**
@@ -413,14 +448,17 @@ enum net_sock_type net_context_get_type(struct net_context *context)
 static inline void net_context_set_type(struct net_context *context,
 					enum net_sock_type type)
 {
-	NET_ASSERT(context);
+	u16_t flag = 0;
 
-	if (type == SOCK_STREAM) {
-		context->flags |= NET_CONTEXT_TYPE;
-		return;
+	if (type == SOCK_DGRAM) {
+		flag = NET_CONTEXT_SOCK_DGRAM << 6;
+	} else if (type == SOCK_STREAM) {
+		flag = NET_CONTEXT_SOCK_STREAM << 6;
+	} else if (type == SOCK_RAW) {
+		flag = NET_CONTEXT_SOCK_STREAM << 6;
 	}
 
-	context->flags &= ~NET_CONTEXT_TYPE;
+	context->flags |= flag;
 }
 
 /**
@@ -436,13 +474,7 @@ static inline void net_context_set_type(struct net_context *context,
 static inline
 enum net_ip_protocol net_context_get_ip_proto(struct net_context *context)
 {
-	NET_ASSERT(context);
-
-	if (context->flags & NET_CONTEXT_PROTO) {
-		return IPPROTO_TCP;
-	}
-
-	return IPPROTO_UDP;
+	return context->proto;
 }
 
 /**
@@ -452,19 +484,13 @@ enum net_ip_protocol net_context_get_ip_proto(struct net_context *context)
  * of the context.
  *
  * @param context Network context.
- * @param ip_proto Context IP protocol (IPPROTO_UDP or IPPROTO_TCP)
+ * @param proto Context IP protocol (IPPROTO_UDP, IPPROTO_TCP or IEEE 802.3
+ * protocol value)
  */
 static inline void net_context_set_ip_proto(struct net_context *context,
-					    enum net_ip_protocol ip_proto)
+					    enum net_ip_protocol proto)
 {
-	NET_ASSERT(context);
-
-	if (ip_proto == IPPROTO_TCP) {
-		context->flags |= NET_CONTEXT_PROTO;
-		return;
-	}
-
-	context->flags &= ~NET_CONTEXT_PROTO;
+	context->proto = proto;
 }
 
 /**
@@ -512,7 +538,8 @@ static inline void net_context_set_iface(struct net_context *context,
  *
  * @param family IP address family (AF_INET or AF_INET6)
  * @param type Type of the socket, SOCK_STREAM or SOCK_DGRAM
- * @param ip_proto IP protocol, IPPROTO_UDP or IPPROTO_TCP
+ * @param ip_proto IP protocol, IPPROTO_UDP or IPPROTO_TCP. For raw socket
+ * access, the value is the L2 protocol value from IEEE 802.3 (see ethernet.h)
  * @param context The allocated context is returned to the caller.
  *
  * @return 0 if ok, < 0 if error

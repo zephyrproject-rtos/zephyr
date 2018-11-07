@@ -149,6 +149,17 @@ struct net_stats_udp {
 	net_stats_t chkerr;
 };
 
+struct net_stats_raw {
+	/** Number of dropped raw. */
+	net_stats_t drop;
+
+	/** Number of recived raw. */
+	net_stats_t recv;
+
+	/** Number of sent raw. */
+	net_stats_t sent;
+};
+
 struct net_stats_ipv6_nd {
 	net_stats_t drop;
 	net_stats_t recv;
@@ -280,6 +291,10 @@ struct net_stats {
 
 #if defined(CONFIG_NET_STATISTICS_UDP)
 	struct net_stats_udp udp;
+#endif
+
+#if defined(CONFIG_NET_STATISTICS_SOCKET_RAW)
+	struct net_stats_raw raw;
 #endif
 
 #if defined(CONFIG_NET_STATISTICS_IPV6_ND)

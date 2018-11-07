@@ -39,6 +39,13 @@ config NET_STATISTICS_PERIODIC_OUTPUT
 	  Print out all the statistics periodically through logging.
 	  This is meant for testing mostly.
 
+config NET_STATISTICS_SOCKET_RAW
+	bool "Raw network packet statistics"
+	depends on NET_SOCKET_RAW
+	default y
+	help
+	  Keep track of raw socket network related statistics
+
 config NET_STATISTICS_IPV4
 	bool "IPv4 statistics"
 	depends on NET_IPV4

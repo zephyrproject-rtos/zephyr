@@ -182,6 +182,19 @@ config	NET_MAX_MCAST_ROUTES
 	  This determines how many entries can be stored in multicast
 	  routing table.
 
+config NET_SOCKET_RAW
+	bool "Enable raw socket support"
+	default n
+	help
+	  The value depends on your network needs.
+
+config NET_MAX_CONN_RAW
+	int "How many network connections for raw socket are supported"
+	depends on NET_SOCKET_RAW
+	default 4
+	help
+	  The value depends on your network needs.
+
 config NET_TCP
 	bool "Enable TCP"
 	help

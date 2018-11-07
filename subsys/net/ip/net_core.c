@@ -46,6 +46,7 @@
 #include "rpl.h"
 
 #include "connection.h"
+#include "connection_raw.h"
 #include "udp_internal.h"
 #include "tcp_internal.h"
 #include "ipv4_autoconf_internal.h"
@@ -57,6 +58,11 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 {
 	int ret;
 	bool locally_routed = false;
+
+
+	if (IS_ENABLED(CONFIG_NET_SOCKET_RAW)) {
+		net_conn_raw_input(net_pkt_l2_proto(pkt), pkt);
+	}
 
 #if defined(CONFIG_NET_IPV6_FRAGMENT)
 	/* If the packet is routed back to us when we have reassembled
