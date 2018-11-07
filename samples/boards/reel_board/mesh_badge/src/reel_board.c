@@ -11,8 +11,10 @@
 #include <display/cfb.h>
 #include <misc/printk.h>
 #include <flash.h>
+#include <sensor.h>
 
 #include <string.h>
+#include <stdio.h>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/mesh/access.h>
@@ -24,6 +26,13 @@ enum font_size {
 	FONT_BIG = 0,
 	FONT_MEDIUM = 1,
 	FONT_SMALL = 2,
+};
+
+enum screen_ids {
+	SCREEN_MAIN = 0,
+	SCREEN_SENSORS = 1,
+	SCREEN_STATS = 2,
+	SCREEN_LAST,
 };
 
 struct font_info {
@@ -48,10 +57,11 @@ struct font_info {
 
 static struct device *epd_dev;
 static bool pressed;
-static bool stats_view;
+static u8_t screen_id = SCREEN_MAIN;
 static struct device *gpio;
 static struct k_delayed_work epd_work;
 static struct k_delayed_work long_press_work;
+static char str_buf[256];
 
 static struct {
 	struct device *dev;
@@ -333,15 +343,68 @@ static void show_statistics(void)
 	cfb_framebuffer_finalize(epd_dev);
 }
 
-static void epd_update(struct k_work *work)
+static void show_sensors_data(s32_t interval)
+{
+	struct sensor_value val[2];
+	u8_t line = 0;
+	u16_t len = 0;
+
+	cfb_framebuffer_clear(epd_dev, false);
+
+	/* hdc1010 */
+	if (get_hdc1010_val(val)) {
+		goto _error_get;
+	}
+
+	len = snprintf(str_buf, sizeof(str_buf), "Temperature:%d.%d C\n",
+		       val[0].val1, val[0].val2/100000);
+	print_line(FONT_SMALL, line++, str_buf, len, false);
+
+	len = snprintf(str_buf, sizeof(str_buf), "Humidity:%d%%\n",
+		       val[1].val1);
+	print_line(FONT_SMALL, line++, str_buf, len, false);
+
+	/* mma8652 */
+	if (get_mma8652_val(val)) {
+		goto _error_get;
+	}
+
+	len = snprintf(str_buf, sizeof(str_buf), "AX :%10.3f\n",
+		 sensor_value_to_double(&val[0]));
+	print_line(FONT_SMALL, line++, str_buf, len, false);
+
+	len = snprintf(str_buf, sizeof(str_buf), "AY :%10.3f\n",
+		 sensor_value_to_double(&val[1]));
+	print_line(FONT_SMALL, line++, str_buf, len, false);
+
+	len = snprintf(str_buf, sizeof(str_buf), "AZ :%10.3f\n",
+		 sensor_value_to_double(&val[2]));
+	print_line(FONT_SMALL, line++, str_buf, len, false);
+
+	/* apds9960 */
+	if (get_apds9960_val(val)) {
+		goto _error_get;
+	}
+
+	len = snprintf(str_buf, sizeof(str_buf), "Light :%d\n", val[0].val1);
+	print_line(FONT_SMALL, line++, str_buf, len, false);
+	len = snprintf(str_buf, sizeof(str_buf), "Proximity:%d\n", val[1].val1);
+	print_line(FONT_SMALL, line++, str_buf, len, false);
+
+	cfb_framebuffer_finalize(epd_dev);
+
+	k_delayed_work_submit(&epd_work, interval);
+
+	return;
+
+_error_get:
+	printk("Failed to get sensor data or print a string\n");
+}
+
+static void show_main(void)
 {
 	char buf[CONFIG_BT_DEVICE_NAME_MAX];
 	int i;
-
-	if (stats_view) {
-		show_statistics();
-		return;
-	}
 
 	strncpy(buf, bt_get_name(), sizeof(buf) - 1);
 	buf[sizeof(buf) - 1] = '\0';
@@ -356,11 +419,27 @@ static void epd_update(struct k_work *work)
 	board_show_text(buf, true, K_FOREVER);
 }
 
+static void epd_update(struct k_work *work)
+{
+	switch (screen_id) {
+	case SCREEN_STATS:
+		show_statistics();
+		return;
+	case SCREEN_SENSORS:
+		show_sensors_data(K_SECONDS(2));
+		return;
+	case SCREEN_MAIN:
+		show_main();
+		return;
+	}
+}
+
 static void long_press(struct k_work *work)
 {
 	/* Treat as release so actual release doesn't send messages */
 	pressed = false;
-	stats_view = !stats_view;
+	screen_id = (screen_id + 1) % SCREEN_LAST;
+	printk("Change screen to id = %d\n", screen_id);
 	board_refresh_display();
 }
 
@@ -394,13 +473,18 @@ static void button_interrupt(struct device *dev, struct gpio_callback *cb,
 		return;
 	}
 
-	/* Short press does currently nothing in statistics view */
-	if (stats_view) {
+	/* Short press for views */
+	switch (screen_id) {
+	case SCREEN_SENSORS:
+	case SCREEN_STATS:
 		return;
-	}
-
-	if (pins & BIT(SW0_GPIO_PIN)) {
-		mesh_send_hello();
+	case SCREEN_MAIN:
+		if (pins & BIT(SW0_GPIO_PIN)) {
+			mesh_send_hello();
+		}
+		return;
+	default:
+		return;
 	}
 }
 

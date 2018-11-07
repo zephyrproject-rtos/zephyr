@@ -13,6 +13,7 @@
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/gatt.h>
+#include <sensor.h>
 
 #include "mesh.h"
 #include "board.h"
@@ -209,6 +210,12 @@ void main(void)
 	err = bt_enable(bt_ready);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
+		return;
+	}
+
+	err = periphs_init();
+	if (err) {
+		printk("perpherals initialization failed (err %d)\n", err);
 		return;
 	}
 }
