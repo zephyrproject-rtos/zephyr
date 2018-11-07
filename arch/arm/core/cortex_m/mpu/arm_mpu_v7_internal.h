@@ -103,7 +103,7 @@ static inline void _get_mpu_ram_region_attr(arm_mpu_region_attr_t *p_attr,
 	 */
 	(void) base;
 
-	p_attr->rasr = _get_region_attr(1, ap, 1, 1, 1, 1, 0, size);
+	p_attr->rasr = _get_region_attr(1, ap, 1, 1, 1, 0, 0, size);
 }
 
 /**
