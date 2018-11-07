@@ -1,0 +1,67 @@
+# Kconfig - RV31M1 SDK pinmux
+#
+# Copyright (c) 2018 Foundries.io
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig PINMUX_RV32M1
+	bool "RV32M1 pinmux driver"
+	depends on PINMUX && SOC_OPENISA_RV32M1_RISCV32
+	help
+	  Enable the RV32M1 pinmux driver.
+
+if PINMUX_RV32M1
+
+config PINMUX_RV32M1_PORTA
+	bool "Port A"
+	help
+	  Enable Port A.
+
+config PINMUX_RV32M1_PORTA_NAME
+	string "Pinmux Port A driver name"
+	depends on PINMUX_RV32M1_PORTA
+	default "porta"
+
+config PINMUX_RV32M1_PORTB
+	bool "Port B"
+	help
+	  Enable Port B.
+
+config PINMUX_RV32M1_PORTB_NAME
+	string "Pinmux Port B driver name"
+	depends on PINMUX_RV32M1_PORTB
+	default "portb"
+
+config PINMUX_RV32M1_PORTC
+	bool "Port C"
+	help
+	  Enable Port C.
+
+config PINMUX_RV32M1_PORTC_NAME
+	string "Pinmux Port C driver name"
+	depends on PINMUX_RV32M1_PORTC
+	default "portc"
+
+config PINMUX_RV32M1_PORTD
+	bool "Port D"
+	help
+	  Enable Port D.
+
+config PINMUX_RV32M1_PORTD_NAME
+	string "Pinmux Port D driver name"
+	depends on PINMUX_RV32M1_PORTD
+	default "portd"
+
+config PINMUX_RV32M1_PORTE
+	bool "Port E"
+	depends on RV32M1_INTMUX
+	help
+	  Enable Port E.
+
+config PINMUX_RV32M1_PORTE_NAME
+	string "Pinmux Port E driver name"
+	depends on PINMUX_RV32M1_PORTE
+	default "porte"
+
+endif # PINMUX_RV32M1

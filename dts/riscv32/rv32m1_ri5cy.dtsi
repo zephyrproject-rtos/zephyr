@@ -14,6 +14,11 @@
 		pcc-1 = &pcc1;
 		intmux = &intmux;
 		system-lptmr = &lptmr0;
+		pinmux-a = &pinmux_a;
+		pinmux-b = &pinmux_b;
+		pinmux-c = &pinmux_c;
+		pinmux-d = &pinmux_d;
+		pinmux-e = &pinmux_e;
 	};
 
 	cpus {
@@ -107,6 +112,36 @@
 			interrupt-parent = <&intmux>;
 			interrupts = <INTMUX_LEVEL2_IRQ(INTMUX_CH1, 22)>;
 			label = "LPTMR_2";
+		};
+
+		pinmux_a: pinmux@40046000 {
+			compatible = "openisa,rv32m1-pinmux";
+			reg = <0x40046000 0xd0>;
+			clocks = <&pcc0 0x118>;
+		};
+
+		pinmux_b: pinmux@40047000 {
+			compatible = "openisa,rv32m1-pinmux";
+			reg = <0x40047000 0xd0>;
+			clocks = <&pcc0 0x11c>;
+		};
+
+		pinmux_c: pinmux@40048000 {
+			compatible = "openisa,rv32m1-pinmux";
+			reg = <0x40048000 0xd0>;
+			clocks = <&pcc0 0x120>;
+		};
+
+		pinmux_d: pinmux@40049000 {
+			compatible = "openisa,rv32m1-pinmux";
+			reg = <0x40049000 0xd0>;
+			clocks = <&pcc0 0x124>;
+		};
+
+		pinmux_e: pinmux@41037000 {
+			compatible = "openisa,rv32m1-pinmux";
+			reg = <0x41037000 0xd0>;
+			clocks = <&pcc1 0xdc>;
 		};
 	};
 };
