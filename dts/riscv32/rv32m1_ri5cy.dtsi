@@ -25,6 +25,10 @@
 		gpio-c = &gpioc;
 		gpio-d = &gpiod;
 		gpio-e = &gpioe;
+		uart-0 = &uart0;
+		uart-1 = &uart1;
+		uart-2 = &uart2;
+		uart-3 = &uart3;
 	};
 
 	cpus {
@@ -199,6 +203,46 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			clocks = <&pcc1 0x3c>;
+		};
+
+		uart0: lpuart@40042000 {
+			compatible = "openisa,rv32m1-lpuart";
+			reg = <0x40042000 0x2c>;
+			interrupt-parent = <&event>;
+			interrupts = <17>;
+			clocks = <&pcc0 0x108>;
+			label = "UART_0";
+			status = "disabled";
+		};
+
+		uart1: lpuart@40043000 {
+			compatible = "openisa,rv32m1-lpuart";
+			reg = <0x40043000 0x2c>;
+			interrupt-parent = <&intmux>;
+			interrupts = <INTMUX_LEVEL2_IRQ(INTMUX_CH1, 13)>;
+			clocks = <&pcc0 0x10c>;
+			label = "UART_1";
+			status = "disabled";
+		};
+
+		uart2: lpuart@40044000 {
+			compatible = "openisa,rv32m1-lpuart";
+			reg = <0x40044000 0x2c>;
+			interrupt-parent = <&intmux>;
+			interrupts = <INTMUX_LEVEL2_IRQ(INTMUX_CH1, 14)>;
+			clocks = <&pcc0 0x110>;
+			label = "UART_2";
+			status = "disabled";
+		};
+
+		uart3: lpuart@41036000 {
+			compatible = "openisa,rv32m1-lpuart";
+			reg = <0x41036000 0x2c>;
+			interrupt-parent = <&intmux>;
+			interrupts = <INTMUX_LEVEL2_IRQ(INTMUX_CH1, 26)>;
+			clocks = <&pcc0 0xd8>;
+			label = "UART_3";
+			status = "disabled";
 		};
 	};
 };

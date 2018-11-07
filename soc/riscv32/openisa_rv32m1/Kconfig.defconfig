@@ -177,4 +177,11 @@ config GPIO_RV32M1
 
 endif # GPIO
 
+if SERIAL
+
+config UART_RV32M1_LPUART
+	def_bool y
+
+endif # SERIAL
+
 endif # SOC_OPENISA_RV32M1_RISCV32

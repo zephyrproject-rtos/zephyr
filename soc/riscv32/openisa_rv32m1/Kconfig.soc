@@ -12,6 +12,7 @@ config SOC_OPENISA_RV32M1_RISCV32
 	# (We can't make it a 'depends on' without causing a dependency loop).
 	select XIP
 	select HAS_DTS
+	select HAS_RV32M1_LPUART
 	select ATOMIC_OPERATIONS_C
 	select VEGA_SDK_HAL
 	select RISCV_SOC_INTERRUPT_INIT
