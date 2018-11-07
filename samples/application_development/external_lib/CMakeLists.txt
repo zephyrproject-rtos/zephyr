@@ -42,6 +42,7 @@ ExternalProject_Add(
   make
   PREFIX=${mylib_build_dir}
   CC=${CMAKE_C_COMPILER}
+  AR=${CMAKE_AR}
   CFLAGS=${external_project_cflags}
   INSTALL_COMMAND ""      # This particular build system has no install command
   BUILD_BYPRODUCTS ${MYLIB_LIB_DIR}/libmylib.a
