@@ -132,5 +132,8 @@ _idle_state_cleared:
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 
-	/* exception return is done in _IntExit() */
-	b _IntExit
+	/* Use 'bx' instead of 'b' because 'bx' can jump further, and use
+	 * 'bx' instead of 'blx' because exception return is done in
+	 * _IntExit() */
+	ldr r0, =_IntExit
+	bx r0
