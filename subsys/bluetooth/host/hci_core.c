@@ -1245,6 +1245,7 @@ static void le_conn_update_complete(struct net_buf *buf)
 		   conn->role == BT_HCI_ROLE_SLAVE &&
 		   !atomic_test_and_set_bit(conn->flags,
 					    BT_CONN_SLAVE_PARAM_L2CAP)) {
+		/* CPR not supported, let's try L2CAP CPUP instead */
 		struct bt_le_conn_param param;
 
 		param.interval_min = conn->le.interval_min;
