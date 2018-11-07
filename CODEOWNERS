@@ -125,7 +125,9 @@
 /drivers/sensor/lis*/                     @avisconti
 /drivers/sensor/lps*/                     @avisconti
 /drivers/sensor/lsm*/                     @avisconti
+/drivers/serial/Kconfig.cloudbear         @vitaly-gaiduk
 /drivers/serial/uart_altera_jtag_hal.c    @ramakrishnapallala
+/drivers/serial/uart_cloudbear.c          @vitaly-gaiduk
 /drivers/net/slip.c                       @jukkar @tbursztyka
 /drivers/spi/                             @tbursztyka
 /drivers/spi/spi_ll_stm32.*               @superna9999
@@ -143,6 +145,7 @@
 /dts/bindings/can/                        @alexanderwachter
 /dts/bindings/*/nordic*                   @anangl
 /dts/bindings/*/nxp*                      @MaureenHelm
+/dts/riscv32/riscv32-bm310.dtsi           @vitaly-gaiduk
 /ext/fs/                                  @nashif @ramakrishnapallala
 /ext/hal/cmsis/                           @MaureenHelm @galak
 /ext/hal/libmetal/                        @galak

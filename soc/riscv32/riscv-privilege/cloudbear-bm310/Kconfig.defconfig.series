@@ -1,0 +1,34 @@
+if SOC_SERIES_RISCV32_CLOUDBEAR_BM310
+
+config SOC_SERIES
+	string
+	default "cloudbear-bm310"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 50000000
+
+config RISCV_SOC_INTERRUPT_INIT
+	bool
+	default y
+
+config INCLUDE_RESET_VECTOR
+	bool
+	default y
+
+config NUM_IRQS
+	int
+	default 43
+	# IRQ #0..11 are reserved for generic RISC-V interrupts,
+	# IRQ #12 - uart0
+	# 31 PLIC interrupts
+
+config RISCV_RAM_BASE_ADDR
+	hex
+	default 0x80000000
+
+config RISCV_RAM_SIZE
+	hex
+	default 0x20000
+
+endif # SOC_SERIES_RISCV32_CLOUDBEAR_BM310

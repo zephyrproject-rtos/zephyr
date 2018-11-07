@@ -1,0 +1,14 @@
+# Kconfig - CloudBEAR BM-310 SOC configuration options
+#
+# Copyright (c) 2018 Vitaly Gaiduk <vitaly.gaiduk@cloudbear.ru>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+choice
+prompt "CloudBEAR BM-310 SOC implementation"
+depends on SOC_SERIES_RISCV32_CLOUDBEAR_BM310
+
+config SOC_RISCV32_CLOUDBEAR_BM310
+	bool "CloudBEAR BM-310 SOC implementation"
+endchoice
