@@ -518,7 +518,7 @@ exit:
 /*
  * Later SimpleLink SDK versions implement the full getaddrinfo semantics,
  * returning potentially multiple IP addresses.
- * This version implements a simple gethostbyname() API.
+ * This version implements a simple gethostbyname() API for client only.
  */
 static int simplelink_getaddrinfo(const char *node, const char *service,
 				  const struct addrinfo *hints,
@@ -534,7 +534,7 @@ static int simplelink_getaddrinfo(const char *node, const char *service,
 	_u32 ipaddr[4];
 
 	/* Check args: */
-	if (!node && !service) {
+	if (!node) {
 		retval = EAI_NONAME;
 		goto exit;
 	}
