@@ -35,6 +35,11 @@
 static struct k_work hello_work;
 static struct k_work mesh_start_work;
 
+/* Definitions of models user data (Start) */
+static struct led_onoff_state led_onoff_state[] = {
+	{ .dev_id = DEV_IDX_LED0 },
+};
+
 static void heartbeat(u8_t hops, u16_t feat)
 {
 	board_show_text("Heartbeat Received", false, K_SECONDS(2));
@@ -74,12 +79,115 @@ static struct bt_mesh_health_srv health_srv = {
 	.cb = &health_srv_cb,
 };
 
+/* Generic OnOff Server message handlers */
+static void gen_onoff_get(struct bt_mesh_model *model,
+			  struct bt_mesh_msg_ctx *ctx,
+			  struct net_buf_simple *buf)
+{
+	NET_BUF_SIMPLE_DEFINE(msg, 2 + 1 + 4);
+	struct led_onoff_state *state = model->user_data;
+
+	printk("addr 0x%04x onoff 0x%02x\n",
+	       bt_mesh_model_elem(model)->addr, state->current);
+	bt_mesh_model_msg_init(&msg, BT_MESH_MODEL_OP_GEN_ONOFF_STATUS);
+	net_buf_simple_add_u8(&msg, state->current);
+
+	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
+		printk("Unable to send On Off Status response\n");
+	}
+}
+
+static void gen_onoff_set_unack(struct bt_mesh_model *model,
+				struct bt_mesh_msg_ctx *ctx,
+				struct net_buf_simple *buf)
+{
+	struct net_buf_simple *msg = model->pub->msg;
+	struct led_onoff_state *state = model->user_data;
+	int err;
+	u8_t tid, onoff;
+	s64_t now;
+
+	onoff = net_buf_simple_pull_u8(buf);
+	tid = net_buf_simple_pull_u8(buf);
+
+	if (onoff > STATE_ON) {
+		printk("Wrong state received\n");
+
+		return;
+	}
+
+	now = k_uptime_get();
+	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
+	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
+		printk("Already received message\n");
+	}
+
+	state->current = onoff;
+	state->last_tid = tid;
+	state->last_tx_addr = ctx->addr;
+	state->last_msg_timestamp = now;
+
+	printk("addr 0x%02x state 0x%02x\n",
+	       bt_mesh_model_elem(model)->addr, state->current);
+
+	/* Pin set low turns on LED's on the reel board */
+	if (set_led_state(state->dev_id, onoff)) {
+		printk("Failed to set led state\n");
+
+		return;
+	}
+
+	/*
+	 * If a server has a publish address, it is required to
+	 * publish status on a state change
+	 *
+	 * See Mesh Profile Specification 3.7.6.1.2
+	 *
+	 * Only publish if there is an assigned address
+	 */
+
+	if (state->previous != state->current &&
+	    model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
+		printk("publish last 0x%02x cur 0x%02x\n",
+		       state->previous, state->current);
+		state->previous = state->current;
+		bt_mesh_model_msg_init(msg,
+				       BT_MESH_MODEL_OP_GEN_ONOFF_STATUS);
+		net_buf_simple_add_u8(msg, state->current);
+		err = bt_mesh_model_publish(model);
+		if (err) {
+			printk("bt_mesh_model_publish err %d\n", err);
+		}
+	}
+}
+
+static void gen_onoff_set(struct bt_mesh_model *model,
+			  struct bt_mesh_msg_ctx *ctx,
+			  struct net_buf_simple *buf)
+{
+	gen_onoff_set_unack(model, ctx, buf);
+	gen_onoff_get(model, ctx, buf);
+}
+
+/* Definitions of models publication context (Start) */
 BT_MESH_HEALTH_PUB_DEFINE(health_pub, 0);
+BT_MESH_MODEL_PUB_DEFINE(gen_onoff_srv_pub_root, NULL, 2 + 3);
+
+/* Mapping of message handlers for Generic OnOff Server (0x1000) */
+static const struct bt_mesh_model_op gen_onoff_srv_op[] = {
+	{ BT_MESH_MODEL_OP_GEN_ONOFF_GET, 0, gen_onoff_get },
+	{ BT_MESH_MODEL_OP_GEN_ONOFF_SET, 2, gen_onoff_set },
+	{ BT_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK, 2, gen_onoff_set_unack },
+	BT_MESH_MODEL_OP_END,
+};
 
 static struct bt_mesh_model root_models[] = {
 	BT_MESH_MODEL_CFG_SRV(&cfg_srv),
 	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
+	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_ONOFF_SRV,
+		      gen_onoff_srv_op, &gen_onoff_srv_pub_root,
+		      &led_onoff_state[0]),
 };
 
 static void vnd_hello(struct bt_mesh_model *model,
@@ -253,6 +361,9 @@ static int provision_and_configure(void)
 	/* Bind to vendor model */
 	bt_mesh_cfg_mod_app_bind_vnd(NET_IDX, addr, addr, APP_IDX,
 				     MOD_LF, BT_COMP_ID_LF, NULL);
+
+	bt_mesh_cfg_mod_app_bind(NET_IDX, addr, addr, APP_IDX,
+				 BT_MESH_MODEL_ID_GEN_ONOFF_SRV, NULL);
 
 	/* Bind to Health model */
 	bt_mesh_cfg_mod_app_bind(NET_IDX, addr, addr, APP_IDX,
