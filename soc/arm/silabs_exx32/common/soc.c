@@ -13,6 +13,7 @@
 #include <init.h>
 #include <soc.h>
 #include <em_cmu.h>
+#include <em_emu.h>
 #include <em_chip.h>
 #include <arch/cpu.h>
 #include <cortex_m/exc.h>
@@ -70,6 +71,25 @@ static ALWAYS_INLINE void clkInit(void)
 #endif
 }
 
+#ifdef CONFIG_SOC_GECKO_EMU_DCDC
+static ALWAYS_INLINE void dcdc_init(void)
+{
+#if defined(CONFIG_SOC_GECKO_EMU_DCDC_MODE_UNCONFIGURED)
+	/* Nothing to do, leave DC/DC converter in unconfigured, safe state. */
+#elif defined(CONFIG_SOC_GECKO_EMU_DCDC_MODE_ON) || defined(CONFIG_SOC_GECKO_EMU_DCDC_MODE_BYPASS)
+	EMU_DCDCInit_TypeDef init_cfg = EMU_DCDCINIT_DEFAULT;
+#if defined(CONFIG_SOC_GECKO_EMU_DCDC_MODE_BYPASS)
+	init_cfg.dcdcMode = emuDcdcMode_Bypass;
+#endif
+	EMU_DCDCInit(&init_cfg);
+#elif defined(CONFIG_SOC_GECKO_EMU_DCDC_MODE_OFF)
+	EMU_DCDCPowerOff();
+#else
+#error "Unsupported power configuration mode of the on chip DC/DC converter."
+#endif
+}
+#endif
+
 /**
  * @brief Perform basic hardware initialization
  *
@@ -91,6 +111,14 @@ static int silabs_exx32_init(struct device *arg)
 	CHIP_Init();
 
 	_ClearFaults();
+
+#ifdef CONFIG_SOC_GECKO_EMU_DCDC
+	/*
+	 * Initialize DCDC before attempting to set clock, HFXO for example
+	 * requires this
+	 */
+	dcdc_init();
+#endif
 
 	/* Initialize system clock according to CONFIG_CMU settings */
 	clkInit();

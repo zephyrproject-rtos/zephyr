@@ -13,7 +13,7 @@ config SOC_EFR32MG12P
 	bool "SOC_EFR32MG12P"
 	select HAS_SILABS_GECKO
 	select HAS_CMU
-	select HAS_EMU
+	select SOC_GECKO_EMU
 
 endchoice
 
