@@ -183,11 +183,22 @@ config LOG_MAX_LEVEL
 	  - 3 INFO, maximal level set to LOG_LEVEL_INFO
 	  - 4 DEBUG, maximal level set to LOG_LEVEL_DBG
 
-config LOG_FUNCTION_NAME
-	bool "Prepend log message with function name"
+menu "Prepend log message with function name"
+
+config LOG_FUNC_NAME_PREFIX_ERR
+	bool "Error messages prepended"
+
+config LOG_FUNC_NAME_PREFIX_WRN
+	bool "Warning messages prepended"
+
+config LOG_FUNC_NAME_PREFIX_INF
+	bool "Info messages prepended"
+
+config LOG_FUNC_NAME_PREFIX_DBG
+	bool "Debug messages prepended"
 	default y
-	help
-	  Prepends log message with function name.
+
+endmenu
 
 config LOG_PRINTK
 	bool "Enable processing of printk messages."
