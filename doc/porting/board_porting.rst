@@ -128,6 +128,11 @@ When porting Zephyr to a board, you must provide the board's default
 Kconfig configuration, which is used in application builds unless explicitly
 overridden.
 
+.. note::
+
+   See the :ref:`kconfig_tips_and_tricks` page for some best practices and tips
+   when writing Kconfig files.
+
 In order to provide consistency across the various boards and ease the work of
 users providing applications that are not board specific, the following
 guidelines should be followed when porting a board:
@@ -327,8 +332,8 @@ Kconfig extensions
 
 Zephyr uses the `Kconfiglib <https://github.com/ulfalizer/Kconfiglib>`_
 implementation of `Kconfig
-<https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt>`_. It
-simplifies how environment variables are handled, and adds some extensions.
+<https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt>`_, which
+includes some Kconfig extensions.
 
 Environment variables in ``source`` statements are expanded directly in
 Kconfiglib, meaning no ``option env="ENV_VAR"`` "bounce" symbols need to be
@@ -339,6 +344,10 @@ as the corresponding environment variables.
 .. note::
 
     ``option env`` has been removed from the C tools in Linux 4.18 as well.
+
+    The recommended syntax for referencing environment variables is now
+    ``$(FOO)`` rather than ``$FOO``. This uses the new `Kconfig preprocessor
+    <https://raw.githubusercontent.com/torvalds/linux/master/Documentation/kbuild/kconfig-macro-language.txt>`_.
 
 The following Kconfig extensions are available:
 
@@ -411,12 +420,13 @@ The following Kconfig extensions are available:
 - ``def_int``, ``def_hex``, and ``def_string`` keywords, which are analogous to
   ``def_bool``. These set the type and add a ``default`` at the same time.
 
+
 Old Zephyr Kconfig behavior for defaults
 ========================================
 
 Prior to early August 2018 (during development of Zephyr 1.13), Zephyr used a
 custom patch that made Kconfig prefer the last ``default`` with a satisfied
-condition, instead of the first one.
+condition, instead of the first one. This patch has been removed.
 
 Consider this example:
 
@@ -430,7 +440,7 @@ Consider this example:
         default "fourth"
         default "fifth" if n
 
-With the old behavior, ``FOO`` got the value ``"fourth"``, from the last
+With the old custom behavior, ``FOO`` got the value ``"fourth"``, from the last
 ``default`` with a satisfied condition.
 
 With the new behavior, ``FOO`` gets the value ``"second"``, from the first
@@ -459,3 +469,20 @@ There are two issues with the old behavior:
     configuration by sourcing ``Kconfig.zephyr`` and adding additional symbol
     definitions, you might need to move the ``source`` from before the extra
     symbol definitions to after them.
+
+
+More Kconfig resources
+======================
+
+The official documentation for Kconfig is `kconfig-language.txt
+<https://raw.githubusercontent.com/torvalds/linux/master/Documentation/kbuild/kconfig-language.txt>`_
+and `kconfig-macro-language.txt
+<https://raw.githubusercontent.com/torvalds/linux/master/Documentation/kbuild/kconfig-macro-language.txt>`_.
+
+The :ref:`kconfig_tips_and_tricks` page has some best practices and
+tips for writing Kconfig files.
+
+The `kconfiglib.py
+<https://raw.githubusercontent.com/zephyrproject-rtos/zephyr/master/scripts/kconfig/kconfiglib.py>`_
+docstring (at the top of the file) goes over how symbol values are calculated
+in detail.

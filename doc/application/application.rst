@@ -997,6 +997,8 @@ development, as described below in :ref:`override_kernel_conf`.
 
 For more information on Zephyr's Kconfig configuration scheme, see the
 :ref:`setting_configuration_values` section in the :ref:`board_porting_guide`.
+For some tips and general recommendations when writing Kconfig files, see the
+:ref:`kconfig_tips_and_tricks` page.
 
 For information on available kernel configuration options, including
 inter-dependencies between options, see the :ref:`configuration`.
@@ -1022,18 +1024,26 @@ This section describes how to edit Zephyr configuration
 
 - Add each configuration entry on a new line.
 
-- Enable a boolean option by setting its value to ``y``:
+- Enable or disable a boolean option by setting its value to ``y`` or ``n``:
 
   .. code-block:: none
 
      CONFIG_SOME_BOOL=y
+     CONFIG_SOME_OTHER_BOOL=n
 
-  To ensure that a boolean configuration option is not set, add a line
-  like this instead (including the leading ``#`` symbol):
+  .. note::
 
-  .. code-block:: none
+     Another way to set a boolean symbol to ``n`` is with a comment with the
+     following format:
 
-     # CONFIG_SOME_BOOL is not set
+     .. code-block:: none
+
+        # CONFIG_SOME_OTHER_BOOL is not set
+
+     This style is accepted for a technical reason: Kconfig configuration files
+     can be parsed as makefiles (though Zephyr doesn't use this). Having
+     ``n``-valued symbols correspond to unset variables simplifies tests in
+     Make.
 
 - You can set integer and string options as well, like this:
 
