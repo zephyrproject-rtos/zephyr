@@ -10540,9 +10540,13 @@ u32_t radio_scan_enable(u8_t type, u8_t init_addr_type, u8_t *init_addr,
 	return 0;
 }
 
-u32_t radio_scan_disable(void)
+u32_t radio_scan_disable(bool scanner)
 {
 	u32_t status;
+
+	if (scanner && _radio.scanner.conn) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
 
 	status = role_disable(RADIO_TICKER_ID_SCAN,
 			      RADIO_TICKER_ID_SCAN_STOP);
@@ -10554,7 +10558,7 @@ u32_t radio_scan_disable(void)
 		}
 	}
 
-	return status ? BT_HCI_ERR_CMD_DISALLOWED : 0;
+	return _radio.scanner.is_enabled ? BT_HCI_ERR_CMD_DISALLOWED : 0;
 }
 
 u32_t ll_scan_is_enabled(void)
@@ -10745,7 +10749,7 @@ u32_t ll_connect_disable(void **node_rx)
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	status = radio_scan_disable();
+	status = radio_scan_disable(false);
 	if (!status) {
 		struct connection *conn = _radio.scanner.conn;
 		struct radio_pdu_node_rx *rx;
