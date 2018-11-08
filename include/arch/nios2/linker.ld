@@ -189,9 +189,6 @@ SECTIONS
 
     SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
         {
-#ifdef CONFIG_GEN_SW_ISR_TABLE
-	KEEP(*(SW_ISR_TABLE))
-#endif
         *(.data)
         *(".data.*")
 

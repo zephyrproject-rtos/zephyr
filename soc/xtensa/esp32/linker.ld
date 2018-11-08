@@ -169,7 +169,6 @@ SECTIONS
     *(.gnu.linkonce.s2.*)
     KEEP(*(.jcr))
     *(.dram1 .dram1.*)
-    KEEP(*(SW_ISR_TABLE))
     _data_end = ABSOLUTE(.);
     . = ALIGN(4);
   } GROUP_LINK_IN(RAMABLE_REGION)

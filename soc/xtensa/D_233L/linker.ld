@@ -403,7 +403,6 @@ SECTIONS
     _data_start = ABSOLUTE(.);
     *(.data)
     *(.data.*)
-    KEEP(*(SW_ISR_TABLE))
     *(.gnu.linkonce.d.*)
     KEEP(*(.gnu.linkonce.d.*personality*))
     *(.data1)

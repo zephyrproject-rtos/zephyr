@@ -102,9 +102,6 @@ SECTIONS
     SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
 	{
 		 . = ALIGN(4);
-#ifdef CONFIG_GEN_SW_ISR_TABLE
-		KEEP(*(SW_ISR_TABLE))
-#endif
 		*(.rodata)
 		*(".rodata.*")
 		*(.gnu.linkonce.r.*)
