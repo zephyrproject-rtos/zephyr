@@ -16,7 +16,9 @@ The following are examples of ISAs and ABIs that Zephyr supports:
 
 For information on Kconfig configuration, see the
 :ref:`setting_configuration_values` section in the :ref:`board_porting_guide`.
-Architectures use a similar Kconfig configuration scheme.
+Architectures use a similar Kconfig configuration scheme. The
+:ref:`kconfig_tips_and_tricks` page has some general recommendations and tips
+for writing Kconfig files as well.
 
 An architecture port can be divided in several parts; most are required and
 some are optional:
