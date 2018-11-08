@@ -48,7 +48,7 @@ u32_t __irq_vector_table _irq_vector_table[IRQ_TABLE_SIZE] = {
  * type and bypass the _sw_isr_table, then do not generate one.
  */
 #ifdef CONFIG_GEN_SW_ISR_TABLE
-struct _isr_table_entry __sw_isr_table _sw_isr_table[IRQ_TABLE_SIZE] = {
+struct _isr_table_entry __weak __sw_isr_table _sw_isr_table[IRQ_TABLE_SIZE] = {
 	[0 ...(IRQ_TABLE_SIZE - 1)] = {(void *)0x42, (void *)&_irq_spurious},
 };
 #endif

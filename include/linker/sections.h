@@ -46,7 +46,7 @@
 
 /* Interrupts */
 #define IRQ_VECTOR_TABLE	.gnu.linkonce.irq_vector_table
-#define SW_ISR_TABLE		.gnu.linkonce.sw_isr_table
+#define SW_ISR_TABLE		.sw_isr_table
 
 /* Architecture-specific sections */
 #if defined(CONFIG_ARM)
