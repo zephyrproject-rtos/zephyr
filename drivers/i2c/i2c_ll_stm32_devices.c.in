@@ -12,15 +12,15 @@
  *
  * device_config = ('i2c_stm32_config',
  * """
- *	.i2c = (I2C_TypeDef *)${reg/0/address},
+ *	.i2c = (I2C_TypeDef *)${get_reg_addr()},
  *	.pclken = {
- *		.enr = ${clocks/0/bits},
- *		.bus = ${clocks/0/bus},
+ *		.enr = ${get_property('clocks/0/bits')},
+ *		.bus = ${get_property('clocks/0/bus')},
  *	},
  * #ifdef CONFIG_I2C_STM32_INTERRUPT
- *	.irq_config_func = ${device-name}_config_irq,
+ *	.irq_config_func = ${get_unique_id()}_config_irq,
  * #endif
- *	.bitrate = ${clock-frequency},
+ *	.bitrate = ${get_property('clock-frequency')},
  * """)
  *
  * devicedeclare.device_declare(['st,stm32-i2c-v1','st,stm32-i2c-v2'],

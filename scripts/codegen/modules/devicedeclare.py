@@ -107,6 +107,11 @@ class _DeviceLocalTemplate(Template):
     # extend default pattern by '-' '/' ','
     idpattern = r'[_a-z][_a-z0-9\-/,]*'
 
+class _DeviceCustomTemplate(Template):
+    # pattern is ${<property_path>}
+    # never starts with /
+    # extend default pattern by '-' '/' ',', '(', ')'
+    idpattern = r'[_a-z][_a-z0-9\-/,()\']*'
 
 class _DeviceGlobalTemplate(Template):
     # pattern is ${<device-id>:<property_path>}
@@ -115,10 +120,31 @@ class _DeviceGlobalTemplate(Template):
     # extend default pattern by '-', '@', '/', ':'
     idpattern = r'/[_a-z0-9\-/,@:]*'
 
+
+##
+# @brief Substitude values in device template
+#
+def _device_custom_template_substitute(template, device_id):
+
+    class CustomMapping:
+        def __getitem__(self, key):
+            # Need to play with device so it could be visible in eval()
+            bogus = device.get_unique_id()
+            cmd = 'device' + '.' + key
+            return eval(cmd)
+
+    # add device properties from device tree
+    device = codegen.edts().get_device_by_device_id(device_id)
+
+    substituted = _DeviceCustomTemplate(template).safe_substitute(CustomMapping())
+
+    return substituted
+
 ##
 # @brief Substitude values in device template
 #
 def _device_template_substitute(template, device_id, preset={}):
+
     # substitute device local placeholders ${<property_path>}, config, ...
     mapping = {}
     # add preset mapping
@@ -132,11 +158,11 @@ def _device_template_substitute(template, device_id, preset={}):
     mapping['driver-name'] = mapping.get('driver-name',
         device.get_property('label').strip('"'))
     mapping['device-data'] = mapping.get('device-data',
-        "{}_data".format(mapping['device-name']).lower())
+        "{}_data".format(device.get_unique_id()))
     mapping['device-config-info'] = mapping.get('device-config-info',
-        "{}_config".format(mapping['device-name']).lower())
+        "{}_config".format(device.get_unique_id()))
     mapping['device-config-irq'] = mapping.get('device-config-irq',
-        "{}_config_irq".format(mapping['device-name']).lower())
+        "{}_config_irq".format(device.get_unique_id()))
     substituted = _DeviceLocalTemplate(template).safe_substitute(mapping)
 
     # substitute device global placeholders ${<device-id>:<property_path>}
@@ -205,6 +231,7 @@ def device_declare_single(device_config,
     if device_info:
         device_info = _device_template_substitute(device_info, device_id,
                                                   preset)
+        device_info = _device_custom_template_substitute(device_info, device_id)
         codegen.outl(device_info)
     #
     # device init
@@ -357,6 +384,7 @@ def device_declare(compatibles, init_prio_flag, kernel_level, irq_func,
 
     config_struct = _device_generate_struct('config', config_struct)
     data_struct = _device_generate_struct('data', data_struct)
+
     if api is None:
         api = "(*(const int *)0)"
 
@@ -374,6 +402,7 @@ def device_declare(compatibles, init_prio_flag, kernel_level, irq_func,
 
             device_info += _device_generate_irq_bootstrap(
                         irq_names, irq_func['irq_flag'], irq_func['irq_func'])
+
         device_info += config_struct
         device_info += data_struct
 

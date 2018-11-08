@@ -10,19 +10,19 @@
  *
  * device_data = ( 'spi_stm32_data',
  * """
- * 	SPI_CONTEXT_INIT_LOCK(${device-name}_data, ctx),
- * 	SPI_CONTEXT_INIT_SYNC(${device-name}_data, ctx),
+ * 	SPI_CONTEXT_INIT_LOCK(${get_unique_id()}_data, ctx),
+ * 	SPI_CONTEXT_INIT_SYNC(${get_unique_id()}_data, ctx),
  * """
  * )
  *
  *
  * device_config = ( 'spi_stm32_config',
  * """
- *      .spi = (SPI_TypeDef *)${reg/0/address},
- *      .pclken.bus = ${clocks/0/bus},
- *      .pclken.enr = ${clocks/0/bits},
+ *      .spi = (SPI_TypeDef *)${get_reg_addr()},
+ *      .pclken.bus = ${get_property('clocks/0/bus')},
+ *      .pclken.enr = ${get_property('clocks/0/bits')},
  * #ifdef CONFIG_SPI_STM32_INTERRUPT
- *      .irq_config = ${device-name}_config_irq,
+ *      .irq_config = ${get_unique_id()}_config_irq,
  * #endif
  * """)
  *
