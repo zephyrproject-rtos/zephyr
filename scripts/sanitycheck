@@ -1016,7 +1016,6 @@ class MakeGenerator:
 
         if options.enable_coverage:
             args += ["EXTRA_LDFLAGS=--coverage"]
-            args += ["CONFIG_COVERAGE=y"]
 
         if type == 'qemu':
             args.append("QEMU_PIPE=%s" % handler.get_fifo())
@@ -1042,9 +1041,12 @@ class MakeGenerator:
             by execute() will be keyed by its .name field.
         """
         args = ti.test.extra_args[:]
-        if len(ti.test.extra_configs) > 0:
+        if len(ti.test.extra_configs) > 0 or options.coverage:
             args.append("OVERLAY_CONFIG=%s" %
                         os.path.join(ti.outdir, "overlay.conf"))
+
+        if ti.test.type == "unit" and options.enable_coverage:
+            args.append("COVERAGE=1")
 
         args.append("BOARD={}".format(ti.platform.name))
         args.extend(extra_args)
@@ -1555,14 +1557,18 @@ class TestInstance:
         return build_only
 
     def create_overlay(self):
+        file = os.path.join(self.outdir, "overlay.conf")
+        os.makedirs(self.outdir, exist_ok=True)
+        f = open(file, "w")
+        content = ""
+
         if len(self.test.extra_configs) > 0:
-            file = os.path.join(self.outdir, "overlay.conf")
-            os.makedirs(self.outdir, exist_ok=True)
-            f = open(file, "w")
-            content = ""
             content = "\n".join(self.test.extra_configs)
-            f.write(content)
-            f.close()
+        if options.enable_coverage:
+            content = content + "\nCONFIG_COVERAGE=y"
+
+        f.write(content)
+        f.close()
 
     def calculate_sizes(self):
         """Get the RAM/ROM sizes of a test case.
@@ -1852,9 +1858,6 @@ class TestSuite:
                         # need a way to avoid different Make processes from clobbering
                         # each other since they all try to build them
                         # simultaneously
-
-                        if options.enable_coverage:
-                            args.append("CONFIG_COVERAGE=y")
 
                         o = os.path.join(self.outdir, plat.name, tc.path)
                         dlist[tc, plat, tc.name.split("/")[-1]] = os.path.join(o, "zephyr", ".config")
@@ -2692,7 +2695,7 @@ def generate_coverage(outdir, ignores):
                          "--output-file", ztestfile,
                          "--rc", "lcov_branch_coverage=1"], stdout=coveragelog)
 
-        if os.path.getsize(ztestfile) > 0:
+        if os.path.exists(ztestfile) and os.path.getsize(ztestfile) > 0:
             subprocess.call(["lcov", "--remove", ztestfile,
                              os.path.join(ZEPHYR_BASE, "tests/ztest/test/*"),
                              "--output-file", ztestfile,
