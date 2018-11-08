@@ -25,7 +25,7 @@ config COAP_SOCK
 	bool "CoAP based on Sockets"
 
 config COAP_NET_PKT
-	bool "CoaP based on net_pkt"
+	bool "CoAP based on net_pkt[Deprecated]"
 
 endchoice
 
