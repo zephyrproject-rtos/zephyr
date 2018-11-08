@@ -1015,7 +1015,7 @@ class MakeGenerator:
             handler = DeviceHandler(instance)
 
         if options.enable_coverage:
-            args += ["COVERAGE=1", "EXTRA_LDFLAGS=--coverage"]
+            args += ["EXTRA_LDFLAGS=--coverage"]
             args += ["CONFIG_COVERAGE=y"]
 
         if type == 'qemu':
@@ -1853,7 +1853,7 @@ class TestSuite:
                         # each other since they all try to build them
                         # simultaneously
 
-                        if plat.type == "native" and options.enable_coverage:
+                        if options.enable_coverage:
                             args.append("CONFIG_COVERAGE=y")
 
                         o = os.path.join(self.outdir, plat.name, tc.path)
@@ -2577,13 +2577,10 @@ def parse_arguments():
     )
 
     parser.add_argument("--enable-coverage", action="store_true",
-                        help="Enable code coverage when building unit tests and"
-                        " when targeting the native_posix board")
+                        help="Enable code coverage using gcov.")
 
     parser.add_argument("-C", "--coverage", action="store_true",
-                        help="Generate coverage report for unit tests, and"
-                        " tests and samples run in native_posix. Implies"
-                        " --enable_coverage")
+                        help="Generate coverage reports. Implies --enable_coverage")
 
     return parser.parse_args()
 
