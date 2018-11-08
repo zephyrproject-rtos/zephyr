@@ -23,7 +23,7 @@
 #define SET_ERRNO(x) \
 	{ int _err = x; if (_err < 0) { errno = -_err; return -1; } }
 
-static struct fd_op_vtable sock_fd_op_vtable;
+static const struct fd_op_vtable sock_fd_op_vtable;
 
 static void zsock_received_cb(struct net_context *ctx, struct net_pkt *pkt,
 			      int status, void *user_data);
@@ -895,7 +895,7 @@ static int sock_ioctl_vmeth(void *obj, unsigned int request, ...)
 	}
 }
 
-static struct fd_op_vtable sock_fd_op_vtable = {
+static const struct fd_op_vtable sock_fd_op_vtable = {
 	.read = sock_read_vmeth,
 	.write = sock_write_vmeth,
 	.ioctl = sock_ioctl_vmeth,

@@ -29,7 +29,7 @@ struct fd_entry {
 #define FD_OBJ_STDERR (void *)0x12
 
 #ifdef CONFIG_POSIX_API
-static struct fd_op_vtable stdinout_fd_op_vtable;
+static const struct fd_op_vtable stdinout_fd_op_vtable;
 #endif
 
 static struct fd_entry fdtable[CONFIG_POSIX_MAX_FDS] = {
@@ -218,7 +218,7 @@ static int stdinout_ioctl_vmeth(void *obj, unsigned int request, ...)
 }
 
 
-static struct fd_op_vtable stdinout_fd_op_vtable = {
+static const struct fd_op_vtable stdinout_fd_op_vtable = {
 	.read = stdinout_read_vmeth,
 	.write = stdinout_write_vmeth,
 	.ioctl = stdinout_ioctl_vmeth,
