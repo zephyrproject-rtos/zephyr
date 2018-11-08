@@ -144,13 +144,11 @@ static inline void pool_irq_unlock(struct sys_mem_pool_base *p, int key)
 static void *block_alloc(struct sys_mem_pool_base *p, int l, size_t lsz)
 {
 	sys_dnode_t *block;
-	int key = pool_irq_lock(p);
 
 	block = sys_dlist_get(&p->levels[l].free_list);
 	if (block != NULL) {
 		clear_free_bit(p, l, block_num(p, block, lsz));
 	}
-	pool_irq_unlock(p, key);
 
 	return block;
 }
@@ -198,9 +196,7 @@ static void block_free(struct sys_mem_pool_base *p, int level,
 static void *block_break(struct sys_mem_pool_base *p, void *block, int l,
 				size_t *lsizes)
 {
-	int i, bn, key;
-
-	key = pool_irq_lock(p);
+	int i, bn;
 
 	bn = block_num(p, block, lsizes[l]);
 
@@ -215,17 +211,15 @@ static void *block_break(struct sys_mem_pool_base *p, void *block, int l,
 		}
 	}
 
-	pool_irq_unlock(p, key);
-
 	return block;
 }
 
 int _sys_mem_pool_block_alloc(struct sys_mem_pool_base *p, size_t size,
 			      u32_t *level_p, u32_t *block_p, void **data_p)
 {
-	int i, from_l;
-	int alloc_l = -1, free_l = -1;
-	void *data;
+	int i, from_l, alloc_l = -1, free_l = -1;
+	unsigned int key;
+	void *data = NULL;
 	size_t lsizes[p->n_levels];
 
 	/* Walk down through levels, finding the one from which we
@@ -255,26 +249,36 @@ int _sys_mem_pool_block_alloc(struct sys_mem_pool_base *p, size_t size,
 		return -ENOMEM;
 	}
 
-	/* Iteratively break the smallest enclosing block... */
-	data = block_alloc(p, free_l, lsizes[free_l]);
+	/* Now walk back down the levels (i.e. toward bigger sizes)
+	 * looking for an available block.  Start at the smallest
+	 * enclosing block found above (note that because that loop
+	 * was done without synchronization, it may no longer be
+	 * available!) as a useful optimization.  Note that the
+	 * removal of the block from the list and the re-addition of
+	 * its the three unused children needs to be performed
+	 * atomically, otherwise we open up a situation where we can
+	 * "steal" the top level block of the whole heap, causing a
+	 * spurious -ENOMEM.
+	 */
+	key = pool_irq_lock(p);
+	for (i = free_l; i >= 0; i--) {
+		data = block_alloc(p, i, lsizes[i]);
 
-	if (data == NULL) {
-		/* This can happen if we race with another allocator.
-		 * It's OK, just back out and the timeout code will
-		 * retry.  Note mild overloading: -EAGAIN isn't for
-		 * propagation to the caller, it's to tell the loop in
-		 * k_mem_pool_alloc() to try again synchronously.  But
-		 * it means exactly what it says.
-		 *
-		 * This doesn't happen for user mode memory pools as this
-		 * entire function runs with a semaphore held.
+		/* Found one.  Iteratively break it down to the size
+		 * we need.  Note that we relax the lock to allow a
+		 * pending interrupt to fire so we don't hurt latency
+		 * by locking the full loop.
 		 */
-		return -EAGAIN;
+		if (data != NULL) {
+			for (from_l = i; from_l < alloc_l; from_l++) {
+				data = block_break(p, data, from_l, lsizes);
+				pool_irq_unlock(p, key);
+				key = pool_irq_lock(p);
+			}
+			break;
+		}
 	}
-
-	for (from_l = free_l; from_l < alloc_l; from_l++) {
-		data = block_break(p, data, from_l, lsizes);
-	}
+	pool_irq_unlock(p, key);
 
 	*level_p = alloc_l;
 	*block_p = block_num(p, data, lsizes[alloc_l]);
