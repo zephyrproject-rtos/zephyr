@@ -9,6 +9,7 @@
 #include <zephyr/types.h>
 #include <device.h>
 #include <misc/util.h>
+#include <counter.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,7 +27,7 @@ extern "C" {
 /** Number of RTC ticks in a day */
 #define RTC_ALARM_DAY (RTC_ALARM_HOUR * 24)
 
-
+typedef void (*rtc_callback_t)(struct device *dev);
 
 struct rtc_config {
 	u32_t init_val;
@@ -36,7 +37,7 @@ struct rtc_config {
 	u32_t alarm_val;
 	/*!< Pointer to function to call when alarm value
 	 * matches current RTC value */
-	void (*cb_fn)(struct device *dev);
+	rtc_callback_t cb_fn;
 };
 
 typedef void (*rtc_api_enable)(struct device *dev);
@@ -57,49 +58,64 @@ struct rtc_driver_api {
 	rtc_api_get_pending_int get_pending_int;
 };
 
-__syscall u32_t rtc_read(struct device *dev);
+__deprecated __syscall u32_t rtc_read(struct device *dev);
 
 static inline u32_t _impl_rtc_read(struct device *dev)
 {
-	const struct rtc_driver_api *api = dev->driver_api;
-
-	return api->read(dev);
+	return counter_read(dev);
 }
 
-__syscall void rtc_enable(struct device *dev);
+__deprecated __syscall void rtc_enable(struct device *dev);
 
 static inline void _impl_rtc_enable(struct device *dev)
 {
-	const struct rtc_driver_api *api = dev->driver_api;
-
-	api->enable(dev);
+	counter_start(dev);
 }
 
-__syscall void rtc_disable(struct device *dev);
+__deprecated __syscall void rtc_disable(struct device *dev);
 
 static inline void _impl_rtc_disable(struct device *dev)
 {
-	const struct rtc_driver_api *api = dev->driver_api;
-
-	api->disable(dev);
+	counter_stop(dev);
 }
 
-static inline int rtc_set_config(struct device *dev,
-				 struct rtc_config *cfg)
+static inline void rtc_counter_wrap_callback(struct device *dev,
+					     void *user_data)
 {
-	const struct rtc_driver_api *api = dev->driver_api;
+	rtc_callback_t cb_fn = (rtc_callback_t)user_data;
 
-	return api->set_config(dev, cfg);
+	if (cb_fn) {
+		cb_fn(dev);
+	}
 }
 
-__syscall int rtc_set_alarm(struct device *dev, const u32_t alarm_val);
+__deprecated static inline int rtc_set_config(struct device *dev,
+					      struct rtc_config *cfg)
+{
+	int err;
+
+	if (cfg->init_val) {
+		return -ENOTSUP;
+	}
+
+	err = counter_set_wrap(dev, cfg->alarm_val, rtc_counter_wrap_callback,
+			       cfg->cb_fn);
+
+	if (!err && cfg->alarm_enable) {
+		err = counter_start(dev);
+	}
+
+	return err;
+}
+
+__deprecated __syscall int rtc_set_alarm(struct device *dev,
+					 const u32_t alarm_val);
 
 static inline int _impl_rtc_set_alarm(struct device *dev,
 				      const u32_t alarm_val)
 {
-	const struct rtc_driver_api *api = dev->driver_api;
-
-	return api->set_alarm(dev, alarm_val);
+	return counter_set_wrap(dev, alarm_val, rtc_counter_wrap_callback,
+				counter_get_user_data(dev));
 }
 
 /**
@@ -115,14 +131,11 @@ static inline int _impl_rtc_set_alarm(struct device *dev,
  * @retval 1 if the rtc interrupt is pending.
  * @retval 0 if no rtc interrupt is pending.
  */
-__syscall int rtc_get_pending_int(struct device *dev);
+__deprecated __syscall int rtc_get_pending_int(struct device *dev);
 
 static inline int _impl_rtc_get_pending_int(struct device *dev)
 {
-	struct rtc_driver_api *api;
-
-	api = (struct rtc_driver_api *)dev->driver_api;
-	return api->get_pending_int(dev);
+	return counter_get_pending_int(dev);
 }
 
 #ifdef __cplusplus
