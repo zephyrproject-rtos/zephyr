@@ -253,7 +253,11 @@ extern "C" {
  *
  * return Number of bytes written.
  */
+#if defined(CONFIG_LOG)
 int log_printk(const char *fmt, va_list ap);
+#else
+#define log_printk(...) { ; }
+#endif
 
 /** @brief Copy transient string to a buffer from internal, logger pool.
  *
@@ -267,7 +271,11 @@ int log_printk(const char *fmt, va_list ap);
  *	   allocated. String may be truncated if input string does not fit in
  *	   a buffer from the pool (see CONFIG_LOG_STRDUP_MAX_STRING).
  */
+#if defined(CONFIG_LOG)
 char *log_strdup(const char *str);
+#else
+#define log_strdup(...) ""
+#endif
 
 #define __DYNAMIC_MODULE_REGISTER(_name)\
 	struct log_source_dynamic_data LOG_ITEM_DYNAMIC_DATA(_name)	\
