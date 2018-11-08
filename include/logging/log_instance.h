@@ -16,11 +16,25 @@ extern "C" {
 struct log_source_const_data {
 	const char *name;
 	u8_t level;
+#ifdef CONFIG_NIOS2
+	/* Workaround alert! Dummy data to ensure that structure is >8 bytes.
+	 * Nios2 uses global pointer register for structures <=8 bytes and
+	 * apparently does not handle well variables placed in custom sections.
+	 */
+	u32_t dummy;
+#endif
 };
 
 /** @brief Dynamic data associated with the source of log messages. */
 struct log_source_dynamic_data {
 	u32_t filters;
+#ifdef CONFIG_NIOS2
+	/* Workaround alert! Dummy data to ensure that structure is >8 bytes.
+	 * Nios2 uses global pointer register for structures <=8 bytes and
+	 * apparently does not handle well variables placed in custom sections.
+	 */
+	u32_t dummy[2];
+#endif
 };
 
 /** @brief Creates name of variable and section for constant log data.
