@@ -93,7 +93,7 @@ static int cmd_gpio_get(const struct shell *shell,
 		index = (uint8_t)atoi(argv[args_indx.index]);
 	} else {
 		shell_fprintf(shell, SHELL_ERROR,
-			      "Wrong parameters for set\n");
+			      "Wrong parameters for get\n");
 		return 0;
 	}
 
