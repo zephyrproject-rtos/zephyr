@@ -77,6 +77,9 @@ struct counter_alarm_cfg {
  */
 typedef void (*counter_wrap_callback_t)(struct device *dev, void *user_data);
 
+__deprecated typedef void (*counter_callback_t)(struct device *dev,
+						void *user_data);
+
 /** @brief Structure with generic counter features. */
 struct counter_config_info {
 	u32_t max_wrap; /*!< Maximal (default) wrap value on which counter is
@@ -109,6 +112,7 @@ typedef int (*counter_api_set_wrap)(struct device *dev, u32_t ticks,
 typedef u32_t (*counter_api_get_pending_int)(struct device *dev);
 typedef u32_t (*counter_api_get_wrap)(struct device *dev);
 typedef u32_t (*counter_api_get_max_relative_alarm)(struct device *dev);
+typedef void *(*counter_api_get_user_data)(struct device *dev);
 
 struct counter_driver_api {
 	counter_api_start start;
@@ -120,6 +124,7 @@ struct counter_driver_api {
 	counter_api_get_pending_int get_pending_int;
 	counter_api_get_wrap get_wrap;
 	counter_api_get_max_relative_alarm get_max_relative_alarm;
+	counter_api_get_user_data get_user_data;
 };
 
 
@@ -248,7 +253,7 @@ static inline u32_t _impl_counter_read(struct device *dev)
 }
 
 /**
- * @brief Set an alarm.
+ * @brief Set an alarm on a channel.
  *
  * In case of absolute request, maximal value that can be set is equal to
  * wrap value set by counter_set_wrap call or default, maximal one. in case of
@@ -263,7 +268,7 @@ static inline u32_t _impl_counter_read(struct device *dev)
  *		    interrupts or requested channel).
  * @retval -EINVAL if alarm settings are invalid.
  */
-static inline int counter_set_alarm(struct device *dev,
+static inline int counter_set_ch_alarm(struct device *dev,
 				    const struct counter_alarm_cfg *alarm_cfg)
 {
 	const struct counter_driver_api *api = dev->driver_api;
@@ -276,7 +281,7 @@ static inline int counter_set_alarm(struct device *dev,
 }
 
 /**
- * @brief Disable an alarm.
+ * @brief Disable an alarm on a channel.
  *
  * @param dev		Pointer to the device structure for the driver instance.
  * @param alarm_cfg	Alarm configuration. It must be the same address as the
@@ -286,7 +291,7 @@ static inline int counter_set_alarm(struct device *dev,
  * @retval -ENOTSUP if request is not supported or the counter was not started
  *		    yet.
  */
-static inline int counter_disable_alarm(struct device *dev,
+static inline int counter_disable_ch_alarm(struct device *dev,
 				const struct counter_alarm_cfg *alarm_cfg)
 {
 	const struct counter_driver_api *api = dev->driver_api;
@@ -389,6 +394,33 @@ static inline u32_t _impl_counter_get_max_relative_alarm(struct device *dev)
 }
 #endif
 
+__deprecated static inline int counter_set_alarm(struct device *dev,
+						 counter_callback_t callback,
+						 u32_t count, void *user_data)
+{
+	return counter_set_wrap(dev, count, callback, user_data);
+}
+
+/**
+ * @brief Get user data set for wrap alarm.
+ *
+ * @note Function intended to be used only by deprecated RTC driver API to
+ * provide backward compatibility.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ *
+ * @return User data.
+ */
+__deprecated static inline void *counter_get_user_data(struct device *dev)
+{
+	const struct counter_driver_api *api = dev->driver_api;
+
+	if (api->get_user_data) {
+		return api->get_user_data(dev);
+	} else {
+		return NULL;
+	}
+}
 /**
  * @}
  */
