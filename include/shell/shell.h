@@ -558,6 +558,53 @@ void shell_fprintf(const struct shell *shell, enum shell_vt100_color color,
 		   const char *p_fmt, ...);
 
 /**
+ * @brief Print info message to the shell.
+ *
+ *  This function shall not be used outside of the shell command context.
+ *
+ * @param[in] _sh Pointer to the shell instance.
+ * @param[in] _ft Format string.
+ * @param[in] ... List of parameters to print.
+ */
+#define shell_info(_sh, _ft, ...) \
+	shell_fprintf(_sh, SHELL_NORMAL, _ft "\n", ##__VA_ARGS__)
+
+/**
+ * @brief Print normal message to the shell.
+ *
+ *  This function shall not be used outside of the shell command context.
+ *
+ * @param[in] _sh Pointer to the shell instance.
+ * @param[in] _ft Format string.
+ * @param[in] ... List of parameters to print.
+ */
+#define shell_print(_sh, _ft, ...) \
+	shell_fprintf(_sh, SHELL_NORMAL, _ft "\n", ##__VA_ARGS__)
+
+/**
+ * @brief Print warning message to the shell.
+ *
+ * This function shall not be used outside of the shell command context.
+ *
+ * @param[in] _sh Pointer to the shell instance.
+ * @param[in] _ft Format string.
+ * @param[in] ... List of parameters to print.
+ */
+#define shell_warn(_sh, _ft, ...) \
+	shell_fprintf(_sh, SHELL_ERROR, _ft "\n", ##__VA_ARGS__)
+
+/**
+ * @brief Print error message to the shell.
+ *
+ * This function shall not be used outside of the shell command context.
+ * @param[in] _sh Pointer to the shell instance.
+ * @param[in] _ft Format string.
+ * @param[in] ... List of parameters to print.
+ */
+#define shell_error(_sh, _ft, ...) \
+	shell_fprintf(_sh, SHELL_ERROR, _ft "\n", ##__VA_ARGS__)
+
+/**
  * @brief Process function, which should be executed when data is ready in the
  *	  transport interface. To be used if shell thread is disabled.
  *
