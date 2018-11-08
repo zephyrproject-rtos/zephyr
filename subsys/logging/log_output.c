@@ -225,8 +225,8 @@ static void color_postfix(struct log_msg *msg,
 }
 
 
-static int ids_print(struct log_msg *msg,
-		     const struct log_output *log_output, bool level_on)
+static int ids_print(struct log_msg *msg, const struct log_output *log_output,
+		     bool level_on, bool func_on)
 {
 	u32_t domain_id = log_msg_domain_id_get(msg);
 	u32_t source_id = log_msg_source_id_get(msg);
@@ -238,7 +238,8 @@ static int ids_print(struct log_msg *msg,
 	}
 
 	total += print_formatted(log_output,
-				IS_ENABLED(CONFIG_LOG_FUNCTION_NAME) ?
+				(func_on &&
+				((1 << level) & LOG_FUNCTION_PREFIX_MASK)) ?
 				"%s." : "%s: ",
 				log_source_name_get(domain_id, source_id));
 
@@ -445,7 +446,7 @@ static void raw_string_print(struct log_msg *msg,
 
 static int prefix_print(struct log_msg *msg,
 			const struct log_output *log_output,
-			u32_t flags)
+			u32_t flags, bool func_on)
 {
 	int length = 0;
 
@@ -485,7 +486,7 @@ static int prefix_print(struct log_msg *msg,
 
 		} else {
 			color_prefix(msg, log_output, colors_on);
-			length += ids_print(msg, log_output, level_on);
+		length += ids_print(msg, log_output, level_on, func_on);
 		}
 	}
 
@@ -507,7 +508,8 @@ void log_output_msg_process(const struct log_output *log_output,
 			    struct log_msg *msg,
 			    u32_t flags)
 {
-	int prefix_offset = prefix_print(msg, log_output, flags);
+	int prefix_offset = prefix_print(msg, log_output, flags,
+					 log_msg_is_std(msg));
 
 	if (log_msg_is_std(msg)) {
 		std_print(msg, log_output);
