@@ -4,6 +4,27 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define STATE_OFF	0x00
+#define STATE_ON	0x01
+#define STATE_DEFAULT	0x01
+#define STATE_RESTORE	0x02
+
+/* Model Operation Codes */
+#define BT_MESH_MODEL_OP_GEN_ONOFF_GET		BT_MESH_MODEL_OP_2(0x82, 0x01)
+#define BT_MESH_MODEL_OP_GEN_ONOFF_SET		BT_MESH_MODEL_OP_2(0x82, 0x02)
+#define BT_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK	BT_MESH_MODEL_OP_2(0x82, 0x03)
+#define BT_MESH_MODEL_OP_GEN_ONOFF_STATUS	BT_MESH_MODEL_OP_2(0x82, 0x04)
+
+struct led_onoff_state {
+	u8_t current;
+	u8_t previous;
+	u8_t dev_id;
+
+	u8_t last_tid;
+	u16_t last_tx_addr;
+	s64_t last_msg_timestamp;
+};
+
 void mesh_send_hello(void);
 
 u16_t mesh_get_addr(void);
