@@ -9,7 +9,7 @@
 #include <errno.h>
 
 #include <kernel.h>
-#include <board.h>
+#include <soc.h>
 #include <init.h>
 #include <sys_io.h>
 #include <misc/util.h>

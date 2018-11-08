@@ -513,7 +513,7 @@ static void write_other_stack(void)
 }
 
 /**
- * @brief Test to revoke acess to kobject without permission
+ * @brief Test to revoke access to kobject without permission
  *
  * @ingroup kernel_memprotect_tests
  */
@@ -691,8 +691,8 @@ void test_main(void)
 	 */
 #if defined(CONFIG_ARC)
 	/*
-	 * appmem_init_app_memory will accees all partitions
-	 * For CONFIG_ARC_MPU_VER == 3, these partiontons are not added
+	 * appmem_init_app_memory will access all partitions
+	 * For CONFIG_ARC_MPU_VER == 3, these partitions are not added
 	 * into MPU now, so need to disable mpu first to do app_bss_zero()
 	 */
 	arc_core_mpu_disable();

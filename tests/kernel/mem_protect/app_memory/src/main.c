@@ -29,7 +29,7 @@ struct test_struct __kernel_bss kernel_bss;
 struct test_struct __kernel_noinit kernel_noinit;
 
 /* Real kernel variable, check it is in the right place */
-extern struct _kernel _kernel;
+extern struct z_kernel _kernel;
 
 struct test_struct app_data = {3, 4, NULL};
 struct test_struct app_bss;

@@ -8,7 +8,6 @@
 #include <clock_control.h>
 #include <misc/util.h>
 #include <kernel.h>
-#include <board.h>
 #include <errno.h>
 #include <i2c.h>
 

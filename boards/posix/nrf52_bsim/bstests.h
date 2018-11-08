@@ -66,7 +66,7 @@ typedef void (*bst_test_fake_ddriver_postkernel_t)(void);
  */
 typedef void (*bst_test_main_t)(void);
 
-typedef struct {
+struct bst_test_instance {
 	char *test_id;
 	char *test_descr;
 	bst_test_args_t                    test_args_f;
@@ -78,20 +78,21 @@ typedef struct {
 	bst_test_fake_ddriver_prekernel_t  test_fake_ddriver_prekernel_f;
 	bst_test_fake_ddriver_postkernel_t test_fake_ddriver_postkernel_f;
 	bst_test_main_t                    test_main_f;
-} bst_test_instance_t;
+};
 
 #define BSTEST_END_MARKER \
 {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL}
 
-typedef struct test_list_entry_t {
-	bst_test_instance_t         *test_instance;
-	struct test_list_entry_t    *next;
-} bst_test_list_t;
+struct bst_test_list {
+	struct bst_test_instance  *test_instance;
+	struct bst_test_list    *next;
+};
 
-typedef bst_test_list_t *(*bst_test_install_t)(bst_test_list_t *test_tail);
+typedef struct bst_test_list *(*bst_test_install_t)(struct bst_test_list
+							*test_tail);
 
-bst_test_list_t *bst_add_tests(bst_test_list_t *tests,
-		const bst_test_instance_t *test_def);
+struct bst_test_list *bst_add_tests(struct bst_test_list *tests,
+				    const struct bst_test_instance *test_def);
 void bst_set_testapp_mode(char *test_id);
 void bst_pass_args(int argc, char **argv);
 void bst_pre_init(void);
@@ -102,7 +103,7 @@ bool bst_irq_sniffer(int irq_number);
 uint8_t bst_delete(void);
 
 /* These return codes need to fit in a uint8_t (0..255), where 0 = successful */
-typedef enum {Passed = 0, In_progress = 1, Failed = 2} bst_result_t;
+enum bst_result_t {Passed = 0, In_progress = 1, Failed = 2};
 
 void bst_print_testslist(void);
 

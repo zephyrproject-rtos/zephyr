@@ -48,7 +48,7 @@ extern "C" {
   * @{
   */
 #if defined (LPTIM1) || defined (LPTIM2)
-	
+
 /** @defgroup LPTIM_LL LPTIM
   * @{
   */
@@ -121,6 +121,10 @@ typedef struct
 #define LL_LPTIM_ISR_ARROK                    LPTIM_ISR_ARROK    /*!< Autoreload register update OK */
 #define LL_LPTIM_ISR_UP                       LPTIM_ISR_UP       /*!< Counter direction change down to up */
 #define LL_LPTIM_ISR_DOWN                     LPTIM_ISR_DOWN     /*!< Counter direction change up to down */
+#if defined(LPTIM_RCR_REP)
+#define LL_LPTIM_ISR_UE                       LPTIM_ISR_UE       /*!< Update event */
+#define LL_LPTIM_ISR_REPOK                    LPTIM_ISR_REPOK    /*!< Repetition register update OK */
+#endif
 /**
   * @}
   */
@@ -136,6 +140,10 @@ typedef struct
 #define LL_LPTIM_IER_ARROKIE                  LPTIM_IER_ARROKIE      /*!< Autoreload register update OK Interrupt Enable */
 #define LL_LPTIM_IER_UPIE                     LPTIM_IER_UPIE         /*!< Direction change to UP Interrupt Enable */
 #define LL_LPTIM_IER_DOWNIE                   LPTIM_IER_DOWNIE       /*!< Direction change to down Interrupt Enable */
+#if defined(LPTIM_RCR_REP)
+#define LL_LPTIM_IER_UEIE                     LPTIM_IER_UEIE         /*!< Update event Interrupt Enable */
+#define LL_LPTIM_IER_REPOKIE                  LPTIM_IER_REPOKIE      /*!< Repetition register update OK Interrupt Enable */
+#endif
 /**
   * @}
   */
@@ -396,6 +404,59 @@ __STATIC_INLINE void LL_LPTIM_StartCounter(LPTIM_TypeDef *LPTIMx, uint32_t Opera
   MODIFY_REG(LPTIMx->CR, LPTIM_CR_CNTSTRT | LPTIM_CR_SNGSTRT, OperatingMode);
 }
 
+#if defined(LPTIM_CR_RSTARE)
+/**
+  * @brief  Enable reset after read.
+  * @note After calling this function any read access to LPTIM_CNT
+  *        register will asynchronously reset the LPTIM_CNT register content.
+  * @rmtoll CR           RSTARE        LL_LPTIM_EnableResetAfterRead
+  * @param  LPTIMx Low-Power Timer instance
+  * @retval None
+  */
+__STATIC_INLINE void LL_LPTIM_EnableResetAfterRead(LPTIM_TypeDef *LPTIMx)
+{
+  SET_BIT(LPTIMx->CR, LPTIM_CR_RSTARE);
+}
+
+/**
+  * @brief  Disable reset after read.
+  * @rmtoll CR           RSTARE        LL_LPTIM_DisableResetAfterRead
+  * @param  LPTIMx Low-Power Timer instance
+  * @retval None
+  */
+__STATIC_INLINE void LL_LPTIM_DisableResetAfterRead(LPTIM_TypeDef *LPTIMx)
+{
+  CLEAR_BIT(LPTIMx->CR, LPTIM_CR_RSTARE);
+}
+
+/**
+  * @brief  Indicate whether the reset after read feature is enabled.
+  * @rmtoll CR           RSTARE        LL_LPTIM_DisableResetAfterRead
+  * @param  LPTIMx Low-Power Timer instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t LL_LPTIM_IsEnabledResetAfterRead(LPTIM_TypeDef *LPTIMx)
+{
+  return (READ_BIT(LPTIMx->CR, LPTIM_CR_RSTARE) == (LPTIM_CR_RSTARE));
+}
+#endif
+
+#if defined(LPTIM_CR_COUNTRST)
+/**
+  * @brief  Reset of the LPTIM_CNT counter register (synchronous).
+  * @note Due to the synchronous nature of this reset, it only takes
+  *       place after a synchronization delay of 3 LPTIM core clock cycles
+  *      (LPTIM core clock may be different from APB clock).
+  * @note COUNTRST is automatically cleared by hardware
+  * @rmtoll CR           COUNTRST       LL_LPTIM_ResetCounter\n
+  * @param  LPTIMx Low-Power Timer instance
+  * @retval None
+  */
+__STATIC_INLINE void LL_LPTIM_ResetCounter(LPTIM_TypeDef *LPTIMx)
+{
+  SET_BIT(LPTIMx->CR, LPTIM_CR_COUNTRST);
+}
+#endif
 
 /**
   * @brief  Set the LPTIM registers update mode (enable/disable register preload)
@@ -453,6 +514,32 @@ __STATIC_INLINE uint32_t LL_LPTIM_GetAutoReload(LPTIM_TypeDef *LPTIMx)
 {
   return (uint32_t)(READ_BIT(LPTIMx->ARR, LPTIM_ARR_ARR));
 }
+
+#if defined(LPTIM_RCR_REP)
+/**
+  * @brief  Set the repetition value
+  * @note The LPTIMx_RCR register content must only be modified when the LPTIM is enabled
+  * @rmtoll RCR          REP           LL_LPTIM_SetRepetition
+  * @param  LPTIMx Low-Power Timer instance
+  * @param  Repetition Value between Min_Data=0x00 and Max_Data=0xFF
+  * @retval None
+  */
+__STATIC_INLINE void LL_LPTIM_SetRepetition(LPTIM_TypeDef *LPTIMx, uint32_t Repetition)
+{
+  MODIFY_REG(LPTIMx->RCR, LPTIM_RCR_REP, Repetition);
+}
+
+/**
+  * @brief  Get the repetition value
+  * @rmtoll RCR          REP           LL_LPTIM_GetRepetition
+  * @param  LPTIMx Low-Power Timer instance
+  * @retval Repetition Value between Min_Data=0x00 and Max_Data=0xFF
+  */
+__STATIC_INLINE uint32_t LL_LPTIM_GetRepetition(LPTIM_TypeDef *LPTIMx)
+{
+  return (uint32_t)(READ_BIT(LPTIMx->RCR, LPTIM_RCR_REP));
+}
+#endif
 
 /**
   * @brief  Set the compare value
@@ -1150,6 +1237,52 @@ __STATIC_INLINE uint32_t LL_LPTIM_IsActiveFlag_DOWN(LPTIM_TypeDef *LPTIMx)
   return (READ_BIT(LPTIMx->ISR, LPTIM_ISR_DOWN) == (LPTIM_ISR_DOWN));
 }
 
+#if defined(LPTIM_RCR_REP)
+/**
+  * @brief  Clear the repetition register update interrupt flag (REPOKCF).
+  * @rmtoll ICR          REPOKCF       LL_LPTIM_ClearFlag_REPOK
+  * @param  LPTIMx Low-Power Timer instance
+  * @retval None
+  */
+__STATIC_INLINE void LL_LPTIM_ClearFlag_REPOK(LPTIM_TypeDef *LPTIMx)
+{
+  SET_BIT(LPTIMx->ICR, LPTIM_ICR_REPOKCF);
+}
+
+/**
+  * @brief  Informs application whether the APB bus write operation to the LPTIMx_RCR register has been successfully completed; If so, a new one can be initiated.
+  * @rmtoll ISR          REPOK         LL_LPTIM_IsActiveFlag_REPOK
+  * @param  LPTIMx Low-Power Timer instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t LL_LPTIM_IsActiveFlag_REPOK(LPTIM_TypeDef *LPTIMx)
+{
+  return (READ_BIT(LPTIMx->ISR, LPTIM_ISR_REPOK) == (LPTIM_ISR_REPOK));
+}
+
+/**
+  * @brief  Clear the update event flag (UECF).
+  * @rmtoll ICR          UECF          LL_LPTIM_ClearFlag_UE
+  * @param  LPTIMx Low-Power Timer instance
+  * @retval None
+  */
+__STATIC_INLINE void LL_LPTIM_ClearFlag_UE(LPTIM_TypeDef *LPTIMx)
+{
+  SET_BIT(LPTIMx->ICR, LPTIM_ICR_UECF);
+}
+
+/**
+  * @brief  Informs application whether the LPTIMx update event has occurred.
+  * @rmtoll ISR          UE            LL_LPTIM_IsActiveFlag_UE
+  * @param  LPTIMx Low-Power Timer instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t LL_LPTIM_IsActiveFlag_UE(LPTIM_TypeDef *LPTIMx)
+{
+  return (READ_BIT(LPTIMx->ISR, LPTIM_ISR_UE) == (LPTIM_ISR_UE));
+}
+#endif
+
 /**
   * @}
   */
@@ -1388,6 +1521,74 @@ __STATIC_INLINE uint32_t LL_LPTIM_IsEnabledIT_DOWN(LPTIM_TypeDef *LPTIMx)
 {
   return (READ_BIT(LPTIMx->IER, LPTIM_IER_DOWNIE) == (LPTIM_IER_DOWNIE));
 }
+
+#if defined(LPTIM_RCR_REP)
+/**
+  * @brief  Enable repetition register update successfully completed interrupt (REPOKIE).
+  * @rmtoll IER          REPOKIE       LL_LPTIM_EnableIT_REPOK
+  * @param  LPTIMx Low-Power Timer instance
+  * @retval None
+  */
+__STATIC_INLINE void LL_LPTIM_EnableIT_REPOK(LPTIM_TypeDef *LPTIMx)
+{
+  SET_BIT(LPTIMx->IER, LPTIM_IER_REPOKIE);
+}
+
+/**
+  * @brief  Disable repetition register update successfully completed interrupt (REPOKIE).
+  * @rmtoll IER          REPOKIE       LL_LPTIM_DisableIT_REPOK
+  * @param  LPTIMx Low-Power Timer instance
+  * @retval None
+  */
+__STATIC_INLINE void LL_LPTIM_DisableIT_REPOK(LPTIM_TypeDef *LPTIMx)
+{
+  CLEAR_BIT(LPTIMx->IER, LPTIM_IER_REPOKIE);
+}
+
+/**
+  * @brief  Indicates whether the repetition register update successfully completed interrupt (REPOKIE) is enabled.
+  * @rmtoll IER          REPOKIE       LL_LPTIM_IsEnabledIT_REPOK
+  * @param  LPTIMx Low-Power Timer instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t LL_LPTIM_IsEnabledIT_REPOK(LPTIM_TypeDef *LPTIMx)
+{
+  return (READ_BIT(LPTIMx->IER, LPTIM_IER_REPOKIE) == (LPTIM_IER_REPOKIE));
+}
+
+/**
+  * @brief  Enable update event interrupt (UEIE).
+  * @rmtoll IER          UEIE          LL_LPTIM_EnableIT_UE
+  * @param  LPTIMx Low-Power Timer instance
+  * @retval None
+  */
+__STATIC_INLINE void LL_LPTIM_EnableIT_UE(LPTIM_TypeDef *LPTIMx)
+{
+  SET_BIT(LPTIMx->IER, LPTIM_IER_UEIE);
+}
+
+/**
+  * @brief  Disable update event interrupt (UEIE).
+  * @rmtoll IER          UEIE          LL_LPTIM_DisableIT_UE
+  * @param  LPTIMx Low-Power Timer instance
+  * @retval None
+  */
+__STATIC_INLINE void LL_LPTIM_DisableIT_UE(LPTIM_TypeDef *LPTIMx)
+{
+  CLEAR_BIT(LPTIMx->IER, LPTIM_IER_UEIE);
+}
+
+/**
+  * @brief  Indicates whether the update event interrupt (UEIE) is enabled.
+  * @rmtoll IER          UEIE          LL_LPTIM_IsEnabledIT_UE
+  * @param  LPTIMx Low-Power Timer instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t LL_LPTIM_IsEnabledIT_UE(LPTIM_TypeDef *LPTIMx)
+{
+  return (READ_BIT(LPTIMx->IER, LPTIM_IER_UEIE) == (LPTIM_IER_UEIE));
+}
+#endif
 
 /**
   * @}

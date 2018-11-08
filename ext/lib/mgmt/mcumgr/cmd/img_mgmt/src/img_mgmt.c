@@ -30,6 +30,8 @@
 #include "img_mgmt_priv.h"
 #include "img_mgmt_config.h"
 
+#define IMG_MGMT_DATA_SHA_LEN 32
+
 static mgmt_handler_fn img_mgmt_upload;
 static mgmt_handler_fn img_mgmt_erase;
 
@@ -66,6 +68,10 @@ static struct {
 
     /** Total length of image currently being uploaded. */
     size_t len;
+
+    /** Hash of image data; used for resume of a partial upload. */
+    uint8_t data_sha_len;
+    uint8_t data_sha[IMG_MGMT_DATA_SHA_LEN];
 } img_mgmt_ctxt;
 
 /**
@@ -247,6 +253,9 @@ img_mgmt_erase(struct mgmt_ctxt *ctxt)
         return MGMT_ERR_ENOMEM;
     }
 
+    /* reset uploading information on erase */
+    img_mgmt_ctxt.uploading = false;
+
     return 0;
 }
 
@@ -270,25 +279,34 @@ img_mgmt_encode_upload_rsp(struct mgmt_ctxt *ctxt, int status)
     return 0;
 }
 
+/* check if header for first packet is valid */
+static int
+img_mgmt_check_header(const uint8_t *req_data, size_t len)
+{
+    struct image_header hdr;
+
+    if (len < sizeof(hdr)) {
+        return MGMT_ERR_EINVAL;
+    }
+
+    memcpy(&hdr, req_data, sizeof(hdr));
+    if (hdr.ih_magic != IMAGE_MAGIC) {
+        return MGMT_ERR_EINVAL;
+    }
+
+    return 0;
+}
+
 /**
  * Processes an upload request specifying an offset of 0 (i.e., the first image
  * chunk).  The caller is responsible for encoding the response.
  */
 static int
 img_mgmt_upload_first_chunk(struct mgmt_ctxt *ctxt, const uint8_t *req_data,
-                            size_t len)
+                            size_t len, const uint8_t *data_sha,
+                            size_t data_sha_len)
 {
-    struct image_header hdr;
     int rc;
-
-    if (len < sizeof hdr) {
-        return MGMT_ERR_EINVAL;
-    }
-
-    memcpy(&hdr, req_data, sizeof hdr);
-    if (hdr.ih_magic != IMAGE_MAGIC) {
-        return MGMT_ERR_EINVAL;
-    }
 
     if (img_mgmt_slot_in_use(1)) {
         /* No free slot. */
@@ -304,6 +322,16 @@ img_mgmt_upload_first_chunk(struct mgmt_ctxt *ctxt, const uint8_t *req_data,
     img_mgmt_ctxt.off = 0;
     img_mgmt_ctxt.len = 0;
 
+    /*
+     * We accept SHA trimmed to any length by client since it's up to client
+     * to make sure provided data are good enough to avoid collisions when
+     * resuming upload.
+     */
+    img_mgmt_ctxt.data_sha_len = data_sha_len;
+    memcpy(img_mgmt_ctxt.data_sha, data_sha, data_sha_len);
+    memset(&img_mgmt_ctxt.data_sha[data_sha_len], 0,
+           IMG_MGMT_DATA_SHA_LEN - data_sha_len);
+
     return 0;
 }
 
@@ -314,6 +342,8 @@ static int
 img_mgmt_upload(struct mgmt_ctxt *ctxt)
 {
     uint8_t img_mgmt_data[IMG_MGMT_UL_CHUNK_SIZE];
+    uint8_t data_sha[IMG_MGMT_DATA_SHA_LEN];
+    size_t data_sha_len = 0;
     unsigned long long len;
     unsigned long long off;
     size_t data_len;
@@ -321,7 +351,7 @@ img_mgmt_upload(struct mgmt_ctxt *ctxt)
     bool last;
     int rc;
 
-    const struct cbor_attr_t off_attr[4] = {
+    const struct cbor_attr_t off_attr[] = {
         [0] = {
             .attribute = "data",
             .type = CborAttrByteStringType,
@@ -341,7 +371,14 @@ img_mgmt_upload(struct mgmt_ctxt *ctxt)
             .addr.uinteger = &off,
             .nodefault = true
         },
-        [3] = { 0 },
+        [3] = {
+            .attribute = "sha",
+            .type = CborAttrByteStringType,
+            .addr.bytestring.data = data_sha,
+            .addr.bytestring.len = &data_sha_len,
+            .len = sizeof(data_sha)
+         },
+         [4] = { 0 },
     };
 
     len = ULLONG_MAX;
@@ -358,7 +395,31 @@ img_mgmt_upload(struct mgmt_ctxt *ctxt)
             return MGMT_ERR_EINVAL;
         }
 
-        rc = img_mgmt_upload_first_chunk(ctxt, img_mgmt_data, data_len);
+        rc = img_mgmt_check_header(img_mgmt_data, data_len);
+        if (rc) {
+            return rc;
+        }
+
+        /* Reject if SHA len is to big */
+        if (data_sha_len > IMG_MGMT_DATA_SHA_LEN) {
+            return MGMT_ERR_EINVAL;
+        }
+
+        /*
+         * If request includes proper data hash we can check whether there is
+         * upload in progress (interrupted due to e.g. link disconnection) with
+         * the same data hash so we can just resume it by simply including
+         * current upload offset in response.
+         */
+         if ((data_sha_len > 0) && img_mgmt_ctxt.uploading) {
+            if ((img_mgmt_ctxt.data_sha_len == data_sha_len) &&
+                    !memcmp(img_mgmt_ctxt.data_sha, data_sha, data_sha_len)) {
+                return img_mgmt_encode_upload_rsp(ctxt, 0);
+            }
+        }
+
+        rc = img_mgmt_upload_first_chunk(ctxt, img_mgmt_data, data_len,
+                                         data_sha, data_sha_len);
         if (rc != 0) {
             return rc;
         }

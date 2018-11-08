@@ -55,7 +55,7 @@
 /** @defgroup SPIEx_Private_Constants SPIEx Private Constants
   * @{
   */
-#define SPI_FIFO_SIZE       4
+#define SPI_FIFO_SIZE       4UL
 /**
   * @}
   */

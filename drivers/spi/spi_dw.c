@@ -1,11 +1,11 @@
-/* spi_dw.c - Designware SPI driver implementation */
-
 /*
  * Copyright (c) 2015 Intel Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#define LOG_DOMAIN "SPI DW"
+
+/* spi_dw.c - Designware SPI driver implementation */
+
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(spi_dw);
@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(spi_dw);
 #include <kernel.h>
 #include <arch/cpu.h>
 
-#include <board.h>
+#include <soc.h>
 #include <device.h>
 #include <init.h>
 

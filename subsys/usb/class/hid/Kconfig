@@ -31,4 +31,10 @@ config USB_HID_MAX_PAYLOAD_SIZE
 	help
 	  Max allowed payload size over USB HID Class
 
+config USB_HID_POLL_INTERVAL_MS
+	int "Polling interval"
+	default 9
+	help
+	  Polling interval in ms selected by the USB HID Device.
+
 endif # USB_DEVICE_HID

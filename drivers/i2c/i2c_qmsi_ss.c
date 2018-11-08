@@ -7,7 +7,7 @@
 #include <errno.h>
 #include <device.h>
 #include <i2c.h>
-#include <board.h>
+#include <soc.h>
 
 #include "qm_ss_i2c.h"
 #include "qm_ss_isr.h"

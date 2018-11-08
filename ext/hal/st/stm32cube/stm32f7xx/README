@@ -6,7 +6,7 @@ Origin:
    http://www.st.com/en/embedded-software/stm32cubef7.html
 
 Status:
-   version 1.11.0
+   version 1.12.0
 
 Purpose:
    ST Microelectronics official MCU package for STM32F7 series.
@@ -23,7 +23,7 @@ URL:
    http://www.st.com/en/embedded-software/stm32cubef7.html
 
 commit:
-   version 1.11.0
+   version 1.12.0
 
 Maintained-by:
    External

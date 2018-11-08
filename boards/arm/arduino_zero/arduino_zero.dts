@@ -46,17 +46,23 @@
 	status = "ok";
 	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
+	rxpo = <3>;
+	txpo = <1>;
 };
 
 &sercom5 {
 	status = "ok";
 	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
+	rxpo = <3>;
+	txpo = <1>;
 };
 
 &sercom4 {
 	status = "ok";
 	compatible = "atmel,sam0-spi";
+	dipo = <0>;
+	dopo = <1>;
 };
 
 &flash0 {

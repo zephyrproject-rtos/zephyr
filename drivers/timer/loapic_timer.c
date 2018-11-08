@@ -73,7 +73,6 @@
 #include <arch/x86/irq_controller.h>
 #include <power.h>
 #include <device.h>
-#include <board.h>
 #include <kernel_structs.h>
 
 #include "legacy_api.h"

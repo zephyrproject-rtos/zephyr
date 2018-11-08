@@ -12,3 +12,14 @@ tests:
       regex:
         - "threadA: Hello World from (.*)!"
         - "threadB: Hello World from (.*)!"
+  sample.synchronization.openocd:
+    tags: kernel synchronization
+    extra_configs:
+      - CONFIG_OPENOCD_SUPPORT=y
+    arch_exclude: posix xtensa
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "thread_a: Hello World from (.*)!"
+        - "thread_b: Hello World from (.*)!"

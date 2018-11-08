@@ -11,6 +11,8 @@ config DISK_ACCESS
 	help
 	  Enable disk access over a supported media backend like FLASH or RAM
 
+if DISK_ACCESS
+
 config DISK_ACCESS_MAX_VOLUMES
 	int "Maximum Disk Interfaces"
 	default 8
@@ -20,8 +22,6 @@ config DISK_ACCESS_MAX_VOLUMES
 module = DISK
 module-str = disk
 source "subsys/logging/Kconfig.template.log_config"
-
-if DISK_ACCESS
 
 config DISK_ACCESS_RAM
 	bool "RAM Disk"

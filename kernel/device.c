@@ -17,14 +17,6 @@ extern struct device __device_POST_KERNEL_start[];
 extern struct device __device_APPLICATION_start[];
 extern struct device __device_init_end[];
 
-static struct device *config_levels[] = {
-	__device_PRE_KERNEL_1_start,
-	__device_PRE_KERNEL_2_start,
-	__device_POST_KERNEL_start,
-	__device_APPLICATION_start,
-	/* End marker */
-	__device_init_end,
-};
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 extern u32_t __device_busy_start[];
@@ -43,15 +35,23 @@ extern u32_t __device_busy_end[];
  *
  * @param level init level to run.
  */
-void _sys_device_do_config_level(int level)
+void _sys_device_do_config_level(s32_t level)
 {
 	struct device *info;
+	static struct device *config_levels[] = {
+		__device_PRE_KERNEL_1_start,
+		__device_PRE_KERNEL_2_start,
+		__device_POST_KERNEL_start,
+		__device_APPLICATION_start,
+		/* End marker */
+		__device_init_end,
+	};
 
 	for (info = config_levels[level]; info < config_levels[level+1];
 								info++) {
-		struct device_config *device = info->config;
+		struct device_config *device_conf = info->config;
 
-		(void)device->init(info);
+		(void)device_conf->init(info);
 		_k_object_init(info);
 	}
 }
@@ -66,17 +66,18 @@ struct device *device_get_binding(const char *name)
 	 * performed.  Reserve string comparisons for a fallback.
 	 */
 	for (info = __device_init_start; info != __device_init_end; info++) {
-		if (info->driver_api != NULL && info->config->name == name) {
+		if ((info->driver_api != NULL) &&
+		    (info->config->name == name)) {
 			return info;
 		}
 	}
 
 	for (info = __device_init_start; info != __device_init_end; info++) {
-		if (!info->driver_api) {
+		if (info->driver_api == NULL) {
 			continue;
 		}
 
-		if (!strcmp(name, info->config->name)) {
+		if (strcmp(name, info->config->name) == 0) {
 			return info;
 		}
 	}

@@ -123,6 +123,7 @@ static bool expecting_dad;
 static u32_t dad_time[3];
 static bool test_failed;
 static struct k_sem wait_data;
+static bool recv_cb_called;
 
 #define WAIT_TIME 250
 #define WAIT_TIME_LONG MSEC_PER_SEC
@@ -174,7 +175,7 @@ static struct net_pkt *prepare_ra_message(void)
 	struct net_linkaddr lladdr_src;
 	struct net_linkaddr lladdr_dst;
 	struct net_pkt *pkt;
-	struct net_buf *frag;
+	struct net_buf *frag, *frag_ll;
 	struct net_if *iface;
 
 	iface = net_if_get_default();
@@ -189,23 +190,37 @@ static struct net_pkt *prepare_ra_message(void)
 
 	net_pkt_frag_add(pkt, frag);
 
+	net_pkt_set_iface(pkt, iface);
+	net_pkt_set_family(pkt, AF_INET6);
+	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
+	net_pkt_set_ipv6_ext_len(pkt, 0);
+
+	/* First fragment contains now IPv6 header and not ethernet frame
+	 * because ICMPv6 calculation function does not understand ethernet
+	 * header.
+	 */
+	memcpy(net_buf_add(frag, sizeof(icmpv6_ra)),
+	       icmpv6_ra, sizeof(icmpv6_ra));
+
+	zassert_false(net_icmpv6_set_chksum(pkt) < 0, "Cannot set checksum");
+
+	/* Then create ethernet fragment */
+	frag_ll = net_pkt_get_frag(pkt, K_FOREVER);
+
 	lladdr_dst.addr = iface->if_dev->link_addr.addr;
 	lladdr_dst.len = 6;
 
 	lladdr_src.addr = NULL;
 	lladdr_src.len = 0;
 
+	net_pkt_frag_insert(pkt, frag_ll);
+
 	net_eth_fill_header(ctx, pkt, htons(NET_ETH_PTYPE_IPV6),
 			    lladdr_src.addr, lladdr_dst.addr);
 
-	net_buf_add(frag, net_pkt_ll_reserve(pkt));
+	net_buf_add(frag_ll, net_pkt_ll_reserve(pkt));
 
-	net_pkt_set_iface(pkt, iface);
-	net_pkt_set_family(pkt, AF_INET6);
-	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
-
-	memcpy(net_buf_add(frag, sizeof(icmpv6_ra)),
-	       icmpv6_ra, sizeof(icmpv6_ra));
+	net_pkt_compact(pkt);
 
 	return pkt;
 }
@@ -347,36 +362,36 @@ static void test_cmp_prefix(void)
 	struct in6_addr prefix2 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x2 } } };
 
-	st = net_is_ipv6_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 64);
+	st = net_ipv6_is_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 64);
 	zassert_true(st, "Prefix /64  compare failed");
 
-	st = net_is_ipv6_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 65);
+	st = net_ipv6_is_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 65);
 	zassert_true(st, "Prefix /65 compare failed");
 
 	/* Set one extra bit in the other prefix for testing /65 */
 	prefix1.s6_addr[8] = 0x80;
 
-	st = net_is_ipv6_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 65);
+	st = net_ipv6_is_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 65);
 	zassert_false(st, "Prefix /65 compare should have failed");
 
 	/* Set two bits in prefix2, it is now /66 */
 	prefix2.s6_addr[8] = 0xc0;
 
-	st = net_is_ipv6_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 65);
+	st = net_ipv6_is_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 65);
 	zassert_true(st, "Prefix /65 compare failed");
 
 	/* Set all remaining bits in prefix2, it is now /128 */
 	(void)memset(&prefix2.s6_addr[8], 0xff, 8);
 
-	st = net_is_ipv6_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 65);
+	st = net_ipv6_is_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 65);
 	zassert_true(st, "Prefix /65 compare failed");
 
 	/* Comparing /64 should be still ok */
-	st = net_is_ipv6_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 64);
+	st = net_ipv6_is_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 64);
 	zassert_true(st, "Prefix /64 compare failed");
 
 	/* But comparing /66 should should fail */
-	st = net_is_ipv6_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 66);
+	st = net_ipv6_is_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 66);
 	zassert_false(st, "Prefix /66 compare should have failed");
 
 }
@@ -1113,6 +1128,302 @@ static void test_dad_timeout(void)
 #endif
 }
 
+#define NET_UDP_HDR(pkt)  ((struct net_udp_hdr *)(net_pkt_udp_data(pkt)))
+
+static void setup_ipv6_udp(struct net_pkt *pkt,
+			   struct in6_addr *local_addr,
+			   struct in6_addr *remote_addr,
+			   u16_t local_port,
+			   u16_t remote_port)
+{
+	static const char payload[] = "foobar";
+
+	NET_IPV6_HDR(pkt)->vtc = 0x60;
+	NET_IPV6_HDR(pkt)->tcflow = 0;
+	NET_IPV6_HDR(pkt)->flow = 0;
+	NET_IPV6_HDR(pkt)->len = htons(NET_UDPH_LEN + strlen(payload));
+
+	NET_IPV6_HDR(pkt)->nexthdr = IPPROTO_UDP;
+	NET_IPV6_HDR(pkt)->hop_limit = 255;
+
+	net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src, local_addr);
+	net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst, remote_addr);
+
+	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
+	net_pkt_set_ipv6_ext_len(pkt, 0);
+
+	net_buf_add(pkt->frags, net_pkt_ip_hdr_len(pkt) +
+				sizeof(struct net_udp_hdr));
+
+	NET_UDP_HDR(pkt)->src_port = htons(local_port);
+	NET_UDP_HDR(pkt)->dst_port = htons(remote_port);
+
+	net_buf_add_mem(pkt->frags, payload, strlen(payload));
+}
+
+static enum net_verdict recv_msg(struct in6_addr *src, struct in6_addr *dst)
+{
+	struct net_pkt *pkt;
+	struct net_buf *frag;
+	struct net_if *iface;
+
+	iface = net_if_get_default();
+
+	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
+				     K_FOREVER);
+
+	NET_ASSERT_INFO(pkt, "Out of TX packets");
+
+	frag = net_pkt_get_frag(pkt, K_FOREVER);
+
+	net_pkt_frag_add(pkt, frag);
+
+	net_pkt_set_iface(pkt, iface);
+	net_pkt_set_family(pkt, AF_INET6);
+	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
+
+	net_pkt_ll_clear(pkt);
+
+	setup_ipv6_udp(pkt, src, dst, 4242, 4321);
+
+	/* We by-pass the normal packet receiving flow in this case in order
+	 * to simplify the testing.
+	 */
+	return net_ipv6_process_pkt(pkt, false);
+}
+
+static int send_msg(struct in6_addr *src, struct in6_addr *dst)
+{
+	struct net_pkt *pkt;
+	struct net_buf *frag;
+	struct net_if *iface;
+
+	iface = net_if_get_default();
+
+	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
+				     K_FOREVER);
+
+	NET_ASSERT_INFO(pkt, "Out of TX packets");
+
+	frag = net_pkt_get_frag(pkt, K_FOREVER);
+
+	net_pkt_frag_add(pkt, frag);
+
+	net_pkt_set_iface(pkt, iface);
+	net_pkt_set_family(pkt, AF_INET6);
+	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
+
+	net_pkt_ll_clear(pkt);
+
+	setup_ipv6_udp(pkt, src, dst, 4242, 4321);
+
+	return net_send_data(pkt);
+}
+
+static void test_src_localaddr_recv(void)
+{
+	struct in6_addr localaddr = { { { 0, 0, 0, 0, 0, 0, 0, 0,
+					  0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+	struct in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+				     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+	enum net_verdict verdict;
+
+	verdict = recv_msg(&localaddr, &addr);
+	zassert_equal(verdict, NET_DROP,
+		      "Local address packet was not dropped");
+}
+
+static void test_dst_localaddr_recv(void)
+{
+	struct in6_addr localaddr = { { { 0, 0, 0, 0, 0, 0, 0, 0,
+					  0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+	struct in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+				     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+	enum net_verdict verdict;
+
+	verdict = recv_msg(&addr, &localaddr);
+	zassert_equal(verdict, NET_DROP,
+		      "Local address packet was not dropped");
+}
+
+static void test_dst_iface_scope_mcast_recv(void)
+{
+	struct in6_addr mcast_iface = { { { 0xff, 0x01, 0, 0, 0, 0, 0, 0,
+					    0, 0, 0, 0, 0, 0, 0, 0 } } };
+	struct in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+				     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+	enum net_verdict verdict;
+
+	verdict = recv_msg(&addr, &mcast_iface);
+	zassert_equal(verdict, NET_DROP,
+		      "Interface scope multicast packet was not dropped");
+}
+
+static void test_dst_zero_scope_mcast_recv(void)
+{
+	struct in6_addr mcast_zero = { { { 0xff, 0x00, 0, 0, 0, 0, 0, 0,
+					   0, 0, 0, 0, 0, 0, 0, 0 } } };
+	struct in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+				     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+	enum net_verdict verdict;
+
+	verdict = recv_msg(&addr, &mcast_zero);
+	zassert_equal(verdict, NET_DROP,
+		      "Zero scope multicast packet was not dropped");
+}
+
+static void test_dst_site_scope_mcast_recv_drop(void)
+{
+	struct in6_addr mcast_site = { { { 0xff, 0x05, 0, 0, 0, 0, 0, 0,
+					   0, 0, 0, 0, 0, 0, 0, 0 } } };
+	struct in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+				     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+	enum net_verdict verdict;
+
+	verdict = recv_msg(&addr, &mcast_site);
+	zassert_equal(verdict, NET_DROP,
+		      "Site scope multicast packet was not dropped");
+}
+
+static void net_ctx_create(struct net_context **ctx)
+{
+	int ret;
+
+	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP, ctx);
+	zassert_equal(ret, 0,
+		      "Context create IPv6 UDP test failed");
+}
+
+static void net_ctx_bind_mcast(struct net_context *ctx, struct in6_addr *maddr)
+{
+	struct sockaddr_in6 addr = {
+		.sin6_family = AF_INET6,
+		.sin6_port = htons(4321),
+		.sin6_addr = { { { 0 } } },
+	};
+	int ret;
+
+	net_ipaddr_copy(&addr.sin6_addr, maddr);
+
+	ret = net_context_bind(ctx, (struct sockaddr *)&addr,
+			       sizeof(struct sockaddr_in6));
+	zassert_equal(ret, 0, "Context bind test failed (%d)", ret);
+}
+
+static void net_ctx_listen(struct net_context *ctx)
+{
+	zassert_true(net_context_listen(ctx, 0),
+		     "Context listen IPv6 UDP test failed");
+}
+
+static void recv_cb(struct net_context *context,
+		    struct net_pkt *pkt,
+		    int status,
+		    void *user_data)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(status);
+	ARG_UNUSED(user_data);
+
+	recv_cb_called = true;
+
+	k_sem_give(&wait_data);
+}
+
+static void net_ctx_recv(struct net_context *ctx)
+{
+	int ret;
+
+	ret = net_context_recv(ctx, recv_cb, 0, NULL);
+	zassert_equal(ret, 0, "Context recv IPv6 UDP failed");
+}
+
+static void join_group(struct in6_addr *mcast_addr)
+{
+	int ret;
+
+	ret = net_ipv6_mld_join(net_if_get_default(), mcast_addr);
+	zassert_equal(ret, 0, "Cannot join IPv6 multicast group");
+}
+
+static void test_dst_site_scope_mcast_recv_ok(void)
+{
+	struct in6_addr mcast_all_dhcp = { { { 0xff, 0x05, 0, 0, 0, 0, 0, 0,
+					    0, 0, 0, 0x01, 0, 0, 0, 0x03 } } };
+	struct in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+				     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+	enum net_verdict verdict;
+	struct net_context *ctx;
+
+	/* The packet will be dropped unless we have a listener and joined the
+	 * group.
+	 */
+	join_group(&mcast_all_dhcp);
+
+	net_ctx_create(&ctx);
+	net_ctx_bind_mcast(ctx, &mcast_all_dhcp);
+	net_ctx_listen(ctx);
+	net_ctx_recv(ctx);
+
+	verdict = recv_msg(&addr, &mcast_all_dhcp);
+	zassert_equal(verdict, NET_OK,
+		      "All DHCP site scope multicast packet was dropped (%d)",
+		      verdict);
+
+	net_context_put(ctx);
+}
+
+static void test_dst_org_scope_mcast_recv(void)
+{
+	struct in6_addr mcast_org = { { { 0xff, 0x08, 0, 0, 0, 0, 0, 0,
+					  0, 0, 0, 0, 0, 0, 0, 0 } } };
+	struct in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+				     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+	enum net_verdict verdict;
+
+	verdict = recv_msg(&addr, &mcast_org);
+	zassert_equal(verdict, NET_DROP,
+		      "Organisation scope multicast packet was not dropped");
+}
+
+static void test_dst_iface_scope_mcast_send(void)
+{
+	struct in6_addr mcast_iface = { { { 0xff, 0x01, 0, 0, 0, 0, 0, 0,
+					    0, 0, 0, 0, 0, 0, 0, 0 } } };
+	struct in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+				     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+	struct net_if_mcast_addr *maddr;
+	struct net_context *ctx;
+	int ret;
+
+	/* Note that there is no need to join the multicast group as the
+	 * interface local scope multicast address packet will not leave the
+	 * device. But we will still need to add proper multicast address to
+	 * the network interface.
+	 */
+	maddr = net_if_ipv6_maddr_add(net_if_get_default(), &mcast_iface);
+	zassert_not_null(maddr, "Cannot add multicast address to interface");
+
+	net_ctx_create(&ctx);
+	net_ctx_bind_mcast(ctx, &mcast_iface);
+	net_ctx_listen(ctx);
+	net_ctx_recv(ctx);
+
+	ret = send_msg(&addr, &mcast_iface);
+	zassert_equal(ret, 0,
+		      "Interface local scope multicast packet was dropped (%d)",
+		      ret);
+
+	k_sem_take(&wait_data, WAIT_TIME);
+
+	zassert_true(recv_cb_called, "No data received on time, "
+		     "IPv6 recv test failed");
+	recv_cb_called = false;
+
+	net_context_put(ctx);
+}
+
 void test_main(void)
 {
 	ztest_test_suite(test_ipv6_fn,
@@ -1133,7 +1444,15 @@ void test_main(void)
 			 ztest_unit_test(test_change_ll_addr),
 			 ztest_unit_test(test_prefix_timeout),
 			 ztest_unit_test(test_prefix_timeout_long),
-			 ztest_unit_test(test_dad_timeout)
+			 ztest_unit_test(test_dad_timeout),
+			 ztest_unit_test(test_src_localaddr_recv),
+			 ztest_unit_test(test_dst_localaddr_recv),
+			 ztest_unit_test(test_dst_iface_scope_mcast_recv),
+			 ztest_unit_test(test_dst_iface_scope_mcast_send),
+			 ztest_unit_test(test_dst_zero_scope_mcast_recv),
+			 ztest_unit_test(test_dst_site_scope_mcast_recv_drop),
+			 ztest_unit_test(test_dst_site_scope_mcast_recv_ok),
+			 ztest_unit_test(test_dst_org_scope_mcast_recv)
 			 );
 	ztest_run_test_suite(test_ipv6_fn);
 }

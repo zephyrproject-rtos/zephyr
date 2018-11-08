@@ -810,7 +810,9 @@ HAL_StatusTypeDef HAL_CAN_ResetError(CAN_HandleTypeDef *hcan);
                          ((BS2) == CAN_BS2_7TQ) || ((BS2) == CAN_BS2_8TQ))
 #define IS_CAN_PRESCALER(PRESCALER) (((PRESCALER) >= 1U) && ((PRESCALER) <= 1024U))
 #define IS_CAN_FILTER_ID_HALFWORD(HALFWORD) ((HALFWORD) <= 0xFFFFU)
+#if   defined(CAN2)
 #define IS_CAN_FILTER_BANK_DUAL(BANK) ((BANK) <= 27U)
+#endif
 #define IS_CAN_FILTER_BANK_SINGLE(BANK) ((BANK) <= 13U)
 #define IS_CAN_FILTER_MODE(MODE) (((MODE) == CAN_FILTERMODE_IDMASK) || \
                                   ((MODE) == CAN_FILTERMODE_IDLIST))

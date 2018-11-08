@@ -78,19 +78,6 @@
 			label= "I2C_2";
 		};
 
-		i2c3: i2c@40005C00 {
-			compatible = "st,stm32-i2c-v2";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x40005C00 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00800000>;
-			interrupts = <72 0>, <73 0>;
-			interrupt-names = "event", "error";
-			status = "disabled";
-			label= "I2C_3";
-		};
-
 		spi3: spi@40003C00 {
 			compatible = "st,stm32-spi-fifo";
 			#address-cells = <1>;

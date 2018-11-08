@@ -129,7 +129,7 @@ static struct usb_ep_cfg_data bluetooth_ep_data[] = {
 
 static void hci_rx_thread(void)
 {
-	USB_DBG("Start USB Bluetooth thread");
+	LOG_DBG("Start USB Bluetooth thread");
 
 	while (true) {
 		struct net_buf *buf;
@@ -150,7 +150,7 @@ static void hci_rx_thread(void)
 				USB_TRANS_WRITE);
 			break;
 		default:
-			USB_ERR("Unknown type %u", bt_buf_get_type(buf));
+			LOG_ERR("Unknown type %u", bt_buf_get_type(buf));
 			break;
 		}
 
@@ -166,7 +166,7 @@ static void hci_tx_thread(void)
 		buf = net_buf_get(&tx_queue, K_FOREVER);
 
 		if (bt_send(buf)) {
-			USB_ERR("Error sending to driver");
+			LOG_ERR("Error sending to driver");
 			net_buf_unref(buf);
 		}
 	}
@@ -189,7 +189,7 @@ static void acl_read_cb(u8_t ep, int size, void *priv)
 
 	buf = net_buf_alloc(&acl_tx_pool, K_NO_WAIT);
 	if (!buf) {
-		USB_ERR("Cannot get free buffer\n");
+		LOG_ERR("Cannot get free buffer\n");
 		return;
 	}
 	net_buf_reserve(buf, CONFIG_BT_HCI_RESERVE);
@@ -205,35 +205,35 @@ static void bluetooth_status_cb(enum usb_dc_status_code status,
 	/* Check the USB status and do needed action if required */
 	switch (status) {
 	case USB_DC_ERROR:
-		USB_DBG("USB device error");
+		LOG_DBG("USB device error");
 		break;
 	case USB_DC_RESET:
-		USB_DBG("USB device reset detected");
+		LOG_DBG("USB device reset detected");
 		break;
 	case USB_DC_CONNECTED:
-		USB_DBG("USB device connected");
+		LOG_DBG("USB device connected");
 		break;
 	case USB_DC_CONFIGURED:
-		USB_DBG("USB device configured");
+		LOG_DBG("USB device configured");
 		/* Start reading */
 		acl_read_cb(bluetooth_ep_data[HCI_OUT_EP_IDX].ep_addr, 0, NULL);
 		break;
 	case USB_DC_DISCONNECTED:
-		USB_DBG("USB device disconnected");
+		LOG_DBG("USB device disconnected");
 		/* Cancel any transfer */
 		usb_cancel_transfer(bluetooth_ep_data[HCI_INT_EP_IDX].ep_addr);
 		usb_cancel_transfer(bluetooth_ep_data[HCI_IN_EP_IDX].ep_addr);
 		usb_cancel_transfer(bluetooth_ep_data[HCI_OUT_EP_IDX].ep_addr);
 		break;
 	case USB_DC_SUSPEND:
-		USB_DBG("USB device suspended");
+		LOG_DBG("USB device suspended");
 		break;
 	case USB_DC_RESUME:
-		USB_DBG("USB device resumed");
+		LOG_DBG("USB device resumed");
 		break;
 	case USB_DC_UNKNOWN:
 	default:
-		USB_DBG("USB unknown state");
+		LOG_DBG("USB unknown state");
 		break;
 	}
 }
@@ -243,16 +243,16 @@ static int bluetooth_class_handler(struct usb_setup_packet *setup,
 {
 	struct net_buf *buf;
 
-	USB_DBG("len %u", *len);
+	LOG_DBG("len %u", *len);
 
 	if (!*len || *len > CMD_BUF_SIZE) {
-		USB_ERR("Incorrect length: %d\n", *len);
+		LOG_ERR("Incorrect length: %d\n", *len);
 		return -EINVAL;
 	}
 
 	buf = net_buf_alloc(&tx_pool, K_NO_WAIT);
 	if (!buf) {
-		USB_ERR("Cannot get free buffer\n");
+		LOG_ERR("Cannot get free buffer\n");
 		return -ENOMEM;
 	}
 
@@ -290,11 +290,11 @@ static int bluetooth_init(struct device *dev)
 {
 	int ret;
 
-	USB_DBG("Initialization");
+	LOG_DBG("Initialization");
 
 	ret = bt_enable_raw(&rx_queue);
 	if (ret) {
-		USB_ERR("Failed to open Bluetooth raw channel: %d", ret);
+		LOG_ERR("Failed to open Bluetooth raw channel: %d", ret);
 		return ret;
 	}
 
@@ -305,14 +305,14 @@ static int bluetooth_init(struct device *dev)
 	/* Initialize the USB driver with the right configuration */
 	ret = usb_set_config(&bluetooth_config);
 	if (ret < 0) {
-		USB_ERR("Failed to config USB");
+		LOG_ERR("Failed to config USB");
 		return ret;
 	}
 
 	/* Enable USB driver */
 	ret = usb_enable(&bluetooth_config);
 	if (ret < 0) {
-		USB_ERR("Failed to enable USB");
+		LOG_ERR("Failed to enable USB");
 		return ret;
 	}
 #endif

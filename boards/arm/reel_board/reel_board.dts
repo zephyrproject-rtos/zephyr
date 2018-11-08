@@ -10,14 +10,12 @@
 
 / {
 	model = "reel board";
-	compatible = "nordic,pca10056-dk", "nordic,nrf52840-qiaa",
+	compatible = "phytec,reel_board", "nordic,nrf52840-qiaa",
 		     "nordic,nrf52840";
 
 	chosen {
 		zephyr,console = &uart0;
-#ifdef CONFIG_MCUMGR_SMP_UART
 		zephyr,uart-mcumgr = &uart0;
-#endif
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};

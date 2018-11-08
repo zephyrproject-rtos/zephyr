@@ -27,11 +27,11 @@
 #include <sys_clock.h>
 
 /*
- * Include board.h from platform to get IRQ number.
+ * Include soc.h from platform to get IRQ number.
  * NOTE: Cortex-M does not need IRQ numbers
  */
-#if !defined(CONFIG_CPU_CORTEX_M)
-#include <board.h>
+#if !defined(CONFIG_CPU_CORTEX_M) && !defined(CONFIG_XTENSA)
+#include <soc.h>
 #endif
 
 #define THREAD_STACKSIZE    (512 + CONFIG_TEST_EXTRA_STACKSIZE)

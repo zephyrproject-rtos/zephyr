@@ -117,7 +117,7 @@ typedef struct _dnode sys_dnode_t;
  * @param __n The field name of sys_dnode_t within the container struct
  */
 #define SYS_DLIST_CONTAINER(__dn, __cn, __n) \
-	(__dn ? CONTAINER_OF(__dn, __typeof__(*__cn), __n) : NULL)
+	((__dn != NULL) ? CONTAINER_OF(__dn, __typeof__(*__cn), __n) : NULL)
 /*
  * @brief Provide the primitive to peek container of the list head
  *
@@ -136,7 +136,8 @@ typedef struct _dnode sys_dnode_t;
  * @param __n The field name of sys_dnode_t within the container struct
  */
 #define SYS_DLIST_PEEK_NEXT_CONTAINER(__dl, __cn, __n) \
-	((__cn) ? SYS_DLIST_CONTAINER(sys_dlist_peek_next(__dl, &(__cn->__n)), \
+	((__cn != NULL) ? \
+	 SYS_DLIST_CONTAINER(sys_dlist_peek_next(__dl, &(__cn->__n)),	\
 				      __cn, __n) : NULL)
 
 /**
@@ -309,7 +310,7 @@ static inline sys_dnode_t *sys_dlist_peek_next_no_check(sys_dlist_t *list,
 static inline sys_dnode_t *sys_dlist_peek_next(sys_dlist_t *list,
 					       sys_dnode_t *node)
 {
-	return node ? sys_dlist_peek_next_no_check(list, node) : NULL;
+	return (node != NULL) ? sys_dlist_peek_next_no_check(list, node) : NULL;
 }
 
 /**
@@ -344,7 +345,7 @@ static inline sys_dnode_t *sys_dlist_peek_prev_no_check(sys_dlist_t *list,
 static inline sys_dnode_t *sys_dlist_peek_prev(sys_dlist_t *list,
 					       sys_dnode_t *node)
 {
-	return node ? sys_dlist_peek_prev_no_check(list, node) : NULL;
+	return (node != NULL) ? sys_dlist_peek_prev_no_check(list, node) : NULL;
 }
 
 /**
@@ -416,7 +417,7 @@ static inline void sys_dlist_prepend(sys_dlist_t *list, sys_dnode_t *node)
 static inline void sys_dlist_insert_after(sys_dlist_t *list,
 	sys_dnode_t *insert_point, sys_dnode_t *node)
 {
-	if (!insert_point) {
+	if (insert_point == NULL) {
 		sys_dlist_prepend(list, node);
 	} else {
 		node->next = insert_point->next;
@@ -442,7 +443,7 @@ static inline void sys_dlist_insert_after(sys_dlist_t *list,
 static inline void sys_dlist_insert_before(sys_dlist_t *list,
 	sys_dnode_t *insert_point, sys_dnode_t *node)
 {
-	if (!insert_point) {
+	if (insert_point == NULL) {
 		sys_dlist_append(list, node);
 	} else {
 		node->prev = insert_point->prev;
@@ -513,14 +514,13 @@ static inline void sys_dlist_remove(sys_dnode_t *node)
 
 static inline sys_dnode_t *sys_dlist_get(sys_dlist_t *list)
 {
-	sys_dnode_t *node;
+	sys_dnode_t *node = NULL;
 
-	if (sys_dlist_is_empty(list)) {
-		return NULL;
+	if (!sys_dlist_is_empty(list)) {
+		node = list->head;
+		sys_dlist_remove(node);
 	}
 
-	node = list->head;
-	sys_dlist_remove(node);
 	return node;
 }
 

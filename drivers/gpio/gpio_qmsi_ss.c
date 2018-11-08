@@ -7,7 +7,7 @@
 #include <errno.h>
 
 #include <gpio.h>
-#include <board.h>
+#include <soc.h>
 #include <misc/util.h>
 
 #include "qm_ss_gpio.h"

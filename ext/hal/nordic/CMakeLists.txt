@@ -11,6 +11,12 @@ if(CONFIG_HAS_NRFX)
   zephyr_include_directories(nrfx/mdk)
   zephyr_include_directories(.)
 
+  # Define MDK defines globally
+  zephyr_compile_definitions_ifdef(CONFIG_SOC_SERIES_NRF51X NRF51)
+  zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF52810      NRF52810_XXAA)
+  zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF52832      NRF52832_XXAA)
+  zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF52840      NRF52840_XXAA)
+
   zephyr_sources_ifdef(CONFIG_SOC_SERIES_NRF51X nrfx/mdk/system_nrf51.c)
   zephyr_sources_ifdef(CONFIG_SOC_NRF52810      nrfx/mdk/system_nrf52810.c)
   zephyr_sources_ifdef(CONFIG_SOC_NRF52832      nrfx/mdk/system_nrf52.c)
@@ -22,7 +28,9 @@ if(CONFIG_HAS_NRFX)
 
   zephyr_sources_ifdef(CONFIG_NRFX_ADC     nrfx/drivers/src/nrfx_adc.c)
   zephyr_sources_ifdef(CONFIG_NRFX_CLOCK   nrfx/drivers/src/nrfx_clock.c)
+  zephyr_sources_ifdef(CONFIG_NRFX_GPIOTE  nrfx/drivers/src/nrfx_gpiote.c)
   zephyr_sources_ifdef(CONFIG_NRFX_NFCT    nrfx/drivers/src/nrfx_nfct.c)
+  zephyr_sources_ifdef(CONFIG_NRFX_PPI     nrfx/drivers/src/nrfx_ppi.c)
   zephyr_sources_ifdef(CONFIG_NRFX_PWM     nrfx/drivers/src/nrfx_pwm.c)
   zephyr_sources_ifdef(CONFIG_NRFX_QDEC    nrfx/drivers/src/nrfx_qdec.c)
   zephyr_sources_ifdef(CONFIG_NRFX_RTC     nrfx/drivers/src/nrfx_rtc.c)

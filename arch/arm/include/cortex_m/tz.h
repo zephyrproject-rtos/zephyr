@@ -167,6 +167,23 @@ void tz_nonsecure_exception_prio_config(int secure_boost);
  */
 void tz_nbanked_exception_target_state_set(int secure_state);
 
+#if defined(CONFIG_ARMV7_M_ARMV8_M_FP)
+/**
+ * @brief Allow Non-Secure firmware to access the FPU
+ *
+ * Function allows the Non-Secure firmware to access the Floating Point Unit.
+ *
+ * Relevant for ARMv8-M MCUs supporting the Floating Point Extension.
+ *
+ * Note:
+ *
+ * This function shall only be called from Secure state.
+ *
+ * @return N/A
+ */
+void tz_nonsecure_fpu_access_enable(void);
+#endif /* CONFIG_ARMV7_M_ARMV8_M_FP */
+
 /**
  *
  * @brief Configure SAU

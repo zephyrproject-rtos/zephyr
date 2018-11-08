@@ -11,7 +11,7 @@
 #define ZEPHYR_DRIVERS_IPM_IPM_QUARK_SE_H_
 
 #include <kernel.h>
-#include <board.h> /* for SCSS_REGISTER_BASE */
+#include <soc.h> /* for SCSS_REGISTER_BASE */
 #include <ipm.h>
 #include <device.h>
 #include <init.h>

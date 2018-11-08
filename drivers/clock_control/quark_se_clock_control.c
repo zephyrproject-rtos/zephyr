@@ -10,7 +10,7 @@
 #include <arch/cpu.h>
 
 #include <misc/__assert.h>
-#include <board.h>
+#include <soc.h>
 #include <device.h>
 #include <init.h>
 

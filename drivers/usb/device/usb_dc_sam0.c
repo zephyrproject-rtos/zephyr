@@ -265,12 +265,12 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 	u8_t ep_idx = cfg->ep_addr & ~USB_EP_DIR_MASK;
 
 	if ((cfg->ep_type == USB_DC_EP_CONTROL) && ep_idx) {
-		USB_ERR("invalid endpoint configuration");
+		LOG_ERR("invalid endpoint configuration");
 		return -1;
 	}
 
 	if (ep_idx > CONFIG_USB_DC_SAM0_NUM_BIDIR_ENDPOINTS) {
-		USB_ERR("endpoint index/address too high");
+		LOG_ERR("endpoint index/address too high");
 		return -1;
 	}
 

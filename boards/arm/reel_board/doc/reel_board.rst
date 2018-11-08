@@ -6,7 +6,7 @@ reel board
 Overview
 ********
 
-reel board is a evaluation board based on the Nordic Semiconductor
+`reel board`_ is a evaluation board based on the Nordic Semiconductor
 nRF52840 SoC. The board was developed by PHYTEC Messtechnik GmbH in
 cooperation with Zephyr Project for the Hackathon - "Get Connected".
 The board has a built-in debug adapter based on the DAPLink interface
@@ -29,6 +29,8 @@ to run on the reel board hardware. It provides
 support for the Nordic Semiconductor nRF52840 ARM |reg| Cortex |reg|-M4F SoC
 with an integrated 2.4 GHz transceiver supporting Bluetooth |reg| Low Energy
 and IEEE |reg| 802.15.4.
+
+The schematic can be found on the `reel board website`_.
 
 Hardware
 ********
@@ -377,6 +379,21 @@ and :ref:`application_run` for more details).
 Flashing
 ========
 
+If you use Linux, create a udev rule to fix a permission issue when not using
+root for flashing.
+
+.. code-block:: console
+
+   $ echo 'ATTR{idProduct}=="0204", ATTR{idVendor}=="0d28", MODE="0666", GROUP="plugdev"' > /etc/udev/rules.d/50-cmsis-dap.rules
+
+Reload the rules and replug the device.
+
+.. code-block:: console
+
+   $ sudo udevadm control --reload-rules
+
+Finally, unplug and plug the board again for the rules to take effect.
+
 Build and flash
 applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
@@ -427,7 +444,13 @@ your board.
 References
 **********
 
+.. _reel board Website:
+   https://www.phytec.de/reelboard/
+
 .. target-notes::
+
+.. _reel board:
+   https://www.phytec.de/reelboard/
 
 .. _DAPLink reel board Firmware:
    https://github.com/jfischer-phytec-iot/DAPLink/tree/reel-board

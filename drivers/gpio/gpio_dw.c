@@ -11,7 +11,7 @@
 #include "gpio_dw.h"
 #include "gpio_utils.h"
 
-#include <board.h>
+#include <soc.h>
 #include <sys_io.h>
 #include <init.h>
 #include <misc/util.h>

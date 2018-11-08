@@ -17,9 +17,9 @@ soc/arm/ti_simplelink/cc32xx             @GAnthony
 soc/arm/ti_simplelink/msp432p4xx         @Mani-Sadhasivam
 arch/nios2/                              @andrewboie @ramakrishnapallala
 arch/posix/                              @aescolar
-arch/riscv32/                            @fractalclone @kgugala @pgielda
+arch/riscv32/                            @kgugala @pgielda @nategraff-sifive
 soc/posix/                               @aescolar
-soc/riscv32/                             @fractalclone @kgugala @pgielda
+soc/riscv32/                             @kgugala @pgielda @nategraff-sifive
 arch/x86/                                @andrewboie @ramakrishnapallala
 arch/x86/core/                           @andrewboie
 arch/x86/core/crt0.S                     @ramakrishnapallala @nashif
@@ -65,7 +65,7 @@ boards/arm/stm32f3_disco/                @ydamigos
 boards/nios2/                            @ramakrishnapallala
 boards/nios2/altera_max10/               @ramakrishnapallala
 boards/posix/                            @aescolar
-boards/riscv32/                          @fractalclone @kgugala @pgielda
+boards/riscv32/                          @kgugala @pgielda @nategraff-sifive
 boards/x86/                              @andrewboie @nashif
 boards/x86/arduino_101/                  @nashif
 boards/x86/galileo/                      @nashif
@@ -76,6 +76,7 @@ boards/xtensa/                           @andrewboie @ramakrishnapallala
 cmake/                                   @nashif @SebastianBoe
 /CMakeLists.txt                          @nashif @SebastianBoe
 doc/                                     @dbkinder
+doc/application/coccinelle.rst           @himanshujha199640 @JuliaLawall
 doc/CMakeLists.txt                       @carlescufi
 doc/scripts/                             @carlescufi
 doc/subsystems/bluetooth/                @sjanc @jhedberg @Vudentz
@@ -87,11 +88,12 @@ drivers/adc/                             @anangl
 drivers/bluetooth/                       @sjanc @jhedberg @Vudentz
 drivers/clock_control/*stm32f4*          @rsalveti @idlethread
 drivers/counter/                         @anangl
+drivers/display/                         @vanwinkeljan
 drivers/ethernet/                        @jukkar @tbursztyka @pfalcon
 drivers/flash/                           @nashif
 drivers/flash/*stm32*                    @superna9999
 drivers/gpio/*stm32*                     @rsalveti @idlethread
-drivers/gpio/gpio_pulpino.c              @fractalclone @kgugala @pgielda
+drivers/gpio/gpio_pulpino.c              @kgugala @pgielda @nategraff-sifive
 drivers/ieee802154/                      @jukkar @tbursztyka
 drivers/interrupt_controller/            @andrewboie
 drivers/led/                             @Mani-Sadhasivam
@@ -99,16 +101,17 @@ drivers/led_strip/                       @mbolivar
 drivers/pinmux/stm32/                    @rsalveti @idlethread
 drivers/sensor/                          @bogdan-davidoaia @MaureenHelm
 drivers/serial/uart_altera_jtag_hal.c    @ramakrishnapallala
-drivers/serial/uart_riscv_qemu.c         @fractalclone @kgugala @pgielda
+drivers/serial/uart_riscv_qemu.c         @kgugala @pgielda @nategraff-sifive
 drivers/net/slip.c                       @jukkar @tbursztyka
 drivers/spi/                             @tbursztyka
 drivers/spi/spi_ll_stm32.*               @superna9999
 drivers/timer/altera_avalon_timer_hal.c  @ramakrishnapallala
-drivers/timer/pulpino_timer.c            @fractalclone @kgugala @pgielda
-drivers/timer/riscv_machine_timer.c      @fractalclone @kgugala @pgielda
+drivers/timer/pulpino_timer.c            @nategraff-sifive @kgugala @pgielda
+drivers/timer/riscv_machine_timer.c      @nategraff-sifive @kgugala @pgielda
 drivers/usb/                             @jfischer-phytec-iot @finikorg
 drivers/usb/device/usb_dc_stm32.c        @ydamigos @loicpoulain
 drivers/i2c/i2c_ll_stm32*                @ldts @ydamigos
+drivers/wifi/eswifi                      @loicpoulain
 dts/arm/st/                              @erwango
 dts/arm/nordic/                          @ioannisg @carlescufi
 ext/fs/                                  @nashif @ramakrishnapallala
@@ -128,7 +131,7 @@ include/arch/arm/cortex_m/irq.h          @andrewboie
 include/arch/nios2/                      @andrewboie
 include/arch/nios2/arch.h                @andrewboie
 include/arch/posix/                      @aescolar
-include/arch/riscv32                     @fractalclone @kgugala @pgielda
+include/arch/riscv32                     @nategraff-sifive @kgugala @pgielda
 include/arch/x86/                        @andrewboie @ramakrishnapallala
 include/arch/x86/arch.h                  @andrewboie
 include/arch/xtensa/                     @andrewboie
@@ -137,6 +140,8 @@ include/bluetooth/                       @sjanc @jhedberg @Vudentz
 include/cache.h                          @andrewboie @andyross
 include/counter.h                        @anangl
 include/device.h                         @ramakrishnapallala @nashif
+include/display.h                        @vanwinkeljan
+include/display/                         @vanwinkeljan
 include/drivers/bluetooth/               @sjanc @jhedberg @Vudentz
 include/drivers/ioapic.h                 @andrewboie
 include/drivers/loapic.h                 @andrewboie
@@ -176,6 +181,7 @@ kernel/device.c                          @ramakrishnapallala @nashif
 kernel/idle.c                            @ramakrishnapallala @nashif
 samples/bluetooth/                       @sjanc @jhedberg @Vudentz
 samples/boards/quark_se_c1000/power*/    @ramakrishnapallala @nashif
+samples/display/                         @vanwinkeljan
 samples/net/                             @jukkar @tbursztyka @pfalcon
 samples/net/dns_resolve/                 @jukkar @tbursztyka @pfalcon
 samples/net/http_server/                 @jukkar @tbursztyka
@@ -187,6 +193,8 @@ samples/net/coap_server/                 @rveerama1
 samples/net/sockets/                     @jukkar @tbursztyka @pfalcon
 samples/sensor/                          @bogdan-davidoaia
 samples/subsys/usb                       @jfischer-phytec-iot @finikorg
+scripts/coccicheck                       @himanshujha199640 @JuliaLawall
+scripts/coccinelle/                      @himanshujha199640 @JuliaLawall
 scripts/expr_parser.py                   @andrewboie @nashif
 scripts/sanity_chk/                      @andrewboie @nashif
 scripts/sanitycheck                      @andrewboie @nashif
@@ -208,13 +216,13 @@ subsys/shell/                            @jarz-nordic @nordic-krch
 subsys/*/*native_posix*/                 @aescolar
 subsys/usb/                              @jfischer-phytec-iot @finikorg
 tests/boards/native_posix/               @aescolar
-tests/bluetooth/                         @sjanc @jhedberg @Vudentz @tarunkum
+tests/bluetooth/                         @sjanc @jhedberg @Vudentz
 tests/posix/                             @nniranjhana
 tests/crypto/                            @lpereira @pswarnak
 tests/crypto/mbedtls/                    @nashif @lpereira
 tests/drivers/spi/                       @tbursztyka
 tests/kernel/                            @andrewboie @andyross @spoorthik @pswarnak @nniranjhana
-tests/net/                               @jukkar @tbursztyka @tarunkum @pfalcon
+tests/net/                               @jukkar @tbursztyka @pfalcon
 tests/net/buf/                           @jukkar @jhedberg @tbursztyka @pfalcon
 tests/net/lib/                           @jukkar @tbursztyka @pfalcon
 tests/net/lib/http_header_fields/        @jukkar @tbursztyka

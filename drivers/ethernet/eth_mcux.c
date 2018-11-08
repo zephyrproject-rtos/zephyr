@@ -19,7 +19,6 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#include <board.h>
 #include <device.h>
 #include <misc/util.h>
 #include <kernel.h>

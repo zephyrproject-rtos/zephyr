@@ -5,7 +5,7 @@
  */
 
 #include <init.h>
-#include <board.h>
+#include "board.h"
 #include <soc.h>
 
 static int board_reel_board_init(struct device *dev)

@@ -452,8 +452,8 @@ typedef void (*pDCMI_CallbackTypeDef)(DCMI_HandleTypeDef *hdcmi);
   * @retval The state of FLAG.
   */
 #define __HAL_DCMI_GET_FLAG(__HANDLE__, __FLAG__)\
-((((__FLAG__) & (DCMI_SR_INDEX|DCMI_MIS_INDEX)) == 0x0)? ((__HANDLE__)->Instance->RISR & (__FLAG__)) :\
- (((__FLAG__) & DCMI_SR_INDEX) == 0x0)? ((__HANDLE__)->Instance->MISR & (__FLAG__)) : ((__HANDLE__)->Instance->SR & (__FLAG__)))
+ ((((__FLAG__) & (DCMI_SR_INDEX|DCMI_MIS_INDEX)) == 0x0U)? ((__HANDLE__)->Instance->RISR & (__FLAG__)) :\
+ (((__FLAG__) & DCMI_SR_INDEX) == 0x0U)? ((__HANDLE__)->Instance->MISR & (__FLAG__)) : ((__HANDLE__)->Instance->SR & (__FLAG__)))
 
 /**
   * @brief  Clear the DCMI pending flag.
@@ -595,8 +595,8 @@ uint32_t              HAL_DCMI_GetError(DCMI_HandleTypeDef *hdcmi);
 /** @defgroup DCMI_Registers_Indices DCMI Registers Indices
   * @{
   */
-#define DCMI_MIS_INDEX        ((uint32_t)0x1000U)         /*!< DCMI MIS register index */
-#define DCMI_SR_INDEX         ((uint32_t)0x2000U)         /*!< DCMI SR register index */
+#define DCMI_MIS_INDEX        (0x1000U)         /*!< DCMI MIS register index */
+#define DCMI_SR_INDEX         (0x2000U)         /*!< DCMI SR register index */
 /**
   * @}
   */

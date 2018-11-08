@@ -75,28 +75,28 @@ static void usb_dw_reg_dump(void)
 {
 	u8_t i;
 
-	USB_DBG("USB registers:  GOTGCTL : 0x%x  GOTGINT : 0x%x  GAHBCFG : "
+	LOG_DBG("USB registers:  GOTGCTL : 0x%x  GOTGINT : 0x%x  GAHBCFG : "
 		"0x%x", USB_DW->gotgctl, USB_DW->gotgint, USB_DW->gahbcfg);
-	USB_DBG("  GUSBCFG : 0x%x  GINTSTS : 0x%x  GINTMSK : 0x%x",
+	LOG_DBG("  GUSBCFG : 0x%x  GINTSTS : 0x%x  GINTMSK : 0x%x",
 		USB_DW->gusbcfg, USB_DW->gintsts, USB_DW->gintmsk);
-	USB_DBG("  DCFG    : 0x%x  DCTL    : 0x%x  DSTS    : 0x%x",
+	LOG_DBG("  DCFG    : 0x%x  DCTL    : 0x%x  DSTS    : 0x%x",
 		USB_DW->dcfg, USB_DW->dctl, USB_DW->dsts);
-	USB_DBG("  DIEPMSK : 0x%x  DOEPMSK : 0x%x  DAINT   : 0x%x",
+	LOG_DBG("  DIEPMSK : 0x%x  DOEPMSK : 0x%x  DAINT   : 0x%x",
 		USB_DW->diepmsk, USB_DW->doepmsk, USB_DW->daint);
-	USB_DBG("  DAINTMSK: 0x%x  GHWCFG1 : 0x%x  GHWCFG2 : 0x%x",
+	LOG_DBG("  DAINTMSK: 0x%x  GHWCFG1 : 0x%x  GHWCFG2 : 0x%x",
 		USB_DW->daintmsk, USB_DW->ghwcfg1, USB_DW->ghwcfg2);
-	USB_DBG("  GHWCFG3 : 0x%x  GHWCFG4 : 0x%x",
+	LOG_DBG("  GHWCFG3 : 0x%x  GHWCFG4 : 0x%x",
 		USB_DW->ghwcfg3, USB_DW->ghwcfg4);
 
 	for (i = 0; i < USB_DW_OUT_EP_NUM; i++) {
-		USB_DBG("\n  EP %d registers:    DIEPCTL : 0x%x    DIEPINT : "
+		LOG_DBG("\n  EP %d registers:    DIEPCTL : 0x%x    DIEPINT : "
 			"0x%x", i, USB_DW->in_ep_reg[i].diepctl,
 			USB_DW->in_ep_reg[i].diepint);
-		USB_DBG("    DIEPTSIZ: 0x%x    DIEPDMA : 0x%x    DOEPCTL : "
+		LOG_DBG("    DIEPTSIZ: 0x%x    DIEPDMA : 0x%x    DOEPCTL : "
 			"0x%x", USB_DW->in_ep_reg[i].dieptsiz,
 			USB_DW->in_ep_reg[i].diepdma,
 			USB_DW->out_ep_reg[i].doepctl);
-		USB_DBG("    DOEPINT : 0x%x    DOEPTSIZ: 0x%x    DOEPDMA : "
+		LOG_DBG("    DOEPINT : 0x%x    DOEPTSIZ: 0x%x    DOEPDMA : "
 			"0x%x", USB_DW->out_ep_reg[i].doepint,
 			USB_DW->out_ep_reg[i].doeptsiz,
 			USB_DW->out_ep_reg[i].doepdma);
@@ -148,7 +148,7 @@ static int usb_dw_reset(void)
 	while (!(USB_DW->grstctl & USB_DW_GRSTCTL_AHB_IDLE)) {
 		usb_dw_udelay(1);
 		if (++cnt > USB_DW_CORE_RST_TIMEOUT_US) {
-			USB_ERR("USB reset HANG! AHB Idle GRSTCTL=0x%08x",
+			LOG_ERR("USB reset HANG! AHB Idle GRSTCTL=0x%08x",
 				USB_DW->grstctl);
 			return -EIO;
 		}
@@ -159,7 +159,7 @@ static int usb_dw_reset(void)
 	USB_DW->grstctl |= USB_DW_GRSTCTL_C_SFT_RST;
 	do {
 		if (++cnt > USB_DW_CORE_RST_TIMEOUT_US) {
-			USB_DBG("USB reset HANG! Soft Reset GRSTCTL=0x%08x",
+			LOG_DBG("USB reset HANG! Soft Reset GRSTCTL=0x%08x",
 				USB_DW->grstctl);
 			return -EIO;
 		}
@@ -277,7 +277,7 @@ static int usb_dw_ep_set(u8_t ep,
 	volatile u32_t *p_depctl;
 	u8_t ep_idx = USB_DW_EP_ADDR2IDX(ep);
 
-	USB_DBG("%s ep %x, mps %d, type %d", __func__, ep, ep_mps, ep_type);
+	LOG_DBG("%s ep %x, mps %d, type %d", __func__, ep, ep_mps, ep_type);
 
 	if (USB_DW_EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
 		p_depctl = &USB_DW->out_ep_reg[ep_idx].doepctl;
@@ -374,7 +374,7 @@ static void usb_dw_prep_rx(const u8_t ep, u8_t setup)
 	}
 	USB_DW->out_ep_reg[ep_idx].doepctl |= USB_DW_DEPCTL_EP_ENA;
 
-	USB_DBG("USB OUT EP%d armed", ep_idx);
+	LOG_DBG("USB OUT EP%d armed", ep_idx);
 }
 
 static int usb_dw_tx(u8_t ep, const u8_t *const data,
@@ -400,7 +400,7 @@ static int usb_dw_tx(u8_t ep, const u8_t *const data,
 
 	avail_space *= 4;
 	if (!avail_space) {
-		USB_ERR("USB IN EP%d no space available, DTXFSTS %x", ep_idx,
+		LOG_ERR("USB IN EP%d no space available, DTXFSTS %x", ep_idx,
 			USB_DW->in_ep_reg[ep_idx].dtxfsts);
 		irq_unlock(key);
 		return -EAGAIN;
@@ -436,7 +436,7 @@ static int usb_dw_tx(u8_t ep, const u8_t *const data,
 
 		/* Check if transfer len is too big */
 		if (data_len > max_xfer_size) {
-			USB_WRN("USB IN EP%d len too big (%d->%d)", ep_idx,
+			LOG_WRN("USB IN EP%d len too big (%d->%d)", ep_idx,
 				data_len, max_xfer_size);
 			data_len = max_xfer_size;
 		}
@@ -451,7 +451,7 @@ static int usb_dw_tx(u8_t ep, const u8_t *const data,
 		pkt_cnt = (data_len + ep_mps - 1) / ep_mps;
 
 		if (pkt_cnt > max_pkt_cnt) {
-			USB_WRN("USB IN EP%d pkt count too big (%d->%d)",
+			LOG_WRN("USB IN EP%d pkt count too big (%d->%d)",
 				ep_idx, pkt_cnt, pkt_cnt);
 			pkt_cnt = max_pkt_cnt;
 			data_len = pkt_cnt * ep_mps;
@@ -494,7 +494,7 @@ static int usb_dw_tx(u8_t ep, const u8_t *const data,
 	}
 	irq_unlock(key);
 
-	USB_DBG("USB IN EP%d write %u bytes", ep_idx, data_len);
+	LOG_DBG("USB IN EP%d write %u bytes", ep_idx, data_len);
 
 	return data_len;
 }
@@ -547,7 +547,7 @@ static int usb_dw_init(void)
 
 static void usb_dw_handle_reset(void)
 {
-	USB_DBG("USB RESET event");
+	LOG_DBG("USB RESET event");
 
 	/* Inform upper layers */
 	if (usb_dw_ctrl.status_cb) {
@@ -570,7 +570,7 @@ static void usb_dw_handle_enum_done(void)
 	speed = (USB_DW->dsts & ~USB_DW_DSTS_ENUM_SPD_MASK) >>
 	    USB_DW_DSTS_ENUM_SPD_OFFSET;
 
-	USB_DBG("USB ENUM DONE event, %s speed detected",
+	LOG_DBG("USB ENUM DONE event, %s speed detected",
 		speed == USB_DW_DSTS_ENUM_LS ? "Low" : "Full");
 
 	/* Inform upper layers */
@@ -589,7 +589,7 @@ static void usb_dw_isr_handler(void)
 	/*  Read interrupt status */
 	while ((int_status = (USB_DW->gintsts & USB_DW->gintmsk))) {
 
-		USB_DBG("USB GINTSTS 0x%x", int_status);
+		LOG_DBG("USB GINTSTS 0x%x", int_status);
 
 		if (int_status & USB_DW_GINTSTS_USB_RST) {
 			/* Clear interrupt. */
@@ -636,7 +636,7 @@ static void usb_dw_isr_handler(void)
 			xfer_size = (grxstsp & USB_DW_GRXSTSR_PKT_CNT_MASK) >>
 			    USB_DW_GRXSTSR_PKT_CNT_OFFSET;
 
-			USB_DBG("USB OUT EP%d: RX_FLVL status %d, size %d",
+			LOG_DBG("USB OUT EP%d: RX_FLVL status %d, size %d",
 				ep_idx, status, xfer_size);
 			usb_dw_ctrl.out_ep_ctrl[ep_idx].data_len = xfer_size;
 			ep_cb = usb_dw_ctrl.out_ep_ctrl[ep_idx].cb;
@@ -678,7 +678,7 @@ static void usb_dw_isr_handler(void)
 					USB_DW->in_ep_reg[ep_idx].diepint =
 					    ep_int_status;
 
-					USB_DBG("USB IN EP%d interrupt "
+					LOG_DBG("USB IN EP%d interrupt "
 						"status: 0x%x", ep_idx,
 						ep_int_status);
 
@@ -718,7 +718,7 @@ static void usb_dw_isr_handler(void)
 					USB_DW->out_ep_reg[ep_idx].doepint =
 					    ep_int_status;
 
-					USB_DBG("USB OUT EP%d interrupt "
+					LOG_DBG("USB OUT EP%d interrupt "
 						"status: 0x%x\n", ep_idx,
 						ep_int_status);
 				}
@@ -805,28 +805,28 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 {
 	u8_t ep_idx = USB_DW_EP_ADDR2IDX(cfg->ep_addr);
 
-	USB_DBG("ep %x, mps %d, type %d", cfg->ep_addr, cfg->ep_mps,
+	LOG_DBG("ep %x, mps %d, type %d", cfg->ep_addr, cfg->ep_mps,
 		cfg->ep_type);
 
 	if ((cfg->ep_type == USB_DC_EP_CONTROL) && ep_idx) {
-		USB_ERR("invalid endpoint configuration");
+		LOG_ERR("invalid endpoint configuration");
 		return -1;
 	}
 
 	if (cfg->ep_mps > DW_USB_MAX_PACKET_SIZE) {
-		USB_WRN("unsupported packet size");
+		LOG_WRN("unsupported packet size");
 		return -1;
 	}
 
 	if ((USB_DW_EP_ADDR2DIR(cfg->ep_addr) == USB_EP_DIR_OUT) &&
 	    (ep_idx >= DW_USB_OUT_EP_NUM)) {
-		USB_WRN("OUT endpoint address out of range");
+		LOG_WRN("OUT endpoint address out of range");
 		return -1;
 	}
 
 	if ((USB_DW_EP_ADDR2DIR(cfg->ep_addr) == USB_EP_DIR_IN) &&
 	    (ep_idx >= DW_USB_IN_EP_NUM)) {
-		USB_WRN("IN endpoint address out of range");
+		LOG_WRN("IN endpoint address out of range");
 		return -1;
 	}
 
@@ -1026,7 +1026,7 @@ int usb_dc_ep_flush(const u8_t ep)
 	cnt = 0;
 	do {
 		if (++cnt > USB_DW_CORE_RST_TIMEOUT_US) {
-			USB_ERR("USB TX FIFO flush HANG!");
+			LOG_ERR("USB TX FIFO flush HANG!");
 			return -EIO;
 		}
 		usb_dw_udelay(1);
@@ -1073,25 +1073,25 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 	u32_t i, j, data_len, bytes_to_copy;
 
 	if (!usb_dw_ctrl.attached && !usb_dw_ep_is_valid(ep)) {
-		USB_ERR("No valid endpoint");
+		LOG_ERR("No valid endpoint");
 		return -EINVAL;
 	}
 
 	/* Check if OUT ep */
 	if (USB_DW_EP_ADDR2DIR(ep) != USB_EP_DIR_OUT) {
-		USB_ERR("Wrong endpoint direction");
+		LOG_ERR("Wrong endpoint direction");
 		return -EINVAL;
 	}
 
 	/* Allow to read 0 bytes */
 	if (!data && max_data_len) {
-		USB_ERR("Wrong arguments");
+		LOG_ERR("Wrong arguments");
 		return -EINVAL;
 	}
 
 	/* Check if ep enabled */
 	if (!usb_dw_ep_is_enabled(ep)) {
-		USB_ERR("Not enabled endpoint");
+		LOG_ERR("Not enabled endpoint");
 		return -EINVAL;
 	}
 
@@ -1109,13 +1109,13 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 
 
 	if (data_len > max_data_len) {
-		USB_ERR("Not enough room to copy all the rcvd data!");
+		LOG_ERR("Not enough room to copy all the rcvd data!");
 		bytes_to_copy = max_data_len;
 	} else {
 		bytes_to_copy = data_len;
 	}
 
-	USB_DBG("Read EP%d, req %d, read %d bytes", ep, max_data_len,
+	LOG_DBG("Read EP%d, req %d, read %d bytes", ep, max_data_len,
 		bytes_to_copy);
 
 	/* Data in the FIFOs is always stored per 32-bit words */
@@ -1147,13 +1147,13 @@ int usb_dc_ep_read_continue(u8_t ep)
 	u8_t ep_idx = USB_DW_EP_ADDR2IDX(ep);
 
 	if (!usb_dw_ctrl.attached && !usb_dw_ep_is_valid(ep)) {
-		USB_ERR("No valid endpoint");
+		LOG_ERR("No valid endpoint");
 		return -EINVAL;
 	}
 
 	/* Check if OUT ep */
 	if (USB_DW_EP_ADDR2DIR(ep) != USB_EP_DIR_OUT) {
-		USB_ERR("Wrong endpoint direction");
+		LOG_ERR("Wrong endpoint direction");
 		return -EINVAL;
 	}
 

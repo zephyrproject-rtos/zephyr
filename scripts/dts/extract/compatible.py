@@ -38,9 +38,9 @@ class DTCompatible(DTDirective):
         for i, comp in enumerate(compatible):
             # Generate #define's
             compat_label = convert_string_to_label(str(comp))
-            compat_defs = 'CONFIG_DT_COMPAT_' + compat_label
+            compat_defs = 'DT_COMPAT_' + compat_label
             load_defs = {
-                compat_defs: "",
+                compat_defs: "1",
             }
             insert_defs(node_address, load_defs, {})
 

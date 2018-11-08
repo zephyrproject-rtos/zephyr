@@ -15,7 +15,6 @@
 
 #include <misc/__assert.h>
 #include <misc/byteorder.h>
-#include <board.h>
 #include <dfu/mcuboot.h>
 
 /*

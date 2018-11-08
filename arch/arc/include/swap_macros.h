@@ -76,13 +76,13 @@ extern "C" {
 
 #endif
 
-	/* save stack pointer in struct tcs */
+	/* save stack pointer in struct k_thread */
 	st sp, [r2, _thread_offset_to_sp]
 .endm
 
 /* entering this macro, current is in r2 */
 .macro _load_callee_saved_regs
-	/* restore stack pointer from struct tcs */
+	/* restore stack pointer from struct k_thread */
 	ld sp, [r2, _thread_offset_to_sp]
 
 #ifdef CONFIG_FP_SHARING

@@ -7,7 +7,6 @@
  */
 
 #include <gpio.h>
-#include <board.h>
 
 #include <display/mb_display.h>
 
@@ -31,7 +30,7 @@ static void configure_button(void)
 {
 	static struct gpio_callback button_cb;
 
-	gpio = device_get_binding(SW0_GPIO_NAME);
+	gpio = device_get_binding(SW0_GPIO_CONTROLLER);
 
 	gpio_pin_configure(gpio, SW0_GPIO_PIN,
 			   (GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |

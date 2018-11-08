@@ -7,4 +7,4 @@
 
 config BOARD_NUCLEO_F413ZH
 	bool "NUCLEO-144 F413ZH Development Board"
-	depends on SOC_STM32F413XH
+	depends on SOC_STM32F413XX

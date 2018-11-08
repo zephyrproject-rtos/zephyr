@@ -15,4 +15,12 @@ set(OPTIMIZE_FOR_DEBUG_FLAG "-O0")
 set(CC xcc)
 set(C++ xc++)
 
+set(NOSYSDEF_CFLAG "")
+
 list(APPEND TOOLCHAIN_C_FLAGS -fms-extensions)
+
+# xcc doesn't have this, so we need to define it here.
+# This is the same as in the xcc toolchain spec files.
+list(APPEND TOOLCHAIN_C_FLAGS
+  -D__SIZEOF_LONG__=4
+  )

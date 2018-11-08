@@ -14,10 +14,9 @@
 #include <misc/printk.h>
 #include <device.h>
 #include <pwm.h>
-#include <board.h>
 
 #if defined(CONFIG_SOC_STM32F401XE) || defined(CONFIG_SOC_STM32F412ZG) || \
-	defined(CONFIG_SOC_STM32F413XH) || defined(CONFIG_SOC_STM32L476XG) || \
+	defined(CONFIG_SOC_STM32F413XX) || defined(CONFIG_SOC_STM32L476XG) || \
 	defined(CONFIG_SOC_STM32F407XG) || defined(CONFIG_SOC_STM32F302X8)
 #define PWM_DRIVER CONFIG_PWM_STM32_2_DEV_NAME
 #define PWM_CHANNEL 1
@@ -30,15 +29,16 @@
 #elif defined(CONFIG_SOC_FAMILY_NRF)
 #define PWM_DRIVER CONFIG_PWM_NRF5_SW_0_DEV_NAME
 #define PWM_CHANNEL LED0_GPIO_PIN
-#elif defined(CONFIG_BOARD_HEXIWEAR_K64)
-#define PWM_DRIVER	GREEN_PWM_NAME
-#define PWM_CHANNEL	GREEN_PWM_CHANNEL
 #elif defined(CONFIG_BOARD_COLIBRI_IMX7D_M4)
 #define PWM_DRIVER	PWM_1_LABEL
 #define PWM_CHANNEL	0
 #elif defined(CONFIG_SOC_FAMILY_NRF)
 #define PWM_DRIVER	CONFIG_PWM_NRF5_SW_0_DEV_NAME
 #define PWM_CHANNEL	LED0_GPIO_PIN
+#elif defined(PWM_LED0_PWM_CONTROLLER) && defined(PWM_LED0_PWM_CHANNEL)
+/* get the defines from dt (based on alias 'pwm-led0') */
+#define PWM_DRIVER	PWM_LED0_PWM_CONTROLLER
+#define PWM_CHANNEL	PWM_LED0_PWM_CHANNEL
 #else
 #error "Choose supported PWM driver"
 #endif

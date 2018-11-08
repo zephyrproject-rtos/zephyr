@@ -37,8 +37,8 @@
 #define _priq_wait_best		_priq_dumb_best
 #endif
 
-/* the only struct _kernel instance */
-struct _kernel _kernel;
+/* the only struct z_kernel instance */
+struct z_kernel _kernel;
 
 static struct k_spinlock sched_lock;
 
@@ -445,7 +445,8 @@ void _reschedule(u32_t key)
 	}
 
 #ifdef CONFIG_SMP
-	return _Swap(key);
+	(void)_Swap(key);
+	return;
 #else
 	if (_get_next_ready_thread() != _current) {
 		(void)_Swap(key);
@@ -507,12 +508,24 @@ void *_get_next_switch_handle(void *interrupted)
 		if (_current != th) {
 			reset_time_slice();
 			_current_cpu->swap_ok = 0;
+#ifdef CONFIG_TRACING
+			sys_trace_thread_switched_out();
+#endif
 			_current = th;
+#ifdef CONFIG_TRACING
+			sys_trace_thread_switched_in();
+#endif
 		}
 	}
 
 #else
+#ifdef CONFIG_TRACING
+	sys_trace_thread_switched_out();
+#endif
 	_current = _get_next_ready_thread();
+#ifdef CONFIG_TRACING
+	sys_trace_thread_switched_in();
+#endif
 #endif
 
 	_check_stack_sentinel();
@@ -780,13 +793,11 @@ void _impl_k_yield(void)
 Z_SYSCALL_HANDLER0_SIMPLE_VOID(k_yield);
 #endif
 
-void _impl_k_sleep(s32_t duration)
+s32_t _impl_k_sleep(s32_t duration)
 {
 #ifdef CONFIG_MULTITHREADING
-	/* volatile to guarantee that irq_lock() is executed after ticks is
-	 * populated
-	 */
-	volatile s32_t ticks;
+	u32_t expected_wakeup_time;
+	s32_t ticks;
 	unsigned int key;
 
 	__ASSERT(!_is_in_isr(), "");
@@ -797,17 +808,25 @@ void _impl_k_sleep(s32_t duration)
 	/* wait of 0 ms is treated as a 'yield' */
 	if (duration == 0) {
 		k_yield();
-		return;
+		return 0;
 	}
 
 	ticks = _TICK_ALIGN + _ms_to_ticks(duration);
+	expected_wakeup_time = ticks + z_tick_get_32();
 	key = irq_lock();
 
 	_remove_thread_from_ready_q(_current);
 	_add_thread_timeout(_current, ticks);
 
 	(void)_Swap(key);
+
+	ticks = expected_wakeup_time - z_tick_get_32();
+	if (ticks > 0) {
+		return __ticks_to_ms(ticks);
+	}
 #endif
+
+	return 0;
 }
 
 #ifdef CONFIG_USERSPACE
@@ -818,9 +837,8 @@ Z_SYSCALL_HANDLER(k_sleep, duration)
 	 */
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(duration != K_FOREVER,
 				    "sleeping forever not allowed"));
-	_impl_k_sleep(duration);
 
-	return 0;
+	return _impl_k_sleep(duration);
 }
 #endif
 

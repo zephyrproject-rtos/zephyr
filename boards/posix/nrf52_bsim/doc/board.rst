@@ -20,7 +20,7 @@ This board models some of the NRF52 SOC peripherals:
 * Radio
 * Timers
 * Real time counter
-* Random number gerator
+* Random number generator
 * AES CCM & AES ECB encryption HW
 * Accelerated address resolver
 * Clock control

@@ -122,7 +122,7 @@ Z_SYSCALL_HANDLER(_zephyr_write, buf, nbytes)
 }
 #endif
 
-#ifndef CONFIG_POSIX_FS
+#ifndef CONFIG_POSIX_API
 int _read(int fd, char *buf, int nbytes)
 {
 	ARG_UNUSED(fd);

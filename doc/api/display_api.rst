@@ -3,9 +3,11 @@
 Display Interface APIs
 ######################
 
-.. comment
-   not documenting
-   .. doxygengroup:: display_interfaces
+Generic Display Interface
+*************************
+
+.. doxygengroup:: display_interface
+   :project: Zephyr
 
 Grove LCD Display
 *****************

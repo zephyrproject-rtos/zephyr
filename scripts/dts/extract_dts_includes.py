@@ -312,13 +312,13 @@ def extract_string_prop(node_address, yaml, key, label):
         defs[node_address] = prop_def
 
 
-def extract_property(node_compat, yaml, node_address, prop, prop_val, names,
-                     label_override):
+def extract_property(node_compat, yaml, node_address, prop, prop_val, names):
 
+    node = reduced[node_address]
     if 'base_label' in yaml[node_compat]:
         def_label = yaml[node_compat].get('base_label')
     else:
-        def_label = get_node_label(node_compat, node_address)
+        def_label = get_node_label(node_address)
 
     if 'parent' in yaml[node_compat]:
         if 'bus' in yaml[node_compat]['parent']:
@@ -347,27 +347,24 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names,
             # Generate alias definition if parent has any alias
             if parent_address in aliases:
                 for i in aliases[parent_address]:
-                    node_alias = i + '_' + def_label
-                    aliases[node_address].append(node_alias)
+                    # Build an alias name that respects device tree specs
+                    node_name = node_compat + '-' + node_address.split('@')[-1]
+                    node_strip = node_name.replace('@','-').replace(',','-')
+                    node_alias = i + '-' + node_strip
+                    if node_alias not in aliases[node_address]:
+                        # Need to generate alias name for this node:
+                        aliases[node_address].append(node_alias)
 
             # Use parent label to generate label
-            parent_label = get_node_label(
-                find_parent_prop(node_address,'compatible') , parent_address)
+            parent_label = get_node_label(parent_address)
             def_label = parent_label + '_' + def_label
 
             # Generate bus-name define
             extract_single(node_address, yaml, 'parent-label',
                            'bus-name', def_label)
 
-    if label_override is not None:
-        def_label += '_' + label_override
-
     if prop == 'reg':
-        if 'partition@' in node_address:
-            # reg in partition is covered by flash handling
-            flash.extract(node_address, yaml, prop, def_label)
-        else:
-            reg.extract(node_address, yaml, names, def_label, 1)
+        reg.extract(node_address, yaml, names, def_label, 1)
     elif prop == 'interrupts' or prop == 'interrupts-extended':
         interrupts.extract(node_address, yaml, prop, names, def_label)
     elif prop == 'compatible':
@@ -376,16 +373,24 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names,
         pinctrl.extract(node_address, yaml, prop, def_label)
     elif 'clocks' in prop:
         clocks.extract(node_address, yaml, prop, def_label)
-    elif 'gpios' in prop:
+    elif 'pwms' in prop or 'gpios' in prop:
+        # drop the 's' from the prop
+        generic = prop[:-1]
         try:
             prop_values = list(reduced[node_address]['props'].get(prop))
         except:
             prop_values = reduced[node_address]['props'].get(prop)
 
+        # Newer versions of dtc might have the property look like
+        # cs-gpios = <0x05 0x0d 0x00>, < 0x06 0x00 0x00>;
+        # So we need to flatten the list in that case
+        if isinstance(prop_values[0], list):
+            prop_values = [item for sublist in prop_values for item in sublist]
+
         extract_controller(node_address, yaml, prop, prop_values, 0,
-                           def_label, 'gpio')
+                           def_label, generic)
         extract_cells(node_address, yaml, prop, prop_values,
-                      names, 0, def_label, 'gpio')
+                      names, 0, def_label, generic)
     else:
         default.extract(node_address, yaml, prop, prop_val['type'], def_label)
 
@@ -399,7 +404,6 @@ def extract_node_include_info(reduced, root_node_address, sub_node_address,
                     'linux,phandle']
     node = reduced[sub_node_address]
     node_compat = get_compat(root_node_address)
-    label_override = None
 
     if node_compat not in yaml.keys():
         return {}, {}
@@ -408,13 +412,6 @@ def extract_node_include_info(reduced, root_node_address, sub_node_address,
         y_node = yaml[node_compat]
     else:
         y_node = y_sub
-
-    if yaml[node_compat].get('use-property-label', False):
-        try:
-            label = y_node['properties']['label']
-            label_override = convert_string_to_label(node['props']['label'])
-        except KeyError:
-            pass
 
     # check to see if we need to process the properties
     for k, v in y_node['properties'].items():
@@ -426,6 +423,17 @@ def extract_node_include_info(reduced, root_node_address, sub_node_address,
             if 'generation' in v:
 
                 match = False
+
+                # Handle any per node extraction first.  For example we
+                # extract a few different defines for a flash partition so its
+                # easier to handle the partition node in one step
+                if 'partition@' in sub_node_address:
+                    flash.extract_partition(sub_node_address)
+                    continue
+
+                # Handle each property individually, this ends up handling common
+                # patterns for things like reg, interrupts, etc that we don't need
+                # any special case handling at a node level
                 for c in node['props'].keys():
                     # if prop is in filter list - ignore it
                     if c in filter_list:
@@ -447,8 +455,7 @@ def extract_node_include_info(reduced, root_node_address, sub_node_address,
                             names = [names]
 
                         extract_property(
-                            node_compat, yaml, sub_node_address, c, v, names,
-                            label_override)
+                            node_compat, yaml, sub_node_address, c, v, names)
                         match = True
 
                 # Handle the case that we have a boolean property, but its not
@@ -456,8 +463,7 @@ def extract_node_include_info(reduced, root_node_address, sub_node_address,
                 if not match:
                     if v['type'] == "boolean":
                         extract_property(
-                            node_compat, yaml, sub_node_address, k, v, None,
-                            label_override)
+                            node_compat, yaml, sub_node_address, k, v, None)
 
 def dict_merge(dct, merge_dct):
     # from https://gist.github.com/angstwad/bf22d1822c38a92ec0a9

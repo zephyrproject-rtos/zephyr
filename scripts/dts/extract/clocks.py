@@ -24,7 +24,7 @@ class DTClocks(DTDirective):
         clock_consumer = reduced[node_address]
         clock_consumer_compat = get_compat(node_address)
         clock_consumer_bindings = yaml[clock_consumer_compat]
-        clock_consumer_label = self.get_node_label_string(node_address)
+        clock_consumer_label = get_node_label(node_address)
 
         clock_index = 0
         clock_cell_index = 0
@@ -44,7 +44,7 @@ class DTClocks(DTDirective):
                 clock_provider = reduced[clock_provider_node_address]
                 clock_provider_compat = get_compat(clock_provider_node_address)
                 clock_provider_bindings = yaml[clock_provider_compat]
-                clock_provider_label = self.get_node_label_string( \
+                clock_provider_label = get_node_label( \
                                                 clock_provider_node_address)
                 nr_clock_cells = int(clock_provider['props'].get(
                                      '#clock-cells', 0))

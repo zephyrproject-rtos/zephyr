@@ -183,6 +183,7 @@ config EXCEPTION_STACK_TRACE
 config OPENOCD_SUPPORT
 	bool "OpenOCD support [EXPERIMENTAL]"
 	select THREAD_MONITOR
+	select THREAD_NAME
 	help
 	  This option exports an array of offsets to kernel structs, used by
 	  OpenOCD to determine the state of running threads.  (This option

@@ -1,0 +1,4 @@
+tests:
+  test:
+    tags: shell
+    harness: keyboard

@@ -81,7 +81,7 @@ int lis3mdl_sample_fetch(struct device *dev, enum sensor_channel chan)
 			   (u8_t *)(buf + 3), 2) < 0) {
 		LOG_DBG("Failed to fetch temperature sample.");
 		return -EIO;
-	};
+	}
 
 	drv_data->x_sample = sys_le16_to_cpu(buf[0]);
 	drv_data->y_sample = sys_le16_to_cpu(buf[1]);

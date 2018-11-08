@@ -1,4 +1,5 @@
 add_subdirectory_if_kconfig(coap)
+add_subdirectory_if_kconfig(coap_sock)
 add_subdirectory_if_kconfig(lwm2m)
 add_subdirectory_if_kconfig(sntp)
 add_subdirectory_ifdef(CONFIG_DNS_RESOLVER      dns)

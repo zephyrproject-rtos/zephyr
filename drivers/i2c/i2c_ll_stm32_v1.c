@@ -12,7 +12,7 @@
 #include <clock_control.h>
 #include <misc/util.h>
 #include <kernel.h>
-#include <board.h>
+#include <soc.h>
 #include <errno.h>
 #include <i2c.h>
 #include "i2c_ll_stm32.h"
@@ -359,7 +359,7 @@ s32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 
 				return -EIO;
 			}
-		};
+		}
 		LL_I2C_TransmitData8(i2c, *buf);
 		buf++;
 		len--;

@@ -3,6 +3,7 @@ name: QEMU Emulation for RISC V
 type: qemu
 simulation: qemu
 arch: riscv32
+ram: 16
 toolchain:
   - zephyr
   - xtools

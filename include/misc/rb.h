@@ -112,7 +112,7 @@ static inline struct rbnode *rb_get_max(struct rbtree *tree)
  * implement a "set" construct by simply testing the pointer value
  * itself.
  */
-int rb_contains(struct rbtree *tree, struct rbnode *node);
+bool rb_contains(struct rbtree *tree, struct rbnode *node);
 
 /**
  * @brief Walk/enumerate a rbtree

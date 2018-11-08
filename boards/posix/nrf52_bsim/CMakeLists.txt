@@ -11,6 +11,48 @@ if (NOT DEFINED ENV{BSIM_OUT_PATH})
  https://babblesim.github.io/folder_structure_and_env.html")
 endif()
 
+#Let's check that the HW models are the needed version or newer
+#That is, that the needed tag is somewhere in the past of its branch
+if(NOT DEFINED ENV{NO_NRF52_BSIM_VERSION_WARNING})
+  if(GIT_FOUND) #boilerplate.cmake searches for git
+    file(STRINGS "hw_models_version" NRF52_HW_MODELS_TAG) #desired version
+    execute_process(COMMAND ${GIT_EXECUTABLE} describe --tags --abbrev=0
+      ${NRF52_HW_MODELS_TAG}
+      WORKING_DIRECTORY $ENV{BSIM_COMPONENTS_PATH}/ext_NRF52_hw_models/
+      OUTPUT_VARIABLE NRF52_HW_MODELS_TAG_FOUND
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      ERROR_STRIP_TRAILING_WHITESPACE
+      ERROR_VARIABLE stderr
+      RESULT_VARIABLE return_code
+    )
+    if(return_code)
+      message(WARNING "The NRF52 HW models are out of date\
+ (${NRF52_HW_MODELS_TAG} needed at least); Please update them or expect\
+ problems!\nReported error while trying to find the tag: \"${stderr}\"")
+
+      #let's print the latest actual tag for the available models:
+      execute_process(COMMAND ${GIT_EXECUTABLE} describe --tags
+        WORKING_DIRECTORY $ENV{BSIM_COMPONENTS_PATH}/ext_NRF52_hw_models/
+        OUTPUT_VARIABLE NRF52_HW_MODELS_TAG_FOUND
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_STRIP_TRAILING_WHITESPACE
+        ERROR_VARIABLE stderr
+        RESULT_VARIABLE return_code
+      )
+      message(STATUS "Found NRF52 models version ${NRF52_HW_MODELS_TAG_FOUND}")
+
+      message(STATUS "To disable this check set the environment variable\
+ NO_NRF52_BSIM_VERSION_WARNING")
+
+    elseif(CMAKE_VERBOSE_MAKEFILE)
+      message(STATUS "nrf52_bsim: git describe --tags --abbrev=0\
+ ${NRF52_HW_MODELS_TAG},
+ stdout: ${NRF52_HW_MODELS_TAG_FOUND}
+ stderr: ${stderr}")
+    endif()
+  endif()
+endif()
+
 zephyr_library()
 zephyr_library_compile_definitions(NO_POSIX_CHEATS)
 

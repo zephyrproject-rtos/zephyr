@@ -421,8 +421,8 @@ u16_t ieee802154_compute_header_size(struct net_if *iface,
 
 	/** if dst is NULL, we'll consider it as a brodcast header */
 	if (!dst ||
-	    net_is_ipv6_addr_mcast(dst) ||
-	    net_is_ipv6_addr_unspecified(dst)) {
+	    net_ipv6_is_addr_mcast(dst) ||
+	    net_ipv6_is_addr_unspecified(dst)) {
 		NET_DBG("Broadcast destination");
 		/* 4 dst pan/addr + 8 src addr */
 		hdr_len += IEEE802154_PAN_ID_LENGTH +

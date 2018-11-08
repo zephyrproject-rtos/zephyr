@@ -26,7 +26,7 @@ extern "C" {
  */
 #define NVS_STATUS_NOSPACE 1
 
-#define NVS_BLOCK_SIZE 8
+#define NVS_BLOCK_SIZE 32
 
 /* Allocation Table Entry */
 struct nvs_ate {

@@ -3178,7 +3178,7 @@ static int _ping_ipv6(const struct shell *shell, char *host)
 	return ret;
 }
 #else
-#define _ping_ipv6(...) -EINVAL
+#define _ping_ipv6(...) -ENOTSUP
 #define _remove_ipv6_ping_handler()
 #endif /* CONFIG_NET_IPV6 */
 
@@ -3235,7 +3235,7 @@ static int _ping_ipv4(const struct shell *shell, char *host)
 	return ret;
 }
 #else
-#define _ping_ipv4(...) -EINVAL
+#define _ping_ipv4(...) -ENOTSUP
 #define _remove_ipv4_ping_handler()
 #endif /* CONFIG_NET_IPV4 */
 #endif /* CONFIG_NET_IPV6 || CONFIG_NET_IPV4 */
@@ -3261,23 +3261,27 @@ static int cmd_net_ping(const struct shell *shell, size_t argc, char *argv[])
 
 	shell_for_ping = shell;
 
-	ret = _ping_ipv6(shell, host);
-	if (!ret) {
-		goto wait_reply;
-	} else if (ret == -EIO) {
-		PR_WARNING("Cannot send IPv6 ping\n");
-		return -ENOEXEC;
+	if (IS_ENABLED(CONFIG_NET_IPV6)) {
+		ret = _ping_ipv6(shell, host);
+		if (!ret) {
+			goto wait_reply;
+		} else if (ret == -EIO) {
+			PR_WARNING("Cannot send IPv6 ping\n");
+			return -ENOEXEC;
+		}
 	}
 
-	ret = _ping_ipv4(shell, host);
-	if (ret) {
-		if (ret == -EIO) {
-			PR_WARNING("Cannot send IPv4 ping\n");
-		} else if (ret == -EINVAL) {
-			PR_WARNING("Invalid IP address\n");
-		}
+	if (IS_ENABLED(CONFIG_NET_IPV4)) {
+		ret = _ping_ipv4(shell, host);
+		if (ret) {
+			if (ret == -EIO) {
+				PR_WARNING("Cannot send IPv4 ping\n");
+			} else if (ret == -EINVAL) {
+				PR_WARNING("Invalid IP address\n");
+			}
 
-		return -ENOEXEC;
+			return -ENOEXEC;
+		}
 	}
 
 wait_reply:

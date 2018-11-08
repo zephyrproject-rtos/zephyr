@@ -77,8 +77,8 @@ Using Coccinelle on Zephyr
 and has various modes:
 
 Four basic modes are defined: ``patch``, ``report``, ``context``, and
-``org``. The mode to use is specified by setting the MODE variable with
-``--mode=<mode>`` or ``-m=<mode>``.
+``org``. The mode to use is specified by setting ``--mode=<mode>`` or
+``-m=<mode>``.
 
 * ``patch`` proposes a fix, when possible.
 
@@ -176,7 +176,7 @@ or:
    ./scripts/coccicheck --mode=report --cocci=./path/to/<example.cocci>
 
 
-Controlling Which Files are Processed by Coccinelle
+Controlling which files are processed by Coccinelle
 ***************************************************
 
 By default the entire source tree is checked.
@@ -213,7 +213,7 @@ instance:
    ./scripts/coccicheck --mode=patch --debug=cocci.err
    cat cocci.err
 
-DEBUG_FILE support is only supported when using Coccinelle >= 1.0.2.
+Debugging support is only supported when using Coccinelle >= 1.0.2.
 
 SmPL patch specific options
 ***************************
@@ -247,7 +247,7 @@ Example
    /// Use ARRAY_SIZE instead of dividing sizeof array with sizeof an element
 
 * A more detailed information about the script with exceptional cases
-  of false postives(if any) can be listed using ``//#`` comments.
+  or false positives (if any) can be listed using ``//#`` comments.
 
 Example
 =======
@@ -261,7 +261,7 @@ Example
 
 * Confidence: It is a property defined to specify the accuracy level of
   the script. It can be either ``High``, ``Moderate`` or ``Low`` depending
-  upon the number of false positives obeserved.
+  upon the number of false positives observed.
 
 Example
 =======
@@ -424,7 +424,7 @@ Running:
 
 .. code-block:: console
 
-   ./scripts/coccicheck --mode=patch --cocci=scripts/coccinelle/array_size.cocci
+   ./scripts/coccicheck --mode=context --cocci=scripts/coccinelle/array_size.cocci
 
 will execute the following part of the SmPL script:
 

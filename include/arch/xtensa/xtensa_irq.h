@@ -8,11 +8,13 @@
 
 #include <xtensa_api.h>
 #include <xtensa/xtruntime.h>
-#include <board.h>
 
 #define CONFIG_GEN_IRQ_START_VECTOR 0
 
 #ifdef CONFIG_MULTI_LEVEL_INTERRUPTS
+
+/* for _soc_irq_*() */
+#include <soc.h>
 
 #define CONFIG_NUM_IRQS (XCHAL_NUM_INTERRUPTS +\
 			(CONFIG_NUM_2ND_LEVEL_AGGREGATORS +\

@@ -10,3 +10,5 @@ supported:
   - adc
   - gpio
   - spi
+  - watchdog
+  - usb_device

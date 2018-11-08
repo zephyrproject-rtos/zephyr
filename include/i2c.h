@@ -104,16 +104,6 @@ struct i2c_msg {
 	u8_t		flags;
 };
 
-union __deprecated dev_config {
-	u32_t raw;
-	struct __bits {
-		u32_t        use_10_bit_addr : 1;
-		u32_t        speed : 3;
-		u32_t        is_master_device : 1;
-		u32_t        reserved : 26;
-	} bits;
-};
-
 /**
  * @cond INTERNAL_HIDDEN
  *

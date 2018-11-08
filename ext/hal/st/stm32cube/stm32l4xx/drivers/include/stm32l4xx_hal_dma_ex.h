@@ -34,8 +34,8 @@
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __STM32L4xx_HAL_DMA_EX_H
-#define __STM32L4xx_HAL_DMA_EX_H
+#ifndef STM32L4xx_HAL_DMA_EX_H
+#define STM32L4xx_HAL_DMA_EX_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -253,7 +253,7 @@ void HAL_DMAEx_MUX_IRQHandler(DMA_HandleTypeDef *hdma);
 
 #define IS_DMAMUX_SYNC_SIGNAL_ID(SIGNAL_ID) ((SIGNAL_ID) <= HAL_DMAMUX1_SYNC_LDTC_IT)
 
-#define IS_DMAMUX_SYNC_REQUEST_NUMBER(REQUEST_NUMBER) (((REQUEST_NUMBER) > 0) && ((REQUEST_NUMBER) <= 32))
+#define IS_DMAMUX_SYNC_REQUEST_NUMBER(REQUEST_NUMBER) (((REQUEST_NUMBER) > 0U) && ((REQUEST_NUMBER) <= 32U))
 
 #define IS_DMAMUX_SYNC_POLARITY(POLARITY) (((POLARITY) == HAL_DMAMUX_SYNC_NO_EVENT)    || \
                                            ((POLARITY) == HAL_DMAMUX_SYNC_RISING)   || \
@@ -267,12 +267,12 @@ void HAL_DMAEx_MUX_IRQHandler(DMA_HandleTypeDef *hdma);
 
 #define IS_DMAMUX_REQUEST_GEN_SIGNAL_ID(SIGNAL_ID) ((SIGNAL_ID) <= HAL_DMAMUX1_REQ_GEN_LTDC_IT)
 
-#define IS_DMAMUX_REQUEST_GEN_REQUEST_NUMBER(REQUEST_NUMBER) (((REQUEST_NUMBER) > 0) && ((REQUEST_NUMBER) <= 32))
+#define IS_DMAMUX_REQUEST_GEN_REQUEST_NUMBER(REQUEST_NUMBER) (((REQUEST_NUMBER) > 0U) && ((REQUEST_NUMBER) <= 32U))
 
-#define IS_DMAMUX_REQUEST_GEN_POLARITY(POLARITY) (((POLARITY) == HAL_DMAMUX_REQUEST_GEN_NO_EVENT)   || \
-                                               ((POLARITY) == HAL_DMAMUX_REQUEST_GEN_RISING)  || \
-                                               ((POLARITY) == HAL_DMAMUX_REQUEST_GEN_FALLING) || \
-                                               ((POLARITY) == HAL_DMAMUX_REQUEST_GEN_RISING_FALLING))
+#define IS_DMAMUX_REQUEST_GEN_POLARITY(POLARITY) (((POLARITY) == HAL_DMAMUX_REQ_GEN_NO_EVENT)   || \
+                                               ((POLARITY) == HAL_DMAMUX_REQ_GEN_RISING)  || \
+                                               ((POLARITY) == HAL_DMAMUX_REQ_GEN_FALLING) || \
+                                               ((POLARITY) == HAL_DMAMUX_REQ_GEN_RISING_FALLING))
 
 /**
   * @}
@@ -293,6 +293,6 @@ void HAL_DMAEx_MUX_IRQHandler(DMA_HandleTypeDef *hdma);
 }
 #endif
 
-#endif /* __STM32L4xx_HAL_DMA_H */
+#endif /* STM32L4xx_HAL_DMA_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

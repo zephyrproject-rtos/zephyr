@@ -10,7 +10,7 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 
 #include <misc/util.h>
 #include <kernel.h>
-#include <board.h>
+#include <soc.h>
 #include <errno.h>
 #include <spi.h>
 #include <toolchain.h>

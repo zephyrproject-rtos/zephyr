@@ -485,7 +485,7 @@ static inline bool is_addr_unspecified(const struct sockaddr *addr)
 	}
 
 	if (addr->sa_family == AF_INET6) {
-		return net_is_ipv6_addr_unspecified(
+		return net_ipv6_is_addr_unspecified(
 			&(net_sin6(addr)->sin6_addr));
 	} else if (addr->sa_family == AF_INET) {
 		return net_sin(addr)->sin_addr.s4_addr32[0] == 0;

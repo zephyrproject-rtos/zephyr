@@ -22,7 +22,6 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 
-#include <gatt/dis.h>
 #include <gatt/bas.h>
 #include <gatt/hog.h>
 
@@ -85,7 +84,6 @@ static void bt_ready(int err)
 	printk("Bluetooth initialized\n");
 
 	bas_init();
-	dis_init(CONFIG_SOC, "Manufacturer");
 	hog_init();
 
 	if (IS_ENABLED(CONFIG_SETTINGS)) {

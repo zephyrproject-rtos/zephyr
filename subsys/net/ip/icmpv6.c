@@ -295,7 +295,7 @@ static enum net_verdict handle_echo_request(struct net_pkt *orig)
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	struct net_if *iface;
-	u16_t payload_len;
+	s16_t payload_len;
 	int ret;
 
 	NET_DBG("Received Echo Request from %s to %s",
@@ -304,13 +304,18 @@ static enum net_verdict handle_echo_request(struct net_pkt *orig)
 
 	iface = net_pkt_iface(orig);
 
+	payload_len = ntohs(NET_IPV6_HDR(orig)->len) -
+		net_pkt_ipv6_ext_len(orig) - NET_ICMPH_LEN;
+	if (payload_len < NET_ICMPV6_UNUSED_LEN) {
+		/* No identifier or sequence number present */
+		goto drop_no_pkt;
+	}
+
 	pkt = net_pkt_get_reserve_tx(0, PKT_WAIT_TIME);
 	if (!pkt) {
 		goto drop_no_pkt;
 	}
 
-	payload_len = ntohs(NET_IPV6_HDR(orig)->len) - sizeof(NET_ICMPH_LEN) -
-							NET_ICMPV6_UNUSED_LEN;
 	frag = net_pkt_copy_all(orig, 0, PKT_WAIT_TIME);
 	if (!frag) {
 		goto drop;
@@ -334,7 +339,7 @@ static enum net_verdict handle_echo_request(struct net_pkt *orig)
 	NET_IPV6_HDR(pkt)->flow = 0;
 	NET_IPV6_HDR(pkt)->hop_limit = net_if_ipv6_get_hop_limit(iface);
 
-	if (net_is_ipv6_addr_mcast(&NET_IPV6_HDR(pkt)->dst)) {
+	if (net_ipv6_is_addr_mcast(&NET_IPV6_HDR(pkt)->dst)) {
 		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst,
 				&NET_IPV6_HDR(orig)->src);
 
@@ -480,7 +485,7 @@ int net_icmpv6_send_error(struct net_pkt *orig, u8_t type, u8_t code,
 			     sizeof(struct net_icmp_hdr));
 	}
 
-	if (net_is_ipv6_addr_mcast(&NET_IPV6_HDR(orig)->dst)) {
+	if (net_ipv6_is_addr_mcast(&NET_IPV6_HDR(orig)->dst)) {
 		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst,
 				&NET_IPV6_HDR(orig)->src);
 

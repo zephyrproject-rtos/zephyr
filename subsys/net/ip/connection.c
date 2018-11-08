@@ -580,7 +580,7 @@ int net_conn_register(enum net_ip_protocol proto,
 				memcpy(&conns[i].remote_addr, remote_addr,
 				       sizeof(struct sockaddr_in6));
 
-				if (net_is_ipv6_addr_unspecified(
+				if (net_ipv6_is_addr_unspecified(
 					    &net_sin6(remote_addr)->
 							sin6_addr)) {
 					rank |= NET_RANK_REMOTE_UNSPEC_ADDR;
@@ -617,7 +617,7 @@ int net_conn_register(enum net_ip_protocol proto,
 				memcpy(&conns[i].local_addr, local_addr,
 				       sizeof(struct sockaddr_in6));
 
-				if (net_is_ipv6_addr_unspecified(
+				if (net_ipv6_is_addr_unspecified(
 					    &net_sin6(local_addr)->
 							sin6_addr)) {
 					rank |= NET_RANK_LOCAL_UNSPEC_ADDR;
@@ -721,7 +721,7 @@ static bool check_addr(struct net_pkt *pkt,
 			addr6 = &NET_IPV6_HDR(pkt)->dst;
 		}
 
-		if (!net_is_ipv6_addr_unspecified(
+		if (!net_ipv6_is_addr_unspecified(
 			    &net_sin6(addr)->sin6_addr)) {
 			if (!net_ipv6_addr_cmp(&net_sin6(addr)->sin6_addr,
 					       addr6)) {
@@ -781,14 +781,14 @@ static bool is_invalid_packet(struct net_pkt *pkt,
 	switch (NET_IPV6_HDR(pkt)->vtc & 0xf0) {
 #if defined(CONFIG_NET_IPV6)
 	case 0x60:
-		if (net_is_my_ipv6_addr(&NET_IPV6_HDR(pkt)->src)) {
+		if (net_ipv6_is_my_addr(&NET_IPV6_HDR(pkt)->src)) {
 			my_src_addr = true;
 		}
 		break;
 #endif
 #if defined(CONFIG_NET_IPV4)
 	case 0x40:
-		if (net_is_my_ipv4_addr(&NET_IPV4_HDR(pkt)->src)) {
+		if (net_ipv4_is_my_addr(&NET_IPV4_HDR(pkt)->src)) {
 			my_src_addr = true;
 		}
 		break;
@@ -1004,13 +1004,13 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 	 * we do not send ICMP error as that makes no sense.
 	 */
 	if (net_pkt_family(pkt) == AF_INET6 &&
-	    net_is_ipv6_addr_mcast(&NET_IPV6_HDR(pkt)->dst)) {
+	    net_ipv6_is_addr_mcast(&NET_IPV6_HDR(pkt)->dst)) {
 		;
 	} else
 #endif
 #if defined(CONFIG_NET_IPV4)
 	if (net_pkt_family(pkt) == AF_INET &&
-	    net_is_ipv4_addr_mcast(&NET_IPV4_HDR(pkt)->dst)) {
+	    net_ipv4_is_addr_mcast(&NET_IPV4_HDR(pkt)->dst)) {
 		;
 	} else
 #endif

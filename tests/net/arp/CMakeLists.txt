@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.8.2)
 include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
-project(NONE)
+project(arp)
 
 target_include_directories(
   app

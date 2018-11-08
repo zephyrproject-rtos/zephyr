@@ -167,6 +167,7 @@ To use RTT, you will first need to enable it by adding the following lines in yo
 .. code-block:: text
 
    CONFIG_HAS_SEGGER_RTT=y
+   CONFIG_USE_SEGGER_RTT=y
    CONFIG_RTT_CONSOLE=y
 
 If you get no RTT output you might need to disable other consoles which conflict

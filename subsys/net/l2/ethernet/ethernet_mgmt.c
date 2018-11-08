@@ -88,6 +88,22 @@ static int ethernet_set_config(u32_t mgmt_request,
 			return -EACCES;
 		}
 
+		/* We need to remove the old IPv6 link layer address, that is
+		 * generated from old MAC address, from network interface if
+		 * needed.
+		 */
+		if (IS_ENABLED(CONFIG_NET_IPV6)) {
+			struct in6_addr iid;
+
+			net_ipv6_addr_create_iid(&iid,
+						 net_if_get_link_addr(iface));
+
+			/* No need to check the return value in this case. It
+			 * is not an error if the address is not found atm.
+			 */
+			(void)net_if_ipv6_addr_rm(iface, &iid);
+		}
+
 		memcpy(&config.mac_address, &params->mac_address,
 		       sizeof(struct net_eth_addr));
 		type = ETHERNET_CONFIG_TYPE_MAC_ADDRESS;

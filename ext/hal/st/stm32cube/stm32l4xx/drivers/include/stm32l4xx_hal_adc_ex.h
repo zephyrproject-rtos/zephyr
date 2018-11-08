@@ -92,7 +92,7 @@ typedef struct
                                                Note: Depending on devices and ADC instances, some channels may not be available on device package pins. Refer to device datasheet for channels availability. */
 
   uint32_t InjectedRank;                  /*!< Specifies the rank in the ADC group injected sequencer.
-                                               This parameter must be a value of @ref ADC_LL_EC_INJ_SEQ_RANKS.
+                                               This parameter must be a value of @ref ADC_INJ_SEQ_RANKS.
                                                Note: to disable a channel or change order of conversion sequencer, rank containing a previous channel setting can be overwritten by
                                                the new channel setting (or parameter number of conversions adjusted) */
 
@@ -136,7 +136,7 @@ typedef struct
                                                Caution: this setting impacts the entire injected group. Therefore, call of HAL_ADCEx_InjectedConfigChannel() to
                                                         configure a channel on injected group can impact the configuration of other channels previously set. */
 
-  uint32_t InjectedDiscontinuousConvMode; /*!< Specifies whether the conversions sequence of ADC group injected is performed in Complete-sequence/Discontinuous-sequence
+  FunctionalState InjectedDiscontinuousConvMode; /*!< Specifies whether the conversions sequence of ADC group injected is performed in Complete-sequence/Discontinuous-sequence
                                                (main sequence subdivided in successive parts).
                                                Discontinuous mode is used only if sequencer is enabled (parameter 'ScanConvMode'). If sequencer is disabled, this parameter is discarded.
                                                Discontinuous mode can be enabled only if continuous mode is disabled.
@@ -146,7 +146,7 @@ typedef struct
                                                Caution: this setting impacts the entire injected group. Therefore, call of HAL_ADCEx_InjectedConfigChannel() to
                                                         configure a channel on injected group can impact the configuration of other channels previously set. */
 
-  uint32_t AutoInjectedConv;              /*!< Enables or disables the selected ADC group injected automatic conversion after regular one
+  FunctionalState AutoInjectedConv;       /*!< Enables or disables the selected ADC group injected automatic conversion after regular one
                                                This parameter can be set to ENABLE or DISABLE.
                                                Note: To use Automatic injected conversion, discontinuous mode must be disabled ('DiscontinuousConvMode' and 'InjectedDiscontinuousConvMode' set to DISABLE)
                                                Note: To use Automatic injected conversion, injected group external triggers must be disabled ('ExternalTrigInjecConv' set to ADC_INJECTED_SOFTWARE_START)
@@ -155,7 +155,7 @@ typedef struct
                                                Caution: this setting impacts the entire injected group. Therefore, call of HAL_ADCEx_InjectedConfigChannel() to
                                                         configure a channel on injected group can impact the configuration of other channels previously set. */
 
-  uint32_t QueueInjectedContext;          /*!< Specifies whether the context queue feature is enabled.
+  FunctionalState QueueInjectedContext;   /*!< Specifies whether the context queue feature is enabled.
                                                This parameter can be set to ENABLE or DISABLE.
                                                If context queue is enabled, injected sequencer&channels configurations are queued on up to 2 contexts. If a
                                                new injected context is set when queue is full, error is triggered by interruption and through function
@@ -178,9 +178,9 @@ typedef struct
                                                Caution: this setting impacts the entire injected group. Therefore, call of HAL_ADCEx_InjectedConfigChannel() to
                                                         configure a channel on injected group can impact the configuration of other channels previously set. */
 
-  uint32_t InjecOversamplingMode;                 /*!< Specifies whether the oversampling feature is enabled or disabled.
-                                                       This parameter can be set to ENABLE or DISABLE.
-                                                       Note: This parameter can be modified only if there is no conversion is ongoing (both ADSTART and JADSTART cleared). */
+  FunctionalState InjecOversamplingMode;         /*!< Specifies whether the oversampling feature is enabled or disabled.
+                                                      This parameter can be set to ENABLE or DISABLE.
+                                                      Note: This parameter can be modified only if there is no conversion is ongoing (both ADSTART and JADSTART cleared). */
 
   ADC_InjOversamplingTypeDef  InjecOversampling; /*!< Specifies the Oversampling parameters.
                                                       Caution: this setting overwrites the previous oversampling configuration if oversampling already enabled.
@@ -248,7 +248,7 @@ typedef struct
 /** @defgroup ADC_injected_external_trigger_edge ADC group injected trigger edge (when external trigger is selected)
   * @{
   */
-#define ADC_EXTERNALTRIGINJECCONV_EDGE_NONE           (0x00000000U)         /*!< Injected conversions hardware trigger detection disabled                             */
+#define ADC_EXTERNALTRIGINJECCONV_EDGE_NONE           (0x00000000UL)        /*!< Injected conversions hardware trigger detection disabled                             */
 #define ADC_EXTERNALTRIGINJECCONV_EDGE_RISING         (ADC_JSQR_JEXTEN_0)   /*!< Injected conversions hardware trigger detection on the rising edge                   */
 #define ADC_EXTERNALTRIGINJECCONV_EDGE_FALLING        (ADC_JSQR_JEXTEN_1)   /*!< Injected conversions hardware trigger detection on the falling edge                  */
 #define ADC_EXTERNALTRIGINJECCONV_EDGE_RISINGFALLING  (ADC_JSQR_JEXTEN)     /*!< Injected conversions hardware trigger detection on both the rising and falling edges */
@@ -277,7 +277,7 @@ typedef struct
   * @}
   */
 
-/** @defgroup ADC_LL_EC_INJ_SEQ_RANKS  ADC group injected - Sequencer ranks
+/** @defgroup ADC_INJ_SEQ_RANKS  ADC group injected - Sequencer ranks
   * @{
   */
 #define ADC_INJECTED_RANK_1                (LL_ADC_INJ_RANK_1) /*!< ADC group injected sequencer rank 1 */
@@ -304,7 +304,7 @@ typedef struct
 /** @defgroup ADC_HAL_EC_MULTI_DMA_TRANSFER_RESOLUTION  Multimode - DMA transfer mode depending on ADC resolution
   * @{
   */
-#define ADC_DMAACCESSMODE_DISABLED      (0x00000000U)      /*!< DMA multimode disabled: each ADC uses its own DMA channel */
+#define ADC_DMAACCESSMODE_DISABLED      (0x00000000UL)     /*!< DMA multimode disabled: each ADC uses its own DMA channel */
 #define ADC_DMAACCESSMODE_12_10_BITS    (ADC_CCR_MDMA_1)   /*!< DMA multimode enabled (one DMA channel for both ADC, DMA of ADC master) for 12 and 10 bits resolution */
 #define ADC_DMAACCESSMODE_8_6_BITS      (ADC_CCR_MDMA)     /*!< DMA multimode enabled (one DMA channel for both ADC, DMA of ADC master) for 8 and 6 bits resolution */
 /**
@@ -403,7 +403,7 @@ typedef struct
 /** @defgroup ADC_HAL_EC_REG_DFSDM_TRANSFER ADC group regular - DFSDM transfer of ADC conversion data
   * @{
   */
-#define ADC_DFSDM_MODE_DISABLE     (0x00000000U)                      /*!< ADC conversions are not transferred by DFSDM. */
+#define ADC_DFSDM_MODE_DISABLE     (0x00000000UL)                     /*!< ADC conversions are not transferred by DFSDM. */
 #define ADC_DFSDM_MODE_ENABLE      (LL_ADC_REG_DFSDM_TRANSFER_ENABLE) /*!< ADC conversion data are transfered to DFSDM for post processing. The ADC conversion data format must be 16-bit signed and right aligned, refer to reference manual. DFSDM transfer cannot be used if DMA transfer is enabled. */
 /**
   * @}
@@ -421,7 +421,7 @@ typedef struct
   * @{
   */
 
-/** @brief  Force ADC instance in multimode mode independant (multimode disable).
+/** @brief  Force ADC instance in multimode mode independent (multimode disable).
   * @note   This macro must be used only in case of transition from multimode
   *         to mode independent and in case of unknown previous state,
   *         to ensure ADC configuration is in mode independent.
@@ -458,21 +458,21 @@ typedef struct
   * @retval SET (software start) or RESET (external trigger).
   */
 #define ADC_IS_SOFTWARE_START_INJECTED(__HANDLE__)                             \
-  (((__HANDLE__)->Instance->JSQR & ADC_JSQR_JEXTEN) == RESET)
+  (((__HANDLE__)->Instance->JSQR & ADC_JSQR_JEXTEN) == 0UL)
 
 /**
   * @brief Check if conversion is on going on regular or injected groups.
   * @param __HANDLE__ ADC handle.
   * @retval SET (conversion is on going) or RESET (no conversion is on going).
   */
-#define ADC_IS_CONVERSION_ONGOING_REGULAR_INJECTED(__HANDLE__)                    \
-       (( (((__HANDLE__)->Instance->CR) & (ADC_CR_ADSTART | ADC_CR_JADSTART)) == RESET  \
+#define ADC_IS_CONVERSION_ONGOING_REGULAR_INJECTED(__HANDLE__)                       \
+       (( (((__HANDLE__)->Instance->CR) & (ADC_CR_ADSTART | ADC_CR_JADSTART)) == 0UL \
         ) ? RESET : SET)
 
 /**
   * @brief Check if conversion is on going on injected group.
   * @param __HANDLE__ ADC handle.
-  * @retval SET (conversion is on going) or RESET (no conversion is on going).
+  * @retval Value "0" (no conversion is on going) or value "1" (conversion is on going)
   */
 #define ADC_IS_CONVERSION_ONGOING_INJECTED(__HANDLE__)                         \
   (LL_ADC_INJ_IsConversionOngoing((__HANDLE__)->Instance))
@@ -493,6 +493,8 @@ typedef struct
   )
 #elif defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx) || defined (STM32L4R5xx) || defined (STM32L4R7xx) || defined (STM32L4R9xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined (STM32L4S9xx)
 #define ADC_IS_INDEPENDENT(__HANDLE__)   (SET)
+#elif defined (STM32L412xx) || defined (STM32L422xx)
+#define ADC_IS_INDEPENDENT(__HANDLE__)   (RESET)
 #endif
 
 /**
@@ -529,7 +531,7 @@ typedef struct
   * @param __NBR_DISCONTINUOUS_CONV__ Number of discontinuous conversions.
   * @retval None
   */
-#define ADC_CFGR_DISCONTINUOUS_NUM(__NBR_DISCONTINUOUS_CONV__) (((__NBR_DISCONTINUOUS_CONV__) - 1) << ADC_CFGR_DISCNUM_Pos)
+#define ADC_CFGR_DISCONTINUOUS_NUM(__NBR_DISCONTINUOUS_CONV__) (((__NBR_DISCONTINUOUS_CONV__) - 1UL) << ADC_CFGR_DISCNUM_Pos)
 
 /**
   * @brief Configure the ADC auto delay mode.
@@ -564,7 +566,7 @@ typedef struct
   * @param __CHANNEL__ ADC Channel.
   * @retval None
   */
-#define ADC_DIFSEL_CHANNEL(__CHANNEL__) (1U << (__CHANNEL__))
+#define ADC_DIFSEL_CHANNEL(__CHANNEL__) (1UL << (__CHANNEL__))
 
 /**
   * @brief Configure calibration factor in differential mode to be set into calibration register.
@@ -585,7 +587,7 @@ typedef struct
   * @param __THRESHOLD__ Threshold value.
   * @retval None
   */
-#define ADC_TRX_HIGHTHRESHOLD(__THRESHOLD__) ((__THRESHOLD__) << 16)
+#define ADC_TRX_HIGHTHRESHOLD(__THRESHOLD__) ((__THRESHOLD__) << 16UL)
 
 #if defined(ADC_MULTIMODE_SUPPORT)
 /**
@@ -595,45 +597,6 @@ typedef struct
   */
 #define ADC_CCR_MULTI_DMACONTREQ(__DMACONTREQ_MODE__) ((__DMACONTREQ_MODE__) << ADC_CCR_DMACFG_Pos)
 #endif /* ADC_MULTIMODE_SUPPORT */
-/**
-  * @brief Enable the ADC peripheral.
-  * @param __HANDLE__ ADC handle.
-  * @retval None
-  */
-#define ADC_ENABLE(__HANDLE__) ((__HANDLE__)->Instance->CR |= ADC_CR_ADEN)
-
-/**
-  * @brief Verification of hardware constraints before ADC can be enabled.
-  * @param __HANDLE__ ADC handle.
-  * @retval SET (ADC can be enabled) or RESET (ADC cannot be enabled)
-  */
-#define ADC_ENABLING_CONDITIONS(__HANDLE__)                             \
-       (( ( ((__HANDLE__)->Instance->CR) &                                    \
-            (ADC_CR_ADCAL | ADC_CR_JADSTP | ADC_CR_ADSTP | ADC_CR_JADSTART |  \
-             ADC_CR_ADSTART | ADC_CR_ADDIS | ADC_CR_ADEN                    ) \
-           ) == RESET                                                         \
-        ) ? SET : RESET)
-
-/**
-  * @brief Disable the ADC peripheral.
-  * @param __HANDLE__ ADC handle.
-  * @retval None
-  */
-#define ADC_DISABLE(__HANDLE__)                                          \
-  do{                                                                          \
-         (__HANDLE__)->Instance->CR |= ADC_CR_ADDIS;                           \
-          __HAL_ADC_CLEAR_FLAG((__HANDLE__), (ADC_FLAG_EOSMP | ADC_FLAG_RDY)); \
-  } while(0)
-
-/**
-  * @brief Verification of hardware constraints before ADC can be disabled.
-  * @param __HANDLE__ ADC handle.
-  * @retval SET (ADC can be disabled) or RESET (ADC cannot be disabled)
-  */
-#define ADC_DISABLING_CONDITIONS(__HANDLE__)                             \
-       (( ( ((__HANDLE__)->Instance->CR) &                                     \
-            (ADC_CR_JADSTART | ADC_CR_ADSTART | ADC_CR_ADEN)) == ADC_CR_ADEN   \
-        ) ? SET : RESET)
 
 /**
   * @brief Shift the offset with respect to the selected ADC resolution.
@@ -648,8 +611,7 @@ typedef struct
   * @retval None
   */
 #define ADC_OFFSET_SHIFT_RESOLUTION(__HANDLE__, __OFFSET__) \
-        ((__OFFSET__) << ((((__HANDLE__)->Instance->CFGR & ADC_CFGR_RES) >> 3)*2))
-
+        ((__OFFSET__) << ((((__HANDLE__)->Instance->CFGR & ADC_CFGR_RES) >> 3UL) * 2UL))
 
 /**
   * @brief Shift the AWD1 threshold with respect to the selected ADC resolution.
@@ -664,7 +626,7 @@ typedef struct
   * @retval None
   */
 #define ADC_AWD1THRESHOLD_SHIFT_RESOLUTION(__HANDLE__, __THRESHOLD__) \
-        ((__THRESHOLD__) << ((((__HANDLE__)->Instance->CFGR & ADC_CFGR_RES) >> 3)*2))
+        ((__THRESHOLD__) << ((((__HANDLE__)->Instance->CFGR & ADC_CFGR_RES) >> 3UL) * 2UL))
 
 /**
   * @brief Shift the AWD2 and AWD3 threshold with respect to the selected ADC resolution.
@@ -677,29 +639,11 @@ typedef struct
   * @param __THRESHOLD__ Value to be shifted
   * @retval None
   */
-#define ADC_AWD23THRESHOLD_SHIFT_RESOLUTION(__HANDLE__, __THRESHOLD__) \
-         ( ((__HANDLE__)->Instance->CFGR & ADC_CFGR_RES) != (ADC_CFGR_RES_1 | ADC_CFGR_RES_0) ? \
-            ((__THRESHOLD__) >> (4- ((((__HANDLE__)->Instance->CFGR & ADC_CFGR_RES) >> 3)*2))) : \
-            (__THRESHOLD__) << 2 )
-
-/**
-  * @brief Report Master Instance.
-  * @param __HANDLE__ ADC handle.
-  * @note Return same instance if ADC of input handle is independent ADC or if
-  *       multimode feature is not available.
-  * @retval Master Instance
-  */
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || defined (STM32L496xx) || defined (STM32L4A6xx)
-#define ADC_MASTER_REGISTER(__HANDLE__)                                          \
-  ( ( ((((__HANDLE__)->Instance) == ADC1) || (((__HANDLE__)->Instance) == ADC3)) \
-    )?                                                                           \
-     ((__HANDLE__)->Instance)                                                    \
-     :                                                                           \
-     (ADC1)                                                                      \
+#define ADC_AWD23THRESHOLD_SHIFT_RESOLUTION(__HANDLE__, __THRESHOLD__)                                       \
+  ((((__HANDLE__)->Instance->CFGR & ADC_CFGR_RES) != (ADC_CFGR_RES_1 | ADC_CFGR_RES_0))                    ? \
+    ((__THRESHOLD__) >> ((4UL - ((((__HANDLE__)->Instance->CFGR & ADC_CFGR_RES) >> 3UL) * 2UL)) & 0x1FUL)) : \
+    ((__THRESHOLD__) << 2UL)                                                                                 \
   )
-#elif defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx) || defined (STM32L4R5xx) || defined (STM32L4R7xx) || defined (STM32L4R9xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined (STM32L4S9xx)
-#define ADC_MASTER_REGISTER(__HANDLE__)   ((__HANDLE__)->Instance)
-#endif
 
 /**
   * @brief Clear Common Control Register.
@@ -725,132 +669,7 @@ typedef struct
 
 #endif /* ADC_MULTIMODE_SUPPORT */
 
-/**
-  * @brief Check whether or not dual conversions are enabled.
-  * @param __HANDLE__ ADC handle.
-  * @note Return RESET if ADC of input handle is independent ADC or if multimode feature is not available.
-  * @retval SET (dual regular conversions are enabled) or RESET (ADC is independent or no dual regular conversions are enabled)
-  */
-#if defined(ADC_MULTIMODE_SUPPORT)
-#define ADC_IS_DUAL_CONVERSION_ENABLE(__HANDLE__)                                \
-  ( ( ((((__HANDLE__)->Instance) == ADC1) || (((__HANDLE__)->Instance) == ADC2)) \
-    )?                                                                           \
-     ( ((ADC123_COMMON->CCR & ADC_CCR_DUAL) != ADC_MODE_INDEPENDENT)  )          \
-     :                                                                           \
-     RESET                                                                       \
-  )
-#else
-#define ADC_IS_DUAL_CONVERSION_ENABLE(__HANDLE__)    (RESET)
-#endif
-
-/**
-  * @brief Check whether or not dual regular conversions are enabled.
-  * @param __HANDLE__ ADC handle.
-  * @note Return RESET if ADC of input handle is independent ADC or if multimode feature is not available.
-  * @retval SET (dual regular conversions are enabled) or RESET (ADC is independent or no dual regular conversions are enabled)
-  */
-#if defined(ADC_MULTIMODE_SUPPORT)
-#define ADC_IS_DUAL_REGULAR_CONVERSION_ENABLE(__HANDLE__)                        \
-  ( ( ((((__HANDLE__)->Instance) == ADC1) || (((__HANDLE__)->Instance) == ADC2)) \
-    )?                                                                           \
-     ( (((__LL_ADC_COMMON_INSTANCE((__HANDLE__)->Instance))->CCR & ADC_CCR_DUAL) != ADC_MODE_INDEPENDENT)     &&      \
-       (((__LL_ADC_COMMON_INSTANCE((__HANDLE__)->Instance))->CCR & ADC_CCR_DUAL) != ADC_DUALMODE_INJECSIMULT) &&      \
-       (((__LL_ADC_COMMON_INSTANCE((__HANDLE__)->Instance))->CCR & ADC_CCR_DUAL) != ADC_DUALMODE_ALTERTRIG) )         \
-     :                                                                           \
-     RESET                                                                       \
-  )
-#else
-#define ADC_IS_DUAL_REGULAR_CONVERSION_ENABLE(__HANDLE__)    (RESET)
-#endif
-
-/**
-  * @brief Verification of condition for ADC start conversion: ADC must be in non-multimode or multimode with handle of ADC master.
-  * @param __HANDLE__ ADC handle.
-  * @note Return SET if multimode feature is not available.
-  * @retval SET (non-multimode or Master handle) or RESET (handle of Slave ADC in multimode)
-  */
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || defined (STM32L496xx) || defined (STM32L4A6xx)
-#define ADC_NONMULTIMODE_OR_MULTIMODEMASTER(__HANDLE__)                        \
-  ( ( ((__HANDLE__)->Instance == ADC1) || ((__HANDLE__)->Instance == ADC3)     \
-    )?                                                                         \
-     SET                                                                       \
-     :                                                                         \
-     ((ADC123_COMMON->CCR & ADC_CCR_DUAL) == RESET)                            \
-  )
-#elif defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx) || defined (STM32L4R5xx) || defined (STM32L4R7xx) || defined (STM32L4R9xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined (STM32L4S9xx)
-#define ADC_NONMULTIMODE_OR_MULTIMODEMASTER(__HANDLE__)    (SET)
-#endif
-
-/**
-  * @brief Ensure ADC Instance is Independent or Master, or is not Slave ADC with dual regular conversions enabled.
-  * @param __HANDLE__ ADC handle.
-  * @note Return SET if multimode feature is not available.
-  * @retval SET (Independent or Master, or Slave without dual regular conversions enabled) or RESET (Slave ADC with dual regular conversions enabled)
-  */
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || defined (STM32L496xx) || defined (STM32L4A6xx)
-#define ADC_INDEPENDENT_OR_NONMULTIMODEREGULAR_SLAVE(__HANDLE__)            \
-  ( ( ((__HANDLE__)->Instance == ADC1) || ((__HANDLE__)->Instance == ADC3)  \
-    )?                                                                      \
-     SET                                                                    \
-     :                                                                      \
-     ( ((ADC123_COMMON->CCR & ADC_CCR_DUAL) == ADC_MODE_INDEPENDENT)     || \
-       ((ADC123_COMMON->CCR & ADC_CCR_DUAL) == ADC_DUALMODE_INJECSIMULT) || \
-       ((ADC123_COMMON->CCR & ADC_CCR_DUAL) == ADC_DUALMODE_ALTERTRIG) ))
-#elif defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L451xx) || defined (STM32L452xx) || defined( STM32L462xx) || defined (STM32L4R5xx) || defined (STM32L4R7xx) || defined (STM32L4R9xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined (STM32L4S9xx)
-#define ADC_INDEPENDENT_OR_NONMULTIMODEREGULAR_SLAVE(__HANDLE__)    (SET)
-#endif
-
-/**
-  * @brief Ensure ADC Instance is Independent or Master, or is not Slave ADC with dual injected conversions enabled.
-  * @param __HANDLE__ ADC handle.
-  * @note Return SET if multimode feature is not available.
-  * @retval SET (non-multimode or Master, or Slave without dual injected conversions enabled) or RESET (Slave ADC with dual injected conversions enabled)
-  */
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || defined (STM32L496xx) || defined (STM32L4A6xx)
-#define ADC_INDEPENDENT_OR_NONMULTIMODEINJECTED_SLAVE(__HANDLE__)          \
-  ( ( ((__HANDLE__)->Instance == ADC1) || ((__HANDLE__)->Instance == ADC3) \
-    )?                                                                     \
-     SET                                                                   \
-     :                                                                     \
-     ( ((ADC123_COMMON->CCR & ADC_CCR_DUAL) == ADC_MODE_INDEPENDENT)    || \
-       ((ADC123_COMMON->CCR & ADC_CCR_DUAL) == ADC_DUALMODE_REGSIMULT)  || \
-       ((ADC123_COMMON->CCR & ADC_CCR_DUAL) == ADC_DUALMODE_INTERL) ))
-#elif defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx) || defined (STM32L4R5xx) || defined (STM32L4R7xx) || defined (STM32L4R9xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined (STM32L4S9xx)
-#define ADC_INDEPENDENT_OR_NONMULTIMODEINJECTED_SLAVE(__HANDLE__)    (SET)
-#endif
-
-/**
-  * @brief Verification of ADC state: enabled or disabled, directly checked on instance as input parameter.
-  * @param __INSTANCE__ ADC instance.
-  * @retval SET (ADC enabled) or RESET (ADC disabled)
-  */
-#define ADC_INSTANCE_IS_ENABLED(__INSTANCE__)                                       \
-       (( ((((__INSTANCE__)->CR) & (ADC_CR_ADEN | ADC_CR_ADDIS)) == ADC_CR_ADEN) && \
-          ((((__INSTANCE__)->ISR) & ADC_FLAG_RDY) == ADC_FLAG_RDY)                  \
-        ) ? SET : RESET)
-
-/**
-  * @brief Verification of enabled/disabled status of ADCs other than that associated to the input parameter handle.
-  * @param __HANDLE__ ADC handle.
-  * @retval SET (at least one other ADC is enabled) or RESET (no other ADC is enabled, all other ADCs are disabled)
-  */
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || defined (STM32L496xx) || defined (STM32L4A6xx)
-#define ADC_ANY_OTHER_ENABLED(__HANDLE__)                                   \
-  ( ( ((__HANDLE__)->Instance == ADC1)                                      \
-    )?                                                                      \
-     (ADC_INSTANCE_IS_ENABLED(ADC2)) || (ADC_INSTANCE_IS_ENABLED(ADC3))     \
-     :                                                                      \
-     ( ( ((__HANDLE__)->Instance == ADC2)                                   \
-       )?                                                                   \
-         (ADC_INSTANCE_IS_ENABLED(ADC1)) || (ADC_INSTANCE_IS_ENABLED(ADC3)) \
-        :                                                                   \
-          ADC_INSTANCE_IS_ENABLED(ADC1)) || (ADC_INSTANCE_IS_ENABLED(ADC2)) \
-     )
-#elif defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx) || defined (STM32L4R5xx) || defined (STM32L4R7xx) || defined (STM32L4R9xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined (STM32L4S9xx)
-#define ADC_ANY_OTHER_ENABLED(__HANDLE__)    (RESET)
-#endif
-
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || defined (STM32L496xx) || defined (STM32L4A6xx)
+#if defined (STM32L412xx) || defined (STM32L422xx) || defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || defined (STM32L496xx) || defined (STM32L4A6xx)
 /**
   * @brief Set handle instance of the ADC slave associated to the ADC master.
   * @param __HANDLE_MASTER__ ADC master handle.
@@ -860,28 +679,15 @@ typedef struct
   */
 #define ADC_MULTI_SLAVE(__HANDLE_MASTER__, __HANDLE_SLAVE__)             \
   ( (((__HANDLE_MASTER__)->Instance == ADC1)) ? ((__HANDLE_SLAVE__)->Instance = ADC2) : ((__HANDLE_SLAVE__)->Instance = NULL) )
-#endif /* defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) */
+#endif /* defined (STM32L412xx) || defined (STM32L422xx) || defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) */
 
-/**
-  * @brief Check whether or not multimode is configured in DMA mode.
-  * @param __HANDLE__ ADC handle.
-  * @note  Return RESET if multimode feature is not available.
-  * @retval SET (multimode is configured in DMA mode) or RESET (DMA multimode is disabled)
-  */
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || defined (STM32L496xx) || defined (STM32L4A6xx)
-#define ADC_MULTIMODE_DMA_ENABLED(__HANDLE__)                                     \
-    ((READ_BIT(ADC123_COMMON->CCR, ADC_CCR_MDMA) == ADC_DMAACCESSMODE_12_10_BITS) \
-  || (READ_BIT(ADC123_COMMON->CCR, ADC_CCR_MDMA) == ADC_DMAACCESSMODE_8_6_BITS))
-#elif defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx) || defined (STM32L4R5xx) || defined (STM32L4R7xx) || defined (STM32L4R9xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined (STM32L4S9xx)
-#define ADC_MULTIMODE_DMA_ENABLED(__HANDLE__)    (RESET)
-#endif
 
 /**
   * @brief Verify the ADC instance connected to the temperature sensor.
   * @param __HANDLE__ ADC handle.
   * @retval SET (ADC instance is valid) or RESET (ADC instance is invalid)
   */
-#if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx) || defined (STM32L4R5xx) || defined (STM32L4R7xx) || defined (STM32L4R9xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined (STM32L4S9xx)
+#if defined (STM32L412xx) || defined (STM32L422xx) || defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx) || defined (STM32L4R5xx) || defined (STM32L4R7xx) || defined (STM32L4R9xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined (STM32L4S9xx)
 /*  The temperature sensor measurement path (channel 17) is available on ADC1 */
 #define ADC_TEMPERATURE_SENSOR_INSTANCE(__HANDLE__)  (((__HANDLE__)->Instance) == ADC1)
 #elif defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || defined (STM32L496xx) || defined (STM32L4A6xx)
@@ -894,7 +700,7 @@ typedef struct
   * @param __HANDLE__ ADC handle.
   * @retval SET (ADC instance is valid) or RESET (ADC instance is invalid)
   */
-#if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx) || defined (STM32L4R5xx) || defined (STM32L4R7xx) || defined (STM32L4R9xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined (STM32L4S9xx)
+#if defined (STM32L412xx) || defined (STM32L422xx) || defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx) || defined (STM32L4R5xx) || defined (STM32L4R7xx) || defined (STM32L4R9xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined (STM32L4S9xx)
 /*  The battery voltage measurement path (channel 18) is available on ADC1 */
 #define ADC_BATTERY_VOLTAGE_INSTANCE(__HANDLE__)  (((__HANDLE__)->Instance) == ADC1)
 #elif defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || defined (STM32L496xx) || defined (STM32L4A6xx)
@@ -956,6 +762,42 @@ typedef struct
                                                           ((__CHANNEL__) == ADC_CHANNEL_VBAT)        || \
                                                           ((__CHANNEL__) == ADC_CHANNEL_DAC1CH1)     || \
                                                           ((__CHANNEL__) == ADC_CHANNEL_DAC1CH2)))
+#elif defined (STM32L412xx) || defined (STM32L422xx)
+#define IS_ADC_CHANNEL(__HANDLE__, __CHANNEL__)  (((((__HANDLE__)->Instance) == ADC1)  && \
+                                                         (((__CHANNEL__) == ADC_CHANNEL_1)           || \
+                                                          ((__CHANNEL__) == ADC_CHANNEL_2)           || \
+                                                          ((__CHANNEL__) == ADC_CHANNEL_3)           || \
+                                                          ((__CHANNEL__) == ADC_CHANNEL_4)           || \
+                                                          ((__CHANNEL__) == ADC_CHANNEL_5)           || \
+                                                          ((__CHANNEL__) == ADC_CHANNEL_6)           || \
+                                                          ((__CHANNEL__) == ADC_CHANNEL_7)           || \
+                                                          ((__CHANNEL__) == ADC_CHANNEL_8)           || \
+                                                          ((__CHANNEL__) == ADC_CHANNEL_9)           || \
+                                                          ((__CHANNEL__) == ADC_CHANNEL_10)          || \
+                                                          ((__CHANNEL__) == ADC_CHANNEL_11)          || \
+                                                          ((__CHANNEL__) == ADC_CHANNEL_12)          || \
+                                                          ((__CHANNEL__) == ADC_CHANNEL_13)          || \
+                                                          ((__CHANNEL__) == ADC_CHANNEL_14)          || \
+                                                          ((__CHANNEL__) == ADC_CHANNEL_15)          || \
+                                                          ((__CHANNEL__) == ADC_CHANNEL_16)          || \
+                                                          ((__CHANNEL__) == ADC_CHANNEL_VREFINT)     || \
+                                                          ((__CHANNEL__) == ADC_CHANNEL_TEMPSENSOR)  || \
+                                                          ((__CHANNEL__) == ADC_CHANNEL_VBAT)))      || \
+                                                        ((((__HANDLE__)->Instance) == ADC2)  && \
+                                                         (((__CHANNEL__) == ADC_CHANNEL_1)           || \
+                                                          ((__CHANNEL__) == ADC_CHANNEL_2)           || \
+                                                          ((__CHANNEL__) == ADC_CHANNEL_3)           || \
+                                                          ((__CHANNEL__) == ADC_CHANNEL_4)           || \
+                                                          ((__CHANNEL__) == ADC_CHANNEL_7)           || \
+                                                          ((__CHANNEL__) == ADC_CHANNEL_8)           || \
+                                                          ((__CHANNEL__) == ADC_CHANNEL_9)           || \
+                                                          ((__CHANNEL__) == ADC_CHANNEL_10)          || \
+                                                          ((__CHANNEL__) == ADC_CHANNEL_11)          || \
+                                                          ((__CHANNEL__) == ADC_CHANNEL_12)          || \
+                                                          ((__CHANNEL__) == ADC_CHANNEL_13)          || \
+                                                          ((__CHANNEL__) == ADC_CHANNEL_14)          || \
+                                                          ((__CHANNEL__) == ADC_CHANNEL_15)          || \
+                                                          ((__CHANNEL__) == ADC_CHANNEL_16)  )))
 #elif defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || defined (STM32L496xx) || defined (STM32L4A6xx)
 #define IS_ADC_CHANNEL(__HANDLE__, __CHANNEL__)  (((((__HANDLE__)->Instance) == ADC1)  && \
                                                          (((__CHANNEL__) == ADC_CHANNEL_1)           || \
@@ -1025,7 +867,7 @@ typedef struct
   * @param __CHANNEL__ programmed ADC channel.
   * @retval SET (__CHANNEL__ is valid) or RESET (__CHANNEL__ is invalid)
   */
-#if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx) || defined (STM32L4R5xx) || defined (STM32L4R7xx) || defined (STM32L4R9xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined (STM32L4S9xx)
+#if defined (STM32L412xx) || defined (STM32L422xx) || defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx) || defined (STM32L4R5xx) || defined (STM32L4R7xx) || defined (STM32L4R9xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined (STM32L4S9xx)
 #define IS_ADC_DIFF_CHANNEL(__HANDLE__, __CHANNEL__) (((__CHANNEL__) == ADC_CHANNEL_1)      || \
                                                       ((__CHANNEL__) == ADC_CHANNEL_2)      || \
                                                       ((__CHANNEL__) == ADC_CHANNEL_3)      || \
@@ -1296,7 +1138,7 @@ typedef struct
 #if defined(ADC_CFGR_DFSDMCFG) &&defined(DFSDM1_Channel0)
 #define ADC_CFGR_DFSDM(__HANDLE__) ((__HANDLE__)->Init.DFSDMConfig)
 #else
-#define ADC_CFGR_DFSDM(__HANDLE__) (0x0)
+#define ADC_CFGR_DFSDM(__HANDLE__) (0x0UL)
 #endif
 
 /**

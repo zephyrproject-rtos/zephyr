@@ -16,7 +16,7 @@
 #include <arch/cpu.h>
 #include <string.h>
 
-#include <board.h>
+#include <soc.h>
 #include <errno.h>
 #include <sys_io.h>
 

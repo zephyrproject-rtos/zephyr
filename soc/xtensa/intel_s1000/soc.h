@@ -62,6 +62,8 @@
 #define CAVS_DMA1_OWNERSHIP_REG			(0x00071A62)
 #define CAVS_DMA2_OWNERSHIP_REG			(0x00071A64)
 
+#define DMA_HANDSHAKE_DMIC_RXA			0
+#define DMA_HANDSHAKE_DMIC_RXB			1
 #define DMA_HANDSHAKE_SSP0_TX			2
 #define DMA_HANDSHAKE_SSP0_RX			3
 #define DMA_HANDSHAKE_SSP1_TX			4
@@ -70,6 +72,14 @@
 #define DMA_HANDSHAKE_SSP2_RX			7
 #define DMA_HANDSHAKE_SSP3_TX			8
 #define DMA_HANDSHAKE_SSP3_RX			9
+
+/* DMA Channel Allocation
+ * FIXME: I2S Driver assigns channel in Kconfig.
+ * Perhaps DTS is a better option
+ */
+#define DMIC_DMA_DEV_NAME			CONFIG_DMA_0_NAME
+#define DMA_CHANNEL_DMIC_RXA			0
+#define DMA_CHANNEL_DMIC_RXB			1
 
 /* I2S */
 #define I2S0_CAVS_IRQ				0x00000010

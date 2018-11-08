@@ -126,12 +126,6 @@ extern "C" {
 #define ETIME 79   /* STREAMS timeout occurred */
 #define ENOMSG 80  /* Unexpected message type */
 
-/* specific encryption errno values */
-#define ENOKEY 126       /* Required key not available */
-#define EKEYEXPIRED 127  /* Required key not available */
-#define EKEYREVOKED 128  /* Key has been revoked */
-#define EKEYREJECTED 129 /* Key was rejected by service */
-
 #define EILSEQ 138 /* Illegal byte sequence */
 
 #ifdef __cplusplus

@@ -34,8 +34,8 @@
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __STM32L4xx_HAL_RTC_H
-#define __STM32L4xx_HAL_RTC_H
+#ifndef STM32L4xx_HAL_RTC_H
+#define STM32L4xx_HAL_RTC_H
 
 #ifdef __cplusplus
  extern "C" {
@@ -48,7 +48,7 @@
   * @{
   */
 
-/** @addtogroup RTC
+/** @defgroup RTC RTC
   * @{
   */
 
@@ -56,16 +56,17 @@
 /** @defgroup RTC_Exported_Types RTC Exported Types
   * @{
   */
+
 /**
   * @brief  HAL State structures definition
   */
 typedef enum
 {
-  HAL_RTC_STATE_RESET             = 0x00,  /*!< RTC not yet initialized or disabled */
-  HAL_RTC_STATE_READY             = 0x01,  /*!< RTC initialized and ready for use   */
-  HAL_RTC_STATE_BUSY              = 0x02,  /*!< RTC process is ongoing              */
-  HAL_RTC_STATE_TIMEOUT           = 0x03,  /*!< RTC timeout state                   */
-  HAL_RTC_STATE_ERROR             = 0x04   /*!< RTC error state                     */
+  HAL_RTC_STATE_RESET             = 0x00U,  /*!< RTC not yet initialized or disabled */
+  HAL_RTC_STATE_READY             = 0x01U,  /*!< RTC initialized and ready for use   */
+  HAL_RTC_STATE_BUSY              = 0x02U,  /*!< RTC process is ongoing              */
+  HAL_RTC_STATE_TIMEOUT           = 0x03U,  /*!< RTC timeout state                   */
+  HAL_RTC_STATE_ERROR             = 0x04U   /*!< RTC error state                     */
 
 }HAL_RTCStateTypeDef;
 
@@ -86,7 +87,7 @@ typedef struct
   uint32_t OutPut;          /*!< Specifies which signal will be routed to the RTC output.
                                  This parameter can be a value of @ref RTCEx_Output_selection_Definitions */
 
-  uint32_t OutPutRemap;    /*!< Specifies the remap for RTC output.
+  uint32_t OutPutRemap;     /*!< Specifies the remap for RTC output.
                                  This parameter can be a value of @ref  RTC_Output_ALARM_OUT_Remap */
 
   uint32_t OutPutPolarity;  /*!< Specifies the polarity of the output signal.
@@ -94,6 +95,10 @@ typedef struct
 
   uint32_t OutPutType;      /*!< Specifies the RTC Output Pin mode.
                                  This parameter can be a value of @ref RTC_Output_Type_ALARM_OUT */
+#if defined(STM32L412xx) || defined(STM32L422xx)
+  uint32_t OutPutPullUp;    /*!< Specifies the RTC Output Pull-Up mode.
+                                 This parameter can be a value of @ref RTC_Output_PullUp_ALARM_OUT */
+#endif
 }RTC_InitTypeDef;
 
 /**
@@ -127,7 +132,7 @@ typedef struct
   uint32_t DayLightSaving;  /*!< Specifies RTC_DayLightSaveOperation: the value of hour adjustment.
                                  This parameter can be a value of @ref RTC_DayLightSaving_Definitions */
 
-  uint32_t StoreOperation;  /*!< Specifies RTC_StoreOperation value to be written in the BCK bit
+  uint32_t StoreOperation;  /*!< Specifies RTC_StoreOperation value to be written in the BKP bit
                                  in CR register to store the operation.
                                  This parameter can be a value of @ref RTC_StoreOperation_Definitions */
 }RTC_TimeTypeDef;
@@ -182,6 +187,9 @@ typedef struct __RTC_HandleTypeDef
 {
   RTC_TypeDef               *Instance;  /*!< Register base address    */
 
+#if defined(STM32L412xx) || defined(STM32L422xx)
+  uint32_t                  TampOffset; /*!< Offset to TAMP instance  */
+#endif
   RTC_InitTypeDef           Init;       /*!< RTC required parameters  */
 
   HAL_LockTypeDef           Lock;       /*!< RTC locking object       */
@@ -189,58 +197,49 @@ typedef struct __RTC_HandleTypeDef
   __IO HAL_RTCStateTypeDef  State;      /*!< Time communication state */
 
 #if (USE_HAL_RTC_REGISTER_CALLBACKS == 1)
-  void  (* AlarmAEventCallback)      ( struct __RTC_HandleTypeDef * hrtc);  /*!< RTC Alarm A Event callback         */
-
-  void  (* AlarmBEventCallback)      ( struct __RTC_HandleTypeDef * hrtc);  /*!< RTC Alarm B Event callback         */
-
-  void  (* TimeStampEventCallback)   ( struct __RTC_HandleTypeDef * hrtc);  /*!< RTC TimeStamp Event callback       */
-
-  void  (* WakeUpTimerEventCallback) ( struct __RTC_HandleTypeDef * hrtc);  /*!< RTC WakeUpTimer Event callback     */
-
+  void  (* AlarmAEventCallback)              ( struct __RTC_HandleTypeDef * hrtc);   /*!< RTC Alarm A Event callback            */
+  void  (* AlarmBEventCallback)              ( struct __RTC_HandleTypeDef * hrtc);   /*!< RTC Alarm B Event callback            */
+  void  (* TimeStampEventCallback)           ( struct __RTC_HandleTypeDef * hrtc);   /*!< RTC TimeStamp Event callback          */
+  void  (* WakeUpTimerEventCallback)         ( struct __RTC_HandleTypeDef * hrtc);   /*!< RTC WakeUpTimer Event callback        */
 #if defined(RTC_TAMPER1_SUPPORT)
-  void  (* Tamper1EventCallback)     ( struct __RTC_HandleTypeDef * hrtc);  /*!< RTC Tamper 1 Event callback        */
+  void  (* Tamper1EventCallback)             ( struct __RTC_HandleTypeDef * hrtc);   /*!< RTC Tamper 1 Event callback           */
 #endif /* RTC_TAMPER1_SUPPORT */
-
-  void  (* Tamper2EventCallback)     ( struct __RTC_HandleTypeDef * hrtc);  /*!< RTC Tamper 2 Event callback        */
-
+  void  (* Tamper2EventCallback)             ( struct __RTC_HandleTypeDef * hrtc);   /*!< RTC Tamper 2 Event callback           */
 #if defined(RTC_TAMPER3_SUPPORT)
-  void  (* Tamper3EventCallback)     ( struct __RTC_HandleTypeDef * hrtc);  /*!< RTC Tamper 3 Event callback        */
+  void  (* Tamper3EventCallback)             ( struct __RTC_HandleTypeDef * hrtc);   /*!< RTC Tamper 3 Event callback           */
 #endif /* RTC_TAMPER3_SUPPORT */
-
-  void  (* MspInitCallback)         ( struct __RTC_HandleTypeDef * hrtc);   /*!< RTC Msp Init callback              */
-
-  void  (* MspDeInitCallback)       ( struct __RTC_HandleTypeDef * hrtc);   /*!< RTC Msp DeInit callback            */
-
-#endif /* (USE_HAL_RTC_REGISTER_CALLBACKS) */
+  void  (* MspInitCallback)                  ( struct __RTC_HandleTypeDef * hrtc);   /*!< RTC Msp Init callback                 */
+  void  (* MspDeInitCallback)                ( struct __RTC_HandleTypeDef * hrtc);   /*!< RTC Msp DeInit callback               */
+#endif /* (USE_HAL_RTC_REGISTER_CALLBACKS == 1) */
 
 }RTC_HandleTypeDef;
 
 #if (USE_HAL_RTC_REGISTER_CALLBACKS == 1)
 /**
-  * @brief  HAL LPTIM Callback ID enumeration definition
+  * @brief  HAL RTC Callback ID enumeration definition
   */
 typedef enum
 {
-  HAL_RTC_ALARM_A_EVENT_CB_ID           = 0x00U,    /*!< RTC Alarm A Event Callback ID      */
-  HAL_RTC_ALARM_B_EVENT_CB_ID           = 0x01U,    /*!< RTC Alarm B Event Callback ID      */
-  HAL_RTC_TIMESTAMP_EVENT_CB_ID         = 0x02U,    /*!< RTC TimeStamp Event Callback ID    */
-  HAL_RTC_WAKEUPTIMER_EVENT_CB_ID       = 0x03U,    /*!< RTC WakeUp Timer Event Callback ID */
+  HAL_RTC_ALARM_A_EVENT_CB_ID            =  0u,    /*!< RTC Alarm A Event Callback ID      */
+  HAL_RTC_ALARM_B_EVENT_CB_ID            =  1u,    /*!< RTC Alarm B Event Callback ID      */
+  HAL_RTC_TIMESTAMP_EVENT_CB_ID          =  2u,    /*!< RTC TimeStamp Event Callback ID    */
+  HAL_RTC_WAKEUPTIMER_EVENT_CB_ID        =  3u,    /*!< RTC WakeUp Timer Event Callback ID */
 #if defined(RTC_TAMPER1_SUPPORT)
-  HAL_RTC_TAMPER1_EVENT_CB_ID           = 0x04U,    /*!< RTC Tamper 1 Callback ID           */
+  HAL_RTC_TAMPER1_EVENT_CB_ID            =  4u,    /*!< RTC Tamper 1 Callback ID           */
 #endif /* RTC_TAMPER1_SUPPORT */
-  HAL_RTC_TAMPER2_EVENT_CB_ID           = 0x05U,    /*!< RTC Tamper 2 Callback ID           */
+  HAL_RTC_TAMPER2_EVENT_CB_ID            =  5u,    /*!< RTC Tamper 2 Callback ID           */
 #if defined(RTC_TAMPER3_SUPPORT)
-  HAL_RTC_TAMPER3_EVENT_CB_ID           = 0x06U,    /*!< RTC Tamper 3 Callback ID           */
+  HAL_RTC_TAMPER3_EVENT_CB_ID            =  6u,    /*!< RTC Tamper 3 Callback ID           */
 #endif /* RTC_TAMPER3_SUPPORT */
-  HAL_RTC_MSPINIT_CB_ID                 = 0x0EU,    /*!< RTC Msp Init callback ID           */
-  HAL_RTC_MSPDEINIT_CB_ID               = 0x0FU     /*!< RTC Msp DeInit callback ID         */
+  HAL_RTC_MSPINIT_CB_ID                  =  7u,    /*!< RTC Msp Init callback ID           */
+  HAL_RTC_MSPDEINIT_CB_ID                =  8u     /*!< RTC Msp DeInit callback ID         */
 }HAL_RTC_CallbackIDTypeDef;
 
 /**
   * @brief  HAL RTC Callback pointer definition
   */
 typedef  void (*pRTC_CallbackTypeDef)(RTC_HandleTypeDef * hrtc); /*!< pointer to an RTC callback function */
-#endif /* USE_HAL_RTC_REGISTER_CALLBACKS */
+#endif /* (USE_HAL_RTC_REGISTER_CALLBACKS == 1) */
 
 /**
   * @}
@@ -251,11 +250,25 @@ typedef  void (*pRTC_CallbackTypeDef)(RTC_HandleTypeDef * hrtc); /*!< pointer to
   * @{
   */
 
-/** @defgroup RTC_Hour_Formats RTC Hour Formats
+/** @defgroup RTC_Hour_Formats_Definitions RTC Hour Formats Definitions
   * @{
   */
-#define RTC_HOURFORMAT_24              ((uint32_t)0x00000000)
-#define RTC_HOURFORMAT_12              ((uint32_t)0x00000040)
+#define RTC_HOURFORMAT_24                   0x00000000u
+#define RTC_HOURFORMAT_12                   RTC_CR_FMT
+/**
+  * @}
+  */
+
+/** @defgroup RTCEx_Output_selection_Definitions RTCEx Output Selection Definitions
+  * @{
+  */
+#define RTC_OUTPUT_DISABLE                  0x00000000u
+#define RTC_OUTPUT_ALARMA                   RTC_CR_OSEL_0
+#define RTC_OUTPUT_ALARMB                   RTC_CR_OSEL_1
+#define RTC_OUTPUT_WAKEUP                   RTC_CR_OSEL
+#if defined(STM32L412xx) || defined(STM32L422xx)
+#define RTC_OUTPUT_TAMPER                   RTC_CR_TAMPOE
+#endif
 /**
   * @}
   */
@@ -263,8 +276,8 @@ typedef  void (*pRTC_CallbackTypeDef)(RTC_HandleTypeDef * hrtc); /*!< pointer to
 /** @defgroup RTC_Output_Polarity_Definitions RTC Output Polarity Definitions
   * @{
   */
-#define RTC_OUTPUT_POLARITY_HIGH       ((uint32_t)0x00000000)
-#define RTC_OUTPUT_POLARITY_LOW        ((uint32_t)0x00100000)
+#define RTC_OUTPUT_POLARITY_HIGH            0x00000000u
+#define RTC_OUTPUT_POLARITY_LOW             RTC_CR_POL
 /**
   * @}
   */
@@ -272,8 +285,24 @@ typedef  void (*pRTC_CallbackTypeDef)(RTC_HandleTypeDef * hrtc); /*!< pointer to
 /** @defgroup RTC_Output_Type_ALARM_OUT RTC Output Type ALARM OUT
   * @{
   */
-#define RTC_OUTPUT_TYPE_OPENDRAIN      ((uint32_t)0x00000000)
-#define RTC_OUTPUT_TYPE_PUSHPULL       ((uint32_t)RTC_OR_ALARMOUTTYPE)
+#if defined(STM32L412xx) || defined(STM32L422xx)
+#define RTC_OUTPUT_TYPE_PUSHPULL            0x00000000u
+#define RTC_OUTPUT_TYPE_OPENDRAIN           RTC_CR_TAMPALRM_TYPE
+#else
+#define RTC_OUTPUT_TYPE_PUSHPULL            RTC_OR_ALARMOUTTYPE
+#define RTC_OUTPUT_TYPE_OPENDRAIN           0x00000000u
+#endif
+/**
+  * @}
+  */
+
+/** @defgroup RTC_Output_PullUp_ALARM_OUT RTC Output Pull-Up ALARM OUT
+  * @{
+  */
+#if defined(STM32L412xx) || defined(STM32L422xx)
+#define RTC_OUTPUT_PULLUP_NONE              0x00000000u
+#define RTC_OUTPUT_PULLUP_ON                RTC_CR_TAMPALRM_PU
+#endif
 /**
   * @}
   */
@@ -281,8 +310,13 @@ typedef  void (*pRTC_CallbackTypeDef)(RTC_HandleTypeDef * hrtc); /*!< pointer to
 /** @defgroup RTC_Output_ALARM_OUT_Remap RTC Output ALARM OUT Remap
   * @{
   */
-#define RTC_OUTPUT_REMAP_NONE          ((uint32_t)0x00000000)
-#define RTC_OUTPUT_REMAP_POS1          ((uint32_t)RTC_OR_OUT_RMP)
+#if defined(STM32L412xx) || defined(STM32L422xx)
+#define RTC_OUTPUT_REMAP_NONE               0x00000000u
+#define RTC_OUTPUT_REMAP_POS1               RTC_CR_OUT2EN
+#else
+#define RTC_OUTPUT_REMAP_NONE               0x00000000u
+#define RTC_OUTPUT_REMAP_POS1               RTC_OR_OUT_RMP
+#endif
 /**
   * @}
   */
@@ -291,26 +325,26 @@ typedef  void (*pRTC_CallbackTypeDef)(RTC_HandleTypeDef * hrtc); /*!< pointer to
   * @{
   */
 #define RTC_HOURFORMAT12_AM            ((uint8_t)0x00)
-#define RTC_HOURFORMAT12_PM            ((uint8_t)0x40)
+#define RTC_HOURFORMAT12_PM            ((uint8_t)0x01)
 /**
   * @}
   */
 
-/** @defgroup RTC_DayLightSaving_Definitions RTC DayLight Saving Definitions
+/** @defgroup RTC_DayLightSaving_Definitions RTC DayLightSaving Definitions
   * @{
   */
-#define RTC_DAYLIGHTSAVING_SUB1H       ((uint32_t)0x00020000)
-#define RTC_DAYLIGHTSAVING_ADD1H       ((uint32_t)0x00010000)
-#define RTC_DAYLIGHTSAVING_NONE        ((uint32_t)0x00000000)
+#define RTC_DAYLIGHTSAVING_SUB1H            RTC_CR_SUB1H
+#define RTC_DAYLIGHTSAVING_ADD1H            RTC_CR_ADD1H
+#define RTC_DAYLIGHTSAVING_NONE             0x00000000u
 /**
   * @}
   */
 
-/** @defgroup RTC_StoreOperation_Definitions RTC Store Operation Definitions
+/** @defgroup RTC_StoreOperation_Definitions RTC StoreOperation Definitions
   * @{
   */
-#define RTC_STOREOPERATION_RESET        ((uint32_t)0x00000000)
-#define RTC_STOREOPERATION_SET          ((uint32_t)0x00040000)
+#define RTC_STOREOPERATION_RESET            0x00000000u
+#define RTC_STOREOPERATION_SET              RTC_CR_BKP
 /**
   * @}
   */
@@ -318,29 +352,30 @@ typedef  void (*pRTC_CallbackTypeDef)(RTC_HandleTypeDef * hrtc); /*!< pointer to
 /** @defgroup RTC_Input_parameter_format_definitions RTC Input Parameter Format Definitions
   * @{
   */
-#define RTC_FORMAT_BIN                  ((uint32_t)0x00000000)
-#define RTC_FORMAT_BCD                  ((uint32_t)0x00000001)
+#define RTC_FORMAT_BIN                      0x00000000u
+#define RTC_FORMAT_BCD                      0x00000001u
 /**
   * @}
   */
 
-/** @defgroup RTC_Month_Date_Definitions RTC Month Date Definitions
+/** @defgroup RTC_Month_Date_Definitions RTC Month Date Definitions (in BCD format)
   * @{
   */
 
 /* Coded in BCD format */
-#define RTC_MONTH_JANUARY              ((uint8_t)0x01)
-#define RTC_MONTH_FEBRUARY             ((uint8_t)0x02)
-#define RTC_MONTH_MARCH                ((uint8_t)0x03)
-#define RTC_MONTH_APRIL                ((uint8_t)0x04)
-#define RTC_MONTH_MAY                  ((uint8_t)0x05)
-#define RTC_MONTH_JUNE                 ((uint8_t)0x06)
-#define RTC_MONTH_JULY                 ((uint8_t)0x07)
-#define RTC_MONTH_AUGUST               ((uint8_t)0x08)
-#define RTC_MONTH_SEPTEMBER            ((uint8_t)0x09)
-#define RTC_MONTH_OCTOBER              ((uint8_t)0x10)
-#define RTC_MONTH_NOVEMBER             ((uint8_t)0x11)
-#define RTC_MONTH_DECEMBER             ((uint8_t)0x12)
+#define RTC_MONTH_JANUARY                   ((uint8_t)0x01U)
+#define RTC_MONTH_FEBRUARY                  ((uint8_t)0x02U)
+#define RTC_MONTH_MARCH                     ((uint8_t)0x03U)
+#define RTC_MONTH_APRIL                     ((uint8_t)0x04U)
+#define RTC_MONTH_MAY                       ((uint8_t)0x05U)
+#define RTC_MONTH_JUNE                      ((uint8_t)0x06U)
+#define RTC_MONTH_JULY                      ((uint8_t)0x07U)
+#define RTC_MONTH_AUGUST                    ((uint8_t)0x08U)
+#define RTC_MONTH_SEPTEMBER                 ((uint8_t)0x09U)
+#define RTC_MONTH_OCTOBER                   ((uint8_t)0x10U)
+#define RTC_MONTH_NOVEMBER                  ((uint8_t)0x11U)
+#define RTC_MONTH_DECEMBER                  ((uint8_t)0x12U)
+
 /**
   * @}
   */
@@ -348,36 +383,38 @@ typedef  void (*pRTC_CallbackTypeDef)(RTC_HandleTypeDef * hrtc); /*!< pointer to
 /** @defgroup RTC_WeekDay_Definitions RTC WeekDay Definitions
   * @{
   */
-#define RTC_WEEKDAY_MONDAY             ((uint8_t)0x01)
-#define RTC_WEEKDAY_TUESDAY            ((uint8_t)0x02)
-#define RTC_WEEKDAY_WEDNESDAY          ((uint8_t)0x03)
-#define RTC_WEEKDAY_THURSDAY           ((uint8_t)0x04)
-#define RTC_WEEKDAY_FRIDAY             ((uint8_t)0x05)
-#define RTC_WEEKDAY_SATURDAY           ((uint8_t)0x06)
-#define RTC_WEEKDAY_SUNDAY             ((uint8_t)0x07)
+#define RTC_WEEKDAY_MONDAY                  ((uint8_t)0x01U)
+#define RTC_WEEKDAY_TUESDAY                 ((uint8_t)0x02U)
+#define RTC_WEEKDAY_WEDNESDAY               ((uint8_t)0x03U)
+#define RTC_WEEKDAY_THURSDAY                ((uint8_t)0x04U)
+#define RTC_WEEKDAY_FRIDAY                  ((uint8_t)0x05U)
+#define RTC_WEEKDAY_SATURDAY                ((uint8_t)0x06U)
+#define RTC_WEEKDAY_SUNDAY                  ((uint8_t)0x07U)
+
 /**
   * @}
   */
 
-/** @defgroup RTC_AlarmDateWeekDay_Definitions RTC Alarm Date WeekDay Definitions
+/** @defgroup RTC_AlarmDateWeekDay_Definitions RTC AlarmDateWeekDay Definitions
   * @{
   */
-#define RTC_ALARMDATEWEEKDAYSEL_DATE      ((uint32_t)0x00000000)
-#define RTC_ALARMDATEWEEKDAYSEL_WEEKDAY   ((uint32_t)0x40000000)
+#define RTC_ALARMDATEWEEKDAYSEL_DATE        0x00000000u
+#define RTC_ALARMDATEWEEKDAYSEL_WEEKDAY     RTC_ALRMAR_WDSEL
+
 /**
   * @}
   */
 
-
-/** @defgroup RTC_AlarmMask_Definitions RTC Alarm Mask Definitions
+/** @defgroup RTC_AlarmMask_Definitions RTC AlarmMask Definitions
   * @{
   */
-#define RTC_ALARMMASK_NONE                ((uint32_t)0x00000000)
-#define RTC_ALARMMASK_DATEWEEKDAY         RTC_ALRMAR_MSK4
-#define RTC_ALARMMASK_HOURS               RTC_ALRMAR_MSK3
-#define RTC_ALARMMASK_MINUTES             RTC_ALRMAR_MSK2
-#define RTC_ALARMMASK_SECONDS             RTC_ALRMAR_MSK1
-#define RTC_ALARMMASK_ALL                 ((uint32_t)0x80808080)
+#define RTC_ALARMMASK_NONE                  0x00000000u
+#define RTC_ALARMMASK_DATEWEEKDAY           RTC_ALRMAR_MSK4
+#define RTC_ALARMMASK_HOURS                 RTC_ALRMAR_MSK3
+#define RTC_ALARMMASK_MINUTES               RTC_ALRMAR_MSK2
+#define RTC_ALARMMASK_SECONDS               RTC_ALRMAR_MSK1
+#define RTC_ALARMMASK_ALL                   (RTC_ALARMMASK_DATEWEEKDAY | RTC_ALARMMASK_HOURS  | RTC_ALARMMASK_MINUTES | RTC_ALARMMASK_SECONDS)
+
 /**
   * @}
   */
@@ -385,48 +422,50 @@ typedef  void (*pRTC_CallbackTypeDef)(RTC_HandleTypeDef * hrtc); /*!< pointer to
 /** @defgroup RTC_Alarms_Definitions RTC Alarms Definitions
   * @{
   */
-#define RTC_ALARM_A                       RTC_CR_ALRAE
-#define RTC_ALARM_B                       RTC_CR_ALRBE
+#define RTC_ALARM_A                         RTC_CR_ALRAE
+#define RTC_ALARM_B                         RTC_CR_ALRBE
+
 /**
   * @}
   */
 
+
 /** @defgroup RTC_Alarm_Sub_Seconds_Masks_Definitions RTC Alarm Sub Seconds Masks Definitions
   * @{
   */
-#define RTC_ALARMSUBSECONDMASK_ALL         ((uint32_t)0x00000000)  /*!< All Alarm SS fields are masked.
-                                                                        There is no comparison on sub seconds
-                                                                        for Alarm */
-#define RTC_ALARMSUBSECONDMASK_SS14_1      ((uint32_t)0x01000000)  /*!< SS[14:1] are don't care in Alarm
-                                                                        comparison. Only SS[0] is compared.    */
-#define RTC_ALARMSUBSECONDMASK_SS14_2      ((uint32_t)0x02000000)  /*!< SS[14:2] are don't care in Alarm
-                                                                        comparison. Only SS[1:0] are compared  */
-#define RTC_ALARMSUBSECONDMASK_SS14_3      ((uint32_t)0x03000000)  /*!< SS[14:3] are don't care in Alarm
-                                                                        comparison. Only SS[2:0] are compared  */
-#define RTC_ALARMSUBSECONDMASK_SS14_4      ((uint32_t)0x04000000)  /*!< SS[14:4] are don't care in Alarm
-                                                                        comparison. Only SS[3:0] are compared  */
-#define RTC_ALARMSUBSECONDMASK_SS14_5      ((uint32_t)0x05000000)  /*!< SS[14:5] are don't care in Alarm
-                                                                        comparison. Only SS[4:0] are compared  */
-#define RTC_ALARMSUBSECONDMASK_SS14_6      ((uint32_t)0x06000000)  /*!< SS[14:6] are don't care in Alarm
-                                                                        comparison. Only SS[5:0] are compared  */
-#define RTC_ALARMSUBSECONDMASK_SS14_7      ((uint32_t)0x07000000)  /*!< SS[14:7] are don't care in Alarm
-                                                                        comparison. Only SS[6:0] are compared  */
-#define RTC_ALARMSUBSECONDMASK_SS14_8      ((uint32_t)0x08000000)  /*!< SS[14:8] are don't care in Alarm
-                                                                        comparison. Only SS[7:0] are compared  */
-#define RTC_ALARMSUBSECONDMASK_SS14_9      ((uint32_t)0x09000000)  /*!< SS[14:9] are don't care in Alarm
-                                                                        comparison. Only SS[8:0] are compared  */
-#define RTC_ALARMSUBSECONDMASK_SS14_10     ((uint32_t)0x0A000000)  /*!< SS[14:10] are don't care in Alarm
-                                                                        comparison. Only SS[9:0] are compared  */
-#define RTC_ALARMSUBSECONDMASK_SS14_11     ((uint32_t)0x0B000000)  /*!< SS[14:11] are don't care in Alarm
-                                                                        comparison. Only SS[10:0] are compared */
-#define RTC_ALARMSUBSECONDMASK_SS14_12     ((uint32_t)0x0C000000)  /*!< SS[14:12] are don't care in Alarm
-                                                                        comparison. Only SS[11:0] are compared */
-#define RTC_ALARMSUBSECONDMASK_SS14_13     ((uint32_t)0x0D000000)  /*!< SS[14:13] are don't care in Alarm
-                                                                        comparison. Only SS[12:0] are compared */
-#define RTC_ALARMSUBSECONDMASK_SS14        ((uint32_t)0x0E000000)  /*!< SS[14] is don't care in Alarm
-                                                                        comparison. Only SS[13:0] are compared */
-#define RTC_ALARMSUBSECONDMASK_NONE        ((uint32_t)0x0F000000)  /*!< SS[14:0] are compared and must match
-                                                                        to activate alarm. */
+#define RTC_ALARMSUBSECONDMASK_ALL          0x00000000u                                                              /*!< All Alarm SS fields are masked.
+                                                                                                                          There is no comparison on sub seconds
+                                                                                                                          for Alarm */
+#define RTC_ALARMSUBSECONDMASK_SS14_1       RTC_ALRMASSR_MASKSS_0                                                    /*!< SS[14:1] are don't care in Alarm
+                                                                                                                          comparison. Only SS[0] is compared.    */
+#define RTC_ALARMSUBSECONDMASK_SS14_2       RTC_ALRMASSR_MASKSS_1                                                    /*!< SS[14:2] are don't care in Alarm
+                                                                                                                          comparison. Only SS[1:0] are compared  */
+#define RTC_ALARMSUBSECONDMASK_SS14_3       (RTC_ALRMASSR_MASKSS_0 | RTC_ALRMASSR_MASKSS_1)                          /*!< SS[14:3] are don't care in Alarm
+                                                                                                                          comparison. Only SS[2:0] are compared  */
+#define RTC_ALARMSUBSECONDMASK_SS14_4       RTC_ALRMASSR_MASKSS_2                                                    /*!< SS[14:4] are don't care in Alarm
+                                                                                                                          comparison. Only SS[3:0] are compared  */
+#define RTC_ALARMSUBSECONDMASK_SS14_5       (RTC_ALRMASSR_MASKSS_0 | RTC_ALRMASSR_MASKSS_2)                          /*!< SS[14:5] are don't care in Alarm
+                                                                                                                          comparison. Only SS[4:0] are compared  */
+#define RTC_ALARMSUBSECONDMASK_SS14_6       (RTC_ALRMASSR_MASKSS_1 | RTC_ALRMASSR_MASKSS_2)                          /*!< SS[14:6] are don't care in Alarm
+                                                                                                                          comparison. Only SS[5:0] are compared  */
+#define RTC_ALARMSUBSECONDMASK_SS14_7       (RTC_ALRMASSR_MASKSS_0 | RTC_ALRMASSR_MASKSS_1 | RTC_ALRMASSR_MASKSS_2)  /*!< SS[14:7] are don't care in Alarm
+                                                                                                                          comparison. Only SS[6:0] are compared  */
+#define RTC_ALARMSUBSECONDMASK_SS14_8       RTC_ALRMASSR_MASKSS_3                                                    /*!< SS[14:8] are don't care in Alarm
+                                                                                                                          comparison. Only SS[7:0] are compared  */
+#define RTC_ALARMSUBSECONDMASK_SS14_9       (RTC_ALRMASSR_MASKSS_0 | RTC_ALRMASSR_MASKSS_3)                          /*!< SS[14:9] are don't care in Alarm
+                                                                                                                          comparison. Only SS[8:0] are compared  */
+#define RTC_ALARMSUBSECONDMASK_SS14_10      (RTC_ALRMASSR_MASKSS_1 | RTC_ALRMASSR_MASKSS_3)                          /*!< SS[14:10] are don't care in Alarm
+                                                                                                                          comparison. Only SS[9:0] are compared  */
+#define RTC_ALARMSUBSECONDMASK_SS14_11      (RTC_ALRMASSR_MASKSS_0 | RTC_ALRMASSR_MASKSS_1 | RTC_ALRMASSR_MASKSS_3)  /*!< SS[14:11] are don't care in Alarm
+                                                                                                                          comparison. Only SS[10:0] are compared */
+#define RTC_ALARMSUBSECONDMASK_SS14_12      (RTC_ALRMASSR_MASKSS_2 | RTC_ALRMASSR_MASKSS_3)                          /*!< SS[14:12] are don't care in Alarm
+                                                                                                                          comparison.Only SS[11:0] are compared  */
+#define RTC_ALARMSUBSECONDMASK_SS14_13      (RTC_ALRMASSR_MASKSS_0 | RTC_ALRMASSR_MASKSS_2 | RTC_ALRMASSR_MASKSS_3)  /*!< SS[14:13] are don't care in Alarm
+                                                                                                                          comparison. Only SS[12:0] are compared */
+#define RTC_ALARMSUBSECONDMASK_SS14         (RTC_ALRMASSR_MASKSS_1 | RTC_ALRMASSR_MASKSS_2 | RTC_ALRMASSR_MASKSS_3)  /*!< SS[14] is don't care in Alarm
+                                                                                                                          comparison.Only SS[13:0] are compared  */
+#define RTC_ALARMSUBSECONDMASK_NONE         RTC_ALRMASSR_MASKSS                                                      /*!< SS[14:0] are compared and must match
+                                                                                                                          to activate alarm. */
 /**
   * @}
   */
@@ -434,41 +473,86 @@ typedef  void (*pRTC_CallbackTypeDef)(RTC_HandleTypeDef * hrtc); /*!< pointer to
 /** @defgroup RTC_Interrupts_Definitions RTC Interrupts Definitions
   * @{
   */
-#define RTC_IT_TS                         ((uint32_t)RTC_CR_TSIE)        /*!< Enable Timestamp Interrupt    */
-#define RTC_IT_WUT                        ((uint32_t)RTC_CR_WUTIE)       /*!< Enable Wakeup timer Interrupt */
-#define RTC_IT_ALRA                       ((uint32_t)RTC_CR_ALRAIE)      /*!< Enable Alarm A Interrupt      */
-#define RTC_IT_ALRB                       ((uint32_t)RTC_CR_ALRBIE)      /*!< Enable Alarm B Interrupt      */
-#define RTC_IT_TAMP                       ((uint32_t)RTC_TAMPCR_TAMPIE)  /*!< Enable all Tamper Interrupt   */
-#define RTC_IT_TAMP1                      ((uint32_t)RTC_TAMPCR_TAMP1IE) /*!< Enable Tamper 1 Interrupt     */
-#define RTC_IT_TAMP2                      ((uint32_t)RTC_TAMPCR_TAMP2IE) /*!< Enable Tamper 2 Interrupt     */
-#define RTC_IT_TAMP3                      ((uint32_t)RTC_TAMPCR_TAMP3IE) /*!< Enable Tamper 3 Interrupt     */
+#define RTC_IT_TS                           RTC_CR_TSIE        /*!< Enable Timestamp Interrupt    */
+#define RTC_IT_WUT                          RTC_CR_WUTIE       /*!< Enable Wakeup timer Interrupt */
+#define RTC_IT_ALRA                         RTC_CR_ALRAIE      /*!< Enable Alarm A Interrupt      */
+#define RTC_IT_ALRB                         RTC_CR_ALRBIE      /*!< Enable Alarm B Interrupt      */
+/**
+  * @}
+  */
+
+#if defined(STM32L412xx) || defined(STM32L422xx)
+/** @defgroup RTC_Interruption_Mask    RTC Interruptions Flag Mask
+  * @{
+  */
+#define RTC_IT_MASK                         0x001Fu                  /*!< RTC interruptions flags mask */
 /**
   * @}
   */
 
 /** @defgroup RTC_Flags_Definitions RTC Flags Definitions
+  *        Elements values convention: 000000XX000YYYYYb
+  *           - YYYYY  : Interrupt flag position in the XX register (5bits)
+  *           - XX  : Interrupt status register (2bits)
+  *                 - 01: ICSR register
+  *                 - 10: SR register
   * @{
   */
-#define RTC_FLAG_RECALPF                  ((uint32_t)RTC_ISR_RECALPF)
-#define RTC_FLAG_TAMP3F                   ((uint32_t)RTC_ISR_TAMP3F)
-#define RTC_FLAG_TAMP2F                   ((uint32_t)RTC_ISR_TAMP2F)
-#define RTC_FLAG_TAMP1F                   ((uint32_t)RTC_ISR_TAMP1F)
-#define RTC_FLAG_TSOVF                    ((uint32_t)RTC_ISR_TSOVF)
-#define RTC_FLAG_TSF                      ((uint32_t)RTC_ISR_TSF)
-#define RTC_FLAG_ITSF                     ((uint32_t)RTC_ISR_ITSF)
-#define RTC_FLAG_WUTF                     ((uint32_t)RTC_ISR_WUTF)
-#define RTC_FLAG_ALRBF                    ((uint32_t)RTC_ISR_ALRBF)
-#define RTC_FLAG_ALRAF                    ((uint32_t)RTC_ISR_ALRAF)
-#define RTC_FLAG_INITF                    ((uint32_t)RTC_ISR_INITF)
-#define RTC_FLAG_RSF                      ((uint32_t)RTC_ISR_RSF)
-#define RTC_FLAG_INITS                    ((uint32_t)RTC_ISR_INITS)
-#define RTC_FLAG_SHPF                     ((uint32_t)RTC_ISR_SHPF)
-#define RTC_FLAG_WUTWF                    ((uint32_t)RTC_ISR_WUTWF)
-#define RTC_FLAG_ALRBWF                   ((uint32_t)RTC_ISR_ALRBWF)
-#define RTC_FLAG_ALRAWF                   ((uint32_t)RTC_ISR_ALRAWF)
+#define RTC_FLAG_RECALPF                    0x00000110u    /*!< Recalibration pending Flag */
+#define RTC_FLAG_INITF                      0x00000106u    /*!< Initialization flag */
+#define RTC_FLAG_RSF                        0x00000105u    /*!< Registers synchronization flag */
+#define RTC_FLAG_INITS                      0x00000104u    /*!< Initialization status flag */
+#define RTC_FLAG_SHPF                       0x00000103u    /*!< Shift operation pending flag */
+#define RTC_FLAG_WUTWF                      0x00000102u    /*!< Wakeup timer write flag */
+#define RTC_FLAG_ALRBWF                     0x00000101u    /*!< Alarm B write flag */
+#define RTC_FLAG_ALRAWF                     0x00000100u    /*!< Alarm A write flag */
+#define RTC_FLAG_ITSF                       0x00000205u    /*!< Clear Internal Time-stamp flag */
+#define RTC_FLAG_TSOVF                      0x00000204u    /*!< Clear Time-stamp overflow flag */
+#define RTC_FLAG_TSF                        0x00000203u    /*!< Clear Time-stamp flag */
+#define RTC_FLAG_WUTF                       0x00000202u    /*!< Clear Wakeup timer flag */
+#define RTC_FLAG_ALRBF                      0x00000201u    /*!< Clear Alarm B flag */
+#define RTC_FLAG_ALRAF                      0x00000200u    /*!< Clear Alarm A flag */
 /**
   * @}
   */
+
+/** @defgroup RTC_Clear_Flags_Definitions RTC Clear Flags Definitions
+  * @{
+  */
+#define RTC_CLEAR_ITSF                      RTC_SCR_CITSF    /*!< Clear Internal Time-stamp flag */
+#define RTC_CLEAR_TSOVF                     RTC_SCR_CTSOVF   /*!< Clear Time-stamp overflow flag */
+#define RTC_CLEAR_TSF                       RTC_SCR_CTSF     /*!< Clear Time-stamp flag */
+#define RTC_CLEAR_WUTF                      RTC_SCR_CWUTF    /*!< Clear Wakeup timer flag */
+#define RTC_CLEAR_ALRBF                     RTC_SCR_CALRBF   /*!< Clear Alarm B flag */
+#define RTC_CLEAR_ALRAF                     RTC_SCR_CALRAF   /*!< Clear Alarm A flag */
+
+/**
+  * @}
+  */
+
+#else /* #if defined(STM32L412xx) || defined(STM32L422xx) */
+
+/** @defgroup RTC_Flags_Definitions RTC Flags Definitions
+  * @{
+  */
+#define RTC_FLAG_RECALPF                    RTC_ISR_RECALPF
+#define RTC_FLAG_TSOVF                      RTC_ISR_TSOVF
+#define RTC_FLAG_TSF                        RTC_ISR_TSF
+#define RTC_FLAG_ITSF                       RTC_ISR_ITSF
+#define RTC_FLAG_WUTF                       RTC_ISR_WUTF
+#define RTC_FLAG_ALRBF                      RTC_ISR_ALRBF
+#define RTC_FLAG_ALRAF                      RTC_ISR_ALRAF
+#define RTC_FLAG_INITF                      RTC_ISR_INITF
+#define RTC_FLAG_RSF                        RTC_ISR_RSF
+#define RTC_FLAG_INITS                      RTC_ISR_INITS
+#define RTC_FLAG_SHPF                       RTC_ISR_SHPF
+#define RTC_FLAG_WUTWF                      RTC_ISR_WUTWF
+#define RTC_FLAG_ALRBWF                     RTC_ISR_ALRBWF
+#define RTC_FLAG_ALRAWF                     RTC_ISR_ALRAWF
+/**
+  * @}
+  */
+#endif /* #if defined(STM32L412xx) || defined(STM32L422xx) */
 
 /**
   * @}
@@ -479,8 +563,8 @@ typedef  void (*pRTC_CallbackTypeDef)(RTC_HandleTypeDef * hrtc); /*!< pointer to
   * @{
   */
 
-/** @brief Reset RTC handle state.
-  * @param  __HANDLE__: RTC handle.
+/** @brief Reset RTC handle state
+  * @param  __HANDLE__ RTC handle.
   * @retval None
   */
 #if (USE_HAL_RTC_REGISTER_CALLBACKS == 1)
@@ -488,128 +572,173 @@ typedef  void (*pRTC_CallbackTypeDef)(RTC_HandleTypeDef * hrtc); /*!< pointer to
                                                       (__HANDLE__)->State = HAL_RTC_STATE_RESET;\
                                                       (__HANDLE__)->MspInitCallback = NULL;\
                                                       (__HANDLE__)->MspDeInitCallback = NULL;\
-                                                     }while(0)
+                                                     }while(0u)
 #else
 #define __HAL_RTC_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = HAL_RTC_STATE_RESET)
 #endif /* USE_HAL_RTC_REGISTER_CALLBACKS */
 
 /**
   * @brief  Disable the write protection for RTC registers.
-  * @param  __HANDLE__: specifies the RTC handle.
+  * @param  __HANDLE__ specifies the RTC handle.
   * @retval None
   */
 #define __HAL_RTC_WRITEPROTECTION_DISABLE(__HANDLE__)             \
                         do{                                       \
-                            (__HANDLE__)->Instance->WPR = 0xCA;   \
-                            (__HANDLE__)->Instance->WPR = 0x53;   \
-                          } while(0)
+                            (__HANDLE__)->Instance->WPR = 0xCAU;   \
+                            (__HANDLE__)->Instance->WPR = 0x53U;   \
+                          } while(0u)
 
 /**
   * @brief  Enable the write protection for RTC registers.
-  * @param  __HANDLE__: specifies the RTC handle.
+  * @param  __HANDLE__ specifies the RTC handle.
   * @retval None
   */
 #define __HAL_RTC_WRITEPROTECTION_ENABLE(__HANDLE__)              \
                         do{                                       \
-                            (__HANDLE__)->Instance->WPR = 0xFF;   \
-                          } while(0)
-
+                            (__HANDLE__)->Instance->WPR = 0xFFU;   \
+                          } while(0u)
 
 /**
-  * @brief  Enable the RTC ALARMA peripheral.
-  * @param  __HANDLE__: specifies the RTC handle.
+  * @brief  Add 1 hour (summer time change).
+  * @param  __HANDLE__ specifies the RTC handle.
+  * @param  __BKP__ Backup
+  *         This parameter can be:
+  *            @arg @ref RTC_STOREOPERATION_RESET
+  *            @arg @ref RTC_STOREOPERATION_SET
   * @retval None
   */
-#define __HAL_RTC_ALARMA_ENABLE(__HANDLE__)                          ((__HANDLE__)->Instance->CR |= (RTC_CR_ALRAE))
+#define __HAL_RTC_DAYLIGHT_SAVING_TIME_ADD1H(__HANDLE__, __BKP__)                         \
+                        do {                                                              \
+                            __HAL_RTC_WRITEPROTECTION_DISABLE(__HANDLE__);                \
+                            SET_BIT((__HANDLE__)->Instance->CR, RTC_CR_ADD1H);            \
+                            MODIFY_REG((__HANDLE__)->Instance->CR, RTC_CR_BKP , (__BKP__)); \
+                            __HAL_RTC_WRITEPROTECTION_ENABLE(__HANDLE__);                 \
+                        } while(0u);
+
+/**
+  * @brief  Subtract 1 hour (winter time change).
+  * @param  __HANDLE__ specifies the RTC handle.
+  * @param  __BKP__ Backup
+  *         This parameter can be:
+  *            @arg @ref RTC_STOREOPERATION_RESET
+  *            @arg @ref RTC_STOREOPERATION_SET
+  * @retval None
+  */
+#define __HAL_RTC_DAYLIGHT_SAVING_TIME_SUB1H(__HANDLE__, __BKP__)                         \
+                        do {                                                              \
+                            __HAL_RTC_WRITEPROTECTION_DISABLE(__HANDLE__);                \
+                            SET_BIT((__HANDLE__)->Instance->CR, RTC_CR_SUB1H);            \
+                            MODIFY_REG((__HANDLE__)->Instance->CR, RTC_CR_BKP , (__BKP__)); \
+                            __HAL_RTC_WRITEPROTECTION_ENABLE(__HANDLE__);                 \
+                        } while(0u);
+
+ /**
+  * @brief  Enable the RTC ALARMA peripheral.
+  * @param  __HANDLE__ specifies the RTC handle.
+  * @retval None
+  */
+#define __HAL_RTC_ALARMA_ENABLE(__HANDLE__)  ((__HANDLE__)->Instance->CR |= (RTC_CR_ALRAE))
 
 /**
   * @brief  Disable the RTC ALARMA peripheral.
-  * @param  __HANDLE__: specifies the RTC handle.
+  * @param  __HANDLE__ specifies the RTC handle.
   * @retval None
   */
-#define __HAL_RTC_ALARMA_DISABLE(__HANDLE__)                         ((__HANDLE__)->Instance->CR &= ~(RTC_CR_ALRAE))
+#define __HAL_RTC_ALARMA_DISABLE(__HANDLE__)  ((__HANDLE__)->Instance->CR &= ~(RTC_CR_ALRAE))
 
 /**
   * @brief  Enable the RTC ALARMB peripheral.
-  * @param  __HANDLE__: specifies the RTC handle.
+  * @param  __HANDLE__ specifies the RTC handle.
   * @retval None
   */
-#define __HAL_RTC_ALARMB_ENABLE(__HANDLE__)                          ((__HANDLE__)->Instance->CR |= (RTC_CR_ALRBE))
+#define __HAL_RTC_ALARMB_ENABLE(__HANDLE__)   ((__HANDLE__)->Instance->CR |= (RTC_CR_ALRBE))
 
 /**
   * @brief  Disable the RTC ALARMB peripheral.
-  * @param  __HANDLE__: specifies the RTC handle.
+  * @param  __HANDLE__ specifies the RTC handle.
   * @retval None
   */
-#define __HAL_RTC_ALARMB_DISABLE(__HANDLE__)                         ((__HANDLE__)->Instance->CR &= ~(RTC_CR_ALRBE))
+#define __HAL_RTC_ALARMB_DISABLE(__HANDLE__)  ((__HANDLE__)->Instance->CR &= ~(RTC_CR_ALRBE))
 
 /**
   * @brief  Enable the RTC Alarm interrupt.
-  * @param  __HANDLE__: specifies the RTC handle.
-  * @param  __INTERRUPT__: specifies the RTC Alarm interrupt sources to be enabled or disabled.
+  * @param  __HANDLE__ specifies the RTC handle.
+  * @param  __INTERRUPT__ specifies the RTC Alarm interrupt sources to be enabled or disabled.
   *          This parameter can be any combination of the following values:
-  *             @arg RTC_IT_ALRA: Alarm A interrupt
-  *             @arg RTC_IT_ALRB: Alarm B interrupt
+  *             @arg @ref RTC_IT_ALRA Alarm A interrupt
+  *             @arg @ref RTC_IT_ALRB Alarm B interrupt
   * @retval None
   */
-#define __HAL_RTC_ALARM_ENABLE_IT(__HANDLE__, __INTERRUPT__)         ((__HANDLE__)->Instance->CR |= (__INTERRUPT__))
+#define __HAL_RTC_ALARM_ENABLE_IT(__HANDLE__, __INTERRUPT__)   ((__HANDLE__)->Instance->CR |= (__INTERRUPT__))
 
 /**
   * @brief  Disable the RTC Alarm interrupt.
-  * @param  __HANDLE__: specifies the RTC handle.
-  * @param  __INTERRUPT__: specifies the RTC Alarm interrupt sources to be enabled or disabled.
+  * @param  __HANDLE__ specifies the RTC handle.
+  * @param  __INTERRUPT__ specifies the RTC Alarm interrupt sources to be enabled or disabled.
   *         This parameter can be any combination of the following values:
-  *            @arg RTC_IT_ALRA: Alarm A interrupt
-  *            @arg RTC_IT_ALRB: Alarm B interrupt
+  *            @arg @ref RTC_IT_ALRA Alarm A interrupt
+  *            @arg @ref RTC_IT_ALRB Alarm B interrupt
   * @retval None
   */
-#define __HAL_RTC_ALARM_DISABLE_IT(__HANDLE__, __INTERRUPT__)        ((__HANDLE__)->Instance->CR &= ~(__INTERRUPT__))
+#define __HAL_RTC_ALARM_DISABLE_IT(__HANDLE__, __INTERRUPT__) ((__HANDLE__)->Instance->CR &= ~(__INTERRUPT__))
 
 /**
   * @brief  Check whether the specified RTC Alarm interrupt has occurred or not.
-  * @param  __HANDLE__: specifies the RTC handle.
-  * @param  __INTERRUPT__: specifies the RTC Alarm interrupt sources to check.
+  * @param  __HANDLE__ specifies the RTC handle.
+  * @param  __INTERRUPT__ specifies the RTC Alarm interrupt sources to check.
   *         This parameter can be:
-  *            @arg RTC_IT_ALRA: Alarm A interrupt
-  *            @arg RTC_IT_ALRB: Alarm B interrupt
+  *            @arg @ref RTC_IT_ALRA Alarm A interrupt
+  *            @arg @ref RTC_IT_ALRB Alarm B interrupt
   * @retval None
   */
-#define __HAL_RTC_ALARM_GET_IT(__HANDLE__, __INTERRUPT__)            (((((__HANDLE__)->Instance->ISR)& ((__INTERRUPT__)>> 4)) != RESET) ? SET : RESET)
+#if defined(STM32L412xx) || defined(STM32L422xx)
+#define __HAL_RTC_ALARM_GET_IT(__HANDLE__, __INTERRUPT__) (((((__HANDLE__)->Instance->MISR)& (__INTERRUPT__ >> 12)) != 0U)? 1U : 0U)
+#else
+#define __HAL_RTC_ALARM_GET_IT(__HANDLE__, __INTERRUPT__) (((((__HANDLE__)->Instance->ISR)& (__INTERRUPT__ >> 4)) != 0U)? 1U : 0U)
+#endif
+/**
+  * @brief  Check whether the specified RTC Alarm interrupt has been enabled or not.
+  * @param  __HANDLE__ specifies the RTC handle.
+  * @param  __INTERRUPT__ specifies the RTC Alarm interrupt sources to check.
+  *         This parameter can be:
+  *            @arg @ref RTC_IT_ALRA Alarm A interrupt
+  *            @arg @ref RTC_IT_ALRB Alarm B interrupt
+  * @retval None
+  */
+#define __HAL_RTC_ALARM_GET_IT_SOURCE(__HANDLE__, __INTERRUPT__)     (((((__HANDLE__)->Instance->CR) & (__INTERRUPT__)) != 0U) ? 1U : 0U)
 
 /**
   * @brief  Get the selected RTC Alarm's flag status.
-  * @param  __HANDLE__: specifies the RTC handle.
-  * @param  __FLAG__: specifies the RTC Alarm Flag sources to check.
+  * @param  __HANDLE__ specifies the RTC handle.
+  * @param  __FLAG__ specifies the RTC Alarm Flag sources to check.
   *         This parameter can be:
-  *            @arg RTC_FLAG_ALRAF
-  *            @arg RTC_FLAG_ALRBF
-  *            @arg RTC_FLAG_ALRAWF
-  *            @arg RTC_FLAG_ALRBWF
+  *            @arg @ref RTC_FLAG_ALRAF
+  *            @arg @ref RTC_FLAG_ALRBF
+  *            @arg @ref RTC_FLAG_ALRAWF
+  *            @arg @ref RTC_FLAG_ALRBWF
   * @retval None
   */
-#define __HAL_RTC_ALARM_GET_FLAG(__HANDLE__, __FLAG__)               (((((__HANDLE__)->Instance->ISR) & (__FLAG__)) != RESET) ? SET : RESET)
+#if defined(STM32L412xx) || defined(STM32L422xx)
+#define __HAL_RTC_ALARM_GET_FLAG(__HANDLE__, __FLAG__)   (__HAL_RTC_GET_FLAG((__HANDLE__), (__FLAG__)))
+#else
+#define __HAL_RTC_ALARM_GET_FLAG(__HANDLE__, __FLAG__)  (((((__HANDLE__)->Instance->ISR) & (__FLAG__)) != 0U) ? 1U : 0U)
+#endif
 
 /**
   * @brief  Clear the RTC Alarm's pending flags.
-  * @param  __HANDLE__: specifies the RTC handle.
-  * @param  __FLAG__: specifies the RTC Alarm Flag sources to clear.
+  * @param  __HANDLE__ specifies the RTC handle.
+  * @param  __FLAG__ specifies the RTC Alarm Flag sources to clear.
   *          This parameter can be:
-  *             @arg RTC_FLAG_ALRAF
-  *             @arg RTC_FLAG_ALRBF
+  *             @arg @ref RTC_FLAG_ALRAF
+  *             @arg @ref RTC_FLAG_ALRBF
   * @retval None
   */
-#define __HAL_RTC_ALARM_CLEAR_FLAG(__HANDLE__, __FLAG__)             ((__HANDLE__)->Instance->ISR) = (~((__FLAG__) | RTC_ISR_INIT)|((__HANDLE__)->Instance->ISR & RTC_ISR_INIT))
-
-/**
-  * @brief  Check whether the specified RTC Alarm interrupt is enabled or not.
-  * @param  __HANDLE__: specifies the RTC handle.
-  * @param  __INTERRUPT__: specifies the RTC Alarm interrupt sources to check.
-  *         This parameter can be:
-  *            @arg RTC_IT_ALRA: Alarm A interrupt
-  *            @arg RTC_IT_ALRB: Alarm B interrupt
-  * @retval None
-  */
-#define __HAL_RTC_ALARM_GET_IT_SOURCE(__HANDLE__, __INTERRUPT__)     (((((__HANDLE__)->Instance->CR) & (__INTERRUPT__)) != RESET) ? SET : RESET)
+#if defined(STM32L412xx) || defined(STM32L422xx)
+#define __HAL_RTC_ALARM_CLEAR_FLAG(__HANDLE__, __FLAG__)   (((__FLAG__) == RTC_FLAG_ALRAF) ? (((__HANDLE__)->Instance->SCR = (RTC_CLEAR_ALRAF))) : \
+                                                           ((__HANDLE__)->Instance->SCR = (RTC_CLEAR_ALRBF)))
+#else
+#define __HAL_RTC_ALARM_CLEAR_FLAG(__HANDLE__, __FLAG__)  ((__HANDLE__)->Instance->ISR = (~((__FLAG__) | RTC_ISR_INIT)|((__HANDLE__)->Instance->ISR & RTC_ISR_INIT)))
+#endif
 
 /**
   * @brief  Enable interrupt on the RTC Alarm associated Exti line.
@@ -625,13 +754,13 @@ typedef  void (*pRTC_CallbackTypeDef)(RTC_HandleTypeDef * hrtc); /*!< pointer to
 
 /**
   * @brief  Enable event on the RTC Alarm associated Exti line.
-  * @retval None
+  * @retval None.
   */
 #define __HAL_RTC_ALARM_EXTI_ENABLE_EVENT()         (EXTI->EMR1 |= RTC_EXTI_LINE_ALARM_EVENT)
 
 /**
   * @brief  Disable event on the RTC Alarm associated Exti line.
-  * @retval None
+  * @retval None.
   */
 #define __HAL_RTC_ALARM_EXTI_DISABLE_EVENT()         (EXTI->EMR1 &= ~(RTC_EXTI_LINE_ALARM_EVENT))
 
@@ -666,7 +795,7 @@ typedef  void (*pRTC_CallbackTypeDef)(RTC_HandleTypeDef * hrtc); /*!< pointer to
 #define __HAL_RTC_ALARM_EXTI_ENABLE_RISING_FALLING_EDGE()  do { \
                                                              __HAL_RTC_ALARM_EXTI_ENABLE_RISING_EDGE();  \
                                                              __HAL_RTC_ALARM_EXTI_ENABLE_FALLING_EDGE(); \
-                                                           } while(0)
+                                                           } while(0u)
 
 /**
   * @brief  Disable rising & falling edge trigger on the RTC Alarm associated Exti line.
@@ -675,7 +804,7 @@ typedef  void (*pRTC_CallbackTypeDef)(RTC_HandleTypeDef * hrtc); /*!< pointer to
 #define __HAL_RTC_ALARM_EXTI_DISABLE_RISING_FALLING_EDGE() do { \
                                                              __HAL_RTC_ALARM_EXTI_DISABLE_RISING_EDGE();  \
                                                              __HAL_RTC_ALARM_EXTI_DISABLE_FALLING_EDGE(); \
-                                                           } while(0)
+                                                           } while(0u)
 
 /**
   * @brief Check whether the RTC Alarm associated Exti line interrupt flag is set or not.
@@ -703,30 +832,30 @@ typedef  void (*pRTC_CallbackTypeDef)(RTC_HandleTypeDef * hrtc); /*!< pointer to
 #include "stm32l4xx_hal_rtc_ex.h"
 
 /* Exported functions --------------------------------------------------------*/
-/** @addtogroup RTC_Exported_Functions
+/** @defgroup RTC_Exported_Functions RTC Exported Functions
   * @{
   */
 
-/** @addtogroup RTC_Exported_Functions_Group1
+/** @defgroup RTC_Exported_Functions_Group1 Initialization and de-initialization functions
   * @{
   */
 /* Initialization and de-initialization functions  ****************************/
 HAL_StatusTypeDef HAL_RTC_Init(RTC_HandleTypeDef *hrtc);
 HAL_StatusTypeDef HAL_RTC_DeInit(RTC_HandleTypeDef *hrtc);
-void              HAL_RTC_MspInit(RTC_HandleTypeDef *hrtc);
-void              HAL_RTC_MspDeInit(RTC_HandleTypeDef *hrtc);
+
+void HAL_RTC_MspInit(RTC_HandleTypeDef *hrtc);
+void HAL_RTC_MspDeInit(RTC_HandleTypeDef *hrtc);
 
 /* Callbacks Register/UnRegister functions  ***********************************/
 #if (USE_HAL_RTC_REGISTER_CALLBACKS == 1)
 HAL_StatusTypeDef HAL_RTC_RegisterCallback(RTC_HandleTypeDef *hrtc, HAL_RTC_CallbackIDTypeDef CallbackID, pRTC_CallbackTypeDef pCallback);
 HAL_StatusTypeDef HAL_RTC_UnRegisterCallback(RTC_HandleTypeDef *hrtc, HAL_RTC_CallbackIDTypeDef CallbackID);
-#endif /* USE_HAL_LPTIM_REGISTER_CALLBACKS */
-
+#endif /* (USE_HAL_RTC_REGISTER_CALLBACKS == 1) */
 /**
   * @}
   */
 
-/** @addtogroup RTC_Exported_Functions_Group2
+/** @defgroup RTC_Exported_Functions_Group2 RTC Time and Date functions
   * @{
   */
 /* RTC Time and Date functions ************************************************/
@@ -738,7 +867,7 @@ HAL_StatusTypeDef HAL_RTC_GetDate(RTC_HandleTypeDef *hrtc, RTC_DateTypeDef *sDat
   * @}
   */
 
-/** @addtogroup RTC_Exported_Functions_Group3
+/** @defgroup RTC_Exported_Functions_Group3 RTC Alarm functions
   * @{
   */
 /* RTC Alarm functions ********************************************************/
@@ -747,27 +876,26 @@ HAL_StatusTypeDef HAL_RTC_SetAlarm_IT(RTC_HandleTypeDef *hrtc, RTC_AlarmTypeDef 
 HAL_StatusTypeDef HAL_RTC_DeactivateAlarm(RTC_HandleTypeDef *hrtc, uint32_t Alarm);
 HAL_StatusTypeDef HAL_RTC_GetAlarm(RTC_HandleTypeDef *hrtc, RTC_AlarmTypeDef *sAlarm, uint32_t Alarm, uint32_t Format);
 void              HAL_RTC_AlarmIRQHandler(RTC_HandleTypeDef *hrtc);
-HAL_StatusTypeDef HAL_RTC_PollForAlarmAEvent(RTC_HandleTypeDef *hrtc, uint32_t Timeout);
 void              HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc);
+HAL_StatusTypeDef HAL_RTC_PollForAlarmAEvent(RTC_HandleTypeDef *hrtc, uint32_t Timeout);
 /**
   * @}
   */
 
-/** @addtogroup RTC_Exported_Functions_Group4
+/** @defgroup  RTC_Exported_Functions_Group4 Peripheral Control functions
   * @{
   */
 /* Peripheral Control functions ***********************************************/
-HAL_StatusTypeDef HAL_RTC_WaitForSynchro(RTC_HandleTypeDef* hrtc);
+HAL_StatusTypeDef   HAL_RTC_WaitForSynchro(RTC_HandleTypeDef* hrtc);
 /**
   * @}
   */
 
-/** @addtogroup RTC_Exported_Functions_Group5
+/** @defgroup RTC_Exported_Functions_Group5 Peripheral State functions
   * @{
   */
 /* Peripheral State functions *************************************************/
 HAL_RTCStateTypeDef HAL_RTC_GetState(RTC_HandleTypeDef *hrtc);
-
 /**
   * @}
   */
@@ -783,14 +911,24 @@ HAL_RTCStateTypeDef HAL_RTC_GetState(RTC_HandleTypeDef *hrtc);
   * @{
   */
 /* Masks Definition */
-#define RTC_TR_RESERVED_MASK    0x007F7F7FU
-#define RTC_DR_RESERVED_MASK    0x00FFFF3FU
-#define RTC_INIT_MASK           0xFFFFFFFFU
-#define RTC_RSF_MASK            0xFFFFFF5FU
+#define RTC_TR_RESERVED_MASK                (RTC_TR_PM | RTC_TR_HT | RTC_TR_HU | \
+                                            RTC_TR_MNT | RTC_TR_MNU| RTC_TR_ST | \
+                                            RTC_TR_SU)
 
-#define RTC_TIMEOUT_VALUE  1000
+#define RTC_DR_RESERVED_MASK                (RTC_DR_YT | RTC_DR_YU | RTC_DR_WDU | \
+                                            RTC_DR_MT | RTC_DR_MU | RTC_DR_DT  | \
+                                            RTC_DR_DU)
 
-#define RTC_EXTI_LINE_ALARM_EVENT             ((uint32_t)0x00040000)  /*!< External interrupt line 18 Connected to the RTC Alarm event */
+#define RTC_INIT_MASK                       0xFFFFFFFFu
+#if defined(STM32L412xx) || defined(STM32L422xx)
+#define RTC_RSF_MASK                        (~(RTC_ICSR_INIT | RTC_ICSR_RSF))
+#else
+#define RTC_RSF_MASK                        (~(RTC_ISR_INIT | RTC_ISR_RSF))
+#endif
+
+#define RTC_TIMEOUT_VALUE                   1000u
+
+#define RTC_EXTI_LINE_ALARM_EVENT           EXTI_IMR1_IM18  /*!< External interrupt line 18 Connected to the RTC Alarm event */
 
 /**
   * @}
@@ -804,6 +942,18 @@ HAL_RTCStateTypeDef HAL_RTC_GetState(RTC_HandleTypeDef *hrtc);
 /** @defgroup RTC_IS_RTC_Definitions RTC Private macros to check input parameters
   * @{
   */
+#if defined(STM32L412xx) || defined(STM32L422xx)
+#define IS_RTC_OUTPUT(OUTPUT) (((OUTPUT) == RTC_OUTPUT_DISABLE) || \
+                                ((OUTPUT) == RTC_OUTPUT_ALARMA)  || \
+                                ((OUTPUT) == RTC_OUTPUT_ALARMB)  || \
+                                ((OUTPUT) == RTC_OUTPUT_WAKEUP)  || \
+                                ((OUTPUT) == RTC_OUTPUT_TAMPER))
+#else
+#define IS_RTC_OUTPUT(OUTPUT) (((OUTPUT) == RTC_OUTPUT_DISABLE) || \
+                               ((OUTPUT) == RTC_OUTPUT_ALARMA)  || \
+                               ((OUTPUT) == RTC_OUTPUT_ALARMB)  || \
+                               ((OUTPUT) == RTC_OUTPUT_WAKEUP))
+#endif
 
 #define IS_RTC_HOUR_FORMAT(FORMAT)     (((FORMAT) == RTC_HOURFORMAT_12) || \
                                         ((FORMAT) == RTC_HOURFORMAT_24))
@@ -814,10 +964,16 @@ HAL_RTCStateTypeDef HAL_RTC_GetState(RTC_HandleTypeDef *hrtc);
 #define IS_RTC_OUTPUT_TYPE(TYPE) (((TYPE) == RTC_OUTPUT_TYPE_OPENDRAIN) || \
                                   ((TYPE) == RTC_OUTPUT_TYPE_PUSHPULL))
 
+#if defined(STM32L412xx) || defined(STM32L422xx)
+#define IS_RTC_OUTPUT_PULLUP(TYPE) (((TYPE) == RTC_OUTPUT_PULLUP_NONE) || \
+                                    ((TYPE) == RTC_OUTPUT_PULLUP_ON))
+#endif
+
 #define IS_RTC_OUTPUT_REMAP(REMAP)   (((REMAP) == RTC_OUTPUT_REMAP_NONE) || \
                                       ((REMAP) == RTC_OUTPUT_REMAP_POS1))
 
-#define IS_RTC_HOURFORMAT12(PM)  (((PM) == RTC_HOURFORMAT12_AM) || ((PM) == RTC_HOURFORMAT12_PM))
+#define IS_RTC_HOURFORMAT12(PM)  (((PM) == RTC_HOURFORMAT12_AM) || \
+                                  ((PM) == RTC_HOURFORMAT12_PM))
 
 #define IS_RTC_DAYLIGHT_SAVING(SAVE) (((SAVE) == RTC_DAYLIGHTSAVING_SUB1H) || \
                                       ((SAVE) == RTC_DAYLIGHTSAVING_ADD1H) || \
@@ -826,13 +982,14 @@ HAL_RTCStateTypeDef HAL_RTC_GetState(RTC_HandleTypeDef *hrtc);
 #define IS_RTC_STORE_OPERATION(OPERATION) (((OPERATION) == RTC_STOREOPERATION_RESET) || \
                                            ((OPERATION) == RTC_STOREOPERATION_SET))
 
-#define IS_RTC_FORMAT(FORMAT) (((FORMAT) == RTC_FORMAT_BIN) || ((FORMAT) == RTC_FORMAT_BCD))
+#define IS_RTC_FORMAT(FORMAT) (((FORMAT) == RTC_FORMAT_BIN) || \
+                               ((FORMAT) == RTC_FORMAT_BCD))
 
-#define IS_RTC_YEAR(YEAR)              ((YEAR) <= (uint32_t)99)
+#define IS_RTC_YEAR(YEAR)              ((YEAR) <= 99u)
 
-#define IS_RTC_MONTH(MONTH)            (((MONTH) >= (uint32_t)1) && ((MONTH) <= (uint32_t)12))
+#define IS_RTC_MONTH(MONTH)            (((MONTH) >= 1u) && ((MONTH) <= 12u))
 
-#define IS_RTC_DATE(DATE)              (((DATE) >= (uint32_t)1) && ((DATE) <= (uint32_t)31))
+#define IS_RTC_DATE(DATE)              (((DATE) >= 1u) && ((DATE) <= 31u))
 
 #define IS_RTC_WEEKDAY(WEEKDAY) (((WEEKDAY) == RTC_WEEKDAY_MONDAY)    || \
                                  ((WEEKDAY) == RTC_WEEKDAY_TUESDAY)   || \
@@ -842,7 +999,7 @@ HAL_RTCStateTypeDef HAL_RTC_GetState(RTC_HandleTypeDef *hrtc);
                                  ((WEEKDAY) == RTC_WEEKDAY_SATURDAY)  || \
                                  ((WEEKDAY) == RTC_WEEKDAY_SUNDAY))
 
-#define IS_RTC_ALARM_DATE_WEEKDAY_DATE(DATE) (((DATE) >(uint32_t) 0) && ((DATE) <= (uint32_t)31))
+#define IS_RTC_ALARM_DATE_WEEKDAY_DATE(DATE) (((DATE) >0u) && ((DATE) <= 31u))
 
 #define IS_RTC_ALARM_DATE_WEEKDAY_WEEKDAY(WEEKDAY) (((WEEKDAY) == RTC_WEEKDAY_MONDAY)    || \
                                                     ((WEEKDAY) == RTC_WEEKDAY_TUESDAY)   || \
@@ -855,40 +1012,27 @@ HAL_RTCStateTypeDef HAL_RTC_GetState(RTC_HandleTypeDef *hrtc);
 #define IS_RTC_ALARM_DATE_WEEKDAY_SEL(SEL) (((SEL) == RTC_ALARMDATEWEEKDAYSEL_DATE) || \
                                             ((SEL) == RTC_ALARMDATEWEEKDAYSEL_WEEKDAY))
 
-#define IS_RTC_ALARM_MASK(MASK)  (((MASK) & 0x7F7F7F7F) == (uint32_t)RESET)
+#define IS_RTC_ALARM_MASK(MASK)  (((MASK) & ~(RTC_ALARMMASK_ALL)) == 0U)
 
-#define IS_RTC_ALARM(ALARM)      (((ALARM) == RTC_ALARM_A) || ((ALARM) == RTC_ALARM_B))
+#define IS_RTC_ALARM(ALARM)      (((ALARM) == RTC_ALARM_A) || \
+                                  ((ALARM) == RTC_ALARM_B))
 
-#define IS_RTC_ALARM_SUB_SECOND_VALUE(VALUE) ((VALUE) <= (uint32_t)0x00007FFF)
+#define IS_RTC_ALARM_SUB_SECOND_VALUE(VALUE) ((VALUE) <= RTC_ALRMASSR_SS)
 
-#define IS_RTC_ALARM_SUB_SECOND_MASK(MASK)   (((MASK) == RTC_ALARMSUBSECONDMASK_ALL) || \
-                                              ((MASK) == RTC_ALARMSUBSECONDMASK_SS14_1) || \
-                                              ((MASK) == RTC_ALARMSUBSECONDMASK_SS14_2) || \
-                                              ((MASK) == RTC_ALARMSUBSECONDMASK_SS14_3) || \
-                                              ((MASK) == RTC_ALARMSUBSECONDMASK_SS14_4) || \
-                                              ((MASK) == RTC_ALARMSUBSECONDMASK_SS14_5) || \
-                                              ((MASK) == RTC_ALARMSUBSECONDMASK_SS14_6) || \
-                                              ((MASK) == RTC_ALARMSUBSECONDMASK_SS14_7) || \
-                                              ((MASK) == RTC_ALARMSUBSECONDMASK_SS14_8) || \
-                                              ((MASK) == RTC_ALARMSUBSECONDMASK_SS14_9) || \
-                                              ((MASK) == RTC_ALARMSUBSECONDMASK_SS14_10) || \
-                                              ((MASK) == RTC_ALARMSUBSECONDMASK_SS14_11) || \
-                                              ((MASK) == RTC_ALARMSUBSECONDMASK_SS14_12) || \
-                                              ((MASK) == RTC_ALARMSUBSECONDMASK_SS14_13) || \
-                                              ((MASK) == RTC_ALARMSUBSECONDMASK_SS14) || \
-                                              ((MASK) == RTC_ALARMSUBSECONDMASK_NONE))
+#define IS_RTC_ALARM_SUB_SECOND_MASK(MASK)          (((MASK) == 0u) || \
+                                                    (((MASK) >= RTC_ALARMSUBSECONDMASK_SS14_1) && ((MASK) <= RTC_ALARMSUBSECONDMASK_NONE)))
 
-#define IS_RTC_ASYNCH_PREDIV(PREDIV)   ((PREDIV) <= (uint32_t)0x7F)
+#define IS_RTC_ASYNCH_PREDIV(PREDIV)   ((PREDIV) <= (RTC_PRER_PREDIV_A >> RTC_PRER_PREDIV_A_Pos))
 
-#define IS_RTC_SYNCH_PREDIV(PREDIV)    ((PREDIV) <= (uint32_t)0x7FFF)
+#define IS_RTC_SYNCH_PREDIV(PREDIV)    ((PREDIV) <= (RTC_PRER_PREDIV_S >> RTC_PRER_PREDIV_S_Pos))
 
-#define IS_RTC_HOUR12(HOUR)            (((HOUR) > (uint32_t)0) && ((HOUR) <= (uint32_t)12))
+#define IS_RTC_HOUR12(HOUR)            (((HOUR) > 0u) && ((HOUR) <= 12u))
 
-#define IS_RTC_HOUR24(HOUR)            ((HOUR) <= (uint32_t)23)
+#define IS_RTC_HOUR24(HOUR)            ((HOUR) <= 23u)
 
-#define IS_RTC_MINUTES(MINUTES)        ((MINUTES) <= (uint32_t)59)
+#define IS_RTC_MINUTES(MINUTES)        ((MINUTES) <= 59u)
 
-#define IS_RTC_SECONDS(SECONDS)        ((SECONDS) <= (uint32_t)59)
+#define IS_RTC_SECONDS(SECONDS)        ((SECONDS) <= 59u)
 
 /**
   * @}
@@ -898,14 +1042,17 @@ HAL_RTCStateTypeDef HAL_RTC_GetState(RTC_HandleTypeDef *hrtc);
   * @}
   */
 
-/* Private functions ---------------------------------------------------------*/
-/** @addtogroup RTC_Private_Functions
+/* Private functions -------------------------------------------------------------*/
+/** @defgroup RTC_Private_Functions RTC Private Functions
   * @{
   */
-
 HAL_StatusTypeDef  RTC_EnterInitMode(RTC_HandleTypeDef* hrtc);
 uint8_t            RTC_ByteToBcd2(uint8_t Value);
 uint8_t            RTC_Bcd2ToByte(uint8_t Value);
+/**
+  * @}
+  */
+
 
 /**
   * @}
@@ -923,6 +1070,7 @@ uint8_t            RTC_Bcd2ToByte(uint8_t Value);
 }
 #endif
 
-#endif /* __STM32L4xx_HAL_RTC_H */
+#endif /* STM32L4xx_HAL_RTC_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+

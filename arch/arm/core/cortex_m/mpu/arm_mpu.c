@@ -186,14 +186,23 @@ void arm_core_mpu_configure(u8_t type, u32_t base, u32_t size)
 #if defined(CONFIG_USERSPACE)
 void arm_core_mpu_configure_user_context(struct k_thread *thread)
 {
-	u32_t base = (u32_t)thread->stack_obj;
-	u32_t size = thread->stack_info.size;
-
 	if (!thread->arch.priv_stack_start) {
 		_disable_region(_get_region_index_by_type(
 			THREAD_STACK_REGION));
 		return;
 	}
+
+	u32_t base = (u32_t)thread->stack_obj;
+	u32_t size = thread->stack_info.size;
+#if !defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
+	/* In user-mode the thread stack will include the (optional)
+	 * guard area. For MPUs with arbitrary base address and limit
+	 * it is essential to include this size increase, to avoid
+	 * MPU faults.
+	 */
+	size += thread->stack_info.start - thread->stack_obj;
+#endif
+
 	arm_core_mpu_configure(THREAD_STACK_REGION, base, size);
 }
 

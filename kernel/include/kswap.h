@@ -90,12 +90,16 @@ static inline int _Swap(unsigned int key)
 	int ret;
 	_check_stack_sentinel();
 
+#ifndef CONFIG_ARM
 #ifdef CONFIG_TRACING
 	sys_trace_thread_switched_out();
 #endif
+#endif
 	ret = __swap(key);
+#ifndef CONFIG_ARM
 #ifdef CONFIG_TRACING
 	sys_trace_thread_switched_in();
+#endif
 #endif
 
 	return ret;

@@ -249,6 +249,10 @@ HAL_StatusTypeDef HAL_LPTIM_Init(LPTIM_HandleTypeDef *hlptim)
   assert_param(IS_LPTIM_UPDATE_MODE(hlptim->Init.UpdateMode));
   assert_param(IS_LPTIM_COUNTER_SOURCE(hlptim->Init.CounterSource));
 
+#if defined(LPTIM_RCR_REP)
+  assert_param(IS_LPTIM_REPETITION(hlptim->Init.RepetitionCounter));
+#endif
+
   if(hlptim->State == HAL_LPTIM_STATE_RESET)
   {
     /* Allocate lock resource and initialize it */
@@ -473,6 +477,14 @@ HAL_StatusTypeDef HAL_LPTIM_PWM_Start(LPTIM_HandleTypeDef *hlptim, uint32_t Peri
   /* Load the pulse value in the compare register */
   __HAL_LPTIM_COMPARE_SET(hlptim, Pulse);
 
+#if defined(LPTIM_RCR_REP)
+  /* Load the repetition value in the repetition counter */
+  if (hlptim->Init.RepetitionCounter != 0)
+  {
+    __HAL_LPTIM_REPETITIONCOUNTER_SET(hlptim, hlptim->Init.RepetitionCounter);
+  }
+#endif
+
   /* Start timer in continuous mode */
   __HAL_LPTIM_START_CONTINUOUS(hlptim);
 
@@ -547,6 +559,14 @@ HAL_StatusTypeDef HAL_LPTIM_PWM_Start_IT(LPTIM_HandleTypeDef *hlptim, uint32_t P
     __HAL_LPTIM_ENABLE_IT(hlptim, LPTIM_IT_EXTTRIG);
   }
 
+#if defined(LPTIM_RCR_REP)
+  /* Enable the update event and the repetition register update OK interrupts */
+  if ((hlptim->Init.RepetitionCounter) !=  0)
+  {
+    __HAL_LPTIM_ENABLE_IT(hlptim, (LPTIM_IT_UPDATE | LPTIM_IT_REPOK));
+  }
+#endif
+
   /* Enable the Peripheral */
   __HAL_LPTIM_ENABLE(hlptim);
 
@@ -555,6 +575,14 @@ HAL_StatusTypeDef HAL_LPTIM_PWM_Start_IT(LPTIM_HandleTypeDef *hlptim, uint32_t P
 
   /* Load the pulse value in the compare register */
   __HAL_LPTIM_COMPARE_SET(hlptim, Pulse);
+
+#if defined(LPTIM_RCR_REP)
+  /* Load the repetition value in the repetition counter */
+  if (hlptim->Init.RepetitionCounter != 0)
+  {
+    __HAL_LPTIM_REPETITIONCOUNTER_SET(hlptim, hlptim->Init.RepetitionCounter);
+  }
+#endif
 
   /* Start timer in continuous mode */
   __HAL_LPTIM_START_CONTINUOUS(hlptim);
@@ -601,6 +629,14 @@ HAL_StatusTypeDef HAL_LPTIM_PWM_Stop_IT(LPTIM_HandleTypeDef *hlptim)
     __HAL_LPTIM_DISABLE_IT(hlptim, LPTIM_IT_EXTTRIG);
   }
 
+#if defined(LPTIM_RCR_REP)
+  /* Disable the update event and the repetition register update OK interrupts */
+  if ((hlptim->Init.RepetitionCounter) !=  0)
+  {
+    __HAL_LPTIM_DISABLE_IT(hlptim, (LPTIM_IT_UPDATE | LPTIM_IT_REPOK));
+  }
+#endif
+
   /* Change the TIM state*/
   hlptim->State= HAL_LPTIM_STATE_READY;
 
@@ -641,6 +677,14 @@ HAL_StatusTypeDef HAL_LPTIM_OnePulse_Start(LPTIM_HandleTypeDef *hlptim, uint32_t
 
   /* Start timer in continuous mode */
   __HAL_LPTIM_START_SINGLE(hlptim);
+
+#if defined(LPTIM_RCR_REP)
+  /* Load the repetition value in the repetition counter */
+  if (hlptim->Init.RepetitionCounter != 0)
+  {
+    __HAL_LPTIM_REPETITIONCOUNTER_SET(hlptim, hlptim->Init.RepetitionCounter);
+  }
+#endif
 
   /* Change the TIM state*/
   hlptim->State= HAL_LPTIM_STATE_READY;
@@ -713,6 +757,14 @@ HAL_StatusTypeDef HAL_LPTIM_OnePulse_Start_IT(LPTIM_HandleTypeDef *hlptim, uint3
     __HAL_LPTIM_ENABLE_IT(hlptim, LPTIM_IT_EXTTRIG);
   }
 
+#if defined(LPTIM_RCR_REP)
+  /* Enable the update event and the repetition register update OK interrupts */
+  if ((hlptim->Init.RepetitionCounter) !=  0)
+  {
+    __HAL_LPTIM_ENABLE_IT(hlptim, (LPTIM_IT_UPDATE | LPTIM_IT_REPOK));
+  }
+#endif
+
   /* Enable the Peripheral */
   __HAL_LPTIM_ENABLE(hlptim);
 
@@ -721,6 +773,14 @@ HAL_StatusTypeDef HAL_LPTIM_OnePulse_Start_IT(LPTIM_HandleTypeDef *hlptim, uint3
 
   /* Load the pulse value in the compare register */
   __HAL_LPTIM_COMPARE_SET(hlptim, Pulse);
+
+#if defined(LPTIM_RCR_REP)
+  /* Load the repetition value in the repetition counter */
+  if (hlptim->Init.RepetitionCounter != 0)
+  {
+    __HAL_LPTIM_REPETITIONCOUNTER_SET(hlptim, hlptim->Init.RepetitionCounter);
+  }
+#endif
 
   /* Start timer in continuous mode */
   __HAL_LPTIM_START_SINGLE(hlptim);
@@ -767,6 +827,14 @@ HAL_StatusTypeDef HAL_LPTIM_OnePulse_Stop_IT(LPTIM_HandleTypeDef *hlptim)
     __HAL_LPTIM_DISABLE_IT(hlptim, LPTIM_IT_EXTTRIG);
   }
 
+#if defined(LPTIM_RCR_REP)
+  /* Disable the update event and the repetition register update OK interrupts */
+  if ((hlptim->Init.RepetitionCounter) !=  0)
+  {
+    __HAL_LPTIM_DISABLE_IT(hlptim, (LPTIM_IT_UPDATE | LPTIM_IT_REPOK));
+  }
+#endif
+
   /* Change the TIM state*/
   hlptim->State= HAL_LPTIM_STATE_READY;
 
@@ -804,6 +872,14 @@ HAL_StatusTypeDef HAL_LPTIM_SetOnce_Start(LPTIM_HandleTypeDef *hlptim, uint32_t 
 
   /* Load the pulse value in the compare register */
   __HAL_LPTIM_COMPARE_SET(hlptim, Pulse);
+
+#if defined(LPTIM_RCR_REP)
+  /* Load the repetition value in the repetition counter */
+  if (hlptim->Init.RepetitionCounter != 0)
+  {
+    __HAL_LPTIM_REPETITIONCOUNTER_SET(hlptim, hlptim->Init.RepetitionCounter);
+  }
+#endif
 
   /* Start timer in continuous mode */
   __HAL_LPTIM_START_SINGLE(hlptim);
@@ -879,6 +955,14 @@ HAL_StatusTypeDef HAL_LPTIM_SetOnce_Start_IT(LPTIM_HandleTypeDef *hlptim, uint32
     __HAL_LPTIM_ENABLE_IT(hlptim, LPTIM_IT_EXTTRIG);
   }
 
+#if defined(LPTIM_RCR_REP)
+  /* Enable the update event and the repetition register update OK interrupts */
+  if ((hlptim->Init.RepetitionCounter) !=  0)
+  {
+    __HAL_LPTIM_ENABLE_IT(hlptim, (LPTIM_IT_UPDATE | LPTIM_IT_REPOK));
+  }
+#endif
+
   /* Enable the Peripheral */
   __HAL_LPTIM_ENABLE(hlptim);
 
@@ -887,6 +971,14 @@ HAL_StatusTypeDef HAL_LPTIM_SetOnce_Start_IT(LPTIM_HandleTypeDef *hlptim, uint32
 
   /* Load the pulse value in the compare register */
   __HAL_LPTIM_COMPARE_SET(hlptim, Pulse);
+
+#if defined(LPTIM_RCR_REP)
+  /* Load the repetition value in the repetition counter */
+  if (hlptim->Init.RepetitionCounter != 0)
+  {
+    __HAL_LPTIM_REPETITIONCOUNTER_SET(hlptim, hlptim->Init.RepetitionCounter);
+  }
+#endif
 
   /* Start timer in continuous mode */
   __HAL_LPTIM_START_SINGLE(hlptim);
@@ -932,6 +1024,14 @@ HAL_StatusTypeDef HAL_LPTIM_SetOnce_Stop_IT(LPTIM_HandleTypeDef *hlptim)
     /* Disable external trigger interrupt */
     __HAL_LPTIM_DISABLE_IT(hlptim, LPTIM_IT_EXTTRIG);
   }
+
+#if defined(LPTIM_RCR_REP)
+  /* Disable the update event and the repetition register update OK interrupts */
+  if ((hlptim->Init.RepetitionCounter) !=  0)
+  {
+    __HAL_LPTIM_DISABLE_IT(hlptim, (LPTIM_IT_UPDATE | LPTIM_IT_REPOK));
+  }
+#endif
 
   /* Change the TIM state*/
   hlptim->State= HAL_LPTIM_STATE_READY;
@@ -1302,6 +1402,14 @@ HAL_StatusTypeDef HAL_LPTIM_Counter_Start(LPTIM_HandleTypeDef *hlptim, uint32_t 
   /* Load the period value in the autoreload register */
   __HAL_LPTIM_AUTORELOAD_SET(hlptim, Period);
 
+#if defined(LPTIM_RCR_REP)
+  /* Load the repetition value in the repetition counter */
+  if (hlptim->Init.RepetitionCounter != 0)
+  {
+    __HAL_LPTIM_REPETITIONCOUNTER_SET(hlptim, hlptim->Init.RepetitionCounter);
+  }
+#endif
+
   /* Start timer in continuous mode */
   __HAL_LPTIM_START_CONTINUOUS(hlptim);
 
@@ -1366,13 +1474,29 @@ HAL_StatusTypeDef HAL_LPTIM_Counter_Start_IT(LPTIM_HandleTypeDef *hlptim, uint32
   /* Enable Autoreload match interrupt */
   __HAL_LPTIM_ENABLE_IT(hlptim, LPTIM_IT_ARRM);
 
+#if defined(LPTIM_RCR_REP)
+  /* Enable the update event and the repetition register update OK interrupts */
+  if ((hlptim->Init.RepetitionCounter) !=  0)
+  {
+    __HAL_LPTIM_ENABLE_IT(hlptim, (LPTIM_IT_UPDATE | LPTIM_IT_REPOK));
+  }
+#endif
+
   /* Enable the Peripheral */
   __HAL_LPTIM_ENABLE(hlptim);
 
   /* Load the period value in the autoreload register */
   __HAL_LPTIM_AUTORELOAD_SET(hlptim, Period);
 
-  /* Start timer in continuous mode */
+ #if defined(LPTIM_RCR_REP)
+  /* Load the repetition value in the repetition counter */
+  if (hlptim->Init.RepetitionCounter != 0)
+  {
+    __HAL_LPTIM_REPETITIONCOUNTER_SET(hlptim, hlptim->Init.RepetitionCounter);
+  }
+#endif
+
+ /* Start timer in continuous mode */
   __HAL_LPTIM_START_CONTINUOUS(hlptim);
 
   /* Change the TIM state*/
@@ -1403,6 +1527,14 @@ HAL_StatusTypeDef HAL_LPTIM_Counter_Stop_IT(LPTIM_HandleTypeDef *hlptim)
 
   /* Disable Autoreload match interrupt */
   __HAL_LPTIM_DISABLE_IT(hlptim, LPTIM_IT_ARRM);
+
+#if defined(LPTIM_RCR_REP)
+  /* Disable the update event and the repetition register update OK interrupts */
+  if ((hlptim->Init.RepetitionCounter) !=  0)
+  {
+    __HAL_LPTIM_DISABLE_IT(hlptim, (LPTIM_IT_UPDATE | LPTIM_IT_REPOK));
+  }
+#endif
 
   /* Change the TIM state*/
   hlptim->State= HAL_LPTIM_STATE_READY;
@@ -1614,6 +1746,43 @@ void HAL_LPTIM_IRQHandler(LPTIM_HandleTypeDef *hlptim)
 #endif /* USE_HAL_LPTIM_REGISTER_CALLBACKS */
     }
   }
+
+#if defined(LPTIM_RCR_REP)
+  /* Repetition counter underflowed (or contains zero) and the LPTIM counter
+     overflowed */
+  if(__HAL_LPTIM_GET_FLAG(hlptim, LPTIM_FLAG_UPDATE) != RESET)
+  {
+    if(__HAL_LPTIM_GET_IT_SOURCE(hlptim, LPTIM_IT_UPDATE) != RESET)
+    {
+      /* Clear update event flag */
+      __HAL_LPTIM_CLEAR_FLAG(hlptim, LPTIM_FLAG_UPDATE);
+
+      /* Update event Callback */
+#if (USE_HAL_LPTIM_REGISTER_CALLBACKS == 1)
+      hlptim->UpdateEventCallback(hlptim);
+#else
+      HAL_LPTIM_UpdateEventCallback(hlptim);
+#endif /* USE_HAL_LPTIM_REGISTER_CALLBACKS */
+    }
+  }
+
+  /* Successful APB bus write to repetition counter register */
+  if(__HAL_LPTIM_GET_FLAG(hlptim, LPTIM_FLAG_REPOK) != RESET)
+  {
+    if(__HAL_LPTIM_GET_IT_SOURCE(hlptim, LPTIM_IT_REPOK) != RESET)
+    {
+      /* Clear successful APB bus write to repetition counter flag */
+      __HAL_LPTIM_CLEAR_FLAG(hlptim, LPTIM_FLAG_REPOK);
+
+      /* Successful APB bus write to repetition counter Callback */
+#if (USE_HAL_LPTIM_REGISTER_CALLBACKS == 1)
+      hlptim->RepCounterWriteCallback(hlptim);
+#else
+      HAL_LPTIM_RepCounterWriteCallback(hlptim);
+#endif /* USE_HAL_LPTIM_REGISTER_CALLBACKS */
+    }
+  }
+#endif
 }
 
 /**
@@ -1721,6 +1890,38 @@ __weak void HAL_LPTIM_DirectionDownCallback(LPTIM_HandleTypeDef *hlptim)
    */
 }
 
+#if defined(LPTIM_RCR_REP)
+/**
+  * @brief Repetition counter underflowed (or contains zero) and LPTIM counter overflowed callback in non-blocking mode.
+  * @param  hlptim : LPTIM handle
+  * @retval None
+  */
+__weak void HAL_LPTIM_UpdateEventCallback(LPTIM_HandleTypeDef *hlptim)
+{
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(hlptim);
+
+  /* NOTE : This function should not be modified, when the callback is needed,
+            the HAL_LPTIM_UpdateEventCallback could be implemented in the user file
+   */
+}
+
+/**
+  * @brief  Successful APB bus write to repetition counter register callback in non-blocking mode.
+  * @param  hlptim : LPTIM handle
+  * @retval None
+  */
+__weak void HAL_LPTIM_RepCounterWriteCallback(LPTIM_HandleTypeDef *hlptim)
+{
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(hlptim);
+
+  /* NOTE : This function should not be modified, when the callback is needed,
+            the HAL_LPTIM_RepCounterWriteCallback could be implemented in the user file
+   */
+}
+#endif /* LPTIM_RCR_REP */
+
 #if (USE_HAL_LPTIM_REGISTER_CALLBACKS == 1)
 /**
   * @brief  Register a User LPTIM callback to be used instead of the weak predefined callback
@@ -1792,6 +1993,16 @@ HAL_StatusTypeDef HAL_LPTIM_RegisterCallback(LPTIM_HandleTypeDef        *hlptim,
       case HAL_LPTIM_DIRECTION_DOWN_CB_ID :
         hlptim->DirectionDownCallback = pCallback;
         break;
+
+#if defined(LPTIM_RCR_REP)
+      case HAL_LPTIM_UPDATE_EVENT_CB_ID :
+        hlptim->UpdateEventCallback = pCallback;
+        break;
+
+      case HAL_LPTIM_REPETITION_WRITE_CB_ID :
+        hlptim->RepCounterWriteCallback = pCallback;
+        break;
+#endif /* LPTIM_RCR_REP */
 
       default :
         /* Return error status */
@@ -1894,6 +2105,16 @@ HAL_StatusTypeDef HAL_LPTIM_UnRegisterCallback(LPTIM_HandleTypeDef        *hlpti
         hlptim->DirectionDownCallback = HAL_LPTIM_DirectionDownCallback;       /* Legacy weak One Pulse Msp Init Callback */
         break;
 
+#if defined(LPTIM_RCR_REP)
+      case HAL_LPTIM_UPDATE_EVENT_CB_ID :
+        hlptim->UpdateEventCallback = HAL_LPTIM_UpdateEventCallback;           /* Legacy weak Update Event Callback */
+        break;
+
+      case HAL_LPTIM_REPETITION_WRITE_CB_ID :
+        hlptim->RepCounterWriteCallback = HAL_LPTIM_RepCounterWriteCallback;   /* Legacy weak Repetition counter successful write Callback */
+        break;
+#endif /* LPTIM_RCR_REP */
+
       default :
         /* Return error status */
         status =  HAL_ERROR;
@@ -1990,7 +2211,11 @@ static void LPTIM_ResetCallback(LPTIM_HandleTypeDef *lptim)
   lptim->CompareWriteCallback    = HAL_LPTIM_CompareWriteCallback;    /* Compare register write complete Callback     */
   lptim->AutoReloadWriteCallback = HAL_LPTIM_AutoReloadWriteCallback; /* Auto-reload register write complete Callback */
   lptim->DirectionUpCallback     = HAL_LPTIM_DirectionUpCallback;     /* Up-counting direction change Callback        */
-  lptim->DirectionDownCallback   = HAL_LPTIM_DirectionDownCallback;   /* Down-counting direction change Callback       */
+  lptim->DirectionDownCallback   = HAL_LPTIM_DirectionDownCallback;   /* Down-counting direction change Callback      */
+#if defined(LPTIM_RCR_REP)
+  lptim->UpdateEventCallback     = HAL_LPTIM_UpdateEventCallback;     /* Update Event Callback                        */
+  lptim->RepCounterWriteCallback = HAL_LPTIM_RepCounterWriteCallback; /* Repetition counter successful write Callback */
+#endif /* LPTIM_RCR_REP */
 }
 #endif /* USE_HAL_LPTIM_REGISTER_CALLBACKS */
 

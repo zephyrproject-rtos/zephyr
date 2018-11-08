@@ -94,7 +94,7 @@ static inline void ssd1673_busy_wait(struct ssd1673_data *driver)
 	while (val) {
 		k_busy_wait(SSD1673_BUSY_DELAY);
 		gpio_pin_read(driver->busy, CONFIG_SSD1673_BUSY_PIN, &val);
-	};
+	}
 }
 
 static inline int ssd1673_set_ram_param(struct ssd1673_data *driver,
@@ -136,7 +136,7 @@ static inline int ssd1673_set_ram_ptr(struct ssd1673_data *driver,
 static inline void ssd1673_set_orientation(struct ssd1673_data *driver)
 
 {
-#if defined(CONFIG_SSD1673_ORIENTATION_FLIPPED)
+#if CONFIG_SSD1673_ORIENTATION_FLIPPED == 1
 	driver->scan_mode = SSD1673_DATA_ENTRY_XIYDY;
 #else
 	driver->scan_mode = SSD1673_DATA_ENTRY_XDYIY;

@@ -61,7 +61,7 @@ extern int z_clock_device_ctrl(struct device *device,
  * Note that ticks can also be passed the special value K_FOREVER,
  * indicating that no future timer interrupts are expected or required
  * and that the system is permitted to enter an indefinite sleep even
- * if this could cause rolloever of the internal counter (i.e. the
+ * if this could cause rollover of the internal counter (i.e. the
  * system uptime counter is allowed to be wrong, see
  * k_enable_sys_clock_always_on().
  *
@@ -92,7 +92,7 @@ extern void z_clock_set_timeout(s32_t ticks, bool idle);
  * @brief Timer idle exit notification
  *
  * This notifies the timer driver that the system is exiting the idle
- * and allows it to do whatever bookeeping is needed to restore timer
+ * and allows it to do whatever bookkeeping is needed to restore timer
  * operation and compute elapsed ticks.
  *
  * @note Legacy timer drivers also use this opportunity to call back

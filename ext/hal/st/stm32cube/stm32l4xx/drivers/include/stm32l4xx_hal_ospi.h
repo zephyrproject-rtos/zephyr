@@ -6,7 +6,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2018 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -113,7 +113,7 @@ typedef struct __OSPI_HandleTypeDef
   __IO uint32_t              State;         /* Internal state of the OSPI HAL driver            */
   __IO uint32_t              ErrorCode;     /* Error code in case of HAL driver internal error  */
   uint32_t                   Timeout;       /* Timeout used for the OSPI external device access */
-#if (USE_HAL_OSPI_REGISTER_CALLBACKS == 1)
+#if defined (USE_HAL_OSPI_REGISTER_CALLBACKS) && (USE_HAL_OSPI_REGISTER_CALLBACKS == 1U)
   void (* ErrorCallback)        (struct __OSPI_HandleTypeDef *hospi);
   void (* AbortCpltCallback)    (struct __OSPI_HandleTypeDef *hospi);
   void (* FifoThresholdCallback)(struct __OSPI_HandleTypeDef *hospi);
@@ -260,7 +260,7 @@ typedef struct
                                       This parameter can be a value of @ref OSPIM_IOPort */
 }OSPIM_CfgTypeDef;
 
-#if (USE_HAL_OSPI_REGISTER_CALLBACKS == 1)
+#if defined (USE_HAL_OSPI_REGISTER_CALLBACKS) && (USE_HAL_OSPI_REGISTER_CALLBACKS == 1U)
 /**
   * @brief  HAL OSPI Callback ID enumeration definition
   */
@@ -324,7 +324,7 @@ typedef void (*pOSPI_CallbackTypeDef)(OSPI_HandleTypeDef *hospi);
 #define HAL_OSPI_ERROR_DMA                   ((uint32_t)0x00000004U)                                         /*!< DMA transfer error                         */
 #define HAL_OSPI_ERROR_INVALID_PARAM         ((uint32_t)0x00000008U)                                         /*!< Invalid parameters error                   */
 #define HAL_OSPI_ERROR_INVALID_SEQUENCE      ((uint32_t)0x00000010U)                                         /*!< Sequence of the state machine is incorrect */
-#if (USE_HAL_OSPI_REGISTER_CALLBACKS == 1)
+#if defined (USE_HAL_OSPI_REGISTER_CALLBACKS) && (USE_HAL_OSPI_REGISTER_CALLBACKS == 1U)
 #define HAL_OSPI_ERROR_INVALID_CALLBACK      ((uint32_t)0x00000020U)                                         /*!< Invalid callback error                     */
 #endif
 /**
@@ -345,6 +345,9 @@ typedef void (*pOSPI_CallbackTypeDef)(OSPI_HandleTypeDef *hospi);
   */
 #define HAL_OSPI_MEMTYPE_MICRON              ((uint32_t)0x00000000U)                                         /*!< Micron mode       */
 #define HAL_OSPI_MEMTYPE_MACRONIX            ((uint32_t)OCTOSPI_DCR1_MTYP_0)                                 /*!< Macronix mode     */
+#if !defined(STM32L4R5xx)&&!defined(STM32L4R7xx)&&!defined(STM32L4R9xx)&&!defined(STM32L4S5xx)&&!defined(STM32L4S7xx)&&!defined(STM32L4S9xx)
+#define HAL_OSPI_MEMTYPE_APMEMORY            ((uint32_t)OCTOSPI_DCR1_MTYP_1)                                 /*!< AP Memory mode    */
+#endif
 #define HAL_OSPI_MEMTYPE_MACRONIX_RAM        ((uint32_t)(OCTOSPI_DCR1_MTYP_1 | OCTOSPI_DCR1_MTYP_0))         /*!< Macronix RAM mode */
 #define HAL_OSPI_MEMTYPE_HYPERBUS            ((uint32_t)OCTOSPI_DCR1_MTYP_2)                                 /*!< Hyperbus mode     */
 /**
@@ -643,10 +646,10 @@ typedef void (*pOSPI_CallbackTypeDef)(OSPI_HandleTypeDef *hospi);
 /** @defgroup OSPIM_IOPort OSPI IO Manager IO Port
   * @{
   */
-#define HAL_OSPIM_IOPORT_1_LOW             ((uint32_t)(OCTOSPIM_PCR_IOLEN | 0x1))                          /*!< Port 1 - IO[3:0] */
-#define HAL_OSPIM_IOPORT_1_HIGH            ((uint32_t)(OCTOSPIM_PCR_IOHEN | 0x1))                          /*!< Port 1 - IO[7:4] */
-#define HAL_OSPIM_IOPORT_2_LOW             ((uint32_t)(OCTOSPIM_PCR_IOLEN | 0x2))                          /*!< Port 2 - IO[3:0] */
-#define HAL_OSPIM_IOPORT_2_HIGH            ((uint32_t)(OCTOSPIM_PCR_IOHEN | 0x2))                          /*!< Port 2 - IO[7:4] */
+#define HAL_OSPIM_IOPORT_1_LOW             ((uint32_t)(OCTOSPIM_PCR_IOLEN | 0x1U))                          /*!< Port 1 - IO[3:0] */
+#define HAL_OSPIM_IOPORT_1_HIGH            ((uint32_t)(OCTOSPIM_PCR_IOHEN | 0x1U))                          /*!< Port 1 - IO[7:4] */
+#define HAL_OSPIM_IOPORT_2_LOW             ((uint32_t)(OCTOSPIM_PCR_IOLEN | 0x2U))                          /*!< Port 2 - IO[3:0] */
+#define HAL_OSPIM_IOPORT_2_HIGH            ((uint32_t)(OCTOSPIM_PCR_IOHEN | 0x2U))                          /*!< Port 2 - IO[7:4] */
 /**
   * @}
   */
@@ -662,7 +665,7 @@ typedef void (*pOSPI_CallbackTypeDef)(OSPI_HandleTypeDef *hospi);
   * @param  __HANDLE__: OSPI handle.
   * @retval None
   */
-#if (USE_HAL_OSPI_REGISTER_CALLBACKS == 1)
+#if defined (USE_HAL_OSPI_REGISTER_CALLBACKS) && (USE_HAL_OSPI_REGISTER_CALLBACKS == 1U)
 #define __HAL_OSPI_RESET_HANDLE_STATE(__HANDLE__)           do {                                              \
                                                                   (__HANDLE__)->State = HAL_OSPI_STATE_RESET; \
                                                                   (__HANDLE__)->MspInitCallback = NULL;       \
@@ -819,7 +822,7 @@ void                  HAL_OSPI_StatusMatchCallback  (OSPI_HandleTypeDef *hospi);
 /* OSPI memory-mapped mode functions */
 void                  HAL_OSPI_TimeOutCallback      (OSPI_HandleTypeDef *hospi);
 
-#if (USE_HAL_OSPI_REGISTER_CALLBACKS == 1)
+#if defined (USE_HAL_OSPI_REGISTER_CALLBACKS) && (USE_HAL_OSPI_REGISTER_CALLBACKS == 1U)
 /* OSPI callback registering/unregistering */
 HAL_StatusTypeDef     HAL_OSPI_RegisterCallback     (OSPI_HandleTypeDef *hospi, HAL_OSPI_CallbackIDTypeDef CallbackID, pOSPI_CallbackTypeDef pCallback);
 HAL_StatusTypeDef     HAL_OSPI_UnRegisterCallback   (OSPI_HandleTypeDef *hospi, HAL_OSPI_CallbackIDTypeDef CallbackID);
@@ -868,9 +871,18 @@ HAL_StatusTypeDef     HAL_OSPIM_Config              (OSPI_HandleTypeDef *hospi, 
 #define IS_OSPI_DUALQUAD_MODE(MODE)        (((MODE) == HAL_OSPI_DUALQUAD_DISABLE) || \
                                             ((MODE) == HAL_OSPI_DUALQUAD_ENABLE))
 
+#if defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
 #define IS_OSPI_MEMORY_TYPE(TYPE)          (((TYPE) == HAL_OSPI_MEMTYPE_MICRON)       || \
                                             ((TYPE) == HAL_OSPI_MEMTYPE_MACRONIX)     || \
+                                            ((TYPE) == HAL_OSPI_MEMTYPE_MACRONIX_RAM) || \
                                             ((TYPE) == HAL_OSPI_MEMTYPE_HYPERBUS))
+#else
+#define IS_OSPI_MEMORY_TYPE(TYPE)          (((TYPE) == HAL_OSPI_MEMTYPE_MICRON)       || \
+                                            ((TYPE) == HAL_OSPI_MEMTYPE_MACRONIX)     || \
+                                            ((TYPE) == HAL_OSPI_MEMTYPE_APMEMORY)     || \
+                                            ((TYPE) == HAL_OSPI_MEMTYPE_MACRONIX_RAM) || \
+                                            ((TYPE) == HAL_OSPI_MEMTYPE_HYPERBUS))
+#endif
 
 #define IS_OSPI_DEVICE_SIZE(SIZE)          (((SIZE) >= 1U) && ((SIZE) <= 32U))
 

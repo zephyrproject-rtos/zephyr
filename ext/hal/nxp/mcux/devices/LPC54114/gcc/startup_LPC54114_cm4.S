@@ -45,7 +45,6 @@
 /* Version: GCC for ARM Embedded Processors                                  */
 /*****************************************************************************/
 
-#include <board.h>
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <arch/cpu.h>

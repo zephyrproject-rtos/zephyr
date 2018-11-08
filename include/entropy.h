@@ -96,9 +96,10 @@ static inline int entropy_get_entropy_isr(struct device *dev,
 {
 	const struct entropy_driver_api *api = dev->driver_api;
 
-	if (!api->get_entropy_isr) {
+	if (unlikely(!api->get_entropy_isr)) {
 		return -ENOTSUP;
 	}
+
 	return api->get_entropy_isr(dev, buffer, length, flags);
 }
 

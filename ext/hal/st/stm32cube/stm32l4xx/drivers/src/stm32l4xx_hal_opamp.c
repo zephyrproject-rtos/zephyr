@@ -21,7 +21,7 @@
   [..] The device integrates 1 or 2 operational amplifiers OPAMP1 & OPAMP2
 
        (#) The OPAMP(s) provide(s) several exclusive running modes.
-       (++) 1 OPAMP: STM32L431xx STM32L432xx STM32L433xx STM32L442xx STM32L443xx
+       (++) 1 OPAMP: STM32L412xx STM32L422xx STM32L431xx STM32L432xx STM32L433xx STM32L442xx STM32L443xx
        (++) 2 OPAMP: STM32L471xx STM32L475xx STM32L476xx STM32L485xx STM32L486xx
 
        (#) The OPAMP(s) provide(s) several exclusive running modes.
@@ -296,12 +296,19 @@
 HAL_StatusTypeDef HAL_OPAMP_Init(OPAMP_HandleTypeDef *hopamp)
 {
   HAL_StatusTypeDef status = HAL_OK;
-  uint32_t updateotrlpotr = 0;
+  uint32_t updateotrlpotr;
 
   /* Check the OPAMP handle allocation and lock status */
   /* Init not allowed if calibration is ongoing */
-  if((hopamp == NULL) || (hopamp->State == HAL_OPAMP_STATE_BUSYLOCKED)
-                      || (hopamp->State == HAL_OPAMP_STATE_CALIBBUSY))
+  if(hopamp == NULL)
+  {
+    return HAL_ERROR;
+  }
+  else if(hopamp->State == HAL_OPAMP_STATE_BUSYLOCKED)
+  {
+    return HAL_ERROR;
+  }
+  else if(hopamp->State == HAL_OPAMP_STATE_CALIBBUSY)
   {
     return HAL_ERROR;
   }
@@ -456,7 +463,11 @@ HAL_StatusTypeDef HAL_OPAMP_DeInit(OPAMP_HandleTypeDef *hopamp)
 
   /* Check the OPAMP handle allocation */
   /* DeInit not allowed if calibration is ongoing */
-  if((hopamp == NULL) || (hopamp->State == HAL_OPAMP_STATE_CALIBBUSY))
+  if(hopamp == NULL)
+  {
+    status = HAL_ERROR;
+  }
+  else if(hopamp->State == HAL_OPAMP_STATE_CALIBBUSY)
   {
     status = HAL_ERROR;
   }
@@ -553,7 +564,11 @@ HAL_StatusTypeDef HAL_OPAMP_Start(OPAMP_HandleTypeDef *hopamp)
 
   /* Check the OPAMP handle allocation */
   /* Check if OPAMP locked */
-  if((hopamp == NULL) || (hopamp->State == HAL_OPAMP_STATE_BUSYLOCKED))
+  if(hopamp == NULL)
+  {
+    status = HAL_ERROR;
+  }
+  else if(hopamp->State == HAL_OPAMP_STATE_BUSYLOCKED)
   {
     status = HAL_ERROR;
   }
@@ -592,8 +607,15 @@ HAL_StatusTypeDef HAL_OPAMP_Stop(OPAMP_HandleTypeDef *hopamp)
   /* Check the OPAMP handle allocation */
   /* Check if OPAMP locked */
   /* Check if OPAMP calibration ongoing */
-  if((hopamp == NULL) || (hopamp->State == HAL_OPAMP_STATE_BUSYLOCKED) \
-                      || (hopamp->State == HAL_OPAMP_STATE_CALIBBUSY))
+  if(hopamp == NULL)
+  {
+    status = HAL_ERROR;
+  }
+  else if(hopamp->State == HAL_OPAMP_STATE_BUSYLOCKED)
+  {
+    status = HAL_ERROR;
+  }
+  else if(hopamp->State == HAL_OPAMP_STATE_CALIBBUSY)
   {
     status = HAL_ERROR;
   }
@@ -637,8 +659,8 @@ HAL_StatusTypeDef HAL_OPAMP_SelfCalibrate(OPAMP_HandleTypeDef *hopamp)
 
   HAL_StatusTypeDef status = HAL_OK;
 
-  uint32_t trimmingvaluen = 0;
-  uint32_t trimmingvaluep = 0;
+  uint32_t trimmingvaluen;
+  uint32_t trimmingvaluep;
   uint32_t delta;
   uint32_t opampmode;
 
@@ -646,7 +668,11 @@ HAL_StatusTypeDef HAL_OPAMP_SelfCalibrate(OPAMP_HandleTypeDef *hopamp)
 
   /* Check the OPAMP handle allocation */
   /* Check if OPAMP locked */
-  if((hopamp == NULL) || (hopamp->State == HAL_OPAMP_STATE_BUSYLOCKED))
+  if(hopamp == NULL)
+  {
+    status = HAL_ERROR;
+  }
+  else if(hopamp->State == HAL_OPAMP_STATE_BUSYLOCKED)
   {
     status = HAL_ERROR;
   }
@@ -691,10 +717,10 @@ HAL_StatusTypeDef HAL_OPAMP_SelfCalibrate(OPAMP_HandleTypeDef *hopamp)
 
       /* Init trimming counter */
       /* Medium value */
-      trimmingvaluen = 16;
-      delta = 8;
+      trimmingvaluen = 16U;
+      delta = 8U;
 
-      while (delta != 0)
+      while (delta != 0U)
       {
         /* Set candidate trimming */
         /* OPAMP_POWERMODE_NORMAL */
@@ -705,7 +731,7 @@ HAL_StatusTypeDef HAL_OPAMP_SelfCalibrate(OPAMP_HandleTypeDef *hopamp)
         /* two steps to have 1 mV accuracy */
         HAL_Delay(OPAMP_TRIMMING_DELAY);
 
-        if (READ_BIT(hopamp->Instance->CSR, OPAMP_CSR_CALOUT) != RESET)
+        if (READ_BIT(hopamp->Instance->CSR, OPAMP_CSR_CALOUT) != 0U)
         {
           /* OPAMP_CSR_CALOUT is HIGH try higher trimming */
           trimmingvaluen -= delta;
@@ -716,7 +742,7 @@ HAL_StatusTypeDef HAL_OPAMP_SelfCalibrate(OPAMP_HandleTypeDef *hopamp)
           trimmingvaluen += delta;
         }
         /* Divide range by 2 to continue dichotomy sweep */
-        delta >>= 1;
+        delta >>= 1U;
       }
 
       /* Still need to check if right calibration is current value or one step below */
@@ -729,7 +755,7 @@ HAL_StatusTypeDef HAL_OPAMP_SelfCalibrate(OPAMP_HandleTypeDef *hopamp)
       /* two steps to have 1 mV accuracy */
       HAL_Delay(OPAMP_TRIMMING_DELAY);
 
-      if ((READ_BIT(hopamp->Instance->CSR, OPAMP_CSR_CALOUT)) == 0)
+      if ((READ_BIT(hopamp->Instance->CSR, OPAMP_CSR_CALOUT)) == 0U)
       {
         /* Trimming value is actually one value more */
         trimmingvaluen++;
@@ -742,10 +768,10 @@ HAL_StatusTypeDef HAL_OPAMP_SelfCalibrate(OPAMP_HandleTypeDef *hopamp)
 
       /* Init trimming counter */
       /* Medium value */
-      trimmingvaluep = 16;
-      delta = 8;
+      trimmingvaluep = 16U;
+      delta = 8U;
 
-      while (delta != 0)
+      while (delta != 0U)
       {
         /* Set candidate trimming */
         /* OPAMP_POWERMODE_NORMAL */
@@ -756,7 +782,7 @@ HAL_StatusTypeDef HAL_OPAMP_SelfCalibrate(OPAMP_HandleTypeDef *hopamp)
         /* two steps to have 1 mV accuracy */
         HAL_Delay(OPAMP_TRIMMING_DELAY);
 
-        if (READ_BIT(hopamp->Instance->CSR, OPAMP_CSR_CALOUT) != RESET)
+        if (READ_BIT(hopamp->Instance->CSR, OPAMP_CSR_CALOUT) != 0U)
         {
           /* OPAMP_CSR_CALOUT is HIGH try higher trimming */
           trimmingvaluep += delta;
@@ -768,7 +794,7 @@ HAL_StatusTypeDef HAL_OPAMP_SelfCalibrate(OPAMP_HandleTypeDef *hopamp)
         }
 
         /* Divide range by 2 to continue dichotomy sweep */
-        delta >>= 1;
+        delta >>= 1U;
       }
 
       /* Still need to check if right calibration is current value or one step below */
@@ -781,7 +807,7 @@ HAL_StatusTypeDef HAL_OPAMP_SelfCalibrate(OPAMP_HandleTypeDef *hopamp)
       /* two steps to have 1 mV accuracy */
       HAL_Delay(OPAMP_TRIMMING_DELAY);
 
-      if (READ_BIT(hopamp->Instance->CSR, OPAMP_CSR_CALOUT) != RESET)
+      if (READ_BIT(hopamp->Instance->CSR, OPAMP_CSR_CALOUT) != 0U)
       {
         /* Trimming value is actually one value more */
         trimmingvaluep++;
@@ -865,22 +891,21 @@ HAL_StatusTypeDef HAL_OPAMP_Lock(OPAMP_HandleTypeDef *hopamp)
   /* Check if OPAMP locked */
   /* OPAMP can be locked when enabled and running in normal mode */
   /*   It is meaningless otherwise */
-  if((hopamp == NULL) || (hopamp->State == HAL_OPAMP_STATE_RESET) \
-                      || (hopamp->State == HAL_OPAMP_STATE_READY) \
-                      || (hopamp->State == HAL_OPAMP_STATE_CALIBBUSY)\
-                      || (hopamp->State == HAL_OPAMP_STATE_BUSYLOCKED))
-
+  if(hopamp == NULL)
   {
     status = HAL_ERROR;
   }
-
-  else
+  else if(hopamp->State == HAL_OPAMP_STATE_BUSY)
   {
     /* Check the parameter */
     assert_param(IS_OPAMP_ALL_INSTANCE(hopamp->Instance));
 
    /* OPAMP state changed to locked */
     hopamp->State = HAL_OPAMP_STATE_BUSYLOCKED;
+  }
+  else
+  {
+    status = HAL_ERROR;
   }
   return status;
 }
@@ -914,14 +939,14 @@ HAL_OPAMP_TrimmingValueTypeDef HAL_OPAMP_GetTrimOffset (OPAMP_HandleTypeDef *hop
 
   /* Check the OPAMP handle allocation */
   /* Value can be retrieved in HAL_OPAMP_STATE_READY state */
-  if((hopamp == NULL) || (hopamp->State == HAL_OPAMP_STATE_RESET) \
-                      || (hopamp->State == HAL_OPAMP_STATE_BUSY) \
-                      || (hopamp->State == HAL_OPAMP_STATE_CALIBBUSY)\
-                      || (hopamp->State == HAL_OPAMP_STATE_BUSYLOCKED))
+  if(hopamp == NULL)
   {
     return OPAMP_FACTORYTRIMMING_DUMMY;
   }
-  else
+
+  /* Check the OPAMP handle allocation */
+  /* Value can be retrieved in HAL_OPAMP_STATE_READY state */
+  if(hopamp->State == HAL_OPAMP_STATE_READY)
   {
     /* Check the parameter */
     assert_param(IS_OPAMP_ALL_INSTANCE(hopamp->Instance));
@@ -929,7 +954,7 @@ HAL_OPAMP_TrimmingValueTypeDef HAL_OPAMP_GetTrimOffset (OPAMP_HandleTypeDef *hop
     assert_param(IS_OPAMP_POWERMODE(hopamp->Init.PowerMode));
 
     /* Check the trimming mode */
-    if (READ_BIT(hopamp->Instance->CSR,OPAMP_CSR_USERTRIM) != RESET)
+    if (READ_BIT(hopamp->Instance->CSR,OPAMP_CSR_USERTRIM) != 0U)
     {
       /* This function must called when OPAMP init parameter "UserTrimming"   */
       /* is set to trimming factory, and before OPAMP calibration (function   */
@@ -962,6 +987,10 @@ HAL_OPAMP_TrimmingValueTypeDef HAL_OPAMP_GetTrimOffset (OPAMP_HandleTypeDef *hop
         trimmingvalue = (*tmp_opamp_reg_trimming) & OPAMP_OTR_TRIMOFFSETN;
       }
     }
+  }
+  else
+  {
+    return OPAMP_FACTORYTRIMMING_DUMMY;
   }
   return trimmingvalue;
 }

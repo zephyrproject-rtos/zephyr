@@ -34,8 +34,8 @@
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __STM32L4xx_HAL_OPAMP_H
-#define __STM32L4xx_HAL_OPAMP_H
+#ifndef STM32L4xx_HAL_OPAMP_H
+#define STM32L4xx_HAL_OPAMP_H
 
 #ifdef __cplusplus
  extern "C" {
@@ -135,7 +135,11 @@ typedef enum
 /**
   * @brief OPAMP Handle Structure definition
   */
+#if (USE_HAL_OPAMP_REGISTER_CALLBACKS == 1)
 typedef struct __OPAMP_HandleTypeDef
+#else
+typedef struct
+#endif /* USE_HAL_OPAMP_REGISTER_CALLBACKS */
 {
   OPAMP_TypeDef       *Instance;                    /*!< OPAMP instance's registers base address   */
   OPAMP_InitTypeDef   Init;                         /*!< OPAMP required parameters */
@@ -148,7 +152,7 @@ void (* MspInitCallback)                (struct __OPAMP_HandleTypeDef *hopamp);
 void (* MspDeInitCallback)              (struct __OPAMP_HandleTypeDef *hopamp);
 #endif /* USE_HAL_OPAMP_REGISTER_CALLBACKS */
 
-} OPAMP_HandleTypeDef;
+}OPAMP_HandleTypeDef;
 
 /**
   * @brief HAl_OPAMP_TrimmingValueTypeDef definition
@@ -187,7 +191,7 @@ typedef void (*pOPAMP_CallbackTypeDef)(OPAMP_HandleTypeDef *hopamp);
 /** @defgroup OPAMP_Mode OPAMP Mode
   * @{
   */
-#define OPAMP_STANDALONE_MODE            ((uint32_t)0x00000000) /*!< standalone mode */
+#define OPAMP_STANDALONE_MODE            0x00000000U            /*!< standalone mode */
 #define OPAMP_PGA_MODE                   OPAMP_CSR_OPAMODE_1    /*!< PGA mode */
 #define OPAMP_FOLLOWER_MODE              OPAMP_CSR_OPAMODE      /*!< follower mode */
 
@@ -199,7 +203,7 @@ typedef void (*pOPAMP_CallbackTypeDef)(OPAMP_HandleTypeDef *hopamp);
   * @{
   */
 
-#define OPAMP_NONINVERTINGINPUT_IO0        ((uint32_t)0x00000000)  /*!< OPAMP non-inverting input connected to dedicated IO pin */
+#define OPAMP_NONINVERTINGINPUT_IO0         0x00000000U            /*!< OPAMP non-inverting input connected to dedicated IO pin */
 #define OPAMP_NONINVERTINGINPUT_DAC_CH      OPAMP_CSR_VPSEL        /*!< OPAMP non-inverting input connected internally to DAC channel */
 
 /**
@@ -210,7 +214,7 @@ typedef void (*pOPAMP_CallbackTypeDef)(OPAMP_HandleTypeDef *hopamp);
   * @{
   */
 
-#define OPAMP_INVERTINGINPUT_IO0              ((uint32_t)0x00000000)  /*!< OPAMP inverting input connected to dedicated IO pin low-leakage */
+#define OPAMP_INVERTINGINPUT_IO0              0x00000000U             /*!< OPAMP inverting input connected to dedicated IO pin low-leakage */
 #define OPAMP_INVERTINGINPUT_IO1              OPAMP_CSR_VMSEL_0       /*!< OPAMP inverting input connected to alternative IO pin available on some device packages */
 #define OPAMP_INVERTINGINPUT_CONNECT_NO       OPAMP_CSR_VMSEL_1       /*!< OPAMP inverting input not connected externally (PGA mode only) */
 
@@ -222,7 +226,7 @@ typedef void (*pOPAMP_CallbackTypeDef)(OPAMP_HandleTypeDef *hopamp);
   * @{
   */
 
-#define OPAMP_PGA_GAIN_2                ((uint32_t)0x00000000)                        /*!< PGA gain =  2 */
+#define OPAMP_PGA_GAIN_2                0x00000000U                                   /*!< PGA gain =  2 */
 #define OPAMP_PGA_GAIN_4                OPAMP_CSR_PGGAIN_0                            /*!< PGA gain =  4 */
 #define OPAMP_PGA_GAIN_8                OPAMP_CSR_PGGAIN_1                            /*!< PGA gain =  8 */
 #define OPAMP_PGA_GAIN_16              (OPAMP_CSR_PGGAIN_0 | OPAMP_CSR_PGGAIN_1)      /*!< PGA gain = 16 */
@@ -234,7 +238,7 @@ typedef void (*pOPAMP_CallbackTypeDef)(OPAMP_HandleTypeDef *hopamp);
 /** @defgroup OPAMP_PowerMode OPAMP PowerMode
   * @{
   */
-#define OPAMP_POWERMODE_NORMAL        ((uint32_t)0x00000000)
+#define OPAMP_POWERMODE_NORMAL        0x00000000U
 #define OPAMP_POWERMODE_LOWPOWER      OPAMP_CSR_OPALPM
 
 /**
@@ -244,7 +248,7 @@ typedef void (*pOPAMP_CallbackTypeDef)(OPAMP_HandleTypeDef *hopamp);
 /** @defgroup OPAMP_PowerSupplyRange OPAMP PowerSupplyRange
   * @{
   */
-#define OPAMP_POWERSUPPLY_LOW          ((uint32_t)0x00000000)  /*!< Power supply range low (VDDA lower than 2.4V) */
+#define OPAMP_POWERSUPPLY_LOW          0x00000000U             /*!< Power supply range low (VDDA lower than 2.4V) */
 #define OPAMP_POWERSUPPLY_HIGH         OPAMP1_CSR_OPARANGE     /*!< Power supply range high (VDDA higher than 2.4V) */
 
 /**
@@ -254,7 +258,7 @@ typedef void (*pOPAMP_CallbackTypeDef)(OPAMP_HandleTypeDef *hopamp);
 /** @defgroup OPAMP_UserTrimming OPAMP User Trimming
   * @{
   */
-#define OPAMP_TRIMMING_FACTORY        ((uint32_t)0x00000000)                          /*!< Factory trimming */
+#define OPAMP_TRIMMING_FACTORY        0x00000000U                                     /*!< Factory trimming */
 #define OPAMP_TRIMMING_USER           OPAMP_CSR_USERTRIM                              /*!< User trimming */
 
 /**
@@ -264,10 +268,9 @@ typedef void (*pOPAMP_CallbackTypeDef)(OPAMP_HandleTypeDef *hopamp);
 /** @defgroup OPAMP_FactoryTrimming OPAMP Factory Trimming
   * @{
   */
-#define OPAMP_FACTORYTRIMMING_DUMMY    ((uint32_t)0xFFFFFFFF)                           /*!< Dummy value if trimming value could not be retrieved */
-
-#define OPAMP_FACTORYTRIMMING_N        ((uint32_t)0x00000000)                          /*!< Offset trimming N */
-#define OPAMP_FACTORYTRIMMING_P        ((uint32_t)0x00000001)                          /*!< Offset trimming P */
+#define OPAMP_FACTORYTRIMMING_DUMMY    0xFFFFFFFFU                 /*!< Dummy value if trimming value could not be retrieved */
+#define OPAMP_FACTORYTRIMMING_N        0U                          /*!< Offset trimming N */
+#define OPAMP_FACTORYTRIMMING_P        1U                          /*!< Offset trimming P */
 
 /**
   * @}
@@ -340,14 +343,30 @@ typedef void (*pOPAMP_CallbackTypeDef)(OPAMP_HandleTypeDef *hopamp);
        /* STM32L496xx STM32L4A6xx                                      */
        /* STM32L4R5xx STM32L4R7xx STM32L4R9xx STM32L4S5xx  STM32L4S7xx STM32L4S9xx */
 
-#if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx)  || defined (STM32L442xx)  || defined (STM32L443xx) || \
+#if defined (STM32L412xx) || defined (STM32L422xx) || \
+    defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx)  || defined (STM32L442xx)  || defined (STM32L443xx) || \
     defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
 #define IS_OPAMP_INVERTING_INPUT_STANDALONE(INPUT) ((INPUT) == OPAMP_INVERTINGINPUT_IO0)
-#endif /* STM32L431xx STM32L432xx STM32L433xx STM32L442xx STM32L443xx  */
+#endif /* STM32L412xx STM32L422xx                                      */
+       /* STM32L431xx STM32L432xx STM32L433xx STM32L442xx STM32L443xx  */
        /* STM32L451xx STM32L452xx STM32L462xx */
 
+#if defined (STM32L412xx) || defined (STM32L422xx)
+#define IS_OPAMP_NONINVERTING_INPUT(INPUT) ((INPUT) == OPAMP_NONINVERTINGINPUT_IO0)
+#endif /* STM32L412xx STM32L422xx                                      */
+
+#if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx)  || defined (STM32L442xx)  || defined (STM32L443xx) || \
+    defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx) || \
+    defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || \
+    defined (STM32L496xx) || defined (STM32L4A6xx) || \
+    defined (STM32L4R5xx) || defined (STM32L4R7xx) || defined (STM32L4R9xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined(STM32L4S9xx)
 #define IS_OPAMP_NONINVERTING_INPUT(INPUT) (((INPUT) == OPAMP_NONINVERTINGINPUT_IO0) || \
                                             ((INPUT) == OPAMP_NONINVERTINGINPUT_DAC_CH))
+#endif /* STM32L431xx STM32L432xx STM32L433xx STM32L442xx STM32L443xx  */
+       /* STM32L451xx STM32L452xx STM32L462xx */
+       /* STM32L471xx STM32L475xx STM32L476xx STM32L485xx STM32L486xx  */
+       /* STM32L496xx STM32L4A6xx                                      */
+       /* STM32L4R5xx STM32L4R7xx STM32L4R9xx STM32L4S5xx  STM32L4S7xx STM32L4S9xx */
 
 #if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || \
     defined (STM32L496xx) || defined (STM32L4A6xx) || \
@@ -359,11 +378,13 @@ typedef void (*pOPAMP_CallbackTypeDef)(OPAMP_HandleTypeDef *hopamp);
        /* STM32L496xx STM32L4A6xx                                      */
        /* STM32L4R5xx STM32L4R7xx STM32L4R9xx STM32L4S5xx  STM32L4S7xx STM32L4S9xx */
 
-#if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || \
+#if defined (STM32L412xx) || defined (STM32L422xx) || \
+    defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx)  || defined (STM32L442xx)  || defined (STM32L443xx) || \
     defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
 #define IS_OPAMP_INVERTING_INPUT_PGA(INPUT) (((INPUT) == OPAMP_INVERTINGINPUT_IO0) || \
                                              ((INPUT) == OPAMP_INVERTINGINPUT_CONNECT_NO))
-#endif /* STM32L431xx STM32L432xx STM32L433xx STM32L442xx STM32L443xx  */
+#endif /* STM32L412xx STM32L422xx                                      */
+       /* STM32L431xx STM32L432xx STM32L433xx STM32L442xx STM32L443xx  */
        /* STM32L451xx STM32L452xx STM32L462xx */
 
 #define IS_OPAMP_PGA_GAIN(GAIN) (((GAIN) == OPAMP_PGA_GAIN_2) || \
@@ -381,7 +402,7 @@ typedef void (*pOPAMP_CallbackTypeDef)(OPAMP_HandleTypeDef *hopamp);
                                      ((TRIMMING) == OPAMP_TRIMMING_USER))
 
 
-#define IS_OPAMP_TRIMMINGVALUE(TRIMMINGVALUE) ((TRIMMINGVALUE) <= 0x1F)
+#define IS_OPAMP_TRIMMINGVALUE(TRIMMINGVALUE) ((TRIMMINGVALUE) <= 31U)
 
 #define IS_OPAMP_FACTORYTRIMMING(TRIMMING) (((TRIMMING) == OPAMP_FACTORYTRIMMING_N) || \
                                              ((TRIMMING) == OPAMP_FACTORYTRIMMING_P))
@@ -468,6 +489,6 @@ HAL_OPAMP_StateTypeDef HAL_OPAMP_GetState(OPAMP_HandleTypeDef *hopamp);
 }
 #endif
 
-#endif /* __STM32L4xx_HAL_OPAMP_H */
+#endif /* STM32L4xx_HAL_OPAMP_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

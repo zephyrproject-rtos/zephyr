@@ -31,8 +31,32 @@ The module can be connected to any transport for command input and output.
 At this point, the following transport layers are implemented:
 
 * UART
+* Segger RTT
+* DUMMY - not a physical transport layer
 
 See the :ref:`shell_api` documentation for more information.
+
+Connecting to Segger RTT via TCP (on macOS, for example)
+========================================================
+
+On macOS JLinkRTTClient won't let you enter input. Instead, please use following procedure:
+
+* Open up a first Terminal window and enter:
+
+  .. code-block:: none
+
+     JLinkRTTLogger -Device NRF52840_XXAA -RTTChannel 1 -if SWD -Speed 4000 ~/rtt.log
+
+  (change device if required)
+
+* Open up a second Terminal window and enter:
+
+  .. code-block:: none
+
+     nc localhost 19021
+
+* Now you should have a network connection to RTT that will let you enter input to the shell.
+
 
 Commands
 ********
@@ -167,6 +191,27 @@ Each command or subcommand may have a handler. The shell executes the handler
 that is found deepest in the command tree and further subcommands (without a
 handler) are passed as arguments. Characters within parentheses are treated
 as one argument. If shell wont find a handler it will display an error message.
+
+Commands can be also executed from a user application using any active backend
+and a function :cpp:func:`shell_execute_cmd`, as shown in this example:
+
+.. code-block:: c
+
+	void main(void)
+	{
+		/* Below code will execute "clear" command on a DUMMY backend */
+		shell_execute_cmd(NULL, "clear");
+
+		/* Below code will execute "shell colors off" command on
+		 * an UART backend
+		 */
+		shell_execute_cmd(shell_backend_uart_get_ptr(),
+				  "shell colors off");
+	}
+
+Enable the DUMMY backend by setting the Kconfig
+:option:`CONFIG_SHELL_BACKEND_DUMMY` option.
+
 
 Command handler
 ----------------

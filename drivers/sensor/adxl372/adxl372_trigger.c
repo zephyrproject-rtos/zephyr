@@ -122,7 +122,7 @@ int adxl372_trigger_set(struct device *dev,
 		int_en = int_mask;
 	} else {
 		int_en = 0;
-	};
+	}
 
 	ret = adxl372_reg_write_mask(dev, ADXL372_INT1_MAP, int_mask, int_en);
 

@@ -52,6 +52,11 @@
 /** @addtogroup GPIO_LL
   * @{
   */
+/** MISRA C:2012 deviation rule has been granted for following rules:
+  * Rule-12.2 - Medium: RHS argument is in interval [0,INF] which is out of
+  * range of the shift operator in following API :
+  * LL_GPIO_Init
+  */
 
 /* Private types -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -60,7 +65,7 @@
 /** @addtogroup GPIO_LL_Private_Macros
   * @{
   */
-#define IS_LL_GPIO_PIN(__VALUE__)          (((0x00000000U) < (__VALUE__)) && ((__VALUE__) <= (LL_GPIO_PIN_ALL)))
+#define IS_LL_GPIO_PIN(__VALUE__)          (((0x00u) < (__VALUE__)) && ((__VALUE__) <= (LL_GPIO_PIN_ALL)))
 
 #define IS_LL_GPIO_MODE(__VALUE__)         (((__VALUE__) == LL_GPIO_MODE_INPUT)     ||\
                                             ((__VALUE__) == LL_GPIO_MODE_OUTPUT)    ||\
@@ -193,7 +198,7 @@ ErrorStatus LL_GPIO_DeInit(GPIO_TypeDef *GPIOx)
 /**
   * @brief  Initialize GPIO registers according to the specified parameters in GPIO_InitStruct.
   * @param  GPIOx GPIO Port
-  * @param  GPIO_InitStruct: pointer to a @ref LL_GPIO_InitTypeDef structure
+  * @param GPIO_InitStruct pointer to a @ref LL_GPIO_InitTypeDef structure
   *         that contains the configuration information for the specified GPIO peripheral.
   * @retval An ErrorStatus enumeration value:
   *          - SUCCESS: GPIO registers are initialized according to GPIO_InitStruct content
@@ -201,8 +206,8 @@ ErrorStatus LL_GPIO_DeInit(GPIO_TypeDef *GPIOx)
   */
 ErrorStatus LL_GPIO_Init(GPIO_TypeDef *GPIOx, LL_GPIO_InitTypeDef *GPIO_InitStruct)
 {
-  uint32_t pinpos     = 0x00000000U;
-  uint32_t currentpin = 0x00000000U;
+  uint32_t pinpos;
+  uint32_t currentpin;
 
   /* Check the parameters */
   assert_param(IS_GPIO_ALL_INSTANCE(GPIOx));
@@ -215,12 +220,12 @@ ErrorStatus LL_GPIO_Init(GPIO_TypeDef *GPIOx, LL_GPIO_InitTypeDef *GPIO_InitStru
   pinpos = POSITION_VAL(GPIO_InitStruct->Pin);
 
   /* Configure the port pins */
-  while (((GPIO_InitStruct->Pin) >> pinpos) != 0x00000000U)
+  while (((GPIO_InitStruct->Pin) >> pinpos) != 0x00u)
   {
     /* Get current io position */
-    currentpin = (GPIO_InitStruct->Pin) & (0x00000001U << pinpos);
+    currentpin = (GPIO_InitStruct->Pin) & (0x00000001uL << pinpos);
 
-    if (currentpin)
+    if (currentpin != 0x00u)
     {
       /* Pin Mode configuration */
       LL_GPIO_SetPinMode(GPIOx, currentpin, GPIO_InitStruct->Mode);
@@ -243,7 +248,7 @@ ErrorStatus LL_GPIO_Init(GPIO_TypeDef *GPIOx, LL_GPIO_InitTypeDef *GPIO_InitStru
         assert_param(IS_LL_GPIO_ALTERNATE(GPIO_InitStruct->Alternate));
 
         /* Speed mode configuration */
-        if (POSITION_VAL(currentpin) < 0x00000008U)
+        if (currentpin < LL_GPIO_PIN_8)
         {
           LL_GPIO_SetAFPin_0_7(GPIOx, currentpin, GPIO_InitStruct->Alternate);
         }
@@ -270,7 +275,7 @@ ErrorStatus LL_GPIO_Init(GPIO_TypeDef *GPIOx, LL_GPIO_InitTypeDef *GPIO_InitStru
 
 /**
   * @brief Set each @ref LL_GPIO_InitTypeDef field to default value.
-  * @param GPIO_InitStruct: pointer to a @ref LL_GPIO_InitTypeDef structure
+  * @param GPIO_InitStruct pointer to a @ref LL_GPIO_InitTypeDef structure
   *                          whose fields will be set to default values.
   * @retval None
   */

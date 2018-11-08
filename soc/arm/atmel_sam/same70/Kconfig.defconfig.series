@@ -68,4 +68,9 @@ config SPI_SAM
 	default y
 endif # SPI
 
+if USB
+config USB_DC_SAM
+	default y
+endif # USB
+
 endif # SOC_SERIES_SAME70

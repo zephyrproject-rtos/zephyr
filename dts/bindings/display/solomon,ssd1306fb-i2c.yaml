@@ -20,48 +20,54 @@ properties:
     height:
       type: int
       category: required
-      generation: Height in pixel of the panel driven by the controller
+      description: Height in pixel of the panel driven by the controller
+      generation: define
 
     width:
       type: int
       category: required
-      generation: Width in pixel of the panel driven by the controller
+      description: Width in pixel of the panel driven by the controller
+      generation: define
 
     segment-offset:
       type: int
       category: required
-      generation: 8-bit column start address for Page Addressing Mode
+      description: 8-bit column start address for Page Addressing Mode
+      generation: define
 
     page-offset:
       type: int
       category: required
-      generation: Start address for Page Addressing Mode
+      description: Start address for Page Addressing Mode
+      generation: define
 
     display-offset:
       type: int
       category: required
-      generation: mapping of the display start line to one of COM0 .. COM63
+      description: mapping of the display start line to one of COM0 .. COM63
+      generation: define
 
     segment-remap:
-      type: string
+      type: boolean
       category: optional
-      generation: Last column address is mapped to first segment
+      description: Last column address is mapped to first segment
+      generation: define
 
     com-invdir:
-      type: string
+      type: boolean
       category: optional
-      generation: Scan direction is from last COM output to first COM output
+      description: Scan direction is from last COM output to first COM output
+      generation: define
 
     prechargep:
       type: int
       category: required
-      generation: Duration of the pre-charge period
+      description: Duration of the pre-charge period
+      generation: define
 
     reset-gpios:
       type: compound
       category: optional
       generation: define, use-prop-name
-
-base_label: SSD1306
 
 ...

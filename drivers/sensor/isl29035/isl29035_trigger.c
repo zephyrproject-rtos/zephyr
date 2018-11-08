@@ -84,8 +84,11 @@ static void isl29035_thread_cb(struct device *dev)
 	u8_t val;
 
 	/* clear interrupt */
-	i2c_reg_read_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
-			  ISL29035_COMMAND_I_REG, &val);
+	if (i2c_reg_read_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,
+			      ISL29035_COMMAND_I_REG, &val) < 0) {
+		LOG_ERR("isl29035: Error reading command register");
+		return;
+	}
 
 	if (drv_data->th_handler != NULL) {
 		drv_data->th_handler(dev, &drv_data->th_trigger);

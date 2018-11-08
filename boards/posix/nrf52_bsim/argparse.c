@@ -69,8 +69,8 @@ static void save_test_arg(struct NRF_bsim_args_t *args, char *argv)
 static void print_no_sim_warning(void)
 {
 	bs_trace_warning("Neither simulation id or the device number "
-			"have been set. I assume you wand to run "
-			"with a BabbleSim phy (-nosim)\n");
+			"have been set. I assume you want to run "
+			"without a BabbleSim phy (-nosim)\n");
 	bs_trace_warning("If this is not what you wanted, check with "
 			"--help how to set them\n");
 	bs_trace_raw(3, "setting sim_id to 'bogus', device number to 0 "

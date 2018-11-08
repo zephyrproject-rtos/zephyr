@@ -12,8 +12,7 @@
 #include <gpio.h>
 #include <spi.h>
 #include <i2c.h>
-
-#define GENMASK(h, l) (((~0UL) - (1UL << (l)) + 1) & (~0UL >> (31 - (h))))
+#include <misc/util.h>
 
 /*
  * ADXL372 registers definition

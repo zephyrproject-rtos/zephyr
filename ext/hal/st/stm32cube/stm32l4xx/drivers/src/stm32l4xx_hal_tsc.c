@@ -318,7 +318,7 @@ HAL_StatusTypeDef HAL_TSC_Init(TSC_HandleTypeDef *htsc)
                          htsc->Init.AcquisitionMode);
 
   /* Spread spectrum */
-  if (htsc->Init.SpreadSpectrum == ENABLE)
+  if ((FunctionalState)htsc->Init.SpreadSpectrum == ENABLE)
   {
     htsc->Instance->CR |= TSC_CR_SSE;
   }
@@ -692,7 +692,7 @@ HAL_StatusTypeDef HAL_TSC_Start_IT(TSC_HandleTypeDef *htsc)
   __HAL_TSC_ENABLE_IT(htsc, TSC_IT_EOA);
 
   /* Enable max count error interrupt (optional) */
-  if (htsc->Init.MaxCountInterrupt == ENABLE)
+  if ((FunctionalState)htsc->Init.MaxCountInterrupt == ENABLE)
   {
     __HAL_TSC_ENABLE_IT(htsc, TSC_IT_MCE);
   }
@@ -928,7 +928,7 @@ HAL_StatusTypeDef HAL_TSC_IODischarge(TSC_HandleTypeDef *htsc, uint32_t choice)
   /* Process locked */
   __HAL_LOCK(htsc);
 
-  if (choice == ENABLE)
+  if ((FunctionalState)choice == ENABLE)
   {
     __HAL_TSC_SET_IODEF_OUTPPLOW(htsc);
   }
@@ -1102,14 +1102,14 @@ __weak void HAL_TSC_ErrorCallback(TSC_HandleTypeDef *htsc)
   */
 static uint32_t TSC_extract_groups(uint32_t iomask)
 {
-  uint32_t groups = 0U;
+  uint32_t groups = 0UL;
   uint32_t idx;
 
-  for (idx = 0U; idx < TSC_NB_OF_GROUPS; idx++)
+  for (idx = 0UL; idx < (uint32_t)TSC_NB_OF_GROUPS; idx++)
   {
-    if ((iomask & (0x0FU << (idx * 4U))) != RESET)
+    if ((iomask & (0x0FUL << (idx * 4UL))) != 0UL )
     {
-      groups |= (1U << idx);
+      groups |= (1UL << idx);
     }
   }
 

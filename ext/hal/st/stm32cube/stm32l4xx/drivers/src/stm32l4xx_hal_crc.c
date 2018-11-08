@@ -305,9 +305,6 @@ uint32_t HAL_CRC_Accumulate(CRC_HandleTypeDef *hcrc, uint32_t pBuffer[], uint32_
   uint32_t index;      /* CRC input data buffer index */
   uint32_t temp = 0U;  /* CRC output (read from hcrc->Instance->DR register) */
 
-  /* Process locked */
-  __HAL_LOCK(hcrc);
-
   /* Change CRC peripheral state */
   hcrc->State = HAL_CRC_STATE_BUSY;
 
@@ -327,7 +324,7 @@ uint32_t HAL_CRC_Accumulate(CRC_HandleTypeDef *hcrc, uint32_t pBuffer[], uint32_
       break;
 
     case CRC_INPUTDATA_FORMAT_HALFWORDS:
-      temp = CRC_Handle_16(hcrc, (uint16_t *)pBuffer, BufferLength);
+      temp = CRC_Handle_16(hcrc, (uint16_t *)(void *)pBuffer, BufferLength);    /* Derogation MisraC2012 R.11.5 */
       break;
     default:
       break;
@@ -335,9 +332,6 @@ uint32_t HAL_CRC_Accumulate(CRC_HandleTypeDef *hcrc, uint32_t pBuffer[], uint32_
 
   /* Change CRC peripheral state */
   hcrc->State = HAL_CRC_STATE_READY;
-
-  /* Process unlocked */
-  __HAL_UNLOCK(hcrc);
 
   /* Return the CRC computed value */
   return temp;
@@ -362,9 +356,6 @@ uint32_t HAL_CRC_Calculate(CRC_HandleTypeDef *hcrc, uint32_t pBuffer[], uint32_t
 {
   uint32_t index;      /* CRC input data buffer index */
   uint32_t temp = 0U;  /* CRC output (read from hcrc->Instance->DR register) */
-
-  /* Process locked */
-  __HAL_LOCK(hcrc);
 
   /* Change CRC peripheral state */
   hcrc->State = HAL_CRC_STATE_BUSY;
@@ -391,7 +382,7 @@ uint32_t HAL_CRC_Calculate(CRC_HandleTypeDef *hcrc, uint32_t pBuffer[], uint32_t
 
     case CRC_INPUTDATA_FORMAT_HALFWORDS:
       /* Specific 16-bit input data handling  */
-      temp = CRC_Handle_16(hcrc, (uint16_t *)pBuffer, BufferLength);
+      temp = CRC_Handle_16(hcrc, (uint16_t *)(void *)pBuffer, BufferLength);    /* Derogation MisraC2012 R.11.5 */
       break;
 
     default:
@@ -400,9 +391,6 @@ uint32_t HAL_CRC_Calculate(CRC_HandleTypeDef *hcrc, uint32_t pBuffer[], uint32_t
 
   /* Change CRC peripheral state */
   hcrc->State = HAL_CRC_STATE_READY;
-
-  /* Process unlocked */
-  __HAL_UNLOCK(hcrc);
 
   /* Return the CRC computed value */
   return temp;
@@ -469,30 +457,30 @@ static uint32_t CRC_Handle_8(CRC_HandleTypeDef *hcrc, uint8_t pBuffer[], uint32_
   for (i = 0U; i < (BufferLength / 4U); i++)
   {
     hcrc->Instance->DR = ((uint32_t)pBuffer[4U * i] << 24U) | \
-                         ((uint32_t)pBuffer[4U * i + 1U] << 16U) | \
-                         ((uint32_t)pBuffer[4U * i + 2U] << 8U)  | \
-                         (uint32_t)pBuffer[4U * i + 3U];
+                         ((uint32_t)pBuffer[(4U * i) + 1U] << 16U) | \
+                         ((uint32_t)pBuffer[(4U * i) + 2U] << 8U)  | \
+                         (uint32_t)pBuffer[(4U * i) + 3U];
   }
   /* last bytes specific handling */
   if ((BufferLength % 4U) != 0U)
   {
-    if (BufferLength % 4U == 1U)
+    if ((BufferLength % 4U) == 1U)
     {
-      *(__IO uint8_t *)(__IO void *)(&hcrc->Instance->DR) = pBuffer[4U * i];
+      *(__IO uint8_t *)(__IO void *)(&hcrc->Instance->DR) = pBuffer[4U * i];         /* Derogation MisraC2012 R.11.5 */
     }
-    if (BufferLength % 4U == 2U)
+    if ((BufferLength % 4U) == 2U)
     {
-      data = (uint16_t)(pBuffer[4U * i] << 8U) | (uint16_t)pBuffer[4U * i + 1U];
-      pReg = (__IO uint16_t *)(__IO void *)(&hcrc->Instance->DR);
+      data = ((uint16_t)(pBuffer[4U * i]) << 8U) | (uint16_t)pBuffer[(4U * i) + 1U];
+      pReg = (__IO uint16_t *)(__IO void *)(&hcrc->Instance->DR);                    /* Derogation MisraC2012 R.11.5 */
       *pReg = data;
     }
-    if (BufferLength % 4U == 3U)
+    if ((BufferLength % 4U) == 3U)
     {
-      data = (uint16_t)(pBuffer[4U * i] << 8U) | (uint16_t)pBuffer[4U * i + 1U];
-      pReg = (__IO uint16_t *)(__IO void *)(&hcrc->Instance->DR);
+      data = ((uint16_t)(pBuffer[4U * i]) << 8U) | (uint16_t)pBuffer[(4U * i) + 1U];
+      pReg = (__IO uint16_t *)(__IO void *)(&hcrc->Instance->DR);                    /* Derogation MisraC2012 R.11.5 */
       *pReg = data;
 
-      *(__IO uint8_t *)(__IO void *)(&hcrc->Instance->DR) = pBuffer[4U * i + 2U];
+      *(__IO uint8_t *)(__IO void *)(&hcrc->Instance->DR) = pBuffer[(4U * i) + 2U];  /* Derogation MisraC2012 R.11.5 */
     }
   }
 
@@ -518,11 +506,11 @@ static uint32_t CRC_Handle_16(CRC_HandleTypeDef *hcrc, uint16_t pBuffer[], uint3
    * a correct type handling by the IP */
   for (i = 0U; i < (BufferLength / 2U); i++)
   {
-    hcrc->Instance->DR = ((uint32_t)pBuffer[2U * i] << 16U) | (uint32_t)pBuffer[2U * i + 1U];
+    hcrc->Instance->DR = ((uint32_t)pBuffer[2U * i] << 16U) | (uint32_t)pBuffer[(2U * i) + 1U];
   }
   if ((BufferLength % 2U) != 0U)
   {
-    pReg = (__IO uint16_t *)(__IO void *)(&hcrc->Instance->DR);
+    pReg = (__IO uint16_t *)(__IO void *)(&hcrc->Instance->DR);                 /* Derogation MisraC2012 R.11.5 */
     *pReg = pBuffer[2U * i];
   }
 

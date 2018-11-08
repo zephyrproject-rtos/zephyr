@@ -25,8 +25,8 @@ See `Peripherals`_ for more information.
 Host system dependencies
 ========================
 
-This port is designed to run in POSIX compatible operating systems.
-It has only been tested on Linux, but should also be compatible with macOS.
+This port is designed to run in POSIX compatible operating systems,
+but it has only been tested on Linux.
 
 .. note::
 

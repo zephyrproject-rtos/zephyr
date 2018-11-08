@@ -67,6 +67,11 @@ can be disabled if not needed.
   Both :ref:`coap-client-sample` and :ref:`coap-server-sample` sample
   applications are implemented.
 
+* **CoAP over Sockets** Constrained Application Protocol (RFC 7252) is supported
+  over socket based applications or higher layer protocols.
+  Both :ref:`coap-client-sock-sample` and :ref:`coap-server-sock-sample`
+  sample applications are implemented.
+
 * **LWM2M** OMA Lightweight Machine-to-Machine Protocol (V1.0 Feb 2017) is
   supported via the "Register Device" API (Register, De-Register and Update)
   and has template implementations for Security, Server, Device Management and

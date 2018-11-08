@@ -1,0 +1,31 @@
+# Kconfig - Gecko SDK LEUART
+#
+# Copyright (c) 2018, Diego Sueiro
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig LEUART_GECKO
+	bool "Gecko leuart driver"
+	depends on HAS_SILABS_GECKO
+	depends on GPIO_GECKO
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  Enable the Gecko leuart driver.
+
+if LEUART_GECKO
+
+config LEUART_GECKO_0
+	bool "Enable Gecko Low Energy UART 0"
+	help
+	  Enable support for Gecko LEUART0 port in the driver. Say y here if you
+	  want to use LEUART0 device.
+
+config LEUART_GECKO_1
+	bool "Enable Gecko Low Energy UART 1"
+	help
+	  Enable support for Gecko LEUART1 port in the driver. Say y here if you
+	  want to use LEUART1 device.
+
+endif # LEUART_GECKO

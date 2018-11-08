@@ -35,7 +35,10 @@
 #define LLMNR_TTL CONFIG_LLMNR_RESPONDER_TTL /* In seconds */
 
 static struct net_context *ipv4;
+
+#if defined(CONFIG_NET_IPV6)
 static struct net_context *ipv6;
+#endif
 
 #define BUF_ALLOC_TIMEOUT K_MSEC(100)
 
@@ -268,7 +271,7 @@ static const u8_t *get_ipv4_src(struct net_if *iface, struct in_addr *dst)
 	const struct in_addr *addr;
 
 	addr = net_if_ipv4_select_src_addr(iface, dst);
-	if (!addr || net_is_ipv4_addr_unspecified(addr)) {
+	if (!addr || net_ipv4_is_addr_unspecified(addr)) {
 		return NULL;
 	}
 
@@ -282,7 +285,7 @@ static const u8_t *get_ipv6_src(struct net_if *iface, struct in6_addr *dst)
 	const struct in6_addr *addr;
 
 	addr = net_if_ipv6_select_src_addr(iface, dst);
-	if (!addr || net_is_ipv6_addr_unspecified(addr)) {
+	if (!addr || net_ipv6_is_addr_unspecified(addr)) {
 		return NULL;
 	}
 
@@ -326,6 +329,7 @@ static int create_ipv4_answer(struct net_context *ctx,
 
 		addr_len = sizeof(struct in6_addr);
 #else
+		addr = NULL;
 		addr_len = 0;
 #endif
 	} else {

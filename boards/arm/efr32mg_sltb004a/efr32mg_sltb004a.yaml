@@ -1,0 +1,13 @@
+identifier: efr32mg_sltb004a
+name: EFR32MG-SLTB004A
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

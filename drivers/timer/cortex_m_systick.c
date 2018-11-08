@@ -40,8 +40,6 @@ static volatile u32_t clock_accumulated_count;
  * This is the sysTick input clock frequency.
  */
 
-#include <board.h>
-
 #include "legacy_api.h"
 
 #ifdef CONFIG_TICKLESS_IDLE

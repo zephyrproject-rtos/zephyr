@@ -234,7 +234,7 @@ struct device {
 	void *driver_data;
 };
 
-void _sys_device_do_config_level(int level);
+void _sys_device_do_config_level(s32_t level);
 
 /**
  * @brief Retrieve the device structure for a driver by name

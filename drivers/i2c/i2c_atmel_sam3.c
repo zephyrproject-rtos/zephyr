@@ -29,7 +29,6 @@
 
 #include <kernel.h>
 
-#include <board.h>
 #include <i2c.h>
 #include <sys_clock.h>
 
@@ -237,7 +236,7 @@ static inline void sr_bits_set_wait(struct device *dev, u32_t bits)
 
 	while (!(cfg->regs->TWI_SR & bits)) {
 		/* loop till <bits> are set */
-	};
+	}
 }
 
 /* Clear the status registers from previous transfers */

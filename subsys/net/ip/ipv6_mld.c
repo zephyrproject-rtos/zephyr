@@ -125,7 +125,6 @@ static int send_mldv2_raw(struct net_if *iface, struct net_buf *frags)
 
 #define ROUTER_ALERT_LEN 8
 
-	pkt->frags->len = NET_IPV6ICMPH_LEN + ROUTER_ALERT_LEN;
 	net_pkt_set_iface(pkt, iface);
 
 	/* Insert the actual multicast record(s) here */

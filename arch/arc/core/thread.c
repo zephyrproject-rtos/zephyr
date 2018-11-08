@@ -123,14 +123,14 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		thread->arch.priv_stack_start = 0;
 		thread->arch.priv_stack_size = 0;
 
-		stackAdjEnd = (char *)STACK_ROUND_DOWN(stackEnd);
-
 #ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
 		/* reserve stack space for the userspace local data struct */
 		stackAdjEnd = (char *)STACK_ROUND_DOWN(stackEnd
 			- sizeof(*thread->userspace_local_data));
 		thread->userspace_local_data =
 			(struct _thread_userspace_local_data *)stackAdjEnd;
+#else
+		stackAdjEnd = (char *)STACK_ROUND_DOWN(stackEnd);
 #endif
 	}
 

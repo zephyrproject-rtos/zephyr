@@ -4,4 +4,5 @@ zephyr_sources_ifdef(CONFIG_CPLUSPLUS
   cpp_init_array.c
   cpp_ctors.c
   cpp_dtors.c
+  cpp_new.cpp
 )

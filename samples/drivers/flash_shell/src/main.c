@@ -603,7 +603,7 @@ static int cmd_set_dev(const struct shell *shell, size_t argc, char **argv)
 	const char *name;
 	int ret;
 
-	ret = shell_cmd_precheck(shell, (argc = 2), NULL, 0);
+	ret = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
 	if (ret) {
 		return ret;
 	}

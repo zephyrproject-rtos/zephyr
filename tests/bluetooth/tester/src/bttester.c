@@ -16,6 +16,10 @@
 #include <misc/byteorder.h>
 #include <console/uart_pipe.h>
 
+#include <logging/log.h>
+#define LOG_MODULE_NAME bttester
+LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+
 #include "bttester.h"
 
 #define STACKSIZE 2048

@@ -19,7 +19,15 @@ be automatically built and run by the sanitycheck script. If you are testing
 the **bar** component of **foo**, you should copy the sample folder to
 ``tests/foo/bar``. It can then be tested with::
 
-    ./scripts/sanitycheck -s tests/foo/bar/test
+    ./scripts/sanitycheck -s tests/foo/bar/test-identifier
+
+
+In the example above ``tests/foo/bar`` signifies the path to the test and the
+``test-identifier`` references a test defined in the file::`testcase.yaml` file.
+
+To run all tests defined in a test project, run::
+
+    ./scripts/sanitycheck -T tests/foo/bar/
 
 The sample contains the following files:
 

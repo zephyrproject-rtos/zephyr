@@ -17,7 +17,6 @@
 
 #include <kernel.h>
 #include <arch/cpu.h>
-#include <board.h>
 #include <device.h>
 #include <init.h>
 

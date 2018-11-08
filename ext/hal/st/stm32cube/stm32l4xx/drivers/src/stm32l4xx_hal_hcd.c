@@ -73,14 +73,14 @@
   * @{
   */
 
+#ifdef HAL_HCD_MODULE_ENABLED
+
+#if defined (USB_OTG_FS) || defined (USB_OTG_HS)
+
 /** @defgroup HCD HCD
   * @brief HCD HAL module driver
   * @{
   */
-
-#ifdef HAL_HCD_MODULE_ENABLED
-
-#if defined (USB_OTG_FS) || defined (USB_OTG_HS)
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/

@@ -43,10 +43,8 @@ LOG_MODULE_REGISTER(kernel);
 #if defined(CONFIG_BOOT_DELAY) && CONFIG_BOOT_DELAY > 0
 #define BOOT_DELAY_BANNER " (delayed boot "	\
 	STRINGIFY(CONFIG_BOOT_DELAY) "ms)"
-static const unsigned int boot_delay = CONFIG_BOOT_DELAY;
 #else
 #define BOOT_DELAY_BANNER ""
-static const unsigned int boot_delay;
 #endif
 
 #ifdef BUILD_VERSION
@@ -199,6 +197,12 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	ARG_UNUSED(unused2);
 	ARG_UNUSED(unused3);
 
+#if defined(CONFIG_BOOT_DELAY) && CONFIG_BOOT_DELAY > 0
+	static const unsigned int boot_delay = CONFIG_BOOT_DELAY;
+#else
+	static const unsigned int boot_delay;
+#endif
+
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_POST_KERNEL);
 #if CONFIG_STACK_POINTER_RANDOM
 	z_stack_adjust_initialized = 1;
@@ -279,6 +283,15 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	ARG_UNUSED(dummy_thread);
 #else
+
+#ifdef CONFIG_TRACING
+	sys_trace_thread_switched_out();
+#endif
+	_current = dummy_thread;
+#ifdef CONFIG_TRACING
+	sys_trace_thread_switched_in();
+#endif
+
 	/*
 	 * Initialize the current execution thread to permit a level of
 	 * debugging output if an exception should happen during kernel
@@ -286,9 +299,6 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 	 * fields of the dummy thread beyond those needed to identify it as a
 	 * dummy thread.
 	 */
-
-	_current = dummy_thread;
-
 	dummy_thread->base.user_options = K_ESSENTIAL;
 	dummy_thread->base.thread_state = _THREAD_DUMMY;
 #ifdef CONFIG_THREAD_STACK_INFO
@@ -313,7 +323,7 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 	 *   contain garbage, which would prevent the cache loading algorithm
 	 *   to work as intended
 	 */
-	_ready_q.cache = _main_thread;
+	_kernel.ready_q.cache = _main_thread;
 #endif
 
 	_setup_new_thread(_main_thread, _main_stack,

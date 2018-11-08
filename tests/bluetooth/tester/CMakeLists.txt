@@ -8,7 +8,7 @@ endif()
 LIST(APPEND QEMU_EXTRA_FLAGS -serial unix:/tmp/bt-stack-tester)
 
 include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
-project(NONE)
+project(tester)
 
 zephyr_library_include_directories($ENV{ZEPHYR_BASE}/samples/bluetooth)
 target_sources(app PRIVATE

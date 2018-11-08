@@ -364,9 +364,9 @@ config BT_GAP_PERIPHERAL_PREF_PARAMS
 	default y
 	depends on BT_PERIPHERAL
 	help
-	  This allows to configure periphral preferred connection parameters.
+	  This allows to configure peripheral preferred connection parameters.
 	  Enabling this option results in adding PPCP characteristic in GAP
-	  and sending request for connection parameters udpate after GAP
+	  and sending request for connection parameters update after GAP
 	  recommended 5 seconds of connection as peripheral. If disabled it is
 	  up to application to set expected connection parameters.
 

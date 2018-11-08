@@ -55,7 +55,7 @@
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 
-#if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx)
+#if defined (STM32L412xx) || defined (STM32L422xx) || defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx)
 #define PWR_PORTH_AVAILABLE_PINS   ((uint32_t)0x0000000B) /* PH0/PH1/PH3 */
 #elif defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
 #define PWR_PORTH_AVAILABLE_PINS   ((uint32_t)0x0000000B) /* PH0/PH1/PH3 */
@@ -87,7 +87,7 @@
 /** @defgroup PWREx_TimeOut_Value PWR Extended Flag Setting Time Out Value
   * @{
   */
-#define PWR_FLAG_SETTING_DELAY_US                      50   /*!< Time out value for REGLPF and VOSF flags setting */
+#define PWR_FLAG_SETTING_DELAY_US                      50UL   /*!< Time out value for REGLPF and VOSF flags setting */
 /**
   * @}
   */
@@ -179,7 +179,7 @@ uint32_t HAL_PWREx_GetVoltageRange(void)
   */
 HAL_StatusTypeDef HAL_PWREx_ControlVoltageScaling(uint32_t VoltageScaling)
 {
-  uint32_t wait_loop_index = 0;
+  uint32_t wait_loop_index;
 
   assert_param(IS_PWR_VOLTAGE_SCALING_RANGE(VoltageScaling));
 
@@ -196,8 +196,8 @@ HAL_StatusTypeDef HAL_PWREx_ControlVoltageScaling(uint32_t VoltageScaling)
       MODIFY_REG(PWR->CR1, PWR_CR1_VOS, PWR_REGULATOR_VOLTAGE_SCALE1);
 
       /* Wait until VOSF is cleared */
-      wait_loop_index = (PWR_FLAG_SETTING_DELAY_US * (SystemCoreClock / 1000000));
-      while ((wait_loop_index != 0) && (HAL_IS_BIT_SET(PWR->SR2, PWR_SR2_VOSF)))
+      wait_loop_index = ((PWR_FLAG_SETTING_DELAY_US * SystemCoreClock) / 1000000U) + 1;
+      while ((HAL_IS_BIT_SET(PWR->SR2, PWR_SR2_VOSF)) && (wait_loop_index != 0U))
       {
         wait_loop_index--;
       }
@@ -225,8 +225,8 @@ HAL_StatusTypeDef HAL_PWREx_ControlVoltageScaling(uint32_t VoltageScaling)
       MODIFY_REG(PWR->CR1, PWR_CR1_VOS, PWR_REGULATOR_VOLTAGE_SCALE1);
 
       /* Wait until VOSF is cleared */
-      wait_loop_index = (PWR_FLAG_SETTING_DELAY_US * (SystemCoreClock / 1000000));
-      while ((wait_loop_index != 0) && (HAL_IS_BIT_SET(PWR->SR2, PWR_SR2_VOSF)))
+      wait_loop_index = ((PWR_FLAG_SETTING_DELAY_US * SystemCoreClock) / 1000000U) + 1;
+      while ((HAL_IS_BIT_SET(PWR->SR2, PWR_SR2_VOSF)) && (wait_loop_index != 0U))
       {
         wait_loop_index--;
       }
@@ -261,8 +261,8 @@ HAL_StatusTypeDef HAL_PWREx_ControlVoltageScaling(uint32_t VoltageScaling)
       MODIFY_REG(PWR->CR1, PWR_CR1_VOS, PWR_REGULATOR_VOLTAGE_SCALE1);
 
       /* Wait until VOSF is cleared */
-      wait_loop_index = (PWR_FLAG_SETTING_DELAY_US * (SystemCoreClock / 1000000));
-      while ((wait_loop_index != 0) && (HAL_IS_BIT_SET(PWR->SR2, PWR_SR2_VOSF)))
+      wait_loop_index = ((PWR_FLAG_SETTING_DELAY_US * SystemCoreClock) / 1000000U) + 1U;
+      while ((HAL_IS_BIT_SET(PWR->SR2, PWR_SR2_VOSF)) && (wait_loop_index != 0U))
       {
         wait_loop_index--;
       }
@@ -407,6 +407,8 @@ void HAL_PWREx_DisableInternalWakeUpLine(void)
   */
 HAL_StatusTypeDef HAL_PWREx_EnableGPIOPullUp(uint32_t GPIO, uint32_t GPIONumber)
 {
+  HAL_StatusTypeDef status = HAL_OK;
+
   assert_param(IS_PWR_GPIO(GPIO));
   assert_param(IS_PWR_GPIO_BIT_NUMBER(GPIONumber));
 
@@ -463,10 +465,11 @@ HAL_StatusTypeDef HAL_PWREx_EnableGPIOPullUp(uint32_t GPIO, uint32_t GPIONumber)
        break;
 #endif
     default:
-       return HAL_ERROR;
+      status = HAL_ERROR;
+      break;
   }
 
-  return HAL_OK;
+  return status;
 }
 
 
@@ -487,6 +490,8 @@ HAL_StatusTypeDef HAL_PWREx_EnableGPIOPullUp(uint32_t GPIO, uint32_t GPIONumber)
   */
 HAL_StatusTypeDef HAL_PWREx_DisableGPIOPullUp(uint32_t GPIO, uint32_t GPIONumber)
 {
+  HAL_StatusTypeDef status = HAL_OK;
+
   assert_param(IS_PWR_GPIO(GPIO));
   assert_param(IS_PWR_GPIO_BIT_NUMBER(GPIONumber));
 
@@ -530,10 +535,11 @@ HAL_StatusTypeDef HAL_PWREx_DisableGPIOPullUp(uint32_t GPIO, uint32_t GPIONumber
        break;
 #endif
     default:
-       return HAL_ERROR;
+       status = HAL_ERROR;
+       break;
   }
 
-  return HAL_OK;
+  return status;
 }
 
 
@@ -561,6 +567,8 @@ HAL_StatusTypeDef HAL_PWREx_DisableGPIOPullUp(uint32_t GPIO, uint32_t GPIONumber
   */
 HAL_StatusTypeDef HAL_PWREx_EnableGPIOPullDown(uint32_t GPIO, uint32_t GPIONumber)
 {
+  HAL_StatusTypeDef status = HAL_OK;
+
   assert_param(IS_PWR_GPIO(GPIO));
   assert_param(IS_PWR_GPIO_BIT_NUMBER(GPIONumber));
 
@@ -617,10 +625,11 @@ HAL_StatusTypeDef HAL_PWREx_EnableGPIOPullDown(uint32_t GPIO, uint32_t GPIONumbe
        break;
 #endif
     default:
-       return HAL_ERROR;
+      status = HAL_ERROR;
+      break;
   }
 
-  return HAL_OK;
+  return status;
 }
 
 
@@ -641,6 +650,8 @@ HAL_StatusTypeDef HAL_PWREx_EnableGPIOPullDown(uint32_t GPIO, uint32_t GPIONumbe
   */
 HAL_StatusTypeDef HAL_PWREx_DisableGPIOPullDown(uint32_t GPIO, uint32_t GPIONumber)
 {
+  HAL_StatusTypeDef status = HAL_OK;
+
   assert_param(IS_PWR_GPIO(GPIO));
   assert_param(IS_PWR_GPIO_BIT_NUMBER(GPIONumber));
 
@@ -688,10 +699,11 @@ HAL_StatusTypeDef HAL_PWREx_DisableGPIOPullDown(uint32_t GPIO, uint32_t GPIONumb
        break;
 #endif
     default:
-       return HAL_ERROR;
+      status = HAL_ERROR;
+      break;
   }
 
-  return HAL_OK;
+  return status;
 }
 
 
@@ -747,6 +759,56 @@ void HAL_PWREx_DisableSRAM2ContentRetention(void)
 {
   CLEAR_BIT(PWR->CR3, PWR_CR3_RRS);
 }
+
+
+#if defined(PWR_CR3_EN_ULP)
+/**
+  * @brief Enable Ultra Low Power BORL, BORH and PVD for STOP2 and Standby modes.
+  * @note  All the other modes are not affected by this bit.
+  * @retval None
+  */
+void HAL_PWREx_EnableBORPVD_ULP(void)
+{
+  SET_BIT(PWR->CR3, PWR_CR3_EN_ULP);
+}
+
+
+/**
+  * @brief Disable Ultra Low Power BORL, BORH and PVD for STOP2 and Standby modes.
+  * @note  All the other modes are not affected by this bit
+  * @retval None
+  */
+void HAL_PWREx_DisableBORPVD_ULP(void)
+{
+  CLEAR_BIT(PWR->CR3, PWR_CR3_EN_ULP);
+}
+#endif /* PWR_CR3_EN_ULP */
+
+
+#if defined(PWR_CR4_EXT_SMPS_ON)
+/**
+  * @brief Enable the CFLDO working @ 0.95V.
+  * @note  When external SMPS is used & CFLDO operating in Range 2, the regulated voltage of the
+  *        internal CFLDO can be reduced to 0.95V.
+  * @retval None
+  */
+void HAL_PWREx_EnableExtSMPS_0V95(void)
+{
+  SET_BIT(PWR->CR4, PWR_CR4_EXT_SMPS_ON);
+}
+
+/**
+  * @brief Disable the CFLDO working @ 0.95V
+  * @note  Before SMPS is switched off, the regulated voltage of the
+  *        internal CFLDO shall be set to 1.00V.
+  *        1.00V. is also default operating Range 2 voltage.
+  * @retval None
+  */
+void HAL_PWREx_DisableExtSMPS_0V95(void)
+{
+  CLEAR_BIT(PWR->CR4, PWR_CR4_EXT_SMPS_ON);
+}
+#endif /* PWR_CR4_EXT_SMPS_ON */
 
 
 #if defined(PWR_CR1_RRSTP)
@@ -891,6 +953,8 @@ void HAL_PWREx_DisablePVM4(void)
   */
 HAL_StatusTypeDef HAL_PWREx_ConfigPVM(PWR_PVMTypeDef *sConfigPVM)
 {
+  HAL_StatusTypeDef status = HAL_OK;
+
   /* Check the parameters */
   assert_param(IS_PWR_PVM_TYPE(sConfigPVM->PVMType));
   assert_param(IS_PWR_PVM_MODE(sConfigPVM->Mode));
@@ -1030,12 +1094,11 @@ HAL_StatusTypeDef HAL_PWREx_ConfigPVM(PWR_PVMTypeDef *sConfigPVM)
       break;
 
     default:
-      return HAL_ERROR;
-
+      status = HAL_ERROR;
+      break;
   }
 
-
-  return HAL_OK;
+  return status;
 }
 
 
@@ -1067,14 +1130,14 @@ void HAL_PWREx_EnableLowPowerRunMode(void)
   */
 HAL_StatusTypeDef HAL_PWREx_DisableLowPowerRunMode(void)
 {
-  uint32_t wait_loop_index = 0;
+  uint32_t wait_loop_index;
 
   /* Clear LPR bit */
   CLEAR_BIT(PWR->CR1, PWR_CR1_LPR);
 
   /* Wait until REGLPF is reset */
-  wait_loop_index = (PWR_FLAG_SETTING_DELAY_US * (SystemCoreClock / 1000000));
-  while ((wait_loop_index != 0) && (HAL_IS_BIT_SET(PWR->SR2, PWR_SR2_REGLPF)))
+  wait_loop_index = ((PWR_FLAG_SETTING_DELAY_US * SystemCoreClock) / 1000000U) + 1U;
+  while ((HAL_IS_BIT_SET(PWR->SR2, PWR_SR2_REGLPF)) && (wait_loop_index != 0U))
   {
     wait_loop_index--;
   }
@@ -1282,7 +1345,7 @@ void HAL_PWREx_EnterSHUTDOWNMode(void)
 void HAL_PWREx_PVD_PVM_IRQHandler(void)
 {
   /* Check PWR exti flag */
-  if(__HAL_PWR_PVD_EXTI_GET_FLAG() != RESET)
+  if(__HAL_PWR_PVD_EXTI_GET_FLAG() != 0x0U)
   {
     /* PWR PVD interrupt user callback */
     HAL_PWR_PVDCallback();
@@ -1292,7 +1355,7 @@ void HAL_PWREx_PVD_PVM_IRQHandler(void)
   }
   /* Next, successively check PVMx exti flags */
 #if defined(PWR_CR2_PVME1)
-  if(__HAL_PWR_PVM1_EXTI_GET_FLAG() != RESET)
+  if(__HAL_PWR_PVM1_EXTI_GET_FLAG() != 0x0U)
   {
     /* PWR PVM1 interrupt user callback */
     HAL_PWREx_PVM1Callback();
@@ -1302,7 +1365,7 @@ void HAL_PWREx_PVD_PVM_IRQHandler(void)
   }
 #endif /* PWR_CR2_PVME1 */
 #if defined(PWR_CR2_PVME2)
-  if(__HAL_PWR_PVM2_EXTI_GET_FLAG() != RESET)
+  if(__HAL_PWR_PVM2_EXTI_GET_FLAG() != 0x0U)
   {
     /* PWR PVM2 interrupt user callback */
     HAL_PWREx_PVM2Callback();
@@ -1311,7 +1374,7 @@ void HAL_PWREx_PVD_PVM_IRQHandler(void)
     __HAL_PWR_PVM2_EXTI_CLEAR_FLAG();
   }
 #endif /* PWR_CR2_PVME2 */
-  if(__HAL_PWR_PVM3_EXTI_GET_FLAG() != RESET)
+  if(__HAL_PWR_PVM3_EXTI_GET_FLAG() != 0x0U)
   {
     /* PWR PVM3 interrupt user callback */
     HAL_PWREx_PVM3Callback();
@@ -1319,7 +1382,7 @@ void HAL_PWREx_PVD_PVM_IRQHandler(void)
     /* Clear PVM3 exti pending bit */
     __HAL_PWR_PVM3_EXTI_CLEAR_FLAG();
   }
-  if(__HAL_PWR_PVM4_EXTI_GET_FLAG() != RESET)
+  if(__HAL_PWR_PVM4_EXTI_GET_FLAG() != 0x0U)
   {
     /* PWR PVM4 interrupt user callback */
     HAL_PWREx_PVM4Callback();

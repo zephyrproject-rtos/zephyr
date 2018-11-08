@@ -34,8 +34,8 @@
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __STM32L4xx_LL_SPI_H
-#define __STM32L4xx_LL_SPI_H
+#ifndef STM32L4xx_LL_SPI_H
+#define STM32L4xx_LL_SPI_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -1048,11 +1048,10 @@ __STATIC_INLINE void LL_SPI_ClearFlag_CRCERR(SPI_TypeDef *SPIx)
   */
 __STATIC_INLINE void LL_SPI_ClearFlag_MODF(SPI_TypeDef *SPIx)
 {
-  __IO uint32_t tmpreg;
-  tmpreg = SPIx->SR;
-  (void) tmpreg;
-  tmpreg = CLEAR_BIT(SPIx->CR1, SPI_CR1_SPE);
-  (void) tmpreg;
+  __IO uint32_t tmpreg_sr;
+  tmpreg_sr = SPIx->SR;
+  (void) tmpreg_sr;
+  CLEAR_BIT(SPIx->CR1, SPI_CR1_SPE);
 }
 
 /**
@@ -1394,7 +1393,7 @@ __STATIC_INLINE void LL_SPI_TransmitData16(SPI_TypeDef *SPIx, uint16_t TxData)
   __IO uint16_t *spidr = ((__IO uint16_t *)&SPIx->DR);
   *spidr = TxData;
 #else
-  *((__IO uint16_t *)&SPIx->DR) = TxData;
+  SPIx->DR = TxData;
 #endif
 }
 
@@ -1432,6 +1431,6 @@ void        LL_SPI_StructInit(LL_SPI_InitTypeDef *SPI_InitStruct);
 }
 #endif
 
-#endif /* __STM32L4xx_LL_SPI_H */
+#endif /* STM32L4xx_LL_SPI_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

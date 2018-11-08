@@ -1,0 +1,70 @@
+# Kconfig - C++ configuration options
+
+#
+# Copyright (c) 2018 B. Leforestier
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menu "C++ Options"
+
+config CPLUSPLUS
+	bool "Enable C++ support for the application"
+	help
+	  This option enables the use of applications built with C++.
+
+choice
+	prompt "C++ Standard"
+	default STD_CPP11
+	help
+	  C++ Standards.
+
+config STD_CPP98
+	bool "C++ 98"
+	help
+	  1998 C++ standard as modified by the 2003 technical corrigendum
+	  and some later defect reports.
+
+config STD_CPP11
+	bool "C++ 11"
+	help
+	  2011 C++ standard, previously known as C++0x.
+
+config STD_CPP14
+	bool "C++ 14"
+	help
+	  2014 C++ standard.
+
+config STD_CPP17
+	bool "C++ 17"
+	help
+	  2017 C++ standard, previously known as C++0x.
+
+config STD_CPP2A
+	bool "C++ 2a"
+	help
+	  Next revision of the C++ standard, which is expected to be published in 2020.
+
+endchoice
+
+config LIB_CPLUSPLUS
+	depends on CPLUSPLUS
+	bool "Link with STD C++ library"
+	help
+	  Link with STD C++ Library.
+
+config EXCEPTIONS
+	depends on CPLUSPLUS
+	select LIB_CPLUSPLUS
+	bool "Enable C++ exceptions support"
+	help
+	  This option enables support of C++ exceptions.
+
+config RTTI
+	depends on CPLUSPLUS
+	select LIB_CPLUSPLUS
+	bool "Enable C++ RTTI support"
+	help
+	  This option enables support of C++ RTTI.
+
+endmenu

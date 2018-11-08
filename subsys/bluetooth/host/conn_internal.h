@@ -29,6 +29,7 @@ enum {
 	BT_CONN_AUTO_DATA_LEN,          /* Auto data len change in progress */
 	BT_CONN_SLAVE_PARAM_UPDATE,	/* If slave param update timer fired */
 	BT_CONN_SLAVE_PARAM_SET,	/* If slave param were set from app */
+	BT_CONN_SLAVE_PARAM_L2CAP,	/* If should force L2CAP for CPUP */
 
 	/* Total number of flags - must be at the end of the enum */
 	BT_CONN_NUM_FLAGS,
@@ -46,6 +47,8 @@ struct bt_conn_le {
 
 	u16_t			latency;
 	u16_t			timeout;
+	u16_t			pending_latency;
+	u16_t			pending_timeout;
 
 	u8_t			features[8];
 

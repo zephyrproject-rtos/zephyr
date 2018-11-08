@@ -35,21 +35,29 @@
 	status = "ok";
 	compatible = "atmel,sam0-uart";
 	current-speed = <9600>;
+	rxpo = <3>;
+	txpo = <2>;
 };
 
 &sercom1 {
 	status = "ok";
 	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
+	rxpo = <3>;
+	txpo = <0>;
 };
 
 &sercom3 {
 	status = "ok";
 	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
+	rxpo = <1>;
+	txpo = <0>;
 };
 
 &sercom5 {
 	status = "ok";
 	compatible = "atmel,sam0-spi";
+	dipo = <0>;
+	dopo = <2>;
 };

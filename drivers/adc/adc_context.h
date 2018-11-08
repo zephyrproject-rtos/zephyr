@@ -159,7 +159,7 @@ static inline void adc_context_complete(struct adc_context *ctx, int status)
 #ifdef CONFIG_ADC_ASYNC
 	if (ctx->asynchronous) {
 		if (ctx->signal) {
-			k_poll_signal(ctx->signal, status);
+			k_poll_signal_raise(ctx->signal, status);
 		}
 
 		k_sem_give(&ctx->lock);

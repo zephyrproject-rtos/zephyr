@@ -9,7 +9,6 @@
 
 #include <zephyr.h>
 #include <errno.h>
-#include <board.h>
 
 #include <misc/byteorder.h>
 #include <net/net_core.h>

@@ -191,7 +191,7 @@ static void sendCSW(void)
 	csw.Signature = CSW_Signature;
 	if (usb_write(mass_ep_data[MSD_IN_EP_IDX].ep_addr, (u8_t *)&csw,
 		      sizeof(struct CSW), NULL) != 0) {
-		USB_ERR("usb write failure");
+		LOG_ERR("usb write failure");
 	}
 	stage = WAIT_CSW;
 }
@@ -208,7 +208,7 @@ static bool write(u8_t *buf, u16_t size)
 	stage = SEND_CSW;
 
 	if (usb_write(mass_ep_data[MSD_IN_EP_IDX].ep_addr, buf, size, NULL)) {
-		USB_ERR("USB write failed");
+		LOG_ERR("USB write failed");
 		return false;
 	}
 
@@ -232,19 +232,19 @@ static int mass_storage_class_handle_req(struct usb_setup_packet *pSetup,
 
 	switch (pSetup->bRequest) {
 	case MSC_REQUEST_RESET:
-		USB_DBG("MSC_REQUEST_RESET");
+		LOG_DBG("MSC_REQUEST_RESET");
 		msd_state_machine_reset();
 		break;
 
 	case MSC_REQUEST_GET_MAX_LUN:
-		USB_DBG("MSC_REQUEST_GET_MAX_LUN");
+		LOG_DBG("MSC_REQUEST_GET_MAX_LUN");
 		max_lun_count = 0;
 		*data = (u8_t *)(&max_lun_count);
 		*len = 1;
 		break;
 
 	default:
-		USB_WRN("Unknown request 0x%x, value 0x%x",
+		LOG_WRN("Unknown request 0x%x, value 0x%x",
 			pSetup->bRequest, pSetup->wValue);
 		return -EINVAL;
 	}
@@ -256,10 +256,10 @@ static void testUnitReady(void)
 {
 	if (cbw.DataLength != 0) {
 		if ((cbw.Flags & 0x80) != 0) {
-			USB_WRN("Stall IN endpoint");
+			LOG_WRN("Stall IN endpoint");
 			usb_ep_set_stall(mass_ep_data[MSD_IN_EP_IDX].ep_addr);
 		} else {
-			USB_WRN("Stall OUT endpoint");
+			LOG_WRN("Stall OUT endpoint");
 			usb_ep_set_stall(mass_ep_data[MSD_OUT_EP_IDX].ep_addr);
 		}
 	}
@@ -360,7 +360,7 @@ static void thread_memory_read_done(void)
 
 	if (usb_write(mass_ep_data[MSD_IN_EP_IDX].ep_addr,
 		&page[addr % BLOCK_SIZE], n, NULL) != 0) {
-		USB_ERR("Failed to write EP 0x%x",
+		LOG_ERR("Failed to write EP 0x%x",
 			mass_ep_data[MSD_IN_EP_IDX].ep_addr);
 	}
 	addr += n;
@@ -388,7 +388,7 @@ static void memoryRead(void)
 	/* we read an entire block */
 	if (!(addr % BLOCK_SIZE)) {
 		thread_op = THREAD_OP_READ_QUEUED;
-		USB_DBG("Signal thread for %d", (addr/BLOCK_SIZE));
+		LOG_DBG("Signal thread for %d", (addr/BLOCK_SIZE));
 		k_sem_give(&disk_wait_sem);
 		return;
 	}
@@ -413,7 +413,7 @@ static bool infoTransfer(void)
 	n = (cbw.CB[2] << 24) | (cbw.CB[3] << 16) | (cbw.CB[4] <<  8) |
 				 (cbw.CB[5] <<  0);
 
-	USB_DBG("LBA (block) : 0x%x ", n);
+	LOG_DBG("LBA (block) : 0x%x ", n);
 	addr = n * BLOCK_SIZE;
 
 	/* Number of Blocks to transfer */
@@ -431,11 +431,11 @@ static bool infoTransfer(void)
 		break;
 	}
 
-	USB_DBG("Size (block) : 0x%x ", n);
+	LOG_DBG("Size (block) : 0x%x ", n);
 	length = n * BLOCK_SIZE;
 
 	if (!cbw.DataLength) {              /* host requests no data*/
-		USB_WRN("Zero length in CBW");
+		LOG_WRN("Zero length in CBW");
 		csw.Status = CSW_FAILED;
 		sendCSW();
 		return false;
@@ -443,10 +443,10 @@ static bool infoTransfer(void)
 
 	if (cbw.DataLength != length) {
 		if ((cbw.Flags & 0x80) != 0) {
-			USB_WRN("Stall IN endpoint");
+			LOG_WRN("Stall IN endpoint");
 			usb_ep_set_stall(mass_ep_data[MSD_IN_EP_IDX].ep_addr);
 		} else {
-			USB_WRN("Stall OUT endpoint");
+			LOG_WRN("Stall OUT endpoint");
 			usb_ep_set_stall(mass_ep_data[MSD_OUT_EP_IDX].ep_addr);
 		}
 
@@ -467,13 +467,13 @@ static void fail(void)
 static void CBWDecode(u8_t *buf, u16_t size)
 {
 	if (size != sizeof(cbw)) {
-		USB_ERR("size != sizeof(cbw)");
+		LOG_ERR("size != sizeof(cbw)");
 		return;
 	}
 
 	memcpy((u8_t *)&cbw, buf, size);
 	if (cbw.Signature != CBW_Signature) {
-		USB_ERR("CBW Signature Mismatch");
+		LOG_ERR("CBW Signature Mismatch");
 		return;
 	}
 
@@ -481,37 +481,37 @@ static void CBWDecode(u8_t *buf, u16_t size)
 	csw.DataResidue = cbw.DataLength;
 
 	if ((cbw.CBLength <  1) || (cbw.CBLength > 16) || (cbw.LUN != 0)) {
-		USB_WRN("cbw.CBLength %d", cbw.CBLength);
+		LOG_WRN("cbw.CBLength %d", cbw.CBLength);
 		fail();
 	} else {
 		switch (cbw.CB[0]) {
 		case TEST_UNIT_READY:
-			USB_DBG(">> TUR");
+			LOG_DBG(">> TUR");
 			testUnitReady();
 			break;
 		case REQUEST_SENSE:
-			USB_DBG(">> REQ_SENSE");
+			LOG_DBG(">> REQ_SENSE");
 			requestSense();
 			break;
 		case INQUIRY:
-			USB_DBG(">> INQ");
+			LOG_DBG(">> INQ");
 			inquiryRequest();
 			break;
 		case MODE_SENSE6:
-			USB_DBG(">> MODE_SENSE6");
+			LOG_DBG(">> MODE_SENSE6");
 			modeSense6();
 			break;
 		case READ_FORMAT_CAPACITIES:
-			USB_DBG(">> READ_FORMAT_CAPACITY");
+			LOG_DBG(">> READ_FORMAT_CAPACITY");
 			readFormatCapacity();
 			break;
 		case READ_CAPACITY:
-			USB_DBG(">> READ_CAPACITY");
+			LOG_DBG(">> READ_CAPACITY");
 			readCapacity();
 			break;
 		case READ10:
 		case READ12:
-			USB_DBG(">> READ");
+			LOG_DBG(">> READ");
 			if (infoTransfer()) {
 				if ((cbw.Flags & 0x80)) {
 					stage = PROCESS_CBW;
@@ -519,7 +519,7 @@ static void CBWDecode(u8_t *buf, u16_t size)
 				} else {
 					usb_ep_set_stall(
 					  mass_ep_data[MSD_OUT_EP_IDX].ep_addr);
-					USB_WRN("Stall OUT endpoint");
+					LOG_WRN("Stall OUT endpoint");
 					csw.Status = CSW_ERROR;
 					sendCSW();
 				}
@@ -527,21 +527,21 @@ static void CBWDecode(u8_t *buf, u16_t size)
 			break;
 		case WRITE10:
 		case WRITE12:
-			USB_DBG(">> WRITE");
+			LOG_DBG(">> WRITE");
 			if (infoTransfer()) {
 				if (!(cbw.Flags & 0x80)) {
 					stage = PROCESS_CBW;
 				} else {
 					usb_ep_set_stall(
 					  mass_ep_data[MSD_IN_EP_IDX].ep_addr);
-					USB_WRN("Stall IN endpoint");
+					LOG_WRN("Stall IN endpoint");
 					csw.Status = CSW_ERROR;
 					sendCSW();
 				}
 			}
 			break;
 		case VERIFY10:
-			USB_DBG(">> VERIFY10");
+			LOG_DBG(">> VERIFY10");
 			if (!(cbw.CB[1] & 0x02)) {
 				csw.Status = CSW_PASSED;
 				sendCSW();
@@ -554,19 +554,19 @@ static void CBWDecode(u8_t *buf, u16_t size)
 				} else {
 					usb_ep_set_stall(
 					  mass_ep_data[MSD_IN_EP_IDX].ep_addr);
-					USB_WRN("Stall IN endpoint");
+					LOG_WRN("Stall IN endpoint");
 					csw.Status = CSW_ERROR;
 					sendCSW();
 				}
 			}
 			break;
 		case MEDIA_REMOVAL:
-			USB_DBG(">> MEDIA_REMOVAL");
+			LOG_DBG(">> MEDIA_REMOVAL");
 			csw.Status = CSW_PASSED;
 			sendCSW();
 			break;
 		default:
-			USB_WRN(">> default CB[0] %x", cbw.CB[0]);
+			LOG_WRN(">> default CB[0] %x", cbw.CB[0]);
 			fail();
 			break;
 		}		/*switch(cbw.CB[0])*/
@@ -582,21 +582,21 @@ static void memoryVerify(u8_t *buf, u16_t size)
 		size = memory_size - addr;
 		stage = ERROR;
 		usb_ep_set_stall(mass_ep_data[MSD_OUT_EP_IDX].ep_addr);
-		USB_WRN("Stall OUT endpoint");
+		LOG_WRN("Stall OUT endpoint");
 	}
 
 	/* beginning of a new block -> load a whole block in RAM */
 	if (!(addr % BLOCK_SIZE)) {
-		USB_DBG("Disk READ sector %d", addr/BLOCK_SIZE);
+		LOG_DBG("Disk READ sector %d", addr/BLOCK_SIZE);
 		if (disk_access_read(disk_pdrv, page, addr/BLOCK_SIZE, 1)) {
-			USB_ERR("---- Disk Read Error %d", addr/BLOCK_SIZE);
+			LOG_ERR("---- Disk Read Error %d", addr/BLOCK_SIZE);
 		}
 	}
 
 	/* info are in RAM -> no need to re-read memory */
 	for (n = 0; n < size; n++) {
 		if (page[addr%BLOCK_SIZE + n] != buf[n]) {
-			USB_DBG("Mismatch sector %d offset %d",
+			LOG_DBG("Mismatch sector %d offset %d",
 				addr/BLOCK_SIZE, n);
 			memOK = false;
 			break;
@@ -620,7 +620,7 @@ static void memoryWrite(u8_t *buf, u16_t size)
 		size = memory_size - addr;
 		stage = ERROR;
 		usb_ep_set_stall(mass_ep_data[MSD_OUT_EP_IDX].ep_addr);
-		USB_WRN("Stall OUT endpoint");
+		LOG_WRN("Stall OUT endpoint");
 	}
 
 	/* we fill an array in RAM of 1 block before writing it in memory */
@@ -632,7 +632,7 @@ static void memoryWrite(u8_t *buf, u16_t size)
 	if (!((addr + size) % BLOCK_SIZE)) {
 		if (!(disk_access_status(disk_pdrv) &
 					DISK_STATUS_WR_PROTECT)) {
-			USB_DBG("Disk WRITE Qd %d", (addr/BLOCK_SIZE));
+			LOG_DBG("Disk WRITE Qd %d", (addr/BLOCK_SIZE));
 			thread_op = THREAD_OP_WRITE_QUEUED;  /* write_queued */
 			defered_wr_sz = size;
 			k_sem_give(&disk_wait_sem);
@@ -665,7 +665,7 @@ static void mass_storage_bulk_out(u8_t ep,
 	switch (stage) {
 	/*the device has to decode the CBW received*/
 	case READ_CBW:
-		USB_DBG("> BO - READ_CBW");
+		LOG_DBG("> BO - READ_CBW");
 		CBWDecode(bo_buf, bytes_read);
 		break;
 
@@ -674,22 +674,22 @@ static void mass_storage_bulk_out(u8_t ep,
 		switch (cbw.CB[0]) {
 		case WRITE10:
 		case WRITE12:
-			/* USB_DBG("> BO - PROC_CBW WR");*/
+			/* LOG_DBG("> BO - PROC_CBW WR");*/
 			memoryWrite(bo_buf, bytes_read);
 			break;
 		case VERIFY10:
-			USB_DBG("> BO - PROC_CBW VER");
+			LOG_DBG("> BO - PROC_CBW VER");
 			memoryVerify(bo_buf, bytes_read);
 			break;
 		default:
-			USB_ERR("> BO - PROC_CBW default <<ERROR!!!>>");
+			LOG_ERR("> BO - PROC_CBW default <<ERROR!!!>>");
 			break;
 		}
 		break;
 
 	/*an error has occurred: stall endpoint and send CSW*/
 	default:
-		USB_WRN("Stall OUT endpoint, stage: %d", stage);
+		LOG_WRN("Stall OUT endpoint, stage: %d", stage);
 		usb_ep_set_stall(ep);
 		csw.Status = CSW_ERROR;
 		sendCSW();
@@ -699,7 +699,7 @@ static void mass_storage_bulk_out(u8_t ep,
 	if (thread_op != THREAD_OP_WRITE_QUEUED) {
 		usb_ep_read_continue(ep);
 	} else {
-		USB_DBG("> BO not clearing NAKs yet");
+		LOG_DBG("> BO not clearing NAKs yet");
 	}
 
 }
@@ -743,30 +743,30 @@ static void mass_storage_bulk_in(u8_t ep,
 		switch (cbw.CB[0]) {
 		case READ10:
 		case READ12:
-			/* USB_DBG("< BI - PROC_CBW  READ"); */
+			/* LOG_DBG("< BI - PROC_CBW  READ"); */
 			memoryRead();
 			break;
 		default:
-			USB_ERR("< BI-PROC_CBW default <<ERROR!!>>");
+			LOG_ERR("< BI-PROC_CBW default <<ERROR!!>>");
 			break;
 		}
 		break;
 
 	/*the device has to send a CSW*/
 	case SEND_CSW:
-		USB_DBG("< BI - SEND_CSW");
+		LOG_DBG("< BI - SEND_CSW");
 		sendCSW();
 		break;
 
 	/*the host has received the CSW -> we wait a CBW*/
 	case WAIT_CSW:
-		USB_DBG("< BI - WAIT_CSW");
+		LOG_DBG("< BI - WAIT_CSW");
 		stage = READ_CBW;
 		break;
 
 	/*an error has occurred*/
 	default:
-		USB_WRN("Stall IN endpoint, stage: %d", stage);
+		LOG_WRN("Stall IN endpoint, stage: %d", stage);
 		usb_ep_set_stall(mass_ep_data[MSD_IN_EP_IDX].ep_addr);
 		sendCSW();
 		break;
@@ -790,31 +790,31 @@ static void mass_storage_status_cb(enum usb_dc_status_code status,
 	/* Check the USB status and do needed action if required */
 	switch (status) {
 	case USB_DC_ERROR:
-		USB_DBG("USB device error");
+		LOG_DBG("USB device error");
 		break;
 	case USB_DC_RESET:
-		USB_DBG("USB device reset detected");
+		LOG_DBG("USB device reset detected");
 		msd_state_machine_reset();
 		msd_init();
 		break;
 	case USB_DC_CONNECTED:
-		USB_DBG("USB device connected");
+		LOG_DBG("USB device connected");
 		break;
 	case USB_DC_CONFIGURED:
-		USB_DBG("USB device configured");
+		LOG_DBG("USB device configured");
 		break;
 	case USB_DC_DISCONNECTED:
-		USB_DBG("USB device disconnected");
+		LOG_DBG("USB device disconnected");
 		break;
 	case USB_DC_SUSPEND:
-		USB_DBG("USB device supended");
+		LOG_DBG("USB device supended");
 		break;
 	case USB_DC_RESUME:
-		USB_DBG("USB device resumed");
+		LOG_DBG("USB device resumed");
 		break;
 	case USB_DC_UNKNOWN:
 	default:
-		USB_DBG("USB unknown state");
+		LOG_DBG("USB unknown state");
 		break;
 	}
 }
@@ -846,13 +846,13 @@ static void mass_thread_main(int arg1, int unused)
 
 	while (1) {
 		k_sem_take(&disk_wait_sem, K_FOREVER);
-		USB_DBG("sem %d", thread_op);
+		LOG_DBG("sem %d", thread_op);
 
 		switch (thread_op) {
 		case THREAD_OP_READ_QUEUED:
 			if (disk_access_read(disk_pdrv,
 						page, (addr/BLOCK_SIZE), 1)) {
-				USB_ERR("!! Disk Read Error %d !",
+				LOG_ERR("!! Disk Read Error %d !",
 					addr/BLOCK_SIZE);
 			}
 
@@ -861,13 +861,13 @@ static void mass_thread_main(int arg1, int unused)
 		case THREAD_OP_WRITE_QUEUED:
 			if (disk_access_write(disk_pdrv,
 						page, (addr/BLOCK_SIZE), 1)) {
-				USB_ERR("!!!!! Disk Write Error %d !!!!!",
+				LOG_ERR("!!!!! Disk Write Error %d !!!!!",
 					addr/BLOCK_SIZE);
 			}
 			thread_memory_write_done();
 			break;
 		default:
-			USB_ERR("XXXXXX thread_op  %d ! XXXXX", thread_op);
+			LOG_ERR("XXXXXX thread_op  %d ! XXXXX", thread_op);
 		}
 	}
 }
@@ -894,33 +894,33 @@ static int mass_storage_init(struct device *dev)
 	ARG_UNUSED(dev);
 
 	if (disk_access_init(disk_pdrv) != 0) {
-		USB_ERR("Storage init ERROR !!!! - Aborting USB init");
+		LOG_ERR("Storage init ERROR !!!! - Aborting USB init");
 		return 0;
 	}
 
 	if (disk_access_ioctl(disk_pdrv,
 				DISK_IOCTL_GET_SECTOR_COUNT, &block_count)) {
-		USB_ERR("Unable to get sector count - Aborting USB init");
+		LOG_ERR("Unable to get sector count - Aborting USB init");
 		return 0;
 	}
 
 	if (disk_access_ioctl(disk_pdrv,
 				DISK_IOCTL_GET_SECTOR_SIZE, &block_size)) {
-		USB_ERR("Unable to get sector size - Aborting USB init");
+		LOG_ERR("Unable to get sector size - Aborting USB init");
 		return 0;
 	}
 
 	if (block_size != BLOCK_SIZE) {
-		USB_ERR("Block Size reported by the storage side is "
+		LOG_ERR("Block Size reported by the storage side is "
 			"different from Mass Storgae Class page Buffer - "
 			"Aborting");
 		return 0;
 	}
 
 
-	USB_INF("Sect Count %d", block_count);
+	LOG_INF("Sect Count %d", block_count);
 	memory_size = block_count * BLOCK_SIZE;
-	USB_INF("Memory Size %d", memory_size);
+	LOG_INF("Memory Size %d", memory_size);
 
 	msd_state_machine_reset();
 	msd_init();
@@ -934,14 +934,14 @@ static int mass_storage_init(struct device *dev)
 	/* Initialize the USB driver with the right configuration */
 	ret = usb_set_config(&mass_storage_config);
 	if (ret < 0) {
-		USB_ERR("Failed to config USB");
+		LOG_ERR("Failed to config USB");
 		return ret;
 	}
 
 	/* Enable USB driver */
 	ret = usb_enable(&mass_storage_config);
 	if (ret < 0) {
-		USB_ERR("Failed to enable USB");
+		LOG_ERR("Failed to enable USB");
 		return ret;
 	}
 #endif

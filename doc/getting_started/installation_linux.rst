@@ -74,7 +74,8 @@ On Ubuntu:
 
    sudo apt-get install --no-install-recommends git cmake ninja-build gperf \
      ccache dfu-util device-tree-compiler wget \
-     python3-pip python3-setuptools python3-wheel xz-utils file make
+     python3-pip python3-setuptools python3-wheel xz-utils file make gcc \
+     gcc-multilib
 
 On Fedora:
 
@@ -147,9 +148,9 @@ Follow these steps to install the SDK on your Linux host system.
 
    .. code-block:: console
 
-      wget https://github.com/zephyrproject-rtos/meta-zephyr-sdk/releases/download/0.9.3/zephyr-sdk-0.9.3-setup.run
+      wget https://github.com/zephyrproject-rtos/meta-zephyr-sdk/releases/download/0.9.5/zephyr-sdk-0.9.5-setup.run
 
-   (You can change *0.9.3* to another version if needed; the `Zephyr
+   (You can change *0.9.5* to another version if needed; the `Zephyr
    Downloads`_ page contains all available SDK releases.)
 
 #. Run the installation binary:
@@ -157,7 +158,7 @@ Follow these steps to install the SDK on your Linux host system.
    .. code-block:: console
 
       cd <sdk download directory>
-      sh zephyr-sdk-0.9.3-setup.run
+      sh zephyr-sdk-0.9.5-setup.run
 
    .. important::
       If this fails, make sure Zephyr's dependencies were installed

@@ -14,6 +14,13 @@ config TEST
 	  Mark a project or an application as a test. This will enable a few
 	  test defaults.
 
+config TEST_SHELL
+	bool "Enable various shells for testing"
+	select GPIO_SHELL if GPIO
+	select PCI_SHELL if PCI
+	help
+	  Enable various platform and driver related shells for testing.
+
 config TEST_EXTRA_STACKSIZE
 	int "Test function extra thread stack size"
 	default 768 if XTENSA

@@ -99,6 +99,7 @@ int net_ipv6_find_last_ext_hdr(struct net_pkt *pkt, u16_t *next_hdr_idx,
 			break;
 
 		case NET_IPV6_NEXTHDR_HBHO:
+		case NET_IPV6_NEXTHDR_DESTO:
 			length = 0;
 			frag = net_frag_read_u8(frag, offset, &offset,
 						(u8_t *)&length);

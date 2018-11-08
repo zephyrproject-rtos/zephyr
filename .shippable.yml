@@ -4,10 +4,10 @@ compiler: gcc
 
 env:
     global:
-        - SDK=0.9.3
+        - SDK=0.9.5
         - SANITYCHECK_OPTIONS=" --inline-logs --enable-coverage -N"
         - SANITYCHECK_OPTIONS_RETRY="${SANITYCHECK_OPTIONS} --only-failed --outdir=out-2nd-pass"
-        - ZEPHYR_SDK_INSTALL_DIR=/opt/sdk/zephyr-sdk-0.9.3
+        - ZEPHYR_SDK_INSTALL_DIR=/opt/sdk/zephyr-sdk-0.9.5
         - ZEPHYR_TOOLCHAIN_VARIANT=zephyr
         - MATRIX_BUILDS="5"
         - MATRIX_BUILDS_EXTRA="5"
@@ -26,7 +26,7 @@ build:
         - ${SHIPPABLE_BUILD_DIR}/ccache
     pre_ci_boot:
         image_name: zephyrprojectrtos/ci
-        image_tag: v0.4-rc9
+        image_tag: v0.4-rc12
         pull: true
         options: "-e HOME=/home/buildslave --privileged=true --tty --net=bridge --user buildslave"
 

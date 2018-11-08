@@ -10,17 +10,16 @@
 #include <posix/unistd.h>
 #include <posix/dirent.h>
 #include <string.h>
+#include <misc/fdtable.h>
 
 BUILD_ASSERT_MSG(PATH_MAX > MAX_FILE_NAME,
 		"PATH_MAX is less than MAX_FILE_NAME");
 
-union file_desc {
-	struct fs_file_t file;
-	struct fs_dir_t	dir;
-};
-
 struct posix_fs_desc {
-	union file_desc desc;
+	union {
+		struct fs_file_t file;
+		struct fs_dir_t	dir;
+	};
 	bool is_dir;
 	bool used;
 };
@@ -30,63 +29,30 @@ static struct posix_fs_desc desc_array[CONFIG_POSIX_MAX_OPEN_FILES];
 static struct fs_dirent fdirent;
 static struct dirent pdirent;
 
-static int posix_fs_alloc_fd(union file_desc **ptr, bool is_dir)
+static struct fd_op_vtable fs_fd_op_vtable;
+
+static struct posix_fs_desc *posix_fs_alloc_obj(bool is_dir)
 {
-	int fd;
+	int i;
+	struct posix_fs_desc *ptr = NULL;
 	unsigned int key = irq_lock();
 
-	for (fd = 0; fd < CONFIG_POSIX_MAX_OPEN_FILES; fd++) {
-		if (desc_array[fd].used == false) {
-			*ptr = &desc_array[fd].desc;
-			desc_array[fd].used = true;
-			desc_array[fd].is_dir = is_dir;
+	for (i = 0; i < CONFIG_POSIX_MAX_OPEN_FILES; i++) {
+		if (desc_array[i].used == false) {
+			ptr = &desc_array[i];
+			ptr->used = true;
+			ptr->is_dir = is_dir;
 			break;
 		}
 	}
 	irq_unlock(key);
 
-	if (fd >= CONFIG_POSIX_MAX_OPEN_FILES) {
-		return -1;
-	}
-
-	return fd;
+	return ptr;
 }
 
-static int posix_fs_get_ptr(int fd, union file_desc **ptr, bool is_dir)
+static inline void posix_fs_free_obj(struct posix_fs_desc *ptr)
 {
-	int rc = 0;
-	unsigned int key;
-
-	if (fd < 0 || fd >= CONFIG_POSIX_MAX_OPEN_FILES) {
-		return -1;
-	}
-
-	key = irq_lock();
-
-	if ((desc_array[fd].used == true) &&
-		(desc_array[fd].is_dir == is_dir)) {
-		*ptr = &desc_array[fd].desc;
-	} else {
-		rc = -1;
-	}
-	irq_unlock(key);
-
-	return rc;
-}
-
-static inline void posix_fs_free_ptr(struct posix_fs_desc *ptr)
-{
-	struct posix_fs_desc *desc = ptr;
-	unsigned int key = irq_lock();
-
-	desc->used = false;
-	desc->is_dir = false;
-	irq_unlock(key);
-}
-
-static inline void posix_fs_free_fd(int fd)
-{
-	posix_fs_free_ptr(&desc_array[fd]);
+	ptr->used = false;
 }
 
 /**
@@ -97,46 +63,65 @@ static inline void posix_fs_free_fd(int fd)
 int open(const char *name, int flags)
 {
 	int rc, fd;
-	struct fs_file_t *ptr = NULL;
+	struct posix_fs_desc *ptr = NULL;
 
 	ARG_UNUSED(flags);
 
-	fd = posix_fs_alloc_fd((union file_desc **)&ptr, false);
-	if ((fd < 0) || (ptr == NULL)) {
-		errno = ENFILE;
+	fd = z_reserve_fd();
+	if (fd < 0) {
 		return -1;
 	}
-	(void)memset(ptr, 0, sizeof(struct fs_file_t));
 
-	rc = fs_open(ptr, name);
+	ptr = posix_fs_alloc_obj(false);
+	if (ptr == NULL) {
+		z_free_fd(fd);
+		errno = EMFILE;
+		return -1;
+	}
+
+	(void)memset(&ptr->file, 0, sizeof(ptr->file));
+
+	rc = fs_open(&ptr->file, name);
 	if (rc < 0) {
-		posix_fs_free_fd(fd);
+		posix_fs_free_obj(ptr);
+		z_free_fd(fd);
 		errno = -rc;
 		return -1;
 	}
 
+	z_finalize_fd(fd, ptr, &fs_fd_op_vtable);
+
 	return fd;
 }
 
-/**
- * @brief Close a file descriptor.
- *
- * See IEEE 1003.1
- */
-int close(int fd)
+static int fs_ioctl_vmeth(void *obj, unsigned int request, ...)
 {
 	int rc;
-	struct fs_file_t *ptr = NULL;
+	struct posix_fs_desc *ptr = obj;
 
-	if (posix_fs_get_ptr(fd, (union file_desc **)&ptr, false)) {
-		errno = EBADF;
-		return -1;
+	switch (request) {
+	case ZFD_IOCTL_CLOSE:
+		rc = fs_close(&ptr->file);
+		break;
+
+	case ZFD_IOCTL_LSEEK: {
+		va_list args;
+		off_t offset;
+		int whence;
+
+		va_start(args, request);
+		offset = va_arg(args, off_t);
+		whence = va_arg(args, int);
+		va_end(args);
+
+		rc = fs_seek(&ptr->file, offset, whence);
+		break;
 	}
 
-	rc = fs_close(ptr);
-
-	/* Free file ptr memory */
-	posix_fs_free_fd(fd);
+	default:
+		errno = EOPNOTSUPP;
+		return -1;
+	}
 
 	if (rc < 0) {
 		errno = -rc;
@@ -151,17 +136,12 @@ int close(int fd)
  *
  * See IEEE 1003.1
  */
-ssize_t write(int fd, const void *buffer, size_t count)
+static ssize_t fs_write_vmeth(void *obj, const void *buffer, size_t count)
 {
 	ssize_t rc;
-	struct fs_file_t *ptr = NULL;
+	struct posix_fs_desc *ptr = obj;
 
-	if (posix_fs_get_ptr(fd, (union file_desc **)&ptr, false)) {
-		errno = EBADF;
-		return -1;
-	}
-
-	rc = fs_write(ptr, buffer, count);
+	rc = fs_write(&ptr->file, buffer, count);
 	if (rc < 0) {
 		errno = -rc;
 		return -1;
@@ -175,17 +155,12 @@ ssize_t write(int fd, const void *buffer, size_t count)
  *
  * See IEEE 1003.1
  */
-ssize_t read(int fd, void *buffer, size_t count)
+static ssize_t fs_read_vmeth(void *obj, void *buffer, size_t count)
 {
 	ssize_t rc;
-	struct fs_file_t *ptr = NULL;
+	struct posix_fs_desc *ptr = obj;
 
-	if (posix_fs_get_ptr(fd, (union file_desc **)&ptr, false)) {
-		errno = EBADF;
-		return -1;
-	}
-
-	rc = fs_read(ptr, buffer, count);
+	rc = fs_read(&ptr->file, buffer, count);
 	if (rc < 0) {
 		errno = -rc;
 		return -1;
@@ -194,29 +169,11 @@ ssize_t read(int fd, void *buffer, size_t count)
 	return rc;
 }
 
-/**
- * @brief Move read/write file offset.
- *
- * See IEEE 1003.1
- */
-off_t lseek(int fd, off_t offset, int whence)
-{
-	int rc;
-	struct fs_file_t *ptr = NULL;
-
-	if (posix_fs_get_ptr(fd, (union file_desc **)&ptr, false)) {
-		errno = EBADF;
-		return -1;
-	}
-
-	rc = fs_seek(ptr, offset, whence);
-	if (rc < 0) {
-		errno = -rc;
-		return -1;
-	}
-
-	return 0;
-}
+static struct fd_op_vtable fs_fd_op_vtable = {
+	.read = fs_read_vmeth,
+	.write = fs_write_vmeth,
+	.ioctl = fs_ioctl_vmeth,
+};
 
 /**
  * @brief Open a directory stream.
@@ -225,19 +182,20 @@ off_t lseek(int fd, off_t offset, int whence)
  */
 DIR *opendir(const char *dirname)
 {
-	int rc, fd;
-	struct fs_dir_t *ptr = NULL;
+	int rc;
+	struct posix_fs_desc *ptr;
 
-	fd = posix_fs_alloc_fd((union file_desc **)&ptr, true);
-	if ((fd < 0) || (ptr == NULL)) {
+	ptr = posix_fs_alloc_obj(true);
+	if (ptr == NULL) {
 		errno = EMFILE;
 		return NULL;
 	}
-	(void)memset(ptr, 0, sizeof(struct fs_dir_t));
 
-	rc = fs_opendir(ptr, dirname);
+	(void)memset(&ptr->dir, 0, sizeof(ptr->dir));
+
+	rc = fs_opendir(&ptr->dir, dirname);
 	if (rc < 0) {
-		posix_fs_free_fd(fd);
+		posix_fs_free_obj(ptr);
 		errno = -rc;
 		return NULL;
 	}
@@ -253,16 +211,16 @@ DIR *opendir(const char *dirname)
 int closedir(DIR *dirp)
 {
 	int rc;
+	struct posix_fs_desc *ptr = dirp;
 
 	if (dirp == NULL) {
 		errno = EBADF;
 		return -1;
 	}
 
-	rc = fs_closedir(dirp);
+	rc = fs_closedir(&ptr->dir);
 
-	/* Free file ptr memory */
-	posix_fs_free_ptr((struct posix_fs_desc *)dirp);
+	posix_fs_free_obj(ptr);
 
 	if (rc < 0) {
 		errno = -rc;
@@ -280,13 +238,14 @@ int closedir(DIR *dirp)
 struct dirent *readdir(DIR *dirp)
 {
 	int rc;
+	struct posix_fs_desc *ptr = dirp;
 
 	if (dirp == NULL) {
 		errno = EBADF;
 		return NULL;
 	}
 
-	rc = fs_readdir(dirp, &fdirent);
+	rc = fs_readdir(&ptr->dir, &fdirent);
 	if (rc < 0) {
 		errno = -rc;
 		return NULL;

@@ -8,7 +8,6 @@
 #define LOG_MODULE_NAME net_irc_bot
 #define NET_LOG_LEVEL LOG_LEVEL_DBG
 
-#include <board.h>
 #include <random/rand32.h>
 #include <errno.h>
 #include <gpio.h>

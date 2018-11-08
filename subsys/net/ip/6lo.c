@@ -288,7 +288,7 @@ static inline u8_t compress_sa(struct net_ipv6_hdr *ipv6,
 			       struct net_buf *frag,
 			       u8_t offset)
 {
-	if (net_is_ipv6_addr_unspecified(&ipv6->src)) {
+	if (net_ipv6_is_addr_unspecified(&ipv6->src)) {
 		NET_DBG("SAM_00, SAC_1 unspecified src address");
 
 		/* Unspecified IPv6 src address */
@@ -299,7 +299,7 @@ static inline u8_t compress_sa(struct net_ipv6_hdr *ipv6,
 	}
 
 	/* If address is link-local prefix and padded with zeros */
-	if (net_is_ipv6_ll_addr(&ipv6->src) &&
+	if (net_ipv6_is_ll_addr(&ipv6->src) &&
 	    net_6lo_ll_prefix_padded_with_zeros(&ipv6->src)) {
 
 		NET_DBG("SAC_0 src is ll_addr and padded with zeros");
@@ -446,12 +446,12 @@ static inline u8_t compress_da(struct net_ipv6_hdr *ipv6,
 			       u8_t offset)
 {
 	/* If destination address is multicast */
-	if (net_is_ipv6_addr_mcast(&ipv6->dst)) {
+	if (net_ipv6_is_addr_mcast(&ipv6->dst)) {
 		return compress_da_mcast(ipv6, pkt, frag, offset);
 	}
 
 	/* If address is link-local prefix and padded with zeros */
-	if (net_is_ipv6_ll_addr(&ipv6->dst) &&
+	if (net_ipv6_is_ll_addr(&ipv6->dst) &&
 	    net_6lo_ll_prefix_padded_with_zeros(&ipv6->dst)) {
 
 		NET_DBG("Dst is ll_addr and padded with zeros");

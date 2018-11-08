@@ -1,4 +1,7 @@
 sample:
   description: Example of using GPIOs on UP Squared board
   name: Example of using GPIOs on UP Squared board
-  platforms: up_squared
+tests:
+  test:
+    platform_whitelist: up_squared
+    tags: gpio

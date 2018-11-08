@@ -3,5 +3,4 @@ config BOARD_X86_JAILHOUSE
 	bool "QEMU x86 (root cell)"
 	depends on SOC_IA32
 	select QEMU_TARGET
-	select HAS_DTS
 	select CPU_HAS_FPU if !X86_IAMCU

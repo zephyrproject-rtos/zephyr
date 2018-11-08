@@ -38,6 +38,5 @@ properties:
             generation: define
 
 base_label: FLASH_AREA
-use-property-label: yes
 
 ...

@@ -10,6 +10,10 @@
 #include <zephyr/types.h>
 #include <toolchain.h>
 
+#include <logging/log.h>
+#define LOG_MODULE_NAME bttester_main
+LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+
 #include "bttester.h"
 
 void main(void)

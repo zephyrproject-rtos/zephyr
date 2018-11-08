@@ -9,9 +9,8 @@
 #include <stdio.h>
 #include <zephyr.h>
 
-#define SYS_LOG_DOMAIN "main"
-#define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
-#include <logging/sys_log.h>
+#include <logging/log.h>
+LOG_MODULE_REGISTER(main);
 
 void main(void)
 {
@@ -19,15 +18,15 @@ void main(void)
 	struct device *dev = device_get_binding(CONFIG_MS5837_DEV_NAME);
 
 	if (dev == NULL) {
-		SYS_LOG_ERR("Could not find MS5837 device, aborting test.");
+		LOG_ERR("Could not find MS5837 device, aborting test.");
 		return;
 	}
 
 	if (sensor_attr_set(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_OVERSAMPLING,
 				&oversampling_rate) != 0) {
-		SYS_LOG_ERR("Could not set oversampling rate of %d "
-				"on MS5837 device, aborting test.",
-				oversampling_rate.val1);
+		LOG_ERR("Could not set oversampling rate of %d "
+			"on MS5837 device, aborting test.",
+			oversampling_rate.val1);
 		return;
 	}
 

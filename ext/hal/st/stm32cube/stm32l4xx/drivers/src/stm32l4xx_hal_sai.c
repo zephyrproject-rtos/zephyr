@@ -227,12 +227,13 @@
   * @{
   */
 
+#ifdef HAL_SAI_MODULE_ENABLED
+#if !defined(STM32L412xx) && !defined(STM32L422xx)
+
 /** @defgroup SAI SAI
   * @brief SAI HAL module driver
   * @{
   */
-
-#ifdef HAL_SAI_MODULE_ENABLED
 
 /* Private typedef -----------------------------------------------------------*/
 /** @defgroup SAI_Private_Typedefs  SAI Private Typedefs
@@ -251,7 +252,6 @@ typedef enum
 /** @defgroup SAI_Private_Constants  SAI Private Constants
   * @{
   */
-#define SAI_FIFO_SIZE            8
 #define SAI_DEFAULT_TIMEOUT      4U
 #define SAI_LONG_TIMEOUT         1000U
 /**
@@ -602,6 +602,8 @@ HAL_StatusTypeDef HAL_SAI_Init(SAI_HandleTypeDef *hsai)
     }
 #endif /* STM32L4R5xx || STM32L4R7xx || STM32L4R9xx || STM32L4S5xx || STM32L4S7xx || STM32L4S9xx */
   }
+  /* Check the SAI Block master clock divider parameter */
+  assert_param(IS_SAI_BLOCK_MASTER_DIVIDER(hsai->Init.Mckdiv));
 
   /* Compute CKSTR bits of SAI CR1 according ClockStrobing and AudioMode */
   if ((hsai->Init.AudioMode == SAI_MODEMASTER_TX) || (hsai->Init.AudioMode == SAI_MODESLAVE_TX))
@@ -1098,10 +1100,8 @@ HAL_StatusTypeDef HAL_SAI_Transmit(SAI_HandleTypeDef *hsai, uint8_t *pData, uint
           hsai->Instance->CLRFR = 0xFFFFFFFFU;
 
           /* Disable SAI peripheral */
-          if (SAI_Disable(hsai) != HAL_OK)
-          {
-            /* Nothing to do because state update, unlock and error return will be performed later */
-          }
+          /* No need to check return value because state update, unlock and error return will be performed later */
+          (void) SAI_Disable(hsai);
 
           /* Flush the fifo */
           SET_BIT(hsai->Instance->CR2, SAI_xCR2_FFLUSH);
@@ -1211,10 +1211,8 @@ HAL_StatusTypeDef HAL_SAI_Receive(SAI_HandleTypeDef *hsai, uint8_t *pData, uint1
           hsai->Instance->CLRFR = 0xFFFFFFFFU;
 
           /* Disable SAI peripheral */
-          if (SAI_Disable(hsai) != HAL_OK)
-          {
-            /* Nothing to do because state update, unlock and error return will be performed later */
-          }
+          /* No need to check return value because state update, unlock and error return will be performed later */
+          (void) SAI_Disable(hsai);
 
           /* Flush the fifo */
           SET_BIT(hsai->Instance->CR2, SAI_xCR2_FFLUSH);
@@ -1873,10 +1871,8 @@ void HAL_SAI_IRQHandler(SAI_HandleTypeDef *hsai)
       else
       {
         /* Abort SAI */
-        if (HAL_SAI_Abort(hsai) != HAL_OK)
-        {
-          /* Nothing to do because HAL_SAI_ErrorCallback will be called later */
-        }
+        /* No need to check return value because HAL_SAI_ErrorCallback will be called later */
+        (void) HAL_SAI_Abort(hsai);
 
         /* Set error callback */
 #if (USE_HAL_SAI_REGISTER_CALLBACKS == 1)
@@ -1930,10 +1926,8 @@ void HAL_SAI_IRQHandler(SAI_HandleTypeDef *hsai)
       else
       {
         /* Abort SAI */
-        if (HAL_SAI_Abort(hsai) != HAL_OK)
-        {
-          /* Nothing to do because HAL_SAI_ErrorCallback will be called later */
-        }
+        /* No need to check return value because HAL_SAI_ErrorCallback will be called later */
+        (void) HAL_SAI_Abort(hsai);
 
         /* Set error callback */
 #if (USE_HAL_SAI_REGISTER_CALLBACKS == 1)
@@ -2757,10 +2751,8 @@ static void SAI_DMAError(DMA_HandleTypeDef *hdma)
   hsai->Instance->CR1 &= ~SAI_xCR1_DMAEN;
 
   /* Disable SAI peripheral */
-  if (SAI_Disable(hsai) != HAL_OK)
-  {
-    /* Nothing to do because state will be updated and HAL_SAI_ErrorCallback will be called later */
-  }
+  /* No need to check return value because state will be updated and HAL_SAI_ErrorCallback will be called later */
+  (void) SAI_Disable(hsai);
 
   /* Set the SAI state ready to be able to start again the process */
   hsai->State = HAL_SAI_STATE_READY;
@@ -2796,10 +2788,8 @@ static void SAI_DMAAbort(DMA_HandleTypeDef *hdma)
   if (hsai->ErrorCode != HAL_SAI_ERROR_WCKCFG)
   {
     /* Disable SAI peripheral */
-    if (SAI_Disable(hsai) != HAL_OK)
-    {
-      /* Nothing to do because state will be updated and HAL_SAI_ErrorCallback will be called later */
-    }
+    /* No need to check return value because state will be updated and HAL_SAI_ErrorCallback will be called later */
+    (void) SAI_Disable(hsai);
 
     /* Flush the fifo */
     SET_BIT(hsai->Instance->CR2, SAI_xCR2_FFLUSH);
@@ -2822,10 +2812,12 @@ static void SAI_DMAAbort(DMA_HandleTypeDef *hdma)
   * @}
   */
 
-#endif /* HAL_SAI_MODULE_ENABLED */
 /**
   * @}
   */
+
+#endif /* !STM32L412xx && !STM32L422xx */
+#endif /* HAL_SAI_MODULE_ENABLED */
 
 /**
   * @}

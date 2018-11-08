@@ -382,7 +382,7 @@ void HAL_FLASH_IRQHandler(void)
     }
     else
     {
-      /* Nothing to do */
+       HAL_FLASH_OperationErrorCallback(0U);
     }
 
     /*Stop the procedure ongoing*/

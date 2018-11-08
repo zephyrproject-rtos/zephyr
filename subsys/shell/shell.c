@@ -8,6 +8,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <shell/shell.h>
+#include <shell/shell_dummy.h>
 #include "shell_utils.h"
 #include "shell_ops.h"
 #include "shell_wildcard.h"
@@ -31,6 +32,13 @@
 
 /* Initial cursor position is: (1, 1). */
 #define SHELL_INITIAL_CURS_POS		(1u)
+
+#define EXIT_HISTORY(shell)					\
+		((shell)->ctx->internal.flags.history_exit)
+#define EXIT_HISTORY_REQUEST(shell)				\
+		((shell)->ctx->internal.flags.history_exit = 1)
+#define EXIT_HISTORY_CLEAR(shell)				\
+		((shell)->ctx->internal.flags.history_exit = 0)
 
 static int shell_execute(const struct shell *shell);
 
@@ -89,6 +97,19 @@ static void shell_cmd_buffer_clear(const struct shell *shell)
 	shell->ctx->cmd_buff_len = 0;
 }
 
+static void shell_pend_on_txdone(const struct shell *shell)
+{
+	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+		k_poll(&shell->ctx->events[SHELL_SIGNAL_TXDONE], 1, K_FOREVER);
+		k_poll_signal_reset(&shell->ctx->signals[SHELL_SIGNAL_TXDONE]);
+	} else {
+		/* Blocking wait in case of bare metal. */
+		while (!shell->ctx->internal.flags.tx_rdy) {
+		}
+		shell->ctx->internal.flags.tx_rdy = 0;
+	}
+}
+
 /* Function sends data stream to the shell instance. Each time before the
  * shell_write function is called, it must be ensured that IO buffer of fprintf
  * is flushed to avoid synchronization issues.
@@ -113,17 +134,7 @@ static void shell_write(const struct shell *shell, const void *data,
 		length -= tmp_cnt;
 		if (tmp_cnt == 0 &&
 		    (shell->ctx->state != SHELL_STATE_PANIC_MODE_ACTIVE)) {
-			/* todo  semaphore pend*/
-			if (IS_ENABLED(CONFIG_MULTITHREADING)) {
-				k_poll(&shell->ctx->events[SHELL_SIGNAL_TXDONE],
-				1, K_FOREVER);
-			} else {
-				/* Blocking wait in case of bare metal. */
-				while (!shell->ctx->internal.flags.tx_rdy) {
-
-				}
-				shell->ctx->internal.flags.tx_rdy = 0;
-			}
+			shell_pend_on_txdone(shell);
 		}
 	}
 }
@@ -288,6 +299,7 @@ static void history_mode_exit(const struct shell *shell)
 		return;
 	}
 
+	EXIT_HISTORY_CLEAR(shell);
 	shell_history_mode_exit(shell->history);
 }
 
@@ -310,6 +322,12 @@ static void history_handle(const struct shell *shell, bool up)
 		return;
 	}
 
+	/* Checking if history process has been stopped */
+	if (EXIT_HISTORY(shell)) {
+		EXIT_HISTORY_CLEAR(shell);
+		shell_history_mode_exit(shell->history);
+	}
+
 	/* Backup command if history is entered */
 	if (!shell_history_active(shell->history)) {
 		if (up) {
@@ -328,7 +346,7 @@ static void history_handle(const struct shell *shell, bool up)
 	}
 
 	/* Start by checking if history is not empty. */
-	history_mode = shell_history_get(shell->history, true,
+	history_mode = shell_history_get(shell->history, up,
 					 shell->ctx->cmd_buff, &len);
 
 	/* On exiting history mode print backed up command. */
@@ -337,14 +355,12 @@ static void history_handle(const struct shell *shell, bool up)
 		len = shell_strlen(shell->ctx->cmd_buff);
 	}
 
-	if (len) {
-		shell_op_cursor_home_move(shell);
-		clear_eos(shell);
-		shell_fprintf(shell, SHELL_NORMAL, "%s", shell->ctx->cmd_buff);
-		shell->ctx->cmd_buff_pos = len;
-		shell->ctx->cmd_buff_len = len;
-		shell_op_cond_next_line(shell);
-	}
+	shell_op_cursor_home_move(shell);
+	clear_eos(shell);
+	shell_fprintf(shell, SHELL_NORMAL, "%s", shell->ctx->cmd_buff);
+	shell->ctx->cmd_buff_pos = len;
+	shell->ctx->cmd_buff_len = len;
+	shell_op_cond_next_line(shell);
 }
 
 static const struct shell_static_entry *find_cmd(
@@ -424,11 +440,6 @@ static bool shell_tab_prepare(const struct shell *shell,
 	if (compl_space == 0) {
 		return false;
 	}
-
-	/* If the Tab key is pressed, "history mode" must be terminated because
-	 * tab and history handlers are sharing the same array: temp_buff.
-	 */
-	history_mode_exit(shell);
 
 	/* Copy command from its beginning to cursor position. */
 	memcpy(shell->ctx->temp_buff, shell->ctx->cmd_buff,
@@ -690,8 +701,7 @@ static void shell_tab_handle(const struct shell *shell)
 #define SHELL_ASCII_MAX_CHAR (127u)
 static inline int ascii_filter(const char data)
 {
-	return (u8_t) data > SHELL_ASCII_MAX_CHAR ?
-			-EINVAL : 0;
+	return (u8_t) data > SHELL_ASCII_MAX_CHAR ? -EINVAL : 0;
 }
 
 static void metakeys_handle(const struct shell *shell, char data)
@@ -711,6 +721,7 @@ static void metakeys_handle(const struct shell *shell, char data)
 		if (!shell_cursor_in_empty_line(shell)) {
 			cursor_next_line_move(shell);
 		}
+		EXIT_HISTORY_REQUEST(shell);
 		shell_state_set(shell, SHELL_STATE_ACTIVE);
 		break;
 
@@ -732,11 +743,13 @@ static void metakeys_handle(const struct shell *shell, char data)
 	case SHELL_VT100_ASCII_CTRL_U: /* CTRL + U */
 		shell_op_cursor_home_move(shell);
 		shell_cmd_buffer_clear(shell);
+		EXIT_HISTORY_REQUEST(shell);
 		clear_eos(shell);
 		break;
 
 	case SHELL_VT100_ASCII_CTRL_W: /* CTRL + W */
 		shell_op_word_remove(shell);
+		EXIT_HISTORY_REQUEST(shell);
 		break;
 
 	default:
@@ -786,18 +799,26 @@ static void shell_state_collect(const struct shell *shell)
 
 			case '\t': /* TAB */
 				if (flag_echo_is_set(shell)) {
+					/* If the Tab key is pressed, "history
+					 * mode" must be terminated because
+					 * tab and history handlers are sharing
+					 * the same array: temp_buff.
+					 */
+					EXIT_HISTORY_REQUEST(shell);
 					shell_tab_handle(shell);
 				}
 				break;
 
 			case SHELL_VT100_ASCII_BSPACE: /* BACKSPACE */
 				if (flag_echo_is_set(shell)) {
+					EXIT_HISTORY_REQUEST(shell);
 					shell_op_char_backspace(shell);
 				}
 				break;
 
 			case SHELL_VT100_ASCII_DEL: /* DELETE */
 				if (flag_echo_is_set(shell)) {
+					EXIT_HISTORY_REQUEST(shell);
 					if (flag_delete_mode_set(shell)) {
 						shell_op_char_backspace(shell);
 
@@ -809,6 +830,7 @@ static void shell_state_collect(const struct shell *shell)
 
 			default:
 				if (isprint((int) data)) {
+					EXIT_HISTORY_REQUEST(shell);
 					shell_op_char_insert(shell, data);
 				} else {
 					metakeys_handle(shell, data);
@@ -1108,7 +1130,7 @@ static void shell_transport_evt_handler(enum shell_transport_evt evt_type,
 	signal = (evt_type == SHELL_TRANSPORT_EVT_RX_RDY) ?
 			&shell->ctx->signals[SHELL_SIGNAL_RXRDY] :
 			&shell->ctx->signals[SHELL_SIGNAL_TXDONE];
-	k_poll_signal(signal, 0);
+	k_poll_signal_raise(signal, 0);
 }
 
 static void shell_current_command_erase(const struct shell *shell)
@@ -1142,6 +1164,13 @@ static void shell_log_process(const struct shell *shell)
 		shell_current_command_erase(shell);
 		processed = shell_log_backend_process(shell->log_backend);
 		shell_current_command_print(shell);
+
+		/* Arbitrary delay added to ensure that prompt is readable and
+		 * can be used to enter further commands.
+		 */
+		if (shell->ctx->cmd_buff_len) {
+			k_sleep(K_MSEC(15));
+		}
 
 		k_poll_signal_check(&shell->ctx->signals[SHELL_SIGNAL_RXRDY],
 						    &signaled, &result);
@@ -1192,9 +1221,12 @@ static int shell_instance_init(const struct shell *shell, const void *p_config,
 
 static int shell_instance_uninit(const struct shell *shell);
 
-void shell_thread(void *shell_handle, void *dummy1, void *dummy2)
+void shell_thread(void *shell_handle, void *arg_log_backend,
+		  void *arg_log_level)
 {
 	struct shell *shell = (struct shell *)shell_handle;
+	bool log_backend = (bool)arg_log_backend;
+	u32_t log_level = (u32_t)arg_log_level;
 	int err;
 	int i;
 
@@ -1209,6 +1241,11 @@ void shell_thread(void *shell_handle, void *dummy1, void *dummy2)
 	err = shell_start(shell);
 	if (err != 0) {
 		return;
+	}
+
+	if (log_backend && IS_ENABLED(CONFIG_LOG)) {
+		shell_log_backend_enable(shell->log_backend, (void *)shell,
+					 log_level);
 	}
 
 	while (true) {
@@ -1259,19 +1296,14 @@ int shell_init(const struct shell *shell, const void *transport_config,
 		return err;
 	}
 
-	if (log_backend) {
-		if (IS_ENABLED(CONFIG_LOG)) {
-			shell_log_backend_enable(shell->log_backend,
-						 (void *)shell, init_log_level);
-		}
-	}
-
 	k_tid_t tid = k_thread_create(shell->thread,
 			      shell->stack, CONFIG_SHELL_STACK_SIZE,
-			      shell_thread, (void *)shell, NULL, NULL,
+			      shell_thread, (void *)shell, (void *)log_backend,
+			      (void *)init_log_level,
 			      CONFIG_SHELL_THREAD_PRIO, 0, K_NO_WAIT);
 
 	k_thread_name_set(tid, "shell");
+
 	return 0;
 }
 
@@ -1306,7 +1338,7 @@ int shell_uninit(const struct shell *shell)
 {
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
 		/* signal kill message */
-		(void)k_poll_signal(&shell->ctx->signals[SHELL_SIGNAL_KILL], 0);
+		(void)k_poll_signal_raise(&shell->ctx->signals[SHELL_SIGNAL_KILL], 0);
 
 		return 0;
 	} else {
@@ -1729,7 +1761,7 @@ int shell_execute_cmd(const struct shell *shell, const char *cmd)
 {
 	u16_t cmd_len = shell_strlen(cmd);
 
-	if ((cmd == NULL) || (shell == NULL)) {
+	if (cmd == NULL) {
 		return -ENOEXEC;
 	}
 
@@ -1737,8 +1769,17 @@ int shell_execute_cmd(const struct shell *shell, const char *cmd)
 		return -ENOEXEC;
 	}
 
+	if (shell == NULL) {
+#if CONFIG_SHELL_BACKEND_DUMMY
+		shell = shell_backend_dummy_get_ptr();
+#else
+		return -EINVAL;
+#endif
+	}
+
 	strcpy(shell->ctx->cmd_buff, cmd);
 	shell->ctx->cmd_buff_len = cmd_len;
+	shell->ctx->cmd_buff_pos = cmd_len;
 
 	return shell_execute(shell);
 }

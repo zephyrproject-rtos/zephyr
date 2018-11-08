@@ -125,28 +125,32 @@ void posix_interrupt_raised(void)
 
 
 /**
- * Called from k_cpu_idle(), the idle loop will call this function to set the
- * CPU to "sleep".
- * Interrupts should be unlocked before calling
+ * Normally called from k_cpu_idle():
+ *   the idle loop will call this function to set the CPU to "sleep".
+ * Others may also call this function with care. The CPU will be set to sleep
+ * until some interrupt awakes it.
+ * Interrupts should be enabled before calling.
  */
 void posix_halt_cpu(void)
 {
-	/* We change the CPU to halted state, and block this thread until it is
-	 * set running again
+	/*
+	 * We set the CPU in the halted state (this blocks this pthread
+	 * until the CPU is awoken again by the HW models)
 	 */
 	posix_change_cpu_state_and_wait(true);
 
-	/* We are awaken when some interrupt comes => let the "irq handler"
-	 * check what interrupt was raised and call the appropriate irq handler
-	 * That may trigger a __swap() to another Zephyr thread
+	/* We are awoken, normally that means some interrupt has just come
+	 * => let the "irq handler" check if/what interrupt was raised
+	 * and call the appropriate irq handler.
+	 *
+	 * Note that, the interrupt handling may trigger a __swap() to another
+	 * Zephyr thread. When posix_irq_handler() returns, the Zephyr
+	 * kernel has swapped back to this thread again
 	 */
 	posix_irq_handler();
 
 	/*
-	 * When the interrupt handler is back we go back to the idle loop (which
-	 * will just call us back)
-	 * Note that when we are coming back from the irq_handler the Zephyr
-	 * kernel has swapped back to the idle thread
+	 * And we go back to whatever Zephyr thread calleed us.
 	 */
 }
 

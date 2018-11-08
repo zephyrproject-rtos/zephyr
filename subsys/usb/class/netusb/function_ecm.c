@@ -206,13 +206,13 @@ static int ecm_class_handler(struct usb_setup_packet *setup, s32_t *len,
 	}
 
 	if (setup->bmRequestType != USB_CDC_ECM_REQ_TYPE) {
-		USB_WRN("Unhandled req_type 0x%x", setup->bmRequestType);
+		LOG_WRN("Unhandled req_type 0x%x", setup->bmRequestType);
 		return 0;
 	}
 
 	switch (setup->bRequest) {
 	case USB_CDC_SET_ETH_PKT_FILTER:
-		USB_DBG("intf 0x%x filter 0x%x", setup->wIndex, setup->wValue);
+		LOG_DBG("intf 0x%x filter 0x%x", setup->wIndex, setup->wValue);
 		break;
 	default:
 		break;
@@ -223,7 +223,7 @@ static int ecm_class_handler(struct usb_setup_packet *setup, s32_t *len,
 
 static void ecm_int_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
-	USB_DBG("EP 0x%x status %d", ep, ep_status);
+	LOG_DBG("EP 0x%x status %d", ep, ep_status);
 }
 
 /* Retrieve expected pkt size from ethernet/ip header */
@@ -247,7 +247,7 @@ static size_t ecm_eth_size(void *ecm_pkt, size_t len)
 		ip_len = ntohs(((struct net_ipv6_hdr *)ip_data)->len);
 		break;
 	default:
-		USB_DBG("Unknown hdr type 0x%04x", hdr->type);
+		LOG_DBG("Unknown hdr type 0x%04x", hdr->type);
 		return 0;
 	}
 
@@ -279,7 +279,7 @@ static int ecm_send(struct net_pkt *pkt)
 	ret = usb_transfer_sync(ecm_ep_data[ECM_IN_EP_IDX].ep_addr,
 				tx_buf, b_idx, USB_TRANS_WRITE);
 	if (ret != b_idx) {
-		USB_ERR("Transfer failure");
+		LOG_ERR("Transfer failure");
 		return -EINVAL;
 	}
 
@@ -309,13 +309,13 @@ static void ecm_read_cb(u8_t ep, int size, void *priv)
 
 	pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
 	if (!pkt) {
-		USB_ERR("no memory for network packet\n");
+		LOG_ERR("no memory for network packet\n");
 		goto done;
 	}
 
 	frag = net_pkt_get_frag(pkt, K_FOREVER);
 	if (!frag) {
-		USB_ERR("no memory for network packet\n");
+		LOG_ERR("no memory for network packet\n");
 		net_pkt_unref(pkt);
 		goto done;
 	}
@@ -323,7 +323,7 @@ static void ecm_read_cb(u8_t ep, int size, void *priv)
 	net_pkt_frag_insert(pkt, frag);
 
 	if (!net_pkt_append_all(pkt, size, rx_buf, K_FOREVER)) {
-		USB_ERR("no memory for network packet\n");
+		LOG_ERR("no memory for network packet\n");
 		net_pkt_unref(pkt);
 		goto done;
 	}
@@ -355,7 +355,7 @@ static struct netusb_function ecm_function = {
 
 static inline void ecm_status_interface(const u8_t *iface)
 {
-	USB_DBG("iface %u", *iface);
+	LOG_DBG("iface %u", *iface);
 
 	/* First interface is CDC Comm interface */
 	if (*iface != ecm_get_first_iface_number() + 1) {
@@ -370,12 +370,12 @@ static void ecm_status_cb(enum usb_dc_status_code status, const u8_t *param)
 	/* Check the USB status and do needed action if required */
 	switch (status) {
 	case USB_DC_DISCONNECTED:
-		USB_DBG("USB device disconnected");
+		LOG_DBG("USB device disconnected");
 		netusb_disable();
 		break;
 
 	case USB_DC_INTERFACE:
-		USB_DBG("USB interface selected");
+		LOG_DBG("USB interface selected");
 		ecm_status_interface(param);
 		break;
 
@@ -385,12 +385,12 @@ static void ecm_status_cb(enum usb_dc_status_code status, const u8_t *param)
 	case USB_DC_CONFIGURED:
 	case USB_DC_SUSPEND:
 	case USB_DC_RESUME:
-		USB_DBG("USB unhandlded state: %d", status);
+		LOG_DBG("USB unhandlded state: %d", status);
 		break;
 
 	case USB_DC_UNKNOWN:
 	default:
-		USB_DBG("USB unknown state: %d", status);
+		LOG_DBG("USB unknown state: %d", status);
 		break;
 	}
 }

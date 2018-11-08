@@ -135,6 +135,15 @@ typedef struct
                                                     for LPTIM1 instance.
                                                     This parameter can be a value of @ref LPTIM_Input2_Source */
 
+#if defined(LPTIM_RCR_REP)
+  uint32_t                     RepetitionCounter;  /*!< Specifies the repetition counter value. Each time the RCR downcounter
+                                                    reaches zero, an update event is generated and counting restarts
+                                                    from the RCR value (N).
+                                                    Note: When using repetition counter the UpdateMode field must be set to
+                                                          LPTIM_UPDATE_ENDOFPERIOD otherwise unpredictable bahavior may occur.
+                                                    This parameter must be a number between Min_Data = 0x00 and Max_Data = 0xFF. */
+#endif
+
 }LPTIM_InitTypeDef;
 
 /**
@@ -174,6 +183,10 @@ typedef struct __LPTIM_HandleTypeDef
   void (* AutoReloadWriteCallback)(struct __LPTIM_HandleTypeDef *hlptim);    /*!< Auto-reload register write complete Callback */
   void (* DirectionUpCallback)(struct __LPTIM_HandleTypeDef *hlptim);        /*!< Up-counting direction change Callback        */
   void (* DirectionDownCallback)(struct __LPTIM_HandleTypeDef *hlptim);      /*!< Down-counting direction change Callback      */
+#if defined(LPTIM_RCR_REP)
+  void (* UpdateEventCallback)(struct __LPTIM_HandleTypeDef *hlptim);        /*!< Repetition counter underflow Callback        */
+  void (* RepCounterWriteCallback)(struct __LPTIM_HandleTypeDef *hlptim);    /*!< Repetition counter successful write Callback */
+#endif /* LPTIM_RCR_REP */
 #endif /* USE_HAL_LPTIM_REGISTER_CALLBACKS */
 }LPTIM_HandleTypeDef;
 
@@ -192,6 +205,10 @@ typedef enum
   HAL_LPTIM_AUTORELOAD_WRITE_CB_ID = 0x06U,    /*!< Auto-reload register write complete Callback ID  */
   HAL_LPTIM_DIRECTION_UP_CB_ID     = 0x07U,    /*!< Up-counting direction change Callback ID         */
   HAL_LPTIM_DIRECTION_DOWN_CB_ID   = 0x08U,    /*!< Down-counting direction change Callback ID       */
+#if defined(LPTIM_RCR_REP)
+  HAL_LPTIM_UPDATE_EVENT_CB_ID     = 0x09U,    /*!< Repetition counter underflow Callback ID         */
+  HAL_LPTIM_REPETITION_WRITE_CB_ID = 0x0AU,    /*!< Repetition counter successful write Callback ID  */
+#endif /* LPTIM_RCR_REP */
 } HAL_LPTIM_CallbackIDTypeDef;
 
 /**
@@ -346,7 +363,10 @@ typedef  void (*pLPTIM_CallbackTypeDef)(LPTIM_HandleTypeDef *hlptim);  /*!< poin
 /** @defgroup LPTIM_Flag_Definition LPTIM Flags Definition
   * @{
   */
-
+#if defined(LPTIM_RCR_REP)
+#define LPTIM_FLAG_REPOK                         LPTIM_ISR_REPOK
+#define LPTIM_FLAG_UPDATE                        LPTIM_ISR_UE
+#endif
 #define LPTIM_FLAG_DOWN                          LPTIM_ISR_DOWN
 #define LPTIM_FLAG_UP                            LPTIM_ISR_UP
 #define LPTIM_FLAG_ARROK                         LPTIM_ISR_ARROK
@@ -361,7 +381,10 @@ typedef  void (*pLPTIM_CallbackTypeDef)(LPTIM_HandleTypeDef *hlptim);  /*!< poin
 /** @defgroup LPTIM_Interrupts_Definition LPTIM Interrupts Definition
   * @{
   */
-
+#if defined(LPTIM_RCR_REP)
+#define LPTIM_IT_REPOK                           LPTIM_IER_REPOKIE
+#define LPTIM_IT_UPDATE                          LPTIM_IER_UEIE
+#endif
 #define LPTIM_IT_DOWN                            LPTIM_IER_DOWNIE
 #define LPTIM_IT_UP                              LPTIM_IER_UPIE
 #define LPTIM_IT_ARROK                           LPTIM_IER_ARROKIE
@@ -412,7 +435,7 @@ typedef  void (*pLPTIM_CallbackTypeDef)(LPTIM_HandleTypeDef *hlptim);  /*!< poin
 
 /**
   * @brief  Start the LPTIM peripheral in Continuous or in single mode.
-  * @param  __HANDLE__: DMA handle
+  * @param  __HANDLE__: LPTIM handle
   * @retval None
   */
 #define __HAL_LPTIM_START_CONTINUOUS(__HANDLE__)  ((__HANDLE__)->Instance->CR |=  LPTIM_CR_CNTSTRT)
@@ -435,11 +458,34 @@ typedef  void (*pLPTIM_CallbackTypeDef)(LPTIM_HandleTypeDef *hlptim);  /*!< poin
   */
 #define __HAL_LPTIM_COMPARE_SET(__HANDLE__ , __VALUE__)     ((__HANDLE__)->Instance->CMP =  (__VALUE__))
 
+#if defined(LPTIM_RCR_REP)
+/**
+  * @brief  Write the passed parameter in the Repetition register.
+  * @param  __HANDLE__: LPTIM handle
+  * @param  __VALUE__: Repetition value
+  * @retval None
+  */
+#define __HAL_LPTIM_REPETITIONCOUNTER_SET(__HANDLE__ , __VALUE__) \
+  do {                                                            \
+       (__HANDLE__)->Instance->RCR =  (__VALUE__);                \
+       (__HANDLE__)->Init.RepetitionCounter = (__VALUE__);        \
+  } while(0)
+
+/**
+  * @brief  Return the current Repetition value.
+  * @param  __HANDLE__: LPTIM handle
+  * @retval Repetition register value
+  */
+#define __HAL_LPTIM_REPETITIONCOUNTER_GET(__HANDLE__)  ((__HANDLE__)->Instance->RCR)
+#endif
+
 /**
   * @brief  Check whether the specified LPTIM flag is set or not.
   * @param  __HANDLE__: LPTIM handle
   * @param  __FLAG__: LPTIM flag to check
   *            This parameter can be a value of:
+  *            @arg LPTIM_FLAG_REPOK   : Repetition register update OK Flag (when available).
+  *            @arg LPTIM_FLAG_UPDATE  : Update event Flag (when available).
   *            @arg LPTIM_FLAG_DOWN    : Counter direction change up Flag.
   *            @arg LPTIM_FLAG_UP      : Counter direction change down to up Flag.
   *            @arg LPTIM_FLAG_ARROK   : Autoreload register update OK Flag.
@@ -456,6 +502,8 @@ typedef  void (*pLPTIM_CallbackTypeDef)(LPTIM_HandleTypeDef *hlptim);  /*!< poin
   * @param  __HANDLE__: LPTIM handle.
   * @param  __FLAG__: LPTIM flag to clear.
   *            This parameter can be a value of:
+  *            @arg LPTIM_FLAG_REPOK   : Repetition register update OK Flag (when available).
+  *            @arg LPTIM_FLAG_UPDATE  : Update event Flag (when available).
   *            @arg LPTIM_FLAG_DOWN    : Counter direction change up Flag.
   *            @arg LPTIM_FLAG_UP      : Counter direction change down to up Flag.
   *            @arg LPTIM_FLAG_ARROK   : Autoreload register update OK Flag.
@@ -472,6 +520,8 @@ typedef  void (*pLPTIM_CallbackTypeDef)(LPTIM_HandleTypeDef *hlptim);  /*!< poin
   * @param  __HANDLE__: LPTIM handle.
   * @param  __INTERRUPT__: LPTIM interrupt to set.
   *            This parameter can be a value of:
+  *            @arg LPTIM_IT_REPOK   : Repetition register update Interrupt (when available).
+  *            @arg LPTIM_IT_UPDATE  : Update event Interrupt (when available).
   *            @arg LPTIM_IT_DOWN    : Counter direction change up Interrupt.
   *            @arg LPTIM_IT_UP      : Counter direction change down to up Interrupt.
   *            @arg LPTIM_IT_ARROK   : Autoreload register update OK Interrupt.
@@ -598,6 +648,10 @@ void HAL_LPTIM_CompareWriteCallback(LPTIM_HandleTypeDef *hlptim);
 void HAL_LPTIM_AutoReloadWriteCallback(LPTIM_HandleTypeDef *hlptim);
 void HAL_LPTIM_DirectionUpCallback(LPTIM_HandleTypeDef *hlptim);
 void HAL_LPTIM_DirectionDownCallback(LPTIM_HandleTypeDef *hlptim);
+#if defined(LPTIM_RCR_REP)
+void HAL_LPTIM_UpdateEventCallback(LPTIM_HandleTypeDef *hlptim);
+void HAL_LPTIM_RepCounterWriteCallback(LPTIM_HandleTypeDef *hlptim);
+#endif /* LPTIM_RCR_REP */
 
 /* Callbacks Register/UnRegister functions  ***********************************/
 #if (USE_HAL_LPTIM_REGISTER_CALLBACKS == 1)
@@ -703,6 +757,10 @@ HAL_LPTIM_StateTypeDef HAL_LPTIM_GetState(LPTIM_HandleTypeDef *hlptim);
 #define IS_LPTIM_PERIOD(__PERIOD__)             ((__PERIOD__) <= 0x0000FFFF)
 
 #define IS_LPTIM_PULSE(__PULSE__)               ((__PULSE__) <= 0x0000FFFF)
+
+#if defined(LPTIM_RCR_REP)
+#define IS_LPTIM_REPETITION(__REPETITION__)     ((__REPETITION__) <= 0x000000FF)
+#endif
 
 #define IS_LPTIM_INPUT1_SOURCE(__INSTANCE__, __SOURCE__)  \
     ((((__INSTANCE__) == LPTIM1) &&                       \

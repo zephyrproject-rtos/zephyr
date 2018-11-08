@@ -11,11 +11,31 @@
 	model = "BBC Micro:bit";
 	compatible = "bbc,microbit", "nordic,nrf51822-qfaa", "nordic,nrf51822";
 
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		sw0 = &buttonA;
+		sw1 = &buttonB;
+	};
+
 	chosen {
 		zephyr,console = &uart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		buttonA: button_0 {
+			label = "BTN_A";
+			gpios = <&gpio0 17 GPIO_INT_ACTIVE_LOW>;
+		};
+
+		buttonB: button_1 {
+			label = "BTN_B";
+			gpios = <&gpio0 26 GPIO_INT_ACTIVE_LOW>;
+		};
+	};
+
 };
 
 &gpiote {
