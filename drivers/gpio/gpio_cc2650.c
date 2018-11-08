@@ -41,19 +41,19 @@ static u32_t gpio_cc2650_get_pending_int(struct device *dev);
 
 /* GPIO registers */
 static const u32_t doutset31_0 =
-	REG_ADDR(TI_CC2650_GPIO_40022000_BASE_ADDRESS,
+	REG_ADDR(DT_TI_CC2650_GPIO_40022000_BASE_ADDRESS,
 		 CC2650_GPIO_DOUTSET31_0);
 static const u32_t doutclr31_0 =
-	REG_ADDR(TI_CC2650_GPIO_40022000_BASE_ADDRESS,
+	REG_ADDR(DT_TI_CC2650_GPIO_40022000_BASE_ADDRESS,
 		 CC2650_GPIO_DOUTCLR31_0);
 static const u32_t din31_0 =
-	REG_ADDR(TI_CC2650_GPIO_40022000_BASE_ADDRESS,
+	REG_ADDR(DT_TI_CC2650_GPIO_40022000_BASE_ADDRESS,
 		 CC2650_GPIO_DIN31_0);
 static const u32_t doe31_0 =
-	REG_ADDR(TI_CC2650_GPIO_40022000_BASE_ADDRESS,
+	REG_ADDR(DT_TI_CC2650_GPIO_40022000_BASE_ADDRESS,
 		 CC2650_GPIO_DOE31_0);
 static const u32_t evflags31_0 =
-	REG_ADDR(TI_CC2650_GPIO_40022000_BASE_ADDRESS,
+	REG_ADDR(DT_TI_CC2650_GPIO_40022000_BASE_ADDRESS,
 		 CC2650_GPIO_EVFLAGS31_0);
 
 static struct gpio_cc2650_data gpio_cc2650_data = {
@@ -97,7 +97,7 @@ static void disconnect(const int pin, u32_t *gpiodoe31_0,
  */
 static int gpio_cc2650_config_pin(int pin, int flags)
 {
-	const u32_t iocfg = REG_ADDR(TI_CC2650_PINMUX_40081000_BASE_ADDRESS,
+	const u32_t iocfg = REG_ADDR(DT_TI_CC2650_PINMUX_40081000_BASE_ADDRESS,
 				     CC2650_IOC_IOCFG0 + 0x4 * pin);
 	u32_t iocfg_config = sys_read32(iocfg);
 	u32_t gpio_doe31_0_config = sys_read32(doe31_0);
@@ -209,11 +209,11 @@ static int gpio_cc2650_init(struct device *dev)
 	ARG_UNUSED(dev);
 
 	/* ISR setup */
-	IRQ_CONNECT(TI_CC2650_GPIO_40022000_IRQ_0,
-		    TI_CC2650_GPIO_40022000_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_TI_CC2650_GPIO_40022000_IRQ_0,
+		    DT_TI_CC2650_GPIO_40022000_IRQ_0_PRIORITY,
 		    gpio_cc2650_isr, DEVICE_GET(gpio_cc2650_0),
 		    0);
-	irq_enable(TI_CC2650_GPIO_40022000_IRQ_0);
+	irq_enable(DT_TI_CC2650_GPIO_40022000_IRQ_0);
 
 	return 0;
 }
