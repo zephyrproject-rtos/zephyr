@@ -9,6 +9,16 @@ if BOARD_NRF52840_PCA10059
 config BOARD
 	default "nrf52840_pca10059"
 
+if BOARD_HAS_NRF5_BOOTLOADER && !BOOTLOADER_MCUBOOT
+
+# Link the application after Nordic MBR.
+# When flashing MCUBoot, leave unchanged to link it in its correct partition.
+
+config TEXT_SECTION_OFFSET
+	default 0x1000
+
+endif # BOARD_HAS_NRF5_BOOTLOADER && !BOOTLOADER_MCUBOOT
+
 if ADC
 
 config ADC_0
