@@ -3159,6 +3159,13 @@ int bt_le_scan_update(bool fast_scan)
 		u16_t interval, window;
 		struct bt_conn *conn;
 
+		/* don't restart scan if we have pending connection */
+		conn = bt_conn_lookup_state_le(NULL, BT_CONN_CONNECT);
+		if (conn) {
+			bt_conn_unref(conn);
+			return 0;
+		}
+
 		conn = bt_conn_lookup_state_le(NULL, BT_CONN_CONNECT_SCAN);
 		if (!conn) {
 			return 0;
