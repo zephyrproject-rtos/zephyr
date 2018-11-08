@@ -24,7 +24,7 @@ zephyr_compile_definitions(
 
 zephyr_sources(                                    emlib/src/em_system.c)
 zephyr_sources_ifdef(CONFIG_HAS_CMU                emlib/src/em_cmu.c)
-zephyr_sources_ifdef(CONFIG_HAS_EMU                emlib/src/em_emu.c)
+zephyr_sources_ifdef(CONFIG_SOC_GECKO_EMU          emlib/src/em_emu.c)
 zephyr_sources_ifdef(CONFIG_GPIO_GECKO             emlib/src/em_gpio.c)
 zephyr_sources_ifdef(CONFIG_UART_GECKO             emlib/src/em_usart.c)
 zephyr_sources_ifdef(CONFIG_LEUART_GECKO           emlib/src/em_leuart.c)
