@@ -88,9 +88,6 @@ SECTIONS {
 		KEEP(*(".exc_vector_table.*"))
 		KEEP(*(IRQ_VECTOR_TABLE))
 
-#ifdef CONFIG_GEN_SW_ISR_TABLE
-		KEEP(*(SW_ISR_TABLE))
-#endif
 		*(.text)
 		*(".text.*")
 		*(.gnu.linkonce.t.*)
