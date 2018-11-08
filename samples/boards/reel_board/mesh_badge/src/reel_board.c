@@ -408,7 +408,7 @@ static int configure_button(void)
 {
 	static struct gpio_callback button_cb;
 
-	gpio = device_get_binding(GPIO_KEYS_BUTTON_0_GPIO_CONTROLLER);
+	gpio = device_get_binding(SW0_GPIO_CONTROLLER);
 	if (!gpio) {
 		return -ENODEV;
 	}
