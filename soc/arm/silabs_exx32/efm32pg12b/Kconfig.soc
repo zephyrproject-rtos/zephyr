@@ -12,7 +12,7 @@ depends on SOC_SERIES_EFM32PG12B
 config SOC_EFM32PG12B
 	bool "SOC_EFM32PG12B"
 	select HAS_CMU
-	select HAS_EMU
+	select SOC_GECKO_EMU
 
 endchoice
 
