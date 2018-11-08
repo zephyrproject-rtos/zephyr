@@ -229,14 +229,11 @@ Simple command handler implementation:
 		ARG_UNUSED(argc);
 		ARG_UNUSED(argv);
 
-		shell_fprintf(shell, SHELL_NORMAL,
-			      "Print simple text.\n");
+		shell_print(shell, "Print simple text.");
 
-		shell_fprintf(shell, SHELL_WARNING,
-			      "Print warning text.\n");
+		shell_warn(shell, "Print warning text.");
 
-		shell_fprintf(shell, SHELL_ERROR,
-			      "Print error text.\n");
+		shell_error(shell, "Print error text.");
 
 		return 0;
 	}
