@@ -2970,7 +2970,7 @@ def main():
 
     if options.coverage:
         info("Generating coverage files...")
-        generate_coverage(options.outdir, ["tests/*", "samples/*"])
+        generate_coverage(options.outdir, ["*generated*", "tests/*", "samples/*"])
 
     duration = time.time() - start_time
     info("%s%d of %d%s tests passed with %s%d%s warnings in %d seconds" %
