@@ -295,7 +295,7 @@ static const struct mcux_lpsci_config mcux_lpsci_0_config = {
 	.clock_name = CONFIG_UART_MCUX_LPSCI_0_CLOCK_NAME,
 	.clock_subsys =
 		(clock_control_subsys_t)CONFIG_UART_MCUX_LPSCI_0_CLOCK_SUBSYS,
-	.baud_rate = NXP_KINETIS_LPSCI_4006A000_CURRENT_SPEED,
+	.baud_rate = DT_NXP_KINETIS_LPSCI_4006A000_CURRENT_SPEED,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = mcux_lpsci_config_func_0,
 #endif
@@ -312,11 +312,11 @@ DEVICE_AND_API_INIT(uart_0, CONFIG_UART_MCUX_LPSCI_0_NAME,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void mcux_lpsci_config_func_0(struct device *dev)
 {
-	IRQ_CONNECT(NXP_KINETIS_LPSCI_4006A000_IRQ_0,
-		    NXP_KINETIS_LPSCI_4006A000_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_NXP_KINETIS_LPSCI_4006A000_IRQ_0,
+		    DT_NXP_KINETIS_LPSCI_4006A000_IRQ_0_PRIORITY,
 		    mcux_lpsci_isr, DEVICE_GET(uart_0), 0);
 
-	irq_enable(NXP_KINETIS_LPSCI_4006A000_IRQ_0);
+	irq_enable(DT_NXP_KINETIS_LPSCI_4006A000_IRQ_0);
 }
 #endif
 
