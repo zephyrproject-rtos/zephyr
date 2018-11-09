@@ -327,8 +327,8 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names):
 
             #check parent has matching child bus value
             try:
-                parent_yaml = \
-                    yaml[reduced[parent_address]['props']['compatible']]
+                parent_compat = get_compat(parent_address)
+                parent_yaml = yaml[parent_compat]
                 parent_bus = parent_yaml['child']['bus']
             except (KeyError, TypeError) as e:
                 raise Exception(str(node_address) + " defines parent " +
