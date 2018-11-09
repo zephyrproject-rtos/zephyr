@@ -212,9 +212,9 @@
 			status = "disabled";
 		};
 
-		uart4: uart@30A60000 {
+		uart4: uart@30a60000 {
 			compatible = "nxp,imx-uart";
-			reg = <0x30A60000 0x10000>;
+			reg = <0x30a60000 0x10000>;
 			interrupts = <29 3>;
 			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW)|\
@@ -224,9 +224,9 @@
 			status = "disabled";
 		};
 
-		uart5: uart@30A70000 {
+		uart5: uart@30a70000 {
 			compatible = "nxp,imx-uart";
-			reg = <0x30A70000 0x10000>;
+			reg = <0x30a70000 0x10000>;
 			interrupts = <30 3>;
 			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW)|\
@@ -236,9 +236,9 @@
 			status = "disabled";
 		};
 
-		uart6: uart@30A80000 {
+		uart6: uart@30a80000 {
 			compatible = "nxp,imx-uart";
-			reg = <0x30A80000 0x10000>;
+			reg = <0x30a80000 0x10000>;
 			interrupts = <16 3>;
 			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW)|\
@@ -248,9 +248,9 @@
 			status = "disabled";
 		};
 
-		uart7: uart@30A90000 {
+		uart7: uart@30a90000 {
 			compatible = "nxp,imx-uart";
-			reg = <0x30A90000 0x10000>;
+			reg = <0x30a90000 0x10000>;
 			interrupts = <126 3>;
 			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW)|\
@@ -260,12 +260,12 @@
 			status = "disabled";
 		};
 
-		i2c1: i2c@30A20000 {
+		i2c1: i2c@30a20000 {
 			compatible = "fsl,imx7d-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x30A20000 0x10000>;
+			reg = <0x30a20000 0x10000>;
 			interrupts = <35 0>;
 			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW)|\
@@ -275,12 +275,12 @@
 			status = "disabled";
 		};
 
-		i2c2: i2c@30A30000 {
+		i2c2: i2c@30a30000 {
 			compatible = "fsl,imx7d-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x30A30000 0x10000>;
+			reg = <0x30a30000 0x10000>;
 			interrupts = <36 0>;
 			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW)|\
@@ -290,12 +290,12 @@
 			status = "disabled";
 		};
 
-		i2c3: i2c@30A40000 {
+		i2c3: i2c@30a40000 {
 			compatible = "fsl,imx7d-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x30A40000 0x10000>;
+			reg = <0x30a40000 0x10000>;
 			interrupts = <37 0>;
 			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW)|\
@@ -305,12 +305,12 @@
 			status = "disabled";
 		};
 
-		i2c4: i2c@30A50000 {
+		i2c4: i2c@30a50000 {
 			compatible = "fsl,imx7d-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x30A50000 0x10000>;
+			reg = <0x30a50000 0x10000>;
 			interrupts = <38 0>;
 			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW)|\

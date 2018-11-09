@@ -78,9 +78,9 @@
 			#clock-cells = <3>;
 		};
 
-		uart0: uart@4006A000 {
+		uart0: uart@4006a000 {
 			compatible = "nxp,kinetis-lpsci";
-			reg = <0x4006A000 0xc>;
+			reg = <0x4006a000 0xc>;
 			interrupts = <12 0>;
 			clocks = <&sim KINETIS_SIM_CORESYS_CLK 0x1034 10>;
 			label = "UART_0";
