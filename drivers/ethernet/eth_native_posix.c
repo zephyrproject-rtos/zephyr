@@ -294,6 +294,7 @@ static int read_data(struct eth_context *ctx, int fd)
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	u32_t pkt_len;
+	u16_t type;
 	int ret;
 
 	ret = eth_read_data(fd, ctx->recv, sizeof(ctx->recv));
@@ -321,6 +322,8 @@ static int read_data(struct eth_context *ctx, int fd)
 		count += frag->len;
 	} while (ret > 0);
 
+	type = NET_ETH_HDR(pkt)->type;
+
 #if defined(CONFIG_NET_VLAN)
 	{
 		struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
@@ -331,6 +334,8 @@ static int read_data(struct eth_context *ctx, int fd)
 
 			net_pkt_set_vlan_tci(pkt, ntohs(hdr_vlan->vlan.tci));
 			vlan_tag = net_pkt_vlan_tag(pkt);
+
+			type = hdr_vlan->type;
 		}
 
 #if CONFIG_NET_TC_RX_COUNT > 1
@@ -346,6 +351,8 @@ static int read_data(struct eth_context *ctx, int fd)
 
 	iface = get_iface(ctx, vlan_tag);
 	pkt_len = net_pkt_get_len(pkt);
+
+	net_pkt_set_l2_proto(pkt, type);
 
 	eth_stats_update_bytes_rx(iface, pkt_len);
 	eth_stats_update_pkts_rx(iface);
