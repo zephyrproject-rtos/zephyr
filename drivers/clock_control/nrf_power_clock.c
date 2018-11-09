@@ -17,6 +17,12 @@
 #include <drivers/clock_control/nrf_clock_control.h>
 #endif
 
+#define HF_STAT_MASK (NRF_CLOCK_HFCLK_HIGH_ACCURACY | CLOCK_HFCLKSTAT_STATE_Msk)
+
+#if defined(CONFIG_SOC_SERIES_NRF52X)
+static u32_t hf_stat_hack;
+#endif /* CONFIG_SOC_SERIES_NRF52X */
+
 static u8_t m16src_ref;
 static u8_t m16src_grd;
 static u8_t k32src_initialized;
@@ -25,7 +31,6 @@ static int _m16src_start(struct device *dev, clock_control_subsys_t sub_system)
 {
 	bool blocking;
 	u32_t imask;
-	u32_t stat;
 
 	/* If the clock is already started then just increment refcount.
 	 * If the start and stop don't happen in pairs, a rollover will
@@ -71,6 +76,10 @@ static int _m16src_start(struct device *dev, clock_control_subsys_t sub_system)
 			__WFE();
 		}
 
+#if defined(CONFIG_SOC_SERIES_NRF52X)
+		hf_stat_hack = HF_STAT_MASK;
+#endif /* CONFIG_SOC_SERIES_NRF52X */
+
 		NRF_CLOCK->EVENTS_HFCLKSTARTED = 0;
 
 		if (!(intenset & CLOCK_INTENSET_HFCLKSTARTED_Msk)) {
@@ -95,8 +104,11 @@ hf_already_started:
 	 */
 	__ASSERT_NO_MSG(m16src_ref);
 
-	stat = NRF_CLOCK_HFCLK_HIGH_ACCURACY | CLOCK_HFCLKSTAT_STATE_Msk;
-	if ((NRF_CLOCK->HFCLKSTAT & stat) == stat) {
+#if defined(CONFIG_SOC_SERIES_NRF52X)
+	if ((hf_stat_hack & HF_STAT_MASK) == HF_STAT_MASK) {
+#else /* !CONFIG_SOC_SERIES_NRF52X */
+	if ((NRF_CLOCK->HFCLKSTAT & HF_STAT_MASK) == HF_STAT_MASK) {
+#endif /* !CONFIG_SOC_SERIES_NRF52X */
 		return 0;
 	} else {
 		return -EINPROGRESS;
@@ -135,6 +147,10 @@ static int _m16src_stop(struct device *dev, clock_control_subsys_t sub_system)
 	irq_unlock(imask);
 
 	/* re-entrancy and mult-context safe, and reference count is zero, */
+
+#if defined(CONFIG_SOC_SERIES_NRF52X)
+	hf_stat_hack = 0;
+#endif /* CONFIG_SOC_SERIES_NRF52X */
 
 	nrf_clock_task_trigger(NRF_CLOCK_TASK_HFCLKSTOP);
 
@@ -278,20 +294,25 @@ static inline void power_event_cb(nrf_power_event_t event)
 
 static void _power_clock_isr(void *arg)
 {
-	u8_t pof, hf_intenset, hf, lf_intenset, lf;
-#if NRF_CLOCK_HAS_CALIBRATION
-	u8_t ctto, done;
-	struct device *dev = arg;
-#endif
+	u8_t pof, hf_intenset, hf, hf_stat, lf_intenset, lf;
 #if defined(CONFIG_USB) && defined(CONFIG_SOC_NRF52840)
 	bool usb_detected, usb_pwr_rdy, usb_removed;
+#endif
+#if NRF_CLOCK_HAS_CALIBRATION
+	struct device *dev = arg;
+	u8_t ctto, done;
 #endif
 
 	pof = (NRF_POWER->EVENTS_POFWARN != 0);
 
 	hf_intenset = ((NRF_CLOCK->INTENSET &
-		       CLOCK_INTENSET_HFCLKSTARTED_Msk) != 0);
+			CLOCK_INTENSET_HFCLKSTARTED_Msk) != 0);
 	hf = (NRF_CLOCK->EVENTS_HFCLKSTARTED != 0);
+	hf_stat = ((NRF_CLOCK->HFCLKSTAT & HF_STAT_MASK) == HF_STAT_MASK);
+
+#if defined(CONFIG_SOC_SERIES_NRF52X)
+	hf_stat = hf_stat || !!hf_stat_hack;
+#endif /* CONFIG_SOC_SERIES_NRF52X */
 
 	lf_intenset = ((NRF_CLOCK->INTENSET &
 		       CLOCK_INTENSET_LFCLKSTARTED_Msk) != 0);
@@ -322,13 +343,16 @@ static void _power_clock_isr(void *arg)
 
 	if (hf) {
 		NRF_CLOCK->EVENTS_HFCLKSTARTED = 0;
+
+#if defined(CONFIG_SOC_SERIES_NRF52X)
+		if (!hf_stat_hack) {
+			hf_stat_hack = HF_STAT_MASK;
+			hf_stat = !!hf_stat_hack;
+		}
+#endif /* CONFIG_SOC_SERIES_NRF52X */
 	}
 
-	if (hf_intenset && (hf || ((NRF_CLOCK->HFCLKSTAT &
-				    (CLOCK_HFCLKSTAT_STATE_Msk |
-				     CLOCK_HFCLKSTAT_SRC_Msk)) ==
-				   (CLOCK_HFCLKSTAT_STATE_Msk |
-				    CLOCK_HFCLKSTAT_SRC_Msk)))){
+	if (hf_intenset && hf_stat) {
 		/* INTENSET is used as state flag to start calibration,
 		 * hence clear it here.
 		 */
