@@ -51,8 +51,6 @@ if(CONFIG_QMSI_BUILTIN)
   endif()
 endif()
 
-zephyr_library_sources_ifdef(CONFIG_ADC_QMSI             drivers/adc/qm_adc.c)
-zephyr_library_sources_ifdef(CONFIG_ADC_QMSI_SS          drivers/adc/qm_ss_adc.c)
 zephyr_library_sources_ifdef(CONFIG_AIO_COMPARATOR_QMSI  drivers/comparator/qm_comparator.c)
 zephyr_library_sources_ifdef(CONFIG_AON_COUNTER_QMSI     drivers/aon_counters/qm_aon_counters.c)
 zephyr_library_sources_ifdef(CONFIG_DMA_QMSI             drivers/dma/qm_dma.c)
