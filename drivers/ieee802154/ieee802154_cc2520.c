@@ -7,7 +7,7 @@
  */
 
 #define LOG_MODULE_NAME ieee802154_cc2520
-#define LOG_LEVEL CONFIG_IEEE802154_LOG_LEVEL
+#define LOG_LEVEL CONFIG_IEEE802154_DRIVER_LOG_LEVEL
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
@@ -63,7 +63,7 @@ static struct spi_cs_control cs_ctrl;
 /*********
  * DEBUG *
  ********/
-#if CONFIG_IEEE802154_LOG_LEVEL == LOG_LEVEL_DBG
+#if LOG_LEVEL == LOG_LEVEL_DBG
 static inline void _cc2520_print_gpio_config(struct device *dev)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
@@ -194,7 +194,7 @@ static inline void _cc2520_print_errors(struct cc2520_context *cc2520)
 #define _cc2520_print_gpio_config(...)
 #define _cc2520_print_exceptions(...)
 #define _cc2520_print_errors(...)
-#endif /* CONFIG_IEEE802154_LOG_LEVEL == 4 */
+#endif /* LOG_LEVEL == LOG_LEVEL_DBG */
 
 
 /*********************
