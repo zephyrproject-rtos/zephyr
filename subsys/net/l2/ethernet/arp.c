@@ -579,6 +579,14 @@ enum net_verdict net_arp_input(struct net_pkt *pkt)
 
 	arp_hdr = NET_ARP_HDR(pkt);
 
+	if (ntohs(arp_hdr->hwtype) != NET_ARP_HTYPE_ETH) {
+		return NET_DROP;
+	}
+
+	if (ntohs(arp_hdr->protocol) != NET_ETH_PTYPE_IP) {
+		return NET_DROP;
+	}
+
 	switch (ntohs(arp_hdr->opcode)) {
 	case NET_ARP_REQUEST:
 		if (IS_ENABLED(CONFIG_NET_ARP_GRATUITOUS)) {
