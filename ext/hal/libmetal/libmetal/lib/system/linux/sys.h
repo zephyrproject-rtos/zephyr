@@ -46,6 +46,8 @@ extern "C" {
 #define METAL_INVALID_VADDR     NULL
 #define MAX_PAGE_SIZES		32
 
+struct metal_device;
+
 /** Structure of shared page or hugepage sized data. */
 struct metal_page_size {
 	/** Page size. */
@@ -110,6 +112,19 @@ extern void metal_randomize_string(char *template);
 extern void metal_mktemp_template(char template[PATH_MAX],
 				  const char *name);
 extern int metal_virt2phys(void *addr, unsigned long *phys);
+
+/**
+ * @brief	Read a device tree property of a device
+ *
+ * @param[in]	device metal_device of the intended DT node
+ * @param[in]	property_name name of the property to be read
+ * @param[out]	output output buffer to store read data
+ * @param[in]	len number of bytes to be read
+ * @return	0 on success, or -errno on error.
+ */
+extern int metal_linux_get_device_property(struct metal_device *device,
+					   const char *property_name,
+					   void *output, int len);
 
 #define metal_for_each_page_size_up(ps)					\
 	for ((ps) = &_metal.page_sizes[0];				\
