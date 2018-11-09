@@ -47,6 +47,23 @@ struct net_eth_addr {
 #define NET_ETH_PTYPE_VLAN		0x8100
 #define NET_ETH_PTYPE_PTP		0x88f7
 #define NET_ETH_PTYPE_LLDP		0x88cc
+#define NET_ETH_PTYPE_ALL               0x0003 /* from linux/if_ether.h */
+
+#if !defined(ETH_P_ALL)
+#define ETH_P_ALL	NET_ETH_PTYPE_ALL
+#endif
+#if !defined(ETH_P_IP)
+#define ETH_P_IP	NET_ETH_PTYPE_IP
+#endif
+#if !defined(ETH_P_ARP)
+#define ETH_P_ARP	NET_ETH_PTYPE_ARP
+#endif
+#if !defined(ETH_P_IPV6)
+#define ETH_P_IPV6	NET_ETH_PTYPE_IPV6
+#endif
+#if !defined(ETH_P_8021Q)
+#define ETH_P_8021Q	NET_ETH_PTYPE_VLAN
+#endif
 
 #define NET_ETH_MINIMAL_FRAME_SIZE	60
 
