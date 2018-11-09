@@ -7,656 +7,705 @@
 
 #include <string.h>
 #include <metal/alloc.h>
+#include <metal/log.h>
 #include <openamp/elf_loader.h>
+#include <openamp/remoteproc.h>
 
-/* Local functions. */
-
-static int elf_loader_get_needed_sections(struct elf_decode_info *elf_info);
-static int elf_loader_relocs_specific(struct elf_decode_info *elf_info,
-				      Elf32_Shdr * section);
-static void *elf_loader_get_entry_point_address(struct elf_decode_info
-						*elf_info);
-static int elf_loader_relocate_link(struct elf_decode_info *elf_info);
-static int elf_loader_seek_and_read(void *firmware, void *destination,
-				    Elf32_Off offset, Elf32_Word size);
-static int elf_loader_read_headers(void *firmware,
-				   struct elf_decode_info *elf_info);
-static int elf_loader_load_sections(void *firmware,
-				    struct elf_decode_info *elf_info);
-static int elf_loader_get_decode_info(void *firmware,
-				      struct elf_decode_info *elf_info);
-static int elf_loader_reloc_entry(struct elf_decode_info *elf_info,
-				  Elf32_Rel * rel_entry);
-static Elf32_Addr elf_loader_get_dynamic_symbol_addr(struct elf_decode_info
-						     *elf_info, int index);
-
-/**
- * elf_loader_init
- *
- * Initializes ELF loader.
- *
- * @param loader    - pointer to remoteproc loader
- *
- * @return  - 0 if success, error otherwise
- */
-int elf_loader_init(struct remoteproc_loader *loader)
+static int elf_is_64(const void *elf_info)
 {
+	const unsigned char *tmp = elf_info;
 
-	/* Initialize loader function table */
-	loader->load_firmware = elf_loader_load_remote_firmware;
-	loader->retrieve_entry = elf_loader_retrieve_entry_point;
-	loader->retrieve_rsc = elf_loader_retrieve_resource_section;
-	loader->attach_firmware = elf_loader_attach_firmware;
-	loader->detach_firmware = elf_loader_detach_firmware;
-	loader->retrieve_load_addr = elf_get_load_address;
-
-	return RPROC_SUCCESS;
+	if (tmp[EI_CLASS] == ELFCLASS64)
+		return 1;
+	else
+		return 0;
 }
 
-/**
- * elf_loader_attach_firmware
- *
- * Attaches an ELF firmware to the loader
- *
- * @param loader    - pointer to remoteproc loader
- * @param firmware -  pointer to the firmware start location
- *
- * @return  - 0 if success, error otherwise
- */
-int elf_loader_attach_firmware(struct remoteproc_loader *loader, void *firmware)
+static size_t elf_ehdr_size(const void *elf_info)
 {
+	if (elf_info == NULL)
+		return sizeof(Elf64_Ehdr);
+	else if (elf_is_64(elf_info) != 0)
+		return sizeof(Elf64_Ehdr);
+	else
+		return sizeof(Elf32_Ehdr);
+}
 
-	struct elf_decode_info *elf_info;
-	int status;
+static size_t elf_phoff(const void *elf_info)
+{
+	if (elf_is_64(elf_info) == 0) {
+		const Elf32_Ehdr *ehdr = elf_info;
 
-	/* Allocate memory for decode info structure. */
-	elf_info = metal_allocate_memory(sizeof(struct elf_decode_info));
+		return ehdr->e_phoff;
+	} else {
+		const Elf64_Ehdr *ehdr = elf_info;
 
-	if (!elf_info) {
-		return RPROC_ERR_NO_MEM;
+		return ehdr->e_phoff;
 	}
+}
 
-	/* Clear the ELF decode struct. */
-	memset(elf_info, 0, sizeof(struct elf_decode_info));
+static size_t elf_phentsize(const void *elf_info)
+{
+	if (elf_is_64(elf_info) == 0) {
+		const Elf32_Ehdr *ehdr = elf_info;
 
-	/* Get the essential information to decode the ELF. */
-	status = elf_loader_get_decode_info(firmware, elf_info);
+		return ehdr->e_phentsize;
+	} else {
+		const Elf64_Ehdr *ehdr = elf_info;
 
-	if (status) {
-		/* Free memory. */
-		metal_free_memory(elf_info);
-		return status;
+		return ehdr->e_phentsize;
 	}
-
-	elf_info->firmware = firmware;
-	loader->fw_decode_info = elf_info;
-
-	return status;
 }
 
-/**
- * elf_loader_detach_firmware
- *
- * Detaches ELF firmware from the loader
- *
- * @param loader - pointer to remoteproc loader
- *
- * @return  - 0 if success, error otherwise
- */
-int elf_loader_detach_firmware(struct remoteproc_loader *loader)
+static int elf_phnum(const void *elf_info)
 {
+	if (elf_is_64(elf_info) == 0) {
+		const Elf32_Ehdr *ehdr = elf_info;
 
-	struct elf_decode_info *elf_info =
-	    (struct elf_decode_info *)loader->fw_decode_info;
-	if (elf_info) {
-		/* Free memory. */
-		metal_free_memory(elf_info->shstrtab);
-		metal_free_memory(elf_info->section_headers_start);
-		metal_free_memory(elf_info);
+		return ehdr->e_phnum;
+	} else {
+		const Elf64_Ehdr *ehdr = elf_info;
+
+		return ehdr->e_phnum;
 	}
-
-	return RPROC_SUCCESS;
 }
 
-/**
- * elf_loader_retrieve_entry_point
- *
- * Retrieves the ELF entrypoint.
- *
- * @param loader - pointer to remoteproc loader
- *
- * @return  - entrypoint
- */
-void *elf_loader_retrieve_entry_point(struct remoteproc_loader *loader)
+static size_t elf_shoff(const void *elf_info)
 {
+	if (elf_is_64(elf_info) == 0) {
+		const Elf32_Ehdr *ehdr = elf_info;
 
-	return elf_loader_get_entry_point_address((struct elf_decode_info *)
-						  loader->fw_decode_info);
-}
+		return ehdr->e_shoff;
+	} else {
+		const Elf64_Ehdr *ehdr = elf_info;
 
-/**
- * elf_loader_retrieve_resource_section
- *
- * Retrieves the resource section.
- *
- * @param loader - pointer to remoteproc loader
- * @param size   - pointer to contain the size of the section
- *
- * @return  - pointer to resource section
- */
-void *elf_loader_retrieve_resource_section(struct remoteproc_loader *loader,
-					   unsigned int *size)
-{
-
-	Elf32_Shdr *rsc_header;
-	void *resource_section = NULL;
-	struct elf_decode_info *elf_info =
-	    (struct elf_decode_info *)loader->fw_decode_info;
-
-	if (elf_info->rsc) {
-		/* Retrieve resource section header. */
-		rsc_header = elf_info->rsc;
-		/* Retrieve resource section size. */
-		*size = rsc_header->sh_size;
-
-		/* Locate the start of resource section. */
-		resource_section = (void *)((uintptr_t)elf_info->firmware
-					    + rsc_header->sh_offset);
+		return ehdr->e_shoff;
 	}
-
-	/* Return the address of resource section. */
-	return resource_section;
 }
 
-/**
- * elf_loader_load_remote_firmware
- *
- * Loads the ELF firmware.
- *
- * @param loader - pointer to remoteproc loader
- *
- * @return  - 0 if success, error otherwise
- */
-int elf_loader_load_remote_firmware(struct remoteproc_loader *loader)
+static size_t elf_shentsize(const void *elf_info)
 {
+	if (elf_is_64(elf_info) == 0) {
+		const Elf32_Ehdr *ehdr = elf_info;
 
-	struct elf_decode_info *elf_info =
-	    (struct elf_decode_info *)loader->fw_decode_info;
-	int status;
+		return ehdr->e_shentsize;
+	} else {
+		const Elf64_Ehdr *ehdr = elf_info;
 
-	/* Load ELF sections. */
-	status = elf_loader_load_sections(elf_info->firmware, elf_info);
-
-	if (!status) {
-
-		/* Perform dynamic relocations if needed. */
-		status = elf_loader_relocate_link(elf_info);
+		return ehdr->e_shentsize;
 	}
-
-	return status;
 }
 
-/**
- * elf_get_load_address
- *
- * Provides firmware load address.
- *
- * @param loader - pointer to remoteproc loader
- *
- * @return  - load address pointer
- */
-void *elf_get_load_address(struct remoteproc_loader *loader)
+static int elf_shnum(const void *elf_info)
 {
+	if (elf_is_64(elf_info) == 0) {
+		const Elf32_Ehdr *ehdr = elf_info;
 
-	struct elf_decode_info *elf_info =
-	    (struct elf_decode_info *)loader->fw_decode_info;
-	int status = 0;
-	Elf32_Shdr *current = (Elf32_Shdr *) (elf_info->section_headers_start);
+		return ehdr->e_shnum;
+	} else {
+		const Elf64_Ehdr *ehdr = elf_info;
 
-	/* Traverse all sections except the reserved null section. */
-	int section_count = elf_info->elf_header.e_shnum - 1;
-	while ((section_count > 0) && (status == 0)) {
-		/* Compute the pointer to section header. */
-		current = (Elf32_Shdr *) (((unsigned char *)current)
-					  + elf_info->elf_header.e_shentsize);
-		/* Get the name of current section. */
-		char *current_name = elf_info->shstrtab + current->sh_name;
-		if (!strcmp(current_name, ".text")) {
-			return ((void *)(current->sh_addr));
-		}
-		/* Move to the next section. */
-		section_count--;
+		return ehdr->e_shnum;
 	}
-
-	return (RPROC_ERR_PTR);
 }
 
-/**
- * elf_loader_get_needed_sections
- *
- * Retrieves the sections we need during the load and link from the
- * section headers list.
- *
- * @param elf_info  - ELF object decode info container.
- *
- * @return- Pointer to the ELF section header.
- */
-
-static int elf_loader_get_needed_sections(struct elf_decode_info *elf_info)
+static int elf_shstrndx(const void *elf_info)
 {
-	Elf32_Shdr *current = (Elf32_Shdr *) (elf_info->section_headers_start);
+	if (elf_is_64(elf_info) == 0) {
+		const Elf32_Ehdr *ehdr = elf_info;
 
-	/* We are interested in the following sections:
-	   .dynsym
-	   .dynstr
-	   .rel.plt
-	   .rel.dyn
-	 */
-	int sections_to_find = 5;
+		return ehdr->e_shstrndx;
+	} else {
+		const Elf64_Ehdr *ehdr = elf_info;
 
-	/* Search for sections but skip the reserved null section. */
-
-	int section_count = elf_info->elf_header.e_shnum - 1;
-	while ((section_count > 0) && (sections_to_find > 0)) {
-		/* Compute the section header pointer. */
-		current = (Elf32_Shdr *) (((unsigned char *)current)
-					  + elf_info->elf_header.e_shentsize);
-
-		/* Get the name of current section. */
-		char *current_name = elf_info->shstrtab + current->sh_name;
-
-		/* Proceed if the section is allocatable and is not executable. */
-		if ((current->sh_flags & SHF_ALLOC)
-		    && !(current->sh_flags & SHF_EXECINSTR)) {
-			/* Check for '.dynsym' or '.dynstr' or '.rel.plt' or '.rel.dyn'. */
-			if (*current_name == '.') {
-				current_name++;
-
-				/* Check for '.dynsym' or 'dynstr'. */
-				if (*current_name == 'd') {
-					current_name++;
-
-					/* Check for '.dynsym'. */
-					if (strncmp(current_name, "ynsym", 5) == 0) {
-						elf_info->dynsym = current;
-						sections_to_find--;
-					}
-
-					/* Check for '.dynstr'. */
-					else if (strncmp(current_name, "ynstr", 5) == 0) {
-						elf_info->dynstr = current;
-						sections_to_find--;
-					}
-				}
-
-				/* Check for '.rel.plt' or '.rel.dyn'. */
-				else if (*current_name == 'r') {
-					current_name++;
-
-					/* Check for '.rel.plt'. */
-					if (strncmp(current_name, "el.plt", 6) == 0) {
-						elf_info->rel_plt = current;
-						sections_to_find--;
-					}
-
-					/* Check for '.rel.dyn'. */
-					else if (strncmp(current_name, "el.dyn", 6) == 0) {
-						elf_info->rel_dyn = current;
-						sections_to_find--;
-					}
-
-					/* Check for '.resource_table'. */
-					else if (strncmp(current_name, "esource_table", 13)
-						 == 0) {
-						elf_info->rsc = current;
-						sections_to_find--;
-					}
-				}
-			}
-		}
-
-		/* Move to the next section. */
-		section_count--;
+		return ehdr->e_shstrndx;
 	}
-
-	/* Return remaining sections section. */
-	return (sections_to_find);
 }
 
-/**
- * elf_loader_relocs_specific
- *
- * Processes the relocations contained in the specified section.
- *
- * @param elf_info - elf decoding information.
- * @param section  - header of the specified relocation section.
- *
- * @return  - 0 if success, error otherwise
- */
-static int elf_loader_relocs_specific(struct elf_decode_info *elf_info,
-				      Elf32_Shdr * section)
+static void *elf_phtable_ptr(void *elf_info)
 {
+	if (elf_is_64(elf_info) == 0) {
+		struct elf32_info *einfo = elf_info;
 
-	unsigned char *section_load_addr = (unsigned char *)section->sh_addr;
-	int status = 0;
+		return (void *)&einfo->phdrs;
+	} else {
+		struct elf64_info *einfo = elf_info;
+
+		return (void *)&einfo->phdrs;
+	}
+}
+
+static void *elf_shtable_ptr(void *elf_info)
+{
+	if (elf_is_64(elf_info) == 0) {
+		struct elf32_info *einfo = elf_info;
+
+		return (void *)(&einfo->shdrs);
+	} else {
+		struct elf64_info *einfo = elf_info;
+
+		return (void *)(&einfo->shdrs);
+	}
+}
+
+static void **elf_shstrtab_ptr(void *elf_info)
+{
+	if (elf_is_64(elf_info) == 0) {
+		struct elf32_info *einfo = elf_info;
+
+		return &einfo->shstrtab;
+	} else {
+		struct elf64_info *einfo = elf_info;
+
+		return &einfo->shstrtab;
+	}
+}
+
+static unsigned int *elf_load_state(void *elf_info)
+{
+	if (elf_is_64(elf_info) == 0) {
+		struct elf32_info *einfo = elf_info;
+
+		return &einfo->load_state;
+	} else {
+		struct elf64_info *einfo = elf_info;
+
+		return &einfo->load_state;
+	}
+}
+
+static void elf_parse_segment(void *elf_info, const void *elf_phdr,
+			      unsigned int *p_type, size_t *p_offset,
+			      metal_phys_addr_t *p_vaddr,
+			      metal_phys_addr_t *p_paddr,
+			      size_t *p_filesz, size_t *p_memsz)
+{
+	if (elf_is_64(elf_info) == 0) {
+		const Elf32_Phdr *phdr = elf_phdr;
+
+		if (p_type != NULL)
+			*p_type = (unsigned int)phdr->p_type;
+		if (p_offset != NULL)
+			*p_offset = (size_t)phdr->p_offset;
+		if (p_vaddr != NULL)
+			*p_vaddr = (metal_phys_addr_t)phdr->p_vaddr;
+		if (p_paddr != NULL)
+			*p_paddr = (metal_phys_addr_t)phdr->p_paddr;
+		if (p_filesz != NULL)
+			*p_filesz = (size_t)phdr->p_filesz;
+		if (p_memsz != NULL)
+			*p_memsz = (size_t)phdr->p_memsz;
+	} else {
+		const Elf64_Phdr *phdr = elf_phdr;
+
+		if (p_type != NULL)
+			*p_type = (unsigned int)phdr->p_type;
+		if (p_offset != NULL)
+			*p_offset = (size_t)phdr->p_offset;
+		if (p_vaddr != NULL)
+		if (p_vaddr != NULL)
+			*p_vaddr = (metal_phys_addr_t)phdr->p_vaddr;
+		if (p_paddr != NULL)
+			*p_paddr = (metal_phys_addr_t)phdr->p_paddr;
+		if (p_filesz != NULL)
+			*p_filesz = (size_t)phdr->p_filesz;
+		if (p_memsz != NULL)
+			*p_memsz = (size_t)phdr->p_memsz;
+	}
+}
+
+static const void *elf_get_segment_from_index(void *elf_info, int index)
+{
+	if (elf_is_64(elf_info) == 0) {
+		const struct elf32_info *einfo = elf_info;
+		const Elf32_Ehdr *ehdr = &einfo->ehdr;
+		const Elf32_Phdr *phdrs = einfo->phdrs;
+
+		if (phdrs == NULL)
+			return NULL;
+		if (index < 0 || index > ehdr->e_phnum)
+			return NULL;
+		return &phdrs[index];
+	} else {
+		const struct elf64_info *einfo = elf_info;
+		const Elf64_Ehdr *ehdr = &einfo->ehdr;
+		const Elf64_Phdr *phdrs = einfo->phdrs;
+
+		if (phdrs == NULL)
+			return NULL;
+		if (index < 0 || index > ehdr->e_phnum)
+			return NULL;
+		return &phdrs[index];
+	}
+}
+
+static void *elf_get_section_from_name(void *elf_info, const char *name)
+{
 	unsigned int i;
+	const char *name_table;
 
-	/* Check the section type. */
-	if (section->sh_type == SHT_REL) {
-		/* Traverse the list of relocation entries contained in the section. */
-		for (i = 0; (i < section->sh_size) && (status == 0);
-		     i += section->sh_entsize) {
-			/* Compute the relocation entry address. */
-			Elf32_Rel *rel_entry =
-			    (Elf32_Rel *) (section_load_addr + i);
+	if (elf_is_64(elf_info) == 0) {
+		struct elf32_info *einfo = elf_info;
+		Elf32_Ehdr *ehdr = &einfo->ehdr;
+		Elf32_Shdr *shdr = einfo->shdrs;
 
-			/* Process the relocation entry. */
-			status = elf_loader_reloc_entry(elf_info, rel_entry);
+		name_table = einfo->shstrtab;
+		if (shdr == NULL || name_table == NULL)
+			return NULL;
+		for (i = 0; i < ehdr->e_shnum; i++, shdr++) {
+			if (strcmp(name, name_table + shdr->sh_name))
+				continue;
+			else
+				return shdr;
+		}
+	} else {
+		struct elf64_info *einfo = elf_info;
+		Elf64_Ehdr *ehdr = &einfo->ehdr;
+		Elf64_Shdr *shdr = einfo->shdrs;
+
+		name_table = einfo->shstrtab;
+		if (shdr == NULL || name_table == NULL)
+			return NULL;
+		for (i = 0; i < ehdr->e_shnum; i++, shdr++) {
+			if (strcmp(name, name_table + shdr->sh_name))
+				continue;
+			else
+				return shdr;
 		}
 	}
-
-	/* Return status to caller. */
-	return (status);
+	return NULL;
 }
 
-/**
- * elf_loader_get_entry_point_address
- *
- * Retrieves the entry point address from the specified ELF object.
- *
- * @param elf_info       - elf object decode info container.
- * @param runtime_buffer - buffer containing ELF sections which are
- *                         part of runtime.
- *
- * @return - entry point address of the specified ELF object.
- */
-static void *elf_loader_get_entry_point_address(struct elf_decode_info
-						*elf_info)
+static void *elf_get_section_from_index(void *elf_info, int index)
 {
-	return ((void *)elf_info->elf_header.e_entry);
-}
+	if (elf_is_64(elf_info) == 0) {
+		struct elf32_info *einfo = elf_info;
+		Elf32_Ehdr *ehdr = &einfo->ehdr;
+		Elf32_Shdr *shdr = einfo->shdrs;
 
-/**
- * elf_loader_relocate_link
- *
- * Relocates and links the given ELF object.
- *
- * @param elf_info       - elf object decode info container.
+		if (shdr == NULL)
+			return NULL;
+		if (index > ehdr->e_shnum)
+			return NULL;
+		return &einfo->shdrs[index];
+	} else {
+		struct elf64_info *einfo = elf_info;
+		Elf64_Ehdr *ehdr = &einfo->ehdr;
+		Elf64_Shdr *shdr = einfo->shdrs;
 
- *
- * @return  - 0 if success, error otherwise
- */
-
-static int elf_loader_relocate_link(struct elf_decode_info *elf_info)
-{
-	int status = 0;
-
-	/* Check of .rel.dyn section exists in the ELF. */
-	if (elf_info->rel_dyn) {
-		/* Relocate and link .rel.dyn section. */
-		status =
-		    elf_loader_relocs_specific(elf_info, elf_info->rel_dyn);
+		if (shdr == NULL)
+			return NULL;
+		if (index > ehdr->e_shnum)
+			return NULL;
+		return &einfo->shdrs[index];
 	}
+}
 
-	/* Proceed to check if .rel.plt section exists, if no error encountered yet. */
-	if (status == 0 && elf_info->rel_plt) {
-		/* Relocate and link .rel.plt section. */
-		status =
-		    elf_loader_relocs_specific(elf_info, elf_info->rel_plt);
+static void elf_parse_section(void *elf_info, void *elf_shdr,
+			      unsigned int *sh_type, unsigned int *sh_flags,
+			      metal_phys_addr_t *sh_addr,
+			      size_t *sh_offset, size_t *sh_size,
+			      unsigned int *sh_link, unsigned int *sh_info,
+			      unsigned int *sh_addralign,
+			      size_t *sh_entsize)
+{
+	if (elf_is_64(elf_info) == 0) {
+		Elf32_Shdr *shdr = elf_shdr;
+
+		if (sh_type != NULL)
+			*sh_type = shdr->sh_type;
+		if (sh_flags != NULL)
+			*sh_flags = shdr->sh_flags;
+		if (sh_addr != NULL)
+			*sh_addr = (metal_phys_addr_t)shdr->sh_addr;
+		if (sh_offset != NULL)
+			*sh_offset = shdr->sh_offset;
+		if (sh_size != NULL)
+			*sh_size = shdr->sh_size;
+		if (sh_link != NULL)
+			*sh_link = shdr->sh_link;
+		if (sh_info != NULL)
+			*sh_info = shdr->sh_info;
+		if (sh_addralign != NULL)
+			*sh_addralign = shdr->sh_addralign;
+		if (sh_entsize != NULL)
+			*sh_entsize = shdr->sh_entsize;
+	} else {
+		Elf64_Shdr *shdr = elf_shdr;
+
+		if (sh_type != NULL)
+			*sh_type = shdr->sh_type;
+		if (sh_flags != NULL)
+			*sh_flags = shdr->sh_flags;
+		if (sh_addr != NULL)
+			*sh_addr = (metal_phys_addr_t)(shdr->sh_addr &
+				   (metal_phys_addr_t)(-1));
+		if (sh_offset != NULL)
+			*sh_offset = shdr->sh_offset;
+		if (sh_size != NULL)
+			*sh_size = shdr->sh_size;
+		if (sh_link != NULL)
+			*sh_link = shdr->sh_link;
+		if (sh_info != NULL)
+			*sh_info = shdr->sh_info;
+		if (sh_addralign != NULL)
+			*sh_addralign = shdr->sh_addralign;
+		if (sh_entsize != NULL)
+			*sh_entsize = shdr->sh_entsize;
 	}
-
-	/* Return status to caller */
-	return (status);
 }
 
-/**
- * elf_loader_seek_and_read
- *
- * Seeks to the specified offset in the given file and reads the data
- * into the specified destination location.
- *
- * @param firmware     - firmware to read from.
- * @param destination - Location into which the data should be read.
- * @param offset      - Offset to seek in the file.
- * @param size        - Size of the data to read.
-
- *
- * @return  - 0 if success, error otherwise
- */
-
-static int elf_loader_seek_and_read(void *firmware, void *destination,
-				    Elf32_Off offset, Elf32_Word size)
+static const void *elf_next_load_segment(void *elf_info, int *nseg,
+				   metal_phys_addr_t *da,
+				   size_t *noffset, size_t *nfsize,
+				   size_t *nmsize)
 {
-	char *src = (char *)firmware;
+	const void *phdr;
+	unsigned int p_type = PT_NULL;
 
-	/* Seek to the specified offset. */
-	src = src + offset;
-
-	/* Read the data. */
-	memcpy((char *)destination, src, size);
-
-	/* Return status to caller. */
-	return (0);
+	if (elf_info == NULL || nseg == NULL)
+		return NULL;
+	while(p_type != PT_LOAD) {
+		phdr = elf_get_segment_from_index(elf_info, *nseg);
+		if (phdr == NULL)
+			return NULL;
+		elf_parse_segment(elf_info, phdr, &p_type, noffset,
+				  da, NULL, nfsize, nmsize);
+		*nseg = *nseg + 1;
+	}
+	return phdr;
 }
 
-/**
- * elf_loader_read_headers
- *
- * Reads the ELF headers (ELF header, section headers and the section
- * headers string table) essential to access further information from
- * the file containing the ELF object.
- *
- * @param firmware    - firmware to read from.
- * @param elf_info - ELF object decode info container.
- *
- * @return  - 0 if success, error otherwise
- */
-static int elf_loader_read_headers(void *firmware,
-				   struct elf_decode_info *elf_info)
+static size_t elf_info_size(const void *img_data)
 {
-	int status = 0;
-	unsigned int section_count;
+	if (elf_is_64(img_data) == 0)
+		return sizeof(struct elf32_info);
+	else
+		return sizeof(struct elf64_info);
+}
 
-	/* Read the ELF header. */
-	status = elf_loader_seek_and_read(firmware, &(elf_info->elf_header), 0,
-					  sizeof(Elf32_Ehdr));
+int elf_identify(const void *img_data, size_t len)
+{
+	if (len < SELFMAG || img_data == NULL)
+		return -RPROC_EINVAL;
+	if (memcmp(img_data, ELFMAG, SELFMAG) != 0)
+		return -RPROC_EINVAL;
+	else
+		return 0;
+}
 
-	/* Ensure the read was successful. */
-	if (!status) {
-		/* Get section count from the ELF header. */
-		section_count = elf_info->elf_header.e_shnum;
+int elf_load_header(const void *img_data, size_t offset, size_t len,
+		    void **img_info, int last_load_state,
+		    size_t *noffset, size_t *nlen)
+{
+	unsigned int *load_state;
 
-		/* Allocate memory to read in the section headers. */
-		elf_info->section_headers_start = metal_allocate_memory(section_count * elf_info->elf_header.e_shentsize);
+	metal_assert(noffset != NULL);
+	metal_assert(nlen != NULL);
+	/* Get ELF header */
+	if (last_load_state == ELF_STATE_INIT) {
+		size_t tmpsize;
 
-		/* Check if the allocation was successful. */
-		if (elf_info->section_headers_start) {
-			/* Read the section headers list. */
-			status = elf_loader_seek_and_read(firmware,
-							  elf_info->
-							  section_headers_start,
-							  elf_info->elf_header.
-							  e_shoff,
-							  section_count *
-							  elf_info->elf_header.
-							  e_shentsize);
+		metal_log(METAL_LOG_DEBUG, "Loading ELF headering\r\n");
+		tmpsize = elf_ehdr_size(img_data);
+		if (len < tmpsize) {
+			*noffset = 0;
+			*nlen = tmpsize;
+			return ELF_STATE_INIT;
+		} else {
+			size_t infosize = elf_info_size(img_data);
 
-			/* Ensure the read was successful. */
-			if (!status) {
-				/* Compute the pointer to section header string table section. */
-				Elf32_Shdr *section_header_string_table =
-				    (Elf32_Shdr *) (elf_info->
-						    section_headers_start +
-						    elf_info->elf_header.
-						    e_shstrndx *
-						    elf_info->elf_header.
-						    e_shentsize);
-
-				/* Allocate the memory for section header string table. */
-				elf_info->shstrtab = metal_allocate_memory(section_header_string_table->sh_size);
-
-				/* Ensure the allocation was successful. */
-				if (elf_info->shstrtab) {
-					/* Read the section headers string table. */
-					status =
-					    elf_loader_seek_and_read(firmware,
-								     elf_info->
-								     shstrtab,
-								     section_header_string_table->
-								     sh_offset,
-								     section_header_string_table->
-								     sh_size);
-				}
+			if (*img_info == NULL) {
+				*img_info = metal_allocate_memory(infosize);
+				if (*img_info == NULL)
+					return -ENOMEM;
+				memset(*img_info, 0, infosize);
 			}
+			memcpy(*img_info, img_data, tmpsize);
+			load_state = elf_load_state(*img_info);
+			*load_state = ELF_STATE_WAIT_FOR_PHDRS;
+			last_load_state = ELF_STATE_WAIT_FOR_PHDRS;
 		}
 	}
+	metal_assert(*img_info != NULL);
+	load_state = elf_load_state(*img_info);
+	if (last_load_state != (int)*load_state)
+		return -RPROC_EINVAL;
+	/* Get ELF program headers */
+	if (*load_state == ELF_STATE_WAIT_FOR_PHDRS) {
+		size_t phdrs_size;
+		size_t phdrs_offset;
+		char **phdrs;
+		const void *img_phdrs;
 
-	/* Return status to caller. */
-	return (status);
+		metal_log(METAL_LOG_DEBUG, "Loading ELF program header.\r\n");
+		phdrs_offset = elf_phoff(*img_info);
+		phdrs_size = elf_phnum(*img_info) * elf_phentsize(*img_info);
+		if (offset > phdrs_offset ||
+		    offset + len < phdrs_offset + phdrs_size) {
+			*noffset = phdrs_offset;
+			*nlen = phdrs_size;
+			return (int)*load_state;
+		}
+		/* caculate the programs headers offset to the image_data */
+		phdrs_offset -= offset;
+		img_phdrs = (const void *)
+			    ((const char *)img_data + phdrs_offset);
+		phdrs = (char **)elf_phtable_ptr(*img_info);
+		(*phdrs) = metal_allocate_memory(phdrs_size);
+		if (*phdrs == NULL)
+			return -ENOMEM;
+		memcpy((void *)(*phdrs), img_phdrs, phdrs_size);
+		*load_state = ELF_STATE_WAIT_FOR_SHDRS |
+			       RPROC_LOADER_READY_TO_LOAD;
+	}
+	/* Get ELF Section Headers */
+	if ((*load_state & ELF_STATE_WAIT_FOR_SHDRS) != 0) {
+		size_t shdrs_size;
+		size_t shdrs_offset;
+		char **shdrs;
+		const void *img_shdrs;
+
+		metal_log(METAL_LOG_DEBUG, "Loading ELF section header.\r\n");
+		shdrs_offset = elf_shoff(*img_info);
+		if (elf_shnum(*img_info) == 0) {
+			*load_state = (*load_state & (~ELF_STATE_MASK)) |
+				       ELF_STATE_HDRS_COMPLETE;
+		       *nlen = 0;
+			return (int)*load_state;
+		}
+		shdrs_size = elf_shnum(*img_info) * elf_shentsize(*img_info);
+		if (offset > shdrs_offset ||
+		    offset + len < shdrs_offset + shdrs_size) {
+			*noffset = shdrs_offset;
+			*nlen = shdrs_size;
+			return (int)*load_state;
+		}
+		/* caculate the sections headers offset to the image_data */
+		shdrs_offset -= offset;
+		img_shdrs = (const void *)
+			    ((const char *)img_data + shdrs_offset);
+		shdrs = (char **)elf_shtable_ptr(*img_info);
+		(*shdrs) = metal_allocate_memory(shdrs_size);
+		if (*shdrs == NULL)
+			return -ENOMEM;
+		memcpy((void *)*shdrs, img_shdrs, shdrs_size);
+		*load_state = (*load_state & (~ELF_STATE_MASK)) |
+			       ELF_STATE_WAIT_FOR_SHSTRTAB;
+		metal_log(METAL_LOG_DEBUG,
+			  "Loading ELF section header complete.\r\n");
+	}
+	/* Get ELF SHSTRTAB section */
+	if ((*load_state & ELF_STATE_WAIT_FOR_SHSTRTAB) != 0) {
+		size_t shstrtab_size;
+		size_t shstrtab_offset;
+		int shstrndx;
+		void *shdr;
+		void **shstrtab;
+
+		metal_log(METAL_LOG_DEBUG, "Loading ELF shstrtab.\r\n");
+		shstrndx = elf_shstrndx(*img_info);
+		shdr = elf_get_section_from_index(*img_info, shstrndx);
+		if (shdr == NULL)
+			return -RPROC_EINVAL;
+		elf_parse_section(*img_info, shdr, NULL, NULL,
+				  NULL, &shstrtab_offset,
+				  &shstrtab_size, NULL, NULL,
+				  NULL, NULL);
+		if (offset > shstrtab_offset ||
+		    offset + len < shstrtab_offset + shstrtab_size) {
+			*noffset = shstrtab_offset;
+			*nlen = shstrtab_size;
+			return (int)*load_state;
+		}
+		/* Caculate shstrtab section offset to the input image data */
+		shstrtab_offset -= offset;
+		shstrtab = elf_shstrtab_ptr(*img_info);
+		*shstrtab = metal_allocate_memory(shstrtab_size);
+		if (*shstrtab == NULL)
+			return -ENOMEM;
+		memcpy(*shstrtab,
+		       (const void *)((const char *)img_data + shstrtab_offset),
+		       shstrtab_size);
+		*load_state = (*load_state & (~ELF_STATE_MASK)) |
+			       ELF_STATE_HDRS_COMPLETE;
+		*nlen = 0;
+		return *load_state;
+	}
+	return last_load_state;
 }
 
-/**
- * elf_loader_file_read_sections
- *
- * Reads the ELF section contents from the specified file containing
- * the ELF object.
- *
- * @param firmware - firmware to read from.
- * @param elf_info - ELF object decode info container.
- *
- * @return  - 0 if success, error otherwise
- */
-static int elf_loader_load_sections(void *firmware,
-				    struct elf_decode_info *elf_info)
+int elf_load(struct remoteproc *rproc,
+	     const void *img_data, size_t offset, size_t len,
+	     void **img_info, int last_load_state,
+	     metal_phys_addr_t *da,
+	     size_t *noffset, size_t *nlen,
+	     unsigned char *padding, size_t *nmemsize)
 {
-	int status = 0;
-	Elf32_Shdr *current = (Elf32_Shdr *) (elf_info->section_headers_start);
+	unsigned int *load_state;
+	const void *phdr;
 
-	/* Traverse all sections except the reserved null section. */
-	int section_count = elf_info->elf_header.e_shnum - 1;
-	while ((section_count > 0) && (status == 0)) {
-		/* Compute the pointer to section header. */
-		current = (Elf32_Shdr *) (((unsigned char *)current)
-					  + elf_info->elf_header.e_shentsize);
+	(void)rproc;
+	metal_assert(da != NULL);
+	metal_assert(noffset != NULL);
+	metal_assert(nlen != NULL);
+	if ((last_load_state & RPROC_LOADER_MASK) == RPROC_LOADER_NOT_READY) {
+		metal_log(METAL_LOG_DEBUG,
+			  "%s, needs to load header first\r\n");
+		last_load_state = elf_load_header(img_data, offset, len,
+						  img_info, last_load_state,
+						  noffset, nlen);
+		if ((last_load_state & RPROC_LOADER_MASK) ==
+		    RPROC_LOADER_NOT_READY) {
+			*da = RPROC_LOAD_ANYADDR;
+			return last_load_state;
+		}
+	}
+	metal_assert(img_info != NULL && *img_info != NULL);
+	load_state = elf_load_state(*img_info);
+	/* For ELF, segment padding value is 0 */
+	if (padding != NULL)
+		*padding = 0;
+	if ((*load_state & RPROC_LOADER_READY_TO_LOAD) != 0) {
+		int nsegment;
+		size_t nsegmsize = 0;
+		size_t nsize = 0;
+		int phnums = 0;
 
-		/* Make sure the section can be allocated and is not empty. */
-		if ((current->sh_flags & SHF_ALLOC) && (current->sh_size)) {
-			char *destination = NULL;
-
-			/* Check if the section is part of runtime and is not section with
-			 * no-load attributes such as BSS or heap. */
-			if ((current->sh_type & SHT_NOBITS) == 0) {
-				/* Compute the destination address where the section should
-				 * be copied. */
-				destination = (char *)(current->sh_addr);
-				status =
-				    elf_loader_seek_and_read(firmware,
-							     destination,
-							     current->sh_offset,
-							     current->sh_size);
+		nsegment = (int)(*load_state & ELF_NEXT_SEGMENT_MASK);
+		phdr = elf_next_load_segment(*img_info, &nsegment, da,
+					     noffset, &nsize, &nsegmsize);
+		if (phdr == NULL) {
+			metal_log(METAL_LOG_DEBUG, "cannot find more segement\r\n");
+			*load_state = (*load_state & (~ELF_NEXT_SEGMENT_MASK)) |
+				      (unsigned int)(nsegment & ELF_NEXT_SEGMENT_MASK);
+			return *load_state;
+		}
+		*nlen = nsize;
+		*nmemsize = nsegmsize;
+		phnums = elf_phnum(*img_info);
+		metal_log(METAL_LOG_DEBUG, "segment: %d, total segs %d\r\n",
+			  nsegment, phnums);
+		if (nsegment == elf_phnum(*img_info)) {
+			*load_state = (*load_state & (~RPROC_LOADER_MASK)) |
+				      RPROC_LOADER_POST_DATA_LOAD;
+		}
+		*load_state = (*load_state & (~ELF_NEXT_SEGMENT_MASK)) |
+			      (unsigned int)(nsegment & ELF_NEXT_SEGMENT_MASK);
+	} else if ((*load_state & RPROC_LOADER_POST_DATA_LOAD) != 0) {
+		if ((*load_state & ELF_STATE_HDRS_COMPLETE) == 0) {
+			last_load_state = elf_load_header(img_data, offset,
+							  len, img_info,
+							  last_load_state,
+							  noffset, nlen);
+			if (last_load_state < 0)
+				return last_load_state;
+			if ((last_load_state & ELF_STATE_HDRS_COMPLETE) != 0) {
+				*load_state = (*load_state &
+						(~RPROC_LOADER_MASK)) |
+						RPROC_LOADER_LOAD_COMPLETE;
+				*nlen = 0;
 			}
+			*da = RPROC_LOAD_ANYADDR;
+		} else {
+		/* TODO: will handle relocate later */
+			*nlen = 0;
+			*load_state = (*load_state &
+					(~RPROC_LOADER_MASK)) |
+					RPROC_LOADER_LOAD_COMPLETE;
 		}
-
-		/* Move to the next section. */
-		section_count--;
 	}
-
-	/* Return status to caller. */
-	return (status);
+	return *load_state;
 }
 
-/**
- * elf_loader_get_decode_info
- *
- * Retrieves the information necessary to decode the ELF object for
- * loading, relocating and linking.
- *
- * @param firmware - firmware to read from.
- * @param elf_info - ELF object decode info container.
- *
- * @return  - 0 if success, error otherwise
- */
-static int elf_loader_get_decode_info(void *firmware,
-				      struct elf_decode_info *elf_info)
+void elf_release(void *img_info)
 {
-	int status;
+	if (img_info == NULL)
+		return;
+	if (elf_is_64(img_info) == 0) {
+		struct elf32_info *elf_info = img_info;
 
-	/* Read the ELF headers (ELF header and section headers including
-	 * the section header string table). */
-	status = elf_loader_read_headers(firmware, elf_info);
+		if (elf_info->phdrs != NULL)
+			metal_free_memory(elf_info->phdrs);
+		if (elf_info->shdrs != NULL)
+			metal_free_memory(elf_info->shdrs);
+		if (elf_info->shstrtab != NULL)
+			metal_free_memory(elf_info->shstrtab);
+		metal_free_memory(img_info);
 
-	/* Ensure that ELF headers were read successfully. */
-	if (!status) {
-		/* Retrieve the sections required for load. */
-		elf_loader_get_needed_sections(elf_info);
+	} else {
+		struct elf64_info *elf_info = img_info;
 
+		if (elf_info->phdrs != NULL)
+			metal_free_memory(elf_info->phdrs);
+		if (elf_info->shdrs != NULL)
+			metal_free_memory(elf_info->shdrs);
+		if (elf_info->shstrtab != NULL)
+			metal_free_memory(elf_info->shstrtab);
+		metal_free_memory(img_info);
 	}
-
-	/* Return status to caller. */
-	return (status);
 }
 
-/**
- * elf_loader_get_dynamic_symbol_addr
- *
- * Retrieves the (relocatable) address of the symbol specified as
- * index from the given ELF object.
- *
- * @param elf_info - ELF object decode info container.
- * @param index    - Index of the desired symbol in the dynamic symbol table.
- *
- * @return - Address of the specified symbol.
- */
-static Elf32_Addr elf_loader_get_dynamic_symbol_addr(struct elf_decode_info
-						     *elf_info, int index)
+metal_phys_addr_t elf_get_entry(void *elf_info)
 {
-	Elf32_Sym *symbol_entry = (Elf32_Sym *) (elf_info->dynsym_addr
-						 +
-						 index *
-						 elf_info->dynsym->sh_entsize);
+	if (!elf_info)
+		return METAL_BAD_PHYS;
 
-	/* Return the symbol address. */
-	return (symbol_entry->st_value);
-}
+	if (elf_is_64(elf_info) == 0) {
+		Elf32_Ehdr *elf_ehdr = (Elf32_Ehdr *)elf_info;
+		Elf32_Addr e_entry;
 
-/**
- * elf_loader_reloc_entry
- *
- * Processes the specified relocation entry. It handles the relocation
- * and linking both cases.
- *
- *
- * @param elf_info - ELF object decode info container.
- *
- * @return  - 0 if success, error otherwise
- */
-static int elf_loader_reloc_entry(struct elf_decode_info *elf_info,
-				  Elf32_Rel * rel_entry)
-{
-	unsigned char rel_type = ELF32_R_TYPE(rel_entry->r_info);
-	int status = 0;
+		e_entry = elf_ehdr->e_entry;
+		return (metal_phys_addr_t)e_entry;
+	} else {
+		Elf64_Ehdr *elf_ehdr = (Elf64_Ehdr *)elf_info;
+		Elf64_Addr e_entry;
 
-	switch (rel_type) {
-	case R_ARM_ABS32:	/* 0x02 */
-		{
-			Elf32_Addr sym_addr =
-			    elf_loader_get_dynamic_symbol_addr(elf_info,
-							       ELF32_R_SYM
-							       (rel_entry->
-								r_info));
-
-			if (sym_addr) {
-				*((unsigned int *)(rel_entry->r_offset)) =
-				    (unsigned int)sym_addr;
-				break;
-			}
-		}
-
-		break;
-
-	default:
-		break;
+		e_entry = elf_ehdr->e_entry;
+		return (metal_phys_addr_t)(e_entry & (metal_phys_addr_t)(-1));
 	}
-
-	return status;
 }
+
+int elf_locate_rsc_table(void *elf_info, metal_phys_addr_t *da,
+			 size_t *offset, size_t *size)
+{
+	char *sect_name = ".resource_table";
+	void *shdr;
+	unsigned int *load_state;
+
+	if (elf_info == NULL)
+		return -RPROC_EINVAL;
+
+	load_state = elf_load_state(elf_info);
+	if ((*load_state & ELF_STATE_HDRS_COMPLETE) == 0)
+		return -RPROC_ERR_LOADER_STATE;
+	shdr = elf_get_section_from_name(elf_info, sect_name);
+	if (shdr == NULL) {
+		metal_assert(size != NULL);
+		*size = 0;
+		return 0;
+	}
+	elf_parse_section(elf_info, shdr, NULL, NULL,
+			  da, offset, size,
+			  NULL, NULL, NULL, NULL);
+	return 0;
+}
+
+int elf_get_load_state(void *img_info)
+{
+	unsigned int *load_state;
+
+	if (img_info == NULL)
+		return -RPROC_EINVAL;
+	load_state = elf_load_state(img_info);
+	return (int)(*load_state);
+}
+
+struct loader_ops elf_ops = {
+	.load_header = elf_load_header,
+	.load_data = elf_load,
+	.locate_rsc_table = elf_locate_rsc_table,
+	.release = elf_release,
+	.get_entry = elf_get_entry,
+	.get_load_state = elf_get_load_state,
+};

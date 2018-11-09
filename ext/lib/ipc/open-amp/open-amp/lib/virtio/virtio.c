@@ -57,7 +57,7 @@ static const char *virtio_feature_name(unsigned long val,
 	};
 
 	for (i = 0; i < 2; i++) {
-		if (descs[i] == NULL)
+		if (!descs[i])
 			continue;
 
 		for (j = 0; descs[i][j].vfd_val != 0; j++) {
@@ -79,3 +79,43 @@ void virtio_describe(struct virtio_device *dev, const char *msg,
 	// TODO: Not used currently - keeping it for future use
 	virtio_feature_name(0, desc);
 }
+
+int virtio_create_virtqueues(struct virtio_device *vdev, unsigned int flags,
+			     unsigned int nvqs, const char *names[],
+			     vq_callback *callbacks[])
+{
+	struct virtio_vring_info *vring_info;
+	struct vring_alloc_info *vring_alloc;
+	unsigned int num_vrings, i;
+	int ret;
+	(void)flags;
+
+	num_vrings = vdev->vrings_num;
+	if (nvqs > num_vrings)
+		return -ERROR_VQUEUE_INVLD_PARAM;
+	/* Initialize virtqueue for each vring */
+	for (i = 0; i < nvqs; i++) {
+		vring_info = &vdev->vrings_info[i];
+
+		vring_alloc = &vring_info->info;
+#ifndef VIRTIO_SLAVE_ONLY
+		if (vdev->role == VIRTIO_DEV_MASTER) {
+			size_t offset;
+			struct metal_io_region *io = vring_info->io;
+
+			offset = metal_io_virt_to_offset(io,
+							 vring_alloc->vaddr);
+			metal_io_block_set(io, offset, 0,
+					   vring_size(vring_alloc->num_descs,
+						      vring_alloc->align));
+		}
+#endif
+		ret = virtqueue_create(vdev, i, names[i], vring_alloc,
+				       callbacks[i], vdev->func->notify,
+				       vring_info->vq);
+		if (ret)
+			return ret;
+	}
+	return 0;
+}
+

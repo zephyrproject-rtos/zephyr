@@ -22,15 +22,18 @@ extern "C" {
 
 /* The Host uses this in used->flags to advise the Guest: don't kick me
  * when you add a buffer.  It's unreliable, so it's simply an
- * optimization.  Guest will still kick if it's out of buffers. */
+ * optimization.  Guest will still kick if it's out of buffers.
+ */
 #define VRING_USED_F_NO_NOTIFY  1
 /* The Guest uses this in avail->flags to advise the Host: don't
  * interrupt me when you consume a buffer.  It's unreliable, so it's
- * simply an optimization.  */
+ * simply an optimization.
+ */
 #define VRING_AVAIL_F_NO_INTERRUPT      1
 
 /* VirtIO ring descriptors: 16 bytes.
- * These can chain together via "next". */
+ * These can chain together via "next".
+ */
 struct vring_desc {
 	/* Address (guest-physical). */
 	uint64_t addr;
@@ -113,17 +116,19 @@ static inline int vring_size(unsigned int num, unsigned long align)
 	size = (size + align - 1) & ~(align - 1);
 	size += sizeof(struct vring_used) +
 	    (num * sizeof(struct vring_used_elem)) + sizeof(uint16_t);
-	return (size);
+
+	return size;
 }
 
 static inline void
-vring_init(struct vring *vr, unsigned int num, uint8_t * p, unsigned long align)
+vring_init(struct vring *vr, unsigned int num, uint8_t *p, unsigned long align)
 {
 	vr->num = num;
 	vr->desc = (struct vring_desc *)p;
 	vr->avail = (struct vring_avail *)(p + num * sizeof(struct vring_desc));
 	vr->used = (struct vring_used *)
-	    (((unsigned long)&vr->avail->ring[num] + align - 1) & ~(align - 1));
+	    (((unsigned long)&vr->avail->ring[num] + sizeof(uint16_t) +
+	      align - 1) & ~(align - 1));
 }
 
 /*
@@ -136,9 +141,8 @@ vring_init(struct vring *vr, unsigned int num, uint8_t * p, unsigned long align)
 static inline int
 vring_need_event(uint16_t event_idx, uint16_t new_idx, uint16_t old)
 {
-
-	return (uint16_t) (new_idx - event_idx - 1) <
-	    (uint16_t) (new_idx - old);
+	return (uint16_t)(new_idx - event_idx - 1) <
+	    (uint16_t)(new_idx - old);
 }
 
 #if defined __cplusplus
