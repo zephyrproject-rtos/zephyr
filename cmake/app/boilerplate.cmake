@@ -14,19 +14,6 @@
 # modified by the entry point ${APPLICATION_SOURCE_DIR}/CMakeLists.txt
 # that was specified when cmake was called.
 
-# Determine if we are using MSYS.
-#
-# We don't use project() because it would take some time to rewrite
-# the build scripts to be compatible with everything project() does.
-execute_process(
-  COMMAND
-  uname
-  OUTPUT_VARIABLE uname_output
-  )
-if(uname_output MATCHES "MSYS")
-  set(MSYS 1)
-endif()
-
 # CMake version 3.8.2 is the real minimum supported version.
 #
 # Unfortunately CMake requires the toplevel CMakeLists.txt file to
@@ -114,18 +101,6 @@ add_custom_target(
   COMMAND ${CMAKE_COMMAND} -P ${ZEPHYR_BASE}/cmake/pristine.cmake
   # Equivalent to rm -rf build/*
   )
-
-# Must be run before kconfig.cmake
-if(MSYS)
-  execute_process(
-    COMMAND
-    ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/check_host_is_ok.py
-    RESULT_VARIABLE ret
-    )
-  if(NOT "${ret}" STREQUAL "0")
-    message(FATAL_ERROR "command failed with return code: ${ret}")
-  endif()
-endif()
 
 # The BOARD can be set by 3 sources. Through environment variables,
 # through the cmake CLI, and through CMakeLists.txt.

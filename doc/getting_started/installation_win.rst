@@ -33,19 +33,16 @@ Install Requirements and Dependencies
    introduction of LaTeX->PDF support for the docs, as the texlive footprint is
    massive and not needed by users not building PDF documentation.)
 
-There are 3 different ways of developing for Zephyr on Microsoft Windows:
+There are 2 different ways of developing for Zephyr on Microsoft Windows:
 
 #. :ref:`windows_install_native`
 #. :ref:`windows_install_wsl`
-#. :ref:`windows_install_msys2`
 
-The first option is fully Windows native; the rest require emulation layers
-that may result in slower build times. All three are included for completeness,
+The first option is fully Windows native; the other requires emulation layers
+that may result in slower build times. Both are included for completeness,
 but unless you have a particular requirement for a UNIX tool that is not
 available on Windows, we strongly recommend you use the Windows Command Prompt
-option for performance and minimal dependency set. If you have a Unix tool
-requirement, then we recommend trying the Windows Subsystem for Linux instead of
-MSYS2.
+option for performance and minimal dependency set.
 
 .. _windows_install_native:
 
@@ -129,88 +126,6 @@ command-prompt. This allows you to use software such as the :ref:`Zephyr SDK
 .. NOTE FOR DOCS AUTHORS: as a reminder, do *NOT* put dependencies for building
    the documentation itself here.
 
-.. _windows_install_msys2:
-
-Option 3: MSYS2
-===============
-
-Alternatively, one can set up the Zephyr development environment with
-MSYS2, a modern UNIX environment for Windows. Follow the steps below
-to set it up:
-
-#. Download and install :program:`MSYS2`. Download the appropriate (32 or
-   64-bit) MSYS2 installer from the `MSYS2 website`_ and execute it. On the
-   final installation screen, check the "Run MSYS2 now." box to start up an
-   MSYS2 shell when installation is complete.  Follow the rest of the
-   installation instructions on the MSYS2 website to update the package
-   database and core system packages.  You may be advised to "terminate MSYS2
-   without returning to shell and check for updates again".  If so, simply
-   close the ``MSYS2 MSYS Shell`` desktop app and run it again to complete the update.)
-
-#. Launch the ``MSYS2 MSYS Shell`` desktop app from your start menu (if it's not still open).
-
-   .. note::
-
-        Make sure you start ``MSYS2 MSYS Shell``, not ``MSYS2 MinGW Shell``.
-
-   .. note::
-
-        If you need to inherit the existing Windows environment variables into
-        MSYS2 you will need to create a **Windows** environment variable like so::
-        ``MSYS2_PATH_TYPE=inherit``.
-
-   .. note::
-        There are multiple ``export`` statements in this tutorial. You can avoid
-        typing them every time by placing them at the bottom of your
-        ``~/.bash_profile`` file.
-
-#. If you're behind a corporate firewall, you'll likely need to specify a
-   proxy to get access to internet resources::
-
-      export http_proxy=http://proxy.mycompany.com:123
-      export https_proxy=$http_proxy
-
-#. Update MSYS2's packages and install the dependencies required to build
-   Zephyr (you may need to restart the MSYS2 shell):
-
-   .. code-block:: console
-
-      pacman -Syu
-      pacman -S git cmake make gcc dtc diffutils ncurses-devel python3 gperf tar
-
-#. Compile :program:`Ninja` from source (Ninja is not available as
-   an MSYS2 package) and install it:
-
-   .. code-block:: console
-
-      git clone git://github.com/ninja-build/ninja.git && cd ninja
-      git checkout release
-      ./configure.py --bootstrap
-      cp ninja.exe /usr/bin/
-
-#. Install pip and the required Python modules::
-
-      curl -O 'https://bootstrap.pypa.io/get-pip.py'
-      ./get-pip.py
-      rm get-pip.py
-
-You're now almost ready to continue with the rest of the getting started guide.
-
-Since you're using MSYS2, when you're cloning Zephyr in the next step of the
-guide, use this command line instead (i.e. add the ``--config
-core.autocrlf=false`` option).
-
-   .. code-block:: console
-
-      git clone --config core.autocrlf=false https://github.com/zephyrproject-rtos/zephyr
-
-Furthermore, when you start installing Python dependencies, you'll want to add
-the ``--user`` option as is recommended on Linux.
-
-.. NOTE FOR DOCS AUTHORS: as a reminder, do *NOT* put dependencies for building
-   the documentation itself here.
-
 .. _Chocolatey: https://chocolatey.org/
 .. _Chocolatey install: https://chocolatey.org/install
-.. _MSYS2 website: http://www.msys2.org/
 .. _Install the Windows Subsystem for Linux (WSL): https://msdn.microsoft.com/en-us/commandline/wsl/install_guide
