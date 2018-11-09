@@ -197,10 +197,6 @@ struct adc_info {
 	u32_t channels;
 	u32_t channel_id;
 
-#ifdef CONFIG_ADC_DW_REPETITIVE
-	/**Current reception buffer index*/
-	u8_t  index[BUFS_NUM];
-#endif
 	/**Sequence entries' array*/
 	const struct adc_sequence *entries;
 	/**State of execution of the driver*/
@@ -210,9 +206,6 @@ struct adc_info {
 #ifdef CONFIG_ADC_DW_CALIBRATION
 	/**Calibration value*/
 	u8_t calibration_value;
-#endif
-#ifdef CONFIG_ADC_DW_DUMMY_CONVERSION
-	u8_t dummy_conversion;
 #endif
 
 };
