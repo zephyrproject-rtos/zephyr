@@ -40,11 +40,13 @@ extern "C" {
 #define PF_UNSPEC	0	/* Unspecified.  */
 #define PF_INET		2	/* IP protocol family.  */
 #define PF_INET6	10	/* IP version 6.  */
+#define PF_PACKET	17	/* Packet family. */
 
 /** Address families.  */
 #define AF_UNSPEC	PF_UNSPEC
 #define AF_INET		PF_INET
 #define AF_INET6	PF_INET6
+#define AF_PACKET	PF_PACKET
 
 /** Protocol numbers from IANA */
 enum net_ip_protocol {
@@ -67,6 +69,7 @@ enum net_ip_protocol_secure {
 enum net_sock_type {
 	SOCK_STREAM = 1,
 	SOCK_DGRAM,
+	SOCK_RAW
 };
 
 #define ntohs(x) sys_be16_to_cpu(x)
@@ -128,10 +131,52 @@ struct sockaddr_in_ptr {
 	struct in_addr		*sin_addr;     /* IPv4 address */
 };
 
-#if defined(CONFIG_NET_IPV4) && !defined(CONFIG_NET_IPV6)
+struct sockaddr_ll {
+	sa_family_t sll_family;   /* Always AF_PACKET        */
+	u16_t       sll_protocol; /* Physical-layer protocol */
+	int         sll_ifindex;  /* Interface number        */
+	u16_t       sll_hatype;   /* ARP hardware type       */
+	u8_t        sll_pkttype;  /* Packet type             */
+	u8_t        sll_halen;    /* Length of address       */
+	u8_t        sll_addr[8];  /* Physical-layer address  */
+};
+
+struct sockaddr_ll_ptr {
+	sa_family_t sll_family;   /* Always AF_PACKET        */
+	u16_t       sll_protocol; /* Physical-layer protocol */
+	int         sll_ifindex;  /* Interface number        */
+	u16_t       sll_hatype;   /* ARP hardware type       */
+	u8_t        sll_pkttype;  /* Packet type             */
+	u8_t        sll_halen;    /* Length of address       */
+	u8_t        *sll_addr;    /* Physical-layer address  */
+};
+
+/* Packet types.  */
+#define PACKET_HOST         0     /* To us            */
+#define PACKET_BROADCAST    1     /* To all           */
+#define PACKET_MULTICAST    2     /* To group         */
+#define PACKET_OTHERHOST    3     /* To someone else  */
+#define PACKET_OUTGOING     4     /* Originated by us */
+#define PACKET_LOOPBACK     5
+#define PACKET_FASTROUTE    6
+
+#if defined(CONFIG_NET_IPV4)
+#undef NET_SOCKADDR_MAX_SIZE
+#undef NET_SOCKADDR_PTR_MAX_SIZE
 #define NET_SOCKADDR_MAX_SIZE (sizeof(struct sockaddr_in))
 #define NET_SOCKADDR_PTR_MAX_SIZE (sizeof(struct sockaddr_in_ptr))
-#else
+#endif
+
+#if defined(CONFIG_NET_SOCKET_RAW)
+#undef NET_SOCKADDR_MAX_SIZE
+#undef NET_SOCKADDR_PTR_MAX_SIZE
+#define NET_SOCKADDR_MAX_SIZE (sizeof(struct sockaddr_ll))
+#define NET_SOCKADDR_PTR_MAX_SIZE (sizeof(struct sockaddr_ll_ptr))
+#endif
+
+#if defined(CONFIG_NET_IPV6)
+#undef NET_SOCKADDR_MAX_SIZE
+#undef NET_SOCKADDR_PTR_MAX_SIZE
 #define NET_SOCKADDR_MAX_SIZE (sizeof(struct sockaddr_in6))
 #define NET_SOCKADDR_PTR_MAX_SIZE (sizeof(struct sockaddr_in6_ptr))
 #endif
@@ -973,6 +1018,20 @@ static inline
 struct sockaddr_in_ptr *net_sin_ptr(const struct sockaddr_ptr *addr)
 {
 	return (struct sockaddr_in_ptr *)addr;
+}
+
+/**
+ * @brief Get sockaddr_ll_ptr from sockaddr_ptr. This is a helper so that
+ * the code calling this function can be made shorter.
+ *
+ * @param addr Socket address
+ *
+ * @return Pointer to linklayer socket address
+ */
+static inline
+struct sockaddr_ll_ptr *net_sll_ptr(const struct sockaddr_ptr *addr)
+{
+	return (struct sockaddr_ll_ptr *)addr;
 }
 
 /**
