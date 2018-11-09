@@ -9,6 +9,10 @@ tests:
   test:
     platform_whitelist: qemu_x86 sam_e70_xplained frdm_k64f
       qemu_cortex_m3 arduino_101 frdm_kw41z
+  test.raw:
+    platform_whitelist: native_posix
+    extra_configs:
+      - CONFIG_NET_SOCKET_RAW=y
   test_802154:
     extra_args: OVERLAY_CONFIG="overlay-qemu_802154.conf"
     platform_whitelist: qemu_x86

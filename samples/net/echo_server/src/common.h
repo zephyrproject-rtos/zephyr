@@ -7,9 +7,14 @@
 #define MY_PORT 4242
 
 #define MAX_DBG_PRINT 64
+#define STACK_SIZE 1504
+#define THREAD_PRIORITY K_PRIO_COOP(8)
 
 void start_udp(void);
 void stop_udp(void);
+
+void start_raw(void);
+void stop_raw(void);
 
 void start_tcp(void);
 void stop_tcp(void);

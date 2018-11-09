@@ -126,6 +126,10 @@ void main(void)
 {
 	init_app();
 
+	if (IS_ENABLED(CONFIG_NET_SOCKET_RAW)) {
+		start_raw();
+	}
+
 	if (IS_ENABLED(CONFIG_NET_TCP)) {
 		start_tcp();
 	}
@@ -144,5 +148,9 @@ void main(void)
 
 	if (IS_ENABLED(CONFIG_NET_UDP)) {
 		stop_udp();
+	}
+
+	if (IS_ENABLED(CONFIG_NET_SOCKET_RAW)) {
+		stop_raw();
 	}
 }
