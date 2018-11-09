@@ -102,7 +102,7 @@ static int metal_uio_dev_bind(struct linux_device *ldev,
 		return 0;
 
 	if (strcmp(ldev->sdev->driver_name, SYSFS_UNKNOWN) != 0) {
-		metal_log(METAL_LOG_ERROR, "device %s in use by driver %s\n",
+		metal_log(METAL_LOG_INFO, "device %s in use by driver %s\n",
 			  ldev->dev_name, ldev->sdev->driver_name);
 		return -EBUSY;
 	}
@@ -361,6 +361,16 @@ static struct linux_bus linux_bus[] = {
 			{
 				.drv_name  = "uio_pdrv_genirq",
 				.mod_name  = "uio_pdrv_genirq",
+				.cls_name  = "uio",
+				.dev_open  = metal_uio_dev_open,
+				.dev_close = metal_uio_dev_close,
+				.dev_irq_ack  = metal_uio_dev_irq_ack,
+				.dev_dma_map = metal_uio_dev_dma_map,
+				.dev_dma_unmap = metal_uio_dev_dma_unmap,
+			},
+			{
+				.drv_name  = "uio_dmem_genirq",
+				.mod_name  = "uio_dmem_genirq",
 				.cls_name  = "uio",
 				.dev_open  = metal_uio_dev_open,
 				.dev_close = metal_uio_dev_close,
@@ -634,5 +644,26 @@ int metal_generic_dev_sys_open(struct metal_device *dev)
 {
 	(void)dev;
 	return 0;
+}
+
+int metal_linux_get_device_property(struct metal_device *device,
+				    const char *property_name,
+				    void *output, int len)
+{
+	int fd = 0;
+	int status = 0;
+	const int flags = O_RDONLY;
+	const int mode = S_IRUSR | S_IRGRP | S_IROTH;
+	struct linux_device *ldev = to_linux_device(device);
+	char path[PATH_MAX];
+
+	snprintf(path, sizeof(path), "%s/of_node/%s",
+			 ldev->sdev->path, property_name);
+	fd = open(path, flags, mode);
+	if (fd < 0)
+		return -errno;
+	status = read(fd, output, len);
+
+	return status < 0 ? -errno : 0;
 }
 
