@@ -178,6 +178,12 @@ struct net_pkt {
 	u8_t ieee802154_rssi; /* Received Signal Strength Indication */
 	u8_t ieee802154_lqi;  /* Link Quality Indicator */
 #endif
+
+#if defined(CONFIG_NET_SOCKET_RAW)
+	u16_t l2_proto;   /* IEEE 802.3 protocol value of the L2 (in network
+			   * byte order)
+			   */
+#endif
 	/* @endcond */
 };
 
@@ -277,6 +283,26 @@ static inline u8_t net_pkt_transport_proto(struct net_pkt *pkt)
 static inline void net_pkt_set_transport_proto(struct net_pkt *pkt, u8_t proto)
 {
 	pkt->transport_proto = proto;
+}
+
+static inline u16_t net_pkt_l2_proto(struct net_pkt *pkt)
+{
+#if defined(CONFIG_NET_SOCKET_RAW)
+	return pkt->l2_proto;
+#else
+	ARG_UNUSED(pkt);
+	return 0;
+#endif
+}
+
+static inline void net_pkt_set_l2_proto(struct net_pkt *pkt, u16_t proto)
+{
+#if defined(CONFIG_NET_SOCKET_RAW)
+	pkt->l2_proto = proto;
+#else
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(proto);
+#endif
 }
 
 static inline u8_t *net_pkt_next_hdr(struct net_pkt *pkt)
