@@ -855,16 +855,19 @@ static int cmd_directed_adv(const struct shell *shell,
 		return err;
 	}
 
-	if (argc > 3) {
-		if (!strcmp(argv[3], "low")) {
-			param = BT_LE_ADV_CONN_DIR_LOW_DUTY;
-		} else {
-			shell_help_print(shell, NULL, 0);
-			/* shell_cmd_precheck returns 1 when help is printed */
-			return 1;
-		}
+	if (argc == 3) {
+		goto connect;
 	}
 
+	if (strcmp(argv[3], "low")) {
+		shell_help_print(shell, NULL, 0);
+		/* shell_cmd_precheck returns 1 when help is printed */
+		return 1;
+	}
+
+	param = BT_LE_ADV_CONN_DIR_LOW_DUTY;
+
+connect:
 	conn = bt_conn_create_slave_le(&addr, param);
 	if (!conn) {
 		error(shell, "Failed to start directed advertising");
