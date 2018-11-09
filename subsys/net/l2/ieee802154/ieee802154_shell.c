@@ -676,7 +676,3 @@ SHELL_CREATE_STATIC_SUBCMD_SET(ieee802154_commands)
 
 SHELL_CMD_REGISTER(ieee802154, &ieee802154_commands, "IEEE 802.15.4 commands",
 		   NULL);
-
-void ieee802154_shell_init(void)
-{
-}

@@ -14,12 +14,6 @@
 
 #include "ieee802154_frame.h"
 
-#ifdef CONFIG_NET_L2_IEEE802154_SHELL
-void ieee802154_shell_init(void);
-#else
-#define ieee802154_shell_init(...)
-#endif /* CONFIG_NET_L2_IEEE802154_SHELL */
-
 #ifdef CONFIG_NET_MGMT
 
 static inline bool ieee802154_is_scanning(struct net_if *iface)
@@ -34,8 +28,6 @@ static inline void ieee802154_mgmt_init(struct net_if *iface)
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 
 	k_sem_init(&ctx->res_lock, 1, 1);
-
-	ieee802154_shell_init();
 }
 
 enum net_verdict ieee802154_handle_beacon(struct net_if *iface,
