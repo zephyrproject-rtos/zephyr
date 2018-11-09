@@ -263,7 +263,7 @@ def main():
                         % (irq, param))
 
             if not "CONFIG_MULTI_LEVEL_INTERRUPTS" in syms:
-                swt[irq - offset] = (param, func)
+                table_index = irq - offset
             else:
                 # Figure out third level interrupt position
                 debug('IRQ = ' + hex(irq))
@@ -278,7 +278,7 @@ def main():
                     debug('IRQ_level = 3')
                     debug('IRQ_Indx = ' + str(irq3))
                     debug('IRQ_Pos  = ' + str(irq3_pos))
-                    swt[irq3_pos - offset] = (param, func)
+                    table_index = irq3_pos - offset
 
                 # Figure out second level interrupt position
                 if irq2:
@@ -288,14 +288,19 @@ def main():
                     debug('IRQ_level = 2')
                     debug('IRQ_Indx = ' + str(irq2))
                     debug('IRQ_Pos  = ' + str(irq2_pos))
-                    swt[irq2_pos - offset] = (param, func)
+                    table_index = irq2_pos - offset
 
                 # Figure out first level interrupt position
                 if not irq3 and not irq2:
                     debug('IRQ_level = 1')
                     debug('IRQ_Indx = ' + str(irq1))
                     debug('IRQ_Pos  = ' + str(irq1))
-                    swt[irq1 - offset] = (param, func)
+                    table_index = irq1 - offset
+
+            if swt[table_index] != (0, spurious_handler):
+                error("multiple registrations for irq %d (0x%x)" % (irq, irq))
+
+            swt[table_index] = (param, func)
 
     with open(args.output_source, "w") as fp:
         write_source_file(fp, vt, swt, intlist, syms)
