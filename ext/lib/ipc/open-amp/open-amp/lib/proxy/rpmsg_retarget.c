@@ -1,6 +1,8 @@
+#include <metal/mutex.h>
+#include <metal/spinlock.h>
+#include <metal/utilities.h>
 #include <openamp/open_amp.h>
 #include <openamp/rpmsg_retarget.h>
-#include <metal/alloc.h>
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
@@ -10,82 +12,134 @@
  *	This files contains rpmsg based redefinitions for C RTL system calls
  *	such as _open, _read, _write, _close.
  *************************************************************************/
-static struct _rpc_data *rpc_data = 0;
+static struct rpmsg_rpc_data *rpmsg_default_rpc;
 
-int send_rpc(void *data, int len);
-
-void rpc_cb(struct rpmsg_channel *rtl_rp_chnl, void *data, int len, void *priv,
-	    unsigned long src)
+static int rpmsg_rpc_ept_cb(struct rpmsg_endpoint *ept, void *data, size_t len,
+			    uint32_t src, void *priv)
 {
+	struct rpmsg_rpc_syscall *syscall;
+
 	(void)priv;
 	(void)src;
 
-	memcpy(rpc_data->rpc_response, data, len);
+	if (data != NULL && ept != NULL) {
+		syscall = data;
+		if (syscall->id == TERM_SYSCALL_ID) {
+			rpmsg_destroy_ept(ept);
+		} else {
+			struct rpmsg_rpc_data *rpc;
 
-	atomic_flag_clear(&rpc_data->sync);
-	if (rpc_data->rpc_response->id == TERM_SYSCALL_ID) {
-		/* Application terminate signal is received from the proxy app,
-		 * so let the application know of terminate message.
-		 */
-		rpc_data->shutdown_cb(rtl_rp_chnl);
+			rpc = metal_container_of(ept,
+						 struct rpmsg_rpc_data,
+						 ept);
+			metal_spinlock_acquire(&rpc->buflock);
+			if (rpc->respbuf != NULL && rpc->respbuf_len != 0) {
+				if (len > rpc->respbuf_len)
+					len = rpc->respbuf_len;
+				memcpy(rpc->respbuf, data, len);
+			}
+			atomic_flag_clear(&rpc->nacked);
+			metal_spinlock_release(&rpc->buflock);
+		}
 	}
+
+	return RPMSG_SUCCESS;
 }
 
-int send_rpc(void *data, int len)
+static void rpmsg_service_unbind(struct rpmsg_endpoint *ept)
 {
-	int retval;
+	struct rpmsg_rpc_data *rpc;
 
-	retval = rpmsg_sendto(rpc_data->rpmsg_chnl, data, len, PROXY_ENDPOINT);
-	return retval;
+	rpc = metal_container_of(ept, struct rpmsg_rpc_data, ept);
+	rpc->ept_destroyed = 1;
+	rpmsg_destroy_ept(ept);
+	atomic_flag_clear(&rpc->nacked);
+	if (rpc->shutdown_cb)
+		rpc->shutdown_cb(rpc);
 }
 
-int rpmsg_retarget_init(struct rpmsg_channel *rp_chnl, rpc_shutdown_cb cb)
+
+int rpmsg_rpc_init(struct rpmsg_rpc_data *rpc,
+		   struct rpmsg_device *rdev,
+		   const char *ept_name, uint32_t ept_addr,
+		   uint32_t ept_raddr,
+		   void *poll_arg, rpmsg_rpc_poll poll,
+		   rpmsg_rpc_shutdown_cb shutdown_cb)
 {
-	/* Allocate memory for rpc control block */
-	rpc_data = (struct _rpc_data *)metal_allocate_memory(sizeof(struct _rpc_data));
+	int ret;
 
-	/* Create a mutex for synchronization */
-	metal_mutex_init(&rpc_data->rpc_lock);
-
-	/* Create a mutex for synchronization */
-	atomic_store(&rpc_data->sync, 1);
-
-	/* Create a endpoint to handle rpc response from master */
-	rpc_data->rpmsg_chnl = rp_chnl;
-	rpc_data->rp_ept = rpmsg_create_ept(rpc_data->rpmsg_chnl, rpc_cb,
-					    RPMSG_NULL, PROXY_ENDPOINT);
-	rpc_data->rpc = metal_allocate_memory(RPC_BUFF_SIZE);
-	rpc_data->rpc_response = metal_allocate_memory(RPC_BUFF_SIZE);
-	rpc_data->shutdown_cb = cb;
-
+	if (rpc == NULL || rdev == NULL)
+		return -EINVAL;
+	metal_spinlock_init(&rpc->buflock);
+	metal_mutex_init(&rpc->lock);
+	rpc->shutdown_cb = shutdown_cb;
+	rpc->poll_arg = poll_arg;
+	rpc->poll = poll;
+	rpc->ept_destroyed = 0;
+	rpc->respbuf = NULL;
+	rpc->respbuf_len = 0;
+	atomic_init(&rpc->nacked, 1);
+	ret = rpmsg_create_ept(&rpc->ept, rdev,
+			       ept_name, ept_addr, ept_raddr,
+			       rpmsg_rpc_ept_cb, rpmsg_service_unbind);
+	if (ret != 0) {
+		metal_mutex_release(&rpc->lock);
+		return -EINVAL;
+	}
+	while (!is_rpmsg_ept_ready(&rpc->ept)) {
+		if (rpc->poll)
+			rpc->poll(rpc->poll_arg);
+	}
 	return 0;
 }
 
-int rpmsg_retarget_deinit(struct rpmsg_channel *rp_chnl)
+void rpmsg_rpc_release(struct rpmsg_rpc_data *rpc)
 {
-	(void)rp_chnl;
+	if (rpc == NULL)
+		return;
+	if (rpc->ept_destroyed == 0)
+		rpmsg_destroy_ept(&rpc->ept);
+	metal_mutex_acquire(&rpc->lock);
+	metal_spinlock_acquire(&rpc->buflock);
+	rpc->respbuf = NULL;
+	rpc->respbuf_len = 0;
+	metal_spinlock_release(&rpc->buflock);
+	metal_mutex_release(&rpc->lock);
+	metal_mutex_deinit(&rpc->lock);
 
-	metal_free_memory(rpc_data->rpc);
-	metal_free_memory(rpc_data->rpc_response);
-	metal_mutex_deinit(&rpc_data->rpc_lock);
-	rpmsg_destroy_ept(rpc_data->rp_ept);
-	metal_free_memory(rpc_data);
-	rpc_data = NULL;
-
-	return 0;
+	return;
 }
 
-int rpmsg_retarget_send(void *data, int len)
+int rpmsg_rpc_send(struct rpmsg_rpc_data *rpc,
+		   void *req, size_t len,
+		   void *resp, size_t resp_len)
 {
-	return send_rpc(data, len);
-}
+	int ret;
 
-static inline void rpmsg_retarget_wait(struct _rpc_data *rpc)
-{
-	struct hil_proc *proc = rpc->rpmsg_chnl->rdev->proc;
-	while (atomic_flag_test_and_set(&rpc->sync)) {
-		hil_poll(proc, 0);
+	if (rpc == NULL)
+		return -EINVAL;
+	metal_spinlock_acquire(&rpc->buflock);
+	rpc->respbuf = resp;
+	rpc->respbuf_len = resp_len;
+	metal_spinlock_release(&rpc->buflock);
+	(void)atomic_flag_test_and_set(&rpc->nacked);
+	ret = rpmsg_send(&rpc->ept, req, len);
+	if (ret < 0)
+		return -EINVAL;
+	if (!resp)
+		return ret;
+	while((atomic_flag_test_and_set(&rpc->nacked))) {
+		if (rpc->poll)
+			rpc->poll(rpc->poll_arg);
 	}
+	return ret;
+}
+
+void rpmsg_set_default_rpc(struct rpmsg_rpc_data *rpc)
+{
+	if (rpc == NULL)
+		return;
+	rpmsg_default_rpc = rpc;
 }
 
 /*************************************************************************
@@ -99,40 +153,45 @@ static inline void rpmsg_retarget_wait(struct _rpc_data *rpc)
  *       Open a file.  Minimal implementation
  *
  *************************************************************************/
+#define MAX_BUF_LEN 496UL
+
 int _open(const char *filename, int flags, int mode)
 {
+	struct rpmsg_rpc_data *rpc = rpmsg_default_rpc;
+	struct rpmsg_rpc_syscall *syscall;
+	struct rpmsg_rpc_syscall resp;
 	int filename_len = strlen(filename) + 1;
-	int payload_size = sizeof(struct _sys_rpc) + filename_len;
-	int retval = -1;
+	int payload_size = sizeof(*syscall) + filename_len;
+	unsigned char tmpbuf[MAX_BUF_LEN];
+	int ret;
 
-	if ((!filename) || (filename_len > FILE_NAME_LEN)) {
-		return -1;
+	if (filename == NULL || payload_size > (int)MAX_BUF_LEN) {
+		return -EINVAL;
 	}
 
-	if (!rpc_data)
-		return retval;
+	if (rpc == NULL)
+		return -EINVAL;
 
 	/* Construct rpc payload */
-	rpc_data->rpc->id = OPEN_SYSCALL_ID;
-	rpc_data->rpc->sys_call_args.int_field1 = flags;
-	rpc_data->rpc->sys_call_args.int_field2 = mode;
-	rpc_data->rpc->sys_call_args.data_len = filename_len;
-	memcpy(&rpc_data->rpc->sys_call_args.data, filename, filename_len);
+	syscall = (struct rpmsg_rpc_syscall *)tmpbuf;
+	syscall->id = OPEN_SYSCALL_ID;
+	syscall->args.int_field1 = flags;
+	syscall->args.int_field2 = mode;
+	syscall->args.data_len = filename_len;
+	memcpy(tmpbuf + sizeof(*syscall), filename, filename_len);
 
-	/* Transmit rpc request */
-	metal_mutex_acquire(&rpc_data->rpc_lock);
-	send_rpc((void *)rpc_data->rpc, payload_size);
-	metal_mutex_release(&rpc_data->rpc_lock);
-
-	/* Wait for response from proxy on master */
-	rpmsg_retarget_wait(rpc_data);
-
-	/* Obtain return args and return to caller */
-	if (rpc_data->rpc_response->id == OPEN_SYSCALL_ID) {
-		retval = rpc_data->rpc_response->sys_call_args.int_field1;
+	resp.id = 0;
+	ret = rpmsg_rpc_send(rpc, tmpbuf, payload_size,
+			     (void *)&resp, sizeof(resp));
+	if (ret >= 0) {
+		/* Obtain return args and return to caller */
+		if (resp.id == OPEN_SYSCALL_ID)
+			ret = resp.args.int_field1;
+		else
+			ret = -EINVAL;
 	}
 
-	return retval;
+	return ret;
 }
 
 /*************************************************************************
@@ -148,40 +207,46 @@ int _open(const char *filename, int flags, int mode)
  *************************************************************************/
 int _read(int fd, char *buffer, int buflen)
 {
-	int payload_size = sizeof(struct _sys_rpc);
-	int retval = -1;
+	struct rpmsg_rpc_syscall syscall;
+	struct rpmsg_rpc_syscall *resp;
+	struct rpmsg_rpc_data *rpc = rpmsg_default_rpc;
+	int payload_size = sizeof(syscall);
+	unsigned char tmpbuf[MAX_BUF_LEN];
+	int ret;
 
-	if (!buffer || !buflen)
-		return retval;
-	if (!rpc_data)
-		return retval;
+	if (rpc == NULL || buffer == NULL || buflen == 0)
+		return -EINVAL;
 
 	/* Construct rpc payload */
-	rpc_data->rpc->id = READ_SYSCALL_ID;
-	rpc_data->rpc->sys_call_args.int_field1 = fd;
-	rpc_data->rpc->sys_call_args.int_field2 = buflen;
-	rpc_data->rpc->sys_call_args.data_len = 0;	/*not used */
+	syscall.id = READ_SYSCALL_ID;
+	syscall.args.int_field1 = fd;
+	syscall.args.int_field2 = buflen;
+	syscall.args.data_len = 0;	/*not used */
 
-	/* Transmit rpc request */
-	metal_mutex_acquire(&rpc_data->rpc_lock);
-	send_rpc((void *)rpc_data->rpc, payload_size);
-	metal_mutex_release(&rpc_data->rpc_lock);
-
-	/* Wait for response from proxy on master */
-	rpmsg_retarget_wait(rpc_data);
+	resp = (struct rpmsg_rpc_syscall *)tmpbuf;
+	resp->id = 0;
+	ret = rpmsg_rpc_send(rpc, (void *)&syscall, payload_size,
+			     tmpbuf, sizeof(tmpbuf));
 
 	/* Obtain return args and return to caller */
-	if (rpc_data->rpc_response->id == READ_SYSCALL_ID) {
-		if (rpc_data->rpc_response->sys_call_args.int_field1 > 0) {
-			memcpy(buffer,
-			       rpc_data->rpc_response->sys_call_args.data,
-			       rpc_data->rpc_response->sys_call_args.data_len);
-		}
+	if (ret >= 0) {
+		if (resp->id == READ_SYSCALL_ID) {
+			if (resp->args.int_field1 > 0) {
+				int tmplen = resp->args.data_len;
+				unsigned char *tmpptr = tmpbuf;
 
-		retval = rpc_data->rpc_response->sys_call_args.int_field1;
+				tmpptr += sizeof(*resp);
+				if (tmplen > buflen)
+					tmplen = buflen;
+				memcpy(buffer, tmpptr, tmplen);
+			}
+			ret = resp->args.int_field1;
+		} else {
+			ret = -EINVAL;
+		}
 	}
 
-	return retval;
+	return ret;
 }
 
 /*************************************************************************
@@ -197,38 +262,43 @@ int _read(int fd, char *buffer, int buflen)
  *************************************************************************/
 int _write(int fd, const char *ptr, int len)
 {
-	int retval = -1;
-	int payload_size = sizeof(struct _sys_rpc) + len;
+	int ret;
+	struct rpmsg_rpc_syscall *syscall;
+	struct rpmsg_rpc_syscall resp;
+	int payload_size = sizeof(*syscall) + len;
+	struct rpmsg_rpc_data *rpc = rpmsg_default_rpc;
+	unsigned char tmpbuf[MAX_BUF_LEN];
+	unsigned char *tmpptr;
 	int null_term = 0;
 
-	if (fd == 1) {
+	if (rpc == NULL)
+		return -EINVAL;
+	if (fd == 1)
 		null_term = 1;
+
+	syscall = (struct rpmsg_rpc_syscall *)tmpbuf;
+	syscall->id = WRITE_SYSCALL_ID;
+	syscall->args.int_field1 = fd;
+	syscall->args.int_field2 = len;
+	syscall->args.data_len = len + null_term;
+	tmpptr = tmpbuf + sizeof(*syscall);
+	memcpy(tmpptr, ptr, len);
+	if (null_term == 1) {
+		*(char *)(tmpptr + len + null_term) = 0;
+		payload_size += 1;
 	}
-	if (!rpc_data)
-		return retval;
+	resp.id = 0;
+	ret = rpmsg_rpc_send(rpc, tmpbuf, payload_size,
+			     (void *)&resp, sizeof(resp));
 
-	rpc_data->rpc->id = WRITE_SYSCALL_ID;
-	rpc_data->rpc->sys_call_args.int_field1 = fd;
-	rpc_data->rpc->sys_call_args.int_field2 = len;
-	rpc_data->rpc->sys_call_args.data_len = len + null_term;
-	memcpy(rpc_data->rpc->sys_call_args.data, ptr, len);
-	if (null_term) {
-		*(char *)(rpc_data->rpc->sys_call_args.data + len + null_term) =
-		    0;
-	}
-
-	metal_mutex_acquire(&rpc_data->rpc_lock);
-	send_rpc((void *)rpc_data->rpc, payload_size);
-	metal_mutex_release(&rpc_data->rpc_lock);
-
-	/* Wait for response from proxy on master */
-	rpmsg_retarget_wait(rpc_data);
-
-	if (rpc_data->rpc_response->id == WRITE_SYSCALL_ID) {
-		retval = rpc_data->rpc_response->sys_call_args.int_field1;
+	if (ret >= 0) {
+		if (resp.id == WRITE_SYSCALL_ID)
+			ret = resp.args.int_field1;
+		else
+			ret = -EINVAL;
 	}
 
-	return retval;
+	return ret;
 
 }
 
@@ -245,26 +315,29 @@ int _write(int fd, const char *ptr, int len)
  *************************************************************************/
 int _close(int fd)
 {
-	int payload_size = sizeof(struct _sys_rpc);
-	int retval = -1;
+	int ret;
+	struct rpmsg_rpc_syscall syscall;
+	struct rpmsg_rpc_syscall resp;
+	int payload_size = sizeof(syscall);
+	struct rpmsg_rpc_data *rpc = rpmsg_default_rpc;
 
-	if (!rpc_data)
-		return retval;
-	rpc_data->rpc->id = CLOSE_SYSCALL_ID;
-	rpc_data->rpc->sys_call_args.int_field1 = fd;
-	rpc_data->rpc->sys_call_args.int_field2 = 0;	/*not used */
-	rpc_data->rpc->sys_call_args.data_len = 0;	/*not used */
+	if (rpc == NULL)
+		return -EINVAL;
+	syscall.id = CLOSE_SYSCALL_ID;
+	syscall.args.int_field1 = fd;
+	syscall.args.int_field2 = 0;	/*not used */
+	syscall.args.data_len = 0;	/*not used */
 
-	metal_mutex_acquire(&rpc_data->rpc_lock);
-	send_rpc((void *)rpc_data->rpc, payload_size);
-	metal_mutex_release(&rpc_data->rpc_lock);
+	resp.id = 0;
+	ret = rpmsg_rpc_send(rpc, (void*)&syscall, payload_size,
+			     (void*)&resp, sizeof(resp));
 
-	/* Wait for response from proxy on master */
-	rpmsg_retarget_wait(rpc_data);
-
-	if (rpc_data->rpc_response->id == CLOSE_SYSCALL_ID) {
-		retval = rpc_data->rpc_response->sys_call_args.int_field1;
+	if (ret >= 0) {
+		if (resp.id == CLOSE_SYSCALL_ID)
+			ret = resp.args.int_field1;
+		else
+			ret = -EINVAL;
 	}
 
-	return retval;
+	return ret;
 }
