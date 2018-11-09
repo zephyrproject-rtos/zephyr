@@ -102,9 +102,9 @@
 			label = "SERCOM4";
 		};
 
-		sercom5: sercom@42001C00 {
+		sercom5: sercom@42001c00 {
 			compatible = "atmel,sam0-sercom";
-			reg = <0x42001C00 0x40>;
+			reg = <0x42001c00 0x40>;
 			interrupts = <14 0>;
 			status = "disabled";
 			label = "SERCOM5";

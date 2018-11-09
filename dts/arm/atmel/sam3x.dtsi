@@ -32,19 +32,19 @@
 	};
 
 	soc {
-		wdog: watchdog@400E1A50 {
+		wdog: watchdog@400e1a50 {
 			compatible = "atmel,sam-watchdog";
-			reg = <0x400E1A50 0xc>;
+			reg = <0x400e1a50 0xc>;
 			interrupts = <4 0>;
 			peripheral-id = <4>;
 			label = "WATCHDOG_0";
 			status = "disabled";
 		};
 
-		i2c0: i2c@4008C000 {
+		i2c0: i2c@4008c000 {
 			compatible = "atmel,sam-i2c-twi";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
-			reg = <0x4008C000 0x128>;
+			reg = <0x4008c000 0x128>;
 			interrupts = <22 0>;
 			peripheral-id = <22>;
 			label = "I2C_0";
@@ -61,9 +61,9 @@
 			status = "disabled";
 		};
 
-		uart0: uart@400E0800 {
+		uart0: uart@400e0800 {
 			compatible = "atmel,sam-uart";
-			reg = <0x400E0800 0x124>;
+			reg = <0x400e0800 0x124>;
 			interrupts = <8 1>;
 			peripheral-id = <8>;
 			status = "disabled";
@@ -79,27 +79,27 @@
 			label = "USART_0";
 		};
 
-		usart1: usart@4009C000 {
+		usart1: usart@4009c000 {
 			compatible = "atmel,sam-usart";
-			reg = <0x4009C000 0x130>;
+			reg = <0x4009c000 0x130>;
 			interrupts = <18 0>;
 			peripheral-id = <18>;
 			status = "disabled";
 			label = "USART_1";
 		};
 
-		usart2: usart@400A0000 {
+		usart2: usart@400a0000 {
 			compatible = "atmel,sam-usart";
-			reg = <0x400A0000 0x130>;
+			reg = <0x400a0000 0x130>;
 			interrupts = <19 0>;
 			peripheral-id = <19>;
 			status = "disabled";
 			label = "USART_2";
 		};
 
-		usart3: usart@400A4000 {
+		usart3: usart@400a4000 {
 			compatible = "atmel,sam-usart";
-			reg = <0x400A4000 0x130>;
+			reg = <0x400a4000 0x130>;
 			interrupts = <20 0>;
 			peripheral-id = <20>;
 			status = "disabled";

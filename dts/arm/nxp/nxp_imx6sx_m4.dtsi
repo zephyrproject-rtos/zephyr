@@ -27,10 +27,10 @@
 		};
 	};
 
-	tcml:memory@1FFF8000 {
+	tcml:memory@1fff8000 {
 		device_type = "memory";
 		compatible = "nxp,imx-code-bus";
-		reg = <0x1FFF8000 0x00008000>;
+		reg = <0x1fff8000 0x00008000>;
 		label = "TCML";
 	};
 
@@ -41,10 +41,10 @@
 		label = "TCMU";
 	};
 
-	ocram_s:memory@208F8000 {
+	ocram_s:memory@208f8000 {
 		device_type = "memory";
 		compatible = "nxp,imx-sys-bus";
-		reg = <0x208F8000 0x00004000>;
+		reg = <0x208f8000 0x00004000>;
 		label = "OCRAM_S";
 	};
 
@@ -84,9 +84,9 @@
 			status = "disabled";
 		};
 
-		uart2:uart@421E8000 {
+		uart2:uart@421e8000 {
 			compatible = "nxp,imx-uart";
-			reg = <0x421E8000 0x00004000>;
+			reg = <0x421e8000 0x00004000>;
 			interrupts = <27 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW)|\
@@ -96,9 +96,9 @@
 			status = "disabled";
 		};
 
-		uart3:uart@421EC000 {
+		uart3:uart@421ec000 {
 			compatible = "nxp,imx-uart";
-			reg = <0x421EC000 0x00004000>;
+			reg = <0x421ec000 0x00004000>;
 			interrupts = <28 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW)|\
@@ -108,9 +108,9 @@
 			status = "disabled";
 		};
 
-		uart4:uart@421F0000 {
+		uart4:uart@421f0000 {
 			compatible = "nxp,imx-uart";
-			reg = <0x421F0000 0x00004000>;
+			reg = <0x421f0000 0x00004000>;
 			interrupts = <29 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW)|\
@@ -120,9 +120,9 @@
 			status = "disabled";
 		};
 
-		uart5:uart@421F4000 {
+		uart5:uart@421f4000 {
 			compatible = "nxp,imx-uart";
-			reg = <0x421F4000 0x00004000>;
+			reg = <0x421f4000 0x00004000>;
 			interrupts = <30 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW)|\
@@ -132,9 +132,9 @@
 			status = "disabled";
 		};
 
-		uart6:uart@422A0000 {
+		uart6:uart@422a0000 {
 			compatible = "nxp,imx-uart";
-			reg = <0x422A0000 0x00004000>;
+			reg = <0x422a0000 0x00004000>;
 			interrupts = <17 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW)|\
@@ -144,9 +144,9 @@
 			status = "disabled";
 		};
 
-		gpio1:gpio@4209C000 {
+		gpio1:gpio@4209c000 {
 			compatible = "nxp,imx-gpio";
-			reg = <0x4209C000 0x4000>;
+			reg = <0x4209c000 0x4000>;
 			interrupts = <66 0>, <67 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW)|\
@@ -158,9 +158,9 @@
 			status = "disabled";
 		};
 
-		gpio2:gpio@420A0000 {
+		gpio2:gpio@420a0000 {
 			compatible = "nxp,imx-gpio";
-			reg = <0x420A0000 0x4000>;
+			reg = <0x420a0000 0x4000>;
 			interrupts = <68 0>, <69 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW)|\
@@ -172,9 +172,9 @@
 			status = "disabled";
 		};
 
-		gpio3:gpio@420A4000 {
+		gpio3:gpio@420a4000 {
 			compatible = "nxp,imx-gpio";
-			reg = <0x420A4000 0x4000>;
+			reg = <0x420a4000 0x4000>;
 			interrupts = <70 0>, <71 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW)|\
@@ -186,9 +186,9 @@
 			status = "disabled";
 		};
 
-		gpio4:gpio@420A8000 {
+		gpio4:gpio@420a8000 {
 			compatible = "nxp,imx-gpio";
-			reg = <0x420A8000 0x4000>;
+			reg = <0x420a8000 0x4000>;
 			interrupts = <72 0>, <73 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW)|\
@@ -200,9 +200,9 @@
 			status = "disabled";
 		};
 
-		gpio5:gpio@420AC000 {
+		gpio5:gpio@420ac000 {
 			compatible = "nxp,imx-gpio";
-			reg = <0x420AC000 0x4000>;
+			reg = <0x420ac000 0x4000>;
 			interrupts = <74 0>, <74 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW)|\
@@ -214,9 +214,9 @@
 			status = "disabled";
 		};
 
-		gpio6:gpio@420B0000 {
+		gpio6:gpio@420b0000 {
 			compatible = "nxp,imx-gpio";
-			reg = <0x420B0000 0x4000>;
+			reg = <0x420b0000 0x4000>;
 			interrupts = <76 0>, <77 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW)|\
@@ -228,9 +228,9 @@
 			status = "disabled";
 		};
 
-		gpio7:gpio@420B4000 {
+		gpio7:gpio@420b4000 {
 			compatible = "nxp,imx-gpio";
-			reg = <0x420B4000 0x4000>;
+			reg = <0x420b4000 0x4000>;
 			interrupts = <78 0>, <79 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW)|\

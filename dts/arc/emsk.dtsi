@@ -106,7 +106,7 @@
 
 		gpio0: gpio@f0002000 {
 			compatible = "snps,designware-gpio";
-			reg = <0xF0002000 0xc>;
+			reg = <0xf0002000 0xc>;
 			bits = <32>;
 			label = "GPIO_0";
 			interrupts = <DT_GPIO0_INTNO 1>;
@@ -116,9 +116,9 @@
 			#gpio-cells = <2>;
 		};
 
-		gpio1: gpio@f000200C {
+		gpio1: gpio@f000200c {
 			compatible = "snps,designware-gpio";
-			reg = <0xF000200C 0xc>;
+			reg = <0xf000200c 0xc>;
 			bits = <9>;
 			label = "GPIO_1";
 			interrupts = <DT_GPIO1_INTNO 1>;

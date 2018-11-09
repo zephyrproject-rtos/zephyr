@@ -39,17 +39,17 @@
 	};
 
 	soc {
-		uart0: uart@4000C000 {
+		uart0: uart@4000c000 {
 			compatible = "ti,cc32xx-uart";
-			reg = <0x4000C000 0x4c>;
+			reg = <0x4000c000 0x4c>;
 			interrupts = <EXP_UARTA0 3>;
 			status = "disabled";
 			label = "UART_0";
 		};
 
-		uart1: uart@4000D000 {
+		uart1: uart@4000d000 {
 			compatible = "ti,cc32xx-uart";
-			reg = <0x4000D000 0x4c>;
+			reg = <0x4000d000 0x4c>;
 			interrupts = <EXP_UARTA1 3>;
 			status = "disabled";
 			label = "UART_1";

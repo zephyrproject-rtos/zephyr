@@ -31,9 +31,9 @@
 	};
 
 	soc {
-		wdog: watchdog@400E1450 {
+		wdog: watchdog@400e1450 {
 			compatible = "atmel,sam-watchdog";
-			reg = <0x400E1450 0xc>;
+			reg = <0x400e1450 0xc>;
 			interrupts = <4 0>;
 			peripheral-id = <4>;
 			label = "WATCHDOG_0";
@@ -49,28 +49,28 @@
 			status = "disabled";
 		};
 
-		i2c1: i2c@4001C000 {
+		i2c1: i2c@4001c000 {
 			compatible = "atmel,sam-i2c-twi";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
-			reg = <0x4001C000 0x128>;
+			reg = <0x4001c000 0x128>;
 			interrupts = <20 0>;
 			peripheral-id = <20>;
 			label = "I2C_1";
 			status = "disabled";
 		};
 
-		uart0: uart@400E0600 {
+		uart0: uart@400e0600 {
 			compatible = "atmel,sam-uart";
-			reg = <0x400E0600 0x200>;
+			reg = <0x400e0600 0x200>;
 			interrupts = <8 1>;
 			peripheral-id = <8>;
 			status = "disabled";
 			label = "UART_0";
 		};
 
-		uart1: uart@400E0800 {
+		uart1: uart@400e0800 {
 			compatible = "atmel,sam-uart";
-			reg = <0x400E0800 0x200>;
+			reg = <0x400e0800 0x200>;
 			interrupts = <9 1>;
 			peripheral-id = <9>;
 			status = "disabled";
@@ -95,9 +95,9 @@
 			label = "USART_1";
 		};
 
-		porta: gpio@400E0E00 {
+		porta: gpio@400e0e00 {
 			compatible = "atmel,sam-gpio";
-			reg = <0x400E0E00 0x190>;
+			reg = <0x400e0e00 0x190>;
 			interrupts = <11 1>;
 			peripheral-id = <11>;
 			label = "PORTA";
@@ -105,9 +105,9 @@
 			#gpio-cells = <2>;
 		};
 
-		portb: gpio@400E1000 {
+		portb: gpio@400e1000 {
 			compatible = "atmel,sam-gpio";
-			reg = <0x400E1000 0x190>;
+			reg = <0x400e1000 0x190>;
 			interrupts = <12 1>;
 			peripheral-id = <12>;
 			label = "PORTB";
@@ -115,9 +115,9 @@
 			#gpio-cells = <2>;
 		};
 
-		portc: gpio@400E1200 {
+		portc: gpio@400e1200 {
 			compatible = "atmel,sam-gpio";
-			reg = <0x400E1200 0x190>;
+			reg = <0x400e1200 0x190>;
 			interrupts = <13 1>;
 			peripheral-id = <13>;
 			label = "PORTC";

@@ -24,25 +24,25 @@
 	};
 
 	soc {
-		uart0: uart@4000C000 {
+		uart0: uart@4000c000 {
 			compatible = "ti,stellaris-uart";
-			reg = <0x4000C000 0x4c>;
+			reg = <0x4000c000 0x4c>;
 			interrupts = <5 3>;
 			status = "disabled";
 			label = "UART_0";
 		};
 
-		uart1: uart@4000D000 {
+		uart1: uart@4000d000 {
 			compatible = "ti,stellaris-uart";
-			reg = <0x4000D000 0x4c>;
+			reg = <0x4000d000 0x4c>;
 			interrupts = <6 3>;
 			status = "disabled";
 			label = "UART_1";
 		};
 
-		uart2: uart@4000E000 {
+		uart2: uart@4000e000 {
 			compatible = "ti,stellaris-uart";
-			reg = <0x4000E000 0x4c>;
+			reg = <0x4000e000 0x4c>;
 			interrupts = <33 3>;
 			status = "disabled";
 			label = "UART_2";
