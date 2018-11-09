@@ -1392,7 +1392,7 @@ int shell_start(const struct shell *shell)
 		return err;
 	}
 
-	if (IS_ENABLED(CONFIG_SHELL_VT100_COLORS_ENABLED)) {
+	if (IS_ENABLED(CONFIG_SHELL_VT100_COLORS)) {
 		vt100_color_set(shell, SHELL_NORMAL);
 	}
 
