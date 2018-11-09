@@ -29,6 +29,10 @@ void z_sys_trace_thread_switched_out(void);
 
 #ifdef CONFIG_SEGGER_SYSTEMVIEW
 #include "tracing_sysview.h"
+
+#elif defined CONFIG_TRACING_CPU_STATS
+#include "tracing_cpu_stats.h"
+
 #else
 
 /**
