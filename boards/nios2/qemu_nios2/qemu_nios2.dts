@@ -7,8 +7,8 @@
 	compatible = "qemu,nios2";
 
 	aliases {
-		uart_0 = &jtag_uart;
-		uart_1 = &ns16550_uart;
+		uart-0 = &jtag_uart;
+		uart-1 = &ns16550_uart;
 	};
 
 	chosen {
