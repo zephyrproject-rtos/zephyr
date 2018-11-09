@@ -5,8 +5,9 @@
 #
 
 class EDTSDevice:
-    def __init__(self, device):
-        self.device = device
+    def __init__(self, devices, dev_id):
+        self.all = devices
+        self.device = devices[dev_id]
 
     ##
     # @brief Get device tree property value for the device of the given device id.
@@ -128,3 +129,11 @@ class EDTSDevice:
     # @return device unique id string
     def get_unique_id(self):
         return self.get_property('unique_id')
+
+    def get_parent(self, parent_type='bus'):
+        parent_device_id = ''
+
+        for comp in self.device['device-id'].split('/')[1:-1]:
+            parent_device_id += '/' + comp
+
+        return EDTSDevice(self.all, parent_device_id)

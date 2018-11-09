@@ -95,7 +95,7 @@ class EDTSConsumerMixin(object):
     # @return (dict)device
     def get_device_by_device_id(self, device_id):
         try:
-            return EDTSDevice(self._edts['devices'][device_id])
+            return EDTSDevice(self._edts['devices'], device_id)
         except:
             return None
 
