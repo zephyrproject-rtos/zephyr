@@ -230,4 +230,29 @@ config OPENOCD_SUPPORT
 	  OpenOCD to determine the state of running threads.  (This option
 	  selects CONFIG_THREAD_MONITOR, so all of its caveats are implied.)
 
+config TRACING_CPU_STATS
+	bool "Enable CPU usage tracing"
+	select THREAD_MONITOR
+	select THREAD_STACK_INFO
+	select TRACING
+	help
+	  Module provides information about percent of CPU usage based on
+	  tracing hooks for threads switching in and out, interrupts enters
+	  and exits (only distinguishes between idle thread, non idle thread
+	  and scheduler). Use provided API or enable automatical logging to
+	  get values.
+
+config TRACING_CPU_STATS_LOG
+	bool "Enable current CPU usage logging"
+	depends on TRACING_CPU_STATS
+	help
+	  Periodically displays information about CPU usage.
+
+config TRACING_CPU_STATS_INTERVAL
+	int "Logging interval for CPU measurements [ms]"
+	default 2000
+	depends on TRACING_CPU_STATS_LOG
+	help
+	  Time period of displaying information about CPU usage.
+
 endmenu
