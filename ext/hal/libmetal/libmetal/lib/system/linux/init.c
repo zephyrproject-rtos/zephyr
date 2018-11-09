@@ -135,7 +135,7 @@ int metal_sys_init(const struct metal_init_params *params)
 			  strerror(errno));
 		return -errno;
 	}
-	if (sizeof(int) != fread(&seed, sizeof(int), 1, urandom)) {
+	if (fread(&seed, 1, sizeof(seed), urandom) <= 0) {
 		metal_log(METAL_LOG_DEBUG, "Failed fread /dev/urandom\n");
 	}
 	fclose(urandom);

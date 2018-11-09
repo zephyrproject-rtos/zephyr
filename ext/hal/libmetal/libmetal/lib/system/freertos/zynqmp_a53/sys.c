@@ -39,7 +39,7 @@ unsigned int sys_irq_save_disable(void)
 
 void metal_machine_cache_flush(void *addr, unsigned int len)
 {
-	if (!addr & !len)
+	if (!addr && !len)
 		Xil_DCacheFlush();
 	else
 		Xil_DCacheFlushRange((intptr_t)addr, len);
@@ -47,7 +47,7 @@ void metal_machine_cache_flush(void *addr, unsigned int len)
 
 void metal_machine_cache_invalidate(void *addr, unsigned int len)
 {
-	if (!addr & !len)
+	if (!addr && !len)
 		Xil_DCacheInvalidate();
 	else
 		Xil_DCacheInvalidateRange((intptr_t)addr, len);
