@@ -247,10 +247,11 @@ static void lis2dh_thread_cb(void *arg)
 {
 	struct device *dev = arg;
 	struct lis2dh_data *lis2dh = dev->driver_data;
+	int status;
 
 	if (unlikely(atomic_test_and_clear_bit(&lis2dh->trig_flags,
 		     START_TRIG_INT1))) {
-		int status = lis2dh_start_trigger_int1(dev);
+		status = lis2dh_start_trigger_int1(dev);
 
 		if (unlikely(status < 0)) {
 			LOG_ERR("lis2dh_start_trigger_int1: %d", status);
@@ -260,7 +261,7 @@ static void lis2dh_thread_cb(void *arg)
 
 	if (unlikely(atomic_test_and_clear_bit(&lis2dh->trig_flags,
 		     START_TRIG_INT2))) {
-		int status = lis2dh_start_trigger_int2(dev);
+		status = lis2dh_start_trigger_int2(dev);
 
 		if (unlikely(status < 0)) {
 			LOG_ERR("lis2dh_start_trigger_int2: %d", status);
@@ -291,7 +292,12 @@ static void lis2dh_thread_cb(void *arg)
 		u8_t reg_val;
 
 		/* clear interrupt 2 to de-assert int2 line */
-		lis2dh_reg_read_byte(dev, LIS2DH_REG_INT2_SRC, &reg_val);
+		status = lis2dh_reg_read_byte(dev, LIS2DH_REG_INT2_SRC,
+					      &reg_val);
+		if (status < 0) {
+			LOG_ERR("clearing interrupt 2 failed: %d", status);
+			return;
+		}
 
 		if (likely(lis2dh->handler_anymotion != NULL)) {
 			lis2dh->handler_anymotion(dev, &anym_trigger);
