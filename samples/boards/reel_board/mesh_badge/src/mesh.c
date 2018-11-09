@@ -32,6 +32,29 @@
 /* Maximum characters in "hello" message */
 #define HELLO_MAX         8
 
+#define MAX_SENS_STATUS_LEN 8
+
+#define SENS_PROP_ID_TEMP_CELCIUS 0x2A1F
+#define SENS_PROP_ID_UNIT_TEMP_CELCIUS 0x272F
+#define SENS_PROP_ID_TEMP_CELCIUS_SIZE 2
+
+enum {
+	SENSOR_HDR_A = 0,
+	SENSOR_HDR_B = 1,
+};
+
+struct sensor_hdr_a {
+	u16_t format:1;
+	u16_t length:4;
+	u16_t prop_id:11;
+};
+
+struct sensor_hdr_b {
+	u8_t format:1;
+	u8_t length:7;
+	u16_t prop_id;
+};
+
 static struct k_work hello_work;
 static struct k_work mesh_start_work;
 
@@ -169,6 +192,91 @@ static void gen_onoff_set(struct bt_mesh_model *model,
 	gen_onoff_get(model, ctx, buf);
 }
 
+static void sensor_desc_get(struct bt_mesh_model *model,
+			    struct bt_mesh_msg_ctx *ctx,
+			    struct net_buf_simple *buf)
+{
+	/* TODO */
+}
+
+static void sens_temperature_celcius_fill(struct net_buf_simple *msg)
+{
+	struct sensor_hdr_b hdr;
+	/* TODO Get only temperature from sensor */
+	struct sensor_value val[2];
+	s16_t temp_degrees;
+
+	hdr.format = SENSOR_HDR_B;
+	hdr.length = sizeof(temp_degrees);
+	hdr.prop_id = SENS_PROP_ID_UNIT_TEMP_CELCIUS;
+
+	get_hdc1010_val(val);
+	temp_degrees = sensor_value_to_double(&val[0]);
+
+	net_buf_simple_add_mem(msg, &hdr, sizeof(hdr));
+	net_buf_simple_add_le16(msg, temp_degrees);
+}
+
+static void sens_unknown_fill(u16_t id, struct net_buf_simple *msg)
+{
+	struct sensor_hdr_a hdr;
+
+	/*
+	 * When the message is a response to a Sensor Get message that
+	 * identifies a sensor property that does not exist on the element, the
+	 * Length field shall represent the value of zero and the Raw Value for
+	 * that property shall be omitted. (Mesh model spec 1.0, 4.2.14)
+	 */
+	hdr.format = SENSOR_HDR_A;
+	hdr.length = 0;
+	hdr.prop_id = id;
+
+	net_buf_simple_add_mem(msg, &hdr, sizeof(hdr));
+}
+
+static void sensor_create_status(u16_t id, struct net_buf_simple *msg)
+{
+	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_SENS_STATUS);
+
+	switch (id) {
+	case SENS_PROP_ID_TEMP_CELCIUS:
+		sens_temperature_celcius_fill(msg);
+		break;
+	default:
+		sens_unknown_fill(id, msg);
+		break;
+	}
+}
+
+static void sensor_get(struct bt_mesh_model *model,
+		       struct bt_mesh_msg_ctx *ctx,
+		       struct net_buf_simple *buf)
+{
+	NET_BUF_SIMPLE_DEFINE(msg, 1 + MAX_SENS_STATUS_LEN + 4);
+	u16_t sensor_id;
+
+	sensor_id = net_buf_simple_pull_le16(buf);
+	sensor_create_status(sensor_id, &msg);
+
+	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
+		printk("Unable to send Sensor get status response\n");
+	}
+}
+
+static void sensor_col_get(struct bt_mesh_model *model,
+			   struct bt_mesh_msg_ctx *ctx,
+			   struct net_buf_simple *buf)
+{
+	/* TODO */
+}
+
+static void sensor_series_get(struct bt_mesh_model *model,
+			      struct bt_mesh_msg_ctx *ctx,
+			      struct net_buf_simple *buf)
+{
+	/* TODO */
+}
+
 /* Definitions of models publication context (Start) */
 BT_MESH_HEALTH_PUB_DEFINE(health_pub, 0);
 BT_MESH_MODEL_PUB_DEFINE(gen_onoff_srv_pub_root, NULL, 2 + 3);
@@ -181,6 +289,14 @@ static const struct bt_mesh_model_op gen_onoff_srv_op[] = {
 	BT_MESH_MODEL_OP_END,
 };
 
+/* Mapping of message handlers for Sensor Server (0x1100) */
+static const struct bt_mesh_model_op sensor_srv_op[] = {
+	{ BT_MESH_MODEL_OP_SENS_DESC_GET, 0, sensor_desc_get },
+	{ BT_MESH_MODEL_OP_SENS_GET, 0, sensor_get },
+	{ BT_MESH_MODEL_OP_SENS_COL_GET, 2, sensor_col_get },
+	{ BT_MESH_MODEL_OP_SENS_SERIES_GET, 2, sensor_series_get },
+};
+
 static struct bt_mesh_model root_models[] = {
 	BT_MESH_MODEL_CFG_SRV(&cfg_srv),
 	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
@@ -188,6 +304,8 @@ static struct bt_mesh_model root_models[] = {
 	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_ONOFF_SRV,
 		      gen_onoff_srv_op, &gen_onoff_srv_pub_root,
 		      &led_onoff_state[0]),
+	BT_MESH_MODEL(BT_MESH_MODEL_ID_SENSOR_SRV,
+		      sensor_srv_op, NULL, NULL),
 };
 
 static void vnd_hello(struct bt_mesh_model *model,
@@ -364,6 +482,9 @@ static int provision_and_configure(void)
 
 	bt_mesh_cfg_mod_app_bind(NET_IDX, addr, addr, APP_IDX,
 				 BT_MESH_MODEL_ID_GEN_ONOFF_SRV, NULL);
+
+	bt_mesh_cfg_mod_app_bind(NET_IDX, addr, addr, APP_IDX,
+				 BT_MESH_MODEL_ID_SENSOR_SRV, NULL);
 
 	/* Bind to Health model */
 	bt_mesh_cfg_mod_app_bind(NET_IDX, addr, addr, APP_IDX,
