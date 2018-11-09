@@ -325,8 +325,8 @@ config BOOTLOADER_MCUBOOT
 	  order for the image generated to be bootable using the MCUboot open
 	  source bootloader. Currently this includes:
 
-	    * Setting TEXT_LOAD_OFFSET to a default value that allows space for
-	      the MCUboot image header
+	    * Setting TEXT_SECTION_OFFSET to a default value that allows space
+	      for the MCUboot image header
 	    * Activating SW_VECTOR_RELAY on Cortex-M0 (or Armv8-M baseline)
 	      targets with no built-in vector relocation mechanisms
 	    * Including dts/common/mcuboot.overlay when building the Device
