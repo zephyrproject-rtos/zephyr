@@ -150,16 +150,16 @@
 
 &spi2 {
 	status = "ok";
-	sck-pin = <43>;
-	mosi-pin = <44>;
-	miso-pin = <45>;
+	sck-pin = <37>;
+	mosi-pin = <38>;
+	miso-pin = <39>;
 };
 
 &spi3 {
 	status = "ok";
-	sck-pin = <42>;
-	mosi-pin = <41>;
-	miso-pin = <20>;
+	sck-pin = <41>;
+	mosi-pin = <42>;
+	miso-pin = <43>;
 };
 
 &flash0 {
