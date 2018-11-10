@@ -23,8 +23,8 @@ OUTPUT_ARCH(xtensa)
 #include <linker/linker-defs.h>
 #include <linker/linker-tool.h>
 
-#define RAMABLE_REGION data :data_phdr
-#define ROMABLE_REGION text :text_phdr
+#define RAMABLE_REGION ram :ram_phdr
+#define ROMABLE_REGION ram :ram_phdr
 
 MEMORY
 {
@@ -97,20 +97,14 @@ MEMORY
   vector_double_text :
        	org = XCHAL_DOUBLEEXC_VECTOR_PADDR_SRAM,
         len = MEM_VECT_TEXT_SIZE
-  text :
-       	org = TEXT_BASE,
-        len = TEXT_SIZE,
+  ram :
+	org = RAM_BASE,
+	len = RAM_SIZE
 #ifdef CONFIG_GEN_ISR_TABLES
   IDT_LIST :
-        org = TEXT_BASE + TEXT_SIZE,
-        len = IDT_SIZE,
+	org = IDT_BASE,
+	len = IDT_SIZE
 #endif
-  data :
-       	org = TEXT_BASE + TEXT_SIZE + IDT_SIZE,
-        len = DATA_SIZE
-  bss_data :
-        org = TEXT_BASE + TEXT_SIZE + IDT_SIZE + DATA_SIZE,
-        len = BSS_DATA_SIZE
 }
 
 PHDRS
@@ -138,9 +132,7 @@ PHDRS
   vector_user_text_phdr PT_LOAD;
   vector_double_lit_phdr PT_LOAD;
   vector_double_text_phdr PT_LOAD;
-  text_phdr PT_LOAD;
-  data_phdr PT_LOAD;
-  bss_data_phdr PT_LOAD;
+  ram_phdr PT_LOAD;
 }
 _rom_store_table = 0;
 PROVIDE(_memmap_vecbase_reset = XCHAL_VECBASE_RESET_PADDR_SRAM);
@@ -324,14 +316,14 @@ SECTIONS
     *(.gnu.version)
     _text_end = ABSOLUTE(.);
     _etext = .;
-  } >text :text_phdr
+  } >ram :ram_phdr
 #include <linker/common-rom.ld>
 
   .noinit :  ALIGN(4)
   {
     *(.noinit)
     *(.noinit.*)
-  } >data :data_phdr
+  } >ram :ram_phdr
   .rodata : ALIGN(4)
   {
     _rodata_start = ABSOLUTE(.);
@@ -366,7 +358,7 @@ SECTIONS
     LONG(_bss_end)
     _bss_table_end = ABSOLUTE(.);
     _rodata_end = ABSOLUTE(.);
-  } >data :data_phdr
+  } >ram :ram_phdr
   .data : ALIGN(4)
   {
     _data_start = ABSOLUTE(.);
@@ -385,7 +377,7 @@ SECTIONS
     . = ALIGN(4096);
     *(.gna_model)
     _data_end = ABSOLUTE(.);
-  } >data :data_phdr
+  } >ram :ram_phdr
   .lit4 : ALIGN(4)
   {
     _lit4_start = ABSOLUTE(.);
@@ -393,7 +385,7 @@ SECTIONS
     *(.lit4.*)
     *(.gnu.linkonce.lit4.*)
     _lit4_end = ABSOLUTE(.);
-  } >data :data_phdr
+  } >ram :ram_phdr
 #include <linker/common-ram.ld>
 
   .bss (NOLOAD) : ALIGN(8)
@@ -415,7 +407,7 @@ SECTIONS
     *(COMMON)
     . = ALIGN (8);
     _bss_end = ABSOLUTE(.);
-  } >bss_data :bss_data_phdr
+  } >ram :ram_phdr
 
   /* stack */
   _end = ALIGN(8);

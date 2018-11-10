@@ -43,17 +43,19 @@
 #define MEM_ERROR_TEXT_SIZE			0x180
 #define MEM_ERROR_LIT_SIZE			0x8
 
-/* text and data share the same L2 HP SRAM on Intel S1000 */
-#define TEXT_BASE				(DT_L2_SRAM_BASE + L2_VECTOR_SIZE)
-#define TEXT_SIZE				0x16000
+/* text and data share the same L2 HP SRAM on Intel S1000.
+ * So, they lie next to each other.
+ */
+#define RAM_BASE			(DT_L2_SRAM_BASE + L2_VECTOR_SIZE)
+#define RAM_SIZE			(DT_L2_SRAM_SIZE - L2_VECTOR_SIZE)
+
+/* Location for the intList section which is later used to construct the
+ * Interrupt Descriptor Table (IDT). This is a bogus address as this
+ * section will be stripped off in the final image.
+ */
+#define IDT_BASE				0xFFFFF7FF
 
 /* size of the Interrupt Descriptor Table (IDT) */
 #define IDT_SIZE				0x2000
-
-/* initialized data */
-#define DATA_SIZE				0x10000
-
-/* bss data */
-#define BSS_DATA_SIZE				0x8000
 
 #endif /* __INC_MEMORY_H */
