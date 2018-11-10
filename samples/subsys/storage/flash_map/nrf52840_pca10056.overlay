@@ -1,0 +1,18 @@
+/ {
+ 	chosen {
+		zephyr,flash_map = &flash0, &mx25r6435f;
+	};
+};
+
+&mx25r6435f {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+ 		external_partition: partition@0 {
+			label = "external";
+			reg = <0x000000000 0x00002000>;
+		};
+	};
+};
