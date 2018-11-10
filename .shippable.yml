@@ -34,52 +34,10 @@ build:
       - export CCACHE_DIR=${SHIPPABLE_BUILD_DIR}/ccache/.ccache
       - >
         if [ "$IS_PULL_REQUEST" = "true" ]; then
-          git rebase origin/${PULL_REQUEST_BASE_BRANCH};
-        fi
-      - export NRF_HW_MODELS_VERSION=`cat boards/posix/nrf52_bsim/hw_models_version`
-      - >
-         pushd . ;
-         cd ${BSIM_COMPONENTS_PATH} ;
-         git clone -b ${NRF_HW_MODELS_VERSION} https://github.com/BabbleSim/ext_NRF52_hw_models.git;
-         cd /opt/bsim/ ;
-         make everything -j 8;
-         popd ;
-      - source zephyr-env.sh
-      - ccache -c -s --max-size=5000M
-      - >
-          if [ "$MATRIX_BUILD" = "5" -a "$IS_PULL_REQUEST" = "true" ]; then
-            export COMMIT_RANGE=origin/${PULL_REQUEST_BASE_BRANCH}..HEAD
-            echo "Building a Pull Request";
-            echo "- Building Documentation";
-            echo "Commit range:" ${COMMIT_RANGE}
-            make htmldocs
-            if [ "$?" != "0" ]; then
-              echo "Documentation build failed";
-              exit 1;
-            fi
-            if [ -s doc/_build/doc.warnings ]; then
-              echo " => New documentation warnings/errors";
-              cp doc/_build/doc.warnings doc.warnings
-            fi;
-            echo "- Verify commit message, coding style, doc build";
-            ./scripts/ci/check-compliance.py --commits ${COMMIT_RANGE} || true;
-          fi;
-      - >
-          if [ "$IS_PULL_REQUEST" = "true" ]; then
-            ./scripts/ci/get_modified_tests.py --commits origin/${PULL_REQUEST_BASE_BRANCH}..HEAD > modified_tests.args;
-            ./scripts/ci/get_modified_boards.py --commits origin/${PULL_REQUEST_BASE_BRANCH}..HEAD > modified_boards.args;
-
-            if [ -s modified_boards.args ]; then
-              ./scripts/sanitycheck ${SANITYCHECK_OPTIONS} +modified_boards.args --save-tests test_file.txt || exit 1;
-            fi;
-            if [ -s modified_tests.args ]; then
-              ./scripts/sanitycheck ${SANITYCHECK_OPTIONS} +modified_tests.args --save-tests test_file.txt || exit 1;
-            fi;
-            rm -f modified_tests.args modified_boards.args;
-          fi;
-      - ./scripts/sanitycheck ${SANITYCHECK_OPTIONS} --save-tests test_file.txt || exit 1
-      - ./scripts/sanitycheck ${SANITYCHECK_OPTIONS} --load-tests test_file.txt --subset ${MATRIX_BUILD}/${MATRIX_BUILDS} || ./scripts/sanitycheck ${SANITYCHECK_OPTIONS_RETRY} || ./scripts/sanitycheck ${SANITYCHECK_OPTIONS_RETRY}
-      - rm test_file.txt
+          ./scripts/ci/run_ci.sh -b master -r origin -m ${MATRIX_BUILD} -M ${MATRIX_BUILDS} -p;
+        else
+          ./scripts/ci/run_ci.sh -b master -r origin -m ${MATRIX_BUILD} -M ${MATRIX_BUILDS};
+        fi;
       - ccache -s
     on_failure:
       - >
