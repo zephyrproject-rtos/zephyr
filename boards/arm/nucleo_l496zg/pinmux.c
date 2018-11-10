@@ -14,6 +14,14 @@
 
 /* pin assignments for NUCLEO-L496ZG board */
 static const struct pin_config pinconf[] = {
+#ifdef CONFIG_UART_2
+	{STM32_PIN_PD5, STM32L4X_PINMUX_FUNC_PD5_USART2_TX},
+	{STM32_PIN_PD6, STM32L4X_PINMUX_FUNC_PD6_USART2_RX},
+#endif /* CONFIG_UART_2 */
+#ifdef CONFIG_LPUART_1
+	{STM32_PIN_PG7, STM32L4X_PINMUX_FUNC_PG7_LPUART1_TX},
+	{STM32_PIN_PG8, STM32L4X_PINMUX_FUNC_PG8_LPUART1_RX},
+#endif  /* CONFIG_LPUART_1 */
 };
 
 static int pinmux_stm32_init(struct device *port)
