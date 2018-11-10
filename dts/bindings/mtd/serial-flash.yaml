@@ -1,0 +1,18 @@
+---
+title: Flash base node description
+version: 0.1
+
+description: >
+    This binding gives a base FLASH description
+
+inherits:
+    !include flash.yaml
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "serial-flash"
+
+...
