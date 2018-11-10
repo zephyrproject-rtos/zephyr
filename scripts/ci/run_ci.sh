@@ -24,7 +24,6 @@ SANITYCHECK_OPTIONS_RETRY_2="${SANITYCHECK_OPTIONS} --only-failed --outdir=out-3
 SANITYCHECK="${ZEPHYR_BASE}/scripts/sanitycheck"
 MATRIX_BUILDS=1
 MATRIX=1
-DOC_MATRIX=${MATRIX_BUILDS}
 
 while getopts ":pm:b:r:M:" opt; do
   case $opt in
@@ -54,6 +53,7 @@ while getopts ":pm:b:r:M:" opt; do
   esac
 done
 
+DOC_MATRIX=${MATRIX_BUILDS}
 if [ -z "$BRANCH" ]; then
 	echo "No base branch given"
 	exit
