@@ -198,6 +198,21 @@
 	};
 };
 
+&qspi {
+	status = "ok";
+
+	csn-pin = <17>;
+	sck-pin = <19>;
+	io-pins = <20 21 22 23>;
+	qspi-max-frequency = <80000000>;
+
+	mx25r6435f: serial-flash@12000000 {
+		compatible = "serial-flash";
+		reg = <0x12000000 DT_SIZE_K(8192)>;
+		label = "NRF_QSPI_FLASH";
+	};
+};
+
 &usbd {
 	compatible = "nordic,nrf-usbd";
 	status = "ok";
