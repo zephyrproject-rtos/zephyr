@@ -121,6 +121,16 @@
 			label = "QDEC";
 		};
 
+		qspi: qspi-flash-controller@40029000 {
+			compatible = "nordic,nrf-qspi-flash-controller";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x4001E000 0x1000>;
+			interrupts = <41 1>;
+			status = "disabled";
+			label="NRF_QSPI_FLASH_DRV_NAME";
+		};
+
 		spi0: spi@40003000 {
 			compatible = "nordic,nrf-spi";
 			#address-cells = <1>;

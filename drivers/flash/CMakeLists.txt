@@ -10,6 +10,7 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE flash_handlers.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_SAM0 flash_sam0.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_NIOS2_QSPI soc_flash_nios2_qspi.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_GECKO flash_gecko.c)
+zephyr_library_sources_ifdef(CONFIG_QSPI_FLASH_NRF qspi_flash_nrf.c)
 
 if(CONFIG_SOC_SERIES_STM32F0X)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_STM32

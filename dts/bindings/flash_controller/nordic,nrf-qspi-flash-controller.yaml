@@ -1,0 +1,39 @@
+---
+title: Nordic QSPI peripheral
+version: 0.1
+
+description: >
+    This binding gives a base representation of the Nordic QSPI peripheral
+
+inherits:
+    !include [flash-controller.yaml, spi.yaml]
+
+properties:
+    compatible:
+      constraint: "nordic,nrf-qspi-flash-controller"
+
+    sck-pin:
+      type: int
+      description: SCK pin
+      generation: define
+      category: required
+
+    csn-pin:
+      type: int
+      description: CSN pin
+      generation: define
+      category: optional
+
+    io-pins:
+      type: int
+      description: IO pins
+      category: required
+      generation: define
+
+    qspi-max-frequency:
+      type: u32
+      category: required
+      description: Maximum clock frequency of device's QSPI interface in Hz
+      generation: define
+
+...

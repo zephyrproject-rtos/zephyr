@@ -1,0 +1,130 @@
+# Kconfig.spi -  Nordic QSPI Flash driver configuration options
+
+#
+# Copyright (c) 2018 Findlay Feng
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config QSPI_FLASH_NRF
+	bool "Nordic Semiconductor nRF QSPI flash driver"
+	depends on SOC_FAMILY_NRF && HAS_HW_NRF_QSPI
+	default n
+	select NRFX_QSPI
+	select HAS_DTS_SPI
+	help
+	  Enables Nordic Semiconductor nRF QSPI flash driver.
+
+if QSPI_FLASH_NRF
+
+choice
+	prompt "QSPI read Opcode"
+	default QSPI_FLASH_NRF_READOC_READ4IO
+
+config QSPI_FLASH_NRF_READOC_FASTREAD
+	bool "Read bytes at higher speed"
+	help
+		Single data line SPI. (opcode 0x0B).
+
+config QSPI_FLASH_NRF_READOC_READ2O
+	bool "Dual-read output"
+	help
+		Dual data line SPI. (opcode 0x3B).
+
+config QSPI_FLASH_NRF_READOC_READ2IO
+	bool "Dual-read input/output"
+	help
+		Dual data line SPI. (opcode 0xBB).
+
+config QSPI_FLASH_NRF_READOC_READ4O
+	bool "Quad-read output"
+	help
+		Quad data line SPI. (opcode 0x6B).
+
+config QSPI_FLASH_NRF_READOC_READ4IO
+	bool "Quad-read input/output"
+	help
+		Quad data line SPI. (opcode 0xEB).
+
+endchoice
+
+choice
+	prompt "QSPI write Opcode"
+	default QSPI_FLASH_NRF_WRITEOC_PP4IO
+
+config QSPI_FLASH_NRF_WRITEOC_PP
+	bool "Page program"
+	help
+		Single data line SPI. (opcode 0x0B).
+
+config QSPI_FLASH_NRF_WRITEOC_PP2O
+	bool "Dual-page program output"
+	help
+		Dual data line SPI. (opcode 0x3B).
+
+config QSPI_FLASH_NRF_WRITEOC_PP4O
+	bool "Quad-page program output"
+	help
+		Dual data line SPI. (opcode 0xBB).
+
+config QSPI_FLASH_NRF_WRITEOC_PP4IO
+	bool "Quad-page program input/output"
+	help
+		Quad data line SPI. (opcode 0x6B).
+
+endchoice
+
+choice
+	prompt "QSPI addressing mode"
+	default QSPI_FLASH_NRF_ADDRMODE_24BIT
+
+config QSPI_FLASH_NRF_ADDRMODE_24BIT
+	bool "24-bit"
+	help
+		24-bit addressing.
+
+config QSPI_FLASH_NRF_ADDRMODE_32BIT
+	bool "32-bit"
+	help
+		32-bit addressing.
+endchoice
+
+choice
+	prompt "QSPI SPI mode."
+	default QSPI_NRF_MODE_0
+
+config QSPI_NRF_MODE_0
+	bool "mode 0"
+	help
+		Mode 0 (CPOL=0, CPHA=0).
+
+config QSPI_NRF_MODE_1
+	bool "mode 1"
+	help
+		Mode 1 (CPOL=1, CPHA=1).
+
+endchoice
+
+config QSPI_FLASH_NRF_DPM
+	bool "Deep Power-down Mode"
+	default n
+	help
+		Enable the Deep Power-down Mode (DPM) feature.
+
+config QSPI_FLASH_NRF_DELAY
+	int "QSPI CS delay"
+	range 0 255
+	default 1
+	help
+	  Minimum amount of time that the CSN pin must stay high
+	  before it can go low again. Value is specified in number of
+	  16 MHz periods (62.5 ns).
+
+config QSPI_FLASH_NRF_DEV_MX25R6435F
+	bool "NOR Flash MX25R6435F"
+	default n
+	help
+		MX25R6435F Chip initialization
+
+endif # QSPI_FLASH
+

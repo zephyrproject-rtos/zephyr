@@ -50,6 +50,9 @@ config NRFX_SPIM
 config NRFX_SPIS
 	bool
 
+config NRFX_QSPI
+	bool
+
 config NRFX_SYSTICK
 	bool
 
