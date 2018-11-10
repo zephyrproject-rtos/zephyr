@@ -245,6 +245,37 @@ Z_SYSCALL_HANDLER(k_msgq_get, msgq_p, data, timeout)
 }
 #endif
 
+int _impl_k_msgq_peek(struct k_msgq *q, void *data)
+{
+	unsigned int key = irq_lock();
+	int result;
+
+	if (q->used_msgs > 0) {
+		/* take first available message from queue */
+		(void)memcpy(data, q->read_ptr, q->msg_size);
+		result = 0;
+	} else {
+		/* don't wait for a message to become available */
+		result = -ENOMSG;
+	}
+
+	irq_unlock(key);
+
+	return result;
+}
+
+#ifdef CONFIG_USERSPACE
+Z_SYSCALL_HANDLER(k_msgq_peek, msgq_p, data)
+{
+	struct k_msgq *q = (struct k_msgq *)msgq_p;
+
+	Z_OOPS(Z_SYSCALL_OBJ(q, K_OBJ_MSGQ));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(data, q->msg_size));
+
+	return _impl_k_msgq_peek(q, (void *)data);
+}
+#endif
+
 void _impl_k_msgq_purge(struct k_msgq *q)
 {
 	unsigned int key = irq_lock();
