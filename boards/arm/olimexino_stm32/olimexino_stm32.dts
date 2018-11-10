@@ -43,6 +43,10 @@
 	};
 };
 
+uext_i2c: &i2c2 {};
+uext_spi: &spi1 {};
+uext_serial: &usart1 {};
+
 &usart1 {
 	current-speed = <115200>;
 	pinctrl-0 = <&usart1_pins_a>;
