@@ -956,9 +956,10 @@ static int exec_cmd(const struct shell *shell, size_t argc, char **argv)
 		} else {
 			shell_fprintf(shell, SHELL_ERROR,
 				      SHELL_MSG_SPECIFY_SUBCOMMAND);
-			ret_val = -ENOEXEC;
-			goto clear;
 		}
+
+		ret_val = -ENOEXEC;
+		goto clear;
 	}
 
 	if (shell->ctx->active_cmd.args) {
