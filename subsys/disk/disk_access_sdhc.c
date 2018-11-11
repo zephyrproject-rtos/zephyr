@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define SYS_LOG_DOMAIN "sdhc"
-#define SYS_LOG_LEVEL SYS_LOG_LEVEL_INFO
-#include <logging/sys_log.h>
+#define LOG_LEVEL CONFIG_DISC_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(sdhc);
 
 #include <disk_access.h>
 #include <gpio.h>
@@ -143,11 +143,11 @@ static const struct sdhc_flag_map sdhc_data_response_flags[] = {
 	{0, EPROTO},
 };
 
-/* Traces card traffic for SYS_LOG_LEVEL_DEBUG */
+/* Traces card traffic for LOG_LEVEL_DBG */
 static int sdhc_trace(struct sdhc_data *data, int dir, int err,
 		      const u8_t *buf, int len)
 {
-#if SYS_LOG_LEVEL >= SYS_LOG_LEVEL_DEBUG
+#if LOG_LEVEL >= LOG_LEVEL_DBG
 	if (err != 0) {
 		printk("(err=%d)", err);
 		data->trace_dir = 0;
@@ -333,7 +333,7 @@ static int sdhc_tx_cmd(struct sdhc_data *data, u8_t cmd, u32_t payload)
 {
 	u8_t buf[SDHC_CMD_SIZE];
 
-	SYS_LOG_DBG("cmd%d payload=%u", cmd, payload);
+	LOG_DBG("cmd%d payload=%u", cmd, payload);
 	sdhc_trace(data, 0, 0, NULL, 0);
 
 	/* Encode the command */
@@ -359,7 +359,7 @@ static int sdhc_skip(struct sdhc_data *data, int discard)
 		}
 	} while (sdhc_retry_ok(&retry));
 
-	SYS_LOG_WRN("Timeout while waiting for !%d", discard);
+	LOG_WRN("Timeout while waiting for !%d", discard);
 	return -ETIMEDOUT;
 }
 
@@ -754,8 +754,8 @@ static int sdhc_detect(struct sdhc_data *data)
 
 	data->sector_count = (csize + 1) * (512 * 1024 / SDHC_SECTOR_SIZE);
 
-	SYS_LOG_INF("Found a ~%u MiB SDHC card.",
-		    data->sector_count / (1024 * 1024 / SDHC_SECTOR_SIZE));
+	LOG_INF("Found a ~%u MiB SDHC card.",
+		data->sector_count / (1024 * 1024 / SDHC_SECTOR_SIZE));
 
 	/* Read the CID */
 	err = sdhc_cmd_r1(data, SDHC_SEND_CID, 0);
@@ -768,10 +768,10 @@ static int sdhc_detect(struct sdhc_data *data)
 		return err;
 	}
 
-	SYS_LOG_INF("Manufacturer ID=%d OEM='%c%c' Name='%c%c%c%c%c' "
-		    "Revision=0x%x Serial=0x%x",
-		    buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6],
-		    buf[7], buf[8], sys_get_be32(&buf[9]));
+	LOG_INF("Manufacturer ID=%d OEM='%c%c' Name='%c%c%c%c%c' "
+		"Revision=0x%x Serial=0x%x",
+		buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6],
+		buf[7], buf[8], sys_get_be32(&buf[9]));
 
 	/* Initilisation complete */
 	data->cfg.frequency = SDHC_SPEED;
@@ -900,7 +900,7 @@ int disk_access_read(u8_t *buf, u32_t sector, u32_t count)
 	struct sdhc_data *data = dev->driver_data;
 	int err;
 
-	SYS_LOG_DBG("sector=%u count=%u", sector, count);
+	LOG_DBG("sector=%u count=%u", sector, count);
 
 	err = sdhc_read(data, buf, sector, count);
 	if (err != 0 && sdhc_is_retryable(err)) {
@@ -917,7 +917,7 @@ int disk_access_write(const u8_t *buf, u32_t sector, u32_t count)
 	struct sdhc_data *data = dev->driver_data;
 	int err;
 
-	SYS_LOG_DBG("sector=%u count=%u", sector, count);
+	LOG_DBG("sector=%u count=%u", sector, count);
 
 	err = sdhc_write(data, buf, sector, count);
 	if (err != 0 && sdhc_is_retryable(err)) {
