@@ -61,8 +61,7 @@
 #include <misc/util.h>
 #include <misc/__assert.h>
 #include <init.h>
-#include <board.h>
-#if defined(USB_VUSB_EN_GPIO)
+#if defined(CONFIG_USB_VBUS_GPIO)
 #include <gpio.h>
 #endif
 #include <usb/usb_device.h>
@@ -894,22 +893,26 @@ static void usb_register_status_callback(usb_dc_status_callback cb)
  */
 static int usb_vbus_set(bool on)
 {
-#if defined(USB_VUSB_EN_GPIO)
+#if defined(CONFIG_USB_VBUS_GPIO)
 	int ret = 0;
-	struct device *gpio_dev = device_get_binding(USB_GPIO_DRV_NAME);
+	struct device *gpio_dev;
+
+	gpio_dev = device_get_binding(CONFIG_USB_VBUS_GPIO_DEV_NAME);
 
 	if (!gpio_dev) {
 		LOG_DBG("USB requires GPIO. Cannot find %s!",
-			USB_GPIO_DRV_NAME);
+			CONFIG_USB_VBUS_GPIO_DEV_NAME);
 		return -ENODEV;
 	}
 
 	/* Enable USB IO */
-	ret = gpio_pin_configure(gpio_dev, USB_VUSB_EN_GPIO, GPIO_DIR_OUT);
+	ret = gpio_pin_configure(gpio_dev, CONFIG_USB_VBUS_GPIO_PIN_NUM,
+				 GPIO_DIR_OUT);
 	if (ret)
 		return ret;
 
-	ret = gpio_pin_write(gpio_dev, USB_VUSB_EN_GPIO, on == true ? 1 : 0);
+	ret = gpio_pin_write(gpio_dev, CONFIG_USB_VBUS_GPIO_PIN_NUM,
+			     on == true ? 1 : 0);
 	if (ret)
 		return ret;
 #endif
