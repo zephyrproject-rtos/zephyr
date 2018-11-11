@@ -154,6 +154,12 @@
 /* ADXL362 Reset settings */
 #define ADXL362_RESET_KEY               0x52
 
+struct adxl362_config {
+	char *spi_name;
+	u32_t spi_max_frequency;
+	u16_t spi_slave;
+};
+
 struct adxl362_data {
 	struct device *spi;
 	struct spi_config spi_cfg;
