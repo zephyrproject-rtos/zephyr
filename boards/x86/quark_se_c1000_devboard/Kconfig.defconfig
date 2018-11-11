@@ -39,4 +39,17 @@ config IEEE802154_CC2520_GPIO_1_NAME
 
 endif # IEEE802154_CC2520
 
+if USB_DEVICE_STACK
+
+config USB_VBUS_GPIO
+	def_bool y
+
+config USB_VBUS_GPIO_DEV_NAME
+	default "GPIO_0"
+
+config USB_VBUS_GPIO_PIN_NUM
+        default 28
+
+endif # USB_DEVICE_STACK
+
 endif # BOARD_QUARK_SE_C1000_DEVBOARD

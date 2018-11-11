@@ -66,6 +66,30 @@ config USB_DEVICE_BOS
 config USB_DEVICE_OS_DESC
 	bool "Enable MS OS Descriptors support"
 
+menuconfig USB_VBUS_GPIO
+	bool "Control VBUS via GPIO pin"
+	depends on GPIO
+	help
+	  The USB VBUS signal is connected via a GPIO pin.
+
+if USB_VBUS_GPIO
+
+config USB_VBUS_GPIO_DEV_NAME
+	string "GPIO Device"
+	default "GPIO_0"
+	help
+	  The device name of the GPIO device to which the USB_VBUS_EN signal is
+	  connected.
+
+config USB_VBUS_GPIO_PIN_NUM
+	int "GPIO pin number"
+	default 0
+	help
+	  The number of the GPIO pin to which the USB_VBUS_EN signal is
+	  connected.
+
+endif # USB_VBUS_GPIO
+
 source "subsys/usb/class/Kconfig"
 
 endif # USB_DEVICE_STACK

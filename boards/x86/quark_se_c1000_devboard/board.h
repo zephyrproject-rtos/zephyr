@@ -21,11 +21,4 @@
 
 #endif /* CONFIG_IEEE802154_CC2520 */
 
-#if defined(CONFIG_USB)
-/* GPIO driver name */
-#define USB_GPIO_DRV_NAME	CONFIG_GPIO_QMSI_0_NAME
-/* GPIO pin for enabling VBUS */
-#define USB_VUSB_EN_GPIO	28
-#endif
-
 #endif /* __BOARD_H__ */
