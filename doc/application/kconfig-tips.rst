@@ -481,7 +481,7 @@ boards and configurable on others could be expressed as follows:
 
       config MASK
       	hex
-      	prompt "Foo value" if HAS_CONFIGURABLE_MASK
+      	prompt "Bitmask" if HAS_CONFIGURABLE_MASK
       	default 0xFF
 
 The ``HAS_CONFIGURABLE_MASK`` helper symbol would get selected by boards to
@@ -531,8 +531,8 @@ As a motivating example, consider the following code:
    	int "Foo setting 1"
    	default 1
 
-   config FOO_SETTING_1
-   	int "Foo setting 1"
+   config FOO_SETTING_2
+   	int "Foo setting 2"
    	default 2
 
    endmenu
@@ -548,8 +548,8 @@ equivalent to the following code:
    	default 1
    	depends on HAS_CONFIGURABLE_FOO
 
-   config FOO_SETTING_1
-   	int "Foo setting 1"
+   config FOO_SETTING_2
+   	int "Foo setting 2"
    	default 2
    	depends on HAS_CONFIGURABLE_FOO
 
@@ -566,8 +566,8 @@ can use ``visible if`` instead:
    	int "Foo setting 1"
    	default 1
 
-   config FOO_SETTING_1
-   	int "Foo setting 1"
+   config FOO_SETTING_2
+   	int "Foo setting 2"
    	default 2
 
    endmenu
