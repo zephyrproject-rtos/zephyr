@@ -7,6 +7,7 @@
 config SOC_FAMILY_EXX32
 	bool
 	# omit prompt to signify a "hidden" option
+	select HAS_SEGGER_RTT
 
 if SOC_FAMILY_EXX32
 config SOC_FAMILY
