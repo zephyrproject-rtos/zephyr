@@ -7,29 +7,11 @@
 #
 menuconfig ADXL362
 	bool "ADXL362 sensor"
-	depends on SPI
+	depends on SPI && HAS_DTS_SPI
 	help
 	  Enable driver for ADXL362 Three-Axis Digital Accelerometers.
 
 if ADXL362
-
-config ADXL362_DEV_NAME
-	string "ADXL362 device name"
-	default "ADXL362"
-
-config ADXL362_SPI_DEV_NAME
-	string "SPI device where ADXL362 is connected"
-	default "SPI_0"
-	help
-	  Specify the device name of the SPI device to which ADXL362 is
-	  connected.
-
-config ADXL362_SPI_DEV_SLAVE
-	int "SPI Slave Select where ADXL362 is connected"
-	default 2
-	help
-	  Specify the slave select pin of the SPI to which ADXL362 is
-	  connected.
 
 choice
 	prompt "Accelerometer range setting"
