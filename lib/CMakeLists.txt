@@ -1,4 +1,4 @@
-zephyr_sources(thread_entry.c)
+zephyr_sources(thread_entry.c work_q.c)
 zephyr_sources(fdtable.c)
 add_subdirectory(crc)
 add_subdirectory_ifdef(CONFIG_JSON_LIBRARY          json)

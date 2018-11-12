@@ -2558,6 +2558,46 @@ static inline void k_work_submit_to_queue(struct k_work_q *work_q,
 }
 
 /**
+ * @brief Submit a work item to a user mode workqueue
+ *
+ * Sumbits a work item to a workqueue that runs in user mode. A temporary
+ * memory allocation is made from the caller's resource pool which is freed
+ * once the worker thread consumes the k_work item. The workqueue
+ * thread must have memory access to the k_work item being submitted. The caller
+ * must have permission granted on the work_q parameter's queue object.
+ *
+ * Otherwise this works the same as k_work_submit_to_queue().
+ *
+ * @note Can be called by ISRs.
+ *
+ * @param work_q Address of workqueue.
+ * @param work Address of work item.
+ *
+ * @retval -EBUSY if the work item was already in some workqueue
+ * @retval -ENOMEM if no memory for thread resource pool allocation
+ * @retval 0 Success
+ * @req K-WORK-001
+ */
+static inline int k_work_submit_to_user_queue(struct k_work_q *work_q,
+					      struct k_work *work)
+{
+	int ret = -EBUSY;
+
+	if (!atomic_test_and_set_bit(work->flags, K_WORK_STATE_PENDING)) {
+		ret = k_queue_alloc_append(&work_q->queue, work);
+
+		/* Couldn't insert into the queue. Clear the pending bit
+		 * so the work item can be submitted again
+		 */
+		if (ret) {
+			atomic_clear_bit(work->flags, K_WORK_STATE_PENDING);
+		}
+	}
+
+	return ret;
+}
+
+/**
  * @brief Check if a work item is pending.
  *
  * This routine indicates if work item @a work is pending in a workqueue's
@@ -2595,6 +2635,30 @@ static inline int k_work_pending(struct k_work *work)
 extern void k_work_q_start(struct k_work_q *work_q,
 			   k_thread_stack_t *stack,
 			   size_t stack_size, int prio);
+
+/**
+ * @brief Start a workqueue in user mode
+ *
+ * This works identically to k_work_q_start() except it is callable from user
+ * mode, and the worker thread created will run in user mode.
+ * The caller must have permissions granted on both the work_q parameter's
+ * thread and queue objects, and the same restrictions on priority apply as
+ * k_thread_create().
+ *
+ * @param work_q Address of workqueue.
+ * @param stack Pointer to work queue thread's stack space, as defined by
+ *		K_THREAD_STACK_DEFINE()
+ * @param stack_size Size of the work queue thread's stack (in bytes), which
+ *		should either be the same constant passed to
+ *		K_THREAD_STACK_DEFINE() or the value of K_THREAD_STACK_SIZEOF().
+ * @param prio Priority of the work queue's thread.
+ *
+ * @return N/A
+ * @req K-WORK-001
+ */
+extern void k_work_q_user_start(struct k_work_q *work_q,
+				k_thread_stack_t *stack,
+				size_t stack_size, int prio);
 
 /**
  * @brief Initialize a delayed work item.
