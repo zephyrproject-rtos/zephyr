@@ -14,9 +14,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <pci/pci.h>
 #include "eth_e1000_priv.h"
 
-#define dev_dbg(fmt, args...) LOG_DBG("%s() " fmt, __func__, ## args)
-#define dev_err(fmt, args...) LOG_ERR("%s() " "Error: " fmt, __func__, ## args)
-
 static const char *e1000_reg_to_string(enum e1000_reg_t r)
 {
 #define _(_x)	case _x: return #_x
@@ -41,7 +38,7 @@ static const char *e1000_reg_to_string(enum e1000_reg_t r)
 	_(RAH);
 	}
 #undef _
-	dev_err("Unsupported register: 0x%x", r);
+	LOG_ERR("Unsupported register: 0x%x", r);
 	k_oops();
 	return NULL;
 }
@@ -80,7 +77,7 @@ static int e1000_tx(struct e1000_dev *dev, void *data, size_t data_len)
 		k_yield();
 	}
 
-	dev_dbg("tx.sta: 0x%02hx", dev->tx.sta);
+	LOG_DBG("tx.sta: 0x%02hx", dev->tx.sta);
 
 	return (dev->tx.sta & TDESC_STA_DD) ? 0 : -EIO;
 }
@@ -104,23 +101,23 @@ static struct net_pkt *e1000_rx(struct e1000_dev *dev)
 {
 	struct net_pkt *pkt = NULL;
 
-	dev_dbg("rx.sta: 0x%02hx", dev->rx.sta);
+	LOG_DBG("rx.sta: 0x%02hx", dev->rx.sta);
 
 	if (!(dev->rx.sta & RDESC_STA_DD)) {
-		dev_err("RX descriptor not ready");
+		LOG_ERR("RX descriptor not ready");
 		goto out;
 	}
 
 	pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
 	if (!pkt) {
-		dev_err("Out of RX buffers");
+		LOG_ERR("Out of RX buffers");
 		goto out;
 	}
 
 	if (!net_pkt_append_all(pkt, dev->rx.len - 4,
 				INT_TO_POINTER((u32_t) dev->rx.addr),
 				K_NO_WAIT)) {
-		dev_err("Out of memory for received frame");
+		LOG_ERR("Out of memory for received frame");
 		net_pkt_unref(pkt);
 		pkt = NULL;
 	}
@@ -146,7 +143,7 @@ static void e1000_isr(struct device *device)
 	}
 
 	if (icr) {
-		dev_err("Unhandled interrupt, ICR: 0x%x", icr);
+		LOG_ERR("Unhandled interrupt, ICR: 0x%x", icr);
 	}
 }
 
@@ -225,7 +222,7 @@ static void e1000_init(struct net_if *iface)
 
 	iow32(dev, RCTL, RCTL_EN | RCTL_MPE);
 
-	dev_dbg("done");
+	LOG_DBG("done");
 }
 
 #define PCI_VENDOR_ID_INTEL	0x8086
