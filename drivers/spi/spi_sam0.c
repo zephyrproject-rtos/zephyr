@@ -46,10 +46,15 @@ static int spi_sam0_configure(struct device *dev,
 			      const struct spi_config *config)
 {
 	const struct spi_sam0_config *cfg = dev->config->config_info;
+	struct spi_sam0_data *data = dev->driver_data;
 	SercomSpi *regs = cfg->regs;
 	SERCOM_SPI_CTRLA_Type ctrla = {.reg = 0};
 	SERCOM_SPI_CTRLB_Type ctrlb = {.reg = 0};
 	int div;
+
+	if (spi_context_configured(&data->ctx, config)) {
+		return 0;
+	}
 
 	if (SPI_OP_MODE_GET(config->operation) != SPI_OP_MODE_MASTER) {
 		/* Slave mode is not implemented. */
@@ -105,6 +110,10 @@ static int spi_sam0_configure(struct device *dev,
 		regs->CTRLA = ctrla;
 		wait_synchronization(regs);
 	}
+
+	spi_context_cs_configure(&data->ctx);
+
+	data->ctx.config = config;
 
 	return 0;
 }
@@ -370,8 +379,6 @@ static int spi_sam0_transceive(struct device *dev,
 		goto done;
 	}
 
-	data->ctx.config = config;
-	spi_context_cs_configure(&data->ctx);
 	spi_context_cs_control(&data->ctx, true);
 
 	/* This driver special cases the common send only, receive
