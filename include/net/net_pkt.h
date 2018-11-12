@@ -118,10 +118,18 @@ struct net_pkt {
 				 * packet before EOF
 				 * Used only if defined(CONFIG_NET_TCP)
 				 */
-	u8_t pkt_queued: 1;	/* For outgoing packet: is this packet queued
-				 * to be sent but has not reached the driver
-				 * yet. Used only if defined(CONFIG_NET_TCP)
-				 */
+	union {
+		u8_t pkt_queued: 1; /* For outgoing packet: is this packet
+				     * queued to be sent but has not reached
+				     * the driver yet.
+				     * Used only if defined(CONFIG_NET_TCP)
+				     */
+		u8_t gptp_pkt: 1; /* For outgoing packet: is this packet
+				   * a GPTP packet.
+				   * Used only if defined (CONFIG_NET_GPTP)
+				   */
+	};
+
 	u8_t forwarding : 1;	/* Are we forwarding this pkt
 				 * Used only if defined(CONFIG_NET_ROUTE)
 				 */
@@ -257,6 +265,16 @@ static inline u8_t net_pkt_family(struct net_pkt *pkt)
 static inline void net_pkt_set_family(struct net_pkt *pkt, u8_t family)
 {
 	pkt->family = family;
+}
+
+static inline bool net_pkt_is_gptp(struct net_pkt *pkt)
+{
+	return !!(pkt->gptp_pkt);
+}
+
+static inline void net_pkt_set_gptp(struct net_pkt *pkt, bool is_gptp)
+{
+	pkt->gptp_pkt = is_gptp;
 }
 
 static inline u8_t net_pkt_ip_hdr_len(struct net_pkt *pkt)
