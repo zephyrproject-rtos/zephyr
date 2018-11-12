@@ -73,7 +73,7 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t evtype,
 	bt_data_parse(buf, data_cb, name);
 
 	bt_addr_le_to_str(addr, le_addr, sizeof(le_addr));
-	print(NULL, "[DEVICE]: %s, AD evt type %u, RSSI %i %s",
+	shell_print(ctx_shell, "[DEVICE]: %s, AD evt type %u, RSSI %i %s",
 	      le_addr, evtype, rssi, name);
 }
 
@@ -139,12 +139,12 @@ static void connected(struct bt_conn *conn, u8_t err)
 	conn_addr_str(conn, addr, sizeof(addr));
 
 	if (err) {
-		error(NULL, "Failed to connect to %s (%u)", addr,
+		shell_error(ctx_shell, "Failed to connect to %s (%u)", addr,
 			     err);
 		goto done;
 	}
 
-	print(NULL, "Connected: %s", addr);
+	shell_print(ctx_shell, "Connected: %s", addr);
 
 	if (!default_conn) {
 		default_conn = bt_conn_ref(conn);
@@ -163,7 +163,7 @@ static void disconnected(struct bt_conn *conn, u8_t reason)
 	char addr[BT_ADDR_LE_STR_LEN];
 
 	conn_addr_str(conn, addr, sizeof(addr));
-	print(NULL, "Disconnected: %s (reason %u)", addr, reason);
+	shell_print(ctx_shell, "Disconnected: %s (reason %u)", addr, reason);
 
 	if (default_conn == conn) {
 		bt_conn_unref(default_conn);
@@ -173,9 +173,9 @@ static void disconnected(struct bt_conn *conn, u8_t reason)
 
 static bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
 {
-	print(NULL, "LE conn  param req: int (0x%04x, 0x%04x) lat %d "
-		     "to %d", param->interval_min, param->interval_max,
-		     param->latency, param->timeout);
+	shell_print(ctx_shell, "LE conn  param req: int (0x%04x, 0x%04x) lat %d"
+		    " to %d", param->interval_min, param->interval_max,
+		    param->latency, param->timeout);
 
 	return true;
 }
@@ -183,7 +183,7 @@ static bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
 static void le_param_updated(struct bt_conn *conn, u16_t interval,
 			     u16_t latency, u16_t timeout)
 {
-	print(NULL, "LE conn param updated: int 0x%04x lat %d "
+	shell_print(ctx_shell, "LE conn param updated: int 0x%04x lat %d "
 		     "to %d", interval, latency, timeout);
 }
 
@@ -197,7 +197,7 @@ static void identity_resolved(struct bt_conn *conn, const bt_addr_le_t *rpa,
 	bt_addr_le_to_str(identity, addr_identity, sizeof(addr_identity));
 	bt_addr_le_to_str(rpa, addr_rpa, sizeof(addr_rpa));
 
-	print(NULL, "Identity resolved %s -> %s", addr_rpa,
+	shell_print(ctx_shell, "Identity resolved %s -> %s", addr_rpa,
 	      addr_identity);
 }
 #endif
@@ -208,7 +208,7 @@ static void security_changed(struct bt_conn *conn, bt_security_t level)
 	char addr[BT_ADDR_LE_STR_LEN];
 
 	conn_addr_str(conn, addr, sizeof(addr));
-	print(NULL, "Security changed: %s level %u", addr, level);
+	shell_print(ctx_shell, "Security changed: %s level %u", addr, level);
 }
 #endif
 
@@ -298,11 +298,11 @@ static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
 static void bt_ready(int err)
 {
 	if (err) {
-		error(NULL, "Bluetooth init failed (err %d)", err);
+		shell_error(ctx_shell, "Bluetooth init failed (err %d)", err);
 		return;
 	}
 
-	print(NULL, "Bluetooth initialized");
+	shell_print(ctx_shell, "Bluetooth initialized");
 
 	if (IS_ENABLED(CONFIG_SETTINGS)) {
 		settings_load();
@@ -321,7 +321,7 @@ static int cmd_init(const struct shell *shell, size_t argc, char *argv[])
 
 	err = bt_enable(bt_ready);
 	if (err) {
-		error(shell, "Bluetooth init failed (err %d)", err);
+		shell_error(shell, "Bluetooth init failed (err %d)", err);
 	}
 
 	ctx_shell = shell;
@@ -336,23 +336,23 @@ void hexdump(const struct shell *shell, const u8_t *data, size_t len)
 
 	while (len--) {
 		if (n % 16 == 0) {
-			print(shell, "%08X ", n);
+			shell_print(shell, "%08X ", n);
 		}
 
-		print(shell, "%02X ", *data++);
+		shell_print(shell, "%02X ", *data++);
 
 		n++;
 		if (n % 8 == 0) {
 			if (n % 16 == 0) {
-				print(shell, "");
+				shell_print(shell, "");
 			} else {
-				print(shell, " ");
+				shell_print(shell, " ");
 			}
 		}
 	}
 
 	if (n % 16) {
-		print(shell, "");
+		shell_print(shell, "");
 	}
 }
 #endif /* CONFIG_BT_HCI || CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
@@ -385,7 +385,7 @@ static int cmd_hci_cmd(const struct shell *shell, size_t argc, char *argv[])
 
 	err = bt_hci_cmd_send_sync(BT_OP(ogf, ocf), buf, &rsp);
 	if (err) {
-		error(shell, "HCI command failed (err %d)", err);
+		shell_error(shell, "HCI command failed (err %d)", err);
 		return err;
 	} else {
 		hexdump(shell, rsp->data, rsp->len);
@@ -401,12 +401,13 @@ static int cmd_name(const struct shell *shell, size_t argc, char *argv[])
 	int err;
 
 	if (argc < 2) {
-		print(shell, "Bluetooth Local Name: %s", bt_get_name());
+		shell_print(shell, "Bluetooth Local Name: %s", bt_get_name());
 	}
 
 	err = bt_set_name(argv[1]);
 	if (err) {
-		error(shell, "Unable to set name %s (err %d)", argv[1], err);
+		shell_error(shell, "Unable to set name %s (err %d)", argv[1],
+			    err);
 		return err;
 	}
 
@@ -422,7 +423,7 @@ static int cmd_id_create(const struct shell *shell, size_t argc, char *argv[])
 	if (argc > 1) {
 		err = str2bt_addr_le(argv[1], "random", &addr);
 		if (err) {
-			error(shell, "Invalid address");
+			shell_error(shell, "Invalid address");
 		}
 	} else {
 		bt_addr_le_copy(&addr, BT_ADDR_LE_ANY);
@@ -430,11 +431,11 @@ static int cmd_id_create(const struct shell *shell, size_t argc, char *argv[])
 
 	err = bt_id_create(&addr, NULL);
 	if (err < 0) {
-		error(shell, "Creating new ID failed (err %d)", err);
+		shell_error(shell, "Creating new ID failed (err %d)", err);
 	}
 
 	bt_addr_le_to_str(&addr, addr_str, sizeof(addr_str));
-	print(shell, "New identity (%d) created: %s", err, addr_str);
+	shell_print(shell, "New identity (%d) created: %s", err, addr_str);
 
 	return 0;
 }
@@ -447,7 +448,7 @@ static int cmd_id_reset(const struct shell *shell, size_t argc, char *argv[])
 	int err;
 
 	if (argc < 2) {
-		error(shell, "Identity identifier not specified");
+		shell_error(shell, "Identity identifier not specified");
 		return -ENOEXEC;
 	}
 
@@ -456,7 +457,7 @@ static int cmd_id_reset(const struct shell *shell, size_t argc, char *argv[])
 	if (argc > 2) {
 		err = str2bt_addr_le(argv[2], "random", &addr);
 		if (err) {
-			print(shell, "Invalid address");
+			shell_print(shell, "Invalid address");
 			return err;
 		}
 	} else {
@@ -465,12 +466,12 @@ static int cmd_id_reset(const struct shell *shell, size_t argc, char *argv[])
 
 	err = bt_id_reset(id, &addr, NULL);
 	if (err < 0) {
-		print(shell, "Resetting ID %u failed (err %d)", id, err);
+		shell_print(shell, "Resetting ID %u failed (err %d)", id, err);
 		return err;
 	}
 
 	bt_addr_le_to_str(&addr, addr_str, sizeof(addr_str));
-	print(shell, "Identity %u reset: %s", id, addr_str);
+	shell_print(shell, "Identity %u reset: %s", id, addr_str);
 
 	return 0;
 }
@@ -481,7 +482,7 @@ static int cmd_id_delete(const struct shell *shell, size_t argc, char *argv[])
 	int err;
 
 	if (argc < 2) {
-		error(shell, "Identity identifier not specified");
+		shell_error(shell, "Identity identifier not specified");
 		return -ENOEXEC;
 	}
 
@@ -489,11 +490,11 @@ static int cmd_id_delete(const struct shell *shell, size_t argc, char *argv[])
 
 	err = bt_id_delete(id);
 	if (err < 0) {
-		error(shell, "Deleting ID %u failed (err %d)", id, err);
+		shell_error(shell, "Deleting ID %u failed (err %d)", id, err);
 		return err;
 	}
 
-	print(shell, "Identity %u deleted", id);
+	shell_print(shell, "Identity %u deleted", id);
 
 	return 0;
 }
@@ -509,7 +510,7 @@ static int cmd_id_show(const struct shell *shell, size_t argc, char *argv[])
 		char addr_str[BT_ADDR_LE_STR_LEN];
 
 		bt_addr_le_to_str(&addrs[i], addr_str, sizeof(addr_str));
-		print(shell, "%s%zu: %s", i == selected_id ? "*" : " ", i,
+		shell_print(shell, "%s%zu: %s", i == selected_id ? "*" : " ", i,
 		      addr_str);
 	}
 
@@ -533,12 +534,12 @@ static int cmd_id_select(const struct shell *shell, size_t argc, char *argv[])
 
 	bt_id_get(addrs, &count);
 	if (count <= id) {
-		error(shell, "Invalid identity");
+		shell_error(shell, "Invalid identity");
 		return -ENOEXEC;
 	}
 
 	bt_addr_le_to_str(&addrs[id], addr_str, sizeof(addr_str));
-	print(shell, "Selected identity: %s", addr_str);
+	shell_print(shell, "Selected identity: %s", addr_str);
 	selected_id = id;
 
 	return 0;
@@ -559,11 +560,11 @@ static int cmd_active_scan_on(const struct shell *shell, int dups)
 
 	err = bt_le_scan_start(&param, device_found);
 	if (err) {
-		error(shell, "Bluetooth set active scan failed "
+		shell_error(shell, "Bluetooth set active scan failed "
 		      "(err %d)", err);
 		return err;
 	} else {
-		print(shell, "Bluetooth active scan enabled");
+		shell_print(shell, "Bluetooth active scan enabled");
 	}
 
 	return 0;
@@ -584,11 +585,11 @@ static int cmd_passive_scan_on(const struct shell *shell, int dups)
 
 	err = bt_le_scan_start(&param, device_found);
 	if (err) {
-		error(shell, "Bluetooth set passive scan failed "
+		shell_error(shell, "Bluetooth set passive scan failed "
 			    "(err %d)", err);
 		return err;
 	} else {
-		print(shell, "Bluetooth passive scan enabled");
+		shell_print(shell, "Bluetooth passive scan enabled");
 	}
 
 	return 0;
@@ -600,10 +601,10 @@ static int cmd_scan_off(const struct shell *shell)
 
 	err = bt_le_scan_stop();
 	if (err) {
-		error(shell, "Stopping scanning failed (err %d)", err);
+		shell_error(shell, "Stopping scanning failed (err %d)", err);
 		return err;
 	} else {
-		print(shell, "Scan successfully stopped");
+		shell_print(shell, "Scan successfully stopped");
 	}
 
 	return 0;
@@ -669,10 +670,10 @@ static int cmd_advertise(const struct shell *shell, size_t argc, char *argv[])
 
 	if (!strcmp(argv[1], "off")) {
 		if (bt_le_adv_stop() < 0) {
-			error(shell, "Failed to stop advertising");
+			shell_error(shell, "Failed to stop advertising");
 			return -ENOEXEC;
 		} else {
-			print(shell, "Advertising stopped");
+			shell_print(shell, "Advertising stopped");
 		}
 
 		return 0;
@@ -713,11 +714,11 @@ static int cmd_advertise(const struct shell *shell, size_t argc, char *argv[])
 
 	err = bt_le_adv_start(&param, ad, ad_len, NULL, 0);
 	if (err < 0) {
-		error(shell, "Failed to start advertising (err %d)",
+		shell_error(shell, "Failed to start advertising (err %d)",
 			    err);
 		return err;
 	} else {
-		print(shell, "Advertising started");
+		shell_print(shell, "Advertising started");
 	}
 
 	return 0;
@@ -742,18 +743,18 @@ static int cmd_connect_le(const struct shell *shell, size_t argc, char *argv[])
 
 	err = str2bt_addr_le(argv[1], argv[2], &addr);
 	if (err) {
-		error(shell, "Invalid peer address (err %d)", err);
+		shell_error(shell, "Invalid peer address (err %d)", err);
 		return err;
 	}
 
 	conn = bt_conn_create_le(&addr, BT_LE_CONN_PARAM_DEFAULT);
 
 	if (!conn) {
-		error(shell, "Connection failed");
+		shell_error(shell, "Connection failed");
 		return -ENOEXEC;
 	} else {
 
-		print(shell, "Connection pending");
+		shell_print(shell, "Connection pending");
 
 		/* unref connection obj in advance as app user */
 		bt_conn_unref(conn);
@@ -780,7 +781,7 @@ static int cmd_disconnect(const struct shell *shell, size_t argc, char *argv[])
 
 		err = str2bt_addr_le(argv[1], argv[2], &addr);
 		if (err) {
-			error(shell, "Invalid peer address (err %d)",
+			shell_error(shell, "Invalid peer address (err %d)",
 				    err);
 			return err;
 		}
@@ -789,13 +790,13 @@ static int cmd_disconnect(const struct shell *shell, size_t argc, char *argv[])
 	}
 
 	if (!conn) {
-		error(shell, "Not connected");
+		shell_error(shell, "Not connected");
 		return -ENOEXEC;
 	}
 
 	err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	if (err) {
-		error(shell, "Disconnection failed (err %d)", err);
+		shell_error(shell, "Disconnection failed (err %d)", err);
 		return err;
 	}
 
@@ -817,7 +818,7 @@ static int cmd_auto_conn(const struct shell *shell, size_t argc, char *argv[])
 
 	err = str2bt_addr_le(argv[1], argv[2], &addr);
 	if (err) {
-		error(shell, "Invalid peer address (err %d)", err);
+		shell_error(shell, "Invalid peer address (err %d)", err);
 		return err;
 	}
 
@@ -851,7 +852,7 @@ static int cmd_directed_adv(const struct shell *shell,
 
 	err = str2bt_addr_le(argv[1], argv[2], &addr);
 	if (err) {
-		error(shell, "Invalid peer address (err %d)", err);
+		shell_error(shell, "Invalid peer address (err %d)", err);
 		return err;
 	}
 
@@ -870,10 +871,10 @@ static int cmd_directed_adv(const struct shell *shell,
 connect:
 	conn = bt_conn_create_slave_le(&addr, param);
 	if (!conn) {
-		error(shell, "Failed to start directed advertising");
+		shell_error(shell, "Failed to start directed advertising");
 		return -ENOEXEC;
 	} else {
-		print(shell, "Started directed advertising");
+		shell_print(shell, "Started directed advertising");
 
 		/* unref connection obj in advance as app user */
 		bt_conn_unref(conn);
@@ -895,13 +896,13 @@ static int cmd_select(const struct shell *shell, size_t argc, char *argv[])
 
 	err = str2bt_addr_le(argv[1], argv[2], &addr);
 	if (err) {
-		error(shell, "Invalid peer address (err %d)", err);
+		shell_error(shell, "Invalid peer address (err %d)", err);
 		return err;
 	}
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &addr);
 	if (!conn) {
-		error(shell, "No matching connection found");
+		shell_error(shell, "No matching connection found");
 		return -ENOEXEC;
 	}
 
@@ -932,9 +933,9 @@ static int cmd_conn_update(const struct shell *shell,
 
 	err = bt_conn_le_param_update(default_conn, &param);
 	if (err) {
-		error(shell, "conn update failed (err %d).", err);
+		shell_error(shell, "conn update failed (err %d).", err);
 	} else {
-		print(shell, "conn update initiated.");
+		shell_print(shell, "conn update initiated.");
 	}
 
 	return err;
@@ -948,14 +949,14 @@ static int cmd_oob(const struct shell *shell, size_t argc, char *argv[])
 
 	err = bt_le_oob_get_local(selected_id, &oob);
 	if (err) {
-		error(shell, "OOB data failed");
+		shell_error(shell, "OOB data failed");
 		return err;
 	}
 
 	bt_addr_le_to_str(&oob.addr, addr, sizeof(addr));
 
-	print(shell, "OOB data:");
-	print(shell, "  addr %s", addr);
+	shell_print(shell, "OOB data:");
+	shell_print(shell, "  addr %s", addr);
 
 	return 0;
 }
@@ -966,18 +967,18 @@ static int cmd_clear(const struct shell *shell, size_t argc, char *argv[])
 	int err;
 
 	if (argc < 2) {
-		error(shell, "Specify remote address or \"all\"");
+		shell_error(shell, "Specify remote address or \"all\"");
 		return -ENOEXEC;
 	}
 
 	if (strcmp(argv[1], "all") == 0) {
 		err = bt_unpair(selected_id, NULL);
 		if (err) {
-			error(shell, "Failed to clear pairings (err %d)",
+			shell_error(shell, "Failed to clear pairings (err %d)",
 			      err);
 			return err;
 		} else {
-			print(shell, "Pairings successfully cleared");
+			shell_print(shell, "Pairings successfully cleared");
 		}
 
 		return 0;
@@ -988,7 +989,7 @@ static int cmd_clear(const struct shell *shell, size_t argc, char *argv[])
 		addr.type = BT_ADDR_LE_PUBLIC;
 		err = str2bt_addr(argv[1], &addr.a);
 #else
-		print(shell, "Both address and address type needed");
+		shell_print(shell, "Both address and address type needed");
 		return -ENOEXEC;
 #endif
 	} else {
@@ -996,15 +997,15 @@ static int cmd_clear(const struct shell *shell, size_t argc, char *argv[])
 	}
 
 	if (err) {
-		print(shell, "Invalid address");
+		shell_print(shell, "Invalid address");
 		return err;
 	}
 
 	err = bt_unpair(selected_id, &addr);
 	if (err) {
-		error(shell, "Failed to clear pairing (err %d)", err);
+		shell_error(shell, "Failed to clear pairing (err %d)", err);
 	} else {
-		print(shell, "Pairing successfully cleared");
+		shell_print(shell, "Pairing successfully cleared");
 	}
 
 	return err;
@@ -1022,15 +1023,15 @@ static int cmd_chan_map(const struct shell *shell, size_t argc, char *argv[])
 
 	err = hexstr2array(argv[1], chan_map, 5);
 	if (err) {
-		error(shell, "Invalid channel map");
+		shell_error(shell, "Invalid channel map");
 		return -ENOEXEC;
 	}
 
 	err = bt_le_set_chan_map(chan_map);
 	if (err) {
-		error(shell, "Failed to set channel map (err %d)", err);
+		shell_error(shell, "Failed to set channel map (err %d)", err);
 	} else {
-		print(shell, "Channel map set");
+		shell_print(shell, "Channel map set");
 	}
 
 	return err;
@@ -1043,7 +1044,7 @@ static int cmd_security(const struct shell *shell, size_t argc, char *argv[])
 	int err, sec;
 
 	if (!default_conn) {
-		error(shell, "Not connected");
+		shell_error(shell, "Not connected");
 		return -ENOEXEC;
 	}
 
@@ -1056,7 +1057,7 @@ static int cmd_security(const struct shell *shell, size_t argc, char *argv[])
 
 	err = bt_conn_security(default_conn, sec);
 	if (err) {
-		error(shell, "Setting security failed (err %d)", err);
+		shell_error(shell, "Setting security failed (err %d)", err);
 	}
 
 	return err;
@@ -1095,7 +1096,7 @@ static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
 
 	snprintk(passkey_str, 7, "%06u", passkey);
 
-	print(NULL, "Passkey for %s: %s", addr, passkey_str);
+	shell_print(ctx_shell, "Passkey for %s: %s", addr, passkey_str);
 }
 
 static void auth_passkey_confirm(struct bt_conn *conn, unsigned int passkey)
@@ -1107,7 +1108,7 @@ static void auth_passkey_confirm(struct bt_conn *conn, unsigned int passkey)
 
 	snprintk(passkey_str, 7, "%06u", passkey);
 
-	print(NULL, "Confirm passkey for %s: %s", addr, passkey_str);
+	shell_print(ctx_shell, "Confirm passkey for %s: %s", addr, passkey_str);
 }
 
 static void auth_passkey_entry(struct bt_conn *conn)
@@ -1116,7 +1117,7 @@ static void auth_passkey_entry(struct bt_conn *conn)
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	print(NULL, "Enter passkey for %s", addr);
+	shell_print(ctx_shell, "Enter passkey for %s", addr);
 }
 
 static void auth_cancel(struct bt_conn *conn)
@@ -1125,7 +1126,7 @@ static void auth_cancel(struct bt_conn *conn)
 
 	conn_addr_str(conn, addr, sizeof(addr));
 
-	print(NULL, "Pairing cancelled: %s", addr);
+	shell_print(ctx_shell, "Pairing cancelled: %s", addr);
 
 	/* clear connection reference for sec mode 3 pairing */
 	if (pairing_conn) {
@@ -1140,7 +1141,7 @@ static void auth_pairing_confirm(struct bt_conn *conn)
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	print(NULL, "Confirm pairing for %s", addr);
+	shell_print(ctx_shell, "Confirm pairing for %s", addr);
 }
 
 static void auth_pairing_complete(struct bt_conn *conn, bool bonded)
@@ -1149,7 +1150,8 @@ static void auth_pairing_complete(struct bt_conn *conn, bool bonded)
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	print(NULL, "%s with %s", bonded ? "Bonded" : "Paired",  addr);
+	shell_print(ctx_shell, "%s with %s", bonded ? "Bonded" : "Paired",
+		    addr);
 }
 
 static void auth_pairing_failed(struct bt_conn *conn)
@@ -1158,7 +1160,7 @@ static void auth_pairing_failed(struct bt_conn *conn)
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
-	print(NULL, "Pairing failed with %s", addr);
+	shell_print(ctx_shell, "Pairing failed with %s", addr);
 }
 
 #if defined(CONFIG_BT_BREDR)
@@ -1178,10 +1180,10 @@ static void auth_pincode_entry(struct bt_conn *conn, bool highsec)
 	bt_addr_to_str(info.br.dst, addr, sizeof(addr));
 
 	if (highsec) {
-		print(NULL, "Enter 16 digits wide PIN code for %s",
-		      addr);
+		shell_print(ctx_shell, "Enter 16 digits wide PIN code for %s",
+			    addr);
 	} else {
-		print(NULL, "Enter PIN code for %s", addr);
+		shell_print(ctx_shell, "Enter PIN code for %s", addr);
 	}
 
 	/*
@@ -1299,7 +1301,7 @@ static int cmd_auth_cancel(const struct shell *shell,
 	}
 
 	if (!conn) {
-		print(shell, "Not connected");
+		shell_print(shell, "Not connected");
 		return -ENOEXEC;
 	}
 
@@ -1312,7 +1314,7 @@ static int cmd_auth_passkey_confirm(const struct shell *shell,
 				    size_t argc, char *argv[])
 {
 	if (!default_conn) {
-		print(shell, "Not connected");
+		shell_print(shell, "Not connected");
 		return -ENOEXEC;
 	}
 
@@ -1324,7 +1326,7 @@ static int cmd_auth_pairing_confirm(const struct shell *shell,
 				    size_t argc, char *argv[])
 {
 	if (!default_conn) {
-		print(shell, "Not connected");
+		shell_print(shell, "Not connected");
 		return -ENOEXEC;
 	}
 
@@ -1341,19 +1343,20 @@ static int cmd_fixed_passkey(const struct shell *shell,
 
 	if (argc < 2) {
 		bt_passkey_set(BT_PASSKEY_INVALID);
-		print(shell, "Fixed passkey cleared");
+		shell_print(shell, "Fixed passkey cleared");
 		return 0;
 	}
 
 	passkey = atoi(argv[1]);
 	if (passkey > 999999) {
-		print(shell, "Passkey should be between 0-999999");
+		shell_print(shell, "Passkey should be between 0-999999");
 		return -ENOEXEC;
 	}
 
 	err = bt_passkey_set(passkey);
 	if (err) {
-		print(shell, "Setting fixed passkey failed (err %d)", err);
+		shell_print(shell, "Setting fixed passkey failed (err %d)",
+			    err);
 	}
 
 	return err;
@@ -1367,7 +1370,7 @@ static int cmd_auth_passkey(const struct shell *shell,
 	unsigned int passkey;
 
 	if (!default_conn) {
-		print(shell, "Not connected");
+		shell_print(shell, "Not connected");
 		return -ENOEXEC;
 	}
 
@@ -1378,7 +1381,7 @@ static int cmd_auth_passkey(const struct shell *shell,
 
 	passkey = atoi(argv[1]);
 	if (passkey > 999999) {
-		print(shell, "Passkey should be between 0-999999");
+		shell_print(shell, "Passkey should be between 0-999999");
 		return -EINVAL;
 	}
 
@@ -1468,7 +1471,7 @@ static int cmd_bt(const struct shell *shell, size_t argc, char **argv)
 		return err;
 	}
 
-	error(shell, "%s unknown parameter: %s", argv[0], argv[1]);
+	shell_error(shell, "%s unknown parameter: %s", argv[0], argv[1]);
 
 	return -EINVAL;
 }
