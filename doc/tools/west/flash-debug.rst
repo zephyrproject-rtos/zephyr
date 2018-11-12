@@ -221,10 +221,7 @@ upstream Zephyr, the runner should be added into a new or existing
    measure; when West learns how to manage multiple repositories, the
    copy will be removed.
 
-API documentation for the core module follows.
-
-.. automodule:: west.runners.core
-   :members:
+API documentation for the core module can be found in :ref:`west-apis`.
 
 Doing it By Hand
 ****************
