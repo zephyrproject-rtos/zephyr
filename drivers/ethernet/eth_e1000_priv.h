@@ -22,6 +22,8 @@ extern "C" {
 
 #define IMS_RXO		(1 << 6) /* Receiver FIFO Overrun */
 
+#define RCTL_MPE	(1 << 4) /* Multicast Promiscuous Enabled */
+
 #define TDESC_EOP	     (1) /* End Of Packet */
 #define TDESC_RS	(1 << 3) /* Report Status */
 
