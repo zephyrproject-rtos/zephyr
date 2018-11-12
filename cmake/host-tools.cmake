@@ -1,5 +1,14 @@
 include(${ZEPHYR_BASE}/cmake/toolchain/zephyr/host-tools.cmake)
 
+# west is optional
+find_program(
+  WEST
+  west
+  )
+if(${WEST} STREQUAL WEST-NOTFOUND)
+  unset(WEST)
+endif()
+
 # Search for the must-have program dtc on PATH and in
 # TOOLCHAIN_HOME. Usually DTC will be provided by an SDK, but for
 # SDK-less projects like gnuarmemb, it is up to the user to install
