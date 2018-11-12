@@ -22,7 +22,7 @@
 
 #define LOG_LEVEL CONFIG_NEURAL_NET_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(neural_net)
+LOG_MODULE_REGISTER(neural_net);
 
 #define DCACHE_INVALIDATE(addr, size) \
 	xthal_dcache_region_invalidate(addr, size)

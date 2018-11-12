@@ -22,7 +22,7 @@
 
 #define LOG_LEVEL CONFIG_AUDIO_DMIC_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(audio_dmic)
+LOG_MODULE_REGISTER(audio_dmic);
 
 /*
  * Maximum number of PDM controller instances supported by this driver
