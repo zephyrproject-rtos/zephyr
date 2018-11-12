@@ -7,7 +7,7 @@
 #include <zephyr.h>
 #include <uart.h>
 #include <misc/printk.h>
-#include <console.h>
+#include <tty.h>
 #include <drivers/console/console.h>
 #include <drivers/console/uart_console.h>
 
