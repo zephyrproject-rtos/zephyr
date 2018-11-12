@@ -82,6 +82,7 @@ struct uart_cmsdk_apb_dev_data {
 	((volatile struct uart_cmsdk_apb *)(DEV_CFG(dev))->base)
 
 static const struct uart_driver_api uart_cmsdk_apb_driver_api;
+static void uart_cmsdk_apb_isr(void *arg);
 
 /**
  * @brief Set the baud rate
@@ -258,7 +259,18 @@ static int uart_cmsdk_apb_fifo_read(struct device *dev,
  */
 static void uart_cmsdk_apb_irq_tx_enable(struct device *dev)
 {
+	unsigned int key;
+
 	UART_STRUCT(dev)->ctrl |= UART_TX_IN_EN;
+	/* The expectation is that TX is a level interrupt, active for as
+	 * long as TX buffer is empty. But in CMSDK UART, it appears to be
+	 * edge interrupt, firing on a state change of TX buffer. So, we
+	 * need to "prime" it here by calling ISR directly, to get interrupt
+	 * processing going.
+	 */
+	key = irq_lock();
+	uart_cmsdk_apb_isr(dev);
+	irq_unlock(key);
 }
 
 /**
@@ -310,7 +322,7 @@ static void uart_cmsdk_apb_irq_rx_disable(struct device *dev)
 }
 
 /**
- * @brief Verify if Tx empty interrupt has been raised
+ * @brief Verify if Tx complete interrupt has been raised
  *
  * @param dev UART device struct
  *
@@ -414,13 +426,13 @@ void uart_cmsdk_apb_isr(void *arg)
 	volatile struct uart_cmsdk_apb *uart = UART_STRUCT(dev);
 	struct uart_cmsdk_apb_dev_data *data = DEV_DATA(dev);
 
-	/* Clear pending interrupts */
-	uart->intclear = UART_RX_IN | UART_TX_IN;
-
 	/* Verify if the callback has been registered */
 	if (data->irq_cb) {
 		data->irq_cb(data->irq_cb_data);
 	}
+
+	/* Clear pending interrupts */
+	uart->intclear = UART_RX_IN | UART_TX_IN;
 }
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
