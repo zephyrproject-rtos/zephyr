@@ -12,6 +12,7 @@
 #include <drivers/console/uart_console.h>
 
 static int tty_irq_input_hook(struct tty_serial *tty, u8_t c);
+static int tty_putchar(struct tty_serial *tty, u8_t c);
 
 static void tty_uart_isr(void *user_data)
 {
@@ -57,8 +58,7 @@ static int tty_irq_input_hook(struct tty_serial *tty, u8_t c)
 
 	if (rx_next == tty->rx_get) {
 		/* Try to give a clue to user that some input was lost */
-		console_putchar('~');
-		console_putchar('\n');
+		tty_putchar(tty, '~');
 		return 1;
 	}
 
