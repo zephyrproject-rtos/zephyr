@@ -37,14 +37,14 @@ extern struct k_timer *ptr_timer;
 
 extern struct transition lightness_transition, temp_transition;
 
-struct k_timer dummy_timer;
-struct k_timer onoff_transition_timer;
+extern struct k_timer dummy_timer;
+extern struct k_timer onoff_transition_timer;
 extern struct k_timer level_lightness_transition_timer;
 extern struct k_timer level_temp_transition_timer;
-struct k_timer light_lightness_actual_transition_timer;
-struct k_timer light_lightness_linear_transition_timer;
-struct k_timer light_ctl_transition_timer;
-struct k_timer light_ctl_temp_transition_timer;
+extern struct k_timer light_lightness_actual_transition_timer;
+extern struct k_timer light_lightness_linear_transition_timer;
+extern struct k_timer light_ctl_transition_timer;
+extern struct k_timer light_ctl_temp_transition_timer;
 
 void calculate_rt(struct transition *transition);
 
