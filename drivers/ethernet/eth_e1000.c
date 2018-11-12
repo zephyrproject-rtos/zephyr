@@ -212,6 +212,8 @@ static void e1000_init(struct net_if *iface)
 	memcpy(dev->mac, &ral, 4);
 	memcpy(dev->mac + 4, &rah, 2);
 
+	ethernet_init(iface);
+
 	net_if_set_link_addr(iface, dev->mac, sizeof(dev->mac),
 				NET_LINK_ETHERNET);
 
