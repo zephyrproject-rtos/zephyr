@@ -20,21 +20,78 @@ Follow one of the following guides for your host operating system.
    macOS <installation_mac.rst>
    Windows <installation_win.rst>
 
-Clone the Zephyr Repository
-***************************
+.. _get_the_code:
 
-To clone the Zephyr source code repository from GitHub:
+Get the source code
+*******************
+
+Zephyr's multi-purpose :ref:`west` tool lets you easily get the Zephyr project
+source code, instead of manually cloning the Zephyr repos along with west
+itself.
+
+.. note::
+   If you prefer to manage the repositories manually or with another tool
+   instead of using ``west``, you can still opt to do so. The documentation
+   section :ref:`no-west` describes how to work with Zephyr without using
+   west to manage its source code.
+
+Bootstrap west
+==============
+
+Install the bootstrapper for Zephyr's command-line tool, :ref:`west` in a
+shell or ``cmd.exe`` prompt:
 
 .. code-block:: console
 
-   git clone https://github.com/zephyrproject-rtos/zephyr
+   # Linux
+   pip3 install --user west
+
+   # macOS and Windows
+   pip3 install west
+
+.. note::
+   See :ref:`gs_python_deps` for additional clarfication on using the
+   `--user` switch.
+
+Additional information about west's structure can be found
+:ref:`in the relevant west documentation section <west-struct>`.
+
+Clone the Zephyr Repositories
+=============================
+
+Clone the Zephyr source code repositories from GitHub using the ``west`` tool:
+
+.. code-block:: console
+
+   west init zephyrproject
+   cd zephyrproject
+   west clone
+
+.. note::
+   You can replace :file:`zephyrproject` with the folder name of your choice.
+   West will create the named folder if it doesn't already exist.
+   If no folder name is specified, west initializes the current
+   working directory.
+
+.. note::
+   If you had previously cloned the zephyr repository manually using Git,
+   move the cloned :file:`zephyr/` repository to an empty enclosing folder
+   (for example :file:`zephyrproject/zephyr/`), and
+   from this empty enclosing folder :file:`zephyrproject/`
+   run ``west init`` and then ``west clone``.
+
+This will create a full Zephyr local copy, cloning west itself along with any
+projects (i.e. remote repositories) required by Zephyr. See
+:ref:`west-struct-installation` for additional details.
 
 .. warning::
 
    Don't clone Zephyr to a directory with spaces anywhere in the path.
-   For example, on Windows, :file:`C:\\Users\\YourName\\zephyr` will
-   work, but :file:`C:\\Users\\Your Name\\zephyr` will cause cryptic
+   For example, on Windows, :file:`C:\\Users\\YourName\\zephyrproject` will
+   work, but :file:`C:\\Users\\Your Name\\zephyrproject` will cause cryptic
    errors when you try to build an application.
+
+.. _gs_python_deps:
 
 Install Python Dependencies
 ***************************
@@ -170,7 +227,7 @@ from the build directory (once you've run ``cmake``) to get a list.
 
    .. code-block:: console
 
-      cd zephyr
+      cd zephyrproject/zephyr
 
 #. Set up your build environment:
 
@@ -304,5 +361,6 @@ valgrind.
    configurations is called a "board," even though that doesn't always make
    perfect sense in context.
 
+.. _Manifest repository: https://github.com/zephyrproject-rtos/manifest
 .. _CMake: https://cmake.org
 .. _generators: https://cmake.org/cmake/help/v3.8/manual/cmake-generators.7.html
