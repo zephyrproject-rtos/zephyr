@@ -2956,10 +2956,9 @@ done:
 	return 0;
 }
 
-int net_if_set_promisc(struct net_if *iface)
+static int promisc_mode_set(struct net_if *iface, bool enable)
 {
 	enum net_l2_flags l2_flags = 0;
-	int ret;
 
 	NET_ASSERT(iface);
 
@@ -2973,7 +2972,8 @@ int net_if_set_promisc(struct net_if *iface)
 
 #if defined(CONFIG_NET_L2_ETHERNET)
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
-		ret = net_eth_promisc_mode(iface, true);
+		int ret = net_eth_promisc_mode(iface, enable);
+
 		if (ret < 0) {
 			return ret;
 		}
@@ -2981,6 +2981,18 @@ int net_if_set_promisc(struct net_if *iface)
 #else
 	return -ENOTSUP;
 #endif
+
+	return 0;
+}
+
+int net_if_set_promisc(struct net_if *iface)
+{
+	int ret;
+
+	ret = promisc_mode_set(iface, true);
+	if (ret < 0) {
+		return ret;
+	}
 
 	ret = atomic_test_and_set_bit(iface->if_dev->flags, NET_IF_PROMISC);
 	if (ret) {
@@ -2992,7 +3004,12 @@ int net_if_set_promisc(struct net_if *iface)
 
 void net_if_unset_promisc(struct net_if *iface)
 {
-	NET_ASSERT(iface);
+	int ret;
+
+	ret = promisc_mode_set(iface, false);
+	if (ret < 0) {
+		return;
+	}
 
 	atomic_clear_bit(iface->if_dev->flags, NET_IF_PROMISC);
 }
