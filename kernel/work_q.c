@@ -57,7 +57,6 @@ void k_work_q_start(struct k_work_q *work_q, k_thread_stack_t *stack,
 			work_q, 0, 0, prio, 0, 0);
 
 	k_thread_name_set(&work_q->thread, WORKQUEUE_THREAD_NAME);
-	_k_object_init(work_q);
 }
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
@@ -75,8 +74,6 @@ void k_delayed_work_init(struct k_delayed_work *work, k_work_handler_t handler)
 	k_work_init(&work->work, handler);
 	_init_timeout(&work->timeout, work_timeout);
 	work->work_q = NULL;
-
-	_k_object_init(work);
 }
 
 int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
