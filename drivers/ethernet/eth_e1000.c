@@ -202,8 +202,6 @@ static void e1000_init(struct net_if *iface)
 	iow32(dev, RDH, 0);
 	iow32(dev, RDT, 1);
 
-	iow32(dev, RCTL, RCTL_EN);
-
 	iow32(dev, IMS, IMS_RXO);
 
 	ral = ior32(dev, RAL);
@@ -217,13 +215,15 @@ static void e1000_init(struct net_if *iface)
 	net_if_set_link_addr(iface, dev->mac, sizeof(dev->mac),
 				NET_LINK_ETHERNET);
 
-	iow32(dev, CTRL, CTRL_SLU); /* Set link up */
-
 	IRQ_CONNECT(CONFIG_ETH_E1000_IRQ, CONFIG_ETH_E1000_IRQ_PRIORITY,
 			e1000_isr, DEVICE_GET(eth_e1000),
 			CONFIG_ETH_E1000_IRQ_FLAGS);
 
 	irq_enable(CONFIG_ETH_E1000_IRQ);
+
+	iow32(dev, CTRL, CTRL_SLU); /* Set link up */
+
+	iow32(dev, RCTL, RCTL_EN);
 
 	dev_dbg("done");
 }
