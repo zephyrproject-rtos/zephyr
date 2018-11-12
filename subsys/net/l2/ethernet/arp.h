@@ -38,6 +38,7 @@ struct net_arp_hdr {
 }  __packed;
 
 #define NET_ARP_HTYPE_ETH 1
+#define NET_ARP_IPV4_PTYPE_SIZE 4
 
 #define NET_ARP_REQUEST 1
 #define NET_ARP_REPLY   2
