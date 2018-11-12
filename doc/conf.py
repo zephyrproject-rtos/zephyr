@@ -14,6 +14,7 @@
 
 import sys
 import os
+from subprocess import CalledProcessError, check_output, DEVNULL
 
 if "ZEPHYR_BASE" not in os.environ:
     sys.exit("$ZEPHYR_BASE environment variable undefined.")
@@ -26,11 +27,20 @@ ZEPHYR_BUILD = os.path.abspath(os.environ["ZEPHYR_BUILD"])
 # Add the 'extensions' directory to sys.path, to enable finding Sphinx
 # extensions within.
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, 'doc', 'extensions'))
-# Also add west, to be able to pull in its API docs.
-sys.path.append(os.path.join(ZEPHYR_BASE, 'scripts', 'meta'))
-# HACK: also add the runners module, to work around some import issues
-# related to west's current packaging.
-sys.path.append(os.path.join(ZEPHYR_BASE, 'scripts', 'meta', 'west'))
+
+try:
+    desc = check_output(['west', 'list', '-f{abspath}', 'west'],
+			stderr=DEVNULL,
+			cwd=os.path.dirname(__file__))
+    west_path = desc.decode(sys.getdefaultencoding()).strip()
+    # Add west, to be able to pull in its API docs.
+    sys.path.append(os.path.join(west_path, 'src'))
+except FileNotFoundError as e:
+    raise RuntimeError('Unable to find west. Make sure you have installed'
+                       'it using pip and used it to create an installation'
+                       'using \'west init\'.') from e
+except CalledProcessError as e:
+    raise RuntimeError('Unable to list west itself. Please update west.') from e
 
 # -- General configuration ------------------------------------------------
 
