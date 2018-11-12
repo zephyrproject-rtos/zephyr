@@ -78,9 +78,17 @@ if(DEFINED PYTHONLIBS_VERSION_STRING)
   list(GET _PYTHONLIBS_VERSION 1 _PYTHONLIBS_VERSION_MINOR)
   list(APPEND _Python_VERSIONS ${_PYTHONLIBS_VERSION_MAJOR}.${_PYTHONLIBS_VERSION_MINOR})
 endif()
-# Search for the current active python version first
-list(APPEND _Python_VERSIONS ";")
+
+# Search for the current active python version first on Linux, and last on Windows
+if(NOT WIN32)
+  list(APPEND _Python_VERSIONS ";")
+endif()
+
 list(APPEND _Python_VERSIONS ${_PYTHON_FIND_OTHER_VERSIONS})
+
+if(WIN32)
+  list(APPEND _Python_VERSIONS ";")
+endif()
 
 unset(_PYTHON_FIND_OTHER_VERSIONS)
 unset(_PYTHON1_VERSIONS)
@@ -94,6 +102,14 @@ if(NOT PYTHON_EXECUTABLE)
       if(WIN32)
         list(APPEND _Python_NAMES python)
       endif()
+
+	  if(WIN32)
+        find_program(PYTHON_EXECUTABLE
+          NAMES ${_Python_NAMES}
+          HINTS [HKEY_LOCAL_MACHINE\\SOFTWARE\\Python\\PythonCore\\${_CURRENT_VERSION}\\InstallPath]
+          )
+	  endif()
+
       find_program(PYTHON_EXECUTABLE
         NAMES ${_Python_NAMES}
         PATHS [HKEY_LOCAL_MACHINE\\SOFTWARE\\Python\\PythonCore\\${_CURRENT_VERSION}\\InstallPath]
@@ -145,7 +161,7 @@ if(PYTHON_EXECUTABLE)
     unset(_VERSION)
 endif()
 
-include(${CMAKE_CURRENT_LIST_DIR}/FindPackageHandleStandardArgs.cmake)
+include(FindPackageHandleStandardArgs)
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(PythonInterp REQUIRED_VARS PYTHON_EXECUTABLE VERSION_VAR PYTHON_VERSION_STRING)
 
 mark_as_advanced(PYTHON_EXECUTABLE)
