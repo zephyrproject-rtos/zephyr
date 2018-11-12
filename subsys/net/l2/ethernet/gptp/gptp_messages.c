@@ -117,54 +117,35 @@ out:
 	}
 }
 
-static struct net_buf *setup_ethernet_frame(struct net_pkt *pkt,
-					    struct net_if *iface)
+static struct net_pkt *setup_gptp_frame(struct net_if *iface)
 {
-	int eth_len = sizeof(struct net_eth_hdr);
-	struct net_eth_hdr *eth;
+	struct net_pkt *pkt;
 	struct net_buf *frag;
 
-#if defined(CONFIG_NET_GPTP_VLAN)
-	bool vlan_enabled;
-
-	vlan_enabled = net_eth_get_vlan_status(iface);
-	if (vlan_enabled) {
-		eth_len = sizeof(struct net_eth_vlan_hdr);
+	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
+				     NET_BUF_TIMEOUT);
+	if (!pkt) {
+		return NULL;
 	}
-#endif
 
-	frag = net_pkt_get_reserve_tx_data(eth_len, NET_BUF_TIMEOUT);
+	frag = net_pkt_get_reserve_tx_data(0, NET_BUF_TIMEOUT);
 	if (!frag) {
+		net_pkt_unref(pkt);
 		return NULL;
 	}
 
 	net_pkt_frag_add(pkt, frag);
 	net_pkt_set_iface(pkt, iface);
 	net_pkt_set_family(pkt, AF_UNSPEC);
-	net_pkt_set_ll_reserve(pkt, eth_len);
+	net_pkt_set_gptp(pkt, true);
 
-	eth = NET_ETH_HDR(pkt);
+	net_pkt_lladdr_src(pkt)->addr = (u8_t *)net_if_get_link_addr(iface);
+	net_pkt_lladdr_src(pkt)->len = sizeof(struct net_eth_addr);
 
-#if defined(CONFIG_NET_GPTP_VLAN)
-	if (vlan_enabled) {
-		struct net_eth_vlan_hdr *hdr_vlan;
+	net_pkt_lladdr_dst(pkt)->addr = (u8_t *)&gptp_multicast_eth_addr;
+	net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_eth_addr);
 
-		hdr_vlan = (struct net_eth_vlan_hdr *)eth;
-		hdr_vlan->vlan.tpid = htons(NET_ETH_PTYPE_VLAN);
-		hdr_vlan->vlan.tci = htons(net_eth_get_vlan_tag(iface));
-		hdr_vlan->type = htons(NET_ETH_PTYPE_PTP);
-	} else
-#endif
-	{
-		eth->type = htons(NET_ETH_PTYPE_PTP);
-	}
-
-	memcpy(eth->src.addr, net_if_get_link_addr(iface)->addr,
-	       sizeof(struct net_eth_addr));
-	memcpy(eth->dst.addr, &gptp_multicast_eth_addr,
-	       sizeof(struct net_eth_addr));
-
-	return frag;
+	return pkt;
 }
 
 struct net_pkt *gptp_prepare_sync(int port)
@@ -173,21 +154,15 @@ struct net_pkt *gptp_prepare_sync(int port)
 	struct gptp_sync *sync;
 	struct net_if *iface;
 	struct net_pkt *pkt;
-	struct net_buf *frag;
 	struct gptp_hdr *hdr;
 
 	NET_ASSERT((port >= GPTP_PORT_START) && (port <= GPTP_PORT_END));
 	iface = GPTP_PORT_IFACE(port);
 	NET_ASSERT(iface);
 
-	pkt = net_pkt_get_reserve_tx(0, NET_BUF_TIMEOUT);
+	pkt = setup_gptp_frame(iface);
 	if (!pkt) {
-		goto fail;
-	}
-
-	frag = setup_ethernet_frame(pkt, iface);
-	if (!frag) {
-		goto fail;
+		return NULL;
 	}
 
 	net_pkt_set_priority(pkt, NET_PRIORITY_CA);
@@ -221,19 +196,13 @@ struct net_pkt *gptp_prepare_sync(int port)
 	/* PTP configuration. */
 	(void)memset(&sync->reserved, 0, sizeof(sync->reserved));
 
-	net_buf_add(frag, sizeof(struct gptp_hdr) + sizeof(struct gptp_sync));
+	net_buf_add(pkt->frags, sizeof(struct gptp_hdr) +
+		    sizeof(struct gptp_sync));
 
 	/* Update sequence number. */
 	port_ds->sync_seq_id++;
 
 	return pkt;
-
-fail:
-	if (pkt) {
-		net_pkt_unref(pkt);
-	}
-
-	return NULL;
 }
 
 struct net_pkt *gptp_prepare_follow_up(int port, struct net_pkt *sync)
@@ -242,21 +211,15 @@ struct net_pkt *gptp_prepare_follow_up(int port, struct net_pkt *sync)
 	struct gptp_port_ds *port_ds;
 	struct net_if *iface;
 	struct net_pkt *pkt;
-	struct net_buf *frag;
 
 	NET_ASSERT(sync);
 	NET_ASSERT((port >= GPTP_PORT_START) && (port <= GPTP_PORT_END));
 	iface = GPTP_PORT_IFACE(port);
 	NET_ASSERT(iface);
 
-	pkt = net_pkt_get_reserve_tx(0, NET_BUF_TIMEOUT);
+	pkt = setup_gptp_frame(iface);
 	if (!pkt) {
-		goto fail;
-	}
-
-	frag = setup_ethernet_frame(pkt, iface);
-	if (!frag) {
-		goto fail;
+		return NULL;
 	}
 
 	net_pkt_set_priority(pkt, NET_PRIORITY_IC);
@@ -290,17 +253,10 @@ struct net_pkt *gptp_prepare_follow_up(int port, struct net_pkt *sync)
 
 	/* PTP configuration will be set by the MDSyncSend state machine. */
 
-	net_buf_add(frag, sizeof(struct gptp_hdr) +
+	net_buf_add(pkt->frags, sizeof(struct gptp_hdr) +
 		    sizeof(struct gptp_follow_up));
 
 	return pkt;
-
-fail:
-	if (pkt) {
-		net_pkt_unref(pkt);
-	}
-
-	return NULL;
 }
 
 struct net_pkt *gptp_prepare_pdelay_req(int port)
@@ -309,21 +265,15 @@ struct net_pkt *gptp_prepare_pdelay_req(int port)
 	struct gptp_port_ds *port_ds;
 	struct net_if *iface;
 	struct net_pkt *pkt;
-	struct net_buf *frag;
 	struct gptp_hdr *hdr;
 
 	NET_ASSERT((port >= GPTP_PORT_START) && (port <= GPTP_PORT_END));
 	iface = GPTP_PORT_IFACE(port);
 	NET_ASSERT(iface);
 
-	pkt = net_pkt_get_reserve_tx(0, NET_BUF_TIMEOUT);
+	pkt = setup_gptp_frame(iface);
 	if (!pkt) {
-		goto fail;
-	}
-
-	frag = setup_ethernet_frame(pkt, iface);
-	if (!frag) {
-		goto fail;
+		return NULL;
 	}
 
 	net_pkt_set_priority(pkt, NET_PRIORITY_CA);
@@ -360,20 +310,13 @@ struct net_pkt *gptp_prepare_pdelay_req(int port)
 	(void)memset(&req->reserved1, 0, sizeof(req->reserved1));
 	(void)memset(&req->reserved2, 0, sizeof(req->reserved2));
 
-	net_buf_add(frag, sizeof(struct gptp_hdr) +
+	net_buf_add(pkt->frags, sizeof(struct gptp_hdr) +
 		    sizeof(struct gptp_pdelay_req));
 
 	/* Update sequence number. */
 	port_ds->pdelay_req_seq_id++;
 
 	return pkt;
-
-fail:
-	if (pkt) {
-		net_pkt_unref(pkt);
-	}
-
-	return NULL;
 }
 
 struct net_pkt *gptp_prepare_pdelay_resp(int port,
@@ -385,16 +328,10 @@ struct net_pkt *gptp_prepare_pdelay_resp(int port,
 	struct gptp_hdr *hdr, *query;
 	struct gptp_port_ds *port_ds;
 	struct net_pkt *pkt;
-	struct net_buf *frag;
 
-	pkt = net_pkt_get_reserve_tx(0, NET_BUF_TIMEOUT);
+	pkt = setup_gptp_frame(iface);
 	if (!pkt) {
-		goto fail;
-	}
-
-	frag = setup_ethernet_frame(pkt, iface);
-	if (!frag) {
-		goto fail;
+		return NULL;
 	}
 
 	net_pkt_set_priority(pkt, NET_PRIORITY_CA);
@@ -439,17 +376,10 @@ struct net_pkt *gptp_prepare_pdelay_resp(int port,
 	memcpy(&pdelay_resp->requesting_port_id,
 	       &query->port_id, sizeof(struct gptp_port_identity));
 
-	net_buf_add(frag, sizeof(struct gptp_hdr) +
+	net_buf_add(pkt->frags, sizeof(struct gptp_hdr) +
 		    sizeof(struct gptp_pdelay_resp));
 
 	return pkt;
-
-fail:
-	if (pkt) {
-		net_pkt_unref(pkt);
-	}
-
-	return NULL;
 }
 
 struct net_pkt *gptp_prepare_pdelay_follow_up(int port,
@@ -461,16 +391,10 @@ struct net_pkt *gptp_prepare_pdelay_follow_up(int port,
 	struct gptp_hdr *hdr, *resp_hdr;
 	struct gptp_port_ds *port_ds;
 	struct net_pkt *pkt;
-	struct net_buf *frag;
 
-	pkt = net_pkt_get_reserve_tx(0, NET_BUF_TIMEOUT);
+	pkt = setup_gptp_frame(iface);
 	if (!pkt) {
-		goto fail;
-	}
-
-	frag = setup_ethernet_frame(pkt, iface);
-	if (!frag) {
-		goto fail;
+		return NULL;
 	}
 
 	net_pkt_set_priority(pkt, NET_PRIORITY_IC);
@@ -516,17 +440,10 @@ struct net_pkt *gptp_prepare_pdelay_follow_up(int port,
 	       &pdelay_resp->requesting_port_id,
 	       sizeof(struct gptp_port_identity));
 
-	net_buf_add(frag, sizeof(struct gptp_hdr) +
+	net_buf_add(pkt->frags, sizeof(struct gptp_hdr) +
 		    sizeof(struct gptp_pdelay_resp_follow_up));
 
 	return pkt;
-
-fail:
-	if (pkt) {
-		net_pkt_unref(pkt);
-	}
-
-	return NULL;
 }
 
 struct net_pkt *gptp_prepare_announce(int port)
@@ -537,7 +454,6 @@ struct net_pkt *gptp_prepare_announce(int port)
 	struct gptp_announce *ann;
 	struct net_if *iface;
 	struct net_pkt *pkt;
-	struct net_buf *frag;
 	struct gptp_hdr *hdr;
 
 	NET_ASSERT((port >= GPTP_PORT_START) && (port <= GPTP_PORT_END));
@@ -546,14 +462,9 @@ struct net_pkt *gptp_prepare_announce(int port)
 	iface = GPTP_PORT_IFACE(port);
 	NET_ASSERT(iface);
 
-	pkt = net_pkt_get_reserve_tx(0, NET_BUF_TIMEOUT);
+	pkt = setup_gptp_frame(iface);
 	if (!pkt) {
-		goto fail;
-	}
-
-	frag = setup_ethernet_frame(pkt, iface);
-	if (!frag) {
-		goto fail;
+		return NULL;
 	}
 
 	net_pkt_set_priority(pkt, NET_PRIORITY_IC);
@@ -628,7 +539,7 @@ struct net_pkt *gptp_prepare_announce(int port)
 				    sizeof(struct gptp_announce) - 8 +
 				    ntohs(global_ds->path_trace.len));
 
-	net_buf_add(frag, sizeof(struct gptp_hdr) +
+	net_buf_add(pkt->frags, sizeof(struct gptp_hdr) +
 		    sizeof(struct gptp_announce) - 8);
 
 	ann->tlv.len = global_ds->path_trace.len;
@@ -643,9 +554,7 @@ struct net_pkt *gptp_prepare_announce(int port)
 	return pkt;
 
 fail:
-	if (pkt) {
-		net_pkt_unref(pkt);
-	}
+	net_pkt_unref(pkt);
 
 	return NULL;
 }
