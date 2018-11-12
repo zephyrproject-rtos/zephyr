@@ -70,7 +70,7 @@ int net_promisc_mode_off(struct net_if *iface)
 		net_if_unset_promisc(iface);
 
 		prev = atomic_dec(&enabled);
-		if (!prev) {
+		if (prev == 1) {
 			atomic_clear(&enabled);
 
 			flush_queue();
