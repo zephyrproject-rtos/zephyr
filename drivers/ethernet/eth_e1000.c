@@ -223,7 +223,7 @@ static void e1000_init(struct net_if *iface)
 
 	iow32(dev, CTRL, CTRL_SLU); /* Set link up */
 
-	iow32(dev, RCTL, RCTL_EN);
+	iow32(dev, RCTL, RCTL_EN | RCTL_MPE);
 
 	dev_dbg("done");
 }
