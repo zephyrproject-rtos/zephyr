@@ -2527,7 +2527,6 @@ extern struct k_work_q k_sys_work_q;
 static inline void k_work_init(struct k_work *work, k_work_handler_t handler)
 {
 	*work = (struct k_work)_K_WORK_INITIALIZER(handler);
-	_k_object_init(work);
 }
 
 /**
