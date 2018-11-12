@@ -130,6 +130,22 @@ class EDTSDevice:
     def get_unique_id(self):
         return self.get_property('unique_id')
 
+    def get_controller(self, property_path):
+        device_id = self.device['device-id']
+        property_value = self.device
+        property_path_elems = property_path.strip("'").split('/')
+        # This method is made to find a controller after given path
+        # we expect only ditcs in the path and ['controller'] at the end.
+        for elem_index, key in enumerate(property_path_elems):
+            if isinstance(property_value, dict):
+                property_value = property_value.get(key, None)
+        controller = property_value.get('controller', None)
+
+        # How to return a meaningfull error here?
+        # if controller is None:
+
+        return EDTSDevice(self.all, controller)
+
     def get_parent(self, parent_type='bus'):
         parent_device_id = ''
 
