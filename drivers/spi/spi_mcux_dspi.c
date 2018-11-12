@@ -128,6 +128,11 @@ static int spi_mcux_configure(struct device *dev,
 	u32_t clock_freq;
 	u32_t word_size;
 
+	if (spi_context_configured(&data->ctx, spi_cfg)) {
+		/* This configuration is already in use */
+		return 0;
+	}
+
 	DSPI_MasterGetDefaultConfig(&master_config);
 
 	if (spi_cfg->slave > FSL_FEATURE_DSPI_CHIP_SELECT_COUNT) {
