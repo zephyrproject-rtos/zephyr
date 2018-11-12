@@ -90,7 +90,7 @@ static int e1000_send(struct net_if *iface, struct net_pkt *pkt)
 
 	int err = e1000_tx(dev, dev->txb, len);
 
-	if (err) {
+	if (!err) {
 		net_pkt_unref(pkt);
 	}
 
