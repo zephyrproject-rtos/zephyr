@@ -23,19 +23,19 @@ some highlights of the STM32L496G Discovery board:
 - USB OTG FS with Micro-AB connector
 - Two types of extension resources:
 
-       - STMod+ and PMOD connectors
-       - Compatible Arduino* Uno V3 connectors
+  - STMod+ and PMOD connectors
+  - Compatible Arduino* Uno V3 connectors
 
 - On-board ST-LINK/V2-1 debugger/programmer with SWD connector
 - 5 source options for power supply
 
-       - ST-LINK/V2-1 USB connector
-       - User USB FS connector
-       - VIN from Arduino connector
-       - 5 V from Arduino connector
-       - USB charger
-       - USB VBUS or external source(3.3V, 5V, 7 - 12V)
-       - Power management access point
+  - ST-LINK/V2-1 USB connector
+  - User USB FS connector
+  - VIN from Arduino connector
+  - 5 V from Arduino connector
+  - USB charger
+  - USB VBUS or external source(3.3V, 5V, 7 - 12V)
+  - Power management access point
 
 - 8 LEDs
 - Reset push button
@@ -60,55 +60,55 @@ The STM32L496AG SoC provides the following hardware capabilities:
   100DMIPS/1.25DMIPS/MHz (Dhrystone 2.1)
 - Clock Sources:
 
-        - 4 to 48 MHz crystal oscillator
-        - 32 kHz crystal oscillator for RTC (LSE)
-        - Internal 16 MHz factory-trimmed RC ( |plusminus| 1%)
-        - Internal low-power 32 kHz RC ( |plusminus| 5%)
-        - Internal multispeed 100 kHz to 48 MHz oscillator, auto-trimmed by
-          LSE (better than |plusminus| 0.25 % accuracy)
-        - Internal 48 MHz with clock recovery
-        - 3 PLLs for system clock, USB, audio, ADC
+  - 4 to 48 MHz crystal oscillator
+  - 32 kHz crystal oscillator for RTC (LSE)
+  - Internal 16 MHz factory-trimmed RC ( |plusminus| 1%)
+  - Internal low-power 32 kHz RC ( |plusminus| 5%)
+  - Internal multispeed 100 kHz to 48 MHz oscillator, auto-trimmed by
+    LSE (better than |plusminus| 0.25 % accuracy)
+  - Internal 48 MHz with clock recovery
+  - 3 PLLs for system clock, USB, audio, ADC
 
 - RTC with HW calendar, alarms and calibration
 - LCD 8 x 40 or 4 x 44 with step-up converter
 - Up to 24 capacitive sensing channels: support touchkey, linear and rotary touch sensors
 - 16x timers:
 
-        - 2x 16-bit advanced motor-control
-        - 2x 32-bit and 5x 16-bit general purpose
-        - 2x 16-bit basic
-        - 2x low-power 16-bit timers (available in Stop mode)
-        - 2x watchdogs
-        - SysTick timer
+  - 2x 16-bit advanced motor-control
+  - 2x 32-bit and 5x 16-bit general purpose
+  - 2x 16-bit basic
+  - 2x low-power 16-bit timers (available in Stop mode)
+  - 2x watchdogs
+  - SysTick timer
 
 - Up to 136 fast I/Os, most 5 V-tolerant, up to 14 I/Os with independent supply down to 1.08 V
 - Memories
 
-        - Up to 1 MB Flash, 2 banks read-while-write, proprietary code readout protection
-        - 320 KB of SRAM including 64 KB with hardware parity check
-        - External memory interface for static memories supporting SRAM, PSRAM, NOR, and NAND memories
-        - Quad SPI memory interface
+  - Up to 1 MB Flash, 2 banks read-while-write, proprietary code readout protection
+  - 320 KB of SRAM including 64 KB with hardware parity check
+  - External memory interface for static memories supporting SRAM, PSRAM, NOR, and NAND memories
+  - Quad SPI memory interface
 
 - 4x digital filters for sigma delta modulator
 - Rich analog peripherals (independent supply)
 
-        - 3x 12-bit ADC 5 MSPS, up to 16-bit with hardware oversampling, 200
-          |micro| A/MSPS
-        - 2x 12-bit DAC, low-power sample and hold
-        - 2x operational amplifiers with built-in PGA
-        - 2x ultra-low-power comparators
+  - 3x 12-bit ADC 5 MSPS, up to 16-bit with hardware oversampling, 200
+    |micro| A/MSPS
+  - 2x 12-bit DAC, low-power sample and hold
+  - 2x operational amplifiers with built-in PGA
+  - 2x ultra-low-power comparators
 
 - 20x communication interfaces
 
-        - USB OTG 2.0 full-speed, LPM and BCD
-        - 2x SAIs (serial audio interface)
-        - 4x I2C FM+(1 Mbit/s), SMBus/PMBus
-        - 5x USARTs (ISO 7816, LIN, IrDA, modem)
-        - 1x LPUART
-        - 3x SPIs (4x SPIs with the Quad SPI)
-        - 2x CAN (2.0B Active) and SDMMC interface
-        - SWPMI single wire protocol master I/F
-        - IRTIM (Infrared interface)
+  - USB OTG 2.0 full-speed, LPM and BCD
+  - 2x SAIs (serial audio interface)
+  - 4x I2C FM+(1 Mbit/s), SMBus/PMBus
+  - 5x USARTs (ISO 7816, LIN, IrDA, modem)
+  - 1x LPUART
+  - 3x SPIs (4x SPIs with the Quad SPI)
+  - 2x CAN (2.0B Active) and SDMMC interface
+  - SWPMI single wire protocol master I/F
+  - IRTIM (Infrared interface)
 
 - 14-channel DMA controller
 - True random number generator
@@ -116,9 +116,10 @@ The STM32L496AG SoC provides the following hardware capabilities:
 - Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell*
 
 
-More information about STM32L496AG can be found here:
-       - `STM32L496AG on www.st.com`_
-       - `STM32L496 reference manual`_
+More information about STM32L496AG can be found in:
+
+- `STM32L496AG on www.st.com`_
+- `STM32L496 reference manual`_
 
 Supported Features
 ==================
