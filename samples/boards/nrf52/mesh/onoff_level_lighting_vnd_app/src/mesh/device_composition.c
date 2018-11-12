@@ -15,7 +15,7 @@
 #include "storage.h"
 
 static struct bt_mesh_cfg_srv cfg_srv = {
-	.relay = BT_MESH_RELAY_DISABLED,
+	.relay = BT_MESH_RELAY_ENABLED,
 	.beacon = BT_MESH_BEACON_ENABLED,
 
 #if defined(CONFIG_BT_MESH_FRIEND)
@@ -32,9 +32,11 @@ static struct bt_mesh_cfg_srv cfg_srv = {
 
 	.default_ttl = 7,
 
-	/* 3 transmissions with 20ms interval */
-	.net_transmit = BT_MESH_TRANSMIT(2, 20),
-	.relay_retransmit = BT_MESH_TRANSMIT(2, 20),
+	/* 5 transmissions with 30ms interval */
+	.net_transmit = BT_MESH_TRANSMIT(5, 30),
+
+	/* 5 transmissions with 20ms interval */
+	.relay_retransmit = BT_MESH_TRANSMIT(5, 20),
 };
 
 static struct bt_mesh_health_srv health_srv = {
