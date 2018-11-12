@@ -69,41 +69,41 @@ endif()
 
 # Generate the flash, debug, debugserver, attach targets within the build
 # system itself.
-foreach(target flash debug debugserver attach)
-  if(target STREQUAL flash)
-    set(comment "Flashing ${BOARD}")
-  elseif(target STREQUAL debug)
-    set(comment "Debugging ${BOARD}")
-  elseif(target STREQUAL debugserver)
-    set(comment "Debugging ${BOARD}")
-    if(EMU_PLATFORM)
-      # cmake/qemu/CMakeLists.txt will add a debugserver target for
-      # emulation platforms, so we don't add one here
-      continue()
+if(WEST)
+  foreach(target flash debug debugserver attach)
+    if(target STREQUAL flash)
+      set(comment "Flashing ${BOARD}")
+    elseif(target STREQUAL debug)
+      set(comment "Debugging ${BOARD}")
+    elseif(target STREQUAL debugserver)
+      set(comment "Debugging ${BOARD}")
+      if(EMU_PLATFORM)
+        # cmake/qemu/CMakeLists.txt will add a debugserver target for
+        # emulation platforms, so we don't add one here
+        continue()
+      endif()
+    elseif(target STREQUAL attach)
+      set(comment "Debugging ${BOARD}")
     endif()
-  elseif(target STREQUAL attach)
-    set(comment "Debugging ${BOARD}")
-  endif()
 
-  # We pass --skip-rebuild here because the DEPENDS value ensures the
-  # build is already up to date before west is run.
-  set(cmd
-    ${CMAKE_COMMAND} -E env
-    PYTHONPATH=${ZEPHYR_BASE}/scripts/meta
-    ${PYTHON_EXECUTABLE}
-    ${ZEPHYR_BASE}/scripts/meta/west/main.py
-    ${RUNNER_VERBOSE}
-    ${target}
-    --skip-rebuild
-    DEPENDS ${logical_target_for_zephyr_elf}
-    WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
-    )
+    # We pass --skip-rebuild here because the DEPENDS value ensures the
+    # build is already up to date before west is run.
+    set(cmd
+      ${CMAKE_COMMAND} -E env
+      ${WEST}
+      ${RUNNER_VERBOSE}
+      ${target}
+      --skip-rebuild
+      DEPENDS ${logical_target_for_zephyr_elf}
+      WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
+      )
 
-  add_custom_target(${target}
-    COMMAND
-    ${cmd}
-    COMMENT
-    ${comment}
-    USES_TERMINAL
-    )
-endforeach()
+    add_custom_target(${target}
+      COMMAND
+      ${cmd}
+      COMMENT
+      ${comment}
+      USES_TERMINAL
+      )
+  endforeach()
+endif()

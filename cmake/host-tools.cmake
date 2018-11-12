@@ -1,5 +1,17 @@
 include(${ZEPHYR_BASE}/cmake/host-tools-zephyr.cmake)
 
+# west is optional
+find_program(
+  WEST
+  west
+  )
+if(${WEST} STREQUAL WEST-NOTFOUND)
+  unset(WEST)
+  message(WARNING "Unable to find west, some functionality may not be available. \
+  See https://docs.zephyrproject.org/latest/getting_started/getting_started.html \
+  to learn how to install west and how to clone Zephyr with it." )
+endif()
+
 # Search for the must-have program dtc on PATH and in
 # TOOLCHAIN_HOME. Usually DTC will be provided by an SDK, but for
 # SDK-less projects like gnuarmemb, it is up to the user to install
