@@ -159,9 +159,8 @@ on https://github.com and have Git tools available on your development system.
 Repository layout
 *****************
 
-To clone the main Zephyr Project repository use::
-
-    git clone https://github.com/zephyrproject-rtos/zephyr
+To clone the main Zephyr Project repositories use the instructions in
+:ref:`get_the_code`.
 
 The Zephyr project directory structure is described in :ref:`source_tree_v2`
 documentation. In addition to the Zephyr kernel itself, you'll also find the
@@ -388,13 +387,14 @@ workflow here:
    to your personal account on GitHub. (Click on the fork button in the top
    right corner of the Zephyr project repo page in GitHub.)
 
-#. On your development computer, clone the fork you just made::
+#. On your development computer, change into the :file:`zephyr` folder that was
+   created when you `obtained the code <get_the_code>`::
 
-     git clone https://github.com/<your github id>/zephyr
+     cd zephyrproject/zephyr
 
-   This would be a good time to let Git know about the upstream repo too::
+   and let Git know about the fork you just created::
 
-     git remote add upstream https://github.com/zephyrproject-rtos/zephyr.git
+     git remote add origin https://github.com/<your github id>/zephyr
 
    and verify the remote repos::
 

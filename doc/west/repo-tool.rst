@@ -217,8 +217,8 @@ to the latest manifest revision, and inspects upstream changes.
 
    .. code-block:: console
 
-      $ west init
-      $ west clone
+      west init
+      west clone
 
    .. note::
 
@@ -236,7 +236,7 @@ to the latest manifest revision, and inspects upstream changes.
 
    .. code-block:: console
 
-      $ west checkout -b xy-feature proj-x proj-y
+      west checkout -b xy-feature proj-x proj-y
 
    This creates a Git branch named ``xy-feature`` in ``proj-x`` and ``proj-y``.
    The new branches are automatically set up to track the ``manifest-rev``
@@ -250,7 +250,7 @@ to the latest manifest revision, and inspects upstream changes.
 
    .. code-block:: console
 
-      $ west checkout -b global-fix
+      west checkout -b global-fix
 
 4. After fixing the bug, we want to switch back to working on the feature, but
    we forgot its branch name. We list branches with ``west branch`` to remind
@@ -258,7 +258,7 @@ to the latest manifest revision, and inspects upstream changes.
 
    .. code-block:: console
 
-      $ west checkout xy-feature
+      west checkout xy-feature
 
    This command only affects the ``proj-x`` and ``proj-y`` repositories, since
    only those have the ``xy-feature`` branch.
@@ -268,7 +268,7 @@ to the latest manifest revision, and inspects upstream changes.
 
    .. code-block:: console
 
-      $ west pull proj-x proj-y
+      west pull proj-x proj-y
 
 6. After doing more work, we want to see if more changes have been added
    upstream, but we don't want to rebase yet. Instead, we just fetch changes in
@@ -276,7 +276,7 @@ to the latest manifest revision, and inspects upstream changes.
 
    .. code-block:: console
 
-      $ west fetch
+      west fetch
 
    This command fetches the upstream revision specified in the manifest and
    updates the ``manifest-rev`` branch to point to it, for all projects. Local
@@ -293,7 +293,7 @@ to the latest manifest revision, and inspects upstream changes.
 
    .. code-block:: console
 
-      $ git pull --rebase
+      git pull --rebase
 
    .. note::
 
