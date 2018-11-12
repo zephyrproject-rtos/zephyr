@@ -92,4 +92,61 @@ endif # UART_NS16550_PORT_0
 
 endif # UART_NS16550
 
+if I2C
+
+config I2C_DW
+	def_bool y
+config I2C_0
+	def_bool y
+
+endif
+
+if DMA
+
+config DMA_CAVS
+	def_bool y
+
+config DCACHE_WRITEBACK
+	def_bool y
+
+endif
+
+if I2S
+config I2S_CAVS
+	def_bool y
+endif
+
+if AUDIO
+config AUDIO_CODEC
+	def_bool y
+
+config AUDIO_TLV320DAC
+	def_bool y
+
+config AUDIO_DMIC
+	def_bool y
+
+config AUDIO_INTEL_DMIC
+	def_bool y
+
+endif
+
+
+if NEURAL_NET_ACCEL
+
+config INTEL_GNA
+	def_bool y
+endif
+
+if GPIO
+
+config GPIO_DW
+	def_bool y
+
+config GPIO_DW_0
+	def_bool y
+
+endif
+
+
 endif # BOARD_INTEL_S1000_CRB
