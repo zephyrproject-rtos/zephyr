@@ -2509,9 +2509,7 @@ extern struct k_work_q k_sys_work_q;
  * @req K-WORK-002
  */
 #define K_WORK_DEFINE(work, work_handler) \
-	struct k_work work \
-		__in_section(_k_work, static, work) = \
-		_K_WORK_INITIALIZER(work_handler)
+	struct k_work work = _K_WORK_INITIALIZER(work_handler)
 
 /**
  * @brief Initialize a work item.
