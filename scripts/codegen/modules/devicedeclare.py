@@ -42,24 +42,24 @@ def _device_name(device_id):
         codegen.error("No compatible property for device id '{}'."
                       .format(device_id))
 
-    bus_master_device_id = device.get_property('bus/master', None)
-    if bus_master_device_id is not None:
-        bus_master_device = codegen.edts().get_device_by_device_id(bus_master_device_id)
-        reg = bus_master_device.get_property('reg')
-        try:
-            # use always the first key to get first address inserted into dict
-            # because reg_index may be number or name
-            # reg/<reg_index>/address/<address_index> : address
-            for reg_index in reg:
-                for address_index in reg[reg_index]['address']:
-                    bus = reg[reg_index]['address'][address_index]
-                    device_name += '_' + hex(bus)[2:].zfill(8)
-                    break
-                break
-        except:
-            # this device is missing the register directive
-            codegen.error("No bus master register address property for device id '{}'."
-                          .format(bus_master_device_id))
+    # bus_master_device_id = device.get_property('bus/master', None)
+    # if bus_master_device_id is not None:
+    #     bus_master_device = codegen.edts().get_device_by_device_id(bus_master_device_id)
+    #     reg = bus_master_device.get_property('reg')
+    #     try:
+    #         # use always the first key to get first address inserted into dict
+    #         # because reg_index may be number or name
+    #         # reg/<reg_index>/address/<address_index> : address
+    #         for reg_index in reg:
+    #             for address_index in reg[reg_index]['address']:
+    #                 bus = reg[reg_index]['address'][address_index]
+    #                 device_name += '_' + hex(bus)[2:].zfill(8)
+    #                 break
+    #             break
+    #     except:
+    #         # this device is missing the register directive
+    #         codegen.error("No bus master register address property for device id '{}'."
+    #                       .format(bus_master_device_id))
 
     reg = device.get_property('reg', None)
     if reg is None:
@@ -110,8 +110,8 @@ class _DeviceLocalTemplate(Template):
 class _DeviceCustomTemplate(Template):
     # pattern is ${<property_path>}
     # never starts with /
-    # extend default pattern by '-' '/' ',', '(', ')'
-    idpattern = r'[_a-z][_a-z0-9\-/,()\']*'
+    # extend default pattern by '-' '/' ',', '(', ')', '.'
+    idpattern = r'[_a-z][_a-z0-9\-/,()\'.]*'
 
 class _DeviceGlobalTemplate(Template):
     # pattern is ${<device-id>:<property_path>}
@@ -394,6 +394,8 @@ def device_declare(compatibles, init_prio_flag, kernel_level, irq_func,
         driver_name = device.get_property('label')
         device_config = "CONFIG_{}".format(driver_name.strip('"'))
         interrupts = device.get_property('interrupts', None)
+
+
         if interrupts is not None:
             try:
                 irq_names = list(interrupts[dev]['name'] for dev in interrupts)
