@@ -22,14 +22,8 @@
 #include <zephyr.h>
 
 #include <shell/shell.h>
-#include <shell/shell_uart.h>
 
 #include <gatt/hrs.h>
-
-#define print(_sh, _ft, ...) \
-	shell_fprintf(_sh, SHELL_NORMAL, _ft "\r\n", ##__VA_ARGS__)
-#define error(_sh, _ft, ...) \
-	shell_fprintf(_sh, SHELL_ERROR, _ft "\r\n", ##__VA_ARGS__)
 
 #define DEVICE_NAME CONFIG_BT_DEVICE_NAME
 
@@ -49,18 +43,18 @@ static int cmd_hrs_simulate(const struct shell *shell,
 		static bool hrs_registered;
 
 		if (!hrs_registered) {
-			print(shell, "Registering HRS Service");
+			shell_print(shell, "Registering HRS Service");
 			hrs_init(0x01);
 			hrs_registered = true;
 		}
 
-		print(shell, "Start HRS simulation");
+		shell_print(shell, "Start HRS simulation");
 		hrs_simulate = true;
 	} else if (!strcmp(argv[1], "off")) {
-		print(shell, "Stop HRS simulation");
+		shell_print(shell, "Stop HRS simulation");
 		hrs_simulate = false;
 	} else {
-		print(shell, "Incorrect value: %s", argv[1]);
+		shell_print(shell, "Incorrect value: %s", argv[1]);
 		shell_help_print(shell, NULL, 0);
 		return -ENOEXEC;
 	}
@@ -95,7 +89,7 @@ static int cmd_hrs(const struct shell *shell, size_t argc, char **argv)
 		return err;
 	}
 
-	error(shell, "%s unknown parameter: %s", argv[0], argv[1]);
+	shell_error(shell, "%s unknown parameter: %s", argv[0], argv[1]);
 
 	return -ENOEXEC;
 }

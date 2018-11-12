@@ -74,8 +74,8 @@ int cmd_ticker_info(const struct shell *shell, size_t argc, char *argv[])
 
 		if ((err_cb != TICKER_STATUS_SUCCESS) ||
 		    (ticker_id == TICKER_NULL)) {
-			print(shell, "Query done (0x%02x, err= %u).", ticker_id,
-			       err);
+			shell_print(shell, "Query done (0x%02x, err= %u).",
+				    ticker_id, err);
 
 			break;
 		}
@@ -83,7 +83,8 @@ int cmd_ticker_info(const struct shell *shell, size_t argc, char *argv[])
 		if (ticks_current != ticks_previous) {
 			retry--;
 			if (!retry) {
-				print(shell, "Retry again, tickers too busy now.");
+				shell_print(shell, "Retry again, tickers too "
+					    "busy now.");
 
 				return -EAGAIN;
 			}
@@ -91,8 +92,8 @@ int cmd_ticker_info(const struct shell *shell, size_t argc, char *argv[])
 			if (tickers_count) {
 				tickers_count = 0;
 
-				print(shell, "Query reset, %u retries remaining.",
-				       retry);
+				shell_print(shell, "Query reset, %u retries "
+					    "remaining.", retry);
 			}
 		}
 
@@ -102,24 +103,24 @@ int cmd_ticker_info(const struct shell *shell, size_t argc, char *argv[])
 
 	} while (tickers_count < TICKERS_MAX);
 
-	print(shell, "Tickers: %u.", tickers_count);
-	print(shell, "Tick: %u (%uus).", ticks_current,
+	shell_print(shell, "Tickers: %u.", tickers_count);
+	shell_print(shell, "Tick: %u (%uus).", ticks_current,
 	       HAL_TICKER_TICKS_TO_US(ticks_current));
 
 	if (!tickers_count) {
 		return 0;
 	}
 
-	print(shell, "---------------------");
-	print(shell, " id   offset   offset");
-	print(shell, "      (tick)     (us)");
-	print(shell, "---------------------");
+	shell_print(shell, "---------------------");
+	shell_print(shell, " id   offset   offset");
+	shell_print(shell, "      (tick)     (us)");
+	shell_print(shell, "---------------------");
 	for (i = 0; i < tickers_count; i++) {
-		print(shell, "%03u %08u %08u", tickers[i].id,
+		shell_print(shell, "%03u %08u %08u", tickers[i].id,
 		       tickers[i].ticks_to_expire,
 		       HAL_TICKER_TICKS_TO_US(tickers[i].ticks_to_expire));
 	}
-	print(shell, "---------------------");
+	shell_print(shell, "---------------------");
 
 	return 0;
 }
@@ -146,7 +147,7 @@ static int cmd_ticker(const struct shell *shell, size_t argc, char **argv)
 		return err;
 	}
 
-	error(shell, "%s:%s%s", argv[0], "unknown parameter: ", argv[1]);
+	shell_error(shell, "%s:%s%s", argv[0], "unknown parameter: ", argv[1]);
 	return -ENOEXEC;
 }
 

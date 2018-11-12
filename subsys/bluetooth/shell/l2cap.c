@@ -85,7 +85,7 @@ static void l2cap_recv_cb(struct k_work *work)
 	struct net_buf *buf;
 
 	while ((buf = net_buf_get(&l2cap_recv_fifo, K_NO_WAIT))) {
-		print(ctx_shell, "Confirming reception");
+		shell_print(ctx_shell, "Confirming reception");
 		bt_l2cap_chan_recv_complete(&c->ch.chan, buf);
 	}
 }
@@ -94,7 +94,8 @@ static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct l2ch *l2ch = L2CH_CHAN(chan);
 
-	print(ctx_shell, "Incoming data channel %p len %u", chan, buf->len);
+	shell_print(ctx_shell, "Incoming data channel %p len %u", chan,
+		    buf->len);
 
 	if (buf->len) {
 		hexdump(ctx_shell, buf->data, buf->len);
@@ -103,8 +104,8 @@ static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	if (l2cap_recv_delay) {
 		/* Submit work only if queue is empty */
 		if (k_fifo_is_empty(&l2cap_recv_fifo)) {
-			print(ctx_shell, "Delaying response in %u ms...",
-			      l2cap_recv_delay);
+			shell_print(ctx_shell, "Delaying response in %u ms...",
+				    l2cap_recv_delay);
 			k_delayed_work_submit(&l2ch->recv_work,
 					      l2cap_recv_delay);
 		}
@@ -121,19 +122,19 @@ static void l2cap_connected(struct bt_l2cap_chan *chan)
 
 	k_delayed_work_init(&c->recv_work, l2cap_recv_cb);
 
-	print(ctx_shell, "Channel %p connected", chan);
+	shell_print(ctx_shell, "Channel %p connected", chan);
 }
 
 static void l2cap_disconnected(struct bt_l2cap_chan *chan)
 {
-	print(ctx_shell, "Channel %p disconnected", chan);
+	shell_print(ctx_shell, "Channel %p disconnected", chan);
 }
 
 static struct net_buf *l2cap_alloc_buf(struct bt_l2cap_chan *chan)
 {
 	/* print if metrics is disabled */
 	if (chan->ops->recv != l2cap_recv_metrics) {
-		print(ctx_shell, "Channel %p requires buffer", chan);
+		shell_print(ctx_shell, "Channel %p requires buffer", chan);
 	}
 
 	return net_buf_alloc(&data_rx_pool, K_FOREVER);
@@ -194,7 +195,7 @@ static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 {
 	int err;
 
-	print(ctx_shell, "Incoming conn %p", conn);
+	shell_print(ctx_shell, "Incoming conn %p", conn);
 
 	err = l2cap_accept_policy(conn);
 	if (err < 0) {
@@ -202,7 +203,7 @@ static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 	}
 
 	if (l2ch_chan.ch.chan.conn) {
-		print(ctx_shell, "No channels available");
+		shell_print(ctx_shell, "No channels available");
 		return -ENOMEM;
 	}
 
@@ -226,7 +227,7 @@ static int cmd_register(const struct shell *shell, size_t argc, char *argv[])
 	}
 
 	if (server.psm) {
-		error(shell, "Already registered");
+		shell_error(shell, "Already registered");
 		return -ENOEXEC;
 	}
 
@@ -249,14 +250,14 @@ static int cmd_register(const struct shell *shell, size_t argc, char *argv[])
 	}
 
 	if (bt_l2cap_server_register(&server) < 0) {
-		error(shell, "Unable to register psm");
+		shell_error(shell, "Unable to register psm");
 		server.psm = 0;
 		return -ENOEXEC;
 	} else {
 		bt_conn_cb_register(&l2cap_conn_callbacks);
 
-		print(shell, "L2CAP psm %u sec_level %u registered",
-		      server.psm, server.sec_level);
+		shell_print(shell, "L2CAP psm %u sec_level %u registered",
+			    server.psm, server.sec_level);
 	}
 
 	return 0;
@@ -268,7 +269,7 @@ static int cmd_connect(const struct shell *shell, size_t argc, char *argv[])
 	int err;
 
 	if (!default_conn) {
-		error(shell, "Not connected");
+		shell_error(shell, "Not connected");
 		return -ENOEXEC;
 	}
 
@@ -278,7 +279,7 @@ static int cmd_connect(const struct shell *shell, size_t argc, char *argv[])
 	}
 
 	if (l2ch_chan.ch.chan.conn) {
-		error(shell, "Channel already in use");
+		shell_error(shell, "Channel already in use");
 		return -ENOEXEC;
 	}
 
@@ -286,10 +287,10 @@ static int cmd_connect(const struct shell *shell, size_t argc, char *argv[])
 
 	err = bt_l2cap_chan_connect(default_conn, &l2ch_chan.ch.chan, psm);
 	if (err < 0) {
-		error(shell, "Unable to connect to psm %u (err %u)", psm,
-		      err);
+		shell_error(shell, "Unable to connect to psm %u (err %u)", psm,
+			    err);
 	} else {
-		print(shell, "L2CAP connection pending");
+		shell_print(shell, "L2CAP connection pending");
 	}
 
 	return err;
@@ -301,7 +302,7 @@ static int cmd_disconnect(const struct shell *shell, size_t argc, char *argv[])
 
 	err = bt_l2cap_chan_disconnect(&l2ch_chan.ch.chan);
 	if (err) {
-		print(shell, "Unable to disconnect: %u", -err);
+		shell_print(shell, "Unable to disconnect: %u", -err);
 	}
 
 	return err;
@@ -326,7 +327,7 @@ static int cmd_send(const struct shell *shell, size_t argc, char *argv[])
 		net_buf_add_mem(buf, buf_data, len);
 		ret = bt_l2cap_chan_send(&l2ch_chan.ch.chan, buf);
 		if (ret < 0) {
-			print(shell, "Unable to send: %d", -ret);
+			shell_print(shell, "Unable to send: %d", -ret);
 			net_buf_unref(buf);
 			return -ENOEXEC;
 		}
@@ -340,8 +341,8 @@ static int cmd_recv(const struct shell *shell, size_t argc, char *argv[])
 	if (argc > 1) {
 		l2cap_recv_delay = strtoul(argv[1], NULL, 10);
 	} else {
-		print(shell, "l2cap receive delay: %u ms",
-			     l2cap_recv_delay);
+		shell_print(shell, "l2cap receive delay: %u ms",
+			    l2cap_recv_delay);
 	}
 
 	return 0;
@@ -352,7 +353,7 @@ static int cmd_metrics(const struct shell *shell, size_t argc, char *argv[])
 	const char *action;
 
 	if (argc < 2) {
-		print(shell, "l2cap rate: %u bps.", l2cap_rate);
+		shell_print(shell, "l2cap rate: %u bps.", l2cap_rate);
 
 		return 0;
 	}
@@ -368,7 +369,7 @@ static int cmd_metrics(const struct shell *shell, size_t argc, char *argv[])
 		return 0;
 	}
 
-	print(shell, "l2cap metrics %s.", action);
+	shell_print(shell, "l2cap metrics %s.", action);
 	return 0;
 }
 
@@ -377,7 +378,7 @@ static int cmd_whitelist_add(const struct shell *shell, size_t argc, char *argv[
 	int i;
 
 	if (!default_conn) {
-		error(shell, "Not connected\n");
+		shell_error(shell, "Not connected");
 		return 0;
 	}
 
@@ -394,7 +395,7 @@ static int cmd_whitelist_add(const struct shell *shell, size_t argc, char *argv[
 static int cmd_whitelist_remove(const struct shell *shell, size_t argc, char *argv[])
 {
 	if (!default_conn) {
-		error(shell, "Not connected\n");
+		shell_error(shell, "Not connected");
 		return 0;
 	}
 
@@ -438,7 +439,7 @@ static int cmd_l2cap(const struct shell *shell, size_t argc, char **argv)
 		return err;
 	}
 
-	error(shell, "%s unknown parameter: %s", argv[0], argv[1]);
+	shell_error(shell, "%s unknown parameter: %s", argv[0], argv[1]);
 
 	return -ENOEXEC;
 }

@@ -46,7 +46,7 @@ int cmd_ll_addr_get(const struct shell *shell, size_t argc, char *argv[])
 	(void)ll_addr_get(addr_type, addr.val);
 	bt_addr_to_str(&addr, str_addr, sizeof(str_addr));
 
-	print(shell, "Current %s address: %s\n", str_type, str_addr);
+	shell_print(shell, "Current %s address: %s\n", str_type, str_addr);
 
 	return 0;
 }
@@ -73,7 +73,7 @@ int cmd_test_tx(const struct shell *shell, size_t  argc, char *argv[])
 		return -EINVAL;
 	}
 
-	print(shell, "test_tx...");
+	shell_print(shell, "test_tx...");
 
 	return 0;
 }
@@ -96,7 +96,7 @@ int cmd_test_rx(const struct shell *shell, size_t  argc, char *argv[])
 		return -EINVAL;
 	}
 
-	print(shell, "test_rx...");
+	shell_print(shell, "test_rx...");
 
 	return 0;
 }
@@ -111,7 +111,7 @@ int cmd_test_end(const struct shell *shell, size_t  argc, char *argv[])
 		return -EINVAL;
 	}
 
-	print(shell, "num_rx= %u.", num_rx);
+	shell_print(shell, "num_rx= %u.", num_rx);
 
 	return 0;
 }
@@ -191,7 +191,7 @@ int cmd_advx(const struct shell *shell, size_t argc, char *argv[])
 		}
 	}
 
-	print(shell, "adv param set...");
+	shell_print(shell, "adv param set...");
 	err = ll_adv_params_set(0x00, evt_prop, ADV_INTERVAL, ADV_TYPE,
 				OWN_ADDR_TYPE, PEER_ADDR_TYPE, PEER_ADDR,
 				ADV_CHAN_MAP, FILTER_POLICY, ADV_TX_PWR,
@@ -202,14 +202,14 @@ int cmd_advx(const struct shell *shell, size_t argc, char *argv[])
 	}
 
 disable:
-	print(shell, "adv enable (%u)...", enable);
+	shell_print(shell, "adv enable (%u)...", enable);
 	err = ll_adv_enable(enable);
 	if (err) {
 		goto exit;
 	}
 
 exit:
-	print(shell, "done (err= %d).", err);
+	shell_print(shell, "done (err= %d).", err);
 
 	return 0;
 }
@@ -250,7 +250,7 @@ int cmd_scanx(const struct shell *shell, size_t  argc, char *argv[])
 		}
 	}
 
-	print(shell, "scan param set...");
+	shell_print(shell, "scan param set...");
 	err = ll_scan_params_set(type, SCAN_INTERVAL, SCAN_WINDOW,
 				 SCAN_OWN_ADDR_TYPE, SCAN_FILTER_POLICY);
 	if (err) {
@@ -258,14 +258,14 @@ int cmd_scanx(const struct shell *shell, size_t  argc, char *argv[])
 	}
 
 disable:
-	print(shell, "scan enable (%u)...", enable);
+	shell_print(shell, "scan enable (%u)...", enable);
 	err = ll_scan_enable(enable);
 	if (err) {
 		goto exit;
 	}
 
 exit:
-	print(shell, "done (err= %d).", err);
+	shell_print(shell, "done (err= %d).", err);
 
 	return err;
 }
