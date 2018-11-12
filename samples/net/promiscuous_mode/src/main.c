@@ -9,6 +9,8 @@
 
 #include <zephyr.h>
 #include <errno.h>
+#include <stdlib.h>
+#include <shell/shell.h>
 
 #include <net/net_core.h>
 #include <net/promiscuous.h>
@@ -136,6 +138,89 @@ static void print_info(struct net_pkt *pkt)
 		}
 	}
 }
+
+static int set_promisc_mode(const struct shell *shell,
+			    size_t argc, char *argv[], bool enable)
+{
+	struct net_if *iface;
+	char *endptr;
+	int idx, ret;
+
+	if (shell_help_requested(shell)) {
+		shell_help_print(shell, NULL, 0);
+		return -ENOEXEC;
+	}
+
+	if (argc < 2) {
+		shell_fprintf(shell, SHELL_ERROR, "Invalid arguments.\n");
+		return -ENOEXEC;
+	}
+
+	idx = strtol(argv[1], &endptr, 10);
+
+	iface = net_if_get_by_index(idx);
+	if (!iface) {
+		shell_fprintf(shell, SHELL_ERROR,
+			      "Cannot find network interface for index %d\n",
+			      idx);
+		return -ENOEXEC;
+	}
+
+	shell_fprintf(shell, SHELL_INFO, "Promiscuous mode %s...\n",
+		      enable ? "ON" : "OFF");
+
+	if (enable) {
+		ret = net_promisc_mode_on(iface);
+	} else {
+		ret = net_promisc_mode_off(iface);
+	}
+
+	if (ret < 0) {
+		if (ret == -EALREADY) {
+			shell_fprintf(shell, SHELL_INFO,
+				      "Promiscuous mode already %s\n",
+				      enable ? "enabled" : "disabled");
+		} else {
+			shell_fprintf(shell, SHELL_ERROR,
+				      "Cannot %s promiscuous mode for "
+				      "interface %p (%d)\n",
+				      enable ? "set" : "unset", iface, ret);
+		}
+
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
+static int cmd_promisc_on(const struct shell *shell,
+			  size_t argc, char *argv[])
+{
+	return set_promisc_mode(shell, argc, argv, true);
+}
+
+static int cmd_promisc_off(const struct shell *shell,
+			   size_t argc, char *argv[])
+{
+	return set_promisc_mode(shell, argc, argv, false);
+}
+
+SHELL_CREATE_STATIC_SUBCMD_SET(promisc_commands)
+{
+	SHELL_CMD(on, NULL,
+		  "Turn promiscuous mode on\n"
+		  "promisc on  <interface index>  "
+		      "Turn on promiscuous mode for the interface\n",
+		  cmd_promisc_on),
+	SHELL_CMD(off, NULL, "Turn promiscuous mode off\n"
+		  "promisc off <interface index>  "
+		      "Turn off promiscuous mode for the interface\n",
+		  cmd_promisc_off),
+	SHELL_SUBCMD_SET_END
+};
+
+SHELL_CMD_REGISTER(promisc, &promisc_commands,
+		   "Promiscuous mode commands", NULL);
 
 void main(void)
 {
