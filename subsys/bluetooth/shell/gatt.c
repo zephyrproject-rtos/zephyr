@@ -226,12 +226,6 @@ static int cmd_read(const struct shell *shell, size_t argc, char *argv[])
 	}
 
 	read_params.func = read_func;
-
-	err = shell_cmd_precheck(shell, (argc >= 2), NULL, 0);
-	if (err) {
-		return err;
-	}
-
 	read_params.handle_count = 1;
 	read_params.single.handle = strtoul(argv[1], NULL, 16);
 	read_params.single.offset = 0;
@@ -258,11 +252,6 @@ static int cmd_mread(const struct shell *shell, size_t argc, char *argv[])
 	if (!default_conn) {
 		shell_error(shell, "Not connected");
 		return -ENOEXEC;
-	}
-
-	err = shell_cmd_precheck(shell, (argc >= 3), NULL, 0);
-	if (err) {
-		return err;
 	}
 
 	if ((argc - 1) >  ARRAY_SIZE(h)) {
@@ -315,11 +304,6 @@ static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 	}
 
 
-	err = shell_cmd_precheck(shell, (argc >= 4), NULL, 0);
-	if (err) {
-		return err;
-	}
-
 	handle = strtoul(argv[1], NULL, 16);
 	offset = strtoul(argv[2], NULL, 16);
 
@@ -365,11 +349,6 @@ static int cmd_write_without_rsp(const struct shell *shell,
 	if (!default_conn) {
 		shell_error(shell, "Not connected");
 		return -ENOEXEC;
-	}
-
-	err = shell_cmd_precheck(shell, (argc >= 3), NULL, 0);
-	if (err) {
-		return err;
 	}
 
 	sign = !strcmp(argv[0], "signed-write");
@@ -439,11 +418,6 @@ static int cmd_subscribe(const struct shell *shell, size_t argc, char *argv[])
 	if (!default_conn) {
 		shell_error(shell, "Not connected");
 		return -ENOEXEC;
-	}
-
-	err = shell_cmd_precheck(shell, (argc >= 3), NULL, 0);
-	if (err) {
-		return err;
 	}
 
 	subscribe_params.ccc_handle = strtoul(argv[1], NULL, 16);
@@ -781,57 +755,50 @@ static int cmd_metrics(const struct shell *shell, size_t argc, char *argv[])
 
 SHELL_CREATE_STATIC_SUBCMD_SET(gatt_cmds) {
 #if defined(CONFIG_BT_GATT_CLIENT)
-	SHELL_CMD(discover-characteristic, NULL,
-		  "[UUID] [start handle] [end handle]", cmd_discover),
-	SHELL_CMD(discover-descriptor, NULL,
-		  "[UUID] [start handle] [end handle]", cmd_discover),
-	SHELL_CMD(discover-include, NULL,
-		  "[UUID] [start handle] [end handle]", cmd_discover),
-	SHELL_CMD(discover-primary, NULL,
-		  "[UUID] [start handle] [end handle]", cmd_discover),
-	SHELL_CMD(discover-secondary, NULL,
-		  "[UUID] [start handle] [end handle]", cmd_discover),
-	SHELL_CMD(exchange-mtu, NULL, HELP_NONE, cmd_exchange_mtu),
-	SHELL_CMD(read, NULL, "<handle> [offset]", cmd_read),
-	SHELL_CMD(read-multiple, NULL, "<handle 1> <handle 2> ...",
-		  cmd_mread),
-	SHELL_CMD(signed-write, NULL, "<handle> <data> [length] [repeat]",
-		  cmd_write_without_rsp),
-	SHELL_CMD(subscribe, NULL, "<CCC handle> <value handle> [ind]",
-		  cmd_subscribe),
-	SHELL_CMD(write, NULL, "<handle> <offset> <data> [length]",
-		  cmd_write),
-	SHELL_CMD(write-without-response, NULL,
-		  "<handle> <data> [length] [repeat]",
-		  cmd_write_without_rsp),
-	SHELL_CMD(unsubscribe, NULL, HELP_NONE, cmd_unsubscribe),
+	SHELL_CMD_ARG(discover-characteristic, NULL,
+		      "[UUID] [start handle] [end handle]", cmd_discover, 1, 3),
+	SHELL_CMD_ARG(discover-descriptor, NULL,
+		      "[UUID] [start handle] [end handle]", cmd_discover, 1, 3),
+	SHELL_CMD_ARG(discover-include, NULL,
+		      "[UUID] [start handle] [end handle]", cmd_discover, 1, 3),
+	SHELL_CMD_ARG(discover-primary, NULL,
+		      "[UUID] [start handle] [end handle]", cmd_discover, 1, 3),
+	SHELL_CMD_ARG(discover-secondary, NULL,
+		      "[UUID] [start handle] [end handle]", cmd_discover, 1, 3),
+	SHELL_CMD_ARG(exchange-mtu, NULL, HELP_NONE, cmd_exchange_mtu, 1, 0),
+	SHELL_CMD_ARG(read, NULL, "<handle> [offset]", cmd_read, 2, 1),
+	SHELL_CMD_ARG(read-multiple, NULL, "<handle 1> <handle 2> ...",
+		      cmd_mread, 2, -1),
+	SHELL_CMD_ARG(signed-write, NULL, "<handle> <data> [length] [repeat]",
+		      cmd_write_without_rsp, 3, 2),
+	SHELL_CMD_ARG(subscribe, NULL, "<CCC handle> <value handle> [ind]",
+		      cmd_subscribe, 3, 1),
+	SHELL_CMD_ARG(write, NULL, "<handle> <offset> <data> [length]",
+		      cmd_write, 4, 1),
+	SHELL_CMD_ARG(write-without-response, NULL,
+		      "<handle> <data> [length] [repeat]",
+		      cmd_write_without_rsp, 3, 2),
+	SHELL_CMD_ARG(unsubscribe, NULL, HELP_NONE, cmd_unsubscribe, 1, 0),
 #endif /* CONFIG_BT_GATT_CLIENT */
-	SHELL_CMD(metrics, NULL,
-		  "register vendr char and measure rx [value on, off]",
-		  cmd_metrics),
-	SHELL_CMD(register, NULL,
-		  "register pre-predefined test service",
-		  cmd_register_test_svc),
-	SHELL_CMD(show-db, NULL, HELP_NONE, cmd_show_db),
-	SHELL_CMD(unregister, NULL,
-		  "unregister pre-predefined test service",
-		  cmd_unregister_test_svc),
+	SHELL_CMD_ARG(metrics, NULL,
+		      "register vendr char and measure rx <value: on, off>",
+		      cmd_metrics, 2, 0),
+	SHELL_CMD_ARG(register, NULL,
+		      "register pre-predefined test service",
+		      cmd_register_test_svc, 1, 0),
+	SHELL_CMD_ARG(show-db, NULL, HELP_NONE, cmd_show_db, 1, 0),
+	SHELL_CMD_ARG(unregister, NULL,
+		      "unregister pre-predefined test service",
+		      cmd_unregister_test_svc, 1, 0),
 	SHELL_SUBCMD_SET_END
 };
 
 static int cmd_gatt(const struct shell *shell, size_t argc, char **argv)
 {
-	int err;
-
 	if (argc == 1) {
 		shell_help_print(shell, NULL, 0);
 		/* shell_cmd_precheck returns 1 when help is printed */
 		return 1;
-	}
-
-	err = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
-	if (err) {
-		return err;
 	}
 
 	shell_error(shell, "%s unknown parameter: %s", argv[0], argv[1]);
@@ -839,4 +806,5 @@ static int cmd_gatt(const struct shell *shell, size_t argc, char **argv)
 	return -EINVAL;
 }
 
-SHELL_CMD_REGISTER(gatt, &gatt_cmds, "Bluetooth GATT shell commands", cmd_gatt);
+SHELL_CMD_ARG_REGISTER(gatt, &gatt_cmds, "Bluetooth GATT shell commands",
+		       cmd_gatt, 1, 1);

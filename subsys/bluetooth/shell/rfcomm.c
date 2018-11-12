@@ -178,11 +178,6 @@ static int cmd_connect(const struct shell *shell, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	err = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
-	if (err) {
-		return err;
-	}
-
 	channel = strtoul(argv[1], NULL, 16);
 
 	err = bt_rfcomm_dlc_connect(default_conn, &rfcomm_dlc, channel);
@@ -239,26 +234,19 @@ static int cmd_disconnect(const struct shell *shell, size_t argc, char *argv[])
 #define HELP_ADDR_LE "<address: XX:XX:XX:XX:XX:XX> <type: (public|random)>"
 
 SHELL_CREATE_STATIC_SUBCMD_SET(rfcomm_cmds) {
-	SHELL_CMD(register, NULL, "<channel>", cmd_register),
-	SHELL_CMD(connect, NULL, "<channel>", cmd_connect),
-	SHELL_CMD(disconnect, NULL, HELP_NONE, cmd_disconnect),
-	SHELL_CMD(send, NULL, "<number of packets>", cmd_send),
+	SHELL_CMD_ARG(register, NULL, "<channel>", cmd_register, 2, 0),
+	SHELL_CMD_ARG(connect, NULL, "<channel>", cmd_connect, 2, 0),
+	SHELL_CMD_ARG(disconnect, NULL, HELP_NONE, cmd_disconnect, 1, 0),
+	SHELL_CMD_ARG(send, NULL, "<number of packets>", cmd_send, 2, 0),
 	SHELL_SUBCMD_SET_END
 };
 
 static int cmd_rfcomm(const struct shell *shell, size_t argc, char **argv)
 {
-	int err;
-
 	if (argc == 1) {
 		shell_help_print(shell, NULL, 0);
 		/* shell_cmd_precheck returns 1 when help is printed */
 		return 1;
-	}
-
-	err = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
-	if (err) {
-		return err;
 	}
 
 	shell_error(shell, "%s unknown parameter: %s", argv[0], argv[1]);
@@ -266,6 +254,6 @@ static int cmd_rfcomm(const struct shell *shell, size_t argc, char **argv)
 	return -ENOEXEC;
 }
 
-SHELL_CMD_REGISTER(rfcomm, &rfcomm_cmds, "Bluetooth RFCOMM shell commands",
-		   cmd_rfcomm);
+SHELL_CMD_ARG_REGISTER(rfcomm, &rfcomm_cmds, "Bluetooth RFCOMM shell commands",
+		       cmd_rfcomm, 1, 1);
 

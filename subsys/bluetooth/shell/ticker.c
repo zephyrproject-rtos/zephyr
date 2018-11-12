@@ -128,28 +128,21 @@ int cmd_ticker_info(const struct shell *shell, size_t argc, char *argv[])
 #define HELP_NONE "[none]"
 
 SHELL_CREATE_STATIC_SUBCMD_SET(ticker_cmds) {
-	SHELL_CMD(info, NULL, HELP_NONE, cmd_ticker_info),
+	SHELL_CMD_ARG(info, NULL, HELP_NONE, cmd_ticker_info, 1, 0),
 	SHELL_SUBCMD_SET_END
 };
 
 static int cmd_ticker(const struct shell *shell, size_t argc, char **argv)
 {
-	int err;
-
 	if (argc == 1) {
 		shell_help_print(shell, NULL, 0);
 		/* shell_cmd_precheck returns 1 when help is printed */
 		return 1;
 	}
 
-	err = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
-	if (err) {
-		return err;
-	}
-
 	shell_error(shell, "%s:%s%s", argv[0], "unknown parameter: ", argv[1]);
 	return -ENOEXEC;
 }
 
-SHELL_CMD_REGISTER(ticker, &ticker_cmds, "Bluetooth Ticker shell commands",
-		   cmd_ticker);
+SHELL_CMD_ARG_REGISTER(ticker, &ticker_cmds, "Bluetooth Ticker shell commands",
+		       cmd_ticker, 1, 1);

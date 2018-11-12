@@ -365,11 +365,6 @@ static int cmd_hci_cmd(const struct shell *shell, size_t argc, char *argv[])
 	struct net_buf *buf = NULL, *rsp;
 	int err;
 
-	err = shell_cmd_precheck(shell, (argc == 3), NULL, 0);
-	if (err) {
-		return err;
-	}
-
 	ogf = strtoul(argv[1], NULL, 16);
 	ocf = strtoul(argv[2], NULL, 16);
 
@@ -524,12 +519,6 @@ static int cmd_id_select(const struct shell *shell, size_t argc, char *argv[])
 	size_t count = CONFIG_BT_ID_MAX;
 	u8_t id;
 
-	if (argc < 2) {
-		shell_help_print(shell, NULL, 0);
-		/* shell_cmd_precheck returns 1 when help is printed */
-		return 1;
-	}
-
 	id = strtol(argv[1], NULL, 10);
 
 	bt_id_get(addrs, &count);
@@ -614,12 +603,6 @@ static int cmd_scan(const struct shell *shell, size_t argc, char *argv[])
 {
 	const char *action;
 	int dups = -1;
-	int err;
-
-	err = shell_cmd_precheck(shell, (argc >= 2), NULL, 0);
-	if (err) {
-		return err;
-	}
 
 	/* Parse duplicate filtering data */
 	if (argc >= 3) {
@@ -662,11 +645,6 @@ static int cmd_advertise(const struct shell *shell, size_t argc, char *argv[])
 	const struct bt_data *ad;
 	size_t ad_len;
 	int err;
-
-	err = shell_cmd_precheck(shell, (argc >= 2), NULL, 0);
-	if (err) {
-		return err;
-	}
 
 	if (!strcmp(argv[1], "off")) {
 		if (bt_le_adv_stop() < 0) {
@@ -734,12 +712,6 @@ static int cmd_connect_le(const struct shell *shell, size_t argc, char *argv[])
 	int err;
 	bt_addr_le_t addr;
 	struct bt_conn *conn;
-
-	if (argc < 3) {
-		shell_help_print(shell, NULL, 0);
-		/* shell_cmd_precheck returns 1 when help is printed */
-		return 1;
-	}
 
 	err = str2bt_addr_le(argv[1], argv[2], &addr);
 	if (err) {
@@ -810,12 +782,6 @@ static int cmd_auto_conn(const struct shell *shell, size_t argc, char *argv[])
 	bt_addr_le_t addr;
 	int err;
 
-	if (argc < 3) {
-		shell_help_print(shell, NULL, 0);
-		/* shell_cmd_precheck returns 1 when help is printed */
-		return 1;
-	}
-
 	err = str2bt_addr_le(argv[1], argv[2], &addr);
 	if (err) {
 		shell_error(shell, "Invalid peer address (err %d)", err);
@@ -844,11 +810,6 @@ static int cmd_directed_adv(const struct shell *shell,
 	bt_addr_le_t addr;
 	struct bt_conn *conn;
 	struct bt_le_adv_param *param = BT_LE_ADV_CONN_DIR;
-
-	err = shell_cmd_precheck(shell, (argc >= 2), NULL, 0);
-	if (err) {
-		return err;
-	}
 
 	err = str2bt_addr_le(argv[1], argv[2], &addr);
 	if (err) {
@@ -889,11 +850,6 @@ static int cmd_select(const struct shell *shell, size_t argc, char *argv[])
 	bt_addr_le_t addr;
 	int err;
 
-	err = shell_cmd_precheck(shell, (argc == 3), NULL, 0);
-	if (err) {
-		return err;
-	}
-
 	err = str2bt_addr_le(argv[1], argv[2], &addr);
 	if (err) {
 		shell_error(shell, "Invalid peer address (err %d)", err);
@@ -920,11 +876,6 @@ static int cmd_conn_update(const struct shell *shell,
 {
 	struct bt_le_conn_param param;
 	int err;
-
-	err = shell_cmd_precheck(shell, (argc == 5), NULL, 0);
-	if (err) {
-		return err;
-	}
 
 	param.interval_min = strtoul(argv[1], NULL, 16);
 	param.interval_max = strtoul(argv[2], NULL, 16);
@@ -1016,11 +967,6 @@ static int cmd_chan_map(const struct shell *shell, size_t argc, char *argv[])
 	u8_t chan_map[5] = {};
 	int err;
 
-	err = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
-	if (err) {
-		return err;
-	}
-
 	err = hexstr2array(argv[1], chan_map, 5);
 	if (err) {
 		shell_error(shell, "Invalid channel map");
@@ -1048,11 +994,6 @@ static int cmd_security(const struct shell *shell, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	err = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
-	if (err) {
-		return err;
-	}
-
 	sec = *argv[1] - '0';
 
 	err = bt_conn_security(default_conn, sec);
@@ -1066,12 +1007,6 @@ static int cmd_security(const struct shell *shell, size_t argc, char *argv[])
 static int cmd_bondable(const struct shell *shell, size_t argc, char *argv[])
 {
 	const char *bondable;
-	int err;
-
-	err = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
-	if (err) {
-		return err;
-	}
 
 	bondable = argv[1];
 	if (!strcmp(bondable, "on")) {
@@ -1260,12 +1195,6 @@ static struct bt_conn_auth_cb auth_cb_all = {
 
 static int cmd_auth(const struct shell *shell, size_t argc, char *argv[])
 {
-	int err = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
-
-	if (err) {
-		return err;
-	}
-
 	if (!strcmp(argv[1], "all")) {
 		bt_conn_auth_cb_register(&auth_cb_all);
 	} else if (!strcmp(argv[1], "input")) {
@@ -1366,17 +1295,11 @@ static int cmd_fixed_passkey(const struct shell *shell,
 static int cmd_auth_passkey(const struct shell *shell,
 			    size_t argc, char *argv[])
 {
-	int err;
 	unsigned int passkey;
 
 	if (!default_conn) {
 		shell_print(shell, "Not connected");
 		return -ENOEXEC;
-	}
-
-	err = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
-	if (err) {
-		return err;
 	}
 
 	passkey = atoi(argv[1]);
@@ -1395,80 +1318,80 @@ static int cmd_auth_passkey(const struct shell *shell,
 #define HELP_ADDR_LE "<address: XX:XX:XX:XX:XX:XX> <type: (public|random)>"
 
 SHELL_CREATE_STATIC_SUBCMD_SET(bt_cmds) {
-	SHELL_CMD(init, NULL, HELP_ADDR_LE, cmd_init),
+	SHELL_CMD_ARG(init, NULL, HELP_ADDR_LE, cmd_init, 1, 0),
 #if defined(CONFIG_BT_HCI)
-	SHELL_CMD(hci-cmd, NULL, "<ogf> <ocf> [data]", cmd_hci_cmd),
+	SHELL_CMD_ARG(hci-cmd, NULL, "<ogf> <ocf> [data]", cmd_hci_cmd, 3, 1),
 #endif
-	SHELL_CMD(id-create, NULL, "[addr]", cmd_id_create),
-	SHELL_CMD(id-reset, NULL, "<id> [addr]", cmd_id_reset),
-	SHELL_CMD(id-delete, NULL, "<id>", cmd_id_delete),
-	SHELL_CMD(id-show, NULL, HELP_NONE, cmd_id_show),
-	SHELL_CMD(id-select, NULL, "<id>", cmd_id_select),
-	SHELL_CMD(name, NULL, "[name]", cmd_name),
-	SHELL_CMD(scan, NULL,
-		  "<value: on, passive, off> <dup filter: dups, nodups>",
-		  cmd_scan),
-	SHELL_CMD(advertise, NULL,
-		  "<type: off, on, scan, nconn> <mode: discov, non_discov>",
-		  cmd_advertise),
+	SHELL_CMD_ARG(id-create, NULL, "[addr]", cmd_id_create, 1, 1),
+	SHELL_CMD_ARG(id-reset, NULL, "<id> [addr]", cmd_id_reset, 2, 1),
+	SHELL_CMD_ARG(id-delete, NULL, "<id>", cmd_id_delete, 2, 0),
+	SHELL_CMD_ARG(id-show, NULL, HELP_NONE, cmd_id_show, 1, 0),
+	SHELL_CMD_ARG(id-select, NULL, "<id>", cmd_id_select, 2, 0),
+	SHELL_CMD_ARG(name, NULL, "[name]", cmd_name, 1, 1),
+	SHELL_CMD_ARG(scan, NULL,
+		      "<value: on, passive, off> <dup filter: dups, nodups>",
+		      cmd_scan, 3, 0),
+	SHELL_CMD_ARG(advertise, NULL,
+		      "<type: off, on, scan, nconn> <mode: discov, non_discov>",
+		      cmd_advertise, 3, 0),
 #if defined(CONFIG_BT_CONN)
-	SHELL_CMD(connect, NULL, HELP_ADDR_LE, cmd_connect_le),
-	SHELL_CMD(disconnect, NULL, HELP_NONE, cmd_disconnect),
-	SHELL_CMD(auto-conn, NULL, HELP_ADDR_LE, cmd_auto_conn),
-	SHELL_CMD(directed-adv, NULL, HELP_ADDR_LE " [mode: low]",
-		  cmd_directed_adv),
-	SHELL_CMD(select, NULL, HELP_ADDR_LE, cmd_select),
-	SHELL_CMD(conn-update, NULL, "<min> <max> <latency> <timeout>",
-		  cmd_conn_update),
-	SHELL_CMD(oob, NULL, NULL, cmd_oob),
-	SHELL_CMD(clear, NULL, NULL, cmd_clear),
-	SHELL_CMD(channel-map, NULL, "<channel-map: XX:XX:XX:XX:XX> (36-0)",
-		  cmd_chan_map),
+	SHELL_CMD_ARG(connect, NULL, HELP_ADDR_LE, cmd_connect_le, 3, 0),
+	SHELL_CMD_ARG(disconnect, NULL, HELP_NONE, cmd_disconnect, 1, 0),
+	SHELL_CMD_ARG(auto-conn, NULL, HELP_ADDR_LE, cmd_auto_conn, 3, 0),
+	SHELL_CMD_ARG(directed-adv, NULL, HELP_ADDR_LE " [mode: low]",
+		      cmd_directed_adv, 1, 1),
+	SHELL_CMD_ARG(select, NULL, HELP_ADDR_LE, cmd_select, 3, 0),
+	SHELL_CMD_ARG(conn-update, NULL, "<min> <max> <latency> <timeout>",
+		      cmd_conn_update, 5, 0),
+	SHELL_CMD_ARG(oob, NULL, NULL, cmd_oob, 1, 0),
+	SHELL_CMD_ARG(clear, NULL, NULL, cmd_clear, 1, 0),
+	SHELL_CMD_ARG(channel-map, NULL, "<channel-map: XX:XX:XX:XX:XX> (36-0)",
+		      cmd_chan_map, 2, 1),
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
-	SHELL_CMD(security, NULL, "<security level: 0, 1, 2, 3>", cmd_security),
-	SHELL_CMD(bondable, NULL, "<bondable: on, off>", cmd_bondable),
-	SHELL_CMD(auth, NULL,
-		  "<auth method: all, input, display, yesno, confirm, none>",
-		  cmd_auth),
-	SHELL_CMD(auth-cancel, NULL, HELP_NONE, cmd_auth_cancel),
-	SHELL_CMD(auth-passkey, NULL, "<passkey>", cmd_auth_passkey),
-	SHELL_CMD(auth-passkey-confirm, NULL, HELP_NONE,
-		  cmd_auth_passkey_confirm),
-	SHELL_CMD(auth-pairing-confirm, NULL, HELP_NONE,
-		  cmd_auth_pairing_confirm),
+	SHELL_CMD_ARG(security, NULL, "<security level: 0, 1, 2, 3>",
+		      cmd_security, 2, 0),
+	SHELL_CMD_ARG(bondable, NULL, "<bondable: on, off>", cmd_bondable,
+		      2, 0),
+	SHELL_CMD_ARG(auth, NULL,
+		      "<method: all, input, display, yesno, confirm, none>",
+		      cmd_auth, 2, 0),
+	SHELL_CMD_ARG(auth-cancel, NULL, HELP_NONE, cmd_auth_cancel, 1, 0),
+	SHELL_CMD_ARG(auth-passkey, NULL, "<passkey>", cmd_auth_passkey, 2, 0),
+	SHELL_CMD_ARG(auth-passkey-confirm, NULL, HELP_NONE,
+		      cmd_auth_passkey_confirm, 1, 0),
+	SHELL_CMD_ARG(auth-pairing-confirm, NULL, HELP_NONE,
+		      cmd_auth_pairing_confirm, 1, 0),
 #if defined(CONFIG_BT_FIXED_PASSKEY)
-	SHELL_CMD(fixed-passkey, NULL, "[passkey]", cmd_fixed_passkey),
+	SHELL_CMD_ARG(fixed-passkey, NULL, "[passkey]", cmd_fixed_passkey,
+		      1, 1),
 #endif
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR) */
 #endif /* CONFIG_BT_CONN */
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-	SHELL_CMD(advx, NULL, "<on off> [coded] [anon] [txp]", cmd_advx),
-	SHELL_CMD(scanx, NULL, "<on passive off> [coded]", cmd_scanx),
+	SHELL_CMD_ARG(advx, NULL, "<on off> [coded] [anon] [txp]", cmd_advx,
+		      2, 3),
+	SHELL_CMD_ARG(scanx, NULL, "<on passive off> [coded]", cmd_scanx,
+		      2, 1),
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #if defined(CONFIG_BT_LL_SW)
-	SHELL_CMD(ll-addr, NULL, "<random|public>", cmd_ll_addr_get),
+	SHELL_CMD_ARG(ll-addr, NULL, "<random|public>", cmd_ll_addr_get, 2, 0),
 #endif
 #if defined(CONFIG_BT_CTLR_DTM)
-	SHELL_CMD(test_tx, NULL, "<chan> <len> <type> <phy>", cmd_test_tx),
-	SHELL_CMD(test_rx, NULL, "<chan> <phy> <mod_idx>", cmd_test_rx),
-	SHELL_CMD(test_end, NULL, HELP_NONE, cmd_test_end),
+	SHELL_CMD_ARG(test_tx, NULL, "<chan> <len> <type> <phy>", cmd_test_tx,
+		      5, 0),
+	SHELL_CMD_ARG(test_rx, NULL, "<chan> <phy> <mod_idx>", cmd_test_rx,
+		      4, 0),
+	SHELL_CMD_ARG(test_end, NULL, HELP_NONE, cmd_test_end, 1, 0),
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 	SHELL_SUBCMD_SET_END
 };
 
 static int cmd_bt(const struct shell *shell, size_t argc, char **argv)
 {
-	int err;
-
 	if (argc == 1) {
 		shell_help_print(shell, NULL, 0);
 		/* shell_cmd_precheck returns 1 when help is printed */
 		return 1;
-	}
-
-	err = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
-	if (err) {
-		return err;
 	}
 
 	shell_error(shell, "%s unknown parameter: %s", argv[0], argv[1]);
@@ -1476,4 +1399,4 @@ static int cmd_bt(const struct shell *shell, size_t argc, char **argv)
 	return -EINVAL;
 }
 
-SHELL_CMD_REGISTER(bt, &bt_cmds, "Bluetooth shell commands", cmd_bt);
+SHELL_CMD_ARG_REGISTER(bt, &bt_cmds, "Bluetooth shell commands", cmd_bt, 1, 1);
