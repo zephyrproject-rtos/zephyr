@@ -218,13 +218,7 @@ static struct bt_l2cap_server server = {
 
 static int cmd_register(const struct shell *shell, size_t argc, char *argv[])
 {
-	int err;
 	const char *policy;
-
-	err = shell_cmd_precheck(shell, (argc >= 2), NULL, 0);
-	if (err) {
-		return err;
-	}
 
 	if (server.psm) {
 		shell_error(shell, "Already registered");
@@ -271,11 +265,6 @@ static int cmd_connect(const struct shell *shell, size_t argc, char *argv[])
 	if (!default_conn) {
 		shell_error(shell, "Not connected");
 		return -ENOEXEC;
-	}
-
-	err = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
-	if (err) {
-		return err;
 	}
 
 	if (l2ch_chan.ch.chan.conn) {
@@ -407,36 +396,29 @@ static int cmd_whitelist_remove(const struct shell *shell, size_t argc, char *ar
 #define HELP_NONE "[none]"
 
 SHELL_CREATE_STATIC_SUBCMD_SET(whitelist_cmds) {
-	SHELL_CMD(add, NULL, HELP_NONE, cmd_whitelist_add),
-	SHELL_CMD(remove, NULL, HELP_NONE, cmd_whitelist_remove),
+	SHELL_CMD_ARG(add, NULL, HELP_NONE, cmd_whitelist_add, 1, 0),
+	SHELL_CMD_ARG(remove, NULL, HELP_NONE, cmd_whitelist_remove, 1, 0),
 	SHELL_SUBCMD_SET_END
 };
 
 SHELL_CREATE_STATIC_SUBCMD_SET(l2cap_cmds) {
-	SHELL_CMD(connect, NULL, "<psm>", cmd_connect),
-	SHELL_CMD(disconnect, NULL, HELP_NONE, cmd_disconnect),
-	SHELL_CMD(metrics, NULL, "<value on, off>", cmd_metrics),
-	SHELL_CMD(recv, NULL, "[delay (in miliseconds)", cmd_recv),
-	SHELL_CMD(register, NULL, "<psm> [sec_level] "
-		  "[policy: whitelist, 16byte_key]", cmd_register),
-	SHELL_CMD(send, NULL, "<number of packets>", cmd_send),
-	SHELL_CMD(whitelist, &whitelist_cmds, HELP_NONE, NULL),
+	SHELL_CMD_ARG(connect, NULL, "<psm>", cmd_connect, 1, 0),
+	SHELL_CMD_ARG(disconnect, NULL, HELP_NONE, cmd_disconnect, 1, 0),
+	SHELL_CMD_ARG(metrics, NULL, "<value on, off>", cmd_metrics, 2, 0),
+	SHELL_CMD_ARG(recv, NULL, "[delay (in miliseconds)", cmd_recv, 1, 1),
+	SHELL_CMD_ARG(register, NULL, "<psm> [sec_level] "
+		      "[policy: whitelist, 16byte_key]", cmd_register, 2, 2),
+	SHELL_CMD_ARG(send, NULL, "<number of packets>", cmd_send, 2, 0),
+	SHELL_CMD_ARG(whitelist, &whitelist_cmds, HELP_NONE, NULL, 1, 0),
 	SHELL_SUBCMD_SET_END
 };
 
 static int cmd_l2cap(const struct shell *shell, size_t argc, char **argv)
 {
-	int err;
-
 	if (argc == 1) {
 		shell_help_print(shell, NULL, 0);
 		/* shell_cmd_precheck returns 1 when help is printed */
 		return 1;
-	}
-
-	err = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
-	if (err) {
-		return err;
 	}
 
 	shell_error(shell, "%s unknown parameter: %s", argv[0], argv[1]);
@@ -444,6 +426,6 @@ static int cmd_l2cap(const struct shell *shell, size_t argc, char **argv)
 	return -ENOEXEC;
 }
 
-SHELL_CMD_REGISTER(l2cap, &l2cap_cmds, "Bluetooth L2CAP shell commands",
-		   cmd_l2cap);
+SHELL_CMD_ARG_REGISTER(l2cap, &l2cap_cmds, "Bluetooth L2CAP shell commands",
+		       cmd_l2cap, 1, 1);
 
