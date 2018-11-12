@@ -492,6 +492,8 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
 		   net_pkt_family(pkt) == AF_INET6) {
 		ptype = htons(NET_ETH_PTYPE_IPV6);
+	} else if (IS_ENABLED(CONFIG_NET_GPTP) && net_pkt_is_gptp(pkt)) {
+		ptype = htons(NET_ETH_PTYPE_PTP);
 	} else if (IS_ENABLED(CONFIG_NET_ARP)) {
 		/* Unktown type: Unqueued pkt is an ARP reply.
 		 */
