@@ -187,6 +187,12 @@ static int hid_custom_handle_req(struct usb_setup_packet *setup,
 					REQTYPE_RECIP_INTERFACE &&
 					setup->bRequest == REQ_GET_DESCRIPTOR) {
 		switch (setup->wValue) {
+		case 0x2100:
+			LOG_DBG("Return HID Descriptor");
+
+			*len = min(*len, hid_cfg.if0_hid.bLength);
+			*data = (u8_t *)&hid_cfg.if0_hid;
+			break;
 		case 0x2200:
 			LOG_DBG("Return Report Descriptor");
 
