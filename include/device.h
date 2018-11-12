@@ -28,6 +28,7 @@
 extern "C" {
 #endif
 
+#define Z_DEVICE_MAX_NAME_LEN	48
 
 /**
  * @def DEVICE_INIT
@@ -37,7 +38,8 @@ extern "C" {
  * @details This macro defines a device object that is automatically
  * configured by the kernel during system initialization.
  *
- * @param dev_name Device name.
+ * @param dev_name Device name. This must be less than Z_DEVICE_MAX_NAME_LEN
+ * characters in order to be looked up from user mode with device_get_binding().
  *
  * @param drv_name The name this instance of the driver exposes to
  * the system.
@@ -248,7 +250,7 @@ void _sys_device_do_config_level(s32_t level);
  *
  * @return pointer to device structure; NULL if not found or cannot be used.
  */
-struct device *device_get_binding(const char *name);
+__syscall struct device *device_get_binding(const char *name);
 
 /**
  * @brief Device Power Management APIs
@@ -435,6 +437,8 @@ int device_busy_check(struct device *chk_dev);
 /**
  * @}
  */
+
+#include <syscalls/device.h>
 
 #ifdef __cplusplus
 }

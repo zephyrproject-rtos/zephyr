@@ -9,6 +9,7 @@
 #include <device.h>
 #include <misc/util.h>
 #include <atomic.h>
+#include <syscall_handler.h>
 
 extern struct device __device_init_start[];
 extern struct device __device_PRE_KERNEL_1_start[];
@@ -56,7 +57,7 @@ void _sys_device_do_config_level(s32_t level)
 	}
 }
 
-struct device *device_get_binding(const char *name)
+struct device *_impl_device_get_binding(const char *name)
 {
 	struct device *info;
 
@@ -84,6 +85,20 @@ struct device *device_get_binding(const char *name)
 
 	return NULL;
 }
+
+#ifdef CONFIG_USERSPACE
+Z_SYSCALL_HANDLER(device_get_binding, name)
+{
+	char name_copy[Z_DEVICE_MAX_NAME_LEN];
+
+	if (z_user_string_copy(name_copy, (char *)name, sizeof(name_copy))
+	    != 0) {
+		return 0;
+	}
+
+	return (u32_t)_impl_device_get_binding(name_copy);
+}
+#endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 int device_pm_control_nop(struct device *unused_device,
