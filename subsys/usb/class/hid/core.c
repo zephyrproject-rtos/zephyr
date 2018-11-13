@@ -186,14 +186,16 @@ static int hid_custom_handle_req(struct usb_setup_packet *setup,
 	    REQTYPE_GET_RECIP(setup->bmRequestType) ==
 					REQTYPE_RECIP_INTERFACE &&
 					setup->bRequest == REQ_GET_DESCRIPTOR) {
-		switch (setup->wValue) {
-		case 0x2100:
+		u8_t value = sys_le16_to_cpu(setup->wValue) >> 8;
+
+		switch (value) {
+		case HID_CLASS_DESCRIPTOR_HID:
 			LOG_DBG("Return HID Descriptor");
 
 			*len = min(*len, hid_cfg.if0_hid.bLength);
 			*data = (u8_t *)&hid_cfg.if0_hid;
 			break;
-		case 0x2200:
+		case HID_CLASS_DESCRIPTOR_REPORT:
 			LOG_DBG("Return Report Descriptor");
 
 			/* Some buggy system may be pass a larger wLength when
