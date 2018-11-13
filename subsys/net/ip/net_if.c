@@ -164,7 +164,8 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 	context_token = net_pkt_token(pkt);
 
 	if (atomic_test_bit(iface->if_dev->flags, NET_IF_UP)) {
-		if (IS_ENABLED(CONFIG_NET_TCP)) {
+		if (IS_ENABLED(CONFIG_NET_TCP) &&
+		    net_pkt_family(pkt) != AF_UNSPEC) {
 			net_pkt_set_sent(pkt, true);
 			net_pkt_set_queued(pkt, false);
 		}
@@ -177,7 +178,8 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 	}
 
 	if (status < 0) {
-		if (IS_ENABLED(CONFIG_NET_TCP)) {
+		if (IS_ENABLED(CONFIG_NET_TCP)
+		    && net_pkt_family(pkt) != AF_UNSPEC) {
 			net_pkt_set_sent(pkt, false);
 		}
 
