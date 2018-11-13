@@ -13,7 +13,8 @@
 
 static u8_t max_partitions;
 
-#if defined(CONFIG_EXECUTE_XOR_WRITE) && __ASSERT_ON
+#if (defined(CONFIG_EXECUTE_XOR_WRITE) || \
+	defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS)) && __ASSERT_ON
 static bool sane_partition(const struct k_mem_partition *part,
 			   const struct k_mem_partition *parts,
 			   u32_t num_parts)
@@ -42,6 +43,13 @@ static bool sane_partition(const struct k_mem_partition *part,
 		if (last < parts[i].start || cur_last < part->start) {
 			continue;
 		}
+#if defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS)
+		/* Partitions overlap */
+		__ASSERT(false, "overlapping partitions <%x...%x>, <%x...%x>",
+			part->start, end,
+			parts[i].start, cur_end);
+		return false;
+#endif
 
 		cur_write = K_MEM_PARTITION_IS_WRITABLE(parts[i].attr);
 		cur_exec = K_MEM_PARTITION_IS_EXECUTABLE(parts[i].attr);
@@ -92,7 +100,8 @@ void k_mem_domain_init(struct k_mem_domain *domain, u8_t num_parts,
 			__ASSERT((parts[i]->start + parts[i]->size) >
 				 parts[i]->start, "");
 
-#if defined(CONFIG_EXECUTE_XOR_WRITE)
+#if defined(CONFIG_EXECUTE_XOR_WRITE) || \
+	defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS)
 			__ASSERT(sane_partition_domain(domain,
 						       parts[i]),
 				 "");
@@ -144,7 +153,8 @@ void k_mem_domain_add_partition(struct k_mem_domain *domain,
 	__ASSERT(part != NULL, "");
 	__ASSERT((part->start + part->size) > part->start, "");
 
-#if defined(CONFIG_EXECUTE_XOR_WRITE)
+#if defined(CONFIG_EXECUTE_XOR_WRITE) || \
+	defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS)
 	__ASSERT(sane_partition_domain(domain, part), "");
 #endif
 
