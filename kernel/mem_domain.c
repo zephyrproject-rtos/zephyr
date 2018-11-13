@@ -81,7 +81,7 @@ void k_mem_domain_init(struct k_mem_domain *domain, u8_t num_parts,
 
 	key = irq_lock();
 
-	domain->num_partitions = num_parts;
+	domain->num_partitions = 0;
 	(void)memset(domain->partitions, 0, sizeof(domain->partitions));
 
 	if (num_parts) {
@@ -92,16 +92,14 @@ void k_mem_domain_init(struct k_mem_domain *domain, u8_t num_parts,
 			__ASSERT((parts[i]->start + parts[i]->size) >
 				 parts[i]->start, "");
 
-			domain->partitions[i] = *parts[i];
-		}
-
 #if defined(CONFIG_EXECUTE_XOR_WRITE)
-		for (i = 0; i < num_parts; i++) {
 			__ASSERT(sane_partition_domain(domain,
-						       &domain->partitions[i]),
+						       parts[i]),
 				 "");
-		}
 #endif
+			domain->partitions[i] = *parts[i];
+			domain->num_partitions++;
+		}
 	}
 
 	sys_dlist_init(&domain->mem_domain_q);
