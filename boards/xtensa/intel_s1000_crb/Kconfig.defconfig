@@ -60,6 +60,9 @@ config HEAP_MEM_POOL_SIZE
 
 endif # DMA_CAVS
 
+config SPI_DW_FIFO_DEPTH
+	default 32
+
 if USB
 config USB_DW
 	default y
@@ -145,5 +148,14 @@ config GPIO_DW_0
 
 endif
 
+if SPI
+
+config SPI_DW
+	def_bool y
+
+config SPI_0
+	def_bool y
+
+endif
 
 endif # BOARD_INTEL_S1000_CRB
