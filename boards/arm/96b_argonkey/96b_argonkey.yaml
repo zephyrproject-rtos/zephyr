@@ -11,6 +11,7 @@ flash: 1024
 supported:
   - gpio
   - i2c
+  - i2s
   - hts221
   - lps22hb
   - lsm6dsl
