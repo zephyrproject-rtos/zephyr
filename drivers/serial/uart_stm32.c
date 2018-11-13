@@ -209,8 +209,8 @@ static int uart_stm32_irq_is_pending(struct device *dev)
 
 	return ((LL_USART_IsActiveFlag_RXNE(UartInstance) &&
 		 LL_USART_IsEnabledIT_RXNE(UartInstance)) ||
-		(LL_USART_IsActiveFlag_TXE(UartInstance) &&
-		 LL_USART_IsEnabledIT_TXE(UartInstance)));
+		(LL_USART_IsActiveFlag_TC(UartInstance) &&
+		 LL_USART_IsEnabledIT_TC(UartInstance)));
 }
 
 static int uart_stm32_irq_update(struct device *dev)
