@@ -108,7 +108,7 @@ void test_slice_reset(void)
 		t32 = k_uptime_get_32();
 		while (k_uptime_get_32() - t32 < HALF_SLICE_SIZE) {
 #if defined(CONFIG_ARCH_POSIX)
-			posix_halt_cpu(); /*sleep until next irq*/
+			k_busy_wait(50);
 #else
 			;
 #endif

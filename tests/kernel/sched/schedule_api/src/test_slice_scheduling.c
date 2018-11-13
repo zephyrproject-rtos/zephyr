@@ -58,7 +58,7 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 		 */
 		while (k_uptime_get_32() - t32 < BUSY_MS) {
 #if defined(CONFIG_ARCH_POSIX)
-			posix_halt_cpu(); /*sleep until next irq*/
+			k_busy_wait(50);
 #else
 			;
 #endif
@@ -114,7 +114,7 @@ void test_slice_scheduling(void)
 		t32 = k_uptime_get_32();
 		while (k_uptime_get_32() - t32 < BUSY_MS) {
 #if defined(CONFIG_ARCH_POSIX)
-			posix_halt_cpu(); /*sleep until next irq*/
+			k_busy_wait(50);
 #else
 			;
 #endif
