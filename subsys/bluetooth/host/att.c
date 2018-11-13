@@ -322,6 +322,13 @@ static u8_t att_handle_rsp(struct bt_att *att, void *pdu, u16_t len, u8_t err)
 	func = att->req->func;
 	att->req->func = NULL;
 
+	/*
+	 * Remove the ATT Req from the list.
+	 * It has to be removed before it reaches the callback since the
+	 * application may reuse the ATT req.
+	 */
+	sys_slist_find_and_remove(&att->reqs, &att->req->node);
+
 	func(att->chan.chan.conn, err, pdu, len, att->req);
 
 	/* Don't destroy if callback had reused the request */
