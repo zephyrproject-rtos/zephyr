@@ -65,12 +65,17 @@ struct ring_buf {
  * The ring buffer can be accessed outside the module where it is defined
  * using:
  *
+ * @note Ring buffer capacity equals 2^pow - 1 because one element is used
+ * internally to distinguish between empty and full state.
+ *
  * @code extern struct ring_buf <name>; @endcode
  *
  * @param name Name of the ring buffer.
  * @param pow Ring buffer size exponent.
  */
 #define RING_BUF_ITEM_DECLARE_POW2(name, pow) \
+	BUILD_ASSERT_MSG(pow > 0, \
+			 "Ring buffer must have at least 2 elements."); \
 	static u32_t _ring_buffer_data_##name[1 << (pow)]; \
 	struct ring_buf name = { \
 		.size = (1 << (pow)), \
@@ -93,13 +98,16 @@ struct ring_buf {
  *
  * @code extern struct ring_buf <name>; @endcode
  *
+ * @note Buffer is allocated for one additional element which is used
+ * internally to distinguish between empty and full state.
+ *
  * @param name Name of the ring buffer.
- * @param size32 Size of ring buffer (in 32-bit words).
+ * @param size32 Capacity of the ring buffer (in 32-bit words).
  */
 #define RING_BUF_ITEM_DECLARE_SIZE(name, size32) \
-	static u32_t _ring_buffer_data_##name[size32]; \
+	static u32_t _ring_buffer_data_##name[size32 + 1]; \
 	struct ring_buf name = { \
-		.size = size32, \
+		.size = size32 + 1, \
 		.buf = { .buf32 = _ring_buffer_data_##name} \
 	}
 
@@ -117,13 +125,16 @@ struct ring_buf {
  *
  * @code extern struct ring_buf <name>; @endcode
  *
+ * @note Buffer is allocated for one additional element which is used
+ * internally to distinguish between empty and full state.
+ *
  * @param name  Name of the ring buffer.
- * @param size8 Size of ring buffer (in bytes).
+ * @param size8 Capacity of the ring buffer (in bytes).
  */
 #define RING_BUF_DECLARE(name, size8) \
-	static u8_t _ring_buffer_data_##name[size8]; \
+	static u8_t _ring_buffer_data_##name[size8 + 1]; \
 	struct ring_buf name = { \
-		.size = size8, \
+		.size = size8 + 1, \
 		.buf = { .buf8 = _ring_buffer_data_##name} \
 	}
 
@@ -146,9 +157,12 @@ struct ring_buf {
  */
 static inline void ring_buf_init(struct ring_buf *buf, u32_t size, void *data)
 {
+	__ASSERT_NO_MSG(size > 1);
+
 	memset(buf, 0, sizeof(struct ring_buf));
 	buf->size = size;
 	buf->buf.buf32 = data;
+
 	if (is_power_of_two(size)) {
 		buf->mask = size - 1;
 	} else {

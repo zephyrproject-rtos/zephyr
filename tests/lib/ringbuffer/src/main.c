@@ -171,7 +171,7 @@ void test_ringbuffer_declare_pow2(void)
 void test_ringbuffer_declare_size(void)
 {
 	zassert_true(ring_buf_is_empty(&ringbuf_size), NULL);
-	zassert_equal(ring_buf_space_get(&ringbuf_size), RINGBUFFER_SIZE - 1,
+	zassert_equal(ring_buf_space_get(&ringbuf_size), RINGBUFFER_SIZE,
 		      NULL);
 }
 
@@ -262,7 +262,7 @@ void test_ringbuffer_raw(void)
 
 	in_size = ring_buf_put(&ringbuf_raw, inbuf,
 				       RINGBUFFER_SIZE);
-	zassert_equal(in_size, RINGBUFFER_SIZE - 1, NULL);
+	zassert_equal(in_size, RINGBUFFER_SIZE, NULL);
 
 	in_size = ring_buf_put(&ringbuf_raw, inbuf,
 				       1);
@@ -271,7 +271,7 @@ void test_ringbuffer_raw(void)
 	out_size = ring_buf_get(&ringbuf_raw, outbuf,
 					RINGBUFFER_SIZE);
 
-	zassert_true(out_size == RINGBUFFER_SIZE - 1, NULL);
+	zassert_true(out_size == RINGBUFFER_SIZE, NULL);
 
 	out_size = ring_buf_get(&ringbuf_raw, outbuf,
 					RINGBUFFER_SIZE + 1);
@@ -395,6 +395,27 @@ void test_byte_put_free(void)
 	}
 }
 
+void test_wrap(void)
+{
+	u8_t in_data[RINGBUFFER_SIZE] = {0};
+	u32_t len;
+	u8_t *data;
+
+	ring_buf_init(&ringbuf_raw, RINGBUFFER_SIZE, ringbuf_raw.buf.buf8);
+
+	len = ring_buf_put(&ringbuf_raw, in_data, RINGBUFFER_SIZE - 2);
+	zassert_true(len  == RINGBUFFER_SIZE - 2, NULL);
+
+	len = ring_buf_get(&ringbuf_raw, in_data, RINGBUFFER_SIZE - 3);
+	zassert_true(len  == RINGBUFFER_SIZE - 3, NULL);
+
+	len = ring_buf_put_claim(&ringbuf_raw, &data, RINGBUFFER_SIZE);
+	zassert_true(len == 2, NULL);
+
+	len = ring_buf_put_claim(&ringbuf_raw, &data, RINGBUFFER_SIZE);
+	zassert_true(len == 1, NULL);
+}
+
 /*test case main entry*/
 void test_main(void)
 {
@@ -410,7 +431,8 @@ void test_main(void)
 			 ztest_unit_test(test_ring_buffer_main),
 			 ztest_unit_test(test_ringbuffer_raw),
 			 ztest_unit_test(test_ringbuffer_alloc_put),
-			 ztest_unit_test(test_byte_put_free)
+			 ztest_unit_test(test_byte_put_free),
+			 ztest_unit_test(test_wrap)
 			 );
 	ztest_run_test_suite(test_ringbuffer_api);
 }
