@@ -66,4 +66,15 @@ config ETH_SAM_GMAC
 
 endif # NETWORKING
 
+if SPI
+
+if SPI_SAM_PORT_0
+
+config SPI_SAME70_PORT_0_PIN_CS3
+	def_bool y
+
+endif # SPI_SAM_PORT_0
+
+endif # SPI
+
 endif # BOARD_SAM_E70_XPLAINED
