@@ -203,3 +203,9 @@ Websocket console
 
 .. doxygengroup:: websocket_console
    :project: Zephyr
+
+TLS credentials
+***************
+
+.. doxygengroup:: tls_credentials
+   :project: Zephyr
