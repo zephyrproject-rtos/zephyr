@@ -54,6 +54,7 @@ module-str = audio_dmic
 source "subsys/logging/Kconfig.template.log_config"
 
 source "drivers/audio/Kconfig.intel_dmic"
+source "drivers/audio/Kconfig.mpxxdtyy"
 
 endif # AUDIO_DMIC
 
