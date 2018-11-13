@@ -2528,6 +2528,10 @@ def parse_arguments():
         "-S", "--enable-slow", action="store_true",
         help="Execute time-consuming test cases that have been marked "
         "as 'slow' in testcase.yaml. Normally these are only built.")
+    parser.add_argument(
+        "--disable-unrecognized-section-test", action="store_true",
+        default=False,
+        help="Skip the 'unrecognized section' test.")
     parser.add_argument("-R", "--enable-asserts", action="store_true",
                         default=True,
                         help="deprecated, left for compatibility")
@@ -2938,7 +2942,7 @@ def main():
     for name, goal in goals.items():
         if goal.failed:
             failed += 1
-        elif goal.metrics.get("unrecognized"):
+        elif goal.metrics.get("unrecognized") and not options.disable_unrecognized_section_test:
             info("%sFAILED%s: %s has unrecognized binary sections: %s" %
                  (COLOR_RED, COLOR_NORMAL, goal.name,
                   str(goal.metrics["unrecognized"])))
