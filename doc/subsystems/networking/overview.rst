@@ -51,6 +51,10 @@ can be disabled if not needed.
   compatible API is implemented. Both blocking and non-blocking DGRAM (UDP)
   and STREAM (TCP) sockets are supported.
 
+* **Secure Sockets API** Experimental support for TLS/DTLS secure protocols and
+  configuration options for sockets API. Secure functions for the implementation
+  are provided by mbedTLS library.
+
 * **HTTP** Hypertext Transfer Protocol (RFC 2116) is supported. A simple
   library is provided that applications can use. Sample applications are
   implemented for :ref:`http-client-sample` and :ref:`http-server-sample`.
