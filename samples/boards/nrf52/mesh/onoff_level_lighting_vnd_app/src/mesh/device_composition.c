@@ -1872,8 +1872,8 @@ static const struct bt_mesh_model_op gen_level_srv_op[] = {
 	{ BT_MESH_MODEL_OP_2(0x82, 0x07), 3, gen_level_set_unack },
 	{ BT_MESH_MODEL_OP_2(0x82, 0x09), 5, gen_delta_set },
 	{ BT_MESH_MODEL_OP_2(0x82, 0x0A), 5, gen_delta_set_unack },
-	{ BT_MESH_MODEL_OP_2(0x82, 0x0B), 5, gen_move_set },
-	{ BT_MESH_MODEL_OP_2(0x82, 0x0C), 5, gen_move_set_unack },
+	{ BT_MESH_MODEL_OP_2(0x82, 0x0B), 3, gen_move_set },
+	{ BT_MESH_MODEL_OP_2(0x82, 0x0C), 3, gen_move_set_unack },
 	BT_MESH_MODEL_OP_END,
 };
 
@@ -1954,8 +1954,8 @@ static const struct bt_mesh_model_op light_lightness_cli_op[] = {
 /* Mapping of message handlers for Light CTL Server (0x1303) */
 static const struct bt_mesh_model_op light_ctl_srv_op[] = {
 	{ BT_MESH_MODEL_OP_2(0x82, 0x5D), 0, light_ctl_get },
-	{ BT_MESH_MODEL_OP_2(0x82, 0x5E), 5, light_ctl_set },
-	{ BT_MESH_MODEL_OP_2(0x82, 0x5F), 5, light_ctl_set_unack },
+	{ BT_MESH_MODEL_OP_2(0x82, 0x5E), 7, light_ctl_set },
+	{ BT_MESH_MODEL_OP_2(0x82, 0x5F), 7, light_ctl_set_unack },
 	{ BT_MESH_MODEL_OP_2(0x82, 0x62), 0, light_ctl_temp_range_get },
 	{ BT_MESH_MODEL_OP_2(0x82, 0x67), 0, light_ctl_default_get },
 	BT_MESH_MODEL_OP_END,
