@@ -13,26 +13,26 @@ config SOC
 	default "efm32wg"
 
 config GPIO
-	def_bool y
+	default y
 
 if GPIO
 
 config GPIO_GECKO
-	def_bool y
+	default y
 
 endif # GPIO
 
 if SERIAL
 
 config UART_GECKO
-	def_bool y
+	default y
 
 endif # SERIAL
 
 if FLASH
 
 config SOC_FLASH_GECKO
-	def_bool y
+	default y
 
 endif # FLASH
 

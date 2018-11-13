@@ -19,29 +19,29 @@ config CMU_LFXO_FREQ
 if GPIO_GECKO
 
 config GPIO_GECKO_PORTA
-	def_bool y
+	default y
 
 config GPIO_GECKO_PORTB
-	def_bool y
+	default y
 
 config GPIO_GECKO_PORTC
-	def_bool y
+	default y
 
 config GPIO_GECKO_PORTD
-	def_bool y
+	default y
 
 config GPIO_GECKO_PORTE
-	def_bool n
+	default n
 
 config GPIO_GECKO_PORTF
-	def_bool y
+	default y
 
 endif # GPIO_GECKO
 
 if UART_GECKO
 
 config USART_GECKO_0
-	def_bool y
+	default y
 
 endif # UART_GECKO
 

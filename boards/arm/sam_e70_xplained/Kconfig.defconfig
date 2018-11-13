@@ -59,10 +59,10 @@ endif # I2C
 if NETWORKING
 
 config NET_L2_ETHERNET
-	def_bool y
+	default y
 
 config ETH_SAM_GMAC
-	def_bool y if NET_L2_ETHERNET
+	default y if NET_L2_ETHERNET
 
 endif # NETWORKING
 

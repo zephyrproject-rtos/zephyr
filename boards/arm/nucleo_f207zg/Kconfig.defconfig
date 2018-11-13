@@ -20,10 +20,10 @@ endif # UART_CONSOLE
 if NETWORKING
 
 config NET_L2_ETHERNET
-	def_bool y
+	default y
 
 config ETH_STM32_HAL
-	def_bool y
+	default y
 
 endif # NETWORKING
 

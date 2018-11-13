@@ -14,7 +14,7 @@ config SOC
 if CLOCK_CONTROL
 
 config CLOCK_CONTROL_MCUX_CCM
-	def_bool y
+	default y
 
 endif # CLOCK_CONTROL
 
@@ -28,19 +28,19 @@ config IPG_DIV
 	default 3
 
 config GPIO
-	def_bool y
+	default y
 
 if GPIO
 
 config GPIO_MCUX_IGPIO
-	def_bool y
+	default y
 
 endif # GPIO
 
 if SERIAL
 
 config UART_MCUX_LPUART
-	def_bool y
+	default y
 
 endif # SERIAL
 
