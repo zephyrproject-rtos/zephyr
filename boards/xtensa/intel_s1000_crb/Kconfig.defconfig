@@ -7,9 +7,6 @@ if BOARD_INTEL_S1000_CRB
 config BOARD
 	default "intel_s1000_crb"
 
-config BOARD_XTENSA
-	def_bool y
-
 config CAVS_ICTL_0_OFFSET
 	default 0x06
 config CAVS_ICTL_1_OFFSET

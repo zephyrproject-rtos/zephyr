@@ -71,9 +71,6 @@ config SPI_DW
 
 if SPI_DW
 
-config SPI_DW_CLOCK_GATE
-	def_bool n
-
 config SPI_DW_FIFO_DEPTH
 	default 32
 
