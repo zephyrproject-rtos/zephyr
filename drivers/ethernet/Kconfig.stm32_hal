@@ -79,5 +79,11 @@ config ETH_STM32_HAL_MAC5
 	  This is the byte 5 of the MAC address.
 endif
 
+config ETH_STM32_HAL_MII
+	bool "Use MII interface"
+	depends on ETH_STM32_HAL
+	help
+	  Use the MII physical interface instead of RMII.
+
 endif # ETH_STM32_HAL
 

@@ -421,7 +421,11 @@ static struct eth_stm32_hal_dev_data eth0_data = {
 			.PhyAddress = CONFIG_ETH_STM32_HAL_PHY_ADDRESS,
 			.RxMode = ETH_RXINTERRUPT_MODE,
 			.ChecksumMode = ETH_CHECKSUM_BY_SOFTWARE,
+#if defined(CONFIG_ETH_STM32_HAL_MII)
+			.MediaInterface = ETH_MEDIA_INTERFACE_MII,
+#else
 			.MediaInterface = ETH_MEDIA_INTERFACE_RMII,
+#endif
 		},
 	},
 	.mac_addr = {
