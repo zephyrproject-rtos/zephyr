@@ -6,11 +6,15 @@
 #include <zephyr.h>
 #include <console.h>
 
+static const char prompt[] = "Start typing characters to see them echoed back\n";
+
 void main(void)
 {
 	console_init();
 
-	printk("Start typing characters to see them echoed back\n");
+	printk("You should see another line with instructions below. If not,\n");
+	printk("the (interrupt-driven) console device doesn't work as expected:\n");
+	console_write(NULL, prompt, sizeof(prompt) - 1);
 
 	while (1) {
 		u8_t c = console_getchar();
