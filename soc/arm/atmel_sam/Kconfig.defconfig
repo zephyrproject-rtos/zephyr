@@ -9,6 +9,6 @@ source "soc/arm/atmel_sam/*/Kconfig.defconfig.series"
 if SOC_FAMILY_SAM
 
 config WATCHDOG
-	def_bool y
+	default y
 
 endif

@@ -16,17 +16,17 @@ config BOARD
 if NETWORKING
 
 config NET_L2_ETHERNET
-	def_bool y if !NET_LOOPBACK && !NET_TEST
+	default y if !NET_LOOPBACK && !NET_TEST
 
 config ETH_NATIVE_POSIX
-	def_bool y if NET_L2_ETHERNET
+	default y if NET_L2_ETHERNET
 
 endif # NETWORKING
 
 if ENTROPY_GENERATOR
 
 config FAKE_ENTROPY_NATIVE_POSIX
-	def_bool y
+	default y
 
 endif # ENTROPY_GENERATOR
 
@@ -41,34 +41,34 @@ endif # BT_HCI
 if SERIAL
 
 config UART_NATIVE_POSIX
-	def_bool y
+	default y
 
 endif # SERIAL
 
 if LOG
 
 config LOG_BACKEND_NATIVE_POSIX
-	def_bool y if !SERIAL
+	default y if !SERIAL
 
 # For native_posix we can log immediately without any problem
 # Doing so will be nicer for debugging
 config LOG_INPLACE_PROCESS
-	def_bool y
+	default y
 
 # If we set LOG_INPLACE_PROCESS, there is no need to have the logging thread
 # running
 config LOG_PROCESS_THREAD
-	def_bool n
+	default n
 
 endif # LOG
 
 if CONSOLE
 
 config NATIVE_POSIX_CONSOLE
-	def_bool y if !SERIAL
+	default y if !SERIAL
 
 config UART_CONSOLE
-	def_bool y if SERIAL
+	default y if SERIAL
 
 endif #CONSOLE
 

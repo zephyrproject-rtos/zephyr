@@ -7,7 +7,7 @@ config BOARD
 if FLASH && SPI
 
 config SPI_FLASH_W25QXXDV
-	def_bool y
+	default y
 
 config SPI_FLASH_W25QXXDV_SPI_NAME
 	default "SPI_2"

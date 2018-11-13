@@ -27,21 +27,21 @@ endif # SERIAL
 if I2C
 
 config I2C_1
-	def_bool y
+	default y
 
 endif # I2C
 
 if SPI
 
 config SPI_2
-	def_bool y
+	default y
 
 endif # SPI
 
 if PWM
 
 config PWM_STM32_2
-	def_bool y
+	default y
 
 endif # PWM
 

@@ -5,26 +5,26 @@ config BOARD
 	default "em_starterkit"
 
 config CPU_ARCEM4
-	def_bool y
+	default y
 
 if GPIO
 
 config GPIO_DW
-	def_bool y
+	default y
 
 if GPIO_DW
 
 config GPIO_DW_0
-	def_bool y
+	default y
 
 config GPIO_DW_1
-	def_bool y
+	default y
 
 config GPIO_DW_2
-	def_bool y
+	default y
 
 config GPIO_DW_3
-	def_bool y
+	default y
 
 endif # GPIO_DW
 
@@ -33,7 +33,7 @@ endif # GPIO
 if I2C
 
 config I2C_DW
-	def_bool y
+	default y
 
 if I2C_DW
 
@@ -41,10 +41,10 @@ config I2C_DW_CLOCK_SPEED
 	default 100
 
 config I2C_0
-	def_bool y
+	default y
 
 config I2C_1
-	def_bool y
+	default y
 
 endif # I2C_DW
 
@@ -53,21 +53,21 @@ endif # I2C
 if SERIAL
 
 config UART_NS16550
-	def_bool y
+	default y
 
 endif # SERIAL
 
 if UART_CONSOLE
 
 config UART_NS16550_PORT_1
-	def_bool y
+	default y
 
 endif # UART_CONSOLE
 
 if SPI
 
 config SPI_DW
-	def_bool y
+	default y
 
 if SPI_DW
 
@@ -75,13 +75,13 @@ config SPI_DW_FIFO_DEPTH
 	default 32
 
 config SPI_DW_ARC_AUX_REGS
-	def_bool n
+	default n
 
 config SPI_0
-	def_bool y
+	default y
 
 config SPI_1
-	def_bool y
+	default y
 
 endif # SPI_DW
 

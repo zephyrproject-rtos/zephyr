@@ -16,7 +16,7 @@ config BOARD
 if BT
 
 config BT_CTLR
-	def_bool y
+	default y
 
 endif # BT
 
@@ -24,17 +24,17 @@ if LOG
 
 # This board can reuse the native_posix logging backend
 config LOG_BACKEND_NATIVE_POSIX
-	def_bool y if !SERIAL
+	default y if !SERIAL
 
 # For native_posix we can log immediately without any problem
 # Doing so will be nicer for debugging
 config LOG_INPLACE_PROCESS
-	def_bool y
+	default y
 
 # If we set LOG_INPLACE_PROCESS, there is no need to have the logging thread
 # running
 config LOG_PROCESS_THREAD
-	def_bool n
+	default n
 
 endif # LOG
 

@@ -13,17 +13,17 @@ config BOARD
 if GPIO_MCUX_IGPIO
 
 config GPIO_MCUX_IGPIO_1
-	def_bool y
+	default y
 
 config GPIO_MCUX_IGPIO_5
-	def_bool y
+	default y
 
 endif # GPIO_MCUX_IGPIO
 
 if UART_MCUX_LPUART
 
 config UART_MCUX_LPUART_1
-	def_bool y
+	default y
 
 endif # UART_MCUX_LPUART
 

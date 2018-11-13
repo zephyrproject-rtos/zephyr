@@ -13,36 +13,36 @@ config BOARD
 if GPIO_MCUX_IGPIO
 
 config GPIO_MCUX_IGPIO_1
-	def_bool y
+	default y
 
 config GPIO_MCUX_IGPIO_2
-	def_bool n
+	default n
 
 config GPIO_MCUX_IGPIO_3
-	def_bool n
+	default n
 
 config GPIO_MCUX_IGPIO_4
-	def_bool n
+	default n
 
 config GPIO_MCUX_IGPIO_5
-	def_bool y
+	default y
 
 endif # GPIO_MCUX_IGPIO
 
 if SPI_MCUX_LPSPI
 
 config SPI_3
-	def_bool y
+	default y
 
 endif # SPI_MCUX_LPSPI
 
 if UART_MCUX_LPUART
 
 config UART_MCUX_LPUART_1
-	def_bool y
+	default y
 
 config UART_MCUX_LPUART_3
-	def_bool y if BT_UART
+	default y if BT_UART
 
 endif # UART_MCUX_LPUART
 

@@ -27,7 +27,7 @@ config NUM_IRQS
 if SENSOR
 
 config TEMP_NRF5
-	def_bool y
+	default y
 
 endif # SENSOR
 

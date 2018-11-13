@@ -6,7 +6,7 @@ config BOARD
 if FLASH
 
 config SOC_FLASH_NIOS2_QSPI
-	def_bool y
+	default y
 
 if SOC_FLASH_NIOS2_QSPI
 

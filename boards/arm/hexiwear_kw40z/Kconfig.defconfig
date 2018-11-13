@@ -22,47 +22,47 @@ config MCG_FCRDIV
 if PINMUX_MCUX
 
 config PINMUX_MCUX_PORTA
-	def_bool y
+	default y
 
 config PINMUX_MCUX_PORTB
-	def_bool y if ADC_0
+	default y if ADC_0
 
 config PINMUX_MCUX_PORTC
-	def_bool y if UART_MCUX_LPUART_0 || I2C_1
+	default y if UART_MCUX_LPUART_0 || I2C_1
 
 endif # PINMUX_MCUX
 
 if GPIO_MCUX
 
 config GPIO_MCUX_PORTA
-	def_bool y
+	default y
 
 config GPIO_MCUX_PORTB
-	def_bool n
+	default n
 
 config GPIO_MCUX_PORTC
-	def_bool y if UART_MCUX_LPUART_0 || I2C_1
+	default y if UART_MCUX_LPUART_0 || I2C_1
 
 endif # GPIO_MCUX
 
 if UART_MCUX_LPUART
 
 config UART_MCUX_LPUART_0
-	def_bool y
+	default y
 
 endif # UART_MCUX
 
 if I2C
 
 config I2C_1
-	def_bool y
+	default y
 
 endif # I2C
 
 if ADC
 
 config ADC_0
-	def_bool y
+	default y
 
 endif # ADC
 

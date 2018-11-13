@@ -12,12 +12,12 @@ config BOARD
 if I2C
 
 config I2C_NRFX
-	def_bool y
+	default y
 
 if I2C_NRFX
 
 config I2C_0
-	def_bool y
+	default y
 
 endif # I2C_NRFX
 
@@ -26,12 +26,12 @@ endif # I2C
 if SPI
 
 config SPI_NRFX
-	def_bool y
+	default y
 
 if SPI_NRFX
 
 config SPI_0
-	def_bool y
+	default y
 
 endif # SPI_NRFX
 

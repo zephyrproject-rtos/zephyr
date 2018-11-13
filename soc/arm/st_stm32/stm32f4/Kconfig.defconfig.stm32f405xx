@@ -31,7 +31,7 @@ endif # GPIO_STM32
 if ENTROPY_GENERATOR
 
 config ENTROPY_STM32_RNG
-	def_bool y
+	default y
 
 endif # ENTROPY_GENERATOR
 

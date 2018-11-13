@@ -5,6 +5,6 @@ config BOARD
 	default "minnowboard"
 
 config BUILD_OUTPUT_STRIPPED
-	def_bool y
+	default y
 
 endif # BOARD_MINNOWBOARD

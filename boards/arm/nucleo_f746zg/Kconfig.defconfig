@@ -27,31 +27,31 @@ endif # SERIAL
 if NETWORKING
 
 config NET_L2_ETHERNET
-	def_bool y
+	default y
 
 config ETH_STM32_HAL
-	def_bool y
+	default y
 
 endif # NETWORKING
 
 if I2C
 
 config I2C_1
-	def_bool y
+	default y
 
 endif # I2C
 
 if PWM
 
 config PWM_STM32_1
-	def_bool y
+	default y
 
 endif # PWM
 
 if SPI
 
 config SPI_1
-	def_bool y
+	default y
 
 endif # SPI
 
