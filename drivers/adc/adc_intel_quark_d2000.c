@@ -481,7 +481,7 @@ static const struct adc_driver_api adc_quark_d2000_driver_api = {
 static void adc_quark_d2000_config_func_0(struct device *dev);
 
 static const struct adc_quark_d2000_config adc_quark_d2000_config_0 = {
-	.reg_base = (adc_reg_t *)CONFIG_ADC_0_BASE_ADDRESS,
+	.reg_base = (adc_reg_t *)DT_ADC_0_BASE_ADDRESS,
 	.config_func = adc_quark_d2000_config_func_0,
 };
 
@@ -493,11 +493,11 @@ DEVICE_AND_API_INIT(adc_quark_d2000_0, CONFIG_ADC_0_NAME,
 
 static void adc_quark_d2000_config_func_0(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_ADC_0_IRQ, CONFIG_ADC_0_IRQ_PRI,
+	IRQ_CONNECT(DT_ADC_0_IRQ, CONFIG_ADC_0_IRQ_PRI,
 		    adc_quark_d2000_isr,
 		    DEVICE_GET(adc_quark_d2000_0),
-		    CONFIG_ADC_0_IRQ_FLAGS);
+		    DT_ADC_0_IRQ_FLAGS);
 
-	irq_enable(CONFIG_ADC_0_IRQ);
+	irq_enable(DT_ADC_0_IRQ);
 }
 #endif /* CONFIG_ADC_0 */

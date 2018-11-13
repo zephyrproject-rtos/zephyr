@@ -7,7 +7,7 @@
 #include <soc.h>
 #include <watchdog.h>
 
-#define WDT_REGS ((Wdt *)CONFIG_WDT_SAM0_BASE_ADDRESS)
+#define WDT_REGS ((Wdt *)DT_WDT_SAM0_BASE_ADDRESS)
 
 struct wdt_sam0_dev_data {
 	void (*cb)(struct device *dev);
@@ -143,10 +143,10 @@ static int wdt_sam0_init(struct device *dev)
 		| GCLK_CLKCTRL_GEN_GCLK2
 		| GCLK_CLKCTRL_CLKEN;
 
-	IRQ_CONNECT(CONFIG_WDT_SAM0_IRQ,
-		    CONFIG_WDT_SAM0_IRQ_PRIORITY, wdt_sam0_isr,
+	IRQ_CONNECT(DT_WDT_SAM0_IRQ,
+		    DT_WDT_SAM0_IRQ_PRIORITY, wdt_sam0_isr,
 		    DEVICE_GET(wdt_sam0), 0);
-	irq_enable(CONFIG_WDT_SAM0_IRQ);
+	irq_enable(DT_WDT_SAM0_IRQ);
 
 	return 0;
 }

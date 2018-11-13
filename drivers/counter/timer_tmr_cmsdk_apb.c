@@ -173,14 +173,14 @@ static int timer_tmr_cmsdk_apb_init(struct device *dev)
 static void timer_cmsdk_apb_config_0(struct device *dev);
 
 static const struct timer_tmr_cmsdk_apb_cfg timer_tmr_cmsdk_apb_cfg_0 = {
-	.timer = ((volatile struct timer_cmsdk_apb *)CMSDK_APB_TIMER0),
+	.timer = ((volatile struct timer_cmsdk_apb *)DT_CMSDK_APB_TIMER0),
 	.timer_config_func = timer_cmsdk_apb_config_0,
 	.timer_cc_as = {.bus = CMSDK_APB, .state = SOC_ACTIVE,
-			.device = CMSDK_APB_TIMER0,},
+			.device = DT_CMSDK_APB_TIMER0,},
 	.timer_cc_ss = {.bus = CMSDK_APB, .state = SOC_SLEEP,
-			.device = CMSDK_APB_TIMER0,},
+			.device = DT_CMSDK_APB_TIMER0,},
 	.timer_cc_dss = {.bus = CMSDK_APB, .state = SOC_DEEPSLEEP,
-			 .device = CMSDK_APB_TIMER0,},
+			 .device = DT_CMSDK_APB_TIMER0,},
 };
 
 static struct timer_tmr_cmsdk_apb_dev_data timer_tmr_cmsdk_apb_dev_data_0 = {
@@ -197,10 +197,10 @@ DEVICE_AND_API_INIT(timer_tmr_cmsdk_apb_0,
 
 static void timer_cmsdk_apb_config_0(struct device *dev)
 {
-	IRQ_CONNECT(CMSDK_APB_TIMER_0_IRQ, CONFIG_TIMER_TMR_CMSDK_APB_0_IRQ_PRI,
+	IRQ_CONNECT(DT_CMSDK_APB_TIMER_0_IRQ, CONFIG_TIMER_TMR_CMSDK_APB_0_IRQ_PRI,
 		    timer_tmr_cmsdk_apb_isr,
 		    DEVICE_GET(timer_tmr_cmsdk_apb_0), 0);
-	irq_enable(CMSDK_APB_TIMER_0_IRQ);
+	irq_enable(DT_CMSDK_APB_TIMER_0_IRQ);
 }
 #endif /* CONFIG_TIMER_TMR_CMSDK_APB_0 */
 
@@ -209,14 +209,14 @@ static void timer_cmsdk_apb_config_0(struct device *dev)
 static void timer_cmsdk_apb_config_1(struct device *dev);
 
 static const struct timer_tmr_cmsdk_apb_cfg timer_tmr_cmsdk_apb_cfg_1 = {
-	.timer = ((volatile struct timer_cmsdk_apb *)CMSDK_APB_TIMER1),
+	.timer = ((volatile struct timer_cmsdk_apb *)DT_CMSDK_APB_TIMER1),
 	.timer_config_func = timer_cmsdk_apb_config_1,
 	.timer_cc_as = {.bus = CMSDK_APB, .state = SOC_ACTIVE,
-			.device = CMSDK_APB_TIMER1,},
+			.device = DT_CMSDK_APB_TIMER1,},
 	.timer_cc_ss = {.bus = CMSDK_APB, .state = SOC_SLEEP,
-			.device = CMSDK_APB_TIMER1,},
+			.device = DT_CMSDK_APB_TIMER1,},
 	.timer_cc_dss = {.bus = CMSDK_APB, .state = SOC_DEEPSLEEP,
-			 .device = CMSDK_APB_TIMER1,},
+			 .device = DT_CMSDK_APB_TIMER1,},
 };
 
 static struct timer_tmr_cmsdk_apb_dev_data timer_tmr_cmsdk_apb_dev_data_1 = {
@@ -233,9 +233,9 @@ DEVICE_AND_API_INIT(timer_tmr_cmsdk_apb_1,
 
 static void timer_cmsdk_apb_config_1(struct device *dev)
 {
-	IRQ_CONNECT(CMSDK_APB_TIMER_1_IRQ, CONFIG_TIMER_TMR_CMSDK_APB_1_IRQ_PRI,
+	IRQ_CONNECT(DT_CMSDK_APB_TIMER_1_IRQ, CONFIG_TIMER_TMR_CMSDK_APB_1_IRQ_PRI,
 		    timer_tmr_cmsdk_apb_isr,
 		    DEVICE_GET(timer_tmr_cmsdk_apb_0), 0);
-	irq_enable(CMSDK_APB_TIMER_1_IRQ);
+	irq_enable(DT_CMSDK_APB_TIMER_1_IRQ);
 }
 #endif /* CONFIG_TIMER_TMR_CMSDK_APB_1 */

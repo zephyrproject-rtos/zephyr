@@ -23,8 +23,8 @@
 #define SRAM_SIZE		CONFIG_SRAM_SIZE
 
 /* Data Closely Coupled Memory (DCCM) base address and size */
-#define DCCM_START		CONFIG_DCCM_BASE_ADDRESS
-#define DCCM_SIZE		CONFIG_DCCM_SIZE
+#define DCCM_START		DT_DCCM_BASE_ADDRESS
+#define DCCM_SIZE		DT_DCCM_SIZE
 
 #include <generated_dts_board.h>
 #include <arch/arc/v2/linker.ld>

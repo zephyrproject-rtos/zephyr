@@ -136,8 +136,8 @@ static const struct uart_qmsi_config_info config_info_0 = {
 	.instance = QM_UART_0,
 	.clock_gate = CLK_PERIPH_UARTA_REGISTER | CLK_PERIPH_CLK,
 	.baud_divisor = QM_UART_CFG_BAUD_DL_PACK(
-				DIVISOR_HIGH(CONFIG_UART_QMSI_0_BAUDRATE),
-				DIVISOR_LOW(CONFIG_UART_QMSI_0_BAUDRATE),
+				DIVISOR_HIGH(DT_UART_QMSI_0_BAUDRATE),
+				DIVISOR_LOW(DT_UART_QMSI_0_BAUDRATE),
 				0),
 #ifdef CONFIG_UART_QMSI_0_HW_FC
 	.hw_fc = true,
@@ -150,7 +150,7 @@ static const struct uart_qmsi_config_info config_info_0 = {
 
 static struct uart_qmsi_drv_data drv_data_0;
 
-DEVICE_DEFINE(uart_0, CONFIG_UART_QMSI_0_NAME, &uart_qmsi_init,
+DEVICE_DEFINE(uart_0, DT_UART_QMSI_0_NAME, &uart_qmsi_init,
 	      uart_qmsi_device_ctrl, &drv_data_0, &config_info_0, PRE_KERNEL_1,
 	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
 #endif /* CONFIG_UART_QMSI_0 */
@@ -164,8 +164,8 @@ static const struct uart_qmsi_config_info config_info_1 = {
 	.instance = QM_UART_1,
 	.clock_gate = CLK_PERIPH_UARTB_REGISTER | CLK_PERIPH_CLK,
 	.baud_divisor = QM_UART_CFG_BAUD_DL_PACK(
-				DIVISOR_HIGH(CONFIG_UART_QMSI_1_BAUDRATE),
-				DIVISOR_LOW(CONFIG_UART_QMSI_1_BAUDRATE),
+				DIVISOR_HIGH(DT_UART_QMSI_1_BAUDRATE),
+				DIVISOR_LOW(DT_UART_QMSI_1_BAUDRATE),
 				0),
 #ifdef CONFIG_UART_QMSI_1_HW_FC
 	.hw_fc = true,
@@ -178,7 +178,7 @@ static const struct uart_qmsi_config_info config_info_1 = {
 
 static struct uart_qmsi_drv_data drv_data_1;
 
-DEVICE_DEFINE(uart_1, CONFIG_UART_QMSI_1_NAME, &uart_qmsi_init,
+DEVICE_DEFINE(uart_1, DT_UART_QMSI_1_NAME, &uart_qmsi_init,
 	      uart_qmsi_device_ctrl, &drv_data_1, &config_info_1, PRE_KERNEL_1,
 	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
 #endif /* CONFIG_UART_QMSI_1 */
@@ -375,10 +375,10 @@ static void irq_config_func_0(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	IRQ_CONNECT(CONFIG_UART_QMSI_0_IRQ,
+	IRQ_CONNECT(DT_UART_QMSI_0_IRQ,
 		    CONFIG_UART_QMSI_0_IRQ_PRI, uart_qmsi_isr,
-		    DEVICE_GET(uart_0), CONFIG_UART_QMSI_0_IRQ_FLAGS);
-	irq_enable(CONFIG_UART_QMSI_0_IRQ);
+		    DEVICE_GET(uart_0), DT_UART_QMSI_0_IRQ_FLAGS);
+	irq_enable(DT_UART_QMSI_0_IRQ);
 	QM_IR_UNMASK_INTERRUPTS(QM_INTERRUPT_ROUTER->uart_0_int_mask);
 }
 #endif /* CONFIG_UART_QMSI_0 */
@@ -388,10 +388,10 @@ static void irq_config_func_1(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	IRQ_CONNECT(CONFIG_UART_QMSI_1_IRQ,
+	IRQ_CONNECT(DT_UART_QMSI_1_IRQ,
 		    CONFIG_UART_QMSI_1_IRQ_PRI, uart_qmsi_isr,
-		    DEVICE_GET(uart_1), CONFIG_UART_QMSI_1_IRQ_FLAGS);
-	irq_enable(CONFIG_UART_QMSI_1_IRQ);
+		    DEVICE_GET(uart_1), DT_UART_QMSI_1_IRQ_FLAGS);
+	irq_enable(DT_UART_QMSI_1_IRQ);
 	QM_IR_UNMASK_INTERRUPTS(QM_INTERRUPT_ROUTER->uart_1_int_mask);
 }
 #endif /* CONFIG_UART_QMSI_1 */

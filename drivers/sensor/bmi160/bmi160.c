@@ -796,16 +796,16 @@ int bmi160_init(struct device *dev)
 	u8_t val = 0;
 	s32_t acc_range, gyr_range;
 
-	bmi160->spi = device_get_binding(CONFIG_BMI160_SPI_PORT_NAME);
+	bmi160->spi = device_get_binding(DT_BMI160_SPI_PORT_NAME);
 	if (!bmi160->spi) {
 		LOG_DBG("SPI master controller not found: %s.",
-			    CONFIG_BMI160_SPI_PORT_NAME);
+			    DT_BMI160_SPI_PORT_NAME);
 		return -EINVAL;
 	}
 
 	bmi160->spi_cfg.operation = SPI_WORD_SET(8);
-	bmi160->spi_cfg.frequency = CONFIG_BMI160_SPI_BUS_FREQ;
-	bmi160->spi_cfg.slave = CONFIG_BMI160_SLAVE;
+	bmi160->spi_cfg.frequency = DT_BMI160_SPI_BUS_FREQ;
+	bmi160->spi_cfg.slave = DT_BMI160_SLAVE;
 
 	/* reboot the chip */
 	if (bmi160_byte_write(dev, BMI160_REG_CMD, BMI160_CMD_SOFT_RESET) < 0) {
@@ -902,12 +902,12 @@ int bmi160_init(struct device *dev)
 
 const struct bmi160_device_config bmi160_config = {
 #if defined(CONFIG_BMI160_TRIGGER)
-	.gpio_port = CONFIG_BMI160_GPIO_DEV_NAME,
-	.int_pin = CONFIG_BMI160_GPIO_PIN_NUM,
+	.gpio_port = DT_BMI160_GPIO_DEV_NAME,
+	.int_pin = DT_BMI160_GPIO_PIN_NUM,
 #endif
 };
 
 
 
-DEVICE_INIT(bmi160, CONFIG_BMI160_NAME, bmi160_init, &bmi160_data,
+DEVICE_INIT(bmi160, DT_BMI160_NAME, bmi160_init, &bmi160_data,
 	    &bmi160_config, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY);

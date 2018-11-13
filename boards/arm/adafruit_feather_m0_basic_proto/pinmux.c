@@ -9,54 +9,54 @@
 
 static int board_pinmux_init(struct device *dev)
 {
-	struct device *muxa = device_get_binding(CONFIG_PINMUX_SAM0_A_LABEL);
-#if CONFIG_SPI_SAM0_SERCOM4_BASE_ADDRESS
-	struct device *muxb = device_get_binding(CONFIG_PINMUX_SAM0_B_LABEL);
+	struct device *muxa = device_get_binding(DT_PINMUX_SAM0_A_LABEL);
+#if DT_SPI_SAM0_SERCOM4_BASE_ADDRESS
+	struct device *muxb = device_get_binding(DT_PINMUX_SAM0_B_LABEL);
 #endif
 	ARG_UNUSED(dev);
 
-#if CONFIG_UART_SAM0_SERCOM0_BASE_ADDRESS
+#if DT_UART_SAM0_SERCOM0_BASE_ADDRESS
 	/* SERCOM0 on RX=PA11/pad 3, TX=PA10/pad 2 */
 	pinmux_pin_set(muxa, 11, PINMUX_FUNC_C);
 	pinmux_pin_set(muxa, 10, PINMUX_FUNC_C);
 #endif
 
-#if CONFIG_UART_SAM0_SERCOM1_BASE_ADDRESS
+#if DT_UART_SAM0_SERCOM1_BASE_ADDRESS
 #error Pin mapping is not configured
 #endif
-#if CONFIG_UART_SAM0_SERCOM2_BASE_ADDRESS
+#if DT_UART_SAM0_SERCOM2_BASE_ADDRESS
 #error Pin mapping is not configured
 #endif
-#if CONFIG_UART_SAM0_SERCOM3_BASE_ADDRESS
+#if DT_UART_SAM0_SERCOM3_BASE_ADDRESS
 #error Pin mapping is not configured
 #endif
-#if CONFIG_UART_SAM0_SERCOM4_BASE_ADDRESS
+#if DT_UART_SAM0_SERCOM4_BASE_ADDRESS
 #error Pin mapping is not configured
 #endif
-#if CONFIG_UART_SAM0_SERCOM5_BASE_ADDRESS
+#if DT_UART_SAM0_SERCOM5_BASE_ADDRESS
 #error Pin mapping is not configured
 #endif
 
-#if CONFIG_SPI_SAM0_SERCOM4_BASE_ADDRESS
+#if DT_SPI_SAM0_SERCOM4_BASE_ADDRESS
 	/* SPI SERCOM4 on MISO=PA12/pad 0, MOSI=PB10/pad 2, SCK=PB11/pad 3 */
 	pinmux_pin_set(muxa, 12, PINMUX_FUNC_D);
 	pinmux_pin_set(muxb, 10, PINMUX_FUNC_D);
 	pinmux_pin_set(muxb, 11, PINMUX_FUNC_D);
 #endif
 
-#if CONFIG_SPI_SAM0_SERCOM0_BASE_ADDRESS
+#if DT_SPI_SAM0_SERCOM0_BASE_ADDRESS
 #error Pin mapping is not configured
 #endif
-#if CONFIG_SPI_SAM0_SERCOM1_BASE_ADDRESS
+#if DT_SPI_SAM0_SERCOM1_BASE_ADDRESS
 #error Pin mapping is not configured
 #endif
-#if CONFIG_SPI_SAM0_SERCOM2_BASE_ADDRESS
+#if DT_SPI_SAM0_SERCOM2_BASE_ADDRESS
 #error Pin mapping is not configured
 #endif
-#if CONFIG_SPI_SAM0_SERCOM3_BASE_ADDRESS
+#if DT_SPI_SAM0_SERCOM3_BASE_ADDRESS
 #error Pin mapping is not configured
 #endif
-#if CONFIG_SPI_SAM0_SERCOM5_BASE_ADDRESS
+#if DT_SPI_SAM0_SERCOM5_BASE_ADDRESS
 #error Pin mapping is not configured
 #endif
 

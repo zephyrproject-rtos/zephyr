@@ -116,14 +116,14 @@ static inline unsigned int dw_ictl_intr_get_state(struct device *dev)
 static void dw_ictl_config_irq(struct device *port);
 
 static const struct dw_ictl_config dw_config = {
-	.irq_num = DW_ICTL_IRQ,
+	.irq_num = DT_DW_ICTL_IRQ,
 	.numirqs = DW_ICTL_NUM_IRQS,
 	.isr_table_offset = CONFIG_DW_ISR_TBL_OFFSET,
 	.config_func = dw_ictl_config_irq,
 };
 
 static struct dw_ictl_runtime dw_runtime = {
-	.base_addr = DW_ICTL_BASE_ADDR,
+	.base_addr = DT_DW_ICTL_BASE_ADDR,
 };
 
 static const struct irq_next_level_api dw_ictl_apis = {
@@ -138,6 +138,6 @@ DEVICE_AND_API_INIT(dw_ictl, CONFIG_DW_ICTL_NAME, dw_ictl_initialize,
 
 static void dw_ictl_config_irq(struct device *port)
 {
-	IRQ_CONNECT(DW_ICTL_IRQ, CONFIG_DW_ICTL_IRQ_PRI, dw_ictl_isr,
-		    DEVICE_GET(dw_ictl), DW_ICTL_IRQ_FLAGS);
+	IRQ_CONNECT(DT_DW_ICTL_IRQ, DT_DW_ICTL_IRQ_PRI, dw_ictl_isr,
+		    DEVICE_GET(dw_ictl), DT_DW_ICTL_IRQ_FLAGS);
 }

@@ -142,11 +142,11 @@ static int rtc_qmsi_init(struct device *dev)
 		k_sem_init(RP_GET(dev), 1, UINT_MAX);
 	}
 
-	IRQ_CONNECT(CONFIG_RTC_0_IRQ, CONFIG_RTC_0_IRQ_PRI,
-		    qm_rtc_0_isr, NULL, CONFIG_RTC_0_IRQ_FLAGS);
+	IRQ_CONNECT(DT_RTC_0_IRQ, CONFIG_RTC_0_IRQ_PRI,
+		    qm_rtc_0_isr, NULL, DT_RTC_0_IRQ_FLAGS);
 
 	/* Unmask RTC interrupt */
-	irq_enable(CONFIG_RTC_0_IRQ);
+	irq_enable(DT_RTC_0_IRQ);
 
 	/* Route RTC interrupt to the current core */
 	QM_IR_UNMASK_INTERRUPTS(QM_INTERRUPT_ROUTER->rtc_0_int_mask);

@@ -63,7 +63,7 @@ K_SEM_DEFINE(counter_sem, 0, 1);
 #define NUM_PINS	ARRAY_SIZE(counter_pins)
 #define MASK		(BIT(NUM_PINS) - 1)
 
-#define GPIO_DEV	CONFIG_APL_GPIO_LABEL
+#define GPIO_DEV	DT_APL_GPIO_LABEL
 
 void button_cb(struct device *gpiodev, struct gpio_callback *cb, u32_t pin)
 {

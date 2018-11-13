@@ -307,7 +307,7 @@ static const struct uart_driver_api uart_cc32xx_driver_api = {
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
-DEVICE_AND_API_INIT(uart_cc32xx_0, CONFIG_UART_CC32XX_NAME,
+DEVICE_AND_API_INIT(uart_cc32xx_0, DT_UART_CC32XX_NAME,
 		    uart_cc32xx_init, &uart_cc32xx_dev_data_0,
 		    &uart_cc32xx_dev_cfg_0,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,

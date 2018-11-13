@@ -254,10 +254,10 @@ static int init_spis(struct device *dev, const nrfx_spis_config_t *config)
 			    CONFIG_SPI_##idx##_IRQ_PRI,			   \
 			    nrfx_isr, nrfx_spis_##idx##_irq_handler, 0);   \
 		const nrfx_spis_config_t config = {			   \
-			.sck_pin    = CONFIG_SPI_##idx##_NRF_SCK_PIN,	   \
-			.mosi_pin   = CONFIG_SPI_##idx##_NRF_MOSI_PIN,	   \
-			.miso_pin   = CONFIG_SPI_##idx##_NRF_MISO_PIN,	   \
-			.csn_pin    = CONFIG_SPI_##idx##_NRF_CSN_PIN,	   \
+			.sck_pin    = DT_SPI_##idx##_NRF_SCK_PIN,	   \
+			.mosi_pin   = DT_SPI_##idx##_NRF_MOSI_PIN,	   \
+			.miso_pin   = DT_SPI_##idx##_NRF_MISO_PIN,	   \
+			.csn_pin    = DT_SPI_##idx##_NRF_CSN_PIN,	   \
 			.mode       = NRF_SPIS_MODE_0,			   \
 			.bit_order  = NRF_SPIS_BIT_ORDER_MSB_FIRST,	   \
 			.csn_pullup = NRFX_SPIS_DEFAULT_CSN_PULLUP,	   \

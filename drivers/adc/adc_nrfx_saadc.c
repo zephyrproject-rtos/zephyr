@@ -366,9 +366,9 @@ static int init_saadc(struct device *dev)
 {
 	nrf_saadc_event_clear(NRF_SAADC_EVENT_END);
 	nrf_saadc_int_enable(NRF_SAADC_INT_END);
-	NRFX_IRQ_ENABLE(CONFIG_ADC_0_IRQ);
+	NRFX_IRQ_ENABLE(DT_ADC_0_IRQ);
 
-	IRQ_CONNECT(CONFIG_ADC_0_IRQ, CONFIG_ADC_0_IRQ_PRI,
+	IRQ_CONNECT(DT_ADC_0_IRQ, CONFIG_ADC_0_IRQ_PRI,
 		    saadc_irq_handler, DEVICE_GET(adc_0), 0);
 
 	adc_context_unlock_unconditionally(&m_data.ctx);

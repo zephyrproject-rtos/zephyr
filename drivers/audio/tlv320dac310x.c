@@ -33,8 +33,8 @@ struct codec_driver_data {
 
 static struct codec_driver_config codec_device_config = {
 	.i2c_device	= NULL,
-	.i2c_dev_name	= CONFIG_CODEC_I2C_BUS_NAME,
-	.i2c_address	= CONFIG_CODEC_I2C_BUS_ADDR,
+	.i2c_dev_name	= DT_CODEC_I2C_BUS_NAME,
+	.i2c_address	= DT_CODEC_I2C_BUS_ADDR,
 };
 
 static struct codec_driver_data codec_device_data;
@@ -509,6 +509,6 @@ static const struct audio_codec_api codec_driver_api = {
 	.apply_properties	= codec_apply_properties,
 };
 
-DEVICE_AND_API_INIT(tlv320dac310x, CONFIG_CODEC_NAME, codec_initialize,
+DEVICE_AND_API_INIT(tlv320dac310x, DT_CODEC_NAME, codec_initialize,
 		&codec_device_data, &codec_device_config, POST_KERNEL,
 		CONFIG_AUDIO_CODEC_INIT_PRIORITY, &codec_driver_api);

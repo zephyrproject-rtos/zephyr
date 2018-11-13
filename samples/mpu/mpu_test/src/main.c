@@ -60,7 +60,7 @@ static int cmd_write_mcux(const struct shell *shell, size_t argc, char *argv[])
 		return 0;
 	}
 
-	flash_dev = device_get_binding(FLASH_DEV_NAME);
+	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
 
 	/* 128K reserved to the application */
 	offset = FLASH_MEM + 0x20000;
@@ -95,7 +95,7 @@ static int cmd_write_stm32(const struct shell *shell, size_t argc, char *argv[])
 		return 0;
 	}
 
-	flash_dev = device_get_binding(FLASH_DEV_NAME);
+	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
 
 	/* 16K reserved to the application */
 	u32_t offset = FLASH_MEM + 0x4000;

@@ -58,7 +58,7 @@
 
 /* UART configuration */
 #define CONFIG_UART_NS16550_PORT_0_IRQ_PRI       0
-#define CONFIG_UART_NS16550_PORT_0_IRQ_FLAGS     0
+#define DT_UART_NS16550_PORT_0_IRQ_FLAGS     0
 
 /* PAD configuration */
 #define PULP_PAD_BASE              0x1A107000

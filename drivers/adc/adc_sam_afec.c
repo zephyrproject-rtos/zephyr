@@ -345,9 +345,9 @@ static void adc_sam_isr(void *arg)
 static void adc0_sam_cfg_func(struct device *dev);
 
 static const struct adc_sam_cfg adc0_sam_cfg = {
-	.regs = (Afec *)CONFIG_ADC_0_BASE_ADDRESS,
+	.regs = (Afec *)DT_ADC_0_BASE_ADDRESS,
 	.cfg_func = adc0_sam_cfg_func,
-	.periph_id = CONFIG_ADC_0_PERIPHERAL_ID,
+	.periph_id = DT_ADC_0_PERIPHERAL_ID,
 	.afec_trg_pin = PIN_AFE0_ADTRG,
 };
 
@@ -363,9 +363,9 @@ DEVICE_AND_API_INIT(adc0_sam, CONFIG_ADC_0_NAME, adc_sam_init,
 
 static void adc0_sam_cfg_func(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_ADC_0_IRQ, CONFIG_ADC_0_IRQ_PRI, adc_sam_isr,
+	IRQ_CONNECT(DT_ADC_0_IRQ, CONFIG_ADC_0_IRQ_PRI, adc_sam_isr,
 		    DEVICE_GET(adc0_sam), 0);
-	irq_enable(CONFIG_ADC_0_IRQ);
+	irq_enable(DT_ADC_0_IRQ);
 }
 
 #endif /* CONFIG_ADC_0 */
@@ -374,9 +374,9 @@ static void adc0_sam_cfg_func(struct device *dev)
 static void adc1_sam_cfg_func(struct device *dev);
 
 static const struct adc_sam_cfg adc1_sam_cfg = {
-	.regs = (Afec *)CONFIG_ADC_1_BASE_ADDRESS,
+	.regs = (Afec *)DT_ADC_1_BASE_ADDRESS,
 	.cfg_func = adc1_sam_cfg_func,
-	.periph_id = CONFIG_ADC_1_PERIPHERAL_ID,
+	.periph_id = DT_ADC_1_PERIPHERAL_ID,
 	.afec_trg_pin = PIN_AFE1_ADTRG,
 };
 
@@ -392,9 +392,9 @@ DEVICE_AND_API_INIT(adc1_sam, CONFIG_ADC_1_NAME, adc_sam_init,
 
 static void adc1_sam_cfg_func(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_ADC_1_IRQ, CONFIG_ADC_1_IRQ_PRI, adc_sam_isr,
+	IRQ_CONNECT(DT_ADC_1_IRQ, CONFIG_ADC_1_IRQ_PRI, adc_sam_isr,
 		    DEVICE_GET(adc1_sam), 0);
-	irq_enable(CONFIG_ADC_1_IRQ);
+	irq_enable(DT_ADC_1_IRQ);
 }
 
 #endif /* CONFIG_ADC_1 */

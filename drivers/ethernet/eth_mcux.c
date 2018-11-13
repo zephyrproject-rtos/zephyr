@@ -968,35 +968,35 @@ static struct eth_context eth_0_context = {
 		0x04,
 		0x9f,
 #if defined(CONFIG_ETH_MCUX_0_MANUAL_MAC)
-		CONFIG_ETH_MCUX_0_MAC3,
-		CONFIG_ETH_MCUX_0_MAC4,
-		CONFIG_ETH_MCUX_0_MAC5
+		DT_ETH_MCUX_0_MAC3,
+		DT_ETH_MCUX_0_MAC4,
+		DT_ETH_MCUX_0_MAC5
 #endif
 	}
 };
 
-ETH_NET_DEVICE_INIT(eth_mcux_0, CONFIG_ETH_MCUX_0_NAME, eth_0_init,
+ETH_NET_DEVICE_INIT(eth_mcux_0, DT_ETH_MCUX_0_NAME, eth_0_init,
 		    &eth_0_context, NULL, CONFIG_ETH_INIT_PRIORITY,
 		    &api_funcs, 1500);
 
 static void eth_0_config_func(void)
 {
-	IRQ_CONNECT(CONFIG_IRQ_ETH_RX, CONFIG_ETH_MCUX_0_IRQ_PRI,
+	IRQ_CONNECT(DT_IRQ_ETH_RX, DT_ETH_MCUX_0_IRQ_PRI,
 		    eth_mcux_rx_isr, DEVICE_GET(eth_mcux_0), 0);
-	irq_enable(CONFIG_IRQ_ETH_RX);
+	irq_enable(DT_IRQ_ETH_RX);
 
-	IRQ_CONNECT(CONFIG_IRQ_ETH_TX, CONFIG_ETH_MCUX_0_IRQ_PRI,
+	IRQ_CONNECT(DT_IRQ_ETH_TX, DT_ETH_MCUX_0_IRQ_PRI,
 		    eth_mcux_tx_isr, DEVICE_GET(eth_mcux_0), 0);
-	irq_enable(CONFIG_IRQ_ETH_TX);
+	irq_enable(DT_IRQ_ETH_TX);
 
-	IRQ_CONNECT(CONFIG_IRQ_ETH_ERR_MISC, CONFIG_ETH_MCUX_0_IRQ_PRI,
+	IRQ_CONNECT(DT_IRQ_ETH_ERR_MISC, DT_ETH_MCUX_0_IRQ_PRI,
 		    eth_mcux_error_isr, DEVICE_GET(eth_mcux_0), 0);
-	irq_enable(CONFIG_IRQ_ETH_ERR_MISC);
+	irq_enable(DT_IRQ_ETH_ERR_MISC);
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
-	IRQ_CONNECT(CONFIG_IRQ_ETH_IEEE1588_TMR, CONFIG_ETH_MCUX_0_IRQ_PRI,
+	IRQ_CONNECT(DT_IRQ_ETH_IEEE1588_TMR, DT_ETH_MCUX_0_IRQ_PRI,
 		    eth_mcux_ptp_isr, DEVICE_GET(eth_mcux_0), 0);
-	irq_enable(CONFIG_IRQ_ETH_IEEE1588_TMR);
+	irq_enable(DT_IRQ_ETH_IEEE1588_TMR);
 #endif
 }
 

@@ -803,10 +803,10 @@ static struct device DEVICE_NAME_GET(i2s_stm32_1);
 static void i2s_stm32_irq_config_func_1(struct device *dev);
 
 static const struct i2s_stm32_cfg i2s_stm32_config_1 = {
-	.i2s = (SPI_TypeDef *) CONFIG_I2S_1_BASE_ADDRESS,
+	.i2s = (SPI_TypeDef *) DT_I2S_1_BASE_ADDRESS,
 	.pclken = {
-		.enr = CONFIG_I2S_1_CLOCK_BITS,
-		.bus = CONFIG_I2S_1_CLOCK_BUS,
+		.enr = DT_I2S_1_CLOCK_BITS,
+		.bus = DT_I2S_1_CLOCK_BUS,
 	},
 	.i2s_clk_sel = CLK_SEL_2,
 	.irq_config = i2s_stm32_irq_config_func_1,
@@ -854,15 +854,15 @@ static struct i2s_stm32_data i2s_stm32_data_1 = {
 		.mem_block_queue.len = ARRAY_SIZE(tx_1_ring_buf),
 	},
 };
-DEVICE_AND_API_INIT(i2s_stm32_1, CONFIG_I2S_1_NAME, &i2s_stm32_initialize,
+DEVICE_AND_API_INIT(i2s_stm32_1, DT_I2S_1_NAME, &i2s_stm32_initialize,
 		    &i2s_stm32_data_1, &i2s_stm32_config_1, POST_KERNEL,
 		    CONFIG_I2S_INIT_PRIORITY, &i2s_stm32_driver_api);
 
 static void i2s_stm32_irq_config_func_1(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_I2S_1_IRQ, CONFIG_I2S_1_IRQ_PRI, i2s_stm32_isr,
+	IRQ_CONNECT(DT_I2S_1_IRQ, DT_I2S_1_IRQ_PRI, i2s_stm32_isr,
 		    DEVICE_GET(i2s_stm32_1), 0);
-	irq_enable(CONFIG_I2S_1_IRQ);
+	irq_enable(DT_I2S_1_IRQ);
 }
 
 #endif /* CONFIG_I2S_1 */
@@ -873,10 +873,10 @@ static struct device DEVICE_NAME_GET(i2s_stm32_2);
 static void i2s_stm32_irq_config_func_2(struct device *dev);
 
 static const struct i2s_stm32_cfg i2s_stm32_config_2 = {
-	.i2s = (SPI_TypeDef *) CONFIG_I2S_2_BASE_ADDRESS,
+	.i2s = (SPI_TypeDef *) DT_I2S_2_BASE_ADDRESS,
 	.pclken = {
-		.enr = CONFIG_I2S_2_CLOCK_BITS,
-		.bus = CONFIG_I2S_2_CLOCK_BUS,
+		.enr = DT_I2S_2_CLOCK_BITS,
+		.bus = DT_I2S_2_CLOCK_BUS,
 	},
 	.i2s_clk_sel = CLK_SEL_1,
 	.irq_config = i2s_stm32_irq_config_func_2,
@@ -924,15 +924,15 @@ static struct i2s_stm32_data i2s_stm32_data_2 = {
 		.mem_block_queue.len = ARRAY_SIZE(tx_2_ring_buf),
 	},
 };
-DEVICE_AND_API_INIT(i2s_stm32_2, CONFIG_I2S_2_NAME, &i2s_stm32_initialize,
+DEVICE_AND_API_INIT(i2s_stm32_2, DT_I2S_2_NAME, &i2s_stm32_initialize,
 		    &i2s_stm32_data_2, &i2s_stm32_config_2, POST_KERNEL,
 		    CONFIG_I2S_INIT_PRIORITY, &i2s_stm32_driver_api);
 
 static void i2s_stm32_irq_config_func_2(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_I2S_2_IRQ, CONFIG_I2S_2_IRQ_PRI, i2s_stm32_isr,
+	IRQ_CONNECT(DT_I2S_2_IRQ, DT_I2S_2_IRQ_PRI, i2s_stm32_isr,
 		    DEVICE_GET(i2s_stm32_2), 0);
-	irq_enable(CONFIG_I2S_2_IRQ);
+	irq_enable(DT_I2S_2_IRQ);
 }
 
 #endif /* CONFIG_I2S_2 */
@@ -943,10 +943,10 @@ static struct device DEVICE_NAME_GET(i2s_stm32_3);
 static void i2s_stm32_irq_config_func_3(struct device *dev);
 
 static const struct i2s_stm32_cfg i2s_stm32_config_3 = {
-	.i2s = (SPI_TypeDef *) CONFIG_I2S_3_BASE_ADDRESS,
+	.i2s = (SPI_TypeDef *) DT_I2S_3_BASE_ADDRESS,
 	.pclken = {
-		.enr = CONFIG_I2S_3_CLOCK_BITS,
-		.bus = CONFIG_I2S_3_CLOCK_BUS,
+		.enr = DT_I2S_3_CLOCK_BITS,
+		.bus = DT_I2S_3_CLOCK_BUS,
 	},
 	.i2s_clk_sel = CLK_SEL_1,
 	.irq_config = i2s_stm32_irq_config_func_3,
@@ -994,15 +994,15 @@ static struct i2s_stm32_data i2s_stm32_data_3 = {
 		.mem_block_queue.len = ARRAY_SIZE(tx_3_ring_buf),
 	},
 };
-DEVICE_AND_API_INIT(i2s_stm32_3, CONFIG_I2S_3_NAME, &i2s_stm32_initialize,
+DEVICE_AND_API_INIT(i2s_stm32_3, DT_I2S_3_NAME, &i2s_stm32_initialize,
 		    &i2s_stm32_data_3, &i2s_stm32_config_3, POST_KERNEL,
 		    CONFIG_I2S_INIT_PRIORITY, &i2s_stm32_driver_api);
 
 static void i2s_stm32_irq_config_func_3(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_I2S_3_IRQ, CONFIG_I2S_3_IRQ_PRI, i2s_stm32_isr,
+	IRQ_CONNECT(DT_I2S_3_IRQ, DT_I2S_3_IRQ_PRI, i2s_stm32_isr,
 		    DEVICE_GET(i2s_stm32_3), 0);
-	irq_enable(CONFIG_I2S_3_IRQ);
+	irq_enable(DT_I2S_3_IRQ);
 }
 
 #endif /* CONFIG_I2S_3 */
@@ -1013,10 +1013,10 @@ static struct device DEVICE_NAME_GET(i2s_stm32_4);
 static void i2s_stm32_irq_config_func_4(struct device *dev);
 
 static const struct i2s_stm32_cfg i2s_stm32_config_4 = {
-	.i2s = (SPI_TypeDef *) CONFIG_I2S_4_BASE_ADDRESS,
+	.i2s = (SPI_TypeDef *) DT_I2S_4_BASE_ADDRESS,
 	.pclken = {
-		.enr = CONFIG_I2S_4_CLOCK_BITS,
-		.bus = CONFIG_I2S_4_CLOCK_BUS,
+		.enr = DT_I2S_4_CLOCK_BITS,
+		.bus = DT_I2S_4_CLOCK_BUS,
 	},
 	.i2s_clk_sel = CLK_SEL_2,
 	.irq_config = i2s_stm32_irq_config_func_4,
@@ -1064,15 +1064,15 @@ static struct i2s_stm32_data i2s_stm32_data_4 = {
 		.mem_block_queue.len = ARRAY_SIZE(tx_4_ring_buf),
 	},
 };
-DEVICE_AND_API_INIT(i2s_stm32_4, CONFIG_I2S_4_NAME, &i2s_stm32_initialize,
+DEVICE_AND_API_INIT(i2s_stm32_4, DT_I2S_4_NAME, &i2s_stm32_initialize,
 		    &i2s_stm32_data_4, &i2s_stm32_config_4, POST_KERNEL,
 		    CONFIG_I2S_INIT_PRIORITY, &i2s_stm32_driver_api);
 
 static void i2s_stm32_irq_config_func_4(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_I2S_4_IRQ, CONFIG_I2S_4_IRQ_PRI, i2s_stm32_isr,
+	IRQ_CONNECT(DT_I2S_4_IRQ, DT_I2S_4_IRQ_PRI, i2s_stm32_isr,
 		    DEVICE_GET(i2s_stm32_4), 0);
-	irq_enable(CONFIG_I2S_4_IRQ);
+	irq_enable(DT_I2S_4_IRQ);
 }
 
 #endif /* CONFIG_I2S_4 */
@@ -1083,10 +1083,10 @@ static struct device DEVICE_NAME_GET(i2s_stm32_5);
 static void i2s_stm32_irq_config_func_5(struct device *dev);
 
 static const struct i2s_stm32_cfg i2s_stm32_config_5 = {
-	.i2s = (SPI_TypeDef *) CONFIG_I2S_5_BASE_ADDRESS,
+	.i2s = (SPI_TypeDef *) DT_I2S_5_BASE_ADDRESS,
 	.pclken = {
-		.enr = CONFIG_I2S_5_CLOCK_BITS,
-		.bus = CONFIG_I2S_5_CLOCK_BUS,
+		.enr = DT_I2S_5_CLOCK_BITS,
+		.bus = DT_I2S_5_CLOCK_BUS,
 	},
 	.i2s_clk_sel = CLK_SEL_2,
 	.irq_config = i2s_stm32_irq_config_func_5,
@@ -1134,15 +1134,15 @@ static struct i2s_stm32_data i2s_stm32_data_5 = {
 		.mem_block_queue.len = ARRAY_SIZE(tx_5_ring_buf),
 	},
 };
-DEVICE_AND_API_INIT(i2s_stm32_5, CONFIG_I2S_5_NAME, &i2s_stm32_initialize,
+DEVICE_AND_API_INIT(i2s_stm32_5, DT_I2S_5_NAME, &i2s_stm32_initialize,
 		    &i2s_stm32_data_5, &i2s_stm32_config_5, POST_KERNEL,
 		    CONFIG_I2S_INIT_PRIORITY, &i2s_stm32_driver_api);
 
 static void i2s_stm32_irq_config_func_5(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_I2S_5_IRQ, CONFIG_I2S_5_IRQ_PRI, i2s_stm32_isr,
+	IRQ_CONNECT(DT_I2S_5_IRQ, DT_I2S_5_IRQ_PRI, i2s_stm32_isr,
 		    DEVICE_GET(i2s_stm32_5), 0);
-	irq_enable(CONFIG_I2S_5_IRQ);
+	irq_enable(DT_I2S_5_IRQ);
 }
 
 #endif /* CONFIG_I2S_5 */

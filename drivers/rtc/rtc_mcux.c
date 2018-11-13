@@ -190,18 +190,18 @@ static struct mcux_rtc_data rtc_mcux_data_0;
 static void rtc_mcux_irq_config_0(struct device *dev);
 
 static struct mcux_rtc_config rtc_mcux_config_0 = {
-	.base = (RTC_Type *)CONFIG_RTC_MCUX_0_BASE_ADDRESS,
+	.base = (RTC_Type *)DT_RTC_MCUX_0_BASE_ADDRESS,
 	.irq_config_func = rtc_mcux_irq_config_0,
 };
 
-DEVICE_DEFINE(rtc, CONFIG_RTC_MCUX_0_NAME,
+DEVICE_DEFINE(rtc, DT_RTC_MCUX_0_NAME,
 	      &mcux_rtc_init, NULL, &rtc_mcux_data_0, &rtc_mcux_config_0,
 	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 	      &mcux_rtc_driver_api);
 
 static void rtc_mcux_irq_config_0(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_RTC_MCUX_0_IRQ, CONFIG_RTC_MCUX_0_IRQ_PRI,
+	IRQ_CONNECT(DT_RTC_MCUX_0_IRQ, DT_RTC_MCUX_0_IRQ_PRI,
 		    mcux_rtc_isr, DEVICE_GET(rtc), 0);
-	irq_enable(CONFIG_RTC_MCUX_0_IRQ);
+	irq_enable(DT_RTC_MCUX_0_IRQ);
 }

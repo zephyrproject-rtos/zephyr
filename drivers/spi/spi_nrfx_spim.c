@@ -314,9 +314,9 @@ static int init_spim(struct device *dev, const nrfx_spim_config_t *config)
 			    CONFIG_SPI_##idx##_IRQ_PRI,			     \
 			    nrfx_isr, nrfx_spim_##idx##_irq_handler, 0);     \
 		const nrfx_spim_config_t config = {			     \
-			.sck_pin   = CONFIG_SPI_##idx##_NRF_SCK_PIN,	     \
-			.mosi_pin  = CONFIG_SPI_##idx##_NRF_MOSI_PIN,	     \
-			.miso_pin  = CONFIG_SPI_##idx##_NRF_MISO_PIN,	     \
+			.sck_pin   = DT_SPI_##idx##_NRF_SCK_PIN,	     \
+			.mosi_pin  = DT_SPI_##idx##_NRF_MOSI_PIN,	     \
+			.miso_pin  = DT_SPI_##idx##_NRF_MISO_PIN,	     \
 			.ss_pin    = NRFX_SPIM_PIN_NOT_USED,		     \
 			.orc       = CONFIG_SPI_##idx##_NRF_ORC,	     \
 			.frequency = NRF_SPIM_FREQ_4M,			     \

@@ -253,7 +253,7 @@ static int init_adc(struct device *dev)
 		return -EBUSY;
 	}
 
-	IRQ_CONNECT(CONFIG_ADC_0_IRQ, CONFIG_ADC_0_IRQ_PRI,
+	IRQ_CONNECT(DT_ADC_0_IRQ, CONFIG_ADC_0_IRQ_PRI,
 		    nrfx_isr, nrfx_adc_irq_handler, 0);
 
 	adc_context_unlock_unconditionally(&m_data.ctx);

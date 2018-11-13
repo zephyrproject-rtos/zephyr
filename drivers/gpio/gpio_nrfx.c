@@ -419,10 +419,10 @@ static int gpio_nrfx_init(struct device *port)
 
 	if (!gpio_initialized) {
 		gpio_initialized = true;
-		IRQ_CONNECT(CONFIG_GPIOTE_IRQ, CONFIG_GPIOTE_IRQ_PRI,
+		IRQ_CONNECT(DT_GPIOTE_IRQ, DT_GPIOTE_IRQ_PRI,
 			    gpiote_event_handler, NULL, 0);
 
-		irq_enable(CONFIG_GPIOTE_IRQ);
+		irq_enable(DT_GPIOTE_IRQ);
 		nrf_gpiote_int_enable(NRF_GPIOTE_INT_PORT_MASK);
 	}
 
@@ -442,7 +442,7 @@ static int gpio_nrfx_init(struct device *port)
 	static struct gpio_nrfx_data gpio_nrfx_p##id##_data;		\
 									\
 	DEVICE_AND_API_INIT(gpio_nrfx_p##id,				\
-			    CONFIG_GPIO_P##id##_DEV_NAME,		\
+			    DT_GPIO_P##id##_DEV_NAME,		\
 			    gpio_nrfx_init,				\
 			    &gpio_nrfx_p##id##_data,			\
 			    &gpio_nrfx_p##id##_cfg,			\

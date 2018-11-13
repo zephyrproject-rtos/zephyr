@@ -174,12 +174,12 @@ static const struct gpio_driver_api mcux_igpio_driver_api = {
 static int mcux_igpio_1_init(struct device *dev);
 
 static const struct mcux_igpio_config mcux_igpio_1_config = {
-	.base = (GPIO_Type *)CONFIG_MCUX_IGPIO_1_BASE_ADDRESS,
+	.base = (GPIO_Type *)DT_MCUX_IGPIO_1_BASE_ADDRESS,
 };
 
 static struct mcux_igpio_data mcux_igpio_1_data;
 
-DEVICE_AND_API_INIT(mcux_igpio_1, CONFIG_MCUX_IGPIO_1_NAME,
+DEVICE_AND_API_INIT(mcux_igpio_1, DT_MCUX_IGPIO_1_NAME,
 		    mcux_igpio_1_init,
 		    &mcux_igpio_1_data, &mcux_igpio_1_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -187,15 +187,15 @@ DEVICE_AND_API_INIT(mcux_igpio_1, CONFIG_MCUX_IGPIO_1_NAME,
 
 static int mcux_igpio_1_init(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_MCUX_IGPIO_1_IRQ_0, CONFIG_MCUX_IGPIO_1_IRQ_0_PRI,
+	IRQ_CONNECT(DT_MCUX_IGPIO_1_IRQ_0, DT_MCUX_IGPIO_1_IRQ_0_PRI,
 		    mcux_igpio_port_isr, DEVICE_GET(mcux_igpio_1), 0);
 
-	irq_enable(CONFIG_MCUX_IGPIO_1_IRQ_0);
+	irq_enable(DT_MCUX_IGPIO_1_IRQ_0);
 
-	IRQ_CONNECT(CONFIG_MCUX_IGPIO_1_IRQ_1, CONFIG_MCUX_IGPIO_1_IRQ_1_PRI,
+	IRQ_CONNECT(DT_MCUX_IGPIO_1_IRQ_1, DT_MCUX_IGPIO_1_IRQ_1_PRI,
 		    mcux_igpio_port_isr, DEVICE_GET(mcux_igpio_1), 0);
 
-	irq_enable(CONFIG_MCUX_IGPIO_1_IRQ_1);
+	irq_enable(DT_MCUX_IGPIO_1_IRQ_1);
 
 	return 0;
 }
@@ -298,12 +298,12 @@ static int mcux_igpio_4_init(struct device *dev)
 static int mcux_igpio_5_init(struct device *dev);
 
 static const struct mcux_igpio_config mcux_igpio_5_config = {
-	.base = (GPIO_Type *)CONFIG_MCUX_IGPIO_5_BASE_ADDRESS,
+	.base = (GPIO_Type *)DT_MCUX_IGPIO_5_BASE_ADDRESS,
 };
 
 static struct mcux_igpio_data mcux_igpio_5_data;
 
-DEVICE_AND_API_INIT(mcux_igpio_5, CONFIG_MCUX_IGPIO_5_NAME,
+DEVICE_AND_API_INIT(mcux_igpio_5, DT_MCUX_IGPIO_5_NAME,
 		    mcux_igpio_5_init,
 		    &mcux_igpio_5_data, &mcux_igpio_5_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -311,15 +311,15 @@ DEVICE_AND_API_INIT(mcux_igpio_5, CONFIG_MCUX_IGPIO_5_NAME,
 
 static int mcux_igpio_5_init(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_MCUX_IGPIO_5_IRQ_0, CONFIG_MCUX_IGPIO_5_IRQ_0_PRI,
+	IRQ_CONNECT(DT_MCUX_IGPIO_5_IRQ_0, DT_MCUX_IGPIO_5_IRQ_0_PRI,
 		    mcux_igpio_port_isr, DEVICE_GET(mcux_igpio_5), 0);
 
-	irq_enable(CONFIG_MCUX_IGPIO_5_IRQ_0);
+	irq_enable(DT_MCUX_IGPIO_5_IRQ_0);
 
-	IRQ_CONNECT(CONFIG_MCUX_IGPIO_5_IRQ_1, CONFIG_MCUX_IGPIO_5_IRQ_1_PRI,
+	IRQ_CONNECT(DT_MCUX_IGPIO_5_IRQ_1, DT_MCUX_IGPIO_5_IRQ_1_PRI,
 		    mcux_igpio_port_isr, DEVICE_GET(mcux_igpio_5), 0);
 
-	irq_enable(CONFIG_MCUX_IGPIO_5_IRQ_1);
+	irq_enable(DT_MCUX_IGPIO_5_IRQ_1);
 
 	return 0;
 }

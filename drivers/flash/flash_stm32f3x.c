@@ -133,7 +133,7 @@ static const struct flash_driver_api flash_stm32_api = {
 };
 
 static const struct flash_stm32_dev_config flash_device_config = {
-	.base = (u32_t *)FLASH_DEV_BASE_ADDRESS,
+	.base = (u32_t *)DT_FLASH_DEV_BASE_ADDRESS,
 	.pclken = { .bus = STM32_CLOCK_BUS_APB1,
 		    .enr =  LL_AHB1_GRP1_PERIPH_FLASH},
 };
@@ -142,7 +142,7 @@ static struct flash_stm32_dev_data flash_device_data = {
 
 };
 
-DEVICE_AND_API_INIT(flash_stm32, FLASH_DEV_NAME,
+DEVICE_AND_API_INIT(flash_stm32, DT_FLASH_DEV_NAME,
 		    flash_stm32_init,
 		    &flash_device_data,
 		    &flash_device_config,

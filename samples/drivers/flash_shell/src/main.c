@@ -28,11 +28,11 @@ LOG_MODULE_REGISTER(app);
 #define PR_WARNING(shell, fmt, ...)				\
 	shell_fprintf(shell, SHELL_WARNING, fmt, ##__VA_ARGS__)
 /*
- * When FLASH_DEV_NAME is available, we use it here. Otherwise,
+ * When DT_FLASH_DEV_NAME is available, we use it here. Otherwise,
  * the device can be set at runtime with the set_device command.
  */
-#ifndef FLASH_DEV_NAME
-#define FLASH_DEV_NAME ""
+#ifndef DT_FLASH_DEV_NAME
+#define DT_FLASH_DEV_NAME ""
 #endif
 
 /* Command usage info. */
@@ -627,9 +627,9 @@ static int cmd_set_dev(const struct shell *shell, size_t argc, char **argv)
 
 void main(void)
 {
-	flash_device = device_get_binding(FLASH_DEV_NAME);
+	flash_device = device_get_binding(DT_FLASH_DEV_NAME);
 	if (flash_device) {
-		printk("Found flash device %s.\n", FLASH_DEV_NAME);
+		printk("Found flash device %s.\n", DT_FLASH_DEV_NAME);
 		printk("Flash I/O commands can be run.\n");
 	} else {
 		printk("**No flash device found!**\n");

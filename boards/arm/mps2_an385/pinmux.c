@@ -32,13 +32,13 @@
  */
 
 #define CMSDK_AHB_GPIO0_DEV \
-	((volatile struct gpio_cmsdk_ahb *)CMSDK_AHB_GPIO0)
+	((volatile struct gpio_cmsdk_ahb *)DT_CMSDK_AHB_GPIO0)
 #define CMSDK_AHB_GPIO1_DEV \
-	((volatile struct gpio_cmsdk_ahb *)CMSDK_AHB_GPIO1)
+	((volatile struct gpio_cmsdk_ahb *)DT_CMSDK_AHB_GPIO1)
 #define CMSDK_AHB_GPIO2_DEV \
-	((volatile struct gpio_cmsdk_ahb *)CMSDK_AHB_GPIO2)
+	((volatile struct gpio_cmsdk_ahb *)DT_CMSDK_AHB_GPIO2)
 #define CMSDK_AHB_GPIO3_DEV \
-	((volatile struct gpio_cmsdk_ahb *)CMSDK_AHB_GPIO3)
+	((volatile struct gpio_cmsdk_ahb *)DT_CMSDK_AHB_GPIO3)
 
 /*
  * This is the mapping from the ARM MPS2 AN385 Board pins to GPIO

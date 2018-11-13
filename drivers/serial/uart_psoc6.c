@@ -44,14 +44,14 @@ static const cy_stc_scb_uart_config_t uartConfig = {
 	.irdaInvertRx               = false,
 	.irdaEnableLowPowerReceiver = false,
 
-	.oversample                 = CONFIG_UART_PSOC6_CONFIG_OVERSAMPLE,
+	.oversample                 = DT_UART_PSOC6_CONFIG_OVERSAMPLE,
 
 	.enableMsbFirst             = false,
-	.dataWidth                  = CONFIG_UART_PSOC6_CONFIG_DATAWIDTH,
+	.dataWidth                  = DT_UART_PSOC6_CONFIG_DATAWIDTH,
 	.parity                     = CY_SCB_UART_PARITY_NONE,
 	.stopBits                   = CY_SCB_UART_STOP_BITS_1,
 	.enableInputFilter          = false,
-	.breakWidth                 = CONFIG_UART_PSOC6_CONFIG_BREAKWIDTH,
+	.breakWidth                 = DT_UART_PSOC6_CONFIG_BREAKWIDTH,
 	.dropOnFrameError           = false,
 	.dropOnParityError          = false,
 
@@ -91,14 +91,14 @@ static int uart_psoc6_init(struct device *dev)
 
 	/* Connect assigned divider to be a clock source for UART */
 	Cy_SysClk_PeriphAssignDivider(config->scb_clock,
-		CONFIG_UART_PSOC6_UART_CLK_DIV_TYPE,
-		CONFIG_UART_PSOC6_UART_CLK_DIV_NUMBER);
+		DT_UART_PSOC6_UART_CLK_DIV_TYPE,
+		DT_UART_PSOC6_UART_CLK_DIV_NUMBER);
 
-	Cy_SysClk_PeriphSetDivider(CONFIG_UART_PSOC6_UART_CLK_DIV_TYPE,
-		CONFIG_UART_PSOC6_UART_CLK_DIV_NUMBER,
-		CONFIG_UART_PSOC6_UART_CLK_DIV_VAL);
-	Cy_SysClk_PeriphEnableDivider(CONFIG_UART_PSOC6_UART_CLK_DIV_TYPE,
-		CONFIG_UART_PSOC6_UART_CLK_DIV_NUMBER);
+	Cy_SysClk_PeriphSetDivider(DT_UART_PSOC6_UART_CLK_DIV_TYPE,
+		DT_UART_PSOC6_UART_CLK_DIV_NUMBER,
+		DT_UART_PSOC6_UART_CLK_DIV_VAL);
+	Cy_SysClk_PeriphEnableDivider(DT_UART_PSOC6_UART_CLK_DIV_TYPE,
+		DT_UART_PSOC6_UART_CLK_DIV_NUMBER);
 
 	/* Configure UART to operate */
 	(void) Cy_SCB_UART_Init(config->base, &uartConfig, NULL);
@@ -135,16 +135,16 @@ static const struct uart_driver_api uart_psoc6_driver_api = {
 
 #ifdef CONFIG_UART_PSOC6_UART_5
 static const struct cypress_psoc6_config cypress_psoc6_uart5_config = {
-	.base = CONFIG_UART_PSOC6_UART_5_BASE_ADDRESS,
-	.port = CONFIG_UART_PSOC6_UART_5_PORT,
-	.rx_num = CONFIG_UART_PSOC6_UART_5_RX_NUM,
-	.tx_num = CONFIG_UART_PSOC6_UART_5_TX_NUM,
-	.rx_val = CONFIG_UART_PSOC6_UART_5_RX_VAL,
-	.tx_val = CONFIG_UART_PSOC6_UART_5_TX_VAL,
-	.scb_clock = CONFIG_UART_PSOC6_UART_5_CLOCK,
+	.base = DT_UART_PSOC6_UART_5_BASE_ADDRESS,
+	.port = DT_UART_PSOC6_UART_5_PORT,
+	.rx_num = DT_UART_PSOC6_UART_5_RX_NUM,
+	.tx_num = DT_UART_PSOC6_UART_5_TX_NUM,
+	.rx_val = DT_UART_PSOC6_UART_5_RX_VAL,
+	.tx_val = DT_UART_PSOC6_UART_5_TX_VAL,
+	.scb_clock = DT_UART_PSOC6_UART_5_CLOCK,
 };
 
-DEVICE_AND_API_INIT(uart_5, CONFIG_UART_PSOC6_UART_5_NAME,
+DEVICE_AND_API_INIT(uart_5, DT_UART_PSOC6_UART_5_NAME,
 			uart_psoc6_init, NULL,
 			&cypress_psoc6_uart5_config,
 			PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -153,16 +153,16 @@ DEVICE_AND_API_INIT(uart_5, CONFIG_UART_PSOC6_UART_5_NAME,
 
 #ifdef CONFIG_UART_PSOC6_UART_6
 static const struct cypress_psoc6_config cypress_psoc6_uart6_config = {
-	.base = CONFIG_UART_PSOC6_UART_6_BASE_ADDRESS,
-	.port = CONFIG_UART_PSOC6_UART_6_PORT,
-	.rx_num = CONFIG_UART_PSOC6_UART_6_RX_NUM,
-	.tx_num = CONFIG_UART_PSOC6_UART_6_TX_NUM,
-	.rx_val = CONFIG_UART_PSOC6_UART_6_RX_VAL,
-	.tx_val = CONFIG_UART_PSOC6_UART_6_TX_VAL,
-	.scb_clock = CONFIG_UART_PSOC6_UART_6_CLOCK,
+	.base = DT_UART_PSOC6_UART_6_BASE_ADDRESS,
+	.port = DT_UART_PSOC6_UART_6_PORT,
+	.rx_num = DT_UART_PSOC6_UART_6_RX_NUM,
+	.tx_num = DT_UART_PSOC6_UART_6_TX_NUM,
+	.rx_val = DT_UART_PSOC6_UART_6_RX_VAL,
+	.tx_val = DT_UART_PSOC6_UART_6_TX_VAL,
+	.scb_clock = DT_UART_PSOC6_UART_6_CLOCK,
 };
 
-DEVICE_AND_API_INIT(uart_6, CONFIG_UART_PSOC6_UART_6_NAME,
+DEVICE_AND_API_INIT(uart_6, DT_UART_PSOC6_UART_6_NAME,
 			uart_psoc6_init, NULL,
 			&cypress_psoc6_uart6_config,
 			PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,

@@ -156,7 +156,7 @@ SECTIONS
 	/* Kernel ROM extends to the end of flash. Need to do this to program
 	 * the MMU
 	 */
-	_image_rom_end = _image_rom_start + KB(CONFIG_ROM_SIZE);
+	_image_rom_end = _image_rom_start + KB(DT_ROM_SIZE);
 #else
 	/* ROM ends here, position counter will now be in RAM areas */
 	_image_rom_end = .;
@@ -358,11 +358,11 @@ SECTIONS
 	__data_ram_end = .;
 
 	/* All unused memory also owned by the kernel for heaps */
-	__kernel_ram_end = PHYS_RAM_ADDR + KB(CONFIG_RAM_SIZE);
+	__kernel_ram_end = PHYS_RAM_ADDR + KB(DT_RAM_SIZE);
 	__kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
 
 	_image_ram_end = .;
-	_image_ram_all = (PHYS_RAM_ADDR + KB(CONFIG_RAM_SIZE)) - _image_ram_start;
+	_image_ram_all = (PHYS_RAM_ADDR + KB(DT_RAM_SIZE)) - _image_ram_start;
 
 	_end = .; /* end of image */
 

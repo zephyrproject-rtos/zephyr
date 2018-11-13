@@ -18,7 +18,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(usb_dc_kinetis);
 
-#define NUM_OF_EP_MAX		CONFIG_USBD_KINETIS_NUM_BIDIR_EP
+#define NUM_OF_EP_MAX		DT_USBD_KINETIS_NUM_BIDIR_EP
 
 #define BD_OWN_MASK		(1 << 5)
 #define BD_DATA01_MASK		(1 << 4)
@@ -177,10 +177,10 @@ static int kinetis_usb_init(void)
 			K_PRIO_COOP(2), 0, K_NO_WAIT);
 
 	/* Connect and enable USB interrupt */
-	IRQ_CONNECT(CONFIG_USBD_KINETIS_IRQ, CONFIG_USBD_KINETIS_IRQ_PRI,
+	IRQ_CONNECT(DT_USBD_KINETIS_IRQ, DT_USBD_KINETIS_IRQ_PRI,
 		    usb_kinetis_isr_handler, 0, 0);
 
-	irq_enable(CONFIG_USBD_KINETIS_IRQ);
+	irq_enable(DT_USBD_KINETIS_IRQ);
 
 	LOG_DBG("");
 
