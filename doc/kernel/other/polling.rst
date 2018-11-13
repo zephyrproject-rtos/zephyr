@@ -208,7 +208,7 @@ pass extra information to the thread waiting on the event.
         struct k_poll_event events[1] = {
             K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
                                      K_POLL_MODE_NOTIFY_ONLY,
-                                     &signal);
+                                     &signal),
         };
 
         k_poll(events, 1, K_FOREVER);
@@ -239,7 +239,7 @@ If the signal is to be polled in a loop, *both* its event state and its
         struct k_poll_event events[1] = {
             K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
                                      K_POLL_MODE_NOTIFY_ONLY,
-                                     &signal);
+                                     &signal),
         };
 
         for (;;) {
