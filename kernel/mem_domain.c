@@ -19,10 +19,10 @@ static bool sane_partition(const struct k_mem_partition *part,
 			   u32_t num_parts)
 {
 	bool exec, write;
-	u32_t end;
+	u32_t last;
 	u32_t i;
 
-	end = part->start + part->size;
+	last = part->start + part->size - 1;
 	exec = K_MEM_PARTITION_IS_EXECUTABLE(part->attr);
 	write = K_MEM_PARTITION_IS_WRITABLE(part->attr);
 
@@ -35,11 +35,11 @@ static bool sane_partition(const struct k_mem_partition *part,
 
 	for (i = 0; i < num_parts; i++) {
 		bool cur_write, cur_exec;
-		u32_t cur_end;
+		u32_t cur_last;
 
-		cur_end = parts[i].start + parts[i].size;
+		cur_last = parts[i].start + parts[i].size - 1;
 
-		if (end < parts[i].start || cur_end < part->start) {
+		if (last < parts[i].start || cur_last < part->start) {
 			continue;
 		}
 
@@ -50,8 +50,8 @@ static bool sane_partition(const struct k_mem_partition *part,
 			__ASSERT(false, "overlapping partitions are "
 				 "writable and executable "
 				 "<%x...%x>, <%x...%x>",
-				 part->start, end,
-				 parts[i].start, cur_end);
+				 part->start, last,
+				 parts[i].start, cur_last);
 			return false;
 		}
 	}
