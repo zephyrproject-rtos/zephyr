@@ -2002,6 +2002,9 @@ static void att_reset(struct bt_att *att)
 		k_sem_give(&att->tx_sem);
 	}
 
+	/* Notify outstanding request */
+	att_handle_rsp(att, NULL, 0, BT_ATT_ERR_UNLIKELY);
+
 	/* Notify pending requests */
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&att->reqs, req, tmp, node) {
 		if (req->func) {
@@ -2014,12 +2017,8 @@ static void att_reset(struct bt_att *att)
 	/* Reset list */
 	sys_slist_init(&att->reqs);
 
-	if (!att->req) {
-		return;
-	}
-
-	/* Notify outstanding request */
-	att_handle_rsp(att, NULL, 0, BT_ATT_ERR_UNLIKELY);
+	/* Remove active ATT req that has been freed */
+	att->req = NULL;
 }
 
 static void att_timeout(struct k_work *work)
