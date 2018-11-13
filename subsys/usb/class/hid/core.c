@@ -280,7 +280,7 @@ static u8_t interface_data[CONFIG_USB_HID_MAX_PAYLOAD_SIZE];
 
 int usb_hid_init(void)
 {
-	LOG_DBG("Iinitializing HID Device");
+	LOG_DBG("Initializing HID Device");
 
 	/*
 	 * Modify Report Descriptor Size
