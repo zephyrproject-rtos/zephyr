@@ -1,0 +1,31 @@
+# Kconfig - GPIO based WDT configuration
+#
+# Copyright (C) 2018 qianfan Zhao
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig WDT_GPIO
+	bool "GPIO based (WDT) Driver"
+	depends on GPIO
+	default n
+	help
+	  Enable WDT driver for GPIO based chip, eg: SP706
+
+config WDT_GPIO_MINIMUM_SUPPORT
+	bool "Minimum support"
+	depends on WDT_GPIO
+	default n
+	help
+	  Select the minimum support mode for gpio watchdog, doesn't support
+	  setup/disable/install_timeout.
+	  This mode doesn't need k_delay_work, and can save some resource.
+
+config WDT_GPIO_INIT_PRIORITY
+	int "Init priority"
+	depends on WDT_GPIO
+	default 60
+	help
+	  WDT_GPIO device driver initialization priority.
+	  This driver is based on GPIO, please make sure the priority is
+	  lower that GPIO driver.

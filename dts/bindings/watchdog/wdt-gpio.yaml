@@ -1,0 +1,36 @@
+#
+# Copyright (c) 2018 qianfan Zhao
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: GPIO based watchdog driver
+version: 0.1
+
+description: >
+    This is a representation of the gpio-wdt.
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "wdt-gpio"
+
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+
+    gpios:
+      type: compound
+      category: required
+      generation: define
+
+    hw-margin-ms:
+      type: int
+      category: required
+      description: Maximum time to reset watchdog circuit (milliseconds).
+      generation: define
+...
