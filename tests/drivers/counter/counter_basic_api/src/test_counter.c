@@ -15,7 +15,11 @@ static void top_handler(struct device *dev, void *user_data);
 
 void *exp_user_data = (void *)199;
 
+#ifdef CONFIG_COUNTER_MCUX_RTC
+#define COUNTER_PERIOD_US (2*USEC_PER_SEC)
+#else
 #define COUNTER_PERIOD_US 20000
+#endif
 
 struct counter_alarm_cfg alarm_cfg;
 struct counter_alarm_cfg alarm_cfg2;
@@ -51,6 +55,9 @@ const char *devices[] = {
 #endif
 #ifdef CONFIG_COUNTER_IMX_EPIT_2
 	EPIT_2_LABEL,
+#endif
+#ifdef DT_RTC_MCUX_0_NAME
+	DT_RTC_MCUX_0_NAME,
 #endif
 };
 typedef void (*counter_test_func_t)(const char *dev_name);
@@ -123,7 +130,11 @@ void test_set_top_value_with_alarm_instance(const char *dev_name)
 
 void test_set_top_value_with_alarm(void)
 {
+#ifdef CONFIG_COUNTER_MCUX_RTC
+	ztest_test_skip();
+#else
 	test_all_instances(test_set_top_value_with_alarm_instance);
+#endif
 }
 
 static void alarm_handler(struct device *dev, u8_t chan_id, u32_t counter,
@@ -133,7 +144,7 @@ static void alarm_handler(struct device *dev, u8_t chan_id, u32_t counter,
 	alarm_cnt++;
 }
 
-void test_single_shot_alarm_instance(const char *dev_name)
+void test_single_shot_alarm_instance(const char *dev_name, bool set_top)
 {
 	struct device *dev;
 	int err;
@@ -142,8 +153,8 @@ void test_single_shot_alarm_instance(const char *dev_name)
 	dev = device_get_binding(dev_name);
 	ticks = counter_us_to_ticks(dev, COUNTER_PERIOD_US);
 
-	alarm_cfg.absolute = true;
-	alarm_cfg.ticks = ticks + 1;
+	alarm_cfg.absolute = false;
+	alarm_cfg.ticks = ticks;
 	alarm_cfg.callback = alarm_handler;
 	alarm_cfg.user_data = &alarm_cfg;
 
@@ -157,22 +168,26 @@ void test_single_shot_alarm_instance(const char *dev_name)
 	err = counter_start(dev);
 	zassert_equal(0, err, "Counter failed to start\n");
 
-	err = counter_set_top_value(dev, ticks, top_handler, exp_user_data);
-	zassert_equal(0, err, "Counter failed to set top value\n");
+	if (set_top) {
+		err = counter_set_top_value(dev, ticks, top_handler,
+					    exp_user_data);
 
-	err = counter_set_channel_alarm(dev, 0, &alarm_cfg);
-	zassert_equal(-EINVAL, err, "Counter should return error because ticks"
-					" exceeded the limit set alarm\n");
-	alarm_cfg.ticks = ticks - 100;
+		zassert_equal(0, err, "Counter failed to set top value\n");
+
+		err = counter_set_channel_alarm(dev, 0, &alarm_cfg);
+		zassert_equal(-EINVAL, err,
+			      "Counter should return error because ticks"
+			      " exceeded the limit set alarm\n");
+		alarm_cfg.ticks = ticks - 100;
+	}
 
 	err = counter_set_channel_alarm(dev, 0, &alarm_cfg);
 	zassert_equal(0, err, "Counter set alarm failed\n");
 
-	k_busy_wait(1.2*counter_ticks_to_us(dev, ticks));
-
+	k_busy_wait(1.5*counter_ticks_to_us(dev, ticks));
 	zassert_equal(1, alarm_cnt, "Expecting alarm callback\n");
 
-	k_busy_wait(counter_ticks_to_us(dev, 2*ticks));
+	k_busy_wait(1.5*counter_ticks_to_us(dev, ticks));
 	zassert_equal(1, alarm_cnt, "Expecting alarm callback\n");
 
 	err = counter_disable_channel_alarm(dev, 0);
@@ -186,9 +201,28 @@ void test_single_shot_alarm_instance(const char *dev_name)
 	zassert_equal(0, err, "Counter failed to stop\n");
 }
 
-void test_single_shot_alarm(void)
+void test_single_shot_alarm_notop_instance(const char *dev_name)
 {
-	test_all_instances(test_single_shot_alarm_instance);
+	test_single_shot_alarm_instance(dev_name, false);
+}
+
+void test_single_shot_alarm_top_instance(const char *dev_name)
+{
+	test_single_shot_alarm_instance(dev_name, true);
+}
+
+void test_single_shot_alarm_notop(void)
+{
+	test_all_instances(test_single_shot_alarm_notop_instance);
+}
+
+void test_single_shot_alarm_top(void)
+{
+#ifdef CONFIG_COUNTER_MCUX_RTC
+	ztest_test_skip();
+#else
+	test_all_instances(test_single_shot_alarm_top_instance);
+#endif
 }
 
 static void *clbk_data[2];
@@ -281,7 +315,7 @@ void test_all_channels_instance(const char *str)
 
 	for (int i = 0; i < n; i++) {
 		alarm_cfgs[i].absolute = false;
-		alarm_cfgs[i].ticks = ticks-100;
+		alarm_cfgs[i].ticks = ticks;
 		alarm_cfgs[i].callback = alarm_handler2;
 	}
 
@@ -299,6 +333,9 @@ void test_all_channels_instance(const char *str)
 					"Unexpected error on setting alarm");
 		}
 	}
+
+	k_busy_wait(1.5*counter_ticks_to_us(dev, ticks));
+	zassert_equal(nchan, alarm_cnt, "Expecting alarm callback\n");
 
 	for (int i = 0; i < nchan; i++) {
 		err = counter_disable_channel_alarm(dev, i);
@@ -323,7 +360,10 @@ void test_main(void)
 		ztest_unit_test_setup_teardown(test_set_top_value_with_alarm,
 					unit_test_noop,
 					counter_tear_down),
-		ztest_unit_test_setup_teardown(test_single_shot_alarm,
+		ztest_unit_test_setup_teardown(test_single_shot_alarm_notop,
+					unit_test_noop,
+					counter_tear_down),
+		ztest_unit_test_setup_teardown(test_single_shot_alarm_top,
 					unit_test_noop,
 					counter_tear_down),
 		ztest_unit_test_setup_teardown(test_multiple_alarms,
