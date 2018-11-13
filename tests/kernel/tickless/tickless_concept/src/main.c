@@ -63,7 +63,7 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 	/*keep the current thread busy for more than one slice*/
 	while (k_uptime_get_32() - t32 < SLEEP_TICKLESS)
 #if defined(CONFIG_ARCH_POSIX)
-		posix_halt_cpu();
+		k_busy_wait(50);
 #else
 		;
 #endif
