@@ -692,6 +692,14 @@ function(zephyr_check_compiler_flag lang option check)
   endif()
 endfunction()
 
+# Helper function for CONFIG_CODE_DATA_RELOCATION
+# Call this function with 2 arguments file and then memory location
+function(zephyr_code_relocate file location)
+  set_property(TARGET code_data_relocation_target
+    APPEND PROPERTY COMPILE_DEFINITIONS
+    "${location}:${CMAKE_CURRENT_SOURCE_DIR}/${file}")
+endfunction()
+
 ########################################################
 # 2. Kconfig-aware extensions
 ########################################################

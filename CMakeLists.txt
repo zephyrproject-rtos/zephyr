@@ -776,7 +776,9 @@ if(CONFIG_APPLICATION_MEMORY)
 	)
 endif() # CONFIG_APPLICATION_MEMORY
 
-
+if (CONFIG_CODE_DATA_RELOCATION)
+  set(CODE_RELOCATION_DEP code_relocation_source_lib)
+endif() # CONFIG_CODE_DATA_RELOCATION
 
 construct_add_custom_command_for_linker_pass(linker custom_command)
 add_custom_command(
@@ -788,6 +790,7 @@ add_custom_target(
   DEPENDS
   ${ALIGN_SIZING_DEP} ${PRIV_STACK_DEP}
   ${APP_SMEM_DEP}
+  ${CODE_RELOCATION_DEP}
   linker.cmd
   offsets_h
   )
@@ -849,6 +852,28 @@ if(CONFIG_GEN_ISR_TABLES)
     DEPENDS zephyr_prebuilt
     )
   set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_SOURCE_FILES isr_tables.c)
+endif()
+
+if(CONFIG_CODE_DATA_RELOCATION)
+   set(MEM_RELOCATAION_LD "${PROJECT_BINARY_DIR}/include/generated/linker_relocate.ld")
+   set(MEM_RELOCATAION_CODE "${PROJECT_BINARY_DIR}/code_relocation.c")
+
+   add_custom_command(
+     OUTPUT ${MEM_RELOCATAION_CODE} ${MEM_RELOCATAION_LD}
+     COMMAND
+     ${PYTHON_EXECUTABLE}
+     ${ZEPHYR_BASE}/scripts/gen_relocate_app.py
+     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
+     -d ${APPLICATION_BINARY_DIR}
+     -i '$<TARGET_PROPERTY:code_data_relocation_target,COMPILE_DEFINITIONS>'
+     -o ${MEM_RELOCATAION_LD}
+     -c ${MEM_RELOCATAION_CODE}
+     DEPENDS app kernel ${ZEPHYR_LIBS_PROPERTY}
+     )
+
+   add_library(code_relocation_source_lib  STATIC ${MEM_RELOCATAION_CODE})
+   target_link_libraries(code_relocation_source_lib zephyr_interface)
+
 endif()
 
 if(CONFIG_ARM AND CONFIG_USERSPACE)
@@ -1138,6 +1163,7 @@ if(CONFIG_CPU_HAS_MPU AND CONFIG_USERSPACE)
       linker_app_sizing.cmd
       offsets_h
       ${APP_SMEM_DEP}
+      ${CODE_RELOCATION_DEP}
     )
 
     set_property(TARGET
@@ -1152,9 +1178,9 @@ if(CONFIG_CPU_HAS_MPU AND CONFIG_USERSPACE)
     # other ELF files are built
     set(GEN_APP_ALIGN $ENV{ZEPHYR_BASE}/scripts/gen_alignment_script.py)
     add_executable(       app_sizing_prebuilt misc/empty_file.c)
-    target_link_libraries(app_sizing_prebuilt ${TOPT} ${PROJECT_BINARY_DIR}/linker_app_sizing.cmd ${zephyr_lnk})
+    target_link_libraries(app_sizing_prebuilt ${TOPT} ${PROJECT_BINARY_DIR}/linker_app_sizing.cmd ${zephyr_lnk} ${CODE_RELOCATION_DEP})
     set_property(TARGET   app_sizing_prebuilt PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_app_sizing.cmd)
-    add_dependencies(     app_sizing_prebuilt linker_app_sizing_script offsets )
+    add_dependencies(     app_sizing_prebuilt linker_app_sizing_script offsets ${CODE_RELOCATION_DEP} )
 
     add_custom_command(
       TARGET app_sizing_prebuilt
@@ -1177,6 +1203,7 @@ if(CONFIG_ARM)
     linker_priv_stacks_script
     DEPENDS
     ${ALIGN_SIZING_DEP} ${APP_SMEM_DEP}
+    ${CODE_RELOCATION_DEP}
     linker_priv_stacks.cmd
     offsets_h
     )
@@ -1189,7 +1216,7 @@ if(CONFIG_ARM)
 
   set(PRIV_STACK_LIB priv_stacks_output_obj_renamed_lib)
   add_executable(       priv_stacks_prebuilt misc/empty_file.c)
-  target_link_libraries(priv_stacks_prebuilt ${TOPT} ${PROJECT_BINARY_DIR}/linker_priv_stacks.cmd ${zephyr_lnk})
+  target_link_libraries(priv_stacks_prebuilt ${TOPT} ${PROJECT_BINARY_DIR}/linker_priv_stacks.cmd ${zephyr_lnk} ${CODE_RELOCATION_DEP})
   set_property(TARGET   priv_stacks_prebuilt PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_priv_stacks.cmd)
   add_dependencies(     priv_stacks_prebuilt ${ALIGN_SIZING_DEP} linker_priv_stacks_script offsets)
 endif()
@@ -1198,7 +1225,7 @@ endif()
 
 # FIXME: Is there any way to get rid of empty_file.c?
 add_executable(       zephyr_prebuilt misc/empty_file.c)
-target_link_libraries(zephyr_prebuilt ${TOPT} ${PROJECT_BINARY_DIR}/linker.cmd ${PRIV_STACK_LIB} ${zephyr_lnk})
+target_link_libraries(zephyr_prebuilt ${TOPT} ${PROJECT_BINARY_DIR}/linker.cmd ${PRIV_STACK_LIB} ${zephyr_lnk} ${CODE_RELOCATION_DEP})
 set_property(TARGET   zephyr_prebuilt PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker.cmd)
 add_dependencies(     zephyr_prebuilt ${ALIGN_SIZING_DEP} ${PRIV_STACK_DEP} linker_script offsets)
 
@@ -1218,6 +1245,7 @@ if(GKOF OR GKSF)
     linker_pass_final_script
     DEPENDS
     ${ALIGN_SIZING_DEP} ${PRIV_STACK_DEP}
+    ${CODE_RELOCATION_DEP}
     zephyr_prebuilt
     linker_pass_final.cmd
     offsets_h
@@ -1229,7 +1257,7 @@ if(GKOF OR GKSF)
   )
 
   add_executable(       kernel_elf misc/empty_file.c ${GKSF})
-  target_link_libraries(kernel_elf ${GKOF} ${TOPT} ${PROJECT_BINARY_DIR}/linker_pass_final.cmd ${zephyr_lnk})
+  target_link_libraries(kernel_elf ${GKOF} ${TOPT} ${PROJECT_BINARY_DIR}/linker_pass_final.cmd ${zephyr_lnk} ${CODE_RELOCATION_DEP})
   set_property(TARGET   kernel_elf PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_pass_final.cmd)
   add_dependencies(     kernel_elf ${ALIGN_SIZING_DEP} ${PRIV_STACK_DEP} linker_pass_final_script)
 else()
