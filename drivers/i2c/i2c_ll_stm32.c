@@ -181,19 +181,19 @@ static int i2c_stm32_init(struct device *dev)
 
 	switch ((u32_t)cfg->i2c) {
 #ifdef CONFIG_I2C_1
-	case CONFIG_I2C_1_BASE_ADDRESS:
+	case DT_I2C_1_BASE_ADDRESS:
 		LL_RCC_SetI2CClockSource(LL_RCC_I2C1_CLKSOURCE_SYSCLK);
 		break;
 #endif /* CONFIG_I2C_1 */
 
 #if defined(CONFIG_SOC_SERIES_STM32F3X) && defined(CONFIG_I2C_2)
-	case CONFIG_I2C_2_BASE_ADDRESS:
+	case DT_I2C_2_BASE_ADDRESS:
 		LL_RCC_SetI2CClockSource(LL_RCC_I2C2_CLKSOURCE_SYSCLK);
 		break;
 #endif /* CONFIG_SOC_SERIES_STM32F3X && CONFIG_I2C_2 */
 
 #ifdef CONFIG_I2C_3
-	case CONFIG_I2C_3_BASE_ADDRESS:
+	case DT_I2C_3_BASE_ADDRESS:
 		LL_RCC_SetI2CClockSource(LL_RCC_I2C3_CLKSOURCE_SYSCLK);
 		break;
 #endif /* CONFIG_I2C_3 */
@@ -218,15 +218,15 @@ static void i2c_stm32_irq_config_func_1(struct device *port);
 #endif
 
 static const struct i2c_stm32_config i2c_stm32_cfg_1 = {
-	.i2c = (I2C_TypeDef *)CONFIG_I2C_1_BASE_ADDRESS,
+	.i2c = (I2C_TypeDef *)DT_I2C_1_BASE_ADDRESS,
 	.pclken = {
-		.enr = CONFIG_I2C_1_CLOCK_BITS,
-		.bus = CONFIG_I2C_1_CLOCK_BUS,
+		.enr = DT_I2C_1_CLOCK_BITS,
+		.bus = DT_I2C_1_CLOCK_BUS,
 	},
 #ifdef CONFIG_I2C_STM32_INTERRUPT
 	.irq_config_func = i2c_stm32_irq_config_func_1,
 #endif
-	.bitrate = CONFIG_I2C_1_BITRATE,
+	.bitrate = DT_I2C_1_BITRATE,
 };
 
 static struct i2c_stm32_data i2c_stm32_dev_data_1;
@@ -240,17 +240,17 @@ DEVICE_AND_API_INIT(i2c_stm32_1, CONFIG_I2C_1_NAME, &i2c_stm32_init,
 static void i2c_stm32_irq_config_func_1(struct device *dev)
 {
 #ifdef CONFIG_I2C_STM32_COMBINED_INTERRUPT
-	IRQ_CONNECT(CONFIG_I2C_1_COMBINED_IRQ, CONFIG_I2C_1_COMBINED_IRQ_PRI,
+	IRQ_CONNECT(DT_I2C_1_COMBINED_IRQ, DT_I2C_1_COMBINED_IRQ_PRI,
 		   stm32_i2c_combined_isr, DEVICE_GET(i2c_stm32_1), 0);
-	irq_enable(CONFIG_I2C_1_COMBINED_IRQ);
+	irq_enable(DT_I2C_1_COMBINED_IRQ);
 #else
-	IRQ_CONNECT(CONFIG_I2C_1_EVENT_IRQ, CONFIG_I2C_1_EVENT_IRQ_PRI,
+	IRQ_CONNECT(DT_I2C_1_EVENT_IRQ, DT_I2C_1_EVENT_IRQ_PRI,
 		   stm32_i2c_event_isr, DEVICE_GET(i2c_stm32_1), 0);
-	irq_enable(CONFIG_I2C_1_EVENT_IRQ);
+	irq_enable(DT_I2C_1_EVENT_IRQ);
 
-	IRQ_CONNECT(CONFIG_I2C_1_ERROR_IRQ, CONFIG_I2C_1_ERROR_IRQ_PRI,
+	IRQ_CONNECT(DT_I2C_1_ERROR_IRQ, DT_I2C_1_ERROR_IRQ_PRI,
 		   stm32_i2c_error_isr, DEVICE_GET(i2c_stm32_1), 0);
-	irq_enable(CONFIG_I2C_1_ERROR_IRQ);
+	irq_enable(DT_I2C_1_ERROR_IRQ);
 #endif
 }
 #endif
@@ -264,15 +264,15 @@ static void i2c_stm32_irq_config_func_2(struct device *port);
 #endif
 
 static const struct i2c_stm32_config i2c_stm32_cfg_2 = {
-	.i2c = (I2C_TypeDef *)CONFIG_I2C_2_BASE_ADDRESS,
+	.i2c = (I2C_TypeDef *)DT_I2C_2_BASE_ADDRESS,
 	.pclken = {
-		.enr = CONFIG_I2C_2_CLOCK_BITS,
-		.bus = CONFIG_I2C_2_CLOCK_BUS,
+		.enr = DT_I2C_2_CLOCK_BITS,
+		.bus = DT_I2C_2_CLOCK_BUS,
 	},
 #ifdef CONFIG_I2C_STM32_INTERRUPT
 	.irq_config_func = i2c_stm32_irq_config_func_2,
 #endif
-	.bitrate = CONFIG_I2C_2_BITRATE,
+	.bitrate = DT_I2C_2_BITRATE,
 };
 
 static struct i2c_stm32_data i2c_stm32_dev_data_2;
@@ -286,17 +286,17 @@ DEVICE_AND_API_INIT(i2c_stm32_2, CONFIG_I2C_2_NAME, &i2c_stm32_init,
 static void i2c_stm32_irq_config_func_2(struct device *dev)
 {
 #ifdef CONFIG_I2C_STM32_COMBINED_INTERRUPT
-	IRQ_CONNECT(CONFIG_I2C_2_COMBINED_IRQ, CONFIG_I2C_2_COMBINED_IRQ_PRI,
+	IRQ_CONNECT(DT_I2C_2_COMBINED_IRQ, DT_I2C_2_COMBINED_IRQ_PRI,
 		   stm32_i2c_combined_isr, DEVICE_GET(i2c_stm32_2), 0);
-	irq_enable(CONFIG_I2C_2_COMBINED_IRQ);
+	irq_enable(DT_I2C_2_COMBINED_IRQ);
 #else
-	IRQ_CONNECT(CONFIG_I2C_2_EVENT_IRQ, CONFIG_I2C_2_EVENT_IRQ_PRI,
+	IRQ_CONNECT(DT_I2C_2_EVENT_IRQ, DT_I2C_2_EVENT_IRQ_PRI,
 		   stm32_i2c_event_isr, DEVICE_GET(i2c_stm32_2), 0);
-	irq_enable(CONFIG_I2C_2_EVENT_IRQ);
+	irq_enable(DT_I2C_2_EVENT_IRQ);
 
-	IRQ_CONNECT(CONFIG_I2C_2_ERROR_IRQ, CONFIG_I2C_2_ERROR_IRQ_PRI,
+	IRQ_CONNECT(DT_I2C_2_ERROR_IRQ, DT_I2C_2_ERROR_IRQ_PRI,
 		   stm32_i2c_error_isr, DEVICE_GET(i2c_stm32_2), 0);
-	irq_enable(CONFIG_I2C_2_ERROR_IRQ);
+	irq_enable(DT_I2C_2_ERROR_IRQ);
 #endif
 }
 #endif
@@ -314,15 +314,15 @@ static void i2c_stm32_irq_config_func_3(struct device *port);
 #endif
 
 static const struct i2c_stm32_config i2c_stm32_cfg_3 = {
-	.i2c = (I2C_TypeDef *)CONFIG_I2C_3_BASE_ADDRESS,
+	.i2c = (I2C_TypeDef *)DT_I2C_3_BASE_ADDRESS,
 	.pclken = {
-		.enr = CONFIG_I2C_3_CLOCK_BITS,
-		.bus = CONFIG_I2C_3_CLOCK_BUS,
+		.enr = DT_I2C_3_CLOCK_BITS,
+		.bus = DT_I2C_3_CLOCK_BUS,
 	},
 #ifdef CONFIG_I2C_STM32_INTERRUPT
 	.irq_config_func = i2c_stm32_irq_config_func_3,
 #endif
-	.bitrate = CONFIG_I2C_3_BITRATE,
+	.bitrate = DT_I2C_3_BITRATE,
 };
 
 static struct i2c_stm32_data i2c_stm32_dev_data_3;
@@ -335,13 +335,13 @@ DEVICE_AND_API_INIT(i2c_stm32_3, CONFIG_I2C_3_NAME, &i2c_stm32_init,
 #ifdef CONFIG_I2C_STM32_INTERRUPT
 static void i2c_stm32_irq_config_func_3(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_I2C_3_EVENT_IRQ, CONFIG_I2C_3_EVENT_IRQ_PRI,
+	IRQ_CONNECT(DT_I2C_3_EVENT_IRQ, DT_I2C_3_EVENT_IRQ_PRI,
 		   stm32_i2c_event_isr, DEVICE_GET(i2c_stm32_3), 0);
-	irq_enable(CONFIG_I2C_3_EVENT_IRQ);
+	irq_enable(DT_I2C_3_EVENT_IRQ);
 
-	IRQ_CONNECT(CONFIG_I2C_3_ERROR_IRQ, CONFIG_I2C_3_ERROR_IRQ_PRI,
+	IRQ_CONNECT(DT_I2C_3_ERROR_IRQ, DT_I2C_3_ERROR_IRQ_PRI,
 		   stm32_i2c_error_isr, DEVICE_GET(i2c_stm32_3), 0);
-	irq_enable(CONFIG_I2C_3_ERROR_IRQ);
+	irq_enable(DT_I2C_3_ERROR_IRQ);
 }
 #endif
 
@@ -358,15 +358,15 @@ static void i2c_stm32_irq_config_func_4(struct device *port);
 #endif
 
 static const struct i2c_stm32_config i2c_stm32_cfg_4 = {
-	.i2c = (I2C_TypeDef *)CONFIG_I2C_4_BASE_ADDRESS,
+	.i2c = (I2C_TypeDef *)DT_I2C_4_BASE_ADDRESS,
 	.pclken = {
-		.enr = CONFIG_I2C_4_CLOCK_BITS,
-		.bus = CONFIG_I2C_4_CLOCK_BUS,
+		.enr = DT_I2C_4_CLOCK_BITS,
+		.bus = DT_I2C_4_CLOCK_BUS,
 	},
 #ifdef CONFIG_I2C_STM32_INTERRUPT
 	.irq_config_func = i2c_stm32_irq_config_func_4,
 #endif
-	.bitrate = CONFIG_I2C_4_BITRATE,
+	.bitrate = DT_I2C_4_BITRATE,
 };
 
 static struct i2c_stm32_data i2c_stm32_dev_data_4;
@@ -379,13 +379,13 @@ DEVICE_AND_API_INIT(i2c_stm32_4, CONFIG_I2C_4_NAME, &i2c_stm32_init,
 #ifdef CONFIG_I2C_STM32_INTERRUPT
 static void i2c_stm32_irq_config_func_4(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_I2C_4_EVENT_IRQ, CONFIG_I2C_4_EVENT_IRQ_PRI,
+	IRQ_CONNECT(DT_I2C_4_EVENT_IRQ, DT_I2C_4_EVENT_IRQ_PRI,
 		   stm32_i2c_event_isr, DEVICE_GET(i2c_stm32_4), 0);
-	irq_enable(CONFIG_I2C_4_EVENT_IRQ);
+	irq_enable(DT_I2C_4_EVENT_IRQ);
 
-	IRQ_CONNECT(CONFIG_I2C_4_ERROR_IRQ, CONFIG_I2C_4_ERROR_IRQ_PRI,
+	IRQ_CONNECT(DT_I2C_4_ERROR_IRQ, DT_I2C_4_ERROR_IRQ_PRI,
 		   stm32_i2c_error_isr, DEVICE_GET(i2c_stm32_4), 0);
-	irq_enable(CONFIG_I2C_4_ERROR_IRQ);
+	irq_enable(DT_I2C_4_ERROR_IRQ);
 }
 #endif
 

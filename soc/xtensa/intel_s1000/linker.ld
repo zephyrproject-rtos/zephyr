@@ -419,7 +419,7 @@ SECTIONS
   /* stack */
   _end = ALIGN(8);
   PROVIDE(end = ALIGN(8));
-  __stack = L2_SRAM_BASE + L2_SRAM_SIZE;
+  __stack = DT_L2_SRAM_BASE + DT_L2_SRAM_SIZE;
   .comment  0 :  { *(.comment) }
   .debug 0 : { *(.debug) }
   .line 0 : { *(.line) }

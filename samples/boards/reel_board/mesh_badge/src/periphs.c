@@ -29,10 +29,10 @@ static struct led_device_info led_dev_info[] = {
 
 static struct device_info dev_info[] = {
 	{NULL, SW0_GPIO_CONTROLLER},
-	{NULL, CONFIG_HDC1008_NAME},
-	{NULL, CONFIG_FXOS8700_NAME},
-	{NULL, CONFIG_APDS9960_DRV_NAME},
-	{NULL, CONFIG_SSD1673_DEV_NAME},
+	{NULL, DT_HDC1008_NAME},
+	{NULL, DT_FXOS8700_NAME},
+	{NULL, DT_APDS9960_DRV_NAME},
+	{NULL, DT_SSD1673_DEV_NAME},
 };
 
 static void configure_gpios(void)

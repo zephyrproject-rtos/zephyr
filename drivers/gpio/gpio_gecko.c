@@ -285,7 +285,7 @@ static const struct gpio_gecko_common_config gpio_gecko_common_config = {
 
 static struct gpio_gecko_common_data gpio_gecko_common_data;
 
-DEVICE_AND_API_INIT(gpio_gecko_common, CONFIG_GPIO_GECKO_COMMON_NAME,
+DEVICE_AND_API_INIT(gpio_gecko_common, DT_GPIO_GECKO_COMMON_NAME,
 		    gpio_gecko_common_init,
 		    &gpio_gecko_common_data, &gpio_gecko_common_config,
 		    POST_KERNEL, CONFIG_GPIO_GECKO_COMMON_INIT_PRIORITY,
@@ -294,10 +294,10 @@ DEVICE_AND_API_INIT(gpio_gecko_common, CONFIG_GPIO_GECKO_COMMON_NAME,
 static int gpio_gecko_common_init(struct device *dev)
 {
 	gpio_gecko_common_data.count = 0;
-	IRQ_CONNECT(GPIO_EVEN_IRQn, CONFIG_GPIO_GECKO_COMMON_EVEN_PRI,
+	IRQ_CONNECT(GPIO_EVEN_IRQn, DT_GPIO_GECKO_COMMON_EVEN_PRI,
 		    gpio_gecko_common_isr, DEVICE_GET(gpio_gecko_common), 0);
 
-	IRQ_CONNECT(GPIO_ODD_IRQn, CONFIG_GPIO_GECKO_COMMON_ODD_PRI,
+	IRQ_CONNECT(GPIO_ODD_IRQn, DT_GPIO_GECKO_COMMON_ODD_PRI,
 		    gpio_gecko_common_isr, DEVICE_GET(gpio_gecko_common), 0);
 
 	irq_enable(GPIO_EVEN_IRQn);
@@ -318,7 +318,7 @@ static const struct gpio_gecko_config gpio_gecko_porta_config = {
 
 static struct gpio_gecko_data gpio_gecko_porta_data;
 
-DEVICE_AND_API_INIT(gpio_gecko_porta, CONFIG_GPIO_GECKO_PORTA_NAME,
+DEVICE_AND_API_INIT(gpio_gecko_porta, DT_GPIO_GECKO_PORTA_NAME,
 		    gpio_gecko_porta_init,
 		    &gpio_gecko_porta_data, &gpio_gecko_porta_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -341,7 +341,7 @@ static const struct gpio_gecko_config gpio_gecko_portb_config = {
 
 static struct gpio_gecko_data gpio_gecko_portb_data;
 
-DEVICE_AND_API_INIT(gpio_gecko_portb, CONFIG_GPIO_GECKO_PORTB_NAME,
+DEVICE_AND_API_INIT(gpio_gecko_portb, DT_GPIO_GECKO_PORTB_NAME,
 		    gpio_gecko_portb_init,
 		    &gpio_gecko_portb_data, &gpio_gecko_portb_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -364,7 +364,7 @@ static const struct gpio_gecko_config gpio_gecko_portc_config = {
 
 static struct gpio_gecko_data gpio_gecko_portc_data;
 
-DEVICE_AND_API_INIT(gpio_gecko_portc, CONFIG_GPIO_GECKO_PORTC_NAME,
+DEVICE_AND_API_INIT(gpio_gecko_portc, DT_GPIO_GECKO_PORTC_NAME,
 		    gpio_gecko_portc_init,
 		    &gpio_gecko_portc_data, &gpio_gecko_portc_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -387,7 +387,7 @@ static const struct gpio_gecko_config gpio_gecko_portd_config = {
 
 static struct gpio_gecko_data gpio_gecko_portd_data;
 
-DEVICE_AND_API_INIT(gpio_gecko_portd, CONFIG_GPIO_GECKO_PORTD_NAME,
+DEVICE_AND_API_INIT(gpio_gecko_portd, DT_GPIO_GECKO_PORTD_NAME,
 		    gpio_gecko_portd_init,
 		    &gpio_gecko_portd_data, &gpio_gecko_portd_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -410,7 +410,7 @@ static const struct gpio_gecko_config gpio_gecko_porte_config = {
 
 static struct gpio_gecko_data gpio_gecko_porte_data;
 
-DEVICE_AND_API_INIT(gpio_gecko_porte, CONFIG_GPIO_GECKO_PORTE_NAME,
+DEVICE_AND_API_INIT(gpio_gecko_porte, DT_GPIO_GECKO_PORTE_NAME,
 		    gpio_gecko_porte_init,
 		    &gpio_gecko_porte_data, &gpio_gecko_porte_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -433,7 +433,7 @@ static const struct gpio_gecko_config gpio_gecko_portf_config = {
 
 static struct gpio_gecko_data gpio_gecko_portf_data;
 
-DEVICE_AND_API_INIT(gpio_gecko_portf, CONFIG_GPIO_GECKO_PORTF_NAME,
+DEVICE_AND_API_INIT(gpio_gecko_portf, DT_GPIO_GECKO_PORTF_NAME,
 		    gpio_gecko_portf_init,
 		    &gpio_gecko_portf_data, &gpio_gecko_portf_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,

@@ -275,126 +275,126 @@ int gpio_sam_init(struct device *dev)
 }
 
 /* PORT A */
-#ifdef CONFIG_GPIO_SAM_PORTA_BASE_ADDRESS
+#ifdef DT_GPIO_SAM_PORTA_BASE_ADDRESS
 static void port_a_sam_config_func(struct device *dev);
 
 static const struct gpio_sam_config port_a_sam_config = {
-	.regs = (Pio *)CONFIG_GPIO_SAM_PORTA_BASE_ADDRESS,
-	.periph_id = CONFIG_GPIO_SAM_PORTA_PERIPHERAL_ID,
+	.regs = (Pio *)DT_GPIO_SAM_PORTA_BASE_ADDRESS,
+	.periph_id = DT_GPIO_SAM_PORTA_PERIPHERAL_ID,
 	.config_func = port_a_sam_config_func,
 };
 
 static struct gpio_sam_runtime port_a_sam_runtime;
 
-DEVICE_AND_API_INIT(port_a_sam, CONFIG_GPIO_SAM_PORTA_LABEL, gpio_sam_init,
+DEVICE_AND_API_INIT(port_a_sam, DT_GPIO_SAM_PORTA_LABEL, gpio_sam_init,
 		    &port_a_sam_runtime, &port_a_sam_config, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &gpio_sam_api);
 
 static void port_a_sam_config_func(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_GPIO_SAM_PORTA_IRQ, CONFIG_GPIO_SAM_PORTA_IRQ_PRIO,
+	IRQ_CONNECT(DT_GPIO_SAM_PORTA_IRQ, DT_GPIO_SAM_PORTA_IRQ_PRIO,
 		    gpio_sam_isr, DEVICE_GET(port_a_sam), 0);
-	irq_enable(CONFIG_GPIO_SAM_PORTA_IRQ);
+	irq_enable(DT_GPIO_SAM_PORTA_IRQ);
 }
 
-#endif /* CONFIG_GPIO_SAM_PORTA_BASE_ADDRESS */
+#endif /* DT_GPIO_SAM_PORTA_BASE_ADDRESS */
 
 /* PORT B */
-#ifdef CONFIG_GPIO_SAM_PORTB_BASE_ADDRESS
+#ifdef DT_GPIO_SAM_PORTB_BASE_ADDRESS
 static void port_b_sam_config_func(struct device *dev);
 
 static const struct gpio_sam_config port_b_sam_config = {
-	.regs = (Pio *)CONFIG_GPIO_SAM_PORTB_BASE_ADDRESS,
-	.periph_id = CONFIG_GPIO_SAM_PORTB_PERIPHERAL_ID,
+	.regs = (Pio *)DT_GPIO_SAM_PORTB_BASE_ADDRESS,
+	.periph_id = DT_GPIO_SAM_PORTB_PERIPHERAL_ID,
 	.config_func = port_b_sam_config_func,
 };
 
 static struct gpio_sam_runtime port_b_sam_runtime;
 
-DEVICE_AND_API_INIT(port_b_sam, CONFIG_GPIO_SAM_PORTB_LABEL, gpio_sam_init,
+DEVICE_AND_API_INIT(port_b_sam, DT_GPIO_SAM_PORTB_LABEL, gpio_sam_init,
 		    &port_b_sam_runtime, &port_b_sam_config, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &gpio_sam_api);
 
 static void port_b_sam_config_func(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_GPIO_SAM_PORTB_IRQ, CONFIG_GPIO_SAM_PORTB_IRQ_PRIO,
+	IRQ_CONNECT(DT_GPIO_SAM_PORTB_IRQ, DT_GPIO_SAM_PORTB_IRQ_PRIO,
 		    gpio_sam_isr, DEVICE_GET(port_b_sam), 0);
-	irq_enable(CONFIG_GPIO_SAM_PORTB_IRQ);
+	irq_enable(DT_GPIO_SAM_PORTB_IRQ);
 }
 
-#endif /* CONFIG_GPIO_SAM_PORTB_BASE_ADDRESS */
+#endif /* DT_GPIO_SAM_PORTB_BASE_ADDRESS */
 
 /* PORT C */
-#ifdef CONFIG_GPIO_SAM_PORTC_BASE_ADDRESS
+#ifdef DT_GPIO_SAM_PORTC_BASE_ADDRESS
 static void port_c_sam_config_func(struct device *dev);
 
 static const struct gpio_sam_config port_c_sam_config = {
-	.regs = (Pio *)CONFIG_GPIO_SAM_PORTC_BASE_ADDRESS,
-	.periph_id = CONFIG_GPIO_SAM_PORTC_PERIPHERAL_ID,
+	.regs = (Pio *)DT_GPIO_SAM_PORTC_BASE_ADDRESS,
+	.periph_id = DT_GPIO_SAM_PORTC_PERIPHERAL_ID,
 	.config_func = port_c_sam_config_func,
 };
 
 static struct gpio_sam_runtime port_c_sam_runtime;
 
-DEVICE_AND_API_INIT(port_c_sam, CONFIG_GPIO_SAM_PORTC_LABEL, gpio_sam_init,
+DEVICE_AND_API_INIT(port_c_sam, DT_GPIO_SAM_PORTC_LABEL, gpio_sam_init,
 		    &port_c_sam_runtime, &port_c_sam_config, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &gpio_sam_api);
 
 static void port_c_sam_config_func(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_GPIO_SAM_PORTC_IRQ, CONFIG_GPIO_SAM_PORTC_IRQ_PRIO,
+	IRQ_CONNECT(DT_GPIO_SAM_PORTC_IRQ, DT_GPIO_SAM_PORTC_IRQ_PRIO,
 		    gpio_sam_isr, DEVICE_GET(port_c_sam), 0);
-	irq_enable(CONFIG_GPIO_SAM_PORTC_IRQ);
+	irq_enable(DT_GPIO_SAM_PORTC_IRQ);
 }
 
-#endif /* CONFIG_GPIO_SAM_PORTC_BASE_ADDRESS */
+#endif /* DT_GPIO_SAM_PORTC_BASE_ADDRESS */
 
 /* PORT D */
-#ifdef CONFIG_GPIO_SAM_PORTD_BASE_ADDRESS
+#ifdef DT_GPIO_SAM_PORTD_BASE_ADDRESS
 static void port_d_sam_config_func(struct device *dev);
 
 static const struct gpio_sam_config port_d_sam_config = {
-	.regs = (Pio *)CONFIG_GPIO_SAM_PORTD_BASE_ADDRESS,
-	.periph_id = CONFIG_GPIO_SAM_PORTD_PERIPHERAL_ID,
+	.regs = (Pio *)DT_GPIO_SAM_PORTD_BASE_ADDRESS,
+	.periph_id = DT_GPIO_SAM_PORTD_PERIPHERAL_ID,
 	.config_func = port_d_sam_config_func,
 };
 
 static struct gpio_sam_runtime port_d_sam_runtime;
 
-DEVICE_AND_API_INIT(port_d_sam, CONFIG_GPIO_SAM_PORTD_LABEL, gpio_sam_init,
+DEVICE_AND_API_INIT(port_d_sam, DT_GPIO_SAM_PORTD_LABEL, gpio_sam_init,
 		    &port_d_sam_runtime, &port_d_sam_config, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &gpio_sam_api);
 
 static void port_d_sam_config_func(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_GPIO_SAM_PORTD_IRQ, CONFIG_GPIO_SAM_PORTD_IRQ_PRIO,
+	IRQ_CONNECT(DT_GPIO_SAM_PORTD_IRQ, DT_GPIO_SAM_PORTD_IRQ_PRIO,
 		    gpio_sam_isr, DEVICE_GET(port_d_sam), 0);
-	irq_enable(CONFIG_GPIO_SAM_PORTD_IRQ);
+	irq_enable(DT_GPIO_SAM_PORTD_IRQ);
 }
 
-#endif /* CONFIG_GPIO_SAM_PORTD_BASE_ADDRESS */
+#endif /* DT_GPIO_SAM_PORTD_BASE_ADDRESS */
 
 /* PORT E */
-#ifdef CONFIG_GPIO_SAM_PORTE_BASE_ADDRESS
+#ifdef DT_GPIO_SAM_PORTE_BASE_ADDRESS
 static void port_e_sam_config_func(struct device *dev);
 
 static const struct gpio_sam_config port_e_sam_config = {
-	.regs = (Pio *)CONFIG_GPIO_SAM_PORTE_BASE_ADDRESS,
-	.periph_id = CONFIG_GPIO_SAM_PORTE_PERIPHERAL_ID,
+	.regs = (Pio *)DT_GPIO_SAM_PORTE_BASE_ADDRESS,
+	.periph_id = DT_GPIO_SAM_PORTE_PERIPHERAL_ID,
 	.config_func = port_e_sam_config_func,
 };
 
 static struct gpio_sam_runtime port_e_sam_runtime;
 
-DEVICE_AND_API_INIT(port_e_sam, CONFIG_GPIO_SAM_PORTE_LABEL, gpio_sam_init,
+DEVICE_AND_API_INIT(port_e_sam, DT_GPIO_SAM_PORTE_LABEL, gpio_sam_init,
 		    &port_e_sam_runtime, &port_e_sam_config, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &gpio_sam_api);
 
 static void port_e_sam_config_func(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_GPIO_SAM_PORTE_IRQ, CONFIG_GPIO_SAM_PORTE_IRQ_PRIO,
+	IRQ_CONNECT(DT_GPIO_SAM_PORTE_IRQ, DT_GPIO_SAM_PORTE_IRQ_PRIO,
 		    gpio_sam_isr, DEVICE_GET(port_e_sam), 0);
-	irq_enable(CONFIG_GPIO_SAM_PORTE_IRQ);
+	irq_enable(DT_GPIO_SAM_PORTE_IRQ);
 }
 
-#endif /* CONFIG_GPIO_SAM_PORTE_BASE_ADDRESS */
+#endif /* DT_GPIO_SAM_PORTE_BASE_ADDRESS */

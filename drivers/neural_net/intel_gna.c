@@ -141,8 +141,8 @@ static int intel_gna_setup_page_table(void *physical, size_t size,
 
 	LOG_DBG("physical %p size %u virtual %p", physical, size, virtual);
 
-	if (((phys_addr + size - L2_SRAM_BASE) > L2_SRAM_SIZE) ||
-			(phys_addr < L2_SRAM_BASE)) {
+	if (((phys_addr + size - DT_L2_SRAM_BASE) > DT_L2_SRAM_SIZE) ||
+			(phys_addr < DT_L2_SRAM_BASE)) {
 		LOG_ERR("model at %p of size %u exceeds L2 SRAM space",
 				physical, size);
 		return -EINVAL;

@@ -12,7 +12,7 @@
 
 void main(void)
 {
-	struct device *dev = device_get_binding(CONFIG_VL53L0X_NAME);
+	struct device *dev = device_get_binding(DT_VL53L0X_NAME);
 	struct sensor_value value;
 	int ret;
 

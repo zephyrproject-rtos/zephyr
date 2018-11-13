@@ -15,7 +15,7 @@ void test_collecting(void)
 	u32_t i, j;
 	u8_t data[5], temp, k;
 
-	flash_dev = device_get_binding(FLASH_DEV_NAME);
+	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
 
 	flash_write_protection_set(flash_dev, false);
 	flash_erase(flash_dev, FLASH_AREA_IMAGE_1_OFFSET,

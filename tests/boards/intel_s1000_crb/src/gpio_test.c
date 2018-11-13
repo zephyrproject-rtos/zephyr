@@ -89,7 +89,7 @@ void setup_gpio(struct device *gpio_dev)
 	}
 
 	/* Disable the GPIO interrupt. It is enabled by default */
-	/* irq_disable(GPIO_DW_0_IRQ); */
+	/* irq_disable(DT_GPIO_DW_0_IRQ); */
 }
 
 /* gpio_thread is a static thread that is spawned automatically */

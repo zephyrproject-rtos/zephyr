@@ -38,19 +38,19 @@ end:
 void main(void)
 {
 	struct device *accelerometer = device_get_binding(
-						CONFIG_LSM303DLHC_ACCEL_NAME);
+						DT_LSM303DLHC_ACCEL_NAME);
 	struct device *magnetometer = device_get_binding(
-						CONFIG_LSM303DLHC_MAGN_NAME);
+						DT_LSM303DLHC_MAGN_NAME);
 
 	if (accelerometer == NULL) {
 		printf("Could not get %s device\n",
-				CONFIG_LSM303DLHC_ACCEL_NAME);
+				DT_LSM303DLHC_ACCEL_NAME);
 		return;
 	}
 
 	if (magnetometer == NULL) {
 		printf("Could not get %s device\n",
-				CONFIG_LSM303DLHC_MAGN_NAME);
+				DT_LSM303DLHC_MAGN_NAME);
 		return;
 	}
 

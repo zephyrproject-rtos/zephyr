@@ -75,7 +75,7 @@ void main(void)
 	u8_t key[8], longarray[128];
 	u32_t reboot_counter = 0, reboot_counter_his;
 
-	rc = nvs_init(&fs, FLASH_DEV_NAME);
+	rc = nvs_init(&fs, DT_FLASH_DEV_NAME);
 	if (rc) {
 		printk("Flash Init failed\n");
 	}

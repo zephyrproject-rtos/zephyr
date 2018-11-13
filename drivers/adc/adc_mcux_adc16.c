@@ -223,7 +223,7 @@ static const struct adc_driver_api mcux_adc16_driver_api = {
 static void mcux_adc16_config_func_0(struct device *dev);
 
 static const struct mcux_adc16_config mcux_adc16_config_0 = {
-	.base = (ADC_Type *)CONFIG_ADC_0_BASE_ADDRESS,
+	.base = (ADC_Type *)DT_ADC_0_BASE_ADDRESS,
 	.irq_config_func = mcux_adc16_config_func_0,
 };
 
@@ -240,10 +240,10 @@ DEVICE_AND_API_INIT(mcux_adc16_0, CONFIG_ADC_0_NAME, &mcux_adc16_init,
 
 static void mcux_adc16_config_func_0(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_ADC_0_IRQ, CONFIG_ADC_0_IRQ_PRI,
+	IRQ_CONNECT(DT_ADC_0_IRQ, CONFIG_ADC_0_IRQ_PRI,
 		    mcux_adc16_isr, DEVICE_GET(mcux_adc16_0), 0);
 
-	irq_enable(CONFIG_ADC_0_IRQ);
+	irq_enable(DT_ADC_0_IRQ);
 }
 #endif /* CONFIG_ADC_0 */
 
@@ -251,7 +251,7 @@ static void mcux_adc16_config_func_0(struct device *dev)
 static void mcux_adc16_config_func_1(struct device *dev);
 
 static const struct mcux_adc16_config mcux_adc16_config_1 = {
-	.base = (ADC_Type *)CONFIG_ADC_1_BASE_ADDRESS,
+	.base = (ADC_Type *)DT_ADC_1_BASE_ADDRESS,
 	.irq_config_func = mcux_adc16_config_func_1,
 };
 
@@ -268,9 +268,9 @@ DEVICE_AND_API_INIT(mcux_adc16_1, CONFIG_ADC_1_NAME, &mcux_adc16_init,
 
 static void mcux_adc16_config_func_1(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_ADC_1_IRQ, CONFIG_ADC_1_IRQ_PRI,
+	IRQ_CONNECT(DT_ADC_1_IRQ, CONFIG_ADC_1_IRQ_PRI,
 		    mcux_adc16_isr, DEVICE_GET(mcux_adc16_1), 0);
 
-	irq_enable(CONFIG_ADC_1_IRQ);
+	irq_enable(DT_ADC_1_IRQ);
 }
 #endif /* CONFIG_ADC_1 */

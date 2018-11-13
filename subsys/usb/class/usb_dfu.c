@@ -683,7 +683,7 @@ static int usb_dfu_init(struct device *dev)
 
 	ARG_UNUSED(dev);
 
-	dfu_data.flash_dev = device_get_binding(FLASH_DEV_NAME);
+	dfu_data.flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
 	if (!dfu_data.flash_dev) {
 		LOG_ERR("Flash device not found\n");
 		return -ENODEV;

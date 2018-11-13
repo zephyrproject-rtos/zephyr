@@ -27,18 +27,18 @@ static struct arc_mpu_region mpu_regions[] = {
 			 AUX_MPU_RDP_KW | AUX_MPU_RDP_KR),
 
 #else
-#if CONFIG_ICCM_SIZE > 0
+#if DT_ICCM_SIZE > 0
 	/* Region ICCM */
 	MPU_REGION_ENTRY("ICCM",
-			 CONFIG_ICCM_BASE_ADDRESS,
-			 CONFIG_ICCM_SIZE * 1024,
+			 DT_ICCM_BASE_ADDRESS,
+			 DT_ICCM_SIZE * 1024,
 			 REGION_FLASH_ATTR),
 #endif
-#if CONFIG_DCCM_SIZE > 0
+#if DT_DCCM_SIZE > 0
 	/* Region DCCM */
 	MPU_REGION_ENTRY("DCCM",
-			 CONFIG_DCCM_BASE_ADDRESS,
-			 CONFIG_DCCM_SIZE * 1024,
+			 DT_DCCM_BASE_ADDRESS,
+			 DT_DCCM_SIZE * 1024,
 			 AUX_MPU_RDP_KW | AUX_MPU_RDP_KR),
 #endif
 #if CONFIG_SRAM_SIZE > 0
@@ -58,18 +58,18 @@ static struct arc_mpu_region mpu_regions[] = {
 };
 #else /* CONFIG_USERSPACE */
 static struct arc_mpu_region mpu_regions[] = {
-#if CONFIG_ICCM_SIZE > 0
+#if DT_ICCM_SIZE > 0
 	/* Region ICCM */
 	MPU_REGION_ENTRY("ICCM",
-			 CONFIG_ICCM_BASE_ADDRESS,
-			 CONFIG_ICCM_SIZE * 1024,
+			 DT_ICCM_BASE_ADDRESS,
+			 DT_ICCM_SIZE * 1024,
 			 REGION_FLASH_ATTR),
 #endif
-#if CONFIG_DCCM_SIZE > 0
+#if DT_DCCM_SIZE > 0
 	/* Region DCCM */
 	MPU_REGION_ENTRY("DCCM",
-			 CONFIG_DCCM_BASE_ADDRESS,
-			 CONFIG_DCCM_SIZE * 1024,
+			 DT_DCCM_BASE_ADDRESS,
+			 DT_DCCM_SIZE * 1024,
 			 REGION_RAM_ATTR),
 #endif
 #if CONFIG_SRAM_SIZE > 0

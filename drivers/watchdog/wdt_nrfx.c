@@ -197,9 +197,9 @@ static int init_wdt(struct device *dev)
 		return -EBUSY;
 	}
 
-	IRQ_CONNECT(CONFIG_WDT_NRF_IRQ, CONFIG_WDT_NRF_IRQ_PRI,
+	IRQ_CONNECT(DT_WDT_NRF_IRQ, DT_WDT_NRF_IRQ_PRI,
 		    nrfx_isr, nrfx_wdt_irq_handler, 0);
-	irq_enable(CONFIG_WDT_NRF_IRQ);
+	irq_enable(DT_WDT_NRF_IRQ);
 
 	return 0;
 }

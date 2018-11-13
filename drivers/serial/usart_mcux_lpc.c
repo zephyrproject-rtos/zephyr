@@ -111,14 +111,14 @@ static const struct uart_driver_api usart_mcux_lpc_driver_api = {
 
 #ifdef CONFIG_USART_MCUX_LPC_0
 static const struct usart_mcux_lpc_config usart_mcux_lpc_0_config = {
-	.base = (USART_Type *)CONFIG_USART_MCUX_LPC_0_BASE_ADDRESS,
+	.base = (USART_Type *)DT_USART_MCUX_LPC_0_BASE_ADDRESS,
 	.clock_source = kCLOCK_Flexcomm0,
-	.baud_rate = CONFIG_USART_MCUX_LPC_0_BAUD_RATE,
+	.baud_rate = DT_USART_MCUX_LPC_0_BAUD_RATE,
 };
 
 static struct usart_mcux_lpc_data usart_mcux_lpc_0_data;
 
-DEVICE_AND_API_INIT(usart_0, CONFIG_USART_MCUX_LPC_0_NAME,
+DEVICE_AND_API_INIT(usart_0, DT_USART_MCUX_LPC_0_NAME,
 		    &usart_mcux_lpc_init,
 		    &usart_mcux_lpc_0_data, &usart_mcux_lpc_0_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,

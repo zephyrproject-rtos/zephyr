@@ -372,11 +372,11 @@ static int uart_stm32_init(struct device *dev)
 #define STM32_UART_IRQ_HANDLER(name)					\
 static void uart_stm32_irq_config_func_##name(struct device *dev)	\
 {									\
-	IRQ_CONNECT(name##_IRQ,					\
-		CONFIG_UART_STM32_##name##_IRQ_PRI,			\
+	IRQ_CONNECT(DT_##name##_IRQ,					\
+		DT_UART_STM32_##name##_IRQ_PRI,			\
 		uart_stm32_isr, DEVICE_GET(uart_stm32_##name),	\
 		0);							\
-	irq_enable(name##_IRQ);					\
+	irq_enable(DT_##name##_IRQ);					\
 }
 #else
 #define STM32_UART_IRQ_HANDLER_DECL(name)
@@ -389,19 +389,19 @@ STM32_UART_IRQ_HANDLER_DECL(name);					\
 									\
 static const struct uart_stm32_config uart_stm32_cfg_##name = {		\
 	.uconf = {							\
-		.base = (u8_t *)CONFIG_UART_STM32_##name##_BASE_ADDRESS,\
+		.base = (u8_t *)DT_UART_STM32_##name##_BASE_ADDRESS,\
 		STM32_UART_IRQ_HANDLER_FUNC(name)			\
 	},								\
-	.pclken = { .bus = CONFIG_UART_STM32_##name##_CLOCK_BUS,	\
-		    .enr = CONFIG_UART_STM32_##name##_CLOCK_BITS	\
+	.pclken = { .bus = DT_UART_STM32_##name##_CLOCK_BUS,	\
+		    .enr = DT_UART_STM32_##name##_CLOCK_BITS	\
 	},								\
-	.baud_rate = CONFIG_UART_STM32_##name##_BAUD_RATE		\
+	.baud_rate = DT_UART_STM32_##name##_BAUD_RATE		\
 };									\
 									\
 static struct uart_stm32_data uart_stm32_data_##name = {		\
 };									\
 									\
-DEVICE_AND_API_INIT(uart_stm32_##name, CONFIG_UART_STM32_##name##_NAME,	\
+DEVICE_AND_API_INIT(uart_stm32_##name, DT_UART_STM32_##name##_NAME,	\
 		    &uart_stm32_init,					\
 		    &uart_stm32_data_##name, &uart_stm32_cfg_##name,	\
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\

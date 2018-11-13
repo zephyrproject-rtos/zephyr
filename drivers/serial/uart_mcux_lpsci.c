@@ -292,9 +292,9 @@ static void mcux_lpsci_config_func_0(struct device *dev);
 
 static const struct mcux_lpsci_config mcux_lpsci_0_config = {
 	.base = UART0,
-	.clock_name = CONFIG_UART_MCUX_LPSCI_0_CLOCK_NAME,
+	.clock_name = DT_UART_MCUX_LPSCI_0_CLOCK_NAME,
 	.clock_subsys =
-		(clock_control_subsys_t)CONFIG_UART_MCUX_LPSCI_0_CLOCK_SUBSYS,
+		(clock_control_subsys_t)DT_UART_MCUX_LPSCI_0_CLOCK_SUBSYS,
 	.baud_rate = DT_NXP_KINETIS_LPSCI_4006A000_CURRENT_SPEED,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = mcux_lpsci_config_func_0,
@@ -303,7 +303,7 @@ static const struct mcux_lpsci_config mcux_lpsci_0_config = {
 
 static struct mcux_lpsci_data mcux_lpsci_0_data;
 
-DEVICE_AND_API_INIT(uart_0, CONFIG_UART_MCUX_LPSCI_0_NAME,
+DEVICE_AND_API_INIT(uart_0, DT_UART_MCUX_LPSCI_0_NAME,
 		    &mcux_lpsci_init,
 		    &mcux_lpsci_0_data, &mcux_lpsci_0_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,

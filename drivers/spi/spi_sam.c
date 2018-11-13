@@ -452,8 +452,8 @@ static const struct spi_driver_api spi_sam_driver_api = {
 
 #define SPI_SAM_DEFINE_CONFIG(n)					\
 	static const struct spi_sam_config spi_sam_config_##n = {	\
-		.regs = (Spi *)CONFIG_SPI_##n##_BASE_ADDRESS,		\
-		.periph_id = CONFIG_SPI_##n##_PERIPHERAL_ID,		\
+		.regs = (Spi *)DT_SPI_##n##_BASE_ADDRESS,		\
+		.periph_id = DT_SPI_##n##_PERIPHERAL_ID,		\
 		.pins = PINS_SPI##n,					\
 		.cs = PINS_SPI##n##_CS,					\
 	}
@@ -470,11 +470,11 @@ static const struct spi_driver_api spi_sam_driver_api = {
 			    &spi_sam_config_##n, POST_KERNEL,		\
 			    CONFIG_SPI_INIT_PRIORITY, &spi_sam_driver_api)
 
-#if CONFIG_SPI_0_BASE_ADDRESS
+#if DT_SPI_0_BASE_ADDRESS
 SPI_SAM_DEVICE_INIT(0);
 #endif
 
-#if CONFIG_SPI_1_BASE_ADDRESS
+#if DT_SPI_1_BASE_ADDRESS
 SPI_SAM_DEVICE_INIT(1);
 #endif
 

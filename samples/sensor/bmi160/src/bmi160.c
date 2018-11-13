@@ -417,7 +417,7 @@ void main(void)
 #endif
 
 	printk("IMU: Binding...\n");
-	bmi160 = device_get_binding(CONFIG_BMI160_NAME);
+	bmi160 = device_get_binding(DT_BMI160_NAME);
 	if (!bmi160) {
 		printk("Gyro: Device not found.\n");
 		return;

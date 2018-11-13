@@ -149,31 +149,31 @@ void main(void)
 	printk("ArgonKey test!!\n");
 
 #ifdef CONFIG_LPS22HB
-	struct device *baro_dev = device_get_binding(CONFIG_LPS22HB_DEV_NAME);
+	struct device *baro_dev = device_get_binding(DT_LPS22HB_DEV_NAME);
 
 	if (!baro_dev) {
 		printk("Could not get pointer to %s sensor\n",
-			CONFIG_LPS22HB_DEV_NAME);
+			DT_LPS22HB_DEV_NAME);
 		return;
 	}
 #endif
 
 #ifdef CONFIG_HTS221
-	struct device *hum_dev = device_get_binding(CONFIG_HTS221_NAME);
+	struct device *hum_dev = device_get_binding(DT_HTS221_NAME);
 
 	if (!hum_dev) {
 		printk("Could not get pointer to %s sensor\n",
-			CONFIG_HTS221_NAME);
+			DT_HTS221_NAME);
 		return;
 	}
 #endif
 
 #ifdef CONFIG_LSM6DSL
-	struct device *accel_dev = device_get_binding(CONFIG_LSM6DSL_DEV_NAME);
+	struct device *accel_dev = device_get_binding(DT_LSM6DSL_DEV_NAME);
 
 	if (!accel_dev) {
 		printk("Could not get pointer to %s sensor\n",
-			CONFIG_LSM6DSL_DEV_NAME);
+			DT_LSM6DSL_DEV_NAME);
 		return;
 	}
 
@@ -234,11 +234,11 @@ void main(void)
 #endif
 
 #ifdef CONFIG_VL53L0X
-	struct device *tof_dev = device_get_binding(CONFIG_VL53L0X_NAME);
+	struct device *tof_dev = device_get_binding(DT_VL53L0X_NAME);
 
 	if (!tof_dev) {
 		printk("Could not get pointer to %s sensor\n",
-			CONFIG_VL53L0X_NAME);
+			DT_VL53L0X_NAME);
 		return;
 	}
 #endif

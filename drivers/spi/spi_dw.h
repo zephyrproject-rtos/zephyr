@@ -42,9 +42,9 @@ struct spi_dw_data {
 
 /* Helper macros */
 
-#ifdef SPI_DW_SPI_CLOCK
+#ifdef DT_SPI_DW_SPI_CLOCK
 #define SPI_DW_CLK_DIVIDER(ssi_clk_hz) \
-		((SPI_DW_SPI_CLOCK / ssi_clk_hz) & 0xFFFF)
+		((DT_SPI_DW_SPI_CLOCK / ssi_clk_hz) & 0xFFFF)
 /* provision for soc.h providing a clock that is different than CPU clock */
 #else
 #define SPI_DW_CLK_DIVIDER(ssi_clk_hz) \

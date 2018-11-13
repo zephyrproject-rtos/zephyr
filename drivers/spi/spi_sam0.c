@@ -452,12 +452,12 @@ static const struct spi_driver_api spi_sam0_driver_api = {
 };
 
 #define CONFIG_SPI_SAM0_SERCOM_PADS(n) \
-	SERCOM_SPI_CTRLA_DIPO(CONFIG_SPI_SAM0_SERCOM##n##_DIPO) | \
-	SERCOM_SPI_CTRLA_DOPO(CONFIG_SPI_SAM0_SERCOM##n##_DOPO)
+	SERCOM_SPI_CTRLA_DIPO(DT_SPI_SAM0_SERCOM##n##_DIPO) | \
+	SERCOM_SPI_CTRLA_DOPO(DT_SPI_SAM0_SERCOM##n##_DOPO)
 
 #define SPI_SAM0_DEFINE_CONFIG(n)                                            \
 	static const struct spi_sam0_config spi_sam0_config_##n = {          \
-		.regs = (SercomSpi *)CONFIG_SPI_SAM0_SERCOM##n##_BASE_ADDRESS, \
+		.regs = (SercomSpi *)DT_SPI_SAM0_SERCOM##n##_BASE_ADDRESS, \
 		.pm_apbcmask = PM_APBCMASK_SERCOM##n,                        \
 		.gclk_clkctrl_id = GCLK_CLKCTRL_ID_SERCOM##n##_CORE,         \
 		.pads = CONFIG_SPI_SAM0_SERCOM_PADS(n)                       \
@@ -470,31 +470,31 @@ static const struct spi_driver_api spi_sam0_driver_api = {
 		SPI_CONTEXT_INIT_SYNC(spi_sam0_dev_data_##n, ctx),           \
 	};                                                                   \
 	DEVICE_AND_API_INIT(spi_sam0_##n, \
-			    CONFIG_SPI_SAM0_SERCOM##n##_LABEL,               \
+			    DT_SPI_SAM0_SERCOM##n##_LABEL,               \
 			    &spi_sam0_init, &spi_sam0_dev_data_##n,          \
 			    &spi_sam0_config_##n, POST_KERNEL,               \
 			    CONFIG_SPI_INIT_PRIORITY, &spi_sam0_driver_api)
 
-#if CONFIG_SPI_SAM0_SERCOM0_BASE_ADDRESS
+#if DT_SPI_SAM0_SERCOM0_BASE_ADDRESS
 SPI_SAM0_DEVICE_INIT(0);
 #endif
 
-#if CONFIG_SPI_SAM0_SERCOM1_BASE_ADDRESS
+#if DT_SPI_SAM0_SERCOM1_BASE_ADDRESS
 SPI_SAM0_DEVICE_INIT(1);
 #endif
 
-#if CONFIG_SPI_SAM0_SERCOM2_BASE_ADDRESS
+#if DT_SPI_SAM0_SERCOM2_BASE_ADDRESS
 SPI_SAM0_DEVICE_INIT(2);
 #endif
 
-#if CONFIG_SPI_SAM0_SERCOM3_BASE_ADDRESS
+#if DT_SPI_SAM0_SERCOM3_BASE_ADDRESS
 SPI_SAM0_DEVICE_INIT(3);
 #endif
 
-#if CONFIG_SPI_SAM0_SERCOM4_BASE_ADDRESS
+#if DT_SPI_SAM0_SERCOM4_BASE_ADDRESS
 SPI_SAM0_DEVICE_INIT(4);
 #endif
 
-#if CONFIG_SPI_SAM0_SERCOM5_BASE_ADDRESS
+#if DT_SPI_SAM0_SERCOM5_BASE_ADDRESS
 SPI_SAM0_DEVICE_INIT(5);
 #endif

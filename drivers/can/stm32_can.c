@@ -846,21 +846,21 @@ static const struct can_driver_api can_api_funcs = {
 static void config_can_1_irq(CAN_TypeDef *can);
 
 static const struct can_stm32_config can_stm32_cfg_1 = {
-	.can = (CAN_TypeDef *)CONFIG_CAN_1_BASE_ADDRESS,
-	.bus_speed = CONFIG_CAN_1_BUS_SPEED,
-	.swj = CONFIG_CAN_1_SJW,
-	.prop_bs1 = CONFIG_CAN_1_PROP_SEG_PHASE_SEG1,
-	.bs2 = CONFIG_CAN_1_PHASE_SEG2,
+	.can = (CAN_TypeDef *)DT_CAN_1_BASE_ADDRESS,
+	.bus_speed = DT_CAN_1_BUS_SPEED,
+	.swj = DT_CAN_1_SJW,
+	.prop_bs1 = DT_CAN_1_PROP_SEG_PHASE_SEG1,
+	.bs2 = DT_CAN_1_PHASE_SEG2,
 	.pclken = {
-		.enr = CONFIG_CAN_1_CLOCK_BITS,
-		.bus = CONFIG_CAN_1_CLOCK_BUS,
+		.enr = DT_CAN_1_CLOCK_BITS,
+		.bus = DT_CAN_1_CLOCK_BUS,
 	},
 	.config_irq = config_can_1_irq
 };
 
 static struct can_stm32_data can_stm32_dev_data_1;
 
-DEVICE_AND_API_INIT(can_stm32_1, CONFIG_CAN_1_NAME, &can_stm32_init,
+DEVICE_AND_API_INIT(can_stm32_1, DT_CAN_1_NAME, &can_stm32_init,
 		    &can_stm32_dev_data_1, &can_stm32_cfg_1,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &can_api_funcs);
@@ -869,21 +869,21 @@ static void config_can_1_irq(CAN_TypeDef *can)
 {
 	LOG_DBG("Enable CAN1 IRQ");
 #ifdef CONFIG_SOC_SERIES_STM32F0X
-	IRQ_CONNECT(CONFIG_CAN_1_IRQ, CONFIG_CAN_1_IRQ_PRIORITY, can_stm32_isr,
+	IRQ_CONNECT(DT_CAN_1_IRQ, DT_CAN_1_IRQ_PRIORITY, can_stm32_isr,
 		    DEVICE_GET(can_stm32_1), 0);
-	irq_enable(CONFIG_CAN_1_IRQ);
+	irq_enable(DT_CAN_1_IRQ);
 #else
-	IRQ_CONNECT(CONFIG_CAN_1_IRQ_RX0, CONFIG_CAN_1_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_CAN_1_IRQ_RX0, DT_CAN_1_IRQ_PRIORITY,
 		    can_stm32_rx_isr, DEVICE_GET(can_stm32_1), 0);
-	irq_enable(CONFIG_CAN_1_IRQ_RX0);
+	irq_enable(DT_CAN_1_IRQ_RX0);
 
-	IRQ_CONNECT(CONFIG_CAN_1_IRQ_TX, CONFIG_CAN_1_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_CAN_1_IRQ_TX, DT_CAN_1_IRQ_PRIORITY,
 		    can_stm32_tx_isr, DEVICE_GET(can_stm32_1), 0);
-	irq_enable(CONFIG_CAN_1_IRQ_TX);
+	irq_enable(DT_CAN_1_IRQ_TX);
 
-	IRQ_CONNECT(CONFIG_CAN_1_IRQ_SCE, CONFIG_CAN_1_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_CAN_1_IRQ_SCE, DT_CAN_1_IRQ_PRIORITY,
 		    can_stm32_tx_isr, DEVICE_GET(can_stm32_1), 0);
-	irq_enable(CONFIG_CAN_1_IRQ_SCE);
+	irq_enable(DT_CAN_1_IRQ_SCE);
 #endif
 	can->IER |= CAN_IT_TME | CAN_IT_ERR | CAN_IT_FMP0 | CAN_IT_FMP1;
 }

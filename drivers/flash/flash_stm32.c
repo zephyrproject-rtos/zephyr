@@ -204,13 +204,13 @@ static int flash_stm32_write_protection(struct device *dev, bool enable)
 
 static struct flash_stm32_priv flash_data = {
 #if defined(CONFIG_SOC_SERIES_STM32F0X)
-	.regs = (struct stm32f0x_flash *) FLASH_DEV_BASE_ADDRESS,
+	.regs = (struct stm32f0x_flash *) DT_FLASH_DEV_BASE_ADDRESS,
 	.pclken = { .bus = STM32_CLOCK_BUS_AHB1,
 		    .enr = LL_AHB1_GRP1_PERIPH_FLASH },
 #elif defined(CONFIG_SOC_SERIES_STM32F4X)
-	.regs = (struct stm32f4x_flash *) FLASH_DEV_BASE_ADDRESS,
+	.regs = (struct stm32f4x_flash *) DT_FLASH_DEV_BASE_ADDRESS,
 #elif defined(CONFIG_SOC_SERIES_STM32L4X)
-	.regs = (struct stm32l4x_flash *) FLASH_DEV_BASE_ADDRESS,
+	.regs = (struct stm32l4x_flash *) DT_FLASH_DEV_BASE_ADDRESS,
 	.pclken = { .bus = STM32_CLOCK_BUS_AHB1,
 		    .enr = LL_AHB1_GRP1_PERIPH_FLASH },
 #endif
@@ -260,6 +260,6 @@ static int stm32_flash_init(struct device *dev)
 	return flash_stm32_write_protection(dev, false);
 }
 
-DEVICE_AND_API_INIT(stm32_flash, FLASH_DEV_NAME,
+DEVICE_AND_API_INIT(stm32_flash, DT_FLASH_DEV_NAME,
 		    stm32_flash_init, &flash_data, NULL, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_stm32_api);

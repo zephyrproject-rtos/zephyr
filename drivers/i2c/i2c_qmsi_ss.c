@@ -117,11 +117,11 @@ static void i2c_qmsi_ss_config_irq_0(void);
 
 static const struct i2c_qmsi_ss_config_info config_info_0 = {
 	.instance = QM_SS_I2C_0,
-	.bitrate = CONFIG_I2C_SS_0_BITRATE,
+	.bitrate = DT_I2C_SS_0_BITRATE,
 	.irq_cfg = i2c_qmsi_ss_config_irq_0,
 };
 
-DEVICE_DEFINE(i2c_ss_0, CONFIG_I2C_SS_0_NAME, i2c_qmsi_ss_init,
+DEVICE_DEFINE(i2c_ss_0, DT_I2C_SS_0_NAME, i2c_qmsi_ss_init,
 	      ss_i2c_device_ctrl, &driver_data_0, &config_info_0, POST_KERNEL,
 	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
 
@@ -150,19 +150,19 @@ static void i2c_qmsi_ss_config_irq_0(void)
 	sys_write32(mask, SCSS_REGISTER_BASE + I2C_SS_0_STOP_MASK);
 
 	/* Connect the IRQs to ISR */
-	IRQ_CONNECT(CONFIG_I2C_SS_0_ERR_IRQ, CONFIG_I2C_SS_0_ERR_IRQ_PRI,
+	IRQ_CONNECT(DT_I2C_SS_0_ERR_IRQ, DT_I2C_SS_0_ERR_IRQ_PRI,
 		    qm_ss_i2c_0_error_isr, DEVICE_GET(i2c_ss_0), 0);
-	IRQ_CONNECT(CONFIG_I2C_SS_0_RX_IRQ, CONFIG_I2C_SS_0_RX_IRQ_PRI,
+	IRQ_CONNECT(DT_I2C_SS_0_RX_IRQ, DT_I2C_SS_0_RX_IRQ_PRI,
 		    qm_ss_i2c_0_rx_avail_isr, DEVICE_GET(i2c_ss_0), 0);
-	IRQ_CONNECT(CONFIG_I2C_SS_0_TX_IRQ, CONFIG_I2C_SS_0_TX_IRQ_PRI,
+	IRQ_CONNECT(DT_I2C_SS_0_TX_IRQ, DT_I2C_SS_0_TX_IRQ_PRI,
 		    qm_ss_i2c_0_tx_req_isr, DEVICE_GET(i2c_ss_0), 0);
-	IRQ_CONNECT(CONFIG_I2C_SS_0_STOP_IRQ, CONFIG_I2C_SS_0_STOP_IRQ_PRI,
+	IRQ_CONNECT(DT_I2C_SS_0_STOP_IRQ, DT_I2C_SS_0_STOP_IRQ_PRI,
 		    qm_ss_i2c_0_stop_det_isr, DEVICE_GET(i2c_ss_0), 0);
 
-	irq_enable(CONFIG_I2C_SS_0_ERR_IRQ);
-	irq_enable(CONFIG_I2C_SS_0_RX_IRQ);
-	irq_enable(CONFIG_I2C_SS_0_TX_IRQ);
-	irq_enable(CONFIG_I2C_SS_0_STOP_IRQ);
+	irq_enable(DT_I2C_SS_0_ERR_IRQ);
+	irq_enable(DT_I2C_SS_0_RX_IRQ);
+	irq_enable(DT_I2C_SS_0_TX_IRQ);
+	irq_enable(DT_I2C_SS_0_STOP_IRQ);
 }
 #endif /* CONFIG_I2C_SS_0 */
 
@@ -174,11 +174,11 @@ static void i2c_qmsi_ss_config_irq_1(void);
 
 static const struct i2c_qmsi_ss_config_info config_info_1 = {
 	.instance = QM_SS_I2C_1,
-	.bitrate = CONFIG_I2C_SS_1_BITRATE,
+	.bitrate = DT_I2C_SS_1_BITRATE,
 	.irq_cfg = i2c_qmsi_ss_config_irq_1,
 };
 
-DEVICE_DEFINE(i2c_ss_1, CONFIG_I2C_SS_1_NAME, i2c_qmsi_ss_init,
+DEVICE_DEFINE(i2c_ss_1, DT_I2C_SS_1_NAME, i2c_qmsi_ss_init,
 	      ss_i2c_device_ctrl, &driver_data_1, &config_info_1, POST_KERNEL,
 	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
 
@@ -207,19 +207,19 @@ static void i2c_qmsi_ss_config_irq_1(void)
 	sys_write32(mask, SCSS_REGISTER_BASE + I2C_SS_1_STOP_MASK);
 
 	/* Connect the IRQs to ISR */
-	IRQ_CONNECT(CONFIG_I2C_SS_1_ERR_IRQ, CONFIG_I2C_SS_1_ERR_IRQ_PRI,
+	IRQ_CONNECT(DT_I2C_SS_1_ERR_IRQ, DT_I2C_SS_1_ERR_IRQ_PRI,
 		    qm_ss_i2c_1_error_isr, DEVICE_GET(i2c_ss_1), 0);
-	IRQ_CONNECT(CONFIG_I2C_SS_1_RX_IRQ, CONFIG_I2C_SS_1_RX_IRQ_PRI,
+	IRQ_CONNECT(DT_I2C_SS_1_RX_IRQ, DT_I2C_SS_1_RX_IRQ_PRI,
 		    qm_ss_i2c_1_rx_avail_isr, DEVICE_GET(i2c_ss_1), 0);
-	IRQ_CONNECT(CONFIG_I2C_SS_1_TX_IRQ, CONFIG_I2C_SS_1_TX_IRQ_PRI,
+	IRQ_CONNECT(DT_I2C_SS_1_TX_IRQ, DT_I2C_SS_1_TX_IRQ_PRI,
 		    qm_ss_i2c_1_tx_req_isr, DEVICE_GET(i2c_ss_1), 0);
-	IRQ_CONNECT(CONFIG_I2C_SS_1_STOP_IRQ, CONFIG_I2C_SS_1_STOP_IRQ_PRI,
+	IRQ_CONNECT(DT_I2C_SS_1_STOP_IRQ, DT_I2C_SS_1_STOP_IRQ_PRI,
 		    qm_ss_i2c_1_stop_det_isr, DEVICE_GET(i2c_ss_1), 0);
 
-	irq_enable(CONFIG_I2C_SS_1_ERR_IRQ);
-	irq_enable(CONFIG_I2C_SS_1_RX_IRQ);
-	irq_enable(CONFIG_I2C_SS_1_TX_IRQ);
-	irq_enable(CONFIG_I2C_SS_1_STOP_IRQ);
+	irq_enable(DT_I2C_SS_1_ERR_IRQ);
+	irq_enable(DT_I2C_SS_1_RX_IRQ);
+	irq_enable(DT_I2C_SS_1_TX_IRQ);
+	irq_enable(DT_I2C_SS_1_STOP_IRQ);
 }
 #endif /* CONFIG_I2C_SS_1 */
 

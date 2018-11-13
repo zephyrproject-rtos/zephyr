@@ -291,9 +291,9 @@ static void irq_config_func_1(struct device *port);
 #endif
 
 static const struct imx_uart_config imx_uart_1_config = {
-	.base = (UART_Type *) CONFIG_UART_IMX_UART_1_BASE_ADDRESS,
-	.baud_rate = CONFIG_UART_IMX_UART_1_BAUD_RATE,
-	.modem_mode = CONFIG_UART_IMX_UART_1_MODEM_MODE,
+	.base = (UART_Type *) DT_UART_IMX_UART_1_BASE_ADDRESS,
+	.baud_rate = DT_UART_IMX_UART_1_BAUD_RATE,
+	.modem_mode = DT_UART_IMX_UART_1_MODEM_MODE,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = irq_config_func_1,
 #endif
@@ -301,7 +301,7 @@ static const struct imx_uart_config imx_uart_1_config = {
 
 static struct imx_uart_data imx_uart_1_data;
 
-DEVICE_AND_API_INIT(uart_1, CONFIG_UART_IMX_UART_1_NAME, &uart_imx_init,
+DEVICE_AND_API_INIT(uart_1, DT_UART_IMX_UART_1_NAME, &uart_imx_init,
 		&imx_uart_1_data, &imx_uart_1_config,
 		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		&uart_imx_driver_api);
@@ -309,11 +309,11 @@ DEVICE_AND_API_INIT(uart_1, CONFIG_UART_IMX_UART_1_NAME, &uart_imx_init,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void irq_config_func_1(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_UART_IMX_UART_1_IRQ_NUM,
-			CONFIG_UART_IMX_UART_1_IRQ_PRI,
+	IRQ_CONNECT(DT_UART_IMX_UART_1_IRQ_NUM,
+			DT_UART_IMX_UART_1_IRQ_PRI,
 			uart_imx_isr, DEVICE_GET(uart_1),
 			0);
-	irq_enable(CONFIG_UART_IMX_UART_1_IRQ_NUM);
+	irq_enable(DT_UART_IMX_UART_1_IRQ_NUM);
 }
 #endif
 
@@ -327,9 +327,9 @@ static void irq_config_func_2(struct device *port);
 #endif
 
 static const struct imx_uart_config imx_uart_2_config = {
-	.base = (UART_Type *) CONFIG_UART_IMX_UART_2_BASE_ADDRESS,
-	.baud_rate = CONFIG_UART_IMX_UART_2_BAUD_RATE,
-	.modem_mode = CONFIG_UART_IMX_UART_2_MODEM_MODE,
+	.base = (UART_Type *) DT_UART_IMX_UART_2_BASE_ADDRESS,
+	.baud_rate = DT_UART_IMX_UART_2_BAUD_RATE,
+	.modem_mode = DT_UART_IMX_UART_2_MODEM_MODE,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = irq_config_func_2,
 #endif
@@ -337,7 +337,7 @@ static const struct imx_uart_config imx_uart_2_config = {
 
 static struct imx_uart_data imx_uart_2_data;
 
-DEVICE_AND_API_INIT(uart_2, CONFIG_UART_IMX_UART_2_NAME, &uart_imx_init,
+DEVICE_AND_API_INIT(uart_2, DT_UART_IMX_UART_2_NAME, &uart_imx_init,
 		&imx_uart_2_data, &imx_uart_2_config,
 		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		&uart_imx_driver_api);
@@ -345,11 +345,11 @@ DEVICE_AND_API_INIT(uart_2, CONFIG_UART_IMX_UART_2_NAME, &uart_imx_init,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void irq_config_func_2(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_UART_IMX_UART_2_IRQ_NUM,
-			CONFIG_UART_IMX_UART_2_IRQ_PRI,
+	IRQ_CONNECT(DT_UART_IMX_UART_2_IRQ_NUM,
+			DT_UART_IMX_UART_2_IRQ_PRI,
 			uart_imx_isr, DEVICE_GET(uart_2),
 			0);
-	irq_enable(CONFIG_UART_IMX_UART_2_IRQ_NUM);
+	irq_enable(DT_UART_IMX_UART_2_IRQ_NUM);
 }
 #endif
 
@@ -362,9 +362,9 @@ static void irq_config_func_3(struct device *port);
 #endif
 
 static const struct imx_uart_config imx_uart_3_config = {
-	.base = (UART_Type *) CONFIG_UART_IMX_UART_3_BASE_ADDRESS,
-	.baud_rate = CONFIG_UART_IMX_UART_3_BAUD_RATE,
-	.modem_mode = CONFIG_UART_IMX_UART_3_MODEM_MODE,
+	.base = (UART_Type *) DT_UART_IMX_UART_3_BASE_ADDRESS,
+	.baud_rate = DT_UART_IMX_UART_3_BAUD_RATE,
+	.modem_mode = DT_UART_IMX_UART_3_MODEM_MODE,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = irq_config_func_3,
 #endif
@@ -372,7 +372,7 @@ static const struct imx_uart_config imx_uart_3_config = {
 
 static struct imx_uart_data imx_uart_3_data;
 
-DEVICE_AND_API_INIT(uart_3, CONFIG_UART_IMX_UART_3_NAME, &uart_imx_init,
+DEVICE_AND_API_INIT(uart_3, DT_UART_IMX_UART_3_NAME, &uart_imx_init,
 		&imx_uart_3_data, &imx_uart_3_config,
 		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		&uart_imx_driver_api);
@@ -380,11 +380,11 @@ DEVICE_AND_API_INIT(uart_3, CONFIG_UART_IMX_UART_3_NAME, &uart_imx_init,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void irq_config_func_3(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_UART_IMX_UART_3_IRQ_NUM,
-			CONFIG_UART_IMX_UART_3_IRQ_PRI,
+	IRQ_CONNECT(DT_UART_IMX_UART_3_IRQ_NUM,
+			DT_UART_IMX_UART_3_IRQ_PRI,
 			uart_imx_isr, DEVICE_GET(uart_3),
 			0);
-	irq_enable(CONFIG_UART_IMX_UART_3_IRQ_NUM);
+	irq_enable(DT_UART_IMX_UART_3_IRQ_NUM);
 }
 #endif
 
@@ -397,9 +397,9 @@ static void irq_config_func_4(struct device *port);
 #endif
 
 static const struct imx_uart_config imx_uart_4_config = {
-	.base = (UART_Type *) CONFIG_UART_IMX_UART_4_BASE_ADDRESS,
-	.baud_rate = CONFIG_UART_IMX_UART_4_BAUD_RATE,
-	.modem_mode = CONFIG_UART_IMX_UART_4_MODEM_MODE,
+	.base = (UART_Type *) DT_UART_IMX_UART_4_BASE_ADDRESS,
+	.baud_rate = DT_UART_IMX_UART_4_BAUD_RATE,
+	.modem_mode = DT_UART_IMX_UART_4_MODEM_MODE,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = irq_config_func_4,
 #endif
@@ -407,7 +407,7 @@ static const struct imx_uart_config imx_uart_4_config = {
 
 static struct imx_uart_data imx_uart_4_data;
 
-DEVICE_AND_API_INIT(uart_4, CONFIG_UART_IMX_UART_4_NAME, &uart_imx_init,
+DEVICE_AND_API_INIT(uart_4, DT_UART_IMX_UART_4_NAME, &uart_imx_init,
 		&imx_uart_4_data, &imx_uart_4_config,
 		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		&uart_imx_driver_api);
@@ -415,11 +415,11 @@ DEVICE_AND_API_INIT(uart_4, CONFIG_UART_IMX_UART_4_NAME, &uart_imx_init,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void irq_config_func_4(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_UART_IMX_UART_4_IRQ_NUM,
-			CONFIG_UART_IMX_UART_4_IRQ_PRI,
+	IRQ_CONNECT(DT_UART_IMX_UART_4_IRQ_NUM,
+			DT_UART_IMX_UART_4_IRQ_PRI,
 			uart_imx_isr, DEVICE_GET(uart_4),
 			0);
-	irq_enable(CONFIG_UART_IMX_UART_4_IRQ_NUM);
+	irq_enable(DT_UART_IMX_UART_4_IRQ_NUM);
 }
 #endif
 
@@ -432,9 +432,9 @@ static void irq_config_func_5(struct device *port);
 #endif
 
 static const struct imx_uart_config imx_uart_5_config = {
-	.base = (UART_Type *) CONFIG_UART_IMX_UART_5_BASE_ADDRESS,
-	.baud_rate = CONFIG_UART_IMX_UART_5_BAUD_RATE,
-	.modem_mode = CONFIG_UART_IMX_UART_5_MODEM_MODE,
+	.base = (UART_Type *) DT_UART_IMX_UART_5_BASE_ADDRESS,
+	.baud_rate = DT_UART_IMX_UART_5_BAUD_RATE,
+	.modem_mode = DT_UART_IMX_UART_5_MODEM_MODE,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = irq_config_func_5,
 #endif
@@ -442,7 +442,7 @@ static const struct imx_uart_config imx_uart_5_config = {
 
 static struct imx_uart_data imx_uart_5_data;
 
-DEVICE_AND_API_INIT(uart_5, CONFIG_UART_IMX_UART_5_NAME, &uart_imx_init,
+DEVICE_AND_API_INIT(uart_5, DT_UART_IMX_UART_5_NAME, &uart_imx_init,
 		&imx_uart_5_data, &imx_uart_5_config,
 		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		&uart_imx_driver_api);
@@ -450,11 +450,11 @@ DEVICE_AND_API_INIT(uart_5, CONFIG_UART_IMX_UART_5_NAME, &uart_imx_init,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void irq_config_func_5(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_UART_IMX_UART_5_IRQ_NUM,
-			CONFIG_UART_IMX_UART_5_IRQ_PRI,
+	IRQ_CONNECT(DT_UART_IMX_UART_5_IRQ_NUM,
+			DT_UART_IMX_UART_5_IRQ_PRI,
 			uart_imx_isr, DEVICE_GET(uart_5),
 			0);
-	irq_enable(CONFIG_UART_IMX_UART_5_IRQ_NUM);
+	irq_enable(DT_UART_IMX_UART_5_IRQ_NUM);
 }
 #endif
 
@@ -467,9 +467,9 @@ static void irq_config_func_6(struct device *port);
 #endif
 
 static const struct imx_uart_config imx_uart_6_config = {
-	.base = (UART_Type *) CONFIG_UART_IMX_UART_6_BASE_ADDRESS,
-	.baud_rate = CONFIG_UART_IMX_UART_6_BAUD_RATE,
-	.modem_mode = CONFIG_UART_IMX_UART_6_MODEM_MODE,
+	.base = (UART_Type *) DT_UART_IMX_UART_6_BASE_ADDRESS,
+	.baud_rate = DT_UART_IMX_UART_6_BAUD_RATE,
+	.modem_mode = DT_UART_IMX_UART_6_MODEM_MODE,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = irq_config_func_6,
 #endif
@@ -477,7 +477,7 @@ static const struct imx_uart_config imx_uart_6_config = {
 
 static struct imx_uart_data imx_uart_6_data;
 
-DEVICE_AND_API_INIT(uart_6, CONFIG_UART_IMX_UART_6_NAME, &uart_imx_init,
+DEVICE_AND_API_INIT(uart_6, DT_UART_IMX_UART_6_NAME, &uart_imx_init,
 		&imx_uart_6_data, &imx_uart_6_config,
 		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		&uart_imx_driver_api);
@@ -485,11 +485,11 @@ DEVICE_AND_API_INIT(uart_6, CONFIG_UART_IMX_UART_6_NAME, &uart_imx_init,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void irq_config_func_6(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_UART_IMX_UART_6_IRQ_NUM,
-			CONFIG_UART_IMX_UART_6_IRQ_PRI,
+	IRQ_CONNECT(DT_UART_IMX_UART_6_IRQ_NUM,
+			DT_UART_IMX_UART_6_IRQ_PRI,
 			uart_imx_isr, DEVICE_GET(uart_6),
 			0);
-	irq_enable(CONFIG_UART_IMX_UART_6_IRQ_NUM);
+	irq_enable(DT_UART_IMX_UART_6_IRQ_NUM);
 }
 #endif
 
@@ -502,9 +502,9 @@ static void irq_config_func_7(struct device *port);
 #endif
 
 static const struct imx_uart_config imx_uart_7_config = {
-	.base = (UART_Type *) CONFIG_UART_IMX_UART_7_BASE_ADDRESS,
-	.baud_rate = CONFIG_UART_IMX_UART_7_BAUD_RATE,
-	.modem_mode = CONFIG_UART_IMX_UART_7_MODEM_MODE,
+	.base = (UART_Type *) DT_UART_IMX_UART_7_BASE_ADDRESS,
+	.baud_rate = DT_UART_IMX_UART_7_BAUD_RATE,
+	.modem_mode = DT_UART_IMX_UART_7_MODEM_MODE,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = irq_config_func_7,
 #endif
@@ -512,7 +512,7 @@ static const struct imx_uart_config imx_uart_7_config = {
 
 static struct imx_uart_data imx_uart_7_data;
 
-DEVICE_AND_API_INIT(uart_7, CONFIG_UART_IMX_UART_7_NAME, &uart_imx_init,
+DEVICE_AND_API_INIT(uart_7, DT_UART_IMX_UART_7_NAME, &uart_imx_init,
 		&imx_uart_7_data, &imx_uart_7_config,
 		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		&uart_imx_driver_api);
@@ -520,11 +520,11 @@ DEVICE_AND_API_INIT(uart_7, CONFIG_UART_IMX_UART_7_NAME, &uart_imx_init,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void irq_config_func_7(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_UART_IMX_UART_7_IRQ_NUM,
-			CONFIG_UART_IMX_UART_7_IRQ_PRI,
+	IRQ_CONNECT(DT_UART_IMX_UART_7_IRQ_NUM,
+			DT_UART_IMX_UART_7_IRQ_PRI,
 			uart_imx_isr, DEVICE_GET(uart_7),
 			0);
-	irq_enable(CONFIG_UART_IMX_UART_7_IRQ_NUM);
+	irq_enable(DT_UART_IMX_UART_7_IRQ_NUM);
 }
 #endif
 
