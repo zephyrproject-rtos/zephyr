@@ -123,7 +123,7 @@ void wakeup_src_thread(int id)
 		 * executes in 0 time: it always waits for the code to finish
 		 * and it letting the cpu sleep before letting time pass)
 		 */
-		posix_halt_cpu();
+		k_busy_wait(50);
 #endif
 	}
 
