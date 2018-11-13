@@ -53,6 +53,10 @@ aa_loop:
 	li t0, CONFIG_ISR_STACK_SIZE
 	add sp, sp, t0
 
+#ifdef CONFIG_WDOG_INIT
+	call _WdogInit
+#endif
+
 	/*
 	 * Jump into C domain. _PrepC zeroes BSS, copies rw data into RAM,
 	 * and then enters kernel _Cstart
