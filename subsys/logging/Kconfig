@@ -290,7 +290,7 @@ config LOG_CMDS
 config LOG_BACKEND_UART
 	bool "Enable UART backend"
 	depends on UART_CONSOLE
-	default y
+	default y if !SHELL_BACKEND_SERIAL
 	help
 	  When enabled backend is using UART to output logs.
 
