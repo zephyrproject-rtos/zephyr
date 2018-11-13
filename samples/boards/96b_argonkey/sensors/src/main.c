@@ -278,7 +278,8 @@ void main(void)
 		sensor_channel_get(tof_dev, SENSOR_CHAN_PROX, &prox);
 		printk("proxy: %d  ;\n", prox.val1);
 		sensor_channel_get(tof_dev, SENSOR_CHAN_DISTANCE, &prox);
-		printk("distance: %d -- %3d mm;\n", prox.val1, prox.val2);
+		printk("distance: %d m -- %02d cm;\n", prox.val1,
+						       prox.val2/10000);
 #endif
 
 #ifdef CONFIG_LPS22HB
