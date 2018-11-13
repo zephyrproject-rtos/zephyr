@@ -56,8 +56,6 @@ foreach(board_root ${BOARD_ROOT})
   endforeach()
 endforeach()
 
-message(STATUS "Generating zephyr/include/generated/generated_dts_board.h")
-
 if(CONFIG_HAS_DTS)
 
   if(DTC_OVERLAY_FILE)
@@ -69,10 +67,19 @@ if(CONFIG_HAS_DTS)
       )
   endif()
 
+  set(i 0)
   unset(DTC_INCLUDE_FLAG_FOR_DTS)
   foreach(dts_file ${dts_files})
     list(APPEND DTC_INCLUDE_FLAG_FOR_DTS
          -include ${dts_file})
+
+	if(i EQUAL 0)
+	  message(STATUS "Loading ${dts_file} as base")
+	else()
+	  message(STATUS "Overlaying ${dts_file}")
+	endif()
+
+	math(EXPR i "${i}+1")
   endforeach()
 
   # TODO: Cut down on CMake configuration time by avoiding
