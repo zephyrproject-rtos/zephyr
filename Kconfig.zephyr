@@ -172,6 +172,11 @@ config CHECK_LINK_MAP
 	  Run a linker address generation validity checker at the end of the
 	  build.
 
+config VERSION_HEADER
+	bool "Add a version header to binary"
+	help
+	  This will add a version header section to the generated binary.
+
 endmenu
 
 menu "Compiler Options"

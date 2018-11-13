@@ -93,3 +93,12 @@
 		KEEP(*(SORT_BY_NAME(".font_entry.*")))
 		__font_entry_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
+
+#ifdef CONFIG_VERSION_HEADER
+	SECTION_PROLOGUE (version_header_section, (OPTIONAL),)
+	{
+		__version_header_start = .;
+		KEEP(*(".version_header*"))
+		__version_header_end = .;
+	} GROUP_LINK_IN(ROMABLE_REGION)
+#endif

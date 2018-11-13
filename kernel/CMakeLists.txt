@@ -37,6 +37,7 @@ target_sources_ifdef(CONFIG_INT_LATENCY_BENCHMARK kernel PRIVATE int_latency_ben
 target_sources_ifdef(CONFIG_STACK_CANARIES        kernel PRIVATE compiler_stack_protect.c)
 target_sources_ifdef(CONFIG_SYS_CLOCK_EXISTS      kernel PRIVATE timeout.c timer.c)
 target_sources_ifdef(CONFIG_ATOMIC_OPERATIONS_C   kernel PRIVATE atomic_c.c)
+target_sources_ifdef(CONFIG_VERSION_HEADER        kernel PRIVATE version_header.c)
 target_sources_if_kconfig(                        kernel PRIVATE poll.c)
 
 # The last 2 files inside the target_sources_ifdef should be
@@ -54,4 +55,8 @@ target_sources_ifdef(
 
 add_dependencies(kernel offsets_h)
 
-target_link_libraries(kernel zephyr_interface)
+target_link_libraries(kernel PUBLIC zephyr_interface)
+
+if(CONFIG_VERSION_HEADER)
+  target_link_libraries(kernel INTERFACE -uversion_header)
+endif()
