@@ -44,6 +44,7 @@ config USB_DEVICE_PRODUCT
 
 config USB_DEVICE_SN
 	string "USB serial number"
+	default "ABCDEF012345" if USB_MASS_STORAGE
 	default "0.01"
 	help
 	  USB device SerialNumber string. MUST be configured by vendor.
