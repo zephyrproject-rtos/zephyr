@@ -10,11 +10,11 @@
 #include <misc/byteorder.h>
 #include <sensor.h>
 #include <string.h>
-#include <logging/log.h>
 
 #include "hmc5883l.h"
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
 LOG_MODULE_REGISTER(HMC5883L);
 
 static void hmc5883l_convert(struct sensor_value *val, s16_t raw_val,

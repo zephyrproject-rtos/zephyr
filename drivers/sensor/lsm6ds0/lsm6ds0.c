@@ -14,11 +14,11 @@
 #include <init.h>
 #include <misc/byteorder.h>
 #include <misc/__assert.h>
-#include <logging/log.h>
 
 #include "lsm6ds0.h"
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
 LOG_MODULE_REGISTER(LSM6DS0);
 
 static inline int lsm6ds0_reboot(struct device *dev)

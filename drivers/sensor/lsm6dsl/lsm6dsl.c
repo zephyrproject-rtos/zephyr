@@ -15,11 +15,11 @@
 #include <string.h>
 #include <misc/byteorder.h>
 #include <misc/__assert.h>
-#include <logging/log.h>
 
 #include "lsm6dsl.h"
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
 LOG_MODULE_REGISTER(LSM6DSL);
 
 static const u16_t lsm6dsl_odr_map[] = {0, 12, 26, 52, 104, 208, 416, 833,

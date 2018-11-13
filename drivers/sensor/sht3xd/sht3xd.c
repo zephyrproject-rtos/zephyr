@@ -9,11 +9,11 @@
 #include <kernel.h>
 #include <sensor.h>
 #include <misc/__assert.h>
-#include <logging/log.h>
 
 #include "sht3xd.h"
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
 LOG_MODULE_REGISTER(SHT3XD);
 
 /*

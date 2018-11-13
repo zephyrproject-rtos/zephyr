@@ -11,11 +11,11 @@
 #include <sensor.h>
 #include <string.h>
 #include <zephyr.h>
-#include <logging/log.h>
 
 #include "dht.h"
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
 LOG_MODULE_REGISTER(DHT);
 
 /**

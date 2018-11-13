@@ -7,9 +7,9 @@
 #include "fxas21002.h"
 #include <misc/util.h>
 #include <misc/__assert.h>
-#include <logging/log.h>
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
 LOG_MODULE_REGISTER(FXAS21002);
 
 /* Sample period in microseconds, indexed by output data rate encoding (DR) */

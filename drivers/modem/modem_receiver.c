@@ -15,10 +15,9 @@
 #include <init.h>
 #include <uart.h>
 
-#include <logging/log.h>
-#define LOG_DOMAIN mdm_receiver
 #define LOG_LEVEL CONFIG_LOG_MODEM_LEVEL
-LOG_MODULE_REGISTER(LOG_DOMAIN);
+#include <logging/log.h>
+LOG_MODULE_REGISTER(mdm_receiver);
 
 #include <drivers/modem/modem_receiver.h>
 

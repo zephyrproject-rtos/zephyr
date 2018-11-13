@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/log.h>
-
 #include "fxas21002.h"
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL

@@ -8,11 +8,11 @@
 #include <init.h>
 #include <sensor.h>
 #include <misc/__assert.h>
-#include <logging/log.h>
 
 #include "lis3dh.h"
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
 LOG_MODULE_REGISTER(LIS3DH);
 
 static void lis3dh_convert(struct sensor_value *val, s64_t raw_val)

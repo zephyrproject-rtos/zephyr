@@ -12,11 +12,11 @@
 #include <misc/util.h>
 #include <sensor.h>
 #include <misc/__assert.h>
-#include <logging/log.h>
 
 #include "ccs811.h"
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
 LOG_MODULE_REGISTER(CCS811);
 
 static int ccs811_sample_fetch(struct device *dev, enum sensor_channel chan)

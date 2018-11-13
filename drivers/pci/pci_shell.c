@@ -10,11 +10,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include <logging/log.h>
 #include <pci/pci.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
-
+#include <logging/log.h>
 LOG_MODULE_REGISTER(lspci_shell);
 
 static void list_devices(const struct shell *shell,

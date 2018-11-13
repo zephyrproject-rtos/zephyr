@@ -14,11 +14,11 @@
 #include <misc/__assert.h>
 
 #include <gpio.h>
-#include <logging/log.h>
 
 #include "lsm9ds0_gyro.h"
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
 LOG_MODULE_REGISTER(LSM9DS0_GYRO);
 
 static inline int lsm9ds0_gyro_power_ctrl(struct device *dev, int power,

@@ -11,11 +11,11 @@
 #include <misc/__assert.h>
 #include <misc/byteorder.h>
 #include <misc/util.h>
-#include <logging/log.h>
 
 #include "ak8975.h"
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
 LOG_MODULE_REGISTER(AK8975);
 
 static int ak8975_sample_fetch(struct device *dev, enum sensor_channel chan)

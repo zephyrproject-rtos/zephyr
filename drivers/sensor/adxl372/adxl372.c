@@ -14,11 +14,11 @@
 #include <stdlib.h>
 #include <spi.h>
 #include <i2c.h>
-#include <logging/log.h>
 
 #include "adxl372.h"
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
 LOG_MODULE_REGISTER(ADXL372);
 
 static int adxl372_bus_access(struct device *dev, u8_t reg,

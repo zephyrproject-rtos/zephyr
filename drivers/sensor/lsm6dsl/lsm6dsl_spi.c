@@ -10,11 +10,11 @@
 #include <string.h>
 #include <spi.h>
 #include "lsm6dsl.h"
-#include <logging/log.h>
 
 #define LSM6DSL_SPI_READ		(1 << 7)
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
 LOG_MODULE_DECLARE(LSM6DSL);
 
 #if defined(CONFIG_LSM6DSL_SPI_GPIO_CS)

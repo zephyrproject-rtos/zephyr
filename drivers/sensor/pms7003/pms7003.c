@@ -18,9 +18,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <uart.h>
-#include <logging/log.h>
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
 LOG_MODULE_REGISTER(PMS7003);
 
 /* wait serial output with 1000ms timeout */

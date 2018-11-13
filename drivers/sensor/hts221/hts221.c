@@ -10,11 +10,11 @@
 #include <misc/byteorder.h>
 #include <sensor.h>
 #include <string.h>
-#include <logging/log.h>
 
 #include "hts221.h"
 
 #define LOG_LEVEL CONFIG_SENSOR_LEVEL
+#include <logging/log.h>
 LOG_MODULE_REGISTER(HTS221);
 
 static int hts221_channel_get(struct device *dev,

@@ -14,11 +14,11 @@
 #include <init.h>
 #include <gpio.h>
 #include <misc/__assert.h>
-#include <logging/log.h>
 
 #include "sx9500.h"
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
 LOG_MODULE_REGISTER(SX9500);
 
 static u8_t sx9500_reg_defaults[] = {

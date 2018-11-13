@@ -12,11 +12,11 @@
 #include <kernel.h>
 #include <sensor.h>
 #include <misc/__assert.h>
-#include <logging/log.h>
 
 #include "tmp007.h"
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
 LOG_MODULE_REGISTER(TMP007);
 
 int tmp007_reg_read(struct tmp007_data *drv_data, u8_t reg, u16_t *val)

@@ -17,11 +17,11 @@
 #include <init.h>
 #include <kernel.h>
 #include <string.h>
-#include <logging/log.h>
 
 #include "apds9960.h"
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
 LOG_MODULE_REGISTER(APDS9960);
 
 static void apds9960_gpio_callback(struct device *dev,

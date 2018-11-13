@@ -11,9 +11,9 @@
 #include <kernel.h>
 #include <sensor.h>
 #include <misc/__assert.h>
-#include <logging/log.h>
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
 LOG_MODULE_REGISTER(TMP112);
 
 #define TMP112_I2C_ADDRESS		CONFIG_TMP112_I2C_ADDR

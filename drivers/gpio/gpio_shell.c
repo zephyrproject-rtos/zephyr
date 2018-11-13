@@ -12,10 +12,9 @@
 #include <gpio.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include <logging/log.h>
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
-
+#include <logging/log.h>
 LOG_MODULE_REGISTER(gpio_shell);
 
 struct args_index {

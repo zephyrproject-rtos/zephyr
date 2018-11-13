@@ -12,11 +12,11 @@
 #include <init.h>
 #include <misc/byteorder.h>
 #include <misc/__assert.h>
-#include <logging/log.h>
 
 #include "lps25hb.h"
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
 LOG_MODULE_REGISTER(LPS25HB);
 
 static inline int lps25hb_power_ctrl(struct device *dev, u8_t value)

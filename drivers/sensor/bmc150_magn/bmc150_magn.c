@@ -17,11 +17,11 @@
 #include <misc/__assert.h>
 
 #include <gpio.h>
-#include <logging/log.h>
 
 #include "bmc150_magn.h"
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
 LOG_MODULE_REGISTER(BMC150_MAGN);
 
 static const struct {

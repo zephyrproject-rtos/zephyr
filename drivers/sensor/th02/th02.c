@@ -11,11 +11,11 @@
 #include <misc/util.h>
 #include <sensor.h>
 #include <misc/__assert.h>
-#include <logging/log.h>
 
 #include "th02.h"
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
 LOG_MODULE_REGISTER(TH02);
 
 static u8_t read8(struct device *dev, u8_t d)

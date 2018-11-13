@@ -13,11 +13,11 @@
 #include <kernel.h>
 #include <sensor.h>
 #include <misc/__assert.h>
-#include <logging/log.h>
 
 #include "amg88xx.h"
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
 LOG_MODULE_REGISTER(AMG88XX);
 
 static int amg88xx_sample_fetch(struct device *dev, enum sensor_channel chan)

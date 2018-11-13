@@ -8,10 +8,10 @@
 #include "fxos8700.h"
 #include <misc/util.h>
 #include <misc/__assert.h>
-#include <logging/log.h>
 #include <stdlib.h>
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
 LOG_MODULE_REGISTER(FXOS8700);
 
 int fxos8700_set_odr(struct device *dev, const struct sensor_value *val)

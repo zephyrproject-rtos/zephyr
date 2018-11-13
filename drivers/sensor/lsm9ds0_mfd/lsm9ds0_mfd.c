@@ -15,11 +15,11 @@
 #include <i2c.h>
 #include <misc/byteorder.h>
 #include <gpio.h>
-#include <logging/log.h>
 
 #include "lsm9ds0_mfd.h"
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
 LOG_MODULE_REGISTER(LSM9DS0_MFD);
 
 static inline int lsm9ds0_mfd_reboot_memory(struct device *dev)

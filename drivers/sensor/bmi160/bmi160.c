@@ -13,11 +13,11 @@
 #include <misc/byteorder.h>
 #include <kernel.h>
 #include <misc/__assert.h>
-#include <logging/log.h>
 
 #include "bmi160.h"
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
 LOG_MODULE_REGISTER(BMI160);
 
 struct bmi160_device_data bmi160_data;

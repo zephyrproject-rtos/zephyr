@@ -16,12 +16,12 @@
 #include <misc/__assert.h>
 #include <zephyr/types.h>
 #include <device.h>
-#include <logging/log.h>
 
 #include "vl53l0x_api.h"
 #include "vl53l0x_platform.h"
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
 LOG_MODULE_REGISTER(VL53L0X);
 
 /* All the values used in this driver are coming from ST datasheet and examples.

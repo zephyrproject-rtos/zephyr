@@ -14,11 +14,11 @@
 #include <misc/byteorder.h>
 #include <misc/__assert.h>
 #include <spi.h>
-#include <logging/log.h>
 
 #include "adxl362.h"
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
 LOG_MODULE_REGISTER(ADXL362);
 
 static struct adxl362_data adxl362_data;

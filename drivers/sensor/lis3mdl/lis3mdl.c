@@ -10,11 +10,11 @@
 #include <misc/byteorder.h>
 #include <sensor.h>
 #include <string.h>
-#include <logging/log.h>
 
 #include "lis3mdl.h"
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
 LOG_MODULE_REGISTER(LIS3MDL);
 
 static void lis3mdl_convert(struct sensor_value *val, s16_t raw_val,

@@ -7,9 +7,9 @@
 #include <device.h>
 #include <sensor.h>
 #include <clock_control.h>
-#include <logging/log.h>
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
 LOG_MODULE_REGISTER(TEMPNRF5);
 
 #include "nrf.h"

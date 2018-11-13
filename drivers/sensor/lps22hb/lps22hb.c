@@ -12,11 +12,11 @@
 #include <init.h>
 #include <misc/byteorder.h>
 #include <misc/__assert.h>
-#include <logging/log.h>
 
 #include "lps22hb.h"
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
 LOG_MODULE_REGISTER(LPS22HB);
 
 static inline int lps22hb_set_odr_raw(struct device *dev, u8_t odr)

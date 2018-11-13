@@ -9,7 +9,6 @@
 #include <misc/util.h>
 #include <kernel.h>
 #include <sensor.h>
-#include <logging/log.h>
 
 #include "lis3dh.h"
 

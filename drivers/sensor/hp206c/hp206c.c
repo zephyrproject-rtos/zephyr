@@ -14,12 +14,11 @@
 #include <misc/byteorder.h>
 #include <kernel.h>
 #include <gpio.h>
-#include <logging/log.h>
 
 #include "hp206c.h"
 
-
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
 LOG_MODULE_REGISTER(HP206C);
 
 static inline int hp206c_bus_config(struct device *dev)

@@ -15,9 +15,9 @@
 #include <device.h>
 #include <init.h>
 #include <i2c.h>
-#include <logging/log.h>
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
 LOG_MODULE_DECLARE(VL53L0X);
 
 VL53L0X_Error VL53L0X_WriteMulti(VL53L0X_DEV Dev, uint8_t index, uint8_t *pdata,

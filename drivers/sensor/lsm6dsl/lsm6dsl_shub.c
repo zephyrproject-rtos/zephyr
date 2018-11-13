@@ -10,11 +10,11 @@
 #include <misc/util.h>
 #include <kernel.h>
 #include <sensor.h>
-#include <logging/log.h>
 
 #include "lsm6dsl.h"
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
 LOG_MODULE_DECLARE(LSM6DSL);
 
 #define LSM6DSL_EMBEDDED_SLV0_ADDR       0x02

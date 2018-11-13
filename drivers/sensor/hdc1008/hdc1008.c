@@ -11,11 +11,11 @@
 #include <sensor.h>
 #include <misc/util.h>
 #include <misc/__assert.h>
-#include <logging/log.h>
 
 #include "hdc1008.h"
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
 LOG_MODULE_REGISTER(HDC1008);
 
 static void hdc1008_gpio_callback(struct device *dev,

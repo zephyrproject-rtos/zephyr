@@ -19,11 +19,11 @@
 #elif defined CONFIG_BME280_DEV_TYPE_SPI
 #include <spi.h>
 #endif
-#include <logging/log.h>
 
 #include "bme280.h"
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
 LOG_MODULE_REGISTER(BME280);
 
 static int bm280_reg_read(struct bme280_data *data,

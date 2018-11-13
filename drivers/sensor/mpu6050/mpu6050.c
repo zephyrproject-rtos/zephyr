@@ -8,11 +8,11 @@
 #include <init.h>
 #include <misc/byteorder.h>
 #include <sensor.h>
-#include <logging/log.h>
 
 #include "mpu6050.h"
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
+#include <logging/log.h>
 LOG_MODULE_REGISTER(MPU6050);
 
 /* see "Accelerometer Measurements" section from register map description */
