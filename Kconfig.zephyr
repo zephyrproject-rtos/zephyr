@@ -69,6 +69,15 @@ config LINKER_ORPHAN_SECTION_ERROR
 
 endchoice
 
+config CODE_DATA_RELOCATION
+       bool "Relocate code/data sections"
+       depends on ARM
+       help
+	  When selected this will relocate .text, data and .bss sections from
+	  the specified files and places it in the required memory region. The
+	  files should be specified in the CMakeList.txt file with
+	  a cmake API zephyr_code_relocation().
+
 config HAS_FLASH_LOAD_OFFSET
 	bool
 	help
