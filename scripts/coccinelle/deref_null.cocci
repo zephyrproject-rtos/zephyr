@@ -16,7 +16,7 @@ virtual report
 
 // The following two rules are separate, because both can match a single
 // expression in different ways
-@pr1 expression@
+@pr1 depends on !(file in "ext")@
 expression E;
 identifier f;
 position p1;
@@ -24,7 +24,7 @@ position p1;
 
  (E != NULL && ...) ? <+...E->f@p1...+> : ...
 
-@pr2 expression@
+@pr2 depends on !(file in "ext")@
 expression E;
 identifier f;
 position p2;
@@ -38,7 +38,7 @@ position p2;
  sizeof(<+...E->f@p2...+>)
 )
 
-@ifm@
+@ifm depends on !(file in "ext")@
 expression *E;
 statement S1,S2;
 position p1;
@@ -48,7 +48,7 @@ if@p1 ((E == NULL && ...) || ...) S1 else S2
 
 // For org and report modes
 
-@r depends on !context && (org || report) exists@
+@r depends on !context && (org || report) && !(file in "ext") exists@
 expression subE <= ifm.E;
 expression *ifm.E;
 expression E1,E2;
@@ -169,7 +169,7 @@ cocci.print_main(msg_safe,p)
 
 // For context mode
 
-@depends on context && !org && !report exists@
+@depends on context && !org && !report && !(file in "ext") exists@
 expression subE <= ifm.E;
 expression *ifm.E;
 expression E1,E2;
@@ -212,7 +212,7 @@ else S3
 // The following three rules are duplicates of ifm, pr1 and pr2 respectively.
 // It is need because the previous rule as already made a "change".
 
-@pr11 depends on context && !org && !report expression@
+@pr11 depends on context && !org && !report && !(file in "ext") && pr1@
 expression E;
 identifier f;
 position p1;
@@ -220,7 +220,7 @@ position p1;
 
  (E != NULL && ...) ? <+...E->f@p1...+> : ...
 
-@pr12 depends on context && !org && !report expression@
+@pr12 depends on context && !org && !report && pr2@
 expression E;
 identifier f;
 position p2;
@@ -234,7 +234,7 @@ position p2;
  sizeof(<+...E->f@p2...+>)
 )
 
-@ifm1 depends on context && !org && !report@
+@ifm1 depends on context && !org && !report && !(file in "ext") && ifm@
 expression *E;
 statement S1,S2;
 position p1;
