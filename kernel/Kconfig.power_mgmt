@@ -7,6 +7,7 @@
 
 menuconfig SYS_POWER_MANAGEMENT
 	bool "Power management"
+	select TICKLESS_IDLE
 	help
 	  This option enables the board to implement extra power management
 	  policies whenever the kernel becomes idle. The kernel informs the
@@ -59,6 +60,8 @@ config SYS_POWER_DEEP_SLEEP
 	  from the reset vector same as cold boot. The interface allows
 	  restoration of states that were saved at the time of suspend.
 
+endif # SYS_POWER_MANAGEMENT
+
 config DEVICE_POWER_MANAGEMENT
 	bool "Device power management"
 	help
@@ -69,5 +72,3 @@ config DEVICE_POWER_MANAGEMENT
 	  device drivers to do any necessary power management operations
 	  like turning off device clocks and peripherals. The device drivers
 	  may also save and restore states in these hook functions.
-
-endif
