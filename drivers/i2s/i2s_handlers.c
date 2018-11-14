@@ -8,6 +8,38 @@
 #include <syscall_handler.h>
 #include <i2s.h>
 
+
+Z_SYSCALL_HANDLER(i2s_configure, dev, dir, cfg_ptr)
+{
+	struct i2s_config config;
+	int ret = -EINVAL;
+
+	if (Z_SYSCALL_DRIVER_I2S(dev, configure)) {
+		goto out;
+	}
+
+	Z_OOPS(z_user_from_copy(&config, (void *)cfg_ptr,
+				sizeof(struct i2s_config)));
+
+	/* Check that the k_mem_slab provided is a valid pointer and that
+	 * the caller has permission on it
+	 */
+	if (Z_SYSCALL_OBJ(config.mem_slab, K_OBJ_MEM_SLAB)) {
+		goto out;
+	}
+
+	/* Ensure that the k_mem_slab's slabs are large enough for the
+	 * specified block size
+	 */
+	if (config.block_size > config.mem_slab->block_size) {
+		goto out;
+	}
+
+	ret = _impl_i2s_configure((struct device *)dev, dir, &config);
+out:
+	return ret;
+}
+
 Z_SYSCALL_HANDLER(i2s_buf_read, dev, buf, size)
 {
 	void *mem_block;
