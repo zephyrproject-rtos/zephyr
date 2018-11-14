@@ -1537,8 +1537,22 @@ class TestInstance:
         self.platform = platform
         self.name = os.path.join(platform.name, test.name)
         self.outdir = os.path.join(base_outdir, platform.name, test.path)
-        self.build_only = options.build_only or test.build_only or (test.harness and test.harness != 'console')
+
+        self.build_only = options.build_only or test.build_only \
+                or self.check_dependency()
         self.results = {}
+
+    def check_dependency(self):
+        build_only = False
+        if self.test.harness == 'console':
+            if "fixture" in self.test.harness_config:
+                fixture = self.test.harness_config['fixture']
+                if fixture not in options.fixture:
+                    build_only = True
+        elif self.test.harness:
+            build_only = True
+
+        return build_only
 
     def create_overlay(self):
         if len(self.test.extra_configs) > 0:
@@ -2481,6 +2495,10 @@ def parse_arguments():
         "--device-testing", action="store_true",
         help="Test on device directly. Specify the serial device to "
              "use with the --device-serial option.")
+
+    parser.add_argument(
+        "-X", "--fixture", action="append", default=[],
+        help="Specify a fixture that a board might support")
     parser.add_argument(
         "--device-serial",
 		help="Serial device for accessing the board (e.g., /dev/ttyACM0)")
@@ -2513,8 +2531,10 @@ def parse_arguments():
         "testcase.yaml files under here will be processed. May be "
         "called multiple times. Defaults to the 'samples' and "
         "'tests' directories in the Zephyr tree.")
+
     board_root_list = ["%s/boards" % ZEPHYR_BASE,
                        "%s/scripts/sanity_chk/boards" % ZEPHYR_BASE]
+
     parser.add_argument(
         "-A", "--board-root", action="append", default=board_root_list,
         help="Directory to search for board configuration files. All .yaml "
