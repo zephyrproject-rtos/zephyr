@@ -1119,7 +1119,7 @@ static inline enum net_priority net_vlan2priority(u8_t priority)
 		return NET_PRIORITY_BE;
 	}
 
-	return vlan2priority[priority];
+	return (enum net_priority)vlan2priority[priority];
 }
 
 /**
