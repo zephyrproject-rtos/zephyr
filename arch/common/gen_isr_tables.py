@@ -196,7 +196,7 @@ def main():
 
             debug(str(list_2nd_lvl_offsets))
 
-            if syms["CONFIG_3RD_LEVEL_INTERRUPTS"]:
+            if "CONFIG_3RD_LEVEL_INTERRUPTS" in syms:
                 if "CONFIG_NUM_3RD_LEVEL_AGGREGATORS" in syms:
                     num_aggregators = syms["CONFIG_NUM_3RD_LEVEL_AGGREGATORS"]
                     list_3rd_lvl_offsets = []
