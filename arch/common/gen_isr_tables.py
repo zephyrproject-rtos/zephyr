@@ -259,7 +259,8 @@ def main():
                     irq_parent = (irq & SECND_LVL_INTERRUPTS) >> 8
                     list_index = getindex(irq_parent, list_3rd_lvl_offsets)
                     irq3_baseoffset = syms["CONFIG_3RD_LVL_ISR_TBL_OFFSET"]
-                    irq3_pos = irq3_baseoffset + 32*list_index + irq3 - 1
+                    max_irq_per = syms["CONFIG_MAX_IRQ_PER_AGGREGATOR"]
+                    irq3_pos = irq3_baseoffset + max_irq_per*list_index + irq3 - 1
                     debug('IRQ_Indx = ' + str(irq3))
                     debug('IRQ_Pos  = ' + str(irq3_pos))
                     swt[irq3_pos - offset] = (param, func)
@@ -271,7 +272,8 @@ def main():
                         irq_parent = (irq & FIRST_LVL_INTERRUPTS)
                         list_index = getindex(irq_parent, list_2nd_lvl_offsets)
                         irq2_baseoffset = syms["CONFIG_2ND_LVL_ISR_TBL_OFFSET"]
-                        irq2_pos = irq2_baseoffset + 32*list_index + irq2 - 1
+                        max_irq_per = syms["CONFIG_MAX_IRQ_PER_AGGREGATOR"]
+                        irq2_pos = irq2_baseoffset + max_irq_per*list_index + irq2 - 1
                         debug('IRQ_Indx = ' + str(irq2))
                         debug('IRQ_Pos  = ' + str(irq2_pos))
                         swt[irq2_pos - offset] = (param, func)
