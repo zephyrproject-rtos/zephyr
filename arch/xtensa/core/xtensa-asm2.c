@@ -135,9 +135,10 @@ static void dump_stack(int *stack)
 #define DEF_INT_C_HANDLER(l)				\
 void *xtensa_int##l##_c(void *interrupted_stack)	\
 {							   \
-	int irqs, m;					   \
+	u32_t irqs, intenable, m;			   \
 	__asm__ volatile("rsr.interrupt %0" : "=r"(irqs)); \
-							   \
+	__asm__ volatile("rsr.intenable %0" : "=r"(intenable)); \
+	irqs &= intenable;					\
 	while ((m = _xtensa_handle_one_int##l(irqs))) {		\
 		irqs ^= m;					\
 		__asm__ volatile("wsr.intclear %0" : : "r"(m)); \
