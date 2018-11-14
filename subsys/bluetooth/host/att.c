@@ -1209,7 +1209,7 @@ static u8_t write_cb(const struct bt_gatt_attr *attr, void *user_data)
 		flags |= BT_GATT_WRITE_FLAG_CMD;
 	}
 
-	/* Read attribute value and store in the buffer */
+	/* Write attribute value */
 	write = attr->write(data->conn, attr, data->value, data->len,
 			    data->offset, flags);
 	if (write < 0 || write != data->len) {
