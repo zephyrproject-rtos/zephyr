@@ -57,6 +57,17 @@ static void ccompare_isr(void *arg)
 	z_clock_announce(dticks);
 }
 
+/* The legacy Xtensa platform code handles the timer interrupt via a
+ * special path and must find it via this name.  Remove once ASM2 is
+ * pervasive.
+ */
+#ifndef CONFIG_XTENSA_ASM2
+void _timer_int_handler(void *arg)
+{
+	return ccompare_isr(arg);
+}
+#endif
+
 int z_clock_driver_init(struct device *device)
 {
 	IRQ_CONNECT(TIMER_IRQ, 0, ccompare_isr, 0, 0);
