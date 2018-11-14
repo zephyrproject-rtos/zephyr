@@ -237,12 +237,15 @@ static int gpio_nrfx_read(struct device *port, int access_op,
 	NRF_GPIO_Type *reg = get_port_cfg(port)->port;
 	struct gpio_nrfx_data *data = get_port_data(port);
 
-	u32_t port_in = nrf_gpio_port_in_read(reg) ^ data->inverted;
+	u32_t dir = nrf_gpio_port_dir_read(reg);
+	u32_t port_in = nrf_gpio_port_in_read(reg) & ~dir;
+	u32_t port_out = nrf_gpio_port_out_read(reg) & dir;
+	u32_t port_val = (port_in | port_out) ^ data->inverted;
 
 	if (access_op == GPIO_ACCESS_BY_PORT) {
-		*value = port_in;
+		*value = port_val;
 	} else {
-		*value = (port_in & BIT(pin)) ? 1 : 0;
+		*value = (port_val & BIT(pin)) ? 1 : 0;
 	}
 
 	return 0;
