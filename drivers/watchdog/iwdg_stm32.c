@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2016 Open-RnD Sp. z o.o.
  * Copyright (c) 2017 RnDity Sp. z o.o.
+ * Copyright (c) 2018 qianfan Zhao
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,7 +41,6 @@ static void iwdg_stm32_convert_timeout(u32_t timeout,
 				       u32_t *prescaler,
 				       u32_t *reload)
 {
-	assert(IS_IWDG_TIMEOUT(timeout));
 
 	u16_t divider = 0U;
 	u8_t shift = 0U;
@@ -61,11 +61,22 @@ static void iwdg_stm32_convert_timeout(u32_t timeout,
 	*reload = (u32_t)(m_timeout / divider) - 1;
 }
 
-static void iwdg_stm32_enable(struct device *dev)
+static int iwdg_stm32_setup(struct device *dev, u8_t options)
 {
 	IWDG_TypeDef *iwdg = IWDG_STM32_STRUCT(dev);
 
+	/* Deactivate running when debugger is attached. */
+	if (options & WDT_OPT_PAUSE_HALTED_BY_DBG) {
+#if defined(CONFIG_SOC_SERIES_STM32F0X)
+		LL_APB1_GRP2_EnableClock(LL_APB1_GRP2_PERIPH_DBGMCU);
+#elif defined(CONFIG_SOC_SERIES_STM32L0X)
+		LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_DBGMCU);
+#endif
+		LL_DBGMCU_APB1_GRP1_FreezePeriph(LL_DBGMCU_APB1_GRP1_IWDG_STOP);
+	}
+
 	LL_IWDG_Enable(iwdg);
+	return 0;
 }
 
 static int iwdg_stm32_disable(struct device *dev)
@@ -73,88 +84,75 @@ static int iwdg_stm32_disable(struct device *dev)
 	/* watchdog cannot be stopped once started */
 	ARG_UNUSED(dev);
 
-	return 0;
+	return -EPERM;
 }
 
-static int iwdg_stm32_set_config(struct device *dev,
-				 struct wdt_config *config)
+static int iwdg_stm32_install_timeout(struct device *dev,
+				      const struct wdt_timeout_cfg *config)
 {
 	IWDG_TypeDef *iwdg = IWDG_STM32_STRUCT(dev);
-	u32_t timeout = config->timeout;
+	u32_t timeout = config->window.max * USEC_PER_MSEC;
 	u32_t prescaler = 0U;
 	u32_t reload = 0U;
 	u32_t tickstart;
 
-	assert(IS_IWDG_TIMEOUT(timeout));
+	if (config->callback != NULL) {
+		return -ENOTSUP;
+	}
 
 	iwdg_stm32_convert_timeout(timeout, &prescaler, &reload);
 
-	assert(IS_IWDG_PRESCALER(prescaler));
-	assert(IS_IWDG_RELOAD(reload));
+	if (IS_IWDG_TIMEOUT(timeout) || IS_IWDG_PRESCALER(prescaler) ||
+	    IS_IWDG_RELOAD(reload)) {
+		/* One of the parameters provided is invalid */
+		return -EINVAL;
+	}
+
+	tickstart = k_uptime_get_32();
+
+	while (LL_IWDG_IsReady(iwdg) == 0) {
+		/* Wait untill WVU, RVU, PVU are reset before updating  */
+		if ((k_uptime_get_32() - tickstart) > IWDG_DEFAULT_TIMEOUT) {
+			return -ENODEV;
+		}
+	}
 
 	LL_IWDG_EnableWriteAccess(iwdg);
 
 	LL_IWDG_SetPrescaler(iwdg, prescaler);
 	LL_IWDG_SetReloadCounter(iwdg, reload);
 
-#if defined(CONFIG_SOC_SERIES_STM32F3X) || defined(CONFIG_SOC_SERIES_STM32L4X)
-	/* Neither STM32F1X nor STM32F4 series supports window option. */
-	LL_IWDG_SetWindow(iwdg, 0x0FFF);
-#endif
+	return 0;
+}
 
-	tickstart = k_uptime_get_32();
+static int iwdg_stm32_feed(struct device *dev, int channel_id)
+{
+	IWDG_TypeDef *iwdg = IWDG_STM32_STRUCT(dev);
 
-	while (LL_IWDG_IsReady(iwdg) == 0) {
-		if ((k_uptime_get_32() - tickstart) > IWDG_DEFAULT_TIMEOUT) {
-			return -ENODEV;
-		}
-	}
-
+	ARG_UNUSED(channel_id);
 	LL_IWDG_ReloadCounter(iwdg);
 
 	return 0;
 }
 
-static void iwdg_stm32_get_config(struct device *dev,
-				  struct wdt_config *config)
-{
-	IWDG_TypeDef *iwdg = IWDG_STM32_STRUCT(dev);
-
-	u32_t prescaler = LL_IWDG_GetPrescaler(iwdg);
-	u32_t reload = LL_IWDG_GetReloadCounter(iwdg);
-
-	/* Timeout given in microseconds. */
-	config->timeout = (u32_t)((4 << prescaler) * (reload + 1)
-				  * (1000000 / LSI_VALUE));
-}
-
-static void iwdg_stm32_reload(struct device *dev)
-{
-	IWDG_TypeDef *iwdg = IWDG_STM32_STRUCT(dev);
-
-	LL_IWDG_ReloadCounter(iwdg);
-}
-
 static const struct wdt_driver_api iwdg_stm32_api = {
-	.enable = iwdg_stm32_enable,
+	.setup = iwdg_stm32_setup,
 	.disable = iwdg_stm32_disable,
-	.get_config = iwdg_stm32_get_config,
-	.set_config = iwdg_stm32_set_config,
-	.reload = iwdg_stm32_reload,
+	.install_timeout = iwdg_stm32_install_timeout,
+	.feed = iwdg_stm32_feed,
 };
 
 static int iwdg_stm32_init(struct device *dev)
 {
-	struct wdt_config config;
-
 #ifdef CONFIG_IWDG_STM32_START_AT_BOOT
 	IWDG_TypeDef *iwdg = IWDG_STM32_STRUCT(dev);
+	struct wdt_timeout_cfg config = {
+		.window.max = CONFIG_IWDG_STM32_TIMEOUT * USEC_PER_MSEC,
+	};
 
 	LL_IWDG_Enable(iwdg);
-#endif /* CONFIG_IWDG_STM32_START_AT_BOOT */
-
-	config.timeout = CONFIG_IWDG_STM32_TIMEOUT;
-	iwdg_stm32_set_config(dev, &config);
+	iwdg_stm32_install_timeout(dev, &config);
+#endif
 
 	/*
 	 * The ST production value for the option bytes where WDG_SW bit is
