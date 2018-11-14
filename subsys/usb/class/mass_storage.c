@@ -227,17 +227,34 @@ static bool write(u8_t *buf, u16_t size)
  * @return  0 on success, negative errno code on fail.
  */
 static int mass_storage_class_handle_req(struct usb_setup_packet *pSetup,
-		s32_t *len, u8_t **data)
+					 s32_t *len, u8_t **data)
 {
+	if (sys_le16_to_cpu(pSetup->wIndex) != mass_cfg.if0.bInterfaceNumber ||
+	    sys_le16_to_cpu(pSetup->wValue) != 0) {
+		LOG_WRN("Invalid setup parameters");
+		return -EINVAL;
+	}
 
 	switch (pSetup->bRequest) {
 	case MSC_REQUEST_RESET:
 		LOG_DBG("MSC_REQUEST_RESET");
+
+		if (sys_le16_to_cpu(pSetup->wLength)) {
+			LOG_WRN("Invalid length");
+			return -EINVAL;
+		}
+
 		msd_state_machine_reset();
 		break;
 
 	case MSC_REQUEST_GET_MAX_LUN:
 		LOG_DBG("MSC_REQUEST_GET_MAX_LUN");
+
+		if (sys_le16_to_cpu(pSetup->wLength) != 1) {
+			LOG_WRN("Invalid length");
+			return -EINVAL;
+		}
+
 		max_lun_count = 0;
 		*data = (u8_t *)(&max_lun_count);
 		*len = 1;
