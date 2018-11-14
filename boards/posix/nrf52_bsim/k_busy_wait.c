@@ -14,9 +14,9 @@
  * Will block this thread (and therefore the whole zephyr) during usec_to_wait
  *
  * Note that interrupts may be received in the meanwhile and that therefore this
- * thread may loose context
+ * thread may lose context
  */
-void k_busy_wait(u32_t usec_to_wait)
+void z_arch_busy_wait(u32_t usec_to_wait)
 {
 	bs_time_t time_end = tm_get_hw_time() + usec_to_wait;
 

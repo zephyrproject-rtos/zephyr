@@ -227,6 +227,10 @@ extern u32_t z_early_boot_rand32_get(void);
 extern int z_stack_adjust_initialized;
 #endif
 
+#if defined(CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT)
+extern void z_arch_busy_wait(u32_t usec_to_wait);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

@@ -25,10 +25,6 @@ void posix_irq_handler(void);
 void posix_exit(int exit_code);
 u64_t posix_get_hw_cycle(void);
 
-#if defined(CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT)
-void k_busy_wait(u32_t usec_to_wait);
-#endif
-
 #ifdef __cplusplus
 }
 #endif
