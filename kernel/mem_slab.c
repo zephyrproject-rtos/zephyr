@@ -62,6 +62,7 @@ static int init_mem_slab_module(struct device *dev)
 	     slab++) {
 		create_free_list(slab);
 		SYS_TRACING_OBJ_INIT(k_mem_slab, slab);
+		_k_object_init(slab);
 	}
 	return 0;
 }

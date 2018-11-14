@@ -18,6 +18,7 @@ from elf_helper import ElfHelper, kobject_to_enum
 
 kobjects = {
     "k_alert": None,
+    "k_mem_slab": None,
     "k_msgq": None,
     "k_mutex": None,
     "k_pipe": None,
