@@ -32,6 +32,14 @@ build:
         options: "-e HOME=/home/buildslave --privileged=true --tty --net=bridge --user buildslave"
 
     ci:
+      - sudo pip3 install west
+      - cd ..
+      - west init .
+      - west clone
+      - cd zephyr
+      - git fetch origin pull/${PULL_REQUEST}/head
+      - git checkout -f FETCH_HEAD
+      - git merge -q origin/${PULL_REQUEST_BASE_BRANCH}
       - export CCACHE_DIR=${SHIPPABLE_BUILD_DIR}/ccache/.ccache
       - >
         if [ "$IS_PULL_REQUEST" = "true" ]; then
