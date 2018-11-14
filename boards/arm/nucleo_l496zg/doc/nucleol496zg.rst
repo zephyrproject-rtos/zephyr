@@ -121,6 +121,10 @@ The Zephyr nucleo_l496zg board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
+| PWM       | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
+| RTC       | on-chip    | rtc                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -142,6 +146,10 @@ Default Zephyr Peripheral Mapping:
 - UART_2 TX/RX : PD5/PD6
 - UART_3 TX/RX : PD8/PD9
 - LPUART_1 TX/RX : PG7/PG8
+- PWM_1_CH1: PE9
+- PWM_1_CH2: PE11
+- PWM_1_CH3: PE13
+- PWM_2_CH1: PA0
 - USER_PB : PC13
 - LD1 : PC7
 - LD2 : PB7
