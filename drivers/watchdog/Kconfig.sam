@@ -8,6 +8,7 @@
 menuconfig WDT_SAM
 	bool "Atmel SAM MCU Family Watchdog (WDT) Driver"
 	depends on SOC_FAMILY_SAM
+	select HAS_DTS_WDT
 	default y
 	help
 	  Enable WDT driver for Atmel SAM MCUs.
