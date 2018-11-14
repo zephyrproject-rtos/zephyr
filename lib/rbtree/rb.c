@@ -27,7 +27,7 @@ static struct rbnode *get_child(struct rbnode *n, int side)
 
 	uintptr_t l = (uintptr_t) n->children[0];
 
-	l &= ~1ul;
+	l &= ~1UL;
 	return (struct rbnode *) l;
 }
 
@@ -40,14 +40,14 @@ static void set_child(struct rbnode *n, int side, void *val)
 		uintptr_t old = (uintptr_t) n->children[0];
 		uintptr_t new = (uintptr_t) val;
 
-		n->children[0] = (void *) (new | (old & 1ul));
+		n->children[0] = (void *) (new | (old & 1UL));
 	}
 }
 
 static enum rb_color get_color(struct rbnode *n)
 {
 	CHECK(n);
-	return ((uintptr_t)n->children[0]) & 1ul;
+	return ((uintptr_t)n->children[0]) & 1UL;
 }
 
 static bool is_black(struct rbnode *n)
@@ -66,7 +66,7 @@ static void set_color(struct rbnode *n, enum rb_color color)
 
 	uintptr_t *p = (void *) &n->children[0];
 
-	*p = (*p & ~1ul) | color;
+	*p = (*p & ~1UL) | color;
 }
 
 /* Searches the tree down to a node that is either identical with the
