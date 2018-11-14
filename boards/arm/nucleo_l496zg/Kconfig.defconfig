@@ -24,4 +24,20 @@ config LPUART_1
 
 endif # SERIAL
 
+if PWM
+
+config PWM_STM32_1
+	default y
+
+config PWM_STM32_2
+	default y
+
+config PWM_STM32_4
+	default y
+
+config PWM_STM32_15
+	default y
+
+endif # PWM
+
 endif # BOARD_NUCLEO_L496ZG
