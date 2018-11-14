@@ -253,7 +253,7 @@ extern "C" {
 
 #define _LOG(_level, ...)			       \
 	__LOG(_level,				       \
-	      LOG_CURRENT_MODULE_ID(),		       \
+	      (u16_t)LOG_CURRENT_MODULE_ID(),	       \
 	      LOG_CURRENT_DYNAMIC_DATA_ADDR(),	       \
 	      __VA_ARGS__)
 
