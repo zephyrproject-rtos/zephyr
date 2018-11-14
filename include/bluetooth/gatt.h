@@ -91,6 +91,13 @@ enum {
 	 * authorized but no data shall be written.
 	 */
 	BT_GATT_WRITE_FLAG_PREPARE = BIT(0),
+
+	/** Attribute write command flag
+	 *
+	 * If set, indicates that write operation is a command (Write without
+	 * response) which doesn't generate any response.
+	 */
+	BT_GATT_WRITE_FLAG_CMD = BIT(1),
 };
 
 /** @brief GATT Attribute structure. */
