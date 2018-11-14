@@ -106,8 +106,8 @@ struct i2s_sam_dev_data {
 #define MODULO_INC(val, max) { val = (++val < max) ? val : 0; }
 
 static struct device *get_dev_from_dma_channel(u32_t dma_channel);
-static void dma_rx_callback(struct device *, u32_t, int);
-static void dma_tx_callback(struct device *, u32_t, int);
+static void dma_rx_callback(void *, u32_t, int);
+static void dma_tx_callback(void *, u32_t, int);
 static void rx_stream_disable(struct stream *, Ssc *const, struct device *);
 static void tx_stream_disable(struct stream *, Ssc *const, struct device *);
 
@@ -188,7 +188,7 @@ static int start_dma(struct device *dev_dma, u32_t channel,
 }
 
 /* This function is executed in the interrupt context */
-static void dma_rx_callback(struct device *dev_dma, u32_t channel, int status)
+static void dma_rx_callback(void *callback_arg, u32_t channel, int status)
 {
 	struct device *dev = get_dev_from_dma_channel(channel);
 	const struct i2s_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
@@ -197,6 +197,7 @@ static void dma_rx_callback(struct device *dev_dma, u32_t channel, int status)
 	struct stream *stream = &dev_data->rx;
 	int ret;
 
+	ARG_UNUSED(callback_arg);
 	__ASSERT_NO_MSG(stream->mem_block != NULL);
 
 	/* Stop reception if there was an error */
@@ -246,7 +247,7 @@ rx_disable:
 }
 
 /* This function is executed in the interrupt context */
-static void dma_tx_callback(struct device *dev_dma, u32_t channel, int status)
+static void dma_tx_callback(void *callback_arg, u32_t channel, int status)
 {
 	struct device *dev = get_dev_from_dma_channel(channel);
 	const struct i2s_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
@@ -256,6 +257,7 @@ static void dma_tx_callback(struct device *dev_dma, u32_t channel, int status)
 	size_t mem_block_size;
 	int ret;
 
+	ARG_UNUSED(callback_arg);
 	__ASSERT_NO_MSG(stream->mem_block != NULL);
 
 	/* All block data sent */
