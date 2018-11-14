@@ -210,12 +210,16 @@ def extract_cells(node_address, yaml, prop, prop_values, names, index,
     try:
         name = names.pop(0).upper()
     except:
-        name = []
+        name = ''
 
     # Get number of cells per element of current property
     for k in reduced[cell_parent]['props'].keys():
         if k[0] == '#' and '-cells' in k:
             num_cells = reduced[cell_parent]['props'].get(k)
+            if k in cell_yaml.keys():
+                cell_yaml_names = k
+            else:
+                cell_yaml_names = '#cells'
     try:
         generation = yaml[get_compat(node_address)]['properties'][prop][
             'generation']
@@ -241,12 +245,12 @@ def extract_cells(node_address, yaml, prop, prop_values, names, index,
 
     # Generate label for each field of the property element
     for i in range(num_cells):
-        l_cellname = [str(cell_yaml['#cells'][i]).upper()]
+        l_cellname = [str(cell_yaml[cell_yaml_names][i]).upper()]
         if l_cell == l_cellname:
             label = l_base + l_cell + l_idx
         else:
             label = l_base + l_cell + l_cellname + l_idx
-        label_name = l_base + name + l_cellname
+        label_name = l_base + [name] + l_cellname
         prop_def['_'.join(label)] = prop_values.pop(0)
         if len(name):
             prop_alias['_'.join(label_name)] = '_'.join(label)
