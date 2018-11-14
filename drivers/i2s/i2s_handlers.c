@@ -30,7 +30,7 @@ Z_SYSCALL_HANDLER(i2s_buf_read, dev, buf, size)
 		copy_success = z_user_to_copy((void *)buf, mem_block,
 					      data_size);
 
-		k_mem_slab_free(rx_cfg->mem_slab, mem_block);
+		k_mem_slab_free(rx_cfg->mem_slab, &mem_block);
 		Z_OOPS(copy_success);
 		Z_OOPS(z_user_to_copy((void *)size, &data_size,
 				      sizeof(data_size)));
@@ -62,7 +62,7 @@ Z_SYSCALL_HANDLER(i2s_buf_write, dev, buf, size)
 
 	ret = z_user_from_copy(mem_block, (void *)buf, size);
 	if (ret) {
-		k_mem_slab_free(tx_cfg->mem_slab, mem_block);
+		k_mem_slab_free(tx_cfg->mem_slab, &mem_block);
 		Z_OOPS(ret);
 	}
 
