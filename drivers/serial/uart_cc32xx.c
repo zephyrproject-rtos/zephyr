@@ -27,6 +27,8 @@ struct uart_cc32xx_dev_data_t {
 #define DEV_DATA(dev) \
 	((struct uart_cc32xx_dev_data_t * const)(dev)->driver_data)
 
+#define PRIME_CHAR '\r'
+
 /* Forward decls: */
 static struct device DEVICE_NAME_GET(uart_cc32xx_0);
 
@@ -70,15 +72,20 @@ static int uart_cc32xx_init(struct device *dev)
 	MAP_UARTFIFODisable((unsigned long)config->base);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	/* Clear any pending UART interrupts: we only care about RX, TX: */
-	MAP_UARTIntClear((unsigned long)config->base,
-		(UART_INT_RX | UART_INT_TX));
+	/* Clear any pending UART RX interrupts: */
+	MAP_UARTIntClear((unsigned long)config->base, UART_INT_RX);
 
 	IRQ_CONNECT(DT_TI_CC32XX_UART_4000C000_IRQ_0,
 		    DT_TI_CC32XX_UART_4000C000_IRQ_0_PRIORITY,
 		    uart_cc32xx_isr, DEVICE_GET(uart_cc32xx_0),
 		    0);
 	irq_enable(DT_TI_CC32XX_UART_4000C000_IRQ_0);
+
+	/* Fill the tx fifo, so Zephyr console & shell subsystems get "primed"
+	 * with first tx fifo empty interrupt when they first call
+	 * uart_irq_tx_enable().
+	 */
+	MAP_UARTCharPutNonBlocking((unsigned long)config->base, PRIME_CHAR);
 #endif
 	return 0;
 }
@@ -278,10 +285,12 @@ static void uart_cc32xx_isr(void *arg)
 		dev_data->cb(dev_data->cb_data);
 	}
 	/*
-	 * Clear interrupts only after cb called, as Zephyr UART clients expect
-	 * to check interrupt status during the callback.
+	 * RX/TX interrupt should have been implicitly cleared by Zephyr UART
+	 * clients calling uart_fifo_read() or uart_fifo_write().
+	 * Still, clear any error interrupts here, as they're not yet handled.
 	 */
-	MAP_UARTIntClear((unsigned long)config->base, intStatus);
+	MAP_UARTIntClear((unsigned long)config->base,
+			 intStatus & ~(UART_INT_RX | UART_INT_TX));
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
