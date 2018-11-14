@@ -72,6 +72,13 @@ done
 DOC_MATRIX=${MATRIX_BUILDS}
 
 if [ -n "$MAIN_CI" ]; then
+
+	# West handling
+        cd ..
+        west init .
+        west clone
+        cd zephyr
+
 	if [ -z "$BRANCH" ]; then
 		echo "No base branch given"
 		exit
@@ -82,6 +89,11 @@ if [ -n "$MAIN_CI" ]; then
 	source zephyr-env.sh
 	SANITYCHECK="${ZEPHYR_BASE}/scripts/sanitycheck"
 	if [ -n "$PULL_REQUEST_NR" ]; then
+		# west resets the tree after calling clone, so lets point back
+		# to the PR again.
+		git fetch origin pull/${PULL_REQUEST}/head
+		git checkout -f FETCH_HEAD
+		git merge -q origin/${PULL_REQUEST_BASE_BRANCH}
 		git rebase $REMOTE/${BRANCH};
 	fi
 fi
