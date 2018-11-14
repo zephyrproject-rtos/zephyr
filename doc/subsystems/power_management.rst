@@ -92,9 +92,11 @@ System Power Management
 
 This consists of the hook functions that the power management subsystem calls
 when the kernel enters and exits the idle state, in other words, when the kernel
-has nothing to schedule. This section provides a general overview of the hook
-functions. Refer to :ref:`power_management_api` for the detailed description of
-the APIs.
+has nothing to schedule. Enabling system power management compels Zephyr kernel
+scheduler to work in tickless idle mode (see :option:`CONFIG_TICKLESS_IDLE`).
+
+This section provides a general overview of the hook functions. Refer to
+:ref:`power_management_api` for the detailed description of the APIs.
 
 Suspend Hook function
 =====================
