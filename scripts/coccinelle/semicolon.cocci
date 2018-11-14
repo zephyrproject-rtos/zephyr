@@ -12,7 +12,7 @@ virtual report
 virtual context
 virtual org
 
-@r_default@
+@r_default depends on !(file in "ext")@
 position p;
 @@
 switch (...)
@@ -20,7 +20,7 @@ switch (...)
 default: ...;@p
 }
 
-@r_case@
+@r_case depends on !(file in "ext")@
 position p;
 @@
 (
@@ -43,7 +43,7 @@ case ...:;@p
 }
 )
 
-@r1@
+@r1 depends on !(file in "ext")@
 statement S;
 position p1;
 position p != {r_default.p, r_case.p};
