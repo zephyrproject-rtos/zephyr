@@ -75,6 +75,10 @@ static int iwdg_stm32_setup(struct device *dev, u8_t options)
 		LL_DBGMCU_APB1_GRP1_FreezePeriph(LL_DBGMCU_APB1_GRP1_IWDG_STOP);
 	}
 
+	if (options & WDT_OPT_PAUSE_IN_SLEEP) {
+		return -ENOTSUP;
+	}
+
 	LL_IWDG_Enable(iwdg);
 	return 0;
 }
