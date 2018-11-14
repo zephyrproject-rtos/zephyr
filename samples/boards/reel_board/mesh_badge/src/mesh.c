@@ -44,16 +44,16 @@ enum {
 };
 
 struct sensor_hdr_a {
-	u16_t format:1;
-	u16_t length:4;
 	u16_t prop_id:11;
-};
+	u16_t length:4;
+	u16_t format:1;
+} __packed;
 
 struct sensor_hdr_b {
-	u8_t format:1;
 	u8_t length:7;
+	u8_t format:1;
 	u16_t prop_id;
-};
+} __packed;
 
 static struct k_work hello_work;
 static struct k_work mesh_start_work;
