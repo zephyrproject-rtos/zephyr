@@ -1742,11 +1742,13 @@ int ztls_getsockopt(int sock, int level, int optname,
 	}
 
 	if (!context || !context->tls) {
-		return -EBADF;
+		errno = EBADF;
+		return -1;
 	}
 
 	if (!optval || !optlen) {
-		return -EINVAL;
+		errno = EINVAL;
+		return -1;
 	}
 
 	switch (optname) {
@@ -1787,7 +1789,8 @@ int ztls_setsockopt(int sock, int level, int optname,
 	}
 
 	if (!context || !context->tls) {
-		return -EBADF;
+		errno = EBADF;
+		return -1;
 	}
 
 	switch (optname) {
