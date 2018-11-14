@@ -235,12 +235,16 @@ void k_queue_append_list(struct k_queue *queue, void *head, void *tail)
 
 	unsigned int key = irq_lock();
 #if !defined(CONFIG_POLL)
-	struct k_thread *thread;
+	struct k_thread *thread = NULL;
 
-	while ((head != NULL) &&
-		(thread = _unpend_first_thread(&queue->wait_q))) {
+	if (head) {
+		thread = _unpend_first_thread(&queue->wait_q);
+	}
+
+	while ((head != NULL) && (thread != NULL)) {
 		prepare_thread_to_run(thread, head);
 		head = *(void **)head;
+		thread = _unpend_first_thread(&queue->wait_q);
 	}
 
 	if (head != NULL) {
