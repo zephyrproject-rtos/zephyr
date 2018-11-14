@@ -800,7 +800,7 @@ __syscall s32_t k_sleep(s32_t duration);
  *
  * @return N/A
  */
-extern void k_busy_wait(u32_t usec_to_wait);
+__syscall void k_busy_wait(u32_t usec_to_wait);
 
 /**
  * @brief Yield the current thread.

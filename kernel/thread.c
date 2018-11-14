@@ -94,9 +94,10 @@ int _is_thread_essential(void)
 	return _current->base.user_options & K_ESSENTIAL;
 }
 
-#if !defined(CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT)
-void k_busy_wait(u32_t usec_to_wait)
+#ifdef CONFIG_SYS_CLOCK_EXISTS
+void _impl_k_busy_wait(u32_t usec_to_wait)
 {
+#if !defined(CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT)
 	/* use 64-bit math to prevent overflow when multiplying */
 	u32_t cycles_to_wait = (u32_t)(
 		(u64_t)usec_to_wait *
@@ -113,8 +114,19 @@ void k_busy_wait(u32_t usec_to_wait)
 			break;
 		}
 	}
+#else
+	z_arch_busy_wait(usec_to_wait);
+#endif /* CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT */
 }
-#endif
+
+#ifdef CONFIG_USERSPACE
+Z_SYSCALL_HANDLER(k_busy_wait, usec_to_wait)
+{
+	_impl_k_busy_wait(usec_to_wait);
+	return 0;
+}
+#endif /* CONFIG_USERSPACE */
+#endif /* CONFIG_SYS_CLOCK_EXISTS */
 
 #ifdef CONFIG_THREAD_CUSTOM_DATA
 void _impl_k_thread_custom_data_set(void *value)
