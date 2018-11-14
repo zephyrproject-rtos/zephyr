@@ -812,6 +812,9 @@ static void mass_storage_status_cb(enum usb_dc_status_code status,
 	case USB_DC_RESUME:
 		LOG_DBG("USB device resumed");
 		break;
+	case USB_DC_INTERFACE:
+		LOG_DBG("USB interface selected");
+		break;
 	case USB_DC_UNKNOWN:
 	default:
 		LOG_DBG("USB unknown state");
