@@ -346,8 +346,11 @@ struct i2s_driver_api {
  * @retval 0 If successful.
  * @retval -EINVAL Invalid argument.
  */
-static inline int i2s_configure(struct device *dev, enum i2s_dir dir,
-				struct i2s_config *cfg)
+__syscall int i2s_configure(struct device *dev, enum i2s_dir dir,
+			    struct i2s_config *cfg);
+
+static inline int _impl_i2s_configure(struct device *dev, enum i2s_dir dir,
+				      struct i2s_config *cfg)
 {
 	const struct i2s_driver_api *api = dev->driver_api;
 
