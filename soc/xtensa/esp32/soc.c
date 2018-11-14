@@ -74,3 +74,13 @@ void __attribute__((section(".iram1"))) __start(void)
 
 	CODE_UNREACHABLE;
 }
+
+/* Boot-time static default printk handler, possibly to be overriden later. */
+int z_arch_printk_char_out(int c)
+{
+	if (c == '\n') {
+		esp32_rom_uart_tx_one_char('\r');
+	}
+	esp32_rom_uart_tx_one_char(c);
+	return 0;
+}
