@@ -143,7 +143,7 @@ void main(void)
 
 	printk("fujitsu FRAM example application\n");
 
-	spi = device_get_binding(CONFIG_SPI_1_NAME);
+	spi = device_get_binding(DT_SPI_1_NAME);
 	if (!spi) {
 		printk("Could not find SPI driver\n");
 		return;

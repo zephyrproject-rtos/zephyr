@@ -22,7 +22,6 @@ LOG_MODULE_REGISTER(main);
  */
 #define STRIP_NUM_LEDS 32
 
-#define SPI_DEV_NAME "lpd8806_spi"
 #define STRIP_DEV_NAME CONFIG_LPD880X_STRIP_NAME
 #define DELAY_TIME K_MSEC(40)
 
@@ -53,19 +52,9 @@ const struct led_rgb *color_at(size_t time, size_t i)
 
 void main(void)
 {
-	struct device *spi, *strip;
+	struct device *strip;
 	size_t i, time;
 
-	/* Double-check the configuration. */
-	spi = device_get_binding(SPI_DEV_NAME);
-	if (spi) {
-		LOG_INF("Found SPI device %s", SPI_DEV_NAME);
-	} else {
-		LOG_ERR("SPI device not found; you must choose a SPI "
-			    "device and configure its name to %s",
-			    SPI_DEV_NAME);
-		return;
-	}
 	strip = device_get_binding(STRIP_DEV_NAME);
 	if (strip) {
 		LOG_INF("Found LED strip device %s", STRIP_DEV_NAME);
