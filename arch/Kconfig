@@ -12,7 +12,7 @@
 # overriden (by defining symbols in multiple locations)
 
 # Note: $ARCH might be a glob pattern
-source "arch/$(ARCH)/Kconfig"
+source "$(ARCH_DIR)/$(ARCH)/Kconfig"
 
 choice
 	prompt "Architecture"

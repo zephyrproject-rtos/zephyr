@@ -142,6 +142,7 @@ add_custom_target(
   KERNELVERSION=${KERNELVERSION}
   BOARD_DIR=boards/*/*/
   ARCH=*
+  ARCH_DIR=arch/
   SOC_DIR=soc/
   SRCARCH=x86
   KCONFIG_TURBO_MODE=${KCONFIG_TURBO_MODE}
