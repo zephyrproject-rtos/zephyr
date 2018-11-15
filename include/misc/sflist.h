@@ -396,7 +396,7 @@ Z_GENLIST_APPEND_LIST(sflist, sfnode)
 static inline void sys_sflist_merge_sflist(sys_sflist_t *list,
 					   sys_sflist_t *list_to_append);
 
-Z_GENLIST_MERGE_LIST(sflist)
+Z_GENLIST_MERGE_LIST(sflist, sfnode)
 
 /**
  * @brief Insert a node to the given list

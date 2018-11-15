@@ -126,15 +126,16 @@
 				     (sys_ ## __nname ## _t *)tail);	\
 }
 
-#define Z_GENLIST_MERGE_LIST(__lname)					\
+#define Z_GENLIST_MERGE_LIST(__lname, __nname)				\
 	static inline void						\
 	sys_ ## __lname ## _merge_ ## __lname (				\
 				sys_ ## __lname ## _t *list,		\
 				sys_ ## __lname ## _t *list_to_append)	\
 	{								\
-		sys_ ## __lname ## _append_list(list,			\
-			sys_ ## __lname ## _peek_head(list_to_append),	\
-			sys_ ## __lname ## _peek_tail(list_to_append));	\
+		sys_ ## __nname ## _t *head, *tail;			\
+		head = sys_ ## __lname ## _peek_head(list_to_append);	\
+		tail = sys_ ## __lname ## _peek_tail(list_to_append);	\
+		sys_ ## __lname ## _append_list(list, head, tail);	\
 		sys_ ## __lname ## _init(list_to_append);		\
 	}
 
