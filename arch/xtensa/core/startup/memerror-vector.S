@@ -1,7 +1,5 @@
 /* memerror-vector.S  --  Memory Error Exception Vector and Handler */
 
-/* $Id: //depot/rel/Foxhill/dot.5/Xtensa/OS/xtos/memerror-vector.S#1 $ */
-
 /*
  * Copyright (c) 2006-2013 Tensilica Inc.
  *
