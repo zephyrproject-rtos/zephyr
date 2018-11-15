@@ -140,13 +140,10 @@
 			label = "image-scratch";
 			reg = <0x000c1000 0x0001f000>;
 		};
-
-#if defined(CONFIG_FS_FLASH_STORAGE_PARTITION)
 		storage_partition: partition@fa000 {
 			label = "storage";
 			reg = <0x000fa000 0x00004000>;
 		};
-#endif
 	};
 };
 

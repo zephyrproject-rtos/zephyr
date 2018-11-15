@@ -72,12 +72,9 @@
 		 * The final 16 KiB is reserved for the application
 		 * and is used by NFFS if enabled.
 		 */
-
-#if defined(CONFIG_FS_FLASH_MAP_STORAGE)
 		storage_partition: partition@3c000 {
 			label = "storage";
 			reg = <0x0003c000 0x00004000>;
 		};
-#endif
 	};
 };
