@@ -26,15 +26,15 @@
 #include <xtensa/coreasm.h>
 #include <xtensa/corebits.h>
 
-// This file just contains this one symbol, used by the reset code.
-// It is here rather than in reset-vector.S because we want the symbol
-// to be external, so resolution is delayed until link time.
-//
-// To define your own value to override this default, redefine the
-// symbol _MemErrorHandler to the desired value, e.g. -
-//
-//    xt-xcc test.c -g -o test -Wl,--defsym=_MemErrorHandler=0x08080808
-//
+/* This file just contains this one symbol, used by the reset code.
+ * It is here rather than in reset-vector.S because we want the symbol
+ * to be external, so resolution is delayed until link time.
+ *
+ * To define your own value to override this default, redefine the
+ * symbol _MemErrorHandler to the desired value, e.g. -
+ *
+ *    xt-xcc test.c -g -o test -Wl,--defsym=_MemErrorHandler=0x08080808
+ */
 
 	.global	_MemErrorHandler
 	.weak   _MemErrorHandler
