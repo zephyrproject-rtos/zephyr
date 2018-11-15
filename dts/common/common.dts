@@ -1,8 +1,4 @@
 /*
- * Common Device Tree source, used for conditionally pulling in features and
+ * Common Device Tree source, used for pulling in features and
  * additions by the build system.
  */
-
-#ifdef CONFIG_BOOTLOADER_MCUBOOT
-#include "mcuboot.overlay"
-#endif

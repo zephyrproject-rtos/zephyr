@@ -16,6 +16,7 @@
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	leds {
@@ -61,12 +62,6 @@
 
 &flash0 {
 	partitions {
-		/*
-		 * If chosen's zephyr,code-partion is unset, the image will be
-		 * linked into the entire flash device.  If it points to an
-		 * individual partition, the code will be linked to, and
-		 * restricted to that partition.
-		 */
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
