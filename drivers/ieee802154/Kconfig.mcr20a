@@ -18,53 +18,6 @@ config IEEE802154_MCR20A_DRV_NAME
 	help
 	  This option sets the driver name
 
-if !HAS_DTS_SPI
-
-config IEEE802154_MCR20A_SPI_DRV_NAME
-	string "SPI driver's name to use to access MCR20A"
-	default SPI_0_NAME
-	help
-	  This option is mandatory to set which SPI controller to use in order
-	  to actually control the MCR20A chip.
-
-config IEEE802154_MCR20A_SPI_FREQ
-	int "SPI system frequency"
-	default 4000000
-	help
-	  This option sets the SPI controller's frequency. Beware this value
-	  depends on the SPI controller being used and also on the system
-	  clock.
-
-config IEEE802154_MCR20A_SPI_SLAVE
-	int "SPI slave linked to MCR20A"
-	default 0
-	help
-	  This option sets the SPI slave number SPI controller has to switch
-	  to when dealing with MCR20A chip.
-
-config IEEE802154_MCR20A_GPIO_SPI_CS
-	bool "Manage SPI CS through a GPIO pin"
-	help
-	This option is useful if one needs to manage SPI CS through a GPIO
-	pin to by-pass the SPI controller's CS logic.
-
-config IEEE802154_MCR20A_GPIO_SPI_CS_DRV_NAME
-	string "GPIO driver's name to use to drive SPI CS through"
-	depends on IEEE802154_MCR20A_GPIO_SPI_CS
-	help
-	This option is mandatory to set which GPIO controller to use in order
-	to actually emulate the SPI CS.
-
-config IEEE802154_MCR20A_GPIO_SPI_CS_PIN
-	int "GPIO PIN to use to drive SPI CS through"
-	default 0
-	depends on IEEE802154_MCR20A_GPIO_SPI_CS
-	help
-	This option is mandatory to set which GPIO pin to use in order
-	to actually emulate the SPI CS.
-
-endif # !HAS_DTS_SPI
-
 if !HAS_DTS_GPIO
 
 config MCR20A_GPIO_IRQ_B_NAME
