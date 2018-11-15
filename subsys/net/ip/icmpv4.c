@@ -112,6 +112,14 @@ static inline enum net_verdict icmpv4_handle_echo_request(struct net_pkt *pkt)
 	net_ipaddr_copy(&NET_IPV4_HDR(pkt)->src,
 			net_if_ipv4_select_src_addr(net_pkt_iface(pkt),
 						    &addr));
+	/* If interface can not select src address based on dst addr
+	 * and src address is unspecified, drop the echo request.
+	 */
+	if (net_ipv4_is_addr_unspecified(&NET_IPV4_HDR(pkt)->src)) {
+		NET_DBG("DROP: src addr is unspecified");
+		return NET_DROP;
+	}
+
 	net_ipaddr_copy(&NET_IPV4_HDR(pkt)->dst, &addr);
 
 	icmp_hdr.type = NET_ICMPV4_ECHO_REPLY;
