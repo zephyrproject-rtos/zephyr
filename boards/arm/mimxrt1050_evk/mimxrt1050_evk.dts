@@ -23,6 +23,7 @@
 		led0 = &green_led;
 		sw0 = &user_button;
 		spi-3 = &spi3;
+		eth = &eth;
 	};
 
 	chosen {
@@ -91,4 +92,11 @@ arduino_serial: &uart3 {};
 
 &spi3 {
 	status = "ok";
+};
+
+&eth {
+	status = "ok";
+	ptp {
+		status = "ok";
+	};
 };

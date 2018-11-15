@@ -51,4 +51,12 @@ config SPI_MCUX_LPSPI
 
 endif # SPI
 
+if NET_L2_ETHERNET
+
+config ETH_MCUX
+	def_bool y
+
+endif # NET_L2_ETHERNET
+
+
 endif # SOC_MIMXRT1052
