@@ -262,11 +262,21 @@ void _ztest_run_test_suite(const char *name, struct unit_test *suite)
 		}
 	}
 	if (fail) {
+		TC_PRINT("Test suite %s failed.\n", name);
+	} else {
+		TC_PRINT("Test suite %s succeeded\n", name);
+	}
+
+	test_status = (test_status || fail) ? 1 : 0;
+}
+
+void end_report(void)
+{
+	if (test_status) {
 		TC_END_REPORT(TC_FAIL);
 	} else {
 		TC_END_REPORT(TC_PASS);
 	}
-	test_status = (test_status || fail) ? 1 : 0;
 }
 
 #ifndef KERNEL
@@ -274,6 +284,7 @@ int main(void)
 {
 	_init_mock();
 	test_main();
+	end_report();
 
 	return test_status;
 }
@@ -282,5 +293,6 @@ void main(void)
 {
 	_init_mock();
 	test_main();
+	end_report();
 }
 #endif
