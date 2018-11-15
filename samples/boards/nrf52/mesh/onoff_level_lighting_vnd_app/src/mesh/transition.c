@@ -62,7 +62,7 @@ void calculate_rt(struct transition *transition)
 
 /* Function to calculate Remaining Time (End) */
 
-static void bound_states_transition_type_reassignment(u8_t type)
+void bound_states_transition_type_reassignment(u8_t type)
 {
 	switch (type) {
 	case ONOFF:
@@ -118,8 +118,6 @@ static void tt_values_calculator(struct transition *transition)
 
 void onoff_tt_values(struct generic_onoff_state *state)
 {
-	bound_states_transition_type_reassignment(ONOFF);
-
 	tt_values_calculator(state->transition);
 
 	if (state->transition->counter == 0) {
@@ -135,12 +133,6 @@ void onoff_tt_values(struct generic_onoff_state *state)
 void level_tt_values(struct generic_level_state *state)
 {
 	u32_t counter;
-
-	if (state == &gen_level_srv_root_user_data) {
-		bound_states_transition_type_reassignment(LEVEL);
-	} else if (state == &gen_level_srv_s0_user_data) {
-		bound_states_transition_type_reassignment(LEVEL_TEMP);
-	}
 
 	tt_values_calculator(state->transition);
 
@@ -167,8 +159,6 @@ void light_lightness_actual_tt_values(struct light_lightness_state *state)
 {
 	u32_t counter;
 
-	bound_states_transition_type_reassignment(ACTUAL);
-
 	tt_values_calculator(state->transition);
 
 	counter = state->transition->counter;
@@ -191,8 +181,6 @@ void light_lightness_linear_tt_values(struct light_lightness_state *state)
 {
 	u32_t counter;
 
-	bound_states_transition_type_reassignment(LINEAR);
-
 	tt_values_calculator(state->transition);
 
 	counter = state->transition->counter;
@@ -214,8 +202,6 @@ void light_lightness_linear_tt_values(struct light_lightness_state *state)
 void light_ctl_tt_values(struct light_ctl_state *state)
 {
 	u32_t counter;
-
-	bound_states_transition_type_reassignment(CTL);
 
 	tt_values_calculator(state->transition);
 
@@ -246,8 +232,6 @@ void light_ctl_tt_values(struct light_ctl_state *state)
 void light_ctl_temp_tt_values(struct light_ctl_state *state)
 {
 	u32_t counter;
-
-	bound_states_transition_type_reassignment(CTL_TEMP);
 
 	tt_values_calculator(state->transition);
 
