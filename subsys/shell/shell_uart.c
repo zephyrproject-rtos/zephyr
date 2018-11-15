@@ -35,13 +35,25 @@ static void uart_rx_handle(const struct shell_uart *sh_uart)
 	do {
 		len = ring_buf_put_claim(sh_uart->rx_ringbuf, &data,
 					 sh_uart->rx_ringbuf->size);
-		rd_len = uart_fifo_read(sh_uart->ctrl_blk->dev, data, len);
 
-		if (rd_len) {
-			new_data = true;
+		if (len) {
+			rd_len = uart_fifo_read(sh_uart->ctrl_blk->dev,
+						data, len);
+
+			if (rd_len) {
+				new_data = true;
+			}
+
+			ring_buf_put_finish(sh_uart->rx_ringbuf, rd_len);
+		} else {
+			u8_t dummy;
+
+			/* No space in the ring buffer - consume byte. */
+			LOG_WRN("RX ring buffer full.");
+
+			rd_len = uart_fifo_read(sh_uart->ctrl_blk->dev,
+						&dummy, 1);
 		}
-
-		ring_buf_put_finish(sh_uart->rx_ringbuf, rd_len);
 	} while (rd_len && (rd_len == len));
 
 	if (new_data) {
