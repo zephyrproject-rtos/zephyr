@@ -83,7 +83,7 @@ zephyr_smp_trim_front(void *buf, size_t len, void *arg)
  *
  *     struct net_buf *frag;
  *     struct net_buf *rsp;
- *     // [...]
+ *     ...
  *     while (rsp != NULL) {
  *         frag = zephyr_smp_split_frag(&rsp, zst, get_mtu());
  *         if (frag == NULL) {
