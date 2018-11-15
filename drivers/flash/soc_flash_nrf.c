@@ -85,7 +85,7 @@ static inline bool is_aligned_32(u32_t data)
 	return (data & 0x3) ? false : true;
 }
 
-static inline bool is_addr_valid(off_t addr, size_t len)
+static inline bool is_regular_addr_valid(off_t addr, size_t len)
 {
 	if (addr + len > NRF_FICR->CODEPAGESIZE * NRF_FICR->CODESIZE ||
 			addr < 0) {
@@ -93,6 +93,29 @@ static inline bool is_addr_valid(off_t addr, size_t len)
 	}
 
 	return true;
+}
+
+
+static inline bool is_uicr_addr_valid(off_t addr, size_t len)
+{
+#ifdef CONFIG_SOC_FLASH_NRF_UICR
+	if (addr >= (off_t)NRF_UICR + sizeof(*NRF_UICR) ||
+	    addr < (off_t)NRF_UICR ||
+	    len > sizeof(*NRF_UICR) ||
+	    addr + len > (off_t)NRF_UICR + sizeof(*NRF_UICR)) {
+		return false;
+	}
+
+	return true;
+#else
+	return false;
+#endif /* CONFIG_SOC_FLASH_NRF_UICR */
+}
+
+static inline bool is_addr_valid(off_t addr, size_t len)
+{
+	return is_regular_addr_valid(addr, len) ||
+	       is_uicr_addr_valid(addr, len);
 }
 
 static void nvmc_wait_ready(void)
@@ -153,18 +176,24 @@ static int flash_nrf_erase(struct device *dev, off_t addr, size_t size)
 	u32_t n_pages = size / pg_size;
 	int ret;
 
-	/* Erase can only be done per page */
-	if (((addr % pg_size) != 0) || ((size % pg_size) != 0)) {
+	if (is_regular_addr_valid(addr, size)) {
+		/* Erase can only be done per page */
+		if (((addr % pg_size) != 0) || ((size % pg_size) != 0)) {
+			return -EINVAL;
+		}
+
+		if (!n_pages) {
+			return 0;
+		}
+#ifdef CONFIG_SOC_FLASH_NRF_UICR
+	} else if (addr != (off_t)NRF_UICR || size != sizeof(*NRF_UICR)) {
 		return -EINVAL;
 	}
-
-	if (!is_addr_valid(addr, size)) {
+#else
+	} else {
 		return -EINVAL;
 	}
-
-	if (!n_pages) {
-		return 0;
-	}
+#endif /* CONFIG_SOC_FLASH_NRF_UICR */
 
 	SYNC_LOCK();
 
@@ -419,6 +448,16 @@ static int erase_op(void *context)
 	/* Erase uses a specific configuration register */
 	NRF_NVMC->CONFIG = NVMC_CONFIG_WEN_Een << NVMC_CONFIG_WEN_Pos;
 	nvmc_wait_ready();
+
+#ifdef CONFIG_SOC_FLASH_NRF_UICR
+	if (e_ctx->flash_addr == (off_t)NRF_UICR) {
+		NRF_NVMC->ERASEUICR = 1;
+		nvmc_wait_ready();
+		NRF_NVMC->CONFIG = prev_nvmc_cfg;
+		nvmc_wait_ready();
+		return FLASH_OP_DONE;
+	}
+#endif
 
 	do {
 		NRF_NVMC->ERASEPAGE = e_ctx->flash_addr;
