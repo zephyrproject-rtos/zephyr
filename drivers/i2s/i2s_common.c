@@ -20,7 +20,7 @@ int _impl_i2s_buf_read(struct device *dev, void *buf, size_t *size)
 			i2s_config_get((struct device *)dev, I2S_DIR_RX);
 
 		memcpy(buf, mem_block, *size);
-		k_mem_slab_free(rx_cfg->mem_slab, mem_block);
+		k_mem_slab_free(rx_cfg->mem_slab, &mem_block);
 	}
 
 	return ret;
