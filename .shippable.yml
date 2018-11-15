@@ -35,9 +35,9 @@ build:
       - export CCACHE_DIR=${SHIPPABLE_BUILD_DIR}/ccache/.ccache
       - >
         if [ "$IS_PULL_REQUEST" = "true" ]; then
-          ./scripts/ci/run_ci.sh -b master -r origin -m ${MATRIX_BUILD} -M ${MATRIX_BUILDS} -p;
+          ./scripts/ci/run_ci.sh -b master -r origin -m ${MATRIX_BUILD} -M ${MATRIX_BUILDS} -B ${BSIM_BT_TEST_RESULTS_FILE} -p;
         else
-          ./scripts/ci/run_ci.sh -b master -r origin -m ${MATRIX_BUILD} -M ${MATRIX_BUILDS};
+          ./scripts/ci/run_ci.sh -b master -r origin -m ${MATRIX_BUILD} -M ${MATRIX_BUILDS} -B ${BSIM_BT_TEST_RESULTS_FILE};
         fi;
       - ccache -s
     on_failure:

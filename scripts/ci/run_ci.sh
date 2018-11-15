@@ -25,7 +25,7 @@ SANITYCHECK="${ZEPHYR_BASE}/scripts/sanitycheck"
 MATRIX_BUILDS=1
 MATRIX=1
 
-while getopts ":pm:b:r:M:" opt; do
+while getopts ":pm:b:B:r:M:" opt; do
   case $opt in
     p)
       echo "Testing a Pull Request." >&2
@@ -42,6 +42,10 @@ while getopts ":pm:b:r:M:" opt; do
     b)
       echo "Base Branch: $OPTARG" >&2
       BRANCH=$OPTARG
+      ;;
+    B)
+      echo "bsim BT tests xml results file: $OPTARG" >&2
+      BSIM_BT_TEST_RESULTS_FILE=$OPTARG
       ;;
     r)
       echo "Remote: $OPTARG" >&2
