@@ -84,9 +84,9 @@ config HAS_FLASH_LOAD_OFFSET
 	  This option is selected by targets having a FLASH_LOAD_OFFSET
 	  and FLASH_LOAD_SIZE.
 
-if !HAS_DTS
 config FLASH_LOAD_OFFSET
 	hex "Kernel load offset"
+	default "$(dt_get_hex_val,DT_CODE_PARTITION_OFFSET)" if BOOTLOADER_MCUBOOT
 	default 0
 	depends on HAS_FLASH_LOAD_OFFSET
 	help
@@ -99,6 +99,7 @@ config FLASH_LOAD_OFFSET
 
 config FLASH_LOAD_SIZE
 	hex "Kernel load size"
+	default "$(dt_get_hex_val,DT_CODE_PARTITION_SIZE)" if BOOTLOADER_MCUBOOT
 	default 0
 	depends on HAS_FLASH_LOAD_OFFSET
 	help
@@ -108,7 +109,6 @@ config FLASH_LOAD_SIZE
 	  the device.
 
 	  If unsure, leave at the default value 0.
-endif
 
 config TEXT_SECTION_OFFSET
 	hex "TEXT section offset"
