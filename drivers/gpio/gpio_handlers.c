@@ -29,20 +29,17 @@ Z_SYSCALL_HANDLER(gpio_read, port, access_op, pin, value)
 
 Z_SYSCALL_HANDLER(gpio_enable_callback, port, access_op, pin)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_GPIO(port, enable_callback));
 	return _impl_gpio_enable_callback((struct device *)port, access_op,
 					  pin);
 }
 
 Z_SYSCALL_HANDLER(gpio_disable_callback, port, access_op, pin)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_GPIO(port, disable_callback));
 	return _impl_gpio_disable_callback((struct device *)port, access_op,
 					   pin);
 }
 
 Z_SYSCALL_HANDLER(gpio_get_pending_int, port)
 {
-	Z_OOPS(Z_SYSCALL_DRIVER_GPIO(port, get_pending_int));
 	return _impl_gpio_get_pending_int((struct device *)port);
 }
