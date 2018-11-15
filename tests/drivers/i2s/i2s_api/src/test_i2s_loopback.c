@@ -15,136 +15,21 @@
 #include <zephyr.h>
 #include <ztest.h>
 #include <i2s.h>
+#include "i2s_api_test.h"
 
-#define I2S_DEV_NAME "I2S_0"
 #define NUM_RX_BLOCKS 2
 #define NUM_TX_BLOCKS 2
-#define SAMPLE_NO 32
-
-/* The data_l represent a sine wave */
-static s16_t data_l[SAMPLE_NO] = {
-	  6392,  12539,  18204,  23169,  27244,  30272,  32137,  32767,  32137,
-	 30272,  27244,  23169,  18204,  12539,   6392,      0,  -6393, -12540,
-	-18205, -23170, -27245, -30273, -32138, -32767, -32138, -30273, -27245,
-	-23170, -18205, -12540,  -6393,     -1,
-};
-
-/* The data_r represent a sine wave with double the frequency of data_l */
-static s16_t data_r[SAMPLE_NO] = {
-	 12539,  23169,  30272,  32767,  30272,  23169,  12539,      0, -12540,
-	-23170, -30273, -32767, -30273, -23170, -12540,     -1,  12539,  23169,
-	 30272,  32767,  30272,  23169,  12539,      0, -12540, -23170, -30273,
-	-32767, -30273, -23170, -12540,     -1,
-};
-
-#define BLOCK_SIZE (2 * sizeof(data_l))
-
 K_MEM_SLAB_DEFINE(rx_0_mem_slab, BLOCK_SIZE, NUM_RX_BLOCKS, 1);
 K_MEM_SLAB_DEFINE(tx_0_mem_slab, BLOCK_SIZE, NUM_TX_BLOCKS, 1);
 
-static void fill_buf(s16_t *tx_block, int att)
-{
-	for (int i = 0; i < SAMPLE_NO; i++) {
-		tx_block[2 * i] = data_l[i] >> att;
-		tx_block[2 * i + 1] = data_r[i] >> att;
-	}
-}
-
-static int verify_buf(s16_t *rx_block, int att)
-{
-	for (int i = 0; i < SAMPLE_NO; i++) {
-		if (rx_block[2 * i] != data_l[i] >> att) {
-			TC_PRINT("Error: att %d: data_l mismatch at position "
-				 "%d, expected %d, actual %d\n",
-				 att, i, data_l[i] >> att, rx_block[2 * i]);
-			return -TC_FAIL;
-		}
-		if (rx_block[2 * i + 1] != data_r[i] >> att) {
-			TC_PRINT("Error: att %d: data_r mismatch at position "
-				 "%d, expected %d, actual %d\n",
-				 att, i, data_r[i] >> att, rx_block[2 * i + 1]);
-			return -TC_FAIL;
-		}
-	}
-
-	return TC_PASS;
-}
-
-static void fill_buf_const(s16_t *tx_block, s16_t val_l, s16_t val_r)
-{
-	for (int i = 0; i < SAMPLE_NO; i++) {
-		tx_block[2 * i] = val_l;
-		tx_block[2 * i + 1] = val_r;
-	}
-}
-
-static int verify_buf_const(s16_t *rx_block, s16_t val_l, s16_t val_r)
-{
-	for (int i = 0; i < SAMPLE_NO; i++) {
-		if (rx_block[2 * i] != val_l) {
-			TC_PRINT("Error: data_l mismatch at position "
-				 "%d, expected %d, actual %d\n",
-				 i, val_l, rx_block[2 * i]);
-			return -TC_FAIL;
-		}
-		if (rx_block[2 * i + 1] != val_r) {
-			TC_PRINT("Error: data_r mismatch at position "
-				 "%d, expected %d, actual %d\n",
-				 i, val_r, rx_block[2 * i + 1]);
-			return -TC_FAIL;
-		}
-	}
-
-	return TC_PASS;
-}
-
 static int tx_block_write(struct device *dev_i2s, int att, int err)
 {
-	void *tx_block;
-	int ret;
-
-	ret = k_mem_slab_alloc(&tx_0_mem_slab, &tx_block, K_FOREVER);
-	if (ret < 0) {
-		TC_PRINT("Error: Failed to allocate tx_block\n");
-		return -TC_FAIL;
-	}
-	fill_buf((u16_t *)tx_block, att);
-	ret = i2s_write(dev_i2s, tx_block, BLOCK_SIZE);
-	if (ret < 0) {
-		k_mem_slab_free(&tx_0_mem_slab, &tx_block);
-	}
-	if (ret != err) {
-		TC_PRINT("Error: i2s_write failed expected %d, actual %d\n",
-			 err, ret);
-		return -TC_FAIL;
-	}
-
-	return TC_PASS;
+	return tx_block_write_slab(dev_i2s, att, err, &tx_0_mem_slab);
 }
-
 static int rx_block_read(struct device *dev_i2s, int att)
 {
-	void *rx_block;
-	size_t rx_size;
-	int ret;
-
-	ret = i2s_read(dev_i2s, &rx_block, &rx_size);
-	if (ret < 0 || rx_size != BLOCK_SIZE) {
-		TC_PRINT("Error: Read failed\n");
-		return -TC_FAIL;
-	}
-	ret = verify_buf((u16_t *)rx_block, att);
-	if (ret < 0) {
-		TC_PRINT("Error: Verify failed\n");
-		return -TC_FAIL;
-	}
-	k_mem_slab_free(&rx_0_mem_slab, &rx_block);
-
-	return TC_PASS;
+	return rx_block_read_slab(dev_i2s, att, &rx_0_mem_slab);
 }
-
-#define TIMEOUT          2000
-#define FRAME_CLK_FREQ   8000
 
 /** Configure I2S TX transfer. */
 void test_i2s_tx_transfer_configure_0(void)
@@ -325,20 +210,17 @@ void test_i2s_transfer_long(void)
 void test_i2s_rx_sync_start(void)
 {
 	struct device *dev_i2s;
-	void *tx_block;
-	void *rx_block;
 	size_t rx_size;
 	int ret;
+	char buf[BLOCK_SIZE];
 
 	dev_i2s = device_get_binding(I2S_DEV_NAME);
 	zassert_not_null(dev_i2s, "device " I2S_DEV_NAME " not found");
 
 	/* Prefill TX queue */
 	for (int n = 0; n < NUM_TX_BLOCKS; n++) {
-		ret = k_mem_slab_alloc(&tx_0_mem_slab, &tx_block, K_FOREVER);
-		zassert_equal(ret, TC_PASS, NULL);
-		fill_buf_const((u16_t *)tx_block, 1, 2);
-		ret = i2s_write(dev_i2s, tx_block, BLOCK_SIZE);
+		fill_buf_const((u16_t *)buf, 1, 2);
+		ret = i2s_buf_write(dev_i2s, buf, BLOCK_SIZE);
 		zassert_equal(ret, TC_PASS, NULL);
 		TC_PRINT("%d->OK\n", n);
 	}
@@ -352,11 +234,10 @@ void test_i2s_rx_sync_start(void)
 	/* Start reception */
 	ret = i2s_trigger(dev_i2s, I2S_DIR_RX, I2S_TRIGGER_START);
 	zassert_equal(ret, 0, "RX START trigger failed");
-
-	ret = i2s_read(dev_i2s, &rx_block, &rx_size);
+	ret = i2s_buf_read(dev_i2s, buf, &rx_size);
 	zassert_equal(ret, TC_PASS, NULL);
-	ret = verify_buf_const((u16_t *)rx_block, 1, 2);
-	k_mem_slab_free(&rx_0_mem_slab, &rx_block);
+	ret = verify_buf_const((u16_t *)buf, 1, 2);
+
 	zassert_equal(ret, TC_PASS, NULL);
 	TC_PRINT("%d<-OK\n", 1);
 
@@ -379,14 +260,14 @@ void test_i2s_rx_sync_start(void)
 void test_i2s_rx_empty_timeout(void)
 {
 	struct device *dev_i2s;
-	void *rx_block;
 	size_t rx_size;
 	int ret;
+	char buf[BLOCK_SIZE];
 
 	dev_i2s = device_get_binding(I2S_DEV_NAME);
 	zassert_not_null(dev_i2s, "device " I2S_DEV_NAME " not found");
 
-	ret = i2s_read(dev_i2s, &rx_block, &rx_size);
+	ret = i2s_buf_read(dev_i2s, buf, &rx_size);
 	zassert_equal(ret, -EAGAIN, "i2s_read did not timed out");
 }
 
@@ -486,9 +367,9 @@ void test_i2s_transfer_restart(void)
 void test_i2s_transfer_rx_overrun(void)
 {
 	struct device *dev_i2s;
-	void *rx_block;
 	size_t rx_size;
 	int ret;
+	char rx_buf[BLOCK_SIZE];
 
 	dev_i2s = device_get_binding(I2S_DEV_NAME);
 	zassert_not_null(dev_i2s, "device " I2S_DEV_NAME " not found");
@@ -524,7 +405,8 @@ void test_i2s_transfer_rx_overrun(void)
 	}
 
 	/* Attempt to read one more data block, expect an error */
-	ret = i2s_read(dev_i2s, &rx_block, &rx_size);
+	ret = i2s_buf_read(dev_i2s, rx_buf, &rx_size);
+
 	zassert_equal(ret, -EIO, "RX overrun error not detected");
 
 	ret = i2s_trigger(dev_i2s, I2S_DIR_RX, I2S_TRIGGER_PREPARE);
@@ -589,6 +471,8 @@ void test_i2s_transfer_tx_underrun(void)
 
 	ret = i2s_trigger(dev_i2s, I2S_DIR_TX, I2S_TRIGGER_PREPARE);
 	zassert_equal(ret, 0, "TX PREPARE trigger failed");
+
+	k_sleep(200);
 
 	/* Transmit and receive two more data blocks */
 	ret = tx_block_write(dev_i2s, 1, 0);
