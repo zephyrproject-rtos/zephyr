@@ -107,10 +107,11 @@ static ALWAYS_INLINE s32_t _ms_to_ticks(s32_t ms)
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 
 #ifdef _NEED_PRECISE_TICK_MS_CONVERSION
+	int cycles_per_sec = sys_clock_hw_cycles_per_sec();
 	/* use 64-bit math to keep precision */
 	return (s32_t)ceiling_fraction(
-		(s64_t)ms * sys_clock_hw_cycles_per_sec(),
-		((s64_t)MSEC_PER_SEC * sys_clock_hw_cycles_per_sec()) /
+		(s64_t)ms * cycles_per_sec,
+		((s64_t)MSEC_PER_SEC * cycles_per_sec) /
 		CONFIG_SYS_CLOCK_TICKS_PER_SEC);
 #else
 	/* simple division keeps precision */
