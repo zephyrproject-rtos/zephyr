@@ -107,7 +107,7 @@ struct ieee802154_radio_api {
 		       void (*done_cb)(struct device *dev,
 				       s16_t max_ed));
 #endif /* CONFIG_NET_L2_OPENTHREAD */
-} __packed;
+};
 
 #define IEEE802154_AR_FLAG_SET (0x20)
 
