@@ -1,0 +1,11 @@
+common:
+  harness: display
+  tags: display
+sample:
+  description: Character framebuffer shell test
+  name: cfb shell sample
+tests:
+  test_ssd1306:
+    platform_whitelist: frdm_k64f
+  test_ssd1673:
+    platform_whitelist: reel_board
