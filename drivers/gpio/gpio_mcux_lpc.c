@@ -48,10 +48,12 @@ static int gpio_mcux_lpc_configure(struct device *dev,
 	if ((flags & GPIO_INT) && (flags & GPIO_DIR_OUT)) {
 		return -EINVAL;
 	}
+
 	/* Check if GPIO port supports interrupts */
 	if (flags & GPIO_INT) {
-		return -EINVAL;
+		return -ENOTSUP;
 	}
+
 	/* supports access by pin now,you can add access by port when needed */
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 		/* input-0,output-1 */

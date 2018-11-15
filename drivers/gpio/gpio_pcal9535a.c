@@ -358,6 +358,10 @@ static int gpio_pcal9535a_config(struct device *dev, int access_op,
 	u16_t i2c_addr = config->i2c_slave_addr;
 #endif
 
+	if (flags & GPIO_INT) {
+		return -ENOTSUP;
+	}
+
 	if (!_has_i2c_master(dev)) {
 		return -EINVAL;
 	}
@@ -488,44 +492,10 @@ done:
 	return ret;
 }
 
-static int gpio_pcal9535a_manage_callback(struct device *dev,
-					  struct gpio_callback *callback,
-					  bool set)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(callback);
-	ARG_UNUSED(set);
-
-	return -ENOTSUP;
-}
-
-static int gpio_pcal9535a_enable_callback(struct device *dev,
-					  int access_op, u32_t pin)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(access_op);
-	ARG_UNUSED(pin);
-
-	return -ENOTSUP;
-}
-
-static int gpio_pcal9535a_disable_callback(struct device *dev,
-					   int access_op, u32_t pin)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(access_op);
-	ARG_UNUSED(pin);
-
-	return -ENOTSUP;
-}
-
 static const struct gpio_driver_api gpio_pcal9535a_drv_api_funcs = {
 	.config = gpio_pcal9535a_config,
 	.write = gpio_pcal9535a_write,
 	.read = gpio_pcal9535a_read,
-	.manage_callback = gpio_pcal9535a_manage_callback,
-	.enable_callback = gpio_pcal9535a_enable_callback,
-	.disable_callback = gpio_pcal9535a_disable_callback,
 };
 
 /**

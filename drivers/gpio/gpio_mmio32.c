@@ -35,6 +35,10 @@ static int gpio_mmio32_config(struct device *dev, int access_op,
 	struct gpio_mmio32_context *context = dev->driver_data;
 	const struct gpio_mmio32_config *config = context->config;
 
+	if (flags & GPIO_INT) {
+		return -ENOTSUP;
+	}
+
 	if (access_op != GPIO_ACCESS_BY_PIN) {
 		return -ENOTSUP;
 	}
