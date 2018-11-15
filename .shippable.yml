@@ -35,74 +35,25 @@ build:
       - export CCACHE_DIR=${SHIPPABLE_BUILD_DIR}/ccache/.ccache
       - >
         if [ "$IS_PULL_REQUEST" = "true" ]; then
-          ./scripts/ci/run_ci.sh -b master -r origin -m ${MATRIX_BUILD} -M ${MATRIX_BUILDS} -B ${BSIM_BT_TEST_RESULTS_FILE} -p;
+          ./scripts/ci/run_ci.sh -c -b ${PULL_REQUEST_BASE_BRANCH} -r origin -m ${MATRIX_BUILD} -M ${MATRIX_BUILDS} -B ${BSIM_BT_TEST_RESULTS_FILE} -p;
         else
-          ./scripts/ci/run_ci.sh -b master -r origin -m ${MATRIX_BUILD} -M ${MATRIX_BUILDS} -B ${BSIM_BT_TEST_RESULTS_FILE};
+          ./scripts/ci/run_ci.sh -c -b ${PULL_REQUEST_BASE_BRANCH} -r origin -m ${MATRIX_BUILD} -M ${MATRIX_BUILDS} -B ${BSIM_BT_TEST_RESULTS_FILE};
         fi;
       - ccache -s
     on_failure:
       - >
-         if [ -f "$HOME/.cache/zephyr/ToolchainCapabilityDatabase.cmake" ]; then
-           echo "Dumping the capability database in case we are affected by #9992"
-           cat $HOME/.cache/zephyr/ToolchainCapabilityDatabase.cmake
-         fi;
-      - rm -rf ccache $HOME/.cache/zephyr
-      - mkdir -p shippable/testresults
-      - mkdir -p shippable/codecoverage
-      - source zephyr-env.sh
-      - >
-         if [ "$MATRIX_BUILD" = "1" ]; then
-            gcovr -r ${ZEPHYR_BASE} -x > shippable/codecoverage/coverage.xml;
-            lcov --capture --directory sanity-out/native_posix/ --directory sanity-out/nrf52_bsim/ --directory sanity-out/unit_testing/ --directory bsim_bt_out/ --output-file lcov.pre.info -q --rc lcov_branch_coverage=1;
-            lcov -q --remove lcov.pre.info mylib.c --remove lcov.pre.info tests/\* --remove lcov.pre.info samples/\* --remove lcov.pre.info ext/\* --remove lcov.pre.info *generated* -o lcov.info --rc lcov_branch_coverage=1;
-            rm lcov.pre.info;
-            rm -rf sanity-out out-2nd-pass;
-            bash <(curl -s https://codecov.io/bash) -f "lcov.info" -X coveragepy -X fixes;
-            rm -f lcov.info;
-         else
-            rm -rf sanity-out out-2nd-pass;
-         fi;
-      - >
-          if [ -e compliance.xml ]; then
-            cp compliance.xml shippable/testresults/;
-          fi;
-      - >
-          if [ -e ./scripts/sanity_chk/last_sanity.xml ]; then
-            cp ./scripts/sanity_chk/last_sanity.xml shippable/testresults/;
-          fi;
-      - >
-          if [ -e ${BSIM_BT_TEST_RESULTS_FILE} ]; then
-            cp ${BSIM_BT_TEST_RESULTS_FILE} shippable/testresults/;
-          fi;
+        if [ "$IS_PULL_REQUEST" = "true" ]; then
+          ./scripts/ci/run_ci.sh -f -b ${PULL_REQUEST_BASE_BRANCH} -r origin -m ${MATRIX_BUILD} -M ${MATRIX_BUILDS} -p;
+        else
+          ./scripts/ci/run_ci.sh -f -b ${PULL_REQUEST_BASE_BRANCH} -r origin -m ${MATRIX_BUILD} -M ${MATRIX_BUILDS};
+        fi;
     on_success:
-      - rm -rf ccache $HOME/.cache/zephyr
-      - mkdir -p shippable/testresults
-      - mkdir -p shippable/codecoverage
-      - source zephyr-env.sh
       - >
-         if [ "$MATRIX_BUILD" = "1" ]; then
-            gcovr -r ${ZEPHYR_BASE} -x > shippable/codecoverage/coverage.xml;
-            lcov --capture --directory sanity-out/native_posix/ --directory sanity-out/nrf52_bsim/ --directory sanity-out/unit_testing/ --directory bsim_bt_out/ --output-file lcov.pre.info -q --rc lcov_branch_coverage=1;
-            lcov -q --remove lcov.pre.info mylib.c --remove lcov.pre.info tests/\* --remove lcov.pre.info samples/\* --remove lcov.pre.info ext/\* --remove lcov.pre.info *generated* -o lcov.info --rc lcov_branch_coverage=1;
-            rm lcov.pre.info;
-            rm -rf sanity-out out-2nd-pass;
-            bash <(curl -s https://codecov.io/bash) -f "lcov.info" -X coveragepy -X fixes;
-            rm -f lcov.info;
-         else
-            rm -rf sanity-out out-2nd-pass;
-         fi;
-      - >
-          if [ -e compliance.xml ]; then
-            cp compliance.xml shippable/testresults/;
-          fi;
-      - >
-          if [ -e ./scripts/sanity_chk/last_sanity.xml ]; then
-            cp ./scripts/sanity_chk/last_sanity.xml shippable/testresults/;
-          fi;
-      - >
-          if [ -e ${BSIM_BT_TEST_RESULTS_FILE} ]; then
-            cp ${BSIM_BT_TEST_RESULTS_FILE} shippable/testresults/;
-          fi;
+        if [ "$IS_PULL_REQUEST" = "true" ]; then
+          ./scripts/ci/run_ci.sh -s -b ${PULL_REQUEST_BASE_BRANCH} -r origin -m ${MATRIX_BUILD} -M ${MATRIX_BUILDS} -p;
+        else
+          ./scripts/ci/run_ci.sh -s -b ${PULL_REQUEST_BASE_BRANCH} -r origin -m ${MATRIX_BUILD} -M ${MATRIX_BUILDS};
+        fi;
 
 integrations:
   notifications:
