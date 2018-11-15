@@ -571,8 +571,9 @@ void _priq_dumb_remove(sys_dlist_t *pq, struct k_thread *thread)
 
 struct k_thread *_priq_dumb_best(sys_dlist_t *pq)
 {
-	return CONTAINER_OF(sys_dlist_peek_head(pq),
-			    struct k_thread, base.qnode_dlist);
+	sys_dnode_t *n = sys_dlist_peek_head(pq);
+
+	return CONTAINER_OF(n, struct k_thread, base.qnode_dlist);
 }
 
 bool _priq_rb_lessthan(struct rbnode *a, struct rbnode *b)
@@ -663,9 +664,9 @@ struct k_thread *_priq_mq_best(struct _priq_mq *pq)
 	}
 
 	sys_dlist_t *l = &pq->queues[__builtin_ctz(pq->bitmask)];
+	sys_dnode_t *n = sys_dlist_peek_head(l);
 
-	return CONTAINER_OF(sys_dlist_peek_head(l),
-			    struct k_thread, base.qnode_dlist);
+	return CONTAINER_OF(n, struct k_thread, base.qnode_dlist);
 }
 
 int _unpend_all(_wait_q_t *waitq)
