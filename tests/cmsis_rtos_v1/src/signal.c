@@ -167,7 +167,7 @@ static void offload_function(void *param)
 	int signals;
 
 	/* Make sure we're in IRQ context */
-	zassert_true(_is_in_isr(), "Not in IRQ context!");
+	zassert_true(k_is_in_isr(), "Not in IRQ context!");
 
 	signals = osSignalSet((osThreadId)tid, ISR_SIGNAL);
 	zassert_not_equal(signals, 0x80000000, "signal set failed in ISR");

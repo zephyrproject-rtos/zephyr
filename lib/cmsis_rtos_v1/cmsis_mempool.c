@@ -14,7 +14,7 @@
  */
 osPoolId osPoolCreate(const osPoolDef_t *pool_def)
 {
-	if (_is_in_isr()) {
+	if (k_is_in_isr()) {
 		return NULL;
 	}
 

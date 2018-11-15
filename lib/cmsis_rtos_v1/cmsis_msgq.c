@@ -17,7 +17,7 @@ osMessageQId osMessageCreate(const osMessageQDef_t *queue_def,
 		return NULL;
 	}
 
-	if (_is_in_isr()) {
+	if (k_is_in_isr()) {
 		return NULL;
 	}
 

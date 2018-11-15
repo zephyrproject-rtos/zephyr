@@ -59,7 +59,7 @@ osThreadId osThreadCreate(const osThreadDef_t *thread_def, void *arg)
 	__ASSERT(thread_def->stacksize <= CONFIG_CMSIS_THREAD_MAX_STACK_SIZE,
 		 "invalid stack size\n");
 
-	if (_is_in_isr()) {
+	if (k_is_in_isr()) {
 		return NULL;
 	}
 
@@ -96,7 +96,7 @@ osThreadId osThreadCreate(const osThreadDef_t *thread_def, void *arg)
  */
 osThreadId osThreadGetId(void)
 {
-	if (_is_in_isr()) {
+	if (k_is_in_isr()) {
 		return NULL;
 	}
 
@@ -111,7 +111,7 @@ osPriority osThreadGetPriority(osThreadId thread_id)
 	k_tid_t thread = (k_tid_t)thread_id;
 	u32_t priority;
 
-	if ((thread_id == NULL) || (_is_in_isr())) {
+	if ((thread_id == NULL) || (k_is_in_isr())) {
 		return osPriorityError;
 	}
 
@@ -128,7 +128,7 @@ osStatus osThreadSetPriority(osThreadId thread_id, osPriority priority)
 		return osErrorParameter;
 	}
 
-	if (_is_in_isr()) {
+	if (k_is_in_isr()) {
 		return osErrorISR;
 	}
 
@@ -155,7 +155,7 @@ osStatus osThreadTerminate(osThreadId thread_id)
 		return osErrorParameter;
 	}
 
-	if (_is_in_isr()) {
+	if (k_is_in_isr()) {
 		return osErrorISR;
 	}
 
@@ -172,7 +172,7 @@ osStatus osThreadTerminate(osThreadId thread_id)
  */
 osStatus osThreadYield(void)
 {
-	if (_is_in_isr()) {
+	if (k_is_in_isr()) {
 		return osErrorISR;
 	}
 
