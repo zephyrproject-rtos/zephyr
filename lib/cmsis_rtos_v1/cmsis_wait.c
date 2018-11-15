@@ -12,7 +12,7 @@
  */
 osStatus osDelay(uint32_t delay_ms)
 {
-	if (_is_in_isr()) {
+	if (k_is_in_isr()) {
 		return osErrorISR;
 	}
 

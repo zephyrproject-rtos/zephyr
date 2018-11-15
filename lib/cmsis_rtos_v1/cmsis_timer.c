@@ -74,7 +74,7 @@ osStatus osTimerStart(osTimerId timer_id, uint32_t millisec)
 		return osErrorParameter;
 	}
 
-	if (_is_in_isr()) {
+	if (k_is_in_isr()) {
 		return osErrorISR;
 	}
 
@@ -99,7 +99,7 @@ osStatus osTimerStop(osTimerId timer_id)
 		return osErrorParameter;
 	}
 
-	if (_is_in_isr()) {
+	if (k_is_in_isr()) {
 		return osErrorISR;
 	}
 
@@ -123,7 +123,7 @@ osStatus osTimerDelete(osTimerId timer_id)
 		return osErrorParameter;
 	}
 
-	if (_is_in_isr()) {
+	if (k_is_in_isr()) {
 		return osErrorISR;
 	}
 
