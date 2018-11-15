@@ -48,5 +48,10 @@ int _impl_i2s_buf_write(struct device *dev, void *buf, size_t size)
 
 	memcpy(mem_block, (void *)buf, size);
 
-	return i2s_write((struct device *)dev, mem_block, size);
+	ret = i2s_write((struct device *)dev, mem_block, size);
+	if (ret != 0) {
+		k_mem_slab_free(tx_cfg->mem_slab, &mem_block);
+	}
+
+	return ret;
 }

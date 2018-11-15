@@ -98,7 +98,12 @@ Z_SYSCALL_HANDLER(i2s_buf_write, dev, buf, size)
 		Z_OOPS(ret);
 	}
 
-	return i2s_write((struct device *)dev, mem_block, size);
+	ret = i2s_write((struct device *)dev, mem_block, size);
+	if (ret != 0) {
+		k_mem_slab_free(tx_cfg->mem_slab, &mem_block);
+	}
+
+	return ret;
 }
 
 Z_SYSCALL_HANDLER(i2s_trigger, dev, dir, cmd)
