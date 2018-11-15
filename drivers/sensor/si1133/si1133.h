@@ -7,13 +7,24 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_SI1133_SI1133_H_
 #define ZEPHYR_DRIVERS_SENSOR_SI1133_SI1133_H_
 
+#include "si1133_regs.h"
+
 #include <zephyr/types.h>
 #include <device.h>
+#include <gpio.h>
+#include <sensor.h>
+
+#define SI1133_CHANNEL_COUNT  4
 
 struct si1133_data {
 
 	struct device *i2c_master;
 	u16_t i2c_slave_addr;
+
+	struct {
+		uint32_t hostout;	
+		//bool out_24bit;
+	} channels[SI1133_CHANNEL_COUNT];
 
 #ifdef CONFIG_SI1133_TRIGGER
 	struct device *gpio;

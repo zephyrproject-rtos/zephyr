@@ -27,10 +27,14 @@ config SI1133_I2C_ADDR
 
 config SI1133_I2C_DEV_NAME
 	string "SI1133 I2C master interface"
-	default "I2C_0"
+	default "I2C_1"
 	help
 	  Specify the device name of the I2C master device to which
 	  SI1133 is connected.
+
+config SI1133_CHANNEL_COUNT
+	int "SI1133 Input channel count"
+	default 4
 
 choice
 	prompt "SI1133 trigger mode"
