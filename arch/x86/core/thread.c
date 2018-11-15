@@ -34,7 +34,7 @@ struct _x86_initial_frame {
 	u32_t ebx;
 	u32_t esi;
 	u32_t edi;
-	void *_thread_entry;
+	void *thread_entry;
 	u32_t eflags;
 	k_thread_entry_t entry;
 	void *p1;
@@ -102,18 +102,18 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	if (options & K_USER) {
 #ifdef _THREAD_WRAPPER_REQUIRED
 		initial_frame->edi = (u32_t)_arch_user_mode_enter;
-		initial_frame->_thread_entry = _x86_thread_entry_wrapper;
+		initial_frame->thread_entry = _x86_thread_entry_wrapper;
 #else
-		initial_frame->_thread_entry = _arch_user_mode_enter;
+		initial_frame->thread_entry = _arch_user_mode_enter;
 #endif /* _THREAD_WRAPPER_REQUIRED */
 	} else
 #endif /* CONFIG_X86_USERSPACE */
 	{
 #ifdef _THREAD_WRAPPER_REQUIRED
 		initial_frame->edi = (u32_t)_thread_entry;
-		initial_frame->_thread_entry = _x86_thread_entry_wrapper;
+		initial_frame->thread_entry = _x86_thread_entry_wrapper;
 #else
-		initial_frame->_thread_entry = _thread_entry;
+		initial_frame->thread_entry = _thread_entry;
 #endif
 	}
 	/* Remaining _x86_initial_frame members can be garbage, _thread_entry()
