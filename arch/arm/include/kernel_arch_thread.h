@@ -30,13 +30,13 @@ struct _caller_saved {
 	 *
 	 * For Cortex-A, this may be:
 	 *
-	 * u32_t a1;    // r0
-	 * u32_t a2;    // r1
-	 * u32_t a3;    // r2
-	 * u32_t a4;    // r3
-	 * u32_t ip;    // r12
-	 * u32_t lr;    // r14
-	 * u32_t pc;    // r15
+	 * u32_t a1;       r0
+	 * u32_t a2;       r1
+	 * u32_t a3;       r2
+	 * u32_t a4;       r3
+	 * u32_t ip;       r12
+	 * u32_t lr;       r14
+	 * u32_t pc;       r15
 	 * u32_t xpsr;
 	 */
 };
