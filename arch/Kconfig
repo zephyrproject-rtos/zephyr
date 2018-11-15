@@ -150,7 +150,7 @@ config PRIVILEGED_STACK_SIZE
 
 config PRIVILEGED_STACK_TEXT_AREA
 	int "Privileged stacks text area"
-	default 256 if (DEBUG || STACK_CANARIES)
+	default 256 if (DEBUG || STACK_CANARIES || CODE_DATA_RELOCATION)
 	default 128
 	depends on ARCH_HAS_USERSPACE
 	help
@@ -159,6 +159,7 @@ config PRIVILEGED_STACK_TEXT_AREA
 config KOBJECT_TEXT_AREA
 	int "Size if kobject text area"
 	default 256 if (!SIZE_OPTIMIZATIONS || STACK_CANARIES || ARC)
+	default 256 if CODE_DATA_RELOCATION
 	default 128
 	depends on ARCH_HAS_USERSPACE
 	help
