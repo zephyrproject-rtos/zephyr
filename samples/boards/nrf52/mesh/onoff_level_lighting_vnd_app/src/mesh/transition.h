@@ -29,6 +29,8 @@ struct transition {
 	u32_t counter;
 	u32_t total_duration;
 	s64_t start_timestamp;
+
+	struct k_timer timer;
 };
 
 extern u8_t transition_type, default_tt;
