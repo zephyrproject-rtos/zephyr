@@ -432,7 +432,7 @@ const struct spi_intel_config spi_intel_config_0 = {
 	.config_func = spi_config_0_irq
 };
 
-DEVICE_DEFINE(spi_intel_port_0, CONFIG_SPI_0_NAME, spi_intel_init,
+DEVICE_DEFINE(spi_intel_port_0, DT_SPI_0_NAME, spi_intel_init,
 	      spi_intel_device_ctrl, &spi_intel_data_port_0,
 	      &spi_intel_config_0, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
 	      &intel_spi_api);
@@ -468,7 +468,7 @@ const struct spi_intel_config spi_intel_config_1 = {
 	.config_func = spi_config_1_irq
 };
 
-DEVICE_DEFINE(spi_intel_port_1, CONFIG_SPI_1_NAME, spi_intel_init,
+DEVICE_DEFINE(spi_intel_port_1, DT_SPI_1_NAME, spi_intel_init,
 	      spi_intel_device_ctrl, &spi_intel_data_port_1,
 	      &spi_intel_config_1, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
 	      &intel_spi_api);

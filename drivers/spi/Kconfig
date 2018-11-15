@@ -11,6 +11,7 @@
 #
 menuconfig SPI
 	bool "SPI hardware bus support"
+	select HAS_DTS_SPI
 	help
 	  Enable support for the SPI hardware bus.
 
@@ -46,11 +47,6 @@ config	SPI_0
 
 if SPI_0
 
-config SPI_0_NAME
-	string "SPI port 0 device name"
-	depends on !HAS_DTS_SPI
-	default "SPI_0"
-
 config SPI_0_OP_MODES
 	int "Port 0 supported operation modes (master/slave/both)"
 	default 1
@@ -62,10 +58,6 @@ config SPI_0_OP_MODES
 	  2 is SLAVE mode only
 	  3 is both modes are available.
 
-config SPI_0_IRQ_PRI
-	int "Port 0 interrupt priority"
-	depends on !HAS_DTS_SPI
-
 endif # SPI_0
 
 config SPI_1
@@ -74,11 +66,6 @@ config SPI_1
 	  Enable SPI controller port 1.
 
 if SPI_1
-
-config SPI_1_NAME
-	string "SPI port 1 device name"
-	depends on !HAS_DTS_SPI
-	default "SPI_1"
 
 config SPI_1_OP_MODES
 	int "Port 1 supported operation modes (master/slave/both)"
@@ -91,10 +78,6 @@ config SPI_1_OP_MODES
 	  2 is SLAVE mode only
 	  3 is both modes are available.
 
-config SPI_1_IRQ_PRI
-	int "Port 1 interrupt priority"
-	depends on !HAS_DTS_SPI
-
 endif # SPI_1
 
 config SPI_2
@@ -103,11 +86,6 @@ config SPI_2
 	  Enable SPI controller port 2.
 
 if SPI_2
-
-config SPI_2_NAME
-	string "SPI port 2 device name"
-	depends on !HAS_DTS_SPI
-	default "SPI_2"
 
 config SPI_2_OP_MODES
 	int "Port 2 supported operation modes (master/slave/both)"
@@ -120,10 +98,6 @@ config SPI_2_OP_MODES
 	  2 is SLAVE mode only
 	  3 is both modes are available.
 
-config SPI_2_IRQ_PRI
-	int "Port 2 interrupt priority"
-	depends on !HAS_DTS_SPI
-
 endif # SPI_2
 
 config SPI_3
@@ -132,11 +106,6 @@ config SPI_3
 	  Enable SPI controller port 3.
 
 if SPI_3
-
-config SPI_3_NAME
-	string "SPI port 3 device name"
-	depends on !HAS_DTS_SPI
-	default "SPI_3"
 
 config SPI_3_OP_MODES
 	int "Port 3 supported operation modes (master/slave/both)"
@@ -149,10 +118,6 @@ config SPI_3_OP_MODES
 	  2 is SLAVE mode only
 	  3 is both modes are available.
 
-config SPI_3_IRQ_PRI
-	int "Port 3 interrupt priority"
-	depends on !HAS_DTS_SPI
-
 endif # SPI_3
 
 config SPI_4
@@ -161,11 +126,6 @@ config SPI_4
 	  Enable SPI controller port 4.
 
 if SPI_4
-
-config SPI_4_NAME
-	string "SPI port 4 device name"
-	depends on !HAS_DTS_SPI
-	default "SPI_4"
 
 config SPI_4_OP_MODES
 	int "Port 4 supported operation modes (master/slave/both)"
@@ -187,11 +147,6 @@ config SPI_5
 
 if SPI_5
 
-config SPI_5_NAME
-	string "SPI port 5 device name"
-	depends on !HAS_DTS_SPI
-	default "SPI_5"
-
 config SPI_5_OP_MODES
 	int "Port 5 supported operation modes (master/slave/both)"
 	default 1
@@ -208,7 +163,6 @@ endif # SPI_5
 config SPI_INTEL
 	bool "Intel SPI controller driver"
 	depends on CPU_MINUTEIA
-	select HAS_DTS_SPI
 	help
 	  Enable support for Intel's SPI controllers. Such controller
 	  was formerly found on XScale chips. It can be found nowadays

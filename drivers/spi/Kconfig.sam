@@ -6,7 +6,6 @@
 menuconfig SPI_SAM
 	bool "Atmel SAM series SPI driver"
 	depends on SOC_FAMILY_SAM
-	select HAS_DTS_SPI
 	help
 	  Enable support for the SAM SPI driver.
 

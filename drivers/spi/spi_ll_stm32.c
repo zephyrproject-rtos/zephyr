@@ -504,7 +504,7 @@ static struct spi_stm32_data spi_stm32_dev_data_1 = {
 	SPI_CONTEXT_INIT_SYNC(spi_stm32_dev_data_1, ctx),
 };
 
-DEVICE_AND_API_INIT(spi_stm32_1, CONFIG_SPI_1_NAME, &spi_stm32_init,
+DEVICE_AND_API_INIT(spi_stm32_1, DT_SPI_1_NAME, &spi_stm32_init,
 		    &spi_stm32_dev_data_1, &spi_stm32_cfg_1,
 		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
 		    &api_funcs);
@@ -542,7 +542,7 @@ static struct spi_stm32_data spi_stm32_dev_data_2 = {
 	SPI_CONTEXT_INIT_SYNC(spi_stm32_dev_data_2, ctx),
 };
 
-DEVICE_AND_API_INIT(spi_stm32_2, CONFIG_SPI_2_NAME, &spi_stm32_init,
+DEVICE_AND_API_INIT(spi_stm32_2, DT_SPI_2_NAME, &spi_stm32_init,
 		    &spi_stm32_dev_data_2, &spi_stm32_cfg_2,
 		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
 		    &api_funcs);
@@ -580,7 +580,7 @@ static struct spi_stm32_data spi_stm32_dev_data_3 = {
 	SPI_CONTEXT_INIT_SYNC(spi_stm32_dev_data_3, ctx),
 };
 
-DEVICE_AND_API_INIT(spi_stm32_3, CONFIG_SPI_3_NAME, &spi_stm32_init,
+DEVICE_AND_API_INIT(spi_stm32_3, DT_SPI_3_NAME, &spi_stm32_init,
 		    &spi_stm32_dev_data_3, &spi_stm32_cfg_3,
 		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
 		    &api_funcs);
