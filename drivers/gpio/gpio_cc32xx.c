@@ -129,9 +129,7 @@ static int gpio_cc32xx_manage_callback(struct device *dev,
 {
 	struct gpio_cc32xx_data *data = DEV_DATA(dev);
 
-	_gpio_manage_callback(&data->callbacks, callback, set);
-
-	return 0;
+	return _gpio_manage_callback(&data->callbacks, callback, set);
 }
 
 

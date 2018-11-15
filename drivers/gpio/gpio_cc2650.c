@@ -297,8 +297,7 @@ static int gpio_cc2650_manage_callback(struct device *port,
 {
 	struct gpio_cc2650_data *data = port->driver_data;
 
-	_gpio_manage_callback(&data->callbacks, callback, set);
-	return 0;
+	return _gpio_manage_callback(&data->callbacks, callback, set);
 }
 
 static int gpio_cc2650_enable_callback(struct device *port,

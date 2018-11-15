@@ -274,9 +274,7 @@ static int gpio_sifive_manage_callback(struct device *dev,
 {
 	struct gpio_sifive_data *data = DEV_GPIO_DATA(dev);
 
-	_gpio_manage_callback(&data->cb, callback, set);
-
-	return 0;
+	return _gpio_manage_callback(&data->cb, callback, set);
 }
 
 static int gpio_sifive_enable_callback(struct device *dev,

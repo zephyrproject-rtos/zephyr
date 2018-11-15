@@ -18,19 +18,29 @@
  * @param callbacks A pointer to the original list of callbacks (can be NULL)
  * @param callback A pointer of the callback to insert or remove from the list
  * @param set A boolean indicating insertion or removal of the callback
+ *
+ * @return 0 on success, negative errno otherwise.
  */
-static inline void _gpio_manage_callback(sys_slist_t *callbacks,
-					 struct gpio_callback *callback,
-					 bool set)
+static inline int _gpio_manage_callback(sys_slist_t *callbacks,
+					struct gpio_callback *callback,
+					bool set)
 {
 	__ASSERT(callback, "No callback!");
 	__ASSERT(callback->handler, "No callback handler!");
 
+	if (!sys_slist_is_empty(callbacks)) {
+		if (!sys_slist_find_and_remove(callbacks, &callback->node)) {
+			if (!set) {
+				return -EINVAL;
+			}
+		}
+	}
+
 	if (set) {
 		sys_slist_prepend(callbacks, &callback->node);
-	} else {
-		sys_slist_find_and_remove(callbacks, &callback->node);
 	}
+
+	return 0;
 }
 
 /**

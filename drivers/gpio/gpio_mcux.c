@@ -174,9 +174,7 @@ static int gpio_mcux_manage_callback(struct device *dev,
 {
 	struct gpio_mcux_data *data = dev->driver_data;
 
-	_gpio_manage_callback(&data->callbacks, callback, set);
-
-	return 0;
+	return _gpio_manage_callback(&data->callbacks, callback, set);
 }
 
 static int gpio_mcux_enable_callback(struct device *dev,
@@ -412,4 +410,3 @@ static int gpio_mcux_porte_init(struct device *dev)
 #endif
 }
 #endif /* CONFIG_GPIO_MCUX_PORTE */
-

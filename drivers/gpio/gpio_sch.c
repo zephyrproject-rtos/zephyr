@@ -235,7 +235,9 @@ static int gpio_sch_manage_callback(struct device *dev,
 {
 	struct gpio_sch_data *gpio = dev->driver_data;
 
-	_gpio_manage_callback(&gpio->callbacks, callback, set);
+	if (_gpio_manage_callback(&gpio->callbacks, callback, set)) {
+		return -EINVAL;
+	}
 
 	_gpio_sch_manage_callback(dev);
 

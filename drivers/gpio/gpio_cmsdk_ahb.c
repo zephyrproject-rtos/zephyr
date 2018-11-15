@@ -217,9 +217,7 @@ static int gpio_cmsdk_ahb_manage_callback(struct device *dev,
 {
 	struct gpio_cmsdk_ahb_dev_data *data = dev->driver_data;
 
-	_gpio_manage_callback(&data->gpio_cb, callback, set);
-
-	return 0;
+	return _gpio_manage_callback(&data->gpio_cb, callback, set);
 }
 
 static int gpio_cmsdk_ahb_enable_callback(struct device *dev,
