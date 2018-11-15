@@ -43,14 +43,16 @@ extern struct k_timer dummy_timer;
 
 void calculate_rt(struct transition *transition);
 
-void bound_states_transition_type_reassignment(u8_t type);
 
-void onoff_tt_values(struct generic_onoff_state *state);
-void level_tt_values(struct generic_level_state *state);
-void light_lightness_actual_tt_values(struct light_lightness_state *state);
-void light_lightness_linear_tt_values(struct light_lightness_state *state);
-void light_ctl_tt_values(struct light_ctl_state *state);
-void light_ctl_temp_tt_values(struct light_ctl_state *state);
+void onoff_tt_values(struct generic_onoff_state *state, u8_t tt, u8_t delay);
+void level_tt_values(struct generic_level_state *state, u8_t tt, u8_t delay);
+void light_lightness_actual_tt_values(struct light_lightness_state *state,
+				      u8_t tt, u8_t delay);
+void light_lightness_linear_tt_values(struct light_lightness_state *state,
+				      u8_t tt, u8_t delay);
+void light_ctl_tt_values(struct light_ctl_state *state, u8_t tt, u8_t delay);
+void light_ctl_temp_tt_values(struct light_ctl_state *state,
+			      u8_t tt, u8_t delay);
 
 void onoff_handler(struct generic_onoff_state *state);
 void level_lightness_handler(struct generic_level_state *state);

@@ -185,10 +185,6 @@ static bool gen_onoff_setunack(struct bt_mesh_model *model,
 		return false;
 	}
 
-	bound_states_transition_type_reassignment(ONOFF);
-	state->transition->tt = tt;
-	state->transition->delay = delay;
-
 	*ptr_counter = 0;
 	k_timer_stop(ptr_timer);
 
@@ -197,9 +193,8 @@ static bool gen_onoff_setunack(struct bt_mesh_model *model,
 	state->last_msg_timestamp = now;
 	state->target_onoff = onoff;
 
-	state->transition->counter = 0;
 	if (state->target_onoff != state->onoff) {
-		onoff_tt_values(state);
+		onoff_tt_values(state, tt, delay);
 	} else {
 		return true;
 	}
@@ -357,14 +352,6 @@ static bool gen_level_setunack(struct bt_mesh_model *model,
 		return false;
 	}
 
-	if (bt_mesh_model_elem(model)->addr == elements[0].addr) {
-		bound_states_transition_type_reassignment(LEVEL);
-	} else if (bt_mesh_model_elem(model)->addr == elements[1].addr) {
-		bound_states_transition_type_reassignment(LEVEL_TEMP);
-	}
-	state->transition->tt = tt;
-	state->transition->delay = delay;
-
 	*ptr_counter = 0;
 	k_timer_stop(ptr_timer);
 
@@ -373,9 +360,8 @@ static bool gen_level_setunack(struct bt_mesh_model *model,
 	state->last_msg_timestamp = now;
 	state->target_level = level;
 
-	state->transition->counter = 0;
 	if (state->target_level != state->level) {
-		level_tt_values(state);
+		level_tt_values(state, tt, delay);
 	} else {
 		return true;
 	}
@@ -459,14 +445,6 @@ static bool gen_delta_setunack(struct bt_mesh_model *model,
 		return false;
 	}
 
-	if (bt_mesh_model_elem(model)->addr == elements[0].addr) {
-		bound_states_transition_type_reassignment(LEVEL);
-	} else if (bt_mesh_model_elem(model)->addr == elements[1].addr) {
-		bound_states_transition_type_reassignment(LEVEL_TEMP);
-	}
-	state->transition->tt = tt;
-	state->transition->delay = delay;
-
 	*ptr_counter = 0;
 	k_timer_stop(ptr_timer);
 
@@ -483,9 +461,8 @@ static bool gen_delta_setunack(struct bt_mesh_model *model,
 
 	state->target_level = tmp32;
 
-	state->transition->counter = 0;
 	if (state->target_level != state->level) {
-		level_tt_values(state);
+		level_tt_values(state, tt, delay);
 	} else {
 		return true;
 	}
@@ -562,14 +539,6 @@ static bool gen_move_setunack(struct bt_mesh_model *model,
 		return false;
 	}
 
-	if (bt_mesh_model_elem(model)->addr == elements[0].addr) {
-		bound_states_transition_type_reassignment(LEVEL);
-	} else if (bt_mesh_model_elem(model)->addr == elements[1].addr) {
-		bound_states_transition_type_reassignment(LEVEL_TEMP);
-	}
-	state->transition->tt = tt;
-	state->transition->delay = delay;
-
 	*ptr_counter = 0;
 	k_timer_stop(ptr_timer);
 
@@ -587,9 +556,8 @@ static bool gen_move_setunack(struct bt_mesh_model *model,
 
 	state->target_level = tmp32;
 
-	state->transition->counter = 0;
 	if (state->target_level != state->level) {
-		level_tt_values(state);
+		level_tt_values(state, tt, delay);
 	} else {
 		if (delta == 0) {
 			goto jump;
@@ -959,10 +927,6 @@ static bool light_lightness_setunack(struct bt_mesh_model *model,
 		return false;
 	}
 
-	bound_states_transition_type_reassignment(ACTUAL);
-	state->transition->tt = tt;
-	state->transition->delay = delay;
-
 	*ptr_counter = 0;
 	k_timer_stop(ptr_timer);
 
@@ -978,9 +942,8 @@ static bool light_lightness_setunack(struct bt_mesh_model *model,
 
 	state->target_actual = actual;
 
-	state->transition->counter = 0;
 	if (state->target_actual != state->actual) {
-		light_lightness_actual_tt_values(state);
+		light_lightness_actual_tt_values(state, tt, delay);
 	} else {
 		return true;
 	}
@@ -1093,10 +1056,6 @@ static bool light_lightness_linear_setunack(struct bt_mesh_model *model,
 		return false;
 	}
 
-	bound_states_transition_type_reassignment(LINEAR);
-	state->transition->tt = tt;
-	state->transition->delay = delay;
-
 	*ptr_counter = 0;
 	k_timer_stop(ptr_timer);
 
@@ -1105,9 +1064,8 @@ static bool light_lightness_linear_setunack(struct bt_mesh_model *model,
 	state->last_msg_timestamp = now;
 	state->target_linear = linear;
 
-	state->transition->counter = 0;
 	if (state->target_linear != state->linear) {
-		light_lightness_linear_tt_values(state);
+		light_lightness_linear_tt_values(state, tt, delay);
 	} else {
 		return true;
 	}
@@ -1448,10 +1406,6 @@ static bool light_ctl_setunack(struct bt_mesh_model *model,
 		return false;
 	}
 
-	bound_states_transition_type_reassignment(CTL);
-	state->transition->tt = tt;
-	state->transition->delay = delay;
-
 	*ptr_counter = 0;
 	k_timer_stop(ptr_timer);
 
@@ -1469,11 +1423,10 @@ static bool light_ctl_setunack(struct bt_mesh_model *model,
 	state->target_temp = temp;
 	state->target_delta_uv = delta_uv;
 
-	state->transition->counter = 0;
 	if (state->target_lightness != state->lightness ||
 	    state->target_temp != state->temp ||
 	    state->target_delta_uv != state->delta_uv) {
-		light_ctl_tt_values(state);
+		light_ctl_tt_values(state, tt, delay);
 	} else {
 		return true;
 	}
@@ -1828,10 +1781,6 @@ static bool light_ctl_temp_setunack(struct bt_mesh_model *model,
 		return false;
 	}
 
-	bound_states_transition_type_reassignment(CTL_TEMP);
-	state->transition->tt = tt;
-	state->transition->delay = delay;
-
 	*ptr_counter = 0;
 	k_timer_stop(ptr_timer);
 
@@ -1848,10 +1797,9 @@ static bool light_ctl_temp_setunack(struct bt_mesh_model *model,
 	state->target_temp = temp;
 	state->target_delta_uv = delta_uv;
 
-	state->transition->counter = 0;
 	if (state->target_temp != state->temp ||
 	    state->target_delta_uv != state->delta_uv) {
-		light_ctl_temp_tt_values(state);
+		light_ctl_temp_tt_values(state, tt, delay);
 	} else {
 		return true;
 	}
