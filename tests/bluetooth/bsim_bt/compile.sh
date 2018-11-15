@@ -32,11 +32,16 @@ function compile(){
 
   echo "Building $EXE_NAME"
 
-  [ -d "${WORK_DIR}/${APP}" ] && rm ${WORK_DIR}/${APP} -rf
-  mkdir -p ${WORK_DIR}/${APP} && cd ${WORK_DIR}/${APP}
-  cmake -GNinja -DBOARD_ROOT=${BOARD_ROOT} -DBOARD=${BOARD} \
-        -DCONF_FILE=${CONF_FILE} ${CMAKE_ARGS} ${APP_ROOT}/${APP} \
-      &> cmake.out || { cat cmake.out && return 0; }
+  #Set INCR_BUILD when calling to only do an incremental build
+  if [ ! -v INCR_BUILD ] || [ ! -d "${WORK_DIR}/${APP}" ]; then
+      [ -d "${WORK_DIR}/${APP}" ] && rm ${WORK_DIR}/${APP} -rf
+      mkdir -p ${WORK_DIR}/${APP} && cd ${WORK_DIR}/${APP}
+      cmake -GNinja -DBOARD_ROOT=${BOARD_ROOT} -DBOARD=${BOARD} \
+            -DCONF_FILE=${CONF_FILE} ${CMAKE_ARGS} ${APP_ROOT}/${APP} \
+	  &> cmake.out || { cat cmake.out && return 0; }
+  else
+      cd ${WORK_DIR}/${APP}
+  fi
   ninja ${NINJA_ARGS} &> ninja.out || { cat ninja.out && return 0; }
   cp ${WORK_DIR}/${APP}/zephyr/zephyr.exe ${EXE_NAME}
 
