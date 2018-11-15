@@ -34,8 +34,8 @@
 #define ADV_SCAN_UNIT(_ms) ((_ms) * 8 / 5)
 
 /* Window and Interval are equal for continuous scanning */
-#define MESH_SCAN_INTERVAL_MS 10
-#define MESH_SCAN_WINDOW_MS   10
+#define MESH_SCAN_INTERVAL_MS 30
+#define MESH_SCAN_WINDOW_MS   30
 #define MESH_SCAN_INTERVAL    ADV_SCAN_UNIT(MESH_SCAN_INTERVAL_MS)
 #define MESH_SCAN_WINDOW      ADV_SCAN_UNIT(MESH_SCAN_WINDOW_MS)
 
