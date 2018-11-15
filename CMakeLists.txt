@@ -49,7 +49,7 @@ zephyr_library_named(zephyr)
 
 zephyr_include_directories(
   kernel/include
-  arch/${ARCH}/include
+  ${ARCH_DIR}/${ARCH}/include
   ${SOC_DIR}/${ARCH}/${SOC_PATH}
   ${SOC_DIR}/${ARCH}/${SOC_PATH}/include
   ${SOC_DIR}/${ARCH}/${SOC_FAMILY}/include
@@ -550,7 +550,7 @@ gen_kobj(KOBJ_INCLUDE_PATH)
 # Generate offsets.c.obj from offsets.c
 # Generate offsets.h     from offsets.c.obj
 
-set(OFFSETS_C_PATH arch/${ARCH}/core/offsets/offsets.c)
+set(OFFSETS_C_PATH ${ARCH_DIR}/${ARCH}/core/offsets/offsets.c)
 set(OFFSETS_H_PATH ${PROJECT_BINARY_DIR}/include/generated/offsets.h)
 
 add_library(          offsets OBJECT ${OFFSETS_C_PATH})
