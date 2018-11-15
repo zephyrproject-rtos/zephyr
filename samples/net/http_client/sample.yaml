@@ -6,6 +6,7 @@ sample:
 tests:
   test:
     depends_on: netif
+    min_flash: 140
   test_bt:
     extra_args: CONF_FILE="prj_bt.conf"
     platform_whitelist: qemu_x86 qemu_cortex_m3

@@ -5,6 +5,7 @@ tests:
     harness: net
     depends_on: netif
     tags: net http
+    min_flash: 140
   test_bt:
     harness: net
     extra_args: CONF_FILE="prj_bt.conf"
