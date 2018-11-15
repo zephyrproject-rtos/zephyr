@@ -34,6 +34,16 @@ const clock_usb_pll_config_t usb1PllConfig = {
 };
 #endif
 
+#ifdef CONFIG_ETH_MCUX_0
+const clock_enet_pll_config_t ethPllConfig = {
+	.enableClkOutput0 = true,
+	.enableClkOutput1 = false,
+	.enableClkOutput2 = false,
+	.loopDivider0 = 1,
+	.loopDivider1 = 1
+};
+#endif
+
 /**
  *
  * @brief Initialize the system clock
@@ -72,6 +82,9 @@ static ALWAYS_INLINE void clkInit(void)
 #endif
 #ifdef CONFIG_INIT_USB1_PLL
 	CLOCK_InitUsb1Pll(&usb1PllConfig); /* Configure USB1 PLL to 480M */
+#endif
+#ifdef CONFIG_ETH_MCUX_0
+	CLOCK_InitEnetPll(&ethPllConfig);
 #endif
 
 	CLOCK_SetDiv(kCLOCK_ArmDiv, CONFIG_ARM_DIV); /* Set ARM PODF */
