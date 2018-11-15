@@ -151,7 +151,7 @@ static bool gen_onoff_setunack(struct bt_mesh_model *model,
 			       struct bt_mesh_msg_ctx *ctx,
 			       struct net_buf_simple *buf)
 {
-	u8_t tid, onoff, tt;
+	u8_t tid, onoff, tt, delay;
 	s64_t now;
 	struct generic_onoff_state *state = model->user_data;
 
@@ -170,8 +170,8 @@ static bool gen_onoff_setunack(struct bt_mesh_model *model,
 
 	switch (buf->len) {
 	case 0x00:	/* No optional fields are available */
-		state->transition->tt = default_tt;
-		state->transition->delay = 0;
+		tt = default_tt;
+		delay = 0;
 		break;
 	case 0x02:	/* Optional fields are available */
 		tt = net_buf_simple_pull_u8(buf);
@@ -179,12 +179,15 @@ static bool gen_onoff_setunack(struct bt_mesh_model *model,
 			return false;
 		}
 
-		state->transition->tt = tt;
-		state->transition->delay = net_buf_simple_pull_u8(buf);
+		delay = net_buf_simple_pull_u8(buf);
 		break;
 	default:
 		return false;
 	}
+
+	bound_states_transition_type_reassignment(ONOFF);
+	state->transition->tt = tt;
+	state->transition->delay = delay;
 
 	*ptr_counter = 0;
 	k_timer_stop(ptr_timer);
@@ -323,7 +326,7 @@ static bool gen_level_setunack(struct bt_mesh_model *model,
 			       struct bt_mesh_msg_ctx *ctx,
 			       struct net_buf_simple *buf)
 {
-	u8_t tid, tt;
+	u8_t tid, tt, delay;
 	s16_t level;
 	s64_t now;
 	struct generic_level_state *state = model->user_data;
@@ -339,8 +342,8 @@ static bool gen_level_setunack(struct bt_mesh_model *model,
 
 	switch (buf->len) {
 	case 0x00:	/* No optional fields are available */
-		state->transition->tt = default_tt;
-		state->transition->delay = 0;
+		tt = default_tt;
+		delay = 0;
 		break;
 	case 0x02:	/* Optional fields are available */
 		tt = net_buf_simple_pull_u8(buf);
@@ -348,12 +351,19 @@ static bool gen_level_setunack(struct bt_mesh_model *model,
 			return false;
 		}
 
-		state->transition->tt = tt;
-		state->transition->delay = net_buf_simple_pull_u8(buf);
+		delay = net_buf_simple_pull_u8(buf);
 		break;
 	default:
 		return false;
 	}
+
+	if (bt_mesh_model_elem(model)->addr == elements[0].addr) {
+		bound_states_transition_type_reassignment(LEVEL);
+	} else if (bt_mesh_model_elem(model)->addr == elements[1].addr) {
+		bound_states_transition_type_reassignment(LEVEL_TEMP);
+	}
+	state->transition->tt = tt;
+	state->transition->delay = delay;
 
 	*ptr_counter = 0;
 	k_timer_stop(ptr_timer);
@@ -410,7 +420,7 @@ static bool gen_delta_setunack(struct bt_mesh_model *model,
 			       struct bt_mesh_msg_ctx *ctx,
 			       struct net_buf_simple *buf)
 {
-	u8_t tid, tt;
+	u8_t tid, tt, delay;
 	s32_t tmp32, delta;
 	s64_t now;
 	struct generic_level_state *state = model->user_data;
@@ -434,8 +444,8 @@ static bool gen_delta_setunack(struct bt_mesh_model *model,
 
 	switch (buf->len) {
 	case 0x00:	/* No optional fields are available */
-		state->transition->tt = default_tt;
-		state->transition->delay = 0;
+		tt = default_tt;
+		delay = 0;
 		break;
 	case 0x02:	/* Optional fields are available */
 		tt = net_buf_simple_pull_u8(buf);
@@ -443,12 +453,19 @@ static bool gen_delta_setunack(struct bt_mesh_model *model,
 			return false;
 		}
 
-		state->transition->tt = tt;
-		state->transition->delay = net_buf_simple_pull_u8(buf);
+		delay = net_buf_simple_pull_u8(buf);
 		break;
 	default:
 		return false;
 	}
+
+	if (bt_mesh_model_elem(model)->addr == elements[0].addr) {
+		bound_states_transition_type_reassignment(LEVEL);
+	} else if (bt_mesh_model_elem(model)->addr == elements[1].addr) {
+		bound_states_transition_type_reassignment(LEVEL_TEMP);
+	}
+	state->transition->tt = tt;
+	state->transition->delay = delay;
 
 	*ptr_counter = 0;
 	k_timer_stop(ptr_timer);
@@ -513,7 +530,7 @@ static bool gen_move_setunack(struct bt_mesh_model *model,
 			      struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
 {
-	u8_t tid, tt;
+	u8_t tid, tt, delay;
 	s16_t delta;
 	s32_t tmp32;
 	s64_t now;
@@ -530,8 +547,8 @@ static bool gen_move_setunack(struct bt_mesh_model *model,
 
 	switch (buf->len) {
 	case 0x00:	/* No optional fields are available */
-		state->transition->tt = default_tt;
-		state->transition->delay = 0;
+		tt = default_tt;
+		delay = 0;
 		break;
 	case 0x02:	/* Optional fields are available */
 		tt = net_buf_simple_pull_u8(buf);
@@ -539,12 +556,19 @@ static bool gen_move_setunack(struct bt_mesh_model *model,
 			return false;
 		}
 
-		state->transition->tt = tt;
-		state->transition->delay = net_buf_simple_pull_u8(buf);
+		delay = net_buf_simple_pull_u8(buf);
 		break;
 	default:
 		return false;
 	}
+
+	if (bt_mesh_model_elem(model)->addr == elements[0].addr) {
+		bound_states_transition_type_reassignment(LEVEL);
+	} else if (bt_mesh_model_elem(model)->addr == elements[1].addr) {
+		bound_states_transition_type_reassignment(LEVEL_TEMP);
+	}
+	state->transition->tt = tt;
+	state->transition->delay = delay;
 
 	*ptr_counter = 0;
 	k_timer_stop(ptr_timer);
@@ -904,7 +928,7 @@ static bool light_lightness_setunack(struct bt_mesh_model *model,
 				     struct bt_mesh_msg_ctx *ctx,
 				     struct net_buf_simple *buf)
 {
-	u8_t tid, tt;
+	u8_t tid, tt, delay;
 	u16_t actual;
 	s64_t now;
 	struct light_lightness_state *state = model->user_data;
@@ -920,8 +944,8 @@ static bool light_lightness_setunack(struct bt_mesh_model *model,
 
 	switch (buf->len) {
 	case 0x00:	/* No optional fields are available */
-		state->transition->tt = default_tt;
-		state->transition->delay = 0;
+		tt = default_tt;
+		delay = 0;
 		break;
 	case 0x02:	/* Optional fields are available */
 		tt = net_buf_simple_pull_u8(buf);
@@ -929,12 +953,15 @@ static bool light_lightness_setunack(struct bt_mesh_model *model,
 			return false;
 		}
 
-		state->transition->tt = tt;
-		state->transition->delay = net_buf_simple_pull_u8(buf);
+		delay = net_buf_simple_pull_u8(buf);
 		break;
 	default:
 		return false;
 	}
+
+	bound_states_transition_type_reassignment(ACTUAL);
+	state->transition->tt = tt;
+	state->transition->delay = delay;
 
 	*ptr_counter = 0;
 	k_timer_stop(ptr_timer);
@@ -1035,7 +1062,7 @@ static bool light_lightness_linear_setunack(struct bt_mesh_model *model,
 					    struct bt_mesh_msg_ctx *ctx,
 					    struct net_buf_simple *buf)
 {
-	u8_t tid, tt;
+	u8_t tid, tt, delay;
 	u16_t linear;
 	s64_t now;
 	struct light_lightness_state *state = model->user_data;
@@ -1051,8 +1078,8 @@ static bool light_lightness_linear_setunack(struct bt_mesh_model *model,
 
 	switch (buf->len) {
 	case 0x00:	/* No optional fields are available */
-		state->transition->tt = default_tt;
-		state->transition->delay = 0;
+		tt = default_tt;
+		delay = 0;
 		break;
 	case 0x02:	/* Optional fields are available */
 		tt = net_buf_simple_pull_u8(buf);
@@ -1060,12 +1087,15 @@ static bool light_lightness_linear_setunack(struct bt_mesh_model *model,
 			return false;
 		}
 
-		state->transition->tt = tt;
-		state->transition->delay = net_buf_simple_pull_u8(buf);
+		delay = net_buf_simple_pull_u8(buf);
 		break;
 	default:
 		return false;
 	}
+
+	bound_states_transition_type_reassignment(LINEAR);
+	state->transition->tt = tt;
+	state->transition->delay = delay;
 
 	*ptr_counter = 0;
 	k_timer_stop(ptr_timer);
@@ -1380,7 +1410,7 @@ static bool light_ctl_setunack(struct bt_mesh_model *model,
 			       struct bt_mesh_msg_ctx *ctx,
 			       struct net_buf_simple *buf)
 {
-	u8_t tid, tt;
+	u8_t tid, tt, delay;
 	s16_t delta_uv;
 	u16_t lightness, temp;
 	s64_t now;
@@ -1403,8 +1433,8 @@ static bool light_ctl_setunack(struct bt_mesh_model *model,
 
 	switch (buf->len) {
 	case 0x00:	/* No optional fields are available */
-		state->transition->tt = default_tt;
-		state->transition->delay = 0;
+		tt = default_tt;
+		delay = 0;
 		break;
 	case 0x02:	/* Optional fields are available */
 		tt = net_buf_simple_pull_u8(buf);
@@ -1412,12 +1442,15 @@ static bool light_ctl_setunack(struct bt_mesh_model *model,
 			return false;
 		}
 
-		state->transition->tt = tt;
-		state->transition->delay = net_buf_simple_pull_u8(buf);
+		delay = net_buf_simple_pull_u8(buf);
 		break;
 	default:
 		return false;
 	}
+
+	bound_states_transition_type_reassignment(CTL);
+	state->transition->tt = tt;
+	state->transition->delay = delay;
 
 	*ptr_counter = 0;
 	k_timer_stop(ptr_timer);
@@ -1758,7 +1791,7 @@ static bool light_ctl_temp_setunack(struct bt_mesh_model *model,
 				    struct bt_mesh_msg_ctx *ctx,
 				    struct net_buf_simple *buf)
 {
-	u8_t tid, tt;
+	u8_t tid, tt, delay;
 	s16_t delta_uv;
 	u16_t temp;
 	s64_t now;
@@ -1780,8 +1813,8 @@ static bool light_ctl_temp_setunack(struct bt_mesh_model *model,
 
 	switch (buf->len) {
 	case 0x00:	/* No optional fields are available */
-		state->transition->tt = default_tt;
-		state->transition->delay = 0;
+		tt = default_tt;
+		delay = 0;
 		break;
 	case 0x02:	/* Optional fields are available */
 		tt = net_buf_simple_pull_u8(buf);
@@ -1789,12 +1822,15 @@ static bool light_ctl_temp_setunack(struct bt_mesh_model *model,
 			return false;
 		}
 
-		state->transition->tt = tt;
-		state->transition->delay = net_buf_simple_pull_u8(buf);
+		delay = net_buf_simple_pull_u8(buf);
 		break;
 	default:
 		return false;
 	}
+
+	bound_states_transition_type_reassignment(CTL_TEMP);
+	state->transition->tt = tt;
+	state->transition->delay = delay;
 
 	*ptr_counter = 0;
 	k_timer_stop(ptr_timer);
