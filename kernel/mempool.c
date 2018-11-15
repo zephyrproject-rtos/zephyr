@@ -55,7 +55,8 @@ int k_mem_pool_alloc(struct k_mem_pool *p, struct k_mem_block *block,
 	__ASSERT(!(_is_in_isr() && timeout != K_NO_WAIT), "");
 
 	if (timeout > 0) {
-		end = z_tick_get() + _ms_to_ticks(timeout);
+		end = z_tick_get();
+		end += _ms_to_ticks(timeout);
 	}
 
 	while (true) {
