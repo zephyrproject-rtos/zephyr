@@ -257,8 +257,8 @@ static int gpio_nrfx_manage_callback(struct device *port,
 				     struct gpio_callback *callback,
 				     bool set)
 {
-	_gpio_manage_callback(&get_port_data(port)->callbacks, callback, set);
-	return 0;
+	return _gpio_manage_callback(&get_port_data(port)->callbacks,
+				     callback, set);
 }
 
 static int gpio_nrfx_pin_manage_callback(struct device *port,

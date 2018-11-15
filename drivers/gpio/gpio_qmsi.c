@@ -298,9 +298,7 @@ static inline int gpio_qmsi_manage_callback(struct device *port,
 {
 	struct gpio_qmsi_runtime *context = port->driver_data;
 
-	_gpio_manage_callback(&context->callbacks, callback, set);
-
-	return 0;
+	return _gpio_manage_callback(&context->callbacks, callback, set);
 }
 
 static inline int gpio_qmsi_enable_callback(struct device *port,

@@ -332,9 +332,7 @@ static int gpio_stm32_manage_callback(struct device *dev,
 {
 	struct gpio_stm32_data *data = dev->driver_data;
 
-	_gpio_manage_callback(&data->cb, callback, set);
-
-	return 0;
+	return _gpio_manage_callback(&data->cb, callback, set);
 }
 
 static int gpio_stm32_enable_callback(struct device *dev,

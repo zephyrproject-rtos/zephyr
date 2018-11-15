@@ -202,9 +202,7 @@ static int gpio_sam3_manage_callback(struct device *dev,
 {
 	struct gpio_sam3_runtime *context = dev->driver_data;
 
-	_gpio_manage_callback(&context->cb, callback, set);
-
-	return 0;
+	return _gpio_manage_callback(&context->cb, callback, set);
 }
 
 static int gpio_sam3_enable_callback(struct device *dev,

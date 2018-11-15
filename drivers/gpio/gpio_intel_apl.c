@@ -338,9 +338,7 @@ static int gpio_intel_apl_manage_callback(struct device *dev,
 {
 	struct gpio_intel_apl_data *data = dev->driver_data;
 
-	_gpio_manage_callback(&data->cb, callback, set);
-
-	return 0;
+	return _gpio_manage_callback(&data->cb, callback, set);
 }
 
 static int gpio_intel_apl_enable_callback(struct device *dev,

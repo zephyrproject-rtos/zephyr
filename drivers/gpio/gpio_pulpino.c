@@ -193,9 +193,7 @@ static int gpio_pulpino_manage_callback(struct device *dev,
 {
 	struct gpio_pulpino_data *data = DEV_GPIO_DATA(dev);
 
-	_gpio_manage_callback(&data->cb, callback, set);
-
-	return 0;
+	return _gpio_manage_callback(&data->cb, callback, set);
 }
 
 static int gpio_pulpino_enable_callback(struct device *dev,

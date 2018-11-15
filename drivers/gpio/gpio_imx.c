@@ -109,9 +109,7 @@ static int imx_gpio_manage_callback(struct device *dev,
 {
 	struct imx_gpio_data *data = dev->driver_data;
 
-	_gpio_manage_callback(&data->callbacks, callback, set);
-
-	return 0;
+	return _gpio_manage_callback(&data->callbacks, callback, set);
 }
 
 static int imx_gpio_enable_callback(struct device *dev,
