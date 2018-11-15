@@ -270,14 +270,16 @@ int log_printk(const char *fmt, va_list ap);
 char *log_strdup(const char *str);
 
 /* Macro expects that optionally on second argument local log level is provided.
- * If provided it is returned, otherwise default log level is returned.
+ * If provided it is returned, otherwise default log level is returned or
+ * LOG_LEVEL, if it was locally defined.
  */
-#if defined(LOG_LEVEL) && defined(CONFIG_LOG)
-#define _LOG_LEVEL_RESOLVE(...) \
-	__LOG_ARG_2(__VA_ARGS__, LOG_LEVEL)
+#if !defined(CONFIG_LOG)
+#define _LOG_LEVEL_RESOLVE(...) LOG_LEVEL_NONE
 #else
 #define _LOG_LEVEL_RESOLVE(...) \
-	__LOG_ARG_2(__VA_ARGS__, CONFIG_LOG_DEFAULT_LEVEL)
+	_LOG_EVAL(LOG_LEVEL, \
+		  (__LOG_ARG_2(__VA_ARGS__, LOG_LEVEL)), \
+		  (__LOG_ARG_2(__VA_ARGS__, CONFIG_LOG_DEFAULT_LEVEL)))
 #endif
 
 /* Return first argument */
