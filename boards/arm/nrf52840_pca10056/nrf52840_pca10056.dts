@@ -98,30 +98,6 @@
 	cts-pin = <7>;
 };
 
-#ifdef CONFIG_UART_1_NRF_UARTE
-&uart1 {
-	current-speed = <115200>;
-	status = "ok";
-	tx-pin = <46>;
-	rx-pin = <45>;
-	rts-pin = <44>;
-	cts-pin = <47>;
-
-#ifdef CONFIG_MODEM_WNCM14A2A
-	wncm14a2a {
-		compatible = "wnc,m14a2a";
-		label = "wncm14a2a";
-		mdm-boot-mode-sel-gpios = <&gpio1 2 0>;
-		mdm-power-gpios = <&gpio1 3 0>;
-		mdm-keep-awake-gpios = <&gpio1 7 0>;
-		mdm-reset-gpios = <&gpio1 10 0>;
-		mdm-shld-trans-ena-gpios = <&gpio1 11 0>;
-		status = "ok";
-	};
-#endif
-};
-#endif
-
 &i2c0 {
 	status = "ok";
 	sda-pin = <26>;
