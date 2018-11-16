@@ -28,5 +28,6 @@ source "drivers/counter/Kconfig.dtmr_cmsdk_apb"
 
 source "drivers/counter/Kconfig.nrfx"
 
+source "drivers/counter/Kconfig.imx_epit"
 
 endif # COUNTER
