@@ -131,6 +131,8 @@ features:
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | general purpose input/output        |
 +-----------+------------+-------------------------------------+
+| COUNTER   | on-chip    | counter                             |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
