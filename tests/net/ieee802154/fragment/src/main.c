@@ -145,10 +145,6 @@ struct net_fragment_data {
 
 int net_fragment_dev_init(struct device *dev)
 {
-	struct net_fragment_context *net_fragment_context = dev->driver_data;
-
-	net_fragment_context = net_fragment_context;
-
 	return 0;
 }
 
@@ -416,12 +412,23 @@ static struct net_fragment_data test_data_8 = {
 	.iphc = false
 };
 
+static u8_t frame_buffer_data[IEEE802154_MTU - 2];
+
+static struct net_buf frame_buf = {
+	.data = frame_buffer_data,
+	.size = IEEE802154_MTU - 2,
+	.frags = NULL,
+	.__buf = frame_buffer_data,
+};
+
 static int test_fragment(struct net_fragment_data *data)
 {
 	struct net_pkt *rxpkt = NULL;
+	struct net_pkt *f_pkt = NULL;
 	int result = TC_FAIL;
-	struct net_pkt *pkt;
+	struct ieee802154_fragment_ctx ctx;
 	struct net_buf *frag, *dfrag;
+	struct net_pkt *pkt;
 	int hdr_diff;
 
 	pkt = create_pkt(data);
@@ -441,20 +448,51 @@ static int test_fragment(struct net_fragment_data *data)
 		goto end;
 	}
 
-	if (!ieee802154_fragment(pkt, hdr_diff)) {
-		TC_PRINT("fragmentation failed\n");
+	if (!ieee802154_fragment_is_needed(pkt, 0)) {
+		f_pkt = pkt;
+		pkt = NULL;
+
+		goto reassemble;
+	}
+
+	f_pkt = net_pkt_get_reserve_tx(K_FOREVER);
+	if (!f_pkt) {
 		goto end;
 	}
 
+	ieee802154_fragment_ctx_init(&ctx, pkt, hdr_diff, data->iphc);
+	frame_buf.len = 0;
+
+	frag = pkt->frags;
+	while (frag) {
+		ieee802154_fragment(&ctx, &frame_buf, data->iphc);
+		frag = ctx.frag;
+
+		dfrag = net_pkt_get_frag(f_pkt, K_FOREVER);
+		if (!dfrag) {
+			goto end;
+		}
+
+		memcpy(dfrag->data, frame_buf.data, frame_buf.len);
+		dfrag->len = frame_buf.len;
+
+		net_pkt_frag_add(f_pkt, dfrag);
+
+		frame_buf.len = 0;
+	}
+
+	net_pkt_unref(pkt);
+	pkt = NULL;
+
+reassemble:
 
 #if DEBUG > 0
 	printk("length after compression and fragmentation %zd\n",
-	       net_pkt_get_len(pkt));
-	net_hexdump_frags("after-compression", pkt, false);
+	       net_pkt_get_len(f_pkt));
+	net_hexdump_frags("after-compression", f_pkt, false);
 #endif
 
-	frag = pkt->frags;
-
+	frag = f_pkt->frags;
 	while (frag) {
 		rxpkt = net_pkt_get_reserve_rx(0, K_FOREVER);
 		if (!rxpkt) {
@@ -495,8 +533,17 @@ compare:
 	}
 
 end:
-	net_pkt_unref(rxpkt);
-	net_pkt_unref(pkt);
+	if (pkt) {
+		net_pkt_unref(pkt);
+	}
+
+	if (f_pkt) {
+		net_pkt_unref(f_pkt);
+	}
+
+	if (rxpkt) {
+		net_pkt_unref(rxpkt);
+	}
 
 	return result;
 }
