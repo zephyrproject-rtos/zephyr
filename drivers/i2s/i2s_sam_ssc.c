@@ -32,11 +32,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(LOG_DOMAIN);
 
-/* FIXME change to
- * #if __DCACHE_PRESENT == 1
- * when cache support is added
- */
-#if 0
+#if __DCACHE_PRESENT == 1
 #define DCACHE_INVALIDATE(addr, size) \
 	SCB_InvalidateDCache_by_Addr((u32_t *)addr, size)
 #define DCACHE_CLEAN(addr, size) \
