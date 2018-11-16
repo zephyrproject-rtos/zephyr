@@ -27,6 +27,8 @@
 #include <net/net_if.h>
 #include <net/net_stats.h>
 
+#include <net/socket_can.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -287,7 +289,7 @@ struct net_context {
 	u8_t iface;
 
 	/** Flags for the context */
-	u8_t flags;
+	u16_t flags;
 };
 
 static inline bool net_context_is_used(struct net_context *context)
@@ -354,6 +356,11 @@ static inline sa_family_t net_context_get_family(struct net_context *context)
 		return AF_INET6;
 	}
 
+	if (IS_ENABLED(CONFIG_SOCKET_CAN) &&
+	    (context->flags & CAN_CONTEXT_FAMILY)) {
+		return AF_CAN;
+	}
+
 	return AF_INET;
 }
 
@@ -373,6 +380,12 @@ static inline void net_context_set_family(struct net_context *context,
 
 	if (family == AF_INET6) {
 		context->flags |= NET_CONTEXT_FAMILY;
+		return;
+	}
+
+	if (IS_ENABLED(CONFIG_SOCKET_CAN) &&
+	    (family == AF_CAN)) {
+		context->flags |= CAN_CONTEXT_FAMILY;
 		return;
 	}
 
@@ -398,6 +411,11 @@ enum net_sock_type net_context_get_type(struct net_context *context)
 		return SOCK_STREAM;
 	}
 
+	if (IS_ENABLED(CONFIG_SOCKET_CAN) &&
+	    (context->flags & CAN_CONTEXT_FAMILY)) {
+		return SOCK_RAW;
+	}
+
 	return SOCK_DGRAM;
 }
 
@@ -417,6 +435,12 @@ static inline void net_context_set_type(struct net_context *context,
 
 	if (type == SOCK_STREAM) {
 		context->flags |= NET_CONTEXT_TYPE;
+		return;
+	}
+
+	if (IS_ENABLED(CONFIG_SOCKET_CAN) &&
+	    (type == SOCK_RAW)) {
+		context->flags |= CAN_CONTEXT_TYPE;
 		return;
 	}
 
@@ -442,6 +466,11 @@ enum net_ip_protocol net_context_get_ip_proto(struct net_context *context)
 		return IPPROTO_TCP;
 	}
 
+	if (IS_ENABLED(CONFIG_SOCKET_CAN) &&
+	    (context->flags & CAN_CONTEXT_PROTO)) {
+		return CAN_RAW;
+	}
+
 	return IPPROTO_UDP;
 }
 
@@ -461,6 +490,12 @@ static inline void net_context_set_ip_proto(struct net_context *context,
 
 	if (ip_proto == IPPROTO_TCP) {
 		context->flags |= NET_CONTEXT_PROTO;
+		return;
+	}
+
+	if (IS_ENABLED(CONFIG_SOCKET_CAN) &&
+	    (ip_proto == CAN_RAW)) {
+		context->flags |= CAN_CONTEXT_PROTO;
 		return;
 	}
 

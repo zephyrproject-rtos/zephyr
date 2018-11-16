@@ -21,6 +21,8 @@
 #include <net/net_ip.h>
 #include <net/net_pkt.h>
 
+#include <can.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -163,6 +165,17 @@ typedef void (*net_conn_foreach_cb_t)(struct net_conn *conn, void *user_data);
 void net_conn_foreach(net_conn_foreach_cb_t cb, void *user_data);
 
 void net_conn_init(void);
+
+#if defined(CONFIG_SOCKET_CAN)
+/**
+ * @brief Trigger connection callback for sending a can packet and loopback.
+ *
+ * @param pkt Pointer to net_pkt structure
+ * @param loopback boolean for loopback transmission
+ * @return net_verdict NET_OK is callback triggered else NET_DROP.
+ */
+enum net_verdict can_conn_input(struct net_pkt *pkt, bool loopback);
+#endif
 
 #ifdef __cplusplus
 }

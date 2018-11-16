@@ -46,6 +46,8 @@
 #else
 #if defined(CONFIG_NET_IPV4)
 #define MAX_IP_PROTO_LEN NET_IPV4H_LEN
+#elif defined(CONFIG_SOCKET_CAN)
+#define MAX_IP_PROTO_LEN
 #else
 #error "Either IPv6 or IPv4 needs to be selected."
 #endif /* IPv4 */
@@ -579,6 +581,10 @@ static struct net_pkt *net_pkt_get(struct k_mem_slab *slab,
 		if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
 			data_len = max(iface_len, NET_IPV4_MTU);
 			data_len -= NET_IPV4H_LEN;
+		}
+
+		if (IS_ENABLED(CONFIG_SOCKET_CAN) && (family == AF_CAN)) {
+			data_len = max(iface_len, CAN_NET_MTU);
 		}
 
 		proto = net_context_get_ip_proto(context);
@@ -1789,7 +1795,9 @@ static int net_pkt_get_addr(struct net_pkt *pkt, bool is_src,
 	/* Set the family */
 	family = net_pkt_family(pkt);
 	addr->sa_family = family;
-
+	if (IS_ENABLED(CONFIG_SOCKET_CAN) && (family == PF_CAN)) {
+		return 0;
+	}
 	/* Examine the transport protocol */
 	proto = net_pkt_transport_proto(pkt);
 
@@ -2110,7 +2118,15 @@ void net_pkt_set_appdata_values(struct net_pkt *pkt,
 	case IPPROTO_TCP:
 		proto_len = tcp_hdr_len(pkt);
 		break;
-
+#if defined(CONFIG_SOCKET_CAN)
+	case CAN_RAW:
+		frag = pkt->frags;
+		if (frag) {
+			net_pkt_set_appdata(pkt, frag->data);
+		}
+		net_pkt_set_appdatalen(pkt, total_len);
+		return;
+#endif
 	default:
 		return;
 	}

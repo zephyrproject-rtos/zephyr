@@ -603,7 +603,10 @@ int net_conn_register(enum net_ip_protocol proto,
 				}
 			} else
 #endif
-			{
+			if (IS_ENABLED(CONFIG_SOCKET_CAN) &&
+			    (local_addr->sa_family == AF_CAN)) {
+				conns[i].local_addr.sa_family = AF_CAN;
+			} else {
 				NET_ERR("Remote address family not set");
 				return -EINVAL;
 			}
@@ -639,7 +642,12 @@ int net_conn_register(enum net_ip_protocol proto,
 				}
 			} else
 #endif
-			{
+			if (IS_ENABLED(CONFIG_SOCKET_CAN) &&
+			    (local_addr->sa_family == AF_CAN)) {
+				memcpy(&conns[i].local_addr,
+				       local_addr,
+				       sizeof(struct sockaddr_can));
+			} else {
 				NET_ERR("Local address family not set");
 				return -EINVAL;
 			}
@@ -1053,3 +1061,40 @@ void net_conn_init(void)
 	} while (0);
 #endif /* CONFIG_NET_CONN_CACHE */
 }
+#if defined(CONFIG_SOCKET_CAN)
+extern bool socket_can_check_matched_id_filter(struct net_pkt *pkt);
+
+enum net_verdict can_conn_input(struct net_pkt *pkt, bool loopback)
+{
+	int i;
+	int ret = NET_DROP;
+
+	if (!pkt || !(pkt->frags)) {
+		ret = NET_CONTINUE;
+		goto err;
+	}
+	for (i = 0; i < CONFIG_NET_MAX_CONN; i++) {
+		if ((conns[i].flags & NET_CONN_IN_USE) &&
+		    (conns[i].proto == CAN_RAW)) {
+			if (loopback) {
+				if (!socket_can_check_matched_id_filter(pkt)) {
+					/* No filter matched but dont unref */
+					/* net_pkt data */
+					ret = NET_OK;
+					goto err;
+				}
+			}
+
+			if (conns[i].cb(&conns[i], pkt, conns[i].user_data)
+			    == NET_DROP) {
+				goto err;
+			}
+			ret = NET_OK;
+			break;
+		}
+	}
+err:
+	return ret;
+}
+#endif
+

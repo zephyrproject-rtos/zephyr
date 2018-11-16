@@ -40,11 +40,13 @@ extern "C" {
 #define PF_UNSPEC	0	/* Unspecified.  */
 #define PF_INET		2	/* IP protocol family.  */
 #define PF_INET6	10	/* IP version 6.  */
+#define PF_CAN		13	/* CAN protocol family */
 
 /** Address families.  */
 #define AF_UNSPEC	PF_UNSPEC
 #define AF_INET		PF_INET
 #define AF_INET6	PF_INET6
+#define AF_CAN		PF_CAN	/* CAN address family */
 
 /** Protocol numbers from IANA */
 enum net_ip_protocol {
@@ -52,6 +54,7 @@ enum net_ip_protocol {
 	IPPROTO_TCP = 6,
 	IPPROTO_UDP = 17,
 	IPPROTO_ICMPV6 = 58,
+	CAN_RAW = 252,
 };
 
 /* Protocol numbers for TLS protocols */
@@ -67,6 +70,7 @@ enum net_ip_protocol_secure {
 enum net_sock_type {
 	SOCK_STREAM = 1,
 	SOCK_DGRAM,
+	SOCK_RAW,
 };
 
 #define ntohs(x) sys_be16_to_cpu(x)

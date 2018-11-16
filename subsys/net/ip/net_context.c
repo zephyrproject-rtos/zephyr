@@ -129,6 +129,11 @@ int net_context_get(sa_family_t family,
 		return -EPFNOSUPPORT;
 	}
 #endif
+	if (!IS_ENABLED(CONFIG_SOCKET_CAN) && (family == AF_CAN)) {
+		NET_ASSERT_INFO((family != AF_CAN), "AF_CAN disabled");
+		return -EPFNOSUPPORT;
+	}
+
 
 #if !defined(CONFIG_NET_UDP)
 	if (type == SOCK_DGRAM) {
@@ -155,31 +160,51 @@ int net_context_get(sa_family_t family,
 		return -EPROTONOSUPPORT;
 	}
 #endif
-
-	if (family != AF_INET && family != AF_INET6) {
-		NET_ASSERT_INFO(family == AF_INET || family == AF_INET6,
-				"Unknown address family %d", family);
-		return -EAFNOSUPPORT;
-	}
-
-	if (type != SOCK_DGRAM && type != SOCK_STREAM) {
-		NET_ASSERT_INFO(type == SOCK_DGRAM || type == SOCK_STREAM,
-				"Unknown context type");
+	if (!IS_ENABLED(CONFIG_SOCKET_CAN) && (type == SOCK_RAW)) {
+		NET_ASSERT_INFO((type != SOCK_RAW), "SOCKET RAW disabled");
 		return -EPROTOTYPE;
 	}
 
-	if (ip_proto != IPPROTO_UDP && ip_proto != IPPROTO_TCP) {
+	if (!IS_ENABLED(CONFIG_SOCKET_CAN) && (ip_proto == CAN_RAW)) {
+		NET_ASSERT_INFO(ip_proto != CAN_RAW, "CAN_RAW disabled");
+		return -EPROTONOSUPPORT;
+	}
+
+	if (family != AF_INET && family != AF_INET6 &&
+	    (IS_ENABLED(CONFIG_SOCKET_CAN) && (family != AF_CAN))) {
+		NET_ASSERT_INFO(family == AF_INET || family == AF_INET6 ||
+		(IS_ENABLED(CONFIG_SOCKET_CAN) && (family == AF_CAN)),
+		"Unknown address family %d", family);
+		return -EAFNOSUPPORT;
+	}
+
+	if (type != SOCK_DGRAM && type != SOCK_STREAM &&
+	    (IS_ENABLED(CONFIG_SOCKET_CAN) && (type != SOCK_RAW))) {
+		NET_ASSERT_INFO(type == SOCK_DGRAM || (type == SOCK_STREAM) ||
+		(IS_ENABLED(CONFIG_SOCKET_CAN) && (type == SOCK_RAW)),
+		"Unknown context type");
+		return -EPROTOTYPE;
+	}
+
+	if (ip_proto != IPPROTO_UDP && ip_proto != IPPROTO_TCP &&
+	    (IS_ENABLED(CONFIG_SOCKET_CAN) && (ip_proto != CAN_RAW))) {
 		NET_ASSERT_INFO(ip_proto == IPPROTO_UDP ||
-				ip_proto == IPPROTO_TCP,
-				"Unknown IP protocol %d", ip_proto);
+		ip_proto == IPPROTO_TCP ||
+		(IS_ENABLED(CONFIG_SOCKET_CAN) && (ip_proto == CAN_RAW)),
+		"Unknown IP protocol %d", ip_proto);
 		return -EPROTONOSUPPORT;
 	}
 
 	if ((type == SOCK_STREAM && ip_proto == IPPROTO_UDP) ||
-	    (type == SOCK_DGRAM && ip_proto == IPPROTO_TCP)) {
+	    (type == SOCK_DGRAM && ip_proto == IPPROTO_TCP) ||
+	    (IS_ENABLED(CONFIG_SOCKET_CAN) &&
+	    (((type == SOCK_STREAM) && (ip_proto == CAN_RAW)) ||
+	    ((type == SOCK_RAW) && (ip_proto != CAN_RAW))))) {
 		NET_ASSERT_INFO(\
-			(type != SOCK_STREAM || ip_proto != IPPROTO_UDP) &&
-			(type != SOCK_DGRAM || ip_proto != IPPROTO_TCP),
+		(type != SOCK_STREAM || ip_proto != IPPROTO_UDP) &&
+		(type != SOCK_DGRAM || ip_proto != IPPROTO_TCP) &&
+		(IS_ENABLED(CONFIG_SOCKET_CAN) &&
+		((type != SOCK_RAW) || (ip_proto != CAN_RAW))),
 			"Context type and protocol mismatch, type %d proto %d",
 			type, ip_proto);
 		return -EOPNOTSUPP;
@@ -581,7 +606,19 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 		return 0;
 	}
 #endif
-
+	/* user application need to call ioctl to get iface index and to need
+	 *  to pass same for binding with net context
+	 */
+	if (IS_ENABLED(CONFIG_SOCKET_CAN) && (addr->sa_family == AF_CAN)) {
+		struct sockaddr_can *addr_can = (struct sockaddr_can *)addr;
+		struct net_if *iface = net_if_get_by_index(
+						addr_can->can_ifindex);
+		if (!iface) {
+			return -EINVAL;
+		}
+		net_context_set_iface(context, iface);
+		return 0;
+	}
 	return -EINVAL;
 }
 
@@ -966,7 +1003,8 @@ static int sendto(struct net_pkt *pkt,
 		return -EBADF;
 	}
 
-	if (!dst_addr) {
+	if (!dst_addr && (IS_ENABLED(CONFIG_SOCKET_CAN) &&
+	    (net_context_get_ip_proto(context) != CAN_RAW))) {
 		return -EDESTADDRREQ;
 	}
 
@@ -997,7 +1035,11 @@ static int sendto(struct net_pkt *pkt,
 		}
 	} else
 #endif /* CONFIG_NET_IPV4 */
-	{
+	if (IS_ENABLED(CONFIG_SOCKET_CAN) &&
+	    (net_context_get_ip_proto(context) == CAN_RAW)) {
+		net_pkt_set_family(pkt, AF_CAN);
+		ret = 0;
+	} else {
 		NET_DBG("Invalid protocol family %d", net_pkt_family(pkt));
 		return -EINVAL;
 	}
@@ -1027,6 +1069,11 @@ static int sendto(struct net_pkt *pkt,
 	case IPPROTO_TCP:
 		ret = net_tcp_queue_data(context, pkt);
 		break;
+#if defined(CONFIG_SOCKET_CAN)
+	case CAN_RAW:
+		ret = 0;
+		break;
+#endif
 
 	default:
 		ret = -EPROTONOSUPPORT;
@@ -1054,7 +1101,10 @@ static int sendto(struct net_pkt *pkt,
 
 	case IPPROTO_TCP:
 		return net_tcp_send_data(context, cb, token, user_data);
-
+#if defined(CONFIG_SOCKET_CAN)
+	case CAN_RAW:
+		return net_send_data(pkt);
+#endif
 	default:
 		return -EPROTONOSUPPORT;
 	}
@@ -1080,8 +1130,10 @@ int net_context_send(struct net_pkt *pkt,
 	}
 #endif /* CONFIG_NET_OFFLOAD */
 
-	if (!(context->flags & NET_CONTEXT_REMOTE_ADDR_SET) ||
-	    !net_sin(&context->remote)->sin_port) {
+	if ((!(context->flags & NET_CONTEXT_REMOTE_ADDR_SET) ||
+	    !net_sin(&context->remote)->sin_port) &&
+	    (IS_ENABLED(CONFIG_SOCKET_CAN) &&
+	    (net_context_get_ip_proto(context) != CAN_RAW))) {
 		return -EDESTADDRREQ;
 	}
 
@@ -1144,9 +1196,14 @@ enum net_verdict net_context_packet_received(struct net_conn *conn,
 		return NET_DROP;
 	}
 
-	if (net_context_get_ip_proto(context) != IPPROTO_TCP) {
+	if (net_context_get_ip_proto(context) != IPPROTO_TCP &&
+	    (IS_ENABLED(CONFIG_SOCKET_CAN) &&
+	    (net_context_get_ip_proto(context) != CAN_RAW))) {
 		/* TCP packets get appdata earlier in tcp_established(). */
 		net_pkt_set_appdata_values(pkt, IPPROTO_UDP);
+	} else if (IS_ENABLED(CONFIG_SOCKET_CAN) &&
+		(net_context_get_ip_proto(context) == CAN_RAW)) {
+		net_pkt_set_appdata_values(pkt, CAN_RAW);
 	} else {
 		net_stats_update_tcp_recv(net_pkt_iface(pkt),
 					  net_pkt_appdatalen(pkt));
@@ -1240,6 +1297,13 @@ int net_context_recv(struct net_context *context,
 		     void *user_data)
 {
 	int ret;
+
+#if defined(CONFIG_SOCKET_CAN)
+	struct sockaddr local_addr = {
+		.sa_family = net_context_get_family(context),
+	};
+#endif
+
 	NET_ASSERT(context);
 
 	if (!net_context_is_used(context)) {
@@ -1264,7 +1328,20 @@ int net_context_recv(struct net_context *context,
 	case IPPROTO_TCP:
 		ret = net_tcp_recv(context, cb, user_data);
 		break;
-
+#if defined(CONFIG_SOCKET_CAN)
+	case CAN_RAW:
+		if (context->conn_handler) {
+			return 0;
+		}
+		context->recv_cb = cb;
+		ret = net_conn_register(net_context_get_ip_proto(context),
+					NULL,
+					&local_addr, 0, 0,
+					net_context_packet_received,
+					user_data,
+					&context->conn_handler);
+		break;
+#endif
 	default:
 		ret = -EPROTOTYPE;
 		break;

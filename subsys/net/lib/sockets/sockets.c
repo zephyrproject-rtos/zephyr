@@ -15,6 +15,7 @@
 #include <net/net_context.h>
 #include <net/net_pkt.h>
 #include <net/socket.h>
+#include <net/socket_can.h>
 #include <syscall_handler.h>
 #include <misc/fdtable.h>
 
@@ -220,7 +221,9 @@ int _impl_zsock_bind(int sock, const struct sockaddr *addr, socklen_t addrlen)
 	 * bind(), but for STREAM socket, next expected operation is
 	 * listen(), which doesn't work if recv callback is set.
 	 */
-	if (net_context_get_type(ctx) == SOCK_DGRAM) {
+	if (net_context_get_type(ctx) == SOCK_DGRAM ||
+	    (IS_ENABLED(CONFIG_SOCKET_CAN) &&
+	     (net_context_get_type(ctx) == SOCK_RAW))) {
 		SET_ERRNO(net_context_recv(ctx, zsock_received_cb, K_NO_WAIT,
 					   ctx->user_data));
 	}
@@ -493,6 +496,9 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 			*addrlen = sizeof(struct sockaddr_in);
 		} else if (src_addr->sa_family == AF_INET6) {
 			*addrlen = sizeof(struct sockaddr_in6);
+		} else if (IS_ENABLED(CONFIG_SOCKET_CAN) &&
+			   (src_addr->sa_family == AF_CAN)) {
+			*addrlen = sizeof(struct sockaddr_can);
 		} else {
 			errno = ENOTSUP;
 			return -1;
@@ -614,6 +620,9 @@ ssize_t zsock_recvfrom_ctx(struct net_context *ctx, void *buf, size_t max_len,
 		return zsock_recv_dgram(ctx, buf, max_len, flags, src_addr, addrlen);
 	} else if (sock_type == SOCK_STREAM) {
 		return zsock_recv_stream(ctx, buf, max_len, flags);
+	} else if (IS_ENABLED(CONFIG_SOCKET_CAN) && (sock_type == SOCK_RAW)) {
+		return zsock_recv_dgram(ctx, buf, max_len, flags, src_addr,
+					addrlen);
 	} else {
 		__ASSERT(0, "Unknown socket type");
 	}
@@ -862,6 +871,12 @@ Z_SYSCALL_HANDLER(zsock_inet_pton, family, src, dst)
 int zsock_getsockopt(int sock, int level, int optname,
 		     void *optval, socklen_t *optlen)
 {
+	struct net_context *context = sock_to_net_ctx(sock);
+
+	if (IS_ENABLED(CONFIG_SOCKET_CAN) && level == SOL_CAN_RAW) {
+		return socket_can_get_opt(context, optname, optval, optlen);
+	}
+
 	errno = ENOPROTOOPT;
 	return -1;
 }
@@ -869,6 +884,12 @@ int zsock_getsockopt(int sock, int level, int optname,
 int zsock_setsockopt(int sock, int level, int optname,
 		     const void *optval, socklen_t optlen)
 {
+	struct net_context *context = sock_to_net_ctx(sock);
+
+	if (IS_ENABLED(CONFIG_SOCKET_CAN) && level == SOL_CAN_RAW) {
+		return socket_can_set_opt(context, optname, optval, optlen);
+	}
+
 	errno = ENOPROTOOPT;
 	return -1;
 }

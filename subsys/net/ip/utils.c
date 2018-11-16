@@ -43,6 +43,10 @@ const char *net_proto2str(enum net_ip_protocol proto)
 		return "UDP";
 	case IPPROTO_ICMPV6:
 		return "ICMPv6";
+#if defined(CONFIG_SOCKET_CAN)
+	case CAN_RAW:
+		return "CAN_RAW";
+#endif
 	default:
 		break;
 	}

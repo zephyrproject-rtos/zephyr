@@ -98,4 +98,10 @@ config NET_L2_WIFI_SHELL
 	  This can be used for controlling WiFi through the console via
 	  exposing a shell module named "wifi".
 
+config NET_L2_CAN
+	bool "Enable L2 layer for CAN"
+	default y if SOCKET_CAN
+	depends on SOCKET_CAN
+	help
+		Add support l2 layer for CAN.
 endmenu

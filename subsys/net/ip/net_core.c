@@ -89,6 +89,11 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 		}
 	}
 
+	/* Check for CAN packets */
+	if (IS_ENABLED(CONFIG_SOCKET_CAN) && (net_pkt_family(pkt) == AF_CAN)) {
+		return can_conn_input(pkt, is_loopback);
+	}
+
 	/* IP version and header length. */
 	switch (NET_IPV6_HDR(pkt)->vtc & 0xf0) {
 #if defined(CONFIG_NET_IPV6)
@@ -248,8 +253,10 @@ static inline int check_ip_addr(struct net_pkt *pkt)
 		}
 	} else
 #endif /* CONFIG_NET_IPV4 */
-
-	{
+	if (IS_ENABLED(CONFIG_SOCKET_CAN) &&
+	    (net_pkt_family(pkt) == AF_CAN)) {
+		return 1;
+	} else {
 		;
 	}
 
@@ -284,6 +291,11 @@ int net_send_data(struct net_pkt *pkt)
 #endif
 
 	status = check_ip_addr(pkt);
+	/* For Socket CAN it wil be sent to all nodes in the network */
+	if (IS_ENABLED(CONFIG_SOCKET_CAN) && (net_pkt_family(pkt) == AF_CAN)) {
+		status = 1;
+	}
+
 	if (status < 0) {
 		return status;
 	} else if (status > 0) {
@@ -292,7 +304,10 @@ int net_send_data(struct net_pkt *pkt)
 		 */
 		NET_DBG("Loopback pkt %p back to us", pkt);
 		processing_data(pkt, true);
-		return 0;
+
+		if (net_pkt_family(pkt) != AF_CAN) {
+			return 0;
+		}
 	}
 
 	if (net_if_send_data(net_pkt_iface(pkt), pkt) == NET_DROP) {

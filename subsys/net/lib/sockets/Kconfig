@@ -96,6 +96,13 @@ config NET_SOCKETS_OFFLOAD
 	  See NET_OFFLOAD for a more deeply integrated approach which offloads
 	  from the net_context() API within the Zephyr IP stack.
 
+config SOCKET_CAN
+	bool "Enable socket can for CAN_RAW type sockets"
+	default n
+	depends on CAN
+	help
+	  "Enable socket can"
+
 module = NET_SOCKETS
 module-dep = NET_LOG
 module-str = Log level for BSD sockets compatible API calls

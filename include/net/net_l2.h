@@ -103,6 +103,12 @@ NET_L2_DECLARE_PUBLIC(BLUETOOTH_L2);
 NET_L2_DECLARE_PUBLIC(OPENTHREAD_L2);
 #endif /* CONFIG_NET_L2_OPENTHREAD */
 
+#ifdef CONFIG_NET_L2_CAN
+#define CAN_L2  CAN
+#define CAN_L2_CTX_TYPE  void*
+NET_L2_DECLARE_PUBLIC(CAN_L2);
+#endif /* CONFIG_NET_L2_CAN */
+
 #define NET_L2_INIT(_name, _recv_fn, _send_fn, _reserve_fn, _enable_fn, \
 		    _get_flags_fn)					\
 	const struct net_l2 (NET_L2_GET_NAME(_name)) __used		\

@@ -52,6 +52,10 @@ struct zsock_pollfd {
  */
 #define SOL_TLS 282
 
+/* Protocl level of CAN */
+#define SOL_CAN_BASE 100
+#define SOL_CAN_RAW (SOL_CAN_BASE + CAN_RAW)
+
 /* Socket options for TLS */
 
 /* Socket option to select TLS credentials to use. It accepts and returns an
@@ -93,6 +97,16 @@ struct zsock_pollfd {
  * 0 - client,
  * 1 - server.
  */
+
+/* Socket optaions for CAN */
+
+/* Get ifindex for corresponding socket*/
+#define SOCKET_CAN_GET_IF_INDEX 6
+/* Confifgure CAN controller operation mode defined in can.h */
+#define SOCKET_CAN_SET_MODE 7
+/* Configure CAN filter for acceptance filtering */
+#define SOCKET_CAN_SET_FILTER 8
+
 #define TLS_DTLS_ROLE 6
 
 struct zsock_addrinfo {
