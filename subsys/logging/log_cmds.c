@@ -158,22 +158,6 @@ static int module_id_get(const char *name)
 	return -1;
 }
 
-static u32_t module_filter_set(const struct log_backend *backend,
-			       int module_id, u32_t level)
-{
-	u32_t compiled_lvl;
-
-	compiled_lvl = log_filter_get(backend, CONFIG_LOG_DOMAIN_ID,
-				      module_id, false);
-	if (level > compiled_lvl) {
-		level = compiled_lvl;
-	}
-
-	log_filter_set(backend, CONFIG_LOG_DOMAIN_ID, module_id, level);
-
-	return level;
-}
-
 static void filters_set(const struct shell *shell,
 			const struct log_backend *backend,
 			size_t argc, char **argv, u32_t level)
@@ -190,7 +174,9 @@ static void filters_set(const struct shell *shell,
 	for (i = 0; i < cnt; i++) {
 		id = all ? i : module_id_get(argv[i]);
 		if (id >= 0) {
-			u32_t set_lvl = module_filter_set(backend, id, level);
+			u32_t set_lvl = log_filter_set(backend,
+						       CONFIG_LOG_DOMAIN_ID,
+						       id, level);
 
 			if (set_lvl != level) {
 				const char *name;
