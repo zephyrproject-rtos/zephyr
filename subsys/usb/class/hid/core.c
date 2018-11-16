@@ -91,8 +91,8 @@ static struct hid_device_info {
 
 static void usb_set_hid_report_size(u16_t report_desc_size)
 {
-	hid_cfg.if0_hid.subdesc[0].wDescriptorLength =
-		sys_cpu_to_le16(report_desc_size);
+	UNALIGNED_PUT(sys_cpu_to_le16(report_desc_size),
+		&(hid_cfg.if0_hid.subdesc[0].wDescriptorLength));
 }
 
 static void hid_status_cb(enum usb_dc_status_code status, const u8_t *param)
