@@ -37,6 +37,8 @@
 		gpio-6 = &gpio6;
 		led0 = &red_led;
 		mu-b = &mub;
+		epit-1 = &epit1;
+		epit-2 = &epit2;
 	};
 
 	chosen {
@@ -74,5 +76,13 @@
 };
 
 &mub {
+	status = "ok";
+};
+
+&epit1 {
+	status = "ok";
+};
+
+&epit2 {
 	status = "ok";
 };
