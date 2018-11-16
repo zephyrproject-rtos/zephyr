@@ -176,7 +176,8 @@ static bool test_ns_sending(struct ieee802154_pkt_test *t)
 		return false;
 	}
 
-	k_sem_take(&driver_lock, 10);
+	k_yield();
+	k_sem_take(&driver_lock, K_SECONDS(1));
 
 	if (!current_pkt->frags) {
 		NET_ERR("*** Could not send IPv6 NS packet\n");
@@ -231,7 +232,8 @@ static bool test_ack_reply(struct ieee802154_pkt_test *t)
 		return false;
 	}
 
-	k_sem_take(&driver_lock, 20);
+	k_yield();
+	k_sem_take(&driver_lock, K_SECONDS(1));
 
 	/* an ACK packet should be in current_pkt */
 	if (!current_pkt->frags) {

@@ -44,22 +44,19 @@ static int fake_set_txpower(struct device *dev, s16_t dbm)
 	return 0;
 }
 
-static inline void insert_frag_dummy_way(struct net_pkt *pkt)
+static inline void insert_frag(struct net_pkt *pkt, struct net_buf *frag)
 {
-	if (current_pkt->frags) {
-		struct net_buf *frag, *prev_frag = NULL;
+	struct net_buf *new_frag;
 
-		frag = current_pkt->frags;
-		while (frag) {
-			prev_frag = frag;
-
-			frag = frag->frags;
-		}
-
-		prev_frag->frags = net_buf_ref(pkt->frags);
-	} else {
-		current_pkt->frags = net_buf_ref(pkt->frags);
+	new_frag = net_pkt_get_frag(pkt, K_SECONDS(1));
+	if (!new_frag) {
+		return;
 	}
+
+	memcpy(new_frag->data, frag->data, frag->len);
+	net_buf_add(new_frag, frag->len);
+
+	net_pkt_frag_add(current_pkt, new_frag);
 }
 
 static int fake_tx(struct device *dev,
@@ -73,7 +70,7 @@ static int fake_tx(struct device *dev,
 		return 0;
 	}
 
-	insert_frag_dummy_way(pkt);
+	insert_frag(pkt, frag);
 
 	k_sem_give(&driver_lock);
 
@@ -118,7 +115,6 @@ static int fake_init(struct device *dev)
 
 static struct ieee802154_radio_api fake_radio_api = {
 	.iface_api.init	= fake_iface_init,
-	.iface_api.send	= ieee802154_radio_send,
 
 	.get_capabilities	= fake_get_capabilities,
 	.cca			= fake_cca,
