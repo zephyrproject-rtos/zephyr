@@ -262,6 +262,10 @@ static inline bool att_is_connected(struct bt_att *att)
 
 static int att_send_req(struct bt_att *att, struct bt_att_req *req)
 {
+	__ASSERT_NO_MSG(req);
+	__ASSERT_NO_MSG(req->func);
+	__ASSERT_NO_MSG(!att->req);
+
 	BT_DBG("req %p", req);
 
 	att->req = req;
