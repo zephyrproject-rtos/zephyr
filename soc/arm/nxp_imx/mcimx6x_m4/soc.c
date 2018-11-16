@@ -78,6 +78,15 @@ static void SOC_RdcInit(void)
 	/* Set access to MU B for M4 core */
 	RDC_SetPdapAccess(RDC, rdcPdapMuB, MU_B_RDC, false, false);
 #endif /* CONFIG_IPM_IMX */
+
+#ifdef CONFIG_COUNTER_IMX_EPIT_1
+	/* Set access to EPIT_1 for M4 core */
+	RDC_SetPdapAccess(RDC, rdcPdapEpit1, EPIT_1_RDC, false, false);
+#endif /* CONFIG_COUNTER_IMX_EPIT_1 */
+#ifdef CONFIG_COUNTER_IMX_EPIT_2
+	/* Set access to EPIT_2 for M4 core */
+	RDC_SetPdapAccess(RDC, rdcPdapEpit2, EPIT_2_RDC, false, false);
+#endif /* CONFIG_COUNTER_IMX_EPIT_2 */
 }
 
 /* Initialize cache. */
@@ -133,6 +142,22 @@ static void SOC_ClockInit(void)
 	CCM_ControlGate(CCM, ccmCcgrGateUartClk, ccmClockNeededAll);
 	CCM_ControlGate(CCM, ccmCcgrGateUartSerialClk, ccmClockNeededAll);
 #endif /* CONFIG_UART_IMX */
+
+#ifdef CONFIG_COUNTER_IMX_EPIT
+	/* Select EPIT clock is derived from OSC (24M) */
+	CCM_SetRootMux(CCM, ccmRootPerclkClkSel, ccmRootmuxPerclkClkOsc24m);
+
+	/* Configure EPIT divider */
+	CCM_SetRootDivider(CCM, ccmRootPerclkPodf, 0);
+
+	/* Enable EPIT clocks */
+#ifdef CONFIG_COUNTER_IMX_EPIT_1
+	CCM_ControlGate(CCM, ccmCcgrGateEpit1Clk, ccmClockNeededAll);
+#endif /* CONFIG_COUNTER_IMX_EPIT_1 */
+#ifdef CONFIG_COUNTER_IMX_EPIT_2
+	CCM_ControlGate(CCM, ccmCcgrGateEpit2Clk, ccmClockNeededAll);
+#endif /* CONFIG_COUNTER_IMX_EPIT_2 */
+#endif /* CONFIG_COUNTER_IMX_EPIT */
 }
 
 /**
@@ -140,7 +165,7 @@ static void SOC_ClockInit(void)
  * @brief Perform basic hardware initialization
  *
  * Initialize the interrupt controller device drivers.
- * Also initialize the timer device driver, if required.
+ * Also initialize the counter device driver, if required.
  *
  * @return 0
  */
