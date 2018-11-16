@@ -1,0 +1,142 @@
+#
+# Copyright (c) 2014 Wind River Systems, Inc.
+# Copyright (c) 2018 Synopsys, Inc. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_ARC_IOT
+
+config SOC
+	string
+	default "snps_arc_iot"
+
+config CPU_EM4_FPUS
+	def_bool y
+
+config NUM_IRQ_PRIO_LEVELS
+	# This processor supports 4 priority levels:
+	# 0 for Fast Interrupts (FIRQs) and 1-3 for Regular Interrupts (IRQs).
+	default 4
+
+config NUM_IRQS
+	# must be > the highest interrupt number used
+	default 95
+
+config RGF_NUM_BANKS
+	default 2
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 144000000
+
+config HARVARD
+	def_bool y
+
+if SERIAL
+
+config UART_NS16550
+	def_bool y
+
+endif # SERIAL
+
+if UART_CONSOLE
+
+config UART_NS16550_PORT_0
+	def_bool y
+
+endif # UART_CONSOLE
+
+
+if GPIO
+
+config GPIO_QMSI_SS
+	def_bool y
+
+if GPIO_QMSI_SS
+
+config GPIO_QMSI_SS_0
+	def_bool y
+
+config GPIO_QMSI_SS_1
+	def_bool y
+
+endif # GPIO_QMSI_SS
+
+endif # GPIO
+
+if I2C
+
+config I2C_QMSI_SS
+	def_bool y
+
+if I2C_QMSI_SS
+config I2C_SS_0
+	def_bool y
+
+config I2C_SS_1
+	def_bool y
+
+config I2C_SS_SDA_SETUP
+	default 2
+
+config I2C_SS_SDA_HOLD
+	default 10
+
+endif
+
+endif # I2C
+
+
+if SPI
+
+config SPI_DW
+	def_bool y
+
+if SPI_DW
+
+config SPI_DW_FIFO_DEPTH
+	default 7
+
+config CLOCK_CONTROL
+	def_bool y
+
+config CLOCK_CONTROL_QUARK_SE
+	def_bool y
+
+config CLOCK_CONTROL_QUARK_SE_SENSOR
+	def_bool y
+
+config SPI_0
+	def_bool y
+
+config SPI_DW_PORT_0_INTERRUPT_SINGLE_LINE
+	def_bool n
+
+config SPI_DW_PORT_0_CLOCK_GATE
+	def_bool y
+
+config SPI_DW_PORT_0_CLOCK_GATE_DRV_NAME
+	default CLOCK_CONTROL_QUARK_SE_SENSOR_DRV_NAME
+
+config SPI_DW_PORT_0_CLOCK_GATE_SUBSYS
+	default 3
+
+config SPI_1
+	def_bool y
+
+config SPI_DW_PORT_1_INTERRUPT_SINGLE_LINE
+	def_bool n
+
+config SPI_DW_PORT_1_CLOCK_GATE
+	def_bool y
+
+config SPI_DW_PORT_1_CLOCK_GATE_DRV_NAME
+	default CLOCK_CONTROL_QUARK_SE_SENSOR_DRV_NAME
+
+config SPI_DW_PORT_1_CLOCK_GATE_SUBSYS
+	default 4
+
+endif # SPI_DW
+endif # SPI
+
+endif #ARC_IOT
