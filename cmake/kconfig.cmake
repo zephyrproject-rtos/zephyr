@@ -23,6 +23,7 @@ endif()
 set(ENV{srctree}            ${ZEPHYR_BASE})
 set(ENV{KERNELVERSION}      ${KERNELVERSION})
 set(ENV{KCONFIG_CONFIG}     ${DOTCONFIG})
+set(ENV{PYTHON_EXECUTABLE} ${PYTHON_EXECUTABLE})
 
 # Set environment variables so that Kconfig can prune Kconfig source
 # files for other architectures
@@ -33,6 +34,7 @@ set(ENV{SOC_DIR}   ${SOC_DIR})
 add_custom_target(
   menuconfig
   ${CMAKE_COMMAND} -E env
+  PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}
   srctree=${ZEPHYR_BASE}
   KERNELVERSION=${KERNELVERSION}
   KCONFIG_CONFIG=${DOTCONFIG}
