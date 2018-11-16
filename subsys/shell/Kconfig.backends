@@ -22,14 +22,14 @@ config SHELL_BACKEND_SERIAL
 	help
 	  Enable serial backends.
 
+if SHELL_BACKEND_SERIAL
+
 # Internal config to enable UART interrupts if supported.
 config SHELL_BACKEND_SERIAL_FORCE_INTERRUPTS
 	bool
 	default y
 	depends on SERIAL_SUPPORT_INTERRUPT
 	imply UART_INTERRUPT_DRIVEN
-
-if SHELL_BACKEND_SERIAL
 
 config SHELL_BACKEND_SERIAL_TX_RING_BUFFER_SIZE
 	int "Set TX ring buffer size"
@@ -56,13 +56,84 @@ config SHELL_BACKEND_SERIAL_RX_POLL_PERIOD
 	help
 	  Determines how often UART is polled for RX byte.
 
+choice
+	prompt "Initial log level limit"
+	default SHELL_BACKEND_SERIAL_LOG_LEVEL_DEFAULT
+
+config SHELL_BACKEND_SERIAL_LOG_LEVEL_DEFAULT
+	bool "System limit (LOG_MAX_LEVEL)"
+
+config SHELL_BACKEND_SERIAL_LOG_LEVEL_DBG
+	bool "Debug"
+
+config SHELL_BACKEND_SERIAL_LOG_LEVEL_INF
+	bool "Info"
+
+config SHELL_BACKEND_SERIAL_LOG_LEVEL_WRN
+	bool "Warning"
+
+config SHELL_BACKEND_SERIAL_LOG_LEVEL_ERR
+	bool "Error"
+
+config SHELL_BACKEND_SERIAL_LOG_LEVEL_NONE
+	bool "None"
+
+endchoice
+
+config SHELL_BACKEND_SERIAL_LOG_LEVEL
+	int
+	default 0 if SHELL_BACKEND_SERIAL_LOG_LEVEL_NONE
+	default 1 if SHELL_BACKEND_SERIAL_LOG_LEVEL_ERR
+	default 2 if SHELL_BACKEND_SERIAL_LOG_LEVEL_WRN
+	default 3 if SHELL_BACKEND_SERIAL_LOG_LEVEL_INF
+	default 4 if SHELL_BACKEND_SERIAL_LOG_LEVEL_DBG
+	default 5 if SHELL_BACKEND_SERIAL_LOG_LEVEL_DEFAULT
+
 endif #SHELL_BACKEND_SERIAL
 
 config SHELL_BACKEND_RTT
 	bool "Enable RTT backend."
+	select USE_SEGGER_RTT
 	select RTT_CONSOLE
 	help
 	  Enable RTT backend.
+
+if SHELL_BACKEND_RTT
+
+choice
+	prompt "Initial log level limit"
+	default SHELL_BACKEND_RTT_LOG_LEVEL_DEFAULT
+
+config SHELL_BACKEND_RTT_LOG_LEVEL_DEFAULT
+	bool "System limit (LOG_MAX_LEVEL)"
+
+config SHELL_BACKEND_RTT_LOG_LEVEL_DBG
+	bool "Debug"
+
+config SHELL_BACKEND_RTT_LOG_LEVEL_INF
+	bool "Info"
+
+config SHELL_BACKEND_RTT_LOG_LEVEL_WRN
+	bool "Warning"
+
+config SHELL_BACKEND_RTT_LOG_LEVEL_ERR
+	bool "Error"
+
+config SHELL_BACKEND_RTT_LOG_LEVEL_NONE
+	bool "None"
+
+endchoice
+
+config SHELL_BACKEND_RTT_LOG_LEVEL
+	int
+	default 0 if SHELL_BACKEND_RTT_LOG_LEVEL_NONE
+	default 1 if SHELL_BACKEND_RTT_LOG_LEVEL_ERR
+	default 2 if SHELL_BACKEND_RTT_LOG_LEVEL_WRN
+	default 3 if SHELL_BACKEND_RTT_LOG_LEVEL_INF
+	default 4 if SHELL_BACKEND_RTT_LOG_LEVEL_DBG
+	default 5 if SHELL_BACKEND_RTT_LOG_LEVEL_DEFAULT
+
+endif #SHELL_BACKEND_RTT
 
 config SHELL_BACKEND_DUMMY
 	bool "Enable dummy backend."
