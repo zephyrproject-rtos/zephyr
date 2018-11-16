@@ -158,16 +158,6 @@
 			interrupt-parent = <&intc>;
 			label = "SPI_1";
 			status = "disabled";
-
-			cs-gpios = <&gpio0 11 0>;
-
-			cc2520@0 {
-				compatible = "ti,cc2520";
-				reg = <0x0>;
-				label = "cc2520";
-				spi-max-frequency = <8000000>;
-				status = "ok";
-			};
 		};
 
 		spi2: spi@b0001800 {
