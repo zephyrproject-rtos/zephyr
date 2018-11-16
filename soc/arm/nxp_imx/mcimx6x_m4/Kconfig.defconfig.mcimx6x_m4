@@ -39,4 +39,11 @@ config IPM_IMX
 
 endif # IPM
 
+if COUNTER
+
+config COUNTER_IMX_EPIT
+	default y
+
+endif # COUNTER
+
 endif # SOC_MCIMX6X_M4
