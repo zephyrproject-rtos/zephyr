@@ -29,7 +29,7 @@
 		nvmctrl: nvmctrl@41004000  {
 			compatible = "atmel,sam0-nvmctrl";
 			label = "FLASH_CTRL";
-			reg = <0x40022000 0x22>;
+			reg = <0x41004000 0x22>;
 			interrupts = <5 0>;
 
 			#address-cells = <1>;
