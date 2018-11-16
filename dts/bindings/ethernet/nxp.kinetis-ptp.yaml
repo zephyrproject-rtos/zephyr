@@ -18,4 +18,9 @@ properties:
       category: required
       description: compatible strings
       constraint: "nxp,kinetis-ptp"
+    interrupts:
+      type: array
+      category: required
+      description: required interrupts
+      generation: define
 ...
