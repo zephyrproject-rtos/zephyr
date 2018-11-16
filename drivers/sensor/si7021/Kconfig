@@ -1,0 +1,31 @@
+# Kconfig - SI7021 Relative Humidity and Temperature Sensor
+
+#
+# Copyright (c) 2018 Thomas Li Fredriksen
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig SI7021
+    bool "SI7021 Relative Humidity and Temperature Sensor"
+    depends on I2C
+    help
+      Enable driver for SI7021 I2C-based Relative Humidity and Temperature Sensor
+
+if SI7021
+
+config SI7021_DEV_NAME
+    string "SI7021 device name"
+    default "SI7021"
+
+config SI7021_I2C_ADDR
+    hex "SI7021 I2C Slave address"
+    default 0x40
+    help
+      Specify the i2C Slave address for the SI7021
+
+config SI7021_I2C_DEV_NAME
+    string "I2C master where SI7021 is connected"
+    default "I2C_1"
+
+endif # SI7021
