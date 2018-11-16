@@ -730,7 +730,7 @@ DEVICE_AND_API_INIT(i2c_0, CONFIG_I2C_0_NAME, &i2c_dw_initialize,
 static void i2c_config_0(struct device *port)
 {
 #if defined(CONFIG_I2C_DW_0_IRQ_DIRECT)
-	IRQ_CONNECT(DT_I2C_0_IRQ, CONFIG_I2C_0_IRQ_PRI,
+	IRQ_CONNECT(DT_I2C_0_IRQ, DT_I2C_0_IRQ_PRI,
 		    i2c_dw_isr, DEVICE_GET(i2c_0), DT_I2C_0_IRQ_FLAGS);
 	irq_enable(DT_I2C_0_IRQ);
 #elif defined(CONFIG_I2C_DW_0_IRQ_SHARED)
@@ -777,7 +777,7 @@ DEVICE_AND_API_INIT(i2c_1, CONFIG_I2C_1_NAME, &i2c_dw_initialize,
 
 static void i2c_config_1(struct device *port)
 {
-	IRQ_CONNECT(DT_I2C_1_IRQ, CONFIG_I2C_1_IRQ_PRI,
+	IRQ_CONNECT(DT_I2C_1_IRQ, DT_I2C_1_IRQ_PRI,
 		    i2c_dw_isr, DEVICE_GET(i2c_1), DT_I2C_1_IRQ_FLAGS);
 	irq_enable(DT_I2C_1_IRQ);
 }
@@ -815,7 +815,7 @@ DEVICE_AND_API_INIT(I2C_2, CONFIG_I2C_2_NAME, &i2c_dw_initialize,
 
 static void i2c_config_2(struct device *port)
 {
-	IRQ_CONNECT(DT_I2C_2_IRQ, CONFIG_I2C_2_IRQ_PRI,
+	IRQ_CONNECT(DT_I2C_2_IRQ, DT_I2C_2_IRQ_PRI,
 		    i2c_dw_isr, DEVICE_GET(I2C_2), DT_I2C_2_IRQ_FLAGS);
 	irq_enable(DT_I2C_2_IRQ);
 }
@@ -853,7 +853,7 @@ DEVICE_AND_API_INIT(I2C_3, CONFIG_I2C_3_NAME, &i2c_dw_initialize,
 
 static void i2c_config_3(struct device *port)
 {
-	IRQ_CONNECT(DT_I2C_3_IRQ, CONFIG_I2C_3_IRQ_PRI,
+	IRQ_CONNECT(DT_I2C_3_IRQ, DT_I2C_3_IRQ_PRI,
 		    i2c_dw_isr, DEVICE_GET(I2C_3), DT_I2C_3_IRQ_FLAGS);
 	irq_enable(DT_I2C_3_IRQ);
 }
@@ -891,7 +891,7 @@ DEVICE_AND_API_INIT(I2C_4, CONFIG_I2C_4_NAME, &i2c_dw_initialize,
 
 static void i2c_config_4(struct device *port)
 {
-	IRQ_CONNECT(DT_I2C_4_IRQ, CONFIG_I2C_4_IRQ_PRI,
+	IRQ_CONNECT(DT_I2C_4_IRQ, DT_I2C_4_IRQ_PRI,
 		    i2c_dw_isr, DEVICE_GET(I2C_4), DT_I2C_4_IRQ_FLAGS);
 	irq_enable(DT_I2C_4_IRQ);
 }
@@ -929,7 +929,7 @@ DEVICE_AND_API_INIT(I2C_5, CONFIG_I2C_5_NAME, &i2c_dw_initialize,
 
 static void i2c_config_5(struct device *port)
 {
-	IRQ_CONNECT(DT_I2C_5_IRQ, CONFIG_I2C_5_IRQ_PRI,
+	IRQ_CONNECT(DT_I2C_5_IRQ, DT_I2C_5_IRQ_PRI,
 		    i2c_dw_isr, DEVICE_GET(I2C_5), DT_I2C_5_IRQ_FLAGS);
 	irq_enable(DT_I2C_5_IRQ);
 }
@@ -967,7 +967,7 @@ DEVICE_AND_API_INIT(I2C_6, CONFIG_I2C_6_NAME, &i2c_dw_initialize,
 
 static void i2c_config_6(struct device *port)
 {
-	IRQ_CONNECT(DT_I2C_6_IRQ, CONFIG_I2C_6_IRQ_PRI,
+	IRQ_CONNECT(DT_I2C_6_IRQ, DT_I2C_6_IRQ_PRI,
 		    i2c_dw_isr, DEVICE_GET(I2C_6), DT_I2C_6_IRQ_FLAGS);
 	irq_enable(DT_I2C_6_IRQ);
 }
@@ -1005,7 +1005,7 @@ DEVICE_AND_API_INIT(I2C_7, CONFIG_I2C_7_NAME, &i2c_dw_initialize,
 
 static void i2c_config_7(struct device *port)
 {
-	IRQ_CONNECT(DT_I2C_7_IRQ, CONFIG_I2C_7_IRQ_PRI,
+	IRQ_CONNECT(DT_I2C_7_IRQ, DT_I2C_7_IRQ_PRI,
 		    i2c_dw_isr, DEVICE_GET(I2C_7), DT_I2C_7_IRQ_FLAGS);
 	irq_enable(DT_I2C_7_IRQ);
 }
