@@ -25,7 +25,8 @@ static void shell_rtt_rx_process(struct shell_rtt *sh_rtt)
 
 		if (count > 0) {
 			sh_rtt->rx_cnt = count;
-			sh_rtt->handler(SHELL_TRANSPORT_EVT_RX_RDY, sh_rtt->context);
+			sh_rtt->handler(SHELL_TRANSPORT_EVT_RX_RDY,
+					sh_rtt->context);
 		}
 
 		k_sleep(K_MSEC(10));
@@ -102,8 +103,11 @@ const struct shell_transport_api shell_rtt_transport_api = {
 static int enable_shell_rtt(struct device *arg)
 {
 	ARG_UNUSED(arg);
+	bool log_backend = CONFIG_SHELL_BACKEND_RTT_LOG_LEVEL > 0;
+	u32_t level = (CONFIG_SHELL_BACKEND_RTT_LOG_LEVEL > LOG_LEVEL_DBG) ?
+		      CONFIG_LOG_MAX_LEVEL : CONFIG_SHELL_BACKEND_RTT_LOG_LEVEL;
 
-	shell_init(&rtt_shell, NULL, false, false, LOG_LEVEL_INF);
+	shell_init(&rtt_shell, NULL, true, log_backend, level);
 
 	return 0;
 }

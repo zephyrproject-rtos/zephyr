@@ -218,7 +218,13 @@ static int enable_shell_uart(struct device *arg)
 	ARG_UNUSED(arg);
 	struct device *dev =
 			device_get_binding(CONFIG_UART_CONSOLE_ON_DEV_NAME);
-	shell_init(&uart_shell, dev, true, true, LOG_LEVEL_INF);
+	bool log_backend = CONFIG_SHELL_BACKEND_SERIAL_LOG_LEVEL > 0;
+	u32_t level =
+		(CONFIG_SHELL_BACKEND_SERIAL_LOG_LEVEL > LOG_LEVEL_DBG) ?
+		CONFIG_LOG_MAX_LEVEL : CONFIG_SHELL_BACKEND_SERIAL_LOG_LEVEL;
+
+	shell_init(&uart_shell, dev, true, log_backend, level);
+
 	return 0;
 }
 SYS_INIT(enable_shell_uart, POST_KERNEL, 0);
