@@ -9,6 +9,8 @@ zephyr_compile_options(
   -include ${ZEPHYR_BASE}/arch/posix/include/posix_cheats.h
   )
 
+zephyr_include_directories(${BOARD_DIR})
+
 zephyr_compile_options_ifdef(CONFIG_COVERAGE
   -fprofile-arcs
   -ftest-coverage
