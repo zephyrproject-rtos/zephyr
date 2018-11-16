@@ -985,8 +985,7 @@ static inline int configure_spi(struct device *dev)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
-	cc2520->spi = device_get_binding(
-			CONFIG_IEEE802154_CC2520_SPI_DRV_NAME);
+	cc2520->spi = device_get_binding(DT_IEEE802154_CC2520_SPI_DRV_NAME);
 	if (!cc2520->spi) {
 		LOG_ERR("Unable to get SPI device");
 		return -ENODEV;
@@ -994,25 +993,25 @@ static inline int configure_spi(struct device *dev)
 
 #if defined(CONFIG_IEEE802154_CC2520_GPIO_SPI_CS)
 	cs_ctrl.gpio_dev = device_get_binding(
-		CONFIG_IEEE802154_CC2520_GPIO_SPI_CS_DRV_NAME);
+		DT_IEEE802154_CC2520_GPIO_SPI_CS_DRV_NAME);
 	if (!cs_ctrl.gpio_dev) {
 		LOG_ERR("Unable to get GPIO SPI CS device");
 		return -ENODEV;
 	}
 
-	cs_ctrl.gpio_pin = CONFIG_IEEE802154_CC2520_GPIO_SPI_CS_PIN;
+	cs_ctrl.gpio_pin = DT_IEEE802154_CC2520_GPIO_SPI_CS_PIN;
 	cs_ctrl.delay = 0;
 
 	cc2520->spi_cfg.cs = &cs_ctrl;
 
 	LOG_DBG("SPI GPIO CS configured on %s:%u",
-		    CONFIG_IEEE802154_CC2520_GPIO_SPI_CS_DRV_NAME,
-		    CONFIG_IEEE802154_CC2520_GPIO_SPI_CS_PIN);
+		    DT_IEEE802154_CC2520_GPIO_SPI_CS_DRV_NAME,
+		    DT_IEEE802154_CC2520_GPIO_SPI_CS_PIN);
 #endif /* CONFIG_IEEE802154_CC2520_GPIO_SPI_CS */
 
-	cc2520->spi_cfg.frequency = CONFIG_IEEE802154_CC2520_SPI_FREQ;
+	cc2520->spi_cfg.frequency = DT_IEEE802154_CC2520_SPI_FREQ;
 	cc2520->spi_cfg.operation = SPI_WORD_SET(8);
-	cc2520->spi_cfg.slave = CONFIG_IEEE802154_CC2520_SPI_SLAVE;
+	cc2520->spi_cfg.slave = DT_IEEE802154_CC2520_SPI_SLAVE;
 
 	return 0;
 }
