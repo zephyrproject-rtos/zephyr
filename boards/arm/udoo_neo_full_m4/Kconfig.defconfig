@@ -57,4 +57,11 @@ config GPIO_IMX_PORT_7
 
 endif # GPIO_IMX
 
+if COUNTER_IMX_EPIT
+
+config COUNTER_IMX_EPIT_1
+	default y
+
+endif # COUNTER_IMX_EPIT
+
 endif # BOARD_UDOO_NEO_FULL_M4
