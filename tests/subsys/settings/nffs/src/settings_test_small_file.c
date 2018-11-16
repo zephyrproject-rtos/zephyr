@@ -13,8 +13,8 @@ void test_config_small_file(void)
 	int rc;
 	struct settings_file cf_mfg;
 	struct settings_file cf_running;
-	const char cf_mfg_test[] = "myfoo/mybar=1";
-	const char cf_running_test[] = " myfoo/mybar = 8 ";
+	const char cf_mfg_test[] = "\x10\x00myfoo/mybar=AQ==";
+	const char cf_running_test[] = "\x10\x00myfoo/mybar=CA==";
 
 	config_wipe_srcs();
 

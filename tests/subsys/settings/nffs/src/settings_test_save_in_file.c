@@ -30,13 +30,15 @@ void test_config_save_in_file(void)
 	rc = settings_save();
 	zassert_true(rc == 0, "fs write error");
 
-	rc = settings_test_file_strstr(cf.cf_name, "myfoo/mybar=8\n");
+	rc = settings_test_file_strstr(cf.cf_name, "\x10\x00myfoo/mybar=CA==",
+				       18);
 	zassert_true(rc == 0, "bad value read");
 
 	val8 = 43U;
 	rc = settings_save();
 	zassert_true(rc == 0, "fs write error");
 
-	rc = settings_test_file_strstr(cf.cf_name, "myfoo/mybar=43\n");
+	rc = settings_test_file_strstr(cf.cf_name, "\x10\x00myfoo/mybar=Kw==",
+				       18);
 	zassert_true(rc == 0, "bad value read");
 }
