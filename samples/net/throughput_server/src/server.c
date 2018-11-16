@@ -91,12 +91,6 @@ struct net_pkt *build_reply_pkt(const char *name,
 			net_buf_push(frag, net_buf_headroom(frag));
 
 			frag->len = 0; /* to make fragment empty */
-
-			/* Make sure to set the reserve so that
-			 * in sending side we add the link layer
-			 * header if needed.
-			 */
-			net_pkt_set_ll_reserve(reply_pkt, 0);
 		}
 
 		NET_ASSERT_INFO(net_buf_tailroom(frag) >= tmp->len,
