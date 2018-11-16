@@ -38,8 +38,7 @@ static int c1_set(int argc, char **argv, char *val)
 	return 0;
 }
 
-static int c1_export(int (*export_func)(const char *name, char *val),
-			enum settings_export_tgt tgt)
+static int c1_export(int (*export_func)(const char *name, char *val))
 {
 	char buf[32];
 
