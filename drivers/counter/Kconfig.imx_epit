@@ -1,0 +1,26 @@
+# Kconfig.imx_epit - IMX EPIT configuration options
+#
+# Copyright (c) 2018, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config COUNTER_IMX_EPIT
+	bool "IMX EPIT driver"
+	depends on COUNTER && HAS_IMX_EPIT
+	help
+	  Enable the IMX EPIT driver.
+
+if COUNTER_IMX_EPIT
+
+config COUNTER_IMX_EPIT_1
+	bool "Counter 1"
+	help
+	  Enable Counter 1.
+
+config COUNTER_IMX_EPIT_2
+	bool "Counter 2"
+	help
+	  Enable Counter 2.
+
+endif # COUNTER_IMX_EPIT
