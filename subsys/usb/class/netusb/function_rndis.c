@@ -1139,16 +1139,9 @@ static int rndis_send(struct net_pkt *pkt)
 		return -ENODATA;
 	}
 
-	rndis_hdr_add(buf, net_pkt_get_len(pkt) + net_pkt_ll_reserve(pkt));
+	rndis_hdr_add(buf, net_pkt_get_len(pkt));
 
 	remaining -= sizeof(struct rndis_payload_packet);
-
-	remaining = append_bytes(buf, sizeof(buf), net_pkt_ll(pkt),
-				 net_pkt_ll_reserve(pkt) + pkt->frags->len,
-				 remaining);
-	if (remaining < 0) {
-		return remaining;
-	}
 
 	for (frag = pkt->frags->frags; frag; frag = frag->frags) {
 		LOG_DBG("Fragment %p len %u remaining %u",

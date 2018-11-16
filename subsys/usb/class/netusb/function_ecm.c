@@ -265,10 +265,6 @@ static int ecm_send(struct net_pkt *pkt)
 		return -ENODATA;
 	}
 
-	/* copy header */
-	memcpy(&tx_buf[b_idx], net_pkt_ll(pkt), net_pkt_ll_reserve(pkt));
-	b_idx += net_pkt_ll_reserve(pkt);
-
 	/* copy payload */
 	for (frag = pkt->frags; frag; frag = frag->frags) {
 		memcpy(&tx_buf[b_idx], frag->data, frag->len);
