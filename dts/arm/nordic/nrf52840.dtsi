@@ -53,6 +53,7 @@
 		usbd-0 = &usbd;
 		cc310 = &cryptocell;
 		arm-cryptocell-310 = &cryptocell310;
+		qdec-0 = &qdec;
 	};
 
 	soc {

@@ -43,6 +43,7 @@
 		gpio-0 = &gpio0;
 		gpiote-0 = &gpiote;
 		wdt-0 = &wdt;
+		qdec-0 = &qdec;
 	};
 
 	soc {
