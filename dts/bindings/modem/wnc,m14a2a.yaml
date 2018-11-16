@@ -50,6 +50,4 @@ properties:
       category: optional
       description: UART RTS pin if no HW flow control (set to always enabled)
       generation: define, use-prop-name
-
-base_label: WNCM14A2A
 ...
