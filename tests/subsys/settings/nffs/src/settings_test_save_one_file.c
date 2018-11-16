@@ -8,6 +8,12 @@
 #include "settings_test.h"
 #include "settings/settings_file.h"
 
+static int test_config_save_one_byte_value(const char *name, u8_t val)
+{
+	return settings_save_one(name, &val, 1);
+}
+
+
 void test_config_save_one_file(void)
 {
 	int rc;
@@ -29,14 +35,14 @@ void test_config_save_one_file(void)
 	rc = settings_save();
 	zassert_true(rc == 0, "fs write error");
 
-	rc = settings_save_one("myfoo/mybar", "42");
+	rc = test_config_save_one_byte_value("myfoo/mybar", 42);
 	zassert_equal(rc, 0, "fs one item write error");
 
 	rc = settings_load();
 	zassert_true(rc == 0, "fs redout error");
 	zassert_true(val8 == 42, "bad value read");
 
-	rc = settings_save_one("myfoo/mybar", "44");
+	rc = test_config_save_one_byte_value("myfoo/mybar", 44);
 	zassert_true(rc == 0, "fs one item write error");
 
 	rc = settings_load();

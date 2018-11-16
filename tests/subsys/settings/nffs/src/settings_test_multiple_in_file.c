@@ -13,12 +13,11 @@ void test_config_multiple_in_file(void)
 	int rc;
 	struct settings_file cf_mfg;
 	const char cf_mfg_test1[] =
-		"myfoo/mybar=1\n"
-		"myfoo/mybar=14";
+		"\x10\x00myfoo/mybar=AQ=="
+		"\x10\x00myfoo/mybar=Dg==";
 	const char cf_mfg_test2[] =
-		"myfoo/mybar=1\n"
-		"myfoo/mybar=15\n"
-		"\n";
+		"\x10\x00myfoo/mybar=AQ=="
+		"\x10\x00myfoo/mybar=Dw==";
 
 	config_wipe_srcs();
 

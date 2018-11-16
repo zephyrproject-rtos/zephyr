@@ -23,6 +23,7 @@
 #define TEST_CONFIG_DIR TEST_FS_MPTR"/config"
 
 extern u8_t val8;
+extern u16_t val16;
 extern u32_t val32;
 extern u64_t val64;
 
@@ -43,7 +44,8 @@ void config_wipe_srcs(void);
 int fsutil_read_file(const char *path, off_t offset, size_t len, void *dst,
 		     size_t *out_len);
 int fsutil_write_file(const char *path, const void *data, size_t len);
-int settings_test_file_strstr(const char *fname, char *string);
+int settings_test_file_strstr(const char *fname, char const *string,
+			      size_t str_len);
 
 #ifdef __cplusplus
 }

@@ -27,6 +27,7 @@ void test_config_empty_file(void)
 	rc = settings_file_src(&cf_running);
 	zassert_true(rc == 0, "can't register FS as configuration source");
 
+	settings_mount_fs_backend(&cf_mfg);
 	/*
 	 * No files
 	 */
@@ -36,7 +37,7 @@ void test_config_empty_file(void)
 	zassert_true(rc == 0, "can't create directory");
 
 	rc = fsutil_write_file(TEST_CONFIG_DIR "/mfg", cf_mfg_test,
-			       sizeof(cf_mfg_test));
+			       0);
 	zassert_true(rc == 0, "can't write to file");
 
 	rc = fsutil_write_file(TEST_CONFIG_DIR "/running", cf_running_test,

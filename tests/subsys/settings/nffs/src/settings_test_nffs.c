@@ -12,6 +12,7 @@
 
 
 u8_t val8;
+u16_t val16;
 u64_t val64;
 
 int test_get_called;
@@ -21,11 +22,10 @@ int test_export_block;
 
 int c2_var_count = 1;
 
-char *c1_handle_get(int argc, char **argv, char *val, int val_len_max);
-int c1_handle_set(int argc, char **argv, char *val);
+int c1_handle_get(int argc, char **argv, char *val, int val_len_max);
+int c1_handle_set(int argc, char **argv, void *value_ctx);
 int c1_handle_commit(void);
-int c1_handle_export(int (*cb)(const char *name, char *value),
-			enum settings_export_tgt tgt);
+int c1_handle_export(int (*cb)(const char *name, void *value, size_t val_len));
 
 struct settings_handler c_test_handlers[] = {
 	{
@@ -39,41 +39,51 @@ struct settings_handler c_test_handlers[] = {
 
 
 
-char *c1_handle_get(int argc, char **argv, char *val, int val_len_max)
+int c1_handle_get(int argc, char **argv, char *val, int val_len_max)
 {
 	test_get_called = 1;
 
 	if (argc == 1 && !strcmp(argv[0], "mybar")) {
-		return settings_str_from_value(SETTINGS_INT8, &val8, val,
-					       val_len_max);
+		val_len_max = min(val_len_max, sizeof(val8));
+		memcpy(val, &val8, min(val_len_max, sizeof(val8)));
+		return val_len_max;
+	}
+
+	if (argc == 1 && !strcmp(argv[0], "mybar16")) {
+		val_len_max = min(val_len_max, sizeof(val16));
+		memcpy(val, &val16, min(val_len_max, sizeof(val16)));
+		return val_len_max;
 	}
 
 	if (argc == 1 && !strcmp(argv[0], "mybar64")) {
-		return settings_str_from_value(SETTINGS_INT64, &val64, val,
-					       val_len_max);
+		val_len_max = min(val_len_max, sizeof(val64));
+		memcpy(val, &val64, min(val_len_max, sizeof(val64)));
+		return val_len_max;
 	}
 
-	return NULL;
+	return -ENOENT;
 }
 
-int c1_handle_set(int argc, char **argv, char *val)
+int c1_handle_set(int argc, char **argv, void *value_ctx)
 {
-	u8_t newval;
-	u64_t newval64;
 	int rc;
 
 	test_set_called = 1;
 	if (argc == 1 && !strcmp(argv[0], "mybar")) {
-		rc = SETTINGS_VALUE_SET(val, SETTINGS_INT8, newval);
-		zassert_true(rc == 0, "SETTINGS_VALUE_SET callback");
-		val8 = newval;
+		rc = settings_val_read_cb(value_ctx, &val8, sizeof(val8));
+		zassert_true(rc >= 0, "SETTINGS_VALUE_SET callback");
+		return 0;
+	}
+
+	if (argc == 1 && !strcmp(argv[0], "mybar16"))	 {
+		rc = settings_val_read_cb(value_ctx, &val16, sizeof(val16));
+		zassert_true(rc >= 0, "SETTINGS_VALUE_SET callback");
 		return 0;
 	}
 
 	if (argc == 1 && !strcmp(argv[0], "mybar64"))	 {
-		rc = SETTINGS_VALUE_SET(val, SETTINGS_INT64, newval64);
-		zassert_true(rc == 0, "SETTINGS_VALUE_SET callback");
-		val64 = newval64;
+		rc = settings_val_read_cb(value_ctx, &val64, sizeof(val64));
+		zassert_true(rc >= 0, "SETTINGS_VALUE_SET callback");
 		return 0;
 	}
 
@@ -86,20 +96,17 @@ int c1_handle_commit(void)
 	return 0;
 }
 
-int c1_handle_export(int (*cb)(const char *name, char *value),
-			enum settings_export_tgt tgt)
+int c1_handle_export(int (*cb)(const char *name, void *value, size_t val_len))
 {
-	char value[32];
-
 	if (test_export_block) {
 		return 0;
 	}
 
-	settings_str_from_value(SETTINGS_INT8, &val8, value, sizeof(value));
-	(void)cb("myfoo/mybar", value);
+	(void)cb("myfoo/mybar", &val8, sizeof(val8));
 
-	settings_str_from_value(SETTINGS_INT64, &val64, value, sizeof(value));
-	(void)cb("myfoo/mybar64", value);
+	(void)cb("myfoo/mybar16", &val16, sizeof(val16));
+
+	(void)cb("myfoo/mybar64", &val64, sizeof(val64));
 
 	return 0;
 }
@@ -163,7 +170,24 @@ int fsutil_write_file(const char *path, const void *data, size_t len)
 	return rc;
 }
 
-int settings_test_file_strstr(const char *fname, char *string)
+char const *memmem(char const *mem, size_t mem_len, char const *sub,
+		   size_t sub_len)
+{
+	int i;
+
+	if (sub_len <= mem_len && sub_len > 0) {
+		for (i = 0; i <= mem_len - sub_len; i++) {
+			if (!memcmp(&mem[i], sub, sub_len)) {
+				return &mem[i];
+			}
+		}
+	}
+
+	return NULL;
+}
+
+int settings_test_file_strstr(const char *fname, char const *string,
+			      size_t str_len)
 {
 	int rc;
 	u32_t len;
@@ -185,7 +209,7 @@ int settings_test_file_strstr(const char *fname, char *string)
 	zassert_true(rc == 0, "not enough data read\n'");
 	buf[rlen] = '\0';
 
-	if (strstr(buf, string)) {
+	if (memmem(buf, len, string, str_len)) {
 		return 0;
 	}
 
@@ -196,7 +220,6 @@ void config_empty_lookups(void);
 void test_config_insert(void);
 void test_config_getset_unknown(void);
 void test_config_getset_int(void);
-void test_config_getset_bytes(void);
 void test_config_getset_int64(void);
 void test_config_commit(void);
 
@@ -216,7 +239,6 @@ void test_main(void)
 			 ztest_unit_test(test_config_insert),
 			 ztest_unit_test(test_config_getset_unknown),
 			 ztest_unit_test(test_config_getset_int),
-			 ztest_unit_test(test_config_getset_bytes),
 			 ztest_unit_test(test_config_getset_int64),
 			 ztest_unit_test(test_config_commit),
 			 /* NFFS as backing storage. */
