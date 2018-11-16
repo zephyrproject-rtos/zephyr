@@ -19,13 +19,6 @@ config GPIO
 config IEEE802154_CC2520_GPIO_SPI_CS
 	default y
 
-config IEEE802154_CC2520_GPIO_0_NAME
-	string
-	default "GPIO_0"
-config IEEE802154_CC2520_GPIO_1_NAME
-	string
-	default "GPIO_1"
-
 endif # IEEE802154_CC2520
 
 if USB_DEVICE_STACK

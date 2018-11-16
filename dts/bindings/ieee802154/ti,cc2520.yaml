@@ -20,4 +20,33 @@ properties:
       description: compatible strings
       constraint: "ti,cc2520"
 
+    vreg-en-gpios:
+      type: compound
+      category: optional
+      generation: define, use-prop-name
+
+    reset-gpios:
+      type: compound
+      category: optional
+      generation: define, use-prop-name
+
+    fifo-gpios:
+      type: compound
+      category: optional
+      generation: define, use-prop-name
+
+    cca-gpios:
+      type: compound
+      category: optional
+      generation: define, use-prop-name
+
+    sfd-gpios:
+      type: compound
+      category: optional
+      generation: define, use-prop-name
+
+    fifop-gpios:
+      type: compound
+      category: optional
+      generation: define, use-prop-name
 ...
