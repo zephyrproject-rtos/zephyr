@@ -21,8 +21,8 @@
 #define NUM_RX_BLOCKS 4
 #define NUM_TX_BLOCKS 4
 
-K_MEM_SLAB_DEFINE(rx_1_mem_slab, BLOCK_SIZE, NUM_RX_BLOCKS, 1);
-K_MEM_SLAB_DEFINE(tx_1_mem_slab, BLOCK_SIZE, NUM_TX_BLOCKS, 1);
+K_MEM_SLAB_DEFINE(rx_1_mem_slab, BLOCK_SIZE, NUM_RX_BLOCKS, 32);
+K_MEM_SLAB_DEFINE(tx_1_mem_slab, BLOCK_SIZE, NUM_TX_BLOCKS, 32);
 
 static int tx_block_write(struct device *dev_i2s, int att, int err)
 {
