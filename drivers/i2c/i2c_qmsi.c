@@ -257,6 +257,16 @@ static const struct i2c_driver_api api = {
 	.transfer = i2c_qmsi_transfer,
 };
 
+/* Some SoCs have interrupt controllers w/o priority, in that case set
+ * it to 0 */
+#ifndef DT_I2C_0_IRQ_PRI
+#define DT_I2C_0_IRQ_PRI 0
+#endif
+
+#ifndef DT_I2C_1_IRQ_PRI
+#define DT_I2C_1_IRQ_PRI 0
+#endif
+
 static int i2c_qmsi_init(struct device *dev)
 {
 	struct i2c_qmsi_driver_data *driver_data = GET_DRIVER_DATA(dev);
@@ -274,7 +284,7 @@ static int i2c_qmsi_init(struct device *dev)
 		 * to Lakemont core.
 		 */
 		IRQ_CONNECT(DT_I2C_0_IRQ,
-			    CONFIG_I2C_0_IRQ_PRI, qm_i2c_0_irq_isr, NULL,
+			    DT_I2C_0_IRQ_PRI, qm_i2c_0_irq_isr, NULL,
 			    DT_I2C_0_IRQ_FLAGS);
 		irq_enable(DT_I2C_0_IRQ);
 		QM_IR_UNMASK_INTERRUPTS(
@@ -284,7 +294,7 @@ static int i2c_qmsi_init(struct device *dev)
 #ifdef CONFIG_I2C_1
 	case QM_I2C_1:
 		IRQ_CONNECT(DT_I2C_1_IRQ,
-			    CONFIG_I2C_1_IRQ_PRI, qm_i2c_1_irq_isr, NULL,
+			    DT_I2C_1_IRQ_PRI, qm_i2c_1_irq_isr, NULL,
 			    DT_I2C_1_IRQ_FLAGS);
 		irq_enable(DT_I2C_1_IRQ);
 		QM_IR_UNMASK_INTERRUPTS(

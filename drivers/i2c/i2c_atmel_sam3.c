@@ -618,7 +618,7 @@ static void config_func_0(struct device *dev)
 	/* Enable clock for TWI0 controller */
 	PMC->PMC_PCER0 = (1 << ID_TWI0);
 
-	IRQ_CONNECT(TWI0_IRQn, CONFIG_I2C_0_IRQ_PRI,
+	IRQ_CONNECT(TWI0_IRQn, DT_I2C_0_IRQ_PRI,
 		    i2c_sam3_isr, DEVICE_GET(i2c_sam3_0), 0);
 	irq_enable(TWI0_IRQn);
 }
@@ -648,7 +648,7 @@ static void config_func_1(struct device *dev)
 	/* Enable clock for TWI0 controller */
 	PMC->PMC_PCER0 = (1 << ID_TWI1);
 
-	IRQ_CONNECT(TWI1_IRQn, CONFIG_I2C_1_IRQ_PRI,
+	IRQ_CONNECT(TWI1_IRQn, DT_I2C_1_IRQ_PRI,
 		    i2c_sam3_isr, DEVICE_GET(i2c_sam3_1), 0);
 	irq_enable(TWI1_IRQn);
 }

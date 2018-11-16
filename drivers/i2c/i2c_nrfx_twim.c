@@ -141,7 +141,7 @@ static int init_twim(struct device *dev, const nrfx_twim_config_t *config)
 	static int twim_##idx##_init(struct device *dev)		\
 	{								\
 		IRQ_CONNECT(DT_I2C_##idx##_IRQ,			\
-			    CONFIG_I2C_##idx##_IRQ_PRI,			\
+			    DT_I2C_##idx##_IRQ_PRI,			\
 			    nrfx_isr, nrfx_twim_##idx##_irq_handler, 0);\
 		const nrfx_twim_config_t config = {			\
 			.scl       = DT_I2C_##idx##_SCL_PIN,	\

@@ -330,7 +330,7 @@ static struct device DEVICE_NAME_GET(i2c0_sam);
 
 static void i2c0_sam_irq_config(void)
 {
-	IRQ_CONNECT(DT_I2C_0_IRQ, CONFIG_I2C_0_IRQ_PRI, i2c_sam_twihs_isr,
+	IRQ_CONNECT(DT_I2C_0_IRQ, DT_I2C_0_IRQ_PRI, i2c_sam_twihs_isr,
 		    DEVICE_GET(i2c0_sam), 0);
 }
 
@@ -360,7 +360,7 @@ static struct device DEVICE_NAME_GET(i2c1_sam);
 
 static void i2c1_sam_irq_config(void)
 {
-	IRQ_CONNECT(DT_I2C_1_IRQ, CONFIG_I2C_1_IRQ_PRI, i2c_sam_twihs_isr,
+	IRQ_CONNECT(DT_I2C_1_IRQ, DT_I2C_1_IRQ_PRI, i2c_sam_twihs_isr,
 		    DEVICE_GET(i2c1_sam), 0);
 }
 
@@ -390,7 +390,7 @@ static struct device DEVICE_NAME_GET(i2c2_sam);
 
 static void i2c2_sam_irq_config(void)
 {
-	IRQ_CONNECT(DT_I2C_2_IRQ, CONFIG_I2C_2_IRQ_PRI, i2c_sam_twihs_isr,
+	IRQ_CONNECT(DT_I2C_2_IRQ, DT_I2C_2_IRQ_PRI, i2c_sam_twihs_isr,
 		    DEVICE_GET(i2c2_sam), 0);
 }
 
