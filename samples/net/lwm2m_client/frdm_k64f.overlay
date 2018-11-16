@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 &uart2 {
+	current-speed = <115200>;
+	status = "ok";
+
 	wncm14a2a {
 		compatible = "wnc,m14a2a";
 		label = "wncm14a2a";
