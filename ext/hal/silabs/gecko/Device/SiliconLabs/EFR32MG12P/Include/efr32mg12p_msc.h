@@ -1,7 +1,7 @@
 /**************************************************************************//**
  * @file efr32mg12p_msc.h
  * @brief EFR32MG12P_MSC register and bit field definitions
- * @version 5.5.0
+ * @version 5.6.0
  ******************************************************************************
  * # License
  * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
@@ -52,11 +52,11 @@ typedef struct {
   __IOM uint32_t WRITECTRL;      /**< Write Control Register  */
   __IOM uint32_t WRITECMD;       /**< Write Command Register  */
   __IOM uint32_t ADDRB;          /**< Page Erase/Write Address Buffer  */
-  uint32_t       RESERVED0[1];   /**< Reserved for future use **/
+  uint32_t       RESERVED0[1U];  /**< Reserved for future use **/
   __IOM uint32_t WDATA;          /**< Write Data Register  */
   __IM uint32_t  STATUS;         /**< Status Register  */
 
-  uint32_t       RESERVED1[4];   /**< Reserved for future use **/
+  uint32_t       RESERVED1[4U];  /**< Reserved for future use **/
   __IM uint32_t  IF;             /**< Interrupt Flag Register  */
   __IOM uint32_t IFS;            /**< Interrupt Flag Set Register  */
   __IOM uint32_t IFC;            /**< Interrupt Flag Clear Register  */
@@ -66,22 +66,22 @@ typedef struct {
   __IM uint32_t  CACHEHITS;      /**< Cache Hits Performance Counter  */
   __IM uint32_t  CACHEMISSES;    /**< Cache Misses Performance Counter  */
 
-  uint32_t       RESERVED2[1];   /**< Reserved for future use **/
+  uint32_t       RESERVED2[1U];  /**< Reserved for future use **/
   __IOM uint32_t MASSLOCK;       /**< Mass Erase Lock Register  */
 
-  uint32_t       RESERVED3[1];   /**< Reserved for future use **/
+  uint32_t       RESERVED3[1U];  /**< Reserved for future use **/
   __IOM uint32_t STARTUP;        /**< Startup Control  */
 
-  uint32_t       RESERVED4[4];   /**< Reserved for future use **/
+  uint32_t       RESERVED4[4U];  /**< Reserved for future use **/
   __IOM uint32_t BANKSWITCHLOCK; /**< Bank Switching Lock Register  */
   __IOM uint32_t CMD;            /**< Command Register  */
 
-  uint32_t       RESERVED5[6];   /**< Reserved for future use **/
+  uint32_t       RESERVED5[6U];  /**< Reserved for future use **/
   __IOM uint32_t BOOTLOADERCTRL; /**< Bootloader Read and Write Enable, Write Once Register  */
   __IOM uint32_t AAPUNLOCKCMD;   /**< Software Unlock AAP Command Register  */
   __IOM uint32_t CACHECONFIG0;   /**< Cache Configuration Register 0  */
 
-  uint32_t       RESERVED6[25];  /**< Reserved for future use **/
+  uint32_t       RESERVED6[25U]; /**< Reserved for future use **/
   __IOM uint32_t RAMCTRL;        /**< RAM Control Enable Register  */
 } MSC_TypeDef;                   /** @} */
 

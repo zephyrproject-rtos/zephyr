@@ -1,36 +1,27 @@
-/* @file startup_efm32hg.S
+/***************************************************************************//**
+ * @file startup_efm32hg.S
  * @brief startup file for Silicon Labs EFM32HG devices.
  *        For use with GCC for ARM Embedded Processors
- * @version 5.1.2
- * Date:    12 June 2014
+ * @version 5.6.0
+ * @date     02. March 2016
+ ******************************************************************************/
+/*
+ * Copyright (c) 2009-2016 ARM Limited. All rights reserved.
  *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed under the Apache License, Version 2.0 (the License); you may
+ * not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an AS IS BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
-/* Copyright (c) 2011 - 2014 ARM LIMITED
-
-   All rights reserved.
-   Redistribution and use in source and binary forms, with or without
-   modification, are permitted provided that the following conditions are met:
-   - Redistributions of source code must retain the above copyright
-     notice, this list of conditions and the following disclaimer.
-   - Redistributions in binary form must reproduce the above copyright
-     notice, this list of conditions and the following disclaimer in the
-     documentation and/or other materials provided with the distribution.
-   - Neither the name of ARM nor the names of its contributors may be used
-     to endorse or promote products derived from this software without
-     specific prior written permission.
-   *
-   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-   ARE DISCLAIMED. IN NO EVENT SHALL COPYRIGHT HOLDERS AND CONTRIBUTORS BE
-   LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-   CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-   SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-   INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-   POSSIBILITY OF SUCH DAMAGE.
-   ---------------------------------------------------------------------------*/
 
     .syntax     unified
     .arch       armv6-m
@@ -71,46 +62,46 @@ __HeapLimit:
     .align      2
     .globl      __Vectors
 __Vectors:
-    .long       __StackTop            /* Top of Stack */
-    .long       Reset_Handler         /* Reset Handler */
-    .long       NMI_Handler           /* NMI Handler */
-    .long       HardFault_Handler     /* Hard Fault Handler */
-    .long       Default_Handler       /* Reserved */
-    .long       Default_Handler       /* Reserved */
-    .long       Default_Handler       /* Reserved */
-    .long       Default_Handler       /* Reserved */
-    .long       Default_Handler       /* Reserved */
-    .long       Default_Handler       /* Reserved */
-    .long       Default_Handler       /* Reserved */
-    .long       SVC_Handler           /* SVCall Handler */
-    .long       Default_Handler       /* Reserved */
-    .long       Default_Handler       /* Reserved */
-    .long       PendSV_Handler        /* PendSV Handler */
-    .long       SysTick_Handler       /* SysTick Handler */
+    .long       __StackTop                 /* Top of Stack */
+    .long       Reset_Handler              /* Reset Handler */
+    .long       NMI_Handler                /* NMI Handler */
+    .long       HardFault_Handler          /* Hard Fault Handler */
+    .long       Default_Handler            /* Reserved */
+    .long       Default_Handler            /* Reserved */
+    .long       Default_Handler            /* Reserved */
+    .long       Default_Handler            /* Reserved */
+    .long       Default_Handler            /* Reserved */
+    .long       Default_Handler            /* Reserved */
+    .long       Default_Handler            /* Reserved */
+    .long       SVC_Handler                /* SVCall Handler */
+    .long       Default_Handler            /* Reserved */
+    .long       Default_Handler            /* Reserved */
+    .long       PendSV_Handler             /* PendSV Handler */
+    .long       SysTick_Handler            /* SysTick Handler */
 
     /* External interrupts */
 
-    .long       DMA_IRQHandler    /* 0 - DMA */
-    .long       GPIO_EVEN_IRQHandler    /* 1 - GPIO_EVEN */
-    .long       TIMER0_IRQHandler    /* 2 - TIMER0 */
-    .long       ACMP0_IRQHandler    /* 3 - ACMP0 */
-    .long       ADC0_IRQHandler    /* 4 - ADC0 */
-    .long       I2C0_IRQHandler    /* 5 - I2C0 */
-    .long       GPIO_ODD_IRQHandler    /* 6 - GPIO_ODD */
-    .long       TIMER1_IRQHandler    /* 7 - TIMER1 */
-    .long       USART1_RX_IRQHandler    /* 8 - USART1_RX */
-    .long       USART1_TX_IRQHandler    /* 9 - USART1_TX */
-    .long       LEUART0_IRQHandler    /* 10 - LEUART0 */
-    .long       PCNT0_IRQHandler    /* 11 - PCNT0 */
-    .long       RTC_IRQHandler    /* 12 - RTC */
-    .long       CMU_IRQHandler    /* 13 - CMU */
-    .long       VCMP_IRQHandler    /* 14 - VCMP */
-    .long       MSC_IRQHandler    /* 15 - MSC */
-    .long       AES_IRQHandler    /* 16 - AES */
-    .long       USART0_RX_IRQHandler    /* 17 - USART0_RX */
-    .long       USART0_TX_IRQHandler    /* 18 - USART0_TX */
-    .long       USB_IRQHandler    /* 19 - USB */
-    .long       TIMER2_IRQHandler    /* 20 - TIMER2 */
+    .long       DMA_IRQHandler             /* 0 - DMA */
+    .long       GPIO_EVEN_IRQHandler       /* 1 - GPIO_EVEN */
+    .long       TIMER0_IRQHandler          /* 2 - TIMER0 */
+    .long       ACMP0_IRQHandler           /* 3 - ACMP0 */
+    .long       ADC0_IRQHandler            /* 4 - ADC0 */
+    .long       I2C0_IRQHandler            /* 5 - I2C0 */
+    .long       GPIO_ODD_IRQHandler        /* 6 - GPIO_ODD */
+    .long       TIMER1_IRQHandler          /* 7 - TIMER1 */
+    .long       USART1_RX_IRQHandler       /* 8 - USART1_RX */
+    .long       USART1_TX_IRQHandler       /* 9 - USART1_TX */
+    .long       LEUART0_IRQHandler         /* 10 - LEUART0 */
+    .long       PCNT0_IRQHandler           /* 11 - PCNT0 */
+    .long       RTC_IRQHandler             /* 12 - RTC */
+    .long       CMU_IRQHandler             /* 13 - CMU */
+    .long       VCMP_IRQHandler            /* 14 - VCMP */
+    .long       MSC_IRQHandler             /* 15 - MSC */
+    .long       AES_IRQHandler             /* 16 - AES */
+    .long       USART0_RX_IRQHandler       /* 17 - USART0_RX */
+    .long       USART0_TX_IRQHandler       /* 18 - USART0_TX */
+    .long       USB_IRQHandler             /* 19 - USB */
+    .long       TIMER2_IRQHandler          /* 20 - TIMER2 */
 
 
     .size       __Vectors, . - __Vectors

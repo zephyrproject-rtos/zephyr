@@ -1,7 +1,7 @@
 /**************************************************************************//**
  * @file efr32mg12p_vdac_opa.h
  * @brief EFR32MG12P_VDAC_OPA register and bit field definitions
- * @version 5.5.0
+ * @version 5.6.0
  ******************************************************************************
  * # License
  * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
@@ -52,7 +52,7 @@ typedef struct {
   __IOM uint32_t MUX;           /**< Operational Amplifier Mux Configuration Register  */
   __IOM uint32_t OUT;           /**< Operational Amplifier Output Configuration Register  */
   __IOM uint32_t CAL;           /**< Operational Amplifier Calibration Register  */
-  uint32_t       RESERVED0[1];  /**< Reserved future */
+  uint32_t       RESERVED0[1U]; /**< Reserved future */
 } VDAC_OPA_TypeDef;
 
 /** @} End of group Parts */

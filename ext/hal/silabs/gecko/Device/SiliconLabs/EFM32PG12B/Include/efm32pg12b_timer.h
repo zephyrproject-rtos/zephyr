@@ -1,10 +1,10 @@
 /**************************************************************************//**
  * @file efm32pg12b_timer.h
  * @brief EFM32PG12B_TIMER register and bit field definitions
- * @version 5.1.2
+ * @version 5.6.0
  ******************************************************************************
- * @section License
- * <b>Copyright 2017 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
  ******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -29,48 +29,57 @@
  * any third party, arising from your use of this Software.
  *
  *****************************************************************************/
+
+#if defined(__ICCARM__)
+#pragma system_include       /* Treat file as system include file. */
+#elif defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
+#pragma clang system_header  /* Treat file as system include file. */
+#endif
+
 /**************************************************************************//**
 * @addtogroup Parts
 * @{
 ******************************************************************************/
 /**************************************************************************//**
- * @defgroup EFM32PG12B_TIMER
+ * @defgroup EFM32PG12B_TIMER TIMER
  * @{
  * @brief EFM32PG12B_TIMER Register Declaration
  *****************************************************************************/
-typedef struct
-{
-  __IOM uint32_t   CTRL;         /**< Control Register  */
-  __IOM uint32_t   CMD;          /**< Command Register  */
-  __IM uint32_t    STATUS;       /**< Status Register  */
-  __IM uint32_t    IF;           /**< Interrupt Flag Register  */
-  __IOM uint32_t   IFS;          /**< Interrupt Flag Set Register  */
-  __IOM uint32_t   IFC;          /**< Interrupt Flag Clear Register  */
-  __IOM uint32_t   IEN;          /**< Interrupt Enable Register  */
-  __IOM uint32_t   TOP;          /**< Counter Top Value Register  */
-  __IOM uint32_t   TOPB;         /**< Counter Top Value Buffer Register  */
-  __IOM uint32_t   CNT;          /**< Counter Value Register  */
-  uint32_t         RESERVED0[1]; /**< Reserved for future use **/
-  __IOM uint32_t   LOCK;         /**< TIMER Configuration Lock Register  */
-  __IOM uint32_t   ROUTEPEN;     /**< I/O Routing Pin Enable Register  */
-  __IOM uint32_t   ROUTELOC0;    /**< I/O Routing Location Register  */
-  uint32_t         RESERVED1[1]; /**< Reserved for future use **/
-  __IOM uint32_t   ROUTELOC2;    /**< I/O Routing Location Register  */
+/** TIMER Register Declaration */
+typedef struct {
+  __IOM uint32_t   CTRL;          /**< Control Register  */
+  __IOM uint32_t   CMD;           /**< Command Register  */
+  __IM uint32_t    STATUS;        /**< Status Register  */
+  __IM uint32_t    IF;            /**< Interrupt Flag Register  */
+  __IOM uint32_t   IFS;           /**< Interrupt Flag Set Register  */
+  __IOM uint32_t   IFC;           /**< Interrupt Flag Clear Register  */
+  __IOM uint32_t   IEN;           /**< Interrupt Enable Register  */
+  __IOM uint32_t   TOP;           /**< Counter Top Value Register  */
+  __IOM uint32_t   TOPB;          /**< Counter Top Value Buffer Register  */
+  __IOM uint32_t   CNT;           /**< Counter Value Register  */
+  uint32_t         RESERVED0[1U]; /**< Reserved for future use **/
+  __IOM uint32_t   LOCK;          /**< TIMER Configuration Lock Register  */
+  __IOM uint32_t   ROUTEPEN;      /**< I/O Routing Pin Enable Register  */
+  __IOM uint32_t   ROUTELOC0;     /**< I/O Routing Location Register  */
+  uint32_t         RESERVED1[1U]; /**< Reserved for future use **/
+  __IOM uint32_t   ROUTELOC2;     /**< I/O Routing Location Register  */
 
-  uint32_t         RESERVED2[8]; /**< Reserved registers */
-  TIMER_CC_TypeDef CC[4];        /**< Compare/Capture Channel */
+  uint32_t         RESERVED2[8U]; /**< Reserved registers */
+  TIMER_CC_TypeDef CC[4U];        /**< Compare/Capture Channel */
 
-  __IOM uint32_t   DTCTRL;       /**< DTI Control Register  */
-  __IOM uint32_t   DTTIME;       /**< DTI Time Control Register  */
-  __IOM uint32_t   DTFC;         /**< DTI Fault Configuration Register  */
-  __IOM uint32_t   DTOGEN;       /**< DTI Output Generation Enable Register  */
-  __IM uint32_t    DTFAULT;      /**< DTI Fault Register  */
-  __IOM uint32_t   DTFAULTC;     /**< DTI Fault Clear Register  */
-  __IOM uint32_t   DTLOCK;       /**< DTI Configuration Lock Register  */
-} TIMER_TypeDef;                 /** @} */
+  __IOM uint32_t   DTCTRL;        /**< DTI Control Register  */
+  __IOM uint32_t   DTTIME;        /**< DTI Time Control Register  */
+  __IOM uint32_t   DTFC;          /**< DTI Fault Configuration Register  */
+  __IOM uint32_t   DTOGEN;        /**< DTI Output Generation Enable Register  */
+  __IM uint32_t    DTFAULT;       /**< DTI Fault Register  */
+  __IOM uint32_t   DTFAULTC;      /**< DTI Fault Clear Register  */
+  __IOM uint32_t   DTLOCK;        /**< DTI Configuration Lock Register  */
+} TIMER_TypeDef;                  /** @} */
 
 /**************************************************************************//**
- * @defgroup EFM32PG12B_TIMER_BitFields
+ * @addtogroup EFM32PG12B_TIMER
+ * @{
+ * @defgroup EFM32PG12B_TIMER_BitFields  TIMER Bit Fields
  * @{
  *****************************************************************************/
 
@@ -188,7 +197,7 @@ typedef struct
 #define _TIMER_CTRL_ATI_MASK                       0x10000000UL                             /**< Bit mask for TIMER_ATI */
 #define _TIMER_CTRL_ATI_DEFAULT                    0x00000000UL                             /**< Mode DEFAULT for TIMER_CTRL */
 #define TIMER_CTRL_ATI_DEFAULT                     (_TIMER_CTRL_ATI_DEFAULT << 28)          /**< Shifted mode DEFAULT for TIMER_CTRL */
-#define TIMER_CTRL_RSSCOIST                        (0x1UL << 29)                            /**< Reload-Start Sets Compare Output initial State */
+#define TIMER_CTRL_RSSCOIST                        (0x1UL << 29)                            /**< Reload-Start Sets Compare Output Initial State */
 #define _TIMER_CTRL_RSSCOIST_SHIFT                 29                                       /**< Shift value for TIMER_RSSCOIST */
 #define _TIMER_CTRL_RSSCOIST_MASK                  0x20000000UL                             /**< Bit mask for TIMER_RSSCOIST */
 #define _TIMER_CTRL_RSSCOIST_DEFAULT               0x00000000UL                             /**< Mode DEFAULT for TIMER_CTRL */
@@ -1293,7 +1302,7 @@ typedef struct
 #define _TIMER_DTCTRL_DTIPOL_MASK                  0x4UL                                 /**< Bit mask for TIMER_DTIPOL */
 #define _TIMER_DTCTRL_DTIPOL_DEFAULT               0x00000000UL                          /**< Mode DEFAULT for TIMER_DTCTRL */
 #define TIMER_DTCTRL_DTIPOL_DEFAULT                (_TIMER_DTCTRL_DTIPOL_DEFAULT << 2)   /**< Shifted mode DEFAULT for TIMER_DTCTRL */
-#define TIMER_DTCTRL_DTCINV                        (0x1UL << 3)                          /**< DTI Complementary Output Invert. */
+#define TIMER_DTCTRL_DTCINV                        (0x1UL << 3)                          /**< DTI Complementary Output Invert */
 #define _TIMER_DTCTRL_DTCINV_SHIFT                 3                                     /**< Shift value for TIMER_DTCINV */
 #define _TIMER_DTCTRL_DTCINV_MASK                  0x8UL                                 /**< Bit mask for TIMER_DTCINV */
 #define _TIMER_DTCTRL_DTCINV_DEFAULT               0x00000000UL                          /**< Mode DEFAULT for TIMER_DTCTRL */
@@ -1570,6 +1579,6 @@ typedef struct
 #define TIMER_DTLOCK_LOCKKEY_LOCKED                (_TIMER_DTLOCK_LOCKKEY_LOCKED << 0)   /**< Shifted mode LOCKED for TIMER_DTLOCK */
 #define TIMER_DTLOCK_LOCKKEY_UNLOCK                (_TIMER_DTLOCK_LOCKKEY_UNLOCK << 0)   /**< Shifted mode UNLOCK for TIMER_DTLOCK */
 
+/** @} */
 /** @} End of group EFM32PG12B_TIMER */
 /** @} End of group Parts */
-

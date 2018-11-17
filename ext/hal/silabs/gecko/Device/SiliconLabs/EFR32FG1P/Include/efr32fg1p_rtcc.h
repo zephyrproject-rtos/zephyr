@@ -1,10 +1,10 @@
 /**************************************************************************//**
  * @file efr32fg1p_rtcc.h
  * @brief EFR32FG1P_RTCC register and bit field definitions
- * @version 5.1.2
+ * @version 5.6.0
  ******************************************************************************
- * @section License
- * <b>Copyright 2017 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
  ******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -29,42 +29,51 @@
  * any third party, arising from your use of this Software.
  *
  *****************************************************************************/
+
+#if defined(__ICCARM__)
+#pragma system_include       /* Treat file as system include file. */
+#elif defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
+#pragma clang system_header  /* Treat file as system include file. */
+#endif
+
 /**************************************************************************//**
 * @addtogroup Parts
 * @{
 ******************************************************************************/
 /**************************************************************************//**
- * @defgroup EFR32FG1P_RTCC
+ * @defgroup EFR32FG1P_RTCC RTCC
  * @{
  * @brief EFR32FG1P_RTCC Register Declaration
  *****************************************************************************/
-typedef struct
-{
-  __IOM uint32_t   CTRL;          /**< Control Register  */
-  __IOM uint32_t   PRECNT;        /**< Pre-Counter Value Register  */
-  __IOM uint32_t   CNT;           /**< Counter Value Register  */
-  __IM uint32_t    COMBCNT;       /**< Combined Pre-Counter and Counter Value Register  */
-  __IOM uint32_t   TIME;          /**< Time of day register  */
-  __IOM uint32_t   DATE;          /**< Date register  */
-  __IM uint32_t    IF;            /**< RTCC Interrupt Flags  */
-  __IOM uint32_t   IFS;           /**< Interrupt Flag Set Register  */
-  __IOM uint32_t   IFC;           /**< Interrupt Flag Clear Register  */
-  __IOM uint32_t   IEN;           /**< Interrupt Enable Register  */
-  __IM uint32_t    STATUS;        /**< Status register  */
-  __IOM uint32_t   CMD;           /**< Command Register  */
-  __IM uint32_t    SYNCBUSY;      /**< Synchronization Busy Register  */
-  __IOM uint32_t   POWERDOWN;     /**< Retention RAM power-down register  */
-  __IOM uint32_t   LOCK;          /**< Configuration Lock Register  */
-  __IOM uint32_t   EM4WUEN;       /**< Wake Up Enable  */
+/** RTCC Register Declaration */
+typedef struct {
+  __IOM uint32_t   CTRL;           /**< Control Register  */
+  __IOM uint32_t   PRECNT;         /**< Pre-Counter Value Register  */
+  __IOM uint32_t   CNT;            /**< Counter Value Register  */
+  __IM uint32_t    COMBCNT;        /**< Combined Pre-Counter and Counter Value Register  */
+  __IOM uint32_t   TIME;           /**< Time of Day Register  */
+  __IOM uint32_t   DATE;           /**< Date Register  */
+  __IM uint32_t    IF;             /**< RTCC Interrupt Flags  */
+  __IOM uint32_t   IFS;            /**< Interrupt Flag Set Register  */
+  __IOM uint32_t   IFC;            /**< Interrupt Flag Clear Register  */
+  __IOM uint32_t   IEN;            /**< Interrupt Enable Register  */
+  __IM uint32_t    STATUS;         /**< Status Register  */
+  __IOM uint32_t   CMD;            /**< Command Register  */
+  __IM uint32_t    SYNCBUSY;       /**< Synchronization Busy Register  */
+  __IOM uint32_t   POWERDOWN;      /**< Retention RAM Power-down Register  */
+  __IOM uint32_t   LOCK;           /**< Configuration Lock Register  */
+  __IOM uint32_t   EM4WUEN;        /**< Wake Up Enable  */
 
-  RTCC_CC_TypeDef  CC[3];         /**< Capture/Compare Channel */
+  RTCC_CC_TypeDef  CC[3U];         /**< Capture/Compare Channel */
 
-  uint32_t         RESERVED0[37]; /**< Reserved registers */
-  RTCC_RET_TypeDef RET[32];       /**< RetentionReg */
-} RTCC_TypeDef;                   /** @} */
+  uint32_t         RESERVED0[37U]; /**< Reserved registers */
+  RTCC_RET_TypeDef RET[32U];       /**< RetentionReg */
+} RTCC_TypeDef;                    /** @} */
 
 /**************************************************************************//**
- * @defgroup EFR32FG1P_RTCC_BitFields
+ * @addtogroup EFR32FG1P_RTCC
+ * @{
+ * @defgroup EFR32FG1P_RTCC_BitFields  RTCC Bit Fields
  * @{
  *****************************************************************************/
 
@@ -81,12 +90,12 @@ typedef struct
 #define _RTCC_CTRL_DEBUGRUN_MASK            0x4UL                                   /**< Bit mask for RTCC_DEBUGRUN */
 #define _RTCC_CTRL_DEBUGRUN_DEFAULT         0x00000000UL                            /**< Mode DEFAULT for RTCC_CTRL */
 #define RTCC_CTRL_DEBUGRUN_DEFAULT          (_RTCC_CTRL_DEBUGRUN_DEFAULT << 2)      /**< Shifted mode DEFAULT for RTCC_CTRL */
-#define RTCC_CTRL_PRECCV0TOP                (0x1UL << 4)                            /**< Pre-counter CCV0 top value enable. */
+#define RTCC_CTRL_PRECCV0TOP                (0x1UL << 4)                            /**< Pre-counter CCV0 Top Value Enable */
 #define _RTCC_CTRL_PRECCV0TOP_SHIFT         4                                       /**< Shift value for RTCC_PRECCV0TOP */
 #define _RTCC_CTRL_PRECCV0TOP_MASK          0x10UL                                  /**< Bit mask for RTCC_PRECCV0TOP */
 #define _RTCC_CTRL_PRECCV0TOP_DEFAULT       0x00000000UL                            /**< Mode DEFAULT for RTCC_CTRL */
 #define RTCC_CTRL_PRECCV0TOP_DEFAULT        (_RTCC_CTRL_PRECCV0TOP_DEFAULT << 4)    /**< Shifted mode DEFAULT for RTCC_CTRL */
-#define RTCC_CTRL_CCV1TOP                   (0x1UL << 5)                            /**< CCV1 top value enable */
+#define RTCC_CTRL_CCV1TOP                   (0x1UL << 5)                            /**< CCV1 Top Value Enable */
 #define _RTCC_CTRL_CCV1TOP_SHIFT            5                                       /**< Shift value for RTCC_CCV1TOP */
 #define _RTCC_CTRL_CCV1TOP_MASK             0x20UL                                  /**< Bit mask for RTCC_CCV1TOP */
 #define _RTCC_CTRL_CCV1TOP_DEFAULT          0x00000000UL                            /**< Mode DEFAULT for RTCC_CTRL */
@@ -127,7 +136,7 @@ typedef struct
 #define RTCC_CTRL_CNTPRESC_DIV8192          (_RTCC_CTRL_CNTPRESC_DIV8192 << 8)      /**< Shifted mode DIV8192 for RTCC_CTRL */
 #define RTCC_CTRL_CNTPRESC_DIV16384         (_RTCC_CTRL_CNTPRESC_DIV16384 << 8)     /**< Shifted mode DIV16384 for RTCC_CTRL */
 #define RTCC_CTRL_CNTPRESC_DIV32768         (_RTCC_CTRL_CNTPRESC_DIV32768 << 8)     /**< Shifted mode DIV32768 for RTCC_CTRL */
-#define RTCC_CTRL_CNTTICK                   (0x1UL << 12)                           /**< Counter prescaler mode. */
+#define RTCC_CTRL_CNTTICK                   (0x1UL << 12)                           /**< Counter Prescaler Mode */
 #define _RTCC_CTRL_CNTTICK_SHIFT            12                                      /**< Shift value for RTCC_CNTTICK */
 #define _RTCC_CTRL_CNTTICK_MASK             0x1000UL                                /**< Bit mask for RTCC_CNTTICK */
 #define _RTCC_CTRL_CNTTICK_DEFAULT          0x00000000UL                            /**< Mode DEFAULT for RTCC_CTRL */
@@ -136,12 +145,12 @@ typedef struct
 #define RTCC_CTRL_CNTTICK_DEFAULT           (_RTCC_CTRL_CNTTICK_DEFAULT << 12)      /**< Shifted mode DEFAULT for RTCC_CTRL */
 #define RTCC_CTRL_CNTTICK_PRESC             (_RTCC_CTRL_CNTTICK_PRESC << 12)        /**< Shifted mode PRESC for RTCC_CTRL */
 #define RTCC_CTRL_CNTTICK_CCV0MATCH         (_RTCC_CTRL_CNTTICK_CCV0MATCH << 12)    /**< Shifted mode CCV0MATCH for RTCC_CTRL */
-#define RTCC_CTRL_OSCFDETEN                 (0x1UL << 15)                           /**< Oscillator failure detection enable */
+#define RTCC_CTRL_OSCFDETEN                 (0x1UL << 15)                           /**< Oscillator Failure Detection Enable */
 #define _RTCC_CTRL_OSCFDETEN_SHIFT          15                                      /**< Shift value for RTCC_OSCFDETEN */
 #define _RTCC_CTRL_OSCFDETEN_MASK           0x8000UL                                /**< Bit mask for RTCC_OSCFDETEN */
 #define _RTCC_CTRL_OSCFDETEN_DEFAULT        0x00000000UL                            /**< Mode DEFAULT for RTCC_CTRL */
 #define RTCC_CTRL_OSCFDETEN_DEFAULT         (_RTCC_CTRL_OSCFDETEN_DEFAULT << 15)    /**< Shifted mode DEFAULT for RTCC_CTRL */
-#define RTCC_CTRL_CNTMODE                   (0x1UL << 16)                           /**< Main counter mode */
+#define RTCC_CTRL_CNTMODE                   (0x1UL << 16)                           /**< Main Counter Mode */
 #define _RTCC_CTRL_CNTMODE_SHIFT            16                                      /**< Shift value for RTCC_CNTMODE */
 #define _RTCC_CTRL_CNTMODE_MASK             0x10000UL                               /**< Bit mask for RTCC_CNTMODE */
 #define _RTCC_CTRL_CNTMODE_DEFAULT          0x00000000UL                            /**< Mode DEFAULT for RTCC_CTRL */
@@ -150,7 +159,7 @@ typedef struct
 #define RTCC_CTRL_CNTMODE_DEFAULT           (_RTCC_CTRL_CNTMODE_DEFAULT << 16)      /**< Shifted mode DEFAULT for RTCC_CTRL */
 #define RTCC_CTRL_CNTMODE_NORMAL            (_RTCC_CTRL_CNTMODE_NORMAL << 16)       /**< Shifted mode NORMAL for RTCC_CTRL */
 #define RTCC_CTRL_CNTMODE_CALENDAR          (_RTCC_CTRL_CNTMODE_CALENDAR << 16)     /**< Shifted mode CALENDAR for RTCC_CTRL */
-#define RTCC_CTRL_LYEARCORRDIS              (0x1UL << 17)                           /**< Leap year correction disabled. */
+#define RTCC_CTRL_LYEARCORRDIS              (0x1UL << 17)                           /**< Leap Year Correction Disabled */
 #define _RTCC_CTRL_LYEARCORRDIS_SHIFT       17                                      /**< Shift value for RTCC_LYEARCORRDIS */
 #define _RTCC_CTRL_LYEARCORRDIS_MASK        0x20000UL                               /**< Bit mask for RTCC_LYEARCORRDIS */
 #define _RTCC_CTRL_LYEARCORRDIS_DEFAULT     0x00000000UL                            /**< Mode DEFAULT for RTCC_CTRL */
@@ -227,7 +236,7 @@ typedef struct
 #define _RTCC_DATE_MONTHU_MASK              0xF00UL                           /**< Bit mask for RTCC_MONTHU */
 #define _RTCC_DATE_MONTHU_DEFAULT           0x00000000UL                      /**< Mode DEFAULT for RTCC_DATE */
 #define RTCC_DATE_MONTHU_DEFAULT            (_RTCC_DATE_MONTHU_DEFAULT << 8)  /**< Shifted mode DEFAULT for RTCC_DATE */
-#define RTCC_DATE_MONTHT                    (0x1UL << 12)                     /**< Month, tens. */
+#define RTCC_DATE_MONTHT                    (0x1UL << 12)                     /**< Month, Tens */
 #define _RTCC_DATE_MONTHT_SHIFT             12                                /**< Shift value for RTCC_MONTHT */
 #define _RTCC_DATE_MONTHT_MASK              0x1000UL                          /**< Bit mask for RTCC_MONTHT */
 #define _RTCC_DATE_MONTHT_DEFAULT           0x00000000UL                      /**< Mode DEFAULT for RTCC_DATE */
@@ -268,37 +277,37 @@ typedef struct
 #define _RTCC_IF_CC2_MASK                   0x8UL                              /**< Bit mask for RTCC_CC2 */
 #define _RTCC_IF_CC2_DEFAULT                0x00000000UL                       /**< Mode DEFAULT for RTCC_IF */
 #define RTCC_IF_CC2_DEFAULT                 (_RTCC_IF_CC2_DEFAULT << 3)        /**< Shifted mode DEFAULT for RTCC_IF */
-#define RTCC_IF_OSCFAIL                     (0x1UL << 4)                       /**< Oscillator failure Interrupt Flag */
+#define RTCC_IF_OSCFAIL                     (0x1UL << 4)                       /**< Oscillator Failure Interrupt Flag */
 #define _RTCC_IF_OSCFAIL_SHIFT              4                                  /**< Shift value for RTCC_OSCFAIL */
 #define _RTCC_IF_OSCFAIL_MASK               0x10UL                             /**< Bit mask for RTCC_OSCFAIL */
 #define _RTCC_IF_OSCFAIL_DEFAULT            0x00000000UL                       /**< Mode DEFAULT for RTCC_IF */
 #define RTCC_IF_OSCFAIL_DEFAULT             (_RTCC_IF_OSCFAIL_DEFAULT << 4)    /**< Shifted mode DEFAULT for RTCC_IF */
-#define RTCC_IF_CNTTICK                     (0x1UL << 5)                       /**< Main counter tick */
+#define RTCC_IF_CNTTICK                     (0x1UL << 5)                       /**< Main Counter Tick */
 #define _RTCC_IF_CNTTICK_SHIFT              5                                  /**< Shift value for RTCC_CNTTICK */
 #define _RTCC_IF_CNTTICK_MASK               0x20UL                             /**< Bit mask for RTCC_CNTTICK */
 #define _RTCC_IF_CNTTICK_DEFAULT            0x00000000UL                       /**< Mode DEFAULT for RTCC_IF */
 #define RTCC_IF_CNTTICK_DEFAULT             (_RTCC_IF_CNTTICK_DEFAULT << 5)    /**< Shifted mode DEFAULT for RTCC_IF */
-#define RTCC_IF_MINTICK                     (0x1UL << 6)                       /**< Minute tick */
+#define RTCC_IF_MINTICK                     (0x1UL << 6)                       /**< Minute Tick */
 #define _RTCC_IF_MINTICK_SHIFT              6                                  /**< Shift value for RTCC_MINTICK */
 #define _RTCC_IF_MINTICK_MASK               0x40UL                             /**< Bit mask for RTCC_MINTICK */
 #define _RTCC_IF_MINTICK_DEFAULT            0x00000000UL                       /**< Mode DEFAULT for RTCC_IF */
 #define RTCC_IF_MINTICK_DEFAULT             (_RTCC_IF_MINTICK_DEFAULT << 6)    /**< Shifted mode DEFAULT for RTCC_IF */
-#define RTCC_IF_HOURTICK                    (0x1UL << 7)                       /**< Hour tick */
+#define RTCC_IF_HOURTICK                    (0x1UL << 7)                       /**< Hour Tick */
 #define _RTCC_IF_HOURTICK_SHIFT             7                                  /**< Shift value for RTCC_HOURTICK */
 #define _RTCC_IF_HOURTICK_MASK              0x80UL                             /**< Bit mask for RTCC_HOURTICK */
 #define _RTCC_IF_HOURTICK_DEFAULT           0x00000000UL                       /**< Mode DEFAULT for RTCC_IF */
 #define RTCC_IF_HOURTICK_DEFAULT            (_RTCC_IF_HOURTICK_DEFAULT << 7)   /**< Shifted mode DEFAULT for RTCC_IF */
-#define RTCC_IF_DAYTICK                     (0x1UL << 8)                       /**< Day tick */
+#define RTCC_IF_DAYTICK                     (0x1UL << 8)                       /**< Day Tick */
 #define _RTCC_IF_DAYTICK_SHIFT              8                                  /**< Shift value for RTCC_DAYTICK */
 #define _RTCC_IF_DAYTICK_MASK               0x100UL                            /**< Bit mask for RTCC_DAYTICK */
 #define _RTCC_IF_DAYTICK_DEFAULT            0x00000000UL                       /**< Mode DEFAULT for RTCC_IF */
 #define RTCC_IF_DAYTICK_DEFAULT             (_RTCC_IF_DAYTICK_DEFAULT << 8)    /**< Shifted mode DEFAULT for RTCC_IF */
-#define RTCC_IF_DAYOWOF                     (0x1UL << 9)                       /**< Day of week overflow */
+#define RTCC_IF_DAYOWOF                     (0x1UL << 9)                       /**< Day of Week Overflow */
 #define _RTCC_IF_DAYOWOF_SHIFT              9                                  /**< Shift value for RTCC_DAYOWOF */
 #define _RTCC_IF_DAYOWOF_MASK               0x200UL                            /**< Bit mask for RTCC_DAYOWOF */
 #define _RTCC_IF_DAYOWOF_DEFAULT            0x00000000UL                       /**< Mode DEFAULT for RTCC_IF */
 #define RTCC_IF_DAYOWOF_DEFAULT             (_RTCC_IF_DAYOWOF_DEFAULT << 9)    /**< Shifted mode DEFAULT for RTCC_IF */
-#define RTCC_IF_MONTHTICK                   (0x1UL << 10)                      /**< Month tick */
+#define RTCC_IF_MONTHTICK                   (0x1UL << 10)                      /**< Month Tick */
 #define _RTCC_IF_MONTHTICK_SHIFT            10                                 /**< Shift value for RTCC_MONTHTICK */
 #define _RTCC_IF_MONTHTICK_MASK             0x400UL                            /**< Bit mask for RTCC_MONTHTICK */
 #define _RTCC_IF_MONTHTICK_DEFAULT          0x00000000UL                       /**< Mode DEFAULT for RTCC_IF */
@@ -488,7 +497,7 @@ typedef struct
 /* Bit fields for RTCC CMD */
 #define _RTCC_CMD_RESETVALUE                0x00000000UL                       /**< Default value for RTCC_CMD */
 #define _RTCC_CMD_MASK                      0x00000001UL                       /**< Mask for RTCC_CMD */
-#define RTCC_CMD_CLRSTATUS                  (0x1UL << 0)                       /**< Clear RTCC_STATUS register. */
+#define RTCC_CMD_CLRSTATUS                  (0x1UL << 0)                       /**< Clear RTCC_STATUS Register */
 #define _RTCC_CMD_CLRSTATUS_SHIFT           0                                  /**< Shift value for RTCC_CLRSTATUS */
 #define _RTCC_CMD_CLRSTATUS_MASK            0x1UL                              /**< Bit mask for RTCC_CLRSTATUS */
 #define _RTCC_CMD_CLRSTATUS_DEFAULT         0x00000000UL                       /**< Mode DEFAULT for RTCC_CMD */
@@ -506,7 +515,7 @@ typedef struct
 /* Bit fields for RTCC POWERDOWN */
 #define _RTCC_POWERDOWN_RESETVALUE          0x00000000UL                       /**< Default value for RTCC_POWERDOWN */
 #define _RTCC_POWERDOWN_MASK                0x00000001UL                       /**< Mask for RTCC_POWERDOWN */
-#define RTCC_POWERDOWN_RAM                  (0x1UL << 0)                       /**< Retention RAM power-down */
+#define RTCC_POWERDOWN_RAM                  (0x1UL << 0)                       /**< Retention RAM Power-down */
 #define _RTCC_POWERDOWN_RAM_SHIFT           0                                  /**< Shift value for RTCC_RAM */
 #define _RTCC_POWERDOWN_RAM_MASK            0x1UL                              /**< Bit mask for RTCC_RAM */
 #define _RTCC_POWERDOWN_RAM_DEFAULT         0x00000000UL                       /**< Mode DEFAULT for RTCC_POWERDOWN */
@@ -531,7 +540,7 @@ typedef struct
 /* Bit fields for RTCC EM4WUEN */
 #define _RTCC_EM4WUEN_RESETVALUE            0x00000000UL                       /**< Default value for RTCC_EM4WUEN */
 #define _RTCC_EM4WUEN_MASK                  0x00000001UL                       /**< Mask for RTCC_EM4WUEN */
-#define RTCC_EM4WUEN_EM4WU                  (0x1UL << 0)                       /**< EM4 Wake-up enable */
+#define RTCC_EM4WUEN_EM4WU                  (0x1UL << 0)                       /**< EM4 Wake-up Enable */
 #define _RTCC_EM4WUEN_EM4WU_SHIFT           0                                  /**< Shift value for RTCC_EM4WU */
 #define _RTCC_EM4WUEN_EM4WU_MASK            0x1UL                              /**< Bit mask for RTCC_EM4WU */
 #define _RTCC_EM4WUEN_EM4WU_DEFAULT         0x00000000UL                       /**< Mode DEFAULT for RTCC_EM4WUEN */
@@ -602,7 +611,7 @@ typedef struct
 #define RTCC_CC_CTRL_PRSSEL_PRSCH9          (_RTCC_CC_CTRL_PRSSEL_PRSCH9 << 6)      /**< Shifted mode PRSCH9 for RTCC_CC_CTRL */
 #define RTCC_CC_CTRL_PRSSEL_PRSCH10         (_RTCC_CC_CTRL_PRSSEL_PRSCH10 << 6)     /**< Shifted mode PRSCH10 for RTCC_CC_CTRL */
 #define RTCC_CC_CTRL_PRSSEL_PRSCH11         (_RTCC_CC_CTRL_PRSSEL_PRSCH11 << 6)     /**< Shifted mode PRSCH11 for RTCC_CC_CTRL */
-#define RTCC_CC_CTRL_COMPBASE               (0x1UL << 11)                           /**< Capture compare channel comparison base. */
+#define RTCC_CC_CTRL_COMPBASE               (0x1UL << 11)                           /**< Capture Compare Channel Comparison Base */
 #define _RTCC_CC_CTRL_COMPBASE_SHIFT        11                                      /**< Shift value for CC_COMPBASE */
 #define _RTCC_CC_CTRL_COMPBASE_MASK         0x800UL                                 /**< Bit mask for CC_COMPBASE */
 #define _RTCC_CC_CTRL_COMPBASE_DEFAULT      0x00000000UL                            /**< Mode DEFAULT for RTCC_CC_CTRL */
@@ -615,7 +624,7 @@ typedef struct
 #define _RTCC_CC_CTRL_COMPMASK_MASK         0x1F000UL                               /**< Bit mask for CC_COMPMASK */
 #define _RTCC_CC_CTRL_COMPMASK_DEFAULT      0x00000000UL                            /**< Mode DEFAULT for RTCC_CC_CTRL */
 #define RTCC_CC_CTRL_COMPMASK_DEFAULT       (_RTCC_CC_CTRL_COMPMASK_DEFAULT << 12)  /**< Shifted mode DEFAULT for RTCC_CC_CTRL */
-#define RTCC_CC_CTRL_DAYCC                  (0x1UL << 17)                           /**< Day Capture/Compare selection */
+#define RTCC_CC_CTRL_DAYCC                  (0x1UL << 17)                           /**< Day Capture/Compare Selection */
 #define _RTCC_CC_CTRL_DAYCC_SHIFT           17                                      /**< Shift value for CC_DAYCC */
 #define _RTCC_CC_CTRL_DAYCC_MASK            0x20000UL                               /**< Bit mask for CC_DAYCC */
 #define _RTCC_CC_CTRL_DAYCC_DEFAULT         0x00000000UL                            /**< Mode DEFAULT for RTCC_CC_CTRL */
@@ -676,7 +685,7 @@ typedef struct
 #define _RTCC_CC_DATE_MONTHU_MASK           0xF00UL                              /**< Bit mask for CC_MONTHU */
 #define _RTCC_CC_DATE_MONTHU_DEFAULT        0x00000000UL                         /**< Mode DEFAULT for RTCC_CC_DATE */
 #define RTCC_CC_DATE_MONTHU_DEFAULT         (_RTCC_CC_DATE_MONTHU_DEFAULT << 8)  /**< Shifted mode DEFAULT for RTCC_CC_DATE */
-#define RTCC_CC_DATE_MONTHT                 (0x1UL << 12)                        /**< Month, tens. */
+#define RTCC_CC_DATE_MONTHT                 (0x1UL << 12)                        /**< Month, Tens */
 #define _RTCC_CC_DATE_MONTHT_SHIFT          12                                   /**< Shift value for CC_MONTHT */
 #define _RTCC_CC_DATE_MONTHT_MASK           0x1000UL                             /**< Bit mask for CC_MONTHT */
 #define _RTCC_CC_DATE_MONTHT_DEFAULT        0x00000000UL                         /**< Mode DEFAULT for RTCC_CC_DATE */
@@ -690,6 +699,6 @@ typedef struct
 #define _RTCC_RET_REG_REG_DEFAULT           0x00000000UL                     /**< Mode DEFAULT for RTCC_RET_REG */
 #define RTCC_RET_REG_REG_DEFAULT            (_RTCC_RET_REG_REG_DEFAULT << 0) /**< Shifted mode DEFAULT for RTCC_RET_REG */
 
+/** @} */
 /** @} End of group EFR32FG1P_RTCC */
 /** @} End of group Parts */
-

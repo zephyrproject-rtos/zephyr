@@ -1,10 +1,10 @@
 /**************************************************************************//**
  * @file efm32wg_etm.h
  * @brief EFM32WG_ETM register and bit field definitions
- * @version 5.1.2
+ * @version 5.6.0
  ******************************************************************************
- * @section License
- * <b>Copyright 2017 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
  ******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -29,6 +29,13 @@
  * any third party, arising from your use of this Software.
  *
  *****************************************************************************/
+
+#if defined(__ICCARM__)
+#pragma system_include       /* Treat file as system include file. */
+#elif defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
+#pragma clang system_header  /* Treat file as system include file. */
+#endif
+
 /**************************************************************************//**
 * @addtogroup Parts
 * @{
@@ -38,67 +45,66 @@
  * @{
  * @brief EFM32WG_ETM Register Declaration
  *****************************************************************************/
-typedef struct
-{
-  __IOM uint32_t ETMCR;           /**< Main Control Register  */
-  __IM uint32_t  ETMCCR;          /**< Configuration Code Register  */
-  __IOM uint32_t ETMTRIGGER;      /**< ETM Trigger Event Register  */
-  uint32_t       RESERVED0[1];    /**< Reserved for future use **/
-  __IOM uint32_t ETMSR;           /**< ETM Status Register  */
-  __IM uint32_t  ETMSCR;          /**< ETM System Configuration Register  */
-  uint32_t       RESERVED1[2];    /**< Reserved for future use **/
-  __IOM uint32_t ETMTEEVR;        /**< ETM TraceEnable Event Register  */
-  __IOM uint32_t ETMTECR1;        /**< ETM Trace control Register  */
-  uint32_t       RESERVED2[1];    /**< Reserved for future use **/
-  __IOM uint32_t ETMFFLR;         /**< ETM Fifo Full Level Register  */
-  uint32_t       RESERVED3[68];   /**< Reserved for future use **/
-  __IOM uint32_t ETMCNTRLDVR1;    /**< Counter Reload Value  */
-  uint32_t       RESERVED4[39];   /**< Reserved for future use **/
-  __IOM uint32_t ETMSYNCFR;       /**< Synchronisation Frequency Register  */
-  __IM uint32_t  ETMIDR;          /**< ID Register  */
-  __IM uint32_t  ETMCCER;         /**< Configuration Code Extension Register  */
-  uint32_t       RESERVED5[1];    /**< Reserved for future use **/
-  __IOM uint32_t ETMTESSEICR;     /**< TraceEnable Start/Stop EmbeddedICE Control Register  */
-  uint32_t       RESERVED6[1];    /**< Reserved for future use **/
-  __IOM uint32_t ETMTSEVR;        /**< Timestamp Event Register  */
-  uint32_t       RESERVED7[1];    /**< Reserved for future use **/
-  __IOM uint32_t ETMTRACEIDR;     /**< CoreSight Trace ID Register  */
-  uint32_t       RESERVED8[1];    /**< Reserved for future use **/
-  __IM uint32_t  ETMIDR2;         /**< ETM ID Register 2  */
-  uint32_t       RESERVED9[66];   /**< Reserved for future use **/
-  __IM uint32_t  ETMPDSR;         /**< Device Power-down Status Register  */
-  uint32_t       RESERVED10[754]; /**< Reserved for future use **/
-  __IOM uint32_t ETMISCIN;        /**< Integration Test Miscellaneous Inputs Register  */
-  uint32_t       RESERVED11[1];   /**< Reserved for future use **/
-  __OM uint32_t  ITTRIGOUT;       /**< Integration Test Trigger Out Register  */
-  uint32_t       RESERVED12[1];   /**< Reserved for future use **/
-  __IM uint32_t  ETMITATBCTR2;    /**< ETM Integration Test ATB Control 2 Register  */
-  uint32_t       RESERVED13[1];   /**< Reserved for future use **/
-  __OM uint32_t  ETMITATBCTR0;    /**< ETM Integration Test ATB Control 0 Register  */
-  uint32_t       RESERVED14[1];   /**< Reserved for future use **/
-  __IOM uint32_t ETMITCTRL;       /**< ETM Integration Control Register  */
-  uint32_t       RESERVED15[39];  /**< Reserved for future use **/
-  __IOM uint32_t ETMCLAIMSET;     /**< ETM Claim Tag Set Register  */
-  __IOM uint32_t ETMCLAIMCLR;     /**< ETM Claim Tag Clear Register  */
-  uint32_t       RESERVED16[2];   /**< Reserved for future use **/
-  __IOM uint32_t ETMLAR;          /**< ETM Lock Access Register  */
-  __IM uint32_t  ETMLSR;          /**< Lock Status Register  */
-  __IM uint32_t  ETMAUTHSTATUS;   /**< ETM Authentication Status Register  */
-  uint32_t       RESERVED17[4];   /**< Reserved for future use **/
-  __IM uint32_t  ETMDEVTYPE;      /**< CoreSight Device Type Register  */
-  __IM uint32_t  ETMPIDR4;        /**< Peripheral ID4 Register  */
-  __OM uint32_t  ETMPIDR5;        /**< Peripheral ID5 Register  */
-  __OM uint32_t  ETMPIDR6;        /**< Peripheral ID6 Register  */
-  __OM uint32_t  ETMPIDR7;        /**< Peripheral ID7 Register  */
-  __IM uint32_t  ETMPIDR0;        /**< Peripheral ID0 Register  */
-  __IM uint32_t  ETMPIDR1;        /**< Peripheral ID1 Register  */
-  __IM uint32_t  ETMPIDR2;        /**< Peripheral ID2 Register  */
-  __IM uint32_t  ETMPIDR3;        /**< Peripheral ID3 Register  */
-  __IM uint32_t  ETMCIDR0;        /**< Component ID0 Register  */
-  __IM uint32_t  ETMCIDR1;        /**< Component ID1 Register  */
-  __IM uint32_t  ETMCIDR2;        /**< Component ID2 Register  */
-  __IM uint32_t  ETMCIDR3;        /**< Component ID3 Register  */
-} ETM_TypeDef;                    /** @} */
+typedef struct {
+  __IOM uint32_t ETMCR;            /**< Main Control Register  */
+  __IM uint32_t  ETMCCR;           /**< Configuration Code Register  */
+  __IOM uint32_t ETMTRIGGER;       /**< ETM Trigger Event Register  */
+  uint32_t       RESERVED0[1U];    /**< Reserved for future use **/
+  __IOM uint32_t ETMSR;            /**< ETM Status Register  */
+  __IM uint32_t  ETMSCR;           /**< ETM System Configuration Register  */
+  uint32_t       RESERVED1[2U];    /**< Reserved for future use **/
+  __IOM uint32_t ETMTEEVR;         /**< ETM TraceEnable Event Register  */
+  __IOM uint32_t ETMTECR1;         /**< ETM Trace control Register  */
+  uint32_t       RESERVED2[1U];    /**< Reserved for future use **/
+  __IOM uint32_t ETMFFLR;          /**< ETM Fifo Full Level Register  */
+  uint32_t       RESERVED3[68U];   /**< Reserved for future use **/
+  __IOM uint32_t ETMCNTRLDVR1;     /**< Counter Reload Value  */
+  uint32_t       RESERVED4[39U];   /**< Reserved for future use **/
+  __IOM uint32_t ETMSYNCFR;        /**< Synchronisation Frequency Register  */
+  __IM uint32_t  ETMIDR;           /**< ID Register  */
+  __IM uint32_t  ETMCCER;          /**< Configuration Code Extension Register  */
+  uint32_t       RESERVED5[1U];    /**< Reserved for future use **/
+  __IOM uint32_t ETMTESSEICR;      /**< TraceEnable Start/Stop EmbeddedICE Control Register  */
+  uint32_t       RESERVED6[1U];    /**< Reserved for future use **/
+  __IOM uint32_t ETMTSEVR;         /**< Timestamp Event Register  */
+  uint32_t       RESERVED7[1U];    /**< Reserved for future use **/
+  __IOM uint32_t ETMTRACEIDR;      /**< CoreSight Trace ID Register  */
+  uint32_t       RESERVED8[1U];    /**< Reserved for future use **/
+  __IM uint32_t  ETMIDR2;          /**< ETM ID Register 2  */
+  uint32_t       RESERVED9[66U];   /**< Reserved for future use **/
+  __IM uint32_t  ETMPDSR;          /**< Device Power-down Status Register  */
+  uint32_t       RESERVED10[754U]; /**< Reserved for future use **/
+  __IOM uint32_t ETMISCIN;         /**< Integration Test Miscellaneous Inputs Register  */
+  uint32_t       RESERVED11[1U];   /**< Reserved for future use **/
+  __OM uint32_t  ITTRIGOUT;        /**< Integration Test Trigger Out Register  */
+  uint32_t       RESERVED12[1U];   /**< Reserved for future use **/
+  __IM uint32_t  ETMITATBCTR2;     /**< ETM Integration Test ATB Control 2 Register  */
+  uint32_t       RESERVED13[1U];   /**< Reserved for future use **/
+  __OM uint32_t  ETMITATBCTR0;     /**< ETM Integration Test ATB Control 0 Register  */
+  uint32_t       RESERVED14[1U];   /**< Reserved for future use **/
+  __IOM uint32_t ETMITCTRL;        /**< ETM Integration Control Register  */
+  uint32_t       RESERVED15[39U];  /**< Reserved for future use **/
+  __IOM uint32_t ETMCLAIMSET;      /**< ETM Claim Tag Set Register  */
+  __IOM uint32_t ETMCLAIMCLR;      /**< ETM Claim Tag Clear Register  */
+  uint32_t       RESERVED16[2U];   /**< Reserved for future use **/
+  __IOM uint32_t ETMLAR;           /**< ETM Lock Access Register  */
+  __IM uint32_t  ETMLSR;           /**< Lock Status Register  */
+  __IM uint32_t  ETMAUTHSTATUS;    /**< ETM Authentication Status Register  */
+  uint32_t       RESERVED17[4U];   /**< Reserved for future use **/
+  __IM uint32_t  ETMDEVTYPE;       /**< CoreSight Device Type Register  */
+  __IM uint32_t  ETMPIDR4;         /**< Peripheral ID4 Register  */
+  __OM uint32_t  ETMPIDR5;         /**< Peripheral ID5 Register  */
+  __OM uint32_t  ETMPIDR6;         /**< Peripheral ID6 Register  */
+  __OM uint32_t  ETMPIDR7;         /**< Peripheral ID7 Register  */
+  __IM uint32_t  ETMPIDR0;         /**< Peripheral ID0 Register  */
+  __IM uint32_t  ETMPIDR1;         /**< Peripheral ID1 Register  */
+  __IM uint32_t  ETMPIDR2;         /**< Peripheral ID2 Register  */
+  __IM uint32_t  ETMPIDR3;         /**< Peripheral ID3 Register  */
+  __IM uint32_t  ETMCIDR0;         /**< Component ID0 Register  */
+  __IM uint32_t  ETMCIDR1;         /**< Component ID1 Register  */
+  __IM uint32_t  ETMCIDR2;         /**< Component ID2 Register  */
+  __IM uint32_t  ETMCIDR3;         /**< Component ID3 Register  */
+} ETM_TypeDef;                     /**< ETM Register Declaration *//** @} */
 
 /**************************************************************************//**
  * @defgroup EFM32WG_ETM_BitFields
@@ -783,4 +789,3 @@ typedef struct
 
 /** @} End of group EFM32WG_ETM */
 /** @} End of group Parts */
-

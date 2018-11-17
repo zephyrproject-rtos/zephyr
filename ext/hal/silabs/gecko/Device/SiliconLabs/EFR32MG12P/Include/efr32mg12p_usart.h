@@ -1,7 +1,7 @@
 /**************************************************************************//**
  * @file efr32mg12p_usart.h
  * @brief EFR32MG12P_USART register and bit field definitions
- * @version 5.5.0
+ * @version 5.6.0
  ******************************************************************************
  * # License
  * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
@@ -47,39 +47,39 @@
  *****************************************************************************/
 /** USART Register Declaration */
 typedef struct {
-  __IOM uint32_t CTRL;         /**< Control Register  */
-  __IOM uint32_t FRAME;        /**< USART Frame Format Register  */
-  __IOM uint32_t TRIGCTRL;     /**< USART Trigger Control Register  */
-  __IOM uint32_t CMD;          /**< Command Register  */
-  __IM uint32_t  STATUS;       /**< USART Status Register  */
-  __IOM uint32_t CLKDIV;       /**< Clock Control Register  */
-  __IM uint32_t  RXDATAX;      /**< RX Buffer Data Extended Register  */
-  __IM uint32_t  RXDATA;       /**< RX Buffer Data Register  */
-  __IM uint32_t  RXDOUBLEX;    /**< RX Buffer Double Data Extended Register  */
-  __IM uint32_t  RXDOUBLE;     /**< RX FIFO Double Data Register  */
-  __IM uint32_t  RXDATAXP;     /**< RX Buffer Data Extended Peek Register  */
-  __IM uint32_t  RXDOUBLEXP;   /**< RX Buffer Double Data Extended Peek Register  */
-  __IOM uint32_t TXDATAX;      /**< TX Buffer Data Extended Register  */
-  __IOM uint32_t TXDATA;       /**< TX Buffer Data Register  */
-  __IOM uint32_t TXDOUBLEX;    /**< TX Buffer Double Data Extended Register  */
-  __IOM uint32_t TXDOUBLE;     /**< TX Buffer Double Data Register  */
-  __IM uint32_t  IF;           /**< Interrupt Flag Register  */
-  __IOM uint32_t IFS;          /**< Interrupt Flag Set Register  */
-  __IOM uint32_t IFC;          /**< Interrupt Flag Clear Register  */
-  __IOM uint32_t IEN;          /**< Interrupt Enable Register  */
-  __IOM uint32_t IRCTRL;       /**< IrDA Control Register  */
-  uint32_t       RESERVED0[1]; /**< Reserved for future use **/
-  __IOM uint32_t INPUT;        /**< USART Input Register  */
-  __IOM uint32_t I2SCTRL;      /**< I2S Control Register  */
-  __IOM uint32_t TIMING;       /**< Timing Register  */
-  __IOM uint32_t CTRLX;        /**< Control Register Extended  */
-  __IOM uint32_t TIMECMP0;     /**< Used to Generate Interrupts and Various Delays  */
-  __IOM uint32_t TIMECMP1;     /**< Used to Generate Interrupts and Various Delays  */
-  __IOM uint32_t TIMECMP2;     /**< Used to Generate Interrupts and Various Delays  */
-  __IOM uint32_t ROUTEPEN;     /**< I/O Routing Pin Enable Register  */
-  __IOM uint32_t ROUTELOC0;    /**< I/O Routing Location Register  */
-  __IOM uint32_t ROUTELOC1;    /**< I/O Routing Location Register  */
-} USART_TypeDef;               /** @} */
+  __IOM uint32_t CTRL;          /**< Control Register  */
+  __IOM uint32_t FRAME;         /**< USART Frame Format Register  */
+  __IOM uint32_t TRIGCTRL;      /**< USART Trigger Control Register  */
+  __IOM uint32_t CMD;           /**< Command Register  */
+  __IM uint32_t  STATUS;        /**< USART Status Register  */
+  __IOM uint32_t CLKDIV;        /**< Clock Control Register  */
+  __IM uint32_t  RXDATAX;       /**< RX Buffer Data Extended Register  */
+  __IM uint32_t  RXDATA;        /**< RX Buffer Data Register  */
+  __IM uint32_t  RXDOUBLEX;     /**< RX Buffer Double Data Extended Register  */
+  __IM uint32_t  RXDOUBLE;      /**< RX FIFO Double Data Register  */
+  __IM uint32_t  RXDATAXP;      /**< RX Buffer Data Extended Peek Register  */
+  __IM uint32_t  RXDOUBLEXP;    /**< RX Buffer Double Data Extended Peek Register  */
+  __IOM uint32_t TXDATAX;       /**< TX Buffer Data Extended Register  */
+  __IOM uint32_t TXDATA;        /**< TX Buffer Data Register  */
+  __IOM uint32_t TXDOUBLEX;     /**< TX Buffer Double Data Extended Register  */
+  __IOM uint32_t TXDOUBLE;      /**< TX Buffer Double Data Register  */
+  __IM uint32_t  IF;            /**< Interrupt Flag Register  */
+  __IOM uint32_t IFS;           /**< Interrupt Flag Set Register  */
+  __IOM uint32_t IFC;           /**< Interrupt Flag Clear Register  */
+  __IOM uint32_t IEN;           /**< Interrupt Enable Register  */
+  __IOM uint32_t IRCTRL;        /**< IrDA Control Register  */
+  uint32_t       RESERVED0[1U]; /**< Reserved for future use **/
+  __IOM uint32_t INPUT;         /**< USART Input Register  */
+  __IOM uint32_t I2SCTRL;       /**< I2S Control Register  */
+  __IOM uint32_t TIMING;        /**< Timing Register  */
+  __IOM uint32_t CTRLX;         /**< Control Register Extended  */
+  __IOM uint32_t TIMECMP0;      /**< Used to Generate Interrupts and Various Delays  */
+  __IOM uint32_t TIMECMP1;      /**< Used to Generate Interrupts and Various Delays  */
+  __IOM uint32_t TIMECMP2;      /**< Used to Generate Interrupts and Various Delays  */
+  __IOM uint32_t ROUTEPEN;      /**< I/O Routing Pin Enable Register  */
+  __IOM uint32_t ROUTELOC0;     /**< I/O Routing Location Register  */
+  __IOM uint32_t ROUTELOC1;     /**< I/O Routing Location Register  */
+} USART_TypeDef;                /** @} */
 
 /**************************************************************************//**
  * @addtogroup EFR32MG12P_USART

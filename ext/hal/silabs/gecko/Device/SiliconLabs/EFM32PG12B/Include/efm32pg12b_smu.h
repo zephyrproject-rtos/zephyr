@@ -1,10 +1,10 @@
 /**************************************************************************//**
  * @file efm32pg12b_smu.h
  * @brief EFM32PG12B_SMU register and bit field definitions
- * @version 5.1.2
+ * @version 5.6.0
  ******************************************************************************
- * @section License
- * <b>Copyright 2017 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
  ******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -29,35 +29,44 @@
  * any third party, arising from your use of this Software.
  *
  *****************************************************************************/
+
+#if defined(__ICCARM__)
+#pragma system_include       /* Treat file as system include file. */
+#elif defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
+#pragma clang system_header  /* Treat file as system include file. */
+#endif
+
 /**************************************************************************//**
 * @addtogroup Parts
 * @{
 ******************************************************************************/
 /**************************************************************************//**
- * @defgroup EFM32PG12B_SMU
+ * @defgroup EFM32PG12B_SMU SMU
  * @{
  * @brief EFM32PG12B_SMU Register Declaration
  *****************************************************************************/
-typedef struct
-{
-  uint32_t       RESERVED0[3];  /**< Reserved for future use **/
-  __IM uint32_t  IF;            /**< Interrupt Flag Register  */
-  __IOM uint32_t IFS;           /**< Interrupt Flag Set Register  */
-  __IOM uint32_t IFC;           /**< Interrupt Flag Clear Register  */
-  __IOM uint32_t IEN;           /**< Interrupt Enable Register  */
+/** SMU Register Declaration */
+typedef struct {
+  uint32_t       RESERVED0[3U];  /**< Reserved for future use **/
+  __IM uint32_t  IF;             /**< Interrupt Flag Register  */
+  __IOM uint32_t IFS;            /**< Interrupt Flag Set Register  */
+  __IOM uint32_t IFC;            /**< Interrupt Flag Clear Register  */
+  __IOM uint32_t IEN;            /**< Interrupt Enable Register  */
 
-  uint32_t       RESERVED1[9];  /**< Reserved for future use **/
-  __IOM uint32_t PPUCTRL;       /**< PPU Control Register  */
-  uint32_t       RESERVED2[3];  /**< Reserved for future use **/
-  __IOM uint32_t PPUPATD0;      /**< PPU Privilege Access Type Descriptor 0  */
-  __IOM uint32_t PPUPATD1;      /**< PPU Privilege Access Type Descriptor 1  */
+  uint32_t       RESERVED1[9U];  /**< Reserved for future use **/
+  __IOM uint32_t PPUCTRL;        /**< PPU Control Register  */
+  uint32_t       RESERVED2[3U];  /**< Reserved for future use **/
+  __IOM uint32_t PPUPATD0;       /**< PPU Privilege Access Type Descriptor 0  */
+  __IOM uint32_t PPUPATD1;       /**< PPU Privilege Access Type Descriptor 1  */
 
-  uint32_t       RESERVED3[14]; /**< Reserved for future use **/
-  __IM uint32_t  PPUFS;         /**< PPU Fault Status  */
-} SMU_TypeDef;                  /** @} */
+  uint32_t       RESERVED3[14U]; /**< Reserved for future use **/
+  __IM uint32_t  PPUFS;          /**< PPU Fault Status  */
+} SMU_TypeDef;                   /** @} */
 
 /**************************************************************************//**
- * @defgroup EFM32PG12B_SMU_BitFields
+ * @addtogroup EFM32PG12B_SMU
+ * @{
+ * @defgroup EFM32PG12B_SMU_BitFields  SMU Bit Fields
  * @{
  *****************************************************************************/
 
@@ -395,6 +404,6 @@ typedef struct
 #define SMU_PPUFS_PERIPHID_WTIMER0         (_SMU_PPUFS_PERIPHID_WTIMER0 << 0)   /**< Shifted mode WTIMER0 for SMU_PPUFS */
 #define SMU_PPUFS_PERIPHID_WTIMER1         (_SMU_PPUFS_PERIPHID_WTIMER1 << 0)   /**< Shifted mode WTIMER1 for SMU_PPUFS */
 
+/** @} */
 /** @} End of group EFM32PG12B_SMU */
 /** @} End of group Parts */
-

@@ -1,7 +1,7 @@
 /**************************************************************************//**
  * @file efr32mg12p_ldma_ch.h
  * @brief EFR32MG12P_LDMA_CH register and bit field definitions
- * @version 5.5.0
+ * @version 5.6.0
  ******************************************************************************
  * # License
  * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
@@ -45,14 +45,14 @@
  * @ingroup EFR32MG12P_LDMA
  *****************************************************************************/
 typedef struct {
-  __IOM uint32_t REQSEL;       /**< Channel Peripheral Request Select Register  */
-  __IOM uint32_t CFG;          /**< Channel Configuration Register  */
-  __IOM uint32_t LOOP;         /**< Channel Loop Counter Register  */
-  __IOM uint32_t CTRL;         /**< Channel Descriptor Control Word Register  */
-  __IOM uint32_t SRC;          /**< Channel Descriptor Source Data Address Register  */
-  __IOM uint32_t DST;          /**< Channel Descriptor Destination Data Address Register  */
-  __IOM uint32_t LINK;         /**< Channel Descriptor Link Structure Address Register  */
-  uint32_t       RESERVED0[5]; /**< Reserved future */
+  __IOM uint32_t REQSEL;        /**< Channel Peripheral Request Select Register  */
+  __IOM uint32_t CFG;           /**< Channel Configuration Register  */
+  __IOM uint32_t LOOP;          /**< Channel Loop Counter Register  */
+  __IOM uint32_t CTRL;          /**< Channel Descriptor Control Word Register  */
+  __IOM uint32_t SRC;           /**< Channel Descriptor Source Data Address Register  */
+  __IOM uint32_t DST;           /**< Channel Descriptor Destination Data Address Register  */
+  __IOM uint32_t LINK;          /**< Channel Descriptor Link Structure Address Register  */
+  uint32_t       RESERVED0[5U]; /**< Reserved future */
 } LDMA_CH_TypeDef;
 
 /** @} End of group Parts */

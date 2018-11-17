@@ -2,25 +2,27 @@
 ; * @file startup_efr32fg1p.s
 ; * @brief    CMSIS Core Device Startup File for
 ; *           Silicon Labs EFR32FG1P Device Series
-; * @version 5.1.2
-; * @date     03. February 2012
+; * @version 5.6.0
+; * @date     02. March 2016
+; *****************************************************************************/
+;/*
+; * Copyright (c) 2009-2016 ARM Limited. All rights reserved.
 ; *
-; * @note
-; * Copyright (C) 2012 ARM Limited. All rights reserved.
+; * SPDX-License-Identifier: Apache-2.0
 ; *
-; * @par
-; * ARM Limited (ARM) is supplying this software for use with Cortex-M
-; * processor based microcontrollers.  This file can be freely distributed
-; * within development tools that are supporting such ARM based processors.
+; * Licensed under the Apache License, Version 2.0 (the License); you may
+; * not use this file except in compliance with the License.
+; * You may obtain a copy of the License at
 ; *
-; * @par
-; * THIS SOFTWARE IS PROVIDED "AS IS".  NO WARRANTIES, WHETHER EXPRESS, IMPLIED
-; * OR STATUTORY, INCLUDING, BUT NOT LIMITED TO, IMPLIED WARRANTIES OF
-; * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE APPLY TO THIS SOFTWARE.
-; * ARM SHALL NOT, IN ANY CIRCUMSTANCES, BE LIABLE FOR SPECIAL, INCIDENTAL, OR
-; * CONSEQUENTIAL DAMAGES, FOR ANY REASON WHATSOEVER.
+; * www.apache.org/licenses/LICENSE-2.0
 ; *
-; ******************************************************************************/
+; * Unless required by applicable law or agreed to in writing, software
+; * distributed under the License is distributed on an AS IS BASIS, WITHOUT
+; * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; * See the License for the specific language governing permissions and
+; * limitations under the License.
+; */
+
 ;/*
 ;//-------- <<< Use Configuration Wizard in Context Menu >>> ------------------
 ;*/
@@ -84,40 +86,40 @@ __Vectors       DCD     __initial_sp              ; Top of Stack
 
                 ; External Interrupts
 
-                DCD     EMU_IRQHandler        ; 0: EMU Interrupt
+                DCD     EMU_IRQHandler            ; 0: EMU Interrupt
                 DCD     FRC_PRI_IRQHandler        ; 1: FRC_PRI Interrupt
-                DCD     WDOG0_IRQHandler        ; 2: WDOG0 Interrupt
-                DCD     FRC_IRQHandler        ; 3: FRC Interrupt
-                DCD     MODEM_IRQHandler        ; 4: MODEM Interrupt
+                DCD     WDOG0_IRQHandler          ; 2: WDOG0 Interrupt
+                DCD     FRC_IRQHandler            ; 3: FRC Interrupt
+                DCD     MODEM_IRQHandler          ; 4: MODEM Interrupt
                 DCD     RAC_SEQ_IRQHandler        ; 5: RAC_SEQ Interrupt
                 DCD     RAC_RSM_IRQHandler        ; 6: RAC_RSM Interrupt
-                DCD     BUFC_IRQHandler        ; 7: BUFC Interrupt
-                DCD     LDMA_IRQHandler        ; 8: LDMA Interrupt
-                DCD     GPIO_EVEN_IRQHandler        ; 9: GPIO_EVEN Interrupt
-                DCD     TIMER0_IRQHandler        ; 10: TIMER0 Interrupt
-                DCD     USART0_RX_IRQHandler        ; 11: USART0_RX Interrupt
-                DCD     USART0_TX_IRQHandler        ; 12: USART0_TX Interrupt
-                DCD     ACMP0_IRQHandler        ; 13: ACMP0 Interrupt
-                DCD     ADC0_IRQHandler        ; 14: ADC0 Interrupt
-                DCD     IDAC0_IRQHandler        ; 15: IDAC0 Interrupt
-                DCD     I2C0_IRQHandler        ; 16: I2C0 Interrupt
-                DCD     GPIO_ODD_IRQHandler        ; 17: GPIO_ODD Interrupt
-                DCD     TIMER1_IRQHandler        ; 18: TIMER1 Interrupt
-                DCD     USART1_RX_IRQHandler        ; 19: USART1_RX Interrupt
-                DCD     USART1_TX_IRQHandler        ; 20: USART1_TX Interrupt
+                DCD     BUFC_IRQHandler           ; 7: BUFC Interrupt
+                DCD     LDMA_IRQHandler           ; 8: LDMA Interrupt
+                DCD     GPIO_EVEN_IRQHandler      ; 9: GPIO_EVEN Interrupt
+                DCD     TIMER0_IRQHandler         ; 10: TIMER0 Interrupt
+                DCD     USART0_RX_IRQHandler      ; 11: USART0_RX Interrupt
+                DCD     USART0_TX_IRQHandler      ; 12: USART0_TX Interrupt
+                DCD     ACMP0_IRQHandler          ; 13: ACMP0 Interrupt
+                DCD     ADC0_IRQHandler           ; 14: ADC0 Interrupt
+                DCD     IDAC0_IRQHandler          ; 15: IDAC0 Interrupt
+                DCD     I2C0_IRQHandler           ; 16: I2C0 Interrupt
+                DCD     GPIO_ODD_IRQHandler       ; 17: GPIO_ODD Interrupt
+                DCD     TIMER1_IRQHandler         ; 18: TIMER1 Interrupt
+                DCD     USART1_RX_IRQHandler      ; 19: USART1_RX Interrupt
+                DCD     USART1_TX_IRQHandler      ; 20: USART1_TX Interrupt
                 DCD     LEUART0_IRQHandler        ; 21: LEUART0 Interrupt
-                DCD     PCNT0_IRQHandler        ; 22: PCNT0 Interrupt
-                DCD     CMU_IRQHandler        ; 23: CMU Interrupt
-                DCD     MSC_IRQHandler        ; 24: MSC Interrupt
-                DCD     CRYPTO_IRQHandler        ; 25: CRYPTO Interrupt
-                DCD     LETIMER0_IRQHandler        ; 26: LETIMER0 Interrupt
-                DCD     AGC_IRQHandler        ; 27: AGC Interrupt
-                DCD     PROTIMER_IRQHandler        ; 28: PROTIMER Interrupt
-                DCD     RTCC_IRQHandler        ; 29: RTCC Interrupt
-                DCD     SYNTH_IRQHandler        ; 30: SYNTH Interrupt
-                DCD     CRYOTIMER_IRQHandler        ; 31: CRYOTIMER Interrupt
+                DCD     PCNT0_IRQHandler          ; 22: PCNT0 Interrupt
+                DCD     CMU_IRQHandler            ; 23: CMU Interrupt
+                DCD     MSC_IRQHandler            ; 24: MSC Interrupt
+                DCD     CRYPTO_IRQHandler         ; 25: CRYPTO Interrupt
+                DCD     LETIMER0_IRQHandler       ; 26: LETIMER0 Interrupt
+                DCD     AGC_IRQHandler            ; 27: AGC Interrupt
+                DCD     PROTIMER_IRQHandler       ; 28: PROTIMER Interrupt
+                DCD     RTCC_IRQHandler           ; 29: RTCC Interrupt
+                DCD     SYNTH_IRQHandler          ; 30: SYNTH Interrupt
+                DCD     CRYOTIMER_IRQHandler      ; 31: CRYOTIMER Interrupt
                 DCD     RFSENSE_IRQHandler        ; 32: RFSENSE Interrupt
-                DCD     FPUEH_IRQHandler        ; 33: FPUEH Interrupt
+                DCD     FPUEH_IRQHandler          ; 33: FPUEH Interrupt
 
 __Vectors_End
 __Vectors_Size  EQU     __Vectors_End - __Vectors
@@ -184,40 +186,40 @@ SysTick_Handler PROC
 
 Default_Handler PROC
 
-                EXPORT  EMU_IRQHandler        [WEAK]
+                EXPORT  EMU_IRQHandler            [WEAK]
                 EXPORT  FRC_PRI_IRQHandler        [WEAK]
-                EXPORT  WDOG0_IRQHandler        [WEAK]
-                EXPORT  FRC_IRQHandler        [WEAK]
-                EXPORT  MODEM_IRQHandler        [WEAK]
+                EXPORT  WDOG0_IRQHandler          [WEAK]
+                EXPORT  FRC_IRQHandler            [WEAK]
+                EXPORT  MODEM_IRQHandler          [WEAK]
                 EXPORT  RAC_SEQ_IRQHandler        [WEAK]
                 EXPORT  RAC_RSM_IRQHandler        [WEAK]
-                EXPORT  BUFC_IRQHandler        [WEAK]
-                EXPORT  LDMA_IRQHandler        [WEAK]
-                EXPORT  GPIO_EVEN_IRQHandler        [WEAK]
-                EXPORT  TIMER0_IRQHandler        [WEAK]
-                EXPORT  USART0_RX_IRQHandler        [WEAK]
-                EXPORT  USART0_TX_IRQHandler        [WEAK]
-                EXPORT  ACMP0_IRQHandler        [WEAK]
-                EXPORT  ADC0_IRQHandler        [WEAK]
-                EXPORT  IDAC0_IRQHandler        [WEAK]
-                EXPORT  I2C0_IRQHandler        [WEAK]
-                EXPORT  GPIO_ODD_IRQHandler        [WEAK]
-                EXPORT  TIMER1_IRQHandler        [WEAK]
-                EXPORT  USART1_RX_IRQHandler        [WEAK]
-                EXPORT  USART1_TX_IRQHandler        [WEAK]
+                EXPORT  BUFC_IRQHandler           [WEAK]
+                EXPORT  LDMA_IRQHandler           [WEAK]
+                EXPORT  GPIO_EVEN_IRQHandler      [WEAK]
+                EXPORT  TIMER0_IRQHandler         [WEAK]
+                EXPORT  USART0_RX_IRQHandler      [WEAK]
+                EXPORT  USART0_TX_IRQHandler      [WEAK]
+                EXPORT  ACMP0_IRQHandler          [WEAK]
+                EXPORT  ADC0_IRQHandler           [WEAK]
+                EXPORT  IDAC0_IRQHandler          [WEAK]
+                EXPORT  I2C0_IRQHandler           [WEAK]
+                EXPORT  GPIO_ODD_IRQHandler       [WEAK]
+                EXPORT  TIMER1_IRQHandler         [WEAK]
+                EXPORT  USART1_RX_IRQHandler      [WEAK]
+                EXPORT  USART1_TX_IRQHandler      [WEAK]
                 EXPORT  LEUART0_IRQHandler        [WEAK]
-                EXPORT  PCNT0_IRQHandler        [WEAK]
-                EXPORT  CMU_IRQHandler        [WEAK]
-                EXPORT  MSC_IRQHandler        [WEAK]
-                EXPORT  CRYPTO_IRQHandler        [WEAK]
-                EXPORT  LETIMER0_IRQHandler        [WEAK]
-                EXPORT  AGC_IRQHandler        [WEAK]
-                EXPORT  PROTIMER_IRQHandler        [WEAK]
-                EXPORT  RTCC_IRQHandler        [WEAK]
-                EXPORT  SYNTH_IRQHandler        [WEAK]
-                EXPORT  CRYOTIMER_IRQHandler        [WEAK]
+                EXPORT  PCNT0_IRQHandler          [WEAK]
+                EXPORT  CMU_IRQHandler            [WEAK]
+                EXPORT  MSC_IRQHandler            [WEAK]
+                EXPORT  CRYPTO_IRQHandler         [WEAK]
+                EXPORT  LETIMER0_IRQHandler       [WEAK]
+                EXPORT  AGC_IRQHandler            [WEAK]
+                EXPORT  PROTIMER_IRQHandler       [WEAK]
+                EXPORT  RTCC_IRQHandler           [WEAK]
+                EXPORT  SYNTH_IRQHandler          [WEAK]
+                EXPORT  CRYOTIMER_IRQHandler      [WEAK]
                 EXPORT  RFSENSE_IRQHandler        [WEAK]
-                EXPORT  FPUEH_IRQHandler        [WEAK]
+                EXPORT  FPUEH_IRQHandler          [WEAK]
 
 
 EMU_IRQHandler

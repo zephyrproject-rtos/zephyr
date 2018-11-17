@@ -1,7 +1,7 @@
 /**************************************************************************//**
  * @file efr32mg12p_gpio.h
  * @brief EFR32MG12P_GPIO register and bit field definitions
- * @version 5.5.0
+ * @version 5.6.0
  ******************************************************************************
  * # License
  * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
@@ -47,31 +47,31 @@
  *****************************************************************************/
 /** GPIO Register Declaration */
 typedef struct {
-  GPIO_P_TypeDef P[12];          /**< Port configuration bits */
+  GPIO_P_TypeDef P[12U];          /**< Port configuration bits */
 
-  uint32_t       RESERVED0[112]; /**< Reserved for future use **/
-  __IOM uint32_t EXTIPSELL;      /**< External Interrupt Port Select Low Register  */
-  __IOM uint32_t EXTIPSELH;      /**< External Interrupt Port Select High Register  */
-  __IOM uint32_t EXTIPINSELL;    /**< External Interrupt Pin Select Low Register  */
-  __IOM uint32_t EXTIPINSELH;    /**< External Interrupt Pin Select High Register  */
-  __IOM uint32_t EXTIRISE;       /**< External Interrupt Rising Edge Trigger Register  */
-  __IOM uint32_t EXTIFALL;       /**< External Interrupt Falling Edge Trigger Register  */
-  __IOM uint32_t EXTILEVEL;      /**< External Interrupt Level Register  */
-  __IM uint32_t  IF;             /**< Interrupt Flag Register  */
-  __IOM uint32_t IFS;            /**< Interrupt Flag Set Register  */
-  __IOM uint32_t IFC;            /**< Interrupt Flag Clear Register  */
-  __IOM uint32_t IEN;            /**< Interrupt Enable Register  */
-  __IOM uint32_t EM4WUEN;        /**< EM4 Wake Up Enable Register  */
+  uint32_t       RESERVED0[112U]; /**< Reserved for future use **/
+  __IOM uint32_t EXTIPSELL;       /**< External Interrupt Port Select Low Register  */
+  __IOM uint32_t EXTIPSELH;       /**< External Interrupt Port Select High Register  */
+  __IOM uint32_t EXTIPINSELL;     /**< External Interrupt Pin Select Low Register  */
+  __IOM uint32_t EXTIPINSELH;     /**< External Interrupt Pin Select High Register  */
+  __IOM uint32_t EXTIRISE;        /**< External Interrupt Rising Edge Trigger Register  */
+  __IOM uint32_t EXTIFALL;        /**< External Interrupt Falling Edge Trigger Register  */
+  __IOM uint32_t EXTILEVEL;       /**< External Interrupt Level Register  */
+  __IM uint32_t  IF;              /**< Interrupt Flag Register  */
+  __IOM uint32_t IFS;             /**< Interrupt Flag Set Register  */
+  __IOM uint32_t IFC;             /**< Interrupt Flag Clear Register  */
+  __IOM uint32_t IEN;             /**< Interrupt Enable Register  */
+  __IOM uint32_t EM4WUEN;         /**< EM4 Wake Up Enable Register  */
 
-  uint32_t       RESERVED1[4];   /**< Reserved for future use **/
-  __IOM uint32_t ROUTEPEN;       /**< I/O Routing Pin Enable Register  */
-  __IOM uint32_t ROUTELOC0;      /**< I/O Routing Location Register  */
-  __IOM uint32_t ROUTELOC1;      /**< I/O Routing Location Register 1  */
+  uint32_t       RESERVED1[4U];   /**< Reserved for future use **/
+  __IOM uint32_t ROUTEPEN;        /**< I/O Routing Pin Enable Register  */
+  __IOM uint32_t ROUTELOC0;       /**< I/O Routing Location Register  */
+  __IOM uint32_t ROUTELOC1;       /**< I/O Routing Location Register 1  */
 
-  uint32_t       RESERVED2[1];   /**< Reserved for future use **/
-  __IOM uint32_t INSENSE;        /**< Input Sense Register  */
-  __IOM uint32_t LOCK;           /**< Configuration Lock Register  */
-} GPIO_TypeDef;                  /** @} */
+  uint32_t       RESERVED2[1U];   /**< Reserved for future use **/
+  __IOM uint32_t INSENSE;         /**< Input Sense Register  */
+  __IOM uint32_t LOCK;            /**< Configuration Lock Register  */
+} GPIO_TypeDef;                   /** @} */
 
 /**************************************************************************//**
  * @addtogroup EFR32MG12P_GPIO

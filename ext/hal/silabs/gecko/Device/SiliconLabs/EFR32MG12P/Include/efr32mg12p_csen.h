@@ -1,7 +1,7 @@
 /**************************************************************************//**
  * @file efr32mg12p_csen.h
  * @brief EFR32MG12P_CSEN register and bit field definitions
- * @version 5.5.0
+ * @version 5.6.0
  ******************************************************************************
  * # License
  * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
@@ -67,7 +67,7 @@ typedef struct {
   __IOM uint32_t DMCFG;         /**< Delta Modulation Configuration  */
   __IOM uint32_t ANACTRL;       /**< Analog Control  */
 
-  uint32_t       RESERVED0[2];  /**< Reserved for future use **/
+  uint32_t       RESERVED0[2U]; /**< Reserved for future use **/
   __IM uint32_t  IF;            /**< Interrupt Flag  */
   __IOM uint32_t IFS;           /**< Interrupt Flag Set  */
   __IOM uint32_t IFC;           /**< Interrupt Flag Clear  */

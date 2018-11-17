@@ -1,10 +1,10 @@
 /**************************************************************************//**
  * @file efr32fg1p_crypto.h
  * @brief EFR32FG1P_CRYPTO register and bit field definitions
- * @version 5.1.2
+ * @version 5.6.0
  ******************************************************************************
- * @section License
- * <b>Copyright 2017 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
  ******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -29,80 +29,89 @@
  * any third party, arising from your use of this Software.
  *
  *****************************************************************************/
+
+#if defined(__ICCARM__)
+#pragma system_include       /* Treat file as system include file. */
+#elif defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
+#pragma clang system_header  /* Treat file as system include file. */
+#endif
+
 /**************************************************************************//**
 * @addtogroup Parts
 * @{
 ******************************************************************************/
 /**************************************************************************//**
- * @defgroup EFR32FG1P_CRYPTO
+ * @defgroup EFR32FG1P_CRYPTO CRYPTO
  * @{
  * @brief EFR32FG1P_CRYPTO Register Declaration
  *****************************************************************************/
-typedef struct
-{
-  __IOM uint32_t CTRL;           /**< Control Register  */
-  __IOM uint32_t WAC;            /**< Wide Arithmetic Configuration  */
-  __IOM uint32_t CMD;            /**< Command Register  */
-  uint32_t       RESERVED0[1];   /**< Reserved for future use **/
-  __IM uint32_t  STATUS;         /**< Status Register  */
-  __IM uint32_t  DSTATUS;        /**< Data Status Register  */
-  __IM uint32_t  CSTATUS;        /**< Control Status Register  */
-  uint32_t       RESERVED1[1];   /**< Reserved for future use **/
-  __IOM uint32_t KEY;            /**< KEY Register Access  */
-  __IOM uint32_t KEYBUF;         /**< KEY Buffer Register Access  */
-  uint32_t       RESERVED2[2];   /**< Reserved for future use **/
-  __IOM uint32_t SEQCTRL;        /**< Sequence Control  */
-  __IOM uint32_t SEQCTRLB;       /**< Sequence Control B  */
-  uint32_t       RESERVED3[2];   /**< Reserved for future use **/
-  __IM uint32_t  IF;             /**< AES Interrupt Flags  */
-  __IOM uint32_t IFS;            /**< Interrupt Flag Set Register  */
-  __IOM uint32_t IFC;            /**< Interrupt Flag Clear Register  */
-  __IOM uint32_t IEN;            /**< Interrupt Enable Register  */
-  __IOM uint32_t SEQ0;           /**< Sequence register 0  */
-  __IOM uint32_t SEQ1;           /**< Sequence Register 1  */
-  __IOM uint32_t SEQ2;           /**< Sequence Register 2  */
-  __IOM uint32_t SEQ3;           /**< Sequence Register 3  */
-  __IOM uint32_t SEQ4;           /**< Sequence Register 4  */
-  uint32_t       RESERVED4[7];   /**< Reserved for future use **/
-  __IOM uint32_t DATA0;          /**< DATA0 Register Access  */
-  __IOM uint32_t DATA1;          /**< DATA1 Register Access  */
-  __IOM uint32_t DATA2;          /**< DATA2 Register Access  */
-  __IOM uint32_t DATA3;          /**< DATA3 Register Access  */
-  uint32_t       RESERVED5[4];   /**< Reserved for future use **/
-  __IOM uint32_t DATA0XOR;       /**< DATA0XOR Register Access  */
-  uint32_t       RESERVED6[3];   /**< Reserved for future use **/
-  __IOM uint32_t DATA0BYTE;      /**< DATA0 Register Byte Access  */
-  __IOM uint32_t DATA1BYTE;      /**< DATA1 Register Byte Access  */
-  uint32_t       RESERVED7[1];   /**< Reserved for future use **/
-  __IOM uint32_t DATA0XORBYTE;   /**< DATA0 Register Byte XOR Access  */
-  __IOM uint32_t DATA0BYTE12;    /**< DATA0 Register Byte 12 Access  */
-  __IOM uint32_t DATA0BYTE13;    /**< DATA0 Register Byte 13 Access  */
-  __IOM uint32_t DATA0BYTE14;    /**< DATA0 Register Byte 14 Access  */
-  __IOM uint32_t DATA0BYTE15;    /**< DATA0 Register Byte 15 Access  */
-  uint32_t       RESERVED8[12];  /**< Reserved for future use **/
-  __IOM uint32_t DDATA0;         /**< DDATA0 Register Access  */
-  __IOM uint32_t DDATA1;         /**< DDATA1 Register Access  */
-  __IOM uint32_t DDATA2;         /**< DDATA2 Register Access  */
-  __IOM uint32_t DDATA3;         /**< DDATA3 Register Access  */
-  __IOM uint32_t DDATA4;         /**< DDATA4 Register Access  */
-  uint32_t       RESERVED9[7];   /**< Reserved for future use **/
-  __IOM uint32_t DDATA0BIG;      /**< DDATA0 Register Big Endian Access  */
-  uint32_t       RESERVED10[3];  /**< Reserved for future use **/
-  __IOM uint32_t DDATA0BYTE;     /**< DDATA0 Register Byte Access  */
-  __IOM uint32_t DDATA1BYTE;     /**< DDATA1 Register Byte Access  */
-  __IOM uint32_t DDATA0BYTE32;   /**< DDATA0 Register Byte 32 access.  */
-  uint32_t       RESERVED11[13]; /**< Reserved for future use **/
-  __IOM uint32_t QDATA0;         /**< QDATA0 Register Access  */
-  __IOM uint32_t QDATA1;         /**< QDATA1 Register Access  */
-  uint32_t       RESERVED12[7];  /**< Reserved for future use **/
-  __IOM uint32_t QDATA1BIG;      /**< QDATA1 Register Big Endian Access  */
-  uint32_t       RESERVED13[6];  /**< Reserved for future use **/
-  __IOM uint32_t QDATA0BYTE;     /**< QDATA0 Register Byte Access  */
-  __IOM uint32_t QDATA1BYTE;     /**< QDATA1 Register Byte Access  */
-} CRYPTO_TypeDef;                /** @} */
+/** CRYPTO Register Declaration */
+typedef struct {
+  __IOM uint32_t CTRL;            /**< Control Register  */
+  __IOM uint32_t WAC;             /**< Wide Arithmetic Configuration  */
+  __IOM uint32_t CMD;             /**< Command Register  */
+  uint32_t       RESERVED0[1U];   /**< Reserved for future use **/
+  __IM uint32_t  STATUS;          /**< Status Register  */
+  __IM uint32_t  DSTATUS;         /**< Data Status Register  */
+  __IM uint32_t  CSTATUS;         /**< Control Status Register  */
+  uint32_t       RESERVED1[1U];   /**< Reserved for future use **/
+  __IOM uint32_t KEY;             /**< KEY Register Access  */
+  __IOM uint32_t KEYBUF;          /**< KEY Buffer Register Access  */
+  uint32_t       RESERVED2[2U];   /**< Reserved for future use **/
+  __IOM uint32_t SEQCTRL;         /**< Sequence Control  */
+  __IOM uint32_t SEQCTRLB;        /**< Sequence Control B  */
+  uint32_t       RESERVED3[2U];   /**< Reserved for future use **/
+  __IM uint32_t  IF;              /**< AES Interrupt Flags  */
+  __IOM uint32_t IFS;             /**< Interrupt Flag Set Register  */
+  __IOM uint32_t IFC;             /**< Interrupt Flag Clear Register  */
+  __IOM uint32_t IEN;             /**< Interrupt Enable Register  */
+  __IOM uint32_t SEQ0;            /**< Sequence Register 0  */
+  __IOM uint32_t SEQ1;            /**< Sequence Register 1  */
+  __IOM uint32_t SEQ2;            /**< Sequence Register 2  */
+  __IOM uint32_t SEQ3;            /**< Sequence Register 3  */
+  __IOM uint32_t SEQ4;            /**< Sequence Register 4  */
+  uint32_t       RESERVED4[7U];   /**< Reserved for future use **/
+  __IOM uint32_t DATA0;           /**< DATA0 Register Access  */
+  __IOM uint32_t DATA1;           /**< DATA1 Register Access  */
+  __IOM uint32_t DATA2;           /**< DATA2 Register Access  */
+  __IOM uint32_t DATA3;           /**< DATA3 Register Access  */
+  uint32_t       RESERVED5[4U];   /**< Reserved for future use **/
+  __IOM uint32_t DATA0XOR;        /**< DATA0XOR Register Access  */
+  uint32_t       RESERVED6[3U];   /**< Reserved for future use **/
+  __IOM uint32_t DATA0BYTE;       /**< DATA0 Register Byte Access  */
+  __IOM uint32_t DATA1BYTE;       /**< DATA1 Register Byte Access  */
+  uint32_t       RESERVED7[1U];   /**< Reserved for future use **/
+  __IOM uint32_t DATA0XORBYTE;    /**< DATA0 Register Byte XOR Access  */
+  __IOM uint32_t DATA0BYTE12;     /**< DATA0 Register Byte 12 Access  */
+  __IOM uint32_t DATA0BYTE13;     /**< DATA0 Register Byte 13 Access  */
+  __IOM uint32_t DATA0BYTE14;     /**< DATA0 Register Byte 14 Access  */
+  __IOM uint32_t DATA0BYTE15;     /**< DATA0 Register Byte 15 Access  */
+  uint32_t       RESERVED8[12U];  /**< Reserved for future use **/
+  __IOM uint32_t DDATA0;          /**< DDATA0 Register Access  */
+  __IOM uint32_t DDATA1;          /**< DDATA1 Register Access  */
+  __IOM uint32_t DDATA2;          /**< DDATA2 Register Access  */
+  __IOM uint32_t DDATA3;          /**< DDATA3 Register Access  */
+  __IOM uint32_t DDATA4;          /**< DDATA4 Register Access  */
+  uint32_t       RESERVED9[7U];   /**< Reserved for future use **/
+  __IOM uint32_t DDATA0BIG;       /**< DDATA0 Register Big Endian Access  */
+  uint32_t       RESERVED10[3U];  /**< Reserved for future use **/
+  __IOM uint32_t DDATA0BYTE;      /**< DDATA0 Register Byte Access  */
+  __IOM uint32_t DDATA1BYTE;      /**< DDATA1 Register Byte Access  */
+  __IOM uint32_t DDATA0BYTE32;    /**< DDATA0 Register Byte 32 Access  */
+  uint32_t       RESERVED11[13U]; /**< Reserved for future use **/
+  __IOM uint32_t QDATA0;          /**< QDATA0 Register Access  */
+  __IOM uint32_t QDATA1;          /**< QDATA1 Register Access  */
+  uint32_t       RESERVED12[7U];  /**< Reserved for future use **/
+  __IOM uint32_t QDATA1BIG;       /**< QDATA1 Register Big Endian Access  */
+  uint32_t       RESERVED13[6U];  /**< Reserved for future use **/
+  __IOM uint32_t QDATA0BYTE;      /**< QDATA0 Register Byte Access  */
+  __IOM uint32_t QDATA1BYTE;      /**< QDATA1 Register Byte Access  */
+} CRYPTO_TypeDef;                 /** @} */
 
 /**************************************************************************//**
- * @defgroup EFR32FG1P_CRYPTO_BitFields
+ * @addtogroup EFR32FG1P_CRYPTO
+ * @{
+ * @defgroup EFR32FG1P_CRYPTO_BitFields  CRYPTO Bit Fields
  * @{
  *****************************************************************************/
 
@@ -645,12 +654,12 @@ typedef struct
 #define _CRYPTO_STATUS_SEQRUNNING_MASK               0x1UL                                      /**< Bit mask for CRYPTO_SEQRUNNING */
 #define _CRYPTO_STATUS_SEQRUNNING_DEFAULT            0x00000000UL                               /**< Mode DEFAULT for CRYPTO_STATUS */
 #define CRYPTO_STATUS_SEQRUNNING_DEFAULT             (_CRYPTO_STATUS_SEQRUNNING_DEFAULT << 0)   /**< Shifted mode DEFAULT for CRYPTO_STATUS */
-#define CRYPTO_STATUS_INSTRRUNNING                   (0x1UL << 1)                               /**< Action is active */
+#define CRYPTO_STATUS_INSTRRUNNING                   (0x1UL << 1)                               /**< Action is Active */
 #define _CRYPTO_STATUS_INSTRRUNNING_SHIFT            1                                          /**< Shift value for CRYPTO_INSTRRUNNING */
 #define _CRYPTO_STATUS_INSTRRUNNING_MASK             0x2UL                                      /**< Bit mask for CRYPTO_INSTRRUNNING */
 #define _CRYPTO_STATUS_INSTRRUNNING_DEFAULT          0x00000000UL                               /**< Mode DEFAULT for CRYPTO_STATUS */
 #define CRYPTO_STATUS_INSTRRUNNING_DEFAULT           (_CRYPTO_STATUS_INSTRRUNNING_DEFAULT << 1) /**< Shifted mode DEFAULT for CRYPTO_STATUS */
-#define CRYPTO_STATUS_DMAACTIVE                      (0x1UL << 2)                               /**< DMA Action is active */
+#define CRYPTO_STATUS_DMAACTIVE                      (0x1UL << 2)                               /**< DMA Action is Active */
 #define _CRYPTO_STATUS_DMAACTIVE_SHIFT               2                                          /**< Shift value for CRYPTO_DMAACTIVE */
 #define _CRYPTO_STATUS_DMAACTIVE_MASK                0x4UL                                      /**< Bit mask for CRYPTO_DMAACTIVE */
 #define _CRYPTO_STATUS_DMAACTIVE_DEFAULT             0x00000000UL                               /**< Mode DEFAULT for CRYPTO_STATUS */
@@ -793,12 +802,12 @@ typedef struct
 #define _CRYPTO_SEQCTRL_DMA1SKIP_MASK                0xC000000UL                               /**< Bit mask for CRYPTO_DMA1SKIP */
 #define _CRYPTO_SEQCTRL_DMA1SKIP_DEFAULT             0x00000000UL                              /**< Mode DEFAULT for CRYPTO_SEQCTRL */
 #define CRYPTO_SEQCTRL_DMA1SKIP_DEFAULT              (_CRYPTO_SEQCTRL_DMA1SKIP_DEFAULT << 26)  /**< Shifted mode DEFAULT for CRYPTO_SEQCTRL */
-#define CRYPTO_SEQCTRL_DMA0PRESA                     (0x1UL << 28)                             /**< DMA0 Preserve A */
+#define CRYPTO_SEQCTRL_DMA0PRESA                     (0x1UL << 28)                             /**< DMA0 Preserve a */
 #define _CRYPTO_SEQCTRL_DMA0PRESA_SHIFT              28                                        /**< Shift value for CRYPTO_DMA0PRESA */
 #define _CRYPTO_SEQCTRL_DMA0PRESA_MASK               0x10000000UL                              /**< Bit mask for CRYPTO_DMA0PRESA */
 #define _CRYPTO_SEQCTRL_DMA0PRESA_DEFAULT            0x00000000UL                              /**< Mode DEFAULT for CRYPTO_SEQCTRL */
 #define CRYPTO_SEQCTRL_DMA0PRESA_DEFAULT             (_CRYPTO_SEQCTRL_DMA0PRESA_DEFAULT << 28) /**< Shifted mode DEFAULT for CRYPTO_SEQCTRL */
-#define CRYPTO_SEQCTRL_DMA1PRESA                     (0x1UL << 29)                             /**< DMA1 Preserve A */
+#define CRYPTO_SEQCTRL_DMA1PRESA                     (0x1UL << 29)                             /**< DMA1 Preserve a */
 #define _CRYPTO_SEQCTRL_DMA1PRESA_SHIFT              29                                        /**< Shift value for CRYPTO_DMA1PRESA */
 #define _CRYPTO_SEQCTRL_DMA1PRESA_MASK               0x20000000UL                              /**< Bit mask for CRYPTO_DMA1PRESA */
 #define _CRYPTO_SEQCTRL_DMA1PRESA_DEFAULT            0x00000000UL                              /**< Mode DEFAULT for CRYPTO_SEQCTRL */
@@ -830,7 +839,7 @@ typedef struct
 /* Bit fields for CRYPTO IF */
 #define _CRYPTO_IF_RESETVALUE                        0x00000000UL                        /**< Default value for CRYPTO_IF */
 #define _CRYPTO_IF_MASK                              0x00000003UL                        /**< Mask for CRYPTO_IF */
-#define CRYPTO_IF_INSTRDONE                          (0x1UL << 0)                        /**< Instruction done */
+#define CRYPTO_IF_INSTRDONE                          (0x1UL << 0)                        /**< Instruction Done */
 #define _CRYPTO_IF_INSTRDONE_SHIFT                   0                                   /**< Shift value for CRYPTO_INSTRDONE */
 #define _CRYPTO_IF_INSTRDONE_MASK                    0x1UL                               /**< Bit mask for CRYPTO_INSTRDONE */
 #define _CRYPTO_IF_INSTRDONE_DEFAULT                 0x00000000UL                        /**< Mode DEFAULT for CRYPTO_IF */
@@ -1191,6 +1200,6 @@ typedef struct
 #define _CRYPTO_QDATA1BYTE_QDATA1BYTE_DEFAULT        0x00000000UL                                 /**< Mode DEFAULT for CRYPTO_QDATA1BYTE */
 #define CRYPTO_QDATA1BYTE_QDATA1BYTE_DEFAULT         (_CRYPTO_QDATA1BYTE_QDATA1BYTE_DEFAULT << 0) /**< Shifted mode DEFAULT for CRYPTO_QDATA1BYTE */
 
+/** @} */
 /** @} End of group EFR32FG1P_CRYPTO */
 /** @} End of group Parts */
-

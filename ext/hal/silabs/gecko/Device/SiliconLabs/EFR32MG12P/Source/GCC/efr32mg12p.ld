@@ -1,12 +1,8 @@
 /* Linker script for Silicon Labs EFR32MG12P devices                      */
 /*                                                                     */
-/* This file is subject to the license terms as defined in ARM's       */
-/* CMSIS END USER LICENSE AGREEMENT.pdf, governing the use of          */
-/* Example Code.                                                       */
-/*                                                                     */
 /* Copyright 2018 Silicon Laboratories, Inc. http://www.silabs.com     */
 /*                                                                     */
-/* Version 5.5.0 */
+/* Version 5.6.0 */
 /*                                                                     */
 
 
@@ -41,6 +37,7 @@ MEMORY
  *   __bss_end__
  *   __end__
  *   end
+ *   __HeapBase
  *   __HeapLimit
  *   __StackLimit
  *   __StackTop

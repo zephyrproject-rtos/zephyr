@@ -1,10 +1,10 @@
 /**************************************************************************//**
  * @file efm32hg_pcnt.h
  * @brief EFM32HG_PCNT register and bit field definitions
- * @version 5.1.2
+ * @version 5.6.0
  ******************************************************************************
- * @section License
- * <b>Copyright 2017 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
  ******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -29,6 +29,13 @@
  * any third party, arising from your use of this Software.
  *
  *****************************************************************************/
+
+#if defined(__ICCARM__)
+#pragma system_include       /* Treat file as system include file. */
+#elif defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
+#pragma clang system_header  /* Treat file as system include file. */
+#endif
+
 /**************************************************************************//**
 * @addtogroup Parts
 * @{
@@ -38,27 +45,26 @@
  * @{
  * @brief EFM32HG_PCNT Register Declaration
  *****************************************************************************/
-typedef struct
-{
-  __IOM uint32_t CTRL;         /**< Control Register  */
-  __IOM uint32_t CMD;          /**< Command Register  */
-  __IM uint32_t  STATUS;       /**< Status Register  */
-  __IM uint32_t  CNT;          /**< Counter Value Register  */
-  __IM uint32_t  TOP;          /**< Top Value Register  */
-  __IOM uint32_t TOPB;         /**< Top Value Buffer Register  */
-  __IM uint32_t  IF;           /**< Interrupt Flag Register  */
-  __IOM uint32_t IFS;          /**< Interrupt Flag Set Register  */
-  __IOM uint32_t IFC;          /**< Interrupt Flag Clear Register  */
-  __IOM uint32_t IEN;          /**< Interrupt Enable Register  */
-  __IOM uint32_t ROUTE;        /**< I/O Routing Register  */
+typedef struct {
+  __IOM uint32_t CTRL;          /**< Control Register  */
+  __IOM uint32_t CMD;           /**< Command Register  */
+  __IM uint32_t  STATUS;        /**< Status Register  */
+  __IM uint32_t  CNT;           /**< Counter Value Register  */
+  __IM uint32_t  TOP;           /**< Top Value Register  */
+  __IOM uint32_t TOPB;          /**< Top Value Buffer Register  */
+  __IM uint32_t  IF;            /**< Interrupt Flag Register  */
+  __IOM uint32_t IFS;           /**< Interrupt Flag Set Register  */
+  __IOM uint32_t IFC;           /**< Interrupt Flag Clear Register  */
+  __IOM uint32_t IEN;           /**< Interrupt Enable Register  */
+  __IOM uint32_t ROUTE;         /**< I/O Routing Register  */
 
-  __IOM uint32_t FREEZE;       /**< Freeze Register  */
-  __IM uint32_t  SYNCBUSY;     /**< Synchronization Busy Register  */
+  __IOM uint32_t FREEZE;        /**< Freeze Register  */
+  __IM uint32_t  SYNCBUSY;      /**< Synchronization Busy Register  */
 
-  uint32_t       RESERVED0[1]; /**< Reserved for future use **/
-  __IOM uint32_t AUXCNT;       /**< Auxiliary Counter Value Register  */
-  __IOM uint32_t INPUT;        /**< PCNT Input Register  */
-} PCNT_TypeDef;                /** @} */
+  uint32_t       RESERVED0[1U]; /**< Reserved for future use **/
+  __IOM uint32_t AUXCNT;        /**< Auxiliary Counter Value Register  */
+  __IOM uint32_t INPUT;         /**< PCNT Input Register  */
+} PCNT_TypeDef;                 /**< PCNT Register Declaration *//** @} */
 
 /**************************************************************************//**
  * @defgroup EFM32HG_PCNT_BitFields
@@ -483,4 +489,3 @@ typedef struct
 
 /** @} End of group EFM32HG_PCNT */
 /** @} End of group Parts */
-

@@ -1,7 +1,7 @@
 /**************************************************************************//**
  * @file efr32mg12p_wdog.h
  * @brief EFR32MG12P_WDOG register and bit field definitions
- * @version 5.5.0
+ * @version 5.6.0
  ******************************************************************************
  * # License
  * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
@@ -47,19 +47,19 @@
  *****************************************************************************/
 /** WDOG Register Declaration */
 typedef struct {
-  __IOM uint32_t   CTRL;         /**< Control Register  */
-  __IOM uint32_t   CMD;          /**< Command Register  */
+  __IOM uint32_t   CTRL;          /**< Control Register  */
+  __IOM uint32_t   CMD;           /**< Command Register  */
 
-  __IM uint32_t    SYNCBUSY;     /**< Synchronization Busy Register  */
+  __IM uint32_t    SYNCBUSY;      /**< Synchronization Busy Register  */
 
-  WDOG_PCH_TypeDef PCH[2];       /**< PCH */
+  WDOG_PCH_TypeDef PCH[2U];       /**< PCH */
 
-  uint32_t         RESERVED0[2]; /**< Reserved for future use **/
-  __IM uint32_t    IF;           /**< Watchdog Interrupt Flags  */
-  __IOM uint32_t   IFS;          /**< Interrupt Flag Set Register  */
-  __IOM uint32_t   IFC;          /**< Interrupt Flag Clear Register  */
-  __IOM uint32_t   IEN;          /**< Interrupt Enable Register  */
-} WDOG_TypeDef;                  /** @} */
+  uint32_t         RESERVED0[2U]; /**< Reserved for future use **/
+  __IM uint32_t    IF;            /**< Watchdog Interrupt Flags  */
+  __IOM uint32_t   IFS;           /**< Interrupt Flag Set Register  */
+  __IOM uint32_t   IFC;           /**< Interrupt Flag Clear Register  */
+  __IOM uint32_t   IEN;           /**< Interrupt Enable Register  */
+} WDOG_TypeDef;                   /** @} */
 
 /**************************************************************************//**
  * @addtogroup EFR32MG12P_WDOG

@@ -1,10 +1,10 @@
 /***************************************************************************//**
  * @file em_assert.c
  * @brief Assert API
- * @version 5.1.2
+ * @version 5.6.0
  *******************************************************************************
- * @section License
- * <b>Copyright 2016 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2016 Silicon Laboratories, Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -40,6 +40,9 @@
 
 /***************************************************************************//**
  * @addtogroup ASSERT
+ * @details
+ *  This module contains functions to control the ASSERT peripheral of Silicon
+ *  Labs 32-bit MCUs and SoCs.
  * @{
  ******************************************************************************/
 
@@ -48,12 +51,12 @@
  * @brief
  *   EFM internal assert handling.
  *
- *   This function is invoked through EFM_ASSERT() macro usage only, it should
+ *   This function is invoked through EFM_ASSERT() macro usage only and should
  *   not be used explicitly.
  *
- *   This implementation simply enters an indefinite loop, allowing
- *   the use of a debugger to determine cause of failure. By defining
- *   DEBUG_EFM_USER to the preprocessor for all files, a user defined version
+ *   This implementation enters an indefinite loop, allowing
+ *   the use of a debugger to determine a cause of failure. By defining
+ *   DEBUG_EFM_USER to the preprocessor for all files, a user-defined version
  *   of this function must be defined and will be invoked instead, possibly
  *   providing output of assertion location.
  *
@@ -62,18 +65,17 @@
  *   during preprocessing of EFM_ASSERT() usage.
  *
  * @param[in] file
- *   Name of source file where assertion failed.
+ *   Name of the source file where assertion failed.
  *
  * @param[in] line
- *   Line number in source file where assertion failed.
+ *   A line number in the source file where assertion failed.
  ******************************************************************************/
 void assertEFM(const char *file, int line)
 {
   (void)file;  /* Unused parameter */
   (void)line;  /* Unused parameter */
 
-  while (true)
-  {
+  while (true) {
   }
 }
 #endif /* DEBUG_EFM */

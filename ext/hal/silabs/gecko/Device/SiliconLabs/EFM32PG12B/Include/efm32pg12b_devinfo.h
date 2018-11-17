@@ -1,10 +1,10 @@
 /**************************************************************************//**
  * @file efm32pg12b_devinfo.h
  * @brief EFM32PG12B_DEVINFO register and bit field definitions
- * @version 5.1.2
+ * @version 5.6.0
  ******************************************************************************
- * @section License
- * <b>Copyright 2017 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
  ******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -29,69 +29,74 @@
  * any third party, arising from your use of this Software.
  *
  *****************************************************************************/
+
+#if defined(__ICCARM__)
+#pragma system_include       /* Treat file as system include file. */
+#elif defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
+#pragma clang system_header  /* Treat file as system include file. */
+#endif
+
 /**************************************************************************//**
 * @addtogroup Parts
 * @{
 ******************************************************************************/
 /**************************************************************************//**
- * @defgroup EFM32PG12B_DEVINFO
+ * @defgroup EFM32PG12B_DEVINFO Device Information and Calibration
  * @{
  *****************************************************************************/
 
-typedef struct
-{
+/** DEVINFO Register Declaration */
+typedef struct {
   __IM uint32_t CAL;              /**< CRC of DI-page and calibration temperature  */
-  uint32_t      RESERVED0[7];     /**< Reserved for future use **/
-  __IM uint32_t EXTINFO;          /**< External Component description  */
-  uint32_t      RESERVED1[1];     /**< Reserved for future use **/
+  uint32_t      RESERVED0[9U];    /**< Reserved for future use **/
   __IM uint32_t EUI48L;           /**< EUI48 OUI and Unique identifier  */
   __IM uint32_t EUI48H;           /**< OUI  */
   __IM uint32_t CUSTOMINFO;       /**< Custom information  */
   __IM uint32_t MEMINFO;          /**< Flash page size and misc. chip information  */
-  uint32_t      RESERVED2[2];     /**< Reserved for future use **/
+  uint32_t      RESERVED1[2U];    /**< Reserved for future use **/
   __IM uint32_t UNIQUEL;          /**< Low 32 bits of device unique number  */
   __IM uint32_t UNIQUEH;          /**< High 32 bits of device unique number  */
   __IM uint32_t MSIZE;            /**< Flash and SRAM Memory size in kB  */
   __IM uint32_t PART;             /**< Part description  */
   __IM uint32_t DEVINFOREV;       /**< Device information page revision  */
   __IM uint32_t EMUTEMP;          /**< EMU Temperature Calibration Information  */
-  uint32_t      RESERVED3[2];     /**< Reserved for future use **/
+  uint32_t      RESERVED2[2U];    /**< Reserved for future use **/
   __IM uint32_t ADC0CAL0;         /**< ADC0 calibration register 0  */
   __IM uint32_t ADC0CAL1;         /**< ADC0 calibration register 1  */
   __IM uint32_t ADC0CAL2;         /**< ADC0 calibration register 2  */
   __IM uint32_t ADC0CAL3;         /**< ADC0 calibration register 3  */
-  uint32_t      RESERVED4[4];     /**< Reserved for future use **/
+  uint32_t      RESERVED3[4U];    /**< Reserved for future use **/
   __IM uint32_t HFRCOCAL0;        /**< HFRCO Calibration Register (4 MHz)  */
-  uint32_t      RESERVED5[2];     /**< Reserved for future use **/
+  uint32_t      RESERVED4[2U];    /**< Reserved for future use **/
   __IM uint32_t HFRCOCAL3;        /**< HFRCO Calibration Register (7 MHz)  */
-  uint32_t      RESERVED6[2];     /**< Reserved for future use **/
+  uint32_t      RESERVED5[2U];    /**< Reserved for future use **/
   __IM uint32_t HFRCOCAL6;        /**< HFRCO Calibration Register (13 MHz)  */
   __IM uint32_t HFRCOCAL7;        /**< HFRCO Calibration Register (16 MHz)  */
   __IM uint32_t HFRCOCAL8;        /**< HFRCO Calibration Register (19 MHz)  */
-  uint32_t      RESERVED7[1];     /**< Reserved for future use **/
+  uint32_t      RESERVED6[1U];    /**< Reserved for future use **/
   __IM uint32_t HFRCOCAL10;       /**< HFRCO Calibration Register (26 MHz)  */
   __IM uint32_t HFRCOCAL11;       /**< HFRCO Calibration Register (32 MHz)  */
   __IM uint32_t HFRCOCAL12;       /**< HFRCO Calibration Register (38 MHz)  */
-  uint32_t      RESERVED8[11];    /**< Reserved for future use **/
+  uint32_t      RESERVED7[11U];   /**< Reserved for future use **/
   __IM uint32_t AUXHFRCOCAL0;     /**< AUXHFRCO Calibration Register (4 MHz)  */
-  uint32_t      RESERVED9[2];     /**< Reserved for future use **/
+  uint32_t      RESERVED8[2U];    /**< Reserved for future use **/
   __IM uint32_t AUXHFRCOCAL3;     /**< AUXHFRCO Calibration Register (7 MHz)  */
-  uint32_t      RESERVED10[2];    /**< Reserved for future use **/
+  uint32_t      RESERVED9[2U];    /**< Reserved for future use **/
   __IM uint32_t AUXHFRCOCAL6;     /**< AUXHFRCO Calibration Register (13 MHz)  */
   __IM uint32_t AUXHFRCOCAL7;     /**< AUXHFRCO Calibration Register (16 MHz)  */
   __IM uint32_t AUXHFRCOCAL8;     /**< AUXHFRCO Calibration Register (19 MHz)  */
-  uint32_t      RESERVED11[1];    /**< Reserved for future use **/
+  uint32_t      RESERVED10[1U];   /**< Reserved for future use **/
   __IM uint32_t AUXHFRCOCAL10;    /**< AUXHFRCO Calibration Register (26 MHz)  */
   __IM uint32_t AUXHFRCOCAL11;    /**< AUXHFRCO Calibration Register (32 MHz)  */
   __IM uint32_t AUXHFRCOCAL12;    /**< AUXHFRCO Calibration Register (38 MHz)  */
-  uint32_t      RESERVED12[11];   /**< Reserved for future use **/
+  uint32_t      RESERVED11[11U];  /**< Reserved for future use **/
   __IM uint32_t VMONCAL0;         /**< VMON Calibration Register 0  */
   __IM uint32_t VMONCAL1;         /**< VMON Calibration Register 1  */
   __IM uint32_t VMONCAL2;         /**< VMON Calibration Register 2  */
-  uint32_t      RESERVED13[3];    /**< Reserved for future use **/
+  uint32_t      RESERVED12[3U];   /**< Reserved for future use **/
   __IM uint32_t IDAC0CAL0;        /**< IDAC0 Calibration Register 0  */
   __IM uint32_t IDAC0CAL1;        /**< IDAC0 Calibration Register 1  */
-  uint32_t      RESERVED14[2];    /**< Reserved for future use **/
+  uint32_t      RESERVED13[2U];   /**< Reserved for future use **/
   __IM uint32_t DCDCLNVCTRL0;     /**< DCDC Low-noise VREF Trim Register 0  */
   __IM uint32_t DCDCLPVCTRL0;     /**< DCDC Low-power VREF Trim Register 0  */
   __IM uint32_t DCDCLPVCTRL1;     /**< DCDC Low-power VREF Trim Register 1  */
@@ -115,7 +120,7 @@ typedef struct
   __IM uint32_t OPA2CAL2;         /**< OPA2 Calibration Register for DRIVESTRENGTH 2, INCBW=1  */
   __IM uint32_t OPA2CAL3;         /**< OPA2 Calibration Register for DRIVESTRENGTH 3, INCBW=1  */
   __IM uint32_t CSENGAINCAL;      /**< Cap Sense Gain Adjustment  */
-  uint32_t      RESERVED15[3];    /**< Reserved for future use **/
+  uint32_t      RESERVED14[3U];   /**< Reserved for future use **/
   __IM uint32_t OPA0CAL4;         /**< OPA0 Calibration Register for DRIVESTRENGTH 0, INCBW=0  */
   __IM uint32_t OPA0CAL5;         /**< OPA0 Calibration Register for DRIVESTRENGTH 1, INCBW=0  */
   __IM uint32_t OPA0CAL6;         /**< OPA0 Calibration Register for DRIVESTRENGTH 2, INCBW=0  */
@@ -131,7 +136,9 @@ typedef struct
 } DEVINFO_TypeDef;                /** @} */
 
 /**************************************************************************//**
- * @defgroup EFM32PG12B_DEVINFO_BitFields
+ * @addtogroup EFM32PG12B_DEVINFO
+ * @{
+ * @defgroup EFM32PG12B_DEVINFO_BitFields DEVINFO Bit Fields
  * @{
  *****************************************************************************/
 
@@ -141,27 +148,6 @@ typedef struct
 #define _DEVINFO_CAL_CRC_MASK                                    0xFFFFUL     /**< Bit mask for CRC */
 #define _DEVINFO_CAL_TEMP_SHIFT                                  16           /**< Shift value for TEMP */
 #define _DEVINFO_CAL_TEMP_MASK                                   0xFF0000UL   /**< Bit mask for TEMP */
-
-/* Bit fields for DEVINFO EXTINFO */
-#define _DEVINFO_EXTINFO_MASK                                    0x00FFFFFFUL                            /**< Mask for DEVINFO_EXTINFO */
-#define _DEVINFO_EXTINFO_TYPE_SHIFT                              0                                       /**< Shift value for TYPE */
-#define _DEVINFO_EXTINFO_TYPE_MASK                               0xFFUL                                  /**< Bit mask for TYPE */
-#define _DEVINFO_EXTINFO_TYPE_IS25LQ040B                         0x00000001UL                            /**< Mode IS25LQ040B for DEVINFO_EXTINFO */
-#define _DEVINFO_EXTINFO_TYPE_NONE                               0x000000FFUL                            /**< Mode NONE for DEVINFO_EXTINFO */
-#define DEVINFO_EXTINFO_TYPE_IS25LQ040B                          (_DEVINFO_EXTINFO_TYPE_IS25LQ040B << 0) /**< Shifted mode IS25LQ040B for DEVINFO_EXTINFO */
-#define DEVINFO_EXTINFO_TYPE_NONE                                (_DEVINFO_EXTINFO_TYPE_NONE << 0)       /**< Shifted mode NONE for DEVINFO_EXTINFO */
-#define _DEVINFO_EXTINFO_CONNECTION_SHIFT                        8                                       /**< Shift value for CONNECTION */
-#define _DEVINFO_EXTINFO_CONNECTION_MASK                         0xFF00UL                                /**< Bit mask for CONNECTION */
-#define _DEVINFO_EXTINFO_CONNECTION_SPI                          0x00000001UL                            /**< Mode SPI for DEVINFO_EXTINFO */
-#define _DEVINFO_EXTINFO_CONNECTION_NONE                         0x000000FFUL                            /**< Mode NONE for DEVINFO_EXTINFO */
-#define DEVINFO_EXTINFO_CONNECTION_SPI                           (_DEVINFO_EXTINFO_CONNECTION_SPI << 8)  /**< Shifted mode SPI for DEVINFO_EXTINFO */
-#define DEVINFO_EXTINFO_CONNECTION_NONE                          (_DEVINFO_EXTINFO_CONNECTION_NONE << 8) /**< Shifted mode NONE for DEVINFO_EXTINFO */
-#define _DEVINFO_EXTINFO_REV_SHIFT                               16                                      /**< Shift value for REV */
-#define _DEVINFO_EXTINFO_REV_MASK                                0xFF0000UL                              /**< Bit mask for REV */
-#define _DEVINFO_EXTINFO_REV_REV1                                0x00000001UL                            /**< Mode REV1 for DEVINFO_EXTINFO */
-#define _DEVINFO_EXTINFO_REV_NONE                                0x000000FFUL                            /**< Mode NONE for DEVINFO_EXTINFO */
-#define DEVINFO_EXTINFO_REV_REV1                                 (_DEVINFO_EXTINFO_REV_REV1 << 16)       /**< Shifted mode REV1 for DEVINFO_EXTINFO */
-#define DEVINFO_EXTINFO_REV_NONE                                 (_DEVINFO_EXTINFO_REV_NONE << 16)       /**< Shifted mode NONE for DEVINFO_EXTINFO */
 
 /* Bit fields for DEVINFO EUI48L */
 #define _DEVINFO_EUI48L_MASK                                     0xFFFFFFFFUL /**< Mask for DEVINFO_EUI48L */
@@ -240,7 +226,6 @@ typedef struct
 #define _DEVINFO_PART_DEVICE_FAMILY_EFR32FG1B                    0x0000001AUL                                   /**< Mode EFR32FG1B for DEVINFO_PART */
 #define _DEVINFO_PART_DEVICE_FAMILY_EFR32FG1V                    0x0000001BUL                                   /**< Mode EFR32FG1V for DEVINFO_PART */
 #define _DEVINFO_PART_DEVICE_FAMILY_EFR32MG12P                   0x0000001CUL                                   /**< Mode EFR32MG12P for DEVINFO_PART */
-#define _DEVINFO_PART_DEVICE_FAMILY_EFR32MG2P                    0x0000001CUL                                   /**< Mode EFR32MG2P for DEVINFO_PART */
 #define _DEVINFO_PART_DEVICE_FAMILY_EFR32MG12B                   0x0000001DUL                                   /**< Mode EFR32MG12B for DEVINFO_PART */
 #define _DEVINFO_PART_DEVICE_FAMILY_EFR32MG12V                   0x0000001EUL                                   /**< Mode EFR32MG12V for DEVINFO_PART */
 #define _DEVINFO_PART_DEVICE_FAMILY_EFR32BG12P                   0x0000001FUL                                   /**< Mode EFR32BG12P for DEVINFO_PART */
@@ -249,6 +234,26 @@ typedef struct
 #define _DEVINFO_PART_DEVICE_FAMILY_EFR32FG12P                   0x00000025UL                                   /**< Mode EFR32FG12P for DEVINFO_PART */
 #define _DEVINFO_PART_DEVICE_FAMILY_EFR32FG12B                   0x00000026UL                                   /**< Mode EFR32FG12B for DEVINFO_PART */
 #define _DEVINFO_PART_DEVICE_FAMILY_EFR32FG12V                   0x00000027UL                                   /**< Mode EFR32FG12V for DEVINFO_PART */
+#define _DEVINFO_PART_DEVICE_FAMILY_EFR32MG13P                   0x00000028UL                                   /**< Mode EFR32MG13P for DEVINFO_PART */
+#define _DEVINFO_PART_DEVICE_FAMILY_EFR32MG13B                   0x00000029UL                                   /**< Mode EFR32MG13B for DEVINFO_PART */
+#define _DEVINFO_PART_DEVICE_FAMILY_EFR32MG13V                   0x0000002AUL                                   /**< Mode EFR32MG13V for DEVINFO_PART */
+#define _DEVINFO_PART_DEVICE_FAMILY_EFR32BG13P                   0x0000002BUL                                   /**< Mode EFR32BG13P for DEVINFO_PART */
+#define _DEVINFO_PART_DEVICE_FAMILY_EFR32BG13B                   0x0000002CUL                                   /**< Mode EFR32BG13B for DEVINFO_PART */
+#define _DEVINFO_PART_DEVICE_FAMILY_EFR32BG13V                   0x0000002DUL                                   /**< Mode EFR32BG13V for DEVINFO_PART */
+#define _DEVINFO_PART_DEVICE_FAMILY_EFR32ZG13P                   0x0000002EUL                                   /**< Mode EFR32ZG13P for DEVINFO_PART */
+#define _DEVINFO_PART_DEVICE_FAMILY_EFR32FG13P                   0x00000031UL                                   /**< Mode EFR32FG13P for DEVINFO_PART */
+#define _DEVINFO_PART_DEVICE_FAMILY_EFR32FG13B                   0x00000032UL                                   /**< Mode EFR32FG13B for DEVINFO_PART */
+#define _DEVINFO_PART_DEVICE_FAMILY_EFR32FG13V                   0x00000033UL                                   /**< Mode EFR32FG13V for DEVINFO_PART */
+#define _DEVINFO_PART_DEVICE_FAMILY_EFR32MG14P                   0x00000034UL                                   /**< Mode EFR32MG14P for DEVINFO_PART */
+#define _DEVINFO_PART_DEVICE_FAMILY_EFR32MG14B                   0x00000035UL                                   /**< Mode EFR32MG14B for DEVINFO_PART */
+#define _DEVINFO_PART_DEVICE_FAMILY_EFR32MG14V                   0x00000036UL                                   /**< Mode EFR32MG14V for DEVINFO_PART */
+#define _DEVINFO_PART_DEVICE_FAMILY_EFR32BG14P                   0x00000037UL                                   /**< Mode EFR32BG14P for DEVINFO_PART */
+#define _DEVINFO_PART_DEVICE_FAMILY_EFR32BG14B                   0x00000038UL                                   /**< Mode EFR32BG14B for DEVINFO_PART */
+#define _DEVINFO_PART_DEVICE_FAMILY_EFR32BG14V                   0x00000039UL                                   /**< Mode EFR32BG14V for DEVINFO_PART */
+#define _DEVINFO_PART_DEVICE_FAMILY_EFR32ZG14P                   0x0000003AUL                                   /**< Mode EFR32ZG14P for DEVINFO_PART */
+#define _DEVINFO_PART_DEVICE_FAMILY_EFR32FG14P                   0x0000003DUL                                   /**< Mode EFR32FG14P for DEVINFO_PART */
+#define _DEVINFO_PART_DEVICE_FAMILY_EFR32FG14B                   0x0000003EUL                                   /**< Mode EFR32FG14B for DEVINFO_PART */
+#define _DEVINFO_PART_DEVICE_FAMILY_EFR32FG14V                   0x0000003FUL                                   /**< Mode EFR32FG14V for DEVINFO_PART */
 #define _DEVINFO_PART_DEVICE_FAMILY_EFM32G                       0x00000047UL                                   /**< Mode EFM32G for DEVINFO_PART */
 #define _DEVINFO_PART_DEVICE_FAMILY_G                            0x00000047UL                                   /**< Mode G for DEVINFO_PART */
 #define _DEVINFO_PART_DEVICE_FAMILY_EFM32GG                      0x00000048UL                                   /**< Mode EFM32GG for DEVINFO_PART */
@@ -267,6 +272,9 @@ typedef struct
 #define _DEVINFO_PART_DEVICE_FAMILY_EFM32JG1B                    0x00000053UL                                   /**< Mode EFM32JG1B for DEVINFO_PART */
 #define _DEVINFO_PART_DEVICE_FAMILY_EFM32PG12B                   0x00000055UL                                   /**< Mode EFM32PG12B for DEVINFO_PART */
 #define _DEVINFO_PART_DEVICE_FAMILY_EFM32JG12B                   0x00000057UL                                   /**< Mode EFM32JG12B for DEVINFO_PART */
+#define _DEVINFO_PART_DEVICE_FAMILY_EFM32GG11B                   0x00000064UL                                   /**< Mode EFM32GG11B for DEVINFO_PART */
+#define _DEVINFO_PART_DEVICE_FAMILY_EFM32TG11B                   0x00000067UL                                   /**< Mode EFM32TG11B for DEVINFO_PART */
+#define _DEVINFO_PART_DEVICE_FAMILY_EFM32GG12B                   0x0000006AUL                                   /**< Mode EFM32GG12B for DEVINFO_PART */
 #define _DEVINFO_PART_DEVICE_FAMILY_EZR32LG                      0x00000078UL                                   /**< Mode EZR32LG for DEVINFO_PART */
 #define _DEVINFO_PART_DEVICE_FAMILY_EZR32WG                      0x00000079UL                                   /**< Mode EZR32WG for DEVINFO_PART */
 #define _DEVINFO_PART_DEVICE_FAMILY_EZR32HG                      0x0000007AUL                                   /**< Mode EZR32HG for DEVINFO_PART */
@@ -280,7 +288,6 @@ typedef struct
 #define DEVINFO_PART_DEVICE_FAMILY_EFR32FG1B                     (_DEVINFO_PART_DEVICE_FAMILY_EFR32FG1B << 16)  /**< Shifted mode EFR32FG1B for DEVINFO_PART */
 #define DEVINFO_PART_DEVICE_FAMILY_EFR32FG1V                     (_DEVINFO_PART_DEVICE_FAMILY_EFR32FG1V << 16)  /**< Shifted mode EFR32FG1V for DEVINFO_PART */
 #define DEVINFO_PART_DEVICE_FAMILY_EFR32MG12P                    (_DEVINFO_PART_DEVICE_FAMILY_EFR32MG12P << 16) /**< Shifted mode EFR32MG12P for DEVINFO_PART */
-#define DEVINFO_PART_DEVICE_FAMILY_EFR32MG2P                     (_DEVINFO_PART_DEVICE_FAMILY_EFR32MG2P << 16)  /**< Shifted mode EFR32MG2P for DEVINFO_PART */
 #define DEVINFO_PART_DEVICE_FAMILY_EFR32MG12B                    (_DEVINFO_PART_DEVICE_FAMILY_EFR32MG12B << 16) /**< Shifted mode EFR32MG12B for DEVINFO_PART */
 #define DEVINFO_PART_DEVICE_FAMILY_EFR32MG12V                    (_DEVINFO_PART_DEVICE_FAMILY_EFR32MG12V << 16) /**< Shifted mode EFR32MG12V for DEVINFO_PART */
 #define DEVINFO_PART_DEVICE_FAMILY_EFR32BG12P                    (_DEVINFO_PART_DEVICE_FAMILY_EFR32BG12P << 16) /**< Shifted mode EFR32BG12P for DEVINFO_PART */
@@ -289,6 +296,26 @@ typedef struct
 #define DEVINFO_PART_DEVICE_FAMILY_EFR32FG12P                    (_DEVINFO_PART_DEVICE_FAMILY_EFR32FG12P << 16) /**< Shifted mode EFR32FG12P for DEVINFO_PART */
 #define DEVINFO_PART_DEVICE_FAMILY_EFR32FG12B                    (_DEVINFO_PART_DEVICE_FAMILY_EFR32FG12B << 16) /**< Shifted mode EFR32FG12B for DEVINFO_PART */
 #define DEVINFO_PART_DEVICE_FAMILY_EFR32FG12V                    (_DEVINFO_PART_DEVICE_FAMILY_EFR32FG12V << 16) /**< Shifted mode EFR32FG12V for DEVINFO_PART */
+#define DEVINFO_PART_DEVICE_FAMILY_EFR32MG13P                    (_DEVINFO_PART_DEVICE_FAMILY_EFR32MG13P << 16) /**< Shifted mode EFR32MG13P for DEVINFO_PART */
+#define DEVINFO_PART_DEVICE_FAMILY_EFR32MG13B                    (_DEVINFO_PART_DEVICE_FAMILY_EFR32MG13B << 16) /**< Shifted mode EFR32MG13B for DEVINFO_PART */
+#define DEVINFO_PART_DEVICE_FAMILY_EFR32MG13V                    (_DEVINFO_PART_DEVICE_FAMILY_EFR32MG13V << 16) /**< Shifted mode EFR32MG13V for DEVINFO_PART */
+#define DEVINFO_PART_DEVICE_FAMILY_EFR32BG13P                    (_DEVINFO_PART_DEVICE_FAMILY_EFR32BG13P << 16) /**< Shifted mode EFR32BG13P for DEVINFO_PART */
+#define DEVINFO_PART_DEVICE_FAMILY_EFR32BG13B                    (_DEVINFO_PART_DEVICE_FAMILY_EFR32BG13B << 16) /**< Shifted mode EFR32BG13B for DEVINFO_PART */
+#define DEVINFO_PART_DEVICE_FAMILY_EFR32BG13V                    (_DEVINFO_PART_DEVICE_FAMILY_EFR32BG13V << 16) /**< Shifted mode EFR32BG13V for DEVINFO_PART */
+#define DEVINFO_PART_DEVICE_FAMILY_EFR32ZG13P                    (_DEVINFO_PART_DEVICE_FAMILY_EFR32ZG13P << 16) /**< Shifted mode EFR32ZG13P for DEVINFO_PART */
+#define DEVINFO_PART_DEVICE_FAMILY_EFR32FG13P                    (_DEVINFO_PART_DEVICE_FAMILY_EFR32FG13P << 16) /**< Shifted mode EFR32FG13P for DEVINFO_PART */
+#define DEVINFO_PART_DEVICE_FAMILY_EFR32FG13B                    (_DEVINFO_PART_DEVICE_FAMILY_EFR32FG13B << 16) /**< Shifted mode EFR32FG13B for DEVINFO_PART */
+#define DEVINFO_PART_DEVICE_FAMILY_EFR32FG13V                    (_DEVINFO_PART_DEVICE_FAMILY_EFR32FG13V << 16) /**< Shifted mode EFR32FG13V for DEVINFO_PART */
+#define DEVINFO_PART_DEVICE_FAMILY_EFR32MG14P                    (_DEVINFO_PART_DEVICE_FAMILY_EFR32MG14P << 16) /**< Shifted mode EFR32MG14P for DEVINFO_PART */
+#define DEVINFO_PART_DEVICE_FAMILY_EFR32MG14B                    (_DEVINFO_PART_DEVICE_FAMILY_EFR32MG14B << 16) /**< Shifted mode EFR32MG14B for DEVINFO_PART */
+#define DEVINFO_PART_DEVICE_FAMILY_EFR32MG14V                    (_DEVINFO_PART_DEVICE_FAMILY_EFR32MG14V << 16) /**< Shifted mode EFR32MG14V for DEVINFO_PART */
+#define DEVINFO_PART_DEVICE_FAMILY_EFR32BG14P                    (_DEVINFO_PART_DEVICE_FAMILY_EFR32BG14P << 16) /**< Shifted mode EFR32BG14P for DEVINFO_PART */
+#define DEVINFO_PART_DEVICE_FAMILY_EFR32BG14B                    (_DEVINFO_PART_DEVICE_FAMILY_EFR32BG14B << 16) /**< Shifted mode EFR32BG14B for DEVINFO_PART */
+#define DEVINFO_PART_DEVICE_FAMILY_EFR32BG14V                    (_DEVINFO_PART_DEVICE_FAMILY_EFR32BG14V << 16) /**< Shifted mode EFR32BG14V for DEVINFO_PART */
+#define DEVINFO_PART_DEVICE_FAMILY_EFR32ZG14P                    (_DEVINFO_PART_DEVICE_FAMILY_EFR32ZG14P << 16) /**< Shifted mode EFR32ZG14P for DEVINFO_PART */
+#define DEVINFO_PART_DEVICE_FAMILY_EFR32FG14P                    (_DEVINFO_PART_DEVICE_FAMILY_EFR32FG14P << 16) /**< Shifted mode EFR32FG14P for DEVINFO_PART */
+#define DEVINFO_PART_DEVICE_FAMILY_EFR32FG14B                    (_DEVINFO_PART_DEVICE_FAMILY_EFR32FG14B << 16) /**< Shifted mode EFR32FG14B for DEVINFO_PART */
+#define DEVINFO_PART_DEVICE_FAMILY_EFR32FG14V                    (_DEVINFO_PART_DEVICE_FAMILY_EFR32FG14V << 16) /**< Shifted mode EFR32FG14V for DEVINFO_PART */
 #define DEVINFO_PART_DEVICE_FAMILY_EFM32G                        (_DEVINFO_PART_DEVICE_FAMILY_EFM32G << 16)     /**< Shifted mode EFM32G for DEVINFO_PART */
 #define DEVINFO_PART_DEVICE_FAMILY_G                             (_DEVINFO_PART_DEVICE_FAMILY_G << 16)          /**< Shifted mode G for DEVINFO_PART */
 #define DEVINFO_PART_DEVICE_FAMILY_EFM32GG                       (_DEVINFO_PART_DEVICE_FAMILY_EFM32GG << 16)    /**< Shifted mode EFM32GG for DEVINFO_PART */
@@ -307,6 +334,9 @@ typedef struct
 #define DEVINFO_PART_DEVICE_FAMILY_EFM32JG1B                     (_DEVINFO_PART_DEVICE_FAMILY_EFM32JG1B << 16)  /**< Shifted mode EFM32JG1B for DEVINFO_PART */
 #define DEVINFO_PART_DEVICE_FAMILY_EFM32PG12B                    (_DEVINFO_PART_DEVICE_FAMILY_EFM32PG12B << 16) /**< Shifted mode EFM32PG12B for DEVINFO_PART */
 #define DEVINFO_PART_DEVICE_FAMILY_EFM32JG12B                    (_DEVINFO_PART_DEVICE_FAMILY_EFM32JG12B << 16) /**< Shifted mode EFM32JG12B for DEVINFO_PART */
+#define DEVINFO_PART_DEVICE_FAMILY_EFM32GG11B                    (_DEVINFO_PART_DEVICE_FAMILY_EFM32GG11B << 16) /**< Shifted mode EFM32GG11B for DEVINFO_PART */
+#define DEVINFO_PART_DEVICE_FAMILY_EFM32TG11B                    (_DEVINFO_PART_DEVICE_FAMILY_EFM32TG11B << 16) /**< Shifted mode EFM32TG11B for DEVINFO_PART */
+#define DEVINFO_PART_DEVICE_FAMILY_EFM32GG12B                    (_DEVINFO_PART_DEVICE_FAMILY_EFM32GG12B << 16) /**< Shifted mode EFM32GG12B for DEVINFO_PART */
 #define DEVINFO_PART_DEVICE_FAMILY_EZR32LG                       (_DEVINFO_PART_DEVICE_FAMILY_EZR32LG << 16)    /**< Shifted mode EZR32LG for DEVINFO_PART */
 #define DEVINFO_PART_DEVICE_FAMILY_EZR32WG                       (_DEVINFO_PART_DEVICE_FAMILY_EZR32WG << 16)    /**< Shifted mode EZR32WG for DEVINFO_PART */
 #define DEVINFO_PART_DEVICE_FAMILY_EZR32HG                       (_DEVINFO_PART_DEVICE_FAMILY_EZR32HG << 16)    /**< Shifted mode EZR32HG for DEVINFO_PART */
@@ -1269,6 +1299,6 @@ typedef struct
 #define _DEVINFO_OPA2CAL7_OFFSETN_SHIFT                          26           /**< Shift value for OFFSETN */
 #define _DEVINFO_OPA2CAL7_OFFSETN_MASK                           0x7C000000UL /**< Bit mask for OFFSETN */
 
+/** @} */
 /** @} End of group EFM32PG12B_DEVINFO */
 /** @} End of group Parts */
-

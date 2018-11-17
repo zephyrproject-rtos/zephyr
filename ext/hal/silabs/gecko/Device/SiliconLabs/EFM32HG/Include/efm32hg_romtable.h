@@ -1,10 +1,10 @@
 /**************************************************************************//**
  * @file efm32hg_romtable.h
  * @brief EFM32HG_ROMTABLE register and bit field definitions
- * @version 5.1.2
+ * @version 5.6.0
  ******************************************************************************
- * @section License
- * <b>Copyright 2017 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
  ******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -29,6 +29,13 @@
  * any third party, arising from your use of this Software.
  *
  *****************************************************************************/
+
+#if defined(__ICCARM__)
+#pragma system_include       /* Treat file as system include file. */
+#elif defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
+#pragma clang system_header  /* Treat file as system include file. */
+#endif
+
 /**************************************************************************//**
 * @addtogroup Parts
 * @{
@@ -38,8 +45,7 @@
  * @{
  * @brief Chip Information, Revision numbers
  *****************************************************************************/
-typedef struct
-{
+typedef struct {
   __IM uint32_t PID4; /**< JEP_106_BANK */
   __IM uint32_t PID5; /**< Unused */
   __IM uint32_t PID6; /**< Unused */
@@ -69,4 +75,3 @@ typedef struct
 
 /** @} End of group EFM32HG_ROMTABLE */
 /** @} End of group Parts */
-

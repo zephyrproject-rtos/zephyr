@@ -2,7 +2,7 @@
  * @file efr32mg12p232f1024gm48.h
  * @brief CMSIS Cortex-M Peripheral Access Layer Header File
  *        for EFR32MG12P232F1024GM48
- * @version 5.5.0
+ * @version 5.6.0
  ******************************************************************************
  * # License
  * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
@@ -128,11 +128,11 @@ typedef enum IRQn{
  * @{
  * @brief Processor and Core Peripheral Section
  *****************************************************************************/
-#define __MPU_PRESENT             1 /**< Presence of MPU  */
-#define __FPU_PRESENT             1 /**< Presence of FPU  */
-#define __VTOR_PRESENT            1 /**< Presence of VTOR register in SCB */
-#define __NVIC_PRIO_BITS          3 /**< NVIC interrupt priority bits */
-#define __Vendor_SysTickConfig    0 /**< Is 1 if different SysTick counter is used */
+#define __MPU_PRESENT             1U /**< Presence of MPU  */
+#define __FPU_PRESENT             1U /**< Presence of FPU  */
+#define __VTOR_PRESENT            1U /**< Presence of VTOR register in SCB */
+#define __NVIC_PRIO_BITS          3U /**< NVIC interrupt priority bits */
+#define __Vendor_SysTickConfig    0U /**< Is 1 if different SysTick counter is used */
 
 /** @} End of group EFR32MG12P232F1024GM48_Core */
 
@@ -255,7 +255,7 @@ typedef enum IRQn{
 #define FLASH_PAGE_SIZE            2048U          /**< Flash Memory page size (interleaving off) */
 #define SRAM_BASE                  (0x20000000UL) /**< SRAM Base Address */
 #define SRAM_SIZE                  (0x00020000UL) /**< Available SRAM Memory */
-#define __CM4_REV                  0x001          /**< Cortex-M4 Core revision r0p1 */
+#define __CM4_REV                  0x0001U        /**< Cortex-M4 Core revision r0p1 */
 #define PRS_CHAN_COUNT             12             /**< Number of PRS channels */
 #define DMA_CHAN_COUNT             8              /**< Number of DMA channels */
 #define EXT_IRQ_COUNT              51             /**< Number of External (NVIC) interrupts */

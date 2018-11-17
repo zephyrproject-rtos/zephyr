@@ -1,10 +1,10 @@
 /**************************************************************************//**
  * @file efr32fg1p_prs.h
  * @brief EFR32FG1P_PRS register and bit field definitions
- * @version 5.1.2
+ * @version 5.6.0
  ******************************************************************************
- * @section License
- * <b>Copyright 2017 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
  ******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -29,38 +29,47 @@
  * any third party, arising from your use of this Software.
  *
  *****************************************************************************/
+
+#if defined(__ICCARM__)
+#pragma system_include       /* Treat file as system include file. */
+#elif defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
+#pragma clang system_header  /* Treat file as system include file. */
+#endif
+
 /**************************************************************************//**
 * @addtogroup Parts
 * @{
 ******************************************************************************/
 /**************************************************************************//**
- * @defgroup EFR32FG1P_PRS
+ * @defgroup EFR32FG1P_PRS PRS
  * @{
  * @brief EFR32FG1P_PRS Register Declaration
  *****************************************************************************/
-typedef struct
-{
-  __IOM uint32_t SWPULSE;      /**< Software Pulse Register  */
-  __IOM uint32_t SWLEVEL;      /**< Software Level Register  */
-  __IOM uint32_t ROUTEPEN;     /**< I/O Routing Pin Enable Register  */
-  uint32_t       RESERVED0[1]; /**< Reserved for future use **/
-  __IOM uint32_t ROUTELOC0;    /**< I/O Routing Location Register  */
-  __IOM uint32_t ROUTELOC1;    /**< I/O Routing Location Register  */
-  __IOM uint32_t ROUTELOC2;    /**< I/O Routing Location Register  */
+/** PRS Register Declaration */
+typedef struct {
+  __IOM uint32_t SWPULSE;       /**< Software Pulse Register  */
+  __IOM uint32_t SWLEVEL;       /**< Software Level Register  */
+  __IOM uint32_t ROUTEPEN;      /**< I/O Routing Pin Enable Register  */
+  uint32_t       RESERVED0[1U]; /**< Reserved for future use **/
+  __IOM uint32_t ROUTELOC0;     /**< I/O Routing Location Register  */
+  __IOM uint32_t ROUTELOC1;     /**< I/O Routing Location Register  */
+  __IOM uint32_t ROUTELOC2;     /**< I/O Routing Location Register  */
 
-  uint32_t       RESERVED1[1]; /**< Reserved for future use **/
-  __IOM uint32_t CTRL;         /**< Control Register  */
-  __IOM uint32_t DMAREQ0;      /**< DMA Request 0 Register  */
-  __IOM uint32_t DMAREQ1;      /**< DMA Request 1 Register  */
-  uint32_t       RESERVED2[1]; /**< Reserved for future use **/
-  __IM uint32_t  PEEK;         /**< PRS Channel Values  */
+  uint32_t       RESERVED1[1U]; /**< Reserved for future use **/
+  __IOM uint32_t CTRL;          /**< Control Register  */
+  __IOM uint32_t DMAREQ0;       /**< DMA Request 0 Register  */
+  __IOM uint32_t DMAREQ1;       /**< DMA Request 1 Register  */
+  uint32_t       RESERVED2[1U]; /**< Reserved for future use **/
+  __IM uint32_t  PEEK;          /**< PRS Channel Values  */
 
-  uint32_t       RESERVED3[3]; /**< Reserved registers */
-  PRS_CH_TypeDef CH[12];       /**< Channel registers */
-} PRS_TypeDef;                 /** @} */
+  uint32_t       RESERVED3[3U]; /**< Reserved registers */
+  PRS_CH_TypeDef CH[12U];       /**< Channel registers */
+} PRS_TypeDef;                  /** @} */
 
 /**************************************************************************//**
- * @defgroup EFR32FG1P_PRS_BitFields
+ * @addtogroup EFR32FG1P_PRS
+ * @{
+ * @defgroup EFR32FG1P_PRS_BitFields  PRS Bit Fields
  * @{
  *****************************************************************************/
 
@@ -944,12 +953,12 @@ typedef struct
 #define _PRS_CH_CTRL_ANDNEXT_MASK              0x10000000UL                               /**< Bit mask for PRS_ANDNEXT */
 #define _PRS_CH_CTRL_ANDNEXT_DEFAULT           0x00000000UL                               /**< Mode DEFAULT for PRS_CH_CTRL */
 #define PRS_CH_CTRL_ANDNEXT_DEFAULT            (_PRS_CH_CTRL_ANDNEXT_DEFAULT << 28)       /**< Shifted mode DEFAULT for PRS_CH_CTRL */
-#define PRS_CH_CTRL_ASYNC                      (0x1UL << 30)                              /**< Asynchronous reflex */
+#define PRS_CH_CTRL_ASYNC                      (0x1UL << 30)                              /**< Asynchronous Reflex */
 #define _PRS_CH_CTRL_ASYNC_SHIFT               30                                         /**< Shift value for PRS_ASYNC */
 #define _PRS_CH_CTRL_ASYNC_MASK                0x40000000UL                               /**< Bit mask for PRS_ASYNC */
 #define _PRS_CH_CTRL_ASYNC_DEFAULT             0x00000000UL                               /**< Mode DEFAULT for PRS_CH_CTRL */
 #define PRS_CH_CTRL_ASYNC_DEFAULT              (_PRS_CH_CTRL_ASYNC_DEFAULT << 30)         /**< Shifted mode DEFAULT for PRS_CH_CTRL */
 
+/** @} */
 /** @} End of group EFR32FG1P_PRS */
 /** @} End of group Parts */
-

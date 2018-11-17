@@ -1,10 +1,10 @@
 /***************************************************************************//**
  * @file em_csen.h
  * @brief Capacitive Sense Module (CSEN) peripheral API
- * @version 5.1.2
+ * @version 5.6.0
  *******************************************************************************
- * @section License
- * <b>Copyright 2016 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2016 Silicon Laboratories, Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -34,7 +34,7 @@
 #define EM_CSEN_H
 
 #include "em_device.h"
-#if defined( CSEN_COUNT ) && ( CSEN_COUNT > 0 )
+#if defined(CSEN_COUNT) && (CSEN_COUNT > 0)
 
 #include <stdbool.h>
 #include "em_bus.h"
@@ -50,27 +50,27 @@ extern "C" {
 
 /***************************************************************************//**
  * @addtogroup CSEN
- * @brief Capacitive Sense (CSEN) Peripheral API
+ * @brief Capacitive Sense (CSEN) Peripheral API.
  *
  * @details
- *  This module provides functions for controlling the capacitive sense 
- *  peripheral of Silicon Labs 32-bit MCUs and SoCs. The CSEN includes a 
- *  capacitance-to-digital circuit that measures capacitance on selected 
- *  inputs. Measurements are performed using either a successive approximation 
- *  register (SAR) or a delta modulator (DM) analog to digital converter.
+ *  Provides functions for controlling the capacitive sense
+ *  peripheral of Silicon Labs' 32-bit MCUs and SoCs. The CSEN includes a
+ *  capacitance-to-digital circuit that measures capacitance on selected
+ *  inputs. Measurements are performed using either a Successive Approximation
+ *  Register (SAR) or a Delta Modulator (DM) analog to digital converter.
  *
- *  The CSEN can be configured to measure capacitance on a single port pin 
- *  or to automatically measure multiple port pins in succession using scan 
- *  mode. Also several port pins can be shorted together to measure the 
+ *  The CSEN can be configured to measure capacitance on a single port pin
+ *  or to automatically measure multiple port pins in succession using scan
+ *  mode. Also, several port pins can be shorted together to measure the
  *  combined capacitance.
  *
- *  The CSEN includes an accumulator which can be configured to average 
- *  multiple conversions on the selected input. Additionally, an exponential 
- *  moving average (EMA) calculator is included to provide data smoothing. 
- *  A comparator is also included and can be used to terminate a continuous 
+ *  The CSEN includes an accumulator which can be configured to average
+ *  multiple conversions on the selected input. Additionally, an Exponential
+ *  Moving Average (EMA) calculator is included to provide data smoothing.
+ *  A comparator is also included and can be used to terminate a continuous
  *  conversion when the configured threshold condition is met.
  *
- *  The following example shows how to intialize and start a single 
+ *  The following example shows how to initialize and start a single
  *  conversion on one input:
  *
  *  @include em_csen_single.c
@@ -83,29 +83,26 @@ extern "C" {
  ******************************************************************************/
 
 /** Comparator Mode. Selects the operation of the digital comparator. */
-typedef enum
-{
+typedef enum {
   /** Comparator is disabled. */
   csenCmpModeDisabled    = 0,
 
   /** Comparator trips when the result is greater than the threshold. */
   csenCmpModeGreater     = CSEN_CTRL_CMPEN | CSEN_CTRL_CMPPOL_GT,
 
-  /** Comparator trips when the result is less or equal to the threshold. */
+  /** Comparator trips when the result is less than or equal to the threshold. */
   csenCmpModeLessOrEqual = CSEN_CTRL_CMPEN | CSEN_CTRL_CMPPOL_LTE,
 
   /** Comparator trips when the EMA is within the threshold window. */
   csenCmpModeEMAWindow   = CSEN_CTRL_EMACMPEN,
 } CSEN_CmpMode_TypeDef;
 
-
 /** Converter Select. Determines the converter operational mode. */
-typedef enum
-{
+typedef enum {
   /** Successive Approximation (SAR) converter. */
   csenConvSelSAR     = CSEN_CTRL_CONVSEL_SAR,
 
-  /** Successive Approximation (SAR) converter with low freq attenuation. */
+  /** Successive Approximation (SAR) converter with low frequency attenuation. */
   csenConvSelSARChop = CSEN_CTRL_CONVSEL_SAR | CSEN_CTRL_CHOPEN_ENABLE,
 
   /** Delta Modulation (DM) converter. */
@@ -115,42 +112,36 @@ typedef enum
   csenConvSelDMChop  = CSEN_CTRL_CONVSEL_DM | CSEN_CTRL_CHOPEN_ENABLE,
 } CSEN_ConvSel_TypeDef;
 
-
 /** Sample Mode. Determines how inputs are sampled for a conversion. */
-typedef enum
-{
-  /** Convert multiple inputs shorted together and stop. */
+typedef enum {
+  /** Converts multiple inputs shorted together and stop. */
   csenSampleModeBonded     = CSEN_CTRL_CM_SGL | CSEN_CTRL_MCEN_ENABLE,
 
-  /** Convert one input and stop. */
+  /** Converts one input and stop. */
   csenSampleModeSingle     = CSEN_CTRL_CM_SGL,
 
-  /** Convert multiple inputs one at a time and stop. */
+  /** Converts multiple inputs one at a time and stop. */
   csenSampleModeScan       = CSEN_CTRL_CM_SCAN,
 
-  /** Continuously convert multiple inputs shorted together. */
+  /** Continuously converts multiple inputs shorted together. */
   csenSampleModeContBonded = CSEN_CTRL_CM_CONTSGL | CSEN_CTRL_MCEN_ENABLE,
 
-  /** Continuously convert one input. */
+  /** Continuously converts one input. */
   csenSampleModeContSingle = CSEN_CTRL_CM_CONTSGL,
 
-  /** Continuously convert multiple inputs one at a time. */
+  /** Continuously converts multiple inputs one at a time. */
   csenSampleModeContScan   = CSEN_CTRL_CM_CONTSCAN,
 } CSEN_SampleMode_TypeDef;
 
-
-/** Start Trigger Select. */
-typedef enum
-{
+/** Starts Trigger Select. */
+typedef enum {
   csenTrigSelPRS   = _CSEN_CTRL_STM_PRS,   /**< PRS system. */
   csenTrigSelTimer = _CSEN_CTRL_STM_TIMER, /**< CSEN PC timer. */
   csenTrigSelStart = _CSEN_CTRL_STM_START, /**< Start bit. */
 } CSEN_TrigSel_TypeDef;
 
-
 /** Accumulator Mode Select. */
-typedef enum
-{
+typedef enum {
   csenAccMode1  = _CSEN_CTRL_ACU_ACC1,  /**< Accumulate 1 sample. */
   csenAccMode2  = _CSEN_CTRL_ACU_ACC2,  /**< Accumulate 2 samples. */
   csenAccMode4  = _CSEN_CTRL_ACU_ACC4,  /**< Accumulate 4 samples. */
@@ -160,31 +151,25 @@ typedef enum
   csenAccMode64 = _CSEN_CTRL_ACU_ACC64, /**< Accumulate 64 samples. */
 } CSEN_AccMode_TypeDef;
 
-
 /** Successive Approximation (SAR) Conversion Resolution. */
-typedef enum
-{
+typedef enum {
   csenSARRes10 = _CSEN_CTRL_SARCR_CLK10, /**< 10-bit resolution. */
   csenSARRes12 = _CSEN_CTRL_SARCR_CLK12, /**< 12-bit resolution. */
   csenSARRes14 = _CSEN_CTRL_SARCR_CLK14, /**< 14-bit resolution. */
   csenSARRes16 = _CSEN_CTRL_SARCR_CLK16, /**< 16-bit resolution. */
 } CSEN_SARRes_TypeDef;
 
-
 /** Delta Modulator (DM) Conversion Resolution. */
-typedef enum
-{
+typedef enum {
   csenDMRes10 = _CSEN_DMCFG_CRMODE_DM10, /**< 10-bit resolution. */
   csenDMRes12 = _CSEN_DMCFG_CRMODE_DM12, /**< 12-bit resolution. */
   csenDMRes14 = _CSEN_DMCFG_CRMODE_DM14, /**< 14-bit resolution. */
   csenDMRes16 = _CSEN_DMCFG_CRMODE_DM16, /**< 16-bit resolution. */
 } CSEN_DMRes_TypeDef;
 
-
-/** Period counter clock pre-scaler. See the reference manual for source clock 
+/** Period counter clock pre-scaler. See the reference manual for source clock
  *  information. */
-typedef enum
-{
+typedef enum {
   csenPCPrescaleDiv1   = _CSEN_TIMCTRL_PCPRESC_DIV1,   /**< Divide by 1. */
   csenPCPrescaleDiv2   = _CSEN_TIMCTRL_PCPRESC_DIV2,   /**< Divide by 2. */
   csenPCPrescaleDiv4   = _CSEN_TIMCTRL_PCPRESC_DIV4,   /**< Divide by 4. */
@@ -195,10 +180,8 @@ typedef enum
   csenPCPrescaleDiv128 = _CSEN_TIMCTRL_PCPRESC_DIV128, /**< Divide by 128. */
 } CSEN_PCPrescale_TypeDef;
 
-
 /** Exponential Moving Average sample weight. */
-typedef enum
-{
+typedef enum {
   csenEMASampleW1  = _CSEN_EMACTRL_EMASAMPLE_W1,  /**< Weight 1. */
   csenEMASampleW2  = _CSEN_EMACTRL_EMASAMPLE_W2,  /**< Weight 2. */
   csenEMASampleW4  = _CSEN_EMACTRL_EMASAMPLE_W4,  /**< Weight 4. */
@@ -208,10 +191,8 @@ typedef enum
   csenEMASampleW64 = _CSEN_EMACTRL_EMASAMPLE_W64, /**< Weight 64. */
 } CSEN_EMASample_TypeDef;
 
-
 /** Reset Phase Timing Select (units are microseconds). */
-typedef enum
-{
+typedef enum {
   csenResetPhaseSel0 = 0,  /**< Reset phase time = 0.75 usec. */
   csenResetPhaseSel1 = 1,  /**< Reset phase time = 1.00 usec. */
   csenResetPhaseSel2 = 2,  /**< Reset phase time = 1.20 usec. */
@@ -222,10 +203,8 @@ typedef enum
   csenResetPhaseSel7 = 7,  /**< Reset phase time = 12.0 usec. */
 } CSEN_ResetPhaseSel_TypeDef;
 
-
 /** Drive Strength Select. Scales the output current. */
-typedef enum
-{
+typedef enum {
   csenDriveSelFull = 0,  /**< Drive strength = fully on. */
   csenDriveSel1 = 1,     /**< Drive strength = 1/8 full scale. */
   csenDriveSel2 = 2,     /**< Drive strength = 1/4 full scale. */
@@ -236,10 +215,8 @@ typedef enum
   csenDriveSel7 = 7,     /**< Drive strength = 7/8 full scale. */
 } CSEN_DriveSel_TypeDef;
 
-
 /** Gain Select. See reference manual for information on each setting. */
-typedef enum
-{
+typedef enum {
   csenGainSel1X = 0,  /**< Gain = 1x. */
   csenGainSel2X = 1,  /**< Gain = 2x. */
   csenGainSel3X = 2,  /**< Gain = 3x. */
@@ -250,10 +227,8 @@ typedef enum
   csenGainSel8X = 7,  /**< Gain = 8x. */
 } CSEN_GainSel_TypeDef;
 
-
 /** Peripheral Reflex System signal used to trigger conversion. */
-typedef enum
-{
+typedef enum {
   csenPRSSELCh0  = _CSEN_PRSSEL_PRSSEL_PRSCH0,  /**< PRS channel 0. */
   csenPRSSELCh1  = _CSEN_PRSSEL_PRSSEL_PRSCH1,  /**< PRS channel 1. */
   csenPRSSELCh2  = _CSEN_PRSSEL_PRSSEL_PRSCH2,  /**< PRS channel 2. */
@@ -262,16 +237,22 @@ typedef enum
   csenPRSSELCh5  = _CSEN_PRSSEL_PRSSEL_PRSCH5,  /**< PRS channel 5. */
   csenPRSSELCh6  = _CSEN_PRSSEL_PRSSEL_PRSCH6,  /**< PRS channel 6. */
   csenPRSSELCh7  = _CSEN_PRSSEL_PRSSEL_PRSCH7,  /**< PRS channel 7. */
+#if defined(_CSEN_PRSSEL_PRSSEL_PRSCH8)
   csenPRSSELCh8  = _CSEN_PRSSEL_PRSSEL_PRSCH8,  /**< PRS channel 8. */
+#endif
+#if defined(_CSEN_PRSSEL_PRSSEL_PRSCH9)
   csenPRSSELCh9  = _CSEN_PRSSEL_PRSSEL_PRSCH9,  /**< PRS channel 9. */
+#endif
+#if defined(_CSEN_PRSSEL_PRSSEL_PRSCH10)
   csenPRSSELCh10 = _CSEN_PRSSEL_PRSSEL_PRSCH10, /**< PRS channel 10. */
+#endif
+#if defined(_CSEN_PRSSEL_PRSSEL_PRSCH11)
   csenPRSSELCh11 = _CSEN_PRSSEL_PRSSEL_PRSCH11, /**< PRS channel 11. */
+#endif
 } CSEN_PRSSel_TypeDef;
 
-
 /** APORT channel to CSEN input selection. */
-typedef enum
-{
+typedef enum {
   csenInputSelDefault        = _CSEN_SCANINPUTSEL0_INPUT0TO7SEL_DEFAULT,
   csenInputSelAPORT1CH0TO7   = _CSEN_SCANINPUTSEL0_INPUT0TO7SEL_APORT1CH0TO7,
   csenInputSelAPORT1CH8TO15  = _CSEN_SCANINPUTSEL0_INPUT0TO7SEL_APORT1CH8TO15,
@@ -283,10 +264,8 @@ typedef enum
   csenInputSelAPORT3CH24TO31 = _CSEN_SCANINPUTSEL0_INPUT0TO7SEL_APORT3CH24TO31,
 } CSEN_InputSel_TypeDef;
 
-
 /** APORT channel to CSEN single input selection. */
-typedef enum
-{
+typedef enum {
   csenSingleSelDefault     = _CSEN_SINGLECTRL_SINGLESEL_DEFAULT,
   csenSingleSelAPORT1XCH0  = _CSEN_SINGLECTRL_SINGLESEL_APORT1XCH0,
   csenSingleSelAPORT1YCH1  = _CSEN_SINGLECTRL_SINGLESEL_APORT1YCH1,
@@ -354,14 +333,12 @@ typedef enum
   csenSingleSelAPORT3YCH31 = _CSEN_SINGLECTRL_SINGLESEL_APORT3YCH31,
 } CSEN_SingleSel_TypeDef;
 
-
 /*******************************************************************************
  *******************************   STRUCTS   ***********************************
  ******************************************************************************/
 
-/** CSEN init structure, common for all measurement modes. */
-typedef struct
-{
+/** CSEN initialization structure, common for all measurement modes. */
+typedef struct {
   /** Requests system charge pump high accuracy mode. */
   bool                          cpAccuracyHi;
 
@@ -371,7 +348,7 @@ typedef struct
   /** Keeps the converter warm allowing continuous conversions. */
   bool                          keepWarm;
 
-  /** Converter warmup time is warmUpCount + 3 converter clock cycles. */
+  /** Converter warm-up time is warmUpCount + 3 converter clock cycles. */
   uint8_t                       warmUpCount;
 
   /** Period counter reload value. */
@@ -394,29 +371,27 @@ typedef struct
   CSEN_InputSel_TypeDef         input56To63;
 } CSEN_Init_TypeDef;
 
-#define CSEN_INIT_DEFAULT                                               \
-{                                                                       \
-  false,                        /* Charge pump low accuracy mode. */    \
-  false,                        /* Use external kelvin connection. */   \
-  false,                        /* Disable keep warm. */                \
-  0,                            /* 0+3 cycle warmup time. */            \
-  0,                            /* Period counter reload. */            \
-  csenPCPrescaleDiv1,           /* Period counter prescale. */          \
-  csenPRSSELCh0,                /* PRS channel 0. */                    \
-  csenInputSelAPORT1CH0TO7,     /* input0To7   -> aport1ch0to7 */       \
-  csenInputSelAPORT1CH8TO15,    /* input8To15  -> aport1ch8to15 */      \
-  csenInputSelAPORT1CH16TO23,   /* input16To23 -> aport1ch16to23 */     \
-  csenInputSelAPORT1CH24TO31,   /* input24To31 -> aport1ch24to31 */     \
-  csenInputSelAPORT3CH0TO7,     /* input32To39 -> aport3ch0to7 */       \
-  csenInputSelAPORT3CH8TO15,    /* input40To47 -> aport3ch8to15 */      \
-  csenInputSelAPORT3CH16TO23,   /* input48To55 -> aport3ch16to23 */     \
-  csenInputSelAPORT3CH24TO31,   /* input56To63 -> aport3ch24to31 */     \
-}
+#define CSEN_INIT_DEFAULT                                             \
+  {                                                                   \
+    false,                      /* Charge pump low accuracy mode. */  \
+    false,                      /* Use external kelvin connection. */ \
+    false,                      /* Disable keep warm. */              \
+    0,                          /* 0+3 cycle warm-up time. */         \
+    0,                          /* Period counter reload. */          \
+    csenPCPrescaleDiv1,         /* Period counter prescale. */        \
+    csenPRSSELCh0,              /* PRS channel 0. */                  \
+    csenInputSelAPORT1CH0TO7,   /* input0To7   -> aport1ch0to7 */     \
+    csenInputSelAPORT1CH8TO15,  /* input8To15  -> aport1ch8to15 */    \
+    csenInputSelAPORT1CH16TO23, /* input16To23 -> aport1ch16to23 */   \
+    csenInputSelAPORT1CH24TO31, /* input24To31 -> aport1ch24to31 */   \
+    csenInputSelAPORT3CH0TO7,   /* input32To39 -> aport3ch0to7 */     \
+    csenInputSelAPORT3CH8TO15,  /* input40To47 -> aport3ch8to15 */    \
+    csenInputSelAPORT3CH16TO23, /* input48To55 -> aport3ch16to23 */   \
+    csenInputSelAPORT3CH24TO31, /* input56To63 -> aport3ch24to31 */   \
+  }
 
-
-/** Measurement mode init structure. */
-typedef struct
-{
+/** Measurement mode initialization structure. */
+typedef struct {
   /** Selects the conversion sample mode. */
   CSEN_SampleMode_TypeDef       sampleMode;
 
@@ -444,11 +419,11 @@ typedef struct
   /** Selects an APORT channel for a single conversion. */
   CSEN_SingleSel_TypeDef        singleSel;
 
-  /** 
-   * Mask selects inputs 0 to 31. Effect depends on @p sampleMode. If sample 
-   * mode is bonded, then mask selects inputs to short together. If sample 
-   * mode is scan, then mask selects which inputs will be scanned. If sample 
-   * mode is single and auto-ground is on (@p autoGnd is true), mask selects 
+  /**
+   * Mask selects inputs 0 to 31. Effect depends on @p sampleMode. If sample
+   * mode is bonded, then mask selects inputs to short together. If sample
+   * mode is scan, then mask selects which inputs will be scanned. If sample
+   * mode is single and auto-ground is on (@p autoGnd is true), mask selects
    * which pins are grounded.
    */
   uint32_t                      inputMask0;
@@ -467,61 +442,60 @@ typedef struct
 
   /** Selects the Delta Modulation (DM) converter resolution. */
   CSEN_DMRes_TypeDef            dmRes;
-  
-  /** Sets the number of DM iterations (comparisons) per cycle. Only applies 
-    * to the Delta Modulation converter. */
+
+  /** Sets the number of DM iterations (comparisons) per cycle. Only applies
+   *  to the Delta Modulation converter. */
   uint8_t                       dmIterPerCycle;
-  
-  /** Sets number of DM converter cycles. Only applies to the 
-    * Delta Modulation converter. */
+
+  /** Sets number of DM converter cycles. Only applies to the
+   *  Delta Modulation converter. */
   uint8_t                       dmCycles;
 
-  /** Sets the DM converter initial delta value. Only applies to the 
-    * Delta Modulation converter. */
+  /** Sets the DM converter initial delta value. Only applies to the
+   *  Delta Modulation converter. */
   uint8_t                       dmDelta;
 
-  /** Disable DM automatic delta size reduction per cycle. Only applies to the 
-    * Delta Modulation converter. */
+  /** Disables DM automatic delta size reduction per cycle. Only applies to the
+   *  Delta Modulation converter. */
   bool                          dmFixedDelta;
 
-  /** Selects the reset phase timing. Most measurements should use the default  
-    * value. See reference manual for details on when to adjust. */
+  /** Selects the reset phase timing. Most measurements should use the default
+   *  value. See reference manual for details on when to adjust. */
   CSEN_ResetPhaseSel_TypeDef    resetPhase;
 
-  /** Selects the output drive strength.  Most measurements should use the 
-    * default value. See reference manual for details on when to adjust. */
+  /** Selects the output drive strength.  Most measurements should use the
+  *  default value. See reference manual for details on when to adjust. */
   CSEN_DriveSel_TypeDef         driveSel;
 
   /** Selects the converter gain. */
   CSEN_GainSel_TypeDef          gainSel;
 } CSEN_InitMode_TypeDef;
 
-#define CSEN_INITMODE_DEFAULT                                           \
-{                                                                       \
-  csenSampleModeSingle,         /* Sample one input and stop. */        \
-  csenTrigSelStart,             /* Use start bit to trigger. */         \
-  false,                        /* Disable DMA. */                      \
-  false,                        /* Average the accumulated result. */   \
-  csenAccMode1,                 /* Accumulate 1 sample. */              \
-  csenEMASampleW1,              /* Disable the EMA. */                  \
-  csenCmpModeDisabled,          /* Disable the comparator. */           \
-  0,                            /* Comparator threshold not used. */    \
-  csenSingleSelDefault,         /* Disconnect the single input. */      \
-  0,                            /* Disable inputs 0 to 31. */           \
-  0,                            /* Disable inputs 32 to 63. */          \
-  false,                        /* Do not ground inactive inputs. */    \
-  csenConvSelSAR,               /* Use the SAR converter. */            \
-  csenSARRes10,                 /* Set SAR resolution to 10 bits. */    \
-  csenDMRes10,                  /* Set DM resolution to 10 bits. */     \
-  0,                            /* Set DM conv/cycle to default. */     \
-  0,                            /* Set DM cycles to default. */         \
-  0,                            /* Set DM initial delta to default. */  \
-  false,                        /* Use DM auto delta reduction. */      \
-  csenResetPhaseSel0,           /* Use shortest reset phase time. */    \
-  csenDriveSelFull,             /* Use full output current. */          \
-  csenGainSel8X,                /* Use highest converter gain. */       \
-}
-
+#define CSEN_INITMODE_DEFAULT                                          \
+  {                                                                    \
+    csenSampleModeSingle,       /* Sample one input and stop. */       \
+    csenTrigSelStart,           /* Use start bit to trigger. */        \
+    false,                      /* Disable DMA. */                     \
+    false,                      /* Average the accumulated result. */  \
+    csenAccMode1,               /* Accumulate 1 sample. */             \
+    csenEMASampleW1,            /* Disable the EMA. */                 \
+    csenCmpModeDisabled,        /* Disable the comparator. */          \
+    0,                          /* Comparator threshold not used. */   \
+    csenSingleSelDefault,       /* Disconnect the single input. */     \
+    0,                          /* Disable inputs 0 to 31. */          \
+    0,                          /* Disable inputs 32 to 63. */         \
+    false,                      /* Do not ground inactive inputs. */   \
+    csenConvSelSAR,             /* Use the SAR converter. */           \
+    csenSARRes10,               /* Set SAR resolution to 10 bits. */   \
+    csenDMRes10,                /* Set DM resolution to 10 bits. */    \
+    0,                          /* Set DM conv/cycle to default. */    \
+    0,                          /* Set DM cycles to default. */        \
+    0,                          /* Set DM initial delta to default. */ \
+    false,                      /* Use DM auto delta reduction. */     \
+    csenResetPhaseSel0,         /* Use shortest reset phase time. */   \
+    csenDriveSelFull,           /* Use full output current. */         \
+    csenGainSel8X,              /* Use highest converter gain. */      \
+  }
 
 /*******************************************************************************
  *****************************   PROTOTYPES   **********************************
@@ -532,8 +506,8 @@ typedef struct
  *   Get last conversion result.
  *
  * @note
- *   Check conversion busy flag before calling this function. In addition, 
- *   the result width and format depend on the parameters passed to the 
+ *   Check conversion busy flag before calling this function. In addition,
+ *   the result width and format depend on the parameters passed to the
  *   @ref CSEN_InitMode() function.
  *
  * @param[in] csen
@@ -612,7 +586,6 @@ void CSEN_Init(CSEN_TypeDef *csen, const CSEN_Init_TypeDef *init);
 void CSEN_InitMode(CSEN_TypeDef *csen, const CSEN_InitMode_TypeDef *init);
 void CSEN_Reset(CSEN_TypeDef *csen);
 
-
 /***************************************************************************//**
  * @brief
  *   Clear one or more pending CSEN interrupts.
@@ -629,7 +602,6 @@ __STATIC_INLINE void CSEN_IntClear(CSEN_TypeDef *csen, uint32_t flags)
   csen->IFC = flags;
 }
 
-
 /***************************************************************************//**
  * @brief
  *   Disable one or more CSEN interrupts.
@@ -645,7 +617,6 @@ __STATIC_INLINE void CSEN_IntDisable(CSEN_TypeDef *csen, uint32_t flags)
 {
   csen->IEN &= ~flags;
 }
-
 
 /***************************************************************************//**
  * @brief
@@ -668,7 +639,6 @@ __STATIC_INLINE void CSEN_IntEnable(CSEN_TypeDef *csen, uint32_t flags)
   csen->IEN |= flags;
 }
 
-
 /***************************************************************************//**
  * @brief
  *   Get pending CSEN interrupt flags.
@@ -687,7 +657,6 @@ __STATIC_INLINE uint32_t CSEN_IntGet(CSEN_TypeDef *csen)
 {
   return csen->IF;
 }
-
 
 /***************************************************************************//**
  * @brief
@@ -720,7 +689,6 @@ __STATIC_INLINE uint32_t CSEN_IntGetEnabled(CSEN_TypeDef *csen)
   return csen->IF & ien;
 }
 
-
 /***************************************************************************//**
  * @brief
  *   Set one or more pending CSEN interrupts from SW.
@@ -737,7 +705,6 @@ __STATIC_INLINE void CSEN_IntSet(CSEN_TypeDef *csen, uint32_t flags)
   csen->IFS = flags;
 }
 
-
 /***************************************************************************//**
  * @brief
  *   Return CSEN conversion busy status.
@@ -753,7 +720,6 @@ __STATIC_INLINE bool CSEN_IsBusy(CSEN_TypeDef *csen)
   return (bool)(csen->STATUS & _CSEN_STATUS_CSENBUSY_MASK);
 }
 
-
 /***************************************************************************//**
  * @brief
  *   Start scan sequence and/or single conversion.
@@ -765,7 +731,6 @@ __STATIC_INLINE void CSEN_Start(CSEN_TypeDef *csen)
 {
   csen->CMD = CSEN_CMD_START;
 }
-
 
 /** @} (end addtogroup CSEN) */
 /** @} (end addtogroup emlib) */

@@ -1,7 +1,7 @@
 /**************************************************************************//**
  * @file efr32mg12p_romtable.h
  * @brief EFR32MG12P_ROMTABLE register and bit field definitions
- * @version 5.5.0
+ * @version 5.6.0
  ******************************************************************************
  * # License
  * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>

@@ -2,25 +2,26 @@
 ; * @file startup_efr32mg12p.s
 ; * @brief    CMSIS Core Device Startup File
 ; *           Silicon Labs EFR32MG12P Device Series
-; * @version 5.5.0
-; * @date     30. January 2012
+; * @version 5.6.0
+; * @date     08. March 2016
+; *****************************************************************************/
+;/*
+; * Copyright (c) 2009-2016 ARM Limited. All rights reserved.
 ; *
-; * @note
-; * Copyright (C) 2012 ARM Limited. All rights reserved.
+; * SPDX-License-Identifier: Apache-2.0
 ; *
-; * @par
-; * ARM Limited (ARM) is supplying this software for use with Cortex-M
-; * processor based microcontrollers.  This file can be freely distributed
-; * within development tools that are supporting such ARM based processors.
+; * Licensed under the Apache License, Version 2.0 (the License); you may
+; * not use this file except in compliance with the License.
+; * You may obtain a copy of the License at
 ; *
-; * @par
-; * THIS SOFTWARE IS PROVIDED "AS IS".  NO WARRANTIES, WHETHER EXPRESS, IMPLIED
-; * OR STATUTORY, INCLUDING, BUT NOT LIMITED TO, IMPLIED WARRANTIES OF
-; * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE APPLY TO THIS SOFTWARE.
-; * ARM SHALL NOT, IN ANY CIRCUMSTANCES, BE LIABLE FOR SPECIAL, INCIDENTAL, OR
-; * CONSEQUENTIAL DAMAGES, FOR ANY REASON WHATSOEVER.
+; * www.apache.org/licenses/LICENSE-2.0
 ; *
-; ******************************************************************************/
+; * Unless required by applicable law or agreed to in writing, software
+; * distributed under the License is distributed on an AS IS BASIS, WITHOUT
+; * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; * See the License for the specific language governing permissions and
+; * limitations under the License.
+; */
 
 ;
 ; The modules in this file are included in the libraries, and may be replaced
@@ -132,6 +133,7 @@ __vector_table_0x1c
         DCD     0                         ; 50: Reserved Interrupt
 
 __Vectors_End
+
 __Vectors       EQU   __vector_table
 __Vectors_Size  EQU   __Vectors_End - __Vectors
 

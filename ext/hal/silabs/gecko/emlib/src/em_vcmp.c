@@ -1,10 +1,10 @@
 /***************************************************************************//**
  * @file em_vcmp.c
  * @brief Voltage Comparator (VCMP) peripheral API
- * @version 5.1.2
+ * @version 5.6.0
  *******************************************************************************
- * @section License
- * <b>Copyright 2016 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2016 Silicon Laboratories, Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -52,58 +52,48 @@
 
 /***************************************************************************//**
  * @brief
- *   Configure and enable Voltage Comparator
+ *   Configure and enable Voltage Comparator.
  *
  * @param[in] vcmpInit
- *   VCMP Initialization structure
+ *   The VCMP Initialization structure.
  ******************************************************************************/
 void VCMP_Init(const VCMP_Init_TypeDef *vcmpInit)
 {
-  /* Verify input */
+  /* Verify input. */
   EFM_ASSERT((vcmpInit->inactive == 0) || (vcmpInit->inactive == 1));
   EFM_ASSERT((vcmpInit->biasProg >= 0) && (vcmpInit->biasProg < 16));
 
-  /* Configure Half Bias setting */
-  if (vcmpInit->halfBias)
-  {
+  /* Configure the Half Bias setting. */
+  if (vcmpInit->halfBias) {
     VCMP->CTRL |= VCMP_CTRL_HALFBIAS;
-  }
-  else
-  {
+  } else {
     VCMP->CTRL &= ~(VCMP_CTRL_HALFBIAS);
   }
 
-  /* Configure bias prog */
+  /* Configure the bias prog. */
   VCMP->CTRL &= ~(_VCMP_CTRL_BIASPROG_MASK);
   VCMP->CTRL |= (vcmpInit->biasProg << _VCMP_CTRL_BIASPROG_SHIFT);
 
-  /* Configure sense for falling edge */
-  if (vcmpInit->irqFalling)
-  {
+  /* Configure sense for the falling edge. */
+  if (vcmpInit->irqFalling) {
     VCMP->CTRL |= VCMP_CTRL_IFALL;
-  }
-  else
-  {
+  } else {
     VCMP->CTRL &= ~(VCMP_CTRL_IFALL);
   }
 
-  /* Configure sense for rising edge */
-  if (vcmpInit->irqRising)
-  {
+  /* Configure sense for the rising edge. */
+  if (vcmpInit->irqRising) {
     VCMP->CTRL |= VCMP_CTRL_IRISE;
-  }
-  else
-  {
+  } else {
     VCMP->CTRL &= ~(VCMP_CTRL_IRISE);
   }
 
-  /* Configure warm-up time */
+  /* Configure the warm-up time. */
   VCMP->CTRL &= ~(_VCMP_CTRL_WARMTIME_MASK);
   VCMP->CTRL |= (vcmpInit->warmup << _VCMP_CTRL_WARMTIME_SHIFT);
 
-  /* Configure hysteresis */
-  switch (vcmpInit->hyst)
-  {
+  /* Configure hysteresis. */
+  switch (vcmpInit->hyst) {
     case vcmpHyst20mV:
       VCMP->CTRL |= VCMP_CTRL_HYSTEN;
       break;
@@ -114,74 +104,64 @@ void VCMP_Init(const VCMP_Init_TypeDef *vcmpInit)
       break;
   }
 
-  /* Configure inactive output value */
+  /* Configure the inactive output value. */
   VCMP->CTRL |= (vcmpInit->inactive << _VCMP_CTRL_INACTVAL_SHIFT);
 
-  /* Configure trigger level */
+  /* Configure the trigger level. */
   VCMP_TriggerSet(vcmpInit->triggerLevel);
 
-  /* Enable or disable VCMP */
-  if (vcmpInit->enable)
-  {
+  /* Enable or disable VCMP. */
+  if (vcmpInit->enable) {
     VCMP->CTRL |= VCMP_CTRL_EN;
-  }
-  else
-  {
+  } else {
     VCMP->CTRL &= ~(VCMP_CTRL_EN);
   }
 
   /* If Low Power Reference is enabled, wait until VCMP is ready */
-  /* before enabling it, see reference manual for deatils        */
-  /* Configuring Low Power Ref without enable has no effect      */
-  if(vcmpInit->lowPowerRef && vcmpInit->enable)
-  {
-    /* Poll for VCMP ready */
-    while(!VCMP_Ready());
+  /* before enabling it. See the reference manual for deatils.        */
+  /* Configuring Low Power Ref without enable has no effect.      */
+  if (vcmpInit->lowPowerRef && vcmpInit->enable) {
+    /* Poll for VCMP ready. */
+    while (!VCMP_Ready()) ;
     VCMP_LowPowerRefSet(vcmpInit->lowPowerRef);
   }
 
-  /* Clear edge interrupt */
+  /* Clear the edge interrupt. */
   VCMP_IntClear(VCMP_IF_EDGE);
 }
 
-
 /***************************************************************************//**
  * @brief
- *    Enable or disable Low Power Reference setting
+ *    Enable or disable Low Power Reference setting.
  *
  * @param[in] enable
- *    If true, enables low power reference, if false disable low power reference
+ *    If true, enables low power reference. If false, disable low power reference.
  ******************************************************************************/
 void VCMP_LowPowerRefSet(bool enable)
 {
-  if (enable)
-  {
+  if (enable) {
     VCMP->INPUTSEL |= VCMP_INPUTSEL_LPREF;
-  }
-  else
-  {
+  } else {
     VCMP->INPUTSEL &= ~VCMP_INPUTSEL_LPREF;
   }
 }
 
-
 /***************************************************************************//**
  * @brief
- *    Configure trigger level of voltage comparator
+ *    Configure the trigger level of the voltage comparator.
  *
  * @param[in] level
- *    Trigger value, in range 0-63
+ *    A trigger value, in range 0-63.
  ******************************************************************************/
 void VCMP_TriggerSet(int level)
 {
-  /* Trigger range is 6 bits, value from 0-63 */
+  /* Trigger range is 6 bits, value from 0-63. */
   EFM_ASSERT((level > 0) && (level < 64));
 
-  /* Set trigger level */
+  /* Set the trigger level. */
   VCMP->INPUTSEL = (VCMP->INPUTSEL & ~(_VCMP_INPUTSEL_TRIGLEVEL_MASK))
                    | (level << _VCMP_INPUTSEL_TRIGLEVEL_SHIFT);
 }
-
 
 /** @} (end addtogroup VCMP) */
 /** @} (end addtogroup emlib) */
