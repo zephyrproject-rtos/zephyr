@@ -508,3 +508,13 @@ illustrated below:
 .. code-block:: console
 
    * TODO [[view:ext/lib/encoding/tinycbor/src/cborvalidation.c::face=ovl-face1::linb=328::colb=52::cole=53][WARNING should use ARRAY_SIZE]]
+
+Coccinelle Mailing List
+***********************
+
+Interested developers can subscribe coccinelle mailing list via:
+        https://systeme.lip6.fr/mailman/listinfo/cocci
+
+Archives:
+        https://lore.kernel.org/cocci/
+        https://systeme.lip6.fr/pipermail/cocci/
