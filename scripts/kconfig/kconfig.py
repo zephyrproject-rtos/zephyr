@@ -5,7 +5,8 @@ import os
 import sys
 import textwrap
 
-from kconfiglib import Kconfig, Symbol, BOOL, STRING, TRISTATE, TRI_TO_STR
+from kconfiglib import Kconfig, BOOL, TRISTATE, TRI_TO_STR
+
 
 # Warnings that won't be turned into errors (but that will still be printed),
 # identified by a substring of the warning. The warning texts from Kconfiglib
@@ -16,34 +17,25 @@ WARNING_WHITELIST = (
     "y-selected",
 )
 
+
 def fatal(warning):
     # Returns True if 'warning' is not whitelisted and should be turned into an
     # error
 
-    for wl_warning in WARNING_WHITELIST:
-        if wl_warning in warning:
-            return False
-
-    # Only allow enabled (printed) warnings to be fatal
-    return enabled(warning)
-
-
-def enabled(warning):
-    # Returns True if 'warning' should be printed
-
-    # Some prj.conf files seem to deliberately override settings from the board
-    # configuration (e.g. samples/bluetooth/hci_usb/prj.conf, with GPIO=y).
-    # Disable the warning about a symbol being assigned more than once.
-    return "set more than once" not in warning
+    return not any(wl_warning in warning for wl_warning in WARNING_WHITELIST)
 
 
 def main():
-    parse_args()
+    args = parse_args()
 
-    print("Parsing Kconfig tree in {}".format(args.kconfig_root))
+    print("Parsing Kconfig tree in " + args.kconfig_root)
     kconf = Kconfig(args.kconfig_root, warn_to_stderr=False)
 
-    # Enable warnings for assignments to undefined symbols
+    # prj.conf may override settings from the board configuration, so disable
+    # warnings about symbols being assigned more than once
+    kconf.disable_override_warnings()
+    kconf.disable_redun_warnings()
+    # Warn for assignments to undefined symbols
     kconf.enable_undef_warnings()
 
     for i, config in enumerate(args.conf_fragments):
@@ -73,11 +65,11 @@ def main():
     # fast.
     kconf.write_config(os.devnull)
 
-    # We could roll this into the loop below, but it's nice to always print all
-    # warnings, even if one of them turns out to be fatal
+    # Print warnings ourselves so that we can put a blank line between them for
+    # readability. We could roll this into the loop below, but it's nice to
+    # always print all warnings, even if one of them turns out to be fatal.
     for warning in kconf.warnings:
-        if enabled(warning):
-            print("\n" + warning, file=sys.stderr)
+        print("\n" + warning, file=sys.stderr)
 
     # Turn all warnings except for explicity whitelisted ones into errors. In
     # particular, this will turn assignments to undefined Kconfig variables
@@ -191,8 +183,6 @@ def promptless(sym):
 
 
 def parse_args():
-    global args
-
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter
@@ -203,7 +193,7 @@ def parse_args():
     parser.add_argument("autoconf")
     parser.add_argument("conf_fragments", metavar='conf', type=str, nargs='+')
 
-    args = parser.parse_args()
+    return parser.parse_args()
 
 
 if __name__ == "__main__":

@@ -152,7 +152,7 @@ including prompts, so these two configurations are logically equivalent:
 (1)
 
   menu "menu"
-  depends on A
+      depends on A
 
   if B
 
@@ -168,7 +168,7 @@ including prompts, so these two configurations are logically equivalent:
 (2)
 
   menu "menu"
-  depends on A
+      depends on A
 
   config FOO
       tristate "foo" if A && B && C && D
@@ -731,6 +731,7 @@ class Kconfig(object):
         "_set_match",
         "_unset_match",
         "_warn_for_no_prompt",
+        "_warn_for_override",
         "_warn_for_redun_assign",
         "_warn_for_undef_assign",
         "_warn_to_stderr",
@@ -852,7 +853,7 @@ class Kconfig(object):
         self._warn_to_stderr = warn_to_stderr
         self._warn_for_undef_assign = \
             os.environ.get("KCONFIG_WARN_UNDEF_ASSIGN") == "y"
-        self._warn_for_redun_assign = True
+        self._warn_for_redun_assign = self._warn_for_override = True
 
 
         self._encoding = encoding
@@ -1179,14 +1180,14 @@ class Kconfig(object):
                     else:
                         display_user_val = sym.user_value
 
-                    warn_msg = '{} set more than once. Old value: "{}", new value: "{}".'.format(
+                    msg = '{} set more than once. Old value: "{}", new value: "{}".'.format(
                         _name_and_loc(sym), display_user_val, val
                     )
 
                     if display_user_val == val:
-                        self._warn_redun_assign(warn_msg, filename, linenr)
+                        self._warn_redun_assign(msg, filename, linenr)
                     else:
-                        self._warn(             warn_msg, filename, linenr)
+                        self._warn_override(msg, filename, linenr)
 
                 sym.set_value(val)
 
@@ -1391,7 +1392,8 @@ class Kconfig(object):
         function when adding symbol prerequisites to source files.
 
         In case you need a different scheme for your project, the sync_deps()
-        implementation can be used as a template."""
+        implementation can be used as a template.
+        """
         if not os.path.exists(path):
             os.mkdir(path, 0o755)
 
@@ -1590,7 +1592,7 @@ class Kconfig(object):
         self._tokens = self._tokenize("if " + s)[1:]
         self._tokens_i = -1
 
-        return expr_value(self._expect_expr_and_eol())  # transform_m
+        return expr_value(self._expect_expr_and_eol())
 
     def unset_values(self):
         """
@@ -1647,6 +1649,23 @@ class Kconfig(object):
         See enable_undef_assign().
         """
         self._warn_for_undef_assign = False
+
+    def enable_override_warnings(self):
+        """
+        Enables warnings for duplicated assignments in .config files that set
+        different values (e.g. CONFIG_FOO=m followed by CONFIG_FOO=y, where
+        the last value set is used).
+
+        These warnings are enabled by default. Disabling them might be helpful
+        in certain cases when merging configurations.
+        """
+        self._warn_for_override = True
+
+    def disable_override_warnings(self):
+        """
+        See enable_override_warnings().
+        """
+        self._warn_for_override = False
 
     def enable_redun_warnings(self):
         """
@@ -1974,28 +1993,37 @@ class Kconfig(object):
                 c = s[i]
 
                 if c in "\"'":
-                    s, end_i = self._expand_str(s, i)
+                    if "$" not in s and "\\" not in s:
+                        # Fast path for lines without $ and \. Find the
+                        # matching quote.
+                        end_i = s.find(c, i + 1) + 1
+                        if not end_i:
+                            self._parse_error("unterminated string")
+                        val = s[i + 1:end_i - 1]
+                        i = end_i
+                    else:
+                        # Slow path
+                        s, end_i = self._expand_str(s, i)
 
-                    # os.path.expandvars() and the $UNAME_RELEASE replace() is
-                    # a backwards compatibility hack, which should be
-                    # reasonably safe as expandvars() leaves references to
-                    # undefined env. vars. as is.
-                    #
-                    # The preprocessor functionality changed how environment
-                    # variables are referenced, to $(FOO).
-                    val = os.path.expandvars(
-                        s[i + 1:end_i - 1].replace("$UNAME_RELEASE",
-                                                   platform.uname()[2]))
+                        # os.path.expandvars() and the $UNAME_RELEASE replace()
+                        # is a backwards compatibility hack, which should be
+                        # reasonably safe as expandvars() leaves references to
+                        # undefined env. vars. as is.
+                        #
+                        # The preprocessor functionality changed how
+                        # environment variables are referenced, to $(FOO).
+                        val = os.path.expandvars(
+                            s[i + 1:end_i - 1].replace("$UNAME_RELEASE",
+                                                       platform.uname()[2]))
 
-                    i = end_i
+                        i = end_i
 
                     # This is the only place where we don't survive with a
                     # single token of lookback: 'option env="FOO"' does not
                     # refer to a constant symbol named "FOO".
-                    token = val \
-                            if token in _STRING_LEX or \
-                                tokens[0] is _T_OPTION else \
-                            self._lookup_const_sym(val)
+                    token = \
+                        val if token in _STRING_LEX or tokens[0] is _T_OPTION \
+                        else self._lookup_const_sym(val)
 
                 elif s.startswith("&&", i):
                     token = _T_AND
@@ -2830,6 +2858,7 @@ class Kconfig(object):
         # 'prompt' properties override each other within a single definition of
         # a symbol, but additional prompts can be added by defining the symbol
         # multiple times
+
         if node.prompt:
             self._warn(_name_and_loc(node.item) +
                        " defined with multiple prompts in single location")
@@ -2903,7 +2932,7 @@ class Kconfig(object):
 
         self._linenr += len(help_lines)
 
-        node.help = "\n".join(help_lines).rstrip() + "\n"
+        node.help = "\n".join(help_lines).rstrip()
         self._line_after_help(line)
 
     def _parse_expr(self, transform_m):
@@ -3510,7 +3539,7 @@ class Kconfig(object):
             if self._warn_to_stderr:
                 sys.stderr.write(msg + "\n")
 
-    def _warn_undef_assign(self, msg, filename=None, linenr=None):
+    def _warn_undef_assign(self, msg, filename, linenr):
         # See the class documentation
 
         if self._warn_for_undef_assign:
@@ -3523,7 +3552,13 @@ class Kconfig(object):
             'attempt to assign the value "{}" to the undefined symbol {}'
             .format(val, name), filename, linenr)
 
-    def _warn_redun_assign(self, msg, filename=None, linenr=None):
+    def _warn_override(self, msg, filename, linenr):
+        # See the class documentation
+
+        if self._warn_for_override:
+            self._warn(msg, filename, linenr)
+
+    def _warn_redun_assign(self, msg, filename, linenr):
         # See the class documentation
 
         if self._warn_for_redun_assign:
@@ -3855,7 +3890,7 @@ class Symbol(object):
                 has_active_range = False
 
             # Defaults are used if the symbol is invisible, lacks a user value,
-            # or has an out-of-range user value.
+            # or has an out-of-range user value
             use_defaults = True
 
             if vis and self.user_value:
@@ -4250,7 +4285,8 @@ class Symbol(object):
         defined in multiple locations will return a string with all
         definitions.
 
-        An empty string is returned for undefined and constant symbols.
+        The returned string does not end in a newline. An empty string is
+        returned for undefined and constant symbols.
         """
         return self.custom_str(standard_sc_expr_str)
 
@@ -4259,8 +4295,8 @@ class Symbol(object):
         Works like Symbol.__str__(), but allows a custom format to be used for
         all symbol/choice references. See expr_str().
         """
-        return "\n".join(node.custom_str(sc_expr_str_fn)
-                         for node in self.nodes)
+        return "\n\n".join(node.custom_str(sc_expr_str_fn)
+                           for node in self.nodes)
 
     #
     # Private methods
@@ -4825,6 +4861,8 @@ class Choice(object):
         matching the Kconfig format (though without the contained choice
         symbols).
 
+        The returned string does not end in a newline.
+
         See Symbol.__str__() as well.
         """
         return self.custom_str(standard_sc_expr_str)
@@ -4834,8 +4872,8 @@ class Choice(object):
         Works like Choice.__str__(), but allows a custom format to be used for
         all symbol/choice references. See expr_str().
         """
-        return "\n".join(node.custom_str(sc_expr_str_fn)
-                         for node in self.nodes)
+        return "\n\n".join(node.custom_str(sc_expr_str_fn)
+                           for node in self.nodes)
 
     #
     # Private methods
@@ -5004,6 +5042,10 @@ class MenuNode(object):
       no help text. Always stored in the node rather than the Symbol or Choice.
       It is possible to have a separate help text at each location if a symbol
       is defined in multiple locations.
+
+      Trailing whitespace (including a final newline) is stripped from the help
+      text. This was not the case before Kconfiglib 10.21.0, where the format
+      was undocumented.
 
     dep:
       The 'depends on' dependencies for the menu node, or self.kconfig.y if
@@ -5194,6 +5236,8 @@ class MenuNode(object):
         locations), properties that aren't associated with a particular menu
         node are shown on all menu nodes ('option env=...', 'optional' for
         choices, etc.).
+
+        The returned string does not end in a newline.
         """
         return self.custom_str(standard_sc_expr_str)
 
@@ -5207,14 +5251,14 @@ class MenuNode(object):
                self._sym_choice_node_str(sc_expr_str_fn)
 
     def _menu_comment_node_str(self, sc_expr_str_fn):
-        s = '{} "{}"\n'.format("menu" if self.item is MENU else "comment",
-                               self.prompt[0])
+        s = '{} "{}"'.format("menu" if self.item is MENU else "comment",
+                             self.prompt[0])
 
         if self.dep is not self.kconfig.y:
-            s += "\tdepends on {}\n".format(expr_str(self.dep, sc_expr_str_fn))
+            s += "\n\tdepends on {}".format(expr_str(self.dep, sc_expr_str_fn))
 
         if self.item is MENU and self.visibility is not self.kconfig.y:
-            s += "\tvisible if {}\n".format(expr_str(self.visibility,
+            s += "\n\tvisible if {}".format(expr_str(self.visibility,
                                                      sc_expr_str_fn))
 
         return s
@@ -5288,7 +5332,7 @@ class MenuNode(object):
             for line in self.help.splitlines():
                 indent_add("  " + line)
 
-        return "\n".join(lines) + "\n"
+        return "\n".join(lines)
 
 class Variable(object):
     """
@@ -5599,6 +5643,61 @@ def standard_config_filename():
     .config file to load/save) if it is set, and ".config" otherwise.
     """
     return os.environ.get("KCONFIG_CONFIG", ".config")
+
+def load_allconfig(kconf, filename):
+    """
+    Helper for all*config. Loads (merges) the configuration file specified by
+    KCONFIG_ALLCONFIG, if any. See Documentation/kbuild/kconfig.txt in the
+    Linux kernel.
+
+    Disables warnings for duplicated assignments within configuration files for
+    the duration of the call (disable_override_warnings() +
+    disable_redun_warnings()), and enables them at the end. The
+    KCONFIG_ALLCONFIG configuration file is expected to override symbols.
+
+    Exits with sys.exit() (which raises a SystemExit exception) and prints an
+    error to stderr if KCONFIG_ALLCONFIG is set but the configuration file
+    can't be opened.
+
+    kconf:
+      Kconfig instance to load the configuration in.
+
+    filename:
+      Command-specific configuration filename - "allyes.config",
+      "allno.config", etc.
+    """
+    def std_msg(e):
+        # "Upcasts" a _KconfigIOError to an IOError, removing the custom
+        # __str__() message. The standard message is better here.
+        return IOError(e.errno, e.strerror, e.filename)
+
+    kconf.disable_override_warnings()
+    kconf.disable_redun_warnings()
+
+    allconfig = os.environ.get("KCONFIG_ALLCONFIG")
+    if allconfig is not None:
+        if allconfig in ("", "1"):
+            try:
+                kconf.load_config(filename, False)
+            except IOError as e1:
+                try:
+                    kconf.load_config("all.config", False)
+                except IOError as e2:
+                    sys.exit("error: KCONFIG_ALLCONFIG is set, but neither {} "
+                             "nor all.config could be opened: {}, {}"
+                             .format(filename, std_msg(e1), std_msg(e2)))
+        else:
+            try:
+                kconf.load_config(allconfig, False)
+            except IOError as e:
+                sys.exit("error: KCONFIG_ALLCONFIG is set to '{}', which "
+                         "could not be opened: {}"
+                         .format(allconfig, std_msg(e)))
+
+    # API wart: It would be nice if there was a way to query and/or push/pop
+    # warning settings
+    kconf.enable_override_warnings()
+    kconf.enable_redun_warnings()
 
 #
 # Internal functions
@@ -5987,7 +6086,7 @@ def _found_dep_loop(loop, cur):
             if isinstance(item, Symbol) and item.choice:
                 msg += "the choice symbol "
 
-        msg += "{}, with definition...\n\n{}\n" \
+        msg += "{}, with definition...\n\n{}\n\n" \
                .format(_name_and_loc(item), item)
 
         # Small wart: Since we reuse the already calculated
