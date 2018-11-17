@@ -1,13 +1,62 @@
 ================ Revision history ============================================
+5.6.0:
+ - Upgrade to conform with ARM CMSIS version 5.3.0.
+ - New OPNs in EFR32MG12P, EFR32MG13P and EFR32MG14P families.
+ - Added support for BGM, MGM and ZGM modules.
+ - Added support for EFR32ZG14P family.
+
+5.5.0:
+ - Fixed bug in ROMTABLE base address for EFM32TG11B family.
+ - Added IRQ numbers for all EFRs.
+ - Minor fixes for EFM32GG11B family.
+
+5.4.0:
+ - New part header files for all families. New Flex Gecko parts added and
+   miscellaneous changes related to MISRA compliance.
+   ACMP_CTRL_PWRSEL_VREGVDD enumeration renamed to ACMP_CTRL_PWRSEL_DVDD.
+
+5.3.5:
+ - No changes.
+
+5.3.4:
+ - Changes to move code towards MISRAC 2012 compliance.
+
+5.3.3:
+ - New part header/system files for all Gecko families.
+ - Added support for new members of EFR32FG14, EFR32MG13 and EFR32BG13 families.
+
+5.3.1:
+ - Updated support for EFR32xG13.
+
+5.3.0:
+ - New part header/system files for all Gecko families.
+
+5.2.2:
+ - No changes.
+
+5.2.1:
+ - Added support for new members of EFM32GG11B family of Gecko MCUs.
+ - Added workaround for errata DCDC-E206 for EFR32xG1x devices.
+
+5.2.0:
+ - Added support for EFM32TG11B family of Gecko MCUs.
+ - Added support for EFR32BG14P, EFR32FG14P and EFR32MG14P families.
+ - Added support for EFM32GG11B family of Gecko MCUs.
+ - Fixed bug in interrupt handler prototype list in system header files
+   for Pearl and Jade families (EFM32PG12B, EFM32PG13B, EFM32JG12B, EFM32JG13B)
+
+5.1.3:
+ - No changes.
+
 5.1.2:
  - No changes.
 
 5.1.1:
- - Added missing calibration value symbols for OPA's on Jade/Pearl
+ - Added missing calibration value symbols for OPAs on Jade/Pearl
    EFM32JG12B and EFM32PG12B families.
 
 5.1.0:
- - Added radiotype #define's to EFR32 part header files.
+ - Added radiotype #defines to EFR32 part header files.
    The _SILICON_LABS_EFR32_RADIO_TYPE #define will have one of these values:
      #define _SILICON_LABS_EFR32_RADIO_SUBGHZ    1
      #define _SILICON_LABS_EFR32_RADIO_2G4HZ     2
@@ -35,7 +84,7 @@
 
 4.3.0:
  - Use ARM CMSIS version 4.5.0.
- - Renamed some bitfields in ADC for Pearl/Jade/EFR's.
+ - Renamed some bitfields in ADC for Pearl Gecko, Jade Gecko and EFR32.
  - Added usb LEMNAK and LEMADDR low power modes on Happy Gecko devices.
  - SystemHFClockGet() is now calculating the frequency taking the HFCLK or
    HFPRESC divider into account.
@@ -85,7 +134,7 @@
 
 3.20.12:
  - emlib: Added errata fix EMU_108.
- - emlib: #ifdef's now use register defines instead of a mix of register and family defines.
+ - emlib: #ifdefs now use register defines instead of a mix of register and family defines.
  - emlib: Added a case for when there are only 4 DMA channels available:
           Alignment was (correctly) defined at 7 bit, but got asserted for 8 bit, leading
           to unpredicatable tripped asserts.

@@ -2,10 +2,10 @@
  * @file em_gpio.c
  * @brief General Purpose IO (GPIO) peripheral API
  *   devices.
- * @version 5.1.2
+ * @version 5.6.0
  *******************************************************************************
- * @section License
- * <b>Copyright 2016 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2016 Silicon Laboratories, Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -30,7 +30,6 @@
  * arising from your use of this Software.
  *
  ******************************************************************************/
-
 
 #include "em_gpio.h"
 
@@ -58,13 +57,12 @@
 
 /** @cond DO_NOT_INCLUDE_WITH_DOXYGEN */
 
-/** Validation of pin typically usable in assert statements. */
+/** Validation of the pin typically usable in assert statements. */
 #define GPIO_DRIVEMODE_VALID(mode)    ((mode) <= 3)
-#define GPIO_STRENGHT_VALID(strenght) (!((strenght) & \
-                                         ~(_GPIO_P_CTRL_DRIVESTRENGTH_MASK \
-                                           | _GPIO_P_CTRL_DRIVESTRENGTHALT_MASK)))
+#define GPIO_STRENGTH_VALID(strength) (!((strength)                          \
+                                         & ~(_GPIO_P_CTRL_DRIVESTRENGTH_MASK \
+                                             | _GPIO_P_CTRL_DRIVESTRENGTHALT_MASK)))
 /** @endcond */
-
 
 /*******************************************************************************
  **************************   GLOBAL FUNCTIONS   *******************************
@@ -82,11 +80,16 @@
  ******************************************************************************/
 void GPIO_DbgLocationSet(unsigned int location)
 {
-#if defined ( _GPIO_ROUTE_SWLOCATION_MASK )
+#if defined (_GPIO_ROUTE_SWLOCATION_MASK)
   EFM_ASSERT(location < AFCHANLOC_MAX);
 
-  GPIO->ROUTE = (GPIO->ROUTE & ~_GPIO_ROUTE_SWLOCATION_MASK) |
-                (location << _GPIO_ROUTE_SWLOCATION_SHIFT);
+  GPIO->ROUTE = (GPIO->ROUTE & ~_GPIO_ROUTE_SWLOCATION_MASK)
+                | (location << _GPIO_ROUTE_SWLOCATION_SHIFT);
+#elif defined (_GPIO_ROUTELOC0_SWVLOC_MASK)
+  EFM_ASSERT(location < AFCHANLOC_MAX);
+
+  GPIO->ROUTELOC0 = (GPIO->ROUTELOC0 & ~_GPIO_ROUTELOC0_SWVLOC_MASK)
+                    | (location << _GPIO_ROUTELOC0_SWVLOC_SHIFT);
 #else
   (void)location;
 #endif
@@ -95,13 +98,13 @@ void GPIO_DbgLocationSet(unsigned int location)
 #if defined (_GPIO_P_CTRL_DRIVEMODE_MASK)
 /***************************************************************************//**
  * @brief
- *   Sets the drive mode for a GPIO port.
+ *   Sets drive mode for a GPIO port.
  *
  * @param[in] port
  *   The GPIO port to access.
  *
  * @param[in] mode
- *   Drive mode to use for port.
+ *   Drive mode to use for the port.
  ******************************************************************************/
 void GPIO_DriveModeSet(GPIO_Port_TypeDef port, GPIO_DriveMode_TypeDef mode)
 {
@@ -121,12 +124,12 @@ void GPIO_DriveModeSet(GPIO_Port_TypeDef port, GPIO_DriveMode_TypeDef mode)
  *   The GPIO port to access.
  *
  * @param[in] strength
- *   Drive strength to use for port.
+ *   The drive strength to use for the port.
  ******************************************************************************/
 void GPIO_DriveStrengthSet(GPIO_Port_TypeDef port,
                            GPIO_DriveStrength_TypeDef strength)
 {
-  EFM_ASSERT(GPIO_PORT_VALID(port) && GPIO_STRENGHT_VALID(strength));
+  EFM_ASSERT(GPIO_PORT_VALID(port) && GPIO_STRENGTH_VALID(strength));
   BUS_RegMaskedWrite(&GPIO->P[port].CTRL,
                      _GPIO_P_CTRL_DRIVESTRENGTH_MASK | _GPIO_P_CTRL_DRIVESTRENGTHALT_MASK,
                      strength);
@@ -135,32 +138,32 @@ void GPIO_DriveStrengthSet(GPIO_Port_TypeDef port,
 
 /***************************************************************************//**
  * @brief
- *   Configure GPIO external pin interrupt.
+ *   Configure the GPIO external pin interrupt.
  *
  * @details
- *   If reconfiguring a GPIO interrupt that is already enabled, it is generally
- *   recommended to disable it first, see GPIO_Disable().
+ *   It is recommended to disable interrupts before configuring the GPIO pin interrupt.
+ *   See @ref GPIO_IntDisable() for more information.
  *
- *   The actual GPIO interrupt handler must be in place before enabling the
+ *   The GPIO interrupt handler must be in place before enabling the
  *   interrupt.
  *
  *   Notice that any pending interrupt for the selected interrupt is cleared
  *   by this function.
  *
  * @note
- *   On series 0 devices the pin number parameter is not used. The
+ *   On series 0 devices, the pin number parameter is not used. The
  *   pin number used on these devices is hardwired to the interrupt with the
  *   same number. @n
- *   On series 1 devices, pin number can be selected freely within a group.
+ *   On series 1 devices, the pin number can be selected freely within a group.
  *   Interrupt numbers are divided into 4 groups (intNo / 4) and valid pin
  *   number within the interrupt groups are:
- *       0: pins 0-3
- *       1: pins 4-7
- *       2: pins 8-11
- *       3: pins 12-15
+ *       0: pins 0-3   (interrupt number 0-3)
+ *       1: pins 4-7   (interrupt number 4-7)
+ *       2: pins 8-11  (interrupt number 8-11)
+ *       3: pins 12-15 (interrupt number 12-15)
  *
  * @param[in] port
- *   The port to associate with @p pin.
+ *   The port to associate with the @p pin.
  *
  * @param[in] pin
  *   The pin number on the port.
@@ -169,14 +172,14 @@ void GPIO_DriveStrengthSet(GPIO_Port_TypeDef port,
  *   The interrupt number to trigger.
  *
  * @param[in] risingEdge
- *   Set to true if interrupts shall be enabled on rising edge, otherwise false.
+ *   Set to true if the interrupt will be enabled on the rising edge. Otherwise, false.
  *
  * @param[in] fallingEdge
- *   Set to true if interrupts shall be enabled on falling edge, otherwise false.
+ *   Set to true if the interrupt will be enabled on the falling edge. Otherwise, false.
  *
  * @param[in] enable
- *   Set to true if interrupt shall be enabled after configuration completed,
- *   false to leave disabled. See GPIO_IntDisable() and GPIO_IntEnable().
+ *   Set to true if the interrupt will be enabled after the configuration is complete.
+ *   False to leave disabled. See @ref GPIO_IntDisable() and @ref GPIO_IntEnable().
  ******************************************************************************/
 void GPIO_ExtIntConfig(GPIO_Port_TypeDef port,
                        unsigned int pin,
@@ -185,7 +188,9 @@ void GPIO_ExtIntConfig(GPIO_Port_TypeDef port,
                        bool fallingEdge,
                        bool enable)
 {
+#if defined (_GPIO_EXTIPSELH_MASK)
   uint32_t tmp = 0;
+#endif
 #if !defined(_GPIO_EXTIPINSELL_MASK)
   (void)pin;
 #endif
@@ -195,57 +200,54 @@ void GPIO_ExtIntConfig(GPIO_Port_TypeDef port,
   EFM_ASSERT(GPIO_INTNO_PIN_VALID(intNo, pin));
 #endif
 
-  /* There are two registers controlling the interrupt configuration:
-   * The EXTIPSELL register controls pins 0-7 and EXTIPSELH controls
-   * pins 8-15. */
-  if (intNo < 8)
-  {
+  /* The EXTIPSELL register controls pins 0-7 and EXTIPSELH controls
+   * pins 8-15 of the interrupt configuration. */
+  if (intNo < 8) {
     BUS_RegMaskedWrite(&GPIO->EXTIPSELL,
                        _GPIO_EXTIPSELL_EXTIPSEL0_MASK
                        << (_GPIO_EXTIPSELL_EXTIPSEL1_SHIFT * intNo),
                        port << (_GPIO_EXTIPSELL_EXTIPSEL1_SHIFT * intNo));
-  }
-  else
-  {
+  } else {
+#if defined(_GPIO_EXTIPSELH_MASK) && !defined(_SILICON_LABS_32B_SERIES_2)
     tmp = intNo - 8;
     BUS_RegMaskedWrite(&GPIO->EXTIPSELH,
                        _GPIO_EXTIPSELH_EXTIPSEL8_MASK
                        << (_GPIO_EXTIPSELH_EXTIPSEL9_SHIFT * tmp),
                        port << (_GPIO_EXTIPSELH_EXTIPSEL9_SHIFT * tmp));
+#endif
   }
 
 #if defined(_GPIO_EXTIPINSELL_MASK)
-  /* There are two registers controlling the interrupt/pin number mapping:
-   * The EXTIPINSELL register controls interrupt 0-7 and EXTIPINSELH controls
-   * interrupt 8-15. */
-  if (intNo < 8)
-  {
+
+  /* The EXTIPINSELL register controls interrupt 0-7 and EXTIPINSELH controls
+   * interrupt 8-15 of the interrupt/pin number mapping. */
+  if (intNo < 8) {
     BUS_RegMaskedWrite(&GPIO->EXTIPINSELL,
                        _GPIO_EXTIPINSELL_EXTIPINSEL0_MASK
                        << (_GPIO_EXTIPINSELL_EXTIPINSEL1_SHIFT * intNo),
                        ((pin % 4) & _GPIO_EXTIPINSELL_EXTIPINSEL0_MASK)
                        << (_GPIO_EXTIPINSELL_EXTIPINSEL1_SHIFT * intNo));
-  }
-  else
-  {
+  } else {
+#if defined (_GPIO_EXTIPINSELH_MASK) && !defined(_SILICON_LABS_32B_SERIES_2)
     BUS_RegMaskedWrite(&GPIO->EXTIPINSELH,
                        _GPIO_EXTIPINSELH_EXTIPINSEL8_MASK
                        << (_GPIO_EXTIPINSELH_EXTIPINSEL9_SHIFT * tmp),
                        ((pin % 4) & _GPIO_EXTIPINSELH_EXTIPINSEL8_MASK)
                        << (_GPIO_EXTIPSELH_EXTIPSEL9_SHIFT * tmp));
+#endif
   }
 #endif
 
-  /* Enable/disable rising edge */
+  /* Enable/disable the rising edge interrupt. */
   BUS_RegBitWrite(&(GPIO->EXTIRISE), intNo, risingEdge);
 
-  /* Enable/disable falling edge */
+  /* Enable/disable the falling edge interrupt. */
   BUS_RegBitWrite(&(GPIO->EXTIFALL), intNo, fallingEdge);
 
-  /* Clear any pending interrupt */
-  GPIO->IFC = 1 << intNo;
+  /* Clear any pending interrupt. */
+  GPIO_IntClear(1 << intNo);
 
-  /* Finally enable/disable interrupt */
+  /* Finally enable/disable interrupt. */
   BUS_RegBitWrite(&(GPIO->IEN), intNo, enable);
 }
 
@@ -263,8 +265,8 @@ void GPIO_ExtIntConfig(GPIO_Port_TypeDef port,
  *   The desired pin mode.
  *
  * @param[in] out
- *   Value to set for pin in DOUT register. The DOUT setting is important for
- *   even some input mode configurations, determining pull-up/down direction.
+ *   A value to set for the pin in the DOUT register. The DOUT setting is important for
+ *   some input mode configurations to determine the pull-up/down direction.
  ******************************************************************************/
 void GPIO_PinModeSet(GPIO_Port_TypeDef port,
                      unsigned int pin,
@@ -273,41 +275,30 @@ void GPIO_PinModeSet(GPIO_Port_TypeDef port,
 {
   EFM_ASSERT(GPIO_PORT_PIN_VALID(port, pin));
 
-  /* If disabling pin, do not modify DOUT in order to reduce chance for */
-  /* glitch/spike (may not be sufficient precaution in all use cases) */
-  if (mode != gpioModeDisabled)
-  {
-    if (out)
-    {
+  /* If disabling a pin, do not modify DOUT to reduce the chance of */
+  /* a glitch/spike (may not be sufficient precaution in all use cases). */
+  if (mode != gpioModeDisabled) {
+    if (out) {
       GPIO_PinOutSet(port, pin);
-    }
-    else
-    {
+    } else {
       GPIO_PinOutClear(port, pin);
     }
   }
 
   /* There are two registers controlling the pins for each port. The MODEL
    * register controls pins 0-7 and MODEH controls pins 8-15. */
-  if (pin < 8)
-  {
+  if (pin < 8) {
     GPIO->P[port].MODEL = (GPIO->P[port].MODEL & ~(0xFu << (pin * 4)))
                           | (mode << (pin * 4));
-  }
-  else
-  {
+  } else {
     GPIO->P[port].MODEH = (GPIO->P[port].MODEH & ~(0xFu << ((pin - 8) * 4)))
                           | (mode << ((pin - 8) * 4));
   }
 
-  if (mode == gpioModeDisabled)
-  {
-    if (out)
-    {
+  if (mode == gpioModeDisabled) {
+    if (out) {
       GPIO_PinOutSet(port, pin);
-    }
-    else
-    {
+    } else {
       GPIO_PinOutClear(port, pin);
     }
   }
@@ -331,17 +322,14 @@ GPIO_Mode_TypeDef GPIO_PinModeGet(GPIO_Port_TypeDef port,
 {
   EFM_ASSERT(GPIO_PORT_PIN_VALID(port, pin));
 
-  if (pin < 8)
-  {
+  if (pin < 8) {
     return (GPIO_Mode_TypeDef) ((GPIO->P[port].MODEL >> (pin * 4)) & 0xF);
-  }
-  else
-  {
+  } else {
     return (GPIO_Mode_TypeDef) ((GPIO->P[port].MODEH >> ((pin - 8) * 4)) & 0xF);
   }
 }
 
-#if defined( _GPIO_EM4WUEN_MASK )
+#if defined(_GPIO_EM4WUEN_MASK)
 /**************************************************************************//**
  * @brief
  *   Enable GPIO pin wake-up from EM4. When the function exits,
@@ -352,32 +340,32 @@ GPIO_Mode_TypeDef GPIO_PinModeGet(GPIO_Port_TypeDef port,
  *   Valid modes are @ref gpioModeInput and @ref gpioModeInputPull.
  *
  * @param[in] pinmask
- *   Bitmask containing the bitwise logic OR of which GPIO pin(s) to enable.
- *   Refer to Reference Manuals for pinmask to GPIO port/pin mapping.
+ *   A bitmask containing the bitwise logic OR of which GPIO pin(s) to enable.
+ *   See Reference Manuals for a pinmask to the GPIO port/pin mapping.
  * @param[in] polaritymask
- *   Bitmask containing the bitwise logic OR of GPIO pin(s) wake-up polarity.
- *   Refer to Reference Manuals for pinmask to GPIO port/pin mapping.
+ *   A bitmask containing the bitwise logic OR of GPIO pin(s) wake-up polarity.
+ *   See Reference Manuals for pinmask-to-GPIO port/pin mapping.
  *****************************************************************************/
 void GPIO_EM4EnablePinWakeup(uint32_t pinmask, uint32_t polaritymask)
 {
   EFM_ASSERT((pinmask & ~_GPIO_EM4WUEN_MASK) == 0);
 
-#if defined( _GPIO_EM4WUPOL_MASK )
+#if defined(_GPIO_EM4WUPOL_MASK)
   EFM_ASSERT((polaritymask & ~_GPIO_EM4WUPOL_MASK) == 0);
-  GPIO->EM4WUPOL &= ~pinmask;               /* Set wakeup polarity */
+  GPIO->EM4WUPOL &= ~pinmask;               /* Set the wakeup polarity. */
   GPIO->EM4WUPOL |= pinmask & polaritymask;
-#elif defined( _GPIO_EXTILEVEL_MASK )
+#elif defined(_GPIO_EXTILEVEL_MASK)
   EFM_ASSERT((polaritymask & ~_GPIO_EXTILEVEL_MASK) == 0);
   GPIO->EXTILEVEL &= ~pinmask;
   GPIO->EXTILEVEL |= pinmask & polaritymask;
 #endif
-  GPIO->EM4WUEN  |= pinmask;                /* Enable wakeup */
+  GPIO->EM4WUEN  |= pinmask;                /* Enable wakeup. */
 
-  GPIO_EM4SetPinRetention(true);            /* Enable pin retention */
+  GPIO_EM4SetPinRetention(true);            /* Enable the pin retention. */
 
-#if defined( _GPIO_CMD_EM4WUCLR_MASK )
-  GPIO->CMD = GPIO_CMD_EM4WUCLR;            /* Clear wake-up logic */
-#elif defined( _GPIO_IFC_EM4WU_MASK )
+#if defined(_GPIO_CMD_EM4WUCLR_MASK)
+  GPIO->CMD = GPIO_CMD_EM4WUCLR;            /* Clear the wake-up logic. */
+#elif defined(_GPIO_IF_EM4WU_MASK)
   GPIO_IntClear(pinmask);
 #endif
 }

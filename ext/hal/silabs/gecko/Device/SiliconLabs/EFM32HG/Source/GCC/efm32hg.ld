@@ -1,12 +1,8 @@
 /* Linker script for Silicon Labs EFM32HG devices                      */
 /*                                                                     */
-/* This file is subject to the license terms as defined in ARM's       */
-/* CMSIS END USER LICENSE AGREEMENT.pdf, governing the use of          */
-/* Example Code.                                                       */
+/* Copyright 2018 Silicon Laboratories, Inc. http://www.silabs.com     */
 /*                                                                     */
-/* Copyright 2017 Silicon Laboratories, Inc. http://www.silabs.com     */
-/*                                                                     */
-/* Version 5.1.2 */
+/* Version 5.6.0 */
 /*                                                                     */
 
 MEMORY
@@ -40,6 +36,7 @@ MEMORY
  *   __bss_end__
  *   __end__
  *   end
+ *   __HeapBase
  *   __HeapLimit
  *   __StackLimit
  *   __StackTop

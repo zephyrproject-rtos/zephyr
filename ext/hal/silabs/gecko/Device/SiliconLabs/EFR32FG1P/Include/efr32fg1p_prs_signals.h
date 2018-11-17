@@ -1,10 +1,10 @@
 /**************************************************************************//**
  * @file efr32fg1p_prs_signals.h
  * @brief EFR32FG1P_PRS_SIGNALS register and bit field definitions
- * @version 5.1.2
+ * @version 5.6.0
  ******************************************************************************
- * @section License
- * <b>Copyright 2017 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
  ******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -29,12 +29,21 @@
  * any third party, arising from your use of this Software.
  *
  *****************************************************************************/
+
+#if defined(__ICCARM__)
+#pragma system_include       /* Treat file as system include file. */
+#elif defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
+#pragma clang system_header  /* Treat file as system include file. */
+#endif
+
 /**************************************************************************//**
 * @addtogroup Parts
 * @{
 ******************************************************************************/
 /**************************************************************************//**
- * @addtogroup EFR32FG1P_PRS_Signals
+ * @addtogroup EFR32FG1P_PRS
+ * @{
+ * @addtogroup EFR32FG1P_PRS_Signals PRS Signals
  * @{
  * @brief PRS Signal names
  *****************************************************************************/
@@ -76,6 +85,20 @@
 #define PRS_TIMER1_CC1          ((29 << 8) + 3) /**< PRS Timer 1 Compare/Capture 1 */
 #define PRS_TIMER1_CC2          ((29 << 8) + 4) /**< PRS Timer 1 Compare/Capture 2 */
 #define PRS_TIMER1_CC3          ((29 << 8) + 5) /**< PRS Timer 1 Compare/Capture 3 */
+#define PRS_RAC_ACTIVE          ((32 << 8) + 0) /**< PRS RAC is active */
+#define PRS_RAC_TX              ((32 << 8) + 1) /**< PRS RAC is in TX */
+#define PRS_RAC_RX              ((32 << 8) + 2) /**< PRS RAC is in RX */
+#define PRS_RAC_LNAEN           ((32 << 8) + 3) /**< PRS LNA enable */
+#define PRS_RAC_PAEN            ((32 << 8) + 4) /**< PRS PA enable */
+#define PRS_PROTIMER_LBTS       ((35 << 8) + 5) /**< PRS Listen Before Talk Success */
+#define PRS_PROTIMER_LBTR       ((35 << 8) + 6) /**< PRS Listen Before Talk Retry */
+#define PRS_PROTIMER_LBTF       ((35 << 8) + 7) /**< PRS Listen Before Talk Failure */
+#define PRS_MODEM_FRAMEDET      ((38 << 8) + 0) /**< PRS Frame detected */
+#define PRS_MODEM_PREDET        ((38 << 8) + 1) /**< PRS Receive preamble detected */
+#define PRS_MODEM_TIMDET        ((38 << 8) + 2) /**< PRS Receive timing detected */
+#define PRS_MODEM_FRAMESENT     ((38 << 8) + 3) /**< PRS Entire frame transmitted */
+#define PRS_MODEM_SYNCSENT      ((38 << 8) + 4) /**< PRS Syncword transmitted */
+#define PRS_MODEM_PRESENT       ((38 << 8) + 5) /**< PRS Preamble transmitted */
 #define PRS_RTCC_CCV0           ((41 << 8) + 1) /**< PRS RTCC Compare 0 */
 #define PRS_RTCC_CCV1           ((41 << 8) + 2) /**< PRS RTCC Compare 1 */
 #define PRS_RTCC_CCV2           ((41 << 8) + 3) /**< PRS RTCC Compare 2 */
@@ -100,11 +123,12 @@
 #define PRS_PCNT0_TCC           ((54 << 8) + 0) /**< PRS Triggered compare match */
 #define PRS_PCNT0_UFOF          ((54 << 8) + 1) /**< PRS Counter overflow or underflow */
 #define PRS_PCNT0_DIR           ((54 << 8) + 2) /**< PRS Counter direction */
+#define PRS_RFSENSE_WU          ((59 << 8) + 0) /**< PRS RFSENSE Output */
 #define PRS_CRYOTIMER_PERIOD    ((60 << 8) + 0) /**< PRS CRYOTIMER Output */
 #define PRS_CMU_CLKOUT0         ((61 << 8) + 0) /**< PRS Clock Output 0 */
 #define PRS_CMU_CLKOUT1         ((61 << 8) + 1) /**< PRS Clock Output 1 */
 #define PRS_CM4_TXEV            ((67 << 8) + 0) /**< PRS  */
 
+/** @} */
 /** @} End of group EFR32FG1P_PRS */
 /** @} End of group Parts */
-

@@ -1,10 +1,10 @@
 /**************************************************************************//**
  * @file efm32pg12b_lesense_ch.h
  * @brief EFM32PG12B_LESENSE_CH register and bit field definitions
- * @version 5.1.2
+ * @version 5.6.0
  ******************************************************************************
- * @section License
- * <b>Copyright 2017 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
  ******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -29,21 +29,26 @@
  * any third party, arising from your use of this Software.
  *
  *****************************************************************************/
+
+#if defined(__ICCARM__)
+#pragma system_include       /* Treat file as system include file. */
+#elif defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
+#pragma clang system_header  /* Treat file as system include file. */
+#endif
+
 /**************************************************************************//**
 * @addtogroup Parts
 * @{
 ******************************************************************************/
 /**************************************************************************//**
- * @brief LESENSE_CH EFM32PG12B LESENSE CH
+ * @brief LESENSE_CH LESENSE CH Register
+ * @ingroup EFM32PG12B_LESENSE
  *****************************************************************************/
-typedef struct
-{
-  __IOM uint32_t TIMING;       /**< Scan configuration  */
-  __IOM uint32_t INTERACT;     /**< Scan configuration  */
-  __IOM uint32_t EVAL;         /**< Scan configuration  */
-  uint32_t       RESERVED0[1]; /**< Reserved future */
+typedef struct {
+  __IOM uint32_t TIMING;        /**< Scan Configuration  */
+  __IOM uint32_t INTERACT;      /**< Scan Configuration  */
+  __IOM uint32_t EVAL;          /**< Scan Configuration  */
+  uint32_t       RESERVED0[1U]; /**< Reserved future */
 } LESENSE_CH_TypeDef;
 
 /** @} End of group Parts */
-
-

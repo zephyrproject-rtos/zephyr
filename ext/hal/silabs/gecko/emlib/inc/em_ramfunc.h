@@ -1,10 +1,10 @@
 /***************************************************************************//**
  * @file em_ramfunc.h
  * @brief RAM code support.
- * @version 5.1.2
+ * @version 5.6.0
  *******************************************************************************
- * @section License
- * <b>Copyright 2016 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2016 Silicon Laboratories, Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -37,14 +37,15 @@
 extern "C" {
 #endif
 
+/* *INDENT-OFF* */
 /***************************************************************************//**
  * @addtogroup emlib
  * @{
  * @addtogroup RAMFUNC
- * @brief RAM code support.
+ * @brief RAM code support
  * @details
- *  This module provides support for executing code from RAM. A unified method
- *  to manage RAM code across all supported tools is provided.
+ *  Provides support for executing code from RAM.
+ *  Provides a unified method to manage RAM code across all supported tools.
  * @{
 
   @note
@@ -54,12 +55,17 @@ extern "C" {
     Functions executing from RAM should not be declared as static.
 
   @warning
-    With GCC in hosted mode (default), standard library facilities are available
-    to the tool regardless of the section attribute. Calls to standard libraries
-    placed in the default section may therefore occur. To disable hosted mode,
-    add '-ffreestanding' to the build command line. This is the only way to
-    guarantee no calls to standard libraries with GCC.
+    Standard library facilities are available to the tool with GCC in hosted
+	mode (default), regardless of the section attribute. Calls to standard
+    libraries placed in the default section may therefore occur. To disable
+    hosted mode, add '-ffreestanding' to the build command line. This is the
+    only way to guarantee no calls to standard libraries with GCC.
     Read more at https://gcc.gnu.org/onlinedocs/gcc-5.3.0/gcc/Standards.html
+
+  @warning
+    Keil/ARM uVision users must add a section named "ram_code" in their linker
+    scatter file. This section must be in RAM memory. Look in the MCU SDK for
+    example scatter files (ram_code.sct).
 
   @n @section ramfunc_usage Usage
 
@@ -87,17 +93,17 @@ extern "C" {
   SL_RAMFUNC_DEFINITION_END
   @endverbatim
 
-
  ******************************************************************************/
+/* *INDENT-ON* */
 
- /*******************************************************************************
+/*******************************************************************************
  ******************************   DEFINES    ***********************************
  ******************************************************************************/
 
 /**
  * @brief
- *    This define is not present by default. By compiling with the define
- *    @ref SL_RAMFUNC_DISABLE, code placed in RAM by the SL_RAMFUNC macros
+ *    This define is not present by default. By compiling with define
+ *    @ref SL_RAMFUNC_DISABLE, code placed in RAM by SL_RAMFUNC macros
  *    will be placed in default code space (Flash) instead.
  *
  * @note
@@ -136,7 +142,7 @@ extern "C" {
 #define SL_RAMFUNC_DEFINITION_END
 
 #elif defined(__GNUC__)
-/* Simplicity Studio, Atollic and vanilla armgcc */
+/* Simplicity Studio, Atollic and Vanilla armgcc */
 #define SL_RAMFUNC_DECLARATOR          __attribute__ ((section(".ram")))
 #define SL_RAMFUNC_DEFINITION_BEGIN    SL_RAMFUNC_DECLARATOR
 #define SL_RAMFUNC_DEFINITION_END
@@ -144,7 +150,7 @@ extern "C" {
 #endif
 
 /** @cond DO_NOT_INCLUDE_WITH_DOXYGEN */
-/* Deprecated macro names and user config */
+/* Deprecated macro names and user configuration */
 #if defined(RAMFUNC_DISABLE)
 #define SL_RAMFUNC_DISABLE
 #endif

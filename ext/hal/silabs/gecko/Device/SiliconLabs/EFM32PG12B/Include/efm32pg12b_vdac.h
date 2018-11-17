@@ -1,10 +1,10 @@
 /**************************************************************************//**
  * @file efm32pg12b_vdac.h
  * @brief EFM32PG12B_VDAC register and bit field definitions
- * @version 5.1.2
+ * @version 5.6.0
  ******************************************************************************
- * @section License
- * <b>Copyright 2017 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
  ******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -29,37 +29,46 @@
  * any third party, arising from your use of this Software.
  *
  *****************************************************************************/
+
+#if defined(__ICCARM__)
+#pragma system_include       /* Treat file as system include file. */
+#elif defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
+#pragma clang system_header  /* Treat file as system include file. */
+#endif
+
 /**************************************************************************//**
 * @addtogroup Parts
 * @{
 ******************************************************************************/
 /**************************************************************************//**
- * @defgroup EFM32PG12B_VDAC
+ * @defgroup EFM32PG12B_VDAC VDAC
  * @{
  * @brief EFM32PG12B_VDAC Register Declaration
  *****************************************************************************/
-typedef struct
-{
-  __IOM uint32_t   CTRL;          /**< Control Register  */
-  __IM uint32_t    STATUS;        /**< Status Register  */
-  __IOM uint32_t   CH0CTRL;       /**< Channel 0 Control Register  */
-  __IOM uint32_t   CH1CTRL;       /**< Channel 1 Control Register  */
-  __IOM uint32_t   CMD;           /**< Command Register  */
-  __IM uint32_t    IF;            /**< Interrupt Flag Register  */
-  __IOM uint32_t   IFS;           /**< Interrupt Flag Set Register  */
-  __IOM uint32_t   IFC;           /**< Interrupt Flag Clear Register  */
-  __IOM uint32_t   IEN;           /**< Interrupt Enable Register  */
-  __IOM uint32_t   CH0DATA;       /**< Channel 0 Data Register  */
-  __IOM uint32_t   CH1DATA;       /**< Channel 1 Data Register  */
-  __IOM uint32_t   COMBDATA;      /**< Combined Data Register  */
-  __IOM uint32_t   CAL;           /**< Calibration Register  */
+/** VDAC Register Declaration */
+typedef struct {
+  __IOM uint32_t   CTRL;           /**< Control Register  */
+  __IM uint32_t    STATUS;         /**< Status Register  */
+  __IOM uint32_t   CH0CTRL;        /**< Channel 0 Control Register  */
+  __IOM uint32_t   CH1CTRL;        /**< Channel 1 Control Register  */
+  __IOM uint32_t   CMD;            /**< Command Register  */
+  __IM uint32_t    IF;             /**< Interrupt Flag Register  */
+  __IOM uint32_t   IFS;            /**< Interrupt Flag Set Register  */
+  __IOM uint32_t   IFC;            /**< Interrupt Flag Clear Register  */
+  __IOM uint32_t   IEN;            /**< Interrupt Enable Register  */
+  __IOM uint32_t   CH0DATA;        /**< Channel 0 Data Register  */
+  __IOM uint32_t   CH1DATA;        /**< Channel 1 Data Register  */
+  __IOM uint32_t   COMBDATA;       /**< Combined Data Register  */
+  __IOM uint32_t   CAL;            /**< Calibration Register  */
 
-  uint32_t         RESERVED0[27]; /**< Reserved registers */
-  VDAC_OPA_TypeDef OPA[3];        /**< OPA Registers */
-} VDAC_TypeDef;                   /** @} */
+  uint32_t         RESERVED0[27U]; /**< Reserved registers */
+  VDAC_OPA_TypeDef OPA[3U];        /**< OPA Registers */
+} VDAC_TypeDef;                    /** @} */
 
 /**************************************************************************//**
- * @defgroup EFM32PG12B_VDAC_BitFields
+ * @addtogroup EFM32PG12B_VDAC
+ * @{
+ * @defgroup EFM32PG12B_VDAC_BitFields  VDAC Bit Fields
  * @{
  *****************************************************************************/
 
@@ -814,42 +823,42 @@ typedef struct
 /* Bit fields for VDAC OPA_APORTREQ */
 #define _VDAC_OPA_APORTREQ_RESETVALUE                      0x00000000UL                                 /**< Default value for VDAC_OPA_APORTREQ */
 #define _VDAC_OPA_APORTREQ_MASK                            0x000003FCUL                                 /**< Mask for VDAC_OPA_APORTREQ */
-#define VDAC_OPA_APORTREQ_APORT1XREQ                       (0x1UL << 2)                                 /**< 1 if the bus connected to APORT2X is requested */
+#define VDAC_OPA_APORTREQ_APORT1XREQ                       (0x1UL << 2)                                 /**< 1 If the Bus Connected to APORT2X is Requested */
 #define _VDAC_OPA_APORTREQ_APORT1XREQ_SHIFT                2                                            /**< Shift value for VDAC_OPAAPORT1XREQ */
 #define _VDAC_OPA_APORTREQ_APORT1XREQ_MASK                 0x4UL                                        /**< Bit mask for VDAC_OPAAPORT1XREQ */
 #define _VDAC_OPA_APORTREQ_APORT1XREQ_DEFAULT              0x00000000UL                                 /**< Mode DEFAULT for VDAC_OPA_APORTREQ */
 #define VDAC_OPA_APORTREQ_APORT1XREQ_DEFAULT               (_VDAC_OPA_APORTREQ_APORT1XREQ_DEFAULT << 2) /**< Shifted mode DEFAULT for VDAC_OPA_APORTREQ */
-#define VDAC_OPA_APORTREQ_APORT1YREQ                       (0x1UL << 3)                                 /**< 1 if the bus connected to APORT1X is requested */
+#define VDAC_OPA_APORTREQ_APORT1YREQ                       (0x1UL << 3)                                 /**< 1 If the Bus Connected to APORT1X is Requested */
 #define _VDAC_OPA_APORTREQ_APORT1YREQ_SHIFT                3                                            /**< Shift value for VDAC_OPAAPORT1YREQ */
 #define _VDAC_OPA_APORTREQ_APORT1YREQ_MASK                 0x8UL                                        /**< Bit mask for VDAC_OPAAPORT1YREQ */
 #define _VDAC_OPA_APORTREQ_APORT1YREQ_DEFAULT              0x00000000UL                                 /**< Mode DEFAULT for VDAC_OPA_APORTREQ */
 #define VDAC_OPA_APORTREQ_APORT1YREQ_DEFAULT               (_VDAC_OPA_APORTREQ_APORT1YREQ_DEFAULT << 3) /**< Shifted mode DEFAULT for VDAC_OPA_APORTREQ */
-#define VDAC_OPA_APORTREQ_APORT2XREQ                       (0x1UL << 4)                                 /**< 1 if the bus connected to APORT2X is requested */
+#define VDAC_OPA_APORTREQ_APORT2XREQ                       (0x1UL << 4)                                 /**< 1 If the Bus Connected to APORT2X is Requested */
 #define _VDAC_OPA_APORTREQ_APORT2XREQ_SHIFT                4                                            /**< Shift value for VDAC_OPAAPORT2XREQ */
 #define _VDAC_OPA_APORTREQ_APORT2XREQ_MASK                 0x10UL                                       /**< Bit mask for VDAC_OPAAPORT2XREQ */
 #define _VDAC_OPA_APORTREQ_APORT2XREQ_DEFAULT              0x00000000UL                                 /**< Mode DEFAULT for VDAC_OPA_APORTREQ */
 #define VDAC_OPA_APORTREQ_APORT2XREQ_DEFAULT               (_VDAC_OPA_APORTREQ_APORT2XREQ_DEFAULT << 4) /**< Shifted mode DEFAULT for VDAC_OPA_APORTREQ */
-#define VDAC_OPA_APORTREQ_APORT2YREQ                       (0x1UL << 5)                                 /**< 1 if the bus connected to APORT2Y is requested */
+#define VDAC_OPA_APORTREQ_APORT2YREQ                       (0x1UL << 5)                                 /**< 1 If the Bus Connected to APORT2Y is Requested */
 #define _VDAC_OPA_APORTREQ_APORT2YREQ_SHIFT                5                                            /**< Shift value for VDAC_OPAAPORT2YREQ */
 #define _VDAC_OPA_APORTREQ_APORT2YREQ_MASK                 0x20UL                                       /**< Bit mask for VDAC_OPAAPORT2YREQ */
 #define _VDAC_OPA_APORTREQ_APORT2YREQ_DEFAULT              0x00000000UL                                 /**< Mode DEFAULT for VDAC_OPA_APORTREQ */
 #define VDAC_OPA_APORTREQ_APORT2YREQ_DEFAULT               (_VDAC_OPA_APORTREQ_APORT2YREQ_DEFAULT << 5) /**< Shifted mode DEFAULT for VDAC_OPA_APORTREQ */
-#define VDAC_OPA_APORTREQ_APORT3XREQ                       (0x1UL << 6)                                 /**< 1 if the bus connected to APORT3X is requested */
+#define VDAC_OPA_APORTREQ_APORT3XREQ                       (0x1UL << 6)                                 /**< 1 If the Bus Connected to APORT3X is Requested */
 #define _VDAC_OPA_APORTREQ_APORT3XREQ_SHIFT                6                                            /**< Shift value for VDAC_OPAAPORT3XREQ */
 #define _VDAC_OPA_APORTREQ_APORT3XREQ_MASK                 0x40UL                                       /**< Bit mask for VDAC_OPAAPORT3XREQ */
 #define _VDAC_OPA_APORTREQ_APORT3XREQ_DEFAULT              0x00000000UL                                 /**< Mode DEFAULT for VDAC_OPA_APORTREQ */
 #define VDAC_OPA_APORTREQ_APORT3XREQ_DEFAULT               (_VDAC_OPA_APORTREQ_APORT3XREQ_DEFAULT << 6) /**< Shifted mode DEFAULT for VDAC_OPA_APORTREQ */
-#define VDAC_OPA_APORTREQ_APORT3YREQ                       (0x1UL << 7)                                 /**< 1 if the bus connected to APORT3Y is requested */
+#define VDAC_OPA_APORTREQ_APORT3YREQ                       (0x1UL << 7)                                 /**< 1 If the Bus Connected to APORT3Y is Requested */
 #define _VDAC_OPA_APORTREQ_APORT3YREQ_SHIFT                7                                            /**< Shift value for VDAC_OPAAPORT3YREQ */
 #define _VDAC_OPA_APORTREQ_APORT3YREQ_MASK                 0x80UL                                       /**< Bit mask for VDAC_OPAAPORT3YREQ */
 #define _VDAC_OPA_APORTREQ_APORT3YREQ_DEFAULT              0x00000000UL                                 /**< Mode DEFAULT for VDAC_OPA_APORTREQ */
 #define VDAC_OPA_APORTREQ_APORT3YREQ_DEFAULT               (_VDAC_OPA_APORTREQ_APORT3YREQ_DEFAULT << 7) /**< Shifted mode DEFAULT for VDAC_OPA_APORTREQ */
-#define VDAC_OPA_APORTREQ_APORT4XREQ                       (0x1UL << 8)                                 /**< 1 if the bus connected to APORT4X is requested */
+#define VDAC_OPA_APORTREQ_APORT4XREQ                       (0x1UL << 8)                                 /**< 1 If the Bus Connected to APORT4X is Requested */
 #define _VDAC_OPA_APORTREQ_APORT4XREQ_SHIFT                8                                            /**< Shift value for VDAC_OPAAPORT4XREQ */
 #define _VDAC_OPA_APORTREQ_APORT4XREQ_MASK                 0x100UL                                      /**< Bit mask for VDAC_OPAAPORT4XREQ */
 #define _VDAC_OPA_APORTREQ_APORT4XREQ_DEFAULT              0x00000000UL                                 /**< Mode DEFAULT for VDAC_OPA_APORTREQ */
 #define VDAC_OPA_APORTREQ_APORT4XREQ_DEFAULT               (_VDAC_OPA_APORTREQ_APORT4XREQ_DEFAULT << 8) /**< Shifted mode DEFAULT for VDAC_OPA_APORTREQ */
-#define VDAC_OPA_APORTREQ_APORT4YREQ                       (0x1UL << 9)                                 /**< 1 if the bus connected to APORT4Y is requested */
+#define VDAC_OPA_APORTREQ_APORT4YREQ                       (0x1UL << 9)                                 /**< 1 If the Bus Connected to APORT4Y is Requested */
 #define _VDAC_OPA_APORTREQ_APORT4YREQ_SHIFT                9                                            /**< Shift value for VDAC_OPAAPORT4YREQ */
 #define _VDAC_OPA_APORTREQ_APORT4YREQ_MASK                 0x200UL                                      /**< Bit mask for VDAC_OPAAPORT4YREQ */
 #define _VDAC_OPA_APORTREQ_APORT4YREQ_DEFAULT              0x00000000UL                                 /**< Mode DEFAULT for VDAC_OPA_APORTREQ */
@@ -858,42 +867,42 @@ typedef struct
 /* Bit fields for VDAC OPA_APORTCONFLICT */
 #define _VDAC_OPA_APORTCONFLICT_RESETVALUE                 0x00000000UL                                           /**< Default value for VDAC_OPA_APORTCONFLICT */
 #define _VDAC_OPA_APORTCONFLICT_MASK                       0x000003FCUL                                           /**< Mask for VDAC_OPA_APORTCONFLICT */
-#define VDAC_OPA_APORTCONFLICT_APORT1XCONFLICT             (0x1UL << 2)                                           /**< 1 if the bus connected to APORT1X is in conflict with another peripheral */
+#define VDAC_OPA_APORTCONFLICT_APORT1XCONFLICT             (0x1UL << 2)                                           /**< 1 If the Bus Connected to APORT1X is in Conflict With Another Peripheral */
 #define _VDAC_OPA_APORTCONFLICT_APORT1XCONFLICT_SHIFT      2                                                      /**< Shift value for VDAC_OPAAPORT1XCONFLICT */
 #define _VDAC_OPA_APORTCONFLICT_APORT1XCONFLICT_MASK       0x4UL                                                  /**< Bit mask for VDAC_OPAAPORT1XCONFLICT */
 #define _VDAC_OPA_APORTCONFLICT_APORT1XCONFLICT_DEFAULT    0x00000000UL                                           /**< Mode DEFAULT for VDAC_OPA_APORTCONFLICT */
 #define VDAC_OPA_APORTCONFLICT_APORT1XCONFLICT_DEFAULT     (_VDAC_OPA_APORTCONFLICT_APORT1XCONFLICT_DEFAULT << 2) /**< Shifted mode DEFAULT for VDAC_OPA_APORTCONFLICT */
-#define VDAC_OPA_APORTCONFLICT_APORT1YCONFLICT             (0x1UL << 3)                                           /**< 1 if the bus connected to APORT1X is in conflict with another peripheral */
+#define VDAC_OPA_APORTCONFLICT_APORT1YCONFLICT             (0x1UL << 3)                                           /**< 1 If the Bus Connected to APORT1X is in Conflict With Another Peripheral */
 #define _VDAC_OPA_APORTCONFLICT_APORT1YCONFLICT_SHIFT      3                                                      /**< Shift value for VDAC_OPAAPORT1YCONFLICT */
 #define _VDAC_OPA_APORTCONFLICT_APORT1YCONFLICT_MASK       0x8UL                                                  /**< Bit mask for VDAC_OPAAPORT1YCONFLICT */
 #define _VDAC_OPA_APORTCONFLICT_APORT1YCONFLICT_DEFAULT    0x00000000UL                                           /**< Mode DEFAULT for VDAC_OPA_APORTCONFLICT */
 #define VDAC_OPA_APORTCONFLICT_APORT1YCONFLICT_DEFAULT     (_VDAC_OPA_APORTCONFLICT_APORT1YCONFLICT_DEFAULT << 3) /**< Shifted mode DEFAULT for VDAC_OPA_APORTCONFLICT */
-#define VDAC_OPA_APORTCONFLICT_APORT2XCONFLICT             (0x1UL << 4)                                           /**< 1 if the bus connected to APORT2X is in conflict with another peripheral */
+#define VDAC_OPA_APORTCONFLICT_APORT2XCONFLICT             (0x1UL << 4)                                           /**< 1 If the Bus Connected to APORT2X is in Conflict With Another Peripheral */
 #define _VDAC_OPA_APORTCONFLICT_APORT2XCONFLICT_SHIFT      4                                                      /**< Shift value for VDAC_OPAAPORT2XCONFLICT */
 #define _VDAC_OPA_APORTCONFLICT_APORT2XCONFLICT_MASK       0x10UL                                                 /**< Bit mask for VDAC_OPAAPORT2XCONFLICT */
 #define _VDAC_OPA_APORTCONFLICT_APORT2XCONFLICT_DEFAULT    0x00000000UL                                           /**< Mode DEFAULT for VDAC_OPA_APORTCONFLICT */
 #define VDAC_OPA_APORTCONFLICT_APORT2XCONFLICT_DEFAULT     (_VDAC_OPA_APORTCONFLICT_APORT2XCONFLICT_DEFAULT << 4) /**< Shifted mode DEFAULT for VDAC_OPA_APORTCONFLICT */
-#define VDAC_OPA_APORTCONFLICT_APORT2YCONFLICT             (0x1UL << 5)                                           /**< 1 if the bus connected to APORT2Y is in conflict with another peripheral */
+#define VDAC_OPA_APORTCONFLICT_APORT2YCONFLICT             (0x1UL << 5)                                           /**< 1 If the Bus Connected to APORT2Y is in Conflict With Another Peripheral */
 #define _VDAC_OPA_APORTCONFLICT_APORT2YCONFLICT_SHIFT      5                                                      /**< Shift value for VDAC_OPAAPORT2YCONFLICT */
 #define _VDAC_OPA_APORTCONFLICT_APORT2YCONFLICT_MASK       0x20UL                                                 /**< Bit mask for VDAC_OPAAPORT2YCONFLICT */
 #define _VDAC_OPA_APORTCONFLICT_APORT2YCONFLICT_DEFAULT    0x00000000UL                                           /**< Mode DEFAULT for VDAC_OPA_APORTCONFLICT */
 #define VDAC_OPA_APORTCONFLICT_APORT2YCONFLICT_DEFAULT     (_VDAC_OPA_APORTCONFLICT_APORT2YCONFLICT_DEFAULT << 5) /**< Shifted mode DEFAULT for VDAC_OPA_APORTCONFLICT */
-#define VDAC_OPA_APORTCONFLICT_APORT3XCONFLICT             (0x1UL << 6)                                           /**< 1 if the bus connected to APORT3X is in conflict with another peripheral */
+#define VDAC_OPA_APORTCONFLICT_APORT3XCONFLICT             (0x1UL << 6)                                           /**< 1 If the Bus Connected to APORT3X is in Conflict With Another Peripheral */
 #define _VDAC_OPA_APORTCONFLICT_APORT3XCONFLICT_SHIFT      6                                                      /**< Shift value for VDAC_OPAAPORT3XCONFLICT */
 #define _VDAC_OPA_APORTCONFLICT_APORT3XCONFLICT_MASK       0x40UL                                                 /**< Bit mask for VDAC_OPAAPORT3XCONFLICT */
 #define _VDAC_OPA_APORTCONFLICT_APORT3XCONFLICT_DEFAULT    0x00000000UL                                           /**< Mode DEFAULT for VDAC_OPA_APORTCONFLICT */
 #define VDAC_OPA_APORTCONFLICT_APORT3XCONFLICT_DEFAULT     (_VDAC_OPA_APORTCONFLICT_APORT3XCONFLICT_DEFAULT << 6) /**< Shifted mode DEFAULT for VDAC_OPA_APORTCONFLICT */
-#define VDAC_OPA_APORTCONFLICT_APORT3YCONFLICT             (0x1UL << 7)                                           /**< 1 if the bus connected to APORT3Y is in conflict with another peripheral */
+#define VDAC_OPA_APORTCONFLICT_APORT3YCONFLICT             (0x1UL << 7)                                           /**< 1 If the Bus Connected to APORT3Y is in Conflict With Another Peripheral */
 #define _VDAC_OPA_APORTCONFLICT_APORT3YCONFLICT_SHIFT      7                                                      /**< Shift value for VDAC_OPAAPORT3YCONFLICT */
 #define _VDAC_OPA_APORTCONFLICT_APORT3YCONFLICT_MASK       0x80UL                                                 /**< Bit mask for VDAC_OPAAPORT3YCONFLICT */
 #define _VDAC_OPA_APORTCONFLICT_APORT3YCONFLICT_DEFAULT    0x00000000UL                                           /**< Mode DEFAULT for VDAC_OPA_APORTCONFLICT */
 #define VDAC_OPA_APORTCONFLICT_APORT3YCONFLICT_DEFAULT     (_VDAC_OPA_APORTCONFLICT_APORT3YCONFLICT_DEFAULT << 7) /**< Shifted mode DEFAULT for VDAC_OPA_APORTCONFLICT */
-#define VDAC_OPA_APORTCONFLICT_APORT4XCONFLICT             (0x1UL << 8)                                           /**< 1 if the bus connected to APORT4X is in conflict with another peripheral */
+#define VDAC_OPA_APORTCONFLICT_APORT4XCONFLICT             (0x1UL << 8)                                           /**< 1 If the Bus Connected to APORT4X is in Conflict With Another Peripheral */
 #define _VDAC_OPA_APORTCONFLICT_APORT4XCONFLICT_SHIFT      8                                                      /**< Shift value for VDAC_OPAAPORT4XCONFLICT */
 #define _VDAC_OPA_APORTCONFLICT_APORT4XCONFLICT_MASK       0x100UL                                                /**< Bit mask for VDAC_OPAAPORT4XCONFLICT */
 #define _VDAC_OPA_APORTCONFLICT_APORT4XCONFLICT_DEFAULT    0x00000000UL                                           /**< Mode DEFAULT for VDAC_OPA_APORTCONFLICT */
 #define VDAC_OPA_APORTCONFLICT_APORT4XCONFLICT_DEFAULT     (_VDAC_OPA_APORTCONFLICT_APORT4XCONFLICT_DEFAULT << 8) /**< Shifted mode DEFAULT for VDAC_OPA_APORTCONFLICT */
-#define VDAC_OPA_APORTCONFLICT_APORT4YCONFLICT             (0x1UL << 9)                                           /**< 1 if the bus connected to APORT4Y is in conflict with another peripheral */
+#define VDAC_OPA_APORTCONFLICT_APORT4YCONFLICT             (0x1UL << 9)                                           /**< 1 If the Bus Connected to APORT4Y is in Conflict With Another Peripheral */
 #define _VDAC_OPA_APORTCONFLICT_APORT4YCONFLICT_SHIFT      9                                                      /**< Shift value for VDAC_OPAAPORT4YCONFLICT */
 #define _VDAC_OPA_APORTCONFLICT_APORT4YCONFLICT_MASK       0x200UL                                                /**< Bit mask for VDAC_OPAAPORT4YCONFLICT */
 #define _VDAC_OPA_APORTCONFLICT_APORT4YCONFLICT_DEFAULT    0x00000000UL                                           /**< Mode DEFAULT for VDAC_OPA_APORTCONFLICT */
@@ -906,17 +915,17 @@ typedef struct
 #define _VDAC_OPA_CTRL_DRIVESTRENGTH_MASK                  0x3UL                                          /**< Bit mask for VDAC_OPADRIVESTRENGTH */
 #define _VDAC_OPA_CTRL_DRIVESTRENGTH_DEFAULT               0x00000002UL                                   /**< Mode DEFAULT for VDAC_OPA_CTRL */
 #define VDAC_OPA_CTRL_DRIVESTRENGTH_DEFAULT                (_VDAC_OPA_CTRL_DRIVESTRENGTH_DEFAULT << 0)    /**< Shifted mode DEFAULT for VDAC_OPA_CTRL */
-#define VDAC_OPA_CTRL_INCBW                                (0x1UL << 2)                                   /**< OPAx unity gain bandwidth scale. */
+#define VDAC_OPA_CTRL_INCBW                                (0x1UL << 2)                                   /**< OPAx Unity Gain Bandwidth Scale */
 #define _VDAC_OPA_CTRL_INCBW_SHIFT                         2                                              /**< Shift value for VDAC_OPAINCBW */
 #define _VDAC_OPA_CTRL_INCBW_MASK                          0x4UL                                          /**< Bit mask for VDAC_OPAINCBW */
 #define _VDAC_OPA_CTRL_INCBW_DEFAULT                       0x00000001UL                                   /**< Mode DEFAULT for VDAC_OPA_CTRL */
 #define VDAC_OPA_CTRL_INCBW_DEFAULT                        (_VDAC_OPA_CTRL_INCBW_DEFAULT << 2)            /**< Shifted mode DEFAULT for VDAC_OPA_CTRL */
-#define VDAC_OPA_CTRL_HCMDIS                               (0x1UL << 3)                                   /**< High Common Mode Disable. */
+#define VDAC_OPA_CTRL_HCMDIS                               (0x1UL << 3)                                   /**< High Common Mode Disable */
 #define _VDAC_OPA_CTRL_HCMDIS_SHIFT                        3                                              /**< Shift value for VDAC_OPAHCMDIS */
 #define _VDAC_OPA_CTRL_HCMDIS_MASK                         0x8UL                                          /**< Bit mask for VDAC_OPAHCMDIS */
 #define _VDAC_OPA_CTRL_HCMDIS_DEFAULT                      0x00000001UL                                   /**< Mode DEFAULT for VDAC_OPA_CTRL */
 #define VDAC_OPA_CTRL_HCMDIS_DEFAULT                       (_VDAC_OPA_CTRL_HCMDIS_DEFAULT << 3)           /**< Shifted mode DEFAULT for VDAC_OPA_CTRL */
-#define VDAC_OPA_CTRL_OUTSCALE                             (0x1UL << 4)                                   /**< Scale OPAx output driving strength. */
+#define VDAC_OPA_CTRL_OUTSCALE                             (0x1UL << 4)                                   /**< Scale OPAx Output Driving Strength */
 #define _VDAC_OPA_CTRL_OUTSCALE_SHIFT                      4                                              /**< Shift value for VDAC_OPAOUTSCALE */
 #define _VDAC_OPA_CTRL_OUTSCALE_MASK                       0x10UL                                         /**< Bit mask for VDAC_OPAOUTSCALE */
 #define _VDAC_OPA_CTRL_OUTSCALE_DEFAULT                    0x00000000UL                                   /**< Mode DEFAULT for VDAC_OPA_CTRL */
@@ -967,7 +976,7 @@ typedef struct
 #define VDAC_OPA_CTRL_PRSSEL_PRSCH9                        (_VDAC_OPA_CTRL_PRSSEL_PRSCH9 << 10)           /**< Shifted mode PRSCH9 for VDAC_OPA_CTRL */
 #define VDAC_OPA_CTRL_PRSSEL_PRSCH10                       (_VDAC_OPA_CTRL_PRSSEL_PRSCH10 << 10)          /**< Shifted mode PRSCH10 for VDAC_OPA_CTRL */
 #define VDAC_OPA_CTRL_PRSSEL_PRSCH11                       (_VDAC_OPA_CTRL_PRSSEL_PRSCH11 << 10)          /**< Shifted mode PRSCH11 for VDAC_OPA_CTRL */
-#define VDAC_OPA_CTRL_PRSOUTMODE                           (0x1UL << 16)                                  /**< OPAx PRS Output Select. */
+#define VDAC_OPA_CTRL_PRSOUTMODE                           (0x1UL << 16)                                  /**< OPAx PRS Output Select */
 #define _VDAC_OPA_CTRL_PRSOUTMODE_SHIFT                    16                                             /**< Shift value for VDAC_OPAPRSOUTMODE */
 #define _VDAC_OPA_CTRL_PRSOUTMODE_MASK                     0x10000UL                                      /**< Bit mask for VDAC_OPAPRSOUTMODE */
 #define _VDAC_OPA_CTRL_PRSOUTMODE_DEFAULT                  0x00000000UL                                   /**< Mode DEFAULT for VDAC_OPA_CTRL */
@@ -1306,7 +1315,7 @@ typedef struct
 #define VDAC_OPA_MUX_RESINMUX_CENTER                       (_VDAC_OPA_MUX_RESINMUX_CENTER << 16)   /**< Shifted mode CENTER for VDAC_OPA_MUX */
 #define VDAC_OPA_MUX_RESINMUX_DEFAULT                      (_VDAC_OPA_MUX_RESINMUX_DEFAULT << 16)  /**< Shifted mode DEFAULT for VDAC_OPA_MUX */
 #define VDAC_OPA_MUX_RESINMUX_VSS                          (_VDAC_OPA_MUX_RESINMUX_VSS << 16)      /**< Shifted mode VSS for VDAC_OPA_MUX */
-#define VDAC_OPA_MUX_GAIN3X                                (0x1UL << 20)                           /**< OPAx Dedicated 3x gain resistor ladder. */
+#define VDAC_OPA_MUX_GAIN3X                                (0x1UL << 20)                           /**< OPAx Dedicated 3x Gain Resistor Ladder */
 #define _VDAC_OPA_MUX_GAIN3X_SHIFT                         20                                      /**< Shift value for VDAC_OPAGAIN3X */
 #define _VDAC_OPA_MUX_GAIN3X_MASK                          0x100000UL                              /**< Bit mask for VDAC_OPAGAIN3X */
 #define _VDAC_OPA_MUX_GAIN3X_DEFAULT                       0x00000001UL                            /**< Mode DEFAULT for VDAC_OPA_MUX */
@@ -1534,6 +1543,6 @@ typedef struct
 #define _VDAC_OPA_CAL_OFFSETN_DEFAULT                      0x00000000UL                          /**< Mode DEFAULT for VDAC_OPA_CAL */
 #define VDAC_OPA_CAL_OFFSETN_DEFAULT                       (_VDAC_OPA_CAL_OFFSETN_DEFAULT << 26) /**< Shifted mode DEFAULT for VDAC_OPA_CAL */
 
+/** @} */
 /** @} End of group EFM32PG12B_VDAC */
 /** @} End of group Parts */
-

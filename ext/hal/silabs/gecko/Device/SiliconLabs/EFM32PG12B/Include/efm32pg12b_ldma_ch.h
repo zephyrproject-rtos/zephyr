@@ -1,10 +1,10 @@
 /**************************************************************************//**
  * @file efm32pg12b_ldma_ch.h
  * @brief EFM32PG12B_LDMA_CH register and bit field definitions
- * @version 5.1.2
+ * @version 5.6.0
  ******************************************************************************
- * @section License
- * <b>Copyright 2017 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
  ******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -29,25 +29,30 @@
  * any third party, arising from your use of this Software.
  *
  *****************************************************************************/
+
+#if defined(__ICCARM__)
+#pragma system_include       /* Treat file as system include file. */
+#elif defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
+#pragma clang system_header  /* Treat file as system include file. */
+#endif
+
 /**************************************************************************//**
 * @addtogroup Parts
 * @{
 ******************************************************************************/
 /**************************************************************************//**
- * @brief LDMA_CH EFM32PG12B LDMA CH
+ * @brief LDMA_CH LDMA CH Register
+ * @ingroup EFM32PG12B_LDMA
  *****************************************************************************/
-typedef struct
-{
-  __IOM uint32_t REQSEL;       /**< Channel Peripheral Request Select Register  */
-  __IOM uint32_t CFG;          /**< Channel Configuration Register  */
-  __IOM uint32_t LOOP;         /**< Channel Loop Counter Register  */
-  __IOM uint32_t CTRL;         /**< Channel Descriptor Control Word Register  */
-  __IOM uint32_t SRC;          /**< Channel Descriptor Source Data Address Register  */
-  __IOM uint32_t DST;          /**< Channel Descriptor Destination Data Address Register  */
-  __IOM uint32_t LINK;         /**< Channel Descriptor Link Structure Address Register  */
-  uint32_t       RESERVED0[5]; /**< Reserved future */
+typedef struct {
+  __IOM uint32_t REQSEL;        /**< Channel Peripheral Request Select Register  */
+  __IOM uint32_t CFG;           /**< Channel Configuration Register  */
+  __IOM uint32_t LOOP;          /**< Channel Loop Counter Register  */
+  __IOM uint32_t CTRL;          /**< Channel Descriptor Control Word Register  */
+  __IOM uint32_t SRC;           /**< Channel Descriptor Source Data Address Register  */
+  __IOM uint32_t DST;           /**< Channel Descriptor Destination Data Address Register  */
+  __IOM uint32_t LINK;          /**< Channel Descriptor Link Structure Address Register  */
+  uint32_t       RESERVED0[5U]; /**< Reserved future */
 } LDMA_CH_TypeDef;
 
 /** @} End of group Parts */
-
-

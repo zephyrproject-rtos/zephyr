@@ -3,10 +3,10 @@ Silicon Labs Gecko HAL
 
 Origin:
    Silicon Labs Gecko SDK
-   https://github.com/SiliconLabs/Gecko_SDK
+   https://www.silabs.com/products/development-tools/software/simplicity-studio
 
 Version:
-   v5.1.2
+   v5.6.1
 
 Purpose:
    Add support for Silicon Labs EXX32 SoCs
@@ -27,10 +27,7 @@ Dependencies:
    ext/hal/cmsis
 
 URL:
-   https://github.com/SiliconLabs/Gecko_SDK
-
-commit:
-   938464c68e6c3b2237388a692f767bb0767ec010
+   https://www.silabs.com/products/development-tools/software/simplicity-studio
 
 Maintained-by:
    External
@@ -38,16 +35,13 @@ Maintained-by:
 License:
    Zlib
 
-License Link:
-   https://github.com/SiliconLabs/Gecko_SDK/blob/e8c70a3d4fda8ee09688d6c6cf2a2bafc5f649e9/platform/emlib/ReadMe_emlib.txt#L51-L54
-   https://github.com/SiliconLabs/Gecko_SDK/blob/e8c70a3d4fda8ee09688d6c6cf2a2bafc5f649e9/platform/Device/ReadMe-Device.txt#L91
-
-
 How to update
 +++++++++++++
 
-  * Downloaded current version from https://github.com/SiliconLabs/Gecko_SDK
-  * Extract
+  * Start Simplicity Studio
+  * Start the Package Manager
+  * Install the 32-bit MCU SDK with the version you want to update to
+  * The installation directory is <Simplicity Studio Path>/developer/sdks/gecko_sdk_suite/<version>
   * Replace the necessary files in ext/hal/silabs/gecko/Device and ext/hal/silabs/gecko/emlib
   * Ensure that the CMakeLists and Kconfig files match the new version of the Gecko SDK
 

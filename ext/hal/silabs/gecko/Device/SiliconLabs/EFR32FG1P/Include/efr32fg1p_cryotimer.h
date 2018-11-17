@@ -1,10 +1,10 @@
 /**************************************************************************//**
  * @file efr32fg1p_cryotimer.h
  * @brief EFR32FG1P_CRYOTIMER register and bit field definitions
- * @version 5.1.2
+ * @version 5.6.0
  ******************************************************************************
- * @section License
- * <b>Copyright 2017 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
  ******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -29,17 +29,24 @@
  * any third party, arising from your use of this Software.
  *
  *****************************************************************************/
+
+#if defined(__ICCARM__)
+#pragma system_include       /* Treat file as system include file. */
+#elif defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
+#pragma clang system_header  /* Treat file as system include file. */
+#endif
+
 /**************************************************************************//**
 * @addtogroup Parts
 * @{
 ******************************************************************************/
 /**************************************************************************//**
- * @defgroup EFR32FG1P_CRYOTIMER
+ * @defgroup EFR32FG1P_CRYOTIMER CRYOTIMER
  * @{
  * @brief EFR32FG1P_CRYOTIMER Register Declaration
  *****************************************************************************/
-typedef struct
-{
+/** CRYOTIMER Register Declaration */
+typedef struct {
   __IOM uint32_t CTRL;      /**< Control Register  */
   __IOM uint32_t PERIODSEL; /**< Interrupt Duration  */
   __IM uint32_t  CNT;       /**< Counter Value  */
@@ -51,7 +58,9 @@ typedef struct
 } CRYOTIMER_TypeDef;        /** @} */
 
 /**************************************************************************//**
- * @defgroup EFR32FG1P_CRYOTIMER_BitFields
+ * @addtogroup EFR32FG1P_CRYOTIMER
+ * @{
+ * @defgroup EFR32FG1P_CRYOTIMER_BitFields  CRYOTIMER Bit Fields
  * @{
  *****************************************************************************/
 
@@ -118,7 +127,7 @@ typedef struct
 /* Bit fields for CRYOTIMER EM4WUEN */
 #define _CRYOTIMER_EM4WUEN_RESETVALUE             0x00000000UL                            /**< Default value for CRYOTIMER_EM4WUEN */
 #define _CRYOTIMER_EM4WUEN_MASK                   0x00000001UL                            /**< Mask for CRYOTIMER_EM4WUEN */
-#define CRYOTIMER_EM4WUEN_EM4WU                   (0x1UL << 0)                            /**< EM4 Wake-up enable */
+#define CRYOTIMER_EM4WUEN_EM4WU                   (0x1UL << 0)                            /**< EM4 Wake-up Enable */
 #define _CRYOTIMER_EM4WUEN_EM4WU_SHIFT            0                                       /**< Shift value for CRYOTIMER_EM4WU */
 #define _CRYOTIMER_EM4WUEN_EM4WU_MASK             0x1UL                                   /**< Bit mask for CRYOTIMER_EM4WU */
 #define _CRYOTIMER_EM4WUEN_EM4WU_DEFAULT          0x00000000UL                            /**< Mode DEFAULT for CRYOTIMER_EM4WUEN */
@@ -127,7 +136,7 @@ typedef struct
 /* Bit fields for CRYOTIMER IF */
 #define _CRYOTIMER_IF_RESETVALUE                  0x00000000UL                        /**< Default value for CRYOTIMER_IF */
 #define _CRYOTIMER_IF_MASK                        0x00000001UL                        /**< Mask for CRYOTIMER_IF */
-#define CRYOTIMER_IF_PERIOD                       (0x1UL << 0)                        /**< Wakeup event/Interrupt */
+#define CRYOTIMER_IF_PERIOD                       (0x1UL << 0)                        /**< Wakeup Event/Interrupt */
 #define _CRYOTIMER_IF_PERIOD_SHIFT                0                                   /**< Shift value for CRYOTIMER_PERIOD */
 #define _CRYOTIMER_IF_PERIOD_MASK                 0x1UL                               /**< Bit mask for CRYOTIMER_PERIOD */
 #define _CRYOTIMER_IF_PERIOD_DEFAULT              0x00000000UL                        /**< Mode DEFAULT for CRYOTIMER_IF */
@@ -160,6 +169,6 @@ typedef struct
 #define _CRYOTIMER_IEN_PERIOD_DEFAULT             0x00000000UL                         /**< Mode DEFAULT for CRYOTIMER_IEN */
 #define CRYOTIMER_IEN_PERIOD_DEFAULT              (_CRYOTIMER_IEN_PERIOD_DEFAULT << 0) /**< Shifted mode DEFAULT for CRYOTIMER_IEN */
 
+/** @} */
 /** @} End of group EFR32FG1P_CRYOTIMER */
 /** @} End of group Parts */
-

@@ -1,10 +1,10 @@
 /***************************************************************************//**
  * @file em_aes.h
  * @brief Advanced encryption standard (AES) accelerator peripheral API.
- * @version 5.1.2
+ * @version 5.6.0
  *******************************************************************************
- * @section License
- * <b>Copyright 2016 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2016 Silicon Laboratories, Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -62,26 +62,26 @@ extern "C" {
  *
  *   The following input/output notations should be noted:
  *
- *   @li Input/output data (plaintext, ciphertext, key etc) are treated as
- *     byte arrays, starting with most significant byte. Ie, 32 bytes of
+ *   @li Input/output data (plaintext, ciphertext, key, and so on) are treated as
+ *     byte arrays, starting with the most significant byte, i.e., 32 bytes of
  *     plaintext (B0...B31) is located in memory in the same order, with B0 at
  *     the lower address and B31 at the higher address.
  *
- *   @li Byte arrays must always be a multiple of AES block size, ie a multiple
+ *   @li Byte arrays must always be a multiple of AES block size, i.e., a multiple
  *     of 16. Padding, if required, is done at the end of the byte array.
  *
  *   @li Byte arrays should be word (32 bit) aligned for performance
- *     considerations, since the array is accessed with 32 bit access type.
- *     The Cortex-M supports unaligned accesses, but with a performance penalty.
+ *     considerations, since the array is accessed with a 32 bit access type.
+ *     Cortex-M supports unaligned accesses with a performance penalty.
  *
- *   @li It is possible to specify the same output buffer as input buffer
- *     as long as they point to the same address. In that case the provided input
- *     buffer is replaced with the encrypted/decrypted output. Notice that the
+ *   @li It is possible to specify the same output buffer as an input buffer
+ *     as long as they point to the same address. In that case, the provided input
+ *     buffer is replaced with the encrypted/decrypted output. Notice that
  *     buffers must be exactly overlapping. If partly overlapping, the
- *     behaviour is undefined.
+ *     behavior is undefined.
  *
- *   It is up to the user to use a cipher mode according to its requirements
- *   in order to not break security. Please refer to specific cipher mode
+ *   Use a cipher mode according to its requirements to avoid
+ *   breaking security. See a specific cipher mode
  *   theory for details.
  *
  *   References:
@@ -91,7 +91,7 @@ extern "C" {
  *      NIST Special Publication 800-38A, 2001 Edition,
  *      http://csrc.nist.gov/publications/nistpubs/800-38a/sp800-38a.pdf
  *
- *  E.g. the following example shows how to perform an AES-128 CBC encryption:
+ *  The following example shows how to perform an AES-128 CBC encryption:
  *
  *  Enable clocks:
  *  @include em_aes_clock_enable.c
@@ -108,10 +108,10 @@ extern "C" {
 
 /**
  * @brief
- *   AES counter modification function pointer.
+ *   An AES counter modification function pointer.
  * @details
  *   Parameters:
- *   @li ctr - Ptr to byte array (16 bytes) holding counter to be modified.
+ *   @li ctr - Ptr to byte array (16 bytes) holding a counter to be modified.
  */
 typedef void (*AES_CtrFuncPtr_TypeDef)(uint8_t *ctr);
 
@@ -126,7 +126,7 @@ void AES_CBC128(uint8_t *out,
                 const uint8_t *iv,
                 bool encrypt);
 
-#if defined( AES_CTRL_AES256 )
+#if defined(AES_CTRL_AES256)
 void AES_CBC256(uint8_t *out,
                 const uint8_t *in,
                 unsigned int len,
@@ -142,7 +142,7 @@ void AES_CFB128(uint8_t *out,
                 const uint8_t *iv,
                 bool encrypt);
 
-#if defined( AES_CTRL_AES256 )
+#if defined(AES_CTRL_AES256)
 void AES_CFB256(uint8_t *out,
                 const uint8_t *in,
                 unsigned int len,
@@ -158,7 +158,7 @@ void AES_CTR128(uint8_t *out,
                 uint8_t *ctr,
                 AES_CtrFuncPtr_TypeDef ctrFunc);
 
-#if defined( AES_CTRL_AES256 )
+#if defined(AES_CTRL_AES256)
 void AES_CTR256(uint8_t *out,
                 const uint8_t *in,
                 unsigned int len,
@@ -171,7 +171,7 @@ void AES_CTRUpdate32Bit(uint8_t *ctr);
 
 void AES_DecryptKey128(uint8_t *out, const uint8_t *in);
 
-#if defined( AES_CTRL_AES256 )
+#if defined(AES_CTRL_AES256)
 void AES_DecryptKey256(uint8_t *out, const uint8_t *in);
 #endif
 
@@ -181,7 +181,7 @@ void AES_ECB128(uint8_t *out,
                 const uint8_t *key,
                 bool encrypt);
 
-#if defined( AES_CTRL_AES256 )
+#if defined(AES_CTRL_AES256)
 void AES_ECB256(uint8_t *out,
                 const uint8_t *in,
                 unsigned int len,
@@ -194,7 +194,7 @@ void AES_ECB256(uint8_t *out,
  *   Clear one or more pending AES interrupts.
  *
  * @param[in] flags
- *   Pending AES interrupt source to clear. Use a bitwise logic OR combination of
+ *   A pending AES interrupt source to clear. Use a bitwise logic OR combination of
  *   valid interrupt flags for the AES module (AES_IF_nnn).
  ******************************************************************************/
 __STATIC_INLINE void AES_IntClear(uint32_t flags)
@@ -202,13 +202,12 @@ __STATIC_INLINE void AES_IntClear(uint32_t flags)
   AES->IFC = flags;
 }
 
-
 /***************************************************************************//**
  * @brief
  *   Disable one or more AES interrupts.
  *
  * @param[in] flags
- *   AES interrupt sources to disable. Use a bitwise logic OR combination of
+ *   An AES interrupt sources to disable. Use a bitwise logic OR combination of
  *   valid interrupt flags for the AES module (AES_IF_nnn).
  ******************************************************************************/
 __STATIC_INLINE void AES_IntDisable(uint32_t flags)
@@ -216,15 +215,14 @@ __STATIC_INLINE void AES_IntDisable(uint32_t flags)
   AES->IEN &= ~(flags);
 }
 
-
 /***************************************************************************//**
  * @brief
  *   Enable one or more AES interrupts.
  *
  * @note
- *   Depending on the use, a pending interrupt may already be set prior to
+ *   Depending on use, a pending interrupt may already be set prior to
  *   enabling the interrupt. Consider using AES_IntClear() prior to enabling
- *   if such a pending interrupt should be ignored.
+ *   if a pending interrupt should be ignored.
  *
  * @param[in] flags
  *   AES interrupt sources to enable. Use a bitwise logic OR combination of
@@ -235,13 +233,12 @@ __STATIC_INLINE void AES_IntEnable(uint32_t flags)
   AES->IEN |= flags;
 }
 
-
 /***************************************************************************//**
  * @brief
  *   Get pending AES interrupt flags.
  *
  * @note
- *   The event bits are not cleared by the use of this function.
+ *   This function does not clear event bits.
  *
  * @return
  *   AES interrupt sources pending. A bitwise logic OR combination of valid
@@ -252,17 +249,16 @@ __STATIC_INLINE uint32_t AES_IntGet(void)
   return AES->IF;
 }
 
-
 /***************************************************************************//**
  * @brief
  *   Get enabled and pending AES interrupt flags.
  *   Useful for handling more interrupt sources in the same interrupt handler.
  *
  * @note
- *   Interrupt flags are not cleared by the use of this function.
+ *   This function does not clear interrupt flags.
  *
  * @return
- *   Pending and enabled AES interrupt sources
+ *   Pending and enabled AES interrupt sources.
  *   The return value is the bitwise AND of
  *   - the enabled interrupt sources in AES_IEN and
  *   - the pending interrupt flags AES_IF
@@ -275,13 +271,12 @@ __STATIC_INLINE uint32_t AES_IntGetEnabled(void)
   return AES->IF & ien;
 }
 
-
 /***************************************************************************//**
  * @brief
- *   Set one or more pending AES interrupts from SW.
+ *   Set one or more pending AES interrupts from software.
  *
  * @param[in] flags
- *   AES interrupt sources to set to pending. Use a bitwise logic OR combination
+ *   AES interrupt sources to set as pending. Use a bitwise logic OR combination
  *   of valid interrupt flags for the AES module (AES_IF_nnn).
  ******************************************************************************/
 __STATIC_INLINE void AES_IntSet(uint32_t flags)
@@ -289,21 +284,19 @@ __STATIC_INLINE void AES_IntSet(uint32_t flags)
   AES->IFS = flags;
 }
 
-
 void AES_OFB128(uint8_t *out,
                 const uint8_t *in,
                 unsigned int len,
                 const uint8_t *key,
                 const uint8_t *iv);
 
-#if defined( AES_CTRL_AES256 )
+#if defined(AES_CTRL_AES256)
 void AES_OFB256(uint8_t *out,
                 const uint8_t *in,
                 unsigned int len,
                 const uint8_t *key,
                 const uint8_t *iv);
 #endif
-
 
 /** @} (end addtogroup AES) */
 /** @} (end addtogroup emlib) */
@@ -314,5 +307,3 @@ void AES_OFB256(uint8_t *out,
 
 #endif /* defined(AES_COUNT) && (AES_COUNT > 0) */
 #endif /* EM_AES_H */
-
-

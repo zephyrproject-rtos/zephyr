@@ -1,10 +1,10 @@
 /**************************************************************************//**
  * @file efr32fg1p_msc.h
  * @brief EFR32FG1P_MSC register and bit field definitions
- * @version 5.1.2
+ * @version 5.6.0
  ******************************************************************************
- * @section License
- * <b>Copyright 2017 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
  ******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -29,48 +29,57 @@
  * any third party, arising from your use of this Software.
  *
  *****************************************************************************/
+
+#if defined(__ICCARM__)
+#pragma system_include       /* Treat file as system include file. */
+#elif defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
+#pragma clang system_header  /* Treat file as system include file. */
+#endif
+
 /**************************************************************************//**
 * @addtogroup Parts
 * @{
 ******************************************************************************/
 /**************************************************************************//**
- * @defgroup EFR32FG1P_MSC
+ * @defgroup EFR32FG1P_MSC MSC
  * @{
  * @brief EFR32FG1P_MSC Register Declaration
  *****************************************************************************/
-typedef struct
-{
-  __IOM uint32_t CTRL;         /**< Memory System Control Register  */
-  __IOM uint32_t READCTRL;     /**< Read Control Register  */
-  __IOM uint32_t WRITECTRL;    /**< Write Control Register  */
-  __IOM uint32_t WRITECMD;     /**< Write Command Register  */
-  __IOM uint32_t ADDRB;        /**< Page Erase/Write Address Buffer  */
-  uint32_t       RESERVED0[1]; /**< Reserved for future use **/
-  __IOM uint32_t WDATA;        /**< Write Data Register  */
-  __IM uint32_t  STATUS;       /**< Status Register  */
+/** MSC Register Declaration */
+typedef struct {
+  __IOM uint32_t CTRL;          /**< Memory System Control Register  */
+  __IOM uint32_t READCTRL;      /**< Read Control Register  */
+  __IOM uint32_t WRITECTRL;     /**< Write Control Register  */
+  __IOM uint32_t WRITECMD;      /**< Write Command Register  */
+  __IOM uint32_t ADDRB;         /**< Page Erase/Write Address Buffer  */
+  uint32_t       RESERVED0[1U]; /**< Reserved for future use **/
+  __IOM uint32_t WDATA;         /**< Write Data Register  */
+  __IM uint32_t  STATUS;        /**< Status Register  */
 
-  uint32_t       RESERVED1[4]; /**< Reserved for future use **/
-  __IM uint32_t  IF;           /**< Interrupt Flag Register  */
-  __IOM uint32_t IFS;          /**< Interrupt Flag Set Register  */
-  __IOM uint32_t IFC;          /**< Interrupt Flag Clear Register  */
-  __IOM uint32_t IEN;          /**< Interrupt Enable Register  */
-  __IOM uint32_t LOCK;         /**< Configuration Lock Register  */
-  __IOM uint32_t CACHECMD;     /**< Flash Cache Command Register  */
-  __IM uint32_t  CACHEHITS;    /**< Cache Hits Performance Counter  */
-  __IM uint32_t  CACHEMISSES;  /**< Cache Misses Performance Counter  */
+  uint32_t       RESERVED1[4U]; /**< Reserved for future use **/
+  __IM uint32_t  IF;            /**< Interrupt Flag Register  */
+  __IOM uint32_t IFS;           /**< Interrupt Flag Set Register  */
+  __IOM uint32_t IFC;           /**< Interrupt Flag Clear Register  */
+  __IOM uint32_t IEN;           /**< Interrupt Enable Register  */
+  __IOM uint32_t LOCK;          /**< Configuration Lock Register  */
+  __IOM uint32_t CACHECMD;      /**< Flash Cache Command Register  */
+  __IM uint32_t  CACHEHITS;     /**< Cache Hits Performance Counter  */
+  __IM uint32_t  CACHEMISSES;   /**< Cache Misses Performance Counter  */
 
-  uint32_t       RESERVED2[1]; /**< Reserved for future use **/
-  __IOM uint32_t MASSLOCK;     /**< Mass Erase Lock Register  */
+  uint32_t       RESERVED2[1U]; /**< Reserved for future use **/
+  __IOM uint32_t MASSLOCK;      /**< Mass Erase Lock Register  */
 
-  uint32_t       RESERVED3[1]; /**< Reserved for future use **/
-  __IOM uint32_t STARTUP;      /**< Startup Control  */
+  uint32_t       RESERVED3[1U]; /**< Reserved for future use **/
+  __IOM uint32_t STARTUP;       /**< Startup Control  */
 
-  uint32_t       RESERVED4[5]; /**< Reserved for future use **/
-  __IOM uint32_t CMD;          /**< Command Register  */
-} MSC_TypeDef;                 /** @} */
+  uint32_t       RESERVED4[5U]; /**< Reserved for future use **/
+  __IOM uint32_t CMD;           /**< Command Register  */
+} MSC_TypeDef;                  /** @} */
 
 /**************************************************************************//**
- * @defgroup EFR32FG1P_MSC_BitFields
+ * @addtogroup EFR32FG1P_MSC
+ * @{
+ * @defgroup EFR32FG1P_MSC_BitFields  MSC Bit Fields
  * @{
  *****************************************************************************/
 
@@ -87,7 +96,7 @@ typedef struct
 #define _MSC_CTRL_CLKDISFAULTEN_MASK            0x2UL                                  /**< Bit mask for MSC_CLKDISFAULTEN */
 #define _MSC_CTRL_CLKDISFAULTEN_DEFAULT         0x00000000UL                           /**< Mode DEFAULT for MSC_CTRL */
 #define MSC_CTRL_CLKDISFAULTEN_DEFAULT          (_MSC_CTRL_CLKDISFAULTEN_DEFAULT << 1) /**< Shifted mode DEFAULT for MSC_CTRL */
-#define MSC_CTRL_PWRUPONDEMAND                  (0x1UL << 2)                           /**< Power Up On Demand During Wake Up */
+#define MSC_CTRL_PWRUPONDEMAND                  (0x1UL << 2)                           /**< Power Up on Demand During Wake Up */
 #define _MSC_CTRL_PWRUPONDEMAND_SHIFT           2                                      /**< Shift value for MSC_PWRUPONDEMAND */
 #define _MSC_CTRL_PWRUPONDEMAND_MASK            0x4UL                                  /**< Bit mask for MSC_PWRUPONDEMAND */
 #define _MSC_CTRL_PWRUPONDEMAND_DEFAULT         0x00000000UL                           /**< Mode DEFAULT for MSC_CTRL */
@@ -143,7 +152,7 @@ typedef struct
 /* Bit fields for MSC WRITECTRL */
 #define _MSC_WRITECTRL_RESETVALUE               0x00000000UL                                /**< Default value for MSC_WRITECTRL */
 #define _MSC_WRITECTRL_MASK                     0x00000003UL                                /**< Mask for MSC_WRITECTRL */
-#define MSC_WRITECTRL_WREN                      (0x1UL << 0)                                /**< Enable Write/Erase Controller  */
+#define MSC_WRITECTRL_WREN                      (0x1UL << 0)                                /**< Enable Write/Erase Controller */
 #define _MSC_WRITECTRL_WREN_SHIFT               0                                           /**< Shift value for MSC_WREN */
 #define _MSC_WRITECTRL_WREN_MASK                0x1UL                                       /**< Bit mask for MSC_WREN */
 #define _MSC_WRITECTRL_WREN_DEFAULT             0x00000000UL                                /**< Mode DEFAULT for MSC_WRITECTRL */
@@ -157,7 +166,7 @@ typedef struct
 /* Bit fields for MSC WRITECMD */
 #define _MSC_WRITECMD_RESETVALUE                0x00000000UL                             /**< Default value for MSC_WRITECMD */
 #define _MSC_WRITECMD_MASK                      0x0000113FUL                             /**< Mask for MSC_WRITECMD */
-#define MSC_WRITECMD_LADDRIM                    (0x1UL << 0)                             /**< Load MSC_ADDRB into ADDR */
+#define MSC_WRITECMD_LADDRIM                    (0x1UL << 0)                             /**< Load MSC_ADDRB Into ADDR */
 #define _MSC_WRITECMD_LADDRIM_SHIFT             0                                        /**< Shift value for MSC_LADDRIM */
 #define _MSC_WRITECMD_LADDRIM_MASK              0x1UL                                    /**< Bit mask for MSC_LADDRIM */
 #define _MSC_WRITECMD_LADDRIM_DEFAULT           0x00000000UL                             /**< Mode DEFAULT for MSC_WRITECMD */
@@ -182,17 +191,17 @@ typedef struct
 #define _MSC_WRITECMD_WRITETRIG_MASK            0x10UL                                   /**< Bit mask for MSC_WRITETRIG */
 #define _MSC_WRITECMD_WRITETRIG_DEFAULT         0x00000000UL                             /**< Mode DEFAULT for MSC_WRITECMD */
 #define MSC_WRITECMD_WRITETRIG_DEFAULT          (_MSC_WRITECMD_WRITETRIG_DEFAULT << 4)   /**< Shifted mode DEFAULT for MSC_WRITECMD */
-#define MSC_WRITECMD_ERASEABORT                 (0x1UL << 5)                             /**< Abort erase sequence */
+#define MSC_WRITECMD_ERASEABORT                 (0x1UL << 5)                             /**< Abort Erase Sequence */
 #define _MSC_WRITECMD_ERASEABORT_SHIFT          5                                        /**< Shift value for MSC_ERASEABORT */
 #define _MSC_WRITECMD_ERASEABORT_MASK           0x20UL                                   /**< Bit mask for MSC_ERASEABORT */
 #define _MSC_WRITECMD_ERASEABORT_DEFAULT        0x00000000UL                             /**< Mode DEFAULT for MSC_WRITECMD */
 #define MSC_WRITECMD_ERASEABORT_DEFAULT         (_MSC_WRITECMD_ERASEABORT_DEFAULT << 5)  /**< Shifted mode DEFAULT for MSC_WRITECMD */
-#define MSC_WRITECMD_ERASEMAIN0                 (0x1UL << 8)                             /**< Mass erase region 0 */
+#define MSC_WRITECMD_ERASEMAIN0                 (0x1UL << 8)                             /**< Mass Erase Region 0 */
 #define _MSC_WRITECMD_ERASEMAIN0_SHIFT          8                                        /**< Shift value for MSC_ERASEMAIN0 */
 #define _MSC_WRITECMD_ERASEMAIN0_MASK           0x100UL                                  /**< Bit mask for MSC_ERASEMAIN0 */
 #define _MSC_WRITECMD_ERASEMAIN0_DEFAULT        0x00000000UL                             /**< Mode DEFAULT for MSC_WRITECMD */
 #define MSC_WRITECMD_ERASEMAIN0_DEFAULT         (_MSC_WRITECMD_ERASEMAIN0_DEFAULT << 8)  /**< Shifted mode DEFAULT for MSC_WRITECMD */
-#define MSC_WRITECMD_CLEARWDATA                 (0x1UL << 12)                            /**< Clear WDATA state */
+#define MSC_WRITECMD_CLEARWDATA                 (0x1UL << 12)                            /**< Clear WDATA State */
 #define _MSC_WRITECMD_CLEARWDATA_SHIFT          12                                       /**< Shift value for MSC_CLEARWDATA */
 #define _MSC_WRITECMD_CLEARWDATA_MASK           0x1000UL                                 /**< Bit mask for MSC_CLEARWDATA */
 #define _MSC_WRITECMD_CLEARWDATA_DEFAULT        0x00000000UL                             /**< Mode DEFAULT for MSC_WRITECMD */
@@ -281,7 +290,7 @@ typedef struct
 #define _MSC_IF_PWRUPF_MASK                     0x10UL                          /**< Bit mask for MSC_PWRUPF */
 #define _MSC_IF_PWRUPF_DEFAULT                  0x00000000UL                    /**< Mode DEFAULT for MSC_IF */
 #define MSC_IF_PWRUPF_DEFAULT                   (_MSC_IF_PWRUPF_DEFAULT << 4)   /**< Shifted mode DEFAULT for MSC_IF */
-#define MSC_IF_ICACHERR                         (0x1UL << 5)                    /**< iCache RAM Parity Error Flag */
+#define MSC_IF_ICACHERR                         (0x1UL << 5)                    /**< ICache RAM Parity Error Flag */
 #define _MSC_IF_ICACHERR_SHIFT                  5                               /**< Shift value for MSC_ICACHERR */
 #define _MSC_IF_ICACHERR_MASK                   0x20UL                          /**< Bit mask for MSC_ICACHERR */
 #define _MSC_IF_ICACHERR_DEFAULT                0x00000000UL                    /**< Mode DEFAULT for MSC_IF */
@@ -496,6 +505,6 @@ typedef struct
 #define _MSC_CMD_PWRUP_DEFAULT                  0x00000000UL                  /**< Mode DEFAULT for MSC_CMD */
 #define MSC_CMD_PWRUP_DEFAULT                   (_MSC_CMD_PWRUP_DEFAULT << 0) /**< Shifted mode DEFAULT for MSC_CMD */
 
+/** @} */
 /** @} End of group EFR32FG1P_MSC */
 /** @} End of group Parts */
-

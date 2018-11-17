@@ -1,10 +1,10 @@
 /**************************************************************************//**
  * @file efm32pg12b_vdac_opa.h
  * @brief EFM32PG12B_VDAC_OPA register and bit field definitions
- * @version 5.1.2
+ * @version 5.6.0
  ******************************************************************************
- * @section License
- * <b>Copyright 2017 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
  ******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -29,15 +29,22 @@
  * any third party, arising from your use of this Software.
  *
  *****************************************************************************/
+
+#if defined(__ICCARM__)
+#pragma system_include       /* Treat file as system include file. */
+#elif defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
+#pragma clang system_header  /* Treat file as system include file. */
+#endif
+
 /**************************************************************************//**
 * @addtogroup Parts
 * @{
 ******************************************************************************/
 /**************************************************************************//**
- * @brief VDAC_OPA EFM32PG12B VDAC OPA
+ * @brief VDAC_OPA VDAC OPA Register
+ * @ingroup EFM32PG12B_VDAC
  *****************************************************************************/
-typedef struct
-{
+typedef struct {
   __IM uint32_t  APORTREQ;      /**< Operational Amplifier APORT Request Status Register  */
   __IM uint32_t  APORTCONFLICT; /**< Operational Amplifier APORT Conflict Status Register  */
   __IOM uint32_t CTRL;          /**< Operational Amplifier Control Register  */
@@ -45,9 +52,7 @@ typedef struct
   __IOM uint32_t MUX;           /**< Operational Amplifier Mux Configuration Register  */
   __IOM uint32_t OUT;           /**< Operational Amplifier Output Configuration Register  */
   __IOM uint32_t CAL;           /**< Operational Amplifier Calibration Register  */
-  uint32_t       RESERVED0[1];  /**< Reserved future */
+  uint32_t       RESERVED0[1U]; /**< Reserved future */
 } VDAC_OPA_TypeDef;
 
 /** @} End of group Parts */
-
-

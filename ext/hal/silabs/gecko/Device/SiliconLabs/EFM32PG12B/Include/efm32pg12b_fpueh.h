@@ -1,10 +1,10 @@
 /**************************************************************************//**
  * @file efm32pg12b_fpueh.h
  * @brief EFM32PG12B_FPUEH register and bit field definitions
- * @version 5.1.2
+ * @version 5.6.0
  ******************************************************************************
- * @section License
- * <b>Copyright 2017 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
  ******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -29,17 +29,24 @@
  * any third party, arising from your use of this Software.
  *
  *****************************************************************************/
+
+#if defined(__ICCARM__)
+#pragma system_include       /* Treat file as system include file. */
+#elif defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
+#pragma clang system_header  /* Treat file as system include file. */
+#endif
+
 /**************************************************************************//**
 * @addtogroup Parts
 * @{
 ******************************************************************************/
 /**************************************************************************//**
- * @defgroup EFM32PG12B_FPUEH
+ * @defgroup EFM32PG12B_FPUEH FPUEH
  * @{
  * @brief EFM32PG12B_FPUEH Register Declaration
  *****************************************************************************/
-typedef struct
-{
+/** FPUEH Register Declaration */
+typedef struct {
   __IM uint32_t  IF;  /**< Interrupt Flag Register  */
   __IOM uint32_t IFS; /**< Interrupt Flag Set Register  */
   __IOM uint32_t IFC; /**< Interrupt Flag Clear Register  */
@@ -47,7 +54,9 @@ typedef struct
 } FPUEH_TypeDef;      /** @} */
 
 /**************************************************************************//**
- * @defgroup EFM32PG12B_FPUEH_BitFields
+ * @addtogroup EFM32PG12B_FPUEH
+ * @{
+ * @defgroup EFM32PG12B_FPUEH_BitFields  FPUEH Bit Fields
  * @{
  *****************************************************************************/
 
@@ -187,6 +196,6 @@ typedef struct
 #define _FPUEH_IEN_FPIXC_DEFAULT    0x00000000UL                    /**< Mode DEFAULT for FPUEH_IEN */
 #define FPUEH_IEN_FPIXC_DEFAULT     (_FPUEH_IEN_FPIXC_DEFAULT << 5) /**< Shifted mode DEFAULT for FPUEH_IEN */
 
+/** @} */
 /** @} End of group EFM32PG12B_FPUEH */
 /** @} End of group Parts */
-

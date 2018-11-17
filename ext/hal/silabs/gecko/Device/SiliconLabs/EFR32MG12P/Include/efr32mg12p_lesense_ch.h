@@ -1,7 +1,7 @@
 /**************************************************************************//**
  * @file efr32mg12p_lesense_ch.h
  * @brief EFR32MG12P_LESENSE_CH register and bit field definitions
- * @version 5.5.0
+ * @version 5.6.0
  ******************************************************************************
  * # License
  * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
@@ -45,10 +45,10 @@
  * @ingroup EFR32MG12P_LESENSE
  *****************************************************************************/
 typedef struct {
-  __IOM uint32_t TIMING;       /**< Scan Configuration  */
-  __IOM uint32_t INTERACT;     /**< Scan Configuration  */
-  __IOM uint32_t EVAL;         /**< Scan Configuration  */
-  uint32_t       RESERVED0[1]; /**< Reserved future */
+  __IOM uint32_t TIMING;        /**< Scan Configuration  */
+  __IOM uint32_t INTERACT;      /**< Scan Configuration  */
+  __IOM uint32_t EVAL;          /**< Scan Configuration  */
+  uint32_t       RESERVED0[1U]; /**< Reserved future */
 } LESENSE_CH_TypeDef;
 
 /** @} End of group Parts */

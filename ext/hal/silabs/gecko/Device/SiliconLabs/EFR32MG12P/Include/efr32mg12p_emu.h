@@ -1,7 +1,7 @@
 /**************************************************************************//**
  * @file efr32mg12p_emu.h
  * @brief EFR32MG12P_EMU register and bit field definitions
- * @version 5.5.0
+ * @version 5.6.0
  ******************************************************************************
  * # License
  * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
@@ -53,7 +53,7 @@ typedef struct {
   __IOM uint32_t RAM0CTRL;              /**< Memory Control Register  */
   __IOM uint32_t CMD;                   /**< Command Register  */
 
-  uint32_t       RESERVED0[1];          /**< Reserved for future use **/
+  uint32_t       RESERVED0[1U];         /**< Reserved for future use **/
   __IOM uint32_t EM4CTRL;               /**< EM4 Control Register  */
   __IOM uint32_t TEMPLIMITS;            /**< Temperature Limits for Interrupt Generation  */
   __IM uint32_t  TEMP;                  /**< Value of Last Temperature Measurement  */
@@ -66,37 +66,37 @@ typedef struct {
   __IOM uint32_t PWRCTRL;               /**< Power Control Register  */
   __IOM uint32_t DCDCCTRL;              /**< DCDC Control  */
 
-  uint32_t       RESERVED1[2];          /**< Reserved for future use **/
+  uint32_t       RESERVED1[2U];         /**< Reserved for future use **/
   __IOM uint32_t DCDCMISCCTRL;          /**< DCDC Miscellaneous Control Register  */
   __IOM uint32_t DCDCZDETCTRL;          /**< DCDC Power Train NFET Zero Current Detector Control Register  */
   __IOM uint32_t DCDCCLIMCTRL;          /**< DCDC Power Train PFET Current Limiter Control Register  */
   __IOM uint32_t DCDCLNCOMPCTRL;        /**< DCDC Low Noise Compensator Control Register  */
   __IOM uint32_t DCDCLNVCTRL;           /**< DCDC Low Noise Voltage Register  */
 
-  uint32_t       RESERVED2[1];          /**< Reserved for future use **/
+  uint32_t       RESERVED2[1U];         /**< Reserved for future use **/
   __IOM uint32_t DCDCLPVCTRL;           /**< DCDC Low Power Voltage Register  */
 
-  uint32_t       RESERVED3[1];          /**< Reserved for future use **/
+  uint32_t       RESERVED3[1U];         /**< Reserved for future use **/
   __IOM uint32_t DCDCLPCTRL;            /**< DCDC Low Power Control Register  */
   __IOM uint32_t DCDCLNFREQCTRL;        /**< DCDC Low Noise Controller Frequency Control  */
 
-  uint32_t       RESERVED4[1];          /**< Reserved for future use **/
+  uint32_t       RESERVED4[1U];         /**< Reserved for future use **/
   __IM uint32_t  DCDCSYNC;              /**< DCDC Read Status Register  */
 
-  uint32_t       RESERVED5[5];          /**< Reserved for future use **/
+  uint32_t       RESERVED5[5U];         /**< Reserved for future use **/
   __IOM uint32_t VMONAVDDCTRL;          /**< VMON AVDD Channel Control  */
   __IOM uint32_t VMONALTAVDDCTRL;       /**< Alternate VMON AVDD Channel Control  */
   __IOM uint32_t VMONDVDDCTRL;          /**< VMON DVDD Channel Control  */
   __IOM uint32_t VMONIO0CTRL;           /**< VMON IOVDD0 Channel Control  */
 
-  uint32_t       RESERVED6[5];          /**< Reserved for future use **/
+  uint32_t       RESERVED6[5U];         /**< Reserved for future use **/
   __IOM uint32_t RAM1CTRL;              /**< Memory Control Register  */
   __IOM uint32_t RAM2CTRL;              /**< Memory Control Register  */
 
-  uint32_t       RESERVED7[12];         /**< Reserved for future use **/
+  uint32_t       RESERVED7[12U];        /**< Reserved for future use **/
   __IOM uint32_t DCDCLPEM01CFG;         /**< Configuration Bits for Low Power Mode to Be Applied During EM01, This Field is Only Relevant If LP Mode is Used in EM01  */
 
-  uint32_t       RESERVED8[4];          /**< Reserved for future use **/
+  uint32_t       RESERVED8[4U];         /**< Reserved for future use **/
   __IOM uint32_t EM23PERNORETAINCMD;    /**< Clears Corresponding Bits in EM23PERNORETAINSTATUS Unlocking Access to Peripheral  */
   __IM uint32_t  EM23PERNORETAINSTATUS; /**< Status Indicating If Peripherals Were Powered Down in EM23, Subsequently Locking Access to It  */
   __IOM uint32_t EM23PERNORETAINCTRL;   /**< When Set Corresponding Peripherals May Get Powered Down in EM23  */

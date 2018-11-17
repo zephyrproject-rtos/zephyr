@@ -1,10 +1,10 @@
 /**************************************************************************//**
  * @file efr32fg1p_emu.h
  * @brief EFR32FG1P_EMU register and bit field definitions
- * @version 5.1.2
+ * @version 5.6.0
  ******************************************************************************
- * @section License
- * <b>Copyright 2017 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
  ******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -29,37 +29,44 @@
  * any third party, arising from your use of this Software.
  *
  *****************************************************************************/
+
+#if defined(__ICCARM__)
+#pragma system_include       /* Treat file as system include file. */
+#elif defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
+#pragma clang system_header  /* Treat file as system include file. */
+#endif
+
 /**************************************************************************//**
 * @addtogroup Parts
 * @{
 ******************************************************************************/
 /**************************************************************************//**
- * @defgroup EFR32FG1P_EMU
+ * @defgroup EFR32FG1P_EMU EMU
  * @{
  * @brief EFR32FG1P_EMU Register Declaration
  *****************************************************************************/
-typedef struct
-{
+/** EMU Register Declaration */
+typedef struct {
   __IOM uint32_t CTRL;            /**< Control Register  */
   __IM uint32_t  STATUS;          /**< Status Register  */
   __IOM uint32_t LOCK;            /**< Configuration Lock Register  */
   __IOM uint32_t RAM0CTRL;        /**< Memory Control Register  */
   __IOM uint32_t CMD;             /**< Command Register  */
 
-  uint32_t       RESERVED0[1];    /**< Reserved for future use **/
+  uint32_t       RESERVED0[1U];   /**< Reserved for future use **/
   __IOM uint32_t EM4CTRL;         /**< EM4 Control Register  */
-  __IOM uint32_t TEMPLIMITS;      /**< Temperature limits for interrupt generation  */
-  __IM uint32_t  TEMP;            /**< Value of last temperature measurement  */
+  __IOM uint32_t TEMPLIMITS;      /**< Temperature Limits for Interrupt Generation  */
+  __IM uint32_t  TEMP;            /**< Value of Last Temperature Measurement  */
   __IM uint32_t  IF;              /**< Interrupt Flag Register  */
   __IOM uint32_t IFS;             /**< Interrupt Flag Set Register  */
   __IOM uint32_t IFC;             /**< Interrupt Flag Clear Register  */
   __IOM uint32_t IEN;             /**< Interrupt Enable Register  */
   __IOM uint32_t PWRLOCK;         /**< Regulator and Supply Lock Register  */
   __IOM uint32_t PWRCFG;          /**< Power Configuration Register  */
-  __IOM uint32_t PWRCTRL;         /**< Power Control Register.  */
+  __IOM uint32_t PWRCTRL;         /**< Power Control Register  */
   __IOM uint32_t DCDCCTRL;        /**< DCDC Control  */
 
-  uint32_t       RESERVED1[2];    /**< Reserved for future use **/
+  uint32_t       RESERVED1[2U];   /**< Reserved for future use **/
   __IOM uint32_t DCDCMISCCTRL;    /**< DCDC Miscellaneous Control Register  */
   __IOM uint32_t DCDCZDETCTRL;    /**< DCDC Power Train NFET Zero Current Detector Control Register  */
   __IOM uint32_t DCDCCLIMCTRL;    /**< DCDC Power Train PFET Current Limiter Control Register  */
@@ -68,31 +75,33 @@ typedef struct
   __IOM uint32_t DCDCTIMING;      /**< DCDC Controller Timing Value Register  */
   __IOM uint32_t DCDCLPVCTRL;     /**< DCDC Low Power Voltage Register  */
 
-  uint32_t       RESERVED2[1];    /**< Reserved for future use **/
+  uint32_t       RESERVED2[1U];   /**< Reserved for future use **/
   __IOM uint32_t DCDCLPCTRL;      /**< DCDC Low Power Control Register  */
   __IOM uint32_t DCDCLNFREQCTRL;  /**< DCDC Low Noise Controller Frequency Control  */
 
-  uint32_t       RESERVED3[1];    /**< Reserved for future use **/
+  uint32_t       RESERVED3[1U];   /**< Reserved for future use **/
   __IM uint32_t  DCDCSYNC;        /**< DCDC Read Status Register  */
 
-  uint32_t       RESERVED4[5];    /**< Reserved for future use **/
+  uint32_t       RESERVED4[5U];   /**< Reserved for future use **/
   __IOM uint32_t VMONAVDDCTRL;    /**< VMON AVDD Channel Control  */
   __IOM uint32_t VMONALTAVDDCTRL; /**< Alternate VMON AVDD Channel Control  */
   __IOM uint32_t VMONDVDDCTRL;    /**< VMON DVDD Channel Control  */
   __IOM uint32_t VMONIO0CTRL;     /**< VMON IOVDD0 Channel Control  */
 
-  uint32_t       RESERVED5[49];   /**< Reserved for future use **/
+  uint32_t       RESERVED5[49U];  /**< Reserved for future use **/
   __IOM uint32_t BIASCONF;        /**< Configurations Related to the Bias  */
 
-  uint32_t       RESERVED6[10];   /**< Reserved for future use **/
+  uint32_t       RESERVED6[10U];  /**< Reserved for future use **/
   __IOM uint32_t TESTLOCK;        /**< Test Lock Register  */
 
-  uint32_t       RESERVED7[2];    /**< Reserved for future use **/
-  __IOM uint32_t BIASTESTCTRL;    /**< Test Control Register for regulator and BIAS  */
+  uint32_t       RESERVED7[2U];   /**< Reserved for future use **/
+  __IOM uint32_t BIASTESTCTRL;    /**< Test Control Register for Regulator and BIAS  */
 } EMU_TypeDef;                    /** @} */
 
 /**************************************************************************//**
- * @defgroup EFR32FG1P_EMU_BitFields
+ * @addtogroup EFR32FG1P_EMU
+ * @{
+ * @defgroup EFR32FG1P_EMU_BitFields  EMU Bit Fields
  * @{
  *****************************************************************************/
 
@@ -108,32 +117,32 @@ typedef struct
 /* Bit fields for EMU STATUS */
 #define _EMU_STATUS_RESETVALUE                       0x00000000UL                           /**< Default value for EMU_STATUS */
 #define _EMU_STATUS_MASK                             0x0010011FUL                           /**< Mask for EMU_STATUS */
-#define EMU_STATUS_VMONRDY                           (0x1UL << 0)                           /**< VMON ready */
+#define EMU_STATUS_VMONRDY                           (0x1UL << 0)                           /**< VMON Ready */
 #define _EMU_STATUS_VMONRDY_SHIFT                    0                                      /**< Shift value for EMU_VMONRDY */
 #define _EMU_STATUS_VMONRDY_MASK                     0x1UL                                  /**< Bit mask for EMU_VMONRDY */
 #define _EMU_STATUS_VMONRDY_DEFAULT                  0x00000000UL                           /**< Mode DEFAULT for EMU_STATUS */
 #define EMU_STATUS_VMONRDY_DEFAULT                   (_EMU_STATUS_VMONRDY_DEFAULT << 0)     /**< Shifted mode DEFAULT for EMU_STATUS */
-#define EMU_STATUS_VMONAVDD                          (0x1UL << 1)                           /**< VMON AVDD Channel. */
+#define EMU_STATUS_VMONAVDD                          (0x1UL << 1)                           /**< VMON AVDD Channel */
 #define _EMU_STATUS_VMONAVDD_SHIFT                   1                                      /**< Shift value for EMU_VMONAVDD */
 #define _EMU_STATUS_VMONAVDD_MASK                    0x2UL                                  /**< Bit mask for EMU_VMONAVDD */
 #define _EMU_STATUS_VMONAVDD_DEFAULT                 0x00000000UL                           /**< Mode DEFAULT for EMU_STATUS */
 #define EMU_STATUS_VMONAVDD_DEFAULT                  (_EMU_STATUS_VMONAVDD_DEFAULT << 1)    /**< Shifted mode DEFAULT for EMU_STATUS */
-#define EMU_STATUS_VMONALTAVDD                       (0x1UL << 2)                           /**< Alternate VMON AVDD Channel. */
+#define EMU_STATUS_VMONALTAVDD                       (0x1UL << 2)                           /**< Alternate VMON AVDD Channel */
 #define _EMU_STATUS_VMONALTAVDD_SHIFT                2                                      /**< Shift value for EMU_VMONALTAVDD */
 #define _EMU_STATUS_VMONALTAVDD_MASK                 0x4UL                                  /**< Bit mask for EMU_VMONALTAVDD */
 #define _EMU_STATUS_VMONALTAVDD_DEFAULT              0x00000000UL                           /**< Mode DEFAULT for EMU_STATUS */
 #define EMU_STATUS_VMONALTAVDD_DEFAULT               (_EMU_STATUS_VMONALTAVDD_DEFAULT << 2) /**< Shifted mode DEFAULT for EMU_STATUS */
-#define EMU_STATUS_VMONDVDD                          (0x1UL << 3)                           /**< VMON DVDD Channel. */
+#define EMU_STATUS_VMONDVDD                          (0x1UL << 3)                           /**< VMON DVDD Channel */
 #define _EMU_STATUS_VMONDVDD_SHIFT                   3                                      /**< Shift value for EMU_VMONDVDD */
 #define _EMU_STATUS_VMONDVDD_MASK                    0x8UL                                  /**< Bit mask for EMU_VMONDVDD */
 #define _EMU_STATUS_VMONDVDD_DEFAULT                 0x00000000UL                           /**< Mode DEFAULT for EMU_STATUS */
 #define EMU_STATUS_VMONDVDD_DEFAULT                  (_EMU_STATUS_VMONDVDD_DEFAULT << 3)    /**< Shifted mode DEFAULT for EMU_STATUS */
-#define EMU_STATUS_VMONIO0                           (0x1UL << 4)                           /**< VMON IOVDD0 Channel. */
+#define EMU_STATUS_VMONIO0                           (0x1UL << 4)                           /**< VMON IOVDD0 Channel */
 #define _EMU_STATUS_VMONIO0_SHIFT                    4                                      /**< Shift value for EMU_VMONIO0 */
 #define _EMU_STATUS_VMONIO0_MASK                     0x10UL                                 /**< Bit mask for EMU_VMONIO0 */
 #define _EMU_STATUS_VMONIO0_DEFAULT                  0x00000000UL                           /**< Mode DEFAULT for EMU_STATUS */
 #define EMU_STATUS_VMONIO0_DEFAULT                   (_EMU_STATUS_VMONIO0_DEFAULT << 4)     /**< Shifted mode DEFAULT for EMU_STATUS */
-#define EMU_STATUS_VMONFVDD                          (0x1UL << 8)                           /**< VMON VDDFLASH Channel. */
+#define EMU_STATUS_VMONFVDD                          (0x1UL << 8)                           /**< VMON VDDFLASH Channel */
 #define _EMU_STATUS_VMONFVDD_SHIFT                   8                                      /**< Shift value for EMU_VMONFVDD */
 #define _EMU_STATUS_VMONFVDD_MASK                    0x100UL                                /**< Bit mask for EMU_VMONFVDD */
 #define _EMU_STATUS_VMONFVDD_DEFAULT                 0x00000000UL                           /**< Mode DEFAULT for EMU_STATUS */
@@ -203,17 +212,17 @@ typedef struct
 #define EMU_EM4CTRL_EM4STATE_DEFAULT                 (_EMU_EM4CTRL_EM4STATE_DEFAULT << 0)       /**< Shifted mode DEFAULT for EMU_EM4CTRL */
 #define EMU_EM4CTRL_EM4STATE_EM4S                    (_EMU_EM4CTRL_EM4STATE_EM4S << 0)          /**< Shifted mode EM4S for EMU_EM4CTRL */
 #define EMU_EM4CTRL_EM4STATE_EM4H                    (_EMU_EM4CTRL_EM4STATE_EM4H << 0)          /**< Shifted mode EM4H for EMU_EM4CTRL */
-#define EMU_EM4CTRL_RETAINLFRCO                      (0x1UL << 1)                               /**< LFRCO Retain during EM4 */
+#define EMU_EM4CTRL_RETAINLFRCO                      (0x1UL << 1)                               /**< LFRCO Retain During EM4 */
 #define _EMU_EM4CTRL_RETAINLFRCO_SHIFT               1                                          /**< Shift value for EMU_RETAINLFRCO */
 #define _EMU_EM4CTRL_RETAINLFRCO_MASK                0x2UL                                      /**< Bit mask for EMU_RETAINLFRCO */
 #define _EMU_EM4CTRL_RETAINLFRCO_DEFAULT             0x00000000UL                               /**< Mode DEFAULT for EMU_EM4CTRL */
 #define EMU_EM4CTRL_RETAINLFRCO_DEFAULT              (_EMU_EM4CTRL_RETAINLFRCO_DEFAULT << 1)    /**< Shifted mode DEFAULT for EMU_EM4CTRL */
-#define EMU_EM4CTRL_RETAINLFXO                       (0x1UL << 2)                               /**< LFXO Retain during EM4 */
+#define EMU_EM4CTRL_RETAINLFXO                       (0x1UL << 2)                               /**< LFXO Retain During EM4 */
 #define _EMU_EM4CTRL_RETAINLFXO_SHIFT                2                                          /**< Shift value for EMU_RETAINLFXO */
 #define _EMU_EM4CTRL_RETAINLFXO_MASK                 0x4UL                                      /**< Bit mask for EMU_RETAINLFXO */
 #define _EMU_EM4CTRL_RETAINLFXO_DEFAULT              0x00000000UL                               /**< Mode DEFAULT for EMU_EM4CTRL */
 #define EMU_EM4CTRL_RETAINLFXO_DEFAULT               (_EMU_EM4CTRL_RETAINLFXO_DEFAULT << 2)     /**< Shifted mode DEFAULT for EMU_EM4CTRL */
-#define EMU_EM4CTRL_RETAINULFRCO                     (0x1UL << 3)                               /**< ULFRCO Retain during EM4S */
+#define EMU_EM4CTRL_RETAINULFRCO                     (0x1UL << 3)                               /**< ULFRCO Retain During EM4S */
 #define _EMU_EM4CTRL_RETAINULFRCO_SHIFT              3                                          /**< Shift value for EMU_RETAINULFRCO */
 #define _EMU_EM4CTRL_RETAINULFRCO_MASK               0x8UL                                      /**< Bit mask for EMU_RETAINULFRCO */
 #define _EMU_EM4CTRL_RETAINULFRCO_DEFAULT            0x00000000UL                               /**< Mode DEFAULT for EMU_EM4CTRL */
@@ -244,7 +253,7 @@ typedef struct
 #define _EMU_TEMPLIMITS_TEMPHIGH_MASK                0xFF00UL                                /**< Bit mask for EMU_TEMPHIGH */
 #define _EMU_TEMPLIMITS_TEMPHIGH_DEFAULT             0x000000FFUL                            /**< Mode DEFAULT for EMU_TEMPLIMITS */
 #define EMU_TEMPLIMITS_TEMPHIGH_DEFAULT              (_EMU_TEMPLIMITS_TEMPHIGH_DEFAULT << 8) /**< Shifted mode DEFAULT for EMU_TEMPLIMITS */
-#define EMU_TEMPLIMITS_EM4WUEN                       (0x1UL << 16)                           /**< Enable EM4 Wakeup due to low/high temperature */
+#define EMU_TEMPLIMITS_EM4WUEN                       (0x1UL << 16)                           /**< Enable EM4 Wakeup Due to Low/high Temperature */
 #define _EMU_TEMPLIMITS_EM4WUEN_SHIFT                16                                      /**< Shift value for EMU_EM4WUEN */
 #define _EMU_TEMPLIMITS_EM4WUEN_MASK                 0x10000UL                               /**< Bit mask for EMU_EM4WUEN */
 #define _EMU_TEMPLIMITS_EM4WUEN_DEFAULT              0x00000000UL                            /**< Mode DEFAULT for EMU_TEMPLIMITS */
@@ -311,32 +320,32 @@ typedef struct
 #define _EMU_IF_VMONFVDDRISE_MASK                    0x8000UL                                     /**< Bit mask for EMU_VMONFVDDRISE */
 #define _EMU_IF_VMONFVDDRISE_DEFAULT                 0x00000000UL                                 /**< Mode DEFAULT for EMU_IF */
 #define EMU_IF_VMONFVDDRISE_DEFAULT                  (_EMU_IF_VMONFVDDRISE_DEFAULT << 15)         /**< Shifted mode DEFAULT for EMU_IF */
-#define EMU_IF_PFETOVERCURRENTLIMIT                  (0x1UL << 16)                                /**< PFET current limit hit */
+#define EMU_IF_PFETOVERCURRENTLIMIT                  (0x1UL << 16)                                /**< PFET Current Limit Hit */
 #define _EMU_IF_PFETOVERCURRENTLIMIT_SHIFT           16                                           /**< Shift value for EMU_PFETOVERCURRENTLIMIT */
 #define _EMU_IF_PFETOVERCURRENTLIMIT_MASK            0x10000UL                                    /**< Bit mask for EMU_PFETOVERCURRENTLIMIT */
 #define _EMU_IF_PFETOVERCURRENTLIMIT_DEFAULT         0x00000000UL                                 /**< Mode DEFAULT for EMU_IF */
 #define EMU_IF_PFETOVERCURRENTLIMIT_DEFAULT          (_EMU_IF_PFETOVERCURRENTLIMIT_DEFAULT << 16) /**< Shifted mode DEFAULT for EMU_IF */
-#define EMU_IF_NFETOVERCURRENTLIMIT                  (0x1UL << 17)                                /**< NFET current limit hit */
+#define EMU_IF_NFETOVERCURRENTLIMIT                  (0x1UL << 17)                                /**< NFET Current Limit Hit */
 #define _EMU_IF_NFETOVERCURRENTLIMIT_SHIFT           17                                           /**< Shift value for EMU_NFETOVERCURRENTLIMIT */
 #define _EMU_IF_NFETOVERCURRENTLIMIT_MASK            0x20000UL                                    /**< Bit mask for EMU_NFETOVERCURRENTLIMIT */
 #define _EMU_IF_NFETOVERCURRENTLIMIT_DEFAULT         0x00000000UL                                 /**< Mode DEFAULT for EMU_IF */
 #define EMU_IF_NFETOVERCURRENTLIMIT_DEFAULT          (_EMU_IF_NFETOVERCURRENTLIMIT_DEFAULT << 17) /**< Shifted mode DEFAULT for EMU_IF */
-#define EMU_IF_DCDCLPRUNNING                         (0x1UL << 18)                                /**< LP mode is running */
+#define EMU_IF_DCDCLPRUNNING                         (0x1UL << 18)                                /**< LP Mode is Running */
 #define _EMU_IF_DCDCLPRUNNING_SHIFT                  18                                           /**< Shift value for EMU_DCDCLPRUNNING */
 #define _EMU_IF_DCDCLPRUNNING_MASK                   0x40000UL                                    /**< Bit mask for EMU_DCDCLPRUNNING */
 #define _EMU_IF_DCDCLPRUNNING_DEFAULT                0x00000000UL                                 /**< Mode DEFAULT for EMU_IF */
 #define EMU_IF_DCDCLPRUNNING_DEFAULT                 (_EMU_IF_DCDCLPRUNNING_DEFAULT << 18)        /**< Shifted mode DEFAULT for EMU_IF */
-#define EMU_IF_DCDCLNRUNNING                         (0x1UL << 19)                                /**< LN mode is running */
+#define EMU_IF_DCDCLNRUNNING                         (0x1UL << 19)                                /**< LN Mode is Running */
 #define _EMU_IF_DCDCLNRUNNING_SHIFT                  19                                           /**< Shift value for EMU_DCDCLNRUNNING */
 #define _EMU_IF_DCDCLNRUNNING_MASK                   0x80000UL                                    /**< Bit mask for EMU_DCDCLNRUNNING */
 #define _EMU_IF_DCDCLNRUNNING_DEFAULT                0x00000000UL                                 /**< Mode DEFAULT for EMU_IF */
 #define EMU_IF_DCDCLNRUNNING_DEFAULT                 (_EMU_IF_DCDCLNRUNNING_DEFAULT << 19)        /**< Shifted mode DEFAULT for EMU_IF */
-#define EMU_IF_DCDCINBYPASS                          (0x1UL << 20)                                /**< DCDC is in bypass */
+#define EMU_IF_DCDCINBYPASS                          (0x1UL << 20)                                /**< DCDC is in Bypass */
 #define _EMU_IF_DCDCINBYPASS_SHIFT                   20                                           /**< Shift value for EMU_DCDCINBYPASS */
 #define _EMU_IF_DCDCINBYPASS_MASK                    0x100000UL                                   /**< Bit mask for EMU_DCDCINBYPASS */
 #define _EMU_IF_DCDCINBYPASS_DEFAULT                 0x00000000UL                                 /**< Mode DEFAULT for EMU_IF */
 #define EMU_IF_DCDCINBYPASS_DEFAULT                  (_EMU_IF_DCDCINBYPASS_DEFAULT << 20)         /**< Shifted mode DEFAULT for EMU_IF */
-#define EMU_IF_EM23WAKEUP                            (0x1UL << 24)                                /**< Wakeup IRQ from EM2 and EM3 */
+#define EMU_IF_EM23WAKEUP                            (0x1UL << 24)                                /**< Wakeup IRQ From EM2 and EM3 */
 #define _EMU_IF_EM23WAKEUP_SHIFT                     24                                           /**< Shift value for EMU_EM23WAKEUP */
 #define _EMU_IF_EM23WAKEUP_MASK                      0x1000000UL                                  /**< Bit mask for EMU_EM23WAKEUP */
 #define _EMU_IF_EM23WAKEUP_DEFAULT                   0x00000000UL                                 /**< Mode DEFAULT for EMU_IF */
@@ -732,7 +741,7 @@ typedef struct
 /* Bit fields for EMU DCDCMISCCTRL */
 #define _EMU_DCDCMISCCTRL_RESETVALUE                 0x33307700UL                                    /**< Default value for EMU_DCDCMISCCTRL */
 #define _EMU_DCDCMISCCTRL_MASK                       0x377FFF01UL                                    /**< Mask for EMU_DCDCMISCCTRL */
-#define EMU_DCDCMISCCTRL_LNFORCECCM                  (0x1UL << 0)                                    /**< Force DCDC into CCM mode in low noise operation */
+#define EMU_DCDCMISCCTRL_LNFORCECCM                  (0x1UL << 0)                                    /**< Force DCDC Into CCM Mode in Low Noise Operation */
 #define _EMU_DCDCMISCCTRL_LNFORCECCM_SHIFT           0                                               /**< Shift value for EMU_LNFORCECCM */
 #define _EMU_DCDCMISCCTRL_LNFORCECCM_MASK            0x1UL                                           /**< Bit mask for EMU_LNFORCECCM */
 #define _EMU_DCDCMISCCTRL_LNFORCECCM_DEFAULT         0x00000000UL                                    /**< Mode DEFAULT for EMU_DCDCMISCCTRL */
@@ -847,7 +856,7 @@ typedef struct
 #define _EMU_DCDCTIMING_LPINITWAIT_MASK              0xFFUL                                        /**< Bit mask for EMU_LPINITWAIT */
 #define _EMU_DCDCTIMING_LPINITWAIT_DEFAULT           0x000000FFUL                                  /**< Mode DEFAULT for EMU_DCDCTIMING */
 #define EMU_DCDCTIMING_LPINITWAIT_DEFAULT            (_EMU_DCDCTIMING_LPINITWAIT_DEFAULT << 0)     /**< Shifted mode DEFAULT for EMU_DCDCTIMING */
-#define EMU_DCDCTIMING_COMPENPRCHGEN                 (0x1UL << 11)                                 /**< LN mode precharge enable */
+#define EMU_DCDCTIMING_COMPENPRCHGEN                 (0x1UL << 11)                                 /**< LN Mode Precharge Enable */
 #define _EMU_DCDCTIMING_COMPENPRCHGEN_SHIFT          11                                            /**< Shift value for EMU_COMPENPRCHGEN */
 #define _EMU_DCDCTIMING_COMPENPRCHGEN_MASK           0x800UL                                       /**< Bit mask for EMU_COMPENPRCHGEN */
 #define _EMU_DCDCTIMING_COMPENPRCHGEN_DEFAULT        0x00000001UL                                  /**< Mode DEFAULT for EMU_DCDCTIMING */
@@ -868,7 +877,7 @@ typedef struct
 /* Bit fields for EMU DCDCLPVCTRL */
 #define _EMU_DCDCLPVCTRL_RESETVALUE                  0x00000168UL                           /**< Default value for EMU_DCDCLPVCTRL */
 #define _EMU_DCDCLPVCTRL_MASK                        0x000001FFUL                           /**< Mask for EMU_DCDCLPVCTRL */
-#define EMU_DCDCLPVCTRL_LPATT                        (0x1UL << 0)                           /**< Low power feedback attenuation */
+#define EMU_DCDCLPVCTRL_LPATT                        (0x1UL << 0)                           /**< Low Power Feedback Attenuation */
 #define _EMU_DCDCLPVCTRL_LPATT_SHIFT                 0                                      /**< Shift value for EMU_LPATT */
 #define _EMU_DCDCLPVCTRL_LPATT_MASK                  0x1UL                                  /**< Bit mask for EMU_LPATT */
 #define _EMU_DCDCLPVCTRL_LPATT_DEFAULT               0x00000000UL                           /**< Mode DEFAULT for EMU_DCDCLPVCTRL */
@@ -889,7 +898,7 @@ typedef struct
 #define _EMU_DCDCLPCTRL_LPCMPHYSSEL_MASK             0xF000UL                                     /**< Bit mask for EMU_LPCMPHYSSEL */
 #define _EMU_DCDCLPCTRL_LPCMPHYSSEL_DEFAULT          0x00000007UL                                 /**< Mode DEFAULT for EMU_DCDCLPCTRL */
 #define EMU_DCDCLPCTRL_LPCMPHYSSEL_DEFAULT           (_EMU_DCDCLPCTRL_LPCMPHYSSEL_DEFAULT << 12)  /**< Shifted mode DEFAULT for EMU_DCDCLPCTRL */
-#define EMU_DCDCLPCTRL_LPVREFDUTYEN                  (0x1UL << 24)                                /**< LP mode duty cycling enable */
+#define EMU_DCDCLPCTRL_LPVREFDUTYEN                  (0x1UL << 24)                                /**< LP Mode Duty Cycling Enable */
 #define _EMU_DCDCLPCTRL_LPVREFDUTYEN_SHIFT           24                                           /**< Shift value for EMU_LPVREFDUTYEN */
 #define _EMU_DCDCLPCTRL_LPVREFDUTYEN_MASK            0x1000000UL                                  /**< Bit mask for EMU_LPVREFDUTYEN */
 #define _EMU_DCDCLPCTRL_LPVREFDUTYEN_DEFAULT         0x00000000UL                                 /**< Mode DEFAULT for EMU_DCDCLPCTRL */
@@ -914,7 +923,7 @@ typedef struct
 /* Bit fields for EMU DCDCSYNC */
 #define _EMU_DCDCSYNC_RESETVALUE                     0x00000000UL                              /**< Default value for EMU_DCDCSYNC */
 #define _EMU_DCDCSYNC_MASK                           0x00000001UL                              /**< Mask for EMU_DCDCSYNC */
-#define EMU_DCDCSYNC_DCDCCTRLBUSY                    (0x1UL << 0)                              /**< DCDC CTRL Register Transfer Busy. */
+#define EMU_DCDCSYNC_DCDCCTRLBUSY                    (0x1UL << 0)                              /**< DCDC CTRL Register Transfer Busy */
 #define _EMU_DCDCSYNC_DCDCCTRLBUSY_SHIFT             0                                         /**< Shift value for EMU_DCDCCTRLBUSY */
 #define _EMU_DCDCSYNC_DCDCCTRLBUSY_MASK              0x1UL                                     /**< Bit mask for EMU_DCDCCTRLBUSY */
 #define _EMU_DCDCSYNC_DCDCCTRLBUSY_DEFAULT           0x00000000UL                              /**< Mode DEFAULT for EMU_DCDCSYNC */
@@ -1027,7 +1036,7 @@ typedef struct
 #define _EMU_VMONIO0CTRL_FALLWU_MASK                 0x8UL                                        /**< Bit mask for EMU_FALLWU */
 #define _EMU_VMONIO0CTRL_FALLWU_DEFAULT              0x00000000UL                                 /**< Mode DEFAULT for EMU_VMONIO0CTRL */
 #define EMU_VMONIO0CTRL_FALLWU_DEFAULT               (_EMU_VMONIO0CTRL_FALLWU_DEFAULT << 3)       /**< Shifted mode DEFAULT for EMU_VMONIO0CTRL */
-#define EMU_VMONIO0CTRL_RETDIS                       (0x1UL << 4)                                 /**< EM4 IO0 Retention disable */
+#define EMU_VMONIO0CTRL_RETDIS                       (0x1UL << 4)                                 /**< EM4 IO0 Retention Disable */
 #define _EMU_VMONIO0CTRL_RETDIS_SHIFT                4                                            /**< Shift value for EMU_RETDIS */
 #define _EMU_VMONIO0CTRL_RETDIS_MASK                 0x10UL                                       /**< Bit mask for EMU_RETDIS */
 #define _EMU_VMONIO0CTRL_RETDIS_DEFAULT              0x00000000UL                                 /**< Mode DEFAULT for EMU_VMONIO0CTRL */
@@ -1100,6 +1109,6 @@ typedef struct
 #define _EMU_BIASTESTCTRL_BIAS_RIP_RESET_DEFAULT     0x00000000UL                                    /**< Mode DEFAULT for EMU_BIASTESTCTRL */
 #define EMU_BIASTESTCTRL_BIAS_RIP_RESET_DEFAULT      (_EMU_BIASTESTCTRL_BIAS_RIP_RESET_DEFAULT << 3) /**< Shifted mode DEFAULT for EMU_BIASTESTCTRL */
 
+/** @} */
 /** @} End of group EFR32FG1P_EMU */
 /** @} End of group Parts */
-

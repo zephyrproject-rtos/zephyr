@@ -1,10 +1,10 @@
 /***************************************************************************//**
  * @file em_burtc.c
  * @brief Backup Real Time Counter (BURTC) Peripheral API
- * @version 5.1.2
+ * @version 5.6.0
  *******************************************************************************
- * @section License
- * <b>Copyright 2016 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2016 Silicon Laboratories, Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -29,7 +29,6 @@
  * arising from your use of this Software.
  *
  ******************************************************************************/
-
 
 #include "em_burtc.h"
 #if defined(BURTC_PRESENT)
@@ -60,64 +59,65 @@
 
 /** @cond DO_NOT_INCLUDE_WITH_DOXYGEN */
 /***************************************************************************//**
- * @brief Convert dividend to prescaler logarithmic value. Only works for even
- *        numbers equal to 2^n
+ * @brief Convert dividend to a prescaler logarithmic value. Only works for even
+ *        numbers equal to 2^n.
  * @param[in] div Unscaled dividend,
- * @return Base 2 logarithm of input, as used by fixed prescalers
+ * @return Base 2 logarithm of input, as used by fixed prescalers.
  ******************************************************************************/
 __STATIC_INLINE uint32_t divToLog2(uint32_t div)
 {
   uint32_t log2;
 
-  /* Prescaler accepts an argument of 128 or less, valid values being 2^n */
+  /* Prescaler accepts an argument of 128 or less, valid values being 2^n. */
   EFM_ASSERT((div > 0) && (div <= 32768));
 
-  /* Count leading zeroes and "reverse" result, Cortex-M3 intrinsic */
+  /* Count leading zeroes and "reverse" result, Cortex-M3 intrinsic. */
   log2 = (31 - __CLZ(div));
 
   return log2;
 }
 
-
 /***************************************************************************//**
  * @brief
- *   Wait for ongoing sync of register(s) to low frequency domain to complete.
+ *   Wait for an ongoing sync of register(s) to low frequency domain to complete.
  *
  * @param[in] mask
- *   Bitmask corresponding to SYNCBUSY register defined bits, indicating
+ *   A bitmask corresponding to SYNCBUSY register defined bits, indicating
  *   registers that must complete any ongoing synchronization.
  ******************************************************************************/
 __STATIC_INLINE void regSync(uint32_t mask)
 {
+#if defined(_BURTC_FREEZE_MASK)
   /* Avoid deadlock if modifying the same register twice when freeze mode is
-     activated, or when no clock is selected for the BURTC. If no clock is
-     selected, then the sync is done once the clock source is set. */
+     activated or when a clock is not selected for the BURTC. If a clock is
+     not selected, then the sync is done once the clock source is set. */
   if ((BURTC->FREEZE & BURTC_FREEZE_REGFREEZE)
-      || ((BURTC->CTRL & _BURTC_CTRL_CLKSEL_MASK) == BURTC_CTRL_CLKSEL_NONE))
-  {
+      || ((BURTC->CTRL & _BURTC_CTRL_CLKSEL_MASK) == BURTC_CTRL_CLKSEL_NONE)
+      || ((BURTC->CTRL & _BURTC_CTRL_RSTEN_MASK) == BURTC_CTRL_RSTEN)) {
     return;
   }
-  /* Wait for any pending previous write operation to have been completed */
-  /* in low frequency domain. This is only required for the Gecko Family */
-  while (BURTC->SYNCBUSY & mask)
+#endif
+
+  /* Wait for any pending previous write operation to complete */
+  /* in low frequency domain. This is only required for the Gecko Family. */
+  while ((BURTC->SYNCBUSY & mask) != 0U)
     ;
 }
 /** @endcond */
-
 
 /*******************************************************************************
  **************************   GLOBAL FUNCTIONS   *******************************
  ******************************************************************************/
 
 /***************************************************************************//**
- * @brief Initialize BURTC
+ * @brief Initialize BURTC.
  *
  * @details
  *    Configures the BURTC peripheral.
  *
  * @note
  *   Before initialization, BURTC module must first be enabled by clearing the
- *   reset bit in the RMU, i.e.
+ *   reset bit in the RMU, i.e.,
  * @verbatim
  *   RMU_ResetControl(rmuResetBU, rmuResetModeClear);
  * @endverbatim
@@ -125,38 +125,39 @@ __STATIC_INLINE void regSync(uint32_t mask)
  *   initialization if enable is set to true. The counter will always be reset.
  *
  * @param[in] burtcInit
- *   Pointer to BURTC initialization structure
+ *   A pointer to the BURTC initialization structure.
  ******************************************************************************/
 void BURTC_Init(const BURTC_Init_TypeDef *burtcInit)
 {
+#if defined(_SILICON_LABS_32B_SERIES_0)
   uint32_t ctrl;
   uint32_t presc;
 
-  /* Check initializer structure integrity */
+  /* Check initializer structure integrity. */
   EFM_ASSERT(burtcInit != (BURTC_Init_TypeDef *) 0);
-  /* Clock divider must be between 1 and 128, really on the form 2^n */
+  /* Clock divider must be between 1 and 128, really on the form 2^n. */
   EFM_ASSERT((burtcInit->clkDiv >= 1) && (burtcInit->clkDiv <= 128));
-  /* Ignored compare bits during low power operation must be less than 7 */
-  /* Note! Giant Gecko revision C errata, do NOT use LPCOMP=7 */
+
+  /* Ignored compare bits during low power operation must be less than 7. */
+  /* Note! Giant Gecko revision C errata, do NOT use LPCOMP=7. */
   EFM_ASSERT(burtcInit->lowPowerComp <= 6);
-  /* You cannot enable the BURTC if mode is set to disabled */
-  EFM_ASSERT((burtcInit->enable == false) ||
-             ((burtcInit->enable == true)
-              && (burtcInit->mode != burtcModeDisable)));
-  /* Low power mode is only available with LFRCO or LFXO as clock source */
+  /* You cannot enable the BURTC if mode is set to disabled. */
+  EFM_ASSERT((burtcInit->enable == false)
+             || ((burtcInit->enable == true)
+                 && (burtcInit->mode != burtcModeDisable)));
+  /* Low power mode is only available with LFRCO or LFXO as clock source. */
   EFM_ASSERT((burtcInit->clkSel != burtcClkSelULFRCO)
              || ((burtcInit->clkSel == burtcClkSelULFRCO)
-                  && (burtcInit->lowPowerMode == burtcLPDisable)));
+                 && (burtcInit->lowPowerMode == burtcLPDisable)));
 
-  /* Calculate prescaler value from clock divider input */
+  /* Calculate a prescaler value from the clock divider input. */
   /* Note! If clock select (clkSel) is ULFRCO, a clock divisor (clkDiv) of
-     value 1 will select a 2kHz ULFRCO clock, while any other value will
-     select a 1kHz ULFRCO clock source. */
+     value 1 will select a 2 kHz ULFRCO clock, while any other value will
+     select a 1 kHz ULFRCO clock source. */
   presc = divToLog2(burtcInit->clkDiv);
 
-  /* Make sure all registers are updated simultaneously */
-  if (burtcInit->enable)
-  {
+  /* Make sure all registers are updated simultaneously. */
+  if (burtcInit->enable) {
     BURTC_FreezeEnable(true);
   }
 
@@ -164,10 +165,10 @@ void BURTC_Init(const BURTC_Init_TypeDef *burtcInit)
    * register updates in LF domain. */
   regSync(BURTC_SYNCBUSY_LPMODE);
 
-  /* Configure low power mode */
+  /* Configure low power mode. */
   BURTC->LPMODE = (uint32_t) (burtcInit->lowPowerMode);
 
-  /* New configuration */
+  /* New configuration. */
   ctrl = (BURTC_CTRL_RSTEN
           | (burtcInit->mode)
           | (burtcInit->debugRun << _BURTC_CTRL_DEBUGRUN_SHIFT)
@@ -177,77 +178,158 @@ void BURTC_Init(const BURTC_Init_TypeDef *burtcInit)
           | (burtcInit->clkSel)
           | (burtcInit->timeStamp << _BURTC_CTRL_BUMODETSEN_SHIFT));
 
-  /* Clear interrupts */
+  /* Clear interrupts. */
   BURTC_IntClear(0xFFFFFFFF);
 
-  /* Set new configuration */
+  /* Set the new configuration. */
   BURTC->CTRL = ctrl;
 
-  /* Enable BURTC and counter */
-  if (burtcInit->enable)
-  {
-    /* To enable BURTC counter, we need to disable reset */
+  /* Enable BURTC and counter. */
+  if (burtcInit->enable) {
+    /* To enable BURTC counter, disable reset. */
     BURTC_Enable(true);
 
-    /* Clear freeze */
+    /* Clear freeze. */
     BURTC_FreezeEnable(false);
   }
+#elif defined(_SILICON_LABS_32B_SERIES_2)
+  uint32_t presc;
+
+  presc = divToLog2(burtcInit->clkDiv);
+
+  if (BURTC->EN != 0U) {
+    BURTC_SyncWait();
+  }
+  BURTC->EN_CLR = BURTC_EN_EN;
+  regSync(BURTC_SYNCBUSY_EN);
+  BURTC->CFG = (presc << _BURTC_CFG_CNTPRESC_SHIFT)
+               | ((burtcInit->compare0Top ? 1U : 0U) << _BURTC_CFG_COMPTOP_SHIFT)
+               | ((burtcInit->debugRun ? 1U : 0U) << _BURTC_CFG_DEBUGRUN_SHIFT);
+  BURTC->EM4WUEN = ((burtcInit->em4comp ? 1U : 0U) << _BURTC_EM4WUEN_COMPEM4WUEN_SHIFT)
+                   | ((burtcInit->em4overflow ? 1U : 0U) << _BURTC_EM4WUEN_OFEM4WUEN_SHIFT);
+  BURTC->EN_SET = BURTC_EN_EN;
+  if (burtcInit->start) {
+    BURTC_Start();
+  }
+#endif
 }
 
+#if defined(_SILICON_LABS_32B_SERIES_2)
+/***************************************************************************//**
+ * @brief
+ *   Enable or Disable BURTC peripheral.
+ *
+ * @param[in] enable
+ *   true to enable, false to disable.
+ ******************************************************************************/
+void BURTC_Enable(bool enable)
+{
+  regSync(BURTC_SYNCBUSY_EN);
+
+  if ((BURTC->EN == 0U) && !enable) {
+    /* Trying to disable BURTC when it's already disabled */
+    return;
+  }
+
+  if (BURTC->EN != 0U) {
+    /* Modifying the enable bit while synchronization is active will BusFault */
+    BURTC_SyncWait();
+  }
+
+  if (enable) {
+    BURTC->EN_SET = BURTC_EN_EN;
+  } else {
+    BURTC_Stop();
+    BURTC_SyncWait(); /* Wait for the stop to synchronize */
+    BURTC->EN_CLR = BURTC_EN_EN;
+  }
+}
+#elif defined(_SILICON_LABS_32B_SERIES_0)
+/***************************************************************************//**
+ * @brief
+ *   Enable or Disable BURTC peripheral reset and start counter
+ * @param[in] enable
+ *   If true; asserts reset to BURTC, halts counter, if false; deassert reset
+ ******************************************************************************/
+void BURTC_Enable(bool enable)
+{
+  /* Note! If mode is disabled, BURTC counter will not start */
+  EFM_ASSERT(((enable == true)
+              && ((BURTC->CTRL & _BURTC_CTRL_MODE_MASK)
+                  != BURTC_CTRL_MODE_DISABLE))
+             || (enable == false));
+  BUS_RegBitWrite(&BURTC->CTRL, _BURTC_CTRL_RSTEN_SHIFT, (uint32_t) !enable);
+}
+#endif
 
 /***************************************************************************//**
- * @brief Set BURTC compare channel
+ * @brief Set BURTC compare channel.
  *
- * @param[in] comp Compare channel index, must be 0 for Giant / Leopard Gecko
+ * @param[in] comp Compare the channel index, must be 0 for current devices.
  *
- * @param[in] value New compare value
+ * @param[in] value New compare value.
  ******************************************************************************/
 void BURTC_CompareSet(unsigned int comp, uint32_t value)
 {
   (void) comp;  /* Unused parameter when EFM_ASSERT is undefined. */
 
-  EFM_ASSERT(comp == 0);
+  EFM_ASSERT(comp == 0U);
 
+#if defined(_BURTC_COMP0_MASK)
   /* Modification of COMP0 register requires sync with potential ongoing
    * register updates in LF domain. */
   regSync(BURTC_SYNCBUSY_COMP0);
 
-  /* Configure compare channel 0 */
+  /* Configure compare channel 0/. */
   BURTC->COMP0 = value;
+#else
+  /* Wait for last potential write to complete. */
+  regSync(BURTC_SYNCBUSY_COMP);
+
+  /* Configure compare channel 0 */
+  BURTC->COMP = value;
+  regSync(BURTC_SYNCBUSY_COMP);
+#endif
 }
 
-
 /***************************************************************************//**
- * @brief Get BURTC compare value
+ * @brief Get the BURTC compare value.
  *
- * @param[in] comp Compare channel index value, must be 0 for Giant/Leopard.
+ * @param[in] comp Compare the channel index value, must be 0 for Giant/Leopard Gecko.
  *
- * @return Currently configured value for this compare channel
+ * @return The currently configured value for this compare channel.
  ******************************************************************************/
 uint32_t BURTC_CompareGet(unsigned int comp)
 {
   (void) comp;  /* Unused parameter when EFM_ASSERT is undefined. */
 
-  EFM_ASSERT(comp == 0);
-
+  EFM_ASSERT(comp == 0U);
+#if defined(_BURTC_COMP0_MASK)
   return BURTC->COMP0;
+#else
+  return BURTC->COMP;
+#endif
 }
-
 
 /***************************************************************************//**
  * @brief Reset counter
  ******************************************************************************/
 void BURTC_CounterReset(void)
 {
+#if defined(_BURTC_CTRL_MASK)
   /* Set and clear reset bit */
-  BUS_RegBitWrite(&BURTC->CTRL, _BURTC_CTRL_RSTEN_SHIFT, 1);
-  BUS_RegBitWrite(&BURTC->CTRL, _BURTC_CTRL_RSTEN_SHIFT, 0);
+  BUS_RegBitWrite(&BURTC->CTRL, _BURTC_CTRL_RSTEN_SHIFT, 1U);
+  BUS_RegBitWrite(&BURTC->CTRL, _BURTC_CTRL_RSTEN_SHIFT, 0U);
+#else
+  BURTC_Stop();
+  BURTC->CNT = 0U;
+  BURTC_Start();
+#endif
 }
-
 
 /***************************************************************************//**
  * @brief
- *   Restore BURTC to reset state
+ *   Restore BURTC to reset state.
  * @note
  *   Before accessing the BURTC, BURSTEN in RMU->CTRL must be cleared.
  *   LOCK will not be reset to default value, as this will disable access
@@ -255,18 +337,38 @@ void BURTC_CounterReset(void)
  ******************************************************************************/
 void BURTC_Reset(void)
 {
+#if defined(_SILICON_LABS_32B_SERIES_0)
   bool buResetState;
 
-  /* Read reset state, set reset and restore state */
+  /* Read reset state, set reset, and restore state. */
   buResetState = BUS_RegBitRead(&RMU->CTRL, _RMU_CTRL_BURSTEN_SHIFT);
   BUS_RegBitWrite(&RMU->CTRL, _RMU_CTRL_BURSTEN_SHIFT, 1);
   BUS_RegBitWrite(&RMU->CTRL, _RMU_CTRL_BURSTEN_SHIFT, buResetState);
+#elif defined(_SILICON_LABS_32B_SERIES_2)
+  if (BURTC->EN != 0U) {
+    BURTC_SyncWait();
+  }
+  BURTC->EN_SET = BURTC_EN_EN;
+  BURTC_Stop();
+  BURTC->CNT     = 0x0;
+  BURTC->PRECNT  = 0x0;
+  BURTC->COMP    = 0x0;
+  BURTC->EM4WUEN = _BURTC_EM4WUEN_RESETVALUE;
+  BURTC->IEN     = _BURTC_IEN_RESETVALUE;
+  BURTC->IF_CLR  = _BURTC_IF_MASK;
+  /* Wait for all values to synchronize. BusFaults can happen if we don't
+   * do this before the enable bit is cleared. */
+  BURTC_SyncWait();
+  BURTC->EN_CLR  = BURTC_EN_EN;
+  BURTC_SyncWait();
+  BURTC->CFG = _BURTC_CFG_RESETVALUE;
+#endif
 }
 
-
+#if defined(_BURTC_CTRL_MASK)
 /***************************************************************************//**
  * @brief
- *   Get clock frequency of the BURTC.
+ *   Get the clock frequency of the BURTC.
  *
  * @return
  *   The current frequency in Hz.
@@ -280,27 +382,23 @@ uint32_t BURTC_ClockFreqGet(void)
   clkSel = BURTC->CTRL & _BURTC_CTRL_CLKSEL_MASK;
   clkDiv = (BURTC->CTRL & _BURTC_CTRL_PRESC_MASK) >> _BURTC_CTRL_PRESC_SHIFT;
 
-  switch (clkSel)
-  {
-    /** Ultra low frequency (1 kHz) clock */
+  switch (clkSel) {
+    /** Ultra-low frequency (1 kHz) clock. */
     case BURTC_CTRL_CLKSEL_ULFRCO:
-      if (_BURTC_CTRL_PRESC_DIV1 == clkDiv)
-      {
-        frequency = 2000;     /* 2KHz when clock divisor is 1. */
-      }
-      else
-      {
-        frequency = SystemULFRCOClockGet();  /* 1KHz when divisor is different
+      if (_BURTC_CTRL_PRESC_DIV1 == clkDiv) {
+        frequency = 2000;     /* 2 kHz when clock divisor is 1. */
+      } else {
+        frequency = SystemULFRCOClockGet();  /* 1 kHz when divisor is different
                                                 from 1. */
       }
       break;
 
-    /** Low frequency RC oscillator */
+    /** Low-frequency RC oscillator. */
     case BURTC_CTRL_CLKSEL_LFRCO:
       frequency = SystemLFRCOClockGet() / (1 << clkDiv); /* freq=32768/2^clkDiv */
       break;
 
-    /** Low frequency crystal osciallator */
+    /** Low-frequency crystal oscillator. */
     case BURTC_CTRL_CLKSEL_LFXO:
       frequency = SystemLFXOClockGet() / (1 << clkDiv); /* freq=32768/2^clkDiv */
       break;
@@ -311,7 +409,7 @@ uint32_t BURTC_ClockFreqGet(void)
   }
   return frequency;
 }
-
+#endif
 
 /** @} (end addtogroup BURTC) */
 /** @} (end addtogroup emlib) */

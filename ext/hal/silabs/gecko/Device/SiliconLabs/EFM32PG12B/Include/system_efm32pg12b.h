@@ -1,10 +1,10 @@
 /***************************************************************************//**
  * @file system_efm32pg12b.h
  * @brief CMSIS Cortex-M3/M4 System Layer for EFM32 devices.
- * @version 5.1.2
+ * @version 5.6.0
  ******************************************************************************
- * @section License
- * <b>Copyright 2017 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
  ******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -39,6 +39,15 @@ extern "C" {
 
 #include <stdint.h>
 
+/**************************************************************************//**
+ * @addtogroup Parts
+ * @{
+ *****************************************************************************/
+/**************************************************************************//**
+ * @addtogroup EFM32 EFM32
+ * @{
+ *****************************************************************************/
+
 /*******************************************************************************
  **************************   GLOBAL VARIABLES   *******************************
  ******************************************************************************/
@@ -50,42 +59,59 @@ extern uint32_t SystemHfrcoFreq;        /**< System HFRCO frequency */
  *****************************   PROTOTYPES   **********************************
  ******************************************************************************/
 
-void Reset_Handler(void);
-void NMI_Handler(void);
-void HardFault_Handler(void);
-void MemManage_Handler(void);
-void BusFault_Handler(void);
-void UsageFault_Handler(void);
-void SVC_Handler(void);
-void DebugMon_Handler(void);
-void PendSV_Handler(void);
-void SysTick_Handler(void);
+void Reset_Handler(void);           /**< Reset Handler */
+void NMI_Handler(void);             /**< NMI Handler */
+void HardFault_Handler(void);       /**< Hard Fault Handler */
+void MemManage_Handler(void);       /**< MPU Fault Handler */
+void BusFault_Handler(void);        /**< Bus Fault Handler */
+void UsageFault_Handler(void);      /**< Usage Fault Handler */
+void SVC_Handler(void);             /**< SVCall Handler */
+void DebugMon_Handler(void);        /**< Debug Monitor Handler */
+void PendSV_Handler(void);          /**< PendSV Handler */
+void SysTick_Handler(void);         /**< SysTick Handler */
 
-void EMU_IRQHandler(void);
-void WDOG0_IRQHandler(void);
-void LDMA_IRQHandler(void);
-void GPIO_EVEN_IRQHandler(void);
-void TIMER0_IRQHandler(void);
-void USART0_RX_IRQHandler(void);
-void USART0_TX_IRQHandler(void);
-void ACMP0_IRQHandler(void);
-void ADC0_IRQHandler(void);
-void IDAC0_IRQHandler(void);
-void I2C0_IRQHandler(void);
-void GPIO_ODD_IRQHandler(void);
-void TIMER1_IRQHandler(void);
-void USART1_RX_IRQHandler(void);
-void USART1_TX_IRQHandler(void);
-void LEUART0_IRQHandler(void);
-void PCNT0_IRQHandler(void);
-void CMU_IRQHandler(void);
-void MSC_IRQHandler(void);
-void LETIMER0_IRQHandler(void);
-void RTCC_IRQHandler(void);
-void CRYOTIMER_IRQHandler(void);
+void EMU_IRQHandler(void);          /**< EMU IRQ Handler */
+void WDOG0_IRQHandler(void);        /**< WDOG0 IRQ Handler */
+void WDOG1_IRQHandler(void);        /**< WDOG1 IRQ Handler */
+void LDMA_IRQHandler(void);         /**< LDMA IRQ Handler */
+void GPIO_EVEN_IRQHandler(void);    /**< GPIO_EVEN IRQ Handler */
+void TIMER0_IRQHandler(void);       /**< TIMER0 IRQ Handler */
+void USART0_RX_IRQHandler(void);    /**< USART0_RX IRQ Handler */
+void USART0_TX_IRQHandler(void);    /**< USART0_TX IRQ Handler */
+void ACMP0_IRQHandler(void);        /**< ACMP0 IRQ Handler */
+void ADC0_IRQHandler(void);         /**< ADC0 IRQ Handler */
+void IDAC0_IRQHandler(void);        /**< IDAC0 IRQ Handler */
+void I2C0_IRQHandler(void);         /**< I2C0 IRQ Handler */
+void GPIO_ODD_IRQHandler(void);     /**< GPIO_ODD IRQ Handler */
+void TIMER1_IRQHandler(void);       /**< TIMER1 IRQ Handler */
+void USART1_RX_IRQHandler(void);    /**< USART1_RX IRQ Handler */
+void USART1_TX_IRQHandler(void);    /**< USART1_TX IRQ Handler */
+void LEUART0_IRQHandler(void);      /**< LEUART0 IRQ Handler */
+void PCNT0_IRQHandler(void);        /**< PCNT0 IRQ Handler */
+void CMU_IRQHandler(void);          /**< CMU IRQ Handler */
+void MSC_IRQHandler(void);          /**< MSC IRQ Handler */
+void CRYPTO0_IRQHandler(void);      /**< CRYPTO IRQ Handler */
+void LETIMER0_IRQHandler(void);     /**< LETIMER0 IRQ Handler */
+void RTCC_IRQHandler(void);         /**< RTCC IRQ Handler */
+void CRYOTIMER_IRQHandler(void);    /**< CRYOTIMER IRQ Handler */
+void SMU_IRQHandler(void);          /**< SMU IRQ Handler */
+void WTIMER0_IRQHandler(void);      /**< WTIMER0 IRQ Handler */
+void WTIMER1_IRQHandler(void);      /**< WTIMER1 IRQ Handler */
+void PCNT1_IRQHandler(void);        /**< PCNT1 IRQ Handler */
+void PCNT2_IRQHandler(void);        /**< PCNT2 IRQ Handler */
+void USART2_RX_IRQHandler(void);    /**< USART2_RX IRQ Handler */
+void USART2_TX_IRQHandler(void);    /**< USART2_TX IRQ Handler */
+void I2C1_IRQHandler(void);         /**< I2C1 IRQ Handler */
+void USART3_RX_IRQHandler(void);    /**< USART3_RX IRQ Handler */
+void USART3_TX_IRQHandler(void);    /**< USART3_TX IRQ Handler */
+void VDAC0_IRQHandler(void);        /**< VDAC0 IRQ Handler */
+void CSEN_IRQHandler(void);         /**< CSEN IRQ Handler */
+void LESENSE_IRQHandler(void);      /**< LESENSE IRQ Handler */
+void CRYPTO1_IRQHandler(void);      /**< CRYPTO1 IRQ Handler */
+void TRNG0_IRQHandler(void);        /**< TRNG0 IRQ Handler */
 
 #if (__FPU_PRESENT == 1)
-void FPUEH_IRQHandler(void);
+void FPUEH_IRQHandler(void);        /**< FPUEH IRQ Handler */
 #endif
 
 uint32_t SystemCoreClockGet(void);
@@ -106,7 +132,7 @@ uint32_t SystemCoreClockGet(void);
  *****************************************************************************/
 static __INLINE void SystemCoreClockUpdate(void)
 {
-  SystemCoreClockGet();
+  (void)SystemCoreClockGet();
 }
 
 uint32_t SystemMaxCoreClockGet(void);
@@ -122,6 +148,9 @@ uint32_t SystemULFRCOClockGet(void);
 
 uint32_t SystemLFXOClockGet(void);
 void SystemLFXOClockSet(uint32_t freq);
+
+/** @} End of group */
+/** @} End of group Parts */
 
 #ifdef __cplusplus
 }

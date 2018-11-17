@@ -1,7 +1,7 @@
 /**************************************************************************//**
  * @file efr32mg12p_adc.h
  * @brief EFR32MG12P_ADC register and bit field definitions
- * @version 5.5.0
+ * @version 5.6.0
  ******************************************************************************
  * # License
  * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
@@ -48,7 +48,7 @@
 /** ADC Register Declaration */
 typedef struct {
   __IOM uint32_t CTRL;            /**< Control Register  */
-  uint32_t       RESERVED0[1];    /**< Reserved for future use **/
+  uint32_t       RESERVED0[1U];   /**< Reserved for future use **/
   __IOM uint32_t CMD;             /**< Command Register  */
   __IM uint32_t  STATUS;          /**< Status Register  */
   __IOM uint32_t SINGLECTRL;      /**< Single Channel Control Register  */
@@ -69,11 +69,11 @@ typedef struct {
   __IM uint32_t  SCANDATA;        /**< Scan Conversion Result Data  */
   __IM uint32_t  SINGLEDATAP;     /**< Single Conversion Result Data Peek Register  */
   __IM uint32_t  SCANDATAP;       /**< Scan Sequence Result Data Peek Register  */
-  uint32_t       RESERVED1[4];    /**< Reserved for future use **/
+  uint32_t       RESERVED1[4U];   /**< Reserved for future use **/
   __IM uint32_t  SCANDATAX;       /**< Scan Sequence Result Data + Data Source Register  */
   __IM uint32_t  SCANDATAXP;      /**< Scan Sequence Result Data + Data Source Peek Register  */
 
-  uint32_t       RESERVED2[3];    /**< Reserved for future use **/
+  uint32_t       RESERVED2[3U];   /**< Reserved for future use **/
   __IM uint32_t  APORTREQ;        /**< APORT Request Status Register  */
   __IM uint32_t  APORTCONFLICT;   /**< APORT Conflict Status Register  */
   __IM uint32_t  SINGLEFIFOCOUNT; /**< Single FIFO Count Register  */

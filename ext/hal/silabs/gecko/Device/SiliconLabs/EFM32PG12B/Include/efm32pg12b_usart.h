@@ -1,10 +1,10 @@
 /**************************************************************************//**
  * @file efm32pg12b_usart.h
  * @brief EFM32PG12B_USART register and bit field definitions
- * @version 5.1.2
+ * @version 5.6.0
  ******************************************************************************
- * @section License
- * <b>Copyright 2017 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
  ******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -29,53 +29,62 @@
  * any third party, arising from your use of this Software.
  *
  *****************************************************************************/
+
+#if defined(__ICCARM__)
+#pragma system_include       /* Treat file as system include file. */
+#elif defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
+#pragma clang system_header  /* Treat file as system include file. */
+#endif
+
 /**************************************************************************//**
 * @addtogroup Parts
 * @{
 ******************************************************************************/
 /**************************************************************************//**
- * @defgroup EFM32PG12B_USART
+ * @defgroup EFM32PG12B_USART USART
  * @{
  * @brief EFM32PG12B_USART Register Declaration
  *****************************************************************************/
-typedef struct
-{
-  __IOM uint32_t CTRL;         /**< Control Register  */
-  __IOM uint32_t FRAME;        /**< USART Frame Format Register  */
-  __IOM uint32_t TRIGCTRL;     /**< USART Trigger Control register  */
-  __IOM uint32_t CMD;          /**< Command Register  */
-  __IM uint32_t  STATUS;       /**< USART Status Register  */
-  __IOM uint32_t CLKDIV;       /**< Clock Control Register  */
-  __IM uint32_t  RXDATAX;      /**< RX Buffer Data Extended Register  */
-  __IM uint32_t  RXDATA;       /**< RX Buffer Data Register  */
-  __IM uint32_t  RXDOUBLEX;    /**< RX Buffer Double Data Extended Register  */
-  __IM uint32_t  RXDOUBLE;     /**< RX FIFO Double Data Register  */
-  __IM uint32_t  RXDATAXP;     /**< RX Buffer Data Extended Peek Register  */
-  __IM uint32_t  RXDOUBLEXP;   /**< RX Buffer Double Data Extended Peek Register  */
-  __IOM uint32_t TXDATAX;      /**< TX Buffer Data Extended Register  */
-  __IOM uint32_t TXDATA;       /**< TX Buffer Data Register  */
-  __IOM uint32_t TXDOUBLEX;    /**< TX Buffer Double Data Extended Register  */
-  __IOM uint32_t TXDOUBLE;     /**< TX Buffer Double Data Register  */
-  __IM uint32_t  IF;           /**< Interrupt Flag Register  */
-  __IOM uint32_t IFS;          /**< Interrupt Flag Set Register  */
-  __IOM uint32_t IFC;          /**< Interrupt Flag Clear Register  */
-  __IOM uint32_t IEN;          /**< Interrupt Enable Register  */
-  __IOM uint32_t IRCTRL;       /**< IrDA Control Register  */
-  uint32_t       RESERVED0[1]; /**< Reserved for future use **/
-  __IOM uint32_t INPUT;        /**< USART Input Register  */
-  __IOM uint32_t I2SCTRL;      /**< I2S Control Register  */
-  __IOM uint32_t TIMING;       /**< Timing Register  */
-  __IOM uint32_t CTRLX;        /**< Control Register Extended  */
-  __IOM uint32_t TIMECMP0;     /**< Used to generate interrupts and various delays  */
-  __IOM uint32_t TIMECMP1;     /**< Used to generate interrupts and various delays  */
-  __IOM uint32_t TIMECMP2;     /**< Used to generate interrupts and various delays  */
-  __IOM uint32_t ROUTEPEN;     /**< I/O Routing Pin Enable Register  */
-  __IOM uint32_t ROUTELOC0;    /**< I/O Routing Location Register  */
-  __IOM uint32_t ROUTELOC1;    /**< I/O Routing Location Register  */
-} USART_TypeDef;               /** @} */
+/** USART Register Declaration */
+typedef struct {
+  __IOM uint32_t CTRL;          /**< Control Register  */
+  __IOM uint32_t FRAME;         /**< USART Frame Format Register  */
+  __IOM uint32_t TRIGCTRL;      /**< USART Trigger Control Register  */
+  __IOM uint32_t CMD;           /**< Command Register  */
+  __IM uint32_t  STATUS;        /**< USART Status Register  */
+  __IOM uint32_t CLKDIV;        /**< Clock Control Register  */
+  __IM uint32_t  RXDATAX;       /**< RX Buffer Data Extended Register  */
+  __IM uint32_t  RXDATA;        /**< RX Buffer Data Register  */
+  __IM uint32_t  RXDOUBLEX;     /**< RX Buffer Double Data Extended Register  */
+  __IM uint32_t  RXDOUBLE;      /**< RX FIFO Double Data Register  */
+  __IM uint32_t  RXDATAXP;      /**< RX Buffer Data Extended Peek Register  */
+  __IM uint32_t  RXDOUBLEXP;    /**< RX Buffer Double Data Extended Peek Register  */
+  __IOM uint32_t TXDATAX;       /**< TX Buffer Data Extended Register  */
+  __IOM uint32_t TXDATA;        /**< TX Buffer Data Register  */
+  __IOM uint32_t TXDOUBLEX;     /**< TX Buffer Double Data Extended Register  */
+  __IOM uint32_t TXDOUBLE;      /**< TX Buffer Double Data Register  */
+  __IM uint32_t  IF;            /**< Interrupt Flag Register  */
+  __IOM uint32_t IFS;           /**< Interrupt Flag Set Register  */
+  __IOM uint32_t IFC;           /**< Interrupt Flag Clear Register  */
+  __IOM uint32_t IEN;           /**< Interrupt Enable Register  */
+  __IOM uint32_t IRCTRL;        /**< IrDA Control Register  */
+  uint32_t       RESERVED0[1U]; /**< Reserved for future use **/
+  __IOM uint32_t INPUT;         /**< USART Input Register  */
+  __IOM uint32_t I2SCTRL;       /**< I2S Control Register  */
+  __IOM uint32_t TIMING;        /**< Timing Register  */
+  __IOM uint32_t CTRLX;         /**< Control Register Extended  */
+  __IOM uint32_t TIMECMP0;      /**< Used to Generate Interrupts and Various Delays  */
+  __IOM uint32_t TIMECMP1;      /**< Used to Generate Interrupts and Various Delays  */
+  __IOM uint32_t TIMECMP2;      /**< Used to Generate Interrupts and Various Delays  */
+  __IOM uint32_t ROUTEPEN;      /**< I/O Routing Pin Enable Register  */
+  __IOM uint32_t ROUTELOC0;     /**< I/O Routing Location Register  */
+  __IOM uint32_t ROUTELOC1;     /**< I/O Routing Location Register  */
+} USART_TypeDef;                /** @} */
 
 /**************************************************************************//**
- * @defgroup EFM32PG12B_USART_BitFields
+ * @addtogroup EFM32PG12B_USART
+ * @{
+ * @defgroup EFM32PG12B_USART_BitFields  USART Bit Fields
  * @{
  *****************************************************************************/
 
@@ -128,7 +137,7 @@ typedef struct
 #define USART_CTRL_CLKPOL_DEFAULT               (_USART_CTRL_CLKPOL_DEFAULT << 8)        /**< Shifted mode DEFAULT for USART_CTRL */
 #define USART_CTRL_CLKPOL_IDLELOW               (_USART_CTRL_CLKPOL_IDLELOW << 8)        /**< Shifted mode IDLELOW for USART_CTRL */
 #define USART_CTRL_CLKPOL_IDLEHIGH              (_USART_CTRL_CLKPOL_IDLEHIGH << 8)       /**< Shifted mode IDLEHIGH for USART_CTRL */
-#define USART_CTRL_CLKPHA                       (0x1UL << 9)                             /**< Clock Edge For Setup/Sample */
+#define USART_CTRL_CLKPHA                       (0x1UL << 9)                             /**< Clock Edge for Setup/Sample */
 #define _USART_CTRL_CLKPHA_SHIFT                9                                        /**< Shift value for USART_CLKPHA */
 #define _USART_CTRL_CLKPHA_MASK                 0x200UL                                  /**< Bit mask for USART_CLKPHA */
 #define _USART_CTRL_CLKPHA_DEFAULT              0x00000000UL                             /**< Mode DEFAULT for USART_CTRL */
@@ -142,7 +151,7 @@ typedef struct
 #define _USART_CTRL_MSBF_MASK                   0x400UL                                  /**< Bit mask for USART_MSBF */
 #define _USART_CTRL_MSBF_DEFAULT                0x00000000UL                             /**< Mode DEFAULT for USART_CTRL */
 #define USART_CTRL_MSBF_DEFAULT                 (_USART_CTRL_MSBF_DEFAULT << 10)         /**< Shifted mode DEFAULT for USART_CTRL */
-#define USART_CTRL_CSMA                         (0x1UL << 11)                            /**< Action On Slave-Select In Master Mode */
+#define USART_CTRL_CSMA                         (0x1UL << 11)                            /**< Action on Slave-Select in Master Mode */
 #define _USART_CTRL_CSMA_SHIFT                  11                                       /**< Shift value for USART_CSMA */
 #define _USART_CTRL_CSMA_MASK                   0x800UL                                  /**< Bit mask for USART_CSMA */
 #define _USART_CTRL_CSMA_DEFAULT                0x00000000UL                             /**< Mode DEFAULT for USART_CTRL */
@@ -165,7 +174,7 @@ typedef struct
 #define _USART_CTRL_RXINV_MASK                  0x2000UL                                 /**< Bit mask for USART_RXINV */
 #define _USART_CTRL_RXINV_DEFAULT               0x00000000UL                             /**< Mode DEFAULT for USART_CTRL */
 #define USART_CTRL_RXINV_DEFAULT                (_USART_CTRL_RXINV_DEFAULT << 13)        /**< Shifted mode DEFAULT for USART_CTRL */
-#define USART_CTRL_TXINV                        (0x1UL << 14)                            /**< Transmitter output Invert */
+#define USART_CTRL_TXINV                        (0x1UL << 14)                            /**< Transmitter Output Invert */
 #define _USART_CTRL_TXINV_SHIFT                 14                                       /**< Shift value for USART_TXINV */
 #define _USART_CTRL_TXINV_MASK                  0x4000UL                                 /**< Bit mask for USART_TXINV */
 #define _USART_CTRL_TXINV_DEFAULT               0x00000000UL                             /**< Mode DEFAULT for USART_CTRL */
@@ -205,17 +214,17 @@ typedef struct
 #define _USART_CTRL_BIT8DV_MASK                 0x200000UL                               /**< Bit mask for USART_BIT8DV */
 #define _USART_CTRL_BIT8DV_DEFAULT              0x00000000UL                             /**< Mode DEFAULT for USART_CTRL */
 #define USART_CTRL_BIT8DV_DEFAULT               (_USART_CTRL_BIT8DV_DEFAULT << 21)       /**< Shifted mode DEFAULT for USART_CTRL */
-#define USART_CTRL_ERRSDMA                      (0x1UL << 22)                            /**< Halt DMA On Error */
+#define USART_CTRL_ERRSDMA                      (0x1UL << 22)                            /**< Halt DMA on Error */
 #define _USART_CTRL_ERRSDMA_SHIFT               22                                       /**< Shift value for USART_ERRSDMA */
 #define _USART_CTRL_ERRSDMA_MASK                0x400000UL                               /**< Bit mask for USART_ERRSDMA */
 #define _USART_CTRL_ERRSDMA_DEFAULT             0x00000000UL                             /**< Mode DEFAULT for USART_CTRL */
 #define USART_CTRL_ERRSDMA_DEFAULT              (_USART_CTRL_ERRSDMA_DEFAULT << 22)      /**< Shifted mode DEFAULT for USART_CTRL */
-#define USART_CTRL_ERRSRX                       (0x1UL << 23)                            /**< Disable RX On Error */
+#define USART_CTRL_ERRSRX                       (0x1UL << 23)                            /**< Disable RX on Error */
 #define _USART_CTRL_ERRSRX_SHIFT                23                                       /**< Shift value for USART_ERRSRX */
 #define _USART_CTRL_ERRSRX_MASK                 0x800000UL                               /**< Bit mask for USART_ERRSRX */
 #define _USART_CTRL_ERRSRX_DEFAULT              0x00000000UL                             /**< Mode DEFAULT for USART_CTRL */
 #define USART_CTRL_ERRSRX_DEFAULT               (_USART_CTRL_ERRSRX_DEFAULT << 23)       /**< Shifted mode DEFAULT for USART_CTRL */
-#define USART_CTRL_ERRSTX                       (0x1UL << 24)                            /**< Disable TX On Error */
+#define USART_CTRL_ERRSTX                       (0x1UL << 24)                            /**< Disable TX on Error */
 #define _USART_CTRL_ERRSTX_SHIFT                24                                       /**< Shift value for USART_ERRSTX */
 #define _USART_CTRL_ERRSTX_MASK                 0x1000000UL                              /**< Bit mask for USART_ERRSTX */
 #define _USART_CTRL_ERRSTX_DEFAULT              0x00000000UL                             /**< Mode DEFAULT for USART_CTRL */
@@ -225,7 +234,7 @@ typedef struct
 #define _USART_CTRL_SSSEARLY_MASK               0x2000000UL                              /**< Bit mask for USART_SSSEARLY */
 #define _USART_CTRL_SSSEARLY_DEFAULT            0x00000000UL                             /**< Mode DEFAULT for USART_CTRL */
 #define USART_CTRL_SSSEARLY_DEFAULT             (_USART_CTRL_SSSEARLY_DEFAULT << 25)     /**< Shifted mode DEFAULT for USART_CTRL */
-#define USART_CTRL_BYTESWAP                     (0x1UL << 28)                            /**< Byteswap In Double Accesses */
+#define USART_CTRL_BYTESWAP                     (0x1UL << 28)                            /**< Byteswap in Double Accesses */
 #define _USART_CTRL_BYTESWAP_SHIFT              28                                       /**< Shift value for USART_BYTESWAP */
 #define _USART_CTRL_BYTESWAP_MASK               0x10000000UL                             /**< Bit mask for USART_BYTESWAP */
 #define _USART_CTRL_BYTESWAP_DEFAULT            0x00000000UL                             /**< Mode DEFAULT for USART_CTRL */
@@ -320,32 +329,32 @@ typedef struct
 #define _USART_TRIGCTRL_AUTOTXTEN_MASK          0x40UL                                   /**< Bit mask for USART_AUTOTXTEN */
 #define _USART_TRIGCTRL_AUTOTXTEN_DEFAULT       0x00000000UL                             /**< Mode DEFAULT for USART_TRIGCTRL */
 #define USART_TRIGCTRL_AUTOTXTEN_DEFAULT        (_USART_TRIGCTRL_AUTOTXTEN_DEFAULT << 6) /**< Shifted mode DEFAULT for USART_TRIGCTRL */
-#define USART_TRIGCTRL_TXARX0EN                 (0x1UL << 7)                             /**< Enable Transmit Trigger after RX End of Frame plus TCMP0VAL */
+#define USART_TRIGCTRL_TXARX0EN                 (0x1UL << 7)                             /**< Enable Transmit Trigger After RX End of Frame Plus TCMP0VAL */
 #define _USART_TRIGCTRL_TXARX0EN_SHIFT          7                                        /**< Shift value for USART_TXARX0EN */
 #define _USART_TRIGCTRL_TXARX0EN_MASK           0x80UL                                   /**< Bit mask for USART_TXARX0EN */
 #define _USART_TRIGCTRL_TXARX0EN_DEFAULT        0x00000000UL                             /**< Mode DEFAULT for USART_TRIGCTRL */
 #define USART_TRIGCTRL_TXARX0EN_DEFAULT         (_USART_TRIGCTRL_TXARX0EN_DEFAULT << 7)  /**< Shifted mode DEFAULT for USART_TRIGCTRL */
-#define USART_TRIGCTRL_TXARX1EN                 (0x1UL << 8)                             /**< Enable Transmit Trigger after RX End of Frame plus TCMP1VAL */
+#define USART_TRIGCTRL_TXARX1EN                 (0x1UL << 8)                             /**< Enable Transmit Trigger After RX End of Frame Plus TCMP1VAL */
 #define _USART_TRIGCTRL_TXARX1EN_SHIFT          8                                        /**< Shift value for USART_TXARX1EN */
 #define _USART_TRIGCTRL_TXARX1EN_MASK           0x100UL                                  /**< Bit mask for USART_TXARX1EN */
 #define _USART_TRIGCTRL_TXARX1EN_DEFAULT        0x00000000UL                             /**< Mode DEFAULT for USART_TRIGCTRL */
 #define USART_TRIGCTRL_TXARX1EN_DEFAULT         (_USART_TRIGCTRL_TXARX1EN_DEFAULT << 8)  /**< Shifted mode DEFAULT for USART_TRIGCTRL */
-#define USART_TRIGCTRL_TXARX2EN                 (0x1UL << 9)                             /**< Enable Transmit Trigger after RX End of Frame plus TCMP2VAL */
+#define USART_TRIGCTRL_TXARX2EN                 (0x1UL << 9)                             /**< Enable Transmit Trigger After RX End of Frame Plus TCMP2VAL */
 #define _USART_TRIGCTRL_TXARX2EN_SHIFT          9                                        /**< Shift value for USART_TXARX2EN */
 #define _USART_TRIGCTRL_TXARX2EN_MASK           0x200UL                                  /**< Bit mask for USART_TXARX2EN */
 #define _USART_TRIGCTRL_TXARX2EN_DEFAULT        0x00000000UL                             /**< Mode DEFAULT for USART_TRIGCTRL */
 #define USART_TRIGCTRL_TXARX2EN_DEFAULT         (_USART_TRIGCTRL_TXARX2EN_DEFAULT << 9)  /**< Shifted mode DEFAULT for USART_TRIGCTRL */
-#define USART_TRIGCTRL_RXATX0EN                 (0x1UL << 10)                            /**< Enable Receive Trigger after TX end of frame plus TCMPVAL0 baud-times */
+#define USART_TRIGCTRL_RXATX0EN                 (0x1UL << 10)                            /**< Enable Receive Trigger After TX End of Frame Plus TCMPVAL0 Baud-times */
 #define _USART_TRIGCTRL_RXATX0EN_SHIFT          10                                       /**< Shift value for USART_RXATX0EN */
 #define _USART_TRIGCTRL_RXATX0EN_MASK           0x400UL                                  /**< Bit mask for USART_RXATX0EN */
 #define _USART_TRIGCTRL_RXATX0EN_DEFAULT        0x00000000UL                             /**< Mode DEFAULT for USART_TRIGCTRL */
 #define USART_TRIGCTRL_RXATX0EN_DEFAULT         (_USART_TRIGCTRL_RXATX0EN_DEFAULT << 10) /**< Shifted mode DEFAULT for USART_TRIGCTRL */
-#define USART_TRIGCTRL_RXATX1EN                 (0x1UL << 11)                            /**< Enable Receive Trigger after TX end of frame plus TCMPVAL1 baud-times */
+#define USART_TRIGCTRL_RXATX1EN                 (0x1UL << 11)                            /**< Enable Receive Trigger After TX End of Frame Plus TCMPVAL1 Baud-times */
 #define _USART_TRIGCTRL_RXATX1EN_SHIFT          11                                       /**< Shift value for USART_RXATX1EN */
 #define _USART_TRIGCTRL_RXATX1EN_MASK           0x800UL                                  /**< Bit mask for USART_RXATX1EN */
 #define _USART_TRIGCTRL_RXATX1EN_DEFAULT        0x00000000UL                             /**< Mode DEFAULT for USART_TRIGCTRL */
 #define USART_TRIGCTRL_RXATX1EN_DEFAULT         (_USART_TRIGCTRL_RXATX1EN_DEFAULT << 11) /**< Shifted mode DEFAULT for USART_TRIGCTRL */
-#define USART_TRIGCTRL_RXATX2EN                 (0x1UL << 12)                            /**< Enable Receive Trigger after TX end of frame plus TCMPVAL2 baud-times */
+#define USART_TRIGCTRL_RXATX2EN                 (0x1UL << 12)                            /**< Enable Receive Trigger After TX End of Frame Plus TCMPVAL2 Baud-times */
 #define _USART_TRIGCTRL_RXATX2EN_SHIFT          12                                       /**< Shift value for USART_RXATX2EN */
 #define _USART_TRIGCTRL_RXATX2EN_MASK           0x1000UL                                 /**< Bit mask for USART_RXATX2EN */
 #define _USART_TRIGCTRL_RXATX2EN_DEFAULT        0x00000000UL                             /**< Mode DEFAULT for USART_TRIGCTRL */
@@ -516,7 +525,7 @@ typedef struct
 #define _USART_STATUS_TXIDLE_MASK               0x2000UL                                     /**< Bit mask for USART_TXIDLE */
 #define _USART_STATUS_TXIDLE_DEFAULT            0x00000001UL                                 /**< Mode DEFAULT for USART_STATUS */
 #define USART_STATUS_TXIDLE_DEFAULT             (_USART_STATUS_TXIDLE_DEFAULT << 13)         /**< Shifted mode DEFAULT for USART_STATUS */
-#define USART_STATUS_TIMERRESTARTED             (0x1UL << 14)                                /**< The USART Timer restarted itself */
+#define USART_STATUS_TIMERRESTARTED             (0x1UL << 14)                                /**< The USART Timer Restarted Itself */
 #define _USART_STATUS_TIMERRESTARTED_SHIFT      14                                           /**< Shift value for USART_TIMERRESTARTED */
 #define _USART_STATUS_TIMERRESTARTED_MASK       0x4000UL                                     /**< Bit mask for USART_TIMERRESTARTED */
 #define _USART_STATUS_TIMERRESTARTED_DEFAULT    0x00000000UL                                 /**< Mode DEFAULT for USART_STATUS */
@@ -533,7 +542,7 @@ typedef struct
 #define _USART_CLKDIV_DIV_MASK                  0x7FFFF8UL                               /**< Bit mask for USART_DIV */
 #define _USART_CLKDIV_DIV_DEFAULT               0x00000000UL                             /**< Mode DEFAULT for USART_CLKDIV */
 #define USART_CLKDIV_DIV_DEFAULT                (_USART_CLKDIV_DIV_DEFAULT << 3)         /**< Shifted mode DEFAULT for USART_CLKDIV */
-#define USART_CLKDIV_AUTOBAUDEN                 (0x1UL << 31)                            /**< AUTOBAUD detection enable */
+#define USART_CLKDIV_AUTOBAUDEN                 (0x1UL << 31)                            /**< AUTOBAUD Detection Enable */
 #define _USART_CLKDIV_AUTOBAUDEN_SHIFT          31                                       /**< Shift value for USART_AUTOBAUDEN */
 #define _USART_CLKDIV_AUTOBAUDEN_MASK           0x80000000UL                             /**< Bit mask for USART_AUTOBAUDEN */
 #define _USART_CLKDIV_AUTOBAUDEN_DEFAULT        0x00000000UL                             /**< Mode DEFAULT for USART_CLKDIV */
@@ -676,7 +685,7 @@ typedef struct
 #define _USART_TXDATAX_TXTRIAT_MASK             0x1000UL                               /**< Bit mask for USART_TXTRIAT */
 #define _USART_TXDATAX_TXTRIAT_DEFAULT          0x00000000UL                           /**< Mode DEFAULT for USART_TXDATAX */
 #define USART_TXDATAX_TXTRIAT_DEFAULT           (_USART_TXDATAX_TXTRIAT_DEFAULT << 12) /**< Shifted mode DEFAULT for USART_TXDATAX */
-#define USART_TXDATAX_TXBREAK                   (0x1UL << 13)                          /**< Transmit Data As Break */
+#define USART_TXDATAX_TXBREAK                   (0x1UL << 13)                          /**< Transmit Data as Break */
 #define _USART_TXDATAX_TXBREAK_SHIFT            13                                     /**< Shift value for USART_TXBREAK */
 #define _USART_TXDATAX_TXBREAK_MASK             0x2000UL                               /**< Bit mask for USART_TXBREAK */
 #define _USART_TXDATAX_TXBREAK_DEFAULT          0x00000000UL                           /**< Mode DEFAULT for USART_TXDATAX */
@@ -717,7 +726,7 @@ typedef struct
 #define _USART_TXDOUBLEX_TXTRIAT0_MASK          0x1000UL                                  /**< Bit mask for USART_TXTRIAT0 */
 #define _USART_TXDOUBLEX_TXTRIAT0_DEFAULT       0x00000000UL                              /**< Mode DEFAULT for USART_TXDOUBLEX */
 #define USART_TXDOUBLEX_TXTRIAT0_DEFAULT        (_USART_TXDOUBLEX_TXTRIAT0_DEFAULT << 12) /**< Shifted mode DEFAULT for USART_TXDOUBLEX */
-#define USART_TXDOUBLEX_TXBREAK0                (0x1UL << 13)                             /**< Transmit Data As Break */
+#define USART_TXDOUBLEX_TXBREAK0                (0x1UL << 13)                             /**< Transmit Data as Break */
 #define _USART_TXDOUBLEX_TXBREAK0_SHIFT         13                                        /**< Shift value for USART_TXBREAK0 */
 #define _USART_TXDOUBLEX_TXBREAK0_MASK          0x2000UL                                  /**< Bit mask for USART_TXBREAK0 */
 #define _USART_TXDOUBLEX_TXBREAK0_DEFAULT       0x00000000UL                              /**< Mode DEFAULT for USART_TXDOUBLEX */
@@ -746,7 +755,7 @@ typedef struct
 #define _USART_TXDOUBLEX_TXTRIAT1_MASK          0x10000000UL                              /**< Bit mask for USART_TXTRIAT1 */
 #define _USART_TXDOUBLEX_TXTRIAT1_DEFAULT       0x00000000UL                              /**< Mode DEFAULT for USART_TXDOUBLEX */
 #define USART_TXDOUBLEX_TXTRIAT1_DEFAULT        (_USART_TXDOUBLEX_TXTRIAT1_DEFAULT << 28) /**< Shifted mode DEFAULT for USART_TXDOUBLEX */
-#define USART_TXDOUBLEX_TXBREAK1                (0x1UL << 29)                             /**< Transmit Data As Break */
+#define USART_TXDOUBLEX_TXBREAK1                (0x1UL << 29)                             /**< Transmit Data as Break */
 #define _USART_TXDOUBLEX_TXBREAK1_SHIFT         29                                        /**< Shift value for USART_TXBREAK1 */
 #define _USART_TXDOUBLEX_TXBREAK1_MASK          0x20000000UL                              /**< Bit mask for USART_TXBREAK1 */
 #define _USART_TXDOUBLEX_TXBREAK1_DEFAULT       0x00000000UL                              /**< Mode DEFAULT for USART_TXDOUBLEX */
@@ -832,7 +841,7 @@ typedef struct
 #define _USART_IF_MPAF_MASK                     0x400UL                          /**< Bit mask for USART_MPAF */
 #define _USART_IF_MPAF_DEFAULT                  0x00000000UL                     /**< Mode DEFAULT for USART_IF */
 #define USART_IF_MPAF_DEFAULT                   (_USART_IF_MPAF_DEFAULT << 10)   /**< Shifted mode DEFAULT for USART_IF */
-#define USART_IF_SSM                            (0x1UL << 11)                    /**< Slave-Select In Master Mode Interrupt Flag */
+#define USART_IF_SSM                            (0x1UL << 11)                    /**< Slave-Select in Master Mode Interrupt Flag */
 #define _USART_IF_SSM_SHIFT                     11                               /**< Shift value for USART_SSM */
 #define _USART_IF_SSM_MASK                      0x800UL                          /**< Bit mask for USART_SSM */
 #define _USART_IF_SSM_DEFAULT                   0x00000000UL                     /**< Mode DEFAULT for USART_IF */
@@ -847,17 +856,17 @@ typedef struct
 #define _USART_IF_TXIDLE_MASK                   0x2000UL                         /**< Bit mask for USART_TXIDLE */
 #define _USART_IF_TXIDLE_DEFAULT                0x00000000UL                     /**< Mode DEFAULT for USART_IF */
 #define USART_IF_TXIDLE_DEFAULT                 (_USART_IF_TXIDLE_DEFAULT << 13) /**< Shifted mode DEFAULT for USART_IF */
-#define USART_IF_TCMP0                          (0x1UL << 14)                    /**< Timer comparator 0 Interrupt Flag */
+#define USART_IF_TCMP0                          (0x1UL << 14)                    /**< Timer Comparator 0 Interrupt Flag */
 #define _USART_IF_TCMP0_SHIFT                   14                               /**< Shift value for USART_TCMP0 */
 #define _USART_IF_TCMP0_MASK                    0x4000UL                         /**< Bit mask for USART_TCMP0 */
 #define _USART_IF_TCMP0_DEFAULT                 0x00000000UL                     /**< Mode DEFAULT for USART_IF */
 #define USART_IF_TCMP0_DEFAULT                  (_USART_IF_TCMP0_DEFAULT << 14)  /**< Shifted mode DEFAULT for USART_IF */
-#define USART_IF_TCMP1                          (0x1UL << 15)                    /**< Timer comparator 1 Interrupt Flag */
+#define USART_IF_TCMP1                          (0x1UL << 15)                    /**< Timer Comparator 1 Interrupt Flag */
 #define _USART_IF_TCMP1_SHIFT                   15                               /**< Shift value for USART_TCMP1 */
 #define _USART_IF_TCMP1_MASK                    0x8000UL                         /**< Bit mask for USART_TCMP1 */
 #define _USART_IF_TCMP1_DEFAULT                 0x00000000UL                     /**< Mode DEFAULT for USART_IF */
 #define USART_IF_TCMP1_DEFAULT                  (_USART_IF_TCMP1_DEFAULT << 15)  /**< Shifted mode DEFAULT for USART_IF */
-#define USART_IF_TCMP2                          (0x1UL << 16)                    /**< Timer comparator 2 Interrupt Flag */
+#define USART_IF_TCMP2                          (0x1UL << 16)                    /**< Timer Comparator 2 Interrupt Flag */
 #define _USART_IF_TCMP2_SHIFT                   16                               /**< Shift value for USART_TCMP2 */
 #define _USART_IF_TCMP2_MASK                    0x10000UL                        /**< Bit mask for USART_TCMP2 */
 #define _USART_IF_TCMP2_DEFAULT                 0x00000000UL                     /**< Mode DEFAULT for USART_IF */
@@ -1261,12 +1270,12 @@ typedef struct
 #define USART_I2SCTRL_JUSTIFY_DEFAULT           (_USART_I2SCTRL_JUSTIFY_DEFAULT << 2)  /**< Shifted mode DEFAULT for USART_I2SCTRL */
 #define USART_I2SCTRL_JUSTIFY_LEFT              (_USART_I2SCTRL_JUSTIFY_LEFT << 2)     /**< Shifted mode LEFT for USART_I2SCTRL */
 #define USART_I2SCTRL_JUSTIFY_RIGHT             (_USART_I2SCTRL_JUSTIFY_RIGHT << 2)    /**< Shifted mode RIGHT for USART_I2SCTRL */
-#define USART_I2SCTRL_DMASPLIT                  (0x1UL << 3)                           /**< Separate DMA Request For Left/Right Data */
+#define USART_I2SCTRL_DMASPLIT                  (0x1UL << 3)                           /**< Separate DMA Request for Left/Right Data */
 #define _USART_I2SCTRL_DMASPLIT_SHIFT           3                                      /**< Shift value for USART_DMASPLIT */
 #define _USART_I2SCTRL_DMASPLIT_MASK            0x8UL                                  /**< Bit mask for USART_DMASPLIT */
 #define _USART_I2SCTRL_DMASPLIT_DEFAULT         0x00000000UL                           /**< Mode DEFAULT for USART_I2SCTRL */
 #define USART_I2SCTRL_DMASPLIT_DEFAULT          (_USART_I2SCTRL_DMASPLIT_DEFAULT << 3) /**< Shifted mode DEFAULT for USART_I2SCTRL */
-#define USART_I2SCTRL_DELAY                     (0x1UL << 4)                           /**< Delay on I2S data */
+#define USART_I2SCTRL_DELAY                     (0x1UL << 4)                           /**< Delay on I2S Data */
 #define _USART_I2SCTRL_DELAY_SHIFT              4                                      /**< Shift value for USART_DELAY */
 #define _USART_I2SCTRL_DELAY_MASK               0x10UL                                 /**< Bit mask for USART_DELAY */
 #define _USART_I2SCTRL_DELAY_DEFAULT            0x00000000UL                           /**< Mode DEFAULT for USART_I2SCTRL */
@@ -1379,7 +1388,7 @@ typedef struct
 /* Bit fields for USART CTRLX */
 #define _USART_CTRLX_RESETVALUE                 0x00000000UL                        /**< Default value for USART_CTRLX */
 #define _USART_CTRLX_MASK                       0x0000000FUL                        /**< Mask for USART_CTRLX */
-#define USART_CTRLX_DBGHALT                     (0x1UL << 0)                        /**< Debug halt */
+#define USART_CTRLX_DBGHALT                     (0x1UL << 0)                        /**< Debug Halt */
 #define _USART_CTRLX_DBGHALT_SHIFT              0                                   /**< Shift value for USART_DBGHALT */
 #define _USART_CTRLX_DBGHALT_MASK               0x1UL                               /**< Bit mask for USART_DBGHALT */
 #define _USART_CTRLX_DBGHALT_DEFAULT            0x00000000UL                        /**< Mode DEFAULT for USART_CTRLX */
@@ -1389,7 +1398,7 @@ typedef struct
 #define _USART_CTRLX_CTSINV_MASK                0x2UL                               /**< Bit mask for USART_CTSINV */
 #define _USART_CTRLX_CTSINV_DEFAULT             0x00000000UL                        /**< Mode DEFAULT for USART_CTRLX */
 #define USART_CTRLX_CTSINV_DEFAULT              (_USART_CTRLX_CTSINV_DEFAULT << 1)  /**< Shifted mode DEFAULT for USART_CTRLX */
-#define USART_CTRLX_CTSEN                       (0x1UL << 2)                        /**< CTS Function enabled */
+#define USART_CTRLX_CTSEN                       (0x1UL << 2)                        /**< CTS Function Enabled */
 #define _USART_CTRLX_CTSEN_SHIFT                2                                   /**< Shift value for USART_CTSEN */
 #define _USART_CTRLX_CTSEN_MASK                 0x4UL                               /**< Bit mask for USART_CTSEN */
 #define _USART_CTRLX_CTSEN_DEFAULT              0x00000000UL                        /**< Mode DEFAULT for USART_CTRLX */
@@ -1967,6 +1976,6 @@ typedef struct
 #define USART_ROUTELOC1_RTSLOC_LOC30            (_USART_ROUTELOC1_RTSLOC_LOC30 << 8)   /**< Shifted mode LOC30 for USART_ROUTELOC1 */
 #define USART_ROUTELOC1_RTSLOC_LOC31            (_USART_ROUTELOC1_RTSLOC_LOC31 << 8)   /**< Shifted mode LOC31 for USART_ROUTELOC1 */
 
+/** @} */
 /** @} End of group EFM32PG12B_USART */
 /** @} End of group Parts */
-

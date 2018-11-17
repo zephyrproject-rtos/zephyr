@@ -1,10 +1,10 @@
 /***************************************************************************//**
  * @file em_core.c
  * @brief Core interrupt handling API
- * @version 5.1.2
+ * @version 5.6.0
  *******************************************************************************
- * @section License
- * <b>Copyright 2016 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2016 Silicon Laboratories, Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -41,6 +41,7 @@
  * @{
  ******************************************************************************/
 
+/* *INDENT-OFF* */
 /***************************************************************************//**
   @addtogroup CORE
   @brief Core interrupt handling API
@@ -55,75 +56,73 @@
 
 @n @section core_intro Introduction
 
-  The purpose of the CORE interrupt API is to provide simple and safe means
+  CORE interrupt API provides a simple and safe means
   to disable and enable interrupts to protect sections of code.
 
-  This is often referred to as "critical sections" and this module provide
+  This is often referred to as "critical sections". This module provides
   support for three types of critical sections, each with different interrupt
   blocking capabilities.
 
-  @li <b>CRITICAL</b> section: Inside a critical sections all interrupts are
+  @li <b>CRITICAL</b> section: Inside a critical section, all interrupts are
       disabled (except for fault handlers). The PRIMASK register is always used for
       interrupt disable/enable.
-  @li <b>ATOMIC</b> section: This type of section is configurable and the default 
-      method is to use PRIMASK. With BASEPRI configuration, interrupts with priority 
-      equal to or lower than a given configurable level are disabled. The interrupt 
-      disable priority level is defined at compile time. The BASEPRI register is not 
+  @li <b>ATOMIC</b> section: This type of section is configurable and the default
+      method is to use PRIMASK. With BASEPRI configuration, interrupts with priority
+      equal to or lower than a given configurable level are disabled. The interrupt
+      disable priority level is defined at compile time. The BASEPRI register is not
       available for all architectures.
   @li <b>NVIC mask</b> section: Disable NVIC (external interrupts) on an
       individual manner.
 
-  em_core also has an API for manipulating RAM based interrupt vector tables.
+  em_core also has an API for manipulating RAM-based interrupt vector tables.
 
-
-@n @section core_conf Compile time configuration
+@n @section core_conf Compile-time Configuration
 
   The following @htmlonly #defines @endhtmlonly are used to configure em_core:
   @verbatim
   // The interrupt priority level used inside ATOMIC sections.
   #define CORE_ATOMIC_BASE_PRIORITY_LEVEL    3
 
-  // Method used for interrupt disable/enable within ATOMIC sections.
+  // A method used for interrupt disable/enable within ATOMIC sections.
   #define CORE_ATOMIC_METHOD                 CORE_ATOMIC_METHOD_PRIMASK
   @endverbatim
 
-  If the default values does not support your needs, they can be overridden
+  If the default values do not support your needs, they can be overridden
   by supplying -D compiler flags on the compiler command line or by collecting
   all macro redefinitions in a file named @em emlib_config.h and then supplying
-  -DEMLIB_USER_CONFIG on compiler command line.
+  -DEMLIB_USER_CONFIG on a compiler command line.
 
   @note The default emlib configuration for ATOMIC section interrupt disable
-        method is using PRIMASK, i.e. ATOMIC sections are implemented as
+        method is using PRIMASK, i.e., ATOMIC sections are implemented as
         CRITICAL sections.
 
-  @note Due to architectural limitations Cortex-M0+ devices does not support
+  @note Due to architectural limitations Cortex-M0+ devices do not support
         ATOMIC type critical sections using the BASEPRI register. On M0+
         devices ATOMIC section helper macros are available but they are
         implemented as CRITICAL sections using PRIMASK register.
 
+@n @section core_macro_api Macro API
 
-@n @section core_macro_api The macro API
-
-  The primary em_core API is the macro API. The macro API will map to correct
+  The primary em_core API is the macro API. Macro API will map to correct
   CORE functions according to the selected @ref CORE_ATOMIC_METHOD and similar
   configurations (the full CORE API is of course also available).
-  The most useful macros are:
+  The most useful macros are as follows:
 
   @ref CORE_DECLARE_IRQ_STATE @n @ref CORE_ENTER_ATOMIC() @n
   @ref CORE_EXIT_ATOMIC()@n
   Used together to implement an ATOMIC section.
   @verbatim
   {
-    CORE_DECLARE_IRQ_STATE;           // Storage for saving IRQ state prior
+    CORE_DECLARE_IRQ_STATE;           // Storage for saving IRQ state prior to
                                       // atomic section entry.
 
-    CORE_ENTER_ATOMIC();              // Enter atomic section
+    CORE_ENTER_ATOMIC();              // Enter atomic section.
 
     ...
     ... your code goes here ...
     ...
 
-    CORE_EXIT_ATOMIC();               // Exit atomic section, IRQ state is restored
+    CORE_EXIT_ATOMIC();               // Exit atomic section, IRQ state is restored.
   }
   @endverbatim
 
@@ -152,12 +151,11 @@
   Refer to @em Macros or <em>Macro Definition Documentation</em> below for a
   full list of macros.
 
-
 @n @section core_reimplementation API reimplementation
 
   Most of the functions in the API are implemented as weak functions. This means
-  that it is easy to reimplement them when special needs arise. Shown below is a
-  reimplementation of CRITICAL sections suitable if FreeRTOS is used:
+  that it is easy to reimplement when special needs arise. Shown below is a
+  reimplementation of CRITICAL sections suitable if FreeRTOS OS is used:
   @verbatim
   CORE_irqState_t CORE_EnterCritical(void)
   {
@@ -173,13 +171,13 @@
   @endverbatim
   Also note that CORE_Enter/ExitCritical() are not implemented as inline
   functions. As a result, reimplementations will be possible even when original
-  implementations reside inside a linked library.
+  implementations are inside a linked library.
 
-  Some RTOS'es must be notified on interrupt handler entry and exit. Macros
+  Some RTOSes must be notified on interrupt handler entry and exit. Macros
   @ref CORE_INTERRUPT_ENTRY() and @ref CORE_INTERRUPT_EXIT() are suitable
   placeholders for inserting such code. Insert these macros in all your
   interrupt handlers and then override the default macro implementations.
-  Here is an example suitable if uC/OS is used:
+  This is an example if uC/OS is used:
   @verbatim
   // In emlib_config.h:
 
@@ -187,12 +185,11 @@
   #define CORE_INTERRUPT_EXIT()    OSIntExit()
   @endverbatim
 
-
 @n @section core_vector_tables Interrupt vector tables
 
-  When using RAM based interrupt vector tables it is the users responsibility
+  When using RAM based interrupt vector tables it is the user's responsibility
   to allocate the table space correctly. The tables must be aligned as specified
-  in the cpu reference manual.
+  in the CPU reference manual.
 
   @ref CORE_InitNvicVectorTable()@n
   Initialize a RAM based vector table by copying table entries from a source
@@ -201,19 +198,19 @@
 
   @n @ref CORE_GetNvicRamTableHandler() @n @ref CORE_SetNvicRamTableHandler()@n
   Use these functions to get or set the interrupt handler for a specific IRQn.
-  They both use the interrupt vector table defined by current
+  They both use the interrupt vector table defined by the current
   VTOR register value.
 
 @n @section core_examples Examples
 
-  Implement a NVIC critical section:
+  Implement an NVIC critical section:
   @verbatim
   {
     CORE_DECLARE_NVIC_ZEROMASK(mask); // A zero initialized NVIC disable mask
 
-    // Set mask bits for IRQ's we wish to block in the NVIC critical section
-    // In many cases you can create the disable mask once upon application
-    // startup and use the mask globally throughout application lifetime.
+    // Set mask bits for IRQs to block in the NVIC critical section.
+    // In many cases, you can create the disable mask once upon application
+    // startup and use the mask globally throughout the application lifetime.
     CORE_NvicMaskSetIRQ(LEUART0_IRQn, &mask);
     CORE_NvicMaskSetIRQ(VCMP_IRQn,    &mask);
 
@@ -227,20 +224,20 @@
   @endverbatim
 
 @n @section core_porting Porting from em_int
-  
+
   Existing code using INT_Enable() and INT_Disable() must be ported to the
-  em_core API. While em_int used a global counter to store the interrupt state,
-  em_core uses a local variable. Any usage of INT_Disable() therefore needs to
+  em_core API. While em_int used, a global counter to store the interrupt state,
+  em_core uses a local variable. Any usage of INT_Disable(), therefore, needs to
   be replaced with a declaration of the interrupt state variable before entering
   the critical section.
 
-  Since the state variable is in the local scope, the critical section exit
+  Since the state variable is in local scope, the critical section exit
   needs to occur within the scope of the variable. If multiple nested critical
   sections are used, each needs to have its own state variable in its own scope.
 
   In many cases, completely disabling all interrupts using CRITICAL sections
   might be more heavy-handed than needed. When porting, consider whether other
-  types of sections, like ATOMIC or NVIC mask, can be used to only disable
+  types of sections, such as ATOMIC or NVIC mask, can be used to only disable
   a subset of the interrupts.
 
   Replacing em_int calls with em_core function calls:
@@ -259,6 +256,7 @@
   @endverbatim
  * @{
  ******************************************************************************/
+/* *INDENT-ON* */
 
 /*******************************************************************************
  *******************************   DEFINES   ***********************************
@@ -279,7 +277,7 @@
 #endif
 
 #if !defined(CORE_INTERRUPT_ENTRY)
-// Some RTOS's must be notified on interrupt entry (and exit).
+// Some RTOSes must be notified on interrupt entry (and exit).
 // Use this macro at the start of all your interrupt handlers.
 // Reimplement the macro in emlib_config.h to suit the needs of your RTOS.
 /** Placeholder for optional interrupt handler entry code. This might be needed
@@ -295,7 +293,7 @@
 
 // Compile time sanity check.
 #if (CORE_ATOMIC_METHOD != CORE_ATOMIC_METHOD_PRIMASK) \
-    && (CORE_ATOMIC_METHOD != CORE_ATOMIC_METHOD_BASEPRI)
+  && (CORE_ATOMIC_METHOD != CORE_ATOMIC_METHOD_BASEPRI)
 #error "em_core: Undefined ATOMIC IRQ handling strategy."
 #endif
 
@@ -334,7 +332,7 @@ SL_WEAK void CORE_CriticalEnableIrq(void)
  *   are disabled.
  *
  * @return
- *   The value of PRIMASK register prior to CRITICAL section entry.
+ *   The value of PRIMASK register prior to the CRITICAL section entry.
  ******************************************************************************/
 SL_WEAK CORE_irqState_t CORE_EnterCritical(void)
 {
@@ -354,7 +352,7 @@ SL_WEAK CORE_irqState_t CORE_EnterCritical(void)
  ******************************************************************************/
 SL_WEAK void CORE_ExitCritical(CORE_irqState_t irqState)
 {
-  if (irqState == 0) {
+  if (irqState == 0U) {
     __enable_irq();
   }
 }
@@ -365,12 +363,13 @@ SL_WEAK void CORE_ExitCritical(CORE_irqState_t irqState)
  *   pending interrupts.
  *
  * @note
- *   Usully used within a CRITICAL section.
+ *   Usually used within a CRITICAL section.
  ******************************************************************************/
 SL_WEAK void CORE_YieldCritical(void)
 {
-  if (__get_PRIMASK() & 1) {
+  if ((__get_PRIMASK() & 1U) != 0U) {
     __enable_irq();
+    __ISB();
     __disable_irq();
   }
 }
@@ -379,7 +378,7 @@ SL_WEAK void CORE_YieldCritical(void)
  * @brief
  *   Disable interrupts.
  *
- *   Disable interrupts with priority lower or equal to
+ *   Disable interrupts with a priority lower or equal to
  *   @ref CORE_ATOMIC_BASE_PRIORITY_LEVEL. Sets core BASEPRI register
  *   to CORE_ATOMIC_BASE_PRIORITY_LEVEL.
  *
@@ -404,7 +403,7 @@ SL_WEAK void CORE_AtomicDisableIrq(void)
  *
  * @note
  *   If @ref CORE_ATOMIC_METHOD is @ref CORE_ATOMIC_METHOD_BASEPRI and PRIMASK
- *   is set (cpu is inside a CRITICAL section), interrupts will still be
+ *   is set (CPU is inside a CRITICAL section), interrupts will still be
  *   disabled after calling this function.
  *
  * @note
@@ -465,7 +464,7 @@ SL_WEAK void CORE_ExitAtomic(CORE_irqState_t irqState)
 #if (CORE_ATOMIC_METHOD == CORE_ATOMIC_METHOD_BASEPRI)
   __set_BASEPRI(irqState);
 #else
-  if (irqState == 0) {
+  if (irqState == 0U) {
     __enable_irq();
   }
 #endif // (CORE_ATOMIC_METHOD == CORE_ATOMIC_METHOD_BASEPRI)
@@ -489,11 +488,13 @@ SL_WEAK void CORE_YieldAtomic(void)
   CORE_irqState_t basepri = __get_BASEPRI();
   if (basepri >= (CORE_ATOMIC_BASE_PRIORITY_LEVEL << (8 - __NVIC_PRIO_BITS))) {
     __set_BASEPRI(0);
+    __ISB();
     __set_BASEPRI(basepri);
   }
 #else
-  if (__get_PRIMASK() & 1) {
+  if ((__get_PRIMASK() & 1U) != 0U) {
     __enable_irq();
+    __ISB();
     __disable_irq();
   }
 #endif // (CORE_ATOMIC_METHOD == CORE_ATOMIC_METHOD_BASEPRI)
@@ -510,15 +511,15 @@ SL_WEAK void CORE_YieldAtomic(void)
  *   Return NVIC interrupts enable mask prior to section entry.
  *
  * @param[in] disable
- *   Mask specifying which NVIC interrupts to disable within the section.
+ *   A mask specifying which NVIC interrupts to disable within the section.
  ******************************************************************************/
 void CORE_EnterNvicMask(CORE_nvicMask_t *nvicState,
                         const CORE_nvicMask_t *disable)
 {
   CORE_CRITICAL_SECTION(
-    *nvicState = *(CORE_nvicMask_t*)&NVIC->ICER[0];
-    *(CORE_nvicMask_t*)&NVIC->ICER[0] = *disable;
-  )
+    *nvicState = *(CORE_nvicMask_t*)((uint32_t)&NVIC->ICER[0]);
+    *(CORE_nvicMask_t*)((uint32_t)&NVIC->ICER[0]) = *disable;
+    )
 }
 
 /***************************************************************************//**
@@ -526,13 +527,13 @@ void CORE_EnterNvicMask(CORE_nvicMask_t *nvicState,
  *   Disable NVIC interrupts.
  *
  * @param[in] disable
- *   Mask specifying which NVIC interrupts to disable.
+ *   A mask specifying which NVIC interrupts to disable.
  ******************************************************************************/
 void CORE_NvicDisableMask(const CORE_nvicMask_t *disable)
 {
   CORE_CRITICAL_SECTION(
-    *(CORE_nvicMask_t*)&NVIC->ICER[0] = *disable;
-  )
+    *(CORE_nvicMask_t*)((uint32_t)&NVIC->ICER[0]) = *disable;
+    )
 }
 
 /***************************************************************************//**
@@ -540,13 +541,13 @@ void CORE_NvicDisableMask(const CORE_nvicMask_t *disable)
  *   Set current NVIC interrupt enable mask.
  *
  * @param[out] enable
- *   Mask specifying which NVIC interrupts are currently enabled.
+ *   A mask specifying which NVIC interrupts are currently enabled.
  ******************************************************************************/
 void CORE_NvicEnableMask(const CORE_nvicMask_t *enable)
 {
   CORE_CRITICAL_SECTION(
-    *(CORE_nvicMask_t*)&NVIC->ISER[0] = *enable;
-  )
+    *(CORE_nvicMask_t*)((uint32_t)&NVIC->ISER[0]) = *enable;
+    )
 }
 
 /***************************************************************************//**
@@ -555,10 +556,10 @@ void CORE_NvicEnableMask(const CORE_nvicMask_t *enable)
  *   pending interrupts.
  *
  * @param[in] enable
- *   Mask specifying which NVIC interrupts to briefly enable.
+ *   A mask specifying which NVIC interrupts to briefly enable.
  *
  * @note
- *   Usually used within a NVIC mask section.
+ *   Usually used within an NVIC mask section.
  ******************************************************************************/
 void CORE_YieldNvicMask(const CORE_nvicMask_t *enable)
 {
@@ -566,8 +567,8 @@ void CORE_YieldNvicMask(const CORE_nvicMask_t *enable)
 
   // Get current NVIC enable mask.
   CORE_CRITICAL_SECTION(
-    nvicMask = *(CORE_nvicMask_t*)&NVIC->ISER[0];
-  )
+    nvicMask = *(CORE_nvicMask_t*)((uint32_t)&NVIC->ISER[0]);
+    )
 
   // Make a mask with bits set for those interrupts that are currently
   // disabled but are set in the enable mask.
@@ -576,15 +577,13 @@ void CORE_YieldNvicMask(const CORE_nvicMask_t *enable)
   nvicMask.a[0] = ~nvicMask.a[0] & enable->a[0];
 
   if (nvicMask.a[0] != 0) {
-
 #elif (CORE_NVIC_REG_WORDS == 2)
   nvicMask.a[0] &= enable->a[0];
   nvicMask.a[1] &= enable->a[1];
   nvicMask.a[0] = ~nvicMask.a[0] & enable->a[0];
   nvicMask.a[1] = ~nvicMask.a[1] & enable->a[1];
 
-  if ((nvicMask.a[0] != 0) || (nvicMask.a[1] != 0)) {
-
+  if ((nvicMask.a[0] != 0U) || (nvicMask.a[1] != 0U)) {
 #elif (CORE_NVIC_REG_WORDS == 3)
   nvicMask.a[0] &= enable->a[0];
   nvicMask.a[1] &= enable->a[1];
@@ -597,10 +596,10 @@ void CORE_YieldNvicMask(const CORE_nvicMask_t *enable)
 #endif
 
     // Enable previously disabled interrupts.
-    *(CORE_nvicMask_t*)&NVIC->ISER[0] = nvicMask;
+    *(CORE_nvicMask_t*)((uint32_t)&NVIC->ISER[0]) = nvicMask;
 
     // Disable those interrupts again.
-    *(CORE_nvicMask_t*)&NVIC->ICER[0] = nvicMask;
+    *(CORE_nvicMask_t*)((uint32_t)&NVIC->ICER[0]) = nvicMask;
   }
 }
 
@@ -612,12 +611,12 @@ void CORE_YieldNvicMask(const CORE_nvicMask_t *enable)
  *   The @ref IRQn_Type enumerator for the interrupt.
  *
  * @param[in,out] mask
- *   The mask to set interrupt bit in.
+ *   The mask to set the interrupt bit in.
  ******************************************************************************/
 void CORE_NvicMaskSetIRQ(IRQn_Type irqN, CORE_nvicMask_t *mask)
 {
-  EFM_ASSERT((irqN >= 0) && (irqN < EXT_IRQ_COUNT));
-  mask->a[irqN >> 5] |= 1 << (irqN & 0x1F);
+  EFM_ASSERT(((int)irqN >= 0) && ((int)irqN < EXT_IRQ_COUNT));
+  mask->a[(unsigned)irqN >> 5] |= 1UL << ((unsigned)irqN & 0x1FUL);
 }
 
 /***************************************************************************//**
@@ -628,25 +627,25 @@ void CORE_NvicMaskSetIRQ(IRQn_Type irqN, CORE_nvicMask_t *mask)
  *   The @ref IRQn_Type enumerator for the interrupt.
  *
  * @param[in,out] mask
- *   The mask to clear interrupt bit in.
+ *   The mask to clear the interrupt bit in.
  ******************************************************************************/
 void CORE_NvicMaskClearIRQ(IRQn_Type irqN, CORE_nvicMask_t *mask)
 {
-  EFM_ASSERT((irqN >= 0) && (irqN < EXT_IRQ_COUNT));
-  mask->a[irqN >> 5] &= ~(1 << (irqN & 0x1F));
+  EFM_ASSERT(((int)irqN >= 0) && ((int)irqN < EXT_IRQ_COUNT));
+  mask->a[(unsigned)irqN >> 5] &= ~(1UL << ((unsigned)irqN & 0x1FUL));
 }
 
 /***************************************************************************//**
  * @brief
- *   Check if current cpu operation mode is handler mode.
+ *   Check whether the current CPU operation mode is handler mode.
  *
  * @return
- *   True if cpu in handler mode (currently executing an interrupt handler).
- *   @n False if cpu in thread mode.
+ *   True if the CPU is in handler mode (currently executing an interrupt handler).
+ *   @n False if the CPU is in thread mode.
  ******************************************************************************/
 SL_WEAK bool CORE_InIrqContext(void)
 {
-  return (SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk) != 0;
+  return (SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk) != 0U;
 }
 
 /***************************************************************************//**
@@ -657,7 +656,7 @@ SL_WEAK bool CORE_InIrqContext(void)
  *   The @ref IRQn_Type enumerator for the interrupt to check.
  *
  * @return
- *   True if interrupt disabled or blocked.
+ *   True if the interrupt is disabled or blocked.
  ******************************************************************************/
 SL_WEAK bool CORE_IrqIsBlocked(IRQn_Type irqN)
 {
@@ -666,35 +665,37 @@ SL_WEAK bool CORE_IrqIsBlocked(IRQn_Type irqN)
 #if (__CORTEX_M >= 3)
   uint32_t basepri;
 
-  EFM_ASSERT((irqN >= MemoryManagement_IRQn) && (irqN < EXT_IRQ_COUNT));
+  EFM_ASSERT((irqN >= MemoryManagement_IRQn)
+             && (irqN < (IRQn_Type)EXT_IRQ_COUNT));
 #else
-  EFM_ASSERT((irqN >= SVCall_IRQn) && (irqN < EXT_IRQ_COUNT));
+  EFM_ASSERT((irqN >= SVCall_IRQn) && ((IRQn_Type)irqN < EXT_IRQ_COUNT));
 #endif
 
-  if (__get_PRIMASK() & 1) {
-    return true;                            // All IRQ's are disabled
+  if ((__get_PRIMASK() & 1U) != 0U) {
+    return true;                            // All IRQs are disabled.
   }
 
   if (CORE_NvicIRQDisabled(irqN)) {
-    return true;                            // The IRQ in question is disabled
+    return true;                            // The IRQ in question is disabled.
   }
 
   irqPri  = NVIC_GetPriority(irqN);
 #if (__CORTEX_M >= 3)
   basepri = __get_BASEPRI();
-  if ((basepri != 0)
+  if ((basepri != 0U)
       && (irqPri >= (basepri >> (8 - __NVIC_PRIO_BITS)))) {
     return true;                            // The IRQ in question has too low
-  }                                         // priority vs. BASEPRI
+  }                                         // priority vs. BASEPRI.
 #endif
 
-  // Check if already in an interrupt handler, if so an interrupt with
+  // Check if already in an interrupt handler. If so, an interrupt with a
   // higher priority (lower priority value) can preempt.
   activeIrq = (SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk) >> SCB_ICSR_VECTACTIVE_Pos;
-  if ((activeIrq != 0)
-      && (irqPri >= NVIC_GetPriority((IRQn_Type)(activeIrq - 16)))) {
-    return true;                            // The IRQ in question has too low
-  }                                         // priority vs. current active IRQ
+  if (activeIrq != 0U) {
+    if (irqPri >= NVIC_GetPriority((IRQn_Type)(activeIrq - 16U))) {
+      return true;                          // The IRQ in question has too low
+    }                                       // priority vs. current active IRQ
+  }
 
   return false;
 }
@@ -709,10 +710,10 @@ SL_WEAK bool CORE_IrqIsBlocked(IRQn_Type irqN)
 SL_WEAK bool CORE_IrqIsDisabled(void)
 {
 #if (CORE_ATOMIC_METHOD == CORE_ATOMIC_METHOD_PRIMASK)
-  return (__get_PRIMASK() & 1) == 1;
+  return (__get_PRIMASK() & 1U) == 1U;
 
 #elif (CORE_ATOMIC_METHOD == CORE_ATOMIC_METHOD_BASEPRI)
-  return ((__get_PRIMASK() & 1) == 1)
+  return ((__get_PRIMASK() & 1U) == 1U)
          || (__get_BASEPRI() >= (CORE_ATOMIC_BASE_PRIORITY_LEVEL
                                  << (8 - __NVIC_PRIO_BITS)));
 #endif
@@ -720,16 +721,16 @@ SL_WEAK bool CORE_IrqIsDisabled(void)
 
 /***************************************************************************//**
  * @brief
- *   Get current NVIC enable mask state.
+ *   Get the current NVIC enable mask state.
  *
  * @param[out] mask
- *   Current NVIC enable mask.
+ *   The current NVIC enable mask.
  ******************************************************************************/
 void CORE_GetNvicEnabledMask(CORE_nvicMask_t *mask)
 {
   CORE_CRITICAL_SECTION(
-    *mask = *(CORE_nvicMask_t*)&NVIC->ISER[0];
-  )
+    *mask = *(CORE_nvicMask_t*)((uint32_t)&NVIC->ISER[0]);
+    )
 }
 
 /***************************************************************************//**
@@ -737,7 +738,7 @@ void CORE_GetNvicEnabledMask(CORE_nvicMask_t *mask)
  *   Get NVIC disable state for a given mask.
  *
  * @param[in] mask
- *   NVIC mask to check.
+ *   An NVIC mask to check.
  *
  * @return
  *   True if all NVIC interrupt mask bits are clear.
@@ -747,41 +748,41 @@ bool CORE_GetNvicMaskDisableState(const CORE_nvicMask_t *mask)
   CORE_nvicMask_t nvicMask;
 
   CORE_CRITICAL_SECTION(
-    nvicMask = *(CORE_nvicMask_t*)&NVIC->ISER[0];
-  )
-
+    nvicMask = *(CORE_nvicMask_t*)((uint32_t)&NVIC->ISER[0]);
+    )
 
 #if (CORE_NVIC_REG_WORDS == 1)
-  return (mask->a[0] & nvicMask.a[0]) == 0;
+  return (mask->a[0] & nvicMask.a[0]) == 0U;
 
 #elif (CORE_NVIC_REG_WORDS == 2)
-  return ((mask->a[0] & nvicMask.a[0]) == 0)
-         && ((mask->a[1] & nvicMask.a[1]) == 0);
+  return ((mask->a[0] & nvicMask.a[0]) == 0U)
+         && ((mask->a[1] & nvicMask.a[1]) == 0U);
 
 #elif (CORE_NVIC_REG_WORDS == 3)
-  return ((mask->a[0] & nvicMask.a[0]) == 0)
-         && ((mask->a[1] & nvicMask.a[1]) == 0)
-         && ((mask->a[2] & nvicMask.a[2]) == 0);
+  return ((mask->a[0] & nvicMask.a[0]) == 0U)
+         && ((mask->a[1] & nvicMask.a[1]) == 0U)
+         && ((mask->a[2] & nvicMask.a[2]) == 0U);
 #endif
 }
 
 /***************************************************************************//**
  * @brief
- *   Check if a NVIC interrupt is disabled.
+ *   Check if an NVIC interrupt is disabled.
  *
  * @param[in] irqN
  *   The @ref IRQn_Type enumerator for the interrupt to check.
  *
  * @return
- *   True if interrupt disabled.
+ *   True if the interrupt is disabled.
  ******************************************************************************/
 bool CORE_NvicIRQDisabled(IRQn_Type irqN)
 {
   CORE_nvicMask_t *mask;
 
-  EFM_ASSERT((irqN >= 0) && (irqN < EXT_IRQ_COUNT));
-  mask = (CORE_nvicMask_t*)&NVIC->ISER[0];
-  return (mask->a[irqN >> 5] & (1 << (irqN & 0x1F))) == 0;
+  EFM_ASSERT(((int)irqN >= 0) && ((int)irqN < EXT_IRQ_COUNT));
+  mask = (CORE_nvicMask_t*)((uint32_t)&NVIC->ISER[0]);
+  return (mask->a[(unsigned)irqN >> 5U] & (1UL << ((unsigned)irqN & 0x1FUL)))
+         == 0UL;
 }
 
 /***************************************************************************//**
@@ -795,12 +796,12 @@ bool CORE_NvicIRQDisabled(IRQn_Type irqN)
  *   The handler address.
  *
  * @note
- *   Uses the interrupt vector table defined by current VTOR register value.
+ *   Uses the interrupt vector table defined by the current VTOR register value.
  ******************************************************************************/
 void *CORE_GetNvicRamTableHandler(IRQn_Type irqN)
 {
-  EFM_ASSERT((irqN >= -16) && (irqN < EXT_IRQ_COUNT));
-  return (void*)(((uint32_t*)SCB->VTOR)[irqN+16]);
+  EFM_ASSERT(((int)irqN >= -16) && ((int)irqN < EXT_IRQ_COUNT));
+  return (void*)((uint32_t*)(((uint32_t*)SCB->VTOR)[(int)irqN + 16]));
 }
 
 /***************************************************************************//**
@@ -814,12 +815,12 @@ void *CORE_GetNvicRamTableHandler(IRQn_Type irqN)
  *   The handler address.
  *
  * @note
- *   Uses the interrupt vector table defined by current VTOR register value.
+ *   Uses the interrupt vector table defined by the current VTOR register value.
  ******************************************************************************/
 void CORE_SetNvicRamTableHandler(IRQn_Type irqN, void *handler)
 {
-  EFM_ASSERT((irqN >= -16) && (irqN < EXT_IRQ_COUNT));
-  ((uint32_t*)SCB->VTOR)[irqN+16] = (uint32_t)handler;
+  EFM_ASSERT(((int)irqN >= -16) && ((int)irqN < EXT_IRQ_COUNT));
+  ((uint32_t*)SCB->VTOR)[(int)irqN + 16] = (uint32_t)((uint32_t*)handler);
 }
 
 /***************************************************************************//**
@@ -830,20 +831,20 @@ void CORE_SetNvicRamTableHandler(IRQn_Type irqN, void *handler)
  * @note This function will set a new VTOR register value.
  *
  * @param[in] sourceTable
- *   Address of source vector table.
+ *   The address of the source vector table.
  *
  * @param[in] sourceSize
- *   Number of entries is source vector table.
+ *   A number of entries in the source vector table.
  *
  * @param[in] targetTable
- *   Address of target (new) vector table.
+ *   The address of the target (new) vector table.
  *
  * @param[in] targetSize
- *   Number of entries is target vector table.
+ *   A number of entries in the target vector table.
  *
  * @param[in] defaultHandler
- *   Address of interrupt handler used for target entries for which where there
- *   is no corresponding source entry (i.e. target table is larger than source
+ *   An address of the interrupt handler used for target entries for which where there
+ *   is no corresponding source entry (i.e., the target table is larger than the source
  *   table).
  *
  * @param[in] overwriteActive
@@ -862,38 +863,39 @@ void CORE_InitNvicVectorTable(uint32_t *sourceTable,
 {
   uint32_t i;
 
-  // ASSERT on non SRAM based target table.
-  EFM_ASSERT(((uint32_t)targetTable >= RAM_MEM_BASE)
-             && ((uint32_t)targetTable < (RAM_MEM_BASE + RAM_MEM_SIZE)));
+  // ASSERT on non SRAM-based target table.
+  EFM_ASSERT(((uint32_t)targetTable >= SRAM_BASE)
+             && ((uint32_t)targetTable < (SRAM_BASE + SRAM_SIZE)));
 
-  // ASSERT if misaligned with respect to VTOR register implementation.
+  // ASSERT if misaligned with respect to the VTOR register implementation.
 #if defined(SCB_VTOR_TBLBASE_Msk)
   EFM_ASSERT(((uint32_t)targetTable & ~(SCB_VTOR_TBLOFF_Msk
-                                        | SCB_VTOR_TBLBASE_Msk)) == 0);
+                                        | SCB_VTOR_TBLBASE_Msk)) == 0U);
 #else
-  EFM_ASSERT(((uint32_t)targetTable & ~SCB_VTOR_TBLOFF_Msk) == 0);
+  EFM_ASSERT(((uint32_t)targetTable & ~SCB_VTOR_TBLOFF_Msk) == 0U);
 #endif
 
-  // ASSERT if misaligned with respect to vector table size.
-  // Vector table address must be aligned at its size rounded up to nearest 2^n.
+  // ASSERT if misaligned with respect to the vector table size.
+  // The vector table address must be aligned at its size rounded up to nearest 2^n.
   EFM_ASSERT(((uint32_t)targetTable
-              & ((1 << (32 - __CLZ((targetSize * 4) - 1))) - 1)) == 0);
+              & ((1UL << (32UL - __CLZ((targetSize * 4UL) - 1UL))) - 1UL))
+             == 0UL);
 
-  for (i=0; i<targetSize; i++) {
-    if (overwriteActive) {                      // Overwrite target entries ?
-      if (i<sourceSize) {                       //   targetSize <= sourceSize
+  for (i = 0; i < targetSize; i++) {
+    if (overwriteActive) {                      // Overwrite target entries.
+      if (i < sourceSize) {                     //   targetSize <= sourceSize
         targetTable[i] = sourceTable[i];
       } else {                                  //   targetSize > sourceSize
-        targetTable[i] = (uint32_t)defaultHandler;
+        targetTable[i] = (uint32_t)((uint32_t*)defaultHandler);
       }
-    } else {                            // Overwrite target entries which are 0
-      if (i<sourceSize) {                       // targetSize <= sourceSize
-        if (targetTable[i] == 0) {
+    } else {                            // Overwrite target entries which are 0.
+      if (i < sourceSize) {                     // targetSize <= sourceSize
+        if (targetTable[i] == 0U) {
           targetTable[i] = sourceTable[i];
         }
       } else {                                  // targetSize > sourceSize
-        if (targetTable[i] == 0) {
-          targetTable[i] = (uint32_t)defaultHandler;
+        if (targetTable[i] == 0U) {
+          targetTable[i] = (uint32_t)((uint32_t*)defaultHandler);
         }
       }
     }

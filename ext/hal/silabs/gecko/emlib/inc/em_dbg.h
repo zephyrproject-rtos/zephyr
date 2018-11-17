@@ -1,10 +1,10 @@
 /***************************************************************************//**
  * @file em_dbg.h
  * @brief Debug (DBG) API
- * @version 5.1.2
+ * @version 5.6.0
  *******************************************************************************
- * @section License
- * <b>Copyright 2016 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2016 Silicon Laboratories, Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -30,14 +30,13 @@
  *
  ******************************************************************************/
 
-
 #ifndef EM_DBG_H
 #define EM_DBG_H
 
 #include <stdbool.h>
 #include "em_device.h"
 
-#if defined( CoreDebug_DHCSR_C_DEBUGEN_Msk )
+#if defined(CoreDebug_DHCSR_C_DEBUGEN_Msk)
 
 #ifdef __cplusplus
 extern "C" {
@@ -57,18 +56,20 @@ extern "C" {
  *****************************   PROTOTYPES   **********************************
  ******************************************************************************/
 
-#if defined( GPIO_ROUTE_SWCLKPEN ) || defined( GPIO_ROUTEPEN_SWCLKTCKPEN )
+#if defined(GPIO_ROUTE_SWCLKPEN)        \
+  || defined(GPIO_ROUTEPEN_SWCLKTCKPEN) \
+  || defined(GPIO_DBGROUTEPEN_SWCLKTCKPEN)
 /***************************************************************************//**
  * @brief
- *   Check if a debugger is connected (and debug session activated)
+ *   Check if a debugger is connected (and debug session activated).
  *
  * @details
- *   Used to make run-time decisions depending on whether a debug session
- *   has been active since last reset, ie using a debug probe or similar. In
- *   some cases special handling is required in that scenario.
+ *   Used to make run-time decisions depending on whether or not a debug session
+ *   has been active since last reset, i.e., using a debug probe or similar. In
+ *   some cases, special handling is required in that scenario.
  *
  * @return
- *   true if a debug session is active since last reset, otherwise false.
+ *   True if a debug session is active since last reset, otherwise false.
  ******************************************************************************/
 __STATIC_INLINE bool DBG_Connected(void)
 {
@@ -76,8 +77,9 @@ __STATIC_INLINE bool DBG_Connected(void)
 }
 #endif
 
-
-#if defined( GPIO_ROUTE_SWOPEN ) || defined( GPIO_ROUTEPEN_SWVPEN )
+#if defined(GPIO_ROUTE_SWOPEN)     \
+  || defined(GPIO_ROUTEPEN_SWVPEN) \
+  || defined(GPIO_TRACEROUTEPEN_SWVPEN)
 void DBG_SWOEnable(unsigned int location);
 #endif
 

@@ -1,7 +1,7 @@
 /**************************************************************************//**
  * @file efr32mg12p_lesense.h
  * @brief EFR32MG12P_LESENSE register and bit field definitions
- * @version 5.5.0
+ * @version 5.6.0
  ******************************************************************************
  * # License
  * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
@@ -47,39 +47,39 @@
  *****************************************************************************/
 /** LESENSE Register Declaration */
 typedef struct {
-  __IOM uint32_t      CTRL;          /**< Control Register  */
-  __IOM uint32_t      TIMCTRL;       /**< Timing Control Register  */
-  __IOM uint32_t      PERCTRL;       /**< Peripheral Control Register  */
-  __IOM uint32_t      DECCTRL;       /**< Decoder Control Register  */
-  __IOM uint32_t      BIASCTRL;      /**< Bias Control Register  */
-  __IOM uint32_t      EVALCTRL;      /**< LESENSE Evaluation Control  */
-  __IOM uint32_t      PRSCTRL;       /**< PRS Control Register  */
-  __IOM uint32_t      CMD;           /**< Command Register  */
-  __IOM uint32_t      CHEN;          /**< Channel Enable Register  */
-  __IOM uint32_t      SCANRES;       /**< Scan Result Register  */
-  __IM uint32_t       STATUS;        /**< Status Register  */
-  __IM uint32_t       PTR;           /**< Result Buffer Pointers  */
-  __IM uint32_t       BUFDATA;       /**< Result Buffer Data Register  */
-  __IM uint32_t       CURCH;         /**< Current Channel Index  */
-  __IOM uint32_t      DECSTATE;      /**< Current Decoder State  */
-  __IOM uint32_t      SENSORSTATE;   /**< Decoder Input Register  */
-  __IOM uint32_t      IDLECONF;      /**< GPIO Idle Phase Configuration  */
-  __IOM uint32_t      ALTEXCONF;     /**< Alternative Excite Pin Configuration  */
-  uint32_t            RESERVED0[2];  /**< Reserved for future use **/
-  __IM uint32_t       IF;            /**< Interrupt Flag Register  */
-  __IOM uint32_t      IFS;           /**< Interrupt Flag Set Register  */
-  __IOM uint32_t      IFC;           /**< Interrupt Flag Clear Register  */
-  __IOM uint32_t      IEN;           /**< Interrupt Enable Register  */
-  __IM uint32_t       SYNCBUSY;      /**< Synchronization Busy Register  */
-  __IOM uint32_t      ROUTEPEN;      /**< I/O Routing Register  */
+  __IOM uint32_t      CTRL;           /**< Control Register  */
+  __IOM uint32_t      TIMCTRL;        /**< Timing Control Register  */
+  __IOM uint32_t      PERCTRL;        /**< Peripheral Control Register  */
+  __IOM uint32_t      DECCTRL;        /**< Decoder Control Register  */
+  __IOM uint32_t      BIASCTRL;       /**< Bias Control Register  */
+  __IOM uint32_t      EVALCTRL;       /**< LESENSE Evaluation Control  */
+  __IOM uint32_t      PRSCTRL;        /**< PRS Control Register  */
+  __IOM uint32_t      CMD;            /**< Command Register  */
+  __IOM uint32_t      CHEN;           /**< Channel Enable Register  */
+  __IOM uint32_t      SCANRES;        /**< Scan Result Register  */
+  __IM uint32_t       STATUS;         /**< Status Register  */
+  __IM uint32_t       PTR;            /**< Result Buffer Pointers  */
+  __IM uint32_t       BUFDATA;        /**< Result Buffer Data Register  */
+  __IM uint32_t       CURCH;          /**< Current Channel Index  */
+  __IOM uint32_t      DECSTATE;       /**< Current Decoder State  */
+  __IOM uint32_t      SENSORSTATE;    /**< Decoder Input Register  */
+  __IOM uint32_t      IDLECONF;       /**< GPIO Idle Phase Configuration  */
+  __IOM uint32_t      ALTEXCONF;      /**< Alternative Excite Pin Configuration  */
+  uint32_t            RESERVED0[2U];  /**< Reserved for future use **/
+  __IM uint32_t       IF;             /**< Interrupt Flag Register  */
+  __IOM uint32_t      IFS;            /**< Interrupt Flag Set Register  */
+  __IOM uint32_t      IFC;            /**< Interrupt Flag Clear Register  */
+  __IOM uint32_t      IEN;            /**< Interrupt Enable Register  */
+  __IM uint32_t       SYNCBUSY;       /**< Synchronization Busy Register  */
+  __IOM uint32_t      ROUTEPEN;       /**< I/O Routing Register  */
 
-  uint32_t            RESERVED1[38]; /**< Reserved registers */
-  LESENSE_ST_TypeDef  ST[32];        /**< Decoding states */
+  uint32_t            RESERVED1[38U]; /**< Reserved registers */
+  LESENSE_ST_TypeDef  ST[32U];        /**< Decoding states */
 
-  LESENSE_BUF_TypeDef BUF[16];       /**< Scanresult */
+  LESENSE_BUF_TypeDef BUF[16U];       /**< Scanresult */
 
-  LESENSE_CH_TypeDef  CH[16];        /**< Scanconfig */
-} LESENSE_TypeDef;                   /** @} */
+  LESENSE_CH_TypeDef  CH[16U];        /**< Scanconfig */
+} LESENSE_TypeDef;                    /** @} */
 
 /**************************************************************************//**
  * @addtogroup EFR32MG12P_LESENSE

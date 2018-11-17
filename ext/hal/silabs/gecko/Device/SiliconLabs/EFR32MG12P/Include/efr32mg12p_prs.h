@@ -1,7 +1,7 @@
 /**************************************************************************//**
  * @file efr32mg12p_prs.h
  * @brief EFR32MG12P_PRS register and bit field definitions
- * @version 5.5.0
+ * @version 5.6.0
  ******************************************************************************
  * # License
  * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
@@ -47,24 +47,24 @@
  *****************************************************************************/
 /** PRS Register Declaration */
 typedef struct {
-  __IOM uint32_t SWPULSE;      /**< Software Pulse Register  */
-  __IOM uint32_t SWLEVEL;      /**< Software Level Register  */
-  __IOM uint32_t ROUTEPEN;     /**< I/O Routing Pin Enable Register  */
-  uint32_t       RESERVED0[1]; /**< Reserved for future use **/
-  __IOM uint32_t ROUTELOC0;    /**< I/O Routing Location Register  */
-  __IOM uint32_t ROUTELOC1;    /**< I/O Routing Location Register  */
-  __IOM uint32_t ROUTELOC2;    /**< I/O Routing Location Register  */
+  __IOM uint32_t SWPULSE;       /**< Software Pulse Register  */
+  __IOM uint32_t SWLEVEL;       /**< Software Level Register  */
+  __IOM uint32_t ROUTEPEN;      /**< I/O Routing Pin Enable Register  */
+  uint32_t       RESERVED0[1U]; /**< Reserved for future use **/
+  __IOM uint32_t ROUTELOC0;     /**< I/O Routing Location Register  */
+  __IOM uint32_t ROUTELOC1;     /**< I/O Routing Location Register  */
+  __IOM uint32_t ROUTELOC2;     /**< I/O Routing Location Register  */
 
-  uint32_t       RESERVED1[5]; /**< Reserved for future use **/
-  __IOM uint32_t CTRL;         /**< Control Register  */
-  __IOM uint32_t DMAREQ0;      /**< DMA Request 0 Register  */
-  __IOM uint32_t DMAREQ1;      /**< DMA Request 1 Register  */
-  uint32_t       RESERVED2[1]; /**< Reserved for future use **/
-  __IM uint32_t  PEEK;         /**< PRS Channel Values  */
+  uint32_t       RESERVED1[5U]; /**< Reserved for future use **/
+  __IOM uint32_t CTRL;          /**< Control Register  */
+  __IOM uint32_t DMAREQ0;       /**< DMA Request 0 Register  */
+  __IOM uint32_t DMAREQ1;       /**< DMA Request 1 Register  */
+  uint32_t       RESERVED2[1U]; /**< Reserved for future use **/
+  __IM uint32_t  PEEK;          /**< PRS Channel Values  */
 
-  uint32_t       RESERVED3[3]; /**< Reserved registers */
-  PRS_CH_TypeDef CH[12];       /**< Channel registers */
-} PRS_TypeDef;                 /** @} */
+  uint32_t       RESERVED3[3U]; /**< Reserved registers */
+  PRS_CH_TypeDef CH[12U];       /**< Channel registers */
+} PRS_TypeDef;                  /** @} */
 
 /**************************************************************************//**
  * @addtogroup EFR32MG12P_PRS

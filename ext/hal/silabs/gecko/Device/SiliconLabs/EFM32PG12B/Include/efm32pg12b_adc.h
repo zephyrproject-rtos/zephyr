@@ -1,10 +1,10 @@
 /**************************************************************************//**
  * @file efm32pg12b_adc.h
  * @brief EFM32PG12B_ADC register and bit field definitions
- * @version 5.1.2
+ * @version 5.6.0
  ******************************************************************************
- * @section License
- * <b>Copyright 2017 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
  ******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -29,30 +29,37 @@
  * any third party, arising from your use of this Software.
  *
  *****************************************************************************/
+
+#if defined(__ICCARM__)
+#pragma system_include       /* Treat file as system include file. */
+#elif defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
+#pragma clang system_header  /* Treat file as system include file. */
+#endif
+
 /**************************************************************************//**
 * @addtogroup Parts
 * @{
 ******************************************************************************/
 /**************************************************************************//**
- * @defgroup EFM32PG12B_ADC
+ * @defgroup EFM32PG12B_ADC ADC
  * @{
  * @brief EFM32PG12B_ADC Register Declaration
  *****************************************************************************/
-typedef struct
-{
+/** ADC Register Declaration */
+typedef struct {
   __IOM uint32_t CTRL;            /**< Control Register  */
-  uint32_t       RESERVED0[1];    /**< Reserved for future use **/
+  uint32_t       RESERVED0[1U];   /**< Reserved for future use **/
   __IOM uint32_t CMD;             /**< Command Register  */
   __IM uint32_t  STATUS;          /**< Status Register  */
   __IOM uint32_t SINGLECTRL;      /**< Single Channel Control Register  */
-  __IOM uint32_t SINGLECTRLX;     /**< Single Channel Control Register continued  */
+  __IOM uint32_t SINGLECTRLX;     /**< Single Channel Control Register Continued  */
   __IOM uint32_t SCANCTRL;        /**< Scan Control Register  */
-  __IOM uint32_t SCANCTRLX;       /**< Scan Control Register continued  */
+  __IOM uint32_t SCANCTRLX;       /**< Scan Control Register Continued  */
   __IOM uint32_t SCANMASK;        /**< Scan Sequence Input Mask Register  */
-  __IOM uint32_t SCANINPUTSEL;    /**< Input Selection register for Scan mode  */
-  __IOM uint32_t SCANNEGSEL;      /**< Negative Input select register for Scan  */
+  __IOM uint32_t SCANINPUTSEL;    /**< Input Selection Register for Scan Mode  */
+  __IOM uint32_t SCANNEGSEL;      /**< Negative Input Select Register for Scan  */
   __IOM uint32_t CMPTHR;          /**< Compare Threshold Register  */
-  __IOM uint32_t BIASPROG;        /**< Bias Programming Register for various analog blocks used in ADC operation.  */
+  __IOM uint32_t BIASPROG;        /**< Bias Programming Register for Various Analog Blocks Used in ADC Operation  */
   __IOM uint32_t CAL;             /**< Calibration Register  */
   __IM uint32_t  IF;              /**< Interrupt Flag Register  */
   __IOM uint32_t IFS;             /**< Interrupt Flag Set Register  */
@@ -62,11 +69,11 @@ typedef struct
   __IM uint32_t  SCANDATA;        /**< Scan Conversion Result Data  */
   __IM uint32_t  SINGLEDATAP;     /**< Single Conversion Result Data Peek Register  */
   __IM uint32_t  SCANDATAP;       /**< Scan Sequence Result Data Peek Register  */
-  uint32_t       RESERVED1[4];    /**< Reserved for future use **/
+  uint32_t       RESERVED1[4U];   /**< Reserved for future use **/
   __IM uint32_t  SCANDATAX;       /**< Scan Sequence Result Data + Data Source Register  */
   __IM uint32_t  SCANDATAXP;      /**< Scan Sequence Result Data + Data Source Peek Register  */
 
-  uint32_t       RESERVED2[3];    /**< Reserved for future use **/
+  uint32_t       RESERVED2[3U];   /**< Reserved for future use **/
   __IM uint32_t  APORTREQ;        /**< APORT Request Status Register  */
   __IM uint32_t  APORTCONFLICT;   /**< APORT Conflict Status Register  */
   __IM uint32_t  SINGLEFIFOCOUNT; /**< Single FIFO Count Register  */
@@ -77,7 +84,9 @@ typedef struct
 } ADC_TypeDef;                    /** @} */
 
 /**************************************************************************//**
- * @defgroup EFM32PG12B_ADC_BitFields
+ * @addtogroup EFM32PG12B_ADC
+ * @{
+ * @defgroup EFM32PG12B_ADC_BitFields  ADC Bit Fields
  * @{
  *****************************************************************************/
 
@@ -111,7 +120,7 @@ typedef struct
 #define _ADC_CTRL_TAILGATE_MASK                            0x10UL                                        /**< Bit mask for ADC_TAILGATE */
 #define _ADC_CTRL_TAILGATE_DEFAULT                         0x00000000UL                                  /**< Mode DEFAULT for ADC_CTRL */
 #define ADC_CTRL_TAILGATE_DEFAULT                          (_ADC_CTRL_TAILGATE_DEFAULT << 4)             /**< Shifted mode DEFAULT for ADC_CTRL */
-#define ADC_CTRL_ASYNCCLKEN                                (0x1UL << 6)                                  /**< Selects ASYNC CLK enable mode when ADCCLKMODE=1 */
+#define ADC_CTRL_ASYNCCLKEN                                (0x1UL << 6)                                  /**< Selects ASYNC CLK Enable Mode When ADCCLKMODE=1 */
 #define _ADC_CTRL_ASYNCCLKEN_SHIFT                         6                                             /**< Shift value for ADC_ASYNCCLKEN */
 #define _ADC_CTRL_ASYNCCLKEN_MASK                          0x40UL                                        /**< Bit mask for ADC_ASYNCCLKEN */
 #define _ADC_CTRL_ASYNCCLKEN_DEFAULT                       0x00000000UL                                  /**< Mode DEFAULT for ADC_CTRL */
@@ -495,7 +504,7 @@ typedef struct
 #define _ADC_SINGLECTRL_POSSEL_OPA2                        0x000000F2UL                               /**< Mode OPA2 for ADC_SINGLECTRL */
 #define _ADC_SINGLECTRL_POSSEL_TEMP                        0x000000F3UL                               /**< Mode TEMP for ADC_SINGLECTRL */
 #define _ADC_SINGLECTRL_POSSEL_DAC0OUT0                    0x000000F4UL                               /**< Mode DAC0OUT0 for ADC_SINGLECTRL */
-#define _ADC_SINGLECTRL_POSSEL_TESTP                       0x000000F5UL                               /**< Mode TESTP for ADC_SINGLECTRL */
+#define _ADC_SINGLECTRL_POSSEL_R5VOUT                      0x000000F5UL                               /**< Mode R5VOUT for ADC_SINGLECTRL */
 #define _ADC_SINGLECTRL_POSSEL_SP1                         0x000000F6UL                               /**< Mode SP1 for ADC_SINGLECTRL */
 #define _ADC_SINGLECTRL_POSSEL_SP2                         0x000000F7UL                               /**< Mode SP2 for ADC_SINGLECTRL */
 #define _ADC_SINGLECTRL_POSSEL_DAC0OUT1                    0x000000F8UL                               /**< Mode DAC0OUT1 for ADC_SINGLECTRL */
@@ -674,7 +683,7 @@ typedef struct
 #define ADC_SINGLECTRL_POSSEL_OPA2                         (_ADC_SINGLECTRL_POSSEL_OPA2 << 8)         /**< Shifted mode OPA2 for ADC_SINGLECTRL */
 #define ADC_SINGLECTRL_POSSEL_TEMP                         (_ADC_SINGLECTRL_POSSEL_TEMP << 8)         /**< Shifted mode TEMP for ADC_SINGLECTRL */
 #define ADC_SINGLECTRL_POSSEL_DAC0OUT0                     (_ADC_SINGLECTRL_POSSEL_DAC0OUT0 << 8)     /**< Shifted mode DAC0OUT0 for ADC_SINGLECTRL */
-#define ADC_SINGLECTRL_POSSEL_TESTP                        (_ADC_SINGLECTRL_POSSEL_TESTP << 8)        /**< Shifted mode TESTP for ADC_SINGLECTRL */
+#define ADC_SINGLECTRL_POSSEL_R5VOUT                       (_ADC_SINGLECTRL_POSSEL_R5VOUT << 8)       /**< Shifted mode R5VOUT for ADC_SINGLECTRL */
 #define ADC_SINGLECTRL_POSSEL_SP1                          (_ADC_SINGLECTRL_POSSEL_SP1 << 8)          /**< Shifted mode SP1 for ADC_SINGLECTRL */
 #define ADC_SINGLECTRL_POSSEL_SP2                          (_ADC_SINGLECTRL_POSSEL_SP2 << 8)          /**< Shifted mode SP2 for ADC_SINGLECTRL */
 #define ADC_SINGLECTRL_POSSEL_DAC0OUT1                     (_ADC_SINGLECTRL_POSSEL_DAC0OUT1 << 8)     /**< Shifted mode DAC0OUT1 for ADC_SINGLECTRL */
@@ -1068,7 +1077,7 @@ typedef struct
 #define ADC_SINGLECTRLX_VREFSEL_VREFPNWATT                 (_ADC_SINGLECTRLX_VREFSEL_VREFPNWATT << 0)        /**< Shifted mode VREFPNWATT for ADC_SINGLECTRLX */
 #define ADC_SINGLECTRLX_VREFSEL_VREFPN                     (_ADC_SINGLECTRLX_VREFSEL_VREFPN << 0)            /**< Shifted mode VREFPN for ADC_SINGLECTRLX */
 #define ADC_SINGLECTRLX_VREFSEL_VBGRLOW                    (_ADC_SINGLECTRLX_VREFSEL_VBGRLOW << 0)           /**< Shifted mode VBGRLOW for ADC_SINGLECTRLX */
-#define ADC_SINGLECTRLX_VREFATTFIX                         (0x1UL << 3)                                      /**< Enable fixed scaling on VREF */
+#define ADC_SINGLECTRLX_VREFATTFIX                         (0x1UL << 3)                                      /**< Enable Fixed Scaling on VREF */
 #define _ADC_SINGLECTRLX_VREFATTFIX_SHIFT                  3                                                 /**< Shift value for ADC_VREFATTFIX */
 #define _ADC_SINGLECTRLX_VREFATTFIX_MASK                   0x8UL                                             /**< Bit mask for ADC_VREFATTFIX */
 #define _ADC_SINGLECTRLX_VREFATTFIX_DEFAULT                0x00000000UL                                      /**< Mode DEFAULT for ADC_SINGLECTRLX */
@@ -1135,7 +1144,7 @@ typedef struct
 #define _ADC_SINGLECTRLX_CONVSTARTDELAY_MASK               0x7C00000UL                                       /**< Bit mask for ADC_CONVSTARTDELAY */
 #define _ADC_SINGLECTRLX_CONVSTARTDELAY_DEFAULT            0x00000000UL                                      /**< Mode DEFAULT for ADC_SINGLECTRLX */
 #define ADC_SINGLECTRLX_CONVSTARTDELAY_DEFAULT             (_ADC_SINGLECTRLX_CONVSTARTDELAY_DEFAULT << 22)   /**< Shifted mode DEFAULT for ADC_SINGLECTRLX */
-#define ADC_SINGLECTRLX_CONVSTARTDELAYEN                   (0x1UL << 27)                                     /**< Enable delaying next conversion start */
+#define ADC_SINGLECTRLX_CONVSTARTDELAYEN                   (0x1UL << 27)                                     /**< Enable Delaying Next Conversion Start */
 #define _ADC_SINGLECTRLX_CONVSTARTDELAYEN_SHIFT            27                                                /**< Shift value for ADC_CONVSTARTDELAYEN */
 #define _ADC_SINGLECTRLX_CONVSTARTDELAYEN_MASK             0x8000000UL                                       /**< Bit mask for ADC_CONVSTARTDELAYEN */
 #define _ADC_SINGLECTRLX_CONVSTARTDELAYEN_DEFAULT          0x00000000UL                                      /**< Mode DEFAULT for ADC_SINGLECTRLX */
@@ -1271,7 +1280,7 @@ typedef struct
 #define ADC_SCANCTRLX_VREFSEL_VREFPNWATT                   (_ADC_SCANCTRLX_VREFSEL_VREFPNWATT << 0)        /**< Shifted mode VREFPNWATT for ADC_SCANCTRLX */
 #define ADC_SCANCTRLX_VREFSEL_VREFPN                       (_ADC_SCANCTRLX_VREFSEL_VREFPN << 0)            /**< Shifted mode VREFPN for ADC_SCANCTRLX */
 #define ADC_SCANCTRLX_VREFSEL_VBGRLOW                      (_ADC_SCANCTRLX_VREFSEL_VBGRLOW << 0)           /**< Shifted mode VBGRLOW for ADC_SCANCTRLX */
-#define ADC_SCANCTRLX_VREFATTFIX                           (0x1UL << 3)                                    /**< Enable fixed scaling on VREF */
+#define ADC_SCANCTRLX_VREFATTFIX                           (0x1UL << 3)                                    /**< Enable Fixed Scaling on VREF */
 #define _ADC_SCANCTRLX_VREFATTFIX_SHIFT                    3                                               /**< Shift value for ADC_VREFATTFIX */
 #define _ADC_SCANCTRLX_VREFATTFIX_MASK                     0x8UL                                           /**< Bit mask for ADC_VREFATTFIX */
 #define _ADC_SCANCTRLX_VREFATTFIX_DEFAULT                  0x00000000UL                                    /**< Mode DEFAULT for ADC_SCANCTRLX */
@@ -1338,7 +1347,7 @@ typedef struct
 #define _ADC_SCANCTRLX_CONVSTARTDELAY_MASK                 0x7C00000UL                                     /**< Bit mask for ADC_CONVSTARTDELAY */
 #define _ADC_SCANCTRLX_CONVSTARTDELAY_DEFAULT              0x00000000UL                                    /**< Mode DEFAULT for ADC_SCANCTRLX */
 #define ADC_SCANCTRLX_CONVSTARTDELAY_DEFAULT               (_ADC_SCANCTRLX_CONVSTARTDELAY_DEFAULT << 22)   /**< Shifted mode DEFAULT for ADC_SCANCTRLX */
-#define ADC_SCANCTRLX_CONVSTARTDELAYEN                     (0x1UL << 27)                                   /**< Enable delaying next conversion start */
+#define ADC_SCANCTRLX_CONVSTARTDELAYEN                     (0x1UL << 27)                                   /**< Enable Delaying Next Conversion Start */
 #define _ADC_SCANCTRLX_CONVSTARTDELAYEN_SHIFT              27                                              /**< Shift value for ADC_CONVSTARTDELAYEN */
 #define _ADC_SCANCTRLX_CONVSTARTDELAYEN_MASK               0x8000000UL                                     /**< Bit mask for ADC_CONVSTARTDELAYEN */
 #define _ADC_SCANCTRLX_CONVSTARTDELAYEN_DEFAULT            0x00000000UL                                    /**< Mode DEFAULT for ADC_SCANCTRLX */
@@ -1795,12 +1804,12 @@ typedef struct
 #define ADC_BIASPROG_ADCBIASPROG_SCALE8                    (_ADC_BIASPROG_ADCBIASPROG_SCALE8 << 0)  /**< Shifted mode SCALE8 for ADC_BIASPROG */
 #define ADC_BIASPROG_ADCBIASPROG_SCALE16                   (_ADC_BIASPROG_ADCBIASPROG_SCALE16 << 0) /**< Shifted mode SCALE16 for ADC_BIASPROG */
 #define ADC_BIASPROG_ADCBIASPROG_SCALE32                   (_ADC_BIASPROG_ADCBIASPROG_SCALE32 << 0) /**< Shifted mode SCALE32 for ADC_BIASPROG */
-#define ADC_BIASPROG_VFAULTCLR                             (0x1UL << 12)                            /**< Clear VREFOF flag */
+#define ADC_BIASPROG_VFAULTCLR                             (0x1UL << 12)                            /**< Clear VREFOF Flag */
 #define _ADC_BIASPROG_VFAULTCLR_SHIFT                      12                                       /**< Shift value for ADC_VFAULTCLR */
 #define _ADC_BIASPROG_VFAULTCLR_MASK                       0x1000UL                                 /**< Bit mask for ADC_VFAULTCLR */
 #define _ADC_BIASPROG_VFAULTCLR_DEFAULT                    0x00000000UL                             /**< Mode DEFAULT for ADC_BIASPROG */
 #define ADC_BIASPROG_VFAULTCLR_DEFAULT                     (_ADC_BIASPROG_VFAULTCLR_DEFAULT << 12)  /**< Shifted mode DEFAULT for ADC_BIASPROG */
-#define ADC_BIASPROG_GPBIASACC                             (0x1UL << 16)                            /**< Accuracy setting for the system bias during ADC operation */
+#define ADC_BIASPROG_GPBIASACC                             (0x1UL << 16)                            /**< Accuracy Setting for the System Bias During ADC Operation */
 #define _ADC_BIASPROG_GPBIASACC_SHIFT                      16                                       /**< Shift value for ADC_GPBIASACC */
 #define _ADC_BIASPROG_GPBIASACC_MASK                       0x10000UL                                /**< Bit mask for ADC_GPBIASACC */
 #define _ADC_BIASPROG_GPBIASACC_DEFAULT                    0x00000000UL                             /**< Mode DEFAULT for ADC_BIASPROG */
@@ -1825,7 +1834,7 @@ typedef struct
 #define _ADC_CAL_SINGLEGAIN_MASK                           0x7F00UL                                /**< Bit mask for ADC_SINGLEGAIN */
 #define _ADC_CAL_SINGLEGAIN_DEFAULT                        0x00000040UL                            /**< Mode DEFAULT for ADC_CAL */
 #define ADC_CAL_SINGLEGAIN_DEFAULT                         (_ADC_CAL_SINGLEGAIN_DEFAULT << 8)      /**< Shifted mode DEFAULT for ADC_CAL */
-#define ADC_CAL_OFFSETINVMODE                              (0x1UL << 15)                           /**< Negative single-ended offset calibration is enabled */
+#define ADC_CAL_OFFSETINVMODE                              (0x1UL << 15)                           /**< Negative Single-ended Offset Calibration is Enabled */
 #define _ADC_CAL_OFFSETINVMODE_SHIFT                       15                                      /**< Shift value for ADC_OFFSETINVMODE */
 #define _ADC_CAL_OFFSETINVMODE_MASK                        0x8000UL                                /**< Bit mask for ADC_OFFSETINVMODE */
 #define _ADC_CAL_OFFSETINVMODE_DEFAULT                     0x00000000UL                            /**< Mode DEFAULT for ADC_CAL */
@@ -1842,7 +1851,7 @@ typedef struct
 #define _ADC_CAL_SCANGAIN_MASK                             0x7F000000UL                            /**< Bit mask for ADC_SCANGAIN */
 #define _ADC_CAL_SCANGAIN_DEFAULT                          0x00000040UL                            /**< Mode DEFAULT for ADC_CAL */
 #define ADC_CAL_SCANGAIN_DEFAULT                           (_ADC_CAL_SCANGAIN_DEFAULT << 24)       /**< Shifted mode DEFAULT for ADC_CAL */
-#define ADC_CAL_CALEN                                      (0x1UL << 31)                           /**< Calibration mode is enabled */
+#define ADC_CAL_CALEN                                      (0x1UL << 31)                           /**< Calibration Mode is Enabled */
 #define _ADC_CAL_CALEN_SHIFT                               31                                      /**< Shift value for ADC_CALEN */
 #define _ADC_CAL_CALEN_MASK                                0x80000000UL                            /**< Bit mask for ADC_CALEN */
 #define _ADC_CAL_CALEN_DEFAULT                             0x00000000UL                            /**< Mode DEFAULT for ADC_CAL */
@@ -2183,52 +2192,52 @@ typedef struct
 /* Bit fields for ADC APORTREQ */
 #define _ADC_APORTREQ_RESETVALUE                           0x00000000UL                            /**< Default value for ADC_APORTREQ */
 #define _ADC_APORTREQ_MASK                                 0x000003FFUL                            /**< Mask for ADC_APORTREQ */
-#define ADC_APORTREQ_APORT0XREQ                            (0x1UL << 0)                            /**< 1 if the bus connected to APORT0X is requested */
+#define ADC_APORTREQ_APORT0XREQ                            (0x1UL << 0)                            /**< 1 If the Bus Connected to APORT0X is Requested */
 #define _ADC_APORTREQ_APORT0XREQ_SHIFT                     0                                       /**< Shift value for ADC_APORT0XREQ */
 #define _ADC_APORTREQ_APORT0XREQ_MASK                      0x1UL                                   /**< Bit mask for ADC_APORT0XREQ */
 #define _ADC_APORTREQ_APORT0XREQ_DEFAULT                   0x00000000UL                            /**< Mode DEFAULT for ADC_APORTREQ */
 #define ADC_APORTREQ_APORT0XREQ_DEFAULT                    (_ADC_APORTREQ_APORT0XREQ_DEFAULT << 0) /**< Shifted mode DEFAULT for ADC_APORTREQ */
-#define ADC_APORTREQ_APORT0YREQ                            (0x1UL << 1)                            /**< 1 if the bus connected to APORT0Y is requested */
+#define ADC_APORTREQ_APORT0YREQ                            (0x1UL << 1)                            /**< 1 If the Bus Connected to APORT0Y is Requested */
 #define _ADC_APORTREQ_APORT0YREQ_SHIFT                     1                                       /**< Shift value for ADC_APORT0YREQ */
 #define _ADC_APORTREQ_APORT0YREQ_MASK                      0x2UL                                   /**< Bit mask for ADC_APORT0YREQ */
 #define _ADC_APORTREQ_APORT0YREQ_DEFAULT                   0x00000000UL                            /**< Mode DEFAULT for ADC_APORTREQ */
 #define ADC_APORTREQ_APORT0YREQ_DEFAULT                    (_ADC_APORTREQ_APORT0YREQ_DEFAULT << 1) /**< Shifted mode DEFAULT for ADC_APORTREQ */
-#define ADC_APORTREQ_APORT1XREQ                            (0x1UL << 2)                            /**< 1 if the bus connected to APORT1X is requested */
+#define ADC_APORTREQ_APORT1XREQ                            (0x1UL << 2)                            /**< 1 If the Bus Connected to APORT1X is Requested */
 #define _ADC_APORTREQ_APORT1XREQ_SHIFT                     2                                       /**< Shift value for ADC_APORT1XREQ */
 #define _ADC_APORTREQ_APORT1XREQ_MASK                      0x4UL                                   /**< Bit mask for ADC_APORT1XREQ */
 #define _ADC_APORTREQ_APORT1XREQ_DEFAULT                   0x00000000UL                            /**< Mode DEFAULT for ADC_APORTREQ */
 #define ADC_APORTREQ_APORT1XREQ_DEFAULT                    (_ADC_APORTREQ_APORT1XREQ_DEFAULT << 2) /**< Shifted mode DEFAULT for ADC_APORTREQ */
-#define ADC_APORTREQ_APORT1YREQ                            (0x1UL << 3)                            /**< 1 if the bus connected to APORT1Y is requested */
+#define ADC_APORTREQ_APORT1YREQ                            (0x1UL << 3)                            /**< 1 If the Bus Connected to APORT1Y is Requested */
 #define _ADC_APORTREQ_APORT1YREQ_SHIFT                     3                                       /**< Shift value for ADC_APORT1YREQ */
 #define _ADC_APORTREQ_APORT1YREQ_MASK                      0x8UL                                   /**< Bit mask for ADC_APORT1YREQ */
 #define _ADC_APORTREQ_APORT1YREQ_DEFAULT                   0x00000000UL                            /**< Mode DEFAULT for ADC_APORTREQ */
 #define ADC_APORTREQ_APORT1YREQ_DEFAULT                    (_ADC_APORTREQ_APORT1YREQ_DEFAULT << 3) /**< Shifted mode DEFAULT for ADC_APORTREQ */
-#define ADC_APORTREQ_APORT2XREQ                            (0x1UL << 4)                            /**< 1 if the bus connected to APORT2X is requested */
+#define ADC_APORTREQ_APORT2XREQ                            (0x1UL << 4)                            /**< 1 If the Bus Connected to APORT2X is Requested */
 #define _ADC_APORTREQ_APORT2XREQ_SHIFT                     4                                       /**< Shift value for ADC_APORT2XREQ */
 #define _ADC_APORTREQ_APORT2XREQ_MASK                      0x10UL                                  /**< Bit mask for ADC_APORT2XREQ */
 #define _ADC_APORTREQ_APORT2XREQ_DEFAULT                   0x00000000UL                            /**< Mode DEFAULT for ADC_APORTREQ */
 #define ADC_APORTREQ_APORT2XREQ_DEFAULT                    (_ADC_APORTREQ_APORT2XREQ_DEFAULT << 4) /**< Shifted mode DEFAULT for ADC_APORTREQ */
-#define ADC_APORTREQ_APORT2YREQ                            (0x1UL << 5)                            /**< 1 if the bus connected to APORT2Y is requested */
+#define ADC_APORTREQ_APORT2YREQ                            (0x1UL << 5)                            /**< 1 If the Bus Connected to APORT2Y is Requested */
 #define _ADC_APORTREQ_APORT2YREQ_SHIFT                     5                                       /**< Shift value for ADC_APORT2YREQ */
 #define _ADC_APORTREQ_APORT2YREQ_MASK                      0x20UL                                  /**< Bit mask for ADC_APORT2YREQ */
 #define _ADC_APORTREQ_APORT2YREQ_DEFAULT                   0x00000000UL                            /**< Mode DEFAULT for ADC_APORTREQ */
 #define ADC_APORTREQ_APORT2YREQ_DEFAULT                    (_ADC_APORTREQ_APORT2YREQ_DEFAULT << 5) /**< Shifted mode DEFAULT for ADC_APORTREQ */
-#define ADC_APORTREQ_APORT3XREQ                            (0x1UL << 6)                            /**< 1 if the bus connected to APORT3X is requested */
+#define ADC_APORTREQ_APORT3XREQ                            (0x1UL << 6)                            /**< 1 If the Bus Connected to APORT3X is Requested */
 #define _ADC_APORTREQ_APORT3XREQ_SHIFT                     6                                       /**< Shift value for ADC_APORT3XREQ */
 #define _ADC_APORTREQ_APORT3XREQ_MASK                      0x40UL                                  /**< Bit mask for ADC_APORT3XREQ */
 #define _ADC_APORTREQ_APORT3XREQ_DEFAULT                   0x00000000UL                            /**< Mode DEFAULT for ADC_APORTREQ */
 #define ADC_APORTREQ_APORT3XREQ_DEFAULT                    (_ADC_APORTREQ_APORT3XREQ_DEFAULT << 6) /**< Shifted mode DEFAULT for ADC_APORTREQ */
-#define ADC_APORTREQ_APORT3YREQ                            (0x1UL << 7)                            /**< 1 if the bus connected to APORT3Y is requested */
+#define ADC_APORTREQ_APORT3YREQ                            (0x1UL << 7)                            /**< 1 If the Bus Connected to APORT3Y is Requested */
 #define _ADC_APORTREQ_APORT3YREQ_SHIFT                     7                                       /**< Shift value for ADC_APORT3YREQ */
 #define _ADC_APORTREQ_APORT3YREQ_MASK                      0x80UL                                  /**< Bit mask for ADC_APORT3YREQ */
 #define _ADC_APORTREQ_APORT3YREQ_DEFAULT                   0x00000000UL                            /**< Mode DEFAULT for ADC_APORTREQ */
 #define ADC_APORTREQ_APORT3YREQ_DEFAULT                    (_ADC_APORTREQ_APORT3YREQ_DEFAULT << 7) /**< Shifted mode DEFAULT for ADC_APORTREQ */
-#define ADC_APORTREQ_APORT4XREQ                            (0x1UL << 8)                            /**< 1 if the bus connected to APORT4X is requested */
+#define ADC_APORTREQ_APORT4XREQ                            (0x1UL << 8)                            /**< 1 If the Bus Connected to APORT4X is Requested */
 #define _ADC_APORTREQ_APORT4XREQ_SHIFT                     8                                       /**< Shift value for ADC_APORT4XREQ */
 #define _ADC_APORTREQ_APORT4XREQ_MASK                      0x100UL                                 /**< Bit mask for ADC_APORT4XREQ */
 #define _ADC_APORTREQ_APORT4XREQ_DEFAULT                   0x00000000UL                            /**< Mode DEFAULT for ADC_APORTREQ */
 #define ADC_APORTREQ_APORT4XREQ_DEFAULT                    (_ADC_APORTREQ_APORT4XREQ_DEFAULT << 8) /**< Shifted mode DEFAULT for ADC_APORTREQ */
-#define ADC_APORTREQ_APORT4YREQ                            (0x1UL << 9)                            /**< 1 if the bus connected to APORT4Y is requested */
+#define ADC_APORTREQ_APORT4YREQ                            (0x1UL << 9)                            /**< 1 If the Bus Connected to APORT4Y is Requested */
 #define _ADC_APORTREQ_APORT4YREQ_SHIFT                     9                                       /**< Shift value for ADC_APORT4YREQ */
 #define _ADC_APORTREQ_APORT4YREQ_MASK                      0x200UL                                 /**< Bit mask for ADC_APORT4YREQ */
 #define _ADC_APORTREQ_APORT4YREQ_DEFAULT                   0x00000000UL                            /**< Mode DEFAULT for ADC_APORTREQ */
@@ -2237,52 +2246,52 @@ typedef struct
 /* Bit fields for ADC APORTCONFLICT */
 #define _ADC_APORTCONFLICT_RESETVALUE                      0x00000000UL                                      /**< Default value for ADC_APORTCONFLICT */
 #define _ADC_APORTCONFLICT_MASK                            0x000003FFUL                                      /**< Mask for ADC_APORTCONFLICT */
-#define ADC_APORTCONFLICT_APORT0XCONFLICT                  (0x1UL << 0)                                      /**< 1 if the bus connected to APORT0X is in conflict with another peripheral */
+#define ADC_APORTCONFLICT_APORT0XCONFLICT                  (0x1UL << 0)                                      /**< 1 If the Bus Connected to APORT0X is in Conflict With Another Peripheral */
 #define _ADC_APORTCONFLICT_APORT0XCONFLICT_SHIFT           0                                                 /**< Shift value for ADC_APORT0XCONFLICT */
 #define _ADC_APORTCONFLICT_APORT0XCONFLICT_MASK            0x1UL                                             /**< Bit mask for ADC_APORT0XCONFLICT */
 #define _ADC_APORTCONFLICT_APORT0XCONFLICT_DEFAULT         0x00000000UL                                      /**< Mode DEFAULT for ADC_APORTCONFLICT */
 #define ADC_APORTCONFLICT_APORT0XCONFLICT_DEFAULT          (_ADC_APORTCONFLICT_APORT0XCONFLICT_DEFAULT << 0) /**< Shifted mode DEFAULT for ADC_APORTCONFLICT */
-#define ADC_APORTCONFLICT_APORT0YCONFLICT                  (0x1UL << 1)                                      /**< 1 if the bus connected to APORT0Y is in conflict with another peripheral */
+#define ADC_APORTCONFLICT_APORT0YCONFLICT                  (0x1UL << 1)                                      /**< 1 If the Bus Connected to APORT0Y is in Conflict With Another Peripheral */
 #define _ADC_APORTCONFLICT_APORT0YCONFLICT_SHIFT           1                                                 /**< Shift value for ADC_APORT0YCONFLICT */
 #define _ADC_APORTCONFLICT_APORT0YCONFLICT_MASK            0x2UL                                             /**< Bit mask for ADC_APORT0YCONFLICT */
 #define _ADC_APORTCONFLICT_APORT0YCONFLICT_DEFAULT         0x00000000UL                                      /**< Mode DEFAULT for ADC_APORTCONFLICT */
 #define ADC_APORTCONFLICT_APORT0YCONFLICT_DEFAULT          (_ADC_APORTCONFLICT_APORT0YCONFLICT_DEFAULT << 1) /**< Shifted mode DEFAULT for ADC_APORTCONFLICT */
-#define ADC_APORTCONFLICT_APORT1XCONFLICT                  (0x1UL << 2)                                      /**< 1 if the bus connected to APORT1X is in conflict with another peripheral */
+#define ADC_APORTCONFLICT_APORT1XCONFLICT                  (0x1UL << 2)                                      /**< 1 If the Bus Connected to APORT1X is in Conflict With Another Peripheral */
 #define _ADC_APORTCONFLICT_APORT1XCONFLICT_SHIFT           2                                                 /**< Shift value for ADC_APORT1XCONFLICT */
 #define _ADC_APORTCONFLICT_APORT1XCONFLICT_MASK            0x4UL                                             /**< Bit mask for ADC_APORT1XCONFLICT */
 #define _ADC_APORTCONFLICT_APORT1XCONFLICT_DEFAULT         0x00000000UL                                      /**< Mode DEFAULT for ADC_APORTCONFLICT */
 #define ADC_APORTCONFLICT_APORT1XCONFLICT_DEFAULT          (_ADC_APORTCONFLICT_APORT1XCONFLICT_DEFAULT << 2) /**< Shifted mode DEFAULT for ADC_APORTCONFLICT */
-#define ADC_APORTCONFLICT_APORT1YCONFLICT                  (0x1UL << 3)                                      /**< 1 if the bus connected to APORT1Y is in conflict with another peripheral */
+#define ADC_APORTCONFLICT_APORT1YCONFLICT                  (0x1UL << 3)                                      /**< 1 If the Bus Connected to APORT1Y is in Conflict With Another Peripheral */
 #define _ADC_APORTCONFLICT_APORT1YCONFLICT_SHIFT           3                                                 /**< Shift value for ADC_APORT1YCONFLICT */
 #define _ADC_APORTCONFLICT_APORT1YCONFLICT_MASK            0x8UL                                             /**< Bit mask for ADC_APORT1YCONFLICT */
 #define _ADC_APORTCONFLICT_APORT1YCONFLICT_DEFAULT         0x00000000UL                                      /**< Mode DEFAULT for ADC_APORTCONFLICT */
 #define ADC_APORTCONFLICT_APORT1YCONFLICT_DEFAULT          (_ADC_APORTCONFLICT_APORT1YCONFLICT_DEFAULT << 3) /**< Shifted mode DEFAULT for ADC_APORTCONFLICT */
-#define ADC_APORTCONFLICT_APORT2XCONFLICT                  (0x1UL << 4)                                      /**< 1 if the bus connected to APORT2X is in conflict with another peripheral */
+#define ADC_APORTCONFLICT_APORT2XCONFLICT                  (0x1UL << 4)                                      /**< 1 If the Bus Connected to APORT2X is in Conflict With Another Peripheral */
 #define _ADC_APORTCONFLICT_APORT2XCONFLICT_SHIFT           4                                                 /**< Shift value for ADC_APORT2XCONFLICT */
 #define _ADC_APORTCONFLICT_APORT2XCONFLICT_MASK            0x10UL                                            /**< Bit mask for ADC_APORT2XCONFLICT */
 #define _ADC_APORTCONFLICT_APORT2XCONFLICT_DEFAULT         0x00000000UL                                      /**< Mode DEFAULT for ADC_APORTCONFLICT */
 #define ADC_APORTCONFLICT_APORT2XCONFLICT_DEFAULT          (_ADC_APORTCONFLICT_APORT2XCONFLICT_DEFAULT << 4) /**< Shifted mode DEFAULT for ADC_APORTCONFLICT */
-#define ADC_APORTCONFLICT_APORT2YCONFLICT                  (0x1UL << 5)                                      /**< 1 if the bus connected to APORT2Y is in conflict with another peripheral */
+#define ADC_APORTCONFLICT_APORT2YCONFLICT                  (0x1UL << 5)                                      /**< 1 If the Bus Connected to APORT2Y is in Conflict With Another Peripheral */
 #define _ADC_APORTCONFLICT_APORT2YCONFLICT_SHIFT           5                                                 /**< Shift value for ADC_APORT2YCONFLICT */
 #define _ADC_APORTCONFLICT_APORT2YCONFLICT_MASK            0x20UL                                            /**< Bit mask for ADC_APORT2YCONFLICT */
 #define _ADC_APORTCONFLICT_APORT2YCONFLICT_DEFAULT         0x00000000UL                                      /**< Mode DEFAULT for ADC_APORTCONFLICT */
 #define ADC_APORTCONFLICT_APORT2YCONFLICT_DEFAULT          (_ADC_APORTCONFLICT_APORT2YCONFLICT_DEFAULT << 5) /**< Shifted mode DEFAULT for ADC_APORTCONFLICT */
-#define ADC_APORTCONFLICT_APORT3XCONFLICT                  (0x1UL << 6)                                      /**< 1 if the bus connected to APORT3X is in conflict with another peripheral */
+#define ADC_APORTCONFLICT_APORT3XCONFLICT                  (0x1UL << 6)                                      /**< 1 If the Bus Connected to APORT3X is in Conflict With Another Peripheral */
 #define _ADC_APORTCONFLICT_APORT3XCONFLICT_SHIFT           6                                                 /**< Shift value for ADC_APORT3XCONFLICT */
 #define _ADC_APORTCONFLICT_APORT3XCONFLICT_MASK            0x40UL                                            /**< Bit mask for ADC_APORT3XCONFLICT */
 #define _ADC_APORTCONFLICT_APORT3XCONFLICT_DEFAULT         0x00000000UL                                      /**< Mode DEFAULT for ADC_APORTCONFLICT */
 #define ADC_APORTCONFLICT_APORT3XCONFLICT_DEFAULT          (_ADC_APORTCONFLICT_APORT3XCONFLICT_DEFAULT << 6) /**< Shifted mode DEFAULT for ADC_APORTCONFLICT */
-#define ADC_APORTCONFLICT_APORT3YCONFLICT                  (0x1UL << 7)                                      /**< 1 if the bus connected to APORT3Y is in conflict with another peripheral */
+#define ADC_APORTCONFLICT_APORT3YCONFLICT                  (0x1UL << 7)                                      /**< 1 If the Bus Connected to APORT3Y is in Conflict With Another Peripheral */
 #define _ADC_APORTCONFLICT_APORT3YCONFLICT_SHIFT           7                                                 /**< Shift value for ADC_APORT3YCONFLICT */
 #define _ADC_APORTCONFLICT_APORT3YCONFLICT_MASK            0x80UL                                            /**< Bit mask for ADC_APORT3YCONFLICT */
 #define _ADC_APORTCONFLICT_APORT3YCONFLICT_DEFAULT         0x00000000UL                                      /**< Mode DEFAULT for ADC_APORTCONFLICT */
 #define ADC_APORTCONFLICT_APORT3YCONFLICT_DEFAULT          (_ADC_APORTCONFLICT_APORT3YCONFLICT_DEFAULT << 7) /**< Shifted mode DEFAULT for ADC_APORTCONFLICT */
-#define ADC_APORTCONFLICT_APORT4XCONFLICT                  (0x1UL << 8)                                      /**< 1 if the bus connected to APORT4X is in conflict with another peripheral */
+#define ADC_APORTCONFLICT_APORT4XCONFLICT                  (0x1UL << 8)                                      /**< 1 If the Bus Connected to APORT4X is in Conflict With Another Peripheral */
 #define _ADC_APORTCONFLICT_APORT4XCONFLICT_SHIFT           8                                                 /**< Shift value for ADC_APORT4XCONFLICT */
 #define _ADC_APORTCONFLICT_APORT4XCONFLICT_MASK            0x100UL                                           /**< Bit mask for ADC_APORT4XCONFLICT */
 #define _ADC_APORTCONFLICT_APORT4XCONFLICT_DEFAULT         0x00000000UL                                      /**< Mode DEFAULT for ADC_APORTCONFLICT */
 #define ADC_APORTCONFLICT_APORT4XCONFLICT_DEFAULT          (_ADC_APORTCONFLICT_APORT4XCONFLICT_DEFAULT << 8) /**< Shifted mode DEFAULT for ADC_APORTCONFLICT */
-#define ADC_APORTCONFLICT_APORT4YCONFLICT                  (0x1UL << 9)                                      /**< 1 if the bus connected to APORT4Y is in conflict with another peripheral */
+#define ADC_APORTCONFLICT_APORT4YCONFLICT                  (0x1UL << 9)                                      /**< 1 If the Bus Connected to APORT4Y is in Conflict With Another Peripheral */
 #define _ADC_APORTCONFLICT_APORT4YCONFLICT_SHIFT           9                                                 /**< Shift value for ADC_APORT4YCONFLICT */
 #define _ADC_APORTCONFLICT_APORT4YCONFLICT_MASK            0x200UL                                           /**< Bit mask for ADC_APORT4YCONFLICT */
 #define _ADC_APORTCONFLICT_APORT4YCONFLICT_DEFAULT         0x00000000UL                                      /**< Mode DEFAULT for ADC_APORTCONFLICT */
@@ -2307,7 +2316,7 @@ typedef struct
 /* Bit fields for ADC SINGLEFIFOCLEAR */
 #define _ADC_SINGLEFIFOCLEAR_RESETVALUE                    0x00000000UL                                        /**< Default value for ADC_SINGLEFIFOCLEAR */
 #define _ADC_SINGLEFIFOCLEAR_MASK                          0x00000001UL                                        /**< Mask for ADC_SINGLEFIFOCLEAR */
-#define ADC_SINGLEFIFOCLEAR_SINGLEFIFOCLEAR                (0x1UL << 0)                                        /**< Clear Single FIFO content */
+#define ADC_SINGLEFIFOCLEAR_SINGLEFIFOCLEAR                (0x1UL << 0)                                        /**< Clear Single FIFO Content */
 #define _ADC_SINGLEFIFOCLEAR_SINGLEFIFOCLEAR_SHIFT         0                                                   /**< Shift value for ADC_SINGLEFIFOCLEAR */
 #define _ADC_SINGLEFIFOCLEAR_SINGLEFIFOCLEAR_MASK          0x1UL                                               /**< Bit mask for ADC_SINGLEFIFOCLEAR */
 #define _ADC_SINGLEFIFOCLEAR_SINGLEFIFOCLEAR_DEFAULT       0x00000000UL                                        /**< Mode DEFAULT for ADC_SINGLEFIFOCLEAR */
@@ -2316,7 +2325,7 @@ typedef struct
 /* Bit fields for ADC SCANFIFOCLEAR */
 #define _ADC_SCANFIFOCLEAR_RESETVALUE                      0x00000000UL                                    /**< Default value for ADC_SCANFIFOCLEAR */
 #define _ADC_SCANFIFOCLEAR_MASK                            0x00000001UL                                    /**< Mask for ADC_SCANFIFOCLEAR */
-#define ADC_SCANFIFOCLEAR_SCANFIFOCLEAR                    (0x1UL << 0)                                    /**< Clear Scan FIFO content */
+#define ADC_SCANFIFOCLEAR_SCANFIFOCLEAR                    (0x1UL << 0)                                    /**< Clear Scan FIFO Content */
 #define _ADC_SCANFIFOCLEAR_SCANFIFOCLEAR_SHIFT             0                                               /**< Shift value for ADC_SCANFIFOCLEAR */
 #define _ADC_SCANFIFOCLEAR_SCANFIFOCLEAR_MASK              0x1UL                                           /**< Bit mask for ADC_SCANFIFOCLEAR */
 #define _ADC_SCANFIFOCLEAR_SCANFIFOCLEAR_DEFAULT           0x00000000UL                                    /**< Mode DEFAULT for ADC_SCANFIFOCLEAR */
@@ -2366,6 +2375,6 @@ typedef struct
 #define _ADC_APORTMASTERDIS_APORT4YMASTERDIS_DEFAULT       0x00000000UL                                        /**< Mode DEFAULT for ADC_APORTMASTERDIS */
 #define ADC_APORTMASTERDIS_APORT4YMASTERDIS_DEFAULT        (_ADC_APORTMASTERDIS_APORT4YMASTERDIS_DEFAULT << 9) /**< Shifted mode DEFAULT for ADC_APORTMASTERDIS */
 
+/** @} */
 /** @} End of group EFM32PG12B_ADC */
 /** @} End of group Parts */
-

@@ -1,10 +1,10 @@
 /**************************************************************************//**
  * @file efm32hg_usb.h
  * @brief EFM32HG_USB register and bit field definitions
- * @version 5.1.2
+ * @version 5.6.0
  ******************************************************************************
- * @section License
- * <b>Copyright 2017 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
  ******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -29,6 +29,13 @@
  * any third party, arising from your use of this Software.
  *
  *****************************************************************************/
+
+#if defined(__ICCARM__)
+#pragma system_include       /* Treat file as system include file. */
+#elif defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
+#pragma clang system_header  /* Treat file as system include file. */
+#endif
+
 /**************************************************************************//**
 * @addtogroup Parts
 * @{
@@ -38,89 +45,88 @@
  * @{
  * @brief EFM32HG_USB Register Declaration
  *****************************************************************************/
-typedef struct
-{
-  __IOM uint32_t   CTRL;              /**< System Control Register  */
-  __IM uint32_t    STATUS;            /**< System Status Register  */
-  __IM uint32_t    IF;                /**< Interrupt Flag Register  */
-  __IOM uint32_t   IFS;               /**< Interrupt Flag Set Register  */
-  __IOM uint32_t   IFC;               /**< Interrupt Flag Clear Register  */
-  __IOM uint32_t   IEN;               /**< Interrupt Enable Register  */
-  __IOM uint32_t   ROUTE;             /**< I/O Routing Register  */
+typedef struct {
+  __IOM uint32_t   CTRL;               /**< System Control Register  */
+  __IM uint32_t    STATUS;             /**< System Status Register  */
+  __IM uint32_t    IF;                 /**< Interrupt Flag Register  */
+  __IOM uint32_t   IFS;                /**< Interrupt Flag Set Register  */
+  __IOM uint32_t   IFC;                /**< Interrupt Flag Clear Register  */
+  __IOM uint32_t   IEN;                /**< Interrupt Enable Register  */
+  __IOM uint32_t   ROUTE;              /**< I/O Routing Register  */
 
-  uint32_t         RESERVED0[61435];  /**< Reserved for future use **/
-  __IOM uint32_t   GAHBCFG;           /**< AHB Configuration Register  */
-  __IOM uint32_t   GUSBCFG;           /**< USB Configuration Register  */
-  __IOM uint32_t   GRSTCTL;           /**< Reset Register  */
-  __IOM uint32_t   GINTSTS;           /**< Interrupt Register  */
-  __IOM uint32_t   GINTMSK;           /**< Interrupt Mask Register  */
-  __IM uint32_t    GRXSTSR;           /**< Receive Status Debug Read Register  */
-  __IM uint32_t    GRXSTSP;           /**< Receive Status Read and Pop Register  */
-  __IOM uint32_t   GRXFSIZ;           /**< Receive FIFO Size Register  */
-  __IOM uint32_t   GNPTXFSIZ;         /**< Non-periodic Transmit FIFO Size Register  */
+  uint32_t         RESERVED0[61435U];  /**< Reserved for future use **/
+  __IOM uint32_t   GAHBCFG;            /**< AHB Configuration Register  */
+  __IOM uint32_t   GUSBCFG;            /**< USB Configuration Register  */
+  __IOM uint32_t   GRSTCTL;            /**< Reset Register  */
+  __IOM uint32_t   GINTSTS;            /**< Interrupt Register  */
+  __IOM uint32_t   GINTMSK;            /**< Interrupt Mask Register  */
+  __IM uint32_t    GRXSTSR;            /**< Receive Status Debug Read Register  */
+  __IM uint32_t    GRXSTSP;            /**< Receive Status Read and Pop Register  */
+  __IOM uint32_t   GRXFSIZ;            /**< Receive FIFO Size Register  */
+  __IOM uint32_t   GNPTXFSIZ;          /**< Non-periodic Transmit FIFO Size Register  */
 
-  uint32_t         RESERVED1[12];     /**< Reserved for future use **/
-  __IOM uint32_t   GDFIFOCFG;         /**< Global DFIFO Configuration Register  */
+  uint32_t         RESERVED1[12U];     /**< Reserved for future use **/
+  __IOM uint32_t   GDFIFOCFG;          /**< Global DFIFO Configuration Register  */
 
-  uint32_t         RESERVED2[41];     /**< Reserved for future use **/
-  __IOM uint32_t   DIEPTXF1;          /**< Device IN Endpoint Transmit FIFO 1 Size Register  */
-  __IOM uint32_t   DIEPTXF2;          /**< Device IN Endpoint Transmit FIFO 2 Size Register  */
-  __IOM uint32_t   DIEPTXF3;          /**< Device IN Endpoint Transmit FIFO 3 Size Register  */
+  uint32_t         RESERVED2[41U];     /**< Reserved for future use **/
+  __IOM uint32_t   DIEPTXF1;           /**< Device IN Endpoint Transmit FIFO 1 Size Register  */
+  __IOM uint32_t   DIEPTXF2;           /**< Device IN Endpoint Transmit FIFO 2 Size Register  */
+  __IOM uint32_t   DIEPTXF3;           /**< Device IN Endpoint Transmit FIFO 3 Size Register  */
 
-  uint32_t         RESERVED3[444];    /**< Reserved for future use **/
-  __IOM uint32_t   DCFG;              /**< Device Configuration Register  */
-  __IOM uint32_t   DCTL;              /**< Device Control Register  */
-  __IM uint32_t    DSTS;              /**< Device Status Register  */
-  uint32_t         RESERVED4[1];      /**< Reserved for future use **/
-  __IOM uint32_t   DIEPMSK;           /**< Device IN Endpoint Common Interrupt Mask Register  */
-  __IOM uint32_t   DOEPMSK;           /**< Device OUT Endpoint Common Interrupt Mask Register  */
-  __IM uint32_t    DAINT;             /**< Device All Endpoints Interrupt Register  */
-  __IOM uint32_t   DAINTMSK;          /**< Device All Endpoints Interrupt Mask Register  */
+  uint32_t         RESERVED3[444U];    /**< Reserved for future use **/
+  __IOM uint32_t   DCFG;               /**< Device Configuration Register  */
+  __IOM uint32_t   DCTL;               /**< Device Control Register  */
+  __IM uint32_t    DSTS;               /**< Device Status Register  */
+  uint32_t         RESERVED4[1U];      /**< Reserved for future use **/
+  __IOM uint32_t   DIEPMSK;            /**< Device IN Endpoint Common Interrupt Mask Register  */
+  __IOM uint32_t   DOEPMSK;            /**< Device OUT Endpoint Common Interrupt Mask Register  */
+  __IM uint32_t    DAINT;              /**< Device All Endpoints Interrupt Register  */
+  __IOM uint32_t   DAINTMSK;           /**< Device All Endpoints Interrupt Mask Register  */
 
-  uint32_t         RESERVED5[5];      /**< Reserved for future use **/
-  __IOM uint32_t   DIEPEMPMSK;        /**< Device IN Endpoint FIFO Empty Interrupt Mask Register  */
+  uint32_t         RESERVED5[5U];      /**< Reserved for future use **/
+  __IOM uint32_t   DIEPEMPMSK;         /**< Device IN Endpoint FIFO Empty Interrupt Mask Register  */
 
-  uint32_t         RESERVED6[50];     /**< Reserved for future use **/
-  __IOM uint32_t   DIEP0CTL;          /**< Device IN Endpoint 0 Control Register  */
-  uint32_t         RESERVED7[1];      /**< Reserved for future use **/
-  __IOM uint32_t   DIEP0INT;          /**< Device IN Endpoint 0 Interrupt Register  */
-  uint32_t         RESERVED8[1];      /**< Reserved for future use **/
-  __IOM uint32_t   DIEP0TSIZ;         /**< Device IN Endpoint 0 Transfer Size Register  */
-  __IOM uint32_t   DIEP0DMAADDR;      /**< Device IN Endpoint 0 DMA Address Register  */
-  __IM uint32_t    DIEP0TXFSTS;       /**< Device IN Endpoint 0 Transmit FIFO Status Register  */
+  uint32_t         RESERVED6[50U];     /**< Reserved for future use **/
+  __IOM uint32_t   DIEP0CTL;           /**< Device IN Endpoint 0 Control Register  */
+  uint32_t         RESERVED7[1U];      /**< Reserved for future use **/
+  __IOM uint32_t   DIEP0INT;           /**< Device IN Endpoint 0 Interrupt Register  */
+  uint32_t         RESERVED8[1U];      /**< Reserved for future use **/
+  __IOM uint32_t   DIEP0TSIZ;          /**< Device IN Endpoint 0 Transfer Size Register  */
+  __IOM uint32_t   DIEP0DMAADDR;       /**< Device IN Endpoint 0 DMA Address Register  */
+  __IM uint32_t    DIEP0TXFSTS;        /**< Device IN Endpoint 0 Transmit FIFO Status Register  */
 
-  uint32_t         RESERVED9[1];      /**< Reserved registers */
-  USB_DIEP_TypeDef DIEP[3];           /**< Device IN Endpoint x+1 Registers */
+  uint32_t         RESERVED9[1U];      /**< Reserved registers */
+  USB_DIEP_TypeDef DIEP[3U];           /**< Device IN Endpoint x+1 Registers */
 
-  uint32_t         RESERVED10[96];    /**< Reserved for future use **/
-  __IOM uint32_t   DOEP0CTL;          /**< Device OUT Endpoint 0 Control Register  */
-  uint32_t         RESERVED11[1];     /**< Reserved for future use **/
-  __IOM uint32_t   DOEP0INT;          /**< Device OUT Endpoint 0 Interrupt Register  */
-  uint32_t         RESERVED12[1];     /**< Reserved for future use **/
-  __IOM uint32_t   DOEP0TSIZ;         /**< Device OUT Endpoint 0 Transfer Size Register  */
-  __IOM uint32_t   DOEP0DMAADDR;      /**< Device OUT Endpoint 0 DMA Address Register  */
+  uint32_t         RESERVED10[96U];    /**< Reserved for future use **/
+  __IOM uint32_t   DOEP0CTL;           /**< Device OUT Endpoint 0 Control Register  */
+  uint32_t         RESERVED11[1U];     /**< Reserved for future use **/
+  __IOM uint32_t   DOEP0INT;           /**< Device OUT Endpoint 0 Interrupt Register  */
+  uint32_t         RESERVED12[1U];     /**< Reserved for future use **/
+  __IOM uint32_t   DOEP0TSIZ;          /**< Device OUT Endpoint 0 Transfer Size Register  */
+  __IOM uint32_t   DOEP0DMAADDR;       /**< Device OUT Endpoint 0 DMA Address Register  */
 
-  uint32_t         RESERVED13[2];     /**< Reserved registers */
-  USB_DOEP_TypeDef DOEP[3];           /**< Device OUT Endpoint x+1 Registers */
+  uint32_t         RESERVED13[2U];     /**< Reserved registers */
+  USB_DOEP_TypeDef DOEP[3U];           /**< Device OUT Endpoint x+1 Registers */
 
-  uint32_t         RESERVED14[160];   /**< Reserved for future use **/
-  __IOM uint32_t   PCGCCTL;           /**< Power and Clock Gating Control Register  */
+  uint32_t         RESERVED14[160U];   /**< Reserved for future use **/
+  __IOM uint32_t   PCGCCTL;            /**< Power and Clock Gating Control Register  */
 
-  uint32_t         RESERVED15[127];   /**< Reserved registers */
-  __IOM uint32_t   FIFO0D[384];       /**< Device EP 0 FIFO  */
+  uint32_t         RESERVED15[127U];   /**< Reserved registers */
+  __IOM uint32_t   FIFO0D[384U];       /**< Device EP 0 FIFO  */
 
-  uint32_t         RESERVED16[640];   /**< Reserved registers */
-  __IOM uint32_t   FIFO1D[384];       /**< Device EP 1 FIFO  */
+  uint32_t         RESERVED16[640U];   /**< Reserved registers */
+  __IOM uint32_t   FIFO1D[384U];       /**< Device EP 1 FIFO  */
 
-  uint32_t         RESERVED17[640];   /**< Reserved registers */
-  __IOM uint32_t   FIFO2D[384];       /**< Device EP 2 FIFO  */
+  uint32_t         RESERVED17[640U];   /**< Reserved registers */
+  __IOM uint32_t   FIFO2D[384U];       /**< Device EP 2 FIFO  */
 
-  uint32_t         RESERVED18[640];   /**< Reserved registers */
-  __IOM uint32_t   FIFO3D[384];       /**< Device EP 3 FIFO  */
+  uint32_t         RESERVED18[640U];   /**< Reserved registers */
+  __IOM uint32_t   FIFO3D[384U];       /**< Device EP 3 FIFO  */
 
-  uint32_t         RESERVED19[28288]; /**< Reserved registers */
-  __IOM uint32_t   FIFORAM[512];      /**< Direct Access to Data FIFO RAM for Debugging (2 KB)  */
-} USB_TypeDef;                        /** @} */
+  uint32_t         RESERVED19[28288U]; /**< Reserved registers */
+  __IOM uint32_t   FIFORAM[512U];      /**< Direct Access to Data FIFO RAM for Debugging (2 KB)  */
+} USB_TypeDef;                         /**< USB Register Declaration *//** @} */
 
 /**************************************************************************//**
  * @defgroup EFM32HG_USB_BitFields
@@ -1804,4 +1810,3 @@ typedef struct
 
 /** @} End of group EFM32HG_USB */
 /** @} End of group Parts */
-
