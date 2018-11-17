@@ -284,15 +284,13 @@ void _arch_mem_domain_destroy(struct k_mem_domain *domain)
 void _arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 				       u32_t  partition_id)
 {
-	u32_t total_partitions;
 	struct k_mem_partition partition;
 
 	if (domain == NULL) {
 		goto out;
 	}
 
-	total_partitions = domain->num_partitions;
-	__ASSERT(partition_id <= total_partitions,
+	__ASSERT(partition_id <= domain->num_partitions,
 		 "invalid partitions");
 
 	partition = domain->partitions[partition_id];
