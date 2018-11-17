@@ -547,7 +547,7 @@ int _k_object_validate(struct _k_object *ko, enum k_objects otype,
 	return 0;
 }
 
-void _k_object_init(void *object)
+void _k_object_init(void *obj)
 {
 	struct _k_object *ko;
 
@@ -559,7 +559,7 @@ void _k_object_init(void *object)
 	 * finalizes it
 	 */
 
-	ko = _k_object_find(object);
+	ko = _k_object_find(obj);
 	if (ko == NULL) {
 		/* Supervisor threads can ignore rules about kernel objects
 		 * and may declare them on stacks, etc. Such objects will never
@@ -572,9 +572,9 @@ void _k_object_init(void *object)
 	ko->flags |= K_OBJ_FLAG_INITIALIZED;
 }
 
-void _k_object_recycle(void *object)
+void _k_object_recycle(void *obj)
 {
-	struct _k_object *ko = _k_object_find(object);
+	struct _k_object *ko = _k_object_find(obj);
 
 	if (ko != NULL) {
 		(void)memset(ko->perms, 0, sizeof(ko->perms));
@@ -583,12 +583,12 @@ void _k_object_recycle(void *object)
 	}
 }
 
-void _k_object_uninit(void *object)
+void _k_object_uninit(void *obj)
 {
 	struct _k_object *ko;
 
 	/* See comments in _k_object_init() */
-	ko = _k_object_find(object);
+	ko = _k_object_find(obj);
 	if (ko == NULL) {
 		return;
 	}

@@ -105,18 +105,18 @@ int _abort_timeout(struct _timeout *to)
 	return ret;
 }
 
-s32_t z_timeout_remaining(struct _timeout *to)
+s32_t z_timeout_remaining(struct _timeout *timeout)
 {
 	s32_t ticks = 0;
 
-	if (to->dticks == _INACTIVE) {
+	if (timeout->dticks == _INACTIVE) {
 		return 0;
 	}
 
 	LOCKED(&timeout_lock) {
 		for (struct _timeout *t = first(); t != NULL; t = next(t)) {
 			ticks += t->dticks;
-			if (to == t) {
+			if (timeout == t) {
 				break;
 			}
 		}
