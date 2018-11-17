@@ -1316,10 +1316,10 @@ struct k_timer {
 	_wait_q_t wait_q;
 
 	/* runs in ISR context */
-	void (*expiry_fn)(struct k_timer *);
+	void (*expiry_fn)(struct k_timer *timer);
 
 	/* runs in the context of the thread that calls k_timer_stop() */
-	void (*stop_fn)(struct k_timer *);
+	void (*stop_fn)(struct k_timer *timer);
 
 	/* timer period */
 	s32_t period;
@@ -4907,7 +4907,7 @@ __syscall void k_str_out(char *c, size_t n);
  * @param arg Untyped argument to be passed to "fn"
  */
 extern void _arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
-			    void (*fn)(int, void *), void *arg);
+			    void (*fn)(int key, void *data), void *arg);
 
 #ifdef __cplusplus
 }

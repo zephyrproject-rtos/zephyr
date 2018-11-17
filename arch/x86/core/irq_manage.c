@@ -24,8 +24,8 @@
 #include <kswap.h>
 #include <arch/x86/segmentation.h>
 
-extern void _SpuriousIntHandler(void *);
-extern void _SpuriousIntNoErrCodeHandler(void *);
+extern void _SpuriousIntHandler(void *handler);
+extern void _SpuriousIntNoErrCodeHandler(void *handler);
 
 /*
  * Place the addresses of the spurious interrupt handlers into the intList

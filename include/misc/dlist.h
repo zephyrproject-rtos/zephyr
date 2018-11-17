@@ -471,7 +471,7 @@ static inline void sys_dlist_insert_before(sys_dlist_t *list,
  */
 
 static inline void sys_dlist_insert_at(sys_dlist_t *list, sys_dnode_t *node,
-	int (*cond)(sys_dnode_t *, void *), void *data)
+	int (*cond)(sys_dnode_t *node, void *data), void *data)
 {
 	if (sys_dlist_is_empty(list)) {
 		sys_dlist_append(list, node);

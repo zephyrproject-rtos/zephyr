@@ -93,8 +93,8 @@ void _timer_expiration_handler(struct _timeout *t)
 
 
 void k_timer_init(struct k_timer *timer,
-		  void (*expiry_fn)(struct k_timer *),
-		  void (*stop_fn)(struct k_timer *))
+		  void (*expiry_fn)(struct k_timer *t),
+		  void (*stop_fn)(struct k_timer *t))
 {
 	timer->expiry_fn = expiry_fn;
 	timer->stop_fn = stop_fn;
