@@ -7,7 +7,10 @@
 #ifndef ZEPHYR_DRIVERS_SENSOR_SI7021_SI7021_H_
 #define ZEPHYR_DRIVERS_SENSOR_SI7021_SI7021_H_
 
-#define SI7021_DEFAULT_ADDRESS	0x40
+#include <zephyr/types.h>
+#include <device.h>
+#include <gpio.h>
+#include <sensor.h>
 
 #define SI7021_MEASRH_HOLD_CMD          0xE5    /* Measure Relative Humidity, Hold Master Mode*/
 #define SI7021_MEASRH_NOHOLD_CMD        0xF5    /* Measure Relative Humidity, No Hold Master Mode*/
@@ -27,8 +30,12 @@
 #define SI7021_REV_2					0x20
 
 struct si7021_data {
+
+    struct device *i2c_master;
+    u8_t i2c_slave_addr;
     
-    int dummy;
+    u16_t meash;
+    u16_t meastemp;
 };
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_SI7021_SI7021_H_ */
