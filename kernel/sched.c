@@ -80,7 +80,7 @@ static inline bool _is_idle(struct k_thread *thread)
 #ifdef CONFIG_SMP
 	return thread->base.is_idle;
 #else
-	extern struct k_thread * const _idle_thread;
+	extern k_tid_t const _idle_thread;
 
 	return thread == _idle_thread;
 #endif
@@ -229,11 +229,11 @@ static void reset_time_slice(void)
 	z_set_timeout_expiry(slice_time, false);
 }
 
-void k_sched_time_slice_set(s32_t duration_in_ms, int prio)
+void k_sched_time_slice_set(s32_t slice, int prio)
 {
 	LOCKED(&sched_lock) {
 		_current_cpu->slice_ticks = 0;
-		slice_time = _ms_to_ticks(duration_in_ms);
+		slice_time = _ms_to_ticks(slice);
 		slice_max_prio = prio;
 		reset_time_slice();
 	}
@@ -669,12 +669,12 @@ struct k_thread *_priq_mq_best(struct _priq_mq *pq)
 	return CONTAINER_OF(n, struct k_thread, base.qnode_dlist);
 }
 
-int _unpend_all(_wait_q_t *waitq)
+int _unpend_all(_wait_q_t *wait_q)
 {
 	int need_sched = 0;
 	struct k_thread *th;
 
-	while ((th = _waitq_head(waitq)) != NULL) {
+	while ((th = _waitq_head(wait_q)) != NULL) {
 		_unpend_thread(th);
 		_ready_thread(th);
 		need_sched = 1;
