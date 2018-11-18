@@ -39,11 +39,19 @@ extern "C" {
  *     -0.5: val1 =  0, val2 = -500000
  *     -1.0: val1 = -1, val2 =  0
  *     -1.5: val1 = -1, val2 = -500000
+ *
+ * Denormalized representations should be avoided:
+ *
+ *      0.5: val1 =  1, val2 = -500000
+ *     -1.5: val1 = -2, val2 =  500000
  */
 struct sensor_value {
 	/** Integer part of the value. */
 	s32_t val1;
-	/** Fractional part of the value (in one-millionth parts). */
+	/**
+	 * Fractional part of the value (in one-millionth parts). This
+	 * must have the same sign as #val1 unless #val1 is zero.
+	 */
 	s32_t val2;
 };
 
