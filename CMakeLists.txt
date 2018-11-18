@@ -550,16 +550,12 @@ gen_kobj(KOBJ_INCLUDE_PATH)
 # Generate offsets.c.obj from offsets.c
 # Generate offsets.h     from offsets.c.obj
 
-set(OFFSETS_C_PATH arch/${ARCH}/core/offsets/offsets.c)
+set(OFFSETS_C_PATH ${ZEPHYR_BASE}/arch/${ARCH}/core/offsets/offsets.c)
+set(OFFSETS_O_PATH ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/offsets.dir/arch/${ARCH}/core/offsets/offsets.c.obj)
 set(OFFSETS_H_PATH ${PROJECT_BINARY_DIR}/include/generated/offsets.h)
 
-add_library(          offsets OBJECT ${OFFSETS_C_PATH})
-# target_link_libraries for librareis of type OBJECT is not supported in CMake until 3.12.3. Until then the
-# include directories, compile options and compile definitions are transefered using the the following 3 lines.
-target_include_directories(offsets PRIVATE $<TARGET_PROPERTY:zephyr_interface,INTERFACE_INCLUDE_DIRECTORIES>)
-target_compile_options(offsets PRIVATE $<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_OPTIONS>)
-target_compile_definitions(offsets PRIVATE $<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_DEFINITIONS>)
-
+add_library(          offsets STATIC ${OFFSETS_C_PATH})
+target_link_libraries(offsets zephyr_interface)
 add_dependencies(     offsets
   syscall_list_h_target
   syscall_macros_h_target
@@ -570,7 +566,7 @@ add_dependencies(     offsets
 add_custom_command(
   OUTPUT ${OFFSETS_H_PATH}
   COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/gen_offset_header.py
-  -i $<TARGET_OBJECTS:offsets>
+  -i ${OFFSETS_O_PATH}
   -o ${OFFSETS_H_PATH}
   DEPENDS offsets
 )
@@ -801,7 +797,7 @@ set(zephyr_lnk
   ${ZEPHYR_LIBS_PROPERTY}
   ${LINKERFLAGPREFIX},--no-whole-archive
   kernel
-  $<TARGET_OBJECTS:offsets>
+  ${OFFSETS_O_PATH}
   ${LIB_INCLUDE_DIR}
   -L${PROJECT_BINARY_DIR}
   ${TOOLCHAIN_LIBS}
