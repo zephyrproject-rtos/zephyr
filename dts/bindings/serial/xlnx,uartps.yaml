@@ -1,0 +1,16 @@
+---
+title: Xilinx PS UART
+
+description: >
+    This binding gives a base representation of the Xilinx PS UART
+
+inherits:
+    !include uart.yaml
+
+properties:
+    compatible:
+      constraint: "xlnx,xuartps"
+
+    reg:
+      category: required
+...
