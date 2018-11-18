@@ -9,4 +9,11 @@ ram: 320
 flash: 1024
 supported:
   - gpio
+  - i2c
+  - spi
   - pwm
+testing:
+  default: true
+  ignore_tags:
+    - net
+    - bluetooth
