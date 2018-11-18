@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Intel Corporation
+ * Copyright (c) 2019 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,6 +47,8 @@
 /* max time to be waited for dma to complete (in ms) */
 #define WAITTIME                1000
 
+#define MAX_TRANSFERS		4
+
 /* This semaphore is used as a signal from the dma isr to the app
  * to let it know the DMA is complete. The app should wait till
  * this event comes indicating the completion of DMA.
@@ -58,6 +60,12 @@ extern struct k_sem thread_sem;
 #define DMA_DEVICE_NAME		CONFIG_DMA_0_NAME
 #define RX_BUFF_SIZE		(48)
 
+struct transfers {
+	const char *source;
+	char *destination;
+	size_t size;
+};
+
 static const char tx_data[] = "It is harder to be kind than to be wise";
 static const char tx_data2[] = "India have a good cricket team";
 static const char tx_data3[] = "Virat: the best ever?";
@@ -67,15 +75,51 @@ static char rx_data2[RX_BUFF_SIZE] = { 0 };
 static char rx_data3[RX_BUFF_SIZE] = { 0 };
 static char rx_data4[RX_BUFF_SIZE] = { 0 };
 
-static void test_done(void *arg, u32_t id, int error_code)
-{
-	if (error_code == 0) {
-		printk("DMA transfer done\n");
-	} else {
-		printk("DMA transfer met an error = 0x%x\n", error_code);
-	}
+static struct transfers transfer_blocks[MAX_TRANSFERS] = {
+	{
+		.source = tx_data,
+		.destination = rx_data,
+		.size = sizeof(tx_data),
+	},
+	{
+		.source = tx_data2,
+		.destination = rx_data2,
+		.size = sizeof(tx_data2),
+	},
+	{
+		.source = tx_data3,
+		.destination = rx_data3,
+		.size = sizeof(tx_data3),
+	},
+	{
+		.source = tx_data4,
+		.destination = rx_data4,
+		.size = sizeof(tx_data4),
+	},
+};
+static struct device *dma_device;
+static u32_t current_block_count, total_block_count;
 
-	k_sem_give(&dma_sem);
+static void test_done(void *arg, u32_t channel, int error_code)
+{
+	u32_t src, dst;
+	size_t size;
+
+	current_block_count++;
+
+	if (error_code != 0) {
+		printk("DMA transfer met an error = 0x%x\n", error_code);
+		k_sem_give(&dma_sem);
+	} else if (current_block_count < total_block_count) {
+		src = (u32_t)transfer_blocks[current_block_count].source;
+		dst = (u32_t)transfer_blocks[current_block_count].destination;
+		size = transfer_blocks[current_block_count].size;
+		dma_reload(dma_device, channel, src, dst, size);
+		dma_start(dma_device, channel);
+	} else {
+		printk("DMA transfer done\n");
+		k_sem_give(&dma_sem);
+	}
 }
 
 static int test_task(u32_t chan_id, u32_t blen, u32_t block_count)
@@ -88,27 +132,15 @@ static int test_task(u32_t chan_id, u32_t blen, u32_t block_count)
 		.dest_address = (u32_t)rx_data,
 	};
 
-	struct dma_block_config dma_block_cfg2 = {
-		.block_size = sizeof(tx_data2),
-		.source_address = (u32_t)tx_data2,
-		.dest_address = (u32_t)rx_data2,
-	};
+	if (block_count > ARRAY_SIZE(transfer_blocks)) {
+		printk("block_count %u is greater than %ld\n", block_count,
+			ARRAY_SIZE(transfer_blocks));
+		return -1;
+	}
 
-	struct dma_block_config dma_block_cfg3 = {
-		.block_size = sizeof(tx_data3),
-		.source_address = (u32_t)tx_data3,
-		.dest_address = (u32_t)rx_data3,
-	};
+	dma_device = device_get_binding(DMA_DEVICE_NAME);
 
-	struct dma_block_config dma_block_cfg4 = {
-		.block_size = sizeof(tx_data4),
-		.source_address = (u32_t)tx_data4,
-		.dest_address = (u32_t)rx_data4,
-	};
-
-	struct device *dma = device_get_binding(DMA_DEVICE_NAME);
-
-	if (!dma) {
+	if (!dma_device) {
 		printk("Cannot get dma controller\n");
 		return -1;
 	}
@@ -121,7 +153,7 @@ static int test_task(u32_t chan_id, u32_t blen, u32_t block_count)
 	dma_cfg.dma_callback = test_done;
 	dma_cfg.complete_callback_en = 0;
 	dma_cfg.error_callback_en = 1;
-	dma_cfg.block_count = block_count;
+	dma_cfg.block_count = 1;
 	dma_cfg.head_block = &dma_block_cfg;
 
 	printk("Preparing DMA Controller: Chan_ID=%u, BURST_LEN=%u\n",
@@ -132,23 +164,30 @@ static int test_task(u32_t chan_id, u32_t blen, u32_t block_count)
 	(void)memset(rx_data3, 0, sizeof(rx_data3));
 	(void)memset(rx_data4, 0, sizeof(rx_data4));
 
-	dma_block_cfg.next_block = &dma_block_cfg2;
-	dma_block_cfg2.next_block = &dma_block_cfg3;
-	dma_block_cfg3.next_block = &dma_block_cfg4;
-
-	/* dma_block_cfg4 is assigned to 0 by default. Hence if next_block is
-	 * not configured, it will be 0 implying the last block in the chain
+	/*
+	 * dma_block_cfg4 is assigned to 0 by default. Hence if callback_arg is
+	 * not assigned, it will be NULL implying there are no more blocks to
+	 * transfer
 	 */
 
-	if (dma_config(dma, chan_id, &dma_cfg)) {
+	if (dma_config(dma_device, chan_id, &dma_cfg)) {
 		printk("ERROR: configuring\n");
 		return -1;
 	}
 
 	printk("Starting the transfer\n");
-	if (dma_start(dma, chan_id)) {
+
+	current_block_count = 0;
+	total_block_count = block_count;
+
+	if (dma_start(dma_device, chan_id)) {
 		printk("ERROR: transfer\n");
 		return -1;
+	}
+
+	/* Wait a while for the dma to complete */
+	if (k_sem_take(&dma_sem, WAITTIME)) {
+		printk("*** timed out waiting for dma to complete ***\n");
 	}
 
 	xthal_dcache_region_invalidate(rx_data, RX_BUFF_SIZE);
@@ -156,18 +195,8 @@ static int test_task(u32_t chan_id, u32_t blen, u32_t block_count)
 	xthal_dcache_region_invalidate(rx_data3, RX_BUFF_SIZE);
 	xthal_dcache_region_invalidate(rx_data4, RX_BUFF_SIZE);
 
-	/* Wait a while for the dma to complete */
-	if (k_sem_take(&dma_sem, WAITTIME)) {
-		printk("*** timed out waiting for dma to complete ***\n");
-	}
-
-	if (dma_stop(dma, chan_id)) {
-		printk("ERROR: stopping\n");
-		return -1;
-	}
-
 	/* Intentionally break has been omitted (fall-through) */
-	switch (dma_cfg.block_count) {
+	switch (block_count) {
 	case 4:
 		if (strcmp(tx_data4, rx_data4) != 0)
 			return -1;
@@ -190,7 +219,7 @@ static int test_task(u32_t chan_id, u32_t blen, u32_t block_count)
 		break;
 
 	default:
-		printk("Invalid block count %d\n", dma_cfg.block_count);
+		printk("Invalid block count %d\n", block_count);
 		return -1;
 	}
 
