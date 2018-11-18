@@ -3,9 +3,10 @@
 # Copyright (c) 2017 Google LLC.
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig WDT_SAM0
+config WDT_SAM0
 	bool "Atmel SAM0 series Watchdog (WDT) Driver"
 	depends on SOC_FAMILY_SAM0
+	select HAS_DTS_WDT
 	default y
 	help
 	  Enable WDT driver for Atmel SAM0 MCUs.
