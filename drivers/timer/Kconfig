@@ -241,6 +241,23 @@ config MCHP_XEC_RTOS_TIMER
 	  XEC series RTOS timer and provides the standard "system clock
 	  driver" interfaces.
 
+config XLNX_PSTTC_TIMER
+	bool "Xilinx PS ttc timer support"
+	default y
+	depends on SOC_XILINX_ZYNQMP
+	help
+	  This module implements a kernel device driver for the Xilinx ZynqMP
+	  platform provides the standard "system clock driver" interfaces.
+	  If unchecked, no timer will be used.
+
+config XLNX_PSTTC_TIMER_INDEX
+	int "Xilinx PS ttc timer index"
+	range 0 3
+	default 0
+	depends on XLNX_PSTTC_TIMER
+	help
+	  This is the index of TTC timer picked to provide system clock.
+
 config SYSTEM_CLOCK_DISABLE
 	bool "API to disable system clock"
 	help
