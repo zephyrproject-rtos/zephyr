@@ -435,6 +435,7 @@ struct shell {
 
 	LOG_INSTANCE_PTR_DECLARE(log);
 
+	const char *thread_name;
 	struct k_thread *thread;
 	k_thread_stack_t *stack;
 };
@@ -474,6 +475,7 @@ struct shell {
 		.stats = SHELL_STATS_PTR(_name),			     \
 		.log_backend = SHELL_LOG_BACKEND_PTR(_name),		     \
 		LOG_INSTANCE_PTR_INIT(log, shell, _name)		     \
+		.thread_name = STRINGIFY(_name),			     \
 		.thread = &_name##_thread,				     \
 		.stack = _name##_stack					     \
 	}

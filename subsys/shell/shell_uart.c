@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(shell_uart);
 SHELL_UART_DEFINE(shell_transport_uart,
 		  CONFIG_SHELL_BACKEND_SERIAL_TX_RING_BUFFER_SIZE,
 		  CONFIG_SHELL_BACKEND_SERIAL_RX_RING_BUFFER_SIZE);
-SHELL_DEFINE(uart_shell, "uart:~$ ", &shell_transport_uart, 10,
+SHELL_DEFINE(shell_uart, "uart:~$ ", &shell_transport_uart, 10,
 	     SHELL_FLAG_OLF_CRLF);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -235,7 +235,7 @@ static int enable_shell_uart(struct device *arg)
 		(CONFIG_SHELL_BACKEND_SERIAL_LOG_LEVEL > LOG_LEVEL_DBG) ?
 		CONFIG_LOG_MAX_LEVEL : CONFIG_SHELL_BACKEND_SERIAL_LOG_LEVEL;
 
-	shell_init(&uart_shell, dev, true, log_backend, level);
+	shell_init(&shell_uart, dev, true, log_backend, level);
 
 	return 0;
 }
@@ -243,5 +243,5 @@ SYS_INIT(enable_shell_uart, POST_KERNEL, 0);
 
 const struct shell *shell_backend_uart_get_ptr(void)
 {
-	return &uart_shell;
+	return &shell_uart;
 }
