@@ -176,14 +176,6 @@ endmenu
 
 menu "Compiler Options"
 
-config CROSS_COMPILE
-	string "Cross-compiler tool prefix"
-	help
-	  Same as running 'make CROSS_COMPILE=prefix-' but stored for
-	  default make runs in this kernel build directory.  You don't
-	  need to set this unless you want the configured kernel build
-	  directory to select the cross-compiler automatically.
-
 config NATIVE_APPLICATION
 	bool "Build as a native host application"
 	help

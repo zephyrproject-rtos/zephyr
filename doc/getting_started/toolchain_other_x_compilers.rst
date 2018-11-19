@@ -44,8 +44,7 @@ Follow these steps to use one of these toolchains.
       export ZEPHYR_TOOLCHAIN_VARIANT=cross-compile
       export CROSS_COMPILE=/usr/bin/arm-none-eabi-
 
-   You can also set ``CROSS_COMPILE`` as a CMake variable, or using the Kconfig
-   symbol :option:`CONFIG_CROSS_COMPILE`.
+   You can also set ``CROSS_COMPILE`` as a CMake variable.
 
 When using this option, all of your toolchain binaries must reside in the same
 directory and have a common file name prefix.  The ``CROSS_COMPILE`` variable
