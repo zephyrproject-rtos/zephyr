@@ -20,8 +20,10 @@
 #define MOD_LF            0x0000
 #define OP_HELLO          0xbb
 #define OP_HEARTBEAT      0xbc
+#define OP_GET_NAME       0xbd
 #define OP_VND_HELLO      BT_MESH_MODEL_OP_3(OP_HELLO, BT_COMP_ID_LF)
 #define OP_VND_HEARTBEAT  BT_MESH_MODEL_OP_3(OP_HEARTBEAT, BT_COMP_ID_LF)
+#define OP_VND_GET_NAME   BT_MESH_MODEL_OP_3(OP_GET_NAME, BT_COMP_ID_LF)
 
 #define DEFAULT_TTL       31
 #define GROUP_ADDR        0xc123
@@ -354,9 +356,46 @@ static void vnd_heartbeat(struct bt_mesh_model *model,
 	board_add_heartbeat(ctx->addr, hops);
 }
 
+static size_t first_name_len(const char *name)
+{
+	size_t len;
+
+	for (len = 0; *name; name++, len++) {
+		switch (*name) {
+		case ' ':
+		case ',':
+		case '\n':
+			return len;
+		}
+	}
+
+	return len;
+}
+
+static void vnd_get_name(struct bt_mesh_model *model,
+			  struct bt_mesh_msg_ctx *ctx,
+			  struct net_buf_simple *buf)
+{
+	const char *name = bt_get_name();
+	NET_BUF_SIMPLE_DEFINE(msg, 3 + HELLO_MAX + 4);
+
+	/* Ignore messages from self */
+	if (ctx->addr == bt_mesh_model_elem(model)->addr) {
+		return;
+	}
+
+	bt_mesh_model_msg_init(&msg, OP_VND_GET_NAME);
+	net_buf_simple_add_mem(&msg, name, first_name_len(name));
+
+	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL) == 0) {
+		printk("Unable to send Vendor get name response\n");
+	}
+}
+
 static const struct bt_mesh_model_op vnd_ops[] = {
 	{ OP_VND_HELLO, 1, vnd_hello },
 	{ OP_VND_HEARTBEAT, 1, vnd_heartbeat },
+	{ OP_VND_GET_NAME, 0, vnd_get_name },
 	BT_MESH_MODEL_OP_END,
 };
 
@@ -387,22 +426,6 @@ static const struct bt_mesh_comp comp = {
 	.elem = elements,
 	.elem_count = ARRAY_SIZE(elements),
 };
-
-static size_t first_name_len(const char *name)
-{
-	size_t len;
-
-	for (len = 0; *name; name++, len++) {
-		switch (*name) {
-		case ' ':
-		case ',':
-		case '\n':
-			return len;
-		}
-	}
-
-	return len;
-}
 
 static void send_hello(struct k_work *work)
 {
