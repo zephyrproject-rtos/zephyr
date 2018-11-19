@@ -681,7 +681,10 @@ static int hci_le_read_remote_features(struct bt_conn *conn)
 	return 0;
 }
 
-static int hci_le_set_data_len(struct bt_conn *conn)
+/* LE Data Length Change Event is optional so this function just ignore
+ * error and stack will continue to use default values.
+ */
+static void hci_le_set_data_len(struct bt_conn *conn)
 {
 	struct bt_hci_rp_le_read_max_data_len *rp;
 	struct bt_hci_cp_le_set_data_len *cp;
@@ -691,7 +694,8 @@ static int hci_le_set_data_len(struct bt_conn *conn)
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_MAX_DATA_LEN, NULL, &rsp);
 	if (err) {
-		return err;
+		BT_ERR("Failed to read DLE max data len");
+		return;
 	}
 
 	rp = (void *)rsp->data;
@@ -701,7 +705,8 @@ static int hci_le_set_data_len(struct bt_conn *conn)
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_DATA_LEN, sizeof(*cp));
 	if (!buf) {
-		return -ENOBUFS;
+		BT_ERR("Failed to create LE Set Data Length Command");
+		return;
 	}
 
 	cp = net_buf_add(buf, sizeof(*cp));
@@ -710,10 +715,8 @@ static int hci_le_set_data_len(struct bt_conn *conn)
 	cp->tx_time = sys_cpu_to_le16(tx_time);
 	err = bt_hci_cmd_send(BT_HCI_OP_LE_SET_DATA_LEN, buf);
 	if (err) {
-		return err;
+		BT_ERR("Failed to send LE Set Data Length Command");
 	}
-
-	return 0;
 }
 
 static int hci_le_set_phy(struct bt_conn *conn)
@@ -943,11 +946,7 @@ static void le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 	}
 
 	if (BT_FEAT_LE_DLE(bt_dev.le.features)) {
-		err = hci_le_set_data_len(conn);
-		if (!err) {
-			atomic_set_bit(conn->flags, BT_CONN_AUTO_DATA_LEN);
-			goto done;
-		}
+		hci_le_set_data_len(conn);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
@@ -1035,13 +1034,7 @@ static void le_remote_feat_complete(struct net_buf *buf)
 
 	if (BT_FEAT_LE_DLE(bt_dev.le.features) &&
 	    BT_FEAT_LE_DLE(conn->le.features)) {
-		int err;
-
-		err = hci_le_set_data_len(conn);
-		if (!err) {
-			atomic_set_bit(conn->flags, BT_CONN_AUTO_DATA_LEN);
-			goto done;
-		}
+		hci_le_set_data_len(conn);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
@@ -1072,16 +1065,8 @@ static void le_data_len_change(struct net_buf *buf)
 	BT_DBG("max. tx: %u (%uus), max. rx: %u (%uus)", max_tx_octets,
 	       max_tx_time, max_rx_octets, max_rx_time);
 
-	if (!atomic_test_and_clear_bit(conn->flags, BT_CONN_AUTO_DATA_LEN)) {
-		goto done;
-	}
+	/* TODO use those */
 
-	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
-	    conn->role == BT_CONN_ROLE_SLAVE) {
-		slave_update_conn_param(conn);
-	}
-
-done:
 	bt_conn_unref(conn);
 }
 
@@ -1107,13 +1092,7 @@ static void le_phy_update_complete(struct net_buf *buf)
 
 	if (BT_FEAT_LE_DLE(bt_dev.le.features) &&
 	    BT_FEAT_LE_DLE(conn->le.features)) {
-		int err;
-
-		err = hci_le_set_data_len(conn);
-		if (!err) {
-			atomic_set_bit(conn->flags, BT_CONN_AUTO_DATA_LEN);
-			goto done;
-		}
+		hci_le_set_data_len(conn);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
