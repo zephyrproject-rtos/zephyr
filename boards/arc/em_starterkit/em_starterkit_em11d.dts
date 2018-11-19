@@ -23,6 +23,14 @@
 		zephyr,sram = &ddr0;
 		zephyr,console = &uart1;
 	};
+
+	iccm@0 {
+		reg = <0x0 DT_SIZE_K(64)>;
+	};
+
+	dccm@80000000 {
+		reg = <0x80000000 DT_SIZE_K(64)>;
+	};
 };
 
 &uart1 {
