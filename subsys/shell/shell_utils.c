@@ -304,20 +304,3 @@ void shell_buffer_trim(char *buff, u16_t *buff_len)
 		*buff_len = *buff_len - i;
 	}
 }
-
-u16_t shell_str_similarity_check(const char *str_a, const char *str_b)
-{
-	u16_t cnt = 0;
-
-	while (str_a[cnt] != '\0') {
-		if (str_a[cnt] != str_b[cnt]) {
-			return cnt;
-		}
-
-		if (++cnt == 0) {
-			return --cnt; /* too long strings */
-		}
-	}
-
-	return cnt;
-}

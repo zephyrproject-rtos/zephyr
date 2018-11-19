@@ -52,11 +52,6 @@ void shell_spaces_trim(char *str);
  */
 void shell_buffer_trim(char *buff, u16_t *buff_len);
 
-/* Function checks how many identical characters have two strings starting
- * from the first character.
- */
-u16_t shell_str_similarity_check(const char *str_a, const char *str_b);
-
 #ifdef __cplusplus
 }
 #endif
