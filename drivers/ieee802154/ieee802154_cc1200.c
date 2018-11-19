@@ -744,8 +744,7 @@ static int configure_spi(struct device *dev)
 {
 	struct cc1200_context *cc1200 = dev->driver_data;
 
-	cc1200->spi = device_get_binding(
-			CONFIG_IEEE802154_CC1200_SPI_DRV_NAME);
+	cc1200->spi = device_get_binding(DT_IEEE802154_CC1200_SPI_DRV_NAME);
 	if (!cc1200->spi) {
 		LOG_ERR("Unable to get SPI device");
 		return -ENODEV;
@@ -753,25 +752,25 @@ static int configure_spi(struct device *dev)
 
 	if (IS_ENABLED(CONFIG_IEEE802154_CC1200_GPIO_SPI_CS)) {
 		cs_ctrl.gpio_dev = device_get_binding(
-			CONFIG_IEEE802154_CC1200_GPIO_SPI_CS_DRV_NAME);
+			DT_IEEE802154_CC1200_GPIO_SPI_CS_DRV_NAME);
 		if (!cs_ctrl.gpio_dev) {
 			LOG_ERR("Unable to get GPIO SPI CS device");
 			return -ENODEV;
 		}
 
-		cs_ctrl.gpio_pin = CONFIG_IEEE802154_CC1200_GPIO_SPI_CS_PIN;
+		cs_ctrl.gpio_pin = DT_IEEE802154_CC1200_GPIO_SPI_CS_PIN;
 		cs_ctrl.delay = 0;
 
 		cc1200->spi_cfg.cs = &cs_ctrl;
 
 		LOG_DBG("SPI GPIO CS configured on %s:%u",
-			    CONFIG_IEEE802154_CC1200_GPIO_SPI_CS_DRV_NAME,
-			    CONFIG_IEEE802154_CC1200_GPIO_SPI_CS_PIN);
+			    DT_IEEE802154_CC1200_GPIO_SPI_CS_DRV_NAME,
+			    DT_IEEE802154_CC1200_GPIO_SPI_CS_PIN);
 	}
 
 	cc1200->spi_cfg.operation = SPI_WORD_SET(8);
-	cc1200->spi_cfg.frequency = CONFIG_IEEE802154_CC1200_SPI_FREQ;
-	cc1200->spi_cfg.slave = CONFIG_IEEE802154_CC1200_SPI_SLAVE;
+	cc1200->spi_cfg.frequency = DT_IEEE802154_CC1200_SPI_FREQ;
+	cc1200->spi_cfg.slave = DT_IEEE802154_CC1200_SPI_SLAVE;
 
 	return 0;
 }
