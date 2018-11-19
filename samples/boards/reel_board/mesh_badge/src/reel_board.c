@@ -357,7 +357,7 @@ static void show_sensors_data(s32_t interval)
 	}
 
 	len = snprintf(str_buf, sizeof(str_buf), "Temperature:%d.%d C\n",
-		       val[0].val1, val[0].val2/100000);
+		       val[0].val1, val[0].val2 / 100000);
 	print_line(FONT_SMALL, line++, str_buf, len, false);
 
 	len = snprintf(str_buf, sizeof(str_buf), "Humidity:%d%%\n",
@@ -370,15 +370,15 @@ static void show_sensors_data(s32_t interval)
 	}
 
 	len = snprintf(str_buf, sizeof(str_buf), "AX :%10.3f\n",
-		 sensor_value_to_double(&val[0]));
+		       sensor_value_to_double(&val[0]));
 	print_line(FONT_SMALL, line++, str_buf, len, false);
 
 	len = snprintf(str_buf, sizeof(str_buf), "AY :%10.3f\n",
-		 sensor_value_to_double(&val[1]));
+		       sensor_value_to_double(&val[1]));
 	print_line(FONT_SMALL, line++, str_buf, len, false);
 
 	len = snprintf(str_buf, sizeof(str_buf), "AZ :%10.3f\n",
-		 sensor_value_to_double(&val[2]));
+		       sensor_value_to_double(&val[2]));
 	print_line(FONT_SMALL, line++, str_buf, len, false);
 
 	/* apds9960 */
