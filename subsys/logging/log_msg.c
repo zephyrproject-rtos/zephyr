@@ -167,7 +167,9 @@ static struct log_msg *msg_alloc(u32_t nargs)
 
 		if (!cont) {
 			msg_free(msg);
+			return NULL;
 		}
+
 		*next = cont;
 		cont->next = NULL;
 		next = &cont->next;
