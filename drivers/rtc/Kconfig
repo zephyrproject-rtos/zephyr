@@ -29,7 +29,6 @@ config RTC_0_NAME
 
 comment "RTC drivers"
 
-source "drivers/rtc/Kconfig.qmsi"
 source "drivers/rtc/Kconfig.mcux_rtc"
 source "drivers/rtc/Kconfig.stm32_rtc"
 
