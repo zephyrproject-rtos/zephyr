@@ -1354,7 +1354,7 @@ int shell_execute_cmd(const struct shell *shell, const char *cmd)
 	}
 
 	if (cmd_len > (CONFIG_SHELL_CMD_BUFF_SIZE - 1)) {
-		return -ENOEXEC;
+		return -ENOMEM;
 	}
 
 	if (shell == NULL) {
