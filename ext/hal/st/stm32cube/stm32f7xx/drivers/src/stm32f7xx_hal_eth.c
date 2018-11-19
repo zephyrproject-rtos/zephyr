@@ -171,10 +171,11 @@ static void ETH_FlushTransmitFIFO(ETH_HandleTypeDef *heth);
   */
 HAL_StatusTypeDef HAL_ETH_Init(ETH_HandleTypeDef *heth)
 {
-  uint32_t tempreg = 0, phyreg = 0;
+  uint32_t tempreg = 0;
   uint32_t hclk = 60000000;
   uint32_t tickstart = 0;
   uint32_t err = ETH_SUCCESS;
+  //HAL_StatusTypeDef res;
 
   /* Check the ETH peripheral state */
   if(heth == NULL)
@@ -288,6 +289,37 @@ HAL_StatusTypeDef HAL_ETH_Init(ETH_HandleTypeDef *heth)
   /* Delay to assure PHY reset */
   HAL_Delay(PHY_RESET_DELAY);
 
+  /* CheckAutoNegotiation has a timeout on the link detect, which slows the boot process  with several seconds */
+  //if((res = HAL_ETH_CheckAutoNegotiation(heth)) != HAL_OK)
+  {
+	  /* In case of write timeout */
+	  err = ETH_ERROR;
+  }
+
+  /* Config MAC and DMA */
+  ETH_MACDMAConfig(heth, err);
+
+  /* Set ETH HAL State to Ready */
+  heth->State = HAL_ETH_STATE_READY;
+
+  /* Return function status */
+  return HAL_TIMEOUT; //res;
+
+}
+
+HAL_StatusTypeDef HAL_ETH_CheckAutoNegotiation(ETH_HandleTypeDef *heth)
+{
+  uint32_t phyreg = 0U;
+  uint32_t tickstart = 0U;
+  uint32_t err = ETH_SUCCESS;
+
+  /* Check the ETH peripheral state */
+  if(heth == NULL)
+  {
+    return HAL_ERROR;
+  }
+
+
   if((heth->Init).AutoNegotiation != ETH_AUTONEGOTIATION_DISABLE)
   {
     /* Get tick */
@@ -301,18 +333,8 @@ HAL_StatusTypeDef HAL_ETH_Init(ETH_HandleTypeDef *heth)
       /* Check for the Timeout */
       if((HAL_GetTick() - tickstart ) > ETH_TIMEOUT_LINKED_STATE)
       {
-        /* In case of write timeout */
-        err = ETH_ERROR;
-
-        /* Config MAC and DMA */
-        ETH_MACDMAConfig(heth, err);
-
-        heth->State= HAL_ETH_STATE_READY;
-
-        /* Process Unlocked */
-        __HAL_UNLOCK(heth);
-
-        return HAL_TIMEOUT;
+  		/* No link detected so don't change PHY settings */
+  		return HAL_TIMEOUT;
       }
     } while (((phyreg & PHY_LINKED_STATUS) != PHY_LINKED_STATUS));
 
@@ -344,18 +366,8 @@ HAL_StatusTypeDef HAL_ETH_Init(ETH_HandleTypeDef *heth)
       /* Check for the Timeout */
       if((HAL_GetTick() - tickstart ) > ETH_TIMEOUT_AUTONEGO_COMPLETED)
       {
-        /* In case of write timeout */
-        err = ETH_ERROR;
-
-        /* Config MAC and DMA */
-        ETH_MACDMAConfig(heth, err);
-
-        heth->State= HAL_ETH_STATE_READY;
-
-        /* Process Unlocked */
-        __HAL_UNLOCK(heth);
-
-        return HAL_TIMEOUT;
+  		/* No link setup negotiated so don't change PHY settings */
+  		return HAL_TIMEOUT;
       }
 
     } while (((phyreg & PHY_AUTONEGO_COMPLETE) != PHY_AUTONEGO_COMPLETE));

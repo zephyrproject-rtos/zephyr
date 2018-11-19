@@ -2108,6 +2108,8 @@ void HAL_ETH_MspDeInit(ETH_HandleTypeDef *heth);
 HAL_StatusTypeDef HAL_ETH_DMATxDescListInit(ETH_HandleTypeDef *heth, ETH_DMADescTypeDef *DMATxDescTab, uint8_t* TxBuff, uint32_t TxBuffCount);
 HAL_StatusTypeDef HAL_ETH_DMARxDescListInit(ETH_HandleTypeDef *heth, ETH_DMADescTypeDef *DMARxDescTab, uint8_t *RxBuff, uint32_t RxBuffCount);
 
+HAL_StatusTypeDef HAL_ETH_CheckAutoNegotiation(ETH_HandleTypeDef *heth);
+
 /**
   * @}
   */
