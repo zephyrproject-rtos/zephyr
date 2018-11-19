@@ -139,6 +139,8 @@ int _impl_zsock_close(int sock)
 		return -1;
 	}
 
+	z_free_fd(sock);
+
 	return zsock_close_ctx(ctx);
 }
 
