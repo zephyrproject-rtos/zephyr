@@ -43,3 +43,26 @@ config AON_API_REENTRANCY
 	depends on AON_TIMER_QMSI
 	help
 	  Enable support for AON driver API reentrancy.
+
+config RTC_QMSI
+	bool "QMSI RTC Driver"
+	depends on QMSI
+	help
+	  Build QMSI RTC driver.
+
+if RTC_QMSI
+
+config RTC_QMSI_API_REENTRANCY
+	bool
+	prompt "RTC shim driver API reentrancy"
+	help
+	  Enable support for RTC shim driver API reentrancy.
+
+config RTC_PRESCALER
+	int
+	default 1
+	prompt "Prescaler size"
+	help
+	  RTC prescaler used to determine ticks per second
+
+endif
