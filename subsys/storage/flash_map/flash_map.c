@@ -40,7 +40,7 @@ static const struct driver_map_entry  flash_drivers_map[] = {
 #endif
 };
 
-const struct flash_area *flash_map;
+extern const struct flash_area *flash_map;
 extern const int flash_map_entries;
 static struct device *flash_dev[ARRAY_SIZE(flash_drivers_map)];
 
