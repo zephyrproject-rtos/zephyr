@@ -6,7 +6,9 @@
 
 /dts-v1/;
 
+#include <mem.h>
 #include <emsk.dtsi>
+#include "em_starterkit_r23.dtsi"
 #include "board.dtsi"
 
 / {

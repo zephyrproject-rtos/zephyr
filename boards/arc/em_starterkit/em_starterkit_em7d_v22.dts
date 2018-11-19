@@ -4,4 +4,46 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "em_starterkit_em7d.dts"
+/dts-v1/;
+
+#include <mem.h>
+#include <emsk.dtsi>
+#include "em_starterkit_r22.dtsi"
+#include "board.dtsi"
+
+/ {
+	model = "em_starterkit-em7d";
+	compatible = "snps,em_starterkit-em7d", "snps,em_starterkit";
+
+	aliases {
+		uart-0 = &uart0;
+		uart-1 = &uart1;
+		uart-2 = &uart2;
+	};
+
+	chosen {
+		zephyr,sram = &ddr0;
+		zephyr,console = &uart1;
+	};
+
+	iccm@0 {
+		reg = <0x0 DT_SIZE_K(256)>;
+	};
+
+	dccm@80000000 {
+		reg = <0x80000000 DT_SIZE_K(128)>;
+	};
+};
+
+&uart1 {
+	status = "ok";
+	current-speed = <115200>;
+};
+
+&spi0 {
+	status = "ok";
+};
+
+&spi1 {
+	status = "ok";
+};
