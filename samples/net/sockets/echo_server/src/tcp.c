@@ -7,7 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_echo_client_tcp
+#define LOG_MODULE_NAME net_echo_server_tcp
 #define NET_LOG_LEVEL LOG_LEVEL_DBG
 
 #include <zephyr.h>
