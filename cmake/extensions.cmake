@@ -1099,14 +1099,7 @@ macro(assert_exists var)
   endif()
 endmacro()
 
-# Usage:
-#   assert_with_usage(BOARD_DIR "No board named '${BOARD}' found")
-#
-# will print an error message, show usage, and then end executioon
-# with a FATAL_ERROR if the test fails.
-macro(assert_with_usage test comment)
-  if(NOT ${test})
-    message(${comment})
+function(print_usage)
     message("see usage:")
 	string(REPLACE ";" " " BOARD_ROOT_SPACE_SEPARATED "${BOARD_ROOT}")
     execute_process(
@@ -1115,9 +1108,7 @@ macro(assert_with_usage test comment)
       -DBOARD_ROOT_SPACE_SEPARATED=${BOARD_ROOT_SPACE_SEPARATED}
       -P ${ZEPHYR_BASE}/cmake/usage/usage.cmake
       )
-    message(FATAL_ERROR "Invalid usage")
-  endif()
-endmacro()
+endfunction()
 
 # 3.5. File system management
 function(check_if_directory_is_writeable dir ok)
