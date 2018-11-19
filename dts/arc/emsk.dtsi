@@ -9,6 +9,7 @@
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/gpio/gpio.h>
 
+#define DT_APB_CLK_HZ	50000000
 
 / {
 	cpus {

@@ -9,8 +9,6 @@
 
 #include <mem.h>
 
-#define DT_APB_CLK_HZ		50000000
-
 #ifdef CONFIG_BOARD_EM_STARTERKIT_R23
 #define DT_GPIO0_INTNO	24
 #define DT_GPIO1_INTNO	0
