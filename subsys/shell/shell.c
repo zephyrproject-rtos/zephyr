@@ -1334,7 +1334,7 @@ int shell_init(const struct shell *shell, const void *transport_config,
 			      (void *)init_log_level,
 			      CONFIG_SHELL_THREAD_PRIO, 0, K_NO_WAIT);
 
-	k_thread_name_set(tid, "shell");
+	k_thread_name_set(tid, shell->thread_name);
 
 	return 0;
 }

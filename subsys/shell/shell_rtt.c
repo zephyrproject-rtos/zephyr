@@ -10,7 +10,7 @@
 #include <logging/sys_log.h>
 
 SHELL_RTT_DEFINE(shell_transport_rtt);
-SHELL_DEFINE(rtt_shell, "rtt:~$ ", &shell_transport_rtt, 10,
+SHELL_DEFINE(shell_rtt, "rtt:~$ ", &shell_transport_rtt, 10,
 	     SHELL_FLAG_OLF_CRLF);
 
 static struct k_thread rtt_rx_thread;
@@ -107,7 +107,7 @@ static int enable_shell_rtt(struct device *arg)
 	u32_t level = (CONFIG_SHELL_BACKEND_RTT_LOG_LEVEL > LOG_LEVEL_DBG) ?
 		      CONFIG_LOG_MAX_LEVEL : CONFIG_SHELL_BACKEND_RTT_LOG_LEVEL;
 
-	shell_init(&rtt_shell, NULL, true, log_backend, level);
+	shell_init(&shell_rtt, NULL, true, log_backend, level);
 
 	return 0;
 }
@@ -115,6 +115,6 @@ static int enable_shell_rtt(struct device *arg)
 /* Function is used for testing purposes */
 const struct shell *shell_backend_rtt_get_ptr(void)
 {
-	return &rtt_shell;
+	return &shell_rtt;
 }
 SYS_INIT(enable_shell_rtt, POST_KERNEL, 0);
