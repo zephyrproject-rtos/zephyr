@@ -57,4 +57,11 @@ config PWM_IMX
 
 endif # PWM
 
+if IPM
+
+config IPM_IMX
+	default y
+
+endif # IPM
+
 endif # SOC_MCIMX7_M4

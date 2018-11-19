@@ -260,6 +260,16 @@
 			status = "disabled";
 		};
 
+		mub:mu@30ab0000 {
+			compatible = "nxp,imx-mu";
+			reg = <0x30ab0000 0x4000>;
+			interrupts = <97 0>;
+			rdc = <RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)>;
+			label = "MU_B";
+			status = "disabled";
+		};
+
 		i2c1: i2c@30a20000 {
 			compatible = "fsl,imx7d-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;

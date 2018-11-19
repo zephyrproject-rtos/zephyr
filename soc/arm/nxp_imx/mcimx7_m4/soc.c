@@ -210,6 +210,17 @@ static void nxp_mcimx7_pwm_config(void)
 }
 #endif /* CONFIG_PWM_IMX */
 
+#ifdef CONFIG_IPM_IMX
+static void nxp_mcimx7_mu_config(void)
+{
+	/* Set access to MU B for M4 core */
+	RDC_SetPdapAccess(RDC, rdcPdapMuB, MU_B_RDC, false, false);
+
+	/* Enable clock gate for MU*/
+	CCM_ControlGate(CCM, ccmCcgrGateMu, ccmClockNeededRun);
+}
+#endif /* CONFIG_IPM_IMX */
+
 static int nxp_mcimx7_init(struct device *arg)
 {
 	ARG_UNUSED(arg);
@@ -235,6 +246,10 @@ static int nxp_mcimx7_init(struct device *arg)
 #ifdef CONFIG_PWM_IMX
 	nxp_mcimx7_pwm_config();
 #endif /* CONFIG_PWM_IMX */
+
+#ifdef CONFIG_IPM_IMX
+	nxp_mcimx7_mu_config();
+#endif /* CONFIG_IPM_IMX */
 
 	return 0;
 }
