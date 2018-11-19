@@ -275,6 +275,9 @@ static int uarte_nrfx_fifo_fill(struct device *dev,
 	struct uarte_nrfx_data *data = get_dev_data(dev);
 	const struct uarte_nrfx_config *config = get_dev_config(dev);
 
+	if (!nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ENDTX)) {
+		return 0;
+	}
 
 	if (len > config->tx_buff_size) {
 		len = config->tx_buff_size;
