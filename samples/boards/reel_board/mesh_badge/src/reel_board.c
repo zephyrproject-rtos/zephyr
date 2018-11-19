@@ -322,7 +322,7 @@ static void show_statistics(void)
 		}
 	}
 
-	if (stat_count >= 0) {
+	if (stat_count > 0) {
 		len = snprintk(str, sizeof(str), "Most messages from:");
 		print_line(FONT_SMALL, line++, str, len, false);
 
