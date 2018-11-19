@@ -193,7 +193,12 @@ foreach(root ${BOARD_ROOT})
   endif()
 endforeach()
 
-assert_with_usage(BOARD_DIR "No board named '${BOARD}' found")
+if(NOT BOARD_DIR)
+  message("No board named '${BOARD}' found")
+  print_usage()
+  unset(CACHED_BOARD CACHE)
+  message(FATAL_ERROR "Invalid usage")
+endif()
 
 get_filename_component(BOARD_ARCH_DIR ${BOARD_DIR} DIRECTORY)
 get_filename_component(BOARD_FAMILY   ${BOARD_DIR} NAME     )
