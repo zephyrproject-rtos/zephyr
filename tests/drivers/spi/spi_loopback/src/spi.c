@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Intel Corporation.
+ * Copyright (c) 2018 Vincent van der Locht
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -320,6 +321,10 @@ static struct k_poll_event async_evt =
 static K_SEM_DEFINE(caller, 0, 1);
 K_THREAD_STACK_DEFINE(spi_async_stack, STACK_SIZE);
 static int result = 1;
+static struct spi_async_event async_event = {
+		.type = SPI_ASYNC_EVENT_TYPE_SIGNAL,
+		.signal = &async_sig,
+};
 
 static void spi_async_call_cb(struct k_poll_event *async_evt,
 			      struct k_sem *caller_sem,
@@ -368,7 +373,7 @@ static int spi_async_call(struct device *dev, struct spi_config *spi_conf)
 
 	LOG_INF("Start");
 
-	ret = spi_transceive_async(dev, spi_conf, &tx, &rx, &async_sig);
+	ret = spi_transceive_async(dev, spi_conf, &tx, &rx, &async_event);
 	if (ret == -ENOTSUP) {
 		LOG_DBG("Not supported");
 		return 0;
