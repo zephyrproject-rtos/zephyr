@@ -18,6 +18,7 @@
 		uart-6 = &uart6;
 		sw0    = &user_switch_1;
 		i2c-4  = &i2c4;
+		mu-b   = &mub;
 	};
 
 	chosen {
@@ -70,4 +71,8 @@
 		int1-gpios = <&gpio7 0 0>;
 	};
 
+};
+
+&mub {
+	status = "ok";
 };
