@@ -8,15 +8,22 @@
 
 #include <device.h>
 #include <drivers/ioapic.h>
+#include <counter.h>
 #include <init.h>
 #include <kernel.h>
-#include <rtc.h>
 #include <power.h>
 #include <soc.h>
 #include <misc/util.h>
 
 #include "qm_isr.h"
 #include "qm_rtc.h"
+
+static void rtc_callback(void *user_data);
+static counter_alarm_callback_t user_cb;
+
+struct rtc_config {
+	struct counter_config_info info;
+};
 
 struct rtc_data {
 #ifdef CONFIG_RTC_QMSI_API_REENTRANCY
@@ -62,31 +69,52 @@ static u32_t rtc_qmsi_get_power_state(struct device *dev)
 #define rtc_qmsi_set_power_state(...)
 #endif
 
-static void rtc_qmsi_enable(struct device *dev)
+static int rtc_qmsi_enable(struct device *dev)
 {
 	clk_periph_enable(CLK_PERIPH_RTC_REGISTER | CLK_PERIPH_CLK);
+
+	return 0;
 }
 
-static void rtc_qmsi_disable(struct device *dev)
+static int rtc_qmsi_disable(struct device *dev)
 {
 	clk_periph_disable(CLK_PERIPH_RTC_REGISTER);
+
+	return 0;
 }
 
+static int rtc_qmsi_disable_alarm(struct device *dev,
+			const struct counter_alarm_cfg *alarm_cfg)
+{
+	clk_periph_disable(CLK_PERIPH_RTC_REGISTER);
 
-static int rtc_qmsi_set_config(struct device *dev, struct rtc_config *cfg)
+	return 0;
+}
+
+static int rtc_qmsi_set_wrap(struct device *dev, u32_t ticks,
+			     counter_wrap_callback_t callback,
+			     void *user_data)
+{
+	return -ENODEV;
+}
+
+static int rtc_qmsi_set_alarm(struct device *dev,
+				const struct counter_alarm_cfg *alarm_cfg)
 {
 	qm_rtc_config_t qm_cfg;
 	int result = 0;
 
-	qm_cfg.init_val = cfg->init_val;
-	qm_cfg.alarm_en = cfg->alarm_enable;
-	qm_cfg.alarm_val = cfg->alarm_val;
+	qm_cfg.init_val = 0;
+	qm_cfg.alarm_en = 1;
+	qm_cfg.alarm_val = alarm_cfg->ticks;
+
+	user_cb = alarm_cfg->handler;
 	/* Casting callback type due different input parameter from QMSI
 	 * compared aganst the Zephyr callback from void cb(struct device *dev)
 	 * to void cb(void *)
 	 */
-	qm_cfg.callback = (void *) cfg->cb_fn;
-	qm_cfg.callback_data = dev;
+	qm_cfg.callback = rtc_callback;
+	qm_cfg.callback_data = (void *)alarm_cfg;
 
 	/* Set prescaler value. Ideally, the divider should come from struct
 	 * rtc_config instead. It's safe to use RTC_DIVIDER here for now since
@@ -109,12 +137,9 @@ static int rtc_qmsi_set_config(struct device *dev, struct rtc_config *cfg)
 
 	k_busy_wait(60);
 
-	return result;
-}
+	qm_rtc_set_alarm(QM_RTC_0, alarm_cfg->ticks);
 
-static int rtc_qmsi_set_alarm(struct device *dev, const u32_t alarm_val)
-{
-	return qm_rtc_set_alarm(QM_RTC_0, alarm_val);
+	return result;
 }
 
 static u32_t rtc_qmsi_read(struct device *dev)
@@ -127,12 +152,13 @@ static u32_t rtc_qmsi_get_pending_int(struct device *dev)
 	return QM_RTC[QM_RTC_0]->rtc_stat;
 }
 
-static const struct rtc_driver_api api = {
-	.enable = rtc_qmsi_enable,
-	.disable = rtc_qmsi_disable,
+static const struct counter_driver_api api = {
+	.start = rtc_qmsi_enable,
+	.stop = rtc_qmsi_disable,
 	.read = rtc_qmsi_read,
-	.set_config = rtc_qmsi_set_config,
+	.set_wrap = rtc_qmsi_set_wrap,
 	.set_alarm = rtc_qmsi_set_alarm,
+	.disable_alarm = rtc_qmsi_disable_alarm,
 	.get_pending_int = rtc_qmsi_get_pending_int,
 };
 
@@ -199,6 +225,24 @@ static int rtc_qmsi_device_ctrl(struct device *dev, u32_t ctrl_command,
 }
 #endif
 
+static const struct rtc_config  rtc_conf_info = {
+	.info = {
+		.max_wrap = UINT32_MAX,
+		.freq = 32768,
+		.count_up = true,
+		.channels = 1,
+	}
+};
+
 DEVICE_DEFINE(rtc, CONFIG_RTC_0_NAME, &rtc_qmsi_init, rtc_qmsi_device_ctrl,
-	      RTC_CONTEXT, NULL, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-	      &api);
+	      RTC_CONTEXT, &rtc_conf_info, POST_KERNEL,
+	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &api);
+
+static void rtc_callback(void *user_data)
+{
+	const struct counter_alarm_cfg *cfg = user_data;
+
+	if (user_cb) {
+		(*user_cb)(DEVICE_GET(rtc), cfg, cfg->ticks);
+	}
+}
