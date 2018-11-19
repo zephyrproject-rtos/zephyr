@@ -658,7 +658,7 @@ int usb_dc_ep_flush(u8_t ep)
 int usb_dc_ep_write(u8_t ep, const u8_t *data, u32_t data_len, u32_t *ret_bytes)
 {
 	u8_t ep_idx = EP_ADDR2IDX(ep);
-	u32_t packet_len = min(data_len, usb_dc_ep_mps(ep));
+	u32_t packet_len;
 
 	if (ep_idx >= DT_USBHS_NUM_BIDIR_EP) {
 		LOG_ERR("wrong endpoint index/address");
@@ -681,6 +681,7 @@ int usb_dc_ep_write(u8_t ep, const u8_t *data, u32_t data_len, u32_t *ret_bytes)
 	}
 
 	/* Write the data to the FIFO */
+	packet_len = min(data_len, dev_data.ep_data[ep_idx].mps);
 	for (int i = 0; i < packet_len; i++) {
 		usb_dc_ep_fifo_put(ep_idx, data[i]);
 	}
