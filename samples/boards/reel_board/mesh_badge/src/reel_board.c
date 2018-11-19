@@ -345,7 +345,7 @@ static void show_statistics(void)
 
 static void show_sensors_data(s32_t interval)
 {
-	struct sensor_value val[2];
+	struct sensor_value val[3];
 	u8_t line = 0;
 	u16_t len = 0;
 
