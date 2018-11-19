@@ -48,6 +48,27 @@ config ETH_STM32_HAL_PHY_ADDRESS
 	help
 	  The phy address to use.
 
+config ETH_STM32_HAL_PHY_THREAD
+	bool "PHY polling thread for link status detection"
+	depends on ETH_STM32_HAL
+	default y
+	help
+	  Run a separate thread which polls the link status 
+
+config ETH_STM32_HAL_PHY_THREAD_STACK_SIZE
+	int "PHY thread stack size"
+	depends on ETH_STM32_HAL_PHY_THREAD
+	default 512
+	help
+	  PHY thread stack size
+
+config ETH_STM32_HAL_PHY_THREAD_PRIO
+	int "PHY thread priority"
+	depends on ETH_STM32_HAL_PHY_THREAD
+	default 3
+	help
+	  PHY thread priority
+
 config ETH_STM32_HAL_RANDOM_MAC
 	bool "Random MAC address"
 	depends on ETH_STM32_HAL && ENTROPY_GENERATOR

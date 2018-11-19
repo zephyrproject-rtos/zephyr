@@ -37,6 +37,11 @@ struct eth_stm32_hal_dev_data {
 	K_THREAD_STACK_MEMBER(rx_thread_stack,
 		CONFIG_ETH_STM32_HAL_RX_THREAD_STACK_SIZE);
 	struct k_thread rx_thread;
+#if defined(CONFIG_ETH_STM32_HAL_PHY_THREAD)
+	K_THREAD_STACK_MEMBER(phy_thread_stack,
+		CONFIG_ETH_STM32_HAL_PHY_THREAD_STACK_SIZE);
+	struct k_thread phy_thread;
+#endif
 };
 
 #define DEV_CFG(dev) \

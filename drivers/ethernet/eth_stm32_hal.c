@@ -18,6 +18,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/net_pkt.h>
 #include <net/net_if.h>
 #include <net/ethernet.h>
+#include <net/mii.h>
 #include <soc.h>
 #include <misc/printk.h>
 #include <clock_control.h>
@@ -228,6 +229,61 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 	}
 }
 
+#if defined(CONFIG_ETH_STM32_HAL_PHY_THREAD)
+static void phy_thread(void *arg1, void *unused1, void *unused2)
+{
+	struct device *dev;
+	struct eth_stm32_hal_dev_data *dev_data;
+	s64_t time_stamp;
+	u32_t phyreg;
+	int link_status;
+
+	__ASSERT_NO_MSG(arg1 != NULL);
+	ARG_UNUSED(unused1);
+	ARG_UNUSED(unused2);
+
+	dev = (struct device *)arg1;
+	dev_data = DEV_DATA(dev);
+
+	__ASSERT_NO_MSG(dev_data != NULL);
+
+	link_status = 0;
+
+	while (1) {
+
+		/* Get tick */
+		time_stamp = k_uptime_get();
+	    /* We wait for linked status */
+	    do
+	    {
+	        if((HAL_ETH_ReadPHYRegister(&dev_data->heth, MII_BMSR, &phyreg)) != HAL_OK) {
+	        	k_sleep(5);
+	        	continue;
+	        }
+
+			if(link_status != (phyreg & MII_BMSR_LINK_STATUS)) {
+
+				link_status = (phyreg & MII_BMSR_LINK_STATUS);
+
+				if(link_status) {
+				  /* link up event */
+					HAL_ETH_CheckAutoNegotiation(&dev_data->heth);
+					net_eth_carrier_on(dev_data->iface);
+				} else {
+				  /* link down event */
+					net_eth_carrier_off(dev_data->iface);
+				}
+			}
+			break;
+
+	    } while ((k_uptime_delta(&time_stamp)) < 50);
+
+	    /* sleep till next iteration */
+	    k_sleep(500);
+	}
+}
+#endif
+
 static void eth_isr(void *arg)
 {
 	struct device *dev;
@@ -355,6 +411,17 @@ static void eth_iface_init(struct net_if *iface)
 			rx_thread, (void *) dev, NULL, NULL,
 			K_PRIO_COOP(CONFIG_ETH_STM32_HAL_RX_THREAD_PRIO),
 			0, K_NO_WAIT);
+
+#if defined(CONFIG_ETH_STM32_HAL_PHY_THREAD)
+	/* Start interruption-poll thread */
+	k_thread_create(&dev_data->phy_thread, dev_data->phy_thread_stack,
+			K_THREAD_STACK_SIZEOF(dev_data->phy_thread_stack),
+			phy_thread, (void *) dev, NULL, NULL,
+			K_PRIO_COOP(CONFIG_ETH_STM32_HAL_PHY_THREAD_PRIO),
+			0, K_NO_WAIT);
+#else
+	HAL_ETH_CheckAutoNegotiation(heth);
+#endif
 
 	HAL_ETH_DMATxDescListInit(heth, dma_tx_desc_tab,
 		&dma_tx_buffer[0][0], ETH_TXBUFNB);
