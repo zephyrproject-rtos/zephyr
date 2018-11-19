@@ -73,4 +73,33 @@ config SPI_NOR_BLOCK_ERASE_SIZE
 	default 4 if SPI_NOR_BLOCK_ERASE_64K
 	help
 	This option specifies block size of SPI flash
+
+config SPI_NOR_GPIO_SPI_CS
+	bool "Manage SPI CS through a GPIO pin"
+	help
+	This option is useful if one needs to manage SPI CS through a GPIO
+	pin to by-pass the SPI controller's CS logic.
+
+config SPI_NOR_GPIO_SPI_CS_DRV_NAME
+	string "GPIO driver's name to use to drive SPI CS through"
+	depends on SPI_NOR_GPIO_SPI_CS
+	help
+	This option is mandatory to set which GPIO controller to use in order
+	to actually emulate the SPI CS.
+
+config SPI_NOR_GPIO_SPI_CS_PIN
+	int "GPIO PIN to use to drive SPI CS through"
+	default 0
+	depends on SPI_NOR_GPIO_SPI_CS
+	help
+	This option is mandatory to set which GPIO pin to use in order
+	to actually emulate the SPI CS.
+
+config SPI_NOR_GPIO_SPI_CS_WAIT_DELAY
+	int "Delay time in us"
+	default 0
+		depends on SPI_NOR_GPIO_SPI_CS
+	help
+	This is the wait delay (in us) to allow for CS switching to take effect
+
 endif # SPI_NOR
