@@ -2,7 +2,6 @@ sample:
   description: Hello World sample, the simplest Zephyr
     application
   name: hello world
-  platforms: all
 common:
     tags: introduction
     harness: console

@@ -2,7 +2,6 @@ sample:
   description: userspace memory domain protection
     example application
   name: protected memory
-  platforms: all
 common:
     tags: userspace
     harness: console
