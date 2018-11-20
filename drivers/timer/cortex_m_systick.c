@@ -41,6 +41,7 @@ static u32_t elapsed(void)
 	do {
 		val = SysTick->VAL & COUNTER_MAX;
 		ctrl_cache |= SysTick->CTRL;
+		__ISB();
 	} while (SysTick->VAL > val);
 
 	ov = (ctrl_cache & SysTick_CTRL_COUNTFLAG_Msk) ? last_load : 0;
