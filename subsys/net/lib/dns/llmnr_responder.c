@@ -92,6 +92,10 @@ static void create_ipv4_dst_addr(struct net_pkt *pkt,
 	struct net_udp_hdr *udp_hdr, hdr;
 
 	udp_hdr = net_udp_get_hdr(pkt, &hdr);
+	if (!udp_hdr) {
+		NET_ERR("could not get UDP header");
+		return;
+	}
 
 	addr->sin_family = AF_INET;
 	addr->sin_port = udp_hdr->src_port;
