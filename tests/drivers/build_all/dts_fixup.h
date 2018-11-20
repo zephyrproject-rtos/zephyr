@@ -138,6 +138,14 @@
 #define DT_LIS2DH_INT2_GPIO_PIN 1
 #endif
 
+#ifndef DT_SHT3XD_NAME
+#define DT_SHT3XD_NAME ""
+#define DT_SHT3XD_I2C_ADDR 0
+#define DT_SHT3XD_I2C_MASTER_DEV_NAME ""
+#define DT_SHT3XD_GPIO_ALERT_DEV_NAME ""
+#define DT_SHT3XD_GPIO_ALERT_PIN 0
+#endif
+
 #endif /* CONFIG_HAS_DTS_I2C */
 
 #if defined(CONFIG_HAS_DTS_SPI)

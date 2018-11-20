@@ -1,0 +1,14 @@
+#
+# Copyright (c) 2018 Peter Bigot Consulting, LLC
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+sample:
+  name: SHT3XD Sensor Sample
+tests:
+  test:
+    build_only: true
+    platform_whitelist: nrf51_ble400
+    tags: sensors
+    extra_args: CONF_FILE="prj_nrf.conf"
