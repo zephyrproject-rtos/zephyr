@@ -455,23 +455,25 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 				net_pkt_unref(pkt);
 
 				pkt = arp_pkt;
+				/* For ARP message, we do not touch the packet
+				 * further but will send it as it is because the
+				 * arp.c has prepared the packet already.
+				 */
+				ptype = htons(NET_ETH_PTYPE_ARP);
 			} else {
 				NET_DBG("Found ARP entry, sending pkt %p to "
 					"iface %p",
 					pkt, iface);
+				ptype = htons(NET_ETH_PTYPE_IP);
 			}
+		} else {
+			ptype = htons(NET_ETH_PTYPE_ARP);
 		}
 
 		net_pkt_lladdr_src(pkt)->addr = (u8_t *)&NET_ETH_HDR(pkt)->src;
 		net_pkt_lladdr_src(pkt)->len = sizeof(struct net_eth_addr);
 		net_pkt_lladdr_dst(pkt)->addr = (u8_t *)&NET_ETH_HDR(pkt)->dst;
 		net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_eth_addr);
-
-		/* For ARP message, we do not touch the packet further but will
-		 * send it as it is because the arp.c has prepared the packet
-		 * already.
-		 */
-		ptype = htons(NET_ETH_PTYPE_ARP);
 
 		goto send_frame;
 	}
