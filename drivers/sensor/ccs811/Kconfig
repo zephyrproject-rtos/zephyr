@@ -1,10 +1,36 @@
 # CCS811 Digital Gas sensor configuration options
 
 # Copyright (c) 2018 Linaro Ltd.
+# Copyright (c) 2018 Peter Bigot Consulting, LLC
+#
 # SPDX-License-Identifier: Apache-2.0
 
-config CCS811
+menuconfig CCS811
 	bool "CCS811 Digital Gas Sensor"
 	depends on I2C && HAS_DTS_I2C
 	help
 	  Enable driver for CCS811 Gas sensors.
+
+if CCS811
+
+choice CCS811_DRIVE_MODE
+	prompt "Measurement drive mode"
+	default CCS811_DRIVE_MODE_1
+	help
+	  Specifies the measurement rate used by the driver.
+
+config CCS811_DRIVE_MODE_0
+	bool "Measurements disabled"
+
+config CCS811_DRIVE_MODE_1
+	bool "Measurement every second"
+
+config CCS811_DRIVE_MODE_2
+	bool "Measurement every ten seconds"
+
+config CCS811_DRIVE_MODE_3
+	bool "Measurement every sixty seconds"
+
+endchoice
+
+endif # CCS811
