@@ -221,12 +221,11 @@ to Zephyr, and communicates over a dedicated SPI to the network co-processor.
 It is available as a Zephyr WiFi device driver in
 :file:`drivers/wifi/simplelink`.
 
-Currently only the Zephyr WiFi management operations are exported.
-
 Usage:
 ======
 
-Set :option:`CONFIG_WIFI_SIMPLELINK` to ``y`` to enable WiFi.
+Set :option:`CONFIG_WIFI_SIMPLELINK` and :option:`CONFIG_WIFI` to ``y``
+to enable WiFi.
 See :file:`samples/net/wifi/boards/cc3220sf_launchxl.conf`.
 
 Provisioning:
@@ -247,6 +246,30 @@ See :ref:`wifi_sample`
 Once the connection succeeds, the network co-processor keeps the AP identity in
 its persistent memory.  Newly loaded WiFi applications then need not explicitly
 execute any WiFi scan or connect operations, until the need to change to a new AP.
+
+Secure Socket Offload
+*********************
+
+The SimpleLink WiFi driver provides socket operations to the Zephyr socket
+offload point, enabling Zephyr BSD socket API calls to be directed to the
+SimpleLink WiFi driver, by setting :option:`CONFIG_NET_SOCKETS_OFFLOAD`
+to ``y``.
+
+Secure socket (TLS) communication is handled as part of the socket APIs,
+and enabled by:
+
+- setting both :option:`CONFIG_NET_SOCKETS_SOCKOPT_TLS`
+  and :option:`CONFIG_TLS_CREDENTIAL_FILENAMES` to ``y``,
+- using the TI Uniflash tool to program the required certificates and
+  keys to the secure flash filesystem, and enabling the TI Trusted
+  Root-Certificate Catalog.
+
+See :ref:`sockets-http-get` and
+:file:`samples/net/sockets/http_get/boards/cc3220sf_launchxl.conf` for an
+example.
+
+See the document `Simplelink WiFi Certificates Handling`_ for details on
+using the TI UniFlash tool for certificate programming.
 
 References
 **********
@@ -277,3 +300,6 @@ CC32xx Wiki:
 
 ..  _XDS-110 emulation package:
    http://processors.wiki.ti.com/index.php/XDS_Emulation_Software_Package#XDS_Emulation_Software_.28emupack.29_Download
+
+..  _Simplelink WiFi Certificates Handling:
+   http://www.ti.com/lit/pdf/swpu332
