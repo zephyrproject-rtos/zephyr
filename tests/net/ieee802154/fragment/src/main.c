@@ -10,6 +10,7 @@
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 
 #include <zephyr.h>
+#include <ztest.h>
 #include <linker/sections.h>
 
 #include <zephyr/types.h>
@@ -421,11 +422,11 @@ static struct net_buf frame_buf = {
 	.__buf = frame_buffer_data,
 };
 
-static int test_fragment(struct net_fragment_data *data)
+static bool test_fragment(struct net_fragment_data *data)
 {
 	struct net_pkt *rxpkt = NULL;
 	struct net_pkt *f_pkt = NULL;
-	int result = TC_FAIL;
+	int result = false;
 	struct ieee802154_fragment_ctx ctx;
 	struct net_buf *frag, *dfrag;
 	struct net_pkt *pkt;
@@ -529,7 +530,7 @@ compare:
 #endif
 
 	if (compare_data(rxpkt, data)) {
-		result = TC_PASS;
+		result = true;
 	}
 
 end:
@@ -566,21 +567,75 @@ static const struct {
 	{ "test_fragment_ipv6_dispatch_big", &test_data_8},
 };
 
-void main(void)
+static void test_fragment_sam00_dam00(void)
 {
-	int count, pass;
-	k_thread_priority_set(k_current_get(), K_PRIO_COOP(7));
+	bool ret = test_fragment(&test_data_1);
 
-	for (count = 0, pass = 0; count < ARRAY_SIZE(tests); count++) {
-		TC_START(tests[count].name);
+	zassert_true(ret, NULL);
+}
 
-		if (test_fragment(tests[count].data)) {
-			TC_END(FAIL, "failed\n");
-		} else {
-			TC_END(PASS, "passed\n");
-			pass++;
-		}
-	}
+static void test_fragment_sam01_dam01(void)
+{
+	bool ret = test_fragment(&test_data_2);
 
-	TC_END_REPORT(((pass != ARRAY_SIZE(tests)) ? TC_FAIL : TC_PASS));
+	zassert_true(ret, NULL);
+}
+
+static void test_fragment_sam10_dam10(void)
+{
+	bool ret = test_fragment(&test_data_3);
+
+	zassert_true(ret, NULL);
+}
+
+static void test_fragment_sam00_m1_dam00(void)
+{
+	bool ret = test_fragment(&test_data_4);
+
+	zassert_true(ret, NULL);
+}
+
+static void test_fragment_sam01_m1_dam01(void)
+{
+	bool ret = test_fragment(&test_data_5);
+
+	zassert_true(ret, NULL);
+}
+
+static void test_fragment_sam10_m1_dam10(void)
+{
+	bool ret = test_fragment(&test_data_6);
+
+	zassert_true(ret, NULL);
+}
+
+static void test_fragment_ipv6_dispatch_small(void)
+{
+	bool ret = test_fragment(&test_data_7);
+
+	zassert_true(ret, NULL);
+}
+
+static void test_fragment_ipv6_dispatch_big(void)
+{
+	bool ret = test_fragment(&test_data_8);
+
+	zassert_true(ret, NULL);
+}
+
+
+void test_main(void)
+{
+	ztest_test_suite(ieee802154_fragment,
+			 ztest_unit_test(test_fragment_sam00_dam00),
+			 ztest_unit_test(test_fragment_sam01_dam01),
+			 ztest_unit_test(test_fragment_sam10_dam10),
+			 ztest_unit_test(test_fragment_sam00_m1_dam00),
+			 ztest_unit_test(test_fragment_sam01_m1_dam01),
+			 ztest_unit_test(test_fragment_sam10_m1_dam10),
+			 ztest_unit_test(test_fragment_ipv6_dispatch_small),
+			 ztest_unit_test(test_fragment_ipv6_dispatch_big)
+		);
+
+	ztest_run_test_suite(ieee802154_fragment);
 }
