@@ -8,9 +8,11 @@ choice
 
 config SOC_QUARK_SE_C1000
 	bool "Intel Quark SE C1000"
+	select HAS_SPI_DW
 
 config SOC_QUARK_SE_CURIE
 	bool "Intel Curie"
+	select HAS_SPI_DW
 
 endchoice
 
