@@ -76,6 +76,13 @@
 &i2c1 {
 	status = "ok";
 	clock-frequency = <I2C_BITRATE_FAST>;
+
+	/* ST Microelectronics LSM6DSL accel/gyro sensor */
+	lsm6dsl@1 {
+		compatible = "st,lsm6dsl";
+		reg = <1>;
+		label = "LSM6DSL_I2C";
+	};
 };
 
 &i2c2 {
