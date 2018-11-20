@@ -235,6 +235,8 @@ sub-directories of ``scripts/coccinelle/``.
 
 The cocci script should have the following properties:
 
+* The script **must** have ``report`` mode.
+
 * The first few lines should state the purpose of the script
   using ``///`` comments . Usually, this message would be used as the
   commit log when proposing a patch based on the script.
@@ -512,9 +514,11 @@ illustrated below:
 Coccinelle Mailing List
 ***********************
 
-Interested developers can subscribe coccinelle mailing list via:
-        https://systeme.lip6.fr/mailman/listinfo/cocci
+Subscribe to the coccinelle mailing list:
+
+* https://systeme.lip6.fr/mailman/listinfo/cocci
 
 Archives:
-        https://lore.kernel.org/cocci/
-        https://systeme.lip6.fr/pipermail/cocci/
+
+* https://lore.kernel.org/cocci/
+* https://systeme.lip6.fr/pipermail/cocci/
