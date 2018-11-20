@@ -58,6 +58,7 @@ config LINKER_ORPHAN_SECTION_PLACE
 
 config LINKER_ORPHAN_SECTION_WARN
 	bool "Warn"
+	depends on BLAHBLAH_PPPPPP
 	help
 	  Linker places the orphan sections in ouput and issues
 	  warning about those sections.
