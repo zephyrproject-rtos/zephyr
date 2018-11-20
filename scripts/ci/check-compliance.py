@@ -132,8 +132,7 @@ class Documentation(ComplianceTest):
 
                 self.case.result = Error("Documentation Issues", "failure")
                 self.case.result._elem.text = log.decode('utf8')
-        else:
-            self.case.result = Skipped()
+
 
 class GitLint(ComplianceTest):
     _name = "Gitlint"
@@ -165,14 +164,13 @@ class License(ComplianceTest):
 
         scancode = "/opt/scancode-toolkit/scancode"
         if not os.path.exists(scancode):
-            self.case.result = Skipped()
+            self.case.result = Skipped("scancode-toolkit not installed", "skipped")
             return
 
         os.makedirs("scancode-files", exist_ok=True)
         new_files = sh.git("diff", "--name-only", "--diff-filter=A", self.commit_range, **sh_special_args)
 
         if len(new_files) == 0:
-            self.case.result = Skipped()
             return
 
         for newf in new_files:
@@ -192,7 +190,7 @@ class License(ComplianceTest):
 
         except subprocess.CalledProcessError as e:
             logging.error(e.output)
-            self.case.result = Skipped()
+            self.case.result = Skipped("Exception when running scancode", "skipped")
             return
 
         report = ""
@@ -357,7 +355,7 @@ def main():
         comment_count = 0
         print("Processing results...")
         for case in suite:
-            if case.result and case.result != Skipped:
+            if case.result and case.result.type != 'skipped':
                 comment_count += 1
                 comment += ("## {}\n".format(case.result.message))
                 comment += "\n"
