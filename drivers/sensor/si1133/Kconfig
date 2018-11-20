@@ -38,7 +38,7 @@ config SI1133_CHANNEL_COUNT
 
 choice
 	prompt "SI1133 trigger mode"
-	default SI1133_TRIGGER_GLOBAL_THREAD
+	default SI1133_TRIGGER_NONE
 
 config SI1133_TRIGGER_NONE
 	bool "No trigger"
