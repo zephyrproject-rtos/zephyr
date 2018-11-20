@@ -37,12 +37,20 @@ static void set_wake(struct ccs811_data *drv_data, bool enable)
 static int ccs811_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct ccs811_data *drv_data = dev->driver_data;
-	int tries = 11;
+	int tries;
 	u16_t buf[4];
 	u8_t status;
 	int rv = -EIO;
 
-	/* Check data ready flag for the measurement interval of 1 seconds */
+	/* Check data ready flag for the measurement interval */
+#ifdef CONFIG_CCS811_DRIVE_MODE_1
+	tries = 11;
+#elif defined(CONFIG_CCS811_DRIVE_MODE_2)
+	tries = 101;
+#elif defined(CONFIG_CCS811_DRIVE_MODE_3)
+	tries = 601;
+#endif
+
 	while (tries-- > 0) {
 		set_wake(drv_data, true);
 		if (i2c_reg_read_byte(drv_data->i2c, DT_INST_0_AMS_CCS811_BASE_ADDRESS,
@@ -258,10 +266,18 @@ int ccs811_init(struct device *dev)
 		goto out;
 	}
 
-	/* Set Measurement mode for 1 second */
+	/* Configure measurement mode */
+	u8_t meas_mode = 0;
+#ifdef CONFIG_CCS811_DRIVE_MODE_1
+	meas_mode = 0x10;
+#elif defined(CONFIG_CCS811_DRIVE_MODE_2)
+	meas_mode = 0x20;
+#elif defined(CONFIG_CCS811_DRIVE_MODE_3)
+	meas_mode = 0x30;
+#endif
 	if (i2c_reg_write_byte(drv_data->i2c, DT_INST_0_AMS_CCS811_BASE_ADDRESS,
 			       CCS811_REG_MEAS_MODE,
-			       CCS811_MODE_IAQ_1SEC) < 0) {
+			       meas_mode) < 0) {
 		LOG_ERR("Failed to set Measurement mode");
 		ret = -EIO;
 		goto out;
