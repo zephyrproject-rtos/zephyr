@@ -237,8 +237,7 @@ static inline void k_object_access_revoke(void *object,
 /**
  * @internal
  */
-static inline void _impl_k_object_release(void *object)
-{
+static inline void _impl_k_object_release(void * object) {
 	ARG_UNUSED(object);
 }
 
