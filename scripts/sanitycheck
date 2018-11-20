@@ -316,7 +316,7 @@ class Handler:
         self.name = instance.name
         self.instance = instance
         self.timeout = instance.test.timeout
-        self.sourcedir = instance.test.code_location
+        self.sourcedir = instance.test.test_path
         self.outdir = instance.outdir
         self.log = os.path.join(self.outdir, "handler.log")
         self.returncode = 0
@@ -990,7 +990,7 @@ class MakeGenerator:
         """
 
         name = instance.name
-        directory = instance.test.code_location
+        directory = instance.test.test_path
         outdir = instance.outdir
 
         build_logfile = os.path.join(outdir, "build.log")
@@ -1407,7 +1407,8 @@ class TestCase:
         @param tc_dict Dictionary with test values for this test case
             from the testcase.yaml file
         """
-        self.code_location = os.path.join(testcase_root, workdir)
+        self.test_path = os.path.join(testcase_root, workdir)
+
         self.id = name
         self.cases = []
         self.type = tc_dict["type"]
@@ -1433,14 +1434,25 @@ class TestCase:
         self.min_flash = tc_dict["min_flash"]
         self.extra_sections = tc_dict["extra_sections"]
 
-        self.path = os.path.normpath(os.path.join(os.path.realpath(
-            testcase_root).replace(os.path.realpath(ZEPHYR_BASE) + "/", ''),
-            workdir, name))
+        self.name = self.get_unique(testcase_root, workdir, name)
 
-
-        self.name = os.path.join(self.path)
         self.defconfig = {}
         self.yamlfile = yamlfile
+
+
+    def get_unique(self, testcase_root, workdir, name):
+
+        if ZEPHYR_BASE in testcase_root:
+            # This is a Zephyr Test, so include path in name for uniqueness
+            # FIXME: We should not depend on path of test for unique names.
+
+            zephyr_base = os.path.join(os.path.realpath(ZEPHYR_BASE))
+            short_path = os.path.normpath(testcase_root.replace(zephyr_base + "/", ""))
+        else:
+            short_path = ""
+
+        unique = os.path.normpath(os.path.join(short_path, workdir, name))
+        return unique
 
     def scan_file(self, inf_name):
         suite_regex = re.compile(
@@ -1515,7 +1527,7 @@ class TestCase:
 
 
     def parse_subcases(self):
-        results = self.scan_path(self.code_location)
+        results = self.scan_path(self.test_path)
         for sub in results:
             name = "{}.{}".format(self.id, sub)
             self.cases.append(name)
@@ -1538,7 +1550,7 @@ class TestInstance:
         self.test = test
         self.platform = platform
         self.name = os.path.join(platform.name, test.name)
-        self.outdir = os.path.join(base_outdir, platform.name, test.path)
+        self.outdir = os.path.join(base_outdir, platform.name, test.name)
 
         self.build_only = options.build_only or test.build_only \
                 or self.check_dependency()
@@ -1652,7 +1664,6 @@ class TestSuite:
                         tc = TestCase(testcase_root, workdir, name, tc_dict,
                                       yaml_path)
                         tc.parse_subcases()
-
                         self.testcases[tc.name] = tc
 
                 except Exception as e:
@@ -1859,10 +1870,10 @@ class TestSuite:
                         # each other since they all try to build them
                         # simultaneously
 
-                        o = os.path.join(self.outdir, plat.name, tc.path)
+                        o = os.path.join(self.outdir, plat.name, tc.name)
                         dlist[tc, plat, tc.name.split("/")[-1]] = os.path.join(o, "zephyr", ".config")
                         goal = "_".join([plat.name, "_".join(tc.name.split("/")), "config-sanitycheck"])
-                        mg.add_build_goal(goal, os.path.join(ZEPHYR_BASE, tc.code_location),
+                        mg.add_build_goal(goal, os.path.join(ZEPHYR_BASE, tc.test_path),
                                 o, args, "config-sanitycheck.log", make_args="config-sanitycheck")
 
         info("Building testcase defconfigs...")
