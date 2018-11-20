@@ -22,14 +22,14 @@
 
 /* Device data structure */
 struct uarte_nrfx_data {
-	u8_t rx_data;
-
+	struct uart_config uart_config;
 #ifdef UARTE_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t cb; /**< Callback function pointer */
 	void *cb_data; /**< Callback function arg */
 	u8_t *tx_buffer;
 	volatile bool disable_tx_irq;
 #endif /* UARTE_INTERRUPT_DRIVEN */
+	u8_t rx_data;
 };
 
 /**
@@ -40,6 +40,7 @@ struct uarte_nrfx_config {
 #ifdef UARTE_INTERRUPT_DRIVEN
 	u16_t tx_buff_size;
 #endif /* UARTE_INTERRUPT_DRIVEN */
+	bool rts_cts_pins_set;
 };
 
 struct uarte_init_config {
@@ -47,10 +48,6 @@ struct uarte_init_config {
 	u32_t  pselrxd; /* RXD pin number */
 	u32_t  pselcts; /* CTS pin number */
 	u32_t  pselrts; /* RTS pin number */
-
-	nrf_uarte_hwfc_t      hwfc;     /* Flow control configuration */
-	nrf_uarte_parity_t    parity;   /* Parity configuration */
-	nrf_uarte_baudrate_t  baudrate;
 };
 
 static inline struct uarte_nrfx_data *get_dev_data(struct device *dev)
@@ -190,6 +187,63 @@ static int baudrate_set(struct device *dev, u32_t baudrate)
 
 	nrf_uarte_baudrate_set(uarte, nrf_baudrate);
 
+	return 0;
+}
+
+static int uarte_nrfx_configure(struct device *dev,
+				const struct uart_config *cfg)
+{
+	nrf_uarte_parity_t parity;
+	nrf_uarte_hwfc_t hwfc;
+
+	if (cfg->stop_bits != UART_CFG_STOP_BITS_1) {
+		return -ENOTSUP;
+	}
+
+	if (cfg->data_bits != UART_CFG_DATA_BITS_8) {
+		return -ENOTSUP;
+	}
+
+	switch (cfg->flow_ctrl) {
+	case UART_CFG_FLOW_CTRL_NONE:
+		hwfc = NRF_UARTE_HWFC_DISABLED;
+		break;
+	case UART_CFG_FLOW_CTRL_RTS_CTS:
+		if (get_dev_config(dev)->rts_cts_pins_set) {
+			hwfc = NRF_UARTE_HWFC_ENABLED;
+		} else {
+			return -ENOTSUP;
+		}
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	switch (cfg->parity) {
+	case UART_CFG_PARITY_NONE:
+		parity = NRF_UARTE_PARITY_EXCLUDED;
+		break;
+	case UART_CFG_PARITY_EVEN:
+		parity = NRF_UARTE_PARITY_INCLUDED;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	if (baudrate_set(dev, cfg->baudrate) != 0) {
+		return -ENOTSUP;
+	}
+
+	nrf_uarte_configure(get_uarte_instance(dev), parity, hwfc);
+
+	get_dev_data(dev)->uart_config = *cfg;
+
+	return 0;
+}
+
+static int uarte_nrfx_config_get(struct device *dev, struct uart_config *cfg)
+{
+	*cfg = get_dev_data(dev)->uart_config;
 	return 0;
 }
 
@@ -442,6 +496,8 @@ static const struct uart_driver_api uart_nrfx_uarte_driver_api = {
 	.poll_in		= uarte_nrfx_poll_in,
 	.poll_out		= uarte_nrfx_poll_out,
 	.err_check		= uarte_nrfx_err_check,
+	.configure              = uarte_nrfx_configure,
+	.config_get             = uarte_nrfx_config_get,
 #ifdef UARTE_INTERRUPT_DRIVEN
 	.fifo_fill		= uarte_nrfx_fifo_fill,
 	.fifo_read		= uarte_nrfx_fifo_read,
@@ -477,7 +533,8 @@ static int uarte_instance_init(struct device *dev,
 				config->pseltxd,
 				config->pselrxd);
 
-	if (config->hwfc == NRF_UARTE_HWFC_ENABLED) {
+	if (config->pselcts != NRF_UARTE_PSEL_DISCONNECTED &&
+	    config->pselrts != NRF_UARTE_PSEL_DISCONNECTED) {
 		nrf_gpio_pin_write(config->pselrts, 1);
 		nrf_gpio_cfg_output(config->pselrts);
 
@@ -488,12 +545,7 @@ static int uarte_instance_init(struct device *dev,
 					config->pselcts);
 	}
 
-	/* Configure flow control and parity checking */
-	nrf_uarte_configure(uarte,
-			    config->parity,
-			    config->hwfc);
-
-	err = baudrate_set(dev, config->baudrate);
+	err = uarte_nrfx_configure(dev, &get_dev_data(dev)->uart_config);
 	if (err) {
 		return err;
 	}
@@ -528,11 +580,26 @@ static int uarte_instance_init(struct device *dev,
 	DEVICE_DECLARE(uart_nrfx_uarte##idx);				       \
 	UARTE_##idx##_CREATE_TX_BUFF;					       \
 	static struct uarte_nrfx_data uarte_##idx##_data = {		       \
+		.uart_config = {					       \
+			.baudrate =					       \
+				DT_NORDIC_NRF_UARTE_UART_##idx##_CURRENT_SPEED,\
+			.data_bits = UART_CFG_DATA_BITS_8,		       \
+			.stop_bits = UART_CFG_STOP_BITS_1,		       \
+			.parity = UARTE_##idx##_NRF_PARITY_BIT		       \
+					  == NRF_UARTE_PARITY_INCLUDED	       \
+				  ? UART_CFG_PARITY_EVEN		       \
+				  : UART_CFG_PARITY_NONE,		       \
+			.flow_ctrl = UARTE_##idx##_NRF_HWFC_CONFIG	       \
+					     == NRF_UARTE_HWFC_ENABLED	       \
+				     ? UART_CFG_FLOW_CTRL_RTS_CTS	       \
+				     : UART_CFG_FLOW_CTRL_NONE,		       \
+		},							       \
 		UARTE_##idx##_DATA_INIT					       \
 	};								       \
 	static const struct uarte_nrfx_config uarte_##idx##_config = {	       \
 		.uarte_regs = (NRF_UARTE_Type *)			       \
 			DT_NORDIC_NRF_UARTE_UART_##idx##_BASE_ADDRESS,	       \
+		UARTE_##idx##_CONFIG_RTS_CTS,				       \
 		UARTE_##idx##_CONFIG_INIT				       \
 	};								       \
 	static int uarte_##idx##_init(struct device *dev)		       \
@@ -540,10 +607,7 @@ static int uarte_instance_init(struct device *dev,
 		const struct uarte_init_config init_config = {		       \
 			.pseltxd = DT_NORDIC_NRF_UARTE_UART_##idx##_TX_PIN,    \
 			.pselrxd = DT_NORDIC_NRF_UARTE_UART_##idx##_RX_PIN,    \
-			UARTE_##idx##_NRF_HWFC_CONFIG			       \
-			.parity = UARTE_##idx##_NRF_PARITY_BIT,		       \
-			.baudrate =					       \
-				DT_NORDIC_NRF_UARTE_UART_##idx##_CURRENT_SPEED \
+			UARTE_##idx##_NRF_RTS_CTS_PINS,			       \
 		};							       \
 		UARTE_##idx##_INTERRUPTS_INIT();			       \
 		return uarte_instance_init(dev,				       \
@@ -559,14 +623,13 @@ static int uarte_instance_init(struct device *dev,
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		       \
 			    &uart_nrfx_uarte_driver_api)
 
-#define UARTE_NRF_HWFC_ENABLED(idx)				\
+#define UARTE_NRF_RTS_CTS_SET(idx)				\
 	.pselcts = DT_NORDIC_NRF_UARTE_UART_##idx##_CTS_PIN,	\
-	.pselrts = DT_NORDIC_NRF_UARTE_UART_##idx##_RTS_PIN,	\
-	.hwfc = NRF_UARTE_HWFC_ENABLED,
-#define UARTE_NRF_HWFC_DISABLED					\
+	.pselrts = DT_NORDIC_NRF_UARTE_UART_##idx##_RTS_PIN
+
+#define UARTE_NRF_RTS_CTS_NOT_SET				\
 	.pselcts = NRF_UARTE_PSEL_DISCONNECTED,			\
-	.pselrts = NRF_UARTE_PSEL_DISCONNECTED,			\
-	.hwfc = NRF_UARTE_HWFC_DISABLED,
+	.pselrts = NRF_UARTE_PSEL_DISCONNECTED
 
 #define UARTE_NRF_IRQ_ENABLED(idx)				\
 	IRQ_CONNECT(NRFX_IRQ_NUMBER_GET(NRF_UARTE##idx),	\
@@ -607,21 +670,24 @@ static int uarte_instance_init(struct device *dev,
 	#endif /* CONFIG_UART_0_INTERRUPT_DRIVEN */
 
 	#ifdef CONFIG_UART_0_NRF_FLOW_CONTROL
-		#define UARTE_0_NRF_HWFC_CONFIG	       UARTE_NRF_HWFC_ENABLED(0)
-		#ifndef DT_NORDIC_NRF_UARTE_UART_0_RTS_PIN
-		#error Flow control for UARTE0 is enabled, but RTS pin is not defined.
-		#endif
-		#ifndef DT_NORDIC_NRF_UARTE_UART_0_CTS_PIN
-		#error Flow control for UARTE0 is enabled, but CTS pin is not defined.
-		#endif
+		#define UARTE_0_NRF_HWFC_CONFIG        NRF_UARTE_HWFC_ENABLED
 	#else
-		#define UARTE_0_NRF_HWFC_CONFIG	       UARTE_NRF_HWFC_DISABLED
+		#define UARTE_0_NRF_HWFC_CONFIG        NRF_UARTE_HWFC_DISABLED
 	#endif /* CONFIG_UART_0_NRF_FLOW_CONTROL */
 
-	#ifdef CONFIG_UART_0_NRF_PARITY_BIT
-		#define UARTE_0_NRF_PARITY_BIT	       NRF_UARTE_PARITY_INCLUDED
+	#if defined(DT_NORDIC_NRF_UARTE_UART_0_RTS_PIN) && \
+	    defined(DT_NORDIC_NRF_UARTE_UART_0_CTS_PIN)
+		#define UARTE_0_NRF_RTS_CTS_PINS       UARTE_NRF_RTS_CTS_SET(0)
+		#define UARTE_0_CONFIG_RTS_CTS	       .rts_cts_pins_set = true
 	#else
-		#define UARTE_0_NRF_PARITY_BIT	       NRF_UARTE_PARITY_EXCLUDED
+		#define UARTE_0_NRF_RTS_CTS_PINS       UARTE_NRF_RTS_CTS_NOT_SET
+		#define UARTE_0_CONFIG_RTS_CTS         .rts_cts_pins_set = false
+	#endif
+
+	#ifdef CONFIG_UART_0_NRF_PARITY_BIT
+		#define UARTE_0_NRF_PARITY_BIT         NRF_UARTE_PARITY_INCLUDED
+	#else
+		#define UARTE_0_NRF_PARITY_BIT         NRF_UARTE_PARITY_EXCLUDED
 	#endif /* CONFIG_UART_0_NRF_PARITY_BIT */
 
 	UART_NRF_UARTE_DEVICE(0);
@@ -643,20 +709,22 @@ static int uarte_instance_init(struct device *dev,
 	#endif /* CONFIG_UART_1_INTERRUPT_DRIVEN */
 
 	#ifdef CONFIG_UART_1_NRF_FLOW_CONTROL
-		#define UARTE_1_NRF_HWFC_CONFIG	       UARTE_NRF_HWFC_ENABLED(1)
-		#ifndef DT_NORDIC_NRF_UARTE_UART_1_RTS_PIN
-		#error Flow control for UARTE1 is enabled, but RTS pin is not defined.
-		#endif
-		#ifndef DT_NORDIC_NRF_UARTE_UART_1_CTS_PIN
-		#error Flow control for UARTE1 is enabled, but CTS pin is not defined.
-		#endif
+		#define UARTE_1_NRF_HWFC_CONFIG        NRF_UARTE_HWFC_ENABLED
 	#else
-		#define UARTE_1_NRF_HWFC_CONFIG	       UARTE_NRF_HWFC_DISABLED
+		#define UARTE_1_NRF_HWFC_CONFIG        NRF_UARTE_HWFC_DISABLED
 	#endif /* CONFIG_UART_1_NRF_FLOW_CONTROL */
+
+	#if defined(DT_NORDIC_NRF_UARTE_UART_1_RTS_PIN) && \
+	    defined(DT_NORDIC_NRF_UARTE_UART_1_CTS_PIN)
+		#define UARTE_1_NRF_RTS_CTS_PINS       UARTE_NRF_RTS_CTS_SET(1)
+		#define UARTE_1_CONFIG_RTS_CTS         .rts_cts_pins_set = true
+	#else
+		#define UARTE_1_NRF_RTS_CTS_PINS       UARTE_NRF_RTS_CTS_NOT_SET
+		#define UARTE_1_CONFIG_RTS_CTS         .rts_cts_pins_set = false
+	#endif
 
 	#ifdef CONFIG_UART_1_NRF_PARITY_BIT
 		#define UARTE_1_NRF_PARITY_BIT	       NRF_UARTE_PARITY_INCLUDED
-
 	#else
 		#define UARTE_1_NRF_PARITY_BIT	       NRF_UARTE_PARITY_EXCLUDED
 	#endif /* CONFIG_UART_1_NRF_PARITY_BIT */
