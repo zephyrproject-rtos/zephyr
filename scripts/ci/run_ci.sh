@@ -127,11 +127,10 @@ function get_tests_to_run() {
 }
 
 if [ ! -z "${BSIM_OUT_PATH}" ]; then
-	# Build BT Simulator
-	build_btsim
-
 	# Run BLE tests in simulator on the 1st CI instance:
 	if [ "$MATRIX" = "1" ]; then
+		# Build BT Simulator
+		build_btsim
 		run_bsim_bt_tests
 	fi
 else
