@@ -155,10 +155,14 @@ static int sht3xd_init(struct device *dev)
 {
 	struct sht3xd_data *drv_data = dev->driver_data;
 
-	drv_data->i2c = device_get_binding(CONFIG_SHT3XD_I2C_MASTER_DEV_NAME);
+	drv_data->i2c = device_get_binding(DT_SHT3XD_I2C_MASTER_DEV_NAME);
 	if (drv_data->i2c == NULL) {
 		LOG_DBG("Failed to get pointer to %s device!",
-		    CONFIG_SHT3XD_I2C_MASTER_DEV_NAME);
+			DT_SHT3XD_I2C_MASTER_DEV_NAME);
+		return -EINVAL;
+	}
+	if (!SHT3XD_I2C_ADDRESS) {
+		LOG_DBG("No I2C address");
 		return -EINVAL;
 	}
 
@@ -192,6 +196,6 @@ static int sht3xd_init(struct device *dev)
 
 struct sht3xd_data sht3xd_driver;
 
-DEVICE_AND_API_INIT(sht3xd, CONFIG_SHT3XD_NAME, sht3xd_init, &sht3xd_driver,
+DEVICE_AND_API_INIT(sht3xd, DT_SHT3XD_NAME, sht3xd_init, &sht3xd_driver,
 		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &sht3xd_driver_api);
