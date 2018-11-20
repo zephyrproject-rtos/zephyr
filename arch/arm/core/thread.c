@@ -122,11 +122,9 @@ FUNC_NORETURN void _arch_user_mode_enter(k_thread_entry_t user_entry,
 	_current->arch.priv_stack_size =
 		(u32_t)CONFIG_PRIVILEGED_STACK_SIZE;
 
-	/* FIXME: Need a general API for aligning stacks so that the initial
-	 * user thread stack pointer doesn't overshoot the granularity of MPU
-	 * regions, that works for ARM/NXP/QEMU.
-	 */
-	_current->stack_info.size &= ~0x1f;
+	/* Truncate the stack size with the MPU region granularity. */
+	_current->stack_info.size &=
+		~(CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE - 1);
 
 	_arm_userspace_enter(user_entry, p1, p2, p3,
 			     (u32_t)_current->stack_info.start,

@@ -92,9 +92,9 @@ extern "C" {
  *
  */
 #if defined(CONFIG_MPU_STACK_GUARD)
-#define MPU_GUARD_ALIGN_AND_SIZE	32
+#define MPU_GUARD_ALIGN_AND_SIZE CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE
 #else
-#define MPU_GUARD_ALIGN_AND_SIZE	0
+#define MPU_GUARD_ALIGN_AND_SIZE 0
 #endif
 
 /**
@@ -107,7 +107,7 @@ extern "C" {
  *
  */
 #if defined(CONFIG_USERSPACE)
-#define STACK_ALIGN    32
+#define STACK_ALIGN    CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE
 #else
 #define STACK_ALIGN    max(STACK_ALIGN_SIZE, MPU_GUARD_ALIGN_AND_SIZE)
 #endif
@@ -258,10 +258,11 @@ extern "C" {
 #include <arch/arm/cortex_m/mpu/arm_mpu.h>
 #endif /* _ASMLANGUAGE */
 #define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size) \
-	BUILD_ASSERT_MSG(!(((size) & ((size) - 1))) && (size) >= 32 && \
+	BUILD_ASSERT_MSG(!(((size) & ((size) - 1))) && \
+		(size) >= CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE && \
 		!((u32_t)(start) & ((size) - 1)), \
 		"the size of the partition must be power of 2" \
-		" and greater than or equal to 32." \
+		" and greater than or equal to the minimum MPU region size." \
 		"start address of the partition must align with size.")
 #endif /* CONFIG_CPU_HAS_ARM_MPU */
 #ifdef CONFIG_CPU_HAS_NXP_MPU
@@ -313,11 +314,15 @@ extern "C" {
 
 #endif /* _ASMLANGUAGE */
 #define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size) \
-	BUILD_ASSERT_MSG((size) % 32 == 0 && (size) >= 32 && \
-		(u32_t)(start) % 32 == 0, \
-		"the size of the partition must align with 32" \
-		" and greater than or equal to 32." \
-		"start address of the partition must align with 32.")
+	BUILD_ASSERT_MSG((size) % \
+		CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE == 0 && \
+		(size) >= CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE && \
+		(u32_t)(start) % CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE == 0, \
+		"the size of the partition must align with minimum MPU \
+		 region size" \
+		" and greater than or equal to minimum MPU region size." \
+		"start address of the partition must align with minimum MPU \
+		 region size.")
 #endif  /* CONFIG_CPU_HAS_ARM_MPU */
 #endif /* CONFIG_USERSPACE */
 
