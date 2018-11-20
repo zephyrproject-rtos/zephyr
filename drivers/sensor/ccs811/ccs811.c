@@ -19,37 +19,55 @@
 
 LOG_MODULE_REGISTER(CCS811, CONFIG_SENSOR_LOG_LEVEL);
 
+#ifdef DT_INST_0_AMS_CCS811_WAKE_GPIOS_CONTROLLER
+static void set_wake(struct ccs811_data *drv_data, bool enable)
+{
+	/* Always active-low */
+	gpio_pin_write(drv_data->gpio, DT_INST_0_AMS_CCS811_WAKE_GPIOS_PIN, !enable);
+	if (enable) {
+		k_busy_wait(50);        /* t_WAKE = 50 us */
+	} else {
+		k_busy_wait(20);        /* t_DWAKE = 20 us */
+	}
+}
+#else
+#define set_wake(...)
+#endif
+
 static int ccs811_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct ccs811_data *drv_data = dev->driver_data;
 	int tries = 11;
 	u16_t buf[4];
 	u8_t status;
+	int rv = -EIO;
 
 	/* Check data ready flag for the measurement interval of 1 seconds */
 	while (tries-- > 0) {
+		set_wake(drv_data, true);
 		if (i2c_reg_read_byte(drv_data->i2c, DT_INST_0_AMS_CCS811_BASE_ADDRESS,
 				      CCS811_REG_STATUS, &status) < 0) {
 			LOG_ERR("Failed to read Status register");
-			return -EIO;
+			goto out;
 		}
 
 		if ((status & CCS811_STATUS_DATA_READY) || tries == 0) {
 			break;
 		}
 
+		set_wake(drv_data, false);
 		k_sleep(K_MSEC(100));
 	}
 
 	if (!(status & CCS811_STATUS_DATA_READY)) {
 		LOG_ERR("Sensor data not available");
-		return -EIO;
+		goto out;
 	}
 
 	if (i2c_burst_read(drv_data->i2c, DT_INST_0_AMS_CCS811_BASE_ADDRESS,
 			   CCS811_REG_ALG_RESULT_DATA, (u8_t *)buf, 8) < 0) {
 		LOG_ERR("Failed to read conversion data.");
-		return -EIO;
+		goto out;
 	}
 
 	drv_data->co2 = sys_be16_to_cpu(buf[0]);
@@ -57,8 +75,11 @@ static int ccs811_sample_fetch(struct device *dev, enum sensor_channel chan)
 	drv_data->status = buf[2] & 0xff;
 	drv_data->error = buf[2] >> 8;
 	drv_data->resistance = sys_be16_to_cpu(buf[3]);
+	rv = 0;
 
-	return 0;
+out:
+	set_wake(drv_data, false);
+	return rv;
 }
 
 static int ccs811_channel_get(struct device *dev,
@@ -211,8 +232,8 @@ int ccs811_init(struct device *dev)
 #ifdef DT_INST_0_AMS_CCS811_WAKE_GPIOS_PIN
 		gpio_pin_configure(drv_data->gpio, DT_INST_0_AMS_CCS811_WAKE_GPIOS_PIN,
 				   GPIO_DIR_OUT);
-		gpio_pin_write(drv_data->gpio, DT_INST_0_AMS_CCS811_WAKE_GPIOS_PIN, 0);
 
+		set_wake(drv_data, true);
 		k_sleep(K_MSEC(1));
 #endif
 	}
@@ -220,19 +241,21 @@ int ccs811_init(struct device *dev)
 	/* Switch device to application mode */
 	ret = switch_to_app_mode(drv_data->i2c);
 	if (ret) {
-		return ret;
+		goto out;
 	}
 
 	/* Check Hardware ID */
 	if (i2c_reg_read_byte(drv_data->i2c, DT_INST_0_AMS_CCS811_BASE_ADDRESS,
 			      CCS811_REG_HW_ID, &hw_id) < 0) {
 		LOG_ERR("Failed to read Hardware ID register");
-		return -EIO;
+		ret = -EIO;
+		goto out;
 	}
 
 	if (hw_id != CCS881_HW_ID) {
 		LOG_ERR("Hardware ID mismatch!");
-		return -EINVAL;
+		ret = -EINVAL;
+		goto out;
 	}
 
 	/* Set Measurement mode for 1 second */
@@ -240,22 +263,27 @@ int ccs811_init(struct device *dev)
 			       CCS811_REG_MEAS_MODE,
 			       CCS811_MODE_IAQ_1SEC) < 0) {
 		LOG_ERR("Failed to set Measurement mode");
-		return -EIO;
+		ret = -EIO;
+		goto out;
 	}
 
 	/* Check for error */
 	if (i2c_reg_read_byte(drv_data->i2c, DT_INST_0_AMS_CCS811_BASE_ADDRESS,
 			      CCS811_REG_STATUS, &status) < 0) {
 		LOG_ERR("Failed to read Status register");
-		return -EIO;
+		ret = -EIO;
+		goto out;
 	}
 
 	if (status & CCS811_STATUS_ERROR) {
 		LOG_ERR("Error occurred during sensor configuration");
-		return -EINVAL;
+		ret = -EINVAL;
+		goto out;
 	}
 
-	return 0;
+out:
+	set_wake(drv_data, false);
+	return ret;
 }
 
 static struct ccs811_data ccs811_driver;
