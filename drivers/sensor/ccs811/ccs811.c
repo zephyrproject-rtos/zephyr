@@ -158,6 +158,12 @@ static int switch_to_app_mode(struct device *i2c)
 		return -EINVAL;
 	}
 
+	/* Check if already in application mode */
+	if (status & CCS811_STATUS_FW_MODE) {
+		LOG_DBG("CCS811 Already in application mode");
+		return 0;
+	}
+
 	buf = CCS811_REG_APP_START;
 	/* Set the device to application mode */
 	if (i2c_write(i2c, &buf, 1, DT_INST_0_AMS_CCS811_BASE_ADDRESS) < 0) {
@@ -165,6 +171,7 @@ static int switch_to_app_mode(struct device *i2c)
 		return -EIO;
 	}
 
+	k_sleep(1);             /* t_APP_START */
 	if (i2c_reg_read_byte(i2c, DT_INST_0_AMS_CCS811_BASE_ADDRESS,
 			      CCS811_REG_STATUS, &status) < 0) {
 		LOG_ERR("Failed to read Status register");
