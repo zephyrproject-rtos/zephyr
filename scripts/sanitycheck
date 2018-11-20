@@ -2532,8 +2532,9 @@ def parse_arguments():
         "--footprint-threshold=0")
     parser.add_argument(
         "-O", "--outdir",
-        default="%s/sanity-out" % ZEPHYR_BASE,
+        default="%s/sanity-out" % os.getcwd(),
         help="Output directory for logs and binaries. "
+        "Default is 'sanity-out' in the current directory. "
         "This directory will be deleted unless '--no-clean' is set.")
     parser.add_argument(
         "-n", "--no-clean", action="store_true",
