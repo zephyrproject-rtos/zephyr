@@ -6,8 +6,14 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+config HAS_SPI_DW
+	bool
+	help
+	  Signifies whether DesignWare SPI compatible HW is available
+
 menuconfig SPI_DW
 	bool "Designware SPI controller driver"
+	depends on HAS_SPI_DW
 	help
 	  Enable support for Designware's SPI controllers.
 
