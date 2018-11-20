@@ -104,8 +104,10 @@ def main():
             run_scripts_meta_west()
     finally:
         print(colorama.Fore.LIGHTRED_EX, end='')
-        print('NOTE: you just ran a copy of west from zephyr/scripts; this',
-              'will be removed in the future.')
+        print('NOTE: you just ran a copy of west from {};'.
+              format(os.path.dirname(__file__)),
+              'this will be removed from the Zephyr repository in the future.',
+              'West is now developed separately.')
         print(colorama.Style.RESET_ALL, end='', flush=True)
 
 
