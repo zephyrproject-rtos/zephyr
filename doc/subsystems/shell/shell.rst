@@ -291,7 +291,7 @@ checks for valid arguments count.
 		ARG_UNUSED(argc);
 		ARG_UNUSED(argv);
 
-		if (hell_help_requested(shell) {
+		if (shell_help_requested(shell) {
 			shell_help_print(shell, NULL, 0);
 		} else {
 			shell_fprintf(shell, SHELL_NORMAL,
