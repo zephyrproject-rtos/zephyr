@@ -144,11 +144,11 @@ static int uart_msp432p4xx_init(struct device *dev)
 	MAP_UART_enableModule((unsigned long)config->base);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	IRQ_CONNECT(TI_MSP432P4XX_UART_40001000_IRQ_0,
-			TI_MSP432P4XX_UART_40001000_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_TI_MSP432P4XX_UART_40001000_IRQ_0,
+			DT_TI_MSP432P4XX_UART_40001000_IRQ_0_PRIORITY,
 			uart_msp432p4xx_isr, DEVICE_GET(uart_msp432p4xx_0),
 			0);
-	irq_enable(TI_MSP432P4XX_UART_40001000_IRQ_0);
+	irq_enable(DT_TI_MSP432P4XX_UART_40001000_IRQ_0);
 
 #endif
 	return 0;
