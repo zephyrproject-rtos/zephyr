@@ -11,11 +11,14 @@ properties:
     wake-gpios:
       type: phandle-array
       required: false
+      description: WAKEn pin
 
     reset-gpios:
       type: phandle-array
       required: false
+      description: RESETn pin
 
     irq-gpios:
       type: phandle-array
       required: false
+      description: INTn pin
