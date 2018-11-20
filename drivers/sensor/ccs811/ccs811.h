@@ -20,7 +20,7 @@
 #define CCS811_REG_HW_ID                0x20
 #define CCS811_REG_HW_VERSION           0x21
 #define CCS811_REG_HW_VERSION_MASK      0xF0
-#define CCS811_REG_ERR                  0xE0
+#define CCS811_REG_ERROR_ID             0xE0
 #define CCS811_REG_APP_START            0xF4
 
 #define CCS881_HW_ID                    0x81

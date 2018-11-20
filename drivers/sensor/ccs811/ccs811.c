@@ -34,12 +34,49 @@ static void set_wake(struct ccs811_data *drv_data, bool enable)
 #define set_wake(...)
 #endif
 
+/* Get STATUS register in low 8 bits, and if ERROR is set put ERROR_ID
+ * in bits 8..15.  These registers are available in both boot and
+ * application mode.
+ */
+static int fetch_status(struct device *i2c)
+{
+	u8_t status;
+	int rv;
+
+	if (i2c_reg_read_byte(i2c, DT_INST_0_AMS_CCS811_BASE_ADDRESS,
+			      CCS811_REG_STATUS, &status) < 0) {
+		LOG_ERR("Failed to read Status register");
+		return -EIO;
+	}
+
+	rv = status;
+	if (status & CCS811_STATUS_ERROR) {
+		u8_t error_id;
+
+		if (i2c_reg_read_byte(i2c, DT_INST_0_AMS_CCS811_BASE_ADDRESS,
+				      CCS811_REG_ERROR_ID, &error_id) < 0) {
+			LOG_ERR("Failed to read ERROR_ID register");
+			return -EIO;
+		}
+
+		rv |= (error_id << 8);
+	}
+
+	return rv;
+}
+
+static inline u8_t error_from_status(int status)
+{
+	return status >> 8;
+}
+
 static int ccs811_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct ccs811_data *drv_data = dev->driver_data;
 	int tries;
 	u16_t buf[4];
-	u8_t status;
+	u8_t cmd;
+	int status;
 	int rv = -EIO;
 
 	/* Check data ready flag for the measurement interval */
@@ -53,9 +90,14 @@ static int ccs811_sample_fetch(struct device *dev, enum sensor_channel chan)
 
 	while (tries-- > 0) {
 		set_wake(drv_data, true);
-		if (i2c_reg_read_byte(drv_data->i2c, DT_INST_0_AMS_CCS811_BASE_ADDRESS,
-				      CCS811_REG_STATUS, &status) < 0) {
-			LOG_ERR("Failed to read Status register");
+		status = fetch_status(drv_data->i2c);
+		if (status < 0) {
+			goto out;
+		}
+
+		if (status & CCS811_STATUS_ERROR) {
+			LOG_ERR("CCS811 ERROR ID %02x",
+				error_from_status(status));
 			goto out;
 		}
 
@@ -72,8 +114,10 @@ static int ccs811_sample_fetch(struct device *dev, enum sensor_channel chan)
 		goto out;
 	}
 
-	if (i2c_burst_read(drv_data->i2c, DT_INST_0_AMS_CCS811_BASE_ADDRESS,
-			   CCS811_REG_ALG_RESULT_DATA, (u8_t *)buf, 8) < 0) {
+	cmd = CCS811_REG_ALG_RESULT_DATA;
+	if (i2c_write_read(drv_data->i2c, DT_INST_0_AMS_CCS811_BASE_ADDRESS,
+			   &cmd, sizeof(cmd),
+			   (u8_t *)buf, 8) < 0) {
 		LOG_ERR("Failed to read conversion data.");
 		goto out;
 	}
@@ -142,13 +186,13 @@ static const struct sensor_driver_api ccs811_driver_api = {
 
 static int switch_to_app_mode(struct device *i2c)
 {
-	u8_t status, buf;
+	u8_t buf;
+	int status;
 
 	LOG_DBG("Switching to Application mode...");
 
-	if (i2c_reg_read_byte(i2c, DT_INST_0_AMS_CCS811_BASE_ADDRESS,
-			      CCS811_REG_STATUS, &status) < 0) {
-		LOG_ERR("Failed to read Status register");
+	status = fetch_status(i2c);
+	if (status < 0) {
 		return -EIO;
 	}
 
@@ -172,9 +216,8 @@ static int switch_to_app_mode(struct device *i2c)
 	}
 
 	k_sleep(1);             /* t_APP_START */
-	if (i2c_reg_read_byte(i2c, DT_INST_0_AMS_CCS811_BASE_ADDRESS,
-			      CCS811_REG_STATUS, &status) < 0) {
-		LOG_ERR("Failed to read Status register");
+	status = fetch_status(i2c);
+	if (status < 0) {
 		return -EIO;
 	}
 
@@ -192,8 +235,9 @@ static int switch_to_app_mode(struct device *i2c)
 int ccs811_init(struct device *dev)
 {
 	struct ccs811_data *drv_data = dev->driver_data;
-	int ret;
-	u8_t hw_id, status;
+	int ret = 0;
+	u8_t hw_id;
+	int status;
 
 	drv_data->i2c = device_get_binding(DT_INST_0_AMS_CCS811_BUS_NAME);
 	if (drv_data->i2c == NULL) {
@@ -291,15 +335,15 @@ int ccs811_init(struct device *dev)
 	}
 
 	/* Check for error */
-	if (i2c_reg_read_byte(drv_data->i2c, DT_INST_0_AMS_CCS811_BASE_ADDRESS,
-			      CCS811_REG_STATUS, &status) < 0) {
-		LOG_ERR("Failed to read Status register");
+	status = fetch_status(drv_data->i2c);
+	if (status < 0) {
 		ret = -EIO;
 		goto out;
 	}
 
 	if (status & CCS811_STATUS_ERROR) {
-		LOG_ERR("Error occurred during sensor configuration");
+		LOG_ERR("CCS811 Error %02x during sensor configuration",
+			error_from_status(status));
 		ret = -EINVAL;
 		goto out;
 	}
