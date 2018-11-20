@@ -7,7 +7,6 @@ set(SYSROOT_TARGET       xtensa-elf)
 
 set(CROSS_COMPILE  ${TOOLCHAIN_HOME}/bin/${CROSS_COMPILE_TARGET}-)
 set(SYSROOT_DIR    ${TOOLCHAIN_HOME}/${SYSROOT_TARGET})
-set(XCC_BUILD      $ENV{XTENSA_BUILD_PATHS}/$ENV{TOOLCHAIN_VER}/${CONFIG_SOC})
 
 # xt-xcc does not support -Og, so make it -O0
 set(OPTIMIZE_FOR_DEBUG_FLAG "-O0")
