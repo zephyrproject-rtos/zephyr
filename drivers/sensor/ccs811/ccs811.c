@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2018 Peter Bigot Consulting, LLC
  * Copyright (c) 2018 Linaro Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -165,48 +166,56 @@ int ccs811_init(struct device *dev)
 		return -EINVAL;
 	}
 
+	struct device *gpio = NULL;
+	(void)gpio;
 #ifdef DT_INST_0_AMS_CCS811_WAKE_GPIOS_CONTROLLER
-	drv_data->gpio_wakeup =
-		device_get_binding(DT_INST_0_AMS_CCS811_WAKE_GPIOS_CONTROLLER);
-	if (drv_data->gpio_wakeup == NULL) {
-		LOG_ERR("Failed to get pointer to %s device!",
+	gpio = device_get_binding(DT_INST_0_AMS_CCS811_WAKE_GPIOS_CONTROLLER);
+	if (gpio == NULL) {
+		LOG_ERR("Failed to get pointer to WAKE device: %s",
 			DT_INST_0_AMS_CCS811_WAKE_GPIOS_CONTROLLER);
 		return -EINVAL;
 	}
-#endif
 
+	drv_data->gpio = gpio;
+#endif
 #ifdef DT_INST_0_AMS_CCS811_RESET_GPIOS_CONTROLLER
-	drv_data->gpio_reset =
-		device_get_binding(DT_INST_0_AMS_CCS811_RESET_GPIOS_CONTROLLER);
-	if (drv_data->gpio_reset == NULL) {
-		LOG_ERR("Failed to get pointer to %s device!",
+	gpio = device_get_binding(DT_INST_0_AMS_CCS811_RESET_GPIOS_CONTROLLER);
+	if (gpio == NULL) {
+		LOG_ERR("Failed to get pointer to RESET device: %s",
 			DT_INST_0_AMS_CCS811_RESET_GPIOS_CONTROLLER);
 		return -EINVAL;
 	}
-#endif
-#ifdef DT_INST_0_AMS_CCS811_RESET_GPIOS_CONTROLLER
-	gpio_pin_configure(drv_data->gpio_reset,
-			   DT_INST_0_AMS_CCS811_RESET_GPIOS_PIN,
-			   GPIO_DIR_OUT);
-	gpio_pin_write(drv_data->gpio_reset,
-		       DT_INST_0_AMS_CCS811_RESET_GPIOS_PIN, 1);
 
-	k_sleep(K_MSEC(1));
+	if (drv_data->gpio == NULL) {
+		drv_data->gpio = gpio;
+	} else if (drv_data->gpio != gpio) {
+		LOG_ERR("Crossing GPIO devices not supported");
+		return -EINVAL;
+	}
 #endif
 
-	/*
-	 * Wakeup pin should be pulled low before initiating any I2C transfer.
-	 * If it has been tied to GND by default, skip this part.
-	 */
-#ifdef DT_INST_0_AMS_CCS811_WAKE_GPIOS_CONTROLLER
-	gpio_pin_configure(drv_data->gpio_wakeup,
-			   DT_INST_0_AMS_CCS811_WAKE_GPIOS_PIN,
-			   GPIO_DIR_OUT);
-	gpio_pin_write(drv_data->gpio_wakeup,
-		       DT_INST_0_AMS_CCS811_WAKE_GPIOS_PIN, 0);
+	if (drv_data->gpio) {
+#ifdef DT_INST_0_AMS_CCS811_RESET_GPIOS_PIN
+		gpio_pin_configure(drv_data->gpio, DT_INST_0_AMS_CCS811_RESET_GPIOS_PIN,
+				   GPIO_DIR_OUT);
+		gpio_pin_write(drv_data->gpio, DT_INST_0_AMS_CCS811_RESET_GPIOS_PIN, 1);
 
-	k_sleep(K_MSEC(1));
+		k_sleep(K_MSEC(1));
 #endif
+
+		/*
+		 * Wakeup pin should be pulled low before initiating
+		 * any I2C transfer.  If it has been tied to GND by
+		 * default, skip this part.
+		 */
+#ifdef DT_INST_0_AMS_CCS811_WAKE_GPIOS_PIN
+		gpio_pin_configure(drv_data->gpio, DT_INST_0_AMS_CCS811_WAKE_GPIOS_PIN,
+				   GPIO_DIR_OUT);
+		gpio_pin_write(drv_data->gpio, DT_INST_0_AMS_CCS811_WAKE_GPIOS_PIN, 0);
+
+		k_sleep(K_MSEC(1));
+#endif
+	}
 
 	/* Switch device to application mode */
 	ret = switch_to_app_mode(drv_data->i2c);

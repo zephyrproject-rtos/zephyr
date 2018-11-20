@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2018 Peter Bigot Consulting, LLC
  * Copyright (c) 2018 Linaro Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -44,12 +45,7 @@
 
 struct ccs811_data {
 	struct device *i2c;
-#ifdef DT_INST_0_AMS_CCS811_WAKE_GPIOS_CONTROLLER
-	struct device *gpio_wakeup;
-#endif
-#ifdef DT_INST_0_AMS_CCS811_RESET_GPIOS_CONTROLLER
-	struct device *gpio_reset;
-#endif
+	struct device *gpio;
 	u16_t co2;
 	u16_t voc;
 	u8_t status;
