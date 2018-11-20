@@ -11,7 +11,7 @@
 #include <kernel.h>
 #include <gpio.h>
 
-#define SHT3XD_I2C_ADDRESS		CONFIG_SHT3XD_I2C_ADDR
+#define SHT3XD_I2C_ADDRESS		DT_SHT3XD_I2C_ADDR
 
 #define SHT3XD_CMD_FETCH		0xE000
 #define SHT3XD_CMD_ART			0x2B32
