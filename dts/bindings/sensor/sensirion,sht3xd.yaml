@@ -17,5 +17,10 @@ inherits:
 properties:
     compatible:
       constraint: "sensirion,sht3xd"
+    alert-gpios:
+      type: compound
+      category: optional
+      description: ALERT pin
+      generation: define, use-prop-name
 
 ...

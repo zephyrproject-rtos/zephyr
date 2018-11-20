@@ -38,22 +38,6 @@ endchoice
 config SHT3XD_TRIGGER
 	bool
 
-config SHT3XD_GPIO_DEV_NAME
-	string "GPIO device"
-	default "GPIO_0"
-	depends on SHT3XD_TRIGGER
-	help
-	  The device name of the GPIO device to which the SHT3xD interrupt
-	  pins are connected.
-
-config SHT3XD_GPIO_PIN_NUM
-	int "Interrupt GPIO pin number"
-	default 0
-	depends on SHT3XD_TRIGGER
-	help
-	  The number of the GPIO on which the interrupt signal from the
-	  SHT3xD chip will be received.
-
 config SHT3XD_THREAD_PRIORITY
 	int "Thread priority"
 	depends on SHT3XD_TRIGGER_OWN_THREAD
