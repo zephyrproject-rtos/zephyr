@@ -83,7 +83,7 @@ void test_init_setup(void)
 	settings_subsys_init();
 
 	err = settings_register(&c1_settings);
-	zassert_true(err == 0, "can't regsister the settings handler");
+	zassert_true(err == 0, "can't register the settings handler");
 
 	err = settings_load();
 	zassert_true(err == 0, "can't load settings");
@@ -100,8 +100,7 @@ void test_init_setup(void)
 void test_main(void)
 {
 	/* Bellow call is not used as a test setup intentionally.    */
-	/* It causes device reboota at the first device run after it */
-	/* was flashed. */
+	/* It causes device reboot a first time after it was flashed. */
 	test_init_setup();
 
 	ztest_test_suite(test_initialization,
