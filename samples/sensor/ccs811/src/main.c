@@ -21,9 +21,9 @@ static void do_main(struct device *dev)
 		sensor_channel_get(dev, SENSOR_CHAN_CURRENT, &current);
 
 		printk("Co2: %d.%06dppm; VOC: %d.%06dppb\n", co2.val1, co2.val2,
-				voc.val1, voc.val2);
+		       voc.val1, voc.val2);
 		printk("Voltage: %d.%06dV; Current: %d.%06dA\n\n", voltage.val1,
-				voltage.val2, current.val1, current.val2);
+		       voltage.val2, current.val1, current.val2);
 
 		k_sleep(K_MSEC(1000));
 	}
