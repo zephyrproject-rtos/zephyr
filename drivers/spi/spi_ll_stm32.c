@@ -512,7 +512,7 @@ DEVICE_AND_API_INIT(spi_stm32_1, DT_SPI_1_NAME, &spi_stm32_init,
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 static void spi_stm32_irq_config_func_1(struct device *dev)
 {
-	IRQ_CONNECT(DT_SPI_1_IRQ, CONFIG_SPI_1_IRQ_PRI,
+	IRQ_CONNECT(DT_SPI_1_IRQ, DT_SPI_1_IRQ_PRI,
 		    spi_stm32_isr, DEVICE_GET(spi_stm32_1), 0);
 	irq_enable(DT_SPI_1_IRQ);
 }
@@ -550,7 +550,7 @@ DEVICE_AND_API_INIT(spi_stm32_2, DT_SPI_2_NAME, &spi_stm32_init,
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 static void spi_stm32_irq_config_func_2(struct device *dev)
 {
-	IRQ_CONNECT(DT_SPI_2_IRQ, CONFIG_SPI_2_IRQ_PRI,
+	IRQ_CONNECT(DT_SPI_2_IRQ, DT_SPI_2_IRQ_PRI,
 		    spi_stm32_isr, DEVICE_GET(spi_stm32_2), 0);
 	irq_enable(DT_SPI_2_IRQ);
 }
@@ -588,7 +588,7 @@ DEVICE_AND_API_INIT(spi_stm32_3, DT_SPI_3_NAME, &spi_stm32_init,
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 static void spi_stm32_irq_config_func_3(struct device *dev)
 {
-	IRQ_CONNECT(DT_SPI_3_IRQ, CONFIG_SPI_3_IRQ_PRI,
+	IRQ_CONNECT(DT_SPI_3_IRQ, DT_SPI_3_IRQ_PRI,
 		    spi_stm32_isr, DEVICE_GET(spi_stm32_3), 0);
 	irq_enable(DT_SPI_3_IRQ);
 }
