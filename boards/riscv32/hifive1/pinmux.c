@@ -28,6 +28,24 @@ static int hifive1_pinmux_init(struct device *dev)
 	pinmux_pin_set(p, 9, SIFIVE_PINMUX_IOF0);  /* CS2 */
 	pinmux_pin_set(p, 10, SIFIVE_PINMUX_IOF0); /* CS3 */
 
+#if defined(CONFIG_PWM)
+
+	/* PWM 0 is not enabled because it conflicts with SPI 1 */
+
+	/* PWM 1 */
+	/* PWM1_0 is not enabled because the driver cannot use it */
+	pinmux_pin_set(p, 19, SIFIVE_PINMUX_IOF1); /* PWM1_1 */
+	pinmux_pin_set(p, 21, SIFIVE_PINMUX_IOF1); /* PWM1_2 */
+	pinmux_pin_set(p, 22, SIFIVE_PINMUX_IOF1); /* PWM1_3 */
+
+	/* PWM 2 */
+	/* PWM2_0 is not enabled because the driver cannot use it */
+	pinmux_pin_set(p, 11, SIFIVE_PINMUX_IOF1); /* PWM2_1 */
+	pinmux_pin_set(p, 12, SIFIVE_PINMUX_IOF1); /* PWM2_2 */
+	pinmux_pin_set(p, 13, SIFIVE_PINMUX_IOF1); /* PWM2_3 */
+
+#endif /* CONFIG_PWM */
+
 	return 0;
 }
 

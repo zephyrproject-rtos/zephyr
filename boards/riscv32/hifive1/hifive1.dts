@@ -17,17 +17,17 @@
 	};
 
 	leds {
-		compatible = "gpio-leds";
+		compatible = "pwm-leds";
 		led0: led_0 {
-			gpios = <&gpio0 19 0>;
+			pwms = <&pwm1 1 0>;
 			label = "Green LED";
 		};
 		led1: led_1 {
-			gpios = <&gpio0 21 0>;
+			pwms = <&pwm1 2 0>;
 			label = "Blue LED";
 		};
 		led2: led_2 {
-			gpios = <&gpio0 22 0>;
+			pwms = <&pwm1 3 0>;
 			label = "Red LED";
 		};
 	};
@@ -58,6 +58,21 @@
 };
 
 &spi2 {
+	status = "ok";
+	clock-frequency = <16000000>;
+};
+
+&pwm0 {
+	status = "ok";
+	clock-frequency = <16000000>;
+};
+
+&pwm1 {
+	status = "ok";
+	clock-frequency = <16000000>;
+};
+
+&pwm2 {
 	status = "ok";
 	clock-frequency = <16000000>;
 };
