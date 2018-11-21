@@ -6,6 +6,7 @@
 
 
 #include <i2c.h>
+#include <dt-bindings/i2c/i2c.h>
 #include <nrfx_twi.h>
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
@@ -135,8 +136,19 @@ static int init_twi(struct device *dev, const nrfx_twi_config_t *config)
 	nrfx_twi_enable(&get_dev_config(dev)->twi);
 	return 0;
 }
+#define I2C_NRFX_TWI_INVALID_FREQUENCY  ((nrf_twi_frequency_t)-1)
+#define I2C_NRFX_TWI_FREQUENCY(bitrate)					       \
+	 (bitrate == I2C_BITRATE_STANDARD ? NRF_TWI_FREQ_100K		       \
+	: bitrate == 250000               ? NRF_TWI_FREQ_250K		       \
+	: bitrate == I2C_BITRATE_FAST     ? NRF_TWI_FREQ_400K		       \
+					  : I2C_NRFX_TWI_INVALID_FREQUENCY)
 
 #define I2C_NRFX_TWI_DEVICE(idx)					       \
+	static_assert(							       \
+		I2C_NRFX_TWI_FREQUENCY(					       \
+			DT_NORDIC_NRF_I2C_I2C_##idx##_CLOCK_FREQUENCY)	       \
+		!= I2C_NRFX_TWI_INVALID_FREQUENCY,			       \
+		"Wrong I2C " #idx " frequency setting in dts");		       \
 	static int twi_##idx##_init(struct device *dev)			       \
 	{								       \
 		IRQ_CONNECT(DT_NORDIC_NRF_I2C_I2C_##idx##_IRQ,		       \
@@ -145,7 +157,8 @@ static int init_twi(struct device *dev, const nrfx_twi_config_t *config)
 		const nrfx_twi_config_t config = {			       \
 			.scl       = DT_NORDIC_NRF_I2C_I2C_##idx##_SCL_PIN,    \
 			.sda       = DT_NORDIC_NRF_I2C_I2C_##idx##_SDA_PIN,    \
-			.frequency = NRF_TWI_FREQ_100K,			       \
+			.frequency = I2C_NRFX_TWI_FREQUENCY(		       \
+				DT_NORDIC_NRF_I2C_I2C_##idx##_CLOCK_FREQUENCY) \
 		};							       \
 		return init_twi(dev, &config);				       \
 	}								       \
