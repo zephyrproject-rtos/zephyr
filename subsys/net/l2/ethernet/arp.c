@@ -567,8 +567,9 @@ static bool arp_hdr_check(struct net_arp_hdr *arp_hdr)
 	if (ntohs(arp_hdr->hwtype) != NET_ARP_HTYPE_ETH ||
 	    ntohs(arp_hdr->protocol) != NET_ETH_PTYPE_IP ||
 	    arp_hdr->hwlen != sizeof(struct net_eth_addr) ||
-	    arp_hdr->protolen != NET_ARP_IPV4_PTYPE_SIZE) {
-		NET_DBG("Invalid ARP header");
+	    arp_hdr->protolen != NET_ARP_IPV4_PTYPE_SIZE ||
+	    net_ipv4_is_addr_loopback(&arp_hdr->src_ipaddr)) {
+		NET_DBG("DROP: Invalid ARP header");
 		return false;
 	}
 
