@@ -85,6 +85,12 @@ config BT_OBSERVER
 
 endmenu
 
+config BT_PHY_UPDATE
+	bool "PHY Update"
+	default y
+	help
+	  Enable support for Bluetooth 5.0 PHY Update Procedure.
+
 source "subsys/bluetooth/services/Kconfig"
 
 config BT_CONN

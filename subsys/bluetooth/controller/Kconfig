@@ -259,11 +259,11 @@ config BT_CTLR_DATA_LENGTH_MAX
 	  Set the maximum data length of PDU supported in the Controller.
 
 config BT_CTLR_PHY
-	bool "PHY Update"
+	# Hidden option to enable support for Bluetooth 5.0 PHY Update
+	# Procedure in the Controller.
+	bool
+	depends on BT_PHY_UPDATE
 	default y if SOC_COMPATIBLE_NRF52X
-	help
-	  Enable support for Bluetooth 5.0 PHY Update Procedure in the
-	  Controller.
 
 endif # BT_CONN
 

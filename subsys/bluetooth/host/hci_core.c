@@ -1070,6 +1070,7 @@ static void le_data_len_change(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 
+#if defined(CONFIG_BT_PHY_UPDATE)
 static void le_phy_update_complete(struct net_buf *buf)
 {
 	struct bt_hci_evt_le_phy_update_complete *evt = (void *)buf->data;
@@ -1103,6 +1104,7 @@ static void le_phy_update_complete(struct net_buf *buf)
 done:
 	bt_conn_unref(conn);
 }
+#endif /* CONFIG_BT_PHY_UPDATE */
 
 bool bt_le_conn_params_valid(const struct bt_le_conn_param *param)
 {
@@ -3304,9 +3306,11 @@ static void hci_le_meta_event(struct net_buf *buf)
 	case BT_HCI_EVT_LE_DATA_LEN_CHANGE:
 		le_data_len_change(buf);
 		break;
+#if defined(CONFIG_BT_PHY_UPDATE)
 	case BT_HCI_EVT_LE_PHY_UPDATE_COMPLETE:
 		le_phy_update_complete(buf);
 		break;
+#endif /* CONFIG_BT_PHY_UPDATE */
 #endif /* CONFIG_BT_CONN */
 #if defined(CONFIG_BT_SMP)
 	case BT_HCI_EVT_LE_LTK_REQUEST:
@@ -3791,8 +3795,9 @@ static int le_set_event_mask(void)
 			mask |= BT_EVT_MASK_LE_DATA_LEN_CHANGE;
 		}
 
-		if (BT_FEAT_LE_PHY_2M(bt_dev.le.features) ||
-		    BT_FEAT_LE_PHY_CODED(bt_dev.le.features)) {
+		if (IS_ENABLED(CONFIG_BT_PHY_UPDATE) &&
+		    (BT_FEAT_LE_PHY_2M(bt_dev.le.features) ||
+		     BT_FEAT_LE_PHY_CODED(bt_dev.le.features))) {
 			mask |= BT_EVT_MASK_LE_PHY_UPDATE_COMPLETE;
 		}
 	}
