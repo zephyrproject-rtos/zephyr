@@ -240,7 +240,7 @@ DEVICE_AND_API_INIT(mcux_adc16_0, CONFIG_ADC_0_NAME, &mcux_adc16_init,
 
 static void mcux_adc16_config_func_0(struct device *dev)
 {
-	IRQ_CONNECT(DT_ADC_0_IRQ, CONFIG_ADC_0_IRQ_PRI,
+	IRQ_CONNECT(DT_ADC_0_IRQ, DT_ADC_0_IRQ_PRI,
 		    mcux_adc16_isr, DEVICE_GET(mcux_adc16_0), 0);
 
 	irq_enable(DT_ADC_0_IRQ);
@@ -268,7 +268,7 @@ DEVICE_AND_API_INIT(mcux_adc16_1, CONFIG_ADC_1_NAME, &mcux_adc16_init,
 
 static void mcux_adc16_config_func_1(struct device *dev)
 {
-	IRQ_CONNECT(DT_ADC_1_IRQ, CONFIG_ADC_1_IRQ_PRI,
+	IRQ_CONNECT(DT_ADC_1_IRQ, DT_ADC_1_IRQ_PRI,
 		    mcux_adc16_isr, DEVICE_GET(mcux_adc16_1), 0);
 
 	irq_enable(DT_ADC_1_IRQ);

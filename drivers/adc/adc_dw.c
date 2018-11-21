@@ -507,11 +507,11 @@ DEVICE_AND_API_INIT(adc_dw, CONFIG_ADC_0_NAME, &adc_dw_init,
 
 static void adc_config_irq(void)
 {
-	IRQ_CONNECT(DT_ADC_0_IRQ, CONFIG_ADC_0_IRQ_PRI, adc_dw_rx_isr,
+	IRQ_CONNECT(DT_ADC_0_IRQ, DT_ADC_0_IRQ_PRI, adc_dw_rx_isr,
 		    DEVICE_GET(adc_dw), 0);
 	irq_enable(DT_ADC_0_IRQ);
 
-	IRQ_CONNECT(DT_ADC_IRQ_ERR, CONFIG_ADC_0_IRQ_PRI,
+	IRQ_CONNECT(DT_ADC_IRQ_ERR, DT_ADC_0_IRQ_PRI,
 		    adc_dw_err_isr, DEVICE_GET(adc_dw), 0);
 	irq_enable(DT_ADC_IRQ_ERR);
 }
