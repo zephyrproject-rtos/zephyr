@@ -886,6 +886,24 @@ if(CONFIG_CODE_DATA_RELOCATION)
 
 endif()
 
+if(CONFIG_USERSPACE)
+  zephyr_get_compile_options_for_lang_as_string(C compiler_flags_priv)
+  string(REPLACE "-ftest-coverage" "" NO_COVERAGE_FLAGS "${compiler_flags_priv}")
+  string(REPLACE "-fprofile-arcs" "" NO_COVERAGE_FLAGS "${NO_COVERAGE_FLAGS}")
+
+  get_property(include_dir_in_interface TARGET zephyr_interface
+    PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
+
+  get_property(sys_include_dir_in_interface TARGET zephyr_interface
+    PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES)
+
+  get_property(compile_definitions_interface TARGET zephyr_interface
+    PROPERTY INTERFACE_COMPILE_DEFINITIONS)
+
+  set(complete_include_dirs ${include_dir_in_interface} ${sys_include_dir_in_interface})
+endif()
+
+
 if(CONFIG_ARM AND CONFIG_USERSPACE)
   set(GEN_PRIV_STACKS $ENV{ZEPHYR_BASE}/scripts/gen_priv_stacks.py)
   set(PROCESS_PRIV_STACKS_GPERF $ENV{ZEPHYR_BASE}/scripts/process_gperf.py)
@@ -950,6 +968,13 @@ if(CONFIG_ARM AND CONFIG_USERSPACE)
     )
   add_custom_target(priv_stacks_output_src DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${PRIV_STACKS_OUTPUT_SRC})
 
+  set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/${PRIV_STACKS_OUTPUT_SRC}
+    PROPERTIES COMPILE_DEFINITIONS "${compile_definitions_interface}")
+
+  set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/${PRIV_STACKS_OUTPUT_SRC}
+    PROPERTIES COMPILE_FLAGS
+    "${NO_COVERAGE_FLAGS} -fno-function-sections -fno-data-sections ")
+
   # We need precise control of where generated text/data ends up in the final
   # kernel image. Disable function/data sections and use objcopy to move
   # generated data into special section names
@@ -957,16 +982,14 @@ if(CONFIG_ARM AND CONFIG_USERSPACE)
     ${CMAKE_CURRENT_BINARY_DIR}/${PRIV_STACKS_OUTPUT_SRC}
     )
 
-  target_link_libraries(priv_stacks_output_lib zephyr_interface)
-
   # Turn off -ffunction-sections, etc.
   # NB: Using a library instead of target_compile_options(priv_stacks_output_lib
   # [...]) because a library's options have precedence
   add_library(priv_stacks_output_lib_interface INTERFACE)
-  target_compile_options(priv_stacks_output_lib_interface INTERFACE
-    -fno-function-sections
-    -fno-data-sections
-    )
+  foreach(incl ${complete_include_dirs})
+    target_include_directories(priv_stacks_output_lib_interface INTERFACE ${incl})
+  endforeach()
+
   target_link_libraries(priv_stacks_output_lib priv_stacks_output_lib_interface)
 
   set(PRIV_STACKS_OUTPUT_OBJ_PATH ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/priv_stacks_output_lib.dir/${PRIV_STACKS_OUTPUT_OBJ})
@@ -1072,18 +1095,23 @@ if(CONFIG_USERSPACE)
     )
 
   # always compile kobject_hash.c at optimization -Os
-  set_source_files_properties(${OUTPUT_SRC} PROPERTIES COMPILE_FLAGS -Os)
-  target_link_libraries(output_lib zephyr_interface)
+  set_source_files_properties(${OUTPUT_SRC} PROPERTIES COMPILE_FLAGS
+    "${NO_COVERAGE_FLAGS} -Os -fno-function-sections -fno-data-sections")
+
+  set_source_files_properties(${OUTPUT_SRC}
+    PROPERTIES COMPILE_DEFINITIONS "${compile_definitions_interface}")
 
   # Turn off -ffunction-sections, etc.
   # NB: Using a library instead of target_compile_options(output_lib
   # [...]) because a library's options have precedence
   add_library(output_lib_interface INTERFACE)
-  target_compile_options(output_lib_interface INTERFACE
-    -fno-function-sections
-    -fno-data-sections
-    )
+
   target_link_libraries(output_lib output_lib_interface)
+
+  foreach(incl ${complete_include_dirs})
+    target_include_directories(output_lib_interface INTERFACE ${incl})
+  endforeach()
+
 
   set(OUTPUT_OBJ_PATH ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/output_lib.dir/${OUTPUT_OBJ})
 
