@@ -10,7 +10,11 @@
 
 #include "settings/settings.h"
 #include "settings_priv.h"
+
+#ifdef CONFIG_SETTINGS_USE_BASE64
 #include "base64.h"
+#endif
+
 #include "misc/printk.h"
 
 int settings_line_parse(char *buf, char **namep, char **valp)
@@ -101,12 +105,16 @@ struct settings_io_cb_s {
 int settings_line_write(const char *name, const char *value, size_t val_len,
 			off_t w_loc, void *cb_arg)
 {
-	size_t w_size, rem, add, enc_len;
+	size_t w_size, rem, add;
 
+#ifdef CONFIG_SETTINGS_USE_BASE64
 	/* minimal buffer for encoding base64 + EOL*/
 	char enc_buf[MAX_ENC_BLOCK_SIZE + 1];
 
 	char *p_enc = enc_buf;
+	size_t enc_len = 0;
+#endif
+
 	bool done;
 	char w_buf[16]; /* write buff, must be aligned either to minimal */
 			/* base64 encoding size and write-block-size */
@@ -162,11 +170,11 @@ int settings_line_write(const char *name, const char *value, size_t val_len,
 	w_size++;
 
 	rem = val_len;
-	enc_len = 0;
 	done = false;
 
 	while (1) {
 		while (w_size < sizeof(w_buf)) {
+#ifdef CONFIG_SETTINGS_USE_BASE64
 			if (enc_len) {
 				add = min(enc_len, sizeof(w_buf) - w_size);
 				memcpy(&w_buf[w_size], p_enc, add);
@@ -174,7 +182,9 @@ int settings_line_write(const char *name, const char *value, size_t val_len,
 				w_size += add;
 				p_enc += add;
 			} else {
+#endif
 				if (rem) {
+#ifdef CONFIG_SETTINGS_USE_BASE64
 					add = min(rem, MAX_ENC_BLOCK_SIZE/4*3);
 					rc = base64_encode(enc_buf, sizeof(enc_buf), &enc_len, value, add);
 					if (rc) {
@@ -183,6 +193,13 @@ int settings_line_write(const char *name, const char *value, size_t val_len,
 					value += add;
 					rem -= add;
 					p_enc = enc_buf;
+#else
+					add = min(rem, sizeof(w_buf) - w_size);
+					memcpy(&w_buf[w_size], value, add);
+					value += add;
+					rem -= add;
+					w_size += add;
+#endif
 				} else {
 					add = (w_size) % wbs;
 					if (add) {
@@ -194,7 +211,9 @@ int settings_line_write(const char *name, const char *value, size_t val_len,
 					done = true;
 					break;
 				}
+#ifdef CONFIG_SETTINGS_USE_BASE64
 			}
+#endif
 		}
 
 		rc = settings_io_cb.write_cb(cb_arg, w_loc, w_buf, w_size);
@@ -243,9 +262,14 @@ int settings_next_line_ctx(struct line_entry_ctx *entry_ctx)
 int settings_line_len_calc(const char *name, size_t val_len)
 {
 	int len, mod;
-	
+
+#ifdef CONFIG_SETTINGS_USE_BASE64
 	/* <enc(value)> */
 	len = val_len/3*4 + ((val_len%3) ? 4 : 0);
+#else
+	/* <evalue> */
+	len = val_len;
+#endif
 	/* <name>=<enc(value)> */
 	len += strlen(name) + 1;
 	mod = len % settings_io_cb.rwbs;
@@ -337,6 +361,7 @@ int settings_line_raw_read(off_t seek, char *out, size_t len_req,
 					    NULL, cb_arg);
 }
 
+#ifdef CONFIG_SETTINGS_USE_BASE64
 /* off from value begin */
 int settings_line_val_read(off_t val_off, off_t off, char *out, size_t len_req,
 			   size_t *len_read, void *cb_arg)
@@ -396,8 +421,23 @@ int settings_line_val_read(off_t val_off, off_t off, char *out, size_t len_req,
 
 	return 0;
 }
+#else
 
-
+/* off from value begin */
+int settings_line_val_read(off_t val_off, off_t off, char *out, size_t len_req,
+			   size_t *len_read, void *cb_arg)
+{
+	return settings_line_raw_read(val_off + off, out, len_req, len_read,
+				      cb_arg);
+}
+#endif
+/**
+ * @param line_loc offset of the settings line, expect that it is aligned to rbs physically.
+ * @param seek offset form the line begining.
+ * @retval 0 : read proper name
+ * 1 : when read unproper name
+ * -ERCODE for storage errors
+ */
 int settings_line_name_read(char *out, size_t len_req, size_t *len_read,
 			    void *cb_arg)
 {
