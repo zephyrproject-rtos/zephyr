@@ -9,7 +9,6 @@ menuconfig SETTINGS
 	# Only NFFS is currently supported as FS.
 	# The reason in that FatFs doesn't implement the fs_rename() API
 	depends on (FILE_SYSTEM && FILE_SYSTEM_NFFS) || (FCB && FLASH_PAGE_LAYOUT)
-	select BASE64
 	help
 	  The settings subsystem allows its users to serialize and
 	  deserialize state in memory into and from non-volatile memory.
@@ -20,6 +19,13 @@ menuconfig SETTINGS
 config SETTINGS_ENCODE_LEN
 	depends on SETTINGS
 	bool
+
+config SETTINGS_USE_BASE64
+	bool "encoding value using base64"
+	depends on SETTINGS
+	select BASE64
+	help
+	  Enables values encoding using Base64.
 
 choice
 	prompt "Storage back-end"
