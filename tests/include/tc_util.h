@@ -12,7 +12,7 @@
 #include <zephyr.h>
 
 #include <string.h>
-#include <shell/legacy_shell.h>
+#include <shell/shell.h>
 
 #if defined(CONFIG_STDOUT_CONSOLE)
 #include <stdio.h>
@@ -106,14 +106,27 @@ static __unused const char *TC_RESULT_STR[] = {
 		TC_END_POST(result);                                    \
 	} while (0)
 
+#if CONFIG_SHELL
+#define TC_CMD_DEFINE(name)						\
+	static int cmd_##name(const struct shell *shell, size_t argc,	\
+			      char **argv) \
+	{								\
+		TC_START(__func__);					\
+		name();							\
+		TC_END_RESULT(TC_PASS);					\
+		return 0;						\
+	}
+#define TC_CMD_ITEM(name)	cmd_##name
+#else
 #define TC_CMD_DEFINE(name)				\
-	int cmd_##name(int argc, char *argv[])		\
+	int cmd_##name(int argc, char *argv[]) 		\
 	{						\
 		TC_START(__func__);			\
 		name();					\
 		TC_END_RESULT(TC_PASS);			\
 		return 0;				\
 	}
-
 #define TC_CMD_ITEM(name) {STRINGIFY(name), cmd_##name, "none"}
+#endif
+
 #endif /* __TC_UTIL_H__ */

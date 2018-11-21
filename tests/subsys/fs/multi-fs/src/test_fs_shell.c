@@ -13,17 +13,13 @@
 #include <ztest.h>
 
 #include "test_fs_shell.h"
-#include <shell/legacy_shell.h>
+#include <shell/shell.h>
 
 static void test_shell_exec(const char *line, int result)
 {
-	char cmd[80];
 	int ret;
 
-	strncpy(cmd, line, sizeof(cmd) - 1);
-	cmd[79] = '\0';
-
-	ret = shell_exec(cmd);
+	ret = shell_execute_cmd(NULL, line);
 
 	TC_PRINT("shell_exec(%s): %d\n", line, ret);
 
