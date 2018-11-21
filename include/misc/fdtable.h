@@ -90,6 +90,16 @@ void z_free_fd(int fd);
 void *z_get_fd_obj(int fd, const struct fd_op_vtable *vtable, int err);
 
 /**
+ * @brief Get underlying object pointer and vtable pointer from file descriptor.
+ *
+ * @param fd File descriptor previously returned by z_reserve_fd()
+ * @param vtable A pointer to a pointer variable to store the vtable
+ *
+ * @return Object pointer or NULL, with errno set
+ */
+void *z_get_fd_obj_and_vtable(int fd, const struct fd_op_vtable **vtable);
+
+/**
  * Request codes for fd_op_vtable.ioctl().
  *
  * Note that these codes are internal Zephyr numbers, for internal
