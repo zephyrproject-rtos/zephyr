@@ -461,21 +461,23 @@ static int eswifi_init(struct device *dev)
 	eswifi->bus = &eswifi_bus_ops_spi;
 	eswifi->bus->init(eswifi);
 
-	eswifi->resetn.dev = device_get_binding(ESWIFI0_RESETN_GPIOS_CONTROLLER);
+	eswifi->resetn.dev = device_get_binding(
+			DT_INVENTEK_ESWIFI_ESWIFI0_RESETN_GPIOS_CONTROLLER);
 	if (!eswifi->resetn.dev) {
 		LOG_ERR("Failed to initialize GPIO driver: %s",
-			    ESWIFI0_RESETN_GPIOS_CONTROLLER);
+			    DT_INVENTEK_ESWIFI_ESWIFI0_RESETN_GPIOS_CONTROLLER);
 	}
-	eswifi->resetn.pin = ESWIFI0_RESETN_GPIOS_PIN;
+	eswifi->resetn.pin = DT_INVENTEK_ESWIFI_ESWIFI0_RESETN_GPIOS_PIN;
 	gpio_pin_configure(eswifi->resetn.dev, eswifi->resetn.pin,
 			   GPIO_DIR_OUT);
 
-	eswifi->wakeup.dev = device_get_binding(ESWIFI0_WAKEUP_GPIOS_CONTROLLER);
+	eswifi->wakeup.dev = device_get_binding(
+			DT_INVENTEK_ESWIFI_ESWIFI0_WAKEUP_GPIOS_CONTROLLER);
 	if (!eswifi->wakeup.dev) {
 		LOG_ERR("Failed to initialize GPIO driver: %s",
-			    ESWIFI0_WAKEUP_GPIOS_CONTROLLER);
+			    DT_INVENTEK_ESWIFI_ESWIFI0_WAKEUP_GPIOS_CONTROLLER);
 	}
-	eswifi->wakeup.pin = ESWIFI0_WAKEUP_GPIOS_PIN;
+	eswifi->wakeup.pin = DT_INVENTEK_ESWIFI_ESWIFI0_WAKEUP_GPIOS_PIN;
 	gpio_pin_configure(eswifi->wakeup.dev, eswifi->wakeup.pin,
 			   GPIO_DIR_OUT);
 	gpio_pin_write(eswifi->wakeup.dev, eswifi->wakeup.pin, 1);
