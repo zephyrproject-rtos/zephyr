@@ -343,6 +343,15 @@ config BT_CTLR_PHY_CODED
 
 endif # BT_CTLR_PHY
 
+config BT_CTLR_MASTER_SCA_EXTRA
+	int "Master SCA Compensation PPM"
+	depends on BT_PERIPHERAL
+	range 0 500
+	default 0
+	help
+	  Compensate for masters with incorrect SCA, communicated at connection
+	  establishment, by adding an extra jitter value to window widening.
+
 config BT_CTLR_WORKER_PRIO
 	int "Radio and Ticker's Worker IRQ priority"
 	range 0 3 if SOC_SERIES_NRF51X

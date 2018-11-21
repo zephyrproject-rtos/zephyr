@@ -47,6 +47,12 @@
 #define LOG_MODULE_NAME bt_ctlr_llsw_ctrl
 #include "common/log.h"
 
+#if defined(CONFIG_BT_CTLR_MASTER_SCA_EXTRA)
+#define CLOCK_ACCURACY_EXTRA CONFIG_BT_CTLR_MASTER_SCA_EXTRA
+#else
+#define CLOCK_ACCURACY_EXTRA 0
+#endif /* CONFIG_BT_CTLR_MASTER_SCA_EXTRA */
+
 #if defined(CONFIG_BT_CTLR_CONN_RSSI)
 #define RADIO_RSSI_SAMPLE_COUNT	10
 #define RADIO_RSSI_THRESHOLD	4
@@ -1109,7 +1115,7 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 		/* calculate the window widening */
 		conn->slave.sca = pdu_adv->connect_ind.sca;
 		conn->slave.window_widening_periodic_us =
-			(((gc_lookup_ppm[_radio.sca] +
+			(((gc_lookup_ppm[_radio.sca] + CLOCK_ACCURACY_EXTRA +
 			   gc_lookup_ppm[conn->slave.sca]) *
 			  conn_interval_us) + (1000000 - 1)) / 1000000;
 		conn->slave.window_widening_max_us =
@@ -6837,6 +6843,7 @@ static inline u32_t event_conn_upd_prep(struct connection *conn,
 
 			conn->slave.window_widening_periodic_us =
 				(((gc_lookup_ppm[_radio.sca] +
+				   CLOCK_ACCURACY_EXTRA +
 				   gc_lookup_ppm[conn->slave.sca]) *
 				  conn_interval_us) + (1000000 - 1)) / 1000000;
 			conn->slave.window_widening_max_us =
