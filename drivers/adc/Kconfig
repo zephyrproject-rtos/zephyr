@@ -49,11 +49,6 @@ config ADC_0_NAME
 	depends on ADC_0 && !HAS_DTS_ADC
 	default "ADC_0"
 
-config ADC_0_IRQ_PRI
-	int "ADC 0 interrupt priority"
-	depends on ADC_0 && !HAS_DTS_ADC
-	default 2
-
 config ADC_1
 	bool "Enable ADC 1"
 
@@ -61,11 +56,6 @@ config ADC_1_NAME
 	string "ADC 1 Driver's name"
 	depends on ADC_1 && !HAS_DTS_ADC
 	default "ADC_1"
-
-config ADC_1_IRQ_PRI
-	int "ADC 1 interrupt priority"
-	depends on ADC_1 && !HAS_DTS_ADC
-	default 2
 
 source "drivers/adc/Kconfig.dw"
 
