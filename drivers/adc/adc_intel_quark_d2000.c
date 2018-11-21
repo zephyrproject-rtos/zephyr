@@ -493,7 +493,7 @@ DEVICE_AND_API_INIT(adc_quark_d2000_0, CONFIG_ADC_0_NAME,
 
 static void adc_quark_d2000_config_func_0(struct device *dev)
 {
-	IRQ_CONNECT(DT_ADC_0_IRQ, CONFIG_ADC_0_IRQ_PRI,
+	IRQ_CONNECT(DT_ADC_0_IRQ, 0,
 		    adc_quark_d2000_isr,
 		    DEVICE_GET(adc_quark_d2000_0),
 		    DT_ADC_0_IRQ_FLAGS);
