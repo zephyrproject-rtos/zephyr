@@ -203,6 +203,8 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
  *  Every time the device loses the connection with peer, this connection
  *  will be re-established if connectable advertisement from peer is received.
  *
+ *  Note: Auto connect is disabled during explicit scanning.
+ *
  *  @param addr Remote Bluetooth address.
  *  @param param If non-NULL, auto connect is enabled with the given
  *  parameters. If NULL, auto connect is disabled.
