@@ -1,33 +1,13 @@
-# Kconfig - EFR32MG12P MCU line
+# Kconfig - EFR32MG12P (Mighty Gecko) MCU line
 #
 # Copyright (c) 2018 Diego Sueiro
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 
-choice
-prompt "EFR32 Mighty Gecko MCU Selection"
-depends on SOC_SERIES_EFR32MG12P
-
-config SOC_EFR32MG12P
-	bool "SOC_EFR32MG12P"
-	select HAS_SILABS_GECKO
-	select HAS_CMU
-	select SOC_GECKO_EMU
-
-endchoice
-
 if SOC_SERIES_EFR32MG12P
 
 config SOC_PART_NUMBER_EFR32MG12P332F1024GL125
 	bool
-
-config SOC_PART_NUMBER_EXX32_EFR32MG12P
-	string
-	default "EFR32MG12P332F1024GL125" if SOC_PART_NUMBER_EFR32MG12P332F1024GL125
-	help
-	  This string holds the full part number of the SoC. It is a hidden option
-	  that you should not set directly. The part number selection choice defines
-	  the default value for this string.
 
 endif # SOC_SERIES_EFR32MG12P

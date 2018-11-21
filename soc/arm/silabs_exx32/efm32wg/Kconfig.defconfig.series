@@ -11,11 +11,14 @@ if SOC_SERIES_EFM32WG
 config SOC_SERIES
 	default "efm32wg"
 
+config SOC_PART_NUMBER
+	default "EFM32WG990F256" if SOC_PART_NUMBER_EFM32WG990F256
+
 config NUM_IRQS
 	int
 	# must be >= the highest interrupt number used
 	default 39
 
-source "soc/arm/silabs_exx32/efm32wg/Kconfig.defconfig.e*"
+source "soc/arm/silabs_exx32/efm32wg/Kconfig.defconfig.efm32wg"
 
 endif # SOC_SERIES_EFM32WG

@@ -12,5 +12,7 @@ config SOC_SERIES_EFM32WG
 	select SOC_FAMILY_EXX32
 	select SYS_POWER_LOW_POWER_STATE_SUPPORTED
 	select CPU_HAS_SYSTICK
+	select HAS_SILABS_GECKO
+	select HAS_CMU
 	help
 	  Enable support for EFM32 WonderGecko MCU series
