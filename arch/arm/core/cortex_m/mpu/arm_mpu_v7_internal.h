@@ -23,7 +23,7 @@ static void _mpu_init(void)
  * Note:
  *   The caller must provide a valid region index.
  */
-static void _region_init(u32_t index, struct arm_mpu_region *region_conf)
+static void _region_init(u32_t index, const struct arm_mpu_region *region_conf)
 {
 	/* Select the region you want to access */
 	MPU->RNR = index;

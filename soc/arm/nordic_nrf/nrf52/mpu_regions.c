@@ -13,7 +13,7 @@
 #define PERIPH_BASE	0x40000000
 #define M4_PPB_BASE	0xE0000000
 
-static struct arm_mpu_region mpu_regions[] = {
+static const struct arm_mpu_region mpu_regions[] = {
 	/* Region 0 */
 	MPU_REGION_ENTRY("FLASH_0",
 			 CONFIG_FLASH_BASE_ADDRESS,
@@ -35,7 +35,7 @@ static struct arm_mpu_region mpu_regions[] = {
 #endif /* REGION_SRAM_1_SIZE */
 };
 
-struct arm_mpu_config mpu_config = {
+const struct arm_mpu_config mpu_config = {
 	.num_regions = ARRAY_SIZE(mpu_regions),
 	.mpu_regions = mpu_regions,
 };
