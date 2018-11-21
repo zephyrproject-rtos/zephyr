@@ -49,5 +49,16 @@
 
 &spi0 {
 	status = "ok";
+	clock-frequency = <16000000>;
+};
+
+&spi1 {
+	status = "ok";
+	clock-frequency = <16000000>;
+};
+
+&spi2 {
+	status = "ok";
+	clock-frequency = <16000000>;
 };
 
