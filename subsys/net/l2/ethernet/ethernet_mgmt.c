@@ -35,7 +35,7 @@ static int ethernet_set_config(u32_t mgmt_request,
 		return -ENOTSUP;
 	}
 
-	if (!data || (len != sizeof(struct ethernet_req_params))) {
+	if ((data == NULL) || (len != sizeof(struct ethernet_req_params))) {
 		return -EINVAL;
 	}
 
@@ -178,7 +178,7 @@ static int ethernet_get_config(u32_t mgmt_request,
 		return -ENOTSUP;
 	}
 
-	if (!data || (len != sizeof(struct ethernet_req_params))) {
+	if ((data == NULL) || (len != sizeof(struct ethernet_req_params))) {
 		return -EINVAL;
 	}
 

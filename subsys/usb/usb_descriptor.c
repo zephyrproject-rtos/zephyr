@@ -305,7 +305,7 @@ usb_fix_ascii_sn_string_descriptor(struct usb_sn_descriptor *sn)
 	u8_t *runtime_sn =  usb_update_sn_string_descriptor();
 	int runtime_sn_len, default_sn_len;
 
-	if (!runtime_sn) {
+	if (runtime_sn == NULL) {
 		return;
 	}
 
@@ -360,7 +360,7 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 
 			if (if_descr->bInterfaceNumber == 0) {
 				cfg_data = usb_get_cfg_data(if_descr);
-				if (!cfg_data) {
+				if (cfg_data == NULL) {
 					LOG_ERR("There is no usb_cfg_data "
 						"for %p", head);
 					return -1;
@@ -402,7 +402,7 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 			if (str_descr_idx) {
 				ascii7_to_utf16le(head);
 			} else {
-				if (!cfg_descr) {
+				if (cfg_descr == NULL) {
 					LOG_ERR("Incomplete device descriptor");
 					return -1;
 				}

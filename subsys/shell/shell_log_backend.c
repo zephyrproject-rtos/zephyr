@@ -113,7 +113,7 @@ bool shell_log_backend_process(const struct shell_log_backend *backend)
 			(const struct shell *)backend->backend->cb->ctx;
 	struct log_msg *msg = msg_from_fifo(backend);
 
-	if (!msg) {
+	if (msg == NULL) {
 		return false;
 	}
 

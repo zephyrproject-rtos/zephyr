@@ -163,7 +163,7 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 	struct net_pkt *pkt;
 	int ret;
 
-	if (!ipv4) {
+	if (ipv4 == NULL) {
 		return -EINVAL;
 	}
 
@@ -177,7 +177,7 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface,
 					      (const struct in6_addr *)dst),
 				     PKT_WAIT_TIME);
-	if (!pkt) {
+	if (pkt == NULL) {
 		return -ENOMEM;
 	}
 
@@ -256,7 +256,7 @@ int net_icmpv4_send_error(struct net_pkt *orig, u8_t type, u8_t code)
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface,
 					      (const struct in6_addr *)dst),
 				     PKT_WAIT_TIME);
-	if (!pkt) {
+	if (pkt == NULL) {
 		err = -ENOMEM;
 		goto drop_no_pkt;
 	}
@@ -287,7 +287,7 @@ int net_icmpv4_send_error(struct net_pkt *orig, u8_t type, u8_t code)
 	}
 
 	frag = net_pkt_copy(orig, copy_len, 0, PKT_WAIT_TIME);
-	if (!frag) {
+	if (frag == NULL) {
 		err = -ENOMEM;
 		goto drop;
 	}

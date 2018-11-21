@@ -20,7 +20,7 @@ static void shell_rtt_rx_process(struct shell_rtt *sh_rtt)
 {
 	u32_t count;
 
-	while (1) {
+	while (true) {
 		count = SEGGER_RTT_Read(0, sh_rtt->rx, sizeof(sh_rtt->rx));
 
 		if (count > 0) {

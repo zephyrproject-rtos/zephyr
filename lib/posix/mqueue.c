@@ -57,7 +57,7 @@ mqd_t mq_open(const char *name, int oflags, ...)
 	char *mq_desc_ptr, *mq_obj_ptr, *mq_buf_ptr, *mq_name_ptr;
 
 	va_start(va, oflags);
-	if (oflags & O_CREAT) {
+	if ((oflags & O_CREAT) != 0) {
 		mode = va_arg(va, mode_t);
 		attrs = va_arg(va, mq_attr*);
 	}
@@ -68,8 +68,8 @@ mqd_t mq_open(const char *name, int oflags, ...)
 		max_msgs = attrs->mq_maxmsg;
 	}
 
-	if (name == NULL || ((oflags & O_CREAT) && (msg_size <= 0 ||
-						    max_msgs <= 0))) {
+	if ((name == NULL) || ((oflags & O_CREAT) &&
+			       (msg_size <= 0 || max_msgs <= 0))) {
 		errno = EINVAL;
 		return (mqd_t)mqd;
 	}
@@ -90,7 +90,7 @@ mqd_t mq_open(const char *name, int oflags, ...)
 		return (mqd_t)mqd;
 	}
 
-	if (msg_queue == NULL && !(oflags & O_CREAT)) {
+	if ((msg_queue == NULL) && !(oflags & O_CREAT)) {
 		errno = ENOENT;
 		return (mqd_t)mqd;
 	}
@@ -374,7 +374,7 @@ static s32_t send_message(mqueue_desc *mqd, const char *msg_ptr, size_t msg_len,
 		return ret;
 	}
 
-	if (mqd->flags & O_NONBLOCK) {
+	if ((mqd->flags & O_NONBLOCK) != 0) {
 		timeout = K_NO_WAIT;
 	}
 
@@ -406,7 +406,7 @@ static s32_t receive_message(mqueue_desc *mqd, char *msg_ptr, size_t msg_len,
 		return ret;
 	}
 
-	if (mqd->flags & O_NONBLOCK) {
+	if ((mqd->flags & O_NONBLOCK) != 0) {
 		timeout = K_NO_WAIT;
 	}
 

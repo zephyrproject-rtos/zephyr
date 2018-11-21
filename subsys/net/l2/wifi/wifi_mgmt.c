@@ -22,7 +22,7 @@ static int wifi_connect(u32_t mgmt_request, struct net_if *iface,
 	struct net_wifi_mgmt_offload *off_api =
 		(struct net_wifi_mgmt_offload *) dev->driver_api;
 
-	if (off_api == NULL || off_api->connect == NULL) {
+	if ((off_api == NULL) || off_api->connect == NULL) {
 		return -ENOTSUP;
 	}
 
@@ -51,11 +51,11 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_CONNECT, wifi_connect);
 static void _scan_result_cb(struct net_if *iface, int status,
 			    struct wifi_scan_result *entry)
 {
-	if (!iface) {
+	if (iface == NULL) {
 		return;
 	}
 
-	if (!entry) {
+	if (entry == NULL) {
 		struct wifi_status scan_status = {
 			.status = status,
 		};
@@ -77,7 +77,7 @@ static int wifi_scan(u32_t mgmt_request, struct net_if *iface,
 	struct net_wifi_mgmt_offload *off_api =
 		(struct net_wifi_mgmt_offload *) dev->driver_api;
 
-	if (off_api == NULL || off_api->scan == NULL) {
+	if ((off_api == NULL) || off_api->scan == NULL) {
 		return -ENOTSUP;
 	}
 
@@ -94,7 +94,7 @@ static int wifi_disconnect(u32_t mgmt_request, struct net_if *iface,
 	struct net_wifi_mgmt_offload *off_api =
 		(struct net_wifi_mgmt_offload *) dev->driver_api;
 
-	if (off_api == NULL || off_api->disconnect == NULL) {
+	if ((off_api == NULL) || off_api->disconnect == NULL) {
 		return -ENOTSUP;
 	}
 

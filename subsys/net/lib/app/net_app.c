@@ -156,7 +156,7 @@ void _net_app_received(struct net_context *net_ctx,
 
 #if defined(CONFIG_NET_APP_CLIENT)
 	if (ctx->app_type == NET_APP_CLIENT) {
-		if (!pkt) {
+		if (pkt == NULL) {
 			if (ctx->cb.close) {
 				ctx->cb.close(ctx, status, ctx->user_data);
 			}
@@ -174,7 +174,7 @@ void _net_app_received(struct net_context *net_ctx,
 	if (ctx->app_type == NET_APP_SERVER) {
 		bool close = true;
 
-		if (pkt) {
+		if (pkt != NULL) {
 			if (ctx->cb.recv) {
 				ctx->cb.recv(ctx, pkt, status, ctx->user_data);
 			}
@@ -225,7 +225,7 @@ int _net_app_set_net_ctx(struct net_app_ctx *ctx,
 {
 	int ret;
 
-	if (!net_ctx || !net_context_is_used(net_ctx)) {
+	if ((net_ctx == NULL) || !net_context_is_used(net_ctx)) {
 		return -ENOENT;
 	}
 
@@ -269,7 +269,7 @@ out:
 int _net_app_set_local_addr(struct net_app_ctx *ctx, struct sockaddr *addr,
 			    const char *myaddr, u16_t port)
 {
-	if (myaddr) {
+	if (myaddr != NULL) {
 		void *inaddr;
 
 		if (addr->sa_family == AF_INET) {
@@ -459,7 +459,7 @@ fail:
 
 int net_app_release(struct net_app_ctx *ctx)
 {
-	if (!ctx) {
+	if (ctx == NULL) {
 		return -EINVAL;
 	}
 
@@ -585,7 +585,7 @@ static struct net_context *get_server_ctx_without_dst(struct net_app_ctx *ctx)
 	for (i = 0; i < CONFIG_NET_APP_SERVER_NUM_CONN; i++) {
 		struct net_context *tmp = ctx->server.net_ctxs[i];
 
-		if (!tmp || !net_context_is_used(tmp)) {
+		if ((tmp == NULL) || !net_context_is_used(tmp)) {
 			continue;
 		}
 
@@ -607,7 +607,7 @@ static struct net_context *get_server_ctx(struct net_app_ctx *ctx,
 {
 	int i;
 
-	if (!dst) {
+	if (dst == NULL) {
 		return get_server_ctx_without_dst(ctx);
 	}
 
@@ -615,7 +615,7 @@ static struct net_context *get_server_ctx(struct net_app_ctx *ctx,
 		struct net_context *tmp = ctx->server.net_ctxs[i];
 		u16_t port, rport;
 
-		if (!tmp || !net_context_is_used(tmp)) {
+		if ((tmp == NULL) || !net_context_is_used(tmp)) {
 			continue;
 		}
 
@@ -756,7 +756,7 @@ int net_app_set_cb(struct net_app_ctx *ctx,
 		   net_app_send_cb_t send_cb,
 		   net_app_close_cb_t close_cb)
 {
-	if (!ctx) {
+	if (ctx == NULL) {
 		return -EINVAL;
 	}
 
@@ -803,7 +803,7 @@ int net_app_send_pkt(struct net_app_ctx *ctx,
 {
 	int ret;
 
-	if (!ctx) {
+	if (ctx == NULL) {
 		return -EINVAL;
 	}
 
@@ -899,7 +899,7 @@ int net_app_send_buf(struct net_app_ctx *ctx,
 	size_t len, pos = 0;
 	int ret;
 
-	if (!ctx) {
+	if (ctx == NULL) {
 		return -EINVAL;
 	}
 
@@ -912,12 +912,12 @@ int net_app_send_buf(struct net_app_ctx *ctx,
 	}
 
 	net_ctx = _net_app_select_net_ctx(ctx, dst);
-	if (!net_ctx) {
+	if (net_ctx == NULL) {
 		return -ENOENT;
 	}
 
 	pkt = net_pkt_get_tx(net_ctx, timeout);
-	if (!pkt) {
+	if (pkt == NULL) {
 		return -ENOMEM;
 	}
 
@@ -925,7 +925,7 @@ int net_app_send_buf(struct net_app_ctx *ctx,
 
 	while (buf_len) {
 		frag = net_pkt_get_data(net_ctx, timeout);
-		if (!frag) {
+		if (frag == NULL) {
 			net_pkt_unref(pkt);
 			return -ENOMEM;
 		}
@@ -962,7 +962,7 @@ struct net_pkt *net_app_get_net_pkt(struct net_app_ctx *ctx,
 	struct net_context *net_ctx;
 	struct sockaddr dst = { 0 };
 
-	if (!ctx) {
+	if (ctx == NULL) {
 		return NULL;
 	}
 
@@ -973,7 +973,7 @@ struct net_pkt *net_app_get_net_pkt(struct net_app_ctx *ctx,
 	dst.sa_family = family;
 
 	net_ctx = _net_app_select_net_ctx(ctx, &dst);
-	if (!net_ctx) {
+	if (net_ctx == NULL) {
 		return NULL;
 	}
 
@@ -986,7 +986,7 @@ struct net_pkt *net_app_get_net_pkt_with_dst(struct net_app_ctx *ctx,
 {
 	struct net_context *net_ctx;
 
-	if (!ctx || !dst) {
+	if ((ctx == NULL) || !dst) {
 		return NULL;
 	}
 
@@ -995,7 +995,7 @@ struct net_pkt *net_app_get_net_pkt_with_dst(struct net_app_ctx *ctx,
 	}
 
 	net_ctx = _net_app_select_net_ctx(ctx, dst);
-	if (!net_ctx) {
+	if (net_ctx == NULL) {
 		return NULL;
 	}
 
@@ -1008,7 +1008,7 @@ struct net_buf *net_app_get_net_buf(struct net_app_ctx *ctx,
 {
 	struct net_buf *frag;
 
-	if (!ctx || !pkt) {
+	if ((ctx == NULL) || !pkt) {
 		return NULL;
 	}
 
@@ -1017,7 +1017,7 @@ struct net_buf *net_app_get_net_buf(struct net_app_ctx *ctx,
 	}
 
 	frag = net_pkt_get_frag(pkt, timeout);
-	if (!frag) {
+	if (frag == NULL) {
 		return NULL;
 	}
 
@@ -1030,7 +1030,7 @@ int net_app_close(struct net_app_ctx *ctx)
 {
 	struct net_context *net_ctx;
 
-	if (!ctx) {
+	if (ctx == NULL) {
 		return -EINVAL;
 	}
 
@@ -1058,7 +1058,7 @@ int net_app_close(struct net_app_ctx *ctx)
 #endif
 
 #if defined(CONFIG_NET_APP_SERVER) && defined(CONFIG_NET_TCP)
-	if (net_ctx && ctx->app_type == NET_APP_SERVER) {
+	if ((net_ctx != NULL) && ctx->app_type == NET_APP_SERVER) {
 		int i;
 
 		for (i = 0; i < CONFIG_NET_APP_SERVER_NUM_CONN; i++) {
@@ -1072,7 +1072,7 @@ int net_app_close(struct net_app_ctx *ctx)
 	}
 #endif
 
-	if (net_ctx) {
+	if (net_ctx != NULL) {
 		net_ctx->net_app = NULL;
 		net_context_put(net_ctx);
 
@@ -1100,7 +1100,7 @@ int net_app_close(struct net_app_ctx *ctx)
 
 int net_app_close2(struct net_app_ctx *ctx, struct net_context *net_ctx)
 {
-	if (!ctx || !net_ctx) {
+	if ((ctx == NULL) || !net_ctx) {
 		return -EINVAL;
 	}
 
@@ -1233,7 +1233,7 @@ int _net_app_ssl_tx(void *context, const unsigned char *buf, size_t size)
 	while (size) {
 		send_buf = net_app_get_net_pkt(ctx, AF_UNSPEC,
 					       BUF_ALLOC_TIMEOUT);
-		if (!send_buf) {
+		if (send_buf == NULL) {
 			return MBEDTLS_ERR_SSL_ALLOC_FAILED;
 		}
 
@@ -1313,7 +1313,7 @@ int _net_app_tls_sendto(struct net_pkt *pkt,
 	ARG_UNUSED(dst_addr);
 	ARG_UNUSED(addrlen);
 
-	if (pkt && !net_pkt_appdatalen(pkt)) {
+	if ((pkt != NULL) && !net_pkt_appdatalen(pkt)) {
 		return -EINVAL;
 	}
 
@@ -1439,7 +1439,7 @@ enum net_verdict _net_app_dtls_established(struct net_conn *conn,
 	u16_t offset;
 	int ret, len;
 
-	if (!pkt) {
+	if (pkt == NULL) {
 		return NET_DROP;
 	}
 
@@ -1455,7 +1455,7 @@ enum net_verdict _net_app_dtls_established(struct net_conn *conn,
 				net_pkt_ipv6_ext_len(pkt) +
 				sizeof(struct net_udp_hdr),
 				&offset);
-	if (frag) {
+	if (frag != NULL) {
 		net_pkt_set_appdata(pkt, frag->data + offset);
 	}
 
@@ -1499,7 +1499,7 @@ static int accept_dtls(struct net_app_ctx *ctx,
 	int ret;
 
 	udp_hdr = net_udp_get_hdr(pkt, &hdr);
-	if (!udp_hdr) {
+	if (udp_hdr == NULL) {
 		NET_DBG("Dropping invalid pkt %p", pkt);
 		goto pkt_drop;
 	}
@@ -1617,7 +1617,7 @@ void _net_app_tls_received(struct net_context *context,
 	ARG_UNUSED(context);
 	ARG_UNUSED(status);
 
-	if (pkt && !net_pkt_appdatalen(pkt)) {
+	if ((pkt != NULL) && !net_pkt_appdatalen(pkt)) {
 		net_pkt_unref(pkt);
 		return;
 	}
@@ -1656,7 +1656,7 @@ void _net_app_tls_received(struct net_context *context,
 			       sizeof(struct net_app_fifo_block),
 			       BUF_ALLOC_TIMEOUT);
 	if (ret < 0) {
-		if (pkt) {
+		if (pkt != NULL) {
 			net_pkt_unref(pkt);
 		}
 
@@ -1749,7 +1749,7 @@ static inline void set_remote_endpoint(struct net_app_ctx *ctx,
 	struct net_udp_hdr hdr, *udp_hdr;
 
 	udp_hdr = net_udp_get_hdr(pkt, &hdr);
-	if (!udp_hdr) {
+	if (udp_hdr == NULL) {
 		return;
 	}
 
@@ -2082,14 +2082,14 @@ reset:
 			 * is closed already.
 			 */
 			net_ctx = _net_app_select_net_ctx(ctx, &dst);
-			if (!net_ctx) {
+			if (net_ctx == NULL) {
 				ctx->tls.connection_closing = true;
 				ret = -EIO;
 				goto close;
 			}
 
 			pkt = net_pkt_get_rx(net_ctx, BUF_ALLOC_TIMEOUT);
-			if (!pkt) {
+			if (pkt == NULL) {
 				ret = -ENOMEM;
 				goto close;
 			}
@@ -2136,7 +2136,7 @@ reset:
 				u16_t pos;
 
 				frag = net_frag_get_pos(pkt, hdr_len, &pos);
-				if (!frag) {
+				if (frag == NULL) {
 					/* FIXME: if pos is 0 here, hdr_len
 					 * bytes were successfully skipped.
 					 * Is closing the connection here the
@@ -2367,12 +2367,12 @@ void _net_app_tls_handler_stop(struct net_app_ctx *ctx)
 	/* Empty the fifo just in case there is any received packets
 	 * still there.
 	 */
-	while (1) {
+	while (true) {
 		struct net_app_fifo_block *tx_rx_data;
 
 		tx_rx_data = k_fifo_get(&ctx->tls.mbedtls.ssl_ctx.tx_rx_fifo,
 					K_NO_WAIT);
-		if (!tx_rx_data) {
+		if (tx_rx_data == NULL) {
 			break;
 		}
 

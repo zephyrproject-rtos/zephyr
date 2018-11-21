@@ -414,7 +414,7 @@ static struct bt_sdp_record *bt_sdp_foreach_svc(bt_sdp_svc_func_t func,
 {
 	struct bt_sdp_record *rec = db;
 
-	while (rec) {
+	while (rec != NULL) {
 		if (func(rec, user_data) == BT_SDP_ITER_STOP) {
 			break;
 		}
@@ -531,7 +531,7 @@ static u16_t find_services(struct net_buf *buf,
 		for (rec_idx = 0; rec_idx < num_services; rec_idx++) {
 			record = matching_recs[rec_idx];
 
-			if (!record) {
+			if (record == NULL) {
 				continue;
 			}
 
@@ -601,7 +601,7 @@ static u16_t sdp_svc_search_req(struct bt_sdp *sdp, struct net_buf *buf,
 			continue;
 		}
 
-		if (matching_recs[idx]) {
+		if (matching_recs[idx] != NULL) {
 			count++;
 		}
 	}
@@ -635,7 +635,7 @@ static u16_t sdp_svc_search_req(struct bt_sdp *sdp, struct net_buf *buf,
 	for (; cont_state < num_services; cont_state++) {
 		record = matching_recs[cont_state];
 
-		if (!record) {
+		if (record == NULL) {
 			continue;
 		}
 
@@ -845,7 +845,7 @@ static u8_t select_attrs(struct bt_sdp_attribute *attr, u8_t att_idx,
 			seq_size = attr_size;
 		}
 
-		if (sad->rsp_buf) {
+		if (sad->rsp_buf != NULL) {
 			space = min(SDP_MTU, sad->sdp->chan.tx.mtu) -
 				sad->rsp_buf->len - sizeof(struct bt_sdp_hdr);
 
@@ -956,7 +956,7 @@ static u16_t create_attr_list(struct bt_sdp *sdp, struct bt_sdp_record *record,
 
 	idx_att = bt_sdp_foreach_attr(sad.rec, next_att, select_attrs, &sad);
 
-	if (sad.seq) {
+	if (sad.seq != NULL) {
 		sad.seq->size = sys_cpu_to_be16(sad.seq->size);
 	}
 
@@ -1119,7 +1119,7 @@ static u16_t sdp_svc_att_req(struct bt_sdp *sdp, struct net_buf *buf,
 	/* Find the service */
 	record = bt_sdp_foreach_svc(find_handle, &svc_rec_hdl);
 
-	if (!record) {
+	if (record == NULL) {
 		BT_WARN("Handle %u not found", svc_rec_hdl);
 		return BT_SDP_INVALID_RECORD_HANDLE;
 	}
@@ -1259,7 +1259,7 @@ static u16_t sdp_svc_search_att_req(struct bt_sdp *sdp, struct net_buf *buf,
 	for (; next_svc < num_services; next_svc++) {
 		record = matching_recs[next_svc];
 
-		if (!record) {
+		if (record == NULL) {
 			continue;
 		}
 
@@ -1304,7 +1304,7 @@ static u16_t sdp_svc_search_att_req(struct bt_sdp *sdp, struct net_buf *buf,
 	}
 
 	rsp->att_list_len = sys_cpu_to_be16(att_list_len);
-	if (seq) {
+	if (seq != NULL) {
 		seq->size = sys_cpu_to_be16(state.att_list_size);
 	}
 
@@ -1437,7 +1437,7 @@ int bt_sdp_register_service(struct bt_sdp_record *service)
 {
 	u32_t handle = SDP_SERVICE_HANDLE_BASE;
 
-	if (!service) {
+	if (service == NULL) {
 		BT_ERR("No service record specified");
 		return 0;
 	}
@@ -1447,7 +1447,7 @@ int bt_sdp_register_service(struct bt_sdp_record *service)
 		return -ENOMEM;
 	}
 
-	if (db) {
+	if (db != NULL) {
 		handle = db->handle + 1;
 	}
 
@@ -1484,7 +1484,7 @@ static int sdp_client_ssa_search(struct bt_sdp_client *session)
 		param = session->param;
 	}
 
-	if (!param) {
+	if (param == NULL) {
 		BT_WARN("No UUIDs to be resolved on remote");
 		return -EINVAL;
 	}
@@ -1957,7 +1957,7 @@ int bt_sdp_discover(struct bt_conn *conn,
 	}
 
 	session = sdp_client_get_session(conn);
-	if (!session) {
+	if (session == NULL) {
 		return -ENOMEM;
 	}
 

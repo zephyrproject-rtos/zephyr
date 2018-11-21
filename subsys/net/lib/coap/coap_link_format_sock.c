@@ -25,7 +25,7 @@
 
 static inline bool append_u8(struct coap_packet *cpkt, u8_t data)
 {
-	if (!cpkt) {
+	if (cpkt == NULL) {
 		return false;
 	}
 
@@ -40,7 +40,7 @@ static inline bool append_u8(struct coap_packet *cpkt, u8_t data)
 
 static inline bool append_be16(struct coap_packet *cpkt, u16_t data)
 {
-	if (!cpkt) {
+	if (cpkt == NULL) {
 		return false;
 	}
 
@@ -56,7 +56,7 @@ static inline bool append_be16(struct coap_packet *cpkt, u16_t data)
 
 static inline bool append(struct coap_packet *cpkt, const u8_t *data, u16_t len)
 {
-	if (!cpkt || !data) {
+	if ((cpkt == NULL) || !data) {
 		return false;
 	}
 
@@ -76,7 +76,7 @@ static bool match_path_uri(const char * const *path,
 	const char * const *p = NULL;
 	int i, j, k, plen;
 
-	if (!path) {
+	if (path == NULL) {
 		return false;
 	}
 
@@ -170,11 +170,11 @@ static bool match_queries_resource(const struct coap_resource *resource,
 		return true;
 	}
 
-	if (meta && meta->attributes) {
+	if ((meta != NULL) && meta->attributes) {
 		attributes = meta->attributes;
 	}
 
-	if (!attributes) {
+	if (attributes == NULL) {
 		return false;
 	}
 
@@ -261,7 +261,7 @@ static int format_uri(const char * const *path,
 	const char * const *p;
 	bool res;
 
-	if (!path) {
+	if (path == NULL) {
 		return -EINVAL;
 	}
 
@@ -331,7 +331,7 @@ static int format_attributes(const char * const *attributes,
 	const char * const *attr;
 	bool res;
 
-	if (!attributes) {
+	if (attributes == NULL) {
 		goto terminator;
 	}
 
@@ -402,7 +402,7 @@ static int format_resource(const struct coap_resource *resource,
 		return 0;
 	}
 
-	if (meta && meta->attributes) {
+	if ((meta != NULL) && meta->attributes) {
 		attributes = meta->attributes;
 	}
 
@@ -424,7 +424,7 @@ int clear_more_flag(struct coap_packet *cpkt)
 	offset = cpkt->hdr_len;
 	delta = 0;
 
-	while (1) {
+	while (true) {
 		opt = cpkt->data[offset++];
 
 		delta += ((opt & 0xF0) >> 4);
@@ -567,7 +567,7 @@ static int format_uri(const char * const *path, struct coap_packet *response)
 	char *prefix = "</";
 	bool res;
 
-	if (!path) {
+	if (path == NULL) {
 		return -EINVAL;
 	}
 
@@ -583,7 +583,7 @@ static int format_uri(const char * const *path, struct coap_packet *response)
 		}
 
 		p++;
-		if (*p) {
+		if (*p != NULL) {
 			res = append_u8(response, (u8_t) '/');
 			if (!res) {
 				return -ENOMEM;
@@ -605,7 +605,7 @@ static int format_attributes(const char * const *attributes,
 	const char * const *attr;
 	bool res;
 
-	if (!attributes) {
+	if (attributes == NULL) {
 		goto terminator;
 	}
 
@@ -616,7 +616,7 @@ static int format_attributes(const char * const *attributes,
 		}
 
 		attr++;
-		if (*attr) {
+		if (*attr != NULL) {
 			res = append_u8(response, (u8_t) ';');
 			if (!res) {
 				return -ENOMEM;
@@ -645,7 +645,7 @@ static int format_resource(const struct coap_resource *resource,
 		return r;
 	}
 
-	if (meta && meta->attributes) {
+	if ((meta != NULL) && meta->attributes) {
 		attributes = meta->attributes;
 	}
 

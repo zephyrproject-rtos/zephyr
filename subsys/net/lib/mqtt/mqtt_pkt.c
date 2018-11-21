@@ -70,7 +70,7 @@
 static inline
 u16_t mqtt_strlen(const char *str)
 {
-	if (str) {
+	if (str != NULL) {
 		return (u16_t)strlen(str);
 	}
 

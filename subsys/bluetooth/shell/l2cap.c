@@ -262,7 +262,7 @@ static int cmd_connect(const struct shell *shell, size_t argc, char *argv[])
 	u16_t psm;
 	int err;
 
-	if (!default_conn) {
+	if (default_conn == NULL) {
 		shell_error(shell, "Not connected");
 		return -ENOEXEC;
 	}
@@ -366,7 +366,7 @@ static int cmd_whitelist_add(const struct shell *shell, size_t argc, char *argv[
 {
 	int i;
 
-	if (!default_conn) {
+	if (default_conn == NULL) {
 		shell_error(shell, "Not connected");
 		return 0;
 	}
@@ -383,7 +383,7 @@ static int cmd_whitelist_add(const struct shell *shell, size_t argc, char *argv[
 
 static int cmd_whitelist_remove(const struct shell *shell, size_t argc, char *argv[])
 {
-	if (!default_conn) {
+	if (default_conn == NULL) {
 		shell_error(shell, "Not connected");
 		return 0;
 	}

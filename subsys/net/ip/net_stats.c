@@ -70,7 +70,7 @@ static inline void stats(struct net_if *iface)
 	int i;
 
 	if (!next_print || (abs(cmp) > PRINT_STATISTICS_INTERVAL)) {
-		if (iface) {
+		if (iface != NULL) {
 			NET_INFO("Interface %p [%d]", iface,
 				 net_if_get_by_iface(iface));
 		} else {

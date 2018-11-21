@@ -216,7 +216,7 @@ static int at_state_process_cmd(struct at_client *at, struct net_buf *buf)
 		return 0;
 	}
 
-	if (at->resp) {
+	if (at->resp != NULL) {
 		at->resp(at, buf);
 		at->resp = NULL;
 		return 0;
@@ -250,7 +250,7 @@ static int at_state_process_result(struct at_client *at, struct net_buf *buf)
 	}
 
 	if (at_parse_result(at->buf, buf, &result) == 0) {
-		if (at->finish) {
+		if (at->finish != NULL) {
 			/* cme_err is 0 - Is invalid until result is
 			 * AT_RESULT_CME_ERROR
 			 */
@@ -277,7 +277,7 @@ int cme_handle(struct at_client *at)
 		cme_err = CME_ERROR_UNKNOWN;
 	}
 
-	if (at->finish) {
+	if (at->finish != NULL) {
 		at->finish(at, AT_RESULT_CME_ERROR, cme_err);
 	}
 
@@ -293,7 +293,7 @@ static int at_state_process_ag_nw_err(struct at_client *at, struct net_buf *buf)
 
 static int at_state_unsolicited_cmd(struct at_client *at, struct net_buf *buf)
 {
-	if (at->unsolicited) {
+	if (at->unsolicited != NULL) {
 		return at->unsolicited(at, buf);
 	}
 

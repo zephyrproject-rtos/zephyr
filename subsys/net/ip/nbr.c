@@ -35,7 +35,7 @@ void net_nbr_unref(struct net_nbr *nbr)
 		return;
 	}
 
-	if (nbr->remove) {
+	if (nbr->remove != NULL) {
 		nbr->remove(nbr);
 	}
 }
@@ -199,7 +199,7 @@ void net_nbr_clear_table(struct net_nbr_table *table)
 		net_nbr_unlink(nbr, &lladdr);
 	}
 
-	if (table->clear) {
+	if (table->clear != NULL) {
 		table->clear(table);
 	}
 }

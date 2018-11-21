@@ -899,7 +899,7 @@ static int usb_vbus_set(bool on)
 
 	gpio_dev = device_get_binding(CONFIG_USB_VBUS_GPIO_DEV_NAME);
 
-	if (!gpio_dev) {
+	if (gpio_dev == NULL) {
 		LOG_DBG("USB requires GPIO. Cannot find %s!",
 			CONFIG_USB_VBUS_GPIO_DEV_NAME);
 		return -ENODEV;
@@ -922,7 +922,7 @@ static int usb_vbus_set(bool on)
 
 int usb_set_config(struct usb_cfg_data *config)
 {
-	if (!config)
+	if (config == NULL)
 		return -EINVAL;
 
 	/* register descriptors */
@@ -1221,7 +1221,7 @@ void usb_transfer_ep_callback(u8_t ep, enum usb_dc_ep_cb_status_code status)
 		return;
 	}
 
-	if (!trans) {
+	if (trans == NULL) {
 		if (status == USB_DC_EP_DATA_OUT) {
 			u32_t bytes;
 			/* In the unlikely case we receive data while no
@@ -1267,7 +1267,7 @@ int usb_transfer(u8_t ep, u8_t *data, size_t dlen, unsigned int flags,
 		}
 	}
 
-	if (!trans) {
+	if (trans == NULL) {
 		LOG_ERR("no transfer slot available");
 		ret = -ENOMEM;
 		goto done;
@@ -1316,7 +1316,7 @@ void usb_cancel_transfer(u8_t ep)
 	key = irq_lock();
 
 	trans = usb_ep_get_transfer(ep);
-	if (!trans) {
+	if (trans == NULL) {
 		goto done;
 	}
 
@@ -1494,7 +1494,7 @@ static int usb_composite_init(struct device *dev)
 
 	/* register device descriptor */
 	device_descriptor = usb_get_device_descriptor();
-	if (!device_descriptor) {
+	if (device_descriptor == NULL) {
 		LOG_ERR("Failed to configure USB device stack");
 		return -1;
 	}

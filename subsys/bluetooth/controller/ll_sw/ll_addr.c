@@ -27,14 +27,14 @@ u8_t *ll_addr_get(u8_t addr_type, u8_t *bdaddr)
 	}
 
 	if (addr_type) {
-		if (bdaddr) {
+		if (bdaddr != NULL) {
 			memcpy(bdaddr, rnd_addr, BDADDR_SIZE);
 		}
 
 		return rnd_addr;
 	}
 
-	if (bdaddr) {
+	if (bdaddr != NULL) {
 		memcpy(bdaddr, pub_addr, BDADDR_SIZE);
 	}
 

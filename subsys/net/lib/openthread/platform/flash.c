@@ -26,7 +26,7 @@ otError utilsFlashInit(void)
 
 	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
 
-	if (!flash_dev) {
+	if (flash_dev == NULL) {
 		return OT_ERROR_NOT_IMPLEMENTED;
 	}
 

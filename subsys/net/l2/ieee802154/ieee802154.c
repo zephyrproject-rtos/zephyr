@@ -71,12 +71,12 @@ static inline void ieee802154_acknowledge(struct net_if *iface,
 	}
 
 	pkt = net_pkt_get_reserve_tx(IEEE802154_ACK_PKT_LENGTH, BUF_TIMEOUT);
-	if (!pkt) {
+	if (pkt == NULL) {
 		return;
 	}
 
 	frag = net_pkt_get_frag(pkt, BUF_TIMEOUT);
-	if (!frag) {
+	if (frag == NULL) {
 		net_pkt_unref(pkt);
 		return;
 	}
@@ -260,7 +260,7 @@ static enum net_verdict ieee802154_send(struct net_if *iface,
 	}
 
 	frag = pkt->frags;
-	while (frag) {
+	while (frag != NULL) {
 		if (frag->len > IEEE802154_MTU) {
 			NET_ERR("Frag %p as too big length %u",
 				frag, frag->len);

@@ -41,7 +41,7 @@ static int cmd_ieee802154_ack(const struct shell *shell,
 		return -ENOEXEC;
 	}
 
-	if (!iface) {
+	if (iface == NULL) {
 		shell_fprintf(shell, SHELL_INFO,
 			      "No IEEE 802.15.4 interface found.\n");
 		return -ENOEXEC;
@@ -82,7 +82,7 @@ static int cmd_ieee802154_associate(const struct shell *shell,
 		return -ENOEXEC;
 	}
 
-	if (!iface) {
+	if (iface == NULL) {
 		shell_fprintf(shell, SHELL_INFO,
 			      "No IEEE 802.15.4 interface found.\n");
 		return -ENOEXEC;
@@ -128,7 +128,7 @@ static int cmd_ieee802154_disassociate(const struct shell *shell,
 		return -ENOEXEC;
 	}
 
-	if (!iface) {
+	if (iface == NULL) {
 		shell_fprintf(shell, SHELL_INFO,
 			      "No IEEE 802.15.4 interface found.\n");
 		return -ENOEXEC;
@@ -164,7 +164,7 @@ static inline u32_t parse_channel_set(char *str_set)
 		u32_t chan;
 
 		n = strchr(p, ':');
-		if (n) {
+		if (n != NULL) {
 			*n = '\0';
 		}
 
@@ -222,7 +222,7 @@ static int cmd_ieee802154_scan(const struct shell *shell,
 		return -ENOEXEC;
 	}
 
-	if (!iface) {
+	if (iface == NULL) {
 		shell_fprintf(shell, SHELL_INFO,
 			      "No IEEE 802.15.4 interface found.\n");
 		return -ENOEXEC;
@@ -293,7 +293,7 @@ static int cmd_ieee802154_set_chan(const struct shell *shell,
 		return -ENOEXEC;
 	}
 
-	if (!iface) {
+	if (iface == NULL) {
 		shell_fprintf(shell, SHELL_INFO,
 			      "No IEEE 802.15.4 interface found.\n");
 		return -ENOEXEC;
@@ -329,7 +329,7 @@ static int cmd_ieee802154_get_chan(const struct shell *shell,
 		return -ENOEXEC;
 	}
 
-	if (!iface) {
+	if (iface == NULL) {
 		shell_fprintf(shell, SHELL_INFO,
 			      "No IEEE 802.15.4 interface found.\n");
 		return -ENOEXEC;
@@ -362,7 +362,7 @@ static int cmd_ieee802154_set_pan_id(const struct shell *shell,
 		return -ENOEXEC;
 	}
 
-	if (!iface) {
+	if (iface == NULL) {
 		shell_fprintf(shell, SHELL_INFO,
 			      "No IEEE 802.15.4 interface found.\n");
 		return -ENOEXEC;
@@ -398,7 +398,7 @@ static int cmd_ieee802154_get_pan_id(const struct shell *shell,
 		return -ENOEXEC;
 	}
 
-	if (!iface) {
+	if (iface == NULL) {
 		shell_fprintf(shell, SHELL_INFO,
 			      "No IEEE 802.15.4 interface found.\n");
 		return -ENOEXEC;
@@ -429,7 +429,7 @@ static int cmd_ieee802154_set_ext_addr(const struct shell *shell,
 		return -ENOEXEC;
 	}
 
-	if (!iface) {
+	if (iface == NULL) {
 		shell_fprintf(shell, SHELL_INFO,
 			      "No IEEE 802.15.4 interface found.\n");
 		return -ENOEXEC;
@@ -468,7 +468,7 @@ static int cmd_ieee802154_get_ext_addr(const struct shell *shell,
 		return -ENOEXEC;
 	}
 
-	if (!iface) {
+	if (iface == NULL) {
 		shell_fprintf(shell, SHELL_INFO,
 			      "No IEEE 802.15.4 interface found.\n");
 		return -ENOEXEC;
@@ -509,7 +509,7 @@ static int cmd_ieee802154_set_short_addr(const struct shell *shell,
 		return -ENOEXEC;
 	}
 
-	if (!iface) {
+	if (iface == NULL) {
 		shell_fprintf(shell, SHELL_INFO,
 			      "No IEEE 802.15.4 interface found.\n");
 		return -ENOEXEC;
@@ -542,7 +542,7 @@ static int cmd_ieee802154_get_short_addr(const struct shell *shell,
 		return -ENOEXEC;
 	}
 
-	if (!iface) {
+	if (iface == NULL) {
 		shell_fprintf(shell, SHELL_INFO,
 			      "No IEEE 802.15.4 interface found.\n");
 		return -ENOEXEC;
@@ -573,7 +573,7 @@ static int cmd_ieee802154_set_tx_power(const struct shell *shell,
 		return -ENOEXEC;
 	}
 
-	if (!iface) {
+	if (iface == NULL) {
 		shell_fprintf(shell, SHELL_INFO,
 			      "No IEEE 802.15.4 interface found.\n");
 		return -ENOEXEC;
@@ -606,7 +606,7 @@ static int cmd_ieee802154_get_tx_power(const struct shell *shell,
 		return -ENOEXEC;
 	}
 
-	if (!iface) {
+	if (iface == NULL) {
 		shell_fprintf(shell, SHELL_INFO,
 			      "No IEEE 802.15.4 interface found.\n");
 		return -ENOEXEC;

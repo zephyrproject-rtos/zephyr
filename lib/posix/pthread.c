@@ -216,7 +216,7 @@ int pthread_cancel(pthread_t pthread)
 	struct posix_thread *thread = (struct posix_thread *) pthread;
 	int cancel_state;
 
-	if (thread == NULL || thread->state == PTHREAD_TERMINATED) {
+	if ((thread == NULL) || (thread->state == PTHREAD_TERMINATED)) {
 		return ESRCH;
 	}
 
@@ -299,7 +299,7 @@ int pthread_getschedparam(pthread_t pthread, int *policy,
 	struct posix_thread *thread = (struct posix_thread *) pthread;
 	u32_t priority;
 
-	if (thread == NULL || thread->state == PTHREAD_TERMINATED) {
+	if ((thread == NULL) || (thread->state == PTHREAD_TERMINATED)) {
 		return ESRCH;
 	}
 
@@ -398,7 +398,7 @@ int pthread_join(pthread_t thread, void **status)
 	}
 
 	if (pthread->state == PTHREAD_EXITED) {
-		if (status) {
+		if (status != NULL) {
 			*status = pthread->retval;
 		}
 	} else if (pthread->state == PTHREAD_DETACHED) {
@@ -460,7 +460,7 @@ int pthread_detach(pthread_t thread)
  */
 int pthread_attr_getdetachstate(const pthread_attr_t *attr, int *detachstate)
 {
-	if (!attr || !attr->initialized) {
+	if ((attr == NULL) || (attr->initialized == NULL)) {
 		return EINVAL;
 	}
 
@@ -493,7 +493,7 @@ int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate)
  */
 int pthread_attr_getschedpolicy(const pthread_attr_t *attr, int *policy)
 {
-	if (!attr || !attr->initialized) {
+	if ((attr == NULL) || (attr->initialized == NULL)) {
 		return EINVAL;
 	}
 
@@ -525,7 +525,7 @@ int pthread_attr_setschedpolicy(pthread_attr_t *attr, int policy)
  */
 int pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *stacksize)
 {
-	if (!attr || !attr->initialized) {
+	if ((attr == NULL) || (attr->initialized == NULL)) {
 		return EINVAL;
 	}
 
@@ -542,7 +542,7 @@ int pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *stacksize)
 int pthread_attr_getstack(const pthread_attr_t *attr,
 				 void **stackaddr, size_t *stacksize)
 {
-	if (!attr || !attr->initialized) {
+	if ((attr == NULL) || (attr->initialized == NULL)) {
 		return EINVAL;
 	}
 
@@ -559,7 +559,7 @@ int pthread_attr_getstack(const pthread_attr_t *attr,
 int pthread_attr_getschedparam(const pthread_attr_t *attr,
 			       struct sched_param *schedparam)
 {
-	if (!attr || !attr->initialized) {
+	if ((attr == NULL) || (attr->initialized == NULL)) {
 		return EINVAL;
 	}
 
@@ -574,7 +574,7 @@ int pthread_attr_getschedparam(const pthread_attr_t *attr,
  */
 int pthread_attr_destroy(pthread_attr_t *attr)
 {
-	if (attr && attr->initialized) {
+	if ((attr != NULL) && (attr->initialized != 0U)) {
 		attr->initialized = false;
 		return 0;
 	}

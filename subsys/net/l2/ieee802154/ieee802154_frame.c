@@ -80,7 +80,7 @@ struct ieee802154_fcf_seq *ieee802154_validate_fc_seq(u8_t *buf, u8_t **p_buf)
 	}
 #endif
 
-	if (p_buf) {
+	if (p_buf != NULL) {
 		*p_buf = buf + 3;
 	}
 
@@ -436,7 +436,7 @@ u16_t ieee802154_compute_header_size(struct net_if *iface,
 		struct net_nbr *nbr;
 
 		nbr = net_ipv6_nbr_lookup(iface, dst);
-		if (nbr) {
+		if (nbr != NULL) {
 			/* ToDo: handle short addresses */
 			/* dst pan/addr + src addr */
 			hdr_len += IEEE802154_PAN_ID_LENGTH +
@@ -821,12 +821,12 @@ ieee802154_create_mac_cmd_frame(struct ieee802154_context *ctx,
 	u8_t *p_buf;
 
 	pkt = net_pkt_get_reserve_tx(0, BUF_TIMEOUT);
-	if (!pkt) {
+	if (pkt == NULL) {
 		return NULL;
 	}
 
 	frag = net_pkt_get_frag(pkt, BUF_TIMEOUT);
-	if (!frag) {
+	if (frag == NULL) {
 		goto error;
 	}
 
@@ -880,7 +880,7 @@ bool ieee802154_create_ack_frame(struct net_if *iface,
 	u8_t *p_buf = net_pkt_ll(pkt);
 	struct ieee802154_fcf_seq *fs;
 
-	if (!p_buf) {
+	if (p_buf == NULL) {
 		return false;
 	}
 

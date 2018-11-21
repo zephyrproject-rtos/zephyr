@@ -331,7 +331,7 @@ void bt_mesh_proxy_beacon_send(struct bt_mesh_subnet *sub)
 {
 	int i;
 
-	if (!sub) {
+	if (sub == NULL) {
 		/* NULL means we send on all subnets */
 		for (i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
 			if (bt_mesh.sub[i].net_idx != BT_MESH_KEY_UNUSED) {
@@ -343,7 +343,7 @@ void bt_mesh_proxy_beacon_send(struct bt_mesh_subnet *sub)
 	}
 
 	for (i = 0; i < ARRAY_SIZE(clients); i++) {
-		if (clients[i].conn) {
+		if (clients[i].conn != NULL) {
 			beacon_send(clients[i].conn, sub);
 		}
 	}
@@ -438,7 +438,7 @@ static ssize_t proxy_recv(struct bt_conn *conn,
 	struct bt_mesh_proxy_client *client = find_client(conn);
 	const u8_t *data = buf;
 
-	if (!client) {
+	if (client == NULL) {
 		return -ENOTCONN;
 	}
 
@@ -538,7 +538,7 @@ static void proxy_connected(struct bt_conn *conn, u8_t err)
 		}
 	}
 
-	if (!client) {
+	if (client == NULL) {
 		BT_ERR("No free Proxy Client objects");
 		return;
 	}
@@ -658,7 +658,7 @@ int bt_mesh_proxy_prov_enable(void)
 	prov_fast_adv = true;
 
 	for (i = 0; i < ARRAY_SIZE(clients); i++) {
-		if (clients[i].conn) {
+		if (clients[i].conn != NULL) {
 			clients[i].filter_type = PROV;
 		}
 	}
@@ -764,7 +764,7 @@ int bt_mesh_proxy_gatt_enable(void)
 	gatt_svc = MESH_GATT_PROXY;
 
 	for (i = 0; i < ARRAY_SIZE(clients); i++) {
-		if (clients[i].conn) {
+		if (clients[i].conn != NULL) {
 			clients[i].filter_type = WHITELIST;
 		}
 	}
@@ -938,7 +938,7 @@ int bt_mesh_proxy_send(struct bt_conn *conn, u8_t type,
 {
 	struct bt_mesh_proxy_client *client = find_client(conn);
 
-	if (!client) {
+	if (client == NULL) {
 		BT_ERR("No Proxy Client found");
 		return -ENOTCONN;
 	}
@@ -1101,7 +1101,7 @@ static s32_t gatt_proxy_advertise(struct bt_mesh_subnet *sub)
 		return remaining;
 	}
 
-	if (!sub) {
+	if (sub == NULL) {
 		BT_WARN("No subnets to advertise on");
 		return remaining;
 	}

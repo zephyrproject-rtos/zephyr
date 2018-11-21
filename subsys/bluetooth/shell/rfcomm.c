@@ -173,7 +173,7 @@ static int cmd_connect(const struct shell *shell, size_t argc, char *argv[])
 	u8_t channel;
 	int err;
 
-	if (!default_conn) {
+	if (default_conn == NULL) {
 		shell_error(shell, "Not connected");
 		return -ENOEXEC;
 	}

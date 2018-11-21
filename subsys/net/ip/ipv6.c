@@ -67,7 +67,7 @@ struct net_pkt *net_ipv6_create(struct net_pkt *pkt,
 	struct net_buf *header;
 
 	header = net_pkt_get_frag(pkt, NET_BUF_TIMEOUT);
-	if (!header) {
+	if (header == NULL) {
 		return NULL;
 	}
 
@@ -242,18 +242,18 @@ static inline struct net_buf *handle_ext_hdr_options(struct net_pkt *pkt,
 
 	/* Each extension option has type and length */
 	frag = net_frag_read_u8(frag, offset, &loc, &opt_type);
-	if (!frag && loc == 0xffff) {
+	if ((frag == NULL) && loc == 0xffff) {
 		goto drop;
 	}
 
 	if (opt_type != NET_IPV6_EXT_HDR_OPT_PAD1) {
 		frag = net_frag_read_u8(frag, loc, &loc, &opt_len);
-		if (!frag && loc == 0xffff) {
+		if ((frag == NULL) && loc == 0xffff) {
 			goto drop;
 		}
 	}
 
-	while (frag && (length < len)) {
+	while ((frag != NULL) && (length < len)) {
 		switch (opt_type) {
 		case NET_IPV6_EXT_HDR_OPT_PAD1:
 			length++;
@@ -273,7 +273,7 @@ static inline struct net_buf *handle_ext_hdr_options(struct net_pkt *pkt,
 				goto drop;
 			}
 
-			if (!frag && *pos == 0xffff) {
+			if ((frag == NULL) && *pos == 0xffff) {
 				goto drop;
 			}
 
@@ -300,13 +300,13 @@ static inline struct net_buf *handle_ext_hdr_options(struct net_pkt *pkt,
 		}
 
 		frag = net_frag_read_u8(frag, loc, &loc, &opt_type);
-		if (!frag && loc == 0xffff) {
+		if ((frag == NULL) && loc == 0xffff) {
 			goto drop;
 		}
 
 		if (opt_type != NET_IPV6_EXT_HDR_OPT_PAD1) {
 			frag = net_frag_read_u8(frag, loc, &loc, &opt_len);
-			if (!frag && loc == 0xffff) {
+			if ((frag == NULL) && loc == 0xffff) {
 				goto drop;
 			}
 		}
@@ -340,7 +340,7 @@ static struct net_route_entry *add_route(struct net_if *iface,
 	struct net_route_entry *route;
 
 	route = net_route_lookup(iface, addr);
-	if (route) {
+	if (route != NULL) {
 		return route;
 	}
 
@@ -395,7 +395,7 @@ static enum net_verdict route_ipv6_packet(struct net_pkt *pkt,
 		 */
 		net_pkt_set_orig_iface(pkt, net_pkt_iface(pkt));
 
-		if (route) {
+		if (route != NULL) {
 			net_pkt_set_iface(pkt, route->iface);
 		}
 
@@ -542,7 +542,7 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt, bool is_loopback)
 	offset = sizeof(struct net_ipv6_hdr);
 	prev_hdr = &NET_IPV6_HDR(pkt)->nexthdr - &NET_IPV6_HDR(pkt)->vtc;
 
-	while (frag) {
+	while (frag != NULL) {
 		enum net_verdict verdict;
 
 		if (is_upper_layer_protocol_header(next)) {
@@ -555,7 +555,7 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt, bool is_loopback)
 		}
 
 		frag = net_frag_read_u8(frag, offset, &offset, &next_hdr);
-		if (!frag) {
+		if (frag == NULL) {
 			goto drop;
 		}
 
@@ -575,7 +575,7 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt, bool is_loopback)
 		case NET_IPV6_NEXTHDR_DESTO:
 			frag = net_frag_read_u8(frag, offset, &offset,
 						(u8_t *)&length);
-			if (!frag) {
+			if (frag == NULL) {
 				goto drop;
 			}
 			length = length * 8 + 8;
@@ -589,14 +589,14 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt, bool is_loopback)
 			break;
 
 		case NET_IPV6_NEXTHDR_HBHO:
-			if (ext_bitmap & NET_IPV6_EXT_HDR_BITMAP_HBHO) {
+			if ((ext_bitmap & NET_IPV6_EXT_HDR_BITMAP_HBHO) != 0) {
 				NET_ERR("Dropping packet with multiple HBHO");
 				goto drop;
 			}
 
 			frag = net_frag_read_u8(frag, offset, &offset,
 						(u8_t *)&length);
-			if (!frag) {
+			if (frag == NULL) {
 				goto drop;
 			}
 

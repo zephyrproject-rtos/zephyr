@@ -20,7 +20,7 @@ int usb_handle_os_desc(struct usb_setup_packet *setup,
 {
 	LOG_DBG("wValue 0x%x", setup->wValue);
 
-	if (!os_desc) {
+	if (os_desc == NULL) {
 		return -ENOTSUP;
 	}
 
@@ -41,7 +41,7 @@ int usb_handle_os_desc_feature(struct usb_setup_packet *setup,
 {
 	LOG_DBG("bRequest 0x%x", setup->bRequest);
 
-	if (!os_desc) {
+	if (os_desc == NULL) {
 		return -ENOTSUP;
 	}
 

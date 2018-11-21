@@ -85,7 +85,7 @@ static inline struct net_buf *prepare_new_fragment(struct net_pkt *pkt,
 	struct net_buf *frag;
 
 	frag = net_pkt_get_frag(pkt, BUF_TIMEOUT);
-	if (!frag) {
+	if (frag == NULL) {
 		return NULL;
 	}
 
@@ -234,7 +234,7 @@ bool ieee802154_fragment(struct net_pkt *pkt, int hdr_diff)
 	u8_t max;
 	bool first;
 
-	if (!pkt || !pkt->frags) {
+	if ((pkt == NULL) || !pkt->frags) {
 		return false;
 	}
 
@@ -259,11 +259,11 @@ bool ieee802154_fragment(struct net_pkt *pkt, int hdr_diff)
 	 * values in fragmentation header are based on uncompressed
 	 * IP packet.
 	 */
-	while (1) {
+	while (true) {
 		if (!room) {
 			/* Prepare new fragment based on offset */
 			frag = prepare_new_fragment(pkt, offset);
-			if (!frag) {
+			if (frag == NULL) {
 				return false;
 			}
 
@@ -288,7 +288,7 @@ bool ieee802154_fragment(struct net_pkt *pkt, int hdr_diff)
 
 		if (!next->len) {
 			next = net_pkt_frag_del(pkt, NULL, next);
-			if (!next) {
+			if (next == NULL) {
 				break;
 			}
 		}
@@ -342,7 +342,7 @@ static inline void clear_reass_cache(u16_t size, u16_t tag)
 			continue;
 		}
 
-		if (cache[i].pkt) {
+		if (cache[i].pkt != NULL) {
 			net_pkt_unref(cache[i].pkt);
 		}
 
@@ -362,7 +362,7 @@ static void reass_timeout(struct k_work *work)
 {
 	struct frag_cache *cache = CONTAINER_OF(work, struct frag_cache, timer);
 
-	if (cache->pkt) {
+	if (cache->pkt != NULL) {
 		net_pkt_unref(cache->pkt);
 	}
 
@@ -431,10 +431,10 @@ static inline bool copy_frag(struct net_pkt *pkt,
 
 	write = pkt->frags;
 
-	while (input) {
+	while (input != NULL) {
 		write = net_pkt_write(pkt, write, pos, &pos, input->len,
 				       input->data, NET_6LO_RX_PKT_TIMEOUT);
-		if (!write && pos == 0xffff) {
+		if ((write == NULL) && pos == 0xffff) {
 			/* Free the new bufs we tried to get, we need to discard
 			 * the whole fragment chain.
 			 */
@@ -504,9 +504,9 @@ static inline enum net_verdict add_frag_to_cache(struct net_pkt *pkt,
 	pkt->frags = NULL;
 
 	cache = get_reass_cache(size, tag);
-	if (!cache) {
+	if (cache == NULL) {
 		cache = set_reass_cache(pkt, size, tag);
-		if (!cache) {
+		if (cache == NULL) {
 			NET_ERR("Could not get a cache entry");
 			pkt->frags = frag;
 			return NET_DROP;
@@ -569,7 +569,7 @@ static inline enum net_verdict add_frag_to_cache(struct net_pkt *pkt,
 
 enum net_verdict ieee802154_reassemble(struct net_pkt *pkt)
 {
-	if (!pkt || !pkt->frags) {
+	if ((pkt == NULL) || !pkt->frags) {
 		NET_ERR("Nothing to reassemble");
 		return NET_DROP;
 	}

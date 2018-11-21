@@ -201,7 +201,7 @@ zephyr_smp_free_buf(void *buf, void *arg)
 {
 	struct zephyr_smp_transport *zst = arg;
 
-	if (!buf) {
+	if (buf == NULL) {
 		return;
 	}
 

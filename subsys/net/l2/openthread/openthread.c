@@ -74,22 +74,22 @@ void ot_state_changed_handler(uint32_t flags, void *context)
 	NET_INFO("State changed! Flags: 0x%08" PRIx32 " Current role: %d",
 		    flags, otThreadGetDeviceRole(ot_context->instance));
 
-	if (flags & OT_CHANGED_IP6_ADDRESS_REMOVED) {
+	if ((flags & OT_CHANGED_IP6_ADDRESS_REMOVED) != 0) {
 		NET_DBG("Ipv6 address removed");
 		rm_ipv6_addr_from_zephyr(ot_context);
 	}
 
-	if (flags & OT_CHANGED_IP6_ADDRESS_ADDED) {
+	if ((flags & OT_CHANGED_IP6_ADDRESS_ADDED) != 0) {
 		NET_DBG("Ipv6 address added");
 		add_ipv6_addr_to_zephyr(ot_context);
 	}
 
-	if (flags & OT_CHANGED_IP6_MULTICAST_UNSUBSRCRIBED) {
+	if ((flags & OT_CHANGED_IP6_MULTICAST_UNSUBSRCRIBED) != 0) {
 		NET_DBG("Ipv6 multicast address removed");
 		rm_ipv6_maddr_from_zephyr(ot_context);
 	}
 
-	if (flags & OT_CHANGED_IP6_MULTICAST_SUBSRCRIBED) {
+	if ((flags & OT_CHANGED_IP6_MULTICAST_SUBSRCRIBED) != 0) {
 		NET_DBG("Ipv6 multicast address added");
 		add_ipv6_maddr_to_zephyr(ot_context);
 	}
@@ -105,16 +105,16 @@ void ot_receive_handler(otMessage *aMessage, void *context)
 	struct net_buf *prev_buf = NULL;
 
 	pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
-	if (!pkt) {
+	if (pkt == NULL) {
 		NET_ERR("Failed to reserve net pkt");
 		goto out;
 	}
 
-	while (1) {
+	while (true) {
 		struct net_buf *pkt_buf;
 
 		pkt_buf = net_pkt_get_frag(pkt, K_NO_WAIT);
-		if (!pkt_buf) {
+		if (pkt_buf == NULL) {
 			NET_ERR("Failed to get fragment buf");
 			net_pkt_unref(pkt);
 			goto out;
@@ -161,7 +161,7 @@ void ot_receive_handler(otMessage *aMessage, void *context)
 		NET_INFO("Pacet list is full");
 	}
 out:
-	if (pkt) {
+	if (pkt != NULL) {
 		net_pkt_unref(pkt);
 	}
 
@@ -172,7 +172,7 @@ static void openthread_process(void *context, void *arg2, void *arg3)
 {
 	struct openthread_context *ot_context = context;
 
-	while (1) {
+	while (true) {
 		while (otTaskletsArePending(ot_context->instance)) {
 			otTaskletsProcess(ot_context->instance);
 		}

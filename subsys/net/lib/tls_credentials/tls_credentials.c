@@ -152,7 +152,7 @@ int tls_credential_delete(sec_tag_t tag, enum tls_credential_type type)
 
 	credential = credential_get(tag, type);
 
-	if (!credential) {
+	if (credential == NULL) {
 		ret = -ENOENT;
 		goto exit;
 	}

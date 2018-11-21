@@ -49,7 +49,7 @@ bool shell_history_get(struct shell_history *history, bool up,
 	history->current = l_item;
 	h_item = CONTAINER_OF(l_item, struct shell_history_item, dnode);
 
-	if (h_item) {
+	if (h_item != NULL) {
 		memcpy(dst, h_item->data, h_item->len);
 		*len = h_item->len;
 		dst[*len] = '\0';

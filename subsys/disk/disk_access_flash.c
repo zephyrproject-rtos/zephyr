@@ -43,7 +43,7 @@ static off_t lba_to_address(u32_t sector_num)
 
 static int disk_flash_access_status(struct disk_info *disk)
 {
-	if (!flash_dev) {
+	if (flash_dev == NULL) {
 		return DISK_STATUS_NOMEDIA;
 	}
 
@@ -52,12 +52,12 @@ static int disk_flash_access_status(struct disk_info *disk)
 
 static int disk_flash_access_init(struct disk_info *disk)
 {
-	if (flash_dev) {
+	if (flash_dev != NULL) {
 		return 0;
 	}
 
 	flash_dev = device_get_binding(CONFIG_DISK_FLASH_DEV_NAME);
-	if (!flash_dev) {
+	if (flash_dev == NULL) {
 		return -ENODEV;
 	}
 

@@ -94,7 +94,7 @@ extern void posix_exit(int exit_code);
 
 #define __ASSERT(test, fmt, ...)                                         \
 	do {                                                             \
-		if (!(test)) {                                           \
+		if ((test) == false) {                                   \
 			(void)printk("ASSERTION FAIL [%s] @ %s:%d:\n\t", \
 			       _STRINGIFY(test),                         \
 			       __FILE__,                                 \

@@ -68,7 +68,7 @@ static s32_t hbuf_count;
 
 static void prio_recv_thread(void *p1, void *p2, void *p3)
 {
-	while (1) {
+	while (true) {
 		void *node_rx;
 		u8_t num_cmplt;
 		u16_t handle;
@@ -85,7 +85,7 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 #endif
 		}
 
-		if (node_rx) {
+		if (node_rx != NULL) {
 
 			ll_rx_dequeue();
 
@@ -124,7 +124,7 @@ static inline struct net_buf *encode_node(struct radio_pdu_node_rx *node_rx,
 		} else {
 			buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
 		}
-		if (buf) {
+		if (buf != NULL) {
 			hci_evt_encode(node_rx, buf);
 		}
 		break;
@@ -216,14 +216,14 @@ static inline struct net_buf *process_hbuf(struct radio_pdu_node_rx *n)
 
 	/* host acked ACL packets, try to dequeue from hbuf */
 	node = sys_slist_peek_head(&hbuf_pend);
-	if (!node) {
+	if (node == NULL) {
 		return NULL;
 	}
 
 	/* Return early if this iteration already has a node to process */
 	node_rx = NODE_RX(node);
 	class = hci_get_class(node_rx);
-	if (n) {
+	if (n != NULL) {
 		if (class == HCI_CLASS_EVT_CONNECTION ||
 		    (class == HCI_CLASS_ACL_DATA && hbuf_count)) {
 			/* node to process later, schedule an iteration */
@@ -254,13 +254,13 @@ static inline struct net_buf *process_hbuf(struct radio_pdu_node_rx *n)
 		break;
 	}
 
-	if (node) {
+	if (node != NULL) {
 		buf = encode_node(node_rx, class);
 		/* Update host buffers after encoding */
 		hbuf_count = hbuf_total - (hci_hbuf_sent - hci_hbuf_acked);
 		/* next node */
 		node = sys_slist_peek_head(&hbuf_pend);
-		if (node) {
+		if (node != NULL) {
 			node_rx = NODE_RX(node);
 			class = hci_get_class(node_rx);
 
@@ -293,7 +293,7 @@ static void recv_thread(void *p1, void *p2, void *p3)
 	};
 #endif
 
-	while (1) {
+	while (true) {
 		struct radio_pdu_node_rx *node_rx = NULL;
 		struct net_buf *buf = NULL;
 
@@ -321,12 +321,12 @@ static void recv_thread(void *p1, void *p2, void *p3)
 #endif
 		BT_DBG("unblocked");
 
-		if (node_rx && !buf) {
+		if ((node_rx != NULL) && !buf) {
 			/* process regular node from radio */
 			buf = process_node(node_rx);
 		}
 
-		if (buf) {
+		if (buf != NULL) {
 			if (buf->len) {
 				BT_DBG("Packet in: type:%u len:%u",
 					bt_buf_get_type(buf), buf->len);
@@ -353,11 +353,11 @@ static int cmd_handle(struct net_buf *buf)
 	struct net_buf *evt;
 
 	evt = hci_cmd_handle(buf, &node_rx);
-	if (evt) {
+	if (evt != NULL) {
 		BT_DBG("Replying with event of %u bytes", evt->len);
 		bt_recv_prio(evt);
 
-		if (node_rx) {
+		if (node_rx != NULL) {
 			BT_DBG("RX node enqueue");
 			k_fifo_put(&recv_fifo, node_rx);
 		}
@@ -373,7 +373,7 @@ static int acl_handle(struct net_buf *buf)
 	int err;
 
 	err = hci_acl_handle(buf, &evt);
-	if (evt) {
+	if (evt != NULL) {
 		BT_DBG("Replying with event of %u bytes", evt->len);
 		bt_recv_prio(evt);
 	}

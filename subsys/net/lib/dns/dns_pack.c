@@ -443,7 +443,7 @@ int mdns_unpack_query_header(struct dns_msg_t *msg, u16_t *src_id)
 		return -EINVAL;
 	}
 
-	if (src_id) {
+	if (src_id != NULL) {
 		*src_id = dns_unpack_header_id(dns_header);
 	}
 
@@ -520,8 +520,8 @@ static int dns_unpack_name(const u8_t *msg, int maxlen, const u8_t *src,
 
 	buf->data[buf->len] = '\0';
 
-	if (eol) {
-		if (!end_of_label) {
+	if (eol != NULL) {
+		if (end_of_label == NULL) {
 			end_of_label = curr_src;
 		}
 
@@ -559,11 +559,11 @@ int dns_unpack_query(struct dns_msg_t *dns_msg, struct net_buf *buf,
 		return -EINVAL;
 	}
 
-	if (qtype) {
+	if (qtype != NULL) {
 		*qtype = query_type;
 	}
 
-	if (qclass) {
+	if (qclass != NULL) {
 		*qclass = query_class;
 	}
 

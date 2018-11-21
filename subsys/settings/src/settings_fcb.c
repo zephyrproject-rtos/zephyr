@@ -37,7 +37,7 @@ int settings_fcb_src(struct settings_fcb *cf)
 	cf->cf_fcb.f_version = SETTINGS_FCB_VERS;
 	cf->cf_fcb.f_scratch_cnt = 1;
 
-	while (1) {
+	while (true) {
 		rc = fcb_init(CONFIG_SETTINGS_FCB_FLASH_AREA, &cf->cf_fcb);
 		if (rc) {
 			return -EINVAL;
@@ -171,7 +171,7 @@ static void settings_fcb_compress(struct settings_fcb *cf)
 		if (rc) {
 			continue;
 		}
-		if (!val1) {
+		if (val1 == NULL) {
 			/* No sense to copy empty entry from the oldest sector*/
 			continue;
 		}
@@ -249,7 +249,7 @@ static int settings_fcb_save(struct settings_store *cs, const char *name,
 		 SETTINGS_EXTRA_LEN];
 	int len;
 
-	if (!name) {
+	if (name == NULL) {
 		return -EINVAL;
 	}
 

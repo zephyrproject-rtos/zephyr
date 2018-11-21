@@ -47,12 +47,12 @@ struct bt_keys_link_key *bt_keys_get_link_key(const bt_addr_t *addr)
 	struct bt_keys_link_key *key;
 
 	key = bt_keys_find_link_key(addr);
-	if (key) {
+	if (key != NULL) {
 		return key;
 	}
 
 	key = bt_keys_find_link_key(BT_ADDR_ANY);
-	if (key) {
+	if (key != NULL) {
 		bt_addr_copy(&key->addr, addr);
 		BT_DBG("created %p for %s", key, bt_addr_str(addr));
 
@@ -75,13 +75,13 @@ void bt_keys_link_key_clear_addr(const bt_addr_t *addr)
 {
 	struct bt_keys_link_key *key;
 
-	if (!addr) {
+	if (addr == NULL) {
 		(void)memset(key_pool, 0, sizeof(key_pool));
 		return;
 	}
 
 	key = bt_keys_find_link_key(addr);
-	if (key) {
+	if (key != NULL) {
 		bt_keys_link_key_clear(key);
 	}
 }

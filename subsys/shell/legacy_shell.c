@@ -70,17 +70,17 @@ static const char *get_prompt(void)
 		const char *str;
 
 		str = app_prompt_handler();
-		if (str) {
+		if (str != NULL) {
 			return str;
 		}
 	}
 
-	if (default_module) {
+	if (default_module != NULL) {
 		if (default_module->prompt) {
 			const char *ret;
 
 			ret = default_module->prompt();
-			if (ret) {
+			if (ret != NULL) {
 				return ret;
 			}
 		}
@@ -240,16 +240,16 @@ static int cmd_help(int argc, char *argv[])
 			module = default_module;
 		}
 
-		if (!module) {
+		if (module == NULL) {
 			cmd = get_standalone(cmd_str);
-			if (cmd) {
+			if (cmd != NULL) {
 				return show_cmd_help(cmd, true);
 			}
 			printk("No help found for '%s'\n", cmd_str);
 			return -EINVAL;
 		}
 		cmd = get_module_cmd(module, cmd_str);
-		if (cmd) {
+		if (cmd != NULL) {
 			return show_cmd_help(cmd, true);
 		}
 		printk("Unknown command '%s'\n", cmd_str);
@@ -302,7 +302,7 @@ static int set_default_module(const char *name)
 
 	module = get_destination_module(name);
 
-	if (!module) {
+	if (module == NULL) {
 		printk("Illegal module %s, default is not changed\n", name);
 		return -EINVAL;
 	}
@@ -378,12 +378,12 @@ int shell_exec(char *line)
 	}
 
 	cmd = get_internal(argv[0]);
-	if (cmd) {
+	if (cmd != NULL) {
 		goto done;
 	}
 
 	cmd = get_standalone(argv[0]);
-	if (cmd) {
+	if (cmd != NULL) {
 		goto done;
 	}
 
@@ -392,24 +392,24 @@ int shell_exec(char *line)
 		return -EINVAL;
 	}
 
-	if (default_module) {
+	if (default_module != NULL) {
 		cmd = get_module_cmd(default_module, argv[0]);
 	}
 
-	if (!cmd && argc > 1) {
+	if ((cmd == NULL) && argc > 1) {
 		struct shell_module *module;
 
 		module = get_destination_module(argv[0]);
-		if (module) {
+		if (module != NULL) {
 			cmd = get_module_cmd(module, argv[1]);
-			if (cmd) {
+			if (cmd != NULL) {
 				argc--;
 				argv_start++;
 			}
 		}
 	}
 
-	if (!cmd) {
+	if (cmd == NULL) {
 		if (app_cmd_handler) {
 			return app_cmd_handler(argc, argv);
 		}
@@ -438,7 +438,7 @@ static void shell(void *p1, void *p2, void *p3)
 
 	printk("Zephyr Shell, Zephyr version: %s\n", KERNEL_VERSION_STRING);
 	printk("Type 'help' for a list of available commands\n");
-	while (1) {
+	while (true) {
 		struct console_input *cmd;
 
 		if (!no_promt && !skip_prompt) {
@@ -498,11 +498,11 @@ static struct shell_module *get_completion_module(char *str,
 	 * Otherwise, only two parameters are possibles.
 	 */
 	str = strchr(str, ' ');
-	if (default_module) {
+	if (default_module != NULL) {
 		return str ? NULL : dest;
 	}
 
-	if (!str) {
+	if (str == NULL) {
 		return NULL;
 	}
 
@@ -513,7 +513,7 @@ static struct shell_module *get_completion_module(char *str,
 	strncpy(dest_str, start, (str - start + 1));
 	dest_str[str - start] = '\0';
 	dest = get_destination_module(dest_str);
-	if (!dest) {
+	if (dest == NULL) {
 		return NULL;
 	}
 
@@ -545,7 +545,7 @@ static u8_t completion(char *line, u8_t len)
 	 */
 	line[len] = '\0';
 	module = get_completion_module(line, &command_prefix);
-	if (!module) {
+	if (module == NULL) {
 		return 0;
 	}
 
@@ -559,13 +559,13 @@ static u8_t completion(char *line, u8_t len)
 			continue;
 		}
 
-		if (!first_match) {
+		if (first_match == NULL) {
 			first_match = module->commands[i].cmd_name;
 			continue;
 		}
 
 		/* more commands match, print first match */
-		if (first_match && (common_chars < 0)) {
+		if ((first_match != NULL) && (common_chars < 0)) {
 			printk("\n%s\n", first_match);
 			common_chars = strlen(first_match);
 		}
@@ -583,7 +583,7 @@ static u8_t completion(char *line, u8_t len)
 	}
 
 	/* no match, do nothing */
-	if (!first_match) {
+	if (first_match == NULL) {
 		return 0;
 	}
 

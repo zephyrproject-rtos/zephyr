@@ -81,7 +81,7 @@ void *z_get_fd_obj(int fd, const struct fd_op_vtable *vtable, int err)
 
 	fd_entry = &fdtable[fd];
 
-	if (vtable != NULL && fd_entry->vtable != vtable) {
+	if ((vtable != NULL) && (fd_entry->vtable != vtable)) {
 		errno = err;
 		return NULL;
 	}

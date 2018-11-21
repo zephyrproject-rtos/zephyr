@@ -178,13 +178,13 @@ static void eem_read_cb(u8_t ep, int size, void *priv)
 		}
 
 		pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
-		if (!pkt) {
+		if (pkt == NULL) {
 			LOG_ERR("Unable to alloc pkt\n");
 			break;
 		}
 
 		frag = net_pkt_get_frag(pkt, K_FOREVER);
-		if (!frag) {
+		if (frag == NULL) {
 			LOG_ERR("Unable to alloc fragment");
 			net_pkt_unref(pkt);
 			break;

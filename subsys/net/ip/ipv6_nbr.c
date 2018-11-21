@@ -260,7 +260,7 @@ static struct net_nbr *nbr_lookup(struct net_nbr_table *table,
 			continue;
 		}
 
-		if (iface && nbr->iface != iface) {
+		if ((iface != NULL) && nbr->iface != iface) {
 			continue;
 		}
 
@@ -276,7 +276,7 @@ static inline void nbr_clear_ns_pending(struct net_ipv6_nbr_data *data)
 {
 	data->send_ns = 0;
 
-	if (data->pending) {
+	if (data->pending != NULL) {
 		net_pkt_unref(data->pending);
 		data->pending = NULL;
 	}
@@ -303,7 +303,7 @@ bool net_ipv6_nbr_rm(struct net_if *iface, struct in6_addr *addr)
 #endif
 
 	nbr = nbr_lookup(&net_neighbor.table, iface, addr);
-	if (!nbr) {
+	if (nbr == NULL) {
 		return false;
 	}
 
@@ -340,12 +340,12 @@ static void ipv6_ns_reply_timeout(struct k_work *work)
 		s64_t remaining;
 		nbr = get_nbr(i);
 
-		if (!nbr || !nbr->ref) {
+		if ((nbr == NULL) || !nbr->ref) {
 			continue;
 		}
 
 		data = net_ipv6_nbr_data(nbr);
-		if (!data) {
+		if (data == NULL) {
 			continue;
 		}
 
@@ -417,7 +417,7 @@ static struct net_nbr *nbr_new(struct net_if *iface,
 {
 	struct net_nbr *nbr = net_nbr_get(&net_neighbor.table);
 
-	if (!nbr) {
+	if (nbr == NULL) {
 		return NULL;
 	}
 
@@ -499,9 +499,9 @@ struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,
 #endif
 
 	nbr = nbr_lookup(&net_neighbor.table, iface, addr);
-	if (!nbr) {
+	if (nbr == NULL) {
 		nbr = nbr_new(iface, addr, is_router, state);
-		if (!nbr) {
+		if (nbr == NULL) {
 			NET_ERR("Could not add router neighbor %s [%s]",
 				log_strdup(net_sprint_ipv6_addr(addr)),
 				log_strdup(net_sprint_ll_addr(lladdr->addr,
@@ -596,7 +596,7 @@ struct in6_addr *net_ipv6_nbr_lookup_by_index(struct net_if *iface,
 			continue;
 		}
 
-		if (iface && nbr->iface != iface) {
+		if ((iface != NULL) && nbr->iface != iface) {
 			continue;
 		}
 
@@ -674,7 +674,7 @@ static struct net_pkt *update_ll_reserve(struct net_pkt *pkt,
 	 * you can enable this block to see the IPv6 and LL addresses that
 	 * are used.
 	 */
-	if (0) {
+	if (false) {
 		NET_DBG("ll src %s",
 			log_strdup(net_sprint_ll_addr(
 					   net_pkt_lladdr_src(pkt)->addr,
@@ -701,10 +701,10 @@ static struct net_pkt *update_ll_reserve(struct net_pkt *pkt,
 	room_len = 0;
 	frag = NULL;
 
-	while (orig_frag) {
+	while (orig_frag != NULL) {
 		if (!room_len) {
 			frag = net_pkt_get_frag(pkt, NET_BUF_TIMEOUT);
-			if (!frag) {
+			if (frag == NULL) {
 				net_pkt_unref(pkt);
 				net_pkt_frag_unref(orig_frag);
 				return NULL;
@@ -738,7 +738,7 @@ static struct net_pkt *update_ll_reserve(struct net_pkt *pkt,
 			tmp->frags = NULL;
 			net_pkt_frag_unref(tmp);
 
-			if (!orig_frag) {
+			if (orig_frag == NULL) {
 				break;
 			}
 
@@ -766,7 +766,7 @@ static struct in6_addr *check_route(struct net_if *iface,
 			nexthop ? log_strdup(net_sprint_ipv6_addr(nexthop)) :
 			"<unknown>");
 
-		if (!nexthop) {
+		if (nexthop == NULL) {
 			net_route_del(route);
 
 			net_rpl_global_repair(route);
@@ -781,13 +781,13 @@ static struct in6_addr *check_route(struct net_if *iface,
 		 * route instead.
 		 */
 		router = net_if_ipv6_router_find_default(NULL, dst);
-		if (!router) {
+		if (router == NULL) {
 			NET_DBG("No default route to %s",
 				log_strdup(net_sprint_ipv6_addr(dst)));
 
 			/* Try to send the packet anyway */
 			nexthop = dst;
-			if (try_route) {
+			if (try_route != NULL) {
 				*try_route = true;
 			}
 
@@ -904,7 +904,7 @@ ignore_frag_error:
 
 		nexthop = check_route(NULL, &NET_IPV6_HDR(pkt)->dst,
 				      &try_route);
-		if (!nexthop) {
+		if (nexthop == NULL) {
 			net_pkt_unref(pkt);
 			return NULL;
 		}
@@ -914,7 +914,7 @@ ignore_frag_error:
 		}
 	}
 
-	if (!iface) {
+	if (iface == NULL) {
 		/* This means that the dst was not onlink, so try to
 		 * figure out the interface using nexthop instead.
 		 */
@@ -943,7 +943,7 @@ try_send:
 		nbr ? net_ipv6_nbr_state2str(net_ipv6_nbr_data(nbr)->state) :
 		"-");
 
-	if (nbr && nbr->idx != NET_NBR_LLADDR_UNKNOWN) {
+	if ((nbr != NULL) && nbr->idx != NET_NBR_LLADDR_UNKNOWN) {
 		struct net_linkaddr_storage *lladdr;
 
 		lladdr = net_nbr_get_lladdr(nbr->idx);
@@ -1022,7 +1022,7 @@ struct net_nbr *net_ipv6_get_nbr(struct net_if *iface, u8_t idx)
 		struct net_nbr *nbr = get_nbr(i);
 
 		if (nbr->ref) {
-			if (iface && nbr->iface != iface) {
+			if ((iface != NULL) && nbr->iface != iface) {
 				continue;
 			}
 
@@ -1097,7 +1097,7 @@ static inline struct net_nbr *handle_ns_neighbor(struct net_pkt *pkt,
 
 	frag = net_frag_read(pkt->frags, sllao_offset,
 			     &pos, lladdr.len, lladdr.addr);
-	if (!frag && pos == 0xffff) {
+	if ((frag == NULL) && pos == 0xffff) {
 		return NULL;
 	}
 
@@ -1128,12 +1128,12 @@ int net_ipv6_send_na(struct net_if *iface, const struct in6_addr *src,
 
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, dst),
 				     ND_NET_BUF_TIMEOUT);
-	if (!pkt) {
+	if (pkt == NULL) {
 		return -ENOMEM;
 	}
 
 	frag = net_pkt_get_frag(pkt, ND_NET_BUF_TIMEOUT);
-	if (!frag) {
+	if (frag == NULL) {
 		net_pkt_unref(pkt);
 		return -ENOMEM;
 	}
@@ -1338,7 +1338,7 @@ static enum net_verdict handle_ns_input(struct net_pkt *pkt)
 			struct in6_addr *nexthop;
 
 			nexthop = check_route(NULL, &ns_hdr.tgt, NULL);
-			if (nexthop) {
+			if (nexthop != NULL) {
 				ns_routing_info(pkt, nexthop, &ns_hdr.tgt);
 
 				/* Note that the target is not the address of
@@ -1354,7 +1354,7 @@ static enum net_verdict handle_ns_input(struct net_pkt *pkt)
 				src = net_if_ipv6_select_src_addr(
 					net_pkt_iface(pkt),
 					&NET_IPV6_HDR(pkt)->src);
-				if (!src) {
+				if (src == NULL) {
 					NET_DBG("No interface address for "
 						"dst %s iface %p",
 						log_strdup(
@@ -1501,12 +1501,12 @@ static void ipv6_nd_reachable_timeout(struct k_work *work)
 		s64_t remaining;
 
 		nbr = get_nbr(i);
-		if (!nbr || !nbr->ref) {
+		if ((nbr == NULL) || !nbr->ref) {
 			continue;
 		}
 
 		data = net_ipv6_nbr_data(nbr);
-		if (!data) {
+		if (data == NULL) {
 			continue;
 		}
 
@@ -1593,7 +1593,7 @@ static void ipv6_nd_reachable_timeout(struct k_work *work)
 
 				router = net_if_ipv6_router_lookup(nbr->iface,
 								   &data->addr);
-				if (router && !router->is_infinite) {
+				if ((router != NULL) && !router->is_infinite) {
 					NET_DBG("nbr %p address %s PROBE ended (%d)",
 						nbr,
 						log_strdup(
@@ -1675,7 +1675,7 @@ static inline bool handle_na_neighbor(struct net_pkt *pkt,
 		net_pkt_iface(pkt),
 		log_strdup(net_sprint_ipv6_addr(&na_hdr->tgt)));
 
-	if (!nbr) {
+	if (nbr == NULL) {
 		nbr_print();
 
 		NET_DBG("No such neighbor found, msg discarded");
@@ -1687,7 +1687,7 @@ static inline bool handle_na_neighbor(struct net_pkt *pkt,
 
 		frag = net_frag_read(pkt->frags, tllao_offset,
 				     &pos, lladdr.len, lladdr.addr);
-		if (!frag && pos == 0xffff) {
+		if ((frag == NULL) && pos == 0xffff) {
 			return false;
 		}
 	}
@@ -1716,7 +1716,7 @@ static inline bool handle_na_neighbor(struct net_pkt *pkt,
 	}
 
 	cached_lladdr = net_nbr_get_lladdr(nbr->idx);
-	if (!cached_lladdr) {
+	if (cached_lladdr == NULL) {
 		NET_DBG("No lladdr but index defined");
 		return false;
 	}
@@ -1814,7 +1814,7 @@ send_pending:
 	/* Next send any pending messages to the peer. */
 	pending = net_ipv6_nbr_data(nbr)->pending;
 
-	if (pending) {
+	if (pending != NULL) {
 		NET_DBG("Sending pending %p to %s lladdr %s", pending,
 			log_strdup(net_sprint_ipv6_addr(
 					   &NET_IPV6_HDR(pending)->dst)),
@@ -1914,7 +1914,7 @@ static enum net_verdict handle_na_input(struct net_pkt *pkt)
 
 	ifaddr = net_if_ipv6_addr_lookup_by_iface(net_pkt_iface(pkt),
 						  &na_hdr.tgt);
-	if (ifaddr) {
+	if (ifaddr != NULL) {
 		NET_DBG("Interface %p already has address %s",
 			net_pkt_iface(pkt),
 			log_strdup(net_sprint_ipv6_addr(&na_hdr.tgt)));
@@ -1960,12 +1960,12 @@ int net_ipv6_send_ns(struct net_if *iface,
 
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, dst),
 				     ND_NET_BUF_TIMEOUT);
-	if (!pkt) {
+	if (pkt == NULL) {
 		return -ENOMEM;
 	}
 
 	frag = net_pkt_get_frag(pkt, ND_NET_BUF_TIMEOUT);
-	if (!frag) {
+	if (frag == NULL) {
 		net_pkt_unref(pkt);
 		return -ENOMEM;
 	}
@@ -2007,7 +2007,7 @@ int net_ipv6_send_ns(struct net_if *iface,
 				net_ipv6_unspecified_address());
 		NET_IPV6_HDR(pkt)->len = htons(len - llao_len);
 	} else {
-		if (src) {
+		if (src != NULL) {
 			net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src, src);
 		} else {
 			net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src,
@@ -2018,7 +2018,7 @@ int net_ipv6_send_ns(struct net_if *iface,
 
 		if (net_ipv6_is_addr_unspecified(&NET_IPV6_HDR(pkt)->src)) {
 			NET_DBG("No source address for NS");
-			if (pending) {
+			if (pending != NULL) {
 				net_pkt_unref(pending);
 			}
 
@@ -2041,15 +2041,15 @@ int net_ipv6_send_ns(struct net_if *iface,
 	}
 
 	nbr = nbr_lookup(&net_neighbor.table, net_pkt_iface(pkt), &ns_hdr.tgt);
-	if (!nbr) {
+	if (nbr == NULL) {
 		nbr_print();
 
 		nbr = nbr_new(net_pkt_iface(pkt), &ns_hdr.tgt, false,
 			      NET_IPV6_NBR_STATE_INCOMPLETE);
-		if (!nbr) {
+		if (nbr == NULL) {
 			NET_DBG("Could not create new neighbor %s",
 				log_strdup(net_sprint_ipv6_addr(&ns_hdr.tgt)));
-			if (pending) {
+			if (pending != NULL) {
 				net_pkt_unref(pending);
 			}
 
@@ -2057,7 +2057,7 @@ int net_ipv6_send_ns(struct net_if *iface,
 		}
 	}
 
-	if (pending) {
+	if (pending != NULL) {
 		if (!net_ipv6_nbr_data(nbr)->pending) {
 			net_ipv6_nbr_data(nbr)->pending = net_pkt_ref(pending);
 		} else {
@@ -2087,7 +2087,7 @@ int net_ipv6_send_ns(struct net_if *iface,
 	if (net_send_data(pkt) < 0) {
 		NET_DBG("Cannot send NS %p (pending %p)", pkt, pending);
 
-		if (pending) {
+		if (pending != NULL) {
 			nbr_clear_ns_pending(net_ipv6_nbr_data(nbr));
 		}
 
@@ -2117,12 +2117,12 @@ int net_ipv6_send_rs(struct net_if *iface)
 
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
 				     ND_NET_BUF_TIMEOUT);
-	if (!pkt) {
+	if (pkt == NULL) {
 		return -ENOMEM;
 	}
 
 	frag = net_pkt_get_frag(pkt, ND_NET_BUF_TIMEOUT);
-	if (!frag) {
+	if (frag == NULL) {
 		net_pkt_unref(pkt);
 		return -ENOMEM;
 	}
@@ -2202,7 +2202,7 @@ static inline struct net_buf *handle_ra_neighbor(struct net_pkt *pkt,
 	struct net_linkaddr_storage llstorage;
 	u8_t padding;
 
-	if (!nbr) {
+	if (nbr == NULL) {
 		return NULL;
 	}
 
@@ -2214,14 +2214,14 @@ static inline struct net_buf *handle_ra_neighbor(struct net_pkt *pkt,
 	}
 
 	frag = net_frag_read(frag, offset, pos, lladdr.len, lladdr.addr);
-	if (!frag && offset) {
+	if ((frag == NULL) && offset) {
 		return NULL;
 	}
 
 	padding = len * 8 - 2 - lladdr.len;
 	if (padding) {
 		frag = net_frag_read(frag, *pos, pos, padding, NULL);
-		if (!frag && *pos) {
+		if ((frag == NULL) && *pos) {
 			return NULL;
 		}
 	}
@@ -2239,7 +2239,7 @@ static inline void handle_prefix_onlink(struct net_pkt *pkt,
 	prefix = net_if_ipv6_prefix_lookup(net_pkt_iface(pkt),
 					   &prefix_info->prefix,
 					   prefix_info->prefix_len);
-	if (!prefix) {
+	if (prefix == NULL) {
 		if (!prefix_info->valid_lifetime) {
 			return;
 		}
@@ -2248,7 +2248,7 @@ static inline void handle_prefix_onlink(struct net_pkt *pkt,
 						&prefix_info->prefix,
 						prefix_info->prefix_len,
 						prefix_info->valid_lifetime);
-		if (prefix) {
+		if (prefix != NULL) {
 			NET_DBG("Interface %p add prefix %s/%d lifetime %u",
 				net_pkt_iface(pkt),
 				log_strdup(net_sprint_ipv6_addr(
@@ -2400,14 +2400,14 @@ static inline struct net_buf *handle_ra_prefix(struct net_pkt *pkt,
 	frag = net_frag_skip(frag, *pos, pos, 4);
 	frag = net_frag_read(frag, *pos, pos, sizeof(struct in6_addr),
 			     prefix_info.prefix.s6_addr);
-	if (!frag && *pos) {
+	if ((frag == NULL) && *pos) {
 		return NULL;
 	}
 
 	if (prefix_info.valid_lifetime >= prefix_info.preferred_lifetime &&
 	    !net_ipv6_is_ll_addr(&prefix_info.prefix)) {
 
-		if (prefix_info.flags & NET_ICMPV6_RA_FLAG_ONLINK) {
+		if ((prefix_info.flags & NET_ICMPV6_RA_FLAG_ONLINK) != 0) {
 			handle_prefix_onlink(pkt, &prefix_info);
 		}
 
@@ -2469,7 +2469,7 @@ static inline struct net_buf *handle_ra_6co(struct net_pkt *pkt,
 				     context.prefix.s6_addr);
 	}
 
-	if (!frag && *pos) {
+	if ((frag == NULL) && *pos) {
 		return NULL;
 	}
 
@@ -2530,7 +2530,7 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt)
 
 	frag = net_frag_read_u8(frag, offset, &offset, &hop_limit);
 	frag = net_frag_skip(frag, offset, &offset, 1); /* flags */
-	if (!frag) {
+	if (frag == NULL) {
 		goto drop;
 	}
 
@@ -2543,7 +2543,7 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt)
 	frag = net_frag_read_be16(frag, offset, &offset, &router_lifetime);
 	frag = net_frag_read_be32(frag, offset, &offset, &reachable_time);
 	frag = net_frag_read_be32(frag, offset, &offset, &retrans_timer);
-	if (!frag) {
+	if (frag == NULL) {
 		goto drop;
 	}
 
@@ -2568,10 +2568,10 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt)
 					      retrans_timer);
 	}
 
-	while (frag) {
+	while (frag != NULL) {
 		frag = net_frag_read(frag, offset, &offset, 1, &type);
 		frag = net_frag_read(frag, offset, &offset, 1, &length);
-		if (!frag) {
+		if (frag == NULL) {
 			goto drop;
 		}
 
@@ -2579,7 +2579,7 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt)
 		case NET_ICMPV6_ND_OPT_SLLAO:
 			frag = handle_ra_neighbor(pkt, frag, length, offset,
 						  &offset, &nbr);
-			if (!frag && offset) {
+			if ((frag == NULL) && offset) {
 				goto drop;
 			}
 
@@ -2588,7 +2588,7 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt)
 			/* MTU has reserved 2 bytes, so skip it. */
 			frag = net_frag_skip(frag, offset, &offset, 2);
 			frag = net_frag_read_be32(frag, offset, &offset, &mtu);
-			if (!frag && offset) {
+			if ((frag == NULL) && offset) {
 				goto drop;
 			}
 
@@ -2605,7 +2605,7 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt)
 		case NET_ICMPV6_ND_OPT_PREFIX_INFO:
 			frag = handle_ra_prefix(pkt, frag, length, offset,
 						&offset);
-			if (!frag && offset) {
+			if ((frag == NULL) && offset) {
 				goto drop;
 			}
 
@@ -2620,7 +2620,7 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt)
 
 			frag = handle_ra_6co(pkt, frag, length, offset,
 					     &offset);
-			if (!frag && offset) {
+			if ((frag == NULL) && offset) {
 				goto drop;
 			}
 
@@ -2645,7 +2645,7 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt)
 		skip:
 			frag = net_frag_skip(frag, offset, &offset,
 					     length * 8 - 2);
-			if (!frag && offset) {
+			if ((frag == NULL) && offset) {
 				goto drop;
 			}
 
@@ -2655,14 +2655,14 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt)
 
 	router = net_if_ipv6_router_lookup(net_pkt_iface(pkt),
 					   &NET_IPV6_HDR(pkt)->src);
-	if (router) {
+	if (router != NULL) {
 		if (!router_lifetime) {
 			/* TODO: Start rs_timer on iface if no routers
 			 * at all available on iface.
 			 */
 			net_if_ipv6_router_rm(router);
 		} else {
-			if (nbr) {
+			if (nbr != NULL) {
 				net_ipv6_nbr_data(nbr)->is_router = true;
 			}
 
@@ -2675,7 +2675,7 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt)
 				       router_lifetime);
 	}
 
-	if (nbr && net_ipv6_nbr_data(nbr)->pending) {
+	if ((nbr != NULL) && net_ipv6_nbr_data(nbr)->pending) {
 		NET_DBG("Sending pending pkt %p to %s",
 			net_ipv6_nbr_data(nbr)->pending,
 			log_strdup(net_sprint_ipv6_addr(&NET_IPV6_HDR(

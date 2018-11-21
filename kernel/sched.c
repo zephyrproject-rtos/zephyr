@@ -180,7 +180,7 @@ static struct k_thread *next_up(void)
 			th = _current;
 		}
 
-		if (!should_preempt(th, _current_cpu->swap_ok)) {
+		if (should_preempt(th, _current_cpu->swap_ok)) {
 			th = _current;
 		}
 	}
@@ -782,7 +782,7 @@ void _impl_k_yield(void)
 {
 	__ASSERT(!_is_in_isr(), "");
 
-	if (!_is_idle(_current)) {
+	if (_is_idle(_current)) {
 		LOCKED(&sched_lock) {
 			_priq_run_remove(&_kernel.ready_q.runq, _current);
 			_priq_run_add(&_kernel.ready_q.runq, _current);

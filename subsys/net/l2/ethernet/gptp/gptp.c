@@ -74,7 +74,7 @@ static void gptp_compute_clock_identity(int port)
 
 	default_ds = GPTP_DEFAULT_DS();
 
-	if (iface) {
+	if (iface != NULL) {
 		default_ds->clk_id[0] = net_if_get_link_addr(iface)->addr[0];
 		default_ds->clk_id[1] = net_if_get_link_addr(iface)->addr[1];
 		default_ds->clk_id[2] = net_if_get_link_addr(iface)->addr[2];
@@ -544,12 +544,12 @@ static void gptp_thread(void)
 		gptp_change_port_state(port, GPTP_PORT_DISABLED);
 	}
 
-	while (1) {
+	while (true) {
 		struct net_pkt *pkt;
 
 		pkt = k_fifo_get(&gptp_rx_queue,
 				 K_MSEC(GPTP_THREAD_WAIT_TIMEOUT_MS));
-		if (pkt) {
+		if (pkt != NULL) {
 			gptp_handle_msg(pkt);
 			net_pkt_unref(pkt);
 		}
@@ -583,7 +583,7 @@ static void gptp_add_port(struct net_if *iface, void *user_data)
 
 	/* Check if interface has a PTP clock. */
 	clk = net_eth_get_ptp_clock(iface);
-	if (clk) {
+	if (clk != NULL) {
 		gptp_domain.iface[*num_ports] = iface;
 		net_eth_set_ptp_port(iface, *num_ports);
 		(*num_ports)++;
@@ -820,7 +820,7 @@ static void gptp_get_port(struct net_if *iface, void *user_data)
 
 	/* Check if interface has a PTP clock. */
 	clk = net_eth_get_ptp_clock(iface);
-	if (clk) {
+	if (clk != NULL) {
 		int port = gptp_get_port_number(iface);
 
 		if (port < 0) {
@@ -862,11 +862,11 @@ int gptp_get_port_data(struct gptp_domain *domain,
 		return -EINVAL;
 	}
 
-	if (port_ds) {
+	if (port_ds != NULL) {
 		*port_ds = GPTP_PORT_DS(port);
 	}
 
-	if (port_param_ds) {
+	if (port_param_ds != NULL) {
 #if defined(CONFIG_NET_GPTP_STATISTICS)
 		*port_param_ds = GPTP_PORT_PARAM_DS(port);
 #else
@@ -874,15 +874,15 @@ int gptp_get_port_data(struct gptp_domain *domain,
 #endif
 	}
 
-	if (port_state) {
+	if (port_state != NULL) {
 		*port_state = GPTP_PORT_STATE(port);
 	}
 
-	if (port_bmca_data) {
+	if (port_bmca_data != NULL) {
 		*port_bmca_data = GPTP_PORT_BMCA_DATA(port);
 	}
 
-	if (iface) {
+	if (iface != NULL) {
 		*iface = GPTP_PORT_IFACE(port);
 	}
 

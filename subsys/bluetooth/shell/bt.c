@@ -146,13 +146,13 @@ static void connected(struct bt_conn *conn, u8_t err)
 
 	shell_print(ctx_shell, "Connected: %s", addr);
 
-	if (!default_conn) {
+	if (default_conn == NULL) {
 		default_conn = bt_conn_ref(conn);
 	}
 
 done:
 	/* clear connection reference for sec mode 3 pairing */
-	if (pairing_conn) {
+	if (pairing_conn != NULL) {
 		bt_conn_unref(pairing_conn);
 		pairing_conn = NULL;
 	}
@@ -761,7 +761,7 @@ static int cmd_disconnect(const struct shell *shell, size_t argc, char *argv[])
 		conn = bt_conn_lookup_addr_le(selected_id, &addr);
 	}
 
-	if (!conn) {
+	if (conn == NULL) {
 		shell_error(shell, "Not connected");
 		return -ENOEXEC;
 	}
@@ -857,12 +857,12 @@ static int cmd_select(const struct shell *shell, size_t argc, char *argv[])
 	}
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &addr);
-	if (!conn) {
+	if (conn == NULL) {
 		shell_error(shell, "No matching connection found");
 		return -ENOEXEC;
 	}
 
-	if (default_conn) {
+	if (default_conn != NULL) {
 		bt_conn_unref(default_conn);
 	}
 
@@ -989,7 +989,7 @@ static int cmd_security(const struct shell *shell, size_t argc, char *argv[])
 {
 	int err, sec;
 
-	if (!default_conn) {
+	if (default_conn == NULL) {
 		shell_error(shell, "Not connected");
 		return -ENOEXEC;
 	}
@@ -1064,7 +1064,7 @@ static void auth_cancel(struct bt_conn *conn)
 	shell_print(ctx_shell, "Pairing cancelled: %s", addr);
 
 	/* clear connection reference for sec mode 3 pairing */
-	if (pairing_conn) {
+	if (pairing_conn != NULL) {
 		bt_conn_unref(pairing_conn);
 		pairing_conn = NULL;
 	}
@@ -1125,7 +1125,7 @@ static void auth_pincode_entry(struct bt_conn *conn, bool highsec)
 	 * Save connection info since in security mode 3 (link level enforced
 	 * security) PIN request callback is called before connected callback
 	 */
-	if (!default_conn && !pairing_conn) {
+	if ((default_conn == NULL) && !pairing_conn) {
 		pairing_conn = bt_conn_ref(conn);
 	}
 }
@@ -1221,15 +1221,16 @@ static int cmd_auth_cancel(const struct shell *shell,
 {
 	struct bt_conn *conn;
 
-	if (default_conn) {
+	if (default_conn != NULL) {
 		conn = default_conn;
-	} else if (pairing_conn) {
-		conn = pairing_conn;
-	} else {
-		conn = NULL;
+	} else {if (pairing_conn != NULL) {
+			conn = pairing_conn;
+		} else {
+			conn = NULL;
+		}
 	}
 
-	if (!conn) {
+	if (conn == NULL) {
 		shell_print(shell, "Not connected");
 		return -ENOEXEC;
 	}
@@ -1242,7 +1243,7 @@ static int cmd_auth_cancel(const struct shell *shell,
 static int cmd_auth_passkey_confirm(const struct shell *shell,
 				    size_t argc, char *argv[])
 {
-	if (!default_conn) {
+	if (default_conn == NULL) {
 		shell_print(shell, "Not connected");
 		return -ENOEXEC;
 	}
@@ -1254,7 +1255,7 @@ static int cmd_auth_passkey_confirm(const struct shell *shell,
 static int cmd_auth_pairing_confirm(const struct shell *shell,
 				    size_t argc, char *argv[])
 {
-	if (!default_conn) {
+	if (default_conn == NULL) {
 		shell_print(shell, "Not connected");
 		return -ENOEXEC;
 	}
@@ -1297,7 +1298,7 @@ static int cmd_auth_passkey(const struct shell *shell,
 {
 	unsigned int passkey;
 
-	if (!default_conn) {
+	if (default_conn == NULL) {
 		shell_print(shell, "Not connected");
 		return -ENOEXEC;
 	}

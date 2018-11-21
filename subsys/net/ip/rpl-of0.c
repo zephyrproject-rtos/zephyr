@@ -192,7 +192,7 @@ static u16_t net_rpl_of0_calc_rank(struct net_rpl_parent *parent,
 	u16_t increment;
 
 	if (base_rank == 0) {
-		if (!parent) {
+		if (parent == NULL) {
 			return NET_RPL_INFINITE_RANK;
 		}
 

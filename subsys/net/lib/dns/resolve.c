@@ -198,7 +198,7 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[],
 	int i = 0, idx = 0;
 	int ret, count;
 
-	if (!ctx) {
+	if (ctx == NULL) {
 		return -ENOENT;
 	}
 
@@ -258,7 +258,7 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[],
 #endif
 		}
 
-		if (!local_addr) {
+		if (local_addr == NULL) {
 			NET_DBG("Local address not set");
 			return -EAFNOSUPPORT;
 		}
@@ -529,13 +529,13 @@ static void cb_recv(struct net_context *net_ctx,
 	}
 
 	dns_data = net_buf_alloc(&dns_msg_pool, ctx->buf_timeout);
-	if (!dns_data) {
+	if (dns_data == NULL) {
 		ret = DNS_EAI_MEMORY;
 		goto quit;
 	}
 
 	dns_cname = net_buf_alloc(&dns_qname_pool, ctx->buf_timeout);
-	if (!dns_cname) {
+	if (dns_cname == NULL) {
 		ret = DNS_EAI_MEMORY;
 		goto quit;
 	}
@@ -596,11 +596,11 @@ quit:
 	ctx->queries[i].cb = NULL;
 
 free_buf:
-	if (dns_data) {
+	if (dns_data != NULL) {
 		net_buf_unref(dns_data);
 	}
 
-	if (dns_cname) {
+	if (dns_cname != NULL) {
 		net_buf_unref(dns_cname);
 	}
 }
@@ -634,7 +634,7 @@ static int dns_write(struct dns_resolve_context *ctx,
 	}
 
 	pkt = net_pkt_get_tx(net_ctx, ctx->buf_timeout);
-	if (!pkt) {
+	if (pkt == NULL) {
 		ret = -ENOMEM;
 		goto quit;
 	}
@@ -810,13 +810,13 @@ try_resolve:
 	k_delayed_work_init(&ctx->queries[i].timer, query_timeout);
 
 	dns_data = net_buf_alloc(&dns_msg_pool, ctx->buf_timeout);
-	if (!dns_data) {
+	if (dns_data == NULL) {
 		ret = -ENOMEM;
 		goto quit;
 	}
 
 	dns_qname = net_buf_alloc(&dns_qname_pool, ctx->buf_timeout);
-	if (!dns_qname) {
+	if (dns_qname == NULL) {
 		ret = -ENOMEM;
 		goto quit;
 	}
@@ -832,7 +832,7 @@ try_resolve:
 	/* Do this immediately after calculating the Id so that the unit
 	 * test will work properly.
 	 */
-	if (dns_id) {
+	if (dns_id != NULL) {
 		*dns_id = ctx->queries[i].id;
 
 		NET_DBG("DNS id will be %u", *dns_id);
@@ -847,7 +847,9 @@ try_resolve:
 		const char *ptr = strrchr(query, '.');
 
 		/* Note that we memcmp() the \0 here too */
-		if (ptr && !memcmp(ptr, (const void *){ ".local" }, 7)) {
+		if ((ptr != NULL) && !memcmp(ptr, (const void *){
+					".local",
+				}, 7)) {
 			mdns_query = true;
 		}
 	}
@@ -913,16 +915,16 @@ quit:
 			ctx->queries[i].cb = NULL;
 		}
 
-		if (dns_id) {
+		if (dns_id != NULL) {
 			*dns_id = 0;
 		}
 	}
 
-	if (dns_data) {
+	if (dns_data != NULL) {
 		net_buf_unref(dns_data);
 	}
 
-	if (dns_qname) {
+	if (dns_qname != NULL) {
 		net_buf_unref(dns_qname);
 	}
 

@@ -129,7 +129,7 @@ static int log_backend_rtt_write_drop(void)
 					     line_buf, line_pos - line_buf + 1);
 	RTT_UNLOCK();
 
-	if (!ret) {
+	if (ret == 0) {
 		drop_cnt++;
 		return 0;
 	}
@@ -225,7 +225,7 @@ static void panic(struct log_backend const *const backend)
 static void log_backend_rtt_flush(void)
 {
 	while (SEGGER_RTT_HasDataUp(CONFIG_LOG_BACKEND_RTT_BUFFER)) {
-		if (!panic_mode) {
+		if (panic_mode == 0) {
 			k_yield();
 		}
 	}

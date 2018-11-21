@@ -153,7 +153,7 @@ fcb_init(int f_area_id, struct fcb *fcb)
 	fcb->f_active.fe_elem_off = sizeof(struct fcb_disk_area);
 	fcb->f_active_id = newest;
 
-	while (1) {
+	while (true) {
 		rc = fcb_getnext_in_sector(fcb, &fcb->f_active);
 		if (rc == FCB_ERR_NOVAR) {
 			rc = FCB_OK;
@@ -260,7 +260,7 @@ int fcb_sector_hdr_read(struct fcb *fcb, struct flash_sector *sector,
 	struct fcb_disk_area fda;
 	int rc;
 
-	if (!fdap) {
+	if (fdap == NULL) {
 		fdap = &fda;
 	}
 	rc = fcb_flash_read(fcb, sector, 0, fdap, sizeof(*fdap));

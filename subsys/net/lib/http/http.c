@@ -25,7 +25,7 @@ int http_set_cb(struct http_ctx *ctx,
 		http_send_cb_t send_cb,
 		http_close_cb_t close_cb)
 {
-	if (!ctx) {
+	if (ctx == NULL) {
 		return -EINVAL;
 	}
 
@@ -43,7 +43,7 @@ int http_set_cb(struct http_ctx *ctx,
 
 int http_close(struct http_ctx *ctx)
 {
-	if (!ctx) {
+	if (ctx == NULL) {
 		return -EINVAL;
 	}
 
@@ -77,7 +77,7 @@ int http_close(struct http_ctx *ctx)
 
 int http_release(struct http_ctx *ctx)
 {
-	if (!ctx) {
+	if (ctx == NULL) {
 		return -EINVAL;
 	}
 
@@ -128,7 +128,7 @@ int http_send_msg_raw(struct http_ctx *ctx, struct net_pkt *pkt,
 static inline struct net_pkt *get_net_pkt(struct http_ctx *ctx,
 					  const struct sockaddr *dst)
 {
-	if (!dst) {
+	if (dst == NULL) {
 		return net_app_get_net_pkt(&ctx->app_ctx, AF_UNSPEC,
 					   ctx->timeout);
 	}
@@ -210,7 +210,7 @@ int http_send_chunk(struct http_ctx *ctx, const char *buf, size_t len,
 	char chunk_header[16];
 	int ret;
 
-	if (!buf) {
+	if (buf == NULL) {
 		len = 0;
 	}
 
@@ -248,7 +248,7 @@ static int _http_add_header(struct http_ctx *ctx, s32_t timeout,
 
 	ret = http_prepare_and_send(ctx, name, strlen(name), dst,
 				    user_send_data);
-	if (value && ret >= 0) {
+	if ((value != NULL) && ret >= 0) {
 		ret = http_prepare_and_send(ctx, ": ", strlen(": "), dst,
 					    user_send_data);
 		if (ret < 0) {

@@ -373,7 +373,7 @@ static int cmd_history(const struct shell *shell, size_t argc, char **argv)
 		return ret;
 	}
 
-	while (1) {
+	while (true) {
 		shell_history_get(shell->history, true,
 				  shell->ctx->temp_buff, &len);
 

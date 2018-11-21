@@ -189,7 +189,7 @@ FUNC_ALIAS(_fstat, fstat, int);
 void _exit(int status)
 {
 	_write(1, "exit\n", 5);
-	while (1) {
+	while (true) {
 		;
 	}
 }

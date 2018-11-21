@@ -97,7 +97,7 @@ static struct net_buf *friend_buf_alloc(u16_t src)
 		buf = bt_mesh_adv_create_from_pool(&friend_buf_pool, adv_alloc,
 						   BT_MESH_ADV_DATA,
 						   FRIEND_XMIT, K_NO_WAIT);
-		if (!buf) {
+		if (buf == NULL) {
 			discard_buffer();
 		}
 	} while (!buf);
@@ -164,7 +164,7 @@ static void friend_clear(struct bt_mesh_friend *frnd)
 
 	friend_cred_del(frnd->net_idx, frnd->lpn);
 
-	if (frnd->last) {
+	if (frnd->last != NULL) {
 		/* Cancel the sending if necessary */
 		if (frnd->pending_buf) {
 			BT_MESH_ADV(frnd->last)->busy = 0;
@@ -257,7 +257,7 @@ int bt_mesh_friend_clear(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 	BT_DBG("LPN addr 0x%04x counter 0x%04x", lpn_addr, lpn_counter);
 
 	frnd = bt_mesh_friend_find(rx->sub->net_idx, lpn_addr, false, false);
-	if (!frnd) {
+	if (frnd == NULL) {
 		BT_WARN("No matching LPN addr 0x%04x", lpn_addr);
 		return 0;
 	}
@@ -436,12 +436,12 @@ static void enqueue_sub_cfm(struct bt_mesh_friend *frnd, u8_t xact)
 	cfm->xact = xact;
 
 	buf = encode_friend_ctl(frnd, TRANS_CTL_OP_FRIEND_SUB_CFM, &sdu);
-	if (!buf) {
+	if (buf == NULL) {
 		BT_ERR("Unable to encode Subscription List Confirmation");
 		return;
 	}
 
-	if (frnd->last) {
+	if (frnd->last != NULL) {
 		BT_DBG("Discarding last PDU");
 		net_buf_unref(frnd->last);
 	}
@@ -469,7 +469,7 @@ int bt_mesh_friend_sub_add(struct bt_mesh_net_rx *rx,
 	}
 
 	frnd = bt_mesh_friend_find(rx->sub->net_idx, rx->ctx.addr, true, true);
-	if (!frnd) {
+	if (frnd == NULL) {
 		BT_WARN("No matching LPN addr 0x%04x", rx->ctx.addr);
 		return 0;
 	}
@@ -504,7 +504,7 @@ int bt_mesh_friend_sub_rem(struct bt_mesh_net_rx *rx,
 	}
 
 	frnd = bt_mesh_friend_find(rx->sub->net_idx, rx->ctx.addr, true, true);
-	if (!frnd) {
+	if (frnd == NULL) {
 		BT_WARN("No matching LPN addr 0x%04x", rx->ctx.addr);
 		return 0;
 	}
@@ -538,7 +538,7 @@ static void enqueue_update(struct bt_mesh_friend *frnd, u8_t md)
 	struct net_buf *buf;
 
 	buf = encode_update(frnd, md);
-	if (!buf) {
+	if (buf == NULL) {
 		BT_ERR("Unable to encode Friend Update");
 		return;
 	}
@@ -558,7 +558,7 @@ int bt_mesh_friend_poll(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 	}
 
 	frnd = bt_mesh_friend_find(rx->sub->net_idx, rx->ctx.addr, true, false);
-	if (!frnd) {
+	if (frnd == NULL) {
 		BT_WARN("No matching LPN addr 0x%04x", rx->ctx.addr);
 		return 0;
 	}
@@ -586,7 +586,7 @@ int bt_mesh_friend_poll(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 		BT_DBG("Re-sending last PDU");
 		frnd->send_last = 1;
 	} else {
-		if (frnd->last) {
+		if (frnd->last != NULL) {
 			net_buf_unref(frnd->last);
 			frnd->last = NULL;
 		}
@@ -698,7 +698,7 @@ int bt_mesh_friend_clear_cfm(struct bt_mesh_net_rx *rx,
 	}
 
 	frnd = find_clear(rx->ctx.addr);
-	if (!frnd) {
+	if (frnd == NULL) {
 		BT_WARN("No pending clear procedure for 0x%02x", rx->ctx.addr);
 		return 0;
 	}
@@ -742,14 +742,14 @@ static void enqueue_offer(struct bt_mesh_friend *frnd, s8_t rssi)
 	off->frnd_counter = sys_cpu_to_be16(frnd->counter);
 
 	buf = encode_friend_ctl(frnd, TRANS_CTL_OP_FRIEND_OFFER, &sdu);
-	if (!buf) {
+	if (buf == NULL) {
 		BT_ERR("Unable to encode Friend Offer");
 		return;
 	}
 
 	frnd->counter++;
 
-	if (frnd->last) {
+	if (frnd->last != NULL) {
 		net_buf_unref(frnd->last);
 	}
 
@@ -842,7 +842,7 @@ int bt_mesh_friend_req(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 					   true, false);
 	}
 
-	if (frnd) {
+	if (frnd != NULL) {
 		BT_WARN("Existing LPN re-requesting Friendship");
 		friend_clear(frnd);
 		goto init_friend;
@@ -856,7 +856,7 @@ int bt_mesh_friend_req(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 		}
 	}
 
-	if (!frnd) {
+	if (frnd == NULL) {
 		BT_WARN("No free Friend contexts for new LPN");
 		return -ENOMEM;
 	}
@@ -903,7 +903,7 @@ static struct bt_mesh_friend_seg *get_seg(struct bt_mesh_friend *frnd,
 			return seg;
 		}
 
-		if (!unassigned && !buf) {
+		if ((unassigned == NULL) && !buf) {
 			unassigned = seg;
 		}
 	}
@@ -931,7 +931,7 @@ static void enqueue_friend_pdu(struct bt_mesh_friend *frnd,
 
 	adv = FRIEND_ADV(buf);
 	seg = get_seg(frnd, BT_MESH_ADV(buf)->addr, &adv->seq_auth);
-	if (!seg) {
+	if (seg == NULL) {
 		BT_ERR("No free friend segment RX contexts for 0x%04x",
 		       BT_MESH_ADV(buf)->addr);
 		net_buf_unref(buf);
@@ -1096,7 +1096,7 @@ static void friend_lpn_enqueue_rx(struct bt_mesh_friend *frnd,
 
 	BT_DBG("LPN 0x%04x queue_size %u", frnd->lpn, frnd->queue_size);
 
-	if (type == BT_MESH_FRIEND_PDU_SINGLE && seq_auth) {
+	if (type == BT_MESH_FRIEND_PDU_SINGLE && (seq_auth != NULL)) {
 		friend_purge_old_ack(frnd, seq_auth, rx->ctx.addr);
 	}
 
@@ -1118,12 +1118,12 @@ static void friend_lpn_enqueue_rx(struct bt_mesh_friend *frnd,
 	info.iv_index = BT_MESH_NET_IVI_RX(rx);
 
 	buf = create_friend_pdu(frnd, &info, sbuf);
-	if (!buf) {
+	if (buf == NULL) {
 		BT_ERR("Failed to encode Friend buffer");
 		return;
 	}
 
-	if (seq_auth) {
+	if (seq_auth != NULL) {
 		FRIEND_ADV(buf)->seq_auth = *seq_auth;
 	}
 
@@ -1144,7 +1144,7 @@ static void friend_lpn_enqueue_tx(struct bt_mesh_friend *frnd,
 
 	BT_DBG("LPN 0x%04x", frnd->lpn);
 
-	if (type == BT_MESH_FRIEND_PDU_SINGLE && seq_auth) {
+	if (type == BT_MESH_FRIEND_PDU_SINGLE && (seq_auth != NULL)) {
 		friend_purge_old_ack(frnd, seq_auth, tx->src);
 	}
 
@@ -1162,12 +1162,12 @@ static void friend_lpn_enqueue_tx(struct bt_mesh_friend *frnd,
 	info.iv_index = BT_MESH_NET_IVI_TX;
 
 	buf = create_friend_pdu(frnd, &info, sbuf);
-	if (!buf) {
+	if (buf == NULL) {
 		BT_ERR("Failed to encode Friend buffer");
 		return;
 	}
 
-	if (seq_auth) {
+	if (seq_auth != NULL) {
 		FRIEND_ADV(buf)->seq_auth = *seq_auth;
 	}
 
@@ -1298,7 +1298,7 @@ void bt_mesh_friend_clear_incomplete(struct bt_mesh_subnet *sub, u16_t src,
 			struct net_buf *buf;
 
 			buf = (void *)sys_slist_peek_head(&seg->queue);
-			if (!buf) {
+			if (buf == NULL) {
 				continue;
 			}
 

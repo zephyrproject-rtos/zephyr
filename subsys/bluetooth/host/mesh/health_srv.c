@@ -354,7 +354,7 @@ int bt_mesh_fault_update(struct bt_mesh_elem *elem)
 	struct bt_mesh_model *mod;
 
 	mod = bt_mesh_model_find(elem, BT_MESH_MODEL_ID_HEALTH_SRV);
-	if (!mod) {
+	if (mod == NULL) {
 		return -EINVAL;
 	}
 
@@ -377,7 +377,7 @@ int bt_mesh_health_srv_init(struct bt_mesh_model *model, bool primary)
 {
 	struct bt_mesh_health_srv *srv = model->user_data;
 
-	if (!srv) {
+	if (srv == NULL) {
 		if (!primary) {
 			return 0;
 		}
@@ -410,7 +410,7 @@ void bt_mesh_attention(struct bt_mesh_model *model, u8_t time)
 
 	if (!model) {
 		srv = health_srv;
-		if (!srv) {
+		if (srv == NULL) {
 			BT_WARN("No Health Server available");
 			return;
 		}

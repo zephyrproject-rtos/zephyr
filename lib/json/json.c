@@ -186,13 +186,13 @@ static void *lexer_boolean(struct lexer *lexer)
 
 	switch (next(lexer)) {
 	case 't':
-		if (!accept_run(lexer, "rue")) {
+		if (accept_run(lexer, "rue") == 0) {
 			emit(lexer, JSON_TOK_TRUE);
 			return lexer_json;
 		}
 		break;
 	case 'f':
-		if (!accept_run(lexer, "alse")) {
+		if (accept_run(lexer, "alse") == 0) {
 			emit(lexer, JSON_TOK_FALSE);
 			return lexer_json;
 		}
@@ -553,7 +553,7 @@ static int obj_parse(struct json_obj *obj, const struct json_obj_descr *descr,
 			void *decode_field = (char *)val + descr[i].offset;
 
 			/* Field has been decoded already, skip */
-			if (decoded_fields & (1 << i)) {
+			if (((1 << i) & decoded_fields) != 0) {
 				continue;
 			}
 
@@ -766,7 +766,7 @@ static int str_encode(const char **str, json_append_bytes_t append_bytes,
 	}
 
 	ret = json_escape_internal(*str, append_bytes, data);
-	if (!ret) {
+	if (ret == 0) {
 		return append_bytes("\"", 1, data);
 	}
 

@@ -132,7 +132,7 @@ static int net_set(int argc, char **argv, char *val)
 
 	BT_DBG("val %s", val ? val : "(null)");
 
-	if (!val) {
+	if (val == NULL) {
 		bt_mesh_comp_unprovision();
 		(void)memset(bt_mesh.dev_key, 0, sizeof(bt_mesh.dev_key));
 		return 0;
@@ -166,7 +166,7 @@ static int iv_set(int argc, char **argv, char *val)
 
 	BT_DBG("val %s", val ? val : "(null)");
 
-	if (!val) {
+	if (val == NULL) {
 		bt_mesh.iv_index = 0;
 		bt_mesh.iv_update = 0;
 		return 0;
@@ -201,7 +201,7 @@ static int seq_set(int argc, char **argv, char *val)
 
 	BT_DBG("val %s", val ? val : "(null)");
 
-	if (!val) {
+	if (val == NULL) {
 		bt_mesh.seq = 0;
 		return 0;
 	}
@@ -280,8 +280,8 @@ static int rpl_set(int argc, char **argv, char *val)
 	src = strtol(argv[0], NULL, 16);
 	entry = rpl_find(src);
 
-	if (!val) {
-		if (entry) {
+	if (val == NULL) {
+		if (entry != NULL) {
 			(void)memset(entry, 0, sizeof(*entry));
 		} else {
 			BT_WARN("Unable to find RPL entry for 0x%04x", src);
@@ -290,9 +290,9 @@ static int rpl_set(int argc, char **argv, char *val)
 		return 0;
 	}
 
-	if (!entry) {
+	if (entry == NULL) {
 		entry = rpl_alloc(src);
-		if (!entry) {
+		if (entry == NULL) {
 			BT_ERR("Unable to allocate RPL entry for 0x%04x", src);
 			return -ENOMEM;
 		}
@@ -331,8 +331,8 @@ static int net_key_set(int argc, char **argv, char *val)
 	net_idx = strtol(argv[0], NULL, 16);
 	sub = bt_mesh_subnet_get(net_idx);
 
-	if (!val) {
-		if (!sub) {
+	if (val == NULL) {
+		if (sub == NULL) {
 			BT_ERR("No subnet with NetKeyIndex 0x%03x", net_idx);
 			return -ENOENT;
 		}
@@ -354,7 +354,7 @@ static int net_key_set(int argc, char **argv, char *val)
 		return -EINVAL;
 	}
 
-	if (sub) {
+	if (sub != NULL) {
 		BT_DBG("Updating existing NetKeyIndex 0x%03x", net_idx);
 
 		sub->kr_flag = key.kr_flag;
@@ -372,7 +372,7 @@ static int net_key_set(int argc, char **argv, char *val)
 		}
 	}
 
-	if (!sub) {
+	if (sub == NULL) {
 		BT_ERR("No space to allocate a new subnet");
 		return -ENOMEM;
 	}
@@ -399,11 +399,11 @@ static int app_key_set(int argc, char **argv, char *val)
 
 	app_idx = strtol(argv[0], NULL, 16);
 
-	if (!val) {
+	if (val == NULL) {
 		BT_DBG("Deleting AppKeyIndex 0x%03x", app_idx);
 
 		app = bt_mesh_app_key_find(app_idx);
-		if (app) {
+		if (app != NULL) {
 			bt_mesh_app_key_del(app, false);
 		}
 
@@ -423,11 +423,11 @@ static int app_key_set(int argc, char **argv, char *val)
 	}
 
 	app = bt_mesh_app_key_find(app_idx);
-	if (!app) {
+	if (app == NULL) {
 		app = bt_mesh_app_key_alloc(app_idx);
 	}
 
-	if (!app) {
+	if (app == NULL) {
 		BT_ERR("No space for a new app key");
 		return -ENOMEM;
 	}
@@ -454,11 +454,11 @@ static int hb_pub_set(int argc, char **argv, char *val)
 
 	BT_DBG("val %s", val ? val : "(null)");
 
-	if (!pub) {
+	if (pub == NULL) {
 		return -ENOENT;
 	}
 
-	if (!val) {
+	if (val == NULL) {
 		pub->dst = BT_MESH_ADDR_UNASSIGNED;
 		pub->count = 0;
 		pub->ttl = 0;
@@ -506,11 +506,11 @@ static int cfg_set(int argc, char **argv, char *val)
 
 	BT_DBG("val %s", val ? val : "(null)");
 
-	if (!cfg) {
+	if (cfg == NULL) {
 		return -ENOENT;
 	}
 
-	if (!val) {
+	if (val == NULL) {
 		stored_cfg.valid = false;
 		BT_DBG("Cleared configuration state");
 		return 0;
@@ -544,7 +544,7 @@ static int mod_set_bind(struct bt_mesh_model *mod, char *val)
 		mod->keys[i] = BT_MESH_KEY_UNUSED;
 	}
 
-	if (!val) {
+	if (val == NULL) {
 		BT_DBG("Cleared bindings for model");
 		return 0;
 	}
@@ -567,7 +567,7 @@ static int mod_set_sub(struct bt_mesh_model *mod, char *val)
 	/* Start with empty array regardless of cleared or set value */
 	(void)memset(mod->groups, 0, sizeof(mod->groups));
 
-	if (!val) {
+	if (val == NULL) {
 		BT_DBG("Cleared subscriptions for model");
 		return 0;
 	}
@@ -594,7 +594,7 @@ static int mod_set_pub(struct bt_mesh_model *mod, char *val)
 		return -EINVAL;
 	}
 
-	if (!val) {
+	if (val == NULL) {
 		mod->pub->addr = BT_MESH_ADDR_UNASSIGNED;
 		mod->pub->key = 0;
 		mod->pub->cred = 0;
@@ -652,7 +652,7 @@ static int mod_set(bool vnd, int argc, char **argv, char *val)
 	       mod_key, elem_idx, mod_idx);
 
 	mod = bt_mesh_model_get(vnd, elem_idx, mod_idx);
-	if (!mod) {
+	if (mod == NULL) {
 		BT_ERR("Failed to get model for elem_idx %u mod_idx %u",
 		       elem_idx, mod_idx);
 		return -ENOENT;
@@ -814,7 +814,7 @@ static int mesh_commit(void)
 	}
 
 	cfg = bt_mesh_cfg_get();
-	if (cfg && stored_cfg.valid) {
+	if ((cfg != NULL) && stored_cfg.valid) {
 		cfg->net_transmit = stored_cfg.cfg.net_transmit;
 		cfg->relay = stored_cfg.cfg.relay;
 		cfg->relay_retransmit = stored_cfg.cfg.relay_retransmit;
@@ -881,7 +881,7 @@ static void store_pending_net(void)
 	memcpy(net.dev_key, bt_mesh.dev_key, 16);
 
 	str = settings_str_from_bytes(&net, sizeof(net), buf, sizeof(buf));
-	if (!str) {
+	if (str == NULL) {
 		BT_ERR("Unable to encode Network as value");
 		return;
 	}
@@ -906,7 +906,7 @@ static void store_pending_iv(void)
 	iv.iv_duration = bt_mesh.ivu_duration;
 
 	str = settings_str_from_bytes(&iv, sizeof(iv), buf, sizeof(buf));
-	if (!str) {
+	if (str == NULL) {
 		BT_ERR("Unable to encode IV as value");
 		return;
 	}
@@ -936,7 +936,7 @@ static void store_pending_seq(void)
 	seq.val[2] = bt_mesh.seq >> 16;
 
 	str = settings_str_from_bytes(&seq, sizeof(seq), buf, sizeof(buf));
-	if (!str) {
+	if (str == NULL) {
 		BT_ERR("Unable to encode Seq as value");
 		return;
 	}
@@ -969,7 +969,7 @@ static void store_rpl(struct bt_mesh_rpl *entry)
 	rpl.old_iv = entry->old_iv;
 
 	str = settings_str_from_bytes(&rpl, sizeof(rpl), buf, sizeof(buf));
-	if (!str) {
+	if (str == NULL) {
 		BT_ERR("Unable to encode RPL as value");
 		return;
 	}
@@ -1024,7 +1024,7 @@ static void store_pending_hb_pub(void)
 	struct hb_pub_val val;
 	char *str;
 
-	if (!pub) {
+	if (pub == NULL) {
 		return;
 	}
 
@@ -1040,7 +1040,7 @@ static void store_pending_hb_pub(void)
 
 		str = settings_str_from_bytes(&val, sizeof(val),
 					      buf, sizeof(buf));
-		if (!str) {
+		if (str == NULL) {
 			BT_ERR("Unable to encode hb pub as value");
 			return;
 		}
@@ -1058,7 +1058,7 @@ static void store_pending_cfg(void)
 	struct cfg_val val;
 	char *str;
 
-	if (!cfg) {
+	if (cfg == NULL) {
 		return;
 	}
 
@@ -1071,7 +1071,7 @@ static void store_pending_cfg(void)
 	val.default_ttl = cfg->default_ttl;
 
 	str = settings_str_from_bytes(&val, sizeof(val), buf, sizeof(buf));
-	if (!str) {
+	if (str == NULL) {
 		BT_ERR("Unable to encode configuration as value");
 		return;
 	}
@@ -1122,7 +1122,7 @@ static void store_net_key(struct bt_mesh_subnet *sub)
 	key.kr_phase = sub->kr_phase;
 
 	str = settings_str_from_bytes(&key, sizeof(key), buf, sizeof(buf));
-	if (!str) {
+	if (str == NULL) {
 		BT_ERR("Unable to encode NetKey as value");
 		return;
 	}
@@ -1146,7 +1146,7 @@ static void store_app_key(struct bt_mesh_app_key *app)
 	memcpy(key.val[1], app->keys[1].val, 16);
 
 	str = settings_str_from_bytes(&key, sizeof(key), buf, sizeof(buf));
-	if (!str) {
+	if (str == NULL) {
 		BT_ERR("Unable to encode AppKey as value");
 		return;
 	}
@@ -1179,7 +1179,7 @@ static void store_pending_keys(void)
 				struct bt_mesh_app_key *key;
 
 				key = bt_mesh_app_key_find(update->key_idx);
-				if (key) {
+				if (key != NULL) {
 					store_app_key(key);
 				} else {
 					BT_WARN("AppKeyIndex 0x%03x not found",
@@ -1190,7 +1190,7 @@ static void store_pending_keys(void)
 				struct bt_mesh_subnet *sub;
 
 				sub = bt_mesh_subnet_get(update->key_idx);
-				if (sub) {
+				if (sub != NULL) {
 					store_net_key(sub);
 				} else {
 					BT_WARN("NetKeyIndex 0x%03x not found",
@@ -1232,7 +1232,7 @@ static void store_pending_mod_bind(struct bt_mesh_model *mod, bool vnd)
 	if (count) {
 		val = settings_str_from_bytes(keys, count * sizeof(keys[0]),
 					      buf, sizeof(buf));
-		if (!val) {
+		if (val == NULL) {
 			BT_ERR("Unable to encode model bindings as value");
 			return;
 		}
@@ -1263,7 +1263,7 @@ static void store_pending_mod_sub(struct bt_mesh_model *mod, bool vnd)
 	if (count) {
 		val = settings_str_from_bytes(groups, count * sizeof(groups[0]),
 					      buf, sizeof(buf));
-		if (!val) {
+		if (val == NULL) {
 			BT_ERR("Unable to encode model subscription as value");
 			return;
 		}
@@ -1297,7 +1297,7 @@ static void store_pending_mod_pub(struct bt_mesh_model *mod, bool vnd)
 
 		val = settings_str_from_bytes(&pub, sizeof(pub),
 					      buf, sizeof(buf));
-		if (!val) {
+		if (val == NULL) {
 			BT_ERR("Unable to encode model publication as value");
 			return;
 		}
@@ -1317,17 +1317,17 @@ static void store_pending_mod(struct bt_mesh_model *mod,
 		return;
 	}
 
-	if (mod->flags & BT_MESH_MOD_BIND_PENDING) {
+	if ((mod->flags & BT_MESH_MOD_BIND_PENDING) != 0) {
 		mod->flags &= ~BT_MESH_MOD_BIND_PENDING;
 		store_pending_mod_bind(mod, vnd);
 	}
 
-	if (mod->flags & BT_MESH_MOD_SUB_PENDING) {
+	if ((mod->flags & BT_MESH_MOD_SUB_PENDING) != 0) {
 		mod->flags &= ~BT_MESH_MOD_SUB_PENDING;
 		store_pending_mod_sub(mod, vnd);
 	}
 
-	if (mod->flags & BT_MESH_MOD_PUB_PENDING) {
+	if ((mod->flags & BT_MESH_MOD_PUB_PENDING) != 0) {
 		mod->flags &= ~BT_MESH_MOD_PUB_PENDING;
 		store_pending_mod_pub(mod, vnd);
 	}
@@ -1428,13 +1428,13 @@ void bt_mesh_store_subnet(struct bt_mesh_subnet *sub)
 	BT_DBG("NetKeyIndex 0x%03x", sub->net_idx);
 
 	update = key_update_find(false, sub->net_idx, &free_slot);
-	if (update) {
+	if (update != NULL) {
 		update->clear = 0;
 		schedule_store(BT_MESH_KEYS_PENDING);
 		return;
 	}
 
-	if (!free_slot) {
+	if (free_slot == NULL) {
 		store_net_key(sub);
 		return;
 	}
@@ -1454,13 +1454,13 @@ void bt_mesh_store_app_key(struct bt_mesh_app_key *key)
 	BT_DBG("AppKeyIndex 0x%03x", key->app_idx);
 
 	update = key_update_find(true, key->app_idx, &free_slot);
-	if (update) {
+	if (update != NULL) {
 		update->clear = 0;
 		schedule_store(BT_MESH_KEYS_PENDING);
 		return;
 	}
 
-	if (!free_slot) {
+	if (free_slot == NULL) {
 		store_app_key(key);
 		return;
 	}
@@ -1497,13 +1497,13 @@ void bt_mesh_clear_subnet(struct bt_mesh_subnet *sub)
 	BT_DBG("NetKeyIndex 0x%03x", sub->net_idx);
 
 	update = key_update_find(false, sub->net_idx, &free_slot);
-	if (update) {
+	if (update != NULL) {
 		update->clear = 1;
 		schedule_store(BT_MESH_KEYS_PENDING);
 		return;
 	}
 
-	if (!free_slot) {
+	if (free_slot == NULL) {
 		clear_net_key(sub->net_idx);
 		return;
 	}
@@ -1523,13 +1523,13 @@ void bt_mesh_clear_app_key(struct bt_mesh_app_key *key)
 	BT_DBG("AppKeyIndex 0x%03x", key->app_idx);
 
 	update = key_update_find(true, key->app_idx, &free_slot);
-	if (update) {
+	if (update != NULL) {
 		update->clear = 1;
 		schedule_store(BT_MESH_KEYS_PENDING);
 		return;
 	}
 
-	if (!free_slot) {
+	if (free_slot == NULL) {
 		clear_app_key(key->app_idx);
 		return;
 	}

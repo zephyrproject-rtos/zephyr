@@ -120,7 +120,7 @@ static void net_tcp_trace(struct net_pkt *pkt, struct net_tcp *tcp)
 	}
 
 	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
-	if (!tcp_hdr) {
+	if (tcp_hdr == NULL) {
 		return;
 	}
 
@@ -408,7 +408,7 @@ static int prepare_segment(struct net_tcp *tcp,
 		pkt_allocated = false;
 	} else {
 		pkt = net_pkt_get_tx(context, ALLOC_TIMEOUT);
-		if (!pkt) {
+		if (pkt == NULL) {
 			return -ENOMEM;
 		}
 
@@ -420,7 +420,7 @@ static int prepare_segment(struct net_tcp *tcp,
 		alloc_pkt = net_context_create_ipv4(context, pkt,
 				      net_sin_ptr(segment->src_addr)->sin_addr,
 				      &(net_sin(segment->dst_addr)->sin_addr));
-		if (!alloc_pkt) {
+		if (alloc_pkt == NULL) {
 			status = -ENOMEM;
 			goto fail;
 		}
@@ -436,7 +436,7 @@ static int prepare_segment(struct net_tcp *tcp,
 		alloc_pkt = net_context_create_ipv6(tcp->context, pkt,
 				    net_sin6_ptr(segment->src_addr)->sin6_addr,
 				    &(net_sin6(segment->dst_addr)->sin6_addr));
-		if (!alloc_pkt) {
+		if (alloc_pkt == NULL) {
 			status = -ENOMEM;
 			goto fail;
 		}
@@ -456,7 +456,7 @@ static int prepare_segment(struct net_tcp *tcp,
 	}
 
 	header = net_pkt_get_data(context, ALLOC_TIMEOUT);
-	if (!header) {
+	if (header == NULL) {
 		NET_WARN("[%p] Unable to alloc TCP header", tcp);
 
 		status = -ENOMEM;
@@ -483,7 +483,7 @@ static int prepare_segment(struct net_tcp *tcp,
 	tcp_hdr->urg[0] = 0;
 	tcp_hdr->urg[1] = 0;
 
-	if (tail) {
+	if (tail != NULL) {
 		net_pkt_frag_add(pkt, tail);
 	}
 
@@ -528,13 +528,13 @@ int net_tcp_prepare_segment(struct net_tcp *tcp, u8_t flags,
 	struct tcp_segment segment = { 0 };
 	int status;
 
-	if (!local) {
+	if (local == NULL) {
 		local = &tcp->context->local;
 	}
 
 	seq = tcp->send_seq;
 
-	if (flags & NET_TCP_ACK) {
+	if ((flags & NET_TCP_ACK) != 0) {
 		if (net_tcp_get_state(tcp) == NET_TCP_FIN_WAIT_1) {
 			if (flags & NET_TCP_FIN) {
 				/* FIN is used here only to determine which
@@ -555,7 +555,7 @@ int net_tcp_prepare_segment(struct net_tcp *tcp, u8_t flags,
 		}
 	}
 
-	if (flags & NET_TCP_FIN) {
+	if ((flags & NET_TCP_FIN) != 0) {
 		/* RFC793 says about ACK bit: "Once a connection is
 		 * established this is always sent." as teardown
 		 * happens when connection is established, it must
@@ -630,7 +630,7 @@ u16_t net_tcp_get_recv_mss(const struct net_tcp *tcp)
 #if defined(CONFIG_NET_IPV4)
 		struct net_if *iface = net_context_get_iface(tcp->context);
 
-		if (iface && net_if_get_mtu(iface) >= NET_IPV4TCPH_LEN) {
+		if ((iface != NULL) && net_if_get_mtu(iface) >= NET_IPV4TCPH_LEN) {
 			/* Detect MSS based on interface MTU minus "TCP,IP
 			 * header size"
 			 */
@@ -645,7 +645,7 @@ u16_t net_tcp_get_recv_mss(const struct net_tcp *tcp)
 		struct net_if *iface = net_context_get_iface(tcp->context);
 		int mss = 0;
 
-		if (iface && net_if_get_mtu(iface) >= NET_IPV6TCPH_LEN) {
+		if ((iface != NULL) && net_if_get_mtu(iface) >= NET_IPV6TCPH_LEN) {
 			/* Detect MSS based on interface MTU minus "TCP,IP
 			 * header size"
 			 */
@@ -821,7 +821,7 @@ int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 	}
 
 	NET_ASSERT(context->tcp);
-	if (context->tcp->flags & NET_TCP_IS_SHUTDOWN) {
+	if ((context->tcp->flags & NET_TCP_IS_SHUTDOWN) != 0) {
 		return -ESHUTDOWN;
 	}
 
@@ -869,7 +869,7 @@ int net_tcp_send_pkt(struct net_pkt *pkt)
 	bool calc_chksum = false;
 
 	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
-	if (!tcp_hdr) {
+	if (tcp_hdr == NULL) {
 		NET_ERR("Packet %p does not contain TCP header", pkt);
 		return -EMSGSIZE;
 	}
@@ -894,7 +894,7 @@ int net_tcp_send_pkt(struct net_pkt *pkt)
 		net_tcp_set_chksum(pkt, pkt->frags);
 	}
 
-	if (tcp_hdr->flags & NET_TCP_FIN) {
+	if ((tcp_hdr->flags & NET_TCP_FIN) != 0) {
 		ctx->tcp->fin_sent = 1;
 	}
 
@@ -933,7 +933,7 @@ int net_tcp_send_pkt(struct net_pkt *pkt)
 
 		if (pkt_in_slist) {
 			new_pkt = net_pkt_clone(pkt, ALLOC_TIMEOUT);
-			if (!new_pkt) {
+			if (new_pkt == NULL) {
 				return -ENOMEM;
 			}
 
@@ -1049,7 +1049,7 @@ bool net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 		pkt = CONTAINER_OF(head, struct net_pkt, sent_list);
 
 		tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
-		if (!tcp_hdr) {
+		if (tcp_hdr == NULL) {
 			/* The pkt does not contain TCP header, this should
 			 * not happen.
 			 */
@@ -1064,10 +1064,10 @@ bool net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 		/* Each of SYN and FIN flags are counted
 		 * as one sequence number.
 		 */
-		if (tcp_hdr->flags & NET_TCP_SYN) {
+		if ((tcp_hdr->flags & NET_TCP_SYN) != 0) {
 			seq_len += 1;
 		}
-		if (tcp_hdr->flags & NET_TCP_FIN) {
+		if ((tcp_hdr->flags & NET_TCP_FIN) != 0) {
 			seq_len += 1;
 		}
 
@@ -1082,7 +1082,7 @@ bool net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 			break;
 		}
 
-		if (tcp_hdr->flags & NET_TCP_FIN) {
+		if ((tcp_hdr->flags & NET_TCP_FIN) != 0) {
 			enum net_tcp_state s = net_tcp_get_state(tcp);
 
 			if (s == NET_TCP_FIN_WAIT_1) {
@@ -1232,7 +1232,7 @@ bool net_tcp_validate_seq(struct net_tcp *tcp, struct net_pkt *pkt)
 	struct net_tcp_hdr hdr, *tcp_hdr;
 
 	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
-	if (!tcp_hdr) {
+	if (tcp_hdr == NULL) {
 		return false;
 	}
 
@@ -1251,12 +1251,12 @@ struct net_tcp_hdr *net_tcp_get_hdr(struct net_pkt *pkt,
 	u16_t pos;
 
 	tcp_hdr = net_pkt_tcp_data(pkt);
-	if (!tcp_hdr) {
+	if (tcp_hdr == NULL) {
 		NET_ERR("NULL TCP header!");
 		return NULL;
 	}
 
-	if (net_tcp_header_fits(pkt, tcp_hdr)) {
+	if (net_tcp_header_fits(pkt, tcp_hdr) != NULL) {
 		return tcp_hdr;
 	}
 
@@ -1275,7 +1275,7 @@ struct net_tcp_hdr *net_tcp_get_hdr(struct net_pkt *pkt,
 			     (u8_t *)&hdr->chksum);
 	frag = net_frag_read(frag, pos, &pos, sizeof(hdr->urg), hdr->urg);
 
-	if (!frag && pos == 0xffff) {
+	if ((frag == NULL) && pos == 0xffff) {
 		/* If the pkt is compressed, then this is the typical outcome
 		 * so no use printing error in this case.
 		 */
@@ -1296,7 +1296,7 @@ struct net_tcp_hdr *net_tcp_set_hdr(struct net_pkt *pkt,
 	struct net_buf *frag;
 	u16_t pos;
 
-	if (net_tcp_header_fits(pkt, hdr)) {
+	if (net_tcp_header_fits(pkt, hdr) != NULL) {
 		return hdr;
 	}
 
@@ -1321,7 +1321,7 @@ struct net_tcp_hdr *net_tcp_set_hdr(struct net_pkt *pkt,
 	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(hdr->urg), hdr->urg,
 			     ALLOC_TIMEOUT);
 
-	if (!frag) {
+	if (frag == NULL) {
 		NET_ASSERT(frag);
 		return NULL;
 	}
@@ -1336,7 +1336,7 @@ u16_t net_tcp_get_chksum(struct net_pkt *pkt, struct net_buf *frag)
 	u16_t pos;
 
 	hdr = net_pkt_tcp_data(pkt);
-	if (net_tcp_header_fits(pkt, hdr)) {
+	if (net_tcp_header_fits(pkt, hdr) != NULL) {
 		return hdr->chksum;
 	}
 
@@ -1358,7 +1358,7 @@ struct net_buf *net_tcp_set_chksum(struct net_pkt *pkt, struct net_buf *frag)
 	u16_t pos;
 
 	hdr = net_pkt_tcp_data(pkt);
-	if (net_tcp_header_fits(pkt, hdr)) {
+	if (net_tcp_header_fits(pkt, hdr) != NULL) {
 		hdr->chksum = 0;
 		hdr->chksum = ~net_calc_chksum_tcp(pkt);
 
@@ -1463,7 +1463,7 @@ int tcp_hdr_len(struct net_pkt *pkt)
 	struct net_tcp_hdr hdr, *tcp_hdr;
 
 	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
-	if (tcp_hdr) {
+	if (tcp_hdr != NULL) {
 		return NET_TCP_HDR_LEN(tcp_hdr);
 	}
 
@@ -1593,7 +1593,7 @@ static int tcp_backlog_find(struct net_pkt *pkt, int *empty_slot)
 		}
 
 		tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
-		if (!tcp_hdr) {
+		if (tcp_hdr == NULL) {
 			return -EINVAL;
 		}
 
@@ -1633,7 +1633,7 @@ static int tcp_backlog_find(struct net_pkt *pkt, int *empty_slot)
 		return i;
 	}
 
-	if (empty_slot) {
+	if (empty_slot != NULL) {
 		*empty_slot = empty;
 	}
 
@@ -1688,7 +1688,7 @@ static int tcp_backlog_ack(struct net_pkt *pkt, struct net_context *context)
 	}
 
 	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
-	if (!tcp_hdr) {
+	if (tcp_hdr == NULL) {
 		return -EINVAL;
 	}
 
@@ -1720,7 +1720,7 @@ static int tcp_backlog_rst(struct net_pkt *pkt)
 	}
 
 	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
-	if (!tcp_hdr) {
+	if (tcp_hdr == NULL) {
 		return -EINVAL;
 	}
 
@@ -1862,7 +1862,7 @@ static void print_send_info(struct net_pkt *pkt, const char *msg)
 		struct net_tcp_hdr hdr, *tcp_hdr;
 
 		tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
-		if (tcp_hdr) {
+		if (tcp_hdr != NULL) {
 			net_tcp_print_send_info(msg, pkt, tcp_hdr->dst_port);
 		}
 	}
@@ -1987,7 +1987,7 @@ NET_CONN_CB(tcp_established)
 	NET_ASSERT(context && context->tcp);
 
 	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
-	if (!tcp_hdr) {
+	if (tcp_hdr == NULL) {
 		return NET_DROP;
 	}
 
@@ -2028,7 +2028,7 @@ resend_ack:
 	 * If we receive RST here, we close the socket. See RFC 793 chapter
 	 * called "Reset Processing" for details.
 	 */
-	if (tcp_flags & NET_TCP_RST) {
+	if ((tcp_flags & NET_TCP_RST) != 0) {
 		/* We only accept RST packet that has valid seq field. */
 		if (!net_tcp_validate_seq(context->tcp, pkt)) {
 			net_stats_update_tcp_seg_rsterr(net_pkt_iface(pkt));
@@ -2050,7 +2050,7 @@ resend_ack:
 	}
 
 	/* Handle TCP state transition */
-	if (tcp_flags & NET_TCP_ACK) {
+	if ((tcp_flags & NET_TCP_ACK) != 0) {
 		if (!net_tcp_ack_received(context,
 				     sys_get_be32(tcp_hdr->ack))) {
 			return NET_DROP;
@@ -2074,7 +2074,7 @@ resend_ack:
 		}
 	}
 
-	if (tcp_flags & NET_TCP_FIN) {
+	if ((tcp_flags & NET_TCP_FIN) != 0) {
 		if (net_tcp_get_state(context->tcp) == NET_TCP_ESTABLISHED) {
 			/* Passive close: step to CLOSE_WAIT */
 			net_tcp_change_state(context->tcp, NET_TCP_CLOSE_WAIT);
@@ -2131,7 +2131,7 @@ resend_ack:
 
 	/* Increment the ack */
 	context->tcp->send_ack += data_len;
-	if (tcp_flags & NET_TCP_FIN) {
+	if ((tcp_flags & NET_TCP_FIN) != 0) {
 		context->tcp->send_ack += 1;
 	}
 
@@ -2185,11 +2185,11 @@ NET_CONN_CB(tcp_synack_received)
 	NET_ASSERT(net_pkt_iface(pkt));
 
 	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
-	if (!tcp_hdr) {
+	if (tcp_hdr == NULL) {
 		return NET_DROP;
 	}
 
-	if (NET_TCP_FLAGS(tcp_hdr) & NET_TCP_RST) {
+	if ((NET_TCP_FLAGS(tcp_hdr) & NET_TCP_RST) != 0) {
 		/* We only accept RST packet that has valid seq field. */
 		if (!net_tcp_validate_seq(context->tcp, pkt)) {
 			net_stats_update_tcp_seg_rsterr(net_pkt_iface(pkt));
@@ -2206,7 +2206,7 @@ NET_CONN_CB(tcp_synack_received)
 		return NET_DROP;
 	}
 
-	if (NET_TCP_FLAGS(tcp_hdr) & NET_TCP_SYN) {
+	if ((NET_TCP_FLAGS(tcp_hdr) & NET_TCP_SYN) != 0) {
 		context->tcp->send_ack =
 			sys_get_be32(tcp_hdr->seq) + 1;
 	}
@@ -2269,7 +2269,7 @@ static void pkt_get_sockaddr(sa_family_t family, struct net_pkt *pkt,
 	struct net_tcp_hdr hdr, *tcp_hdr;
 
 	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
-	if (!tcp_hdr) {
+	if (tcp_hdr == NULL) {
 		return;
 	}
 
@@ -2349,7 +2349,7 @@ NET_CONN_CB(tcp_syn_rcvd)
 	NET_ASSERT(net_pkt_iface(pkt));
 
 	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
-	if (!tcp_hdr) {
+	if (tcp_hdr == NULL) {
 		return NET_DROP;
 	}
 
@@ -2415,7 +2415,7 @@ NET_CONN_CB(tcp_syn_rcvd)
 	 * See RFC 793 chapter 3.4 "Reset Processing" and RFC 793, page 65
 	 * for more details.
 	 */
-	if (NET_TCP_FLAGS(tcp_hdr) & NET_TCP_RST) {
+	if ((NET_TCP_FLAGS(tcp_hdr) & NET_TCP_RST) != 0) {
 
 		if (tcp_backlog_rst(pkt) < 0) {
 			net_stats_update_tcp_seg_rsterr(net_pkt_iface(pkt));

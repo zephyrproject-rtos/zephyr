@@ -64,7 +64,7 @@ int gptp_event_capture(struct net_ptp_time *slave_time, bool *gm_present)
 		if (!*gm_present || (GPTP_GLOBAL_DS()->selected_role[port] ==
 				     GPTP_PORT_SLAVE)) {
 			clk = net_eth_get_ptp_clock(GPTP_PORT_IFACE(port));
-			if (clk) {
+			if (clk != NULL) {
 				ptp_clock_get(clk, slave_time);
 				irq_unlock(key);
 				return 0;

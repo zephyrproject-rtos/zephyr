@@ -206,7 +206,7 @@ static int get_port_number(const char *peer_addr_str,
 		int end;
 
 		ptr = strstr(peer_addr_str, "]:");
-		if (!ptr) {
+		if (ptr == NULL) {
 			return -EINVAL;
 		}
 
@@ -237,7 +237,7 @@ static int get_port_number(const char *peer_addr_str,
 		int end;
 
 		ptr = strstr(peer_addr_str, ":");
-		if (!ptr) {
+		if (ptr == NULL) {
 			return -EINVAL;
 		}
 
@@ -341,7 +341,7 @@ int net_app_init_client(struct net_app_ctx *ctx,
 	struct sockaddr addr;
 	int ret, addr_ok = false;
 
-	if (!ctx) {
+	if (ctx == NULL) {
 		return -EINVAL;
 	}
 
@@ -352,29 +352,30 @@ int net_app_init_client(struct net_app_ctx *ctx,
 	(void)memset(&addr, 0, sizeof(addr));
 	(void)memset(&remote_addr, 0, sizeof(remote_addr));
 
-	if (peer_addr) {
+	if (peer_addr != NULL) {
 		memcpy(&remote_addr, peer_addr, sizeof(remote_addr));
-	} else if (peer_addr_str) {
+	} else {if (peer_addr_str != NULL) {
 		/* If the peer string contains port number, use that and
 		 * ignore the port number parameter.
 		 */
-		ret = get_port_number(peer_addr_str, base_addr_str,
-				      sizeof(base_addr_str));
-		if (ret > 0) {
-			base_peer_addr = base_addr_str;
-			peer_port = ret;
-		} else {
-			strncpy(base_addr_str, peer_addr_str,
-				sizeof(base_addr_str) - 1);
-		}
+			ret = get_port_number(peer_addr_str, base_addr_str,
+					      sizeof(base_addr_str));
+			if (ret > 0) {
+				base_peer_addr = base_addr_str;
+				peer_port = ret;
+			} else {
+				strncpy(base_addr_str, peer_addr_str,
+					sizeof(base_addr_str) - 1);
+			}
 
-		addr_ok = net_ipaddr_parse(base_peer_addr,
-					   strlen(base_peer_addr),
-					   &remote_addr);
+			addr_ok = net_ipaddr_parse(base_peer_addr,
+						   strlen(base_peer_addr),
+						   &remote_addr);
 
 		/* The remote_addr will be used by set_remote_addr() to
 		 * set the actual peer address.
 		 */
+		}
 	}
 
 	if (client_addr) {
@@ -433,7 +434,7 @@ int net_app_init_client(struct net_app_ctx *ctx,
 		goto fail;
 	}
 
-	if (peer_addr) {
+	if (peer_addr != NULL) {
 		if (peer_addr->sa_family == AF_INET) {
 #if defined(CONFIG_NET_IPV4)
 			memcpy(&ctx->ipv4.remote, peer_addr,
@@ -455,7 +456,7 @@ int net_app_init_client(struct net_app_ctx *ctx,
 		goto out;
 	}
 
-	if (!peer_addr_str) {
+	if (peer_addr_str == NULL) {
 		NET_ERR("Cannot know where to connect.");
 		ret = -EINVAL;
 		close_net_ctx(ctx);
@@ -479,7 +480,7 @@ int net_app_init_client(struct net_app_ctx *ctx,
 	}
 
 	/* Set the port now that we know the sa_family */
-	if (!peer_addr) {
+	if (peer_addr == NULL) {
 #if defined(CONFIG_NET_IPV6)
 		if (ctx->default_ctx->remote.sa_family == AF_INET6) {
 			net_sin6(&ctx->default_ctx->remote)->sin6_port =
@@ -684,7 +685,7 @@ int net_app_connect(struct net_app_ctx *ctx, s32_t timeout)
 	bool started = false;
 	int ret;
 
-	if (!ctx) {
+	if (ctx == NULL) {
 		return -EINVAL;
 	}
 
@@ -697,7 +698,7 @@ int net_app_connect(struct net_app_ctx *ctx, s32_t timeout)
 	}
 
 	net_ctx = _net_app_select_net_ctx(ctx, NULL);
-	if (!net_ctx && ctx->is_enabled) {
+	if ((net_ctx == NULL) && ctx->is_enabled) {
 		return -EAFNOSUPPORT;
 	}
 
@@ -810,7 +811,7 @@ static void tls_client_handler(struct net_app_ctx *ctx,
 
 	k_sem_give(startup_sync);
 
-	while (1) {
+	while (true) {
 		/* We wait until TLS connection is established */
 		k_sem_take(&ctx->client.connect_wait, K_FOREVER);
 
@@ -892,7 +893,7 @@ int net_app_client_tls(struct net_app_ctx *ctx,
 		       k_thread_stack_t *stack,
 		       size_t stack_size)
 {
-	if (!request_buf || request_buf_len == 0) {
+	if ((request_buf == NULL) || request_buf_len == 0) {
 		NET_ERR("Request buf must be set");
 		return -EINVAL;
 	}

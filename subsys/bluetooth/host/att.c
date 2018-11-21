@@ -156,7 +156,7 @@ static void att_req_sent(struct bt_conn *conn)
 	k_sem_give(&att->tx_sem);
 
 	/* Start timeout work */
-	if (att->req) {
+	if (att->req != NULL) {
 		k_delayed_work_submit(&att->timeout_work, ATT_TIMEOUT);
 	}
 }
@@ -197,7 +197,7 @@ static void send_err_rsp(struct bt_conn *conn, u8_t req, u16_t handle,
 	}
 
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_ERROR_RSP, sizeof(*rsp));
-	if (!buf) {
+	if (buf == NULL) {
 		return;
 	}
 
@@ -229,7 +229,7 @@ static u8_t att_mtu_req(struct bt_att *att, struct net_buf *buf)
 	}
 
 	pdu = bt_att_create_pdu(conn, BT_ATT_OP_MTU_RSP, sizeof(*rsp));
-	if (!pdu) {
+	if (pdu == NULL) {
 		return BT_ATT_ERR_UNLIKELY;
 	}
 
@@ -295,7 +295,7 @@ static void att_process(struct bt_att *att)
 
 	/* Pull next request from the list */
 	node = sys_slist_get(&att->reqs);
-	if (!node) {
+	if (node == NULL) {
 		return;
 	}
 
@@ -348,7 +348,7 @@ static u8_t att_mtu_rsp(struct bt_att *att, struct net_buf *buf)
 	struct bt_att_exchange_mtu_rsp *rsp;
 	u16_t mtu;
 
-	if (!att) {
+	if (att == NULL) {
 		return 0;
 	}
 
@@ -382,7 +382,7 @@ static bool range_is_valid(u16_t start, u16_t end, u16_t *err)
 {
 	/* Handle 0 is invalid */
 	if (!start || !end) {
-		if (err) {
+		if (err != NULL) {
 			*err = 0;
 		}
 		return false;
@@ -390,7 +390,7 @@ static bool range_is_valid(u16_t start, u16_t end, u16_t *err)
 
 	/* Check if range is valid */
 	if (start > end) {
-		if (err) {
+		if (err != NULL) {
 			*err = start;
 		}
 		return false;
@@ -685,7 +685,7 @@ static u8_t check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	}
 
 	mask &= attr->perm;
-	if (mask & BT_GATT_PERM_AUTHEN_MASK) {
+	if ((mask & BT_GATT_PERM_AUTHEN_MASK) != 0) {
 #if defined(CONFIG_BT_SMP)
 		if (conn->sec_level < BT_SECURITY_HIGH) {
 			return BT_ATT_ERR_AUTHENTICATION;
@@ -1266,7 +1266,7 @@ static u8_t att_write_rsp(struct bt_conn *conn, u8_t req, u8_t rsp,
 		return req == BT_ATT_OP_EXEC_WRITE_REQ ? data.err : 0;
 	}
 
-	if (data.buf) {
+	if (data.buf != NULL) {
 		bt_l2cap_send_cb(conn, BT_L2CAP_CID_ATT, data.buf,
 				 att_rsp_sent);
 	}
@@ -1448,7 +1448,7 @@ static u8_t att_exec_write_rsp(struct bt_att *att, u8_t flags)
 
 	/* Generate response */
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_EXEC_WRITE_RSP, 0);
-	if (!buf) {
+	if (buf == NULL) {
 		return BT_ATT_ERR_UNLIKELY;
 	}
 
@@ -1717,7 +1717,7 @@ static u8_t att_indicate(struct bt_att *att, struct net_buf *buf)
 	bt_gatt_notification(conn, handle, buf->data, buf->len);
 
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_CONFIRM, 0);
-	if (!buf) {
+	if (buf == NULL) {
 		return 0;
 	}
 
@@ -1874,7 +1874,7 @@ static att_type_t att_op_get_type(u8_t op)
 		}
 	}
 
-	if (op & ATT_CMD_MASK) {
+	if ((op & ATT_CMD_MASK) != 0) {
 		return ATT_COMMAND;
 	}
 
@@ -1905,7 +1905,7 @@ static int bt_att_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		}
 	}
 
-	if (!handler) {
+	if (handler == NULL) {
 		BT_WARN("Unknown ATT code 0x%02x", hdr->code);
 		if (att_op_get_type(hdr->code) != ATT_COMMAND) {
 			send_err_rsp(chan->conn, hdr->code, 0,
@@ -1953,7 +1953,7 @@ static struct bt_att *att_chan_get(struct bt_conn *conn)
 	}
 
 	chan = bt_l2cap_le_lookup_rx_cid(conn, BT_L2CAP_CID_ATT);
-	if (!chan) {
+	if (chan == NULL) {
 		BT_ERR("Unable to find ATT channel");
 		return NULL;
 	}
@@ -1974,7 +1974,7 @@ struct net_buf *bt_att_create_pdu(struct bt_conn *conn, u8_t op, size_t len)
 	struct bt_att *att;
 
 	att = att_chan_get(conn);
-	if (!att) {
+	if (att == NULL) {
 		return NULL;
 	}
 
@@ -2183,7 +2183,7 @@ u16_t bt_att_get_mtu(struct bt_conn *conn)
 	struct bt_att *att;
 
 	att = att_chan_get(conn);
-	if (!att) {
+	if (att == NULL) {
 		return 0;
 	}
 
@@ -2196,12 +2196,12 @@ int bt_att_send(struct bt_conn *conn, struct net_buf *buf)
 	struct bt_att *att;
 	struct bt_att_hdr *hdr;
 
-	if (!conn || !buf) {
+	if ((conn == NULL) || !buf) {
 		return -EINVAL;
 	}
 
 	att = att_chan_get(conn);
-	if (!att) {
+	if (att == NULL) {
 		return -ENOTCONN;
 	}
 
@@ -2238,17 +2238,17 @@ int bt_att_req_send(struct bt_conn *conn, struct bt_att_req *req)
 
 	BT_DBG("conn %p req %p", conn, req);
 
-	if (!conn || !req) {
+	if ((conn == NULL) || !req) {
 		return -EINVAL;
 	}
 
 	att = att_chan_get(conn);
-	if (!att) {
+	if (att == NULL) {
 		return -ENOTCONN;
 	}
 
 	/* Check if there is a request outstanding */
-	if (att->req) {
+	if (att->req != NULL) {
 		/* Queue the request to be send later */
 		sys_slist_append(&att->reqs, &req->node);
 		return 0;
@@ -2263,12 +2263,12 @@ void bt_att_req_cancel(struct bt_conn *conn, struct bt_att_req *req)
 
 	BT_DBG("req %p", req);
 
-	if (!conn || !req) {
+	if ((conn == NULL) || !req) {
 		return;
 	}
 
 	att = att_chan_get(conn);
-	if (!att) {
+	if (att == NULL) {
 		return;
 	}
 

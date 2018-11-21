@@ -182,7 +182,7 @@ static void ipv6_event_handler(struct net_mgmt_event_callback *cb,
 	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
 	int i;
 
-	if (!ipv6) {
+	if (ipv6 == NULL) {
 		return;
 	}
 
@@ -204,9 +204,7 @@ static void ipv6_event_handler(struct net_mgmt_event_callback *cb,
 		struct net_if_addr *ifaddr;
 
 		ifaddr = net_if_ipv6_addr_lookup(&laddr, &iface);
-		if (!ifaddr ||
-		    !(net_ipv6_addr_cmp(&ifaddr->address.in6_addr, &laddr) &&
-		      ifaddr->addr_state == NET_ADDR_PREFERRED)) {
+		if ((ifaddr == NULL) || !(net_ipv6_addr_cmp(&ifaddr->address.in6_addr, &laddr) && ifaddr->addr_state == NET_ADDR_PREFERRED)) {
 			/* Address is not yet properly setup */
 			return;
 		}
@@ -243,7 +241,7 @@ static void setup_ipv6(struct net_if *iface, u32_t flags)
 		mask |= NET_EVENT_IPV6_ADDR_ADD;
 	}
 
-	if (flags & NET_CONFIG_NEED_ROUTER) {
+	if ((flags & NET_CONFIG_NEED_ROUTER) != 0) {
 		mask |= NET_EVENT_IPV6_ROUTER_ADD;
 	}
 
@@ -260,7 +258,7 @@ static void setup_ipv6(struct net_if *iface, u32_t flags)
 	    NET_EVENT_IPV6_CMD_ADDR_ADD) {
 		ifaddr = net_if_ipv6_addr_add(iface, &laddr,
 					      NET_ADDR_MANUAL, 0);
-		if (!ifaddr) {
+		if (ifaddr == NULL) {
 			NET_ERR("Cannot add %s to interface",
 				CONFIG_NET_CONFIG_MY_IPV6_ADDR);
 		}
@@ -285,20 +283,20 @@ int net_config_init(const char *app_info, u32_t flags, s32_t timeout)
 	int loop = timeout / LOOP_DIVIDER;
 	int count = 0;
 
-	if (app_info) {
+	if (app_info != NULL) {
 		NET_INFO("%s", log_strdup(app_info));
 	}
 
-	if (!iface) {
+	if (iface == NULL) {
 		NET_ERR("No network interfaces");
 		return -ENODEV;
 	}
 
-	if (flags & NET_CONFIG_NEED_IPV6) {
+	if ((flags & NET_CONFIG_NEED_IPV6) != 0) {
 		count++;
 	}
 
-	if (flags & NET_CONFIG_NEED_IPV4) {
+	if ((flags & NET_CONFIG_NEED_IPV4) != 0) {
 		count++;
 	}
 

@@ -90,7 +90,7 @@ static int send_mldv2_raw(struct net_if *iface, struct net_buf *frags)
 
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, &dst),
 				     NET_BUF_TIMEOUT);
-	if (!pkt) {
+	if (pkt == NULL) {
 		return -ENOMEM;
 	}
 
@@ -173,7 +173,7 @@ static int send_mldv2(struct net_if *iface, const struct in6_addr *addr,
 
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
 				     NET_BUF_TIMEOUT);
-	if (!pkt) {
+	if (pkt == NULL) {
 		return -ENOMEM;
 	}
 
@@ -200,13 +200,13 @@ int net_ipv6_mld_join(struct net_if *iface, const struct in6_addr *addr)
 	int ret;
 
 	maddr = net_if_ipv6_maddr_lookup(addr, &iface);
-	if (maddr && net_if_ipv6_maddr_is_joined(maddr)) {
+	if ((maddr != NULL) && net_if_ipv6_maddr_is_joined(maddr)) {
 		return -EALREADY;
 	}
 
-	if (!maddr) {
+	if (maddr == NULL) {
 		maddr = net_if_ipv6_maddr_add(iface, addr);
-		if (!maddr) {
+		if (maddr == NULL) {
 			return -ENOMEM;
 		}
 	}
@@ -255,7 +255,7 @@ static void send_mld_report(struct net_if *iface)
 
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
 				     NET_BUF_TIMEOUT);
-	if (!pkt) {
+	if (pkt == NULL) {
 		return;
 	}
 
@@ -329,7 +329,7 @@ static enum net_verdict handle_mld_query(struct net_pkt *pkt)
 	frag = net_frag_read(frag, pos, &pos, sizeof(mcast), mcast.s6_addr);
 	frag = net_frag_skip(frag, pos, &pos, 2); /* skip S, QRV & QQIC */
 	frag = net_frag_read_be16(pkt->frags, pos, &pos, &num_src);
-	if (!frag && pos == 0xffff) {
+	if ((frag == NULL) && pos == 0xffff) {
 		goto drop;
 	}
 

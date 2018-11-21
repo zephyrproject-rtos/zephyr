@@ -74,7 +74,7 @@ int settings_getnext_line(struct fs_file_t  *file, char *buf, int blen,
 	buf[rc] = '\0';
 
 	end = strchr(buf, '\n');
-	if (end) {
+	if (end != NULL) {
 		*end = '\0';
 	} else {
 		end = strchr(buf, '\0');
@@ -108,7 +108,7 @@ static int settings_file_load(struct settings_store *cs, load_cb cb,
 
 	loc = 0;
 	lines = 0;
-	while (1) {
+	while (true) {
 		rc = settings_getnext_line(&file, tmpbuf, sizeof(tmpbuf), &loc);
 		if (loc == 0) {
 			break;
@@ -194,7 +194,7 @@ void settings_file_compress(struct settings_file *cf)
 
 	loc1 = 0;
 	lines = 0;
-	while (1) {
+	while (true) {
 		len = settings_getnext_line(&rf, buf1, sizeof(buf1), &loc1);
 		if (loc1 == 0 || len < 0) {
 			break;
@@ -262,7 +262,7 @@ static int settings_file_save(struct settings_store *cs, const char *name,
 	int rc2;
 	int rc;
 
-	if (!name) {
+	if (name == NULL) {
 		return -EINVAL;
 	}
 

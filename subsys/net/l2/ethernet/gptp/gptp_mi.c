@@ -272,7 +272,7 @@ u64_t gptp_get_current_time_nanosecond(int port)
 	struct device *clk;
 
 	clk = net_eth_get_ptp_clock(GPTP_PORT_IFACE(port));
-	if (clk) {
+	if (clk != NULL) {
 		struct net_ptp_time tm = {};
 
 		ptp_clock_get(clk, &tm);
@@ -700,7 +700,7 @@ static void gptp_update_local_port_clock(void)
 		(global_ds->sync_receipt_local_time % NSEC_PER_SEC);
 
 	clk = net_eth_get_ptp_clock(GPTP_PORT_IFACE(port));
-	if (!clk) {
+	if (clk == NULL) {
 		return;
 	}
 
@@ -1821,7 +1821,7 @@ static void tx_announce(int port)
 	struct net_pkt *pkt;
 
 	pkt = gptp_prepare_announce(port);
-	if (pkt) {
+	if (pkt != NULL) {
 		gptp_send_announce(port, pkt);
 	}
 }

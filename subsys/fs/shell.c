@@ -127,7 +127,7 @@ static int cmd_ls(const struct shell *shell, size_t argc, char **argv)
 		return -ENOEXEC;
 	}
 
-	while (1) {
+	while (true) {
 		struct fs_dirent entry;
 
 		err = fs_readdir(&dir, &entry);
@@ -425,7 +425,7 @@ static char *mntpt_prepare(char *mntpt)
 	char *cpy_mntpt;
 
 	cpy_mntpt = k_malloc(strlen(mntpt) + 1);
-	if (cpy_mntpt) {
+	if (cpy_mntpt != NULL) {
 		((u8_t *)mntpt)[strlen(mntpt)] = '\0';
 		memcpy(cpy_mntpt, mntpt, strlen(mntpt));
 	}
@@ -445,7 +445,7 @@ static int cmd_mount_fat(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	mntpt = mntpt_prepare(argv[1]);
-	if (!mntpt) {
+	if (mntpt == NULL) {
 		shell_fprintf(shell, SHELL_ERROR,
 			"Failed to allocate  buffer for mount point\n");
 		return -ENOEXEC;
@@ -479,7 +479,7 @@ static int cmd_mount_nffs(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	mntpt = mntpt_prepare(argv[1]);
-	if (!mntpt) {
+	if (mntpt == NULL) {
 		shell_fprintf(shell, SHELL_ERROR,
 			"Failed to allocate  buffer for mount point\n");
 		return -ENOEXEC;
@@ -487,7 +487,7 @@ static int cmd_mount_nffs(const struct shell *shell, size_t argc, char **argv)
 
 	nffs_mnt.mnt_point = (const char *)mntpt;
 	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
-	if (!flash_dev) {
+	if (flash_dev == NULL) {
 		printk("Error in device_get_binding, while mounting nffs fs\n");
 		return -ENOEXEC;
 	}

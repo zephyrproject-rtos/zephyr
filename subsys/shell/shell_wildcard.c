@@ -45,7 +45,7 @@ static enum shell_wildcard_status command_add(char *buff, u16_t *buff_len,
 
 	completion_addr = strstr(buff, pattern);
 
-	if (!completion_addr) {
+	if (completion_addr == NULL) {
 		return SHELL_WILDCARD_CMD_NO_MATCH_FOUND;
 	}
 
@@ -99,7 +99,7 @@ static enum shell_wildcard_status commands_expand(const struct shell *shell,
 	do {
 		subcmd_get(cmd, cmd_idx++, &p_static_entry, &static_entry);
 
-		if (!p_static_entry) {
+		if (p_static_entry == NULL) {
 			break;
 		}
 

@@ -68,7 +68,7 @@ static void health_fault_status(struct bt_mesh_model *model,
 		return;
 	}
 
-	if (param->test_id) {
+	if (param->test_id != NULL) {
 		*param->test_id = test_id;
 	}
 
@@ -156,7 +156,7 @@ static void health_attention_status(struct bt_mesh_model *model,
 
 	param = health_cli->op_param;
 
-	if (param->attention) {
+	if (param->attention != NULL) {
 		*param->attention = net_buf_simple_pull_u8(buf);
 	}
 
@@ -173,7 +173,7 @@ const struct bt_mesh_model_op bt_mesh_health_cli_op[] = {
 
 static int cli_prepare(void *param, u32_t op)
 {
-	if (!health_cli) {
+	if (health_cli == NULL) {
 		BT_ERR("No available Health Client context!");
 		return -EINVAL;
 	}
@@ -258,7 +258,7 @@ int bt_mesh_health_attention_set(u16_t net_idx, u16_t addr, u16_t app_idx,
 		return err;
 	}
 
-	if (updated_attention) {
+	if (updated_attention != NULL) {
 		bt_mesh_model_msg_init(&msg, OP_ATTENTION_SET);
 	} else {
 		bt_mesh_model_msg_init(&msg, OP_ATTENTION_SET_UNREL);
@@ -273,7 +273,7 @@ int bt_mesh_health_attention_set(u16_t net_idx, u16_t addr, u16_t app_idx,
 		return err;
 	}
 
-	if (!updated_attention) {
+	if (updated_attention == NULL) {
 		cli_reset();
 		return 0;
 	}
@@ -333,7 +333,7 @@ int bt_mesh_health_period_set(u16_t net_idx, u16_t addr, u16_t app_idx,
 		return err;
 	}
 
-	if (updated_divisor) {
+	if (updated_divisor != NULL) {
 		bt_mesh_model_msg_init(&msg, OP_HEALTH_PERIOD_SET);
 	} else {
 		bt_mesh_model_msg_init(&msg, OP_HEALTH_PERIOD_SET_UNREL);
@@ -348,7 +348,7 @@ int bt_mesh_health_period_set(u16_t net_idx, u16_t addr, u16_t app_idx,
 		return err;
 	}
 
-	if (!updated_divisor) {
+	if (updated_divisor == NULL) {
 		cli_reset();
 		return 0;
 	}
@@ -380,7 +380,7 @@ int bt_mesh_health_fault_test(u16_t net_idx, u16_t addr, u16_t app_idx,
 		return err;
 	}
 
-	if (faults) {
+	if (faults != NULL) {
 		bt_mesh_model_msg_init(&msg, OP_HEALTH_FAULT_TEST);
 	} else {
 		bt_mesh_model_msg_init(&msg, OP_HEALTH_FAULT_TEST_UNREL);
@@ -396,7 +396,7 @@ int bt_mesh_health_fault_test(u16_t net_idx, u16_t addr, u16_t app_idx,
 		return err;
 	}
 
-	if (!faults) {
+	if (faults == NULL) {
 		cli_reset();
 		return 0;
 	}
@@ -428,7 +428,7 @@ int bt_mesh_health_fault_clear(u16_t net_idx, u16_t addr, u16_t app_idx,
 		return err;
 	}
 
-	if (test_id) {
+	if (test_id != NULL) {
 		bt_mesh_model_msg_init(&msg, OP_HEALTH_FAULT_CLEAR);
 	} else {
 		bt_mesh_model_msg_init(&msg, OP_HEALTH_FAULT_CLEAR_UNREL);
@@ -443,7 +443,7 @@ int bt_mesh_health_fault_clear(u16_t net_idx, u16_t addr, u16_t app_idx,
 		return err;
 	}
 
-	if (!test_id) {
+	if (test_id == NULL) {
 		cli_reset();
 		return 0;
 	}
@@ -516,7 +516,7 @@ int bt_mesh_health_cli_init(struct bt_mesh_model *model, bool primary)
 
 	BT_DBG("primary %u", primary);
 
-	if (!cli) {
+	if (cli == NULL) {
 		BT_ERR("No Health Client context provided");
 		return -EINVAL;
 	}
@@ -527,7 +527,7 @@ int bt_mesh_health_cli_init(struct bt_mesh_model *model, bool primary)
 	k_sem_init(&cli->op_sync, 0, 1);
 
 	/* Set the default health client pointer */
-	if (!health_cli) {
+	if (health_cli == NULL) {
 		health_cli = cli;
 	}
 

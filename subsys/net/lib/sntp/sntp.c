@@ -21,7 +21,7 @@
 
 static void sntp_pkt_dump(struct sntp_pkt *pkt)
 {
-	if (!pkt) {
+	if (pkt == NULL) {
 		return;
 	}
 
@@ -81,7 +81,7 @@ static s32_t parse_response(u8_t *data, u16_t len, u32_t orig_ts,
 		return -EINVAL;
 	}
 
-	if (epoch_time) {
+	if (epoch_time != NULL) {
 		u32_t ts = ntohl(pkt->tx_tm_s);
 
 		/* Check if most significant bit is set */
@@ -159,7 +159,7 @@ int sntp_init(struct sntp_ctx *ctx, const char *srv_addr, u16_t srv_port,
 {
 	int rv;
 
-	if (!ctx) {
+	if (ctx == NULL) {
 		return -EFAULT;
 	}
 
@@ -191,7 +191,7 @@ int sntp_request(struct sntp_ctx *ctx,
 	struct sntp_pkt tx_pkt = { 0 };
 	int rv = 0;
 
-	if (!ctx) {
+	if (ctx == NULL) {
 		return -EFAULT;
 	}
 
@@ -225,7 +225,7 @@ int sntp_request(struct sntp_ctx *ctx,
 
 void sntp_close(struct sntp_ctx *ctx)
 {
-	if (!ctx || !ctx->is_init) {
+	if ((ctx == NULL) || !ctx->is_init) {
 		return;
 	}
 

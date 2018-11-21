@@ -264,7 +264,7 @@ int net_icmpv6_set_na_hdr(struct net_pkt *pkt, struct net_icmpv6_na_hdr *hdr)
 			     sizeof(struct net_icmp_hdr),
 			     &pos, sizeof(*hdr), (u8_t *)hdr,
 			     PKT_WAIT_TIME);
-	if (!frag) {
+	if (frag == NULL) {
 		NET_ERR("Cannot set the ICMPv6 NA header");
 		return -EINVAL;
 	}
@@ -312,12 +312,12 @@ static enum net_verdict handle_echo_request(struct net_pkt *orig)
 	}
 
 	pkt = net_pkt_get_reserve_tx(0, PKT_WAIT_TIME);
-	if (!pkt) {
+	if (pkt == NULL) {
 		goto drop_no_pkt;
 	}
 
 	frag = net_pkt_copy_all(orig, 0, PKT_WAIT_TIME);
-	if (!frag) {
+	if (frag == NULL) {
 		goto drop;
 	}
 
@@ -429,7 +429,7 @@ int net_icmpv6_send_error(struct net_pkt *orig, u8_t type, u8_t code,
 	}
 
 	pkt = net_pkt_get_reserve_tx(0, PKT_WAIT_TIME);
-	if (!pkt) {
+	if (pkt == NULL) {
 		err = -ENOMEM;
 		goto drop_no_pkt;
 	}
@@ -464,7 +464,7 @@ int net_icmpv6_send_error(struct net_pkt *orig, u8_t type, u8_t code,
 	 * This is so that the memory pressure is minimized.
 	 */
 	frag = net_pkt_copy(orig, extra_len, reserve, PKT_WAIT_TIME);
-	if (!frag) {
+	if (frag == NULL) {
 		err = -ENOMEM;
 		goto drop;
 	}
@@ -553,7 +553,7 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, dst),
 				     PKT_WAIT_TIME);
-	if (!pkt) {
+	if (pkt == NULL) {
 		return -ENOMEM;
 	}
 

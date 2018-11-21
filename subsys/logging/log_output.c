@@ -189,7 +189,7 @@ static int ids_print(struct log_msg *msg,
 static void newline_print(const struct log_output *ctx, u32_t flags)
 {
 
-	if (flags & LOG_OUTPUT_FLAG_CRLF_NONE) {
+	if ((flags & LOG_OUTPUT_FLAG_CRLF_NONE) != 0) {
 		return;
 	}
 

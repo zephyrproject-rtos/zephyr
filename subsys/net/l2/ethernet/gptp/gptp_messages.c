@@ -99,7 +99,7 @@ static void gptp_pdelay_response_timestamp_callback(struct net_pkt *pkt)
 	/* If this buffer is a path delay response, send the follow up. */
 	if (hdr->message_type == GPTP_PATH_DELAY_RESP_MESSAGE) {
 		follow_up = gptp_prepare_pdelay_follow_up(port, pkt);
-		if (!follow_up) {
+		if (follow_up == NULL) {
 			/* Cannot handle the follow up, abort */
 			NET_ERR("Could not get buffer");
 			goto out;
@@ -134,7 +134,7 @@ static struct net_buf *setup_ethernet_frame(struct net_pkt *pkt,
 #endif
 
 	frag = net_pkt_get_reserve_tx_data(eth_len, NET_BUF_TIMEOUT);
-	if (!frag) {
+	if (frag == NULL) {
 		return NULL;
 	}
 
@@ -181,12 +181,12 @@ struct net_pkt *gptp_prepare_sync(int port)
 	NET_ASSERT(iface);
 
 	pkt = net_pkt_get_reserve_tx(0, NET_BUF_TIMEOUT);
-	if (!pkt) {
+	if (pkt == NULL) {
 		goto fail;
 	}
 
 	frag = setup_ethernet_frame(pkt, iface);
-	if (!frag) {
+	if (frag == NULL) {
 		goto fail;
 	}
 
@@ -229,7 +229,7 @@ struct net_pkt *gptp_prepare_sync(int port)
 	return pkt;
 
 fail:
-	if (pkt) {
+	if (pkt != NULL) {
 		net_pkt_unref(pkt);
 	}
 
@@ -250,12 +250,12 @@ struct net_pkt *gptp_prepare_follow_up(int port, struct net_pkt *sync)
 	NET_ASSERT(iface);
 
 	pkt = net_pkt_get_reserve_tx(0, NET_BUF_TIMEOUT);
-	if (!pkt) {
+	if (pkt == NULL) {
 		goto fail;
 	}
 
 	frag = setup_ethernet_frame(pkt, iface);
-	if (!frag) {
+	if (frag == NULL) {
 		goto fail;
 	}
 
@@ -296,7 +296,7 @@ struct net_pkt *gptp_prepare_follow_up(int port, struct net_pkt *sync)
 	return pkt;
 
 fail:
-	if (pkt) {
+	if (pkt != NULL) {
 		net_pkt_unref(pkt);
 	}
 
@@ -317,12 +317,12 @@ struct net_pkt *gptp_prepare_pdelay_req(int port)
 	NET_ASSERT(iface);
 
 	pkt = net_pkt_get_reserve_tx(0, NET_BUF_TIMEOUT);
-	if (!pkt) {
+	if (pkt == NULL) {
 		goto fail;
 	}
 
 	frag = setup_ethernet_frame(pkt, iface);
-	if (!frag) {
+	if (frag == NULL) {
 		goto fail;
 	}
 
@@ -369,7 +369,7 @@ struct net_pkt *gptp_prepare_pdelay_req(int port)
 	return pkt;
 
 fail:
-	if (pkt) {
+	if (pkt != NULL) {
 		net_pkt_unref(pkt);
 	}
 
@@ -388,12 +388,12 @@ struct net_pkt *gptp_prepare_pdelay_resp(int port,
 	struct net_buf *frag;
 
 	pkt = net_pkt_get_reserve_tx(0, NET_BUF_TIMEOUT);
-	if (!pkt) {
+	if (pkt == NULL) {
 		goto fail;
 	}
 
 	frag = setup_ethernet_frame(pkt, iface);
-	if (!frag) {
+	if (frag == NULL) {
 		goto fail;
 	}
 
@@ -445,7 +445,7 @@ struct net_pkt *gptp_prepare_pdelay_resp(int port,
 	return pkt;
 
 fail:
-	if (pkt) {
+	if (pkt != NULL) {
 		net_pkt_unref(pkt);
 	}
 
@@ -464,12 +464,12 @@ struct net_pkt *gptp_prepare_pdelay_follow_up(int port,
 	struct net_buf *frag;
 
 	pkt = net_pkt_get_reserve_tx(0, NET_BUF_TIMEOUT);
-	if (!pkt) {
+	if (pkt == NULL) {
 		goto fail;
 	}
 
 	frag = setup_ethernet_frame(pkt, iface);
-	if (!frag) {
+	if (frag == NULL) {
 		goto fail;
 	}
 
@@ -522,7 +522,7 @@ struct net_pkt *gptp_prepare_pdelay_follow_up(int port,
 	return pkt;
 
 fail:
-	if (pkt) {
+	if (pkt != NULL) {
 		net_pkt_unref(pkt);
 	}
 
@@ -547,12 +547,12 @@ struct net_pkt *gptp_prepare_announce(int port)
 	NET_ASSERT(iface);
 
 	pkt = net_pkt_get_reserve_tx(0, NET_BUF_TIMEOUT);
-	if (!pkt) {
+	if (pkt == NULL) {
 		goto fail;
 	}
 
 	frag = setup_ethernet_frame(pkt, iface);
-	if (!frag) {
+	if (frag == NULL) {
 		goto fail;
 	}
 
@@ -643,7 +643,7 @@ struct net_pkt *gptp_prepare_announce(int port)
 	return pkt;
 
 fail:
-	if (pkt) {
+	if (pkt != NULL) {
 		net_pkt_unref(pkt);
 	}
 
@@ -712,7 +712,7 @@ void gptp_handle_pdelay_req(int port, struct net_pkt *pkt)
 
 	/* Prepare response and send */
 	reply = gptp_prepare_pdelay_resp(port, pkt);
-	if (!reply) {
+	if (reply == NULL) {
 		return;
 	}
 

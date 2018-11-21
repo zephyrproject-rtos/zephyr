@@ -201,11 +201,11 @@ static inline void net_hexdump_frags(const char *str,
 	u8_t reserve = full ? net_pkt_ll_reserve(pkt) : 0;
 	struct net_buf *frag = pkt->frags;
 
-	if (str && str[0]) {
+	if ((str != NULL) && str[0]) {
 		LOG_DBG("%s", str);
 	}
 
-	while (frag) {
+	while (frag != NULL) {
 		LOG_HEXDUMP_DBG(full ? frag->data - reserve : frag->data,
 				frag->len + reserve, "");
 		frag = frag->frags;
@@ -221,21 +221,21 @@ static inline void net_print_frags(const char *str, struct net_pkt *pkt)
 {
 	struct net_buf *frag = pkt->frags;
 
-	if (str) {
+	if (str != NULL) {
 		printk("%s", str);
 	}
 
 	printk("%p[%d]", pkt, pkt->ref);
 
-	if (frag) {
+	if (frag != NULL) {
 		printk("->");
 	}
 
-	while (frag) {
+	while (frag != NULL) {
 		printk("%p[%d/%d]", frag, frag->ref, frag->len);
 
 		frag = frag->frags;
-		if (frag) {
+		if (frag != NULL) {
 			printk("->");
 		}
 	}

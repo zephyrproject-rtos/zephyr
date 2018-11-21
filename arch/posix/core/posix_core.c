@@ -131,7 +131,7 @@ static void posix_wait_until_allowed(int this_th_nbr)
 	while (this_th_nbr != currently_allowed_thread) {
 		pthread_cond_wait(&cond_threads, &mtx_threads);
 
-		if (threads_table &&
+		if ((threads_table != NULL) &&
 		    (threads_table[this_th_nbr].state == ABORTING)) {
 			abort_tail(this_th_nbr);
 		}
@@ -277,7 +277,7 @@ static void *posix_thread_starter(void *arg)
 	 * The program may have been finished before this thread ever got to run
 	 */
 	/* LCOV_EXCL_START */ /* See Note1 */
-	if (!threads_table) {
+	if (threads_table == NULL) {
 		posix_cleanup_handler(arg);
 		pthread_exit(NULL);
 	}
@@ -423,7 +423,7 @@ void posix_init_multithreading(void)
 void posix_core_clean_up(void)
 {
 
-	if (!threads_table) { /* LCOV_EXCL_BR_LINE */
+	if (threads_table == NULL) { /* LCOV_EXCL_BR_LINE */
 		return; /* LCOV_EXCL_LINE */
 	}
 

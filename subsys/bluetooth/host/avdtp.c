@@ -117,7 +117,7 @@ void bt_avdtp_l2cap_connected(struct bt_l2cap_chan *chan)
 {
 	struct bt_avdtp *session;
 
-	if (!chan) {
+	if (chan == NULL) {
 		BT_ERR("Invalid AVDTP chan");
 		return;
 	}
@@ -198,7 +198,7 @@ int bt_avdtp_connect(struct bt_conn *conn, struct bt_avdtp *session)
 		.recv = bt_avdtp_l2cap_recv
 	};
 
-	if (!session) {
+	if (session == NULL) {
 		return -EINVAL;
 	}
 
@@ -211,7 +211,7 @@ int bt_avdtp_connect(struct bt_conn *conn, struct bt_avdtp *session)
 
 int bt_avdtp_disconnect(struct bt_avdtp *session)
 {
-	if (!session) {
+	if (session == NULL) {
 		return -EINVAL;
 	}
 
@@ -247,7 +247,7 @@ int bt_avdtp_register(struct bt_avdtp_event_cb *cb)
 {
 	BT_DBG("");
 
-	if (event_cb) {
+	if (event_cb != NULL) {
 		return -EALREADY;
 	}
 
@@ -263,7 +263,7 @@ int bt_avdtp_register_sep(u8_t media_type, u8_t role,
 
 	static u8_t bt_avdtp_seid = BT_AVDTP_MIN_SEID;
 
-	if (!lsep) {
+	if (lsep == NULL) {
 		return -EIO;
 	}
 
@@ -310,7 +310,7 @@ int bt_avdtp_discover(struct bt_avdtp *session,
 	struct net_buf *buf;
 
 	BT_DBG("");
-	if (!param || !session) {
+	if ((param == NULL) || !session) {
 		BT_DBG("Error: Callback/Session not valid");
 		return -EINVAL;
 	}
@@ -318,7 +318,7 @@ int bt_avdtp_discover(struct bt_avdtp *session,
 	buf = avdtp_create_pdu(BT_AVDTP_CMD,
 			       BT_AVDTP_PACKET_TYPE_SINGLE,
 			       BT_AVDTP_DISCOVER);
-	if (!buf) {
+	if (buf == NULL) {
 		BT_ERR("Error: No Buff available");
 		return -ENOMEM;
 	}

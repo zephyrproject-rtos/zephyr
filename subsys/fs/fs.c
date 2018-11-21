@@ -68,7 +68,7 @@ int fs_get_mnt_point(struct fs_mount_t **mnt_pntp,
 	}
 
 	*mnt_pntp = mnt_p;
-	if (match_len)
+	if (match_len != NULL)
 		*match_len = mnt_p->mountp_len;
 
 	return 0;

@@ -42,7 +42,7 @@ memq_link_t *memq_peek(memq_link_t *head, memq_link_t *tail, void **mem)
 	}
 
 	/* extract the link's mem */
-	if (mem) {
+	if (mem != NULL) {
 		*mem = head->mem;
 	}
 
@@ -55,7 +55,7 @@ memq_link_t *memq_dequeue(memq_link_t *tail, memq_link_t **head, void **mem)
 
 	/* use memq peek to get the link and mem */
 	link = memq_peek(*head, tail, mem);
-	if (!link) {
+	if (link == NULL) {
 		return link;
 	}
 

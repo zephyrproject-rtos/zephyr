@@ -1601,7 +1601,7 @@ reexecute:
 					goto error;
 				}
 
-				if (parser->flags & F_CONTENTLENGTH) {
+				if ((parser->flags & F_CONTENTLENGTH) != 0) {
 					SET_ERRNO
 						(HPE_UNEXPECTED_CONTENT_LENGTH);
 					goto error;
@@ -1802,7 +1802,7 @@ reexecute:
 				goto error;
 			}
 
-			if (parser->flags & F_TRAILING) {
+			if ((parser->flags & F_TRAILING) != 0) {
 				/* End of a chunked request */
 				UPDATE_STATE(s_message_done);
 
@@ -2281,7 +2281,7 @@ int http_should_keep_alive(const struct http_parser *parser)
 {
 	if (parser->http_major > 0 && parser->http_minor > 0) {
 		/* HTTP/1.1 */
-		if (parser->flags & F_CONNECTION_CLOSE) {
+		if ((parser->flags & F_CONNECTION_CLOSE) != 0) {
 			return 0;
 		}
 	} else {

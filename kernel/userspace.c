@@ -236,7 +236,7 @@ void *_impl_k_object_alloc(enum k_objects otype)
 
 	/* Need to grab a new thread index for k_thread */
 	if (otype == K_OBJ_THREAD) {
-		if (!_thread_idx_alloc(&tidx)) {
+		if (_thread_idx_alloc(&tidx) == 0) {
 			k_free(dyn_obj);
 			return NULL;
 		}
@@ -333,7 +333,7 @@ static int thread_index_get(struct k_thread *t)
 static void unref_check(struct _k_object *ko)
 {
 	for (int i = 0; i < CONFIG_MAX_THREAD_BYTES; i++) {
-		if (ko->perms[i]) {
+		if (ko->perms[i] != 0) {
 			return;
 		}
 	}
@@ -359,7 +359,7 @@ static void unref_check(struct _k_object *ko)
 	}
 
 #ifdef CONFIG_DYNAMIC_OBJECTS
-	if (ko->flags & K_OBJ_FLAG_ALLOC) {
+	if ((ko->flags & K_OBJ_FLAG_ALLOC) != 0) {
 		struct dyn_obj *dyn_obj =
 			CONTAINER_OF(ko, struct dyn_obj, kobj);
 		rb_remove(&obj_rb_tree, &dyn_obj->node);
@@ -437,7 +437,7 @@ static int thread_perms_test(struct _k_object *ko)
 {
 	int index;
 
-	if (ko->flags & K_OBJ_FLAG_PUBLIC) {
+	if ((ko->flags & K_OBJ_FLAG_PUBLIC) != 0) {
 		return 1;
 	}
 
@@ -662,7 +662,7 @@ char *z_user_string_alloc_copy(char *src, size_t maxlen)
 
 	key = irq_lock();
 	actual_len = z_user_string_nlen(src, maxlen, &err);
-	if (err) {
+	if (err != 0) {
 		goto out;
 	}
 	if (actual_len == maxlen) {
@@ -689,7 +689,7 @@ int z_user_string_copy(char *dst, char *src, size_t maxlen)
 
 	key = irq_lock();
 	actual_len = z_user_string_nlen(src, maxlen, &err);
-	if (err) {
+	if (err != 0) {
 		ret = EFAULT;
 		goto out;
 	}

@@ -506,7 +506,7 @@ int mqtt_rx_pub_msgs(struct mqtt_ctx *ctx, struct net_buf *rx,
 		return -EINVAL;
 	}
 
-	if (!response) {
+	if (response == NULL) {
 		return 0;
 	}
 
@@ -716,7 +716,7 @@ int mqtt_parser(struct mqtt_ctx *ctx, struct net_pkt *rx)
 	int rc = -EINVAL;
 
 	data = mqtt_linearize_packet(ctx, rx, MQTT_PUBLISHER_MIN_MSG_SIZE);
-	if (!data) {
+	if (data == NULL) {
 		return -ENOMEM;
 	}
 
@@ -776,7 +776,7 @@ void app_connected(struct net_app_ctx *ctx, int status, void *data)
 	/* net_app_ctx is already referenced to by the mqtt_ctx struct */
 	ARG_UNUSED(ctx);
 
-	if (!mqtt) {
+	if (mqtt == NULL) {
 		return;
 	}
 
@@ -812,7 +812,7 @@ int mqtt_connect(struct mqtt_ctx *ctx)
 {
 	int rc = 0;
 
-	if (!ctx) {
+	if (ctx == NULL) {
 		return -EFAULT;
 	}
 
@@ -898,7 +898,7 @@ int mqtt_init(struct mqtt_ctx *ctx, enum mqtt_app app_type)
 
 int mqtt_close(struct mqtt_ctx *ctx)
 {
-	if (!ctx) {
+	if (ctx == NULL) {
 		return -EFAULT;
 	}
 

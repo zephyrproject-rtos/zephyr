@@ -187,7 +187,7 @@ FUNC_NORETURN void _Fault(const NANO_ESF *esf)
 #if CONFIG_EXTRA_EXCEPTION_INFO
 	printk("reason: %s\n", cause_str(cause));
 #endif
-	if (BIT(cause) & NIOS2_BADADDR_CAUSE_MASK) {
+	if ((BIT(cause) & NIOS2_BADADDR_CAUSE_MASK) != 0) {
 		badaddr_reg = _nios2_creg_read(NIOS2_CR_BADADDR);
 		printk("Badaddr: 0x%x\n", badaddr_reg);
 	}

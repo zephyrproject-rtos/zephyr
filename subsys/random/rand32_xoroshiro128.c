@@ -54,7 +54,7 @@ static inline u64_t rotl(const u64_t x, int k)
 static int xoroshiro128_initialize(struct device *dev)
 {
 	dev = device_get_binding(CONFIG_ENTROPY_NAME);
-	if (!dev) {
+	if (dev == NULL) {
 		return -EINVAL;
 	}
 

@@ -152,7 +152,7 @@ static struct bt_rfcomm_dlc *rfcomm_dlcs_remove_dlci(struct bt_rfcomm_dlc *dlcs,
 {
 	struct bt_rfcomm_dlc *tmp;
 
-	if (!dlcs) {
+	if (dlcs == NULL) {
 		return NULL;
 	}
 
@@ -210,7 +210,7 @@ int bt_rfcomm_server_register(struct bt_rfcomm_server *server)
 	}
 
 	/* Check if given channel is already in use */
-	if (rfcomm_server_lookup_channel(server->channel)) {
+	if (rfcomm_server_lookup_channel(server->channel) != NULL) {
 		BT_DBG("Channel already registered");
 		return -EADDRINUSE;
 	}
@@ -362,7 +362,7 @@ static int rfcomm_send_disc(struct bt_rfcomm_session *session, u8_t dlci)
 
 static void rfcomm_session_disconnect(struct bt_rfcomm_session *session)
 {
-	if (session->dlcs) {
+	if (session->dlcs != NULL) {
 		return;
 	}
 
@@ -464,7 +464,7 @@ static struct bt_rfcomm_dlc *rfcomm_dlc_accept(struct bt_rfcomm_session *session
 
 	channel = BT_RFCOMM_GET_CHANNEL(dlci);
 	server = rfcomm_server_lookup_channel(channel);
-	if (!server) {
+	if (server == NULL) {
 		BT_ERR("Server Channel not registered");
 		return NULL;
 	}
@@ -547,7 +547,7 @@ static void rfcomm_dlc_tx_thread(void *p1, void *p2, void *p3)
 		if ((dlc->state != BT_RFCOMM_STATE_CONNECTED &&
 		     dlc->state != BT_RFCOMM_STATE_USER_DISCONNECT) ||
 		    !buf || !buf->len) {
-			if (buf) {
+			if (buf != NULL) {
 				net_buf_unref(buf);
 			}
 			break;
@@ -858,9 +858,9 @@ static void rfcomm_handle_sabm(struct bt_rfcomm_session *session, u8_t dlci)
 		enum security_result result;
 
 		dlc = rfcomm_dlcs_lookup_dlci(session->dlcs, dlci);
-		if (!dlc) {
+		if (dlc == NULL) {
 			dlc = rfcomm_dlc_accept(session, dlci);
-			if (!dlc) {
+			if (dlc == NULL) {
 				rfcomm_send_dm(session, dlci);
 				return;
 			}
@@ -1012,7 +1012,7 @@ static void rfcomm_handle_ua(struct bt_rfcomm_session *session, u8_t dlci)
 		}
 	} else {
 		dlc = rfcomm_dlcs_lookup_dlci(session->dlcs, dlci);
-		if (!dlc) {
+		if (dlc == NULL) {
 			return;
 		}
 
@@ -1037,7 +1037,7 @@ static void rfcomm_handle_dm(struct bt_rfcomm_session *session, u8_t dlci)
 	BT_DBG("dlci %d", dlci);
 
 	dlc = rfcomm_dlcs_remove_dlci(session->dlcs, dlci);
-	if (!dlc) {
+	if (dlc == NULL) {
 		return;
 	}
 
@@ -1055,7 +1055,7 @@ static void rfcomm_handle_msc(struct bt_rfcomm_session *session,
 	BT_DBG("dlci %d", dlci);
 
 	dlc = rfcomm_dlcs_lookup_dlci(session->dlcs, dlci);
-	if (!dlc) {
+	if (dlc == NULL) {
 		return;
 	}
 
@@ -1100,7 +1100,7 @@ static void rfcomm_handle_rls(struct bt_rfcomm_session *session,
 	}
 
 	dlc = rfcomm_dlcs_lookup_dlci(session->dlcs, dlci);
-	if (!dlc) {
+	if (dlc == NULL) {
 		return;
 	}
 
@@ -1174,7 +1174,7 @@ static void rfcomm_handle_pn(struct bt_rfcomm_session *session,
 		}
 
 		dlc = rfcomm_dlc_accept(session, pn->dlci);
-		if (!dlc) {
+		if (dlc == NULL) {
 			rfcomm_send_dm(session, pn->dlci);
 			return;
 		}
@@ -1237,7 +1237,7 @@ static void rfcomm_handle_disc(struct bt_rfcomm_session *session, u8_t dlci)
 
 	if (dlci) {
 		dlc = rfcomm_dlcs_remove_dlci(session->dlcs, dlci);
-		if (!dlc) {
+		if (dlc == NULL) {
 			rfcomm_send_dm(session, dlci);
 			return;
 		}
@@ -1365,7 +1365,7 @@ static void rfcomm_handle_data(struct bt_rfcomm_session *session,
 	BT_DBG("dlci %d, pf %d", dlci, pf);
 
 	dlc = rfcomm_dlcs_lookup_dlci(session->dlcs, dlci);
-	if (!dlc) {
+	if (dlc == NULL) {
 		BT_ERR("Data recvd in non existing DLC");
 		rfcomm_send_dm(session, dlci);
 		return;
@@ -1405,7 +1405,7 @@ int bt_rfcomm_dlc_send(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 	struct bt_rfcomm_hdr *hdr;
 	u8_t fcs, cr;
 
-	if (!buf) {
+	if (buf == NULL) {
 		return -EINVAL;
 	}
 
@@ -1603,11 +1603,11 @@ int bt_rfcomm_dlc_connect(struct bt_conn *conn, struct bt_rfcomm_dlc *dlc,
 
 	BT_DBG("conn %p dlc %p channel %d", conn, dlc, channel);
 
-	if (!dlc) {
+	if (dlc == NULL) {
 		return -EINVAL;
 	}
 
-	if (!conn || conn->state != BT_CONN_CONNECTED) {
+	if ((conn == NULL) || conn->state != BT_CONN_CONNECTED) {
 		return -ENOTCONN;
 	}
 
@@ -1620,16 +1620,16 @@ int bt_rfcomm_dlc_connect(struct bt_conn *conn, struct bt_rfcomm_dlc *dlc,
 	}
 
 	session = rfcomm_sessions_lookup_bt_conn(conn);
-	if (!session) {
+	if (session == NULL) {
 		session = rfcomm_session_new(BT_RFCOMM_ROLE_INITIATOR);
-		if (!session) {
+		if (session == NULL) {
 			return -ENOMEM;
 		}
 	}
 
 	dlci = BT_RFCOMM_DLCI(session->role, channel);
 
-	if (rfcomm_dlcs_lookup_dlci(session->dlcs, dlci)) {
+	if (rfcomm_dlcs_lookup_dlci(session->dlcs, dlci) != NULL) {
 		return -EBUSY;
 	}
 
@@ -1679,7 +1679,7 @@ int bt_rfcomm_dlc_disconnect(struct bt_rfcomm_dlc *dlc)
 {
 	BT_DBG("dlc %p", dlc);
 
-	if (!dlc) {
+	if (dlc == NULL) {
 		return -EINVAL;
 	}
 
@@ -1708,7 +1708,7 @@ static int rfcomm_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 	BT_DBG("conn %p", conn);
 
 	session = rfcomm_session_new(BT_RFCOMM_ROLE_ACCEPTOR);
-	if (session) {
+	if (session != NULL) {
 		*chan = &session->br_chan.chan;
 		return 0;
 	}

@@ -796,7 +796,7 @@ static u32_t isr_rx_adv_sr_report(struct pdu_adv *pdu_adv_rx, u8_t rssi_ready)
 	u8_t pdu_len;
 
 	node_rx = packet_rx_reserve_get(3);
-	if (node_rx == 0) {
+	if (node_rx == NULL) {
 		return 1;
 	}
 
@@ -1282,7 +1282,7 @@ static inline bool isr_scan_tgta_rpa_check(struct pdu_adv *pdu,
 	    (pdu->rx_addr != 0) &&
 	    ((pdu->direct_ind.tgt_addr[5] & 0xc0) == 0x40)) {
 
-		if (dir_report) {
+		if (dir_report != NULL) {
 			*dir_report = true;
 		}
 
@@ -1883,7 +1883,7 @@ isr_rx_conn_pkt_release(struct radio_pdu_node_tx *node_tx)
 
 	/* release */
 	if (conn->pkt_tx_head == conn->pkt_tx_ctrl) {
-		if (node_tx) {
+		if (node_tx != NULL) {
 			conn->pkt_tx_head = conn->pkt_tx_head->next;
 			if (conn->pkt_tx_ctrl == conn->pkt_tx_ctrl_last) {
 				conn->pkt_tx_ctrl = NULL;
@@ -2163,7 +2163,7 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 	/* Check for free ctrl tx PDU */
 	if (pdu_data_rx->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_LENGTH_REQ) {
 		node_tx = mem_acquire(&_radio.pkt_tx_ctrl_free);
-		if (!node_tx) {
+		if (node_tx == NULL) {
 			return 1;
 		}
 	}
@@ -2341,7 +2341,7 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 	}
 
 send_length_resp:
-	if (node_tx) {
+	if (node_tx != NULL) {
 		if (nack) {
 			mem_release(node_tx, &_radio.pkt_tx_ctrl_free);
 		} else {
@@ -2816,7 +2816,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 				conn->llcp_conn_param.ack--;
 
 				/* set mutex */
-				if (_radio.conn_upd == 0) {
+				if (_radio.conn_upd == NULL) {
 					_radio.conn_upd = conn;
 				}
 			}
@@ -2888,7 +2888,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 			conn->llcp_conn_param.ack--;
 
 			/* set mutex */
-			if (_radio.conn_upd == 0) {
+			if (_radio.conn_upd == NULL) {
 				_radio.conn_upd = conn;
 			}
 		} else {
@@ -3405,7 +3405,7 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *node_rx,
 	/* check so that we will NEVER use the rx buffer reserved for empty
 	 * packet and internal control enqueue
 	 */
-	    (packet_rx_reserve_get(3) != 0) &&
+	    (packet_rx_reserve_get(3) != NULL) &&
 	    ((_radio.fc_ena == 0) ||
 	     ((_radio.link_rx_head == _radio.link_rx_tail) &&
 	      (_radio.fc_req == _radio.fc_ack)) ||
@@ -3712,7 +3712,7 @@ isr_rx_conn_exit:
 	}
 
 	/* release tx node and generate event for num complete */
-	if (tx_release) {
+	if (tx_release != NULL) {
 		pdu_node_tx_release(_radio.conn_curr->handle, tx_release);
 	}
 
@@ -3803,7 +3803,7 @@ isr_rx_conn_terminate_exit:
 	if (chg) {
 		/* NOTE: enqueue only if rx buffer available, else ignore */
 		node_rx = packet_rx_reserve_get(2);
-		if (node_rx) {
+		if (node_rx != NULL) {
 			node_rx->hdr.handle = 0xFFFF;
 			node_rx->hdr.type = NODE_RX_TYPE_PROFILE;
 			pdu_data_rx = (void *)node_rx->pdu_data;
@@ -3949,11 +3949,11 @@ static inline u32_t isr_close_adv(void)
 		}
 
 #if defined(CONFIG_BT_CTLR_ADV_INDICATION)
-		if (1) {
+		if (true) {
 			struct radio_pdu_node_rx *node_rx;
 
 			node_rx = packet_rx_reserve_get(3);
-			if (node_rx) {
+			if (node_rx != NULL) {
 				node_rx->hdr.type = NODE_RX_TYPE_ADV_INDICATION;
 				node_rx->hdr.handle = 0xFFFF;
 				/* TODO: add other info by defining a payload
@@ -4037,7 +4037,7 @@ static inline void isr_close_conn(void)
 	u8_t force;
 
 	/* Local initiated terminate happened */
-	if (_radio.conn_curr == 0) {
+	if (_radio.conn_curr == NULL) {
 		return;
 	}
 
@@ -4256,7 +4256,7 @@ static inline void isr_close_conn(void)
 		struct pdu_data *pdu_data_rx;
 
 		node_rx = packet_rx_reserve_get(2);
-		if (node_rx) {
+		if (node_rx != NULL) {
 			_radio.conn_curr->rssi_reported =
 				_radio.conn_curr->rssi_latest;
 			_radio.conn_curr->rssi_sample_count =
@@ -4754,7 +4754,7 @@ static void prepare_normal(u32_t status, void *op_context)
 static void prepare_normal_set(struct shdr *hdr, u8_t ticker_user_id,
 			       u8_t ticker_id)
 {
-	if (hdr->ticks_xtal_to_start & XON_BITMASK) {
+	if ((hdr->ticks_xtal_to_start & XON_BITMASK) != 0) {
 		u32_t ticker_status;
 		u32_t ticks_prepare_to_start =
 			max(hdr->ticks_active_to_start,
@@ -4893,7 +4893,7 @@ static void mayfly_xtal_stop_calc(void *params)
 		    hdr_next->ticks_preempt_to_start);
 
 	/* Compensate for next ticker in reduced prepare */
-	if (hdr_next->ticks_xtal_to_start & XON_BITMASK) {
+	if ((hdr_next->ticks_xtal_to_start & XON_BITMASK) != 0) {
 		u32_t ticks_reduced = (hdr_next->ticks_xtal_to_start &
 				       ~XON_BITMASK) -
 				      ticks_prepare_to_start_next;
@@ -4940,7 +4940,7 @@ static void mayfly_xtal_stop_calc(void *params)
 		}
 
 #if defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
-		if (!conn_curr || !conn_next) {
+		if ((conn_curr == NULL) || !conn_next) {
 			return;
 		}
 
@@ -5005,7 +5005,7 @@ static void sched_after_mstr_free_slot_get(u8_t user_id,
 	ticker_id = ticker_id_prev = 0xff;
 	ticks_to_expire = ticks_to_expire_prev = *us_offset = 0;
 	ticks_slot_abs_prev = 0;
-	while (1) {
+	while (true) {
 		u32_t volatile ret_cb = TICKER_STATUS_BUSY;
 		struct connection *conn;
 		u32_t ret;
@@ -5036,7 +5036,7 @@ static void sched_after_mstr_free_slot_get(u8_t user_id,
 
 		conn = mem_get(_radio.conn_pool, CONNECTION_T_SIZE,
 			       (ticker_id - RADIO_TICKER_ID_FIRST_CONNECTION));
-		if (conn && !conn->role) {
+		if ((conn != NULL) && !conn->role) {
 			u32_t ticks_to_expire_normal = ticks_to_expire;
 			u32_t ticks_slot_abs_curr;
 
@@ -5525,7 +5525,7 @@ static void event_common_prepare(u32_t ticks_at_expire,
 	/* in case this event is short prepare, xtal to start duration will be
 	 * active to start duration.
 	 */
-	if (_ticks_xtal_to_start & XON_BITMASK) {
+	if ((_ticks_xtal_to_start & XON_BITMASK) != 0) {
 		_ticks_xtal_to_start = max(_ticks_active_to_start,
 					   ticks_preempt_to_start);
 	}
@@ -5626,7 +5626,7 @@ static void event_common_prepare(u32_t ticks_at_expire,
 		*ticks_active_to_start = _radio.ticks_active_to_start;
 
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
-		if (*ticks_xtal_to_start & XON_BITMASK) {
+		if ((*ticks_xtal_to_start & XON_BITMASK) != 0) {
 			*ticks_xtal_to_start &= ~XON_BITMASK;
 		}
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
@@ -5680,7 +5680,7 @@ static u8_t chan_sel_remap(u8_t *chan_map, u8_t chan_index)
 		bite = *chan_map;
 		bit_count = 8;
 		while (bit_count--) {
-			if (bite & 0x01) {
+			if ((bite & 0x01) != 0) {
 				if (chan_index == 0) {
 					break;
 				}
@@ -6443,7 +6443,7 @@ static void event_scan_prepare(u32_t ticks_at_expire, u32_t remainder,
 	/* calc next group in us for the anchor where first connection event
 	 * to be placed
 	 */
-	if (_radio.scanner.conn) {
+	if (_radio.scanner.conn != NULL) {
 		static memq_link_t s_link;
 		static struct mayfly s_mfy_sched_after_mstr_free_offset_get = {
 			0, 0, &s_link, NULL,
@@ -6452,7 +6452,7 @@ static void event_scan_prepare(u32_t ticks_at_expire, u32_t remainder,
 		u32_t retval;
 
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
-		if (_radio.scanner.hdr.ticks_xtal_to_start & XON_BITMASK) {
+		if ((_radio.scanner.hdr.ticks_xtal_to_start & XON_BITMASK) != 0) {
 			u32_t ticks_prepare_to_start =
 				max(_radio.scanner.hdr.ticks_active_to_start,
 				    _radio.scanner.hdr.ticks_preempt_to_start);
@@ -6641,7 +6641,7 @@ static inline void event_conn_upd_init(struct connection *conn,
 		conn->llcp.conn_upd.ticks_anchor = ticks_at_expire;
 
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
-		if (conn->hdr.ticks_xtal_to_start & XON_BITMASK) {
+		if ((conn->hdr.ticks_xtal_to_start & XON_BITMASK) != 0) {
 			u32_t ticks_prepare_to_start =
 				max(conn->hdr.ticks_active_to_start,
 				    conn->hdr.ticks_preempt_to_start);
@@ -6680,7 +6680,7 @@ static inline u32_t event_conn_upd_prep(struct connection *conn,
 	conn_upd = _radio.conn_upd;
 
 	/* set mutex */
-	if (!conn_upd) {
+	if (conn_upd == NULL) {
 		_radio.conn_upd = conn;
 	}
 
@@ -6697,7 +6697,7 @@ static inline u32_t event_conn_upd_prep(struct connection *conn,
 		struct pdu_data *pdu_ctrl_tx;
 
 		node_tx = mem_acquire(&_radio.pkt_tx_ctrl_free);
-		if (!node_tx) {
+		if (node_tx == NULL) {
 			return 1;
 		}
 
@@ -6799,7 +6799,7 @@ static inline u32_t event_conn_upd_prep(struct connection *conn,
 
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
 		/* restore to normal prepare */
-		if (conn->hdr.ticks_xtal_to_start & XON_BITMASK) {
+		if ((conn->hdr.ticks_xtal_to_start & XON_BITMASK) != 0) {
 			u32_t ticks_prepare_to_start =
 				max(conn->hdr.ticks_active_to_start,
 				    conn->hdr.ticks_preempt_to_start);
@@ -6950,7 +6950,7 @@ static inline void event_ch_map_prep(struct connection *conn,
 		struct radio_pdu_node_tx *node_tx;
 
 		node_tx = mem_acquire(&_radio.pkt_tx_ctrl_free);
-		if (node_tx) {
+		if (node_tx != NULL) {
 			struct pdu_data *pdu_ctrl_tx = (void *)
 						       node_tx->pdu_data;
 
@@ -7204,7 +7204,7 @@ static inline void event_fex_prep(struct connection *conn)
 	}
 
 	node_tx = mem_acquire(&_radio.pkt_tx_ctrl_free);
-	if (node_tx) {
+	if (node_tx != NULL) {
 		struct pdu_data *pdu_ctrl_tx = (void *)node_tx->pdu_data;
 
 		/* procedure request acked */
@@ -7249,7 +7249,7 @@ static inline void event_vex_prep(struct connection *conn)
 		struct radio_pdu_node_tx *node_tx;
 
 		node_tx = mem_acquire(&_radio.pkt_tx_ctrl_free);
-		if (node_tx) {
+		if (node_tx != NULL) {
 			struct pdu_data *pdu_ctrl_tx = (void *)
 						       node_tx->pdu_data;
 
@@ -7328,7 +7328,7 @@ static inline void event_conn_param_req(struct connection *conn,
 	struct pdu_data *pdu_ctrl_tx;
 
 	node_tx = mem_acquire(&_radio.pkt_tx_ctrl_free);
-	if (!node_tx) {
+	if (node_tx == NULL) {
 		return;
 	}
 
@@ -7375,7 +7375,7 @@ static inline void event_conn_param_req(struct connection *conn,
 		conn->llcp_conn_param.ticks_ref = ticks_at_expire;
 
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
-		if (conn->hdr.ticks_xtal_to_start & XON_BITMASK) {
+		if ((conn->hdr.ticks_xtal_to_start & XON_BITMASK) != 0) {
 			u32_t ticks_prepare_to_start =
 				max(conn->hdr.ticks_active_to_start,
 				    conn->hdr.ticks_preempt_to_start);
@@ -7411,7 +7411,7 @@ static inline void event_conn_param_rsp(struct connection *conn)
 		struct pdu_data_llctrl_reject_ext_ind *rej;
 
 		node_tx = mem_acquire(&_radio.pkt_tx_ctrl_free);
-		if (!node_tx) {
+		if (node_tx == NULL) {
 			return;
 		}
 
@@ -7472,7 +7472,7 @@ static inline void event_conn_param_rsp(struct connection *conn)
 
 	/* slave response with connection parameter response */
 	node_tx = mem_acquire(&_radio.pkt_tx_ctrl_free);
-	if (!node_tx) {
+	if (node_tx == NULL) {
 		return;
 	}
 
@@ -7520,7 +7520,7 @@ static inline void event_conn_param_app_req(struct connection *conn)
 
 	/* wait for free rx buffer */
 	node_rx = packet_rx_reserve_get(2);
-	if (!node_rx) {
+	if (node_rx == NULL) {
 		return;
 	}
 
@@ -7554,7 +7554,7 @@ static inline void event_conn_param_prep(struct connection *conn,
 	struct connection *conn_upd;
 
 	conn_upd = _radio.conn_upd;
-	if (conn_upd && (conn_upd != conn)) {
+	if ((conn_upd != NULL) && (conn_upd != conn)) {
 		return;
 	}
 
@@ -7590,7 +7590,7 @@ static inline void event_ping_prep(struct connection *conn)
 	struct radio_pdu_node_tx *node_tx;
 
 	node_tx = mem_acquire(&_radio.pkt_tx_ctrl_free);
-	if (node_tx) {
+	if (node_tx != NULL) {
 		struct pdu_data *pdu_ctrl_tx = (void *)node_tx->pdu_data;
 
 		/* procedure request acked */
@@ -7633,7 +7633,7 @@ static inline void event_len_prep(struct connection *conn)
 		}
 
 		node_tx = mem_acquire(&_radio.pkt_tx_ctrl_free);
-		if (!node_tx) {
+		if (node_tx == NULL) {
 			break;
 		}
 
@@ -7720,10 +7720,10 @@ static inline void event_len_prep(struct connection *conn)
 		 * when the pool is full?
 		 */
 		free_count_conn = mem_free_count_get(_radio.conn_free);
-		if (_radio.advertiser.conn) {
+		if (_radio.advertiser.conn != NULL) {
 			free_count_conn++;
 		}
-		if (_radio.scanner.conn) {
+		if (_radio.scanner.conn != NULL) {
 			free_count_conn++;
 		}
 		packet_rx_data_size = MROUND(offsetof(struct radio_pdu_node_rx,
@@ -7845,7 +7845,7 @@ static inline void event_phy_req_prep(struct connection *conn)
 		struct pdu_data *pdu_ctrl_tx;
 
 		node_tx = mem_acquire(&_radio.pkt_tx_ctrl_free);
-		if (!node_tx) {
+		if (node_tx == NULL) {
 			break;
 		}
 
@@ -7944,7 +7944,7 @@ static inline void event_phy_upd_ind_prep(struct connection *conn,
 		struct radio_pdu_node_tx *node_tx;
 
 		node_tx = mem_acquire(&_radio.pkt_tx_ctrl_free);
-		if (node_tx) {
+		if (node_tx != NULL) {
 			struct pdu_data *pdu_ctrl_tx = (void *)
 						       node_tx->pdu_data;
 			struct pdu_data_llctrl_phy_upd_ind *ind;
@@ -8166,7 +8166,7 @@ static void event_connection_prepare(u32_t ticks_at_expire,
 		event_stop(0, 0, 0, (void *)STATE_ABORT);
 
 		node_tx = mem_acquire(&_radio.pkt_tx_ctrl_free);
-		if (node_tx) {
+		if (node_tx != NULL) {
 			struct pdu_data *pdu_ctrl_tx = (void *)
 						       node_tx->pdu_data;
 
@@ -8774,7 +8774,7 @@ static void prepare_pdu_data_tx(struct connection *conn,
 			_pdu_data_tx->md = 1;
 		}
 
-		if (conn->pkt_tx_head->next) {
+		if (conn->pkt_tx_head->next != NULL) {
 			_pdu_data_tx->md = 1;
 		}
 
@@ -8812,12 +8812,12 @@ static void packet_rx_allocate(u8_t max)
 		struct radio_pdu_node_rx *node_rx;
 
 		link = mem_acquire(&_radio.link_rx_free);
-		if (!link) {
+		if (link == NULL) {
 			break;
 		}
 
 		node_rx = mem_acquire(&_radio.pkt_rx_data_free);
-		if (!node_rx) {
+		if (node_rx == NULL) {
 			mem_release(link, &_radio.link_rx_free);
 			break;
 		}
@@ -8923,16 +8923,16 @@ static void packet_tx_enqueue(u8_t max)
 				pdu_data_q_tx->handle);
 
 		if (conn->handle == pdu_data_q_tx->handle) {
-			if (conn->pkt_tx_data == 0) {
+			if (conn->pkt_tx_data == NULL) {
 				conn->pkt_tx_data = node_tx_new;
 
-				if (conn->pkt_tx_head == 0) {
+				if (conn->pkt_tx_head == NULL) {
 					conn->pkt_tx_head = node_tx_new;
 					conn->pkt_tx_last = NULL;
 				}
 			}
 
-			if (conn->pkt_tx_last) {
+			if (conn->pkt_tx_last != NULL) {
 				conn->pkt_tx_last->next = node_tx_new;
 			}
 
@@ -8967,7 +8967,7 @@ static struct pdu_data *empty_tx_enqueue(struct connection *conn)
 	pdu_data_tx = (void *)radio_pkt_empty_get();
 	pdu_data_tx->ll_id = PDU_DATA_LLID_DATA_CONTINUE;
 	pdu_data_tx->len = 0;
-	if (conn->pkt_tx_head) {
+	if (conn->pkt_tx_head != NULL) {
 		pdu_data_tx->md = 1;
 	} else {
 		pdu_data_tx->md = 0;
@@ -9035,7 +9035,7 @@ static void ctrl_tx_enqueue(struct connection *conn,
 	}
 
 	/* Update last pointer if ctrl added at end of tx list */
-	if (node_tx->next == 0) {
+	if (node_tx->next == NULL) {
 		conn->pkt_tx_last = node_tx;
 	}
 }
@@ -9226,7 +9226,7 @@ static u8_t conn_update(struct connection *conn, struct pdu_data *pdu_data_rx)
 	/* set mutex, if only not already set. As a master the mutex shall
 	 * be set, but a slave we accept it as new 'set' of mutex.
 	 */
-	if (_radio.conn_upd == 0) {
+	if (_radio.conn_upd == NULL) {
 		LL_ASSERT(conn->role);
 
 		_radio.conn_upd = conn;
@@ -9461,7 +9461,7 @@ static u8_t enc_rsp_send(struct connection *conn)
 
 	/* acquire tx mem */
 	node_tx = mem_acquire(&_radio.pkt_tx_ctrl_free);
-	if (!node_tx) {
+	if (node_tx == NULL) {
 		return 1;
 	}
 
@@ -9502,10 +9502,10 @@ static u8_t start_enc_rsp_send(struct connection *conn,
 {
 	struct radio_pdu_node_tx *node_tx = NULL;
 
-	if (!pdu_ctrl_tx) {
+	if (pdu_ctrl_tx == NULL) {
 		/* acquire tx mem */
 		node_tx = mem_acquire(&_radio.pkt_tx_ctrl_free);
-		if (!node_tx) {
+		if (node_tx == NULL) {
 			return 1;
 		}
 
@@ -9519,7 +9519,7 @@ static u8_t start_enc_rsp_send(struct connection *conn,
 	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, enc_rsp);
 	pdu_ctrl_tx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_START_ENC_RSP;
 
-	if (node_tx) {
+	if (node_tx != NULL) {
 		ctrl_tx_enqueue(conn, node_tx);
 	}
 
@@ -9534,7 +9534,7 @@ static u8_t pause_enc_rsp_send(struct connection *conn, u8_t req)
 	if (req) {
 		/* acquire tx mem */
 		node_tx = mem_acquire(&_radio.pkt_tx_ctrl_free);
-		if (!node_tx) {
+		if (node_tx == NULL) {
 			return 1;
 		}
 
@@ -9543,7 +9543,7 @@ static u8_t pause_enc_rsp_send(struct connection *conn, u8_t req)
 	} else if (!conn->role) {
 		/* acquire tx mem */
 		node_tx = mem_acquire(&_radio.pkt_tx_ctrl_free);
-		if (!node_tx) {
+		if (node_tx == NULL) {
 			return 1;
 		}
 
@@ -9581,7 +9581,7 @@ static u8_t unknown_rsp_send(struct connection *conn, u8_t type)
 
 	/* acquire tx mem */
 	node_tx = mem_acquire(&_radio.pkt_tx_ctrl_free);
-	if (!node_tx) {
+	if (node_tx == NULL) {
 		return 1;
 	}
 
@@ -9606,7 +9606,7 @@ static u8_t feature_rsp_send(struct connection *conn,
 
 	/* acquire tx mem */
 	node_tx = mem_acquire(&_radio.pkt_tx_ctrl_free);
-	if (!node_tx) {
+	if (node_tx == NULL) {
 		return 1;
 	}
 
@@ -9647,7 +9647,7 @@ static u8_t version_ind_send(struct connection *conn,
 	if (!conn->llcp_version.tx) {
 		/* acquire tx mem */
 		node_tx = mem_acquire(&_radio.pkt_tx_ctrl_free);
-		if (!node_tx) {
+		if (node_tx == NULL) {
 			return 1;
 		}
 		conn->llcp_version.tx = 1;
@@ -9696,7 +9696,7 @@ static u8_t ping_resp_send(struct connection *conn)
 
 	/* acquire tx mem */
 	node_tx = mem_acquire(&_radio.pkt_tx_ctrl_free);
-	if (!node_tx) {
+	if (node_tx == NULL) {
 		return 1;
 	}
 
@@ -9721,7 +9721,7 @@ static u8_t reject_ext_ind_send(struct connection *conn,
 
 	/* acquire tx mem */
 	node_tx = mem_acquire(&_radio.pkt_tx_ctrl_free);
-	if (!node_tx) {
+	if (node_tx == NULL) {
 		return 1;
 	}
 
@@ -9785,7 +9785,7 @@ static u8_t phy_rsp_send(struct connection *conn, struct pdu_data *pdu_data_rx)
 
 	/* acquire tx mem */
 	node_tx = mem_acquire(&_radio.pkt_tx_ctrl_free);
-	if (!node_tx) {
+	if (node_tx == NULL) {
 		return 1;
 	}
 
@@ -10061,7 +10061,7 @@ static u32_t role_disable(u8_t ticker_id_primary, u8_t ticker_id_stop)
 			conn_handle = ticker_id_primary -
 				      RADIO_TICKER_ID_FIRST_CONNECTION;
 			conn = connection_get(conn_handle);
-			if (!conn) {
+			if (conn == NULL) {
 				return 1;
 			}
 
@@ -10146,17 +10146,17 @@ u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 	    (pdu_adv->type == PDU_ADV_TYPE_DIRECT_IND)) {
 		void *link;
 
-		if (_radio.advertiser.conn) {
+		if (_radio.advertiser.conn != NULL) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 
 		link = mem_acquire(&_radio.link_rx_free);
-		if (!link) {
+		if (link == NULL) {
 			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 		}
 
 		conn = mem_acquire(&_radio.conn_free);
-		if (!conn) {
+		if (conn == NULL) {
 			mem_release(link, &_radio.link_rx_free);
 
 			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
@@ -10376,7 +10376,7 @@ u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 
 failure_cleanup:
 
-	if (conn) {
+	if (conn != NULL) {
 		mem_release(conn->llcp_terminate.radio_pdu_node_rx.hdr.
 			    onion.link, &_radio.link_rx_free);
 		mem_release(conn, &_radio.conn_free);
@@ -10401,7 +10401,7 @@ u32_t radio_adv_disable(void)
 		}
 
 		conn = _radio.advertiser.conn;
-		if (conn) {
+		if (conn != NULL) {
 			_radio.advertiser.conn = NULL;
 
 			mem_release(conn->llcp_terminate.radio_pdu_node_rx.hdr.onion.link,
@@ -10593,17 +10593,17 @@ u32_t radio_connect_enable(u8_t adv_addr_type, u8_t *adv_addr, u16_t interval,
 	u32_t access_addr;
 	void *link;
 
-	if (_radio.scanner.conn) {
+	if (_radio.scanner.conn != NULL) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
 	link = mem_acquire(&_radio.link_rx_free);
-	if (!link) {
+	if (link == NULL) {
 		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 	}
 
 	conn = mem_acquire(&_radio.conn_free);
-	if (!conn) {
+	if (conn == NULL) {
 		mem_release(link, &_radio.link_rx_free);
 		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 	}
@@ -10745,7 +10745,7 @@ u32_t ll_connect_disable(void **node_rx)
 {
 	u32_t status;
 
-	if (_radio.scanner.conn == 0) {
+	if (_radio.scanner.conn == NULL) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
@@ -10774,7 +10774,7 @@ u32_t ll_conn_update(u16_t handle, u8_t cmd, u8_t status, u16_t interval_min,
 	struct connection *conn;
 
 	conn = connection_get(handle);
-	if (!conn) {
+	if (conn == NULL) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
@@ -10866,7 +10866,7 @@ u32_t ll_chm_update(u8_t *chm)
 		struct connection *conn;
 
 		conn = connection_get(instance);
-		if (!conn || conn->role) {
+		if ((conn == NULL) || conn->role) {
 			continue;
 		}
 
@@ -10891,7 +10891,7 @@ u32_t ll_chm_get(u16_t handle, u8_t *chm)
 	struct connection *conn;
 
 	conn = connection_get(handle);
-	if (!conn) {
+	if (conn == NULL) {
 		return 1;
 	}
 
@@ -10913,12 +10913,12 @@ u32_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
 	struct radio_pdu_node_tx *node_tx;
 
 	conn = connection_get(handle);
-	if (!conn || (conn->llcp_req != conn->llcp_ack)) {
+	if ((conn == NULL) || (conn->llcp_req != conn->llcp_ack)) {
 		return 1;
 	}
 
 	node_tx = ll_tx_mem_acquire();
-	if (node_tx) {
+	if (node_tx != NULL) {
 		struct pdu_data *pdu_data_tx;
 
 		pdu_data_tx = (void *)node_tx->pdu_data;
@@ -10983,7 +10983,7 @@ u32_t ll_start_enc_req_send(u16_t handle, u8_t error_code,
 	struct connection *conn;
 
 	conn = connection_get(handle);
-	if (!conn) {
+	if (conn == NULL) {
 		return 1;
 	}
 
@@ -11032,7 +11032,7 @@ u32_t ll_feature_req_send(u16_t handle)
 	struct connection *conn;
 
 	conn = connection_get(handle);
-	if (!conn || (conn->llcp_req != conn->llcp_ack)) {
+	if ((conn == NULL) || (conn->llcp_req != conn->llcp_ack)) {
 		return 1;
 	}
 
@@ -11047,7 +11047,7 @@ u32_t ll_version_ind_send(u16_t handle)
 	struct connection *conn;
 
 	conn = connection_get(handle);
-	if (!conn || (conn->llcp_req != conn->llcp_ack)) {
+	if ((conn == NULL) || (conn->llcp_req != conn->llcp_ack)) {
 		return 1;
 	}
 
@@ -11062,7 +11062,7 @@ u32_t ll_terminate_ind_send(u16_t handle, u8_t reason)
 	struct connection *conn;
 
 	conn = connection_get(handle);
-	if (!conn || (conn->llcp_terminate.ack != conn->llcp_terminate.req)) {
+	if ((conn == NULL) || (conn->llcp_terminate.ack != conn->llcp_terminate.req)) {
 		return 1;
 	}
 
@@ -11078,7 +11078,7 @@ u32_t ll_tx_pwr_lvl_get(u16_t handle, u8_t type, s8_t *tx_pwr_lvl)
 	struct connection *conn;
 
 	conn = connection_get(handle);
-	if (!conn) {
+	if (conn == NULL) {
 		return 1;
 	}
 
@@ -11096,7 +11096,7 @@ u32_t ll_rssi_get(u16_t handle, u8_t *rssi)
 	struct connection *conn;
 
 	conn = connection_get(handle);
-	if (!conn) {
+	if (conn == NULL) {
 		return 1;
 	}
 
@@ -11112,7 +11112,7 @@ u32_t ll_apto_get(u16_t handle, u16_t *apto)
 	struct connection *conn;
 
 	conn = connection_get(handle);
-	if (!conn) {
+	if (conn == NULL) {
 		return 1;
 	}
 
@@ -11126,7 +11126,7 @@ u32_t ll_apto_set(u16_t handle, u16_t apto)
 	struct connection *conn;
 
 	conn = connection_get(handle);
-	if (!conn) {
+	if (conn == NULL) {
 		return 1;
 	}
 
@@ -11194,7 +11194,7 @@ u32_t ll_phy_get(u16_t handle, u8_t *tx, u8_t *rx)
 	struct connection *conn;
 
 	conn = connection_get(handle);
-	if (!conn) {
+	if (conn == NULL) {
 		return 1;
 	}
 
@@ -11416,7 +11416,7 @@ void ll_rx_dequeue(void)
 			_radio.scanner.is_enabled = 0;
 		}
 
-		if (conn) {
+		if (conn != NULL) {
 			struct radio_pdu_node_rx *node_rx = (void *)
 				&conn->llcp_terminate.radio_pdu_node_rx;
 
@@ -11440,7 +11440,7 @@ void ll_rx_mem_release(void **node_rx)
 	struct connection *conn;
 
 	_node_rx = *node_rx;
-	while (_node_rx) {
+	while (_node_rx != NULL) {
 		struct radio_pdu_node_rx *_node_rx_free;
 
 		_node_rx_free = _node_rx;
@@ -11602,7 +11602,7 @@ u8_t radio_rx_fc_get(u16_t *handle)
 	u8_t ack = _radio.fc_ack;
 
 	if (req != ack) {
-		if (handle) {
+		if (handle != NULL) {
 			*handle = _radio.fc_handle[ack];
 		}
 		return 1;
@@ -11643,7 +11643,7 @@ u32_t ll_tx_mem_enqueue(u16_t handle, void *node_tx)
 
 	pdu_data = (void *)((struct radio_pdu_node_tx *)node_tx)->pdu_data;
 	conn = connection_get(handle);
-	if (!conn || (last == _radio.packet_tx_first)) {
+	if ((conn == NULL) || (last == _radio.packet_tx_first)) {
 		return 1;
 	}
 

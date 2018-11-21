@@ -135,7 +135,7 @@ static int secure_beacon_send(void)
 
 		buf = bt_mesh_adv_create(BT_MESH_ADV_BEACON, PROV_XMIT,
 					 K_NO_WAIT);
-		if (!buf) {
+		if (buf == NULL) {
 			BT_ERR("Unable to allocate beacon buffer");
 			return -ENOBUFS;
 		}
@@ -160,7 +160,7 @@ static int unprovisioned_beacon_send(void)
 	BT_DBG("");
 
 	buf = bt_mesh_adv_create(BT_MESH_ADV_BEACON, UNPROV_XMIT, K_NO_WAIT);
-	if (!buf) {
+	if (buf == NULL) {
 		BT_ERR("Unable to allocate beacon buffer");
 		return -ENOBUFS;
 	}
@@ -187,7 +187,7 @@ static int unprovisioned_beacon_send(void)
 
 		buf = bt_mesh_adv_create(BT_MESH_ADV_URI, UNPROV_XMIT,
 					 K_NO_WAIT);
-		if (!buf) {
+		if (buf == NULL) {
 			BT_ERR("Unable to allocate URI buffer");
 			return -ENOBUFS;
 		}
@@ -274,7 +274,7 @@ static void secure_beacon_recv(struct net_buf_simple *buf)
 	}
 
 	sub = cache_check(buf->data);
-	if (sub) {
+	if (sub != NULL) {
 		/* We've seen this beacon before - just update the stats */
 		goto update_stats;
 	}
@@ -292,7 +292,7 @@ static void secure_beacon_recv(struct net_buf_simple *buf)
 	       flags, bt_hex(net_id, 8), iv_index);
 
 	sub = bt_mesh_subnet_find(net_id, flags, iv_index, auth, &new_key);
-	if (!sub) {
+	if (sub == NULL) {
 		BT_DBG("No subnet that matched beacon");
 		return;
 	}

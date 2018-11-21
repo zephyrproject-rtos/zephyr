@@ -309,7 +309,7 @@ struct friend_cred *friend_cred_create(struct bt_mesh_subnet *sub, u16_t addr,
 		}
 	}
 
-	if (!cred) {
+	if (cred == NULL) {
 		BT_WARN("No free friend credential slots");
 		return NULL;
 	}
@@ -379,15 +379,15 @@ int friend_cred_get(struct bt_mesh_subnet *sub, u16_t addr, u8_t *nid,
 			continue;
 		}
 
-		if (nid) {
+		if (nid != NULL) {
 			*nid = cred->cred[sub->kr_flag].nid;
 		}
 
-		if (enc) {
+		if (enc != NULL) {
 			*enc = cred->cred[sub->kr_flag].enc;
 		}
 
-		if (priv) {
+		if (priv != NULL) {
 			*priv = cred->cred[sub->kr_flag].privacy;
 		}
 
@@ -408,7 +408,7 @@ u8_t bt_mesh_net_flags(struct bt_mesh_subnet *sub)
 {
 	u8_t flags = 0x00;
 
-	if (sub && sub->kr_flag) {
+	if ((sub != NULL) && sub->kr_flag) {
 		flags |= BT_MESH_NET_FLAG_KR;
 	}
 
@@ -889,7 +889,7 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
 			/* Notify completion if this only went
 			 * through the Mesh Proxy.
 			 */
-			if (cb) {
+			if (cb != NULL) {
 				if (cb->start) {
 					cb->start(0, 0, cb_data);
 				}
@@ -907,11 +907,11 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
 	/* Deliver to local network interface if necessary */
 	if (bt_mesh_fixed_group_match(tx->ctx->addr) ||
 	    bt_mesh_elem_find(tx->ctx->addr)) {
-		if (cb && cb->start) {
+		if ((cb != NULL) && cb->start) {
 			cb->start(0, 0, cb_data);
 		}
 		net_buf_slist_put(&bt_mesh.local_queue, net_buf_ref(buf));
-		if (cb && cb->end) {
+		if ((cb != NULL) && cb->end) {
 			cb->end(0, cb_data);
 		}
 		k_work_submit(&bt_mesh.local_work);
@@ -1172,7 +1172,7 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 	}
 
 	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, transmit, K_NO_WAIT);
-	if (!buf) {
+	if (buf == NULL) {
 		BT_ERR("Out of relay buffers");
 		return;
 	}

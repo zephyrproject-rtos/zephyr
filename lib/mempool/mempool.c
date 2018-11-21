@@ -136,7 +136,7 @@ static inline int pool_irq_lock(struct sys_mem_pool_base *p)
 
 static inline void pool_irq_unlock(struct sys_mem_pool_base *p, int key)
 {
-	if (p->flags & SYS_MEM_POOL_KERNEL) {
+	if ((p->flags & SYS_MEM_POOL_KERNEL) != 0) {
 		irq_unlock(key);
 	}
 }

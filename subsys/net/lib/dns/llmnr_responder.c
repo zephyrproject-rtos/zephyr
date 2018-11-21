@@ -120,7 +120,7 @@ static int bind_ctx(struct net_context *ctx,
 {
 	int ret;
 
-	if (!ctx) {
+	if (ctx == NULL) {
 		return -EINVAL;
 	}
 
@@ -185,7 +185,7 @@ static int add_question(struct net_pkt *pkt, enum dns_rr_type qtype,
 	int ret;
 
 	while ((dot = strchr(dot, '.'))) {
-		if (!prev) {
+		if (prev == NULL) {
 			prev = dot++;
 			continue;
 		}
@@ -194,7 +194,7 @@ static int add_question(struct net_pkt *pkt, enum dns_rr_type qtype,
 		prev = dot++;
 	}
 
-	if (prev) {
+	if (prev != NULL) {
 		*prev = strlen(prev) - 1;
 	}
 
@@ -238,7 +238,7 @@ static struct net_pkt *create_answer(struct net_context *ctx,
 	int ret;
 
 	pkt = net_pkt_get_tx(ctx, BUF_ALLOC_TIMEOUT);
-	if (!pkt) {
+	if (pkt == NULL) {
 		return NULL;
 	}
 
@@ -271,7 +271,7 @@ static const u8_t *get_ipv4_src(struct net_if *iface, struct in_addr *dst)
 	const struct in_addr *addr;
 
 	addr = net_if_ipv4_select_src_addr(iface, dst);
-	if (!addr || net_ipv4_is_addr_unspecified(addr)) {
+	if ((addr == NULL) || net_ipv4_is_addr_unspecified(addr)) {
 		return NULL;
 	}
 
@@ -285,7 +285,7 @@ static const u8_t *get_ipv6_src(struct net_if *iface, struct in6_addr *dst)
 	const struct in6_addr *addr;
 
 	addr = net_if_ipv6_select_src_addr(iface, dst);
-	if (!addr || net_ipv6_is_addr_unspecified(addr)) {
+	if ((addr == NULL) || net_ipv6_is_addr_unspecified(addr)) {
 		return NULL;
 	}
 
@@ -313,7 +313,7 @@ static int create_ipv4_answer(struct net_context *ctx,
 		/* Select proper address according to destination */
 		addr = get_ipv4_src(net_pkt_iface(pkt),
 				    &net_sin(dst)->sin_addr);
-		if (!addr) {
+		if (addr == NULL) {
 			return -ENOENT;
 		}
 
@@ -323,7 +323,7 @@ static int create_ipv4_answer(struct net_context *ctx,
 #if defined(CONFIG_NET_IPV6)
 		addr = get_ipv6_src(net_pkt_iface(pkt),
 				    &NET_IPV6_HDR(pkt)->src);
-		if (!addr) {
+		if (addr == NULL) {
 			return -ENOENT;
 		}
 
@@ -367,7 +367,7 @@ static int create_ipv6_answer(struct net_context *ctx,
 	if (qtype == DNS_RR_TYPE_AAAA) {
 		addr = get_ipv6_src(net_pkt_iface(pkt),
 				    &NET_IPV6_HDR(pkt)->src);
-		if (!addr) {
+		if (addr == NULL) {
 			return -ENOENT;
 		}
 
@@ -376,7 +376,7 @@ static int create_ipv6_answer(struct net_context *ctx,
 #if defined(CONFIG_NET_IPV4)
 		addr = get_ipv4_src(net_pkt_iface(pkt),
 				    &NET_IPV4_HDR(pkt)->src);
-		if (!addr) {
+		if (addr == NULL) {
 			return -ENOENT;
 		}
 
@@ -478,7 +478,7 @@ static int dns_read(struct net_context *ctx,
 	 * we do not increase the stack usage of RX thread.
 	 */
 	result = net_pkt_get_data(ctx, BUF_ALLOC_TIMEOUT);
-	if (!result) {
+	if (result == NULL) {
 		ret = -ENOMEM;
 		goto quit;
 	}
@@ -535,7 +535,7 @@ static int dns_read(struct net_context *ctx,
 	ret = 0;
 
 quit:
-	if (result) {
+	if (result != NULL) {
 		net_pkt_frag_unref(result);
 	}
 
@@ -555,7 +555,7 @@ static void recv_cb(struct net_context *net_ctx,
 	ARG_UNUSED(net_ctx);
 	NET_ASSERT(ctx == net_ctx);
 
-	if (!pkt) {
+	if (pkt == NULL) {
 		return;
 	}
 
@@ -564,7 +564,7 @@ static void recv_cb(struct net_context *net_ctx,
 	}
 
 	dns_data = net_buf_alloc(&llmnr_dns_msg_pool, BUF_ALLOC_TIMEOUT);
-	if (!dns_data) {
+	if (dns_data == NULL) {
 		goto quit;
 	}
 
@@ -607,7 +607,7 @@ static void iface_ipv4_cb(struct net_if *iface, void *user_data)
 	struct net_if_mcast_addr *ifaddr;
 
 	ifaddr = net_if_ipv4_maddr_add(iface, addr);
-	if (!ifaddr) {
+	if (ifaddr == NULL) {
 		NET_DBG("Cannot add IPv4 multicast address to iface %p",
 			iface);
 	}

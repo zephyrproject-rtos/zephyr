@@ -89,7 +89,7 @@ static int transfer_request(struct coap_block_context *ctx,
 #endif
 
 	msg = lwm2m_get_message(&firmware_ctx);
-	if (!msg) {
+	if (msg == NULL) {
 		LOG_ERR("Unable to get a lwm2m message!");
 		return -ENOMEM;
 	}
@@ -221,7 +221,7 @@ static int transfer_empty_ack(u16_t mid)
 	int ret;
 
 	msg = lwm2m_get_message(&firmware_ctx);
-	if (!msg) {
+	if (msg == NULL) {
 		LOG_ERR("Unable to get a lwm2m message!");
 		return -ENOMEM;
 	}
@@ -354,7 +354,7 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 							     len,
 							     write_buf);
 				/* check for end of packet */
-				if (!payload_frag && payload_offset == 0xffff) {
+				if ((payload_frag == NULL) && payload_offset == 0xffff) {
 					/* malformed packet */
 					ret = -EFAULT;
 					goto error;

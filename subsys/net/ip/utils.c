@@ -308,7 +308,7 @@ int net_addr_pton(sa_family_t family, const char *src,
 		for (i = 0; i < expected_groups; i++) {
 			char *tmp;
 
-			if (!src || *src == '\0') {
+			if ((src == NULL) || *src == '\0') {
 				return -EINVAL;
 			}
 
@@ -317,7 +317,7 @@ int net_addr_pton(sa_family_t family, const char *src,
 				UNALIGNED_PUT(htons(strtol(src, NULL, 16)),
 					      &addr->s6_addr16[i]);
 				src = strchr(src, ':');
-				if (src) {
+				if (src != NULL) {
 					src++;
 				} else {
 					if (i < expected_groups - 1) {
@@ -367,14 +367,14 @@ int net_addr_pton(sa_family_t family, const char *src,
 		if (expected_groups == 6) {
 			/* Parse the IPv4 part */
 			for (i = 0; i < 4; i++) {
-				if (!src || !*src) {
+				if ((src == NULL) || !*src) {
 					return -EINVAL;
 				}
 
 				addr->s6_addr[12 + i] = strtol(src, NULL, 10);
 
 				src = strchr(src, '.');
-				if (src) {
+				if (src != NULL) {
 					src++;
 				} else {
 					if (i < 3) {
@@ -430,7 +430,7 @@ static inline u16_t calc_chksum_pkt(u16_t sum, struct net_pkt *pkt,
 	ARG_UNUSED(upper_layer_len);
 
 	frag = net_frag_skip(pkt->frags, proto_len, &offset, 0);
-	if (!frag) {
+	if (frag == NULL) {
 		NET_DBG("Trying to read past pkt len (proto len %d)",
 			proto_len);
 		return 0;
@@ -441,10 +441,10 @@ static inline u16_t calc_chksum_pkt(u16_t sum, struct net_pkt *pkt,
 	ptr = frag->data + offset;
 	len = frag->len - offset;
 
-	while (frag) {
+	while (frag != NULL) {
 		sum = calc_chksum(sum, ptr, len);
 		frag = frag->frags;
-		if (!frag) {
+		if (frag == NULL) {
 			break;
 		}
 
@@ -576,7 +576,7 @@ static bool parse_ipv6(const char *str, size_t str_len,
 	if (has_port) {
 		/* IPv6 address with port number */
 		ptr = memchr(str, ']', len);
-		if (!ptr) {
+		if (ptr == NULL) {
 			return false;
 		}
 
@@ -652,7 +652,7 @@ static bool parse_ipv4(const char *str, size_t str_len,
 	if (has_port) {
 		/* IPv4 address with port number */
 		ptr = memchr(str, ':', len);
-		if (!ptr) {
+		if (ptr == NULL) {
 			return false;
 		}
 
@@ -699,7 +699,7 @@ bool net_ipaddr_parse(const char *str, size_t str_len, struct sockaddr *addr)
 {
 	int i, count;
 
-	if (!str || str_len == 0) {
+	if ((str == NULL) || str_len == 0) {
 		return false;
 	}
 

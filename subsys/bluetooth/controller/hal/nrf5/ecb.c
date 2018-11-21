@@ -71,12 +71,12 @@ void ecb_encrypt(u8_t const *const key_le, u8_t const *const clear_text_le,
 
 	do_ecb(&ecb);
 
-	if (cipher_text_le) {
+	if (cipher_text_le != NULL) {
 		mem_rcopy(cipher_text_le, &ecb.cipher_text[0],
 			  sizeof(ecb.cipher_text));
 	}
 
-	if (cipher_text_be) {
+	if (cipher_text_be != NULL) {
 		memcpy(cipher_text_be, &ecb.cipher_text[0],
 			 sizeof(ecb.cipher_text));
 	}

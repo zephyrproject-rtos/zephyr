@@ -170,7 +170,7 @@ static void net_key_status(struct bt_mesh_model *model,
 		return;
 	}
 
-	if (param->status) {
+	if (param->status != NULL) {
 		*param->status = status;
 	}
 
@@ -209,7 +209,7 @@ static void app_key_status(struct bt_mesh_model *model,
 		return;
 	}
 
-	if (param->status) {
+	if (param->status != NULL) {
 		*param->status = status;
 	}
 
@@ -261,7 +261,7 @@ static void mod_app_status(struct bt_mesh_model *model,
 		return;
 	}
 
-	if (param->status) {
+	if (param->status != NULL) {
 		*param->status = status;
 	}
 
@@ -326,11 +326,11 @@ static void mod_pub_status(struct bt_mesh_model *model,
 		return;
 	}
 
-	if (param->status) {
+	if (param->status != NULL) {
 		*param->status = status;
 	}
 
-	if (param->pub) {
+	if (param->pub != NULL) {
 		param->pub->addr = net_buf_simple_pull_le16(buf);
 		param->pub->app_idx = net_buf_simple_pull_le16(buf);
 		param->pub->cred_flag = (param->pub->app_idx & BIT(12));
@@ -389,11 +389,11 @@ static void mod_sub_status(struct bt_mesh_model *model,
 		return;
 	}
 
-	if (param->sub_addr) {
+	if (param->sub_addr != NULL) {
 		*param->sub_addr = sub_addr;
 	}
 
-	if (param->status) {
+	if (param->status != NULL) {
 		*param->status = status;
 	}
 
@@ -458,7 +458,7 @@ static void hb_pub_status(struct bt_mesh_model *model,
 
 	*param->status = net_buf_simple_pull_u8(buf);
 
-	if (param->pub) {
+	if (param->pub != NULL) {
 		param->pub->dst = net_buf_simple_pull_le16(buf);
 		param->pub->count = net_buf_simple_pull_u8(buf);
 		param->pub->period = net_buf_simple_pull_u8(buf);
@@ -489,7 +489,7 @@ const struct bt_mesh_model_op bt_mesh_cfg_cli_op[] = {
 
 static int cli_prepare(void *param, u32_t op)
 {
-	if (!cli) {
+	if (cli == NULL) {
 		BT_ERR("No available Configuration Client context!");
 		return -EINVAL;
 	}
@@ -764,7 +764,7 @@ int bt_mesh_cfg_net_key_add(u16_t net_idx, u16_t addr, u16_t key_net_idx,
 		return err;
 	}
 
-	if (!status) {
+	if (status == NULL) {
 		cli_reset();
 		return 0;
 	}
@@ -806,7 +806,7 @@ int bt_mesh_cfg_app_key_add(u16_t net_idx, u16_t addr, u16_t key_net_idx,
 		return err;
 	}
 
-	if (!status) {
+	if (status == NULL) {
 		cli_reset();
 		return 0;
 	}
@@ -856,7 +856,7 @@ static int mod_app_bind(u16_t net_idx, u16_t addr, u16_t elem_addr,
 		return err;
 	}
 
-	if (!status) {
+	if (status == NULL) {
 		cli_reset();
 		return 0;
 	}
@@ -924,7 +924,7 @@ static int mod_sub(u32_t op, u16_t net_idx, u16_t addr, u16_t elem_addr,
 		return err;
 	}
 
-	if (!status) {
+	if (status == NULL) {
 		cli_reset();
 		return 0;
 	}
@@ -1035,7 +1035,7 @@ static int mod_sub_va(u32_t op, u16_t net_idx, u16_t addr, u16_t elem_addr,
 		return err;
 	}
 
-	if (!status) {
+	if (status == NULL) {
 		cli_reset();
 		return 0;
 	}
@@ -1147,7 +1147,7 @@ static int mod_pub_get(u16_t net_idx, u16_t addr, u16_t elem_addr,
 		return err;
 	}
 
-	if (!status) {
+	if (status == NULL) {
 		cli_reset();
 		return 0;
 	}
@@ -1221,7 +1221,7 @@ static int mod_pub_set(u16_t net_idx, u16_t addr, u16_t elem_addr,
 		return err;
 	}
 
-	if (!status) {
+	if (status == NULL) {
 		cli_reset();
 		return 0;
 	}
@@ -1281,7 +1281,7 @@ int bt_mesh_cfg_hb_sub_set(u16_t net_idx, u16_t addr,
 		return err;
 	}
 
-	if (!status) {
+	if (status == NULL) {
 		cli_reset();
 		return 0;
 	}
@@ -1319,7 +1319,7 @@ int bt_mesh_cfg_hb_sub_get(u16_t net_idx, u16_t addr,
 		return err;
 	}
 
-	if (!status) {
+	if (status == NULL) {
 		cli_reset();
 		return 0;
 	}
@@ -1362,7 +1362,7 @@ int bt_mesh_cfg_hb_pub_set(u16_t net_idx, u16_t addr,
 		return err;
 	}
 
-	if (!status) {
+	if (status == NULL) {
 		cli_reset();
 		return 0;
 	}
@@ -1400,7 +1400,7 @@ int bt_mesh_cfg_hb_pub_get(u16_t net_idx, u16_t addr,
 		return err;
 	}
 
-	if (!status) {
+	if (status == NULL) {
 		cli_reset();
 		return 0;
 	}

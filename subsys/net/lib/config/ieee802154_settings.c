@@ -36,12 +36,12 @@ int _net_config_ieee802154_setup(void)
 	struct device *dev;
 
 	dev = device_get_binding(CONFIG_NET_CONFIG_IEEE802154_DEV_NAME);
-	if (!dev) {
+	if (dev == NULL) {
 		return -ENODEV;
 	}
 
 	iface = net_if_lookup_by_dev(dev);
-	if (!iface) {
+	if (iface == NULL) {
 		return -EINVAL;
 	}
 

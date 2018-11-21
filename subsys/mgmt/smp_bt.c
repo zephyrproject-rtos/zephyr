@@ -131,7 +131,7 @@ static void smp_bt_ud_free(void *ud)
 {
 	struct smp_bt_user_data *user_data = ud;
 
-	if (user_data->conn) {
+	if (user_data->conn != NULL) {
 		bt_conn_unref(user_data->conn);
 		user_data->conn = NULL;
 	}
@@ -142,7 +142,7 @@ static int smp_bt_ud_copy(struct net_buf *dst, const struct net_buf *src)
 	struct smp_bt_user_data *src_ud = net_buf_user_data(src);
 	struct smp_bt_user_data *dst_ud = net_buf_user_data(dst);
 
-	if (src_ud->conn) {
+	if (src_ud->conn != NULL) {
 		dst_ud->conn = bt_conn_ref(src_ud->conn);
 	}
 

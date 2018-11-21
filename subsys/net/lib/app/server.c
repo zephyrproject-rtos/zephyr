@@ -117,7 +117,7 @@ int net_app_listen(struct net_app_ctx *ctx)
 	bool dual = false, v4_failed = false;
 	int ret;
 
-	if (!ctx) {
+	if (ctx == NULL) {
 		return -EINVAL;
 	}
 
@@ -202,7 +202,7 @@ int net_app_init_server(struct net_app_ctx *ctx,
 {
 	int ret;
 
-	if (!ctx) {
+	if (ctx == NULL) {
 		return -EINVAL;
 	}
 
@@ -345,7 +345,7 @@ static void tls_server_handler(struct net_app_ctx *ctx,
 
 	k_sem_give(startup_sync);
 
-	while (1) {
+	while (true) {
 		struct net_context *net_ctx;
 
 		_net_app_ssl_mainloop(ctx);
@@ -363,7 +363,7 @@ static void tls_server_handler(struct net_app_ctx *ctx,
 		}
 
 		net_ctx = find_net_ctx(ctx, &i);
-		if (net_ctx) {
+		if (net_ctx != NULL) {
 			NET_DBG("Server context %p removed", net_ctx);
 			net_context_put(net_ctx);
 			ctx->server.net_ctxs[i] = NULL;
@@ -432,7 +432,7 @@ int net_app_server_tls(struct net_app_ctx *ctx,
 		       k_thread_stack_t *stack,
 		       size_t stack_size)
 {
-	if (!request_buf || request_buf_len == 0) {
+	if ((request_buf == NULL) || request_buf_len == 0) {
 		NET_ERR("Request buf must be set");
 		return -EINVAL;
 	}
@@ -451,7 +451,7 @@ int net_app_server_tls(struct net_app_ctx *ctx,
 		return -EINVAL;
 	}
 
-	if (server_banner) {
+	if (server_banner != NULL) {
 		new_server(ctx, server_banner);
 	}
 

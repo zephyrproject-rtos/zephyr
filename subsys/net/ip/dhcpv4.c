@@ -156,7 +156,7 @@ static bool dhcpv4_setup_udp_header(struct net_pkt *pkt)
 	u16_t len;
 
 	udp = net_udp_get_hdr(pkt, &hdr);
-	if (!udp || udp == &hdr) {
+	if ((udp == NULL) || udp == &hdr) {
 		NET_ERR("Could not get UDP header");
 		return false;
 	}
@@ -210,7 +210,7 @@ static struct net_pkt *dhcpv4_prepare_message(struct net_if *iface, u8_t type,
 	msg->xid = htonl(iface->config.dhcpv4.xid);
 	msg->flags = htons(DHCPV4_MSG_BROADCAST);
 
-	if (ciaddr) {
+	if (ciaddr != NULL) {
 		/* The ciaddr field was zero'd out above, if we are
 		 * asked to send a ciaddr then fill it in now
 		 * otherwise leave it as all zeros.
@@ -285,7 +285,7 @@ static u32_t dhcpv4_send_request(struct net_if *iface)
 
 	pkt = dhcpv4_prepare_message(iface, DHCPV4_MSG_TYPE_REQUEST,
 				     ciaddr, server_addr);
-	if (!pkt) {
+	if (pkt == NULL) {
 		goto fail;
 	}
 
@@ -334,7 +334,7 @@ static u32_t dhcpv4_send_request(struct net_if *iface)
 fail:
 	NET_DBG("Message preparation failed");
 
-	if (pkt) {
+	if (pkt != NULL) {
 		net_pkt_unref(pkt);
 	}
 
@@ -351,7 +351,7 @@ static u32_t dhcpv4_send_discover(struct net_if *iface)
 
 	pkt = dhcpv4_prepare_message(iface, DHCPV4_MSG_TYPE_DISCOVER,
 				     NULL, net_ipv4_broadcast_address());
-	if (!pkt) {
+	if (pkt == NULL) {
 		goto fail;
 	}
 
@@ -384,7 +384,7 @@ static u32_t dhcpv4_send_discover(struct net_if *iface)
 fail:
 	NET_DBG("Message preparation failed");
 
-	if (pkt) {
+	if (pkt != NULL) {
 		net_pkt_unref(pkt);
 	}
 
@@ -612,13 +612,13 @@ static enum net_verdict dhcpv4_parse_options(struct net_if *iface,
 
 	frag = net_frag_read(frag, offset, &pos, sizeof(magic_cookie),
 			     (u8_t *)cookie);
-	if (!frag || memcmp(magic_cookie, cookie, sizeof(magic_cookie))) {
+	if ((frag == NULL) || memcmp(magic_cookie, cookie, sizeof(magic_cookie))) {
 
 		NET_DBG("Incorrect magic cookie");
 		return NET_DROP;
 	}
 
-	while (frag) {
+	while (frag != NULL) {
 		frag = net_frag_read_u8(frag, pos, &pos, &type);
 
 		if (type == DHCPV4_OPTIONS_END) {
@@ -627,7 +627,7 @@ static enum net_verdict dhcpv4_parse_options(struct net_if *iface,
 		}
 
 		frag = net_frag_read_u8(frag, pos, &pos, &length);
-		if (!frag) {
+		if (frag == NULL) {
 			NET_ERR("option parsing, bad length");
 			return NET_DROP;
 		}
@@ -643,7 +643,7 @@ static enum net_verdict dhcpv4_parse_options(struct net_if *iface,
 
 			frag = net_frag_read(frag, pos, &pos, length,
 					     netmask.s4_addr);
-			if (!frag && pos) {
+			if ((frag == NULL) && pos) {
 				NET_ERR("options_subnet_mask, short packet");
 				return NET_DROP;
 			}
@@ -669,7 +669,7 @@ static enum net_verdict dhcpv4_parse_options(struct net_if *iface,
 
 			frag = net_frag_read(frag, pos, &pos, 4, router.s4_addr);
 			frag = net_frag_skip(frag, pos, &pos, length - 4);
-			if (!frag && pos) {
+			if ((frag == NULL) && pos) {
 				NET_ERR("options_router, short packet");
 				return NET_DROP;
 			}
@@ -702,7 +702,7 @@ static enum net_verdict dhcpv4_parse_options(struct net_if *iface,
 			frag = net_frag_read(frag, pos, &pos, 4,
 					     dns.sin_addr.s4_addr);
 			frag = net_frag_skip(frag, pos, &pos, length - 4);
-			if (!frag && pos) {
+			if ((frag == NULL) && pos) {
 				NET_ERR("options_dns, short packet");
 				return NET_DROP;
 			}
@@ -799,7 +799,7 @@ static enum net_verdict dhcpv4_parse_options(struct net_if *iface,
 			break;
 		}
 
-		if (!frag && pos) {
+		if ((frag == NULL) && pos) {
 			return NET_DROP;
 		}
 	}
@@ -909,18 +909,18 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 	u8_t min;
 	u16_t pos;
 
-	if (!conn) {
+	if (conn == NULL) {
 		NET_DBG("Invalid connection");
 		return NET_DROP;
 	}
 
-	if (!pkt || !pkt->frags) {
+	if ((pkt == NULL) || !pkt->frags) {
 		NET_DBG("Invalid packet, no fragments");
 		return NET_DROP;
 	}
 
 	iface = net_pkt_iface(pkt);
-	if (!iface) {
+	if (iface == NULL) {
 		NET_DBG("no iface");
 		return NET_DROP;
 	}
@@ -968,7 +968,7 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 
 	/* SNAME, FILE are not used at the moment, skip it */
 	frag = net_frag_skip(frag, min, &pos, SIZE_OF_SNAME + SIZE_OF_FILE);
-	if (!frag && pos) {
+	if ((frag == NULL) && pos) {
 		NET_DBG("short packet while skipping sname");
 		goto drop;
 	}

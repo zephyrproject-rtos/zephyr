@@ -225,14 +225,14 @@ static void gptp_md_compute_pdelay_rate_ratio(int port)
 
 	/* Get ingress timestamp. */
 	pkt = state->rcvd_pdelay_resp_ptr;
-	if (pkt) {
+	if (pkt != NULL) {
 		ingress_tstamp =
 			gptp_timestamp_to_nsec(net_pkt_timestamp(pkt));
 	}
 
 	/* Get peer corrected timestamp. */
 	pkt = state->rcvd_pdelay_follow_up_ptr;
-	if (pkt) {
+	if (pkt != NULL) {
 		hdr = GPTP_HDR(pkt);
 		fup = GPTP_PDELAY_RESP_FOLLOWUP(pkt);
 
@@ -285,19 +285,19 @@ static void gptp_md_compute_prop_time(int port)
 
 	/* Get egress timestamp. */
 	pkt = state->tx_pdelay_req_ptr;
-	if (pkt) {
+	if (pkt != NULL) {
 		t1_ns = gptp_timestamp_to_nsec(net_pkt_timestamp(pkt));
 	}
 
 	/* Get ingress timestamp. */
 	pkt = state->rcvd_pdelay_resp_ptr;
-	if (pkt) {
+	if (pkt != NULL) {
 		t4_ns = gptp_timestamp_to_nsec(net_pkt_timestamp(pkt));
 	}
 
 	/* Get peer corrected timestamps. */
 	pkt = state->rcvd_pdelay_resp_ptr;
-	if (pkt) {
+	if (pkt != NULL) {
 		hdr = GPTP_HDR(pkt);
 		resp = GPTP_PDELAY_RESP(pkt);
 
@@ -309,7 +309,7 @@ static void gptp_md_compute_prop_time(int port)
 	}
 
 	pkt = state->rcvd_pdelay_follow_up_ptr;
-	if (pkt) {
+	if (pkt != NULL) {
 		hdr = GPTP_HDR(pkt);
 		fup = GPTP_PDELAY_RESP_FOLLOWUP(pkt);
 
@@ -821,7 +821,7 @@ static void gptp_md_sync_send_state_machine(int port)
 	case GPTP_SYNC_SEND_SEND_SYNC:
 		if (state->rcvd_md_sync) {
 			pkt = gptp_prepare_sync(port);
-			if (pkt) {
+			if (pkt != NULL) {
 				/* Reference message to track timestamp info */
 				state->sync_ptr = net_pkt_ref(pkt);
 				gptp_md_sync_prepare(pkt,
@@ -846,7 +846,7 @@ static void gptp_md_sync_send_state_machine(int port)
 			}
 
 			pkt = gptp_prepare_follow_up(port, state->sync_ptr);
-			if (pkt) {
+			if (pkt != NULL) {
 				gptp_md_follow_up_prepare(pkt,
 							 state->sync_send_ptr,
 							 port);

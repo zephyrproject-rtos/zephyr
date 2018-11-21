@@ -213,7 +213,7 @@ static void reset(struct net_buf *buf, struct net_buf **evt)
 	event_mask_page_2 = DEFAULT_EVENT_MASK_PAGE_2;
 	le_event_mask = DEFAULT_LE_EVENT_MASK;
 
-	if (buf) {
+	if (buf != NULL) {
 		ll_reset();
 		ccst = cmd_complete(evt, sizeof(*ccst));
 		ccst->status = 0x00;
@@ -224,7 +224,7 @@ static void reset(struct net_buf *buf, struct net_buf **evt)
 	hci_hbuf_acked = 0;
 	(void)memset(hci_hbuf_pend, 0, sizeof(hci_hbuf_pend));
 	conn_count = 0;
-	if (buf) {
+	if (buf != NULL) {
 		atomic_set_bit(&hci_state_mask, HCI_STATE_BIT_RESET);
 		k_poll_signal_raise(hbuf_signal, 0x0);
 	}
@@ -1260,10 +1260,10 @@ static void le_set_default_phy(struct net_buf *buf, struct net_buf **evt)
 	struct bt_hci_evt_cc_status *ccst;
 	u32_t status;
 
-	if (cmd->all_phys & BT_HCI_LE_PHY_TX_ANY) {
+	if ((cmd->all_phys & BT_HCI_LE_PHY_TX_ANY) != 0) {
 		cmd->tx_phys = 0x07;
 	}
-	if (cmd->all_phys & BT_HCI_LE_PHY_RX_ANY) {
+	if ((cmd->all_phys & BT_HCI_LE_PHY_RX_ANY) != 0) {
 		cmd->rx_phys = 0x07;
 	}
 
@@ -1292,10 +1292,10 @@ static void le_set_phy(struct net_buf *buf, struct net_buf **evt)
 		mask_phys |= BIT(2);
 	}
 
-	if (cmd->all_phys & BT_HCI_LE_PHY_TX_ANY) {
+	if ((cmd->all_phys & BT_HCI_LE_PHY_TX_ANY) != 0) {
 		cmd->tx_phys |= mask_phys;
 	}
-	if (cmd->all_phys & BT_HCI_LE_PHY_RX_ANY) {
+	if ((cmd->all_phys & BT_HCI_LE_PHY_RX_ANY) != 0) {
 		cmd->rx_phys |= mask_phys;
 	}
 
@@ -2072,7 +2072,7 @@ int hci_acl_handle(struct net_buf *buf, struct net_buf **evt)
 	handle = bt_acl_handle(handle);
 
 	node_tx = ll_tx_mem_acquire();
-	if (!node_tx) {
+	if (node_tx == NULL) {
 		BT_ERR("Tx Buffer Overflow");
 		data_buf_overflow(evt);
 		return -ENOBUFS;
@@ -2426,7 +2426,7 @@ static void le_conn_complete(struct pdu_data *pdu_data, u16_t handle,
 	}
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	if (le_event_mask & BT_EVT_MASK_LE_ENH_CONN_COMPLETE) {
+	if ((le_event_mask & BT_EVT_MASK_LE_ENH_CONN_COMPLETE) != 0) {
 		struct bt_hci_evt_le_enh_conn_complete *leecc;
 
 		leecc = meta_evt(buf, BT_HCI_EVT_LE_ENH_CONN_COMPLETE,

@@ -222,7 +222,7 @@ static void clear_friendship(bool force, bool disable)
 		lpn->old_friend = lpn->frnd;
 	}
 
-	if (lpn_cb && lpn->frnd != BT_MESH_ADDR_UNASSIGNED) {
+	if ((lpn_cb != NULL) && lpn->frnd != BT_MESH_ADDR_UNASSIGNED) {
 		lpn_cb(lpn->frnd, false);
 	}
 
@@ -511,7 +511,7 @@ int bt_mesh_lpn_friend_offer(struct bt_mesh_net_rx *rx,
 	lpn->frnd = rx->ctx.addr;
 
 	cred = friend_cred_create(sub, lpn->frnd, lpn->counter, frnd_counter);
-	if (!cred) {
+	if (cred == NULL) {
 		lpn->frnd = BT_MESH_ADDR_UNASSIGNED;
 		return -ENOMEM;
 	}
@@ -582,12 +582,12 @@ static void lpn_group_add(u16_t group)
 			return;
 		}
 
-		if (!free_slot && lpn->groups[i] == BT_MESH_ADDR_UNASSIGNED) {
+		if ((free_slot == NULL) && lpn->groups[i] == BT_MESH_ADDR_UNASSIGNED) {
 			free_slot = &lpn->groups[i];
 		}
 	}
 
-	if (!free_slot) {
+	if (free_slot == NULL) {
 		BT_WARN("Friend Subscription List exceeded!");
 		return;
 	}
@@ -956,7 +956,7 @@ int bt_mesh_lpn_friend_update(struct bt_mesh_net_rx *rx,
 
 		BT_INFO("Friendship established with 0x%04x", lpn->frnd);
 
-		if (lpn_cb) {
+		if (lpn_cb != NULL) {
 			lpn_cb(lpn->frnd, true);
 		}
 

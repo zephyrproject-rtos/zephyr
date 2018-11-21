@@ -23,7 +23,7 @@ static void tty_uart_isr(void *user_data)
 	if (uart_irq_rx_ready(dev)) {
 		u8_t c;
 
-		while (1) {
+		while (true) {
 			if (uart_fifo_read(dev, &c, 1) == 0) {
 				break;
 			}

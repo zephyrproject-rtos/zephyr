@@ -25,7 +25,7 @@ struct net_pkt *net_udp_insert(struct net_pkt *pkt,
 	u16_t pos;
 
 	frag = net_frag_get_pos(pkt, offset, &pos);
-	if (!frag && pos == 0xffff) {
+	if ((frag == NULL) && pos == 0xffff) {
 		NET_DBG("Offset %d out of pkt len %zd",
 			offset, net_pkt_get_len(pkt));
 		return NULL;
@@ -34,7 +34,7 @@ struct net_pkt *net_udp_insert(struct net_pkt *pkt,
 	/* We can only insert the UDP header between existing two
 	 * fragments.
 	 */
-	if (frag && pos != 0) {
+	if ((frag != NULL) && pos != 0) {
 		NET_DBG("Cannot insert UDP data into offset %d", offset);
 		return NULL;
 	}
@@ -56,12 +56,12 @@ struct net_pkt *net_udp_insert(struct net_pkt *pkt,
 		prev = pkt->frags;
 	}
 
-	if (!prev) {
+	if (prev == NULL) {
 		goto fail;
 	}
 
 	udp = net_pkt_get_frag(pkt, PKT_WAIT_TIME);
-	if (!udp) {
+	if (udp == NULL) {
 		goto fail;
 	}
 
@@ -82,7 +82,7 @@ struct net_pkt *net_udp_insert(struct net_pkt *pkt,
 				net_pkt_ipv6_ext_len(pkt) +
 				sizeof(struct net_udp_hdr),
 				&pos);
-	if (frag) {
+	if (frag != NULL) {
 		net_pkt_set_appdata(pkt, frag->data + pos);
 	}
 
@@ -100,7 +100,7 @@ struct net_buf *net_udp_set_chksum(struct net_pkt *pkt, struct net_buf *frag)
 	u16_t pos;
 
 	hdr = net_pkt_udp_data(pkt);
-	if (net_udp_header_fits(pkt, hdr)) {
+	if (net_udp_header_fits(pkt, hdr) != NULL) {
 		hdr->chksum = 0;
 		hdr->chksum = ~net_calc_chksum_udp(pkt);
 
@@ -132,7 +132,7 @@ u16_t net_udp_get_chksum(struct net_pkt *pkt, struct net_buf *frag)
 	u16_t pos;
 
 	hdr = net_pkt_udp_data(pkt);
-	if (net_udp_header_fits(pkt, hdr)) {
+	if (net_udp_header_fits(pkt, hdr) != NULL) {
 		return hdr->chksum;
 	}
 
@@ -154,7 +154,7 @@ struct net_udp_hdr *net_udp_get_hdr(struct net_pkt *pkt,
 	u16_t pos;
 
 	udp_hdr = net_pkt_udp_data(pkt);
-	if (net_udp_header_fits(pkt, udp_hdr)) {
+	if (net_udp_header_fits(pkt, udp_hdr) != NULL) {
 		return udp_hdr;
 	}
 
@@ -168,7 +168,7 @@ struct net_udp_hdr *net_udp_get_hdr(struct net_pkt *pkt,
 			     (u8_t *)&hdr->len);
 	frag = net_frag_read(frag, pos, &pos, sizeof(hdr->chksum),
 			     (u8_t *)&hdr->chksum);
-	if (!frag) {
+	if (frag == NULL) {
 		NET_ASSERT(frag);
 		return NULL;
 	}
@@ -182,7 +182,7 @@ struct net_udp_hdr *net_udp_set_hdr(struct net_pkt *pkt,
 	struct net_buf *frag;
 	u16_t pos;
 
-	if (net_udp_header_fits(pkt, hdr)) {
+	if (net_udp_header_fits(pkt, hdr) != NULL) {
 		return hdr;
 	}
 
@@ -197,7 +197,7 @@ struct net_udp_hdr *net_udp_set_hdr(struct net_pkt *pkt,
 	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(hdr->chksum),
 			     (u8_t *)&hdr->chksum, PKT_WAIT_TIME);
 
-	if (!frag) {
+	if (frag == NULL) {
 		NET_ASSERT(frag);
 		return NULL;
 	}

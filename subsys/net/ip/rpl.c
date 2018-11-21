@@ -179,7 +179,7 @@ void net_rpl_set_mode(enum net_rpl_mode new_mode)
 		 */
 		NET_DBG("Switching to mesh mode");
 
-		if (rpl_default_instance) {
+		if (rpl_default_instance != NULL) {
 			net_rpl_schedule_dao_now(rpl_default_instance);
 		}
 
@@ -187,7 +187,7 @@ void net_rpl_set_mode(enum net_rpl_mode new_mode)
 
 		NET_DBG("Switching to feather mode");
 
-		if (rpl_default_instance) {
+		if (rpl_default_instance != NULL) {
 			net_rpl_cancel_dao(rpl_default_instance);
 		}
 	}
@@ -273,11 +273,11 @@ net_rpl_get_ipv6_nbr_data(struct net_rpl_parent *parent)
 	struct net_nbr *nbr;
 
 	nbr = net_rpl_get_nbr(parent);
-	if (nbr) {
+	if (nbr != NULL) {
 		struct net_nbr *ipv6_nbr;
 
 		ipv6_nbr = net_ipv6_get_nbr(nbr->iface, nbr->idx);
-		if (ipv6_nbr) {
+		if (ipv6_nbr != NULL) {
 			return net_ipv6_nbr_data(ipv6_nbr);
 		}
 	}
@@ -300,7 +300,7 @@ static struct net_nbr *nbr_add(struct net_if *iface,
 	struct net_nbr *nbr = net_nbr_get(&net_rpl_parents.table);
 	int ret;
 
-	if (!nbr) {
+	if (nbr == NULL) {
 		return NULL;
 	}
 
@@ -325,7 +325,7 @@ struct in6_addr *net_rpl_get_parent_addr(struct net_if *iface,
 	struct net_nbr *nbr;
 
 	nbr = net_rpl_get_nbr(parent);
-	if (!nbr) {
+	if (nbr == NULL) {
 		NET_DBG("Parent %p unknown", parent);
 		return NULL;
 	}
@@ -361,7 +361,7 @@ static void net_rpl_print_parents(void)
 	int curr_rank;
 	int i;
 
-	if (!rpl_default_instance || !rpl_default_instance->current_dag) {
+	if ((rpl_default_instance == NULL) || !rpl_default_instance->current_dag) {
 		return;
 	}
 
@@ -415,7 +415,7 @@ struct net_route_entry *net_rpl_add_route(struct net_rpl_dag *dag,
 	struct net_nbr *nbr;
 
 	route = net_route_add(iface, addr, prefix_len, nexthop);
-	if (!route) {
+	if (route == NULL) {
 		return NULL;
 	}
 
@@ -489,7 +489,7 @@ int net_rpl_dio_send(struct net_if *iface,
 
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, dst),
 				     BUF_TIMEOUT);
-	if (!pkt) {
+	if (pkt == NULL) {
 		return -ENOMEM;
 	}
 
@@ -522,7 +522,7 @@ int net_rpl_dio_send(struct net_if *iface,
 	append(pkt, u8, value);
 	append(pkt, u8, instance->dtsn);
 
-	if (!dst) {
+	if (dst == NULL) {
 		net_rpl_lollipop_increment(&instance->dtsn);
 	}
 
@@ -631,7 +631,7 @@ static void dio_timer(struct k_work *work)
 		struct in6_addr *tmp;
 
 		tmp = net_if_ipv6_get_ll_addr(NET_ADDR_PREFERRED, NULL);
-		if (tmp) {
+		if (tmp != NULL) {
 			rpl_dio_send_ok = true;
 		} else {
 			NET_DBG("Sending DIO later because IPv6 link local "
@@ -749,7 +749,7 @@ int net_rpl_dis_send(struct in6_addr *dst, struct net_if *iface)
 	u16_t pos;
 	int ret;
 
-	if (!iface) {
+	if (iface == NULL) {
 		/* Go through all interface to send the DIS */
 		net_if_foreach(send_dis_all_interfaces,
 			       dst);
@@ -765,7 +765,7 @@ int net_rpl_dis_send(struct in6_addr *dst, struct net_if *iface)
 
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, dst_addr),
 				     BUF_TIMEOUT);
-	if (!pkt) {
+	if (pkt == NULL) {
 		return -ENOMEM;
 	}
 
@@ -902,7 +902,7 @@ static struct net_rpl_parent *get_probing_target(struct net_rpl_dag *dag)
 	/* With 50% probability: probe best parent not updated
 	 * for NET_RPL_PROBING_EXPIRATION_TIME
 	 */
-	if (!probing_target && (sys_rand32_get() % 2) == 0) {
+	if ((probing_target == NULL) && (sys_rand32_get() % 2) == 0) {
 		for (i = 0; i < CONFIG_NET_RPL_MAX_PARENTS; i++) {
 			struct net_nbr *nbr = get_nbr(i);
 
@@ -913,8 +913,7 @@ static struct net_rpl_parent *get_probing_target(struct net_rpl_dag *dag)
 				u16_t parent_rank =
 					net_rpl_of_calc_rank(parent, 0);
 
-				if (!probing_target ||
-				    parent_rank < probing_target_rank) {
+				if ((probing_target == NULL) || parent_rank < probing_target_rank) {
 					probing_target = parent;
 					probing_target_rank = parent_rank;
 				}
@@ -923,15 +922,13 @@ static struct net_rpl_parent *get_probing_target(struct net_rpl_dag *dag)
 	}
 
 	/* The default probing target is the least recently updated parent */
-	if (!probing_target) {
+	if (probing_target == NULL) {
 		for (i = 0; i < CONFIG_NET_RPL_MAX_PARENTS; i++) {
 			struct net_nbr *nbr = get_nbr(i);
 
 			parent = nbr_data(nbr);
 			if (parent->dag == dag) {
-				if (!probing_target ||
-				    parent->last_tx_time <
-				    probing_target->last_tx_time) {
+				if ((probing_target == NULL) || parent->last_tx_time < probing_target->last_tx_time) {
 					probing_target = parent;
 				}
 			}
@@ -952,14 +949,14 @@ static void rpl_probing_timer(struct k_work *work)
 	NET_DBG("Probing target %p dag %p", probing_target,
 		instance->current_dag);
 
-	if (probing_target) {
+	if (probing_target != NULL) {
 		struct net_nbr *nbr = net_rpl_get_nbr(probing_target);
 		struct net_linkaddr_storage *lladdr;
 		struct in6_addr *src;
 		struct in6_addr *dst;
 		int ret;
 
-		if (!nbr) {
+		if (nbr == NULL) {
 			NET_DBG("No such parent neighbor %p", probing_target);
 			return;
 		}
@@ -1124,9 +1121,9 @@ static struct net_rpl_dag *alloc_dag(struct net_if *iface,
 #endif
 
 	instance = net_rpl_get_instance(instance_id);
-	if (!instance) {
+	if (instance == NULL) {
 		instance = net_rpl_alloc_instance(instance_id);
-		if (!instance) {
+		if (instance == NULL) {
 			NET_ERR("Cannot allocate instance id %d", instance_id);
 			net_stats_update_rpl_mem_overflows(iface);
 
@@ -1162,7 +1159,7 @@ static struct net_rpl_dag *get_dag(u8_t instance_id,
 	int i;
 
 	instance = net_rpl_get_instance(instance_id);
-	if (!instance) {
+	if (instance == NULL) {
 		NET_DBG("Cannot get instance id %d", instance_id);
 		return NULL;
 	}
@@ -1243,7 +1240,7 @@ static void check_prefix(struct net_if *iface,
 		return;
 	}
 
-	if (last_prefix) {
+	if (last_prefix != NULL) {
 		set_ip_from_prefix(net_if_get_link_addr(iface),
 				   last_prefix, &addr);
 
@@ -1253,7 +1250,7 @@ static void check_prefix(struct net_if *iface,
 		}
 	}
 
-	if (new_prefix) {
+	if (new_prefix != NULL) {
 		set_ip_from_prefix(net_if_get_link_addr(iface),
 				   new_prefix, &addr);
 
@@ -1290,7 +1287,7 @@ static void net_rpl_set_preferred_parent(struct net_if *iface,
 					 struct net_rpl_dag *dag,
 					 struct net_rpl_parent *parent)
 {
-	if (dag && dag->preferred_parent != parent) {
+	if ((dag != NULL) && dag->preferred_parent != parent) {
 		struct in6_addr *addr = net_rpl_get_parent_addr(iface, parent);
 
 		NET_DBG("Preferred parent %s",
@@ -1335,7 +1332,7 @@ struct net_rpl_dag *net_rpl_set_root_with_version(struct net_if *iface,
 	int i;
 
 	instance = net_rpl_get_instance(instance_id);
-	if (instance) {
+	if (instance != NULL) {
 		for (i = 0; i < CONFIG_NET_RPL_MAX_DAG_PER_INSTANCE; i++) {
 			dag = &instance->dags[i];
 
@@ -1362,7 +1359,7 @@ struct net_rpl_dag *net_rpl_set_root_with_version(struct net_if *iface,
 	}
 
 	dag = alloc_dag(iface, instance_id, dag_id);
-	if (!dag) {
+	if (dag == NULL) {
 		NET_DBG("Failed to allocate a DAG");
 		return NULL;
 	}
@@ -1517,7 +1514,7 @@ static void net_rpl_nullify_parent(struct net_if *iface,
 			return;
 		}
 
-		if (dag->instance->default_route) {
+		if (dag->instance->default_route != NULL) {
 			NET_DBG("Removing default route %s",
 				log_strdup(net_sprint_ipv6_addr(addr)));
 
@@ -1541,9 +1538,9 @@ static void net_rpl_remove_parent(struct net_if *iface,
 {
 	NET_ASSERT(iface);
 
-	if (!nbr) {
+	if (nbr == NULL) {
 		nbr = net_rpl_get_nbr(parent);
-		if (!nbr) {
+		if (nbr == NULL) {
 			return;
 		}
 	}
@@ -1598,7 +1595,7 @@ static struct net_rpl_parent *net_rpl_add_parent(struct net_if *iface,
 	 * Typically, the parent is added upon receiving a DIO.
 	 */
 	nbr = net_ipv6_nbr_lookup(iface, addr);
-	if (nbr) {
+	if (nbr != NULL) {
 		struct net_linkaddr_storage *lladdr_storage;
 		struct net_ipv6_nbr_data *data;
 		struct net_rpl_parent *parent;
@@ -1614,14 +1611,14 @@ static struct net_rpl_parent *net_rpl_add_parent(struct net_if *iface,
 		rpl_nbr = net_nbr_lookup(&net_rpl_parents.table,
 					 iface,
 					 &lladdr);
-		if (!rpl_nbr) {
+		if (rpl_nbr == NULL) {
 			NET_DBG("Add parent %s [%s]",
 				log_strdup(net_sprint_ipv6_addr(addr)),
 				log_strdup(net_sprint_ll_addr(lladdr.addr,
 							      lladdr.len)));
 
 			rpl_nbr = nbr_add(iface, addr, &lladdr);
-			if (!rpl_nbr) {
+			if (rpl_nbr == NULL) {
 				NET_DBG("Cannot add RPL neighbor");
 				return NULL;
 			}
@@ -1640,7 +1637,7 @@ static struct net_rpl_parent *net_rpl_add_parent(struct net_if *iface,
 		 * a link metric yet.
 		 */
 		ipv6_nbr = net_ipv6_get_nbr(iface, nbr->idx);
-		if (ipv6_nbr) {
+		if (ipv6_nbr != NULL) {
 			data = net_ipv6_nbr_data(ipv6_nbr);
 			if (data->link_metric == 0) {
 				data->link_metric =
@@ -1752,7 +1749,7 @@ static int net_rpl_set_default_route(struct net_if *iface,
 				     struct net_rpl_instance *instance,
 				     struct in6_addr *from)
 {
-	if (instance->default_route) {
+	if (instance->default_route != NULL) {
 		NET_DBG("Removing default route through %s",
 			log_strdup(net_sprint_ipv6_addr(
 				 &instance->default_route->address.in6_addr)));
@@ -1842,7 +1839,7 @@ static struct net_rpl_parent *net_rpl_select_parent(struct net_if *iface,
 {
 	struct net_rpl_parent *best = best_parent(iface, dag);
 
-	if (best) {
+	if (best != NULL) {
 		net_rpl_set_preferred_parent(iface, dag, best);
 	}
 
@@ -1874,7 +1871,7 @@ struct net_rpl_dag *net_rpl_select_dag(struct net_if *iface,
 
 	if (best_dag->rank != NET_RPL_ROOT_RANK(instance)) {
 
-		if (net_rpl_select_parent(iface, parent->dag)) {
+		if (net_rpl_select_parent(iface, parent->dag) != NULL) {
 			if (parent->dag != best_dag) {
 				best_dag = net_rpl_of_best_dag(best_dag,
 							       parent->dag);
@@ -1884,7 +1881,7 @@ struct net_rpl_dag *net_rpl_select_dag(struct net_if *iface,
 		}
 	}
 
-	if (!best_dag) {
+	if (best_dag == NULL) {
 		/* No parent found: the calling function handle this problem. */
 		return NULL;
 	}
@@ -1902,11 +1899,11 @@ struct net_rpl_dag *net_rpl_select_dag(struct net_if *iface,
 				     &instance->current_dag->prefix_info,
 				     &best_dag->prefix_info);
 
-		} else if (instance->current_dag->prefix_info.flags &
-			   NET_ICMPV6_RA_FLAG_AUTONOMOUS) {
-			check_prefix(iface,
-				     &instance->current_dag->prefix_info,
-				     NULL);
+		} else {if ((instance->current_dag->prefix_info.flags & NET_ICMPV6_RA_FLAG_AUTONOMOUS) != 0) {
+				check_prefix(iface,
+					     &instance->current_dag->prefix_info,
+					     NULL);
+			}
 		}
 
 		net_rpl_dag_join(best_dag);
@@ -1928,8 +1925,7 @@ struct net_rpl_dag *net_rpl_select_dag(struct net_if *iface,
 		net_rpl_set_preferred_parent(iface, instance->current_dag,
 					     NULL);
 
-		if (instance->mop != NET_RPL_MOP_NO_DOWNWARD_ROUTES &&
-		    last_parent) {
+		if (instance->mop != NET_RPL_MOP_NO_DOWNWARD_ROUTES && (last_parent != NULL)) {
 
 			/* Send a No-Path DAO to the removed preferred parent.
 			 */
@@ -1950,7 +1946,7 @@ struct net_rpl_dag *net_rpl_select_dag(struct net_if *iface,
 		net_stats_update_rpl_parent_switch(iface);
 
 		if (instance->mop != NET_RPL_MOP_NO_DOWNWARD_ROUTES) {
-			if (last_parent) {
+			if (last_parent != NULL) {
 				/* Send a No-Path DAO to the removed preferred
 				 * parent.
 				 */
@@ -2002,7 +1998,7 @@ static void net_rpl_local_repair(struct net_if *iface,
 {
 	int i;
 
-	if (!instance) {
+	if (instance == NULL) {
 		return;
 	}
 
@@ -2086,8 +2082,7 @@ bool net_rpl_repair_root(u8_t instance_id)
 	struct net_rpl_instance *instance;
 
 	instance = net_rpl_get_instance(instance_id);
-	if (!instance ||
-	    instance->current_dag->rank != NET_RPL_ROOT_RANK(instance)) {
+	if ((instance == NULL) || instance->current_dag->rank != NET_RPL_ROOT_RANK(instance)) {
 		NET_DBG("RPL repair root triggered but not root");
 		return false;
 	}
@@ -2114,7 +2109,7 @@ void net_rpl_global_repair(struct net_route_entry *route)
 	struct net_nbr *nbr;
 
 	nbr = net_route_get_nbr(route);
-	if (!nbr) {
+	if (nbr == NULL) {
 		NET_DBG("No neighbor for route %p", route);
 		return;
 	}
@@ -2122,7 +2117,7 @@ void net_rpl_global_repair(struct net_route_entry *route)
 	extra = net_nbr_extra_data(nbr);
 
 	dag = extra->dag;
-	if (dag) {
+	if (dag != NULL) {
 		instance = dag->instance;
 
 		net_rpl_repair_root(instance->instance_id);
@@ -2238,7 +2233,7 @@ static void net_rpl_join_instance(struct net_if *iface,
 	struct net_rpl_dag *dag;
 
 	dag = alloc_dag(iface, dio->instance_id, &dio->dag_id);
-	if (!dag) {
+	if (dag == NULL) {
 		NET_DBG("Failed to allocate a DAG object!");
 		return;
 	}
@@ -2246,7 +2241,7 @@ static void net_rpl_join_instance(struct net_if *iface,
 	instance = dag->instance;
 
 	parent = net_rpl_add_parent(iface, dag, dio, from);
-	if (!parent) {
+	if (parent == NULL) {
 		instance->is_used = false;
 
 		NET_DBG("Cannot add %s as a parent",
@@ -2276,7 +2271,7 @@ static void net_rpl_join_instance(struct net_if *iface,
 	/* Autoconfigure an address if this node does not already have
 	 * an address with this prefix.
 	 */
-	if (dio->prefix_info.flags & NET_ICMPV6_RA_FLAG_AUTONOMOUS) {
+	if ((dio->prefix_info.flags & NET_ICMPV6_RA_FLAG_AUTONOMOUS) != 0) {
 		check_prefix(iface, NULL, &dio->prefix_info);
 	}
 
@@ -2315,7 +2310,7 @@ static void net_rpl_join_instance(struct net_if *iface,
 	/* So far this is the lowest rank we are aware of. */
 	dag->min_rank = dag->rank;
 
-	if (!rpl_default_instance) {
+	if (rpl_default_instance == NULL) {
 		rpl_default_instance = instance;
 	}
 
@@ -2343,12 +2338,12 @@ struct net_rpl_parent *find_parent_any_dag_any_instance(struct net_if *iface,
 	struct net_linkaddr lladdr;
 
 	nbr = net_ipv6_nbr_lookup(iface, addr);
-	if (!nbr) {
+	if (nbr == NULL) {
 		return NULL;
 	}
 
 	lsaddr = net_nbr_get_lladdr(nbr->idx);
-	if (!lsaddr) {
+	if (lsaddr == NULL) {
 		return NULL;
 	}
 
@@ -2356,7 +2351,7 @@ struct net_rpl_parent *find_parent_any_dag_any_instance(struct net_if *iface,
 	lladdr.len = lsaddr->len;
 
 	rpl_nbr = net_nbr_lookup(&net_rpl_parents.table, iface, &lladdr);
-	if (!rpl_nbr) {
+	if (rpl_nbr == NULL) {
 		return NULL;
 	}
 
@@ -2370,7 +2365,7 @@ static struct net_rpl_parent *find_parent(struct net_if *iface,
 	struct net_rpl_parent *parent;
 
 	parent = find_parent_any_dag_any_instance(iface, addr);
-	if (parent && parent->dag == dag) {
+	if ((parent != NULL) && parent->dag == dag) {
 		return parent;
 	}
 
@@ -2384,7 +2379,7 @@ static struct net_rpl_dag *find_parent_dag(struct net_if *iface,
 	struct net_rpl_parent *parent;
 
 	parent = find_parent_any_dag_any_instance(iface, addr);
-	if (parent) {
+	if (parent != NULL) {
 		return parent->dag;
 	}
 
@@ -2457,7 +2452,7 @@ static void net_rpl_link_neighbor_callback(struct net_if *iface,
 		}
 
 		parent = find_parent_any_dag(iface, instance, &addr);
-		if (parent) {
+		if (parent != NULL) {
 			/* Trigger DAG rank recalculation. */
 			NET_DBG("Neighbor link callback triggering update");
 
@@ -2483,7 +2478,7 @@ static void net_rpl_add_dag(struct net_if *iface,
 	struct net_rpl_parent *parent = NULL;
 
 	dag = alloc_dag(iface, dio->instance_id, &dio->dag_id);
-	if (!dag) {
+	if (dag == NULL) {
 		NET_DBG("Failed to allocate a DAG object!");
 		return;
 	}
@@ -2493,7 +2488,7 @@ static void net_rpl_add_dag(struct net_if *iface,
 	previous_dag = find_parent_dag(iface, instance, from);
 	if (!previous_dag) {
 		parent = net_rpl_add_parent(iface, dag, dio, from);
-		if (!parent) {
+		if (parent == NULL) {
 			NET_DBG("Adding %s as a parent failed.",
 				log_strdup(net_sprint_ipv6_addr(from)));
 
@@ -2505,12 +2500,12 @@ static void net_rpl_add_dag(struct net_if *iface,
 			log_strdup(net_sprint_ipv6_addr(from)));
 	} else {
 		parent = find_parent(iface, previous_dag, from);
-		if (parent) {
+		if (parent != NULL) {
 			net_rpl_move_parent(iface, previous_dag, dag, parent);
 		}
 	}
 
-	if (!parent) {
+	if (parent == NULL) {
 		NET_DBG("No parent found.");
 		return;
 	}
@@ -2596,7 +2591,7 @@ static void net_rpl_process_dio(struct net_if *iface,
 	dag = get_dag(dio->instance_id, &dio->dag_id);
 	instance = net_rpl_get_instance(dio->instance_id);
 
-	if (dag && instance) {
+	if ((dag != NULL) && (instance != NULL)) {
 		if (lollipop_greater_than(dio->version, dag->version)) {
 			if (dag->rank == NET_RPL_ROOT_RANK(instance)) {
 				u8_t version;
@@ -2640,7 +2635,7 @@ static void net_rpl_process_dio(struct net_if *iface,
 		}
 	}
 
-	if (!instance) {
+	if (instance == NULL) {
 		/* Join the RPL DAG if there is no join callback or the join
 		 * callback tells us to join.
 		 */
@@ -2661,7 +2656,7 @@ static void net_rpl_process_dio(struct net_if *iface,
 		return;
 	}
 
-	if (!dag) {
+	if (dag == NULL) {
 #if CONFIG_NET_RPL_MAX_DAG_PER_INSTANCE > 1
 		NET_DBG("Adding new DAG to known instance.");
 		net_rpl_add_dag(iface, from, dio);
@@ -2691,7 +2686,7 @@ static void net_rpl_process_dio(struct net_if *iface,
 
 	/* Prefix Information Option treated to add new prefix */
 	if (dio->prefix_info.length != 0) {
-		if (dio->prefix_info.flags & NET_ICMPV6_RA_FLAG_AUTONOMOUS) {
+		if ((dio->prefix_info.flags & NET_ICMPV6_RA_FLAG_AUTONOMOUS) != 0) {
 			NET_DBG("Prefix announced in DIO");
 
 			net_rpl_set_prefix(iface, dag, &dio->prefix_info.prefix,
@@ -2732,7 +2727,7 @@ static void net_rpl_process_dio(struct net_if *iface,
 		if (!previous_dag) {
 			/* Add the DIO sender as a candidate parent. */
 			parent = net_rpl_add_parent(iface, dag, dio, from);
-			if (!parent) {
+			if (parent == NULL) {
 				NET_DBG("Failed to add a new parent %s",
 					log_strdup(net_sprint_ipv6_addr(from)));
 				return;
@@ -2743,7 +2738,7 @@ static void net_rpl_process_dio(struct net_if *iface,
 				parent->rank);
 		} else {
 			parent = find_parent(iface, previous_dag, from);
-			if (parent) {
+			if (parent != NULL) {
 				net_rpl_move_parent(iface, previous_dag,
 						    dag, parent);
 			} else {
@@ -2830,7 +2825,7 @@ static enum net_verdict handle_dio(struct net_pkt *pkt)
 
 	nbr = net_ipv6_nbr_lookup(net_pkt_iface(pkt),
 				  &NET_IPV6_HDR(pkt)->src);
-	if (!nbr) {
+	if (nbr == NULL) {
 		NET_ASSERT_INFO(net_pkt_lladdr_src(pkt)->len,
 				"Link layer address not set");
 
@@ -2839,7 +2834,7 @@ static enum net_verdict handle_dio(struct net_pkt *pkt)
 				       net_pkt_lladdr_src(pkt),
 				       0,
 				       NET_IPV6_NBR_STATE_REACHABLE);
-		if (!nbr) {
+		if (nbr == NULL) {
 			NET_DBG("Cannot add neighbor by DIO");
 			goto out;
 		}
@@ -2874,16 +2869,17 @@ static enum net_verdict handle_dio(struct net_pkt *pkt)
 			     dio.dag_id.s6_addr);
 
 	/* Handle any DIO suboptions */
-	while (frag) {
+	while (frag != NULL) {
 		len = 0;
 		frag = net_frag_read_u8(frag, pos, &pos, &subopt_type);
 		if (!frag && pos == 0) {
 			/* We are at the end of the message */
 			break;
-		} else if (!frag && pos == 0xffff) {
-			NET_DBG("Invalid DIO packet");
-			net_stats_update_rpl_malformed_msgs(net_pkt_iface(pkt));
-			return NET_DROP;
+		} else {if ((frag == NULL) && pos == 0xffff) {
+				NET_DBG("Invalid DIO packet");
+				net_stats_update_rpl_malformed_msgs(net_pkt_iface(pkt));
+				return NET_DROP;
+			}
 		}
 
 		if (subopt_type != NET_RPL_OPTION_PAD1) {
@@ -3065,7 +3061,7 @@ int net_rpl_dao_send(struct net_if *iface,
 		return -EINVAL;
 	}
 
-	if (!parent || !parent->dag) {
+	if ((parent == NULL) || !parent->dag) {
 		NET_DBG("DAO error parent %p dag %p",
 			parent, parent ? parent->dag : NULL);
 		return -EINVAL;
@@ -3074,13 +3070,13 @@ int net_rpl_dao_send(struct net_if *iface,
 	dag = parent->dag;
 
 	instance = dag->instance;
-	if (!instance) {
+	if (instance == NULL) {
 		NET_DBG("RPL DAO error no instance");
 		return -EINVAL;
 	}
 
 	dst = net_rpl_get_parent_addr(iface, parent);
-	if (!dst) {
+	if (dst == NULL) {
 		NET_DBG("No destination address for parent %p", parent);
 		return -EINVAL;
 	}
@@ -3095,7 +3091,7 @@ int net_rpl_dao_send(struct net_if *iface,
 
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, dst),
 				     BUF_TIMEOUT);
-	if (!pkt) {
+	if (pkt == NULL) {
 		return -ENOMEM;
 	}
 
@@ -3174,7 +3170,7 @@ static int dao_send(struct net_rpl_parent *parent,
 	struct in6_addr *prefix;
 
 	prefix = net_if_ipv6_get_global_addr(&iface);
-	if (!prefix) {
+	if (prefix == NULL) {
 		NET_DBG("Will not send DAO as no global address was found.");
 		return -EDESTADDRREQ;
 	}
@@ -3193,7 +3189,7 @@ static inline int dao_forward(struct net_if *iface,
 
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, dst),
 				     BUF_TIMEOUT);
-	if (!pkt) {
+	if (pkt == NULL) {
 		return -ENOMEM;
 	}
 
@@ -3235,7 +3231,7 @@ static int dao_ack_send(struct in6_addr *src,
 
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, dst),
 				     BUF_TIMEOUT);
-	if (!pkt) {
+	if (pkt == NULL) {
 		return -ENOMEM;
 	}
 
@@ -3295,7 +3291,7 @@ static int forwarding_dao(struct net_rpl_instance *instance,
 
 	paddr = net_rpl_get_parent_addr(instance->iface,
 					dag->preferred_parent);
-	if (paddr) {
+	if (paddr != NULL) {
 		NET_DBG("%s %s", str, log_strdup(net_sprint_ipv6_addr(paddr)));
 
 		net_ipaddr_copy(&src, &NET_IPV6_HDR(pkt)->src);
@@ -3309,7 +3305,7 @@ static int forwarding_dao(struct net_rpl_instance *instance,
 		/* Send DAO ACK incase of failed to forward the
 		 * original DAO message.
 		 */
-		if (flags & NET_RPL_DAO_K_FLAG) {
+		if ((flags & NET_RPL_DAO_K_FLAG) != 0) {
 			/* Coverity CID 173650 complains about reversed
 			 * parameters. This is false positive as dst and
 			 * src parameters are properly set.
@@ -3328,7 +3324,7 @@ static bool is_root(struct net_rpl_instance *instance)
 		return false;
 	}
 
-	if (instance->current_dag->preferred_parent) {
+	if (instance->current_dag->preferred_parent != NULL) {
 		return false;
 	}
 
@@ -3372,13 +3368,13 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 				&offset);
 
 	frag = net_frag_read_u8(frag, offset, &pos, &instance_id);
-	if (!frag) {
+	if (frag == NULL) {
 		NET_DBG("Cannot get instance id");
 		return NET_DROP;
 	}
 
 	instance = net_rpl_get_instance(instance_id);
-	if (!instance) {
+	if (instance == NULL) {
 		NET_DBG("Ignoring DAO for an unknown instance %d",
 			instance_id);
 		return NET_DROP;
@@ -3393,7 +3389,7 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 	dag = instance->current_dag;
 
 	/* Is the DAG ID present? */
-	if (flags & NET_RPL_DAO_D_FLAG) {
+	if ((flags & NET_RPL_DAO_D_FLAG) != 0) {
 		frag = net_frag_read(frag, pos, &pos, sizeof(addr),
 				     addr.s6_addr);
 
@@ -3415,9 +3411,7 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 		/* Check if this is a new DAO registration with an "illegal"
 		 * rank if we already route to this node it is likely.
 		 */
-		if (parent &&
-		    NET_RPL_DAG_RANK(parent->rank, instance) <
-		    NET_RPL_DAG_RANK(dag->rank, instance)) {
+		if ((parent != NULL) && NET_RPL_DAG_RANK(parent->rank, instance) < NET_RPL_DAG_RANK(dag->rank, instance)) {
 			NET_DBG("Loop detected when receiving a unicast DAO "
 				"from a node with a lower rank! (%d < %d)",
 				NET_RPL_DAG_RANK(parent->rank, instance),
@@ -3428,7 +3422,7 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 		}
 
 		/* If we get the DAO from our parent, we also have a loop. */
-		if (parent && parent == dag->preferred_parent) {
+		if ((parent != NULL) && parent == dag->preferred_parent) {
 			NET_DBG("Loop detected when receiving a unicast DAO "
 				"from our parent");
 			parent->rank = NET_RPL_INFINITE_RANK;
@@ -3440,17 +3434,18 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 	target_len = 0;
 
 	/* Handle any DAO suboptions */
-	while (frag) {
+	while (frag != NULL) {
 		len = 0;
 		frag = net_frag_read_u8(frag, pos, &pos, &subopt_type);
 		if (!frag && pos == 0) {
 			/* We are at the end of the message */
 			break;
-		} else if (!frag && pos == 0xffff) {
+		} else {if ((frag == NULL) && pos == 0xffff) {
 			/* Read error */
-			NET_DBG("Invalid DAO packet");
-			net_stats_update_rpl_malformed_msgs(net_pkt_iface(pkt));
-			return NET_DROP;
+				NET_DBG("Invalid DAO packet");
+				net_stats_update_rpl_malformed_msgs(net_pkt_iface(pkt));
+				return NET_DROP;
+			}
 		}
 
 		if (subopt_type != NET_RPL_OPTION_PAD1) {
@@ -3494,7 +3489,7 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 		struct net_route_entry_mcast *mcast_group;
 
 		mcast_group = net_route_mcast_add(net_pkt_iface(pkt), &addr);
-		if (mcast_group) {
+		if (mcast_group != NULL) {
 			mcast_group->data = (void *)dag;
 			mcast_group->lifetime = net_rpl_lifetime(instance,
 								 lifetime);
@@ -3512,7 +3507,7 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 		route = net_route_lookup(net_pkt_iface(pkt), &addr);
 
 		rpl_nbr = net_route_get_nbr(route);
-		if (rpl_nbr) {
+		if (rpl_nbr != NULL) {
 			extra = net_nbr_extra_data(rpl_nbr);
 		}
 
@@ -3531,7 +3526,7 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 			/* We forward the incoming no-path DAO to our parent,
 			 * if we have one.
 			 */
-			if (dag->preferred_parent) {
+			if (dag->preferred_parent != NULL) {
 				r = forwarding_dao(instance, dag,
 						   pkt, sequence, flags,
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
@@ -3555,7 +3550,7 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 		log_strdup(net_sprint_ipv6_addr(dao_sender)));
 
 	ipv6_nbr = net_ipv6_nbr_lookup(net_pkt_iface(pkt), dao_sender);
-	if (ipv6_nbr) {
+	if (ipv6_nbr != NULL) {
 		struct net_linkaddr_storage *nbr_lladdr;
 		struct net_linkaddr *src_lladdr;
 
@@ -3566,13 +3561,13 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 					   net_pkt_lladdr_src(pkt)->len)));
 
 		nbr_lladdr = net_nbr_get_lladdr(ipv6_nbr->idx);
-		if (!nbr_lladdr) {
+		if (nbr_lladdr == NULL) {
 			NET_ERR("Invalid lladdr from ipv6 nbr");
 			return NET_DROP;
 		}
 
 		src_lladdr = net_pkt_lladdr_src(pkt);
-		if (!src_lladdr || !src_lladdr->addr) {
+		if ((src_lladdr == NULL) || !src_lladdr->addr) {
 			NET_ERR("Invalid src lladdr in net pkt");
 			return NET_DROP;
 		}
@@ -3594,7 +3589,7 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 		}
 	}
 
-	if (!ipv6_nbr) {
+	if (ipv6_nbr == NULL) {
 		ipv6_nbr = net_ipv6_nbr_add(net_pkt_iface(pkt), dao_sender,
 					    net_pkt_lladdr_src(pkt), false,
 					    NET_IPV6_NBR_STATE_REACHABLE);
@@ -3620,7 +3615,7 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 
 	route = net_rpl_add_route(dag, net_pkt_iface(pkt),
 				  &addr, target_len, dao_sender);
-	if (!route) {
+	if (route == NULL) {
 		net_stats_update_rpl_mem_overflows(net_pkt_iface(pkt));
 
 		NET_DBG("Could not add a route after receiving a DAO");
@@ -3630,7 +3625,7 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 	rpl_nbr = net_route_get_nbr(route);
 
 	extra = net_nbr_extra_data(rpl_nbr);
-	if (extra) {
+	if (extra != NULL) {
 		extra->lifetime = net_rpl_lifetime(instance, lifetime);
 		extra->route_source = learned_from;
 		extra->no_path_received = false;
@@ -3644,7 +3639,7 @@ fwd_dao:
 		return NET_DROP;
 	}
 
-	if (dag->preferred_parent) {
+	if (dag->preferred_parent != NULL) {
 		r = forwarding_dao(instance, dag, pkt, sequence, flags,
 				   "Forwarding DAO to parent");
 		if (r < 0) {
@@ -3695,13 +3690,13 @@ static enum net_verdict handle_dao_ack(struct net_pkt *pkt)
 				&offset);
 
 	frag = net_frag_read_u8(frag, offset, &pos, &instance_id);
-	if (!frag && pos == 0xffff) {
+	if ((frag == NULL) && pos == 0xffff) {
 		/* Read error */
 		return NET_DROP;
 	}
 
 	instance = net_rpl_get_instance(instance_id);
-	if (!instance || !instance->current_dag) {
+	if ((instance == NULL) || !instance->current_dag) {
 		NET_DBG("Ignoring DAO ACK for an unknown instance %d",
 			instance_id);
 		return NET_DROP;
@@ -3711,7 +3706,7 @@ static enum net_verdict handle_dao_ack(struct net_pkt *pkt)
 	frag = net_frag_skip(frag, pos, &pos, 1);
 	frag = net_frag_read_u8(frag, pos, &pos, &sequence);
 	frag = net_frag_read_u8(frag, pos, &pos, &status);
-	if (!frag && pos == 0xffff) {
+	if ((frag == NULL) && pos == 0xffff) {
 		return NET_DROP;
 	}
 
@@ -3792,7 +3787,7 @@ int net_rpl_update_header(struct net_pkt *pkt, struct in6_addr *addr)
 	pos = sizeof(struct net_ipv6_hdr) + 1;
 	frag = net_frag_read(frag, pos, &pos, 1, &len); /* HBH length */
 	frag = net_frag_read(frag, pos, &pos, 1, &opt); /* Opt type */
-	if (!frag && pos) {
+	if ((frag == NULL) && pos) {
 		/* Not enough data in the message */
 		return -EMSGSIZE;
 	}
@@ -3816,7 +3811,7 @@ int net_rpl_update_header(struct net_pkt *pkt, struct in6_addr *addr)
 	frag = net_frag_skip(frag, pos, &pos, 1); /* flags */
 	frag = net_frag_skip(frag, pos, &pos, 1); /* instance */
 	frag = net_frag_read(frag, pos, &pos, 2, (u8_t *)&sender_rank);
-	if (!frag && pos) {
+	if ((frag == NULL) && pos) {
 		return -EMSGSIZE;
 	}
 
@@ -3834,7 +3829,7 @@ int net_rpl_update_header(struct net_pkt *pkt, struct in6_addr *addr)
 
 	parent = find_parent(net_pkt_iface(pkt),
 			     rpl_default_instance->current_dag, addr);
-	if (!parent || parent != parent->dag->preferred_parent) {
+	if ((parent == NULL) || parent != parent->dag->preferred_parent) {
 		write_pkt(pkt, pkt->frags, offset, &pos, u8,
 			  NET_RPL_HDR_OPT_DOWN);
 	}
@@ -3866,19 +3861,19 @@ struct net_buf *net_rpl_verify_header(struct net_pkt *pkt, struct net_buf *frag,
 	frag = net_frag_read_u8(frag, *pos, pos, &instance_id);
 	frag = net_frag_read_be16(frag, *pos, pos, &sender_rank);
 
-	if (!frag && *pos == 0xffff) {
+	if ((frag == NULL) && *pos == 0xffff) {
 		*result = false;
 		return frag;
 	}
 
 	instance = net_rpl_get_instance(instance_id);
-	if (!instance) {
+	if (instance == NULL) {
 		NET_DBG("Unknown instance %u", instance_id);
 		*result = false;
 		return frag;
 	}
 
-	if (flags & NET_RPL_HDR_OPT_FWD_ERR) {
+	if ((flags & NET_RPL_HDR_OPT_FWD_ERR) != 0) {
 		struct net_route_entry *route;
 
 		/* We should try to repair it by removing the neighbor that
@@ -3890,7 +3885,7 @@ struct net_buf *net_rpl_verify_header(struct net_pkt *pkt, struct net_buf *frag,
 
 		route = net_route_lookup(net_pkt_iface(pkt),
 					 &NET_IPV6_HDR(pkt)->dst);
-		if (route) {
+		if (route != NULL) {
 			net_route_del(route);
 		}
 
@@ -3928,7 +3923,7 @@ struct net_buf *net_rpl_verify_header(struct net_pkt *pkt, struct net_buf *frag,
 			sender_rank, instance->current_dag->rank,
 			sender_closer);
 
-		if (flags & NET_RPL_HDR_OPT_RANK_ERR) {
+		if ((flags & NET_RPL_HDR_OPT_RANK_ERR) != 0) {
 			net_stats_update_rpl_loop_errors(net_pkt_iface(pkt));
 
 			NET_DBG("Rank error signalled in RPL option!");
@@ -4054,7 +4049,7 @@ static int net_rpl_update_header_empty(struct net_pkt *pkt)
 
 	frag = net_frag_read_u8(frag, offset, &offset, &next_hdr);
 	frag = net_frag_read_u8(frag, offset, &offset, &len);
-	if (!frag) {
+	if (frag == NULL) {
 		return 0;
 	}
 
@@ -4112,10 +4107,10 @@ static int net_rpl_update_header_empty(struct net_pkt *pkt)
 	 * down it should in general not go back up again. If this
 	 * happens, a NET_RPL_HDR_OPT_FWD_ERR should be flagged.
 	 */
-	if (flags & NET_RPL_HDR_OPT_DOWN) {
+	if ((flags & NET_RPL_HDR_OPT_DOWN) != 0) {
 		struct net_nbr *nbr;
 
-		if (!route) {
+		if (route == NULL) {
 			write_pkt(pkt, frag, offset, &pos, u8,
 				  flags |= NET_RPL_HDR_OPT_FWD_ERR);
 
@@ -4133,7 +4128,7 @@ static int net_rpl_update_header_empty(struct net_pkt *pkt)
 					     net_pkt_lladdr_src(pkt));
 
 			parent = nbr_data(nbr);
-			if (parent) {
+			if (parent != NULL) {
 				net_rpl_dao_send(net_pkt_iface(pkt),
 						 parent,
 						 &NET_IPV6_HDR(pkt)->dst,
@@ -4201,12 +4196,12 @@ int net_rpl_revert_header(struct net_pkt *pkt, u16_t offset, u16_t *pos)
 	revert_pos = *pos;
 	frag = net_frag_read_u8(frag, *pos, pos, &flags);
 	frag = net_frag_read_u8(frag, *pos, pos, &instance_id);
-	if (!frag && *pos == 0xffff) {
+	if ((frag == NULL) && *pos == 0xffff) {
 		return -EINVAL;
 	}
 
 	instance = net_rpl_get_instance(instance_id);
-	if (!instance) {
+	if (instance == NULL) {
 		NET_DBG("Unknown instance %u", instance_id);
 		return -EINVAL;
 	}
@@ -4231,7 +4226,7 @@ int net_rpl_revert_header(struct net_pkt *pkt, u16_t offset, u16_t *pos)
 					BUF_TIMEOUT);
 	frag = net_pkt_write_be16_timeout(pkt, frag, *pos, pos, sender_rank,
 					  BUF_TIMEOUT);
-	if (!frag) {
+	if (frag == NULL) {
 		if (*pos == 0xffff) {
 			return -EINVAL;
 		} else {
@@ -4245,8 +4240,7 @@ int net_rpl_revert_header(struct net_pkt *pkt, u16_t offset, u16_t *pos)
 int net_rpl_insert_header(struct net_pkt *pkt)
 {
 #if defined(CONFIG_NET_RPL_INSERT_HBH_OPTION)
-	if (rpl_default_instance &&
-	    !net_ipv6_is_addr_mcast(&NET_IPV6_HDR(pkt)->dst)) {
+	if ((rpl_default_instance != NULL) && !net_ipv6_is_addr_mcast(&NET_IPV6_HDR(pkt)->dst)) {
 		return net_rpl_update_header_empty(pkt);
 	}
 #endif
@@ -4322,7 +4316,7 @@ void net_rpl_init(void)
 	rpl_default_iface = net_if_get_ieee802154();
 #endif
 
-	if (!rpl_default_iface) {
+	if (rpl_default_iface == NULL) {
 		rpl_default_iface = net_if_get_default();
 	}
 

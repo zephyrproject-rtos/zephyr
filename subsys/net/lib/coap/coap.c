@@ -89,8 +89,9 @@ static int check_frag_read_status(const struct net_buf *frag, u16_t offset)
 {
 	if (!frag && offset == 0xffff) {
 		return -EINVAL;
-	} else if (!frag && offset == 0) {
-		return 0;
+	} else {if ((frag == NULL) && offset == 0) {
+			return 0;
+		}
 	}
 
 	return 1;
@@ -421,7 +422,7 @@ int coap_packet_init(struct coap_packet *cpkt, struct net_pkt *pkt,
 	append(pkt, u8, code);
 	append(pkt, be16, id);
 
-	if (token && tokenlen) {
+	if ((token != NULL) && tokenlen) {
 		res = net_pkt_append_all(pkt, tokenlen, token, PKT_WAIT_TIME);
 		if (!res) {
 			return -ENOMEM;
@@ -621,7 +622,7 @@ static bool uri_path_eq(const struct coap_packet *cpkt,
 		j++;
 	}
 
-	if (path[j]) {
+	if (path[j] != NULL) {
 		return false;
 	}
 
@@ -987,7 +988,7 @@ static int encode_option(struct coap_packet *cpkt, u16_t code,
 		append(cpkt->pkt, be16, len_ext);
 	}
 
-	if (len && value) {
+	if (len && (value != NULL)) {
 		res = net_pkt_append_all(cpkt->pkt, len, value, PKT_WAIT_TIME);
 		if (!res) {
 			return -EINVAL;
@@ -1007,7 +1008,7 @@ int coap_packet_append_option(struct coap_packet *cpkt, u16_t code,
 	u16_t offset;
 	int r;
 
-	if (!cpkt) {
+	if (cpkt == NULL) {
 		return -EINVAL;
 	}
 
@@ -1022,7 +1023,7 @@ int coap_packet_append_option(struct coap_packet *cpkt, u16_t code,
 
 	/* Skip CoAP packet header */
 	frag = net_frag_skip(cpkt->frag, cpkt->offset, &offset, cpkt->hdr_len);
-	if (!frag && offset == 0xffff) {
+	if ((frag == NULL) && offset == 0xffff) {
 		return -EINVAL;
 	}
 
@@ -1121,7 +1122,7 @@ u8_t coap_header_get_version(const struct coap_packet *cpkt)
 	u8_t version;
 
 	frag = net_frag_read_u8(cpkt->frag, cpkt->offset, &offset, &version);
-	if (!frag && offset == 0xffff) {
+	if ((frag == NULL) && offset == 0xffff) {
 		return 0;
 	}
 
@@ -1135,7 +1136,7 @@ u8_t coap_header_get_type(const struct coap_packet *cpkt)
 	u8_t type;
 
 	frag = net_frag_read_u8(cpkt->frag, cpkt->offset, &offset, &type);
-	if (!frag && offset == 0xffff) {
+	if ((frag == NULL) && offset == 0xffff) {
 		return 0;
 	}
 
@@ -1150,7 +1151,7 @@ static u8_t __coap_header_get_code(const struct coap_packet *cpkt)
 
 	frag = net_frag_skip(cpkt->frag, cpkt->offset, &offset, 1);
 	frag = net_frag_read_u8(frag, offset, &offset, &code);
-	if (!frag && offset == 0xffff) {
+	if ((frag == NULL) && offset == 0xffff) {
 		return 0;
 	}
 
@@ -1163,7 +1164,7 @@ u8_t coap_header_get_token(const struct coap_packet *cpkt, u8_t *token)
 	u16_t offset;
 	u8_t tkl;
 
-	if (!cpkt || !token) {
+	if ((cpkt == NULL) || !token) {
 		return 0;
 	}
 
@@ -1175,7 +1176,7 @@ u8_t coap_header_get_token(const struct coap_packet *cpkt, u8_t *token)
 	frag = net_frag_skip(cpkt->frag, cpkt->offset, &offset,
 			     BASIC_HEADER_SIZE);
 	frag = net_frag_read(frag, offset, &offset, tkl, token);
-	if (!frag && offset == 0xffff) {
+	if ((frag == NULL) && offset == 0xffff) {
 		return 0;
 	}
 
@@ -1233,7 +1234,7 @@ u16_t coap_header_get_id(const struct coap_packet *cpkt)
 
 	frag = net_frag_skip(cpkt->frag, cpkt->offset, &offset, 2);
 	frag = net_frag_read_be16(frag, offset, &offset, &id);
-	if (!frag && offset == 0xffff) {
+	if ((frag == NULL) && offset == 0xffff) {
 		return 0;
 	}
 

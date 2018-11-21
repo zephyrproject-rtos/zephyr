@@ -475,7 +475,7 @@ static void sw_switch(u8_t dir, u8_t phy_curr, u8_t flags_curr, u8_t phy_next,
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 #if defined(CONFIG_SOC_NRF52840)
-		if (1) {
+		if (true) {
 			u8_t ppi_dis =
 				HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(
 					sw_tifs_toggle);

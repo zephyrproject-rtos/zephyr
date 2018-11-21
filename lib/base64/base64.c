@@ -182,7 +182,7 @@ int base64_decode(u8_t *dst, size_t dlen, size_t *olen, const u8_t *src,
 	n = (6 * (n >> 3)) + ((6 * (n & 0x7) + 7) >> 3);
 	n -= j;
 
-	if (dst == NULL || dlen < n) {
+	if ((dst == NULL) || (dlen < n)) {
 		*olen = n;
 		return -ENOMEM;
 	}

@@ -164,7 +164,7 @@ static int publish_retransmit(struct bt_mesh_model *mod)
 	};
 
 	key = bt_mesh_app_key_find(pub->key);
-	if (!key) {
+	if (key == NULL) {
 		return -EADDRNOTAVAIL;
 	}
 
@@ -369,7 +369,7 @@ static struct bt_mesh_model *bt_mesh_elem_find_group(struct bt_mesh_elem *elem,
 		model = &elem->models[i];
 
 		match = bt_mesh_model_find_group(model, group_addr);
-		if (match) {
+		if (match != NULL) {
 			return model;
 		}
 	}
@@ -378,7 +378,7 @@ static struct bt_mesh_model *bt_mesh_elem_find_group(struct bt_mesh_elem *elem,
 		model = &elem->vnd_models[i];
 
 		match = bt_mesh_model_find_group(model, group_addr);
-		if (match) {
+		if (match != NULL) {
 			return model;
 		}
 	}
@@ -395,7 +395,7 @@ struct bt_mesh_elem *bt_mesh_elem_find(u16_t addr)
 
 		if (BT_MESH_ADDR_IS_GROUP(addr) ||
 		    BT_MESH_ADDR_IS_VIRTUAL(addr)) {
-			if (bt_mesh_elem_find_group(elem, addr)) {
+			if (bt_mesh_elem_find_group(elem, addr) != NULL) {
 				return elem;
 			}
 		} else if (elem->addr == addr) {
@@ -666,7 +666,7 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
 
 	BT_DBG("");
 
-	if (!pub) {
+	if (pub == NULL) {
 		return -ENOTSUP;
 	}
 
@@ -675,7 +675,7 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
 	}
 
 	key = bt_mesh_app_key_find(pub->key);
-	if (!key) {
+	if (key == NULL) {
 		return -EADDRNOTAVAIL;
 	}
 

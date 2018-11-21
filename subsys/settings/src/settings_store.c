@@ -100,7 +100,7 @@ int settings_save_one(const char *name, char *value)
 	struct settings_dup_check_arg cdca;
 
 	cs = settings_save_dst;
-	if (!cs) {
+	if (cs == NULL) {
 		return -ENOENT;
 	}
 
@@ -125,7 +125,7 @@ int settings_save(void)
 	int rc2;
 
 	cs = settings_save_dst;
-	if (!cs) {
+	if (cs == NULL) {
 		return -ENOENT;
 	}
 

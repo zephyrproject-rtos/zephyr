@@ -112,7 +112,7 @@ void gptp_update_announce_interval(int port, s8_t log_val);
  */
 static inline u64_t gptp_timestamp_to_nsec(struct net_ptp_time *ts)
 {
-	if (!ts) {
+	if (ts == NULL) {
 		return 0;
 	}
 

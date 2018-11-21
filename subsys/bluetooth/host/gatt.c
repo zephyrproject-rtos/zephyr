@@ -305,7 +305,7 @@ static void gatt_ccc_conn_unqueue(struct bt_conn *conn)
 static bool gatt_ccc_conn_queue_is_empty(void)
 {
 	for (size_t i = 0; i < CONFIG_BT_MAX_CONN; i++) {
-		if (gatt_ccc_store.conn_list[i]) {
+		if (gatt_ccc_store.conn_list[i] != NULL) {
 			return false;
 		}
 	}
@@ -321,7 +321,7 @@ static void ccc_delayed_store(struct k_work *work)
 	for (size_t i = 0; i < CONFIG_BT_MAX_CONN; i++) {
 		struct bt_conn *conn = ccc_store->conn_list[i];
 
-		if (!conn) {
+		if (conn == NULL) {
 			continue;
 		}
 
@@ -792,7 +792,7 @@ static int gatt_notify(struct bt_conn *conn, u16_t handle, const void *data,
 	struct bt_att_notify *nfy;
 
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_NOTIFY, sizeof(*nfy) + len);
-	if (!buf) {
+	if (buf == NULL) {
 		BT_WARN("No buffer available to send notification");
 		return -ENOMEM;
 	}
@@ -864,7 +864,7 @@ static int gatt_indicate(struct bt_conn *conn,
 
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_INDICATE,
 				sizeof(*ind) + params->len);
-	if (!buf) {
+	if (buf == NULL) {
 		BT_WARN("No buffer available to send indication");
 		return -ENOMEM;
 	}
@@ -948,7 +948,7 @@ static u8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 		}
 
 		conn = bt_conn_lookup_addr_le(cfg->id, &cfg->peer);
-		if (!conn) {
+		if (conn == NULL) {
 			if (ccc->cfg == sc_ccc_cfg) {
 				sc_save(cfg, data->params);
 			}
@@ -1000,7 +1000,7 @@ int bt_gatt_notify_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		attr++;
 	}
 
-	if (conn) {
+	if (conn != NULL) {
 		return gatt_notify(conn, attr->handle, data,
 				   len, func);
 	}
@@ -1025,7 +1025,7 @@ int bt_gatt_indicate(struct bt_conn *conn,
 	__ASSERT(params, "invalid parameters\n");
 	__ASSERT(params->attr && params->attr->handle, "invalid parameters\n");
 
-	if (conn) {
+	if (conn != NULL) {
 		return gatt_indicate(conn, params);
 	}
 
@@ -1123,7 +1123,7 @@ static u8_t disconnected_cb(const struct bt_gatt_attr *attr, void *user_data)
 
 			/* Skip if there is another peer connected */
 			tmp = bt_conn_lookup_addr_le(cfg->id, &cfg->peer);
-			if (tmp) {
+			if (tmp != NULL) {
 				if (tmp->state == BT_CONN_CONNECTED) {
 					bt_conn_unref(tmp);
 					return BT_GATT_ITER_CONTINUE;
@@ -1242,7 +1242,7 @@ int bt_gatt_exchange_mtu(struct bt_conn *conn,
 	}
 
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_MTU_REQ, sizeof(*req));
-	if (!buf) {
+	if (buf == NULL) {
 		return -ENOMEM;
 	}
 
@@ -1350,7 +1350,7 @@ static int gatt_find_type(struct bt_conn *conn,
 	struct bt_uuid *uuid;
 
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_FIND_TYPE_REQ, sizeof(*req));
-	if (!buf) {
+	if (buf == NULL) {
 		return -ENOMEM;
 	}
 
@@ -1440,7 +1440,7 @@ static int read_included_uuid(struct bt_conn *conn,
 	struct bt_att_read_req *req;
 
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_READ_REQ, sizeof(*req));
-	if (!buf) {
+	if (buf == NULL) {
 		return -ENOMEM;
 	}
 
@@ -1658,7 +1658,7 @@ static int gatt_read_type(struct bt_conn *conn,
 	struct bt_att_read_type_req *req;
 
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_READ_TYPE_REQ, sizeof(*req));
-	if (!buf) {
+	if (buf == NULL) {
 		return -ENOMEM;
 	}
 
@@ -1789,7 +1789,7 @@ static int gatt_read_group(struct bt_conn *conn,
 	struct bt_att_read_group_req *req;
 
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_READ_GROUP_REQ, sizeof(*req));
-	if (!buf) {
+	if (buf == NULL) {
 		return -ENOMEM;
 	}
 
@@ -1901,7 +1901,7 @@ static int gatt_find_info(struct bt_conn *conn,
 	struct bt_att_find_info_req *req;
 
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_FIND_INFO_REQ, sizeof(*req));
-	if (!buf) {
+	if (buf == NULL) {
 		return -ENOMEM;
 	}
 
@@ -1990,7 +1990,7 @@ static int gatt_read_blob(struct bt_conn *conn,
 	struct bt_att_read_blob_req *req;
 
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_READ_BLOB_REQ, sizeof(*req));
-	if (!buf) {
+	if (buf == NULL) {
 		return -ENOMEM;
 	}
 
@@ -2032,7 +2032,7 @@ static int gatt_read_multiple(struct bt_conn *conn,
 
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_READ_MULT_REQ,
 				params->handle_count * sizeof(u16_t));
-	if (!buf) {
+	if (buf == NULL) {
 		return -ENOMEM;
 	}
 
@@ -2072,7 +2072,7 @@ int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params)
 	}
 
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_READ_REQ, sizeof(*req));
-	if (!buf) {
+	if (buf == NULL) {
 		return -ENOMEM;
 	}
 
@@ -2121,7 +2121,7 @@ int bt_gatt_write_without_response(struct bt_conn *conn, u16_t handle,
 		buf = bt_att_create_pdu(conn, BT_ATT_OP_WRITE_CMD,
 					sizeof(*cmd) + length);
 	}
-	if (!buf) {
+	if (buf == NULL) {
 		return -ENOMEM;
 	}
 
@@ -2142,7 +2142,7 @@ static int gatt_exec_write(struct bt_conn *conn,
 	struct bt_att_exec_write_req *req;
 
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_EXEC_WRITE_REQ, sizeof(*req));
-	if (!buf) {
+	if (buf == NULL) {
 		return -ENOMEM;
 	}
 
@@ -2190,7 +2190,7 @@ static int gatt_prepare_write(struct bt_conn *conn,
 
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_PREPARE_WRITE_REQ,
 				sizeof(*req) + len);
-	if (!buf) {
+	if (buf == NULL) {
 		return -ENOMEM;
 	}
 
@@ -2232,7 +2232,7 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params)
 
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_WRITE_REQ,
 				sizeof(*req) + params->length);
-	if (!buf) {
+	if (buf == NULL) {
 		return -ENOMEM;
 	}
 
@@ -2290,7 +2290,7 @@ static int gatt_write_ccc(struct bt_conn *conn, u16_t handle, u16_t value,
 
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_WRITE_REQ,
 				sizeof(*req) + sizeof(u16_t));
-	if (!buf) {
+	if (buf == NULL) {
 		return -ENOMEM;
 	}
 
@@ -2497,7 +2497,7 @@ static u8_t ccc_save(const struct bt_gatt_attr *attr, void *user_data)
 
 	/* Check if there is a cfg for the peer */
 	cfg = ccc_find_cfg(ccc, save->addr);
-	if (!cfg) {
+	if (cfg == NULL) {
 		return BT_GATT_ITER_CONTINUE;
 	}
 
@@ -2585,7 +2585,7 @@ static void ccc_clear(struct _bt_gatt_ccc *ccc, bt_addr_le_t *addr)
 	struct bt_gatt_ccc_cfg *cfg;
 
 	cfg = ccc_find_cfg(ccc, addr);
-	if (!cfg) {
+	if (cfg == NULL) {
 		BT_DBG("Unable to clear CCC: cfg not found");
 		return;
 	}

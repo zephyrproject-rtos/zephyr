@@ -111,12 +111,12 @@ struct bt_keys *bt_keys_get_type(int type, u8_t id, const bt_addr_le_t *addr)
 	BT_DBG("type %d %s", type, bt_addr_le_str(addr));
 
 	keys = bt_keys_find(type, id, addr);
-	if (keys) {
+	if (keys != NULL) {
 		return keys;
 	}
 
 	keys = bt_keys_get_addr(id, addr);
-	if (!keys) {
+	if (keys == NULL) {
 		return NULL;
 	}
 
@@ -199,7 +199,7 @@ void bt_keys_clear(struct bt_keys *keys)
 {
 	BT_DBG("%s (keys 0x%04x)", bt_addr_le_str(&keys->addr), keys->keys);
 
-	if (keys->keys & BT_KEYS_IRK) {
+	if ((keys->keys & BT_KEYS_IRK) != 0) {
 		bt_id_del(keys);
 	}
 
@@ -253,7 +253,7 @@ int bt_keys_store(struct bt_keys *keys)
 
 	str = settings_str_from_bytes(keys->storage_start, BT_KEYS_STORAGE_LEN,
 				      val, sizeof(val));
-	if (!str) {
+	if (str == NULL) {
 		BT_ERR("Unable to encode bt_keys as value");
 		return -EINVAL;
 	}
@@ -306,7 +306,7 @@ static int keys_set(int argc, char **argv, char *val)
 		id = strtol(argv[1], NULL, 10);
 	}
 
-	if (!val) {
+	if (val == NULL) {
 		keys = bt_keys_find(BT_KEYS_ALL, id, &addr);
 		if (keys) {
 			(void)memset(keys, 0, sizeof(*keys));
@@ -320,7 +320,7 @@ static int keys_set(int argc, char **argv, char *val)
 	}
 
 	keys = bt_keys_get_addr(id, &addr);
-	if (!keys) {
+	if (keys == NULL) {
 		BT_ERR("Failed to allocate keys for %s", bt_addr_le_str(&addr));
 		return -ENOMEM;
 	}

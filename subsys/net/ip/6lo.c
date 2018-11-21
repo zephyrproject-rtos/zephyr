@@ -354,7 +354,7 @@ static inline u8_t compress_sa_ctx(struct net_ipv6_hdr *ipv6,
 				   u8_t offset,
 				   struct net_6lo_context *src)
 {
-	if (!src) {
+	if (src == NULL) {
 		return compress_sa(ipv6, pkt, frag, offset);
 	}
 
@@ -504,7 +504,7 @@ static inline u8_t compress_da_ctx(struct net_ipv6_hdr *ipv6,
 				   u8_t offset,
 				   struct net_6lo_context *dst)
 {
-	if (!dst) {
+	if (dst == NULL) {
 		return compress_da(ipv6, pkt, frag, offset);
 	}
 
@@ -651,12 +651,12 @@ static inline bool is_src_and_dst_addr_ctx_based(struct net_ipv6_hdr *ipv6,
 	IPHC[1] |= NET_6LO_IPHC_CID_1;
 	IPHC[2] = 0;
 
-	if (*src) {
+	if (*src != NULL) {
 		NET_DBG("Src addr context cid %d", (*src)->cid);
 		IPHC[2] = (*src)->cid << 4;
 	}
 
-	if (*dst) {
+	if (*dst != NULL) {
 		NET_DBG("Dst addr context cid %d", (*dst)->cid);
 		IPHC[2] |= (*dst)->cid;
 	}
@@ -700,7 +700,7 @@ static inline bool compress_IPHC_header(struct net_pkt *pkt,
 	}
 
 	frag = net_pkt_get_frag(pkt, K_FOREVER);
-	if (!frag) {
+	if (frag == NULL) {
 		return false;
 	}
 
@@ -757,7 +757,7 @@ static inline bool compress_IPHC_header(struct net_pkt *pkt,
 		struct net_udp_hdr hdr, *udp;
 
 		udp = net_udp_get_hdr(pkt, &hdr);
-		if (!udp) {
+		if (udp == NULL) {
 			NET_ERR("could not get UDP header");
 			return false;
 		}
@@ -787,7 +787,7 @@ end:
 	/* Compact the fragments, so that gaps will be filled */
 	net_pkt_compact(pkt);
 
-	if (fragment) {
+	if (fragment != NULL) {
 		return fragment(pkt, compressed - offset);
 	}
 
@@ -974,7 +974,7 @@ static inline u8_t uncompress_da_mcast(struct net_pkt *pkt,
 {
 	NET_DBG("Dst is multicast");
 
-	if (CIPHC[1] & NET_6LO_IPHC_DAC_1) {
+	if ((CIPHC[1] & NET_6LO_IPHC_DAC_1) != 0) {
 		NET_WARN("Unsupported DAM options");
 		return 0;
 	}
@@ -1030,7 +1030,7 @@ static inline u8_t uncompress_da(struct net_pkt *pkt,
 {
 	NET_DBG("DAC_0");
 
-	if (CIPHC[1] & NET_6LO_IPHC_M_1) {
+	if ((CIPHC[1] & NET_6LO_IPHC_M_1) != 0) {
 		return uncompress_da_mcast(pkt, ipv6, offset);
 	}
 
@@ -1079,7 +1079,7 @@ static inline u8_t uncompress_da_ctx(struct net_pkt *pkt,
 {
 	NET_DBG("DAC_1");
 
-	if (CIPHC[1] & NET_6LO_IPHC_M_1) {
+	if ((CIPHC[1] & NET_6LO_IPHC_M_1) != 0) {
 		return uncompress_da_mcast(pkt, ipv6, offset);
 	}
 
@@ -1227,7 +1227,7 @@ static inline bool uncompress_IPHC_header(struct net_pkt *pkt)
 	struct net_6lo_context *dst = NULL;
 #endif
 
-	if (CIPHC[1] & NET_6LO_IPHC_CID_1) {
+	if ((CIPHC[1] & NET_6LO_IPHC_CID_1) != 0) {
 #if defined(CONFIG_NET_6LO_CONTEXT)
 		uncompress_cid(pkt, &src, &dst);
 		offset++;
@@ -1238,7 +1238,7 @@ static inline bool uncompress_IPHC_header(struct net_pkt *pkt)
 	}
 
 	frag = net_pkt_get_frag(pkt, NET_6LO_RX_PKT_TIMEOUT);
-	if (!frag) {
+	if (frag == NULL) {
 		return false;
 	}
 
@@ -1271,7 +1271,7 @@ static inline bool uncompress_IPHC_header(struct net_pkt *pkt)
 			NET_DBG("SAM_00 unspecified address");
 		} else {
 #if defined(CONFIG_NET_6LO_CONTEXT)
-			if (!src) {
+			if (src == NULL) {
 				NET_ERR("Src context doesn't exists");
 				goto fail;
 			}
@@ -1289,7 +1289,7 @@ static inline bool uncompress_IPHC_header(struct net_pkt *pkt)
 	/* Uncompress Destination Address */
 #if defined(CONFIG_NET_6LO_CONTEXT)
 	if (CIPHC[1] & NET_6LO_IPHC_DAC_1) {
-		if (CIPHC[1] & NET_6LO_IPHC_M_1) {
+		if ((CIPHC[1] & NET_6LO_IPHC_M_1) != 0) {
 			/* TODO: DAM00 Unicast-Prefix-based IPv6 Multicast
 			 * Addresses. DAM_01, DAM_10 and DAM_11 are reserved.
 			 */
@@ -1297,7 +1297,7 @@ static inline bool uncompress_IPHC_header(struct net_pkt *pkt)
 			goto fail;
 		}
 
-		if (!dst) {
+		if (dst == NULL) {
 			NET_ERR("DAC is set but dst context doesn't exists");
 			goto fail;
 		}
@@ -1366,7 +1366,7 @@ end:
 	len = net_pkt_get_len(pkt) - NET_IPV6H_LEN;
 	ipv6->len = htons(len);
 
-	if (ipv6->nexthdr == IPPROTO_UDP && udp) {
+	if (ipv6->nexthdr == IPPROTO_UDP && (udp != NULL)) {
 		udp->len = htons(len);
 
 		if (chksum) {
@@ -1388,7 +1388,7 @@ static inline bool compress_ipv6_header(struct net_pkt *pkt,
 	struct net_buf *frag;
 
 	frag = net_pkt_get_frag(pkt, K_FOREVER);
-	if (!frag) {
+	if (frag == NULL) {
 		return false;
 	}
 
@@ -1400,7 +1400,7 @@ static inline bool compress_ipv6_header(struct net_pkt *pkt,
 	/* Compact the fragments, so that gaps will be filled */
 	net_pkt_compact(pkt);
 
-	if (fragment) {
+	if (fragment != NULL) {
 		return fragment(pkt, -1);
 	}
 

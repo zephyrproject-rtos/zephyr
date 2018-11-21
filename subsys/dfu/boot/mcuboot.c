@@ -498,7 +498,7 @@ static int boot_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
 	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
-	if (!flash_dev) {
+	if (flash_dev == NULL) {
 		return -ENODEV;
 	}
 	return 0;

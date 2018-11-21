@@ -212,7 +212,7 @@ static inline s32_t get_conn(enum net_ip_protocol proto,
 	struct net_udp_hdr hdr, *udp_hdr;
 
 	udp_hdr = net_udp_get_hdr(pkt, &hdr);
-	if (!udp_hdr) {
+	if (udp_hdr == NULL) {
 		return NET_DROP;
 	}
 
@@ -295,7 +295,7 @@ static inline enum net_verdict cache_check(enum net_ip_protocol proto,
 			struct net_udp_hdr hdr, *udp_hdr;
 
 			udp_hdr = net_udp_get_hdr(pkt, &hdr);
-			if (!udp_hdr) {
+			if (udp_hdr == NULL) {
 				return NET_CONTINUE;
 			}
 
@@ -490,7 +490,7 @@ static int find_conn_handler(enum net_ip_protocol proto,
 				continue;
 			}
 		} else {
-			if (conns[i].flags & NET_CONN_REMOTE_ADDR_SET) {
+			if ((conns[i].flags & NET_CONN_REMOTE_ADDR_SET) != 0) {
 				continue;
 			}
 		}
@@ -528,7 +528,7 @@ static int find_conn_handler(enum net_ip_protocol proto,
 				continue;
 			}
 		} else {
-			if (conns[i].flags & NET_CONN_LOCAL_ADDR_SET) {
+			if ((conns[i].flags & NET_CONN_LOCAL_ADDR_SET) != 0) {
 				continue;
 			}
 		}
@@ -570,11 +570,11 @@ int net_conn_register(enum net_ip_protocol proto,
 	}
 
 	for (i = 0; i < CONFIG_NET_MAX_CONN; i++) {
-		if (conns[i].flags & NET_CONN_IN_USE) {
+		if ((conns[i].flags & NET_CONN_IN_USE) != 0) {
 			continue;
 		}
 
-		if (remote_addr) {
+		if (remote_addr != NULL) {
 #if defined(CONFIG_NET_IPV6)
 			if (remote_addr->sa_family == AF_INET6) {
 				memcpy(&conns[i].remote_addr, remote_addr,
@@ -611,7 +611,7 @@ int net_conn_register(enum net_ip_protocol proto,
 			conns[i].flags |= NET_CONN_REMOTE_ADDR_SET;
 		}
 
-		if (local_addr) {
+		if (local_addr != NULL) {
 #if defined(CONFIG_NET_IPV6)
 			if (local_addr->sa_family == AF_INET6) {
 				memcpy(&conns[i].local_addr, local_addr,
@@ -647,7 +647,7 @@ int net_conn_register(enum net_ip_protocol proto,
 			conns[i].flags |= NET_CONN_LOCAL_ADDR_SET;
 		}
 
-		if (remote_addr && local_addr) {
+		if ((remote_addr != NULL) && (local_addr != NULL)) {
 			if (remote_addr->sa_family != local_addr->sa_family) {
 				NET_ERR("Address families different");
 				return -EINVAL;
@@ -693,7 +693,7 @@ int net_conn_register(enum net_ip_protocol proto,
 				cb, user_data);
 		}
 
-		if (handle) {
+		if (handle != NULL) {
 			*handle = (struct net_conn_handle *)&conns[i];
 		}
 
@@ -827,7 +827,7 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 		ARG_UNUSED(hdr);
 
 		udp_hdr = net_udp_get_hdr(pkt, &hdr);
-		if (!udp_hdr) {
+		if (udp_hdr == NULL) {
 			return NET_DROP;
 		}
 
@@ -840,7 +840,7 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 		ARG_UNUSED(hdr);
 
 		tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
-		if (!tcp_hdr) {
+		if (tcp_hdr == NULL) {
 			return NET_DROP;
 		}
 
@@ -899,13 +899,13 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 			}
 		}
 
-		if (conns[i].flags & NET_CONN_REMOTE_ADDR_SET) {
+		if ((conns[i].flags & NET_CONN_REMOTE_ADDR_SET) != 0) {
 			if (!check_addr(pkt, &conns[i].remote_addr, true)) {
 				continue;
 			}
 		}
 
-		if (conns[i].flags & NET_CONN_LOCAL_ADDR_SET) {
+		if ((conns[i].flags & NET_CONN_LOCAL_ADDR_SET) != 0) {
 			if (!check_addr(pkt, &conns[i].local_addr, false)) {
 				continue;
 			}

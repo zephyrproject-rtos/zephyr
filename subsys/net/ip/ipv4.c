@@ -37,7 +37,7 @@ struct net_pkt *net_ipv4_create(struct net_pkt *pkt,
 	struct net_buf *header;
 
 	header = net_pkt_get_frag(pkt, NET_BUF_TIMEOUT);
-	if (!header) {
+	if (header == NULL) {
 		return NULL;
 	}
 

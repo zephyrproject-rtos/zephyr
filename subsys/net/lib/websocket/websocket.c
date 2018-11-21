@@ -46,13 +46,13 @@ void ws_mask_pkt(struct net_pkt *pkt, u32_t masking_value, u32_t *data_read)
 	frag = net_frag_get_pos(pkt,
 				net_pkt_get_len(pkt) - net_pkt_appdatalen(pkt),
 				&pos);
-	if (!frag) {
+	if (frag == NULL) {
 		return;
 	}
 
 	NET_ASSERT(net_pkt_appdata(pkt) == frag->data + pos);
 
-	while (frag) {
+	while (frag != NULL) {
 		for (i = pos; i < frag->len; i++, (*data_read)++) {
 			frag->data[i] ^=
 				masking_value >> (8 * (3 - (*data_read) % 4));
@@ -132,7 +132,7 @@ int ws_send_msg(struct http_ctx *ctx, u8_t *payload, size_t payload_len,
 		goto quit;
 	}
 
-	if (payload) {
+	if (payload != NULL) {
 		ret = http_prepare_and_send(ctx, payload, payload_len,
 					    dst, user_send_data);
 		if (ret < 0) {
@@ -158,11 +158,11 @@ int ws_strip_header(struct net_pkt *pkt, bool *masked, u32_t *mask_value,
 	u8_t len_len; /* length of the length field in header */
 
 	frag = net_frag_read_be16(pkt->frags, 0, &pos, &value);
-	if (!frag && pos == 0xffff) {
+	if ((frag == NULL) && pos == 0xffff) {
 		return -ENOMSG;
 	}
 
-	if (value & 0x8000) {
+	if ((value & 0x8000) != 0) {
 		*message_type_flag |= WS_FLAG_FINAL;
 	}
 
@@ -194,7 +194,7 @@ int ws_strip_header(struct net_pkt *pkt, bool *masked, u32_t *mask_value,
 		len_len = 2;
 
 		frag = net_frag_read_be16(frag, pos, &pos, &msg_len);
-		if (!frag && pos == 0xffff) {
+		if ((frag == NULL) && pos == 0xffff) {
 			return -ENOMSG;
 		}
 
@@ -203,7 +203,7 @@ int ws_strip_header(struct net_pkt *pkt, bool *masked, u32_t *mask_value,
 		len_len = 4;
 
 		frag = net_frag_read_be32(frag, pos, &pos, message_length);
-		if (!frag && pos == 0xffff) {
+		if ((frag == NULL) && pos == 0xffff) {
 			return -ENOMSG;
 		}
 	}
@@ -213,7 +213,7 @@ int ws_strip_header(struct net_pkt *pkt, bool *masked, u32_t *mask_value,
 		appdata_pos = 0;
 
 		frag = net_frag_read_be32(frag, pos, &pos, mask_value);
-		if (!frag && pos == 0xffff) {
+		if ((frag == NULL) && pos == 0xffff) {
 			return -ENOMSG;
 		}
 	} else {
@@ -222,7 +222,7 @@ int ws_strip_header(struct net_pkt *pkt, bool *masked, u32_t *mask_value,
 	}
 
 	frag = net_frag_get_pos(pkt, pos + appdata_pos, &pos);
-	if (!frag && pos == 0xffff) {
+	if ((frag == NULL) && pos == 0xffff) {
 		return -ENOMSG;
 	}
 
@@ -357,7 +357,7 @@ static struct net_pkt *prepare_reply(struct http_ctx *ctx,
 	pkt = net_app_get_net_pkt_with_dst(&ctx->app_ctx,
 					   ctx->http.parser.addr,
 					   ctx->timeout);
-	if (!pkt) {
+	if (pkt == NULL) {
 		return NULL;
 	}
 
@@ -417,9 +417,9 @@ int ws_headers_complete(struct http_parser *parser)
 		int ret;
 
 		url = http_url_find(ctx, HTTP_URL_WEBSOCKET);
-		if (!url) {
+		if (url == NULL) {
 			url = http_url_find(ctx, HTTP_URL_STANDARD);
-			if (url) {
+			if (url != NULL) {
 				/* Normal HTTP URL was found */
 				return 0;
 			}
@@ -457,7 +457,7 @@ accept:
 			ctx->http.field_values_ctr + 1);
 
 		pkt = prepare_reply(ctx, ws_sec_key, host, subprotocol);
-		if (!pkt) {
+		if (pkt == NULL) {
 			goto fail;
 		}
 

@@ -23,7 +23,7 @@ fcb_new_sector(struct fcb *fcb, int cnt)
 	cur = fcb->f_active.fe_sector;
 	do {
 		cur = fcb_getnext_sector(fcb, cur);
-		if (!prev) {
+		if (prev == NULL) {
 			prev = cur;
 		}
 		if (cur == fcb->f_oldest) {
@@ -43,7 +43,7 @@ fcb_append_to_scratch(struct fcb *fcb)
 	int rc;
 
 	sector = fcb_new_sector(fcb, 0);
-	if (!sector) {
+	if (sector == NULL) {
 		return FCB_ERR_NOSPACE;
 	}
 	rc = fcb_sector_hdr_init(fcb, sector, fcb->f_active_id + 1);
@@ -79,8 +79,7 @@ fcb_append(struct fcb *fcb, u16_t len, struct fcb_entry *append_loc)
 	active = &fcb->f_active;
 	if (active->fe_elem_off + len + cnt > active->fe_sector->fs_size) {
 		sector = fcb_new_sector(fcb, fcb->f_scratch_cnt);
-		if (!sector || (sector->fs_size <
-			sizeof(struct fcb_disk_area) + len + cnt)) {
+		if ((sector == NULL) || (sector->fs_size < sizeof(struct fcb_disk_area) + len + cnt)) {
 			rc = FCB_ERR_NOSPACE;
 			goto err;
 		}

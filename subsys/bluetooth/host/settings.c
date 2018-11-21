@@ -26,7 +26,7 @@ extern const struct bt_settings_handler _bt_settings_end[];
 void bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
 			    bt_addr_le_t *addr, const char *key)
 {
-	if (key) {
+	if (key != NULL) {
 		snprintk(path, path_size,
 			 "bt/%s/%02x%02x%02x%02x%02x%02x%u/%s", subsys,
 			 addr->a.val[5], addr->a.val[4], addr->a.val[3],
@@ -180,7 +180,7 @@ static void save_id(struct k_work *work)
 	str = settings_str_from_bytes(&bt_dev.id_addr,
 				      ID_DATA_LEN(bt_dev.id_addr),
 				      buf, sizeof(buf));
-	if (!str) {
+	if (str == NULL) {
 		BT_ERR("Unable to encode ID Addr as value");
 		return;
 	}
@@ -191,7 +191,7 @@ static void save_id(struct k_work *work)
 #if defined(CONFIG_BT_PRIVACY)
 	str = settings_str_from_bytes(bt_dev.irk, ID_DATA_LEN(bt_dev.irk),
 				      buf, sizeof(buf));
-	if (!str) {
+	if (str == NULL) {
 		BT_ERR("Unable to encode IRK as value");
 		return;
 	}
@@ -230,7 +230,7 @@ static int commit(void)
 	}
 
 	for (h = _bt_settings_start; h < _bt_settings_end; h++) {
-		if (h->commit) {
+		if (h->commit != NULL) {
 			h->commit();
 		}
 	}
@@ -251,7 +251,7 @@ static int export(int (*func)(const char *name, char *val),
 	}
 
 	for (h = _bt_settings_start; h < _bt_settings_end; h++) {
-		if (h->export) {
+		if (h->export != NULL) {
 			h->export(func);
 		}
 	}

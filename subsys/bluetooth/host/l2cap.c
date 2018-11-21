@@ -105,12 +105,12 @@ static struct bt_l2cap_le_chan *l2cap_chan_alloc_cid(struct bt_conn *conn,
 	 * No action needed if there's already a CID allocated, e.g. in
 	 * the case of a fixed channel.
 	 */
-	if (ch && ch->rx.cid > 0) {
+	if ((ch != NULL) && ch->rx.cid > 0) {
 		return ch;
 	}
 
 	for (cid = L2CAP_LE_CID_DYN_START; cid <= L2CAP_LE_CID_DYN_END; cid++) {
-		if (ch && !bt_l2cap_le_lookup_rx_cid(conn, cid)) {
+		if ((ch != NULL) && !bt_l2cap_le_lookup_rx_cid(conn, cid)) {
 			ch->rx.cid = cid;
 			return ch;
 		}
@@ -285,7 +285,7 @@ static bool l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 	ch = BT_L2CAP_LE_CHAN(chan);
 #endif
 
-	if (!ch) {
+	if (ch == NULL) {
 		BT_ERR("Unable to allocate L2CAP CID");
 		return false;
 	}
@@ -477,7 +477,7 @@ static void l2cap_send_reject(struct bt_conn *conn, u8_t ident,
 	rej = net_buf_add(buf, sizeof(*rej));
 	rej->reason = sys_cpu_to_le16(reason);
 
-	if (data) {
+	if (data != NULL) {
 		net_buf_add_mem(buf, data, data_len);
 	}
 
@@ -601,7 +601,7 @@ int bt_l2cap_server_register(struct bt_l2cap_server *server)
 		}
 
 		/* Check if given PSM is already in use */
-		if (l2cap_server_lookup_psm(server->psm)) {
+		if (l2cap_server_lookup_psm(server->psm) != NULL) {
 			BT_DBG("PSM already registered");
 			return -EADDRINUSE;
 		}
@@ -775,7 +775,7 @@ static void le_conn_req(struct bt_l2cap *l2cap, u8_t ident,
 
 	/* Check if there is a server registered */
 	server = l2cap_server_lookup_psm(psm);
-	if (!server) {
+	if (server == NULL) {
 		rsp->result = sys_cpu_to_le16(BT_L2CAP_LE_ERR_PSM_NOT_SUPP);
 		goto rsp;
 	}
@@ -792,7 +792,7 @@ static void le_conn_req(struct bt_l2cap *l2cap, u8_t ident,
 	}
 
 	chan = bt_l2cap_le_lookup_tx_cid(conn, scid);
-	if (chan) {
+	if (chan != NULL) {
 		rsp->result = sys_cpu_to_le16(BT_L2CAP_LE_ERR_SCID_IN_USE);
 		goto rsp;
 	}
@@ -888,7 +888,7 @@ static void le_disconn_req(struct bt_l2cap *l2cap, u8_t ident,
 	BT_DBG("scid 0x%04x dcid 0x%04x", scid, sys_le16_to_cpu(req->dcid));
 
 	chan = l2cap_remove_tx_cid(conn, scid);
-	if (!chan) {
+	if (chan == NULL) {
 		struct bt_l2cap_cmd_reject_cid_data data;
 
 		data.scid = req->scid;
@@ -969,7 +969,7 @@ static void le_conn_rsp(struct bt_l2cap *l2cap, u8_t ident,
 		chan = l2cap_remove_ident(conn, ident);
 	}
 
-	if (!chan) {
+	if (chan == NULL) {
 		BT_ERR("Cannot find channel for ident %u", ident);
 		return;
 	}
@@ -1028,7 +1028,7 @@ static void le_disconn_rsp(struct bt_l2cap *l2cap, u8_t ident,
 	BT_DBG("dcid 0x%04x scid 0x%04x", dcid, sys_le16_to_cpu(rsp->scid));
 
 	chan = l2cap_remove_tx_cid(conn, dcid);
-	if (!chan) {
+	if (chan == NULL) {
 		return;
 	}
 
@@ -1042,7 +1042,7 @@ static inline struct net_buf *l2cap_alloc_seg(struct net_buf *buf)
 
 	/* Try to use original pool if possible */
 	seg = net_buf_alloc(pool, K_NO_WAIT);
-	if (seg) {
+	if (seg != NULL) {
 		net_buf_reserve(seg, BT_L2CAP_CHAN_SEND_RESERVE);
 		return seg;
 	}
@@ -1238,7 +1238,7 @@ static void le_credits(struct bt_l2cap *l2cap, u8_t ident,
 	BT_DBG("cid 0x%04x credits %u", cid, credits);
 
 	chan = bt_l2cap_le_lookup_tx_cid(conn, cid);
-	if (!chan) {
+	if (chan == NULL) {
 		BT_ERR("Unable to find channel of LE Credits packet");
 		return;
 	}
@@ -1267,7 +1267,7 @@ static void reject_cmd(struct bt_l2cap *l2cap, u8_t ident,
 
 	/* Check if there is a outstanding channel */
 	chan = l2cap_remove_ident(conn, ident);
-	if (!chan) {
+	if (chan == NULL) {
 		return;
 	}
 
@@ -1395,7 +1395,7 @@ int bt_l2cap_chan_recv_complete(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	__ASSERT_NO_MSG(chan);
 	__ASSERT_NO_MSG(buf);
 
-	if (!conn) {
+	if (conn == NULL) {
 		return -ENOTCONN;
 	}
 
@@ -1421,7 +1421,7 @@ static struct net_buf *l2cap_alloc_frag(s32_t timeout, void *user_data)
 	struct net_buf *frag = NULL;
 
 	frag = chan->chan.ops->alloc_buf(&chan->chan);
-	if (!frag) {
+	if (frag == NULL) {
 		return NULL;
 	}
 
@@ -1597,7 +1597,7 @@ void bt_l2cap_recv(struct bt_conn *conn, struct net_buf *buf)
 	BT_DBG("Packet for CID %u len %u", cid, buf->len);
 
 	chan = bt_l2cap_le_lookup_rx_cid(conn, cid);
-	if (!chan) {
+	if (chan == NULL) {
 		BT_WARN("Ignoring data for unknown CID 0x%04x", cid);
 		net_buf_unref(buf);
 		return;
@@ -1707,11 +1707,11 @@ int bt_l2cap_chan_connect(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 {
 	BT_DBG("conn %p chan %p psm 0x%04x", conn, chan, psm);
 
-	if (!conn || conn->state != BT_CONN_CONNECTED) {
+	if ((conn == NULL) || conn->state != BT_CONN_CONNECTED) {
 		return -ENOTCONN;
 	}
 
-	if (!chan) {
+	if (chan == NULL) {
 		return -EINVAL;
 	}
 
@@ -1736,7 +1736,7 @@ int bt_l2cap_chan_disconnect(struct bt_l2cap_chan *chan)
 	struct bt_l2cap_disconn_req *req;
 	struct bt_l2cap_le_chan *ch;
 
-	if (!conn) {
+	if (conn == NULL) {
 		return -ENOTCONN;
 	}
 
@@ -1769,7 +1769,7 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	int err;
 
-	if (!buf) {
+	if (buf == NULL) {
 		return -EINVAL;
 	}
 

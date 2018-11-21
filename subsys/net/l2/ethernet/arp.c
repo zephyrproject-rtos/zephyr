@@ -65,7 +65,7 @@ static struct arp_entry *arp_entry_find(sys_slist_t *list,
 			return entry;
 		}
 
-		if (previous) {
+		if (previous != NULL) {
 			*previous = &entry->node;
 		}
 	}
@@ -82,7 +82,7 @@ static inline struct arp_entry *arp_entry_find_move_first(struct net_if *iface,
 	NET_DBG("dst %s", log_strdup(net_sprint_ipv4_addr(dst)));
 
 	entry = arp_entry_find(&arp_table, iface, dst, &prev);
-	if (entry) {
+	if (entry != NULL) {
 		/* Let's assume the target is going to be accessed
 		 * more than once here in a short time frame. So we
 		 * place the entry first in position into the table
@@ -115,7 +115,7 @@ static struct arp_entry *arp_entry_get_pending(struct net_if *iface,
 	NET_DBG("dst %s", log_strdup(net_sprint_ipv4_addr(dst)));
 
 	entry = arp_entry_find(&arp_pending_entries, iface, dst, &prev);
-	if (entry) {
+	if (entry != NULL) {
 		/* We remove the entry from the pending list */
 		sys_slist_remove(&arp_pending_entries, prev, &entry->node);
 	}
@@ -132,7 +132,7 @@ static struct arp_entry *arp_entry_get_free(void)
 	sys_snode_t *node;
 
 	node = sys_slist_peek_head(&arp_free_entries);
-	if (!node) {
+	if (node == NULL) {
 		return NULL;
 	}
 
@@ -151,7 +151,7 @@ static struct arp_entry *arp_entry_get_last_from_table(void)
 	 */
 
 	node = sys_slist_peek_tail(&arp_table);
-	if (!node) {
+	if (node == NULL) {
 		return NULL;
 	}
 
@@ -197,7 +197,7 @@ static void arp_request_timeout(struct k_work *work)
 		entry = NULL;
 	}
 
-	if (entry) {
+	if (entry != NULL) {
 		k_delayed_work_submit(&arp_request_timer,
 				      entry->req_start +
 				      ARP_REQUEST_TIMEOUT - current);
@@ -210,7 +210,7 @@ static inline struct in_addr *if_get_addr(struct net_if *iface,
 	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
 	int i;
 
-	if (!ipv4) {
+	if (ipv4 == NULL) {
 		return NULL;
 	}
 
@@ -256,12 +256,12 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 		net_buf_add(pkt->frags, sizeof(struct net_arp_hdr));
 	} else {
 		pkt = net_pkt_get_reserve_tx(eth_hdr_len, NET_BUF_TIMEOUT);
-		if (!pkt) {
+		if (pkt == NULL) {
 			return NULL;
 		}
 
 		frag = net_pkt_get_frag(pkt, NET_BUF_TIMEOUT);
-		if (!frag) {
+		if (frag == NULL) {
 			net_pkt_unref(pkt);
 			return NULL;
 		}
@@ -317,13 +317,13 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 	memcpy(hdr->src_hwaddr.addr, eth->src.addr,
 	       sizeof(struct net_eth_addr));
 
-	if (entry) {
+	if (entry != NULL) {
 		my_addr = if_get_addr(entry->iface, current_ip);
 	} else {
 		my_addr = current_ip;
 	}
 
-	if (my_addr) {
+	if (my_addr != NULL) {
 		net_ipaddr_copy(&hdr->src_ipaddr, my_addr);
 	} else {
 		(void)memset(&hdr->src_ipaddr, 0, sizeof(struct in_addr));
@@ -342,7 +342,7 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 	struct net_eth_hdr *hdr;
 	struct in_addr *addr;
 
-	if (!pkt || !pkt->frags) {
+	if ((pkt == NULL) || !pkt->frags) {
 		return NULL;
 	}
 
@@ -355,7 +355,7 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 		struct net_buf *header;
 
 		header = net_pkt_get_frag(pkt, NET_BUF_TIMEOUT);
-		if (!header) {
+		if (header == NULL) {
 			return NULL;
 		}
 
@@ -392,14 +392,14 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 	 * to send any ARP packet.
 	 */
 	entry = arp_entry_find_move_first(net_pkt_iface(pkt), addr);
-	if (!entry) {
+	if (entry == NULL) {
 		struct net_pkt *req;
 
 		entry = arp_entry_find_pending(net_pkt_iface(pkt), addr);
 		if (!entry) {
 			/* No pending, let's try to get a new entry */
 			entry = arp_entry_get_free();
-			if (!entry) {
+			if (entry == NULL) {
 				/* Then let's take one from table? */
 				entry = arp_entry_get_last_from_table();
 			}
@@ -411,7 +411,7 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 		req = arp_prepare(net_pkt_iface(pkt), addr, entry, pkt,
 				  current_ip);
 
-		if (!entry) {
+		if (entry == NULL) {
 			/* We cannot send the packet, the ARP cache is full
 			 * or there is already a pending query to this IP
 			 * address, so this packet must be discarded.
@@ -445,7 +445,7 @@ static void arp_gratuitous(struct net_if *iface,
 	struct arp_entry *entry;
 
 	entry = arp_entry_find(&arp_table, iface, src, &prev);
-	if (entry) {
+	if (entry != NULL) {
 		NET_DBG("Gratuitous ARP hwaddr %s -> %s",
 			log_strdup(net_sprint_ll_addr(
 					   (const u8_t *)&entry->eth,
@@ -469,7 +469,7 @@ static void arp_update(struct net_if *iface,
 	NET_DBG("src %s", log_strdup(net_sprint_ipv4_addr(src)));
 
 	entry = arp_entry_get_pending(iface, src);
-	if (!entry) {
+	if (entry == NULL) {
 		if (IS_ENABLED(CONFIG_NET_ARP_GRATUITOUS) && gratuitous) {
 			arp_gratuitous(iface, src, hwaddr);
 		}
@@ -515,12 +515,12 @@ static inline struct net_pkt *arp_prepare_reply(struct net_if *iface,
 	}
 
 	pkt = net_pkt_get_reserve_tx(eth_hdr_len, NET_BUF_TIMEOUT);
-	if (!pkt) {
+	if (pkt == NULL) {
 		goto fail;
 	}
 
 	frag = net_pkt_get_frag(pkt, NET_BUF_TIMEOUT);
-	if (!frag) {
+	if (frag == NULL) {
 		goto fail;
 	}
 
@@ -621,7 +621,7 @@ enum net_verdict net_arp_input(struct net_pkt *pkt)
 
 		/* Someone wants to know our ll address */
 		addr = if_get_addr(net_pkt_iface(pkt), &arp_hdr->dst_ipaddr);
-		if (!addr) {
+		if (addr == NULL) {
 			/* Not for us so drop the packet silently */
 			return NET_DROP;
 		}
@@ -636,7 +636,7 @@ enum net_verdict net_arp_input(struct net_pkt *pkt)
 
 		/* Send reply */
 		reply = arp_prepare_reply(net_pkt_iface(pkt), pkt);
-		if (reply) {
+		if (reply != NULL) {
 			net_if_queue_tx(net_pkt_iface(reply), reply);
 		} else {
 			NET_DBG("Cannot send ARP reply");
@@ -667,7 +667,7 @@ void net_arp_clear_cache(struct net_if *iface)
 	NET_DBG("Flushing ARP table");
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&arp_table, entry, next, node) {
-		if (iface && iface != entry->iface) {
+		if ((iface != NULL) && iface != entry->iface) {
 			prev = &entry->node;
 			continue;
 		}
@@ -684,7 +684,7 @@ void net_arp_clear_cache(struct net_if *iface)
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&arp_pending_entries,
 					  entry, next, node) {
-		if (iface && iface != entry->iface) {
+		if ((iface != NULL) && iface != entry->iface) {
 			prev = &entry->node;
 			continue;
 		}

@@ -58,7 +58,7 @@ static int dcache_available(void)
 
 static void dcache_dc_ctrl(u32_t dcache_en_mask)
 {
-	if (!dcache_available())
+	if (dcache_available() == 0)
 		return;
 	_arc_v2_aux_reg_write(_ARC_V2_DC_CTRL, dcache_en_mask);
 }

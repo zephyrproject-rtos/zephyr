@@ -93,7 +93,7 @@ bool ieee802154_decrypt_auth(struct ieee802154_security_ctx *sec_ctx,
 	u8_t nonce[13];
 	int ret;
 
-	if (!sec_ctx || sec_ctx->level == IEEE802154_SECURITY_LEVEL_NONE) {
+	if ((sec_ctx == NULL) || sec_ctx->level == IEEE802154_SECURITY_LEVEL_NONE) {
 		return true;
 	}
 
@@ -138,7 +138,7 @@ bool ieee802154_encrypt_auth(struct ieee802154_security_ctx *sec_ctx,
 	u8_t nonce[13];
 	int ret;
 
-	if (!sec_ctx || sec_ctx->level == IEEE802154_SECURITY_LEVEL_NONE) {
+	if ((sec_ctx == NULL) || sec_ctx->level == IEEE802154_SECURITY_LEVEL_NONE) {
 		return true;
 	}
 
@@ -179,7 +179,7 @@ int ieee802154_security_init(struct ieee802154_security_ctx *sec_ctx)
 
 	dev = device_get_binding(
 		CONFIG_NET_L2_IEEE802154_SECURITY_CRYPTO_DEV_NAME);
-	if (!dev) {
+	if (dev == NULL) {
 		return -ENODEV;
 	}
 

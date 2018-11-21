@@ -176,7 +176,7 @@ static void zsock_received_cb(struct net_context *ctx, struct net_pkt *pkt,
 		user_data);
 
 	/* if pkt is NULL, EOF */
-	if (!pkt) {
+	if (pkt == NULL) {
 		struct net_pkt *last_pkt = k_fifo_peek_tail(&ctx->recv_q);
 
 		if (!last_pkt) {
@@ -313,7 +313,7 @@ int _impl_zsock_accept(int sock, struct sockaddr *addr, socklen_t *addrlen)
 	_k_object_recycle(ctx);
 #endif
 
-	if (addr != NULL && addrlen != NULL) {
+	if ((addr != NULL) && (addrlen != NULL)) {
 		int len = min(*addrlen, sizeof(ctx->remote));
 
 		memcpy(addr, &ctx->remote, len);
@@ -375,7 +375,7 @@ ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 	}
 
 	send_pkt = net_pkt_get_tx(ctx, timeout);
-	if (!send_pkt) {
+	if (send_pkt == NULL) {
 		errno = EAGAIN;
 		return -1;
 	}
@@ -397,7 +397,7 @@ ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 		return -1;
 	}
 
-	if (dest_addr) {
+	if (dest_addr != NULL) {
 		err = net_context_sendto(send_pkt, dest_addr, addrlen, NULL,
 					 timeout, NULL, ctx->user_data);
 	} else {
@@ -474,12 +474,12 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 		pkt = k_fifo_get(&ctx->recv_q, timeout);
 	}
 
-	if (!pkt) {
+	if (pkt == NULL) {
 		errno = EAGAIN;
 		return -1;
 	}
 
-	if (src_addr && addrlen) {
+	if ((src_addr != NULL) && (addrlen != NULL)) {
 		int rv;
 
 		rv = net_pkt_get_src_addr(pkt, src_addr, *addrlen);
@@ -550,7 +550,7 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 		}
 
 		pkt = k_fifo_peek_head(&ctx->recv_q);
-		if (!pkt) {
+		if (pkt == NULL) {
 			/* Either timeout expired, or wait was cancelled
 			 * due to connection closure by peer.
 			 */
@@ -564,7 +564,7 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 		}
 
 		frag = pkt->frags;
-		if (!frag) {
+		if (frag == NULL) {
 			NET_ERR("net_pkt has empty fragments on start!");
 			errno = EAGAIN;
 			return -1;
@@ -584,7 +584,7 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 				net_buf_pull(frag, recv_len);
 			} else {
 				frag = net_pkt_frag_del(pkt, NULL, frag);
-				if (!frag) {
+				if (frag == NULL) {
 					/* Finished processing head pkt in
 					 * the fifo. Drop it from there.
 					 */
@@ -734,7 +734,7 @@ int _impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout)
 			continue;
 		}
 
-		if (pfd->events & ZSOCK_POLLIN) {
+		if ((pfd->events & ZSOCK_POLLIN) != 0) {
 			if (pev == pev_end) {
 				errno = ENOMEM;
 				return -1;
@@ -775,11 +775,11 @@ int _impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout)
 		}
 
 		/* For now, assume that socket is always writable */
-		if (pfd->events & ZSOCK_POLLOUT) {
+		if ((pfd->events & ZSOCK_POLLOUT) != 0) {
 			pfd->revents |= ZSOCK_POLLOUT;
 		}
 
-		if (pfd->events & ZSOCK_POLLIN) {
+		if ((pfd->events & ZSOCK_POLLIN) != 0) {
 			if (pev->state != K_POLL_STATE_NOT_READY) {
 				pfd->revents |= ZSOCK_POLLIN;
 			}

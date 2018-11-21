@@ -319,7 +319,7 @@ static int _nvs_prev_ate(struct nvs_fs *fs, u32_t *addr, struct nvs_ate *ate)
 		return rc;
 	}
 
-	while (1) {
+	while (true) {
 		*addr += ate_size;
 		if (((*addr) & ADDR_OFFS_MASK) != fs->sector_size) {
 			break;
@@ -329,7 +329,7 @@ static int _nvs_prev_ate(struct nvs_fs *fs, u32_t *addr, struct nvs_ate *ate)
 			*addr += (fs->sector_count << ADDR_SECT_SHIFT);
 		}
 		(*addr) -= (1 << ADDR_SECT_SHIFT);
-		while (1) {
+		while (true) {
 			*addr -= ate_size;
 			rc = _nvs_flash_cmp_const(fs, *addr, 0xff, sizeof(struct nvs_ate));
 			if (!rc) {
@@ -406,7 +406,7 @@ static int _nvs_gc(struct nvs_fs *fs)
 	_nvs_sector_advance(fs, &gc_addr);
 	sec_addr = gc_addr;
 
-	while (1) {
+	while (true) {
 		/* if the sector is empty don't do gc */
 		rc = _nvs_flash_cmp_const(fs, gc_addr, 0xff, sizeof(struct nvs_ate));
 		if (!rc) {
@@ -422,7 +422,7 @@ static int _nvs_gc(struct nvs_fs *fs)
 			return rc;
 		}
 		wlk_addr = fs->ate_wra;
-		while (1) {
+		while (true) {
 			wlk_prev_addr = wlk_addr;
 			rc = _nvs_prev_ate(fs, &wlk_addr, &wlk_ate);
 			if (rc) {
@@ -485,7 +485,7 @@ static int _nvs_update_free_space(struct nvs_fs *fs)
 
 	step_addr = fs->ate_wra;
 
-	while (1) {
+	while (true) {
 		rc = _nvs_prev_ate(fs, &step_addr, &step_ate);
 		if (rc) {
 			return rc;
@@ -493,7 +493,7 @@ static int _nvs_update_free_space(struct nvs_fs *fs)
 
 		wlk_addr = fs->ate_wra;
 
-		while (1) {
+		while (true) {
 			rc = _nvs_prev_ate(fs, &wlk_addr, &wlk_ate);
 			if (rc) {
 				return rc;
@@ -593,7 +593,7 @@ int nvs_reinit(struct nvs_fs *fs)
 	}
 
 	/* possible data write after last ate write, update data_wra */
-	while (1) {
+	while (true) {
 		empty_len = fs->ate_wra - fs->data_wra;
 		if (!empty_len) {
 			break;
@@ -711,7 +711,7 @@ ssize_t nvs_write(struct nvs_fs *fs, u16_t id, const void *data, size_t len)
 	rd_addr = wlk_addr;
 	freed_space = 0;
 
-	while (1) {
+	while (true) {
 		rd_addr = wlk_addr;
 		rc = _nvs_prev_ate(fs, &wlk_addr, &wlk_ate);
 		if (rc) {
@@ -756,7 +756,7 @@ ssize_t nvs_write(struct nvs_fs *fs, u16_t id, const void *data, size_t len)
 	}
 
 	gc_count = 0;
-	while (1) {
+	while (true) {
 		if (gc_count == fs->sector_count) {
 			rc = -EROFS;
 			goto end;

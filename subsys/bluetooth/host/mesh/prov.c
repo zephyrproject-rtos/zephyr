@@ -210,7 +210,7 @@ static void free_segments(void)
 	for (i = 0; i < ARRAY_SIZE(link.tx.buf); i++) {
 		struct net_buf *buf = link.tx.buf[i];
 
-		if (!buf) {
+		if (buf == NULL) {
 			break;
 		}
 
@@ -243,7 +243,7 @@ static void reset_link(void)
 
 	link.rx.prev_id = XACT_NVAL;
 
-	if (bt_pub_key_get()) {
+	if (bt_pub_key_get() != NULL) {
 		atomic_set_bit(link.flags, LOCAL_PUB_KEY);
 	}
 
@@ -265,7 +265,7 @@ static struct net_buf *adv_buf_create(void)
 	struct net_buf *buf;
 
 	buf = bt_mesh_adv_create(BT_MESH_ADV_PROV, PROV_XMIT, BUF_TIMEOUT);
-	if (!buf) {
+	if (buf == NULL) {
 		BT_ERR("Out of provisioning buffers");
 		return NULL;
 	}
@@ -297,7 +297,7 @@ static void gen_prov_ack_send(u8_t xact_id)
 	}
 
 	buf = adv_buf_create();
-	if (!buf) {
+	if (buf == NULL) {
 		return;
 	}
 
@@ -325,7 +325,7 @@ static void send_reliable(void)
 	for (i = 0; i < ARRAY_SIZE(link.tx.buf); i++) {
 		struct net_buf *buf = link.tx.buf[i];
 
-		if (!buf) {
+		if (buf == NULL) {
 			break;
 		}
 
@@ -346,7 +346,7 @@ static int bearer_ctl_send(u8_t op, void *data, u8_t data_len)
 	prov_clear_tx();
 
 	buf = adv_buf_create();
-	if (!buf) {
+	if (buf == NULL) {
 		return -ENOBUFS;
 	}
 
@@ -394,7 +394,7 @@ static int prov_send_adv(struct net_buf_simple *msg)
 	prov_clear_tx();
 
 	start = adv_buf_create();
-	if (!start) {
+	if (start == NULL) {
 		return -ENOBUFS;
 	}
 
@@ -422,7 +422,7 @@ static int prov_send_adv(struct net_buf_simple *msg)
 		}
 
 		buf = adv_buf_create();
-		if (!buf) {
+		if (buf == NULL) {
 			free_segments();
 			return -ENOBUFS;
 		}
@@ -462,7 +462,7 @@ static int prov_send_gatt(struct net_buf_simple *msg)
 static inline int prov_send(struct net_buf_simple *buf)
 {
 #if defined(CONFIG_BT_MESH_PB_GATT)
-	if (link.conn) {
+	if (link.conn != NULL) {
 		return prov_send_gatt(buf);
 	}
 #endif
@@ -862,7 +862,7 @@ static void send_pub_key(void)
 	const u8_t *key;
 
 	key = bt_pub_key_get();
-	if (!key) {
+	if (key == NULL) {
 		BT_ERR("No public key available");
 		close_link(PROV_ERR_RESOURCES, CLOSE_REASON_FAILED);
 		return;
@@ -917,7 +917,7 @@ static void prov_pub_key(const u8_t *data)
 
 static void pub_key_ready(const u8_t *pkey)
 {
-	if (!pkey) {
+	if (pkey == NULL) {
 		BT_WARN("Public key not available");
 		return;
 	}
@@ -1113,7 +1113,7 @@ static const struct {
 static void close_link(u8_t err, u8_t reason)
 {
 #if defined(CONFIG_BT_MESH_PB_GATT)
-	if (link.conn) {
+	if (link.conn != NULL) {
 		bt_mesh_pb_gatt_close(link.conn);
 		return;
 	}
@@ -1157,7 +1157,7 @@ static void prov_retransmit(struct k_work *work)
 	for (i = 0; i < ARRAY_SIZE(link.tx.buf); i++) {
 		struct net_buf *buf = link.tx.buf[i];
 
-		if (!buf) {
+		if (buf == NULL) {
 			break;
 		}
 
@@ -1570,7 +1570,7 @@ int bt_mesh_prov_init(const struct bt_mesh_prov *prov_info)
 	};
 	int err;
 
-	if (!prov_info) {
+	if (prov_info == NULL) {
 		BT_ERR("No provisioning context provided");
 		return -EINVAL;
 	}

@@ -374,7 +374,7 @@ static const struct shell_static_entry *find_cmd(
 
 	do {
 		cmd_get(cmd, lvl, idx++, &entry, d_entry);
-		if (entry && (strcmp(cmd_str, entry->syntax) == 0)) {
+		if ((entry != NULL) && (strcmp(cmd_str, entry->syntax) == 0)) {
 			return entry;
 		}
 	} while (entry);
@@ -502,7 +502,7 @@ static void find_completion_candidates(const struct shell_static_entry *cmd,
 		cmd_get(cmd ? cmd->subcmd : NULL, cmd ? 1 : 0,
 			idx, &candidate, &dynamic_entry);
 
-		if (!candidate) {
+		if (candidate == NULL) {
 			break;
 		}
 
@@ -1704,7 +1704,7 @@ static void help_subcmd_print(const struct shell *shell)
 		cmd_get(shell->ctx->active_cmd.subcmd, !SHELL_CMD_ROOT_LVL,
 			cmd_idx++, &entry, &static_entry);
 
-		if (!entry) {
+		if (entry == NULL) {
 			break;
 		}
 

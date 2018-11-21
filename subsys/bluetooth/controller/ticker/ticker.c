@@ -378,7 +378,7 @@ void ticker_worker(void *param)
 		/* scheduled timeout is acknowledged to be complete */
 		ticker->ack--;
 
-		if (ticker->timeout_func) {
+		if (ticker->timeout_func != NULL) {
 			u32_t ticks_at_expire;
 
 			ticks_at_expire = (instance->ticks_current +
@@ -479,7 +479,7 @@ static void ticker_job_op_cb(struct ticker_user_op *user_op, u32_t status)
 {
 	user_op->op = TICKER_USER_OP_TYPE_NONE;
 	user_op->status = status;
-	if (user_op->fp_op_func) {
+	if (user_op->fp_op_func != NULL) {
 		user_op->fp_op_func(user_op->status, user_op->op_context);
 	}
 }
@@ -921,7 +921,7 @@ static inline void ticker_job_list_insert(struct ticker_instance *instance,
 			status = ticker_job_insert(instance, id_insert, ticker,
 						   &insert_head);
 
-			if (user_op) {
+			if (user_op != NULL) {
 				ticker_job_op_cb(user_op, status);
 			}
 		}
@@ -952,7 +952,7 @@ static inline void ticker_job_op_inquire(struct ticker_instance *instance,
 		break;
 	}
 
-	if (fp_op_func) {
+	if (fp_op_func != NULL) {
 		fp_op_func(uop->status, uop->op_context);
 	}
 }
@@ -1213,7 +1213,7 @@ void ticker_trigger(u8_t instance_index)
 	DEBUG_TICKER_ISR(1);
 
 	instance = &_instance[instance_index];
-	if (instance->sched_cb) {
+	if (instance->sched_cb != NULL) {
 		instance->sched_cb(TICKER_CALL_ID_TRIGGER,
 				   TICKER_CALL_ID_WORKER, 1, instance);
 	}

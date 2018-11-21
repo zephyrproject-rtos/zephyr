@@ -405,7 +405,7 @@ static int sm_do_bootstrap(void)
 	    client.has_bs_server_info) {
 		app_ctx = &client.ctx->net_app_ctx;
 		msg = lwm2m_get_message(client.ctx);
-		if (!msg) {
+		if (msg == NULL) {
 			LOG_ERR("Unable to get a lwm2m message!");
 			return -ENOMEM;
 		}
@@ -438,7 +438,7 @@ static int sm_do_bootstrap(void)
 		}
 #endif
 
-		if (!remote) {
+		if (remote == NULL) {
 			remote = &app_ctx->default_ctx->remote;
 		}
 
@@ -517,7 +517,7 @@ static int sm_send_registration(bool send_obj_support_data,
 
 	app_ctx = &client.ctx->net_app_ctx;
 	msg = lwm2m_get_message(client.ctx);
-	if (!msg) {
+	if (msg == NULL) {
 		LOG_ERR("Unable to get a lwm2m message!");
 		return -ENOMEM;
 	}
@@ -601,7 +601,7 @@ static int sm_send_registration(bool send_obj_support_data,
 	}
 #endif
 
-	if (!remote) {
+	if (remote == NULL) {
 		remote = &app_ctx->default_ctx->remote;
 	}
 
@@ -671,7 +671,7 @@ static int sm_do_deregister(void)
 
 	app_ctx = &client.ctx->net_app_ctx;
 	msg = lwm2m_get_message(client.ctx);
-	if (!msg) {
+	if (msg == NULL) {
 		LOG_ERR("Unable to get a lwm2m message!");
 		return -ENOMEM;
 	}
@@ -710,7 +710,7 @@ cleanup:
 
 static void lwm2m_rd_client_service(void)
 {
-	if (client.ctx) {
+	if (client.ctx != NULL) {
 		switch (get_sm_state()) {
 
 		case ENGINE_INIT:

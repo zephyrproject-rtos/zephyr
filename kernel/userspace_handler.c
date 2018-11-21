@@ -19,7 +19,7 @@ static struct _k_object *validate_any_object(void *obj)
 	 * initialized
 	 */
 	ret = _k_object_validate(ko, K_OBJ_ANY, _OBJ_INIT_ANY);
-	if (ret) {
+	if (ret != 0) {
 #ifdef CONFIG_PRINTK
 		_dump_object_error(ret, obj, ko, K_OBJ_ANY);
 #endif

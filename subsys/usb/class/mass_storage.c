@@ -866,7 +866,7 @@ static void mass_thread_main(int arg1, int unused)
 	ARG_UNUSED(unused);
 	ARG_UNUSED(arg1);
 
-	while (1) {
+	while (true) {
 		k_sem_take(&disk_wait_sem, K_FOREVER);
 		LOG_DBG("sem %d", thread_op);
 

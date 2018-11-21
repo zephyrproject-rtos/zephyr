@@ -83,16 +83,16 @@ int net_ipv6_find_last_ext_hdr(struct net_pkt *pkt, u16_t *next_hdr_idx,
 	*next_hdr_idx = *last_hdr_idx;
 	next_hdr_frag = last_hdr_frag = frag;
 
-	while (frag) {
+	while (frag != NULL) {
 		frag = net_frag_read_u8(frag, offset, &offset, &next_hdr);
-		if (!frag) {
+		if (frag == NULL) {
 			goto fail;
 		}
 
 		switch (next) {
 		case NET_IPV6_NEXTHDR_FRAG:
 			frag = net_frag_skip(frag, offset, &offset, 7);
-			if (!frag) {
+			if (frag == NULL) {
 				goto fail;
 			}
 
@@ -103,14 +103,14 @@ int net_ipv6_find_last_ext_hdr(struct net_pkt *pkt, u16_t *next_hdr_idx,
 			length = 0;
 			frag = net_frag_read_u8(frag, offset, &offset,
 						(u8_t *)&length);
-			if (!frag) {
+			if (frag == NULL) {
 				goto fail;
 			}
 
 			length = length * 8 + 8;
 
 			frag = net_frag_skip(frag, offset, &offset, length - 2);
-			if (!frag) {
+			if (frag == NULL) {
 				goto fail;
 			}
 
@@ -145,7 +145,7 @@ out:
 	 */
 	pkt_offset = 0;
 	frag = pkt->frags;
-	while (frag) {
+	while (frag != NULL) {
 		if (next_hdr_frag == frag) {
 			*next_hdr_idx += pkt_offset;
 			break;
@@ -160,7 +160,7 @@ out:
 	 */
 	pkt_offset = 0;
 	frag = pkt->frags;
-	while (frag) {
+	while (frag != NULL) {
 		if (last_hdr_frag == frag) {
 			*last_hdr_idx += pkt_offset;
 			break;
@@ -264,7 +264,7 @@ static void reassembly_info(char *str, struct net_ipv6_reassembly *reass)
 	int i, len;
 
 	for (i = 0, len = 0; i < NET_IPV6_FRAGMENTS_MAX_PKT; i++) {
-		if (reass->pkt[i]) {
+		if (reass->pkt[i] != NULL) {
 			len += net_pkt_get_len(reass->pkt[i]);
 		}
 	}
@@ -343,7 +343,7 @@ static void reassemble_packet(struct net_ipv6_reassembly *reass)
 
 	frag = net_frag_read_u8(pkt->frags, net_pkt_ipv6_fragment_start(pkt),
 				&pos, &next_hdr);
-	if (!frag && pos == 0xFFFF) {
+	if ((frag == NULL) && pos == 0xFFFF) {
 		NET_ERR("Failed to read next header");
 		NET_ASSERT(frag);
 	}
@@ -502,13 +502,13 @@ enum net_verdict net_ipv6_handle_fragment_hdr(struct net_pkt *pkt,
 	frag = net_frag_skip(frag, buf_offset, loc, 1); /* reserved */
 	frag = net_frag_read_be16(frag, *loc, loc, &flag);
 	frag = net_frag_read_be32(frag, *loc, loc, &id);
-	if (!frag && *loc == 0xffff) {
+	if ((frag == NULL) && *loc == 0xffff) {
 		goto drop;
 	}
 
 	reass = reassembly_get(id, &NET_IPV6_HDR(pkt)->src,
 			       &NET_IPV6_HDR(pkt)->dst);
-	if (!reass) {
+	if (reass == NULL) {
 		NET_DBG("Cannot get reassembly slot, dropping pkt %p", pkt);
 		goto drop;
 	}
@@ -605,7 +605,7 @@ accept:
 	return NET_OK;
 
 drop:
-	if (reass) {
+	if (reass != NULL) {
 		if (reassembly_cancel(reass->id, &reass->src, &reass->dst)) {
 			return NET_OK;
 		}
@@ -638,7 +638,7 @@ static int send_ipv6_fragment(struct net_if *iface,
 	int ret;
 
 	ipv6 = net_pkt_clone(pkt, BUF_ALLOC_TIMEOUT);
-	if (!ipv6) {
+	if (ipv6 == NULL) {
 		NET_DBG("Cannot clone %p", ipv6);
 		return -ENOMEM;
 	}
@@ -649,7 +649,7 @@ static int send_ipv6_fragment(struct net_if *iface,
 	temp = net_pkt_write_u8_timeout(ipv6, ipv6->frags, next_hdr_idx, &pos,
 					NET_IPV6_NEXTHDR_FRAG,
 					BUF_ALLOC_TIMEOUT);
-	if (!temp) {
+	if (temp == NULL) {
 		if (pos == 0xffff) {
 			ret = -EINVAL;
 		} else {
@@ -701,7 +701,7 @@ static int send_ipv6_fragment(struct net_if *iface,
 	 * "rest" of the packet will be sent in next iteration.
 	 */
 	temp = ipv6->frags;
-	while (1) {
+	while (true) {
 		if (!temp->frags) {
 			temp->frags = frag;
 			break;
@@ -745,7 +745,7 @@ static int send_ipv6_fragment(struct net_if *iface,
 	return 0;
 
 fail:
-	if (ipv6) {
+	if (ipv6 != NULL) {
 		net_pkt_unref(ipv6);
 	}
 
@@ -774,7 +774,7 @@ int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 	 * the large pkt here and do the fragmenting with the clone.
 	 */
 	clone = net_pkt_clone(pkt, BUF_ALLOC_TIMEOUT);
-	if (!clone) {
+	if (clone == NULL) {
 		NET_DBG("Cannot clone %p", pkt);
 		return -ENOMEM;
 	}
@@ -788,13 +788,13 @@ int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 	}
 
 	temp = net_frag_read_u8(pkt->frags, next_hdr_idx, &pos, &next_hdr);
-	if (!temp && pos == 0xffff) {
+	if ((temp == NULL) && pos == 0xffff) {
 		ret = -EINVAL;
 		goto fail;
 	}
 
 	temp = net_frag_read_u8(pkt->frags, last_hdr_idx, &pos, &last_hdr);
-	if (!temp && pos == 0xffff) {
+	if ((temp == NULL) && pos == 0xffff) {
 		ret = -EINVAL;
 		goto fail;
 	}
@@ -823,7 +823,7 @@ int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 		goto fail;
 	}
 
-	while (rest) {
+	while (rest != NULL) {
 		ret = send_ipv6_fragment(iface, pkt, &rest, ipv6_hdrs_len,
 					 fit_len, frag_offset, next_hdr,
 					 next_hdr_idx, last_hdr, last_hdr_idx,
@@ -843,7 +843,7 @@ int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 fail:
 	net_pkt_unref(pkt);
 
-	if (rest) {
+	if (rest != NULL) {
 		net_buf_unref(rest);
 	}
 

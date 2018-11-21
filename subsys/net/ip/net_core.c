@@ -264,7 +264,7 @@ int net_send_data(struct net_pkt *pkt)
 {
 	int status;
 
-	if (!pkt || !pkt->frags) {
+	if ((pkt == NULL) || !pkt->frags) {
 		return -ENODATA;
 	}
 
@@ -356,7 +356,7 @@ static void net_queue_rx(struct net_if *iface, struct net_pkt *pkt)
 /* Called by driver when an IP packet has been received */
 int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 {
-	if (!pkt || !iface) {
+	if ((pkt == NULL) || !iface) {
 		return -EINVAL;
 	}
 

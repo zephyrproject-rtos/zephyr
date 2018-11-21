@@ -31,7 +31,7 @@ static bool match_path_uri(const char * const *path,
 	const char * const *p = NULL;
 	int i, j, k, plen;
 
-	if (!path) {
+	if (path == NULL) {
 		return false;
 	}
 
@@ -125,11 +125,11 @@ static bool match_queries_resource(const struct coap_resource *resource,
 		return true;
 	}
 
-	if (meta && meta->attributes) {
+	if ((meta != NULL) && meta->attributes) {
 		attributes = meta->attributes;
 	}
 
-	if (!attributes) {
+	if (attributes == NULL) {
 		return false;
 	}
 
@@ -213,7 +213,7 @@ static int format_uri(const char * const *path, struct net_pkt *pkt,
 	const char * const *p;
 	bool res;
 
-	if (!path) {
+	if (path == NULL) {
 		return -EINVAL;
 	}
 
@@ -283,7 +283,7 @@ static int format_attributes(const char * const *attributes,
 	const char * const *attr;
 	bool res;
 
-	if (!attributes) {
+	if (attributes == NULL) {
 		goto terminator;
 	}
 
@@ -353,7 +353,7 @@ static int format_resource(const struct coap_resource *resource,
 		return 0;
 	}
 
-	if (meta && meta->attributes) {
+	if ((meta != NULL) && meta->attributes) {
 		attributes = meta->attributes;
 	}
 
@@ -370,7 +370,7 @@ int clear_more_flag(struct coap_packet *cpkt)
 	u8_t len;
 
 	frag = net_frag_skip(cpkt->frag, 0, &offset, cpkt->hdr_len);
-	if (!frag && offset == 0xffff) {
+	if ((frag == NULL) && offset == 0xffff) {
 		return -EINVAL;
 	}
 
@@ -378,9 +378,9 @@ int clear_more_flag(struct coap_packet *cpkt)
 	/* Note: coap_well_known_core_get() added Option (delta and len) witho
 	 * out any extended options so parsing will not consider at the moment.
 	 */
-	while (1) {
+	while (true) {
 		frag = net_frag_read_u8(frag, offset, &offset, &opt);
-		if (!frag && offset == 0xffff) {
+		if ((frag == NULL) && offset == 0xffff) {
 			return -EINVAL;
 		}
 
@@ -392,7 +392,7 @@ int clear_more_flag(struct coap_packet *cpkt)
 		}
 
 		frag = net_frag_skip(frag, offset, &offset, len);
-		if (!frag && offset == 0xffff) {
+		if ((frag == NULL) && offset == 0xffff) {
 			return -EINVAL;
 		}
 	}
@@ -402,7 +402,7 @@ int clear_more_flag(struct coap_packet *cpkt)
 	 */
 	if (len > 1) {
 		frag = net_frag_skip(frag, offset, &offset, len - 1);
-		if (!frag && offset == 0xffff) {
+		if ((frag == NULL) && offset == 0xffff) {
 			return -EINVAL;
 		}
 	}
@@ -526,7 +526,7 @@ static int format_uri(const char * const *path, struct net_pkt *pkt)
 	char *prefix = "</";
 	bool res;
 
-	if (!path) {
+	if (path == NULL) {
 		return -EINVAL;
 	}
 
@@ -544,7 +544,7 @@ static int format_uri(const char * const *path, struct net_pkt *pkt)
 		}
 
 		p++;
-		if (*p) {
+		if (*p != NULL) {
 			res = net_pkt_append_u8_timeout(pkt, (u8_t) '/',
 							PKT_WAIT_TIME);
 			if (!res) {
@@ -567,7 +567,7 @@ static int format_attributes(const char * const *attributes,
 	const char * const *attr;
 	bool res;
 
-	if (!attributes) {
+	if (attributes == NULL) {
 		goto terminator;
 	}
 
@@ -579,7 +579,7 @@ static int format_attributes(const char * const *attributes,
 		}
 
 		attr++;
-		if (*attr) {
+		if (*attr != NULL) {
 			res = net_pkt_append_u8_timeout(pkt, (u8_t) ';',
 							PKT_WAIT_TIME);
 			if (!res) {
@@ -609,7 +609,7 @@ static int format_resource(const struct coap_resource *resource,
 		return r;
 	}
 
-	if (meta && meta->attributes) {
+	if ((meta != NULL) && meta->attributes) {
 		attributes = meta->attributes;
 	}
 

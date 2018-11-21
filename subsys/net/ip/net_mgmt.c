@@ -224,14 +224,14 @@ static void mgmt_thread(void)
 {
 	struct mgmt_event_entry *mgmt_event;
 
-	while (1) {
+	while (true) {
 		k_sem_take(&network_event, K_FOREVER);
 		k_sem_take(&net_mgmt_lock, K_FOREVER);
 
 		NET_DBG("Handling events, forwarding it relevantly");
 
 		mgmt_event = mgmt_pop_event();
-		if (!mgmt_event) {
+		if (mgmt_event == NULL) {
 			/* System is over-loaded?
 			 * At this point we have most probably notified
 			 * more events than we could handle
@@ -271,7 +271,7 @@ static int mgmt_event_wait_call(struct net_if *iface,
 	};
 	int ret;
 
-	if (iface) {
+	if (iface != NULL) {
 		sync_data.iface = iface;
 	}
 
@@ -284,16 +284,16 @@ static int mgmt_event_wait_call(struct net_if *iface,
 		ret = -ETIMEDOUT;
 	} else {
 		if (!ret) {
-			if (raised_event) {
+			if (raised_event != NULL) {
 				*raised_event = sync.raised_event;
 			}
 
-			if (event_iface) {
+			if (event_iface != NULL) {
 				*event_iface = sync_data.iface;
 			}
 
 #ifdef CONFIG_NET_MGMT_EVENT_INFO
-			if (info) {
+			if (info != NULL) {
 				*info = sync.info;
 			}
 #endif /* CONFIG_NET_MGMT_EVENT_INFO */

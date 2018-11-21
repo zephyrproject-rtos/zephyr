@@ -51,15 +51,16 @@ static int cmd_auth_pincode(const struct shell *shell,
 	struct bt_conn *conn;
 	u8_t max = 16;
 
-	if (default_conn) {
+	if (default_conn != NULL) {
 		conn = default_conn;
-	} else if (pairing_conn) {
-		conn = pairing_conn;
-	} else {
-		conn = NULL;
+	} else {if (pairing_conn != NULL) {
+			conn = pairing_conn;
+		} else {
+			conn = NULL;
+		}
 	}
 
-	if (!conn) {
+	if (conn == NULL) {
 		shell_print(shell, "Not connected");
 		return 0;
 	}
@@ -502,7 +503,7 @@ static int cmd_sdp_find_record(const struct shell *shell,
 	int res;
 	const char *action;
 
-	if (!default_conn) {
+	if (default_conn == NULL) {
 		shell_print(shell, "Not connected");
 		return 0;
 	}

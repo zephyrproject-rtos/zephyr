@@ -134,7 +134,7 @@ static const char *iface2str(struct net_if *iface, const char **extra)
 {
 #ifdef CONFIG_NET_L2_IEEE802154
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(IEEE802154)) {
-		if (extra) {
+		if (extra != NULL) {
 			*extra = "=============";
 		}
 
@@ -144,7 +144,7 @@ static const char *iface2str(struct net_if *iface, const char **extra)
 
 #ifdef CONFIG_NET_L2_ETHERNET
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
-		if (extra) {
+		if (extra != NULL) {
 			*extra = "========";
 		}
 
@@ -154,7 +154,7 @@ static const char *iface2str(struct net_if *iface, const char **extra)
 
 #ifdef CONFIG_NET_L2_DUMMY
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(DUMMY)) {
-		if (extra) {
+		if (extra != NULL) {
 			*extra = "=====";
 		}
 
@@ -164,7 +164,7 @@ static const char *iface2str(struct net_if *iface, const char **extra)
 
 #ifdef CONFIG_NET_L2_BT
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(BLUETOOTH)) {
-		if (extra) {
+		if (extra != NULL) {
 			*extra = "=========";
 		}
 
@@ -174,7 +174,7 @@ static const char *iface2str(struct net_if *iface, const char **extra)
 
 #ifdef CONFIG_NET_OFFLOAD
 	if (net_if_is_ip_offloaded(iface)) {
-		if (extra) {
+		if (extra != NULL) {
 			*extra = "==========";
 		}
 
@@ -182,7 +182,7 @@ static const char *iface2str(struct net_if *iface, const char **extra)
 	}
 #endif
 
-	if (extra) {
+	if (extra != NULL) {
 		*extra = "==============";
 	}
 
@@ -404,14 +404,14 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	}
 
 	router = net_if_ipv6_router_find_default(iface, NULL);
-	if (router) {
+	if (router != NULL) {
 		PR("IPv6 default router :\n");
 		PR("\t%s%s\n",
 		   net_sprint_ipv6_addr(&router->address.in6_addr),
 		   router->is_infinite ? " infinite" : "");
 	}
 
-	if (ipv6) {
+	if (ipv6 != NULL) {
 		PR("IPv6 hop limit           : %d\n",
 		   ipv6->hop_limit);
 		PR("IPv6 base reachable time : %d\n",
@@ -484,7 +484,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		PR("\t<none>\n");
 	}
 
-	if (ipv4) {
+	if (ipv4 != NULL) {
 		PR("IPv4 gateway : %s\n",
 		   net_sprint_ipv4_addr(&ipv4->gw));
 		PR("IPv4 netmask : %s\n",
@@ -825,7 +825,7 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET) && \
 					defined(CONFIG_NET_STATISTICS_USER_API)
-	if (iface && net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
+	if ((iface != NULL) && net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
 		struct net_stats_eth eth_data;
 		int ret;
 
@@ -1013,15 +1013,15 @@ static void tcp_sent_list_cb(struct net_tcp *tcp, void *user_data)
 			       pkt, pkt->ref, net_pkt_get_len(pkt));
 		}
 
-		if (frag) {
+		if (frag != NULL) {
 			PR("->");
 		}
 
-		while (frag) {
+		while (frag != NULL) {
 			PR("%p[%d/%d]", frag, frag->ref, frag->len);
 
 			frag = frag->frags;
-			if (frag) {
+			if (frag != NULL) {
 				PR("->");
 			}
 		}
@@ -1057,16 +1057,16 @@ static void ipv6_frag_cb(struct net_ipv6_reassembly *reass,
 	   src, net_sprint_ipv6_addr(&reass->dst));
 
 	for (i = 0; i < NET_IPV6_FRAGMENTS_MAX_PKT; i++) {
-		if (reass->pkt[i]) {
+		if (reass->pkt[i] != NULL) {
 			struct net_buf *frag = reass->pkt[i]->frags;
 
 			PR("[%d] pkt %p->", i, reass->pkt[i]);
 
-			while (frag) {
+			while (frag != NULL) {
 				PR("%p", frag);
 
 				frag = frag->frags;
-				if (frag) {
+				if (frag != NULL) {
 					PR("->");
 				}
 			}
@@ -1096,18 +1096,18 @@ static void allocs_cb(struct net_pkt *pkt,
 	if (in_use) {
 		str = "used";
 	} else {
-		if (func_alloc) {
+		if (func_alloc != NULL) {
 			str = "free";
 		} else {
 			str = "avail";
 		}
 	}
 
-	if (buf) {
+	if (buf != NULL) {
 		goto buf;
 	}
 
-	if (func_alloc) {
+	if (func_alloc != NULL) {
 		if (in_use) {
 			PR("%p/%d\t%5s\t%5s\t%s():%d\n",
 			   pkt, pkt->ref, str,
@@ -1123,7 +1123,7 @@ static void allocs_cb(struct net_pkt *pkt,
 
 	return;
 buf:
-	if (func_alloc) {
+	if (func_alloc != NULL) {
 		struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
 
 		if (in_use) {
@@ -1589,7 +1589,7 @@ static void dns_result_cb(enum dns_resolve_status status,
 		return;
 	}
 
-	if (status == DNS_EAI_INPROGRESS && info) {
+	if (status == DNS_EAI_INPROGRESS && (info != NULL)) {
 		char addr[NET_IPV6_ADDR_LEN];
 
 		if (*first) {
@@ -1700,7 +1700,7 @@ static int cmd_net_dns_cancel(const struct shell *shell, size_t argc,
 
 #if defined(CONFIG_DNS_RESOLVER)
 	ctx = dns_resolve_get_default();
-	if (!ctx) {
+	if (ctx == NULL) {
 		PR_WARNING("No default DNS context found.\n");
 		return -ENOEXEC;
 	}
@@ -1745,16 +1745,16 @@ static int cmd_net_dns_query(const struct shell *shell, size_t argc,
 	int ret, arg = 1;
 
 	host = argv[arg++];
-	if (!host) {
+	if (host == NULL) {
 		PR_WARNING("Hostname not specified.\n");
 		return -ENOEXEC;
 	}
 
-	if (argv[arg]) {
+	if (argv[arg] != NULL) {
 		type = argv[arg];
 	}
 
-	if (type) {
+	if (type != NULL) {
 		if (strcmp(type, "A") == 0) {
 			qtype = DNS_QUERY_TYPE_A;
 			PR("IPv4 address type\n");
@@ -1798,7 +1798,7 @@ static int cmd_net_dns(const struct shell *shell, size_t argc, char *argv[])
 	}
 
 #if defined(CONFIG_DNS_RESOLVER)
-	if (argv[1]) {
+	if (argv[1] != NULL) {
 		/* So this is a query then */
 		cmd_net_dns_query(shell, argc, argv);
 		return 0;
@@ -1806,7 +1806,7 @@ static int cmd_net_dns(const struct shell *shell, size_t argc, char *argv[])
 
 	/* DNS status */
 	ctx = dns_resolve_get_default();
-	if (!ctx) {
+	if (ctx == NULL) {
 		PR_WARNING("No default DNS context found.\n");
 		return -ENOEXEC;
 	}
@@ -2381,7 +2381,7 @@ static int cmd_net_gptp(const struct shell *shell, size_t argc, char *argv[])
 	}
 
 #if defined(CONFIG_NET_GPTP)
-	if (argv[arg]) {
+	if (argv[arg] != NULL) {
 		cmd_net_gptp_port(shell, argc, argv);
 	} else {
 		struct net_shell_user_data user_data;
@@ -2555,7 +2555,7 @@ static int get_iface_idx(const struct shell *shell, char *index_str)
 	char *endptr;
 	int idx;
 
-	if (!index_str) {
+	if (index_str == NULL) {
 		PR_WARNING("Interface index is missing.\n");
 		return -EINVAL;
 	}
@@ -2591,7 +2591,7 @@ static int cmd_net_iface_up(const struct shell *shell, size_t argc,
 	}
 
 	iface = net_if_get_by_index(idx);
-	if (!iface) {
+	if (iface == NULL) {
 		PR_WARNING("No such interface in index %d\n", idx);
 		return -ENOEXEC;
 	}
@@ -2629,7 +2629,7 @@ static int cmd_net_iface_down(const struct shell *shell, size_t argc,
 	}
 
 	iface = net_if_get_by_index(idx);
-	if (!iface) {
+	if (iface == NULL) {
 		PR_WARNING("No such interface in index %d\n", idx);
 		return -ENOEXEC;
 	}
@@ -2665,7 +2665,7 @@ static void address_lifetime_cb(struct net_if *iface, void *user_data)
 	       iface2str(iface, &extra));
 	PR("==========================================%s\n", extra);
 
-	if (!ipv6) {
+	if (ipv6 == NULL) {
 		PR("No IPv6 config found for this interface.\n");
 		return;
 	}
@@ -2691,7 +2691,7 @@ static void address_lifetime_cb(struct net_if *iface, void *user_data)
 
 		prefix = net_if_ipv6_prefix_get(iface,
 					   &ipv6->unicast[i].address.in6_addr);
-		if (prefix) {
+		if (prefix != NULL) {
 			prefix_len = prefix->len;
 		} else {
 			prefix_len = 128;
@@ -2797,14 +2797,14 @@ static int cmd_net_iface(const struct shell *shell, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	if (argv[1]) {
+	if (argv[1] != NULL) {
 		idx = get_iface_idx(shell, argv[1]);
 		if (idx < 0) {
 			return -ENOEXEC;
 		}
 
 		iface = net_if_get_by_index(idx);
-		if (!iface) {
+		if (iface == NULL) {
 			PR_WARNING("No such interface in index %d\n", idx);
 			return -ENOEXEC;
 		}
@@ -2837,7 +2837,7 @@ static bool slab_pool_found_already(struct ctx_info *info,
 	int i;
 
 	for (i = 0; i < CONFIG_NET_MAX_CONTEXTS; i++) {
-		if (slab) {
+		if (slab != NULL) {
 			if (info->tx_slabs[i] == slab) {
 				return true;
 			}
@@ -3154,13 +3154,13 @@ static int _ping_ipv6(const struct shell *shell, char *host)
 	net_icmpv6_register_handler(&ping6_handler);
 
 	nbr = net_ipv6_nbr_lookup(NULL, &ipv6_target);
-	if (nbr) {
+	if (nbr != NULL) {
 		iface = nbr->iface;
 	}
 
 #if defined(CONFIG_NET_ROUTE)
 	route = net_route_lookup(NULL, &ipv6_target);
-	if (route) {
+	if (route != NULL) {
 		iface = route->iface;
 	}
 #endif
@@ -3254,7 +3254,7 @@ static int cmd_net_ping(const struct shell *shell, size_t argc, char *argv[])
 
 	host = argv[1];
 
-	if (!host) {
+	if (host == NULL) {
 		PR_WARNING("Target host missing\n");
 		return -ENOEXEC;
 	}
@@ -3354,12 +3354,12 @@ static void rpl_parent(struct net_rpl_parent *parent, void *user_data)
 
 	(*count)++;
 
-	if (parent->dag) {
+	if (parent->dag != NULL) {
 		struct net_ipv6_nbr_data *data;
 		char addr[NET_IPV6_ADDR_LEN];
 
 		data = net_rpl_get_ipv6_nbr_data(parent);
-		if (data) {
+		if (data != NULL) {
 			snprintk(addr, sizeof(addr), "%s",
 				 net_sprint_ipv6_addr(&data->addr));
 		} else {
@@ -3472,7 +3472,7 @@ static int cmd_net_rpl(const struct shell *shell, size_t argc, char *argv[])
 	PR("==============\n");
 
 	instance = net_rpl_get_default_instance();
-	if (!instance) {
+	if (instance == NULL) {
 		PR_WARNING("No default RPL instance found.\n");
 		return -ENOEXEC;
 	}
@@ -3480,7 +3480,7 @@ static int cmd_net_rpl(const struct shell *shell, size_t argc, char *argv[])
 	PR("Default instance (id %d) : %p (%s)\n", instance->instance_id,
 	       instance, instance->is_used ? "active" : "disabled");
 
-	if (instance->default_route) {
+	if (instance->default_route != NULL) {
 		PR("Default route   : %s\n",
 		       net_sprint_ipv6_addr(
 			       &instance->default_route->address.in6_addr));
@@ -3678,7 +3678,7 @@ static int cmd_net_stats_iface(const struct shell *shell, size_t argc,
 	}
 
 	iface = net_if_get_by_index(idx);
-	if (!iface) {
+	if (iface == NULL) {
 		PR_WARNING("No such interface in index %d\n", idx);
 		return -ENOEXEC;
 	}
@@ -3839,7 +3839,7 @@ static void tcp_connect(const struct shell *shell, char *host, u16_t port,
 		addrlen = sizeof(struct sockaddr_in6);
 
 		nbr = net_ipv6_nbr_lookup(NULL, &net_sin6(&addr)->sin6_addr);
-		if (nbr) {
+		if (nbr != NULL) {
 			iface = nbr->iface;
 		}
 
@@ -3883,7 +3883,7 @@ static void tcp_connect(const struct shell *shell, char *host, u16_t port,
 
 			nbr = net_ipv6_nbr_lookup(NULL,
 						  &net_sin6(&addr)->sin6_addr);
-			if (nbr) {
+			if (nbr != NULL) {
 				iface = nbr->iface;
 			}
 
@@ -3947,7 +3947,7 @@ static int cmd_net_tcp_connect(const struct shell *shell, size_t argc,
 
 #if defined(CONFIG_NET_TCP)
 	/* tcp connect <ip> port */
-	if (tcp_ctx && net_context_is_used(tcp_ctx)) {
+	if ((tcp_ctx != NULL) && net_context_is_used(tcp_ctx)) {
 		PR("Already connected\n");
 		return -ENOEXEC;
 	}
@@ -3995,7 +3995,7 @@ static int cmd_net_tcp_send(const struct shell *shell, size_t argc,
 
 #if defined(CONFIG_NET_TCP)
 	/* tcp send <data> */
-	if (!tcp_ctx || !net_context_is_used(tcp_ctx)) {
+	if ((tcp_ctx == NULL) || !net_context_is_used(tcp_ctx)) {
 		PR_WARNING("Not connected\n");
 		return -ENOEXEC;
 	}
@@ -4006,7 +4006,7 @@ static int cmd_net_tcp_send(const struct shell *shell, size_t argc,
 	}
 
 	pkt = net_pkt_get_tx(tcp_ctx, TCP_TIMEOUT);
-	if (!pkt) {
+	if (pkt == NULL) {
 		PR_WARNING("Out of pkts, msg cannot be sent.\n");
 		return -ENOEXEC;
 	}
@@ -4050,7 +4050,7 @@ static int cmd_net_tcp_close(const struct shell *shell, size_t argc,
 
 #if defined(CONFIG_NET_TCP)
 	/* tcp close */
-	if (!tcp_ctx || !net_context_is_used(tcp_ctx)) {
+	if ((tcp_ctx == NULL) || !net_context_is_used(tcp_ctx)) {
 		PR_WARNING("Not connected\n");
 		return -ENOEXEC;
 	}
@@ -4213,7 +4213,7 @@ static int cmd_net_vlan_add(const struct shell *shell, size_t argc,
 	}
 
 	iface = net_if_get_by_index(iface_idx);
-	if (!iface) {
+	if (iface == NULL) {
 		PR_WARNING("Network interface index %d is invalid.\n",
 			   iface_idx);
 		goto usage;
@@ -4347,7 +4347,7 @@ static char *set_iface_index_buffer(size_t idx)
 {
 	struct net_if *iface = net_if_get_by_index(idx);
 
-	if (!iface) {
+	if (iface == NULL) {
 		return NULL;
 	}
 
@@ -4360,7 +4360,7 @@ static char *set_iface_index_help(size_t idx)
 {
 	struct net_if *iface = net_if_get_by_index(idx);
 
-	if (!iface) {
+	if (iface == NULL) {
 		return NULL;
 	}
 

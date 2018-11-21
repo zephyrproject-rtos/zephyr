@@ -105,7 +105,7 @@ static int net_rpl_mrhof_neighbor_link_cb(struct net_if *iface,
 	u16_t new_etx;
 
 	data = net_rpl_get_ipv6_nbr_data(parent);
-	if (!data) {
+	if (data == NULL) {
 		/* No neighbor data for this parent,
 		 * something bad has occurred.
 		 */
@@ -164,17 +164,17 @@ static u16_t calculate_path_metric(struct net_rpl_parent *parent)
 	struct net_ipv6_nbr_data *data;
 	struct net_nbr *nbr;
 
-	if (!parent) {
+	if (parent == NULL) {
 		return MRHOF_MAX_PATH_COST * NET_RPL_MC_ETX_DIVISOR;
 	}
 
 	nbr = net_rpl_get_nbr(parent);
-	if (!nbr) {
+	if (nbr == NULL) {
 		return MRHOF_MAX_PATH_COST * NET_RPL_MC_ETX_DIVISOR;
 	}
 
 	data = net_rpl_get_ipv6_nbr_data(parent);
-	if (!data) {
+	if (data == NULL) {
 		/* No neighbor data for this parent,
 		 * something bad has occurred.
 		 */
@@ -264,7 +264,7 @@ static u16_t net_rpl_mrhof_calc_rank(struct net_rpl_parent *parent,
 	u16_t rank_increase = 0;
 	struct net_ipv6_nbr_data *data;
 
-	if (!parent) {
+	if (parent == NULL) {
 		return NET_RPL_INFINITE_RANK;
 	}
 

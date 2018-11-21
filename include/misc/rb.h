@@ -180,8 +180,8 @@ struct rbnode *_rb_foreach_next(struct rbtree *tree, struct _rb_foreach *f);
  */
 #define RB_FOR_EACH_CONTAINER(tree, node, field)			\
 	for (struct _rb_foreach __f = _RB_FOREACH_INIT(tree, node);	\
-	     (node = CONTAINER_OF(_rb_foreach_next(tree, &__f),		\
-				  __typeof__(*(node)), field));		\
+	     ({node = CONTAINER_OF(_rb_foreach_next(tree, &__f),	\
+				   __typeof__(*(node)), field); node != NULL;}); \
 	     /**/)
 
 #endif /* ZEPHYR_INCLUDE_MISC_RB_H_ */

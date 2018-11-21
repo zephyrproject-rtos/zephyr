@@ -37,12 +37,12 @@ static struct net_pkt *ipv4_autoconf_prepare_arp(struct net_if *iface)
 
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
 				     BUF_ALLOC_TIMEOUT);
-	if (!pkt) {
+	if (pkt == NULL) {
 		goto fail;
 	}
 
 	frag = net_pkt_get_frag(pkt, BUF_ALLOC_TIMEOUT);
-	if (!frag) {
+	if (frag == NULL) {
 		goto fail;
 	}
 
@@ -55,7 +55,7 @@ static struct net_pkt *ipv4_autoconf_prepare_arp(struct net_if *iface)
 			       &cfg->ipv4auto.current_ip);
 
 fail:
-	if (pkt) {
+	if (pkt != NULL) {
 		net_pkt_unref(pkt);
 	}
 
@@ -67,7 +67,7 @@ static void ipv4_autoconf_send_probe(struct net_if_ipv4_autoconf *ipv4auto)
 	struct net_pkt *pkt;
 
 	pkt = ipv4_autoconf_prepare_arp(ipv4auto->iface);
-	if (!pkt) {
+	if (pkt == NULL) {
 		NET_DBG("Failed to prepare probe %p", ipv4auto->iface);
 		return;
 	}
@@ -88,7 +88,7 @@ static void ipv4_autoconf_send_announcement(
 	struct net_pkt *pkt;
 
 	pkt = ipv4_autoconf_prepare_arp(ipv4auto->iface);
-	if (!pkt) {
+	if (pkt == NULL) {
 		NET_DBG("Failed to prepare announcement %p", ipv4auto->iface);
 		return;
 	}
@@ -110,7 +110,7 @@ enum net_verdict net_ipv4_autoconf_input(struct net_if *iface,
 	struct net_arp_hdr *arp_hdr;
 
 	cfg = net_if_get_config(iface);
-	if (!cfg) {
+	if (cfg == NULL) {
 		NET_DBG("Interface %p configuration missing!", iface);
 		return NET_DROP;
 	}
@@ -350,7 +350,7 @@ void net_ipv4_autoconf_start(struct net_if *iface)
 	struct net_if_config *cfg;
 
 	cfg = net_if_get_config(iface);
-	if (!cfg) {
+	if (cfg == NULL) {
 		return;
 	}
 
@@ -375,7 +375,7 @@ void net_ipv4_autoconf_reset(struct net_if *iface)
 	struct net_if_config *cfg;
 
 	cfg = net_if_get_config(iface);
-	if (!cfg) {
+	if (cfg == NULL) {
 		return;
 	}
 

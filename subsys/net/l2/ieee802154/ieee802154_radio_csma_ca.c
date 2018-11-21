@@ -44,7 +44,7 @@ loop:
 			k_busy_wait(bo_n * 20);
 		}
 
-		while (1) {
+		while (true) {
 			if (!ieee802154_cca(iface)) {
 				break;
 			}

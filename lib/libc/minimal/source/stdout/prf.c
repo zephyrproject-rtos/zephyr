@@ -93,7 +93,7 @@ static int _to_octal(char *buf, uint32_t value, int alt_form, int precision)
 
 	if (alt_form) {
 		*buf++ = '0';
-		if (!value) {
+		if (value == 0) {
 			/* So we don't return "00" for a value == 0. */
 			*buf++ = 0;
 			return 1;
@@ -350,7 +350,7 @@ static int _to_float(char *buf, uint64_t double_temp, int c,
 	}
 
 	fract += ltemp;
-	if ((fract >> 32) & 0xF0000000) {
+	if (((fract >> 32) & 0xF0000000) != 0) {
 		_ldiv5(&fract);
 		_rlrshift(&fract);
 		decexp++;

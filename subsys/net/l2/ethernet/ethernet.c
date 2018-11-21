@@ -357,12 +357,12 @@ struct net_eth_hdr *net_eth_fill_header(struct ethernet_context *ctx,
 		hdr_vlan = (struct net_eth_vlan_hdr *)(frag->data -
 						       net_pkt_ll_reserve(pkt));
 
-		if (dst && ((u8_t *)&hdr_vlan->dst != dst)) {
+		if ((dst != NULL) && ((u8_t *)&hdr_vlan->dst != dst)) {
 			memcpy(&hdr_vlan->dst, dst,
 			       sizeof(struct net_eth_addr));
 		}
 
-		if (src && ((u8_t *)&hdr_vlan->src != src)) {
+		if ((src != NULL) && ((u8_t *)&hdr_vlan->src != src)) {
 			memcpy(&hdr_vlan->src, src,
 			       sizeof(struct net_eth_addr));
 		}
@@ -383,11 +383,11 @@ struct net_eth_hdr *net_eth_fill_header(struct ethernet_context *ctx,
 
 	hdr = (struct net_eth_hdr *)(frag->data - net_pkt_ll_reserve(pkt));
 
-	if (dst && ((u8_t *)&hdr->dst != dst)) {
+	if ((dst != NULL) && ((u8_t *)&hdr->dst != dst)) {
 		memcpy(&hdr->dst, dst, sizeof(struct net_eth_addr));
 	}
 
-	if (src && ((u8_t *)&hdr->src != src)) {
+	if ((src != NULL) && ((u8_t *)&hdr->src != src)) {
 		memcpy(&hdr->src, src, sizeof(struct net_eth_addr));
 	}
 
@@ -440,7 +440,7 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 		if (!is_ipv4_auto_arp_msg(pkt)) {
 			arp_pkt = net_arp_prepare(pkt, &NET_IPV4_HDR(pkt)->dst,
 						  NULL);
-			if (!arp_pkt) {
+			if (arp_pkt == NULL) {
 				return NET_DROP;
 			}
 
@@ -608,7 +608,7 @@ struct net_if *net_eth_get_vlan_iface(struct net_if *iface, u16_t tag)
 
 	for (i = 0; i < CONFIG_NET_VLAN_COUNT; i++) {
 		if (ctx->vlan[i].tag == NET_VLAN_TAG_UNSPEC) {
-			if (!first_non_vlan_iface) {
+			if (first_non_vlan_iface == NULL) {
 				first_non_vlan_iface = ctx->vlan[i].iface;
 			}
 
@@ -750,7 +750,7 @@ int net_eth_vlan_enable(struct net_if *iface, u16_t tag)
 	}
 
 	vlan = get_vlan(ctx, iface, tag);
-	if (vlan) {
+	if (vlan != NULL) {
 		return -EALREADY;
 	}
 
@@ -803,7 +803,7 @@ int net_eth_vlan_disable(struct net_if *iface, u16_t tag)
 	}
 
 	vlan = get_vlan(ctx, iface, tag);
-	if (!vlan) {
+	if (vlan == NULL) {
 		return -ESRCH;
 	}
 
@@ -956,7 +956,7 @@ void ethernet_init(struct net_if *iface)
 
 	ctx->ethernet_l2_flags = NET_L2_MULTICAST;
 
-	if (net_eth_get_hw_capabilities(iface) & ETHERNET_PROMISC_MODE) {
+	if ((net_eth_get_hw_capabilities(iface) & ETHERNET_PROMISC_MODE) != 0) {
 		ctx->ethernet_l2_flags |= NET_L2_PROMISC_MODE;
 	}
 

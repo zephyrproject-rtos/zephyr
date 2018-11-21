@@ -51,7 +51,7 @@ struct bt_a2dp *get_new_connection(struct bt_conn *conn)
 
 	free = A2DP_NO_SPACE;
 
-	if (!conn) {
+	if (conn == NULL) {
 		BT_ERR("Invalid Input (err: %d)", -EINVAL);
 		return NULL;
 	}
@@ -85,7 +85,7 @@ int a2dp_accept(struct bt_conn *conn, struct bt_avdtp **session)
 	struct bt_a2dp *a2dp_conn;
 
 	a2dp_conn = get_new_connection(conn);
-	if (!a2dp_conn) {
+	if (a2dp_conn == NULL) {
 		return -ENOMEM;
 	}
 
@@ -127,7 +127,7 @@ struct bt_a2dp *bt_a2dp_connect(struct bt_conn *conn)
 	int err;
 
 	a2dp_conn = get_new_connection(conn);
-	if (!a2dp_conn) {
+	if (a2dp_conn == NULL) {
 		BT_ERR("Cannot allocate memory");
 		return NULL;
 	}

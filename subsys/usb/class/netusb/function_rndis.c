@@ -323,7 +323,7 @@ void rndis_clean(void)
 {
 	LOG_DBG("");
 
-	if (rndis.in_pkt) {
+	if (rndis.in_pkt != NULL) {
 		net_pkt_unref(rndis.in_pkt);
 
 		rndis.in_pkt = NULL;
@@ -396,7 +396,7 @@ static void rndis_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 		}
 
 		pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
-		if (!pkt) {
+		if (pkt == NULL) {
 			/* In a case of low memory skip the whole packet
 			 * hoping to get buffers for later ones
 			 */
@@ -410,7 +410,7 @@ static void rndis_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 		}
 
 		buf = net_pkt_get_frag(pkt, K_NO_WAIT);
-		if (!buf) {
+		if (buf == NULL) {
 			/* In a case of low memory skip the whole packet
 			 * hoping to get buffers for later ones
 			 */
@@ -559,7 +559,7 @@ static int rndis_init_handle(u8_t *data, u32_t len)
 	LOG_DBG("req_id 0x%x", cmd->req_id);
 
 	buf = net_buf_alloc(&rndis_tx_pool, K_NO_WAIT);
-	if (!buf) {
+	if (buf == NULL) {
 		LOG_ERR("Cannot get free buffer");
 		return -ENOMEM;
 	}
@@ -622,7 +622,7 @@ static int rndis_query_handle(u8_t *data, u32_t len)
 	u32_t object_id, buf_len = 0;
 
 	buf = net_buf_alloc(&rndis_tx_pool, K_NO_WAIT);
-	if (!buf) {
+	if (buf == NULL) {
 		LOG_ERR("Cannot get free buffer");
 		return -ENOMEM;
 	}
@@ -779,7 +779,7 @@ static int rndis_set_handle(u8_t *data, u32_t len)
 	}
 
 	buf = net_buf_alloc(&rndis_tx_pool, K_NO_WAIT);
-	if (!buf) {
+	if (buf == NULL) {
 		LOG_ERR("Cannot get free buffer");
 		return -ENOMEM;
 	}
@@ -835,7 +835,7 @@ static int rndis_reset_handle(u8_t *data, u32_t len)
 	struct net_buf *buf;
 
 	buf = net_buf_alloc(&rndis_tx_pool, K_NO_WAIT);
-	if (!buf) {
+	if (buf == NULL) {
 		LOG_ERR("Cannot get free buffer");
 		return -ENOMEM;
 	}
@@ -863,7 +863,7 @@ static int rndis_keepalive_handle(u8_t *data, u32_t len)
 	struct net_buf *buf;
 
 	buf = net_buf_alloc(&rndis_tx_pool, K_NO_WAIT);
-	if (!buf) {
+	if (buf == NULL) {
 		LOG_ERR("Cannot get free buffer");
 		return -ENOMEM;
 	}
@@ -889,7 +889,7 @@ static int queue_encapsulated_cmd(u8_t *data, u32_t len)
 	struct net_buf *buf;
 
 	buf = net_buf_alloc(&rndis_cmd_pool, K_NO_WAIT);
-	if (!buf) {
+	if (buf == NULL) {
 		LOG_ERR("Cannot get free buffer");
 		return -ENOMEM;
 	}
@@ -948,7 +948,7 @@ static int rndis_send_media_status(u32_t media_status)
 	LOG_DBG("status %u", media_status);
 
 	buf = net_buf_alloc(&rndis_tx_pool, K_NO_WAIT);
-	if (!buf) {
+	if (buf == NULL) {
 		LOG_ERR("Cannot get free buffer");
 		return -ENOMEM;
 	}
@@ -982,7 +982,7 @@ static int handle_encapsulated_rsp(u8_t **data, u32_t *len)
 	LOG_DBG("");
 
 	buf = net_buf_get(&rndis_tx_queue, K_NO_WAIT);
-	if (!buf) {
+	if (buf == NULL) {
 		LOG_ERR("Error getting response buffer");
 		*len = 0;
 		return -ENODATA;

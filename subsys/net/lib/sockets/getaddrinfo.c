@@ -62,7 +62,7 @@ static void dns_resolve_cb(enum dns_resolve_status status,
 	ai->ai_canonname = ai->_ai_canonname;
 	ai->ai_family = info->ai_family;
 
-	if (state->hints) {
+	if (state->hints != NULL) {
 		if (state->hints->ai_socktype) {
 			socktype = state->hints->ai_socktype;
 		}
@@ -91,11 +91,11 @@ int _impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 	int ret;
 	struct getaddrinfo_state ai_state;
 
-	if (hints) {
+	if (hints != NULL) {
 		family = hints->ai_family;
 	}
 
-	if (service) {
+	if (service != NULL) {
 		port = strtol(service, NULL, 10);
 		if (port < 1 || port > 65535) {
 			return DNS_EAI_NONAME;

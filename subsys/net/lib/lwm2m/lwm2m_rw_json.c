@@ -265,7 +265,7 @@ static size_t put_begin_ri(struct lwm2m_output_context *out,
 	struct json_out_formatter_data *fd;
 
 	fd = engine_get_out_user_data(out);
-	if (!fd) {
+	if (fd == NULL) {
 		return 0;
 	}
 
@@ -279,7 +279,7 @@ static size_t put_end_ri(struct lwm2m_output_context *out,
 	struct json_out_formatter_data *fd;
 
 	fd = engine_get_out_user_data(out);
-	if (!fd) {
+	if (fd == NULL) {
 		return 0;
 	}
 
@@ -296,7 +296,7 @@ static size_t put_json_prefix(struct lwm2m_output_context *out,
 	int len = 0;
 
 	fd = engine_get_out_user_data(out);
-	if (!fd) {
+	if (fd == NULL) {
 		return 0;
 	}
 
@@ -347,7 +347,7 @@ static size_t put_json_postfix(struct lwm2m_output_context *out)
 	struct json_out_formatter_data *fd;
 
 	fd = engine_get_out_user_data(out);
-	if (!fd) {
+	if (fd == NULL) {
 		return 0;
 	}
 
@@ -620,7 +620,7 @@ int do_write_op_json(struct lwm2m_engine_obj *obj,
 		}
 
 		if (mode == MODE_READY) {
-			if (!obj_inst) {
+			if (obj_inst == NULL) {
 				return -EINVAL;
 			}
 
@@ -630,7 +630,7 @@ int do_write_op_json(struct lwm2m_engine_obj *obj,
 			 * if obj_field is not found,
 			 * treat as an optional resource
 			 */
-			if (!obj_field) {
+			if (obj_field == NULL) {
 				/*
 				 * TODO: support BOOTSTRAP WRITE where optional
 				 * resources are ignored
@@ -659,7 +659,7 @@ int do_write_op_json(struct lwm2m_engine_obj *obj,
 				}
 			}
 
-			if (!res) {
+			if (res == NULL) {
 				return -ENOENT;
 			}
 

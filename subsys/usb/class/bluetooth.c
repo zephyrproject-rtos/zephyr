@@ -183,12 +183,12 @@ static void acl_read_cb(u8_t ep, int size, void *priv)
 		buf = NULL;
 	}
 
-	if (buf) {
+	if (buf != NULL) {
 		net_buf_unref(buf);
 	}
 
 	buf = net_buf_alloc(&acl_tx_pool, K_NO_WAIT);
-	if (!buf) {
+	if (buf == NULL) {
 		LOG_ERR("Cannot get free buffer\n");
 		return;
 	}
@@ -253,7 +253,7 @@ static int bluetooth_class_handler(struct usb_setup_packet *setup,
 	}
 
 	buf = net_buf_alloc(&tx_pool, K_NO_WAIT);
-	if (!buf) {
+	if (buf == NULL) {
 		LOG_ERR("Cannot get free buffer\n");
 		return -ENOMEM;
 	}

@@ -42,7 +42,7 @@ static int cmd_exchange_mtu(const struct shell *shell,
 {
 	int err;
 
-	if (!default_conn) {
+	if (default_conn == NULL) {
 		shell_print(shell, "Not connected");
 		return -ENOEXEC;
 	}
@@ -66,35 +66,35 @@ static void print_chrc_props(const struct shell *shell, u8_t properties)
 {
 	shell_print(shell, "Properties: ");
 
-	if (properties & BT_GATT_CHRC_BROADCAST) {
+	if ((properties & BT_GATT_CHRC_BROADCAST) != 0) {
 		shell_print(shell, "[bcast]");
 	}
 
-	if (properties & BT_GATT_CHRC_READ) {
+	if ((properties & BT_GATT_CHRC_READ) != 0) {
 		shell_print(shell, "[read]");
 	}
 
-	if (properties & BT_GATT_CHRC_WRITE) {
+	if ((properties & BT_GATT_CHRC_WRITE) != 0) {
 		shell_print(shell, "[write]");
 	}
 
-	if (properties & BT_GATT_CHRC_WRITE_WITHOUT_RESP) {
+	if ((properties & BT_GATT_CHRC_WRITE_WITHOUT_RESP) != 0) {
 		shell_print(shell, "[write w/w rsp]");
 	}
 
-	if (properties & BT_GATT_CHRC_NOTIFY) {
+	if ((properties & BT_GATT_CHRC_NOTIFY) != 0) {
 		shell_print(shell, "[notify]");
 	}
 
-	if (properties & BT_GATT_CHRC_INDICATE) {
+	if ((properties & BT_GATT_CHRC_INDICATE) != 0) {
 		shell_print(shell, "[indicate]");
 	}
 
-	if (properties & BT_GATT_CHRC_AUTH) {
+	if ((properties & BT_GATT_CHRC_AUTH) != 0) {
 		shell_print(shell, "[auth]");
 	}
 
-	if (properties & BT_GATT_CHRC_EXT_PROP) {
+	if ((properties & BT_GATT_CHRC_EXT_PROP) != 0) {
 		shell_print(shell, "[ext prop]");
 	}
 
@@ -110,7 +110,7 @@ static u8_t discover_func(struct bt_conn *conn,
 	struct bt_gatt_include *gatt_include;
 	char str[37];
 
-	if (!attr) {
+	if (attr == NULL) {
 		shell_print(ctx_shell, "Discover complete");
 		(void)memset(params, 0, sizeof(*params));
 		return BT_GATT_ITER_STOP;
@@ -154,7 +154,7 @@ static int cmd_discover(const struct shell *shell, size_t argc, char *argv[])
 {
 	int err;
 
-	if (!default_conn) {
+	if (default_conn == NULL) {
 		shell_error(shell, "Not connected");
 		return -ENOEXEC;
 	}
@@ -208,7 +208,7 @@ static u8_t read_func(struct bt_conn *conn, u8_t err,
 {
 	shell_print(ctx_shell, "Read complete: err %u length %u", err, length);
 
-	if (!data) {
+	if (data == NULL) {
 		(void)memset(params, 0, sizeof(*params));
 		return BT_GATT_ITER_STOP;
 	}
@@ -220,7 +220,7 @@ static int cmd_read(const struct shell *shell, size_t argc, char *argv[])
 {
 	int err;
 
-	if (!default_conn) {
+	if (default_conn == NULL) {
 		shell_error(shell, "Not connected");
 		return -ENOEXEC;
 	}
@@ -249,7 +249,7 @@ static int cmd_mread(const struct shell *shell, size_t argc, char *argv[])
 	u16_t h[8];
 	int i, err;
 
-	if (!default_conn) {
+	if (default_conn == NULL) {
 		shell_error(shell, "Not connected");
 		return -ENOEXEC;
 	}
@@ -293,7 +293,7 @@ static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 	int err;
 	u16_t handle, offset;
 
-	if (!default_conn) {
+	if (default_conn == NULL) {
 		shell_error(shell, "Not connected");
 		return -ENOEXEC;
 	}
@@ -346,7 +346,7 @@ static int cmd_write_without_rsp(const struct shell *shell,
 	u16_t len;
 	bool sign;
 
-	if (!default_conn) {
+	if (default_conn == NULL) {
 		shell_error(shell, "Not connected");
 		return -ENOEXEC;
 	}
@@ -394,7 +394,7 @@ static u8_t notify_func(struct bt_conn *conn,
 			struct bt_gatt_subscribe_params *params,
 			const void *data, u16_t length)
 {
-	if (!data) {
+	if (data == NULL) {
 		shell_print(ctx_shell, "Unsubscribed");
 		params->value_handle = 0;
 		return BT_GATT_ITER_STOP;
@@ -415,7 +415,7 @@ static int cmd_subscribe(const struct shell *shell, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	if (!default_conn) {
+	if (default_conn == NULL) {
 		shell_error(shell, "Not connected");
 		return -ENOEXEC;
 	}
@@ -444,7 +444,7 @@ static int cmd_unsubscribe(const struct shell *shell,
 {
 	int err;
 
-	if (!default_conn) {
+	if (default_conn == NULL) {
 		shell_error(shell, "Not connected");
 		return -ENOEXEC;
 	}
@@ -569,7 +569,7 @@ static ssize_t write_long_vnd(struct bt_conn *conn,
 {
 	u8_t *value = attr->user_data;
 
-	if (flags & BT_GATT_WRITE_FLAG_PREPARE) {
+	if ((flags & BT_GATT_WRITE_FLAG_PREPARE) != 0) {
 		return 0;
 	}
 

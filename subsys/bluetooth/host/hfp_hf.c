@@ -76,7 +76,7 @@ int hfp_hf_send_cmd(struct bt_hfp_hf *hf, at_resp_cb_t resp,
 	at_register(&hf->at, resp, finish);
 
 	buf = bt_rfcomm_create_pdu(&hf_pool);
-	if (!buf) {
+	if (buf == NULL) {
 		BT_ERR("No Buffers!");
 		return -ENOMEM;
 	}
@@ -387,7 +387,7 @@ int unsolicited_cb(struct at_client *hf_at, struct net_buf *buf)
 	const struct unsolicited *handler;
 
 	handler = hfp_hf_unsol_lookup(hf_at);
-	if (!handler) {
+	if (handler == NULL) {
 		BT_ERR("Unhandled unsolicited response");
 		return -ENOMSG;
 	}
@@ -575,13 +575,13 @@ int bt_hfp_hf_send_cmd(struct bt_conn *conn, enum bt_hfp_hf_at_cmd cmd)
 
 	BT_DBG("");
 
-	if (!conn) {
+	if (conn == NULL) {
 		BT_ERR("Invalid connection");
 		return -ENOTCONN;
 	}
 
 	hf = bt_hfp_hf_lookup_bt_conn(conn);
-	if (!hf) {
+	if (hf == NULL) {
 		BT_ERR("No HF connection found");
 		return -ENOTCONN;
 	}
@@ -692,11 +692,11 @@ static void hfp_hf_init(void)
 
 int bt_hfp_hf_register(struct bt_hfp_hf_cb *cb)
 {
-	if (!cb) {
+	if (cb == NULL) {
 		return -EINVAL;
 	}
 
-	if (bt_hf) {
+	if (bt_hf != NULL) {
 		return -EALREADY;
 	}
 

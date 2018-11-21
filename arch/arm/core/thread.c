@@ -149,7 +149,7 @@ FUNC_NORETURN void _arch_user_mode_enter(k_thread_entry_t user_entry,
 void configure_builtin_stack_guard(struct k_thread *thread)
 {
 #if defined(CONFIG_USERSPACE)
-	if (thread->arch.mode & CONTROL_nPRIV_Msk) {
+	if ((thread->arch.mode & CONTROL_nPRIV_Msk) != 0) {
 		/* Only configure stack limit for threads in privileged mode
 		 * (i.e supervisor threads or user threads doing system call).
 		 * User threads executing in user mode do not require a stack

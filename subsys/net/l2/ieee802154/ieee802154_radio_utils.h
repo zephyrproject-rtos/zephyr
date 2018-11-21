@@ -63,7 +63,7 @@ static inline int handle_ack(struct ieee802154_context *ctx,
 		struct ieee802154_fcf_seq *fs;
 
 		fs = ieee802154_validate_fc_seq(net_pkt_ll(pkt), NULL);
-		if (!fs || fs->sequence != ctx->ack_seq) {
+		if ((fs == NULL) || fs->sequence != ctx->ack_seq) {
 			return NET_CONTINUE;
 		}
 
@@ -84,7 +84,7 @@ static inline int tx_packet_fragments(struct net_if *iface,
 	struct net_buf *frag;
 
 	frag = pkt->frags;
-	while (frag) {
+	while (frag != NULL) {
 		if (IS_ENABLED(CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA) &&
 		    ieee802154_get_hw_capabilities(iface) &
 		    IEEE802154_HW_CSMA) {

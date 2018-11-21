@@ -67,7 +67,7 @@ int settings_line_make(char *dst, int dlen, const char *name, const char *value)
 
 	nlen = strlen(name);
 
-	if (value) {
+	if (value != NULL) {
 		vlen = strlen(value);
 	} else {
 		vlen = 0;

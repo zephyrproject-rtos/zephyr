@@ -66,10 +66,10 @@ int settings_parse_name(char *name, int *name_argc, char *name_argv[])
 {
 	int i = 0;
 
-	while (name) {
+	while (name != NULL) {
 		name_argv[i++] = name;
 
-		while (1) {
+		while (true) {
 			if (*name == '\0') {
 				name = NULL;
 				break;
@@ -109,7 +109,7 @@ int settings_value_from_str(char *val_str, enum settings_type type, void *vp,
 	s64_t val64;
 	char *eptr;
 
-	if (!val_str) {
+	if (val_str == NULL) {
 		goto err;
 	}
 	switch (type) {
@@ -247,7 +247,7 @@ static void s64_to_dec(char *ptr, int buf_len, s64_t value, int base)
 {
 	u64_t val64;
 
-	if (ptr == NULL || buf_len < 1) {
+	if ((ptr == NULL) || buf_len < 1) {
 		return;
 	}
 
@@ -276,7 +276,7 @@ static s64_t dec_to_s64(char *p_str, char **e_ptr)
 		p_str++;
 	}
 
-	while (1) {
+	while (true) {
 		if (*p_str >= '0' && *p_str <= '9') {
 			digit = *p_str - '0';
 		} else {
@@ -295,7 +295,7 @@ static s64_t dec_to_s64(char *p_str, char **e_ptr)
 		p_str++;
 	}
 
-	if (e_ptr != 0)
+	if (e_ptr != NULL)
 		*e_ptr = p_str;
 
 	if (neg) {
@@ -325,7 +325,7 @@ int settings_set_value(char *name, char *val_str)
 	struct settings_handler *ch;
 
 	ch = settings_parse_and_lookup(name, &name_argc, name_argv);
-	if (!ch) {
+	if (ch == NULL) {
 		return -EINVAL;
 	}
 
@@ -345,7 +345,7 @@ char *settings_get_value(char *name, char *buf, int buf_len)
 	struct settings_handler *ch;
 
 	ch = settings_parse_and_lookup(name, &name_argc, name_argv);
-	if (!ch) {
+	if (ch == NULL) {
 		return NULL;
 	}
 
@@ -365,7 +365,7 @@ int settings_commit(char *name)
 
 	if (name) {
 		ch = settings_parse_and_lookup(name, &name_argc, name_argv);
-		if (!ch) {
+		if (ch == NULL) {
 			return -EINVAL;
 		}
 		if (ch->h_commit) {

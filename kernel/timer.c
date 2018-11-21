@@ -64,7 +64,7 @@ void _timer_expiration_handler(struct _timeout *t)
 	timer->status += 1;
 
 	/* invoke timer expiry function */
-	if (timer->expiry_fn) {
+	if (timer->expiry_fn != NULL) {
 		timer->expiry_fn(timer);
 	}
 
@@ -153,11 +153,11 @@ void _impl_k_timer_stop(struct k_timer *timer)
 
 	irq_unlock(key);
 
-	if (inactive) {
+	if (inactive != 0) {
 		return;
 	}
 
-	if (timer->stop_fn) {
+	if (timer->stop_fn != NULL) {
 		timer->stop_fn(timer);
 	}
 

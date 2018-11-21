@@ -40,7 +40,7 @@ static void unwind_stack(u32_t base_ptr)
 	struct stack_frame *frame;
 	int i;
 
-	if (!base_ptr) {
+	if (base_ptr == 0) {
 		printk("NULL base ptr\n");
 		return;
 	}
@@ -52,7 +52,7 @@ static void unwind_stack(u32_t base_ptr)
 		}
 
 		frame = (struct stack_frame *)base_ptr;
-		if (!frame || !frame->ret_addr) {
+		if ((frame == NULL) || (frame->ret_addr == 0U)) {
 			break;
 		}
 #ifdef CONFIG_X86_IAMCU
@@ -225,7 +225,7 @@ static FUNC_NORETURN void generic_exc_handle(unsigned int vector,
 	} else {
 		printk("CPU exception %d\n", vector);
 	}
-	if ((1 << vector) & _EXC_ERROR_CODE_FAULTS) {
+	if (((1 << vector) & _EXC_ERROR_CODE_FAULTS) != 0) {
 		printk("***** Exception code: 0x%x\n", pEsf->errorCode);
 	}
 	_NanoFatalErrorHandler(_NANO_ERR_CPU_EXCEPTION, pEsf);
@@ -409,7 +409,7 @@ static FUNC_NORETURN __used void _df_handler_bottom(void)
 	 * wouldn't be decremented
 	 */
 	_x86_mmu_get_flags((u8_t *)_df_esf.esp - 1, &pde_flags, &pte_flags);
-	if (pte_flags & MMU_ENTRY_PRESENT) {
+	if ((pte_flags & MMU_ENTRY_PRESENT) != 0) {
 		printk("***** Double Fault *****\n");
 		reason = _NANO_ERR_CPU_EXCEPTION;
 	} else {

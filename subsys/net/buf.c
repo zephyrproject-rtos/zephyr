@@ -167,7 +167,7 @@ static u8_t *heap_data_alloc(struct net_buf *buf, size_t *size, s32_t timeout)
 	u8_t *ref_count;
 
 	ref_count = k_malloc(1 + *size);
-	if (!ref_count) {
+	if (ref_count == NULL) {
 		return NULL;
 	}
 
@@ -218,7 +218,7 @@ static void data_unref(struct net_buf *buf, u8_t *data)
 {
 	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
 
-	if (buf->flags & NET_BUF_EXTERNAL_DATA) {
+	if ((buf->flags & NET_BUF_EXTERNAL_DATA) != 0) {
 		return;
 	}
 
@@ -260,7 +260,7 @@ struct net_buf *net_buf_alloc_len(struct net_buf_pool *pool, size_t size,
 		 */
 		if (pool->uninit_count < pool->buf_count) {
 			buf = k_lifo_get(&pool->free, K_NO_WAIT);
-			if (buf) {
+			if (buf != NULL) {
 				irq_unlock(key);
 				goto success;
 			}
@@ -279,7 +279,7 @@ struct net_buf *net_buf_alloc_len(struct net_buf_pool *pool, size_t size,
 	if (timeout == K_FOREVER) {
 		u32_t ref = k_uptime_get_32();
 		buf = k_lifo_get(&pool->free, K_NO_WAIT);
-		while (!buf) {
+		while (buf == NULL) {
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
 			NET_BUF_WARN("%s():%d: Pool %s low on buffers.",
 				     func, line, pool->name);
@@ -304,7 +304,7 @@ struct net_buf *net_buf_alloc_len(struct net_buf_pool *pool, size_t size,
 #else
 	buf = k_lifo_get(&pool->free, timeout);
 #endif
-	if (!buf) {
+	if (buf == NULL) {
 		NET_BUF_ERR("%s():%d: Failed to get free buffer", func, line);
 		return NULL;
 	}
@@ -381,7 +381,7 @@ struct net_buf *net_buf_alloc_with_data(struct net_buf_pool *pool,
 #else
 	buf = net_buf_alloc_len(pool, 0, timeout);
 #endif
-	if (!buf) {
+	if (buf == NULL) {
 		return NULL;
 	}
 
@@ -406,7 +406,7 @@ struct net_buf *net_buf_get(struct k_fifo *fifo, s32_t timeout)
 	NET_BUF_DBG("%s():%d: fifo %p timeout %d", func, line, fifo, timeout);
 
 	buf = k_fifo_get(fifo, timeout);
-	if (!buf) {
+	if (buf == NULL) {
 		return NULL;
 	}
 
@@ -464,7 +464,7 @@ struct net_buf *net_buf_slist_get(sys_slist_t *list)
 	buf = (void *)sys_slist_get(list);
 	irq_unlock(key);
 
-	if (!buf) {
+	if (buf == NULL) {
 		return NULL;
 	}
 
@@ -508,7 +508,7 @@ void net_buf_unref(struct net_buf *buf)
 {
 	NET_BUF_ASSERT(buf);
 
-	while (buf) {
+	while (buf != NULL) {
 		struct net_buf *frags = buf->frags;
 		struct net_buf_pool *pool;
 
@@ -572,7 +572,7 @@ struct net_buf *net_buf_clone(struct net_buf *buf, s32_t timeout)
 	pool = net_buf_pool_get(buf->pool_id);
 
 	clone = net_buf_alloc_len(pool, 0, timeout);
-	if (!clone) {
+	if (clone == NULL) {
 		return NULL;
 	}
 
@@ -634,7 +634,7 @@ struct net_buf *net_buf_frag_add(struct net_buf *head, struct net_buf *frag)
 {
 	NET_BUF_ASSERT(frag);
 
-	if (!head) {
+	if (head == NULL) {
 		return net_buf_ref(frag);
 	}
 
@@ -655,7 +655,7 @@ struct net_buf *net_buf_frag_del(struct net_buf *parent, struct net_buf *frag)
 
 	NET_BUF_ASSERT(frag);
 
-	if (parent) {
+	if (parent != NULL) {
 		NET_BUF_ASSERT(parent->frags);
 		NET_BUF_ASSERT(parent->frags == frag);
 		parent->frags = frag->frags;
@@ -691,14 +691,14 @@ int net_buf_linearize(void *dst, size_t dst_len, struct net_buf *src,
 	(void)memset(dst, 0, dst_len);
 
 	/* find the right fragment to start copying from */
-	while (frag && offset >= frag->len) {
+	while ((frag != NULL) && offset >= frag->len) {
 		offset -= frag->len;
 		frag = frag->frags;
 	}
 
 	/* traverse the fragment chain until len bytes are copied */
 	copied = 0;
-	while (frag && len > 0) {
+	while ((frag != NULL) && len > 0) {
 		to_copy = min(len, frag->len - offset);
 		memcpy((u8_t *)dst + copied, frag->data + offset, to_copy);
 
@@ -744,7 +744,7 @@ size_t net_buf_append_bytes(struct net_buf *buf, size_t len,
 		}
 
 		frag = allocate_cb(timeout, user_data);
-		if (!frag) {
+		if (frag == NULL) {
 			return added_len;
 		}
 

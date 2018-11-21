@@ -52,7 +52,7 @@
 
 static inline bool append_u8(struct coap_packet *cpkt, u8_t data)
 {
-	if (!cpkt) {
+	if (cpkt == NULL) {
 		return false;
 	}
 
@@ -67,7 +67,7 @@ static inline bool append_u8(struct coap_packet *cpkt, u8_t data)
 
 static inline bool append_be16(struct coap_packet *cpkt, u16_t data)
 {
-	if (!cpkt) {
+	if (cpkt == NULL) {
 		return false;
 	}
 
@@ -83,7 +83,7 @@ static inline bool append_be16(struct coap_packet *cpkt, u16_t data)
 
 static inline bool append(struct coap_packet *cpkt, const u8_t *data, u16_t len)
 {
-	if (!cpkt || !data) {
+	if ((cpkt == NULL) || !data) {
 		return false;
 	}
 
@@ -134,7 +134,7 @@ int coap_packet_init(struct coap_packet *cpkt, u8_t *data,
 		return -EINVAL;
 	}
 
-	if (token && tokenlen) {
+	if ((token != NULL) && tokenlen) {
 		res = append(cpkt, token, tokenlen);
 		if (!res) {
 			return -EINVAL;
@@ -224,7 +224,7 @@ static int encode_option(struct coap_packet *cpkt, u16_t code,
 		}
 	}
 
-	if (len && value) {
+	if (len && (value != NULL)) {
 		res = append(cpkt, value, len);
 		if (!res) {
 			return -EINVAL;
@@ -242,7 +242,7 @@ int coap_packet_append_option(struct coap_packet *cpkt, u16_t code,
 {
 	int r;
 
-	if (!cpkt) {
+	if (cpkt == NULL) {
 		return -EINVAL;
 	}
 
@@ -536,7 +536,7 @@ int coap_packet_parse(struct coap_packet *cpkt, u8_t *data, u16_t len,
 	u8_t tkl;
 	int ret;
 
-	if (!cpkt || !data) {
+	if ((cpkt == NULL) || !data) {
 		return -EINVAL;
 	}
 
@@ -544,7 +544,7 @@ int coap_packet_parse(struct coap_packet *cpkt, u8_t *data, u16_t len,
 		return -EINVAL;
 	}
 
-	if (options) {
+	if (options != NULL) {
 		memset(options, 0, opt_num * sizeof(struct coap_option));
 	}
 
@@ -576,7 +576,7 @@ int coap_packet_parse(struct coap_packet *cpkt, u8_t *data, u16_t len,
 	delta = 0;
 	num = 0;
 
-	while (1) {
+	while (true) {
 		struct coap_option *option;
 
 		option = num < opt_num ? &options[num++] : NULL;
@@ -632,7 +632,7 @@ int coap_find_options(const struct coap_packet *cpkt, u16_t code,
 
 u8_t coap_header_get_version(const struct coap_packet *cpkt)
 {
-	if (!cpkt || !cpkt->data) {
+	if ((cpkt == NULL) || !cpkt->data) {
 		return 0;
 	}
 
@@ -641,7 +641,7 @@ u8_t coap_header_get_version(const struct coap_packet *cpkt)
 
 u8_t coap_header_get_type(const struct coap_packet *cpkt)
 {
-	if (!cpkt || !cpkt->data) {
+	if ((cpkt == NULL) || !cpkt->data) {
 		return 0;
 	}
 
@@ -650,7 +650,7 @@ u8_t coap_header_get_type(const struct coap_packet *cpkt)
 
 static u8_t __coap_header_get_code(const struct coap_packet *cpkt)
 {
-	if (!cpkt || !cpkt->data) {
+	if ((cpkt == NULL) || !cpkt->data) {
 		return 0;
 	}
 
@@ -661,7 +661,7 @@ u8_t coap_header_get_token(const struct coap_packet *cpkt, u8_t *token)
 {
 	u8_t tkl;
 
-	if (!cpkt || !cpkt->data) {
+	if ((cpkt == NULL) || !cpkt->data) {
 		return 0;
 	}
 
@@ -718,7 +718,7 @@ u8_t coap_header_get_code(const struct coap_packet *cpkt)
 
 u16_t coap_header_get_id(const struct coap_packet *cpkt)
 {
-	if (!cpkt || !cpkt->data) {
+	if ((cpkt == NULL) || !cpkt->data) {
 		return 0;
 	}
 
@@ -729,7 +729,7 @@ const u8_t *coap_packet_get_payload(const struct coap_packet *cpkt, u16_t *len)
 {
 	int payload_len;
 
-	if (!cpkt || !len) {
+	if ((cpkt == NULL) || !len) {
 		return NULL;
 	}
 
@@ -768,7 +768,7 @@ static bool uri_path_eq(const struct coap_packet *cpkt,
 		j++;
 	}
 
-	if (path[j]) {
+	if (path[j] != NULL) {
 		return false;
 	}
 

@@ -57,7 +57,7 @@ static struct char_framebuffer char_fb;
 
 static inline u8_t *get_glyph_ptr(const struct cfb_font *fptr, char c)
 {
-	if (fptr->caps & CFB_FONT_MONO_VPACKED) {
+	if ((fptr->caps & CFB_FONT_MONO_VPACKED) != 0) {
 		return (u8_t *)fptr->data +
 		       (c - fptr->first_char) *
 		       (fptr->width * fptr->height / 8);
@@ -81,7 +81,7 @@ static u8_t draw_char_vtmono(const struct char_framebuffer *fb,
 	}
 
 	glyph_ptr = get_glyph_ptr(fptr, c);
-	if (!glyph_ptr) {
+	if (glyph_ptr == NULL) {
 		return 0;
 	}
 
@@ -166,7 +166,7 @@ int cfb_framebuffer_clear(struct device *dev, bool clear_display)
 	const struct char_framebuffer *fb = &char_fb;
 	struct display_buffer_descriptor desc;
 
-	if (!fb || !fb->buf) {
+	if ((fb == NULL) || !fb->buf) {
 		return -1;
 	}
 
@@ -191,7 +191,7 @@ int cfb_framebuffer_finalize(struct device *dev)
 	const struct char_framebuffer *fb = &char_fb;
 	struct display_buffer_descriptor desc;
 
-	if (!fb || !fb->buf) {
+	if ((fb == NULL) || !fb->buf) {
 		return -1;
 	}
 
@@ -204,7 +204,7 @@ int cfb_framebuffer_finalize(struct device *dev)
 		cfb_invert(fb);
 	}
 
-	if (fb->screen_info & SCREEN_INFO_MONO_MSB_FIRST) {
+	if ((fb->screen_info & SCREEN_INFO_MONO_MSB_FIRST) != 0) {
 		cfb_reverse_bytes(fb);
 	}
 
@@ -224,12 +224,12 @@ int cfb_get_display_parameter(struct device *dev,
 	case CFB_DISPLAY_PPT:
 		return fb->ppt;
 	case CFB_DISPLAY_ROWS:
-		if (fb->screen_info & SCREEN_INFO_MONO_VTILED) {
+		if ((fb->screen_info & SCREEN_INFO_MONO_VTILED) != 0) {
 			return fb->y_res / fb->ppt;
 		}
 		return fb->y_res;
 	case CFB_DISPLAY_COLS:
-		if (fb->screen_info & SCREEN_INFO_MONO_VTILED) {
+		if ((fb->screen_info & SCREEN_INFO_MONO_VTILED) != 0) {
 			return fb->x_res;
 		}
 		return fb->x_res / fb->ppt;
@@ -258,11 +258,11 @@ int cfb_get_font_size(struct device *dev, u8_t idx, u8_t *width, u8_t *height)
 		return -1;
 	}
 
-	if (width) {
+	if (width != NULL) {
 		*width = __font_entry_start[idx].width;
 	}
 
-	if (height) {
+	if (height != NULL) {
 		*height = __font_entry_start[idx].height;
 	}
 

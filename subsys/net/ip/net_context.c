@@ -185,7 +185,7 @@ int net_context_get(sa_family_t family,
 		return -EOPNOTSUPP;
 	}
 
-	if (!context) {
+	if (context == NULL) {
 		NET_ASSERT_INFO(context, "Invalid context");
 		return -EINVAL;
 	}
@@ -423,7 +423,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 
 			maddr = net_if_ipv6_maddr_lookup(&addr6->sin6_addr,
 							 &iface);
-			if (!maddr) {
+			if (maddr == NULL) {
 				return -ENOENT;
 			}
 
@@ -439,14 +439,14 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 
 			ifaddr = net_if_ipv6_addr_lookup(&addr6->sin6_addr,
 							 &iface);
-			if (!ifaddr) {
+			if (ifaddr == NULL) {
 				return -ENOENT;
 			}
 
 			ptr = &ifaddr->address.in6_addr;
 		}
 
-		if (!iface) {
+		if (iface == NULL) {
 			NET_ERR("Cannot bind to %s",
 				log_strdup(net_sprint_ipv6_addr(
 						   &addr6->sin6_addr)));
@@ -512,7 +512,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 
 			maddr = net_if_ipv4_maddr_lookup(&addr4->sin_addr,
 							 &iface);
-			if (!maddr) {
+			if (maddr == NULL) {
 				return -ENOENT;
 			}
 
@@ -526,14 +526,14 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 		} else {
 			ifaddr = net_if_ipv4_addr_lookup(&addr4->sin_addr,
 							 &iface);
-			if (!ifaddr) {
+			if (ifaddr == NULL) {
 				return -ENOENT;
 			}
 
 			ptr = &ifaddr->address.in_addr;
 		}
 
-		if (!iface) {
+		if (iface == NULL) {
 			NET_ERR("Cannot bind to %s",
 				log_strdup(net_sprint_ipv4_addr(
 						   &addr4->sin_addr)));
@@ -634,7 +634,7 @@ struct net_pkt *net_context_create_ipv4(struct net_context *context,
 {
 	NET_ASSERT(((struct sockaddr_in_ptr *)&context->local)->sin_addr);
 
-	if (!src) {
+	if (src == NULL) {
 		src = ((struct sockaddr_in_ptr *)&context->local)->sin_addr;
 	}
 
@@ -660,7 +660,7 @@ struct net_pkt *net_context_create_ipv6(struct net_context *context,
 {
 	NET_ASSERT(((struct sockaddr_in6_ptr *)&context->local)->sin6_addr);
 
-	if (!src) {
+	if (src == NULL) {
 		src = ((struct sockaddr_in6_ptr *)&context->local)->sin6_addr;
 	}
 
@@ -909,7 +909,7 @@ static int create_udp_packet(struct net_context *context,
 				     net_sin((struct sockaddr *)
 					     &context->local)->sin_port,
 				     addr6->sin6_port);
-		if (!tmp) {
+		if (tmp == NULL) {
 			return -ENOMEM;
 		}
 
@@ -932,7 +932,7 @@ static int create_udp_packet(struct net_context *context,
 				     net_sin((struct sockaddr *)
 					     &context->local)->sin_port,
 				     addr4->sin_port);
-		if (!tmp) {
+		if (tmp == NULL) {
 			return -ENOMEM;
 		}
 
@@ -966,7 +966,7 @@ static int sendto(struct net_pkt *pkt,
 		return -EBADF;
 	}
 
-	if (!dst_addr) {
+	if (dst_addr == NULL) {
 		return -EDESTADDRREQ;
 	}
 
@@ -1321,7 +1321,7 @@ static int get_context_priority(struct net_context *context,
 #if defined(CONFIG_NET_CONTEXT_PRIORITY)
 	*((u8_t *)value) = context->options.priority;
 
-	if (len) {
+	if (len != NULL) {
 		*len = sizeof(u8_t);
 	}
 

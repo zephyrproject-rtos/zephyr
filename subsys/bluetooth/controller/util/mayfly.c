@@ -128,7 +128,7 @@ void mayfly_run(u8_t callee_id)
 		link = memq_peek(mft[callee_id][caller_id].head,
 				 mft[callee_id][caller_id].tail,
 				 (void **)&m);
-		while (link) {
+		while (link != NULL) {
 			u8_t state;
 			u8_t req;
 
@@ -170,7 +170,7 @@ void mayfly_run(u8_t callee_id)
 				 * not empty or all caller queues are not
 				 * processed.
 				 */
-				if (caller_id || link) {
+				if (caller_id || (link != NULL)) {
 					mayfly_pend(callee_id, callee_id);
 
 					return;

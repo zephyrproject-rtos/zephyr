@@ -95,7 +95,7 @@ static u8_t wl_find(u8_t addr_type, u8_t *addr, u8_t *free)
 {
 	int i;
 
-	if (free) {
+	if (free != NULL) {
 		*free = FILTER_IDX_NONE;
 	}
 
@@ -426,7 +426,7 @@ u8_t ll_rl_find(u8_t id_addr_type, u8_t *id_addr, u8_t *free)
 {
 	u8_t i;
 
-	if (free) {
+	if (free != NULL) {
 		*free = FILTER_IDX_NONE;
 	}
 
@@ -827,7 +827,7 @@ void ll_rl_crpa_set(u8_t id_addr_type, u8_t *id_addr, u8_t rl_idx, u8_t *crpa)
 {
 	if ((crpa[5] & 0xc0) == 0x40) {
 
-		if (id_addr) {
+		if (id_addr != NULL) {
 			/* find the device and return its RPA */
 			rl_idx = ll_rl_find(id_addr_type, id_addr, NULL);
 		}

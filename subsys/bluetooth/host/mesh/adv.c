@@ -79,7 +79,7 @@ static inline void adv_send_start(u16_t duration, int err,
 				  const struct bt_mesh_send_cb *cb,
 				  void *cb_data)
 {
-	if (cb && cb->start) {
+	if ((cb != NULL) && cb->start) {
 		cb->start(duration, err, cb_data);
 	}
 }
@@ -87,7 +87,7 @@ static inline void adv_send_start(u16_t duration, int err,
 static inline void adv_send_end(int err, const struct bt_mesh_send_cb *cb,
 				void *cb_data)
 {
-	if (cb && cb->end) {
+	if ((cb != NULL) && cb->end) {
 		cb->end(err, cb_data);
 	}
 }
@@ -163,12 +163,12 @@ static void adv_thread(void *p1, void *p2, void *p3)
 {
 	BT_DBG("started");
 
-	while (1) {
+	while (true) {
 		struct net_buf *buf;
 
 		if (IS_ENABLED(CONFIG_BT_MESH_PROXY)) {
 			buf = net_buf_get(&adv_queue, K_NO_WAIT);
-			while (!buf) {
+			while (buf == NULL) {
 				s32_t timeout;
 
 				timeout = bt_mesh_proxy_adv_start();
@@ -181,7 +181,7 @@ static void adv_thread(void *p1, void *p2, void *p3)
 			buf = net_buf_get(&adv_queue, K_FOREVER);
 		}
 
-		if (!buf) {
+		if (buf == NULL) {
 			continue;
 		}
 
@@ -215,7 +215,7 @@ struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *pool,
 	struct net_buf *buf;
 
 	buf = net_buf_alloc(pool, timeout);
-	if (!buf) {
+	if (buf == NULL) {
 		return NULL;
 	}
 

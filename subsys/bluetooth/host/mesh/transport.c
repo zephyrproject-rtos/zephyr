@@ -124,7 +124,7 @@ static int send_unseg(struct bt_mesh_net_tx *tx, struct net_buf_simple *sdu,
 	       tx->src, tx->ctx->addr, tx->ctx->app_idx, sdu->len);
 
 	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, tx->xmit, BUF_TIMEOUT);
-	if (!buf) {
+	if (buf == NULL) {
 		BT_ERR("Out of network buffers");
 		return -ENOBUFS;
 	}
@@ -263,7 +263,7 @@ static void seg_tx_send_unacked(struct seg_tx *tx)
 	for (i = 0; i <= tx->seg_n; i++) {
 		struct net_buf *seg = tx->seg[i];
 
-		if (!seg) {
+		if (seg == NULL) {
 			continue;
 		}
 
@@ -326,7 +326,7 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 		}
 	}
 
-	if (!tx) {
+	if (tx == NULL) {
 		BT_ERR("No multi-segment message contexts available");
 		return -EBUSY;
 	}
@@ -364,7 +364,7 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 
 		seg = bt_mesh_adv_create(BT_MESH_ADV_DATA, net_tx->xmit,
 					 BUF_TIMEOUT);
-		if (!seg) {
+		if (seg == NULL) {
 			BT_ERR("Out of segment buffers");
 			seg_tx_reset(tx);
 			return -ENOBUFS;
@@ -470,7 +470,7 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
 		struct bt_mesh_app_key *app_key;
 
 		app_key = bt_mesh_app_key_find(tx->ctx->app_idx);
-		if (!app_key) {
+		if (app_key == NULL) {
 			return -EINVAL;
 		}
 
@@ -732,7 +732,7 @@ static int trans_ack(struct bt_mesh_net_rx *rx, u8_t hdr,
 	BT_DBG("OBO %u seq_zero 0x%04x ack 0x%08x", obo, seq_zero, ack);
 
 	tx = seg_tx_lookup(seq_zero, obo, rx->ctx.addr);
-	if (!tx) {
+	if (tx == NULL) {
 		BT_WARN("No matching TX context for ack");
 		return -EINVAL;
 	}
@@ -753,7 +753,7 @@ static int trans_ack(struct bt_mesh_net_rx *rx, u8_t hdr,
 	k_delayed_work_cancel(&tx->retransmit);
 
 	while ((bit = find_lsb_set(ack))) {
-		if (tx->seg[bit - 1]) {
+		if (tx->seg[bit - 1] != NULL) {
 			BT_DBG("seg %u/%u acked", bit - 1, tx->seg_n);
 			net_buf_unref(tx->seg[bit - 1]);
 			tx->seg[bit - 1] = NULL;
@@ -936,7 +936,7 @@ int bt_mesh_ctl_send(struct bt_mesh_net_tx *tx, u8_t ctl_op, void *data,
 	BT_DBG("len %zu: %s", data_len, bt_hex(data, data_len));
 
 	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, tx->xmit, BUF_TIMEOUT);
-	if (!buf) {
+	if (buf == NULL) {
 		BT_ERR("Out of transport buffers");
 		return -ENOBUFS;
 	}
@@ -1211,7 +1211,7 @@ static int trans_seg(struct net_buf_simple *buf, struct bt_mesh_net_rx *net_rx,
 
 	/* Look for old RX sessions */
 	rx = seg_rx_find(net_rx, seq_auth);
-	if (rx) {
+	if (rx != NULL) {
 		/* Discard old SeqAuth packet */
 		if (rx->seq_auth > *seq_auth) {
 			BT_WARN("Ignoring old SeqAuth");
@@ -1254,7 +1254,7 @@ static int trans_seg(struct net_buf_simple *buf, struct bt_mesh_net_rx *net_rx,
 
 	/* Look for free slot for a new RX session */
 	rx = seg_rx_alloc(net_rx, hdr, seq_auth, seg_n);
-	if (!rx) {
+	if (rx == NULL) {
 		/* Warn but don't cancel since the existing slots willl
 		 * eventually be freed up and we'll be able to process
 		 * this one.

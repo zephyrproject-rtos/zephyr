@@ -21,7 +21,7 @@ otError otPlatRandomGetTrue(u8_t *aOutput, u16_t aOutputLength)
 	int i;
 	u32_t random;
 
-	if (!aOutput) {
+	if (aOutput == NULL) {
 		return OT_ERROR_INVALID_ARGS;
 	}
 

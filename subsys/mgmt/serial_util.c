@@ -231,7 +231,7 @@ int mcumgr_serial_tx_frame(const u8_t *data, bool first, int len,
 		dst_off += 4;
 	}
 
-	while (1) {
+	while (true) {
 		if (dst_off >= MCUMGR_SERIAL_MAX_FRAME - 4) {
 			/* Can't fit any more data in this frame. */
 			break;

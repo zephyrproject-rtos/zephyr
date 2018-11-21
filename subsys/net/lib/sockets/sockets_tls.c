@@ -157,7 +157,7 @@ static void tls_debug(void *ctx, int level, const char *file,
 
 	ARG_UNUSED(ctx);
 
-	if (!file || !str) {
+	if ((file == NULL) || !str) {
 		return;
 	}
 
@@ -261,7 +261,7 @@ static int tls_init(struct device *unused)
 #if defined(CONFIG_ENTROPY_HAS_DRIVER)
 	dev = device_get_binding(CONFIG_ENTROPY_NAME);
 
-	if (!dev) {
+	if (dev == NULL) {
 		NET_ERR("Failed to obtain entropy device");
 		return -ENODEV;
 	}
@@ -343,7 +343,7 @@ static struct tls_context *tls_clone(struct tls_context *source_tls)
 	struct tls_context *target_tls;
 
 	target_tls = tls_alloc();
-	if (!target_tls) {
+	if (target_tls == NULL) {
 		return NULL;
 	}
 
@@ -679,7 +679,7 @@ static int tls_set_credential(struct tls_context *tls,
 	{
 		struct tls_credential *priv_key =
 			credential_get(cred->tag, TLS_CREDENTIAL_PRIVATE_KEY);
-		if (!priv_key) {
+		if (priv_key == NULL) {
 			return -ENOENT;
 		}
 
@@ -696,7 +696,7 @@ static int tls_set_credential(struct tls_context *tls,
 	{
 		struct tls_credential *psk_id =
 			credential_get(cred->tag, TLS_CREDENTIAL_PSK_ID);
-		if (!psk_id) {
+		if (psk_id == NULL) {
 			return -ENOENT;
 		}
 
@@ -923,7 +923,7 @@ static int tls_opt_sec_tag_list_set(struct net_context *context,
 {
 	int sec_tag_cnt;
 
-	if (!optval) {
+	if (optval == NULL) {
 		return -EINVAL;
 	}
 
@@ -984,7 +984,7 @@ static int tls_opt_ciphersuite_list_set(struct net_context *context,
 {
 	int cipher_cnt;
 
-	if (!optval) {
+	if (optval == NULL) {
 		return -EINVAL;
 	}
 
@@ -1061,7 +1061,7 @@ static int tls_opt_peer_verify_set(struct net_context *context,
 {
 	int *peer_verify;
 
-	if (!optval) {
+	if (optval == NULL) {
 		return -EINVAL;
 	}
 
@@ -1087,7 +1087,7 @@ static int tls_opt_dtls_role_set(struct net_context *context,
 {
 	int *role;
 
-	if (!optval) {
+	if (optval == NULL) {
 		return -EINVAL;
 	}
 
@@ -1304,7 +1304,7 @@ int ztls_accept(int sock, struct sockaddr *addr, socklen_t *addrlen)
 	return child_sock;
 
 error:
-	if (child_context && child_context->tls) {
+	if ((child_context != NULL) && child_context->tls) {
 		err = tls_release(child_context->tls);
 		__ASSERT(err == 0, "TLS context release failed");
 	}
@@ -1411,8 +1411,7 @@ static ssize_t sendto_dtls_server(int sock, const void *buf, size_t len,
 	}
 
 	/* Verify we are sending to a peer that we have connection with. */
-	if (dest_addr &&
-	    !dtls_is_peer_addr_valid(context, dest_addr, addrlen) != 0) {
+	if ((dest_addr != NULL) && !dtls_is_peer_addr_valid(context, dest_addr, addrlen) != 0) {
 		errno = EISCONN;
 		return -1;
 	}
@@ -1503,7 +1502,7 @@ static ssize_t recvfrom_dtls_client(int sock, void *buf, size_t max_len,
 
 	ret = mbedtls_ssl_read(&context->tls->ssl, buf, max_len);
 	if (ret >= 0) {
-		if (src_addr && addrlen) {
+		if ((src_addr != NULL) && (addrlen != NULL)) {
 			dtls_peer_address_get(context, src_addr, addrlen);
 		}
 		return ret;
@@ -1578,7 +1577,7 @@ static ssize_t recvfrom_dtls_server(int sock, void *buf, size_t max_len,
 
 		ret = mbedtls_ssl_read(&context->tls->ssl, buf, max_len);
 		if (ret >= 0) {
-			if (src_addr && addrlen) {
+			if ((src_addr != NULL) && (addrlen != NULL)) {
 				dtls_peer_address_get(context, src_addr,
 						      addrlen);
 			}
@@ -1631,7 +1630,7 @@ ssize_t ztls_recvfrom(int sock, void *buf, size_t max_len, int flags,
 				      src_addr, addrlen);
 	}
 
-	if (flags & ZSOCK_MSG_PEEK) {
+	if ((flags & ZSOCK_MSG_PEEK) != 0) {
 		/* TODO mbedTLS does not support 'peeking' This could be
 		 * bypassed by having intermediate buffer for peeking
 		 */
@@ -1684,7 +1683,7 @@ int ztls_poll(struct zsock_pollfd *fds, int nfds, int timeout)
 			continue;
 		}
 
-		if (pfd->events & ZSOCK_POLLIN) {
+		if ((pfd->events & ZSOCK_POLLIN) != 0) {
 			context = sock_to_net_ctx(pfd->fd);
 			if (context == NULL) {
 				/* ZSOCK_POLLNVAL will be set by zsock_poll */
@@ -1726,7 +1725,7 @@ int ztls_poll(struct zsock_pollfd *fds, int nfds, int timeout)
 				continue;
 			}
 
-			if (pfd->events & ZSOCK_POLLIN) {
+			if ((pfd->events & ZSOCK_POLLIN) != 0) {
 				context = sock_to_net_ctx(pfd->fd);
 				if (context == NULL) {
 					/* ZSOCK_POLLNVAL was set by
@@ -1739,7 +1738,7 @@ int ztls_poll(struct zsock_pollfd *fds, int nfds, int timeout)
 					continue;
 				}
 
-				if (pfd->revents & ZSOCK_POLLIN) {
+				if ((pfd->revents & ZSOCK_POLLIN) != 0) {
 					/* EAGAIN might happen during or just
 					 * after DLTS handshake.
 					 */
@@ -1809,7 +1808,7 @@ int ztls_getsockopt(int sock, int level, int optname,
 		return -1;
 	}
 
-	if (!optval || !optlen) {
+	if ((optval == NULL) || !optlen) {
 		errno = EINVAL;
 		return -1;
 	}

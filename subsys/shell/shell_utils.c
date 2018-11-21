@@ -55,7 +55,7 @@ static void make_argv(char **ppcmd, u8_t c, u8_t quote)
 {
 	char *cmd = *ppcmd;
 
-	while (1) {
+	while (true) {
 		c = *cmd;
 
 		if (c == '\0') {
@@ -191,7 +191,7 @@ void shell_pattern_remove(char *buff, u16_t *buff_len, const char *pattern)
 	u16_t pattern_len = shell_strlen(pattern);
 	size_t shift;
 
-	if (!pattern_addr) {
+	if (pattern_addr == NULL) {
 		return;
 	}
 
@@ -222,7 +222,7 @@ int shell_command_add(char *buff, u16_t *buff_len,
 
 	cmd_source_addr = strstr(buff, pattern);
 
-	if (!cmd_source_addr) {
+	if (cmd_source_addr == NULL) {
 		return -EINVAL;
 	}
 
@@ -243,7 +243,7 @@ void shell_spaces_trim(char *str)
 	u16_t len = shell_strlen(str);
 	u16_t shift = 0;
 
-	if (!str) {
+	if (str == NULL) {
 		return;
 	}
 

@@ -167,7 +167,7 @@ int log_printk(const char *fmt, va_list ap)
 			 sizeof(formatted_str) : length;
 
 		msg = log_msg_hexdump_create(NULL, formatted_str, length);
-		if (!msg) {
+		if (msg == NULL) {
 			return 0;
 		}
 
@@ -590,7 +590,7 @@ static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 	log_init();
 	thread_set(k_current_get());
 
-	while (1) {
+	while (true) {
 		if (log_process(false) == false) {
 			k_sleep(CONFIG_LOG_PROCESS_THREAD_SLEEP_MS);
 		}

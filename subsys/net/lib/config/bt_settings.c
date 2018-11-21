@@ -44,12 +44,12 @@ int _net_config_bt_setup(void)
 	}
 
 	dev = device_get_binding("net_bt");
-	if (!dev) {
+	if (dev == NULL) {
 		return -ENODEV;
 	}
 
 	iface = net_if_lookup_by_dev(dev);
-	if (!iface) {
+	if (iface == NULL) {
 		return -EINVAL;
 	}
 

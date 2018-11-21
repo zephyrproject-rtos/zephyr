@@ -90,7 +90,7 @@ static int bind_ctx(struct net_context *ctx,
 {
 	int ret;
 
-	if (!ctx) {
+	if (ctx == NULL) {
 		return -EINVAL;
 	}
 
@@ -154,7 +154,7 @@ static int add_answer(struct net_pkt *pkt, enum dns_rr_type qtype,
 	int ret;
 
 	while ((dot = strchr(dot, '.'))) {
-		if (!prev) {
+		if (prev == NULL) {
 			prev = dot++;
 			continue;
 		}
@@ -163,7 +163,7 @@ static int add_answer(struct net_pkt *pkt, enum dns_rr_type qtype,
 		prev = dot++;
 	}
 
-	if (prev) {
+	if (prev != NULL) {
 		*prev = strlen(prev) - 1;
 	}
 
@@ -193,7 +193,7 @@ static struct net_pkt *create_answer(struct net_context *ctx,
 	int ret;
 
 	pkt = net_pkt_get_tx(ctx, BUF_ALLOC_TIMEOUT);
-	if (!pkt) {
+	if (pkt == NULL) {
 		return NULL;
 	}
 
@@ -236,7 +236,7 @@ static int send_response(struct net_context *ctx, struct net_pkt *pkt,
 
 		reply = create_answer(ctx, AF_INET, qtype, query,
 				      sizeof(struct in_addr), (u8_t *)addr);
-		if (!reply) {
+		if (reply == NULL) {
 			return -ENOMEM;
 		}
 
@@ -257,7 +257,7 @@ static int send_response(struct net_context *ctx, struct net_pkt *pkt,
 
 		reply = create_answer(ctx, AF_INET6, qtype, query,
 				      sizeof(struct in6_addr), (u8_t *)addr);
-		if (!reply) {
+		if (reply == NULL) {
 			return -ENOMEM;
 		}
 
@@ -305,7 +305,7 @@ static int dns_read(struct net_context *ctx,
 	 * we do not increase the stack usage of RX thread.
 	 */
 	result = net_pkt_get_data(ctx, BUF_ALLOC_TIMEOUT);
-	if (!result) {
+	if (result == NULL) {
 		ret = -ENOMEM;
 		goto quit;
 	}
@@ -349,7 +349,9 @@ static int dns_read(struct net_context *ctx,
 
 		/* Handle only .local queries */
 		lquery = strrchr(result->data + 1, '.');
-		if (!lquery || memcmp(lquery, (const void *){ ".local" }, 7)) {
+		if ((lquery == NULL) || memcmp(lquery, (const void *){
+					".local",
+				}, 7)) {
 			continue;
 		}
 
@@ -373,7 +375,7 @@ static int dns_read(struct net_context *ctx,
 	ret = 0;
 
 quit:
-	if (result) {
+	if (result != NULL) {
 		net_pkt_frag_unref(result);
 	}
 
@@ -393,7 +395,7 @@ static void recv_cb(struct net_context *net_ctx,
 	ARG_UNUSED(net_ctx);
 	NET_ASSERT(ctx == net_ctx);
 
-	if (!pkt) {
+	if (pkt == NULL) {
 		return;
 	}
 
@@ -402,7 +404,7 @@ static void recv_cb(struct net_context *net_ctx,
 	}
 
 	dns_data = net_buf_alloc(&mdns_msg_pool, BUF_ALLOC_TIMEOUT);
-	if (!dns_data) {
+	if (dns_data == NULL) {
 		goto quit;
 	}
 
@@ -445,7 +447,7 @@ static void iface_ipv4_cb(struct net_if *iface, void *user_data)
 	struct net_if_mcast_addr *ifaddr;
 
 	ifaddr = net_if_ipv4_maddr_add(iface, addr);
-	if (!ifaddr) {
+	if (ifaddr == NULL) {
 		NET_DBG("Cannot add IPv4 multicast address to iface %p",
 			iface);
 	}

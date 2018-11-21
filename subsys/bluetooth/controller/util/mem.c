@@ -39,7 +39,7 @@ void mem_init(void *mem_pool, u16_t mem_size, u16_t mem_count,
 
 void *mem_acquire(void **mem_head)
 {
-	if (*mem_head) {
+	if (*mem_head != NULL) {
 		u16_t free_count;
 		void *head;
 		void *mem;
@@ -53,7 +53,7 @@ void *mem_acquire(void **mem_head)
 		memcpy(&head, mem, sizeof(head));
 
 		/* Store free mem_count after the list's next pointer */
-		if (head) {
+		if (head != NULL) {
 			*((u16_t *)MROUND((u8_t *)head + sizeof(head))) =
 				free_count;
 		}
@@ -70,7 +70,7 @@ void mem_release(void *mem, void **mem_head)
 	u16_t free_count = 0;
 
 	/* Get the free count from the list and increment it */
-	if (*mem_head) {
+	if (*mem_head != NULL) {
 		free_count = *((u16_t *)MROUND((u8_t *)*mem_head +
 					       sizeof(mem_head)));
 	}
@@ -89,7 +89,7 @@ u16_t mem_free_count_get(void *mem_head)
 	u16_t free_count = 0;
 
 	/* Get the free count from the list */
-	if (mem_head) {
+	if (mem_head != NULL) {
 		free_count = *((u16_t *)MROUND((u8_t *)mem_head +
 					       sizeof(mem_head)));
 	}

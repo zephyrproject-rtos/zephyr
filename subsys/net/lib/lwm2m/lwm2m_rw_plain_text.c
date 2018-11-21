@@ -171,7 +171,7 @@ static int pkt_length_left(struct lwm2m_input_context *in)
 	struct net_buf *frag = in->frag;
 	int total_left = -in->offset;
 
-	while (frag) {
+	while (frag != NULL) {
 		total_left += frag->len;
 		frag = frag->frags;
 	}
@@ -192,7 +192,7 @@ static size_t plain_text_read_number(struct lwm2m_input_context *in,
 
 	/* initialize values to 0 */
 	value1 = 0;
-	if (value2) {
+	if (value2 != NULL) {
 		value2 = 0;
 	}
 
@@ -361,7 +361,7 @@ int do_write_op_plain_text(struct lwm2m_engine_obj *obj,
 	}
 
 	obj_field = lwm2m_get_engine_obj_field(obj, path->res_id);
-	if (!obj_field) {
+	if (obj_field == NULL) {
 		return -ENOENT;
 	}
 
@@ -380,7 +380,7 @@ int do_write_op_plain_text(struct lwm2m_engine_obj *obj,
 		}
 	}
 
-	if (!res) {
+	if (res == NULL) {
 		return -ENOENT;
 	}
 

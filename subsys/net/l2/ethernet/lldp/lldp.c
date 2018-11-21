@@ -103,13 +103,13 @@ static int lldp_send(struct ethernet_lldp *lldp)
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(lldp->iface,
 							   NULL),
 				     BUF_ALLOC_TIMEOUT);
-	if (!pkt) {
+	if (pkt == NULL) {
 		ret = -ENOMEM;
 		goto out;
 	}
 
 	frag = net_pkt_get_frag(pkt, BUF_ALLOC_TIMEOUT);
-	if (!frag) {
+	if (frag == NULL) {
 		net_pkt_unref(pkt);
 		ret = -ENOMEM;
 		goto out;

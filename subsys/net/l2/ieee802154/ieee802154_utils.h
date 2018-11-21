@@ -78,8 +78,7 @@ static inline void ieee802154_filter_ieee_addr(struct net_if *iface,
 	const struct ieee802154_radio_api *radio =
 		net_if_get_device(iface)->driver_api;
 
-	if (radio->get_capabilities(net_if_get_device(iface)) &
-	    IEEE802154_HW_FILTER) {
+	if ((radio->get_capabilities(net_if_get_device(iface)) & IEEE802154_HW_FILTER) != 0) {
 		struct ieee802154_filter filter;
 
 		filter.ieee_addr = ieee_addr;
@@ -98,8 +97,7 @@ static inline void ieee802154_filter_short_addr(struct net_if *iface,
 	const struct ieee802154_radio_api *radio =
 		net_if_get_device(iface)->driver_api;
 
-	if (radio->get_capabilities(net_if_get_device(iface)) &
-	    IEEE802154_HW_FILTER) {
+	if ((radio->get_capabilities(net_if_get_device(iface)) & IEEE802154_HW_FILTER) != 0) {
 		struct ieee802154_filter filter;
 
 		filter.short_addr = short_addr;
@@ -118,8 +116,7 @@ static inline void ieee802154_filter_pan_id(struct net_if *iface,
 	const struct ieee802154_radio_api *radio =
 		net_if_get_device(iface)->driver_api;
 
-	if (radio->get_capabilities(net_if_get_device(iface)) &
-	    IEEE802154_HW_FILTER) {
+	if ((radio->get_capabilities(net_if_get_device(iface)) & IEEE802154_HW_FILTER) != 0) {
 		struct ieee802154_filter filter;
 
 		filter.pan_id = pan_id;
@@ -138,8 +135,7 @@ static inline void ieee802154_filter_src_ieee_addr(struct net_if *iface,
 	const struct ieee802154_radio_api *radio =
 		net_if_get_device(iface)->driver_api;
 
-	if (radio->get_capabilities(net_if_get_device(iface)) &
-	    IEEE802154_HW_FILTER) {
+	if ((radio->get_capabilities(net_if_get_device(iface)) & IEEE802154_HW_FILTER) != 0) {
 		struct ieee802154_filter filter;
 
 		filter.ieee_addr = ieee_addr;
@@ -158,8 +154,7 @@ static inline void ieee802154_filter_src_short_addr(struct net_if *iface,
 	const struct ieee802154_radio_api *radio =
 		net_if_get_device(iface)->driver_api;
 
-	if (radio->get_capabilities(net_if_get_device(iface)) &
-	    IEEE802154_HW_FILTER) {
+	if ((radio->get_capabilities(net_if_get_device(iface)) & IEEE802154_HW_FILTER) != 0) {
 		struct ieee802154_filter filter;
 
 		filter.short_addr = short_addr;
@@ -178,8 +173,7 @@ static inline void ieee802154_remove_src_ieee_addr(struct net_if *iface,
 	const struct ieee802154_radio_api *radio =
 		net_if_get_device(iface)->driver_api;
 
-	if (radio->get_capabilities(net_if_get_device(iface)) &
-	    IEEE802154_HW_FILTER) {
+	if ((radio->get_capabilities(net_if_get_device(iface)) & IEEE802154_HW_FILTER) != 0) {
 		struct ieee802154_filter filter;
 
 		filter.ieee_addr = ieee_addr;
@@ -198,8 +192,7 @@ static inline void ieee802154_remove_src_short_addr(struct net_if *iface,
 	const struct ieee802154_radio_api *radio =
 		net_if_get_device(iface)->driver_api;
 
-	if (radio->get_capabilities(net_if_get_device(iface)) &
-	    IEEE802154_HW_FILTER) {
+	if ((radio->get_capabilities(net_if_get_device(iface)) & IEEE802154_HW_FILTER) != 0) {
 		struct ieee802154_filter filter;
 
 		filter.short_addr = short_addr;
@@ -223,8 +216,7 @@ static inline bool ieee802154_verify_channel(struct net_if *iface,
 	const struct ieee802154_radio_api *radio =
 		net_if_get_device(iface)->driver_api;
 
-	if (radio->get_capabilities(net_if_get_device(iface)) &
-	    IEEE802154_HW_SUB_GHZ) {
+	if ((radio->get_capabilities(net_if_get_device(iface)) & IEEE802154_HW_SUB_GHZ) != 0) {
 		if (channel >
 		    radio->get_subg_channel_count(net_if_get_device(iface))) {
 			return false;

@@ -34,7 +34,7 @@ int net_promisc_mode_on(struct net_if *iface)
 {
 	int ret;
 
-	if (!iface) {
+	if (iface == NULL) {
 		return -EINVAL;
 	}
 
@@ -50,9 +50,9 @@ static void flush_queue(void)
 {
 	struct net_pkt *pkt;
 
-	while (1) {
+	while (true) {
 		pkt = k_fifo_get(&promiscuous_queue, K_NO_WAIT);
-		if (!pkt) {
+		if (pkt == NULL) {
 			return;
 		}
 
@@ -84,7 +84,7 @@ int net_promisc_mode_off(struct net_if *iface)
 
 enum net_verdict net_promisc_mode_input(struct net_pkt *pkt)
 {
-	if (!pkt) {
+	if (pkt == NULL) {
 		return NET_CONTINUE;
 	}
 

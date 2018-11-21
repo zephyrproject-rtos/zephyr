@@ -194,7 +194,7 @@ static int ipsp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	/* Get packet for bearer / protocol related data */
 	pkt = net_pkt_get_reserve_rx(0, BUF_TIMEOUT);
-	if (!pkt) {
+	if (pkt == NULL) {
 		return -ENOMEM;
 	}
 
@@ -350,7 +350,7 @@ static int bt_connect(u32_t mgmt_request, struct net_if *iface, void *data,
 		return -ENOMEM;
 	}
 
-	if (default_conn) {
+	if (default_conn != NULL) {
 		return bt_l2cap_chan_connect(default_conn,
 					     &ctxt->ipsp_chan.chan,
 					     L2CAP_IPSP_PSM);
@@ -500,7 +500,7 @@ static int bt_disconnect(u32_t mgmt_request, struct net_if *iface,
 	}
 
 	/* Release connect reference in case of central/router role */
-	if (default_conn) {
+	if (default_conn != NULL) {
 		bt_conn_unref(default_conn);
 		default_conn = NULL;
 	}
