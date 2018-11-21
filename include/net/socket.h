@@ -47,53 +47,58 @@ struct zsock_pollfd {
 #define ZSOCK_MSG_PEEK 0x02
 #define ZSOCK_MSG_DONTWAIT 0x40
 
-/* Protocol level for TLS.
- * Here, the same socket protocol level for TLS as in Linux was used.
+/** Protocol level for TLS.
+ *  Here, the same socket protocol level for TLS as in Linux was used.
  */
 #define SOL_TLS 282
 
-/* Socket options for TLS */
+/** @defgroup secure_sockets_options Socket options for TLS
+ *  @{
+ */
 
-/* Socket option to select TLS credentials to use. It accepts and returns an
- * array of sec_tag_t that indicate which TLS credentials should be used with
- * specific socket
+/** Socket option to select TLS credentials to use. It accepts and returns an
+ *  array of sec_tag_t that indicate which TLS credentials should be used with
+ *  specific socket.
  */
 #define TLS_SEC_TAG_LIST 1
-/* Write-only socket option to set hostname. It accepts a string containing
- * the hostname (may be NULL to disable hostname verification). By default,
- * hostname check is enforced for TLS clients.
+/** Write-only socket option to set hostname. It accepts a string containing
+ *  the hostname (may be NULL to disable hostname verification). By default,
+ *  hostname check is enforced for TLS clients.
  */
 #define TLS_HOSTNAME 2
-/* Socket option to select ciphersuites to use. It accepts and returns an array
- * of integers with IANA assigned ciphersuite identifiers.
- * If not set, socket will allow all ciphersuites available in the system
- * (mebdTLS default behavior).
+/** Socket option to select ciphersuites to use. It accepts and returns an array
+ *  of integers with IANA assigned ciphersuite identifiers.
+ *  If not set, socket will allow all ciphersuites available in the system
+ *  (mebdTLS default behavior).
  */
 #define TLS_CIPHERSUITE_LIST 3
-/* Read-only socket option to read a ciphersuite chosen during TLS handshake.
- * It returns an integer containing an IANA assigned ciphersuite identifier
- * of chosen ciphersuite.
+/** Read-only socket option to read a ciphersuite chosen during TLS handshake.
+ *  It returns an integer containing an IANA assigned ciphersuite identifier
+ *  of chosen ciphersuite.
  */
 #define TLS_CIPHERSUITE_USED 4
-/* Write-only socket option to set peer verification level for TLS connection.
- * This option accepts an integer with a peer verification level, compatible
- * with mbedTLS values:
- * 0 - none,
- * 1 - optional
- * 2 - required.
- * If not set, socket will use mbedTLS defaults (none for servers, required
- * for clients).
+/** Write-only socket option to set peer verification level for TLS connection.
+ *  This option accepts an integer with a peer verification level, compatible
+ *  with mbedTLS values:
+ *    - 0 - none
+ *    - 1 - optional
+ *    - 2 - required
+ *
+ *  If not set, socket will use mbedTLS defaults (none for servers, required
+ *  for clients).
  */
 #define TLS_PEER_VERIFY 5
-/* Write-only socket option to set role for DTLS connection. This option
- * is irrelevant for TLS connections, as for them role is selected based on
- * connect()/listen() usage. By default, DTLS will assume client role.
- * This option accepts an integer with a TLS role, compatible with
- * mbedTLS values:
- * 0 - client,
- * 1 - server.
+/** Write-only socket option to set role for DTLS connection. This option
+ *  is irrelevant for TLS connections, as for them role is selected based on
+ *  connect()/listen() usage. By default, DTLS will assume client role.
+ *  This option accepts an integer with a TLS role, compatible with
+ *  mbedTLS values:
+ *    - 0 - client
+ *    - 1 - server
  */
 #define TLS_DTLS_ROLE 6
+
+/** @} */
 
 struct zsock_addrinfo {
 	struct zsock_addrinfo *ai_next;
