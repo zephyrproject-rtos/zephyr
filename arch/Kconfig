@@ -421,8 +421,7 @@ config SOC
 	help
 	  SoC name which can be found under soc/<arch>/<soc name>.
 	  This option holds the directory name used by the build system to locate
-	  the correct linker and header files for the SoC. This option will go away
-	  once all SoCs are using family/series structure.
+	  the correct linker and header files for the SoC.
 
 config SOC_SERIES
 	string
