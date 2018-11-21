@@ -439,7 +439,7 @@ DEVICE_DEFINE(spi_intel_port_0, DT_SPI_0_NAME, spi_intel_init,
 
 void spi_config_0_irq(void)
 {
-	IRQ_CONNECT(DT_SPI_0_IRQ, CONFIG_SPI_0_IRQ_PRI,
+	IRQ_CONNECT(DT_SPI_0_IRQ, DT_SPI_0_IRQ_PRI,
 		    spi_intel_isr, DEVICE_GET(spi_intel_port_0),
 		    DT_SPI_0_IRQ_FLAGS);
 }
@@ -475,7 +475,7 @@ DEVICE_DEFINE(spi_intel_port_1, DT_SPI_1_NAME, spi_intel_init,
 
 void spi_config_1_irq(void)
 {
-	IRQ_CONNECT(DT_SPI_1_IRQ, CONFIG_SPI_1_IRQ_PRI,
+	IRQ_CONNECT(DT_SPI_1_IRQ, DT_SPI_1_IRQ_PRI,
 		    spi_intel_isr, DEVICE_GET(spi_intel_port_1),
 		    DT_SPI_1_IRQ_FLAGS);
 }

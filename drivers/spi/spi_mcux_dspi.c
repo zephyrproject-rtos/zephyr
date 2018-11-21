@@ -289,7 +289,7 @@ DEVICE_AND_API_INIT(spi_mcux_0, DT_SPI_0_NAME, &spi_mcux_init,
 
 static void spi_mcux_config_func_0(struct device *dev)
 {
-	IRQ_CONNECT(DT_SPI_0_IRQ, CONFIG_SPI_0_IRQ_PRI,
+	IRQ_CONNECT(DT_SPI_0_IRQ, DT_SPI_0_IRQ_PRI,
 		    spi_mcux_isr, DEVICE_GET(spi_mcux_0), 0);
 
 	irq_enable(DT_SPI_0_IRQ);
@@ -318,7 +318,7 @@ DEVICE_AND_API_INIT(spi_mcux_1, DT_SPI_1_NAME, &spi_mcux_init,
 
 static void spi_mcux_config_func_1(struct device *dev)
 {
-	IRQ_CONNECT(DT_SPI_1_IRQ, CONFIG_SPI_1_IRQ_PRI,
+	IRQ_CONNECT(DT_SPI_1_IRQ, DT_SPI_1_IRQ_PRI,
 		    spi_mcux_isr, DEVICE_GET(spi_mcux_1), 0);
 
 	irq_enable(DT_SPI_1_IRQ);
@@ -347,7 +347,7 @@ DEVICE_AND_API_INIT(spi_mcux_2, DT_SPI_2_NAME, &spi_mcux_init,
 
 static void spi_mcux_config_func_2(struct device *dev)
 {
-	IRQ_CONNECT(DT_SPI_2_IRQ, CONFIG_SPI_2_IRQ_PRI,
+	IRQ_CONNECT(DT_SPI_2_IRQ, DT_SPI_2_IRQ_PRI,
 		    spi_mcux_isr, DEVICE_GET(spi_mcux_2), 0);
 
 	irq_enable(DT_SPI_2_IRQ);

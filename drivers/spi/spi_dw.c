@@ -551,7 +551,7 @@ DEVICE_AND_API_INIT(spi_dw_port_0, DT_SPI_0_NAME, spi_dw_init,
 void spi_config_0_irq(void)
 {
 #ifdef CONFIG_SPI_DW_PORT_0_INTERRUPT_SINGLE_LINE
-	IRQ_CONNECT(DT_SPI_0_IRQ, CONFIG_SPI_0_IRQ_PRI,
+	IRQ_CONNECT(DT_SPI_0_IRQ, DT_SPI_0_IRQ_PRI,
 		    spi_dw_isr, DEVICE_GET(spi_dw_port_0), DT_SPI_DW_IRQ_FLAGS);
 	irq_enable(DT_SPI_0_IRQ);
 	_spi_int_unmask(SPI_DW_PORT_0_INT_MASK);
@@ -599,7 +599,7 @@ DEVICE_AND_API_INIT(spi_dw_port_1, DT_SPI_1_NAME, spi_dw_init,
 void spi_config_1_irq(void)
 {
 #ifdef CONFIG_SPI_DW_PORT_1_INTERRUPT_SINGLE_LINE
-	IRQ_CONNECT(DT_SPI_1_IRQ, CONFIG_SPI_1_IRQ_PRI,
+	IRQ_CONNECT(DT_SPI_1_IRQ, DT_SPI_1_IRQ_PRI,
 		    spi_dw_isr, DEVICE_GET(spi_dw_port_1), DT_SPI_DW_IRQ_FLAGS);
 	irq_enable(DT_SPI_1_IRQ);
 	_spi_int_unmask(SPI_DW_PORT_1_INT_MASK);
@@ -647,7 +647,7 @@ DEVICE_AND_API_INIT(spi_dw_port_2, DT_SPI_2_NAME, spi_dw_init,
 void spi_config_2_irq(void)
 {
 #ifdef CONFIG_SPI_DW_PORT_2_INTERRUPT_SINGLE_LINE
-	IRQ_CONNECT(DT_SPI_2_IRQ, CONFIG_SPI_2_IRQ_PRI,
+	IRQ_CONNECT(DT_SPI_2_IRQ, DT_SPI_2_IRQ_PRI,
 		    spi_dw_isr, DEVICE_GET(spi_dw_port_2), DT_SPI_DW_IRQ_FLAGS);
 	irq_enable(DT_SPI_2_IRQ);
 	_spi_int_unmask(SPI_DW_PORT_2_INT_MASK);
@@ -695,7 +695,7 @@ DEVICE_AND_API_INIT(spi_dw_port_3, DT_SPI_3_NAME, spi_dw_init,
 void spi_config_3_irq(void)
 {
 #ifdef CONFIG_SPI_DW_PORT_3_INTERRUPT_SINGLE_LINE
-	IRQ_CONNECT(DT_SPI_3_IRQ, CONFIG_SPI_3_IRQ_PRI,
+	IRQ_CONNECT(DT_SPI_3_IRQ, DT_SPI_3_IRQ_PRI,
 		    spi_dw_isr, DEVICE_GET(spi_dw_port_3), DT_SPI_DW_IRQ_FLAGS);
 	irq_enable(DT_SPI_3_IRQ);
 	_spi_int_unmask(SPI_DW_PORT_3_INT_MASK);
