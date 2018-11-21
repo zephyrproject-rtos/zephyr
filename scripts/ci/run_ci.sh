@@ -54,6 +54,7 @@ while getopts ":pm:b:r:M:" opt; do
 done
 
 DOC_MATRIX=${MATRIX_BUILDS}
+
 if [ -z "$BRANCH" ]; then
 	echo "No base branch given"
 	exit
@@ -135,12 +136,6 @@ if [ ! -z "${BSIM_OUT_PATH}" ]; then
 	fi
 else
 	echo "Skipping BT simulator tests"
-fi
-
-# Build Docs on matrix 5 in a pull request
-if [ "${MATRIX}" = "${DOC_MATRIX}" -a -n "${PULL_REQUEST}" ]; then
-	build_docs
-	./scripts/ci/check-compliance.py --commits ${COMMIT_RANGE} || true;
 fi
 
 # In a pull-request see if we have changed any tests or board definitions
