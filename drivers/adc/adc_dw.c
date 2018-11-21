@@ -500,7 +500,7 @@ const static struct adc_config adc_config_dev = {
 	.config_func  = adc_config_irq,
 };
 
-DEVICE_AND_API_INIT(adc_dw, CONFIG_ADC_0_NAME, &adc_dw_init,
+DEVICE_AND_API_INIT(adc_dw, DT_ADC_0_NAME, &adc_dw_init,
 		    &adc_info_dev, &adc_config_dev,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &api_funcs);
