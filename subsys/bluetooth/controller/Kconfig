@@ -243,11 +243,11 @@ config BT_CTLR_EXT_SCAN_FP
 	  in the Controller.
 
 config BT_CTLR_DATA_LENGTH
-	bool "Data Length Update"
+	# Hidden option to enable support for Bluetooth v4.2 LE Data Length
+	# Update procedure in the Controller.
+	bool
+	depends on BT_DATA_LEN_UPDATE
 	default y if SOC_COMPATIBLE_NRF52X
-	help
-	  Enable support for Bluetooth v4.2 LE Data Length Update procedure in
-	  the Controller.
 
 config BT_CTLR_DATA_LENGTH_MAX
 	int "Maximum data length supported"
