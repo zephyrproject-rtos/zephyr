@@ -2519,14 +2519,6 @@ int bt_gatt_store_ccc(u8_t id, const bt_addr_le_t *addr)
 
 	bt_gatt_foreach_attr(0x0001, 0xffff, ccc_save, &save);
 
-	str = settings_str_from_bytes(save.store,
-				      save.count * sizeof(*save.store),
-				      val, sizeof(val));
-	if (!str) {
-		BT_ERR("Unable to encode CCC as handle:value");
-		return -EINVAL;
-	}
-
 	if (id) {
 		char id_str[4];
 
@@ -2538,6 +2530,21 @@ int bt_gatt_store_ccc(u8_t id, const bt_addr_le_t *addr)
 				       (bt_addr_le_t *)addr, NULL);
 	}
 
+	if (!save.count) {
+		/* No entries to encode just clear */
+		str = NULL;
+		goto save;
+	}
+
+	str = settings_str_from_bytes(save.store,
+				      save.count * sizeof(*save.store),
+				      val, sizeof(val));
+	if (!str) {
+		BT_ERR("Unable to encode CCC as handle:value");
+		return -EINVAL;
+	}
+
+save:
 	err = settings_save_one(key, str);
 	if (err) {
 		BT_ERR("Failed to store CCCs (err %d)", err);
@@ -2545,7 +2552,7 @@ int bt_gatt_store_ccc(u8_t id, const bt_addr_le_t *addr)
 	}
 
 	BT_DBG("Stored CCCs for %s (%s) val %s", bt_addr_le_str(addr), key,
-	       str);
+	       str ? str : "nill");
 
 	return 0;
 }
