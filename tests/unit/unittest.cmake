@@ -31,6 +31,8 @@ list(APPEND INCLUDE
   .
 )
 
+set (CMAKE_C_FLAGS "-m32")
+
 target_compile_options(testbinary PRIVATE
   -Wall
   -I ${KOBJ_GEN_DIR}
