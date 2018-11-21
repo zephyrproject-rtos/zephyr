@@ -26,7 +26,7 @@ extern "C" {
 #define SETTINGS_MAX_VAL_LEN	256
 #define SETTINGS_NAME_SEPARATOR	"/"
 
-/* pleace for settings additions:
+/* place for settings additions:
  * up to 7 separators, '=', '\0'
  */
 #define SETTINGS_EXTRA_LEN ((SETTINGS_MAX_DIR_DEPTH - 1) + 2)
