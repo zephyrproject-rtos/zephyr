@@ -2634,13 +2634,16 @@ static u8_t ccc_load(const struct bt_gatt_attr *attr, void *user_data)
 	BT_DBG("Restoring CCC: handle 0x%04x value 0x%04x", load->entry->handle,
 	       load->entry->value);
 
-	cfg = ccc_find_cfg(ccc, BT_ADDR_LE_ANY);
+	cfg = ccc_find_cfg(ccc, &load->addr);
 	if (!cfg) {
-		BT_DBG("Unable to restore CCC: no cfg left");
-		goto next;
+		cfg = ccc_find_cfg(ccc, BT_ADDR_LE_ANY);
+		if (!cfg) {
+			BT_DBG("Unable to restore CCC: no cfg left");
+			goto next;
+		}
+		bt_addr_le_copy(&cfg->peer, &load->addr);
 	}
 
-	bt_addr_le_copy(&cfg->peer, &load->addr);
 	cfg->value = load->entry->value;
 
 next:
