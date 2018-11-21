@@ -21,6 +21,12 @@ properties:
       constraint: "sifive,pwm0"
       generation: define
 
+    clock-frequency:
+      type: int
+      category: optional
+      description: Clock frequency information for PWM operation
+      generation: define
+
     reg:
       type: array
       description: mmio register space
@@ -31,6 +37,12 @@ properties:
       type: array
       category: required
       description: required interrupts
+      generation: define
+
+    sifive,compare-width:
+      type: int
+      category: required
+      description: Width of the PWM comparator in bits
       generation: define
 
 "#cells":
