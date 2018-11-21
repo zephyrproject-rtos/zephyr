@@ -6,6 +6,7 @@
 
 
 #include <i2c.h>
+#include <dt-bindings/i2c/i2c.h>
 #include <nrfx_twim.h>
 
 #define LOG_DOMAIN "i2c_nrfx_twim"
@@ -125,8 +126,9 @@ static const struct i2c_driver_api i2c_nrfx_twim_driver_api = {
 
 static int init_twim(struct device *dev, const nrfx_twim_config_t *config)
 {
+
 	nrfx_err_t result = nrfx_twim_init(&get_dev_config(dev)->twim, config,
-					  event_handler, dev);
+					   event_handler, dev);
 	if (result != NRFX_SUCCESS) {
 		LOG_ERR("Failed to initialize device: %s",
 			    dev->config->name);
@@ -137,7 +139,19 @@ static int init_twim(struct device *dev, const nrfx_twim_config_t *config)
 	return 0;
 }
 
+#define I2C_NRFX_TWIM_INVALID_FREQUENCY  ((nrf_twim_frequency_t)-1)
+#define I2C_NRFX_TWIM_FREQUENCY(bitrate)				       \
+	 (bitrate == I2C_BITRATE_STANDARD ? NRF_TWIM_FREQ_100K		       \
+	: bitrate == 250000               ? NRF_TWIM_FREQ_250K		       \
+	: bitrate == I2C_BITRATE_FAST     ? NRF_TWIM_FREQ_400K		       \
+					  : I2C_NRFX_TWIM_INVALID_FREQUENCY)
+
 #define I2C_NRFX_TWIM_DEVICE(idx)					       \
+	static_assert(							       \
+		I2C_NRFX_TWIM_FREQUENCY(				       \
+			DT_NORDIC_NRF_I2C_I2C_##idx##_CLOCK_FREQUENCY)	       \
+		!= I2C_NRFX_TWIM_INVALID_FREQUENCY,			       \
+		"Wrong I2C " #idx " frequency setting in dts");		       \
 	static int twim_##idx##_init(struct device *dev)		       \
 	{								       \
 		IRQ_CONNECT(DT_NORDIC_NRF_I2C_I2C_##idx##_IRQ,		       \
@@ -146,7 +160,8 @@ static int init_twim(struct device *dev, const nrfx_twim_config_t *config)
 		const nrfx_twim_config_t config = {			       \
 			.scl       = DT_NORDIC_NRF_I2C_I2C_##idx##_SCL_PIN,    \
 			.sda       = DT_NORDIC_NRF_I2C_I2C_##idx##_SDA_PIN,    \
-			.frequency = NRF_TWIM_FREQ_100K,		       \
+			.frequency = I2C_NRFX_TWIM_FREQUENCY(		       \
+				DT_NORDIC_NRF_I2C_I2C_##idx##_CLOCK_FREQUENCY) \
 		};							       \
 		return init_twim(dev, &config);				       \
 	}								       \
