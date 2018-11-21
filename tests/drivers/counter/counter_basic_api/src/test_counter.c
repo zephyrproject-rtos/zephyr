@@ -8,8 +8,8 @@
 #include <ztest.h>
 #include <kernel.h>
 
-static volatile int wrap_cnt;
-static volatile int alarm_cnt;
+static volatile u32_t wrap_cnt;
+static volatile u32_t alarm_cnt;
 
 static void wrap_handler(struct device *dev, void *user_data);
 
@@ -83,12 +83,11 @@ static void wrap_handler(struct device *dev, void *user_data)
 	wrap_cnt++;
 }
 
-#include <nrf_gpio.h>
 void test_wrap_alarm_instance(const char *dev_name)
 {
 	struct device *dev;
 	int err;
-	int cnt;
+	u32_t cnt;
 	u32_t ticks;
 
 	wrap_cnt = 0;
@@ -120,11 +119,10 @@ void test_wrap_alarm(void)
 	test_all_instances(test_wrap_alarm_instance);
 }
 
-static void alarm_handler(struct device *dev,
-			  const struct counter_alarm_cfg *cfg,
-			  u32_t counter)
+static void alarm_handler(struct device *dev, u8_t chan_id, u32_t counter,
+			  void *user_data)
 {
-	zassert_true(&alarm_cfg == cfg, "Unexpected callback\n");
+	zassert_true(&alarm_cfg == user_data, "Unexpected callback\n");
 	alarm_cnt++;
 }
 
@@ -137,10 +135,10 @@ void test_single_shot_alarm_instance(const char *dev_name)
 	dev = device_get_binding(dev_name);
 	ticks = counter_us_to_ticks(dev, WRAP_PERIOD_US);
 
-	alarm_cfg.channel_id = 0;
 	alarm_cfg.absolute = true;
 	alarm_cfg.ticks = ticks + 1;
-	alarm_cfg.handler = alarm_handler;
+	alarm_cfg.callback = alarm_handler;
+	alarm_cfg.user_data = &alarm_cfg;
 
 	alarm_cnt = 0;
 
@@ -150,11 +148,11 @@ void test_single_shot_alarm_instance(const char *dev_name)
 	err = counter_set_wrap(dev, ticks, wrap_handler, exp_user_data);
 	zassert_equal(0, err, "Counter failed to set wrap\n");
 
-	err = counter_set_ch_alarm(dev, &alarm_cfg);
+	err = counter_set_channel_alarm(dev, 0, &alarm_cfg);
 	zassert_equal(-EINVAL, err, "Counter should return error because ticks exceeded the limit set alarm\n");
-
 	alarm_cfg.ticks = ticks - 100;
-	err = counter_set_ch_alarm(dev, &alarm_cfg);
+
+	err = counter_set_channel_alarm(dev, 0, &alarm_cfg);
 	zassert_equal(0, err, "Counter set alarm failed\n");
 
 	k_busy_wait(1.2*counter_ticks_to_us(dev, ticks));
@@ -164,7 +162,7 @@ void test_single_shot_alarm_instance(const char *dev_name)
 	k_busy_wait(counter_ticks_to_us(dev, 2*ticks));
 	zassert_equal(1, alarm_cnt, "Expecting alarm callback\n");
 
-	err = counter_disable_ch_alarm(dev, &alarm_cfg);
+	err = counter_disable_channel_alarm(dev, 0);
 	zassert_equal(0, err, "Counter disabling alarm failed\n");
 
 	err = counter_set_wrap(dev, counter_get_max_wrap(dev), NULL, NULL);
@@ -179,13 +177,12 @@ void test_single_shot_alarm(void)
 	test_all_instances(test_single_shot_alarm_instance);
 }
 
-static const struct counter_alarm_cfg *clbks[2];
+static void *clbk_data[2];
 
-static void alarm_handler2(struct device *dev,
-			   const struct counter_alarm_cfg *cfg,
-			   u32_t counter)
+static void alarm_handler2(struct device *dev, u8_t chan_id, u32_t counter,
+			   void *user_data)
 {
-	clbks[alarm_cnt] = cfg;
+	clbk_data[alarm_cnt] = user_data;
 	alarm_cnt++;
 }
 
@@ -204,15 +201,15 @@ void test_multiple_alarms_instance(const char *dev_name)
 	dev = device_get_binding(dev_name);
 	ticks = counter_us_to_ticks(dev, WRAP_PERIOD_US);
 
-	alarm_cfg.channel_id = 0;
 	alarm_cfg.absolute = true;
 	alarm_cfg.ticks = counter_us_to_ticks(dev, 2000);
-	alarm_cfg.handler = alarm_handler2;
+	alarm_cfg.callback = alarm_handler2;
+	alarm_cfg.user_data = &alarm_cfg;
 
-	alarm_cfg2.channel_id = 1;
 	alarm_cfg2.absolute = false;
 	alarm_cfg2.ticks = counter_us_to_ticks(dev, 2000);
-	alarm_cfg2.handler = alarm_handler2;
+	alarm_cfg2.callback = alarm_handler2;
+	alarm_cfg2.user_data = &alarm_cfg2;
 
 	alarm_cnt = 0;
 
@@ -222,24 +219,26 @@ void test_multiple_alarms_instance(const char *dev_name)
 	err = counter_set_wrap(dev, ticks, wrap_handler, exp_user_data);
 	zassert_equal(0, err, "Counter failed to set wrap\n");
 
-	k_busy_wait(1.2*counter_ticks_to_us(dev, alarm_cfg.ticks));
+	k_busy_wait(1.4*counter_ticks_to_us(dev, alarm_cfg.ticks));
 
-	err = counter_set_ch_alarm(dev, &alarm_cfg);
+	err = counter_set_channel_alarm(dev, 0, &alarm_cfg);
 	zassert_equal(0, err, "Counter set alarm failed\n");
 
-	err = counter_set_ch_alarm(dev, &alarm_cfg2);
+	err = counter_set_channel_alarm(dev, 1, &alarm_cfg2);
 	zassert_equal(0, err, "Counter set alarm failed\n");
 
 	k_busy_wait(1.2*counter_ticks_to_us(dev, 2*ticks));
 	zassert_equal(2, alarm_cnt, "Counter set alarm failed\n");
-	zassert_equal(&alarm_cfg2, clbks[0], "Expected different order or callbacks\n");
-	zassert_equal(&alarm_cfg, clbks[1], "Expected different order or callbacks\n");
+	zassert_equal(&alarm_cfg2, clbk_data[0],
+			"Expected different order or callbacks\n");
+	zassert_equal(&alarm_cfg, clbk_data[1],
+			"Expected different order or callbacks\n");
 
 	/* tear down */
-	err = counter_disable_ch_alarm(dev, &alarm_cfg);
+	err = counter_disable_channel_alarm(dev, 0);
 	zassert_equal(0, err, "Counter disabling alarm failed\n");
 
-	err = counter_disable_ch_alarm(dev, &alarm_cfg2);
+	err = counter_disable_channel_alarm(dev, 1);
 	zassert_equal(0, err, "Counter disabling alarm failed\n");
 }
 
@@ -262,17 +261,16 @@ void test_all_channels_instance(const char *str)
 	ticks = counter_us_to_ticks(dev, WRAP_PERIOD_US);
 
 	for (int i = 0; i < n; i++) {
-		alarm_cfgs[i].channel_id = i;
 		alarm_cfgs[i].absolute = false;
 		alarm_cfgs[i].ticks = ticks-100;
-		alarm_cfgs[i].handler = alarm_handler2;
+		alarm_cfgs[i].callback = alarm_handler2;
 	}
 
 	err = counter_start(dev);
 	zassert_equal(0, err, "Counter failed to start");
 
 	for (int i = 0; i < n; i++) {
-		err = counter_set_ch_alarm(dev, &alarm_cfgs[i]);
+		err = counter_set_channel_alarm(dev, i, &alarm_cfgs[i]);
 		if ((err == 0) && !limit_reached) {
 			nchan++;
 		} else if (err == -ENOTSUP) {
@@ -283,12 +281,12 @@ void test_all_channels_instance(const char *str)
 	}
 
 	for (int i = 0; i < nchan; i++) {
-		err = counter_disable_ch_alarm(dev, &alarm_cfgs[i]);
+		err = counter_disable_channel_alarm(dev, i);
 		zassert_equal(0, err, "Unexpected error on disabling alarm");
 	}
 
 	for (int i = nchan; i < n; i++) {
-		err = counter_disable_ch_alarm(dev, &alarm_cfgs[i]);
+		err = counter_disable_channel_alarm(dev, i);
 		zassert_equal(-ENOTSUP, err, "Unexpected error on disabling alarm\n");
 	}
 }
