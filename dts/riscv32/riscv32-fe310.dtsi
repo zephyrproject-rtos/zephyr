@@ -170,6 +170,7 @@
 			interrupts = <5>;
 			reg = <0x10014000 0x1000 0x20000000 0x20000000>;
 			reg-names = "control", "mem";
+			label = "spi_0";
 			status = "disabled";
 		};
 		spi1: spi@10024000 {
@@ -178,6 +179,7 @@
 			interrupts = <6>;
 			reg = <0x10024000 0x1000>;
 			reg-names = "control";
+			label = "spi_1";
 			status = "disabled";
 		};
 		spi2: spi@10034000 {
@@ -186,6 +188,7 @@
 			interrupts = <7>;
 			reg = <0x10034000 0x1000>;
 			reg-names = "control";
+			label = "spi_2";
 			status = "disabled";
 		};
 		teststatus: teststatus@4000 {
