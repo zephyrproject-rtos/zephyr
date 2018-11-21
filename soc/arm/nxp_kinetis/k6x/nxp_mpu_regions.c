@@ -6,7 +6,7 @@
 #include <soc.h>
 #include <arch/arm/cortex_m/mpu/nxp_mpu.h>
 
-static struct nxp_mpu_region mpu_regions[] = {
+static const struct nxp_mpu_region mpu_regions[] = {
 	/* Region 0 */
 	MPU_REGION_ENTRY("DEBUGGER_0",
 			 0,
@@ -48,7 +48,7 @@ static struct nxp_mpu_region mpu_regions[] = {
 			 REGION_RAM_ATTR),
 };
 
-struct nxp_mpu_config mpu_config = {
+const struct nxp_mpu_config mpu_config = {
 	.num_regions = ARRAY_SIZE(mpu_regions),
 	.mpu_regions = mpu_regions,
 	.sram_region = 4,

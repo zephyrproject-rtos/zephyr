@@ -146,7 +146,7 @@ struct nxp_mpu_config {
 	/* Number of regions */
 	u32_t num_regions;
 	/* Regions */
-	struct nxp_mpu_region *mpu_regions;
+	const struct nxp_mpu_region *mpu_regions;
 	/* SRAM Region */
 	u32_t sram_region;
 };
@@ -159,6 +159,6 @@ struct nxp_mpu_config {
  * for Thread Stack, Stack Guards, etc.) are programmed during runtime, thus,
  * not kept here.
  */
-extern struct nxp_mpu_config mpu_config;
+extern const struct nxp_mpu_config mpu_config;
 
 #endif /* ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_MPU_NXP_MPU_H_ */
