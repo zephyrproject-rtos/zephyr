@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 import sys
 import subprocess
 import re
@@ -9,37 +10,21 @@ import logging
 import argparse
 from junitparser import TestCase, TestSuite, JUnitXml, Skipped, Error, Failure, Attr
 from github import Github
-from shutil import copyfile, copytree
+from shutil import copyfile
 import json
-from pprint import  pprint
-
-if "ZEPHYR_BASE" not in os.environ:
-    logging.warn("$ZEPHYR_BASE environment variable undefined.\n")
-    repository_path = os.getcwd()
-else:
-    repository_path = os.environ['ZEPHYR_BASE']
 
 logger = None
-DOCS_WARNING_FILE = "doc.warnings"
-
 
 sh_special_args = {
     '_tty_out': False,
-    '_cwd': repository_path
+    '_cwd': os.getcwd()
 }
-
-# Put the Kconfiglib path first to make sure no local Kconfiglib version is
-# used
-sys.path.insert(0, os.path.join(repository_path, "scripts/kconfig"))
-import kconfiglib
 
 
 def get_shas(refspec):
-
     sha_list = sh.git("rev-list",
-        '--max-count={0}'.format(-1 if "." in refspec else 1),
-        refspec, **sh_special_args).split()
-
+                      '--max-count={0}'.format(-1 if "." in refspec else 1),
+                      refspec, **sh_special_args).split()
     return sha_list
 
 
@@ -54,10 +39,11 @@ class ComplianceTest:
     _title = ""
     _doc = "https://docs.zephyrproject.org/latest/contribute/contribute_guidelines.html"
 
-    def __init__(self, suite, range):
+    def __init__(self, suite, commit_range):
         self.case = None
         self.suite = suite
-        self.commit_range = range
+        self.commit_range = commit_range
+        self.repo_path = os.getcwd()
 
     def prepare(self):
         self.case = MyCase(self._name)
@@ -72,17 +58,23 @@ class CheckPatch(ComplianceTest):
     _name = "checkpatch"
     _doc = "https://docs.zephyrproject.org/latest/contribute/contribute_guidelines.html#coding-style"
 
+
     def run(self):
         self.prepare()
-        diff = subprocess.Popen(('git', 'diff', '%s' %(self.commit_range)), stdout=subprocess.PIPE)
+        checkpatch = '%s/scripts/checkpatch.pl' % self.repo_path
+        if not os.path.exists(checkpatch):
+            self.case.result = Skipped()
+
+        diff = subprocess.Popen(('git', 'diff', '%s' % (self.commit_range)),
+                                stdout=subprocess.PIPE)
         try:
-            output = subprocess.check_output(('%s/scripts/checkpatch.pl' %repository_path,
-                '--mailback', '--no-tree', '-'), stdin=diff.stdout,
-                stderr=subprocess.STDOUT, shell=True)
+            subprocess.check_output((checkpatch, '--mailback', '--no-tree', '-'),
+                                    stdin=diff.stdout,
+                                    stderr=subprocess.STDOUT, shell=True)
 
         except subprocess.CalledProcessError as ex:
-            m = re.search("([1-9][0-9]*) errors,", ex.output.decode('utf8'))
-            if m:
+            match = re.search("([1-9][0-9]*) errors,", ex.output.decode('utf8'))
+            if match:
                 self.case.result = Failure("Checkpatch issues", "failure")
                 self.case.result._elem.text = (ex.output.decode('utf8'))
 
@@ -94,8 +86,24 @@ class KconfigCheck(ComplianceTest):
     def run(self):
         self.prepare()
 
+        # Put the Kconfiglib path first to make sure no local Kconfiglib version is
+        # used
+        if 'ZEPHYR_BASE' in os.environ:
+            repo_path = os.environ['ZEPHYR_BASE']
+            kconfig_path = os.path.join(repo_path, "scripts/kconfig")
+            if os.path.exists(kconfig_path):
+                sys.path.insert(0, os.path.join(kconfig_path))
+                import kconfiglib
+            else:
+                self.case.result = Skipped()
+                return
+        else:
+            self.case.result = Skipped()
+            return
+
+
         # Look up Kconfig files relative to ZEPHYR_BASE
-        os.environ["srctree"] = repository_path
+        os.environ["srctree"] = repo_path
 
         # Parse the entire Kconfig tree, to make sure we see all symbols
         os.environ["SOC_DIR"] = "soc/"
@@ -123,11 +131,13 @@ class Documentation(ComplianceTest):
     _name = "Documentation"
     _doc = "https://docs.zephyrproject.org/latest/contribute/doc-guidelines.html"
 
+    DOCS_WARNING_FILE = "doc.warnings"
+
     def run(self):
         self.prepare()
 
-        if os.path.exists(DOCS_WARNING_FILE) and os.path.getsize(DOCS_WARNING_FILE) > 0:
-            with open(DOCS_WARNING_FILE, "rb") as f:
+        if os.path.exists(self.DOCS_WARNING_FILE) and os.path.getsize(self.DOCS_WARNING_FILE) > 0:
+            with open(self.DOCS_WARNING_FILE, "rb") as f:
                 log = f.read()
 
                 self.case.result = Error("Documentation Issues", "failure")
@@ -150,51 +160,57 @@ class GitLint(ComplianceTest):
 
         if msg != "":
             text = (msg.decode('utf8'))
-            self.case.result = Failure("commit message syntax issues", "failure")
+            self.case.result = Failure("commit message syntax issues",
+                                       "failure")
             self.case.result._elem.text = text
-
 
 
 class License(ComplianceTest):
     _name = "License"
-    _doc  = "https://docs.zephyrproject.org/latest/contribute/contribute_guidelines.html#licensing"
+    _doc = "https://docs.zephyrproject.org/latest/contribute/contribute_guidelines.html#licensing"
 
     def run(self):
         self.prepare()
 
         scancode = "/opt/scancode-toolkit/scancode"
         if not os.path.exists(scancode):
-            self.case.result = Skipped("scancode-toolkit not installed", "skipped")
+            self.case.result = Skipped("scancode-toolkit not installed",
+                                       "skipped")
             return
 
         os.makedirs("scancode-files", exist_ok=True)
-        new_files = sh.git("diff", "--name-only", "--diff-filter=A", self.commit_range, **sh_special_args)
+        new_files = sh.git("diff", "--name-only", "--diff-filter=A",
+                           self.commit_range, **sh_special_args)
 
-        if len(new_files) == 0:
+        if not new_files:
             return
 
         for newf in new_files:
-            f = str(newf).rstrip()
-            os.makedirs(os.path.join('scancode-files', os.path.dirname(f)), exist_ok=True)
-            copy = os.path.join("scancode-files", f)
-            copyfile(f, copy)
+            file = str(newf).rstrip()
+            os.makedirs(os.path.join('scancode-files',
+                                     os.path.dirname(file)), exist_ok=True)
+            copy = os.path.join("scancode-files", file)
+            copyfile(file, copy)
 
         try:
             cmd = [scancode, '--verbose', '--copyright', '--license', '--license-diag', '--info',
-                    '--classify', '--summary', '--json', 'scancode.json', 'scancode-files/']
+                   '--classify', '--summary', '--json', 'scancode.json', 'scancode-files/']
 
             cmd_str = " ".join(cmd)
             logging.info(cmd_str)
 
-            out = subprocess.check_output(cmd_str, stderr=subprocess.STDOUT, shell=True)
+            subprocess.check_output(cmd_str,
+                                          stderr=subprocess.STDOUT,
+                                          shell=True)
 
-        except subprocess.CalledProcessError as e:
-            logging.error(e.output)
-            self.case.result = Skipped("Exception when running scancode", "skipped")
+        except subprocess.CalledProcessError as ex:
+            logging.error(ex.output)
+            self.case.result = Skipped(
+                "Exception when running scancode", "skipped")
             return
 
         report = ""
-        with open ('scancode.json', 'r') as json_fp:
+        with open('scancode.json', 'r') as json_fp:
             scancode_results = json.load(json_fp)
             for file in scancode_results['files']:
                 if file['type'] == 'directory':
@@ -203,23 +219,26 @@ class License(ComplianceTest):
                 original_fp = str(file['path']).replace('scancode-files/', '')
                 licenses = file['licenses']
                 if (file['is_script'] or file['is_source']) and (file['programming_language'] not in ['CMake']) and (file['extension'] not in ['.yaml']):
-                    if len(file['licenses']) == 0:
+                    if not file['licenses']:
                         report += ("* {} missing license.\n".format(original_fp))
                     else:
-                        for l in licenses:
-                            if l['key'] != "apache-2.0":
-                                report += ("* {} is not apache-2.0 licensed: {}\n".format(original_fp, l['key']))
-                            if l['category'] != 'Permissive':
-                                report += ("* {} has non-permissive license: {}\n".format(original_fp, l['key']))
+                        for lic in licenses:
+                            if lic['key'] != "apache-2.0":
+                                report += ("* {} is not apache-2.0 licensed: {}\n".format(
+                                    original_fp, lic['key']))
+                            if lic['category'] != 'Permissive':
+                                report += ("* {} has non-permissive license: {}\n".format(
+                                    original_fp, lic['key']))
+                            if lic['key'] == 'unknown-spdx':
+                                report += ("* {} has unknown SPDX: {}\n".format(
+                                    original_fp, lic['key']))
 
-                    if len(file['copyrights'])  == 0:
+                    if not file['copyrights']:
                         report += ("* {} missing copyright.\n".format(original_fp))
 
         if report != "":
             self.case.result = Failure("License/Copyright issues", "failure")
             self.case.result._elem.text = report
-
-
 
 
 class Identity(ComplianceTest):
@@ -229,8 +248,9 @@ class Identity(ComplianceTest):
     def run(self):
         self.prepare()
 
-        for f in get_shas(self.commit_range):
-            commit = sh.git("log", "--decorate=short", "-n 1", f, **sh_special_args)
+        for file in get_shas(self.commit_range):
+            commit = sh.git("log", "--decorate=short",
+                            "-n 1", file, **sh_special_args)
             signed = []
             author = ""
             sha = ""
@@ -247,8 +267,10 @@ class Identity(ComplianceTest):
                 if match:
                     signed.append(match.group(1))
 
-            error1 = "%s: author email (%s) needs to match one of the signed-off-by entries." % (sha, author)
-            error2 = "%s: author email (%s) does not follow the syntax: First Last <email>." % (sha, author)
+            error1 = "%s: author email (%s) needs to match one of the signed-off-by entries." % (
+                sha, author)
+            error2 = "%s: author email (%s) does not follow the syntax: First Last <email>." % (
+                sha, author)
             failure = None
             if author not in signed:
                 failure = error1
@@ -259,7 +281,6 @@ class Identity(ComplianceTest):
                     failure = error2
                 else:
                     failure = failure + "\n" + error2
-
 
             if failure:
                 self.case.result = Failure("identity/email issues", "failure")
@@ -284,11 +305,12 @@ def init_logs():
 
     logging.debug("Log init completed")
 
+
 def parse_args():
     parser = argparse.ArgumentParser(
-                description="Check for coding style and documentation warnings.")
+        description="Check for coding style and documentation warnings.")
     parser.add_argument('-c', '--commits', default=None,
-            help="Commit range in the form: a..b")
+                        help="Commit range in the form: a..b")
     parser.add_argument('-g', '--github', action="store_true",
                         help="Send results to github as a comment.")
 
@@ -297,28 +319,27 @@ def parse_args():
     parser.add_argument('-p', '--pull-request', default=0, type=int,
                         help="Pull request number")
 
-    parser.add_argument('-s', '--status', action="store_true", help="Set status to pending")
+    parser.add_argument('-s', '--status', action="store_true",
+                        help="Set status to pending")
     parser.add_argument('-S', '--sha', default=None, help="Commit SHA")
     return parser.parse_args()
-
 
 
 def set_status(gh, repo, sha):
 
     repo = gh.get_repo(repo)
     commit = repo.get_commit(sha)
-    for Test in ComplianceTest.__subclasses__():
-        t = Test(None, "")
-        print("Creating status for %s" %(t._name))
+    for testcase in ComplianceTest.__subclasses__():
+        test = testcase(None, "")
+        print("Creating status for %s" % (test._name))
         commit.create_status('pending',
-                             '%s' %t._doc,
+                             '%s' % test._doc,
                              'Verification in progress',
-                             '{}'.format(t._name))
+                             '{}'.format(test._name))
 
 
 def main():
     args = parse_args()
-
 
     github_token = ''
     gh = None
@@ -335,11 +356,11 @@ def main():
 
     suite = TestSuite("Compliance")
     docs = {}
-    for Test in ComplianceTest.__subclasses__():
-        t = Test(suite, args.commits)
-        t.run()
-        suite.add_testcase(t.case)
-        docs[t.case.name] = t._doc
+    for testcase in ComplianceTest.__subclasses__():
+        test = testcase(suite, args.commits)
+        test.run()
+        suite.add_testcase(test.case)
+        docs[test.case.name] = test._doc
 
     xml = JUnitXml()
     xml.add_testsuite(suite)
@@ -378,9 +399,9 @@ def main():
         if args.repo and args.pull_request and comment_count > 0:
             comments = pr.get_issue_comments()
             commented = False
-            for c in comments:
-                if 'Found the following issues, please fix and resubmit' in c.body:
-                    c.edit(comment)
+            for cmnt in comments:
+                if 'Found the following issues, please fix and resubmit' in cmnt.body:
+                    cmnt.edit(comment)
                     commented = True
                     break
 
@@ -390,4 +411,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
