@@ -297,6 +297,30 @@ int ccs811_init(struct device *dev)
 #endif
 	}
 
+	/* Reset the device.  This saves having to deal with detecting
+	 * and validating any errors or configuration inconsistencies
+	 * after a reset that left the device running.
+	 */
+#ifdef DT_INST_0_AMS_CCS811_RESET_GPIOS_PIN
+	gpio_pin_write(drv_data->gpio, DT_INST_0_AMS_CCS811_RESET_GPIOS_PIN, 0);
+	k_busy_wait(15);	/* t_RESET */
+	gpio_pin_write(drv_data->gpio, DT_INST_0_AMS_CCS811_RESET_GPIOS_PIN, 1);
+#else
+	{
+		static u8_t const reset_seq[] = {
+			0xFF, 0x11, 0xE5, 0x72, 0x8A,
+		};
+
+		if (i2c_write(drv_data->i2c, reset_seq, sizeof(reset_seq),
+			      DT_INST_0_AMS_CCS811_BASE_ADDRESS) < 0) {
+			LOG_ERR("Failed to issue SW reset");
+			ret = -EIO;
+			goto out;
+		}
+	}
+#endif
+	k_sleep(20);            /* t_START assuming recent power-on */
+
 	/* Switch device to application mode */
 	ret = switch_to_app_mode(drv_data->i2c);
 	if (ret) {
