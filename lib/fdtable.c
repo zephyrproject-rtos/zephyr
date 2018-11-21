@@ -89,6 +89,20 @@ void *z_get_fd_obj(int fd, const struct fd_op_vtable *vtable, int err)
 	return fd_entry->obj;
 }
 
+void *z_get_fd_obj_and_vtable(int fd, const struct fd_op_vtable **vtable)
+{
+	struct fd_entry *fd_entry;
+
+	if (_check_fd(fd) < 0) {
+		return NULL;
+	}
+
+	fd_entry = &fdtable[fd];
+	*vtable = fd_entry->vtable;
+
+	return fd_entry->obj;
+}
+
 int z_reserve_fd(void)
 {
 	int fd;
