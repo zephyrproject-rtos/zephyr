@@ -26,13 +26,17 @@ MIMXRT1050-EVKB board, refer to `Board Revisions`_ section.
 Hardware
 ********
 
-- MIMXRT1052DVL6A MCU (600 MHz, 512 KB TCM)
+- MIMXRT1052DVL6A MCU (Cortex-M7, 600 MHz, 32KB ICache/32KB DCache, MPU,
+  VFPv5 FPU, Crypto Engine)
 
 - Memory
 
-  - 256 KB SDRAM
-  - 64 Mbit QSPI Flash
-  - 512 Mbit Hyper Flash
+  - 512 KByte MCU-internal SRAM
+  - 32 MByte external SDRAM (166MHz)
+  - 8 MByte external QSPI Flash
+  - 64 MByte external Hyper Flash
+  - 96 KByte MCU BootROM for loading application from external memory
+  - No internal Flash in MCU
 
 - Display
 
@@ -57,16 +61,17 @@ Hardware
 - Power
 
   - 5 V DC jack
+  - Can be powered using USB
 
 - Debug
 
   - JTAG 20-pin connector
-  - OpenSDA with DAPLink
+  - OpenSDA with DAPLink over USB (J28 on board)
 
 - Sensor
 
   - FXOS8700CQ 6-axis e-compass
-  - CMOS camera sensor interface
+  - CMOS camera sensor interface (Parallel CSI)
 
 - Expansion port
 
@@ -190,14 +195,23 @@ remaining are not used.
 Programming and Debugging
 *************************
 
+**NOTE:** MCU on this board lacks builtin Flash memory. Programming external
+Flash memory using Zephyr tools is not yet supported. The way to get an
+application running is starting it in debug mode using ``ninja debug`` (see
+below).
+
 The MIMXRT1050-EVK includes the :ref:`nxp_opensda` serial and debug adapter
 built into the board to provide debugging, flash programming, and serial
 communication over USB.
 
+The board comes pre-programmed with mbedRTOS compatible bootloader firmware,
+this bootloader is not yet supported by Zephyr. Instead, Segger J-Link firmware
+should be installed to start with Zephyr development.
+
 To use the Segger J-Link tools with OpenSDA, follow the instructions in the
 :ref:`nxp_opensda_jlink` page using the `Segger J-Link OpenSDA V2.1 Firmware`_.
 The Segger J-Link tools are the default for this board, therefore it is not
-necessary to set ``OPENSDA_FW=jlink`` explicitly when you invoke ``make
+necessary to set ``OPENSDA_FW=jlink`` explicitly when you invoke ``ninja
 debug``.
 
 With these mechanisms, applications for the ``mimxrt1050_evk`` board
@@ -229,7 +243,7 @@ Board Revisions
 ***************
 
 The original MIMXRT1050-EVK (rev A0) board was updated with a newer
-MIMXRT1050-EVKB (rev A1) board, with these major hardware differences::
+MIMXRT1050-EVKB (rev A1) board, with these major hardware differences:
 
 - SoC changed from MIMXRT1052DVL6**A** to MIMXRT1052DVL6**B**
 - Hardware bug fixes for: power, interfaces, and memory
