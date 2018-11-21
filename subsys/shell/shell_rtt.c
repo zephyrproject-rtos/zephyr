@@ -69,8 +69,7 @@ static int write(const struct shell_transport *transport,
 	struct shell_rtt *sh_rtt = (struct shell_rtt *)transport->ctx;
 	const u8_t *data8 = (const u8_t *)data;
 
-	SEGGER_RTT_Write(0, data8, length);
-	*cnt = length;
+	*cnt = SEGGER_RTT_Write(0, data8, length);
 
 	sh_rtt->handler(SHELL_TRANSPORT_EVT_TX_RDY, sh_rtt->context);
 	return 0;
