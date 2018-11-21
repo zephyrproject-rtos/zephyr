@@ -202,7 +202,7 @@ int eswifi_spi_init(struct eswifi_dev *eswifi)
 	struct eswifi_spi_data *spi = &eswifi_spi0; /* Static instance */
 
 	/* SPI DEV */
-	spi->spi_dev = device_get_binding("SPI_3");
+	spi->spi_dev = device_get_binding(DT_INVENTEK_ESWIFI_ESWIFI0_BUS_NAME);
 	if (!spi->spi_dev) {
 		LOG_ERR("Failed to initialize SPI driver");
 		return -ENODEV;
