@@ -73,11 +73,10 @@ static inline u8_t error_from_status(int status)
 static int ccs811_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct ccs811_data *drv_data = dev->driver_data;
+	int rc;
 	int tries;
 	u16_t buf[4];
-	u8_t cmd;
 	int status;
-	int rv = -EIO;
 
 	/* Check data ready flag for the measurement interval */
 #ifdef CONFIG_CCS811_DRIVE_MODE_1
@@ -88,50 +87,41 @@ static int ccs811_sample_fetch(struct device *dev, enum sensor_channel chan)
 	tries = 601;
 #endif
 
-	while (tries-- > 0) {
+	do {
+		const u8_t cmd = CCS811_REG_ALG_RESULT_DATA;
+
 		set_wake(drv_data, true);
-		status = fetch_status(drv_data->i2c);
-		if (status < 0) {
-			goto out;
+		rc = i2c_write_read(drv_data->i2c, DT_INST_0_AMS_CCS811_BASE_ADDRESS,
+				    &cmd, sizeof(cmd),
+				    (u8_t *)buf, sizeof(buf));
+
+		set_wake(drv_data, false);
+		if (rc < 0) {
+			return -EIO;
 		}
 
+		status = buf[2];
 		if (status & CCS811_STATUS_ERROR) {
 			LOG_ERR("CCS811 ERROR ID %02x",
 				error_from_status(status));
-			goto out;
+			return -EIO;
 		}
 
-		if ((status & CCS811_STATUS_DATA_READY) || tries == 0) {
+		if (status & CCS811_STATUS_DATA_READY) {
 			break;
 		}
 
-		set_wake(drv_data, false);
 		k_sleep(K_MSEC(100));
-	}
-
+	} while (--tries > 0);
 	if (!(status & CCS811_STATUS_DATA_READY)) {
-		LOG_ERR("Sensor data not available");
-		goto out;
+		return -EIO;
 	}
-
-	cmd = CCS811_REG_ALG_RESULT_DATA;
-	if (i2c_write_read(drv_data->i2c, DT_INST_0_AMS_CCS811_BASE_ADDRESS,
-			   &cmd, sizeof(cmd),
-			   (u8_t *)buf, 8) < 0) {
-		LOG_ERR("Failed to read conversion data.");
-		goto out;
-	}
-
 	drv_data->co2 = sys_be16_to_cpu(buf[0]);
 	drv_data->voc = sys_be16_to_cpu(buf[1]);
-	drv_data->status = buf[2] & 0xff;
-	drv_data->error = buf[2] >> 8;
+	drv_data->status = status;
+	drv_data->error = error_from_status(status);
 	drv_data->resistance = sys_be16_to_cpu(buf[3]);
-	rv = 0;
-
-out:
-	set_wake(drv_data, false);
-	return rv;
+	return 0;
 }
 
 static int ccs811_channel_get(struct device *dev,
