@@ -1,8 +1,8 @@
 /**************************************************************************//**
  * @file     core_sc300.h
  * @brief    CMSIS SC300 Core Peripheral Access Layer Header File
- * @version  V5.0.3
- * @date     10. January 2018
+ * @version  V5.0.6
+ * @date     04. June 2018
  ******************************************************************************/
 /*
  * Copyright (c) 2009-2018 Arm Limited. All rights reserved.
@@ -977,7 +977,7 @@ typedef struct
  */
 typedef struct
 {
-  __IOM uint32_t SSPSR;                  /*!< Offset: 0x000 (R/ )  Supported Parallel Port Size Register */
+  __IM  uint32_t SSPSR;                  /*!< Offset: 0x000 (R/ )  Supported Parallel Port Size Register */
   __IOM uint32_t CSPSR;                  /*!< Offset: 0x004 (R/W)  Current Parallel Port Size Register */
         uint32_t RESERVED0[2U];
   __IOM uint32_t ACPR;                   /*!< Offset: 0x010 (R/W)  Asynchronous Clock Prescaler Register */
@@ -988,7 +988,7 @@ typedef struct
   __IOM uint32_t FFCR;                   /*!< Offset: 0x304 (R/W)  Formatter and Flush Control Register */
   __IM  uint32_t FSCR;                   /*!< Offset: 0x308 (R/ )  Formatter Synchronization Counter Register */
         uint32_t RESERVED3[759U];
-  __IM  uint32_t TRIGGER;                /*!< Offset: 0xEE8 (R/ )  TRIGGER */
+  __IM  uint32_t TRIGGER;                /*!< Offset: 0xEE8 (R/ )  TRIGGER Register */
   __IM  uint32_t FIFO0;                  /*!< Offset: 0xEEC (R/ )  Integration ETM Data */
   __IM  uint32_t ITATBCTR2;              /*!< Offset: 0xEF0 (R/ )  ITATBCTR2 */
         uint32_t RESERVED4[1U];
@@ -1058,8 +1058,11 @@ typedef struct
 #define TPI_FIFO0_ETM0_Msk                 (0xFFUL /*<< TPI_FIFO0_ETM0_Pos*/)          /*!< TPI FIFO0: ETM0 Mask */
 
 /* TPI ITATBCTR2 Register Definitions */
-#define TPI_ITATBCTR2_ATREADY_Pos           0U                                         /*!< TPI ITATBCTR2: ATREADY Position */
-#define TPI_ITATBCTR2_ATREADY_Msk          (0x1UL /*<< TPI_ITATBCTR2_ATREADY_Pos*/)    /*!< TPI ITATBCTR2: ATREADY Mask */
+#define TPI_ITATBCTR2_ATREADY2_Pos          0U                                         /*!< TPI ITATBCTR2: ATREADY2 Position */
+#define TPI_ITATBCTR2_ATREADY2_Msk         (0x1UL /*<< TPI_ITATBCTR2_ATREADY2_Pos*/)   /*!< TPI ITATBCTR2: ATREADY2 Mask */
+
+#define TPI_ITATBCTR2_ATREADY1_Pos          0U                                         /*!< TPI ITATBCTR2: ATREADY1 Position */
+#define TPI_ITATBCTR2_ATREADY1_Msk         (0x1UL /*<< TPI_ITATBCTR2_ATREADY1_Pos*/)   /*!< TPI ITATBCTR2: ATREADY1 Mask */
 
 /* TPI Integration ITM Data Register Definitions (FIFO1) */
 #define TPI_FIFO1_ITM_ATVALID_Pos          29U                                         /*!< TPI FIFO1: ITM_ATVALID Position */
@@ -1084,12 +1087,15 @@ typedef struct
 #define TPI_FIFO1_ITM0_Msk                 (0xFFUL /*<< TPI_FIFO1_ITM0_Pos*/)          /*!< TPI FIFO1: ITM0 Mask */
 
 /* TPI ITATBCTR0 Register Definitions */
-#define TPI_ITATBCTR0_ATREADY_Pos           0U                                         /*!< TPI ITATBCTR0: ATREADY Position */
-#define TPI_ITATBCTR0_ATREADY_Msk          (0x1UL /*<< TPI_ITATBCTR0_ATREADY_Pos*/)    /*!< TPI ITATBCTR0: ATREADY Mask */
+#define TPI_ITATBCTR0_ATREADY2_Pos          0U                                         /*!< TPI ITATBCTR0: ATREADY2 Position */
+#define TPI_ITATBCTR0_ATREADY2_Msk         (0x1UL /*<< TPI_ITATBCTR0_ATREADY2_Pos*/)   /*!< TPI ITATBCTR0: ATREADY2 Mask */
+
+#define TPI_ITATBCTR0_ATREADY1_Pos          0U                                         /*!< TPI ITATBCTR0: ATREADY1 Position */
+#define TPI_ITATBCTR0_ATREADY1_Msk         (0x1UL /*<< TPI_ITATBCTR0_ATREADY1_Pos*/)   /*!< TPI ITATBCTR0: ATREADY1 Mask */
 
 /* TPI Integration Mode Control Register Definitions */
 #define TPI_ITCTRL_Mode_Pos                 0U                                         /*!< TPI ITCTRL: Mode Position */
-#define TPI_ITCTRL_Mode_Msk                (0x1UL /*<< TPI_ITCTRL_Mode_Pos*/)          /*!< TPI ITCTRL: Mode Mask */
+#define TPI_ITCTRL_Mode_Msk                (0x3UL /*<< TPI_ITCTRL_Mode_Pos*/)          /*!< TPI ITCTRL: Mode Mask */
 
 /* TPI DEVID Register Definitions */
 #define TPI_DEVID_NRZVALID_Pos             11U                                         /*!< TPI DEVID: NRZVALID Position */
@@ -1111,11 +1117,11 @@ typedef struct
 #define TPI_DEVID_NrTraceInput_Msk         (0x1FUL /*<< TPI_DEVID_NrTraceInput_Pos*/)  /*!< TPI DEVID: NrTraceInput Mask */
 
 /* TPI DEVTYPE Register Definitions */
-#define TPI_DEVTYPE_MajorType_Pos           4U                                         /*!< TPI DEVTYPE: MajorType Position */
-#define TPI_DEVTYPE_MajorType_Msk          (0xFUL << TPI_DEVTYPE_MajorType_Pos)        /*!< TPI DEVTYPE: MajorType Mask */
-
-#define TPI_DEVTYPE_SubType_Pos             0U                                         /*!< TPI DEVTYPE: SubType Position */
+#define TPI_DEVTYPE_SubType_Pos             4U                                         /*!< TPI DEVTYPE: SubType Position */
 #define TPI_DEVTYPE_SubType_Msk            (0xFUL /*<< TPI_DEVTYPE_SubType_Pos*/)      /*!< TPI DEVTYPE: SubType Mask */
+
+#define TPI_DEVTYPE_MajorType_Pos           0U                                         /*!< TPI DEVTYPE: MajorType Position */
+#define TPI_DEVTYPE_MajorType_Msk          (0xFUL << TPI_DEVTYPE_MajorType_Pos)        /*!< TPI DEVTYPE: MajorType Mask */
 
 /*@}*/ /* end of group CMSIS_TPI */
 
@@ -1436,6 +1442,12 @@ typedef struct
 #define NVIC_USER_IRQ_OFFSET          16
 
 
+/* The following EXC_RETURN values are saved the LR on exception entry */
+#define EXC_RETURN_HANDLER         (0xFFFFFFF1UL)     /* return to Handler mode, uses MSP after return                               */
+#define EXC_RETURN_THREAD_MSP      (0xFFFFFFF9UL)     /* return to Thread mode, uses MSP after return                                */
+#define EXC_RETURN_THREAD_PSP      (0xFFFFFFFDUL)     /* return to Thread mode, uses PSP after return                                */
+
+
 
 /**
   \brief   Set Priority Grouping
@@ -1728,7 +1740,7 @@ __STATIC_INLINE uint32_t __NVIC_GetVector(IRQn_Type IRQn)
   \brief   System Reset
   \details Initiates a system reset request to reset the MCU.
  */
-__STATIC_INLINE void __NVIC_SystemReset(void)
+__NO_RETURN __STATIC_INLINE void __NVIC_SystemReset(void)
 {
   __DSB();                                                          /* Ensure all outstanding memory accesses included
                                                                        buffered write are completed before reset */

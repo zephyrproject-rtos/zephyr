@@ -67,4 +67,4 @@ uint32_t TZ_LoadContext_S (TZ_MemoryId_t id);
 /// \return execution status (1: success, 0: error)
 uint32_t TZ_StoreContext_S (TZ_MemoryId_t id);
  
-#endif  // TZ_CONTEXT_H
+#endif // TZ_CONTEXT_H
