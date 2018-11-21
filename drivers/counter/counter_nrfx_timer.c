@@ -30,9 +30,14 @@ struct counter_nrfx_data {
 	void *wrap_user_data;
 };
 
+struct counter_nrfx_ch_data {
+	counter_alarm_callback_t callback;
+	void *user_data;
+};
+
 struct counter_nrfx_config {
 	struct counter_config_info info;
-	const struct counter_alarm_cfg **alarm_cfgs;
+	struct counter_nrfx_ch_data *ch_data;
 	nrfx_timer_t timer;
 
 	LOG_INSTANCE_PTR_DECLARE(log);
@@ -70,7 +75,7 @@ static u32_t counter_nrfx_read(struct device *dev)
 				  COUNTER_READ_CC);
 }
 
-static int counter_nrfx_set_alarm(struct device *dev,
+static int counter_nrfx_set_alarm(struct device *dev, u8_t chan_id,
 				  const struct counter_alarm_cfg *alarm_cfg)
 {
 	const struct counter_nrfx_config *nrfx_config = get_nrfx_config(dev);
@@ -81,16 +86,16 @@ static int counter_nrfx_set_alarm(struct device *dev,
 		return -EINVAL;
 	}
 
-	if (nrfx_config->alarm_cfgs[alarm_cfg->channel_id]) {
+	if (nrfx_config->ch_data[chan_id].callback) {
 		return -EBUSY;
 	}
 
 	cc_val = alarm_cfg->ticks + (alarm_cfg->absolute ?
 				0 : nrfx_timer_capture(timer, COUNTER_READ_CC));
-	nrfx_config->alarm_cfgs[alarm_cfg->channel_id] = alarm_cfg;
+	nrfx_config->ch_data[chan_id].callback = alarm_cfg->callback;
+	nrfx_config->ch_data[chan_id].user_data = alarm_cfg->user_data;
 
-	nrfx_timer_compare(timer, ID_TO_CC(alarm_cfg->channel_id),
-			   cc_val, true);
+	nrfx_timer_compare(timer, ID_TO_CC(chan_id), cc_val, true);
 
 	return 0;
 }
@@ -100,16 +105,16 @@ static void _disable(struct device *dev, u8_t id)
 	const struct counter_nrfx_config *config = get_nrfx_config(dev);
 
 	nrfx_timer_compare_int_disable(&config->timer, ID_TO_CC(id));
-	config->alarm_cfgs[id] = NULL;
+	config->ch_data[id].callback = NULL;
 }
 
-static int counter_nrfx_disable_alarm(struct device *dev,
-				      const struct counter_alarm_cfg *alarm_cfg)
+static int counter_nrfx_disable_alarm(struct device *dev,u8_t chan_id)
 {
-	_disable(dev, alarm_cfg->channel_id);
+	_disable(dev, chan_id);
 
 	return 0;
 }
+
 
 static int counter_nrfx_set_wrap(struct device *dev, u32_t ticks,
 				 counter_wrap_callback_t callback,
@@ -123,7 +128,7 @@ static int counter_nrfx_set_wrap(struct device *dev, u32_t ticks,
 		/* Overflow can be changed only when all alarms are
 		 * disables.
 		 */
-		if (nrfx_config->alarm_cfgs[i]) {
+		if (nrfx_config->ch_data[i].callback) {
 			return -EBUSY;
 		}
 	}
@@ -147,18 +152,17 @@ static u32_t counter_nrfx_get_pending_int(struct device *dev)
 
 static void alarm_event_handler(struct device *dev, u32_t id)
 {
-	const nrfx_timer_t *timer = &get_nrfx_config(dev)->timer;
-	const struct counter_alarm_cfg *alarm_cfg =
-				get_nrfx_config(dev)->alarm_cfgs[id];
+	const struct counter_nrfx_config *config = get_nrfx_config(dev);
+	counter_alarm_callback_t clbk = config->ch_data[id].callback;
 	u32_t cc_val;
 
-	if (!alarm_cfg->handler) {
+	if (!clbk) {
 		return;
 	}
 
-	cc_val = nrfx_timer_capture_get(timer, ID_TO_CC(id));
+	cc_val = nrfx_timer_capture_get(&config->timer, ID_TO_CC(id));
 	_disable(dev, id);
-	alarm_cfg->handler(dev, alarm_cfg, cc_val);
+	clbk(dev, id, cc_val, config->ch_data[id].user_data);
 }
 
 static void event_handler(nrf_timer_event_t event_type, void *p_context)
@@ -234,8 +238,8 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 		return init_timer(dev, &config);			       \
 	}								       \
 	static struct counter_nrfx_data counter_##idx##_data;		       \
-	static const struct counter_alarm_cfg				       \
-		*counter##idx##_alarm_cfgs[CC_TO_ID(TIMER##idx##_CC_NUM)];     \
+	static struct counter_nrfx_ch_data				       \
+		counter##idx##_ch_data[CC_TO_ID(TIMER##idx##_CC_NUM)];	       \
 	LOG_INSTANCE_REGISTER(LOG_MODULE_NAME, idx, CONFIG_COUNTER_LOG_LEVEL); \
 	static const struct counter_nrfx_config nrfx_counter_##idx##_config = {\
 		.info = {						       \
@@ -246,7 +250,7 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 			.count_up = true,				       \
 			.channels = CC_TO_ID(TIMER##idx##_CC_NUM),	       \
 		},							       \
-		.alarm_cfgs = counter##idx##_alarm_cfgs,		       \
+		.ch_data = counter##idx##_ch_data,			       \
 		.timer = NRFX_TIMER_INSTANCE(idx),			       \
 		LOG_INSTANCE_PTR_INIT(log, LOG_MODULE_NAME, idx)	       \
 	};								       \

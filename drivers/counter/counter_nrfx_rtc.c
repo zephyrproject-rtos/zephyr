@@ -28,9 +28,14 @@ struct counter_nrfx_data {
 	u32_t wrap;
 };
 
+struct counter_nrfx_ch_data {
+	counter_alarm_callback_t callback;
+	void *user_data;
+};
+
 struct counter_nrfx_config {
 	struct counter_config_info info;
-	const struct counter_alarm_cfg **alarm_cfgs;
+	struct counter_nrfx_ch_data *ch_data;
 	nrfx_rtc_t rtc;
 
 	LOG_INSTANCE_PTR_DECLARE(log);
@@ -67,7 +72,7 @@ static u32_t counter_nrfx_read(struct device *dev)
 	return nrfx_rtc_counter_get(&get_nrfx_config(dev)->rtc);
 }
 
-static int counter_nrfx_set_alarm(struct device *dev,
+static int counter_nrfx_set_alarm(struct device *dev, u8_t chan_id,
 				  const struct counter_alarm_cfg *alarm_cfg)
 {
 	const struct counter_nrfx_config *nrfx_config = get_nrfx_config(dev);
@@ -78,7 +83,7 @@ static int counter_nrfx_set_alarm(struct device *dev,
 		return -EINVAL;
 	}
 
-	if (nrfx_config->alarm_cfgs[alarm_cfg->channel_id]) {
+	if (nrfx_config->ch_data[chan_id].callback) {
 		return -EBUSY;
 	}
 
@@ -86,9 +91,10 @@ static int counter_nrfx_set_alarm(struct device *dev,
 					0 : nrfx_rtc_counter_get(rtc));
 	cc_val = (cc_val > get_dev_data(dev)->wrap) ?
 			(cc_val - get_dev_data(dev)->wrap) : cc_val;
-	nrfx_config->alarm_cfgs[alarm_cfg->channel_id] = alarm_cfg;
+	nrfx_config->ch_data[chan_id].callback = alarm_cfg->callback;
+	nrfx_config->ch_data[chan_id].user_data = alarm_cfg->user_data;
 
-	nrfx_rtc_cc_set(rtc, ID_TO_CC(alarm_cfg->channel_id), cc_val, true);
+	nrfx_rtc_cc_set(rtc, ID_TO_CC(chan_id), cc_val, true);
 
 	return 0;
 }
@@ -98,13 +104,12 @@ static void _disable(struct device *dev, u8_t id)
 	const struct counter_nrfx_config *config = get_nrfx_config(dev);
 
 	nrfx_rtc_cc_disable(&config->rtc, ID_TO_CC(id));
-	config->alarm_cfgs[id] = NULL;
+	config->ch_data[id].callback = NULL;
 }
 
-static int counter_nrfx_disable_alarm(struct device *dev,
-				     const struct counter_alarm_cfg *alarm_cfg)
+static int counter_nrfx_disable_alarm(struct device *dev, u8_t chan_id)
 {
-	_disable(dev, alarm_cfg->channel_id);
+	_disable(dev, chan_id);
 
 	return 0;
 }
@@ -121,7 +126,7 @@ static int counter_nrfx_set_wrap(struct device *dev, u32_t ticks,
 		/* Overflow can be changed only when all alarms are
 		 * disables.
 		 */
-		if (nrfx_config->alarm_cfgs[i]) {
+		if (nrfx_config->ch_data[i].callback) {
 			return -EBUSY;
 		}
 	}
@@ -145,13 +150,17 @@ static u32_t counter_nrfx_get_pending_int(struct device *dev)
 static void alarm_event_handler(struct device *dev, u32_t id)
 {
 	const struct counter_nrfx_config *config = get_nrfx_config(dev);
-	const struct counter_alarm_cfg *alarm_cfg = config->alarm_cfgs[id];
+	counter_alarm_callback_t clbk = config->ch_data[id].callback;
 	u32_t cc_val;
+
+	if (!clbk) {
+		return;
+	}
 
 	cc_val = nrf_rtc_cc_get(config->rtc.p_reg, ID_TO_CC(id));
 
 	_disable(dev, id);
-	alarm_cfg->handler(dev, alarm_cfg, cc_val);
+	clbk(dev, id, cc_val, config->ch_data[id].user_data);
 }
 
 static void event_handler(nrfx_rtc_int_type_t int_type, void *p_context)
@@ -244,8 +253,8 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 		return init_rtc(dev, &config, rtc_##idx##_handler);	       \
 	}								       \
 	static struct counter_nrfx_data counter_##idx##_data;		       \
-	static const struct counter_alarm_cfg				       \
-		*counter##idx##_alarm_cfgs[CC_TO_ID(RTC##idx##_CC_NUM)];       \
+	static struct counter_nrfx_ch_data				       \
+		counter##idx##_ch_data[CC_TO_ID(RTC##idx##_CC_NUM)];	       \
 	LOG_INSTANCE_REGISTER(LOG_MODULE_NAME, idx, CONFIG_COUNTER_LOG_LEVEL); \
 	static const struct counter_nrfx_config nrfx_counter_##idx##_config = {\
 		.info = {						       \
@@ -255,7 +264,7 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 			.count_up = true,				       \
 			.channels = CC_TO_ID(RTC##idx##_CC_NUM)		       \
 		},							       \
-		.alarm_cfgs = counter##idx##_alarm_cfgs,		       \
+		.ch_data = counter##idx##_ch_data,			       \
 		.rtc = NRFX_RTC_INSTANCE(idx),				       \
 		LOG_INSTANCE_PTR_INIT(log, LOG_MODULE_NAME, idx)	       \
 	};								       \
