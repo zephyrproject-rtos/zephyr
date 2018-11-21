@@ -244,6 +244,7 @@ config BT_ATT_TX_MAX
 
 config BT_AUTO_PHY_UPDATE
 	bool "Auto-initiate PHY Update Procedure"
+	depends on BT_PHY_UPDATE
 	default y
 	help
 	  Initiate PHY Update Procedure on connection establishment.
