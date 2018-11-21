@@ -1,5 +1,6 @@
 add_subdirectory_if_kconfig(coap)
 add_subdirectory_if_kconfig(lwm2m)
+add_subdirectory_if_kconfig(socks)
 add_subdirectory_if_kconfig(sntp)
 add_subdirectory_ifdef(CONFIG_DNS_RESOLVER      dns)
 add_subdirectory_ifdef(CONFIG_MQTT_LEGACY_LIB   mqtt)
