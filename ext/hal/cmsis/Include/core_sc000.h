@@ -1,8 +1,8 @@
 /**************************************************************************//**
  * @file     core_sc000.h
  * @brief    CMSIS SC000 Core Peripheral Access Layer Header File
- * @version  V5.0.3
- * @date     10. January 2018
+ * @version  V5.0.5
+ * @date     28. May 2018
  ******************************************************************************/
 /*
  * Copyright (c) 2009-2018 Arm Limited. All rights reserved.
@@ -727,6 +727,12 @@ typedef struct
 #define NVIC_USER_IRQ_OFFSET          16
 
 
+/* The following EXC_RETURN values are saved the LR on exception entry */
+#define EXC_RETURN_HANDLER         (0xFFFFFFF1UL)     /* return to Handler mode, uses MSP after return                               */
+#define EXC_RETURN_THREAD_MSP      (0xFFFFFFF9UL)     /* return to Thread mode, uses MSP after return                                */
+#define EXC_RETURN_THREAD_PSP      (0xFFFFFFFDUL)     /* return to Thread mode, uses PSP after return                                */
+
+
 /* Interrupt Priorities are WORD accessible only under Armv6-M                  */
 /* The following MACROS handle generation of the register offset and byte masks */
 #define _BIT_SHIFT(IRQn)         (  ((((uint32_t)(int32_t)(IRQn))         )      &  0x03UL) * 8UL)
@@ -920,7 +926,7 @@ __STATIC_INLINE uint32_t __NVIC_GetVector(IRQn_Type IRQn)
   \brief   System Reset
   \details Initiates a system reset request to reset the MCU.
  */
-__STATIC_INLINE void __NVIC_SystemReset(void)
+__NO_RETURN __STATIC_INLINE void __NVIC_SystemReset(void)
 {
   __DSB();                                                          /* Ensure all outstanding memory accesses included
                                                                        buffered write are completed before reset */
