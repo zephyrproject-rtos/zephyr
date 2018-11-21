@@ -21,12 +21,12 @@ static int hifive1_pinmux_init(struct device *dev)
 	pinmux_pin_set(p, 17, SIFIVE_PINMUX_IOF0);
 
 	/* SPI1 */
-	pinmux_pin_set(p, 2, SIFIVE_PINMUX_IOF0); /* SS0 */
-	pinmux_pin_set(p, 3, SIFIVE_PINMUX_IOF0); /* MOSI */
-	pinmux_pin_set(p, 4, SIFIVE_PINMUX_IOF0); /* MISO */
-	pinmux_pin_set(p, 5, SIFIVE_PINMUX_IOF0); /* SCK */
-	pinmux_pin_set(p, 9, SIFIVE_PINMUX_IOF0); /* SS2 */
-	pinmux_pin_set(p, 10, SIFIVE_PINMUX_IOF0); /* SS3 */
+	pinmux_pin_set(p, 2, SIFIVE_PINMUX_IOF0);  /* CS0 */
+	pinmux_pin_set(p, 3, SIFIVE_PINMUX_IOF0);  /* MOSI */
+	pinmux_pin_set(p, 4, SIFIVE_PINMUX_IOF0);  /* MISO */
+	pinmux_pin_set(p, 5, SIFIVE_PINMUX_IOF0);  /* SCK */
+	pinmux_pin_set(p, 9, SIFIVE_PINMUX_IOF0);  /* CS2 */
+	pinmux_pin_set(p, 10, SIFIVE_PINMUX_IOF0); /* CS3 */
 
 	return 0;
 }
