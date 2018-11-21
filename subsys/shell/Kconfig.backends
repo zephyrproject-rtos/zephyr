@@ -25,16 +25,15 @@ config SHELL_BACKEND_SERIAL
 if SHELL_BACKEND_SERIAL
 
 # Internal config to enable UART interrupts if supported.
-config SHELL_BACKEND_SERIAL_FORCE_INTERRUPTS
-	bool
-	default y
+config SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
+	bool "Interrupt driven"
+	default y if UART_INTERRUPT_DRIVEN
 	depends on SERIAL_SUPPORT_INTERRUPT
-	imply UART_INTERRUPT_DRIVEN
 
 config SHELL_BACKEND_SERIAL_TX_RING_BUFFER_SIZE
 	int "Set TX ring buffer size"
 	default 8
-	depends on UART_INTERRUPT_DRIVEN
+	depends on SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
 	help
 	  If UART is utilizing DMA transfers then increasing ring buffer size
 	  increases transfers length and reduces number of interrupts.
@@ -52,7 +51,7 @@ config SHELL_BACKEND_SERIAL_RX_RING_BUFFER_SIZE
 config SHELL_BACKEND_SERIAL_RX_POLL_PERIOD
 	int "RX polling period (in milliseconds)"
 	default 10
-	depends on !UART_INTERRUPT_DRIVEN
+	depends on !SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
 	help
 	  Determines how often UART is polled for RX byte.
 
