@@ -61,8 +61,8 @@ static int ccs811_sample_fetch(struct device *dev, enum sensor_channel chan)
 }
 
 static int ccs811_channel_get(struct device *dev,
-			       enum sensor_channel chan,
-			       struct sensor_value *val)
+			      enum sensor_channel chan,
+			      struct sensor_value *val)
 {
 	struct ccs811_data *drv_data = dev->driver_data;
 	u32_t uval;
@@ -83,7 +83,7 @@ static int ccs811_channel_get(struct device *dev,
 		 * Raw ADC readings are contained in least significant 10 bits
 		 */
 		uval = (drv_data->resistance & CCS811_VOLTAGE_MASK)
-					* CCS811_VOLTAGE_SCALE;
+		       * CCS811_VOLTAGE_SCALE;
 		val->val1 = uval / 1000000U;
 		val->val2 = uval % 1000000;
 
@@ -161,7 +161,7 @@ int ccs811_init(struct device *dev)
 	drv_data->i2c = device_get_binding(DT_INST_0_AMS_CCS811_BUS_NAME);
 	if (drv_data->i2c == NULL) {
 		LOG_ERR("Failed to get pointer to %s device!",
-			    DT_INST_0_AMS_CCS811_BUS_NAME);
+			DT_INST_0_AMS_CCS811_BUS_NAME);
 		return -EINVAL;
 	}
 
