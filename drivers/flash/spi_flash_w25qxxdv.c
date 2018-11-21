@@ -399,23 +399,23 @@ static int spi_flash_wb_configure(struct device *dev)
 {
 	struct spi_flash_data *data = dev->driver_data;
 
-	data->spi = device_get_binding(CONFIG_SPI_FLASH_W25QXXDV_SPI_NAME);
+	data->spi = device_get_binding(DT_SPI_FLASH_W25QXXDV_SPI_NAME);
 	if (!data->spi) {
 		return -EINVAL;
 	}
 
-	data->spi_cfg.frequency = CONFIG_SPI_FLASH_W25QXXDV_SPI_FREQ_0;
+	data->spi_cfg.frequency = DT_SPI_FLASH_W25QXXDV_SPI_FREQ;
 	data->spi_cfg.operation = SPI_WORD_SET(8);
-	data->spi_cfg.slave = CONFIG_SPI_FLASH_W25QXXDV_SPI_SLAVE;
+	data->spi_cfg.slave = DT_SPI_FLASH_W25QXXDV_SPI_SLAVE;
 
 #if defined(CONFIG_SPI_FLASH_W25QXXDV_GPIO_SPI_CS)
 	data->cs_ctrl.gpio_dev = device_get_binding(
-		CONFIG_SPI_FLASH_W25QXXDV_GPIO_SPI_CS_DRV_NAME);
+		DT_SPI_FLASH_W25QXXDV_GPIO_SPI_CS_DRV_NAME);
 	if (!data->cs_ctrl.gpio_dev) {
 		return -ENODEV;
 	}
 
-	data->cs_ctrl.gpio_pin = CONFIG_SPI_FLASH_W25QXXDV_GPIO_SPI_CS_PIN;
+	data->cs_ctrl.gpio_pin = DT_SPI_FLASH_W25QXXDV_GPIO_SPI_CS_PIN;
 	data->cs_ctrl.delay = CONFIG_SPI_FLASH_W25QXXDV_GPIO_CS_WAIT_DELAY;
 
 	data->spi_cfg.cs = &data->cs_ctrl;

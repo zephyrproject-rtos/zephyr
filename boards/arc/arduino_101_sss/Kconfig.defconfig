@@ -4,17 +4,4 @@ if BOARD_ARDUINO_101_SSS
 config BOARD
 	default "arduino_101_sss"
 
-if FLASH && SPI
-
-config SPI_FLASH_W25QXXDV
-	default y
-
-config SPI_FLASH_W25QXXDV_SPI_NAME
-	default "SPI_2"
-
-config SPI_FLASH_W25QXXDV_SPI_SLAVE
-	default 1
-
-endif # FLASH && SPI
-
 endif # BOARD_ARDUINO_101_SSS
