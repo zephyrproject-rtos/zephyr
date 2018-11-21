@@ -13,7 +13,17 @@
 #include "settings/settings_fcb.h"
 #include "settings_priv.h"
 
-#define SETTINGS_FCB_VERS		1
+/* Version 2: Add a status byte to tell if the settings is valid */
+#define SETTINGS_FCB_VERS		2
+
+/* Add an extra byte for the status of the settings entry */
+#define FCB_SETTINGS_EXTRA_LEN          1
+
+#define FCB_SETTINGS_BUFFER_LEN (FCB_SETTINGS_EXTRA_LEN + \
+	SETTINGS_MAX_NAME_LEN + SETTINGS_MAX_VAL_LEN + SETTINGS_EXTRA_LEN)
+
+#define SETTINGS_ENTRY_VALID   0xFF
+#define SETTINGS_ENTRY_INVALID 0x00
 
 struct settings_fcb_load_cb_arg {
 	load_cb cb;
@@ -79,8 +89,7 @@ int settings_fcb_dst(struct settings_fcb *cf)
 static int settings_fcb_load_cb(struct fcb_entry_ctx *entry_ctx, void *arg)
 {
 	struct settings_fcb_load_cb_arg *argp;
-	char buf[SETTINGS_MAX_NAME_LEN + SETTINGS_MAX_VAL_LEN +
-		 SETTINGS_EXTRA_LEN];
+	char buf[FCB_SETTINGS_BUFFER_LEN];
 	char *name_str;
 	char *val_str;
 	int rc;
@@ -99,9 +108,16 @@ static int settings_fcb_load_cb(struct fcb_entry_ctx *entry_ctx, void *arg)
 	if (rc) {
 		return 0;
 	}
+
+	/* Check if the setting entry is valid */
+	if (buf[0] == SETTINGS_ENTRY_INVALID) {
+		return 0;
+	}
+
 	buf[len] = '\0';
 
-	rc = settings_line_parse(buf, &name_str, &val_str);
+	rc = settings_line_parse(buf + FCB_SETTINGS_EXTRA_LEN, &name_str,
+				 &val_str);
 	if (rc) {
 		return 0;
 	}
@@ -136,18 +152,23 @@ static int settings_fcb_var_read(struct fcb_entry_ctx *entry_ctx, char *buf,
 	if (rc) {
 		return rc;
 	}
+
+	/* Check if the setting entry is valid */
+	if (buf[0] == SETTINGS_ENTRY_INVALID) {
+		return 0;
+	}
+
 	buf[entry_ctx->loc.fe_data_len] = '\0';
-	rc = settings_line_parse(buf, name, val);
+
+	rc = settings_line_parse(buf + FCB_SETTINGS_EXTRA_LEN, name, val);
 	return rc;
 }
 
 static void settings_fcb_compress(struct settings_fcb *cf)
 {
 	int rc;
-	char buf1[SETTINGS_MAX_NAME_LEN + SETTINGS_MAX_VAL_LEN +
-		  SETTINGS_EXTRA_LEN];
-	char buf2[SETTINGS_MAX_NAME_LEN + SETTINGS_MAX_VAL_LEN +
-		  SETTINGS_EXTRA_LEN];
+	char buf1[FCB_SETTINGS_BUFFER_LEN];
+	char buf2[FCB_SETTINGS_BUFFER_LEN];
 	struct fcb_entry_ctx loc1;
 	struct fcb_entry_ctx loc2;
 	char *name1, *val1;
@@ -216,14 +237,61 @@ static void settings_fcb_compress(struct settings_fcb *cf)
 	__ASSERT(rc == 0, "Failed to fcb rotate.\n");
 }
 
+static int settings_fcb_invalid_entry(struct fcb_entry_ctx *entry_ctx,
+				      void *arg)
+{
+	const char *entry_name = arg;
+	char buf[FCB_SETTINGS_BUFFER_LEN];
+	size_t len;
+	char *name_str;
+	char *val_str;
+	int rc;
+
+	len = entry_ctx->loc.fe_data_len;
+	if (len >= sizeof(buf)) {
+		len = sizeof(buf) - 1;
+	}
+
+	rc = flash_area_read(entry_ctx->fap,
+			     FCB_ENTRY_FA_DATA_OFF(entry_ctx->loc),
+			     buf, len);
+	if (rc) {
+		return rc;
+	}
+
+	/* Check if the setting entry is valid */
+	if (buf[0] == SETTINGS_ENTRY_INVALID) {
+		return 0;
+	}
+
+	buf[len] = '\0';
+
+	rc = settings_line_parse(buf + FCB_SETTINGS_EXTRA_LEN, &name_str,
+				 &val_str);
+	if (rc) {
+		return 0;
+	}
+
+	if (strcmp(entry_name, name_str)) {
+		return 0;
+	}
+
+	buf[0] = SETTINGS_ENTRY_INVALID;
+	return flash_area_write(entry_ctx->fap,
+				FCB_ENTRY_FA_DATA_OFF(entry_ctx->loc),
+				buf, FCB_SETTINGS_EXTRA_LEN);
+}
+
 static int settings_fcb_append(struct settings_fcb *cf, char *buf, int len)
 {
 	int rc;
 	int i;
 	struct fcb_entry loc;
+	u8_t entry_status = SETTINGS_ENTRY_VALID;
 
 	for (i = 0; i < 10; i++) {
-		rc = fcb_append(&cf->cf_fcb, len, &loc);
+		rc = fcb_append(&cf->cf_fcb, len + FCB_SETTINGS_EXTRA_LEN,
+				&loc);
 		if (rc != FCB_ERR_NOSPACE) {
 			break;
 		}
@@ -234,7 +302,14 @@ static int settings_fcb_append(struct settings_fcb *cf, char *buf, int len)
 	}
 
 	rc = flash_area_write(cf->cf_fcb.fap, FCB_ENTRY_FA_DATA_OFF(loc),
-			      buf, len);
+			      &entry_status, sizeof(entry_status));
+	if (rc) {
+		return -EINVAL;
+	}
+
+	rc = flash_area_write(cf->cf_fcb.fap,
+		      FCB_ENTRY_FA_DATA_OFF(loc) + FCB_SETTINGS_EXTRA_LEN,
+		      buf, len);
 	if (rc) {
 		return -EINVAL;
 	}
@@ -245,12 +320,19 @@ static int settings_fcb_save(struct settings_store *cs, const char *name,
 			     const char *value)
 {
 	struct settings_fcb *cf = (struct settings_fcb *)cs;
-	char buf[SETTINGS_MAX_NAME_LEN + SETTINGS_MAX_VAL_LEN +
-		 SETTINGS_EXTRA_LEN];
+	char buf[FCB_SETTINGS_BUFFER_LEN];
 	int len;
+	int rc;
 
 	if (!name) {
 		return -EINVAL;
+	}
+
+	/* Invalid entry with the same key */
+	rc = fcb_walk(&cf->cf_fcb, 0, settings_fcb_invalid_entry,
+		      (char *)name);
+	if (rc) {
+		return rc;
 	}
 
 	len = settings_line_make(buf, sizeof(buf), name, value);
