@@ -3,4 +3,11 @@ if BOARD_HIFIVE1
 config BOARD
 	default "hifive1"
 
+if PWM
+
+config PWM_SIFIVE
+	def_bool y
+
+endif
+
 endif
