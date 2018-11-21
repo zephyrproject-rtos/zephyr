@@ -13,5 +13,7 @@ config SOC_SERIES_EFM32PG12B
 	select SOC_FAMILY_EXX32
 	select SYS_POWER_LOW_POWER_STATE_SUPPORTED
 	select CPU_HAS_SYSTICK
+	select HAS_CMU
+	select SOC_GECKO_EMU
 	help
 	  Enable support for EFM32 PearlGecko MCU series

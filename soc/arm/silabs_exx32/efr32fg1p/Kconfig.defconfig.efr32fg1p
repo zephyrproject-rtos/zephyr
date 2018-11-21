@@ -6,11 +6,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if SOC_EFR32FG1P
-
-config SOC
-	string
-	default "efr32fg1p"
+if SOC_SERIES_EFR32FG1P
 
 config GPIO
 	default y
@@ -36,4 +32,4 @@ config SOC_FLASH_GECKO
 
 endif # FLASH
 
-endif # SOC_EFR32FG1P
+endif # SOC_SERIES_EFR32FG1P
