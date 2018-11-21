@@ -3,3 +3,4 @@
 zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_CCS811 ccs811.c)
+zephyr_library_sources_ifdef(CONFIG_CCS811_TRIGGER ccs811_trigger.c)
