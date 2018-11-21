@@ -19,6 +19,11 @@ properties:
       category: required
       description: compatible strings
       generation: define
+    clock-frequency:
+      type: int
+      category: optional
+      description: Clock frequency the SPI peripheral is being driven at
+      generation: define
     "#address-cells":
       type: int
       category: required
