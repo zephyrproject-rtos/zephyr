@@ -91,6 +91,12 @@ config BT_PHY_UPDATE
 	help
 	  Enable support for Bluetooth 5.0 PHY Update Procedure.
 
+config BT_DATA_LEN_UPDATE
+	bool "Data Length Update"
+	default y
+	help
+	  Enable support for Bluetooth v4.2 LE Data Length Update procedure.
+
 config BT_CONN
 	# Virtual/hidden option
 	bool

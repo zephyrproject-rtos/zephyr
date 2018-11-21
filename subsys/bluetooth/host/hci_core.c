@@ -924,7 +924,8 @@ static void le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 		}
 	}
 
-	if (BT_FEAT_LE_DLE(bt_dev.le.features)) {
+	if (IS_ENABLED(CONFIG_BT_DATA_LEN_UPDATE) &&
+	    BT_FEAT_LE_DLE(bt_dev.le.features)) {
 		hci_le_set_data_len(conn);
 	}
 
@@ -1011,7 +1012,8 @@ static void le_remote_feat_complete(struct net_buf *buf)
 		}
 	}
 
-	if (BT_FEAT_LE_DLE(bt_dev.le.features) &&
+	if (IS_ENABLED(CONFIG_BT_DATA_LEN_UPDATE) &&
+	    BT_FEAT_LE_DLE(bt_dev.le.features) &&
 	    BT_FEAT_LE_DLE(conn->le.features)) {
 		hci_le_set_data_len(conn);
 	}
@@ -1025,6 +1027,7 @@ done:
 	bt_conn_unref(conn);
 }
 
+#if defined(CONFIG_BT_DATA_LEN_UPDATE)
 static void le_data_len_change(struct net_buf *buf)
 {
 	struct bt_hci_evt_le_data_len_change *evt = (void *)buf->data;
@@ -1048,6 +1051,7 @@ static void le_data_len_change(struct net_buf *buf)
 
 	bt_conn_unref(conn);
 }
+#endif /* CONFIG_BT_DATA_LEN_UPDATE */
 
 #if defined(CONFIG_BT_PHY_UPDATE)
 static void le_phy_update_complete(struct net_buf *buf)
@@ -1070,7 +1074,8 @@ static void le_phy_update_complete(struct net_buf *buf)
 		goto done;
 	}
 
-	if (BT_FEAT_LE_DLE(bt_dev.le.features) &&
+	if (IS_ENABLED(CONFIG_BT_DATA_LEN_UPDATE) &&
+	    BT_FEAT_LE_DLE(bt_dev.le.features) &&
 	    BT_FEAT_LE_DLE(conn->le.features)) {
 		hci_le_set_data_len(conn);
 	}
@@ -3280,9 +3285,11 @@ static void hci_le_meta_event(struct net_buf *buf)
 	case BT_HCI_EVT_LE_CONN_PARAM_REQ:
 		le_conn_param_req(buf);
 		break;
+#if defined(CONFIG_BT_DATA_LEN_UPDATE)
 	case BT_HCI_EVT_LE_DATA_LEN_CHANGE:
 		le_data_len_change(buf);
 		break;
+#endif /* CONFIG_BT_DATA_LEN_UPDATE */
 #if defined(CONFIG_BT_PHY_UPDATE)
 	case BT_HCI_EVT_LE_PHY_UPDATE_COMPLETE:
 		le_phy_update_complete(buf);
@@ -3768,7 +3775,8 @@ static int le_set_event_mask(void)
 			mask |= BT_EVT_MASK_LE_CONN_PARAM_REQ;
 		}
 
-		if (BT_FEAT_LE_DLE(bt_dev.le.features)) {
+		if (IS_ENABLED(CONFIG_BT_DATA_LEN_UPDATE) &&
+		    BT_FEAT_LE_DLE(bt_dev.le.features)) {
 			mask |= BT_EVT_MASK_LE_DATA_LEN_CHANGE;
 		}
 
@@ -3861,6 +3869,7 @@ static int le_init(void)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CONN) &&
+	    IS_ENABLED(CONFIG_BT_DATA_LEN_UPDATE) &&
 	    BT_FEAT_LE_DLE(bt_dev.le.features)) {
 		struct bt_hci_cp_le_write_default_data_len *cp;
 		struct bt_hci_rp_le_read_max_data_len *rp;
