@@ -359,17 +359,25 @@ static void raw_string_print(struct log_msg *msg,
 
 	size_t offset = 0;
 	size_t length;
+	bool eol = false;
 
 	do {
 		length = log_output->size;
 		/* Sting is stored in a hexdump message. */
 		log_msg_hexdump_data_get(msg, log_output->buf, &length, offset);
 		log_output->control_block->offset = length;
+
+		if (length) {
+			eol = (log_output->buf[length - 1] == '\n');
+		}
+
 		log_output_flush(log_output);
 		offset += length;
 	} while (length > 0);
 
-	print_formatted(log_output, "\r");
+	if (eol) {
+		print_formatted(log_output, "\r");
+	}
 }
 
 static int prefix_print(struct log_msg *msg,
