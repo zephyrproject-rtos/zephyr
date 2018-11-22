@@ -22,7 +22,7 @@ min-line-count=1
 max-line-count=200
 
 [title-starts-with-subsystem]
-regex = ^(([^:]+):)(\s([^:]+):)*\s(.+)$
+regex = ^(?!subsys:)(([^:]+):)(\s([^:]+):)*\s(.+)$
 
 [title-must-not-contain-word]
 # Comma-separated list of words that should not occur in the title. Matching is case
