@@ -194,7 +194,7 @@ class License(ComplianceTest):
 
         try:
             cmd = [scancode, '--verbose', '--copyright', '--license', '--license-diag', '--info',
-                   '--classify', '--summary', '--json', 'scancode.json', 'scancode-files/']
+                   '--classify', '--summary', '--html', 'scancode.html', '--json', 'scancode.json', 'scancode-files/']
 
             cmd_str = " ".join(cmd)
             logging.info(cmd_str)
@@ -347,7 +347,7 @@ def main():
         github_token = os.environ['GH_TOKEN']
         gh = Github(github_token)
 
-    if args.status and args.sha != None and args.repo and gh:
+    if args.status and args.sha is not None and args.repo and gh:
         set_status(gh, args.repo, args.sha)
         sys.exit(0)
 
