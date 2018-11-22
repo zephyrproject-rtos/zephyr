@@ -117,6 +117,7 @@ config ARCV2_TIMER
 	bool "ARC Timer"
 	default y
 	depends on ARC
+	select TICKLESS_CAPABLE
 	help
 	  This module implements a kernel device driver for the ARCv2 processor timer 0
 	  and provides the standard "system clock driver" interfaces.
