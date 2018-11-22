@@ -411,8 +411,8 @@ static inline int _obj_validation_check(struct _k_object *ko,
 
 #define Z_SYSCALL_IS_OBJ(ptr, type, init) \
 	Z_SYSCALL_VERIFY_MSG( \
-	    !_obj_validation_check(_k_object_find((void *)ptr), (void *)ptr, \
-				   type, init), "access denied")
+	    _obj_validation_check(_k_object_find((void *)ptr), (void *)ptr, \
+				   type, init) == 0, "access denied")
 
 /**
  * @brief Runtime check driver object pointer for presence of operation
