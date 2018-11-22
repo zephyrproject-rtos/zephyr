@@ -2607,10 +2607,10 @@ static inline int k_work_submit_to_user_queue(struct k_work_q *work_q,
  *
  * @param work Address of work item.
  *
- * @return 1 if work item is pending, or 0 if it is not pending.
+ * @return true if work item is pending, or false if it is not pending.
  * @req K-WORK-001
  */
-static inline int k_work_pending(struct k_work *work)
+static inline bool k_work_pending(struct k_work *work)
 {
 	return atomic_test_bit(work->flags, K_WORK_STATE_PENDING);
 }
