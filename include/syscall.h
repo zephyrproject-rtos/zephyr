@@ -10,6 +10,7 @@
 
 #include <syscall_list.h>
 #include <arch/syscall.h>
+#include <stdbool.h>
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
@@ -117,16 +118,16 @@ typedef u32_t (*_k_syscall_handler_t)(u32_t arg1, u32_t arg2, u32_t arg3,
 /**
  * Indicate whether we are currently running in user mode
  *
- * @return nonzero if the CPU is currently running with user permissions
+ * @return true if the CPU is currently running with user permissions
  */
-static inline int _arch_is_user_context(void);
+static inline bool _arch_is_user_context(void);
 
 /**
  * Indicate whether the CPU is currently in user mode
  *
- * @return nonzero if the CPU is currently running with user permissions
+ * @return true if the CPU is currently running with user permissions
  */
-static inline int _is_user_context(void)
+static inline bool _is_user_context(void)
 {
 	return _arch_is_user_context();
 }
