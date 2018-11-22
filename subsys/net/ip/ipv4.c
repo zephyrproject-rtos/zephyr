@@ -122,7 +122,13 @@ enum net_verdict net_ipv4_process_pkt(struct net_pkt *pkt)
 		goto drop;
 	}
 
+	if (net_ipv4_is_addr_mcast(&hdr->src)) {
+		NET_DBG("DROP: src addr is mcast");
+		goto drop;
+	}
+
 	if (net_ipv4_is_addr_bcast(net_pkt_iface(pkt), &hdr->src)) {
+		NET_DBG("DROP: src addr is bcast");
 		goto drop;
 	}
 
