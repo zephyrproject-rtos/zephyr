@@ -12,6 +12,7 @@
 #include <kernel_arch_func.h>
 #include <syscall_handler.h>
 #include <drivers/system_timer.h>
+#include <stdbool.h>
 
 #if defined(CONFIG_SCHED_DUMB)
 #define _priq_run_add		_priq_dumb_add
@@ -74,7 +75,7 @@ static inline int _is_thread_dummy(struct k_thread *thread)
 }
 #endif
 
-static inline int _is_idle(struct k_thread *thread)
+static inline bool _is_idle(struct k_thread *thread)
 {
 #ifdef CONFIG_SMP
 	return thread->base.is_idle;
@@ -110,25 +111,25 @@ bool _is_t1_higher_prio_than_t2(struct k_thread *t1, struct k_thread *t2)
 	return false;
 }
 
-static int should_preempt(struct k_thread *th, int preempt_ok)
+static bool should_preempt(struct k_thread *th, int preempt_ok)
 {
 	/* Preemption is OK if it's being explicitly allowed by
 	 * software state (e.g. the thread called k_yield())
 	 */
-	if (preempt_ok) {
-		return 1;
+	if (preempt_ok != 0) {
+		return true;
 	}
 
 	/* Or if we're pended/suspended/dummy (duh) */
 	if (!_current || !_is_thread_ready(_current)) {
-		return 1;
+		return true;
 	}
 
 	/* Otherwise we have to be running a preemptible thread or
 	 * switching to a metairq
 	 */
 	if (_is_preempt(_current) || is_metairq(th)) {
-		return 1;
+		return true;
 	}
 
 	/* The idle threads can look "cooperative" if there are no
@@ -136,10 +137,10 @@ static int should_preempt(struct k_thread *th, int preempt_ok)
 	 * They must always be preemptible.
 	 */
 	if (_is_idle(_current)) {
-		return 1;
+		return true;
 	}
 
-	return 0;
+	return false;
 }
 
 static struct k_thread *next_up(void)
