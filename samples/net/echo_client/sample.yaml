@@ -8,7 +8,7 @@ sample:
 tests:
   test:
     platform_whitelist: qemu_x86 frdm_k64f sam_e70_xplained
-      qemu_cortex_m3 arduino_101 frdm_kw41z
+      qemu_cortex_m3 frdm_kw41z
   test_802154:
     extra_args: OVERLAY_CONFIG="overlay-qemu_802154.conf"
     platform_whitelist: qemu_x86
@@ -29,3 +29,7 @@ tests:
     slow: true
     tags: net openthread
     platform_whitelist: frdm_kw41z
+  test_enc28j60:
+    extra_args: OVERLAY_CONFIG="overlay-enc28j60.conf"
+    tags: net enc28j60
+    platform_whitelist: arduino_101
