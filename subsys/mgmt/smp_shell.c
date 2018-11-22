@@ -12,7 +12,6 @@
 #include <zephyr.h>
 #include <init.h>
 #include "net/buf.h"
-#include "shell/legacy_shell.h"
 #include "mgmt/mgmt.h"
 #include "mgmt/serial.h"
 #include "mgmt/buf.h"
