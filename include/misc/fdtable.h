@@ -111,6 +111,7 @@ enum {
 	ZFD_IOCTL_CLOSE = 1,
 	ZFD_IOCTL_FSYNC,
 	ZFD_IOCTL_LSEEK,
+	ZFD_IOCTL_FCNTL,
 };
 
 #ifdef __cplusplus

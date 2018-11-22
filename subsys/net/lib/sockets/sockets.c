@@ -23,7 +23,30 @@ LOG_MODULE_REGISTER(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #define SET_ERRNO(x) \
 	{ int _err = x; if (_err < 0) { errno = -_err; return -1; } }
 
-static const struct fd_op_vtable sock_fd_op_vtable;
+#define VTABLE_CALL(fn, sock, ...) \
+	do { \
+		const struct socket_op_vtable *vtable; \
+		void *ctx = get_sock_vtable(sock, &vtable); \
+		if (ctx == NULL) { \
+			return -1; \
+		} \
+		return vtable->fn(ctx, __VA_ARGS__); \
+	} while (0)
+
+const struct socket_op_vtable sock_fd_op_vtable;
+
+static inline void *get_sock_vtable(
+			int sock, const struct socket_op_vtable **vtable)
+{
+	return z_get_fd_obj_and_vtable(sock,
+				       (const struct fd_op_vtable **)vtable);
+}
+
+static inline struct net_context *sock_to_net_ctx(int sock)
+{
+	/* TODO Temporary fix until poll is sorted out */
+	return z_get_fd_obj(sock, NULL, ENOTSOCK);
+}
 
 static void zsock_received_cb(struct net_context *ctx, struct net_pkt *pkt,
 			      int status, void *user_data);
@@ -58,12 +81,7 @@ static void zsock_flush_queue(struct net_context *ctx)
 	k_fifo_cancel_wait(&ctx->recv_q);
 }
 
-static inline struct net_context *sock_to_net_ctx(int sock)
-{
-	return z_get_fd_obj(sock, &sock_fd_op_vtable, ENOTSOCK);
-}
-
-int _impl_zsock_socket(int family, int type, int proto)
+int zsock_socket_internal(int family, int type, int proto)
 {
 	int fd = z_reserve_fd();
 	struct net_context *ctx;
@@ -93,9 +111,21 @@ int _impl_zsock_socket(int family, int type, int proto)
 	_k_object_recycle(ctx);
 #endif
 
-	z_finalize_fd(fd, ctx, &sock_fd_op_vtable);
+	z_finalize_fd(fd, ctx, (const struct fd_op_vtable *)&sock_fd_op_vtable);
 
 	return fd;
+}
+
+int _impl_zsock_socket(int family, int type, int proto)
+{
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	if (((proto >= IPPROTO_TLS_1_0) && (proto <= IPPROTO_TLS_1_2)) ||
+	    (proto >= IPPROTO_DTLS_1_0 && proto <= IPPROTO_DTLS_1_2)) {
+		return ztls_socket(family, type, proto);
+	}
+#endif
+
+	return zsock_socket_internal(family, type, proto);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -133,7 +163,8 @@ int zsock_close_ctx(struct net_context *ctx)
 
 int _impl_zsock_close(int sock)
 {
-	struct net_context *ctx = sock_to_net_ctx(sock);
+	const struct socket_op_vtable *vtable;
+	void *ctx = get_sock_vtable(sock, &vtable);
 
 	if (ctx == NULL) {
 		return -1;
@@ -141,7 +172,7 @@ int _impl_zsock_close(int sock)
 
 	z_free_fd(sock);
 
-	return zsock_close_ctx(ctx);
+	return vtable->fd_vtable.ioctl(ctx, ZFD_IOCTL_CLOSE);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -209,14 +240,9 @@ static void zsock_received_cb(struct net_context *ctx, struct net_pkt *pkt,
 	k_fifo_put(&ctx->recv_q, pkt);
 }
 
-int _impl_zsock_bind(int sock, const struct sockaddr *addr, socklen_t addrlen)
+int zsock_bind_ctx(struct net_context *ctx, const struct sockaddr *addr,
+		   socklen_t addrlen)
 {
-	struct net_context *ctx = sock_to_net_ctx(sock);
-
-	if (ctx == NULL) {
-		return -1;
-	}
-
 	SET_ERRNO(net_context_bind(ctx, addr, addrlen));
 	/* For DGRAM socket, we expect to receive packets after call to
 	 * bind(), but for STREAM socket, next expected operation is
@@ -228,6 +254,11 @@ int _impl_zsock_bind(int sock, const struct sockaddr *addr, socklen_t addrlen)
 	}
 
 	return 0;
+}
+
+int _impl_zsock_bind(int sock, const struct sockaddr *addr, socklen_t addrlen)
+{
+	VTABLE_CALL(bind, sock, addr, addrlen);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -243,20 +274,21 @@ Z_SYSCALL_HANDLER(zsock_bind, sock, addr, addrlen)
 }
 #endif /* CONFIG_USERSPACE */
 
+int zsock_connect_ctx(struct net_context *ctx, const struct sockaddr *addr,
+		      socklen_t addrlen)
+{
+	SET_ERRNO(net_context_connect(ctx, addr, addrlen, NULL, K_FOREVER,
+				      NULL));
+	SET_ERRNO(net_context_recv(ctx, zsock_received_cb, K_NO_WAIT,
+				   ctx->user_data));
+
+	return 0;
+}
+
 int _impl_zsock_connect(int sock, const struct sockaddr *addr,
 			socklen_t addrlen)
 {
-	struct net_context *ctx = sock_to_net_ctx(sock);
-
-	if (ctx == NULL) {
-		return -1;
-	}
-
-	SET_ERRNO(net_context_connect(ctx, addr, addrlen, NULL, K_FOREVER,
-				      NULL));
-	SET_ERRNO(net_context_recv(ctx, zsock_received_cb, K_NO_WAIT, ctx->user_data));
-
-	return 0;
+	VTABLE_CALL(connect, sock, addr, addrlen);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -272,18 +304,17 @@ Z_SYSCALL_HANDLER(zsock_connect, sock, addr, addrlen)
 }
 #endif /* CONFIG_USERSPACE */
 
-int _impl_zsock_listen(int sock, int backlog)
+int zsock_listen_ctx(struct net_context *ctx, int backlog)
 {
-	struct net_context *ctx = sock_to_net_ctx(sock);
-
-	if (ctx == NULL) {
-		return -1;
-	}
-
 	SET_ERRNO(net_context_listen(ctx, backlog));
 	SET_ERRNO(net_context_accept(ctx, zsock_accepted_cb, K_NO_WAIT, ctx));
 
 	return 0;
+}
+
+int _impl_zsock_listen(int sock, int backlog)
+{
+	VTABLE_CALL(listen, sock, backlog);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -293,14 +324,10 @@ Z_SYSCALL_HANDLER(zsock_listen, sock, backlog)
 }
 #endif /* CONFIG_USERSPACE */
 
-int _impl_zsock_accept(int sock, struct sockaddr *addr, socklen_t *addrlen)
+int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
+		     socklen_t *addrlen)
 {
-	struct net_context *parent = sock_to_net_ctx(sock);
 	int fd;
-
-	if (parent == NULL) {
-		return -1;
-	}
 
 	fd = z_reserve_fd();
 	if (fd < 0) {
@@ -330,9 +357,14 @@ int _impl_zsock_accept(int sock, struct sockaddr *addr, socklen_t *addrlen)
 		}
 	}
 
-	z_finalize_fd(fd, ctx, &sock_fd_op_vtable);
+	z_finalize_fd(fd, ctx, (const struct fd_op_vtable *)&sock_fd_op_vtable);
 
 	return fd;
+}
+
+int _impl_zsock_accept(int sock, struct sockaddr *addr, socklen_t *addrlen)
+{
+	VTABLE_CALL(accept, sock, addr, addrlen);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -416,13 +448,7 @@ ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 ssize_t _impl_zsock_sendto(int sock, const void *buf, size_t len, int flags,
 			   const struct sockaddr *dest_addr, socklen_t addrlen)
 {
-	struct net_context *ctx = sock_to_net_ctx(sock);
-
-	if (ctx == NULL) {
-		return -1;
-	}
-
-	return zsock_sendto_ctx(ctx, buf, len, flags, dest_addr, addrlen);
+	VTABLE_CALL(sendto, sock, buf, len, flags, dest_addr, addrlen);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -626,13 +652,7 @@ ssize_t zsock_recvfrom_ctx(struct net_context *ctx, void *buf, size_t max_len,
 ssize_t _impl_zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
 			     struct sockaddr *src_addr, socklen_t *addrlen)
 {
-	struct net_context *ctx = sock_to_net_ctx(sock);
-
-	if (ctx == NULL) {
-		return -1;
-	}
-
-	return zsock_recvfrom_ctx(ctx, buf, max_len, flags, src_addr, addrlen);
+	VTABLE_CALL(recvfrom, sock, buf, max_len, flags, src_addr, addrlen);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -668,17 +688,8 @@ Z_SYSCALL_HANDLER(zsock_recvfrom, sock, buf, max_len, flags, src_addr,
 }
 #endif /* CONFIG_USERSPACE */
 
-/* As this is limited function, we don't follow POSIX signature, with
- * "..." instead of last arg.
- */
-int _impl_zsock_fcntl(int sock, int cmd, int flags)
+int zsock_fcntl_ctx(struct net_context *ctx, int cmd, int flags)
 {
-	struct net_context *ctx = sock_to_net_ctx(sock);
-
-	if (ctx == NULL) {
-		return -1;
-	}
-
 	switch (cmd) {
 	case F_GETFL:
 		if (sock_is_nonblock(ctx)) {
@@ -698,6 +709,14 @@ int _impl_zsock_fcntl(int sock, int cmd, int flags)
 	}
 }
 
+/* As this is limited function, we don't follow POSIX signature, with
+ * "..." instead of last arg.
+ */
+int _impl_zsock_fcntl(int sock, int cmd, int flags)
+{
+	VTABLE_CALL(fd_vtable.ioctl, sock, cmd, flags);
+}
+
 #ifdef CONFIG_USERSPACE
 Z_SYSCALL_HANDLER(zsock_fcntl, sock, cmd, flags)
 {
@@ -705,7 +724,7 @@ Z_SYSCALL_HANDLER(zsock_fcntl, sock, cmd, flags)
 }
 #endif
 
-int _impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout)
+int zsock_poll_internal(struct zsock_pollfd *fds, int nfds, int timeout)
 {
 	int i;
 	int ret = 0;
@@ -794,6 +813,15 @@ int _impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout)
 	return ret;
 }
 
+int _impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout)
+{
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	return ztls_poll(fds, nfds, timeout);
+#endif
+
+	return zsock_poll_internal(fds, nfds, timeout);
+}
+
 #ifdef CONFIG_USERSPACE
 Z_SYSCALL_HANDLER(zsock_poll, fds, nfds, timeout)
 {
@@ -861,8 +889,21 @@ Z_SYSCALL_HANDLER(zsock_inet_pton, family, src, dst)
 }
 #endif
 
+int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
+			 void *optval, socklen_t *optlen)
+{
+	errno = ENOPROTOOPT;
+	return -1;
+}
+
 int zsock_getsockopt(int sock, int level, int optname,
 		     void *optval, socklen_t *optlen)
+{
+	VTABLE_CALL(getsockopt, sock, level, optname, optval, optlen);
+}
+
+int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
+			 const void *optval, socklen_t optlen)
 {
 	errno = ENOPROTOOPT;
 	return -1;
@@ -871,8 +912,7 @@ int zsock_getsockopt(int sock, int level, int optname,
 int zsock_setsockopt(int sock, int level, int optname,
 		     const void *optval, socklen_t optlen)
 {
-	errno = ENOPROTOOPT;
-	return -1;
+	VTABLE_CALL(setsockopt, sock, level, optname, optval, optlen);
 }
 
 static ssize_t sock_read_vmeth(void *obj, void *buffer, size_t count)
@@ -891,14 +931,87 @@ static int sock_ioctl_vmeth(void *obj, unsigned int request, ...)
 	case ZFD_IOCTL_CLOSE:
 		return zsock_close_ctx(obj);
 
+	case ZFD_IOCTL_FCNTL: {
+		va_list args;
+		int cmd, flags;
+
+		va_start(args, request);
+		cmd = va_arg(args, int);
+		flags = va_arg(args, int);
+		va_end(args);
+
+		return zsock_fcntl_ctx(obj, cmd, flags);
+	}
+
 	default:
 		errno = EOPNOTSUPP;
 		return -1;
 	}
 }
 
-static const struct fd_op_vtable sock_fd_op_vtable = {
-	.read = sock_read_vmeth,
-	.write = sock_write_vmeth,
-	.ioctl = sock_ioctl_vmeth,
+static int sock_bind_vmeth(void *obj, const struct sockaddr *addr,
+			   socklen_t addrlen)
+{
+	return zsock_bind_ctx(obj, addr, addrlen);
+}
+
+static int sock_connect_vmeth(void *obj, const struct sockaddr *addr,
+			      socklen_t addrlen)
+{
+	return zsock_connect_ctx(obj, addr, addrlen);
+}
+
+static int sock_listen_vmeth(void *obj, int backlog)
+{
+	return zsock_listen_ctx(obj, backlog);
+}
+
+static int sock_accept_vmeth(void *obj, struct sockaddr *addr,
+			     socklen_t *addrlen)
+{
+	return zsock_accept_ctx(obj, addr, addrlen);
+}
+
+static ssize_t sock_sendto_vmeth(void *obj, const void *buf, size_t len,
+				 int flags, const struct sockaddr *dest_addr,
+				 socklen_t addrlen)
+{
+	return zsock_sendto_ctx(obj, buf, len, flags, dest_addr, addrlen);
+}
+
+static ssize_t sock_recvfrom_vmeth(void *obj, void *buf, size_t max_len,
+				   int flags, struct sockaddr *src_addr,
+				   socklen_t *addrlen)
+{
+	return zsock_recvfrom_ctx(obj, buf, max_len, flags,
+				  src_addr, addrlen);
+}
+
+static int sock_getsockopt_vmeth(void *obj, int level, int optname,
+				 void *optval, socklen_t *optlen)
+{
+	return zsock_getsockopt_ctx(obj, level, optname, optval, optlen);
+}
+
+static int sock_setsockopt_vmeth(void *obj, int level, int optname,
+				 const void *optval, socklen_t optlen)
+{
+	return zsock_setsockopt_ctx(obj, level, optname, optval, optlen);
+}
+
+
+const struct socket_op_vtable sock_fd_op_vtable = {
+	.fd_vtable = {
+		.read = sock_read_vmeth,
+		.write = sock_write_vmeth,
+		.ioctl = sock_ioctl_vmeth,
+	},
+	.bind = sock_bind_vmeth,
+	.connect = sock_connect_vmeth,
+	.listen = sock_listen_vmeth,
+	.accept = sock_accept_vmeth,
+	.sendto = sock_sendto_vmeth,
+	.recvfrom = sock_recvfrom_vmeth,
+	.getsockopt = sock_getsockopt_vmeth,
+	.setsockopt = sock_setsockopt_vmeth,
 };
