@@ -319,9 +319,11 @@ void test_setting_val_read(void);
 void test_main(void)
 {
 	ztest_test_suite(test_config_fcb,
+#ifdef CONFIG_SETTINGS_USE_BASE64
 			 ztest_unit_test(test_settings_encode),
 			 ztest_unit_test(test_setting_raw_read),
 			 ztest_unit_test(test_setting_val_read),
+#endif
 			 /* Config tests */
 			 ztest_unit_test(config_empty_lookups),
 			 ztest_unit_test(test_config_insert),
