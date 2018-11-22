@@ -14,6 +14,7 @@
 
 #include <kernel.h>
 #include <misc/rb.h>
+#include <stdbool.h>
 
 enum rb_color { RED = 0, BLACK = 1 };
 
@@ -49,12 +50,12 @@ static enum rb_color get_color(struct rbnode *n)
 	return ((uintptr_t)n->children[0]) & 1ul;
 }
 
-static int is_black(struct rbnode *n)
+static bool is_black(struct rbnode *n)
 {
 	return get_color(n) == BLACK;
 }
 
-static int is_red(struct rbnode *n)
+static bool is_red(struct rbnode *n)
 {
 	return get_color(n) == RED;
 }
