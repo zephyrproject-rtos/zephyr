@@ -282,6 +282,11 @@ SECTIONS
 
     GROUP_START(RAMABLE_REGION)
 
+	/* Align the start of image SRAM with the
+	 * minimum granularity required by MPU.
+	 */
+	. = ALIGN(_region_min_align);
+	_image_ram_start = .;
 
 #if defined(CONFIG_SOC_SERIES_STM32F0X) && !defined(CONFIG_IS_BOOTLOADER)
     /* Must be first in ramable region */
@@ -351,7 +356,6 @@ SECTIONS
 	SECTION_PROLOGUE(_APP_SMEM_SECTION_NAME, (OPTIONAL),)
 	{
 		APP_SHARED_ALIGN;
-		_image_ram_start = .;
 		_app_smem_start = .;
 		APP_SMEM_SECTION()
 		/* Align the end of shared app mem section with the
