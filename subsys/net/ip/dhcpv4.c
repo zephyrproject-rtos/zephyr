@@ -5,6 +5,7 @@
 /*
  * Copyright (c) 2017 ARM Ltd.
  * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2018 Vincent van der Locht
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -991,6 +992,18 @@ drop:
 static void dhcpv4_iface_event_handler(struct net_mgmt_event_callback *cb,
 				       u32_t mgmt_event, struct net_if *iface)
 {
+	sys_snode_t *node = NULL;
+
+	SYS_SLIST_FOR_EACH_NODE(&dhcpv4_ifaces, node) {
+		if (node == &iface->config.dhcpv4.node) {
+			break;
+		}
+	}
+
+	if (node == NULL) {
+		return;
+	}
+
 	if (mgmt_event == NET_EVENT_IF_DOWN) {
 		NET_DBG("Interface %p going down", iface);
 
@@ -1073,6 +1086,10 @@ void net_dhcpv4_start(struct net_if *iface)
 
 		NET_DBG("wait timeout=%us", timeout);
 
+		if (sys_slist_is_empty(&dhcpv4_ifaces)) {
+			net_mgmt_add_event_callback(&mgmt4_cb);
+		}
+
 		sys_slist_append(&dhcpv4_ifaces,
 				 &iface->config.dhcpv4.node);
 
@@ -1090,19 +1107,10 @@ void net_dhcpv4_start(struct net_if *iface)
 	case NET_DHCPV4_BOUND:
 		break;
 	}
-
-	/* Catch network interface UP or DOWN events and renew the address
-	 * if interface is coming back up again.
-	 */
-	net_mgmt_init_event_callback(&mgmt4_cb, dhcpv4_iface_event_handler,
-				     NET_EVENT_IF_DOWN | NET_EVENT_IF_UP);
-	net_mgmt_add_event_callback(&mgmt4_cb);
 }
 
 void net_dhcpv4_stop(struct net_if *iface)
 {
-	net_mgmt_del_event_callback(&mgmt4_cb);
-
 	switch (iface->config.dhcpv4.state) {
 	case NET_DHCPV4_DISABLED:
 		break;
@@ -1128,6 +1136,7 @@ void net_dhcpv4_stop(struct net_if *iface)
 
 		if (sys_slist_is_empty(&dhcpv4_ifaces)) {
 			k_delayed_work_cancel(&timeout_work);
+			net_mgmt_del_event_callback(&mgmt4_cb);
 		}
 
 		break;
@@ -1159,6 +1168,12 @@ int net_dhcpv4_init(void)
 	}
 
 	k_delayed_work_init(&timeout_work, dhcpv4_timeout);
+
+	/* Catch network interface UP or DOWN events and renew the address
+	 * if interface is coming back up again.
+	 */
+	net_mgmt_init_event_callback(&mgmt4_cb, dhcpv4_iface_event_handler,
+					 NET_EVENT_IF_DOWN | NET_EVENT_IF_UP);
 
 	return 0;
 }
