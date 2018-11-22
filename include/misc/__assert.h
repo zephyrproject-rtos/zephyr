@@ -114,15 +114,11 @@ extern void posix_exit(int exit_code);
 #warning "__ASSERT() statements are ENABLED"
 #endif
 #else
-#define __ASSERT(test, fmt, ...) \
-	do {/* nothing */        \
-	} while (false)
+#define __ASSERT(test, fmt, ...) { }
 #define __ASSERT_EVAL(expr1, expr2, test, fmt, ...) expr1
 #endif
 #else
-#define __ASSERT(test, fmt, ...) \
-	do {/* nothing */        \
-	} while (false)
+#define __ASSERT(test, fmt, ...) { }
 #define __ASSERT_EVAL(expr1, expr2, test, fmt, ...) expr1
 #endif
 
