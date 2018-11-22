@@ -30,6 +30,8 @@
 
 		i2s4: i2s@40013400 {
 			compatible = "st,stm32-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			reg = <0x40013400 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00002000>;
 			interrupts = <84 5>;
@@ -39,6 +41,8 @@
 
 		i2s5: i2s@40015000 {
 			compatible = "st,stm32-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			reg = <0x40015000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00100000>;
 			interrupts = <85 5>;
