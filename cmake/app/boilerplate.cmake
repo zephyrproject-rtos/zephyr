@@ -311,9 +311,52 @@ else()
   set(SOC_PATH ${SOC_FAMILY}/${SOC_SERIES})
 endif()
 
-# Toolchain included after kconfig; permit access of SOC_SOC_NAME etc.
+# Toolchain included after kconfig; permit access of SOC_NAME etc in toolchain
 set(CMAKE_C_COMPILER_FORCED   1)  # Prevent CMake from testing the toolchain
 set(CMAKE_CXX_COMPILER_FORCED 1)  # Prevent CMake from testing the toolchain
+
+## @Brief: Find the {compilers, linker} and define the toolchain-family macros
+## @var   out CMAKE_C_COMPILER                              required : Full path to toolchain's C compiler.
+## @var   out CMAKE_CXX_COMPILER                            required : Full path to toolchain's C++ compiler.
+## @var   out CMAKE_AS                                      required : Full path to toolchain's assembler.
+## @var   out CMAKE_LINKER                                  required : Full path to toolchain's linker.
+## @macro out toolchain_cc                                  required : Macro that expands to Zephyr's compile options.
+## @macro out toolchain_cc_preprocess_linker_pass required : Macro that generates dependency files for use in
+##                                                                     linking. May be empty. If empty, dependency
+##                                                                     management becomes the responsibility of the
+##                                                                     toolchain.
+## @macro out toolchain_ld                                  required : Macro that expands to Zephyr's linker options.
+## @macro out toolchain_ld_cpp                              required : Macro that expands to Zephyr's linker options,
+##                                                                     C++ specific. May be empty.
+## @macro out toolchain_ld_hosted                           required : Macro that expands to Zephyr's linker options,
+##                                                                     POSIX specific. May be empty.
+## @macro out toolchain_ld_link_step_0_init                 required : Macro that performs link step 0. Initialization.
+##                                                                     May be empty.
+## @macro out toolchain_ld_link_step_1_base                 required : Macro that performs link step 1. First link step.
+## @macro out toolchain_ld_link_step_2_generated            required : Macro that performs link step 2. Handle generated
+##                                                                     (kernel) objects. May be empty.
+## @macro out toolchain_bintools_generate_isr               required : Macro that performs generation of C code for ISR
+##                                                                     table. May be empty.
+## @macro out toolchain_bintools_post_link                  required : Macro that executes commands, post-linking.
+##                                                                     May be empty.
+## @macro out toolchain_bintools_print_size                 required : Macro that prints size of final executable.
+##                                                                     May be empty.
+## @macro out toolchain_bintools_usermode                   required : Macro that performs generation of table for
+##                                                                     privileged system calls, if supported.
+##                                                                     May be empty.
+## @var out TOOLCHAIN_HOME                                  optional : Toolchain installation path prefix.
+## @var out TOOLCHAIN_INCLUDES                              optional : Toolchain-specific include paths.
+## @var out TOOLCHAIN_LIBS                                  optional : Toolchain-specific libraries, e.g. libgcc or
+##                                                                     libdivision, etc.
+## @var out TOOLCHAIN_C_FLAGS                               optional : Toolchain-specific flags, e.g. -mfloat-abi=hard.
+## @var out CROSS_COMPILE_TARGET                            optional : ZephyrSDK specific. Path fragment of
+##                                                                     KBuild-compatible external toolchain.
+## @var out CROSS_COMPILE                                   optional : ZephyrSDK specific. Path prefix of
+##                                                                     KBuild-compatible external toolchain.
+## @var out SYSROOT_TARGET                                  optional : ZephyrSDK specific. Path fragment. Maps $ARCH to
+##                                                                     SDK folder of libc.
+## @var out SYSROOT_DIR                                     optional : ZephyrSDK specific. Path prefix for libc.
+## @var out LIB_INCLUDE_DIR                                 optional : ZephyrSDK specific. Flag of "-L<directory>".
 include(${ZEPHYR_BASE}/cmake/toolchain.cmake)
 
 # DTS should ideally be run directly after kconfig because CONFIG_ variables

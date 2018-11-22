@@ -53,6 +53,7 @@ add_library(zephyr_interface INTERFACE)
 # flags that come with zephyr_interface.
 zephyr_library_named(zephyr)
 
+# Common include paths
 zephyr_include_directories(
   kernel/include
   arch/${ARCH}/include
@@ -62,15 +63,15 @@ zephyr_include_directories(
   include
   include/drivers
   ${PROJECT_BINARY_DIR}/include/generated
-  ${USERINCLUDE}
-  ${STDINCLUDE}
+  ${USERINCLUDE}  # unused
+  ${STDINCLUDE}   # unused
 )
 
+# Common defines
 zephyr_compile_definitions(
   KERNEL
   __ZEPHYR__=1
 )
-
 if(BUILD_VERSION)
   zephyr_compile_definitions(
     BUILD_VERSION=${BUILD_VERSION}
@@ -84,8 +85,48 @@ get_property(CSTD GLOBAL PROPERTY CSTD)
 # Set the default C standard to ISO/IEC 9899:1999
 set_ifndef(CSTD c99)
 
-toolchain_cc()
-toolchain_ld()
+
+## @Brief: toolchain_cc: Macro that expands into compiler options.
+## @Brief: toolchain_ld: Macro that expands into linker options.
+## @Details:
+##   toolchain_cc must have been defined by compiler/${COMPILER}.cmake, where
+##     COMPILER was set by toolchain/${ZEPHYR_TOOLCHAIN_VARIANT}.cmake.
+##   toolchain_ld must have been defined by linker/${LINKER}.cmake, where
+##     LINKER was set by toolchain/${ZEPHYR_TOOLCHAIN_VARIANT}.cmake.
+##
+##   We can classify compiler/linker options into 4 groups:
+##
+##     1. Toolchain-specific and Zephyr-agnostic:
+##          Covers: ABI, call-convention, code generation options, etc.
+##          Where: Defines and includes should be should be captured by
+##            {TOOLCHAIN_C_FLAGS, TOOLCHAIN_INCLUDES} set in ${COMPILER}.cmake.
+##            Compiler options that are not defines or includes, should be set
+##            directly in ${COMPILER}.cmake or ${LINKER}.cmake.
+##
+##  --> 2. Toolchain-specific and Zephyr-specific:
+##          Covers:
+##            a. Mapping Kconfig "intents" to toolchain-specific flags (e.g. W,
+##              CONFIG_SPEED_OPTIMIZATIONS, CONFIG_READABLE_ASM).
+##            b. Mapping Zephyr expectations to toolchain-specific flags
+##              PIC/PIE, freestanding,  inclusion of autoconf.h, expected
+##              overflow behavior, etc.
+##          Where: Should be placed in toolchain_cc() or toolchain_ld().
+##          Note: It may be neat, but optional, to further subdivide
+##            toolchain_cc down into toolchain_cc_{security,optimizations,cpp,
+##            freestanding,warnings,diagnostics,asm}. Subdividing like this can
+##            improve reuse (e.g. Clang accepts the gcc-names of C++ standards),
+##            and demarcate responsibility.
+##
+##     3. Toolchain-agnostic and Zephyr-agnostic:
+##          Covers: External dependencies, 3rd party drivers.
+##          Where: Out of Zephyr-tree.
+##
+##     4. Toolchain-agnostic and Zephyr-specific:
+##          Covers: Common defines (__ZEPHYR__, BUILD_VERSION), common
+##            include paths (kernel/include, ...), etc.
+##          Where: CMakeLists.txt and most of Zephyr tree (e.g. subsys,drivers).
+toolchain_cc()  # Toolchain-specific and Zephyr-specific compiler options
+toolchain_ld()  # Toolchain-specific and Zephyr-specific linker options
 
 # Allow the user to inject options when calling cmake, e.g.
 # 'cmake -DEXTRA_CFLAGS="-Werror -Wno-deprecated-declarations" ..'
@@ -297,13 +338,12 @@ add_custom_target(driver_validation_h_target DEPENDS ${DRV_VALIDATION})
 include($ENV{ZEPHYR_BASE}/cmake/kobj.cmake)
 gen_kobj(KOBJ_INCLUDE_PATH)
 
-# Generate offsets.c.obj from offsets.c
-# Generate offsets.h     from offsets.c.obj
 
 set(OFFSETS_C_PATH ${ZEPHYR_BASE}/arch/${ARCH}/core/offsets/offsets.c)
 set(OFFSETS_O_PATH ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/offsets.dir/arch/${ARCH}/core/offsets/offsets.c.obj)
 set(OFFSETS_H_PATH ${PROJECT_BINARY_DIR}/include/generated/offsets.h)
 
+# Generate offsets.c.obj from offsets.c
 add_library(          offsets STATIC ${OFFSETS_C_PATH})
 target_link_libraries(offsets zephyr_interface)
 add_dependencies(     offsets
@@ -313,11 +353,12 @@ add_dependencies(     offsets
   kobj_types_h_target
   )
 
+# Generate offsets.h from offsets.c.obj
 add_custom_command(
   OUTPUT ${OFFSETS_H_PATH}
   COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/gen_offset_header.py
-  -i ${OFFSETS_O_PATH}
-  -o ${OFFSETS_H_PATH}
+  -i ${OFFSETS_O_PATH}  # Input object file
+  -o ${OFFSETS_H_PATH}  # Output header file
   DEPENDS offsets
 )
 add_custom_target(offsets_h DEPENDS ${OFFSETS_H_PATH})
@@ -476,12 +517,22 @@ zephyr_get_include_directories_for_lang(C
 )
 
 
-toolchain_cc_preprocess_linker_pass(linker)
+## @Brief: toolchain_cc_preprocess_linker_pass(linker_output_name): Macro that
+##   registers a command to generate the linker script ${linker_output_name}.cmd
+##   and its dependency files.
+## @Details: The build command is the preprocessing of ${LINKER_SCRIPT}, thus
+##   producing ${linker_output_name}.cmd wherein LINKER_SCRIPT_DEFINES have been
+##   substituted.
+## @arg in linker_output_name    required : Path to output linker script.
+## @var in LINKER_SCRIPT         required : Path to input linker script.
+## @var in LINKER_SCRIPT_DEFINES required : String of defines.
+toolchain_cc_preprocess_linker_pass(linker) # Register builder of "linker.cmd"
 add_custom_target(
   linker_script
   DEPENDS
-  ${ALIGN_SIZING_DEP} ${PRIV_STACK_DEP}
-  ${APP_SMEM_DEP}
+  ${ALIGN_SIZING_DEP} # Only for MPU userspace
+  ${PRIV_STACK_DEP}   # Only for MPU userspace
+  ${APP_SMEM_DEP}     # Only for MPU userspace
   linker.cmd
   offsets_h
   )
@@ -494,14 +545,49 @@ set_property(TARGET
   ${ZEPHYR_INCLUDE_DIRS}
   )
 
+## @Brief: toolchain_ld_link_step_0_init(): Macro for initialization of subsequent linking.
+## @Details: For GNU, this builds the command line arguments used in step 1 and 2.
+##   May be empty.
+## @var in ZEPHYR_LIBS_PROPERTY  required : See zephyr_append_cmake_library().
+## @var in OFFSETS_O_PATH        required : Path to architecture offsets object.
+## @var in PROJECT_BINARY_DIR    required : Folder of linker scripts, map, object files.
+## @var in KERNEL_MAP_NAME       optional : Name of output symbol map file.
+## @var in LIB_INCLUDE_DIR       optional : ZephyrSDK specific. Flag of "-L<directory>"
+## @var in TOOLCHAIN_LIBS        optional : Toolchain-specific libraries, e.g. libgcc or libdivision.
 toolchain_ld_link_step_0_init()
+
+## @Brief: toolchain_bintools_generate_isr(): Macro for generating interrupt tables
+##   for many architectures supported by ZephyrSDK.
+## @Details: May be empty for boards/architectures which choose to do this themselves.
+##
+## @var  in  CONFIG_GEN_ISR_TABLES         optional : Controls if ISR table generation
+##                                                    should be performed at all.
+## @var  in  CONFIG_GEN_SW_ISR_TABLE       optional : Generate SW ISRs.
+## @var  in  CONFIG_GEN_IRQ_VECTOR_TABLE   optional : Generate vector table.
+## @var  in  CONFIG_BIG_ENDIAN             optional : If arch is big-endian or not.
+## @var  in  OUTPUT_FORMAT                 optional : BFD format (GNU specific).
+## @prop out GENERATED_KERNEL_SOURCE_FILES optional : List of generated kernel sources.
 toolchain_bintools_generate_isr()
+
+## @Brief: toolchain_bintools_usermode(): Macro for supporting memory protection across
+##   user mode threads, if architecture wants/supports this.
+## @Details: Generates kernel object file using objcopy (GNU specific).
+##   May be empty for boards/architectures which cannot or choose not to implement this.
+## @var  in  CONFIG_USERSPACE          optional : Threads in user mode.
+## @var  in  CONFIG_APPLICATION_MEMORY optional : Split kernel and application memory.
+## @var  in  CONFIG_APP_SHARED_MEM     optional : Application shared memory.
+## @var  in  CONFIG_CPU_HAS_MPU        optional : If CPU has a Memory Protection Unit.
+## @prop out GENERATED_KERNEL_OBJECT_FILES optional : List of generated kernel objects.
 toolchain_bintools_usermode()
 
 # FIXME: Is there any way to get rid of empty_file.c?
 add_executable(       zephyr_prebuilt misc/empty_file.c)
 set_property(TARGET   zephyr_prebuilt PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker.cmd)
 add_dependencies(     zephyr_prebuilt ${ALIGN_SIZING_DEP} ${PRIV_STACK_DEP} linker_script offsets)
+## @Brief: toolchain_ld_link_step_1_base(): Macro specifying how to link zephyr_prebuilt.
+## @Details: zephyr_prebuilt may be the final link target if no further generated kernel
+##   objects exists. The main contributer to zephyr_prebuilt is ZEPHYR_LIBS_PROPERTY
+##   which holds the list of static libraries containing most of Zephyr code.
 toolchain_ld_link_step_1_base()
 
 # Read global variables into local variables
@@ -509,9 +595,10 @@ get_property(GKOF GLOBAL PROPERTY GENERATED_KERNEL_OBJECT_FILES)
 get_property(GKSF GLOBAL PROPERTY GENERATED_KERNEL_SOURCE_FILES)
 
 if(GKOF OR GKSF)
-  # The second linker pass uses the same source linker script of the
-  # first pass (LINKER_SCRIPT), but this time with a different output
-  # file and preprocessed with the define LINKER_PASS2.
+  ## @Brief: See description above.
+  ## @Details: The second linker pass uses the same source linker script of the
+  ##   first pass (LINKER_SCRIPT), but this time with a different output
+  ##   file and preprocessed with the define LINKER_PASS2.
   toolchain_cc_preprocess_linker_pass(linker_pass_final)
 
   add_custom_target(
@@ -534,6 +621,8 @@ if(GKOF OR GKSF)
   add_executable(       kernel_elf misc/empty_file.c ${GKSF})
   set_property(TARGET   kernel_elf PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_pass_final.cmd)
   add_dependencies(     kernel_elf ${ALIGN_SIZING_DEP} ${PRIV_STACK_DEP} linker_pass_final_script)
+  ## @Brief: toolchain_ld_link_step_2_generated(): Macro specifying how to link kernel_elf.
+  ## @Details: This is only needed if we have generated sources or objects (e.g userspace or isr table)
   toolchain_ld_link_step_2_generated()
 
   set(logical_target_for_zephyr_elf kernel_elf)
@@ -553,6 +642,9 @@ set_target_properties(${logical_target_for_zephyr_elf} PROPERTIES OUTPUT_NAME ${
 
 # Run some commands now that we have made a final elf
 set(post_link_commands "")
+## @Brief: Append commands to execute once the final link has been performed
+## @var  in+out  post_link_commands required : List of commands, covering
+##   stripping, flashtool-friendly hex files, disassembly, etc.
 toolchain_bintools_post_link()
 add_custom_command(
   TARGET ${logical_target_for_zephyr_elf}
@@ -567,6 +659,7 @@ add_custom_command(
 ## Post-build stuff
 ##
 
+## @Brief: Print usage of each linker-defined memory space
 toolchain_bintools_print_size()
 
 if(EMU_PLATFORM)

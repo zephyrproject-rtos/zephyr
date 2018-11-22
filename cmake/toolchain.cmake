@@ -81,7 +81,8 @@ endforeach()
 ##
 
 # TODO: TOOLCHAIN_ROOT is not really a good name, because it points to
-# cmake files, not the toolchain installation location
+# cmake files, not the toolchain installation location, but has already been
+# documented in toolchain_custom_cmake.rst
 if(NOT TOOLCHAIN_ROOT)
   if(DEFINED ENV{TOOLCHAIN_ROOT})
     # Support for out-of-tree/commercial toolchains
@@ -137,11 +138,28 @@ assert(ZEPHYR_TOOLCHAIN_VARIANT "Zephyr toolchain variant invalid: please set th
 ## Load toolchain: compiler, linker and bintools
 ##
 
-# We refer to the toolchain in use via ZEPHYR_TOOLCHAIN_VARIANT.
-# Roughly speaking, a toolchain consists of a compiler, linker and utils.
-# Thus we leave it up to ${ZEPHYR_TOOLCHAIN_VARIANT}.cmake to determine:
-#  * Which ${COMPILER} to use
-#  * Which ${LINKER} to use
+## @Brief: Start loading the selected toolchain
+## @Details:
+##   We refer to the toolchain in use via $ZEPHYR_TOOLCHAIN_VARIANT.
+##   Roughly speaking, a toolchain consists of a compiler, linker and utils.
+##   We leave it up to ${ZEPHYR_TOOLCHAIN_VARIANT}.cmake to determine these.
+## @var in  ARCH                 optional : Targeted architecture
+## @var in  TOOLCHAIN_VENDOR     optional : Toolchain vendor/provider
+## @var in  TOOLCHAIN_ROOT       optional : Toolchain cmake port path prefix
+## @var out COMPILER             required : compiler/${COMPILER}.cmake defines the compiler, e.g. gcc
+## @var out LINKER               required : linker/${LINKER}.cmake     defines the linker, e.g. ld
+## @var out BINTOOLS             required : bintools/${BINTOOLS}.cmake defines the bintools, e.g. binutils
+## @var out TOOLCHAIN_HOME       optional : Toolchain installation path prefix
+## @var out TOOLCHAIN_INCLUDES   optional : Toolchain-specific include paths.
+##                                          Or optionally set from ${COMPILER}.cmake.
+## @var out TOOLCHAIN_LIBS       optional : Toolchain-specific libraries, e.g. libgcc or libdivision
+## @var out TOOLCHAIN_C_FLAGS    optional : Toolchain-specific flags, e.g. -mfloat-abi=hard.
+##                                          Or optionally set from ${COMPILER}.cmake.
+## @var out CROSS_COMPILE_TARGET optional : ZephyrSDK specific. Path fragment of KBuild-compatible external toolchain
+## @var out CROSS_COMPILE        optional : ZephyrSDK specific. Path prefix of KBuild-compatible external toolchain
+## @var out SYSROOT_TARGET       optional : ZephyrSDK specific. Path fragment. Maps $ARCH to SDK folder of libc
+## @var out SYSROOT_DIR          optional : ZephyrSDK specific. Path prefix for libc
+## @var out LIB_INCLUDE_DIR      optional : ZephyrSDK specific. Flag of "-L<directory>"
 include(${TOOLCHAIN_ROOT}/cmake/toolchain/${ZEPHYR_TOOLCHAIN_VARIANT}.cmake)
 
 # Backwards-compatibility: Not all toolchains may yet set LINKER
@@ -156,8 +174,48 @@ if (NOT BINTOOLS)
   set(BINTOOLS "binutils")
 endif()
 
+## @Brief: Find compilers and define the toolchain_cc() macro
+## @var   in  TOOLCHAIN_HOME     optional : Toolchain installation path prefix
+## @var   in  CROSS_COMPILE      optional : ZephyrSDK specific. Path prefix of KBuild-compatible external toolchain
+## @var   out CMAKE_C_COMPILER   required : Full path to toolchain's C compiler
+## @var   out CMAKE_CXX_COMPILER required : Full path to toolchain's C++ compiler
+## @var   out CMAKE_AS           required : Full path to toolchain's assembler
+## @macro out toolchain_cc       required : Macro that expands to Zephyr's compile options
+## @macro out toolchain_cc_preprocess_linker_pass required : Macro that generates
+##                                          dependency files for use in linking.
+##                                          May be empty. If empty, dependency management
+##                                          becomes the responsibility of the toolchain.
 include(${TOOLCHAIN_ROOT}/cmake/compiler/${COMPILER}.cmake)
+
+## @Brief: Find the linker and define the toolchain_ld-family macros
+## @var   in  TOOLCHAIN_HOME                     optional : Toolchain installation path prefix
+## @var   in  CROSS_COMPILE                      optional : ZephyrSDK specific. Path prefix of KBuild-compatible external toolchain
+## @var   out CMAKE_LINKER                       required : Full path to toolchain's linker
+## @macro out toolchain_ld                       required : Macro that expands to Zephyr's linker options
+## @macro out toolchain_ld_cpp                   required : Macro that expands to Zephyr's linker options, C++ specific.
+##                                                          May be empty.
+## @macro out toolchain_ld_hosted                required : Macro that expands to Zephyr's linker options, POSIX specific.
+##                                                          May be empty.
+## @macro out toolchain_ld_link_step_0_init      required : Macro that performs link step 0. Initialization.
+##                                                          May be empty.
+## @macro out toolchain_ld_link_step_1_base      required : Macro that performs link step 1. First link step.
+## @macro out toolchain_ld_link_step_2_generated required : Macro that performs link step 2. Handle generated (kernel) objects.
+##                                                          May be empty.
 include(${TOOLCHAIN_ROOT}/cmake/linker/${LINKER}.cmake)
+
+## @Brief: Find binary utilities and define many toolchain_bintools-family macros
+## @var   in  TOOLCHAIN_HOME                     optional : Toolchain installation path prefix
+## @var   in  CROSS_COMPILE                      optional : ZephyrSDK specific. Path prefix of KBuild-compatible external toolchain
+## @macro out toolchain_bintools_generate_isr    required : Macro that performs generation of table of ISRs.
+##                                                          May be empty: Platforms may choose to handle interrupts in
+##                                                          a different way than the generated table by Zephyr.
+## @macro out toolchain_bintools_usermode        required : Macro that performs generation of table for privileged
+##                                                          system calls, if supported.
+##                                                          May be empty.
+## @macro out toolchain_bintools_post_link       required : Macro that executes commands, post-linking.
+##                                                          May be empty.
+## @macro out toolchain_bintools_print_size      required : Macro that prints size of final executable.
+##                                                          May be empty.
 include(${TOOLCHAIN_ROOT}/cmake/bintools/${BINTOOLS}.cmake)
 
 
