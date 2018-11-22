@@ -154,7 +154,7 @@ static int ccs811_sample_fetch(struct device *dev, enum sensor_channel chan)
 	drv_data->voc = sys_be16_to_cpu(buf[1]);
 	drv_data->status = status;
 	drv_data->error = error_from_status(status);
-	drv_data->resistance = sys_be16_to_cpu(buf[3]);
+	drv_data->raw = sys_be16_to_cpu(buf[3]);
 	return 0;
 }
 
@@ -180,8 +180,8 @@ static int ccs811_channel_get(struct device *dev,
 		/*
 		 * Raw ADC readings are contained in least significant 10 bits
 		 */
-		uval = (drv_data->resistance & CCS811_VOLTAGE_MASK)
-		       * CCS811_VOLTAGE_SCALE;
+		uval = ((drv_data->raw & CCS811_RAW_VOLTAGE_MSK)
+			>> CCS811_RAW_VOLTAGE_POS) * CCS811_RAW_VOLTAGE_SCALE;
 		val->val1 = uval / 1000000U;
 		val->val2 = uval % 1000000;
 
@@ -191,7 +191,8 @@ static int ccs811_channel_get(struct device *dev,
 		 * Current readings are contained in most
 		 * significant 6 bits in microAmps
 		 */
-		uval = drv_data->resistance >> 10;
+		uval = ((drv_data->raw & CCS811_RAW_CURRENT_MSK)
+			>> CCS811_RAW_CURRENT_POS) * CCS811_RAW_CURRENT_SCALE;
 		val->val1 = uval / 1000000U;
 		val->val2 = uval % 1000000;
 
