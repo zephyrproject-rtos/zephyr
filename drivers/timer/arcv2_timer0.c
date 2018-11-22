@@ -131,7 +131,7 @@ static u32_t elapsed(void)
  *
  * @return N/A
  */
-void _timer_int_handler(void *unused)
+static void _timer_int_handler(void *unused)
 {
 	ARG_UNUSED(unused);
 	u32_t dticks;
@@ -152,7 +152,7 @@ void _timer_int_handler(void *unused)
  * @brief Initialize and enable the system clock
  *
  * This routine is used to program the ARCv2 timer to deliver interrupts at the
- * rate specified via the 'sys_clock_us_per_tick' global variable.
+ * rate specified via the CYC_PER_TICK.
  *
  * @return 0
  */
@@ -182,9 +182,8 @@ int z_clock_driver_init(struct device *device)
 void z_clock_set_timeout(s32_t ticks, bool idle)
 {
 	/* If the kernel allows us to miss tick announcements in idle,
-	 * then shut off
-	 * the counter. (Note: we can assume if idle==true that
-	 * interrupts are already disabled)
+	 * then shut off the counter. (Note: we can assume if idle==true
+	 * that interrupts are already disabled)
 	 */
 	if (IS_ENABLED(CONFIG_TICKLESS_IDLE) && idle && ticks == K_FOREVER) {
 		timer0_control_register_set(0);
@@ -217,8 +216,6 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 #endif
 }
 
-
-
 u32_t z_clock_elapsed(void)
 {
 	if (!TICKLESS) {
@@ -240,7 +237,6 @@ u32_t _timer_cycle_get_32(void)
 	k_spin_unlock(&lock, key);
 	return ret;
 }
-
 
 /**
  *
