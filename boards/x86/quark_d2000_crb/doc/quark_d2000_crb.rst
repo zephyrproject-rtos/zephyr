@@ -113,7 +113,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: quark_d200_crb
+   :board: quark_d2000_crb
    :maybe-skip-config:
    :goals: debug
 
