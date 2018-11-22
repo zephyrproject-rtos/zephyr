@@ -10,6 +10,24 @@
 #include "settings_test.h"
 #include "settings/settings_file.h"
 
+#ifdef CONFIG_SETTINGS_USE_BASE64
+#define EXP_STR_CONTENT_1 "\x12\x00myfoo/mybar16=AAE="\
+			  "\x10\x00myfoo/mybar=FA=="\
+			  "\x1A\x00myfoo/mybar64=JQAAAAAAAAA="
+
+#define EXP_STR_CONTENT_2 "\x10\x00myfoo/mybar=FA=="\
+			  "\x12\x00myfoo/mybar16=AQE="\
+			  "\x1A\x00myfoo/mybar64=EwAAAAAAAAA="
+#else
+#define EXP_STR_CONTENT_1 "\x10\x00myfoo/mybar16=\x00\x01"\
+			  "\x0d\x00myfoo/mybar=\x14"\
+			  "\x16\x00myfoo/mybar64=\x25\x00\x00\x00\x00\x00\x00\x00"
+
+#define EXP_STR_CONTENT_2 "\x0d\x00myfoo/mybar=\x14"\
+			  "\x10\x00myfoo/mybar16=\x01\x01"\
+			  "\x16\x00myfoo/mybar64=\x13\x00\x00\x00\x00\x00\x00\x00"
+#endif
+
 int file_str_cmp(const char *fname, char const *string, size_t pattern_len);
 
 void test_config_compress_file(void)
@@ -50,9 +68,7 @@ void test_config_compress_file(void)
 	rc = settings_save();
 	zassert_true(rc == 0, "fs write error");
 
-	const char exp_content_1[] = "\x12\x00myfoo/mybar16=AAE="
-				     "\x10\x00myfoo/mybar=FA=="
-				     "\x1A\x00myfoo/mybar64=JQAAAAAAAAA=";
+	const char exp_content_1[] = EXP_STR_CONTENT_1;
 
 	/* check 1st compression */
 	rc = file_str_cmp(cf.cf_name, exp_content_1, sizeof(exp_content_1)-1);
@@ -69,9 +85,7 @@ void test_config_compress_file(void)
 		zassert_true(val64 == i, "Bad value loaded");
 	}
 
-	const char exp_content_2[] = "\x10\x00myfoo/mybar=FA=="
-				     "\x12\x00myfoo/mybar16=AQE="
-				     "\x1A\x00myfoo/mybar64=EwAAAAAAAAA=";
+	const char exp_content_2[] = EXP_STR_CONTENT_2;
 
 	/* check subsequent compression */
 	rc = file_str_cmp(cf.cf_name, exp_content_2, sizeof(exp_content_2)-1);
