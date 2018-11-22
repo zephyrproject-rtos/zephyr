@@ -70,6 +70,40 @@ static inline u8_t error_from_status(int status)
 	return status >> 8;
 }
 
+int ccs811_baseline_fetch(struct device *dev)
+{
+	const u8_t cmd = CCS811_REG_BASELINE;
+	struct ccs811_data *drv_data = dev->driver_data;
+	int rc;
+	u16_t baseline;
+
+	set_wake(drv_data, true);
+
+	rc = i2c_write_read(drv_data->i2c, DT_INST_0_AMS_CCS811_BASE_ADDRESS,
+			    &cmd, sizeof(cmd),
+			    (u8_t *)&baseline, sizeof(baseline));
+	set_wake(drv_data, false);
+	if (rc <= 0) {
+		rc = baseline;
+	}
+	return rc;
+}
+
+int ccs811_baseline_update(struct device *dev,
+			   u16_t baseline)
+{
+	struct ccs811_data *drv_data = dev->driver_data;
+	u8_t buf[1 + sizeof(baseline)];
+	int rc;
+
+	buf[0] = CCS811_REG_BASELINE;
+	memcpy(buf + 1, &baseline, sizeof(baseline));
+	set_wake(drv_data, true);
+	rc = i2c_write(drv_data->i2c, buf, sizeof(buf), DT_INST_0_AMS_CCS811_BASE_ADDRESS);
+	set_wake(drv_data, false);
+	return rc;
+}
+
 static int ccs811_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct ccs811_data *drv_data = dev->driver_data;
@@ -285,7 +319,7 @@ int ccs811_set_thresholds(struct device *dev)
 
 #endif /* CONFIG_CCS811_TRIGGER */
 
-int ccs811_init(struct device *dev)
+static int ccs811_init(struct device *dev)
 {
 	struct ccs811_data *drv_data = dev->driver_data;
 	int ret = 0;
