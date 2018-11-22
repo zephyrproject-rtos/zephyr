@@ -61,6 +61,9 @@ config USB_COMPOSITE_BUFFER_SIZE
 	default 256 if USB_DEVICE_NETWORK_RNDIS
 	default 64
 
+config USB_DEVICE_SOF
+	bool "Enable Start of Frame processing in events"
+
 config USB_DEVICE_BOS
 	bool "Enable USB Binary Device Object Store (BOS)"
 

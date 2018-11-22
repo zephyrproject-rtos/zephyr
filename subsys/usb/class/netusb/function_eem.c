@@ -262,6 +262,9 @@ static void eem_status_cb(enum usb_dc_status_code status, const u8_t *param)
 		LOG_DBG("USB unhandlded state: %d", status);
 		break;
 
+	case USB_DC_SOF:
+		break;
+
 	case USB_DC_UNKNOWN:
 	default:
 		LOG_DBG("USB unknown state: %d", status);

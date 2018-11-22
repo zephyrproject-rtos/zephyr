@@ -59,6 +59,8 @@ enum usb_dc_status_code {
 	USB_DC_SET_HALT,
 	/** Clear Feature ENDPOINT_HALT received */
 	USB_DC_CLEAR_HALT,
+	/** Start of Frame received */
+	USB_DC_SOF,
 	/** Initial USB connection status */
 	USB_DC_UNKNOWN
 };

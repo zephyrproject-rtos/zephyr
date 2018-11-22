@@ -583,6 +583,8 @@ static void dfu_status_cb(enum usb_dc_status_code status, const u8_t *param)
 	case USB_DC_RESUME:
 		LOG_DBG("USB device resumed");
 		break;
+	case USB_DC_SOF:
+		break;
 	case USB_DC_UNKNOWN:
 	default:
 		LOG_DBG("USB unknown state");

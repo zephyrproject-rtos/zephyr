@@ -108,6 +108,8 @@ static void status_cb(enum usb_dc_status_code status, const u8_t *param)
 	case USB_DC_CONFIGURED:
 		in_ready_cb();
 		break;
+	case USB_DC_SOF:
+		break;
 	default:
 		LOG_DBG("status %u unhandled", status);
 		break;
