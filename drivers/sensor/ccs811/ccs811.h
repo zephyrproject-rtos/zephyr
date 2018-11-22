@@ -43,9 +43,13 @@
 #define CCS811_MODE_DATARDY             0x08
 #define CCS811_MODE_THRESH              0x04
 
-#define CCS811_VOLTAGE_SCALE            1613
-
-#define CCS811_VOLTAGE_MASK             0x3FF
+#define CCS811_RAW_VOLTAGE_POS          0
+#define CCS811_RAW_VOLTAGE_MSK          (0x3FF << CCS811_RAW_VOLTAGE_POS)
+#define CCS811_RAW_VOLTAGE_SCALE        (1650000U / (CCS811_RAW_VOLTAGE_MSK \
+						     >> CCS811_RAW_VOLTAGE_POS))
+#define CCS811_RAW_CURRENT_POS          10
+#define CCS811_RAW_CURRENT_MSK          (0x3F << CCS811_RAW_CURRENT_POS)
+#define CCS811_RAW_CURRENT_SCALE        1
 
 #define CCS811_CO2_MIN_PPM              400
 #define CCS811_CO2_MAX_PPM              32767
@@ -82,7 +86,7 @@ struct ccs811_data {
 #endif
 	u16_t co2;
 	u16_t voc;
-	u16_t resistance;
+	u16_t raw;
 	u8_t status;
 	u8_t error;
 	u8_t mode;
