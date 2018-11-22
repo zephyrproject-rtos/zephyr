@@ -999,6 +999,9 @@ static void usbd_event_handler(nrfx_usbd_evt_t const *const p_event)
 		usbd_status_code_update(USB_DC_RESET);
 		break;
 	case NRFX_USBD_EVT_SOF:
+#ifdef CONFIG_USB_DEVICE_SOF
+		usbd_status_code_update(USB_DC_SOF);
+#endif
 		break;
 
 	case NRFX_USBD_EVT_EPTRANSFER:
