@@ -426,13 +426,13 @@ void uart_cmsdk_apb_isr(void *arg)
 	volatile struct uart_cmsdk_apb *uart = UART_STRUCT(dev);
 	struct uart_cmsdk_apb_dev_data *data = DEV_DATA(dev);
 
+	/* Clear pending interrupts */
+	uart->intclear = UART_RX_IN | UART_TX_IN;
+
 	/* Verify if the callback has been registered */
 	if (data->irq_cb) {
 		data->irq_cb(data->irq_cb_data);
 	}
-
-	/* Clear pending interrupts */
-	uart->intclear = UART_RX_IN | UART_TX_IN;
 }
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
