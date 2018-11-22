@@ -219,17 +219,13 @@ static int slice_max_prio;
  */
 static void reset_time_slice(void)
 {
-	int to = _get_next_timeout_expiry();
-
 	/* Add the elapsed time since the last announced tick to the
 	 * slice count, as we'll see those "expired" ticks arrive in a
 	 * FUTURE z_time_slice() call.
 	 */
 	_current_cpu->slice_ticks = slice_time + z_clock_elapsed();
 
-	if (to == K_FOREVER || slice_time < to) {
-		z_clock_set_timeout(slice_time, false);
-	}
+	z_set_timeout_expiry(slice_time, false);
 }
 
 void k_sched_time_slice_set(s32_t duration_in_ms, int prio)
