@@ -36,7 +36,7 @@ struct ssd1673_data {
 	struct device *busy;
 	struct device *spi_dev;
 	struct spi_config spi_config;
-#if defined(DT_SSD1673_SPI_GPIO_CS)
+#if defined(DT_SSD1673_SPI_GPIO_CS_DRV_NAME)
 	struct spi_cs_control cs_ctrl;
 #endif
 	u8_t contrast;
@@ -492,7 +492,7 @@ static int ssd1673_init(struct device *dev)
 	gpio_pin_configure(driver->busy, DT_SSD1673_BUSY_PIN,
 			   GPIO_DIR_IN);
 
-#if defined(DT_SSD1673_SPI_GPIO_CS)
+#if defined(DT_SSD1673_SPI_GPIO_CS_DRV_NAME)
 	driver->cs_ctrl.gpio_dev = device_get_binding(
 		DT_SSD1673_SPI_GPIO_CS_DRV_NAME);
 	if (!driver->cs_ctrl.gpio_dev) {
