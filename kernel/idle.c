@@ -37,6 +37,9 @@ void __attribute__((weak)) _sys_soc_resume_from_deep_sleep(void)
 {
 }
 #endif
+
+#endif /* CONFIG_SYS_POWER_MANAGEMENT */
+
 /**
  *
  * @brief Indicate that kernel is idling in tickless mode
@@ -50,15 +53,16 @@ void __attribute__((weak)) _sys_soc_resume_from_deep_sleep(void)
  */
 static void set_kernel_idle_time_in_ticks(s32_t ticks)
 {
+#ifdef CONFIG_SYS_POWER_MANAGEMENT
 	_kernel.idle = ticks;
-}
-#else
-#define set_kernel_idle_time_in_ticks(x) do { } while (false)
 #endif
+}
 
 #ifndef CONFIG_SMP
-static void sys_power_save_idle(s32_t ticks)
+static void sys_power_save_idle(void)
 {
+	s32_t ticks = _get_next_timeout_expiry();
+
 	/* The documented behavior of CONFIG_TICKLESS_IDLE_THRESH is
 	 * that the system should not enter a tickless idle for
 	 * periods less than that.  This seems... silly, given that it
@@ -66,7 +70,7 @@ static void sys_power_save_idle(s32_t ticks)
 	 * API we need to honor...
 	 */
 #ifdef CONFIG_SYS_CLOCK_EXISTS
-	z_clock_set_timeout(ticks < IDLE_THRESH ? 1 : ticks, true);
+	z_set_timeout_expiry((ticks < IDLE_THRESH) ? 1 : ticks, true);
 #endif
 
 	set_kernel_idle_time_in_ticks(ticks);
@@ -148,7 +152,7 @@ void idle(void *unused1, void *unused2, void *unused3)
 #else
 	for (;;) {
 		(void)irq_lock();
-		sys_power_save_idle(_get_next_timeout_expiry());
+		sys_power_save_idle();
 
 		IDLE_YIELD_IF_COOP();
 	}

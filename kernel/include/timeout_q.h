@@ -48,6 +48,8 @@ static inline int _abort_thread_timeout(struct k_thread *thread)
 
 s32_t _get_next_timeout_expiry(void);
 
+void z_set_timeout_expiry(s32_t ticks, bool idle);
+
 s32_t z_timeout_remaining(struct _timeout *timeout);
 
 #else
@@ -57,6 +59,7 @@ s32_t z_timeout_remaining(struct _timeout *timeout);
 #define _add_thread_timeout(th, to) do {} while (0 && (void *)to && (void *)th)
 #define _abort_thread_timeout(t) (0)
 #define _get_next_timeout_expiry() (K_FOREVER)
+#define z_set_timeout_expiry(t, i) do {} while (0)
 
 #endif
 
