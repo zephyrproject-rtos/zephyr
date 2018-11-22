@@ -29,7 +29,7 @@ extern "C" {
 #if BT_DBG_ENABLED
 #define LOG_LEVEL LOG_LEVEL_DBG
 #else
-#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
+#define LOG_LEVEL CONFIG_BT_LOG_LEVEL
 #endif
 
 #include <logging/log.h>
