@@ -81,7 +81,6 @@ SHELL_CMD_ARG_REGISTER(hrs, &hrs_cmds, "Heart Rate Service shell commands",
 
 void main(void)
 {
-	printk("Type \"help\" for supported commands.");
 	printk("Before any Bluetooth commands you must `bt init` to initialize"
 	       " the stack.\n");
 
