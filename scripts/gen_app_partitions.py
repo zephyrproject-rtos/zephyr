@@ -22,7 +22,6 @@ linker_start_seq = """
 	SECTION_PROLOGUE(_APP_SMEM_SECTION_NAME, (OPTIONAL),)
 	{
 		APP_SHARED_ALIGN;
-		_image_ram_start = .;
 		_app_smem_start = .;
 """
 
