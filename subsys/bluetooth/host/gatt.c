@@ -168,6 +168,11 @@ static void sc_ccc_cfg_changed(const struct bt_gatt_attr *attr,
 
 static struct bt_gatt_attr gatt_attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_GATT),
+	/* Bluetooth 5.0, Vol3 Part G:
+	 * The Service Changed characteristic Attribute Handle on the server
+	 * shall not change if the server has a trusted relationship with any
+	 * client.
+	 */
 	BT_GATT_CHARACTERISTIC(BT_UUID_GATT_SC, BT_GATT_CHRC_INDICATE,
 			       BT_GATT_PERM_NONE, NULL, NULL, NULL),
 	BT_GATT_CCC(sc_ccc_cfg, sc_ccc_cfg_changed),
@@ -336,8 +341,8 @@ void bt_gatt_init(void)
 	}
 
 	/* Register mandatory services */
-	gatt_register(&gap_svc);
 	gatt_register(&gatt_svc);
+	gatt_register(&gap_svc);
 
 	k_delayed_work_init(&gatt_sc.work, sc_process);
 #if defined(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE)
