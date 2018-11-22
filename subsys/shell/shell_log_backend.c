@@ -26,41 +26,62 @@ void shell_log_backend_enable(const struct shell_log_backend *backend,
 
 static struct log_msg *msg_from_fifo(const struct shell_log_backend *backend)
 {
-	struct log_msg *msg = k_fifo_get(backend->fifo, K_NO_WAIT);
+	struct log_msg *msg;
+	int err;
 
-	if (msg) {
-		atomic_dec(&backend->control_block->cnt);
-	}
+	err = k_msgq_get(backend->msgq, &msg, K_NO_WAIT);
 
-	return msg;
+	return (err == 0) ? msg : NULL;
 }
 
 static void fifo_flush(const struct shell_log_backend *backend)
 {
-	struct log_msg *msg = msg_from_fifo(backend);
+	struct log_msg *msg;
 
 	/* Flush log messages. */
-	while (msg) {
+	while ((msg = msg_from_fifo(backend)) != NULL) {
 		log_msg_put(msg);
-		msg = msg_from_fifo(backend);
 	}
 }
 
 static void msg_to_fifo(const struct shell *shell,
 			struct log_msg *msg)
 {
-	atomic_val_t cnt;
+	int err;
 
-	k_fifo_put(shell->log_backend->fifo, msg);
+	err = k_msgq_put(shell->log_backend->msgq, &msg, K_NO_WAIT);
 
-	cnt = atomic_inc(&shell->log_backend->control_block->cnt);
+	switch (err) {
+	case 0:
+		break;
+	case -ENOMSG:
+	{
+		struct log_msg *old_msg;
 
-	/* If there is too much queued free the oldest one. */
-	if (cnt >= CONFIG_SHELL_MAX_LOG_MSG_BUFFERED) {
-		log_msg_put(msg_from_fifo(shell->log_backend));
-		if (IS_ENABLED(CONFIG_SHELL_STATS)) {
-			shell->stats->log_lost_cnt++;
+		/* drop one message */
+		old_msg = msg_from_fifo(shell->log_backend);
+
+		if (old_msg) {
+			log_msg_put(old_msg);
+
+			if (IS_ENABLED(CONFIG_SHELL_STATS)) {
+				shell->stats->log_lost_cnt++;
+			}
 		}
+
+		err = k_msgq_put(shell->log_backend->msgq, &msg, K_NO_WAIT);
+		if (err) {
+			/* Rather unusual sitaution as we just freed one element
+			 * and there is no other context that puts into the
+			 * mesq. */
+			__ASSERT_NO_MSG(0);
+		}
+		break;
+	}
+	default:
+		/* Other errors are not expected. */
+		__ASSERT_NO_MSG(0);
+		break;
 	}
 }
 

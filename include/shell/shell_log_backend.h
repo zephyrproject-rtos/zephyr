@@ -34,7 +34,7 @@ struct shell_log_backend_control_block {
 /** @brief Shell log backend instance structure (RO data). */
 struct shell_log_backend {
 	const struct log_backend *backend;
-	struct k_fifo *fifo;
+	struct k_msgq *msgq;
 	const struct log_output *log_output;
 	struct shell_log_backend_control_block *control_block;
 };
@@ -57,13 +57,14 @@ int shell_log_backend_output_func(u8_t *data, size_t length, void *ctx);
 #if CONFIG_LOG
 #define SHELL_LOG_BACKEND_DEFINE(_name, _buf, _size)			     \
 	LOG_BACKEND_DEFINE(_name##_backend, log_backend_shell_api, false);   \
-	K_FIFO_DEFINE(_name##_fifo);					     \
+	K_MSGQ_DEFINE(_name##_msgq, sizeof(void *),			     \
+			CONFIG_SHELL_MAX_LOG_MSG_BUFFERED, sizeof(void *));  \
 	LOG_OUTPUT_DEFINE(_name##_log_output, shell_log_backend_output_func, \
 			  _buf, _size);					     \
 	static struct shell_log_backend_control_block _name##_control_block; \
 	static const struct shell_log_backend _name##_log_backend = {	     \
 		.backend = &_name##_backend,				     \
-		.fifo = &_name##_fifo,					     \
+		.msgq = &_name##_msgq,					     \
 		.log_output = &_name##_log_output,			     \
 		.control_block = &_name##_control_block			     \
 	}
