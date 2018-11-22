@@ -24,6 +24,7 @@
 #ifndef _ASMLANGUAGE
 
 #include <zephyr/types.h>
+#include <stdbool.h>
 
 #ifdef CONFIG_CPU_ARCV2
 #include <arch/arc/v2/aux_regs.h>
@@ -172,7 +173,7 @@ static inline u32_t _arch_syscall_invoke0(u32_t call_id)
 	return ret;
 }
 
-static inline int _arch_is_user_context(void)
+static inline bool _arch_is_user_context(void)
 {
 	u32_t status;
 
@@ -182,7 +183,7 @@ static inline int _arch_is_user_context(void)
 			 : "=r"(status)
 			 : [status32] "i" (_ARC_V2_STATUS32));
 
-	return !(status & _ARC_V2_STATUS32_US);
+	return !(status & _ARC_V2_STATUS32_US) ? true : false;
 }
 
 #ifdef __cplusplus

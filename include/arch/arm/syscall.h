@@ -24,6 +24,7 @@
 #ifndef _ASMLANGUAGE
 
 #include <zephyr/types.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -153,19 +154,19 @@ static inline u32_t _arch_syscall_invoke0(u32_t call_id)
 	return ret;
 }
 
-static inline int _arch_is_user_context(void)
+static inline bool _arch_is_user_context(void)
 {
 	u32_t value;
 
 	/* check for handler mode */
 	__asm__ volatile("mrs %0, IPSR\n\t" : "=r"(value));
 	if (value) {
-		return 0;
+		return false;
 	}
 
 	/* if not handler mode, return mode information */
 	__asm__ volatile("mrs %0, CONTROL\n\t" : "=r"(value));
-	return value & 0x1;
+	return (value & 0x1) ? true : false;
 }
 
 #ifdef __cplusplus
