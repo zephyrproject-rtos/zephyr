@@ -32,7 +32,7 @@ static void test_encoding_iteration(char const *name, char const *value,
 
 	test_rwbs = wbs;
 
-	settings_line_io_init(NULL, write_handler, wbs);
+	settings_line_io_init(NULL, write_handler, NULL, wbs);
 
 	rc = settings_line_len_calc(name, strlen(value));
 
@@ -107,7 +107,7 @@ void test_raw_read_iteration(u8_t rbs, size_t off, size_t len)
 
 	memset(read_buf, 0x00, sizeof(read_buf));
 
-	settings_line_io_init(read_handle, write_handler, rbs);
+	settings_line_io_init(read_handle, write_handler, NULL, rbs);
 
 	rc = settings_line_raw_read(off, &read_buf[4], len, &len_read,
 				    (void *)ENC_CTX_VAL);
@@ -161,7 +161,7 @@ void test_val_read_iteration(char const *src, size_t src_len,
 
 	test_rwbs = rbs;
 
-	settings_line_io_init(read_handle, write_handler, rbs);
+	settings_line_io_init(read_handle, write_handler, NULL, rbs);
 
 	rc =  settings_line_val_read(val_off, off, read_buf, len, &len_read,
 				     (void *)ENC_CTX_VAL);

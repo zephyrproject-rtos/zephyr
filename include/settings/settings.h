@@ -198,6 +198,17 @@ int settings_commit(char *name);
 int settings_val_read_cb(void *value_ctx, void *buf, size_t len);
 
 /**
+ * This function fetch length of decode data.
+ * This function should be used inside set handler in order to detect the
+ * settings data length.
+ *
+ * @param[in] value_ctx Data contex provided by the <p>h_set</p> handler.
+ *
+ * @retval length of data.
+ */
+size_t settings_val_get_len_cb(void *value_ctx);
+
+/**
  * @} settings
  */
 
