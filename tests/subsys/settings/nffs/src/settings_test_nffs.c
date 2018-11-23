@@ -67,21 +67,31 @@ int c1_handle_get(int argc, char **argv, char *val, int val_len_max)
 int c1_handle_set(int argc, char **argv, void *value_ctx)
 {
 	int rc;
+	size_t val_len;
 
 	test_set_called = 1;
 	if (argc == 1 && !strcmp(argv[0], "mybar")) {
+		val_len = settings_val_get_len_cb(value_ctx);
+		zassert_true(val_len == 1, "bad set-value size");
+
 		rc = settings_val_read_cb(value_ctx, &val8, sizeof(val8));
 		zassert_true(rc >= 0, "SETTINGS_VALUE_SET callback");
 		return 0;
 	}
 
-	if (argc == 1 && !strcmp(argv[0], "mybar16"))	 {
+	if (argc == 1 && !strcmp(argv[0], "mybar16")) {
+		val_len = settings_val_get_len_cb(value_ctx);
+		zassert_true(val_len == 2, "bad set-value size");
+
 		rc = settings_val_read_cb(value_ctx, &val16, sizeof(val16));
 		zassert_true(rc >= 0, "SETTINGS_VALUE_SET callback");
 		return 0;
 	}
 
-	if (argc == 1 && !strcmp(argv[0], "mybar64"))	 {
+	if (argc == 1 && !strcmp(argv[0], "mybar64")) {
+		val_len = settings_val_get_len_cb(value_ctx);
+		zassert_true(val_len == 8, "bad set-value size");
+
 		rc = settings_val_read_cb(value_ctx, &val64, sizeof(val64));
 		zassert_true(rc >= 0, "SETTINGS_VALUE_SET callback");
 		return 0;

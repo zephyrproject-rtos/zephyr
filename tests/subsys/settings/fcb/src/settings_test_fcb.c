@@ -278,8 +278,12 @@ int c3_handle_get(int argc, char **argv, char *val, int val_len_max)
 int c3_handle_set(int argc, char **argv, void *value_ctx)
 {
 	int rc;
+	size_t val_len;
 
 	if (argc == 1 && !strcmp(argv[0], "v")) {
+		val_len = settings_val_get_len_cb(value_ctx);
+		zassert_true(val_len == 4, "bad set-value size");
+
 		rc = settings_val_read_cb(value_ctx, &val32, sizeof(val32));
 		zassert_true(rc >= 0, "SETTINGS_VALUE_SET callback");
 		return 0;
