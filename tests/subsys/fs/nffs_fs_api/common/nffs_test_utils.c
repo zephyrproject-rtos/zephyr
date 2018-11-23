@@ -25,7 +25,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <fs.h>
-#include <nffs/queue.h>
+#include <sys/queue.h>
 #include <nffs/nffs.h>
 #include <nffs/os.h>
 #include <flash.h>

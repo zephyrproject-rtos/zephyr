@@ -23,7 +23,7 @@
 #include <stddef.h>
 #include <inttypes.h>
 #include <nffs/config.h>
-#include <nffs/queue.h>
+#include <sys/queue.h>
 
 #if __ZEPHYR__
 #include <zephyr/types.h>
