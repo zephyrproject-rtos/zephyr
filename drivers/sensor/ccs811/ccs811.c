@@ -86,6 +86,7 @@ int ccs811_baseline_fetch(struct device *dev)
 	if (rc <= 0) {
 		rc = baseline;
 	}
+
 	return rc;
 }
 
@@ -98,6 +99,74 @@ int ccs811_baseline_update(struct device *dev,
 
 	buf[0] = CCS811_REG_BASELINE;
 	memcpy(buf + 1, &baseline, sizeof(baseline));
+	set_wake(drv_data, true);
+	rc = i2c_write(drv_data->i2c, buf, sizeof(buf), DT_INST_0_AMS_CCS811_BASE_ADDRESS);
+	set_wake(drv_data, false);
+	return rc;
+}
+
+int ccs811_envdata_update(struct device *dev,
+			  const struct sensor_value *temperature,
+			  const struct sensor_value *humidity)
+{
+	struct ccs811_data *drv_data = dev->driver_data;
+	int rc;
+	u8_t buf[5] = { CCS811_REG_ENV_DATA };
+
+	/*
+	 * Environment data are represented in a broken whole/fraction
+	 * system that specified a 9-bit fractional part to represent
+	 * milli-units.  Since 1000 is greater than 512, the device
+	 * actually only pays attention to the top bit, treating it as
+	 * indicating 0.5.  So we only write the first octet (7-bit
+	 * while plus 1-bit half).
+	 *
+	 * Humidity is simple: scale it by two and round to the
+	 * nearest half.  Assume the fractional part is not
+	 * negative.
+	 */
+	if (humidity) {
+		int value = 2 * humidity->val1;
+
+		value += (250000 + humidity->val2) / 500000;
+		if (value < 0) {
+			value = 0;
+		} else if (value > (2 * 100)) {
+			value = 2 * 100;
+		}
+		LOG_DBG("HUM %d.%06d becomes %d",
+			humidity->val1, humidity->val2, value);
+		buf[1] = value;
+	} else {
+		buf[1] = 2 * 50;
+	}
+
+	/*
+	 * Temperature is offset from -25 Cel.  Values below minimum
+	 * store as zero.  Default is 25 Cel.  Again we round to the
+	 * nearest half, complicated by Zephyr's signed representation
+	 * of the fractional part.
+	 */
+	if (temperature) {
+		int value = 2 * temperature->val1;
+
+		if (temperature->val2 < 0) {
+			value += (250000 + temperature->val2) / 500000;
+		} else {
+			value += (-250000 + temperature->val2) / 500000;
+		}
+		if (value < (2 * -25)) {
+			value = 0;
+		} else {
+			value += 2 * 25;
+		}
+		LOG_DBG("TEMP %d.%06d becomes %d",
+			temperature->val1, temperature->val2, value);
+		buf[3] = value;
+	} else {
+		buf[3] = 2 * (25 + 25);
+	}
+
 	set_wake(drv_data, true);
 	rc = i2c_write(drv_data->i2c, buf, sizeof(buf), DT_INST_0_AMS_CCS811_BASE_ADDRESS);
 	set_wake(drv_data, false);

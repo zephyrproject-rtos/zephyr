@@ -20,6 +20,7 @@ extern "C" {
 #endif
 
 #include <device.h>
+#include <drivers/sensor.h>
 
 /**
  * @brief Fetch the current value of the BASELINE register.
@@ -50,6 +51,24 @@ int ccs811_baseline_fetch(struct device *dev);
  * @return 0 if successful, negative errno code if failure.
  */
 int ccs811_baseline_update(struct device *dev, u16_t baseline);
+
+/**
+ * @brief Update the ENV_DATA register.
+ *
+ * Accurate calculation of gas levels requires accurate environment
+ * data.  Measurements are only accurate to 0.5 Cel and 0.5 %RH.
+ *
+ * @param dev Pointer to the sensor device
+ *
+ * @param temperature the current temperature at the sensor
+ *
+ * @param humidity the current humidity at the sensor
+ *
+ * @return 0 if successful, negative errno code if failure.
+ */
+int ccs811_envdata_update(struct device *dev,
+			  const struct sensor_value *temperature,
+			  const struct sensor_value *humidity);
 
 #ifdef __cplusplus
 }
