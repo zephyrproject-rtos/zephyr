@@ -306,32 +306,6 @@ def init_logs():
     logging.debug("Log init completed")
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Check for coding style and documentation warnings.")
-    parser.add_argument('-c', '--commits', default=None,
-                        help="Commit range in the form: a..b")
-    parser.add_argument('-g', '--github', action="store_true",
-                        help="Send results to github as a comment.")
-
-    parser.add_argument('-r', '--repo', default=None,
-                        help="Github repository")
-    parser.add_argument('-p', '--pull-request', default=0, type=int,
-                        help="Pull request number")
-
-    parser.add_argument('-s', '--status', action="store_true",
-                        help="Set status to pending")
-    parser.add_argument('-S', '--sha', default=None, help="Commit SHA")
-    parser.add_argument('-o', '--output', default="compliance.xml",
-                        help='Name of outfile in junit format.')
-
-    parser.add_argument('-l', '--list', action="store_true",
-                        help="List all test modules.")
-
-    parser.add_argument('-m', '--module', action="append", default=[],
-                        help="Tets modules to run, by default run everything.")
-    return parser.parse_args()
-
 
 def set_status(gh, repo, sha):
 
@@ -390,6 +364,38 @@ def report_to_github(repo, pull_request, sha, suite, docs):
         if not commented:
             pr.create_issue_comment(comment)
 
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Check for coding style and documentation warnings.")
+    parser.add_argument('-c', '--commits', default=None,
+                        help="Commit range in the form: a..b")
+    parser.add_argument('-g', '--github', action="store_true",
+                        help="Send results to github as a comment.")
+
+    parser.add_argument('-r', '--repo', default=None,
+                        help="Github repository")
+    parser.add_argument('-p', '--pull-request', default=0, type=int,
+                        help="Pull request number")
+
+    parser.add_argument('-s', '--status', action="store_true",
+                        help="Set status to pending")
+    parser.add_argument('-S', '--sha', default=None, help="Commit SHA")
+    parser.add_argument('-o', '--output', default="compliance.xml",
+                        help='Name of outfile in junit format.')
+
+    parser.add_argument('-l', '--list', action="store_true",
+                        help="List all test modules.")
+
+    parser.add_argument('-m', '--module', action="append", default=[],
+                        help="Tets modules to run, by default run everything.")
+
+    parser.add_argument('-e', '--exclude-module', action="append", default=[],
+                        help="Do not run the specified modules")
+    return parser.parse_args()
+
+
 def main():
     args = parse_args()
 
@@ -417,6 +423,9 @@ def main():
                 suite.add_testcase(test.case)
                 docs[test.case.name] = test._doc
         else:
+            if test._name in args.exclude_module:
+                print("Skipping {}".format(test._name))
+                continue
             test.run()
             suite.add_testcase(test.case)
             docs[test.case.name] = test._doc
@@ -433,11 +442,10 @@ def main():
     else:
         for case in suite:
             if case.result and case.result.type != 'skipped':
-                print(case.result.type)
                 errors += 1
 
     if errors:
-        print("{} Erros found".format(errors))
+        print("{} Errors found".format(errors))
 
     sys.exit(errors)
 
