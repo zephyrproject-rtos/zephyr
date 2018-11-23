@@ -260,7 +260,11 @@ void calculate_lightness_target_values(u8_t type)
 		if (gen_onoff_srv_root_user_data.target_onoff == 0) {
 			tmp16 = 0;
 		} else {
-			tmp16 = light_lightness_srv_user_data.last;
+			if (light_lightness_srv_user_data.def == 0) {
+				tmp16 = light_lightness_srv_user_data.last;
+			} else {
+				tmp16 = light_lightness_srv_user_data.def;
+			}
 		}
 
 		break;

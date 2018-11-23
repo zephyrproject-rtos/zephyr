@@ -83,6 +83,7 @@ struct gen_def_trans_time_state gen_def_trans_time_srv_user_data;
 struct generic_onpowerup_state gen_power_onoff_srv_user_data;
 
 struct light_lightness_state light_lightness_srv_user_data = {
+	.last = 1,
 	.transition = &lightness_transition,
 };
 
