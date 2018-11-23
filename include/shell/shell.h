@@ -22,6 +22,8 @@ extern "C" {
 
 #define SHELL_RX_BUFF_SIZE 16
 
+#define SHELL_INVALID_ARGC 0xFF
+
 #ifndef CONFIG_SHELL_CMD_BUFF_SIZE
 #define CONFIG_SHELL_CMD_BUFF_SIZE 0
 #endif
@@ -190,16 +192,17 @@ struct shell_static_entry {
  * @param[in] _subcmd  Pointer to a subcommands array.
  * @param[in] _help    Pointer to a command help string.
  * @param[in] _handler Pointer to a function handler.
- * @param[in] _mandatory Number of mandatory arguments.
+ * @param[in] _mandatory Number of mandatory arguments. SHELL_INVALID_ARGC value
+ *			 indicates that argument count check is not used.
  * @param[in] _optional Number of optional arguments.
  */
-#define SHELL_CMD_ARG(_syntax, _subcmd, _help, _handler,		\
-		      _mandatory, _optional) {				\
-	.syntax = (const char *)STRINGIFY(_syntax),			\
-	.subcmd = _subcmd,						\
-	.help  = (const char *)_help,					\
-	.handler = _handler,						\
-	.args = _mandatory ?						\
+#define SHELL_CMD_ARG(_syntax, _subcmd, _help, _handler,		     \
+		      _mandatory, _optional) {				     \
+	.syntax = (const char *)STRINGIFY(_syntax),			     \
+	.subcmd = _subcmd,						     \
+	.help  = (const char *)_help,					     \
+	.handler = _handler,						     \
+	.args = _mandatory != SHELL_INVALID_ARGC ?			     \
 	(&(struct shell_static_args) SHELL_ARG(_mandatory, _optional)) : NULL\
 }
 
@@ -212,7 +215,7 @@ struct shell_static_entry {
  * @param[in] _handler Pointer to a function handler.
  */
 #define SHELL_CMD(_syntax, _subcmd, _help, _handler) \
-	SHELL_CMD_ARG(_syntax, _subcmd, _help, _handler, 0, 0)
+	SHELL_CMD_ARG(_syntax, _subcmd, _help, _handler, SHELL_INVALID_ARGC, 0)
 
 
 /**
