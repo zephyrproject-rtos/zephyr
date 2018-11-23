@@ -31,6 +31,9 @@ config CCS811_DRIVE_MODE_2
 config CCS811_DRIVE_MODE_3
 	bool "Measurement every sixty seconds"
 
+config CCS811_DRIVE_MODE_4
+	bool "Measurement every 250 milliseconds"
+
 endchoice
 
 config CCS811_TRIGGER
