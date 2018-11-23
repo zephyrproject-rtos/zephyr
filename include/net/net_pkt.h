@@ -55,8 +55,11 @@ struct net_pkt {
 	/** Slab pointer from where it belongs to */
 	struct k_mem_slab *slab;
 
-	/** List of buffer fragments holding the packet */
-	struct net_buf *frags;
+	/** buffer holding the packet */
+	union {
+		struct net_buf *frags;
+		struct net_buf *buffer;
+	};
 
 	/** Network connection context */
 	struct net_context *context;
@@ -1995,6 +1998,166 @@ const char *net_pkt_pool2str(struct net_buf_pool *pool);
 #else
 #define net_pkt_print(...)
 #endif /* CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG */
+
+/* New allocator, and API are defined below.
+ * This will be simpler when time will come to get rid of former API above.
+ */
+#if defined(CONFIG_NET_DEBUG_NET_PKT_ALLOC) || \
+	(CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG)
+
+struct net_pkt *net_pkt_alloc_debug(s32_t timeout,
+				    const char *caller, int line);
+#define net_pkt_alloc(_timeout)					\
+	net_pkt_alloc_debug(_timeout, __func__, __LINE__)
+
+struct net_pkt *net_pkt_rx_alloc_debug(s32_t timeout,
+				       const char *caller, int line);
+#define net_pkt_rx_alloc(_timeout)				\
+	net_pkt_rx_alloc_debug(_timeout, __func__, __LINE__)
+
+struct net_pkt *net_pkt_alloc_on_iface_debug(struct net_if *iface,
+					     s32_t timeout,
+					     const char *caller,
+					     int line);
+#define net_pkt_alloc_on_iface(_iface, _timeout)			\
+	net_pkt_alloc_on_iface_debug(_iface, _timeout, __func__, __LINE__)
+
+struct net_pkt *net_pkt_rx_alloc_on_iface_debug(struct net_if *iface,
+						s32_t timeout,
+						const char *caller,
+						int line);
+#define net_pkt_rx_alloc_on_iface(_iface, _timeout)			\
+	net_pkt_rx_alloc_on_iface_debug(_iface, _timeout,		\
+					   __func__, __LINE__)
+
+int net_pkt_alloc_buffer_debug(struct net_pkt *pkt,
+			       size_t size,
+			       enum net_ip_protocol proto,
+			       s32_t timeout,
+			       const char *caller, int line);
+#define net_pkt_alloc_buffer(_pkt, _size, _proto, _timeout)		\
+	net_pkt_alloc_buffer_debug(_pkt, _size, _proto, _timeout,	\
+				      __func__, __LINE__)
+
+struct net_pkt *net_pkt_alloc_with_buffer_debug(struct net_if *iface,
+						size_t size,
+						sa_family_t family,
+						enum net_ip_protocol proto,
+						s32_t timeout,
+						const char *caller,
+						int line);
+#define net_pkt_alloc_with_buffer(_iface, _size, _family,		\
+				  _proto, _timeout)			\
+	net_pkt_alloc_with_buffer_debug(_iface, _size, _family,	\
+					   _proto, _timeout,		\
+					   __func__, __LINE__)
+
+struct net_pkt *net_pkt_rx_alloc_with_buffer_debug(struct net_if *iface,
+						   size_t size,
+						   sa_family_t family,
+						   enum net_ip_protocol proto,
+						   s32_t timeout,
+						   const char *caller,
+						   int line);
+#define net_pkt_rx_alloc_with_buffer(_iface, _size, _family,		\
+				     _proto, _timeout)			\
+	net_pkt_rx_alloc_with_buffer_debug(_iface, _size, _family,	\
+					      _proto, _timeout,		\
+					      __func__, __LINE__)
+#else
+
+/**
+ * @brief Allocate an initialized net_pkt
+ *
+ * Note: for the time being, 2 pools are used. One for TX and one for RX.
+ *       This allocater has to be used for TX.
+ *
+ * @param timeout Maximum time in milliseconds to wait for an allocation.
+ *
+ * @return a pointer to a newly allocated net_pkt on success, NULL otherwise.
+ */
+struct net_pkt *net_pkt_alloc(s32_t timeout);
+
+/**
+ * @brief Allocate an initialized net_pkt for RX
+ *
+ * Note: for the time being, 2 pools are used. One for TX and one for RX.
+ *       This allocater has to be used for RX.
+ *
+ * @param timeout Maximum time in milliseconds to wait for an allocation.
+ *
+ * @return a pointer to a newly allocated net_pkt on success, NULL otherwise.
+ */
+struct net_pkt *net_pkt_rx_alloc(s32_t timeout);
+
+/**
+ * @brief Allocate a network packet for a specific network interface.
+ *
+ * @param iface The network interface the packet is supposed to go through.
+ * @param timeout Maximum time in milliseconds to wait for an allocation.
+ *
+ * @return a pointer to a newly allocated net_pkt on success, NULL otherwise.
+ */
+struct net_pkt *net_pkt_alloc_on_iface(struct net_if *iface, s32_t timeout);
+
+/* Same as above but specifically for RX packet */
+struct net_pkt *net_pkt_rx_alloc_on_iface(struct net_if *iface, s32_t timeout);
+
+/**
+ * @brief Allocate buffer for a net_pkt
+ *
+ * Note: such allocator will take into account space necessary for headers,
+ *       MTU, and existing buffer (if any). Beware that, due to all these
+ *       criterias, the allocated size might be smaller/bigger than requested
+ *       one.
+ *
+ * @param pkt     The network packet requiring buffer to be allocated.
+ * @param size    The size of buffer being requested.
+ * @param proto   The IP protocol type (can be 0 for none).
+ * @param timeout Maximum time in milliseconds to wait for an allocation.
+ *
+ * @return 0 on success, negative errno code otherwise.
+ */
+int net_pkt_alloc_buffer(struct net_pkt *pkt,
+			 size_t size,
+			 enum net_ip_protocol proto,
+			 s32_t timeout);
+
+/**
+ * @brief Allocate a network packet and buffer at once
+ *
+ * @param iface   The network interface the packet is supposed to go through.
+ * @param size    The size of buffer being requested.
+ * @param family  The family to which the packet belongs to.
+ * @param proto   The IP protocol type (can be 0 for none).
+ * @param timeout Maximum time in milliseconds to wait for an allocation.
+ *
+ * @return a pointer to a newly allocated net_pkt on success, NULL otherwise.
+ */
+struct net_pkt *net_pkt_alloc_with_buffer(struct net_if *iface,
+					  size_t size,
+					  sa_family_t family,
+					  enum net_ip_protocol proto,
+					  s32_t timeout);
+
+/* Same as above but specifically for RX packet */
+struct net_pkt *net_pkt_rx_alloc_with_buffer(struct net_if *iface,
+					     size_t size,
+					     sa_family_t family,
+					     enum net_ip_protocol proto,
+					     s32_t timeout);
+
+#endif /* CONFIG_NET_DEBUG_NET_PKT_ALLOC |
+	*  CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
+	*/
+
+/**
+ * @brief Append a buffer in packet
+ *
+ * @param pkt    Network packet where to append the buffer
+ * @param buffer Buffer to append
+ */
+void net_pkt_append_buffer(struct net_pkt *pkt, struct net_buf *buffer);
 
 /**
  * @}
