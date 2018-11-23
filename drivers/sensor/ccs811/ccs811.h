@@ -11,6 +11,7 @@
 #include <device.h>
 #include <drivers/gpio.h>
 #include <sys/util.h>
+#include <drivers/sensor/ccs811.h>
 
 /* Registers */
 #define CCS811_REG_STATUS               0x00
@@ -29,17 +30,7 @@
 #define CCS881_HW_ID                    0x81
 #define CCS811_HW_VERSION               0x10
 
-/* Status register fields */
-#define CCS811_STATUS_ERROR             BIT(0)
-#define CCS811_STATUS_DATA_READY        BIT(3)
-#define CCS811_STATUS_APP_VALID         BIT(4)
-#define CCS811_STATUS_FW_MODE           BIT(7)
-
 /* Measurement modes */
-#define CCS811_MODE_IDLE                0x00
-#define CCS811_MODE_IAQ_1SEC            0x10
-#define CCS811_MODE_IAQ_10SEC           0x20
-#define CCS811_MODE_IAQ_60SEC           0x30
 #define CCS811_MODE_RAW_DATA            0x40
 #define CCS811_MODE_DATARDY             0x08
 #define CCS811_MODE_THRESH              0x04
@@ -85,11 +76,7 @@ struct ccs811_data {
 #ifdef DT_INST_0_AMS_CCS811_WAKE_GPIOS_CONTROLLER
 	struct device *wake_gpio;
 #endif
-	u16_t co2;
-	u16_t voc;
-	u16_t raw;
-	u8_t status;
-	u8_t error;
+	struct ccs811_result_type result;
 	u8_t mode;
 };
 
