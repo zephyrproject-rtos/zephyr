@@ -42,6 +42,7 @@ extern "C" {
 #define CCS811_MODE_IAQ_10SEC           0x20
 #define CCS811_MODE_IAQ_60SEC           0x30
 #define CCS811_MODE_IAQ_250MSEC         0x40
+#define CCS811_MODE_MSK                 0x70
 
 /** @brief Information collected from the sensor on each fetch. */
 struct ccs811_result_type {
@@ -80,6 +81,31 @@ struct ccs811_result_type {
  * @return a pointer to the result information.
  */
 const struct ccs811_result_type *ccs811_result(struct device *dev);
+
+/**
+ * @brief Get information about static CCS811 state.
+ *
+ * This includes the configured operating mode as well as hardware and
+ * firmware versions.
+ */
+struct ccs811_configver_type {
+	u16_t fw_boot_version;
+	u16_t fw_app_version;
+	u8_t hw_version;
+	u8_t mode;
+};
+
+/**
+ * @brief Fetch operating mode and version information.
+ *
+ * @param dev Pointer to the sensor device
+ *
+ * @param ptr Pointer to where the returned information should be stored
+ *
+ * @return 0 on success, or a negative errno code on failure.
+ */
+int ccs811_configver_fetch(struct device *dev,
+			   struct ccs811_configver_type *ptr);
 
 /**
  * @brief Fetch the current value of the BASELINE register.
