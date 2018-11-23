@@ -42,13 +42,6 @@ extern const struct socket_op_vtable sock_fd_op_vtable;
 
 static const struct socket_op_vtable tls_sock_fd_op_vtable;
 
-static inline struct net_context *sock_to_net_ctx(int sock)
-{
-	return z_get_fd_obj(sock,
-			    (const struct fd_op_vtable *)&tls_sock_fd_op_vtable,
-			    ENOTSOCK);
-}
-
 /** A list of secure tags that TLS context should use. */
 struct sec_tag_list {
 	/** An array of secure tags referencing TLS credentials. */
@@ -122,9 +115,6 @@ struct tls_context {
 
 	/** DTLS peer address length. */
 	socklen_t dtls_peer_addrlen;
-
-	/* File descriptor associated with the context. */
-	int fd;
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
 #if defined(CONFIG_MBEDTLS)
@@ -488,19 +478,22 @@ static int dtls_rx(void *ctx, unsigned char *buf, size_t len, uint32_t timeout)
 	struct sockaddr addr;
 	int err;
 	ssize_t received;
-	struct pollfd fds;
 	bool retry;
+	struct k_poll_event pev;
 
 	do {
 		retry = false;
 
 		/* mbedtLS does not allow blocking rx for DTLS, therefore use
-		 * poll for timeout functionality.
+		 * k_poll for timeout functionality.
 		 */
 		if (is_block) {
-			fds.fd = net_ctx->tls->fd;
-			fds.events = POLLIN;
-			if (zsock_poll_internal(&fds, 1, remaining_time) == 0) {
+			pev.obj = &net_ctx->recv_q;
+			pev.type = K_POLL_TYPE_FIFO_DATA_AVAILABLE;
+			pev.mode = K_POLL_MODE_NOTIFY_ONLY;
+			pev.state = K_POLL_STATE_NOT_READY;
+
+			if (k_poll(&pev, 1, remaining_time) == -EAGAIN) {
 				return MBEDTLS_ERR_SSL_TIMEOUT;
 			}
 		}
@@ -1163,10 +1156,6 @@ int ztls_socket(int family, int type, int proto)
 		}
 
 		ctx->tls->tls_version = tls_proto;
-
-#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
-		ctx->tls->fd = fd;
-#endif
 	}
 
 	z_finalize_fd(
@@ -1657,128 +1646,98 @@ ssize_t ztls_recvfrom_ctx(struct net_context *ctx, void *buf, size_t max_len,
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 }
 
-int ztls_poll(struct zsock_pollfd *fds, int nfds, int timeout)
+static int ztls_poll_prepare_ctx(struct net_context *ctx,
+				 struct zsock_pollfd *pfd,
+				 struct k_poll_event **pev,
+				 struct k_poll_event *pev_end)
 {
-	bool retry = true;
-	struct zsock_pollfd *pfd;
-	struct net_context *context;
-	int i, ret, remaining_time = timeout;
-	u32_t entry_time = k_uptime_get_32();
+	if (ctx->tls == NULL) {
+		/* POLLNVAL flag will be set in the update function. */
+		return 0;
+	}
 
-	/* There might be some decrypted but unread data pending
-	 * on mbedTLS, check for that.
-	 */
-	for (pfd = fds, i = nfds; i--; pfd++) {
-		/* Per POSIX, negative fd's are just ignored */
-		if (pfd->fd < 0) {
-			continue;
-		}
-
-		if (pfd->events & ZSOCK_POLLIN) {
-			context = sock_to_net_ctx(pfd->fd);
-			if (context == NULL) {
-				/* ZSOCK_POLLNVAL will be set by
-				 * zsock_poll_internal
-				 */
-				continue;
-			}
-
-			if (!context->tls || IS_LISTENING(context)) {
-				continue;
-			}
-
-			/* There already is mbedTLS data to read, so just poll
-			 * with no timeout, to check if there has been any other
-			 * activity on sockets.
+	if (pfd->events & ZSOCK_POLLIN) {
+		if (!IS_LISTENING(ctx)) {
+			/* If there already is mbedTLS data to read, there is no
+			 * need to set the k_poll_event object. Return EALREADY
+			 * so we won't block in the k_poll.
 			 */
-			if (mbedtls_ssl_get_bytes_avail(
-					&context->tls->ssl) > 0) {
-				remaining_time = K_NO_WAIT;
-				break;
+			if (mbedtls_ssl_get_bytes_avail(&ctx->tls->ssl) > 0) {
+				errno = EALREADY;
+				return -1;
 			}
+		}
+
+		if (*pev == pev_end) {
+			errno = ENOMEM;
+			return -1;
+		}
+
+		(*pev)->obj = &ctx->recv_q;
+		(*pev)->type = K_POLL_TYPE_FIFO_DATA_AVAILABLE;
+		(*pev)->mode = K_POLL_MODE_NOTIFY_ONLY;
+		(*pev)->state = K_POLL_STATE_NOT_READY;
+		(*pev)++;
+	}
+
+	return 0;
+}
+
+static int ztls_poll_update_ctx(struct net_context *ctx,
+				struct zsock_pollfd *pfd,
+				struct k_poll_event **pev)
+{
+	if (ctx->tls == NULL) {
+		pfd->revents = ZSOCK_POLLNVAL;
+		return 0;
+	}
+
+	/* For now, assume that socket is always writable */
+	if (pfd->events & ZSOCK_POLLOUT) {
+		pfd->revents |= ZSOCK_POLLOUT;
+	}
+
+	if (pfd->events & ZSOCK_POLLIN) {
+		if (!IS_LISTENING(ctx)) {
+			/* Already had TLS data to read on socket. */
+			if (mbedtls_ssl_get_bytes_avail(&ctx->tls->ssl) > 0) {
+				pfd->revents |= ZSOCK_POLLIN;
+				return 0;
+			}
+		}
+
+		/* Some encrypted data received on the socket. */
+		if (((*pev)++)->state != K_POLL_STATE_NOT_READY) {
+			if (IS_LISTENING(ctx)) {
+				pfd->revents |= ZSOCK_POLLIN;
+				return 0;
+			}
+
+			/* EAGAIN might happen during or just after
+			 * DLTS handshake.
+			 */
+			if (recv(pfd->fd, NULL, 0, ZSOCK_MSG_DONTWAIT) < 0 &&
+			    errno != EAGAIN) {
+				pfd->revents |= ZSOCK_POLLERR;
+				return 0;
+			}
+
+			if (mbedtls_ssl_get_bytes_avail(&ctx->tls->ssl) > 0 ||
+			    sock_is_eof(ctx)) {
+				pfd->revents |= ZSOCK_POLLIN;
+				return 0;
+			}
+
+			/* Received encrypted data, but still not enough
+			 * to decrypt it and return data through socket,
+			 * ask for retry.
+			 */
+			errno = EAGAIN;
+			return -1;
 		}
 	}
 
-	while (retry) {
-		ret = zsock_poll_internal(fds, nfds, remaining_time);
-		if (ret < 0) {
-			/* errno will be propagated. */
-			return ret;
-		} else if (ret == 0) {
-			/* Do not repeat on timeout. */
-			retry = false;
-		}
-
-		/* Make mbedTLS recalculate the data on sockets that notified
-		 * data availability, and update revents respectively.
-		 */
-		for (pfd = fds, i = nfds; i--; pfd++) {
-			/* Per POSIX, negative fd's are just ignored */
-			if (pfd->fd < 0) {
-				continue;
-			}
-
-			if (pfd->events & ZSOCK_POLLIN) {
-				context = sock_to_net_ctx(pfd->fd);
-				if (context == NULL) {
-					/* ZSOCK_POLLNVAL was set by
-					 * zsock_poll_internal
-					 */
-					continue;
-				}
-
-				if (!context->tls || IS_LISTENING(context)) {
-					continue;
-				}
-
-				if (pfd->revents & ZSOCK_POLLIN) {
-					/* EAGAIN might happen during or just
-					 * after DLTS handshake.
-					 */
-					if (recv(pfd->fd, NULL, 0,
-						 ZSOCK_MSG_DONTWAIT) < 0 &&
-					    errno != EAGAIN) {
-						/* No need to increment ret here
-						 * as POLLIN was set.
-						 */
-						pfd->revents |= ZSOCK_POLLERR;
-						continue;
-					}
-				}
-
-				if (mbedtls_ssl_get_bytes_avail(
-						&context->tls->ssl) > 0) {
-					if (pfd->revents == 0) {
-						ret++;
-					}
-
-					pfd->revents |= ZSOCK_POLLIN;
-				} else if (!sock_is_eof(context)) {
-					if (pfd->revents == ZSOCK_POLLIN) {
-						ret--;
-					}
-
-					pfd->revents &= ~ZSOCK_POLLIN;
-				}
-			}
-		}
-
-		/* If there's something to report, exit. */
-		if (ret > 0) {
-			retry = false;
-		}
-
-		if (retry && remaining_time != K_FOREVER &&
-		    remaining_time != K_NO_WAIT) {
-			/* Recalculate the timeout value. */
-			remaining_time = time_left(entry_time, timeout);
-			if (remaining_time <= 0) {
-				retry = false;
-			}
-		}
-	}
-
-	return ret;
+	return 0;
 }
 
 int ztls_getsockopt_ctx(struct net_context *ctx, int level, int optname,
@@ -1905,6 +1864,34 @@ static int tls_sock_ioctl_vmeth(void *obj, unsigned int request, ...)
 		va_end(args);
 
 		return err;
+	}
+
+	case ZFD_IOCTL_POLL_PREPARE: {
+		va_list args;
+		struct zsock_pollfd *pfd;
+		struct k_poll_event **pev;
+		struct k_poll_event *pev_end;
+
+		va_start(args, request);
+		pfd = va_arg(args, struct zsock_pollfd *);
+		pev = va_arg(args, struct k_poll_event **);
+		pev_end = va_arg(args, struct k_poll_event *);
+		va_end(args);
+
+		return ztls_poll_prepare_ctx(obj, pfd, pev, pev_end);
+	}
+
+	case ZFD_IOCTL_POLL_UPDATE: {
+		va_list args;
+		struct zsock_pollfd *pfd;
+		struct k_poll_event **pev;
+
+		va_start(args, request);
+		pfd = va_arg(args, struct zsock_pollfd *);
+		pev = va_arg(args, struct k_poll_event **);
+		va_end(args);
+
+		return ztls_poll_update_ctx(obj, pfd, pev);
 	}
 
 	default:

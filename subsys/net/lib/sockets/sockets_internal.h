@@ -47,9 +47,6 @@ struct socket_op_vtable {
 			  const void *optval, socklen_t optlen);
 };
 
-int zsock_poll_internal(struct zsock_pollfd *fds, int nfds, int timeout);
-
 int ztls_socket(int family, int type, int proto);
-int ztls_poll(struct zsock_pollfd *fds, int nfds, int timeout);
 
 #endif /* _SOCKETS_INTERNAL_H_ */

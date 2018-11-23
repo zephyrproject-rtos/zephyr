@@ -42,12 +42,6 @@ static inline void *get_sock_vtable(
 				       (const struct fd_op_vtable **)vtable);
 }
 
-static inline struct net_context *sock_to_net_ctx(int sock)
-{
-	/* TODO Temporary fix until poll is sorted out */
-	return z_get_fd_obj(sock, NULL, ENOTSOCK);
-}
-
 static void zsock_received_cb(struct net_context *ctx, struct net_pkt *pkt,
 			      int status, void *user_data);
 
@@ -724,14 +718,66 @@ Z_SYSCALL_HANDLER(zsock_fcntl, sock, cmd, flags)
 }
 #endif
 
-int zsock_poll_internal(struct zsock_pollfd *fds, int nfds, int timeout)
+static int zsock_poll_prepare_ctx(struct net_context *ctx,
+				  struct zsock_pollfd *pfd,
+				  struct k_poll_event **pev,
+				  struct k_poll_event *pev_end)
 {
-	int i;
+	if (pfd->events & ZSOCK_POLLIN) {
+		if (*pev == pev_end) {
+			errno = ENOMEM;
+			return -1;
+		}
+
+		(*pev)->obj = &ctx->recv_q;
+		(*pev)->type = K_POLL_TYPE_FIFO_DATA_AVAILABLE;
+		(*pev)->mode = K_POLL_MODE_NOTIFY_ONLY;
+		(*pev)->state = K_POLL_STATE_NOT_READY;
+		(*pev)++;
+	}
+
+	return 0;
+}
+
+static int zsock_poll_update_ctx(struct net_context *ctx,
+				 struct zsock_pollfd *pfd,
+				 struct k_poll_event **pev)
+{
+	ARG_UNUSED(ctx);
+
+	/* For now, assume that socket is always writable */
+	if (pfd->events & ZSOCK_POLLOUT) {
+		pfd->revents |= ZSOCK_POLLOUT;
+	}
+
+	if (pfd->events & ZSOCK_POLLIN) {
+		if ((*pev)->state != K_POLL_STATE_NOT_READY) {
+			pfd->revents |= ZSOCK_POLLIN;
+		}
+		(*pev)++;
+	}
+
+	return 0;
+}
+
+static inline int time_left(u32_t start, u32_t timeout)
+{
+	u32_t elapsed = k_uptime_get_32() - start;
+
+	return timeout - elapsed;
+}
+
+int _impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout)
+{
+	bool retry;
 	int ret = 0;
+	int i, remaining_time;
 	struct zsock_pollfd *pfd;
 	struct k_poll_event poll_events[CONFIG_NET_SOCKETS_POLL_MAX];
 	struct k_poll_event *pev;
 	struct k_poll_event *pev_end = poll_events + ARRAY_SIZE(poll_events);
+	const struct socket_op_vtable *vtable;
+	u32_t entry_time = k_uptime_get_32();
 
 	if (timeout < 0) {
 		timeout = K_FOREVER;
@@ -746,80 +792,88 @@ int zsock_poll_internal(struct zsock_pollfd *fds, int nfds, int timeout)
 			continue;
 		}
 
-		ctx = sock_to_net_ctx(pfd->fd);
-
+		ctx = get_sock_vtable(pfd->fd, &vtable);
 		if (ctx == NULL) {
 			/* Will set POLLNVAL in return loop */
 			continue;
 		}
 
-		if (pfd->events & ZSOCK_POLLIN) {
-			if (pev == pev_end) {
-				errno = ENOMEM;
+		if (vtable->fd_vtable.ioctl(ctx, ZFD_IOCTL_POLL_PREPARE,
+					    pfd, &pev, pev_end) < 0) {
+			if (errno == EALREADY) {
+				timeout = K_NO_WAIT;
+				continue;
+			}
+
+			return -1;
+		}
+	}
+
+	remaining_time = timeout;
+
+	do {
+		ret = k_poll(poll_events, pev - poll_events, remaining_time);
+		/* EAGAIN when timeout expired, EINTR when cancelled (i.e. EOF) */
+		if (ret != 0 && ret != -EAGAIN && ret != -EINTR) {
+			errno = -ret;
+			return -1;
+		}
+
+		retry = false;
+		ret = 0;
+
+		pev = poll_events;
+		for (pfd = fds, i = nfds; i--; pfd++) {
+			struct net_context *ctx;
+
+			pfd->revents = 0;
+
+			if (pfd->fd < 0) {
+				continue;
+			}
+
+			ctx = get_sock_vtable(pfd->fd, &vtable);
+			if (ctx == NULL) {
+				pfd->revents = ZSOCK_POLLNVAL;
+				ret++;
+				continue;
+			}
+
+			if (vtable->fd_vtable.ioctl(ctx, ZFD_IOCTL_POLL_UPDATE,
+						    pfd, &pev) < 0) {
+				if (errno == EAGAIN) {
+					retry = true;
+					continue;
+				}
+
 				return -1;
 			}
 
-			pev->obj = &ctx->recv_q;
-			pev->type = K_POLL_TYPE_FIFO_DATA_AVAILABLE;
-			pev->mode = K_POLL_MODE_NOTIFY_ONLY;
-			pev->state = K_POLL_STATE_NOT_READY;
-			pev++;
-		}
-	}
-
-	ret = k_poll(poll_events, pev - poll_events, timeout);
-	/* EAGAIN when timeout expired, EINTR when cancelled (i.e. EOF) */
-	if (ret != 0 && ret != -EAGAIN && ret != -EINTR) {
-		errno = -ret;
-		return -1;
-	}
-
-	ret = 0;
-
-	pev = poll_events;
-	for (pfd = fds, i = nfds; i--; pfd++) {
-		struct net_context *ctx;
-
-		pfd->revents = 0;
-
-		if (pfd->fd < 0) {
-			continue;
-		}
-
-		ctx = sock_to_net_ctx(pfd->fd);
-		if (ctx == NULL) {
-			pfd->revents = ZSOCK_POLLNVAL;
-			ret++;
-			continue;
-		}
-
-		/* For now, assume that socket is always writable */
-		if (pfd->events & ZSOCK_POLLOUT) {
-			pfd->revents |= ZSOCK_POLLOUT;
-		}
-
-		if (pfd->events & ZSOCK_POLLIN) {
-			if (pev->state != K_POLL_STATE_NOT_READY) {
-				pfd->revents |= ZSOCK_POLLIN;
+			if (pfd->revents != 0) {
+				ret++;
 			}
-			pev++;
 		}
 
-		if (pfd->revents != 0) {
-			ret++;
+		if (retry) {
+			if (ret > 0) {
+				break;
+			}
+
+			if (timeout == K_NO_WAIT) {
+				break;
+			}
+
+			if (timeout != K_FOREVER) {
+				/* Recalculate the timeout value. */
+				remaining_time = time_left(entry_time, timeout);
+				if (remaining_time <= 0) {
+					break;
+				}
+			}
 		}
-	}
+	} while (retry);
 
 	return ret;
-}
-
-int _impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout)
-{
-#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
-	return ztls_poll(fds, nfds, timeout);
-#endif
-
-	return zsock_poll_internal(fds, nfds, timeout);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -941,6 +995,34 @@ static int sock_ioctl_vmeth(void *obj, unsigned int request, ...)
 		va_end(args);
 
 		return zsock_fcntl_ctx(obj, cmd, flags);
+	}
+
+	case ZFD_IOCTL_POLL_PREPARE: {
+		va_list args;
+		struct zsock_pollfd *pfd;
+		struct k_poll_event **pev;
+		struct k_poll_event *pev_end;
+
+		va_start(args, request);
+		pfd = va_arg(args, struct zsock_pollfd *);
+		pev = va_arg(args, struct k_poll_event **);
+		pev_end = va_arg(args, struct k_poll_event *);
+		va_end(args);
+
+		return zsock_poll_prepare_ctx(obj, pfd, pev, pev_end);
+	}
+
+	case ZFD_IOCTL_POLL_UPDATE: {
+		va_list args;
+		struct zsock_pollfd *pfd;
+		struct k_poll_event **pev;
+
+		va_start(args, request);
+		pfd = va_arg(args, struct zsock_pollfd *);
+		pev = va_arg(args, struct k_poll_event **);
+		va_end(args);
+
+		return zsock_poll_update_ctx(obj, pfd, pev);
 	}
 
 	default:
