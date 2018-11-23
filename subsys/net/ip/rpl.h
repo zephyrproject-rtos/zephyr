@@ -1058,7 +1058,7 @@ void net_rpl_init(void);
 #define net_rpl_init(...)
 #define net_rpl_global_repair(...)
 #define net_rpl_update_header(...) 0
-__deprecated static inline struct net_if *net_rpl_get_interface(void)
+static inline struct net_if *net_rpl_get_interface(void)
 {
 	return NULL;
 }
