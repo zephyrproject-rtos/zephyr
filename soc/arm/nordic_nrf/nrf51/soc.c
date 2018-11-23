@@ -15,6 +15,8 @@
 
 #include <kernel.h>
 #include <init.h>
+#include <nrfx.h>
+#include <soc/nrfx_coredep.h>
 
 #ifdef CONFIG_RUNTIME_NMI
 extern void _NmiInit(void);
@@ -46,6 +48,18 @@ static int nordicsemi_nrf51_init(struct device *arg)
 	irq_unlock(key);
 
 	return 0;
+}
+
+#define DELAY_CALL_OVERHEAD_US 2
+
+void z_arch_busy_wait(u32_t time_us)
+{
+	if (time_us <= DELAY_CALL_OVERHEAD_US) {
+		return;
+	}
+
+	time_us -= DELAY_CALL_OVERHEAD_US;
+	nrfx_coredep_delay_us(time_us);
 }
 
 SYS_INIT(nordicsemi_nrf51_init, PRE_KERNEL_1, 0);
