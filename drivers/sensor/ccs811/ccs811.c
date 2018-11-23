@@ -474,13 +474,15 @@ static int ccs811_init(struct device *dev)
 	}
 
 	/* Configure measurement mode */
-	u8_t meas_mode = 0;
+	u8_t meas_mode = CCS811_MODE_IDLE;
 #ifdef CONFIG_CCS811_DRIVE_MODE_1
-	meas_mode = 0x10;
+	meas_mode = CCS811_MODE_IAQ_1SEC;
 #elif defined(CONFIG_CCS811_DRIVE_MODE_2)
-	meas_mode = 0x20;
+	meas_mode = CCS811_MODE_IAQ_10SEC;
 #elif defined(CONFIG_CCS811_DRIVE_MODE_3)
-	meas_mode = 0x30;
+	meas_mode = CCS811_MODE_IAQ_60SEC;
+#elif defined(CONFIG_CCS811_DRIVE_MODE_4)
+	meas_mode = CCS811_MODE_IAQ_250MSEC;
 #endif
 	if (i2c_reg_write_byte(drv_data->i2c, DT_INST_0_AMS_CCS811_BASE_ADDRESS,
 			       CCS811_REG_MEAS_MODE,

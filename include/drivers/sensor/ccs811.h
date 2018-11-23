@@ -41,7 +41,7 @@ extern "C" {
 #define CCS811_MODE_IAQ_1SEC            0x10
 #define CCS811_MODE_IAQ_10SEC           0x20
 #define CCS811_MODE_IAQ_60SEC           0x30
-#define CCS811_MODE_IAQ_RAW_250MSEC     0x40
+#define CCS811_MODE_IAQ_250MSEC         0x40
 
 /** @brief Information collected from the sensor on each fetch. */
 struct ccs811_result_type {
