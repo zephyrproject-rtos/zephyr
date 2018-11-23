@@ -95,10 +95,10 @@ class KconfigCheck(ComplianceTest):
                 sys.path.insert(0, os.path.join(kconfig_path))
                 import kconfiglib
             else:
-                self.case.result = Skipped()
+                self.case.result = Error("Can't find Kconfig", "error")
                 return
         else:
-            self.case.result = Skipped()
+            self.case.result = Skipped("Not a Zephyr tree", "skipped")
             return
 
 
@@ -205,8 +205,8 @@ class License(ComplianceTest):
 
         except subprocess.CalledProcessError as ex:
             logging.error(ex.output)
-            self.case.result = Skipped(
-                "Exception when running scancode", "skipped")
+            self.case.result = Error(
+                "Exception when running scancode", "error")
             return
 
         report = ""
@@ -322,6 +322,14 @@ def parse_args():
     parser.add_argument('-s', '--status', action="store_true",
                         help="Set status to pending")
     parser.add_argument('-S', '--sha', default=None, help="Commit SHA")
+    parser.add_argument('-o', '--output', default="compliance.xml",
+                        help='Name of outfile in junit format.')
+
+    parser.add_argument('-l', '--list', action="store_true",
+                        help="List all test modules.")
+
+    parser.add_argument('-m', '--module', action="append", default=[],
+                        help="Tets modules to run, by default run everything.")
     return parser.parse_args()
 
 
@@ -338,76 +346,100 @@ def set_status(gh, repo, sha):
                              '{}'.format(test._name))
 
 
+def report_to_github(repo, pull_request, sha, suite, docs):
+    github_token = os.environ['GH_TOKEN']
+    gh = Github(github_token)
+
+    repo = gh.get_repo(repo)
+    pr = repo.get_pull(pull_request)
+    commit = repo.get_commit(sha)
+
+    comment = "Found the following issues, please fix and resubmit:\n\n"
+    comment_count = 0
+    print("Processing results...")
+    for case in suite:
+        if case.result and case.result.type != 'skipped':
+            comment_count += 1
+            comment += ("## {}\n".format(case.result.message))
+            comment += "\n"
+            if case.name not in ['Gitlint', 'Identity/Emails', 'License']:
+                comment += "```\n"
+            comment += ("{}\n".format(case.result._elem.text))
+            if case.name not in ['Gitlint', 'Identity/Emails', 'License']:
+                comment += "```\n"
+
+            commit.create_status('failure',
+                                 docs[case.name],
+                                 'Verification failed',
+                                 '{}'.format(case.name))
+        else:
+            commit.create_status('success',
+                                 docs[case.name],
+                                 'Verifications passed',
+                                 '{}'.format(case.name))
+
+    if repo and pull_request and comment_count > 0:
+        comments = pr.get_issue_comments()
+        commented = False
+        for cmnt in comments:
+            if 'Found the following issues, please fix and resubmit' in cmnt.body:
+                cmnt.edit(comment)
+                commented = True
+                break
+
+        if not commented:
+            pr.create_issue_comment(comment)
+
 def main():
     args = parse_args()
 
-    github_token = ''
-    gh = None
-    if args.github:
-        github_token = os.environ['GH_TOKEN']
-        gh = Github(github_token)
+    if args.list:
+        for testcase in ComplianceTest.__subclasses__():
+            test = testcase(None, "")
+            print("{}".format(test._name))
+        sys.exit(0)
 
     if args.status and args.sha is not None and args.repo and gh:
         set_status(gh, args.repo, args.sha)
         sys.exit(0)
 
     if not args.commits:
+        print("No commit range given.")
         sys.exit(1)
 
     suite = TestSuite("Compliance")
     docs = {}
     for testcase in ComplianceTest.__subclasses__():
         test = testcase(suite, args.commits)
-        test.run()
-        suite.add_testcase(test.case)
-        docs[test.case.name] = test._doc
+        if args.module:
+            if test._name in args.module:
+                test.run()
+                suite.add_testcase(test.case)
+                docs[test.case.name] = test._doc
+        else:
+            test.run()
+            suite.add_testcase(test.case)
+            docs[test.case.name] = test._doc
 
     xml = JUnitXml()
     xml.add_testsuite(suite)
     xml.update_statistics()
-    xml.write('compliance.xml')
+    xml.write(args.output)
 
-    if args.github:
-        repo = gh.get_repo(args.repo)
-        pr = repo.get_pull(int(args.pull_request))
-        commit = repo.get_commit(args.sha)
+    errors = 0
 
-        comment = "Found the following issues, please fix and resubmit:\n\n"
-        comment_count = 0
-        print("Processing results...")
+    if args.github and 'GH_TOKEN' in os.environ:
+        errors = report_to_github(args.repo, args.pull_request, args.sha, suite, docs)
+    else:
         for case in suite:
             if case.result and case.result.type != 'skipped':
-                comment_count += 1
-                comment += ("## {}\n".format(case.result.message))
-                comment += "\n"
-                if case.name not in ['Gitlint', 'Identity/Emails', 'License']:
-                    comment += "```\n"
-                comment += ("{}\n".format(case.result._elem.text))
-                if case.name not in ['Gitlint', 'Identity/Emails', 'License']:
-                    comment += "```\n"
+                print(case.result.type)
+                errors += 1
 
-                commit.create_status('failure',
-                                     docs[case.name],
-                                     'Verification failed',
-                                     '{}'.format(case.name))
-            else:
-                commit.create_status('success',
-                                     docs[case.name],
-                                     'Verifications passed',
-                                     '{}'.format(case.name))
+    if errors:
+        print("{} Erros found".format(errors))
 
-        if args.repo and args.pull_request and comment_count > 0:
-            comments = pr.get_issue_comments()
-            commented = False
-            for cmnt in comments:
-                if 'Found the following issues, please fix and resubmit' in cmnt.body:
-                    cmnt.edit(comment)
-                    commented = True
-                    break
-
-            if not commented:
-                pr.create_issue_comment(comment)
-
+    sys.exit(errors)
 
 if __name__ == "__main__":
     main()
