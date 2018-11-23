@@ -1,5 +1,8 @@
 # CODEOWNERS for autoreview assigning in github
 
+# Order is important; the last matching pattern takes the most
+# precedence.
+
 # Do not use wildcard on all source yet
 # *                                        @galak @nashif
 
@@ -117,6 +120,7 @@ drivers/timer/riscv_machine_timer.c      @nategraff-sifive @kgugala @pgielda
 drivers/usb/                             @jfischer-phytec-iot @finikorg
 drivers/usb/device/usb_dc_stm32.c        @ydamigos @loicpoulain
 drivers/i2c/i2c_ll_stm32*                @ldts @ydamigos
+drivers/wifi/                            @jukkar @tbursztyka @pfalcon
 drivers/wifi/eswifi                      @loicpoulain
 dts/arm/st/                              @erwango
 dts/arm/nordic/                          @ioannisg @carlescufi
