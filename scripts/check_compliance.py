@@ -63,7 +63,7 @@ class CheckPatch(ComplianceTest):
         self.prepare()
         checkpatch = '%s/scripts/checkpatch.pl' % self.repo_path
         if not os.path.exists(checkpatch):
-            self.case.result = Skipped()
+            self.case.result = Skipped("checkpatch script not found", "skipped")
 
         diff = subprocess.Popen(('git', 'diff', '%s' % (self.commit_range)),
                                 stdout=subprocess.PIPE)
@@ -307,7 +307,12 @@ def init_logs():
 
 
 
-def set_status(gh, repo, sha):
+def set_status(repo, sha):
+
+    if 'GH_TOKEN' not in os.environ:
+        return
+    github_token = os.environ['GH_TOKEN']
+    gh = Github(github_token)
 
     repo = gh.get_repo(repo)
     commit = repo.get_commit(sha)
@@ -321,6 +326,10 @@ def set_status(gh, repo, sha):
 
 
 def report_to_github(repo, pull_request, sha, suite, docs):
+
+    if 'GH_TOKEN' not in os.environ:
+        return
+
     github_token = os.environ['GH_TOKEN']
     gh = Github(github_token)
 
@@ -405,8 +414,8 @@ def main():
             print("{}".format(test._name))
         sys.exit(0)
 
-    if args.status and args.sha is not None and args.repo and gh:
-        set_status(gh, args.repo, args.sha)
+    if args.status and args.sha is not None and args.repo:
+        set_status(args.repo, args.sha)
         sys.exit(0)
 
     if not args.commits:
