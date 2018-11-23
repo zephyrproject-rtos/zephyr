@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+#
+# Copyright (c) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
 
 import sys
 import subprocess
@@ -22,6 +26,12 @@ sh_special_args = {
 
 
 def get_shas(refspec):
+    """
+    Get SHAs from the Git tree.
+
+    :param refspec:
+    :return:
+    """
     sha_list = sh.git("rev-list",
                       '--max-count={0}'.format(-1 if "." in refspec else 1),
                       refspec, **sh_special_args).split()
@@ -29,11 +39,19 @@ def get_shas(refspec):
 
 
 class MyCase(TestCase):
+    """
+    Implementation of TestCase specific to our tests.
+
+    """
     classname = Attr()
     doc = Attr()
 
 
 class ComplianceTest:
+    """
+    Main Test class
+
+    """
 
     _name = ""
     _title = ""
@@ -46,15 +64,27 @@ class ComplianceTest:
         self.repo_path = os.getcwd()
 
     def prepare(self):
+        """
+        Prepare test case
+        :return:
+        """
         self.case = MyCase(self._name)
         self.case.classname = "Guidelines"
         print("Running {} tests...".format(self._name))
 
     def run(self):
+        """
+        Run testcase
+        :return:
+        """
         pass
 
 
 class CheckPatch(ComplianceTest):
+    """
+    Runs checkpatch and reports found issues
+
+    """
     _name = "checkpatch"
     _doc = "https://docs.zephyrproject.org/latest/contribute/contribute_guidelines.html#coding-style"
 
@@ -80,6 +110,11 @@ class CheckPatch(ComplianceTest):
 
 
 class KconfigCheck(ComplianceTest):
+    """
+    Checks is we are introducing any new warnings/errors with Kconfig,
+    for example using undefiend Kconfig variables.
+
+    """
     _name = "Kconfig"
     _doc = "https://docs.zephyrproject.org/latest/application/kconfig-tips.html"
 
@@ -128,6 +163,10 @@ class KconfigCheck(ComplianceTest):
 
 
 class Documentation(ComplianceTest):
+    """
+    Checks if documentation build has generated any new warnings.
+
+    """
     _name = "Documentation"
     _doc = "https://docs.zephyrproject.org/latest/contribute/doc-guidelines.html"
 
@@ -137,14 +176,18 @@ class Documentation(ComplianceTest):
         self.prepare()
 
         if os.path.exists(self.DOCS_WARNING_FILE) and os.path.getsize(self.DOCS_WARNING_FILE) > 0:
-            with open(self.DOCS_WARNING_FILE, "rb") as f:
-                log = f.read()
+            with open(self.DOCS_WARNING_FILE, "rb") as docs_warning:
+                log = docs_warning.read()
 
                 self.case.result = Error("Documentation Issues", "failure")
                 self.case.result._elem.text = log.decode('utf8')
 
 
 class GitLint(ComplianceTest):
+    """
+    Runs gitlint on the commits and finds issues with style and syntax
+
+    """
     _name = "Gitlint"
     _doc = "https://docs.zephyrproject.org/latest/contribute/contribute_guidelines.html#commit-guidelines"
 
@@ -166,6 +209,10 @@ class GitLint(ComplianceTest):
 
 
 class License(ComplianceTest):
+    """
+    Checks for licenses in new files added by the Pull request
+
+    """
     _name = "License"
     _doc = "https://docs.zephyrproject.org/latest/contribute/contribute_guidelines.html#licensing"
 
@@ -199,9 +246,8 @@ class License(ComplianceTest):
             cmd_str = " ".join(cmd)
             logging.info(cmd_str)
 
-            subprocess.check_output(cmd_str,
-                                          stderr=subprocess.STDOUT,
-                                          shell=True)
+            subprocess.check_output(cmd_str, stderr=subprocess.STDOUT,
+                                    shell=True)
 
         except subprocess.CalledProcessError as ex:
             logging.error(ex.output)
@@ -242,6 +288,9 @@ class License(ComplianceTest):
 
 
 class Identity(ComplianceTest):
+    """
+    Checks if Emails of author and signed-off messages are consistent.
+    """
     _name = "Identity/Emails"
     _doc = "https://docs.zephyrproject.org/latest/contribute/contribute_guidelines.html#commit-guidelines"
 
@@ -288,6 +337,12 @@ class Identity(ComplianceTest):
 
 
 def init_logs():
+
+    """
+    Initialize Logging
+
+    :return:
+    """
     global logger
     log_lev = os.environ.get('LOG_LEVEL', None)
     level = logging.INFO
@@ -308,13 +363,19 @@ def init_logs():
 
 
 def set_status(repo, sha):
+    """
+    Set status on Github
+    :param repo:  repoistory name
+    :param sha:  pull request HEAD SHA
+    :return:
+    """
 
     if 'GH_TOKEN' not in os.environ:
         return
     github_token = os.environ['GH_TOKEN']
-    gh = Github(github_token)
+    github_conn = Github(github_token)
 
-    repo = gh.get_repo(repo)
+    repo = github_conn.get_repo(repo)
     commit = repo.get_commit(sha)
     for testcase in ComplianceTest.__subclasses__():
         test = testcase(None, "")
@@ -326,20 +387,32 @@ def set_status(repo, sha):
 
 
 def report_to_github(repo, pull_request, sha, suite, docs):
+    """
+    Report test results to Github
+
+    :param repo: repo name
+    :param pull_request:  pull request number
+    :param sha:  pull request SHA
+    :param suite:  Test suite
+    :param docs:  documentation of statuses
+    :return: nothing
+    """
 
     if 'GH_TOKEN' not in os.environ:
         return
 
     github_token = os.environ['GH_TOKEN']
-    gh = Github(github_token)
+    github_conn = Github(github_token)
 
-    repo = gh.get_repo(repo)
-    pr = repo.get_pull(pull_request)
+    repo = github_conn.get_repo(repo)
+    gh_pr = repo.get_pull(pull_request)
     commit = repo.get_commit(sha)
 
     comment = "Found the following issues, please fix and resubmit:\n\n"
     comment_count = 0
+
     print("Processing results...")
+
     for case in suite:
         if case.result and case.result.type != 'skipped':
             comment_count += 1
@@ -362,7 +435,7 @@ def report_to_github(repo, pull_request, sha, suite, docs):
                                  '{}'.format(case.name))
 
     if repo and pull_request and comment_count > 0:
-        comments = pr.get_issue_comments()
+        comments = gh_pr.get_issue_comments()
         commented = False
         for cmnt in comments:
             if 'Found the following issues, please fix and resubmit' in cmnt.body:
@@ -371,11 +444,16 @@ def report_to_github(repo, pull_request, sha, suite, docs):
                 break
 
         if not commented:
-            pr.create_issue_comment(comment)
+            gh_pr.create_issue_comment(comment)
 
+    return comment_count
 
 
 def parse_args():
+    """
+    Parse arguments
+    :return:
+    """
     parser = argparse.ArgumentParser(
         description="Check for coding style and documentation warnings.")
     parser.add_argument('-c', '--commits', default=None,
@@ -406,6 +484,11 @@ def parse_args():
 
 
 def main():
+    """
+    Main function
+
+    :return:
+    """
     args = parse_args()
 
     if args.list:
