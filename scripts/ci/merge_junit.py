@@ -56,7 +56,7 @@ def merge_results(xml_files):
 
 def usage():
     this_file = os.path.basename(__file__)
-    print 'Usage:  %s results1.xml results2.xml' % this_file
+    print('Usage:  %s results1.xml results2.xml' % this_file)
 
 
 if __name__ == '__main__':
