@@ -23,12 +23,13 @@
 #define CCS811_REG_BASELINE             0x11
 #define CCS811_REG_HW_ID                0x20
 #define CCS811_REG_HW_VERSION           0x21
-#define CCS811_REG_HW_VERSION_MASK      0xF0
+#define CCS811_REG_FW_BOOT_VERSION      0x23
+#define CCS811_REG_FW_APP_VERSION       0x24
 #define CCS811_REG_ERROR_ID             0xE0
 #define CCS811_REG_APP_START            0xF4
 
 #define CCS881_HW_ID                    0x81
-#define CCS811_HW_VERSION               0x10
+#define CCS811_HW_VERSION_MSK           0xF0
 
 /* Measurement modes */
 #define CCS811_MODE_RAW_DATA            0x40

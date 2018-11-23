@@ -77,6 +77,51 @@ const struct ccs811_result_type *ccs811_result(struct device *dev)
 	return &drv_data->result;
 }
 
+int ccs811_configver_fetch(struct device *dev,
+			   struct ccs811_configver_type *ptr)
+{
+	struct ccs811_data *drv_data = dev->driver_data;
+	u8_t cmd;
+	int rc;
+
+	if (!ptr) {
+		return -EINVAL;
+	}
+
+	set_wake(drv_data, true);
+	cmd = CCS811_REG_HW_VERSION;
+	rc = i2c_write_read(drv_data->i2c, DT_INST_0_AMS_CCS811_BASE_ADDRESS,
+			    &cmd, sizeof(cmd),
+			    &ptr->hw_version, sizeof(ptr->hw_version));
+	if (rc == 0) {
+		cmd = CCS811_REG_FW_BOOT_VERSION;
+		rc = i2c_write_read(drv_data->i2c, DT_INST_0_AMS_CCS811_BASE_ADDRESS,
+				    &cmd, sizeof(cmd),
+				    (u8_t *)&ptr->fw_boot_version,
+				    sizeof(ptr->fw_boot_version));
+		ptr->fw_boot_version = sys_be16_to_cpu(ptr->fw_boot_version);
+	}
+
+	if (rc == 0) {
+		cmd = CCS811_REG_FW_APP_VERSION;
+		rc = i2c_write_read(drv_data->i2c, DT_INST_0_AMS_CCS811_BASE_ADDRESS,
+				    &cmd, sizeof(cmd),
+				    (u8_t *)&ptr->fw_app_version,
+				    sizeof(ptr->fw_app_version));
+		ptr->fw_app_version = sys_be16_to_cpu(ptr->fw_app_version);
+	}
+	if (rc == 0) {
+		LOG_INF("HW %x FW %x APP %x",
+			ptr->hw_version, ptr->fw_boot_version,
+			ptr->fw_app_version);
+	}
+
+	set_wake(drv_data, false);
+	ptr->mode = drv_data->mode & CCS811_MODE_MSK;
+
+	return rc;
+}
+
 int ccs811_baseline_fetch(struct device *dev)
 {
 	const u8_t cmd = CCS811_REG_BASELINE;
