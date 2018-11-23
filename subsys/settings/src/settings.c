@@ -151,6 +151,21 @@ int settings_val_read_cb(void *value_ctx, void *buf, size_t len)
 	return rc;
 }
 
+/* API */
+size_t settings_val_get_len_cb(void *value_ctx)
+{
+	struct read_value_cb_ctx *value_context = value_ctx;
+	struct runtime_value_ctx *rt_ctx;
+
+	if (value_context->runtime) {
+		rt_ctx = value_context->read_cb_ctx;
+		return rt_ctx->size;
+	} else {
+		return settings_line_val_get_len(value_context->off,
+						 value_context->read_cb_ctx);
+	}
+}
+
 /*
  * Get value in printable string form. If value is not string, the value
  * will be filled in *buf.

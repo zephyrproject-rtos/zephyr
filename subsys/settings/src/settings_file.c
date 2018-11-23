@@ -372,6 +372,13 @@ end:
 	return rc;
 }
 
+static size_t get_len_cb(void *ctx)
+{
+	struct line_entry_ctx *entry_ctx = ctx;
+
+	return entry_ctx->len;
+}
+
 static int write_handler(void *ctx, off_t off, char const *buf, size_t len)
 {
 	struct line_entry_ctx *entry_ctx = ctx;
@@ -394,5 +401,5 @@ static int write_handler(void *ctx, off_t off, char const *buf, size_t len)
 
 void settings_mount_fs_backend(struct settings_file *cf)
 {
-	settings_line_io_init(read_handler, write_handler, 1);
+	settings_line_io_init(read_handler, write_handler, get_len_cb, 1);
 }

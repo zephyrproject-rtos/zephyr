@@ -97,6 +97,7 @@ int settings_line_make(char *dst, int dlen, const char *name, const char *value)
 struct settings_io_cb_s {
 	int (*read_cb)(void *ctx, off_t off, char *buf, size_t *len);
 	int (*write_cb)(void *ctx, off_t off, char const *buf, size_t len);
+	size_t (*get_len_cb)(void *ctx);
 	u8_t rwbs;
 } settings_io_cb;
 
@@ -431,6 +432,15 @@ int settings_line_val_read(off_t val_off, off_t off, char *out, size_t len_req,
 				      cb_arg);
 }
 #endif
+
+size_t settings_line_val_get_len(off_t val_off, void *read_cb_ctx)
+{
+	size_t len;
+
+	len = settings_io_cb.get_len_cb(read_cb_ctx);
+	return len - val_off;
+}
+
 /**
  * @param line_loc offset of the settings line, expect that it is aligned to rbs physically.
  * @param seek offset form the line begining.
@@ -480,9 +490,11 @@ void settings_line_io_init(int (*read_cb)(void *ctx, off_t off, char *buf,
 					  size_t *len),
 			  int (*write_cb)(void *ctx, off_t off, char const *buf,
 					  size_t len),
+			  size_t (*get_len_cb)(void *ctx),
 			  u8_t io_rwbs)
 {
 	settings_io_cb.read_cb = read_cb;
 	settings_io_cb.write_cb = write_cb;
+	settings_io_cb.get_len_cb = get_len_cb;
 	settings_io_cb.rwbs = io_rwbs;
 }

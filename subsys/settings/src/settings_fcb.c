@@ -217,6 +217,13 @@ static void settings_fcb_compress(struct settings_fcb *cf)
 	__ASSERT(rc == 0, "Failed to fcb rotate.\n");
 }
 
+static size_t get_len_cb(void *ctx)
+{
+	struct fcb_entry_ctx *entry_ctx = ctx;
+
+	return entry_ctx->loc.fe_data_len;
+}
+
 static int write_handler(void *ctx, off_t off, char const *buf, size_t len)
 {
 	struct fcb_entry_ctx *entry_ctx = ctx;
@@ -274,5 +281,5 @@ void settings_mount_fcb_backend(struct settings_fcb *cf)
 
 	rbs = cf->cf_fcb.f_align;
 
-	settings_line_io_init(read_handler, write_handler, rbs);
+	settings_line_io_init(read_handler, write_handler, get_len_cb, rbs);
 }
