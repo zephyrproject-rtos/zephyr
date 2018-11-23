@@ -416,7 +416,8 @@ static void send_hello(struct k_work *work)
 	const char *name = bt_get_name();
 
 	bt_mesh_model_msg_init(&msg, OP_VND_HELLO);
-	net_buf_simple_add_mem(&msg, name, first_name_len(name));
+	net_buf_simple_add_mem(&msg, name,
+			       min(HELLO_MAX, first_name_len(name)));
 
 	if (bt_mesh_model_send(&vnd_models[0], &ctx, &msg, NULL, NULL) == 0) {
 		board_show_text("Saying \"hi!\" to everyone", false,
