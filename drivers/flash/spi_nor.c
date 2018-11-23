@@ -175,7 +175,6 @@ static int spi_nor_read(struct device *dev, off_t addr, void *dest,
 {
 	struct spi_nor_data *const driver_data = dev->driver_data;
 	const struct spi_nor_config *params = dev->config->config_info;
-	const u8_t *const p_dest = dest;
 	int ret;
 	int to_read;
 
@@ -203,17 +202,17 @@ static int spi_nor_read(struct device *dev, off_t addr, void *dest,
 		ret = spi_nor_cmd_addr_read(dev, SPI_NOR_CMD_READ, addr,
 					    dest, to_read);
 		if (ret != 0) {
-			goto err;
+			SYNC_UNLOCK();
+			return ret;
 		}
+
 		size -= to_read;
 		addr += to_read;
 		dest = (u8_t *)dest + to_read;
 	}
 
-err:
 	SYNC_UNLOCK();
-
-	return ((u8_t *)dest - p_dest);
+	return 0;
 }
 
 static int spi_nor_write(struct device *dev, off_t addr, const void *src,
@@ -221,7 +220,6 @@ static int spi_nor_write(struct device *dev, off_t addr, const void *src,
 {
 	struct spi_nor_data *const driver_data = dev->driver_data;
 	const struct spi_nor_config *params = dev->config->config_info;
-	const u8_t *const p_src = src;
 	int ret;
 	size_t to_write;
 
@@ -250,8 +248,10 @@ static int spi_nor_write(struct device *dev, off_t addr, const void *src,
 		ret = spi_nor_cmd_addr_write(dev, SPI_NOR_CMD_PP, addr,
 					     (void *)src, to_write);
 		if (ret != 0) {
-			goto err;
+			SYNC_UNLOCK();
+			return ret;
 		}
+
 		size -= to_write;
 		addr += to_write;
 		src = (u8_t *)src + to_write;
@@ -259,10 +259,8 @@ static int spi_nor_write(struct device *dev, off_t addr, const void *src,
 		spi_nor_wait_until_ready(dev);
 	}
 
-err:
 	SYNC_UNLOCK();
-
-	return ((u8_t *)src - p_src);
+	return 0;
 }
 
 static int spi_nor_erase(struct device *dev, off_t addr, size_t size)
