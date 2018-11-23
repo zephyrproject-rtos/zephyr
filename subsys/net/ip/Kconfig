@@ -435,17 +435,42 @@ config NET_BUF_TX_COUNT
 	  Each data buffer will occupy CONFIG_NET_BUF_DATA_SIZE + smallish
 	  header (sizeof(struct net_buf)) amount of data.
 
+choice
+	prompt "Network packet data allocator type"
+	default NET_BUF_FIXED_DATA_SIZE
+	help
+	  Select the memory allocator for the network buffers that hold the
+	  packet data.
+
+config NET_BUF_FIXED_DATA_SIZE
+	bool "Fixed data size buffer"
+	help
+	  Each buffer comes with a built time configured size. If runtime
+	  requested is bigger than that, it will allocate as many net_buf
+	  as necessary to reach that request.
+
+config NET_BUF_VARIABLE_DATA_SIZE
+	bool "Variable data size buffer [EXPERIMENTAL]"
+	help
+	  The buffer is dynamically allocated from runtime requested size.
+
+endchoice
+
 config NET_BUF_DATA_SIZE
 	int "Size of each network data fragment"
-	default 125 if NET_L2_IEEE802154
 	default 128
+	depends on NET_BUF_FIXED_DATA_SIZE
 	help
-	  This value tells what is the size of the data fragment that is
-	  received from the network.
-	  Example: For IEEE 802.15.4, the network packet is 127 bytes long,
-	  which leaves in worst case 81 bytes for user data (MTU).
-	  In order to be able to receive at least full IPv6 packet which
-	  has a size of 1280 bytes, the one should allocate 16 fragments here.
+	  This value tells what is the fixed size of each network buffer.
+
+config NET_BUF_DATA_POOL_SIZE
+	int "Size of the memory pool where buffers are allocated from"
+	default 4096 if NET_L2_ETHERNET
+	default 2048
+	depends on NET_BUF_VARIABLE_DATA_SIZE
+	help
+	 This value tell what is the size of the memory pool where each
+	 network buffer is allocated from.
 
 choice
 	prompt "Default Network Interface"
