@@ -409,9 +409,8 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 
 				LOG_DBG("Now the wTotalLength is %d",
 					(u8_t *)head - (u8_t *)cfg_descr);
-				cfg_descr->wTotalLength =
-					sys_cpu_to_le16((u8_t *)head -
-							(u8_t *)cfg_descr);
+				sys_put_le16((u8_t *)head - (u8_t *)cfg_descr,
+					     (u8_t *)&cfg_descr->wTotalLength);
 				cfg_descr->bNumInterfaces = numof_ifaces;
 			}
 
