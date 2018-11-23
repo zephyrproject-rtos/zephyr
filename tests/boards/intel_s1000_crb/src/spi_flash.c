@@ -51,13 +51,13 @@ void test_flash(void)
 
 	LOG_INF("   Attempted to write %x %x\n", buf[0], buf[1]);
 	if (flash_write(flash_dev, FLASH_TEST_REGION_OFFSET, buf,
-	    TEST_DATA_LEN) != TEST_DATA_LEN) {
+	    TEST_DATA_LEN) != 0) {
 		LOG_ERR("   Flash write failed!\n");
 		return;
 	}
 
 	if (flash_read(flash_dev, FLASH_TEST_REGION_OFFSET, buf,
-	    TEST_DATA_LEN) != TEST_DATA_LEN) {
+	    TEST_DATA_LEN) != 0) {
 		LOG_ERR("   Flash read failed!\n");
 		return;
 	}
