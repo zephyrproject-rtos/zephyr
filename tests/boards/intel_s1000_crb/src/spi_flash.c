@@ -11,7 +11,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(test_flash);
 
-#define FLASH_TEST_REGION_OFFSET 0x10000
+#define FLASH_TEST_REGION_OFFSET 0x3F0000
 #define FLASH_SECTOR_SIZE        0x10000
 #define TEST_DATA_BYTE_0         0x4f
 #define TEST_DATA_BYTE_1         0x4a
