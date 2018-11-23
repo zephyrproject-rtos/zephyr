@@ -89,10 +89,10 @@ static struct hid_device_info {
 	const struct hid_ops *ops;
 } hid_device;
 
-static void usb_set_hid_report_size(u16_t report_desc_size)
+static void usb_set_hid_report_size(u16_t size)
 {
-	UNALIGNED_PUT(sys_cpu_to_le16(report_desc_size),
-		&(hid_cfg.if0_hid.subdesc[0].wDescriptorLength));
+	sys_put_le16(size,
+		     (u8_t *)&(hid_cfg.if0_hid.subdesc[0].wDescriptorLength));
 }
 
 static void hid_status_cb(enum usb_dc_status_code status, const u8_t *param)
