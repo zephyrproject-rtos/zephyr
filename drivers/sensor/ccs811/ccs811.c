@@ -70,6 +70,13 @@ static inline u8_t error_from_status(int status)
 	return status >> 8;
 }
 
+const struct ccs811_result_type *ccs811_result(struct device *dev)
+{
+	struct ccs811_data *drv_data = dev->driver_data;
+
+	return &drv_data->result;
+}
+
 int ccs811_baseline_fetch(struct device *dev)
 {
 	const u8_t cmd = CCS811_REG_BASELINE;
@@ -176,55 +183,30 @@ int ccs811_envdata_update(struct device *dev,
 static int ccs811_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct ccs811_data *drv_data = dev->driver_data;
+	struct ccs811_result_type *rp = &drv_data->result;
+	const u8_t cmd = CCS811_REG_ALG_RESULT_DATA;
 	int rc;
-	int tries;
 	u16_t buf[4];
-	int status;
+	unsigned int status;
 
-	/* Check data ready flag for the measurement interval */
-#ifdef CONFIG_CCS811_DRIVE_MODE_1
-	tries = 11;
-#elif defined(CONFIG_CCS811_DRIVE_MODE_2)
-	tries = 101;
-#elif defined(CONFIG_CCS811_DRIVE_MODE_3)
-	tries = 601;
-#endif
-
-	do {
-		const u8_t cmd = CCS811_REG_ALG_RESULT_DATA;
-
-		set_wake(drv_data, true);
-		rc = i2c_write_read(drv_data->i2c, DT_INST_0_AMS_CCS811_BASE_ADDRESS,
-				    &cmd, sizeof(cmd),
-				    (u8_t *)buf, sizeof(buf));
-
-		set_wake(drv_data, false);
-		if (rc < 0) {
-			return -EIO;
-		}
-
-		status = buf[2];
-		if (status & CCS811_STATUS_ERROR) {
-			LOG_ERR("CCS811 ERROR ID %02x",
-				error_from_status(status));
-			return -EIO;
-		}
-
-		if (status & CCS811_STATUS_DATA_READY) {
-			break;
-		}
-
-		k_sleep(K_MSEC(100));
-	} while (--tries > 0);
-	if (!(status & CCS811_STATUS_DATA_READY)) {
+	set_wake(drv_data, true);
+	rc = i2c_write_read(drv_data->i2c, DT_INST_0_AMS_CCS811_BASE_ADDRESS,
+			    &cmd, sizeof(cmd),
+			    (u8_t *)buf, sizeof(buf));
+	set_wake(drv_data, false);
+	if (rc < 0) {
 		return -EIO;
 	}
-	drv_data->co2 = sys_be16_to_cpu(buf[0]);
-	drv_data->voc = sys_be16_to_cpu(buf[1]);
-	drv_data->status = status;
-	drv_data->error = error_from_status(status);
-	drv_data->raw = sys_be16_to_cpu(buf[3]);
-	return 0;
+
+	rp->co2 = sys_be16_to_cpu(buf[0]);
+	rp->voc = sys_be16_to_cpu(buf[1]);
+	status = sys_le16_to_cpu(buf[2]); /* sic */
+	rp->status = status;
+	rp->error = error_from_status(status);
+	rp->raw = sys_be16_to_cpu(buf[3]);
+
+	/* @todo APP FW 1.1 may not set DATA_READY. */
+	return (rp->status & CCS811_STATUS_DATA_READY) ? 0 : -EAGAIN;
 }
 
 static int ccs811_channel_get(struct device *dev,
@@ -232,16 +214,17 @@ static int ccs811_channel_get(struct device *dev,
 			      struct sensor_value *val)
 {
 	struct ccs811_data *drv_data = dev->driver_data;
+	const struct ccs811_result_type *rp = &drv_data->result;
 	u32_t uval;
 
 	switch (chan) {
 	case SENSOR_CHAN_CO2:
-		val->val1 = drv_data->co2;
+		val->val1 = rp->co2;
 		val->val2 = 0;
 
 		break;
 	case SENSOR_CHAN_VOC:
-		val->val1 = drv_data->voc;
+		val->val1 = rp->voc;
 		val->val2 = 0;
 
 		break;
@@ -249,7 +232,7 @@ static int ccs811_channel_get(struct device *dev,
 		/*
 		 * Raw ADC readings are contained in least significant 10 bits
 		 */
-		uval = ((drv_data->raw & CCS811_RAW_VOLTAGE_MSK)
+		uval = ((rp->raw & CCS811_RAW_VOLTAGE_MSK)
 			>> CCS811_RAW_VOLTAGE_POS) * CCS811_RAW_VOLTAGE_SCALE;
 		val->val1 = uval / 1000000U;
 		val->val2 = uval % 1000000;
@@ -260,7 +243,7 @@ static int ccs811_channel_get(struct device *dev,
 		 * Current readings are contained in most
 		 * significant 6 bits in microAmps
 		 */
-		uval = ((drv_data->raw & CCS811_RAW_CURRENT_MSK)
+		uval = ((rp->raw & CCS811_RAW_CURRENT_MSK)
 			>> CCS811_RAW_CURRENT_POS) * CCS811_RAW_CURRENT_SCALE;
 		val->val1 = uval / 1000000U;
 		val->val2 = uval % 1000000;
