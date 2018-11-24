@@ -19,7 +19,7 @@
 
 #define HTS221_REG_CTRL1		0x20
 #define HTS221_PD_BIT			BIT(7)
-#define HTS221_BDU_BIT			BIT(3)
+#define HTS221_BDU_BIT			BIT(2)
 #define HTS221_ODR_SHIFT		0
 
 #define HTS221_REG_CTRL3		0x22
