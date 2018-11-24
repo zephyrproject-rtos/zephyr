@@ -4810,16 +4810,9 @@ int bt_set_name(const char *name)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		char buf[BT_SETTINGS_SIZE(CONFIG_BT_DEVICE_NAME_MAX - 1)];
-		char *str;
-
-		str = settings_str_from_bytes(bt_dev.name, len, buf,
-					      sizeof(buf));
-		if (str) {
-			err = settings_save_one("bt/name", str);
-			if (err) {
-				BT_WARN("Unable to store name");
-			}
+		err = settings_save_one("bt/name", bt_dev.name, len);
+		if (err) {
+			BT_WARN("Unable to store name");
 		}
 	}
 
