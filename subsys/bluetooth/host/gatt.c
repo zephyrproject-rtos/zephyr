@@ -2515,8 +2515,8 @@ static u8_t ccc_save(const struct bt_gatt_attr *attr, void *user_data)
 int bt_gatt_store_ccc(u8_t id, const bt_addr_le_t *addr)
 {
 	struct ccc_save save;
-	char val[BT_SETTINGS_SIZE(sizeof(save.store))];
 	char key[BT_SETTINGS_KEY_MAX];
+	size_t len;
 	char *str;
 	int err;
 
@@ -2539,26 +2539,29 @@ int bt_gatt_store_ccc(u8_t id, const bt_addr_le_t *addr)
 	if (!save.count) {
 		/* No entries to encode just clear */
 		str = NULL;
+		len = 0;
 		goto save;
 	}
 
-	str = settings_str_from_bytes(save.store,
-				      save.count * sizeof(*save.store),
-				      val, sizeof(val));
-	if (!str) {
-		BT_ERR("Unable to encode CCC as handle:value");
-		return -EINVAL;
-	}
+	str = (char *)save.store;
+	len = save.count * sizeof(*save.store);
 
 save:
-	err = settings_save_one(key, str);
+	err = settings_save_one(key, str, len);
 	if (err) {
 		BT_ERR("Failed to store CCCs (err %d)", err);
 		return err;
 	}
 
-	BT_DBG("Stored CCCs for %s (%s) val %s", bt_addr_le_str(addr), key,
-	       str ? str : "nill");
+	BT_DBG("Stored CCCs for %s (%s)", bt_addr_le_str(addr), key);
+	if (len) {
+		for (int i = 0; i < save.count; i++) {
+			BT_DBG("  CCC: handle 0x%04x value 0x%04x",
+			       save.store[i].handle, save.store[i].value);
+		}
+	} else {
+		BT_DBG("  CCC: NULL");
+	}
 
 	return 0;
 }
@@ -2604,7 +2607,7 @@ int bt_gatt_clear_ccc(u8_t id, const bt_addr_le_t *addr)
 	bt_gatt_foreach_attr(0x0001, 0xffff, remove_peer_from_attr,
 			     (void *)addr);
 
-	return settings_save_one(key, NULL);
+	return settings_delete(key);
 }
 
 static void ccc_clear(struct _bt_gatt_ccc *ccc, bt_addr_le_t *addr)
@@ -2685,7 +2688,7 @@ next:
 	return load->count ? BT_GATT_ITER_CONTINUE : BT_GATT_ITER_STOP;
 }
 
-static int ccc_set(int argc, char **argv, char *val)
+static int ccc_set(int argc, char **argv, void *val_ctx)
 {
 	struct ccc_store ccc_store[CCC_STORE_MAX];
 	struct ccc_load load;
@@ -2700,24 +2703,28 @@ static int ccc_set(int argc, char **argv, char *val)
 		load.id = strtol(argv[1], NULL, 10);
 	}
 
-	BT_DBG("argv[0] %s val %s", argv[0], val ? val : "(null)");
-
 	err = bt_settings_decode_key(argv[0], &load.addr);
 	if (err) {
 		BT_ERR("Unable to decode address %s", argv[0]);
 		return -EINVAL;
 	}
 
-	if (val) {
-		len = sizeof(ccc_store);
-		err = settings_bytes_from_str(val, ccc_store, &len);
-		if (err) {
-			BT_ERR("Failed to decode value (err %d)", err);
-			return err;
+	if (settings_val_get_len_cb(val_ctx)) {
+		len = settings_val_read_cb(val_ctx, ccc_store,
+					   sizeof(ccc_store));
+
+		if (len < 0) {
+			BT_ERR("Failed to decode value (err %d)", len);
+			return len;
 		}
 
 		load.entry = ccc_store;
 		load.count = len / sizeof(*ccc_store);
+
+		for (int i = 0; i < load.count; i++) {
+			BT_DBG("Read CCC: handle 0x%04x value 0x%04x",
+			       ccc_store[i].handle, ccc_store[i].value);
+		}
 	} else {
 		load.entry = NULL;
 		load.count = 0;
