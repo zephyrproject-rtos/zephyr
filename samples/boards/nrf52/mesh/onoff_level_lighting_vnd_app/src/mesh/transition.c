@@ -121,27 +121,25 @@ void onoff_tt_values(struct generic_onoff_state *state, u8_t tt, u8_t delay)
 	state->transition->tt = tt;
 	state->transition->delay = delay;
 
-	tt_values_calculator(state->transition);
-
-	if (state->transition->counter == 0) {
-		state->transition->quo_tt = 0;
+	if (tt != 0) {
+		tt_values_calculator(state->transition);
 	} else {
-		state->transition->quo_tt = state->transition->total_duration /
-						state->transition->counter;
-
-		calculate_lightness_target_values(ONOFF);
-
-		light_lightness_srv_user_data.tt_delta_actual =
-			((float) (light_lightness_srv_user_data.actual -
-				  light_lightness_srv_user_data.target_actual) /
-			 state->transition->counter);
+		return;
 	}
+
+	state->transition->quo_tt = state->transition->total_duration /
+					state->transition->counter;
+
+	calculate_lightness_target_values(ONOFF);
+
+	light_lightness_srv_user_data.tt_delta_actual =
+		((float) (light_lightness_srv_user_data.actual -
+			  light_lightness_srv_user_data.target_actual) /
+		 state->transition->counter);
 }
 
 void level_tt_values(struct generic_level_state *state, u8_t tt, u8_t delay)
 {
-	u32_t counter;
-
 	if (state == &gen_level_srv_root_user_data) {
 		bound_states_transition_type_reassignment(LEVEL);
 	} else if (state == &gen_level_srv_s0_user_data) {
@@ -150,143 +148,125 @@ void level_tt_values(struct generic_level_state *state, u8_t tt, u8_t delay)
 	state->transition->tt = tt;
 	state->transition->delay = delay;
 
-	tt_values_calculator(state->transition);
-
-	counter = state->transition->counter;
-	if (counter == 0) {
-		state->transition->quo_tt = 0;
-		counter = 1;
+	if (tt != 0) {
+		tt_values_calculator(state->transition);
 	} else {
-		state->transition->quo_tt = state->transition->total_duration /
-						counter;
+		return;
+	}
 
-		if (state == &gen_level_srv_root_user_data) {
-			calculate_lightness_target_values(LEVEL);
-		} else if (state == &gen_level_srv_s0_user_data) {
-			calculate_temp_target_values(LEVEL_TEMP);
-		}
+	state->transition->quo_tt = state->transition->total_duration /
+					state->transition->counter;
+
+	if (state == &gen_level_srv_root_user_data) {
+		calculate_lightness_target_values(LEVEL);
+	} else if (state == &gen_level_srv_s0_user_data) {
+		calculate_temp_target_values(LEVEL_TEMP);
 	}
 
 	state->tt_delta = ((float) (state->level - state->target_level) /
-			   counter);
+			   state->transition->counter);
 }
 
 void light_lightness_actual_tt_values(struct light_lightness_state *state,
 				      u8_t tt, u8_t delay)
 {
-	u32_t counter;
-
 	bound_states_transition_type_reassignment(ACTUAL);
 	state->transition->tt = tt;
 	state->transition->delay = delay;
 
-	tt_values_calculator(state->transition);
-
-	counter = state->transition->counter;
-	if (counter == 0) {
-		state->transition->quo_tt = 0;
-		counter = 1;
+	if (tt != 0) {
+		tt_values_calculator(state->transition);
 	} else {
-		state->transition->quo_tt = state->transition->total_duration /
-						counter;
-
-		calculate_lightness_target_values(ACTUAL);
+		return;
 	}
+
+	state->transition->quo_tt = state->transition->total_duration /
+					state->transition->counter;
+
+	calculate_lightness_target_values(ACTUAL);
 
 	state->tt_delta_actual =
 		((float) (state->actual - state->target_actual) /
-		 counter);
+		 state->transition->counter);
 }
 
 void light_lightness_linear_tt_values(struct light_lightness_state *state,
 				      u8_t tt, u8_t delay)
 {
-	u32_t counter;
-
 	bound_states_transition_type_reassignment(LINEAR);
 	state->transition->tt = tt;
 	state->transition->delay = delay;
 
-	tt_values_calculator(state->transition);
-
-	counter = state->transition->counter;
-	if (counter == 0) {
-		state->transition->quo_tt = 0;
-		counter = 1;
+	if (tt != 0) {
+		tt_values_calculator(state->transition);
 	} else {
-		state->transition->quo_tt = state->transition->total_duration /
-						counter;
-
-		calculate_lightness_target_values(LINEAR);
+		return;
 	}
+
+	state->transition->quo_tt = state->transition->total_duration /
+					state->transition->counter;
+
+	calculate_lightness_target_values(LINEAR);
 
 	state->tt_delta_linear =
 		((float) (state->linear - state->target_linear) /
-		 counter);
+		 state->transition->counter);
 }
 
 void light_ctl_tt_values(struct light_ctl_state *state, u8_t tt, u8_t delay)
 {
-	u32_t counter;
-
 	bound_states_transition_type_reassignment(CTL);
 	state->transition->tt = tt;
 	state->transition->delay = delay;
 
-	tt_values_calculator(state->transition);
-
-	counter = state->transition->counter;
-	if (counter == 0) {
-		state->transition->quo_tt = 0;
-		counter = 1;
+	if (tt != 0) {
+		tt_values_calculator(state->transition);
 	} else {
-		state->transition->quo_tt = state->transition->total_duration /
-						counter;
-
-		calculate_lightness_target_values(CTL);
+		return;
 	}
+
+	state->transition->quo_tt = state->transition->total_duration /
+					state->transition->counter;
+
+	calculate_lightness_target_values(CTL);
 
 	state->tt_delta_lightness =
 		((float) (state->lightness - state->target_lightness) /
-		 counter);
+		 state->transition->counter);
 
 	state->tt_delta_temp =
 		((float) (state->temp - state->target_temp) /
-		 counter);
+		 state->transition->counter);
 
 	state->tt_delta_duv =
 		((float) (state->delta_uv - state->target_delta_uv) /
-		 counter);
+		 state->transition->counter);
 }
 
 void light_ctl_temp_tt_values(struct light_ctl_state *state,
 			      u8_t tt, u8_t delay)
 {
-	u32_t counter;
-
 	bound_states_transition_type_reassignment(CTL_TEMP);
 	state->transition->tt = tt;
 	state->transition->delay = delay;
 
-	tt_values_calculator(state->transition);
-
-	counter = state->transition->counter;
-	if (counter == 0) {
-		state->transition->quo_tt = 0;
-		counter = 1;
+	if (tt != 0) {
+		tt_values_calculator(state->transition);
 	} else {
-		state->transition->quo_tt = state->transition->total_duration /
-						counter;
-
-		calculate_temp_target_values(CTL_TEMP);
+		return;
 	}
 
+	state->transition->quo_tt = state->transition->total_duration /
+					state->transition->counter;
+
+	calculate_temp_target_values(CTL_TEMP);
+
 	state->tt_delta_temp = ((float) (state->temp - state->target_temp) /
-				counter);
+				state->transition->counter);
 
 	state->tt_delta_duv =
 		((float) (state->delta_uv - state->target_delta_uv) /
-		 counter);
+		 state->transition->counter);
 }
 
 /* Timers related handlers & threads (Start) */
