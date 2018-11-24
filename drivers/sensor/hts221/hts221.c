@@ -14,7 +14,7 @@
 
 #include "hts221.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LEVEL
+#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 LOG_MODULE_REGISTER(HTS221);
 
 static int hts221_channel_get(struct device *dev,
