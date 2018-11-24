@@ -1609,7 +1609,7 @@ class TestInstance:
 
         return build_only
 
-    def create_overlay(self):
+    def create_overlay(self, platform):
         file = os.path.join(self.outdir, "overlay.conf")
         os.makedirs(self.outdir, exist_ok=True)
         f = open(file, "w")
@@ -1618,7 +1618,8 @@ class TestInstance:
         if len(self.test.extra_configs) > 0:
             content = "\n".join(self.test.extra_configs)
         if options.enable_coverage:
-            content = content + "\nCONFIG_COVERAGE=y"
+            if platform in options.coverage_platform:
+                content = content + "\nCONFIG_COVERAGE=y"
 
         f.write(content)
         f.close()
@@ -1775,12 +1776,12 @@ class TestSuite:
                 name = os.path.join(row[0], row[1])
                 platforms = self.arches[row[3]].platforms
                 myp = None
-                for p in platforms:
-                    if p.name == row[2]:
-                        myp = p
+                for platform in platforms:
+                    if platform.name == row[2]:
+                        selected_platform = platform
                         break
-                instance = TestInstance(self.testcases[name], myp, self.outdir)
-                instance.create_overlay()
+                instance = TestInstance(self.testcases[name], selected_platform, self.outdir)
+                instance.create_overlay(selected_platform.name)
                 instance_list.append(instance)
             self.add_instances(instance_list)
 
@@ -2108,7 +2109,7 @@ class TestSuite:
                     self.add_instances(instance_list)
 
                 for name, case in self.instances.items():
-                    case.create_overlay()
+                    case.create_overlay(case.platform.name)
 
         self.discards = discards
         return discards
@@ -2671,6 +2672,11 @@ def parse_arguments():
 
     parser.add_argument("-C", "--coverage", action="store_true",
                         help="Generate coverage reports. Implies --enable_coverage")
+
+    coverage_platforms = ["native_posix", "nrf52_bsim"]
+    parser.add_argument("--coverage-platform", action="append", default=coverage_platforms,
+                        help="Plarforms to run coverage reports on. "
+                        "This option may be used multiple times.")
 
     return parser.parse_args()
 
