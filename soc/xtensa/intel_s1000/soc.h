@@ -36,12 +36,7 @@
 #define DW_ICTL_NUM_IRQS			9
 
 /* GPIO */
-#define DT_GPIO_DW_0_BASE_ADDR			0x00080C00
-#define DT_GPIO_DW_0_BITS				32
 #define GPIO_DW_PORT_0_INT_MASK			0
-#define DT_GPIO_DW_0_IRQ_FLAGS			0
-#define DT_GPIO_DW_0_IRQ				0x00040706
-#define GPIO_DW_0_IRQ_ICTL_OFFSET		INTR_CNTL_IRQ_NUM(DT_GPIO_DW_0_IRQ)
 
 /* low power DMACs */
 #define LP_GP_DMA_SIZE				0x00001000
