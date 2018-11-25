@@ -175,4 +175,11 @@ config SPI_0
 
 endif
 
+if PINMUX
+
+config PINMUX_INTEL_S1000
+	def_bool y
+
+endif
+
 endif # BOARD_INTEL_S1000_CRB
