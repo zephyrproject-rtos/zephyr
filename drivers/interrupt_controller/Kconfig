@@ -162,4 +162,6 @@ source "drivers/interrupt_controller/Kconfig.multilevel"
 
 source "drivers/interrupt_controller/Kconfig.s1000"
 
+source "drivers/interrupt_controller/Kconfig.rv32m1"
+
 endmenu

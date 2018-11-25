@@ -10,8 +10,17 @@ config SOC
 	string
 	default "openisa_rv32m1"
 
+# 32 from event unit + 32 * (1 + max enabled INTMUX channel)
 config NUM_IRQS
 	int
+	default 288 if RV32M1_INTMUX_CHANNEL_7
+	default 256 if RV32M1_INTMUX_CHANNEL_6
+	default 224 if RV32M1_INTMUX_CHANNEL_5
+	default 192 if RV32M1_INTMUX_CHANNEL_4
+	default 160 if RV32M1_INTMUX_CHANNEL_3
+	default 128 if RV32M1_INTMUX_CHANNEL_2
+	default 96 if RV32M1_INTMUX_CHANNEL_1
+	default 64 if RV32M1_INTMUX_CHANNEL_0
 	default 32
 
 config XIP
@@ -72,5 +81,90 @@ config RISCV32_RV32M1_VECTOR_SIZE
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
 	default 8000000 if SOC_OPENISA_RV32M1_RI5CY # SIRC at 8MHz
+
+if MULTI_LEVEL_INTERRUPTS
+
+config MAX_IRQ_PER_AGGREGATOR
+	int
+	default 32
+
+config 2ND_LEVEL_INTERRUPTS
+	def_bool y
+
+config 2ND_LVL_ISR_TBL_OFFSET
+	int
+	default 32
+
+config NUM_2ND_LEVEL_AGGREGATORS
+	int
+	default 8 if RV32M1_INTMUX_CHANNEL_7
+	default 7 if RV32M1_INTMUX_CHANNEL_6
+	default 6 if RV32M1_INTMUX_CHANNEL_5
+	default 5 if RV32M1_INTMUX_CHANNEL_4
+	default 4 if RV32M1_INTMUX_CHANNEL_3
+	default 3 if RV32M1_INTMUX_CHANNEL_2
+	default 2 if RV32M1_INTMUX_CHANNEL_1
+	default 1		# just channel 0
+
+config 2ND_LVL_INTR_00_OFFSET
+	int
+	default 24
+
+config 2ND_LVL_INTR_01_OFFSET
+	int
+	default 25
+
+config 2ND_LVL_INTR_02_OFFSET
+	int
+	default 26
+
+config 2ND_LVL_INTR_03_OFFSET
+	int
+	default 27
+
+config 2ND_LVL_INTR_04_OFFSET
+	int
+	default 28
+
+config 2ND_LVL_INTR_05_OFFSET
+	int
+	default 29
+
+config 2ND_LVL_INTR_06_OFFSET
+	int
+	default 30
+
+config 2ND_LVL_INTR_07_OFFSET
+	int
+	default 31
+
+config RV32M1_INTMUX
+	def_bool y
+
+config RV32M1_INTMUX_CHANNEL_0
+	def_bool y
+
+config RV32M1_INTMUX_CHANNEL_1
+	def_bool y
+
+config RV32M1_INTMUX_CHANNEL_2
+	def_bool y
+
+config RV32M1_INTMUX_CHANNEL_3
+	def_bool y
+
+config RV32M1_INTMUX_CHANNEL_4
+	def_bool y
+
+config RV32M1_INTMUX_CHANNEL_5
+	def_bool y
+
+config RV32M1_INTMUX_CHANNEL_6
+	def_bool y
+
+config RV32M1_INTMUX_CHANNEL_7
+	def_bool y
+
+endif # MULTI_LEVEL_INTERRUPTS
 
 endif # SOC_OPENISA_RV32M1_RISCV32

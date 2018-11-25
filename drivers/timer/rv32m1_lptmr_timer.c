@@ -14,29 +14,24 @@
  *
  * Assumptions and limitations:
  *
- * - LPTMR0 clocked by SIRC output SIRCDIV3 divide-by-1, SIRC at 8MHz
+ * - system clock based on an LPTMR instance, clocked by SIRC output
+ *   SIRCDIV3, prescaler divide-by-1, SIRC at 8MHz
  * - no tickless
- * - direct control of INTMUX0 channel 0 (bypasses intmux driver)
- *
- * This should be rewritten as follows:
- *
- * - use RTC instead of LPTMR
- * - support tickless operation
  */
 
-#define CYCLES_PER_TICK \
-	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#define CYCLES_PER_SEC  CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
+#define CYCLES_PER_TICK (CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
-/* Sanity check the 8MHz clock assumption. */
-#if CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC != 8000000
-#error "timer driver misconfiguration"
+/*
+ * As a simplifying assumption, we only support a clock ticking at the
+ * SIRC reset rate of 8MHz.
+ */
+#if MHZ(8) != CYCLES_PER_SEC
+#error "system timer misconfiguration; unsupported clock rate"
 #endif
 
-#define LPTMR_INSTANCE          LPTMR0
-#define LPTMR_LEVEL0_IRQ        24      /* INTMUX channel 0 */
-#define LPTMR_LEVEL0_IRQ_PRIO   0
-#define LPTMR_LEVEL1_IRQ        7
-#define LPTMR_LEVEL1_IRQ_EN     (1U << LPTMR_LEVEL1_IRQ)
+#define SYSTEM_TIMER_INSTANCE ((LPTMR_Type *)(SYSTEM_LPTMR_BASE_ADDRESS))
+#define SYSTEM_TIMER_IRQ_PRIO 0
 
 #define SIRC_RANGE_8MHZ      SCG_SIRCCFG_RANGE(1)
 #define SIRCDIV3_DIVIDE_BY_1 1
@@ -50,24 +45,9 @@ static void lptmr_irq_handler(struct device *unused)
 {
 	ARG_UNUSED(unused);
 
-	LPTMR_INSTANCE->CSR |= LPTMR_CSR_TCF(1); /* Rearm timer. */
+	SYSTEM_TIMER_INSTANCE->CSR |= LPTMR_CSR_TCF(1); /* Rearm timer. */
 	cycle_count += CYCLES_PER_TICK;          /* Track cycles. */
 	z_clock_announce(1);                     /* Poke the scheduler. */
-}
-
-static void enable_intmux0_pcc(void)
-{
-	u32_t ier;
-
-	/*
-	 * The reference manual doesn't say this exists, but it's in
-	 * the peripheral registers.
-	 */
-	*(u32_t*)(PCC0_BASE + 0x13c) |= PCC_CLKCFG_CGC_MASK;
-
-	ier = INTMUX0->CHANNEL[0].CHn_IER_31_0;
-	ier |= LPTMR_LEVEL1_IRQ_EN;
-	INTMUX0->CHANNEL[0].CHn_IER_31_0 = ier;
 }
 
 int z_clock_driver_init(struct device *unused)
@@ -75,7 +55,8 @@ int z_clock_driver_init(struct device *unused)
 	u32_t csr, psr, sircdiv; /* LPTMR registers */
 
 	ARG_UNUSED(unused);
-	IRQ_CONNECT(LPTMR_LEVEL0_IRQ, LPTMR_LEVEL0_IRQ_PRIO, lptmr_irq_handler, NULL, 0);
+	IRQ_CONNECT(SYSTEM_LPTMR_IRQ, SYSTEM_TIMER_IRQ_PRIO, lptmr_irq_handler,
+		    NULL, 0);
 
 	if ((SCG->SIRCCSR & SCG_SIRCCSR_SIRCEN_MASK) == SCG_SIRCCSR_SIRCEN(0)) {
 		/*
@@ -87,10 +68,10 @@ int z_clock_driver_init(struct device *unused)
 	}
 
 	/* Disable the timer and clear any pending IRQ. */
-	csr = LPTMR_INSTANCE->CSR;
+	csr = SYSTEM_TIMER_INSTANCE->CSR;
 	csr &= ~LPTMR_CSR_TEN(0);
 	csr |= LPTMR_CSR_TFC(1);
-	LPTMR_INSTANCE->CSR = csr;
+	SYSTEM_TIMER_INSTANCE->CSR = csr;
 
 	/*
 	 * Set up the timer clock source and configure the timer.
@@ -114,15 +95,15 @@ int z_clock_driver_init(struct device *unused)
 	 * TIE = 1: enable interrupt
 	 */
 	csr |= LPTMR_CSR_TIE(1);
-	LPTMR_INSTANCE->CSR = csr;
+	SYSTEM_TIMER_INSTANCE->CSR = csr;
 	/*
 	 * PCS = 0: clock source is SIRCDIV3 (SoC dependent)
 	 * PBYP = 1: bypass the prescaler
 	 */
-	psr = LPTMR_INSTANCE->PSR;
+	psr = SYSTEM_TIMER_INSTANCE->PSR;
 	psr &= ~LPTMR_PSR_PCS_MASK;
 	psr |= (LPTMR_PSR_PBYP(1) | LPTMR_PSR_PCS(PCS_SOURCE_SIRCDIV3));
-	LPTMR_INSTANCE->PSR = psr;
+	SYSTEM_TIMER_INSTANCE->PSR = psr;
 
 	/*
 	 * Set compare register to the proper tick count. The check
@@ -134,29 +115,26 @@ int z_clock_driver_init(struct device *unused)
 	if ((SCG->SIRCCFG & SCG_SIRCCFG_RANGE_MASK) != SIRC_RANGE_8MHZ) {
 		return -EINVAL;
 	}
-	LPTMR_INSTANCE->CMR = CYCLES_PER_TICK;
+	SYSTEM_TIMER_INSTANCE->CMR = CYCLES_PER_TICK;
 
 	/*
 	 * Enable interrupts and the timer. There's no need to clear the
 	 * TFC bit in the csr variable, as it's already clear.
 	 */
-	enable_intmux0_pcc();
-
-	irq_enable(LPTMR_LEVEL0_IRQ);
-	csr = LPTMR_INSTANCE->CSR;
+	irq_enable(SYSTEM_LPTMR_IRQ);
+	csr = SYSTEM_TIMER_INSTANCE->CSR;
 	csr |= LPTMR_CSR_TEN(1);
-	LPTMR_INSTANCE->CSR = csr;
+	SYSTEM_TIMER_INSTANCE->CSR = csr;
 	return 0;
 }
 
 u32_t _timer_cycle_get_32(void)
 {
-	return cycle_count + LPTMR_INSTANCE->CNR;
+	return cycle_count + SYSTEM_TIMER_INSTANCE->CNR;
 }
 
 /*
- * Since we're tickless, this is identically zero unless the timer
- * interrupt is getting locked out due to other higher priority work.
+ * Since we're not tickless, this is identically zero.
  */
 u32_t z_clock_elapsed(void)
 {

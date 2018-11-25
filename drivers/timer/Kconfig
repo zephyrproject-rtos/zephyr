@@ -139,6 +139,7 @@ config RV32M1_LPTMR_TIMER
 	default y
 	depends on SOC_OPENISA_RV32M1_RISCV32
 	depends on !TICKLESS_IDLE
+	depends on RV32M1_INTMUX
 	help
 	  This module implements a kernel device driver for using the LPTMR
 	  peripheral as the system clock. It provides the standard "system clock

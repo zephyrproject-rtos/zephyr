@@ -9,8 +9,20 @@
 #include <device.h>
 #include <init.h>
 #include <fsl_clock.h>
+#include <misc/util.h>
+
+#if defined(CONFIG_MULTI_LEVEL_INTERRUPTS)
+#include <errno.h>
+#include <irq_nextlevel.h>
+#endif
+
+#define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(soc);
 
 #define SCG_LPFLL_DISABLE 0U
+
+static struct device *dev_intmux;
 
 /*
  * Run-mode configuration for the fast internal reference clock (FIRC).
@@ -49,24 +61,75 @@ static const scg_lpfll_config_t rv32m1_lpfll_cfg = {
 
 void _arch_irq_enable(unsigned int irq)
 {
-	EVENT_UNIT->INTPTEN |= (1U << irq);
-	(void)(EVENT_UNIT->INTPTEN); /* Ensures write has finished. */
+	if (IS_ENABLED(CONFIG_MULTI_LEVEL_INTERRUPTS)) {
+		unsigned int level = rv32m1_irq_level(irq);
+
+		if (level == 1) {
+			EVENT_UNIT->INTPTEN |= BIT(rv32m1_level1_irq(irq));
+			/* Ensures write has finished: */
+			(void)(EVENT_UNIT->INTPTEN);
+		} else {
+			irq_enable_next_level(dev_intmux, irq);
+		}
+	} else {
+		EVENT_UNIT->INTPTEN |= BIT(rv32m1_level1_irq(irq));
+		(void)(EVENT_UNIT->INTPTEN);
+	}
 }
 
 void _arch_irq_disable(unsigned int irq)
 {
-	EVENT_UNIT->INTPTEN &= ~(1U << irq);
-	(void)(EVENT_UNIT->INTPTEN); /* Ensures write has finished. */
+	if (IS_ENABLED(CONFIG_MULTI_LEVEL_INTERRUPTS)) {
+		unsigned int level = rv32m1_irq_level(irq);
+
+		if (level == 1) {
+			EVENT_UNIT->INTPTEN &= ~BIT(rv32m1_level1_irq(irq));
+			/* Ensures write has finished: */
+			(void)(EVENT_UNIT->INTPTEN);
+		} else {
+			irq_disable_next_level(dev_intmux, irq);
+		}
+	} else {
+		EVENT_UNIT->INTPTEN &= ~BIT(rv32m1_level1_irq(irq));
+		(void)(EVENT_UNIT->INTPTEN);
+	}
 }
 
 int _arch_irq_is_enabled(unsigned int irq)
 {
-	return (EVENT_UNIT->INTPTEN & (1U << irq)) != 0;
+	if (IS_ENABLED(CONFIG_MULTI_LEVEL_INTERRUPTS)) {
+		unsigned int level = rv32m1_irq_level(irq);
+
+		if (level == 1) {
+			return (EVENT_UNIT->INTPTEN &
+				BIT(rv32m1_level1_irq(irq))) != 0;
+		} else {
+			u32_t channel, line, ier;
+
+			/*
+			 * Here we break the abstraction and look
+			 * directly at the INTMUX registers. We can't
+			 * use the irq_nextlevel.h API, as that only
+			 * tells us whether some IRQ at the next level
+			 * is enabled or not.
+			 */
+			channel = rv32m1_intmux_channel(irq);
+			line = rv32m1_intmux_line(irq);
+			ier = INTMUX->CHANNEL[channel].CHn_IER_31_0 & BIT(line);
+
+			return ier != 0;
+		}
+	} else {
+		return (EVENT_UNIT->INTPTEN & BIT(rv32m1_level1_irq(irq))) != 0;
+	}
 }
 
 /*
  * SoC-level interrupt initialization. Clear any pending interrupts or
- * events.
+ * events, and find the INTMUX device if necessary.
+ *
+ * This gets called as almost the first thing _Cstart() does, so it
+ * will happen before any calls to the _arch_irq_xxx() routines above.
  */
 void soc_interrupt_init(void)
 {
@@ -74,6 +137,11 @@ void soc_interrupt_init(void)
 	(void)(EVENT_UNIT->INTPTPENDCLEAR); /* Ensures write has finished. */
 	EVENT_UNIT->EVTPENDCLEAR   = 0xFFFFFFFF;
 	(void)(EVENT_UNIT->EVTPENDCLEAR); /* Ensures write has finished. */
+
+	if (IS_ENABLED(CONFIG_MULTI_LEVEL_INTERRUPTS)) {
+		dev_intmux = device_get_binding(INTMUX_LABEL);
+		__ASSERT(dev_intmux, "no INTMUX device found");
+	}
 }
 
 /**
