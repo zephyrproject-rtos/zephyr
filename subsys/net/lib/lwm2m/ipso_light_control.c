@@ -177,8 +177,6 @@ static struct lwm2m_engine_obj_inst *light_control_create(u16_t obj_inst_id)
 
 static int ipso_light_control_init(struct device *dev)
 {
-	int ret = 0;
-
 	/* Set default values */
 	(void)memset(inst, 0, sizeof(*inst) * MAX_INSTANCE_COUNT);
 	(void)memset(res, 0, sizeof(struct lwm2m_engine_res_inst) *
@@ -191,7 +189,7 @@ static int ipso_light_control_init(struct device *dev)
 	light_control.create_cb = light_control_create;
 	lwm2m_register_obj(&light_control);
 
-	return ret;
+	return 0;
 }
 
 SYS_INIT(ipso_light_control_init, APPLICATION,
