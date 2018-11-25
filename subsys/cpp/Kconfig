@@ -55,6 +55,7 @@ config LIB_CPLUSPLUS
 
 config EXCEPTIONS
 	depends on CPLUSPLUS
+	depends on NEWLIB_LIBC
 	select LIB_CPLUSPLUS
 	bool "Enable C++ exceptions support"
 	help
