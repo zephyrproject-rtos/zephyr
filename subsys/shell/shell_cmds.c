@@ -347,7 +347,7 @@ static int cmd_help(const struct shell *shell, size_t argc, char **argv)
 	shell_fprintf(shell, SHELL_NORMAL,
 		"Please press the <Tab> button to see all available commands.\n"
 		"You can also use the <Tab> button to prompt or auto-complete"
-		"all commands or its subcommands.\n"
+		" all commands or its subcommands.\n"
 		"You can try to call commands with <-h> or <--help> parameter"
 		" for more information.\n");
 
