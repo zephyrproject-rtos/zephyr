@@ -38,4 +38,5 @@ License Link:
 
 Patch List:
    No changes were made to any imported source files.
-   Additional Zephyr-specific files may be added (Kconfig, CMake, etc.)
+   Additional Zephyr-specific build system files were added (Kconfig files,
+   CMakeLists.txt, etc.)

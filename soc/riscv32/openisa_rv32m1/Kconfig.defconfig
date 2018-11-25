@@ -1,0 +1,76 @@
+# Kconfig.defconfig: RV32M1 SoC RISC-V core default configuration values
+#
+# Copyright (c) 2018 Foundries.io Ltd
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_OPENISA_RV32M1_RISCV32
+
+config SOC
+	string
+	default "openisa_rv32m1"
+
+config NUM_IRQS
+	int
+	default 32
+
+config XIP
+	bool
+	default y
+
+config RISCV_GENERIC_TOOLCHAIN
+	bool
+	default n
+
+config RISCV_SOC_CONTEXT_SAVE
+	bool
+	default y if SOC_OPENISA_RV32M1_RI5CY
+
+config RISCV_SOC_INTERRUPT_INIT
+	bool
+	default y
+
+# We need to disable the watchdog out of reset, as it's enabled by
+# default. Use the WDOG_INIT hook for doing that.
+config WDOG_INIT
+	def_bool y
+
+# Built-in flash allocated to each chip. This configuration
+# assumes the Arm cores are disabled, as these base addresses
+# contain the Arm core vector tables if they are used.
+config RISCV32_RV32M1_ROM_BASE_ADDR
+	hex
+	default 0x00000000 if SOC_OPENISA_RV32M1_RI5CY
+	default 0x01000000 if SOC_OPENISA_RV32M1_ZERO_RISCY
+
+config RISCV32_RV32M1_ROM_SIZE
+	hex
+	default 0x000FFF00 if SOC_OPENISA_RV32M1_RI5CY
+	default 0x0003FF00 if SOC_OPENISA_RV32M1_ZERO_RISCY
+
+config RISCV32_RV32M1_RAM_BASE_ADDR
+	hex
+	default 0x20000000 if SOC_OPENISA_RV32M1_RI5CY
+	default 0x09000000 if SOC_OPENISA_RV32M1_ZERO_RISCY
+
+config RISCV32_RV32M1_RAM_SIZE
+	hex
+	default 0x00030000 if SOC_OPENISA_RV32M1_RI5CY
+	default 0x00020000 if SOC_OPENISA_RV32M1_ZERO_RISCY
+
+# The event unit looks for vector tables at the end of each core's
+# flash space. These vector tables are not relocatable.
+config RISCV32_RV32M1_VECTOR_BASE_ADDR
+	hex
+	default 0x000FFF00 if SOC_OPENISA_RV32M1_RI5CY
+	default 0x0103FF00 if SOC_OPENISA_RV32M1_ZERO_RISCY
+
+config RISCV32_RV32M1_VECTOR_SIZE
+	hex
+	default 0x100
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 8000000 if SOC_OPENISA_RV32M1_RI5CY # SIRC at 8MHz
+
+endif # SOC_OPENISA_RV32M1_RISCV32
