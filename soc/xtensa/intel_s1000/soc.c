@@ -147,24 +147,6 @@ void _soc_irq_disable(u32_t irq)
 	}
 }
 
-void soc_config_iomux_ctsrts(void)
-{
-	volatile struct soc_io_mux_regs *regs =
-		(volatile struct soc_io_mux_regs *)IOMUX_BASE;
-
-	/* Configure the MUX to select GPIO functionality for GPIO 23 and 24 */
-	regs->io_mux_ctl0 |= SOC_UART_RTS_CTS_MS;
-}
-
-void soc_config_iomux_i2c(void)
-{
-	volatile struct soc_io_mux_regs *regs =
-		(volatile struct soc_io_mux_regs *)IOMUX_BASE;
-
-	/* Configure the MUX to select the correct I2C port (I2C1) */
-	regs->io_mux_ctl2 |= SOC_I2C_I0_I1_MS;
-}
-
 static inline void soc_set_resource_ownership(void)
 {
 	volatile struct soc_resource_alloc_regs *regs =
@@ -243,14 +225,6 @@ static int soc_init(struct device *dev)
 
 	soc_set_resource_ownership();
 	soc_set_power_and_clock();
-
-#ifdef CONFIG_I2C
-	soc_config_iomux_i2c();
-#endif
-
-#ifdef CONFIG_GPIO
-	soc_config_iomux_ctsrts();
-#endif
 
 	return 0;
 }

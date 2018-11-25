@@ -92,17 +92,6 @@
 #define SOC_NUM_LPGPDMAC			3
 #define SOC_NUM_CHANNELS_IN_DMAC		8
 
-#define IOMUX_BASE				0x00081C00
-#define SOC_I2C_I0_I1_MS			BIT(0)
-#define SOC_UART_RTS_CTS_MS			BIT(16)
-
-struct soc_io_mux_regs {
-	u32_t	reserved[12];
-	u32_t	io_mux_ctl0;
-	u32_t	io_mux_ctl1;
-	u32_t	io_mux_ctl2;
-};
-
 /* SOC Resource Allocation Registers */
 #define SOC_RESOURCE_ALLOC_REG_BASE		0x00071A60
 /* bit field definition for LP GPDMA ownership register */
