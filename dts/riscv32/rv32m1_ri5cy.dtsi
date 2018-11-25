@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <dt-bindings/interrupt-controller/openisa-intmux.h>
+
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
@@ -10,6 +12,8 @@
 	aliases {
 		pcc-0 = &pcc0;
 		pcc-1 = &pcc1;
+		intmux = &intmux;
+		system-lptmr = &lptmr0;
 	};
 
 	cpus {
@@ -48,6 +52,61 @@
 			reg = <0x41027000 0x200>;
 			label = "PCC1";
 			#clock-cells = <1>;
+		};
+
+		event: interrupt-controller@e0041000 {
+			compatible = "openisa,rv32m1-event-unit";
+			#interrupt-cells = <1>;
+			interrupt-controller;
+			reg = <0xe0041000 0x88>;
+		};
+
+		intmux: interrupt-controller@4004f000 {
+			compatible = "openisa,rv32m1-intmux";
+			#interrupt-cells = <1>;
+			interrupt-controller;
+			interrupt-parent = <&event>;
+			interrupts = <INTMUX_CH0_IRQ>, <INTMUX_CH1_IRQ>, <INTMUX_CH2_IRQ>, <INTMUX_CH3_IRQ>, <INTMUX_CH4_IRQ>, <INTMUX_CH5_IRQ>, <INTMUX_CH6_IRQ>, <INTMUX_CH7_IRQ>;
+			reg = <0x4004f000 0x20>;
+			clocks = <&pcc0 0x13c>;
+			label = "INTMUX0";
+		};
+
+		/*
+		 * INTMUX channels below are somewhat arbitrary.
+		 *
+		 * The system timer (assumed at LPTMR0) is placed on channel 0,
+		 * and peripherals are in channel 1. This can be overridden with
+		 * overlays, e.g. to manage IRQ priorities, and it'll will Just
+		 * Work, but using fewer channels here allows disabling unused
+		 * ones in Kconfig, making the binary smaller.
+		 *
+		 * Each enabled channel requires 256 bytes in _sw_isr_table,
+		 * so the savings for disabling channels can add up.
+		 */
+
+		lptmr0: timer@40032000 {
+			compatible = "openisa,rv32m1-lptmr";
+			reg = <0x40032000 0x10>;
+			interrupt-parent = <&intmux>;
+			interrupts = <INTMUX_LEVEL2_IRQ(INTMUX_CH0, 7)>;
+			label = "LPTMR_0";
+		};
+
+		lptmr1: timer@40033000 {
+			compatible = "openisa,rv32m1-lptmr";
+			reg = <0x40033000 0x10>;
+			interrupt-parent = <&intmux>;
+			interrupts = <INTMUX_LEVEL2_IRQ(INTMUX_CH1, 8)>;
+			label = "LPTMR_1";
+		};
+
+		lptmr2: timer@4102b000 {
+			compatible = "openisa,rv32m1-lptmr";
+			reg = <0x4102b000 0x10>;
+			interrupt-parent = <&intmux>;
+			interrupts = <INTMUX_LEVEL2_IRQ(INTMUX_CH1, 22)>;
+			label = "LPTMR_2";
 		};
 	};
 };
