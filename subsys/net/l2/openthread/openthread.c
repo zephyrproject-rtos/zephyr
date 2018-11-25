@@ -232,7 +232,6 @@ static enum net_verdict openthread_recv(struct net_if *iface,
 enum net_verdict openthread_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct openthread_context *ot_context = net_if_l2_data(iface);
-	enum net_verdict ret = NET_OK;
 	otMessage *message;
 	struct net_buf *frag;
 
@@ -265,7 +264,7 @@ enum net_verdict openthread_send(struct net_if *iface, struct net_pkt *pkt)
 exit:
 	net_pkt_unref(pkt);
 
-	return ret;
+	return NET_OK;
 }
 
 static u16_t openthread_reserve(struct net_if *iface, void *arg)
