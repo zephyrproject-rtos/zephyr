@@ -1,0 +1,11 @@
+#
+# Copyright (c) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig PINMUX_INTEL_S1000
+	bool "Intel S1000 I/O multiplexer driver"
+	depends on PINMUX && SOC_INTEL_S1000
+	help
+	  Enable driver for Intel S1000 I/O multiplexer.
