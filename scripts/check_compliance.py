@@ -256,6 +256,9 @@ class License(ComplianceTest):
             return
 
         report = ""
+
+        whitelist_extensions =  ['.yaml', '.html']
+        whitelist_languages = ['CMake', 'HTML']
         with open('scancode.json', 'r') as json_fp:
             scancode_results = json.load(json_fp)
             for file in scancode_results['files']:
@@ -264,7 +267,7 @@ class License(ComplianceTest):
 
                 original_fp = str(file['path']).replace('scancode-files/', '')
                 licenses = file['licenses']
-                if (file['is_script'] or file['is_source']) and (file['programming_language'] not in ['CMake']) and (file['extension'] not in ['.yaml']):
+                if (file['is_script'] or file['is_source']) and (file['programming_language'] not in whitelist_languages) and (file['extension'] not in whitelist_extensions):
                     if not file['licenses']:
                         report += ("* {} missing license.\n".format(original_fp))
                     else:
@@ -434,17 +437,30 @@ def report_to_github(repo, pull_request, sha, suite, docs):
                                  'Verifications passed',
                                  '{}'.format(case.name))
 
-    if repo and pull_request and comment_count > 0:
+
+    if not repo and not pull_request:
+        return comment_count
+
+    if comment_count > 0:
         comments = gh_pr.get_issue_comments()
         commented = False
         for cmnt in comments:
-            if 'Found the following issues, please fix and resubmit' in cmnt.body:
-                cmnt.edit(comment)
+            if ('Found the following issues, please fix and resubmit' in cmnt.body or
+                '**All checks are passing now.**' in cmnt.body) and cmnt.user.login == 'zephyrbot':
+                if cmnt.body != comment:
+                    cmnt.edit(comment)
                 commented = True
                 break
 
         if not commented:
             gh_pr.create_issue_comment(comment)
+    else:
+        comments = gh_pr.get_issue_comments()
+        for cmnt in comments:
+            if 'Found the following issues, please fix and resubmit' in cmnt.body and cmnt.user.login == 'zephyrbot':
+                cmnt.edit("**All checks are passing now.**\n\nReview history of this comment for details about previous failed status.\n"
+                          "Note that some checks might have not completed yet.")
+                break
 
     return comment_count
 
@@ -480,6 +496,10 @@ def parse_args():
 
     parser.add_argument('-e', '--exclude-module', action="append", default=[],
                         help="Do not run the specified modules")
+
+    parser.add_argument('-j', '--previous-run', default=None,
+                        help="Load junit file in XML format from previous run for unified reporting")
+
     return parser.parse_args()
 
 
@@ -505,22 +525,34 @@ def main():
         print("No commit range given.")
         sys.exit(1)
 
-    suite = TestSuite("Compliance")
+
+    if args.previous_run and os.path.exists(args.previous_run) and args.module:
+        junit_xml = JUnitXml.fromfile(args.previous_run)
+        for loaded_suite in junit_xml:
+            suite = loaded_suite
+            break
+
+    else:
+        suite = TestSuite("Compliance")
+
     docs = {}
+    for testcase in ComplianceTest.__subclasses__():
+        test = testcase(None, "")
+        docs[test._name] = test._doc
+
+
     for testcase in ComplianceTest.__subclasses__():
         test = testcase(suite, args.commits)
         if args.module:
             if test._name in args.module:
                 test.run()
                 suite.add_testcase(test.case)
-                docs[test.case.name] = test._doc
         else:
             if test._name in args.exclude_module:
                 print("Skipping {}".format(test._name))
                 continue
             test.run()
             suite.add_testcase(test.case)
-            docs[test.case.name] = test._doc
 
     xml = JUnitXml()
     xml.add_testsuite(suite)
