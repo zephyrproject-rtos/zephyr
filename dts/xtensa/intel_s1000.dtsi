@@ -97,6 +97,11 @@
 			#gpio-cells = <2>;
 		};
 
+		pinmux: pinmux@81C30 {
+			compatible = "intel,s1000-pinmux";
+			reg = <0x00081C30 0xC>;
+		};
+
 		uart0: uart@80800 {
 			compatible = "ns16550";
 			reg = <0x80800 0x400>;
