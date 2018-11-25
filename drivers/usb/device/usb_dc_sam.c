@@ -239,6 +239,17 @@ static void usb_dc_isr(void)
 		dev_data.status_cb(USB_DC_SUSPEND, NULL);
 	}
 
+#ifdef CONFIG_USB_DEVICE_SOF
+	/* SOF interrupt */
+	if (sr & USBHS_DEVISR_SOF) {
+		/* Acknowledge the interrupt */
+		USBHS->USBHS_DEVICR = USBHS_DEVICR_SOFC;
+
+		/* Callback function */
+		dev_data.status_cb(USB_DC_SOF, NULL);
+	}
+#endif
+
 	/* EP0 endpoint interrupt */
 	if (sr & USBHS_DEVISR_PEP_0) {
 		usb_dc_ep0_isr();
@@ -296,6 +307,9 @@ int usb_dc_attach(void)
 	USBHS->USBHS_DEVIER = USBHS_DEVIER_EORSMES;
 	USBHS->USBHS_DEVIER = USBHS_DEVIER_EORSTES;
 	USBHS->USBHS_DEVIER = USBHS_DEVIER_SUSPES;
+#ifdef CONFIG_USB_DEVICE_SOF
+	USBHS->USBHS_DEVIER = USBHS_DEVIER_SOFES;
+#endif
 
 	/* Connect and enable the interrupt */
 	IRQ_CONNECT(DT_USBHS_IRQ, DT_USBHS_IRQ_PRI, usb_dc_isr, 0, 0);
