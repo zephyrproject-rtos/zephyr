@@ -1107,6 +1107,7 @@ void net_dhcpv4_stop(struct net_if *iface)
 	case NET_DHCPV4_DISABLED:
 		break;
 
+	case NET_DHCPV4_RENEWING:
 	case NET_DHCPV4_BOUND:
 		if (!net_if_ipv4_addr_rm(iface,
 					 &iface->config.dhcpv4.requested_ip)) {
@@ -1117,7 +1118,6 @@ void net_dhcpv4_stop(struct net_if *iface)
 	case NET_DHCPV4_INIT:
 	case NET_DHCPV4_SELECTING:
 	case NET_DHCPV4_REQUESTING:
-	case NET_DHCPV4_RENEWING:
 	case NET_DHCPV4_REBINDING:
 		iface->config.dhcpv4.state = NET_DHCPV4_DISABLED;
 		NET_DBG("state=%s",
