@@ -414,6 +414,7 @@ static void cdc_acm_dev_status_cb(enum usb_dc_status_code status,
 		LOG_DBG("USB device connected");
 		break;
 	case USB_DC_CONFIGURED:
+		dev_data->tx_ready = 1;
 		LOG_DBG("USB device configured");
 		break;
 	case USB_DC_DISCONNECTED:
@@ -624,6 +625,9 @@ static void cdc_acm_irq_tx_enable(struct device *dev)
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
 	dev_data->tx_irq_ena = 1U;
+	if (dev_data->tx_ready) {
+		dev_data->cb(dev_data->cb_data);
+	}
 }
 
 /**
@@ -652,7 +656,6 @@ static int cdc_acm_irq_tx_ready(struct device *dev)
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
 	if (dev_data->tx_ready) {
-		dev_data->tx_ready = 0U;
 		return 1;
 	}
 
@@ -671,6 +674,9 @@ static void cdc_acm_irq_rx_enable(struct device *dev)
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
 	dev_data->rx_irq_ena = 1U;
+	if (dev_data->rx_ready) {
+		dev_data->cb(dev_data->cb_data);
+	}
 }
 
 /**
@@ -699,7 +705,6 @@ static int cdc_acm_irq_rx_ready(struct device *dev)
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
 	if (dev_data->rx_ready) {
-		dev_data->rx_ready = 0U;
 		return 1;
 	}
 
