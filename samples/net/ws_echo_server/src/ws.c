@@ -266,14 +266,12 @@ out:
 static int ws_works(struct http_ctx *ctx,
 		    const struct sockaddr *dst)
 {
-	int ret = 0;
-
 	NET_INFO("WS url called");
 
 	append_and_send_data(ctx, dst, false, "connection");
 	append_and_send_data(ctx, dst, true, " established.");
 
-	return ret;
+	return 0;
 }
 
 static void ws_connected(struct http_ctx *ctx,
