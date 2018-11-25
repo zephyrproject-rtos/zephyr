@@ -1,0 +1,7 @@
+# Copyright (c) 2018 Foundries.io
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig VEGA_SDK_HAL
+	bool "RV32M1 VEGA SDK support"
+	depends on SOC_OPENISA_RV32M1_RISCV32

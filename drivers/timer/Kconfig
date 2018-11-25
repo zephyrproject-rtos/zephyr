@@ -134,6 +134,16 @@ config RISCV_MACHINE_TIMER
 	  This module implements a kernel device driver for the generic RISCV machine
 	  timer driver. It provides the standard "system clock driver" interfaces.
 
+config RV32M1_LPTMR_TIMER
+	bool "RV32M1 LPTMR system timer driver"
+	default y
+	depends on SOC_OPENISA_RV32M1_RISCV32
+	depends on !TICKLESS_IDLE
+	help
+	  This module implements a kernel device driver for using the LPTMR
+	  peripheral as the system clock. It provides the standard "system clock
+	  driver" interfaces.
+
 config NATIVE_POSIX_TIMER
 	bool "(POSIX) native_posix timer driver"
 	default y
