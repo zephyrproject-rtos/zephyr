@@ -135,8 +135,8 @@ config DW_ICTL_NAME
 	  Give a name for the instance of Designware Interrupt Controller
 
 config DW_ICTL_OFFSET
-	hex "Parent interrupt number to which DW_ICTL maps"
-	default 0x00
+	int "Parent interrupt number to which DW_ICTL maps"
+	default 0
 	depends on DW_ICTL
 	help
 	  Parent interrupt number to which DW_ICTL maps
