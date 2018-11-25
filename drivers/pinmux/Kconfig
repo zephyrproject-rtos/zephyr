@@ -59,4 +59,6 @@ source "drivers/pinmux/Kconfig.esp32"
 
 source "drivers/pinmux/Kconfig.sam0"
 
+source "drivers/pinmux/Kconfig.intel_s1000"
+
 endif # PINMUX
