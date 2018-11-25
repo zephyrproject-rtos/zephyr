@@ -109,7 +109,6 @@ static int flash_gecko_erase(struct device *dev, off_t offset, size_t size)
 static int flash_gecko_write_protection(struct device *dev, bool enable)
 {
 	struct flash_gecko_data *const dev_data = DEV_DATA(dev);
-	int ret = 0;
 
 	k_sem_take(&dev_data->mutex, K_FOREVER);
 
@@ -123,7 +122,7 @@ static int flash_gecko_write_protection(struct device *dev, bool enable)
 
 	k_sem_give(&dev_data->mutex);
 
-	return ret;
+	return 0;
 }
 
 /* Note:
