@@ -143,8 +143,6 @@ static void receiver_cb(struct net_mgmt_event_callback *cb,
 
 static int sending_event(u32_t times, bool receiver, bool info)
 {
-	int ret = TC_PASS;
-
 	TC_PRINT("- Sending event %u times, %s a receiver, %s info\n",
 		 times, receiver ? "with" : "without",
 		 info ? "with" : "without");
@@ -172,7 +170,7 @@ static int sending_event(u32_t times, bool receiver, bool info)
 		rx_event = rx_calls = 0;
 	}
 
-	return ret;
+	return TC_PASS;
 }
 
 static int test_sending_event(u32_t times, bool receiver)
@@ -243,8 +241,6 @@ static void initialize_event_tests(void)
 
 static int test_core_event(u32_t event, bool (*func)(void))
 {
-	int ret = TC_PASS;
-
 	TC_PRINT("- Triggering core event: 0x%08X\n", event);
 
 	net_mgmt_init_event_callback(&rx_cb, receiver_cb, event);
@@ -261,7 +257,7 @@ static int test_core_event(u32_t event, bool (*func)(void))
 	net_mgmt_del_event_callback(&rx_cb);
 	rx_event = rx_calls = 0;
 
-	return ret;
+	return TC_PASS;
 }
 
 static bool _iface_ip6_add(void)
