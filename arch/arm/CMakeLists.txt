@@ -17,4 +17,9 @@ zephyr_compile_options(
   ${ARCH_FLAG}
   )
 
+zephyr_ld_options(
+  -mabi=aapcs
+  ${ARCH_FLAG}
+  )
+
 add_subdirectory(core)
