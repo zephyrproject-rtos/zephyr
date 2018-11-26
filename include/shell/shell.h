@@ -569,7 +569,7 @@ void shell_fprintf(const struct shell *shell, enum shell_vt100_color color,
  * @param[in] ... List of parameters to print.
  */
 #define shell_info(_sh, _ft, ...) \
-	shell_fprintf(_sh, SHELL_NORMAL, _ft "\n", ##__VA_ARGS__)
+	shell_fprintf(_sh, SHELL_INFO, _ft "\n", ##__VA_ARGS__)
 
 /**
  * @brief Print normal message to the shell.
@@ -593,7 +593,7 @@ void shell_fprintf(const struct shell *shell, enum shell_vt100_color color,
  * @param[in] ... List of parameters to print.
  */
 #define shell_warn(_sh, _ft, ...) \
-	shell_fprintf(_sh, SHELL_ERROR, _ft "\n", ##__VA_ARGS__)
+	shell_fprintf(_sh, SHELL_WARNING, _ft "\n", ##__VA_ARGS__)
 
 /**
  * @brief Print error message to the shell.
