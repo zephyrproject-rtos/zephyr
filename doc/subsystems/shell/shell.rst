@@ -236,127 +236,23 @@ Simple command handler implementation:
 	}
 
 .. warning::
-	Do not use function :cpp:func:`shell_fprintf` outside of the command
-	handler because this might lead to incorrect text display on the
-	screen. If any text should be displayed outside of the command context,
-	then use the :ref:`logger`.
+	Do not use function :cpp:func:`shell_fprintf` or shell print macros:
+	:c:macro:`shell_print`, :c:macro:`shell_info`, :c:macro:`shell_warn`,
+	:c:macro:`shell_error` outside of the command handler because this
+	might lead to incorrect text display on the screen. If any text should
+	be displayed outside of the command context, then use the
+	:ref:`logger` or `printk` function.
 
 Command help
 ------------
 
-Every user-defined command, subcommand, or option can have its own help
-description. The help for commands and subcommands can be created with
-respective macros: :c:macro:`SHELL_CMD_REGISTER` and :c:macro:`SHELL_CMD`.
-In addition, you can define options for commands or subcommands using the
-macro :c:macro:`SHELL_OPT`. By default, each and every command or subcommand
-has these two options implemented: ``-h`` and ``--help``.
+Every user-defined command or subcommand can have its own help description.
+The help for commands and subcommands can be created with respective macros:
+:c:macro:`SHELL_CMD_REGISTER`, :c:macro:`SHELL_CMD_ARG_REGISTER`,
+:c:macro:`SHELL_CMD`, and :c:macro:`SHELL_CMD_ARG`.
 
-In order to add help functionality to a command or subcommand, you must
-implement the help handler by either calling :cpp:func:`shell_cmd_precheck`
-or pair of functions :cpp:func:`shell_help_requested` and
-:cpp:func:`shell_help_print`. The former is more convenient as it also
-checks for valid arguments count.
-
-.. code-block:: c
-
-	static int cmd_dummy_1(const struct shell *shell, size_t argc,
-			       char **argv)
-	{
-		ARG_UNUSED(argv);
-
-		/* Function shell_cmd_precheck will do one of below actions:
-		 * 1. print help if command called with -h or --help
-		 * 2. print error message if argc > 2
-		 *
-		 * Each of these actions can be deactivated in Kconfig.
-		 */
-		int err = shell_cmd_precheck(shell, (argc <= 2), NULL, 0);
-
-		if (err) {
-			return err;
-		}
-
-		shell_fprintf(shell, SHELL_NORMAL,
-			      "Command called with no -h or --help option."
-			      "\n");
-		return 0;
-	}
-
-	static int cmd_dummy_2(const struct shell *shell, size_t argc,
-			       char **argv)
-	{
-		ARG_UNUSED(argc);
-		ARG_UNUSED(argv);
-
-		if (shell_help_requested(shell) {
-			shell_help_print(shell);
-		} else {
-			shell_fprintf(shell, SHELL_NORMAL,
-			      "Command called with no -h or --help option."
-			      "\n");
-		}
-
-		return 0;
-	}
-
-Command options
----------------
-
-When possible, use subcommands instead of options.  Options apply mainly in the
-case when an argument with ``-`` or ``--`` is requested. The main benefit of
-using subcommands is that they can be prompted or completed with the :kbd:`Tab`
-key. In addition, subcommands can have their own handler, which limits the
-usage of ``if - else if`` statements combination with the ``strcmp`` function
-in command handler.
-
-
-.. code-block:: c
-
-	static int cmd_with_options(const struct shell *shell, size_t argc,
-			            char **argv)
-	{
-		int err;
-		/* Dummy options showing options usage */
-		static const struct shell_getopt_option opt[] = {
-			SHELL_OPT(
-				"--test",
-				"-t",
-				"test option help string"
-			),
-			SHELL_OPT(
-				"--dummy",
-				"-d",
-				"dummy option help string"
-			)
-		};
-
-		/* If command will be called with -h or --help option
-		 * all declared options will be listed in the help message
-		 */
-		err = shell_cmd_precheck(shell, (argc <= 2), opt,
-					 sizeof(opt)/sizeof(opt[1]));
-		if (err) {
-			return err;
-		}
-
-		/* checking if command was called with test option */
-		if (!strcmp(argv[1], "-t") || !strcmp(argv[1], "--test")) {
-		    shell_fprintf(shell, SHELL_NORMAL, "Command called with -t"
-				  " or --test option.\n");
-		    return 0;
-		}
-
-		/* checking if command was called with dummy option */
-		if (!strcmp(argv[1], "-d") || !strcmp(argv[1], "--dummy")) {
-		    shell_fprintf(shell, SHELL_NORMAL, "Command called with -d"
-				  " or --dummy option.\n");
-		    return 0;
-		}
-
-		shell_fprintf(shell, SHELL_WARNING,
-			      "Command called with no valid option.\n");
-		return 0;
-	}
+Shell prints this help message when you call a command
+or subcommand with ``-h`` or ``--help`` parameter.
 
 Parent commands
 ---------------
@@ -367,7 +263,7 @@ commands or the parent commands, depending on how you index ``argv``.
 * When indexing ``argv`` with positive numbers, you can access the parameters.
 * When indexing ``argv`` with negative numbers, you can access the parent
   commands.
-* The subcommand to which the handler belongs has the ``argv`` value of 0.
+* The subcommand to which the handler belongs has the ``argv`` index of 0.
 
 .. code-block:: c
 
@@ -379,18 +275,14 @@ commands or the parent commands, depending on how you index ``argv``.
 		/* If it is a subcommand handler parent command syntax
 		 * can be found using argv[-1].
 		 */
-		shell_fprintf(shell, SHELL_NORMAL,
-			      "This command has a parent command: %s\n",
+		shell_print(shell, "This command has a parent command: %s",
 			      argv[-1]);
 
 		/* Print this command syntax */
-		shell_fprintf(shell, SHELL_NORMAL,
-			      "This command syntax is: %s\n",
-			      argv[0]);
+		shell_print(shell, "This command syntax is: %s", argv[0]);
 
 		/* Print first argument */
-		shell_fprintf(shell, SHELL_NORMAL,
-			      argv[1]);
+		shell_print(shell, "%s", argv[1]);
 
 		return 0;
 	}
@@ -480,7 +372,7 @@ The following code shows a simple use case of this library:
 		ARG_UNUSED(argc);
 		ARG_UNUSED(argv);
 
-		shell_fprintf(shell, SHELL_NORMAL, "pong\n");
+		shell_print(shell, "pong");
 		return 0;
 	}
 
@@ -489,10 +381,9 @@ The following code shows a simple use case of this library:
 	{
 		int cnt;
 
-		shell_fprintf(shell, SHELL_NORMAL, "argc = %d\n", argc);
+		shell_print(shell, "argc = %d", argc);
 		for (cnt = 0; cnt < argc; cnt++) {
-			shell_fprintf(shell, SHELL_NORMAL,
-					"  argv[%d] = %s\n", cnt, argv[cnt]);
+			shell_print(shell, "  argv[%d] = %s", cnt, argv[cnt]);
 		}
 		return 0;
 	}
