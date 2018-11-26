@@ -2562,6 +2562,29 @@ save:
 	return 0;
 }
 
+static u8_t remove_peer_from_attr(const struct bt_gatt_attr *attr,
+				       void *user_data)
+{
+	const bt_addr_le_t *peer = user_data;
+	struct _bt_gatt_ccc *ccc;
+	struct bt_gatt_ccc_cfg *cfg;
+
+	/* Check if attribute is a CCC */
+	if (attr->write != bt_gatt_attr_write_ccc) {
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	ccc = attr->user_data;
+
+	/* Check if there is a cfg for the peer */
+	cfg = ccc_find_cfg(ccc, peer);
+	if (cfg) {
+		memset(cfg, 0, sizeof(*cfg));
+	}
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
 int bt_gatt_clear_ccc(u8_t id, const bt_addr_le_t *addr)
 {
 	char key[BT_SETTINGS_KEY_MAX];
@@ -2576,6 +2599,9 @@ int bt_gatt_clear_ccc(u8_t id, const bt_addr_le_t *addr)
 		bt_settings_encode_key(key, sizeof(key), "ccc",
 				       (bt_addr_le_t *)addr, NULL);
 	}
+
+	bt_gatt_foreach_attr(0x0001, 0xffff, remove_peer_from_attr,
+			     (void *)addr);
 
 	return settings_save_one(key, NULL);
 }
