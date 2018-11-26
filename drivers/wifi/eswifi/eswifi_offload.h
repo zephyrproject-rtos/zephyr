@@ -39,7 +39,9 @@ struct eswifi_off_socket {
 	struct net_pkt *tx_pkt;
 	struct k_work connect_work;
 	struct k_work send_work;
+	struct k_delayed_work read_work;
 	struct sockaddr peer_addr;
+	struct k_sem read_sem;
 };
 
 #endif

@@ -20,14 +20,6 @@ LOG_MODULE_REGISTER(wifi_eswifi_offload);
 
 #include "eswifi.h"
 
-#define ESWIFI_OFFLOAD_THREAD_STACK_SIZE 1024
-K_THREAD_STACK_MEMBER(eswifi_data_read_stack, ESWIFI_OFFLOAD_THREAD_STACK_SIZE);
-struct k_thread data_read_thread;
-
-struct eswifi_offload {
-	struct eswifi_off_socket socket[ESWIFI_OFFLOAD_MAX_SOCKETS];
-};
-
 static int __select_socket(struct eswifi_dev *eswifi, u8_t idx)
 {
 	int err;
@@ -86,6 +78,65 @@ static int __read_data(struct eswifi_dev *eswifi, size_t len)
 	return read;
 }
 
+static inline
+struct eswifi_dev *eswifi_socket_to_dev(struct eswifi_off_socket *socket)
+{
+	return CONTAINER_OF(socket - socket->index, struct eswifi_dev, socket);
+}
+
+static void eswifi_off_read_work(struct k_work *work)
+{
+	struct eswifi_off_socket *socket;
+	struct eswifi_dev *eswifi;
+	struct net_pkt *pkt;
+	int err, len;
+
+	LOG_DBG("");
+
+	socket = CONTAINER_OF(work, struct eswifi_off_socket, read_work);
+	eswifi = eswifi_socket_to_dev(socket);
+
+	eswifi_lock(eswifi);
+
+	if (socket->state != ESWIFI_SOCKET_STATE_CONNECTED) {
+		goto done;
+	}
+
+	__select_socket(eswifi, socket->index);
+
+	len = __read_data(eswifi, 1460); /* 1460 is max size */
+	if (len <= 0 || !socket->recv_cb) {
+		goto done;
+	}
+
+	LOG_DBG("payload sz = %d", len);
+
+	pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
+	if (!pkt) {
+		LOG_ERR("Cannot allocate rx packet");
+		goto done;
+	}
+
+	if (!net_pkt_append_all(pkt, len, eswifi->buf + AT_RSP_DELIMITER_LEN,
+				K_NO_WAIT)) {
+		LOG_WRN("Incomplete buffer copy");
+	}
+
+	socket->recv_cb(socket->context, pkt, 0, socket->user_data);
+	k_sem_give(&socket->read_sem);
+	k_yield();
+
+done:
+	err = k_delayed_work_submit_to_queue(&eswifi->work_q,
+					     &socket->read_work,
+					     500);
+	if (err) {
+		LOG_ERR("Rescheduling socket read error");
+	}
+
+	eswifi_unlock(eswifi);
+}
+
 static int eswifi_off_bind(struct net_context *context,
 			   const struct sockaddr *addr,
 			   socklen_t addrlen)
@@ -123,15 +174,29 @@ static int eswifi_off_bind(struct net_context *context,
 
 static int eswifi_off_listen(struct net_context *context, int backlog)
 {
+	struct eswifi_off_socket *socket = context->offload_context;
+	struct eswifi_dev *eswifi = eswifi_by_iface_idx(context->iface);
+	char *cmd = "P5=1\r";
+	int err;
+
 	/* TODO */
 	LOG_ERR("");
-	return -ENOTSUP;
-}
 
-static inline
-struct eswifi_dev *eswifi_socket_to_dev(struct eswifi_off_socket *socket)
-{
-	return CONTAINER_OF(socket - socket->index, struct eswifi_dev, socket);
+	eswifi_lock(eswifi);
+
+	__select_socket(eswifi, socket->index);
+
+	/* Start TCP Server */
+	err = eswifi_request(eswifi, cmd, strlen(cmd), eswifi->buf,
+			     sizeof(eswifi->buf));
+	if (err || !eswifi_is_buf_at_ok(eswifi->buf)) {
+		LOG_ERR("Unable to start TCP server");
+		eswifi_unlock(eswifi);
+		return -EIO;
+	}
+	eswifi_unlock(eswifi);
+
+	return -ENOTSUP;
 }
 
 static int __eswifi_off_connect(struct eswifi_dev *eswifi,
@@ -172,7 +237,7 @@ static int __eswifi_off_connect(struct eswifi_dev *eswifi,
 	err = eswifi_request(eswifi, eswifi->buf, strlen(eswifi->buf),
 			     eswifi->buf, sizeof(eswifi->buf));
 	if (err || !eswifi_is_buf_at_ok(eswifi->buf)) {
-		LOG_ERR("Unable to connect %s");
+		LOG_ERR("Unable to connect");
 		return -EIO;
 	}
 
@@ -264,9 +329,8 @@ static int eswifi_off_connect(struct net_context *context,
 }
 
 static int eswifi_off_accept(struct net_context *context,
-		     net_tcp_accept_cb_t cb,
-		     s32_t timeout,
-		     void *user_data)
+			     net_tcp_accept_cb_t cb, s32_t timeout,
+			     void *user_data)
 {
 	/* TODO */
 	LOG_DBG("");
@@ -411,16 +475,28 @@ static int eswifi_off_recv(struct net_context *context,
 {
 	struct eswifi_off_socket *socket = context->offload_context;
 	struct eswifi_dev *eswifi = eswifi_by_iface_idx(context->iface);
+	int err;
 
-	/* TODO */
+
 	LOG_DBG("");
 
 	eswifi_lock(eswifi);
 	socket->recv_cb = cb;
 	socket->user_data = user_data;
+	k_sem_reset(&socket->read_sem);
 	eswifi_unlock(eswifi);
 
-	return 0;
+	if (timeout == K_NO_WAIT)
+		return 0;
+
+	err = k_sem_take(&socket->read_sem, timeout);
+
+	/* Unregister cakkback */
+	eswifi_lock(eswifi);
+	socket->recv_cb = NULL;
+	eswifi_unlock(eswifi);
+
+	return err;
 }
 
 static int eswifi_off_put(struct net_context *context)
@@ -439,6 +515,8 @@ static int eswifi_off_put(struct net_context *context)
 	}
 
 	__select_socket(eswifi, socket->index);
+
+	k_delayed_work_cancel(&socket->read_work);
 
 	socket->context = NULL;
 	socket->state = ESWIFI_SOCKET_STATE_NONE;
@@ -500,6 +578,8 @@ static int eswifi_off_get(sa_family_t family,
 
 	k_work_init(&socket->connect_work, eswifi_off_connect_work);
 	k_work_init(&socket->send_work, eswifi_off_send_work);
+	k_delayed_work_init(&socket->read_work, eswifi_off_read_work);
+	k_sem_init(&socket->read_sem, 1, 1);
 
 	err = __select_socket(eswifi, socket->index);
 	if (err) {
@@ -519,6 +599,9 @@ static int eswifi_off_get(sa_family_t family,
 		return -EIO;
 	}
 
+	k_delayed_work_submit_to_queue(&eswifi->work_q, &socket->read_work,
+				       500);
+
 	eswifi_unlock(eswifi);
 
 	return 0;
@@ -535,72 +618,6 @@ static struct net_offload eswifi_offload = {
 	.recv	       = eswifi_off_recv,
 	.put	       = eswifi_off_put,
 };
-
-static void eswifi_off_read_data(struct eswifi_dev *eswifi)
-{
-	int i;
-
-	LOG_DBG("");
-
-	eswifi_lock(eswifi);
-
-	if (!eswifi->iface) { /* not yet initialized */
-		eswifi_unlock(eswifi);
-		return;
-	}
-
-	for (i = 0; i < ESWIFI_OFFLOAD_MAX_SOCKETS; i++) {
-		struct eswifi_off_socket *socket = &eswifi->socket[i];
-		struct net_pkt *pkt;
-		int err, len;
-
-		if (socket->state != ESWIFI_SOCKET_STATE_CONNECTED) {
-			continue;
-		}
-
-		err = __select_socket(eswifi, i);
-		if (err) {
-			continue;
-		}
-
-		len = __read_data(eswifi, 1460); /* 1460 is max size */
-		if (len <= 0 /*|| !socket->recv_cb*/) {
-			continue;
-		}
-
-		LOG_DBG("payload sz = %d", len);
-
-		pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
-		if (!pkt) {
-			LOG_ERR("Cannot allocate rx packet");
-			continue;
-		}
-
-		if (!net_pkt_append_all(pkt, len,
-					eswifi->buf + AT_RSP_DELIMITER_LEN,
-					K_NO_WAIT)) {
-			LOG_WRN("Incomplete buffer copy");
-		}
-
-		if (!socket->recv_cb) {
-			net_pkt_unref(pkt);
-			continue;
-		}
-		socket->recv_cb(socket->context, pkt, 0, socket->user_data);
-	}
-
-	eswifi_unlock(eswifi);
-}
-
-static void eswifi_off_data_read_thread(void *p1)
-{
-	struct eswifi_dev *eswifi = p1;
-
-	while (1) {
-		k_sleep(K_MSEC(500));
-		eswifi_off_read_data(eswifi);
-	}
-}
 
 static int eswifi_off_enable_dhcp(struct eswifi_dev *eswifi)
 {
@@ -648,12 +665,6 @@ int eswifi_offload_init(struct eswifi_dev *eswifi)
 {
 	eswifi->iface->if_dev->offload = &eswifi_offload;
 	int err;
-
-	k_thread_create(&data_read_thread, eswifi_data_read_stack,
-			ESWIFI_OFFLOAD_THREAD_STACK_SIZE,
-			(k_thread_entry_t)&eswifi_off_data_read_thread, eswifi,
-			NULL, NULL, K_PRIO_COOP(CONFIG_WIFI_ESWIFI_THREAD_PRIO),
-			0, K_NO_WAIT);
 
 	err = eswifi_off_enable_dhcp(eswifi);
 	if (err) {
