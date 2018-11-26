@@ -34,11 +34,6 @@ static int cmd_read(const struct shell *shell, size_t argc, char *argv[])
 
 	u32_t *p_mem = (u32_t *) RESERVED_MEM_MAP;
 
-	if (shell_help_requested(shell)) {
-		shell_help_print(shell);
-		return 0;
-	}
-
 	/* Reads from an address that is reserved in the memory map */
 	PR_SHELL(shell, "The value is: %d\n", *p_mem);
 
@@ -54,11 +49,6 @@ static int cmd_write_mcux(const struct shell *shell, size_t argc, char *argv[])
 	struct device *flash_dev;
 	u32_t value[2];
 	u32_t offset;
-
-	if (shell_help_requested(shell)) {
-		shell_help_print(shell);
-		return 0;
-	}
 
 	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
 
@@ -90,11 +80,6 @@ static int cmd_write_stm32(const struct shell *shell, size_t argc, char *argv[])
 
 	struct device *flash_dev;
 
-	if (shell_help_requested(shell)) {
-		shell_help_print(shell);
-		return 0;
-	}
-
 	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
 
 	/* 16K reserved to the application */
@@ -123,11 +108,6 @@ static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 	/* 16K reserved to the application */
 	u32_t *p_mem = (u32_t *) (FLASH_MEM + 0x4000);
 
-	if (shell_help_requested(shell)) {
-		shell_help_print(shell);
-		return 0;
-	}
-
 	PR_SHELL(shell, "write address: 0x%x\n", FLASH_MEM + 0x4000);
 
 	/* Write in to boot FLASH/ROM */
@@ -143,11 +123,6 @@ static int cmd_run(const struct shell *shell, size_t argc, char *argv[])
 	ARG_UNUSED(argv);
 
 	void (*func_ptr)(void) = (void (*)(void)) RAM_MEM;
-
-	if (shell_help_requested(shell)) {
-		shell_help_print(shell);
-		return 0;
-	}
 
 	/* Run code located in RAM */
 	func_ptr();

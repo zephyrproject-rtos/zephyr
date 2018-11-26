@@ -21,7 +21,7 @@ extern void qsort(void *a, size_t n, size_t es, cmp_t *cmp);
 
 static int cmd_dynamic(const struct shell *shell, size_t argc, char **argv)
 {
-	if ((argc == 1) || shell_help_requested(shell)) {
+	if ((argc == 1)) {
 		shell_help_print(shell);
 		return 0;
 	}
@@ -48,11 +48,6 @@ static int cmd_dynamic_add(const struct shell *shell,
 {
 	u8_t idx;
 	u16_t cmd_len;
-
-	if (shell_help_requested(shell)) {
-		shell_help_print(shell);
-		return 0;
-	}
 
 	if (argc != 2) {
 		shell_fprintf(shell, SHELL_ERROR,
@@ -102,11 +97,6 @@ static int cmd_dynamic_add(const struct shell *shell,
 static int cmd_dynamic_show(const struct shell *shell,
 			    size_t argc, char **argv)
 {
-	if (shell_help_requested(shell)) {
-		shell_help_print(shell);
-		return 0;
-	}
-
 	if (argc != 1) {
 		shell_fprintf(shell, SHELL_ERROR,
 			      "%s: bad parameter count\r\n", argv[0]);
@@ -132,11 +122,6 @@ static int cmd_dynamic_show(const struct shell *shell,
 static int cmd_dynamic_execute(const struct shell *shell,
 			       size_t argc, char **argv)
 {
-	if (shell_help_requested(shell)) {
-		shell_help_print(shell);
-		return 0;
-	}
-
 	if (argc != 2) {
 		shell_fprintf(shell, SHELL_ERROR,
 			      "%s: bad parameter count\r\n", argv[0]);
@@ -160,7 +145,7 @@ static int cmd_dynamic_execute(const struct shell *shell,
 static int cmd_dynamic_remove(const struct shell *shell, size_t argc,
 			      char **argv)
 {
-	if ((argc == 1) || shell_help_requested(shell)) {
+	if (argc == 1) {
 		shell_help_print(shell);
 		return 0;
 	}

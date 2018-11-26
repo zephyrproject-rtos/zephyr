@@ -441,7 +441,7 @@ SHELL_CREATE_STATIC_SUBCMD_SET(sub_log_stat)
 
 static int cmd_log(const struct shell *shell, size_t argc, char **argv)
 {
-	if ((argc == 1) || shell_help_requested(shell)) {
+	if (argc == 1)  {
 		shell_help_print(shell);
 		return 0;
 	}

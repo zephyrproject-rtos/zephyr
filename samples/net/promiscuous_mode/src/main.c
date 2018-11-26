@@ -146,11 +146,6 @@ static int set_promisc_mode(const struct shell *shell,
 	char *endptr;
 	int idx, ret;
 
-	if (shell_help_requested(shell)) {
-		shell_help_print(shell);
-		return -ENOEXEC;
-	}
-
 	if (argc < 2) {
 		shell_fprintf(shell, SHELL_ERROR, "Invalid arguments.\n");
 		return -ENOEXEC;
