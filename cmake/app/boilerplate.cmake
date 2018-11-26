@@ -10,9 +10,6 @@
 # Omitting it is permitted, but doing so incurs a maintenance cost as
 # the application must manage upstream changes to this file.
 
-# app is a CMake library containing all the application code and is
-# modified by the entry point ${APPLICATION_SOURCE_DIR}/CMakeLists.txt
-# that was specified when cmake was called.
 
 # CMake version 3.8.2 is the real minimum supported version.
 #
@@ -110,6 +107,11 @@ add_custom_target(
   COMMAND ${CMAKE_COMMAND} -P ${ZEPHYR_BASE}/cmake/pristine.cmake
   # Equivalent to rm -rf build/*
   )
+
+# 'app' is a CMake library containing all the application code and is
+# modified by the entry point ${APPLICATION_SOURCE_DIR}/CMakeLists.txt
+# that was specified when cmake was called.
+zephyr_library_named(app)
 
 # The BOARD can be set by 3 sources. Through environment variables,
 # through the cmake CLI, and through CMakeLists.txt.
@@ -339,7 +341,6 @@ if(CONFIG_QEMU_TARGET)
   endif()
 endif()
 
-zephyr_library_named(app)
 
 add_subdirectory(${ZEPHYR_BASE} ${__build_dir})
 
