@@ -50,10 +50,10 @@ macro(toolchain_cc_preprocess_linker_pass linker_output_name)
     ${LINKER_PASS_DEFINE}
     # gcc -E: Stop after the preprocessing stage; do not run the compiler proper
           -E
-    ${LINKER_SCRIPT}
     # gcc -P: Prevent generation of `#line' directives (linemarkers) from the preprocessor
           -P
-    -o ${linker_cmd_file_name}
+    ${LINKER_SCRIPT}           # input
+    -o ${linker_cmd_file_name} # output, is the preprocessed input
     VERBATIM
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
   )

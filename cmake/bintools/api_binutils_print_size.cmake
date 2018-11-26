@@ -1,7 +1,7 @@
 macro(toolchain_bintools_print_size)
 
   if(CONFIG_OUTPUT_PRINT_MEMORY_USAGE)
-    # Use --print-memory-usage with the first link.
+    # For GNU ld, use --print-memory-usage with the first link.
     #
     # Don't use this option with the second link because seeing it twice
     # could confuse users and using it on the second link would suppress

@@ -82,8 +82,7 @@ endif()
 # Discover if the default C standard has been overridden
 # So far, only POSIX-based boards does this
 get_property(CSTD GLOBAL PROPERTY CSTD)
-# Set the default C standard to ISO/IEC 9899:1999
-set_ifndef(CSTD c99)
+set_ifndef(CSTD c99)  # Set the default C standard to ISO/IEC 9899:1999
 
 
 ## @Brief: toolchain_cc: Macro that expands into compiler options.
@@ -570,7 +569,7 @@ toolchain_ld_link_step_0_init()
 toolchain_bintools_generate_isr()
 
 ## @Brief: toolchain_bintools_usermode(): Macro for supporting memory protection across
-##   user mode threads, if architecture wants/supports this.
+##   user mode threads, if architecture supports and wants this.
 ## @Details: Generates kernel object file using objcopy (GNU specific).
 ##   May be empty for boards/architectures which cannot or choose not to implement this.
 ## @var  in  CONFIG_USERSPACE          optional : Threads in user mode.
@@ -599,13 +598,13 @@ if(GKOF OR GKSF)
   ## @Details: The second linker pass uses the same source linker script of the
   ##   first pass (LINKER_SCRIPT), but this time with a different output
   ##   file and preprocessed with the define LINKER_PASS2.
-  toolchain_cc_preprocess_linker_pass(linker_pass_final)
-
+  toolchain_cc_preprocess_linker_pass(linker_pass_final) # Register builder of "linker_pass_final.cmd"
   add_custom_target(
     linker_pass_final_script
     DEPENDS
-    ${ALIGN_SIZING_DEP} ${PRIV_STACK_DEP}
-    zephyr_prebuilt
+    ${ALIGN_SIZING_DEP}   # Only for MPU userspace
+    ${PRIV_STACK_DEP}     # Only for MPU userspace
+    zephyr_prebuilt       # Depend on the link target from step 1
     linker_pass_final.cmd
     offsets_h
     )
