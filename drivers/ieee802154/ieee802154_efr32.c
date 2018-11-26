@@ -54,7 +54,7 @@ static enum EfrState efr_state;
 
 enum
 {
-    IEEE802154_MAX_LENGTH = 127,
+    IEEE802154_MAX_LENGTH = 256,
     EFR32_FCS_LENGTH = 2,
 };
 
@@ -65,6 +65,8 @@ struct efr32_context
 
     u8_t rx_buf[IEEE802154_MAX_LENGTH];
     u8_t tx_buf[IEEE802154_MAX_LENGTH];
+
+	u16_t rx_buf_size;
 
     K_THREAD_STACK_MEMBER(rx_stack,
                           CONFIG_IEEE802154_EFR32_RX_STACK_SIZE);
@@ -87,6 +89,8 @@ struct efr32_context
     u8_t channel;
 
     RAIL_Handle_t rail_handle;
+
+	RAIL_RxPacketHandle_t packet_handle;
 };
 
 static struct efr32_context efr32_data;
@@ -121,7 +125,6 @@ const RAIL_IEEE802154_Config_t rail_ieee802154_config = {
 
 CORE_irqState_t CORE_EnterCritical(void)
 {
-    LOG_DBG("Enter crit");
     return irq_lock();
 }
 
@@ -129,22 +132,17 @@ void CORE_ExitCritical(CORE_irqState_t irqState)
 {
     (void)irqState;
 
-    LOG_DBG("Exit crit");
-
     irq_unlock(irqState);
 }
 
 CORE_irqState_t CORE_EnterAtomic(void)
 {
-    LOG_DBG("Enter atomic");
     return irq_lock();
 }
 
 void CORE_ExitAtomic(CORE_irqState_t irqState)
 {
     (void)irqState;
-
-    LOG_DBG("Exit atomic");
 
     irq_unlock(irqState);
 }
@@ -345,7 +343,9 @@ static int efr32_tx(struct device *dev, struct net_pkt *pkt,
     RAIL_Idle(efr32->rail_handle, RAIL_IDLE_ABORT, true);
 
     written = RAIL_WriteTxFifo(efr32->rail_handle, efr32->tx_buf, payload_len, true);
-    status = RAIL_StartCcaCsmaTx(efr32->rail_handle, efr32->channel, tx_opts, &rail_csma_config, NULL);
+    status = RAIL_StartCcaCsmaTx(efr32->rail_handle, efr32->channel,
+			tx_opts, &rail_csma_config, NULL);
+	//status = RAIL_StartTx(efr32->rail_handle, efr32->channel, tx_opts, NULL);
 
     if (status != RAIL_STATUS_NO_ERROR)
     {
@@ -353,13 +353,16 @@ static int efr32_tx(struct device *dev, struct net_pkt *pkt,
         return -EIO;
     }
 
-    LOG_DBG("Sending frame");
+    LOG_DBG("Sending frame: channel=%d, written=%u", efr32->channel, written);
 
+	k_sem_give(&efr32->rx_wait);
+#if 1
     if (k_sem_take(&efr32->tx_wait, ACK_TIMEOUT))
     {
         LOG_DBG("ACK not received");
         return -EIO;
     }
+#endif
 
     LOG_DBG("Result: %d", efr32->tx_success);
 
@@ -376,8 +379,10 @@ static void efr32_rx(int arg)
 
     while (1)
     {
-        LOG_DBG("Waiting for RX free");
+        LOG_DBG("Waiting for frame");
         k_sem_take(&efr32->rx_wait, K_FOREVER);
+
+		LOG_DBG("Frame received!");
 
         RAIL_Idle(efr32->rail_handle, RAIL_IDLE_ABORT, true);
         RAIL_StartRx(efr32->rail_handle, efr32->channel, NULL);
@@ -390,7 +395,7 @@ static int efr32_init(struct device *dev)
 
     RAIL_Status_t status;
 
-    RAIL_DataConfig_t rail_data_config = {
+    static const RAIL_DataConfig_t rail_data_config = {
         TX_PACKET_DATA,
         RX_PACKET_DATA,
         PACKET_MODE,
@@ -402,6 +407,8 @@ static int efr32_init(struct device *dev)
     RAIL_TxPowerConfig_t txPowerConfig = {RAIL_TX_POWER_MODE_2P4_HP, 1800, 10};
 
     efr32->rail_handle = RAIL_Init(&s_rail_config, NULL);
+	efr32->packet_handle = RAIL_RX_PACKET_HANDLE_INVALID;
+	efr32->rx_buf_size = sizeof(efr32->rx_buf);
 
     k_sem_init(&efr32->rx_wait, 0, 1);
     k_sem_init(&efr32->tx_wait, 0, 1);
@@ -418,6 +425,7 @@ static int efr32_init(struct device *dev)
         LOG_ERR("Error with config data.");
         return -EIO;
     }
+
 
     status = RAIL_ConfigCal(efr32->rail_handle, RAIL_CAL_ALL);
     if (status != RAIL_STATUS_NO_ERROR)
@@ -438,17 +446,22 @@ static int efr32_init(struct device *dev)
         return -EIO;
     }
 
+    RAIL_SetTxFifo(efr32->rail_handle, efr32->tx_buf, 0, sizeof(efr32->tx_buf));
+	RAIL_SetRxFifo(efr32->rail_handle, efr32->rx_buf, &efr32->rx_buf_size);
+
+	RAIL_SetTxFifoThreshold(efr32->rail_handle, (size_t) (0.9 * sizeof(efr32->tx_buf)));
+	RAIL_SetRxFifoThreshold(efr32->rail_handle, (size_t) (0.9 * efr32->rx_buf_size));
+
     status = RAIL_ConfigEvents(efr32->rail_handle, RAIL_EVENTS_ALL,
-                               RAIL_EVENT_RX_ACK_TIMEOUT |                      //
-                                   RAIL_EVENT_TX_PACKET_SENT |                  //
-                                   RAIL_EVENT_RX_PACKET_RECEIVED |              //
-                                   RAIL_EVENT_TX_CHANNEL_BUSY |                 //
-                                   RAIL_EVENT_TX_ABORTED |                      //
-                                   RAIL_EVENT_TX_BLOCKED |                      //
-                                   RAIL_EVENT_TX_UNDERFLOW |                    //
-                                   RAIL_EVENT_IEEE802154_DATA_REQUEST_COMMAND | //
-                                   RAIL_EVENT_CAL_NEEDED                        //
-    );
+		RAIL_EVENTS_RX_COMPLETION
+		| RAIL_EVENTS_TX_COMPLETION
+		| RAIL_EVENTS_TXACK_COMPLETION
+		| RAIL_EVENT_RX_ACK_TIMEOUT
+		| RAIL_EVENT_TX_FIFO_ALMOST_EMPTY
+		| RAIL_EVENT_RX_FIFO_ALMOST_FULL
+		| RAIL_EVENT_IEEE802154_DATA_REQUEST_COMMAND
+		| RAIL_EVENT_CAL_NEEDED
+	);
     if (status != RAIL_STATUS_NO_ERROR)
     {
         return -EIO;
@@ -464,8 +477,6 @@ static int efr32_init(struct device *dev)
     status = RAIL_ConfigTxPower(efr32->rail_handle, &txPowerConfig);
 
     efr32_set_txpower(dev, 0);
-
-    RAIL_SetTxFifo(efr32->rail_handle, efr32->tx_buf, 0, sizeof(efr32->tx_buf));
 
     k_thread_create(&efr32->rx_thread, efr32->rx_stack,
                     CONFIG_IEEE802154_EFR32_RX_STACK_SIZE,
@@ -490,46 +501,70 @@ static void efr32_received()
 
 static void efr32_rail_cb(RAIL_Handle_t rail_handle, RAIL_Events_t events)
 {
-    /*
-                                   RAIL_EVENT_RX_ACK_TIMEOUT |                      //
-                                   RAIL_EVENT_TX_PACKET_SENT |                  //
-                                   RAIL_EVENT_RX_PACKET_RECEIVED |              //
-                                   RAIL_EVENT_TX_CHANNEL_BUSY |                 //
-                                   RAIL_EVENT_TX_ABORTED |                      //
-                                   RAIL_EVENT_TX_BLOCKED |                      //
-                                   RAIL_EVENT_TX_UNDERFLOW |                    //
-                                   RAIL_EVENT_IEEE802154_DATA_REQUEST_COMMAND | //
-                                    RAIL_EVENT_CAL_NEEDED                        //*/
-    LOG_DBG("Processing events %llu", events);
+    LOG_DBG("Processing events 0x%llX", events);
 
-    size_t index = 0;
-    do
-    {
-        switch (index)
-        {
-        case RAIL_EVENT_RX_ACK_TIMEOUT:
-            LOG_DBG("RX AutoAck occurred");
-            break;
-        case RAIL_EVENT_TX_ABORTED:
-            LOG_DBG("TX was aborted");
-            break;
-        case RAIL_EVENT_TX_BLOCKED:
-            LOG_DBG("TX is blocked");
-            break;
-        case RAIL_EVENT_TX_UNDERFLOW:
-            LOG_DBG("TX is underflow");
-            break;
-        case RAIL_EVENT_TX_PACKET_SENT:
-            LOG_DBG("TX packet sent");
-            break;
-        case RAIL_EVENT_RX_PACKET_RECEIVED:
-            LOG_DBG("Received packet frame");
-            efr32_received();
-            break;
-        }
-        events = events >> 1;
-        index += 1;
-    } while (events != 0);
+	if (events & RAIL_EVENT_RX_PACKET_RECEIVED) {
+		LOG_DBG("Received packet frame");
+		efr32_received();
+	}
+	if (events & RAIL_EVENT_RX_PACKET_ABORTED) {
+		LOG_DBG("RX packet aborted");
+	}
+	if (events & RAIL_EVENT_RX_FRAME_ERROR) {
+		LOG_DBG("RX frame error");
+	}
+	if (events & RAIL_EVENT_RX_FIFO_OVERFLOW) {
+		LOG_DBG("RX FIFO overflow");
+	}
+	if (events & RAIL_EVENT_RX_ADDRESS_FILTERED) {
+		LOG_DBG("RX Address filtered");
+	}
+
+	if (events & RAIL_EVENT_TX_PACKET_SENT) {
+		LOG_DBG("TX packet sent");
+	}
+	if (events & RAIL_EVENT_TX_ABORTED) {
+		LOG_DBG("TX was aborted");
+	}
+	if (events & RAIL_EVENT_TX_BLOCKED) {
+		LOG_DBG("TX is blocked");
+	}
+	if (events & RAIL_EVENT_TX_UNDERFLOW) {
+		LOG_DBG("TX is underflow");
+	}
+	if (events & RAIL_EVENT_TX_CHANNEL_BUSY) {
+		LOG_DBG("TX channel busy");
+	}
+
+	if (events & RAIL_EVENT_TXACK_PACKET_SENT) {
+		LOG_DBG("TXACK packet sent");
+	}
+	if (events & RAIL_EVENT_TXACK_ABORTED) {
+		LOG_DBG("TXACK aborted");
+	}
+	if (events & RAIL_EVENT_TXACK_BLOCKED) {
+		LOG_DBG("TXACK blocked");
+	}
+	if (events & RAIL_EVENT_TXACK_UNDERFLOW) {
+		LOG_DBG("TXACK underflow");
+	}
+
+	if (events & RAIL_EVENT_TX_FIFO_ALMOST_EMPTY) {
+		LOG_DBG("TX FIFO almost empty");
+	}
+	if (events & RAIL_EVENT_RX_FIFO_ALMOST_FULL) {
+		LOG_DBG("RX FIFO almost full");
+	}
+	if (events & RAIL_EVENT_RX_ACK_TIMEOUT) {
+		LOG_DBG("RX AutoAck occurred");
+	}
+	if (events & RAIL_EVENT_CAL_NEEDED) {
+		LOG_DBG("Calibration needed");
+		RAIL_Calibrate(rail_handle, NULL, RAIL_CAL_ALL_PENDING);
+	}
+	if (events & RAIL_EVENT_IEEE802154_DATA_REQUEST_COMMAND) {
+		LOG_DBG("IEEE802154 Data request command");
+	}
 }
 
 static struct ieee802154_radio_api efr32_radio_api = {
