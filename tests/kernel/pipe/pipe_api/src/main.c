@@ -13,7 +13,6 @@
 
 #include <ztest.h>
 extern void test_pipe_thread2thread(void);
-
 extern void test_pipe_put_fail(void);
 extern void test_pipe_get_fail(void);
 extern void test_pipe_block_put(void);
@@ -24,6 +23,7 @@ extern void test_half_pipe_block_put_sema(void);
 extern void test_pipe_alloc(void);
 extern void test_pipe_reader_wait(void);
 extern void test_pipe_block_writer_wait(void);
+extern void test_bench(void);
 #ifdef CONFIG_USERSPACE
 extern void test_pipe_user_thread2thread(void);
 extern void test_pipe_user_put_fail(void);
@@ -75,6 +75,7 @@ void test_main(void)
 			 ztest_unit_test(test_half_pipe_get_put),
 			 ztest_unit_test(test_pipe_alloc),
 			 ztest_unit_test(test_pipe_reader_wait),
-			 ztest_unit_test(test_pipe_block_writer_wait));
+			 ztest_unit_test(test_pipe_block_writer_wait),
+			 ztest_unit_test(test_bench));
 	ztest_run_test_suite(pipe_api);
 }
