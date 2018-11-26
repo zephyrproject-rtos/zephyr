@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015 Intel Corporation
+ * Copyright (c) 2018 Vincent van der Locht
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -200,6 +201,38 @@ typedef int (*spi_api_io)(struct device *dev,
 			  const struct spi_buf_set *rx_bufs);
 
 /**
+ * @brief type of object used for the asynchronous signalling
+ */
+enum spi_async_event_type {
+	SPI_ASYNC_EVENT_TYPE_SIGNAL,
+	SPI_ASYNC_EVENT_TYPE_SEMAPHORE,
+	SPI_ASYNC_EVENT_TYPE_MUTEX,
+};
+
+/** @struct spi_async_event
+ * @brief callback event configuration for SPI async calls.
+ *
+ * Configuration struct giving the method of callback for asynchronous spi transfers
+ * containing type of object and pointer to external object to trigger
+ *
+ * @remark Pointer to struct is stored and therefore struct must be available when
+ * transfer is finalized
+ *
+ * @param spi_async_event_type Type of object
+ * @param object Pointer to actual object to trigger
+ */
+struct spi_async_event {
+	enum spi_async_event_type type;
+	union {
+		void *object;
+		struct k_poll_signal *signal;
+		struct k_sem *sem;
+		struct k_mutex *mutex;
+	};
+};
+
+#ifdef CONFIG_SPI_ASYNC
+/**
  * @typedef spi_api_io
  * @brief Callback API for asynchronous I/O
  * See spi_transceive_async() for argument descriptions
@@ -208,7 +241,9 @@ typedef int (*spi_api_io_async)(struct device *dev,
 				const struct spi_config *config,
 				const struct spi_buf_set *tx_bufs,
 				const struct spi_buf_set *rx_bufs,
-				struct k_poll_signal *async);
+				struct spi_async_event *async);
+
+#endif
 
 /**
  * @typedef spi_api_release
@@ -328,7 +363,7 @@ static inline int spi_transceive_async(struct device *dev,
 				       const struct spi_config *config,
 				       const struct spi_buf_set *tx_bufs,
 				       const struct spi_buf_set *rx_bufs,
-				       struct k_poll_signal *async)
+				       struct spi_async_event *async)
 {
 	const struct spi_driver_api *api =
 		(const struct spi_driver_api *)dev->driver_api;
@@ -356,7 +391,7 @@ static inline int spi_transceive_async(struct device *dev,
 static inline int spi_read_async(struct device *dev,
 				 const struct spi_config *config,
 				 const struct spi_buf_set *rx_bufs,
-				 struct k_poll_signal *async)
+				 struct spi_async_event *async)
 {
 	return spi_transceive_async(dev, config, NULL, rx_bufs, async);
 }
@@ -381,7 +416,7 @@ static inline int spi_read_async(struct device *dev,
 static inline int spi_write_async(struct device *dev,
 				  const struct spi_config *config,
 				  const struct spi_buf_set *tx_bufs,
-				  struct k_poll_signal *async)
+				  struct spi_async_event *async)
 {
 	return spi_transceive_async(dev, config, tx_bufs, NULL, async);
 }

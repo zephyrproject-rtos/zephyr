@@ -330,7 +330,7 @@ static int transceive(struct device *dev,
 		      const struct spi_buf_set *tx_bufs,
 		      const struct spi_buf_set *rx_bufs,
 		      bool asynchronous,
-		      struct k_poll_signal *signal)
+		      struct spi_async_event *signal)
 {
 	const struct spi_dw_config *info = dev->config->config_info;
 	struct spi_dw_data *spi = dev->driver_data;
@@ -443,7 +443,7 @@ static int spi_dw_transceive_async(struct device *dev,
 				   const struct spi_config *config,
 				   const struct spi_buf_set *tx_bufs,
 				   const struct spi_buf_set *rx_bufs,
-				   struct k_poll_signal *async)
+				   struct spi_async_event *async)
 {
 	LOG_DBG("%p, %p, %p, %p", dev, tx_bufs, rx_bufs, async);
 

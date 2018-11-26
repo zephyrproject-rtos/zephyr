@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2018 Vincent van der Locht
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,7 +33,7 @@ struct spi_context {
 	int sync_status;
 
 #ifdef CONFIG_SPI_ASYNC
-	struct k_poll_signal *signal;
+	struct spi_async_event *signal;
 	bool asynchronous;
 #endif /* CONFIG_SPI_ASYNC */
 	const struct spi_buf *current_tx;
@@ -69,7 +70,7 @@ static inline bool spi_context_is_slave(struct spi_context *ctx)
 
 static inline void spi_context_lock(struct spi_context *ctx,
 				    bool asynchronous,
-				    struct k_poll_signal *signal)
+				    struct spi_async_event *signal)
 {
 	k_sem_take(&ctx->lock, K_FOREVER);
 
@@ -134,7 +135,22 @@ static inline void spi_context_complete(struct spi_context *ctx, int status)
 				status = ctx->recv_frames;
 			}
 #endif /* CONFIG_SPI_SLAVE */
-			k_poll_signal_raise(ctx->signal, status);
+
+			switch (ctx->signal->type) {
+			case SPI_ASYNC_EVENT_TYPE_SIGNAL:
+				k_poll_signal_raise(ctx->signal->signal, status);
+				break;
+			case SPI_ASYNC_EVENT_TYPE_SEMAPHORE:
+				k_sem_give(ctx->signal->sem);
+				break;
+			case SPI_ASYNC_EVENT_TYPE_MUTEX:
+				k_mutex_unlock(ctx->signal->mutex);
+				break;
+			default:
+				LOG_ERR("Unknown type event callback for SPI");
+				break;
+			}
+
 		}
 
 		if (!(ctx->config->operation & SPI_LOCK_ON)) {

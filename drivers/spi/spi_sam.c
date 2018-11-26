@@ -412,7 +412,7 @@ static int spi_sam_transceive_async(struct device *dev,
 				     const struct spi_config *config,
 				     const struct spi_buf_set *tx_bufs,
 				     const struct spi_buf_set *rx_bufs,
-				     struct k_poll_signal *async)
+				     struct spi_async_event *async)
 {
 	struct spi_sam_data *data = dev->driver_data;
 

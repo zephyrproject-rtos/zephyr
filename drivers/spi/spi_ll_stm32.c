@@ -362,7 +362,7 @@ static int transceive(struct device *dev,
 		      const struct spi_config *config,
 		      const struct spi_buf_set *tx_bufs,
 		      const struct spi_buf_set *rx_bufs,
-		      bool asynchronous, struct k_poll_signal *signal)
+		      bool asynchronous, struct spi_async_event *signal)
 {
 	const struct spi_stm32_config *cfg = DEV_CFG(dev);
 	struct spi_stm32_data *data = DEV_DATA(dev);
@@ -444,7 +444,7 @@ static int spi_stm32_transceive_async(struct device *dev,
 				      const struct spi_config *config,
 				      const struct spi_buf_set *tx_bufs,
 				      const struct spi_buf_set *rx_bufs,
-				      struct k_poll_signal *async)
+				      struct spi_async_event *async)
 {
 	return transceive(dev, config, tx_bufs, rx_bufs, true, async);
 }

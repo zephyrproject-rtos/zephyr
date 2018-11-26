@@ -204,7 +204,7 @@ static int spi_nrfx_transceive_async(struct device *dev,
 				     const struct spi_config *spi_cfg,
 				     const struct spi_buf_set *tx_bufs,
 				     const struct spi_buf_set *rx_bufs,
-				     struct k_poll_signal *async)
+				     struct spi_async_event *async)
 {
 	spi_context_lock(&get_dev_data(dev)->ctx, true, async);
 	return transceive(dev, spi_cfg, tx_bufs, rx_bufs);

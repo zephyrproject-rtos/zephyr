@@ -197,7 +197,7 @@ static int transceive(struct device *dev,
 		      const struct spi_buf_set *tx_bufs,
 		      const struct spi_buf_set *rx_bufs,
 		      bool asynchronous,
-		      struct k_poll_signal *signal)
+		      struct spi_async_event *signal)
 {
 	struct spi_mcux_data *data = dev->driver_data;
 	int ret;
@@ -235,7 +235,7 @@ static int spi_mcux_transceive_async(struct device *dev,
 				     const struct spi_config *spi_cfg,
 				     const struct spi_buf_set *tx_bufs,
 				     const struct spi_buf_set *rx_bufs,
-				     struct k_poll_signal *async)
+				     struct spi_async_event *async)
 {
 	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, true, async);
 }
