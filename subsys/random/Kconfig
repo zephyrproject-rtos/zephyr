@@ -42,6 +42,13 @@ config ENTROPY_DEVICE_RANDOM_GENERATOR
 	  hardware entropy gathering driver to generate random
 	  numbers.
 
+config DEVICE_ID_SEED_XOROSHIRO_RANDOM_GENERATOR
+	bool "Use device ID to seed Xoroshiro128"
+	depends on TEST_RANDOM_GENERATOR && DEVICE_ID_SEED_HAS_DRIVER
+	help
+	  Use the device ID to seed Xoroshiro128. This option is not a secure
+	  entropy source. Do not use for crypto.
+
 config XOROSHIRO_RANDOM_GENERATOR
 	bool "Use Xoroshiro128+ as PRNG"
 	depends on ENTROPY_HAS_DRIVER

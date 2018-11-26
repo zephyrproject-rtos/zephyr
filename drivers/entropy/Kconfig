@@ -19,12 +19,19 @@ source "drivers/entropy/Kconfig.esp32"
 source "drivers/entropy/Kconfig.nrf5"
 source "drivers/entropy/Kconfig.sam"
 source "drivers/entropy/Kconfig.native_posix"
+source "drivers/entropy/Kconfig.pseudo_stm32"
 
 config ENTROPY_HAS_DRIVER
 	bool
 	help
 	  This is an option to be enabled by individual entropy driver
 	  to signal that there is a true entropy driver.
+
+config DEVICE_ID_SEED_HAS_DRIVER
+	bool
+	help
+	  This is an option to be enabled by individual pseudo entropy seed
+	  driver to signal that there is a source of a pseudo entropy source.
 
 if !HAS_DTS_ENTROPY
 

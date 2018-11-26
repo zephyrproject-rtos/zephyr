@@ -1,0 +1,14 @@
+# Kconfig.stm32 - STM32 entropy generator driver configuration
+#
+# Copyright (c) 2018 Alexander Wachter
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ENTROPY_PSEUDO_STM32
+	bool "STM32 pseudo entropy driver"
+	depends on SOC_FAMILY_STM32 && (SOC_SERIES_STM32F0X || SOC_SERIES_STM32F3X || SOC_SERIES_STM32L4X || SOC_SERIES_STM32F7X)
+	select DEVICE_ID_SEED_HAS_DRIVER
+	help
+	  This driver enables a pseudo entropy to seed the xoroshiro128 random
+	  generator. It is not a real source of entropy and must not be used for
+	  crypto.
