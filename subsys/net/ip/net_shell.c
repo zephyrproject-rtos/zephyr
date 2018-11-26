@@ -3926,6 +3926,27 @@ static void tcp_sent_cb(struct net_context *context,
 {
 	PR_SHELL(tcp_shell, "Message sent\n");
 }
+
+static void tcp_recv_cb(struct net_context *context,
+			struct net_pkt *pkt,
+			int status,
+			void *user_data)
+{
+	if (status < 0) {
+		PR_SHELL(tcp_shell, "Message receive error: %d\n", status);
+		return;
+	}
+
+	if (!pkt) {
+		PR_SHELL(tcp_shell, "Message received: EOF\n");
+		return;
+	}
+
+	PR_SHELL(tcp_shell, "Message received: %d bytes\n",
+		 net_pkt_get_len(pkt));
+	net_pkt_unref(pkt);
+}
+
 #endif
 
 static int cmd_net_tcp_connect(const struct shell *shell, size_t argc,
@@ -4029,6 +4050,36 @@ static int cmd_net_tcp_send(const struct shell *shell, size_t argc,
 		return -ENOEXEC;
 	}
 
+#else
+	PR_INFO("TCP not enabled. Set CONFIG_NET_TCP to enable it.\n");
+#endif /* CONFIG_NET_TCP */
+
+	return 0;
+}
+
+static int cmd_net_tcp_recv(const struct shell *shell, size_t argc,
+			    char *argv[])
+{
+#if defined(CONFIG_NET_TCP)
+	int ret;
+#endif
+
+	if (shell_help_requested(shell)) {
+		shell_help_print(shell, NULL, 0);
+		return -ENOEXEC;
+	}
+
+#if defined(CONFIG_NET_TCP)
+	if (!tcp_ctx || !net_context_is_used(tcp_ctx)) {
+		PR_WARNING("Not connected\n");
+		return -ENOEXEC;
+	}
+
+	ret =  net_context_recv(tcp_ctx, tcp_recv_cb, K_FOREVER, NULL);
+	if (ret < 0) {
+		PR_WARNING("Cannot recv msg (%d)\n", ret);
+		return -ENOEXEC;
+	}
 #else
 	PR_INFO("TCP not enabled. Set CONFIG_NET_TCP to enable it.\n");
 #endif /* CONFIG_NET_TCP */
@@ -4502,6 +4553,9 @@ SHELL_CREATE_STATIC_SUBCMD_SET(net_cmd_tcp)
 	SHELL_CMD(send, NULL,
 		  "'net tcp send <data>' sends data to peer using TCP.",
 		  cmd_net_tcp_send),
+	SHELL_CMD(recv, NULL,
+		  "'net tcp recv' recv data from peer using TCP.",
+		  cmd_net_tcp_recv),
 	SHELL_CMD(close, NULL,
 		  "'net tcp close' closes TCP connection.", cmd_net_tcp_close),
 	SHELL_SUBCMD_SET_END
