@@ -119,14 +119,14 @@ struct shell_static_entry {
  */
 #define SHELL_CMD_ARG_REGISTER(syntax, subcmd, help, handler,		   \
 			       mandatory, optional)			   \
-	static const struct shell_static_entry UTIL_CAT(shell_, syntax) =  \
+	static const struct shell_static_entry UTIL_CAT(_shell_, syntax) = \
 	SHELL_CMD_ARG(syntax, subcmd, help, handler, mandatory, optional); \
 	static const struct shell_cmd_entry UTIL_CAT(shell_cmd_, syntax)   \
 	__attribute__ ((section("."					   \
 			STRINGIFY(UTIL_CAT(shell_root_cmd_, syntax)))))	   \
 	__attribute__((used)) = {					   \
 		.is_dynamic = false,					   \
-		.u.entry = &UTIL_CAT(shell_, syntax)			   \
+		.u.entry = &UTIL_CAT(_shell_, syntax)			   \
 	}
 
 /**
@@ -141,14 +141,14 @@ struct shell_static_entry {
  * @param[in] handler Pointer to a function handler.
  */
 #define SHELL_CMD_REGISTER(syntax, subcmd, help, handler) \
-	static const struct shell_static_entry UTIL_CAT(shell_, syntax) =  \
+	static const struct shell_static_entry UTIL_CAT(_shell_, syntax) = \
 	SHELL_CMD(syntax, subcmd, help, handler);			   \
 	static const struct shell_cmd_entry UTIL_CAT(shell_cmd_, syntax)   \
 	__attribute__ ((section("."					   \
 			STRINGIFY(UTIL_CAT(shell_root_cmd_, syntax)))))	   \
 	__attribute__((used)) = {					   \
 		.is_dynamic = false,					   \
-		.u.entry = &UTIL_CAT(shell_, syntax)			   \
+		.u.entry = &UTIL_CAT(_shell_, syntax)			   \
 	}
 
 /**
@@ -440,6 +440,8 @@ struct shell {
 	k_thread_stack_t *stack;
 };
 
+extern void shell_print_stream(const void *user_ctx, const char *data,
+			       size_t data_len);
 /**
  * @brief Macro for defining a shell instance.
  *
@@ -615,16 +617,6 @@ void shell_fprintf(const struct shell *shell, enum shell_vt100_color color,
 void shell_process(const struct shell *shell);
 
 /**
- * @brief Prints the current command help.
- *
- * Function will print a help string with the currently entered command and
- * its subcommands (if exist).
- *
- * @param[in] shell      Pointer to the shell instance.
- */
-void shell_help_print(const struct shell *shell);
-
-/**
  * @brief Change displayed shell prompt.
  *
  * @param[in] shell	Pointer to the shell instance.
@@ -636,30 +628,14 @@ void shell_help_print(const struct shell *shell);
 int shell_prompt_change(const struct shell *shell, char *prompt);
 
 /**
- * @brief Prints help if requested and prints error message on wrong argument
- *	  count.
- *	  Optionally, printing help on wrong argument count can be enabled.
+ * @brief Prints the current command help.
  *
- * @param[in] shell	  Pointer to the shell instance.
- * @param[in] arg_cnt_ok  Flag indicating valid number of arguments.
+ * Function will print a help string with: the currently entered command
+ * and subcommands (if they exist).
  *
- * @return 0		  if check passed
- * @return 1		  if help was requested
- * @return -EINVAL	  if wrong argument count
+ * @param[in] shell      Pointer to the shell instance.
  */
-int shell_cmd_precheck(const struct shell *shell,
-		       bool arg_cnt_ok);
-
-/**
- * @internal @brief This function shall not be used directly, it is required by
- *		    the fprintf module.
- *
- * @param[in] p_user_ctx    Pointer to the context for the shell instance.
- * @param[in] p_data        Pointer to the data buffer.
- * @param[in] data_len      Data buffer size.
- */
-void shell_print_stream(const void *user_ctx, const char *data,
-			size_t data_len);
+void shell_help_print(const struct shell *shell);
 
 /** @brief Execute command.
  *

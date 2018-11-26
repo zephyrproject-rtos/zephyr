@@ -3,7 +3,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
 #include <stdlib.h>
 #include <string.h>
 
@@ -241,15 +240,11 @@ static int cmd_flash(const struct shell *shell, size_t argc, char **argv)
 static int cmd_write_block_size(const struct shell *shell, size_t argc,
 				char **argv)
 {
+	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	int err = shell_cmd_precheck(shell, argc == 1);
+	int err = check_flash_device(shell);
 
-	if (err) {
-		return err;
-	}
-
-	err = check_flash_device(shell);
 	if (!err) {
 		PR_SHELL(shell, "%d\n",
 			 flash_get_write_block_size(flash_device));
@@ -260,15 +255,9 @@ static int cmd_write_block_size(const struct shell *shell, size_t argc,
 
 static int cmd_read(const struct shell *shell, size_t argc, char **argv)
 {
-
-	int err = shell_cmd_precheck(shell, argc == 3);
+	int err = check_flash_device(shell);
 	unsigned long int offset, len;
 
-	if (err) {
-		goto exit;
-	}
-
-	err = check_flash_device(shell);
 	if (err) {
 		goto exit;
 	}
@@ -287,14 +276,10 @@ exit:
 
 static int cmd_erase(const struct shell *shell, size_t argc, char **argv)
 {
-	int err = shell_cmd_precheck(shell, argc == 3);
-	unsigned long int offset, size;
+	int err = check_flash_device(shell);
+	unsigned long int offset;
+	unsigned long int size;
 
-	if (err) {
-		goto exit;
-	}
-
-	err = check_flash_device(shell);
 	if (err) {
 		goto exit;
 	}
@@ -312,15 +297,11 @@ exit:
 
 static int cmd_write(const struct shell *shell, size_t argc, char **argv)
 {
-	int err = shell_cmd_precheck(shell, argc > 2);
 	unsigned long int i, offset;
 	u8_t buf[ARGC_MAX];
 
-	if (err) {
-		goto exit;
-	}
+	int err = check_flash_device(shell);
 
-	err = check_flash_device(shell);
 	if (err) {
 		goto exit;
 	}
@@ -365,15 +346,11 @@ exit:
 static int cmd_page_count(const struct shell *shell, size_t argc, char **argv)
 {
 	ARG_UNUSED(argv);
+	ARG_UNUSED(argc);
 
-	int err = shell_cmd_precheck(shell, argc == 1);
+	int err = check_flash_device(shell);
 	size_t page_count;
 
-	if (err) {
-		return err;
-	}
-
-	err = check_flash_device(shell);
 	if (!err) {
 		page_count = flash_get_page_count(flash_device);
 		PR_SHELL(shell, "Flash device contains %lu pages.\n",
@@ -409,15 +386,11 @@ static bool page_layout_cb(const struct flash_pages_info *info, void *datav)
 
 static int cmd_page_layout(const struct shell *shell, size_t argc, char **argv)
 {
-	int err = shell_cmd_precheck(shell, argc <= 3);
 	unsigned long int start_page, end_page;
 	struct page_layout_data data;
 
-	if (err) {
-		return err;
-	}
+	int err = check_flash_device(shell);
 
-	err = check_flash_device(shell);
 	if (err) {
 		goto bail;
 	}
@@ -463,12 +436,6 @@ static int cmd_page_read(const struct shell *shell, size_t argc, char **argv)
 	struct flash_pages_info info;
 	int ret;
 
-
-	ret = shell_cmd_precheck(shell, argc == 3 || argc == 4);
-	if (ret) {
-		return ret;
-	}
-
 	ret = check_flash_device(shell);
 	if (ret) {
 		return ret;
@@ -508,11 +475,6 @@ static int cmd_page_erase(const struct shell *shell, size_t argc, char **argv)
 	int ret;
 
 	ret = check_flash_device(shell);
-	if (ret) {
-		return ret;
-	}
-
-	ret = shell_cmd_precheck(shell, argc == 2 || argc == 3);
 	if (ret) {
 		return ret;
 	}
@@ -563,15 +525,11 @@ static int cmd_page_write(const struct shell *shell, size_t argc, char **argv)
 		return ret;
 	}
 
-	ret = shell_cmd_precheck(shell, argc > 2);
-	if (ret) {
-		return ret;
-	}
-
-	if (argc < 2 || parse_ul(argv[1], &page) || parse_ul(argv[2], &off)) {
+	if (parse_ul(argv[1], &page) || parse_ul(argv[2], &off)) {
 		ret = -EINVAL;
 		goto bail;
 	}
+
 	argc -= 3;
 	argv += 3;
 	for (i = 0; i < argc; i++) {
@@ -601,12 +559,6 @@ static int cmd_set_dev(const struct shell *shell, size_t argc, char **argv)
 {
 	struct device *dev;
 	const char *name;
-	int ret;
-
-	ret = shell_cmd_precheck(shell, argc == 2);
-	if (ret) {
-		return ret;
-	}
 
 	name = argv[1];
 
@@ -642,19 +594,21 @@ void main(void)
 SHELL_CREATE_STATIC_SUBCMD_SET(sub_flash)
 {
 	/* Alphabetically sorted to ensure correct Tab autocompletion. */
-	SHELL_CMD(erase,		NULL,	ERASE_HELP,	cmd_erase),
+	SHELL_CMD_ARG(erase,	NULL,	ERASE_HELP,	cmd_erase, 3, 0),
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
-	SHELL_CMD(page_count,	NULL,	PAGE_COUNT_HELP,   cmd_page_count),
-	SHELL_CMD(page_errase,	NULL,	PAGE_ERASE_HELP,   cmd_page_erase),
-	SHELL_CMD(page_layout,	NULL,	PAGE_LAYOUT_HELP,  cmd_page_layout),
-	SHELL_CMD(page_read,	NULL,	PAGE_READ_HELP,	   cmd_page_read),
-	SHELL_CMD(page_write,	NULL,	PAGE_WRITE_HELP,   cmd_page_write),
+	SHELL_CMD_ARG(page_count,  NULL, PAGE_COUNT_HELP, cmd_page_count, 1, 0),
+	SHELL_CMD_ARG(page_erase, NULL, PAGE_ERASE_HELP, cmd_page_erase, 2, 1),
+	SHELL_CMD_ARG(page_layout, NULL, PAGE_LAYOUT_HELP,
+		      cmd_page_layout, 1, 2),
+	SHELL_CMD_ARG(page_read,   NULL, PAGE_READ_HELP,  cmd_page_read, 3, 1),
+	SHELL_CMD_ARG(page_write,  NULL, PAGE_WRITE_HELP,
+		      cmd_page_write, 3, 255),
 #endif
-	SHELL_CMD(read,			NULL,	READ_HELP,	cmd_read),
-	SHELL_CMD(set_device,		NULL,	SET_DEV_HELP,	cmd_set_dev),
-	SHELL_CMD(write,		NULL,	WRITE_HELP,	cmd_write),
-	SHELL_CMD(write_block_size,	NULL,	WRITE_BLOCK_SIZE_HELP,
-							cmd_write_block_size),
+	SHELL_CMD_ARG(read,		NULL,	READ_HELP,	cmd_read, 3, 0),
+	SHELL_CMD_ARG(set_device, NULL, SET_DEV_HELP, cmd_set_dev, 2, 0),
+	SHELL_CMD_ARG(write,	  NULL,	WRITE_HELP,	cmd_write, 3, 255),
+	SHELL_CMD_ARG(write_block_size,	NULL,	WRITE_BLOCK_SIZE_HELP,
+						    cmd_write_block_size, 1, 0),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 };
 

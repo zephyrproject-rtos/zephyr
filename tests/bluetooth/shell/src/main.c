@@ -33,12 +33,6 @@ static bool hrs_simulate;
 static int cmd_hrs_simulate(const struct shell *shell,
 			    size_t argc, char *argv[])
 {
-	int err = shell_cmd_precheck(shell, (argc == 2));
-
-	if (err) {
-		return err;
-	}
-
 	if (!strcmp(argv[1], "on")) {
 		static bool hrs_registered;
 
@@ -68,34 +62,22 @@ static int cmd_hrs_simulate(const struct shell *shell,
 
 SHELL_CREATE_STATIC_SUBCMD_SET(hrs_cmds) {
 #if defined(CONFIG_BT_CONN)
-	SHELL_CMD(hrs-simulate, NULL,
-		  "register and simulate Heart Rate Service <value: on, off>",
-		  cmd_hrs_simulate),
+	SHELL_CMD_ARG(hrs-simulate, NULL,
+		"register and simulate Heart Rate Service <value: on, off>",
+		cmd_hrs_simulate, 2, 0),
 #endif /* CONFIG_BT_CONN */
 	SHELL_SUBCMD_SET_END
 };
 
 static int cmd_hrs(const struct shell *shell, size_t argc, char **argv)
 {
-	int err = shell_cmd_precheck(shell, (argc == 2));
-
-	if (argc == 1) {
-		shell_help_print(shell);
-		/* shell_cmd_precheck returns 1 when help is printed */
-		return 1;
-	}
-
-	if (err) {
-		return err;
-	}
-
 	shell_error(shell, "%s unknown parameter: %s", argv[0], argv[1]);
 
 	return -ENOEXEC;
 }
 
-SHELL_CMD_REGISTER(hrs, &hrs_cmds, "Heart Rate Service shell commands",
-		   cmd_hrs);
+SHELL_CMD_ARG_REGISTER(hrs, &hrs_cmds, "Heart Rate Service shell commands",
+		       cmd_hrs, 2, 0);
 
 void main(void)
 {

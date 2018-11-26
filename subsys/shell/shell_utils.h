@@ -8,6 +8,7 @@
 
 #include <zephyr.h>
 #include <shell/shell.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -42,8 +43,28 @@ char shell_make_argv(size_t *argc, char **argv, char *cmd, uint8_t max_argc);
  */
 void shell_pattern_remove(char *buff, u16_t *buff_len, const char *pattern);
 
+/* @brief Function shall be used to search commands.
+ *
+ * It moves the pointer entry to command of static command structure. If the
+ * command cannot be found, the function will set entry to NULL.
+ *
+ *   @param command	Pointer to command which will be processed (no matter
+ *			the root command).
+ *   @param lvl		Level of the requested command.
+ *   @param idx		Index of the requested command.
+ *   @param entry	Pointer which points to subcommand[idx] after function
+ *			execution.
+ *   @param st_entry	Pointer to the structure where dynamic entry data can be
+ *			stored.
+ */
+void shell_cmd_get(const struct shell_cmd_entry *command, size_t lvl,
+		   size_t idx, const struct shell_static_entry **entry,
+		   struct shell_static_entry *d_entry);
+
 int shell_command_add(char *buff, u16_t *buff_len,
 		      const char *new_cmd, const char *pattern);
+
+const struct shell_cmd_entry *root_cmd_find(const char *syntax);
 
 void shell_spaces_trim(char *str);
 
@@ -51,6 +72,11 @@ void shell_spaces_trim(char *str);
  *
  */
 void shell_buffer_trim(char *buff, u16_t *buff_len);
+
+static inline void transport_buffer_flush(const struct shell *shell)
+{
+	shell_fprintf_buffer_flush(shell->fprintf_ctx);
+}
 
 #ifdef __cplusplus
 }

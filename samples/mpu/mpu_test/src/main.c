@@ -134,18 +134,6 @@ static int cmd_mtest(const struct shell *shell, size_t argc, char *argv[])
 {
 	u32_t *mem;
 	u32_t val;
-	int err;
-
-	if (argc > 3) {
-		PR_ERROR(shell, "mtest accepts 1 (Read) or 2 (Write)"
-				"parameters\n");
-		return -EINVAL;
-	}
-
-	err = shell_cmd_precheck(shell, (argc >= 2) && (argc <= 3));
-	if (err) {
-		return err;
-	}
 
 	val = (u32_t)strtol(argv[1], NULL, 16);
 	mem = (u32_t *) val;
@@ -166,7 +154,7 @@ void main(void)
 
 SHELL_CREATE_STATIC_SUBCMD_SET(sub_mpu)
 {
-	SHELL_CMD(mtest, NULL, MTEST_CMD_HELP, cmd_mtest),
+	SHELL_CMD_ARG(mtest, NULL, MTEST_CMD_HELP, cmd_mtest, 2, 1),
 	SHELL_CMD(read, NULL, READ_CMD_HELP, cmd_read),
 	SHELL_CMD(run, NULL, RUN_CMD_HELP, cmd_run),
 #if defined(CONFIG_SOC_FLASH_MCUX)

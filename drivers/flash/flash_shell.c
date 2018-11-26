@@ -216,8 +216,6 @@ static int cmd_test(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
-#define HELP_NONE "[none]"
-
 SHELL_CREATE_STATIC_SUBCMD_SET(flash_cmds) {
 	SHELL_CMD(erase, NULL, "<page address> <size>", cmd_erase),
 	SHELL_CMD(read, NULL, "<address> <Dword count>", cmd_read),
@@ -228,22 +226,9 @@ SHELL_CREATE_STATIC_SUBCMD_SET(flash_cmds) {
 
 static int cmd_flash(const struct shell *shell, size_t argc, char **argv)
 {
-	int err;
-
-	if (argc == 1) {
-		shell_help_print(shell);
-		/* shell_cmd_precheck returns 1 when help is printed */
-		return 1;
-	}
-
-	err = shell_cmd_precheck(shell, argc == 2);
-	if (err) {
-		return err;
-	}
-
-	error(shell, "%s:%s%s", argv[0], "unknown parameter: ", argv[1]);
+	error(shell, "%s:unknown parameter: %s", argv[0], argv[1]);
 	return -EINVAL;
 }
 
-SHELL_CMD_REGISTER(flash, &flash_cmds, "Flash shell commands",
-		   cmd_flash);
+SHELL_CMD_ARG_REGISTER(flash, &flash_cmds, "Flash shell commands",
+		       cmd_flash, 2, 0);

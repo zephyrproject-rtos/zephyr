@@ -614,7 +614,7 @@ static int cmd_scan(const struct shell *shell, size_t argc, char *argv[])
 			dups = BT_HCI_LE_SCAN_FILTER_DUP_ENABLE;
 		} else {
 			shell_help_print(shell);
-			/* shell_cmd_precheck returns 1 when help is printed */
+			/* shell returns 1 when help is printed */
 			return 1;
 		}
 	}
@@ -628,7 +628,7 @@ static int cmd_scan(const struct shell *shell, size_t argc, char *argv[])
 		return cmd_passive_scan_on(shell, dups);
 	} else {
 		shell_help_print(shell);
-		/* shell_cmd_precheck returns 1 when help is printed */
+		/* shell returns 1 when help is printed */
 		return 1;
 	}
 
@@ -747,7 +747,7 @@ static int cmd_disconnect(const struct shell *shell, size_t argc, char *argv[])
 
 		if (argc < 3) {
 			shell_help_print(shell);
-			/* shell_cmd_precheck returns 1 when help is printed */
+			/* shell returns 1 when help is printed */
 			return 1;
 		}
 
@@ -796,7 +796,7 @@ static int cmd_auto_conn(const struct shell *shell, size_t argc, char *argv[])
 		return bt_le_set_auto_conn(&addr, NULL);
 	} else {
 		shell_help_print(shell);
-		/* shell_cmd_precheck returns 1 when help is printed */
+		/* shell returns 1 when help is printed */
 		return 1;
 	}
 
@@ -823,7 +823,7 @@ static int cmd_directed_adv(const struct shell *shell,
 
 	if (strcmp(argv[3], "low")) {
 		shell_help_print(shell);
-		/* shell_cmd_precheck returns 1 when help is printed */
+		/* shell returns 1 when help is printed */
 		return 1;
 	}
 
@@ -1015,7 +1015,7 @@ static int cmd_bondable(const struct shell *shell, size_t argc, char *argv[])
 		bt_set_bondable(false);
 	} else {
 		shell_help_print(shell);
-		/* shell_cmd_precheck returns 1 when help is printed */
+		/* shell returns 1 when help is printed */
 		return 1;
 	}
 
@@ -1209,7 +1209,7 @@ static int cmd_auth(const struct shell *shell, size_t argc, char *argv[])
 		bt_conn_auth_cb_register(NULL);
 	} else {
 		shell_help_print(shell);
-		/* shell_cmd_precheck returns 1 when help is printed */
+		/* shell returns 1 when help is printed */
 		return 1;
 	}
 
@@ -1390,7 +1390,7 @@ static int cmd_bt(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc == 1) {
 		shell_help_print(shell);
-		/* shell_cmd_precheck returns 1 when help is printed */
+		/* shell returns 1 when help is printed */
 		return 1;
 	}
 

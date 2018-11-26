@@ -166,11 +166,6 @@ static int cmd_trunc(const struct shell *shell, size_t argc, char **argv)
 	int length;
 	int err;
 
-	err = shell_cmd_precheck(shell, (argc >= 2));
-	if (err) {
-		return err;
-	}
-
 	if (argv[1][0] == '/') {
 		strncpy(path, argv[1], sizeof(path) - 1);
 		path[MAX_PATH_LEN - 1] = '\0';
@@ -212,11 +207,6 @@ static int cmd_mkdir(const struct shell *shell, size_t argc, char **argv)
 	int err;
 	char path[MAX_PATH_LEN];
 
-	err = shell_cmd_precheck(shell, (argc == 2));
-	if (err) {
-		return err;
-	}
-
 	create_abs_path(argv[1], path, sizeof(path));
 
 	err = fs_mkdir(path);
@@ -233,11 +223,6 @@ static int cmd_rm(const struct shell *shell, size_t argc, char **argv)
 {
 	int err;
 	char path[MAX_PATH_LEN];
-
-	err = shell_cmd_precheck(shell, (argc == 2));
-	if (err) {
-		return err;
-	}
 
 	create_abs_path(argv[1], path, sizeof(path));
 
@@ -259,11 +244,6 @@ static int cmd_read(const struct shell *shell, size_t argc, char **argv)
 	int count;
 	off_t offset;
 	int err;
-
-	err = shell_cmd_precheck(shell, (argc >= 2));
-	if (err) {
-		return err;
-	}
 
 	create_abs_path(argv[1], path, sizeof(path));
 
@@ -356,11 +336,6 @@ static int cmd_write(const struct shell *shell, size_t argc, char **argv)
 	off_t offset = -1;
 	int err;
 
-	err = shell_cmd_precheck(shell, (argc >= 3));
-	if (err) {
-		return err;
-	}
-
 	create_abs_path(argv[1], path, sizeof(path));
 
 	if (!strcmp(argv[2], "-o")) {
@@ -439,11 +414,6 @@ static int cmd_mount_fat(const struct shell *shell, size_t argc, char **argv)
 	char *mntpt;
 	int res;
 
-	res = shell_cmd_precheck(shell, (argc == 2));
-	if (res) {
-		return res;
-	}
-
 	mntpt = mntpt_prepare(argv[1]);
 	if (!mntpt) {
 		shell_fprintf(shell, SHELL_ERROR,
@@ -472,11 +442,6 @@ static int cmd_mount_nffs(const struct shell *shell, size_t argc, char **argv)
 	struct device *flash_dev;
 	char *mntpt;
 	int res;
-
-	res = shell_cmd_precheck(shell, (argc == 2));
-	if (res) {
-		return res;
-	}
 
 	mntpt = mntpt_prepare(argv[1]);
 	if (!mntpt) {
@@ -512,13 +477,15 @@ SHELL_CREATE_STATIC_SUBCMD_SET(sub_fs_mount)
 {
 
 #if defined(CONFIG_FAT_FILESYSTEM_ELM)
-	SHELL_CMD(fat, NULL,
-		  "Mount fatfs. fs mount fat <mount-point>", cmd_mount_fat),
+	SHELL_CMD_ARG(fat, NULL,
+		      "Mount fatfs. fs mount fat <mount-point>",
+		      cmd_mount_fat, 2, 0),
 #endif
 
 #if defined(CONFIG_FILE_SYSTEM_NFFS)
-	SHELL_CMD(nffs, NULL,
-		  "Mount nffs. fs mount nffs <mount-point>", cmd_mount_nffs),
+	SHELL_CMD_ARG(nffs, NULL,
+		      "Mount nffs. fs mount nffs <mount-point>",
+		      cmd_mount_nffs, 2, 0),
 #endif
 
 	SHELL_SUBCMD_SET_END
@@ -530,16 +497,16 @@ SHELL_CREATE_STATIC_SUBCMD_SET(sub_fs)
 	SHELL_CMD(cd, NULL,
 			"Change working directory", cmd_cd),
 	SHELL_CMD(ls, NULL, "List files in current directory", cmd_ls),
-	SHELL_CMD(mkdir, NULL, "Create directory", cmd_mkdir),
+	SHELL_CMD_ARG(mkdir, NULL, "Create directory", cmd_mkdir, 2, 0),
 #if defined(CONFIG_FILE_SYSTEM_NFFS) || defined(CONFIG_FAT_FILESYSTEM_ELM)
 	SHELL_CMD(mount, &sub_fs_mount,
 		  "<fs e.g: fat/nffs> <mount-point>", NULL),
 #endif
 	SHELL_CMD(pwd, NULL, "Print current working directory", cmd_pwd),
-	SHELL_CMD(read, NULL, "Read from file", cmd_read),
-	SHELL_CMD(rm, NULL, "Remove file", cmd_rm),
-	SHELL_CMD(trunc, NULL, "Truncate file", cmd_trunc),
-	SHELL_CMD(write, NULL, "Write file", cmd_write),
+	SHELL_CMD_ARG(read, NULL, "Read from file", cmd_read, 2, 255),
+	SHELL_CMD_ARG(rm, NULL, "Remove file", cmd_rm, 2, 0),
+	SHELL_CMD_ARG(trunc, NULL, "Truncate file", cmd_trunc, 2, 255),
+	SHELL_CMD_ARG(write, NULL, "Write file", cmd_write, 3, 255),
 	SHELL_SUBCMD_SET_END
 };
 

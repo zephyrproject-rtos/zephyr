@@ -262,3 +262,47 @@ void shell_op_completion_insert(const struct shell *shell,
 {
 	data_insert(shell, compl, compl_len);
 }
+
+static void shell_pend_on_txdone(const struct shell *shell)
+{
+	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+		k_poll(&shell->ctx->events[SHELL_SIGNAL_TXDONE], 1, K_FOREVER);
+		k_poll_signal_reset(&shell->ctx->signals[SHELL_SIGNAL_TXDONE]);
+	} else {
+		/* Blocking wait in case of bare metal. */
+		while (!shell->ctx->internal.flags.tx_rdy) {
+		}
+		shell->ctx->internal.flags.tx_rdy = 0;
+	}
+}
+
+void shell_write(const struct shell *shell, const void *data,
+		 size_t length)
+{
+	__ASSERT_NO_MSG(shell && data);
+
+	size_t offset = 0;
+	size_t tmp_cnt;
+
+	while (length) {
+		int err = shell->iface->api->write(shell->iface,
+				&((const u8_t *) data)[offset], length,
+				&tmp_cnt);
+		(void)err;
+		__ASSERT_NO_MSG(err == 0);
+		__ASSERT_NO_MSG(length >= tmp_cnt);
+		offset += tmp_cnt;
+		length -= tmp_cnt;
+		if (tmp_cnt == 0 &&
+		    (shell->ctx->state != SHELL_STATE_PANIC_MODE_ACTIVE)) {
+			shell_pend_on_txdone(shell);
+		}
+	}
+}
+
+/* Function shall be only used by the fprintf module. */
+void shell_print_stream(const void *user_ctx, const char *data,
+			size_t data_len)
+{
+	shell_write((const struct shell *) user_ctx, data, data_len);
+}
