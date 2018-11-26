@@ -149,20 +149,15 @@ static int cmd_wifi_connect(const struct shell *shell, size_t argc,
 	struct net_if *iface = net_if_get_default();
 	static struct wifi_connect_req_params cnx_params;
 	char *endptr;
-	int idx = 3;
+	int idx = 2;
 
 	if (shell_help_requested(shell) || argc < 3) {
 		shell_help_print(shell, NULL, 0);
 		return -ENOEXEC;
 	}
 
-	cnx_params.ssid_length = strtol(argv[2], &endptr, 10);
-	if (*endptr != '\0' || cnx_params.ssid_length <= 2) {
-		shell_help_print(shell, NULL, 0);
-		return -ENOEXEC;
-	}
-
 	cnx_params.ssid = argv[1];
+	cnx_params.ssid_length = strlen(argv[1]);
 
 	if ((idx < argc) && (strlen(argv[idx]) <= 2)) {
 		cnx_params.channel = strtol(argv[idx], &endptr, 10);
@@ -264,8 +259,8 @@ static int cmd_wifi_scan(const struct shell *shell, size_t argc, char *argv[])
 SHELL_CREATE_STATIC_SUBCMD_SET(wifi_commands)
 {
 	SHELL_CMD(connect, NULL,
-		  "\"<SSID>\"\n<SSID length>\n<channel number (optional), "
-		  "0 means all>\n"
+		  "<SSID>\n"
+		  "<channel number (optional), 0 means all>\n"
 		  "<PSK (optional: valid only for secured SSIDs)>",
 		  cmd_wifi_connect),
 	SHELL_CMD(disconnect, NULL, "Disconnect from Wifi AP",
