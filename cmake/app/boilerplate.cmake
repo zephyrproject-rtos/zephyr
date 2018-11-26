@@ -10,10 +10,6 @@
 # Omitting it is permitted, but doing so incurs a maintenance cost as
 # the application must manage upstream changes to this file.
 
-# app is a CMake library containing all the application code and is
-# modified by the entry point ${APPLICATION_SOURCE_DIR}/CMakeLists.txt
-# that was specified when cmake was called.
-
 # CMake version 3.8.2 is the real minimum supported version.
 #
 # Unfortunately CMake requires the toplevel CMakeLists.txt file to
@@ -355,6 +351,9 @@ Enable Qemu supported ethernet driver like e1000 at drivers/ethernet")
   endif()
 endif()
 
+# "app" is a CMake library containing all the application code and is
+# modified by the entry point ${APPLICATION_SOURCE_DIR}/CMakeLists.txt
+# that was specified when cmake was called.
 zephyr_library_named(app)
 set_property(TARGET app PROPERTY ARCHIVE_OUTPUT_DIRECTORY app)
 
