@@ -42,6 +42,15 @@ extern "C" {
 
 struct net_context;
 
+
+/* buffer cursor used in net_pkt */
+struct net_pkt_cursor {
+	/** Current net_buf pointer by the cursor */
+	struct net_buf *buf;
+	/** Current position in the data buffer of the net_buf */
+	u8_t *pos;
+};
+
 /* Note that if you add new fields into net_pkt, remember to update
  * net_pkt_clone() function.
  */
@@ -60,6 +69,9 @@ struct net_pkt {
 		struct net_buf *frags;
 		struct net_buf *buffer;
 	};
+
+	/** Internal buffer iterator used for reading/writing */
+	struct net_pkt_cursor cursor;
 
 	/** Network connection context */
 	struct net_context *context;
@@ -115,6 +127,8 @@ struct net_pkt {
 	sys_snode_t sent_list;
 #endif
 
+	u8_t overwrite  : 1;	/* Is packet content being overwritten? */
+
 	u8_t sent_or_eof: 1;	/* For outgoing packet: is this sent or not
 				 * For incoming packet of a socket: last
 				 * packet before EOF
@@ -135,7 +149,7 @@ struct net_pkt {
 	u8_t forwarding : 1;	/* Are we forwarding this pkt
 				 * Used only if defined(CONFIG_NET_ROUTE)
 				 */
-	u8_t family     : 4;	/* IPv4 vs IPv6 */
+	u8_t family     : 3;	/* IPv4 vs IPv6 */
 	u8_t ipv4_auto_arp_msg : 1; /* Is this pkt IPv4 autoconf ARP message.
 				     * Used only if
 				     * defined(CONFIG_NET_IPV4_AUTO)
@@ -811,6 +825,16 @@ static inline void net_pkt_set_src_ipv6_addr(struct net_pkt *pkt)
 	net_if_ipv6_select_src_addr(net_context_get_iface(
 					    net_pkt_context(pkt)),
 				    &NET_IPV6_HDR(pkt)->src);
+}
+
+static inline void net_pkt_set_overwrite(struct net_pkt *pkt, bool overwrite)
+{
+	pkt->overwrite = overwrite;
+}
+
+static inline bool net_pkt_is_being_overwritten(struct net_pkt *pkt)
+{
+	return pkt->overwrite;
 }
 
 /* @endcond */
@@ -2158,6 +2182,265 @@ struct net_pkt *net_pkt_rx_alloc_with_buffer(struct net_if *iface,
  * @param buffer Buffer to append
  */
 void net_pkt_append_buffer(struct net_pkt *pkt, struct net_buf *buffer);
+
+/**
+ * @brief Get available buffer space from a pkt
+ *
+ * @param pkt The net_pkt which buffer availabality should be evaluated
+ *
+ * @return the amount of buffer available
+ */
+size_t net_pkt_available_buffer(struct net_pkt *pkt);
+
+/**
+ * @brief Initialize net_pkt cursor
+ *
+ * Note: This will inialize the net_pkt cursor from its buffer.
+ *
+ * @param pkt The net_pkt which cursor is going to be initialized
+ */
+void net_pkt_cursor_init(struct net_pkt *pkt);
+
+/**
+ * @brief Backup net_pkt cursor
+ *
+ * @param pkt    The net_pkt which cursor is going to be backuped
+ * @param backup The cursor where to backup net_pkt cursor
+ */
+static inline void net_pkt_cursor_backup(struct net_pkt *pkt,
+					 struct net_pkt_cursor *backup)
+{
+	backup->buf = pkt->cursor.buf;
+	backup->pos = pkt->cursor.pos;
+}
+
+/**
+ * @brief Restore net_pkt cursor from a backup
+ *
+ * @param pkt    The net_pkt which cursor is going to be restored
+ * @param backup The cursor from where to restore net_pkt cursor
+ */
+static inline void net_pkt_cursor_restore(struct net_pkt *pkt,
+					  struct net_pkt_cursor *backup)
+{
+	pkt->cursor.buf = backup->buf;
+	pkt->cursor.pos = backup->pos;
+}
+
+/**
+ * @brief Returns current position of the cursor
+ *
+ * @param pkt The net_pkt which cursor's position is going to be returned
+ *
+ * @return cursor's position
+ */
+static inline void *net_pkt_cursor_get_pos(struct net_pkt *pkt)
+{
+	return pkt->cursor.pos;
+}
+
+/**
+ * @brief Skip some data from a net_pkt
+ *
+ * Note: net_pkt's cursor should be properly initialized
+ *       Cursor will be updated according to parameter.
+ *       Depending on the value of pkt->overwrite bit, this function
+ *       will affect the buffer length or not: if it's 0, skip will
+ *       actually apply the move in the buffer as it had written in it.
+ *
+ * @param pkt    The net_pkt which cursor will be updated to skip given
+ *               amount of data from the buffer.
+ * @param length Amount of data to skip in the buffer
+ *
+ * @return 0 in success, negative errno code otherwise.
+ */
+int net_pkt_skip(struct net_pkt *pkt, size_t length);
+
+/**
+ * @brief Memset some data in a net_pkt
+ *
+ * Note: net_pkt's cursor should be properly initialized and,
+ *       eventally, properly positioned using net_pkt_skip.
+ *       Cursor will be updated according to parameter.
+ *
+ * @param pkt    The net_pkt which cursor will be updated to skip given
+ *               amount of data from the buffer.
+ * @param byte   The byte to write in memory
+ * @param length Amount of data to memset with given byte
+ *
+ * @return 0 in success, negative errno code otherwise.
+ */
+int net_pkt_memset(struct net_pkt *pkt, int byte, size_t length);
+
+/**
+ * @brief Copy data from a packet into another one.
+ *
+ * Note: Both net_pkt cursors should be properly initialized and,
+ *       eventally, properly positioned using net_pkt_skip.
+ *       Cursors will be updated according to parameters.
+ *
+ * @param pkt_dst Destination network packet.
+ * @param pkt_src Source network packet.
+ * @param length  Length of data to be copied.
+ *
+ * @return 0 on success, negative errno code otherwise.
+ */
+int net_pkt_copy_new(struct net_pkt *pkt_dst,
+		     struct net_pkt *pkt_src,
+		     size_t length);
+
+/**
+ * @brief Clone pkt and its fragment chain.
+ *
+ * @param pkt Original pkt to be cloned
+ * @param timeout Timeout to wait for free buffer
+ *
+ * @return NULL if error, cloned packet otherwise.
+ */
+struct net_pkt *net_pkt_clone_new(struct net_pkt *pkt, s32_t timeout);
+
+/**
+ * @brief Read some data from a net_pkt
+ *
+ * Note: net_pkt's cursor should be properly initialized and,
+ *       eventally, properly positioned using net_pkt_skip.
+ *       Cursor will be updated according to parameters.
+ * @param pkt    The network packet from where to read some data
+ * @param data   The destination buffer where to copy the data
+ * @param length The amount of data to copy
+ *
+ * @return 0 on success, negative errno code otherwise.
+ */
+int net_pkt_read_new(struct net_pkt *pkt, void *data, size_t length);
+
+/* Read u8_t data data a net_pkt */
+static inline int net_pkt_read_u8_new(struct net_pkt *pkt, u8_t *data)
+{
+	return net_pkt_read_new(pkt, data, 1);
+}
+
+/**
+ * @brief Read u16_t big endian data from a net_pkt
+ *
+ * Note: net_pkt's cursor should be properly initialized and,
+ *       eventally, properly positioned using net_pkt_skip.
+ *       Cursor will be updated according to parameters.
+ *
+ * @param pkt  The network packet from where to read
+ * @param data The destination u16_t where to copy the data
+ *
+ * @return 0 on success, negative errno code otherwise.
+ */
+int net_pkt_read_be16_new(struct net_pkt *pkt, u16_t *data);
+
+/**
+ * @brief Read u32_t big endian data from a net_pkt
+ *
+ * Note: net_pkt's cursor should be properly initialized and,
+ *       eventally, properly positioned using net_pkt_skip.
+ *       Cursor will be updated according to parameters.
+ *
+ * @param pkt  The network packet from where to read
+ * @param data The destination u32_t where to copy the data
+ *
+ * @return 0 on success, negative errno code otherwise.
+ */
+int net_pkt_read_be32_new(struct net_pkt *pkt, u32_t *data);
+
+/**
+ * @brief Write data into a net_pkt
+ *
+ * Note: net_pkt's cursor should be properly initialized and,
+ *       eventally, properly positioned using net_pkt_skip_read/write.
+ *       Cursor will be updated according to parameters.
+ *
+ * @param pkt    The network packet where to write
+ * @param data   Data to be written
+ * @param length Length of the data to be written
+ *
+ * @return 0 on success, negative errno code otherwise.
+ */
+int net_pkt_write_new(struct net_pkt *pkt, const void *data, size_t length);
+
+/* Write u8_t data into a net_pkt. */
+static inline int net_pkt_write_u8_new(struct net_pkt *pkt, u8_t data)
+{
+	return net_pkt_write_new(pkt, &data, sizeof(u8_t));
+}
+
+/* Write u16_t big endian data into a net_pkt. */
+static inline int net_pkt_write_be16_new(struct net_pkt *pkt, u16_t data)
+{
+	u16_t data_be16 = htons(data);
+
+	return net_pkt_write_new(pkt, &data_be16, sizeof(u16_t));
+}
+
+/* Write u32_t big endian data into a net_pkt. */
+static inline int net_pkt_write_be32_new(struct net_pkt *pkt, u32_t data)
+{
+	u32_t data_be32 = htonl(data);
+
+	return net_pkt_write_new(pkt, &data_be32, sizeof(u32_t));
+}
+
+/* Write u32_t little endian data into a net_pkt. */
+static inline int net_pkt_write_le32_new(struct net_pkt *pkt, u32_t data)
+{
+	u32_t data_le32 = sys_cpu_to_le32(data);
+
+	return net_pkt_write_new(pkt, &data_le32, sizeof(u32_t));
+}
+
+/**
+ * @brief Update the overall length of a packet
+ *
+ * Note: Unlike net_pkt_pull_new() below, this does not take packet cursor
+ *       into account. It's mainly a helper dedicated for ipv4 and ipv6
+ *       input functions. It shrinks the overall length by given parameter.
+ *
+ * @param pkt    Network packet
+ * @param length The new length of the packet
+ *
+ * @return 0 on success, negative errno code otherwise.
+ */
+int net_pkt_update_length(struct net_pkt *pkt, size_t length);
+
+/**
+ * @brief Remove data from the packet at current location
+ *
+ * Note: net_pkt's cursor should be properly initialized and,
+ *       eventally, properly positioned using net_pkt_skip/read/write.
+ *
+ * @param pkt    Network packet
+ * @param length Number of bytes to be removed
+ *
+ * @return 0 on success, negative errno code otherwise.
+ */
+int net_pkt_pull_new(struct net_pkt *pkt, size_t length);
+
+/**
+ * @brief Get the actual offset in the packet from its cursor
+ *
+ * @param pkt Network packet.
+ *
+ * @return a valid offset on success, 0 otherwise as there is nothing that
+ *         can be done to evaluate the offset.
+ */
+u16_t net_pkt_get_current_offset(struct net_pkt *pkt);
+
+/**
+ * @brief Check if a data size could fit contiguously
+ *
+ * Note: net_pkt's cursor should be properly initialized and,
+ *       eventally, properly positioned using net_pkt_skip_read/write.
+ *
+ * @param pkt  Network packet.
+ * @param size The size to check for contiguity
+ *
+ * @return true if that is the case, false otherwise.
+ */
+bool net_pkt_is_contiguous(struct net_pkt *pkt, size_t size);
 
 /**
  * @}

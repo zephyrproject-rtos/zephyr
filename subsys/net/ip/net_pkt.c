@@ -2352,6 +2352,14 @@ static size_t pkt_get_size(struct net_pkt *pkt)
 	return size;
 }
 
+size_t net_pkt_available_buffer(struct net_pkt *pkt)
+{
+	if (!pkt) {
+		return 0;
+	}
+
+	return pkt_get_size(pkt) - net_pkt_get_len(pkt);
+}
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 int net_pkt_alloc_buffer_debug(struct net_pkt *pkt,
@@ -2451,6 +2459,8 @@ static struct net_pkt *pkt_alloc(struct k_mem_slab *slab, s32_t timeout)
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 	net_pkt_alloc_add(pkt, true, caller, line);
 #endif
+
+	net_pkt_cursor_init(pkt);
 
 	return pkt;
 }
@@ -2654,9 +2664,407 @@ void net_pkt_append_buffer(struct net_pkt *pkt, struct net_buf *buffer)
 {
 	if (!pkt->buffer) {
 		pkt->buffer = buffer;
+		net_pkt_cursor_init(pkt);
 	} else {
 		net_buf_frag_insert(net_buf_frag_last(pkt->buffer), buffer);
 	}
+}
+
+void net_pkt_cursor_init(struct net_pkt *pkt)
+{
+	pkt->cursor.buf = pkt->buffer;
+	if (pkt->cursor.buf) {
+		pkt->cursor.pos = pkt->cursor.buf->data;
+	} else {
+		pkt->cursor.pos = NULL;
+	}
+}
+
+static void pkt_cursor_jump(struct net_pkt *pkt, bool write)
+{
+	struct net_pkt_cursor *cursor = &pkt->cursor;
+
+	cursor->buf = cursor->buf->frags;
+	while (cursor->buf) {
+		size_t len = write ? cursor->buf->size : cursor->buf->len;
+
+		if (!len) {
+			cursor->buf = cursor->buf->frags;
+		} else {
+			break;
+		}
+	}
+
+	if (cursor->buf) {
+		cursor->pos = cursor->buf->data;
+	} else {
+		cursor->pos = NULL;
+	}
+}
+
+static void pkt_cursor_advance(struct net_pkt *pkt, bool write)
+{
+	struct net_pkt_cursor *cursor = &pkt->cursor;
+	size_t len;
+
+	if (!cursor->buf) {
+		return;
+	}
+
+	len = write ? cursor->buf->size : cursor->buf->len;
+	if ((cursor->pos - cursor->buf->data) == len) {
+		pkt_cursor_jump(pkt, write);
+	}
+
+	if (write) {
+		pkt->length += length;
+	}
+}
+
+static void pkt_cursor_update(struct net_pkt *pkt,
+			      size_t length, bool write)
+{
+	struct net_pkt_cursor *cursor = &pkt->cursor;
+	size_t len;
+
+	if (net_pkt_is_being_overwritten(pkt)) {
+		write = false;
+	}
+
+	len = write ? cursor->buf->size : cursor->buf->len;
+	if (length + (cursor->pos - cursor->buf->data) == len &&
+	    !(net_pkt_is_being_overwritten(pkt) && len < cursor->buf->size)) {
+		pkt_cursor_jump(pkt, write);
+	} else {
+		cursor->pos += length;
+	}
+}
+
+/* Internal function that does all operation (skip/read/write/memset) */
+static int net_pkt_cursor_operate(struct net_pkt *pkt,
+				  void *data, size_t length,
+				  bool copy, bool write)
+{
+	/* We use such variable to avoid lengthy lines */
+	struct net_pkt_cursor *c_op = &pkt->cursor;
+
+	while (c_op->buf && length) {
+		size_t d_len, len;
+
+		pkt_cursor_advance(pkt, net_pkt_is_being_overwritten(pkt) ?
+				   false : write);
+		if (c_op->buf == NULL) {
+			break;
+		}
+
+		if (write && !net_pkt_is_being_overwritten(pkt)) {
+			d_len = c_op->buf->size - (c_op->pos - c_op->buf->data);
+		} else {
+			d_len = c_op->buf->len - (c_op->pos - c_op->buf->data);
+		}
+
+		if (!d_len) {
+			break;
+		}
+
+		if (length < d_len) {
+			len = length;
+		} else {
+			len = d_len;
+		}
+
+		if (copy) {
+			memcpy(write ? c_op->pos : data,
+			       write ? data : c_op->pos,
+			       len);
+		} else if (data) {
+			memset(c_op->pos, *(int *)data, len);
+		}
+
+		if (write && !net_pkt_is_being_overwritten(pkt)) {
+			net_buf_add(c_op->buf, len);
+		}
+
+		pkt_cursor_update(pkt, len, write);
+
+		if (copy && data) {
+			data = (u8_t *) data + len;
+		}
+
+		length -= len;
+	}
+
+	if (length) {
+		NET_DBG("Still some length to go %zu", length);
+		return -ENOBUFS;
+	}
+
+	return 0;
+}
+
+int net_pkt_skip(struct net_pkt *pkt, size_t skip)
+{
+	NET_DBG("pkt %p skip %zu", pkt, skip);
+
+	return net_pkt_cursor_operate(pkt, NULL, skip, false, true);
+}
+
+int net_pkt_memset(struct net_pkt *pkt, int byte, size_t amount)
+{
+	NET_DBG("pkt %p byte %d amount %zu", pkt, byte, amount);
+
+	return net_pkt_cursor_operate(pkt, &byte, amount, false, true);
+}
+
+int net_pkt_read_new(struct net_pkt *pkt, void *data, size_t length)
+{
+	NET_DBG("pkt %p data %p length %zu", pkt, data, length);
+
+	return net_pkt_cursor_operate(pkt, data, length, true, false);
+}
+
+int net_pkt_read_be16_new(struct net_pkt *pkt, u16_t *data)
+{
+	u8_t d16[2];
+	int ret;
+
+	ret = net_pkt_read_new(pkt, d16, sizeof(u16_t));
+
+	*data = d16[0] << 8 | d16[1];
+
+	return ret;
+}
+
+int net_pkt_read_be32_new(struct net_pkt *pkt, u32_t *data)
+{
+	u8_t d32[4];
+	int ret;
+
+	ret = net_pkt_read_new(pkt, d32, sizeof(u32_t));
+
+	*data = d32[0] << 24 | d32[1] << 16 | d32[2] << 8 | d32[3];
+
+	return ret;
+}
+
+int net_pkt_write_new(struct net_pkt *pkt, const void *data, size_t length)
+{
+	NET_DBG("pkt %p data %p length %zu", pkt, data, length);
+
+	return net_pkt_cursor_operate(pkt, (void *)data, length, true, true);
+}
+
+int net_pkt_copy_new(struct net_pkt *pkt_dst,
+		     struct net_pkt *pkt_src,
+		     size_t length)
+{
+	struct net_pkt_cursor *c_dst = &pkt_dst->cursor;
+	struct net_pkt_cursor *c_src = &pkt_src->cursor;
+
+	while (c_dst->buf && c_src->buf && length) {
+		size_t s_len, d_len, len;
+
+		pkt_cursor_advance(pkt_dst, true);
+		pkt_cursor_advance(pkt_src, false);
+
+		if (!c_dst->buf || !c_src->buf) {
+			break;
+		}
+
+		s_len = c_src->buf->len - (c_src->pos - c_src->buf->data);
+		d_len = c_dst->buf->size - (c_dst->pos - c_dst->buf->data);
+		if (length < s_len && length < d_len) {
+			len = length;
+		} else {
+			if (d_len < s_len) {
+				len = d_len;
+			} else {
+				len = s_len;
+			}
+		}
+
+		if (!len) {
+			break;
+		}
+
+		memcpy(c_dst->pos, c_src->pos, len);
+
+		if (!net_pkt_is_being_overwritten(pkt_dst)) {
+			net_buf_add(c_dst->buf, len);
+		}
+
+		pkt_cursor_update(pkt_dst, len, true);
+		pkt_cursor_update(pkt_src, len, false);
+
+		length -= len;
+	}
+
+	if (length) {
+		NET_DBG("Still some length to go %zu", length);
+		return -ENOBUFS;
+	}
+
+	return 0;
+}
+
+struct net_pkt *net_pkt_clone_new(struct net_pkt *pkt, s32_t timeout)
+{
+	struct net_pkt *clone_pkt;
+
+	clone_pkt = net_pkt_alloc_with_buffer(net_pkt_iface(pkt),
+					      net_pkt_get_len(pkt),
+					      AF_UNSPEC, 0, timeout);
+	if (!clone_pkt) {
+		return NULL;
+	}
+
+	net_pkt_cursor_init(pkt);
+
+	if (net_pkt_copy_new(clone_pkt, pkt, net_pkt_get_len(pkt))) {
+		net_pkt_unref(clone_pkt);
+		return NULL;
+	}
+
+	if (clone_pkt->buffer) {
+		/* The link header pointers are only usable if there is
+		 * a buffer that we copied because those pointers point
+		 * to start of the fragment which we do not have right now.
+		 */
+		memcpy(&clone_pkt->lladdr_src, &pkt->lladdr_src,
+		       sizeof(clone_pkt->lladdr_src));
+		memcpy(&clone_pkt->lladdr_dst, &pkt->lladdr_dst,
+		       sizeof(clone_pkt->lladdr_dst));
+	}
+
+	net_pkt_set_family(clone_pkt, net_pkt_family(pkt));
+	net_pkt_set_context(clone_pkt, net_pkt_context(pkt));
+	net_pkt_set_token(clone_pkt, net_pkt_token(pkt));
+	net_pkt_set_next_hdr(clone_pkt, NULL);
+	net_pkt_set_ip_hdr_len(clone_pkt, net_pkt_ip_hdr_len(pkt));
+	net_pkt_set_vlan_tag(clone_pkt, net_pkt_vlan_tag(pkt));
+	net_pkt_set_timestamp(clone_pkt, net_pkt_timestamp(pkt));
+	net_pkt_set_priority(clone_pkt, net_pkt_priority(pkt));
+	net_pkt_set_orig_iface(clone_pkt, net_pkt_orig_iface(pkt));
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
+		net_pkt_set_ipv4_ttl(clone_pkt, net_pkt_ipv4_ttl(pkt));
+	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
+		   net_pkt_family(pkt) == AF_INET6) {
+		net_pkt_set_ipv6_hop_limit(clone_pkt,
+					   net_pkt_ipv6_hop_limit(pkt));
+		net_pkt_set_ipv6_ext_len(clone_pkt, net_pkt_ipv6_ext_len(pkt));
+		net_pkt_set_ipv6_ext_opt_len(clone_pkt,
+					     net_pkt_ipv6_ext_opt_len(pkt));
+		net_pkt_set_ipv6_hdr_prev(clone_pkt,
+					  net_pkt_ipv6_hdr_prev(pkt));
+	}
+
+	net_pkt_cursor_init(clone_pkt);
+
+	NET_DBG("Cloned %p to %p", pkt, clone_pkt);
+
+	return clone_pkt;
+}
+
+int net_pkt_update_length(struct net_pkt *pkt, size_t length)
+{
+	struct net_buf *buf;
+
+	for (buf = pkt->buffer; buf; buf = buf->frags) {
+		if (buf->len < length) {
+			length -= buf->len;
+		} else {
+			buf->len = length;
+			length = 0;
+		}
+	}
+
+	return !length ? 0 : -EINVAL;
+}
+
+int net_pkt_pull_new(struct net_pkt *pkt, size_t length)
+{
+	struct net_pkt_cursor *c_op = &pkt->cursor;
+	struct net_pkt_cursor backup;
+
+	net_pkt_cursor_backup(pkt, &backup);
+
+	while (length) {
+		u8_t left, rem;
+
+		pkt_cursor_advance(pkt, false);
+
+		left = c_op->buf->len - (c_op->pos - c_op->buf->data);
+		if (!left) {
+			break;
+		}
+
+		rem = left;
+		if (rem > length) {
+			rem = length;
+		}
+
+		c_op->buf->len -= rem;
+		left -= rem;
+		if (left) {
+			memmove(c_op->pos, c_op->pos+rem, rem);
+		}
+
+		/* For now, empty buffer are not freed, and there is no
+		 * compaction done either.
+		 * net_pkt_pull_new() is currently used only in very specific
+		 * places where such memory optimization would not make
+		 * that much sense. Let's see in future if it's worth do to it.
+		 */
+
+		length -= rem;
+	}
+
+	net_pkt_cursor_restore(pkt, &backup);
+
+	if (length) {
+		NET_DBG("Still some length to go %zu", length);
+		return -ENOBUFS;
+	}
+
+	return 0;
+}
+
+u16_t net_pkt_get_current_offset(struct net_pkt *pkt)
+{
+	struct net_buf *buf = pkt->buffer;
+	u16_t offset;
+
+	if (!pkt->cursor.buf || !pkt->cursor.pos) {
+		return 0;
+	}
+
+	offset = 0;
+
+	while (buf != pkt->cursor.buf) {
+		offset += buf->len;
+		buf = buf->frags;
+	}
+
+	offset += pkt->cursor.pos - buf->data;
+
+	return offset;
+}
+
+bool net_pkt_is_contiguous(struct net_pkt *pkt, size_t size)
+{
+	if (pkt->cursor.buf && pkt->cursor.pos) {
+		size_t len;
+
+		len = net_pkt_is_being_overwritten(pkt) ?
+			pkt->cursor.buf->len : pkt->cursor.buf->size;
+		len -= pkt->cursor.pos - pkt->cursor.buf->data;
+		if (len >= size) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 void net_pkt_init(void)
