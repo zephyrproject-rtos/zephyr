@@ -26,7 +26,7 @@ struct log_strdup_buf {
 #define LOG_STRDUP_POOL_BUFFER_SIZE \
 	(sizeof(struct log_strdup_buf) * CONFIG_LOG_STRDUP_BUF_COUNT)
 
-static const char *log_strdup_fail_msg = "log_strdup pool empty!";
+static const char *log_strdup_fail_msg = "<log_strdup alloc failed>";
 struct k_mem_slab log_strdup_pool;
 static u8_t __noinit __aligned(sizeof(u32_t))
 		log_strdup_pool_buf[LOG_STRDUP_POOL_BUFFER_SIZE];
