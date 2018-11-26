@@ -111,6 +111,40 @@ void _sys_soc_resume(void);
  */
 extern int _sys_soc_suspend(s32_t ticks);
 
+#ifdef CONFIG_PM_CONTROL_OS_DEBUG
+/**
+ * @brief Dump Low Power states related debug info
+ *
+ * Dump Low Power states debug info like LPS entry count and residencies.
+ */
+extern void sys_pm_dump_debug_info(void);
+
+#endif /* CONFIG_PM_CONTROL_OS_DEBUG */
+
+#ifdef CONFIG_PM_CONTROL_STATE_LOCK
+/**
+ * @brief Disable system PM state
+ *
+ * Disable system Low power states like LPS or Deep Sleep states.
+ */
+extern void sys_pm_ctrl_disable_state(int state);
+
+/**
+ * @brief Enable system PM state
+ *
+ * Enable system Low power states like LPS or Deep Sleep states.
+ */
+extern void sys_pm_ctrl_enable_state(int state);
+
+/**
+ * @brief Get enable status of a PM state
+ *
+ * Get enable status of a system PM state.
+ */
+extern bool sys_pm_ctrl_is_state_enabled(int state);
+
+#endif /* CONFIG_PM_CONTROL_STATE_LOCK */
+
 /**
  * @}
  */
