@@ -133,6 +133,13 @@ th,td {
   padding-left: 0 !important;
 }
 
+/* doxygenXX item color tweaks, light blue background with dark blue top border */
+.rst-content dl:not(.docutils) dl dt {
+  background: #e7f2fa !important;
+  border-top: solid 3px #2980B9 !important;
+  border-left: none !important; */
+}
+
 /* tweak display of option tables to make first column wider */
 col.option {
   width: 25%;
