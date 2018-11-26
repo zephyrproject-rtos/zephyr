@@ -31,29 +31,22 @@ static int cmd_log_test_start(const struct shell *shell, size_t argc,
 {
 	ARG_UNUSED(argv);
 
-	int err = shell_cmd_precheck(shell, argc == 1);
-
-	if (err) {
-		return err;
-	}
-
 	k_timer_start(&log_timer, period, period);
-	shell_fprintf(shell, SHELL_NORMAL, "Log test started\n");
+	shell_print(shell, "Log test started\n");
+
 	return 0;
 }
 
 static int cmd_log_test_start_demo(const struct shell *shell, size_t argc,
 				   char **argv)
 {
-	cmd_log_test_start(shell, argc, argv, 200);
-	return 0;
+	return cmd_log_test_start(shell, argc, argv, 200);
 }
 
 static int cmd_log_test_start_flood(const struct shell *shell, size_t argc,
 				    char **argv)
 {
-	cmd_log_test_start(shell, argc, argv, 10);
-	return 0;
+	return cmd_log_test_start(shell, argc, argv, 10);
 }
 
 static int cmd_log_test_stop(const struct shell *shell, size_t argc,
@@ -62,33 +55,28 @@ static int cmd_log_test_stop(const struct shell *shell, size_t argc,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	int err = shell_cmd_precheck(shell, argc == 1);
-
-	if (err) {
-		return err;
-	}
-
 	k_timer_stop(&log_timer);
-	shell_fprintf(shell, SHELL_NORMAL, "Log test stopped\n");
+	shell_print(shell, "Log test stopped");
 
 	return 0;
 }
+
 SHELL_CREATE_STATIC_SUBCMD_SET(sub_log_test_start)
 {
 	/* Alphabetically sorted. */
-	SHELL_CMD(demo, NULL,
+	SHELL_CMD_ARG(demo, NULL,
 		  "Start log timer which generates log message every 200ms.",
-		  cmd_log_test_start_demo),
-	SHELL_CMD(flood, NULL,
+		  cmd_log_test_start_demo, 1, 0),
+	SHELL_CMD_ARG(flood, NULL,
 		  "Start log timer which generates log message every 10ms.",
-		  cmd_log_test_start_flood),
+		  cmd_log_test_start_flood, 1, 0),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 };
 SHELL_CREATE_STATIC_SUBCMD_SET(sub_log_test)
 {
 	/* Alphabetically sorted. */
-	SHELL_CMD(start, &sub_log_test_start, "Start log test", NULL),
-	SHELL_CMD(stop, NULL, "Stop log test.", cmd_log_test_stop),
+	SHELL_CMD_ARG(start, &sub_log_test_start, "Start log test", NULL, 2, 0),
+	SHELL_CMD_ARG(stop, NULL, "Stop log test.", cmd_log_test_stop, 1, 0),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 };
 
@@ -99,20 +87,18 @@ static int cmd_demo_ping(const struct shell *shell, size_t argc, char **argv)
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_fprintf(shell, SHELL_NORMAL, "pong\n");
+	shell_print(shell, "pong");
 
 	return 0;
 }
 
 static int cmd_demo_params(const struct shell *shell, size_t argc, char **argv)
 {
-	int cnt;
-
-	shell_fprintf(shell, SHELL_NORMAL, "argc = %d\n", argc);
-	for (cnt = 0; cnt < argc; cnt++) {
-		shell_fprintf(shell, SHELL_NORMAL,
-				"  argv[%d] = %s\n", cnt, argv[cnt]);
+	shell_print(shell, "argc = %d", argc);
+	for (size_t cnt = 0; cnt < argc; cnt++) {
+		shell_print(shell, "  argv[%d] = %s", cnt, argv[cnt]);
 	}
+
 	return 0;
 }
 
@@ -121,8 +107,8 @@ static int cmd_version(const struct shell *shell, size_t argc, char **argv)
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_fprintf(shell, SHELL_NORMAL,
-		      "Zephyr version %s\n", KERNEL_VERSION_STRING);
+	shell_print(shell, "Zephyr version %s", KERNEL_VERSION_STRING);
+
 	return 0;
 }
 
@@ -135,8 +121,7 @@ SHELL_CREATE_STATIC_SUBCMD_SET(sub_demo)
 };
 SHELL_CMD_REGISTER(demo, &sub_demo, "Demo commands", NULL);
 
-SHELL_CMD_REGISTER(version, NULL, "Show kernel version", cmd_version);
-
+SHELL_CMD_ARG_REGISTER(version, NULL, "Show kernel version", cmd_version, 1, 0);
 
 void main(void)
 {

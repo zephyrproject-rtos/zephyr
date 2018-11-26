@@ -34,6 +34,11 @@ zephyr_sources_ifdef(
 )
 
 zephyr_sources_ifdef(
+  CONFIG_SHELL_HELP
+  shell_help.c
+  )
+
+zephyr_sources_ifdef(
   CONFIG_SHELL_CMDS
   shell_cmds.c
 )

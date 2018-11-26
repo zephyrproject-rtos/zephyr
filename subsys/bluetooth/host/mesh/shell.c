@@ -1574,12 +1574,6 @@ static int cmd_provision(const struct shell *shell, size_t argc, char *argv[])
 int cmd_timeout(const struct shell *shell, size_t argc, char *argv[])
 {
 	s32_t timeout;
-	int err;
-
-	err = shell_cmd_precheck(shell, (argc >= 1));
-	if (err) {
-		return err;
-	}
 
 	if (argc < 2) {
 		timeout = bt_mesh_cfg_cli_timeout_get();
@@ -1618,11 +1612,6 @@ static int cmd_fault_get(const struct shell *shell, size_t argc, char *argv[])
 	u8_t test_id;
 	u16_t cid;
 	int err;
-
-	err = shell_cmd_precheck(shell, (argc == 1));
-	if (err) {
-		return err;
-	}
 
 	cid = strtoul(argv[1], NULL, 0);
 	fault_count = sizeof(faults);
@@ -2043,7 +2032,7 @@ static int cmd_mesh(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc == 1) {
 		shell_help_print(shell);
-		/* shell_cmd_precheck returns 1 when help is printed */
+		/* shell returns 1 when help is printed */
 		return 1;
 	}
 

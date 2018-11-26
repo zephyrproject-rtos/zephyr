@@ -34,8 +34,8 @@ static void test_shell_execute_cmd(const char *cmd, int result)
 static void test_cmd_help(void)
 {
 	test_shell_execute_cmd("help", 0);
-	test_shell_execute_cmd("help -h", 0);
-	test_shell_execute_cmd("help --help", 0);
+	test_shell_execute_cmd("help -h", 1);
+	test_shell_execute_cmd("help --help", 1);
 	test_shell_execute_cmd("help dummy", 0);
 	test_shell_execute_cmd("help dummy dummy", 0);
 }
@@ -53,13 +53,13 @@ static void test_cmd_shell(void)
 {
 	test_shell_execute_cmd("shell -h", 1);
 	test_shell_execute_cmd("shell --help", 1);
-	test_shell_execute_cmd("shell dummy", -EINVAL);
-	test_shell_execute_cmd("shell dummy dummy", -EINVAL);
+	test_shell_execute_cmd("shell dummy", 1);
+	test_shell_execute_cmd("shell dummy dummy", 1);
 
 	/* subcommand: backspace_mode */
 	test_shell_execute_cmd("shell backspace_mode -h", 1);
 	test_shell_execute_cmd("shell backspace_mode --help", 1);
-	test_shell_execute_cmd("shell backspace_mode dummy", -EINVAL);
+	test_shell_execute_cmd("shell backspace_mode dummy", 1);
 
 	test_shell_execute_cmd("shell backspace_mode backspace", 0);
 	test_shell_execute_cmd("shell backspace_mode backspace -h", 1);
@@ -78,8 +78,8 @@ static void test_cmd_shell(void)
 	/* subcommand: colors */
 	test_shell_execute_cmd("shell colors -h", 1);
 	test_shell_execute_cmd("shell colors --help", 1);
-	test_shell_execute_cmd("shell colors dummy", -EINVAL);
-	test_shell_execute_cmd("shell colors dummy dummy", -EINVAL);
+	test_shell_execute_cmd("shell colors dummy", 1);
+	test_shell_execute_cmd("shell colors dummy dummy", 1);
 
 	test_shell_execute_cmd("shell colors off", 0);
 	test_shell_execute_cmd("shell colors off -h", 1);
@@ -113,11 +113,11 @@ static void test_cmd_shell(void)
 	test_shell_execute_cmd("shell echo on dummy dummy", -EINVAL);
 
 	/* subcommand: stats */
-	test_shell_execute_cmd("shell stats", -EINVAL);
+	test_shell_execute_cmd("shell stats", 1);
 	test_shell_execute_cmd("shell stats -h", 1);
 	test_shell_execute_cmd("shell stats --help", 1);
-	test_shell_execute_cmd("shell stats dummy", -EINVAL);
-	test_shell_execute_cmd("shell stats dummy dummy", -EINVAL);
+	test_shell_execute_cmd("shell stats dummy", 1);
+	test_shell_execute_cmd("shell stats dummy dummy", 1);
 
 	test_shell_execute_cmd("shell stats reset", 0);
 	test_shell_execute_cmd("shell stats reset -h", 1);
@@ -195,10 +195,11 @@ static void test_shell_wildcards_dynamic(void)
 static int cmd_test_module(const struct shell *shell, size_t argc, char **argv)
 {
 	ARG_UNUSED(argv);
+	ARG_UNUSED(argc);
 
-	return shell_cmd_precheck(shell, (argc == 1));
+	return 0;
 }
-SHELL_CMD_REGISTER(test_shell_cmd, NULL, NULL, cmd_test_module);
+SHELL_CMD_ARG_REGISTER(test_shell_cmd, NULL, "help", cmd_test_module, 1, 0);
 
 
 static int cmd_wildcard(const struct shell *shell, size_t argc, char **argv)

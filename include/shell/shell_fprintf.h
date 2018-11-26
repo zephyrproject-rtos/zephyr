@@ -76,7 +76,6 @@ void shell_fprintf_fmt(const struct shell_fprintf *sh_fprintf,
  */
 void shell_fprintf_buffer_flush(const struct shell_fprintf *sh_fprintf);
 
-
 #ifdef __cplusplus
 }
 #endif

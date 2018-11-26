@@ -6,7 +6,6 @@
 #ifndef SHELL_OPS_H__
 #define SHELL_OPS_H__
 
-#include <zephyr.h>
 #include <shell/shell.h>
 #include "shell_vt100.h"
 #include "shell_utils.h"
@@ -121,6 +120,29 @@ void shell_op_completion_insert(const struct shell *shell,
 				u16_t compl_len);
 
 bool shell_cursor_in_empty_line(const struct shell *shell);
+
+/* Function sends data stream to the shell instance. Each time before the
+ * shell_write function is called, it must be ensured that IO buffer of fprintf
+ * is flushed to avoid synchronization issues.
+ * For that purpose, use function transport_buffer_flush(shell)
+ *
+ * This function can be only used by shell module, it shall not be called
+ * directly.
+ */
+void shell_write(const struct shell *shell, const void *data,
+		 size_t length);
+
+/**
+ * @internal @brief This function shall not be used directly, it is required by
+ *		    the fprintf module.
+ *
+ * @param[in] p_user_ctx    Pointer to the context for the shell instance.
+ * @param[in] p_data        Pointer to the data buffer.
+ * @param[in] data_len      Data buffer size.
+ */
+void shell_print_stream(const void *user_ctx, const char *data,
+			size_t data_len);
+
 #ifdef __cplusplus
 }
 #endif
