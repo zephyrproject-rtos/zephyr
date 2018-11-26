@@ -151,7 +151,7 @@ static int cmd_wifi_connect(const struct shell *shell, size_t argc,
 	char *endptr;
 	int idx = 3;
 
-	if (shell_help_requested(shell) || argc < 3) {
+	if (argc < 3) {
 		shell_help_print(shell);
 		return -ENOEXEC;
 	}
@@ -212,11 +212,6 @@ static int cmd_wifi_disconnect(const struct shell *shell, size_t argc,
 	struct net_if *iface = net_if_get_default();
 	int status;
 
-	if (shell_help_requested(shell)) {
-		shell_help_print(shell);
-		return -ENOEXEC;
-	}
-
 	context.disconnecting = true;
 	context.shell = shell;
 
@@ -244,11 +239,6 @@ static int cmd_wifi_disconnect(const struct shell *shell, size_t argc,
 static int cmd_wifi_scan(const struct shell *shell, size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_default();
-
-	if (shell_help_requested(shell)) {
-		shell_help_print(shell);
-		return -ENOEXEC;
-	}
 
 	if (net_mgmt(NET_REQUEST_WIFI_SCAN, iface, NULL, 0)) {
 		shell_fprintf(shell, SHELL_WARNING, "Scan request failed\n");

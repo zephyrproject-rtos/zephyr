@@ -44,11 +44,6 @@ static int cmd_lspci(const struct shell *shell, size_t argc, char **argv)
 		.bar = PCI_BAR_ANY,
 	};
 
-	if (shell_help_requested(shell)) {
-		shell_help_print(shell);
-		return 1;
-	}
-
 	pci_bus_scan_init();
 
 	while (pci_bus_scan(&info)) {

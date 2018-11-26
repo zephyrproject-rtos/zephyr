@@ -24,11 +24,6 @@ static int cmd_br_repair(const struct shell *shell,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	if (shell_help_requested(shell)) {
-		shell_help_print(shell);
-		return -ENOEXEC;
-	}
-
 	shell_fprintf(shell, SHELL_INFO, "Starting global repair...\n");
 
 	net_rpl_repair_root(CONFIG_NET_RPL_DEFAULT_INSTANCE);
@@ -42,11 +37,6 @@ static int cmd_coap_send(const struct shell *shell,
 	struct in6_addr peer_addr;
 	enum coap_request_type type;
 	int r;
-
-	if (shell_help_requested(shell)) {
-		shell_help_print(shell);
-		return -ENOEXEC;
-	}
 
 	if (argc != 3 || !argv[1] || !argv[2]) {
 		shell_fprintf(shell, SHELL_ERROR, "Invalid arguments.\n");

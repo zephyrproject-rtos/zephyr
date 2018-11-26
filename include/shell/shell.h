@@ -342,7 +342,6 @@ struct shell_stats {
  */
 struct shell_flags {
 	u32_t insert_mode :1; /*!< Controls insert mode for text introduction.*/
-	u32_t show_help   :1; /*!< Shows help if -h or --help option present.*/
 	u32_t use_colors  :1; /*!< Controls colored syntax.*/
 	u32_t echo        :1; /*!< Controls shell echo.*/
 	u32_t processing  :1; /*!< Shell is executing process function.*/
@@ -614,18 +613,6 @@ void shell_fprintf(const struct shell *shell, enum shell_vt100_color color,
  * @param[in] shell Pointer to the shell instance.
  */
 void shell_process(const struct shell *shell);
-
-/**
- * @brief Informs that a command has been called with -h or --help option.
- *
- * @param[in] shell Pointer to the shell instance.
- *
- * @return True if help has been requested.
- */
-static inline bool shell_help_requested(const struct shell *shell)
-{
-	return shell->ctx->internal.flags.show_help;
-}
 
 /**
  * @brief Prints the current command help.

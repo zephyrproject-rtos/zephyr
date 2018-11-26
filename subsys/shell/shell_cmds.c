@@ -434,10 +434,7 @@ static int cmd_shell_stats(const struct shell *shell, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
 
-	if (shell_help_requested(shell)) {
-		shell_help_print(shell);
-		return 1;
-	} else if (argc == 1) {
+	if (argc == 1) {
 		shell_help_print(shell);
 	} else {
 		shell_fprintf(shell, SHELL_ERROR, "%s:%s%s\n", argv[0],

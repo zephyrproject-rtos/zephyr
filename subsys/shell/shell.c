@@ -62,15 +62,6 @@ static inline void transport_buffer_flush(const struct shell *shell)
 	shell_fprintf_buffer_flush(shell->fprintf_ctx);
 }
 
-static inline void help_flag_set(const struct shell *shell)
-{
-	shell->ctx->internal.flags.show_help = 1;
-}
-static inline void help_flag_clear(const struct shell *shell)
-{
-	shell->ctx->internal.flags.show_help = 0;
-}
-
 /* Function returns true if delete escape code shall be interpreted as
  * backspace.
  */
@@ -974,12 +965,16 @@ static const struct shell_cmd_entry *root_cmd_find(const char *syntax)
 	return NULL;
 }
 
-static int exec_cmd(const struct shell *shell, size_t argc, char **argv)
+static int exec_cmd(const struct shell *shell, size_t argc, char **argv,
+		    struct shell_static_entry help_entry)
 {
 	int ret_val = 0;
 
 	if (shell->ctx->active_cmd.handler == NULL) {
-		if (shell->ctx->active_cmd.help) {
+		if (help_entry.help) {
+			if (help_entry.help != shell->ctx->active_cmd.help) {
+				shell->ctx->active_cmd = help_entry;
+			}
 			shell_help_print(shell);
 		} else {
 			shell_fprintf(shell, SHELL_ERROR,
@@ -1014,11 +1009,8 @@ static int exec_cmd(const struct shell *shell, size_t argc, char **argv)
 	}
 
 clear:
-	help_flag_clear(shell);
-
 	return ret_val;
 }
-
 
 /* Function is analyzing the command buffer to find matching commands. Next, it
  * invokes the  last recognized command which has a handler and passes the rest
@@ -1030,6 +1022,7 @@ static int shell_execute(const struct shell *shell)
 	char *argv[CONFIG_SHELL_ARGC_MAX + 1]; /* +1 reserved for NULL */
 	const struct shell_static_entry *p_static_entry = NULL;
 	const struct shell_cmd_entry *p_cmd = NULL;
+	struct shell_static_entry help_entry;
 	size_t cmd_lvl = SHELL_CMD_ROOT_LVL;
 	size_t cmd_with_handler_lvl = 0;
 	bool wildcard_found = false;
@@ -1080,6 +1073,7 @@ static int shell_execute(const struct shell *shell)
 
 	/* checking if root command has a handler */
 	shell->ctx->active_cmd = *p_cmd->u.entry;
+	help_entry = *p_cmd->u.entry;
 
 	p_cmd = p_cmd->u.entry->subcmd;
 	cmd_lvl++;
@@ -1096,8 +1090,15 @@ static int shell_execute(const struct shell *shell)
 			/* Command called with help option so it makes no sense
 			 * to search deeper commands.
 			 */
-			help_flag_set(shell);
-			break;
+			if (help_entry.help) {
+				shell->ctx->active_cmd = help_entry;
+				shell_help_print(shell);
+				return 1;
+			}
+
+			shell_fprintf(shell, SHELL_ERROR,
+				      SHELL_MSG_SPECIFY_SUBCOMMAND);
+			return -ENOEXEC;
 		}
 
 		if (IS_ENABLED(CONFIG_SHELL_WILDCARD)) {
@@ -1147,7 +1148,6 @@ static int shell_execute(const struct shell *shell)
 							"Error: requested"
 							" multiple function"
 							" executions\r\n");
-						help_flag_clear(shell);
 
 						return -ENOEXEC;
 					}
@@ -1155,6 +1155,10 @@ static int shell_execute(const struct shell *shell)
 
 				shell->ctx->active_cmd = *p_static_entry;
 				cmd_with_handler_lvl = cmd_lvl;
+			}
+			/* checking if function has a help handler */
+			if (p_static_entry->help != NULL) {
+				help_entry = *p_static_entry;
 			}
 
 			cmd_lvl++;
@@ -1176,7 +1180,7 @@ static int shell_execute(const struct shell *shell)
 
 	/* Executing the deepest found handler. */
 	return exec_cmd(shell, argc - cmd_with_handler_lvl,
-			&argv[cmd_with_handler_lvl]);
+			&argv[cmd_with_handler_lvl], help_entry);
 }
 
 static void shell_transport_evt_handler(enum shell_transport_evt evt_type,
@@ -1740,11 +1744,6 @@ int shell_prompt_change(const struct shell *shell, char *prompt)
 int shell_cmd_precheck(const struct shell *shell,
 		       bool arg_cnt_ok)
 {
-	if (shell_help_requested(shell)) {
-		shell_help_print(shell);
-		return 1; /* help printed */
-	}
-
 	if (!arg_cnt_ok) {
 		shell_fprintf(shell, SHELL_ERROR,
 			      "%s: wrong parameter count\n",
