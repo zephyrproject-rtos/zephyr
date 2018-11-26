@@ -27,7 +27,7 @@ elseif("${ARCH}" STREQUAL "xtensa")
   set(TOOLCHAIN_INCLUDES
     ${SYSROOT_DIR}/include/arch/include
     ${SYSROOT_DIR}/include
-    )
+  )
 
   LIST(APPEND TOOLCHAIN_LIBS hal)
   LIST(APPEND LIB_INCLUDE_DIR -L${SYSROOT_DIR}/lib)

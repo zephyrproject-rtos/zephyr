@@ -27,7 +27,7 @@ include(CheckCXXCompilerFlag)
 # 1.1. zephyr_*
 #
 # The following methods are for modifying the CMake library[0] called
-# "zephyr". zephyr is a catchall CMake library for source files that
+# "zephyr". zephyr is a catch-all CMake library for source files that
 # can be built purely with the include paths, defines, and other
 # compiler flags that all zephyr source files use.
 # [0] https://cmake.org/cmake/help/latest/manual/cmake-buildsystem.7.html

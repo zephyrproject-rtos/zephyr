@@ -18,7 +18,7 @@ foreach(arch ${arch_list})
   foreach(root ${BOARD_ROOT})
 	set(board_arch_dir ${root}/boards/${arch})
 
-	# Match the .yanl files in the board directories to make sure we are
+	# Match the .yaml files in the board directories to make sure we are
 	# finding boards, e.g. qemu_xtensa/qemu_xtensa.yaml
 	file(GLOB_RECURSE yamls_for_${arch}
       RELATIVE ${board_arch_dir}

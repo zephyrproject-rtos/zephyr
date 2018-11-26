@@ -65,7 +65,7 @@ set(PROJECT_BINARY_DIR ${__build_dir})
 # CMake's 'project' concept has proven to not be very useful for Zephyr
 # due in part to how Zephyr is organized and in part to it not fitting well
 # with cross compilation.
-# CMake therefore tries to rely as little as possible on project()
+# Zephyr therefore tries to rely as little as possible on project()
 # and its associated variables, e.g. PROJECT_SOURCE_DIR.
 # It is recommended to always use ZEPHYR_BASE instead of PROJECT_SOURCE_DIR
 # when trying to reference ENV${ZEPHYR_BASE}.
@@ -192,12 +192,12 @@ foreach(root ${BOARD_ROOT})
   # NB: find_path will return immediately if the output variable is
   # already set
   find_path(BOARD_DIR
-	NAMES ${BOARD}_defconfig
-	PATHS ${root}/boards/*/*
-	NO_DEFAULT_PATH
-	)
+    NAMES ${BOARD}_defconfig
+    PATHS ${root}/boards/*/*
+    NO_DEFAULT_PATH
+    )
   if(BOARD_DIR AND NOT (${root} STREQUAL ${ZEPHYR_BASE}))
-	set(USING_OUT_OF_TREE_BOARD 1)
+    set(USING_OUT_OF_TREE_BOARD 1)
   endif()
 endforeach()
 
@@ -208,8 +208,8 @@ if(NOT BOARD_DIR)
   message(FATAL_ERROR "Invalid usage")
 endif()
 
-get_filename_component(BOARD_ARCH_DIR ${BOARD_DIR} DIRECTORY)
-get_filename_component(BOARD_FAMILY   ${BOARD_DIR} NAME     )
+get_filename_component(BOARD_ARCH_DIR ${BOARD_DIR}      DIRECTORY)
+get_filename_component(BOARD_FAMILY   ${BOARD_DIR}      NAME)
 get_filename_component(ARCH           ${BOARD_ARCH_DIR} NAME)
 
 if(CONF_FILE)
@@ -276,7 +276,7 @@ if(GIT_FOUND)
   endif()
 endif()
 
-set(SOC_NAME ${CONFIG_SOC})
+set(SOC_NAME   ${CONFIG_SOC})
 set(SOC_SERIES ${CONFIG_SOC_SERIES})
 set(SOC_FAMILY ${CONFIG_SOC_FAMILY})
 
@@ -323,23 +323,25 @@ if(CONFIG_QEMU_TARGET)
   if(CONFIG_NET_QEMU_ETHERNET)
     if(CONFIG_ETH_NIC_MODEL)
       list(APPEND QEMU_FLAGS_${ARCH}
-	-nic tap,model=${CONFIG_ETH_NIC_MODEL},script=no,downscript=no,ifname=zeth
-	)
+        -nic tap,model=${CONFIG_ETH_NIC_MODEL},script=no,downscript=no,ifname=zeth
+      )
     else()
-      message(FATAL_ERROR
-	"No Qemu ethernet driver configured!
-Enable Qemu supported ethernet driver like e1000 at drivers/ethernet")
+      message(FATAL_ERROR "
+        No Qemu ethernet driver configured!
+        Enable Qemu supported ethernet driver like e1000 at drivers/ethernet"
+      )
     endif()
   else()
     list(APPEND QEMU_FLAGS_${ARCH}
       -net none
-      )
+    )
   endif()
 endif()
 
 zephyr_library_named(app)
 
 add_subdirectory(${ZEPHYR_BASE} ${__build_dir})
+
 
 # Link 'app' with the Zephyr interface libraries.
 #

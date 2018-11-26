@@ -19,6 +19,7 @@ enable_language(C CXX ASM)
 #
 # To see a list of typical targets execute "make usage"
 # More info can be located in ./README.rst
+#
 # Comments in this file are targeted only to the developer, do not
 # expect to learn how to build the kernel reading this file.
 
@@ -27,22 +28,26 @@ enable_language(C CXX ASM)
 check_c_compiler_flag("" toolchain_is_ok)
 assert(toolchain_is_ok "The toolchain is unable to build a dummy C file. See CMakeError.log.")
 
+# TODO: Clean up
 set(CMAKE_EXECUTABLE_SUFFIX .elf)
 
+# TODO: Clean up
 if(NOT PROPERTY_LINKER_SCRIPT_DEFINES)
   set_property(GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES -D__GCC_LINKER_CMD__)
 endif()
 
+# TODO: Clean up
 define_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT BRIEF_DOCS " " FULL_DOCS " ")
-set_property(   GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf32-little${ARCH})
+set_property(   GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf32-little${ARCH}) # BFD format
 
-# zephyr_interface is a source-less library that has all the global
+# 'zephyr_interface' is a source-less "library" that encapsulates all the global
 # compiler options needed by all source files. All zephyr libraries,
-# including the library named "zephyr" link with this library to
+# including the library named 'zephyr', link with zephyr_interface to
 # obtain these flags.
+# https://cmake.org/cmake/help/latest/manual/cmake-buildsystem.7.html#interface-libraries
 add_library(zephyr_interface INTERFACE)
 
-# zephyr is a catchall CMake library for source files that can be
+# 'zephyr' is a catch-all CMake library for source files that can be
 # built purely with the include paths, defines, and other compiler
 # flags that come with zephyr_interface.
 zephyr_library_named(zephyr)
@@ -376,6 +381,8 @@ endif()
 
 configure_file(version.h.in ${PROJECT_BINARY_DIR}/include/generated/version.h)
 
+
+
 # Unfortunately, the order in which CMakeLists.txt code is processed
 # matters so we need to be careful about how we order the processing
 # of subdirectories. One example is "Compiler flags added late in the
@@ -422,7 +429,6 @@ add_custom_command(                       OUTPUT  ${syscall_macros_h}
   > ${syscall_macros_h}
   DEPENDS ${ZEPHYR_BASE}/scripts/gen_syscall_header.py
   )
-
 
 set(syscall_list_h ${CMAKE_CURRENT_BINARY_DIR}/include/generated/syscall_list.h)
 set(syscalls_json  ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/syscalls.json)
@@ -603,6 +609,7 @@ or make sure it is not created when it has no source files.")
   endif()
 endforeach()
 
+
 get_property(OUTPUT_FORMAT        GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT)
 
 get_property(LINKER_SCRIPT_DEFINES GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES)
@@ -699,6 +706,8 @@ if(CONFIG_APPLICATION_MEMORY)
   list(APPEND LINKER_SCRIPT_DEFINES ${def})
 endif() # CONFIG_APPLICATION_MEMORY
 
+
+
 # Declare MPU userspace dependencies before the linker scripts to make
 # sure the order of dependencies are met
 if(CONFIG_CPU_HAS_MPU AND CONFIG_USERSPACE)
@@ -709,7 +718,7 @@ if(CONFIG_CPU_HAS_MPU AND CONFIG_USERSPACE)
     set(ALIGN_SIZING_DEP app_sizing_prebuilt linker_app_sizing_script)
   endif()
   if(CONFIG_ARM)
-  set(PRIV_STACK_DEP priv_stacks_prebuilt)
+    set(PRIV_STACK_DEP priv_stacks_prebuilt)
   endif()
 endif()
 
@@ -774,7 +783,6 @@ add_custom_target(
   linker.cmd
   offsets_h
   )
-
 # Give the 'linker_script' target all of the include directories so
 # that cmake can successfully find the linker_script's header
 # dependencies.
@@ -1327,7 +1335,6 @@ else()
 endif()
 
 add_subdirectory(cmake/flash)
-
 add_subdirectory(cmake/usage)
 add_subdirectory(cmake/reports)
 
@@ -1337,14 +1344,14 @@ if(CONFIG_ASSERT AND (NOT CONFIG_FORCE_NO_ASSERT))
       --- WARNING:  __ASSERT() statements are globally ENABLED ---
       --- The kernel will run more slowly and use more memory  ---
       ------------------------------------------------------------"
-)
+  )
 endif()
 
 if(CONFIG_BOARD_DEPRECATED)
   message(WARNING "
       WARNING:  The board '${BOARD}' is deprecated and will be
       removed in version ${CONFIG_BOARD_DEPRECATED}"
-)
+  )
 endif()
 
 if(CONFIG_X86 AND CONFIG_USERSPACE AND NOT CONFIG_X86_NO_MELTDOWN)
@@ -1353,5 +1360,5 @@ if(CONFIG_X86 AND CONFIG_USERSPACE AND NOT CONFIG_X86_NO_MELTDOWN)
       If your CPU is vulnerable to the Meltdown CPU bug, security of
       supervisor-only memory pages is not guaranteed. This version of Zephyr
       does not contain a fix for this issue."
-)
+  )
 endif()
