@@ -102,6 +102,8 @@ set(PythonInterp_FIND_VERSION_EXACT 0)
 set(PythonInterp_FIND_REQUIRED 1)
 include(${ZEPHYR_BASE}/cmake/backports/FindPythonInterp.cmake)
 
+include(CheckCCompilerFlag)
+include(CheckCXXCompilerFlag)
 include(${ZEPHYR_BASE}/cmake/extensions.cmake)
 
 include(${ZEPHYR_BASE}/cmake/ccache.cmake)

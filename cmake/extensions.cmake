@@ -1,6 +1,3 @@
-include(CheckCCompilerFlag)
-include(CheckCXXCompilerFlag)
-
 ########################################################
 # Table of contents
 ########################################################
