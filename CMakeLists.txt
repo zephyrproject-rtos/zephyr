@@ -1236,6 +1236,7 @@ set(logical_target_for_zephyr_elf ${logical_target_for_zephyr_elf} PARENT_SCOPE)
 set_target_properties(${logical_target_for_zephyr_elf} PROPERTIES OUTPUT_NAME ${KERNEL_NAME})
 
 set(post_build_commands "")
+set(post_build_byproducts "")
 
 list_append_ifdef(CONFIG_CHECK_LINK_MAP
   post_build_commands
@@ -1289,10 +1290,19 @@ list_append_ifdef(
   COMMAND ${CMAKE_COMMAND} -E copy ${KERNEL_ELF_NAME}    ${KERNEL_EXE_NAME}
   )
 
+list_append_ifdef(CONFIG_BUILD_OUTPUT_HEX post_build_byproducts ${KERNEL_HEX_NAME})
+list_append_ifdef(CONFIG_BUILD_OUTPUT_BIN post_build_byproducts ${KERNEL_BIN_NAME})
+list_append_ifdef(CONFIG_BUILD_OUTPUT_S19 post_build_byproducts ${KERNEL_S19_NAME})
+list_append_ifdef(CONFIG_OUTPUT_DISASSEMBLY post_build_byproducts ${KERNEL_LST_NAME})
+list_append_ifdef(CONFIG_OUTPUT_STAT post_build_byproducts ${KERNEL_STAT_NAME})
+list_append_ifdef(CONFIG_BUILD_OUTPUT_STRIPPED post_build_byproducts ${KERNEL_STRIP_NAME})
+list_append_ifdef(CONFIG_BUILD_OUTPUT_EXE post_build_byproducts ${KERNEL_EXE_NAME})
+
 add_custom_command(
   TARGET ${logical_target_for_zephyr_elf}
   POST_BUILD
   ${post_build_commands}
+  BYPRODUCTS ${post_build_byproducts}
   COMMENT "Generating files from zephyr.elf for board: ${BOARD}"
   # NB: COMMENT only works for some CMake-Generators
 )
