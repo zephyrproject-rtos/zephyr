@@ -53,6 +53,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 				k_oops(); \
 			}
 
+#define BT_HEXDUMP_DBG(_data, _length, _str) \
+		LOG_HEXDUMP_DBG((const u8_t *)_data, _length, _str)
+
 const char *bt_hex_real(const void *buf, size_t len);
 const char *bt_addr_str_real(const bt_addr_t *addr);
 const char *bt_addr_le_str_real(const bt_addr_le_t *addr);
