@@ -162,6 +162,10 @@ zephyr_compile_options(
 )
 endif()
 
+zephyr_ld_options(
+  ${TOOLCHAIN_LD_FLAGS}
+)
+
 if(NOT CONFIG_NATIVE_APPLICATION)
 zephyr_ld_options(
   -nostdlib
