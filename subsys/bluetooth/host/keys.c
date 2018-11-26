@@ -23,6 +23,7 @@
 #include "common/log.h"
 
 #include "common/rpa.h"
+#include "gatt_internal.h"
 #include "hci_core.h"
 #include "smp.h"
 #include "settings.h"
@@ -229,6 +230,10 @@ static void keys_clear_id(struct bt_keys *keys, void *data)
 	u8_t *id = data;
 
 	if (*id == keys->id) {
+		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+			bt_gatt_clear_ccc(*id, &keys->addr);
+		}
+
 		bt_keys_clear(keys);
 	}
 }
