@@ -153,7 +153,6 @@ struct wncm14a2a_socket {
 	struct sockaddr dst;
 
 	int socket_id;
-	bool socket_reading;
 
 	/** semaphore */
 	struct k_sem sock_send_sem;
@@ -826,7 +825,7 @@ static void on_cmd_sockread(struct net_buf **buf, u16_t len)
 	sock->recv_pkt = net_pkt_get_rx(sock->context, BUF_ALLOC_TIMEOUT);
 	if (!sock->recv_pkt) {
 		LOG_ERR("Failed net_pkt_get_reserve_rx!");
-		goto cleanup;
+		return;
 	}
 
 	/* set pkt data */
@@ -839,7 +838,7 @@ static void on_cmd_sockread(struct net_buf **buf, u16_t len)
 		LOG_ERR("Failed net_pkt_get_frag!");
 		net_pkt_unref(sock->recv_pkt);
 		sock->recv_pkt = NULL;
-		goto cleanup;
+		return;
 	}
 
 	net_pkt_frag_add(sock->recv_pkt, frag);
@@ -866,7 +865,7 @@ static void on_cmd_sockread(struct net_buf **buf, u16_t len)
 				LOG_ERR("Unable to add data! Aborting!");
 				net_pkt_unref(sock->recv_pkt);
 				sock->recv_pkt = NULL;
-				goto cleanup;
+				return;
 			}
 
 			c = 0;
@@ -896,9 +895,6 @@ static void on_cmd_sockread(struct net_buf **buf, u16_t len)
 	 * case the app takes a long time.
 	 */
 	k_work_submit_to_queue(&wncm14a2a_workq, &sock->recv_cb_work);
-
-cleanup:
-	sock->socket_reading = false;
 }
 
 /* Handler: @SOCKDATAIND: <socket_id>,<session_status>,<left_bytes> */
@@ -946,23 +942,14 @@ static void on_cmd_sockdataind(struct net_buf **buf, u16_t len)
 	}
 
 	if (left_bytes > 0) {
-		if (!sock->socket_reading) {
-			LOG_DBG("socket_id:%d left_bytes:%d",
-				    socket_id, left_bytes);
+		LOG_DBG("socket_id:%d left_bytes:%d", socket_id, left_bytes);
+		snprintk(sendbuf, sizeof(sendbuf), "AT@SOCKREAD=%d,%d",
+			 sock->socket_id, left_bytes);
 
-			/* TODO: add a timeout to unset this */
-			sock->socket_reading = true;
-			snprintk(sendbuf, sizeof(sendbuf), "AT@SOCKREAD=%d,%d",
-				 sock->socket_id, left_bytes);
-
-			/* We still have a lock from hitting this cmd trigger,
-			 * so don't hold one when we send the new command
-			 */
-			send_at_cmd(sock, sendbuf, K_NO_WAIT);
-		} else {
-			LOG_DBG("SKIPPING socket_id:%d left_bytes:%d",
-				    socket_id, left_bytes);
-		}
+		/* We still have a lock from hitting this cmd trigger,
+		 * so don't hold one when we send the new command
+		 */
+		send_at_cmd(sock, sendbuf, K_NO_WAIT);
 	}
 }
 
