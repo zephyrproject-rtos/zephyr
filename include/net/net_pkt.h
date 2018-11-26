@@ -366,6 +366,20 @@ static inline void net_pkt_set_ipv4_ttl(struct net_pkt *pkt,
 {
 	pkt->ipv4_ttl = ttl;
 }
+#else
+static inline u8_t net_pkt_ipv4_ttl(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return 0;
+}
+
+static inline void net_pkt_set_ipv4_ttl(struct net_pkt *pkt,
+					u8_t ttl)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(ttl);
+}
 #endif
 
 #if defined(CONFIG_NET_IPV6)
@@ -411,6 +425,62 @@ static inline void net_pkt_set_ipv6_hop_limit(struct net_pkt *pkt,
 {
 	pkt->ipv6_hop_limit = hop_limit;
 }
+#else /* CONFIG_NET_IPV6 */
+static inline u8_t net_pkt_ipv6_ext_opt_len(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return 0;
+}
+
+static inline void net_pkt_set_ipv6_ext_opt_len(struct net_pkt *pkt,
+						u8_t len)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(len);
+}
+
+static inline u16_t net_pkt_ipv6_ext_len(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return 0;
+}
+
+static inline void net_pkt_set_ipv6_ext_len(struct net_pkt *pkt, u16_t len)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(len);
+}
+
+static inline u16_t net_pkt_ipv6_hdr_prev(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return 0;
+}
+
+static inline void net_pkt_set_ipv6_hdr_prev(struct net_pkt *pkt,
+					     u16_t offset)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(offset);
+}
+
+static inline u8_t net_pkt_ipv6_hop_limit(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return 0;
+}
+
+static inline void net_pkt_set_ipv6_hop_limit(struct net_pkt *pkt,
+					      u8_t hop_limit)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(hop_limit);
+}
+#endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV6_FRAGMENT)
 static inline u16_t net_pkt_ipv6_fragment_start(struct net_pkt *pkt)
@@ -445,11 +515,49 @@ static inline void net_pkt_set_ipv6_fragment_id(struct net_pkt *pkt,
 {
 	pkt->ipv6_fragment_id = id;
 }
+#else /* CONFIG_NET_IPV6_FRAGMENT */
+static inline u16_t net_pkt_ipv6_fragment_start(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return 0;
+}
+
+static inline void net_pkt_set_ipv6_fragment_start(struct net_pkt *pkt,
+						   u16_t start)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(start);
+}
+
+static inline u16_t net_pkt_ipv6_fragment_offset(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return 0;
+}
+
+static inline void net_pkt_set_ipv6_fragment_offset(struct net_pkt *pkt,
+						    u16_t offset)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(offset);
+}
+
+static inline u32_t net_pkt_ipv6_fragment_id(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return 0;
+}
+
+static inline void net_pkt_set_ipv6_fragment_id(struct net_pkt *pkt,
+						u32_t id)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(id);
+}
 #endif /* CONFIG_NET_IPV6_FRAGMENT */
-#else /* CONFIG_NET_IPV6 */
-#define net_pkt_ipv6_ext_len(...) 0
-#define net_pkt_set_ipv6_ext_len(...)
-#endif /* CONFIG_NET_IPV6 */
 
 #if NET_TC_COUNT > 1
 static inline u8_t net_pkt_priority(struct net_pkt *pkt)
@@ -676,14 +784,21 @@ static inline void net_pkt_set_ipv4_auto(struct net_pkt *pkt,
 {
 	pkt->ipv4_auto_arp_msg = is_auto_arp_msg;
 }
-#else
+#else /* CONFIG_NET_IPV4_AUTO */
 static inline bool net_pkt_ipv4_auto(struct net_pkt *pkt)
 {
+	ARG_UNUSED(pkt);
+
 	return false;
 }
 
-#define net_pkt_set_ipv4_auto(...)
-#endif
+static inline void net_pkt_set_ipv4_auto(struct net_pkt *pkt,
+					 bool is_auto_arp_msg)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(is_auto_arp_msg);
+}
+#endif /* CONFIG_NET_IPV4_AUTO */
 
 #define NET_IPV6_HDR(pkt) ((struct net_ipv6_hdr *)net_pkt_ip_data(pkt))
 #define NET_IPV4_HDR(pkt) ((struct net_ipv4_hdr *)net_pkt_ip_data(pkt))
