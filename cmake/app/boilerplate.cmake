@@ -88,22 +88,21 @@ set(AUTOCONF_H ${__build_dir}/include/generated/autoconf.h)
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${AUTOCONF_H})
 
 
-# The 'FindPythonInterp' that is distributed with CMake 3.8 has a bug
-# that we need to work around until we upgrade to 3.13. Until then we
-# maintain a patched copy in our repo. Bug:
-# https://github.com/zephyrproject-rtos/zephyr/issues/11103
-set(PythonInterp_FIND_VERSION 3.4)
-set(PythonInterp_FIND_VERSION_COUNT 2)
-set(PythonInterp_FIND_VERSION_MAJOR 3)
-set(PythonInterp_FIND_VERSION_MINOR 4)
-set(PythonInterp_FIND_VERSION_EXACT 0)
-set(PythonInterp_FIND_REQUIRED 1)
-include(${ZEPHYR_BASE}/cmake/backports/FindPythonInterp.cmake)
+#
+# Import more CMake functions and macros
+#
 
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
 include(${ZEPHYR_BASE}/cmake/extensions.cmake)
+include(${ZEPHYR_BASE}/cmake/version.cmake)  # depends on hex.cmake
 
+#
+# Find tools
+#
+
+include(${ZEPHYR_BASE}/cmake/python.cmake)
+include(${ZEPHYR_BASE}/cmake/git.cmake)  # depends on version.cmake
 include(${ZEPHYR_BASE}/cmake/ccache.cmake)
 
 if(${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_BINARY_DIR})
@@ -262,7 +261,6 @@ DTC_OVERLAY_FILE=\"dts1.overlay dts2.overlay\"")
 set(CMAKE_C_COMPILER_FORCED   1)
 set(CMAKE_CXX_COMPILER_FORCED 1)
 
-include(${ZEPHYR_BASE}/cmake/version.cmake)
 include(${ZEPHYR_BASE}/cmake/host-tools.cmake)
 
 # DTS should be close to kconfig because CONFIG_ variables from
@@ -280,23 +278,6 @@ include(${ZEPHYR_BASE}/cmake/host-tools.cmake)
 # and possibly change the toolchain.
 include(${ZEPHYR_BASE}/cmake/generic_toolchain.cmake)
 include(${ZEPHYR_BASE}/cmake/kconfig.cmake)
-
-find_package(Git QUIET)
-if(GIT_FOUND)
-  execute_process(COMMAND ${GIT_EXECUTABLE} describe
-    WORKING_DIRECTORY ${ZEPHYR_BASE}
-    OUTPUT_VARIABLE BUILD_VERSION
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    ERROR_STRIP_TRAILING_WHITESPACE
-    ERROR_VARIABLE stderr
-    RESULT_VARIABLE return_code
-    )
-  if(return_code)
-    message(STATUS "git describe failed: ${stderr}; ${KERNEL_VERSION_STRING} will be used instead")
-  elseif(CMAKE_VERBOSE_MAKEFILE)
-    message(STATUS "git describe stderr: ${stderr}")
-  endif()
-endif()
 
 set(SOC_NAME   ${CONFIG_SOC})
 set(SOC_SERIES ${CONFIG_SOC_SERIES})
