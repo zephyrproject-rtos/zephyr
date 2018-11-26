@@ -1,0 +1,12 @@
+sample:
+  description: Code data relocation Sample
+  name: code relocation
+tests:
+  test:
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+      - "Hello World! (.*)"
+    platform_whitelist: qemu_cortex_m3 mps2_an385 sam_e70_xplained
+    tags: linker
