@@ -105,10 +105,12 @@ struct shell_static_entry {
 };
 
 /**
- * @brief Macro for defining and adding a root command (level 0) with
- * arguments.
+ * @brief Macro for defining and adding a root command (level 0) with required
+ * number of arguments.
  *
- * @note Each root command shall have unique syntax.
+ * @note Each root command shall have unique syntax. If a command will be called
+ * with wrong number of arguments shell will print an error message and command
+ * handler will not be called.
  *
  * @param[in] syntax  Command syntax (for example: history).
  * @param[in] subcmd  Pointer to a subcommands array.
@@ -184,7 +186,10 @@ struct shell_static_entry {
 	}
 
 /**
- * @brief Initializes a shell command with arguments
+ * @brief Initializes a shell command with arguments.
+ *
+ * @note If a command will be called with wrong number of arguments shell will
+ * print an error message and command handler will not be called.
  *
  * @param[in] _syntax  Command syntax (for example: history).
  * @param[in] _subcmd  Pointer to a subcommands array.
