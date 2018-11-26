@@ -289,6 +289,10 @@ config BUILD_OUTPUT_S19
 	  Build a binary in S19 format. This will build a zephyr.s19 file need
 	  by some platforms.
 
+config BUILD_NO_GAP_FILL
+	bool "Don't fill gaps in generated hex/bin/s19 files."
+	depends on BUILD_OUTPUT_HEX || BUILD_OUTPUT_BIN || BUILD_OUTPUT_S19
+
 config BUILD_OUTPUT_STRIPPED
 	bool "Build a stripped binary"
 	help
