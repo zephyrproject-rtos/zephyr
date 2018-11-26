@@ -181,7 +181,6 @@ int bt_conn_addr_le_cmp(const struct bt_conn *conn, const bt_addr_le_t *peer);
  * e.g. as the handle since that's assigned to us by the controller.
  */
 #define BT_CONN_ID_INVALID 0xff
-u8_t bt_conn_get_id(struct bt_conn *conn);
 struct bt_conn *bt_conn_lookup_id(u8_t id);
 
 /* Look up a connection state. For BT_ADDR_LE_ANY, returns the first connection

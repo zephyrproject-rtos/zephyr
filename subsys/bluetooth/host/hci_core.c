@@ -503,7 +503,7 @@ static void hci_acl(struct net_buf *buf)
 		return;
 	}
 
-	acl(buf)->id = bt_conn_get_id(conn);
+	acl(buf)->id = bt_conn_index(conn);
 
 	bt_conn_recv(conn, buf, flags);
 	bt_conn_unref(conn);
