@@ -25,6 +25,7 @@
 # invocation in every toplevel CMakeLists.txt.
 cmake_minimum_required(VERSION 3.8.2)
 
+# CMP0002: "Logical target names must be globally unique"
 cmake_policy(SET CMP0002 NEW)
 
 define_property(GLOBAL PROPERTY ZEPHYR_LIBS

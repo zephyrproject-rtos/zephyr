@@ -1,8 +1,39 @@
-set(CMAKE_SYSTEM_NAME      Generic)
+# No official documentation exists for the "Generic" value, except their wiki.
+#
+# https://gitlab.kitware.com/cmake/community/wikis/doc/cmake/CrossCompiling:
+#   CMAKE_SYSTEM_NAME : this one is mandatory, it is the name of the target
+#   system, i.e. the same as CMAKE_SYSTEM_NAME would have if CMake would run
+#   on the target system.  Typical examples are "Linux" and "Windows". This
+#   variable is used for constructing the file names of the platform files
+#   like Linux.cmake or Windows-gcc.cmake. If your target is an embedded
+#   system without OS set CMAKE_SYSTEM_NAME to "Generic".
+set(CMAKE_SYSTEM_NAME Generic)
+
+# https://cmake.org/cmake/help/latest/variable/CMAKE_SYSTEM_PROCESSOR.html:
+#   The name of the CPU CMake is building for.
+#
+# https://gitlab.kitware.com/cmake/community/wikis/doc/cmake/CrossCompiling:
+#   CMAKE_SYSTEM_PROCESSOR : optional, processor (or hardware) of the
+#   target system. This variable is not used very much except for one
+#   purpose, it is used to load a
+#   CMAKE_SYSTEM_NAME-compiler-CMAKE_SYSTEM_PROCESSOR.cmake file,
+#   which can be used to modify settings like compiler flags etc. for
+#   the target
 set(CMAKE_SYSTEM_PROCESSOR ${ARCH})
 
-set(BUILD_SHARED_LIBS OFF)
+# https://cmake.org/cmake/help/latest/variable/CMAKE_SYSTEM_VERSION.html:
+#   When the CMAKE_SYSTEM_NAME variable is set explicitly to enable cross
+#   compiling then the value of CMAKE_SYSTEM_VERSION must also be set
+#   explicitly to specify the target system version.
+set(CMAKE_SYSTEM_VERSION ${PROJECT_VERSION})
 
+# https://cmake.org/cmake/help/latest/variable/CMAKE_FIND_ROOT_PATH_MODE_PROGRAM.html:
+#   [...] controls whether the CMAKE_FIND_ROOT_PATH and CMAKE_SYSROOT
+#   are used by find_program().  If set to ONLY, then only the roots in
+#   CMAKE_FIND_ROOT_PATH will be searched.  If set to NEVER, then the roots
+#   in CMAKE_FIND_ROOT_PATH will be ignored and only the host system root
+#   will be used.  If set to BOTH, then the host system paths and the paths
+#   in CMAKE_FIND_ROOT_PATH will be searched.
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
