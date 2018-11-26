@@ -100,6 +100,18 @@ struct bt_conn *bt_conn_lookup_addr_le(u8_t id, const bt_addr_le_t *peer);
  */
 const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn);
 
+/** @brief Get array index of a connection
+ *
+ *  This function is used to map bt_conn to index of an array of
+ *  connections. The array has CONFIG_BT_MAX_CONN elements.
+ *
+ *  @param conn Connection object.
+ *
+ *  @return Index of the connection object.
+ *  The range of the returned value is 0..CONFIG_BT_MAX_CONN-1
+ */
+u8_t bt_conn_index(struct bt_conn *conn);
+
 /** Connection Type */
 enum {
 	/** LE Connection Type */

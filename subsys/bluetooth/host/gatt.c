@@ -19,6 +19,7 @@
 
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
+#include <bluetooth/conn.h>
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 #include <bluetooth/hci_driver.h>
@@ -289,12 +290,12 @@ static struct gatt_ccc_store {
 
 static bool gatt_ccc_conn_is_queued(struct bt_conn *conn)
 {
-	return (conn == gatt_ccc_store.conn_list[bt_conn_get_id(conn)]);
+	return (conn == gatt_ccc_store.conn_list[bt_conn_index(conn)]);
 }
 
 static void gatt_ccc_conn_unqueue(struct bt_conn *conn)
 {
-	u8_t index = bt_conn_get_id(conn);
+	u8_t index = bt_conn_index(conn);
 
 	if (gatt_ccc_store.conn_list[index] != NULL) {
 		bt_conn_unref(gatt_ccc_store.conn_list[index]);
@@ -727,7 +728,7 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 			/* Store the connection with the same index it has in
 			 * the conns array
 			 */
-			gatt_ccc_store.conn_list[bt_conn_get_id(conn)] =
+			gatt_ccc_store.conn_list[bt_conn_index(conn)] =
 				bt_conn_ref(conn);
 			k_delayed_work_submit(&gatt_ccc_store.work,
 					      CCC_STORE_DELAY);

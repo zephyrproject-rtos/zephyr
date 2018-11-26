@@ -2249,9 +2249,12 @@ int bt_conn_auth_pairing_confirm(struct bt_conn *conn)
 }
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
 
-u8_t bt_conn_get_id(struct bt_conn *conn)
+u8_t bt_conn_index(struct bt_conn *conn)
 {
-	return conn - conns;
+	u8_t index = conn - conns;
+
+	__ASSERT(index < CONFIG_BT_MAX_CONN, "Invalid bt_conn pointer");
+	return index;
 }
 
 struct bt_conn *bt_conn_lookup_id(u8_t id)
