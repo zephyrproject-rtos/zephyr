@@ -946,8 +946,13 @@ static void on_cmd_sockdataind(struct net_buf **buf, u16_t len)
 		snprintk(sendbuf, sizeof(sendbuf), "AT@SOCKREAD=%d,%d",
 			 sock->socket_id, left_bytes);
 
-		/* We still have a lock from hitting this cmd trigger,
-		 * so don't hold one when we send the new command
+		/* We entered this trigger due to an unsolicited modem response.
+		 * When we send the AT@SOCKREAD command it won't generate an
+		 * "OK" response directly.  The modem will respond with
+		 * "@SOCKREAD ..." and the data requested and then "OK" or
+		 * "ERROR".  Let's not wait here by passing in a timeout to
+		 * send_at_cmd().  Instead, when the resulting response is
+		 * received, we trigger on_cmd_sockread() to handle it.
 		 */
 		send_at_cmd(sock, sendbuf, K_NO_WAIT);
 	}
