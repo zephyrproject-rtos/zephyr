@@ -642,10 +642,20 @@ set_target_properties(${logical_target_for_zephyr_elf} PROPERTIES OUTPUT_NAME ${
 
 # Run some commands now that we have made a final elf
 set(post_link_commands "")
+list_append_ifdef(
+  CONFIG_CHECK_LINK_MAP
+  post_link_commands
+  COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/check_link_map.py ${KERNEL_MAP_NAME}
+)
 ## @Brief: Append commands to execute once the final link has been performed
 ## @var  in+out  post_link_commands required : List of commands, covering
 ##   stripping, flashtool-friendly hex files, disassembly, etc.
 toolchain_bintools_post_link()
+list_append_ifdef(
+  CONFIG_BUILD_OUTPUT_EXE
+  post_link_commands
+  COMMAND ${CMAKE_COMMAND} -E copy ${KERNEL_ELF_NAME}    ${KERNEL_EXE_NAME}
+)
 add_custom_command(
   TARGET ${logical_target_for_zephyr_elf}
   POST_BUILD

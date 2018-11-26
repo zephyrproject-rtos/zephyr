@@ -1,10 +1,5 @@
 macro(toolchain_bintools_post_link)
 
-  list_append_ifdef(CONFIG_CHECK_LINK_MAP
-    post_link_commands
-    COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/check_link_map.py ${KERNEL_MAP_NAME}
-  )
-
   list_append_ifdef(
     CONFIG_BUILD_OUTPUT_HEX
     post_link_commands
@@ -39,12 +34,6 @@ macro(toolchain_bintools_post_link)
     CONFIG_BUILD_OUTPUT_STRIPPED
     post_link_commands
     COMMAND ${CMAKE_STRIP}   --strip-all ${KERNEL_ELF_NAME} -o ${KERNEL_STRIP_NAME}
-  )
-
-  list_append_ifdef(
-    CONFIG_BUILD_OUTPUT_EXE
-    post_link_commands
-    COMMAND ${CMAKE_COMMAND} -E copy ${KERNEL_ELF_NAME}    ${KERNEL_EXE_NAME}
   )
 
 endmacro()
