@@ -31,7 +31,7 @@ static int cmd_log_test_start(const struct shell *shell, size_t argc,
 {
 	ARG_UNUSED(argv);
 
-	int err = shell_cmd_precheck(shell, argc == 1, NULL, 0);
+	int err = shell_cmd_precheck(shell, argc == 1);
 
 	if (err) {
 		return err;
@@ -62,7 +62,7 @@ static int cmd_log_test_stop(const struct shell *shell, size_t argc,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	int err = shell_cmd_precheck(shell, argc == 1, NULL, 0);
+	int err = shell_cmd_precheck(shell, argc == 1);
 
 	if (err) {
 		return err;

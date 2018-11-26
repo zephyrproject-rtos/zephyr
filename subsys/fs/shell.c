@@ -166,7 +166,7 @@ static int cmd_trunc(const struct shell *shell, size_t argc, char **argv)
 	int length;
 	int err;
 
-	err = shell_cmd_precheck(shell, (argc >= 2), NULL, 0);
+	err = shell_cmd_precheck(shell, (argc >= 2));
 	if (err) {
 		return err;
 	}
@@ -212,7 +212,7 @@ static int cmd_mkdir(const struct shell *shell, size_t argc, char **argv)
 	int err;
 	char path[MAX_PATH_LEN];
 
-	err = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
+	err = shell_cmd_precheck(shell, (argc == 2));
 	if (err) {
 		return err;
 	}
@@ -234,7 +234,7 @@ static int cmd_rm(const struct shell *shell, size_t argc, char **argv)
 	int err;
 	char path[MAX_PATH_LEN];
 
-	err = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
+	err = shell_cmd_precheck(shell, (argc == 2));
 	if (err) {
 		return err;
 	}
@@ -260,7 +260,7 @@ static int cmd_read(const struct shell *shell, size_t argc, char **argv)
 	off_t offset;
 	int err;
 
-	err = shell_cmd_precheck(shell, (argc >= 2), NULL, 0);
+	err = shell_cmd_precheck(shell, (argc >= 2));
 	if (err) {
 		return err;
 	}
@@ -356,7 +356,7 @@ static int cmd_write(const struct shell *shell, size_t argc, char **argv)
 	off_t offset = -1;
 	int err;
 
-	err = shell_cmd_precheck(shell, (argc >= 3), NULL, 0);
+	err = shell_cmd_precheck(shell, (argc >= 3));
 	if (err) {
 		return err;
 	}
@@ -439,7 +439,7 @@ static int cmd_mount_fat(const struct shell *shell, size_t argc, char **argv)
 	char *mntpt;
 	int res;
 
-	res = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
+	res = shell_cmd_precheck(shell, (argc == 2));
 	if (res) {
 		return res;
 	}
@@ -473,7 +473,7 @@ static int cmd_mount_nffs(const struct shell *shell, size_t argc, char **argv)
 	char *mntpt;
 	int res;
 
-	res = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
+	res = shell_cmd_precheck(shell, (argc == 2));
 	if (res) {
 		return res;
 	}

@@ -231,12 +231,12 @@ static int cmd_flash(const struct shell *shell, size_t argc, char **argv)
 	int err;
 
 	if (argc == 1) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		/* shell_cmd_precheck returns 1 when help is printed */
 		return 1;
 	}
 
-	err = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
+	err = shell_cmd_precheck(shell, argc == 2);
 	if (err) {
 		return err;
 	}

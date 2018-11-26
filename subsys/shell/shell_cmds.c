@@ -184,7 +184,7 @@ static int cmd_clear(const struct shell *shell, size_t argc, char **argv)
 {
 	ARG_UNUSED(argv);
 
-	int ret = shell_cmd_precheck(shell, (argc == 1), NULL, 0);
+	int ret = shell_cmd_precheck(shell, (argc == 1));
 
 	if (ret) {
 		return ret;
@@ -198,7 +198,7 @@ static int cmd_clear(const struct shell *shell, size_t argc, char **argv)
 
 static int cmd_shell(const struct shell *shell, size_t argc, char **argv)
 {
-	int ret = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
+	int ret = shell_cmd_precheck(shell, (argc == 2));
 
 	if (ret) {
 		return ret;
@@ -215,7 +215,7 @@ static int cmd_bacskpace_mode_backspace(const struct shell *shell, size_t argc,
 {
 	ARG_UNUSED(argv);
 
-	int ret = shell_cmd_precheck(shell, (argc == 1), NULL, 0);
+	int ret = shell_cmd_precheck(shell, (argc == 1));
 
 	if (ret == 0) {
 		shell->ctx->internal.flags.mode_delete = 0;
@@ -229,7 +229,7 @@ static int cmd_bacskpace_mode_delete(const struct shell *shell, size_t argc,
 {
 	ARG_UNUSED(argv);
 
-	int ret = shell_cmd_precheck(shell, (argc == 1), NULL, 0);
+	int ret = shell_cmd_precheck(shell, (argc == 1));
 
 	if (ret == 0) {
 		shell->ctx->internal.flags.mode_delete = 1;
@@ -241,7 +241,7 @@ static int cmd_bacskpace_mode_delete(const struct shell *shell, size_t argc,
 static int cmd_bacskpace_mode(const struct shell *shell, size_t argc,
 			      char **argv)
 {
-	int ret = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
+	int ret = shell_cmd_precheck(shell, (argc == 2));
 
 	if (ret) {
 		return ret;
@@ -257,7 +257,7 @@ static int cmd_colors_off(const struct shell *shell, size_t argc, char **argv)
 {
 	ARG_UNUSED(argv);
 
-	int ret = shell_cmd_precheck(shell, (argc == 1), NULL, 0);
+	int ret = shell_cmd_precheck(shell, (argc == 1));
 
 	if (ret == 0) {
 		shell->ctx->internal.flags.use_colors = 0;
@@ -270,7 +270,7 @@ static int cmd_colors_on(const struct shell *shell, size_t argc, char **argv)
 {
 	ARG_UNUSED(argv);
 
-	int ret = shell_cmd_precheck(shell, (argc == 1), NULL, 0);
+	int ret = shell_cmd_precheck(shell, (argc == 1));
 
 	if (ret == 0) {
 		shell->ctx->internal.flags.use_colors = 1;
@@ -281,7 +281,7 @@ static int cmd_colors_on(const struct shell *shell, size_t argc, char **argv)
 
 static int cmd_colors(const struct shell *shell, size_t argc, char **argv)
 {
-	int ret = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
+	int ret = shell_cmd_precheck(shell, (argc == 2));
 
 	if (ret) {
 		return ret;
@@ -297,7 +297,7 @@ static int cmd_echo_off(const struct shell *shell, size_t argc, char **argv)
 {
 	ARG_UNUSED(argv);
 
-	int ret = shell_cmd_precheck(shell, (argc == 1), NULL, 0);
+	int ret = shell_cmd_precheck(shell, (argc == 1));
 
 	if (ret == 0) {
 		shell->ctx->internal.flags.echo = 0;
@@ -310,7 +310,7 @@ static int cmd_echo_on(const struct shell *shell, size_t argc, char **argv)
 {
 	ARG_UNUSED(argv);
 
-	int ret = shell_cmd_precheck(shell, (argc == 1), NULL, 0);
+	int ret = shell_cmd_precheck(shell, (argc == 1));
 
 	if (ret == 0) {
 		shell->ctx->internal.flags.echo = 1;
@@ -321,7 +321,7 @@ static int cmd_echo_on(const struct shell *shell, size_t argc, char **argv)
 
 static int cmd_echo(const struct shell *shell, size_t argc, char **argv)
 {
-	int ret = shell_cmd_precheck(shell, (argc <= 2), NULL, 0);
+	int ret = shell_cmd_precheck(shell, (argc <= 2));
 
 	if (ret) {
 		return ret;
@@ -367,7 +367,7 @@ static int cmd_history(const struct shell *shell, size_t argc, char **argv)
 		return -ENOEXEC;
 	}
 
-	ret = shell_cmd_precheck(shell, (argc == 1), NULL, 0);
+	ret = shell_cmd_precheck(shell, (argc == 1));
 
 	if (ret) {
 		return ret;
@@ -401,7 +401,7 @@ static int cmd_shell_stats_show(const struct shell *shell, size_t argc,
 		return -ENOEXEC;
 	}
 
-	int ret = shell_cmd_precheck(shell, (argc == 1), NULL, 0);
+	int ret = shell_cmd_precheck(shell, (argc == 1));
 
 	if (ret == 0) {
 		shell_fprintf(shell, SHELL_NORMAL, "Lost logs: %u\n",
@@ -421,7 +421,7 @@ static int cmd_shell_stats_reset(const struct shell *shell,
 		return -ENOEXEC;
 	}
 
-	int ret = shell_cmd_precheck(shell, (argc == 1), NULL, 0);
+	int ret = shell_cmd_precheck(shell, (argc == 1));
 
 	if (ret == 0) {
 		shell->stats->log_lost_cnt = 0;
@@ -435,10 +435,10 @@ static int cmd_shell_stats(const struct shell *shell, size_t argc, char **argv)
 	ARG_UNUSED(argc);
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return 1;
 	} else if (argc == 1) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 	} else {
 		shell_fprintf(shell, SHELL_ERROR, "%s:%s%s\n", argv[0],
 			      SHELL_MSG_UNKNOWN_PARAMETER, argv[1]);
@@ -452,7 +452,7 @@ static int cmd_resize_default(const struct shell *shell,
 {
 	ARG_UNUSED(argv);
 
-	int ret = shell_cmd_precheck(shell, (argc == 1), NULL, 0);
+	int ret = shell_cmd_precheck(shell, (argc == 1));
 
 	if (ret == 0) {
 		SHELL_VT100_CMD(shell, SHELL_VT100_SETCOL_80);
@@ -474,7 +474,7 @@ static int cmd_resize(const struct shell *shell, size_t argc, char **argv)
 		return -ENOEXEC;
 	}
 
-	err = shell_cmd_precheck(shell, (argc <= 2), NULL, 0);
+	err = shell_cmd_precheck(shell, (argc <= 2));
 	if (err) {
 		return err;
 	}

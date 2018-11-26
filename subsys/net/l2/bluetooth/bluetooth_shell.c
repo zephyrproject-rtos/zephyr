@@ -85,7 +85,7 @@ static int shell_cmd_connect(const struct shell *shell,
 	struct net_if *iface = net_if_get_default();
 
 	if (argc < 3 || shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -113,7 +113,7 @@ static int shell_cmd_scan(const struct shell *shell,
 	struct net_if *iface = net_if_get_default();
 
 	if (argc < 2 || shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -134,7 +134,7 @@ static int shell_cmd_disconnect(const struct shell *shell,
 	struct net_if *iface = net_if_get_default();
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -155,7 +155,7 @@ static int shell_cmd_advertise(const struct shell *shell,
 	struct net_if *iface = net_if_get_default();
 
 	if (argc < 2 || shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 

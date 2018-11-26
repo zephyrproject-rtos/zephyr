@@ -196,7 +196,7 @@ static int cmd_test_module(const struct shell *shell, size_t argc, char **argv)
 {
 	ARG_UNUSED(argv);
 
-	return shell_cmd_precheck(shell, (argc == 1), NULL, 0);
+	return shell_cmd_precheck(shell, (argc == 1));
 }
 SHELL_CMD_REGISTER(test_shell_cmd, NULL, NULL, cmd_test_module);
 

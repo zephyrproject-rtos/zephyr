@@ -22,7 +22,7 @@ extern void qsort(void *a, size_t n, size_t es, cmp_t *cmp);
 static int cmd_dynamic(const struct shell *shell, size_t argc, char **argv)
 {
 	if ((argc == 1) || shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return 0;
 	}
 
@@ -50,7 +50,7 @@ static int cmd_dynamic_add(const struct shell *shell,
 	u16_t cmd_len;
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return 0;
 	}
 
@@ -103,7 +103,7 @@ static int cmd_dynamic_show(const struct shell *shell,
 			    size_t argc, char **argv)
 {
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return 0;
 	}
 
@@ -133,7 +133,7 @@ static int cmd_dynamic_execute(const struct shell *shell,
 			       size_t argc, char **argv)
 {
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return 0;
 	}
 
@@ -161,7 +161,7 @@ static int cmd_dynamic_remove(const struct shell *shell, size_t argc,
 			      char **argv)
 {
 	if ((argc == 1) || shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return 0;
 	}
 

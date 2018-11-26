@@ -36,7 +36,7 @@ static int ot_cmd(const struct shell *shell, size_t argc, char *argv[])
 	int i;
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 

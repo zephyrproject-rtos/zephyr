@@ -233,7 +233,7 @@ static int cmd_flash(const struct shell *shell, size_t argc, char **argv)
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_help_print(shell, NULL, 0);
+	shell_help_print(shell);
 	return 0;
 }
 
@@ -243,7 +243,7 @@ static int cmd_write_block_size(const struct shell *shell, size_t argc,
 {
 	ARG_UNUSED(argv);
 
-	int err = shell_cmd_precheck(shell, (argc == 1), NULL, 0);
+	int err = shell_cmd_precheck(shell, argc == 1);
 
 	if (err) {
 		return err;
@@ -261,7 +261,7 @@ static int cmd_write_block_size(const struct shell *shell, size_t argc,
 static int cmd_read(const struct shell *shell, size_t argc, char **argv)
 {
 
-	int err = shell_cmd_precheck(shell, (argc == 3), NULL, 0);
+	int err = shell_cmd_precheck(shell, argc == 3);
 	unsigned long int offset, len;
 
 	if (err) {
@@ -287,7 +287,7 @@ exit:
 
 static int cmd_erase(const struct shell *shell, size_t argc, char **argv)
 {
-	int err = shell_cmd_precheck(shell, (argc == 3), NULL, 0);
+	int err = shell_cmd_precheck(shell, argc == 3);
 	unsigned long int offset, size;
 
 	if (err) {
@@ -312,7 +312,7 @@ exit:
 
 static int cmd_write(const struct shell *shell, size_t argc, char **argv)
 {
-	int err = shell_cmd_precheck(shell, (argc > 2), NULL, 0);
+	int err = shell_cmd_precheck(shell, argc > 2);
 	unsigned long int i, offset;
 	u8_t buf[ARGC_MAX];
 
@@ -366,7 +366,7 @@ static int cmd_page_count(const struct shell *shell, size_t argc, char **argv)
 {
 	ARG_UNUSED(argv);
 
-	int err = shell_cmd_precheck(shell, (argc == 1), NULL, 0);
+	int err = shell_cmd_precheck(shell, argc == 1);
 	size_t page_count;
 
 	if (err) {
@@ -409,7 +409,7 @@ static bool page_layout_cb(const struct flash_pages_info *info, void *datav)
 
 static int cmd_page_layout(const struct shell *shell, size_t argc, char **argv)
 {
-	int err = shell_cmd_precheck(shell, (argc <= 3), NULL, 0);
+	int err = shell_cmd_precheck(shell, argc <= 3);
 	unsigned long int start_page, end_page;
 	struct page_layout_data data;
 
@@ -464,7 +464,7 @@ static int cmd_page_read(const struct shell *shell, size_t argc, char **argv)
 	int ret;
 
 
-	ret = shell_cmd_precheck(shell, (argc == 3) || (argc == 4), NULL, 0);
+	ret = shell_cmd_precheck(shell, argc == 3 || argc == 4);
 	if (ret) {
 		return ret;
 	}
@@ -512,7 +512,7 @@ static int cmd_page_erase(const struct shell *shell, size_t argc, char **argv)
 		return ret;
 	}
 
-	ret = shell_cmd_precheck(shell, (argc == 2) || (argc == 3), NULL, 0);
+	ret = shell_cmd_precheck(shell, argc == 2 || argc == 3);
 	if (ret) {
 		return ret;
 	}
@@ -563,7 +563,7 @@ static int cmd_page_write(const struct shell *shell, size_t argc, char **argv)
 		return ret;
 	}
 
-	ret = shell_cmd_precheck(shell, (argc > 2), NULL, 0);
+	ret = shell_cmd_precheck(shell, argc > 2);
 	if (ret) {
 		return ret;
 	}
@@ -603,7 +603,7 @@ static int cmd_set_dev(const struct shell *shell, size_t argc, char **argv)
 	const char *name;
 	int ret;
 
-	ret = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
+	ret = shell_cmd_precheck(shell, argc == 2);
 	if (ret) {
 		return ret;
 	}

@@ -1153,7 +1153,7 @@ static int cmd_net_allocs(const struct shell *shell, size_t argc, char *argv[])
 	ARG_UNUSED(argv);
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -1381,7 +1381,7 @@ static int cmd_net_app(const struct shell *shell, size_t argc, char *argv[])
 	ARG_UNUSED(argv);
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -1459,7 +1459,7 @@ static int cmd_net_arp(const struct shell *shell, size_t argc, char *argv[])
 	ARG_UNUSED(argc);
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -1489,7 +1489,7 @@ static int cmd_net_arp_flush(const struct shell *shell, size_t argc,
 	ARG_UNUSED(argv);
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -1512,7 +1512,7 @@ static int cmd_net_conn(const struct shell *shell, size_t argc, char *argv[])
 	ARG_UNUSED(argv);
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -1694,7 +1694,7 @@ static int cmd_net_dns_cancel(const struct shell *shell, size_t argc,
 	ARG_UNUSED(argv);
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -1732,7 +1732,7 @@ static int cmd_net_dns_query(const struct shell *shell, size_t argc,
 			     char *argv[])
 {
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -1793,7 +1793,7 @@ static int cmd_net_dns(const struct shell *shell, size_t argc, char *argv[])
 #endif
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -2339,7 +2339,7 @@ static int cmd_net_gptp_port(const struct shell *shell, size_t argc,
 #endif
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -2376,7 +2376,7 @@ static int cmd_net_gptp(const struct shell *shell, size_t argc, char *argv[])
 #endif
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -2498,7 +2498,7 @@ static int cmd_net_http_monitor(const struct shell *shell, size_t argc,
 				char *argv[])
 {
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -2525,7 +2525,7 @@ static int cmd_net_http(const struct shell *shell, size_t argc, char *argv[])
 #endif
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -2581,7 +2581,7 @@ static int cmd_net_iface_up(const struct shell *shell, size_t argc,
 	int idx, ret;
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -2619,7 +2619,7 @@ static int cmd_net_iface_down(const struct shell *shell, size_t argc,
 	int idx, ret;
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -2722,7 +2722,7 @@ static int cmd_net_ipv6(const struct shell *shell, size_t argc, char *argv[])
 	struct net_shell_user_data user_data;
 #endif
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -2793,7 +2793,7 @@ static int cmd_net_iface(const struct shell *shell, size_t argc, char *argv[])
 	int idx;
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -2913,7 +2913,7 @@ static int cmd_net_mem(const struct shell *shell, size_t argc, char *argv[])
 	ARG_UNUSED(argv);
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -2977,7 +2977,7 @@ static int cmd_net_nbr_rm(const struct shell *shell, size_t argc,
 #endif
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -3083,7 +3083,7 @@ static int cmd_net_nbr(const struct shell *shell, size_t argc, char *argv[])
 	ARG_UNUSED(argv);
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -3248,7 +3248,7 @@ static int cmd_net_ping(const struct shell *shell, size_t argc, char *argv[])
 	ARG_UNUSED(argc);
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -3307,7 +3307,7 @@ static int cmd_net_route(const struct shell *shell, size_t argc, char *argv[])
 	ARG_UNUSED(argv);
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -3391,7 +3391,7 @@ static int cmd_net_rpl(const struct shell *shell, size_t argc, char *argv[])
 	ARG_UNUSED(argv);
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -3552,7 +3552,7 @@ static int cmd_net_stacks(const struct shell *shell, size_t argc,
 	ARG_UNUSED(argv);
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -3632,7 +3632,7 @@ static int cmd_net_stats_all(const struct shell *shell, size_t argc,
 #endif
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -3665,7 +3665,7 @@ static int cmd_net_stats_iface(const struct shell *shell, size_t argc,
 #endif
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -3704,7 +3704,7 @@ static int cmd_net_stats_iface(const struct shell *shell, size_t argc,
 static int cmd_net_stats(const struct shell *shell, size_t argc, char *argv[])
 {
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -3941,7 +3941,7 @@ static int cmd_net_tcp_connect(const struct shell *shell, size_t argc,
 #endif
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -3989,7 +3989,7 @@ static int cmd_net_tcp_send(const struct shell *shell, size_t argc,
 #endif
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -4044,7 +4044,7 @@ static int cmd_net_tcp_close(const struct shell *shell, size_t argc,
 #endif
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -4076,7 +4076,7 @@ static int cmd_net_tcp(const struct shell *shell, size_t argc, char *argv[])
 	ARG_UNUSED(argv);
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -4153,7 +4153,7 @@ static int cmd_net_vlan(const struct shell *shell, size_t argc, char *argv[])
 #endif
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -4184,7 +4184,7 @@ static int cmd_net_vlan_add(const struct shell *shell, size_t argc,
 #endif
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -4261,7 +4261,7 @@ static int cmd_net_vlan_del(const struct shell *shell, size_t argc,
 #endif
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 

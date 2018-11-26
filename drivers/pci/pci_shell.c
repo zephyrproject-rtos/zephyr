@@ -45,7 +45,7 @@ static int cmd_lspci(const struct shell *shell, size_t argc, char **argv)
 	};
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return 1;
 	}
 
