@@ -25,40 +25,23 @@ cmake_minimum_required(VERSION 3.8.2)
 # CMP0002: "Logical target names must be globally unique"
 cmake_policy(SET CMP0002 NEW)
 
-define_property(GLOBAL PROPERTY ZEPHYR_LIBS
-    BRIEF_DOCS "Global list of all Zephyr CMake libs that should be linked in"
-    FULL_DOCS  "Global list of all Zephyr CMake libs that should be linked in.
-zephyr_library() appends libs to this list.")
-set_property(GLOBAL PROPERTY ZEPHYR_LIBS "")
 
-define_property(GLOBAL PROPERTY ZEPHYR_INTERFACE_LIBS
-    BRIEF_DOCS "Global list of all Zephyr interface libs that should be linked in."
-    FULL_DOCS  "Global list of all Zephyr interface libs that should be linked in.
-zephyr_interface_library_named() appends libs to this list.")
-set_property(GLOBAL PROPERTY ZEPHYR_INTERFACE_LIBS "")
+##
+## Directories
+##
 
-define_property(GLOBAL PROPERTY GENERATED_KERNEL_OBJECT_FILES
-  BRIEF_DOCS "Object files that are generated after Zephyr has been linked once."
-  FULL_DOCS "\
-Object files that are generated after Zephyr has been linked once.\
-May include mmu tables, etc."
-  )
-set_property(GLOBAL PROPERTY GENERATED_KERNEL_OBJECT_FILES "")
-
-define_property(GLOBAL PROPERTY GENERATED_KERNEL_SOURCE_FILES
-  BRIEF_DOCS "Source files that are generated after Zephyr has been linked once."
-  FULL_DOCS "\
-Source files that are generated after Zephyr has been linked once.\
-May include isr_tables.c etc."
-  )
-set_property(GLOBAL PROPERTY GENERATED_KERNEL_SOURCE_FILES "")
+if(${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_BINARY_DIR})
+  message(FATAL_ERROR "Source directory equals build directory.\
+ In-source builds are not supported.\
+ Please specify a build directory, e.g. cmake -Bbuild -H.")
+endif()
 
 set(APPLICATION_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR} CACHE PATH "Application Source Directory")
 set(APPLICATION_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE PATH "Application Binary Directory")
 
-set(__build_dir ${CMAKE_CURRENT_BINARY_DIR}/zephyr)
-
-set(PROJECT_BINARY_DIR ${__build_dir})
+set(__build_dir        ${CMAKE_CURRENT_BINARY_DIR}/zephyr)
+set(PROJECT_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/zephyr)
+set(ZEPHYR_BINARY_DIR  ${CMAKE_CURRENT_BINARY_DIR}/zephyr)
 
 # CMake's 'project' concept has proven to not be very useful for Zephyr
 # due in part to how Zephyr is organized and in part to it not fitting well
@@ -68,16 +51,9 @@ set(PROJECT_BINARY_DIR ${__build_dir})
 # It is recommended to always use ZEPHYR_BASE instead of PROJECT_SOURCE_DIR
 # when trying to reference ENV${ZEPHYR_BASE}.
 set(PROJECT_SOURCE_DIR $ENV{ZEPHYR_BASE})
-
 # Convert path to use the '/' separator
 string(REPLACE "\\" "/" PROJECT_SOURCE_DIR ${PROJECT_SOURCE_DIR})
-
-set(ZEPHYR_BINARY_DIR ${PROJECT_BINARY_DIR})
 set(ZEPHYR_BASE ${PROJECT_SOURCE_DIR})
-
-set(AUTOCONF_H ${__build_dir}/include/generated/autoconf.h)
-# Re-configure (Re-execute all CMakeLists.txt code) when autoconf.h changes
-set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${AUTOCONF_H})
 
 
 ##
@@ -87,6 +63,8 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${AUTOCONF_H})
 include(CheckCCompilerFlag)
 include(CheckCXXCompilerFlag)
 include(${ZEPHYR_BASE}/cmake/extensions.cmake)
+include(${ZEPHYR_BASE}/cmake/version.cmake)
+
 
 ##
 ## Find tools
@@ -96,11 +74,18 @@ include(${ZEPHYR_BASE}/cmake/python.cmake)
 include(${ZEPHYR_BASE}/cmake/git.cmake)
 include(${ZEPHYR_BASE}/cmake/ccache.cmake)
 
-if(${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_BINARY_DIR})
-  message(FATAL_ERROR "Source directory equals build directory.\
- In-source builds are not supported.\
- Please specify a build directory, e.g. cmake -Bbuild -H.")
+
+##
+## Misc
+##
+
+# Populate USER_CACHE_DIR with a directory that user applications may
+# write cache files to.
+if(NOT DEFINED USER_CACHE_DIR)
+  find_appropriate_cache_directory(USER_CACHE_DIR)
 endif()
+message(STATUS "Cache files will be written to: ${USER_CACHE_DIR}")
+
 
 add_custom_target(
   pristine
@@ -108,10 +93,59 @@ add_custom_target(
   # Equivalent to rm -rf build/*
   )
 
+
+##
+## CMake containers
+##
+
+define_property(GLOBAL PROPERTY ZEPHYR_LIBS
+  BRIEF_DOCS "Global list of all Zephyr CMake libs that should be linked in"
+  FULL_DOCS  "Global list of all Zephyr CMake libs that should be linked in.
+    zephyr_library() appends libs to this list."
+)
+set_property(GLOBAL PROPERTY ZEPHYR_LIBS "")
+
+define_property(GLOBAL PROPERTY ZEPHYR_INTERFACE_LIBS
+  BRIEF_DOCS "Global list of all Zephyr interface libs that should be linked in."
+  FULL_DOCS  "Global list of all Zephyr interface libs that should be linked in.
+    zephyr_interface_library_named() appends libs to this list."
+)
+set_property(GLOBAL PROPERTY ZEPHYR_INTERFACE_LIBS "")
+
+define_property(GLOBAL PROPERTY GENERATED_KERNEL_OBJECT_FILES
+  BRIEF_DOCS "Object files that are generated after Zephyr has been linked once."
+  FULL_DOCS "\
+    Object files that are generated after Zephyr has been linked once.\
+    May include mmu tables, etc."
+)
+set_property(GLOBAL PROPERTY GENERATED_KERNEL_OBJECT_FILES "")
+
+define_property(GLOBAL PROPERTY GENERATED_KERNEL_SOURCE_FILES
+  BRIEF_DOCS "Source files that are generated after Zephyr has been linked once."
+  FULL_DOCS "\
+    Source files that are generated after Zephyr has been linked once.\
+    May include isr_tables.c etc."
+)
+set_property(GLOBAL PROPERTY GENERATED_KERNEL_SOURCE_FILES "")
+
 # 'app' is a CMake library containing all the application code and is
 # modified by the entry point ${APPLICATION_SOURCE_DIR}/CMakeLists.txt
 # that was specified when cmake was called.
 zephyr_library_named(app)
+
+
+##
+## Autoconf
+##
+
+set(AUTOCONF_H ${__build_dir}/include/generated/autoconf.h)
+# Re-configure (Re-execute all CMakeLists.txt code) when autoconf.h changes
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${AUTOCONF_H})
+
+
+##
+## Board
+##
 
 # The BOARD can be set by 3 sources. Through environment variables,
 # through the cmake CLI, and through CMakeLists.txt.
@@ -253,31 +287,19 @@ alternate .overlay file using this parameter. These settings will override the \
 settings in the board's .dts file. Multiple files may be listed, e.g. \
 DTC_OVERLAY_FILE=\"dts1.overlay dts2.overlay\"")
 
-# Prevent CMake from testing the toolchain
-set(CMAKE_C_COMPILER_FORCED   1)
-set(CMAKE_CXX_COMPILER_FORCED 1)
-
-include(${ZEPHYR_BASE}/cmake/version.cmake)
 include(${ZEPHYR_BASE}/cmake/host-tools.cmake)
 include(${ZEPHYR_BASE}/cmake/kconfig.cmake)
-include(${ZEPHYR_BASE}/cmake/toolchain.cmake)
 
-find_package(Git QUIET)
-if(GIT_FOUND)
-  execute_process(COMMAND ${GIT_EXECUTABLE} describe
-    WORKING_DIRECTORY ${ZEPHYR_BASE}
-    OUTPUT_VARIABLE BUILD_VERSION
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    ERROR_STRIP_TRAILING_WHITESPACE
-    ERROR_VARIABLE stderr
-    RESULT_VARIABLE return_code
-    )
-  if(return_code)
-    message(STATUS "git describe failed: ${stderr}; ${KERNEL_VERSION_STRING} will be used instead")
-  elseif(CMAKE_VERBOSE_MAKEFILE)
-    message(STATUS "git describe stderr: ${stderr}")
-  endif()
-endif()
+set(KERNEL_NAME ${CONFIG_KERNEL_BIN_NAME})
+set(KERNEL_ELF_NAME   ${KERNEL_NAME}.elf)
+set(KERNEL_BIN_NAME   ${KERNEL_NAME}.bin)
+set(KERNEL_HEX_NAME   ${KERNEL_NAME}.hex)
+set(KERNEL_MAP_NAME   ${KERNEL_NAME}.map)
+set(KERNEL_LST_NAME   ${KERNEL_NAME}.lst)
+set(KERNEL_S19_NAME   ${KERNEL_NAME}.s19)
+set(KERNEL_EXE_NAME   ${KERNEL_NAME}.exe)
+set(KERNEL_STAT_NAME  ${KERNEL_NAME}.stat)
+set(KERNEL_STRIP_NAME ${KERNEL_NAME}.strip)
 
 set(SOC_NAME   ${CONFIG_SOC})
 set(SOC_SERIES ${CONFIG_SOC_SERIES})
@@ -289,33 +311,24 @@ else()
   set(SOC_PATH ${SOC_FAMILY}/${SOC_SERIES})
 endif()
 
+# Toolchain included after kconfig; permit access of SOC_SOC_NAME etc.
+set(CMAKE_C_COMPILER_FORCED   1)  # Prevent CMake from testing the toolchain
+set(CMAKE_CXX_COMPILER_FORCED 1)  # Prevent CMake from testing the toolchain
+include(${ZEPHYR_BASE}/cmake/toolchain.cmake)
 
-# DTS should be run directly after kconfig because CONFIG_ variables
-# from kconfig and dts should be available at the same time. But
-# running DTS involves running the preprocessor, so we put it behind
-# toolchain. Meaning toolchain.cmake is the only component where
-# kconfig and dts variables aren't available at the same time.
+# DTS should ideally be run directly after kconfig because CONFIG_ variables
+# from kconfig and dts should be available at the same time. But:
+#   1. Running DTS involves running the preprocessor, so it must be after toolchain.
+#   2. Toolchain may want access to kconfig.
+# Meaning toolchain.cmake is the only component where dts variables aren't available.
 include(${ZEPHYR_BASE}/cmake/dts.cmake)
 
-set(KERNEL_NAME ${CONFIG_KERNEL_BIN_NAME})
 
-set(KERNEL_ELF_NAME   ${KERNEL_NAME}.elf)
-set(KERNEL_BIN_NAME   ${KERNEL_NAME}.bin)
-set(KERNEL_HEX_NAME   ${KERNEL_NAME}.hex)
-set(KERNEL_MAP_NAME   ${KERNEL_NAME}.map)
-set(KERNEL_LST_NAME   ${KERNEL_NAME}.lst)
-set(KERNEL_S19_NAME   ${KERNEL_NAME}.s19)
-set(KERNEL_EXE_NAME   ${KERNEL_NAME}.exe)
-set(KERNEL_STAT_NAME  ${KERNEL_NAME}.stat)
-set(KERNEL_STRIP_NAME ${KERNEL_NAME}.strip)
+##
+## Run/flash/debug configuration
+##
 
-# Populate USER_CACHE_DIR with a directory that user applications may
-# write cache files to.
-if(NOT DEFINED USER_CACHE_DIR)
-  find_appropriate_cache_directory(USER_CACHE_DIR)
-endif()
-message(STATUS "Cache files will be written to: ${USER_CACHE_DIR}")
-
+# Obtain runner arguments, set EMU_PLATFORM
 include(${BOARD_DIR}/board.cmake OPTIONAL)
 
 # If we are using a suitable ethernet driver inside qemu, then these options
@@ -342,6 +355,9 @@ if(CONFIG_QEMU_TARGET)
 endif()
 
 
+##
+## Load the root CMakeLists.txt
+##
 add_subdirectory(${ZEPHYR_BASE} ${__build_dir})
 
 
@@ -367,6 +383,11 @@ foreach(boilerplate_lib ${ZEPHYR_INTERFACE_LIBS_PROPERTY})
     ${boilerplate_lib}
     )
 endforeach()
+
+
+##
+## Misc
+##
 
 if("${CMAKE_EXTRA_GENERATOR}" STREQUAL "Eclipse CDT4")
   # Call the amendment function before .project and .cproject generation
