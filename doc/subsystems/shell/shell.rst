@@ -289,7 +289,7 @@ checks for valid arguments count.
 		ARG_UNUSED(argv);
 
 		if (shell_help_requested(shell) {
-			shell_help_print(shell, NULL, 0);
+			shell_help_print(shell);
 		} else {
 			shell_fprintf(shell, SHELL_NORMAL,
 			      "Command called with no -h or --help option."

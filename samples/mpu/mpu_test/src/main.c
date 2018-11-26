@@ -35,7 +35,7 @@ static int cmd_read(const struct shell *shell, size_t argc, char *argv[])
 	u32_t *p_mem = (u32_t *) RESERVED_MEM_MAP;
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return 0;
 	}
 
@@ -56,7 +56,7 @@ static int cmd_write_mcux(const struct shell *shell, size_t argc, char *argv[])
 	u32_t offset;
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return 0;
 	}
 
@@ -91,7 +91,7 @@ static int cmd_write_stm32(const struct shell *shell, size_t argc, char *argv[])
 	struct device *flash_dev;
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return 0;
 	}
 
@@ -124,7 +124,7 @@ static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 	u32_t *p_mem = (u32_t *) (FLASH_MEM + 0x4000);
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return 0;
 	}
 
@@ -145,7 +145,7 @@ static int cmd_run(const struct shell *shell, size_t argc, char *argv[])
 	void (*func_ptr)(void) = (void (*)(void)) RAM_MEM;
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return 0;
 	}
 
@@ -167,7 +167,7 @@ static int cmd_mtest(const struct shell *shell, size_t argc, char *argv[])
 		return -EINVAL;
 	}
 
-	err = shell_cmd_precheck(shell, (argc >= 2) && (argc <= 3), NULL, 0);
+	err = shell_cmd_precheck(shell, (argc >= 2) && (argc <= 3));
 	if (err) {
 		return err;
 	}

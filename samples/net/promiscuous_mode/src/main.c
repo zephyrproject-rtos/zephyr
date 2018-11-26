@@ -147,7 +147,7 @@ static int set_promisc_mode(const struct shell *shell,
 	int idx, ret;
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 

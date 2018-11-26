@@ -37,7 +37,7 @@ static int cmd_ieee802154_ack(const struct shell *shell,
 	ARG_UNUSED(argc);
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -78,7 +78,7 @@ static int cmd_ieee802154_associate(const struct shell *shell,
 	char ext_addr[MAX_EXT_ADDR_STR_LEN];
 
 	if (argc < 3 || shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -124,7 +124,7 @@ static int cmd_ieee802154_disassociate(const struct shell *shell,
 	ARG_UNUSED(argv);
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -218,7 +218,7 @@ static int cmd_ieee802154_scan(const struct shell *shell,
 	int ret;
 
 	if (argc < 3 || shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -289,7 +289,7 @@ static int cmd_ieee802154_set_chan(const struct shell *shell,
 	u16_t channel;
 
 	if (argc < 2 || shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -325,7 +325,7 @@ static int cmd_ieee802154_get_chan(const struct shell *shell,
 	ARG_UNUSED(argv);
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -358,7 +358,7 @@ static int cmd_ieee802154_set_pan_id(const struct shell *shell,
 	ARG_UNUSED(argc);
 
 	if (argc < 2 || shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -394,7 +394,7 @@ static int cmd_ieee802154_get_pan_id(const struct shell *shell,
 	ARG_UNUSED(argv);
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -425,7 +425,7 @@ static int cmd_ieee802154_set_ext_addr(const struct shell *shell,
 	u8_t addr[IEEE802154_EXT_ADDR_LENGTH];
 
 	if (argc < 2 || shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -464,7 +464,7 @@ static int cmd_ieee802154_get_ext_addr(const struct shell *shell,
 	u8_t addr[IEEE802154_EXT_ADDR_LENGTH];
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -505,7 +505,7 @@ static int cmd_ieee802154_set_short_addr(const struct shell *shell,
 	u16_t short_addr;
 
 	if (argc < 2 || shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -538,7 +538,7 @@ static int cmd_ieee802154_get_short_addr(const struct shell *shell,
 	u16_t short_addr;
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -569,7 +569,7 @@ static int cmd_ieee802154_set_tx_power(const struct shell *shell,
 	s16_t tx_power;
 
 	if (argc < 2 || shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -602,7 +602,7 @@ static int cmd_ieee802154_get_tx_power(const struct shell *shell,
 	s16_t tx_power;
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 

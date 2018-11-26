@@ -980,7 +980,7 @@ static int exec_cmd(const struct shell *shell, size_t argc, char **argv)
 
 	if (shell->ctx->active_cmd.handler == NULL) {
 		if (shell->ctx->active_cmd.help) {
-			shell_help_print(shell, NULL, 0);
+			shell_help_print(shell);
 		} else {
 			shell_fprintf(shell, SHELL_ERROR,
 				      SHELL_MSG_SPECIFY_SUBCOMMAND);
@@ -1001,13 +1001,11 @@ static int exec_cmd(const struct shell *shell, size_t argc, char **argv)
 						     ((argc >= args->mandatory)
 						      &&
 						     (argc <= args->mandatory +
-						     args->optional)),
-						     NULL, 0);
+						     args->optional)));
 		} else {
 			/* Perform exact match if there are no optional args */
 			ret_val = shell_cmd_precheck(shell,
-						     (args->mandatory == argc),
-						     NULL, 0);
+						     (args->mandatory == argc));
 		}
 	}
 
@@ -1661,57 +1659,6 @@ static void help_item_print(const struct shell *shell, const char *item_name,
 	formatted_text_print(shell, item_help, offset, false);
 }
 
-static void help_options_print(const struct shell *shell,
-			       const struct shell_getopt_option *opt,
-			       size_t opt_cnt)
-{
-	static const char opt_sep[] = ", "; /* options separator */
-	static const char help_opt[] = "-h, --help";
-	u16_t longest_name = shell_strlen(help_opt);
-
-	shell_fprintf(shell, SHELL_NORMAL, "Options:\r\n");
-
-	if ((opt == NULL) || (opt_cnt == 0)) {
-		help_item_print(shell, help_opt, longest_name,
-				"Show command help.");
-		return;
-	}
-
-	/* Looking for the longest option string. */
-	for (size_t i = 0; i < opt_cnt; ++i) {
-		u16_t len = shell_strlen(opt[i].optname_short) +
-						 shell_strlen(opt[i].optname) +
-						 shell_strlen(opt_sep);
-
-		longest_name = len > longest_name ? len : longest_name;
-	}
-
-	/* help option is printed first */
-	help_item_print(shell, help_opt, longest_name, "Show command help.");
-
-	/* prepare a buffer to compose a string:
-	 *	option name short - option separator - option name
-	 */
-	memset(shell->ctx->temp_buff, 0, longest_name + 1);
-
-	/* Formating and printing all available options (except -h, --help). */
-	for (size_t i = 0; i < opt_cnt; ++i) {
-		if (opt[i].optname_short) {
-			strcpy(shell->ctx->temp_buff, opt[i].optname_short);
-		}
-		if (opt[i].optname) {
-			if (*shell->ctx->temp_buff) {
-				strcat(shell->ctx->temp_buff, opt_sep);
-				strcat(shell->ctx->temp_buff, opt[i].optname);
-			} else {
-				strcpy(shell->ctx->temp_buff, opt[i].optname);
-			}
-		}
-		help_item_print(shell, shell->ctx->temp_buff, longest_name,
-				opt[i].optname_help);
-	}
-}
-
 /* Function is printing command help, its subcommands name and subcommands
  * help string.
  */
@@ -1763,8 +1710,7 @@ static void help_subcmd_print(const struct shell *shell)
 	}
 }
 
-void shell_help_print(const struct shell *shell,
-		      const struct shell_getopt_option *opt, size_t opt_len)
+void shell_help_print(const struct shell *shell)
 {
 	__ASSERT_NO_MSG(shell);
 
@@ -1773,7 +1719,6 @@ void shell_help_print(const struct shell *shell,
 	}
 
 	help_cmd_print(shell);
-	help_options_print(shell, opt, opt_len);
 	help_subcmd_print(shell);
 }
 
@@ -1793,12 +1738,10 @@ int shell_prompt_change(const struct shell *shell, char *prompt)
 }
 
 int shell_cmd_precheck(const struct shell *shell,
-		       bool arg_cnt_ok,
-		       const struct shell_getopt_option *opt,
-		       size_t opt_len)
+		       bool arg_cnt_ok)
 {
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, opt, opt_len);
+		shell_help_print(shell);
 		return 1; /* help printed */
 	}
 
@@ -1808,7 +1751,7 @@ int shell_cmd_precheck(const struct shell *shell,
 			      shell->ctx->active_cmd.syntax);
 
 		if (IS_ENABLED(CONFIG_SHELL_HELP_ON_WRONG_ARGUMENT_COUNT)) {
-			shell_help_print(shell, opt, opt_len);
+			shell_help_print(shell);
 		}
 
 		return -EINVAL;

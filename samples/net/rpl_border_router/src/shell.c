@@ -25,7 +25,7 @@ static int cmd_br_repair(const struct shell *shell,
 	ARG_UNUSED(argv);
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -44,7 +44,7 @@ static int cmd_coap_send(const struct shell *shell,
 	int r;
 
 	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 

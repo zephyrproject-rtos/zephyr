@@ -740,7 +740,7 @@ static int cmd_metrics(const struct shell *shell, size_t argc, char *argv[])
 		err = bt_gatt_service_unregister(&met_svc);
 	} else {
 		shell_error(shell, "Incorrect value: %s", argv[1]);
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		return -ENOEXEC;
 	}
 
@@ -796,7 +796,7 @@ SHELL_CREATE_STATIC_SUBCMD_SET(gatt_cmds) {
 static int cmd_gatt(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc == 1) {
-		shell_help_print(shell, NULL, 0);
+		shell_help_print(shell);
 		/* shell_cmd_precheck returns 1 when help is printed */
 		return 1;
 	}

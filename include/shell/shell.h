@@ -616,28 +616,6 @@ void shell_fprintf(const struct shell *shell, enum shell_vt100_color color,
 void shell_process(const struct shell *shell);
 
 /**
- * @brief Option descriptor.
- */
-struct shell_getopt_option {
-	const char *optname; /*!< Option long name.*/
-	const char *optname_short; /*!< Option short name.*/
-	const char *optname_help; /*!< Option help string.*/
-};
-
-/**
- * @brief Option structure initializer.
- *
- * @param[in] _optname    Option name long.
- * @param[in] _shortname  Option name short.
- * @param[in] _help       Option help string.
- */
-#define SHELL_OPT(_optname, _shortname, _help) {	\
-	.optname = _optname,				\
-	.optname_short = _shortname,			\
-	.optname_help = _help,				\
-	}
-
-/**
  * @brief Informs that a command has been called with -h or --help option.
  *
  * @param[in] shell Pointer to the shell instance.
@@ -652,15 +630,12 @@ static inline bool shell_help_requested(const struct shell *shell)
 /**
  * @brief Prints the current command help.
  *
- * Function will print a help string with: the currently entered command, its
- * options,and subcommands (if they exist).
+ * Function will print a help string with the currently entered command and
+ * its subcommands (if exist).
  *
  * @param[in] shell      Pointer to the shell instance.
- * @param[in] opt        Pointer to the optional option array.
- * @param[in] opt_len    Option array size.
  */
-void shell_help_print(const struct shell *shell,
-		      const struct shell_getopt_option *opt, size_t opt_len);
+void shell_help_print(const struct shell *shell);
 
 /**
  * @brief Change displayed shell prompt.
@@ -680,17 +655,13 @@ int shell_prompt_change(const struct shell *shell, char *prompt);
  *
  * @param[in] shell	  Pointer to the shell instance.
  * @param[in] arg_cnt_ok  Flag indicating valid number of arguments.
- * @param[in] opt	  Pointer to the optional option array.
- * @param[in] opt_len	  Option array size.
  *
  * @return 0		  if check passed
  * @return 1		  if help was requested
  * @return -EINVAL	  if wrong argument count
  */
 int shell_cmd_precheck(const struct shell *shell,
-		       bool arg_cnt_ok,
-		       const struct shell_getopt_option *opt,
-		       size_t opt_len);
+		       bool arg_cnt_ok);
 
 /**
  * @internal @brief This function shall not be used directly, it is required by
