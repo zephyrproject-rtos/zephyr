@@ -16,7 +16,6 @@
 #include <soc.h>
 #include <em_gpio.h>
 
-#ifdef CONFIG_SOC_PART_NUMBER_EFM32PG12B500F1024GL125
 #ifdef CONFIG_USART_GECKO_0
 #if (DT_USART_GECKO_0_GPIO_LOC == 0)
 #define PIN_USART0_TXD {gpioPortA, 0, gpioModePushPull, 1}
@@ -82,9 +81,5 @@
 #endif
 #endif /* CONFIG_I2C_1 */
 #endif /* CONFIG_I2C_GECKO */
-
-#else
-#error ("Pinmap not available for this for Pearl Gecko MCU")
-#endif /* SOC_PART_NUMBER_EFM32PG12B500F1024GL125*/
 
 #endif /* _SILABS_EFM32PG12B_SOC_PINMAP_H_ */

@@ -16,7 +16,6 @@
 #include <soc.h>
 #include <em_gpio.h>
 
-#ifdef CONFIG_SOC_PART_NUMBER_EFR32FG1P133F256GM48
 #ifdef CONFIG_USART_GECKO_0
 #if (DT_USART_GECKO_0_LOCATION == 0)
 #define PIN_USART0_TXD {gpioPortA, 0, gpioModePushPull, 1}
@@ -48,8 +47,5 @@
 #error ("Serial Driver for Gecko MCUs not implemented for this location index")
 #endif
 #endif /* CONFIG_USART_GECKO_1 */
-#else
-#error ("Pinmap not available for this for Flex Gecko MCU")
-#endif /* CONFIG_SOC_PART_NUMBER_EFR32FG1P133F256GM48 */
 
 #endif /* _SILABS_EFR32FG1P_SOC_PINMAP_H_ */

@@ -16,7 +16,6 @@
 #include <soc.h>
 #include <em_gpio.h>
 
-#ifdef CONFIG_SOC_PART_NUMBER_EFM32WG990F256
 #ifdef CONFIG_UART_GECKO_0
 #if (DT_UART_GECKO_0_LOCATION == 0)
 #define PIN_UART0_TXD {gpioPortF, 6, gpioModePushPull, 1}
@@ -48,8 +47,5 @@
 #error ("Serial Driver for Gecko MCUs not implemented for this location index")
 #endif
 #endif /* CONFIG_UART_GECKO_0 */
-#else
-#error ("Pinmap not available for this for Wonder Gecko MCU")
-#endif /* SOC_PART_NUMBER_EFM32WG990F256*/
 
 #endif /* _SILABS_EFM32WG_SOC_PINMAP_H_ */

@@ -57,7 +57,4 @@
 #endif /* CONFIG_I2C_1 */
 #endif /* CONFIG_I2C_GECKO */
 
-#else
-#error ("Pinmap not available for this Mighty Gecko MCU")
-
 #endif /* _SOC_PINMAP_H_ */
