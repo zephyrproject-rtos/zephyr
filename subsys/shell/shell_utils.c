@@ -51,9 +51,10 @@ void shell_multiline_data_calc(struct shell_multiline_cons *cons,
 	cons->cur_x_end = (buff_len + cons->name_len) % cons->terminal_wid + 1;
 }
 
-static void make_argv(char **ppcmd, u8_t c, u8_t quote)
+static char make_argv(char **ppcmd, u8_t c)
 {
 	char *cmd = *ppcmd;
+	char quote = 0;
 
 	while (1) {
 		c = *cmd;
@@ -154,6 +155,8 @@ static void make_argv(char **ppcmd, u8_t c, u8_t quote)
 		cmd += 1;
 	}
 	*ppcmd = cmd;
+
+	return quote;
 }
 
 
@@ -175,9 +178,7 @@ char shell_make_argv(size_t *argc, char **argv, char *cmd, u8_t max_argc)
 		}
 
 		argv[(*argc)++] = cmd;
-		quote = 0;
-
-		make_argv(&cmd, c, quote);
+		quote = make_argv(&cmd, c);
 	} while (*argc < max_argc);
 
 	argv[*argc] = 0;
