@@ -1,0 +1,13 @@
+#
+# Copyright (c) 2018 SiFive Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig I2C_SIFIVE
+	bool "Sifive I2C driver"
+	depends on SOC_SERIES_RISCV32_SIFIVE_FREEDOM
+	depends on HAS_DTS_I2C
+	help
+	  Enable I2C support on SiFive Freedom
+
