@@ -1,0 +1,20 @@
+include(${TOOLCHAIN_ROOT}/cmake/compiler/api_gcc_freestanding.cmake)
+include(${TOOLCHAIN_ROOT}/cmake/compiler/api_gcc_optimizations.cmake)
+include(${TOOLCHAIN_ROOT}/cmake/compiler/api_gcc_security.cmake)
+include(${TOOLCHAIN_ROOT}/cmake/compiler/api_gcc_asm.cmake)
+include(${TOOLCHAIN_ROOT}/cmake/compiler/api_gcc_cpp.cmake)
+include(${TOOLCHAIN_ROOT}/cmake/compiler/api_gcc_warnings.cmake)
+include(${TOOLCHAIN_ROOT}/cmake/compiler/api_gcc_diagnostics.cmake)
+
+macro(toolchain_cc)
+  toolchain_cc_security()
+  toolchain_cc_optimizations()
+  toolchain_cc_cpp()
+  toolchain_cc_freestanding()
+  toolchain_cc_warnings()
+  toolchain_cc_diagnostics()
+  toolchain_cc_asm()
+endmacro()
+
+# not included in toolchain_cc:
+include(${TOOLCHAIN_ROOT}/cmake/compiler/api_gcc_preprocess_linker_pass.cmake)

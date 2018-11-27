@@ -25,3 +25,6 @@ endforeach()
 
 set(CMAKE_REQUIRED_FLAGS -nostartfiles -nostdlib ${isystem_include_flags} -Wl,--unresolved-symbols=ignore-in-object-files)
 string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
+
+###########
+include(${ZEPHYR_BASE}/cmake/compiler/api_llvm.cmake)

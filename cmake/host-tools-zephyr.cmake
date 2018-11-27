@@ -27,8 +27,9 @@ Is ZEPHYR_SDK_INSTALL_DIR=${ZEPHYR_SDK_INSTALL_DIR} misconfigured?")
 endif()
 
 file(READ ${sdk_version_path} SDK_VERSION)
+string(STRIP "${SDK_VERSION}" SDK_VERSION)
 if(${REQUIRED_SDK_VER} VERSION_GREATER ${SDK_VERSION})
-  message(FATAL_ERROR "The SDK version you are using is old, please update your SDK.
+  message(FATAL_ERROR "The SDK version you are using (${SDK_VERSION}) is old, please update your SDK.
 You need at least SDK version ${REQUIRED_SDK_VER}.
 The new version of the SDK can be download from:
 https://github.com/zephyrproject-rtos/meta-zephyr-sdk/releases/download/${REQUIRED_SDK_VER}/zephyr-sdk-${REQUIRED_SDK_VER}-setup.run

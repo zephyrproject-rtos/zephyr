@@ -1,7 +1,8 @@
 # NB: Depends on host-tools.cmake having been executed already
 
-# Ensures toolchain-gcc.cmake is run
-set(COMPILER gcc)
+set(COMPILER gcc)      # Ensures compiler/${COMPILER}.cmake is run
+set(LINKER   ld)       # Ensures linker/${LINKER}.cmake is run
+set(BINTOOLS binutils) # Ensures bintools/${BINTOOLS}.cmake is run
 
 # TODO fetch from environment
 

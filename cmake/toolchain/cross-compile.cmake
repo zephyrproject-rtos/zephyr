@@ -22,4 +22,6 @@ endif()
 set(   CROSS_COMPILE ${CROSS_COMPILE} CACHE PATH "")
 assert(CROSS_COMPILE "CROSS_COMPILE is not set")
 
-set(COMPILER gcc)
+set(COMPILER gcc)      # Ensures compiler/${COMPILER}.cmake is run
+set(LINKER   ld)       # Ensures linker/${LINKER}.cmake is run
+set(BINTOOLS binutils) # Ensures bintools/${BINTOOLS}.cmake is run

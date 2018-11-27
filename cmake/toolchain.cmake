@@ -39,16 +39,32 @@ set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 
-if(NOT TOOLCHAIN_ROOT)
-  if(DEFINED ENV{TOOLCHAIN_ROOT})
-    # Support for out-of-tree toolchain
-    set(TOOLCHAIN_ROOT $ENV{TOOLCHAIN_ROOT})
-  else()
-    # Default toolchain cmake file
-    set(TOOLCHAIN_ROOT ${ZEPHYR_BASE})
-  endif()
-endif()
+# We are building static libraries
+set(BUILD_SHARED_LIBS OFF)
+
+
+# CMake provides:
+#   CMAKE_C_FLAGS_ENV_INIT
+#   CMAKE_C_FLAGS_DEBUG
+#   CMAKE_C_FLAGS_DEBUG_INIT
+#   CMAKE_C_FLAGS_INIT
+#   CMAKE_C_FLAGS_MINSIZEREL
+#   CMAKE_C_FLAGS_MINSIZEREL_INIT
+#   CMAKE_C_FLAGS_RELEASE
+#   CMAKE_C_FLAGS_RELEASE_INIT
+#   CMAKE_C_FLAGS_RELWITHDEBINFO
+#   CMAKE_C_FLAGS_RELWITHDEBINFO_INIT
+#   CMAKE_INCLUDE_FLAG_C          Search path for header files "-I" typically
+#   CMAKE_LIBRARY_PATH_FLAG       Search path for libraries    "-L" typically
+#   CMAKE_LINK_LIBRARY_FLAG       Link with a library          "-l" typically
+#   CMAKE_LIBRARY_PATH_TERMINATOR
+#   CMAKE_STATIC_LIBRARY_PREFIX   Handled by Zephyr's build system
+#   CMAKE_STATIC_LIBRARY_SUFFIX   Handled by Zephyr's build system
+#   CMAKE_EXECUTABLE_SUFFIX       Handled by Zephyr's build system
+# However, CMake does not provide:
+#   CMAKE_DEFINE_FLAG_C           We invent this ourselves as ZEPHYR_DEFINE_FLAG_C
 set(ZEPHYR_DEFINE_FLAG_C "-D")  # set default but let toolchain override later if needed
+
 
 # Don't inherit compiler flags from the environment
 foreach(var CFLAGS CXXFLAGS)
@@ -59,7 +75,31 @@ but Zephyr ignores flags from the environment. Use 'cmake -DEXTRA_${var}=$ENV{${
   endif()
 endforeach()
 
-# Until we completely deprecate it
+
+##
+## Determine TOOLCHAIN_ROOT
+##
+
+# TODO: TOOLCHAIN_ROOT is not really a good name, because it points to
+# cmake files, not the toolchain installation location
+if(NOT TOOLCHAIN_ROOT)
+  if(DEFINED ENV{TOOLCHAIN_ROOT})
+    # Support for out-of-tree/commercial toolchains
+    set(TOOLCHAIN_ROOT $ENV{TOOLCHAIN_ROOT})
+  else()
+    # Default to toolchain cmake file
+    set(TOOLCHAIN_ROOT ${ZEPHYR_BASE})
+  endif()
+endif()
+set(TOOLCHAIN_ROOT ${TOOLCHAIN_ROOT} CACHE STRING "Path to folder. Available toolchains are the cmake files contained within the folder")
+assert(TOOLCHAIN_ROOT "Zephyr toolchain root path invalid: please set the TOOLCHAIN_ROOT-variable")
+
+
+##
+## Determine ZEPHYR_TOOLCHAIN_VARIANT
+##
+
+# Backwards compatibility with ZEPHYR_GCC_VARIANT variable; until we completely remove it
 if(NOT DEFINED ENV{ZEPHYR_TOOLCHAIN_VARIANT})
   if(DEFINED ENV{ZEPHYR_GCC_VARIANT})
     message(WARNING "ZEPHYR_GCC_VARIANT is deprecated, please use ZEPHYR_TOOLCHAIN_VARIANT instead")
@@ -67,6 +107,13 @@ if(NOT DEFINED ENV{ZEPHYR_TOOLCHAIN_VARIANT})
   endif()
 endif()
 
+# Backwards compatibility with gccarmemb toolchain; until we completely remove it
+if("${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "gccarmemb")
+  message(WARNING "gccarmemb is deprecated, please use gnuarmemb instead")
+  set(ZEPHYR_TOOLCHAIN_VARIANT "gnuarmemb")
+endif()
+
+# Special override for cross-compile
 if(NOT ZEPHYR_TOOLCHAIN_VARIANT)
   if(DEFINED ENV{ZEPHYR_TOOLCHAIN_VARIANT})
     set(ZEPHYR_TOOLCHAIN_VARIANT $ENV{ZEPHYR_TOOLCHAIN_VARIANT})
@@ -75,32 +122,44 @@ if(NOT ZEPHYR_TOOLCHAIN_VARIANT)
   endif()
 endif()
 
-# Until we completely deprecate it
-if("${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "gccarmemb")
-  message(WARNING "gccarmemb is deprecated, please use gnuarmemb instead")
-  set(ZEPHYR_TOOLCHAIN_VARIANT "gnuarmemb")
+# Special override for POSIX arch
+if(CONFIG_ARCH_POSIX)
+  if(NOT (ZEPHYR_TOOLCHAIN_VARIANT STREQUAL "host"))
+    set(ZEPHYR_TOOLCHAIN_VARIANT "host")
+  endif()
 endif()
 
-
-set(TOOLCHAIN_ROOT ${TOOLCHAIN_ROOT} CACHE STRING "Zephyr toolchain root")
-assert(TOOLCHAIN_ROOT "Zephyr toolchain root path invalid: please set the TOOLCHAIN_ROOT-variable")
-
-set(ZEPHYR_TOOLCHAIN_VARIANT ${ZEPHYR_TOOLCHAIN_VARIANT} CACHE STRING "Zephyr toolchain variant")
+set(ZEPHYR_TOOLCHAIN_VARIANT ${ZEPHYR_TOOLCHAIN_VARIANT} CACHE STRING "Name-identifier of toolchain used")
 assert(ZEPHYR_TOOLCHAIN_VARIANT "Zephyr toolchain variant invalid: please set the ZEPHYR_TOOLCHAIN_VARIANT-variable")
 
-if(CONFIG_ARCH_POSIX OR (ZEPHYR_TOOLCHAIN_VARIANT STREQUAL "host"))
-  set(COMPILER host-gcc)
+
+##
+## Load toolchain: compiler, linker and bintools
+##
+
+# We refer to the toolchain in use via ZEPHYR_TOOLCHAIN_VARIANT.
+# Roughly speaking, a toolchain consists of a compiler, linker and utils.
+# Thus we leave it up to ${ZEPHYR_TOOLCHAIN_VARIANT}.cmake to determine:
+#  * Which ${COMPILER} to use
+#  * Which ${LINKER} to use
+include(${TOOLCHAIN_ROOT}/cmake/toolchain/${ZEPHYR_TOOLCHAIN_VARIANT}.cmake)
+
+# Backwards-compatibility: Not all toolchains may yet set LINKER
+if (NOT LINKER)
+  message(WARNING "LINKER not set: Assuming GNU ld. LINKER must be set by toolchain/${ZEPHYR_TOOLCHAIN_VARIANT}.cmake")
+  set(LINKER "ld")
 endif()
 
-
-# Configure the toolchain based on what SDK/toolchain is in use.
-if(NOT (COMPILER STREQUAL "host-gcc"))
-  include(${TOOLCHAIN_ROOT}/cmake/toolchain/${ZEPHYR_TOOLCHAIN_VARIANT}.cmake)
+# Backwards-compatibility: Not all toolchains may yet set BINTOOLS
+if (NOT BINTOOLS)
+  message(WARNING "BINTOOLS not set: Assuming GNU binutils. BINTOOLS must be set by toolchain/${ZEPHYR_TOOLCHAIN_VARIANT}.cmake")
+  set(BINTOOLS "binutils")
 endif()
 
-# Configure the toolchain based on what toolchain technology is used
-# (gcc, host-gcc etc.)
-include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}.cmake OPTIONAL)
+include(${TOOLCHAIN_ROOT}/cmake/compiler/${COMPILER}.cmake)
+include(${TOOLCHAIN_ROOT}/cmake/linker/${LINKER}.cmake)
+include(${TOOLCHAIN_ROOT}/cmake/bintools/${BINTOOLS}.cmake)
+
 
 # Uniquely identify the toolchain wrt. it's capabilities.
 #

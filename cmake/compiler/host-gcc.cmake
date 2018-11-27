@@ -1,4 +1,4 @@
-# Configures CMake for using GCC
+# Configures CMake for using the system-installed GCC, i.e. /usr/bin or wherever
 
 find_program(CMAKE_C_COMPILER   gcc    )
 find_program(CMAKE_OBJCOPY      objcopy)
@@ -26,3 +26,7 @@ else()
   endif()
 endif()
 find_program(CMAKE_CXX_COMPILER ${cplusplus_compiler}     CACHE INTERNAL " " FORCE)
+
+
+###########
+include(${ZEPHYR_BASE}/cmake/compiler/api_gcc.cmake)

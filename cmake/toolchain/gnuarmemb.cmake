@@ -16,7 +16,9 @@ endif()
 
 set(TOOLCHAIN_HOME ${GNUARMEMB_TOOLCHAIN_PATH})
 
-set(COMPILER gcc)
+set(COMPILER gcc)      # Ensures compiler/${COMPILER}.cmake is run
+set(LINKER   ld)       # Ensures linker/${LINKER}.cmake is run
+set(BINTOOLS binutils) # Ensures bintools/${BINTOOLS}.cmake is run
 
 set(CROSS_COMPILE_TARGET arm-none-eabi)
 set(SYSROOT_TARGET       arm-none-eabi)

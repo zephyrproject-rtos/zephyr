@@ -1,6 +1,8 @@
 set(TOOLCHAIN_HOME /opt/xtensa/XtDevTools/install/tools/$ENV{TOOLCHAIN_VER}/XtensaTools)
 
-set(COMPILER gcc)
+set(COMPILER gcc)      # Ensures compiler/${COMPILER}.cmake is run
+set(LINKER   ld)       # Ensures linker/${LINKER}.cmake is run
+set(BINTOOLS binutils) # Ensures bintools/${BINTOOLS}.cmake is run
 
 set(CROSS_COMPILE_TARGET xt)
 set(SYSROOT_TARGET       xtensa-elf)

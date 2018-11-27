@@ -4,7 +4,9 @@ assert(    XTOOLS_TOOLCHAIN_PATH     "XTOOLS_TOOLCHAIN_PATH is not set")
 
 set(TOOLCHAIN_HOME ${XTOOLS_TOOLCHAIN_PATH})
 
-set(COMPILER gcc)
+set(COMPILER gcc)      # Ensures compiler/${COMPILER}.cmake is run
+set(LINKER   ld)       # Ensures linker/${LINKER}.cmake is run
+set(BINTOOLS binutils) # Ensures bintools/${BINTOOLS}.cmake is run
 
 set(CROSS_COMPILE_TARGET_arm arm-zephyr-eabi)
 if("${ARCH}" STREQUAL "x86")

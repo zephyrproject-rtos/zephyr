@@ -8,7 +8,9 @@ set_ifndef(ISSM_INSTALLATION_PATH "$ENV{ISSM_INSTALLATION_PATH}")
 set(       ISSM_INSTALLATION_PATH    ${ISSM_INSTALLATION_PATH} CACHE PATH "")
 assert(    ISSM_INSTALLATION_PATH     "ISSM_INSTALLATION_PATH is not set")
 
-set(COMPILER gcc)
+set(COMPILER gcc)      # Ensures compiler/${COMPILER}.cmake is run
+set(LINKER   ld)       # Ensures linker/${LINKER}.cmake is run
+set(BINTOOLS binutils) # Ensures bintools/${BINTOOLS}.cmake is run
 
 set(TOOLCHAIN_VENDOR intel)
 
