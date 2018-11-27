@@ -1,0 +1,18 @@
+sample:
+  name: SPI Flash Sample for PCA10056
+tests:
+  test:
+    platform_whitelist: nrf52840_pca10056
+    tags: spi flash
+    harness: console
+    harness_config:
+        type: multi_line
+        ordered: true
+        regex:
+            - "Test 1: Flash erase"
+            - "Flash erase succeeded!"
+            - "Test 2: Flash write"
+            - "Attempted to write 55 aa"
+            - "Data read 55 aa"
+            - "Data read matches with data written. Good!!"
+    depends_on: spi
