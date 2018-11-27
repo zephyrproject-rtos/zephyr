@@ -17,7 +17,7 @@
 typedef u32_t IRQn_Type;
 
 /* Need to keep the remaining from cmsis.h, as Zephyr expects these. */
-enum {
+typedef enum {
 	Reset_IRQn                    = -15,
 	NonMaskableInt_IRQn           = -14,
 	HardFault_IRQn                = -13,
