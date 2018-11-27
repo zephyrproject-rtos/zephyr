@@ -57,6 +57,18 @@ void main(void)
 	}
 
 	sys_pm_dump_debug_info();
+	sys_pm_ctrl_disable_state(SYS_PM_LOW_POWER_STATE);
+
+	k_sleep(LPS1_STATE_ENTER_TO);
+
+	/* Debug counts should remain same */
+	sys_pm_dump_debug_info();
+	sys_pm_ctrl_enable_state(SYS_PM_LOW_POWER_STATE);
+
+	k_sleep(LPS1_STATE_ENTER_TO);
+
+	/* Debug counts should have increased */
+	sys_pm_dump_debug_info();
 
 	printk("OS managed Power Management Test completed\n");
 }
