@@ -144,7 +144,7 @@ mqd_t mq_open(const char *name, int oflags, ...)
 			goto free_mq_buffer;
 		}
 
-		atomic_set(&msg_queue->ref_count, 1);
+		(void)atomic_set(&msg_queue->ref_count, 1);
 		/* initialize zephyr message queue */
 		k_msgq_init(&msg_queue->queue, msg_queue->mem_buffer, msg_size,
 			    max_msgs);
