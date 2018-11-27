@@ -4781,10 +4781,10 @@ struct k_mem_partition {
 	u32_t start;
 	/* size of memory partition */
 	u32_t size;
-#ifdef CONFIG_USERSPACE
+#if defined(CONFIG_MEMORY_PROTECTION)
 	/* attribute of memory partition */
 	k_mem_partition_attr_t attr;
-#endif	/* CONFIG_USERSPACE */
+#endif /* CONFIG_MEMORY_PROTECTION */
 };
 
 /* memory domain

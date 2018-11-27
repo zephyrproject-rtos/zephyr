@@ -393,6 +393,14 @@ config CPU_HAS_MPU
 	help
 	  This option is enabled when the CPU has a Memory Protection Unit (MPU).
 
+config MEMORY_PROTECTION
+	bool
+	# Omit prompt to signify "hidden" option
+	help
+	  This option is enabled when Memory Protection features are supported.
+	  Memory protection support is currently available on ARC, ARM, and x86
+	  architectures.
+
 config MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 	bool
 	# Omit prompt to signify "hidden" option
