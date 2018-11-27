@@ -129,7 +129,6 @@ struct arm_mpu_region_attr {
 
 typedef struct arm_mpu_region_attr arm_mpu_region_attr_t;
 
-#ifdef CONFIG_USERSPACE
 #ifndef _ASMLANGUAGE
 /* Read-Write access permission attributes */
 #define K_MEM_PARTITION_P_NA_U_NA	(NO_ACCESS_Msk | NOT_EXEC)
@@ -162,4 +161,3 @@ typedef struct arm_mpu_region_attr arm_mpu_region_attr_t;
 #define K_MEM_PARTITION_IS_EXECUTABLE(attr) \
 	(!((attr) & (NOT_EXEC)))
 #endif /* _ASMLANGUAGE */
-#endif /* USERSPACE */

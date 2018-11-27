@@ -252,7 +252,7 @@ extern "C" {
 #define _ARCH_THREAD_STACK_BUFFER(sym) \
 		((char *)(sym) + MPU_GUARD_ALIGN_AND_SIZE)
 
-#ifdef CONFIG_USERSPACE
+#ifdef CONFIG_ARM_MPU
 #ifdef CONFIG_CPU_HAS_ARM_MPU
 #ifndef _ASMLANGUAGE
 #include <arch/arm/cortex_m/mpu/arm_mpu.h>
@@ -323,8 +323,8 @@ extern "C" {
 		" and greater than or equal to minimum MPU region size." \
 		"start address of the partition must align with minimum MPU \
 		 region size.")
-#endif  /* CONFIG_CPU_HAS_ARM_MPU */
-#endif /* CONFIG_USERSPACE */
+#endif  /* CONFIG_CPU_HAS_NXP_MPU */
+#endif /* CONFIG_ARM_MPU */
 
 #ifndef _ASMLANGUAGE
 /* Typedef for the k_mem_partition attribute*/
