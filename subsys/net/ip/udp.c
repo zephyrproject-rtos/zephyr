@@ -16,6 +16,45 @@ LOG_MODULE_REGISTER(net_udp, CONFIG_NET_UDP_LOG_LEVEL);
 
 #define PKT_WAIT_TIME K_SECONDS(1)
 
+int net_udp_create(struct net_pkt *pkt, u16_t src_port, u16_t dst_port)
+{
+	NET_PKT_DATA_ACCESS_DEFINE(udp_access, struct net_udp_hdr);
+	struct net_udp_hdr *udp_hdr;
+
+	udp_hdr = (struct net_udp_hdr *)net_pkt_get_data_new(pkt, &udp_access);
+	if (!udp_hdr) {
+		return -ENOBUFS;
+	}
+
+	udp_hdr->src_port = src_port;
+	udp_hdr->dst_port = dst_port;
+	udp_hdr->len      = 0;
+	udp_hdr->chksum   = 0;
+
+	return net_pkt_set_data(pkt, &udp_access);
+}
+
+int net_udp_finalize(struct net_pkt *pkt)
+{
+	NET_PKT_DATA_ACCESS_DEFINE(udp_access, struct net_udp_hdr);
+	struct net_udp_hdr *udp_hdr;
+	u16_t length;
+
+	udp_hdr = (struct net_udp_hdr *)net_pkt_get_data_new(pkt, &udp_access);
+	if (!udp_hdr) {
+		return -ENOBUFS;
+	}
+
+	length = net_pkt_get_len(pkt) -
+		net_pkt_ip_hdr_len(pkt) -
+		net_pkt_ipv6_ext_len(pkt);
+
+	udp_hdr->len    = htons(length);
+	udp_hdr->chksum = net_calc_chksum_udp(pkt);
+
+	return net_pkt_set_data(pkt, &udp_access);
+}
+
 struct net_pkt *net_udp_insert(struct net_pkt *pkt,
 			       u16_t offset,
 			       u16_t src_port,

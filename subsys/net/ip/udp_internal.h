@@ -67,10 +67,53 @@ struct net_pkt *net_udp_insert(struct net_pkt *pkt,
 			       u16_t src_port,
 			       u16_t dst_port);
 
+/**
+ * @brief Create UDP packet into net_pkt
+ *
+ * Note: pkt's cursor should be set a the right position.
+ *       (i.e. after IP header)
+ *
+ * @param pkt Network packet
+ * @param src_port Destination port in network byte order.
+ * @param dst_port Destination port in network byte order.
+ *
+ * @return 0 on success, negative errno otherwise.
+ */
+int net_udp_create(struct net_pkt *pkt, u16_t src_port, u16_t dst_port);
+
+/**
+ * @brief Finalize UDP packet
+ *
+ * Note: calculates final length and setting up the checksum.
+ *
+ * @param pkt Network packet
+ *
+ * @return 0 on success, negative errno otherwise.
+ */
+int net_udp_finalize(struct net_pkt *pkt);
+
 #else
 #define net_udp_insert(pkt, offset, src_port, dst_port) (pkt)
 #define net_udp_get_chksum(pkt, frag) (0)
 #define net_udp_set_chksum(pkt, frag) NULL
+
+static inline int net_udp_create(struct net_pkt *pkt,
+				 u16_t src_port, u16_t dst_port)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(src_port);
+	ARG_UNUSED(dst_port);
+
+	return 0;
+}
+
+static inline int net_udp_finalize(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return 0;
+}
+
 #endif /* CONFIG_NET_UDP */
 
 /**
