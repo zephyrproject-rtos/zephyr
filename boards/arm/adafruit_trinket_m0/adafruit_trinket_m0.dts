@@ -13,6 +13,7 @@
 
 	chosen {
 		zephyr,console = &sercom0;
+		shell-uart = &sercom0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &code_partition;

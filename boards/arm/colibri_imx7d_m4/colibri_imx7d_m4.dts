@@ -29,6 +29,7 @@
 #endif
 		zephyr,sram = &tcmu_sys;
 		zephyr,console = &uart2;
+		shell-uart = &uart2;
 	};
 
 	leds {

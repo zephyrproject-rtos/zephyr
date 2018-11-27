@@ -13,6 +13,7 @@
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,console = &uart0;
+		shell-uart = &uart0;
 	};
 };
 

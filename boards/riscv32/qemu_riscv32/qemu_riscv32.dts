@@ -8,6 +8,7 @@
 
 	chosen {
 		zephyr,console = &uart0;
+		shell-uart = &uart0;
 	};
 
 };

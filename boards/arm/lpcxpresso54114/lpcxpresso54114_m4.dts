@@ -17,6 +17,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,console = &usart0;
+		shell-uart = &usart0;
 	};
 };
 

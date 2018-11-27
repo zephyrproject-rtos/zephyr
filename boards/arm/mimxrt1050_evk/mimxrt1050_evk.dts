@@ -36,6 +36,7 @@
 #endif
 		zephyr,sram = &dtcm0;
 		zephyr,console = &uart1;
+		shell-uart = &uart1;
 	};
 
 	sdram0: memory@80000000 {
