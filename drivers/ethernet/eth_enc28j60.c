@@ -500,7 +500,6 @@ static int eth_enc28j60_rx(struct device *dev)
 
 	do {
 		struct net_buf *pkt_buf = NULL;
-		struct net_buf *last_buf = NULL;
 		u16_t frm_len = 0U;
 		u8_t info[RSV_SIZE];
 		struct net_pkt *pkt;
@@ -538,35 +537,21 @@ static int eth_enc28j60_rx(struct device *dev)
 		lengthfr = frm_len;
 
 		/* Get the frame from the buffer */
-		pkt = net_pkt_get_reserve_rx(config->timeout);
+		pkt = net_pkt_rx_alloc_with_buffer(context->iface, frm_len,
+						   AF_UNSPEC, 0,
+						   config->timeout);
 		if (!pkt) {
 			LOG_ERR("Could not allocate rx buffer");
 			eth_stats_update_errors_rx(context->iface);
 			goto done;
 		}
 
+		pkt_buf = pkt->buffer;
+
 		do {
 			size_t frag_len;
 			u8_t *data_ptr;
 			size_t spi_frame_len;
-
-			/* Reserve a data frag to receive the frame */
-			pkt_buf = net_pkt_get_frag(pkt, config->timeout);
-			if (!pkt_buf) {
-				LOG_ERR("Could not allocate data buffer");
-				eth_stats_update_errors_rx(context->iface);
-				net_pkt_unref(pkt);
-
-				goto done;
-			}
-
-			if (!last_buf) {
-				net_pkt_frag_insert(pkt, pkt_buf);
-			} else {
-				net_buf_frag_insert(last_buf, pkt_buf);
-			}
-
-			last_buf = pkt_buf;
 
 			data_ptr = pkt_buf->data;
 
@@ -585,6 +570,7 @@ static int eth_enc28j60_rx(struct device *dev)
 
 			/* One fragment has been written via SPI */
 			frm_len -= spi_frame_len;
+			pkt_buf = pkt_buf->frags;
 		} while (frm_len > 0);
 
 		/* Let's pop the useless CRC */
@@ -599,7 +585,9 @@ static int eth_enc28j60_rx(struct device *dev)
 
 		/* Feed buffer frame to IP stack */
 		LOG_DBG("Received packet of length %u", lengthfr);
-		net_recv_data(context->iface, pkt);
+		if (net_recv_data(context->iface, pkt) < 0) {
+			net_pkt_unref(pkt);
+		}
 done:
 		/* Free buffer memory and decrement rx counter */
 		eth_enc28j60_set_bank(dev, ENC28J60_REG_ERXRDPTL);

@@ -210,15 +210,12 @@ static void update_gptp(struct net_if *iface, struct net_pkt *pkt,
 static int eth_send(struct device *dev, struct net_pkt *pkt)
 {
 	struct eth_context *ctx = dev->driver_data;
-	struct net_buf *frag;
-	int count = 0;
+	int count = net_pkt_get_len(pkt);
 	int ret;
 
-	frag = pkt->frags;
-	while (frag) {
-		memcpy(ctx->send + count, frag->data, frag->len);
-		count += frag->len;
-		frag = frag->frags;
+	ret = net_pkt_read_new(pkt, ctx->send, count);
+	if (ret) {
+		return ret;
 	}
 
 	update_gptp(net_pkt_iface(pkt), pkt, true);
@@ -269,37 +266,24 @@ static inline struct net_if *get_iface(struct eth_context *ctx,
 static int read_data(struct eth_context *ctx, int fd)
 {
 	u16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
-	int count = 0;
 	struct net_if *iface;
 	struct net_pkt *pkt;
-	struct net_buf *frag;
-	u32_t pkt_len;
-	int ret;
+	int count;
 
-	ret = eth_read_data(fd, ctx->recv, sizeof(ctx->recv));
-	if (ret <= 0) {
+	count = eth_read_data(fd, ctx->recv, sizeof(ctx->recv));
+	if (count <= 0) {
 		return 0;
 	}
 
-	pkt = net_pkt_get_reserve_rx(NET_BUF_TIMEOUT);
+	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, count,
+					   AF_UNSPEC, 0, NET_BUF_TIMEOUT);
 	if (!pkt) {
 		return -ENOMEM;
 	}
 
-	do {
-		frag = net_pkt_get_frag(pkt, NET_BUF_TIMEOUT);
-		if (!frag) {
-			net_pkt_unref(pkt);
-			return -ENOMEM;
-		}
-
-		net_pkt_frag_add(pkt, frag);
-
-		net_buf_add_mem(frag, ctx->recv + count,
-				min(net_buf_tailroom(frag), ret));
-		ret -= frag->len;
-		count += frag->len;
-	} while (ret > 0);
+	if (net_pkt_write_new(pkt, ctx->recv, count)) {
+		return -ENOBUFS;
+	}
 
 #if defined(CONFIG_NET_VLAN)
 	{
@@ -325,9 +309,8 @@ static int read_data(struct eth_context *ctx, int fd)
 #endif
 
 	iface = get_iface(ctx, vlan_tag);
-	pkt_len = net_pkt_get_len(pkt);
 
-	LOG_DBG("Recv pkt %p len %d", pkt, pkt_len);
+	LOG_DBG("Recv pkt %p len %d", pkt, count);
 
 	update_gptp(iface, pkt, false);
 

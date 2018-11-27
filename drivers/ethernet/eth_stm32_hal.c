@@ -61,7 +61,6 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 	ETH_HandleTypeDef *heth;
 	u8_t *dma_buffer;
 	int res;
-	struct net_buf *frag;
 	u16_t total_len;
 	__IO ETH_DMADescTypeDef *dma_tx_desc;
 
@@ -88,11 +87,9 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 
 	dma_buffer = (u8_t *)(dma_tx_desc->Buffer1Addr);
 
-	frag = pkt->frags;
-	while (frag) {
-		memcpy(dma_buffer, frag->data, frag->len);
-		dma_buffer += frag->len;
-		frag = frag->frags;
+	if (net_pkt_read_new(pkt, dma_buffer, total_len)) {
+		res = -EIO;
+		goto error;
 	}
 
 	if (HAL_ETH_TransmitFrame(heth, total_len) != HAL_OK) {
@@ -146,13 +143,14 @@ static struct net_pkt *eth_rx(struct device *dev)
 	total_len = heth->RxFrameInfos.length;
 	dma_buffer = (u8_t *)heth->RxFrameInfos.buffer;
 
-	pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
+	pkt = net_pkt_rx_alloc_with_buffer(dev_data->iface, total_len,
+					   AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("Failed to obtain RX buffer");
 		goto release_desc;
 	}
 
-	if (!net_pkt_append_all(pkt, total_len, dma_buffer, K_NO_WAIT)) {
+	if (net_pkt_write_new(pkt, dma_buffer, total_len)) {
 		LOG_ERR("Failed to append RX buffer to context buffer");
 		net_pkt_unref(pkt);
 		pkt = NULL;
