@@ -1,16 +1,3 @@
-if(NOT DEFINED ZEPHYR_BINARY_DIR)
-  message(FATAL_ERROR "A user error has occured.
-cmake was invoked with '${CMAKE_CURRENT_LIST_DIR}' specified as the source directory,
-but it must be invoked with an application source directory,
-such as '${CMAKE_CURRENT_LIST_DIR}/samples/hello_world'.
-Debug variables:
-CMAKE_CACHEFILE_DIR: ${CMAKE_CACHEFILE_DIR}
-")
-endif()
-
-project(Zephyr-Kernel VERSION ${PROJECT_VERSION})
-enable_language(C CXX ASM)
-
 # *DOCUMENTATION*
 #
 # Note that this is *NOT* the top-level CMakeLists.txt. That's in the
@@ -23,7 +10,21 @@ enable_language(C CXX ASM)
 # Comments in this file are targeted only to the developer, do not
 # expect to learn how to build the kernel reading this file.
 
-# Verify that the toolchain can compile a dummy file, if it is not we
+project(Zephyr-Kernel VERSION ${PROJECT_VERSION})
+enable_language(C CXX ASM)
+
+if(NOT DEFINED ZEPHYR_BINARY_DIR)
+  message(FATAL_ERROR "
+    A user error has occurred.
+    cmake was invoked with '${CMAKE_CURRENT_LIST_DIR}' specified as the source directory,
+    but it must be invoked with an application source directory,
+    such as '${CMAKE_CURRENT_LIST_DIR}/samples/hello_world'.
+    Debug variables:
+    CMAKE_CACHEFILE_DIR: ${CMAKE_CACHEFILE_DIR}"
+  )
+endif()
+
+# Verify that the toolchain can compile a dummy file, if it cannot we
 # won't be able to test for compatiblity with certain C flags.
 check_c_compiler_flag("" toolchain_is_ok)
 assert(toolchain_is_ok "The toolchain is unable to build a dummy C file. See CMakeError.log.")
