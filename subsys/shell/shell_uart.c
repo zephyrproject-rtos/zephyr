@@ -229,7 +229,7 @@ static int enable_shell_uart(struct device *arg)
 {
 	ARG_UNUSED(arg);
 	struct device *dev =
-			device_get_binding(CONFIG_UART_CONSOLE_ON_DEV_NAME);
+			device_get_binding(CONFIG_UART_SHELL_ON_DEV_NAME);
 	bool log_backend = CONFIG_SHELL_BACKEND_SERIAL_LOG_LEVEL > 0;
 	u32_t level =
 		(CONFIG_SHELL_BACKEND_SERIAL_LOG_LEVEL > LOG_LEVEL_DBG) ?

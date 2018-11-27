@@ -13,6 +13,7 @@
 
 	chosen {
 		zephyr,console = &sercom5;
+		zephyr,shell-uart = &sercom5;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};

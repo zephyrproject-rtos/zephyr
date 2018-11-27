@@ -20,6 +20,7 @@
 		zephyr,sram = &sram2;
 		zephyr,flash = &flash1;
 		zephyr,console = &uart5;
+		zephyr,shell-uart = &uart5;
 	};
 };
 
