@@ -16,7 +16,6 @@
 #include <soc.h>
 #include <em_gpio.h>
 
-#ifdef CONFIG_SOC_PART_NUMBER_EFM32HG322F64
 #ifdef CONFIG_USART_GECKO_0
 #if (DT_USART_GECKO_0_LOCATION == 0)
 #define PIN_USART0_TXD {gpioPortE, 10, gpioModePushPull, 1}
@@ -54,8 +53,5 @@
 #error ("Serial Driver for Gecko MCUs not implemented for this location index")
 #endif
 #endif /* CONFIG_USART_GECKO_1 */
-#else
-#error ("Pinmap not available for this for Happy Gecko MCU")
-#endif /* SOC_PART_NUMBER_EFM32HG322F64*/
 
 #endif /* _SILABS_EFM32HG_SOC_PINMAP_H_ */
