@@ -136,6 +136,7 @@ zephyr_compile_options(
   -imacros ${AUTOCONF_H}
   -ffreestanding
   -Wno-main
+  -fno-common
   ${NOSTDINC_F}
   ${TOOLCHAIN_C_FLAGS}
 )
