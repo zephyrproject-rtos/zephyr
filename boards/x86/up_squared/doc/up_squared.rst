@@ -300,6 +300,6 @@ Steps
          WARNING: no console will be available to OS
 
 
-.. _UP Squared: http://www.up-board.org/upsquared/
+.. _UP Squared: https://www.up-board.org/upsquared/specifications
 
 .. _UP Squared Pinout: https://wiki.up-community.org/Pinout
