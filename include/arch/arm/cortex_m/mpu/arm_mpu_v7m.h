@@ -147,10 +147,10 @@ typedef struct arm_mpu_region_attr arm_mpu_region_attr_t;
 #define K_MEM_PARTITION_IS_WRITABLE(attr) \
 	({ \
 		int __is_writable__; \
-		switch (attr) { \
-		case P_RW_U_RW: \
-		case P_RW_U_RO: \
-		case P_RW_U_NA: \
+		switch (attr & MPU_RASR_AP_Msk) { \
+		case P_RW_U_RW_Msk: \
+		case P_RW_U_RO_Msk: \
+		case P_RW_U_NA_Msk: \
 			__is_writable__ = 1; \
 			break; \
 		default: \
