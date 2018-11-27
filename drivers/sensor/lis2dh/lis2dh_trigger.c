@@ -23,7 +23,7 @@ static int lis2dh_trigger_drdy_set(struct device *dev, enum sensor_channel chan,
 	struct lis2dh_data *lis2dh = dev->driver_data;
 	int status;
 
-	gpio_pin_disable_callback(lis2dh->gpio, CONFIG_LIS2DH_INT1_GPIO_PIN);
+	gpio_pin_disable_callback(lis2dh->gpio, DT_LIS2DH_INT1_GPIO_PIN);
 
 	/* cancel potentially pending trigger */
 	atomic_clear_bit(&lis2dh->trig_flags, TRIGGED_INT1);
@@ -78,7 +78,7 @@ static int lis2dh_start_trigger_int1(struct device *dev)
 		return status;
 	}
 
-	gpio_pin_enable_callback(lis2dh->gpio, CONFIG_LIS2DH_INT1_GPIO_PIN);
+	gpio_pin_enable_callback(lis2dh->gpio, DT_LIS2DH_INT1_GPIO_PIN);
 
 	/* re-enable output sampling */
 	status = lis2dh_reg_write_byte(dev, LIS2DH_REG_CTRL1, ctrl1);
@@ -101,7 +101,7 @@ static int lis2dh_trigger_anym_set(struct device *dev,
 	int status;
 	u8_t reg_val;
 
-	gpio_pin_disable_callback(lis2dh->gpio, CONFIG_LIS2DH_INT2_GPIO_PIN);
+	gpio_pin_disable_callback(lis2dh->gpio, DT_LIS2DH_INT2_GPIO_PIN);
 
 	/* cancel potentially pending trigger */
 	atomic_clear_bit(&lis2dh->trig_flags, TRIGGED_INT2);
@@ -135,7 +135,7 @@ static int lis2dh_start_trigger_int2(struct device *dev)
 	int status;
 
 	status = gpio_pin_enable_callback(lis2dh->gpio,
-					  CONFIG_LIS2DH_INT2_GPIO_PIN);
+					  DT_LIS2DH_INT2_GPIO_PIN);
 	if (unlikely(status < 0)) {
 		LOG_ERR("enable callback failed err=%d", status);
 	}
@@ -349,25 +349,25 @@ int lis2dh_init_interrupt(struct device *dev)
 	u8_t raw[LIS2DH_DATA_OFS + 2];
 
 	/* setup data ready gpio interrupt */
-	lis2dh->gpio = device_get_binding(CONFIG_LIS2DH_GPIO_DEV_NAME);
+	lis2dh->gpio = device_get_binding(DT_LIS2DH_INT1_GPIO_DEV_NAME);
 	if (lis2dh->gpio == NULL) {
 		LOG_ERR("Cannot get pointer to %s device",
-			    CONFIG_LIS2DH_GPIO_DEV_NAME);
+			    DT_LIS2DH_INT1_GPIO_DEV_NAME);
 		return -EINVAL;
 	}
 
 	/* data ready int1 gpio configuration */
-	status = gpio_pin_configure(lis2dh->gpio, CONFIG_LIS2DH_INT1_GPIO_PIN,
+	status = gpio_pin_configure(lis2dh->gpio, DT_LIS2DH_INT1_GPIO_PIN,
 				    LIS2DH_INT1_CFG);
 	if (status < 0) {
 		LOG_ERR("Could not configure gpio %d",
-			     CONFIG_LIS2DH_INT1_GPIO_PIN);
+			     DT_LIS2DH_INT1_GPIO_PIN);
 		return status;
 	}
 
 	gpio_init_callback(&lis2dh->gpio_int1_cb,
 			   lis2dh_gpio_int1_callback,
-			   BIT(CONFIG_LIS2DH_INT1_GPIO_PIN));
+			   BIT(DT_LIS2DH_INT1_GPIO_PIN));
 
 	status = gpio_add_callback(lis2dh->gpio, &lis2dh->gpio_int1_cb);
 	if (status < 0) {
@@ -376,17 +376,17 @@ int lis2dh_init_interrupt(struct device *dev)
 	}
 
 	/* any motion int2 gpio configuration */
-	status = gpio_pin_configure(lis2dh->gpio, CONFIG_LIS2DH_INT2_GPIO_PIN,
+	status = gpio_pin_configure(lis2dh->gpio, DT_LIS2DH_INT2_GPIO_PIN,
 				    LIS2DH_INT2_CFG);
 	if (status < 0) {
 		LOG_ERR("Could not configure gpio %d",
-			     CONFIG_LIS2DH_INT2_GPIO_PIN);
+			     DT_LIS2DH_INT2_GPIO_PIN);
 		return status;
 	}
 
 	gpio_init_callback(&lis2dh->gpio_int2_cb,
 			   lis2dh_gpio_int2_callback,
-			   BIT(CONFIG_LIS2DH_INT2_GPIO_PIN));
+			   BIT(DT_LIS2DH_INT2_GPIO_PIN));
 
 	/* callback is going to be enabled by trigger setting function */
 	status = gpio_add_callback(lis2dh->gpio, &lis2dh->gpio_int2_cb);
@@ -430,8 +430,8 @@ int lis2dh_init_interrupt(struct device *dev)
 	}
 
 	LOG_INF("int1 on pin=%d cfg=0x%x, int2 on pin=%d cfg=0x%x",
-		    CONFIG_LIS2DH_INT1_GPIO_PIN, LIS2DH_INT1_CFG,
-		    CONFIG_LIS2DH_INT2_GPIO_PIN, LIS2DH_INT2_CFG);
+		    DT_LIS2DH_INT1_GPIO_PIN, LIS2DH_INT1_CFG,
+		    DT_LIS2DH_INT2_GPIO_PIN, LIS2DH_INT2_CFG);
 
 	/* enable interrupt 2 on int2 line */
 	return lis2dh_reg_write_byte(dev, LIS2DH_REG_CTRL6,
