@@ -6,6 +6,7 @@
 
 #include "test_fat.h"
 
+struct fs_file_t filep;
 const char test_str[] = "hello world!";
 
 int check_file_dir_exists(const char *path)
