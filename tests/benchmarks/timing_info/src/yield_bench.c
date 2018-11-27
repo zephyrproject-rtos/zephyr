@@ -25,8 +25,8 @@ extern u32_t __read_swap_end_time_value;
 extern u64_t __common_var_swap_end_time;
 extern char sline[];
 
-u64_t thread_sleep_start_time;
-u64_t thread_sleep_end_time;
+extern u64_t thread_sleep_start_time;
+extern u64_t thread_sleep_end_time;
 u64_t thread_start_time;
 u64_t thread_end_time;
 static u32_t count;
