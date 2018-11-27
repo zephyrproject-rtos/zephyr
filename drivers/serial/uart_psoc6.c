@@ -118,14 +118,12 @@ static int uart_psoc6_poll_in(struct device *dev, unsigned char *c)
 	return ((rec == CY_SCB_UART_RX_NO_DATA) ? -1 : 0);
 }
 
-static unsigned char uart_psoc6_poll_out(struct device *dev, unsigned char c)
+static void uart_psoc6_poll_out(struct device *dev, unsigned char c)
 {
 	const struct cypress_psoc6_config *config = dev->config->config_info;
 
 	while (Cy_SCB_UART_Put(config->base, (uint32_t)c) != 1UL)
 		;
-
-	return c;
 }
 
 static const struct uart_driver_api uart_psoc6_driver_api = {

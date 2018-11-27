@@ -87,7 +87,7 @@ static int uart_nsim_init(struct device *dev)
  * @param dev UART device struct
  * @param c character to output
  */
-unsigned char uart_nsim_poll_out(struct device *dev, unsigned char c)
+static void uart_nsim_poll_out(struct device *dev, unsigned char c)
 {
 	u32_t regs = DEV_CFG(dev)->regs;
 	/* wait for transmitter to ready to accept a character */
@@ -96,8 +96,6 @@ unsigned char uart_nsim_poll_out(struct device *dev, unsigned char c)
 		;
 
 	UART_SET_DATA(regs, c);
-
-	return c;
 }
 
 static int uart_nsim_poll_in(struct device *dev, unsigned char *c)

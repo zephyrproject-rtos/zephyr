@@ -33,7 +33,9 @@ Z_SYSCALL_HANDLER(uart_poll_in, dev, p_char)
 Z_SYSCALL_HANDLER(uart_poll_out, dev, out_char)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_UART(dev, poll_out));
-	return _impl_uart_poll_out((struct device *)dev, out_char);
+	_impl_uart_poll_out((struct device *)dev, out_char);
+
+	return 0;
 }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN

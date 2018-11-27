@@ -898,16 +898,12 @@ static int cdc_acm_poll_in(struct device *dev, unsigned char *c)
  *
  * The UART poll method for USB UART is simulated by waiting till
  * we get the next BULK In upcall from the USB device controller or 100 ms.
- *
- * @return the same character which is sent
  */
-static unsigned char cdc_acm_poll_out(struct device *dev,
+static void cdc_acm_poll_out(struct device *dev,
 				      unsigned char c)
 {
 	cdc_acm_fifo_fill(dev, &c, 1);
 	k_sem_take(&poll_wait_sem, K_MSEC(100));
-
-	return c;
 }
 
 static const struct uart_driver_api cdc_acm_driver_api = {

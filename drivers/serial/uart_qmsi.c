@@ -202,13 +202,12 @@ static int uart_qmsi_poll_in(struct device *dev, unsigned char *data)
 	return 0;
 }
 
-static unsigned char uart_qmsi_poll_out(struct device *dev,
+static void uart_qmsi_poll_out(struct device *dev,
 					unsigned char data)
 {
 	qm_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 
 	qm_uart_write(instance, data);
-	return data;
 }
 
 static int uart_qmsi_err_check(struct device *dev)

@@ -45,7 +45,7 @@ static int usart_mcux_lpc_poll_in(struct device *dev, unsigned char *c)
 	return ret;
 }
 
-static unsigned char usart_mcux_lpc_poll_out(struct device *dev,
+static void usart_mcux_lpc_poll_out(struct device *dev,
 					     unsigned char c)
 {
 	const struct usart_mcux_lpc_config *config = dev->config->config_info;
@@ -55,8 +55,6 @@ static unsigned char usart_mcux_lpc_poll_out(struct device *dev,
 		;
 
 	USART_WriteByte(config->base, c);
-
-	return c;
 }
 
 static int usart_mcux_lpc_err_check(struct device *dev)

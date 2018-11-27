@@ -177,7 +177,7 @@ struct uart_device_config {
 struct uart_driver_api {
 	/** Console I/O function */
 	int (*poll_in)(struct device *dev, unsigned char *p_char);
-	unsigned char (*poll_out)(struct device *dev, unsigned char out_char);
+	void (*poll_out)(struct device *dev, unsigned char out_char);
 
 	/** Console I/O function */
 	int (*err_check)(struct device *dev);
@@ -303,19 +303,17 @@ static inline int _impl_uart_poll_in(struct device *dev, unsigned char *p_char)
  *
  * @param dev UART device structure.
  * @param out_char Character to send.
- *
- * @retval char Sent character.
  */
-__syscall unsigned char uart_poll_out(struct device *dev,
+__syscall void uart_poll_out(struct device *dev,
 				      unsigned char out_char);
 
-static inline unsigned char _impl_uart_poll_out(struct device *dev,
+static inline void _impl_uart_poll_out(struct device *dev,
 						unsigned char out_char)
 {
 	const struct uart_driver_api *api =
 		(const struct uart_driver_api *)dev->driver_api;
 
-	return api->poll_out(dev, out_char);
+	api->poll_out(dev, out_char);
 }
 
 /**

@@ -138,7 +138,7 @@ static int usart_sam_poll_in(struct device *dev, unsigned char *c)
 	return 0;
 }
 
-static unsigned char usart_sam_poll_out(struct device *dev, unsigned char c)
+static void usart_sam_poll_out(struct device *dev, unsigned char c)
 {
 	Usart *const usart = DEV_CFG(dev)->regs;
 
@@ -149,7 +149,6 @@ static unsigned char usart_sam_poll_out(struct device *dev, unsigned char c)
 
 	/* send a character */
 	usart->US_THR = (u32_t)c;
-	return c;
 }
 
 static int usart_sam_err_check(struct device *dev)

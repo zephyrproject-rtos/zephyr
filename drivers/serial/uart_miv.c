@@ -150,7 +150,7 @@ struct uart_miv_data {
 #define DEV_DATA(dev)						\
 	((struct uart_miv_data * const)(dev)->driver_data)
 
-static unsigned char uart_miv_poll_out(struct device *dev,
+static void uart_miv_poll_out(struct device *dev,
 				       unsigned char c)
 {
 	volatile struct uart_miv_regs_t *uart = DEV_UART(dev);
@@ -159,8 +159,6 @@ static unsigned char uart_miv_poll_out(struct device *dev,
 		;
 
 	uart->tx = c;
-
-	return c;
 }
 
 static int uart_miv_poll_in(struct device *dev, unsigned char *c)

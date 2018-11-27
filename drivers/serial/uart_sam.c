@@ -153,7 +153,7 @@ static int uart_sam_poll_in(struct device *dev, unsigned char *c)
 	return 0;
 }
 
-static unsigned char uart_sam_poll_out(struct device *dev, unsigned char c)
+static void uart_sam_poll_out(struct device *dev, unsigned char c)
 {
 	Uart *const uart = DEV_CFG(dev)->regs;
 
@@ -163,7 +163,6 @@ static unsigned char uart_sam_poll_out(struct device *dev, unsigned char c)
 
 	/* send a character */
 	uart->UART_THR = (u32_t)c;
-	return c;
 }
 
 static int uart_sam_err_check(struct device *dev)

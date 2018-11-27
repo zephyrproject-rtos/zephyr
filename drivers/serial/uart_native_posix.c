@@ -34,7 +34,7 @@
 
 static int np_uart_stdin_poll_in(struct device *dev, unsigned char *p_char);
 static int np_uart_tty_poll_in(struct device *dev, unsigned char *p_char);
-static unsigned char np_uart_poll_out(struct device *dev,
+static void np_uart_poll_out(struct device *dev,
 				      unsigned char out_char);
 
 static bool auto_attach;
@@ -200,7 +200,7 @@ static int np_uart_init(struct device *dev)
  * @param dev UART device struct
  * @param out_char Character to send.
  */
-static unsigned char np_uart_poll_out(struct device *dev,
+static void np_uart_poll_out(struct device *dev,
 				      unsigned char out_char)
 {
 	int ret;
@@ -212,8 +212,6 @@ static unsigned char np_uart_poll_out(struct device *dev,
 	if (ret != 1) {
 		WARN("%s: a character could not be output\n", __func__);
 	}
-
-	return out_char;
 }
 
 /**
