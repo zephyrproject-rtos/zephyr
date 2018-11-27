@@ -182,7 +182,7 @@ endfunction()
 
 function(zephyr_get_include_directories_for_lang lang i)
   get_property_and_add_prefix(flags zephyr_interface INTERFACE_INCLUDE_DIRECTORIES
-    "-I"
+    "${CMAKE_INCLUDE_FLAG_${lang}}" # E.g. CMAKE_INCLUDE_FLAG_C
     ${ARGN}
     )
 
@@ -193,7 +193,7 @@ endfunction()
 
 function(zephyr_get_system_include_directories_for_lang lang i)
   get_property_and_add_prefix(flags zephyr_interface INTERFACE_SYSTEM_INCLUDE_DIRECTORIES
-    "-isystem"
+    "-isystem"  # No need to abstract yet
     ${ARGN}
     )
 
@@ -204,7 +204,8 @@ endfunction()
 
 function(zephyr_get_compile_definitions_for_lang lang i)
   get_property_and_add_prefix(flags zephyr_interface INTERFACE_COMPILE_DEFINITIONS
-    "-D"
+    # Note that CMAKE_DEFINE_FLAG_C does not exist in CMake
+    "${ZEPHYR_DEFINE_FLAG_${lang}}"  # E.g. ZEPHYR_DEFINE_FLAG_C
     ${ARGN}
     )
 

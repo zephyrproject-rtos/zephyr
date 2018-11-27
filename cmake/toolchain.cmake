@@ -48,6 +48,7 @@ if(NOT TOOLCHAIN_ROOT)
     set(TOOLCHAIN_ROOT ${ZEPHYR_BASE})
   endif()
 endif()
+set(ZEPHYR_DEFINE_FLAG_C "-D")  # set default but let toolchain override later if needed
 
 # Don't inherit compiler flags from the environment
 foreach(var CFLAGS CXXFLAGS)
