@@ -61,7 +61,7 @@ extern "C" {
 struct stats_name_map {
 	u16_t snm_off;
 	const char *snm_name;
-} __packed;
+} __attribute__((packed));
 
 struct stats_hdr {
 	const char *s_name;
