@@ -31,7 +31,7 @@ struct nffs_test_file_desc {
 	struct nffs_test_file_desc *children;
 };
 
-int nffs_test_num_touched_entries;
+extern int nffs_test_num_touched_entries;
 
 extern int flash_native_memset(u32_t offset, uint8_t c, u32_t len);
 extern u8_t nffs_test_buf[];
