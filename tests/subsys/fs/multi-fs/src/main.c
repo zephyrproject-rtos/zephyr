@@ -63,7 +63,6 @@ void test_main(void)
 			 ztest_unit_test(test_fat_unlink),
 			 ztest_unit_test_setup_teardown(test_nffs_unlink,
 							test_setup, test_teardown),
-			 ztest_unit_test(test_fs_help),
-			 ztest_unit_test(test_fs_shell_exit));
+			 ztest_unit_test(test_fs_help));
 	ztest_run_test_suite(multifs_fs_test);
 }
