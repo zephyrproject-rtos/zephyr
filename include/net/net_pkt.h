@@ -2442,6 +2442,80 @@ u16_t net_pkt_get_current_offset(struct net_pkt *pkt);
  */
 bool net_pkt_is_contiguous(struct net_pkt *pkt, size_t size);
 
+struct net_pkt_data_access {
+#if !defined(CONFIG_NET_HEADERS_ALWAYS_CONTIGUOUS)
+	void *data;
+#endif
+	const size_t size;
+};
+
+#if defined(CONFIG_NET_HEADERS_ALWAYS_CONTIGUOUS)
+#define NET_PKT_DATA_ACCESS_DEFINE(_name, _type)		\
+	struct net_pkt_data_access _name = {			\
+		.size = sizeof(_type),				\
+	}
+
+#define NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(_name, _type)	\
+	NET_PKT_DATA_ACCESS_DEFINE(_name, _type)
+
+#else
+#define NET_PKT_DATA_ACCESS_DEFINE(_name, _type)		\
+	_type _hdr_##_name;					\
+	struct net_pkt_data_access _name = {			\
+		.data = &_hdr_##_name,				\
+		.size = sizeof(_type),				\
+	}
+
+#define NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(_name, _type)	\
+	struct net_pkt_data_access _name = {			\
+		.data = NULL,					\
+		.size = sizeof(_type),				\
+	}
+
+#endif /* CONFIG_NET_HEADERS_ALWAYS_CONTIGUOUS */
+
+/**
+ * @brief Get data from a network packet in a contiguous way
+ *
+ * Note: net_pkt's cursor should be properly initialized and,
+ *       eventally, properly positioned using net_pkt_skip_read/write.
+ *       Cursor will be updated according to parameters.
+ *
+ * @param pkt    The network packet from where to get the data.
+ * @param access A pointer to a valid net_pkt_data_access describing the
+ *        data to get in a contiguous way.
+ *
+ * @return a pointer to the requested contiguous data, NULL otherwise.
+ */
+void *net_pkt_get_data_new(struct net_pkt *pkt,
+			   struct net_pkt_data_access *access);
+
+/**
+ * @brief Set contiguous data into a network packet
+ *
+ * Note: net_pkt's cursor should be properly initialized and,
+ *       eventally, properly positioned using net_pkt_skip_read/write.
+ *       Cursor will be updated according to parameters.
+ *
+ * @param pkt    The network packet to where the data should be set.
+ * @param access A pointer to a valid net_pkt_data_access describing the
+ *        data to set.
+ *
+ * @return 0 on success, a negative errno otherwise.
+ */
+int net_pkt_set_data(struct net_pkt *pkt,
+		     struct net_pkt_data_access *access);
+
+/**
+ * Acknowledge previously contiguous data taken from a network packet
+ * Packet needs to be set to overwrite mode.
+ */
+static inline int net_pkt_acknowledge_data(struct net_pkt *pkt,
+					   struct net_pkt_data_access *access)
+{
+	return net_pkt_skip(pkt, access->size);
+}
+
 /**
  * @}
  */

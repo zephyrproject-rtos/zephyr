@@ -2715,10 +2715,6 @@ static void pkt_cursor_advance(struct net_pkt *pkt, bool write)
 	if ((cursor->pos - cursor->buf->data) == len) {
 		pkt_cursor_jump(pkt, write);
 	}
-
-	if (write) {
-		pkt->length += length;
-	}
 }
 
 static void pkt_cursor_update(struct net_pkt *pkt,
@@ -2850,6 +2846,10 @@ int net_pkt_read_be32_new(struct net_pkt *pkt, u32_t *data)
 int net_pkt_write_new(struct net_pkt *pkt, const void *data, size_t length)
 {
 	NET_DBG("pkt %p data %p length %zu", pkt, data, length);
+
+	if (data == pkt->cursor.pos && net_pkt_is_contiguous(pkt, length)) {
+		return net_pkt_skip(pkt, length);
+	}
 
 	return net_pkt_cursor_operate(pkt, (void *)data, length, true, true);
 }
@@ -3065,6 +3065,53 @@ bool net_pkt_is_contiguous(struct net_pkt *pkt, size_t size)
 	}
 
 	return false;
+}
+
+void *net_pkt_get_data_new(struct net_pkt *pkt,
+			   struct net_pkt_data_access *access)
+{
+	if (IS_ENABLED(CONFIG_NET_HEADERS_ALWAYS_CONTIGUOUS)) {
+		if (!net_pkt_is_contiguous(pkt, access->size)) {
+			return NULL;
+		}
+
+		return pkt->cursor.pos;
+	} else {
+		if (net_pkt_is_contiguous(pkt, access->size)) {
+			access->data = pkt->cursor.pos;
+		} else if (net_pkt_is_being_overwritten(pkt)) {
+			struct net_pkt_cursor backup;
+
+			if (!access->data) {
+				NET_ERR("Uncontiguous data"
+					" cannot be linearized");
+				return NULL;
+			}
+
+			net_pkt_cursor_backup(pkt, &backup);
+
+			if (net_pkt_read_new(pkt, access->data, access->size)) {
+				net_pkt_cursor_restore(pkt, &backup);
+				return NULL;
+			}
+
+			net_pkt_cursor_restore(pkt, &backup);
+		}
+
+		return access->data;
+	}
+
+	return NULL;
+}
+
+int net_pkt_set_data(struct net_pkt *pkt,
+		     struct net_pkt_data_access *access)
+{
+	if (IS_ENABLED(CONFIG_NET_HEADERS_ALWAYS_CONTIGUOUS)) {
+		return net_pkt_skip(pkt, access->size);
+	}
+
+	return net_pkt_write_new(pkt, access->data, access->size);
 }
 
 void net_pkt_init(void)
