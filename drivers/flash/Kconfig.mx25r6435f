@@ -1,0 +1,90 @@
+#
+# Copyright (c) 2018 Sigma Connectivity.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+
+menuconfig SPI_FLASH_MX25R6435F
+	bool "SPI NOR Flash MXSMIO MX25R6435F"
+	select FLASH_HAS_DRIVER_ENABLED
+	depends on SPI
+
+if SPI_FLASH_MX25R6435F
+
+config SPI_FLASH_MX25R6435F_SPI_NAME
+	string "SPI controller device name"
+	default "SPI_2"
+
+config SPI_FLASH_MX25R6435F_DRV_NAME
+	string "SPI flash device name"
+	default "spi_flash"
+
+config SPI_FLASH_MX25R6435F_INIT_PRIORITY
+	int
+	default 80
+	help
+	  Device driver initialization priority.
+	  Device is connected to SPI bus, it has to
+	  be initialized after SPI driver.
+
+config SPI_FLASH_MX25R6435F_SPI_FREQ_0
+	int "SPI system frequency"
+	default 1000000
+	help
+	  This option sets the SPI controller's frequency. Beware this value
+	  depends on the SPI controller being used and also on the system
+	  clock.
+
+config SPI_FLASH_MX25R6435F_SPI_SLAVE
+	int "SPI slave linked to SPI flash"
+	default 0
+	help
+	  This option sets the SPI slave number the SPI controller has to switch
+	  to when dealing with MXSMIO SPI flash chip.
+
+config SPI_FLASH_MX25R6435F_GPIO_SPI_CS
+	bool "Manage SPI CS through a GPIO pin"
+	help
+	This option is useful if one needs to manage SPI CS through a GPIO
+	pin to by-pass the SPI controller's CS logic.
+
+config SPI_FLASH_MX25R6435F_GPIO_SPI_CS_DRV_NAME
+	string "GPIO driver's name to use to drive SPI CS through"
+	depends on SPI_FLASH_MX25R6435F_GPIO_SPI_CS
+	default "flash_gpio"
+	help
+	This option is mandatory to set which GPIO controller to use in order
+	to actually emulate the SPI CS.
+
+config SPI_FLASH_MX25R6435F_GPIO_SPI_CS_PIN
+	int "GPIO PIN to use to drive SPI CS through"
+	default 17
+	depends on SPI_FLASH_MX25R6435F_GPIO_SPI_CS
+	help
+	This option is mandatory to set which GPIO pin to use in order
+	to actually emulate the SPI CS.
+
+config SPI_FLASH_MX25R6435F_GPIO_CS_WAIT_DELAY
+	int "Delay time in us"
+	default 1
+	depends on SPI_FLASH_MX25R6435F_GPIO_SPI_CS
+	help
+	This is the wait delay (in us) to allow for CS switching to take effect
+
+config SPI_FLASH_MX25R6435F_FLASH_SIZE
+	int "Flash size in bytes"
+	default 67108864
+	help
+	This is the flash capacity in bytes.
+
+config SPI_FLASH_MX25R6435F_DEVICE_ID
+	hex "Device ID in hex"
+	default 0x00c22817
+	help
+	This is the device ID of the flash chip to use, which is 0x00c22817 for
+	the MX25R6435F
+
+endif # SPI_FLASH_MX25R6435F
+
+
