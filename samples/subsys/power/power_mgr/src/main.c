@@ -56,5 +56,7 @@ void main(void)
 		}
 	}
 
+	sys_pm_dump_debug_info();
+
 	printk("OS managed Power Management Test completed\n");
 }
