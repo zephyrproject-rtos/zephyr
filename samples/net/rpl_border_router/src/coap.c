@@ -41,6 +41,8 @@ struct coap_request {
 	void *user_data;
 };
 
+struct network_topology topology;
+
 static struct net_context *coap;
 static struct coap_request requests[MAX_COAP_REQUESTS];
 

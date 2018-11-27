@@ -74,7 +74,7 @@ struct network_topology {
 	} edges[CONFIG_NET_IPV6_MAX_NEIGHBORS];
 };
 
-struct network_topology topology;
+extern struct network_topology topology;
 
 typedef void (*coap_reply_cb_t)(struct coap_packet *response, void *user_data);
 
