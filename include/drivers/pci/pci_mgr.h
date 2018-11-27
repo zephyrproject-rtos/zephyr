@@ -541,7 +541,7 @@ union pci_dev {
  * +---------------------------------------------------------------------------+
  */
 
-union pci_cap_hdr {
+typedef union pci_cap_hdr {
 	struct {
 		/* offset 00:				*/
 		u32_t id : 8; /*   capability ID			*/
