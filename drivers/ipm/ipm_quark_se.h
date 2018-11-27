@@ -104,7 +104,7 @@ struct quark_se_ipm_driver_data {
 	void *callback_ctx;
 };
 
-const struct ipm_driver_api ipm_quark_se_api_funcs;
+extern const struct ipm_driver_api ipm_quark_se_api_funcs;
 
 void quark_se_ipm_isr(void *param);
 
