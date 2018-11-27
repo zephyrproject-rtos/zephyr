@@ -553,7 +553,7 @@ char *log_strdup(const char *str)
 	}
 
 	/* Set 'allocated' flag. */
-	atomic_set(&dup->refcount, 1);
+	(void)atomic_set(&dup->refcount, 1);
 
 	strncpy(dup->buf, str, sizeof(dup->buf) - 2);
 	dup->buf[sizeof(dup->buf) - 2] = '~';
