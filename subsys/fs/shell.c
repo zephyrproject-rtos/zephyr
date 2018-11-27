@@ -7,8 +7,6 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
-
-#include <misc/printk.h>
 #include <shell/shell.h>
 #include <init.h>
 #include <fs.h>
@@ -93,13 +91,12 @@ static int cmd_cd(const struct shell *shell, size_t argc, char **argv)
 
 	err = fs_stat(path, &entry);
 	if (err) {
-		shell_fprintf(shell, SHELL_ERROR, "%s doesn't exist\n", path);
+		shell_error(shell, "%s doesn't exist", path);
 		return -ENOEXEC;
 	}
 
 	if (entry.type != FS_DIR_ENTRY_DIR) {
-		shell_fprintf(shell, SHELL_ERROR,
-				"%s is not a directory\n", path);
+		shell_error(shell, "%s is not a directory", path);
 		return -ENOEXEC;
 	}
 
@@ -122,8 +119,7 @@ static int cmd_ls(const struct shell *shell, size_t argc, char **argv)
 
 	err = fs_opendir(&dir, path);
 	if (err) {
-		shell_fprintf(shell, SHELL_ERROR,
-			      "Unable to open %s (err %d)\n", path, err);
+		shell_error(shell, "Unable to open %s (err %d)", path, err);
 		return -ENOEXEC;
 	}
 
@@ -132,8 +128,7 @@ static int cmd_ls(const struct shell *shell, size_t argc, char **argv)
 
 		err = fs_readdir(&dir, &entry);
 		if (err) {
-			shell_fprintf(shell, SHELL_ERROR,
-				      "Unable to read directory\n");
+			shell_error(shell, "Unable to read directory");
 			break;
 		}
 
@@ -142,8 +137,7 @@ static int cmd_ls(const struct shell *shell, size_t argc, char **argv)
 			break;
 		}
 
-		shell_fprintf(shell, SHELL_NORMAL, "%s%s\n",
-			      entry.name,
+		shell_print(shell, "%s%s", entry.name,
 			      (entry.type == FS_DIR_ENTRY_DIR) ? "/" : "");
 	}
 
@@ -154,7 +148,7 @@ static int cmd_ls(const struct shell *shell, size_t argc, char **argv)
 
 static int cmd_pwd(const struct shell *shell, size_t argc, char **argv)
 {
-	shell_fprintf(shell, SHELL_NORMAL, "%s\n", cwd);
+	shell_print(shell, "%s", cwd);
 
 	return 0;
 }
@@ -185,15 +179,13 @@ static int cmd_trunc(const struct shell *shell, size_t argc, char **argv)
 
 	err = fs_open(&file, path);
 	if (err) {
-		shell_fprintf(shell, SHELL_ERROR,
-			      "Failed to open %s (%d)\n", path, err);
+		shell_error(shell, "Failed to open %s (%d)", path, err);
 		return -ENOEXEC;;
 	}
 
 	err = fs_truncate(&file, length);
 	if (err) {
-		shell_fprintf(shell, SHELL_ERROR,
-			      "Failed to truncate %s (%d)\n", path, err);
+		shell_error(shell, "Failed to truncate %s (%d)", path, err);
 		err = -ENOEXEC;
 	}
 
@@ -211,8 +203,7 @@ static int cmd_mkdir(const struct shell *shell, size_t argc, char **argv)
 
 	err = fs_mkdir(path);
 	if (err) {
-		shell_fprintf(shell, SHELL_ERROR,
-				"Error creating dir[%d]\n", err);
+		shell_error(shell, "Error creating dir[%d]", err);
 		err = -ENOEXEC;
 	}
 
@@ -228,8 +219,7 @@ static int cmd_rm(const struct shell *shell, size_t argc, char **argv)
 
 	err = fs_unlink(path);
 	if (err) {
-		shell_fprintf(shell, SHELL_ERROR,
-				"Failed to remove %s (%d)\n", path, err);
+		shell_error(shell, "Failed to remove %s (%d)", path, err);
 		err = -ENOEXEC;
 	}
 
@@ -264,24 +254,21 @@ static int cmd_read(const struct shell *shell, size_t argc, char **argv)
 
 	err = fs_stat(path, &dirent);
 	if (err) {
-		shell_fprintf(shell, SHELL_ERROR,
-			      "Failed to obtain file %s (err: %d)\n",
-			      path, err);
+		shell_error(shell, "Failed to obtain file %s (err: %d)",
+			    path, err);
 		return -ENOEXEC;
 	}
 
 	if (dirent.type != FS_DIR_ENTRY_FILE) {
-		shell_fprintf(shell, SHELL_ERROR, "Note a file %s\n",
-				path);
+		shell_error(shell, "Note a file %s", path);
 		return -ENOEXEC;
 	}
 
-	shell_fprintf(shell, SHELL_NORMAL, "File size: %zd\n", dirent.size);
+	shell_print(shell, "File size: %zd", dirent.size);
 
 	err = fs_open(&file, path);
 	if (err) {
-		shell_fprintf(shell, SHELL_ERROR, "Failed to open %s (%d)\n",
-				path, err);
+		shell_error(shell, "Failed to open %s (%d)", path, err);
 		return -ENOEXEC;
 	}
 
@@ -307,15 +294,15 @@ static int cmd_read(const struct shell *shell, size_t argc, char **argv)
 		for (; i < sizeof(buf); i++) {
 			shell_fprintf(shell, SHELL_NORMAL, "   ");
 		}
-
-		shell_fprintf(shell, SHELL_NORMAL, " ");
+		i = sizeof(buf) - i;
+		shell_fprintf(shell, SHELL_NORMAL, "%*c", i*3, ' ');
 
 		for (i = 0; i < read; i++) {
 			shell_fprintf(shell, SHELL_NORMAL, "%c", buf[i] < 32 ||
-			       buf[i] > 127 ? '.' : buf[i]);
+				      buf[i] > 127 ? '.' : buf[i]);
 		}
 
-		shell_fprintf(shell, SHELL_NORMAL, "\n");
+		shell_print(shell, "");
 
 		offset += read;
 		count -= read;
@@ -340,8 +327,7 @@ static int cmd_write(const struct shell *shell, size_t argc, char **argv)
 
 	if (!strcmp(argv[2], "-o")) {
 		if (argc < 4) {
-			shell_fprintf(shell, SHELL_ERROR,
-					"Missing argument\n");
+			shell_error(shell, "Missing argument");
 			return -ENOEXEC;
 		}
 
@@ -354,8 +340,7 @@ static int cmd_write(const struct shell *shell, size_t argc, char **argv)
 
 	err = fs_open(&file, path);
 	if (err) {
-		shell_fprintf(shell, SHELL_ERROR, "Failed to open %s (%d)\n",
-				path, err);
+		shell_error(shell, "Failed to open %s (%d)", path, err);
 		return -ENOEXEC;
 	}
 
@@ -365,8 +350,7 @@ static int cmd_write(const struct shell *shell, size_t argc, char **argv)
 		err = fs_seek(&file, offset, FS_SEEK_SET);
 	}
 	if (err) {
-		shell_fprintf(shell, SHELL_ERROR,
-				"Failed to seek %s (%d)\n", path, err);
+		shell_error(shell, "Failed to seek %s (%d)", path, err);
 		fs_close(&file);
 		return -ENOEXEC;
 	}
@@ -378,8 +362,7 @@ static int cmd_write(const struct shell *shell, size_t argc, char **argv)
 		if ((buf_len == BUF_CNT) || (arg_offset == argc)) {
 			err = fs_write(&file, buf, buf_len);
 			if (err < 0) {
-				shell_fprintf(shell, SHELL_ERROR,
-					      "Failed to write %s (%d)\n",
+				shell_error(shell, "Failed to write %s (%d)",
 					      path, err);
 				fs_close(&file);
 				return -ENOEXEC;
@@ -416,20 +399,20 @@ static int cmd_mount_fat(const struct shell *shell, size_t argc, char **argv)
 
 	mntpt = mntpt_prepare(argv[1]);
 	if (!mntpt) {
-		shell_fprintf(shell, SHELL_ERROR,
-			"Failed to allocate  buffer for mount point\n");
+		shell_error(shell,
+			    "Failed to allocate  buffer for mount point");
 		return -ENOEXEC;
 	}
 
 	fatfs_mnt.mnt_point = (const char *)mntpt;
 	res = fs_mount(&fatfs_mnt);
 	if (res != 0) {
-		shell_fprintf(shell, SHELL_ERROR,
-			      "Error mounting fat fs.Error Code [%d]\n", res);
+		shell_error(shell,
+			"Error mounting fat fs.Error Code [%d]", res);
 		return -ENOEXEC;
 	}
 
-	shell_fprintf(shell, SHELL_NORMAL, "Successfully mounted fat fs:%s\n",
+	shell_print(shell, "Successfully mounted fat fs:%s",
 			fatfs_mnt.mnt_point);
 
 	return 0;
@@ -445,28 +428,28 @@ static int cmd_mount_nffs(const struct shell *shell, size_t argc, char **argv)
 
 	mntpt = mntpt_prepare(argv[1]);
 	if (!mntpt) {
-		shell_fprintf(shell, SHELL_ERROR,
-			"Failed to allocate  buffer for mount point\n");
+		shell_error(shell,
+				"Failed to allocate  buffer for mount point");
 		return -ENOEXEC;
 	}
 
 	nffs_mnt.mnt_point = (const char *)mntpt;
-	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
+	flash_dev = device_get_binding(CONFIG_FS_NFFS_FLASH_DEV_NAME);
 	if (!flash_dev) {
-		printk("Error in device_get_binding, while mounting nffs fs\n");
+		shell_error(shell,
+			"Error in device_get_binding, while mounting nffs fs");
 		return -ENOEXEC;
 	}
 
 	nffs_mnt.storage_dev = flash_dev;
 	res = fs_mount(&nffs_mnt);
 	if (res != 0) {
-		shell_fprintf(shell, SHELL_ERROR,
-			      "Error mounting fat fs.Error Code [%d]\n", res);
+		shell_error(shell,
+			      "Error mounting fat fs.Error Code [%d]", res);
 		return -ENOEXEC;
 	}
 
-	shell_fprintf(shell, SHELL_NORMAL,
-		      "Successfully mounted fs:%s\n", nffs_mnt.mnt_point);
+	shell_print(shell, "Successfully mounted fs:%s", nffs_mnt.mnt_point);
 
 	return 0;
 }
@@ -475,7 +458,6 @@ static int cmd_mount_nffs(const struct shell *shell, size_t argc, char **argv)
 #if defined(CONFIG_FILE_SYSTEM_NFFS) || defined(CONFIG_FAT_FILESYSTEM_ELM)
 SHELL_CREATE_STATIC_SUBCMD_SET(sub_fs_mount)
 {
-
 #if defined(CONFIG_FAT_FILESYSTEM_ELM)
 	SHELL_CMD_ARG(fat, NULL,
 		      "Mount fatfs. fs mount fat <mount-point>",
@@ -494,13 +476,12 @@ SHELL_CREATE_STATIC_SUBCMD_SET(sub_fs_mount)
 
 SHELL_CREATE_STATIC_SUBCMD_SET(sub_fs)
 {
-	SHELL_CMD(cd, NULL,
-			"Change working directory", cmd_cd),
+	SHELL_CMD(cd, NULL, "Change working directory", cmd_cd),
 	SHELL_CMD(ls, NULL, "List files in current directory", cmd_ls),
 	SHELL_CMD_ARG(mkdir, NULL, "Create directory", cmd_mkdir, 2, 0),
 #if defined(CONFIG_FILE_SYSTEM_NFFS) || defined(CONFIG_FAT_FILESYSTEM_ELM)
 	SHELL_CMD(mount, &sub_fs_mount,
-		  "<fs e.g: fat/nffs> <mount-point>", NULL),
+		  "<Mount fs, syntax:- fs mount <fs type> <mount-point>", NULL),
 #endif
 	SHELL_CMD(pwd, NULL, "Print current working directory", cmd_pwd),
 	SHELL_CMD_ARG(read, NULL, "Read from file", cmd_read, 2, 255),
