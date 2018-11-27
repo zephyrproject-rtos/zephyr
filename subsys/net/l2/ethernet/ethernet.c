@@ -559,6 +559,8 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 		goto error;
 	}
 
+	net_pkt_cursor_init(pkt);
+
 	ret = api->send(net_if_get_device(iface), pkt);
 	if (ret != 0) {
 		eth_stats_update_errors_tx(iface);

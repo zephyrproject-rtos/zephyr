@@ -50,19 +50,6 @@ static enum ethernet_hw_caps e1000_caps(struct device *dev)
 		ETHERNET_LINK_1000BASE_T;
 }
 
-static size_t e1000_linearize(struct net_pkt *pkt, void *buf, size_t bufsize)
-{
-	size_t len = 0;
-	struct net_buf *nb;
-
-	for (nb = pkt->frags; nb; nb = nb->frags) {
-		memcpy((u8_t *) buf + len, nb->data, nb->len);
-		len += nb->len;
-	}
-
-	return len;
-}
-
 static int e1000_tx(struct e1000_dev *dev, void *data, size_t data_len)
 {
 	dev->tx.addr = POINTER_TO_INT(data);
@@ -83,7 +70,11 @@ static int e1000_tx(struct e1000_dev *dev, void *data, size_t data_len)
 static int e1000_send(struct device *device, struct net_pkt *pkt)
 {
 	struct e1000_dev *dev = device->driver_data;
-	size_t len = e1000_linearize(pkt, dev->txb, sizeof(dev->txb));
+	size_t len = net_pkt_get_len(pkt);
+
+	if (net_pkt_read_new(pkt, dev->txb, len)) {
+		return -EIO;
+	}
 
 	return e1000_tx(dev, dev->txb, len);
 }
@@ -99,19 +90,20 @@ static struct net_pkt *e1000_rx(struct e1000_dev *dev)
 		goto out;
 	}
 
-	pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
+	pkt = net_pkt_rx_alloc_with_buffer(dev->iface, dev->rx.len - 4,
+					   AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
-		LOG_ERR("Out of RX buffers");
+		LOG_ERR("Out of buffers");
 		goto out;
 	}
 
-	if (!net_pkt_append_all(pkt, dev->rx.len - 4,
-				INT_TO_POINTER((u32_t) dev->rx.addr),
-				K_NO_WAIT)) {
+	if (net_pkt_write_new(pkt, INT_TO_POINTER((u32_t) dev->rx.addr),
+			      dev->rx.len - 4)) {
 		LOG_ERR("Out of memory for received frame");
 		net_pkt_unref(pkt);
 		pkt = NULL;
 	}
+
 out:
 	return pkt;
 }
