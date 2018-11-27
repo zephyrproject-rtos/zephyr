@@ -43,6 +43,7 @@
 		zephyr,flash = &flash;
 		zephyr,sram = &tcmu;
 		zephyr,console = &uart5;
+		zephyr,shell-uart = &uart5;
 	};
 
 	leds {

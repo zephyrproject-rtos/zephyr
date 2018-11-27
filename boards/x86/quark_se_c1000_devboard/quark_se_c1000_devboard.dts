@@ -23,6 +23,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash1;
 		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
 		zephyr,bt-uart = &uart0;
 		zephyr,uart-pipe = &uart1;
 		zephyr,bt-mon-uart = &uart1;

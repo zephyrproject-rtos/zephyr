@@ -24,6 +24,15 @@ config SHELL_BACKEND_SERIAL
 
 if SHELL_BACKEND_SERIAL
 
+if !HAS_DTS
+config UART_SHELL_ON_DEV_NAME
+	string "Device Name of UART Device for SHELL_BACKEND_SERIAL"
+	default "UART_0"
+	help
+	  This option specifies the name of UART device to be used for the
+	  SHELL UART backend.
+endif
+
 # Internal config to enable UART interrupts if supported.
 config SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
 	bool "Interrupt driven"
