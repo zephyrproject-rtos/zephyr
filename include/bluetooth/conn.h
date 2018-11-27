@@ -124,8 +124,8 @@ enum {
 
 /** LE Connection Info Structure */
 struct bt_conn_le_info {
-	const bt_addr_le_t *src; /** Source Address */
-	const bt_addr_le_t *dst; /** Destination Address */
+	const bt_addr_le_t *src; /** Source (Local) Address */
+	const bt_addr_le_t *dst; /** Destination (Remote) Address */
 	u16_t interval; /** Connection interval */
 	u16_t latency; /** Connection slave latency */
 	u16_t timeout; /** Connection supervision timeout */
@@ -133,7 +133,7 @@ struct bt_conn_le_info {
 
 /** BR/EDR Connection Info Structure */
 struct bt_conn_br_info {
-	const bt_addr_t *dst; /** Destination BR/EDR address */
+	const bt_addr_t *dst; /** Destination (Remote) BR/EDR address */
 };
 
 /** Connection role (master or slave) */
