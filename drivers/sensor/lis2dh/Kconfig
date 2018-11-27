@@ -14,29 +14,23 @@ menuconfig LIS2DH
 
 if LIS2DH
 
-choice
-	prompt "Sensor Bus Type"
-	default LIS2DH_BUS_SPI
+choice LIS2DH_BUS_TYPE
+	prompt "Interface to AP"
 	help
-	  Specify bus type, SPI versus I2C, to which the sensor is attached.
-
-config LIS2DH_BUS_SPI
-	bool "SPI bus"
-	depends on SPI
-	help
-	  Use a SPI master to communicate with accelerometer (SPI slave)
+	  Select interface the LIS2DH driver is connected to AP
 
 config LIS2DH_BUS_I2C
-	bool "I2C bus"
 	depends on I2C
-	help
-	  Use an I2C master to communicate with accelerometer (I2C slave)
+	bool "I2C Interface"
+
+config LIS2DH_BUS_SPI
+	depends on SPI
+	bool "SPI Interface"
 
 endchoice
 
-choice
+choice LIS2DH_TRIGGER_MODE
 	prompt "Trigger mode"
-	default LIS2DH_TRIGGER_GLOBAL_THREAD
 	help
 	  Specify the type of triggering to be used by the driver.
 
