@@ -220,7 +220,7 @@ static void spi_sam_fast_txrx(Spi *regs,
 	u8_t *rx = rx_buf->buf;
 	size_t len = rx_buf->len;
 
-	if (len <= 0) {
+	if (len == 0) {
 		return;
 	}
 
