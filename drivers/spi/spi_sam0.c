@@ -228,7 +228,7 @@ static void spi_sam0_fast_txrx(SercomSpi *regs,
 	u8_t *rx = rx_buf->buf;
 	size_t len = rx_buf->len;
 
-	if (len <= 0) {
+	if (len == 0) {
 		return;
 	}
 
