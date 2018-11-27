@@ -163,14 +163,12 @@ static int uart_msp432p4xx_poll_in(struct device *dev, unsigned char *c)
 	return 0;
 }
 
-static unsigned char uart_msp432p4xx_poll_out(struct device *dev,
-							unsigned char c)
+static void uart_msp432p4xx_poll_out(struct device *dev,
+				     unsigned char c)
 {
 	const struct uart_device_config *config = DEV_CFG(dev);
 
 	MAP_UART_transmitData((unsigned long)config->base, c);
-
-	return c;
 }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN

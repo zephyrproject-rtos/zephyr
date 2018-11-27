@@ -42,7 +42,7 @@ static int mcux_lpuart_poll_in(struct device *dev, unsigned char *c)
 	return ret;
 }
 
-static unsigned char mcux_lpuart_poll_out(struct device *dev, unsigned char c)
+static void mcux_lpuart_poll_out(struct device *dev, unsigned char c)
 {
 	const struct mcux_lpuart_config *config = dev->config->config_info;
 
@@ -51,8 +51,6 @@ static unsigned char mcux_lpuart_poll_out(struct device *dev, unsigned char c)
 		;
 
 	LPUART_WriteByte(config->base, c);
-
-	return c;
 }
 
 static int mcux_lpuart_err_check(struct device *dev)

@@ -134,7 +134,7 @@ static int uart_sam0_poll_in(struct device *dev, unsigned char *c)
 	return 0;
 }
 
-static unsigned char uart_sam0_poll_out(struct device *dev, unsigned char c)
+static void uart_sam0_poll_out(struct device *dev, unsigned char c)
 {
 	SercomUsart *const usart = DEV_CFG(dev)->regs;
 
@@ -143,7 +143,6 @@ static unsigned char uart_sam0_poll_out(struct device *dev, unsigned char c)
 
 	/* send a character */
 	usart->DATA.reg = c;
-	return c;
 }
 
 #if CONFIG_UART_INTERRUPT_DRIVEN

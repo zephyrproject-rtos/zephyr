@@ -395,10 +395,8 @@ static int uart_ns16550_poll_in(struct device *dev, unsigned char *c)
  *
  * @param dev UART device struct
  * @param c Character to send
- *
- * @return Sent character
  */
-static unsigned char uart_ns16550_poll_out(struct device *dev,
+static void uart_ns16550_poll_out(struct device *dev,
 					   unsigned char c)
 {
 	/* wait for transmitter to ready to accept a character */
@@ -406,8 +404,6 @@ static unsigned char uart_ns16550_poll_out(struct device *dev,
 		;
 
 	OUTBYTE(THR(dev), c);
-
-	return c;
 }
 
 /**

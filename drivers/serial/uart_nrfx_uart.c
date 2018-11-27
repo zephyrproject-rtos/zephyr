@@ -187,10 +187,8 @@ static int uart_nrfx_poll_in(struct device *dev, unsigned char *c)
  *
  * @param dev UART device struct
  * @param c Character to send
- *
- * @return Sent character
  */
-static unsigned char uart_nrfx_poll_out(struct device *dev,
+static void uart_nrfx_poll_out(struct device *dev,
 					unsigned char c)
 {
 	/* The UART API dictates that poll_out should wait for the transmitter
@@ -221,8 +219,6 @@ static unsigned char uart_nrfx_poll_out(struct device *dev,
 	 * power.
 	 */
 	nrf_uart_task_trigger(uart0_addr, NRF_UART_TASK_STOPTX);
-
-	return c;
 }
 
 /** Console I/O function */

@@ -77,10 +77,8 @@ struct uart_sifive_data {
  *
  * @param dev UART device struct
  * @param c Character to send
- *
- * @return Sent character
  */
-static unsigned char uart_sifive_poll_out(struct device *dev,
+static void uart_sifive_poll_out(struct device *dev,
 					 unsigned char c)
 {
 	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
@@ -90,8 +88,6 @@ static unsigned char uart_sifive_poll_out(struct device *dev,
 		;
 
 	uart->tx = (int)c;
-
-	return c;
 }
 
 /**

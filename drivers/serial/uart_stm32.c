@@ -50,7 +50,7 @@ static int uart_stm32_poll_in(struct device *dev, unsigned char *c)
 	return 0;
 }
 
-static unsigned char uart_stm32_poll_out(struct device *dev,
+static void uart_stm32_poll_out(struct device *dev,
 					unsigned char c)
 {
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
@@ -62,8 +62,6 @@ static unsigned char uart_stm32_poll_out(struct device *dev,
 	LL_USART_ClearFlag_TC(UartInstance);
 
 	LL_USART_TransmitData8(UartInstance, (u8_t)c);
-
-	return c;
 }
 
 static inline void __uart_stm32_get_clock(struct device *dev)

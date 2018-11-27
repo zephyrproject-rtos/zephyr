@@ -278,10 +278,8 @@ static int uarte_nrfx_poll_in(struct device *dev, unsigned char *c)
  *
  * @param dev UARTE device struct
  * @param c Character to send
- *
- * @return Sent character
  */
-static unsigned char uarte_nrfx_poll_out(struct device *dev,
+static void uarte_nrfx_poll_out(struct device *dev,
 					 unsigned char c)
 {
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
@@ -318,8 +316,6 @@ static unsigned char uarte_nrfx_poll_out(struct device *dev,
 	 * when TX is stopped.
 	 */
 	nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPTX);
-
-	return c;
 }
 
 static int uarte_nrfx_err_check(struct device *dev)
