@@ -18,7 +18,7 @@
 #if defined(CONFIG_LIS2DH_BUS_SPI)
 #include <spi.h>
 
-#define LIS2DH_BUS_ADDRESS		CONFIG_LIS2DH_SPI_SS_1
+#define LIS2DH_BUS_ADDRESS		DT_LIS2DH_SPI_SELECT_SLAVE
 
 #define LIS2DH_SPI_READ_BIT		BIT(7)
 #define LIS2DH_SPI_AUTOINC_ADDR		BIT(6)
@@ -27,14 +27,14 @@
 /* LIS2DH supports only SPI mode 0, word size 8 bits, MSB first */
 #define LIS2DH_SPI_CFG			SPI_WORD_SET(8)
 
-#define LIS2DH_BUS_DEV_NAME		CONFIG_LIS2DH_SPI_MASTER_DEV_NAME
+#define LIS2DH_BUS_DEV_NAME		DT_LIS2DH_SPI_MASTER_DEV_NAME
 
 #elif defined(CONFIG_LIS2DH_BUS_I2C)
 #include <i2c.h>
 
-#define LIS2DH_BUS_ADDRESS		CONFIG_LIS2DH_I2C_ADDR
+#define LIS2DH_BUS_ADDRESS		DT_LIS2DH_I2C_ADDRESS
 
-#define LIS2DH_BUS_DEV_NAME		CONFIG_LIS2DH_I2C_MASTER_DEV_NAME
+#define LIS2DH_BUS_DEV_NAME		DT_LIS2DH_I2C_MASTER_DEV_NAME
 
 #endif
 
@@ -234,7 +234,7 @@ static inline int lis2dh_bus_configure(struct device *dev)
 	}
 
 	lis2dh->spi_cfg.operation = LIS2DH_SPI_CFG;
-	lis2dh->spi_cfg.frequency = CONFIG_LIS2DH_SPI_FREQUENCY;
+	lis2dh->spi_cfg.frequency = DT_LIS2DH_SPI_BUS_FREQ;
 	lis2dh->spi_cfg.slave = LIS2DH_BUS_ADDRESS;
 
 	return 0;
