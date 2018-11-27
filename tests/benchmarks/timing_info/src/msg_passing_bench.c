@@ -61,7 +61,7 @@ k_tid_t producer_w_cxt_switch_tid;
 k_tid_t producer_wo_cxt_switch_tid;
 k_tid_t producer_get_w_cxt_switch_tid;
 k_tid_t consumer_get_w_cxt_switch_tid;
-k_tid_t consumer_tid;
+extern k_tid_t consumer_tid;
 k_tid_t thread_mbox_sync_put_send_tid;
 k_tid_t thread_mbox_sync_put_receive_tid;
 k_tid_t thread_mbox_sync_get_send_tid;

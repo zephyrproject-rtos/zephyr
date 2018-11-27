@@ -24,8 +24,8 @@ extern struct k_thread my_thread_0;
 
 /* u64_t thread_yield_start_time[1000]; */
 /* u64_t thread_yield_end_time[1000]; */
-u64_t thread_start_time;
-u64_t thread_end_time;
+extern u64_t thread_start_time;
+extern u64_t thread_end_time;
 u64_t sem_start_time;
 u64_t sem_end_time;
 u64_t sem_give_start_time;
