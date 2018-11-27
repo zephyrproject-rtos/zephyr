@@ -161,51 +161,77 @@ static struct net_buf *icmpv4_create(struct net_pkt *pkt, u8_t icmp_type,
 	return frag;
 }
 
+static int icmpv4_create_new(struct net_pkt *pkt, u8_t icmp_type,
+			     u8_t icmp_code)
+{
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmpv4_access,
+					      struct net_icmp_hdr);
+	struct net_icmp_hdr *icmp_hdr;
+
+	icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data_new(pkt,
+							       &icmpv4_access);
+	if (!icmp_hdr) {
+		return -ENOBUFS;
+	}
+
+	icmp_hdr->type   = icmp_type;
+	icmp_hdr->code   = icmp_code;
+	icmp_hdr->chksum = 0;
+
+	return net_pkt_set_data(pkt, &icmpv4_access);
+}
+
 int net_icmpv4_send_echo_request(struct net_if *iface,
 				 struct in_addr *dst,
 				 u16_t identifier,
 				 u16_t sequence)
 {
-	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmpv4_access,
+					      struct net_icmpv4_echo_req);
+	int ret = -ENOBUFS;
+	struct net_icmpv4_echo_req *echo_req;
 	const struct in_addr *src;
 	struct net_pkt *pkt;
-	int ret;
 
-	if (!ipv4) {
+	if (!iface->config.ip.ipv4) {
 		return -EINVAL;
 	}
 
 	/* Take the first address of the network interface */
-	src = &ipv4->unicast[0].address.in_addr;
+	src = &iface->config.ip.ipv4->unicast[0].address.in_addr;
 
-	pkt = net_pkt_get_reserve_tx(PKT_WAIT_TIME);
+	pkt = net_pkt_alloc_with_buffer(iface,
+					sizeof(struct net_icmpv4_echo_req),
+					AF_INET, IPPROTO_ICMP,
+					PKT_WAIT_TIME);
 	if (!pkt) {
 		return -ENOMEM;
 	}
 
-	net_pkt_set_iface(pkt, iface);
-
-	if (!net_ipv4_create(pkt, src, dst, iface, IPPROTO_ICMP)) {
-		ret = -ENOMEM;
+	if (net_ipv4_create_new(pkt, src, dst) ||
+	    icmpv4_create_new(pkt, NET_ICMPV4_ECHO_REQUEST, 0)) {
 		goto drop;
 	}
 
-	if (!icmpv4_create(pkt, NET_ICMPV4_ECHO_REQUEST, 0)) {
-		ret = -ENOMEM;
+	echo_req = (struct net_icmpv4_echo_req *)net_pkt_get_data_new(
+							pkt, &icmpv4_access);
+	if (!echo_req) {
 		goto drop;
 	}
 
-	net_buf_add(pkt->frags, sizeof(struct net_icmpv4_echo_req));
+	echo_req->identifier = htons(identifier);
+	echo_req->sequence   = htons(sequence);
 
-	NET_ICMPV4_ECHO_REQ(pkt)->identifier = htons(identifier);
-	NET_ICMPV4_ECHO_REQ(pkt)->sequence = htons(sequence);
+	net_pkt_set_data(pkt, &icmpv4_access);
 
-	net_ipv4_finalize(pkt, IPPROTO_ICMP);
+	net_pkt_cursor_init(pkt);
+
+	net_ipv4_finalize_new(pkt, IPPROTO_ICMP);
 
 	NET_DBG("Sending ICMPv4 Echo Request type %d from %s to %s",
 		NET_ICMPV4_ECHO_REQUEST,
-		log_strdup(net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src)),
-		log_strdup(net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->dst)));
+		log_strdup(net_sprint_ipv4_addr(src)),
+		log_strdup(net_sprint_ipv4_addr(dst)));
 
 	if (net_send_data(pkt) >= 0) {
 		net_stats_update_icmp_sent(iface);
