@@ -151,11 +151,10 @@ Programming and Debugging
 
 Use the following procedures for booting an image on a UP Squared board.
 
-* `Creating a GRUB2 Boot Loader Image from a Linux Host`_
-
-* `Preparing the Boot Device`_
-
-* `Booting the UP Squared Board`_
+.. contents::
+   :depth: 1
+   :local:
+   :backlinks: top
 
 Creating a GRUB2 Boot Loader Image from a Linux Host
 ====================================================
