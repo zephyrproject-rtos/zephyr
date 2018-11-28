@@ -1,0 +1,70 @@
+/*
+ * Copyright 2018 Foundries.io Ltd
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "rv32m1_ri5cy.dtsi"
+
+/ {
+	model = "OpenISA RV32M1 Vega RI5CY";
+	compatible = "openisa,rv32m1";
+
+	aliases {
+		led0 = &green_led;
+		led1 = &blue_led;
+		led2 = &red_led;
+		sw0 = &user_button_2;
+		sw1 = &user_button_3;
+		sw2 = &user_button_4;
+		sw3 = &user_button_5;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart0;
+		zephyr,uart-pipe = &uart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_0 {
+			gpios = <&gpioa 22 0>;
+			label = "User LD1";
+		};
+		green_led: led_1 {
+			gpios = <&gpioa 23 0>;
+			label = "User LD2";
+		};
+		blue_led: led_2 {
+			gpios = <&gpioa 24 0>;
+			label = "User LD3";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_2: button_0 {
+			label = "User SW2";
+			gpios = <&gpioa 0 GPIO_INT_ACTIVE_LOW>;
+		};
+		user_button_3: button_1 {
+			label = "User SW3";
+			gpios = <&gpioe 8 GPIO_INT_ACTIVE_LOW>;
+		};
+		user_button_4: button_2 {
+			label = "User SW4";
+			gpios = <&gpioe 9 GPIO_INT_ACTIVE_LOW>;
+		};
+		user_button_5: button_3 {
+			label = "User SW5";
+			gpios = <&gpioe 12 GPIO_INT_ACTIVE_LOW>;
+		};
+	};
+};
+
+&uart0 {
+	current-speed = <115200>;
+	status = "ok";
+};
