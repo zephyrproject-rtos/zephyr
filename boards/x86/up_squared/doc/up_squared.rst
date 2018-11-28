@@ -175,15 +175,15 @@ copy of GRUB, follow these steps to test on supported boards using a custom GRUB
 
    .. code-block:: console
 
-     $ sudo dnf install gnu-efi bison m4 autoconf help2man flex \
-        automake texinfo
+      $ sudo dnf install gnu-efi bison m4 autoconf help2man flex \
+      automake texinfo
 
 #. Clone and build the GRUB repository using the script in Zephyr tree, type:
 
    .. code-block:: console
 
-     $ cd $ZEPHYR_BASE
-     $ ./boards/x86/common/scripts/build_grub.sh x86_64
+      $ cd $ZEPHYR_BASE
+      $ ./boards/x86/common/scripts/build_grub.sh x86_64
 
 #. Find the binary at
    :file:`$ZEPHYR_BASE/boards/x86/common/scripts/grub/bin/grub_x86_64.efi`.
@@ -225,7 +225,7 @@ a UP Squared board.
 
    .. code-block:: console
 
-      mkfs.vfat -F 32 <device-node>
+      $ mkfs.vfat -F 32 <device-node>
 
    .. important::
       Make sure the device node is the actual device node for
@@ -263,9 +263,9 @@ Boot the UP Squared board from the boot device using GRUB2 via USB flash drive.
 Steps
 -----
 
-1. Insert the prepared boot device (USB flash drive) into the UP Squared board.
+#. Insert the prepared boot device (USB flash drive) into the UP Squared board.
 
-2. Connect the board to the host system using the serial cable and
+#. Connect the board to the host system using the serial cable and
    configure your host system to watch for serial data.  See
    https://wiki.up-community.org/Serial_console.
 
@@ -273,21 +273,21 @@ Steps
       On Windows, PuTTY has an option to set up configuration for
       serial data.  Use a baud rate of 115200.
 
-3. Power on the UP Squared board.
+#. Power on the UP Squared board.
 
-4. When the following output appears, press :kbd:`F7`:
+#. When the following output appears, press :kbd:`F7`:
 
    .. code-block:: console
 
-     Press <DEL> or <ESC> to enter setup.
+      Press <DEL> or <ESC> to enter setup.
 
-5. From the menu that appears, select the menu entry that describes
+#. From the menu that appears, select the menu entry that describes
    that particular type of USB flash drive.
 
    GRUB2 starts and a menu shows entries for the items you added
    to the file :file:`grub.cfg`.
 
-6. Select the image you want to boot and press :guilabel:`Enter`.
+#. Select the image you want to boot and press :guilabel:`Enter`.
 
    When the boot process completes, you have finished booting the
    Zephyr application image.
