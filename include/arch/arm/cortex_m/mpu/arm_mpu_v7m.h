@@ -5,6 +5,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef _ASMLANGUAGE
+
+#include <arch/arm/cortex_m/cmsis.h>
+
+/* Convenience macros to represent the ARMv7-M-specific
+ * configuration for memory access permission and
+ * cache-ability attribution.
+ */
+
 /* Privileged No Access, Unprivileged No Access */
 #define NO_ACCESS       0x0
 #define NO_ACCESS_Msk   ((NO_ACCESS << MPU_RASR_AP_Pos) & MPU_RASR_AP_Msk)
@@ -129,24 +138,54 @@ struct arm_mpu_region_attr {
 
 typedef struct arm_mpu_region_attr arm_mpu_region_attr_t;
 
-#ifndef _ASMLANGUAGE
+/* Typedef for the k_mem_partition attribute */
+typedef struct {
+	u32_t rasr_attr;
+} k_mem_partition_attr_t;
+
+/* Kernel macros for memory attribution
+ * (access permissions and cache-ability).
+ *
+ * The macros are to be stored in k_mem_partition_attr_t
+ * objects. The format of k_mem_partition_attr_t is an
+ * "1-1" mapping of the ARMv7-M MPU RASR attribute register
+ * fields (excluding the <size> and <enable> bit-fields).
+ */
+
 /* Read-Write access permission attributes */
-#define K_MEM_PARTITION_P_NA_U_NA	(NO_ACCESS_Msk | NOT_EXEC)
-#define K_MEM_PARTITION_P_RW_U_RW	(P_RW_U_RW_Msk | NOT_EXEC)
-#define K_MEM_PARTITION_P_RW_U_RO	(P_RW_U_RO_Msk | NOT_EXEC)
-#define K_MEM_PARTITION_P_RW_U_NA	(P_RW_U_NA_Msk | NOT_EXEC)
-#define K_MEM_PARTITION_P_RO_U_RO	(P_RO_U_RO_Msk | NOT_EXEC)
-#define K_MEM_PARTITION_P_RO_U_NA	(P_RO_U_NA_Msk | NOT_EXEC)
+#define K_MEM_PARTITION_P_NA_U_NA	((k_mem_partition_attr_t) \
+	{(NO_ACCESS_Msk | NOT_EXEC)})
+#define K_MEM_PARTITION_P_RW_U_RW	((k_mem_partition_attr_t) \
+	{(P_RW_U_RW_Msk | NOT_EXEC)})
+#define K_MEM_PARTITION_P_RW_U_RO	((k_mem_partition_attr_t) \
+	{(P_RW_U_RO_Msk | NOT_EXEC)})
+#define K_MEM_PARTITION_P_RW_U_NA	((k_mem_partition_attr_t) \
+	{(P_RW_U_NA_Msk | NOT_EXEC)})
+#define K_MEM_PARTITION_P_RO_U_RO	((k_mem_partition_attr_t) \
+	{(P_RO_U_RO_Msk | NOT_EXEC)})
+#define K_MEM_PARTITION_P_RO_U_NA	((k_mem_partition_attr_t) \
+	{(P_RO_U_NA_Msk | NOT_EXEC)})
 
 /* Execution-allowed attributes */
-#define K_MEM_PARTITION_P_RWX_U_RWX	(P_RW_U_RW_Msk)
-#define K_MEM_PARTITION_P_RWX_U_RX	(P_RW_U_RO_Msk)
-#define K_MEM_PARTITION_P_RX_U_RX	(P_RO_U_RO_Msk)
+#define K_MEM_PARTITION_P_RWX_U_RWX	((k_mem_partition_attr_t) \
+	{(P_RW_U_RW_Msk)})
+#define K_MEM_PARTITION_P_RWX_U_RX	((k_mem_partition_attr_t) \
+	{(P_RW_U_RO_Msk)})
+#define K_MEM_PARTITION_P_RX_U_RX	((k_mem_partition_attr_t) \
+	{(P_RO_U_RO_Msk)})
 
+/*
+ * @brief Evaluate Write-ability
+ *
+ * Evaluate whether the access permissions include write-ability.
+ *
+ * @param attr The k_mem_partition_attr_t object holding the
+ *             MPU attributes to be checked against write-ability.
+ */
 #define K_MEM_PARTITION_IS_WRITABLE(attr) \
 	({ \
 		int __is_writable__; \
-		switch (attr & MPU_RASR_AP_Msk) { \
+		switch (attr.rasr_attr & MPU_RASR_AP_Msk) { \
 		case P_RW_U_RW_Msk: \
 		case P_RW_U_RO_Msk: \
 		case P_RW_U_NA_Msk: \
@@ -158,6 +197,55 @@ typedef struct arm_mpu_region_attr arm_mpu_region_attr_t;
 		__is_writable__; \
 	})
 
+/*
+ * @brief Evaluate Execution allowance
+ *
+ * Evaluate whether the access permissions include execution.
+ *
+ * @param attr The k_mem_partition_attr_t object holding the
+ *             MPU attributes to be checked against execution
+ *             allowance.
+ */
 #define K_MEM_PARTITION_IS_EXECUTABLE(attr) \
-	(!((attr) & (NOT_EXEC)))
+	(!((attr.rasr_attr) & (NOT_EXEC)))
+
+/* Attributes for no-cache enabling (share-ability is selected by default) */
+
+#define K_MEM_PARTITION_P_NA_U_NA_NOCACHE ((k_mem_partition_attr_t) \
+	{(K_MEM_PARTITION_P_NA_U_NA \
+	| NORMAL_OUTER_INNER_NON_CACHEABLE_SHAREABLE)})
+#define K_MEM_PARTITION_P_RW_U_RW_NOCACHE ((k_mem_partition_attr_t) \
+	{(K_MEM_PARTITION_P_RW_U_RW \
+	| NORMAL_OUTER_INNER_NON_CACHEABLE_SHAREABLE)})
+#define K_MEM_PARTITION_P_RW_U_RO_NOCACHE ((k_mem_partition_attr_t) \
+	{(K_MEM_PARTITION_P_RW_U_RO \
+	| NORMAL_OUTER_INNER_NON_CACHEABLE_SHAREABLE)})
+#define K_MEM_PARTITION_P_RW_U_NA_NOCACHE ((k_mem_partition_attr_t) \
+	{(K_MEM_PARTITION_P_RW_U_NA \
+	| NORMAL_OUTER_INNER_NON_CACHEABLE_SHAREABLE)})
+#define K_MEM_PARTITION_P_RO_U_RO_NOCACHE ((k_mem_partition_attr_t) \
+	{(K_MEM_PARTITION_P_RO_U_RO \
+	| NORMAL_OUTER_INNER_NON_CACHEABLE_SHAREABLE)})
+#define K_MEM_PARTITION_P_RO_U_NA_NOCACHE ((k_mem_partition_attr_t) \
+	{(K_MEM_PARTITION_P_RO_U_NA \
+	| NORMAL_OUTER_INNER_NON_CACHEABLE_SHAREABLE)})
+
+#define K_MEM_PARTITION_P_RWX_U_RWX_NOCACHE ((k_mem_partition_attr_t) \
+	{(K_MEM_PARTITION_P_RWX_U_RWX \
+	| NORMAL_OUTER_INNER_NON_CACHEABLE_SHAREABLE)})
+#define K_MEM_PARTITION_P_RWX_U_RX_NOCACHE  ((k_mem_partition_attr_t) \
+	{(K_MEM_PARTITION_P_RWX_U_RX  \
+	| NORMAL_OUTER_INNER_NON_CACHEABLE_SHAREABLE)})
+#define K_MEM_PARTITION_P_RX_U_RX_NOCACHE   ((k_mem_partition_attr_t) \
+	{(K_MEM_PARTITION_P_RX_U_RX   \
+	| NORMAL_OUTER_INNER_NON_CACHEABLE_SHAREABLE)})
+
 #endif /* _ASMLANGUAGE */
+
+#define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size) \
+	BUILD_ASSERT_MSG(!(((size) & ((size) - 1))) && \
+		(size) >= CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE && \
+		!((u32_t)(start) & ((size) - 1)), \
+		"the size of the partition must be power of 2" \
+		" and greater than or equal to the minimum MPU region size." \
+		"start address of the partition must align with size.")
