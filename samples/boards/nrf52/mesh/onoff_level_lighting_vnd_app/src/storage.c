@@ -14,34 +14,19 @@ u8_t reset_counter;
 
 static void save_reset_counter(void)
 {
-	char buf[5];
-
-	settings_str_from_bytes(&reset_counter, sizeof(reset_counter), buf,
-				sizeof(buf));
-
-	settings_save_one("ps/rc", buf);
+	settings_save_one("ps/rc", &reset_counter, sizeof(reset_counter));
 }
 
 static void save_gen_def_trans_time_state(void)
 {
-	char buf[5];
-
-	settings_str_from_bytes(&gen_def_trans_time_srv_user_data.tt,
-				sizeof(gen_def_trans_time_srv_user_data.tt),
-				buf, sizeof(buf));
-
-	settings_save_one("ps/gdtt", buf);
+	settings_save_one("ps/gdtt", &gen_def_trans_time_srv_user_data.tt,
+			  sizeof(gen_def_trans_time_srv_user_data.tt));
 }
 
 static void save_gen_onpowerup_state(void)
 {
-	char buf[5];
-
-	settings_str_from_bytes(&gen_power_onoff_srv_user_data.onpowerup,
-				sizeof(gen_power_onoff_srv_user_data.onpowerup),
-				buf, sizeof(buf));
-
-	settings_save_one("ps/gpo", buf);
+	settings_save_one("ps/gpo", &gen_power_onoff_srv_user_data.onpowerup,
+			  sizeof(gen_power_onoff_srv_user_data.onpowerup));
 
 	if (gen_power_onoff_srv_user_data.onpowerup == 0x02) {
 		save_on_flash(LIGHTNESS_TEMP_LAST_STATE);
@@ -50,32 +35,23 @@ static void save_gen_onpowerup_state(void)
 
 static void save_lightness_temp_def_state(void)
 {
-	char buf[12];
-
 	light_ctl_srv_user_data.lightness_temp_def =
 		(u32_t) ((light_ctl_srv_user_data.lightness_def << 16) |
 			 light_ctl_srv_user_data.temp_def);
 
-	settings_str_from_bytes(&light_ctl_srv_user_data.lightness_temp_def,
-				sizeof(light_ctl_srv_user_data.lightness_temp_def),
-				buf, sizeof(buf));
-
-	settings_save_one("ps/ltd", buf);
+	settings_save_one("ps/ltd", &light_ctl_srv_user_data.lightness_temp_def,
+			  sizeof(light_ctl_srv_user_data.lightness_temp_def));
 }
 
 static void save_lightness_temp_last_state(void)
 {
-	char buf[12];
-
 	light_ctl_srv_user_data.lightness_temp_last =
 		(u32_t) ((light_ctl_srv_user_data.lightness << 16) |
 			 light_ctl_srv_user_data.temp);
 
-	settings_str_from_bytes(&light_ctl_srv_user_data.lightness_temp_last,
-				sizeof(light_ctl_srv_user_data.lightness_temp_last),
-				buf, sizeof(buf));
-
-	settings_save_one("ps/ltl", buf);
+	settings_save_one("ps/ltl",
+			  &light_ctl_srv_user_data.lightness_temp_last,
+			  sizeof(light_ctl_srv_user_data.lightness_temp_last));
 
 	printk("Light CTL Last values have beed saved !!\n");
 }
@@ -109,48 +85,45 @@ void save_on_flash(u8_t id)
 	k_work_submit(&storage_work);
 }
 
-static int ps_set(int argc, char **argv, char *val)
+static int ps_set(int argc, char **argv, void *val_ctx)
 {
-	int len;
+	int len = 0;
 
-	if (argc == 1) {
+	if (argc != 1) {
 		if (!strcmp(argv[0], "rc")) {
-			len = sizeof(reset_counter);
-
-			return settings_bytes_from_str(val, &reset_counter,
-						       &len);
+			len = settings_val_read_cb(val_ctx, &reset_counter,
+						   sizeof(reset_counter));
 		}
 
 		if (!strcmp(argv[0], "gdtt")) {
-			len = sizeof(gen_def_trans_time_srv_user_data.tt);
-
-			return settings_bytes_from_str(val,
-				&gen_def_trans_time_srv_user_data.tt, &len);
+			len = settings_val_read_cb(
+				val_ctx,
+				&gen_def_trans_time_srv_user_data.tt,
+				sizeof(gen_def_trans_time_srv_user_data.tt));
 		}
 
 		if (!strcmp(argv[0], "gpo")) {
-			len = sizeof(gen_power_onoff_srv_user_data.onpowerup);
-
-			return settings_bytes_from_str(val,
-				&gen_power_onoff_srv_user_data.onpowerup, &len);
+			len = settings_val_read_cb(
+			val_ctx,
+			&gen_power_onoff_srv_user_data.onpowerup,
+			sizeof(gen_power_onoff_srv_user_data.onpowerup));
 		}
 
 		if (!strcmp(argv[0], "ltd")) {
-			len = sizeof(light_ctl_srv_user_data.lightness_temp_def);
-
-			return settings_bytes_from_str(val,
-				&light_ctl_srv_user_data.lightness_temp_def,
-				&len);
+			len = settings_val_read_cb(
+			val_ctx,
+			&light_ctl_srv_user_data.lightness_temp_def,
+			sizeof(light_ctl_srv_user_data.lightness_temp_def));
 		}
 
 		if (!strcmp(argv[0], "ltl")) {
-			len = sizeof(light_ctl_srv_user_data.
-				     lightness_temp_last);
-
-			return settings_bytes_from_str(val,
-				&light_ctl_srv_user_data.lightness_temp_last,
-				&len);
+			len = settings_val_read_cb(
+			val_ctx,
+			&light_ctl_srv_user_data.lightness_temp_last,
+			sizeof(light_ctl_srv_user_data.lightness_temp_last));
 		}
+
+		return (len < 0) ? len : 0;
 	}
 
 	return -ENOENT;
