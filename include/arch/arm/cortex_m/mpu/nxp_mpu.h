@@ -6,6 +6,8 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_MPU_NXP_MPU_H_
 #define ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_MPU_NXP_MPU_H_
 
+#ifndef _ASMLANGUAGE
+
 #include <fsl_common.h>
 #include <arch/arm/cortex_m/mpu/arm_core_mpu_dev.h>
 
@@ -121,6 +123,77 @@
 
 #define REGION_BACKGROUND_ATTR	MPU_REGION_SU_RW
 
+
+/* Typedef for the k_mem_partition attribute*/
+typedef u32_t k_mem_partition_attr_t;
+
+/* Kernel macros for memory attribution
+ * (access permissions and cache-ability).
+ */
+
+/* Read-Write access permission attributes */
+#define K_MEM_PARTITION_P_NA_U_NA	(MPU_REGION_SU)
+#define K_MEM_PARTITION_P_RW_U_RW	(MPU_REGION_READ | MPU_REGION_WRITE | \
+					 MPU_REGION_SU)
+#define K_MEM_PARTITION_P_RW_U_RO	(MPU_REGION_READ | MPU_REGION_SU_RW)
+#define K_MEM_PARTITION_P_RW_U_NA	(MPU_REGION_SU_RW)
+#define K_MEM_PARTITION_P_RO_U_RO	(MPU_REGION_READ | MPU_REGION_SU)
+#define K_MEM_PARTITION_P_RO_U_NA	(MPU_REGION_SU_RX)
+
+/* Execution-allowed attributes */
+#define K_MEM_PARTITION_P_RWX_U_RWX	(MPU_REGION_READ | MPU_REGION_WRITE | \
+					 MPU_REGION_EXEC | MPU_REGION_SU)
+#define K_MEM_PARTITION_P_RWX_U_RX	(MPU_REGION_READ | MPU_REGION_EXEC | \
+					 MPU_REGION_SU_RWX)
+#define K_MEM_PARTITION_P_RX_U_RX	(MPU_REGION_READ | MPU_REGION_EXEC | \
+					 MPU_REGION_SU)
+
+/*
+ * @brief Evaluate Write-ability
+ *
+ * Evaluate whether the access permissions include write-ability.
+ *
+ * @param attr The k_mem_partition_attr_t object holding the
+ *             MPU attributes to be checked against write-ability.
+ */
+#define K_MEM_PARTITION_IS_WRITABLE(attr) \
+	({ \
+		int __is_writable__; \
+		switch (attr) { \
+		case MPU_REGION_WRITE: \
+		case MPU_REGION_SU_RW: \
+			__is_writable__ = 1; \
+			break; \
+		default: \
+			__is_writable__ = 0; \
+		} \
+		__is_writable__; \
+	})
+
+/*
+ * @brief Evaluate Execution allowance
+ *
+ * Evaluate whether the access permissions include execution.
+ *
+ * @param attr The k_mem_partition_attr_t object holding the
+ *             MPU attributes to be checked against execution
+ *             allowance.
+ */
+#define K_MEM_PARTITION_IS_EXECUTABLE(attr) \
+	({ \
+		int __is_executable__; \
+		switch (attr) { \
+		case MPU_REGION_SU_RX: \
+		case MPU_REGION_EXEC: \
+			__is_executable__ = 1; \
+			break; \
+		default: \
+			__is_executable__ = 0; \
+		} \
+		__is_executable__; \
+	})
+
+
 /* Region definition data structure */
 struct nxp_mpu_region {
 	/* Region Base Address */
@@ -160,5 +233,18 @@ struct nxp_mpu_config {
  * not kept here.
  */
 extern const struct nxp_mpu_config mpu_config;
+
+#endif /* _ASMLANGUAGE */
+
+#define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size) \
+	BUILD_ASSERT_MSG((size) % \
+		CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE == 0 && \
+		(size) >= CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE && \
+		(u32_t)(start) % CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE == 0, \
+		"the size of the partition must align with minimum MPU \
+		 region size" \
+		" and greater than or equal to minimum MPU region size." \
+		"start address of the partition must align with minimum MPU \
+		 region size.")
 
 #endif /* ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_MPU_NXP_MPU_H_ */

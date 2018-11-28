@@ -132,14 +132,14 @@ static inline void _get_mpu_ram_nocache_region_attr(arm_mpu_region_attr_t *p_att
  * parameter set.
  */
 static inline void _get_ram_region_attr_by_conf(arm_mpu_region_attr_t *p_attr,
-	u32_t attr, u32_t base, u32_t size)
+	k_mem_partition_attr_t *attr, u32_t base, u32_t size)
 {
 	/* in ARMv7-M MPU the base address is not required
 	 * to determine region attributes
 	 */
 	(void) base;
 
-	p_attr->rasr = attr | _size_to_mpu_rasr_size(size);
+	p_attr->rasr = attr->rasr_attr | _size_to_mpu_rasr_size(size);
 }
 
 /**

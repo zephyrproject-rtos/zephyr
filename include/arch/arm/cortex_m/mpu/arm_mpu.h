@@ -6,9 +6,6 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_MPU_ARM_MPU_H_
 #define ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_MPU_ARM_MPU_H_
 
-#include <arch/arm/cortex_m/mpu/arm_core_mpu_dev.h>
-#include <arch/arm/cortex_m/cmsis.h>
-
 #if defined(CONFIG_CPU_CORTEX_M0PLUS) || \
 	defined(CONFIG_CPU_CORTEX_M3) || \
 	defined(CONFIG_CPU_CORTEX_M4) || \
@@ -20,6 +17,10 @@
 #else
 #error "Unsupported ARM CPU"
 #endif
+
+#ifndef _ASMLANGUAGE
+
+#include <arch/arm/cortex_m/mpu/arm_core_mpu_dev.h>
 
 /* Region definition data structure */
 struct arm_mpu_region {
@@ -55,5 +56,7 @@ struct arm_mpu_config {
  * not kept here.
  */
 extern const struct arm_mpu_config mpu_config;
+
+#endif /* _ASMLANGUAGE */
 
 #endif /* ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_MPU_ARM_MPU_H_ */

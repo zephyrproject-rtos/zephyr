@@ -243,7 +243,7 @@ void arm_core_mpu_configure_mem_domain(struct k_mem_domain *mem_domain)
 				    region_index, pparts->start, pparts->size);
 			region_conf.base = pparts->start;
 			_get_ram_region_attr_by_conf(&region_conf.attr,
-				pparts->attr,	pparts->start, pparts->size);
+				&pparts->attr, pparts->start, pparts->size);
 			_region_init(region_index, &region_conf);
 			num_partitions--;
 		} else {
@@ -273,7 +273,7 @@ void arm_core_mpu_configure_mem_partition(u32_t part_index,
 		LOG_DBG("set region 0x%x 0x%x 0x%x",
 			    region_index + part_index, part->start, part->size);
 		_get_ram_region_attr_by_conf(&region_conf.attr,
-			part->attr, part->start, part->size);
+			&part->attr, part->start, part->size);
 		region_conf.base = part->start;
 		_region_init(region_index + part_index, &region_conf);
 	} else {
