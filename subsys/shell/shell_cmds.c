@@ -8,12 +8,12 @@
 #include "shell_ops.h"
 #include "shell_vt100.h"
 
+#define SHELL_MSG_CMD_NOT_SUPPORTED	"Command not supported.\n"
 #define SHELL_HELP_CLEAR		"Clear screen."
-#define SHELL_HELP_BACKSPACE_MODE	"Toggle backspace key mode.\n" \
-	"Some terminals are not sending separate escape code for"	 \
-	"backspace and delete button. Hence backspace is not working as" \
-	"expected. This command can force shell to interpret delete"	 \
-	" escape as backspace."
+#define SHELL_HELP_BACKSPACE_MODE	"Toggle backspace key mode.\n"	      \
+	"Some terminals are not sending separate escape code for "	      \
+	"backspace and delete button. This command forces shell to interpret" \
+	" delete key as backspace."
 #define SHELL_HELP_BACKSPACE_MODE_BACKSPACE	"Set different escape"	 \
 	" code for backspace and delete key."
 #define SHELL_HELP_BACKSPACE_MODE_DELETE	"Set the same escape"	 \
@@ -28,9 +28,9 @@
 #define SHELL_HELP_STATISTICS_RESET	\
 	"Reset shell statistics for the Logger module."
 #define SHELL_HELP_RESIZE						\
-	"Console gets terminal screen size or assumes 80 in case "	\
-	"the readout fails. It must be executed after each terminal "	\
-	"width change to ensure correct text display."
+	"Console gets terminal screen size or assumes 80 in case"	\
+	" the readout fails. It must be executed after each terminal"	\
+	" width change to ensure correct text display."
 #define SHELL_HELP_RESIZE_DEFAULT				\
 	"Assume 80 chars screen width and send this setting "	\
 	"to the terminal."
@@ -38,8 +38,8 @@
 #define SHELL_HELP_ECHO		"Toggle shell echo."
 #define SHELL_HELP_ECHO_ON	"Enable shell echo."
 #define SHELL_HELP_ECHO_OFF	\
-	"Disable shell echo. Arrows and buttons: Backspace, Delete, End, " \
-	"Home, Insert are not handled."
+	"Disable shell echo. Editing keys and meta-keys are not handled"
+
 #define SHELL_HELP_SHELL		"Useful, not Unix-like shell commands."
 
 #define SHELL_MSG_UNKNOWN_PARAMETER	" unknown parameter: "
@@ -363,7 +363,7 @@ static int cmd_history(const struct shell *shell, size_t argc, char **argv)
 	int ret;
 
 	if (!IS_ENABLED(CONFIG_SHELL_HISTORY)) {
-		shell_fprintf(shell, SHELL_ERROR, "Command not supported.\n");
+		shell_fprintf(shell, SHELL_ERROR, SHELL_MSG_CMD_NOT_SUPPORTED);
 		return -ENOEXEC;
 	}
 
@@ -397,7 +397,7 @@ static int cmd_shell_stats_show(const struct shell *shell, size_t argc,
 	ARG_UNUSED(argv);
 
 	if (!IS_ENABLED(CONFIG_SHELL_STATS)) {
-		shell_fprintf(shell, SHELL_ERROR, "Command not supported.\n");
+		shell_fprintf(shell, SHELL_ERROR, SHELL_MSG_CMD_NOT_SUPPORTED);
 		return -ENOEXEC;
 	}
 
@@ -417,7 +417,7 @@ static int cmd_shell_stats_reset(const struct shell *shell,
 	ARG_UNUSED(argv);
 
 	if (!IS_ENABLED(CONFIG_SHELL_STATS)) {
-		shell_fprintf(shell, SHELL_ERROR, "Command not supported.\n");
+		shell_fprintf(shell, SHELL_ERROR, SHELL_MSG_CMD_NOT_SUPPORTED);
 		return -ENOEXEC;
 	}
 
@@ -470,7 +470,7 @@ static int cmd_resize(const struct shell *shell, size_t argc, char **argv)
 	int err;
 
 	if (!IS_ENABLED(CONFIG_SHELL_CMDS_RESIZE)) {
-		shell_fprintf(shell, SHELL_ERROR, "Command not supported.\n");
+		shell_fprintf(shell, SHELL_ERROR, SHELL_MSG_CMD_NOT_SUPPORTED);
 		return -ENOEXEC;
 	}
 
