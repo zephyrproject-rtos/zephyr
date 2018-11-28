@@ -105,6 +105,8 @@ extern FUNC_NORETURN void _Cstart(void);
  * @return N/A
  */
 
+extern void _IntLibInit(void);
+
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
 	extern u64_t __start_time_stamp;
 #endif
@@ -117,6 +119,7 @@ void _PrepC(void)
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
 	__start_time_stamp = 0;
 #endif
+	_IntLibInit();
 	_Cstart();
 	CODE_UNREACHABLE;
 }

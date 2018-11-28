@@ -35,6 +35,9 @@ void _PrepC(void)
 #ifdef CONFIG_XIP
 	_data_copy();
 #endif
+#if defined(CONFIG_RISCV_SOC_INTERRUPT_INIT)
+	soc_interrupt_init();
+#endif
 	_Cstart();
 	CODE_UNREACHABLE;
 }

@@ -463,8 +463,6 @@ FUNC_NORETURN void _Cstart(void)
 	 * drivers are initialized.
 	 */
 
-	_IntLibInit();
-
 	if (IS_ENABLED(CONFIG_LOG)) {
 		log_core_init();
 	}
