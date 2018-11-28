@@ -195,8 +195,8 @@ static void gen_onoff_set_unack(struct bt_mesh_model *model,
 
 	if (state->target_onoff != state->onoff) {
 		onoff_tt_values(state, tt, delay);
-		gen_onoff_publisher(model);
 	} else {
+		gen_onoff_publisher(model);
 		return;
 	}
 
