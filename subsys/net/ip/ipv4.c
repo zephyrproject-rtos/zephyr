@@ -117,9 +117,11 @@ enum net_verdict net_ipv4_process_pkt(struct net_pkt *pkt)
 	int pkt_len = ntohs(hdr->len);
 	enum net_verdict verdict = NET_DROP;
 
-	if (real_len != pkt_len) {
+	if (real_len < pkt_len) {
 		NET_DBG("IPv4 packet size %d pkt len %d", pkt_len, real_len);
 		goto drop;
+	} else if (real_len > pkt_len) {
+		net_pkt_pull(pkt, pkt_len, real_len - pkt_len);
 	}
 
 	if (net_ipv4_is_addr_mcast(&hdr->src)) {
