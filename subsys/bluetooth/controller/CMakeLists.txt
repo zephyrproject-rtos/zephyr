@@ -52,6 +52,13 @@ zephyr_library_sources_ifdef(
   hal/nrf5/ticker.c
   )
 
+if(CONFIG_SOC_COMPATIBLE_NRF)
+  zephyr_library_sources_ifdef(
+    CONFIG_BT_HCI_VS
+    hci/nordic/hal/nrf5/hci.c
+    )
+endif()
+
 zephyr_library_include_directories(
   .
   util
@@ -59,6 +66,14 @@ zephyr_library_include_directories(
   ticker
   include
   )
+
+if(CONFIG_SOC_COMPATIBLE_NRF)
+  if(CONFIG_BT_HCI_VS)
+    zephyr_library_include_directories(
+      hci/nordic
+      )
+  endif()
+endif()
 
 zephyr_library_compile_options_ifdef(
   CONFIG_BT_CTLR_FAST_ENC
