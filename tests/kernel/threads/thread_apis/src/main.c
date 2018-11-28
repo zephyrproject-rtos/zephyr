@@ -16,6 +16,7 @@
 #include <ztest.h>
 #include <kernel_structs.h>
 #include <kernel.h>
+#include <kernel_internal.h>
 #include <string.h>
 
 extern void test_threads_spawn_params(void);
