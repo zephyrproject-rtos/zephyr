@@ -185,16 +185,14 @@ int mqtt_connect(struct mqtt_client *client)
 	}
 
 	err_code = client_connect(client);
-	if (err_code < 0) {
-		err_code = -ECONNREFUSED;
-		goto error;
-	}
-
-	return 0;
 
 error:
-	client_reset(client);
+	if (err_code < 0) {
+		client_reset(client);
+	}
+
 	mqtt_mutex_unlock(client);
+
 	return err_code;
 }
 
