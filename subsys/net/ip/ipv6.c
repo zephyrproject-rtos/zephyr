@@ -446,10 +446,13 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt, bool is_loopback)
 	u16_t total_len = 0;
 	u8_t ext_bitmap;
 
-	if (real_len != pkt_len) {
+	if (real_len < pkt_len) {
 		NET_DBG("IPv6 packet size %d pkt len %d", pkt_len, real_len);
 		net_stats_update_ipv6_drop(net_pkt_iface(pkt));
 		goto drop;
+	} else if (real_len > pkt_len) {
+		net_pkt_pull(pkt, pkt_len, real_len - pkt_len);
+		real_len = net_pkt_get_len(pkt);
 	}
 
 	NET_DBG("IPv6 packet len %d received from %s to %s", real_len,
