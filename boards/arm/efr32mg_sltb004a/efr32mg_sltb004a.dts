@@ -12,10 +12,6 @@
 	compatible = "silabs,efr32mg_sltb004a", "silabs,efr32mg";
 
 	aliases {
-		i2c-0  = &i2c0;
-		i2c-1  = &i2c1;
-		usart-0 = &usart0;
-		leuart-0 = &leuart0;
 		led0 = &led0;
 		led1 = &led1;
 		sw0 = &button0;

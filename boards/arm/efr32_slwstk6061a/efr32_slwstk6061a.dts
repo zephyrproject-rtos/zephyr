@@ -11,10 +11,6 @@
 	model = "Silicon Labs EFR32 SLWSTK6061A board";
 	compatible = "silabs,efr32_slwstk6061a", "silabs,efr32fg1p";
 
-	aliases {
-		usart-0 = &usart0;
-	};
-
 	chosen {
 		zephyr,console = &usart0;
 		zephyr,sram = &sram0;

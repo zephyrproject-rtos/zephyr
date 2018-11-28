@@ -23,7 +23,6 @@
 		led1 = &led1;
 		sw0 = &button0;
 		sw1 = &button1;
-		usart-1 = &usart1;
 	};
 
 	leds {
