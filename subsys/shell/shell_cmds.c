@@ -77,7 +77,7 @@ static int cursor_position_get(const struct shell *shell, u16_t *x, u16_t *y)
 			(void)shell->iface->api->read(shell->iface, &c,
 						      sizeof(c), &cnt);
 			if (cnt == 0) {
-				k_sleep(1);
+				k_busy_wait(1000);
 				break;
 			}
 			if ((c != SHELL_VT100_ASCII_ESC) &&
