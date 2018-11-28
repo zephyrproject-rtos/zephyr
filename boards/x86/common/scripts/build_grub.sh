@@ -41,7 +41,7 @@ build() {
             exfat fat multiboot2 multiboot terminal part_msdos part_gpt normal \
             all_video aout configfile echo file fixvideo fshelp gfxterm gfxmenu \
             gfxterm_background gfxterm_menu legacycfg video_bochs video_cirrus \
-            video_colors video_fb videoinfo video
+            video_colors video_fb videoinfo video net tftp
 
   popd
 }
