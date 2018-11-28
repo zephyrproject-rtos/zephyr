@@ -109,7 +109,7 @@ char *_net_app_sprint_ipaddr(char *buf, int buflen,
 		net_addr_ntop(addr->sa_family,
 			      &net_sin6(addr)->sin6_addr,
 			      ipaddr, sizeof(ipaddr));
-		snprintk(buf, buflen, "[%s]:%u", log_strdup(ipaddr),
+		snprintk(buf, buflen, "[%s]:%u", ipaddr,
 			 ntohs(net_sin6(addr)->sin6_port));
 #endif
 	} else if (addr->sa_family == AF_INET) {
@@ -119,7 +119,7 @@ char *_net_app_sprint_ipaddr(char *buf, int buflen,
 		net_addr_ntop(addr->sa_family,
 			      &net_sin(addr)->sin_addr,
 			      ipaddr, sizeof(ipaddr));
-		snprintk(buf, buflen, "%s:%u", log_strdup(ipaddr),
+		snprintk(buf, buflen, "%s:%u", ipaddr,
 			 ntohs(net_sin(addr)->sin_port));
 #endif
 	} else {
