@@ -19,8 +19,6 @@ struct shell_rtt {
 	shell_transport_handler_t handler;
 	struct k_timer timer;
 	void *context;
-	u8_t rx[5];
-	size_t rx_cnt;
 };
 
 #define SHELL_RTT_DEFINE(_name)					\
