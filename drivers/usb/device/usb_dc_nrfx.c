@@ -241,6 +241,8 @@ struct nrf_usbd_ctx {
 	struct k_mutex drv_lock;
 
 	struct nrf_usbd_ep_ctx ep_ctx[CFG_EP_CNT];
+
+	u16_t ctrl_read_len;
 };
 
 
@@ -728,10 +730,17 @@ static inline void usbd_work_process_setup(struct nrf_usbd_ep_ctx *ep_ctx)
 	/* Inform the stack. */
 	ep_ctx->cfg.cb(ep_ctx->cfg.addr, USB_DC_EP_SETUP);
 
+	struct nrf_usbd_ctx *ctx = get_usbd_ctx();
+
 	if (((usbd_setup->bmRequestType & USB_BMREQUESTTYPE_MASK)
 	     == USB_BMREQUESTTYPE_HOSTTODEVICE_MASK)
 	    && (usbd_setup->wLength)) {
+		struct nrf_usbd_ctx *ctx = get_usbd_ctx();
+
+		ctx->ctrl_read_len -= usbd_setup->wLength;
 		nrfx_usbd_setup_data_clear();
+	} else {
+		ctx->ctrl_read_len = 0;
 	}
 }
 
@@ -871,6 +880,7 @@ static void usbd_event_transfer_ctrl(nrfx_usbd_evt_t const *const p_event)
 		break;
 
 		case NRFX_USBD_EP_OK: {
+			struct nrf_usbd_ctx *ctx = get_usbd_ctx();
 			struct usbd_ep_event *ev = usbd_evt_alloc();
 			nrfx_err_t err_code;
 
@@ -887,6 +897,13 @@ static void usbd_event_transfer_ctrl(nrfx_usbd_evt_t const *const p_event)
 				__ASSERT_NO_MSG(0);
 			}
 			LOG_DBG("ctrl read done: %d", ep_ctx->buf.len);
+
+			if (ctx->ctrl_read_len > ep_ctx->buf.len) {
+				ctx->ctrl_read_len -= ep_ctx->buf.len;
+				nrfx_usbd_setup_data_clear();
+			} else {
+				ctx->ctrl_read_len = 0;
+			}
 
 			usbd_evt_put(ev);
 			usbd_work_schedule();
