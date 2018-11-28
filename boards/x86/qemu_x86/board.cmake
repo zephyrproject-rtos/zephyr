@@ -11,10 +11,7 @@ set(QEMU_FLAGS_${ARCH}
   -device isa-debug-exit,iobase=0xf4,iosize=0x04
   ${REBOOT_FLAG}
   -nographic
-  -vga none
-  -display none
   -no-acpi
-  -machine type=pc-0.14
   )
 
 # TODO: Support debug
