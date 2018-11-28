@@ -395,15 +395,15 @@ done:
 	return err;
 }
 
-static int spi_sam0_transceive_sync(struct device *dev,
+static int spi_sam_transceive_sync(struct device *dev,
 				    const struct spi_config *config,
 				    const struct spi_buf_set *tx_bufs,
 				    const struct spi_buf_set *rx_bufs)
 {
-	struct spi_sam0_data *data = dev->driver_data;
+	struct spi_sam_data *data = dev->driver_data;
 
 	spi_context_lock(&data->ctx, false, NULL);
-	return spi_sam0_transceive(dev, config, tx_bufs, rx_bufs);
+	return spi_sam_transceive(dev, config, tx_bufs, rx_bufs);
 }
 
 #ifdef CONFIG_SPI_ASYNC
@@ -413,10 +413,10 @@ static int spi_sam_transceive_async(struct device *dev,
 				     const struct spi_buf_set *rx_bufs,
 				     struct k_poll_signal *async)
 {
-	struct spi_sam0_data *data = dev->driver_data;
+	struct spi_sam_data *data = dev->driver_data;
 
 	spi_context_lock(&data->ctx, true, async);
-	return spi_sam0_transceive(dev, config, tx_bufs, rx_bufs);
+	return spi_sam_transceive(dev, config, tx_bufs, rx_bufs);
 }
 #endif /* CONFIG_SPI_ASYNC */
 
@@ -513,7 +513,7 @@ static const struct spi_driver_api spi_sam_driver_api = {
 		SPI_CONTEXT_INIT_SYNC(spi_sam_dev_data_##n, ctx),	\
 	};								\
 	DEVICE_AND_API_INIT(spi_sam_##n,				\
-			    CONFIG_SPI_##n##_NAME,			\
+			    DT_SPI_##n##_NAME,				\
 			    &spi_sam_init, &spi_sam_dev_data_##n,	\
 			    &spi_sam_config_##n, POST_KERNEL,		\
 			    CONFIG_SPI_INIT_PRIORITY, &spi_sam_driver_api)
