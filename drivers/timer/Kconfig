@@ -44,7 +44,7 @@ config HPET_TIMER_BASE_ADDRESS
 
 config HPET_TIMER_IRQ
 	int "HPET Timer IRQ"
-	default 20
+	default 2
 	depends on HPET_TIMER
 	help
 	  This option specifies the IRQ used by the HPET timer.
