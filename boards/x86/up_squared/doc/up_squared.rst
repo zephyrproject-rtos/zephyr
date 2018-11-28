@@ -187,11 +187,8 @@ copy of GRUB, follow these steps to test on supported boards using a custom GRUB
 #. Find the binary at
    :file:`$ZEPHYR_BASE/boards/x86/common/scripts/grub/bin/grub_x86_64.efi`.
 
-Preparing the Boot Device
-=========================
-
-Prepare a USB flash drive to boot the Zephyr application image on
-a UP Squared board.
+Build Zephyr application
+========================
 
 #. Build a Zephyr application; for instance, to build the ``hello_world``
    application on UP Squared:
@@ -206,6 +203,12 @@ a UP Squared board.
       A stripped project image file named :file:`zephyr.strip` is automatically
       created in the build directory after the application is built. This image
       has removed debug information from the :file:`zephyr.elf` file.
+
+Preparing the Boot Device
+=========================
+
+Prepare a USB flash drive to boot the Zephyr application image on
+a UP Squared board.
 
 #. Refer to the `UP Squared Serial Console Wiki page
    <https://wiki.up-community.org/Serial_console>`_ for instructions on how to
@@ -259,9 +262,6 @@ Booting the UP Squared Board
 
 Boot the UP Squared board from the boot device using GRUB2 via USB flash drive.
 
-Steps
------
-
 #. Insert the prepared boot device (USB flash drive) into the UP Squared board.
 
 #. Connect the board to the host system using the serial cable and
@@ -298,6 +298,137 @@ Steps
 
          WARNING: no console will be available to OS
 
+
+Booting the UP Squared Board over network
+=========================================
+
+Build Zephyr image
+------------------
+
+#. Follow `Build Zephyr application`_ steps to build Zephyr image.
+
+Prepare Linux host
+------------------
+
+#. Follow `Creating a GRUB2 Boot Loader Image from a Linux Host`_ steps
+   to create grub binary.
+
+#. Install DHCP, TFTP servers. For example `dnsmasq`
+
+   .. code-block:: console
+
+      $ sudo apt-get install dnsmasq
+
+#. Configure DHCP server. Configuration for `dnsmasq` is below:
+
+   .. code-block:: console
+
+      # Only listen to this interface
+      interface=eno2
+      dhcp-range=10.1.1.20,10.1.1.30,12h
+
+#. Configure TFTP server.
+
+   .. code-block:: console
+
+      # tftp
+      enable-tftp
+      tftp-root=/srv/tftp
+      dhcp-boot=grub_x86_64.efi
+
+   `grub_x86_64.efi` is a grub binary created above.
+
+#. Create the following directories inside TFTP root :file:`/srv/tftp`
+
+    .. code-block:: console
+
+       $ sudo mkdir -p /srv/tftp/EFI/BOOT
+       $ sudo mkdir -p /srv/tftp/kernel
+
+#. Copy the Zephyr image :file:`zephyr/zephyr.strip` to the
+   :file:`/srv/tftp/kernel` folder.
+
+    .. code-block:: console
+
+       $ sudo cp zephyr/zephyr.strip /srv/tftp/kernel
+
+#. Copy your built version of GRUB to :file:`/srv/tftp/grub_x86_64.efi`
+
+#. Create :file:`/srv/tftp/EFI/BOOT/grub.cfg` containing the following:
+
+   .. code-block:: console
+
+      set default=0
+      set timeout=10
+
+      menuentry "Zephyr Kernel" {
+         multiboot /kernel/zephyr.strip
+      }
+
+#. TFTP root should be looking like:
+
+   .. code-block:: console
+
+      $ tree /srv/tftp
+      /srv/tftp
+      ├── EFI
+      │   └── BOOT
+      │       └── grub.cfg
+      ├── grub_x86_64.efi
+      └── kernel
+          └── zephyr.strip
+
+#. Restart `dnsmasq` service:
+
+   .. code-block:: console
+
+      $ sudo systemctl restart dnsmasq.service
+
+Prepare UP Squared board for network boot
+-----------------------------------------
+
+#. Enable PXE network from BIOS settings.
+
+   .. code-block:: console
+
+      Advanced -> Network Stack Configuration -> Enable Network Stack -> Enable Ipv4 PXE Support
+
+#. Make network boot as the first boot option.
+
+   .. code-block:: console
+
+      Boot -> Boot Option #1 : [Network]
+
+Booting UP Squared
+------------------
+
+#. Connect the board to the host system using the serial cable and
+   configure your host system to watch for serial data.  See
+   https://wiki.up-community.org/Serial_console.
+
+#. Power on the UP Squared board.
+
+#. Verify that the board got an IP address:
+
+   .. code-block:: console
+
+      $ journalctl -f -u dnsmasq
+      dnsmasq-dhcp[5386]: DHCPDISCOVER(eno2) 00:07:32:52:25:88
+      dnsmasq-dhcp[5386]: DHCPOFFER(eno2) 10.1.1.28 00:07:32:52:25:88
+      dnsmasq-dhcp[5386]: DHCPREQUEST(eno2) 10.1.1.28 00:07:32:52:25:88
+      dnsmasq-dhcp[5386]: DHCPACK(eno2) 10.1.1.28 00:07:32:52:25:88
+
+#. Verify that network booting is started:
+
+   .. code-block:: console
+
+      $ journalctl -f -u dnsmasq
+      dnsmasq-tftp[5386]: sent /srv/tftp/grub_x86_64.efi to 10.1.1.28
+      dnsmasq-tftp[5386]: sent /srv/tftp/EFI/BOOT/grub.cfg to 10.1.1.28
+      dnsmasq-tftp[5386]: sent /srv/tftp/kernel/zephyr.strip to 10.1.1.28
+
+#. When the boot process completes, you have finished booting the
+   Zephyr application image.
 
 .. _UP Squared: https://www.up-board.org/upsquared/specifications
 
