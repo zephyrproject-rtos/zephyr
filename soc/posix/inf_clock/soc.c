@@ -183,6 +183,8 @@ static void *zephyr_wrapper(void *a)
 			zephyr_thread);
 #endif
 
+	posix_init_multithreading();
+
 	/* Start Zephyr: */
 	_Cstart();
 	CODE_UNREACHABLE;

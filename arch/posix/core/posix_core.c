@@ -385,7 +385,7 @@ void posix_new_thread(posix_thread_status_t *ptr)
 }
 
 /**
- * Called from _IntLibInit()
+ * Called from zephyr_wrapper()
  * prepare whatever needs to be prepared to be able to start threads
  */
 void posix_init_multithreading(void)

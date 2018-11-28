@@ -61,11 +61,6 @@ static ALWAYS_INLINE int _INTERRUPT_CAUSE(void)
 extern void _thread_entry_wrapper(void);
 extern void _user_thread_entry_wrapper(void);
 
-static inline void _IntLibInit(void)
-{
-	/* nothing needed, here because the kernel requires it */
-}
-
 extern void _arc_userspace_enter(k_thread_entry_t user_entry, void *p1,
 		 void *p2, void *p3, u32_t stack, u32_t size);
 
