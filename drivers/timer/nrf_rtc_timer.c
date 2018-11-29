@@ -63,7 +63,7 @@ void rtc1_nrf5_isr(void *arg)
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		u32_t next = last_count + CYC_PER_TICK;
 
-		if ((s32_t)(next - t) < MIN_DELAY) {
+		if (counter_sub(next, t) < MIN_DELAY) {
 			next += CYC_PER_TICK;
 		}
 		set_comparator(next);
@@ -126,7 +126,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	cyc = (cyc / CYC_PER_TICK) * CYC_PER_TICK;
 	cyc += last_count;
 
-	if ((cyc - t) < MIN_DELAY) {
+	if (counter_sub(cyc, t) < MIN_DELAY) {
 		cyc += CYC_PER_TICK;
 	}
 
