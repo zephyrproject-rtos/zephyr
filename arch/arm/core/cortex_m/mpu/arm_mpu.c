@@ -8,8 +8,7 @@
 #include <init.h>
 #include <kernel.h>
 #include <soc.h>
-#include <arch/arm/cortex_m/cmsis.h>
-#include <arch/arm/cortex_m/mpu/arm_mpu.h>
+#include <arch/arm/cortex_m/mpu/arm_core_mpu_dev.h>
 #include <arch/arm/cortex_m/mpu/arm_core_mpu.h>
 #include <linker/linker-defs.h>
 

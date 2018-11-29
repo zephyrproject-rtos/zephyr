@@ -20,8 +20,6 @@
 
 #ifndef _ASMLANGUAGE
 
-#include <arch/arm/cortex_m/mpu/arm_core_mpu_dev.h>
-
 /* Region definition data structure */
 struct arm_mpu_region {
 	/* Region Base Address */
