@@ -45,6 +45,7 @@ extensions = [
     'sphinx.ext.extlinks',
     'sphinx.ext.autodoc',
     'zephyr.application',
+    'only.eager_only'
 ]
 
 # Only use SVG converter when it is really needed, e.g. LaTeX.
