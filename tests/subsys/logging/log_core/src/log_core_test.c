@@ -149,7 +149,7 @@ static int log_source_id_get(const char *name)
 
 static void log_setup(bool backend2_enable)
 {
-	stamp = 0;
+	stamp = 0U;
 	zassert_false(in_panic, "Logger in panic state.");
 
 	log_init();
@@ -183,13 +183,13 @@ static void test_log_backend_runtime_filtering(void)
 	backend1_cb.check_timestamp = true;
 	backend2_cb.check_timestamp = true;
 
-	backend1_cb.exp_timestamps[0] = 0;
-	backend1_cb.exp_timestamps[1] = 1;
-	backend1_cb.exp_timestamps[2] = 2;
+	backend1_cb.exp_timestamps[0] = 0U;
+	backend1_cb.exp_timestamps[1] = 1U;
+	backend1_cb.exp_timestamps[2] = 2U;
 
 	/* Expect one less log message */
-	backend2_cb.exp_timestamps[0] = 0;
-	backend2_cb.exp_timestamps[1] = 2;
+	backend2_cb.exp_timestamps[0] = 0U;
+	backend2_cb.exp_timestamps[1] = 2U;
 
 	LOG_INF("test");
 	while (log_process(false)) {
@@ -237,8 +237,8 @@ static void test_log_overflow(void)
 	backend2_cb.check_timestamp = true;
 
 	/* expect first message to be dropped */
-	backend1_cb.exp_timestamps[0] = 1;
-	backend1_cb.exp_timestamps[1] = 2;
+	backend1_cb.exp_timestamps[0] = 1U;
+	backend1_cb.exp_timestamps[1] = 2U;
 
 	LOG_INF("test");
 	LOG_INF("test");
@@ -250,7 +250,7 @@ static void test_log_overflow(void)
 	/* Expect big message to be dropped because it does not fit in.
 	 * First message is also dropped in the process of finding free space.
 	 */
-	backend1_cb.exp_timestamps[2] = 3;
+	backend1_cb.exp_timestamps[2] = 3U;
 
 	LOG_INF("test");
 	LOG_HEXDUMP_INF(data, max_hexdump_len+1, "test");
@@ -274,14 +274,14 @@ static void test_log_arguments(void)
 	log_setup(false);
 	backend1_cb.check_args = true;
 
-	backend1_cb.exp_nargs[0] = 10;
-	backend1_cb.exp_nargs[1] = 1;
-	backend1_cb.exp_nargs[2] = 2;
-	backend1_cb.exp_nargs[3] = 3;
-	backend1_cb.exp_nargs[4] = 4;
-	backend1_cb.exp_nargs[5] = 5;
-	backend1_cb.exp_nargs[6] = 6;
-	backend1_cb.exp_nargs[7] = 10;
+	backend1_cb.exp_nargs[0] = 10U;
+	backend1_cb.exp_nargs[1] = 1U;
+	backend1_cb.exp_nargs[2] = 2U;
+	backend1_cb.exp_nargs[3] = 3U;
+	backend1_cb.exp_nargs[4] = 4U;
+	backend1_cb.exp_nargs[5] = 5U;
+	backend1_cb.exp_nargs[6] = 6U;
+	backend1_cb.exp_nargs[7] = 10U;
 
 	LOG_INF("test");
 	LOG_INF("test %d", 1);

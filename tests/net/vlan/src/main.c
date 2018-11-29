@@ -424,7 +424,7 @@ static void test_vlan_tci(void)
 	tag = NET_VLAN_TAG_UNSPEC;
 	net_pkt_set_vlan_tag(pkt, tag);
 
-	priority = 0;
+	priority = 0U;
 	net_pkt_set_vlan_priority(pkt, priority);
 
 	zassert_equal(net_pkt_vlan_tag(pkt), NET_VLAN_TAG_UNSPEC,
@@ -438,7 +438,7 @@ static void test_vlan_tci(void)
 	/* TCI should be zero now */
 	zassert_equal(net_pkt_vlan_tci(pkt), 0, "invalid VLAN TCI");
 
-	priority = 1;
+	priority = 1U;
 	net_pkt_set_vlan_priority(pkt, priority);
 
 	zassert_equal(net_pkt_vlan_priority(pkt), priority,
@@ -477,14 +477,14 @@ static void test_vlan_tci(void)
 	zassert_equal(net_pkt_vlan_priority(pkt), priority,
 		      "invalid VLAN priority");
 
-	tag = 0;
+	tag = 0U;
 	net_pkt_set_vlan_tag(pkt, tag);
 	zassert_equal(net_pkt_vlan_tag(pkt), tag, "invalid VLAN tag");
 	zassert_equal(net_pkt_vlan_dei(pkt), dei, "invalid VLAN DEI");
 	zassert_equal(net_pkt_vlan_priority(pkt), priority,
 		      "invalid VLAN priority");
 
-	priority = 0;
+	priority = 0U;
 	net_pkt_set_vlan_priority(pkt, priority);
 	zassert_equal(net_pkt_vlan_tag(pkt), tag, "invalid VLAN tag");
 	zassert_equal(net_pkt_vlan_dei(pkt), dei, "invalid VLAN DEI");
@@ -493,9 +493,9 @@ static void test_vlan_tci(void)
 
 	zassert_equal(net_pkt_vlan_tci(pkt), 0, "invalid VLAN TCI");
 
-	tci = 0;
-	tag = 100;
-	priority = 3;
+	tci = 0U;
+	tag = 100U;
+	priority = 3U;
 
 	tci = net_eth_vlan_set_vid(tci, tag);
 	tci = net_eth_vlan_set_pcp(tci, priority);

@@ -37,7 +37,7 @@ static void ipm_dummy_isr(void *data)
 		driver_data->cb(driver_data->cb_context, driver_data->regs.id,
 				(volatile void *)&driver_data->regs.data);
 	}
-	driver_data->regs.busy = 0;
+	driver_data->regs.busy = 0U;
 }
 
 
@@ -67,7 +67,7 @@ static int ipm_dummy_send(struct device *d, int wait, u32_t id,
 		datareg[i] = data8[i];
 	}
 	driver_data->regs.id = id;
-	driver_data->regs.busy = 1;
+	driver_data->regs.busy = 1U;
 
 	irq_offload(ipm_dummy_isr, d);
 

@@ -502,7 +502,7 @@ static void write_other_stack(void)
 	expect_fault = true;
 	expected_reason = REASON_HW_EXCEPTION;
 	BARRIER();
-	*ptr = 0;
+	*ptr = 0U;
 
 	/* Shouldn't be reached, but if so, let the other thread exit */
 	if (give_uthread_end_sem) {

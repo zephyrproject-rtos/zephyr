@@ -415,7 +415,7 @@ void test_log_hexdump_data_get_multiple_chunks(void)
 	}
 
 	/* allocation of buffer that fits in two chunks. */
-	wr_length = 40;
+	wr_length = 40U;
 	msg = log_msg_hexdump_create("test", data, wr_length);
 
 	/* Read whole data from offset = 0*/

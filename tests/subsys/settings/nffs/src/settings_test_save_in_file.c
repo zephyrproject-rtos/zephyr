@@ -26,14 +26,14 @@ void test_config_save_in_file(void)
 	zassert_true(rc == 0,
 		     "can't register FS as configuration destination");
 
-	val8 = 8;
+	val8 = 8U;
 	rc = settings_save();
 	zassert_true(rc == 0, "fs write error");
 
 	rc = settings_test_file_strstr(cf.cf_name, "myfoo/mybar=8\n");
 	zassert_true(rc == 0, "bad value read");
 
-	val8 = 43;
+	val8 = 43U;
 	rc = settings_save();
 	zassert_true(rc == 0, "fs write error");
 

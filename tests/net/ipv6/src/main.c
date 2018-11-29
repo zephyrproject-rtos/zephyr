@@ -497,7 +497,7 @@ static void test_prefix_timeout(void)
 	struct net_if_ipv6_prefix *prefix;
 	struct in6_addr addr = { { { 0x20, 1, 0x0d, 0xb8, 42, 0, 0, 0,
 				     0, 0, 0, 0, 0, 0, 0, 0 } } };
-	u32_t lifetime = 1;
+	u32_t lifetime = 1U;
 	int len = 64;
 
 	prefix = net_if_ipv6_prefix_add(net_if_get_default(),

@@ -395,7 +395,7 @@ void test_ctr_prng_reseed(void)
 	 * first, entropy only
 	 */
 	(void)memset(&ctx, 0x0, sizeof(ctx));
-	for (i = 0; i < sizeof(entropy); i++) {
+	for (i = 0U; i < sizeof(entropy); i++) {
 		entropy[i] = i;
 	}
 
@@ -410,7 +410,7 @@ void test_ctr_prng_reseed(void)
 
 	/* now, entropy and additional_input */
 	(void)memset(&ctx, 0x00, sizeof(ctx));
-	for (i = 0; i < sizeof(extra_input); i++) {
+	for (i = 0U; i < sizeof(extra_input); i++) {
 		extra_input[i] = i * 2;
 	}
 

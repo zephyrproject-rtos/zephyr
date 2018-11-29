@@ -124,7 +124,7 @@ static void get_faults(u8_t *faults, u8_t faults_size, u8_t *dst, u8_t *count)
 {
 	u8_t i, limit = *count;
 
-	for (i = 0, *count = 0; i < faults_size && *count < limit; i++) {
+	for (i = 0U, *count = 0U; i < faults_size && *count < limit; i++) {
 		if (faults[i]) {
 			*dst++ = faults[i];
 			(*count)++;

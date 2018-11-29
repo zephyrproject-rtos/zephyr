@@ -299,7 +299,7 @@ static void test_timeout_empty_fifo(void)
 	u32_t start_time, timeout;
 
 	/* Test empty fifo with timeout */
-	timeout = 10;
+	timeout = 10U;
 	start_time = k_cycle_get_32();
 	packet = k_fifo_get(&fifo_timeout[0], timeout);
 	zassert_true(packet == NULL, NULL);
@@ -353,7 +353,7 @@ static void test_timeout_fifo_thread(void)
 	 * Test fifo with some timeout and child thread that puts
 	 * data on the fifo on time
 	 */
-	timeout = 10;
+	timeout = 10U;
 	start_time = k_cycle_get_32();
 
 	tid[0] = k_thread_create(&ttdata[0], ttstack[0], TSTACK_SIZE,

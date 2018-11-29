@@ -27,7 +27,7 @@ void test_gpio_pin_read_write(void)
 	gpio_pin_configure(dev, PIN_IN, GPIO_DIR_IN);
 	gpio_pin_disable_callback(dev, PIN_IN);
 
-	u32_t val_write, val_read = 0;
+	u32_t val_write, val_read = 0U;
 	int i = 0;
 
 	while (i++ < 32) {

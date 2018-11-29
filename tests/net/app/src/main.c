@@ -163,7 +163,7 @@ static void iface_setup(void)
 
 	iface1 = net_if_get_by_index(0);
 
-	((struct net_if_test *)net_if_get_device(iface1)->driver_data)->idx = 0;
+	((struct net_if_test *)net_if_get_device(iface1)->driver_data)->idx = 0U;
 
 	idx = net_if_get_by_iface(iface1);
 	zassert_equal(idx, 0, "Invalid index iface1");

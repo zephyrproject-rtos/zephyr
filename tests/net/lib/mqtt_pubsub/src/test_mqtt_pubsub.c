@@ -102,7 +102,7 @@ void publish_handler(struct mqtt_client *const client,
 {
 	int rc;
 	u8_t buf[16];
-	u32_t offset = 0;
+	u32_t offset = 0U;
 
 	if (evt->result != 0) {
 		TC_PRINT("MQTT PUBLISH error: %d\n", evt->result);

@@ -27,7 +27,7 @@ void test_config_save_one_fcb(void)
 	zassert_true(rc == 0,
 			 "can't register FCB as configuration destination");
 
-	val8 = 33;
+	val8 = 33U;
 	rc = settings_save();
 	zassert_true(rc == 0, "fcb write error");
 

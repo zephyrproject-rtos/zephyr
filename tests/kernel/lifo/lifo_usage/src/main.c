@@ -265,7 +265,7 @@ static void test_timeout_empty_lifo(void)
 
 	u32_t start_time, timeout;
 
-	timeout = 10;
+	timeout = 10U;
 
 	start_time = k_cycle_get_32();
 
@@ -316,7 +316,7 @@ static void test_timeout_lifo_thread(void)
 	 * Test lifo with some timeout and child thread that puts
 	 * data on the lifo on time
 	 */
-	timeout = 10;
+	timeout = 10U;
 	start_time = k_cycle_get_32();
 
 	tid[0] = k_thread_create(&ttdata[0], ttstack[0], TSTACK_SIZE,

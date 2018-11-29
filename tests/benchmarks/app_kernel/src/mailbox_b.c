@@ -99,13 +99,13 @@ void mailbox_test(void)
 
 	putcount = NR_OF_MBOX_RUNS;
 
-	putsize = 0;
+	putsize = 0U;
 	mailbox_put(putsize, putcount, &puttime);
 	/* waiting for ack */
 	k_msgq_get(&MB_COMM, &getinfo, K_FOREVER);
 	PRINT_ONE_RESULT();
 	empty_msg_put_time = puttime;
-	for (putsize = 8; putsize <= MESSAGE_SIZE; putsize <<= 1) {
+	for (putsize = 8U; putsize <= MESSAGE_SIZE; putsize <<= 1) {
 		mailbox_put(putsize, putcount, &puttime);
 		/* waiting for ack */
 		k_msgq_get(&MB_COMM, &getinfo, K_FOREVER);

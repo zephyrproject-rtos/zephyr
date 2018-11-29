@@ -53,7 +53,7 @@ void yield_bench(void)
 				     0 /*priority*/, 0, 0);
 
 	/*read the time of start of the sleep till the swap happens */
-	__read_swap_end_time_value = 1;
+	__read_swap_end_time_value = 1U;
 
 	TIMING_INFO_PRE_READ();
 	thread_sleep_start_time =   TIMING_INFO_OS_GET_TIME();

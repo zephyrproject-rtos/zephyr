@@ -104,7 +104,7 @@ void nffs_test_util_assert_cache_is_sane(const char *filename)
 		zassert_equal(cache_start, 0, NULL);
 		zassert_equal(cache_end, 0, NULL);
 	} else {
-		block_end = 0;  /* Pacify gcc. */
+		block_end = 0U;  /* Pacify gcc. */
 		TAILQ_FOREACH(cache_block, &cache_inode->nci_block_list,
 			      ncb_link) {
 			if (cache_block ==
@@ -240,7 +240,7 @@ void nffs_test_util_create_file_blocks(const char *filename,
 	rc = fs_open(&file, filename);
 	zassert_equal(rc, 0, NULL);
 
-	total_len = 0;
+	total_len = 0U;
 	if (num_blocks <= 0) {
 		num_writes = 1;
 	} else {
@@ -259,7 +259,7 @@ void nffs_test_util_create_file_blocks(const char *filename,
 	zassert_true(total_len <= AREA_BUF_MAX_SIZE, "contents too large");
 	buf = area_buf;
 
-	offset = 0;
+	offset = 0U;
 	for (i = 0; i < num_writes; i++) {
 		memcpy(buf + offset, blocks[i].data, blocks[i].data_len);
 		offset += blocks[i].data_len;

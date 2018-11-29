@@ -86,7 +86,7 @@ void main(void)
 	dma_cfg.block_count = 1;
 	dma_cfg.head_block = &dma_block_cfg;
 
-	chan_id = 0;
+	chan_id = 0U;
 
 	printk("Starting the transfer and waiting for 1 second\n");
 	dma_block_cfg.block_size = strlen(tx_data);

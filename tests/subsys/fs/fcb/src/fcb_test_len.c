@@ -15,7 +15,7 @@ void fcb_test_len(void)
 	int rc;
 	int rc2;
 
-	for (len = 0; len < FCB_MAX_LEN; len++) {
+	for (len = 0U; len < FCB_MAX_LEN; len++) {
 		rc = fcb_put_len(buf, len);
 		zassert_true(rc == 1 || rc == 2, "fcb_pull_len call failure");
 

@@ -73,7 +73,7 @@ static int fault_get_reg(struct bt_mesh_model *model, u16_t company_id,
 		memcpy(faults, reg_faults, sizeof(reg_faults));
 		*fault_count = sizeof(reg_faults);
 	} else {
-		*fault_count = 0;
+		*fault_count = 0U;
 	}
 
 	return 0;

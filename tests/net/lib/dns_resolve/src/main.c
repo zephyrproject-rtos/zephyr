@@ -204,7 +204,7 @@ static void test_init(void)
 
 	iface1 = net_if_get_by_index(0);
 
-	((struct net_if_test *)net_if_get_device(iface1)->driver_data)->idx = 0;
+	((struct net_if_test *)net_if_get_device(iface1)->driver_data)->idx = 0U;
 
 #if defined(CONFIG_NET_IPV6)
 	ifaddr = net_if_ipv6_addr_add(iface1, &my_addr1,

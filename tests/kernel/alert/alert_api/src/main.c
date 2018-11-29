@@ -98,7 +98,7 @@ static void thread_entry(void *p1, void *p2, void *p3)
 
 static void thread_alert(void)
 {
-	handler_executed = 0;
+	handler_executed = 0U;
 	/**TESTPOINT: thread-thread sync via alert*/
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 				      thread_entry, NULL, NULL, NULL,
@@ -122,7 +122,7 @@ static void sync_entry(void *p)
 
 static void isr_alert(void)
 {
-	handler_executed = 0;
+	handler_executed = 0U;
 	/**TESTPOINT: thread-isr sync via alert*/
 	irq_offload(tisr_entry, NULL);
 	k_sleep(TIMEOUT);
@@ -476,11 +476,11 @@ void signal_task(void *p1, void *p2, void *p3)
 	irq_offload(sync_entry, NULL);
 
 	k_sem_take(&sync_sema, K_FOREVER);
-	handler_val = 0;
+	handler_val = 0U;
 	k_alert_send(palert);
 
 	k_sem_take(&sync_sema, K_FOREVER);
-	handler_val = 1;
+	handler_val = 1U;
 	k_alert_send(palert);
 }
 

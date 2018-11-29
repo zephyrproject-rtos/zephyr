@@ -123,12 +123,12 @@ void mutex_bench(void)
 {
 	u32_t mutex_lock_start_time;
 	u32_t mutex_lock_end_time;
-	u32_t mutex_lock_diff = 0;
+	u32_t mutex_lock_diff = 0U;
 
 	u32_t mutex_unlock_start_time;
 	u32_t mutex_unlock_end_time;
-	u32_t mutex_unlock_diff = 0;
-	u32_t count = 0;
+	u32_t mutex_unlock_diff = 0U;
+	u32_t count = 0U;
 
 	for (int i = 0; i < 1000; i++) {
 		s64_t before = k_uptime_get();
@@ -175,7 +175,7 @@ void thread_sem1_test(void *p1, void *p2, void *p3)
 
 	k_sem_give(&sem_bench); /* sync the 2 threads*/
 
-	__read_swap_end_time_value = 1;
+	__read_swap_end_time_value = 1U;
 	TIMING_INFO_PRE_READ();
 	sem_start_time =  TIMING_INFO_OS_GET_TIME();
 	k_sem_take(&sem_bench, 10);
@@ -205,7 +205,7 @@ void thread_sem0_give_test(void *p1, void *p2, void *p3)
 	/* To make sure that the sem give will cause a swap to occur */
 	k_thread_priority_set(sem1_tid, 1);
 
-	__read_swap_end_time_value = 1;
+	__read_swap_end_time_value = 1U;
 	TIMING_INFO_PRE_READ();
 	sem_give_start_time =  TIMING_INFO_OS_GET_TIME();
 	k_sem_give(&sem_bench_1);

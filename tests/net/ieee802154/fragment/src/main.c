@@ -178,7 +178,7 @@ NET_DEVICE_INIT(net_fragment_test, "net_fragment_test",
 static bool compare_data(struct net_pkt *pkt, struct net_fragment_data *data)
 {
 	struct net_buf *frag;
-	u8_t bytes, pos, compare, offset = 0;
+	u8_t bytes, pos, compare, offset = 0U;
 	int remaining = data->len;
 
 	if (net_pkt_get_len(pkt) != (NET_IPV6UDPH_LEN + remaining)) {
@@ -195,7 +195,7 @@ static bool compare_data(struct net_pkt *pkt, struct net_fragment_data *data)
 		return false;
 	}
 
-	pos = 0;
+	pos = 0U;
 	offset = NET_IPV6UDPH_LEN;
 
 	while (remaining > 0 && frag) {
@@ -211,7 +211,7 @@ static bool compare_data(struct net_pkt *pkt, struct net_fragment_data *data)
 		pos += compare;
 		remaining -= compare;
 		frag = frag->frags;
-		offset = 0;
+		offset = 0U;
 	}
 
 	return true;
@@ -243,7 +243,7 @@ static struct net_pkt *create_pkt(struct net_fragment_data *data)
 	memcpy(frag->data, (u8_t *) data, NET_IPV6UDPH_LEN);
 	net_buf_add(frag, NET_IPV6UDPH_LEN);
 
-	pos = 0;
+	pos = 0U;
 	remaining = data->len;
 
 	len = NET_UDPH_LEN + remaining;

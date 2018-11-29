@@ -475,7 +475,7 @@ void test_sem_multiple_threads_wait(void)
 {
 	u32_t signal_count;
 	s32_t ret_value;
-	u32_t repeat_count = 0;
+	u32_t repeat_count = 0U;
 
 	k_sem_reset(&simple_sem);
 	k_sem_reset(&multiple_thread_sem);

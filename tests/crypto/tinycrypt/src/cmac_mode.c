@@ -57,7 +57,7 @@ static void show(const char *label, const u8_t *s, size_t slen)
 	u32_t i;
 
 	TC_PRINT("%s\t", label);
-	for (i = 0; i < slen; ++i) {
+	for (i = 0U; i < slen; ++i) {
 		TC_PRINT("%02x", s[i]);
 	}
 	TC_PRINT("\n");

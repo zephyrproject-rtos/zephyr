@@ -108,8 +108,8 @@ void test_config_compress_deleted(void)
 	zassert_true(rc == 0, "settings_register fail");
 
 	deletable_val.valid = true;
-	deletable_val.val32 = 2018;
-	val4v2 = 0;
+	deletable_val.val32 = 2018U;
+	val4v2 = 0U;
 
 	rc = settings_save();
 	zassert_true(rc == 0, "fcb write error");

@@ -75,13 +75,13 @@ void test_intmath(void)
 	bignum = ba * bb;
 	zassert_true((bignum == 0xbcdf0509369bf232ULL), "64-bit multiplication failed");
 
-	a = 30000;
-	b = 5872;
+	a = 30000U;
+	b = 5872U;
 	num = a * b;
 	zassert_true((num == 176160000), "32-bit multiplication failed");
 
-	a = 234424432;
-	b = 98982;
+	a = 234424432U;
+	b = 98982U;
 	num = a / b;
 	zassert_true((num == 2368), "32-bit division failed");
 }

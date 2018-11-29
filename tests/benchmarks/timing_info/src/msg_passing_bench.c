@@ -327,7 +327,7 @@ void thread_producer_msgq_w_cxt_switch(void *p1, void *p2, void *p3)
 {
 	int data_to_send = 5050;
 
-	__read_swap_end_time_value = 1;
+	__read_swap_end_time_value = 1U;
 	TIMING_INFO_PRE_READ();
 	__msg_q_put_w_cxt_start_time = (u32_t) TIMING_INFO_OS_GET_TIME();
 	k_msgq_put(&benchmark_q, &data_to_send, K_NO_WAIT);
@@ -363,7 +363,7 @@ void thread_producer_get_msgq_w_cxt_switch(void *p1, void *p2, void *p3)
 void thread_consumer_get_msgq_w_cxt_switch(void *p1, void *p2, void *p3)
 {
 	producer_get_w_cxt_switch_tid->base.timeout.dticks = _EXPIRED;
-	__read_swap_end_time_value = 1;
+	__read_swap_end_time_value = 1U;
 	TIMING_INFO_PRE_READ();
 	__msg_q_get_w_cxt_start_time = TIMING_INFO_OS_GET_TIME();
 	received_data_get =  k_msgq_get(&benchmark_q_get,
@@ -387,7 +387,7 @@ void thread_mbox_sync_put_send(void *p1, void *p2, void *p3)
 
 	TIMING_INFO_PRE_READ();
 	mbox_sync_put_start_time = TIMING_INFO_OS_GET_TIME();
-	__read_swap_end_time_value = 1;
+	__read_swap_end_time_value = 1U;
 
 	status = k_mbox_put(&benchmark_mbox, &tx_msg, 300);
 	MBOX_CHECK(status);
@@ -433,7 +433,7 @@ void thread_mbox_sync_get_receive(void *p1, void *p2, void *p3)
 		.tx_target_thread = K_ANY
 	};
 
-	__read_swap_end_time_value = 1;
+	__read_swap_end_time_value = 1U;
 	TIMING_INFO_PRE_READ();
 	mbox_sync_get_start_time = TIMING_INFO_OS_GET_TIME();
 

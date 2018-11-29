@@ -117,7 +117,7 @@ static struct device *counter_dev;
 
 static void setup_counter(void)
 {
-	volatile u32_t delay = 0;
+	volatile u32_t delay = 0U;
 
 	counter_dev = device_get_binding("AON_TIMER");
 
@@ -130,7 +130,7 @@ static void setup_counter(void)
 	 * the system clock which is 32MHz) so we need to spin for a few cycles
 	 * to allow the register change to propagate.
 	 */
-	for (delay = 5000; delay--;) {
+	for (delay = 5000U; delay--;) {
 	}
 }
 
@@ -165,7 +165,7 @@ static struct device *cmp_dev;
 
 static void setup_aon_comparator(void)
 {
-	volatile u32_t delay = 0;
+	volatile u32_t delay = 0U;
 
 	cmp_dev = device_get_binding("AIO_CMP_0");
 
@@ -174,7 +174,7 @@ static void setup_aon_comparator(void)
 
 	/* Wait for the comparator to be grounded. */
 	printk("USER_ACTION: Ground the comparator pin.\n");
-	for (delay = 0; delay < 5000000; delay++) {
+	for (delay = 0U; delay < 5000000; delay++) {
 	}
 
 	aio_cmp_configure(cmp_dev, CMP_INTERRUPT_PIN,

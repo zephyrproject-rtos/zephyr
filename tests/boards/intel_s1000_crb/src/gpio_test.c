@@ -98,7 +98,7 @@ void gpio_thread(void *dummy1, void *dummy2, void *dummy3)
 	struct device *gpio_dev;
 	int ret;
 	int toggle = 1;
-	u32_t read_val = 0;
+	u32_t read_val = 0U;
 
 	ARG_UNUSED(dummy1);
 	ARG_UNUSED(dummy2);

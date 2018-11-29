@@ -128,7 +128,7 @@ static int test_wdt_no_callback(void)
 
 	if (m_state == WDT_TEST_STATE_CHECK_RESET) {
 		m_state = WDT_TEST_STATE_IDLE;
-		m_testcase_index = 1;
+		m_testcase_index = 1U;
 		TC_PRINT("Testcase passed\n");
 		return TC_PASS;
 	}
@@ -147,7 +147,7 @@ static int test_wdt_no_callback(void)
 	}
 
 	TC_PRINT("Waiting to restart MCU\n");
-	m_testvalue = 0;
+	m_testvalue = 0U;
 	m_state = WDT_TEST_STATE_CHECK_RESET;
 	while (1) {
 		k_yield();
@@ -177,7 +177,7 @@ static int test_wdt_callback_1(void)
 		}
 	}
 
-	m_testvalue = 0;
+	m_testvalue = 0U;
 	m_cfg_wdt0.flags = WDT_FLAG_RESET_SOC;
 	m_cfg_wdt0.callback = wdt_int_cb0;
 	m_cfg_wdt0.window.max = 2000;
@@ -194,7 +194,7 @@ static int test_wdt_callback_1(void)
 	}
 
 	TC_PRINT("Waiting to restart MCU\n");
-	m_testvalue = 0;
+	m_testvalue = 0U;
 	m_state = WDT_TEST_STATE_CHECK_RESET;
 	while (1) {
 		k_yield();
@@ -226,7 +226,7 @@ static int test_wdt_callback_2(void)
 	}
 
 
-	m_testvalue = 0;
+	m_testvalue = 0U;
 	m_cfg_wdt0.callback = wdt_int_cb0;
 	m_cfg_wdt0.flags = WDT_FLAG_RESET_SOC;
 	m_cfg_wdt0.window.max = 2000;
@@ -253,7 +253,7 @@ static int test_wdt_callback_2(void)
 	}
 
 	TC_PRINT("Waiting to restart MCU\n");
-	m_testvalue = 0;
+	m_testvalue = 0U;
 	m_state = WDT_TEST_STATE_CHECK_RESET;
 
 	while (1) {
