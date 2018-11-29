@@ -95,6 +95,7 @@ struct bt_mesh_friend {
 	      valid:1,
 	      established:1;
 	s32_t poll_to;
+	u8_t  num_elem;
 	u16_t lpn_counter;
 	u16_t counter;
 
