@@ -31,7 +31,7 @@ void test_config_compress_file(void)
 	zassert_true(rc == 0,
 		     "can't register FS as configuration destination");
 
-	val64 = 1125;
+	val64 = 1125U;
 
 	for (int i = 0; i < 22; i++) {
 		val8 = i;
@@ -43,7 +43,7 @@ void test_config_compress_file(void)
 		zassert_true(val8 == i, "Bad value loaded");
 	}
 
-	val64 = 37;
+	val64 = 37U;
 	rc = settings_save();
 	zassert_true(rc == 0, "fs write error");
 

@@ -69,7 +69,7 @@ void test_init(void)
 	zassert_true(err == 0, "can't save settings");
 
 	prev_int = val32;
-	val32 = 0;
+	val32 = 0U;
 	err = settings_load();
 	zassert_true(err == 0, "can't load settings");
 	zassert_equal(prev_int, val32,
@@ -89,7 +89,7 @@ void test_init_setup(void)
 	zassert_true(err == 0, "can't load settings");
 
 	if (val32 < 1) {
-		val32 = 1;
+		val32 = 1U;
 		err = settings_save();
 		zassert_true(err == 0, "can't save settings");
 		k_sleep(250);

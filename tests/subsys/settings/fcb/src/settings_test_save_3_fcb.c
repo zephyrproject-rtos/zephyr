@@ -40,7 +40,7 @@ void test_config_save_3_fcb(void)
 		rc = settings_save();
 		zassert_true(rc == 0, "fcb write error");
 
-		val32 = 0;
+		val32 = 0U;
 
 		rc = settings_load();
 		zassert_true(rc == 0, "fcb read error");

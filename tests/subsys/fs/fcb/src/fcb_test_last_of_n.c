@@ -9,7 +9,7 @@
 
 void fcb_test_last_of_n(void)
 {
-	const u8_t ENTRIES = 5;
+	const u8_t ENTRIES = 5U;
 	struct fcb *fcb;
 	int rc;
 	struct fcb_entry loc;
@@ -27,7 +27,7 @@ void fcb_test_last_of_n(void)
 	/*
 	 * Add some fcbs.
 	 */
-	for (i = 0; i < ENTRIES; i++) {
+	for (i = 0U; i < ENTRIES; i++) {
 		rc = fcb_append(fcb, sizeof(test_data), &loc);
 		if (rc == FCB_ERR_NOSPACE) {
 			break;

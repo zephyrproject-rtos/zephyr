@@ -65,7 +65,7 @@ void test_msgdma(void)
 	 * Set channel id to 0 as Nios-II
 	 * MSGDMA only supports one channel
 	 */
-	chan_id = 0;
+	chan_id = 0U;
 
 	/* Init DMA descriptor info */
 	dma_block_cfg.block_size = DMA_BUFF_SIZE;

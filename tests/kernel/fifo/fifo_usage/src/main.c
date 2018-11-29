@@ -61,7 +61,7 @@ static void tIsr_entry_put(void *p)
 	u32_t i;
 
 	/* Put items into fifo */
-	for (i = 0; i < LIST_LEN; i++) {
+	for (i = 0U; i < LIST_LEN; i++) {
 		k_fifo_put((struct k_fifo *)p, (void *)&data_isr[i]);
 	}
 	zassert_false(k_fifo_is_empty((struct k_fifo *)p), NULL);
@@ -73,7 +73,7 @@ static void tIsr_entry_get(void *p)
 	u32_t i;
 
 	/* Get items from fifo */
-	for (i = 0; i < LIST_LEN; i++) {
+	for (i = 0U; i < LIST_LEN; i++) {
 		rx_data = k_fifo_get((struct k_fifo *)p, K_NO_WAIT);
 		zassert_equal(rx_data, (void *)&data_isr[i], NULL);
 	}
@@ -86,13 +86,13 @@ static void thread_entry_fn_single(void *p1, void *p2, void *p3)
 	u32_t i;
 
 	/* Get items from fifo */
-	for (i = 0; i < LIST_LEN; i++) {
+	for (i = 0U; i < LIST_LEN; i++) {
 		rx_data = k_fifo_get((struct k_fifo *)p1, K_NO_WAIT);
 		zassert_equal(rx_data, (void *)&data1[i], NULL);
 	}
 
 	/* Put items into fifo */
-	for (i = 0; i < LIST_LEN; i++) {
+	for (i = 0U; i < LIST_LEN; i++) {
 		k_fifo_put((struct k_fifo *)p1, (void *)&data2[i]);
 	}
 
@@ -105,7 +105,7 @@ static void thread_entry_fn_dual(void *p1, void *p2, void *p3)
 	void *rx_data;
 	u32_t i;
 
-	for (i = 0; i < LIST_LEN; i++) {
+	for (i = 0U; i < LIST_LEN; i++) {
 		/* Get items from fifo2 */
 		rx_data = k_fifo_get((struct k_fifo *)p2, K_FOREVER);
 		zassert_equal(rx_data, (void *)&data2[i], NULL);
@@ -150,7 +150,7 @@ static void test_single_fifo_play(void)
 	k_sem_init(&end_sema, 0, 1);
 
 	/* Put items into fifo */
-	for (i = 0; i < LIST_LEN; i++) {
+	for (i = 0U; i < LIST_LEN; i++) {
 		k_fifo_put(&fifo1, (void *)&data1[i]);
 	}
 
@@ -162,7 +162,7 @@ static void test_single_fifo_play(void)
 	k_sem_take(&end_sema, K_FOREVER);
 
 	/* Get items from fifo */
-	for (i = 0; i < LIST_LEN; i++) {
+	for (i = 0U; i < LIST_LEN; i++) {
 		rx_data = k_fifo_get(&fifo1, K_NO_WAIT);
 		zassert_equal(rx_data, (void *)&data2[i], NULL);
 	}
@@ -189,7 +189,7 @@ static void test_dual_fifo_play(void)
 				thread_entry_fn_dual, &fifo1, &fifo2, NULL,
 				K_PRIO_PREEMPT(0), K_INHERIT_PERMS, 0);
 
-	for (i = 0; i < LIST_LEN; i++) {
+	for (i = 0U; i < LIST_LEN; i++) {
 		/* Put item into fifo */
 		k_fifo_put(&fifo2, (void *)&data2[i]);
 

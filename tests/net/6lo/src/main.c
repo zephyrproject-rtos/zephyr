@@ -222,8 +222,8 @@ static bool compare_data(struct net_pkt *pkt, struct net_6lo_data *data)
 	struct net_buf *frag;
 	u8_t bytes;
 	u8_t compare;
-	u8_t pos = 0;
-	u8_t offset = 0;
+	u8_t pos = 0U;
+	u8_t offset = 0U;
 	int remaining = data->small ? SIZE_OF_SMALL_DATA : SIZE_OF_LARGE_DATA;
 
 	if (data->nh_udp) {
@@ -298,7 +298,7 @@ static bool compare_data(struct net_pkt *pkt, struct net_6lo_data *data)
 		pos += compare;
 		remaining -= compare;
 		frag = frag->frags;
-		offset = 0;
+		offset = 0U;
 	}
 
 	return true;
@@ -344,7 +344,7 @@ static struct net_pkt *create_pkt(struct net_6lo_data *data)
 		net_buf_add(frag, NET_IPV6H_LEN);
 	}
 
-	pos = 0;
+	pos = 0U;
 	remaining = data->small ? SIZE_OF_SMALL_DATA : SIZE_OF_LARGE_DATA;
 
 	if (data->nh_udp) {

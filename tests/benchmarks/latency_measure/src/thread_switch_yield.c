@@ -49,7 +49,7 @@ void yielding_thread(void *arg1, void *arg2, void *arg3)
  */
 void thread_switch_yield(void)
 {
-	u32_t iterations = 0;
+	u32_t iterations = 0U;
 	s32_t delta;
 	u32_t timestamp;
 

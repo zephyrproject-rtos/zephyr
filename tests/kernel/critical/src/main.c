@@ -147,7 +147,7 @@ void alternate_thread(void *arg1, void *arg2, void *arg3)
 
 void regression_thread(void *arg1, void *arg2, void *arg3)
 {
-	u32_t ncalls = 0;
+	u32_t ncalls = 0U;
 
 	ARG_UNUSED(arg1);
 	ARG_UNUSED(arg2);
@@ -183,8 +183,8 @@ void regression_thread(void *arg1, void *arg2, void *arg3)
 
 static void init_objects(void)
 {
-	critical_var = 0;
-	alt_thread_iterations = 0;
+	critical_var = 0U;
+	alt_thread_iterations = 0U;
 	k_work_q_start(&offload_work_q,
 		       offload_work_q_stack,
 		       K_THREAD_STACK_SIZEOF(offload_work_q_stack),

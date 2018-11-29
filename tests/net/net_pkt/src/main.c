@@ -1174,21 +1174,21 @@ static void test_net_pkt_append_memset(void)
 
 	ret = net_frag_linearize(read_data, size, pkt, 0, 50);
 	zassert_true(ret == 50, "Linearize failed failed");
-	for (cur_pos = 0; cur_pos < 50; ++cur_pos) {
+	for (cur_pos = 0U; cur_pos < 50; ++cur_pos) {
 		zassert_true(read_data[cur_pos] == 0,
 			     "Byte was expected to read 0");
 	}
 
 	ret = net_frag_linearize(read_data, size, pkt, 50, 128);
 	zassert_true(ret == 128, "Linearize failed failed");
-	for (cur_pos = 0; cur_pos < 128; ++cur_pos) {
+	for (cur_pos = 0U; cur_pos < 128; ++cur_pos) {
 		zassert_true(read_data[cur_pos] == 255,
 			     "Byte was expected to read 255");
 	}
 
 	ret = net_frag_linearize(read_data, size, pkt, 50 + 128, 128);
 	zassert_true(ret == 128, "Linearize failed failed");
-	for (cur_pos = 0; cur_pos < 128; ++cur_pos) {
+	for (cur_pos = 0U; cur_pos < 128; ++cur_pos) {
 		zassert_true(read_data[cur_pos] == 0,
 			     "Byte was expected to read 0");
 	}

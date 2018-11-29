@@ -317,7 +317,7 @@ struct net_pkt *prepare_dhcp_offer(struct net_if *iface, u32_t xid)
 				goto fail;
 			}
 
-			offset = 0;
+			offset = 0U;
 			net_pkt_frag_add(pkt, frag);
 		}
 	}
@@ -387,7 +387,7 @@ struct net_pkt *prepare_dhcp_ack(struct net_if *iface, u32_t xid)
 				goto fail;
 			}
 
-			offset = 0;
+			offset = 0U;
 			net_pkt_frag_add(pkt, frag);
 		}
 	}

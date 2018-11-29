@@ -108,7 +108,7 @@ static int test_build_simple_pdu(void)
 	struct coap_packet cpkt;
 	const char token[] = "token";
 	u8_t *data;
-	u8_t format = 0;
+	u8_t format = 0U;
 	int result = TC_FAIL;
 	int r;
 
@@ -783,7 +783,7 @@ static int test_block1_size(void)
 	int r;
 	u8_t i;
 
-	i = 0;
+	i = 0U;
 	result = TC_FAIL;
 	more = 1;
 	memset(&req_ctx, 0, sizeof(req_ctx));
@@ -1020,7 +1020,7 @@ static int test_block2_size(void)
 	int r;
 	u8_t i;
 
-	i = 0;
+	i = 0U;
 	result = TC_FAIL;
 	more = 1;
 	memset(&req_ctx, 0, sizeof(req_ctx));

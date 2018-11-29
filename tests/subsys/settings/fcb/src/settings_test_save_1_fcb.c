@@ -26,11 +26,11 @@ void test_config_save_1_fcb(void)
 	zassert_true(rc == 0,
 		     "can't register FCB as configuration destination");
 
-	val8 = 33;
+	val8 = 33U;
 	rc = settings_save();
 	zassert_true(rc == 0, "fcb write error");
 
-	val8 = 0;
+	val8 = 0U;
 
 	rc = settings_load();
 	zassert_true(rc == 0, "fcb redout error");

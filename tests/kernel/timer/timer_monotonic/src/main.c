@@ -52,7 +52,7 @@ void test_timer(void)
 	u32_t t_last, t_now, i, errors;
 	s32_t diff;
 
-	errors = 0;
+	errors = 0U;
 
 	TC_PRINT("sys_clock_hw_cycles_per_tick() = %d\n",
 		 sys_clock_hw_cycles_per_tick());
@@ -63,7 +63,7 @@ void test_timer(void)
 
 	t_last = k_cycle_get_32();
 
-	for (i = 0; i < 1000000; i++) {
+	for (i = 0U; i < 1000000; i++) {
 		t_now = k_cycle_get_32();
 
 		if (t_now < t_last) {

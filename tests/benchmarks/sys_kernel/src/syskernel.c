@@ -154,7 +154,7 @@ void main(void)
 	u64_t time_stamp_2 = z_tick_get();
 
 	if (time_stamp_2 - time_stamp > 1) {
-		number_of_loops = 10;
+		number_of_loops = 10U;
 	}
 
 	init_output(&continuously);

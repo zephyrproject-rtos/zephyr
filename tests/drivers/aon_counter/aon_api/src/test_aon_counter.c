@@ -27,7 +27,7 @@
 
 static int test_counter(void)
 {
-	u32_t i = 0;
+	u32_t i = 0U;
 	u32_t p_val, c_val, delta;
 	struct device *aon_counter = device_get_binding(AON_COUNTER);
 
@@ -51,7 +51,7 @@ static int test_counter(void)
 	TC_PRINT("Always-on counter started\n");
 
 	/* verify counter_read() */
-	for (i = 0; i < 20; i++) {
+	for (i = 0U; i < 20; i++) {
 		p_val = counter_read(aon_counter);
 		k_sleep(10); //sleep 10 ms
 		c_val = counter_read(aon_counter);

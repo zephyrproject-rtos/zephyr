@@ -25,8 +25,8 @@
 
 static int test_task(void)
 {
-	u32_t val_1 = 0;
-	u32_t val_2 = 0;
+	u32_t val_1 = 0U;
+	u32_t val_2 = 0U;
 	struct device *rtc = device_get_binding(RTC_DEVICE_NAME);
 
 	if (!rtc) {

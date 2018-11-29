@@ -91,7 +91,7 @@ static void thread_entry(void *p1, void *p2, void *p3)
 void test_kdefine_preempt_thread(void)
 {
 	/*static thread created time unknown, skip it*/
-	t_create = 0;
+	t_create = 0U;
 	expected.init_p1 = INIT_PREEMPT_P1;
 	expected.init_p2 = INIT_PREEMPT_P2;
 	expected.init_p3 = INIT_PREEMPT_P3;
@@ -116,7 +116,7 @@ void test_kdefine_preempt_thread(void)
 void test_kdefine_coop_thread(void)
 {
 	/*static thread creation time unknown, skip it*/
-	t_create = 0;
+	t_create = 0U;
 	expected.init_p1 = INIT_COOP_P1;
 	expected.init_p2 = INIT_COOP_P2;
 	expected.init_p3 = INIT_COOP_P3;

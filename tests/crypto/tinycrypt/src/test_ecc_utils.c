@@ -167,7 +167,7 @@ void print_ecc_scalar(const char *label, const unsigned int *p_vli,
 		printf("%s = { ", label);
 	}
 
-	for (i = 0; i < num_word32 - 1; ++i) {
+	for (i = 0U; i < num_word32 - 1; ++i) {
 		printf("0x%08lX, ", (unsigned long)p_vli[i]);
 	}
 	printf("0x%08lX", (unsigned long)p_vli[i]);

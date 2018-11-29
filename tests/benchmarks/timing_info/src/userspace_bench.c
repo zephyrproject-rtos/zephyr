@@ -63,7 +63,7 @@ void userspace_bench(void)
 
 void test_drop_to_user_mode_1(void *p1, void *p2, void *p3)
 {
-	volatile u32_t dummy = 100;
+	volatile u32_t dummy = 100U;
 
 	dummy++;
 }

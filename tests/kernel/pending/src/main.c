@@ -408,7 +408,7 @@ void test_pending(void)
 	offload2.sem = &end_test_sem;
 	k_work_submit_to_queue(&offload_work_q, &offload2.work_item);
 
-	timer_end_tick = 0;
+	timer_end_tick = 0U;
 	k_sem_give(&start_test_sem);    /* start timer tests */
 
 	/*

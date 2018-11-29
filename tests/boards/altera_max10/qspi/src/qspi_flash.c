@@ -23,7 +23,7 @@ void test_qspi_flash(void)
 	flash_dev = device_get_binding(CONFIG_SOC_FLASH_NIOS2_QSPI_DEV_NAME);
 	zassert_equal(!flash_dev, TC_PASS, "Flash device not found!");
 
-	for (i = 0; i < NUM_OF_SECTORS_TO_TEST; i++) {
+	for (i = 0U; i < NUM_OF_SECTORS_TO_TEST; i++) {
 		TC_PRINT("\nTesting: Flash Sector-%d\n", i);
 		offset = FLASH_SECTOR_SIZE * i;
 

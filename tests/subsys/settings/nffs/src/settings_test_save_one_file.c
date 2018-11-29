@@ -25,7 +25,7 @@ void test_config_save_one_file(void)
 	zassert_true(rc == 0,
 		     "can't register FS as configuration destination");
 
-	val8 = 33;
+	val8 = 33U;
 	rc = settings_save();
 	zassert_true(rc == 0, "fs write error");
 

@@ -395,7 +395,7 @@ void test_sha256_12(void)
 	(void)memset(m, 0x00, sizeof(m));
 
 	(void)tc_sha256_init(&s);
-	for (i = 0; i < 1000; ++i) {
+	for (i = 0U; i < 1000; ++i) {
 		tc_sha256_update(&s, m, sizeof(m));
 	}
 	(void)tc_sha256_final(digest, &s);
@@ -427,7 +427,7 @@ void test_sha256_13(void)
 	(void)memset(m, 0x5a, sizeof(m));
 
 	(void)tc_sha256_init(&s);
-	for (i = 0; i < 16384; ++i) {
+	for (i = 0U; i < 16384; ++i) {
 		tc_sha256_update(&s, m, sizeof(m));
 	}
 	(void)tc_sha256_final(digest, &s);
@@ -460,7 +460,7 @@ void test_sha256_14(void)
 	(void)memset(m, 0x00, sizeof(m));
 
 	(void)tc_sha256_init(&s);
-	for (i = 0; i < 33280; ++i) {
+	for (i = 0U; i < 33280; ++i) {
 		tc_sha256_update(&s, m, sizeof(m));
 	}
 	(void)tc_sha256_final(digest, &s);

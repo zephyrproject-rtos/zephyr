@@ -73,7 +73,7 @@ static void thread_name_entry(void)
 
 static void customdata_entry(void *p1, void *p2, void *p3)
 {
-	u32_t data = 1;
+	u32_t data = 1U;
 
 	zassert_is_null(k_thread_custom_data_get(), NULL);
 	while (1) {

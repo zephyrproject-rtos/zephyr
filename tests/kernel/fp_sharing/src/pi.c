@@ -74,7 +74,7 @@ void calculate_pi_low(void)
 		pi = 1.0;
 		divisor = 3.0;
 
-		for (ix = 0; ix < PI_NUM_ITERATIONS; ix++) {
+		for (ix = 0U; ix < PI_NUM_ITERATIONS; ix++) {
 			pi += sign / divisor;
 			divisor += 2.0;
 			sign *= -1.0;
@@ -117,7 +117,7 @@ void calculate_pi_high(void)
 		pi = 1.0;
 		divisor = 3.0;
 
-		for (ix = 0; ix < PI_NUM_ITERATIONS; ix++) {
+		for (ix = 0U; ix < PI_NUM_ITERATIONS; ix++) {
 			pi += sign / divisor;
 			divisor += 2.0;
 			sign *= -1.0;

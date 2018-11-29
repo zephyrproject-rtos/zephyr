@@ -70,7 +70,7 @@ void test_hmac_prng(void)
 	TC_PRINT("HMAC-PRNG test#1 (init, reseed, generate):\n");
 
 	/* Fake seed (replace by a a truly random seed): */
-	for (i = 0; i < (u32_t)sizeof(seed); ++i) {
+	for (i = 0U; i < (u32_t)sizeof(seed); ++i) {
 		seed[i] = i;
 	}
 
