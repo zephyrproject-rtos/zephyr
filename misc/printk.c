@@ -239,7 +239,7 @@ struct buf_out_context {
 static void buf_flush(struct buf_out_context *ctx)
 {
 	k_str_out(ctx->buf, ctx->buf_count);
-	ctx->buf_count = 0;
+	ctx->buf_count = 0U;
 }
 
 static int buf_char_out(int c, void *ctx_p)
