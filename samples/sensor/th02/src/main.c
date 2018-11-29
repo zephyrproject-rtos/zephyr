@@ -34,7 +34,7 @@ void main(void)
 	unsigned int i;
 	int rc;
 
-	for (i = 0; i < ARRAY_SIZE(info); i++) {
+	for (i = 0U; i < ARRAY_SIZE(info); i++) {
 		dev[i] = device_get_binding(info[i].dev_name);
 		if (dev[i] == NULL) {
 			printk("Failed to get \"%s\" device\n",
@@ -60,7 +60,7 @@ void main(void)
 
 	while (1) {
 		/* fetch sensor samples */
-		for (i = 0; i < ARRAY_SIZE(info); i++) {
+		for (i = 0U; i < ARRAY_SIZE(info); i++) {
 			rc = sensor_sample_fetch(dev[i]);
 			if (rc) {
 				printk("Failed to fetch sample for device %s (%d)\n",
@@ -68,7 +68,7 @@ void main(void)
 			}
 		}
 
-		for (i = 0; i < ARRAY_SIZE(info); i++) {
+		for (i = 0U; i < ARRAY_SIZE(info); i++) {
 			rc = sensor_channel_get(dev[i], info[i].chan, &val[i]);
 			if (rc) {
 				printk("Failed to get data for device %s (%d)\n",

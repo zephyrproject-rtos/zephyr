@@ -45,7 +45,7 @@ static int send_tcp_data(struct data *data)
 		data->tcp.expecting = sys_rand32_get() % ipsum_len;
 	} while (data->tcp.expecting == 0);
 
-	data->tcp.received = 0;
+	data->tcp.received = 0U;
 
 	ret =  sendall(data->tcp.sock, lorem_ipsum, data->tcp.expecting);
 

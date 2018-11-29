@@ -164,7 +164,7 @@ static int well_known_core_get(struct coap_resource *resource,
 
 static void toggle_led(void)
 {
-	u32_t led = 0;
+	u32_t led = 0U;
 	int r;
 
 	if (!led0) {
@@ -414,7 +414,7 @@ static void udp_receive(struct net_context *context,
 {
 	struct coap_packet request;
 	struct coap_option options[16] = { 0 };
-	u8_t opt_num = 16;
+	u8_t opt_num = 16U;
 	int r;
 
 	r = coap_packet_parse(&request, pkt, options, opt_num);

@@ -78,7 +78,7 @@ static void tcp_received(struct net_context *context,
 					  (u64_t)USEC_PER_SEC) /
 					 ((u64_t)duration * 1024));
 			} else {
-				rate_in_kbps = 0;
+				rate_in_kbps = 0U;
 			}
 
 			shell_fprintf(shell, SHELL_NORMAL,

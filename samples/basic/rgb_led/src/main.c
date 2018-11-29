@@ -72,7 +72,7 @@ void main(void)
 	}
 
 	while (1) {
-		for (pulse_width0 = 0; pulse_width0 <= PERIOD;
+		for (pulse_width0 = 0U; pulse_width0 <= PERIOD;
 		     pulse_width0 += STEPSIZE) {
 			if (write_pin(pwm_dev[0], PWM_CH0,
 				      pulse_width0) != 0) {
@@ -80,7 +80,7 @@ void main(void)
 				return;
 			}
 
-			for (pulse_width1 = 0; pulse_width1 <= PERIOD;
+			for (pulse_width1 = 0U; pulse_width1 <= PERIOD;
 			     pulse_width1 += STEPSIZE) {
 				if (write_pin(pwm_dev[1], PWM_CH1,
 					      pulse_width1) != 0) {
@@ -88,7 +88,7 @@ void main(void)
 					return;
 				}
 
-				for (pulse_width2 = 0; pulse_width2 <= PERIOD;
+				for (pulse_width2 = 0U; pulse_width2 <= PERIOD;
 				     pulse_width2 += STEPSIZE) {
 					if (write_pin(pwm_dev[2], PWM_CH2,
 						      pulse_width2) != 0) {

@@ -77,7 +77,7 @@ bool setup_rpl(struct net_if *iface, const char *addr_prefix)
 
 	slash = strstr(prefix, "/");
 	if (!slash) {
-		rpl.prefix_len = 64;
+		rpl.prefix_len = 64U;
 	} else {
 		*slash = '\0';
 		rpl.prefix_len = atoi(slash + 1);

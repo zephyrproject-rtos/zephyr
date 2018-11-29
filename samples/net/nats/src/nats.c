@@ -247,7 +247,7 @@ static int copy_pkt_to_buf(struct net_buf *src, u16_t offset,
 		src = src->frags;
 	}
 
-	for (copied = 0; src && n_bytes > 0; offset = 0) {
+	for (copied = 0U; src && n_bytes > 0; offset = 0U) {
 		to_copy = min(n_bytes, src->len - offset);
 
 		memcpy(dst + copied, (char *)src->data + offset, to_copy);
@@ -539,7 +539,7 @@ static void receive_cb(struct net_context *ctx, struct net_pkt *pkt, int status,
 	struct nats *nats = user_data;
 	char cmd_buf[CMD_BUF_LEN];
 	struct net_buf *tmp;
-	u16_t pos = 0, cmd_len = 0;
+	u16_t pos = 0U, cmd_len = 0U;
 	size_t len;
 	u8_t *end_of_line;
 
@@ -588,7 +588,7 @@ static void receive_cb(struct net_context *ctx, struct net_pkt *pkt, int status,
 				/* FIXME: What to do with unhandled messages? */
 				break;
 			}
-			cmd_len = 0;
+			cmd_len = 0U;
 		}
 	}
 

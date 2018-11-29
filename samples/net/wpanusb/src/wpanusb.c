@@ -292,7 +292,7 @@ static int tx(struct net_pkt *pkt)
 	if (ret) {
 		LOG_ERR("Error sending data, seq %u", seq);
 		/* Send seq = 0 for unsuccessful send */
-		seq = 0;
+		seq = 0U;
 	}
 
 	try_write(WPANUSB_ENDP_BULK_IN, &seq, sizeof(seq));

@@ -101,7 +101,7 @@ static u32_t get_period(char note, bool sharp)
 void board_play_tune(const char *str)
 {
 	while (*str) {
-		u32_t period, duration = 0;
+		u32_t period, duration = 0U;
 
 		while (*str && !isdigit((unsigned char)*str)) {
 			str++;

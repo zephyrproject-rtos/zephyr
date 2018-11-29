@@ -259,7 +259,7 @@ void update_light_state(void)
 static void short_time_multireset_bt_mesh_unprovisioning(void)
 {
 	if (reset_counter >= 4) {
-		reset_counter = 0;
+		reset_counter = 0U;
 		printk("BT Mesh reset\n");
 		bt_mesh_reset();
 	} else {
@@ -272,7 +272,7 @@ static void short_time_multireset_bt_mesh_unprovisioning(void)
 
 static void reset_counter_timer_handler(struct k_timer *dummy)
 {
-	reset_counter = 0;
+	reset_counter = 0U;
 	save_on_flash(RESET_COUNTER);
 	printk("Reset Counter set to Zero\n");
 }

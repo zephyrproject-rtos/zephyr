@@ -73,7 +73,7 @@ void main(void)
 	int rc = 0, cnt = 0, cnt_his = 0;
 	char buf[16];
 	u8_t key[8], longarray[128];
-	u32_t reboot_counter = 0, reboot_counter_his;
+	u32_t reboot_counter = 0U, reboot_counter_his;
 
 	rc = nvs_init(&fs, DT_FLASH_DEV_NAME);
 	if (rc) {

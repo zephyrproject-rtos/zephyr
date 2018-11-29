@@ -85,7 +85,7 @@ static void print_buffer_comparison(u8_t *wanted_result,
 
 int validate_hw_compatibility(struct device *dev)
 {
-	u32_t flags = 0;
+	u32_t flags = 0U;
 
 	flags = cipher_query_hwcaps(dev);
 	if ((flags & CAP_RAW_KEY) == 0) {

@@ -38,7 +38,7 @@ void main(void)
 {
 	struct device *pwm_dev;
 	u32_t pulse_width = MINPULSEWIDTH;
-	u8_t dir = 0;
+	u8_t dir = 0U;
 
 	printk("PWM demo app-servo control\n");
 
@@ -56,7 +56,7 @@ void main(void)
 
 		if (dir) {
 			if (pulse_width <= MINPULSEWIDTH) {
-				dir = 0;
+				dir = 0U;
 				pulse_width = MINPULSEWIDTH;
 			} else {
 				pulse_width -= STEPSIZE;
@@ -65,7 +65,7 @@ void main(void)
 			pulse_width += STEPSIZE;
 
 			if (pulse_width >= MAXPULSEWIDTH) {
-				dir = 1;
+				dir = 1U;
 				pulse_width = MAXPULSEWIDTH;
 			}
 		}

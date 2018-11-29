@@ -146,7 +146,7 @@ static void send_tcp_data(struct net_app_ctx *ctx,
 		data->expecting_tcp = sys_rand32_get() % ipsum_len;
 	} while (data->expecting_tcp == 0);
 
-	data->received_tcp = 0;
+	data->received_tcp = 0U;
 
 	pkt = prepare_send_pkt(ctx, data->proto, &data->expecting_tcp);
 	if (!pkt) {

@@ -171,7 +171,7 @@ static void gen_onoff_set_unack(struct bt_mesh_model *model,
 	switch (buf->len) {
 	case 0x00:	/* No optional fields are available */
 		tt = default_tt;
-		delay = 0;
+		delay = 0U;
 		break;
 	case 0x02:	/* Optional fields are available */
 		tt = net_buf_simple_pull_u8(buf);
@@ -185,7 +185,7 @@ static void gen_onoff_set_unack(struct bt_mesh_model *model,
 		return;
 	}
 
-	*ptr_counter = 0;
+	*ptr_counter = 0U;
 	k_timer_stop(ptr_timer);
 
 	state->last_tid = tid;
@@ -234,7 +234,7 @@ static void gen_onoff_set(struct bt_mesh_model *model,
 	switch (buf->len) {
 	case 0x00:	/* No optional fields are available */
 		tt = default_tt;
-		delay = 0;
+		delay = 0U;
 		break;
 	case 0x02:	/* Optional fields are available */
 		tt = net_buf_simple_pull_u8(buf);
@@ -248,7 +248,7 @@ static void gen_onoff_set(struct bt_mesh_model *model,
 		return;
 	}
 
-	*ptr_counter = 0;
+	*ptr_counter = 0U;
 	k_timer_stop(ptr_timer);
 
 	state->last_tid = tid;
@@ -387,7 +387,7 @@ static void gen_level_set_unack(struct bt_mesh_model *model,
 	switch (buf->len) {
 	case 0x00:	/* No optional fields are available */
 		tt = default_tt;
-		delay = 0;
+		delay = 0U;
 		break;
 	case 0x02:	/* Optional fields are available */
 		tt = net_buf_simple_pull_u8(buf);
@@ -401,7 +401,7 @@ static void gen_level_set_unack(struct bt_mesh_model *model,
 		return;
 	}
 
-	*ptr_counter = 0;
+	*ptr_counter = 0U;
 	k_timer_stop(ptr_timer);
 
 	state->last_tid = tid;
@@ -456,7 +456,7 @@ static void gen_level_set(struct bt_mesh_model *model,
 	switch (buf->len) {
 	case 0x00:	/* No optional fields are available */
 		tt = default_tt;
-		delay = 0;
+		delay = 0U;
 		break;
 	case 0x02:	/* Optional fields are available */
 		tt = net_buf_simple_pull_u8(buf);
@@ -470,7 +470,7 @@ static void gen_level_set(struct bt_mesh_model *model,
 		return;
 	}
 
-	*ptr_counter = 0;
+	*ptr_counter = 0U;
 	k_timer_stop(ptr_timer);
 
 	state->last_tid = tid;
@@ -535,7 +535,7 @@ static void gen_delta_set_unack(struct bt_mesh_model *model,
 	switch (buf->len) {
 	case 0x00:	/* No optional fields are available */
 		tt = default_tt;
-		delay = 0;
+		delay = 0U;
 		break;
 	case 0x02:	/* Optional fields are available */
 		tt = net_buf_simple_pull_u8(buf);
@@ -549,7 +549,7 @@ static void gen_delta_set_unack(struct bt_mesh_model *model,
 		return;
 	}
 
-	*ptr_counter = 0;
+	*ptr_counter = 0U;
 	k_timer_stop(ptr_timer);
 
 	state->last_delta = delta;
@@ -621,7 +621,7 @@ static void gen_delta_set(struct bt_mesh_model *model,
 	switch (buf->len) {
 	case 0x00:	/* No optional fields are available */
 		tt = default_tt;
-		delay = 0;
+		delay = 0U;
 		break;
 	case 0x02:	/* Optional fields are available */
 		tt = net_buf_simple_pull_u8(buf);
@@ -635,7 +635,7 @@ static void gen_delta_set(struct bt_mesh_model *model,
 		return;
 	}
 
-	*ptr_counter = 0;
+	*ptr_counter = 0U;
 	k_timer_stop(ptr_timer);
 
 	state->last_delta = delta;
@@ -701,7 +701,7 @@ static void gen_move_set_unack(struct bt_mesh_model *model,
 	switch (buf->len) {
 	case 0x00:	/* No optional fields are available */
 		tt = default_tt;
-		delay = 0;
+		delay = 0U;
 		break;
 	case 0x02:	/* Optional fields are available */
 		tt = net_buf_simple_pull_u8(buf);
@@ -715,7 +715,7 @@ static void gen_move_set_unack(struct bt_mesh_model *model,
 		return;
 	}
 
-	*ptr_counter = 0;
+	*ptr_counter = 0U;
 	k_timer_stop(ptr_timer);
 
 	state->last_delta = delta;
@@ -777,7 +777,7 @@ static void gen_move_set(struct bt_mesh_model *model,
 	switch (buf->len) {
 	case 0x00:	/* No optional fields are available */
 		tt = default_tt;
-		delay = 0;
+		delay = 0U;
 		break;
 	case 0x02:	/* Optional fields are available */
 		tt = net_buf_simple_pull_u8(buf);
@@ -791,7 +791,7 @@ static void gen_move_set(struct bt_mesh_model *model,
 		return;
 	}
 
-	*ptr_counter = 0;
+	*ptr_counter = 0U;
 	k_timer_stop(ptr_timer);
 
 	state->last_delta = delta;
@@ -1160,7 +1160,7 @@ static void light_lightness_set_unack(struct bt_mesh_model *model,
 	switch (buf->len) {
 	case 0x00:	/* No optional fields are available */
 		tt = default_tt;
-		delay = 0;
+		delay = 0U;
 		break;
 	case 0x02:	/* Optional fields are available */
 		tt = net_buf_simple_pull_u8(buf);
@@ -1174,7 +1174,7 @@ static void light_lightness_set_unack(struct bt_mesh_model *model,
 		return;
 	}
 
-	*ptr_counter = 0;
+	*ptr_counter = 0U;
 	k_timer_stop(ptr_timer);
 
 	state->last_tid = tid;
@@ -1227,7 +1227,7 @@ static void light_lightness_set(struct bt_mesh_model *model,
 	switch (buf->len) {
 	case 0x00:	/* No optional fields are available */
 		tt = default_tt;
-		delay = 0;
+		delay = 0U;
 		break;
 	case 0x02:	/* Optional fields are available */
 		tt = net_buf_simple_pull_u8(buf);
@@ -1241,7 +1241,7 @@ static void light_lightness_set(struct bt_mesh_model *model,
 		return;
 	}
 
-	*ptr_counter = 0;
+	*ptr_counter = 0U;
 	k_timer_stop(ptr_timer);
 
 	state->last_tid = tid;
@@ -1341,7 +1341,7 @@ static void light_lightness_linear_set_unack(struct bt_mesh_model *model,
 	switch (buf->len) {
 	case 0x00:	/* No optional fields are available */
 		tt = default_tt;
-		delay = 0;
+		delay = 0U;
 		break;
 	case 0x02:	/* Optional fields are available */
 		tt = net_buf_simple_pull_u8(buf);
@@ -1355,7 +1355,7 @@ static void light_lightness_linear_set_unack(struct bt_mesh_model *model,
 		return;
 	}
 
-	*ptr_counter = 0;
+	*ptr_counter = 0U;
 	k_timer_stop(ptr_timer);
 
 	state->last_tid = tid;
@@ -1401,7 +1401,7 @@ static void light_lightness_linear_set(struct bt_mesh_model *model,
 	switch (buf->len) {
 	case 0x00:	/* No optional fields are available */
 		tt = default_tt;
-		delay = 0;
+		delay = 0U;
 		break;
 	case 0x02:	/* Optional fields are available */
 		tt = net_buf_simple_pull_u8(buf);
@@ -1415,7 +1415,7 @@ static void light_lightness_linear_set(struct bt_mesh_model *model,
 		return;
 	}
 
-	*ptr_counter = 0;
+	*ptr_counter = 0U;
 	k_timer_stop(ptr_timer);
 
 	state->last_tid = tid;
@@ -1753,7 +1753,7 @@ static void light_ctl_set_unack(struct bt_mesh_model *model,
 	switch (buf->len) {
 	case 0x00:	/* No optional fields are available */
 		tt = default_tt;
-		delay = 0;
+		delay = 0U;
 		break;
 	case 0x02:	/* Optional fields are available */
 		tt = net_buf_simple_pull_u8(buf);
@@ -1767,7 +1767,7 @@ static void light_ctl_set_unack(struct bt_mesh_model *model,
 		return;
 	}
 
-	*ptr_counter = 0;
+	*ptr_counter = 0U;
 	k_timer_stop(ptr_timer);
 
 	state->last_tid = tid;
@@ -1833,7 +1833,7 @@ static void light_ctl_set(struct bt_mesh_model *model,
 	switch (buf->len) {
 	case 0x00:	/* No optional fields are available */
 		tt = default_tt;
-		delay = 0;
+		delay = 0U;
 		break;
 	case 0x02:	/* Optional fields are available */
 		tt = net_buf_simple_pull_u8(buf);
@@ -1847,7 +1847,7 @@ static void light_ctl_set(struct bt_mesh_model *model,
 		return;
 	}
 
-	*ptr_counter = 0;
+	*ptr_counter = 0U;
 	k_timer_stop(ptr_timer);
 
 	state->last_tid = tid;
@@ -2210,7 +2210,7 @@ static void light_ctl_temp_set_unack(struct bt_mesh_model *model,
 	switch (buf->len) {
 	case 0x00:	/* No optional fields are available */
 		tt = default_tt;
-		delay = 0;
+		delay = 0U;
 		break;
 	case 0x02:	/* Optional fields are available */
 		tt = net_buf_simple_pull_u8(buf);
@@ -2224,7 +2224,7 @@ static void light_ctl_temp_set_unack(struct bt_mesh_model *model,
 		return;
 	}
 
-	*ptr_counter = 0;
+	*ptr_counter = 0U;
 	k_timer_stop(ptr_timer);
 
 	state->last_tid = tid;
@@ -2286,7 +2286,7 @@ static void light_ctl_temp_set(struct bt_mesh_model *model,
 	switch (buf->len) {
 	case 0x00:	/* No optional fields are available */
 		tt = default_tt;
-		delay = 0;
+		delay = 0U;
 		break;
 	case 0x02:	/* Optional fields are available */
 		tt = net_buf_simple_pull_u8(buf);
@@ -2300,7 +2300,7 @@ static void light_ctl_temp_set(struct bt_mesh_model *model,
 		return;
 	}
 
-	*ptr_counter = 0;
+	*ptr_counter = 0U;
 	k_timer_stop(ptr_timer);
 
 	state->last_tid = tid;

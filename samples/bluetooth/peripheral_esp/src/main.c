@@ -348,7 +348,7 @@ static void ess_simulate(void)
 	}
 
 	if (!(i % INT8_MAX)) {
-		i = 0;
+		i = 0U;
 	}
 
 	i++;

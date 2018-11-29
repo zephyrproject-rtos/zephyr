@@ -97,7 +97,7 @@ void app_task(void *arg1, void *arg2, void *arg3)
 	while (k_sem_take(&channel_created, K_NO_WAIT) != 0)
 		hil_poll(proc, 0);
 
-	unsigned int message = 0;
+	unsigned int message = 0U;
 
 	while (message <= 100) {
 		message = receive_message();

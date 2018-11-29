@@ -80,7 +80,7 @@ void main(void)
 	gpio_pin_enable_callback(gpiob, PIN);
 
 	while (1) {
-		u32_t val = 0;
+		u32_t val = 0U;
 
 		gpio_pin_read(gpiob, PIN, &val);
 		k_sleep(SLEEP_TIME);

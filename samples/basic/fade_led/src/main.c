@@ -50,8 +50,8 @@
 void main(void)
 {
 	struct device *pwm_dev;
-	u32_t pulse_width = 0;
-	u8_t dir = 0;
+	u32_t pulse_width = 0U;
+	u8_t dir = 0U;
 
 	printk("PWM demo app-fade LED\n");
 
@@ -70,8 +70,8 @@ void main(void)
 
 		if (dir) {
 			if (pulse_width < FADESTEP) {
-				dir = 0;
-				pulse_width = 0;
+				dir = 0U;
+				pulse_width = 0U;
 			} else {
 				pulse_width -= FADESTEP;
 			}
@@ -79,7 +79,7 @@ void main(void)
 			pulse_width += FADESTEP;
 
 			if (pulse_width >= PERIOD) {
-				dir = 1;
+				dir = 1U;
 				pulse_width = PERIOD;
 			}
 		}

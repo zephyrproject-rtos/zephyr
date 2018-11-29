@@ -34,7 +34,7 @@ void main(void)
 	struct device *iwdg = device_get_binding("IWDG");
 	struct k_timer iwdg_timer;
 	struct wdt_config config;
-	u8_t counter = 0;
+	u8_t counter = 0U;
 
 	wdt_enable(iwdg);
 

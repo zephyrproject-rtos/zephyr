@@ -176,7 +176,7 @@ static void initialize_network(void)
 
 static bool read_led(void)
 {
-	u32_t led = 0;
+	u32_t led = 0U;
 	int r;
 
 	if (!led0) {

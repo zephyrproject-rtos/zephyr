@@ -72,7 +72,7 @@ static int cmd_dynamic_add(const struct shell *shell,
 		return -ENOEXEC;
 	}
 
-	for (idx = 0; idx < cmd_len; idx++) {
+	for (idx = 0U; idx < cmd_len; idx++) {
 		if (!isalnum((int)(argv[1][idx]))) {
 			shell_fprintf(shell, SHELL_ERROR,
 				     "bad command name - please use only"
@@ -81,7 +81,7 @@ static int cmd_dynamic_add(const struct shell *shell,
 		}
 	}
 
-	for (idx = 0; idx < MAX_CMD_CNT; idx++) {
+	for (idx = 0U; idx < MAX_CMD_CNT; idx++) {
 		if (!strcmp(dynamic_cmd_buffer[idx], argv[1])) {
 			shell_fprintf(shell, SHELL_ERROR,
 				      "duplicated command\r\n");

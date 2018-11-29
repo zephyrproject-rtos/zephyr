@@ -471,7 +471,7 @@ static void button_cnt_timer(struct k_timer *work)
 	button_sw->onoff_state = button_press_cnt == 1 ? 1 : 0;
 	printk("button_press_cnt 0x%02x onoff_state 0x%02x\n",
 	       button_press_cnt, button_sw->onoff_state);
-	button_press_cnt = 0;
+	button_press_cnt = 0U;
 	k_work_submit(&sw.button_work);
 }
 

@@ -1356,14 +1356,14 @@ static void calculate_edges(void)
 {
 	u8_t i, j, k;
 
-	k = 0;
+	k = 0U;
 
-	for (i = 1; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
+	for (i = 1U; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
 		if (!topology.nodes[i].used) {
 			continue;
 		}
 
-		for (j = 0; j < CONFIG_NET_IPV6_MAX_NEIGHBORS; j++) {
+		for (j = 0U; j < CONFIG_NET_IPV6_MAX_NEIGHBORS; j++) {
 			if (!topology.nodes[j].used) {
 				continue;
 			}
@@ -1408,7 +1408,7 @@ static int send_topology_information(struct http_ctx *ctx,
 		goto out;
 	}
 
-	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
+	for (i = 0U; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
 		if (!topology.nodes[i].used) {
 			continue;
 		}
@@ -1447,7 +1447,7 @@ static int send_topology_information(struct http_ctx *ctx,
 		goto out;
 	}
 
-	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
+	for (i = 0U; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
 		if (!topology.edges[i].used) {
 			continue;
 		}

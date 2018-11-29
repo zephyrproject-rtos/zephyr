@@ -76,7 +76,7 @@ static void read_and_echo_data(struct device *dev, int *bytes_read)
 void main(void)
 {
 	struct device *dev;
-	u32_t baudrate, bytes_read, dtr = 0;
+	u32_t baudrate, bytes_read, dtr = 0U;
 	int ret;
 
 	dev = device_get_binding(CONFIG_CDC_ACM_PORT_NAME);

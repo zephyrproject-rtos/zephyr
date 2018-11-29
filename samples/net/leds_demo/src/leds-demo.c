@@ -106,7 +106,7 @@ static int well_known_core_get(struct coap_resource *resource,
 
 static bool read_led(void)
 {
-	u32_t led = 0;
+	u32_t led = 0U;
 	int r;
 
 	if (!led0) {
@@ -208,7 +208,7 @@ static int led_post(struct coap_resource *resource,
 	u32_t led;
 	int r;
 
-	led = 0;
+	led = 0U;
 	frag = net_frag_skip(request->frag, request->offset, &offset,
 			     request->hdr_len + request->opt_len);
 	if (!frag && offset == 0xffff) {
@@ -222,7 +222,7 @@ static int led_post(struct coap_resource *resource,
 		led = !led;
 	} else {
 		if (payload == 0x31) {
-			led = 1;
+			led = 1U;
 		}
 	}
 
@@ -294,7 +294,7 @@ static int led_put(struct coap_resource *resource,
 	u32_t led;
 	int r;
 
-	led = 0;
+	led = 0U;
 	frag = net_frag_skip(request->frag, request->offset, &offset,
 			     request->hdr_len + request->opt_len);
 	if (!frag && offset == 0xffff) {
@@ -308,7 +308,7 @@ static int led_put(struct coap_resource *resource,
 		led = !led;
 	} else {
 		if (payload == 0x31) {
-			led = 1;
+			led = 1U;
 		}
 	}
 
@@ -463,7 +463,7 @@ static void udp_receive(struct net_context *context,
 {
 	struct coap_packet request;
 	struct coap_option options[16] = { 0 };
-	u8_t opt_num = 16;
+	u8_t opt_num = 16U;
 	int r;
 
 	r = coap_packet_parse(&request, pkt, options, opt_num);

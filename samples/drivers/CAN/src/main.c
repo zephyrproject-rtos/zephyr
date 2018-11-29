@@ -71,7 +71,7 @@ void send_string(char *string, struct device *can_dev)
 void tx_thread(void *can_dev_param, void *unused2, void *unused3)
 {
 	u8_t toggle = SET_LED;
-	u16_t button_press_cnt = 0;
+	u16_t button_press_cnt = 0U;
 	struct can_msg msg;
 	struct can_msg msg_button_cnt;
 	struct device *can_dev = can_dev_param;
