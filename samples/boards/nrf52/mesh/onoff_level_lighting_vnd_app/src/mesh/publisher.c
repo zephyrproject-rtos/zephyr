@@ -40,7 +40,7 @@ void randomize_publishers_TID(void)
 
 static u32_t button_read(struct device *port, u32_t pin)
 {
-	u32_t val = 0;
+	u32_t val = 0U;
 
 	gpio_pin_read(port, pin, &val);
 	return val;

@@ -125,7 +125,7 @@ static enum net_verdict parse_lldp(struct net_if *iface, struct net_pkt *pkt)
 {
 	size_t len = net_pkt_get_len(pkt);
 	struct net_buf *frag = pkt->frags;
-	u16_t pos = 0;
+	u16_t pos = 0U;
 
 	NET_DBG("iface %p Parsing LLDP, len %u", iface, len);
 

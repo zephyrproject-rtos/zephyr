@@ -193,7 +193,7 @@ end:
 
 static int send_simple_coap_msgs_and_wait_for_reply(void)
 {
-	u8_t test_type = 0;
+	u8_t test_type = 0U;
 	int r;
 
 	while (1) {
@@ -561,7 +561,7 @@ end:
 
 static int register_observer(void)
 {
-	u8_t counter = 0;
+	u8_t counter = 0U;
 	int r;
 
 	while (1) {

@@ -228,7 +228,7 @@ static void sens_unknown_fill(u16_t id, struct net_buf_simple *msg)
 	 * that property shall be omitted. (Mesh model spec 1.0, 4.2.14)
 	 */
 	hdr.format = SENSOR_HDR_A;
-	hdr.length = 0;
+	hdr.length = 0U;
 	hdr.prop_id = id;
 
 	net_buf_simple_add_mem(msg, &hdr, sizeof(hdr));

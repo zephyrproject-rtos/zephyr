@@ -235,7 +235,7 @@ on_context_recv(struct net_app_ctx *ctx, struct net_pkt *pkt,
 		int status, void *data)
 {
 	struct net_buf *tmp;
-	u16_t pos = 0;
+	u16_t pos = 0U;
 
 	if (!pkt) {
 		/* TODO: notify of disconnection, maybe reconnect? */
@@ -259,7 +259,7 @@ on_context_recv(struct net_app_ctx *ctx, struct net_pkt *pkt,
 		if (cmd_len >= CMD_BUFFER_SIZE) {
 			NET_WARN("cmd_buf overrun (>%d) Ignoring",
 				 CMD_BUFFER_SIZE);
-			cmd_len = 0;
+			cmd_len = 0U;
 		}
 
 		tmp = net_frag_read(tmp, pos, &pos, 1, cmd_buf + cmd_len);
@@ -268,7 +268,7 @@ on_context_recv(struct net_app_ctx *ctx, struct net_pkt *pkt,
 			process_command((char *)cmd_buf, cmd_len);
 			/* skip the \n after \r */
 			tmp = net_frag_read(tmp, pos, &pos, 1, NULL);
-			cmd_len = 0;
+			cmd_len = 0U;
 		} else {
 			cmd_len++;
 		}
@@ -402,7 +402,7 @@ static int
 zirc_disconnect(void)
 {
 	NET_INFO("Disconnecting");
-	cmd_len = 0;
+	cmd_len = 0U;
 	net_app_close(&app_ctx);
 	return net_app_release(&app_ctx);
 }
@@ -495,7 +495,7 @@ on_cmd_random(char *chan_name, const char *nick, const char *msg)
 static bool
 read_led(void)
 {
-	u32_t led = 0;
+	u32_t led = 0U;
 	int r;
 
 	if (!led0) {
@@ -643,7 +643,7 @@ void main(void)
 		gpio_pin_configure(led0, LED_PIN, GPIO_DIR_OUT);
 	}
 
-	cmd_len = 0;
+	cmd_len = 0U;
 
 	/* setup IRC nick for max 16 chars */
 	ret = snprintk(nick_buf, sizeof(nick_buf), "zephyrbot%05u",

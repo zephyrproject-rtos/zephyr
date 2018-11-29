@@ -353,7 +353,7 @@ static void shell_udp_upload_print_stats(const struct shell *shell,
 				  (u64_t)8 * (u64_t)USEC_PER_SEC) /
 				 ((u64_t)results->time_in_us * 1024));
 		} else {
-			rate_in_kbps = 0;
+			rate_in_kbps = 0U;
 		}
 
 		if (results->client_time_in_us != 0) {
@@ -363,7 +363,7 @@ static void shell_udp_upload_print_stats(const struct shell *shell,
 				  (u64_t)USEC_PER_SEC) /
 				 ((u64_t)results->client_time_in_us * 1024));
 		} else {
-			client_rate_in_kbps = 0;
+			client_rate_in_kbps = 0U;
 		}
 
 		if (!rate_in_kbps) {
@@ -419,7 +419,7 @@ static void shell_tcp_upload_print_stats(const struct shell *shell,
 				  (u64_t)USEC_PER_SEC) /
 				 ((u64_t)results->client_time_in_us * 1024));
 		} else {
-			client_rate_in_kbps = 0;
+			client_rate_in_kbps = 0U;
 		}
 
 		shell_fprintf(shell, SHELL_NORMAL, "Duration:\t");
@@ -785,7 +785,7 @@ static int shell_cmd_upload(const struct shell *shell, size_t argc,
 	if (argc > 4) {
 		packet_size = parse_number(argv[start + 4], K, K_UNIT);
 	} else {
-		packet_size = 256;
+		packet_size = 256U;
 	}
 
 	if (argc > 5) {
@@ -793,7 +793,7 @@ static int shell_cmd_upload(const struct shell *shell, size_t argc,
 			(parse_number(argv[start + 5], K, K_UNIT) +
 			 1023) / 1024;
 	} else {
-		rate_in_kbps = 10;
+		rate_in_kbps = 10U;
 	}
 
 	return execute_upload(shell, context6, context4, family, &ipv6, &ipv4,
@@ -904,7 +904,7 @@ static int shell_cmd_upload2(const struct shell *shell, size_t argc,
 	if (argc > 3) {
 		packet_size = parse_number(argv[start + 3], K, K_UNIT);
 	} else {
-		packet_size = 256;
+		packet_size = 256U;
 	}
 
 	if (argc > 4) {
@@ -912,7 +912,7 @@ static int shell_cmd_upload2(const struct shell *shell, size_t argc,
 			(parse_number(argv[start + 4], K, K_UNIT) + 1023) /
 			1024;
 	} else {
-		rate_in_kbps = 10;
+		rate_in_kbps = 10U;
 	}
 
 	return execute_upload(shell, context6, context4, family, &in6_addr_dst,

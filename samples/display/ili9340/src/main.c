@@ -92,7 +92,7 @@ void main(void)
 		 */
 		(void)memset(buf, 0, buf_size);
 		for (size_t idx = color; idx < buf_size; idx += 3) {
-			*(buf + idx) = 255;
+			*(buf + idx) = 255U;
 		}
 		switch (cnt % 4) {
 		case 0:

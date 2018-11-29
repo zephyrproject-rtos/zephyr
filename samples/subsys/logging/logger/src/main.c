@@ -191,8 +191,8 @@ static void performance_showcase(void)
 	volatile u32_t current_timestamp;
 	volatile u32_t start_timestamp;
 	u32_t per_sec;
-	u32_t cnt = 0;
-	u32_t window = 2;
+	u32_t cnt = 0U;
+	u32_t window = 2U;
 
 	printk("Logging performance showcase.\n");
 

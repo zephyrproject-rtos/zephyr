@@ -37,7 +37,7 @@ void main(void)
 	char *slash = strstr(prefix_str, "/");
 
 	if (!slash) {
-		prefix_len = 64;
+		prefix_len = 64U;
 	} else {
 		*slash = '\0';
 		prefix_len = atoi(slash + 1);

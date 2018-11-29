@@ -576,7 +576,7 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 void main(void)
 {
 	struct device *dev;
-	u32_t baudrate, dtr = 0;
+	u32_t baudrate, dtr = 0U;
 	int ret;
 
 	dev = device_get_binding(CONFIG_CDC_ACM_PORT_NAME);

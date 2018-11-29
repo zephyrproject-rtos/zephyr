@@ -120,7 +120,7 @@ static void payload_dump(const char *s, struct net_buf *frag,
 	while (frag) {
 		net_hexdump("", frag->data + offset, frag->len - offset);
 		frag = frag->frags;
-		offset = 0;
+		offset = 0U;
 	}
 }
 
@@ -1236,7 +1236,7 @@ static void udp_receive(struct net_context *context,
 	struct coap_pending *pending;
 	struct sockaddr_in6 from;
 	struct coap_option options[16] = { 0 };
-	u8_t opt_num = 16;
+	u8_t opt_num = 16U;
 	int r;
 
 	r = coap_packet_parse(&request, pkt, options, opt_num);

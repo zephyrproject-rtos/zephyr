@@ -128,7 +128,7 @@ int periphs_init(void)
 	unsigned int i;
 
 	/* Bind sensors */
-	for (i = 0; i < ARRAY_SIZE(dev_info); i++) {
+	for (i = 0U; i < ARRAY_SIZE(dev_info); i++) {
 		dev_info[i].dev = device_get_binding(dev_info[i].name);
 		if (dev_info[i].dev == NULL) {
 			printk("Failed to get %s device\n", dev_info[i].name);
@@ -137,7 +137,7 @@ int periphs_init(void)
 	}
 
 	/* Bind leds */
-	for (i = 0; i < ARRAY_SIZE(led_dev_info); i++) {
+	for (i = 0U; i < ARRAY_SIZE(led_dev_info); i++) {
 		led_dev_info[i].dev = device_get_binding(led_dev_info[i].name);
 		if (led_dev_info[i].dev == NULL) {
 			printk("Failed to get %s led device\n",

@@ -1320,7 +1320,7 @@ static void process_coap_request(u8_t *data, u16_t data_len,
 	struct coap_packet request;
 	struct coap_pending *pending;
 	struct coap_option options[16] = { 0 };
-	u8_t opt_num = 16;
+	u8_t opt_num = 16U;
 	u8_t type;
 	int r;
 

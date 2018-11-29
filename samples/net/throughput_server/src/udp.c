@@ -161,7 +161,7 @@ static void udp_received(struct net_app_ctx *ctx,
 	/* Print statistics only periodically */
 	if (count > STATS_CHECK) {
 		print_statistics();
-		count = 0;
+		count = 0U;
 	}
 
 	count++;

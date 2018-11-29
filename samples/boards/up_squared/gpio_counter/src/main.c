@@ -108,7 +108,7 @@ void main(void)
 	gpio_pin_enable_callback(gpiodev, intr_pin.pin);
 
 	/* main loop */
-	val = 0;
+	val = 0U;
 	while (1) {
 		printk("counter: 0x%x\n", val);
 

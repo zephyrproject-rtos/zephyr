@@ -50,7 +50,7 @@ static int dump_payload(const struct coap_packet *response)
 	while (frag) {
 		net_hexdump("", frag->data + offset, frag->len - offset);
 		frag = frag->frags;
-		offset = 0;
+		offset = 0U;
 	}
 
 	printk("\n");

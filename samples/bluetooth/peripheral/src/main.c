@@ -79,7 +79,7 @@ static void indicate_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			u8_t err)
 {
 	printk("Indication %s\n", err != 0 ? "fail" : "success");
-	indicating = 0;
+	indicating = 0U;
 }
 
 #define MAX_DATA 74
@@ -339,7 +339,7 @@ void main(void)
 			ind_params.len = sizeof(indicating);
 
 			if (bt_gatt_indicate(NULL, &ind_params) == 0) {
-				indicating = 1;
+				indicating = 1U;
 			}
 		}
 	}

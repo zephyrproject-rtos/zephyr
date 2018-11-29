@@ -196,7 +196,7 @@ static int add_hello(u16_t addr, const char *name)
 		if (!stat->addr) {
 			stat->addr = addr;
 			strncpy(stat->name, name, sizeof(stat->name) - 1);
-			stat->hello_count = 1;
+			stat->hello_count = 1U;
 			stat_count++;
 			return i;
 		}
@@ -226,7 +226,7 @@ static int add_heartbeat(u16_t addr, u8_t hops)
 
 		if (!stat->addr) {
 			stat->addr = addr;
-			stat->heartbeat_count = 1;
+			stat->heartbeat_count = 1U;
 			stat->min_hops = hops;
 			stat->max_hops = hops;
 			stat_count++;
@@ -346,8 +346,8 @@ static void show_statistics(void)
 static void show_sensors_data(s32_t interval)
 {
 	struct sensor_value val[3];
-	u8_t line = 0;
-	u16_t len = 0;
+	u8_t line = 0U;
+	u16_t len = 0U;
 
 	cfb_framebuffer_clear(epd_dev, false);
 

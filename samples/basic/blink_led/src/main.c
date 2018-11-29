@@ -53,7 +53,7 @@ void main(void)
 {
 	struct device *pwm_dev;
 	u32_t period = MAX_PERIOD;
-	u8_t dir = 0;
+	u8_t dir = 0U;
 
 	printk("PWM demo app-blink LED\n");
 
@@ -74,14 +74,14 @@ void main(void)
 			period *= 2;
 
 			if (period > MAX_PERIOD) {
-				dir = 0;
+				dir = 0U;
 				period = MAX_PERIOD;
 			}
 		} else {
 			period /= 2;
 
 			if (period < MIN_PERIOD) {
-				dir = 1;
+				dir = 1U;
 				period = MIN_PERIOD;
 			}
 		}

@@ -24,7 +24,7 @@
 
 static struct bt_gatt_ccc_cfg hrmc_ccc_cfg[BT_GATT_CCC_MAX] = {};
 static u8_t simulate_hrm;
-static u8_t heartrate = 90;
+static u8_t heartrate = 90U;
 static u8_t hrs_blsc;
 
 static void hrmc_ccc_cfg_changed(const struct bt_gatt_attr *attr,
@@ -72,7 +72,7 @@ void hrs_notify(void)
 
 	heartrate++;
 	if (heartrate == 160) {
-		heartrate = 90;
+		heartrate = 90U;
 	}
 
 	hrm[0] = 0x06; /* uint8, sensor contact */

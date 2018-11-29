@@ -68,7 +68,7 @@ get_coap_request_by_type(const struct sockaddr_in6 *peer,
 {
 	u8_t i;
 
-	for (i = 0; i < MAX_COAP_REQUESTS; i++) {
+	for (i = 0U; i < MAX_COAP_REQUESTS; i++) {
 		if (!requests[i].used) {
 			continue;
 		}
@@ -88,7 +88,7 @@ get_coap_request_by_id(const struct sockaddr_in6 *peer, u16_t id)
 {
 	u8_t i;
 
-	for (i = 0; i < MAX_COAP_REQUESTS; i++) {
+	for (i = 0U; i < MAX_COAP_REQUESTS; i++) {
 		if (!requests[i].used) {
 			continue;
 		}
@@ -108,7 +108,7 @@ get_coap_request_by_addr(const struct in6_addr *peer)
 {
 	u8_t i;
 
-	for (i = 0; i < MAX_COAP_REQUESTS; i++) {
+	for (i = 0U; i < MAX_COAP_REQUESTS; i++) {
 		if (!requests[i].used) {
 			continue;
 		}
@@ -141,9 +141,9 @@ static void clear_coap_request(struct coap_request *request)
 	}
 
 	request->type = COAP_REQ_NONE;
-	request->id = 0;
-	request->code = 0;
-	request->count = 0;
+	request->id = 0U;
+	request->code = 0U;
+	request->count = 0U;
 	request->used = false;
 	request->cb = NULL;
 	request->user_data = NULL;
@@ -293,7 +293,7 @@ static void add_nbr_to_topology(struct in6_addr *nbr)
 		return;
 	}
 
-	topology.nodes[0].id = 1;
+	topology.nodes[0].id = 1U;
 	topology.nodes[0].used = true;
 	snprintk(topology.nodes[0].label, sizeof(topology.nodes[0].label),
 		 "NBR");
@@ -305,7 +305,7 @@ static void add_node_to_topology(struct in6_addr *node)
 	u8_t i;
 
 	/* BR takes 'id : 1', so node's id starts from 2 */
-	for (i = 1; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
+	for (i = 1U; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
 		if (topology.nodes[i].used) {
 			continue;
 		}
@@ -328,7 +328,7 @@ static void update_node_topology(struct in6_addr *node,
 {
 	u8_t i;
 
-	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
+	for (i = 0U; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
 		if (!topology.nodes[i].used) {
 			continue;
 		}
@@ -348,7 +348,7 @@ static void remove_node_from_topology(struct in6_addr *node)
 {
 	u8_t i;
 
-	for (i = 1; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
+	for (i = 1U; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
 		if (!topology.nodes[i].used) {
 			continue;
 		}
@@ -409,7 +409,7 @@ static void node_obs_reply(struct coap_packet *response, void *user_data)
 		return;
 	}
 
-	i = 0;
+	i = 0U;
 	offset = COAP_REPLY_PARENT;
 	while (payload[offset] != '\n') {
 		parent_str[i++] = payload[offset++];
@@ -429,7 +429,7 @@ static void node_obs_reply(struct coap_packet *response, void *user_data)
 	}
 
 	offset = COAP_REPLY_PARENT + i + COAP_REPLY_RANK;
-	i = 0;
+	i = 0U;
 	while (offset < len) {
 		rank_str[i++] = payload[offset++];
 	}
@@ -463,7 +463,7 @@ static void pkt_receive(struct net_context *context,
 	u16_t id;
 	u8_t type;
 	u8_t code;
-	u8_t opt_num = 4;
+	u8_t opt_num = 4U;
 	int r;
 
 	r = coap_packet_parse(&response, pkt, options, opt_num);
@@ -564,7 +564,7 @@ void coap_send_request(struct in6_addr *peer_addr,
 	net_ipaddr_copy(&request->peer.sin6_addr, &peer.sin6_addr);
 
 	request->id = coap_next_id();
-	request->count = 1;
+	request->count = 1U;
 	request->type = type;
 	request->cb = cb;
 	request->user_data = user_data;
@@ -595,7 +595,7 @@ int coap_init(void)
 		return -EINVAL;
 	}
 
-	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
+	for (i = 0U; i < NET_IF_MAX_IPV6_ADDR; i++) {
 		if (iface->config.ip.ipv6->unicast[i].is_used) {
 			break;
 		}

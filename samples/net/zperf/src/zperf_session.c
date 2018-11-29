@@ -113,12 +113,12 @@ void zperf_reset_session_stats(struct session *session)
 		return;
 	}
 
-	session->counter = 0;
-	session->start_time = 0;
-	session->next_id = 0;
-	session->length = 0;
-	session->outorder = 0;
-	session->error = 0;
+	session->counter = 0U;
+	session->start_time = 0U;
+	session->next_id = 0U;
+	session->length = 0U;
+	session->outorder = 0U;
+	session->error = 0U;
 	session->jitter = 0;
 	session->last_transit_time = 0;
 }
