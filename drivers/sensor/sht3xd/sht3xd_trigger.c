@@ -195,7 +195,8 @@ int sht3xd_init_interrupt(struct device *dev)
 	}
 
 	gpio_pin_configure(drv_data->gpio, DT_SHT3XD_GPIO_ALERT_PIN,
-			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_LEVEL |
+			   GPIO_DIR_IN | GPIO_INT |
+			   GPIO_INT_EDGE | GPIO_INT_DOUBLE_EDGE |
 			   GPIO_INT_ACTIVE_HIGH | GPIO_INT_DEBOUNCE);
 
 	gpio_init_callback(&drv_data->gpio_cb,
