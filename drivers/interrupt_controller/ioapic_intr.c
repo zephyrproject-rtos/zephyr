@@ -176,7 +176,7 @@ void store_flags(unsigned int irq, u32_t flags)
 
 u32_t restore_flags(unsigned int irq)
 {
-	u32_t flags = 0;
+	u32_t flags = 0U;
 
 	if (sys_bitfield_test_bit((mem_addr_t) ioapic_suspend_buf,
 		BIT_POS_FOR_IRQ_OPTION(irq, IOAPIC_BITFIELD_HI_LO))) {

@@ -93,7 +93,7 @@ static int bmc150_magn_set_odr(struct device *dev, u8_t val)
 	const struct bmc150_magn_config *config = dev->config->config_info;
 	u8_t i;
 
-	for (i = 0; i < ARRAY_SIZE(bmc150_magn_samp_freq_table); ++i) {
+	for (i = 0U; i < ARRAY_SIZE(bmc150_magn_samp_freq_table); ++i) {
 		if (val <= bmc150_magn_samp_freq_table[i].freq) {
 			return i2c_reg_update_byte(data->i2c_master,
 						config->i2c_slave_addr,
@@ -184,7 +184,7 @@ static int bmc150_magn_read_odr(struct device *dev)
 
 	odr_val = (reg_val & BMC150_MAGN_MASK_ODR) >> BMC150_MAGN_SHIFT_ODR;
 
-	for (i = 0; i < ARRAY_SIZE(bmc150_magn_samp_freq_table); ++i) {
+	for (i = 0U; i < ARRAY_SIZE(bmc150_magn_samp_freq_table); ++i) {
 		if (bmc150_magn_samp_freq_table[i].reg_val == odr_val) {
 			data->odr = bmc150_magn_samp_freq_table[i].freq;
 			return 0;

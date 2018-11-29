@@ -129,7 +129,7 @@ static void bme280_compensate_press(struct bme280_data *data, s32_t adc_press)
 
 	/* Avoid exception caused by division by zero. */
 	if (var1 == 0) {
-		data->comp_press = 0;
+		data->comp_press = 0U;
 		return;
 	}
 

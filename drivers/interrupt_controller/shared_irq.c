@@ -29,7 +29,7 @@ static int isr_register(struct device *dev, isr_t isr_func,
 	const struct shared_irq_config *config = dev->config->config_info;
 	u32_t i;
 
-	for (i = 0; i < config->client_count; i++) {
+	for (i = 0U; i < config->client_count; i++) {
 		if (!clients->client[i].isr_dev) {
 			clients->client[i].isr_dev = isr_dev;
 			clients->client[i].isr_func = isr_func;
@@ -50,7 +50,7 @@ static inline int enable(struct device *dev, struct device *isr_dev)
 	const struct shared_irq_config *config = dev->config->config_info;
 	u32_t i;
 
-	for (i = 0; i < config->client_count; i++) {
+	for (i = 0U; i < config->client_count; i++) {
 		if (clients->client[i].isr_dev == isr_dev) {
 			clients->client[i].enabled = 1;
 			irq_enable(config->irq_num);
@@ -64,7 +64,7 @@ static int last_enabled_isr(struct shared_irq_runtime *clients, int count)
 {
 	u32_t i;
 
-	for (i = 0; i < count; i++) {
+	for (i = 0U; i < count; i++) {
 		if (clients->client[i].enabled) {
 			return 0;
 		}
@@ -82,7 +82,7 @@ static inline int disable(struct device *dev, struct device *isr_dev)
 	const struct shared_irq_config *config = dev->config->config_info;
 	u32_t i;
 
-	for (i = 0; i < config->client_count; i++) {
+	for (i = 0U; i < config->client_count; i++) {
 		if (clients->client[i].isr_dev == isr_dev) {
 			clients->client[i].enabled = 0;
 			if (last_enabled_isr(clients, config->client_count)) {
@@ -100,7 +100,7 @@ void shared_irq_isr(struct device *dev)
 	const struct shared_irq_config *config = dev->config->config_info;
 	u32_t i;
 
-	for (i = 0; i < config->client_count; i++) {
+	for (i = 0U; i < config->client_count; i++) {
 		if (clients->client[i].isr_dev) {
 			clients->client[i].isr_func(clients->client[i].isr_dev);
 		}

@@ -183,8 +183,8 @@ static int max30101_init(struct device *dev)
 #endif
 
 	/* Initialize the channel map and active channel count */
-	data->num_channels = 0;
-	for (led_chan = 0; led_chan < MAX30101_MAX_NUM_CHANNELS; led_chan++) {
+	data->num_channels = 0U;
+	for (led_chan = 0U; led_chan < MAX30101_MAX_NUM_CHANNELS; led_chan++) {
 		data->map[led_chan] = MAX30101_MAX_NUM_CHANNELS;
 	}
 

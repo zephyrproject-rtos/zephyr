@@ -65,7 +65,7 @@ static int imx_gpio_configure(struct device *dev,
 		GPIO_Init(config->base, &pin_config);
 		GPIO_SetIntEdgeSelect(config->base, pin, double_edge);
 	} else {	/* GPIO_ACCESS_BY_PORT */
-		for (i = 0; i < 32; i++) {
+		for (i = 0U; i < 32; i++) {
 			pin_config.pin = i;
 			GPIO_Init(config->base, &pin_config);
 			GPIO_SetIntEdgeSelect(config->base, i, double_edge);
@@ -126,7 +126,7 @@ static int imx_gpio_enable_callback(struct device *dev,
 		GPIO_SetPinIntMode(config->base, pin, true);
 	} else {
 		data->pin_callback_enables = 0xFFFFFFFF;
-		for (i = 0; i < 32; i++) {
+		for (i = 0U; i < 32; i++) {
 			GPIO_SetPinIntMode(config->base, i, true);
 		}
 	}
@@ -145,10 +145,10 @@ static int imx_gpio_disable_callback(struct device *dev,
 		GPIO_SetPinIntMode(config->base, pin, false);
 		data->pin_callback_enables &= ~BIT(pin);
 	} else {
-		for (i = 0; i < 32; i++) {
+		for (i = 0U; i < 32; i++) {
 			GPIO_SetPinIntMode(config->base, i, false);
 		}
-		data->pin_callback_enables = 0;
+		data->pin_callback_enables = 0U;
 	}
 
 	return 0;

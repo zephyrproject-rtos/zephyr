@@ -127,7 +127,7 @@ DEVICE_DEFINE(i2c_ss_0, DT_I2C_SS_0_NAME, i2c_qmsi_ss_init,
 
 static void i2c_qmsi_ss_config_irq_0(void)
 {
-	u32_t mask = 0;
+	u32_t mask = 0U;
 
 	/* Need to unmask the interrupts in System Control Subsystem (SCSS)
 	 * so the interrupt controller can route these interrupts to
@@ -184,7 +184,7 @@ DEVICE_DEFINE(i2c_ss_1, DT_I2C_SS_1_NAME, i2c_qmsi_ss_init,
 
 static void i2c_qmsi_ss_config_irq_1(void)
 {
-	u32_t mask = 0;
+	u32_t mask = 0U;
 
 	/* Need to unmask the interrupts in System Control Subsystem (SCSS)
 	 * so the interrupt controller can route these interrupts to

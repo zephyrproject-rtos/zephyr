@@ -135,7 +135,7 @@ static int __parse_ipv4_address(char *str, char *ssid, u8_t ip[4])
 	while (*str) {
 		if (byte == -1) {
 			if (!strncmp(str, ssid, strlen(ssid))) {
-				byte = 0;
+				byte = 0U;
 				str += strlen(ssid);
 			}
 			str++;

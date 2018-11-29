@@ -39,8 +39,8 @@ static int dw_ictl_initialize(struct device *port)
 			(struct dw_ictl_registers *)dw->base_addr;
 
 	/* disable all interrupts */
-	regs->irq_inten_l = 0;
-	regs->irq_inten_h = 0;
+	regs->irq_inten_l = 0U;
+	regs->irq_inten_h = 0U;
 
 	return 0;
 }

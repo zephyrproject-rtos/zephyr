@@ -165,8 +165,8 @@ out:
 		net_pkt_unref(pkt);
 flush:
 		upipe->rx = false;
-		upipe->rx_len = 0;
-		upipe->rx_off = 0;
+		upipe->rx_len = 0U;
+		upipe->rx_off = 0U;
 	}
 done:
 	*off = 0;
@@ -284,7 +284,7 @@ static int upipe_tx(struct device *dev,
 	data = len;
 	uart_pipe_send(&data, 1);
 
-	for (i = 0; i < len; i++) {
+	for (i = 0U; i < len; i++) {
 		uart_pipe_send(pkt_buf+i, 1);
 	}
 

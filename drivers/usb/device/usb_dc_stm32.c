@@ -365,13 +365,13 @@ static int usb_dc_stm32_init(void)
 	/* Start PMA configuration for the endpoints after the BTABLE. */
 	usb_dc_stm32_state.pma_offset = USB_BTABLE_SIZE;
 
-	for (i = 0; i < DT_USB_NUM_BIDIR_ENDPOINTS; i++) {
+	for (i = 0U; i < DT_USB_NUM_BIDIR_ENDPOINTS; i++) {
 		k_sem_init(&usb_dc_stm32_state.in_ep_state[i].write_sem, 1, 1);
 	}
 #else /* USB_OTG_FS */
 	/* TODO: make this dynamic (depending usage) */
 	HAL_PCDEx_SetRxFiFo(&usb_dc_stm32_state.pcd, FIFO_EP_WORDS);
-	for (i = 0; i < DT_USB_NUM_BIDIR_ENDPOINTS; i++) {
+	for (i = 0U; i < DT_USB_NUM_BIDIR_ENDPOINTS; i++) {
 		HAL_PCDEx_SetTxFiFo(&usb_dc_stm32_state.pcd, i,
 				    FIFO_EP_WORDS);
 		k_sem_init(&usb_dc_stm32_state.in_ep_state[i].write_sem, 1, 1);
@@ -595,7 +595,7 @@ int usb_dc_ep_set_stall(const u8_t ep)
 		return -EIO;
 	}
 
-	ep_state->ep_stalled = 1;
+	ep_state->ep_stalled = 1U;
 
 	return 0;
 }
@@ -618,8 +618,8 @@ int usb_dc_ep_clear_stall(const u8_t ep)
 		return -EIO;
 	}
 
-	ep_state->ep_stalled = 0;
-	ep_state->read_count = 0;
+	ep_state->ep_stalled = 0U;
+	ep_state->read_count = 0U;
 
 	return 0;
 }
@@ -884,7 +884,7 @@ void HAL_PCD_SetupStageCallback(PCD_HandleTypeDef *hpcd)
 
 	ep_state = usb_dc_stm32_get_ep_state(EP0_OUT); /* can't fail for ep0 */
 	ep_state->read_count = SETUP_SIZE;
-	ep_state->read_offset = 0;
+	ep_state->read_offset = 0U;
 	memcpy(&usb_dc_stm32_state.ep_buf[EP0_IDX],
 	       usb_dc_stm32_state.pcd.Setup, ep_state->read_count);
 
@@ -914,7 +914,7 @@ void HAL_PCD_DataOutStageCallback(PCD_HandleTypeDef *hpcd, u8_t epnum)
 	 * for the upper stack (usb_dc_ep_read to retrieve).
 	 */
 	usb_dc_ep_get_read_count(ep, &ep_state->read_count);
-	ep_state->read_offset = 0;
+	ep_state->read_offset = 0U;
 
 	if (ep_state->cb) {
 		ep_state->cb(ep, USB_DC_EP_DATA_OUT);

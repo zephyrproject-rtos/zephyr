@@ -134,11 +134,11 @@ static int ili9340_write(const struct device *dev, const u16_t x,
 	ili9340_set_mem_area(data, x, y, desc->width, desc->height);
 
 	if (desc->pitch > desc->width) {
-		write_h = 1;
+		write_h = 1U;
 		nbr_of_writes = desc->height;
 	} else {
 		write_h = desc->height;
-		nbr_of_writes = 1;
+		nbr_of_writes = 1U;
 	}
 
 	ili9340_transmit(data, ILI9340_CMD_MEM_WRITE,
@@ -148,7 +148,7 @@ static int ili9340_write(const struct device *dev, const u16_t x,
 	tx_bufs.count = 1;
 
 	write_data_start += (3 * desc->pitch);
-	for (write_cnt = 1; write_cnt < nbr_of_writes; ++write_cnt) {
+	for (write_cnt = 1U; write_cnt < nbr_of_writes; ++write_cnt) {
 		tx_buf.buf = (void *)write_data_start;
 		tx_buf.len = 3 * desc->width * write_h;
 		spi_write(data->spi_dev, &data->spi_config, &tx_bufs);

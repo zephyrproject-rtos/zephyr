@@ -83,7 +83,7 @@ static void i2c_mcux_master_transfer_callback(I2C_Type *base,
 
 static u32_t i2c_mcux_convert_flags(int msg_flags)
 {
-	u32_t flags = 0;
+	u32_t flags = 0U;
 
 	if (!(msg_flags & I2C_MSG_STOP)) {
 		flags |= kI2C_TransferNoStopFlag;

@@ -320,7 +320,7 @@ static void uarte_nrfx_poll_out(struct device *dev,
 
 static int uarte_nrfx_err_check(struct device *dev)
 {
-	u32_t error = 0;
+	u32_t error = 0U;
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 
 	if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ERROR)) {

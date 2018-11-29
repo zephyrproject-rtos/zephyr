@@ -54,7 +54,7 @@ int tmp007_reg_write(struct tmp007_data *drv_data, u8_t reg, u16_t val)
 int tmp007_reg_update(struct tmp007_data *drv_data, u8_t reg,
 		      u16_t mask, u16_t val)
 {
-	u16_t old_val = 0;
+	u16_t old_val = 0U;
 	u16_t new_val;
 
 	if (tmp007_reg_read(drv_data, reg, &old_val) < 0) {

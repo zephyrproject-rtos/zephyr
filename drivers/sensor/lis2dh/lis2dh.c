@@ -54,7 +54,7 @@ int lis2dh_reg_field_update(struct device *dev, u8_t reg_addr,
 	u8_t old_val;
 
 	/* just to remove gcc warning */
-	old_val = 0;
+	old_val = 0U;
 
 	status = lis2dh_reg_read_byte(dev, reg_addr, &old_val);
 	if (status < 0) {

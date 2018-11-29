@@ -82,7 +82,7 @@ static int bmm150_set_odr(struct device *dev, u8_t val)
 	const struct bmm150_config *config = dev->config->config_info;
 	u8_t i;
 
-	for (i = 0; i < ARRAY_SIZE(bmm150_samp_freq_table); ++i) {
+	for (i = 0U; i < ARRAY_SIZE(bmm150_samp_freq_table); ++i) {
 		if (val <= bmm150_samp_freq_table[i].freq) {
 			return i2c_reg_update_byte(data->i2c,
 						   config->i2c_slave_addr,
@@ -173,7 +173,7 @@ static int bmm150_read_odr(struct device *dev)
 
 	odr_val = (reg_val & BMM150_MASK_ODR) >> BMM150_SHIFT_ODR;
 
-	for (i = 0; i < ARRAY_SIZE(bmm150_samp_freq_table); ++i) {
+	for (i = 0U; i < ARRAY_SIZE(bmm150_samp_freq_table); ++i) {
 		if (bmm150_samp_freq_table[i].reg_val == odr_val) {
 			data->odr = bmm150_samp_freq_table[i].freq;
 			return 0;

@@ -51,7 +51,7 @@ static inline void _i2c_dw_data_ask(struct device *dev)
 
 	/* No more bytes to request, so command queue is no longer needed */
 	if (dw->request_bytes == 0) {
-		regs->ic_intr_mask.bits.tx_empty = 0;
+		regs->ic_intr_mask.bits.tx_empty = 0U;
 		return;
 	}
 
@@ -126,14 +126,14 @@ static void _i2c_dw_data_read(struct device *dev)
 static int _i2c_dw_data_send(struct device *dev)
 {
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
-	u32_t data = 0;
+	u32_t data = 0U;
 
 	volatile struct i2c_dw_registers * const regs =
 		(struct i2c_dw_registers *)dw->base_address;
 
 	/* Nothing to send anymore, mask the interrupt */
 	if (dw->xfr_len == 0) {
-		regs->ic_intr_mask.bits.tx_empty = 0;
+		regs->ic_intr_mask.bits.tx_empty = 0U;
 
 		dw->state &= ~I2C_DW_CMD_SEND;
 
@@ -282,13 +282,13 @@ static int _i2c_dw_setup(struct device *dev, u16_t slave_address)
 	volatile struct i2c_dw_registers * const regs =
 		(struct i2c_dw_registers *)dw->base_address;
 
-	ic_con.raw = 0;
+	ic_con.raw = 0U;
 
 	/* Disable the device controller to be able set TAR */
-	regs->ic_enable.bits.enable = 0;
+	regs->ic_enable.bits.enable = 0U;
 
 	/* Disable interrupts */
-	regs->ic_intr_mask.raw = 0;
+	regs->ic_intr_mask.raw = 0U;
 
 	/* Clear interrupts */
 	value = regs->ic_clr_intr;
@@ -300,19 +300,19 @@ static int _i2c_dw_setup(struct device *dev, u16_t slave_address)
 		 * to both 0 or both 1
 		 */
 		LOG_DBG("I2C: host configured as Master Device");
-		ic_con.bits.master_mode = 1;
-		ic_con.bits.slave_disable = 1;
+		ic_con.bits.master_mode = 1U;
+		ic_con.bits.slave_disable = 1U;
 	} else {
 		return -EINVAL;
 	}
 
-	ic_con.bits.restart_en = 1;
+	ic_con.bits.restart_en = 1U;
 
 	/* Set addressing mode - (initialization = 7 bit) */
 	if (I2C_ADDR_10_BITS & dw->app_config) {
 		LOG_DBG("I2C: using 10-bit address");
-		ic_con.bits.addr_master_10bit = 1;
-		ic_con.bits.addr_slave_10bit = 1;
+		ic_con.bits.addr_master_10bit = 1U;
+		ic_con.bits.addr_slave_10bit = 1U;
 	}
 
 	/* Setup the clock frequency and speed mode */
@@ -361,7 +361,7 @@ static int _i2c_dw_setup(struct device *dev, u16_t slave_address)
 	 *
 	 * TODO: extend the threshold for multi-byte RX.
 	 */
-	regs->ic_rx_tl = 0;
+	regs->ic_rx_tl = 0U;
 
 	/* Set TX fifo threshold level.
 	 * TX_EMPTY interrupt is triggered only when the
@@ -371,7 +371,7 @@ static int _i2c_dw_setup(struct device *dev, u16_t slave_address)
 	 * cause some pauses during transfers, but this keeps
 	 * the device from interrupting often.
 	 */
-	regs->ic_tx_tl = 0;
+	regs->ic_tx_tl = 0U;
 
 	if (regs->ic_con.bits.master_mode) {
 		/* Set address of target slave */
@@ -388,9 +388,9 @@ static int _i2c_dw_setup(struct device *dev, u16_t slave_address)
 	 */
 	if (I2C_MODE_MASTER & dw->app_config) {
 		if (I2C_ADDR_10_BITS & dw->app_config) {
-			regs->ic_tar.bits.ic_10bitaddr_master = 1;
+			regs->ic_tar.bits.ic_10bitaddr_master = 1U;
 		} else {
-			regs->ic_tar.bits.ic_10bitaddr_master = 0;
+			regs->ic_tar.bits.ic_10bitaddr_master = 0U;
 		}
 	}
 
@@ -429,7 +429,7 @@ static int i2c_dw_transfer(struct device *dev,
 	}
 
 	/* Enable controller */
-	regs->ic_enable.bits.enable = 1;
+	regs->ic_enable.bits.enable = 1U;
 
 	/*
 	 * While waiting at device_sync_sem, kernel can switch to idle
@@ -452,7 +452,7 @@ static int i2c_dw_transfer(struct device *dev,
 		dw->xfr_buf = cur_msg->buf;
 		dw->xfr_len = cur_msg->len;
 		dw->xfr_flags = cur_msg->flags;
-		dw->rx_pending = 0;
+		dw->rx_pending = 0U;
 
 		/* Need to RESTART if changing transfer direction */
 		if ((pflags & I2C_MSG_RW_MASK)
@@ -469,7 +469,7 @@ static int i2c_dw_transfer(struct device *dev,
 
 		if ((dw->xfr_flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
 			dw->state |= I2C_DW_CMD_SEND;
-			dw->request_bytes = 0;
+			dw->request_bytes = 0U;
 		} else {
 			dw->state |= I2C_DW_CMD_RECV;
 			dw->request_bytes = dw->xfr_len;
@@ -513,8 +513,8 @@ static int i2c_dw_transfer(struct device *dev,
 static int i2c_dw_runtime_configure(struct device *dev, u32_t config)
 {
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
-	u32_t	value = 0;
-	u32_t	rc = 0;
+	u32_t	value = 0U;
+	u32_t	rc = 0U;
 
 	volatile struct i2c_dw_registers * const regs =
 		(struct i2c_dw_registers *)dw->base_address;

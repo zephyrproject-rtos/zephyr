@@ -339,14 +339,14 @@ static int gpio_sifive_init(struct device *dev)
 	const struct gpio_sifive_config *cfg = DEV_GPIO_CFG(dev);
 
 	/* Ensure that all gpio registers are reset to 0 initially */
-	gpio->in_en   = 0;
-	gpio->out_en  = 0;
-	gpio->pue     = 0;
-	gpio->rise_ie = 0;
-	gpio->fall_ie = 0;
-	gpio->high_ie = 0;
-	gpio->low_ie  = 0;
-	gpio->invert  = 0;
+	gpio->in_en   = 0U;
+	gpio->out_en  = 0U;
+	gpio->pue     = 0U;
+	gpio->rise_ie = 0U;
+	gpio->fall_ie = 0U;
+	gpio->high_ie = 0U;
+	gpio->low_ie  = 0U;
+	gpio->invert  = 0U;
 
 	/* Setup IRQ handler for each gpio pin */
 	cfg->gpio_cfg_func();

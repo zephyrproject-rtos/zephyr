@@ -182,7 +182,7 @@ static inline struct net_if *get_iface(struct eth_context *ctx, u16_t vlan_tag)
 
 static void eth_mcux_phy_enter_reset(struct eth_context *context)
 {
-	const u32_t phy_addr = 0;
+	const u32_t phy_addr = 0U;
 
 	/* Reset the PHY. */
 	ENET_StartSMIWrite(ENET, phy_addr, PHY_BASICCONTROL_REG,
@@ -193,7 +193,7 @@ static void eth_mcux_phy_enter_reset(struct eth_context *context)
 
 static void eth_mcux_phy_start(struct eth_context *context)
 {
-	const u32_t phy_addr = 0;
+	const u32_t phy_addr = 0U;
 #ifdef CONFIG_ETH_MCUX_PHY_EXTRA_DEBUG
 	LOG_DBG("phy_state=%s", phy_state_name(context->phy_state));
 #endif
@@ -259,7 +259,7 @@ static void eth_mcux_phy_event(struct eth_context *context)
 	bool link_up;
 	phy_duplex_t phy_duplex = kPHY_FullDuplex;
 	phy_speed_t phy_speed = kPHY_Speed100M;
-	const u32_t phy_addr = 0;
+	const u32_t phy_addr = 0U;
 
 #ifdef CONFIG_ETH_MCUX_PHY_EXTRA_DEBUG
 	LOG_DBG("phy_state=%s", phy_state_name(context->phy_state));
@@ -532,7 +532,7 @@ static void eth_rx(struct device *iface)
 	struct net_buf *prev_buf;
 	struct net_pkt *pkt;
 	const u8_t *src;
-	u32_t frame_length = 0;
+	u32_t frame_length = 0U;
 	status_t status;
 	unsigned int imask;
 	u16_t vlan_tag = NET_VLAN_TAG_UNSPEC;

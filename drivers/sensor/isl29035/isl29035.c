@@ -81,7 +81,7 @@ static int isl29035_init(struct device *dev)
 		return -EINVAL;
 	}
 
-	drv_data->data_sample = 0;
+	drv_data->data_sample = 0U;
 
 	/* clear blownout status bit */
 	if (i2c_reg_update_byte(drv_data->i2c, ISL29035_I2C_ADDRESS,

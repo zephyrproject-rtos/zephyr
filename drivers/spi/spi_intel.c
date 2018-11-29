@@ -85,7 +85,7 @@ static void push_data(struct device *dev)
 	u32_t status;
 
 	while ((status = read_sssr(spi->regs)) & INTEL_SPI_SSSR_TNF) {
-		u32_t data = 0;
+		u32_t data = 0U;
 
 		if (status & INTEL_SPI_SSSR_RFS) {
 			break;
@@ -255,7 +255,7 @@ static int spi_intel_release(struct device *dev,
 void spi_intel_isr(struct device *dev)
 {
 	struct spi_intel_data *spi = dev->driver_data;
-	u32_t error = 0;
+	u32_t error = 0U;
 	u32_t status;
 
 	LOG_DBG("%p", dev);
@@ -264,7 +264,7 @@ void spi_intel_isr(struct device *dev)
 	if (status & INTEL_SPI_SSSR_ROR) {
 		/* Unrecoverable error, ack it */
 		clear_bit_sssr_ror(spi->regs);
-		error = 1;
+		error = 1U;
 		goto out;
 	}
 

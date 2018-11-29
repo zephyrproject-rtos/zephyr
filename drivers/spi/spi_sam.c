@@ -52,7 +52,7 @@ static int spi_sam_configure(struct device *dev,
 	const struct spi_sam_config *cfg = dev->config->config_info;
 	struct spi_sam_data *data = dev->driver_data;
 	Spi *regs = cfg->regs;
-	u32_t spi_mr = 0, spi_csr = 0;
+	u32_t spi_mr = 0U, spi_csr = 0U;
 	int div;
 
 	if (spi_context_configured(&data->ctx, config)) {
@@ -120,7 +120,7 @@ static void spi_sam_shift_master(Spi *regs, struct spi_sam_data *data)
 	if (spi_context_tx_buf_on(&data->ctx)) {
 		tx = *(u8_t *)(data->ctx.tx_buf);
 	} else {
-		tx = 0;
+		tx = 0U;
 	}
 
 	while ((regs->SPI_SR & SPI_SR_TDRE) == 0) {

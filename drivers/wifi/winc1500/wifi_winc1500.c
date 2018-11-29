@@ -663,7 +663,7 @@ static void handle_wifi_dhcp_conf(void *pvMsg)
 	/* TODO at this point the standby mode should be enable
 	 * status = WiFi connected IP assigned
 	 */
-	for (i = 0; i < 4; i++) {
+	for (i = 0U; i < 4; i++) {
 		addr.s4_addr[i] = pu8IPAddress[i];
 	}
 
@@ -675,7 +675,7 @@ static void handle_wifi_dhcp_conf(void *pvMsg)
 static void reset_scan_data(void)
 {
 	w1500_data.scan_cb = NULL;
-	w1500_data.scan_result = 0;
+	w1500_data.scan_result = 0U;
 }
 
 static void handle_scan_result(void *pvMsg)
@@ -734,7 +734,7 @@ static void handle_scan_done(void *pvMsg)
 		return;
 	}
 
-	w1500_data.scan_result = 0;
+	w1500_data.scan_result = 0U;
 
 	if (pstrInfo->u8NumofCh >= 1) {
 		LOG_DBG("Requesting results (%u)",

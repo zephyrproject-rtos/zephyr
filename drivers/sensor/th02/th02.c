@@ -47,7 +47,7 @@ static int is_ready(struct device *dev)
 
 static u16_t get_humi(struct device *dev)
 {
-	u16_t humidity = 0;
+	u16_t humidity = 0U;
 
 	if (i2c_reg_write_byte(dev, TH02_I2C_DEV_ID,
 			       TH02_REG_CONFIG, TH02_CMD_MEASURE_HUMI) < 0) {
@@ -67,7 +67,7 @@ static u16_t get_humi(struct device *dev)
 
 u16_t get_temp(struct device *dev)
 {
-	u16_t temperature = 0;
+	u16_t temperature = 0U;
 
 	if (i2c_reg_write_byte(dev, TH02_I2C_DEV_ID,
 			       TH02_REG_CONFIG, TH02_CMD_MEASURE_TEMP) < 0) {

@@ -47,7 +47,7 @@ static int _m16src_start(struct device *dev, clock_control_subsys_t sub_system)
 		return -EAGAIN;
 	}
 
-	m16src_grd = 1;
+	m16src_grd = 1U;
 
 	irq_unlock(imask);
 
@@ -87,7 +87,7 @@ static int _m16src_start(struct device *dev, clock_control_subsys_t sub_system)
 	}
 
 	/* release resource guard */
-	m16src_grd = 0;
+	m16src_grd = 0U;
 
 hf_already_started:
 	/* rollover should not happen as start and stop shall be
@@ -130,7 +130,7 @@ static int _m16src_stop(struct device *dev, clock_control_subsys_t sub_system)
 		return -EAGAIN;
 	}
 
-	m16src_grd = 1;
+	m16src_grd = 1U;
 
 	irq_unlock(imask);
 
@@ -139,7 +139,7 @@ static int _m16src_stop(struct device *dev, clock_control_subsys_t sub_system)
 	nrf_clock_task_trigger(NRF_CLOCK_TASK_HFCLKSTOP);
 
 	/* release resource guard */
-	m16src_grd = 0;
+	m16src_grd = 0U;
 
 	return 0;
 }
@@ -172,7 +172,7 @@ static int _k32src_start(struct device *dev, clock_control_subsys_t sub_system)
 		goto lf_already_started;
 	}
 
-	k32src_initialized = 1;
+	k32src_initialized = 1U;
 
 	irq_unlock(imask);
 
@@ -348,7 +348,7 @@ static void _power_clock_isr(void *arg)
 			/* Start HF Clock if LF RC is used. */
 			if ((NRF_CLOCK->LFCLKSRCCOPY & CLOCK_LFCLKSRCCOPY_SRC_Msk) ==
 			    CLOCK_LFCLKSRCCOPY_SRC_RC) {
-				ctto = 1;
+				ctto = 1U;
 			}
 		}
 	}

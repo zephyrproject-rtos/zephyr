@@ -93,7 +93,7 @@ static int lis2mdl_set_hard_iron(struct device *dev, enum sensor_channel chan,
 	s16_t offs;
 	int ret;
 
-	for (i = 0; i < LIS2MDL_NUM_AXIS; i++) {
+	for (i = 0U; i < LIS2MDL_NUM_AXIS; i++) {
 		offs = sys_cpu_to_le16(val->val1);
 		ret = i2c_burst_write(lis2mdl->i2c, lis2mdl->i2c_addr,
 				      regs, (u8_t *)&offs, sizeof(offs));
@@ -120,16 +120,16 @@ static void lis2mdl_channel_get_mag(struct device *dev,
 
 	switch (chan) {
 	case SENSOR_CHAN_MAGN_X:
-		ofs_start = ofs_stop = 0;
+		ofs_start = ofs_stop = 0U;
 		break;
 	case SENSOR_CHAN_MAGN_Y:
-		ofs_start = ofs_stop = 1;
+		ofs_start = ofs_stop = 1U;
 		break;
 	case SENSOR_CHAN_MAGN_Z:
-		ofs_start = ofs_stop = 2;
+		ofs_start = ofs_stop = 2U;
 		break;
 	default:
-		ofs_start = 0; ofs_stop = 2;
+		ofs_start = 0U; ofs_stop = 2U;
 		break;
 	}
 

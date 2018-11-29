@@ -187,7 +187,7 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 	int error = 0;
 	u32_t channels = sequence->channels;
 
-	data->channels = 0;
+	data->channels = 0U;
 
 	/* Signal an error if the channel selection is invalid (no channels or
 	 * a non-existing one is selected).
@@ -212,8 +212,8 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 		return -EINVAL;
 	}
 
-	u8_t num_active_channels = 0;
-	u8_t channel = 0;
+	u8_t num_active_channels = 0U;
+	u8_t channel = 0U;
 
 	while (channels > 0) {
 		if (channels & 1) {

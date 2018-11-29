@@ -66,7 +66,7 @@ static int mcux_igpio_configure(struct device *dev,
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 		GPIO_PinInit(config->base, pin, &pin_config);
 	} else {	/* GPIO_ACCESS_BY_PORT */
-		for (i = 0; i < 32; i++) {
+		for (i = 0U; i < 32; i++) {
 			GPIO_PinInit(config->base, i, &pin_config);
 		}
 	}
@@ -140,7 +140,7 @@ static int mcux_igpio_disable_callback(struct device *dev,
 		data->pin_callback_enables &= ~BIT(pin);
 	} else {
 		GPIO_PortDisableInterrupts(config->base, 0);
-		data->pin_callback_enables = 0;
+		data->pin_callback_enables = 0U;
 	}
 
 	return 0;

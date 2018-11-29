@@ -274,7 +274,7 @@ int bmg160_init(struct device *dev)
 {
 	const struct bmg160_device_config *cfg = dev->config->config_info;
 	struct bmg160_device_data *bmg160 = dev->driver_data;
-	u8_t chip_id = 0;
+	u8_t chip_id = 0U;
 	u16_t range_dps;
 
 	bmg160->i2c = device_get_binding((char *)cfg->i2c_port);

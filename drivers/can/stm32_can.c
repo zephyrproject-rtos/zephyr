@@ -288,7 +288,7 @@ static int can_stm32_init(struct device *dev)
 	data->filter_usage = (1ULL << CAN_MAX_NUMBER_OF_FILTES) - 1ULL;
 	(void)memset(data->rx_response, 0,
 		     sizeof(void *) * CONFIG_CAN_MAX_FILTER);
-	data->response_type = 0;
+	data->response_type = 0U;
 
 	clock = device_get_binding(STM32_CLOCK_CONTROL_NAME);
 	__ASSERT_NO_MSG(clock);
@@ -595,8 +595,8 @@ static inline int can_stm32_set_filter(const struct can_filter *filter,
 				       CAN_TypeDef *can,
 				       int *filter_index)
 {
-	u32_t mask = 0;
-	u32_t id = 0;
+	u32_t mask = 0U;
+	u32_t id = 0U;
 	int filter_nr = 0;
 	int filter_index_tmp = CAN_NO_FREE_FILTER;
 	int bank_nr;

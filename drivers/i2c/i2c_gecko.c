@@ -95,7 +95,7 @@ static int i2c_gecko_transfer(struct device *dev, struct i2c_msg *msgs,
 	struct i2c_gecko_data *data = DEV_DATA(dev);
 	I2C_TransferSeq_TypeDef seq;
 	I2C_TransferReturn_TypeDef ret = -EIO;
-	u32_t timeout = 300000;
+	u32_t timeout = 300000U;
 
 	if (!num_msgs) {
 		return 0;

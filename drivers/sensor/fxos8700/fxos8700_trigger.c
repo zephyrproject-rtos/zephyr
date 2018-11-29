@@ -129,7 +129,7 @@ static void fxos8700_handle_int(void *arg)
 			      FXOS8700_REG_INT_SOURCE,
 			      &int_source)) {
 		LOG_ERR("Could not read interrupt source");
-		int_source = 0;
+		int_source = 0U;
 	}
 
 	k_sem_give(&data->sem);
@@ -348,7 +348,7 @@ int fxos8700_trigger_init(struct device *dev)
 #endif
 
 	/* Route the interrupts to INT1/INT2 pins */
-	ctrl_reg5 = 0;
+	ctrl_reg5 = 0U;
 #if CONFIG_FXOS8700_DRDY_INT1
 	ctrl_reg5 |= FXOS8700_DRDY_MASK;
 #endif

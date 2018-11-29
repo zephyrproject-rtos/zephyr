@@ -56,7 +56,7 @@ static u32_t counter_tmr_cmsdk_apb_read(struct device *dev)
 						dev->config->config_info;
 
 	/* Return Counter Value */
-	u32_t value = 0;
+	u32_t value = 0U;
 
 	value = TIMER_MAX_RELOAD - cfg->timer->value;
 

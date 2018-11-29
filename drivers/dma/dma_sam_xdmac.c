@@ -243,9 +243,9 @@ static int sam_xdmac_config(struct device *dev, u32_t channel,
 		| XDMAC_CC_SIF_AHB_IF1
 		| XDMAC_CC_DIF_AHB_IF1
 		| XDMAC_CC_PERID(cfg->dma_slot);
-	channel_cfg.ds_msp = 0;
-	channel_cfg.sus = 0;
-	channel_cfg.dus = 0;
+	channel_cfg.ds_msp = 0U;
+	channel_cfg.sus = 0U;
+	channel_cfg.dus = 0U;
 	channel_cfg.cie =
 		  (cfg->complete_callback_en ? XDMAC_CIE_BIE : XDMAC_CIE_LIE)
 		| (cfg->error_callback_en ? XDMAC_INT_ERR : 0);

@@ -407,9 +407,9 @@ static int erase_op(void *context)
 	struct flash_context *e_ctx = context;
 
 #if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC)
-	u32_t ticks_begin = 0;
+	u32_t ticks_begin = 0U;
 	u32_t ticks_diff;
-	u32_t i = 0;
+	u32_t i = 0U;
 
 	if (e_ctx->enable_time_limit) {
 		ticks_begin = ticker_ticks_now_get();
@@ -464,9 +464,9 @@ static int write_op(void *context)
 	u32_t count;
 
 #if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC)
-	u32_t ticks_begin = 0;
+	u32_t ticks_begin = 0U;
 	u32_t ticks_diff;
-	u32_t i = 1;
+	u32_t i = 1U;
 
 	if (w_ctx->enable_time_limit) {
 		ticks_begin = ticker_ticks_now_get();

@@ -163,7 +163,7 @@ static int pinmux_initialize(struct device *device)
 {
 	u32_t pin;
 
-	for (pin = 0; pin < ARRAY_SIZE(pin_mux_off); pin++) {
+	for (pin = 0U; pin < ARRAY_SIZE(pin_mux_off); pin++) {
 		pinmux_set(NULL, pin, 0);
 	}
 

@@ -366,7 +366,7 @@ static int  bmi160_acc_calibrate(struct device *dev, enum sensor_channel chan,
 		BMI160_FOC_ACC_Z_POS,
 	};
 	int i;
-	u8_t reg_val = 0;
+	u8_t reg_val = 0U;
 
 	/* Calibration has to be done in normal mode. */
 	if (bmi160->pmu_sts.acc != BMI160_PMU_NORMAL) {
@@ -386,13 +386,13 @@ static int  bmi160_acc_calibrate(struct device *dev, enum sensor_channel chan,
 
 		accel_g = sensor_ms2_to_g(xyz_calib_value);
 		if (accel_g == 0) {
-			accel_val = 3;
+			accel_val = 3U;
 		} else if (accel_g == 1) {
-			accel_val = 1;
+			accel_val = 1U;
 		} else if (accel_g == -1) {
-			accel_val = 2;
+			accel_val = 2U;
 		} else {
-			accel_val = 0;
+			accel_val = 0U;
 		}
 		reg_val |= (accel_val << foc_pos[i]);
 	}
@@ -631,7 +631,7 @@ static int bmi160_sample_fetch(struct device *dev, enum sensor_channel chan)
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
-	bmi160->sample.raw[0] = 0;
+	bmi160->sample.raw[0] = 0U;
 
 	while ((bmi160->sample.raw[0] & BMI160_DATA_READY_BIT_MASK) == 0) {
 		if (bmi160_transceive(dev, BMI160_REG_STATUS | (1 << 7), false,
@@ -683,18 +683,18 @@ static void bmi160_channel_convert(enum sensor_channel chan,
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:
 	case SENSOR_CHAN_GYRO_X:
-		ofs_start = ofs_stop = 0;
+		ofs_start = ofs_stop = 0U;
 		break;
 	case SENSOR_CHAN_ACCEL_Y:
 	case SENSOR_CHAN_GYRO_Y:
-		ofs_start = ofs_stop = 1;
+		ofs_start = ofs_stop = 1U;
 		break;
 	case SENSOR_CHAN_ACCEL_Z:
 	case SENSOR_CHAN_GYRO_Z:
-		ofs_start = ofs_stop = 2;
+		ofs_start = ofs_stop = 2U;
 		break;
 	default:
-		ofs_start = 0; ofs_stop = 2;
+		ofs_start = 0U; ofs_stop = 2U;
 		break;
 	}
 
@@ -729,7 +729,7 @@ static inline void bmi160_acc_channel_get(struct device *dev,
 
 static int bmi160_temp_channel_get(struct device *dev, struct sensor_value *val)
 {
-	u16_t temp_raw = 0;
+	u16_t temp_raw = 0U;
 	s32_t temp_micro = 0;
 	struct bmi160_device_data *bmi160 = dev->driver_data;
 
@@ -793,7 +793,7 @@ static const struct sensor_driver_api bmi160_api = {
 int bmi160_init(struct device *dev)
 {
 	struct bmi160_device_data *bmi160 = dev->driver_data;
-	u8_t val = 0;
+	u8_t val = 0U;
 	s32_t acc_range, gyr_range;
 
 	bmi160->spi = device_get_binding(DT_BMI160_SPI_PORT_NAME);

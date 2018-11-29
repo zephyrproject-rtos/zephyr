@@ -278,7 +278,7 @@ static int lsm6dsl_shub_write_slave_reg(struct lsm6dsl_data *data,
 					u8_t *value, u16_t len)
 {
 	u8_t slv_cfg[3];
-	u8_t cnt = 0;
+	u8_t cnt = 0U;
 
 	while (cnt < len) {
 		slv_cfg[0] = (slv_addr << 1) & ~LSM6DSL_EMBEDDED_SLVX_READ;
@@ -375,7 +375,7 @@ int lsm6dsl_shub_init_external_chip(struct device *dev)
 {
 	struct lsm6dsl_data *data = dev->driver_data;
 	u8_t i;
-	u8_t chip_id = 0;
+	u8_t chip_id = 0U;
 	u8_t slv_i2c_addr;
 	u8_t slv_wai_addr = lsm6dsl_shub_sens_list[0].wai_addr;
 
@@ -384,7 +384,7 @@ int lsm6dsl_shub_init_external_chip(struct device *dev)
 	 * So, try them one by one until we read the correct
 	 * chip ID.
 	 */
-	for (i = 0; i < ARRAY_SIZE(lsm6dsl_shub_sens_list[0].i2c_addr); i++) {
+	for (i = 0U; i < ARRAY_SIZE(lsm6dsl_shub_sens_list[0].i2c_addr); i++) {
 		slv_i2c_addr = lsm6dsl_shub_sens_list[0].i2c_addr[i];
 
 		if (slv_i2c_addr == 0) {

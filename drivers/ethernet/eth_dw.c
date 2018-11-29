@@ -106,7 +106,7 @@ static void eth_rx(struct device *dev)
 
 release_desc:
 	/* Return ownership of the RX descriptor to the device. */
-	context->rx_desc.own = 1;
+	context->rx_desc.own = 1U;
 
 	/* Request that the device check for an available RX descriptor, since
 	 * ownership of the descriptor was just transferred to the device.
@@ -146,7 +146,7 @@ static void eth_tx_data(struct eth_runtime *context, u8_t *data, u16_t len)
 	eth_write(context->base_addr, REG_ADDR_TX_DESC_LIST,
 		  (u32_t)&context->tx_desc);
 
-	context->tx_desc.own = 1;
+	context->tx_desc.own = 1U;
 
 	/* Request that the device check for an available TX descriptor, since
 	 * ownership of the descriptor was just transferred to the device.
@@ -257,27 +257,27 @@ static int eth_initialize_internal(struct net_if *iface)
 
 
 	/* Initialize receive descriptor. */
-	context->rx_desc.rdes0 = 0;
-	context->rx_desc.rdes1 = 0;
+	context->rx_desc.rdes0 = 0U;
+	context->rx_desc.rdes1 = 0U;
 
 	context->rx_desc.buf1_ptr = (u8_t *)context->rx_buf;
-	context->rx_desc.first_desc = 1;
-	context->rx_desc.last_desc = 1;
-	context->rx_desc.own = 1;
+	context->rx_desc.first_desc = 1U;
+	context->rx_desc.last_desc = 1U;
+	context->rx_desc.own = 1U;
 	context->rx_desc.rx_buf1_sz = sizeof(context->rx_buf);
-	context->rx_desc.rx_end_of_ring = 1;
+	context->rx_desc.rx_end_of_ring = 1U;
 
 	/* Install receive descriptor. */
 	eth_write(base_addr, REG_ADDR_RX_DESC_LIST, (u32_t)&context->rx_desc);
 
 	/* Initialize transmit descriptor. */
-	context->tx_desc.tdes0 = 0;
-	context->tx_desc.tdes1 = 0;
+	context->tx_desc.tdes0 = 0U;
+	context->tx_desc.tdes1 = 0U;
 	context->tx_desc.buf1_ptr = NULL;
-	context->tx_desc.tx_buf1_sz = 0;
-	context->tx_desc.first_seg_in_frm = 1;
-	context->tx_desc.last_seg_in_frm = 1;
-	context->tx_desc.tx_end_of_ring = 1;
+	context->tx_desc.tx_buf1_sz = 0U;
+	context->tx_desc.first_seg_in_frm = 1U;
+	context->tx_desc.last_seg_in_frm = 1U;
+	context->tx_desc.tx_end_of_ring = 1U;
 
 	/* Install transmit descriptor. */
 	eth_write(context->base_addr, REG_ADDR_TX_DESC_LIST,

@@ -87,7 +87,7 @@ static __attribute__((noinline)) u32_t next_pow2(u32_t x)
 static u32_t get_timeout(u32_t  timeout)
 {
 	u32_t val = timeout / 2;
-	u32_t count = 0;
+	u32_t count = 0U;
 
 	if (val & (val - 1))
 		val = next_pow2(val);

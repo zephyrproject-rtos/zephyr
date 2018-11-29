@@ -158,7 +158,7 @@ static int gpio_cc32xx_disable_callback(struct device *dev,
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 		data->pin_callback_enables &= ~(1 << pin);
 	} else {
-		data->pin_callback_enables = 0;
+		data->pin_callback_enables = 0U;
 	}
 
 	return 0;

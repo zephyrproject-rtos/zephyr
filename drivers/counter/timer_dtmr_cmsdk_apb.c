@@ -80,7 +80,7 @@ static u32_t timer_dtmr_cmsdk_apb_read(struct device *dev)
 	struct timer_dtmr_cmsdk_apb_dev_data *data = dev->driver_data;
 
 	/* Return Timer Value */
-	u32_t value = 0;
+	u32_t value = 0U;
 
 	value = data->load - cfg->dtimer->timer1value;
 

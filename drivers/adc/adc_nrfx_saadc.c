@@ -261,12 +261,12 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 		return -EINVAL;
 	}
 
-	active_channels = 0;
+	active_channels = 0U;
 
 	/* Enable only the channels selected for the pointed sequence.
 	 * Disable all the rest.
 	 */
-	channel_id = 0;
+	channel_id = 0U;
 	do {
 		if (selected_channels & BIT(channel_id)) {
 			/* Signal an error if a selected channel has not been

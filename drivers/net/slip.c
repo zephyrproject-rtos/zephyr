@@ -161,7 +161,7 @@ static int slip_send(struct device *dev, struct net_pkt *pkt)
 
 		/* This writes ethernet header */
 		if (!send_header_once && ll_reserve) {
-			for (i = 0; i < ll_reserve; i++) {
+			for (i = 0U; i < ll_reserve; i++) {
 				slip_writeb_esc(*ptr++);
 			}
 		}
@@ -173,7 +173,7 @@ static int slip_send(struct device *dev, struct net_pkt *pkt)
 			 * link layer header always.
 			 */
 			send_header_once = true;
-			ll_reserve = 0;
+			ll_reserve = 0U;
 			ptr = frag->data;
 		}
 #else
@@ -181,7 +181,7 @@ static int slip_send(struct device *dev, struct net_pkt *pkt)
 		ptr = frag->data;
 #endif
 
-		for (i = 0; i < frag->len; ++i) {
+		for (i = 0U; i < frag->len; ++i) {
 			c = *ptr++;
 			slip_writeb_esc(c);
 		}

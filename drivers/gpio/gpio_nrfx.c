@@ -181,8 +181,8 @@ static int gpio_nrfx_config(struct device *port, int access_op,
 		: NRF_GPIO_PIN_INPUT_DISCONNECT;
 
 	if (access_op == GPIO_ACCESS_BY_PORT) {
-		from_pin = 0;
-		to_pin   = 31;
+		from_pin = 0U;
+		to_pin   = 31U;
 	} else {
 		from_pin = pin;
 		to_pin   = pin;
@@ -270,8 +270,8 @@ static int gpio_nrfx_pin_manage_callback(struct device *port,
 	u8_t to_pin;
 
 	if (access_op == GPIO_ACCESS_BY_PORT) {
-		from_pin = 0;
-		to_pin   = 31;
+		from_pin = 0U;
+		to_pin   = 31U;
 	} else {
 		from_pin = pin;
 		to_pin   = pin;

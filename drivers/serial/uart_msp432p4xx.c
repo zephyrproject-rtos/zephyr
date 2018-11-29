@@ -55,54 +55,54 @@ static int baudrate_set(eUSCI_UART_Config *config, uint32_t baudrate)
 
 	switch (baudrate) {
 	case 1200:
-		prescalar = 2500;
-		first_mod_reg = 0;
-		second_mod_reg = 0;
+		prescalar = 2500U;
+		first_mod_reg = 0U;
+		second_mod_reg = 0U;
 		break;
 	case 2400:
-		prescalar = 1250;
-		first_mod_reg = 0;
-		second_mod_reg = 0;
+		prescalar = 1250U;
+		first_mod_reg = 0U;
+		second_mod_reg = 0U;
 		break;
 	case 4800:
-		prescalar = 625;
-		first_mod_reg = 0;
-		second_mod_reg = 0;
+		prescalar = 625U;
+		first_mod_reg = 0U;
+		second_mod_reg = 0U;
 		break;
 	case 9600:
-		prescalar = 312;
-		first_mod_reg = 8;
-		second_mod_reg = 0;
+		prescalar = 312U;
+		first_mod_reg = 8U;
+		second_mod_reg = 0U;
 		break;
 	case 19200:
-		prescalar = 156;
-		first_mod_reg = 4;
-		second_mod_reg = 0;
+		prescalar = 156U;
+		first_mod_reg = 4U;
+		second_mod_reg = 0U;
 		break;
 	case 38400:
-		prescalar = 78;
-		first_mod_reg = 2;
-		second_mod_reg = 0;
+		prescalar = 78U;
+		first_mod_reg = 2U;
+		second_mod_reg = 0U;
 		break;
 	case 57600:
-		prescalar = 52;
-		first_mod_reg = 1;
-		second_mod_reg = 37;
+		prescalar = 52U;
+		first_mod_reg = 1U;
+		second_mod_reg = 37U;
 		break;
 	case 115200:
-		prescalar = 26;
-		first_mod_reg = 0;
-		second_mod_reg = 111;
+		prescalar = 26U;
+		first_mod_reg = 0U;
+		second_mod_reg = 111U;
 		break;
 	case 230400:
-		prescalar = 13;
-		first_mod_reg = 0;
-		second_mod_reg = 37;
+		prescalar = 13U;
+		first_mod_reg = 0U;
+		second_mod_reg = 37U;
 		break;
 	case 460800:
-		prescalar = 6;
-		first_mod_reg = 8;
-		second_mod_reg = 32;
+		prescalar = 6U;
+		first_mod_reg = 8U;
+		second_mod_reg = 32U;
 		break;
 	default:
 		return -EINVAL;
@@ -176,7 +176,7 @@ static int uart_msp432p4xx_fifo_fill(struct device *dev,
 						const u8_t *tx_data, int size)
 {
 	const struct uart_device_config *config = DEV_CFG(dev);
-	unsigned int num_tx = 0;
+	unsigned int num_tx = 0U;
 
 	while ((size - num_tx) > 0) {
 		MAP_UART_transmitData((unsigned long)config->base,
@@ -196,7 +196,7 @@ static int uart_msp432p4xx_fifo_read(struct device *dev, u8_t *rx_data,
 							const int size)
 {
 	const struct uart_device_config *config = DEV_CFG(dev);
-	unsigned int num_rx = 0;
+	unsigned int num_rx = 0U;
 
 	while (((size - num_rx) > 0) &&
 		MAP_UART_getInterruptStatus((unsigned long)config->base,

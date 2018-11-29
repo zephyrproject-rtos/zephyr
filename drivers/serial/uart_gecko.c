@@ -80,7 +80,7 @@ static int uart_gecko_fifo_fill(struct device *dev, const u8_t *tx_data,
 			       int len)
 {
 	const struct uart_gecko_config *config = dev->config->config_info;
-	u8_t num_tx = 0;
+	u8_t num_tx = 0U;
 
 	while ((len - num_tx > 0) &&
 	       (config->base->STATUS & USART_STATUS_TXBL)) {
@@ -95,7 +95,7 @@ static int uart_gecko_fifo_read(struct device *dev, u8_t *rx_data,
 			       const int len)
 {
 	const struct uart_gecko_config *config = dev->config->config_info;
-	u8_t num_rx = 0;
+	u8_t num_rx = 0U;
 
 	while ((len - num_rx > 0) &&
 	       (config->base->STATUS & USART_STATUS_RXDATAV)) {

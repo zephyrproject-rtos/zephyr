@@ -88,7 +88,7 @@ static void usb_dw_reg_dump(void)
 	LOG_DBG("  GHWCFG3 : 0x%x  GHWCFG4 : 0x%x",
 		USB_DW->ghwcfg3, USB_DW->ghwcfg4);
 
-	for (i = 0; i < USB_DW_OUT_EP_NUM; i++) {
+	for (i = 0U; i < USB_DW_OUT_EP_NUM; i++) {
 		LOG_DBG("\n  EP %d registers:    DIEPCTL : 0x%x    DIEPINT : "
 			"0x%x", i, USB_DW->in_ep_reg[i].diepctl,
 			USB_DW->in_ep_reg[i].diepint);
@@ -142,7 +142,7 @@ static inline void usb_dw_udelay(u32_t us)
 
 static int usb_dw_reset(void)
 {
-	u32_t cnt = 0;
+	u32_t cnt = 0U;
 
 	/* Wait for AHB master idle state. */
 	while (!(USB_DW->grstctl & USB_DW_GRSTCTL_AHB_IDLE)) {
@@ -155,7 +155,7 @@ static int usb_dw_reset(void)
 	}
 
 	/* Core Soft Reset */
-	cnt = 0;
+	cnt = 0U;
 	USB_DW->grstctl |= USB_DW_GRSTCTL_C_SFT_RST;
 	do {
 		if (++cnt > USB_DW_CORE_RST_TIMEOUT_US) {
@@ -458,7 +458,7 @@ static int usb_dw_tx(u8_t ep, const u8_t *const data,
 		}
 	} else {
 		/* Zero length packet */
-		pkt_cnt = 1;
+		pkt_cnt = 1U;
 	}
 
 	/* Set number of packets and transfer size */
@@ -478,7 +478,7 @@ static int usb_dw_tx(u8_t ep, const u8_t *const data,
 	 * to access a FIFO, the application must complete the transaction
 	 * before accessing the register."
 	 */
-	for (i = 0; i < data_len; i += 4) {
+	for (i = 0U; i < data_len; i += 4) {
 		u32_t val = data[i];
 
 		if (i + 1 < data_len) {
@@ -522,7 +522,7 @@ static int usb_dw_init(void)
 #endif
 
 	/* Set NAK for all OUT EPs */
-	for (ep = 0; ep < USB_DW_OUT_EP_NUM; ep++) {
+	for (ep = 0U; ep < USB_DW_OUT_EP_NUM; ep++) {
 		USB_DW->out_ep_reg[ep].doepctl = USB_DW_DEPCTL_SNAK;
 	}
 
@@ -558,7 +558,7 @@ static void usb_dw_handle_reset(void)
 	USB_DW->dcfg &= ~USB_DW_DCFG_DEV_ADDR_MASK;
 
 	/* enable global EP interrupts */
-	USB_DW->doepmsk = 0;
+	USB_DW->doepmsk = 0U;
 	USB_DW->gintmsk |= USB_DW_GINTSTS_RX_FLVL;
 	USB_DW->diepmsk |= USB_DW_DIEPINT_XFER_COMPL;
 }
@@ -666,7 +666,7 @@ static void usb_dw_isr_handler(void)
 
 		if (int_status & USB_DW_GINTSTS_IEP_INT) {
 			/* IN EP interrupt */
-			for (ep_idx = 0; ep_idx < USB_DW_IN_EP_NUM; ep_idx++) {
+			for (ep_idx = 0U; ep_idx < USB_DW_IN_EP_NUM; ep_idx++) {
 				if (USB_DW->daint &
 				    USB_DW_DAINT_IN_EP_INT(ep_idx)) {
 					/* Read IN EP interrupt status */
@@ -706,7 +706,7 @@ static void usb_dw_isr_handler(void)
 			/* No OUT interrupt expected in FIFO mode,
 			 * just clear interruot
 			 */
-			for (ep_idx = 0; ep_idx < USB_DW_OUT_EP_NUM; ep_idx++) {
+			for (ep_idx = 0U; ep_idx < USB_DW_OUT_EP_NUM; ep_idx++) {
 				if (USB_DW->daint &
 				    USB_DW_DAINT_OUT_EP_INT(ep_idx)) {
 					/* Read OUT EP interrupt status */
@@ -754,7 +754,7 @@ int usb_dc_attach(void)
 
 	_usb_dw_int_unmask();
 
-	usb_dw_ctrl.attached = 1;
+	usb_dw_ctrl.attached = 1U;
 
 	return 0;
 }
@@ -772,7 +772,7 @@ int usb_dc_detach(void)
 	/* Enable soft disconnect */
 	USB_DW->dctl |= USB_DW_DCTL_SFT_DISCON;
 
-	usb_dw_ctrl.attached = 0;
+	usb_dw_ctrl.attached = 0U;
 
 	return 0;
 }
@@ -926,14 +926,14 @@ int usb_dc_ep_is_stalled(const u8_t ep, u8_t *const stalled)
 		return -EINVAL;
 	}
 
-	*stalled = 0;
+	*stalled = 0U;
 	if (USB_DW_EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
 		if (USB_DW->out_ep_reg[ep_idx].doepctl & USB_DW_DEPCTL_STALL) {
-			*stalled = 1;
+			*stalled = 1U;
 		}
 	} else {
 		if (USB_DW->in_ep_reg[ep_idx].diepctl & USB_DW_DEPCTL_STALL) {
-			*stalled = 1;
+			*stalled = 1U;
 		}
 	}
 
@@ -958,10 +958,10 @@ int usb_dc_ep_enable(const u8_t ep)
 	/* Activate Ep */
 	if (USB_DW_EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
 		USB_DW->out_ep_reg[ep_idx].doepctl |= USB_DW_DEPCTL_USB_ACT_EP;
-		usb_dw_ctrl.out_ep_ctrl[ep_idx].ep_ena = 1;
+		usb_dw_ctrl.out_ep_ctrl[ep_idx].ep_ena = 1U;
 	} else {
 		USB_DW->in_ep_reg[ep_idx].diepctl |= USB_DW_DEPCTL_USB_ACT_EP;
-		usb_dw_ctrl.in_ep_ctrl[ep_idx].ep_ena = 1;
+		usb_dw_ctrl.in_ep_ctrl[ep_idx].ep_ena = 1U;
 	}
 
 	if (USB_DW_EP_ADDR2DIR(ep) == USB_EP_DIR_OUT &&
@@ -993,13 +993,13 @@ int usb_dc_ep_disable(const u8_t ep)
 		    ~(USB_DW_DEPCTL_USB_ACT_EP |
 		    USB_DW_DEPCTL_EP_ENA |
 		    USB_DW_DEPCTL_SNAK);
-		usb_dw_ctrl.out_ep_ctrl[ep_idx].ep_ena = 0;
+		usb_dw_ctrl.out_ep_ctrl[ep_idx].ep_ena = 0U;
 	} else {
 		USB_DW->in_ep_reg[ep_idx].diepctl &=
 		    ~(USB_DW_DEPCTL_USB_ACT_EP |
 		    USB_DW_DEPCTL_EP_ENA |
 		    USB_DW_DEPCTL_SNAK);
-		usb_dw_ctrl.in_ep_ctrl[ep_idx].ep_ena = 0;
+		usb_dw_ctrl.in_ep_ctrl[ep_idx].ep_ena = 0U;
 	}
 
 	return 0;
@@ -1023,7 +1023,7 @@ int usb_dc_ep_flush(const u8_t ep)
 	USB_DW->grstctl |= ep_idx << USB_DW_GRSTCTL_TX_FNUM_OFFSET;
 	USB_DW->grstctl |= USB_DW_GRSTCTL_TX_FFLSH;
 
-	cnt = 0;
+	cnt = 0U;
 	do {
 		if (++cnt > USB_DW_CORE_RST_TIMEOUT_US) {
 			LOG_ERR("USB TX FIFO flush HANG!");
@@ -1119,14 +1119,14 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 		bytes_to_copy);
 
 	/* Data in the FIFOs is always stored per 32-bit words */
-	for (i = 0; i < (bytes_to_copy & ~0x3); i += 4) {
+	for (i = 0U; i < (bytes_to_copy & ~0x3); i += 4) {
 		*(u32_t *)(data + i) = USB_DW_EP_FIFO(ep_idx);
 	}
 	if (bytes_to_copy & 0x3) {
 		/* Not multiple of 4 */
 		u32_t last_dw = USB_DW_EP_FIFO(ep_idx);
 
-		for (j = 0; j < (bytes_to_copy & 0x3); j++) {
+		for (j = 0U; j < (bytes_to_copy & 0x3); j++) {
 			*(data + i + j) =
 				(sys_cpu_to_le32(last_dw) >> (8 * j)) & 0xFF;
 			}

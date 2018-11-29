@@ -198,7 +198,7 @@ static int vl53l0x_init(struct device *dev)
 {
 	struct vl53l0x_data *drv_data = dev->driver_data;
 	VL53L0X_Error ret;
-	u16_t vl53l0x_id = 0;
+	u16_t vl53l0x_id = 0U;
 	VL53L0X_DeviceInfo_t vl53l0x_dev_info;
 
 	LOG_DBG("enter in %s", __func__);

@@ -49,7 +49,7 @@ static int adt7420_attr_set(struct device *dev,
 {
 	struct adt7420_data *drv_data = dev->driver_data;
 	const struct adt7420_dev_config *cfg = dev->config->config_info;
-	u8_t val8, reg = 0;
+	u8_t val8, reg = 0U;
 	u16_t rate;
 	s64_t value;
 

@@ -294,7 +294,7 @@ static int adc_dw_read_request(struct device *dev,
 	if (seq_tbl->options) {
 		info->seq_size = seq_tbl->options->extra_samplings + 1;
 	} else {
-		info->seq_size = 1;
+		info->seq_size = 1U;
 	}
 
 	info->state = ADC_STATE_SAMPLING;
@@ -342,7 +342,7 @@ static void adc_dw_start_conversion(struct device *dev)
 	const struct adc_config *config = info->dev->config->config_info;
 	const struct adc_sequence *entry = info->ctx.sequence;
 	u32_t adc_base = config->reg_base;
-	u32_t ctrl, tmp_val, interval_us = 0;
+	u32_t ctrl, tmp_val, interval_us = 0U;
 
 	info->channel_id = find_lsb_set(info->channels) - 1;
 

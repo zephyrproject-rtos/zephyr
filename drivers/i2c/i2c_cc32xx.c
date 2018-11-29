@@ -94,10 +94,10 @@ static int i2c_cc32xx_configure(struct device *dev, u32_t dev_config_raw)
 
 	switch (I2C_SPEED_GET(dev_config_raw)) {
 	case I2C_SPEED_STANDARD:
-		bitrate_id = 0;
+		bitrate_id = 0U;
 		break;
 	case I2C_SPEED_FAST:
-		bitrate_id = 1;
+		bitrate_id = 1U;
 		break;
 	default:
 		return -EINVAL;

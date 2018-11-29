@@ -117,7 +117,7 @@ static int _arc_v2_irq_unit_suspend(struct device *dev)
 	 * by IRQ auxiliary registers. For that reason we skip those
 	 * values in this loop.
 	 */
-	for (irq = 16; irq < CONFIG_NUM_IRQS; irq++) {
+	for (irq = 16U; irq < CONFIG_NUM_IRQS; irq++) {
 		_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
 		ctx.irq_config[irq - 16] =
 			_arc_v2_aux_reg_read(_ARC_V2_IRQ_PRIORITY) << 2;
@@ -146,7 +146,7 @@ static int _arc_v2_irq_unit_resume(struct device *dev)
 	 * by IRQ auxiliary registers. For that reason we skip those
 	 * values in this loop.
 	 */
-	for (irq = 16; irq < CONFIG_NUM_IRQS; irq++) {
+	for (irq = 16U; irq < CONFIG_NUM_IRQS; irq++) {
 		_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
 #ifdef CONFIG_ARC_HAS_SECURE
 		_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY,

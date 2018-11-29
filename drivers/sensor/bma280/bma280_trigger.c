@@ -75,7 +75,7 @@ static void bma280_thread_cb(void *arg)
 {
 	struct device *dev = arg;
 	struct bma280_data *drv_data = dev->driver_data;
-	u8_t status = 0;
+	u8_t status = 0U;
 	int err = 0;
 
 	/* check for data ready */
