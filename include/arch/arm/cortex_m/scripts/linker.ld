@@ -481,4 +481,13 @@ SECTIONS
 	KEEP(*(.gnu.attributes))
 	}
 
+/* Must be last in romable region */
+SECTION_PROLOGUE(.last_section,(NOLOAD),)
+{
+} GROUP_LINK_IN(ROMABLE_REGION)
+
+/* To provide the image size as a const expression,
+ * calculate this value here. */
+_flash_used = LOADADDR(.last_section) - _image_rom_start;
+
     }

@@ -233,6 +233,9 @@ extern char _image_rom_start[];
 extern char _image_rom_end[];
 extern char _image_rom_size[];
 
+/* Includes all ROMable data, i.e. the size of the output image file. */
+extern char _flash_used[];
+
 /* datas, bss, noinit */
 extern char _image_ram_start[];
 extern char _image_ram_end[];
