@@ -1,0 +1,14 @@
+# Kconfig - STELLARIS CCM
+#
+# Copyright (c) 2018, Zilogic Systems.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig CLOCK_CONTROL_STELLARIS
+	bool
+	prompt "stellaris CCM driver"
+	depends on SOC_TI_LM3S6965
+	depends on CLOCK_CONTROL
+	help
+	  Enable support for stellaris ccm driver.

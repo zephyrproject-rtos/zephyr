@@ -3,6 +3,7 @@ zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_MCUX_CCM            clock_control_mcux
 zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_MCUX_SIM            clock_control_mcux_sim.c)
 zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_NRF                 nrf_power_clock.c)
 zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_QUARK_SE            quark_se_clock_control.c)
+zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_STELLARIS           clock_control_stellaris.c)
 
 if(CONFIG_CLOCK_CONTROL_STM32_CUBE)
   zephyr_sources(stm32_ll_clock.c)
