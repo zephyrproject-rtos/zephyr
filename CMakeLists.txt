@@ -308,6 +308,20 @@ zephyr_cc_option(-Wpointer-arith)
 # TODO: Archiver arguments
 # ar_option(D)
 
+# Declare MPU userspace dependencies before the linker scripts to make
+# sure the order of dependencies are met
+if(CONFIG_CPU_HAS_MPU AND CONFIG_USERSPACE)
+  if(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT AND CONFIG_APP_SHARED_MEM )
+    set(APP_SMEM_DEP app_smem_linker)
+  endif()
+  if(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT AND CONFIG_ARC AND CONFIG_APPLICATION_MEMORY)
+    set(ALIGN_SIZING_DEP app_sizing_prebuilt linker_app_sizing_script)
+  endif()
+  if(CONFIG_ARM)
+    set(PRIV_STACK_DEP priv_stacks_prebuilt)
+  endif()
+endif()
+
 set_ifndef(LINKERFLAGPREFIX -Wl)
 
 if(NOT CONFIG_NATIVE_APPLICATION)
@@ -698,20 +712,6 @@ if(CONFIG_APPLICATION_MEMORY)
   endforeach()
   list(APPEND LINKER_SCRIPT_DEFINES ${def})
 endif() # CONFIG_APPLICATION_MEMORY
-
-# Declare MPU userspace dependencies before the linker scripts to make
-# sure the order of dependencies are met
-if(CONFIG_CPU_HAS_MPU AND CONFIG_USERSPACE)
-  if(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT AND CONFIG_APP_SHARED_MEM )
-    set(APP_SMEM_DEP app_smem_linker)
-  endif()
-  if(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT AND CONFIG_ARC AND CONFIG_APPLICATION_MEMORY)
-    set(ALIGN_SIZING_DEP app_sizing_prebuilt linker_app_sizing_script)
-  endif()
-  if(CONFIG_ARM)
-    set(PRIV_STACK_DEP priv_stacks_prebuilt)
-  endif()
-endif()
 
 function(construct_add_custom_command_for_linker_pass linker_output_name output_variable)
   set(linker_cmd_file_name ${linker_output_name}.cmd)
