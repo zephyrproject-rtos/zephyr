@@ -94,8 +94,8 @@
  */
 static void arm_v2m_beetle_pinmux_defaults(void)
 {
-	u32_t gpio_0 = 0;
-	u32_t gpio_1 = 0;
+	u32_t gpio_0 = 0U;
+	u32_t gpio_1 = 0U;
 
 	/* Set GPIO Alternate Functions */
 
