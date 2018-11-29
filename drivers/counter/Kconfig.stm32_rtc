@@ -1,0 +1,70 @@
+# Kconfig - STM32 Cube LL RTC
+#
+# Copyright (c) 2018, Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig COUNTER_RTC_STM32
+	bool "STM32 Counter RTC driver"
+	depends on SOC_FAMILY_STM32
+	select USE_STM32_LL_RTC
+	select USE_STM32_LL_PWR
+	select USE_STM32_LL_RCC
+	select USE_STM32_LL_EXTI
+	select NEWLIB_LIBC
+	help
+	  Build RTC driver for STM32 SoCs. Tested on STM32 F3, F4, L4, F7 series
+
+choice COUNTER_RTC_STM32_CLOCK_SRC
+	bool "RTC clock source"
+	depends on COUNTER_RTC_STM32
+
+config COUNTER_RTC_STM32_CLOCK_LSI
+	bool "LSI"
+	help
+	  Use LSI as RTC clock
+
+config COUNTER_RTC_STM32_CLOCK_LSE
+	bool "LSE"
+	help
+	  Use LSE as RTC clock
+
+endchoice #COUNTER_RTC_STM32_CLOCK_SRC
+
+if !SOC_SERIES_STM32F4X
+
+choice COUNTER_RTC_STM32_LSE_DRIVE
+	prompt "LSE oscillator drive capability"
+	depends on RTC_STM32_CLOCK_LSE
+
+config COUNTER_RTC_STM32_LSE_DRIVE_LOW
+	bool "Low"
+	help
+	  Xtal mode lower driving capability
+
+config COUNTER_RTC_STM32_LSE_DRIVE_MEDIUMLOW
+	bool "Medium Low"
+	help
+	  Xtal mode medium low driving capability
+
+config COUNTER_RTC_STM32_LSE_DRIVE_MEDIUMHIGH
+	bool "Medium High"
+	help
+	  Xtal mode medium high driving capability
+
+config COUNTER_RTC_STM32_LSE_DRIVE_HIGH
+	bool "High"
+	help
+	  Xtal mode higher driving capability
+
+endchoice
+
+config COUNTER_RTC_STM32_LSE_DRIVE_STRENGTH
+	hex
+	default 0x00000000 if COUNTER_RTC_STM32_LSE_DRIVE_LOW
+	default 0x00000008 if COUNTER_RTC_STM32_LSE_DRIVE_MEDIUMLOW
+	default 0x00000010 if COUNTER_RTC_STM32_LSE_DRIVE_MEDIUMHIGH
+	default 0x00000018 if COUNTER_RTC_STM32_LSE_DRIVE_HIGH
+
+endif

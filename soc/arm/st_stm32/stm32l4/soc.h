@@ -68,7 +68,7 @@
 #include <stm32l4xx_ll_rng.h>
 #endif
 
-#ifdef CONFIG_RTC_STM32
+#if defined(CONFIG_RTC_STM32) || defined(CONFIG_COUNTER_RTC_STM32)
 #include <stm32l4xx_ll_rtc.h>
 #include <stm32l4xx_ll_exti.h>
 #include <stm32l4xx_ll_pwr.h>
