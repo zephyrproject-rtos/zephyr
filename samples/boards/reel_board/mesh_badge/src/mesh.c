@@ -34,7 +34,12 @@
 /* Maximum characters in "hello" message */
 #define HELLO_MAX         8
 
+#define SENS_HDC1010_MONITOR_TIMEOUT_MS 500
+#define SENS_TRIG_TYPE_PERCENTAGE_BIT	BIT(8)
+#define SENS_TRIG_FAST_CAD_PER_DIV_MASK	0x7f
+
 #define MAX_SENS_STATUS_LEN 8
+#define MAX_SENS_CAD_STATUS_LEN 12
 
 #define SENS_PROP_ID_TEMP_CELCIUS 0x2A1F
 #define SENS_PROP_ID_UNIT_TEMP_CELCIUS 0x272F
@@ -57,13 +62,45 @@ struct sensor_hdr_b {
 	u16_t prop_id;
 } __packed;
 
+struct sensor_temperature_celcius_cad {
+	u8_t fast_cad_period_div:7;
+	u8_t status_trigger_type:1;
+	union {
+		u16_t status_trigger_delta_down_per;
+		s16_t status_trigger_delta_down_val;
+	};
+	union {
+		u16_t status_trigger_delta_up_per;
+		s16_t status_trigger_delta_up_val;
+	};
+	u8_t status_min_interval;
+	s16_t fast_cad_low_val;
+	s16_t fast_cad_high_val;
+
+	u32_t pub_period;
+	u8_t fast_cad_period_div_ref;
+	s16_t ref_val;
+	bool was_in_fast_cad;
+};
+
 static struct k_work hello_work;
 static struct k_work mesh_start_work;
+static struct k_delayed_work hdc1010_temp_timer;
 
 /* Definitions of models user data (Start) */
 static struct led_onoff_state led_onoff_state[] = {
 	{ .dev_id = DEV_IDX_LED0 },
 };
+
+static struct sensor_temperature_celcius_cad hdc1010_temp_cad = {
+	.fast_cad_period_div = 0x7F,
+	.fast_cad_low_val = -300,
+	.fast_cad_high_val = -300,
+	.status_trigger_delta_down_val = UINT16_MAX,
+	.status_trigger_delta_up_val = UINT16_MAX,
+	.pub_period = K_SECONDS(20),
+};
+
 
 static void heartbeat(u8_t hops, u16_t feat)
 {
@@ -201,19 +238,23 @@ static void sensor_desc_get(struct bt_mesh_model *model,
 	/* TODO */
 }
 
-static void sens_temperature_celcius_fill(struct net_buf_simple *msg)
+static void sens_temperature_celcius_fill(struct net_buf_simple *msg,
+					  struct sensor_value *val)
 {
 	struct sensor_hdr_b hdr;
 	/* TODO Get only temperature from sensor */
-	struct sensor_value val[2];
+	struct sensor_value meas_val[2];
 	s16_t temp_degrees;
 
 	hdr.format = SENSOR_HDR_B;
 	hdr.length = sizeof(temp_degrees);
 	hdr.prop_id = SENS_PROP_ID_UNIT_TEMP_CELCIUS;
 
-	get_hdc1010_val(val);
-	temp_degrees = sensor_value_to_double(&val[0]);
+	if (!val) {
+		get_hdc1010_val(meas_val);
+	}
+
+	temp_degrees = sensor_value_to_double(val ? &val[0] : &meas_val[0]);
 
 	net_buf_simple_add_mem(msg, &hdr, sizeof(hdr));
 	net_buf_simple_add_le16(msg, temp_degrees);
@@ -242,7 +283,7 @@ static void sensor_create_status(u16_t id, struct net_buf_simple *msg)
 
 	switch (id) {
 	case SENS_PROP_ID_TEMP_CELCIUS:
-		sens_temperature_celcius_fill(msg);
+		sens_temperature_celcius_fill(msg, NULL);
 		break;
 	default:
 		sens_unknown_fill(id, msg);
@@ -279,9 +320,189 @@ static void sensor_series_get(struct bt_mesh_model *model,
 	/* TODO */
 }
 
+static void sens_temperature_celcius_cad_update(struct net_buf_simple *buf,
+						bool type, u8_t fcpd)
+{
+	struct sensor_value val[2];
+	s16_t temp_degrees;
+
+	get_hdc1010_val(val);
+	temp_degrees = sensor_value_to_double(&val[0]);
+
+	hdc1010_temp_cad.status_trigger_type = type;
+	hdc1010_temp_cad.fast_cad_period_div = fcpd;
+
+	/* Status trigger delta */
+	if (type) {
+		hdc1010_temp_cad.status_trigger_delta_down_per =
+						net_buf_simple_pull_le16(buf);
+		hdc1010_temp_cad.status_trigger_delta_up_per =
+						net_buf_simple_pull_le16(buf);
+	} else {
+		hdc1010_temp_cad.status_trigger_delta_down_val =
+						net_buf_simple_pull_le16(buf);
+		hdc1010_temp_cad.status_trigger_delta_up_val =
+						net_buf_simple_pull_le16(buf);
+	}
+
+	/* TODO Handle minimal interval set value */
+	hdc1010_temp_cad.status_min_interval = net_buf_simple_pull_u8(buf);
+
+	/* Fast cadence */
+	hdc1010_temp_cad.fast_cad_low_val = net_buf_simple_pull_le16(buf);
+	hdc1010_temp_cad.fast_cad_high_val = net_buf_simple_pull_le16(buf);
+}
+
+static void sensor_cad_update(struct net_buf_simple *buf, u16_t id, bool type,
+			      u8_t fcpd)
+{
+	switch (id) {
+	case SENS_PROP_ID_TEMP_CELCIUS:
+		sens_temperature_celcius_cad_update(buf, type, fcpd);
+		break;
+	default:
+		break;
+	}
+}
+
+static void sens_temperature_celcius_cad_fill(struct net_buf_simple *msg)
+{
+	u8_t tmp;
+
+	net_buf_simple_add_le16(msg, SENS_PROP_ID_UNIT_TEMP_CELCIUS);
+
+	tmp = hdc1010_temp_cad.fast_cad_period_div;
+	if (hdc1010_temp_cad.status_trigger_type)
+		tmp |= SENS_TRIG_TYPE_PERCENTAGE_BIT;
+
+	net_buf_simple_add_u8(msg, tmp);
+	net_buf_simple_add_le16(msg,
+				hdc1010_temp_cad.status_trigger_delta_down_val);
+	net_buf_simple_add_le16(msg,
+				hdc1010_temp_cad.status_trigger_delta_up_val);
+	net_buf_simple_add_u8(msg, hdc1010_temp_cad.status_min_interval);
+	net_buf_simple_add_le16(msg, hdc1010_temp_cad.fast_cad_low_val);
+	net_buf_simple_add_le16(msg, hdc1010_temp_cad.fast_cad_high_val);
+}
+
+static void sensor_create_cad_status(u16_t id, struct net_buf_simple *msg)
+{
+	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_SENS_CAD_STATUS);
+
+	switch (id) {
+	case SENS_PROP_ID_TEMP_CELCIUS:
+		sens_temperature_celcius_cad_fill(msg);
+		break;
+	default:
+		break;
+	}
+}
+
+static u16_t sensor_cad_set_parse_and_update(struct net_buf_simple *buf)
+{
+	u16_t sensor_id;
+	u8_t fast_cad_period_div;
+	u8_t tmp;
+	bool status_trig_type;
+
+	sensor_id = net_buf_simple_pull_le16(buf);
+	tmp = net_buf_simple_pull_u8(buf);
+	fast_cad_period_div = tmp & SENS_TRIG_FAST_CAD_PER_DIV_MASK;
+	status_trig_type = tmp >> 7;
+
+	sensor_cad_update(buf, sensor_id, status_trig_type,
+			  fast_cad_period_div);
+
+	return sensor_id;
+}
+
+static void sensor_cad_set_unack(struct bt_mesh_model *model,
+				 struct bt_mesh_msg_ctx *ctx,
+				 struct net_buf_simple *buf)
+{
+	sensor_cad_set_parse_and_update(buf);
+}
+
+static void sensor_cad_set(struct bt_mesh_model *model,
+			   struct bt_mesh_msg_ctx *ctx,
+			   struct net_buf_simple *buf)
+{
+	NET_BUF_SIMPLE_DEFINE(msg, 1 + MAX_SENS_CAD_STATUS_LEN + 4);
+	u16_t sensor_id;
+
+	sensor_id = sensor_cad_set_parse_and_update(buf);
+	sensor_create_cad_status(sensor_id, &msg);
+
+	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
+		printk("Unable to send Sensor cadence status (set response)\n");
+	}
+}
+
+static void sensor_cad_get(struct bt_mesh_model *model,
+			   struct bt_mesh_msg_ctx *ctx,
+			   struct net_buf_simple *buf)
+{
+	NET_BUF_SIMPLE_DEFINE(msg, 1 + MAX_SENS_CAD_STATUS_LEN + 4);
+	u16_t sensor_id;
+
+	sensor_id = net_buf_simple_pull_le16(buf);
+	sensor_create_cad_status(sensor_id, &msg);
+
+	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
+		printk("Unable to send Sensor cadence status (get response)\n");
+	}
+}
+
+static bool sensor_delta_check(u16_t id, struct sensor_value *val)
+{
+	switch (id) {
+	case SENS_PROP_ID_TEMP_CELCIUS:
+	{
+		if (hdc1010_temp_cad.status_trigger_type) {
+			/* TODO Percentage delta from measured at cad set */
+		} else {
+			s16_t temp = (s16_t)sensor_value_to_double(&val[0]);
+
+			if ((hdc1010_temp_cad.status_trigger_delta_down_val <=
+			    (hdc1010_temp_cad.ref_val - temp)) ||
+			    (hdc1010_temp_cad.status_trigger_delta_up_val <=
+			    (temp - hdc1010_temp_cad.ref_val))) {
+				hdc1010_temp_cad.ref_val = temp;
+
+				return true;
+			}
+		}
+
+		return false;
+	}
+	default:
+		return false;
+	}
+}
+
+static bool sensor_fast_cad_check(u16_t id, struct sensor_value *val)
+{
+	switch (id) {
+	case SENS_PROP_ID_TEMP_CELCIUS:
+	{
+		s16_t temp = (s16_t)sensor_value_to_double(&val[0]);
+
+		if ((hdc1010_temp_cad.fast_cad_low_val <= temp) &&
+		    (hdc1010_temp_cad.fast_cad_high_val >= temp)) {
+			return true;
+		}
+
+		return false;
+	}
+	default:
+		return false;
+	}
+}
+
 /* Definitions of models publication context (Start) */
 BT_MESH_HEALTH_PUB_DEFINE(health_pub, 0);
 BT_MESH_MODEL_PUB_DEFINE(gen_onoff_srv_pub_root, NULL, 2 + 3);
+BT_MESH_MODEL_PUB_DEFINE(sensor_srv_pub, NULL, 1 + MAX_SENS_STATUS_LEN + 4);
 
 /* Mapping of message handlers for Generic OnOff Server (0x1000) */
 static const struct bt_mesh_model_op gen_onoff_srv_op[] = {
@@ -291,12 +512,19 @@ static const struct bt_mesh_model_op gen_onoff_srv_op[] = {
 	BT_MESH_MODEL_OP_END,
 };
 
-/* Mapping of message handlers for Sensor Server (0x1100) */
+/*
+ * Mapping of message handlers for Sensor Server (0x1100) and Sensor Setup
+ * Server (0x1101)
+ */
 static const struct bt_mesh_model_op sensor_srv_op[] = {
 	{ BT_MESH_MODEL_OP_SENS_DESC_GET, 0, sensor_desc_get },
 	{ BT_MESH_MODEL_OP_SENS_GET, 0, sensor_get },
 	{ BT_MESH_MODEL_OP_SENS_COL_GET, 2, sensor_col_get },
 	{ BT_MESH_MODEL_OP_SENS_SERIES_GET, 2, sensor_series_get },
+	/* Sensor Setup Server */
+	{ BT_MESH_MODEL_OP_SENS_CAD_GET, 2, sensor_cad_get },
+	{ BT_MESH_MODEL_OP_SENS_CAD_SET, 8, sensor_cad_set },
+	{ BT_MESH_MODEL_OP_SENS_CAD_SET_UNACK, 8, sensor_cad_set_unack },
 };
 
 static struct bt_mesh_model root_models[] = {
@@ -307,7 +535,7 @@ static struct bt_mesh_model root_models[] = {
 		      gen_onoff_srv_op, &gen_onoff_srv_pub_root,
 		      &led_onoff_state[0]),
 	BT_MESH_MODEL(BT_MESH_MODEL_ID_SENSOR_SRV,
-		      sensor_srv_op, NULL, NULL),
+		      sensor_srv_op, &sensor_srv_pub, NULL),
 };
 
 static void vnd_hello(struct bt_mesh_model *model,
@@ -354,6 +582,90 @@ static void vnd_heartbeat(struct bt_mesh_model *model,
 	       hops, hops == 1 ? "" : "s");
 
 	board_add_heartbeat(ctx->addr, hops);
+}
+
+static void hdc1010_temp_monitor(struct k_work *work)
+{
+	struct net_buf_simple *msg = sensor_srv_pub.msg;
+	struct bt_mesh_model *mod = sensor_srv_pub.mod;
+	struct sensor_value val[2];
+	bool published = false;
+	int err;
+	static u32_t last_publish;
+	u32_t elapsed, period, current;
+
+	if (sensor_srv_pub.addr == BT_MESH_ADDR_UNASSIGNED) {
+		return;
+	}
+
+	current = k_uptime_get_32();
+	elapsed = current - last_publish;
+	period = hdc1010_temp_cad.pub_period;
+
+	get_hdc1010_val(val);
+
+	/* Check if fast cadence condition is meet */
+	if (sensor_fast_cad_check(SENS_PROP_ID_TEMP_CELCIUS, val)) {
+		if (!hdc1010_temp_cad.was_in_fast_cad) {
+			hdc1010_temp_cad.fast_cad_period_div_ref =
+					hdc1010_temp_cad.fast_cad_period_div;
+			hdc1010_temp_cad.pub_period /=
+				1 << hdc1010_temp_cad.fast_cad_period_div;
+			hdc1010_temp_cad.was_in_fast_cad = true;
+
+			bt_mesh_model_msg_init(msg,
+					       BT_MESH_MODEL_OP_SENS_STATUS);
+			sens_temperature_celcius_fill(msg, val);
+
+			err = bt_mesh_model_publish(mod);
+			last_publish = current;
+			if (err) {
+				goto err_publish;
+			} else {
+				published = true;
+			}
+		}
+	} else {
+		if (hdc1010_temp_cad.was_in_fast_cad) {
+			hdc1010_temp_cad.was_in_fast_cad = false;
+			hdc1010_temp_cad.pub_period *=
+				1 << hdc1010_temp_cad.fast_cad_period_div_ref;
+		}
+	}
+
+	/* Check if delta condition is meet */
+	if (!published && sensor_delta_check(SENS_PROP_ID_TEMP_CELCIUS, val)) {
+		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_SENS_STATUS);
+		sens_temperature_celcius_fill(msg, val);
+
+		err = bt_mesh_model_publish(mod);
+		last_publish = current;
+		if (err) {
+			goto err_publish;
+		} else {
+			published = true;
+		}
+	}
+
+	if (!published && elapsed > period) {
+		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_SENS_STATUS);
+		sens_temperature_celcius_fill(msg, val);
+
+		err = bt_mesh_model_publish(mod);
+		last_publish = current;
+		if (err) {
+			goto err_publish;
+		}
+	}
+
+	goto reschedule;
+
+err_publish:
+	printk("bt_mesh_model_publish err %d\n", err);
+
+reschedule:
+	k_delayed_work_submit(&hdc1010_temp_timer,
+			      K_MSEC(SENS_HDC1010_MONITOR_TIMEOUT_MS));
 }
 
 static size_t first_name_len(const char *name)
@@ -455,6 +767,17 @@ void mesh_send_hello(void)
 	k_work_submit(&hello_work);
 }
 
+static void init_models(void)
+{
+	struct sensor_value meas_val[2];
+
+	get_hdc1010_val(meas_val);
+	hdc1010_temp_cad.ref_val = sensor_value_to_double(&meas_val[0]);
+
+	k_delayed_work_init(&hdc1010_temp_timer, hdc1010_temp_monitor);
+	k_delayed_work_submit(&hdc1010_temp_timer, hdc1010_temp_cad.pub_period);
+}
+
 static int provision_and_configure(void)
 {
 	static const u8_t net_key[16] = {
@@ -470,7 +793,12 @@ static int provision_and_configure(void)
 		.addr = GROUP_ADDR,
 		.app_idx = APP_IDX,
 		.ttl = DEFAULT_TTL,
-		.period = BT_MESH_PUB_PERIOD_SEC(10),
+		.period = BT_MESH_PUB_PERIOD_SEC(7),
+	};
+	struct bt_mesh_cfg_mod_pub pub_cad = {
+		.addr = GROUP_ADDR,
+		.app_idx = APP_IDX,
+		.ttl = DEFAULT_TTL,
 	};
 	u8_t dev_key[16];
 	u16_t addr;
@@ -517,11 +845,16 @@ static int provision_and_configure(void)
 				 BT_MESH_MODEL_ID_HEALTH_SRV, NULL);
 
 	/* Add model subscription */
-	bt_mesh_cfg_mod_sub_add_vnd(NET_IDX, addr, addr, GROUP_ADDR,
-				    MOD_LF, BT_COMP_ID_LF, NULL);
+	bt_mesh_cfg_mod_sub_add_vnd(NET_IDX, addr, addr, GROUP_ADDR, MOD_LF,
+				    BT_COMP_ID_LF, NULL);
 
 	bt_mesh_cfg_mod_pub_set_vnd(NET_IDX, addr, addr, MOD_LF, BT_COMP_ID_LF,
 				    &pub, NULL);
+
+	bt_mesh_cfg_mod_pub_set(NET_IDX, addr, addr,
+				BT_MESH_MODEL_ID_SENSOR_SRV, &pub_cad, NULL);
+
+	init_models();
 
 	printk("Configuration complete\n");
 
