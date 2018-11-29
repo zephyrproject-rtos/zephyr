@@ -1078,7 +1078,7 @@ zephyr_compile_options(
 )
 
 configure_file(
-     $ENV{ZEPHYR_BASE}/include/arch/arm/cortex_m/scripts/app_data_alignment.ld
+     $ENV{ZEPHYR_BASE}/include/arch/arc/v2/app_data_alignment.ld
      ${PROJECT_BINARY_DIR}/include/generated/app_data_alignment.ld)
 
 configure_file(
@@ -1110,7 +1110,7 @@ if(CONFIG_CPU_HAS_MPU AND CONFIG_USERSPACE)
   endif()
 
 
-  if(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT AND CONFIG_APPLICATION_MEMORY)
+  if(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT AND CONFIG_ARC AND CONFIG_APPLICATION_MEMORY)
 
     construct_add_custom_command_for_linker_pass(linker_app_sizing custom_command)
     add_custom_command(
