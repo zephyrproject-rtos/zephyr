@@ -9,3 +9,4 @@ ram: 20
 supported:
   - i2c
   - pwm
+  - usb_device
