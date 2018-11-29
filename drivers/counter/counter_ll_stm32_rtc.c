@@ -320,8 +320,8 @@ static const struct rtc_stm32_config rtc_config = {
 		.channels = 1,
 	},
 	.pclken = {
-		.enr = LL_APB1_GRP1_PERIPH_PWR,
-		.bus = STM32_CLOCK_BUS_APB1,
+		.enr = DT_RTC_0_CLOCK_BITS,
+		.bus = DT_RTC_0_CLOCK_BUS,
 	},
 	.ll_rtc_config = {
 		.HourFormat = LL_RTC_HOURFORMAT_24HOUR,
