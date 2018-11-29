@@ -81,6 +81,7 @@
 			interrupts = <52>;
 			reg = <0x10016000 0x1000>;
 			reg-names = "control";
+			label = "i2c_0";
 			status = "disabled";
 		};
 		plic: interrupt-controller@c000000 {
