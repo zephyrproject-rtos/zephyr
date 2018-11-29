@@ -208,8 +208,9 @@ void k_float_disable(struct k_thread *thread)
 		_FpAccessDisable();
 		_kernel.current_fp = (struct k_thread *)0;
 	} else {
-		if (_kernel.current_fp == thread)
+		if (_kernel.current_fp == thread) {
 			_kernel.current_fp = (struct k_thread *)0;
+		}
 	}
 
 	irq_unlock(imask);
