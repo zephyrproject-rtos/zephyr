@@ -337,6 +337,10 @@ zephyr_ld_options(
   )
 
 if(NOT CONFIG_NATIVE_APPLICATION)
+  set(NOSTDINC_F -nostdinc)
+endif()
+
+if(NOT CONFIG_NATIVE_APPLICATION)
   # Funny thing is if this is set to =error, some architectures will
   # skip this flag even though the compiler flag check passes
   # (e.g. ARC and Xtensa). So warning should be the default for now.
@@ -1187,10 +1191,6 @@ target_link_libraries(zephyr_prebuilt ${TOPT} ${PROJECT_BINARY_DIR}/linker.cmd $
 set_property(TARGET   zephyr_prebuilt PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker.cmd)
 add_dependencies(     zephyr_prebuilt ${ALIGN_SIZING_DEP} ${PRIV_STACK_DEP} linker_script offsets)
 
-
-if(NOT CONFIG_NATIVE_APPLICATION)
-	set(NOSTDINC_F -nostdinc)
-endif()
 
 if(GKOF OR GKSF)
   set(logical_target_for_zephyr_elf kernel_elf)
