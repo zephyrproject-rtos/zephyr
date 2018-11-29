@@ -10,7 +10,7 @@
 int
 strncasecmp(const char *s1, const char *s2, size_t n)
 {
-	unsigned char c = 1;
+	unsigned char c = 1U;
 
 	for (; c && n != 0; n--) {
 		unsigned char lower1, lower2;

@@ -154,7 +154,7 @@ static	void _rlrshift(uint64_t *v)
 static void _ldiv5(uint64_t *v)
 {
 	uint32_t i, hi;
-	uint64_t rem = *v, quot = 0, q;
+	uint64_t rem = *v, quot = 0U, q;
 	static const char shifts[] = { 32, 3, 0 };
 
 	/* Usage in this file wants rounded behavior, not truncation.  So add
@@ -162,7 +162,7 @@ static void _ldiv5(uint64_t *v)
 	 */
 	rem += 2;
 
-	for (i = 0; i < 3; i++) {
+	for (i = 0U; i < 3; i++) {
 		hi = rem >> shifts[i];
 		q = (uint64_t)(hi / 5) << shifts[i];
 		rem -= q * 5;

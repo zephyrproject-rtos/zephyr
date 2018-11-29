@@ -113,7 +113,7 @@ int base64_encode(u8_t *dst, size_t dlen, size_t *olen, const u8_t *src,
 	}
 
 	*olen = p - dst;
-	*p = 0;
+	*p = 0U;
 
 	return 0;
 }
@@ -129,9 +129,9 @@ int base64_decode(u8_t *dst, size_t dlen, size_t *olen, const u8_t *src,
 	u8_t *p;
 
 	/* First pass: check for validity and get output length */
-	for (i = n = j = 0; i < slen; i++) {
+	for (i = n = j = 0U; i < slen; i++) {
 		/* Skip spaces before checking for EOL */
-		x = 0;
+		x = 0U;
 		while (i < slen && src[i] == ' ') {
 			++i;
 			++x;
@@ -187,7 +187,7 @@ int base64_decode(u8_t *dst, size_t dlen, size_t *olen, const u8_t *src,
 		return -ENOMEM;
 	}
 
-	for (j = 3, n = x = 0, p = dst; i > 0; i--, src++) {
+	for (j = 3U, n = x = 0U, p = dst; i > 0; i--, src++) {
 
 		if (*src == '\r' || *src == '\n' || *src == ' ') {
 			continue;

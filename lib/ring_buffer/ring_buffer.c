@@ -35,19 +35,19 @@ int ring_buf_item_put(struct ring_buf *buf, u16_t type, u8_t value,
 		header->value = value;
 
 		if (likely(buf->mask)) {
-			for (i = 0; i < size32; ++i) {
+			for (i = 0U; i < size32; ++i) {
 				index = (i + buf->tail + 1) & buf->mask;
 				buf->buf.buf32[index] = data[i];
 			}
 			buf->tail = (buf->tail + size32 + 1) & buf->mask;
 		} else {
-			for (i = 0; i < size32; ++i) {
+			for (i = 0U; i < size32; ++i) {
 				index = (i + buf->tail + 1) % buf->size;
 				buf->buf.buf32[index] = data[i];
 			}
 			buf->tail = (buf->tail + size32 + 1) % buf->size;
 		}
-		rc = 0;
+		rc = 0U;
 	} else {
 		buf->misc.item_mode.dropped_put_count++;
 		rc = -EMSGSIZE;
@@ -78,13 +78,13 @@ int ring_buf_item_get(struct ring_buf *buf, u16_t *type, u8_t *value,
 	*value = header->value;
 
 	if (likely(buf->mask)) {
-		for (i = 0; i < header->length; ++i) {
+		for (i = 0U; i < header->length; ++i) {
 			index = (i + buf->head + 1) & buf->mask;
 			data[i] = buf->buf.buf32[index];
 		}
 		buf->head = (buf->head + header->length + 1) & buf->mask;
 	} else {
-		for (i = 0; i < header->length; ++i) {
+		for (i = 0U; i < header->length; ++i) {
 			index = (i + buf->head + 1) % buf->size;
 			data[i] = buf->buf.buf32[index];
 		}
@@ -143,7 +143,7 @@ u32_t ring_buf_put(struct ring_buf *buf, const u8_t *data, u32_t size)
 {
 	u8_t *dst;
 	u32_t partial_size;
-	u32_t total_size = 0;
+	u32_t total_size = 0U;
 
 	do {
 		partial_size = ring_buf_put_claim(buf, &dst, size);
@@ -199,7 +199,7 @@ u32_t ring_buf_get(struct ring_buf *buf, u8_t *data, u32_t size)
 {
 	u8_t *src;
 	u32_t partial_size;
-	u32_t total_size = 0;
+	u32_t total_size = 0U;
 
 	do {
 		partial_size = ring_buf_get_claim(buf, &src, size);

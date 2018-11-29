@@ -86,7 +86,7 @@ int pthread_rwlock_timedrdlock(pthread_rwlock_t *rwlock,
 			       const struct timespec *abstime)
 {
 	s32_t timeout;
-	u32_t ret = 0;
+	u32_t ret = 0U;
 
 	if (rwlock->status == NOT_INITIALIZED || abstime->tv_nsec < 0 ||
 	    abstime->tv_nsec > NSEC_PER_SEC) {
@@ -148,7 +148,7 @@ int pthread_rwlock_timedwrlock(pthread_rwlock_t *rwlock,
 			       const struct timespec *abstime)
 {
 	s32_t timeout;
-	u32_t ret = 0;
+	u32_t ret = 0U;
 
 	if (rwlock->status == NOT_INITIALIZED || abstime->tv_nsec < 0 ||
 	    abstime->tv_nsec > NSEC_PER_SEC) {
@@ -214,7 +214,7 @@ int pthread_rwlock_unlock(pthread_rwlock_t *rwlock)
 
 static u32_t read_lock_acquire(pthread_rwlock_t *rwlock, s32_t timeout)
 {
-	u32_t ret = 0;
+	u32_t ret = 0U;
 
 	if (k_sem_take(&rwlock->wr_sem, timeout) == 0) {
 		k_sem_take(&rwlock->reader_active, K_NO_WAIT);
@@ -229,7 +229,7 @@ static u32_t read_lock_acquire(pthread_rwlock_t *rwlock, s32_t timeout)
 
 static u32_t write_lock_acquire(pthread_rwlock_t *rwlock, s32_t timeout)
 {
-	u32_t ret = 0;
+	u32_t ret = 0U;
 	s64_t elapsed_time, st_time = k_uptime_get();
 
 	/* waiting for release of write lock */
