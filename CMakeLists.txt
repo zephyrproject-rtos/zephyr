@@ -340,6 +340,9 @@ if(NOT CONFIG_NATIVE_APPLICATION)
   set(NOSTDINC_F -nostdinc)
 endif()
 
+get_property(TOPT GLOBAL PROPERTY TOPT)
+set_ifndef(  TOPT -T)
+
 if(NOT CONFIG_NATIVE_APPLICATION)
   # Funny thing is if this is set to =error, some architectures will
   # skip this flag even though the compiler flag check passes
@@ -1071,8 +1074,6 @@ endif()
 get_property(GKOF GLOBAL PROPERTY GENERATED_KERNEL_OBJECT_FILES)
 get_property(GKSF GLOBAL PROPERTY GENERATED_KERNEL_SOURCE_FILES)
 
-get_property(TOPT GLOBAL PROPERTY TOPT)
-set_ifndef(  TOPT -T)
 
 get_property(CSTD GLOBAL PROPERTY CSTD)
 set_ifndef(CSTD c99)
