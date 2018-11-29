@@ -698,12 +698,6 @@ static void shell_tab_handle(const struct shell *shell)
 	}
 }
 
-#define SHELL_ASCII_MAX_CHAR (127u)
-static inline int ascii_filter(const char data)
-{
-	return (u8_t) data > SHELL_ASCII_MAX_CHAR ? -EINVAL : 0;
-}
-
 static void metakeys_handle(const struct shell *shell, char data)
 {
 	/* Optional feature */
@@ -757,6 +751,29 @@ static void metakeys_handle(const struct shell *shell, char data)
 	}
 }
 
+/* Functions returns true if new line character shall be processed */
+static bool process_nl(const struct shell *shell, u8_t data)
+{
+	if ((data != '\r') && (data != '\n')) {
+		shell->ctx->internal.flags.last_nl = 0;
+		return false;
+	}
+
+	if ((shell->ctx->internal.flags.last_nl == 0) ||
+	    (data == shell->ctx->internal.flags.last_nl)) {
+		shell->ctx->internal.flags.last_nl = data;
+		return true;
+	}
+
+	return false;
+}
+
+#define SHELL_ASCII_MAX_CHAR (127u)
+static inline int ascii_filter(const char data)
+{
+	return (u8_t) data > SHELL_ASCII_MAX_CHAR ? -EINVAL : 0;
+}
+
 static void shell_state_collect(const struct shell *shell)
 {
 	size_t count = 0;
@@ -777,7 +794,7 @@ static void shell_state_collect(const struct shell *shell)
 
 		switch (shell->ctx->receive_state) {
 		case SHELL_RECEIVE_DEFAULT:
-			if ((data == '\r') || (data == '\n')) {
+			if (process_nl(shell, data)) {
 				if (!shell->ctx->cmd_buff_len) {
 					history_mode_exit(shell);
 					cursor_next_line_move(shell);
@@ -785,10 +802,13 @@ static void shell_state_collect(const struct shell *shell)
 					/* Command execution */
 					(void)shell_execute(shell);
 				}
-
+				/* Function responsible for printing prompt
+				 * on received NL.
+				 */
 				shell_state_set(shell, SHELL_STATE_ACTIVE);
 				return;
 			}
+
 			switch (data) {
 			case SHELL_VT100_ASCII_ESC: /* ESCAPE */
 				receive_state_change(shell, SHELL_RECEIVE_ESC);
