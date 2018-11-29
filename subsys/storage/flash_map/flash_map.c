@@ -38,6 +38,9 @@ static const struct driver_map_entry  flash_drivers_map[] = {
 #ifdef CONFIG_SPI_FLASH_W25QXXDV
 	{SPI_FLASH_0_ID, CONFIG_SPI_FLASH_W25QXXDV_DRV_NAME},
 #endif
+#ifdef DT_SPI_NOR_DRV_NAME
+	{SPI_FLASH_0_ID, DT_SPI_NOR_DRV_NAME},
+#endif
 };
 
 extern const struct flash_area *flash_map;

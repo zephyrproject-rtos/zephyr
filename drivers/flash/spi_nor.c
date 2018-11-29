@@ -382,16 +382,30 @@ static int spi_nor_init(struct device *dev)
 	return spi_nor_configure(dev);
 }
 
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
+static const struct flash_pages_layout dev_layout = {
+	.pages_count = KB(CONFIG_FLASH_SIZE) / FLASH_ERASE_BLOCK_SIZE,
+	.pages_size = FLASH_ERASE_BLOCK_SIZE,
+};
+
+static void spi_nor_pages_layout(struct device *dev,
+				const struct flash_pages_layout **layout,
+				size_t *layout_size)
+{
+	*layout = &dev_layout;
+	*layout_size = 1;
+}
+#endif /* CONFIG_FLASH_PAGE_LAYOUT */
+
 static const struct flash_driver_api spi_nor_api = {
 	.read = spi_nor_read,
 	.write = spi_nor_write,
 	.erase = spi_nor_erase,
 	.write_protection = spi_nor_write_protection_set,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
-	.page_layout = (flash_api_pages_layout)
-		       flash_page_layout_not_implemented,
+	.page_layout = spi_nor_pages_layout,
 #endif
-	.write_block_size = 1,
+	.write_block_size = FLASH_WRITE_BLOCK_SIZE,
 };
 
 static const struct spi_nor_config flash_id = {
