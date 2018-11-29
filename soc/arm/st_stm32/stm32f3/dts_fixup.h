@@ -255,6 +255,7 @@
 #define CONFIG_RTC_0_NAME                       DT_ST_STM32_RTC_40002800_LABEL
 #define DT_RTC_0_NAME                       DT_ST_STM32_RTC_40002800_LABEL
 #define CONFIG_RTC_PRESCALER                    DT_ST_STM32_RTC_40002800_PRESCALER
-
 #define DT_WDT_0_NAME                   DT_ST_STM32_WATCHDOG_0_LABEL
+#define DT_RTC_0_CLOCK_BITS                 DT_ST_STM32_RTC_40002800_CLOCK_BITS
+#define DT_RTC_0_CLOCK_BUS                  DT_ST_STM32_RTC_40002800_CLOCK_BUS
 /* End of SoC Level DTS fixup file */
