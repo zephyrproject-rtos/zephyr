@@ -117,9 +117,9 @@
  */
 static void arm_mps2_pinmux_defaults(void)
 {
-	u32_t gpio_0 = 0;
-	u32_t gpio_1 = 0;
-	u32_t gpio_2 = 0;
+	u32_t gpio_0 = 0U;
+	u32_t gpio_1 = 0U;
+	u32_t gpio_2 = 0U;
 
 	/* Set GPIO Alternate Functions */
 

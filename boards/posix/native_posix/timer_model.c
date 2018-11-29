@@ -155,7 +155,7 @@ void hwtimer_init(void)
 	if (real_time_mode) {
 		boot_time = get_host_us_time();
 		last_radj_rtime = boot_time;
-		last_radj_stime = 0;
+		last_radj_stime = 0U;
 	}
 	if (!reset_rtc) {
 		struct timespec tv;
