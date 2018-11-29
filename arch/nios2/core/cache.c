@@ -26,7 +26,7 @@ void _nios2_icache_flush_all(void)
 {
 	u32_t i;
 
-	for (i = 0; i < ALT_CPU_ICACHE_SIZE; i += ALT_CPU_ICACHE_LINE_SIZE) {
+	for (i = 0U; i < ALT_CPU_ICACHE_SIZE; i += ALT_CPU_ICACHE_LINE_SIZE) {
 		_nios2_icache_flush(i);
 	}
 
@@ -55,7 +55,7 @@ void _nios2_dcache_flush_all(void)
 {
 	u32_t i;
 
-	for (i = 0; i < ALT_CPU_DCACHE_SIZE; i += ALT_CPU_DCACHE_LINE_SIZE) {
+	for (i = 0U; i < ALT_CPU_DCACHE_SIZE; i += ALT_CPU_DCACHE_LINE_SIZE) {
 		_nios2_dcache_flush(i);
 	}
 }

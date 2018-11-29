@@ -233,7 +233,7 @@ void arm_core_mpu_configure_mem_domain(struct k_mem_domain *mem_domain)
 		pparts = mem_domain->partitions;
 	} else {
 		LOG_DBG("disable domain partition regions");
-		num_partitions = 0;
+		num_partitions = 0U;
 		pparts = NULL;
 	}
 
@@ -355,7 +355,7 @@ static int arm_mpu_init(struct device *arg)
 	_mpu_init();
 
 	/* Configure regions */
-	for (r_index = 0; r_index < mpu_config.num_regions; r_index++) {
+	for (r_index = 0U; r_index < mpu_config.num_regions; r_index++) {
 		_region_init(r_index, &mpu_config.mpu_regions[r_index]);
 	}
 

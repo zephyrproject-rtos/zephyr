@@ -143,7 +143,7 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		stackAdjEnd - sizeof(struct init_stack_frame));
 
 	/* fill init context */
-	pInitCtx->status32 = 0;
+	pInitCtx->status32 = 0U;
 	if (options & K_USER) {
 		pInitCtx->pc = ((u32_t)_user_thread_entry_wrapper);
 	} else {
@@ -169,7 +169,7 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		STACK_ROUND_DOWN(stackAdjEnd) -
 		sizeof(struct init_stack_frame));
 
-	pInitCtx->status32 = 0;
+	pInitCtx->status32 = 0U;
 	pInitCtx->pc = ((u32_t)_thread_entry_wrapper);
 #endif
 

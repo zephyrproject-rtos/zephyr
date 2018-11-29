@@ -117,7 +117,7 @@ void _PrepC(void)
 	_bss_zero();
 	_data_copy();
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
-	__start_time_stamp = 0;
+	__start_time_stamp = 0U;
 #endif
 	_IntLibInit();
 	_Cstart();
