@@ -9,7 +9,6 @@
 #ifndef _ASMLANGUAGE
 
 #include <fsl_common.h>
-#include <arch/arm/cortex_m/mpu/arm_core_mpu_dev.h>
 
 #define NXP_MPU_BASE SYSMPU_BASE
 
