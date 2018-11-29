@@ -23,6 +23,15 @@
 		reg = <0x00000000 (256*1024)>;
 	};
 
+	clock: clock-controller@400FE000 {
+		compatible = "ti,stellaris-ccm";
+		reg = <0x400FE000 0x144>;
+		label = "CCM";
+
+		clock-controller;
+		#clock-cells = <2>;
+	};
+
 	soc {
 		uart0: uart@4000c000 {
 			compatible = "ti,stellaris-uart";
