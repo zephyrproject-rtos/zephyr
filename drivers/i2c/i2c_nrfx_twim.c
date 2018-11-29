@@ -147,7 +147,7 @@ static int init_twim(struct device *dev, const nrfx_twim_config_t *config)
 					  : I2C_NRFX_TWIM_INVALID_FREQUENCY)
 
 #define I2C_NRFX_TWIM_DEVICE(idx)					       \
-	static_assert(							       \
+	BUILD_ASSERT_MSG(						       \
 		I2C_NRFX_TWIM_FREQUENCY(				       \
 			DT_NORDIC_NRF_I2C_I2C_##idx##_CLOCK_FREQUENCY)	       \
 		!= I2C_NRFX_TWIM_INVALID_FREQUENCY,			       \
