@@ -172,6 +172,7 @@ SECTIONS
 
   .ResetVector.text : ALIGN(4)
   {
+    . = CONFIG_TEXT_SECTION_OFFSET;
     _ResetVector_text_start = ABSOLUTE(.);
     KEEP (*(.ResetVector.text))
     _ResetVector_text_end = ABSOLUTE(.);

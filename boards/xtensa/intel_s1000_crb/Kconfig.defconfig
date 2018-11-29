@@ -77,6 +77,11 @@ choice SPI_NOR_BLOCK_ERASE_SIZE
 	default SPI_NOR_BLOCK_ERASE_64K
 endchoice
 
+if BOOTLOADER_MCUBOOT
+config TEXT_SECTION_OFFSET
+	default 0x100
+endif
+
 if USB
 config USB_DW
 	default y
