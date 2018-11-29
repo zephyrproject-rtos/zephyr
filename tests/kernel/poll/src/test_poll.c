@@ -66,7 +66,7 @@ void test_poll_no_wait(void)
 	};
 
 	/* test polling events that are already ready */
-	zassert_false(k_fifo_alloc_put(&no_wait_fifo, &msg), NULL);
+	zassert_false(k_fifo_put(&no_wait_fifo, &msg), NULL);
 	k_poll_signal_raise(&no_wait_signal, SIGNAL_RESULT);
 
 	zassert_equal(k_poll(events, ARRAY_SIZE(events), 0), 0, "");
@@ -144,7 +144,7 @@ static void poll_wait_helper(void *use_fifo, void *p2, void *p3)
 	k_sem_give(&wait_sem);
 
 	if ((intptr_t)use_fifo) {
-		k_fifo_alloc_put(&wait_fifo, &wait_msg);
+		k_fifo_put(&wait_fifo, &wait_msg);
 	}
 
 	k_poll_signal_raise(&wait_signal, SIGNAL_RESULT);
@@ -350,7 +350,7 @@ static void poll_cancel_helper(void *p1, void *p2, void *p3)
 
 	k_fifo_cancel_wait(&cancel_fifo);
 
-	k_fifo_alloc_put(&non_cancel_fifo, &msg);
+	k_fifo_put(&non_cancel_fifo, &msg);
 }
 
 /**

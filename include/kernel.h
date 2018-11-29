@@ -1726,18 +1726,25 @@ __syscall void k_queue_cancel_wait(struct k_queue *queue);
 /**
  * @brief Append an element to the end of a queue.
  *
- * This routine appends a data item to @a queue. A queue data item must be
- * aligned on a 4-byte boundary, and the first 32 bits of the item are
- * reserved for the kernel's use.
+ * This routine appends a data item to @a queue.
+ *
+ * If called from supervisor mode, a queue data item must be aligned on a
+ * 4-byte boundary, and the first 32 bits of the item are reserved for the
+ * kernel's use.
+ *
+ * If called from user mode, there is an implicit memory allocation from the
+ * calling thread's resource pool, which is automatically freed when the item
+ * is removed from the queue.
  *
  * @note Can be called by ISRs.
  *
  * @param queue Address of the queue.
  * @param data Address of the data item.
  *
- * @return N/A
+ * @retval 0 on success
+ * @retval -ENOMEM if there isn't sufficient RAM in the caller's resource pool
  */
-extern void k_queue_append(struct k_queue *queue, void *data);
+__syscall s32_t k_queue_append(struct k_queue *queue, void *data);
 
 /**
  * @brief Append an element to a queue.
@@ -1754,23 +1761,34 @@ extern void k_queue_append(struct k_queue *queue, void *data);
  * @retval 0 on success
  * @retval -ENOMEM if there isn't sufficient RAM in the caller's resource pool
  */
-__syscall s32_t k_queue_alloc_append(struct k_queue *queue, void *data);
+static inline s32_t __deprecated k_queue_alloc_append(struct k_queue *queue,
+						      void *data)
+{
+	return k_queue_append(queue, data);
+}
 
 /**
  * @brief Prepend an element to a queue.
  *
- * This routine prepends a data item to @a queue. A queue data item must be
- * aligned on a 4-byte boundary, and the first 32 bits of the item are
- * reserved for the kernel's use.
+ * This routine prepends a data item to @a queue.
+ *
+ * If called from supervisor mode, a queue data item must be aligned on a
+ * 4-byte boundary, and the first 32 bits of the item are reserved for the
+ * kernel's use.
+ *
+ * If called from user mode, there is an implicit memory allocation from the
+ * calling thread's resource pool, which is automatically freed when the item
+ * is removed from the queue.
  *
  * @note Can be called by ISRs.
  *
  * @param queue Address of the queue.
  * @param data Address of the data item.
  *
- * @return N/A
+ * @retval 0 on success
+ * @retval -ENOMEM if there isn't sufficient RAM in the caller's resource pool
  */
-extern void k_queue_prepend(struct k_queue *queue, void *data);
+__syscall s32_t k_queue_prepend(struct k_queue *queue, void *data);
 
 /**
  * @brief Prepend an element to a queue.
@@ -1787,7 +1805,11 @@ extern void k_queue_prepend(struct k_queue *queue, void *data);
  * @retval 0 on success
  * @retval -ENOMEM if there isn't sufficient RAM in the caller's resource pool
  */
-__syscall s32_t k_queue_alloc_prepend(struct k_queue *queue, void *data);
+static inline s32_t __deprecated k_queue_alloc_prepend(struct k_queue *queue,
+						       void *data)
+{
+	return k_queue_prepend(queue, data);
+}
 
 /**
  * @brief Inserts an element to a queue.
@@ -2060,7 +2082,7 @@ struct k_fifo {
  * @retval -ENOMEM if there isn't sufficient RAM in the caller's resource pool
  * @req K-FIFO-001
  */
-#define k_fifo_alloc_put(fifo, data) \
+#define k_fifo_alloc_put(fifo, data) DEPRECATED_MACRO \
 	k_queue_alloc_append((struct k_queue *) fifo, data)
 
 /**
@@ -2259,7 +2281,7 @@ struct k_lifo {
  * @retval -ENOMEM if there isn't sufficient RAM in the caller's resource pool
  * @req K-LIFO-001
  */
-#define k_lifo_alloc_put(lifo, data) \
+#define k_lifo_alloc_put(lifo, data) DEPRECATED_MACRO \
 	k_queue_alloc_prepend((struct k_queue *) lifo, data)
 
 /**
@@ -2537,6 +2559,14 @@ static inline void k_work_init(struct k_work *work, k_work_handler_t handler)
  * being processed, its work is considered complete and the work item can be
  * resubmitted.
  *
+ * If called from user mode, a memory allocation will be done from the caller's
+ * thread resource pool, released when the worker thread consumes the work
+ * item. The caller must have permissions granted on the k_work_q's embedded
+ * k_queue object.
+ *
+ * If the target workqueue is running in user mode, it will need memory access
+ * to the supplied k_work item.
+ *
  * @warning
  * A submitted work item must not be modified until it has been processed
  * by the workqueue.
@@ -2545,52 +2575,20 @@ static inline void k_work_init(struct k_work *work, k_work_handler_t handler)
  *
  * @param work_q Address of workqueue.
  * @param work Address of work item.
- *
- * @return N/A
- * @req K-WORK-001
- */
-static inline void k_work_submit_to_queue(struct k_work_q *work_q,
-					  struct k_work *work)
-{
-	if (!atomic_test_and_set_bit(work->flags, K_WORK_STATE_PENDING)) {
-		k_queue_append(&work_q->queue, work);
-	}
-}
-
-/**
- * @brief Submit a work item to a user mode workqueue
- *
- * Sumbits a work item to a workqueue that runs in user mode. A temporary
- * memory allocation is made from the caller's resource pool which is freed
- * once the worker thread consumes the k_work item. The workqueue
- * thread must have memory access to the k_work item being submitted. The caller
- * must have permission granted on the work_q parameter's queue object.
- *
- * Otherwise this works the same as k_work_submit_to_queue().
- *
- * @note Can be called by ISRs.
- *
- * @param work_q Address of workqueue.
- * @param work Address of work item.
- *
- * @retval -EBUSY if the work item was already in some workqueue
  * @retval -ENOMEM if no memory for thread resource pool allocation
- * @retval 0 Success
+ * @retval -EBUSY if the work item was already in some workqueue
  * @req K-WORK-001
  */
-static inline int k_work_submit_to_user_queue(struct k_work_q *work_q,
-					      struct k_work *work)
+static inline int k_work_submit_to_queue(struct k_work_q *work_q,
+					  struct k_work *work)
 {
 	int ret = -EBUSY;
 
 	if (!atomic_test_and_set_bit(work->flags, K_WORK_STATE_PENDING)) {
-		ret = k_queue_alloc_append(&work_q->queue, work);
-
-		/* Couldn't insert into the queue. Clear the pending bit
-		 * so the work item can be submitted again
-		 */
-		if (ret) {
-			atomic_clear_bit(work->flags, K_WORK_STATE_PENDING);
+		ret = k_queue_append(&work_q->queue, work);
+		if (ret != 0) {
+			atomic_clear_bit(work->flags,
+					 K_WORK_STATE_PENDING);
 		}
 	}
 

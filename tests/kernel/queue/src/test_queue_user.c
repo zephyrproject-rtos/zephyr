@@ -43,10 +43,6 @@ void child_thread_get(void *p1, void *p2, void *p3)
 		qd = k_queue_get(q, K_FOREVER);
 
 		zassert_equal(qd->data, i, NULL);
-		if (qd->allocated) {
-			/* snode should never have been touched */
-			zassert_is_null(qd->snode.next, NULL);
-		}
 	}
 
 
@@ -64,15 +60,10 @@ void child_thread_get(void *p1, void *p2, void *p3)
  * @details The test adds elements to queue and then
  * verified by the child user thread.
  * @ingroup kernel_queue_tests
- * @see k_queue_append(), k_queue_alloc_append(),
- * k_queue_init(), k_queue_cancel_wait()
+ * @see k_queue_append(), k_queue_init(), k_queue_cancel_wait()
  */
 void test_queue_supv_to_user(void)
 {
-	/* Supervisor mode will add a bunch of data, some with alloc
-	 * and some not
-	 */
-
 	struct k_queue *q;
 	struct k_sem *sem;
 
@@ -86,20 +77,14 @@ void test_queue_supv_to_user(void)
 	zassert_not_null(sem, "no memory for semaphore object");
 	k_sem_init(sem, 0, 1);
 
-	for (int i = 0; i < (LIST_LEN * 2); i = i + 2) {
+	for (int i = 0; i < (LIST_LEN * 2); i++) {
 		/* Just for test purposes -- not safe to do this in the
 		 * real world as user mode shouldn't have any access to the
 		 * snode struct
 		 */
 		qdata[i].data = i;
-		qdata[i].allocated = false;
 		qdata[i].snode.next = NULL;
 		k_queue_append(q, &qdata[i]);
-
-		qdata[i + 1].data = i + 1;
-		qdata[i + 1].allocated = true;
-		qdata[i + 1].snode.next = NULL;
-		zassert_false(k_queue_alloc_append(q, &qdata[i + 1]), NULL);
 	}
 
 	k_thread_create(&child_thread, child_stack, STACK_SIZE,

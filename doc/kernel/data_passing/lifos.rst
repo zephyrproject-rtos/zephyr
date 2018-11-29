@@ -28,9 +28,9 @@ LIFO data items must be aligned on a 4-byte boundary, as the kernel reserves
 the first 32 bits of an item for use as a pointer to the next data item in the
 queue. Consequently, a data item that holds N bytes of application data
 requires N+4 bytes of memory. There are no alignment or reserved space
-requirements for data items if they are added with
-:cpp:func:`k_lifo_alloc_put()`, instead additional memory is temporarily
-allocated from the calling thread's resource pool.
+requirements for data items if they are added from user mode, instead
+additional memory is temporarily allocated from the calling thread's
+resource pool.
 
 A data item may be **added** to a lifo by a thread or an ISR.
 The item is given directly to a waiting thread, if one exists;
@@ -102,11 +102,6 @@ to send data to one or more consumer threads.
             ...
         }
     }
-
-A data item can be added to a lifo with :cpp:func:`k_lifo_alloc_put()`.
-With this API, there is no need to reserve space for the kernel's use in
-the data item, instead additional memory will be allocated from the calling
-thread's resource pool until the item is read.
 
 Reading from a LIFO
 ===================

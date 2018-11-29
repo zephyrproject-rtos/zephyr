@@ -20,9 +20,6 @@ static qdata_t data_p[LIST_LEN];
 static qdata_t data_l[LIST_LEN];
 static qdata_t data_sl[LIST_LEN];
 
-static qdata_t *data_append;
-static qdata_t *data_prepend;
-
 static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 static struct k_thread tdata;
 static K_THREAD_STACK_DEFINE(tstack1, STACK_SIZE);
@@ -225,53 +222,3 @@ void test_queue_get_2threads(void)
 	tqueue_get_2threads(&queue);
 }
 
-static void tqueue_alloc(struct k_queue *pqueue)
-{
-	/* Alloc append without resource pool */
-	k_queue_alloc_append(pqueue, (void *)&data_append);
-
-	/* Insertion fails and alloc returns NOMEM */
-	zassert_false(k_queue_remove(pqueue, &data_append), NULL);
-
-	/* Assign resource pool of lower size */
-	k_thread_resource_pool_assign(k_current_get(), &mem_pool_fail);
-
-	/* Prepend to the queue, but fails because of
-	 * insufficient memory
-	 */
-	k_queue_alloc_prepend(pqueue, (void *)&data_prepend);
-
-	zassert_false(k_queue_remove(pqueue, &data_prepend), NULL);
-
-	/* No element must be present in the queue, as all
-	 * operations failed
-	 */
-	zassert_true(k_queue_is_empty(pqueue), NULL);
-
-	/* Assign resource pool of sufficient size */
-	k_thread_resource_pool_assign(k_current_get(),
-				      &mem_pool_pass);
-
-	zassert_false(k_queue_alloc_prepend(pqueue, (void *)&data_prepend),
-		      NULL);
-
-	/* Now queue shouldn't be empty */
-	zassert_false(k_queue_is_empty(pqueue), NULL);
-
-	zassert_true(k_queue_get(pqueue, K_FOREVER) != NULL,
-		     NULL);
-}
-
-/**
- * @brief Test queue alloc append and prepend
- * @ingroup kernel_queue_tests
- * @see k_queue_alloc_append(), k_queue_alloc_prepend(),
- * k_thread_resource_pool_assign(), k_queue_is_empty(),
- * k_queue_get(), k_queue_remove()
- */
-void test_queue_alloc(void)
-{
-	k_queue_init(&queue);
-
-	tqueue_alloc(&queue);
-}

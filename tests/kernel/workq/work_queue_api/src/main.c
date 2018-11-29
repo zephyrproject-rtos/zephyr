@@ -60,7 +60,7 @@ static void twork_submit(void *data)
 		zassert_false(k_work_pending(&work[i]), NULL);
 		if (work_q) {
 			/**TESTPOINT: work submit to queue*/
-			zassert_false(k_work_submit_to_user_queue(work_q, &work[i]),
+			zassert_false(k_work_submit_to_queue(work_q, &work[i]),
 				      "failed to submit to queue");
 		} else {
 			/**TESTPOINT: work submit to system queue*/

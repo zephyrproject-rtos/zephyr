@@ -187,45 +187,35 @@ void k_queue_insert(struct k_queue *queue, void *prev, void *data)
 	(void)queue_insert(queue, prev, data, false);
 }
 
-void k_queue_append(struct k_queue *queue, void *data)
+s32_t _impl_k_queue_append(struct k_queue *queue, void *data)
 {
-	(void)queue_insert(queue, sys_sflist_peek_tail(&queue->data_q),
-			   data, false);
+	return queue_insert(queue, sys_sflist_peek_tail(&queue->data_q),
+			    data, false);
 }
 
-void k_queue_prepend(struct k_queue *queue, void *data)
+s32_t _impl_k_queue_prepend(struct k_queue *queue, void *data)
 {
-	(void)queue_insert(queue, NULL, data, false);
-}
-
-s32_t _impl_k_queue_alloc_append(struct k_queue *queue, void *data)
-{
-	return queue_insert(queue, sys_sflist_peek_tail(&queue->data_q), data,
-			    true);
+	return queue_insert(queue, NULL, data, false);
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(k_queue_alloc_append, queue, data)
+Z_SYSCALL_HANDLER(k_queue_append, q_ptr, data)
 {
+	struct k_queue *queue = (struct k_queue *)q_ptr;
+
 	Z_OOPS(Z_SYSCALL_OBJ(queue, K_OBJ_QUEUE));
 
-	return _impl_k_queue_alloc_append((struct k_queue *)queue,
-					  (void *)data);
-}
-#endif
-
-s32_t _impl_k_queue_alloc_prepend(struct k_queue *queue, void *data)
-{
-	return queue_insert(queue, NULL, data, true);
+	return queue_insert(queue, sys_sflist_peek_tail(&queue->data_q),
+			    (void *)data, true);
 }
 
-#ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(k_queue_alloc_prepend, queue, data)
+Z_SYSCALL_HANDLER(k_queue_prepend, q_ptr, data)
 {
+	struct k_queue *queue = (struct k_queue *)q_ptr;
+
 	Z_OOPS(Z_SYSCALL_OBJ(queue, K_OBJ_QUEUE));
 
-	return _impl_k_queue_alloc_prepend((struct k_queue *)queue,
-					   (void *)data);
+	return queue_insert(queue, NULL, (void *)data, true);
 }
 #endif
 

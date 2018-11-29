@@ -25,6 +25,5 @@ extern void test_queue_alloc(void);
 typedef struct qdata {
 	sys_snode_t snode;
 	u32_t data;
-	bool allocated;
 } qdata_t;
 #endif
