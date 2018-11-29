@@ -127,7 +127,7 @@ static void isr_tx(void)
 
 static void isr_rx(void)
 {
-	u8_t crc_ok = 0;
+	u8_t crc_ok = 0U;
 	u8_t trx_done;
 
 	/* Read radio status and events */
@@ -176,10 +176,10 @@ static u32_t init(u8_t chan, u8_t phy, void (*isr)(void))
 	/* Store value needed in Tx/Rx ISR */
 	if (phy < 0x04) {
 		test_phy = BIT(phy - 1);
-		test_phy_flags = 1;
+		test_phy_flags = 1U;
 	} else {
 		test_phy = BIT(2);
-		test_phy_flags = 0;
+		test_phy_flags = 0U;
 	}
 
 	/* Setup Radio in Tx/Rx */
@@ -311,7 +311,7 @@ u32_t ll_test_end(u16_t *num_rx)
 
 	/* Return packets Rx-ed/Completed */
 	*num_rx = test_num_rx;
-	test_num_rx = 0;
+	test_num_rx = 0U;
 
 	/* Disable Radio, if in Rx test */
 	ack = tx_ack;

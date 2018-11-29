@@ -226,7 +226,7 @@ static inline struct net_buf *handle_ext_hdr_options(struct net_pkt *pkt,
 						     enum net_verdict *verdict)
 {
 	u8_t opt_type, opt_len;
-	u16_t length = 0, loc;
+	u16_t length = 0U, loc;
 #if defined(CONFIG_NET_RPL)
 	bool result;
 #endif
@@ -443,7 +443,7 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt, bool is_loopback)
 	u8_t first_option;
 	u16_t offset;
 	u16_t length;
-	u16_t total_len = 0;
+	u16_t total_len = 0U;
 	u8_t ext_bitmap;
 
 	if (real_len < pkt_len) {
@@ -539,9 +539,9 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt, bool is_loopback)
 	frag = pkt->frags;
 	next = hdr->nexthdr;
 	first_option = next;
-	length = 0;
-	ext_bitmap = 0;
-	start_of_ext = 0;
+	length = 0U;
+	ext_bitmap = 0U;
+	start_of_ext = 0U;
 	offset = sizeof(struct net_ipv6_hdr);
 	prev_hdr = &NET_IPV6_HDR(pkt)->nexthdr - &NET_IPV6_HDR(pkt)->vtc;
 

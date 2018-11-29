@@ -87,7 +87,7 @@ static void handle_wifi_scan_done(struct net_mgmt_event_callback *cb)
 		print(context.shell, SHELL_NORMAL, "Scan request done\n");
 	}
 
-	scan_result = 0;
+	scan_result = 0U;
 }
 
 static void handle_wifi_connect_result(struct net_mgmt_event_callback *cb)
@@ -281,8 +281,8 @@ static int wifi_shell_init(struct device *unused)
 	ARG_UNUSED(unused);
 
 	context.shell = NULL;
-	context.all = 0;
-	scan_result = 0;
+	context.all = 0U;
+	scan_result = 0U;
 
 	net_mgmt_init_event_callback(&wifi_shell_mgmt_cb,
 				     wifi_mgmt_event_handler,

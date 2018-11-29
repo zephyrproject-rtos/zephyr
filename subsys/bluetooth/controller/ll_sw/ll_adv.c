@@ -268,7 +268,7 @@ void ll_adv_data_set(u8_t len, u8_t const *const data)
 	if (radio_adv_data->first == radio_adv_data->last) {
 		last = radio_adv_data->last + 1;
 		if (last == DOUBLE_BUFFER_SIZE) {
-			last = 0;
+			last = 0U;
 		}
 	} else {
 		last = radio_adv_data->last;
@@ -277,12 +277,12 @@ void ll_adv_data_set(u8_t len, u8_t const *const data)
 	/* update adv pdu fields. */
 	pdu = (struct pdu_adv *)&radio_adv_data->data[last][0];
 	pdu->type = prev->type;
-	pdu->rfu = 0;
+	pdu->rfu = 0U;
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
 		pdu->chan_sel = prev->chan_sel;
 	} else {
-		pdu->chan_sel = 0;
+		pdu->chan_sel = 0U;
 	}
 
 	pdu->tx_addr = prev->tx_addr;

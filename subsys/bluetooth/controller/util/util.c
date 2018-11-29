@@ -10,7 +10,7 @@
 
 u8_t util_ones_count_get(u8_t *octets, u8_t octets_len)
 {
-	u8_t one_count = 0;
+	u8_t one_count = 0U;
 
 	while (octets_len--) {
 		u8_t bite;

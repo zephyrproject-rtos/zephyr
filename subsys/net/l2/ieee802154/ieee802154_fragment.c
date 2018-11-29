@@ -116,7 +116,7 @@ static inline void set_datagram_tag(u8_t *ptr, u16_t tag)
 static inline void set_up_frag_hdr(struct net_buf *frag, u16_t size,
 				   u8_t offset)
 {
-	u8_t pos = 0;
+	u8_t pos = 0U;
 
 	if (offset) {
 		frag->data[pos] = NET_6LO_DISPATCH_FRAGN;
@@ -246,9 +246,9 @@ bool ieee802154_fragment(struct net_pkt *pkt, int hdr_diff)
 	/* Datagram_size: total length before compression */
 	size = net_pkt_get_len(pkt) + hdr_diff;
 
-	room = 0;
-	offset = 0;
-	processed = 0;
+	room = 0U;
+	offset = 0U;
+	processed = 0U;
 	first = true;
 	datagram_tag++;
 
@@ -337,7 +337,7 @@ static inline void clear_reass_cache(u16_t size, u16_t tag)
 {
 	u8_t i;
 
-	for (i = 0; i < REASS_CACHE_SIZE; i++) {
+	for (i = 0U; i < REASS_CACHE_SIZE; i++) {
 		if (!(cache[i].size == size && cache[i].tag == tag)) {
 			continue;
 		}
@@ -347,8 +347,8 @@ static inline void clear_reass_cache(u16_t size, u16_t tag)
 		}
 
 		cache[i].pkt = NULL;
-		cache[i].size = 0;
-		cache[i].tag = 0;
+		cache[i].size = 0U;
+		cache[i].tag = 0U;
 		cache[i].used = false;
 		k_delayed_work_cancel(&cache[i].timer);
 	}
@@ -367,8 +367,8 @@ static void reass_timeout(struct k_work *work)
 	}
 
 	cache->pkt = NULL;
-	cache->size = 0;
-	cache->tag = 0;
+	cache->size = 0U;
+	cache->tag = 0U;
 	cache->used = false;
 }
 
@@ -408,7 +408,7 @@ static inline struct frag_cache *get_reass_cache(u16_t size, u16_t tag)
 {
 	u8_t i;
 
-	for (i = 0; i < REASS_CACHE_SIZE; i++) {
+	for (i = 0U; i < REASS_CACHE_SIZE; i++) {
 		if (cache[i].used) {
 			if (cache[i].size == size &&
 			    cache[i].tag == tag) {
@@ -467,8 +467,8 @@ static inline enum net_verdict add_frag_to_cache(struct net_pkt *pkt,
 	struct net_buf *frag;
 	u16_t size;
 	u16_t tag;
-	u16_t offset = 0;
-	u8_t pos = 0;
+	u16_t offset = 0U;
+	u8_t pos = 0U;
 
 	/* Parse total size of packet */
 	size = get_datagram_size(pkt->frags->data);

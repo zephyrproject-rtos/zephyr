@@ -182,8 +182,8 @@ static void msd_init(void)
 	(void)memset((void *)&cbw, 0, sizeof(struct CBW));
 	(void)memset((void *)&csw, 0, sizeof(struct CSW));
 	(void)memset(page, 0, sizeof(page));
-	addr = 0;
-	length = 0;
+	addr = 0U;
+	length = 0U;
 }
 
 static void sendCSW(void)
@@ -255,7 +255,7 @@ static int mass_storage_class_handle_req(struct usb_setup_packet *pSetup,
 			return -EINVAL;
 		}
 
-		max_lun_count = 0;
+		max_lun_count = 0U;
 		*data = (u8_t *)(&max_lun_count);
 		*len = 1;
 		break;
@@ -611,7 +611,7 @@ static void memoryVerify(u8_t *buf, u16_t size)
 	}
 
 	/* info are in RAM -> no need to re-read memory */
-	for (n = 0; n < size; n++) {
+	for (n = 0U; n < size; n++) {
 		if (page[addr%BLOCK_SIZE + n] != buf[n]) {
 			LOG_DBG("Mismatch sector %d offset %d",
 				addr/BLOCK_SIZE, n);
@@ -671,7 +671,7 @@ static void memoryWrite(u8_t *buf, u16_t size)
 static void mass_storage_bulk_out(u8_t ep,
 		enum usb_dc_ep_cb_status_code ep_status)
 {
-	u32_t bytes_read = 0;
+	u32_t bytes_read = 0U;
 	u8_t bo_buf[CONFIG_MASS_STORAGE_BULK_EP_MPS];
 
 	ARG_UNUSED(ep_status);
@@ -911,7 +911,7 @@ static u8_t interface_data[64];
  */
 static int mass_storage_init(struct device *dev)
 {
-	u32_t block_size = 0;
+	u32_t block_size = 0U;
 
 	ARG_UNUSED(dev);
 

@@ -161,7 +161,7 @@ static u8_t encode_extended_option(u16_t num, u8_t *opt, u16_t *ext)
 {
 	if (num < COAP_OPTION_EXT_13) {
 		*opt = num;
-		*ext = 0;
+		*ext = 0U;
 
 		return 0;
 	} else if (num < COAP_OPTION_EXT_269) {
@@ -277,21 +277,21 @@ int coap_append_option_int(struct coap_packet *cpkt, u16_t code,
 	u8_t data[4], len;
 
 	if (val == 0) {
-		data[0] = 0;
-		len = 0;
+		data[0] = 0U;
+		len = 0U;
 	} else if (val < 0xFF) {
 		data[0] = (u8_t) val;
-		len = 1;
+		len = 1U;
 	} else if (val < 0xFFFF) {
 		sys_put_be16(val, data);
-		len = 2;
+		len = 2U;
 	} else if (val < 0xFFFFFF) {
 		sys_put_be16(val, &data[1]);
 		data[0] = val >> 16;
-		len = 3;
+		len = 3U;
 	} else {
 		sys_put_be32(val, data);
-		len = 4;
+		len = 4U;
 	}
 
 	return coap_packet_append_option(cpkt, code, data, len);
@@ -399,7 +399,7 @@ static int decode_delta(u8_t *data, u16_t offset, u16_t *pos, u16_t max_len,
 	if (opt == COAP_OPTION_EXT_13) {
 		u8_t val;
 
-		*hdr_len = 1;
+		*hdr_len = 1U;
 
 		ret = read_u8(data, offset, pos, max_len, &val);
 		if (ret < 0) {
@@ -410,7 +410,7 @@ static int decode_delta(u8_t *data, u16_t offset, u16_t *pos, u16_t max_len,
 	} else if (opt == COAP_OPTION_EXT_14) {
 		u16_t val;
 
-		*hdr_len = 2;
+		*hdr_len = 2U;
 
 		ret = read_be16(data, offset, pos, max_len, &val);
 		if (ret < 0) {
@@ -572,9 +572,9 @@ int coap_packet_parse(struct coap_packet *cpkt, u8_t *data, u16_t len,
 	}
 
 	offset = cpkt->offset;
-	opt_len = 0;
-	delta = 0;
-	num = 0;
+	opt_len = 0U;
+	delta = 0U;
+	num = 0U;
 
 	while (1) {
 		struct coap_option *option;
@@ -606,9 +606,9 @@ int coap_find_options(const struct coap_packet *cpkt, u16_t code,
 	int r;
 
 	offset = cpkt->hdr_len;
-	opt_len = 0;
-	delta = 0;
-	num = 0;
+	opt_len = 0U;
+	delta = 0U;
+	num = 0U;
 
 	while (delta <= code && num < veclen) {
 		r = parse_option(cpkt->data, offset, &offset,
@@ -737,7 +737,7 @@ const u8_t *coap_packet_get_payload(const struct coap_packet *cpkt, u16_t *len)
 	if (payload_len > 0) {
 		*len = payload_len;
 	} else {
-		*len = 0;
+		*len = 0U;
 	}
 
 	return !(*len) ? NULL :
@@ -750,9 +750,9 @@ static bool uri_path_eq(const struct coap_packet *cpkt,
 			u8_t opt_num)
 {
 	u8_t i;
-	u8_t j = 0;
+	u8_t j = 0U;
 
-	for (i = 0; i < opt_num && path[j]; i++) {
+	for (i = 0U; i < opt_num && path[j]; i++) {
 		if (options[i].delta != COAP_OPTION_URI_PATH) {
 			continue;
 		}
@@ -862,7 +862,7 @@ int coap_append_block1_option(struct coap_packet *cpkt,
 			      struct coap_block_context *ctx)
 {
 	u16_t bytes = coap_block_size_to_bytes(ctx->block_size);
-	unsigned int val = 0;
+	unsigned int val = 0U;
 	int r;
 
 	if (is_request(cpkt)) {
@@ -1209,7 +1209,7 @@ void coap_pending_clear(struct coap_pending *pending)
 static int get_observe_option(const struct coap_packet *cpkt)
 {
 	struct coap_option option = {};
-	u16_t count = 1;
+	u16_t count = 1U;
 	int r;
 
 	r = coap_find_options(cpkt, COAP_OPTION_OBSERVE, &option, count);

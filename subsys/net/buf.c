@@ -113,7 +113,7 @@ static u8_t *mem_pool_data_alloc(struct net_buf *buf, size_t *size,
 	memcpy(block.data, &block.id, sizeof(block.id));
 
 	ref_count = (u8_t *)block.data + sizeof(block.id);
-	*ref_count = 1;
+	*ref_count = 1U;
 
 	/* Return pointer to the byte following the ref count */
 	return ref_count + 1;
@@ -171,7 +171,7 @@ static u8_t *heap_data_alloc(struct net_buf *buf, size_t *size, s32_t timeout)
 		return NULL;
 	}
 
-	*ref_count = 1;
+	*ref_count = 1U;
 
 	return ref_count + 1;
 }

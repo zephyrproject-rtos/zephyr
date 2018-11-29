@@ -174,7 +174,7 @@ enum coap_block_size default_block_size(void)
 static bool append_to_net_pkt(struct net_pkt *pkt, const char *str, u16_t len,
 			      u16_t *remaining, size_t *offset, size_t current)
 {
-	u16_t pos = 0;
+	u16_t pos = 0U;
 	bool res;
 
 	if (!*remaining) {
@@ -374,7 +374,7 @@ int clear_more_flag(struct coap_packet *cpkt)
 		return -EINVAL;
 	}
 
-	delta = 0;
+	delta = 0U;
 	/* Note: coap_well_known_core_get() added Option (delta and len) witho
 	 * out any extended options so parsing will not consider at the moment.
 	 */
@@ -463,7 +463,7 @@ int coap_well_known_core_get(struct coap_resource *resource,
 		goto end;
 	}
 
-	format = 40; /* application/link-format */
+	format = 40U; /* application/link-format */
 
 	r = coap_packet_append_option(response, COAP_OPTION_CONTENT_FORMAT,
 				      &format, sizeof(format));
@@ -652,7 +652,7 @@ int coap_well_known_core_get(struct coap_resource *resource,
 		return r;
 	}
 
-	format = 40; /* application/link-format */
+	format = 40U; /* application/link-format */
 	r = coap_packet_append_option(response, COAP_OPTION_CONTENT_FORMAT,
 				      &format, sizeof(format));
 	if (r < 0) {

@@ -155,7 +155,7 @@ static int cmd_ieee802154_disassociate(const struct shell *shell,
 
 static inline u32_t parse_channel_set(char *str_set)
 {
-	u32_t channel_set = 0;
+	u32_t channel_set = 0U;
 	char *p, *n;
 
 	p = str_set;

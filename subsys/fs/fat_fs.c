@@ -214,7 +214,7 @@ static int fatfs_truncate(struct fs_file_t *zfp, off_t length)
 		 * optimization.
 		 */
 		unsigned int bw;
-		u8_t c = 0;
+		u8_t c = 0U;
 
 		for (int i = cur_length; i < length; i++) {
 			res = f_write(zfp->filep, &c, 1, &bw);

@@ -400,14 +400,14 @@ struct net_if *net_if_get_first_by_type(const struct net_l2 *l2)
 static u8_t get_ipaddr_diff(const u8_t *src, const u8_t *dst, int addr_len)
 {
 	u8_t j, k, xor;
-	u8_t len = 0;
+	u8_t len = 0U;
 
-	for (j = 0; j < addr_len; j++) {
+	for (j = 0U; j < addr_len; j++) {
 		if (src[j] == dst[j]) {
 			len += 8;
 		} else {
 			xor = src[j] ^ dst[j];
-			for (k = 0; k < 8; k++) {
+			for (k = 0U; k < 8; k++) {
 				if (!(xor & 0x80)) {
 					len++;
 					xor <<= 1;
@@ -1996,7 +1996,7 @@ const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *dst_iface,
 {
 #if defined(CONFIG_NET_IPV6)
 	struct in6_addr *src = NULL;
-	u8_t best_match = 0;
+	u8_t best_match = 0U;
 	struct net_if *iface;
 
 	if (!net_ipv6_is_ll_addr(dst) && !net_ipv6_is_addr_mcast(dst)) {
@@ -2383,7 +2383,7 @@ const struct in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
 {
 #if defined(CONFIG_NET_IPV4)
 	struct in_addr *src = NULL;
-	u8_t best_match = 0;
+	u8_t best_match = 0U;
 	struct net_if *iface;
 
 	if (!net_ipv4_is_ll_addr(dst) && !net_ipv4_is_addr_mcast(dst)) {

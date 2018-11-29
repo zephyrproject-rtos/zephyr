@@ -383,7 +383,7 @@ static bool range_is_valid(u16_t start, u16_t end, u16_t *err)
 	/* Handle 0 is invalid */
 	if (!start || !end) {
 		if (err) {
-			*err = 0;
+			*err = 0U;
 		}
 		return false;
 	}
@@ -811,7 +811,7 @@ static u8_t att_read_type_rsp(struct bt_att *att, struct bt_uuid *uuid,
 	data.att = att;
 	data.uuid = uuid;
 	data.rsp = net_buf_add(data.buf, sizeof(*data.rsp));
-	data.rsp->len = 0;
+	data.rsp->len = 0U;
 
 	/* Pre-set error if no attr will be found in handle */
 	data.err = BT_ATT_ERR_ATTRIBUTE_NOT_FOUND;
@@ -1115,7 +1115,7 @@ static u8_t att_read_group_rsp(struct bt_att *att, struct bt_uuid *uuid,
 	data.att = att;
 	data.uuid = uuid;
 	data.rsp = net_buf_add(data.buf, sizeof(*data.rsp));
-	data.rsp->len = 0;
+	data.rsp->len = 0U;
 	data.group = NULL;
 
 	bt_gatt_foreach_attr(start_handle, end_handle, read_group_cb, &data);
@@ -1199,7 +1199,7 @@ static u8_t write_cb(const struct bt_gatt_attr *attr, void *user_data)
 {
 	struct write_data *data = user_data;
 	int write;
-	u8_t flags = 0;
+	u8_t flags = 0U;
 
 	BT_DBG("handle 0x%04x offset %u", attr->handle, data->offset);
 
@@ -1222,7 +1222,7 @@ static u8_t write_cb(const struct bt_gatt_attr *attr, void *user_data)
 		return BT_GATT_ITER_STOP;
 	}
 
-	data->err = 0;
+	data->err = 0U;
 
 	return BT_GATT_ITER_CONTINUE;
 }
@@ -1338,7 +1338,7 @@ append:
 
 	net_buf_add_mem(data->buf, data->value, data->len);
 
-	data->err = 0;
+	data->err = 0U;
 
 	return BT_GATT_ITER_CONTINUE;
 }
@@ -1419,7 +1419,7 @@ static u8_t att_exec_write_rsp(struct bt_att *att, u8_t flags)
 {
 	struct bt_conn *conn = att->chan.chan.conn;
 	struct net_buf *buf;
-	u8_t err = 0;
+	u8_t err = 0U;
 
 	while ((buf = net_buf_get(&att->prep_queue, K_NO_WAIT))) {
 		struct bt_attr_data *data = net_buf_user_data(buf);

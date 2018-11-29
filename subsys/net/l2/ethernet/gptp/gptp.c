@@ -387,7 +387,7 @@ static void gptp_init_clock_ds(void)
 
 	default_ds->priority2 = GPTP_PRIORITY2_DEFAULT;
 
-	default_ds->cur_utc_offset = 37; /* Current leap seconds TAI - UTC */
+	default_ds->cur_utc_offset = 37U; /* Current leap seconds TAI - UTC */
 	default_ds->flags.all = 0;
 	default_ds->flags.octets[1] = GPTP_FLAG_TIME_TRACEABLE;
 	default_ds->time_source = GPTP_TS_INTERNAL_OSCILLATOR;
@@ -418,7 +418,7 @@ static void gptp_init_clock_ds(void)
 	/* Initialize properties data set. */
 
 	/* TODO: Get accurate values for below. From the GM. */
-	prop_ds->cur_utc_offset = 37; /* Current leap seconds TAI - UTC */
+	prop_ds->cur_utc_offset = 37U; /* Current leap seconds TAI - UTC */
 	prop_ds->cur_utc_offset_valid = false;
 	prop_ds->leap59 = false;
 	prop_ds->leap61 = false;
@@ -468,7 +468,7 @@ static void gptp_init_port_ds(int port)
 	port_ds->ini_log_half_sync_itv = CONFIG_NET_GPTP_INIT_LOG_SYNC_ITV - 1;
 	port_ds->cur_log_half_sync_itv = port_ds->ini_log_half_sync_itv;
 	port_ds->sync_receipt_timeout = CONFIG_NET_GPTP_SYNC_RECEIPT_TIMEOUT;
-	port_ds->sync_receipt_timeout_time_itv = 10000000; /* 10ms */
+	port_ds->sync_receipt_timeout_time_itv = 10000000U; /* 10ms */
 
 	port_ds->ini_log_pdelay_req_itv =
 		CONFIG_NET_GPTP_INIT_LOG_PDELAY_REQ_ITV;
@@ -1009,7 +1009,7 @@ static void setup_vlan_events_listener(void)
 
 void net_gptp_init(void)
 {
-	gptp_domain.default_ds.nb_ports = 0;
+	gptp_domain.default_ds.nb_ports = 0U;
 
 #if defined(CONFIG_NET_GPTP_VLAN)
 	/* If user has enabled gPTP over VLAN support, then we start gPTP

@@ -160,10 +160,10 @@ static int unpack_data(u32_t length, struct buf_ctx *buf,
  */
 int packet_length_decode(struct buf_ctx *buf, u32_t *length)
 {
-	u8_t shift = 0;
-	u8_t bytes = 0;
+	u8_t shift = 0U;
+	u8_t bytes = 0U;
 
-	*length = 0;
+	*length = 0U;
 	do {
 		if (bytes > MQTT_MAX_LENGTH_BYTES) {
 			return -EINVAL;

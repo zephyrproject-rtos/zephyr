@@ -252,8 +252,8 @@ static void usb_data_to_host(void)
 static void usb_handle_control_transfer(u8_t ep,
 					enum usb_dc_ep_cb_status_code ep_status)
 {
-	u32_t chunk = 0;
-	u32_t type = 0;
+	u32_t chunk = 0U;
+	u32_t type = 0U;
 	struct usb_setup_packet *setup = &usb_dev.setup;
 
 	LOG_DBG("ep %x, status %x", ep, ep_status);
@@ -401,8 +401,8 @@ static void usb_register_descriptors(const u8_t *usb_descriptors)
 static bool usb_get_descriptor(u16_t type_index, u16_t lang_id,
 		s32_t *len, u8_t **data)
 {
-	u8_t type = 0;
-	u8_t index = 0;
+	u8_t type = 0U;
+	u8_t index = 0U;
 	u8_t *p = NULL;
 	s32_t cur_index = 0;
 	bool found = false;
@@ -474,8 +474,8 @@ static bool usb_get_descriptor(u16_t type_index, u16_t lang_id,
 static bool usb_set_configuration(u8_t config_index, u8_t alt_setting)
 {
 	u8_t *p = NULL;
-	u8_t cur_config = 0;
-	u8_t cur_alt_setting = 0;
+	u8_t cur_config = 0U;
+	u8_t cur_alt_setting = 0U;
 
 	if (config_index == 0) {
 		/* unconfigure device */
@@ -616,8 +616,8 @@ static bool usb_handle_std_device_req(struct usb_setup_packet *setup,
 		LOG_DBG("REQ_GET_STATUS");
 		/* bit 0: self-powered */
 		/* bit 1: remote wakeup = not supported */
-		data[0] = 0;
-		data[1] = 0;
+		data[0] = 0U;
+		data[1] = 0U;
 		*len = 2;
 		break;
 
@@ -699,8 +699,8 @@ static bool usb_handle_std_interface_req(struct usb_setup_packet *setup,
 	switch (setup->bRequest) {
 	case REQ_GET_STATUS:
 		/* no bits specified */
-		data[0] = 0;
-		data[1] = 0;
+		data[0] = 0U;
+		data[1] = 0U;
 		*len = 2;
 		break;
 
@@ -711,7 +711,7 @@ static bool usb_handle_std_interface_req(struct usb_setup_packet *setup,
 
 	case REQ_GET_INTERFACE:
 		/* there is only one interface, return n-1 (= 0) */
-		data[0] = 0;
+		data[0] = 0U;
 		*len = 1;
 		break;
 
@@ -749,7 +749,7 @@ static bool usb_handle_std_endpoint_req(struct usb_setup_packet *setup,
 	case REQ_GET_STATUS:
 		/* bit 0 = endpointed halted or not */
 		usb_dc_ep_is_stalled(ep, &data[0]);
-		data[1] = 0;
+		data[1] = 0U;
 		*len = 2;
 		break;
 
@@ -1043,7 +1043,7 @@ int usb_enable(struct usb_cfg_data *config)
 		return ret;
 
 	/*register endpoint handlers*/
-	for (i = 0; i < config->num_endpoints; i++) {
+	for (i = 0U; i < config->num_endpoints; i++) {
 		ret = usb_dc_ep_set_callback(config->endpoint[i].ep_addr,
 		    config->endpoint[i].ep_cb);
 		if (ret < 0)
@@ -1051,7 +1051,7 @@ int usb_enable(struct usb_cfg_data *config)
 	}
 
 	/* init transfer slots */
-	for (i = 0; i < MAX_NUM_TRANSFERS; i++) {
+	for (i = 0U; i < MAX_NUM_TRANSFERS; i++) {
 		k_work_init(&usb_dev.transfer[i].work, usb_transfer_work);
 		k_sem_init(&usb_dev.transfer[i].sem, 1, 1);
 	}

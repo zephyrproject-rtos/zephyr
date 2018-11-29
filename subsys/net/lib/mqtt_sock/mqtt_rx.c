@@ -232,7 +232,7 @@ static int mqtt_read_and_parse_fixed_header(struct mqtt_client *client,
 
 		/* Reset to pointer to the beginning of the frame. */
 		buf->cur = client->rx_buf;
-		chunk_size = 1;
+		chunk_size = 1U;
 
 		err_code = fixed_header_decode(buf, type_and_flags, var_length);
 	} while (err_code == -EAGAIN);

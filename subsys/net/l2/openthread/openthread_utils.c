@@ -25,7 +25,7 @@ int pkt_list_add(struct openthread_context *context, struct net_pkt *pkt)
 
 	i_idx++;
 	if (i_idx == CONFIG_OPENTHREAD_PKT_LIST_SIZE) {
-		i_idx = 0;
+		i_idx = 0U;
 	}
 
 	if (i_idx == context->pkt_list_out_idx) {

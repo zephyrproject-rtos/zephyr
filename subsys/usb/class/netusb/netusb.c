@@ -130,7 +130,7 @@ bool netusb_enabled(void)
 
 int try_write(u8_t ep, u8_t *data, u16_t len)
 {
-	u8_t tries = 10;
+	u8_t tries = 10U;
 	int ret = 0;
 
 	net_hexdump("USB <", data, len);

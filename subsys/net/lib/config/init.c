@@ -343,7 +343,7 @@ int net_config_init(const char *app_info, u32_t flags, s32_t timeout)
 #if defined(CONFIG_NET_CONFIG_AUTO_INIT)
 static int init_net_app(struct device *device)
 {
-	u32_t flags = 0;
+	u32_t flags = 0U;
 	int ret;
 
 	ARG_UNUSED(device);

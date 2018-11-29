@@ -102,7 +102,7 @@ static inline void encode_hdr(struct bt_monitor_hdr *hdr, u32_t timestamp,
 	struct bt_monitor_ts32 *ts;
 
 	hdr->opcode   = sys_cpu_to_le16(opcode);
-	hdr->flags    = 0;
+	hdr->flags    = 0U;
 
 	ts = (void *)hdr->ext;
 	ts->type = BT_MONITOR_TS32;

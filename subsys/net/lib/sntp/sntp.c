@@ -110,9 +110,9 @@ static void sntp_recv_cb(struct net_app_ctx *ctx, struct net_pkt *pkt,
 {
 	struct sntp_ctx *sntp = (struct sntp_ctx *)user_data;
 	struct sntp_pkt buf = { 0 };
-	u64_t epoch_time = 0;
-	u64_t tmp = 0;
-	u16_t offset = 0;
+	u64_t epoch_time = 0U;
+	u64_t tmp = 0U;
+	u16_t offset = 0U;
 
 	if (status < 0) {
 		goto error_exit;

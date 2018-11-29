@@ -695,10 +695,10 @@ static struct net_pkt *update_ll_reserve(struct net_pkt *pkt,
 
 	orig_frag = pkt->frags;
 	copy_len = orig_frag->len;
-	pos = 0;
+	pos = 0U;
 
 	pkt->frags = NULL;
-	room_len = 0;
+	room_len = 0U;
 	frag = NULL;
 
 	while (orig_frag) {
@@ -720,14 +720,14 @@ static struct net_pkt *update_ll_reserve(struct net_pkt *pkt,
 			       orig_frag->data + pos, copy_len);
 
 			room_len -= copy_len;
-			copy_len = 0;
+			copy_len = 0U;
 		} else {
 			memcpy(net_buf_add(frag, room_len),
 			       orig_frag->data + pos, room_len);
 
 			copy_len -= room_len;
 			pos += room_len;
-			room_len = 0;
+			room_len = 0U;
 		}
 
 		if (!copy_len) {
@@ -743,7 +743,7 @@ static struct net_pkt *update_ll_reserve(struct net_pkt *pkt,
 			}
 
 			copy_len = orig_frag->len;
-			pos = 0;
+			pos = 0U;
 		}
 	}
 
@@ -1226,8 +1226,8 @@ static void ns_routing_info(struct net_pkt *pkt,
 static enum net_verdict handle_ns_input(struct net_pkt *pkt)
 {
 	u16_t total_len = net_pkt_get_len(pkt);
-	u8_t prev_opt_len = 0;
-	u8_t flags = 0;
+	u8_t prev_opt_len = 0U;
+	u8_t flags = 0U;
 	bool routing = false;
 	struct net_icmpv6_nd_opt_hdr nd_opt_hdr;
 	struct net_icmpv6_ns_hdr ns_hdr;
@@ -1578,7 +1578,7 @@ static void ipv6_nd_reachable_timeout(struct k_work *work)
 
 		case NET_IPV6_NBR_STATE_DELAY:
 			data->state = NET_IPV6_NBR_STATE_PROBE;
-			data->ns_count = 0;
+			data->ns_count = 0U;
 
 			NET_DBG("nbr %p moving %s state to PROBE (%d)",
 				nbr,
@@ -1744,7 +1744,7 @@ static inline bool handle_na_neighbor(struct net_pkt *pkt,
 
 		if (net_is_solicited(pkt)) {
 			ipv6_nbr_set_state(nbr, NET_IPV6_NBR_STATE_REACHABLE);
-			net_ipv6_nbr_data(nbr)->ns_count = 0;
+			net_ipv6_nbr_data(nbr)->ns_count = 0U;
 
 			/* We might have active timer from PROBE */
 			net_ipv6_nbr_data(nbr)->reachable = 0;
@@ -1836,8 +1836,8 @@ send_pending:
 static enum net_verdict handle_na_input(struct net_pkt *pkt)
 {
 	u16_t total_len = net_pkt_get_len(pkt);
-	u16_t tllao_offset = 0;
-	u8_t prev_opt_len = 0;
+	u16_t tllao_offset = 0U;
+	u8_t prev_opt_len = 0U;
 	struct net_icmpv6_nd_opt_hdr nd_opt_hdr;
 	struct net_icmpv6_na_hdr na_hdr;
 	struct net_if_addr *ifaddr;
@@ -2112,7 +2112,7 @@ int net_ipv6_send_rs(struct net_if *iface)
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	bool unspec_src;
-	u8_t llao_len = 0;
+	u8_t llao_len = 0U;
 	int ret;
 
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),

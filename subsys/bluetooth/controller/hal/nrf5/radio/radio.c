@@ -149,14 +149,14 @@ void radio_pkt_configure(u8_t bits_len, u8_t max_len, u8_t flags)
 #if defined(CONFIG_SOC_SERIES_NRF51X)
 	ARG_UNUSED(phy);
 
-	extra = 0;
+	extra = 0U;
 
 	/* nRF51 supports only 27 byte PDU when using h/w CCM for encryption. */
 	if (!IS_ENABLED(CONFIG_BT_CTLR_DATA_LENGTH_CLEAR) && dc) {
-		bits_len = 5;
+		bits_len = 5U;
 	}
 #elif defined(CONFIG_SOC_COMPATIBLE_NRF52X)
-	extra = 0;
+	extra = 0U;
 
 	phy = (flags >> 1) & 0x07; /* phy */
 	switch (phy) {
@@ -585,7 +585,7 @@ void radio_filter_configure(u8_t bitmask_enable, u8_t bitmask_addr_type,
 {
 	u8_t index;
 
-	for (index = 0; index < 8; index++) {
+	for (index = 0U; index < 8; index++) {
 		NRF_RADIO->DAB[index] = ((u32_t)bdaddr[3] << 24) |
 			((u32_t)bdaddr[2] << 16) |
 			((u32_t)bdaddr[1] << 8) |
@@ -691,7 +691,7 @@ u32_t radio_tmr_start(u8_t trx, u32_t ticks_start, u32_t remainder)
 
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
-	last_pdu_end_us = 0;
+	last_pdu_end_us = 0U;
 
 #else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 	nrf_timer_task_trigger(SW_SWITCH_TIMER, NRF_TIMER_TASK_CLEAR);

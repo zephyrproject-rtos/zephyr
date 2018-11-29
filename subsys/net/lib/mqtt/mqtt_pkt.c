@@ -90,13 +90,13 @@ static
 int compute_rlen_size(u16_t *size, u32_t len)
 {
 	if (len <= 127) {
-		*size = 1;
+		*size = 1U;
 	} else if (len >= 128 && len <= 16383) {
-		*size = 2;
+		*size = 2U;
 	} else if (len >= 16384 && len <= 2097151) {
-		*size = 3;
+		*size = 3U;
 	} else if (len >= 2097152 && len <= 268435455) {
-		*size = 4;
+		*size = 4U;
 	} else {
 		return -EINVAL;
 	}
@@ -117,7 +117,7 @@ static int rlen_encode(u8_t *buf, u32_t len)
 	u8_t encoded;
 	u8_t i;
 
-	i = 0;
+	i = 0U;
 	do {
 		encoded = len % 128;
 		len = len / 128;
@@ -147,9 +147,9 @@ static int rlen_encode(u8_t *buf, u32_t len)
 static int rlen_decode(u32_t *rlen, u16_t *rlen_size,
 		       u8_t *buf, u16_t size)
 {
-	u32_t value = 0;
-	u32_t mult = 1;
-	u16_t i = 0;
+	u32_t value = 0U;
+	u32_t mult = 1U;
+	u16_t i = 0U;
 	u8_t encoded;
 
 	do {
@@ -279,7 +279,7 @@ int mqtt_pack_suback(u8_t *buf, u16_t *length, u16_t size,
 	UNALIGNED_PUT(htons(pkt_id), (u16_t *)(buf + offset));
 	offset += PACKET_ID_SIZE;
 
-	for (i = 0; i < elements; i++) {
+	for (i = 0U; i < elements; i++) {
 		buf[offset + i] = granted_qos[i];
 	}
 
@@ -592,7 +592,7 @@ int subscribe_size(u16_t *rlen_size, u16_t *payload_size, u8_t items,
 
 	*payload_size = PACKET_ID_SIZE;
 
-	for (i = 0; i < items; i++) {
+	for (i = 0U; i < items; i++) {
 		/* topic length (as string) +1 byte for its QoS		*/
 		*payload_size += mqtt_strlen(topics[i]) +
 				 (with_qos ? QoS_SIZE : 0);
@@ -669,7 +669,7 @@ static int mqtt_pack_subscribe_unsubscribe(u8_t *buf, u16_t *length,
 	UNALIGNED_PUT(htons(pkt_id), (u16_t *)(buf + offset));
 	offset += PACKET_ID_SIZE;
 
-	for (i = 0; i < items; i++) {
+	for (i = 0U; i < items; i++) {
 		u16_t topic_len = mqtt_strlen(topics[i]);
 
 		UNALIGNED_PUT(htons(topic_len), (u16_t *)(buf + offset));
@@ -746,8 +746,8 @@ int mqtt_unpack_subscribe(u8_t *buf, u16_t length, u16_t *pkt_id,
 	*pkt_id = ntohs(val_u16);
 	offset += PACKET_ID_SIZE;
 
-	*items = 0;
-	for (i = 0; i < elements; i++) {
+	*items = 0U;
+	for (i = 0U; i < elements; i++) {
 		if ((offset + TOPIC_MIN_SIZE) > length) {
 			return -EINVAL;
 		}
@@ -787,8 +787,8 @@ int mqtt_unpack_suback(u8_t *buf, u16_t length, u16_t *pkt_id,
 	u8_t i;
 	int rc;
 
-	*pkt_id = 0;
-	*items = 0;
+	*pkt_id = 0U;
+	*items = 0U;
 
 	if (elements <= 0) {
 		return -EINVAL;
@@ -822,7 +822,7 @@ int mqtt_unpack_suback(u8_t *buf, u16_t length, u16_t *pkt_id,
 		return -EINVAL;
 	}
 
-	for (i = 0; i < *items; i++) {
+	for (i = 0U; i < *items; i++) {
 		qos = *(buf + offset);
 		if (qos < MQTT_QoS0 || qos > MQTT_QoS2) {
 			return -EINVAL;

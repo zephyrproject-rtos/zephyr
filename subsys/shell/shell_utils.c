@@ -100,9 +100,9 @@ static char make_argv(char **ppcmd, u8_t c)
 
 			if (t == '0') {
 				u8_t i;
-				u8_t v = 0;
+				u8_t v = 0U;
 
-				for (i = 2; i < (2 + 3); i++) {
+				for (i = 2U; i < (2 + 3); i++) {
 					t = *(cmd + i);
 
 					if (t >= '0' && t <= '7') {
@@ -122,9 +122,9 @@ static char make_argv(char **ppcmd, u8_t c)
 
 			if (t == 'x') {
 				u8_t i;
-				u8_t v = 0;
+				u8_t v = 0U;
 
-				for (i = 2; i < (2 + 2); i++) {
+				for (i = 2U; i < (2 + 2); i++) {
 					t = *(cmd + i);
 
 					if (t >= '0' && t <= '9') {
@@ -242,7 +242,7 @@ int shell_command_add(char *buff, u16_t *buff_len,
 void shell_spaces_trim(char *str)
 {
 	u16_t len = shell_strlen(str);
-	u16_t shift = 0;
+	u16_t shift = 0U;
 
 	if (!str) {
 		return;
@@ -262,7 +262,7 @@ void shell_spaces_trim(char *str)
 						&str[j],
 						len - shift + 1);
 					len -= shift;
-					shift = 0;
+					shift = 0U;
 				}
 
 				break;
@@ -273,7 +273,7 @@ void shell_spaces_trim(char *str)
 
 void shell_buffer_trim(char *buff, u16_t *buff_len)
 {
-	u16_t i = 0;
+	u16_t i = 0U;
 
 	/* no command in the buffer */
 	if (buff[0] == '\0') {

@@ -52,12 +52,12 @@
 /* Function reads cursor position from terminal. */
 static int cursor_position_get(const struct shell *shell, u16_t *x, u16_t *y)
 {
-	u16_t buff_idx = 0;
+	u16_t buff_idx = 0U;
 	size_t cnt;
 	char c = 0;
 
-	*x = 0;
-	*y = 0;
+	*x = 0U;
+	*y = 0U;
 
 	memset(shell->ctx->temp_buff, 0, sizeof(shell->ctx->temp_buff));
 
@@ -96,7 +96,7 @@ static int cursor_position_get(const struct shell *shell, u16_t *x, u16_t *y)
 				/* Index start position in the buffer where 'y'
 				 * is stored.
 				 */
-				buff_idx = 2;
+				buff_idx = 2U;
 
 				while (shell->ctx->temp_buff[buff_idx] != ';') {
 					*y = *y * 10 +

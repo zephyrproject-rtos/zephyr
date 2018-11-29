@@ -175,7 +175,7 @@ static void seg_tx_reset(struct seg_tx *tx)
 
 	tx->cb = NULL;
 	tx->cb_data = NULL;
-	tx->seq_auth = 0;
+	tx->seq_auth = 0U;
 	tx->sub = NULL;
 	tx->dst = BT_MESH_ADDR_UNASSIGNED;
 
@@ -192,11 +192,11 @@ static void seg_tx_reset(struct seg_tx *tx)
 		tx->seg[i] = NULL;
 	}
 
-	tx->nack_count = 0;
+	tx->nack_count = 0U;
 
 	if (bt_mesh.pending_update) {
 		BT_DBG("Proceding with pending IV Update");
-		bt_mesh.pending_update = 0;
+		bt_mesh.pending_update = 0U;
 		/* bt_mesh_net_iv_update() will re-enable the flag if this
 		 * wasn't the only transfer.
 		 */
@@ -337,7 +337,7 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 		seg_hdr = SEG_HDR(1, net_tx->aid);
 	}
 
-	seg_o = 0;
+	seg_o = 0U;
 	tx->dst = net_tx->ctx->addr;
 	tx->seg_n = (sdu->len - 1) / 12;
 	tx->nack_count = tx->seg_n + 1;
@@ -357,7 +357,7 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 
 	BT_DBG("SeqZero 0x%04x", seq_zero);
 
-	for (seg_o = 0; sdu->len; seg_o++) {
+	for (seg_o = 0U; sdu->len; seg_o++) {
 		struct net_buf *seg;
 		u16_t len;
 		int err;
@@ -465,7 +465,7 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
 
 	if (tx->ctx->app_idx == BT_MESH_KEY_DEV) {
 		key = bt_mesh.dev_key;
-		tx->aid = 0;
+		tx->aid = 0U;
 	} else {
 		struct bt_mesh_app_key *app_key;
 
@@ -485,9 +485,9 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
 	}
 
 	if (!tx->ctx->send_rel || net_buf_simple_tailroom(msg) < 8) {
-		tx->aszmic = 0;
+		tx->aszmic = 0U;
 	} else {
-		tx->aszmic = 1;
+		tx->aszmic = 1U;
 	}
 
 	if (BT_MESH_ADDR_IS_VIRTUAL(tx->ctx->addr)) {
@@ -629,7 +629,7 @@ static int sdu_recv(struct bt_mesh_net_rx *rx, u32_t seq, u8_t hdr,
 		return 0;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(bt_mesh.app_keys); i++) {
+	for (i = 0U; i < ARRAY_SIZE(bt_mesh.app_keys); i++) {
 		struct bt_mesh_app_key *key = &bt_mesh.app_keys[i];
 		struct bt_mesh_app_keys *keys;
 
@@ -1015,14 +1015,14 @@ static void seg_rx_reset(struct seg_rx *rx, bool full_reset)
 						&rx->seq_auth);
 	}
 
-	rx->in_use = 0;
+	rx->in_use = 0U;
 
 	/* We don't always reset these values since we need to be able to
 	 * send an ack if we receive a segment after we've already received
 	 * the full SDU.
 	 */
 	if (full_reset) {
-		rx->seq_auth = 0;
+		rx->seq_auth = 0U;
 		rx->sub = NULL;
 		rx->src = BT_MESH_ADDR_UNASSIGNED;
 		rx->dst = BT_MESH_ADDR_UNASSIGNED;
@@ -1137,7 +1137,7 @@ static struct seg_rx *seg_rx_alloc(struct bt_mesh_net_rx *net_rx,
 			continue;
 		}
 
-		rx->in_use = 1;
+		rx->in_use = 1U;
 		net_buf_simple_reset(&rx->buf);
 		rx->sub = net_rx->sub;
 		rx->ctl = net_rx->ctl;
@@ -1147,7 +1147,7 @@ static struct seg_rx *seg_rx_alloc(struct bt_mesh_net_rx *net_rx,
 		rx->ttl = net_rx->ctx.send_ttl;
 		rx->src = net_rx->ctx.addr;
 		rx->dst = net_rx->ctx.recv_dst;
-		rx->block = 0;
+		rx->block = 0U;
 
 		BT_DBG("New RX context. Block Complete 0x%08x",
 		       BLOCK_COMPLETE(seg_n));

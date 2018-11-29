@@ -103,7 +103,7 @@ int _impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 	}
 
 	ai_state.hints = hints;
-	ai_state.idx = 0;
+	ai_state.idx = 0U;
 	ai_state.port = htons(port);
 	ai_state.ai_arr = res;
 	k_sem_init(&ai_state.sem, 0, UINT_MAX);

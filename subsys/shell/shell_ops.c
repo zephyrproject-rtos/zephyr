@@ -110,7 +110,7 @@ void shell_op_word_remove(const struct shell *shell)
 	}
 
 	/* Start at the current position. */
-	chars_to_delete = 0;
+	chars_to_delete = 0U;
 
 	/* Look back for all spaces then for non-spaces. */
 	while ((str >= str_start) && (*str == ' ')) {

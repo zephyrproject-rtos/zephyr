@@ -256,7 +256,7 @@ struct net_route_entry *net_route_lookup(struct net_if *iface,
 					 struct in6_addr *dst)
 {
 	struct net_route_entry *route, *found = NULL;
-	u8_t longest_match = 0;
+	u8_t longest_match = 0U;
 	int i;
 
 	for (i = 0; i < CONFIG_NET_MAX_ROUTES && longest_match < 128; i++) {

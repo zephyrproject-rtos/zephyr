@@ -167,8 +167,8 @@ static int iv_set(int argc, char **argv, char *val)
 	BT_DBG("val %s", val ? val : "(null)");
 
 	if (!val) {
-		bt_mesh.iv_index = 0;
-		bt_mesh.iv_update = 0;
+		bt_mesh.iv_index = 0U;
+		bt_mesh.iv_update = 0U;
 		return 0;
 	}
 
@@ -202,7 +202,7 @@ static int seq_set(int argc, char **argv, char *val)
 	BT_DBG("val %s", val ? val : "(null)");
 
 	if (!val) {
-		bt_mesh.seq = 0;
+		bt_mesh.seq = 0U;
 		return 0;
 	}
 
@@ -824,7 +824,7 @@ static int mesh_commit(void)
 		cfg->default_ttl = stored_cfg.cfg.default_ttl;
 	}
 
-	bt_mesh.valid = 1;
+	bt_mesh.valid = 1U;
 
 	bt_mesh_net_start();
 
@@ -1199,7 +1199,7 @@ static void store_pending_keys(void)
 			}
 		}
 
-		update->valid = 0;
+		update->valid = 0U;
 	}
 }
 
@@ -1429,7 +1429,7 @@ void bt_mesh_store_subnet(struct bt_mesh_subnet *sub)
 
 	update = key_update_find(false, sub->net_idx, &free_slot);
 	if (update) {
-		update->clear = 0;
+		update->clear = 0U;
 		schedule_store(BT_MESH_KEYS_PENDING);
 		return;
 	}
@@ -1439,10 +1439,10 @@ void bt_mesh_store_subnet(struct bt_mesh_subnet *sub)
 		return;
 	}
 
-	free_slot->valid = 1;
+	free_slot->valid = 1U;
 	free_slot->key_idx = sub->net_idx;
-	free_slot->app_key = 0;
-	free_slot->clear = 0;
+	free_slot->app_key = 0U;
+	free_slot->clear = 0U;
 
 	schedule_store(BT_MESH_KEYS_PENDING);
 }
@@ -1455,7 +1455,7 @@ void bt_mesh_store_app_key(struct bt_mesh_app_key *key)
 
 	update = key_update_find(true, key->app_idx, &free_slot);
 	if (update) {
-		update->clear = 0;
+		update->clear = 0U;
 		schedule_store(BT_MESH_KEYS_PENDING);
 		return;
 	}
@@ -1465,10 +1465,10 @@ void bt_mesh_store_app_key(struct bt_mesh_app_key *key)
 		return;
 	}
 
-	free_slot->valid = 1;
+	free_slot->valid = 1U;
 	free_slot->key_idx = key->app_idx;
-	free_slot->app_key = 1;
-	free_slot->clear = 0;
+	free_slot->app_key = 1U;
+	free_slot->clear = 0U;
 
 	schedule_store(BT_MESH_KEYS_PENDING);
 }
@@ -1498,7 +1498,7 @@ void bt_mesh_clear_subnet(struct bt_mesh_subnet *sub)
 
 	update = key_update_find(false, sub->net_idx, &free_slot);
 	if (update) {
-		update->clear = 1;
+		update->clear = 1U;
 		schedule_store(BT_MESH_KEYS_PENDING);
 		return;
 	}
@@ -1508,10 +1508,10 @@ void bt_mesh_clear_subnet(struct bt_mesh_subnet *sub)
 		return;
 	}
 
-	free_slot->valid = 1;
+	free_slot->valid = 1U;
 	free_slot->key_idx = sub->net_idx;
-	free_slot->app_key = 0;
-	free_slot->clear = 1;
+	free_slot->app_key = 0U;
+	free_slot->clear = 1U;
 
 	schedule_store(BT_MESH_KEYS_PENDING);
 }
@@ -1524,7 +1524,7 @@ void bt_mesh_clear_app_key(struct bt_mesh_app_key *key)
 
 	update = key_update_find(true, key->app_idx, &free_slot);
 	if (update) {
-		update->clear = 1;
+		update->clear = 1U;
 		schedule_store(BT_MESH_KEYS_PENDING);
 		return;
 	}
@@ -1534,10 +1534,10 @@ void bt_mesh_clear_app_key(struct bt_mesh_app_key *key)
 		return;
 	}
 
-	free_slot->valid = 1;
+	free_slot->valid = 1U;
 	free_slot->key_idx = key->app_idx;
-	free_slot->app_key = 1;
-	free_slot->clear = 1;
+	free_slot->app_key = 1U;
+	free_slot->clear = 1U;
 
 	schedule_store(BT_MESH_KEYS_PENDING);
 }

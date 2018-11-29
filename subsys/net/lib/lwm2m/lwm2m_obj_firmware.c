@@ -343,7 +343,7 @@ static int lwm2m_firmware_init(struct device *dev)
 	firmware.obj_id = LWM2M_OBJECT_FIRMWARE_ID;
 	firmware.fields = fields;
 	firmware.field_count = ARRAY_SIZE(fields);
-	firmware.max_instance_count = 1;
+	firmware.max_instance_count = 1U;
 	firmware.create_cb = firmware_create;
 	lwm2m_register_obj(&firmware);
 

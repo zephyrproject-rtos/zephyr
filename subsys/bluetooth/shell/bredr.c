@@ -49,7 +49,7 @@ static int cmd_auth_pincode(const struct shell *shell,
 			    size_t argc, char *argv[])
 {
 	struct bt_conn *conn;
-	u8_t max = 16;
+	u8_t max = 16U;
 
 	if (default_conn) {
 		conn = default_conn;

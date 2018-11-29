@@ -125,7 +125,7 @@ static int ieee802154_scan(u32_t mgmt_request, struct net_if *iface,
 
 	/* ToDo: For now, we assume we are on 2.4Ghz
 	 * (device will have to export capabilities) */
-	for (channel = 11; channel <= 26; channel++) {
+	for (channel = 11U; channel <= 26; channel++) {
 		if (IEEE802154_IS_CHAN_UNSCANNED(scan->channel_set, channel)) {
 			continue;
 		}
@@ -254,11 +254,11 @@ static int ieee802154_associate(u32_t mgmt_request, struct net_if *iface,
 	}
 
 	cmd = ieee802154_get_mac_command(pkt);
-	cmd->assoc_req.ci.dev_type = 0; /* RFD */
-	cmd->assoc_req.ci.power_src = 0; /* ToDo: set right power source */
-	cmd->assoc_req.ci.rx_on = 1; /* ToDo: that will depends on PM */
-	cmd->assoc_req.ci.sec_capability = 0; /* ToDo: security support */
-	cmd->assoc_req.ci.alloc_addr = 0; /* ToDo: handle short addr */
+	cmd->assoc_req.ci.dev_type = 0U; /* RFD */
+	cmd->assoc_req.ci.power_src = 0U; /* ToDo: set right power source */
+	cmd->assoc_req.ci.rx_on = 1U; /* ToDo: that will depends on PM */
+	cmd->assoc_req.ci.sec_capability = 0U; /* ToDo: security support */
+	cmd->assoc_req.ci.alloc_addr = 0U; /* ToDo: handle short addr */
 
 	ctx->associated = false;
 

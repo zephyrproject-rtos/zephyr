@@ -102,7 +102,7 @@ static int read_copy_flash_block(off_t start_addr, u32_t size,
 {
 	off_t fl_addr;
 	u32_t num_read;
-	u32_t offset = 0;
+	u32_t offset = 0U;
 
 	/* adjust offset if starting address is not erase-aligned address */
 	if (start_addr & (CONFIG_DISK_FLASH_ERASE_ALIGNMENT - 1)) {

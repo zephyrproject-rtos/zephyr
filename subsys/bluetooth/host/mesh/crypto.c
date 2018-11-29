@@ -284,7 +284,7 @@ static int bt_mesh_ccm_decrypt(const u8_t key[16], u8_t nonce[13],
 	last_blk = msg_len % 16;
 	blk_cnt = (msg_len + 15) / 16;
 	if (!last_blk) {
-		last_blk = 16;
+		last_blk = 16U;
 	}
 
 	for (j = 0; j < blk_cnt; j++) {
@@ -448,7 +448,7 @@ static int bt_mesh_ccm_encrypt(const u8_t key[16], u8_t nonce[13],
 	last_blk = msg_len % 16;
 	blk_cnt = (msg_len + 15) / 16;
 	if (!last_blk) {
-		last_blk = 16;
+		last_blk = 16U;
 	}
 
 	for (j = 0; j < blk_cnt; j++) {
@@ -541,8 +541,8 @@ static void create_proxy_nonce(u8_t nonce[13], const u8_t *pdu,
 	nonce[6] = pdu[6];
 
 	/* Pad */
-	nonce[7] = 0;
-	nonce[8] = 0;
+	nonce[7] = 0U;
+	nonce[8] = 0U;
 
 	/* IV Index */
 	sys_put_be32(iv_index, &nonce[9]);
@@ -568,8 +568,8 @@ static void create_net_nonce(u8_t nonce[13], const u8_t *pdu,
 	nonce[6] = pdu[6];
 
 	/* Pad */
-	nonce[7] = 0;
-	nonce[8] = 0;
+	nonce[7] = 0U;
+	nonce[8] = 0U;
 
 	/* IV Index */
 	sys_put_be32(iv_index, &nonce[9]);

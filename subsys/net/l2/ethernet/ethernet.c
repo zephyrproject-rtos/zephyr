@@ -109,7 +109,7 @@ static inline void ethernet_update_length(struct net_if *iface,
 				len -= frag->len;
 			} else {
 				frag->len = len;
-				len = 0;
+				len = 0U;
 			}
 		}
 	}

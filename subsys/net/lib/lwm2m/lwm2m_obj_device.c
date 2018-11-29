@@ -132,7 +132,7 @@ static int factory_default_cb(u16_t obj_inst_id)
 
 static int reset_error_list_cb(u16_t obj_inst_id)
 {
-	error_code_count = 0;
+	error_code_count = 0U;
 	return 0;
 }
 
@@ -327,11 +327,11 @@ static int lwm2m_device_init(struct device *dev)
 	int ret = 0, i;
 
 	/* Set default values */
-	time_offset = 0;
+	time_offset = 0U;
 	mem_total_kb = 0;
 	mem_free_kb = -1;
-	pwrsrc_count = 0;
-	error_code_count = 0;
+	pwrsrc_count = 0U;
+	error_code_count = 0U;
 	/* currently only support UDP binding mode (no SMS or Queue mode) */
 	strcpy(binding_mode, "U");
 
@@ -343,7 +343,7 @@ static int lwm2m_device_init(struct device *dev)
 	device.obj_id = LWM2M_OBJECT_DEVICE_ID;
 	device.fields = fields;
 	device.field_count = ARRAY_SIZE(fields);
-	device.max_instance_count = 1;
+	device.max_instance_count = 1U;
 	device.create_cb = device_create;
 	lwm2m_register_obj(&device);
 

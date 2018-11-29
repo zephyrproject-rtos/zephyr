@@ -72,8 +72,8 @@ static void gptp_md_follow_up_prepare(struct net_pkt *pkt,
 	fup->tlv.org_id[0] = GPTP_FUP_TLV_ORG_ID_BYTE_0;
 	fup->tlv.org_id[1] = GPTP_FUP_TLV_ORG_ID_BYTE_1;
 	fup->tlv.org_id[2] = GPTP_FUP_TLV_ORG_ID_BYTE_2;
-	fup->tlv.org_sub_type[0] = 0;
-	fup->tlv.org_sub_type[1] = 0;
+	fup->tlv.org_sub_type[0] = 0U;
+	fup->tlv.org_sub_type[1] = 0U;
 	fup->tlv.org_sub_type[2] = GPTP_FUP_TLV_ORG_SUB_TYPE;
 
 	fup->tlv.cumulative_scaled_rate_offset =
@@ -211,8 +211,8 @@ static void gptp_md_pdelay_check_multiple_resp(int port)
 
 static void gptp_md_compute_pdelay_rate_ratio(int port)
 {
-	u64_t ingress_tstamp = 0;
-	u64_t resp_evt_tstamp = 0;
+	u64_t ingress_tstamp = 0U;
+	u64_t resp_evt_tstamp = 0U;
 	struct gptp_pdelay_resp_follow_up *fup;
 	struct gptp_pdelay_req_state *state;
 	struct gptp_port_ds *port_ds;
@@ -271,7 +271,7 @@ static void gptp_md_compute_pdelay_rate_ratio(int port)
 
 static void gptp_md_compute_prop_time(int port)
 {
-	u64_t t1_ns = 0, t2_ns = 0, t3_ns = 0, t4_ns = 0;
+	u64_t t1_ns = 0U, t2_ns = 0U, t3_ns = 0U, t4_ns = 0U;
 	struct gptp_pdelay_resp_follow_up *fup;
 	struct gptp_pdelay_req_state *state;
 	struct gptp_pdelay_resp *resp;

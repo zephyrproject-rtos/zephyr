@@ -189,7 +189,7 @@ static int gatt_register(struct bt_gatt_service *svc)
 	u16_t count = svc->attr_count;
 
 	if (sys_slist_is_empty(&db)) {
-		handle = 0;
+		handle = 0U;
 		goto populate;
 	}
 
@@ -266,8 +266,8 @@ static void sc_process(struct k_work *work)
 	sc_range[1] = sys_cpu_to_le16(sc->end);
 
 	atomic_clear_bit(sc->flags, SC_RANGE_CHANGED);
-	sc->start = 0;
-	sc->end = 0;
+	sc->start = 0U;
+	sc->end = 0U;
 
 	sc->params.attr = &gatt_attrs[2];
 	sc->params.func = sc_indicate_rsp;
@@ -1294,7 +1294,7 @@ static void gatt_find_type_rsp(struct bt_conn *conn, u8_t err,
 	const struct bt_att_find_type_rsp *rsp = pdu;
 	struct bt_gatt_discover_params *params = user_data;
 	u8_t i;
-	u16_t end_handle = 0, start_handle;
+	u16_t end_handle = 0U, start_handle;
 
 	BT_DBG("err 0x%02x", err);
 
@@ -1303,7 +1303,7 @@ static void gatt_find_type_rsp(struct bt_conn *conn, u8_t err,
 	}
 
 	/* Parse attributes found */
-	for (i = 0; length >= sizeof(rsp->list[i]);
+	for (i = 0U; length >= sizeof(rsp->list[i]);
 	     i++, length -=  sizeof(rsp->list[i])) {
 		struct bt_gatt_attr attr = {};
 		struct bt_gatt_service_val value;
@@ -1458,7 +1458,7 @@ static u16_t parse_include(struct bt_conn *conn, const void *pdu,
 			   u16_t length)
 {
 	const struct bt_att_read_type_rsp *rsp = pdu;
-	u16_t handle = 0;
+	u16_t handle = 0U;
 	struct bt_gatt_include value;
 	union {
 		struct bt_uuid uuid;
@@ -1556,7 +1556,7 @@ static u16_t parse_characteristic(struct bt_conn *conn, const void *pdu,
 				  u16_t length)
 {
 	const struct bt_att_read_type_rsp *rsp = pdu;
-	u16_t handle = 0;
+	u16_t handle = 0U;
 	union {
 		struct bt_uuid uuid;
 		struct bt_uuid_16 u16;
@@ -1684,7 +1684,7 @@ static u16_t parse_service(struct bt_conn *conn, const void *pdu,
 				  u16_t length)
 {
 	const struct bt_att_read_group_rsp *rsp = pdu;
-	u16_t start_handle, end_handle = 0;
+	u16_t start_handle, end_handle = 0U;
 	union {
 		struct bt_uuid uuid;
 		struct bt_uuid_16 u16;
@@ -1816,7 +1816,7 @@ static void gatt_find_info_rsp(struct bt_conn *conn, u8_t err,
 {
 	const struct bt_att_find_info_rsp *rsp = pdu;
 	struct bt_gatt_discover_params *params = user_data;
-	u16_t handle = 0;
+	u16_t handle = 0U;
 	u8_t len;
 	union {
 		const struct bt_att_info_16 *i16;
@@ -2037,7 +2037,7 @@ static int gatt_read_multiple(struct bt_conn *conn,
 		return -ENOMEM;
 	}
 
-	for (i = 0; i < params->handle_count; i++) {
+	for (i = 0U; i < params->handle_count; i++) {
 		net_buf_add_le16(buf, params->handles[i]);
 	}
 

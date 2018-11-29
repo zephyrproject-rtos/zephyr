@@ -2694,7 +2694,7 @@ static void address_lifetime_cb(struct net_if *iface, void *user_data)
 		if (prefix) {
 			prefix_len = prefix->len;
 		} else {
-			prefix_len = 128;
+			prefix_len = 128U;
 		}
 
 		if (ipv6->unicast[i].is_infinite) {

@@ -1180,7 +1180,7 @@ static int recv_udp(struct net_context *context,
 		.sa_family = net_context_get_family(context),
 	};
 	struct sockaddr *laddr = NULL;
-	u16_t lport = 0;
+	u16_t lport = 0U;
 	int ret;
 
 	ARG_UNUSED(timeout);

@@ -120,7 +120,7 @@ int cfb_print(struct device *dev, char *str, u16_t x, u16_t y)
 	if ((fb->screen_info & SCREEN_INFO_MONO_VTILED) && !(y % 8)) {
 		for (size_t i = 0; i < strlen(str); i++) {
 			if (x + fptr->width > fb->x_res) {
-				x = 0;
+				x = 0U;
 				y += fptr->height;
 			}
 			x += fb->kerning + draw_char_vtmono(fb, str[i], x, y);
@@ -285,16 +285,16 @@ int cfb_framebuffer_init(struct device *dev)
 
 	fb->x_res = cfg.x_resolution;
 	fb->y_res = cfg.y_resolution;
-	fb->ppt = 8;
+	fb->ppt = 8U;
 	fb->pixel_format = cfg.current_pixel_format;
 	fb->screen_info = cfg.screen_info;
 	fb->buf = NULL;
-	fb->font_idx = 0;
+	fb->font_idx = 0U;
 	fb->kerning = 0;
 	fb->inverted = false;
 
 	fb->fonts = __font_entry_start;
-	fb->font_idx = 0;
+	fb->font_idx = 0U;
 
 	fb->size = fb->x_res * fb->y_res / fb->ppt;
 	fb->buf = k_malloc(fb->size);

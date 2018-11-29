@@ -292,7 +292,7 @@ fcb_offset_last_n(struct fcb *fcb, u8_t entries,
 
 	/* assure a minimum amount of entries */
 	if (!entries) {
-		entries = 1;
+		entries = 1U;
 	}
 
 	i = 0;

@@ -354,7 +354,7 @@ static int cmd_write_without_rsp(const struct shell *shell,
 	sign = !strcmp(argv[0], "signed-write");
 	handle = strtoul(argv[1], NULL, 16);
 	gatt_write_buf[0] = strtoul(argv[2], NULL, 16);
-	len = 1;
+	len = 1U;
 
 	if (argc > 3) {
 		int i;
@@ -366,14 +366,14 @@ static int cmd_write_without_rsp(const struct shell *shell,
 		}
 	}
 
-	repeat = 0;
+	repeat = 0U;
 
 	if (argc > 4) {
 		repeat = strtoul(argv[4], NULL, 16);
 	}
 
 	if (!repeat) {
-		repeat = 1;
+		repeat = 1U;
 	}
 
 	while (repeat--) {
@@ -691,9 +691,9 @@ static ssize_t write_met(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	 * reset the metrics.
 	 */
 	if (delta > 1000000000) {
-		write_count = 0;
-		write_len = 0;
-		write_rate = 0;
+		write_count = 0U;
+		write_len = 0U;
+		write_rate = 0U;
 		cycle_stamp = k_cycle_get_32();
 	} else {
 		write_count++;
