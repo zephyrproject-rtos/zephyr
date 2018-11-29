@@ -397,6 +397,57 @@ endif()
 
 configure_file(version.h.in ${PROJECT_BINARY_DIR}/include/generated/version.h)
 
+function(construct_add_custom_command_for_linker_pass linker_output_name output_variable)
+  set(linker_cmd_file_name ${linker_output_name}.cmd)
+
+  if (${linker_output_name} MATCHES "^linker_pass_final$")
+    set(linker_pass_define -DLINKER_PASS2)
+  else()
+    set(linker_pass_define "")
+  endif()
+
+  # Different generators deal with depfiles differently.
+  if(CMAKE_GENERATOR STREQUAL "Unix Makefiles")
+    # Note that the IMPLICIT_DEPENDS option is currently supported only
+    # for Makefile generators and will be ignored by other generators.
+    set(linker_script_dep IMPLICIT_DEPENDS C ${LINKER_SCRIPT})
+  elseif(CMAKE_GENERATOR STREQUAL "Ninja")
+    # Using DEPFILE with other generators than Ninja is an error.
+    set(linker_script_dep DEPFILE ${PROJECT_BINARY_DIR}/${linker_cmd_file_name}.dep)
+  else()
+    # TODO: How would the linker script dependencies work for non-linker
+    # script generators.
+    message(STATUS "Warning; this generator is not well supported. The
+  Linker script may not be regenerated when it should.")
+    set(linker_script_dep "")
+  endif()
+
+  zephyr_get_include_directories_for_lang(C current_includes)
+  get_filename_component(base_name ${CMAKE_CURRENT_BINARY_DIR} NAME)
+  get_property(current_defines GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES)
+
+  set(${output_variable}
+    OUTPUT ${linker_cmd_file_name}
+    DEPENDS ${LINKER_SCRIPT}
+    ${linker_script_dep}
+    COMMAND ${CMAKE_C_COMPILER}
+    -x assembler-with-cpp
+    ${NOSTDINC_F}
+    ${NOSYSDEF_CFLAG}
+    -MD -MF ${linker_cmd_file_name}.dep -MT ${base_name}/${linker_cmd_file_name}
+    ${current_includes}
+    ${current_defines}
+    ${linker_pass_define}
+    -E ${LINKER_SCRIPT}
+    -P # Prevent generation of debug `#line' directives.
+    -o ${linker_cmd_file_name}
+    VERBATIM
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+
+    PARENT_SCOPE
+    )
+endfunction()
+
 # Unfortunately, the order in which CMakeLists.txt code is processed
 # matters so we need to be careful about how we order the processing
 # of subdirectories. One example is "Compiler flags added late in the
@@ -626,8 +677,6 @@ endforeach()
 
 get_property(OUTPUT_FORMAT        GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT)
 
-get_property(LINKER_SCRIPT_DEFINES GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES)
-
 if(CONFIG_APPLICATION_MEMORY)
   # Objects default to being in kernel space, and then we exclude
   # certain items.
@@ -717,57 +766,14 @@ if(CONFIG_APPLICATION_MEMORY)
   foreach(f ${ks})
     set(def "${def} ${f}")
   endforeach()
-  list(APPEND LINKER_SCRIPT_DEFINES ${def})
+  set_property(GLOBAL APPEND PROPERTY
+	PROPERTY_LINKER_SCRIPT_DEFINES
+	${def}
+	)
 endif() # CONFIG_APPLICATION_MEMORY
 
-function(construct_add_custom_command_for_linker_pass linker_output_name output_variable)
-  set(linker_cmd_file_name ${linker_output_name}.cmd)
 
-  if (${linker_output_name} MATCHES "^linker_pass_final$")
-    set(LINKER_PASS_DEFINE -DLINKER_PASS2)
-  else()
-    set(LINKER_PASS_DEFINE "")
-  endif()
 
-  # Different generators deal with depfiles differently.
-  if(CMAKE_GENERATOR STREQUAL "Unix Makefiles")
-    # Note that the IMPLICIT_DEPENDS option is currently supported only
-    # for Makefile generators and will be ignored by other generators.
-    set(LINKER_SCRIPT_DEP IMPLICIT_DEPENDS C ${LINKER_SCRIPT})
-  elseif(CMAKE_GENERATOR STREQUAL "Ninja")
-    # Using DEPFILE with other generators than Ninja is an error.
-    set(LINKER_SCRIPT_DEP DEPFILE ${PROJECT_BINARY_DIR}/${linker_cmd_file_name}.dep)
-  else()
-    # TODO: How would the linker script dependencies work for non-linker
-    # script generators.
-    message(STATUS "Warning; this generator is not well supported. The
-  Linker script may not be regenerated when it should.")
-    set(LINKER_SCRIPT_DEP "")
-  endif()
-
-  set(${output_variable}
-    OUTPUT ${linker_cmd_file_name}
-    DEPENDS ${LINKER_SCRIPT}
-    ${LINKER_SCRIPT_DEP}
-    COMMAND ${CMAKE_C_COMPILER}
-    -x assembler-with-cpp
-    ${NOSTDINC_F}
-    ${NOSYSDEF_CFLAG}
-    -MD -MF ${linker_cmd_file_name}.dep -MT ${BASE_NAME}/${linker_cmd_file_name}
-    ${ZEPHYR_INCLUDES}
-    ${LINKER_SCRIPT_DEFINES}
-    ${LINKER_PASS_DEFINE}
-    -E ${LINKER_SCRIPT}
-    -P # Prevent generation of debug `#line' directives.
-    -o ${linker_cmd_file_name}
-    VERBATIM
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-
-    PARENT_SCOPE
-    )
-endfunction()
-
-get_filename_component(BASE_NAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 construct_add_custom_command_for_linker_pass(linker custom_command)
 add_custom_command(
   ${custom_command}
