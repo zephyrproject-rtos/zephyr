@@ -349,6 +349,7 @@ struct shell_flags {
 	u32_t tx_rdy      :1;
 	u32_t mode_delete :1; /*!< Operation mode of backspace key */
 	u32_t history_exit:1; /*!< Request to exit history mode */
+	u32_t last_nl     :8; /*!< Last received new line character */
 };
 
 BUILD_ASSERT_MSG((sizeof(struct shell_flags) == sizeof(u32_t)),
