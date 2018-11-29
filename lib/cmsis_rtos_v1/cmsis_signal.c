@@ -148,7 +148,7 @@ osEvent osSignalWait(int32_t signals, uint32_t millisec)
 		if (timeout > time_delta_ms) {
 			timeout -= time_delta_ms;
 		} else {
-			timeout = 0;
+			timeout = 0U;
 		}
 	}
 
