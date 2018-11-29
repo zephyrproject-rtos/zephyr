@@ -129,8 +129,16 @@ int _impl_k_msgq_put(struct k_msgq *q, void *data, s32_t timeout)
 			_reschedule(key);
 			return 0;
 		} else {
+			void *aux;
+			/*
+			 * MISRA-C 21.15 requires the pointer arguments for
+			 * memcpy be * compatible types. Unfortunately just cast
+			 * block.id inside the function is not enough.
+			 */
+			aux = q->write_ptr;
+
 			/* put message in queue */
-			(void)memcpy(q->write_ptr, data, q->msg_size);
+			(void)memcpy(aux, data, q->msg_size);
 			q->write_ptr += q->msg_size;
 			if (q->write_ptr == q->buffer_end) {
 				q->write_ptr = q->buffer_start;
@@ -192,8 +200,15 @@ int _impl_k_msgq_get(struct k_msgq *q, void *data, s32_t timeout)
 	int result;
 
 	if (q->used_msgs > 0) {
+		void *aux;
+		/*
+		 * MISRA-C 21.15 requires the pointer arguments for
+		 * memcpy be * compatible types. Unfortunately just cast
+		 * block.id inside the function is not enough.
+		 */
+		aux = q->read_ptr;
 		/* take first available message from queue */
-		(void)memcpy(data, q->read_ptr, q->msg_size);
+		(void)memcpy(data, aux, q->msg_size);
 		q->read_ptr += q->msg_size;
 		if (q->read_ptr == q->buffer_end) {
 			q->read_ptr = q->buffer_start;
@@ -203,8 +218,15 @@ int _impl_k_msgq_get(struct k_msgq *q, void *data, s32_t timeout)
 		/* handle first thread waiting to write (if any) */
 		pending_thread = _unpend_first_thread(&q->wait_q);
 		if (pending_thread != NULL) {
+			/*
+			 * MISRA-C 21.15 requires the pointer arguments for
+			 * memcpy be * compatible types. Unfortunately just cast
+			 * block.id inside the function is not enough.
+			 */
+			aux = q->write_ptr;
+
 			/* add thread's message to queue */
-			(void)memcpy(q->write_ptr, pending_thread->base.swap_data,
+			(void)memcpy(aux, pending_thread->base.swap_data,
 			       q->msg_size);
 			q->write_ptr += q->msg_size;
 			if (q->write_ptr == q->buffer_end) {
@@ -251,8 +273,16 @@ int _impl_k_msgq_peek(struct k_msgq *q, void *data)
 	int result;
 
 	if (q->used_msgs > 0) {
+		void *aux;
+		/*
+		 * MISRA-C 21.15 requires the pointer arguments for
+		 * memcpy be * compatible types. Unfortunately just cast
+		 * block.id inside the function is not enough.
+		 */
+		aux = q->read_ptr;
+
 		/* take first available message from queue */
-		(void)memcpy(data, q->read_ptr, q->msg_size);
+		(void)memcpy(data, aux, q->msg_size);
 		result = 0;
 	} else {
 		/* don't wait for a message to become available */

@@ -147,7 +147,7 @@ void *k_mem_pool_malloc(struct k_mem_pool *pool, size_t size)
 	}
 
 	/* save the block descriptor info at the start of the actual block */
-	(void)memcpy(block.data, &block.id, sizeof(struct k_mem_block_id));
+	*(struct k_mem_block_id *)block.data = block.id;
 
 	/* return address of the user area part of the block to the caller */
 	return (char *)block.data + sizeof(struct k_mem_block_id);
