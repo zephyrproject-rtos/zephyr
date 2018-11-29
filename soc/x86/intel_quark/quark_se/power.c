@@ -84,7 +84,7 @@ void _sys_soc_power_state_post_ops(enum power_states state)
 {
 	switch (state) {
 	case SYS_POWER_STATE_CPU_LPS_2:
-		*_REG_TIMER_ICR = 1;
+		*_REG_TIMER_ICR = 1U;
 	case SYS_POWER_STATE_CPU_LPS_1:
 	case SYS_POWER_STATE_CPU_LPS:
 		__asm__ volatile("sti");
