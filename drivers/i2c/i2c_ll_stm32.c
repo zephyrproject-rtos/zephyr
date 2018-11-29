@@ -25,7 +25,7 @@ int i2c_stm32_runtime_configure(struct device *dev, u32_t config)
 	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
 	struct i2c_stm32_data *data = DEV_DATA(dev);
 	I2C_TypeDef *i2c = cfg->i2c;
-	u32_t clock = 0;
+	u32_t clock = 0U;
 
 #if defined(CONFIG_SOC_SERIES_STM32F3X) || defined(CONFIG_SOC_SERIES_STM32F0X)
 	LL_RCC_ClocksTypeDef rcc_clocks;

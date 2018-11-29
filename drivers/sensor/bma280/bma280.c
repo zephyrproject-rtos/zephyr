@@ -115,7 +115,7 @@ static const struct sensor_driver_api bma280_driver_api = {
 int bma280_init(struct device *dev)
 {
 	struct bma280_data *drv_data = dev->driver_data;
-	u8_t id = 0;
+	u8_t id = 0U;
 
 	drv_data->i2c = device_get_binding(CONFIG_BMA280_I2C_MASTER_DEV_NAME);
 	if (drv_data->i2c == NULL) {

@@ -36,10 +36,10 @@ static inline void handle_sb(I2C_TypeDef *i2c, struct i2c_stm32_data *data)
 		u8_t header = slave | HEADER;
 
 		if (data->current.is_restart == 0) {
-			data->current.is_restart = 1;
+			data->current.is_restart = 1U;
 		} else {
 			header |= I2C_REQUEST_READ;
-			data->current.is_restart = 0;
+			data->current.is_restart = 0U;
 		}
 		LL_I2C_TransmitData8(i2c, header);
 
@@ -57,7 +57,7 @@ static inline void handle_addr(I2C_TypeDef *i2c, struct i2c_stm32_data *data)
 {
 	if (I2C_ADDR_10_BITS & data->dev_config) {
 		if (!data->current.is_write && data->current.is_restart) {
-			data->current.is_restart = 0;
+			data->current.is_restart = 0U;
 			LL_I2C_ClearFlag_ADDR(i2c);
 			LL_I2C_GenerateStartCondition(i2c);
 
@@ -139,7 +139,7 @@ static inline void handle_btf(I2C_TypeDef *i2c, struct i2c_stm32_data *data)
 	if (data->current.is_write) {
 		handle_txe(i2c, data);
 	} else {
-		u32_t counter = 0;
+		u32_t counter = 0U;
 
 		switch (data->current.len) {
 		case 2:
@@ -151,7 +151,7 @@ static inline void handle_btf(I2C_TypeDef *i2c, struct i2c_stm32_data *data)
 				LL_I2C_GenerateStopCondition(i2c);
 			}
 
-			for (counter = 2; counter > 0; counter--) {
+			for (counter = 2U; counter > 0; counter--) {
 				data->current.len--;
 				*data->current.buf = LL_I2C_ReceiveData8(i2c);
 				data->current.buf++;
@@ -201,12 +201,12 @@ void stm32_i2c_error_isr(void *arg)
 	if (LL_I2C_IsActiveFlag_AF(i2c)) {
 		LL_I2C_ClearFlag_AF(i2c);
 		LL_I2C_GenerateStopCondition(i2c);
-		data->current.is_nack = 1;
+		data->current.is_nack = 1U;
 		k_sem_give(&data->device_sync_sem);
 
 		return;
 	}
-	data->current.is_err = 1;
+	data->current.is_err = 1U;
 	k_sem_give(&data->device_sync_sem);
 }
 
@@ -223,10 +223,10 @@ s32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 	data->current.len = msg->len;
 	data->current.buf = msg->buf;
 	data->current.flags = msg->flags;
-	data->current.is_restart = 0;
-	data->current.is_write = 1;
-	data->current.is_nack = 0;
-	data->current.is_err = 0;
+	data->current.is_restart = 0U;
+	data->current.is_write = 1U;
+	data->current.is_nack = 0U;
+	data->current.is_err = 0U;
 	data->slave_address = saddr;
 
 	LL_I2C_EnableIT_EVT(i2c);
@@ -249,8 +249,8 @@ s32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 			LOG_DBG("%s: ERR %d", __func__,
 				    data->current.is_err);
 
-		data->current.is_nack = 0;
-		data->current.is_err = 0;
+		data->current.is_nack = 0U;
+		data->current.is_err = 0U;
 		ret = -EIO;
 	}
 
@@ -273,9 +273,9 @@ s32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 	data->current.len = msg->len;
 	data->current.buf = msg->buf;
 	data->current.flags = msg->flags;
-	data->current.is_restart = 0;
-	data->current.is_write = 0;
-	data->current.is_err = 0;
+	data->current.is_restart = 0U;
+	data->current.is_write = 0U;
+	data->current.is_err = 0U;
 	data->slave_address = saddr;
 
 	LL_I2C_EnableIT_EVT(i2c);
@@ -289,7 +289,7 @@ s32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 	LL_I2C_DisableIT_BUF(i2c);
 	if (data->current.is_err) {
 		LOG_DBG("%s: ERR %d", __func__, data->current.is_err);
-		data->current.is_err = 0;
+		data->current.is_err = 0U;
 		ret = -EIO;
 	}
 

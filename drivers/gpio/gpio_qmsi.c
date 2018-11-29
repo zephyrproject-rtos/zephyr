@@ -336,7 +336,7 @@ static inline int gpio_qmsi_disable_callback(struct device *port,
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 		context->pin_callbacks &= ~BIT(pin);
 	} else {
-		context->pin_callbacks = 0;
+		context->pin_callbacks = 0U;
 	}
 
 	if (IS_ENABLED(CONFIG_GPIO_QMSI_API_REENTRANCY)) {

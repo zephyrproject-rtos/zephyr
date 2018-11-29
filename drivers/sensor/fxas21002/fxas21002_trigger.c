@@ -61,7 +61,7 @@ static void fxas21002_handle_int(void *arg)
 			      FXAS21002_REG_INT_SOURCE,
 			      &int_source)) {
 		LOG_ERR("Could not read interrupt source");
-		int_source = 0;
+		int_source = 0U;
 	}
 
 	k_sem_give(&data->sem);
@@ -187,7 +187,7 @@ int fxas21002_trigger_init(struct device *dev)
 #endif
 
 	/* Route the interrupts to INT1/INT2 pins */
-	ctrl_reg2 = 0;
+	ctrl_reg2 = 0U;
 #if CONFIG_FXAS21002_DRDY_INT1
 	ctrl_reg2 |= FXAS21002_CTRLREG2_CFG_DRDY_MASK;
 #endif

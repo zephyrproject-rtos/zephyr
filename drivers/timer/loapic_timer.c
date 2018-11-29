@@ -315,7 +315,7 @@ void _timer_int_handler(void *unused /* parameter is not used */
 	 * that recursive calls to _update_elapsed_time() will not
 	 * announce already consumed elapsed time
 	 */
-	programmed_full_ticks = 0;
+	programmed_full_ticks = 0U;
 
 	z_clock_announce(_sys_idle_elapsed_ticks);
 
@@ -407,7 +407,7 @@ u32_t _get_elapsed_program_time(void)
 void _set_time(u32_t time)
 {
 	if (!time) {
-		programmed_full_ticks = 0;
+		programmed_full_ticks = 0U;
 		return;
 	}
 
@@ -489,8 +489,8 @@ void _timer_idle_enter(s32_t ticks /* system ticks */
 			_set_time(ticks);
 		}
 	} else {
-		programmed_full_ticks = 0;
-		programmed_cycles = 0;
+		programmed_full_ticks = 0U;
+		programmed_cycles = 0U;
 		initial_count_register_set(0); /* 0 disables timer */
 	}
 #else

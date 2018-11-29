@@ -647,7 +647,7 @@ static void kw41z_isr(int unused)
 {
 	u32_t irqsts = ZLL->IRQSTS;
 	u8_t state = kw41z_get_seq_state();
-	u8_t restart_rx = 1;
+	u8_t restart_rx = 1U;
 	u32_t rx_len;
 
 	/*
@@ -676,7 +676,7 @@ static void kw41z_isr(int unused)
 			(unsigned int)ZLL->PHY_CTRL,
 			(unsigned int)seq_state, state);
 
-		restart_rx = 0;
+		restart_rx = 0U;
 
 	} else if ((!(ZLL->PHY_CTRL & ZLL_PHY_CTRL_RX_WMRK_MSK_MASK)) &&
 	    (irqsts & ZLL_IRQSTS_RXWTRMRKIRQ_MASK)) {
@@ -713,7 +713,7 @@ static void kw41z_isr(int unused)
 			rx_len = rx_len * 2 + 12 + 22 + 2;
 			kw41z_tmr3_set_timeout(rx_len);
 		}
-		restart_rx = 0;
+		restart_rx = 0U;
 	}
 
 	/* Sequence done IRQ */
@@ -725,7 +725,7 @@ static void kw41z_isr(int unused)
 		if (irqsts & ZLL_IRQSTS_PLL_UNLOCK_IRQ_MASK) {
 			LOG_ERR("PLL unlock error");
 			kw41z_isr_seq_cleanup();
-			restart_rx = 1;
+			restart_rx = 1U;
 		}
 		/*
 		 * TMR3 timeout, the autosequence has been aborted due to
@@ -745,7 +745,7 @@ static void kw41z_isr(int unused)
 				(unsigned int)ZLL->PHY_CTRL, seq_state);
 
 			kw41z_isr_timeout_cleanup();
-			restart_rx = 1;
+			restart_rx = 1U;
 
 			if (state == KW41Z_STATE_TXRX) {
 				/* TODO: What is the right error for no ACK? */
@@ -776,7 +776,7 @@ static void kw41z_isr(int unused)
 							rx_len);
 					}
 				}
-				restart_rx = 1;
+				restart_rx = 1U;
 				break;
 			case KW41Z_STATE_TXRX:
 				LOG_DBG("TXRX seq done");
@@ -796,7 +796,7 @@ static void kw41z_isr(int unused)
 				}
 
 				k_sem_give(&kw41z_context_data.seq_sync);
-				restart_rx = 1;
+				restart_rx = 1U;
 
 				break;
 			case KW41Z_STATE_CCA:
@@ -807,19 +807,19 @@ static void kw41z_isr(int unused)
 					atomic_set(
 						&kw41z_context_data.seq_retval,
 						-EBUSY);
-					restart_rx = 1;
+					restart_rx = 1U;
 				} else {
 					atomic_set(
 						&kw41z_context_data.seq_retval,
 						0);
-					restart_rx = 0;
+					restart_rx = 0U;
 				}
 
 				k_sem_give(&kw41z_context_data.seq_sync);
 				break;
 			default:
 				LOG_DBG("Unhandled state: %d", state);
-				restart_rx = 1;
+				restart_rx = 1U;
 				break;
 			}
 		}
@@ -833,10 +833,10 @@ static void kw41z_isr(int unused)
 				irqsts, seq_state, state);
 
 			kw41z_tmr3_disable();
-			restart_rx = 0;
+			restart_rx = 0U;
 			if (state != KW41Z_STATE_IDLE) {
 				kw41z_isr_timeout_cleanup();
-				restart_rx = 1;
+				restart_rx = 1U;
 				/* If we are not running an automated
 				 * sequence then handle event. TMR3 can expire
 				 * during Recv/Ack sequence where the transmit

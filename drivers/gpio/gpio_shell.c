@@ -48,7 +48,7 @@ static const struct args_number args_no = {
 
 static int cmd_gpio_conf(const struct shell *shell, size_t argc, char **argv)
 {
-	u8_t index = 0;
+	u8_t index = 0U;
 	int type = GPIO_DIR_OUT;
 	struct device *dev;
 
@@ -85,8 +85,8 @@ static int cmd_gpio_get(const struct shell *shell,
 			size_t argc, char **argv)
 {
 	struct device *dev;
-	u8_t index = 0;
-	u32_t value = 0;
+	u8_t index = 0U;
+	u32_t value = 0U;
 	int rc;
 
 	if (argc == args_no.get && isdigit((unsigned char)argv[args_indx.index][0])) {
@@ -120,8 +120,8 @@ static int cmd_gpio_set(const struct shell *shell,
 			size_t argc, char **argv)
 {
 	struct device *dev;
-	u8_t index = 0;
-	u8_t value = 0;
+	u8_t index = 0U;
+	u8_t value = 0U;
 
 	if (argc == args_no.set &&
 	    isdigit((unsigned char)argv[args_indx.index][0]) &&

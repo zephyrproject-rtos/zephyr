@@ -66,7 +66,7 @@ static void event_txdrdy_clear(void)
 {
 	nrf_uart_event_clear(uart0_addr, NRF_UART_EVENT_TXDRDY);
 #ifdef CONFIG_UART_0_INTERRUPT_DRIVEN
-	uart_sw_event_txdrdy = 0;
+	uart_sw_event_txdrdy = 0U;
 #endif
 }
 
@@ -224,7 +224,7 @@ static void uart_nrfx_poll_out(struct device *dev,
 /** Console I/O function */
 static int uart_nrfx_err_check(struct device *dev)
 {
-	u32_t error = 0;
+	u32_t error = 0U;
 
 	if (nrf_uart_event_check(uart0_addr, NRF_UART_EVENT_ERROR)) {
 		/* register bitfields maps to the defines in uart.h */
@@ -298,7 +298,7 @@ static int uart_nrfx_fifo_fill(struct device *dev,
 			       const u8_t *tx_data,
 			       int len)
 {
-	u8_t num_tx = 0;
+	u8_t num_tx = 0U;
 
 	while ((len - num_tx > 0) &&
 	       event_txdrdy_check()) {
@@ -318,7 +318,7 @@ static int uart_nrfx_fifo_read(struct device *dev,
 			       u8_t *rx_data,
 			       const int size)
 {
-	u8_t num_rx = 0;
+	u8_t num_rx = 0U;
 
 	while ((size - num_rx > 0) &&
 	       nrf_uart_event_check(uart0_addr, NRF_UART_EVENT_RXDRDY)) {
@@ -524,7 +524,7 @@ static int uart_nrfx_init(struct device *dev)
 	/* Simulate that the TXDRDY event is set, so that the transmitter status
 	 * is indicated correctly.
 	 */
-	uart_sw_event_txdrdy = 1;
+	uart_sw_event_txdrdy = 1U;
 
 	IRQ_CONNECT(DT_NORDIC_NRF_UART_UART_0_IRQ,
 		    DT_NORDIC_NRF_UART_UART_0_IRQ_PRIORITY,

@@ -74,7 +74,7 @@ static int gpio_gecko_configure(struct device *dev,
 	GPIO_P_TypeDef *gpio_base = config->gpio_base;
 	GPIO_Port_TypeDef gpio_index = config->gpio_index;
 	GPIO_Mode_TypeDef mode;
-	unsigned int out = 0;
+	unsigned int out = 0U;
 
 	/* Check for an invalid pin configuration */
 	if ((flags & GPIO_INT) && (flags & GPIO_DIR_OUT)) {
@@ -94,7 +94,7 @@ static int gpio_gecko_configure(struct device *dev,
 	if ((flags & GPIO_DIR_MASK) == GPIO_DIR_IN) {
 		if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_UP) {
 			mode = gpioModeInputPull;
-			out = 1; /* pull-up*/
+			out = 1U; /* pull-up*/
 		} else if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_DOWN) {
 			mode = gpioModeInputPull;
 			/* out = 0 means pull-down*/

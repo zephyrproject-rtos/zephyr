@@ -422,7 +422,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 	u8_t ep_idx = EP_ADDR2IDX(cfg->ep_addr);
 	bool ep_configured[DT_USBHS_NUM_BIDIR_EP];
 	bool ep_enabled[DT_USBHS_NUM_BIDIR_EP];
-	u32_t regval = 0;
+	u32_t regval = 0U;
 	int log2ceil_mps;
 
 	if (usb_dc_ep_check_cap(cfg) != 0) {

@@ -192,9 +192,9 @@ static int rng_pool_put(struct rng_pool *rngp, u8_t byte)
 
 static void rng_pool_init(struct rng_pool *rngp, u16_t size, u8_t threshold)
 {
-	rngp->first_alloc = 0;
-	rngp->first_read  = 0;
-	rngp->last	  = 0;
+	rngp->first_alloc = 0U;
+	rngp->first_read  = 0U;
+	rngp->last	  = 0U;
 	rngp->mask	  = size - 1;
 	rngp->threshold	  = threshold;
 }

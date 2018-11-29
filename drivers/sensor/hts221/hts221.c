@@ -131,7 +131,7 @@ int hts221_init(struct device *dev)
 	}
 
 	/* check if CONFIG_HTS221_ODR is valid */
-	for (idx = 0; idx < ARRAY_SIZE(hts221_odr_strings); idx++) {
+	for (idx = 0U; idx < ARRAY_SIZE(hts221_odr_strings); idx++) {
 		if (!strcmp(hts221_odr_strings[idx], CONFIG_HTS221_ODR)) {
 			break;
 		}

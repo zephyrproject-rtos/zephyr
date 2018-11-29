@@ -131,13 +131,13 @@ static u32_t clk_div_calc(struct device *dev)
 	switch (I2C_SPEED_GET(dev_data->dev_config)) {
 	case I2C_SPEED_STANDARD:
 		i2c_clk = 100000 * 2;
-		i2c_h_min_time = 4000;
-		i2c_l_min_time = 4700;
+		i2c_h_min_time = 4000U;
+		i2c_l_min_time = 4700U;
 		break;
 	case I2C_SPEED_FAST:
 		i2c_clk = 400000 * 2;
-		i2c_h_min_time = 600;
-		i2c_l_min_time = 1300;
+		i2c_h_min_time = 600U;
+		i2c_l_min_time = 1300U;
 		break;
 	default:
 		/* Return 0 as error */
@@ -159,7 +159,7 @@ static u32_t clk_div_calc(struct device *dev)
 	cldiv_min = (i2c_l_min_time * mck / 1000) - 4 + 1;
 	chdiv_min = (i2c_h_min_time * mck / 1000) - 4 + 1;
 
-	ckdiv = 0;
+	ckdiv = 0U;
 	while (cldiv > 255) {
 		ckdiv++;
 
@@ -195,7 +195,7 @@ static int i2c_sam3_runtime_configure(struct device *dev, u32_t config)
 	u32_t clk;
 
 	dev_data->dev_config = config;
-	reg = 0;
+	reg = 0U;
 
 	/* Calculate clock dividers */
 	clk = clk_div_calc(dev);
@@ -288,7 +288,7 @@ static inline void transfer_setup(struct device *dev, u16_t slave_address)
 		/* 7-bit slave addressing */
 		mmr = TWI_MMR_DADR(slave_address);
 
-		iadr = 0;
+		iadr = 0U;
 	}
 
 	cfg->regs->TWI_MMR = mmr;
@@ -361,7 +361,7 @@ static inline int msg_read(struct device *dev)
 	 * reading from slave. If the previous message is also read,
 	 * there is no need to set the START bit again.
 	 */
-	ctrl_reg = 0;
+	ctrl_reg = 0U;
 	if (dev_data->xfr_flags & I2C_MSG_RESTART) {
 		ctrl_reg = TWI_CR_START;
 	}
@@ -390,7 +390,7 @@ static inline int msg_read(struct device *dev)
 		if (dev_data->xfr_len > 1) {
 			last_len = dev_data->xfr_len - 1;
 		} else {
-			last_len = 1;
+			last_len = 1U;
 
 			/* Set STOP bit for last byte.
 			 * The extra check here is to prevent setting
@@ -453,7 +453,7 @@ static int i2c_sam3_transfer(struct device *dev,
 	struct i2c_sam3_dev_data * const dev_data = dev->driver_data;
 	struct i2c_msg *cur_msg = msgs;
 	u8_t msg_left = num_msgs;
-	u32_t pflags = 0;
+	u32_t pflags = 0U;
 	int ret = 0;
 	int xfr_ret;
 

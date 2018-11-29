@@ -58,9 +58,9 @@ static void dw_dma_isr(void *arg)
 	struct dw_dma_dev_data *const dev_data = DEV_DATA(dev);
 	struct dma_chan_data *chan_data;
 
-	u32_t status_tfr = 0;
-	u32_t status_block = 0;
-	u32_t status_err = 0;
+	u32_t status_tfr = 0U;
+	u32_t status_block = 0U;
+	u32_t status_err = 0U;
 	u32_t status_intr;
 	u32_t channel;
 

@@ -310,7 +310,7 @@ static int uart_ns16550_init(struct device *dev)
 	struct uart_ns16550_dev_data_t * const dev_data = DEV_DATA(dev);
 
 	unsigned int old_level;     /* old interrupt lock level */
-	u8_t mdc = 0;
+	u8_t mdc = 0U;
 
 	if (!ns16550_pci_uart_scan(dev)) {
 		dev->driver_api = NULL;
@@ -318,7 +318,7 @@ static int uart_ns16550_init(struct device *dev)
 	}
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	dev_data->iir_cache = 0;
+	dev_data->iir_cache = 0U;
 #endif
 
 	old_level = irq_lock();

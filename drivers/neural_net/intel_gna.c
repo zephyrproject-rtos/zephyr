@@ -158,7 +158,7 @@ static int intel_gna_setup_page_table(void *physical, size_t size,
 		return -EINVAL;
 	}
 
-	for (page = 0; page < GNA_NUM_PAGES(size); page++) {
+	for (page = 0U; page < GNA_NUM_PAGES(size); page++) {
 		dir_index = GNA_VA_PG_DIR(virt_addr);
 		table_index = GNA_VA_PG_TABLE(virt_addr);
 		gna_page_table[dir_index].entry[table_index] =

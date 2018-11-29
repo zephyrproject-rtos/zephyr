@@ -126,7 +126,7 @@ int lis3mdl_init(struct device *dev)
 	}
 
 	/* check if CONFIG_LIS3MDL_ODR is valid */
-	for (idx = 0; idx < ARRAY_SIZE(lis3mdl_odr_strings); idx++) {
+	for (idx = 0U; idx < ARRAY_SIZE(lis3mdl_odr_strings); idx++) {
 		if (!strcmp(lis3mdl_odr_strings[idx], CONFIG_LIS3MDL_ODR)) {
 			break;
 		}

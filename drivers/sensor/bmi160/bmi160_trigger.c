@@ -131,7 +131,7 @@ static int bmi160_trigger_drdy_set(struct device *dev,
 				   sensor_trigger_handler_t handler)
 {
 	struct bmi160_device_data *bmi160 = dev->driver_data;
-	u8_t drdy_en = 0;
+	u8_t drdy_en = 0U;
 
 #if !defined(CONFIG_BMI160_ACCEL_PMU_SUSPEND)
 	if (chan == SENSOR_CHAN_ACCEL_XYZ) {
@@ -166,7 +166,7 @@ static int bmi160_trigger_anym_set(struct device *dev,
 				   sensor_trigger_handler_t handler)
 {
 	struct bmi160_device_data *bmi160 = dev->driver_data;
-	u8_t anym_en = 0;
+	u8_t anym_en = 0U;
 
 	bmi160->handler_anymotion = handler;
 

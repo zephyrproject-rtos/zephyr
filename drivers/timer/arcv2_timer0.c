@@ -277,7 +277,7 @@ u32_t _get_elapsed_program_time(void)
 void _set_time(u32_t time)
 {
 	if (!time) {
-		programmed_ticks = 0;
+		programmed_ticks = 0U;
 		return;
 	}
 

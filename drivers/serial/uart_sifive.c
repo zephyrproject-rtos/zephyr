@@ -340,7 +340,7 @@ static int uart_sifive_init(struct device *dev)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	/* Ensure that uart IRQ is disabled initially */
-	uart->ie = 0;
+	uart->ie = 0U;
 
 	/* Setup IRQ handler */
 	cfg->cfg_func();

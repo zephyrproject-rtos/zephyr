@@ -154,7 +154,7 @@ static int _setup_pin_dir(struct device *dev, int access_op,
 		(struct gpio_pcal9535a_drv_data * const)dev->driver_data;
 	union gpio_pcal9535a_port_data *port = &drv_data->reg_cache.dir;
 	u16_t bit_mask;
-	u16_t new_value = 0;
+	u16_t new_value = 0U;
 	int ret;
 
 	switch (access_op) {
@@ -206,7 +206,7 @@ static int _setup_pin_pullupdown(struct device *dev, int access_op,
 		(struct gpio_pcal9535a_drv_data * const)dev->driver_data;
 	union gpio_pcal9535a_port_data *port;
 	u16_t bit_mask;
-	u16_t new_value = 0;
+	u16_t new_value = 0U;
 	int ret;
 
 	/* If disabling pull up/down, there is no need to set the selection
@@ -299,7 +299,7 @@ static int _setup_pin_polarity(struct device *dev, int access_op,
 		(struct gpio_pcal9535a_drv_data * const)dev->driver_data;
 	union gpio_pcal9535a_port_data *port = &drv_data->reg_cache.pol_inv;
 	u16_t bit_mask;
-	u16_t new_value = 0;
+	u16_t new_value = 0U;
 	int ret;
 
 	switch (access_op) {

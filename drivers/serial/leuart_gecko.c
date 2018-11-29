@@ -90,7 +90,7 @@ static int leuart_gecko_fifo_fill(struct device *dev, const u8_t *tx_data,
 			       int len)
 {
 	LEUART_TypeDef *base = DEV_BASE(dev);
-	u8_t num_tx = 0;
+	u8_t num_tx = 0U;
 
 	while ((len - num_tx > 0) &&
 	       (base->STATUS & LEUART_STATUS_TXBL)) {
@@ -105,7 +105,7 @@ static int leuart_gecko_fifo_read(struct device *dev, u8_t *rx_data,
 			       const int len)
 {
 	LEUART_TypeDef *base = DEV_BASE(dev);
-	u8_t num_rx = 0;
+	u8_t num_rx = 0U;
 
 	while ((len - num_rx > 0) &&
 	       (base->STATUS & LEUART_STATUS_RXDATAV)) {

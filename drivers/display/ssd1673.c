@@ -88,7 +88,7 @@ static inline int ssd1673_write_cmd(struct ssd1673_data *driver,
 
 static inline void ssd1673_busy_wait(struct ssd1673_data *driver)
 {
-	u32_t val = 0;
+	u32_t val = 0U;
 
 	gpio_pin_read(driver->busy, DT_SSD1673_BUSY_PIN, &val);
 	while (val) {
@@ -181,7 +181,7 @@ static int ssd1673_update_display(const struct device *dev, bool initial)
 	}
 
 	if (initial) {
-		driver->numof_part_cycles = 0;
+		driver->numof_part_cycles = 0U;
 		driver->last_lut = SSD1673_LAST_LUT_INITIAL;
 		if (ssd1673_write_cmd(driver, SSD1673_CMD_UPDATE_LUT,
 				      ssd1673_lut_initial,
@@ -409,7 +409,7 @@ static int ssd1673_controller_init(struct device *dev)
 	ssd1673_busy_wait(driver);
 
 	tmp[0] = (SSD1673_RAM_YRES - 1);
-	tmp[1] = 0;
+	tmp[1] = 0U;
 	if (ssd1673_write_cmd(driver, SSD1673_CMD_GDO_CTRL, tmp, 2)) {
 		return -1;
 	}
@@ -441,9 +441,9 @@ static int ssd1673_controller_init(struct device *dev)
 	}
 
 	ssd1673_set_orientation(driver);
-	driver->numof_part_cycles = 0;
+	driver->numof_part_cycles = 0U;
 	driver->last_lut = SSD1673_LAST_LUT_INITIAL;
-	driver->contrast = 0;
+	driver->contrast = 0U;
 
 	return 0;
 }

@@ -261,7 +261,7 @@ static inline u8_t _cc2520_status(struct cc2520_context *ctx)
 
 static bool verify_osc_stabilization(struct cc2520_context *cc2520)
 {
-	u8_t timeout = 100;
+	u8_t timeout = 100U;
 	u8_t status;
 
 	do {
@@ -499,7 +499,7 @@ static inline bool verify_txfifo_status(struct cc2520_context *cc2520,
 
 static inline bool verify_tx_done(struct cc2520_context *cc2520)
 {
-	u8_t timeout = 10;
+	u8_t timeout = 10U;
 	u8_t status;
 
 	do {
@@ -575,9 +575,9 @@ static inline void insert_radio_noise_details(struct net_pkt *pkt, u8_t *buf)
 	 */
 	lqi = buf[1] & CC2520_FCS_CORRELATION;
 	if (lqi <= 50) {
-		lqi = 0;
+		lqi = 0U;
 	} else if (lqi >= 110) {
-		lqi = 255;
+		lqi = 255U;
 	} else {
 		lqi = (lqi - 50) << 2;
 	}
@@ -816,7 +816,7 @@ static int cc2520_tx(struct device *dev,
 	u8_t *frame = frag->data - net_pkt_ll_reserve(pkt);
 	u8_t len = net_pkt_ll_reserve(pkt) + frag->len;
 	struct cc2520_context *cc2520 = dev->driver_data;
-	u8_t retry = 2;
+	u8_t retry = 2U;
 	bool status;
 
 	LOG_DBG("%p (%u)", frag, len);
@@ -1195,7 +1195,7 @@ static int insert_crypto_parameters(struct cipher_ctx *ctx,
 	u8_t data[128];
 	u8_t *in_buf;
 	u8_t in_len;
-	u8_t m = 0;
+	u8_t m = 0U;
 
 	if (!apkt->pkt->out_buf || !apkt->pkt->out_buf_max) {
 		LOG_ERR("Out buffer needs to be set");
@@ -1231,7 +1231,7 @@ static int insert_crypto_parameters(struct cipher_ctx *ctx,
 		in_buf = apkt->ad;
 		in_len = apkt->ad_len;
 
-		*auth_crypt = 0;
+		*auth_crypt = 0U;
 	} else {
 		in_buf = data;
 
@@ -1246,7 +1246,7 @@ static int insert_crypto_parameters(struct cipher_ctx *ctx,
 
 	if (ctx->mode_params.ccm_info.tag_len) {
 		if ((ctx->mode_params.ccm_info.tag_len >> 2) > 3) {
-			m = 3;
+			m = 3U;
 		} else {
 			m = ctx->mode_params.ccm_info.tag_len >> 2;
 		}

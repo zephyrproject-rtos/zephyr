@@ -184,7 +184,7 @@ static int spi_flash_wb_write(struct device *dev, off_t offset,
 static int spi_flash_wb_write_protection_set(struct device *dev, bool enable)
 {
 	struct spi_flash_data *const driver_data = dev->driver_data;
-	u8_t reg = 0;
+	u8_t reg = 0U;
 	int ret;
 
 	SYNC_LOCK();

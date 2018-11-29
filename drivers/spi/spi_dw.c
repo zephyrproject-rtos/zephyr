@@ -87,7 +87,7 @@ static void push_data(struct device *dev)
 {
 	const struct spi_dw_config *info = dev->config->config_info;
 	struct spi_dw_data *spi = dev->driver_data;
-	u32_t data = 0;
+	u32_t data = 0U;
 	u32_t f_tx;
 
 	DBG_COUNTER_INIT();
@@ -96,7 +96,7 @@ static void push_data(struct device *dev)
 		f_tx = DW_SPI_FIFO_DEPTH - read_txflr(info->regs) -
 			read_rxflr(info->regs);
 		if ((int)f_tx < 0) {
-			f_tx = 0; /* if rx-fifo is full, hold off tx */
+			f_tx = 0U; /* if rx-fifo is full, hold off tx */
 		}
 	} else {
 		f_tx = DW_SPI_FIFO_DEPTH - read_txflr(info->regs);
@@ -126,9 +126,9 @@ static void push_data(struct device *dev)
 				break;
 			}
 
-			data = 0;
+			data = 0U;
 		} else if (spi_context_tx_on(&spi->ctx)) {
-			data = 0;
+			data = 0U;
 		} else {
 			/* Nothing to push anymore */
 			break;
@@ -197,7 +197,7 @@ static int spi_dw_configure(const struct spi_dw_config *info,
 			    struct spi_dw_data *spi,
 			    const struct spi_config *config)
 {
-	u32_t ctrlr0 = 0;
+	u32_t ctrlr0 = 0U;
 
 	LOG_DBG("%p (prev %p)", config, spi->ctx.config);
 
@@ -290,7 +290,7 @@ static int spi_dw_configure(const struct spi_dw_config *info,
 static uint32_t spi_dw_compute_ndf(const struct spi_buf *rx_bufs,
 				   size_t rx_count, u8_t dfs)
 {
-	u32_t len = 0;
+	u32_t len = 0U;
 
 	for (; rx_count; rx_bufs++, rx_count--) {
 		if (len > (UINT16_MAX - rx_bufs->len)) {
@@ -314,7 +314,7 @@ static void spi_dw_update_txftlr(const struct spi_dw_config *info,
 
 	if (spi_dw_is_slave(spi)) {
 		if (!spi->ctx.tx_len) {
-			reg_data = 0;
+			reg_data = 0U;
 		} else if (spi->ctx.tx_len < DW_SPI_TXFTLR_DFLT) {
 			reg_data = spi->ctx.tx_len - 1;
 		}
@@ -388,7 +388,7 @@ static int transceive(struct device *dev,
 	/* Set buffers info */
 	spi_context_buffers_setup(&spi->ctx, tx_bufs, rx_bufs, spi->dfs);
 
-	spi->fifo_diff = 0;
+	spi->fifo_diff = 0U;
 
 	/* Tx Threshold */
 	spi_dw_update_txftlr(info, spi);

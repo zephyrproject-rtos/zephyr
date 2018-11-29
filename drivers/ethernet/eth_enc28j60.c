@@ -115,10 +115,10 @@ static void eth_enc28j60_read_reg(struct device *dev, u16_t reg_addr,
 		.buffers = &rx_buf,
 		.count = 1
 	};
-	u8_t rx_size = 2;
+	u8_t rx_size = 2U;
 
 	if (reg_addr & 0xF000) {
-		rx_size = 3;
+		rx_size = 3U;
 	}
 
 	rx_buf.len = rx_size;
@@ -130,7 +130,7 @@ static void eth_enc28j60_read_reg(struct device *dev, u16_t reg_addr,
 		*value = buf[rx_size - 1];
 	} else {
 		LOG_DBG("Failure while reading register 0x%04x", reg_addr);
-		*value = 0;
+		*value = 0U;
 	}
 }
 
@@ -513,12 +513,12 @@ static int eth_enc28j60_rx(struct device *dev)
 	do {
 		struct net_buf *pkt_buf = NULL;
 		struct net_buf *last_buf = NULL;
-		u16_t frm_len = 0;
+		u16_t frm_len = 0U;
 		u8_t info[RSV_SIZE];
 		struct net_pkt *pkt;
 		u16_t next_packet;
-		u8_t rdptl = 0;
-		u8_t rdpth = 0;
+		u8_t rdptl = 0U;
+		u8_t rdpth = 0U;
 
 		/* remove read fifo address to packet header address */
 		eth_enc28j60_set_bank(dev, ENC28J60_REG_ERXRDPTL);

@@ -30,7 +30,7 @@ static int send_buf(u8_t *buf, size_t len)
 	/* Initilization of i is strictly not needed, but it avoids an
 	 * uninitialized warning with the inline assembly.
 	 */
-	u32_t i = 0;
+	u32_t i = 0U;
 
 	clock = device_get_binding(CONFIG_CLOCK_CONTROL_NRF5_M16SRC_DRV_NAME);
 	if (!clock) {

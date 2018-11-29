@@ -58,7 +58,7 @@ void _timer_int_handler(void *arg)
 	announced_cycles += dticks * CYC_PER_TICK;
 
 	ctrl_cache = SysTick->CTRL; /* Reset overflow flag */
-	ctrl_cache = 0;
+	ctrl_cache = 0U;
 
 	z_clock_announce(TICKLESS ? dticks : 1);
 	_ExcExit();

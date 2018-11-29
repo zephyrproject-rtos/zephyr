@@ -58,7 +58,7 @@ static void i2c_gpio_set_sda(void *io_context, int state)
 static int i2c_gpio_get_sda(void *io_context)
 {
 	struct i2c_gpio_context *context = io_context;
-	u32_t state = 1; /* Default high as that would be a NACK */
+	u32_t state = 1U; /* Default high as that would be a NACK */
 
 	gpio_pin_read(context->gpio, context->sda_pin, &state);
 	return state;

@@ -73,7 +73,7 @@ static int lsm9ds0_mfd_accel_set_odr(struct device *dev,
 {
 	u8_t i;
 
-	for (i = 0; i < ARRAY_SIZE(lsm9ds0_mfd_accel_odr_map); ++i) {
+	for (i = 0U; i < ARRAY_SIZE(lsm9ds0_mfd_accel_odr_map); ++i) {
 		if (val->val1 < lsm9ds0_mfd_accel_odr_map[i].freq_int ||
 		    (val->val1 == lsm9ds0_mfd_accel_odr_map[i].freq_int &&
 		     val->val2 <= lsm9ds0_mfd_accel_odr_map[i].freq_micro)) {
@@ -118,7 +118,7 @@ static int lsm9ds0_mfd_accel_set_fs(struct device *dev, int val)
 {
 	u8_t i;
 
-	for (i = 0; i < ARRAY_SIZE(lsm9ds0_mfd_accel_fs_map); ++i) {
+	for (i = 0U; i < ARRAY_SIZE(lsm9ds0_mfd_accel_fs_map); ++i) {
 		if (val <= lsm9ds0_mfd_accel_fs_map[i].fs) {
 			return lsm9ds0_mfd_accel_set_fs_raw(dev, i);
 		}
@@ -158,7 +158,7 @@ static int lsm9ds0_mfd_magn_set_odr(struct device *dev,
 {
 	u8_t i;
 
-	for (i = 0; i < ARRAY_SIZE(lsm9ds0_mfd_accel_odr_map); ++i) {
+	for (i = 0U; i < ARRAY_SIZE(lsm9ds0_mfd_accel_odr_map); ++i) {
 		if (val->val1 < lsm9ds0_mfd_accel_odr_map[i].freq_int ||
 		    (val->val1 == lsm9ds0_mfd_accel_odr_map[i].freq_int &&
 		     val->val2 <= lsm9ds0_mfd_accel_odr_map[i].freq_micro)) {
@@ -203,7 +203,7 @@ static int lsm9ds0_mfd_magn_set_fs(struct device *dev,
 {
 	u8_t i;
 
-	for (i = 0; i < ARRAY_SIZE(lsm9ds0_mfd_magn_fs_map); ++i) {
+	for (i = 0U; i < ARRAY_SIZE(lsm9ds0_mfd_magn_fs_map); ++i) {
 		if (val->val1 <= lsm9ds0_mfd_magn_fs_map[i].fs) {
 			return lsm9ds0_mfd_magn_set_fs_raw(dev, i);
 		}

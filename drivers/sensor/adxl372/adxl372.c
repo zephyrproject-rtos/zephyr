@@ -259,7 +259,7 @@ static int adxl372_set_bandwidth(struct device *dev, enum adxl372_bandwidth bw)
 	if (bw == ADXL372_BW_LPF_DISABLED) {
 		mask = ADXL372_POWER_CTL_LPF_DIS_MSK;
 	} else {
-		mask = 0;
+		mask = 0U;
 	}
 
 	ret = adxl372_reg_write_mask(dev, ADXL372_POWER_CTL,
@@ -293,7 +293,7 @@ static int adxl372_set_hpf_corner(struct device *dev, enum adxl372_hpf_corner c)
 	if (c == ADXL372_HPF_DISABLED) {
 		mask = ADXL372_POWER_CTL_HPF_DIS_MSK;
 	} else {
-		mask = 0;
+		mask = 0U;
 	}
 
 	ret = adxl372_reg_write_mask(dev, ADXL372_POWER_CTL,
@@ -461,7 +461,7 @@ int adxl372_get_status(struct device *dev,
 			   u8_t *status2,
 			   u16_t *fifo_entries)
 {
-	u8_t buf[4], length = 1;
+	u8_t buf[4], length = 1U;
 	int ret;
 
 	if (status2) {

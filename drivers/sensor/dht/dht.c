@@ -94,7 +94,7 @@ static int dht_sample_fetch(struct device *dev, enum sensor_channel chan)
 	}
 
 	/* read sensor data */
-	for (i = 0; i < DHT_DATA_BITS_NUM; i++) {
+	for (i = 0U; i < DHT_DATA_BITS_NUM; i++) {
 		/* LOW signal to indicate a new bit */
 		if (dht_measure_signal_duration(drv_data, 0) == -1) {
 			ret = -EIO;
@@ -118,7 +118,7 @@ static int dht_sample_fetch(struct device *dev, enum sensor_channel chan)
 	 */
 	min_duration = signal_duration[0];
 	max_duration = signal_duration[0];
-	for (i = 1; i < DHT_DATA_BITS_NUM; i++) {
+	for (i = 1U; i < DHT_DATA_BITS_NUM; i++) {
 		if (min_duration > signal_duration[i]) {
 			min_duration = signal_duration[i];
 		}
@@ -129,9 +129,9 @@ static int dht_sample_fetch(struct device *dev, enum sensor_channel chan)
 	avg_duration = ((s16_t)min_duration + (s16_t)max_duration) / 2;
 
 	/* store bits in buf */
-	j = 0;
+	j = 0U;
 	(void)memset(buf, 0, sizeof(buf));
-	for (i = 0; i < DHT_DATA_BITS_NUM; i++) {
+	for (i = 0U; i < DHT_DATA_BITS_NUM; i++) {
 		if (signal_duration[i] >= avg_duration) {
 			buf[j] = (buf[j] << 1) | 1;
 		} else {

@@ -140,7 +140,7 @@ static int wdt_sam_setup(struct device *dev, u8_t options)
 static int wdt_sam_install_timeout(struct device *dev,
 				   const struct wdt_timeout_cfg *cfg)
 {
-	u32_t wdt_mode = 0;
+	u32_t wdt_mode = 0U;
 	int timeout_value;
 
 	struct wdt_sam_dev_data *data = dev->driver_data;

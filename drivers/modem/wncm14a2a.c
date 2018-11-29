@@ -424,13 +424,13 @@ static void net_buf_skipcrlf(struct net_buf **buf)
 static u16_t net_buf_findcrlf(struct net_buf *buf, struct net_buf **frag,
 			      u16_t *offset)
 {
-	u16_t len = 0, pos = 0;
+	u16_t len = 0U, pos = 0U;
 
 	while (buf && !is_crlf(*(buf->data + pos))) {
 		if (pos + 1 >= buf->len) {
 			len += buf->len;
 			buf = buf->frags;
-			pos = 0;
+			pos = 0U;
 		} else {
 			pos++;
 		}
@@ -457,7 +457,7 @@ static int net_pkt_setup_ip_data(struct net_pkt *pkt,
 				  struct wncm14a2a_socket *sock)
 {
 	int hdr_len = 0;
-	u16_t src_port = 0, dst_port = 0;
+	u16_t src_port = 0U, dst_port = 0U;
 
 #if defined(CONFIG_NET_IPV6)
 	if (net_pkt_family(pkt) == AF_INET6) {
@@ -767,7 +767,7 @@ static void on_cmd_sockread(struct net_buf **buf, u16_t len)
 {
 	struct wncm14a2a_socket *sock = NULL;
 	struct net_buf *frag;
-	u8_t c = 0;
+	u8_t c = 0U;
 	u16_t pos;
 	int i, actual_length, hdr_len = 0;
 	size_t value_size;
@@ -868,7 +868,7 @@ static void on_cmd_sockread(struct net_buf **buf, u16_t len)
 				return;
 			}
 
-			c = 0;
+			c = 0U;
 		} else {
 			c = c << 4;
 		}
@@ -1019,7 +1019,7 @@ static void on_cmd_socknotifyev(struct net_buf **buf, u16_t len)
 static int net_buf_ncmp(struct net_buf *buf, const u8_t *s2, size_t n)
 {
 	struct net_buf *frag = buf;
-	u16_t offset = 0;
+	u16_t offset = 0U;
 
 	while ((n > 0) && (*(frag->data + offset) == *s2) && (*s2 != '\0')) {
 		if (offset == frag->len) {
@@ -1027,7 +1027,7 @@ static int net_buf_ncmp(struct net_buf *buf, const u8_t *s2, size_t n)
 				break;
 			}
 			frag = frag->frags;
-			offset = 0;
+			offset = 0U;
 		} else {
 			offset++;
 		}

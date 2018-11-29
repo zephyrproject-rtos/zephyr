@@ -83,7 +83,7 @@ static inline void spi_dump_message(const u8_t *pre, u8_t *buf,
 	u8_t i, c;
 
 	printk("%s (%d): ", pre, size);
-	for (i = 0; i < size; i++) {
+	for (i = 0U; i < size; i++) {
 		c = buf[i];
 		printk("%x ", c);
 		if (c >= 31 && c <= 126) {
@@ -283,7 +283,7 @@ static void bt_spi_rx_thread(void)
 	u8_t header_master[5] = { SPI_READ, 0x00, 0x00, 0x00, 0x00 };
 	u8_t header_slave[5];
 	struct bt_hci_acl_hdr acl_hdr;
-	u8_t size = 0;
+	u8_t size = 0U;
 	int ret;
 
 	(void)memset(&txmsg, 0xFF, SPI_MAX_MSG_LEN);

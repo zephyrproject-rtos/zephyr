@@ -278,7 +278,7 @@ static int mcr20a_timer_set(struct mcr20a_context *mcr20a,
 			    u8_t cmp_reg,
 			    u32_t timeout)
 {
-	u32_t now = 0;
+	u32_t now = 0U;
 	u32_t next;
 	bool retval;
 
@@ -455,7 +455,7 @@ static inline int mcr20a_abort_sequence(struct mcr20a_context *mcr20a,
 static inline int mcr20a_set_sequence(struct mcr20a_context *mcr20a,
 				      u8_t seq)
 {
-	u8_t ctrl1 = 0;
+	u8_t ctrl1 = 0U;
 
 	seq = set_bits_phy_ctrl1_xcvseq(seq);
 	ctrl1 = read_reg_phy_ctrl1(mcr20a);
@@ -720,7 +720,7 @@ static void mcr20a_thread_main(void *arg)
 	struct mcr20a_context *mcr20a = dev->driver_data;
 	u8_t dregs[MCR20A_PHY_CTRL4 + 1];
 	bool set_new_seq;
-	u8_t ctrl1 = 0;
+	u8_t ctrl1 = 0U;
 
 	while (true) {
 		k_sem_take(&mcr20a->isr_sem, K_FOREVER);
@@ -1153,7 +1153,7 @@ error:
 static int mcr20a_start(struct device *dev)
 {
 	struct mcr20a_context *mcr20a = dev->driver_data;
-	u8_t timeout = 6;
+	u8_t timeout = 6U;
 	u8_t status;
 
 	k_mutex_lock(&mcr20a->phy_mutex, K_FOREVER);
@@ -1275,9 +1275,9 @@ error:
 static int power_on_and_setup(struct device *dev)
 {
 	struct mcr20a_context *mcr20a = dev->driver_data;
-	u8_t timeout = 6;
+	u8_t timeout = 6U;
 	u32_t status;
-	u8_t tmp = 0;
+	u8_t tmp = 0U;
 
 	if (!PART_OF_KW2XD_SIP) {
 		set_reset(dev, 0);

@@ -195,18 +195,18 @@ static int plic_init(struct device *dev)
 
 	/* Ensure that all interrupts are disabled initially */
 	for (i = 0; i < PLIC_EN_SIZE; i++) {
-		*en = 0;
+		*en = 0U;
 		en++;
 	}
 
 	/* Set priority of each interrupt line to 0 initially */
 	for (i = 0; i < PLIC_IRQS; i++) {
-		*prio = 0;
+		*prio = 0U;
 		prio++;
 	}
 
 	/* Set threshold priority to 0 */
-	regs->threshold_prio = 0;
+	regs->threshold_prio = 0U;
 
 	/* Setup IRQ handler for PLIC driver */
 	IRQ_CONNECT(RISCV_MACHINE_EXT_IRQ,

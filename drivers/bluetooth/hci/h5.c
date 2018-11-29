@@ -711,7 +711,7 @@ static void h5_init(void)
 
 	h5.link_state = UNINIT;
 	h5.rx_state = START;
-	h5.tx_win = 4;
+	h5.tx_win = 4U;
 
 	/* TX thread */
 	k_fifo_init(&h5.tx_queue);

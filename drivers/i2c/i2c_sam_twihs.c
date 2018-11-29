@@ -72,7 +72,7 @@ struct i2c_sam_twihs_dev_data {
 
 static int i2c_clk_set(Twihs *const twihs, u32_t speed)
 {
-	u32_t ck_div = 0;
+	u32_t ck_div = 0U;
 	u32_t cl_div;
 	bool div_completed = false;
 
@@ -199,8 +199,8 @@ static int i2c_sam_twihs_transfer(struct device *dev, struct i2c_msg *msgs,
 	for (int i = 0; i < num_msgs; i++) {
 		dev_data->msg.buf = msgs[i].buf;
 		dev_data->msg.len = msgs[i].len;
-		dev_data->msg.idx = 0;
-		dev_data->msg.twihs_sr = 0;
+		dev_data->msg.idx = 0U;
+		dev_data->msg.twihs_sr = 0U;
 		dev_data->msg.flags = msgs[i].flags;
 		if ((msgs[i].flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
 			read_msg_start(twihs, &dev_data->msg, addr);

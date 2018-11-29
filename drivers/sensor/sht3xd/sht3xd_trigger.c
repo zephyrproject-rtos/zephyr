@@ -158,8 +158,8 @@ int sht3xd_init_interrupt(struct device *dev)
 {
 	struct sht3xd_data *drv_data = dev->driver_data;
 
-	drv_data->t_low = 0;
-	drv_data->rh_low = 0;
+	drv_data->t_low = 0U;
+	drv_data->rh_low = 0U;
 	drv_data->t_high = 0xFFFF;
 	drv_data->rh_high = 0xFFFF;
 

@@ -39,7 +39,7 @@ static void mdio_bus_disable(Gmac *gmac)
 /* Wait PHY operation complete. */
 static int mdio_bus_wait(Gmac *gmac)
 {
-	u32_t retries = 100;  /* will wait up to 1 s */
+	u32_t retries = 100U;  /* will wait up to 1 s */
 
 	while (!(gmac->GMAC_NSR & GMAC_NSR_IDLE))   {
 		if (retries-- == 0) {
@@ -109,7 +109,7 @@ static int phy_write(const struct phy_sam_gmac_dev *phy, u8_t reg_addr,
 static int phy_soft_reset(const struct phy_sam_gmac_dev *phy)
 {
 	u32_t phy_reg;
-	u32_t retries = 12;
+	u32_t retries = 12U;
 	int retval;
 
 	/* Issue a soft reset */

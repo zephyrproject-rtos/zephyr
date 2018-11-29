@@ -30,7 +30,7 @@ static void ipm_console_thread(void *arg1, void *arg2, void *arg3)
 	driver_data = d->driver_data;
 	config_info = d->config->config_info;
 	ARG_UNUSED(arg2);
-	size32 = 0;
+	size32 = 0U;
 	pos = 0;
 
 	while (1) {
@@ -42,7 +42,7 @@ static void ipm_console_thread(void *arg1, void *arg2, void *arg3)
 		if (ret) {
 			/* Shouldn't ever happen... */
 			printk("ipm console ring buffer error: %d\n", ret);
-			size32 = 0;
+			size32 = 0U;
 			continue;
 		}
 

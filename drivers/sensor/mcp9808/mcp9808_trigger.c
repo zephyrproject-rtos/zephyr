@@ -62,7 +62,7 @@ int mcp9808_attr_set(struct device *dev, enum sensor_channel chan,
 		     const struct sensor_value *val)
 {
 	struct mcp9808_data *data = dev->driver_data;
-	u16_t reg_val = 0;
+	u16_t reg_val = 0U;
 	u8_t reg_addr;
 	s32_t val2;
 

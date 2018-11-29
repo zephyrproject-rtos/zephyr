@@ -72,7 +72,7 @@ struct i2c_sam_twi_dev_data {
 
 static int i2c_clk_set(Twi *const twi, u32_t speed)
 {
-	u32_t ck_div = 0;
+	u32_t ck_div = 0U;
 	u32_t cl_div;
 	bool div_completed = false;
 
@@ -197,8 +197,8 @@ static int i2c_sam_twi_transfer(struct device *dev, struct i2c_msg *msgs,
 	for (; num_msgs > 0; num_msgs--, msgs++) {
 		dev_data->msg.buf = msgs->buf;
 		dev_data->msg.len = msgs->len;
-		dev_data->msg.idx = 0;
-		dev_data->msg.twi_sr = 0;
+		dev_data->msg.idx = 0U;
+		dev_data->msg.twi_sr = 0U;
 		dev_data->msg.flags = msgs->flags;
 
 		/*

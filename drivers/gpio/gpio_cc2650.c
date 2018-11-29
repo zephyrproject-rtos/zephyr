@@ -227,7 +227,7 @@ static int gpio_cc2650_config(struct device *port, int access_op,
 		return gpio_cc2650_config_pin(pin, flags);
 	}
 
-	const u32_t nb_pins = 32;
+	const u32_t nb_pins = 32U;
 
 	for (u8_t i = 0; i < nb_pins; ++i) {
 		if (pin & 0x1 &&
@@ -257,7 +257,7 @@ static int gpio_cc2650_write(struct device *port, int access_op,
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 		gpio_cc2650_write_pin(pin, value);
 	} else {
-		const u32_t nb_pins = 32;
+		const u32_t nb_pins = 32U;
 
 		for (u32_t i = 0; i < nb_pins; ++i) {
 			if (pin & 0x1) {
@@ -279,7 +279,7 @@ static int gpio_cc2650_read(struct device *port, int access_op,
 		gpio_cc2650_read_pin(pin, value);
 		*value >>= pin;
 	} else  {
-		const u32_t nb_pins = 32;
+		const u32_t nb_pins = 32U;
 
 		for (u32_t i = 0; i < nb_pins; ++i) {
 			if (pin & 0x1) {

@@ -252,9 +252,9 @@ int glcd_initialize(struct device *port)
 
 	LOG_DBG("initialize called");
 
-	dev->input_set = 0;
-	dev->display_switch = 0;
-	dev->function = 0;
+	dev->input_set = 0U;
+	dev->display_switch = 0U;
+	dev->function = 0U;
 
 	/*
 	 * First set up the device driver...

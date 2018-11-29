@@ -184,10 +184,10 @@ static int pca9633_led_init(struct device *dev)
 	}
 
 	/* Hardware specific limits */
-	dev_data->min_period = 41;
-	dev_data->max_period = 10667;
-	dev_data->min_brightness = 0;
-	dev_data->max_brightness = 100;
+	dev_data->min_period = 41U;
+	dev_data->max_period = 10667U;
+	dev_data->min_brightness = 0U;
+	dev_data->max_brightness = 100U;
 
 	return 0;
 }

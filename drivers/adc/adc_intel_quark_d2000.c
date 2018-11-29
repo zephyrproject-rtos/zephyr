@@ -267,7 +267,7 @@ static int adc_quark_d2000_read_request(struct device *dev,
 	if (seq_tbl->options) {
 		info->seq_size = seq_tbl->options->extra_samplings + 1;
 	} else {
-		info->seq_size = 1;
+		info->seq_size = 1U;
 	}
 
 	if (info->seq_size > ADC_FIFO_LEN) {
@@ -276,7 +276,7 @@ static int adc_quark_d2000_read_request(struct device *dev,
 
 	/* check if buffer has enough size */
 	utmp = info->channels;
-	num_channels = 0;
+	num_channels = 0U;
 	while (utmp) {
 		if (utmp & BIT(0)) {
 			num_channels++;
@@ -325,8 +325,8 @@ static void adc_quark_d2000_start_conversion(struct device *dev)
 		info->dev->config->config_info;
 	const struct adc_sequence *entry = info->ctx.sequence;
 	volatile adc_reg_t *adc_regs = config->reg_base;
-	u32_t i, val, interval_us = 0;
-	u32_t idx = 0, offset = 0;
+	u32_t i, val, interval_us = 0U;
+	u32_t idx = 0U, offset = 0U;
 
 	info->channel_id = find_lsb_set(info->channels) - 1;
 
@@ -338,7 +338,7 @@ static void adc_quark_d2000_start_conversion(struct device *dev)
 	adc_regs->sample = ADC_FIFO_CLEAR;
 
 	/* setup the sequence table */
-	for (i = 0; i < info->seq_size; i++) {
+	for (i = 0U; i < info->seq_size; i++) {
 		idx = i / 4;
 		offset = (i % 4) * 8;
 

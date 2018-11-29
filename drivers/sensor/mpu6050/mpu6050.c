@@ -171,7 +171,7 @@ int mpu6050_init(struct device *dev)
 	}
 
 	/* set accelerometer full-scale range */
-	for (i = 0; i < 4; i++) {
+	for (i = 0U; i < 4; i++) {
 		if (BIT(i+1) == CONFIG_MPU6050_ACCEL_FS) {
 			break;
 		}
@@ -192,7 +192,7 @@ int mpu6050_init(struct device *dev)
 	drv_data->accel_sensitivity_shift = 14 - i;
 
 	/* set gyroscope full-scale range */
-	for (i = 0; i < 4; i++) {
+	for (i = 0U; i < 4; i++) {
 		if (BIT(i) * 250 == CONFIG_MPU6050_GYRO_FS) {
 			break;
 		}

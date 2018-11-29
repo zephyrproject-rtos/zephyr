@@ -652,14 +652,14 @@ static int source_ipm_helper(struct pdm_chan_cfg *config, u32_t *source_mask,
 	u8_t pdm_ix;
 	u8_t chan_ix;
 	enum pdm_lr lr;
-	u16_t pdm_lr_mask = 0;
+	u16_t pdm_lr_mask = 0U;
 	int ipm = 0;
 
 	/* clear outputs */
-	*source_mask = 0;
-	*stereo_mask = 0;
-	*swap_mask = 0;
-	*controller_mask = 0;
+	*source_mask = 0U;
+	*stereo_mask = 0U;
+	*swap_mask = 0U;
+	*controller_mask = 0U;
 
 	/* Loop number of PDM controllers in the configuration. If mic A
 	 * or B is enabled then a pdm controller is marked as active. Also it
@@ -668,7 +668,7 @@ static int source_ipm_helper(struct pdm_chan_cfg *config, u32_t *source_mask,
 	 * swapped mono left. The function returns also in array source[] the
 	 * indice of enabled pdm controllers to be used for IPM configuration.
 	 */
-	for (chan_ix = 0; chan_ix < config->req_num_chan; chan_ix++) {
+	for (chan_ix = 0U; chan_ix < config->req_num_chan; chan_ix++) {
 
 		dmic_parse_channel_map(config->req_chan_map_lo,
 				config->req_chan_map_hi,

@@ -388,7 +388,7 @@ static inline struct usbd_ep_event *usbd_evt_alloc(void)
 
 	ev = (struct usbd_ep_event *)block.data;
 	ev->block = block;
-	ev->misc_u.flags = 0;
+	ev->misc_u.flags = 0U;
 
 	return ev;
 }
@@ -535,7 +535,7 @@ static void ep_ctx_reset(struct nrf_usbd_ep_ctx *ep_ctx)
 {
 	ep_ctx->buf.data = ep_ctx->buf.block.data;
 	ep_ctx->buf.curr = ep_ctx->buf.data;
-	ep_ctx->buf.len  = 0;
+	ep_ctx->buf.len  = 0U;
 
 	ep_ctx->read_complete = true;
 	ep_ctx->read_pending = false;
@@ -555,7 +555,7 @@ static int eps_ctx_init(void)
 	int err;
 	u32_t i;
 
-	for (i = 0; i < CFG_EPIN_CNT; i++) {
+	for (i = 0U; i < CFG_EPIN_CNT; i++) {
 		ep_ctx = in_endpoint_ctx(i);
 		__ASSERT_NO_MSG(ep_ctx);
 
@@ -571,7 +571,7 @@ static int eps_ctx_init(void)
 		ep_ctx_reset(ep_ctx);
 	}
 
-	for (i = 0; i < CFG_EPOUT_CNT; i++) {
+	for (i = 0U; i < CFG_EPOUT_CNT; i++) {
 		ep_ctx = out_endpoint_ctx(i);
 		__ASSERT_NO_MSG(ep_ctx);
 
@@ -627,14 +627,14 @@ static void eps_ctx_uninit(void)
 	struct nrf_usbd_ep_ctx *ep_ctx;
 	u32_t i;
 
-	for (i = 0; i < CFG_EPIN_CNT; i++) {
+	for (i = 0U; i < CFG_EPIN_CNT; i++) {
 		ep_ctx = in_endpoint_ctx(i);
 		__ASSERT_NO_MSG(ep_ctx);
 		k_mem_pool_free(&ep_ctx->buf.block);
 		memset(ep_ctx, 0, sizeof(*ep_ctx));
 	}
 
-	for (i = 0; i < CFG_EPOUT_CNT; i++) {
+	for (i = 0U; i < CFG_EPOUT_CNT; i++) {
 		ep_ctx = out_endpoint_ctx(i);
 		__ASSERT_NO_MSG(ep_ctx);
 		k_mem_pool_free(&ep_ctx->buf.block);
@@ -1121,7 +1121,7 @@ int usb_dc_detach(void)
 
 	k_mutex_lock(&ctx->drv_lock, K_FOREVER);
 
-	ctx->flags = 0;
+	ctx->flags = 0U;
 	ctx->state = USBD_DETACHED;
 	ctx->status_code = USB_DC_UNKNOWN;
 
@@ -1279,7 +1279,7 @@ int usb_dc_ep_set_stall(const u8_t ep)
 		return -EINVAL;
 	}
 
-	ep_ctx->buf.len = 0;
+	ep_ctx->buf.len = 0U;
 	ep_ctx->buf.curr = ep_ctx->buf.data;
 
 	LOG_DBG("STALL on EP %d.", ep);
@@ -1397,7 +1397,7 @@ int usb_dc_ep_flush(const u8_t ep)
 		return -EINVAL;
 	}
 
-	ep_ctx->buf.len = 0;
+	ep_ctx->buf.len = 0U;
 	ep_ctx->buf.curr = ep_ctx->buf.data;
 
 	nrfx_usbd_transfer_out_drop(ep_addr_to_nrfx(ep));

@@ -107,7 +107,7 @@ int hmc5883l_init(struct device *dev)
 	}
 
 	/* check if CONFIG_HMC5883L_FS is valid */
-	for (idx = 0; idx < ARRAY_SIZE(hmc5883l_fs_strings); idx++) {
+	for (idx = 0U; idx < ARRAY_SIZE(hmc5883l_fs_strings); idx++) {
 		if (!strcmp(hmc5883l_fs_strings[idx], CONFIG_HMC5883L_FS)) {
 			break;
 		}
@@ -121,7 +121,7 @@ int hmc5883l_init(struct device *dev)
 	drv_data->gain_idx = idx;
 
 	/* check if CONFIG_HMC5883L_ODR is valid */
-	for (idx = 0; idx < ARRAY_SIZE(hmc5883l_odr_strings); idx++) {
+	for (idx = 0U; idx < ARRAY_SIZE(hmc5883l_odr_strings); idx++) {
 		if (!strcmp(hmc5883l_odr_strings[idx], CONFIG_HMC5883L_ODR)) {
 			break;
 		}

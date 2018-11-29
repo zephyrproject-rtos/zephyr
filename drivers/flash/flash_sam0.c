@@ -145,7 +145,7 @@ static int flash_sam0_write_page(struct device *dev, off_t offset,
 
 static int flash_sam0_erase_row(struct device *dev, off_t offset)
 {
-	*FLASH_MEM(offset) = 0;
+	*FLASH_MEM(offset) = 0U;
 	NVMCTRL->CTRLA.reg = NVMCTRL_CTRLA_CMD_ER | NVMCTRL_CTRLA_CMDEX_KEY;
 
 	return flash_sam0_check_status(offset);
@@ -318,7 +318,7 @@ static int flash_sam0_write_protection(struct device *dev, bool enable)
 
 	for (offset = 0; offset < CONFIG_FLASH_SIZE * 1024;
 	     offset += LOCK_REGION_SIZE) {
-		*FLASH_MEM(offset) = 0;
+		*FLASH_MEM(offset) = 0U;
 
 		if (enable) {
 			NVMCTRL->CTRLA.reg = NVMCTRL_CTRLA_CMD_LR |

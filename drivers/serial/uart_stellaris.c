@@ -349,7 +349,7 @@ static int uart_stellaris_fifo_fill(struct device *dev, const u8_t *tx_data,
 				    int len)
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
-	u8_t num_tx = 0;
+	u8_t num_tx = 0U;
 
 	while ((len - num_tx > 0) && ((uart->fr & UARTFR_TXFF) == 0)) {
 		uart->dr = (u32_t)tx_data[num_tx++];
@@ -371,7 +371,7 @@ static int uart_stellaris_fifo_read(struct device *dev, u8_t *rx_data,
 				    const int size)
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
-	u8_t num_rx = 0;
+	u8_t num_rx = 0U;
 
 	while ((size - num_rx > 0) && ((uart->fr & UARTFR_RXFE) == 0)) {
 		rx_data[num_rx++] = (u8_t)uart->dr;
@@ -390,7 +390,7 @@ static int uart_stellaris_fifo_read(struct device *dev, u8_t *rx_data,
 static void uart_stellaris_irq_tx_enable(struct device *dev)
 {
 	static u8_t first_time =
-		1;	   /* used to allow the first transmission */
+		1U;	   /* used to allow the first transmission */
 	u32_t saved_ctl;  /* saved UARTCTL (control) register */
 	u32_t saved_ibrd; /* saved UARTIBRD (integer baud rate) register */
 	u32_t saved_fbrd; /* saved UARTFBRD (fractional baud rate) register
@@ -405,7 +405,7 @@ static void uart_stellaris_irq_tx_enable(struct device *dev)
 		 * work,
 		 * so send one via loopback mode.
 		 */
-		first_time = 0;
+		first_time = 0U;
 
 		/* save current control and baud rate settings */
 		saved_ctl = uart->ctl;
@@ -414,11 +414,11 @@ static void uart_stellaris_irq_tx_enable(struct device *dev)
 
 		/* send a character with default settings via loopback */
 		disable(dev);
-		uart->fbrd = 0;
-		uart->ibrd = 1;
-		uart->lcrh = 0;
+		uart->fbrd = 0U;
+		uart->ibrd = 1U;
+		uart->lcrh = 0U;
 		uart->ctl = (UARTCTL_UARTEN | UARTCTL_TXEN | UARTCTL_LBE);
-		uart->dr = 0;
+		uart->dr = 0U;
 
 		while (uart->fr & UARTFR_BUSY)
 			;

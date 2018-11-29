@@ -42,8 +42,8 @@ static void iwdg_stm32_convert_timeout(u32_t timeout,
 {
 	assert(IS_IWDG_TIMEOUT(timeout));
 
-	u16_t divider = 0;
-	u8_t shift = 0;
+	u16_t divider = 0U;
+	u8_t shift = 0U;
 
 	/* Convert timeout to seconds. */
 	float m_timeout = (float)timeout / 1000000 * LSI_VALUE;
@@ -81,8 +81,8 @@ static int iwdg_stm32_set_config(struct device *dev,
 {
 	IWDG_TypeDef *iwdg = IWDG_STM32_STRUCT(dev);
 	u32_t timeout = config->timeout;
-	u32_t prescaler = 0;
-	u32_t reload = 0;
+	u32_t prescaler = 0U;
+	u32_t reload = 0U;
 	u32_t tickstart;
 
 	assert(IS_IWDG_TIMEOUT(timeout));

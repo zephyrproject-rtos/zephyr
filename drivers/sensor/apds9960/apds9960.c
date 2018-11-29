@@ -429,7 +429,7 @@ static int apds9960_init(struct device *dev)
 	}
 
 	(void)memset(data->sample_crgb, 0, sizeof(data->sample_crgb));
-	data->pdata = 0;
+	data->pdata = 0U;
 
 	apds9960_sensor_setup(dev);
 

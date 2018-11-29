@@ -170,7 +170,7 @@ static int i2c_esp32_configure(struct device *dev, u32_t dev_config)
 	const struct i2c_esp32_config *config = dev->config->config_info;
 	struct i2c_esp32_data *data = dev->driver_data;
 	unsigned int key = irq_lock();
-	u32_t v = 0;
+	u32_t v = 0U;
 	int ret;
 
 	ret = i2c_esp32_configure_pins(config->pins.scl,
@@ -344,7 +344,7 @@ i2c_esp32_write_addr(struct device *dev,
 {
 	const struct i2c_esp32_config *config = dev->config->config_info;
 	struct i2c_esp32_data *data = dev->driver_data;
-	u32_t addr_len = 1;
+	u32_t addr_len = 1U;
 
 	i2c_esp32_reset_fifo(config);
 
@@ -437,7 +437,7 @@ static int i2c_esp32_read_msg(struct device *dev, u16_t addr,
 			return ret;
 		}
 
-		for (i = 0; i < to_read; i++) {
+		for (i = 0U; i < to_read; i++) {
 			u32_t v = sys_read32(I2C_DATA_APB_REG(config->index));
 
 			*msg.buf++ = v & I2C_FIFO_RDATA;
@@ -469,7 +469,7 @@ static int i2c_esp32_write_msg(struct device *dev, u16_t addr,
 		int ret;
 
 		/* Copy data to TX fifo */
-		for (i = 0; i < to_send; i++) {
+		for (i = 0U; i < to_send; i++) {
 			sys_write32(*msg.buf++,
 				    I2C_DATA_APB_REG(config->index));
 		}
@@ -514,7 +514,7 @@ static int i2c_esp32_transfer(struct device *dev, struct i2c_msg *msgs,
 	addr &= BIT_MASK(data->dev_config & I2C_ADDR_10_BITS ? 10 : 7);
 	addr <<= 1;
 
-	for (i = 0; i < num_msgs; i++) {
+	for (i = 0U; i < num_msgs; i++) {
 		if ((msgs[i].flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
 			ret = i2c_esp32_write_msg(dev, addr, msgs[i]);
 		} else {

@@ -173,12 +173,12 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 		return -EINVAL;
 	}
 
-	active_channels = 0;
+	active_channels = 0U;
 	nrfx_adc_all_channels_disable();
 
 	/* Enable the channels selected for the pointed sequence.
 	 */
-	channel_id = 0;
+	channel_id = 0U;
 	while (selected_channels) {
 		if (selected_channels & BIT(0)) {
 			/* The nrfx driver requires setting the resolution

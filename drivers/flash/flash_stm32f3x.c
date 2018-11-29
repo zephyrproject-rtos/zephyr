@@ -12,10 +12,10 @@
 
 static int flash_stm32_erase(struct device *dev, off_t offset, size_t size)
 {
-	u32_t first_page_addr = 0;
-	u32_t last_page_addr = 0;
+	u32_t first_page_addr = 0U;
+	u32_t last_page_addr = 0U;
 	u16_t no_of_pages = size / CONFIG_FLASH_PAGE_SIZE;
-	u16_t page_index = 0;
+	u16_t page_index = 0U;
 
 	/* Check offset and size alignment. */
 	if (((offset % CONFIG_FLASH_PAGE_SIZE) != 0) ||
@@ -67,15 +67,15 @@ static int flash_stm32_read(struct device *dev, off_t offset,
 static int flash_stm32_write(struct device *dev, off_t offset,
 			     const void *data, size_t len)
 {
-	u16_t halfword = 0;
+	u16_t halfword = 0U;
 
 	u32_t address =
 		CONFIG_FLASH_BASE_ADDRESS + offset;
 
-	u8_t remainder = 0;
+	u8_t remainder = 0U;
 
 	if ((len % 2) != 0) {
-		remainder = 1;
+		remainder = 1U;
 	}
 
 	len = len / 2;

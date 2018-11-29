@@ -133,7 +133,7 @@ static void mcux_adc16_start_channel(struct device *dev)
 	struct mcux_adc16_data *data = dev->driver_data;
 
 	adc16_channel_config_t channel_config;
-	u32_t channel_group = 0;
+	u32_t channel_group = 0U;
 
 	data->channel_id = find_lsb_set(data->channels) - 1;
 
@@ -174,7 +174,7 @@ static void mcux_adc16_isr(void *arg)
 	const struct mcux_adc16_config *config = dev->config->config_info;
 	struct mcux_adc16_data *data = dev->driver_data;
 	ADC_Type *base = config->base;
-	u32_t channel_group = 0;
+	u32_t channel_group = 0U;
 	u16_t result;
 
 	result = ADC16_GetChannelConversionValue(base, channel_group);
