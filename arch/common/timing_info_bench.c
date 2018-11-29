@@ -102,7 +102,7 @@ void read_timer_end_of_swap(void)
 {
 	if (__read_swap_end_time_value == 1) {
 		TIMING_INFO_PRE_READ();
-		__read_swap_end_time_value = 2;
+		__read_swap_end_time_value = 2U;
 		__common_var_swap_end_time = (u64_t)TIMING_INFO_OS_GET_TIME();
 	}
 }

@@ -20,7 +20,7 @@
 static int
 cpu_has_spec_ctrl(void)
 {
-	u32_t eax, ebx, ecx = 0, edx;
+	u32_t eax, ebx, ecx = 0U, edx;
 
 	if (!__get_cpuid(CPUID_EXTENDED_FEATURES_LVL,
 			 &eax, &ebx, &ecx, &edx)) {

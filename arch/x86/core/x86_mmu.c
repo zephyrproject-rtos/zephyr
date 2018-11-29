@@ -82,11 +82,11 @@ int _arch_buffer_validate(void *addr, size_t size, int write)
 #ifdef CONFIG_X86_PAE_MODE
 	for (pdpte = start_pdpte_num; pdpte <= end_pdpte_num; pdpte++) {
 		if (pdpte != start_pdpte_num) {
-			start_pde_num = 0;
+			start_pde_num = 0U;
 		}
 
 		if (pdpte != end_pdpte_num) {
-			end_pde_num = 0;
+			end_pde_num = 0U;
 		} else {
 			end_pde_num = MMU_PDE_NUM((char *)addr + size - 1);
 		}
@@ -125,7 +125,7 @@ int _arch_buffer_validate(void *addr, size_t size, int write)
 			 * of the buffer.
 			 */
 			if (pde != end_pde_num) {
-				ending_pte_num = 1023;
+				ending_pte_num = 1023U;
 			} else {
 				ending_pte_num =
 					MMU_PAGE_NUM((char *)addr + size - 1);
@@ -135,7 +135,7 @@ int _arch_buffer_validate(void *addr, size_t size, int write)
 			 * will have the start pte number as zero.
 			 */
 			if (pde != start_pde_num) {
-				starting_pte_num = 0;
+				starting_pte_num = 0U;
 			}
 
 			pte_value.value = 0xFFFFFFFF;
@@ -236,8 +236,8 @@ static inline void _x86_mem_domain_pages_update(struct k_mem_domain *mem_domain,
 	 * For x86: interate over all the partitions and set the
 	 * required flags in the correct MMU page tables.
 	 */
-	partitions_count = 0;
-	for (partition_index = 0;
+	partitions_count = 0U;
+	for (partition_index = 0U;
 	     partitions_count < total_partitions;
 	     partition_index++) {
 
