@@ -187,7 +187,7 @@ int log_printk(const char *fmt, va_list ap)
  */
 static u32_t count_args(const char *fmt)
 {
-	u32_t args = 0;
+	u32_t args = 0U;
 	bool prev = false; /* if previous char was a modificator. */
 
 	while (*fmt != '\0') {
@@ -480,7 +480,7 @@ u32_t log_filter_set(struct log_backend const *const backend,
 
 		if (backend == NULL) {
 			struct log_backend const *backend;
-			u32_t max = 0;
+			u32_t max = 0U;
 			u32_t current;
 
 			for (int i = 0; i < log_backend_count_get(); i++) {

@@ -112,8 +112,8 @@ u32_t mayfly_enqueue(u8_t caller_id, u8_t callee_id, u8_t chain,
 
 void mayfly_run(u8_t callee_id)
 {
-	u8_t disable = 0;
-	u8_t enable = 0;
+	u8_t disable = 0U;
+	u8_t enable = 0U;
 	u8_t caller_id;
 
 	/* iterate through each caller queue to this callee_id */
@@ -178,7 +178,7 @@ void mayfly_run(u8_t callee_id)
 
 		if (mft[callee_id][caller_id].disable_req !=
 		    mft[callee_id][caller_id].disable_ack) {
-			disable = 1;
+			disable = 1U;
 
 			mft[callee_id][caller_id].disable_ack =
 				mft[callee_id][caller_id].disable_req;
@@ -186,7 +186,7 @@ void mayfly_run(u8_t callee_id)
 
 		if (mft[callee_id][caller_id].enable_req !=
 		    mft[callee_id][caller_id].enable_ack) {
-			enable = 1;
+			enable = 1U;
 
 			mft[callee_id][caller_id].enable_ack =
 				mft[callee_id][caller_id].enable_req;

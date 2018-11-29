@@ -492,7 +492,7 @@ static void http_received(struct net_app_ctx *app_ctx,
 {
 	struct http_ctx *ctx = user_data;
 	size_t start = ctx->http.rsp.data_len;
-	u16_t len = 0;
+	u16_t len = 0U;
 	struct net_buf *frag, *prev_frag = NULL;
 	size_t recv_len;
 	size_t pkt_len;
@@ -544,7 +544,7 @@ static void http_received(struct net_app_ctx *app_ctx,
 					    len);
 
 			ctx->http.rsp.data_len = 0;
-			len = 0;
+			len = 0U;
 			start = 0;
 		}
 

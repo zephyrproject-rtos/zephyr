@@ -216,7 +216,7 @@ static void free_segments(void)
 
 		link.tx.buf[i] = NULL;
 		/* Mark as canceled */
-		BT_MESH_ADV(buf)->busy = 0;
+		BT_MESH_ADV(buf)->busy = 0U;
 		net_buf_unref(buf);
 	}
 }
@@ -414,7 +414,7 @@ static int prov_send_adv(struct net_buf_simple *msg)
 	net_buf_simple_pull(msg, seg_len);
 
 	buf = start;
-	for (seg_id = 1; msg->len > 0; seg_id++) {
+	for (seg_id = 1U; msg->len > 0; seg_id++) {
 		if (seg_id >= ARRAY_SIZE(link.tx.buf)) {
 			BT_ERR("Too big message");
 			free_segments();
@@ -638,7 +638,7 @@ static int prov_auth(u8_t method, u8_t action, u8_t size)
 			bt_rand(str, size);
 
 			/* Normalize to '0' .. '9' & 'A' .. 'Z' */
-			for (i = 0; i < size; i++) {
+			for (i = 0U; i < size; i++) {
 				str[i] %= 36;
 				if (str[i] < 10) {
 					str[i] += '0';
@@ -1065,7 +1065,7 @@ static void prov_data(const u8_t *data)
 	prov_send(&msg);
 
 	/* Ignore any further PDUs on this link */
-	link.expect = 0;
+	link.expect = 0U;
 
 	/* Store info, since bt_mesh_provision() will end up clearing it */
 	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
@@ -1124,7 +1124,7 @@ static void close_link(u8_t err, u8_t reason)
 		prov_send_fail_msg(err);
 	}
 
-	link.rx.seg = 0;
+	link.rx.seg = 0U;
 	bearer_ctl_send(LINK_CLOSE, &reason, sizeof(reason));
 #endif
 
@@ -1273,7 +1273,7 @@ static void prov_msg_recv(void)
 
 	gen_prov_ack_send(link.rx.id);
 	link.rx.prev_id = link.rx.id;
-	link.rx.id = 0;
+	link.rx.id = 0U;
 
 	if (type != PROV_FAILED && type != link.expect) {
 		BT_WARN("Unexpected msg 0x%02x != 0x%02x", type, link.expect);

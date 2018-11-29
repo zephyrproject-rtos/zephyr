@@ -398,7 +398,7 @@ static void hexdump_print(struct log_msg *msg,
 			  const struct log_output *log_output,
 			  int prefix_offset, u32_t flags)
 {
-	u32_t offset = 0;
+	u32_t offset = 0U;
 	u32_t length;
 
 	print_formatted(log_output, "%s", log_msg_str_get(msg));
@@ -524,7 +524,7 @@ void log_output_msg_process(const struct log_output *log_output,
 
 void log_output_timestamp_freq_set(u32_t frequency)
 {
-	timestamp_div = 1;
+	timestamp_div = 1U;
 	/* There is no point to have frequency higher than 1MHz (ns are not
 	 * printed) and too high frequency leads to overflows in calculations.
 	 */

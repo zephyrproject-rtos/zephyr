@@ -220,10 +220,10 @@ static void reset(struct net_buf *buf, struct net_buf **evt)
 	}
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 	hci_hbuf_total = 0;
-	hci_hbuf_sent = 0;
-	hci_hbuf_acked = 0;
+	hci_hbuf_sent = 0U;
+	hci_hbuf_acked = 0U;
 	(void)memset(hci_hbuf_pend, 0, sizeof(hci_hbuf_pend));
-	conn_count = 0;
+	conn_count = 0U;
 	if (buf) {
 		atomic_set_bit(&hci_state_mask, HCI_STATE_BIT_RESET);
 		k_poll_signal_raise(hbuf_signal, 0x0);
@@ -268,8 +268,8 @@ static void set_ctl_to_host_flow(struct net_buf *buf, struct net_buf **evt)
 		return;
 	}
 
-	hci_hbuf_sent = 0;
-	hci_hbuf_acked = 0;
+	hci_hbuf_sent = 0U;
+	hci_hbuf_acked = 0U;
 	(void)memset(hci_hbuf_pend, 0, sizeof(hci_hbuf_pend));
 	hci_hbuf_total = -hci_hbuf_total;
 }
@@ -304,7 +304,7 @@ static void host_num_completed_packets(struct net_buf *buf,
 {
 	struct bt_hci_cp_host_num_completed_packets *cmd = (void *)buf->data;
 	struct bt_hci_evt_cc_status *ccst;
-	u32_t count = 0;
+	u32_t count = 0U;
 	int i;
 
 	/* special case, no event returned except for error conditions */
@@ -813,7 +813,7 @@ static void le_rand(struct net_buf *buf, struct net_buf **evt)
 static void le_read_supp_states(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_rp_le_read_supp_states *rp;
-	u64_t states = 0;
+	u64_t states = 0U;
 
 	rp = cmd_complete(evt, sizeof(*rp));
 	rp->status = 0x00;
@@ -969,7 +969,7 @@ static void le_set_scan_enable(struct net_buf *buf, struct net_buf **evt)
 	/* initialize duplicate filtering */
 	if (cmd->enable && cmd->filter_dup) {
 		dup_count = 0;
-		dup_curr = 0;
+		dup_curr = 0U;
 	} else {
 		dup_count = -1;
 	}
@@ -1316,7 +1316,7 @@ static void le_set_phy(struct net_buf *buf, struct net_buf **evt)
 		phy_opts -= 1;
 		phy_opts &= 1;
 	} else {
-		phy_opts = 0;
+		phy_opts = 0U;
 	}
 
 	status = ll_phy_req_send(handle, cmd->tx_phys, phy_opts,
@@ -2133,7 +2133,7 @@ static inline bool dup_found(struct pdu_adv *adv)
 		}
 
 		if (dup_curr == CONFIG_BT_CTLR_DUP_FILTER_LEN) {
-			dup_curr = 0;
+			dup_curr = 0U;
 		}
 	}
 
@@ -2509,7 +2509,7 @@ static void disconn_complete(struct pdu_data *pdu_data, u16_t handle,
 	/* Note: This requires linear handle values starting from 0 */
 	LL_ASSERT(handle < ARRAY_SIZE(hci_hbuf_pend));
 	hci_hbuf_acked += hci_hbuf_pend[handle];
-	hci_hbuf_pend[handle] = 0;
+	hci_hbuf_pend[handle] = 0U;
 #endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
 	conn_count--;
 }
@@ -2982,7 +2982,7 @@ void hci_num_cmplt_encode(struct net_buf *buf, u16_t handle, u8_t num)
 	u8_t num_handles;
 	u8_t len;
 
-	num_handles = 1;
+	num_handles = 1U;
 
 	len = (sizeof(*ep) + (sizeof(*hc) * num_handles));
 	evt_create(buf, BT_HCI_EVT_NUM_COMPLETED_PACKETS, len);

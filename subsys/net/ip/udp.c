@@ -96,7 +96,7 @@ fail:
 struct net_buf *net_udp_set_chksum(struct net_pkt *pkt, struct net_buf *frag)
 {
 	struct net_udp_hdr *hdr;
-	u16_t chksum = 0;
+	u16_t chksum = 0U;
 	u16_t pos;
 
 	hdr = net_pkt_udp_data(pkt);

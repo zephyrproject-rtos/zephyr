@@ -57,7 +57,7 @@ int net_icmpv4_get_hdr(struct net_pkt *pkt, struct net_icmp_hdr *hdr)
 
 int net_icmpv4_set_chksum(struct net_pkt *pkt)
 {
-	u16_t chksum = 0;
+	u16_t chksum = 0U;
 	struct net_buf *frag;
 	struct net_buf *temp_frag;
 	u16_t temp_pos;

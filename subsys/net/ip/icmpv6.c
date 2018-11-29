@@ -77,7 +77,7 @@ static inline void setup_ipv6_header(struct net_pkt *pkt, u16_t extra_len,
 				     u8_t icmp_code)
 {
 	struct net_buf *frag = pkt->frags;
-	const u32_t unused = 0;
+	const u32_t unused = 0U;
 	u16_t pos;
 
 	NET_IPV6_HDR(pkt)->vtc = 0x60;
@@ -104,7 +104,7 @@ static inline void setup_ipv6_header(struct net_pkt *pkt, u16_t extra_len,
 
 int net_icmpv6_set_chksum(struct net_pkt *pkt)
 {
-	u16_t chksum = 0;
+	u16_t chksum = 0U;
 	struct net_buf *frag;
 	struct net_buf *temp_frag;
 	u16_t temp_pos;
@@ -200,7 +200,7 @@ int net_icmpv6_set_ns_hdr(struct net_pkt *pkt, struct net_icmpv6_ns_hdr *hdr)
 	struct net_buf *frag;
 	u16_t pos;
 
-	hdr->reserved = 0;
+	hdr->reserved = 0U;
 
 	frag = net_pkt_write(pkt, pkt->frags, net_pkt_ip_hdr_len(pkt) +
 			     net_pkt_ipv6_ext_len(pkt) +

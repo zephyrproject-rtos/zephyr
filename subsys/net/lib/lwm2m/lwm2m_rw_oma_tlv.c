@@ -228,7 +228,7 @@ static size_t oma_tlv_get(struct oma_tlv *tlv,
 {
 	struct net_buf *tmp_frag;
 	u8_t len_type;
-	u8_t len_pos = 1;
+	u8_t len_pos = 1U;
 	size_t tlv_len;
 	u16_t tmp_offset;
 	u8_t buf[2];
@@ -325,7 +325,7 @@ static size_t put_end_tlv(struct lwm2m_output_context *out,
 	struct oma_tlv tlv;
 	struct net_buf *tmp_frag;
 	u16_t tmp_pos;
-	u32_t len = 0;
+	u32_t len = 0U;
 
 	*writer_flags &= ~writer_flag;
 
@@ -846,7 +846,7 @@ static int do_write_op_tlv_item(struct lwm2m_engine_context *context)
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
 	struct lwm2m_engine_res_inst *res = NULL;
 	struct lwm2m_engine_obj_field *obj_field = NULL;
-	u8_t created = 0;
+	u8_t created = 0U;
 	int ret, i;
 
 	ret = lwm2m_get_or_create_engine_obj(context, &obj_inst, &created);

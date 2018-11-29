@@ -1456,7 +1456,7 @@ static void l2cap_chan_le_recv_seg(struct bt_l2cap_le_chan *chan,
 				   struct net_buf *buf)
 {
 	u16_t len;
-	u16_t seg = 0;
+	u16_t seg = 0U;
 
 	len = net_buf_frags_len(chan->_sdu);
 	if (len) {

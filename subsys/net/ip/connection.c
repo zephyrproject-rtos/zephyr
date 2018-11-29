@@ -152,7 +152,7 @@ static s32_t check_hash(enum net_ip_protocol proto,
 			  u32_t *cache_value)
 {
 	int i, free_pos = -1;
-	u32_t value = 0;
+	u32_t value = 0U;
 
 	value = ports_to_hash(remote_port, local_port);
 
@@ -278,7 +278,7 @@ static void cache_clear(void)
 
 	for (i = 0; i < CONFIG_NET_MAX_CONN; i++) {
 		conn_cache[i].idx = -1;
-		conn_cache_neg[i].value = 0;
+		conn_cache_neg[i].value = 0U;
 	}
 }
 
@@ -559,7 +559,7 @@ int net_conn_register(enum net_ip_protocol proto,
 		      struct net_conn_handle **handle)
 {
 	int i;
-	u8_t rank = 0;
+	u8_t rank = 0U;
 
 	i = find_conn_handler(proto, remote_addr, local_addr, remote_port,
 			      local_port);
@@ -808,7 +808,7 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 
 #if defined(CONFIG_NET_CONN_CACHE)
 	enum net_verdict verdict;
-	u32_t cache_value = 0;
+	u32_t cache_value = 0U;
 	s32_t pos;
 
 	verdict = cache_check(proto, pkt, &cache_value, &pos);

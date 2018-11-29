@@ -22,7 +22,7 @@ u32_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 			   u16_t timeout)
 {
 	u32_t status;
-	u8_t  rpa_gen = 0;
+	u8_t  rpa_gen = 0U;
 	u8_t  rl_idx = FILTER_IDX_NONE;
 
 	if (ll_scan_is_enabled()) {
@@ -50,7 +50,7 @@ u32_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 		/* Generate RPAs if required */
 		ll_rl_rpa_update(false);
 		own_addr_type &= 0x1;
-		rpa_gen = 1;
+		rpa_gen = 1U;
 	}
 #endif
 	return radio_scan_enable(0, own_addr_type,

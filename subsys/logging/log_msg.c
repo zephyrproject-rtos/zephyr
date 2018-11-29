@@ -190,7 +190,7 @@ static void copy_args_to_msg(struct  log_msg *msg, u32_t *args, u32_t nargs)
 		args += LOG_MSG_NARGS_HEAD_CHUNK;
 	} else {
 		memcpy(msg->payload.single.args, args, nargs * sizeof(u32_t));
-		nargs  = 0;
+		nargs  = 0U;
 	}
 
 	while (nargs) {
@@ -258,7 +258,7 @@ struct log_msg *log_msg_hexdump_create(const char *str,
 	} else {
 		memcpy(msg->payload.single.bytes, data, length);
 		msg->hdr.params.generic.ext = 0;
-		length = 0;
+		length = 0U;
 	}
 
 	prev_cont = &msg->payload.ext.next;

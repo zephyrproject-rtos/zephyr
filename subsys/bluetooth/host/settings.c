@@ -121,7 +121,7 @@ static int set(int argc, char **argv, char *val)
 			BT_ERR("Invalid length ID address in storage");
 			(void)memset(bt_dev.id_addr, 0,
 				     sizeof(bt_dev.id_addr));
-			bt_dev.id_count = 0;
+			bt_dev.id_count = 0U;
 		} else {
 			int i;
 

@@ -396,7 +396,7 @@ static int cmd_write(const struct shell *shell, size_t argc, char **argv)
 		return -ENOEXEC;
 	}
 
-	buf_len = 0;
+	buf_len = 0U;
 	while (arg_offset < argc) {
 		buf[buf_len++] = strtol(argv[arg_offset++], NULL, 16);
 
@@ -410,7 +410,7 @@ static int cmd_write(const struct shell *shell, size_t argc, char **argv)
 				return -ENOEXEC;
 			}
 
-			buf_len = 0;
+			buf_len = 0U;
 		}
 	}
 

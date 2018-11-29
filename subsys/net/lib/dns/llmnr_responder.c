@@ -467,7 +467,7 @@ static int dns_read(struct net_context *ctx,
 	int hostname_len = strlen(hostname);
 	struct net_buf *result;
 	struct dns_msg_t dns_msg;
-	u16_t dns_id = 0;
+	u16_t dns_id = 0U;
 	int data_len;
 	int queries;
 	int offset;

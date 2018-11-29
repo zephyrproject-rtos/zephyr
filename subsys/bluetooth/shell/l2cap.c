@@ -68,8 +68,8 @@ static int l2cap_recv_metrics(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	 * reset the metrics.
 	 */
 	if (delta > 1000000000) {
-		len = 0;
-		l2cap_rate = 0;
+		len = 0U;
+		l2cap_rate = 0U;
 		cycle_stamp = k_cycle_get_32();
 	} else {
 		len += buf->len;

@@ -36,9 +36,9 @@ int cmd_ll_addr_get(const struct shell *shell, size_t argc, char *argv[])
 
 	str_type = argv[1];
 	if (!strcmp(str_type, "random")) {
-		addr_type = 1;
+		addr_type = 1U;
 	} else if (!strcmp(str_type, "public")) {
-		addr_type = 0;
+		addr_type = 0U;
 	} else {
 		return -EINVAL;
 	}
@@ -149,10 +149,10 @@ int cmd_advx(const struct shell *shell, size_t argc, char *argv[])
 
 	if (argc > 1) {
 		if (!strcmp(argv[1], "on")) {
-			evt_prop = 0;
-			enable = 1;
+			evt_prop = 0U;
+			enable = 1U;
 		} else if (!strcmp(argv[1], "off")) {
-			enable = 0;
+			enable = 0U;
 			goto disable;
 		} else {
 			return -EINVAL;
@@ -216,7 +216,7 @@ exit:
 
 int cmd_scanx(const struct shell *shell, size_t  argc, char *argv[])
 {
-	u8_t type = 0;
+	u8_t type = 0U;
 	u8_t enable;
 	s32_t err;
 
@@ -226,13 +226,13 @@ int cmd_scanx(const struct shell *shell, size_t  argc, char *argv[])
 
 	if (argc > 1) {
 		if (!strcmp(argv[1], "on")) {
-			enable = 1;
-			type = 1;
+			enable = 1U;
+			type = 1U;
 		} else if (!strcmp(argv[1], "passive")) {
-			enable = 1;
-			type = 0;
+			enable = 1U;
+			type = 0U;
 		} else if (!strcmp(argv[1], "off")) {
-			enable = 0;
+			enable = 0U;
 			goto disable;
 		} else {
 			return -EINVAL;

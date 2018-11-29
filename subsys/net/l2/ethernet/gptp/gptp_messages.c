@@ -369,9 +369,9 @@ struct net_pkt *gptp_prepare_pdelay_resp(int port,
 	       GPTP_CLOCK_ID_LEN);
 
 	/* PTP configuration. */
-	pdelay_resp->req_receipt_ts_secs_high = 0;
-	pdelay_resp->req_receipt_ts_secs_low = 0;
-	pdelay_resp->req_receipt_ts_nsecs = 0;
+	pdelay_resp->req_receipt_ts_secs_high = 0U;
+	pdelay_resp->req_receipt_ts_secs_low = 0U;
+	pdelay_resp->req_receipt_ts_nsecs = 0U;
 
 	memcpy(&pdelay_resp->requesting_port_id,
 	       &query->port_id, sizeof(struct gptp_port_identity));
@@ -432,9 +432,9 @@ struct net_pkt *gptp_prepare_pdelay_follow_up(int port,
 	       GPTP_CLOCK_ID_LEN);
 
 	/* PTP configuration. */
-	follow_up->resp_orig_ts_secs_high = 0;
-	follow_up->resp_orig_ts_secs_low = 0;
-	follow_up->resp_orig_ts_nsecs = 0;
+	follow_up->resp_orig_ts_secs_high = 0U;
+	follow_up->resp_orig_ts_secs_low = 0U;
+	follow_up->resp_orig_ts_nsecs = 0U;
 
 	memcpy(&follow_up->requesting_port_id,
 	       &pdelay_resp->requesting_port_id,
@@ -533,7 +533,7 @@ struct net_pkt *gptp_prepare_announce(int port)
 
 	/* Clear reserved fields. */
 	(void)memset(ann->reserved1, 0, sizeof(ann->reserved1));
-	ann->reserved2 = 0;
+	ann->reserved2 = 0U;
 
 	hdr->message_length = htons(sizeof(struct gptp_hdr) +
 				    sizeof(struct gptp_announce) - 8 +

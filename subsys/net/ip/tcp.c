@@ -128,7 +128,7 @@ static void net_tcp_trace(struct net_pkt *pkt, struct net_tcp *tcp)
 	ack = sys_get_be32(tcp_hdr->ack);
 
 	if (!tcp->sent_ack) {
-		rel_ack = 0;
+		rel_ack = 0U;
 	} else {
 		rel_ack = ack ? ack - tcp->sent_ack : 0;
 	}
@@ -392,7 +392,7 @@ static int prepare_segment(struct net_tcp *tcp,
 	struct net_pkt *alloc_pkt;
 	u16_t dst_port, src_port;
 	bool pkt_allocated;
-	u8_t optlen = 0;
+	u8_t optlen = 0U;
 	int status;
 
 	NET_ASSERT(context);
@@ -668,13 +668,13 @@ static void net_tcp_set_syn_opt(struct net_tcp *tcp, u8_t *options,
 {
 	u32_t recv_mss;
 
-	*optionlen = 0;
+	*optionlen = 0U;
 
 	if (!(tcp->flags & NET_TCP_RECV_MSS_SET)) {
 		recv_mss = net_tcp_get_recv_mss(tcp);
 		tcp->flags |= NET_TCP_RECV_MSS_SET;
 	} else {
-		recv_mss = 0;
+		recv_mss = 0U;
 	}
 
 	recv_mss |= (NET_TCP_MSS_OPT << 24) | (NET_TCP_MSS_SIZE << 16);
@@ -764,9 +764,9 @@ int net_tcp_prepare_reset(struct net_tcp *tcp,
 		}
 
 		segment.dst_addr = remote;
-		segment.wnd = 0;
+		segment.wnd = 0U;
 		segment.options = NULL;
-		segment.optlen = 0;
+		segment.optlen = 0U;
 
 		status = prepare_segment(tcp, &segment, NULL, pkt);
 	}
@@ -960,7 +960,7 @@ static void restart_timer(struct net_tcp *tcp)
 {
 	if (!sys_slist_is_empty(&tcp->sent_list)) {
 		tcp->flags |= NET_TCP_RETRYING;
-		tcp->retry_timeout_shift = 0;
+		tcp->retry_timeout_shift = 0U;
 		k_delayed_work_submit(&tcp->retry_timer, retry_timeout(tcp));
 	} else if (CONFIG_NET_TCP_TIME_WAIT_DELAY != 0 &&
 			(tcp->fin_sent && tcp->fin_rcvd)) {
@@ -1354,7 +1354,7 @@ u16_t net_tcp_get_chksum(struct net_pkt *pkt, struct net_buf *frag)
 struct net_buf *net_tcp_set_chksum(struct net_pkt *pkt, struct net_buf *frag)
 {
 	struct net_tcp_hdr *hdr;
-	u16_t chksum = 0;
+	u16_t chksum = 0U;
 	u16_t pos;
 
 	hdr = net_pkt_tcp_data(pkt);
@@ -1417,7 +1417,7 @@ int net_tcp_parse_opts(struct net_pkt *pkt, int opt_totlen,
 		}
 
 		if (!opt_totlen) {
-			optlen = 0;
+			optlen = 0U;
 			goto error;
 		}
 
@@ -1877,7 +1877,7 @@ static inline int send_syn_segment(struct net_context *context,
 	struct net_pkt *pkt = NULL;
 	int ret;
 	u8_t options[NET_TCP_MAX_OPT_SIZE];
-	u8_t optionlen = 0;
+	u8_t optionlen = 0U;
 
 	if (flags == NET_TCP_SYN) {
 		net_tcp_set_syn_opt(context->tcp, options, &optionlen);
@@ -2541,7 +2541,7 @@ int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 {
 	struct sockaddr local_addr;
 	struct sockaddr *laddr = NULL;
-	u16_t lport = 0;
+	u16_t lport = 0U;
 	int ret;
 
 	NET_ASSERT(context->tcp);

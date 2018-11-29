@@ -93,7 +93,7 @@ static inline void reschedule(struct net_trickle *trickle)
 
 	/* Did the clock wrap */
 	if ((s32_t)diff < 0) {
-		diff = 0;
+		diff = 0U;
 		NET_DBG("Clock wrap");
 	}
 

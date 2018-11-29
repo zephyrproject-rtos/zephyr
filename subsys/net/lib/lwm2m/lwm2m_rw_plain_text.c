@@ -353,7 +353,7 @@ int do_write_op_plain_text(struct lwm2m_engine_obj *obj,
 	struct lwm2m_engine_obj_field *obj_field;
 	struct lwm2m_engine_res_inst *res = NULL;
 	int ret, i;
-	u8_t created = 0;
+	u8_t created = 0U;
 
 	ret = lwm2m_get_or_create_engine_obj(context, &obj_inst, &created);
 	if (ret < 0) {
@@ -384,6 +384,6 @@ int do_write_op_plain_text(struct lwm2m_engine_obj *obj,
 		return -ENOENT;
 	}
 
-	context->path->level = 3;
+	context->path->level = 3U;
 	return lwm2m_write_handler(obj_inst, res, obj_field, context);
 }

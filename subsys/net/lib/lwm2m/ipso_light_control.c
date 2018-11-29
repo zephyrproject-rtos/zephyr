@@ -139,9 +139,9 @@ static struct lwm2m_engine_obj_inst *light_control_create(u16_t obj_inst_id)
 
 	/* Set default values */
 	on_off_value[avail] = false;
-	dimmer_value[avail] = 0;
+	dimmer_value[avail] = 0U;
 	on_time_value[avail] = 0;
-	on_time_offset[avail] = 0;
+	on_time_offset[avail] = 0U;
 	cumulative_active_value[avail].val1 = 0;
 	cumulative_active_value[avail].val2 = 0;
 	power_factor_value[avail].val1 = 0;

@@ -461,7 +461,7 @@ struct http_root_url *http_url_find(struct http_ctx *ctx,
 	u8_t i;
 	int ret;
 
-	for (i = 0; i < CONFIG_HTTP_SERVER_NUM_URLS; i++) {
+	for (i = 0U; i < CONFIG_HTTP_SERVER_NUM_URLS; i++) {
 		if (!ctx->http.urls) {
 			continue;
 		}
@@ -560,7 +560,7 @@ static void http_received(struct net_app_ctx *app_ctx,
 {
 	struct http_ctx *ctx = user_data;
 	size_t start = ctx->http.data_len;
-	u16_t len = 0;
+	u16_t len = 0U;
 	const struct sockaddr *dst = NULL;
 	struct net_buf *frag;
 	int parsed_len;
@@ -636,7 +636,7 @@ static void http_received(struct net_app_ctx *app_ctx,
 			}
 
 			ctx->http.data_len = 0;
-			len = 0;
+			len = 0U;
 			start = 0;
 		}
 
@@ -684,7 +684,7 @@ quit:
 ws_only:
 	if (ctx->cb.recv) {
 #if defined(CONFIG_WEBSOCKET)
-		u32_t msg_len, header_len = 0;
+		u32_t msg_len, header_len = 0U;
 		bool masked = true;
 		int ret;
 

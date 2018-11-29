@@ -151,7 +151,7 @@ static int pack_utf8_str(const struct mqtt_utf8 *str, struct buf_ctx *buf)
  */
 static u8_t packet_length_encode(u32_t length, struct buf_ctx *buf)
 {
-	u8_t encoded_bytes = 0;
+	u8_t encoded_bytes = 0U;
 
 	MQTT_TRC(">> length:0x%08x cur:%p, end:%p", length,
 		 (buf == NULL) ? 0 : buf->cur, (buf == NULL) ? 0 : buf->end);

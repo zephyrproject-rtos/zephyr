@@ -58,7 +58,7 @@ void ws_mask_pkt(struct net_pkt *pkt, u32_t masking_value, u32_t *data_read)
 				masking_value >> (8 * (3 - (*data_read) % 4));
 		}
 
-		pos = 0;
+		pos = 0U;
 		frag = frag->frags;
 	}
 }
@@ -68,7 +68,7 @@ int ws_send_msg(struct http_ctx *ctx, u8_t *payload, size_t payload_len,
 		const struct sockaddr *dst,
 		void *user_send_data)
 {
-	u8_t header[14], hdr_len = 2;
+	u8_t header[14], hdr_len = 2U;
 	int ret;
 
 	if (ctx->state != HTTP_STATE_OPEN) {
@@ -101,10 +101,10 @@ int ws_send_msg(struct http_ctx *ctx, u8_t *payload, size_t payload_len,
 		hdr_len += 2;
 	} else {
 		header[1] |= 127;
-		header[2] = 0;
-		header[3] = 0;
-		header[4] = 0;
-		header[5] = 0;
+		header[2] = 0U;
+		header[3] = 0U;
+		header[4] = 0U;
+		header[5] = 0U;
 		header[6] = payload_len >> 24;
 		header[7] = payload_len >> 16;
 		header[8] = payload_len >> 8;
@@ -186,12 +186,12 @@ int ws_strip_header(struct net_pkt *pkt, bool *masked, u32_t *mask_value,
 
 	len = value & 0x007f;
 	if (len < 126) {
-		len_len = 0;
+		len_len = 0U;
 		*message_length = len;
 	} else if (len == 126) {
 		u16_t msg_len;
 
-		len_len = 2;
+		len_len = 2U;
 
 		frag = net_frag_read_be16(frag, pos, &pos, &msg_len);
 		if (!frag && pos == 0xffff) {
@@ -200,7 +200,7 @@ int ws_strip_header(struct net_pkt *pkt, bool *masked, u32_t *mask_value,
 
 		*message_length = msg_len;
 	} else {
-		len_len = 4;
+		len_len = 4U;
 
 		frag = net_frag_read_be32(frag, pos, &pos, message_length);
 		if (!frag && pos == 0xffff) {
@@ -210,7 +210,7 @@ int ws_strip_header(struct net_pkt *pkt, bool *masked, u32_t *mask_value,
 
 	if (value & 0x0080) {
 		*masked = true;
-		appdata_pos = 0;
+		appdata_pos = 0U;
 
 		frag = net_frag_read_be32(frag, pos, &pos, mask_value);
 		if (!frag && pos == 0xffff) {

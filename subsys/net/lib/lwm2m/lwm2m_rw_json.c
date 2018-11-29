@@ -127,7 +127,7 @@ static int json_next_token(struct lwm2m_input_context *in,
 	bool escape = false;
 
 	(void)memset(json, 0, sizeof(struct json_data));
-	cont = 1;
+	cont = 1U;
 
 	/* We will be either at start, or at a specific position */
 	while (in->frag && in->offset != 0xffff && cont) {
@@ -160,7 +160,7 @@ static int json_next_token(struct lwm2m_input_context *in,
 				    json_type == T_STRING) {
 					json->value[json->value_len] = '\0';
 					json_type = T_NONE;
-					cont = 0;
+					cont = 0U;
 				}
 			} else {
 				json_add_char(json, c, json_type);
@@ -174,7 +174,7 @@ static int json_next_token(struct lwm2m_input_context *in,
 				json_type = T_STRING;
 			} else if (!escape) {
 				json_type = T_STRING_B;
-				json->name_len = 0;
+				json->name_len = 0U;
 			} else {
 				json_add_char(json, c, json_type);
 			}
@@ -545,10 +545,10 @@ static int parse_path(const u8_t *buf, u16_t buflen,
 	int ret = 0;
 	int pos = 0;
 	u16_t val;
-	u8_t c = 0;
+	u8_t c = 0U;
 
 	do {
-		val = 0;
+		val = 0U;
 		c = buf[pos];
 		/* we should get a value first - consume all numbers */
 		while (pos < buflen && isdigit(c)) {
@@ -591,7 +591,7 @@ int do_write_op_json(struct lwm2m_engine_obj *obj,
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
 	struct lwm2m_engine_res_inst *res = NULL;
 	struct json_data json;
-	u8_t olv = 0;
+	u8_t olv = 0U;
 	u8_t created;
 	int i, r;
 	u8_t mode = MODE_NONE;
@@ -600,7 +600,7 @@ int do_write_op_json(struct lwm2m_engine_obj *obj,
 
 	while (json_next_token(in, &json)) {
 		i = 0;
-		created = 0;
+		created = 0U;
 		if (json.name[0] == 'n') {
 			path->level = parse_path(json.value, json.value_len,
 						 path);

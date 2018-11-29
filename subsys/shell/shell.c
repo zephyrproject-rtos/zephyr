@@ -495,7 +495,7 @@ static void find_completion_candidates(const struct shell_static_entry *cmd,
 	bool found = false;
 	size_t idx = 0;
 
-	*longest = 0;
+	*longest = 0U;
 	*cnt = 0;
 
 	while (true) {
@@ -1719,7 +1719,7 @@ static void help_subcmd_print(const struct shell *shell)
 {
 	const struct shell_static_entry *entry = NULL;
 	struct shell_static_entry static_entry;
-	u16_t longest_syntax = 0;
+	u16_t longest_syntax = 0U;
 	size_t cmd_idx = 0;
 
 	/* Checking if there are any subcommands available. */

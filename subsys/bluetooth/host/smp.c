@@ -959,7 +959,7 @@ static void smp_br_distribute_keys(struct bt_smp_br *smp)
 		if (atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {
 			bt_keys_add_type(keys, BT_KEYS_LOCAL_CSRK);
 			memcpy(keys->local_csrk.val, info->csrk, 16);
-			keys->local_csrk.cnt = 0;
+			keys->local_csrk.cnt = 0U;
 		}
 
 		smp_br_send(smp, buf, sign_info_sent);
@@ -1671,7 +1671,7 @@ static u8_t smp_send_pairing_confirm(struct bt_smp *smp)
 	switch (smp->method) {
 	case PASSKEY_CONFIRM:
 	case JUST_WORKS:
-		r = 0;
+		r = 0U;
 		break;
 	case PASSKEY_DISPLAY:
 	case PASSKEY_INPUT:
@@ -1843,7 +1843,7 @@ static void bt_smp_distribute_keys(struct bt_smp *smp)
 		if (atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {
 			bt_keys_add_type(keys, BT_KEYS_LOCAL_CSRK);
 			memcpy(keys->local_csrk.val, info->csrk, 16);
-			keys->local_csrk.cnt = 0;
+			keys->local_csrk.cnt = 0U;
 		}
 
 		smp_send(smp, buf, sign_info_sent);
@@ -2878,7 +2878,7 @@ static u8_t sc_smp_check_confirm(struct bt_smp *smp)
 	switch (smp->method) {
 	case PASSKEY_CONFIRM:
 	case JUST_WORKS:
-		r = 0;
+		r = 0U;
 		break;
 	case PASSKEY_DISPLAY:
 	case PASSKEY_INPUT:
@@ -3299,7 +3299,7 @@ static u8_t display_passkey(struct bt_smp *smp)
 		smp->passkey %= 1000000;
 	}
 
-	smp->passkey_round = 0;
+	smp->passkey_round = 0U;
 
 	if (bt_auth && bt_auth->passkey_display) {
 		atomic_set_bit(smp->flags, SMP_FLAG_DISPLAY);

@@ -67,7 +67,7 @@ void *mem_acquire(void **mem_head)
 
 void mem_release(void *mem, void **mem_head)
 {
-	u16_t free_count = 0;
+	u16_t free_count = 0U;
 
 	/* Get the free count from the list and increment it */
 	if (*mem_head) {
@@ -86,7 +86,7 @@ void mem_release(void *mem, void **mem_head)
 
 u16_t mem_free_count_get(void *mem_head)
 {
-	u16_t free_count = 0;
+	u16_t free_count = 0U;
 
 	/* Get the free count from the list */
 	if (mem_head) {

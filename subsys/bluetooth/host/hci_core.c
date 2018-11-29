@@ -623,7 +623,7 @@ static void hci_disconn_complete(struct net_buf *buf)
 	STACK_ANALYZE("tx stack", tx_thread_stack);
 
 	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
-	conn->handle = 0;
+	conn->handle = 0U;
 
 	if (conn->type != BT_CONN_TYPE_LE) {
 #if defined(CONFIG_BT_BREDR)
@@ -885,7 +885,7 @@ static void le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 	conn->le.latency = sys_le16_to_cpu(evt->latency);
 	conn->le.timeout = sys_le16_to_cpu(evt->supv_timeout);
 	conn->role = evt->role;
-	conn->err = 0;
+	conn->err = 0U;
 
 	/*
 	 * Use connection address (instead of identity address) as initiator
@@ -1619,7 +1619,7 @@ static void conn_complete(struct net_buf *buf)
 	}
 
 	conn->handle = handle;
-	conn->err = 0;
+	conn->err = 0U;
 	conn->encrypt = evt->encr_enabled;
 	update_sec_level_br(conn);
 	bt_conn_set_state(conn, BT_CONN_CONNECTED);
@@ -1676,7 +1676,7 @@ static void link_key_notify(struct net_buf *buf)
 	}
 
 	/* clear any old Link Key flags */
-	conn->br.link_key->flags = 0;
+	conn->br.link_key->flags = 0U;
 
 	switch (evt->key_type) {
 	case BT_LK_COMBINATION:
@@ -2054,7 +2054,7 @@ static void report_discovery_results(void)
 			continue;
 		}
 
-		priv->resolving = 1;
+		priv->resolving = 1U;
 		resolving_names = true;
 	}
 
@@ -2214,7 +2214,7 @@ static void remote_name_request_complete(struct net_buf *buf)
 	}
 
 	priv = (struct discovery_priv *)&result->_priv;
-	priv->resolving = 0;
+	priv->resolving = 0U;
 
 	if (evt->status) {
 		goto check_names;
@@ -3594,7 +3594,7 @@ static void read_bdaddr_complete(struct net_buf *buf)
 
 	bt_addr_copy(&bt_dev.id_addr[0].a, &rp->bdaddr);
 	bt_dev.id_addr[0].type = BT_ADDR_LE_PUBLIC;
-	bt_dev.id_count = 1;
+	bt_dev.id_count = 1U;
 }
 
 static void read_le_features_complete(struct net_buf *buf)
@@ -3777,7 +3777,7 @@ static int le_set_event_mask(void)
 {
 	struct bt_hci_cp_le_set_event_mask *cp_mask;
 	struct net_buf *buf;
-	u64_t mask = 0;
+	u64_t mask = 0U;
 
 	/* Set LE event mask */
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_EVENT_MASK, sizeof(*cp_mask));
@@ -4170,7 +4170,7 @@ static int set_event_mask(void)
 {
 	struct bt_hci_cp_set_event_mask *ev;
 	struct net_buf *buf;
-	u64_t mask = 0;
+	u64_t mask = 0U;
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_SET_EVENT_MASK, sizeof(*ev));
 	if (!buf) {
@@ -4864,7 +4864,7 @@ static int id_find(const bt_addr_le_t *addr)
 {
 	u8_t id;
 
-	for (id = 0; id < bt_dev.id_count; id++) {
+	for (id = 0U; id < bt_dev.id_count; id++) {
 		if (!bt_addr_le_cmp(addr, &bt_dev.id_addr[id])) {
 			return id;
 		}

@@ -1057,7 +1057,7 @@ static void bt_conn_reset_rx_state(struct bt_conn *conn)
 
 	net_buf_unref(conn->rx);
 	conn->rx = NULL;
-	conn->rx_len = 0;
+	conn->rx_len = 0U;
 }
 
 void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, u8_t flags)
@@ -1122,7 +1122,7 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, u8_t flags)
 
 		buf = conn->rx;
 		conn->rx = NULL;
-		conn->rx_len = 0;
+		conn->rx_len = 0U;
 
 		break;
 	default:

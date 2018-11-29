@@ -711,7 +711,7 @@ __deprecated static inline void net_rpl_dag_set_not_used(
 {
 	NET_ASSERT(dag);
 
-	dag->is_used = 0;
+	dag->is_used = 0U;
 }
 
 /**
@@ -723,7 +723,7 @@ __deprecated static inline void net_rpl_dag_set_used(struct net_rpl_dag *dag)
 {
 	NET_ASSERT(dag);
 
-	dag->is_used = 1;
+	dag->is_used = 1U;
 }
 
 /**
@@ -777,7 +777,7 @@ __deprecated static inline void net_rpl_dag_join(struct net_rpl_dag *dag)
 {
 	NET_ASSERT(dag);
 
-	dag->is_joined = 1;
+	dag->is_joined = 1U;
 }
 
 /**
@@ -789,7 +789,7 @@ __deprecated static inline void net_rpl_dag_unjoin(struct net_rpl_dag *dag)
 {
 	NET_ASSERT(dag);
 
-	dag->is_joined = 0;
+	dag->is_joined = 0U;
 }
 
 /**

@@ -34,7 +34,7 @@ void settings_init(void)
 		sys_slist_init(&settings_handlers);
 		settings_store_init();
 
-		settings_cmd_inited = 1;
+		settings_cmd_inited = 1U;
 	}
 }
 
@@ -211,7 +211,7 @@ char *settings_str_from_value(enum settings_type type, void *vp, char *buf,
 
 static void u64_to_dec(char *ptr, int buf_len, u64_t value, int base)
 {
-	u64_t t = 0, res = 0;
+	u64_t t = 0U, res = 0U;
 	u64_t tmp = value;
 	int count = 0;
 
@@ -265,7 +265,7 @@ static void s64_to_dec(char *ptr, int buf_len, s64_t value, int base)
 
 static s64_t dec_to_s64(char *p_str, char **e_ptr)
 {
-	u64_t val = 0, prev_val = 0;
+	u64_t val = 0U, prev_val = 0U;
 	bool neg = false;
 	int digit;
 

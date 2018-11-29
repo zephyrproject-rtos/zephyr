@@ -100,7 +100,7 @@ static int net_rpl_mrhof_neighbor_link_cb(struct net_if *iface,
 					  int status, int numtx)
 {
 	u16_t packet_etx = numtx * NET_RPL_MC_ETX_DIVISOR;
-	u16_t recorded_etx = 0;
+	u16_t recorded_etx = 0U;
 	struct net_ipv6_nbr_data *data;
 	u16_t new_etx;
 
@@ -261,7 +261,7 @@ static u16_t net_rpl_mrhof_calc_rank(struct net_rpl_parent *parent,
 				     u16_t base_rank)
 {
 	u16_t new_rank;
-	u16_t rank_increase = 0;
+	u16_t rank_increase = 0U;
 	struct net_ipv6_nbr_data *data;
 
 	if (!parent) {
@@ -320,7 +320,7 @@ static int net_rpl_mrhof_update_mc(struct net_rpl_instance *instance)
 
 	instance->mc.flags = NET_RPL_MC_FLAG_P;
 	instance->mc.aggregated = NET_RPL_MC_A_ADDITIVE;
-	instance->mc.precedence = 0;
+	instance->mc.precedence = 0U;
 
 	dag = instance->current_dag;
 
@@ -330,7 +330,7 @@ static int net_rpl_mrhof_update_mc(struct net_rpl_instance *instance)
 	}
 
 	if (dag->rank == NET_RPL_ROOT_RANK(instance)) {
-		path_metric = 0;
+		path_metric = 0U;
 	} else {
 		path_metric = calculate_path_metric(dag->preferred_parent);
 	}

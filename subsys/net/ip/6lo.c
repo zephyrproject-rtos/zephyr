@@ -110,7 +110,7 @@ void net_6lo_set_context(struct net_if *iface,
 	/* If the context information already exists, update or remove
 	 * as per data.
 	 */
-	for (i = 0; i < CONFIG_NET_MAX_6LO_CONTEXTS; i++) {
+	for (i = 0U; i < CONFIG_NET_MAX_6LO_CONTEXTS; i++) {
 		if (!ctx_6co[i].is_used) {
 			unused = i;
 			continue;
@@ -145,7 +145,7 @@ get_6lo_context_by_cid(struct net_if *iface, u8_t cid)
 {
 	u8_t i;
 
-	for (i = 0; i < CONFIG_NET_MAX_6LO_CONTEXTS; i++) {
+	for (i = 0U; i < CONFIG_NET_MAX_6LO_CONTEXTS; i++) {
 		if (!ctx_6co[i].is_used) {
 			continue;
 		}
@@ -164,7 +164,7 @@ get_6lo_context_by_addr(struct net_if *iface, struct in6_addr *addr)
 {
 	u8_t i;
 
-	for (i = 0; i < CONFIG_NET_MAX_6LO_CONTEXTS; i++) {
+	for (i = 0U; i < CONFIG_NET_MAX_6LO_CONTEXTS; i++) {
 		if (!ctx_6co[i].is_used) {
 			continue;
 		}
@@ -682,7 +682,7 @@ static inline bool compress_IPHC_header(struct net_pkt *pkt,
 	struct net_6lo_context *dst = NULL;
 #endif
 	struct net_ipv6_hdr *ipv6 = NET_IPV6_HDR(pkt);
-	u8_t offset = 0;
+	u8_t offset = 0U;
 	struct net_buf *frag;
 	u8_t compressed;
 
@@ -1217,8 +1217,8 @@ static inline void uncompress_cid(struct net_pkt *pkt,
 static inline bool uncompress_IPHC_header(struct net_pkt *pkt)
 {
 	struct net_udp_hdr *udp = NULL;
-	u8_t offset = 2;
-	u8_t chksum = 0;
+	u8_t offset = 2U;
+	u8_t chksum = 0U;
 	struct net_ipv6_hdr *ipv6;
 	struct net_buf *frag;
 	u16_t len;

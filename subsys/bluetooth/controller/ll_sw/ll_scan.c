@@ -59,7 +59,7 @@ u32_t ll_scan_params_set(u8_t type, u16_t interval, u16_t window,
 
 u32_t ll_scan_enable(u8_t enable)
 {
-	u8_t rpa_gen = 0;
+	u8_t rpa_gen = 0U;
 	u32_t status;
 	u32_t scan;
 
@@ -87,7 +87,7 @@ u32_t ll_scan_enable(u8_t enable)
 	     ll_scan.own_addr_type == BT_ADDR_LE_RANDOM_ID)) {
 		/* Generate RPAs if required */
 		ll_rl_rpa_update(false);
-		rpa_gen = 1;
+		rpa_gen = 1U;
 	}
 #endif
 	status = radio_scan_enable(ll_scan.type, ll_scan.own_addr_type & 0x1,

@@ -55,9 +55,9 @@ int dns_msg_pack_qname(u16_t *len, u8_t *buf, u16_t size,
 	u16_t lb_size;
 	u16_t i;
 
-	lb_start = 0;
-	lb_index = 1;
-	lb_size = 0;
+	lb_start = 0U;
+	lb_index = 1U;
+	lb_size = 0U;
 
 	dn_size = dns_strlen(domain_name);
 	if (dn_size == 0) {
@@ -65,7 +65,7 @@ int dns_msg_pack_qname(u16_t *len, u8_t *buf, u16_t size,
 	}
 
 	/* traverse the domain name str, including the null-terminator :) */
-	for (i = 0; i < dn_size + 1; i++) {
+	for (i = 0U; i < dn_size + 1; i++) {
 		if (lb_index >= size) {
 			return -ENOMEM;
 		}
@@ -77,12 +77,12 @@ int dns_msg_pack_qname(u16_t *len, u8_t *buf, u16_t size,
 			break;
 		case '.':
 			buf[lb_start] = lb_size;
-			lb_size = 0;
+			lb_size = 0U;
 			lb_start = lb_index;
 			break;
 		case '\0':
 			buf[lb_start] = lb_size;
-			buf[lb_index] = 0;
+			buf[lb_index] = 0U;
 			break;
 		}
 		lb_index += 1;
@@ -354,7 +354,7 @@ int dns_copy_qname(u8_t *buf, u16_t *len, u16_t size,
 	int rc = -EINVAL;
 	int i = 0;
 
-	*len = 0;
+	*len = 0U;
 
 	/* Iterate ANCOUNT + 1 to allow the Query's QNAME to be parsed.
 	 * This is required to avoid 'alias loops'

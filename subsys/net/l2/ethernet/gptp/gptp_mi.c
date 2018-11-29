@@ -1738,7 +1738,7 @@ static void gptp_updt_roles_tree(void)
 		global_ds->current_utc_offset =
 			global_ds->sys_current_utc_offset;
 		global_ds->time_source = global_ds->sys_time_source;
-		global_ds->master_steps_removed = 0;
+		global_ds->master_steps_removed = 0U;
 	} else {
 		bmca_data = GPTP_PORT_BMCA_DATA(best_port);
 

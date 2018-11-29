@@ -717,7 +717,7 @@ static void new_dio_interval(struct net_rpl_instance *instance)
 		"ROOT" : "");
 #endif /* CONFIG_NET_STATISTICS_RPL */
 
-	instance->dio_counter = 0;
+	instance->dio_counter = 0U;
 	instance->dio_send = true;
 
 	k_delayed_work_submit(&instance->dio_timer, time);
@@ -727,7 +727,7 @@ static void net_rpl_dio_reset_timer(struct net_rpl_instance *instance)
 {
 	if (instance->dio_interval_current > instance->dio_interval_min) {
 		instance->dio_interval_current = instance->dio_interval_min;
-		instance->dio_counter = 0;
+		instance->dio_counter = 0U;
 
 		new_dio_interval(instance);
 	}
@@ -1022,7 +1022,7 @@ static void dao_timer(struct net_rpl_instance *instance)
 #endif
 
 #if defined(CONFIG_NET_RPL_DAO_ACK)
-		instance->dao_transmissions = 1;
+		instance->dao_transmissions = 1U;
 		k_delayed_work_submit(&instance->dao_retransmit_timer,
 				      NET_RPL_DAO_RETRANSMIT_TIMEOUT);
 #endif
@@ -1317,7 +1317,7 @@ static void net_rpl_reset_dio_timer(struct net_rpl_instance *instance)
 	 * unless forced to do so.
 	 */
 	if (instance->dio_interval_current > instance->dio_interval_min) {
-		instance->dio_counter = 0;
+		instance->dio_counter = 0U;
 		instance->dio_interval_current = instance->dio_interval_min;
 		new_dio_interval(instance);
 	}
@@ -2210,7 +2210,7 @@ static void send_mcast_dao(struct net_rpl_instance *instance)
 	u8_t i;
 
 	/* Send a DAO for own multicast addresses */
-	for (i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
+	for (i = 0U; i < NET_IF_MAX_IPV6_MADDR; i++) {
 		addr =
 		   &instance->iface->config.ip.ipv6->mcast[i].address.in6_addr;
 
@@ -2875,7 +2875,7 @@ static enum net_verdict handle_dio(struct net_pkt *pkt)
 
 	/* Handle any DIO suboptions */
 	while (frag) {
-		len = 0;
+		len = 0U;
 		frag = net_frag_read_u8(frag, pos, &pos, &subopt_type);
 		if (!frag && pos == 0) {
 			/* We are at the end of the message */
@@ -3050,7 +3050,7 @@ int net_rpl_dao_send(struct net_if *iface,
 		     struct in6_addr *prefix,
 		     u8_t lifetime)
 {
-	u16_t value = 0;
+	u16_t value = 0U;
 	struct net_rpl_instance *instance;
 	const struct in6_addr *src;
 	struct net_rpl_dag *dag;
@@ -3437,11 +3437,11 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 		}
 	}
 
-	target_len = 0;
+	target_len = 0U;
 
 	/* Handle any DAO suboptions */
 	while (frag) {
-		len = 0;
+		len = 0U;
 		frag = net_frag_read_u8(frag, pos, &pos, &subopt_type);
 		if (!frag && pos == 0) {
 			/* We are at the end of the message */
@@ -3771,7 +3771,7 @@ static struct net_icmpv6_handler dao_ack_handler = {
 
 int net_rpl_update_header(struct net_pkt *pkt, struct in6_addr *addr)
 {
-	u16_t pos = 0;
+	u16_t pos = 0U;
 	struct net_rpl_parent *parent;
 	struct net_buf *frag;
 	u16_t sender_rank;
@@ -4032,7 +4032,7 @@ static int net_rpl_update_header_empty(struct net_pkt *pkt)
 	struct net_rpl_parent *parent;
 	struct net_route_entry *route;
 	u8_t next_hdr, len, length;
-	u8_t opt_type = 0, opt_len;
+	u8_t opt_type = 0U, opt_len;
 	u8_t instance_id, flags;
 	u16_t pos;
 	int ret;
@@ -4058,7 +4058,7 @@ static int net_rpl_update_header_empty(struct net_pkt *pkt)
 		return 0;
 	}
 
-	length = 0;
+	length = 0U;
 
 	if (len != NET_RPL_HOP_BY_HOP_LEN - 8) {
 		NET_DBG("Hop-by-hop ext header is wrong size "

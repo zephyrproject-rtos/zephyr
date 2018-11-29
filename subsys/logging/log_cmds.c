@@ -109,7 +109,7 @@ static int log_status(const struct shell *shell,
 	shell_fprintf(shell, SHELL_NORMAL,
 	      "----------------------------------------------------------\r\n");
 
-	for (i = 0; i < modules_cnt; i++) {
+	for (i = 0U; i < modules_cnt; i++) {
 		dynamic_lvl = log_filter_get(backend, CONFIG_LOG_DOMAIN_ID,
 					     i, true);
 		compiled_lvl = log_filter_get(backend, CONFIG_LOG_DOMAIN_ID,
@@ -148,7 +148,7 @@ static int module_id_get(const char *name)
 	const char *tmp_name;
 	u32_t i;
 
-	for (i = 0; i < modules_cnt; i++) {
+	for (i = 0U; i < modules_cnt; i++) {
 		tmp_name = log_source_name_get(CONFIG_LOG_DOMAIN_ID, i);
 
 		if (strncmp(tmp_name, name, 64) == 0) {
