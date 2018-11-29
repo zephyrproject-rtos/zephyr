@@ -32,4 +32,6 @@ source "drivers/counter/Kconfig.nrfx"
 
 source "drivers/counter/Kconfig.imx_epit"
 
+source "drivers/counter/Kconfig.stm32_rtc"
+
 endif # COUNTER

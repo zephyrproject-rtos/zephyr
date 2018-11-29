@@ -79,4 +79,11 @@ config RTC_STM32
 
 endif # RTC
 
+if COUNTER
+
+config COUNTER_RTC_STM32
+	default y
+
+endif # COUNTER
+
 endif # SOC_FAMILY_STM32
