@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016-2018 Intel Corporation.
+ * Copyright (c) 2018 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -56,34 +57,6 @@ static const u8_t hid_report_desc[] = {
 	HID_MI_COLLECTION_END,
 };
 
-static int debug_cb(struct usb_setup_packet *setup, s32_t *len,
-		    u8_t **data)
-{
-	LOG_DBG("Debug callback");
-
-	return -ENOTSUP;
-}
-
-static int set_idle_cb(struct usb_setup_packet *setup, s32_t *len,
-		       u8_t **data)
-{
-	LOG_DBG("Set Idle callback");
-
-	/* TODO: Do something */
-
-	return 0;
-}
-
-static int get_report_cb(struct usb_setup_packet *setup, s32_t *len,
-			 u8_t **data)
-{
-	LOG_DBG("Get report callback");
-
-	/* TODO: Do something */
-
-	return 0;
-}
-
 static void send_report(struct k_work *work)
 {
 	static u8_t report_1[2] = { REPORT_ID_1, 0x00 };
@@ -117,12 +90,6 @@ static void status_cb(enum usb_dc_status_code status, const u8_t *param)
 }
 
 static const struct hid_ops ops = {
-	.get_report = get_report_cb,
-	.get_idle = debug_cb,
-	.get_protocol = debug_cb,
-	.set_report = debug_cb,
-	.set_idle = set_idle_cb,
-	.set_protocol = debug_cb,
 	.int_in_ready = in_ready_cb,
 	.status_cb = status_cb,
 };
