@@ -47,7 +47,7 @@ static inline int isxdigit(int a)
 {
 	unsigned int ua = (unsigned int)a;
 
-	return ((ua - '0') < 10) || ((ua - 'a') < 6) || ((ua - 'A') < 6);
+	return ((ua - '0') < 10U) || ((ua | 32U) - 'a' < 6);
 }
 
 static inline int tolower(int chr)
