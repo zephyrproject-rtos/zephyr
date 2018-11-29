@@ -866,6 +866,8 @@ error:
 	return err;
 }
 
+static int disk_sdhc_init(struct device *dev);
+
 static int sdhc_init(struct device *dev)
 {
 	struct sdhc_data *data = dev->driver_data;
@@ -881,12 +883,14 @@ static int sdhc_init(struct device *dev)
 
 	data->pin = DT_DISK_SDHC0_CS_GPIOS_PIN;
 
+	disk_sdhc_init(dev);
+
 	return gpio_pin_configure(data->cs, data->pin, GPIO_DIR_OUT);
 }
 
 static struct device *sdhc_get_device(void) { return DEVICE_GET(sdhc_0); }
 
-int disk_access_status(void)
+static int disk_sdhc_access_status(struct disk_info *disk)
 {
 	struct device *dev = sdhc_get_device();
 	struct sdhc_data *data = dev->driver_data;
@@ -894,7 +898,8 @@ int disk_access_status(void)
 	return data->status;
 }
 
-int disk_access_read(u8_t *buf, u32_t sector, u32_t count)
+static int disk_sdhc_access_read(struct disk_info *disk, u8_t *buf,
+				 u32_t sector, u32_t count)
 {
 	struct device *dev = sdhc_get_device();
 	struct sdhc_data *data = dev->driver_data;
@@ -911,7 +916,8 @@ int disk_access_read(u8_t *buf, u32_t sector, u32_t count)
 	return err;
 }
 
-int disk_access_write(const u8_t *buf, u32_t sector, u32_t count)
+static int disk_sdhc_access_write(struct disk_info *disk, const u8_t *buf,
+				  u32_t sector, u32_t count)
 {
 	struct device *dev = sdhc_get_device();
 	struct sdhc_data *data = dev->driver_data;
@@ -928,7 +934,7 @@ int disk_access_write(const u8_t *buf, u32_t sector, u32_t count)
 	return err;
 }
 
-int disk_access_ioctl(u8_t cmd, void *buf)
+static int disk_sdhc_access_ioctl(struct disk_info *disk, u8_t cmd, void *buf)
 {
 	struct device *dev = sdhc_get_device();
 	struct sdhc_data *data = dev->driver_data;
@@ -958,7 +964,7 @@ int disk_access_ioctl(u8_t cmd, void *buf)
 	return 0;
 }
 
-int disk_access_init(void)
+static int disk_sdhc_access_init(struct disk_info *disk)
 {
 	struct device *dev = sdhc_get_device();
 	struct sdhc_data *data = dev->driver_data;
@@ -973,6 +979,28 @@ int disk_access_init(void)
 	sdhc_set_cs(data, 1);
 
 	return err;
+}
+
+static const struct disk_operations sdhc_disk_ops = {
+	.init = disk_sdhc_access_init,
+	.status = disk_sdhc_access_status,
+	.read = disk_sdhc_access_read,
+	.write = disk_sdhc_access_write,
+	.ioctl = disk_sdhc_access_ioctl,
+};
+
+static struct disk_info sdhc_disk = {
+	.name = CONFIG_DISK_SDHC_VOLUME_NAME,
+	.ops = &sdhc_disk_ops,
+};
+
+static int disk_sdhc_init(struct device *dev)
+{
+	struct sdhc_data *data = dev->driver_data;
+
+	data->status = DISK_STATUS_UNINIT;
+
+	return disk_access_register(&sdhc_disk);
 }
 
 static struct sdhc_data sdhc_data_0;
