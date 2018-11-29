@@ -37,7 +37,7 @@ static void create_free_list(struct k_mem_slab *slab)
 	slab->free_list = NULL;
 	p = slab->buffer;
 
-	for (j = 0; j < slab->num_blocks; j++) {
+	for (j = 0U; j < slab->num_blocks; j++) {
 		*(char **)p = slab->free_list;
 		slab->free_list = p;
 		p += slab->block_size;
