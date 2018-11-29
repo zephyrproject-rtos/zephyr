@@ -80,7 +80,7 @@ int _arc_init(struct device *arg)
 	reset_vector = (u32_t *)RESET_VECTOR;
 	LOG_DBG("Reset vector address: %x", *reset_vector);
 	shared_data->arc_start = *reset_vector;
-	shared_data->flags = 0;
+	shared_data->flags = 0U;
 	if (!shared_data->arc_start) {
 		/* Reset vector points to NULL => skip ARC init. */
 		LOG_DBG("Reset vector is NULL, skipping ARC init.");

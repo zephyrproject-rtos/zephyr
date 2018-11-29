@@ -205,14 +205,14 @@ static void soc_read_bootstraps(void)
 
 	switch (bootstrap) {
 	case SOC_S1000_STRAP_REF_CLK_19P2:
-		ref_clk_freq = 19200000;
+		ref_clk_freq = 19200000U;
 		break;
 	case SOC_S1000_STRAP_REF_CLK_24P576:
-		ref_clk_freq = 24576000;
+		ref_clk_freq = 24576000U;
 		break;
 	case SOC_S1000_STRAP_REF_CLK_38P4:
 	default:
-		ref_clk_freq = 38400000;
+		ref_clk_freq = 38400000U;
 		break;
 	}
 }
