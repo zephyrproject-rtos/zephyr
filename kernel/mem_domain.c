@@ -33,7 +33,7 @@ static bool sane_partition(const struct k_mem_partition *part,
 		return false;
 	}
 
-	for (i = 0; i < num_parts; i++) {
+	for (i = 0U; i < num_parts; i++) {
 		bool cur_write, cur_exec;
 		u32_t cur_last;
 
@@ -87,7 +87,7 @@ void k_mem_domain_init(struct k_mem_domain *domain, u8_t num_parts,
 	if (num_parts) {
 		u32_t i;
 
-		for (i = 0; i < num_parts; i++) {
+		for (i = 0U; i < num_parts; i++) {
 			__ASSERT(parts[i] != NULL, "");
 			__ASSERT((parts[i]->start + parts[i]->size) >
 				 parts[i]->start, "");

@@ -77,7 +77,7 @@ static void sys_power_save_idle(void)
 #if (defined(CONFIG_SYS_POWER_LOW_POWER_STATE) || \
 	defined(CONFIG_SYS_POWER_DEEP_SLEEP))
 
-	_sys_pm_idle_exit_notify = 1;
+	_sys_pm_idle_exit_notify = 1U;
 
 	/*
 	 * Call the suspend hook function of the soc interface to allow
@@ -93,7 +93,7 @@ static void sys_power_save_idle(void)
 	 * the kernel's scheduling logic.
 	 */
 	if (_sys_soc_suspend(ticks) == SYS_PM_NOT_HANDLED) {
-		_sys_pm_idle_exit_notify = 0;
+		_sys_pm_idle_exit_notify = 0U;
 		k_cpu_idle();
 	}
 #else

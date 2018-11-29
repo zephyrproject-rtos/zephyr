@@ -210,7 +210,7 @@ void k_disable_sys_clock_always_on(void)
 
 s64_t z_tick_get(void)
 {
-	u64_t t = 0;
+	u64_t t = 0U;
 
 	LOCKED(&timeout_lock) {
 		t = curr_tick + z_clock_elapsed();
