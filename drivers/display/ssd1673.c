@@ -39,10 +39,7 @@ struct ssd1673_data {
 #if defined(DT_SSD1673_SPI_GPIO_CS_DRV_NAME)
 	struct spi_cs_control cs_ctrl;
 #endif
-	u8_t contrast;
 	u8_t scan_mode;
-	u8_t last_lut;
-	u8_t numof_part_cycles;
 };
 
 #define SSD1673_LAST_LUT_INITIAL		0
@@ -174,7 +171,7 @@ static int ssd1673_suspend(const struct device *dev)
 				 &tmp, sizeof(tmp));
 }
 
-static int ssd1673_update_display(const struct device *dev, bool initial)
+static int ssd1673_update_display(const struct device *dev)
 {
 	struct ssd1673_data *driver = dev->driver_data;
 	u8_t tmp;
@@ -185,29 +182,6 @@ static int ssd1673_update_display(const struct device *dev, bool initial)
 				&tmp, sizeof(tmp));
 	if (err < 0) {
 		return err;
-	}
-
-	if (initial) {
-		driver->numof_part_cycles = 0U;
-		driver->last_lut = SSD1673_LAST_LUT_INITIAL;
-		err = ssd1673_write_cmd(driver, SSD1673_CMD_UPDATE_LUT,
-					ssd1673_lut_initial,
-					sizeof(ssd1673_lut_initial));
-		if (err < 0) {
-			return err;
-		}
-
-	} else {
-		driver->numof_part_cycles++;
-		if (driver->last_lut != SSD1673_LAST_LUT_DEFAULT) {
-			driver->last_lut = SSD1673_LAST_LUT_DEFAULT;
-			err = ssd1673_write_cmd(driver, SSD1673_CMD_UPDATE_LUT,
-						ssd1673_lut_default,
-						sizeof(ssd1673_lut_default));
-			if (err < 0) {
-				return err;
-			}
-		}
 	}
 
 	tmp = (SSD1673_CTRL2_ENABLE_CLK |
@@ -235,7 +209,6 @@ static int ssd1673_write(const struct device *dev, const u16_t x,
 	u8_t dummy_page[SSD1673_RAM_YRES];
 	struct spi_buf sbuf = {.buf = &cmd, .len = 1};
 	struct spi_buf_set buf_set = {.buffers = &sbuf, .count = 1};
-	bool update = true;
 	int err;
 
 	if (desc->pitch < desc->width) {
@@ -344,15 +317,7 @@ static int ssd1673_write(const struct device *dev, const u16_t x,
 		}
 	}
 
-
-	if (update) {
-		if (driver->contrast) {
-			return ssd1673_update_display(dev, true);
-		}
-		return ssd1673_update_display(dev, false);
-	}
-
-	return 0;
+	return ssd1673_update_display(dev);
 }
 
 static int ssd1673_read(const struct device *dev, const u16_t x,
@@ -379,11 +344,8 @@ static int ssd1673_set_brightness(const struct device *dev,
 
 static int ssd1673_set_contrast(const struct device *dev, u8_t contrast)
 {
-	struct ssd1673_data *driver = dev->driver_data;
-
-	driver->contrast = contrast;
-
-	return 0;
+	LOG_WRN("not supported");
+	return -ENOTSUP;
 }
 
 static void ssd1673_get_capabilities(const struct device *dev,
@@ -418,11 +380,66 @@ static int ssd1673_set_pixel_format(const struct device *dev,
 	return -ENOTSUP;
 }
 
+static int ssd1673_clear_and_write_buffer(struct device *dev)
+{
+	int err;
+	u8_t clear_page[SSD1673_RAM_YRES];
+	u8_t page;
+	struct spi_buf sbuf;
+	struct spi_buf_set buf_set = {.buffers = &sbuf, .count = 1};
+	struct ssd1673_data *driver = dev->driver_data;
+	u8_t tmp;
+
+	tmp = SSD1673_DATA_ENTRY_XIYDY;
+	err = ssd1673_write_cmd(driver, SSD1673_CMD_ENTRY_MODE, &tmp, 1);
+	if (err < 0) {
+		return err;
+	}
+
+	err = ssd1673_set_ram_param(driver, SSD1673_PANEL_FIRST_PAGE,
+				SSD1673_PANEL_LAST_PAGE + 1,
+				SSD1673_PANEL_LAST_GATE,
+				SSD1673_PANEL_FIRST_GATE);
+	if (err < 0) {
+		return err;
+	}
+
+	err = ssd1673_set_ram_ptr(driver, SSD1673_PANEL_FIRST_PAGE,
+				SSD1673_PANEL_LAST_GATE);
+	if (err < 0) {
+		return err;
+	}
+
+	gpio_pin_write(driver->dc, DT_SSD1673_DC_PIN, 0);
+
+	tmp = SSD1673_CMD_WRITE_RAM;
+	sbuf.buf = &tmp;
+	sbuf.len = 1;
+	err = spi_write(driver->spi_dev, &driver->spi_config, &buf_set);
+	if (err < 0) {
+		return err;
+	}
+
+	gpio_pin_write(driver->dc, DT_SSD1673_DC_PIN, 1);
+
+	memset(clear_page, 0xff, sizeof(clear_page));
+	sbuf.buf = clear_page;
+	sbuf.len = sizeof(clear_page);
+	for (page = 0; page <= (SSD1673_PANEL_LAST_PAGE + 1); ++page) {
+		err = spi_write(driver->spi_dev, &driver->spi_config, &buf_set);
+		if (err < 0) {
+			return err;
+		}
+	}
+
+	return ssd1673_update_display(dev);
+}
+
 static int ssd1673_controller_init(struct device *dev)
 {
-	struct ssd1673_data *driver = dev->driver_data;
-	u8_t tmp[3];
 	int err;
+	u8_t tmp[3];
+	struct ssd1673_data *driver = dev->driver_data;
 
 	LOG_DBG("");
 
@@ -477,11 +494,29 @@ static int ssd1673_controller_init(struct device *dev)
 	}
 
 	ssd1673_set_orientation_internall(driver);
-	driver->numof_part_cycles = 0U;
-	driver->last_lut = SSD1673_LAST_LUT_INITIAL;
-	driver->contrast = 0U;
 
-	return 0;
+	err = ssd1673_write_cmd(driver, SSD1673_CMD_UPDATE_LUT,
+				ssd1673_lut_initial,
+				sizeof(ssd1673_lut_initial));
+	if (err < 0) {
+		return err;
+	}
+
+	err = ssd1673_clear_and_write_buffer(dev);
+	if (err < 0) {
+		return err;
+	}
+
+	ssd1673_busy_wait(driver);
+
+	err = ssd1673_write_cmd(driver, SSD1673_CMD_UPDATE_LUT,
+				ssd1673_lut_default,
+				sizeof(ssd1673_lut_default));
+	if (err < 0) {
+		return err;
+	}
+
+	return ssd1673_clear_and_write_buffer(dev);
 }
 
 static int ssd1673_init(struct device *dev)
