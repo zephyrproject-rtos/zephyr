@@ -7,6 +7,7 @@
 zephyr_include_directories(.)
 zephyr_sources(
 	soc.c
+	cyprotection.c
 )
 
 if (CONFIG_SLAVE_CORE_PSOC6)
