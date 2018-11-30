@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_mqtt
-#define NET_LOG_LEVEL LOG_LEVEL_ERR
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_mqtt, LOG_LEVEL_ERR);
 
 #include <net/mqtt_legacy.h>
 #include "mqtt_pkt.h"

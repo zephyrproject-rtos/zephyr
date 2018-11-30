@@ -4,13 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_stats
-
 #if defined(CONFIG_NET_STATISTICS_PERIODIC_OUTPUT)
 #define NET_LOG_LEVEL LOG_LEVEL_INF
 #else
 #define NET_LOG_LEVEL CONFIG_NET_STATISTICS_LOG_LEVEL
 #endif
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_stats, NET_LOG_LEVEL);
 
 #include <kernel.h>
 #include <string.h>

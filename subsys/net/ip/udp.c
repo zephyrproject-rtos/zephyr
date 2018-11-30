@@ -8,8 +8,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_udp
-#define NET_LOG_LEVEL CONFIG_NET_UDP_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_udp, CONFIG_NET_UDP_LOG_LEVEL);
 
 #include "net_private.h"
 #include "udp_internal.h"

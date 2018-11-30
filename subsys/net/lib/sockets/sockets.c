@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_sock
-#define NET_LOG_LEVEL CONFIG_NET_SOCKETS_LOG_LEVEL
-
 /* libc headers */
 #include <fcntl.h>
 
 /* Zephyr headers */
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
+
 #include <kernel.h>
 #include <net/net_context.h>
 #include <net/net_pkt.h>

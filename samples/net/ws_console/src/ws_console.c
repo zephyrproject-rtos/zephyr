@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_ws_console_sample
-#define NET_LOG_LEVEL LOG_LEVEL_DBG
-
 /* Printing debugs from this module looks funny in console so do not
  * do it unless you are debugging this module.
  */
 #define EXTRA_DEBUG 0
+
+#include <logging/log.h>
+LOG_MODULE_DECLARE(net_ws_console_sample, LOG_LEVEL_DBG);
 
 #include <zephyr.h>
 #include <errno.h>

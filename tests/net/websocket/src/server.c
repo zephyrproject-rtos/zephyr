@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_test_websocket
-#define NET_LOG_LEVEL CONFIG_WEBSOCKET_LOG_LEVEL
-
 #include <zephyr.h>
 #include <errno.h>
 #include <stdio.h>
+
+#include <logging/log.h>
+LOG_MODULE_DECLARE(net_test, CONFIG_WEBSOCKET_LOG_LEVEL);
 
 #include <net/net_pkt.h>
 #include <net/net_core.h>

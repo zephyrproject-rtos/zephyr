@@ -4,8 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_rpl_br_rpl
-#define NET_LOG_LEVEL LOG_LEVEL_DBG
+#define LOG_LEVEL LOG_LEVEL_DBG
+
+#include <logging/log.h>
+LOG_MODULE_DECLARE(net_rpl_br_sample, LOG_LEVEL);
 
 #include <zephyr.h>
 #include <stdio.h>
@@ -42,7 +44,7 @@ static bool br_join_dag(struct net_rpl_dio *dio)
 			rpl.dag_has_version = true;
 		}
 	} else {
-		if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {
+		if (LOG_LEVEL >= LOG_LEVEL_DBG) {
 			char me[NET_IPV6_ADDR_LEN];
 			char other[NET_IPV6_ADDR_LEN];
 
@@ -119,7 +121,7 @@ bool setup_rpl(struct net_if *iface, const char *addr_prefix)
 		return false;
 	}
 
-	if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {
+	if (LOG_LEVEL >= LOG_LEVEL_DBG) {
 		char out[NET_IPV6_ADDR_LEN];
 
 		if (net_addr_ntop(AF_INET6, &rpl.prefix, out,

@@ -10,8 +10,8 @@
  *        broker.
  */
 
-#define LOG_MODULE_NAME net_mqtt_dec
-#define NET_LOG_LEVEL CONFIG_MQTT_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_mqtt_dec, CONFIG_MQTT_LOG_LEVEL);
 
 #include "mqtt_internal.h"
 #include "mqtt_os.h"

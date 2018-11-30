@@ -4,12 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_HTTPS)
-#define LOG_MODULE_NAME net_https_server
-#else
-#define LOG_MODULE_NAME net_http_server
-#endif
-#define NET_LOG_LEVEL CONFIG_HTTP_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_DECLARE(net_http, CONFIG_HTTP_LOG_LEVEL);
 
 #include <zephyr.h>
 #include <string.h>
@@ -78,7 +74,7 @@ void http_server_conn_monitor(http_server_cb_t cb, void *user_data)
 
 const char * const http_state_str(enum http_state state)
 {
-#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+#if CONFIG_HTTP_LOG_LEVEL >= LOG_LEVEL_DBG
 	switch (state) {
 	case HTTP_STATE_CLOSED:
 		return "CLOSED";
@@ -98,7 +94,7 @@ const char * const http_state_str(enum http_state state)
 	return "";
 }
 
-#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+#if CONFIG_HTTP_LOG_LEVEL >= LOG_LEVEL_DBG
 static void validate_state_transition(struct http_ctx *ctx,
 				      enum http_state current,
 				      enum http_state new)
@@ -124,7 +120,7 @@ static void validate_state_transition(struct http_ctx *ctx,
 			http_state_str(new), new);
 	}
 }
-#endif /* NET_LOG_LEVEL */
+#endif /* CONFIG_HTTP_LOG_LEVEL */
 
 void _http_change_state(struct http_ctx *ctx,
 			enum http_state new_state,
@@ -142,7 +138,7 @@ void _http_change_state(struct http_ctx *ctx,
 		http_state_str(new_state), new_state,
 		func, line);
 
-#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+#if CONFIG_HTTP_LOG_LEVEL >= LOG_LEVEL_DBG
 	validate_state_transition(ctx, ctx->state, new_state);
 #endif
 
@@ -214,7 +210,7 @@ quit:
 	return ret;
 }
 
-#if NET_LOG_LEVEL >= LOG_LEVEL_INF
+#if CONFIG_HTTP_LOG_LEVEL >= LOG_LEVEL_INF
 static char *sprint_ipaddr(char *buf, int buflen, const struct sockaddr *addr)
 {
 	if (addr->sa_family == AF_INET6) {
@@ -297,14 +293,14 @@ static struct net_context *get_server_ctx(struct net_app_ctx *ctx,
 
 	return NULL;
 }
-#endif /* NET_LOG_LEVEL */
+#endif /* CONFIG_HTTP_LOG_LEVEL */
 
 static inline void new_client(struct http_ctx *ctx,
 			      enum http_connection_type type,
 			      struct net_app_ctx *app_ctx,
 			      const struct sockaddr *dst)
 {
-#if NET_LOG_LEVEL >= LOG_LEVEL_INF
+#if CONFIG_HTTP_LOG_LEVEL >= LOG_LEVEL_INF
 #if defined(CONFIG_NET_IPV6)
 #define PORT_LEN sizeof("[]:xxxxx")
 #define ADDR_LEN NET_IPV6_ADDR_LEN
@@ -328,7 +324,7 @@ static inline void new_client(struct http_ctx *ctx,
 	} else {
 		NET_INFO("[%p] %s connection", ctx, type_str);
 	}
-#endif /* NET_LOG_LEVEL */
+#endif /* CONFIG_HTTP_LOG_LEVEL */
 }
 
 static void url_connected(struct http_ctx *ctx,
@@ -993,7 +989,7 @@ static inline void new_server(struct http_ctx *ctx,
 			      const char *server_banner,
 			      const struct sockaddr *addr)
 {
-#if NET_LOG_LEVEL >= LOG_LEVEL_INF
+#if CONFIG_HTTP_LOG_LEVEL >= LOG_LEVEL_INF
 #if defined(CONFIG_NET_IPV6)
 #define PORT_STR sizeof("[]:xxxxx")
 	char buf[NET_IPV6_ADDR_LEN + PORT_STR];
@@ -1008,7 +1004,7 @@ static inline void new_server(struct http_ctx *ctx,
 	} else {
 		NET_INFO("%s (%p)", server_banner, ctx);
 	}
-#endif /* NET_LOG_LEVEL */
+#endif /* CONFIG_HTTP_LOG_LEVEL */
 }
 
 static void init_net(struct http_ctx *ctx,

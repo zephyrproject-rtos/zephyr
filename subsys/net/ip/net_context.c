@@ -10,8 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_ctx
-#define NET_LOG_LEVEL CONFIG_NET_CONTEXT_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_ctx, CONFIG_NET_CONTEXT_LOG_LEVEL);
 
 #include <kernel.h>
 #include <string.h>

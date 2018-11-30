@@ -58,7 +58,7 @@ int _net_app_config_local_ctx(struct net_app_ctx *ctx,
 			      enum net_ip_protocol proto,
 			      struct sockaddr *addr);
 
-#if NET_LOG_LEVEL > 0
+#if CONFIG_NET_APP_LOG_LEVEL >= LOG_LEVEL_ERR
 struct net_context *_net_app_select_net_ctx_debug(struct net_app_ctx *ctx,
 						  const struct sockaddr *dst,
 						  const char *caller,

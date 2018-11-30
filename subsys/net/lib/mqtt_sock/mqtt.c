@@ -9,8 +9,8 @@
  * @brief MQTT Client API Implementation.
  */
 
-#define LOG_MODULE_NAME net_mqtt
-#define NET_LOG_LEVEL CONFIG_MQTT_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_mqtt, CONFIG_MQTT_LOG_LEVEL);
 
 #include <net/mqtt.h>
 

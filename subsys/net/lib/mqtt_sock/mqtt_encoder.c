@@ -9,8 +9,8 @@
  * @brief Encoding functions needed to create packet to be sent to the broker.
  */
 
-#define LOG_MODULE_NAME net_mqtt_enc
-#define NET_LOG_LEVEL CONFIG_MQTT_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_mqtt_enc, CONFIG_MQTT_LOG_LEVEL);
 
 #include "mqtt_internal.h"
 #include "mqtt_os.h"

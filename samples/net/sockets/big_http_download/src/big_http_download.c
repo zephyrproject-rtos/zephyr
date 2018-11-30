@@ -20,8 +20,9 @@
 #include <netdb.h>
 
 #else
-#define LOG_MODULE_NAME net_big_http_download
-#define NET_LOG_LEVEL LOG_LEVEL_DBG
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_big_http_download_sample, LOG_LEVEL_DBG);
 
 #include <net/socket.h>
 #include <kernel.h>

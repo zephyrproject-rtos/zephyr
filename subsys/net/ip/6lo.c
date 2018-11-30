@@ -8,8 +8,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_6lo
-#define NET_LOG_LEVEL CONFIG_NET_6LO_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_6lo, CONFIG_NET_6LO_LOG_LEVEL);
 
 #include <errno.h>
 #include <net/net_core.h>

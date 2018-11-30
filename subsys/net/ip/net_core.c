@@ -11,8 +11,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_core
-#define NET_LOG_LEVEL CONFIG_NET_CORE_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 
 #include <init.h>
 #include <kernel.h>

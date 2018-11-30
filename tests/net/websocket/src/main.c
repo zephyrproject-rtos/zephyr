@@ -11,10 +11,12 @@
  * we get proper data back.
  */
 
-#define LOG_MODULE_NAME net_test
+#include <ztest.h>
+
 #define NET_LOG_LEVEL CONFIG_WEBSOCKET_LOG_LEVEL
 
-#include <ztest.h>
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 
 #include <net/net_ip.h>
 #include <net/net_app.h>

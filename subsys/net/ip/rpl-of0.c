@@ -38,8 +38,8 @@
  * SUCH DAMAGE.
  */
 
-#define LOG_MODULE_NAME net_rpl_of0
-#define NET_LOG_LEVEL CONFIG_NET_RPL_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_DECLARE(net_rpl, CONFIG_NET_RPL_LOG_LEVEL);
 
 #include <kernel.h>
 #include <limits.h>

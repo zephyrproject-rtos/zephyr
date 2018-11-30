@@ -13,8 +13,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_tcp
-#define NET_LOG_LEVEL CONFIG_NET_TCP_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 
 #include <kernel.h>
 #include <string.h>
@@ -115,7 +115,7 @@ static void net_tcp_trace(struct net_pkt *pkt, struct net_tcp *tcp)
 	u32_t rel_ack, ack;
 	u8_t flags;
 
-	if (NET_LOG_LEVEL < LOG_LEVEL_DBG) {
+	if (CONFIG_NET_TCP_LOG_LEVEL < LOG_LEVEL_DBG) {
 		return;
 	}
 
@@ -776,7 +776,7 @@ int net_tcp_prepare_reset(struct net_tcp *tcp,
 
 const char *net_tcp_state_str(enum net_tcp_state state)
 {
-#if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) || defined(CONFIG_NET_SHELL)
+#if (CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG) || defined(CONFIG_NET_SHELL)
 	switch (state) {
 	case NET_TCP_CLOSED:
 		return "CLOSED";
@@ -1114,7 +1114,7 @@ void net_tcp_init(void)
 {
 }
 
-#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+#if CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG
 static void validate_state_transition(enum net_tcp_state current,
 				      enum net_tcp_state new)
 {
@@ -1279,7 +1279,7 @@ struct net_tcp_hdr *net_tcp_get_hdr(struct net_pkt *pkt,
 		/* If the pkt is compressed, then this is the typical outcome
 		 * so no use printing error in this case.
 		 */
-		if ((NET_LOG_LEVEL >= LOG_LEVEL_DBG) &&
+		if ((CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG) &&
 		    !is_6lo_technology(pkt)) {
 			NET_ASSERT(frag);
 		}
@@ -1858,7 +1858,7 @@ int net_tcp_unref(struct net_context *context)
 
 static void print_send_info(struct net_pkt *pkt, const char *msg)
 {
-	if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {
+	if (CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG) {
 		struct net_tcp_hdr hdr, *tcp_hdr;
 
 		tcp_hdr = net_tcp_get_hdr(pkt, &hdr);

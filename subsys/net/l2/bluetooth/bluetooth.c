@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_bt
-#define NET_LOG_LEVEL CONFIG_NET_L2_BT_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_bt, CONFIG_NET_L2_BT_LOG_LEVEL);
 
 #include <kernel.h>
 #include <toolchain.h>
@@ -145,7 +145,7 @@ static void ipsp_connected(struct bt_l2cap_chan *chan)
 		return;
 	}
 
-	if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {
+	if (CONFIG_NET_L2_BT_LOG_LEVEL >= LOG_LEVEL_DBG) {
 		char src[BT_ADDR_LE_STR_LEN];
 		char dst[BT_ADDR_LE_STR_LEN];
 
@@ -376,7 +376,7 @@ static bool eir_found(u8_t type, const u8_t *data, u8_t data_len,
 			continue;
 		}
 
-		if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {
+		if (CONFIG_NET_L2_BT_LOG_LEVEL >= LOG_LEVEL_DBG) {
 			bt_addr_le_t *addr = user_data;
 			char dev[BT_ADDR_LE_STR_LEN];
 
@@ -502,7 +502,7 @@ static int bt_disconnect(u32_t mgmt_request, struct net_if *iface,
 static void connected(struct bt_conn *conn, u8_t err)
 {
 	if (err) {
-		if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {
+		if (CONFIG_NET_L2_BT_LOG_LEVEL >= LOG_LEVEL_DBG) {
 			char addr[BT_ADDR_LE_STR_LEN];
 
 			bt_addr_le_to_str(bt_conn_get_dst(conn), addr,
@@ -529,7 +529,7 @@ static void disconnected(struct bt_conn *conn, u8_t reason)
 		return;
 	}
 
-	if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {
+	if (CONFIG_NET_L2_BT_LOG_LEVEL >= LOG_LEVEL_DBG) {
 		char addr[BT_ADDR_LE_STR_LEN];
 
 		bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
