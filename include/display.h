@@ -49,6 +49,10 @@ enum display_screen_info {
 	 * Electrophoretic Display.
 	 */
 	SCREEN_INFO_EPD			= BIT(2),
+	/**
+	 * Screen has two alternating ram buffers
+	 */
+	SCREEN_INFO_DOUBLE_BUFFER	= BIT(3),
 };
 
 /**

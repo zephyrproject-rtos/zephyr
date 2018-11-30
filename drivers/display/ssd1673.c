@@ -334,7 +334,8 @@ static void ssd1673_get_capabilities(const struct device *dev,
 	caps->current_pixel_format = PIXEL_FORMAT_MONO10;
 	caps->screen_info = SCREEN_INFO_MONO_VTILED |
 			    SCREEN_INFO_MONO_MSB_FIRST |
-			    SCREEN_INFO_EPD;
+			    SCREEN_INFO_EPD |
+			    SCREEN_INFO_DOUBLE_BUFFER;
 }
 
 static int ssd1673_set_orientation(const struct device *dev,
