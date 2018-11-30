@@ -89,9 +89,20 @@ static void status_cb(enum usb_dc_status_code status, const u8_t *param)
 	}
 }
 
+static void idle_cb(u16_t report_id)
+{
+	static u8_t report_1[2] = { 0x00, 0xEB };
+	int ret, wrote;
+
+	ret = hid_int_ep_write(report_1, sizeof(report_1), &wrote);
+
+	LOG_DBG("Idle callback: wrote %d bytes with ret %d", wrote, ret);
+}
+
 static const struct hid_ops ops = {
 	.int_in_ready = in_ready_cb,
 	.status_cb = status_cb,
+	.on_idle = idle_cb,
 };
 
 void main(void)
