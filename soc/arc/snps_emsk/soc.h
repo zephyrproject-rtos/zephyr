@@ -42,12 +42,6 @@
 #include <misc/util.h>
 #include <random/rand32.h>
 
-#define ARCV2_TIMER0_INT_LVL			IRQ_TIMER0
-#define ARCV2_TIMER0_INT_PRI			0
-
-#define ARCV2_TIMER1_INT_LVL			IRQ_TIMER1
-#define ARCV2_TIMER1_INT_PRI			1
-
 #define INT_ENABLE_ARC				~(0x00000001 << 8)
 #define INT_ENABLE_ARC_BIT_POS			(8)
 
