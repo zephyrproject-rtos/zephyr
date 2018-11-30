@@ -29,6 +29,7 @@ struct log_backend_api {
 	void (*put)(const struct log_backend *const backend,
 		    struct log_msg *msg);
 
+	void (*dropped)(const struct log_backend *const backend, u32_t cnt);
 	void (*panic)(const struct log_backend *const backend);
 	void (*init)(void);
 };
@@ -94,7 +95,25 @@ static inline void log_backend_put(const struct log_backend *const backend,
 }
 
 /**
- * @brief Function for reconfiguring backend to panic mode.
+ * @brief Notify backend about dropped log messages.
+ *
+ * Function is optional.
+ *
+ * @param[in] backend  Pointer to the backend instance.
+ * @param[in] cnt      Number of dropped logs since last notification.
+ */
+static inline void log_backend_dropped(const struct log_backend *const backend,
+				       u32_t cnt)
+{
+	assert(backend);
+
+	if (backend->api->dropped) {
+		backend->api->dropped(backend, cnt);
+	}
+}
+
+/**
+ * @brief Reconfigure backend to panic mode.
  *
  * @param[in] backend  Pointer to the backend instance.
  */

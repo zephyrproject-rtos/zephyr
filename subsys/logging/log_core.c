@@ -36,6 +36,7 @@ static atomic_t initialized;
 static bool panic_mode;
 static bool backend_attached;
 static atomic_t buffered_cnt;
+static atomic_t dropped_cnt;
 static k_tid_t proc_tid;
 
 static u32_t dummy_timestamp(void);
@@ -389,9 +390,24 @@ static void msg_process(struct log_msg *msg, bool bypass)
 				log_backend_put(backend, msg);
 			}
 		}
+	} else {
+		atomic_inc(&dropped_cnt);
 	}
 
 	log_msg_put(msg);
+}
+
+void dropped_notify(void)
+{
+	u32_t dropped = atomic_set(&dropped_cnt, 0);
+
+	for (int i = 0; i < log_backend_count_get(); i++) {
+		struct log_backend const *backend = log_backend_get(i);
+
+		if (log_backend_is_active(backend)) {
+			log_backend_dropped(backend, dropped);
+		}
+	}
 }
 
 bool log_process(bool bypass)
@@ -409,6 +425,10 @@ bool log_process(bool bypass)
 	if (msg != NULL) {
 		atomic_dec(&buffered_cnt);
 		msg_process(msg, bypass);
+	}
+
+	if (!bypass && dropped_cnt) {
+		dropped_notify();
 	}
 
 	return (log_list_head_peek(&list) != NULL);
