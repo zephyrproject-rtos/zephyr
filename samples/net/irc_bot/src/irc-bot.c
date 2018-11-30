@@ -81,7 +81,7 @@ static struct net_buf_pool *data_pool(void)
 static void
 panic(const char *msg)
 {
-	NET_ERR("Panic: %s", msg);
+	LOG_ERR("Panic: %s", msg);
 	for (;;) {
 		k_sleep(K_FOREVER);
 	}
@@ -95,7 +95,7 @@ transmit(char buffer[], size_t len)
 
 	send_pkt = net_app_get_net_pkt(&app_ctx, AF_UNSPEC, BUF_ALLOC_TIMEOUT);
 	if (!send_pkt) {
-		NET_ERR("Unable to get TX packet, not enough memory.");
+		LOG_ERR("Unable to get TX packet, not enough memory.");
 		return -ENOMEM;
 	}
 
@@ -121,13 +121,13 @@ on_cmd_ping(char *umask, char *cmd, size_t len)
 	char pong[32];
 	int ret;
 
-	NET_INFO("Got PING command from server: %s", cmd);
+	LOG_INF("Got PING command from server: %s", cmd);
 
 	ret = snprintk(pong, 32, "PONG :%s", cmd + 1);
 	if (ret < sizeof(pong)) {
 		ret = transmit(pong, ret);
 		if (ret < 0) {
-			NET_INFO("Transmit error: %d", ret);
+			LOG_INF("Transmit error: %d", ret);
 		}
 	}
 }
@@ -142,7 +142,7 @@ on_cmd_privmsg(char *umask, char *cmd, size_t len)
 		return;
 	}
 
-	NET_DBG("Got message from umask %s: %s", umask, cmd);
+	LOG_DBG("Got message from umask %s: %s", umask, cmd);
 
 	space = memchr(cmd, ' ', len);
 	if (!space) {
@@ -153,7 +153,7 @@ on_cmd_privmsg(char *umask, char *cmd, size_t len)
 
 	if (*(space + 1) != ':') {
 		/* Just ignore messages without a ':' after the space */
-		NET_DBG("Ignoring message umask: %s: %s", umask, space);
+		LOG_DBG("Ignoring message umask: %s: %s", umask, space);
 		return;
 	}
 
@@ -203,11 +203,11 @@ process_command(char *cmd, size_t len)
 
 		cmd = space + 1;
 
-		NET_DBG("Received from server, umask=%s: %s", umask, cmd);
+		LOG_DBG("Received from server, umask=%s: %s", umask, cmd);
 	} else {
 		umask = NULL;
 
-		NET_DBG("Received from server (no umask): %s", cmd);
+		LOG_DBG("Received from server (no umask): %s", cmd);
 	}
 
 	for (i = 0; i < ARRAY_SIZE(commands); i++) {
@@ -215,7 +215,7 @@ process_command(char *cmd, size_t len)
 			continue;
 		}
 		if (!strncmp(cmd, commands[i].cmd, commands[i].cmd_len)) {
-			NET_DBG("Command has handler, executing");
+			LOG_DBG("Command has handler, executing");
 
 			cmd += commands[i].cmd_len;
 			len -= commands[i].cmd_len;
@@ -226,7 +226,7 @@ process_command(char *cmd, size_t len)
 	}
 
 	/* TODO: handle notices, CTCP, etc */
-	NET_DBG("Could not find handler to handle %s, ignoring", cmd);
+	LOG_DBG("Could not find handler to handle %s, ignoring", cmd);
 }
 #undef CMD
 
@@ -239,13 +239,13 @@ on_context_recv(struct net_app_ctx *ctx, struct net_pkt *pkt,
 
 	if (!pkt) {
 		/* TODO: notify of disconnection, maybe reconnect? */
-		NET_ERR("Disconnected");
+		LOG_ERR("Disconnected");
 		return;
 	}
 
 	if (status) {
 		/* TODO: handle connection error */
-		NET_ERR("Connection error: %d", -status);
+		LOG_ERR("Connection error: %d", -status);
 		net_pkt_unref(pkt);
 		return;
 	}
@@ -257,7 +257,7 @@ on_context_recv(struct net_app_ctx *ctx, struct net_pkt *pkt,
 
 	while (true) {
 		if (cmd_len >= CMD_BUFFER_SIZE) {
-			NET_WARN("cmd_buf overrun (>%d) Ignoring",
+			LOG_WRN("cmd_buf overrun (>%d) Ignoring",
 				 CMD_BUFFER_SIZE);
 			cmd_len = 0U;
 		}
@@ -287,7 +287,7 @@ zirc_nick_set(const char *nick)
 	char buffer[32];
 	int ret;
 
-	NET_INFO("Setting nickname to: %s", nick);
+	LOG_INF("Setting nickname to: %s", nick);
 
 	ret = snprintk(buffer, sizeof(buffer), "NICK %s\r\n", nick);
 	if (ret < 0 || ret >= sizeof(buffer)) {
@@ -303,7 +303,7 @@ zirc_user_set(const char *user, const char *realname)
 	char buffer[64];
 	int ret;
 
-	NET_INFO("Setting user to: %s, real name to: %s", user, realname);
+	LOG_INF("Setting user to: %s, real name to: %s", user, realname);
 
 	ret = snprintk(buffer, sizeof(buffer), "USER %s * * :%s\r\n",
 		       user, realname);
@@ -320,7 +320,7 @@ zirc_chan_join(const char *channel)
 	char buffer[32];
 	int ret;
 
-	NET_INFO("Joining channel: %s", channel);
+	LOG_INF("Joining channel: %s", channel);
 
 	ret = snprintk(buffer, sizeof(buffer), "JOIN %s\r\n", channel);
 	if (ret < 0 || ret >= sizeof(buffer)) {
@@ -337,7 +337,7 @@ zirc_chan_part(char *chan_name)
 	char buffer[32];
 	int ret;
 
-	NET_INFO("Leaving channel: %s", chan_name);
+	LOG_INF("Leaving channel: %s", chan_name);
 
 	ret = snprintk(buffer, sizeof(buffer), "PART %s\r\n", chan_name);
 	if (ret < 0 || ret >= sizeof(buffer)) {
@@ -357,13 +357,13 @@ zirc_connect(const char *host, int port)
 {
 	int ret;
 
-	NET_INFO("Connecting to %s:%d...", host, port);
+	LOG_INF("Connecting to %s:%d...", host, port);
 
 	ret = net_app_init_tcp_client(&app_ctx, NULL, NULL,
 				      host, port,
 				      WAIT_TIMEOUT, NULL);
 	if (ret < 0) {
-		NET_ERR("net_app_init_tcp_client err:%d", ret);
+		LOG_ERR("net_app_init_tcp_client err:%d", ret);
 		return ret;
 	}
 
@@ -374,13 +374,13 @@ zirc_connect(const char *host, int port)
 	/* set net_app callbacks */
 	ret = net_app_set_cb(&app_ctx, NULL, on_context_recv, NULL, NULL);
 	if (ret < 0) {
-		NET_ERR("Could not set receive callback (err:%d)", ret);
+		LOG_ERR("Could not set receive callback (err:%d)", ret);
 		return ret;
 	}
 
 	ret = net_app_connect(&app_ctx, CONNECT_TIMEOUT);
 	if (ret < 0) {
-		NET_ERR("Cannot connect (%d)", ret);
+		LOG_ERR("Cannot connect (%d)", ret);
 		panic("Can't init network");
 	}
 
@@ -401,7 +401,7 @@ zirc_connect(const char *host, int port)
 static int
 zirc_disconnect(void)
 {
-	NET_INFO("Disconnecting");
+	LOG_INF("Disconnecting");
 	cmd_len = 0U;
 	net_app_close(&app_ctx);
 	return net_app_release(&app_ctx);
@@ -412,7 +412,7 @@ zirc_chan_send_msg(const char *chan_name, const char *msg)
 {
 	char buffer[128];
 
-	NET_INFO("Sending to channel/user %s: %s", chan_name, msg);
+	LOG_INF("Sending to channel/user %s: %s", chan_name, msg);
 
 	while (*msg) {
 		int msglen, txret;
@@ -592,7 +592,7 @@ on_msg_rcvd(char *chan_name, char *umask, char *msg)
 		return;
 	}
 
-	NET_DBG("Received from umask %s: %s", umask, msg);
+	LOG_DBG("Received from umask %s: %s", umask, msg);
 
 	end = strchr(umask, '!');
 	if (!end) {
@@ -636,7 +636,7 @@ void main(void)
 {
 	int ret;
 
-	NET_INFO(APP_BANNER);
+	LOG_INF(APP_BANNER);
 
 	led0 = device_get_binding(LED_GPIO_NAME);
 	if (led0) {

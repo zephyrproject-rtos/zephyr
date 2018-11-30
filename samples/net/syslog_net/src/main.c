@@ -21,17 +21,17 @@ void main(void)
 	/* Allow some setup time before starting to send data */
 	k_sleep(SLEEP_BETWEEN_PRINTS);
 
-	NET_DBG("Starting");
+	LOG_DBG("Starting");
 
 	do {
-		NET_ERR("Error message");
-		NET_WARN("Warning message");
-		NET_INFO("Info message");
-		NET_DBG("Debug message");
+		LOG_ERR("Error message");
+		LOG_WRN("Warning message");
+		LOG_INF("Info message");
+		LOG_DBG("Debug message");
 
 		k_sleep(SLEEP_BETWEEN_PRINTS);
 
 	} while (count--);
 
-	NET_DBG("Stopping");
+	LOG_DBG("Stopping");
 }

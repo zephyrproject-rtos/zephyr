@@ -99,14 +99,14 @@ static int setup_cert(struct net_app_ctx *ctx,
 	ret = mbedtls_x509_crt_parse(cert, echo_apps_cert_der,
 				     sizeof(echo_apps_cert_der));
 	if (ret != 0) {
-		NET_ERR("mbedtls_x509_crt_parse returned %d", ret);
+		LOG_ERR("mbedtls_x509_crt_parse returned %d", ret);
 		return ret;
 	}
 
 	ret = mbedtls_pk_parse_key(pkey, echo_apps_key_der,
 				   sizeof(echo_apps_key_der), NULL, 0);
 	if (ret != 0) {
-		NET_ERR("mbedtls_pk_parse_key returned %d", ret);
+		LOG_ERR("mbedtls_pk_parse_key returned %d", ret);
 		return ret;
 	}
 
@@ -150,7 +150,7 @@ static int http_response(struct http_ctx *ctx, const char *header,
 
 	ret = http_add_header(ctx, header, dst, NULL);
 	if (ret < 0) {
-		NET_ERR("Cannot add HTTP header (%d)", ret);
+		LOG_ERR("Cannot add HTTP header (%d)", ret);
 		return ret;
 	}
 
@@ -164,7 +164,7 @@ static int http_response(struct http_ctx *ctx, const char *header,
 	ret = http_add_header_field(ctx, "Content-Length", content_length,
 				    dst, NULL);
 	if (ret < 0) {
-		NET_ERR("Cannot add Content-Length HTTP header (%d)", ret);
+		LOG_ERR("Cannot add Content-Length HTTP header (%d)", ret);
 		return ret;
 	}
 
@@ -175,7 +175,7 @@ static int http_response(struct http_ctx *ctx, const char *header,
 
 	ret = http_send_chunk(ctx, payload, payload_len, dst, NULL);
 	if (ret < 0) {
-		NET_ERR("Cannot send data to peer (%d)", ret);
+		LOG_ERR("Cannot send data to peer (%d)", ret);
 		return ret;
 	}
 
@@ -201,7 +201,7 @@ static int http_serve_index_html(struct http_ctx *ctx,
 #include "index.html.gz.inc"
 	};
 
-	NET_DBG("Sending index.html (%zd bytes) to client",
+	LOG_DBG("Sending index.html (%zd bytes) to client",
 		sizeof(index_html));
 
 	return http_response(ctx, HTTP_STATUS_200_OK_GZ, index_html,
@@ -215,7 +215,7 @@ static int http_serve_style_css(struct http_ctx *ctx,
 #include "style.css.gz.inc"
 	};
 
-	NET_DBG("Sending style.css (%zd bytes) to client",
+	LOG_DBG("Sending style.css (%zd bytes) to client",
 		sizeof(style_css_gz));
 
 	return http_response(ctx, HTTP_STATUS_200_OK_GZ_CSS,
@@ -230,7 +230,7 @@ static int http_serve_favicon_ico(struct http_ctx *ctx,
 #include "favicon.ico.gz.inc"
 	};
 
-	NET_DBG("Sending favicon.ico (%zd bytes) to client",
+	LOG_DBG("Sending favicon.ico (%zd bytes) to client",
 		sizeof(favicon_ico_gz));
 
 	return http_response(ctx, HTTP_STATUS_200_OK_GZ,
@@ -249,7 +249,7 @@ static void ws_connected(struct http_ctx *ctx,
 	memcpy(url, ctx->http.url, len);
 	url[len] = '\0';
 
-	NET_DBG("%s connect attempt URL %s",
+	LOG_DBG("%s connect attempt URL %s",
 		type == HTTP_CONNECTION ? "HTTP" : "WS", url);
 
 	if (type == HTTP_CONNECTION) {
@@ -307,7 +307,7 @@ static void ws_received(struct http_ctx *ctx,
 		int ret;
 
 #if EXTRA_DEBUG
-		NET_DBG("Received %d bytes data", net_pkt_appdatalen(pkt));
+		LOG_DBG("Received %d bytes data", net_pkt_appdatalen(pkt));
 #endif
 
 		ret = ws_console_recv(ctx, pkt);
@@ -315,7 +315,7 @@ static void ws_received(struct http_ctx *ctx,
 			goto out;
 		}
 	} else {
-		NET_ERR("Receive error (%d)", status);
+		LOG_ERR("Receive error (%d)", status);
 
 		goto out;
 	}
@@ -334,7 +334,7 @@ static void ws_sent(struct http_ctx *ctx,
 		    void *user_data)
 {
 #if EXTRA_DEBUG
-	NET_DBG("Data sent status %d", status);
+	LOG_DBG("Data sent status %d", status);
 #endif
 }
 
@@ -342,7 +342,7 @@ static void ws_closed(struct http_ctx *ctx,
 		      int status,
 		      void *user_data)
 {
-	NET_DBG("Connection %p closed", ctx);
+	LOG_DBG("Connection %p closed", ctx);
 
 	ws_console_disable(ctx);
 }
@@ -362,7 +362,7 @@ static enum http_verdict default_handler(struct http_ctx *ctx,
 					 enum http_connection_type type,
 					 const struct sockaddr *dst)
 {
-	NET_DBG("No handler for %s URL %s",
+	LOG_DBG("No handler for %s URL %s",
 		type == HTTP_CONNECTION ? "HTTP" : "WS",
 		get_string(ctx->http.url_len, ctx->http.url));
 
@@ -417,7 +417,7 @@ void start_ws_console(void)
 
 	ret = net_ipaddr_parse(ZEPHYR_ADDR, &addr);
 	if (ret < 0) {
-		NET_ERR("Cannot set local address (%d)", ret);
+		LOG_ERR("Cannot set local address (%d)", ret);
 		panic(NULL);
 	}
 
@@ -440,7 +440,7 @@ void start_ws_console(void)
 			       result, sizeof(result),
 			       "Zephyr WS console", NULL);
 	if (ret < 0) {
-		NET_ERR("Cannot init web server (%d)", ret);
+		LOG_ERR("Cannot init web server (%d)", ret);
 		return;
 	}
 
@@ -462,7 +462,7 @@ void start_ws_console(void)
 				  ws_tls_console_stack,
 				  K_THREAD_STACK_SIZEOF(ws_tls_console_stack));
 	if (ret < 0) {
-		NET_ERR("Cannot enable TLS support (%d)", ret);
+		LOG_ERR("Cannot enable TLS support (%d)", ret);
 	}
 #endif
 

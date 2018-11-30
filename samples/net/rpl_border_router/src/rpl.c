@@ -34,7 +34,7 @@ static bool br_join_dag(struct net_rpl_dio *dio)
 	if (net_ipv6_addr_cmp(&dio->dag_id, &rpl.dag_id)) {
 		if (rpl.dag_init_version != dio->version &&
 		    last_version != dio->version) {
-			NET_DBG("Me root, DIO version %d instance %d",
+			LOG_DBG("Me root, DIO version %d instance %d",
 				dio->version, dio->instance_id);
 			last_version = dio->version;
 		}
@@ -53,7 +53,7 @@ static bool br_join_dag(struct net_rpl_dio *dio)
 			net_addr_ntop(AF_INET6, &rpl.dag_id, me,
 				      NET_IPV6_ADDR_LEN);
 
-			NET_DBG("Other root %s, me %s, "
+			LOG_DBG("Other root %s, me %s, "
 				"DIO version %d instance %d",
 				log_strdup(other), log_strdup(me),
 				dio->version, dio->instance_id);
@@ -86,12 +86,12 @@ bool setup_rpl(struct net_if *iface, const char *addr_prefix)
 	}
 
 	if (rpl.prefix_len == 0) {
-		NET_ERR("Invalid prefix length %s", log_strdup(slash + 1));
+		LOG_ERR("Invalid prefix length %s", log_strdup(slash + 1));
 		return false;
 	}
 
 	if (net_addr_pton(AF_INET6, prefix, &rpl.prefix) < 0) {
-		NET_ERR("Invalid IPv6 prefix %s", log_strdup(prefix));
+		LOG_ERR("Invalid IPv6 prefix %s", log_strdup(prefix));
 		return false;
 	}
 
@@ -108,7 +108,7 @@ bool setup_rpl(struct net_if *iface, const char *addr_prefix)
 				       &rpl.prefix);
 	}
 	if (!dag) {
-		NET_ERR("Cannot set root node");
+		LOG_ERR("Cannot set root node");
 		return false;
 	}
 
@@ -116,7 +116,7 @@ bool setup_rpl(struct net_if *iface, const char *addr_prefix)
 
 	ret = net_rpl_set_prefix(iface, dag, &rpl.prefix, rpl.prefix_len);
 	if (!ret) {
-		NET_ERR("Cannot set prefix %s/%d", log_strdup(prefix),
+		LOG_ERR("Cannot set prefix %s/%d", log_strdup(prefix),
 			rpl.prefix_len);
 		return false;
 	}
@@ -127,11 +127,11 @@ bool setup_rpl(struct net_if *iface, const char *addr_prefix)
 		if (net_addr_ntop(AF_INET6, &rpl.prefix, out,
 				  NET_IPV6_ADDR_LEN)) {
 			if (rpl.dag_has_version) {
-				NET_DBG("New RPL dag %s/%d version %u created",
+				LOG_DBG("New RPL dag %s/%d version %u created",
 					log_strdup(out), rpl.prefix_len,
 					rpl.dag_init_version);
 			} else {
-				NET_DBG("New RPL dag %s/%d created",
+				LOG_DBG("New RPL dag %s/%d created",
 					log_strdup(out),
 					rpl.prefix_len);
 			}

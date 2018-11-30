@@ -20,12 +20,12 @@ void main(void)
 {
 	struct net_if *iface = NULL, *mgmt_iface = NULL;
 
-	NET_DBG("RPL border router starting");
+	LOG_DBG("RPL border router starting");
 
 #if defined(CONFIG_NET_L2_IEEE802154)
 	iface = net_if_get_ieee802154();
 	if (!iface) {
-		NET_INFO("No IEEE 802.15.4 network interface found.");
+		LOG_INF("No IEEE 802.15.4 network interface found.");
 	}
 #else
 #if defined(CONFIG_QEMU_TARGET)
@@ -37,14 +37,14 @@ void main(void)
 #endif
 
 	if (!iface) {
-		NET_INFO("Cannot continue because no suitable network "
-			 "interface exists.");
+		LOG_INF("Cannot continue because no suitable network "
+			"interface exists.");
 		return;
 	}
 
 	mgmt_iface = net_if_get_first_by_type(&NET_L2_GET_NAME(ETHERNET));
 	if (!mgmt_iface) {
-		NET_INFO("No management network interface found.");
+		LOG_INF("No management network interface found.");
 	} else {
 		start_http_server(mgmt_iface);
 	}

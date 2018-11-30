@@ -31,7 +31,7 @@ static struct k_sem quit_lock;
 void panic(const char *msg)
 {
 	if (msg) {
-		NET_ERR("%s", msg);
+		LOG_ERR("%s", msg);
 	}
 
 	for (;;) {
@@ -52,7 +52,7 @@ struct net_pkt *build_reply_pkt(const char *name,
 	struct net_buf *frag, *tmp;
 	int header_len = 0, recv_len, reply_len;
 
-	NET_INFO("%s received %d bytes", name, net_pkt_appdatalen(pkt));
+	LOG_INF("%s received %d bytes", name, net_pkt_appdatalen(pkt));
 
 	if (net_pkt_appdatalen(pkt) == 0) {
 		return NULL;
@@ -129,7 +129,7 @@ void pkt_sent(struct net_app_ctx *ctx,
 	     void *user_data)
 {
 	if (!status) {
-		NET_INFO("Sent %d bytes", POINTER_TO_UINT(user_data_send));
+		LOG_INF("Sent %d bytes", POINTER_TO_UINT(user_data_send));
 	}
 }
 
@@ -150,7 +150,7 @@ void main(void)
 
 	k_sem_take(&quit_lock, K_FOREVER);
 
-	NET_INFO("Stopping...");
+	LOG_INF("Stopping...");
 
 	if (IS_ENABLED(CONFIG_NET_TCP)) {
 		stop_server();
