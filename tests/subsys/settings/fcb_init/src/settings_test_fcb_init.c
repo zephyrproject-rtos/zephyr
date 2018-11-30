@@ -15,38 +15,23 @@
 
 static u32_t val32;
 
-static int c1_set(int argc, char **argv, char *val)
+static int c1_set(int argc, char **argv, void *value_ctx)
 {
-	u32_t new_val32;
-	int ret;
+	int rc;
 
-	if (argc != 1) {
-		return -ENOENT;
+	if (argc == 1 && !strcmp(argv[0], "val32"))	 {
+		rc = settings_val_read_cb(value_ctx, &val32, sizeof(val32));
+		zassert_true(rc >= 0, "SETTINGS_VALUE_SET callback");
+		return 0;
 	}
 
-	if (strcmp(argv[0], "val32")) {
-		return -ENOENT;
-	}
-
-	ret = SETTINGS_VALUE_SET(val, SETTINGS_INT32, new_val32);
-	if (ret != 0) {
-		return -EIO;
-	}
-
-	val32 = new_val32;
-
-	return 0;
+	return -ENOENT;
 }
 
-static int c1_export(int (*export_func)(const char *name, char *val))
+static int c1_export(int (*export_func)(const char *name, void *value,
+					size_t val_len))
 {
-	char buf[32];
-
-	ARG_UNUSED(tgt);
-
-	settings_str_from_value(SETTINGS_INT32, &val32, buf, sizeof(val32));
-
-	export_func("hello/val32", buf);
+	(void)export_func("hello/val32", &val32, sizeof(val32));
 
 	return 0;
 }
