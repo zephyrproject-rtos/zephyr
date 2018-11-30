@@ -53,6 +53,8 @@ jobs:
         git config --global user.email "you@example.com"
         git config --global user.name "Your Name"
         git remote -v
+        # Sauce tag checks before rebasing
+        git log --oneline --first-parent origin/${BASE_REF}..HEAD | grep -E -v "\[nrf (mergeup|fromtree|fromlist|noup)\]" && { echo 'Sauce tag missing'; exit 1; }
         git rebase origin/${BASE_REF}
         # debug
         git log  --pretty=oneline | head -n 10
@@ -69,7 +71,7 @@ jobs:
         # debug
         ls -la
         git log  --pretty=oneline | head -n 10
-        ./scripts/ci/check_compliance.py -m Codeowners -m Devicetree -m Gitlint -m Identity -m Nits -m pylint -m checkpatch -m Kconfig -c origin/${BASE_REF}..
+        ./scripts/ci/check_compliance.py -m Codeowners -m Devicetree -m Gitlint -m Identity -m Nits -m pylint -m checkpatch -m KconfigBasic -c origin/${BASE_REF}..
 
     - name: upload-results
       uses: actions/upload-artifact@master
