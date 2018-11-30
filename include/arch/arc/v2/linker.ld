@@ -42,6 +42,14 @@
 		#define MPU_MIN_SIZE 32
 	#endif
 	#define MPU_MIN_SIZE_ALIGN . = ALIGN(MPU_MIN_SIZE );
+	#if defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
+		#define MPU_ALIGN(region_size) \
+			. = ALIGN(MPU_MIN_SIZE); \
+			. = ALIGN( 1 << LOG2CEIL(region_size))
+	#else
+		#define MPU_ALIGN(region_size) \
+			. = ALIGN(MPU_MIN_SIZE)
+	#endif
 #else
 	#define MPU_MIN_SIZE_ALIGN
 #endif
