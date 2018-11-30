@@ -186,12 +186,23 @@ u32_t soc_get_ref_clk_freq(void)
 
 static void soc_set_power_and_clock(void)
 {
-	volatile struct soc_dsp_shim_regs *regs =
-		(volatile struct soc_dsp_shim_regs *)
-		SOC_DSP_SHIM_REG_BASE;
+	volatile struct soc_dsp_shim_regs *dsp_shim_regs =
+		(volatile struct soc_dsp_shim_regs *)SOC_DSP_SHIM_REG_BASE;
+#if (CONFIG_AUDIO_INTEL_DMIC)
+	volatile struct soc_dmic_shim_regs *dmic_shim_regs =
+		(volatile struct soc_dmic_shim_regs *)SOC_DMIC_SHIM_REG_BASE;
 
-	regs->clkctl |= SOC_CLKCTL_REQ_FAST_CLK | SOC_CLKCTL_OCS_FAST_CLK;
-	regs->pwrctl |= SOC_PWRCTL_DISABLE_PWR_GATING_DSP1 |
+	/* enable power */
+	dmic_shim_regs->dmiclctl |= SOC_DMIC_SHIM_DMICLCTL_SPA;
+
+	while ((dmic_shim_regs->dmiclctl & SOC_DMIC_SHIM_DMICLCTL_CPA) == 0) {
+		/* wait for power status */
+	}
+#endif
+
+	dsp_shim_regs->clkctl |= SOC_CLKCTL_REQ_FAST_CLK |
+		SOC_CLKCTL_OCS_FAST_CLK;
+	dsp_shim_regs->pwrctl |= SOC_PWRCTL_DISABLE_PWR_GATING_DSP1 |
 		SOC_PWRCTL_DISABLE_PWR_GATING_DSP0;
 }
 

@@ -117,6 +117,16 @@ struct soc_resource_alloc_regs {
 	u32_t	geno;
 };
 
+/* DMIC SHIM Registers */
+#define SOC_DMIC_SHIM_REG_BASE			0x00071E80
+#define SOC_DMIC_SHIM_DMICLCTL_SPA		BIT(0)
+#define SOC_DMIC_SHIM_DMICLCTL_CPA		BIT(8)
+
+struct soc_dmic_shim_regs {
+	u32_t	dmiclcap;
+	u32_t	dmiclctl;
+};
+
 /* SOC DSP SHIM Registers */
 #define SOC_DSP_SHIM_REG_BASE			0x00071F00
 /* SOC DSP SHIM Register - Clock Control */
