@@ -92,14 +92,25 @@ extern void posix_exit(int exit_code);
 	}
 #endif
 
+#define __ASSERT_LOC(test)                               \
+	printk("ASSERTION FAIL [%s] @ %s:%d\n",    \
+	       _STRINGIFY(test),                         \
+	       __FILE__,                                 \
+	       __LINE__)                                 \
+
+#define __ASSERT_NO_MSG(test)                                            \
+	do {                                                             \
+		if (!(test)) {                                           \
+			__ASSERT_LOC(test);                              \
+			__ASSERT_POST;                                   \
+		}                                                        \
+	} while (false)
+
 #define __ASSERT(test, fmt, ...)                                         \
 	do {                                                             \
 		if (!(test)) {                                           \
-			(void)printk("ASSERTION FAIL [%s] @ %s:%d:\n\t", \
-			       _STRINGIFY(test),                         \
-			       __FILE__,                                 \
-			       __LINE__);                                \
-			(void)printk(fmt, ##__VA_ARGS__);                \
+			__ASSERT_LOC(test);                              \
+			printk("\t" fmt "\n", ##__VA_ARGS__);      \
 			__ASSERT_POST;                                   \
 		}                                                        \
 	} while (false)
@@ -116,12 +127,12 @@ extern void posix_exit(int exit_code);
 #else
 #define __ASSERT(test, fmt, ...) { }
 #define __ASSERT_EVAL(expr1, expr2, test, fmt, ...) expr1
+#define __ASSERT_NO_MSG(test) { }
 #endif
 #else
 #define __ASSERT(test, fmt, ...) { }
 #define __ASSERT_EVAL(expr1, expr2, test, fmt, ...) expr1
+#define __ASSERT_NO_MSG(test) { }
 #endif
-
-#define __ASSERT_NO_MSG(test) __ASSERT(test, "")
 
 #endif /* ZEPHYR_INCLUDE_MISC___ASSERT_H_ */
