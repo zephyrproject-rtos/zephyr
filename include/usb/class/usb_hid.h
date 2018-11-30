@@ -2,6 +2,7 @@
  * Human Interface Device (HID) USB class core header
  *
  * Copyright (c) 2018 Intel Corporation
+ * Copyright (c) 2018 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -59,6 +60,7 @@ struct usb_hid_descriptor {
 typedef int (*hid_cb_t)(struct usb_setup_packet *setup, s32_t *len,
 			u8_t **data);
 typedef void (*hid_int_ready_callback)(void);
+typedef void (*hid_idle_cb_t)(u16_t report_id);
 
 struct hid_ops {
 	hid_cb_t get_report;
@@ -67,6 +69,7 @@ struct hid_ops {
 	hid_cb_t set_report;
 	hid_cb_t set_idle;
 	hid_cb_t set_protocol;
+	hid_idle_cb_t on_idle;
 	/*
 	 * int_in_ready is an optional callback that is called when
 	 * the current interrupt IN transfer has completed.  This can

@@ -3,6 +3,7 @@
  *
  * Copyright(c) 2015,2016 Intel Corporation.
  * Copyright(c) 2017 PHYTEC Messtechnik GmbH
+ * Copyright(c) 2018 Nordic Semiconductor ASA
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -85,6 +86,9 @@
 /* USB 1.1 spec indicates 100mA(max) per unit load, up to 5 loads */
 #define MAX_LOW_POWER			0x32
 #define MAX_HIGH_POWER			0xFA
+
+/* Highest value of Frame Number in SOF packets. */
+#define USB_SOF_MAX			2047
 
 /* bmAttributes:
  * D7:Reserved, always 1,

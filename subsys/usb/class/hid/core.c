@@ -18,6 +18,8 @@ LOG_MODULE_REGISTER(usb_hid);
 #include <usb_descriptor.h>
 #include <class/usb_hid.h>
 
+#include <stdlib.h>
+
 #define HID_INT_IN_EP_ADDR				0x81
 #define HID_INT_OUT_EP_ADDR				0x01
 
@@ -86,18 +88,36 @@ USBD_CLASS_DESCR_DEFINE(primary) struct usb_hid_config hid_cfg = {
 static struct hid_device_info {
 	const u8_t *report_desc;
 	size_t report_size;
-
 	const struct hid_ops *ops;
+#ifdef CONFIG_USB_DEVICE_SOF
+	u32_t sof_cnt[CONFIG_USB_HID_REPORTS + 1];
+	bool idle_on;
+	bool idle_id_report;
+	u8_t idle_rate[CONFIG_USB_HID_REPORTS + 1];
+#endif
 } hid_device;
 
 static int hid_on_get_idle(struct usb_setup_packet *setup, s32_t *len,
 			   u8_t **data)
 {
-	LOG_DBG("Get Idle callback");
+#ifdef CONFIG_USB_DEVICE_SOF
+	u8_t report_id = sys_le16_to_cpu(setup->wValue) & 0xFF;
 
-	/* TODO: Do something. */
+	if (report_id > CONFIG_USB_HID_REPORTS) {
+		LOG_ERR("Report id out of limit: %d", report_id);
+		return -ENOTSUP;
+	}
 
+	u32_t size = sizeof(hid_device.idle_rate[report_id]);
+
+	LOG_DBG("Get Idle callback, report_id: %d", report_id);
+
+	*data = &hid_device.idle_rate[report_id];
+	len = &size;
+	return 0;
+#else
 	return -ENOTSUP;
+#endif
 }
 
 static int hid_on_get_report(struct usb_setup_packet *setup, s32_t *len,
@@ -107,7 +127,7 @@ static int hid_on_get_report(struct usb_setup_packet *setup, s32_t *len,
 
 	/* TODO: Do something. */
 
-	return 0;
+	return -ENOTSUP;
 }
 
 static int hid_on_get_protocol(struct usb_setup_packet *setup, s32_t *len,
@@ -123,11 +143,53 @@ static int hid_on_get_protocol(struct usb_setup_packet *setup, s32_t *len,
 static int hid_on_set_idle(struct usb_setup_packet *setup, s32_t *len,
 			   u8_t **data)
 {
-	LOG_DBG("Set Idle callback");
+#ifdef CONFIG_USB_DEVICE_SOF
+	u8_t rate = ((sys_le16_to_cpu(setup->wValue) & 0xFF00) >> 8);
+	u8_t report_id = sys_le16_to_cpu(setup->wValue) & 0xFF;
 
-	/* TODO: Do something. */
+	if (report_id > CONFIG_USB_HID_REPORTS) {
+		LOG_ERR("Report id out of limit: %d", report_id);
+		return -ENOTSUP;
+	}
 
+	LOG_DBG("Set Idle callback, rate: %d, report_id: %d", rate, report_id);
+
+	hid_device.idle_rate[report_id] = rate;
+
+	if (rate == 0) {
+		/* Clear idle */
+		bool clear = true;
+
+		for (u16_t i = 1; i <= CONFIG_USB_HID_REPORTS; i++) {
+			if (hid_device.idle_rate[i] != 0) {
+				/* Report with non-zero id has idle rate. */
+				clear = false;
+				break;
+			}
+		}
+		if (clear) {
+			hid_device.idle_id_report = false;
+			LOG_DBG("Non-zero report idle rate OFF.");
+
+			if (hid_device.idle_rate[0] == 0) {
+				hid_device.idle_on = false;
+				LOG_DBG("Idle rate OFF.");
+			}
+		}
+	} else {
+		/* Set idle */
+		hid_device.idle_on = true;
+		LOG_DBG("Idle rate ON.");
+		if (report_id != 0) {
+			/* Report with non-zero id has idle rate set now. */
+			hid_device.idle_id_report = true;
+			LOG_DBG("Non-zero report idle rate ON.");
+		}
+	}
 	return 0;
+#else
+	return -ENOTSUP;
+#endif
 }
 
 static int hid_on_set_report(struct usb_setup_packet *setup, s32_t *len,
@@ -156,40 +218,84 @@ static void usb_set_hid_report_size(u16_t size)
 		     (u8_t *)&(hid_cfg.if0_hid.subdesc[0].wDescriptorLength));
 }
 
-static void hid_status_cb(enum usb_dc_status_code status, const u8_t *param)
+#ifdef CONFIG_USB_DEVICE_SOF
+void hid_clear_idle_ctx(void)
 {
-	if (hid_device.ops->status_cb) {
-		hid_device.ops->status_cb(status, param);
-	} else {
-		switch (status) {
-		case USB_DC_ERROR:
-			LOG_DBG("USB device error");
-			break;
-		case USB_DC_RESET:
-			LOG_DBG("USB device reset detected");
-			break;
-		case USB_DC_CONNECTED:
-			LOG_DBG("USB device connected");
-			break;
-		case USB_DC_CONFIGURED:
-			LOG_DBG("USB device configured");
-			break;
-		case USB_DC_DISCONNECTED:
-			LOG_DBG("USB device disconnected");
-			break;
-		case USB_DC_SUSPEND:
-			LOG_DBG("USB device suspended");
-			break;
-		case USB_DC_RESUME:
-			LOG_DBG("USB device resumed");
-			break;
-		case USB_DC_SOF:
-			break;
-		case USB_DC_UNKNOWN:
-		default:
-			LOG_DBG("USB unknown state");
+	hid_device.idle_on = false;
+	hid_device.idle_id_report = false;
+	for (u16_t i = 0; i <= CONFIG_USB_HID_REPORTS; i++) {
+		hid_device.sof_cnt[i] = 0;
+		hid_device.idle_rate[i] = 0;
+	}
+}
+
+void hid_sof_handler(void)
+{
+	for (u16_t i = 0; i <= CONFIG_USB_HID_REPORTS; i++) {
+		if (hid_device.idle_rate[i]) {
+			hid_device.sof_cnt[i]++;
+		}
+
+		u32_t diff = abs((hid_device.idle_rate[i] * 4)
+				 - hid_device.sof_cnt[i]);
+
+		if (diff < (2 + (hid_device.idle_rate[i] / 10))) {
+			hid_device.sof_cnt[i] = 0;
+			hid_device.ops->on_idle(i);
+		}
+
+		if (!hid_device.idle_id_report) {
+			/* Only report with 0 id has idle rate.
+			 * No need to check the whole array.
+			 */
 			break;
 		}
+	}
+}
+#endif
+
+static void hid_status_cb(enum usb_dc_status_code status, const u8_t *param)
+{
+	switch (status) {
+	case USB_DC_ERROR:
+		LOG_DBG("USB device error");
+		break;
+	case USB_DC_RESET:
+		LOG_DBG("USB device reset detected");
+#ifdef CONFIG_USB_DEVICE_SOF
+		hid_clear_idle_ctx();
+#endif
+		break;
+	case USB_DC_CONNECTED:
+		LOG_DBG("USB device connected");
+		break;
+	case USB_DC_CONFIGURED:
+		LOG_DBG("USB device configured");
+		break;
+	case USB_DC_DISCONNECTED:
+		LOG_DBG("USB device disconnected");
+		break;
+	case USB_DC_SUSPEND:
+		LOG_DBG("USB device suspended");
+		break;
+	case USB_DC_RESUME:
+		LOG_DBG("USB device resumed");
+		break;
+	case USB_DC_SOF:
+#ifdef CONFIG_USB_DEVICE_SOF
+		if (hid_device.idle_on) {
+			hid_sof_handler();
+		}
+#endif
+		break;
+	case USB_DC_UNKNOWN:
+	default:
+		LOG_DBG("USB unknown state");
+		break;
+	}
+
+	if (hid_device.ops->status_cb) {
+		hid_device.ops->status_cb(status, param);
 	}
 }
 

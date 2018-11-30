@@ -37,4 +37,12 @@ config USB_HID_POLL_INTERVAL_MS
 	help
 	  Polling interval in ms selected by the USB HID Device.
 
+config USB_HID_REPORTS
+	int "HID reports in the instance"
+	default 1
+	range 1 256
+	help
+	  Number of HID reports in the instance.
+	  Must be equal or higher than highest report ID (if they are not consecutive).
+
 endif # USB_DEVICE_HID
