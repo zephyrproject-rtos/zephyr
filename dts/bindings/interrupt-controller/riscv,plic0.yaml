@@ -30,8 +30,6 @@ properties:
       category: required
       generation: define
 
-base_label: PLIC
-
 "#cells":
   - irq
 ...
