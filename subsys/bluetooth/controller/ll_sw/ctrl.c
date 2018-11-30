@@ -166,6 +166,7 @@ static struct {
 	u8_t  volatile ticker_id_prepare;
 	u8_t  volatile ticker_id_event;
 	u8_t  volatile ticker_id_stop;
+	u8_t  volatile ticker_id_upd;
 
 	enum  role volatile role;
 	enum  state state;
@@ -249,10 +250,12 @@ static u16_t const gc_lookup_ppm[] = { 500, 250, 150, 100, 75, 50, 30, 20 };
 
 static void common_init(void);
 static void ticker_success_assert(u32_t status, void *params);
+static void ticker_update_adv_assert(u32_t status, void *params);
 static void ticker_stop_adv_assert(u32_t status, void *params);
 static void ticker_stop_scan_assert(u32_t status, void *params);
-static void ticker_update_adv_assert(u32_t status, void *params);
 static void ticker_update_slave_assert(u32_t status, void *params);
+static void ticker_stop_slave_assert(u32_t status, void *params);
+static void ticker_start_slave_assert(u32_t status, void *params);
 static void event_inactive(u32_t ticks_at_expire, u32_t remainder,
 			   u16_t lazy, void *context);
 
@@ -4472,6 +4475,14 @@ static void ticker_success_assert(u32_t status, void *params)
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
 }
 
+static void ticker_update_adv_assert(u32_t status, void *params)
+{
+	ARG_UNUSED(params);
+
+	LL_ASSERT((status == TICKER_STATUS_SUCCESS) ||
+		  (_radio.ticker_id_stop == RADIO_TICKER_ID_ADV));
+}
+
 static void ticker_stop_adv_assert(u32_t status, void *params)
 {
 	ARG_UNUSED(params);
@@ -4522,20 +4533,27 @@ static void ticker_stop_scan_assert(u32_t status, void *params)
 	}
 }
 
-static void ticker_update_adv_assert(u32_t status, void *params)
-{
-	ARG_UNUSED(params);
-
-	LL_ASSERT((status == TICKER_STATUS_SUCCESS) ||
-		  (_radio.ticker_id_stop == RADIO_TICKER_ID_ADV));
-}
-
 static void ticker_update_slave_assert(u32_t status, void *params)
 {
 	u8_t ticker_id = (u32_t)params & 0xFF;
 
 	LL_ASSERT((status == TICKER_STATUS_SUCCESS) ||
-		  (_radio.ticker_id_stop == ticker_id));
+		  (_radio.ticker_id_stop == ticker_id) ||
+		  (_radio.ticker_id_upd == ticker_id));
+}
+
+static void ticker_stop_slave_assert(u32_t status, void *params)
+{
+	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+
+	_radio.ticker_id_upd = (u8_t)((u32_t)params & 0xFF);
+}
+
+static void ticker_start_slave_assert(u32_t status, void *params)
+{
+	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+
+	_radio.ticker_id_upd = 0;
 }
 
 static void mayfly_radio_active(void *params)
@@ -6742,6 +6760,7 @@ static inline u32_t event_conn_upd_prep(struct connection *conn,
 		u32_t conn_interval_us;
 		u32_t ticker_status;
 		u32_t periodic_us;
+		u8_t ticker_id;
 		u16_t latency;
 
 		/* procedure request acked */
@@ -6906,19 +6925,17 @@ static inline u32_t event_conn_upd_prep(struct connection *conn,
 			      RADIO_TICKER_USER_ID_JOB, 0);
 
 		/* start slave/master with new timings */
+		ticker_id = RADIO_TICKER_ID_FIRST_CONNECTION + conn->handle;
 		ticker_status =
 			ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
-				    RADIO_TICKER_USER_ID_WORKER,
-				    RADIO_TICKER_ID_FIRST_CONNECTION +
-				    conn->handle, ticker_success_assert,
-				    (void *)__LINE__);
+				    RADIO_TICKER_USER_ID_WORKER, ticker_id,
+				    ticker_stop_slave_assert,
+				    (void *)(u32_t)ticker_id);
 		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 			  (ticker_status == TICKER_STATUS_BUSY));
 		ticker_status =
 			ticker_start(RADIO_TICKER_INSTANCE_ID_RADIO,
-				     RADIO_TICKER_USER_ID_WORKER,
-				     RADIO_TICKER_ID_FIRST_CONNECTION +
-				     conn->handle,
+				     RADIO_TICKER_USER_ID_WORKER, ticker_id,
 				     ticks_at_expire, ticks_win_offset,
 				     HAL_TICKER_US_TO_TICKS(periodic_us),
 				     HAL_TICKER_REMAINDER(periodic_us),
@@ -6926,8 +6943,8 @@ static inline u32_t event_conn_upd_prep(struct connection *conn,
 				     (ticks_slot_offset + conn->hdr.ticks_slot),
 				     conn->role ?
 				     event_slave_prepare : event_master_prepare,
-				     conn, ticker_success_assert,
-				     (void *)__LINE__);
+				     conn, ticker_start_slave_assert,
+				     (void *)(u32_t)ticker_id);
 		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 			  (ticker_status == TICKER_STATUS_BUSY));
 
