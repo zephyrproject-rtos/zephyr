@@ -107,7 +107,7 @@ static int uart_imx_poll_in(struct device *dev, unsigned char *c)
 {
 	UART_Type *uart = UART_STRUCT(dev);
 
-	while (!UART_GetStatusFlag(uart, uartStatusRxReady))
+	while (!UART_GetStatusFlag(uart, uartStatusRxDataReady))
 		;
 	*c = UART_Getchar(uart);
 
@@ -254,7 +254,7 @@ void uart_imx_isr(void *arg)
 	struct imx_uart_data *data = dev->driver_data;
 
 	if (data->callback) {
-		data->callback(dev);
+		data->callback(data->cb_data);
 	}
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
