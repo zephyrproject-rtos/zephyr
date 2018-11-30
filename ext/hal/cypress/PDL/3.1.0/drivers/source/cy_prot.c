@@ -401,7 +401,7 @@ cy_en_prot_status_t Cy_Prot_ConfigSmpuSlaveStruct(PROT_SMPU_SMPU_STRUCT_Type* ba
                     | _VAL2FLD(PROT_SMPU_SMPU_STRUCT_ATT0_PC_MATCH, config->pcMatch);
         PROT_SMPU_SMPU_STRUCT_ATT0(base) = attReg;
         PROT_SMPU_SMPU_STRUCT_ADDR0(base) = addrReg;
-        status = ((PROT_SMPU_SMPU_STRUCT_ATT0(base) != addrReg) || ((PROT_SMPU_SMPU_STRUCT_ATT0(base) & CY_PROT_SMPU_ATT0_MASK) != attReg))
+        status = ((PROT_SMPU_SMPU_STRUCT_ADDR0(base) != addrReg) || ((PROT_SMPU_SMPU_STRUCT_ATT0(base) & CY_PROT_SMPU_ATT0_MASK) != attReg))
             ? CY_PROT_FAILURE : CY_PROT_SUCCESS;
     }
     
