@@ -88,8 +88,10 @@
 			compatible = "riscv,plic0";
 			interrupt-controller;
 			interrupts-extended = <&hlic 11>;
-			reg = <0xc000000 0x4000000>;
-			reg-names = "control";
+			reg = <0xc000000 0x2000
+			       0xc002000 0x1fe000
+			       0xc200000 0x2000000>;
+			reg-names = "prio", "irq_en", "reg";
 			riscv,max-priority = <7>;
 			riscv,ndev = <52>;
 		};

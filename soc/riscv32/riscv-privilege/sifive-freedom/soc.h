@@ -23,13 +23,6 @@
 /* PINMUX MAX PINS */
 #define SIFIVE_PINMUX_PINS            32
 
-/* Platform Level Interrupt Controller Configuration */
-#define PLIC_PRIO_BASE_ADDR    PLIC_BASE_ADDRESS
-#define PLIC_IRQ_EN_BASE_ADDR  (PLIC_BASE_ADDRESS + 0x2000)
-#define PLIC_REG_BASE_ADDR     (PLIC_BASE_ADDRESS + 0x200000)
-
-#define PLIC_MAX_PRIORITY      PLIC_RISCV_MAX_PRIORITY
-
 /* Clock controller. */
 #define PRCI_BASE_ADDR               0x10008000
 
