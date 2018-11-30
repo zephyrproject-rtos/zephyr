@@ -240,13 +240,6 @@ config LOG_PROCESS_THREAD_SLEEP_MS
 	  Log processing thread sleeps for requested period given in
 	  milliseconds. When waken up, thread process any buffered messages.
 
-config LOG_PROCESS_THREAD_PRIO
-	int "Priority of the log internal thread"
-	default -2
-	help
-	  Change with care since log processing can be time consuming thus it
-	  should be on low priority.
-
 config LOG_PROCESS_THREAD_STACK_SIZE
 	int "Stack size for the internal log processing thread"
 	default 768

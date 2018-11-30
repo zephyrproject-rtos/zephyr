@@ -609,7 +609,7 @@ static int enable_logger(struct device *arg)
 	k_thread_create(&logging_thread, logging_stack,
 			K_THREAD_STACK_SIZEOF(logging_stack),
 			log_process_thread_func, NULL, NULL, NULL,
-			CONFIG_LOG_PROCESS_THREAD_PRIO, 0, K_NO_WAIT);
+			K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_NO_WAIT);
 	k_thread_name_set(&logging_thread, "logging");
 #else
 	log_init();
