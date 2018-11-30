@@ -30,6 +30,8 @@ LOG_MODULE_REGISTER(ssd1673);
 #define SSD1673_PANEL_FIRST_GATE	0
 #define SSD1673_PANEL_LAST_GATE		249
 
+#define SSD1673_PIXELS_PER_BYTE		8
+
 struct ssd1673_data {
 	struct device *reset;
 	struct device *dc;
@@ -205,11 +207,11 @@ static int ssd1673_write(const struct device *dev, const u16_t x,
 			 const void *buf)
 {
 	struct ssd1673_data *driver = dev->driver_data;
-	u8_t cmd = SSD1673_CMD_WRITE_RAM;
-	u8_t dummy_page[SSD1673_RAM_YRES];
-	struct spi_buf sbuf = {.buf = &cmd, .len = 1};
-	struct spi_buf_set buf_set = {.buffers = &sbuf, .count = 1};
 	int err;
+	u8_t x_start;
+	u8_t x_end;
+	u8_t y_start;
+	u8_t y_end;
 
 	if (desc->pitch < desc->width) {
 		LOG_ERR("Pitch is smaller then width");
@@ -226,56 +228,48 @@ static int ssd1673_write(const struct device *dev, const u16_t x,
 		return -ENOTSUP;
 	}
 
-	if (x != 0 && y != 0) {
-		LOG_ERR("Unsupported origin");
-		return -ENOTSUP;
+	if ((y + desc->height) > EPD_PANEL_HEIGHT) {
+		LOG_ERR("Buffer out of bounds (height)");
+		return -EINVAL;
 	}
 
+	if ((x + desc->width) > EPD_PANEL_WIDTH) {
+		LOG_ERR("Buffer out of bounds (width)");
+		return -EINVAL;
+	}
 
-	ssd1673_busy_wait(driver);
-	memset(dummy_page, 0xff, sizeof(dummy_page));
+	if ((desc->height % EPD_PANEL_NUMOF_ROWS_PER_PAGE) != 0) {
+		LOG_ERR("Buffer height not multiple of %d",
+				EPD_PANEL_NUMOF_ROWS_PER_PAGE);
+		return -EINVAL;
+	}
+
+	if ((y % EPD_PANEL_NUMOF_ROWS_PER_PAGE) != 0) {
+		LOG_ERR("Y coordinate not multiple of %d",
+				EPD_PANEL_NUMOF_ROWS_PER_PAGE);
+		return -EINVAL;
+	}
 
 	switch (driver->scan_mode) {
 	case SSD1673_DATA_ENTRY_XIYDY:
-		err = ssd1673_set_ram_param(driver,
-					    SSD1673_PANEL_FIRST_PAGE,
-					    SSD1673_PANEL_LAST_PAGE + 1,
-					    SSD1673_PANEL_LAST_GATE,
-					    SSD1673_PANEL_FIRST_GATE);
-		if (err < 0) {
-			return err;
-		}
-
-		err = ssd1673_set_ram_ptr(driver,
-					  SSD1673_PANEL_FIRST_PAGE,
-					  SSD1673_PANEL_LAST_GATE);
-		if (err < 0) {
-			return err;
-		}
-
+		x_start = y / SSD1673_PIXELS_PER_BYTE;
+		x_end = (y + desc->height - 1) / SSD1673_PIXELS_PER_BYTE;
+		y_start = (x + desc->width - 1);
+		y_end = x;
 		break;
 
 	case SSD1673_DATA_ENTRY_XDYIY:
-		err = ssd1673_set_ram_param(driver,
-					    SSD1673_PANEL_LAST_PAGE + 1,
-					    SSD1673_PANEL_FIRST_PAGE,
-					    SSD1673_PANEL_FIRST_GATE,
-					    SSD1673_PANEL_LAST_GATE);
-		if (err < 0) {
-			return err;
-		}
-
-		err = ssd1673_set_ram_ptr(driver,
-					  SSD1673_PANEL_LAST_PAGE + 1,
-					  SSD1673_PANEL_FIRST_GATE);
-		if (err < 0) {
-			return err;
-		}
-
+		x_start = (EPD_PANEL_HEIGHT - 1 - y) / SSD1673_PIXELS_PER_BYTE;
+		x_end = (EPD_PANEL_HEIGHT - 1 - (y + desc->height - 1)) /
+			SSD1673_PIXELS_PER_BYTE;
+		y_start = x;
+		y_end = (x + desc->width - 1);
 		break;
 	default:
 		return -EINVAL;
 	}
+
+	ssd1673_busy_wait(driver);
 
 	err = ssd1673_write_cmd(driver, SSD1673_CMD_ENTRY_MODE,
 				&driver->scan_mode, sizeof(driver->scan_mode));
@@ -283,38 +277,20 @@ static int ssd1673_write(const struct device *dev, const u16_t x,
 		return err;
 	}
 
-	gpio_pin_write(driver->dc, DT_SSD1673_DC_PIN, 0);
-	err = spi_write(driver->spi_dev, &driver->spi_config, &buf_set);
+	err = ssd1673_set_ram_param(driver, x_start, x_end, y_start, y_end);
 	if (err < 0) {
 		return err;
 	}
 
-	gpio_pin_write(driver->dc, DT_SSD1673_DC_PIN, 1);
-	/* clear unusable page */
-	if (driver->scan_mode == SSD1673_DATA_ENTRY_XDYIY) {
-		sbuf.buf = dummy_page;
-		sbuf.len = sizeof(dummy_page);
-		err = spi_write(driver->spi_dev, &driver->spi_config, &buf_set);
-		if (err < 0) {
-			return err;
-		}
-	}
-
-	sbuf.buf = (u8_t *)buf;
-	sbuf.len = desc->buf_size;
-	err = spi_write(driver->spi_dev, &driver->spi_config, &buf_set);
+	err = ssd1673_set_ram_ptr(driver, x_start, y_start);
 	if (err < 0) {
 		return err;
 	}
 
-	/* clear unusable page */
-	if (driver->scan_mode == SSD1673_DATA_ENTRY_XIYDY) {
-		sbuf.buf = dummy_page;
-		sbuf.len = sizeof(dummy_page);
-		err = spi_write(driver->spi_dev, &driver->spi_config, &buf_set);
-		if (err < 0) {
-			return err;
-		}
+	err = ssd1673_write_cmd(driver, SSD1673_CMD_WRITE_RAM, (u8_t *)buf,
+				desc->buf_size);
+	if (err < 0) {
+		return err;
 	}
 
 	return ssd1673_update_display(dev);
