@@ -34,8 +34,8 @@ jobs:
         git config --global user.name "Your Name"
         git remote -v
         # Ensure there's no merge commits in the PR
-        [[ "$(git rev-list --merges --count origin/${BASE_REF}..)" == "0" ]] || \
-        (echo "::error ::Merge commits not allowed, rebase instead";false)
+        #[[ "$(git rev-list --merges --count origin/${BASE_REF}..)" == "0" ]] || \
+        #(echo "::error ::Merge commits not allowed, rebase instead";false)
         rm -fr ".git/rebase-apply"
         rm -fr ".git/rebase-merge"
         git rebase origin/${BASE_REF}
@@ -72,12 +72,9 @@ jobs:
         git log  --pretty=oneline | head -n 10
         # Increase rename limit to allow for large PRs
         git config diff.renameLimit 10000
-        excludes="-e KconfigBasic -e SysbuildKconfigBasic -e ClangFormat"
-        # The signed-off-by check for dependabot should be skipped
-        if [ "${{ github.actor }}" == "dependabot[bot]" ]; then
-          excludes="$excludes -e Identity"
-        fi
-        ./scripts/ci/check_compliance.py --annotate $excludes -c origin/${BASE_REF}..
+        ./scripts/ci/check_compliance.py --annotate -e KconfigBasic -e SysbuildKconfigBasic \
+        -e Kconfig -e SysbuildKconfig -e KconfigBasicNoModules -e SysbuildKconfigBasicNoModules \
+        -e ModulesMaintainers -c origin/${BASE_REF}..
 
     - name: upload-results
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
