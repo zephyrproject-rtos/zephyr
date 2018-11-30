@@ -8,8 +8,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_icmpv4
-#define NET_LOG_LEVEL CONFIG_NET_ICMPV4_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_icmpv4, CONFIG_NET_ICMPV4_LOG_LEVEL);
 
 #include <errno.h>
 #include <misc/slist.h>

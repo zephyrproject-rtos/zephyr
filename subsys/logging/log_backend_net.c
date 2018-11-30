@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <logging/log.h>
+LOG_MODULE_REGISTER(log_backend_net, CONFIG_LOG_DEFAULT_LEVEL);
+
 #include <logging/log_backend.h>
 #include <logging/log_core.h>
 #include <logging/log_output.h>

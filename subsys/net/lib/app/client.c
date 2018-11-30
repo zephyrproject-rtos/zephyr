@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_app_client
-#define NET_LOG_LEVEL CONFIG_NET_APP_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_DECLARE(net_app, CONFIG_NET_APP_LOG_LEVEL);
 
 #include <zephyr.h>
 #include <string.h>

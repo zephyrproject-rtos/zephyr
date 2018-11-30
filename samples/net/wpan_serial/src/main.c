@@ -12,8 +12,8 @@
  * with popular Contiki-based native border routers.
  */
 
-#define LOG_MODULE_NAME net_wpan_serial
-#define NET_LOG_LEVEL LOG_LEVEL_DBG
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_wpan_serial_sample, LOG_LEVEL_DBG);
 
 #include <string.h>
 #include <device.h>

@@ -16,8 +16,8 @@
  * This might not be what you want to do in your app so caveat emptor.
  */
 
-#define LOG_MODULE_NAME net_echo_client
-#define NET_LOG_LEVEL LOG_LEVEL_DBG
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_echo_client_sample, LOG_LEVEL_DBG);
 
 #include <zephyr.h>
 #include <errno.h>

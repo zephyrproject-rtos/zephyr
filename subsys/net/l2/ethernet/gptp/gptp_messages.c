@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_gptp_msg
-#define NET_LOG_LEVEL CONFIG_NET_GPTP_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_DECLARE(net_gptp, CONFIG_NET_GPTP_LOG_LEVEL);
 
 #include <net/net_if.h>
 
@@ -25,7 +25,7 @@ static const struct net_eth_addr gptp_multicast_eth_addr = {
 	{ 0x01, 0x80, 0xc2, 0x00, 0x00, 0x0e } };
 
 #define NET_GPTP_INFO(msg, pkt)						\
-	if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {				\
+	if (CONFIG_NET_GPTP_LOG_LEVEL >= LOG_LEVEL_DBG) {		\
 		struct gptp_hdr *hdr = GPTP_HDR(pkt);			\
 									\
 		if (hdr->message_type == GPTP_ANNOUNCE_MESSAGE) {	\

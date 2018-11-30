@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_ethernet
-#define NET_LOG_LEVEL CONFIG_NET_L2_ETHERNET_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_ethernet, CONFIG_NET_L2_ETHERNET_LOG_LEVEL);
 
 #include <net/net_core.h>
 #include <net/net_l2.h>
@@ -49,7 +49,7 @@ void net_eth_ipv6_mcast_to_mac_addr(const struct in6_addr *ipv6_addr,
 }
 
 #define print_ll_addrs(pkt, type, len, src, dst)			   \
-	if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {				   \
+	if (CONFIG_NET_L2_ETHERNET_LOG_LEVEL >= LOG_LEVEL_DBG) {	   \
 		char out[sizeof("xx:xx:xx:xx:xx:xx")];			   \
 									   \
 		snprintk(out, sizeof(out), "%s",			   \
@@ -65,7 +65,7 @@ void net_eth_ipv6_mcast_to_mac_addr(const struct in6_addr *ipv6_addr,
 
 #ifdef CONFIG_NET_VLAN
 #define print_vlan_ll_addrs(pkt, type, tci, len, src, dst)		   \
-	if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {				   \
+	if (CONFIG_NET_L2_ETHERNET_LOG_LEVEL >= LOG_LEVEL_DBG) {	   \
 		char out[sizeof("xx:xx:xx:xx:xx:xx")];			   \
 									   \
 		snprintk(out, sizeof(out), "%s",			   \

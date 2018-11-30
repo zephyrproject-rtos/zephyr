@@ -4,8 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_ieee802154_frame
-#define NET_LOG_LEVEL CONFIG_NET_L2_IEEE802154_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_ieee802154_frame, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
+
+#include <net/net_core.h>
+#include <net/net_if.h>
+
+#include <ipv6.h>
+#include <nbr.h>
+
+#include "ieee802154_frame.h"
+#include "ieee802154_security.h"
 
 #define dbg_print_fs(fs)						\
 	NET_DBG("fs(1): %u/%u/%u/%u/%u/%u",				\
@@ -16,15 +25,6 @@
 		fs->fc.seq_num_suppr, fs->fc.ie_list,			\
 		fs->fc.dst_addr_mode, fs->fc.frame_version,		\
 		fs->fc.src_addr_mode, fs->sequence)
-
-#include <net/net_core.h>
-#include <net/net_if.h>
-
-#include <ipv6.h>
-#include <nbr.h>
-
-#include "ieee802154_frame.h"
-#include "ieee802154_security.h"
 
 #define BUF_TIMEOUT K_MSEC(50)
 

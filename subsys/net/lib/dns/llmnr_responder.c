@@ -10,8 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_llmnr_responder
-#define NET_LOG_LEVEL CONFIG_LLMNR_RESPONDER_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_llmnr_responder, CONFIG_LLMNR_RESPONDER_LOG_LEVEL);
 
 #include <zephyr.h>
 #include <init.h>

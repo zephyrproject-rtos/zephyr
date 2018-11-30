@@ -10,8 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_dns_resolve
-#define NET_LOG_LEVEL CONFIG_DNS_RESOLVER_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_dns_resolve, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 
 #include <zephyr/types.h>
 #include <string.h>

@@ -18,6 +18,9 @@
 
 #else
 
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_echo_async_sample, LOG_LEVEL_DBG);
+
 #include <sys/fcntl.h>
 #include <net/socket.h>
 #include <kernel.h>

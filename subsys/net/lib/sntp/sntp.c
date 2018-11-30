@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_sntp
-#define NET_LOG_LEVEL CONFIG_SNTP_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_sntp, CONFIG_SNTP_LOG_LEVEL);
 
 #include <net/sntp.h>
 #include "sntp_pkt.h"

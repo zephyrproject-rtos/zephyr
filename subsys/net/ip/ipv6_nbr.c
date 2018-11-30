@@ -8,13 +8,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_ipv6_nbr
-#define NET_LOG_LEVEL CONFIG_NET_IPV6_LOG_LEVEL
-
 /* By default this prints too much data, set the value to 1 to see
  * neighbor cache contents.
  */
 #define NET_DEBUG_NBR 0
+
+#include <logging/log.h>
+LOG_MODULE_DECLARE(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
 
 #include <errno.h>
 #include <stdlib.h>
@@ -1204,7 +1204,7 @@ static void ns_routing_info(struct net_pkt *pkt,
 			    struct in6_addr *nexthop,
 			    struct in6_addr *tgt)
 {
-	if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {
+	if (CONFIG_NET_IPV6_LOG_LEVEL >= LOG_LEVEL_DBG) {
 		char out[NET_IPV6_ADDR_LEN];
 
 		snprintk(out, sizeof(out), "%s",

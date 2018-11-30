@@ -10,16 +10,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_pkt
-#define NET_LOG_LEVEL CONFIG_NET_PKT_LOG_LEVEL
-
 /* This enables allocation debugging but does not print so much output
  * as that can slow things down a lot.
  */
-#if defined(CONFIG_NET_DEBUG_NET_PKT_ALL)
 #undef NET_LOG_LEVEL
+#if defined(CONFIG_NET_DEBUG_NET_PKT_ALL)
 #define NET_LOG_LEVEL 5
+#else
+#define NET_LOG_LEVEL CONFIG_NET_PKT_LOG_LEVEL
 #endif
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_pkt, NET_LOG_LEVEL);
 
 #include <kernel.h>
 #include <toolchain.h>

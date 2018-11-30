@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define NET_LOG_LEVEL CONFIG_OPENTHREAD_L2_LOG_LEVEL
-#define LOG_MODULE_NAME net_l2_openthread
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 
 #include <net/net_core.h>
 #include <net/net_pkt.h>

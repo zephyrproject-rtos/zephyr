@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_rpl_node
-#define NET_LOG_LEVEL LOG_LEVEL_DBG
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_rpl_node_sample, LOG_LEVEL_DBG);
 
 #include <zephyr.h>
 #include <errno.h>

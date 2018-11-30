@@ -34,25 +34,7 @@ extern "C" {
  */
 
 /* Network subsystem logging helpers */
-
-#if !defined(LOG_LEVEL)
-#if !defined(NET_LOG_LEVEL)
-#define NET_LOG_LEVEL CONFIG_NET_DEFAULT_LOG_LEVEL
-#endif /* !NET_LOG_LEVEL */
-
-#if NET_LOG_LEVEL > CONFIG_NET_MAX_LOG_LEVEL
-#undef NET_LOG_LEVEL
-#define NET_LOG_LEVEL CONFIG_NET_MAX_LOG_LEVEL
-#endif /* NET_LOG_LEVEL > CONFIG_NET_MAX_LOG_LEVEL */
-
-#define LOG_LEVEL NET_LOG_LEVEL
-#endif /* !LOG_LEVEL */
-
-#if defined(NET_LOG_LEVEL)
 #include <logging/log.h>
-
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
-#endif /* NET_LOG_LEVEL */
 
 #if defined(CONFIG_LOG_FUNCTION_NAME)
 #define NET_DBG(fmt, ...) LOG_DBG("(%p): " fmt, k_current_get(), \

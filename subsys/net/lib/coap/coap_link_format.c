@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_coap_utils
-#define NET_LOG_LEVEL CONFIG_COAP_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 
 #include <stdlib.h>
 #include <stddef.h>

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_ieee802154_fake_driver
-#define NET_LOG_LEVEL LOG_LEVEL_DBG
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_ieee802154_fake_driver, LOG_LEVEL_DBG);
 
 #include <zephyr.h>
 

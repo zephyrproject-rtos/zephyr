@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_if
-#define NET_LOG_LEVEL CONFIG_NET_IF_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_if, CONFIG_NET_IF_LOG_LEVEL);
 
 #include <init.h>
 #include <kernel.h>
@@ -97,7 +97,7 @@ static struct k_thread tx_thread_ts;
 static sys_slist_t timestamp_callbacks;
 #endif /* CONFIG_NET_PKT_TIMESTAMP */
 
-#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+#if CONFIG_NET_IF_LOG_LEVEL >= LOG_LEVEL_DBG
 #if defined(CONFIG_NET_STATISTICS)
 #define debug_check_packet(pkt)						\
 	do {								\
@@ -119,7 +119,7 @@ static sys_slist_t timestamp_callbacks;
 #endif /* CONFIG_NET_STATISTICS */
 #else
 #define debug_check_packet(...)
-#endif /* NET_LOG_LEVEL >= LOG_LEVEL_DBG */
+#endif /* CONFIG_NET_IF_LOG_LEVEL >= LOG_LEVEL_DBG */
 
 static inline void net_context_send_cb(struct net_context *context,
 				       void *token, int status)

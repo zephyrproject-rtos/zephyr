@@ -4,8 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_ieee802154_security
-#define NET_LOG_LEVEL CONFIG_NET_L2_IEEE802154_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_ieee802154_security,
+		    CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 
 #include <crypto/cipher.h>
 #include <net/net_core.h>

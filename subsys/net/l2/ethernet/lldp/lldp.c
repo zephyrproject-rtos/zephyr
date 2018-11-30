@@ -8,8 +8,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_lldp
-#define NET_LOG_LEVEL CONFIG_NET_LLDP_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_lldp, CONFIG_NET_LLDP_LOG_LEVEL);
 
 #include <errno.h>
 #include <stdlib.h>

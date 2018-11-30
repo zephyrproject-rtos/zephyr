@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_app_server
-#define NET_LOG_LEVEL CONFIG_NET_APP_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_DECLARE(net_app, CONFIG_NET_APP_LOG_LEVEL);
 
 #include <zephyr.h>
 #include <string.h>
@@ -26,7 +26,7 @@
 static void new_client(struct net_context *net_ctx,
 		       const struct sockaddr *addr)
 {
-#if NET_LOG_LEVEL >= LOG_LEVEL_WRN
+#if CONFIG_NET_APP_LOG_LEVEL >= LOG_LEVEL_WRN
 #if defined(CONFIG_NET_IPV6)
 #define PORT_STR sizeof("[]:xxxxx")
 	char buf[NET_IPV6_ADDR_LEN + PORT_STR];
@@ -288,7 +288,7 @@ fail:
 static inline void new_server(struct net_app_ctx *ctx,
 			      const char *server_banner)
 {
-#if NET_LOG_LEVEL >= LOG_LEVEL_WRN
+#if CONFIG_NET_APP_LOG_LEVEL >= LOG_LEVEL_WRN
 #if defined(CONFIG_NET_IPV6)
 #define PORT_STR sizeof("[]:xxxxx")
 	char buf[NET_IPV6_ADDR_LEN + PORT_STR];

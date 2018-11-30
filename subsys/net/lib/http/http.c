@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_http
-#define NET_LOG_LEVEL CONFIG_HTTP_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_http, CONFIG_HTTP_LOG_LEVEL);
 
 #include <zephyr.h>
 #include <string.h>

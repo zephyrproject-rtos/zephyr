@@ -9,7 +9,9 @@
 #else
 #define LOG_MODULE_NAME net_http_server_sample
 #endif
-#define NET_LOG_LEVEL LOG_LEVEL_DBG
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_DBG);
 
 #include <zephyr.h>
 #include <stdio.h>

@@ -38,8 +38,8 @@
  * SUCH DAMAGE.
  */
 
-#define LOG_MODULE_NAME net_rpl
-#define NET_LOG_LEVEL CONFIG_NET_RPL_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_rpl, CONFIG_NET_RPL_LOG_LEVEL);
 
 #include <kernel.h>
 #include <limits.h>
@@ -352,7 +352,7 @@ int net_rpl_foreach_parent(net_rpl_parent_cb_t cb, void *user_data)
 	return ret;
 }
 
-#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+#if CONFIG_NET_RPL_LOG_LEVEL >= LOG_LEVEL_DBG
 static void net_rpl_print_parents(void)
 {
 	struct net_rpl_parent *parent;
@@ -1548,7 +1548,7 @@ static void net_rpl_remove_parent(struct net_if *iface,
 		}
 	}
 
-	if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {
+	if (CONFIG_NET_RPL_LOG_LEVEL >= LOG_LEVEL_DBG) {
 		struct in6_addr *addr;
 		struct net_linkaddr_storage *lladdr;
 
@@ -2053,7 +2053,7 @@ static bool net_rpl_process_parent_event(struct net_if *iface,
 		return false;
 	}
 
-	if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {
+	if (CONFIG_NET_RPL_LOG_LEVEL >= LOG_LEVEL_DBG) {
 		u16_t old_rank = instance->current_dag->rank;
 
 		if (NET_RPL_DAG_RANK(old_rank, instance) !=
@@ -3534,7 +3534,7 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 			if (dag->preferred_parent) {
 				r = forwarding_dao(instance, dag,
 						   pkt, sequence, flags,
-#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+#if CONFIG_NET_RPL_LOG_LEVEL >= LOG_LEVEL_DBG
 						   "Forwarding no-path DAO to "
 						   "parent"
 #else

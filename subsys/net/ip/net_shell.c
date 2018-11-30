@@ -10,7 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_shell
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_shell, LOG_LEVEL_DBG);
 
 #include <zephyr.h>
 #include <stdlib.h>

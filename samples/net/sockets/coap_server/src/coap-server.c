@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_coap_server
-#define NET_LOG_LEVEL LOG_LEVEL_DBG
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_coap_server_sample, LOG_LEVEL_DBG);
 
 #include <errno.h>
 #include <misc/printk.h>

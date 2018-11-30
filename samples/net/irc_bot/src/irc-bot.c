@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_irc_bot
-#define NET_LOG_LEVEL LOG_LEVEL_DBG
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_irc_bot_sample, LOG_LEVEL_DBG);
 
 #include <random/rand32.h>
 #include <errno.h>

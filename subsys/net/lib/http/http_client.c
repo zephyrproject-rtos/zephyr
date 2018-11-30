@@ -4,12 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_HTTPS)
-#define LOG_MODULE_NAME net_https_client
-#else
-#define LOG_MODULE_NAME net_http_client
-#endif
-#define NET_LOG_LEVEL CONFIG_HTTP_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_DECLARE(net_http, CONFIG_HTTP_LOG_LEVEL);
 
 #include <zephyr.h>
 #include <string.h>
@@ -181,7 +177,7 @@ static void sprint_addr(char *buf, int len,
 static inline void print_info(struct http_ctx *ctx,
 			      enum http_method method)
 {
-	if (NET_LOG_LEVEL >= LOG_LEVEL_INF) {
+	if (CONFIG_HTTP_LOG_LEVEL >= LOG_LEVEL_INF) {
 		char local[NET_IPV6_ADDR_LEN];
 		char remote[NET_IPV6_ADDR_LEN];
 
@@ -271,7 +267,7 @@ out:
 
 static void print_header_field(size_t len, const char *str)
 {
-	if (NET_LOG_LEVEL >= LOG_LEVEL_INF) {
+	if (CONFIG_HTTP_LOG_LEVEL >= LOG_LEVEL_INF) {
 #define MAX_OUTPUT_LEN 128
 		char output[MAX_OUTPUT_LEN];
 
@@ -434,7 +430,7 @@ static int on_headers_complete(struct http_parser *parser)
 
 static int on_message_begin(struct http_parser *parser)
 {
-	if (NET_LOG_LEVEL >= LOG_LEVEL_INF) {
+	if (CONFIG_HTTP_LOG_LEVEL >= LOG_LEVEL_INF) {
 		struct http_ctx *ctx = CONTAINER_OF(parser,
 						    struct http_ctx,
 						    http.parser);

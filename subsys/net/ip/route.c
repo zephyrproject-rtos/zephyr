@@ -9,8 +9,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_route
-#define NET_LOG_LEVEL CONFIG_NET_ROUTE_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_route, CONFIG_NET_ROUTE_LOG_LEVEL);
 
 #include <kernel.h>
 #include <limits.h>
@@ -234,7 +234,7 @@ static int nbr_nexthop_put(struct net_nbr *nbr)
 
 
 #define net_route_info(str, route, dst)					\
-	if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {				\
+	if (CONFIG_NET_ROUTE_LOG_LEVEL >= LOG_LEVEL_DBG) {		\
 		struct in6_addr *naddr = net_route_get_nexthop(route);	\
 									\
 		NET_ASSERT_INFO(naddr, "Unknown nexthop address");	\
@@ -356,7 +356,7 @@ struct net_route_entry *net_route_add(struct net_if *iface,
 				     struct net_route_entry,
 				     node);
 
-		if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {
+		if (CONFIG_NET_ROUTE_LOG_LEVEL >= LOG_LEVEL_DBG) {
 			struct in6_addr *tmp;
 			struct net_linkaddr_storage *llstorage;
 

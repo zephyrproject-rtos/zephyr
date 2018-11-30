@@ -9,8 +9,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_dhcpv4
-#define NET_LOG_LEVEL CONFIG_NET_DHCPV4_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_dhcpv4, CONFIG_NET_DHCPV4_LOG_LEVEL);
 
 #include <errno.h>
 #include <inttypes.h>
