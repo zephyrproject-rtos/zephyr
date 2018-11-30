@@ -46,7 +46,7 @@ struct net_pkt *build_reply_pkt(const char *name,
 	struct net_buf *frag, *tmp;
 	int header_len = 0, recv_len, reply_len;
 
-	NET_DBG("%s received %d bytes", name, net_pkt_appdatalen(pkt));
+	LOG_DBG("%s received %d bytes", name, net_pkt_appdatalen(pkt));
 
 	if (net_pkt_appdatalen(pkt) == 0) {
 		return NULL;
@@ -137,21 +137,21 @@ static inline void stats(void)
 		if (!first_print) {
 			first_print = true;
 		} else {
-			NET_INFO("[%u]", ++count);
-			NET_INFO("Packets received %u", tp_stats.pkts.recv);
+			LOG_INF("[%u]", ++count);
+			LOG_INF("Packets received %u", tp_stats.pkts.recv);
 #if defined(SEND_REPLY)
-			NET_INFO("Packets sent     %u", tp_stats.pkts.sent);
+			LOG_INF("Packets sent     %u", tp_stats.pkts.sent);
 #endif
-			NET_INFO("Packets dropped  %u", tp_stats.pkts.dropped);
-			NET_INFO("Bytes received   %u", tp_stats.bytes.recv);
+			LOG_INF("Packets dropped  %u", tp_stats.pkts.dropped);
+			LOG_INF("Bytes received   %u", tp_stats.bytes.recv);
 #if defined(SEND_REPLY)
-			NET_INFO("Bytes sent       %u", tp_stats.bytes.sent);
+			LOG_INF("Bytes sent       %u", tp_stats.bytes.sent);
 #endif
-			NET_INFO("Packets / period %u", tp_stats.pkts.recv -
-				 tp_stats.pkts.prev_recv);
-			NET_INFO("Packets / sec    %u", (tp_stats.pkts.recv -
+			LOG_INF("Packets / period %u", tp_stats.pkts.recv -
+				tp_stats.pkts.prev_recv);
+			LOG_INF("Packets / sec    %u", (tp_stats.pkts.recv -
 						     tp_stats.pkts.prev_recv) /
-				 PRINT_STATS_SECS);
+				PRINT_STATS_SECS);
 		}
 
 		next_print = curr + PRINT_STATISTICS_INTERVAL;
@@ -174,7 +174,7 @@ void pkt_sent(struct net_app_ctx *ctx,
 	     void *user_data)
 {
 	if (!status) {
-		NET_DBG("Sent %d bytes", POINTER_TO_UINT(user_data_send));
+		LOG_DBG("Sent %d bytes", POINTER_TO_UINT(user_data_send));
 	}
 }
 
@@ -195,7 +195,7 @@ void main(void)
 
 	k_sem_take(&quit_lock, K_FOREVER);
 
-	NET_INFO("Stopping...");
+	LOG_INF("Stopping...");
 
 	if (IS_ENABLED(CONFIG_NET_UDP)) {
 		stop_udp();

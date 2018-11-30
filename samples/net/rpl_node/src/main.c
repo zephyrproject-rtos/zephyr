@@ -127,7 +127,7 @@ static int well_known_core_get(struct coap_resource *resource,
 	struct net_buf *frag;
 	int r;
 
-	NET_DBG("");
+	LOG_DBG("");
 
 	pkt = net_pkt_get_tx(context, K_FOREVER);
 	if (!pkt) {
@@ -182,7 +182,7 @@ static void toggle_led(void)
 static int led_post(struct coap_resource *resource,
 		    struct coap_packet *request)
 {
-	NET_DBG("");
+	LOG_DBG("");
 
 	toggle_led();
 
@@ -419,13 +419,13 @@ static void udp_receive(struct net_context *context,
 
 	r = coap_packet_parse(&request, pkt, options, opt_num);
 	if (r < 0) {
-		NET_ERR("Invalid data received (%d)\n", r);
+		LOG_ERR("Invalid data received (%d)\n", r);
 		goto end;
 	}
 
 	r = coap_handle_request(&request, resources, options, opt_num);
 	if (r < 0) {
-		NET_ERR("No handler for such request (%d)\n", r);
+		LOG_ERR("No handler for such request (%d)\n", r);
 	}
 
 end:
@@ -443,13 +443,13 @@ static bool join_coap_multicast_group(void)
 
 	iface = net_if_get_default();
 	if (!iface) {
-		NET_ERR("Could not get te default interface\n");
+		LOG_ERR("Could not get te default interface\n");
 		return false;
 	}
 
 	mcast = net_if_ipv6_maddr_add(iface, &mcast_addr.sin6_addr);
 	if (!mcast) {
-		NET_ERR("Could not add multicast address to interface\n");
+		LOG_ERR("Could not add multicast address to interface\n");
 		return false;
 	}
 
@@ -468,32 +468,32 @@ static void init_app(void)
 	if (led0) {
 		gpio_pin_configure(led0, LED_PIN, GPIO_DIR_OUT);
 	} else {
-		NET_WARN("Failed to bind '%s'"
-			 "fake_led will provide dummpy replies",
-			 LED_GPIO_NAME);
+		LOG_WRN("Failed to bind '%s'"
+			"fake_led will provide dummpy replies",
+			LED_GPIO_NAME);
 	}
 
 	if (!join_coap_multicast_group()) {
-		NET_ERR("Could not join CoAP multicast group");
+		LOG_ERR("Could not join CoAP multicast group");
 		return;
 	}
 
 	r = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP, &context);
 	if (r) {
-		NET_ERR("Could not get an UDP context");
+		LOG_ERR("Could not get an UDP context");
 		return;
 	}
 
 	r = net_context_bind(context, (struct sockaddr *) &any_addr,
 			     sizeof(any_addr));
 	if (r) {
-		NET_ERR("Could not bind the context");
+		LOG_ERR("Could not bind the context");
 		return;
 	}
 
 	r = net_context_recv(context, udp_receive, 0, NULL);
 	if (r) {
-		NET_ERR("Could not receive in the context");
+		LOG_ERR("Could not receive in the context");
 	}
 
 	k_delayed_work_init(&retransmit_work, retransmit_request);
@@ -501,7 +501,7 @@ static void init_app(void)
 
 void main(void)
 {
-	NET_DBG("Start Demo");
+	LOG_DBG("Start Demo");
 
 	init_app();
 }

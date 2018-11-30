@@ -81,7 +81,7 @@ static struct http_server_urls http_urls;
 void panic(const char *msg)
 {
 	if (msg) {
-		NET_ERR("%s", msg);
+		LOG_ERR("%s", msg);
 	}
 
 	for (;;) {
@@ -113,7 +113,7 @@ static int http_response(struct http_ctx *ctx, const char *header,
 
 	ret = http_add_header(ctx, header, dst, str);
 	if (ret < 0) {
-		NET_ERR("Cannot add HTTP header (%d)", ret);
+		LOG_ERR("Cannot add HTTP header (%d)", ret);
 		return ret;
 	}
 
@@ -124,13 +124,13 @@ static int http_response(struct http_ctx *ctx, const char *header,
 
 	ret = http_send_chunk(ctx, payload, payload_len, dst, str);
 	if (ret < 0) {
-		NET_ERR("Cannot send data to peer (%d)", ret);
+		LOG_ERR("Cannot send data to peer (%d)", ret);
 		return ret;
 	}
 
 	ret = http_send_chunk(ctx, NULL, 0, dst, NULL);
 	if (ret < 0) {
-		NET_ERR("Cannot send data to peer (%d)", ret);
+		LOG_ERR("Cannot send data to peer (%d)", ret);
 		return ret;
 	}
 
@@ -227,7 +227,7 @@ static int http_serve_index_html(struct http_ctx *ctx,
 #include "index.html.inc"
 	};
 
-	NET_DBG("Sending index.html (%zd bytes) to client",
+	LOG_DBG("Sending index.html (%zd bytes) to client",
 		sizeof(index_html));
 
 	return http_response(ctx, HTTP_STATUS_200_OK, index_html,
@@ -245,7 +245,7 @@ static void http_connected(struct http_ctx *ctx,
 	memcpy(url, ctx->http.url, len);
 	url[len] = '\0';
 
-	NET_DBG("%s connect attempt URL %s",
+	LOG_DBG("%s connect attempt URL %s",
 		type == HTTP_CONNECTION ? "HTTP" : "WS", url);
 
 	if (type == HTTP_CONNECTION) {
@@ -287,12 +287,12 @@ static void http_received(struct http_ctx *ctx,
 {
 	if (!status) {
 		if (pkt) {
-			NET_DBG("Received %d bytes data",
+			LOG_DBG("Received %d bytes data",
 				net_pkt_appdatalen(pkt));
 			net_pkt_unref(pkt);
 		}
 	} else {
-		NET_ERR("Receive error (%d)", status);
+		LOG_ERR("Receive error (%d)", status);
 
 		if (pkt) {
 			net_pkt_unref(pkt);
@@ -305,14 +305,14 @@ static void http_sent(struct http_ctx *ctx,
 		      void *user_data_send,
 		      void *user_data)
 {
-	NET_DBG("%s sent", (char *)user_data_send);
+	LOG_DBG("%s sent", (char *)user_data_send);
 }
 
 static void http_closed(struct http_ctx *ctx,
 			int status,
 			void *user_data)
 {
-	NET_DBG("Connection %p closed", ctx);
+	LOG_DBG("Connection %p closed", ctx);
 }
 
 static const char *get_string(int str_len, const char *str)
@@ -330,7 +330,7 @@ static enum http_verdict default_handler(struct http_ctx *ctx,
 					 enum http_connection_type type,
 					 const struct sockaddr *dst)
 {
-	NET_DBG("No handler for %s URL %s",
+	LOG_DBG("No handler for %s URL %s",
 		type == HTTP_CONNECTION ? "HTTP" : "WS",
 		get_string(ctx->http.url_len, ctx->http.url));
 
@@ -362,7 +362,7 @@ static int setup_cert(struct net_app_ctx *app_ctx,
 	ret = mbedtls_x509_crt_parse(cert, echo_apps_cert_der,
 				     sizeof(echo_apps_cert_der));
 	if (ret != 0) {
-		NET_ERR("mbedtls_x509_crt_parse returned %d", ret);
+		LOG_ERR("mbedtls_x509_crt_parse returned %d", ret);
 		return ret;
 	}
 
@@ -370,7 +370,7 @@ static int setup_cert(struct net_app_ctx *app_ctx,
 				   sizeof(echo_apps_key_der),
 				   NULL, 0);
 	if (ret != 0) {
-		NET_ERR("mbedtls_pk_parse_key returned %d", ret);
+		LOG_ERR("mbedtls_pk_parse_key returned %d", ret);
 		return ret;
 	}
 
@@ -422,7 +422,7 @@ void main(void)
 
 	ret = http_server_set_local_addr(&addr, ZEPHYR_ADDR, ZEPHYR_PORT);
 	if (ret < 0) {
-		NET_ERR("Cannot set local address (%d)", ret);
+		LOG_ERR("Cannot set local address (%d)", ret);
 		panic(NULL);
 	}
 
@@ -443,7 +443,7 @@ void main(void)
 			       sizeof(http_result), "Zephyr HTTP Server",
 			       NULL);
 	if (ret < 0) {
-		NET_ERR("Cannot initialize HTTP server (%d)", ret);
+		LOG_ERR("Cannot initialize HTTP server (%d)", ret);
 		panic(NULL);
 	}
 
@@ -465,7 +465,7 @@ void main(void)
 				  https_stack,
 				  K_THREAD_STACK_SIZEOF(https_stack));
 	if (ret < 0) {
-		NET_ERR("Cannot enable TLS support (%d)", ret);
+		LOG_ERR("Cannot enable TLS support (%d)", ret);
 	}
 #endif
 

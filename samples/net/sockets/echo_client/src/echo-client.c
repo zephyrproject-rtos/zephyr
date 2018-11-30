@@ -111,13 +111,13 @@ static void wait(void)
 	 * we'll check them all.
 	 */
 	if (poll(fds, nfds, K_FOREVER) < 0) {
-		NET_ERR("Error in poll:%d", errno);
+		LOG_ERR("Error in poll:%d", errno);
 	}
 }
 
 static void init_app(void)
 {
-	NET_INFO(APP_BANNER);
+	LOG_INF(APP_BANNER);
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 	int err = tls_credential_add(CA_CERTIFICATE_TAG,
@@ -125,7 +125,7 @@ static void init_app(void)
 				    ca_certificate,
 				    sizeof(ca_certificate));
 	if (err < 0) {
-		NET_ERR("Failed to register public certificate: %d", err);
+		LOG_ERR("Failed to register public certificate: %d", err);
 	}
 #endif
 
@@ -173,7 +173,7 @@ void main(void)
 	}
 
 quit:
-	NET_INFO("Stopping...");
+	LOG_INF("Stopping...");
 
 	if (IS_ENABLED(CONFIG_NET_UDP)) {
 		stop_udp();

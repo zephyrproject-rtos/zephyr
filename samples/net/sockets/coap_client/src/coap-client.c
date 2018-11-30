@@ -43,7 +43,7 @@ static struct coap_block_context blk_ctx;
 static void wait(void)
 {
 	if (poll(fds, nfds, K_FOREVER) < 0) {
-		NET_ERR("Error in poll:%d", errno);
+		LOG_ERR("Error in poll:%d", errno);
 	}
 }
 
@@ -67,13 +67,13 @@ static int start_coap_client(void)
 
 	sock = socket(addr6.sin6_family, SOCK_DGRAM, IPPROTO_UDP);
 	if (sock < 0) {
-		NET_ERR("Failed to create UDP socket %d", errno);
+		LOG_ERR("Failed to create UDP socket %d", errno);
 		return -errno;
 	}
 
 	ret = connect(sock, (struct sockaddr *)&addr6, sizeof(addr6));
 	if (ret < 0) {
-		NET_ERR("Cannot connect to UDP remote : %d", errno);
+		LOG_ERR("Cannot connect to UDP remote : %d", errno);
 		return -errno;
 	}
 
@@ -116,7 +116,7 @@ static int process_simple_coap_reply(void)
 
 	ret = coap_packet_parse(&reply, data, rcvd, NULL, 0);
 	if (ret < 0) {
-		NET_ERR("Invalid data received");
+		LOG_ERR("Invalid data received");
 	}
 
 end:
@@ -142,7 +142,7 @@ static int send_simple_coap_request(u8_t method)
 			     1, COAP_TYPE_CON, 8, coap_next_token(),
 			     method, coap_next_id());
 	if (r < 0) {
-		NET_ERR("Failed to init CoAP message");
+		LOG_ERR("Failed to init CoAP message");
 		goto end;
 	}
 
@@ -150,7 +150,7 @@ static int send_simple_coap_request(u8_t method)
 		r = coap_packet_append_option(&request, COAP_OPTION_URI_PATH,
 					      *p, strlen(*p));
 		if (r < 0) {
-			NET_ERR("Unable add option to request");
+			LOG_ERR("Unable add option to request");
 			goto end;
 		}
 	}
@@ -164,14 +164,14 @@ static int send_simple_coap_request(u8_t method)
 	case COAP_METHOD_POST:
 		r = coap_packet_append_payload_marker(&request);
 		if (r < 0) {
-			NET_ERR("Unable to append payload marker");
+			LOG_ERR("Unable to append payload marker");
 			goto end;
 		}
 
 		r = coap_packet_append_payload(&request, (u8_t *)payload,
 					       sizeof(payload) - 1);
 		if (r < 0) {
-			NET_ERR("Not able to append payload");
+			LOG_ERR("Not able to append payload");
 			goto end;
 		}
 
@@ -284,7 +284,7 @@ static int process_large_coap_reply(void)
 
 	ret = coap_packet_parse(&reply, data, rcvd, NULL, 0);
 	if (ret < 0) {
-		NET_ERR("Invalid data received");
+		LOG_ERR("Invalid data received");
 		goto end;
 	}
 
@@ -328,7 +328,7 @@ static int send_large_coap_request(void)
 			     1, COAP_TYPE_CON, 8, coap_next_token(),
 			     COAP_METHOD_GET, coap_next_id());
 	if (r < 0) {
-		NET_ERR("Failed to init CoAP message");
+		LOG_ERR("Failed to init CoAP message");
 		goto end;
 	}
 
@@ -336,14 +336,14 @@ static int send_large_coap_request(void)
 		r = coap_packet_append_option(&request, COAP_OPTION_URI_PATH,
 					      *p, strlen(*p));
 		if (r < 0) {
-			NET_ERR("Unable add option to request");
+			LOG_ERR("Unable add option to request");
 			goto end;
 		}
 	}
 
 	r = coap_append_block2_option(&request, &blk_ctx);
 	if (r < 0) {
-		NET_ERR("Unable to add block2 option.");
+		LOG_ERR("Unable to add block2 option.");
 		goto end;
 	}
 
@@ -399,7 +399,7 @@ static int send_obs_reply_ack(u16_t id, u8_t *token, u8_t tkl)
 	r = coap_packet_init(&request, data, MAX_COAP_MSG_LEN,
 			     1, COAP_TYPE_ACK, tkl, token, 0, id);
 	if (r < 0) {
-		NET_ERR("Failed to init CoAP message");
+		LOG_ERR("Failed to init CoAP message");
 		goto end;
 	}
 
@@ -450,7 +450,7 @@ static int process_obs_coap_reply(void)
 
 	ret = coap_packet_parse(&reply, data, rcvd, NULL, 0);
 	if (ret < 0) {
-		NET_ERR("Invalid data received");
+		LOG_ERR("Invalid data received");
 		goto end;
 	}
 
@@ -485,13 +485,13 @@ static int send_obs_coap_request(void)
 			     1, COAP_TYPE_CON, 8, coap_next_token(),
 			     COAP_METHOD_GET, coap_next_id());
 	if (r < 0) {
-		NET_ERR("Failed to init CoAP message");
+		LOG_ERR("Failed to init CoAP message");
 		goto end;
 	}
 
 	r = coap_append_option_int(&request, COAP_OPTION_OBSERVE, 0);
 	if (r < 0) {
-		NET_ERR("Failed to append Observe option");
+		LOG_ERR("Failed to append Observe option");
 		goto end;
 	}
 
@@ -499,7 +499,7 @@ static int send_obs_coap_request(void)
 		r = coap_packet_append_option(&request, COAP_OPTION_URI_PATH,
 					      *p, strlen(*p));
 		if (r < 0) {
-			NET_ERR("Unable add option to request");
+			LOG_ERR("Unable add option to request");
 			goto end;
 		}
 	}
@@ -530,13 +530,13 @@ static int send_obs_reset_coap_request(void)
 			     1, COAP_TYPE_RESET, 8, coap_next_token(),
 			     0, coap_next_id());
 	if (r < 0) {
-		NET_ERR("Failed to init CoAP message");
+		LOG_ERR("Failed to init CoAP message");
 		goto end;
 	}
 
 	r = coap_append_option_int(&request, COAP_OPTION_OBSERVE, 0);
 	if (r < 0) {
-		NET_ERR("Failed to append Observe option");
+		LOG_ERR("Failed to append Observe option");
 		goto end;
 	}
 
@@ -544,7 +544,7 @@ static int send_obs_reset_coap_request(void)
 		r = coap_packet_append_option(&request, COAP_OPTION_URI_PATH,
 					      *p, strlen(*p));
 		if (r < 0) {
-			NET_ERR("Unable add option to request");
+			LOG_ERR("Unable add option to request");
 			goto end;
 		}
 	}
@@ -601,7 +601,7 @@ void main(void)
 {
 	int r;
 
-	NET_DBG("Start CoAP-client sample");
+	LOG_DBG("Start CoAP-client sample");
 	r = start_coap_client();
 	if (r < 0) {
 		goto quit;
@@ -628,12 +628,12 @@ void main(void)
 	/* Close the socket */
 	close(sock);
 
-	NET_DBG("Done");
+	LOG_DBG("Done");
 
 	return;
 
 quit:
 	close(sock);
 
-	NET_ERR("quit");
+	LOG_ERR("quit");
 }

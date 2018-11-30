@@ -17,5 +17,5 @@ LOG_MODULE_REGISTER(net_mdns_responder_sample, LOG_LEVEL_DBG);
  */
 void main(void)
 {
-	NET_INFO("Waiting mDNS queries...");
+	LOG_INF("Waiting mDNS queries...");
 }

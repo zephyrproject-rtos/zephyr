@@ -81,7 +81,7 @@ static int well_known_core_get(struct coap_resource *resource,
 	struct net_buf *frag;
 	int r;
 
-	NET_DBG("");
+	LOG_DBG("");
 
 	pkt = net_pkt_get_tx(context, K_FOREVER);
 	frag = net_pkt_get_data(context, K_FOREVER);
@@ -468,14 +468,14 @@ static void udp_receive(struct net_context *context,
 
 	r = coap_packet_parse(&request, pkt, options, opt_num);
 	if (r < 0) {
-		NET_ERR("Invalid data received (%d)\n", r);
+		LOG_ERR("Invalid data received (%d)\n", r);
 		net_pkt_unref(pkt);
 		return;
 	}
 
 	r = coap_handle_request(&request, resources, options, opt_num);
 	if (r < 0) {
-		NET_ERR("No handler for such request (%d)\n", r);
+		LOG_ERR("No handler for such request (%d)\n", r);
 	}
 
 	net_pkt_unref(pkt);
@@ -494,21 +494,21 @@ static bool join_coap_multicast_group(void)
 
 	iface = net_if_get_default();
 	if (!iface) {
-		NET_ERR("Could not get default interface");
+		LOG_ERR("Could not get default interface");
 		return false;
 	}
 
 	ifaddr = net_if_ipv6_addr_add(net_if_get_default(),
 				      &my_addr, NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
-		NET_ERR("Could not add IPv6 address to default interface");
+		LOG_ERR("Could not add IPv6 address to default interface");
 		return false;
 	}
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
 
 	mcast = net_if_ipv6_maddr_add(iface, &mcast_addr.sin6_addr);
 	if (!mcast) {
-		NET_ERR("Could not add multicast address to interface\n");
+		LOG_ERR("Could not add multicast address to interface\n");
 		return false;
 	}
 
@@ -531,26 +531,26 @@ void main(void)
 	}
 
 	if (!join_coap_multicast_group()) {
-		NET_ERR("Could not join CoAP multicast group\n");
+		LOG_ERR("Could not join CoAP multicast group\n");
 		return;
 	}
 
 	r = net_context_get(PF_INET6, SOCK_DGRAM, IPPROTO_UDP, &context);
 	if (r) {
-		NET_ERR("Could not get an UDP context\n");
+		LOG_ERR("Could not get an UDP context\n");
 		return;
 	}
 
 	r = net_context_bind(context, (struct sockaddr *) &any_addr,
 			     sizeof(any_addr));
 	if (r) {
-		NET_ERR("Could not bind the context\n");
+		LOG_ERR("Could not bind the context\n");
 		return;
 	}
 
 	r = net_context_recv(context, udp_receive, 0, NULL);
 	if (r) {
-		NET_ERR("Could not receive in the context\n");
+		LOG_ERR("Could not receive in the context\n");
 		return;
 	}
 }

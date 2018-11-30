@@ -17,5 +17,5 @@ LOG_MODULE_REGISTER(net_native_posix_sample, LOG_LEVEL_DBG);
  */
 void main(void)
 {
-	NET_INFO("Start application");
+	LOG_INF("Start application");
 }

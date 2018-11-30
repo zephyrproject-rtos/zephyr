@@ -42,7 +42,7 @@ static void init_app(void)
 {
 	k_sem_init(&quit_lock, 0, UINT_MAX);
 
-	NET_INFO(APP_BANNER);
+	LOG_INF(APP_BANNER);
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 	int err = tls_credential_add(SERVER_CERTIFICATE_TAG,
@@ -50,7 +50,7 @@ static void init_app(void)
 				     server_certificate,
 				     sizeof(server_certificate));
 	if (err < 0) {
-		NET_ERR("Failed to register public certificate: %d", err);
+		LOG_ERR("Failed to register public certificate: %d", err);
 	}
 
 
@@ -58,7 +58,7 @@ static void init_app(void)
 				 TLS_CREDENTIAL_PRIVATE_KEY,
 				 private_key, sizeof(private_key));
 	if (err < 0) {
-		NET_ERR("Failed to register private key: %d", err);
+		LOG_ERR("Failed to register private key: %d", err);
 	}
 #endif
 
@@ -79,7 +79,7 @@ void main(void)
 
 	k_sem_take(&quit_lock, K_FOREVER);
 
-	NET_INFO("Stopping...");
+	LOG_INF("Stopping...");
 
 	if (IS_ENABLED(CONFIG_NET_TCP)) {
 		stop_tcp();

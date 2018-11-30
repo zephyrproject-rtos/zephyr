@@ -50,10 +50,10 @@ static int send_tcp_data(struct data *data)
 	ret =  sendall(data->tcp.sock, lorem_ipsum, data->tcp.expecting);
 
 	if (ret < 0) {
-		NET_ERR("%s TCP: Failed to send data, errno %d", data->proto,
+		LOG_ERR("%s TCP: Failed to send data, errno %d", data->proto,
 			errno);
 	} else {
-		NET_DBG("%s TCP: Sent %d bytes", data->proto,
+		LOG_DBG("%s TCP: Sent %d bytes", data->proto,
 			data->tcp.expecting);
 	}
 
@@ -63,12 +63,12 @@ static int send_tcp_data(struct data *data)
 static int compare_tcp_data(struct data *data, const char *buf, u32_t received)
 {
 	if (data->tcp.received + received > data->tcp.expecting) {
-		NET_ERR("Too much data received: TCP %s", data->proto);
+		LOG_ERR("Too much data received: TCP %s", data->proto);
 		return -EIO;
 	}
 
 	if (memcmp(buf, lorem_ipsum + data->tcp.received, received) != 0) {
-		NET_ERR("Invalid data received: TCP %s", data->proto);
+		LOG_ERR("Invalid data received: TCP %s", data->proto);
 		return -EIO;
 	}
 
@@ -86,7 +86,7 @@ static int start_tcp_proto(struct data *data, struct sockaddr *addr,
 	data->tcp.sock = socket(addr->sa_family, SOCK_STREAM, IPPROTO_TCP);
 #endif
 	if (data->tcp.sock < 0) {
-		NET_ERR("Failed to create TCP socket (%s): %d", data->proto,
+		LOG_ERR("Failed to create TCP socket (%s): %d", data->proto,
 			errno);
 		return -errno;
 	}
@@ -99,7 +99,7 @@ static int start_tcp_proto(struct data *data, struct sockaddr *addr,
 	ret = setsockopt(data->tcp.sock, SOL_TLS, TLS_SEC_TAG_LIST,
 			 sec_tag_list, sizeof(sec_tag_list));
 	if (ret < 0) {
-		NET_ERR("Failed to set TLS_SEC_TAG_LIST option (%s): %d",
+		LOG_ERR("Failed to set TLS_SEC_TAG_LIST option (%s): %d",
 			data->proto, errno);
 		ret = -errno;
 	}
@@ -107,7 +107,7 @@ static int start_tcp_proto(struct data *data, struct sockaddr *addr,
 	ret = setsockopt(data->tcp.sock, SOL_TLS, TLS_HOSTNAME,
 			 TLS_PEER_HOSTNAME, sizeof(TLS_PEER_HOSTNAME));
 	if (ret < 0) {
-		NET_ERR("Failed to set TLS_HOSTNAME option (%s): %d",
+		LOG_ERR("Failed to set TLS_HOSTNAME option (%s): %d",
 			data->proto, errno);
 		ret = -errno;
 	}
@@ -115,7 +115,7 @@ static int start_tcp_proto(struct data *data, struct sockaddr *addr,
 
 	ret = connect(data->tcp.sock, addr, addrlen);
 	if (ret < 0) {
-		NET_ERR("Cannot connect to TCP remote (%s): %d", data->proto,
+		LOG_ERR("Cannot connect to TCP remote (%s): %d", data->proto,
 			errno);
 		ret = -errno;
 	}
@@ -156,13 +156,13 @@ static int process_tcp_proto(struct data *data)
 		}
 
 		/* Response complete */
-		NET_DBG("%s TCP: Received and compared %d bytes, all ok",
+		LOG_DBG("%s TCP: Received and compared %d bytes, all ok",
 			data->proto, data->tcp.received);
 
 
 		if (++data->tcp.counter % 1000 == 0) {
-			NET_INFO("%s TCP: Exchanged %u packets", data->proto,
-				 data->tcp.counter);
+			LOG_INF("%s TCP: Exchanged %u packets", data->proto,
+				data->tcp.counter);
 		}
 
 		ret = send_tcp_data(data);

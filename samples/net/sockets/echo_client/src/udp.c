@@ -36,7 +36,7 @@ static int send_udp_data(struct data *data)
 
 	ret = send(data->udp.sock, lorem_ipsum, data->udp.expecting, 0);
 
-	NET_DBG("%s UDP: Sent %d bytes", data->proto, data->udp.expecting);
+	LOG_DBG("%s UDP: Sent %d bytes", data->proto, data->udp.expecting);
 
 	k_delayed_work_submit(&data->udp.recv, UDP_WAIT);
 
@@ -46,12 +46,12 @@ static int send_udp_data(struct data *data)
 static int compare_udp_data(struct data *data, const char *buf, u32_t received)
 {
 	if (received != data->udp.expecting) {
-		NET_ERR("Invalid amount of data received: UDP %s", data->proto);
+		LOG_ERR("Invalid amount of data received: UDP %s", data->proto);
 		return -EIO;
 	}
 
 	if (memcmp(buf, lorem_ipsum, received) != 0) {
-		NET_ERR("Invalid data received: UDP %s", data->proto);
+		LOG_ERR("Invalid data received: UDP %s", data->proto);
 		return -EIO;
 	}
 
@@ -63,7 +63,7 @@ static void wait_reply(struct k_work *work)
 	/* This means that we did not receive response in time. */
 	struct data *data = CONTAINER_OF(work, struct data, udp.recv);
 
-	NET_ERR("UDP %s: Data packet not received", data->proto);
+	LOG_ERR("UDP %s: Data packet not received", data->proto);
 
 	/* Send a new packet at this point */
 	send_udp_data(data);
@@ -90,7 +90,7 @@ static int start_udp_proto(struct data *data, struct sockaddr *addr,
 	data->udp.sock = socket(addr->sa_family, SOCK_DGRAM, IPPROTO_UDP);
 #endif
 	if (data->udp.sock < 0) {
-		NET_ERR("Failed to create UDP socket (%s): %d", data->proto,
+		LOG_ERR("Failed to create UDP socket (%s): %d", data->proto,
 			errno);
 		return -errno;
 	}
@@ -103,7 +103,7 @@ static int start_udp_proto(struct data *data, struct sockaddr *addr,
 	ret = setsockopt(data->udp.sock, SOL_TLS, TLS_SEC_TAG_LIST,
 			 sec_tag_list, sizeof(sec_tag_list));
 	if (ret < 0) {
-		NET_ERR("Failed to set TLS_SEC_TAG_LIST option (%s): %d",
+		LOG_ERR("Failed to set TLS_SEC_TAG_LIST option (%s): %d",
 			data->proto, errno);
 		ret = -errno;
 	}
@@ -111,7 +111,7 @@ static int start_udp_proto(struct data *data, struct sockaddr *addr,
 	ret = setsockopt(data->udp.sock, SOL_TLS, TLS_HOSTNAME,
 			 TLS_PEER_HOSTNAME, sizeof(TLS_PEER_HOSTNAME));
 	if (ret < 0) {
-		NET_ERR("Failed to set TLS_HOSTNAME option (%s): %d",
+		LOG_ERR("Failed to set TLS_HOSTNAME option (%s): %d",
 			data->proto, errno);
 		ret = -errno;
 	}
@@ -120,7 +120,7 @@ static int start_udp_proto(struct data *data, struct sockaddr *addr,
 	/* Call connect so we can use send and recv. */
 	ret = connect(data->udp.sock, addr, addrlen);
 	if (ret < 0) {
-		NET_ERR("Cannot connect to UDP remote (%s): %d", data->proto,
+		LOG_ERR("Cannot connect to UDP remote (%s): %d", data->proto,
 			errno);
 		ret = -errno;
 	}
@@ -149,18 +149,18 @@ static int process_udp_proto(struct data *data)
 
 	ret = compare_udp_data(data, recv_buf, received);
 	if (ret != 0) {
-		NET_WARN("%s UDP: Received and compared %d bytes, data "
-			 "mismatch", data->proto, received);
+		LOG_WRN("%s UDP: Received and compared %d bytes, data "
+			"mismatch", data->proto, received);
 		return 0;
 	}
 
 	/* Correct response received */
-	NET_DBG("%s UDP: Received and compared %d bytes, all ok",
+	LOG_DBG("%s UDP: Received and compared %d bytes, all ok",
 		data->proto, received);
 
 	if (++data->udp.counter % 1000 == 0) {
-		NET_INFO("%s UDP: Exchanged %u packets", data->proto,
-			 data->udp.counter);
+		LOG_INF("%s UDP: Exchanged %u packets", data->proto,
+			data->udp.counter);
 	}
 
 	k_delayed_work_cancel(&data->udp.recv);
