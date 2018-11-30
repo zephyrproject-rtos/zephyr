@@ -162,7 +162,6 @@ static int cfb_invert(const struct char_framebuffer *fb)
 
 int cfb_framebuffer_clear(struct device *dev, bool clear_display)
 {
-	const struct display_driver_api *api = dev->driver_api;
 	const struct char_framebuffer *fb = &char_fb;
 	struct display_buffer_descriptor desc;
 
@@ -175,12 +174,6 @@ int cfb_framebuffer_clear(struct device *dev, bool clear_display)
 	desc.height = fb->y_res;
 	desc.pitch = fb->x_res;
 	memset(fb->buf, 0, fb->size);
-
-	if (clear_display && (fb->screen_info & SCREEN_INFO_EPD)) {
-		api->set_contrast(dev, 1);
-		api->write(dev, 0, 0, &desc, fb->buf);
-		api->set_contrast(dev, 0);
-	}
 
 	return 0;
 }
