@@ -16,7 +16,7 @@ debug = false
 extra-path=scripts/gitlint
 
 [title-max-length-no-revert]
-line-length=75
+line-length=120
 
 [body-min-line-count]
 min-line-count=1
@@ -42,7 +42,7 @@ words=wip
 
 [max-line-length-with-exceptions]
 # B1 = body-max-line-length
-line-length=75
+line-length=120
 
 [body-min-length]
 min-length=3
