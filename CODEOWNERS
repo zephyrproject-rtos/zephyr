@@ -13,8 +13,7 @@
 # Do not use wildcard on all source yet
 # *                                        @galak @nashif
 
-/.github/				  @nashif
-/.github/workflows/                       @galak @nashif
+/.github/                                 @thst-nordic
 /.buildkite/				  @galak
 /MAINTAINERS.yml                          @ioannisg @MaureenHelm
 /arch/arc/                                @abrodkin @ruuddw @evgeniy-paltsev
@@ -512,6 +511,7 @@
 /include/toolchain.h                      @dcpleung @andyross @nashif
 /include/toolchain/                       @dcpleung @nashif @andyross
 /include/zephyr.h                         @dcpleung @nashif @andyross
+/Jenkinsfile                              @thst-nordic
 /kernel/                                  @dcpleung @nashif @andyross
 /lib/util/                                @carlescufi @jakub-uC
 /lib/util/fnmatch/                        @carlescufi @jakub-uC
