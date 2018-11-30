@@ -66,20 +66,23 @@ static u8_t ssd1673_lut_default[SSD1673_LUT_SIZE] = {
 static inline int ssd1673_write_cmd(struct ssd1673_data *driver,
 				    u8_t cmd, u8_t *data, size_t len)
 {
+	int err;
 	struct spi_buf buf = {.buf = &cmd, .len = sizeof(cmd)};
 	struct spi_buf_set buf_set = {.buffers = &buf, .count = 1};
 
 	gpio_pin_write(driver->dc, DT_SSD1673_DC_PIN, 0);
-	if (spi_write(driver->spi_dev, &driver->spi_config, &buf_set)) {
-		return -1;
+	err = spi_write(driver->spi_dev, &driver->spi_config, &buf_set);
+	if (err < 0) {
+		return err;
 	}
 
 	if (data != NULL) {
 		buf.buf = data;
 		buf.len = len;
 		gpio_pin_write(driver->dc, DT_SSD1673_DC_PIN, 1);
-		if (spi_write(driver->spi_dev, &driver->spi_config, &buf_set)) {
-			return -1;
+		err = spi_write(driver->spi_dev, &driver->spi_config, &buf_set);
+		if (err < 0) {
+			return err;
 		}
 	}
 
@@ -100,18 +103,21 @@ static inline void ssd1673_busy_wait(struct ssd1673_data *driver)
 static inline int ssd1673_set_ram_param(struct ssd1673_data *driver,
 					u8_t sx, u8_t ex, u8_t sy, u8_t ey)
 {
+	int err;
 	u8_t tmp[2];
 
 	tmp[0] = sx; tmp[1] = ex;
-	if (ssd1673_write_cmd(driver, SSD1673_CMD_RAM_XPOS_CTRL,
-			      tmp, sizeof(tmp))) {
-		return -1;
+	err = ssd1673_write_cmd(driver, SSD1673_CMD_RAM_XPOS_CTRL, tmp,
+				sizeof(tmp));
+	if (err < 0) {
+		return err;
 	}
 
 	tmp[0] = sy; tmp[1] = ey;
-	if (ssd1673_write_cmd(driver, SSD1673_CMD_RAM_YPOS_CTRL,
-			      tmp, sizeof(tmp))) {
-		return -1;
+	err = ssd1673_write_cmd(driver, SSD1673_CMD_RAM_YPOS_CTRL, tmp,
+				sizeof(tmp));
+	if (err < 0) {
+		return err;
 	}
 
 	return 0;
@@ -120,17 +126,16 @@ static inline int ssd1673_set_ram_param(struct ssd1673_data *driver,
 static inline int ssd1673_set_ram_ptr(struct ssd1673_data *driver,
 				       u8_t x, u8_t y)
 {
-	if (ssd1673_write_cmd(driver, SSD1673_CMD_RAM_XPOS_CNTR,
-			      &x, sizeof(x))) {
-		return -1;
+	int err;
+
+	err = ssd1673_write_cmd(driver, SSD1673_CMD_RAM_XPOS_CNTR, &x,
+				sizeof(x));
+	if (err < 0) {
+		return err;
 	}
 
-	if (ssd1673_write_cmd(driver, SSD1673_CMD_RAM_YPOS_CNTR,
-			      &y, sizeof(y))) {
-		return -1;
-	}
-
-	return 0;
+	return ssd1673_write_cmd(driver, SSD1673_CMD_RAM_YPOS_CNTR, &y,
+				 sizeof(y));
 }
 
 static void ssd1673_set_orientation_internall(struct ssd1673_data *driver)
@@ -173,30 +178,34 @@ static int ssd1673_update_display(const struct device *dev, bool initial)
 {
 	struct ssd1673_data *driver = dev->driver_data;
 	u8_t tmp;
+	int err;
 
 	tmp = SSD1673_CTRL1_INITIAL_UPDATE_LH;
-	if (ssd1673_write_cmd(driver, SSD1673_CMD_UPDATE_CTRL1,
-			      &tmp, sizeof(tmp))) {
-		return -1;
+	err = ssd1673_write_cmd(driver, SSD1673_CMD_UPDATE_CTRL1,
+				&tmp, sizeof(tmp));
+	if (err < 0) {
+		return err;
 	}
 
 	if (initial) {
 		driver->numof_part_cycles = 0U;
 		driver->last_lut = SSD1673_LAST_LUT_INITIAL;
-		if (ssd1673_write_cmd(driver, SSD1673_CMD_UPDATE_LUT,
-				      ssd1673_lut_initial,
-				      sizeof(ssd1673_lut_initial))) {
-			return -1;
+		err = ssd1673_write_cmd(driver, SSD1673_CMD_UPDATE_LUT,
+					ssd1673_lut_initial,
+					sizeof(ssd1673_lut_initial));
+		if (err < 0) {
+			return err;
 		}
 
 	} else {
 		driver->numof_part_cycles++;
 		if (driver->last_lut != SSD1673_LAST_LUT_DEFAULT) {
 			driver->last_lut = SSD1673_LAST_LUT_DEFAULT;
-			if (ssd1673_write_cmd(driver, SSD1673_CMD_UPDATE_LUT,
-					      ssd1673_lut_default,
-					      sizeof(ssd1673_lut_default))) {
-				return -1;
+			err = ssd1673_write_cmd(driver, SSD1673_CMD_UPDATE_LUT,
+						ssd1673_lut_default,
+						sizeof(ssd1673_lut_default));
+			if (err < 0) {
+				return err;
 			}
 		}
 	}
@@ -206,17 +215,14 @@ static int ssd1673_update_display(const struct device *dev, bool initial)
 	       SSD1673_CTRL2_TO_PATTERN |
 	       SSD1673_CTRL2_DISABLE_ANALOG |
 	       SSD1673_CTRL2_DISABLE_CLK);
-	if (ssd1673_write_cmd(driver, SSD1673_CMD_UPDATE_CTRL2,
-			      &tmp, sizeof(tmp))) {
-		return -1;
+	err = ssd1673_write_cmd(driver, SSD1673_CMD_UPDATE_CTRL2, &tmp,
+				sizeof(tmp));
+	if (err < 0) {
+		return err;
 	}
 
-	if (ssd1673_write_cmd(driver, SSD1673_CMD_MASTER_ACTIVATION,
-			      NULL, 0)) {
-		return -1;
-	}
-
-	return 0;
+	return ssd1673_write_cmd(driver, SSD1673_CMD_MASTER_ACTIVATION,
+				 NULL, 0);
 }
 
 static int ssd1673_write(const struct device *dev, const u16_t x,
@@ -230,25 +236,26 @@ static int ssd1673_write(const struct device *dev, const u16_t x,
 	struct spi_buf sbuf = {.buf = &cmd, .len = 1};
 	struct spi_buf_set buf_set = {.buffers = &sbuf, .count = 1};
 	bool update = true;
+	int err;
 
 	if (desc->pitch < desc->width) {
 		LOG_ERR("Pitch is smaller then width");
-		return -1;
+		return -EINVAL;
 	}
 
 	if (buf == NULL || desc->buf_size == 0) {
 		LOG_ERR("Display buffer is not available");
-		return -1;
+		return -EINVAL;
 	}
 
 	if (desc->pitch > desc->width) {
 		LOG_ERR("Unsupported mode");
-		return -1;
+		return -ENOTSUP;
 	}
 
 	if (x != 0 && y != 0) {
 		LOG_ERR("Unsupported origin");
-		return -1;
+		return -ENOTSUP;
 	}
 
 
@@ -257,50 +264,56 @@ static int ssd1673_write(const struct device *dev, const u16_t x,
 
 	switch (driver->scan_mode) {
 	case SSD1673_DATA_ENTRY_XIYDY:
-		if (ssd1673_set_ram_param(driver,
-					  SSD1673_PANEL_FIRST_PAGE,
-					  SSD1673_PANEL_LAST_PAGE + 1,
-					  SSD1673_PANEL_LAST_GATE,
-					  SSD1673_PANEL_FIRST_GATE)) {
-			return -1;
+		err = ssd1673_set_ram_param(driver,
+					    SSD1673_PANEL_FIRST_PAGE,
+					    SSD1673_PANEL_LAST_PAGE + 1,
+					    SSD1673_PANEL_LAST_GATE,
+					    SSD1673_PANEL_FIRST_GATE);
+		if (err < 0) {
+			return err;
 		}
 
-		if (ssd1673_set_ram_ptr(driver,
-					SSD1673_PANEL_FIRST_PAGE,
-					SSD1673_PANEL_LAST_GATE)) {
-			return -1;
+		err = ssd1673_set_ram_ptr(driver,
+					  SSD1673_PANEL_FIRST_PAGE,
+					  SSD1673_PANEL_LAST_GATE);
+		if (err < 0) {
+			return err;
 		}
 
 		break;
 
 	case SSD1673_DATA_ENTRY_XDYIY:
-		if (ssd1673_set_ram_param(driver,
-					  SSD1673_PANEL_LAST_PAGE + 1,
-					  SSD1673_PANEL_FIRST_PAGE,
-					  SSD1673_PANEL_FIRST_GATE,
-					  SSD1673_PANEL_LAST_GATE)) {
-			return -1;
+		err = ssd1673_set_ram_param(driver,
+					    SSD1673_PANEL_LAST_PAGE + 1,
+					    SSD1673_PANEL_FIRST_PAGE,
+					    SSD1673_PANEL_FIRST_GATE,
+					    SSD1673_PANEL_LAST_GATE);
+		if (err < 0) {
+			return err;
 		}
 
-		if (ssd1673_set_ram_ptr(driver,
-					SSD1673_PANEL_LAST_PAGE + 1,
-					SSD1673_PANEL_FIRST_GATE)) {
-			return -1;
+		err = ssd1673_set_ram_ptr(driver,
+					  SSD1673_PANEL_LAST_PAGE + 1,
+					  SSD1673_PANEL_FIRST_GATE);
+		if (err < 0) {
+			return err;
 		}
 
 		break;
 	default:
-		return -1;
+		return -EINVAL;
 	}
 
-	if (ssd1673_write_cmd(driver, SSD1673_CMD_ENTRY_MODE,
-			      &driver->scan_mode, sizeof(driver->scan_mode))) {
-		return -1;
+	err = ssd1673_write_cmd(driver, SSD1673_CMD_ENTRY_MODE,
+				&driver->scan_mode, sizeof(driver->scan_mode));
+	if (err < 0) {
+		return err;
 	}
 
 	gpio_pin_write(driver->dc, DT_SSD1673_DC_PIN, 0);
-	if (spi_write(driver->spi_dev, &driver->spi_config, &buf_set)) {
-		return -1;
+	err = spi_write(driver->spi_dev, &driver->spi_config, &buf_set);
+	if (err < 0) {
+		return err;
 	}
 
 	gpio_pin_write(driver->dc, DT_SSD1673_DC_PIN, 1);
@@ -308,23 +321,26 @@ static int ssd1673_write(const struct device *dev, const u16_t x,
 	if (driver->scan_mode == SSD1673_DATA_ENTRY_XDYIY) {
 		sbuf.buf = dummy_page;
 		sbuf.len = sizeof(dummy_page);
-		if (spi_write(driver->spi_dev, &driver->spi_config, &buf_set)) {
-			return -1;
+		err = spi_write(driver->spi_dev, &driver->spi_config, &buf_set);
+		if (err < 0) {
+			return err;
 		}
 	}
 
 	sbuf.buf = (u8_t *)buf;
 	sbuf.len = desc->buf_size;
-	if (spi_write(driver->spi_dev, &driver->spi_config, &buf_set)) {
-		return -1;
+	err = spi_write(driver->spi_dev, &driver->spi_config, &buf_set);
+	if (err < 0) {
+		return err;
 	}
 
 	/* clear unusable page */
 	if (driver->scan_mode == SSD1673_DATA_ENTRY_XIYDY) {
 		sbuf.buf = dummy_page;
 		sbuf.len = sizeof(dummy_page);
-		if (spi_write(driver->spi_dev, &driver->spi_config, &buf_set)) {
-			return -1;
+		err = spi_write(driver->spi_dev, &driver->spi_config, &buf_set);
+		if (err < 0) {
+			return err;
 		}
 	}
 
@@ -406,6 +422,7 @@ static int ssd1673_controller_init(struct device *dev)
 {
 	struct ssd1673_data *driver = dev->driver_data;
 	u8_t tmp[3];
+	int err;
 
 	LOG_DBG("");
 
@@ -415,41 +432,48 @@ static int ssd1673_controller_init(struct device *dev)
 	k_sleep(SSD1673_RESET_DELAY);
 	ssd1673_busy_wait(driver);
 
-	if (ssd1673_write_cmd(driver, SSD1673_CMD_SW_RESET, NULL, 0)) {
-		return -1;
+	err = ssd1673_write_cmd(driver, SSD1673_CMD_SW_RESET, NULL, 0);
+	if (err < 0) {
+		return err;
 	}
 	ssd1673_busy_wait(driver);
 
 	tmp[0] = (SSD1673_RAM_YRES - 1);
 	tmp[1] = 0U;
-	if (ssd1673_write_cmd(driver, SSD1673_CMD_GDO_CTRL, tmp, 2)) {
-		return -1;
+	err = ssd1673_write_cmd(driver, SSD1673_CMD_GDO_CTRL, tmp, 2);
+	if (err < 0) {
+		return err;
 	}
 
 	tmp[0] = SSD1673_VAL_GDV_CTRL_A;
 	tmp[1] = SSD1673_VAL_GDV_CTRL_B;
-	if (ssd1673_write_cmd(driver, SSD1673_CMD_GDV_CTRL, tmp, 2)) {
-		return -1;
+	err = ssd1673_write_cmd(driver, SSD1673_CMD_GDV_CTRL, tmp, 2);
+	if (err < 0) {
+		return err;
 	}
 
 	tmp[0] = SSD1673_VAL_SDV_CTRL;
-	if (ssd1673_write_cmd(driver, SSD1673_CMD_SDV_CTRL, tmp, 1)) {
-		return -1;
+	err = ssd1673_write_cmd(driver, SSD1673_CMD_SDV_CTRL, tmp, 1);
+	if (err < 0) {
+		return err;
 	}
 
 	tmp[0] = SSD1673_VAL_VCOM_VOLTAGE;
-	if (ssd1673_write_cmd(driver, SSD1673_CMD_VCOM_VOLTAGE, tmp, 1)) {
-		return -1;
+	err = ssd1673_write_cmd(driver, SSD1673_CMD_VCOM_VOLTAGE, tmp, 1);
+	if (err < 0) {
+		return err;
 	}
 
 	tmp[0] = SSD1673_VAL_DUMMY_LINE;
-	if (ssd1673_write_cmd(driver, SSD1673_CMD_DUMMY_LINE, tmp, 1)) {
-		return -1;
+	err = ssd1673_write_cmd(driver, SSD1673_CMD_DUMMY_LINE, tmp, 1);
+	if (err < 0) {
+		return err;
 	}
 
 	tmp[0] = SSD1673_VAL_GATE_LWIDTH;
-	if (ssd1673_write_cmd(driver, SSD1673_CMD_GATE_LINE_WIDTH, tmp, 1)) {
-		return -1;
+	err = ssd1673_write_cmd(driver, SSD1673_CMD_GATE_LINE_WIDTH, tmp, 1);
+	if (err < 0) {
+		return err;
 	}
 
 	ssd1673_set_orientation_internall(driver);
@@ -517,9 +541,7 @@ static int ssd1673_init(struct device *dev)
 	driver->spi_config.cs = &driver->cs_ctrl;
 #endif
 
-	ssd1673_controller_init(dev);
-
-	return 0;
+	return ssd1673_controller_init(dev);
 }
 
 static struct ssd1673_data ssd1673_driver;
