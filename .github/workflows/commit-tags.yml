@@ -1,0 +1,28 @@
+name: Commit tags
+
+on:
+  pull_request:
+    types: [synchronize, opened, reopened, edited, labeled, unlabeled,
+            milestoned, demilestoned, assigned, unassigned, ready_for_review,
+            review_requested]
+
+jobs:
+  commit_tags:
+    runs-on: ubuntu-22.04
+    name: Run commit tags checks on patch series (PR)
+    steps:
+    - name: Update PATH for west
+      run: |
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+    - name: Checkout the code
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+        fetch-depth: 0
+
+    - name: Run the commit tags
+      uses: nrfconnect/action-commit-tags@main
+      with:
+        target: .
+        upstream: zephyrproject-rtos/zephyr/main
