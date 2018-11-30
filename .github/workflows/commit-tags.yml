@@ -1,0 +1,31 @@
+name: Commit tags
+
+on: pull_request
+
+jobs:
+  commit_tags:
+    runs-on: ubuntu-22.04
+    name: Run commit tags checks on patch series (PR)
+    steps:
+    - name: Update PATH for west
+      run: |
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+    - name: Checkout the code
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+        fetch-depth: 0
+
+    - name: Install python dependencies
+      run: |
+        pip3 install setuptools
+        pip3 install wheel
+        pip3 install gitlint
+
+    - name: Run the commit tags
+      uses: nrfconnect/action-commit-tags@main
+      with:
+        target: '.'
+        baserev: origin/${{ github.base_ref }}
+        revrange: 'none'
