@@ -81,6 +81,7 @@ LOG_MODULE_REGISTER(sdhc);
 #define SDHC_READY_TIMEOUT K_MSEC(500)
 
 struct sdhc_data {
+	struct device *spi;
 	struct spi_config cfg;
 	struct device *cs;
 	u32_t pin;
@@ -289,6 +290,11 @@ static int sdhc_rx_bytes(struct sdhc_data *data, u8_t *buf, int len)
 		}
 	};
 
+	const struct spi_buf_set tx = {
+		.buffers = tx_bufs,
+		.count = 1,
+	};
+
 	struct spi_buf rx_bufs[] = {
 		{
 			.buf = buf,
@@ -296,8 +302,13 @@ static int sdhc_rx_bytes(struct sdhc_data *data, u8_t *buf, int len)
 		}
 	};
 
+	const struct spi_buf_set rx = {
+		.buffers = rx_bufs,
+		.count = 1,
+	};
+
 	return sdhc_trace(data, -1,
-			  spi_transceive(&data->cfg, tx_bufs, 1, rx_bufs, 1),
+			  spi_transceive(data->spi, &data->cfg, &tx, &rx),
 			  buf, len);
 }
 
@@ -324,7 +335,12 @@ static int sdhc_tx(struct sdhc_data *data, const u8_t *buf, int len)
 		}
 	};
 
-	return sdhc_trace(data, 1, spi_write(&data->cfg, spi_bufs, 1), buf,
+	const struct spi_buf_set tx = {
+		.buffers = spi_bufs,
+		.count = 1
+	};
+
+	return sdhc_trace(data, 1, spi_write(data->spi, &data->cfg, &tx), buf,
 			  len);
 }
 
@@ -561,6 +577,11 @@ static int sdhc_rx_block(struct sdhc_data *data, u8_t *buf, int len)
 			}
 		};
 
+		const struct spi_buf_set tx = {
+			.buffers = tx_bufs,
+			.count = 1,
+		};
+
 		struct spi_buf rx_bufs[] = {
 			{
 				.buf = &buf[i],
@@ -568,8 +589,13 @@ static int sdhc_rx_block(struct sdhc_data *data, u8_t *buf, int len)
 			}
 		};
 
-		err = sdhc_trace(data, -1, spi_transceive(&data->cfg, tx_bufs,
-							  1, rx_bufs, 1),
+		const struct spi_buf_set rx = {
+			.buffers = rx_bufs,
+			.count = 1,
+		};
+
+		err = sdhc_trace(data, -1, spi_transceive(data->spi, &data->cfg,
+							  &tx, &rx),
 				 &buf[i], remain);
 		if (err != 0) {
 			return err;
@@ -872,12 +898,11 @@ static int sdhc_init(struct device *dev)
 {
 	struct sdhc_data *data = dev->driver_data;
 
-	data->cfg.dev = device_get_binding(DT_DISK_SDHC0_CS_GPIOS_CONTROLLER);
-	__ASSERT_NO_MSG(data->cfg.dev != NULL);
+	data->spi = device_get_binding(DT_DISK_SDHC0_BUS_NAME);
 
 	data->cfg.frequency = SDHC_INITIAL_SPEED;
 	data->cfg.operation = SPI_WORD_SET(8) | SPI_HOLD_ON_CS;
-
+	data->cfg.slave = DT_DISK_SDHC0_BUS_ADDRESS;
 	data->cs = device_get_binding(DT_DISK_SDHC0_CS_GPIOS_CONTROLLER);
 	__ASSERT_NO_MSG(data->cs != NULL);
 
