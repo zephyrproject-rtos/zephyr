@@ -1,0 +1,19 @@
+name: Backport
+on:
+  pull_request:
+    types:
+      - closed
+      - labeled
+
+jobs:
+  backport:
+    runs-on: ubuntu-18.04
+    name: Backport
+    steps:
+      - name: Backport Bot
+        uses: Gaurav0/backport@v1.0.24
+        with:
+          bot_username: NordicBuilder
+          bot_token: 151a9b45052f9ee8be5a59963d31ad7b92c3ecb5
+          bot_token_key: 67bb1f1f998d546859786a4088917c65415c0ebd
+          github_token: ${{ secrets.GITHUB_TOKEN }}
