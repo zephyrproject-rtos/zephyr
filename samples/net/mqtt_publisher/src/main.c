@@ -12,11 +12,6 @@
 #include <string.h>
 #include <errno.h>
 
-#if defined(CONFIG_NET_L2_BT)
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#endif
-
 #include "config.h"
 
 /* Buffers for MQTT client. */
@@ -33,9 +28,6 @@ static struct pollfd fds[1];
 static int nfds;
 
 static bool connected;
-
-/* This routine sets some basic properties for the network context variable */
-static int network_setup(void);
 
 #if defined(CONFIG_MQTT_LIB_TLS)
 
@@ -365,16 +357,7 @@ static void publisher(void)
 {
 	int i, rc;
 
-#if defined(CONFIG_MQTT_LIB_TLS)
-	rc = tls_init();
-	PRINT_RESULT("tls_init", rc);
-	SUCCESS_OR_EXIT(rc);
-#endif
-
-	rc = network_setup();
-	PRINT_RESULT("network_setup", rc);
-	SUCCESS_OR_EXIT(rc);
-
+	printk("attempting to connect: ");
 	rc = try_to_connect(&client_ctx);
 	PRINT_RESULT("try_to_connect", rc);
 	SUCCESS_OR_EXIT(rc);
@@ -420,57 +403,17 @@ static void publisher(void)
 	printk("\nBye!\n");
 }
 
-#if defined(CONFIG_NET_L2_BT)
-static bool bt_connected;
-
-static
-void bt_connect_cb(struct bt_conn *conn, u8_t err)
-{
-	bt_connected = true;
-}
-
-static
-void bt_disconnect_cb(struct bt_conn *conn, u8_t reason)
-{
-	bt_connected = false;
-	printk("bt disconnected (reason %u)\n", reason);
-}
-
-static
-struct bt_conn_cb bt_conn_cb = {
-	.connected = bt_connect_cb,
-	.disconnected = bt_disconnect_cb,
-};
-#endif
-
-static int network_setup(void)
-{
-#if defined(CONFIG_NET_L2_BT)
-	const char *progress_mark = "/-\\|";
-	int i = 0;
-	int rc;
-
-	rc = bt_enable(NULL);
-	if (rc) {
-		printk("bluetooth init failed\n");
-		return rc;
-	}
-
-	bt_conn_cb_register(&bt_conn_cb);
-
-	printk("\nwaiting for bt connection: ");
-	while (bt_connected == false) {
-		k_sleep(250);
-		printk("%c\b", progress_mark[i]);
-		i = (i + 1) % (sizeof(progress_mark) - 1);
-	}
-	printk("\n");
-#endif
-
-	return 0;
-}
-
 void main(void)
 {
-	publisher();
+#if defined(CONFIG_MQTT_LIB_TLS)
+	int rc;
+
+	rc = tls_init();
+	PRINT_RESULT("tls_init", rc);
+#endif
+
+	while (1) {
+		publisher();
+		k_sleep(5000);
+	}
 }
