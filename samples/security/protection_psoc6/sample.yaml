@@ -1,0 +1,9 @@
+sample:
+    description: Sample app that creates a secure domain on CM0+ side with
+        protected from CM4 access Flash, SRAM and restricted access to some
+        peripheral.
+    name: PSoC6 Secure/Unsecure Domain Sample
+tests:
+    test:
+        platform_whitelist: cy8ckit_062_wifi_bt_m0
+        tags: protection

@@ -253,6 +253,7 @@
 /samples/net/sockets/coap_client/         @rveerama1
 /samples/net/sockets/coap_server/         @rveerama1
 /samples/net/sockets/                     @jukkar @tbursztyka @pfalcon
+/samples/security/                        @OlegKapshii
 /samples/sensor/                          @bogdan-davidoaia
 /samples/subsys/logging/                  @nordic-krch @jarz-nordic
 /samples/subsys/shell/                    @jarz-nordic @nordic-krch
