@@ -73,9 +73,6 @@ config SPI_NOR_SECTOR_SIZE
 config SPI_NOR_SECTORS
 	default 1024
 
-config SPI_NOR_BLOCK_SIZE
-	default 65536
-
 choice SPI_NOR_BLOCK_ERASE_SIZE
 	default SPI_NOR_BLOCK_ERASE_64K
 endchoice
