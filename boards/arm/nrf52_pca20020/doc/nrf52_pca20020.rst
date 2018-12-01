@@ -22,7 +22,7 @@ a set of environmental sensors, a pushbutton, and two RGB LEDs.
 * :abbr:`NVIC (Nested Vectored Interrupt Controller)`
 * Pressure sensor
 * :abbr:`PWM (Pulse Width Modulation)`
-* RADIO (Bluetooth Low Energy and 802.15.4)
+* RADIO (Bluetooth Low Energy)
 * RGB LEDs
 * :abbr:`RTC (nRF RTC System Clock)`
 * :abbr:`SPI (Serial Peripheral Interface)`
