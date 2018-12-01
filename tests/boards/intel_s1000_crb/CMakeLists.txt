@@ -4,6 +4,7 @@ project(intel_s1000_crb)
 
 if(CONFIG_I2C)
 target_sources(app PRIVATE src/i2c_test.c)
+target_compile_definitions(app PRIVATE -DLED_LIGHT_PAT=1)
 endif()
 if(CONFIG_GPIO)
 target_sources(app PRIVATE src/gpio_test.c)
