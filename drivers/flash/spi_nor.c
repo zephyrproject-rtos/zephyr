@@ -397,8 +397,7 @@ static const struct flash_driver_api spi_nor_api = {
 static const struct spi_nor_config flash_id = {
 	JEDEC_ID(CONFIG_SPI_NOR_JEDEC_ID),
 	CONFIG_SPI_NOR_PAGE_SIZE, CONFIG_SPI_NOR_SECTOR_SIZE,
-	CONFIG_SPI_NOR_SECTORS, CONFIG_SPI_NOR_BLOCK_SIZE,
-	CONFIG_SPI_NOR_BLOCK_ERASE_SIZE,
+	CONFIG_SPI_NOR_SECTORS, CONFIG_SPI_NOR_BLOCK_ERASE_SIZE,
 };
 
 static struct spi_nor_data spi_nor_memory_data;

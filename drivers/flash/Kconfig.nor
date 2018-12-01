@@ -46,12 +46,6 @@ config SPI_NOR_SECTORS
 	This option specifies number of sector present
 	in SPI flash
 
-config SPI_NOR_BLOCK_SIZE
-	int "Block size of SPI flash"
-	default 0
-	help
-	This option specifies block size of SPI flash
-
 choice SPI_NOR_BLOCK_ERASE_SIZE
 prompt "Select Block size for erasing"
 
