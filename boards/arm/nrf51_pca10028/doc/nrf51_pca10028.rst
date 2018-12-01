@@ -17,7 +17,7 @@ nRF51822 ARM Cortex-M0 CPU and the following devices:
 * :abbr:`I2C (Inter-Integrated Circuit)`
 * :abbr:`NVIC (Nested Vectored Interrupt Controller)`
 * :abbr:`PWM (Pulse Width Modulation)`
-* RADIO (Bluetooth Low Energy and 802.15.4)
+* RADIO (Bluetooth Low Energy)
 * :abbr:`RTC (nRF RTC System Clock)`
 * Segger RTT (RTT Console)
 * :abbr:`SPI (Serial Peripheral Interface)`
