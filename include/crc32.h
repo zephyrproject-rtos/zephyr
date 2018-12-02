@@ -15,4 +15,7 @@
 
 #include <crc.h>
 
+#warning This include file is deprecated in favor of crc.h. \
+Include crc.h instead.
+
 #endif
