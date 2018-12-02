@@ -56,6 +56,69 @@
 			local-mac-address = [00 00 94 00 83 00];
 			label = "ETH";
 		};
+
+		gpio0: gpio@40004000 {
+			compatible = "ti,stellaris-gpio";
+			reg = <0x40004000 0x1000>;
+			interrupts = <0 3>;
+			label = "GPIO_A";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpio1: gpio@40005000 {
+			compatible = "ti,stellaris-gpio";
+			reg = <0x40005000 0x1000>;
+			interrupts = <1 3>;
+			label = "GPIO_B";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpio2: gpio@40006000 {
+			compatible = "ti,stellaris-gpio";
+			reg = <0x40006000 0x1000>;
+			interrupts = <2 3>;
+			label = "GPIO_C";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpio3: gpio@40007000 {
+			compatible = "ti,stellaris-gpio";
+			reg = <0x40007000 0x1000>;
+			interrupts = <3 3>;
+			label = "GPIO_D";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpio4: gpio@40024000 {
+			compatible = "ti,stellaris-gpio";
+			reg = <0x40024000 0x1000>;
+			interrupts = <4 3>;
+			label = "GPIO_E";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpio5: gpio@40025000 {
+			compatible = "ti,stellaris-gpio";
+			reg = <0x40025000 0x1000>;
+			interrupts = <30 3>;
+			label = "GPIO_F";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpio6: gpio@40026000 {
+			compatible = "ti,stellaris-gpio";
+			reg = <0x40026000 0x1000>;
+			interrupts = <31 3>;
+			label = "GPIO_G";
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
 	};
 };
 

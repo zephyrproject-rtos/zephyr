@@ -41,3 +41,31 @@
 &eth {
 	status = "ok";
 };
+
+&gpio0 {
+       status = "ok";
+};
+
+&gpio1 {
+       status = "ok";
+};
+
+&gpio2 {
+       status = "ok";
+};
+
+&gpio3 {
+       status = "ok";
+};
+
+&gpio4 {
+       status = "ok";
+};
+
+&gpio5 {
+       status = "ok";
+};
+
+&gpio6 {
+       status = "ok";
+};
