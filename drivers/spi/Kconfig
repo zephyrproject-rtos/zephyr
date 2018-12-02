@@ -170,6 +170,8 @@ config SPI_INTEL
 
 source "drivers/spi/Kconfig.stm32"
 
+source "drivers/spi/Kconfig.stellaris"
+
 source "drivers/spi/Kconfig.dw"
 
 source "drivers/spi/Kconfig.mcux_dspi"

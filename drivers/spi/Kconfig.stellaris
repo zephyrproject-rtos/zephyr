@@ -1,0 +1,18 @@
+# Kconfig - Stellaris SPI Driver
+#
+# Copyright (c) 2018 Zilogic Systems.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SPI_STELLARIS
+	bool "Stellaris SPI driver"
+	depends on SOC_TI_LM3S6965
+	select HAS_DTS_SPI
+	help
+	  Enable support for the LM3S6965 SPI driver.
+
+if SPI_STELLARIS
+
+config SPI_PL022
+	bool "Enable Pl022 Driver"
+	default y
+endif
