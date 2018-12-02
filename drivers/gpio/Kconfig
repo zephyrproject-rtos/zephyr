@@ -70,4 +70,6 @@ source "drivers/gpio/Kconfig.imx"
 
 source "drivers/gpio/Kconfig.intel"
 
+source "drivers/gpio/Kconfig.stellaris"
+
 endif # GPIO
