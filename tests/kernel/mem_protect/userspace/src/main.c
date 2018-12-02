@@ -19,6 +19,10 @@
 #include <arch/arc/v2/mpu/arc_core_mpu.h>
 #endif
 
+#if defined(CONFIG_ARM)
+#include <arch/arm/cortex_m/mpu/arm_core_mpu_dev.h>
+#endif
+
 #define INFO(fmt, ...) printk(fmt, ##__VA_ARGS__)
 #define PIPE_LEN 1
 #define BYTES_TO_READ_WRITE 1
