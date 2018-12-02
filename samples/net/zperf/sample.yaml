@@ -1,8 +1,9 @@
 common:
   harness: net
-  tags: net zperf samples
+  tags: net zperf
   # TODO: Does not work properly with native_posix, need more TLC
-  platform_exclude: native_posix
+  platform_exclude: native_posix sam_e70_xplained
+  min_ram: 64
 sample:
   description: Network performance measurement tool for Zephyr
   name: zperf
@@ -14,8 +15,8 @@ tests:
     extra_configs:
       - CONFIG_NET_TCP=n
       - CONFIG_SHELL_CMDS=n
-    platform_whitelist: quark_se_c1000_devboard 96b_carbon
     tags: usb net zperf
+    depends_on: usb_device
   test_netusb_eem:
     extra_args: OVERLAY_CONFIG="overlay-netusb.conf"
     extra_configs:
@@ -23,8 +24,8 @@ tests:
       - CONFIG_USB_DEVICE_NETWORK_EEM=y
       - CONFIG_NET_TCP=n
       - CONFIG_SHELL_CMDS=n
-    platform_whitelist: quark_se_c1000_devboard 96b_carbon
     tags: usb net zperf
+    depends_on: usb_device
   test_netusb_rndis:
     extra_args: OVERLAY_CONFIG="overlay-netusb.conf"
     extra_configs:
@@ -34,5 +35,5 @@ tests:
       - CONFIG_NET_PKT_TX_COUNT=32
       - CONFIG_NET_TCP=n
       - CONFIG_SHELL_CMDS=n
-    platform_whitelist: quark_se_c1000_devboard 96b_carbon
     tags: usb net zperf
+    depends_on: usb_device
