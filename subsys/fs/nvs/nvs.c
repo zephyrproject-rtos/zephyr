@@ -10,7 +10,7 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <nvs/nvs.h>
-#include <crc8.h>
+#include <crc.h>
 #include "nvs_priv.h"
 
 #define LOG_LEVEL CONFIG_NVS_LOG_LEVEL
