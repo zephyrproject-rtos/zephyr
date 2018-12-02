@@ -11,10 +11,10 @@ Miscellaneous APIs
 Checksum APIs
 *************
 
-CRC16
+CRC
 =====
 
-.. doxygengroup:: crc16
+.. doxygengroup:: crc
    :project: Zephyr
 
 Structured Data APIs
