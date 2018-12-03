@@ -167,7 +167,7 @@ static void history_put(const struct shell *shell, u8_t *line, size_t length)
 static void history_handle(const struct shell *shell, bool up)
 {
 	bool history_mode;
-	size_t len;
+	u16_t len;
 
 	/*optional feature */
 	if (!IS_ENABLED(CONFIG_SHELL_HISTORY)) {
@@ -380,8 +380,8 @@ static void autocomplete(const struct shell *shell,
 			 size_t subcmd_idx)
 {
 	const struct shell_static_entry *match;
-	size_t arg_len = shell_strlen(arg);
-	size_t cmd_len;
+	u16_t cmd_len;
+	u16_t arg_len = shell_strlen(arg);
 
 	/* shell->ctx->active_cmd can be safely used outside of command context
 	 * to save stack
@@ -510,11 +510,10 @@ static void partial_autocomplete(const struct shell *shell,
 				 const char *arg,
 				 size_t first, size_t cnt)
 {
-	size_t arg_len = shell_strlen(arg);
 	const char *completion;
-	u16_t common;
-
-	common = common_beginning_find(cmd, &completion, first, cnt, arg_len);
+	u16_t arg_len = shell_strlen(arg);
+	u16_t common = common_beginning_find(cmd, &completion,
+			first, cnt, arg_len);
 
 	if (common) {
 		shell_op_completion_insert(shell, &completion[arg_len],
@@ -1321,10 +1320,12 @@ void shell_fprintf(const struct shell *shell, enum shell_vt100_color color,
 
 int shell_prompt_change(const struct shell *shell, char *prompt)
 {
+	u16_t len;
+
 	__ASSERT_NO_MSG(shell);
 	__ASSERT_NO_MSG(prompt);
 
-	size_t len = shell_strlen(prompt);
+	len = shell_strlen(prompt);
 
 	if (len <= CONFIG_SHELL_PROMPT_LENGTH) {
 		memcpy(shell->prompt, prompt, len + 1); /* +1 for '\0' */
