@@ -30,10 +30,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/net_if.h>
 #include <net/ethernet.h>
 
-#if defined(CONFIG_ETH_NATIVE_POSIX_PTP_CLOCK)
 #include <ptp_clock.h>
 #include <net/gptp.h>
-#endif
 
 #include "eth_native_posix_priv.h"
 #include "ethernet/eth_stats.h"
