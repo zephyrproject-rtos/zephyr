@@ -27,7 +27,7 @@ int lis3dh_trigger_set(struct device *dev,
 		return -ENOTSUP;
 	}
 
-	gpio_pin_disable_callback(drv_data->gpio, CONFIG_LIS3DH_GPIO_PIN_NUM);
+	gpio_pin_disable_callback(drv_data->gpio, DT_LIS3DH_GPIO_PIN_NUM);
 
 	drv_data->data_ready_handler = handler;
 	if (handler == NULL) {
@@ -35,7 +35,7 @@ int lis3dh_trigger_set(struct device *dev,
 	}
 	drv_data->data_ready_trigger = *trig;
 
-	gpio_pin_enable_callback(drv_data->gpio, CONFIG_LIS3DH_GPIO_PIN_NUM);
+	gpio_pin_enable_callback(drv_data->gpio, DT_LIS3DH_GPIO_PIN_NUM);
 
 	return 0;
 }
@@ -48,7 +48,7 @@ static void lis3dh_gpio_callback(struct device *dev,
 
 	ARG_UNUSED(pins);
 
-	gpio_pin_disable_callback(dev, CONFIG_LIS3DH_GPIO_PIN_NUM);
+	gpio_pin_disable_callback(dev, DT_LIS3DH_GPIO_PIN_NUM);
 
 #if defined(CONFIG_LIS3DH_TRIGGER_OWN_THREAD)
 	k_sem_give(&drv_data->gpio_sem);
@@ -67,7 +67,7 @@ static void lis3dh_thread_cb(void *arg)
 					     &drv_data->data_ready_trigger);
 	}
 
-	gpio_pin_enable_callback(drv_data->gpio, CONFIG_LIS3DH_GPIO_PIN_NUM);
+	gpio_pin_enable_callback(drv_data->gpio, DT_LIS3DH_GPIO_PIN_NUM);
 }
 
 #ifdef CONFIG_LIS3DH_TRIGGER_OWN_THREAD
@@ -100,20 +100,20 @@ int lis3dh_init_interrupt(struct device *dev)
 	struct lis3dh_data *drv_data = dev->driver_data;
 
 	/* setup data ready gpio interrupt */
-	drv_data->gpio = device_get_binding(CONFIG_LIS3DH_GPIO_DEV_NAME);
+	drv_data->gpio = device_get_binding(DT_LIS3DH_GPIO_DEV_NAME);
 	if (drv_data->gpio == NULL) {
 		LOG_DBG("Cannot get pointer to %s device",
-			    CONFIG_LIS3DH_GPIO_DEV_NAME);
+			    DT_LIS3DH_GPIO_DEV_NAME);
 		return -EINVAL;
 	}
 
-	gpio_pin_configure(drv_data->gpio, CONFIG_LIS3DH_GPIO_PIN_NUM,
+	gpio_pin_configure(drv_data->gpio, DT_LIS3DH_GPIO_PIN_NUM,
 			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
 			   GPIO_INT_ACTIVE_HIGH | GPIO_INT_DEBOUNCE);
 
 	gpio_init_callback(&drv_data->gpio_cb,
 			   lis3dh_gpio_callback,
-			   BIT(CONFIG_LIS3DH_GPIO_PIN_NUM));
+			   BIT(DT_LIS3DH_GPIO_PIN_NUM));
 
 	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
 		LOG_DBG("Could not set gpio callback");
@@ -146,7 +146,7 @@ int lis3dh_init_interrupt(struct device *dev)
 	drv_data->dev = dev;
 #endif
 
-	gpio_pin_enable_callback(drv_data->gpio, CONFIG_LIS3DH_GPIO_PIN_NUM);
+	gpio_pin_enable_callback(drv_data->gpio, DT_LIS3DH_GPIO_PIN_NUM);
 
 	return 0;
 }

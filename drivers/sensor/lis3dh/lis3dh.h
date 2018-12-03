@@ -12,7 +12,7 @@
 #include <zephyr/types.h>
 #include <gpio.h>
 
-#define LIS3DH_I2C_ADDRESS		CONFIG_LIS3DH_I2C_ADDR
+#define LIS3DH_I2C_ADDRESS		DT_LIS3DH_I2C_ADDRESS
 
 #define LIS3DH_AUTOINCREMENT_ADDR	BIT(7)
 

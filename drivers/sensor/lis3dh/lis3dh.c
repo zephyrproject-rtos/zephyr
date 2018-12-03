@@ -90,10 +90,10 @@ int lis3dh_init(struct device *dev)
 {
 	struct lis3dh_data *drv_data = dev->driver_data;
 
-	drv_data->i2c = device_get_binding(CONFIG_LIS3DH_I2C_MASTER_DEV_NAME);
+	drv_data->i2c = device_get_binding(DT_LIS3DH_I2C_MASTER_DEV_NAME);
 	if (drv_data->i2c == NULL) {
 		LOG_DBG("Could not get pointer to %s device",
-		    CONFIG_LIS3DH_I2C_MASTER_DEV_NAME);
+		    DT_LIS3DH_I2C_MASTER_DEV_NAME);
 		return -EINVAL;
 	}
 
@@ -123,6 +123,6 @@ int lis3dh_init(struct device *dev)
 
 struct lis3dh_data lis3dh_driver;
 
-DEVICE_AND_API_INIT(lis3dh, CONFIG_LIS3DH_NAME, lis3dh_init, &lis3dh_driver,
+DEVICE_AND_API_INIT(lis3dh, DT_LIS3DH_DEV_NAME, lis3dh_init, &lis3dh_driver,
 		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &lis3dh_driver_api);

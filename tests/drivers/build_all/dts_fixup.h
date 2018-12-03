@@ -146,6 +146,14 @@
 #define DT_SHT3XD_GPIO_ALERT_PIN 0
 #endif
 
+#ifndef DT_LIS3DH_DEV_NAME
+#define DT_LIS3DH_DEV_NAME ""
+#define DT_LIS3DH_I2C_ADDRESS 0x19
+#define DT_LIS3DH_I2C_MASTER_DEV_NAME ""
+#define DT_LIS3DH_GPIO_DEV_NAME ""
+#define DT_LIS3DH_GPIO_PIN_NUM 0
+#endif
+
 #endif /* CONFIG_HAS_DTS_I2C */
 
 #if defined(CONFIG_HAS_DTS_SPI)

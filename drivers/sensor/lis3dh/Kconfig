@@ -8,33 +8,11 @@
 
 menuconfig LIS3DH
 	bool "LIS3DH Three Axis Accelerometer"
-	depends on I2C
+	depends on (I2C && HAS_DTS_I2C)
 	help
 	  Enable driver for LIS3DH I2C-based triaxial accelerometer sensor.
 
 if LIS3DH
-
-config LIS3DH_NAME
-	string "Driver name"
-	default "LIS3DH"
-	help
-	  Device name with which the LIS3DH sensor is identified.
-
-config LIS3DH_I2C_ADDR
-	hex "LIS3DH I2C address"
-	default 0x18
-	help
-	  I2C address of the LIS3DH sensor.
-
-	  0x18: Choose this option if the SDO pin is pulled to GND.
-	  0x19: Choose this option if the SDO pin is pulled to VDDIO.
-
-config LIS3DH_I2C_MASTER_DEV_NAME
-	string "I2C master where LIS3DH is connected"
-	default "I2C_0"
-	help
-	  Specify the device name of the I2C master device to which LIS3DH is
-	  connected.
 
 choice
 	prompt "Trigger mode"
@@ -59,22 +37,6 @@ endchoice
 
 config LIS3DH_TRIGGER
 	bool
-
-config LIS3DH_GPIO_DEV_NAME
-	string "GPIO device"
-	default "GPIO_0"
-	depends on LIS3DH_TRIGGER
-	help
-	  The device name of the GPIO device to which the LIS3DH interrupt pins
-	  are connected.
-
-config LIS3DH_GPIO_PIN_NUM
-	int "Interrupt GPIO pin number"
-	default 0
-	depends on LIS3DH_TRIGGER
-	help
-	  The number of the GPIO on which the interrupt signal from the LIS3DH
-	  chip will be received.
 
 config LIS3DH_THREAD_PRIORITY
 	int "Thread priority"
