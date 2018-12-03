@@ -46,6 +46,12 @@ const char *devices[] = {
 #ifdef CONFIG_COUNTER_RTC2
 	CONFIG_COUNTER_RTC2_NAME,
 #endif
+#ifdef CONFIG_COUNTER_IMX_EPIT_1
+	EPIT_1_LABEL,
+#endif
+#ifdef CONFIG_COUNTER_IMX_EPIT_2
+	EPIT_2_LABEL,
+#endif
 };
 typedef void (*counter_test_func_t)(const char *dev_name);
 
@@ -143,6 +149,11 @@ void test_single_shot_alarm_instance(const char *dev_name)
 
 	alarm_cnt = 0;
 
+	if (counter_get_num_of_channels(dev) < 1U) {
+		/* Counter does not support any alarm */
+		return;
+	}
+
 	err = counter_start(dev);
 	zassert_equal(0, err, "Counter failed to start\n");
 
@@ -215,6 +226,11 @@ void test_multiple_alarms_instance(const char *dev_name)
 	alarm_cfg2.user_data = &alarm_cfg2;
 
 	alarm_cnt = 0;
+
+	if (counter_get_num_of_channels(dev) < 2U) {
+		/* Counter does not support two alarms */
+		return;
+	}
 
 	err = counter_start(dev);
 	zassert_equal(0, err, "Counter failed to start\n");
