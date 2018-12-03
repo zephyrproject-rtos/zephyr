@@ -201,7 +201,17 @@ samples/sensor/                          @bogdan-davidoaia
 samples/subsys/usb                       @jfischer-phytec-iot @finikorg
 scripts/coccicheck                       @himanshujha199640 @JuliaLawall
 scripts/coccinelle/                      @himanshujha199640 @JuliaLawall
+scripts/elf_helper.py                    @andrewboie
 scripts/expr_parser.py                   @andrewboie @nashif
+scripts/gen_app_partitions.py            @andrewboie
+scripts/gen_gdt.py                       @andrewboie
+scripts/gen_idt.py                       @andrewboie
+scripts/gen_kobject_list.py              @andrewboie
+scripts/gen_mmu_x86.py                   @andrewboie
+scripts/gen_priv_stacks.py               @agross-linaro
+scripts/gen_syscall_header.py            @andrewboie
+scripts/gen_syscalls.py                  @andrewboie
+scripts/process_gperf.py                 @andrewboie
 scripts/sanity_chk/                      @andrewboie @nashif
 scripts/sanitycheck                      @andrewboie @nashif
 scripts/support/runner/                  @mbolivar
