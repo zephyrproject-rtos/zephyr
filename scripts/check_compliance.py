@@ -385,7 +385,7 @@ def set_status(repo, sha):
         print("Creating status for %s" % (test._name))
         commit.create_status('pending',
                              '%s' % test._doc,
-                             'Verification in progress',
+                             'Checks in progress',
                              '{}'.format(test._name))
 
 
@@ -417,7 +417,20 @@ def report_to_github(repo, pull_request, sha, suite, docs):
     print("Processing results...")
 
     for case in suite:
-        if case.result and case.result.type != 'skipped':
+        if not case.result:
+            print("reporting success on %s" %case.name)
+            commit.create_status('success',
+                                 docs[case.name],
+                                 'Checks passed',
+                                 '{}'.format(case.name))
+        elif case.result.type in ['skipped']:
+            print("reporting skipped on %s" %case.name)
+            commit.create_status('success',
+                                 docs[case.name],
+                                 'Checks skipped',
+                                 '{}'.format(case.name))
+        elif case.result.type in ['failure']:
+            print("reporting failure on %s" %case.name)
             comment_count += 1
             comment += ("## {}\n".format(case.result.message))
             comment += "\n"
@@ -429,13 +442,16 @@ def report_to_github(repo, pull_request, sha, suite, docs):
 
             commit.create_status('failure',
                                  docs[case.name],
-                                 'Verification failed',
+                                 'Checks failed',
+                                 '{}'.format(case.name))
+        elif case.result.type in ['error']:
+            print("reporting error on %s" %case.name)
+            commit.create_status('error',
+                                 docs[case.name],
+                                 'Error during verification, please report!',
                                  '{}'.format(case.name))
         else:
-            commit.create_status('success',
-                                 docs[case.name],
-                                 'Verifications passed',
-                                 '{}'.format(case.name))
+            print("Unhandled status")
 
 
     if not repo and not pull_request:
