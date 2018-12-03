@@ -14,13 +14,15 @@ tests:
   test_usbnet_ecm:
     harness: net
     extra_args: OVERLAY_CONFIG="overlay-netusb.conf"
-    platform_whitelist: 96b_carbon quark_se_c1000_devboard
     tags: net usb
+    depends_on: usb_device
+    min_ram: 64
   test_usbnet_eem:
     harness: net
     extra_args: OVERLAY_CONFIG="overlay-netusb.conf"
     extra_configs:
       - CONFIG_USB_DEVICE_NETWORK_ECM=n
       - CONFIG_USB_DEVICE_NETWORK_EEM=y
-    platform_whitelist: 96b_carbon quark_se_c1000_devboard
     tags: net usb
+    depends_on: usb_device
+    min_ram: 64
