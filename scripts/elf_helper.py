@@ -415,6 +415,10 @@ class ElfHelper:
             if not name:
                 continue
 
+            if name.startswith("__device_sys_init"):
+                # Boot-time initialization function; not an actual device
+                continue
+
             type_offset = die_get_type_offset(die)
 
             # Is this a kernel object, or a structure containing kernel
