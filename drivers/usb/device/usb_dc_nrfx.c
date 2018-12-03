@@ -1043,7 +1043,7 @@ static void usbd_event_handler(nrfx_usbd_evt_t const *const p_event)
 		nrfx_usbd_setup_t drv_setup;
 
 		nrfx_usbd_setup_get(&drv_setup);
-		if (drv_setup.bmRequest != USB_BMREQUEST_SETADDRESS) {
+		if (drv_setup.bRequest != USB_BMREQUEST_SETADDRESS) {
 			/* SetAddress is habdled by USBD hardware.
 			 * No software action required.
 			 */
