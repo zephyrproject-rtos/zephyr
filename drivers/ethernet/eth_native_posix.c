@@ -655,6 +655,6 @@ static int ptp_init(struct device *port)
 
 DEVICE_AND_API_INIT(eth_native_posix_ptp_clock_0, PTP_CLOCK_NAME,
 		    ptp_init, &ptp_0_context, NULL, POST_KERNEL,
-		    CONFIG_APPLICATION_INIT_PRIORITY, &api);
+		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &api);
 
 #endif /* CONFIG_ETH_NATIVE_POSIX_PTP_CLOCK */
