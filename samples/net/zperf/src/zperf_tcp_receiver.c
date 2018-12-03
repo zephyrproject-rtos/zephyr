@@ -236,8 +236,6 @@ static void zperf_tcp_rx_thread(const struct shell *shell, int port)
 	if (fail > 1) {
 		return;
 	}
-
-	k_sleep(K_FOREVER);
 }
 
 void zperf_tcp_receiver_init(const struct shell *shell, int port)

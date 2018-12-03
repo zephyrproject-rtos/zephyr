@@ -410,8 +410,6 @@ static void zperf_rx_thread(const struct shell *shell, int port)
 
 	shell_fprintf(shell, SHELL_NORMAL,
 		      "Listening on port %d\n", port);
-
-	k_sleep(K_FOREVER);
 }
 
 void zperf_receiver_init(const struct shell *shell, int port)
