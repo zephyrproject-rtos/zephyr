@@ -250,25 +250,36 @@ void nrfx_uart_tx_abort(nrfx_uart_t const * p_instance);
  *
  * If an event handler was provided in the nrfx_uart_init() call, this function
  * returns immediately and the handler is called when the transfer is done.
- * Otherwise, the transfer is performed in blocking mode, i.e. this function
+ * Otherwise, the transfer is performed in blocking mode, meaning that this function
  * returns when the transfer is finished. Blocking mode is not using interrupt so
  * there is no context switching inside the function.
+ *
  * The receive buffer pointer is double buffered in non-blocking mode. The secondary
  * buffer can be set immediately after starting the transfer and will be filled
  * when the primary buffer is full. The double buffering feature allows
  * receiving data continuously.
  *
+ * If this function is used without a previous call to @ref nrfx_uart_rx_enable, the reception
+ * will be stopped on error or when the supplied buffer fills up. In both cases,
+ * RX FIFO gets disabled. This means that, in case of error, the bytes that follow are lost.
+ * If this nrfx_uart_rx() function is used with the previous call to @ref nrfx_uart_rx_enable,
+ * the reception is stopped in case of error, but FIFO is still ongoing. The receiver is still
+ * working, so after handling the error, an immediate repeated call to this nrfx_uart_rx()
+ * function with fresh data buffer will re-establish reception. To disable the receiver,
+ * you must call @ref nrfx_uart_rx_disable explicitly.
+ *
  * @param[in] p_instance Pointer to the driver instance structure.
  * @param[in] p_data     Pointer to data.
  * @param[in] length     Number of bytes to receive.
  *
- * @retval    NRFX_SUCCESS If initialization was successful.
- * @retval    NRFX_ERROR_BUSY If the driver is already receiving
- *                            (and the secondary buffer has already been set
- *                            in non-blocking mode).
+ * @retval    NRFX_SUCCESS         If reception is complete (in case of blocking mode) or it is
+ *                                 successfully started (in case of non-blocking mode).
+ * @retval    NRFX_ERROR_BUSY      If the driver is already receiving
+ *                                 (and the secondary buffer has already been set
+ *                                 in non-blocking mode).
  * @retval    NRFX_ERROR_FORBIDDEN If the transfer was aborted from a different context
- *                                (blocking mode only, also see @ref nrfx_uart_rx_disable).
- * @retval    NRFX_ERROR_INTERNAL If UART peripheral reported an error.
+ *                                 (blocking mode only, also see @ref nrfx_uart_rx_disable).
+ * @retval    NRFX_ERROR_INTERNAL  If UART peripheral reported an error.
  */
 nrfx_err_t nrfx_uart_rx(nrfx_uart_t const * p_instance,
                         uint8_t *           p_data,

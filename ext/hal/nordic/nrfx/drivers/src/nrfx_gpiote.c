@@ -47,6 +47,9 @@
 #define SENSE_FIELD_POS           (6)
 #define SENSE_FIELD_MASK          (0xC0)
 
+/* Check if every pin can be encoded on provided number of bits. */
+NRFX_STATIC_ASSERT(NUMBER_OF_PINS <= (1 << SENSE_FIELD_POS));
+
 /**
  * @brief Macro for converting task-event index to an address of an event register.
  *

@@ -2028,6 +2028,15 @@
 #define NRFX_WDT_CONFIG_RELOAD_VALUE 2000
 #endif
 
+// <o> NRFX_WDT_CONFIG_NO_IRQ  - Remove WDT IRQ handling from WDT driver
+
+// <0=> Include WDT IRQ handling
+// <1=> Remove WDT IRQ handling
+
+#ifndef NRFX_WDT_CONFIG_NO_IRQ
+#define NRFX_WDT_CONFIG_NO_IRQ 0
+#endif
+
 // <o> NRFX_WDT_CONFIG_IRQ_PRIORITY  - Interrupt priority
 
 // <0=> 0 (highest)

@@ -554,6 +554,9 @@ __STATIC_INLINE void nrf_qspi_enable(NRF_QSPI_Type * p_reg)
 
 __STATIC_INLINE void nrf_qspi_disable(NRF_QSPI_Type * p_reg)
 {
+    // Workaround for nRF52840 anomaly 122: Current consumption is too high.
+    *(volatile uint32_t *)0x40029054ul = 1ul;
+
     p_reg->ENABLE = (QSPI_ENABLE_ENABLE_Disabled << QSPI_ENABLE_ENABLE_Pos);
 }
 
@@ -705,39 +708,33 @@ __STATIC_INLINE void nrf_qspi_cinstrdata_get(NRF_QSPI_Type const * p_reg,
 {
     uint8_t *p_rx_data_8 = (uint8_t *) p_rx_data;
 
-    uint32_t reg = p_reg->CINSTRDAT1;
+    uint32_t reg1 = p_reg->CINSTRDAT1;
+    uint32_t reg0 = p_reg->CINSTRDAT0;
     switch (length)
     {
         case NRF_QSPI_CINSTR_LEN_9B:
-            p_rx_data_8[7] = (uint8_t)(reg >> QSPI_CINSTRDAT1_BYTE7_Pos);
+            p_rx_data_8[7] = (uint8_t)(reg1 >> QSPI_CINSTRDAT1_BYTE7_Pos);
             /* fall-through */
         case NRF_QSPI_CINSTR_LEN_8B:
-            p_rx_data_8[6] = (uint8_t)(reg >> QSPI_CINSTRDAT1_BYTE6_Pos);
+            p_rx_data_8[6] = (uint8_t)(reg1 >> QSPI_CINSTRDAT1_BYTE6_Pos);
             /* fall-through */
         case NRF_QSPI_CINSTR_LEN_7B:
-            p_rx_data_8[5] = (uint8_t)(reg >> QSPI_CINSTRDAT1_BYTE5_Pos);
+            p_rx_data_8[5] = (uint8_t)(reg1 >> QSPI_CINSTRDAT1_BYTE5_Pos);
             /* fall-through */
         case NRF_QSPI_CINSTR_LEN_6B:
-            p_rx_data_8[4] = (uint8_t)(reg);
+            p_rx_data_8[4] = (uint8_t)(reg1);
             /* fall-through */
-        default:
-            break;
-    }
-
-    reg = p_reg->CINSTRDAT0;
-    switch (length)
-    {
         case NRF_QSPI_CINSTR_LEN_5B:
-            p_rx_data_8[3] = (uint8_t)(reg >> QSPI_CINSTRDAT0_BYTE3_Pos);
+            p_rx_data_8[3] = (uint8_t)(reg0 >> QSPI_CINSTRDAT0_BYTE3_Pos);
             /* fall-through */
         case NRF_QSPI_CINSTR_LEN_4B:
-            p_rx_data_8[2] = (uint8_t)(reg >> QSPI_CINSTRDAT0_BYTE2_Pos);
+            p_rx_data_8[2] = (uint8_t)(reg0 >> QSPI_CINSTRDAT0_BYTE2_Pos);
             /* fall-through */
         case NRF_QSPI_CINSTR_LEN_3B:
-            p_rx_data_8[1] = (uint8_t)(reg >> QSPI_CINSTRDAT0_BYTE1_Pos);
+            p_rx_data_8[1] = (uint8_t)(reg0 >> QSPI_CINSTRDAT0_BYTE1_Pos);
             /* fall-through */
         case NRF_QSPI_CINSTR_LEN_2B:
-            p_rx_data_8[0] = (uint8_t)(reg);
+            p_rx_data_8[0] = (uint8_t)(reg0);
             /* fall-through */
         case NRF_QSPI_CINSTR_LEN_1B:
             /* Send only opcode. Case to avoid compiler warnings. */
