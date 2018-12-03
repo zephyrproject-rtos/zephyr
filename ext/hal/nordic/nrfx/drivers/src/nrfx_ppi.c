@@ -310,11 +310,7 @@ nrfx_err_t nrfx_ppi_channel_fork_assign(nrf_ppi_channel_t channel, uint32_t fork
 {
     nrfx_err_t err_code = NRFX_SUCCESS;
 #ifdef PPI_FEATURE_FORKS_PRESENT
-    if (!is_programmable_app_channel(channel))
-    {
-        err_code = NRFX_ERROR_INVALID_PARAM;
-    }
-    else if (!is_allocated_channel(channel))
+    if (!is_allocated_channel(channel))
     {
         err_code = NRFX_ERROR_INVALID_STATE;
     }

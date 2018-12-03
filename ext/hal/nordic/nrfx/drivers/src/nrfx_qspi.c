@@ -256,9 +256,6 @@ void nrfx_qspi_uninit(void)
 
     nrf_qspi_task_trigger(NRF_QSPI, NRF_QSPI_TASK_DEACTIVATE);
 
-    // Workaround for nRF52840 anomaly 122: Current consumption is too high.
-    *(volatile uint32_t *)0x40029054ul = 1ul;
-
     nrf_qspi_disable(NRF_QSPI);
 
     NRFX_IRQ_DISABLE(QSPI_IRQn);
@@ -274,6 +271,8 @@ nrfx_err_t nrfx_qspi_write(void const * p_tx_buffer,
 {
     NRFX_ASSERT(m_cb.state != NRFX_DRV_STATE_UNINITIALIZED);
     NRFX_ASSERT(p_tx_buffer != NULL);
+    NRFX_ASSERT(nrfx_is_in_ram(p_tx_buffer));
+    NRFX_ASSERT(nrfx_is_word_aligned(p_tx_buffer));
 
     if (!nrfx_is_in_ram(p_tx_buffer))
     {
@@ -291,6 +290,8 @@ nrfx_err_t nrfx_qspi_read(void *   p_rx_buffer,
 {
     NRFX_ASSERT(m_cb.state != NRFX_DRV_STATE_UNINITIALIZED);
     NRFX_ASSERT(p_rx_buffer != NULL);
+    NRFX_ASSERT(nrfx_is_in_ram(p_rx_buffer));
+    NRFX_ASSERT(nrfx_is_word_aligned(p_rx_buffer));
 
     if (!nrfx_is_in_ram(p_rx_buffer))
     {

@@ -122,7 +122,7 @@ typedef struct
 typedef struct
 {
     uint8_t * p_data; ///< Pointer to memory used for transfer.
-    uint8_t   bytes;  ///< Number of bytes transfered.
+    size_t    bytes;  ///< Number of bytes transfered.
 } nrfx_uarte_xfer_evt_t;
 
 /**

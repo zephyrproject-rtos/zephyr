@@ -2282,7 +2282,7 @@ void nrfx_usbd_setup_get(nrfx_usbd_setup_t * p_setup)
 {
     memset(p_setup, 0, sizeof(nrfx_usbd_setup_t));
     p_setup->bmRequestType = nrf_usbd_setup_bmrequesttype_get();
-    p_setup->bmRequest     = nrf_usbd_setup_brequest_get();
+    p_setup->bRequest      = nrf_usbd_setup_brequest_get();
     p_setup->wValue        = nrf_usbd_setup_wvalue_get();
     p_setup->wIndex        = nrf_usbd_setup_windex_get();
     p_setup->wLength       = nrf_usbd_setup_wlength_get();

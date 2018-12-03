@@ -594,24 +594,26 @@ __STATIC_INLINE nrf_timer_int_mask_t nrf_timer_compare_int_get(uint32_t channel)
         ((uint32_t)NRF_TIMER_INT_COMPARE0_MASK << channel);
 }
 
-__STATIC_INLINE uint32_t nrf_timer_us_to_ticks(uint32_t time_us,
+__STATIC_INLINE uint32_t nrf_timer_us_to_ticks(uint32_t              time_us,
                                                nrf_timer_frequency_t frequency)
 {
     // The "frequency" parameter here is actually the prescaler value, and the
     // timer runs at the following frequency: f = 16 MHz / 2^prescaler.
     uint32_t prescaler = (uint32_t)frequency;
-    NRFX_ASSERT(time_us <= (UINT32_MAX / 16UL));
-    return ((time_us * 16UL) >> prescaler);
+    uint64_t ticks = ((time_us * 16ULL) >> prescaler);
+    NRFX_ASSERT(ticks <= UINT32_MAX);
+    return (uint32_t)ticks;
 }
 
-__STATIC_INLINE uint32_t nrf_timer_ms_to_ticks(uint32_t time_ms,
+__STATIC_INLINE uint32_t nrf_timer_ms_to_ticks(uint32_t              time_ms,
                                                nrf_timer_frequency_t frequency)
 {
     // The "frequency" parameter here is actually the prescaler value, and the
     // timer runs at the following frequency: f = 16000 kHz / 2^prescaler.
     uint32_t prescaler = (uint32_t)frequency;
-    NRFX_ASSERT(time_ms <= (UINT32_MAX / 16000UL));
-    return ((time_ms * 16000UL) >> prescaler);
+    uint64_t ticks = ((time_ms * 16000ULL) >> prescaler);
+    NRFX_ASSERT(ticks <= UINT32_MAX);
+    return (uint32_t)ticks;
 }
 
 #endif // SUPPRESS_INLINE_IMPLEMENTATION
