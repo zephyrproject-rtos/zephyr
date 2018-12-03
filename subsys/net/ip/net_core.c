@@ -52,6 +52,20 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 
 #include "net_stats.h"
 
+#if defined(CONFIG_INIT_STACKS)
+void net_analyze_stack(const char *name, const char *stack, size_t size)
+{
+	unsigned int pcnt, unused;
+
+	net_analyze_stack_get_values(stack, size, &pcnt, &unused);
+
+	NET_INFO("net (%p): %s stack real size %zu "
+		 "unused %u usage %zu/%zu (%u %%)",
+		 k_current_get(), name,
+		 size, unused, size - unused, size, pcnt);
+}
+#endif /* CONFIG_INIT_STACKS */
+
 static inline enum net_verdict process_data(struct net_pkt *pkt,
 					    bool is_loopback)
 {
