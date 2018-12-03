@@ -198,9 +198,8 @@ void k_mem_domain_remove_partition(struct k_mem_domain *domain,
 		_arch_mem_domain_partition_remove(domain, p_idx);
 	}
 
-	domain->partitions[p_idx].start = 0;
+	/* A zero-sized partition denotes it's a free partition */
 	domain->partitions[p_idx].size = 0;
-	domain->partitions[p_idx].attr = 0;
 
 	domain->num_partitions--;
 
