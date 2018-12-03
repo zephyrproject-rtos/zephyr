@@ -31,9 +31,9 @@ s32_t column_span_with_buffer_offsets_get(struct shell_multiline_cons *cons,
 void shell_multiline_data_calc(struct shell_multiline_cons *cons,
 				   u16_t buff_pos, u16_t buff_len);
 
-static inline size_t shell_strlen(const char *str)
+static inline u16_t shell_strlen(const char *str)
 {
-	return str == NULL ? 0 : strlen(str);
+	return str == NULL ? 0U : (u16_t)strlen(str);
 }
 
 char shell_make_argv(size_t *argc, char **argv, char *cmd, uint8_t max_argc);

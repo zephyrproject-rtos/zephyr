@@ -132,7 +132,7 @@ static enum shell_wildcard_status commands_expand(const struct shell *shell,
 
 bool shell_wildcard_character_exist(const char *str)
 {
-	size_t str_len = shell_strlen(str);
+	u16_t str_len = shell_strlen(str);
 
 	for (size_t i = 0; i < str_len; i++) {
 		if ((str[i] == '?') || (str[i] == '*')) {

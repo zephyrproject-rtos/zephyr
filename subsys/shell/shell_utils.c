@@ -197,8 +197,8 @@ char shell_make_argv(size_t *argc, char **argv, char *cmd, u8_t max_argc)
 void shell_pattern_remove(char *buff, u16_t *buff_len, const char *pattern)
 {
 	char *pattern_addr = strstr(buff, pattern);
+	u16_t shift;
 	u16_t pattern_len = shell_strlen(pattern);
-	size_t shift;
 
 	if (!pattern_addr) {
 		return;
