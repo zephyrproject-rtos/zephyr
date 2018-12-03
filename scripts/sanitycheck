@@ -1441,6 +1441,7 @@ class TestCase:
         self.name = self.get_unique(testcase_root, workdir, name)
 
         self.defconfig = {}
+        self.dt_config = {}
         self.yamlfile = yamlfile
 
 
@@ -1623,6 +1624,7 @@ def defconfig_cb(context, goals, goal):
 
 class TestSuite:
     config_re = re.compile('(CONFIG_[A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
+    dt_re = re.compile('([A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
 
     yaml_tc_schema = scl.yaml_load(
         os.path.join(ZEPHYR_BASE,
@@ -1795,7 +1797,8 @@ class TestSuite:
             default_platforms = True
 
         mg = MakeGenerator(self.outdir)
-        dlist = {}
+        defconfig_list = {}
+        dt_list = {}
         for tc_name, tc in self.testcases.items():
             for arch_name, arch in self.arches.items():
                 for plat in arch.platforms:
@@ -1875,7 +1878,10 @@ class TestSuite:
                         # simultaneously
 
                         o = os.path.join(self.outdir, plat.name, tc.name)
-                        dlist[tc, plat, tc.name.split("/")[-1]] = os.path.join(o, "zephyr", ".config")
+                        generated_dt_confg = "include/generated/generated_dts_board.conf"
+                        dt_config_path = os.path.join(o, "zephyr", generated_dt_confg)
+                        dt_list[tc, plat, tc.name.split("/")[-1]] = dt_config_path
+                        defconfig_list[tc, plat, tc.name.split("/")[-1]] = os.path.join(o, "zephyr", ".config")
                         goal = "_".join([plat.name, "_".join(tc.name.split("/")), "config-sanitycheck"])
                         mg.add_build_goal(goal, os.path.join(ZEPHYR_BASE, tc.test_path),
                                 o, args, "config-sanitycheck.log", make_args="config-sanitycheck")
@@ -1892,7 +1898,7 @@ class TestSuite:
                 sys.exit(2)
 
 
-        for k, out_config in dlist.items():
+        for k, out_config in defconfig_list.items():
             test, plat, name = k
             defconfig = {}
             with open(out_config, "r") as fp:
@@ -1904,6 +1910,22 @@ class TestSuite:
                         continue
                     defconfig[m.group(1)] = m.group(2).strip()
             test.defconfig[plat] = defconfig
+
+        for k, out_config in dt_list.items():
+            if not os.path.exists(out_config):
+                continue
+
+            test, plat, name = k
+            dt_conf = {}
+            with open(out_config, "r") as fp:
+                for line in fp.readlines():
+                    m = TestSuite.dt_re.match(line)
+                    if not m:
+                        if line.strip() and not line.startswith("#"):
+                            sys.stderr.write("Unrecognized line %s\n" % line)
+                        continue
+                    dt_conf[m.group(1)] = m.group(2).strip()
+            test.dt_config[plat] = dt_conf
 
         for tc_name, tc in self.testcases.items():
             for arch_name, arch in self.arches.items():
@@ -2005,6 +2027,11 @@ class TestSuite:
                             }
                     defconfig.update(os.environ)
                     for p, tdefconfig in tc.defconfig.items():
+                        if p == plat:
+                            defconfig.update(tdefconfig)
+                            break
+
+                    for p, tdefconfig in tc.dt_config.items():
                         if p == plat:
                             defconfig.update(tdefconfig)
                             break
