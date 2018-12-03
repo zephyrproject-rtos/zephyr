@@ -2,7 +2,7 @@ sample:
   name: RGB LED
 tests:
   test:
-    # FIXME: We should remove those and just rely on depends_on
-    platform_whitelist: arduino_101 hexiwear_k64
+    # The filters below are from DTS
+    filter: RED_PWM_LED_PWM_CONTROLLER
     tags: drivers pwm
     depends_on: pwm
