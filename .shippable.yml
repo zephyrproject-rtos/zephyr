@@ -11,9 +11,6 @@ env:
         - ZEPHYR_TOOLCHAIN_VARIANT=zephyr
         - MATRIX_BUILDS="5"
         - MATRIX_BUILDS_EXTRA="5"
-        - BSIM_OUT_PATH=/opt/bsim/
-        - BSIM_COMPONENTS_PATH=${BSIM_OUT_PATH}/components/
-        - BSIM_BT_TEST_RESULTS_FILE="./bsim_bt_out/bsim_results.xml"
     matrix:
         - MATRIX_BUILD="1"
         - MATRIX_BUILD="2"
@@ -35,9 +32,9 @@ build:
       - export CCACHE_DIR=${SHIPPABLE_BUILD_DIR}/ccache/.ccache
       - >
         if [ "$IS_PULL_REQUEST" = "true" ]; then
-          ./scripts/ci/run_ci.sh -c -b ${PULL_REQUEST_BASE_BRANCH} -r origin -m ${MATRIX_BUILD} -M ${MATRIX_BUILDS} -B ${BSIM_BT_TEST_RESULTS_FILE} -p;
+          ./scripts/ci/run_ci.sh -c -b ${PULL_REQUEST_BASE_BRANCH} -r origin -m ${MATRIX_BUILD} -M ${MATRIX_BUILDS} -p;
         else
-          ./scripts/ci/run_ci.sh -c -b ${PULL_REQUEST_BASE_BRANCH} -r origin -m ${MATRIX_BUILD} -M ${MATRIX_BUILDS} -B ${BSIM_BT_TEST_RESULTS_FILE};
+          ./scripts/ci/run_ci.sh -c -b ${PULL_REQUEST_BASE_BRANCH} -r origin -m ${MATRIX_BUILD} -M ${MATRIX_BUILDS};
         fi;
       - ccache -s
     on_failure:
