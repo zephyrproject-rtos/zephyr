@@ -61,7 +61,7 @@ extern "C" {
  * yet available.
  * \n
  * \li PRE_KERNEL_2: Used for devices that rely on the initialization of devices
- * initialized as part of the PRIMARY level. These devices cannot use any
+ * initialized as part of the PRE_KERNEL_1 level. These devices cannot use any
  * kernel services during configuration, since they are not yet available.
  * \n
  * \li POST_KERNEL: Used for devices that require kernel services during
