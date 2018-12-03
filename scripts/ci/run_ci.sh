@@ -32,7 +32,7 @@ BSIM_BT_TEST_RESULTS_FILE="./bsim_bt_out/bsim_results.xml"
 MATRIX_BUILDS=1
 MATRIX=1
 
-while getopts ":pm:b:r:M:cfsB:" opt; do
+while getopts ":p:m:b:r:M:cfsB:" opt; do
 	case $opt in
 		c)
 			echo "Execute CI" >&2
@@ -47,8 +47,8 @@ while getopts ":pm:b:r:M:cfsB:" opt; do
 			FAILURE=1
 			;;
 		p)
-			echo "Testing a Pull Request." >&2
-			PULL_REQUEST=1
+			echo "Testing a Pull Request: $OPTARG." >&2
+			PULL_REQUEST=$OPTARG
 			;;
 		m)
 			echo "Running on Matrix $OPTARG" >&2
