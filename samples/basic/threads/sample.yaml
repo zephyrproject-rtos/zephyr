@@ -4,6 +4,6 @@ sample:
   name: Basic Thread Demo
 tests:
   test:
-    platform_whitelist: 96b_carbon
     tags: kernel threads gpio
-    depends_on: gpio
+    # The filters below are from DTS
+    filter: LED0_GPIO_CONTROLLER and LED1_GPIO_CONTROLLER
