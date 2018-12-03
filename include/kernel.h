@@ -4760,18 +4760,6 @@ static inline char *K_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
  */
 
 /**
- * @def MEM_PARTITION_ENTRY
- * @brief Used to declare a memory partition entry
- * @req K-MP-001
- */
-#define MEM_PARTITION_ENTRY(_start, _size, _attr) \
-	{\
-		.start = _start, \
-		.size = _size, \
-		.attr = _attr, \
-	}
-
-/**
  * @def K_MEM_PARTITION_DEFINE
  * @brief Used to declare a memory partition
  * @req K-MP-001
@@ -4780,11 +4768,11 @@ static inline char *K_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
 #define K_MEM_PARTITION_DEFINE(name, start, size, attr) \
 	_ARCH_MEM_PARTITION_ALIGN_CHECK(start, size); \
 	__kernel struct k_mem_partition name =\
-		MEM_PARTITION_ENTRY((u32_t)start, size, attr)
+		{ (u32_t)start, size, attr}
 #else
 #define K_MEM_PARTITION_DEFINE(name, start, size, attr) \
 	__kernel struct k_mem_partition name =\
-		MEM_PARTITION_ENTRY((u32_t)start, size, attr)
+		{ (u32_t)start, size, attr}
 #endif /* _ARCH_MEM_PARTITION_ALIGN_CHECK */
 
 /* memory partition */
