@@ -13,8 +13,12 @@ GPIO outputs of the MCU/board.
 Wiring
 ******
 
-The code may need some work before running on another board: set PORT,
-LED1 and LED2 according to the board's GPIO configuration.
+This sample should work on board with multiple built-in LEDs without any
+changes, otherwise, the code may need some changes before running on various
+board: set PORT, LED0 and LED1 according to the board's GPIO configuration.
+
+For example, on the following boards with additional LEDs, follow the
+instructions below:
 
 Nucleo-64 F103RB/F401RE boards
 ==============================
@@ -26,31 +30,12 @@ these boards see:
 - https://developer.mbed.org/platforms/ST-Nucleo-F103RB/
 - https://developer.mbed.org/platforms/ST-Nucleo-F401RE/
 
-Arduino 101 (x86)
-=================
-
-Connect two LEDs to D4 (IO4) and D7 (IO7) pins. The schematics for the Arduino
-101 board is available at:
-
-https://www.arduino.cc/en/uploads/Main/Arduino101-REV4Schematic.pdf
-
-For Arduino 101's pinmux mapping in Zephyr, see: :file:`boards/x86/arduino_101/pinmux.c`
-
-Modify the src/main.c file and set:
-
-.. code-block:: c
-
-   #define PORT	CONFIG_GPIO_QMSI_0_NAME
-   /* GPIO_19 is Arduino's D4 */
-   #define LED1	19
-   /* GPIO_20 is Arduino's D7 */
-   #define LED2	20
 
 Building and Running
 *********************
 
 After startup, the program looks up a predefined GPIO device defined by 'PORT',
-and configures pins 'LED1' and 'LED2' in output mode.  During each iteration of
+and configures pins 'LED0' and 'LED1' in output mode.  During each iteration of
 the main loop, the state of GPIO lines will be changed so that one of the lines
 is in high state, while the other is in low, thus switching the LEDs on and off
 in an alternating pattern.
@@ -78,11 +63,11 @@ Nucleo F401RE
    :goals: build
    :compact:
 
-Arduino 101
-============
+reel Board
+==========
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/disco
-   :board: arduino_101
+   :board: reel_board
    :goals: build
    :compact:
