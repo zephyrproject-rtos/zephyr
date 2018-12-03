@@ -40,7 +40,7 @@ SECTION_FUNC(exception.other, __soc_is_irq)
  * INTPTPENDCLEAR.
  */
 SECTION_FUNC(exception.other, __soc_handle_irq)
-	la t0, __EVENT0_INTPTPENDCLEAR
+	la t0, __EVENT_INTPTPENDCLEAR
 	li t1, 1
 	sll t1, t1, a0
 	sw t1, 0x00(t0)
