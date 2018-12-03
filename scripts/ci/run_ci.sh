@@ -45,7 +45,7 @@ while getopts ":p:m:b:r:M:cfsB:" opt; do
 			;;
 		p)
 			echo "Testing a Pull Request: $OPTARG." >&2
-			PULL_REQUEST=$OPTARG
+			PULL_REQUEST_NR=$OPTARG
 			;;
 		m)
 			echo "Running on Matrix $OPTARG" >&2
@@ -85,7 +85,7 @@ if [ -n "$MAIN_CI" ]; then
 	fi
 	source zephyr-env.sh
 	SANITYCHECK="${ZEPHYR_BASE}/scripts/sanitycheck"
-	if [ -n "$PULL_REQUEST" ]; then
+	if [ -n "$PULL_REQUEST_NR" ]; then
 		git rebase $REMOTE/${BRANCH};
 	fi
 fi
@@ -239,7 +239,7 @@ if [ -n "$MAIN_CI" ]; then
 	fi
 
 	# In a pull-request see if we have changed any tests or board definitions
-	if [ -n "${PULL_REQUEST}" ]; then
+	if [ -n "${PULL_REQUEST_NR}" ]; then
 		get_tests_to_run
 	fi
 
