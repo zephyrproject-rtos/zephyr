@@ -193,19 +193,8 @@ static inline void net_analyze_stack_get_values(const char *stack,
 	*pcnt = ((size - *unused) * 100) / size;
 }
 
-static inline void net_analyze_stack(const char *name,
-				     const char *stack,
-				     size_t size)
-{
-	unsigned int pcnt, unused;
+void net_analyze_stack(const char *name, const char *stack, size_t size);
 
-	net_analyze_stack_get_values(stack, size, &pcnt, &unused);
-
-	NET_INFO("net (%p): %s stack real size %zu "
-		 "unused %u usage %zu/%zu (%u %%)",
-		 k_current_get(), name,
-		 size, unused, size - unused, size, pcnt);
-}
 #else
 #define net_analyze_stack(...)
 #define net_analyze_stack_get_values(...)
