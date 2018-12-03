@@ -500,6 +500,12 @@ class ElfHelper:
             # if it has one.
             apiaddr = device_get_api_addr(self.elf, addr)
             if apiaddr not in all_objs:
+                if apiaddr == 0:
+                    self.debug("device instance at 0x%x has no associated subsystem"
+                            % addr);
+                else:
+                    self.debug("device instance at 0x%x has unknown API 0x%x"
+                            % (addr, apiaddr));
                 # API struct does not correspond to a known subsystem, skip it
                 continue
 
