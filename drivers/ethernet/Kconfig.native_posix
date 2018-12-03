@@ -81,6 +81,7 @@ config ETH_NATIVE_POSIX_DEV_NAME
 
 config ETH_NATIVE_POSIX_PTP_CLOCK
 	bool "PTP clock driver support"
+	default y if NET_GPTP
 	select PTP_CLOCK
 	depends on NET_GPTP
 	help
