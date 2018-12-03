@@ -1,3 +1,8 @@
+#
+# Copyright (c) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
 from gitlint.rules import CommitRule, RuleViolation, TitleRegexMatches, CommitMessageTitle, LineRule, CommitMessageBody
 from gitlint.options import IntOption, BoolOption, StrOption, ListOption
 import re
