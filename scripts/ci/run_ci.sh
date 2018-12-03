@@ -25,6 +25,10 @@ SANITYCHECK_OPTIONS=" --inline-logs --enable-coverage -N"
 SANITYCHECK_OPTIONS_RETRY="${SANITYCHECK_OPTIONS} --only-failed --outdir=out-2nd-pass"
 SANITYCHECK_OPTIONS_RETRY_2="${SANITYCHECK_OPTIONS} --only-failed --outdir=out-3nd-pass"
 SANITYCHECK="${ZEPHYR_BASE}/scripts/sanitycheck"
+BSIM_OUT_PATH="/opt/bsim/"
+BSIM_COMPONENTS_PATH="${BSIM_OUT_PATH}/components/"
+BSIM_BT_TEST_RESULTS_FILE="./bsim_bt_out/bsim_results.xml"
+
 MATRIX_BUILDS=1
 MATRIX=1
 
