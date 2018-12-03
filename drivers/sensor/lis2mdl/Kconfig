@@ -6,34 +6,11 @@
 
 menuconfig LIS2MDL
 	bool "LIS2MDL Magnetometer"
-	depends on I2C
+	depends on (I2C && HAS_DTS_I2C)
 	help
 	  Enable driver for LIS2MDL I2C-based magnetometer sensor.
 
 if LIS2MDL
-
-config LIS2MDL_DEV_NAME
-	string "Driver name"
-	default "LIS2MDL"
-	help
-	  Device name with which the LIS2MDL sensor is identified.
-
-if !HAS_DTS_I2C
-
-config LIS2MDL_I2C_ADDR
-	hex "I2C address"
-	default 0x1E
-	help
-	  I2C address of the LIS2MDL sensor.
-
-config LIS2MDL_I2C_MASTER_DEV_NAME
-	string "I2C master where LIS2MDL is connected"
-	default "I2C_0"
-	help
-	  Specify the device name of the I2C master device to which LIS2MDL is
-	  connected.
-
-endif # LIS2MDL_I2C_ADDR
 
 choice
 	prompt "Trigger mode"
@@ -58,26 +35,6 @@ endchoice
 
 config LIS2MDL_TRIGGER
 	bool
-
-if !HAS_DTS_GPIO
-
-config LIS2MDL_GPIO_DEV_NAME
-	string "GPIO device"
-	default "GPIO_0"
-	depends on LIS2MDL_TRIGGER
-	help
-	  The device name of the GPIO device to which the LIS2MDL interrupt pins
-	  are connected.
-
-config LIS2MDL_GPIO_PIN_NUM
-	int "Interrupt GPIO pin number"
-	default 0
-	depends on LIS2MDL_TRIGGER
-	help
-	  The number of the GPIO on which the interrupt signal from the LIS2MDL
-	  chip will be received.
-
-endif # !HAS_DTS_GPIO
 
 config LIS2MDL_THREAD_PRIORITY
 	int "Thread priority"

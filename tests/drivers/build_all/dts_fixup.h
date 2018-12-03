@@ -154,6 +154,14 @@
 #define DT_LIS3DH_GPIO_PIN_NUM 0
 #endif
 
+#ifndef DT_LIS2MDL_DEV_NAME
+#define DT_LIS2MDL_DEV_NAME ""
+#define DT_LIS2MDL_I2C_ADDRESS 0x1e
+#define DT_LIS2MDL_I2C_MASTER_DEV_NAME ""
+#define DT_LIS2MDL_INT_GPIO_DEV_NAME ""
+#define DT_LIS2MDL_INT_GPIO_PIN_NUM 0
+#endif
+
 #endif /* CONFIG_HAS_DTS_I2C */
 
 #if defined(CONFIG_HAS_DTS_SPI)
