@@ -31,6 +31,11 @@ nordic
 The Nordic Semiconductor Microcontroller Development Kit (MDK) provides device
 header files for the Nordic Semiconductor nRF5 SoCs.
 
+openisa
+-------
+This directory contains HALs used to enable OpenISA's RISC-V development
+boards.
+
 pdl
 ---
 The Cypress Peripheral Driver Library (PDL) provides device header files and
