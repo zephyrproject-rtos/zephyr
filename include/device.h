@@ -36,7 +36,10 @@ extern "C" {
  * @brief Create device object and set it up for boot time initialization.
  *
  * @details This macro defines a device object that is automatically
- * configured by the kernel during system initialization.
+ * configured by the kernel during system initialization. Note that
+ * devices set up with this macro will not be accessible from user mode
+ * since the API is not specified; whenever possible, use DEVICE_AND_API_INIT
+ * instead.
  *
  * @param dev_name Device name. This must be less than Z_DEVICE_MAX_NAME_LEN
  * characters in order to be looked up from user mode with device_get_binding().
