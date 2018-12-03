@@ -20,6 +20,9 @@
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
 #include <soc_context.h>
 #endif
+#ifdef CONFIG_RISCV_SOC_OFFSETS
+#include <soc_offsets.h>
+#endif
 
 /* thread_arch_t member offsets */
 GEN_OFFSET_SYM(_thread_arch_t, swap_return_value);
@@ -64,6 +67,8 @@ GEN_OFFSET_SYM(NANO_ESF, mstatus);
 
 #if defined(CONFIG_RISCV_SOC_CONTEXT_SAVE)
 GEN_OFFSET_SYM(NANO_ESF, soc_context);
+#endif
+#if defined(CONFIG_RISCV_SOC_OFFSETS)
 GEN_SOC_OFFSET_SYMS();
 #endif
 

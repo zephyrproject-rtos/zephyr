@@ -36,6 +36,10 @@ config RISCV_SOC_CONTEXT_SAVE
 	bool
 	default y if SOC_OPENISA_RV32M1_RI5CY
 
+config RISCV_SOC_OFFSETS
+	bool
+	default y
+
 config RISCV_SOC_INTERRUPT_INIT
 	bool
 	default y
