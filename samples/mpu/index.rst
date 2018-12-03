@@ -1,4 +1,4 @@
-.. _mmu_mpu--samples:
+.. _mmu_mpu-samples:
 
 MMU/MPU Samples
 ###############

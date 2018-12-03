@@ -10,6 +10,7 @@ Samples and Demos
 
    kernel
    basic/*
+   userspace/*
    subsys/subsys.rst
    net/net.rst
    bluetooth/bluetooth.rst
