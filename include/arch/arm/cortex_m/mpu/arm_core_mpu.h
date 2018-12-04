@@ -14,6 +14,16 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Use the HW-specific MPU driver to program
+ *        the static MPU regions.
+ *
+ * Program the static MPU regions through the HW-specific
+ * MPU driver. The function is meant to be invoked once,
+ * during system initialization.
+ */
+void _arch_configure_static_mpu_regions(void);
+
 #if defined(CONFIG_MPU_STACK_GUARD)
 /**
  * @brief Configure MPU stack guard
