@@ -15,6 +15,7 @@ chosen = {}
 reduced = {}
 defs = {}
 structs = {}
+bindings = {}
 old_alias_names = False
 
 regs_config = {
@@ -287,3 +288,9 @@ def add_prop_aliases(node_address,
             prop_aliases[new_alias_label] = prop_label
         if (old_alias_names and old_alias_label != prop_label):
             prop_aliases[old_alias_label] = prop_label
+
+def get_binding(compat):
+    return bindings[compat]
+
+def get_binding_compats():
+    return bindings.keys()

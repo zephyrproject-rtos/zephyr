@@ -19,12 +19,11 @@ class DTPinCtrl(DTDirective):
     # @brief Extract pinctrl information.
     #
     # @param node_address Address of node owning the pinctrl definition.
-    # @param yaml YAML definition for the owning node.
     # @param prop pinctrl-x key
     # @param def_label Define label string of client node owning the pinctrl
     #                  definition.
     #
-    def extract(self, node_address, yaml, prop, def_label):
+    def extract(self, node_address, prop, def_label):
 
         pinconf = reduced[node_address]['props'][prop]
 
@@ -40,7 +39,7 @@ class DTPinCtrl(DTDirective):
         for p in prop_list:
             pin_node_address = phandles[p]
             pin_subnode = '/'.join(pin_node_address.split('/')[-1:])
-            cell_yaml = yaml[get_compat(pin_node_address)]
+            cell_yaml = get_binding(get_compat(pin_node_address))
             cell_prefix = 'PINMUX'
             post_fix = []
 
