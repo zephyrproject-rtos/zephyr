@@ -619,29 +619,36 @@ static void tab_options_print(const struct shell *shell,
 
 static u16_t common_beginning_find(const struct shell_static_entry *cmd,
 				   const char **str,
-				   size_t first, size_t cnt)
+				   size_t first, size_t cnt, size_t arg_len)
 {
 	struct shell_static_entry dynamic_entry;
 	const struct shell_static_entry *match;
 	u16_t common = UINT16_MAX;
-
+	size_t idx = first + 1;
 
 	cmd_get(cmd ? cmd->subcmd : NULL, cmd ? 1 : 0,
 		first, &match, &dynamic_entry);
 
 	*str = match->syntax;
 
-	for (size_t idx = first + 1; idx < first + cnt; idx++) {
+	while (cnt > 1) {
 		struct shell_static_entry dynamic_entry2;
 		const struct shell_static_entry *match2;
 		int curr_common;
 
 		cmd_get(cmd ? cmd->subcmd : NULL, cmd ? 1 : 0,
-			idx, &match2, &dynamic_entry2);
+			idx++, &match2, &dynamic_entry2);
+
+		if (match2 == NULL) {
+			break;
+		}
 
 		curr_common = shell_str_common(match->syntax, match2->syntax,
 					       UINT16_MAX);
-		common = (curr_common < common) ? curr_common : common;
+		if ((arg_len == 0U) || (curr_common >= arg_len)) {
+			--cnt;
+			common = (curr_common < common) ? curr_common : common;
+		}
 	}
 
 	return common;
@@ -652,9 +659,11 @@ static void partial_autocomplete(const struct shell *shell,
 				 const char *arg,
 				 size_t first, size_t cnt)
 {
+	size_t arg_len = shell_strlen(arg);
 	const char *completion;
-	u16_t common = common_beginning_find(cmd, &completion, first, cnt);
-	int arg_len = shell_strlen(arg);
+	u16_t common;
+
+	common = common_beginning_find(cmd, &completion, first, cnt, arg_len);
 
 	if (common) {
 		shell_op_completion_insert(shell, &completion[arg_len],
@@ -674,7 +683,6 @@ static void shell_tab_handle(const struct shell *shell)
 	size_t first;
 	size_t argc;
 	size_t cnt;
-
 
 	bool tab_possible = shell_tab_prepare(shell, &cmd, argv, &argc,
 					      &arg_idx, &d_entry);
