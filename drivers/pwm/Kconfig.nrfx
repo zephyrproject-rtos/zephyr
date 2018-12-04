@@ -13,7 +13,6 @@ menuconfig PWM_NRFX
 if PWM_NRFX
 
 if PWM_0
-
 config PWM_0_NAME
 	string "PWM module 0 device name"
 	default "PWM_0"
@@ -27,63 +26,9 @@ config PWM_0_NRF_CLOCK_PRESCALER
 	default 0
 	help
 	  Clock = 16MHz / (2^prescaler).
-
-config PWM_0_NRF_CH0_PIN
-	int "CH0 pin number"
-	range -1 47 if SOC_NRF52840_QIAA
-	range -1 31
-	default -1
-	help
-	  GPIO pin number to use for CH0 (set to -1 if not used).
-
-config PWM_0_NRF_CH0_INVERTED
-	bool "CH0 inverted"
-	help
-	  Inverses the polarity.
-
-config PWM_0_NRF_CH1_PIN
-	int "CH1 pin number"
-	range -1 47 if SOC_NRF52840_QIAA
-	range -1 31
-	default -1
-	help
-	  GPIO pin number to use for CH1 (set to -1 if not used).
-
-config PWM_0_NRF_CH1_INVERTED
-	bool "CH1 inverted"
-	help
-	  Inverses the polarity.
-
-config PWM_0_NRF_CH2_PIN
-	int "CH2 pin number"
-	range -1 47 if SOC_NRF52840_QIAA
-	range -1 31
-	default -1
-	help
-	  GPIO pin number to use for CH2 (set to -1 if not used).
-
-config PWM_0_NRF_CH2_INVERTED
-	bool "CH2 inverted"
-	help
-	  Inverses the polarity.
-
-config PWM_0_NRF_CH3_PIN
-	int "CH3 pin number"
-	range -1 47 if SOC_NRF52840_QIAA
-	range -1 31
-	default -1
-	help
-	  GPIO pin number to use for CH3 (set to -1 if not used).
-
-config PWM_0_NRF_CH3_INVERTED
-	bool "CH3 Inverted"
-	help
-	  Inverses the polarity.
-
 endif # PWM_0
 
 if PWM_1
-
 config PWM_1_NAME
 	string "PWM module 1 device name"
 	default "PWM_1"
@@ -97,64 +42,10 @@ config PWM_1_NRF_CLOCK_PRESCALER
 	default 0
 	help
 	  Clock = 16MHz / (2^prescaler).
-
-config PWM_1_NRF_CH0_PIN
-	int "CH0 pin number"
-	range -1 47 if SOC_NRF52840_QIAA
-	range -1 31
-	default -1
-	help
-	  GPIO pin number to use for CH0
-
-config PWM_1_NRF_CH0_INVERTED
-	bool "CH0 inverted"
-	help
-	  Inverses the polarity.
-
-config PWM_1_NRF_CH1_PIN
-	int "CH1 pin number"
-	range -1 47 if SOC_NRF52840_QIAA
-	range -1 31
-	default -1
-	help
-	  GPIO pin number to use for CH1 (set to -1 if not used).
-
-config PWM_1_NRF_CH1_INVERTED
-	bool "CH1 inverted"
-	help
-	  Inverses the polarity.
-
-config PWM_1_NRF_CH2_PIN
-	int "CH2 pin number"
-	range -1 47 if SOC_NRF52840_QIAA
-	range -1 31
-	default -1
-	help
-	  GPIO pin number to use for CH2 (set to -1 if not used).
-
-config PWM_1_NRF_CH2_INVERTED
-	bool "CH2 inverted"
-	help
-	  Inverses the polarity.
-
-config PWM_1_NRF_CH3_PIN
-	int "CH3 pin number"
-	range -1 47 if SOC_NRF52840_QIAA
-	range -1 31
-	default -1
-	help
-	  GPIO pin number to use for CH3 (set to -1 if not used).
-
-config PWM_1_NRF_CH3_INVERTED
-	bool "CH3 Inverted"
-	help
-	  Inverses the polarity.
-
 endif # PWM_1
 
 
 if PWM_2
-
 config PWM_2_NAME
 	string "PWM module 2 device name"
 	default "PWM_2"
@@ -168,63 +59,9 @@ config PWM_2_NRF_CLOCK_PRESCALER
 	default 0
 	help
 	  Clock = 16MHz / (2^prescaler).
-
-config PWM_2_NRF_CH0_PIN
-	int "CH0 pin number"
-	range -1 47 if SOC_NRF52840_QIAA
-	range -1 31
-	default -1
-	help
-	  GPIO pin number to use for CH0 (set to -1 if not used).
-
-config PWM_2_NRF_CH0_INVERTED
-	bool "CH0 inverted"
-	help
-	  Inverses the polarity.
-
-config PWM_2_NRF_CH1_PIN
-	int "CH1 pin number"
-	range -1 47 if SOC_NRF52840_QIAA
-	range -1 31
-	default -1
-	help
-	  GPIO pin number to use for CH1 (set to -1 if not used).
-
-config PWM_2_NRF_CH1_INVERTED
-	bool "CH1 inverted"
-	help
-	  Inverses the polarity.
-
-config PWM_2_NRF_CH2_PIN
-	int "CH2 pin number"
-	range -1 47 if SOC_NRF52840_QIAA
-	range -1 31
-	default -1
-	help
-	  GPIO pin number to use for CH2 (set to -1 if not used).
-
-config PWM_2_NRF_CH2_INVERTED
-	bool "CH2 inverted"
-	help
-	  Inverses the polarity.
-
-config PWM_2_NRF_CH3_PIN
-	int "CH3 pin number"
-	range -1 47 if SOC_NRF52840_QIAA
-	range -1 31
-	default -1
-	help
-	  GPIO pin number to use for CH3 (set to -1 if not used).
-
-config PWM_2_NRF_CH3_INVERTED
-	bool "CH3 Inverted"
-	help
-	  Inverses the polarity.
-
 endif # PWM_2
 
 if PWM_3
-
 config PWM_3_NAME
 	string "PWM module 3 device name"
 	default "PWM_3"
@@ -238,59 +75,6 @@ config PWM_3_NRF_CLOCK_PRESCALER
 	default 0
 	help
 	  Clock = 16MHz / (2^prescaler).
-
-config PWM_3_NRF_CH0_PIN
-	int "CH0 pin number"
-	range -1 47 if SOC_NRF52840_QIAA
-	range -1 31
-	default -1
-	help
-	  GPIO pin number to use for CH0 (set to -1 if not used).
-
-config PWM_3_NRF_CH0_INVERTED
-	bool "CH0 inverted"
-	help
-	  Inverses the polarity.
-
-config PWM_3_NRF_CH1_PIN
-	int "CH1 pin number"
-	range -1 47 if SOC_NRF52840_QIAA
-	range -1 31
-	default -1
-	help
-	  GPIO pin number to use for CH1.
-
-config PWM_3_NRF_CH1_INVERTED
-	bool "CH1 inverted"
-	help
-	  Inverses the polarity.
-
-config PWM_3_NRF_CH2_PIN
-	int "CH2 pin number"
-	range -1 47 if SOC_NRF52840_QIAA
-	range -1 31
-	default -1
-	help
-	  GPIO pin number to use for CH2 (set to -1 if not used).
-
-config PWM_3_NRF_CH2_INVERTED
-	bool "CH2 inverted"
-	help
-	  Inverses the polarity.
-
-config PWM_3_NRF_CH3_PIN
-	int "CH3 pin number"
-	range -1 47 if SOC_NRF52840_QIAA
-	range -1 31
-	default -1
-	help
-	  GPIO pin number to use for CH3 (set to -1 if not used).
-
-config PWM_3_NRF_CH3_INVERTED
-	bool "CH3 Inverted"
-	help
-	  Inverses the polarity.
-
 endif # PWM_3
 
 endif # PWM_NRFX
