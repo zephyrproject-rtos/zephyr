@@ -31,13 +31,12 @@ class DTInterrupts(DTDirective):
     #
     # @param node_address Address of node owning the
     #                     interrupts definition.
-    # @param yaml YAML definition for the owning node.
     # @param prop compatible property name
     # @param names (unused)
     # @param def_label Define label string of node owning the
     #                  compatible definition.
     #
-    def extract(self, node_address, yaml, prop, names, def_label):
+    def extract(self, node_address, prop, names, def_label):
 
         node = reduced[node_address]
 
@@ -67,7 +66,7 @@ class DTInterrupts(DTDirective):
             except:
                 name = []
 
-            cell_yaml = yaml[get_compat(irq_parent)]
+            cell_yaml = get_binding(get_compat(irq_parent))
             l_cell_prefix = ['IRQ']
 
             for i in range(reduced[irq_parent]['props']['#interrupt-cells']):

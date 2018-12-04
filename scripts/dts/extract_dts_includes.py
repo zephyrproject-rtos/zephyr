@@ -19,6 +19,7 @@ from copy import deepcopy
 
 from devicetree import parse_file
 from extract.globals import *
+import extract.globals
 
 from extract.clocks import clocks
 from extract.compatible import compatible
@@ -126,8 +127,7 @@ class Bindings(yaml.Loader):
         with open(filepaths[0], 'r', encoding='utf-8') as f:
             return yaml.load(f, Bindings)
 
-
-def extract_controller(node_address, yaml, prop, prop_values, index, def_label, generic):
+def extract_controller(node_address, prop, prop_values, index, def_label, generic):
 
     prop_def = {}
     prop_alias = {}
@@ -161,8 +161,8 @@ def extract_controller(node_address, yaml, prop, prop_values, index, def_label, 
 
         # Check node generation requirements
         try:
-            generation = yaml[get_compat(node_address)]['properties'][prop][
-                'generation']
+            generation = get_binding(get_compat(node_address))['properties'
+                    ][prop]['generation']
         except:
             generation = ''
 
@@ -191,17 +191,17 @@ def extract_controller(node_address, yaml, prop, prop_values, index, def_label, 
 
     # recurse if we have anything left
     if len(prop_values):
-        extract_controller(node_address, yaml, prop, prop_values, index + 1,
+        extract_controller(node_address, prop, prop_values, index + 1,
                            def_label, generic)
 
 
-def extract_cells(node_address, yaml, prop, prop_values, names, index,
+def extract_cells(node_address, prop, prop_values, names, index,
                   def_label, generic):
 
     cell_parent = phandles[prop_values.pop(0)]
 
     try:
-        cell_yaml = yaml[get_compat(cell_parent)]
+        cell_yaml = get_binding(get_compat(cell_parent))
     except:
         raise Exception(
             "Could not find yaml description for " +
@@ -221,8 +221,8 @@ def extract_cells(node_address, yaml, prop, prop_values, names, index,
             else:
                 cell_yaml_names = '#cells'
     try:
-        generation = yaml[get_compat(node_address)]['properties'][prop][
-            'generation']
+        generation = get_binding(get_compat(node_address))['properties'][prop
+                ]['generation']
     except:
         generation = ''
 
@@ -268,7 +268,7 @@ def extract_cells(node_address, yaml, prop, prop_values, names, index,
 
     # recurse if we have anything left
     if len(prop_values):
-        extract_cells(node_address, yaml, prop, prop_values, names,
+        extract_cells(node_address, prop, prop_values, names,
                       index + 1, def_label, generic)
 
 
@@ -322,23 +322,24 @@ def extract_string_prop(node_address, key, label):
         defs[node_address] = prop_def
 
 
-def extract_property(node_compat, yaml, node_address, prop, prop_val, names):
+def extract_property(node_compat, node_address, prop, prop_val, names):
 
     node = reduced[node_address]
-    if 'base_label' in yaml[node_compat]:
-        def_label = yaml[node_compat].get('base_label')
+    yaml_node_compat = get_binding(node_compat)
+    if 'base_label' in yaml_node_compat:
+        def_label = yaml_node_compat.get('base_label')
     else:
         def_label = get_node_label(node_address)
 
-    if 'parent' in yaml[node_compat]:
-        if 'bus' in yaml[node_compat]['parent']:
+    if 'parent' in yaml_node_compat:
+        if 'bus' in yaml_node_compat['parent']:
             # get parent label
             parent_address = get_parent_address(node_address)
 
             #check parent has matching child bus value
             try:
                 parent_compat = get_compat(parent_address)
-                parent_yaml = yaml[parent_compat]
+                parent_yaml = get_binding(parent_compat)
                 parent_bus = parent_yaml['child']['bus']
             except (KeyError, TypeError) as e:
                 raise Exception(str(node_address) + " defines parent " +
@@ -346,8 +347,8 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names):
                         str(parent_address) + " not configured as bus master " +
                         "in yaml description")
 
-            if parent_bus != yaml[node_compat]['parent']['bus']:
-                bus_value = yaml[node_compat]['parent']['bus']
+            if parent_bus != yaml_node_compat['parent']['bus']:
+                bus_value = yaml_node_compat['parent']['bus']
                 raise Exception(str(node_address) + " defines parent " +
                         str(parent_address) + " as " + bus_value +
                         " bus master but " + str(parent_address) +
@@ -373,19 +374,19 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names):
             extract_single(node_address, 'parent-label',
                            'bus-name', 'DT_' + def_label)
 
-    if 'base_label' not in yaml[node_compat]:
+    if 'base_label' not in yaml_node_compat:
         def_label = 'DT_' + def_label
 
     if prop == 'reg':
         reg.extract(node_address, names, def_label, 1)
     elif prop == 'interrupts' or prop == 'interrupts-extended':
-        interrupts.extract(node_address, yaml, prop, names, def_label)
+        interrupts.extract(node_address, prop, names, def_label)
     elif prop == 'compatible':
         compatible.extract(node_address, prop, def_label)
     elif 'pinctrl-' in prop:
-        pinctrl.extract(node_address, yaml, prop, def_label)
+        pinctrl.extract(node_address, prop, def_label)
     elif 'clocks' in prop:
-        clocks.extract(node_address, yaml, prop, def_label)
+        clocks.extract(node_address, prop, def_label)
     elif 'pwms' in prop or 'gpios' in prop:
         # drop the 's' from the prop
         generic = prop[:-1]
@@ -400,16 +401,16 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names):
         if isinstance(prop_values[0], list):
             prop_values = [item for sublist in prop_values for item in sublist]
 
-        extract_controller(node_address, yaml, prop, prop_values, 0,
+        extract_controller(node_address, prop, prop_values, 0,
                            def_label, generic)
-        extract_cells(node_address, yaml, prop, prop_values,
+        extract_cells(node_address, prop, prop_values,
                       names, 0, def_label, generic)
     else:
         default.extract(node_address, prop, prop_val['type'], def_label)
 
 
 def extract_node_include_info(reduced, root_node_address, sub_node_address,
-                              yaml, y_sub):
+                              y_sub):
 
     filter_list = ['interrupt-names',
                     'reg-names',
@@ -418,11 +419,11 @@ def extract_node_include_info(reduced, root_node_address, sub_node_address,
     node = reduced[sub_node_address]
     node_compat = get_compat(root_node_address)
 
-    if node_compat not in yaml.keys():
+    if node_compat not in get_binding_compats():
         return {}, {}
 
     if y_sub is None:
-        y_node = yaml[node_compat]
+        y_node = get_binding(node_compat)
     else:
         y_node = y_sub
 
@@ -432,7 +433,7 @@ def extract_node_include_info(reduced, root_node_address, sub_node_address,
                 for c in reduced:
                     if root_node_address + '/' in c:
                         extract_node_include_info(
-                            reduced, root_node_address, c, yaml, v)
+                            reduced, root_node_address, c, v)
             if 'generation' in v:
 
                 match = False
@@ -468,7 +469,7 @@ def extract_node_include_info(reduced, root_node_address, sub_node_address,
                             names = [names]
 
                         extract_property(
-                            node_compat, yaml, sub_node_address, c, v, names)
+                            node_compat, sub_node_address, c, v, names)
                         match = True
 
                 # Handle the case that we have a boolean property, but its not
@@ -476,7 +477,7 @@ def extract_node_include_info(reduced, root_node_address, sub_node_address,
                 if not match:
                     if v['type'] == "boolean":
                         extract_property(
-                            node_compat, yaml, sub_node_address, k, v, None)
+                            node_compat, sub_node_address, k, v, None)
 
 def dict_merge(dct, merge_dct):
     # from https://gist.github.com/angstwad/bf22d1822c38a92ec0a9
@@ -670,13 +671,12 @@ def load_yaml_descriptions(dts, yaml_dirs):
     return yaml_list
 
 
-def generate_node_definitions(yaml_list):
+def generate_node_definitions():
 
     for k, v in reduced.items():
         node_compat = get_compat(k)
-        if node_compat is not None and node_compat in yaml_list:
-            extract_node_include_info(
-                reduced, k, k, yaml_list, None)
+        if node_compat is not None and node_compat in get_binding_compats():
+            extract_node_include_info(reduced, k, k, None)
 
     if defs == {}:
         raise Exception("No information parsed from dts file.")
@@ -728,9 +728,9 @@ def main():
     get_aliases(dts['/'])
     get_chosen(dts['/'])
 
-    yaml_list = load_yaml_descriptions(dts, args.yaml)
+    extract.globals.bindings = load_yaml_descriptions(dts, args.yaml)
 
-    defs = generate_node_definitions(yaml_list)
+    defs = generate_node_definitions()
 
      # generate config and include file
     generate_keyvalue_file(args.keyvalue[0])
