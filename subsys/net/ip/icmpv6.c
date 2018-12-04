@@ -603,6 +603,11 @@ enum net_verdict net_icmpv6_input(struct net_pkt *pkt,
 {
 	struct net_icmpv6_handler *cb;
 
+	if (net_calc_chksum_icmpv6(pkt) != 0) {
+		NET_DBG("DROP: invalid checksum");
+		goto drop;
+	}
+
 	net_stats_update_icmp_recv(net_pkt_iface(pkt));
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&handlers, cb, node) {
@@ -610,7 +615,7 @@ enum net_verdict net_icmpv6_input(struct net_pkt *pkt,
 			return cb->handler(pkt);
 		}
 	}
-
+drop:
 	net_stats_update_icmp_drop(net_pkt_iface(pkt));
 
 	return NET_DROP;
