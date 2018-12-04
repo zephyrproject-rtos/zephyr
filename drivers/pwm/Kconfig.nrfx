@@ -20,12 +20,6 @@ config PWM_0_NAME
 	  Specify the device name for the Nordic Semiconductor nRF52 series HW
 	  PWM module 0.
 
-config PWM_0_NRF_CLOCK_PRESCALER
-	int "Clock prescaler"
-	range 0 7
-	default 0
-	help
-	  Clock = 16MHz / (2^prescaler).
 endif # PWM_0
 
 if PWM_1
@@ -35,13 +29,6 @@ config PWM_1_NAME
 	help
 	  Specify the device name for the Nordic Semiconductor nRF52 series HW
 	  PWM module 1.
-
-config PWM_1_NRF_CLOCK_PRESCALER
-	int "Clock prescaler"
-	range 0 7
-	default 0
-	help
-	  Clock = 16MHz / (2^prescaler).
 endif # PWM_1
 
 
@@ -52,13 +39,6 @@ config PWM_2_NAME
 	help
 	  Specify the device name for the Nordic Semiconductor nRF52 series HW
 	  PWM module 2.
-
-config PWM_2_NRF_CLOCK_PRESCALER
-	int "Clock prescaler"
-	range 0 7
-	default 0
-	help
-	  Clock = 16MHz / (2^prescaler).
 endif # PWM_2
 
 if PWM_3
@@ -68,13 +48,6 @@ config PWM_3_NAME
 	help
 	  Specify the device name for the Nordic Semiconductor nRF52 series HW
 	  PWM module 3.
-
-config PWM_3_NRF_CLOCK_PRESCALER
-	int "Clock prescaler"
-	range 0 7
-	default 0
-	help
-	  Clock = 16MHz / (2^prescaler).
 endif # PWM_3
 
 endif # PWM_NRFX
