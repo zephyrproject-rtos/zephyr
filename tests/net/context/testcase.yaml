@@ -4,4 +4,6 @@ common:
 tests:
   net.context:
     min_ram: 16
-    tags: net
+    extra_configs:
+      - CONFIG_ASSERT_LEVEL=0
+    tags: net net_context
