@@ -171,8 +171,7 @@ static inline const struct log_backend *log_backend_get(u32_t idx)
  */
 static inline int log_backend_count_get(void)
 {
-	return ((u8_t *)__log_backends_end - (u8_t *)__log_backends_start) /
-			sizeof(struct log_backend);
+	return __log_backends_end - __log_backends_start;
 }
 
 /**
