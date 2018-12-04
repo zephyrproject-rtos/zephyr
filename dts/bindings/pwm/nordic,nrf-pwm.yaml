@@ -1,0 +1,71 @@
+---
+title: nRF PWM
+version: 0.1
+
+description: >
+    This binding gives a base representation of the nRF PWM
+
+properties:
+    compatible:
+      constraint: "nordic,nrf-pwm"
+
+    reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+
+    ch0-pin:
+      type: int
+      description: Channel 0 pin
+      category: optional
+      generation: define
+
+    ch0-inverted:
+      type: boolean
+      description: Channel 0 inverted
+      category: optional
+      generation: define
+
+    ch1-pin:
+      type: int
+      description: Channel 1 pin
+      category: optional
+      generation: define
+
+    ch1-inverted:
+      type: boolean
+      description: Channel 1 inverted
+      category: optional
+      generation: define
+
+    ch2-pin:
+      type: int
+      description: Channel 2 pin
+      category: optional
+      generation: define
+
+    ch2-inverted:
+      type: boolean
+      description: Channel 2 inverted
+      category: optional
+      generation: define
+
+    ch3-pin:
+      type: int
+      description: Channel 3 pin
+      category: optional
+      generation: define
+
+    ch3-inverted:
+      type: boolean
+      description: Channel 3 inverted
+      category: optional
+      generation: define
+...
