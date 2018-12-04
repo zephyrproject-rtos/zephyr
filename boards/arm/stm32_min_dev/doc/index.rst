@@ -104,6 +104,8 @@ The stm32_min_dev board configuration supports the following hardware features:
 +-----------+------------+----------------------+
 | SPI       | on-chip    | spi                  |
 +-----------+------------+----------------------+
+| USB       | on-chip    | USB device           |
++-----------+------------+----------------------+
 
 Other hardware features are not supported by the Zephyr kernel.
 
