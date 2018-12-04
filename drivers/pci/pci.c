@@ -389,7 +389,12 @@ int pci_bus_scan(struct pci_dev_info *dev_info)
 
 	/* run through the buses and devices */
 	for (; lookup.bus < LSPCI_MAX_BUS; lookup.bus++) {
-		for (; (lookup.dev < LSPCI_MAX_DEV); lookup.dev++) {
+		for (; lookup.dev < LSPCI_MAX_DEV; lookup.dev++) {
+			if (lookup.bus == 0 && lookup.dev == 0) {
+				LOG_DBG("Skip Host Bridge");
+				continue;
+			}
+
 			pci_ctrl_addr.field.bus = lookup.bus;
 			pci_ctrl_addr.field.device = lookup.dev;
 
