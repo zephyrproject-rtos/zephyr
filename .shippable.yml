@@ -32,7 +32,7 @@ build:
         if [ "$IS_PULL_REQUEST" = "true" ]; then
           ./scripts/ci/run_ci.sh -c -b ${PULL_REQUEST_BASE_BRANCH} -r origin -m ${MATRIX_BUILD} -M ${MATRIX_BUILDS} -p ${PULL_REQUEST};
         else
-          ./scripts/ci/run_ci.sh -c -b ${PULL_REQUEST_BASE_BRANCH} -r origin -m ${MATRIX_BUILD} -M ${MATRIX_BUILDS};
+          ./scripts/ci/run_ci.sh -c -b ${BRANCH} -r origin -m ${MATRIX_BUILD} -M ${MATRIX_BUILDS};
         fi;
       - ccache -s
     on_failure:
@@ -40,14 +40,14 @@ build:
         if [ "$IS_PULL_REQUEST" = "true" ]; then
           ./scripts/ci/run_ci.sh -f -b ${PULL_REQUEST_BASE_BRANCH} -r origin -m ${MATRIX_BUILD} -M ${MATRIX_BUILDS} -p ${PULL_REQUEST};
         else
-          ./scripts/ci/run_ci.sh -f -b ${PULL_REQUEST_BASE_BRANCH} -r origin -m ${MATRIX_BUILD} -M ${MATRIX_BUILDS};
+          ./scripts/ci/run_ci.sh -f -b ${BRANCH} -r origin -m ${MATRIX_BUILD} -M ${MATRIX_BUILDS};
         fi;
     on_success:
       - >
         if [ "$IS_PULL_REQUEST" = "true" ]; then
           ./scripts/ci/run_ci.sh -s -b ${PULL_REQUEST_BASE_BRANCH} -r origin -m ${MATRIX_BUILD} -M ${MATRIX_BUILDS} -p ${PULL_REQUEST};
         else
-          ./scripts/ci/run_ci.sh -s -b ${PULL_REQUEST_BASE_BRANCH} -r origin -m ${MATRIX_BUILD} -M ${MATRIX_BUILDS};
+          ./scripts/ci/run_ci.sh -s -b ${BRANCH} -r origin -m ${MATRIX_BUILD} -M ${MATRIX_BUILDS};
         fi;
 
 integrations:
