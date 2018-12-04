@@ -14,7 +14,7 @@ import os, fnmatch
 import re
 import yaml
 import argparse
-import collections
+from collections.abc import Mapping
 from copy import deepcopy
 
 from devicetree import parse_file
@@ -493,7 +493,7 @@ def dict_merge(dct, merge_dct):
     """
     for k, v in merge_dct.items():
         if (k in dct and isinstance(dct[k], dict)
-                and isinstance(merge_dct[k], collections.Mapping)):
+                and isinstance(merge_dct[k], Mapping)):
             dict_merge(dct[k], merge_dct[k])
         else:
             if k in dct and dct[k] != merge_dct[k]:
