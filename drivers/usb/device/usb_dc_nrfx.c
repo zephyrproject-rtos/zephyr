@@ -29,11 +29,16 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(usb_nrfx);
 
-#define USB_BMREQUEST_SETADDRESS 0x05
-#define USB_BMREQUESTTYPE_POS    7uL
-#define USB_BMREQUESTTYPE_MASK   (1uL << USB_BMREQUESTTYPE_POS)
-#define USB_BMREQUESTTYPE_HOSTTODEVICE_MASK  0uL
-#define USB_BMREQUESTTYPE_DEVICETOHOST_MASK  (1uL << USB_BMREQUESTTYPE_POS)
+#define USB_BREQUEST_SETADDRESS 		0x05
+#define USB_BMREQUESTTYPE_DIR_POS		7uL
+#define USB_BMREQUESTTYPE_DIR_MASK		(1uL << USB_BMREQUESTTYPE_DIR_POS)
+#define USB_BMREQUESTTYPE_DIR_HOSTTODEVICE_MASK	0uL
+#define USB_BMREQUESTTYPE_DIR_DEVICETOHOST_MASK	(1uL << USB_BMREQUESTTYPE_DIR_POS)
+#define USB_BMREQUESTTYPE_TYPE_POS		5uL
+#define USB_BMREQUESTTYPE_TYPE_MASK		(3uL << USB_BMREQUESTTYPE_TYPE_POS)
+#define USB_BMREQUESTTYPE_TYPE_STANDARD_MASK	0uL
+#define USB_BMREQUESTTYPE_TYPE_CLASS_MASK	(1uL << USB_BMREQUESTTYPE_TYPE_POS)
+#define USB_BMREQUESTTYPE_TYPE_CLASS_VENDOR	(2uL << USB_BMREQUESTTYPE_TYPE_POS)
 
 #define MAX_EP_BUF_SZ           64UL
 #define MAX_ISO_EP_BUF_SZ       1024UL
@@ -732,8 +737,8 @@ static inline void usbd_work_process_setup(struct nrf_usbd_ep_ctx *ep_ctx)
 
 	struct nrf_usbd_ctx *ctx = get_usbd_ctx();
 
-	if (((usbd_setup->bmRequestType & USB_BMREQUESTTYPE_MASK)
-	     == USB_BMREQUESTTYPE_HOSTTODEVICE_MASK)
+	if (((usbd_setup->bmRequestType & USB_BMREQUESTTYPE_DIR_MASK)
+	     == USB_BMREQUESTTYPE_DIR_HOSTTODEVICE_MASK)
 	    && (usbd_setup->wLength)) {
 		struct nrf_usbd_ctx *ctx = get_usbd_ctx();
 
@@ -1043,7 +1048,9 @@ static void usbd_event_handler(nrfx_usbd_evt_t const *const p_event)
 		nrfx_usbd_setup_t drv_setup;
 
 		nrfx_usbd_setup_get(&drv_setup);
-		if (drv_setup.bRequest != USB_BMREQUEST_SETADDRESS) {
+		if ((drv_setup.bRequest != USB_BREQUEST_SETADDRESS)
+		    || ((drv_setup.bmRequestType & USB_BMREQUESTTYPE_TYPE_MASK)
+			!= USB_BMREQUESTTYPE_TYPE_STANDARD_MASK)) {
 			/* SetAddress is habdled by USBD hardware.
 			 * No software action required.
 			 */
