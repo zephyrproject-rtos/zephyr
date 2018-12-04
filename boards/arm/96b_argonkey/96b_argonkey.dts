@@ -61,7 +61,7 @@
 
 	/* ST Microelectronics LSM6DSL accel/gyro sensor */
 	lsm6dsl@1 {
-		compatible = "st,lsm6dsl-spi";
+		compatible = "st,lsm6dsl";
 		reg = <1>;
 		spi-max-frequency = <1000000>;
 		irq-gpios = <&gpiob 1 0>;
