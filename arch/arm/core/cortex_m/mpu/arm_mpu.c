@@ -78,6 +78,39 @@ void arm_core_mpu_disable(void)
 	MPU->CTRL = 0;
 }
 
+/**
+ * @brief configure fixed (static) MPU regions.
+ */
+void arm_core_mpu_configure_static_mpu_regions(const struct k_mem_partition
+	static_regions[], const u8_t regions_num,
+	const u32_t background_area_start, const u32_t background_area_end)
+{
+	if (_mpu_configure_static_mpu_regions(static_regions, regions_num,
+		background_area_start, background_area_end) == -EINVAL) {
+
+		__ASSERT(0, "Configuring %u static MPU regions failed\n",
+			regions_num);
+	}
+}
+
+#if defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS)
+/**
+ * @brief mark memory areas for dynamic region configuration
+ */
+void arm_core_mpu_mark_areas_for_dynamic_regions(
+	const struct k_mem_partition dyn_region_areas[],
+	const u8_t dyn_region_areas_num)
+{
+	if (_mpu_mark_areas_for_dynamic_regions(dyn_region_areas,
+			dyn_region_areas_num) == -EINVAL) {
+
+		__ASSERT(0, "Marking %u areas for dynamic regions failed\n",
+			dyn_region_areas_num);
+	}
+}
+#endif /* CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS */
+
+
 #if defined(CONFIG_USERSPACE) || defined(CONFIG_MPU_STACK_GUARD) || \
 	defined(CONFIG_APPLICATION_MEMORY) || defined(CONFIG_NOCACHE_MEMORY)
 
