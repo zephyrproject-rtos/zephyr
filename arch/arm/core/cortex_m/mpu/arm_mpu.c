@@ -391,54 +391,14 @@ static int arm_mpu_init(struct device *arg)
 	/* Architecture-specific configuration */
 	_mpu_init();
 
-	/* Configure regions */
+	/* Program fixed regions configured at SOC definition. */
 	for (r_index = 0U; r_index < mpu_config.num_regions; r_index++) {
 		_region_init(r_index, &mpu_config.mpu_regions[r_index]);
 	}
 
-#if defined(CONFIG_NOCACHE_MEMORY) || defined(CONFIG_APPLICATION_MEMORY)
-	u32_t index, size;
-	struct arm_mpu_region region_conf;
-#endif
+	/* Update the number of programmed MPU regions. */
+	static_regions_num = mpu_config.num_regions;
 
-#if defined(CONFIG_NOCACHE_MEMORY)
-	/* configure non-cached memory */
-	index = _get_region_index_by_type(NOCACHE_MEMORY_REGION);
-	size = (u32_t)&_nocache_ram_end - (u32_t)&_nocache_ram_start;
-	_get_region_attr_by_type(&region_conf.attr, NOCACHE_MEMORY_REGION,
-			(u32_t)&_nocache_ram_start, size);
-	region_conf.base = (u32_t)&_nocache_ram_start;
-	if (size > 0) {
-		_region_init(index, &region_conf);
-	}
-#endif /* CONFIG_NOCACHE_MEMORY */
-
-#if defined(CONFIG_APPLICATION_MEMORY)
-	/* configure app data portion */
-	index = _get_region_index_by_type(THREAD_APP_DATA_REGION);
-	size = (u32_t)&__app_ram_end - (u32_t)&__app_ram_start;
-	_get_region_attr_by_type(&region_conf.attr, THREAD_APP_DATA_REGION,
-			(u32_t)&__app_ram_start, size);
-	region_conf.base = (u32_t)&__app_ram_start;
-	if (size > 0) {
-		_region_init(index, &region_conf);
-	}
-#endif
-
-#if defined(CONFIG_COVERAGE_GCOV) && defined(CONFIG_USERSPACE)
-	u32_t gcov_index, gcov_size;
-	struct arm_mpu_region gcov_region_conf;
-
-	/* configure app data portion */
-	gcov_index = _get_region_index_by_type(THREAD_GCOV_BSS_REGION);
-	gcov_size = (u32_t)&__gcov_bss_end - (u32_t)&__gcov_bss_start;
-	_get_region_attr_by_type(&gcov_region_conf.attr, THREAD_GCOV_BSS_REGION,
-			(u32_t)&__gcov_bss_start, gcov_size);
-	gcov_region_conf.base = (u32_t)&__gcov_bss_start;
-	if (gcov_size > 0) {
-		_region_init(gcov_index, &gcov_region_conf);
-	}
-#endif
 
 	arm_core_mpu_enable();
 
