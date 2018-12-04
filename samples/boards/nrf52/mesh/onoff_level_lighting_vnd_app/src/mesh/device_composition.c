@@ -125,25 +125,26 @@ static void gen_onoff_get(struct bt_mesh_model *model,
 
 void gen_onoff_publish(struct bt_mesh_model *model)
 {
+	int err;
 	struct net_buf_simple *msg = model->pub->msg;
 	struct generic_onoff_state *state = model->user_data;
 
-	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
-		int err;
+	if (model->pub->addr == BT_MESH_ADDR_UNASSIGNED) {
+		return;
+	}
 
-		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_GEN_ONOFF_STATUS);
-		net_buf_simple_add_u8(msg, state->onoff);
+	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_GEN_ONOFF_STATUS);
+	net_buf_simple_add_u8(msg, state->onoff);
 
-		if (state->transition->counter) {
-			calculate_rt(state->transition);
-			net_buf_simple_add_u8(msg, state->target_onoff);
-			net_buf_simple_add_u8(msg, state->transition->rt);
-		}
+	if (state->transition->counter) {
+		calculate_rt(state->transition);
+		net_buf_simple_add_u8(msg, state->target_onoff);
+		net_buf_simple_add_u8(msg, state->transition->rt);
+	}
 
-		err = bt_mesh_model_publish(model);
-		if (err) {
-			printk("bt_mesh_model_publish err %d\n", err);
-		}
+	err = bt_mesh_model_publish(model);
+	if (err) {
+		printk("bt_mesh_model_publish err %d\n", err);
 	}
 }
 
@@ -313,25 +314,26 @@ static void gen_level_get(struct bt_mesh_model *model,
 
 void gen_level_publish(struct bt_mesh_model *model)
 {
+	int err;
 	struct net_buf_simple *msg = model->pub->msg;
 	struct generic_level_state *state = model->user_data;
 
-	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
-		int err;
+	if (model->pub->addr == BT_MESH_ADDR_UNASSIGNED) {
+		return;
+	}
 
-		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_GEN_LEVEL_STATUS);
-		net_buf_simple_add_le16(msg, state->level);
+	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_GEN_LEVEL_STATUS);
+	net_buf_simple_add_le16(msg, state->level);
 
-		if (state->transition->counter) {
-			calculate_rt(state->transition);
-			net_buf_simple_add_le16(msg, state->target_level);
-			net_buf_simple_add_u8(msg, state->transition->rt);
-		}
+	if (state->transition->counter) {
+		calculate_rt(state->transition);
+		net_buf_simple_add_le16(msg, state->target_level);
+		net_buf_simple_add_u8(msg, state->transition->rt);
+	}
 
-		err = bt_mesh_model_publish(model);
-		if (err) {
-			printk("bt_mesh_model_publish err %d\n", err);
-		}
+	err = bt_mesh_model_publish(model);
+	if (err) {
+		printk("bt_mesh_model_publish err %d\n", err);
 	}
 }
 
@@ -659,15 +661,13 @@ static void gen_level_move_get(struct bt_mesh_model *model,
 	net_buf_simple_add_le16(msg, state->level);
 
 	if (state->transition->counter) {
-
 		if (state->last_delta < 0) {
 			net_buf_simple_add_le16(msg, INT16_MIN);
-		} else if (state->last_delta > 0) {
+		} else { /* 0 should not be possible */
 			net_buf_simple_add_le16(msg, INT16_MAX);
 		}
 
-		/* This is as per PTS requirement */
-		net_buf_simple_add_u8(msg, 0x3F);
+		net_buf_simple_add_u8(msg, UNKNOWN_VALUE);
 	}
 
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
@@ -677,31 +677,30 @@ static void gen_level_move_get(struct bt_mesh_model *model,
 
 static void gen_level_move_publish(struct bt_mesh_model *model)
 {
+	int err;
 	struct net_buf_simple *msg = model->pub->msg;
 	struct generic_level_state *state = model->user_data;
 
-	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
-		int err;
+	if (model->pub->addr == BT_MESH_ADDR_UNASSIGNED) {
+		return;
+	}
 
-		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_GEN_LEVEL_STATUS);
-		net_buf_simple_add_le16(msg, state->level);
+	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_GEN_LEVEL_STATUS);
+	net_buf_simple_add_le16(msg, state->level);
 
-		if (state->transition->counter) {
-
-			if (state->last_delta < 0) {
-				net_buf_simple_add_le16(msg, INT16_MIN);
-			} else if (state->last_delta > 0) {
-				net_buf_simple_add_le16(msg, INT16_MAX);
-			}
-
-			/* This is as per PTS requirement */
-			net_buf_simple_add_u8(msg, 0x3F);
+	if (state->transition->counter) {
+		if (state->last_delta < 0) {
+			net_buf_simple_add_le16(msg, INT16_MIN);
+		} else { /* 0 should not be possible */
+			net_buf_simple_add_le16(msg, INT16_MAX);
 		}
 
-		err = bt_mesh_model_publish(model);
-		if (err) {
-			printk("bt_mesh_model_publish err %d\n", err);
-		}
+		net_buf_simple_add_u8(msg, UNKNOWN_VALUE);
+	}
+
+	err = bt_mesh_model_publish(model);
+	if (err) {
+		printk("bt_mesh_model_publish err %d\n", err);
 	}
 }
 
@@ -891,19 +890,20 @@ static void gen_def_trans_time_get(struct bt_mesh_model *model,
 
 static void gen_def_trans_time_publish(struct bt_mesh_model *model)
 {
+	int err;
 	struct net_buf_simple *msg = model->pub->msg;
 	struct gen_def_trans_time_state *state = model->user_data;
 
-	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
-		int err;
+	if (model->pub->addr == BT_MESH_ADDR_UNASSIGNED) {
+		return;
+	}
 
-		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x10));
-		net_buf_simple_add_u8(msg, state->tt);
+	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x10));
+	net_buf_simple_add_u8(msg, state->tt);
 
-		err = bt_mesh_model_publish(model);
-		if (err) {
-			printk("bt_mesh_model_publish err %d\n", err);
-		}
+	err = bt_mesh_model_publish(model);
+	if (err) {
+		printk("bt_mesh_model_publish err %d\n", err);
 	}
 }
 
@@ -989,19 +989,20 @@ static void gen_onpowerup_status(struct bt_mesh_model *model,
 
 static void gen_onpowerup_publish(struct bt_mesh_model *model)
 {
+	int err;
 	struct net_buf_simple *msg = model->pub->msg;
 	struct generic_onpowerup_state *state = model->user_data;
 
-	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
-		int err;
+	if (model->pub->addr == BT_MESH_ADDR_UNASSIGNED) {
+		return;
+	}
 
-		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x12));
-		net_buf_simple_add_u8(msg, state->onpowerup);
+	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x12));
+	net_buf_simple_add_u8(msg, state->onpowerup);
 
-		err = bt_mesh_model_publish(model);
-		if (err) {
-			printk("bt_mesh_model_publish err %d\n", err);
-		}
+	err = bt_mesh_model_publish(model);
+	if (err) {
+		printk("bt_mesh_model_publish err %d\n", err);
 	}
 }
 
@@ -1143,25 +1144,26 @@ static void light_lightness_get(struct bt_mesh_model *model,
 
 void light_lightness_publish(struct bt_mesh_model *model)
 {
+	int err;
 	struct net_buf_simple *msg = model->pub->msg;
 	struct light_lightness_state *state = model->user_data;
 
-	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
-		int err;
+	if (model->pub->addr == BT_MESH_ADDR_UNASSIGNED) {
+		return;
+	}
 
-		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x4E));
-		net_buf_simple_add_le16(msg, state->actual);
+	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x4E));
+	net_buf_simple_add_le16(msg, state->actual);
 
-		if (state->transition->counter) {
-			calculate_rt(state->transition);
-			net_buf_simple_add_le16(msg, state->target_actual);
-			net_buf_simple_add_u8(msg, state->transition->rt);
-		}
+	if (state->transition->counter) {
+		calculate_rt(state->transition);
+		net_buf_simple_add_le16(msg, state->target_actual);
+		net_buf_simple_add_u8(msg, state->transition->rt);
+	}
 
-		err = bt_mesh_model_publish(model);
-		if (err) {
-			printk("bt_mesh_model_publish err %d\n", err);
-		}
+	err = bt_mesh_model_publish(model);
+	if (err) {
+		printk("bt_mesh_model_publish err %d\n", err);
 	}
 }
 
@@ -1324,25 +1326,26 @@ static void light_lightness_linear_get(struct bt_mesh_model *model,
 
 void light_lightness_linear_publish(struct bt_mesh_model *model)
 {
+	int err;
 	struct net_buf_simple *msg = model->pub->msg;
 	struct light_lightness_state *state = model->user_data;
 
-	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
-		int err;
+	if (model->pub->addr == BT_MESH_ADDR_UNASSIGNED) {
+		return;
+	}
 
-		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x52));
-		net_buf_simple_add_le16(msg, state->linear);
+	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x52));
+	net_buf_simple_add_le16(msg, state->linear);
 
-		if (state->transition->counter) {
-			calculate_rt(state->transition);
-			net_buf_simple_add_le16(msg, state->target_linear);
-			net_buf_simple_add_u8(msg, state->transition->rt);
-		}
+	if (state->transition->counter) {
+		calculate_rt(state->transition);
+		net_buf_simple_add_le16(msg, state->target_linear);
+		net_buf_simple_add_u8(msg, state->transition->rt);
+	}
 
-		err = bt_mesh_model_publish(model);
-		if (err) {
-			printk("bt_mesh_model_publish err %d\n", err);
-		}
+	err = bt_mesh_model_publish(model);
+	if (err) {
+		printk("bt_mesh_model_publish err %d\n", err);
 	}
 }
 
@@ -1521,19 +1524,20 @@ static void light_lightness_range_get(struct bt_mesh_model *model,
 
 static void light_lightness_default_publish(struct bt_mesh_model *model)
 {
+	int err;
 	struct net_buf_simple *msg = model->pub->msg;
 	struct light_lightness_state *state = model->user_data;
 
-	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
-		int err;
+	if (model->pub->addr == BT_MESH_ADDR_UNASSIGNED) {
+		return;
+	}
 
-		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x56));
-		net_buf_simple_add_le16(msg, state->def);
+	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x56));
+	net_buf_simple_add_le16(msg, state->def);
 
-		err = bt_mesh_model_publish(model);
-		if (err) {
-			printk("bt_mesh_model_publish err %d\n", err);
-		}
+	err = bt_mesh_model_publish(model);
+	if (err) {
+		printk("bt_mesh_model_publish err %d\n", err);
 	}
 }
 
@@ -1569,21 +1573,22 @@ static void light_lightness_default_set(struct bt_mesh_model *model,
 
 static void light_lightness_range_publish(struct bt_mesh_model *model)
 {
+	int err;
 	struct net_buf_simple *msg = model->pub->msg;
 	struct light_lightness_state *state = model->user_data;
 
-	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
-		int err;
+	if (model->pub->addr == BT_MESH_ADDR_UNASSIGNED) {
+		return;
+	}
 
-		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x58));
-		net_buf_simple_add_u8(msg, state->status_code);
-		net_buf_simple_add_le16(msg, state->light_range_min);
-		net_buf_simple_add_le16(msg, state->light_range_max);
+	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x58));
+	net_buf_simple_add_u8(msg, state->status_code);
+	net_buf_simple_add_le16(msg, state->light_range_min);
+	net_buf_simple_add_le16(msg, state->light_range_max);
 
-		err = bt_mesh_model_publish(model);
-		if (err) {
-			printk("bt_mesh_model_publish err %d\n", err);
-		}
+	err = bt_mesh_model_publish(model);
+	if (err) {
+		printk("bt_mesh_model_publish err %d\n", err);
 	}
 }
 
@@ -1723,31 +1728,32 @@ static void light_ctl_get(struct bt_mesh_model *model,
 
 void light_ctl_publish(struct bt_mesh_model *model)
 {
+	int err;
 	struct net_buf_simple *msg = model->pub->msg;
 	struct light_ctl_state *state = model->user_data;
 
-	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
-		int err;
+	if (model->pub->addr == BT_MESH_ADDR_UNASSIGNED) {
+		return;
+	}
 
-		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x60));
+	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x60));
 
-		/* Here, as per Model specification, status should be
-		 * made up of lightness & temperature values only
-		 */
-		net_buf_simple_add_le16(msg, state->lightness);
-		net_buf_simple_add_le16(msg, state->temp);
+	/* Here, as per Model specification, status should be
+	 * made up of lightness & temperature values only
+	 */
+	net_buf_simple_add_le16(msg, state->lightness);
+	net_buf_simple_add_le16(msg, state->temp);
 
-		if (state->transition->counter) {
-			calculate_rt(state->transition);
-			net_buf_simple_add_le16(msg, state->target_lightness);
-			net_buf_simple_add_le16(msg, state->target_temp);
-			net_buf_simple_add_u8(msg, state->transition->rt);
-		}
+	if (state->transition->counter) {
+		calculate_rt(state->transition);
+		net_buf_simple_add_le16(msg, state->target_lightness);
+		net_buf_simple_add_le16(msg, state->target_temp);
+		net_buf_simple_add_u8(msg, state->transition->rt);
+	}
 
-		err = bt_mesh_model_publish(model);
-		if (err) {
-			printk("bt_mesh_model_publish err %d\n", err);
-		}
+	err = bt_mesh_model_publish(model);
+	if (err) {
+		printk("bt_mesh_model_publish err %d\n", err);
 	}
 }
 
@@ -1953,21 +1959,22 @@ static void light_ctl_default_get(struct bt_mesh_model *model,
 
 static void light_ctl_default_publish(struct bt_mesh_model *model)
 {
+	int err;
 	struct net_buf_simple *msg = model->pub->msg;
 	struct light_ctl_state *state = model->user_data;
 
-	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
-		int err;
+	if (model->pub->addr == BT_MESH_ADDR_UNASSIGNED) {
+		return;
+	}
 
-		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x68));
-		net_buf_simple_add_le16(msg, state->lightness_def);
-		net_buf_simple_add_le16(msg, state->temp_def);
-		net_buf_simple_add_le16(msg, state->delta_uv_def);
+	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x68));
+	net_buf_simple_add_le16(msg, state->lightness_def);
+	net_buf_simple_add_le16(msg, state->temp_def);
+	net_buf_simple_add_le16(msg, state->delta_uv_def);
 
-		err = bt_mesh_model_publish(model);
-		if (err) {
-			printk("bt_mesh_model_publish err %d\n", err);
-		}
+	err = bt_mesh_model_publish(model);
+	if (err) {
+		printk("bt_mesh_model_publish err %d\n", err);
 	}
 }
 
@@ -2028,21 +2035,22 @@ static void light_ctl_default_set(struct bt_mesh_model *model,
 
 static void light_ctl_temp_range_publish(struct bt_mesh_model *model)
 {
+	int err;
 	struct net_buf_simple *msg = model->pub->msg;
 	struct light_ctl_state *state = model->user_data;
 
-	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
-		int err;
+	if (model->pub->addr == BT_MESH_ADDR_UNASSIGNED) {
+		return;
+	}
 
-		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x63));
-		net_buf_simple_add_u8(msg, state->status_code);
-		net_buf_simple_add_le16(msg, state->temp_range_min);
-		net_buf_simple_add_le16(msg, state->temp_range_max);
+	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x63));
+	net_buf_simple_add_u8(msg, state->status_code);
+	net_buf_simple_add_le16(msg, state->temp_range_min);
+	net_buf_simple_add_le16(msg, state->temp_range_max);
 
-		err = bt_mesh_model_publish(model);
-		if (err) {
-			printk("bt_mesh_model_publish err %d\n", err);
-		}
+	err = bt_mesh_model_publish(model);
+	if (err) {
+		printk("bt_mesh_model_publish err %d\n", err);
 	}
 }
 
@@ -2185,27 +2193,28 @@ static void light_ctl_temp_get(struct bt_mesh_model *model,
 
 void light_ctl_temp_publish(struct bt_mesh_model *model)
 {
+	int err;
 	struct net_buf_simple *msg = model->pub->msg;
 	struct light_ctl_state *state = model->user_data;
 
-	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
-		int err;
+	if (model->pub->addr == BT_MESH_ADDR_UNASSIGNED) {
+		return;
+	}
 
-		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x66));
-		net_buf_simple_add_le16(msg, state->temp);
-		net_buf_simple_add_le16(msg, state->delta_uv);
+	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x66));
+	net_buf_simple_add_le16(msg, state->temp);
+	net_buf_simple_add_le16(msg, state->delta_uv);
 
-		if (state->transition->counter) {
-			calculate_rt(state->transition);
-			net_buf_simple_add_le16(msg, state->target_temp);
-			net_buf_simple_add_le16(msg, state->target_delta_uv);
-			net_buf_simple_add_u8(msg, state->transition->rt);
-		}
+	if (state->transition->counter) {
+		calculate_rt(state->transition);
+		net_buf_simple_add_le16(msg, state->target_temp);
+		net_buf_simple_add_le16(msg, state->target_delta_uv);
+		net_buf_simple_add_u8(msg, state->transition->rt);
+	}
 
-		err = bt_mesh_model_publish(model);
-		if (err) {
-			printk("bt_mesh_model_publish err %d\n", err);
-		}
+	err = bt_mesh_model_publish(model);
+	if (err) {
+		printk("bt_mesh_model_publish err %d\n", err);
 	}
 }
 
