@@ -362,7 +362,7 @@ static void send_query(struct net_if *iface)
 
 	net_pkt_write_be16(pkt, pkt->frags,
 			   NET_IPV6H_LEN + ROUTER_ALERT_LEN + 2,
-			   &pos, ntohs(~net_calc_chksum_icmpv6(pkt)));
+			   &pos, ntohs(net_calc_chksum_icmpv6(pkt)));
 
 	net_recv_data(iface, pkt);
 }

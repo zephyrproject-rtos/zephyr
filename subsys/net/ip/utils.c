@@ -504,7 +504,7 @@ u16_t net_calc_chksum(struct net_pkt *pkt, u8_t proto)
 
 	sum = (sum == 0) ? 0xffff : htons(sum);
 
-	return sum;
+	return ~sum;
 }
 
 #if defined(CONFIG_NET_IPV4)
@@ -516,7 +516,7 @@ u16_t net_calc_chksum_ipv4(struct net_pkt *pkt)
 
 	sum = (sum == 0) ? 0xffff : htons(sum);
 
-	return sum;
+	return ~sum;
 }
 #endif /* CONFIG_NET_IPV4 */
 

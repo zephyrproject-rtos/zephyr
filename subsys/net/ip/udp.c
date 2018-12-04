@@ -102,7 +102,7 @@ struct net_buf *net_udp_set_chksum(struct net_pkt *pkt, struct net_buf *frag)
 	hdr = net_pkt_udp_data(pkt);
 	if (net_udp_header_fits(pkt, hdr)) {
 		hdr->chksum = 0;
-		hdr->chksum = ~net_calc_chksum_udp(pkt);
+		hdr->chksum = net_calc_chksum_udp(pkt);
 
 		return frag;
 	}
@@ -115,7 +115,7 @@ struct net_buf *net_udp_set_chksum(struct net_pkt *pkt, struct net_buf *frag)
 			     &pos, sizeof(chksum), (u8_t *)&chksum,
 			     PKT_WAIT_TIME);
 
-	chksum = ~net_calc_chksum_udp(pkt);
+	chksum = net_calc_chksum_udp(pkt);
 
 	frag = net_pkt_write(pkt, frag, pos - 2, &pos, sizeof(chksum),
 			     (u8_t *)&chksum, PKT_WAIT_TIME);

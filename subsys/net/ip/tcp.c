@@ -1360,7 +1360,7 @@ struct net_buf *net_tcp_set_chksum(struct net_pkt *pkt, struct net_buf *frag)
 	hdr = net_pkt_tcp_data(pkt);
 	if (net_tcp_header_fits(pkt, hdr)) {
 		hdr->chksum = 0;
-		hdr->chksum = ~net_calc_chksum_tcp(pkt);
+		hdr->chksum = net_calc_chksum_tcp(pkt);
 
 		return frag;
 	}
@@ -1374,7 +1374,7 @@ struct net_buf *net_tcp_set_chksum(struct net_pkt *pkt, struct net_buf *frag)
 			     &pos, sizeof(chksum), (u8_t *)&chksum,
 			     ALLOC_TIMEOUT);
 
-	chksum = ~net_calc_chksum_tcp(pkt);
+	chksum = net_calc_chksum_tcp(pkt);
 
 	frag = net_pkt_write(pkt, frag, pos - 2, &pos, sizeof(chksum),
 			     (u8_t *)&chksum, ALLOC_TIMEOUT);
