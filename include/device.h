@@ -23,6 +23,7 @@
  */
 
 #include <zephyr/types.h>
+#include <toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,15 +32,93 @@ extern "C" {
 #define Z_DEVICE_MAX_NAME_LEN	48
 
 /**
- * @def DEVICE_INIT
+ * @def DEVICE_AND_API_INIT
  *
  * @brief Create device object and set it up for boot time initialization.
  *
  * @details This macro defines a device object that is automatically
- * configured by the kernel during system initialization. Note that
- * devices set up with this macro will not be accessible from user mode
- * since the API is not specified; whenever possible, use DEVICE_AND_API_INIT
- * instead.
+ * configured by the kernel during system initialization.
+ *
+ * @param dev_name Device name. This must be less than Z_DEVICE_MAX_NAME_LEN
+ * characters in order to be looked up from user mode with device_get_binding().
+ *
+ * @param drv_name The name this instance of the driver exposes to
+ * the system.
+ *
+ * @param init_fn Address to the init function of the driver.
+ *
+ * @param data Pointer to the device's configuration data.
+ *
+ * @param cfg_info The address to the structure containing the
+ * configuration information for this instance of the driver.
+ *
+ * @param level The initialization level at which configuration occurs.
+ * Must be one of the following symbols, which are listed in the order
+ * they are performed by the kernel:
+ * \n
+ * \li PRE_KERNEL_1: Used for devices that have no dependencies, such as those
+ * that rely solely on hardware present in the processor/SOC. These devices
+ * cannot use any kernel services during configuration, since they are not
+ * yet available.
+ * \n
+ * \li PRE_KERNEL_2: Used for devices that rely on the initialization of devices
+ * initialized as part of the PRE_KERNEL_1 level. These devices cannot use any
+ * kernel services during configuration, since they are not yet available.
+ * \n
+ * \li POST_KERNEL: Used for devices that require kernel services during
+ * configuration.
+ * \n
+ * \li APPLICATION: Used for application components (i.e. non-kernel components)
+ * that need automatic configuration. These devices can use all services
+ * provided by the kernel during configuration.
+ *
+ * @param prio The initialization priority of the device, relative to
+ * other devices of the same initialization level. Specified as an integer
+ * value in the range 0 to 99; lower values indicate earlier initialization.
+ * Must be a decimal integer literal without leading zeroes or sign (e.g. 32),
+ * or an equivalent symbolic name (e.g. \#define MY_INIT_PRIO 32); symbolic
+ * expressions are *not* permitted
+ * (e.g. CONFIG_KERNEL_INIT_PRIORITY_DEFAULT + 5).
+ *
+ * @param api Provides an initial pointer to the API function struct
+ * used by the driver. Can be NULL, but the driver will not be usable
+ * from user mode.
+ */
+#ifndef CONFIG_DEVICE_POWER_MANAGEMENT
+#define DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info,  \
+			    level, prio, api)				  \
+	static struct device_config _CONCAT(__config_, dev_name) __used	  \
+	__attribute__((__section__(".devconfig.init"))) = {		  \
+		.name = drv_name, .init = (init_fn),			  \
+		.config_info = (cfg_info)				  \
+	};								  \
+	static struct device _CONCAT(__device_, dev_name) __used	  \
+	__attribute__((__section__(".init_" #level STRINGIFY(prio)))) = { \
+		.config = &_CONCAT(__config_, dev_name),		  \
+		.driver_api = api,					  \
+		.driver_data = data					  \
+	}
+#else
+/*
+ * Use the default device_pm_control for devices that do not call the
+ * DEVICE_DEFINE macro so that caller of hook functions
+ * need not check device_pm_control != NULL.
+ */
+#define DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info, \
+			    level, prio, api)				 \
+	DEVICE_DEFINE(dev_name, drv_name, init_fn,			 \
+		      device_pm_control_nop, data, cfg_info, level,	 \
+		      prio, api)
+#endif
+
+/**
+ * @def DEVICE_INIT
+ *
+ * @brief This macro is deprecated, please use DEVICE_AND_API_INIT
+ *
+ * @details This macro defines a device object that is automatically
+ * configured by the kernel during system initialization. Devices
+ * created with this macro will not be usable from user mode.
  *
  * @param dev_name Device name. This must be less than Z_DEVICE_MAX_NAME_LEN
  * characters in order to be looked up from user mode with device_get_binding().
@@ -83,48 +162,9 @@ extern "C" {
  * (e.g. CONFIG_KERNEL_INIT_PRIORITY_DEFAULT + 5).
  */
 #define DEVICE_INIT(dev_name, drv_name, init_fn, data, cfg_info, level, prio) \
+	__DEPRECATED_MACRO \
 	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info,      \
 			    level, prio, NULL)
-
-
-/**
- * @def DEVICE_AND_API_INIT
- *
- * @brief Create device object and set it up for boot time initialization,
- * with the option to set driver_api.
- *
- * @copydetails DEVICE_INIT
- * @param api Provides an initial pointer to the API function struct
- * used by the driver. Can be NULL.
- * @details The driver api is also set here, eliminating the need to do that
- * during initialization.
- */
-#ifndef CONFIG_DEVICE_POWER_MANAGEMENT
-#define DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info,  \
-			    level, prio, api)				  \
-	static struct device_config _CONCAT(__config_, dev_name) __used	  \
-	__attribute__((__section__(".devconfig.init"))) = {		  \
-		.name = drv_name, .init = (init_fn),			  \
-		.config_info = (cfg_info)				  \
-	};								  \
-	static struct device _CONCAT(__device_, dev_name) __used	  \
-	__attribute__((__section__(".init_" #level STRINGIFY(prio)))) = { \
-		.config = &_CONCAT(__config_, dev_name),		  \
-		.driver_api = api,					  \
-		.driver_data = data					  \
-	}
-#else
-/*
- * Use the default device_pm_control for devices that do not call the
- * DEVICE_DEFINE macro so that caller of hook functions
- * need not check device_pm_control != NULL.
- */
-#define DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info, \
-			    level, prio, api)				 \
-	DEVICE_DEFINE(dev_name, drv_name, init_fn,			 \
-		      device_pm_control_nop, data, cfg_info, level,	 \
-		      prio, api)
-#endif
 
 /**
  * @def DEVICE_DEFINE
