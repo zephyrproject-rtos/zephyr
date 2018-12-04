@@ -42,6 +42,7 @@
 #define NET_LOG_ENABLED 1
 #endif
 #include "net_private.h"
+#include "ipv4.h"
 
 static bool test_failed;
 static bool fail = true;
@@ -337,6 +338,8 @@ static void setup_ipv4_udp(struct net_pkt *pkt,
 	NET_UDP_HDR(pkt)->dst_port = htons(local_port);
 
 	net_buf_add_mem(pkt->frags, payload, strlen(payload));
+
+	net_ipv4_finalize(pkt, IPPROTO_UDP);
 }
 
 #define TIMEOUT 200
