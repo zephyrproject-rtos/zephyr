@@ -82,6 +82,13 @@ static inline double _gptp_pow2(int exp)
 #define GPTP_POW2(exp) _gptp_pow2(exp)
 #endif
 
+/* Pre-calculated constants */
+/* 2^16 */
+#define GPTP_POW2_16	65536.0
+/* 2^41 */
+#define GPTP_POW2_41	2199023255552.0
+
+
 /* Message types. Event messages have BIT(3) set to 0, and general messages
  * have that bit set to 1. IEEE 802.1AS chapter 10.5.2.2.2
  */

@@ -77,7 +77,7 @@ static void gptp_md_follow_up_prepare(struct net_pkt *pkt,
 	fup->tlv.org_sub_type[2] = GPTP_FUP_TLV_ORG_SUB_TYPE;
 
 	fup->tlv.cumulative_scaled_rate_offset =
-		(sync_send->rate_ratio - 1.0) * GPTP_POW2(41);
+		(sync_send->rate_ratio - 1.0) * GPTP_POW2_41;
 	fup->tlv.cumulative_scaled_rate_offset =
 		ntohl(fup->tlv.cumulative_scaled_rate_offset);
 	fup->tlv.gm_time_base_indicator =
@@ -140,7 +140,7 @@ static int gptp_set_md_sync_receive(int port,
 	sync_rcv->upstream_tx_time -= delay_asymmetry_rated;
 
 	sync_rcv->rate_ratio = ntohl(fup->tlv.cumulative_scaled_rate_offset);
-	sync_rcv->rate_ratio *= GPTP_POW2(-41);
+	sync_rcv->rate_ratio /= GPTP_POW2_41;
 	sync_rcv->rate_ratio += 1;
 
 	sync_rcv->gm_time_base_indicator =
