@@ -17,6 +17,7 @@ if PCI
 
 config PCI_SHELL
 	bool "Enable PCI Shell"
+	depends on SHELL
 	select PCI_ENUMERATION
 	help
 	  Enable commands for debugging PCI using the built-in shell.
