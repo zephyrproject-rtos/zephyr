@@ -301,23 +301,9 @@ static void gen_level_get(struct bt_mesh_model *model,
 	net_buf_simple_add_le16(msg, state->level);
 
 	if (state->transition->counter) {
-
-		if (transition_type == LEVEL_TT_MOVE ||
-		    transition_type == LEVEL_TEMP_TT_MOVE) {
-
-			if (state->last_delta < 0) {
-				net_buf_simple_add_le16(msg, INT16_MIN);
-			} else if (state->last_delta > 0) {
-				net_buf_simple_add_le16(msg, INT16_MAX);
-			}
-
-			/* This is as per PTS requirement */
-			net_buf_simple_add_u8(msg, 0x3F);
-		} else {
-			calculate_rt(state->transition);
-			net_buf_simple_add_le16(msg, state->target_level);
-			net_buf_simple_add_u8(msg, state->transition->rt);
-		}
+		calculate_rt(state->transition);
+		net_buf_simple_add_le16(msg, state->target_level);
+		net_buf_simple_add_u8(msg, state->transition->rt);
 	}
 
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
@@ -337,26 +323,9 @@ void gen_level_publisher(struct bt_mesh_model *model)
 		net_buf_simple_add_le16(msg, state->level);
 
 		if (state->transition->counter) {
-
-			if (transition_type == LEVEL_TT_MOVE ||
-			    transition_type == LEVEL_TEMP_TT_MOVE) {
-
-				if (state->last_delta < 0) {
-					net_buf_simple_add_le16(msg, INT16_MIN);
-				} else if (state->last_delta > 0) {
-					net_buf_simple_add_le16(msg, INT16_MAX);
-				}
-
-				/* This is as per PTS requirement */
-				net_buf_simple_add_u8(msg, 0x3F);
-
-			} else {
-				calculate_rt(state->transition);
-				net_buf_simple_add_le16(msg,
-							state->target_level);
-				net_buf_simple_add_u8(msg,
-						      state->transition->rt);
-			}
+			calculate_rt(state->transition);
+			net_buf_simple_add_le16(msg, state->target_level);
+			net_buf_simple_add_u8(msg, state->transition->rt);
 		}
 
 		err = bt_mesh_model_publish(model);
@@ -679,6 +648,63 @@ static void gen_delta_set(struct bt_mesh_model *model,
 	}
 }
 
+static void gen_level_move_get(struct bt_mesh_model *model,
+			       struct bt_mesh_msg_ctx *ctx,
+			       struct net_buf_simple *buf)
+{
+	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 5 + 4);
+	struct generic_level_state *state = model->user_data;
+
+	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_GEN_LEVEL_STATUS);
+	net_buf_simple_add_le16(msg, state->level);
+
+	if (state->transition->counter) {
+
+		if (state->last_delta < 0) {
+			net_buf_simple_add_le16(msg, INT16_MIN);
+		} else if (state->last_delta > 0) {
+			net_buf_simple_add_le16(msg, INT16_MAX);
+		}
+
+		/* This is as per PTS requirement */
+		net_buf_simple_add_u8(msg, 0x3F);
+	}
+
+	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
+		printk("Unable to send GEN_LEVEL_SRV Status response\n");
+	}
+}
+
+static void gen_level_move_publisher(struct bt_mesh_model *model)
+{
+	struct net_buf_simple *msg = model->pub->msg;
+	struct generic_level_state *state = model->user_data;
+
+	if (model->pub->addr != BT_MESH_ADDR_UNASSIGNED) {
+		int err;
+
+		bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_GEN_LEVEL_STATUS);
+		net_buf_simple_add_le16(msg, state->level);
+
+		if (state->transition->counter) {
+
+			if (state->last_delta < 0) {
+				net_buf_simple_add_le16(msg, INT16_MIN);
+			} else if (state->last_delta > 0) {
+				net_buf_simple_add_le16(msg, INT16_MAX);
+			}
+
+			/* This is as per PTS requirement */
+			net_buf_simple_add_u8(msg, 0x3F);
+		}
+
+		err = bt_mesh_model_publish(model);
+		if (err) {
+			printk("bt_mesh_model_publish err %d\n", err);
+		}
+	}
+}
+
 static void gen_move_set_unack(struct bt_mesh_model *model,
 			       struct bt_mesh_msg_ctx *ctx,
 			       struct net_buf_simple *buf)
@@ -737,7 +763,7 @@ static void gen_move_set_unack(struct bt_mesh_model *model,
 	}
 
 	state->transition->just_started = true;
-	gen_level_publisher(model);
+	gen_level_move_publisher(model);
 
 	/* if (tt == 0) OR (delta == 0) */
 	if (state->transition->counter == 0) {
@@ -813,8 +839,8 @@ static void gen_move_set(struct bt_mesh_model *model,
 	}
 
 	state->transition->just_started = true;
-	gen_level_get(model, ctx, buf);
-	gen_level_publisher(model);
+	gen_level_move_get(model, ctx, buf);
+	gen_level_move_publisher(model);
 
 	/* if (tt == 0) OR (delta == 0) */
 	if (state->transition->counter == 0) {
