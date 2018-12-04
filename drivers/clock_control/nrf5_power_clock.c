@@ -212,6 +212,7 @@ static int _k32src_start(struct device *dev, clock_control_subsys_t sub_system)
 	/* NOTE: LFCLK will initially start running from the LFRC if LFXO is
 	 *       selected.
 	 */
+	nrf_clock_int_enable(NRF_CLOCK_INT_LF_STARTED_MASK);
 	nrf_clock_task_trigger(NRF_CLOCK_TASK_LFCLKSTART);
 #endif /* !CONFIG_CLOCK_CONTROL_NRF5_K32SRC_BLOCKING */
 
@@ -344,8 +345,11 @@ static void _power_clock_isr(void *arg)
 			 */
 			NRF_CLOCK->INTENCLR = CLOCK_INTENCLR_LFCLKSTARTED_Msk;
 
-			/* Start HF Clock */
-			ctto = 1;
+			/* Start HF Clock if LF RC is used. */
+			if ((NRF_CLOCK->LFCLKSRCCOPY & CLOCK_LFCLKSRCCOPY_SRC_Msk) ==
+			    CLOCK_LFCLKSRCCOPY_SRC_RC) {
+				ctto = 1;
+			}
 		}
 	}
 
