@@ -226,6 +226,14 @@ void log_core_init(void)
 	log_msg_pool_init();
 	log_list_init(&list);
 
+	k_mem_slab_init(&log_strdup_pool, log_strdup_pool_buf,
+				sizeof(struct log_strdup_buf),
+				CONFIG_LOG_STRDUP_BUF_COUNT);
+
+	/* Set default timestamp. */
+	timestamp_func = timestamp_get;
+	log_output_timestamp_freq_set(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+
 	/*
 	 * Initialize aggregated runtime filter levels (no backends are
 	 * attached yet, so leave backend slots in each dynamic filter set
@@ -278,14 +286,6 @@ void log_init(void)
 	if (atomic_inc(&initialized)) {
 		return;
 	}
-
-	k_mem_slab_init(&log_strdup_pool, log_strdup_pool_buf,
-			sizeof(struct log_strdup_buf),
-			CONFIG_LOG_STRDUP_BUF_COUNT);
-
-	/* Set default timestamp. */
-	timestamp_func = timestamp_get;
-	log_output_timestamp_freq_set(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 
 	/* Assign ids to backends. */
 	for (i = 0; i < log_backend_count_get(); i++) {
