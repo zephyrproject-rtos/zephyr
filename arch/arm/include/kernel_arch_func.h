@@ -29,6 +29,10 @@ extern "C" {
 #ifndef _ASMLANGUAGE
 extern void _FaultInit(void);
 extern void _CpuIdleInit(void);
+#ifdef CONFIG_ARM_MPU
+extern void _arch_configure_static_mpu_regions(void);
+#endif
+
 static ALWAYS_INLINE void kernel_arch_init(void)
 {
 	_InterruptStackSetup();
@@ -42,6 +46,16 @@ _arch_switch_to_main_thread(struct k_thread *main_thread,
 			    k_thread_stack_t *main_stack,
 			    size_t main_stack_size, k_thread_entry_t _main)
 {
+#ifdef CONFIG_ARM_MPU
+	/* Configure static memory map. This will program MPU regions,
+	 * to set up access permissions for fixed memory sections, such
+	 * as Application Memory or No-Cacheable SRAM area.
+	 *
+	 * This function is invoked once, upon system initialization.
+	 */
+	_arch_configure_static_mpu_regions();
+#endif
+
 	/* get high address of the stack, i.e. its start (stack grows down) */
 	char *start_of_main_stack;
 
