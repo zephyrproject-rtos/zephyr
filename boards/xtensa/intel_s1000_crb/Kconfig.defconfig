@@ -58,25 +58,6 @@ endif # DMA_CAVS
 config SPI_DW_FIFO_DEPTH
 	default 32
 
-config SPI_NOR
-	def_bool y
-
-config SPI_NOR_JEDEC_ID
-	default 0xC2803A
-
-config SPI_NOR_PAGE_SIZE
-	default 256
-
-config SPI_NOR_SECTOR_SIZE
-	default 4096
-
-config SPI_NOR_SECTORS
-	default 1024
-
-choice SPI_NOR_BLOCK_ERASE_SIZE
-	default SPI_NOR_BLOCK_ERASE_64K
-endchoice
-
 if BOOTLOADER_MCUBOOT
 config TEXT_SECTION_OFFSET
 	default 0x100
@@ -169,6 +150,38 @@ config GPIO_DW
 
 config GPIO_DW_0
 	default y
+
+endif
+
+if FLASH
+
+config SPI
+	def_bool y
+
+config SPI_NOR
+	def_bool y
+
+config SPI_NOR_JEDEC_ID
+	default 0xC2803A
+
+config SPI_NOR_PAGE_SIZE
+	default 256
+
+config SPI_NOR_SECTOR_SIZE
+	default 4096
+
+config SPI_NOR_SECTORS
+	default 1024
+
+choice SPI_NOR_BLOCK_ERASE_SIZE
+	default SPI_NOR_BLOCK_ERASE_64K
+endchoice
+
+config FLASH_HAS_PAGE_LAYOUT
+	def_bool y
+
+config FLASH_PAGE_LAYOUT
+	def_bool y
 
 endif
 
