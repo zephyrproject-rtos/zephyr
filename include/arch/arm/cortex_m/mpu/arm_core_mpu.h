@@ -24,6 +24,19 @@ extern "C" {
  */
 void _arch_configure_static_mpu_regions(void);
 
+/**
+ * @brief Use the HW-specific MPU driver to program
+ *        the dynamic MPU regions.
+ *
+ * Program the dynamic MPU regions using the HW-specific MPU
+ * driver. This function is meant to be invoked every time the
+ * memory map is to be re-programmed, e.g during thread context
+ * switch, entering user mode, reconfiguring memory domain, etc.
+ *
+ * @param thread pointer to the current k_thread context
+ */
+void _arch_configure_dynamic_mpu_regions(struct k_thread *thread);
+
 #if defined(CONFIG_MPU_STACK_GUARD)
 /**
  * @brief Configure MPU stack guard

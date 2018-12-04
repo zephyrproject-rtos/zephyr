@@ -16,7 +16,27 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(mpu);
 
+/*
+ * Maximum number of dynamic memory partitions that may be supplied to the MPU
+ * driver for programming during run-time. Note that the actual number of the
+ * available MPU regions for dynamic programming depends on the number of the
+ * static MPU regions currently being programmed, and the total number of HW-
+ * available MPU regions. This macro is only used internally in function
+ * _arch_configure_dynamic_mpu_regions(), to reserve sufficient area for the
+ * array of dynamic regions passed to the underlying driver.
+ */
+#if defined(CONFIG_USERSPACE)
+#define _MAX_DYNAMIC_MPU_REGIONS_NUM \
+	CONFIG_MAX_DOMAIN_PARTITIONS + /* User thread stack */ 1 + \
+	(IS_ENABLED(CONFIG_MPU_STACK_GUARD) ? 1 : 0)
+#else
+#define _MAX_DYNAMIC_MPU_REGIONS_NUM \
+	(IS_ENABLED(CONFIG_MPU_STACK_GUARD) ? 1 : 0)
+#endif /* CONFIG_USERSPACE */
 
+/* Convenience macros to denote the start address and the size of the system
+ * memory area, where dynamic memory regions may be programmed at run-time.
+ */
 #if defined(CONFIG_APP_SHARED_MEM)
 #define _MPU_DYNAMIC_REGIONS_AREA_START ((u32_t)&_app_smem_start)
 #else
@@ -102,6 +122,110 @@ void _arch_configure_static_mpu_regions(void)
 #endif /* CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS */
 }
 
+/**
+ * @brief Use the HW-specific MPU driver to program
+ *        the dynamic MPU regions.
+ *
+ * Program the dynamic MPU regions using the HW-specific MPU
+ * driver. This function is meant to be invoked every time the
+ * memory map is to be re-programmed, e.g during thread context
+ * switch, entering user mode, reconfiguring memory domain, etc.
+ *
+ * For some MPU architectures, such as the unmodified ARMv8-M MPU,
+ * the function must execute with MPU enabled.
+ */
+void _arch_configure_dynamic_mpu_regions(struct k_thread *thread)
+{
+	/* Define an array of k_mem_partition objects to hold the configuration
+	 * of the respective dynamic MPU regions to be programmed for
+	 * the given thread. The array of partitions (along with its
+	 * actual size) will be supplied to the underlying MPU driver.
+	 */
+	struct k_mem_partition dynamic_regions[_MAX_DYNAMIC_MPU_REGIONS_NUM];
+
+	u8_t region_num = 0;
+
+#if defined(CONFIG_USERSPACE)
+	/* Memory domain */
+	LOG_DBG("configure thread %p's domain", thread);
+	struct k_mem_domain *mem_domain = thread->mem_domain_info.mem_domain;
+
+	if (mem_domain) {
+		LOG_DBG("configure domain: %p", mem_domain);
+		u32_t num_partitions = mem_domain->num_partitions;
+		struct k_mem_partition partition;
+		int i;
+
+		LOG_DBG("configure domain: %p", mem_domain);
+
+		for (i = 0; i < CONFIG_MAX_DOMAIN_PARTITIONS; i++) {
+			partition = mem_domain->partitions[i];
+			if (partition.size == 0) {
+				/* Zero size indicates a non-existing
+				 * memory partition.
+				 */
+				continue;
+			}
+			LOG_DBG("set region 0x%x 0x%x",
+				partition.start, partition.size);
+			__ASSERT(region_num < _MAX_DYNAMIC_MPU_REGIONS_NUM,
+				"Out-of-bounds error for dynamic region map.");
+			dynamic_regions[region_num] = partition;
+
+			region_num++;
+			num_partitions--;
+			if (num_partitions == 0) {
+				break;
+			}
+		}
+	}
+	/* Thread user stack */
+	LOG_DBG("configure user thread %p's context", thread);
+	if (thread->arch.priv_stack_start) {
+		u32_t base = (u32_t)thread->stack_obj;
+		u32_t size = thread->stack_info.size;
+#if !defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
+		/* In user-mode the thread stack will include the (optional)
+		 * guard area. For MPUs with arbitrary base address and limit
+		 * it is essential to include this size increase, to avoid
+		 * MPU faults.
+		 */
+		size += thread->stack_info.start - base;
+#endif
+		__ASSERT(region_num < _MAX_DYNAMIC_MPU_REGIONS_NUM,
+			"Out-of-bounds error for dynamic region map.");
+		dynamic_regions[region_num] = (const struct k_mem_partition)
+			{base, size, K_MEM_PARTITION_P_RW_U_RW};
+
+		region_num++;
+	}
+#endif /* CONFIG_USERSPACE */
+
+#if defined(CONFIG_MPU_STACK_GUARD)
+	/* Privileged stack guard */
+#if defined(CONFIG_USERSPACE)
+	u32_t guard_start = thread->arch.priv_stack_start ?
+	    (u32_t)thread->arch.priv_stack_start :
+	    (u32_t)thread->stack_obj;
+#else
+	u32_t guard_start = thread->stack_info.start;
+#endif
+	__ASSERT(region_num < _MAX_DYNAMIC_MPU_REGIONS_NUM,
+		"Out-of-bounds error for dynamic region map.");
+	dynamic_regions[region_num] = (const struct k_mem_partition)
+	{
+		guard_start,
+		MPU_GUARD_ALIGN_AND_SIZE,
+		K_MEM_PARTITION_P_RO_U_NA
+	};
+
+	region_num++;
+#endif /* CONFIG_MPU_STACK_GUARD */
+
+	/* Configure the dynamic MPU regions */
+	arm_core_mpu_configure_dynamic_mpu_regions(dynamic_regions,
+		region_num);
+}
 
 #if defined(CONFIG_MPU_STACK_GUARD)
 /*
