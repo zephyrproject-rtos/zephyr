@@ -135,6 +135,12 @@ enum net_verdict net_ipv4_process_pkt(struct net_pkt *pkt)
 		goto drop;
 	}
 
+	if (net_if_need_calc_rx_checksum(net_pkt_iface(pkt)) &&
+	    net_calc_chksum_ipv4(pkt) != 0) {
+		NET_DBG("DROP: invalid chksum");
+		goto drop;
+	}
+
 	NET_DBG("IPv4 packet received from %s to %s",
 		log_strdup(net_sprint_ipv4_addr(&hdr->src)),
 		log_strdup(net_sprint_ipv4_addr(&hdr->dst)));
