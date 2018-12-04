@@ -97,7 +97,6 @@ arduino_serial: &uart3 {};
 
 &spi0 {
 	status = "ok";
-	cs-gpios = <&gpiod 0 0>;
 
 	mcr20a@0 {
 		compatible = "nxp,mcr20a";
