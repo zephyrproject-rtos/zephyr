@@ -47,15 +47,10 @@ extern "C" {
 #define NET_WARN(fmt, ...) LOG_WRN(fmt, ##__VA_ARGS__)
 #define NET_INFO(fmt, ...) LOG_INF(fmt,  ##__VA_ARGS__)
 
-#define NET_ASSERT(cond) do {				     \
-		if (!(cond)) {					     \
-			NET_ERR("{assert: '" #cond "' failed}");     \
-		} } while (false)
-#define NET_ASSERT_INFO(cond, fmt, ...) do {			     \
-		if (!(cond)) {					     \
-			NET_ERR("{assert: '" #cond "' failed} " fmt, \
-				##__VA_ARGS__);			     \
-		} } while (false)
+#include <misc/__assert.h>
+
+#define NET_ASSERT(cond) __ASSERT_NO_MSG(cond)
+#define NET_ASSERT_INFO(cond, fmt, ...) __ASSERT(cond, fmt, ##__VA_ARGS__)
 
 #include <kernel.h>
 
