@@ -62,13 +62,13 @@ static inline int sys_clock_hw_cycles_per_tick(void)
 #endif
 
 /* number of nsec per usec */
-#define NSEC_PER_USEC 1000
+#define NSEC_PER_USEC 1000U
 
 /* number of microseconds per millisecond */
-#define USEC_PER_MSEC 1000
+#define USEC_PER_MSEC 1000U
 
 /* number of milliseconds per second */
-#define MSEC_PER_SEC 1000
+#define MSEC_PER_SEC 1000U
 
 /* number of microseconds per second */
 #define USEC_PER_SEC ((USEC_PER_MSEC) * (MSEC_PER_SEC))
