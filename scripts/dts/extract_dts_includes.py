@@ -71,7 +71,8 @@ class Bindings(yaml.Loader):
                             file_load_list.add(file)
                             with open(file, 'r', encoding='utf-8') as yf:
                                 cls._included = []
-                                yaml_list[c] = yaml.load(yf, cls)
+                                l = yaml_traverse_inherited(yaml.load(yf, cls))
+                                yaml_list[c] = l
         return yaml_list
 
     def __init__(self, stream):
@@ -548,17 +549,6 @@ def yaml_traverse_inherited(node):
     return node
 
 
-def yaml_collapse(yaml_list):
-
-    collapsed = dict(yaml_list)
-
-    for k, v in collapsed.items():
-        v = yaml_traverse_inherited(v)
-        collapsed[k]=v
-
-    return collapsed
-
-
 def get_key_value(k, v, tabstop):
     label = "#define " + k
 
@@ -679,9 +669,6 @@ def load_yaml_descriptions(dts, yaml_dirs):
     yaml_list = Bindings.bindings(compatibles, yaml_dirs)
     if yaml_list == {}:
         raise Exception("Missing YAML information.  Check YAML sources")
-
-    # collapse the yaml inherited information
-    yaml_list = yaml_collapse(yaml_list)
 
     return yaml_list
 
