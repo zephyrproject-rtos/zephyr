@@ -225,7 +225,7 @@ function get_tests_to_run() {
 
 if [ -n "$MAIN_CI" ]; then
 
-	if [ ! -z "${BSIM_OUT_PATH}" ]; then
+	if [ -n "${BSIM_OUT_PATH}" -a -d "${BSIM_OUT_PATH}" ]; then
 		echo "Build BT simulator tests"
 		# Build BT Simulator
 		build_btsim
