@@ -324,7 +324,7 @@ static int cmd_udp_download(const struct shell *shell, size_t argc,
 			return -ENOEXEC;
 		}
 
-		zperf_receiver_init(shell, port);
+		zperf_udp_receiver_init(shell, port);
 
 		k_yield();
 
