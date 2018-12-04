@@ -219,11 +219,11 @@ void _impl_k_mutex_unlock(struct k_mutex *mutex)
 
 	RECORD_STATE_CHANGE();
 
-	mutex->lock_count--;
 
 	K_DEBUG("mutex %p lock_count: %d\n", mutex, mutex->lock_count);
 
-	if (mutex->lock_count != 0U) {
+	if (mutex->lock_count - 1U != 0U) {
+		mutex->lock_count--;
 		goto k_mutex_unlock_return;
 	}
 
@@ -250,8 +250,9 @@ void _impl_k_mutex_unlock(struct k_mutex *mutex)
 		 * waiter since the wait queue is priority-based: no need to
 		 * ajust its priority
 		 */
-		mutex->lock_count++;
 		mutex->owner_orig_prio = new_owner->base.prio;
+	} else {
+		mutex->lock_count = 0;
 	}
 
 	irq_unlock(key);
