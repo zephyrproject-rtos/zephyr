@@ -1258,7 +1258,7 @@ static int mcr20a_update_overwrites(struct mcr20a_context *dev)
 	     i < sizeof(overwrites_indirect) / sizeof(overwrites_t);
 	     i++) {
 
-		if (!_mcr20a_write_reg(dev, true,
+		if (!_mcr20a_write_reg(dev, false,
 				       overwrites_indirect[i].address,
 				       overwrites_indirect[i].data)) {
 			goto error;
