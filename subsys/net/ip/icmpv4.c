@@ -83,7 +83,7 @@ int net_icmpv4_set_chksum(struct net_pkt *pkt)
 		return -EINVAL;
 	}
 
-	chksum = ~net_calc_chksum_icmpv4(pkt);
+	chksum = net_calc_chksum_icmpv4(pkt);
 
 	temp_frag = net_pkt_write(pkt, temp_frag, temp_pos, &temp_pos,
 				  sizeof(chksum), (u8_t *)&chksum,

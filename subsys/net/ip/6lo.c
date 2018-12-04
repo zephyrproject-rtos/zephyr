@@ -1370,7 +1370,7 @@ end:
 		udp->len = htons(len);
 
 		if (chksum) {
-			udp->chksum = ~net_calc_chksum_udp(pkt);
+			udp->chksum = net_calc_chksum_udp(pkt);
 		}
 	}
 

@@ -318,7 +318,7 @@ void test_utils(void)
 	frag->data[hdr_len + 2] = 0;
 	frag->data[hdr_len + 3] = 0;
 
-	chksum = ntohs(~net_calc_chksum(pkt, IPPROTO_ICMPV6));
+	chksum = ntohs(net_calc_chksum(pkt, IPPROTO_ICMPV6));
 	if (chksum != orig_chksum) {
 		printk("Invalid chksum 0x%x in pkt1, should be 0x%x\n",
 		       chksum, orig_chksum);
@@ -352,7 +352,7 @@ void test_utils(void)
 	memcpy(net_buf_add(frag, sizeof(pkt2) - sizeof(pkt2) / 2),
 	       pkt2 + sizeof(pkt2) / 2, sizeof(pkt2) - sizeof(pkt2) / 2);
 
-	chksum = ntohs(~net_calc_chksum(pkt, IPPROTO_ICMPV6));
+	chksum = ntohs(net_calc_chksum(pkt, IPPROTO_ICMPV6));
 	if (chksum != orig_chksum) {
 		printk("Invalid chksum 0x%x in pkt2, should be 0x%x\n",
 		       chksum, orig_chksum);
@@ -389,7 +389,7 @@ void test_utils(void)
 	printk("Second fragment will have %zd bytes\n",
 	       sizeof(pkt3) - sizeof(pkt3) / 2);
 
-	chksum = ntohs(~net_calc_chksum(pkt, IPPROTO_ICMPV6));
+	chksum = ntohs(net_calc_chksum(pkt, IPPROTO_ICMPV6));
 	if (chksum != orig_chksum) {
 		printk("Invalid chksum 0x%x in pkt3, should be 0x%x\n",
 		       chksum, orig_chksum);
@@ -461,7 +461,7 @@ void test_utils(void)
 		zassert_true(0, "exiting");
 	}
 
-	chksum = ntohs(~net_calc_chksum(pkt, IPPROTO_ICMPV6));
+	chksum = ntohs(net_calc_chksum(pkt, IPPROTO_ICMPV6));
 	if (chksum != orig_chksum) {
 		printk("Invalid chksum 0x%x in pkt3, should be 0x%x\n",
 		       chksum, orig_chksum);
@@ -496,7 +496,7 @@ void test_utils(void)
 	frag->data[hdr_len + 2] = 0;
 	frag->data[hdr_len + 3] = 0;
 
-	chksum = ntohs(~net_calc_chksum(pkt, IPPROTO_ICMP));
+	chksum = ntohs(net_calc_chksum(pkt, IPPROTO_ICMP));
 	if (chksum != orig_chksum) {
 		printk("Invalid chksum 0x%x in pkt4, should be 0x%x\n",
 		       chksum, orig_chksum);
@@ -529,7 +529,7 @@ void test_utils(void)
 	frag->data[hdr_len + 2] = 0;
 	frag->data[hdr_len + 3] = 0;
 
-	chksum = ntohs(~net_calc_chksum(pkt, IPPROTO_ICMP));
+	chksum = ntohs(net_calc_chksum(pkt, IPPROTO_ICMP));
 	if (chksum != orig_chksum) {
 		printk("Invalid chksum 0x%x in pkt5, should be 0x%x\n",
 		       chksum, orig_chksum);

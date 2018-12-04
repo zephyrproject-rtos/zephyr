@@ -140,7 +140,7 @@ static int send_mldv2_raw(struct net_if *iface, struct net_buf *frags)
 	if (!net_pkt_write_be16_timeout(pkt, pkt->frags,
 					NET_IPV6H_LEN + ROUTER_ALERT_LEN + 2,
 					&pos,
-					ntohs(~net_calc_chksum_icmpv6(pkt)),
+					ntohs(net_calc_chksum_icmpv6(pkt)),
 					NET_BUF_TIMEOUT)) {
 		ret = -ENOMEM;
 		goto drop;
