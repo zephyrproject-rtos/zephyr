@@ -335,9 +335,6 @@ void calculate_temp_target_values(u8_t type)
 
 		gen_level_srv_s0_user_data.target_level = (s16_t)
 		light_ctl_temp_to_level(light_ctl_srv_user_data.target_temp);
-
-		light_ctl_srv_user_data.target_lightness =
-			light_ctl_srv_user_data.lightness;
 		break;
 	default:
 		return;

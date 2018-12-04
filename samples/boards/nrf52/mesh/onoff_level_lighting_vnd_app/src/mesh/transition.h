@@ -8,6 +8,7 @@
 #ifndef _TRANSITION_H
 #define _TRANSITION_H
 
+#define UNKNOWN_VALUE 0x3F
 #define DEVICE_SPECIFIC_RESOLUTION 10
 
 enum level_transition_types {
