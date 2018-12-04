@@ -104,10 +104,7 @@ subcommands.
 
 .. code-block:: c
 
-	/* Creating subcommands (level 1 command) array for command "demo".
-	 * Subcommands must be added in alphabetical order to ensure correct
-	 * command autocompletion.
-	 */
+	/* Creating subcommands (level 1 command) array for command "demo". */
 	SHELL_CREATE_STATIC_SUBCMD_SET(sub_demo)
 	{
 		SHELL_CMD(params, NULL, "Print params command.",
@@ -500,9 +497,7 @@ The following code shows a simple use case of this library:
 		return 0;
 	}
 
-	/* Creating subcommands (level 1 command) array for command "demo".
-	 * Subcommands must be added in alphabetical order
-	 */
+	/* Creating subcommands (level 1 command) array for command "demo". */
 	SHELL_CREATE_STATIC_SUBCMD_SET(sub_demo)
 	{
 		SHELL_CMD(params, NULL, "Print params command.",
