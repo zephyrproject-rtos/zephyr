@@ -182,13 +182,14 @@ _thread_irq_disabled:
     vldmia r0, {s16-s31}
 #endif
 
-#ifdef CONFIG_MPU_STACK_GUARD
-    /* r2 contains k_thread */
-    add r0, r2, #0
-    push {r2, lr}
-    blx configure_mpu_stack_guard
-    pop {r2, lr}
-#endif /* CONFIG_MPU_STACK_GUARD */
+#if defined (CONFIG_ARM_MPU)
+    /* Re-program dynamic memory map */
+    push {r2,lr}
+    ldr r0, =_kernel
+    ldr r0, [r0, #_kernel_offset_to_current]
+    bl _arch_configure_dynamic_mpu_regions
+    pop {r2,lr}
+#endif
 
 #ifdef CONFIG_USERSPACE
     /* restore mode */
@@ -204,16 +205,6 @@ _thread_irq_disabled:
      */
     isb
 
-    /* r2 contains k_thread */
-    add r0, r2, #0
-    push {r2, lr}
-    blx configure_mpu_mem_domain
-    pop {r2, lr}
-
-    add r0, r2, #0
-    push {r2, lr}
-    blx configure_mpu_user_context
-    pop {r2, lr}
 #endif
 
     /* load callee-saved + psp from thread */

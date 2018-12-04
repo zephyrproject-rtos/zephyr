@@ -104,14 +104,14 @@ _arch_switch_to_main_thread(struct k_thread *main_thread,
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 
-#ifdef CONFIG_MPU_STACK_GUARD
+#ifdef CONFIG_ARM_MPU
 		/*
-		 * if guard is enabled, make sure to set it before jumping to thread
-		 * entry function
-		*/
+		 * If stack protection is enabled, make sure to set it
+		 * before jumping to thread entry function
+		 */
 		"mov %%r0, %3 \t\n"
 		"push {r2, lr} \t\n"
-		"blx configure_mpu_stack_guard \t\n"
+		"blx _arch_configure_dynamic_mpu_regions \t\n"
 		"pop {r2, lr} \t\n"
 #endif
 		/* branch to _thread_entry(_main, 0, 0, 0) */
