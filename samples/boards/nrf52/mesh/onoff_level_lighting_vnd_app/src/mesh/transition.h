@@ -10,7 +10,7 @@
 
 #define DEVICE_SPECIFIC_RESOLUTION 10
 
-enum transition_types {
+enum level_transition_types {
 	LEVEL_TT,
 	LEVEL_TT_DELTA,
 	LEVEL_TT_MOVE,
