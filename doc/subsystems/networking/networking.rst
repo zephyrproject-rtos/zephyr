@@ -20,6 +20,7 @@ operation of the stacks and how they were implemented.
    net-app-api.rst
    buffers.rst
    qemu_setup.rst
+   native_posix_setup.rst
    usbnet_setup.rst
    vlan.rst
    traffic-class.rst
