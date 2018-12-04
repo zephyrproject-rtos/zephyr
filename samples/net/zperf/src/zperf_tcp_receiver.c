@@ -27,11 +27,6 @@
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
 
-#define TCP_RX_FIBER_STACK_SIZE 1024
-
-static K_THREAD_STACK_DEFINE(zperf_tcp_rx_stack, TCP_RX_FIBER_STACK_SIZE);
-static struct k_thread zperf_tcp_rx_thread_data;
-
 static struct sockaddr_in6 *in6_addr_my;
 static struct sockaddr_in *in4_addr_my;
 
@@ -125,11 +120,19 @@ static void tcp_accepted(struct net_context *context,
 	}
 }
 
-static void zperf_tcp_rx_thread(const struct shell *shell, int port)
+void zperf_tcp_receiver_init(const struct shell *shell, int port)
 {
 	struct net_context *context4 = NULL;
 	struct net_context *context6 = NULL;
-	int ret, fail = 0;
+	int ret;
+
+	if (IS_ENABLED(CONFIG_NET_IPV6)) {
+		in6_addr_my = zperf_get_sin6();
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4)) {
+		in4_addr_my = zperf_get_sin();
+	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && MY_IP4ADDR) {
 		ret = net_context_get(AF_INET, SOCK_STREAM, IPPROTO_TCP,
@@ -185,7 +188,7 @@ static void zperf_tcp_rx_thread(const struct shell *shell, int port)
 			shell_fprintf(shell, SHELL_WARNING,
 				      "Cannot bind IPv6 TCP port %d (%d)\n",
 				      ntohs(in6_addr_my->sin6_port), ret);
-			fail++;
+			return;
 		}
 
 		ret = net_context_listen(context6, 0);
@@ -213,7 +216,7 @@ static void zperf_tcp_rx_thread(const struct shell *shell, int port)
 			shell_fprintf(shell, SHELL_WARNING,
 				      "Cannot bind IPv4 TCP port %d (%d)\n",
 				      ntohs(in4_addr_my->sin_port), ret);
-			fail++;
+			return;
 		}
 
 		ret = net_context_listen(context4, 0);
@@ -233,24 +236,6 @@ static void zperf_tcp_rx_thread(const struct shell *shell, int port)
 		}
 	}
 
-	if (fail > 1) {
-		return;
-	}
-}
-
-void zperf_tcp_receiver_init(const struct shell *shell, int port)
-{
-	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		in6_addr_my = zperf_get_sin6();
-	}
-
-	if (IS_ENABLED(CONFIG_NET_IPV4)) {
-		in4_addr_my = zperf_get_sin();
-	}
-
-	k_thread_create(&zperf_tcp_rx_thread_data, zperf_tcp_rx_stack,
-			K_THREAD_STACK_SIZEOF(zperf_tcp_rx_stack),
-			(k_thread_entry_t)zperf_tcp_rx_thread,
-			(void *)shell, INT_TO_POINTER(port), 0,
-			K_PRIO_COOP(7), 0, K_NO_WAIT);
+	shell_fprintf(shell, SHELL_NORMAL,
+		      "Listening on port %d\n", port);
 }
