@@ -274,7 +274,7 @@ def enable_old_alias_names(enable):
     global old_alias_names
     old_alias_names = enable
 
-def add_prop_aliases(node_address, yaml,
+def add_prop_aliases(node_address,
                      alias_label_function, prop_label, prop_aliases):
     node_compat = get_compat(node_address)
     new_alias_prefix = 'DT_' + convert_string_to_label(node_compat)

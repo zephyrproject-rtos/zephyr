@@ -179,7 +179,6 @@ def extract_controller(node_address, yaml, prop, prop_values, index, def_label, 
         if node_address in aliases:
             add_prop_aliases(
                 node_address,
-                yaml,
                 lambda alias:
                     '_'.join([convert_string_to_label(alias)] + label[1:]),
                 '_'.join(label),
@@ -260,7 +259,6 @@ def extract_cells(node_address, yaml, prop, prop_values, names, index,
         if node_address in aliases:
             add_prop_aliases(
                 node_address,
-                yaml,
                 lambda alias:
                     '_'.join([convert_string_to_label(alias)] + label[1:]),
                 '_'.join(label),
@@ -274,7 +272,7 @@ def extract_cells(node_address, yaml, prop, prop_values, names, index,
                       index + 1, def_label, generic)
 
 
-def extract_single(node_address, yaml, prop, key, def_label):
+def extract_single(node_address, prop, key, def_label):
 
     prop_def = {}
     prop_alias = {}
@@ -301,7 +299,6 @@ def extract_single(node_address, yaml, prop, key, def_label):
         if node_address in aliases:
             add_prop_aliases(
                 node_address,
-                yaml,
                 lambda alias:
                     convert_string_to_label(alias) + '_' + k,
                 label,
@@ -309,7 +306,7 @@ def extract_single(node_address, yaml, prop, key, def_label):
 
     insert_defs(node_address, prop_def, prop_alias)
 
-def extract_string_prop(node_address, yaml, key, label):
+def extract_string_prop(node_address, key, label):
 
     prop_def = {}
 
@@ -373,18 +370,18 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names):
             def_label = parent_label + '_' + def_label
 
             # Generate bus-name define
-            extract_single(node_address, yaml, 'parent-label',
+            extract_single(node_address, 'parent-label',
                            'bus-name', 'DT_' + def_label)
 
     if 'base_label' not in yaml[node_compat]:
         def_label = 'DT_' + def_label
 
     if prop == 'reg':
-        reg.extract(node_address, yaml, names, def_label, 1)
+        reg.extract(node_address, names, def_label, 1)
     elif prop == 'interrupts' or prop == 'interrupts-extended':
         interrupts.extract(node_address, yaml, prop, names, def_label)
     elif prop == 'compatible':
-        compatible.extract(node_address, yaml, prop, def_label)
+        compatible.extract(node_address, prop, def_label)
     elif 'pinctrl-' in prop:
         pinctrl.extract(node_address, yaml, prop, def_label)
     elif 'clocks' in prop:
@@ -408,7 +405,7 @@ def extract_property(node_compat, yaml, node_address, prop, prop_val, names):
         extract_cells(node_address, yaml, prop, prop_values,
                       names, 0, def_label, generic)
     else:
-        default.extract(node_address, yaml, prop, prop_val['type'], def_label)
+        default.extract(node_address, prop, prop_val['type'], def_label)
 
 
 def extract_node_include_info(reduced, root_node_address, sub_node_address,
@@ -686,16 +683,16 @@ def generate_node_definitions(yaml_list):
 
     for k, v in regs_config.items():
         if k in chosen:
-            reg.extract(chosen[k], None, None, v, 1024)
+            reg.extract(chosen[k], None, v, 1024)
 
     for k, v in name_config.items():
         if k in chosen:
-            extract_string_prop(chosen[k], None, "label", v)
+            extract_string_prop(chosen[k], "label", v)
 
     node_address = chosen.get('zephyr,flash', 'dummy-flash')
-    flash.extract(node_address, yaml_list, 'zephyr,flash', 'FLASH')
+    flash.extract(node_address, 'zephyr,flash', 'FLASH')
     node_address = chosen.get('zephyr,code-partition', node_address)
-    flash.extract(node_address, yaml_list, 'zephyr,code-partition', 'FLASH')
+    flash.extract(node_address, 'zephyr,code-partition', 'FLASH')
 
     return defs
 

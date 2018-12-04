@@ -19,12 +19,11 @@ class DTDefault(DTDirective):
     # @brief Extract directives in a default way
     #
     # @param node_address Address of node owning the clockxxx definition.
-    # @param yaml YAML definition for the owning node.
     # @param prop property name
     # @param prop type (string, boolean, etc)
     # @param def_label Define label string of node owning the directive.
     #
-    def extract(self, node_address, yaml, prop, prop_type, def_label):
+    def extract(self, node_address, prop, prop_type, def_label):
         prop_def = {}
         prop_alias = {}
 
@@ -58,7 +57,6 @@ class DTDefault(DTDirective):
             if node_address in aliases:
                 add_prop_aliases(
                     node_address,
-                    yaml,
                     lambda alias:
                         convert_string_to_label(alias) + '_' + prop_name,
                     label,

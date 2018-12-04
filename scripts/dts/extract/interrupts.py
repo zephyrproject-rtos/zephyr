@@ -84,7 +84,6 @@ class DTInterrupts(DTDirective):
                 if node_address in aliases:
                     add_prop_aliases(
                         node_address,
-                        yaml,
                         lambda alias:
                             '_'.join([convert_string_to_label(alias)] +
                                      l_cell_prefix + name + l_cell_name),

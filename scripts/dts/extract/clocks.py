@@ -86,7 +86,6 @@ class DTClocks(DTDirective):
                         if clock_cells_string == clock_cell_name:
                             add_prop_aliases(
                                 node_address,
-                                yaml,
                                 lambda alias:
                                     self.get_label_string([
                                         alias,
@@ -97,7 +96,6 @@ class DTClocks(DTDirective):
                         else:
                             add_prop_aliases(
                                 node_address,
-                                yaml,
                                 lambda alias:
                                     self.get_label_string([
                                         alias,
@@ -138,7 +136,6 @@ class DTClocks(DTDirective):
                     if node_address in aliases:
                         add_prop_aliases(
                             node_address,
-                            yaml,
                             lambda alias:
                                 self.get_label_string([
                                     alias,

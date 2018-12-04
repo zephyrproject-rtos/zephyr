@@ -23,12 +23,11 @@ class DTCompatible(DTDirective):
     #
     # @param node_address Address of node owning the
     #                     compatible definition.
-    # @param yaml YAML definition for the owning node.
     # @param prop compatible property name
     # @param def_label Define label string of node owning the
     #                  compatible definition.
     #
-    def extract(self, node_address, yaml, prop, def_label):
+    def extract(self, node_address, prop, def_label):
 
         # compatible definition
         compatible = reduced[node_address]['props'][prop]
