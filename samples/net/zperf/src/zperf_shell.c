@@ -218,6 +218,46 @@ int zperf_get_ipv4_addr(const struct shell *shell, char *host,
 	return 0;
 }
 
+struct in_addr *zperf_get_default_if_in4_addr(void)
+{
+	struct in_addr *in4_addr = NULL;
+#if CONFIG_NET_IPV4
+	struct net_if *iface;
+	struct net_if_ipv4 *ipv4;
+
+	iface = net_if_get_default();
+	ipv4 = iface->config.ip.ipv4;
+	for (int i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
+		if (ipv4->unicast[i].is_used &&
+		     ipv4->unicast[i].addr_state == NET_ADDR_PREFERRED &&
+		    ipv4->unicast[i].address.family == AF_INET) {
+			in4_addr = &ipv4->unicast[i].address.in_addr;
+		}
+	}
+#endif /* CONFIG_NET_IPV4 */
+	return in4_addr;
+}
+
+struct in6_addr *zperf_get_default_if_in6_addr(void)
+{
+	struct in6_addr *in6_addr = NULL;
+#if CONFIG_NET_IPV6
+	struct net_if *iface;
+	struct net_if_ipv6 *ipv6;
+
+	iface = net_if_get_default();
+	ipv6 = iface->config.ip.ipv6;
+	for (int i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
+		if (ipv6->unicast[i].is_used &&
+		     ipv6->unicast[i].addr_state == NET_ADDR_PREFERRED &&
+		    ipv6->unicast[i].address.family == AF_INET) {
+			in6_addr = &ipv6->unicast[i].address.in6_addr;
+		}
+	}
+#endif /* CONFIG_NET_IPV6 */
+	return in6_addr;
+}
+
 static int cmd_setip(const struct shell *shell, size_t argc, char *argv[])
 {
 	int start = 0;
@@ -324,7 +364,7 @@ static int cmd_udp_download(const struct shell *shell, size_t argc,
 			return -ENOEXEC;
 		}
 
-		zperf_receiver_init(shell, port);
+		zperf_udp_receiver_init(shell, port);
 
 		k_yield();
 
@@ -662,12 +702,12 @@ static int execute_upload(const struct shell *shell,
 	}
 
 out:
-	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		net_context_put(context6);
-	}
-	if (IS_ENABLED(CONFIG_NET_IPV4)) {
-		net_context_put(context4);
-	}
+if (IS_ENABLED(CONFIG_NET_IPV6)) {
+	net_context_put(context6);
+}
+if (IS_ENABLED(CONFIG_NET_IPV4)) {
+	net_context_put(context4);
+}
 
 	return 0;
 }
@@ -1027,9 +1067,9 @@ static void zperf_init(const struct shell *shell)
 
 	shell_fprintf(shell, SHELL_NORMAL, "\n");
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) && MY_IP6ADDR) {
-		if (zperf_get_ipv6_addr(shell, MY_IP6ADDR, MY_PREFIX_LEN_STR,
-					&ipv6) < 0) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) && MY_STATIC_IP6ADDR) {
+		if (zperf_get_ipv6_addr(shell, MY_STATIC_IP6ADDR,
+					MY_PREFIX_LEN_STR, &ipv6) < 0) {
 			shell_fprintf(shell, SHELL_WARNING,
 				      "Unable to set IP\n");
 		} else {
@@ -1040,12 +1080,12 @@ static void zperf_init(const struct shell *shell)
 			net_ipaddr_copy(&in6_addr_my.sin6_addr, &ipv6);
 		}
 
-		ret = net_addr_pton(AF_INET6, DST_IP6ADDR,
+		ret = net_addr_pton(AF_INET6, DST_STATIC_IP6ADDR,
 				    &in6_addr_dst.sin6_addr);
 		if (ret < 0) {
 			shell_fprintf(shell, SHELL_WARNING,
 				      "Unable to set IP %s\n",
-				      DST_IP6ADDR);
+				      DST_STATIC_IP6ADDR);
 		} else {
 			shell_fprintf(shell, SHELL_NORMAL,
 				      "Setting destination IP address %s\n",
@@ -1054,8 +1094,8 @@ static void zperf_init(const struct shell *shell)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV4) && MY_IP4ADDR) {
-		if (zperf_get_ipv4_addr(shell, MY_IP4ADDR, &ipv4) < 0) {
+	if (IS_ENABLED(CONFIG_NET_IPV4) && MY_STATIC_IP4ADDR) {
+		if (zperf_get_ipv4_addr(shell, MY_STATIC_IP4ADDR, &ipv4) < 0) {
 			shell_fprintf(shell, SHELL_WARNING,
 				      "Unable to set IP\n");
 		} else {
@@ -1066,12 +1106,12 @@ static void zperf_init(const struct shell *shell)
 			net_ipaddr_copy(&in4_addr_my.sin_addr, &ipv4);
 		}
 
-		ret = net_addr_pton(AF_INET, DST_IP4ADDR,
+		ret = net_addr_pton(AF_INET, DST_STATIC_IP4ADDR,
 				    &in4_addr_dst.sin_addr);
 		if (ret < 0) {
 			shell_fprintf(shell, SHELL_WARNING,
 				      "Unable to set IP %s\n",
-				      DST_IP4ADDR);
+				      DST_STATIC_IP4ADDR);
 		} else {
 			shell_fprintf(shell, SHELL_NORMAL,
 				      "Setting destination IP address %s\n",
@@ -1105,13 +1145,13 @@ SHELL_CREATE_STATIC_SUBCMD_SET(zperf_cmd_tcp)
 							"(with suffix K)\n"
 		  "Example: tcp upload2 v6 1 1K\n"
 		  "Example: tcp upload2 v4\n"
-#if defined(CONFIG_NET_IPV6) && defined(MY_IP6ADDR_SET)
-		  "Default IPv6 address is " MY_IP6ADDR
-		  ", destination [" DST_IP6ADDR "]:" DEF_PORT_STR "\n"
+#if defined(CONFIG_NET_IPV6) && defined(MY_STATIC_IP6ADDR_SET)
+		  "Default IPv6 address is " MY_STATIC_IP6ADDR
+		  ", destination [" DST_STATIC_IP6ADDR "]:" DEF_PORT_STR "\n"
 #endif
-#if defined(CONFIG_NET_IPV4) && defined(MY_IP4ADDR_SET)
-		  "Default IPv4 address is " MY_IP4ADDR
-		  ", destination " DST_IP4ADDR ":" DEF_PORT_STR "\n"
+#if defined(CONFIG_NET_IPV4) && defined(MY_STATIC_IP4ADDR_SET)
+		  "Default IPv4 address is " MY_STATIC_IP4ADDR
+		  ", destination " DST_STATIC_IP4ADDR ":" DEF_PORT_STR "\n"
 #endif
 		  ,
 		  cmd_tcp_upload2),
@@ -1145,13 +1185,13 @@ SHELL_CREATE_STATIC_SUBCMD_SET(zperf_cmd_udp)
 		  "<baud rate>   Baudrate in kilobyte or megabyte\n"
 		  "Example: udp upload2 v4 1 1K 1M\n"
 		  "Example: udp upload2 v6\n"
-#if defined(CONFIG_NET_IPV6) && defined(MY_IP6ADDR_SET)
-		  "Default IPv6 address is " MY_IP6ADDR
-		  ", destination [" DST_IP6ADDR "]:" DEF_PORT_STR "\n"
+#if defined(CONFIG_NET_IPV6) && defined(MY_STATIC_IP6ADDR_SET)
+		  "Default IPv6 address is " MY_STATIC_IP6ADDR
+		  ", destination [" DST_STATIC_IP6ADDR "]:" DEF_PORT_STR "\n"
 #endif
-#if defined(CONFIG_NET_IPV4) && defined(MY_IP4ADDR_SET)
-		  "Default IPv4 address is " MY_IP4ADDR
-		  ", destination " DST_IP4ADDR ":" DEF_PORT_STR "\n"
+#if defined(CONFIG_NET_IPV4) && defined(MY_STATIC_IP4ADDR_SET)
+		  "Default IPv4 address is " MY_STATIC_IP4ADDR
+		  ", destination " DST_STATIC_IP4ADDR ":" DEF_PORT_STR "\n"
 #endif
 		  ,
 		  cmd_udp_upload2),

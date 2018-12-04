@@ -18,21 +18,21 @@
 
 /* Note that you can set local endpoint address in config file */
 #if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_CONFIG_SETTINGS)
-#define MY_IP6ADDR CONFIG_NET_CONFIG_MY_IPV6_ADDR
-#define DST_IP6ADDR CONFIG_NET_CONFIG_PEER_IPV6_ADDR
+#define MY_STATIC_IP6ADDR CONFIG_NET_CONFIG_MY_IPV6_ADDR
+#define DST_STATIC_IP6ADDR CONFIG_NET_CONFIG_PEER_IPV6_ADDR
 #define MY_IP6ADDR_SET
 #else
-#define MY_IP6ADDR NULL
-#define DST_IP6ADDR NULL
+#define MY_STATIC_IP6ADDR NULL
+#define DST_STATIC_IP6ADDR NULL
 #endif
 
 #if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_CONFIG_SETTINGS)
-#define MY_IP4ADDR CONFIG_NET_CONFIG_MY_IPV4_ADDR
-#define DST_IP4ADDR CONFIG_NET_CONFIG_PEER_IPV4_ADDR
+#define MY_STATIC_IP4ADDR CONFIG_NET_CONFIG_MY_IPV4_ADDR
+#define DST_STATIC_IP4ADDR CONFIG_NET_CONFIG_PEER_IPV4_ADDR
 #define MY_IP4ADDR_SET
 #else
-#define MY_IP4ADDR NULL
-#define DST_IP4ADDR NULL
+#define MY_STATIC_IP4ADDR NULL
+#define DST_STATIC_IP4ADDR NULL
 #endif
 
 #define PACKET_SIZE_MAX      1024
@@ -102,7 +102,7 @@ extern void zperf_udp_upload(const struct shell *shell,
 			     unsigned int rate_in_kbps,
 			     struct zperf_results *results);
 
-extern void zperf_receiver_init(const struct shell *shell, int port);
+extern void zperf_udp_receiver_init(const struct shell *shell, int port);
 
 extern void zperf_tcp_receiver_init(const struct shell *shell, int port);
 extern void zperf_tcp_uploader_init(struct k_fifo *tx_queue);
@@ -113,5 +113,8 @@ extern void zperf_tcp_upload(const struct shell *shell,
 			     struct zperf_results *results);
 
 extern void connect_ap(char *ssid);
+
+struct in_addr *zperf_get_default_if_in4_addr(void);
+struct in6_addr *zperf_get_default_if_in6_addr(void);
 
 #endif /* __ZPERF_INTERNAL_H */
