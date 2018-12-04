@@ -74,6 +74,69 @@ void arm_core_mpu_enable(void);
 void arm_core_mpu_disable(void);
 
 /**
+ * @brief configure a set of fixed (static) MPU regions
+ *
+ * Internal API function to configure a set of static MPU memory regions,
+ * within a (background) memory area determined by start and end address.
+ * The total number of HW MPU regions to be programmed depends on the MPU
+ * architecture.
+ *
+ * The function shall be invoked once, upon system initialization.
+ *
+ * @param static_regions[] an array of memory partitions to be programmed
+ * @param regions_num the number of regions to be programmed
+ * @param background_area_start the start address of the background memory area
+ * @param background_area_end the end address of the background memory area
+ *
+ * The function shall assert if the operation cannot be not performed
+ * successfully. Therefore:
+ * - the number of HW MPU regions to be programmed shall not exceed the number
+ *   of available MPU indices,
+ * - the size and alignment of the static regions shall comply with the
+ *   requirements of the MPU hardware.
+ */
+void arm_core_mpu_configure_static_mpu_regions(
+	const struct k_mem_partition static_regions[], const u8_t regions_num,
+	const u32_t background_area_start, const u32_t background_area_end);
+
+#if defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS)
+
+/* Number of memory areas, inside which dynamic regions
+ * may be programmed in run-time.
+ */
+#if defined(CONFIG_APPLICATION_MEMORY)
+#define MPU_DYNAMIC_REGION_AREAS_NUM 2
+#else
+#define MPU_DYNAMIC_REGION_AREAS_NUM 1
+#endif
+
+/**
+ * @brief mark a set of memory regions as eligible for dynamic configuration
+ *
+ * Internal API function to configure a set of memory regions, determined
+ * by their start address and size, as memory areas eligible for dynamically
+ * programming MPU regions (such as a supervisor stack overflow guard) at
+ * run-time (for example, thread upon context-switch).
+ *
+ * The function shall be invoked once, upon system initialization.
+ *
+ * @param dyn_region_areas an array of k_mem_partition objects declaring the
+ *                             eligible memory areas for dynamic programming
+ * @param dyn_region_areas_num the number of eligible areas for dynamic
+ *                             programming.
+ *
+ * The function shall assert if the operation cannot be not performed
+ * successfully. Therefore, the requested areas shall correspond to
+ * static memory regions, configured earlier by
+ * arm_core_mpu_configure_static_mpu_regions().
+ */
+void arm_core_mpu_mark_areas_for_dynamic_regions(
+	const struct k_mem_partition dyn_region_areas[],
+	const u8_t dyn_region_areas_num);
+
+#endif /* CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS */
+
+/**
  * @brief configure the base address and size for an MPU region
  *
  * @param   type    MPU region type
