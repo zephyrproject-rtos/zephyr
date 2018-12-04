@@ -803,7 +803,6 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 	int i, best_match = -1;
 	s16_t best_rank = -1;
 	u16_t src_port, dst_port;
-	u16_t chksum;
 	struct net_if *pkt_iface = net_pkt_iface(pkt);
 
 #if defined(CONFIG_NET_CONN_CACHE)
@@ -833,7 +832,6 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 
 		src_port = udp_hdr->src_port;
 		dst_port = udp_hdr->dst_port;
-		chksum = udp_hdr->chksum;
 	} else if (IS_ENABLED(CONFIG_NET_TCP) && proto == IPPROTO_TCP) {
 		struct net_tcp_hdr hdr, *tcp_hdr;
 
@@ -846,7 +844,6 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 
 		src_port = tcp_hdr->src_port;
 		dst_port = tcp_hdr->dst_port;
-		chksum = tcp_hdr->chksum;
 	} else {
 		NET_DBG("No UDP or TCP configured, dropping packet.");
 		return NET_DROP;
@@ -869,11 +866,11 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 		}
 
 		NET_DBG("Check %s listener for pkt %p src port %u dst port %u "
-			"family %d chksum 0x%04x len %d", net_proto2str(proto),
+			"family %d len %d", net_proto2str(proto),
 			pkt,
 			ntohs(src_port),
 			ntohs(dst_port),
-			net_pkt_family(pkt), ntohs(chksum), data_len);
+			net_pkt_family(pkt), data_len);
 	}
 
 	for (i = 0; i < CONFIG_NET_MAX_CONN; i++) {
@@ -934,36 +931,18 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 		 */
 		if (IS_ENABLED(CONFIG_NET_UDP_CHECKSUM) &&
 		    proto == IPPROTO_UDP &&
-		    net_if_need_calc_rx_checksum(net_pkt_iface(pkt))) {
-			u16_t chksum_calc;
-
-			net_udp_set_chksum(pkt, pkt->frags);
-			chksum_calc = net_udp_get_chksum(pkt, pkt->frags);
-
-			if (chksum != chksum_calc) {
-				net_stats_update_udp_chkerr(net_pkt_iface(pkt));
-				NET_DBG("UDP checksum mismatch "
-					"expected 0x%04x got 0x%04x, dropping packet.",
-					ntohs(chksum_calc), ntohs(chksum));
-				goto drop;
-			}
-
+		    net_if_need_calc_rx_checksum(net_pkt_iface(pkt)) &&
+		    net_calc_chksum_udp(pkt) != 0) {
+			net_stats_update_udp_chkerr(net_pkt_iface(pkt));
+			NET_DBG("DROP: UDP checksum mismatch");
+			goto drop;
 		} else if (IS_ENABLED(CONFIG_NET_TCP_CHECKSUM) &&
 			   proto == IPPROTO_TCP &&
-			   net_if_need_calc_rx_checksum(net_pkt_iface(pkt))) {
-			u16_t chksum_calc;
-
-			net_tcp_set_chksum(pkt, pkt->frags);
-			chksum_calc = net_tcp_get_chksum(pkt, pkt->frags);
-
-			if (chksum != chksum_calc) {
-				net_stats_update_tcp_seg_chkerr(
-							net_pkt_iface(pkt));
-				NET_DBG("TCP checksum mismatch "
-					"expected 0x%04x got 0x%04x, dropping packet.",
-					ntohs(chksum_calc), ntohs(chksum));
-				goto drop;
-			}
+			   net_if_need_calc_rx_checksum(net_pkt_iface(pkt)) &&
+			   net_calc_chksum_tcp(pkt) != 0) {
+			net_stats_update_tcp_seg_chkerr(net_pkt_iface(pkt));
+			NET_DBG("DROP: TCP checksum mismatch");
+			goto drop;
 		}
 
 #if defined(CONFIG_NET_CONN_CACHE)

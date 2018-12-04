@@ -37,6 +37,7 @@
 
 #include "tcp_internal.h"
 #include "net_private.h"
+#include "ipv4.h"
 
 static bool test_failed;
 static bool fail = true;
@@ -294,6 +295,9 @@ static void setup_ipv4_tcp(struct net_pkt *pkt,
 	net_pkt_append_all(pkt, sizeof(ipv4), (u8_t *)&ipv4, K_FOREVER);
 	net_pkt_append_all(pkt, sizeof(tcp_hdr), (u8_t *)&tcp_hdr, K_FOREVER);
 	net_pkt_append_all(pkt, sizeof(data), data, K_FOREVER);
+
+	net_ipv4_finalize(pkt, IPPROTO_TCP);
+	net_tcp_set_chksum(pkt, pkt->frags);
 }
 
 u8_t ipv6_hop_by_hop_ext_hdr[] = {
