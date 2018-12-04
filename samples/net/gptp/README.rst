@@ -17,16 +17,16 @@ The source code for this sample application can be found at:
 Requirements
 ************
 
-- :ref:`networking_with_qemu`
+- :ref:`networking_with_native_posix`
 
 Building and Running
 ********************
 
-A good way to run this sample is to run this gPTP application inside QEMU
-as described in :ref:`networking_with_qemu` or with embedded device like
-FRDM-K64F. Note that gPTP is only supported for boards that have ethernet port
-and which has support for collecting timestamps for sent and received
-ethernet frames.
+A good way to run this sample is to run this gPTP application inside
+native_posix board as described in :ref:`networking_with_native_posix` or with
+embedded device like NXP FRDM-K64F or Atmel SAM-E70 Xplained. Note that gPTP is
+only supported for boards that have an Ethernet port and which has support for
+collecting timestamps for sent and received Ethernet frames.
 
 Follow these steps to build the gPTP sample application:
 
@@ -49,11 +49,19 @@ Setting up Linux Host
 If you need VLAN support in your network, then the
 :file:`samples/net/vlan/vlan-setup-linux.sh` provides a script that can be
 executed on the Linux host. It creates two VLANs on the Linux host and creates
-routes to Zephyr.
+routes to Zephyr. If you are using native_posix board, then
+the ``net-setup.sh`` will create VLAN setup automatically with this command:
+
+.. code-block:: console
+
+   ./net-setup.sh -c zeth-vlan.conf
 
 The OpenAVNU repository at https://github.com/AVnu/OpenAvnu contains gPTP
 daemon that can be run in Linux host and which can act as a grandmaster for
-the IEEE 801.1AS network.
+the IEEE 801.1AS network. Note that OpenAvnu will not work with
+native_posix board as that board only supports software timestamping and
+OpenAvnu only supports hardware timestamping. See instructions at the end
+of this chapter how to run linuxptp daemon with native_posix board.
 
 After downloading the source code, compile it like this in Linux:
 
@@ -110,3 +118,21 @@ If Zephyr syncs properly with gptp daemon, then this is printed:
 By default gPTP in Zephyr will not print any gPTP debug messages to console.
 One can enable debug prints by setting
 :option:`CONFIG_NET_GPTP_LOG_LEVEL_DBG` in the config file.
+
+For native_posix board, use ``linuxptp`` project as that supports
+software timestamping.
+
+Get linuxptp project sources
+
+.. code-block:: console
+
+    git clone git://git.code.sf.net/p/linuxptp/code
+
+Compile the ``ptp4l`` daemon and start it like this:
+
+.. code-block:: console
+
+    sudo ./ptp4l -2 -f gPTP-zephyr.cfg -i zeth -m -q -l 6 -S
+
+Use the ``default.cfg`` as a base, copy it to ``gPTP-zephyr.cfg``, and modify
+it according to your needs.
