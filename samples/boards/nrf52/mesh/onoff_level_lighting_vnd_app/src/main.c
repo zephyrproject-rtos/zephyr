@@ -166,14 +166,14 @@ static void light_default_status_init(void)
 
 static void unsolicitedly_publish_states_work_handler(struct k_work *work)
 {
-	gen_onoff_publisher(&root_models[2]);
-	gen_level_publisher(&root_models[4]);
-	light_lightness_publisher(&root_models[11]);
-	light_lightness_linear_publisher(&root_models[11]);
-	light_ctl_publisher(&root_models[14]);
+	gen_onoff_publish(&root_models[2]);
+	gen_level_publish(&root_models[4]);
+	light_lightness_publish(&root_models[11]);
+	light_lightness_linear_publish(&root_models[11]);
+	light_ctl_publish(&root_models[14]);
 
-	gen_level_publisher(&s0_models[0]);
-	light_ctl_temp_publisher(&s0_models[2]);
+	gen_level_publish(&s0_models[0]);
+	light_ctl_temp_publish(&s0_models[2]);
 }
 
 K_WORK_DEFINE(unsolicitedly_publish_states_work,

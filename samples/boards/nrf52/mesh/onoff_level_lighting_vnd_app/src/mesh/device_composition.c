@@ -123,7 +123,7 @@ static void gen_onoff_get(struct bt_mesh_model *model,
 	}
 }
 
-void gen_onoff_publisher(struct bt_mesh_model *model)
+void gen_onoff_publish(struct bt_mesh_model *model)
 {
 	struct net_buf_simple *msg = model->pub->msg;
 	struct generic_onoff_state *state = model->user_data;
@@ -196,7 +196,7 @@ static void gen_onoff_set_unack(struct bt_mesh_model *model,
 	if (state->target_onoff != state->onoff) {
 		onoff_tt_values(state, tt, delay);
 	} else {
-		gen_onoff_publisher(model);
+		gen_onoff_publish(model);
 		return;
 	}
 
@@ -206,7 +206,7 @@ static void gen_onoff_set_unack(struct bt_mesh_model *model,
 	}
 
 	state->transition->just_started = true;
-	gen_onoff_publisher(model);
+	gen_onoff_publish(model);
 	onoff_handler(state);
 }
 
@@ -260,7 +260,7 @@ static void gen_onoff_set(struct bt_mesh_model *model,
 		onoff_tt_values(state, tt, delay);
 	} else {
 		gen_onoff_get(model, ctx, buf);
-		gen_onoff_publisher(model);
+		gen_onoff_publish(model);
 		return;
 	}
 
@@ -271,7 +271,7 @@ static void gen_onoff_set(struct bt_mesh_model *model,
 
 	state->transition->just_started = true;
 	gen_onoff_get(model, ctx, buf);
-	gen_onoff_publisher(model);
+	gen_onoff_publish(model);
 	onoff_handler(state);
 }
 
@@ -311,7 +311,7 @@ static void gen_level_get(struct bt_mesh_model *model,
 	}
 }
 
-void gen_level_publisher(struct bt_mesh_model *model)
+void gen_level_publish(struct bt_mesh_model *model)
 {
 	struct net_buf_simple *msg = model->pub->msg;
 	struct generic_level_state *state = model->user_data;
@@ -381,7 +381,7 @@ static void gen_level_set_unack(struct bt_mesh_model *model,
 	if (state->target_level != state->level) {
 		level_tt_values(state, tt, delay);
 	} else {
-		gen_level_publisher(model);
+		gen_level_publish(model);
 		return;
 	}
 
@@ -391,7 +391,7 @@ static void gen_level_set_unack(struct bt_mesh_model *model,
 	}
 
 	state->transition->just_started = true;
-	gen_level_publisher(model);
+	gen_level_publish(model);
 
 	if (bt_mesh_model_elem(model)->addr == elements[0].addr) {
 		/* Root element */
@@ -451,7 +451,7 @@ static void gen_level_set(struct bt_mesh_model *model,
 		level_tt_values(state, tt, delay);
 	} else {
 		gen_level_get(model, ctx, buf);
-		gen_level_publisher(model);
+		gen_level_publish(model);
 		return;
 	}
 
@@ -462,7 +462,7 @@ static void gen_level_set(struct bt_mesh_model *model,
 
 	state->transition->just_started = true;
 	gen_level_get(model, ctx, buf);
-	gen_level_publisher(model);
+	gen_level_publish(model);
 
 	if (bt_mesh_model_elem(model)->addr == elements[0].addr) {
 		/* Root element */
@@ -537,7 +537,7 @@ static void gen_delta_set_unack(struct bt_mesh_model *model,
 	if (state->target_level != state->level) {
 		level_tt_values(state, tt, delay);
 	} else {
-		gen_level_publisher(model);
+		gen_level_publish(model);
 		return;
 	}
 
@@ -547,7 +547,7 @@ static void gen_delta_set_unack(struct bt_mesh_model *model,
 	}
 
 	state->transition->just_started = true;
-	gen_level_publisher(model);
+	gen_level_publish(model);
 
 	if (bt_mesh_model_elem(model)->addr == elements[0].addr) {
 		/* Root element */
@@ -624,7 +624,7 @@ static void gen_delta_set(struct bt_mesh_model *model,
 		level_tt_values(state, tt, delay);
 	} else {
 		gen_level_get(model, ctx, buf);
-		gen_level_publisher(model);
+		gen_level_publish(model);
 		return;
 	}
 
@@ -635,7 +635,7 @@ static void gen_delta_set(struct bt_mesh_model *model,
 
 	state->transition->just_started = true;
 	gen_level_get(model, ctx, buf);
-	gen_level_publisher(model);
+	gen_level_publish(model);
 
 	if (bt_mesh_model_elem(model)->addr == elements[0].addr) {
 		/* Root element */
@@ -675,7 +675,7 @@ static void gen_level_move_get(struct bt_mesh_model *model,
 	}
 }
 
-static void gen_level_move_publisher(struct bt_mesh_model *model)
+static void gen_level_move_publish(struct bt_mesh_model *model)
 {
 	struct net_buf_simple *msg = model->pub->msg;
 	struct generic_level_state *state = model->user_data;
@@ -763,7 +763,7 @@ static void gen_move_set_unack(struct bt_mesh_model *model,
 	}
 
 	state->transition->just_started = true;
-	gen_level_move_publisher(model);
+	gen_level_move_publish(model);
 
 	/* if (tt == 0) OR (delta == 0) */
 	if (state->transition->counter == 0) {
@@ -840,7 +840,7 @@ static void gen_move_set(struct bt_mesh_model *model,
 
 	state->transition->just_started = true;
 	gen_level_move_get(model, ctx, buf);
-	gen_level_move_publisher(model);
+	gen_level_move_publish(model);
 
 	/* if (tt == 0) OR (delta == 0) */
 	if (state->transition->counter == 0) {
@@ -889,7 +889,7 @@ static void gen_def_trans_time_get(struct bt_mesh_model *model,
 	}
 }
 
-static void gen_def_trans_time_publisher(struct bt_mesh_model *model)
+static void gen_def_trans_time_publish(struct bt_mesh_model *model)
 {
 	struct net_buf_simple *msg = model->pub->msg;
 	struct gen_def_trans_time_state *state = model->user_data;
@@ -937,7 +937,7 @@ static void gen_def_trans_time_set_unack(struct bt_mesh_model *model,
 					 struct net_buf_simple *buf)
 {
 	if (gen_def_trans_time_setunack(model, ctx, buf) == true) {
-		gen_def_trans_time_publisher(model);
+		gen_def_trans_time_publish(model);
 	}
 }
 
@@ -947,7 +947,7 @@ static void gen_def_trans_time_set(struct bt_mesh_model *model,
 {
 	if (gen_def_trans_time_setunack(model, ctx, buf) == true) {
 		gen_def_trans_time_get(model, ctx, buf);
-		gen_def_trans_time_publisher(model);
+		gen_def_trans_time_publish(model);
 	}
 }
 
@@ -987,7 +987,7 @@ static void gen_onpowerup_status(struct bt_mesh_model *model,
 
 /* Generic Power OnOff Setup Server message handlers */
 
-static void gen_onpowerup_publisher(struct bt_mesh_model *model)
+static void gen_onpowerup_publish(struct bt_mesh_model *model)
 {
 	struct net_buf_simple *msg = model->pub->msg;
 	struct generic_onpowerup_state *state = model->user_data;
@@ -1034,7 +1034,7 @@ static void gen_onpowerup_set_unack(struct bt_mesh_model *model,
 				    struct net_buf_simple *buf)
 {
 	if (gen_onpowerup_setunack(model, ctx, buf) == true) {
-		gen_onpowerup_publisher(model);
+		gen_onpowerup_publish(model);
 	}
 }
 
@@ -1044,7 +1044,7 @@ static void gen_onpowerup_set(struct bt_mesh_model *model,
 {
 	if (gen_onpowerup_setunack(model, ctx, buf) == true) {
 		gen_onpowerup_get(model, ctx, buf);
-		gen_onpowerup_publisher(model);
+		gen_onpowerup_publish(model);
 	}
 }
 
@@ -1141,7 +1141,7 @@ static void light_lightness_get(struct bt_mesh_model *model,
 	}
 }
 
-void light_lightness_publisher(struct bt_mesh_model *model)
+void light_lightness_publish(struct bt_mesh_model *model)
 {
 	struct net_buf_simple *msg = model->pub->msg;
 	struct light_lightness_state *state = model->user_data;
@@ -1218,7 +1218,7 @@ static void light_lightness_set_unack(struct bt_mesh_model *model,
 	if (state->target_actual != state->actual) {
 		light_lightness_actual_tt_values(state, tt, delay);
 	} else {
-		light_lightness_publisher(model);
+		light_lightness_publish(model);
 		return;
 	}
 
@@ -1228,7 +1228,7 @@ static void light_lightness_set_unack(struct bt_mesh_model *model,
 	}
 
 	state->transition->just_started = true;
-	light_lightness_publisher(model);
+	light_lightness_publish(model);
 	light_lightness_actual_handler(state);
 }
 
@@ -1286,7 +1286,7 @@ static void light_lightness_set(struct bt_mesh_model *model,
 		light_lightness_actual_tt_values(state, tt, delay);
 	} else {
 		light_lightness_get(model, ctx, buf);
-		light_lightness_publisher(model);
+		light_lightness_publish(model);
 		return;
 	}
 
@@ -1297,7 +1297,7 @@ static void light_lightness_set(struct bt_mesh_model *model,
 
 	state->transition->just_started = true;
 	light_lightness_get(model, ctx, buf);
-	light_lightness_publisher(model);
+	light_lightness_publish(model);
 	light_lightness_actual_handler(state);
 }
 
@@ -1322,7 +1322,7 @@ static void light_lightness_linear_get(struct bt_mesh_model *model,
 	}
 }
 
-void light_lightness_linear_publisher(struct bt_mesh_model *model)
+void light_lightness_linear_publish(struct bt_mesh_model *model)
 {
 	struct net_buf_simple *msg = model->pub->msg;
 	struct light_lightness_state *state = model->user_data;
@@ -1392,7 +1392,7 @@ static void light_lightness_linear_set_unack(struct bt_mesh_model *model,
 	if (state->target_linear != state->linear) {
 		light_lightness_linear_tt_values(state, tt, delay);
 	} else {
-		light_lightness_linear_publisher(model);
+		light_lightness_linear_publish(model);
 		return;
 	}
 
@@ -1402,7 +1402,7 @@ static void light_lightness_linear_set_unack(struct bt_mesh_model *model,
 	}
 
 	state->transition->just_started = true;
-	light_lightness_linear_publisher(model);
+	light_lightness_linear_publish(model);
 	light_lightness_linear_handler(state);
 }
 
@@ -1453,7 +1453,7 @@ static void light_lightness_linear_set(struct bt_mesh_model *model,
 		light_lightness_linear_tt_values(state, tt, delay);
 	} else {
 		light_lightness_linear_get(model, ctx, buf);
-		light_lightness_linear_publisher(model);
+		light_lightness_linear_publish(model);
 		return;
 	}
 
@@ -1464,7 +1464,7 @@ static void light_lightness_linear_set(struct bt_mesh_model *model,
 
 	state->transition->just_started = true;
 	light_lightness_linear_get(model, ctx, buf);
-	light_lightness_linear_publisher(model);
+	light_lightness_linear_publish(model);
 	light_lightness_linear_handler(state);
 }
 
@@ -1519,7 +1519,7 @@ static void light_lightness_range_get(struct bt_mesh_model *model,
 
 /* Light Lightness Setup Server message handlers */
 
-static void light_lightness_default_publisher(struct bt_mesh_model *model)
+static void light_lightness_default_publish(struct bt_mesh_model *model)
 {
 	struct net_buf_simple *msg = model->pub->msg;
 	struct light_lightness_state *state = model->user_data;
@@ -1555,7 +1555,7 @@ static void light_lightness_default_set_unack(struct bt_mesh_model *model,
 		save_on_flash(LIGHTNESS_TEMP_DEF_STATE);
 	}
 
-	light_lightness_default_publisher(model);
+	light_lightness_default_publish(model);
 }
 
 static void light_lightness_default_set(struct bt_mesh_model *model,
@@ -1564,10 +1564,10 @@ static void light_lightness_default_set(struct bt_mesh_model *model,
 {
 	light_lightness_default_set_unack(model, ctx, buf);
 	light_lightness_default_get(model, ctx, buf);
-	light_lightness_default_publisher(model);
+	light_lightness_default_publish(model);
 }
 
-static void light_lightness_range_publisher(struct bt_mesh_model *model)
+static void light_lightness_range_publish(struct bt_mesh_model *model)
 {
 	struct net_buf_simple *msg = model->pub->msg;
 	struct light_lightness_state *state = model->user_data;
@@ -1628,7 +1628,7 @@ static void light_lightness_range_set_unack(struct bt_mesh_model *model,
 					    struct net_buf_simple *buf)
 {
 	if (light_lightness_range_setunack(model, ctx, buf) == true) {
-		light_lightness_range_publisher(model);
+		light_lightness_range_publish(model);
 	}
 }
 
@@ -1638,7 +1638,7 @@ static void light_lightness_range_set(struct bt_mesh_model *model,
 {
 	if (light_lightness_range_setunack(model, ctx, buf) == true) {
 		light_lightness_range_get(model, ctx, buf);
-		light_lightness_range_publisher(model);
+		light_lightness_range_publish(model);
 	}
 }
 
@@ -1721,7 +1721,7 @@ static void light_ctl_get(struct bt_mesh_model *model,
 	}
 }
 
-void light_ctl_publisher(struct bt_mesh_model *model)
+void light_ctl_publish(struct bt_mesh_model *model)
 {
 	struct net_buf_simple *msg = model->pub->msg;
 	struct light_ctl_state *state = model->user_data;
@@ -1815,7 +1815,7 @@ static void light_ctl_set_unack(struct bt_mesh_model *model,
 	    state->target_delta_uv != state->delta_uv) {
 		light_ctl_tt_values(state, tt, delay);
 	} else {
-		light_ctl_publisher(model);
+		light_ctl_publish(model);
 		return;
 	}
 
@@ -1827,7 +1827,7 @@ static void light_ctl_set_unack(struct bt_mesh_model *model,
 	}
 
 	state->transition->just_started = true;
-	light_ctl_publisher(model);
+	light_ctl_publish(model);
 	light_ctl_handler(state);
 }
 
@@ -1896,7 +1896,7 @@ static void light_ctl_set(struct bt_mesh_model *model,
 		light_ctl_tt_values(state, tt, delay);
 	} else {
 		light_ctl_get(model, ctx, buf);
-		light_ctl_publisher(model);
+		light_ctl_publish(model);
 		return;
 	}
 
@@ -1909,7 +1909,7 @@ static void light_ctl_set(struct bt_mesh_model *model,
 
 	state->transition->just_started = true;
 	light_ctl_get(model, ctx, buf);
-	light_ctl_publisher(model);
+	light_ctl_publish(model);
 	light_ctl_handler(state);
 }
 
@@ -1951,7 +1951,7 @@ static void light_ctl_default_get(struct bt_mesh_model *model,
 
 /* Light CTL Setup Server message handlers */
 
-static void light_ctl_default_publisher(struct bt_mesh_model *model)
+static void light_ctl_default_publish(struct bt_mesh_model *model)
 {
 	struct net_buf_simple *msg = model->pub->msg;
 	struct light_ctl_state *state = model->user_data;
@@ -2012,7 +2012,7 @@ static void light_ctl_default_set_unack(struct bt_mesh_model *model,
 					struct net_buf_simple *buf)
 {
 	if (light_ctl_default_setunack(model, ctx, buf) == true) {
-		light_ctl_default_publisher(model);
+		light_ctl_default_publish(model);
 	}
 }
 
@@ -2022,11 +2022,11 @@ static void light_ctl_default_set(struct bt_mesh_model *model,
 {
 	if (light_ctl_default_setunack(model, ctx, buf) == true) {
 		light_ctl_default_get(model, ctx, buf);
-		light_ctl_default_publisher(model);
+		light_ctl_default_publish(model);
 	}
 }
 
-static void light_ctl_temp_range_publisher(struct bt_mesh_model *model)
+static void light_ctl_temp_range_publish(struct bt_mesh_model *model)
 {
 	struct net_buf_simple *msg = model->pub->msg;
 	struct light_ctl_state *state = model->user_data;
@@ -2087,7 +2087,7 @@ static void light_ctl_temp_range_set_unack(struct bt_mesh_model *model,
 					   struct net_buf_simple *buf)
 {
 	if (light_ctl_temp_range_setunack(model, ctx, buf) == true) {
-		light_ctl_temp_range_publisher(model);
+		light_ctl_temp_range_publish(model);
 	}
 }
 
@@ -2097,7 +2097,7 @@ static void light_ctl_temp_range_set(struct bt_mesh_model *model,
 {
 	if (light_ctl_temp_range_setunack(model, ctx, buf) == true) {
 		light_ctl_temp_range_get(model, ctx, buf);
-		light_ctl_temp_range_publisher(model);
+		light_ctl_temp_range_publish(model);
 	}
 }
 
@@ -2183,7 +2183,7 @@ static void light_ctl_temp_get(struct bt_mesh_model *model,
 	}
 }
 
-void light_ctl_temp_publisher(struct bt_mesh_model *model)
+void light_ctl_temp_publish(struct bt_mesh_model *model)
 {
 	struct net_buf_simple *msg = model->pub->msg;
 	struct light_ctl_state *state = model->user_data;
@@ -2270,7 +2270,7 @@ static void light_ctl_temp_set_unack(struct bt_mesh_model *model,
 	    state->target_delta_uv != state->delta_uv) {
 		light_ctl_temp_tt_values(state, tt, delay);
 	} else {
-		light_ctl_temp_publisher(model);
+		light_ctl_temp_publish(model);
 		return;
 	}
 
@@ -2281,7 +2281,7 @@ static void light_ctl_temp_set_unack(struct bt_mesh_model *model,
 	}
 
 	state->transition->just_started = true;
-	light_ctl_temp_publisher(model);
+	light_ctl_temp_publish(model);
 	light_ctl_temp_handler(state);
 }
 
@@ -2347,7 +2347,7 @@ static void light_ctl_temp_set(struct bt_mesh_model *model,
 		light_ctl_temp_tt_values(state, tt, delay);
 	} else {
 		light_ctl_temp_get(model, ctx, buf);
-		light_ctl_temp_publisher(model);
+		light_ctl_temp_publish(model);
 		return;
 	}
 
@@ -2359,7 +2359,7 @@ static void light_ctl_temp_set(struct bt_mesh_model *model,
 
 	state->transition->just_started = true;
 	light_ctl_temp_get(model, ctx, buf);
-	light_ctl_temp_publisher(model);
+	light_ctl_temp_publish(model);
 	light_ctl_temp_handler(state);
 }
 
