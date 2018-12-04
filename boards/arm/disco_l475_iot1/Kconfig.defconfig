@@ -123,6 +123,14 @@ config VL53L0X_XSHUT_GPIO_PIN_NUM
 
 endif #VL53L0X
 
+if LSM6DSL
+
+choice LSM6DSL_TRIGGER_MODE
+	default LSM6DSL_TRIGGER_GLOBAL_THREAD
+endchoice
+
+endif # LSM6DSL
+
 if BT
 
 config SPI

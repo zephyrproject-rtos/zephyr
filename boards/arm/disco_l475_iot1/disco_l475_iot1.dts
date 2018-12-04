@@ -102,6 +102,7 @@ arduino_serial: &uart4 {};
 	lsm6dsl@6a {
 		compatible = "st,lsm6dsl";
 		reg = <0x6a>;
+		irq-gpios = <&gpiod 11 0>;
 		label = "LSM6DSL";
 	};
 
