@@ -6,6 +6,7 @@
 
 #include <zephyr.h>
 #include <flash.h>
+#include <flash_map.h>
 #include <device.h>
 #include <stdio.h>
 #include <logging/log.h>
@@ -17,10 +18,42 @@ LOG_MODULE_REGISTER(test_flash);
 #define TEST_DATA_BYTE_1         0x4a
 #define TEST_DATA_LEN            128
 
+int flash_region_is_empty(u32_t off, void *dst, u32_t len)
+{
+	u8_t i;
+	u8_t *u8dst;
+	int rc;
+	const struct flash_area *fap;
+
+	rc = flash_area_open(3, &fap);
+	if (rc != 0) {
+		LOG_ERR("SPI flash area open failed!\n");
+		return -1;
+	}
+
+	rc = flash_area_read(fap, off - fap->fa_off, dst, len);
+	if (rc) {
+		LOG_ERR("SPI flash efailed!\n");
+		return -1;
+	}
+
+	for (i = 0, u8dst = (uint8_t *)dst; i < len; i++) {
+		if (u8dst[i] != 0xFF) {
+			flash_area_close(fap);
+			return 0;
+		}
+	}
+
+	flash_area_close(fap);
+
+	return 1;
+}
+
 void test_flash(void)
 {
 	struct device *flash_dev;
 	u8_t buf[TEST_DATA_LEN];
+	u32_t magic[4];
 	int i;
 
 	flash_dev = device_get_binding(DT_SPI_NOR_DRV_NAME);
@@ -66,5 +99,12 @@ void test_flash(void)
 		LOG_INF("   Data read matches with data written. Good!!\n");
 	} else {
 		LOG_ERR("   Data read does not match with data written!!\n");
+	}
+
+	if (flash_region_is_empty(
+			FLASH_TEST_REGION_OFFSET - 16, magic, 16) == 1) {
+		LOG_INF("   Flash region is empty. Good!!\n");
+	} else {
+		LOG_ERR("   Flash region is not empty!!\n");
 	}
 }
