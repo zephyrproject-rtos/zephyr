@@ -126,6 +126,9 @@ enum ethernet_hw_caps {
 
 	/** VLAN Tag stripping */
 	ETHERNET_HW_VLAN_TAG_STRIP	= BIT(14),
+
+	/** Hardware TX queue supported */
+	ETHERNET_TX_QUEUE		= BIT(15),
 };
 
 /** @cond INTERNAL_HIDDEN */
