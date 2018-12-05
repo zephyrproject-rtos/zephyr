@@ -23,6 +23,15 @@ extern void k_cpu_idle(void);
 
 extern u32_t _timer_cycle_get_32(void);
 #define _arch_k_cycle_get_32()	_timer_cycle_get_32()
+
+/**
+ * @brief Explicitly nop operation.
+ */
+static ALWAYS_INLINE void arch_nop(void)
+{
+	__asm__ volatile("nop");
+}
+
 #endif
 
 #ifdef __cplusplus

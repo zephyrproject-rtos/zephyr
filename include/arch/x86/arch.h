@@ -454,6 +454,15 @@ static ALWAYS_INLINE void _arch_irq_unlock(unsigned int key)
 }
 
 /**
+ * @brief Explicitly nop operation.
+ */
+static ALWAYS_INLINE void arch_nop(void)
+{
+	__asm__ volatile("nop");
+}
+
+
+/**
  * The NANO_SOFT_IRQ macro must be used as the value for the @a irq parameter
  * to NANO_CPU_INT_REGISTER when connecting to an interrupt that does not
  * correspond to any IRQ line (such as spurious vector or SW IRQ)
