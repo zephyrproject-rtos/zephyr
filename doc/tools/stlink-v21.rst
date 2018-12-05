@@ -47,6 +47,15 @@ Debugging
      :zephyr-app: samples/hello_world
      :goals: debug
 
+.. note:: ST-Link relies on openocd for flashing and debugging.
+   On Linux, openocd is available though the `Zephyr SDK
+   <https://www.zephyrproject.org/developers/#downloads>`_.
+   Windows users should use the following steps to install
+   openocd:
+
+   - Download openocd for Windows from here: `OpenOCD Windows`_
+   - Copy bin and share dirs to ``C:\Program Files\OpenOCD\``
+   - Add ``C:\Program Files\OpenOCD\bin`` to 'Path'
 
 .. _st_ST-LINK/V2-1_jlink:
 
@@ -124,3 +133,6 @@ application you are running, such as disable UART_CONSOLE in menuconfig.
 
 .. _Segger RTT:
     https://www.segger.com/jlink-rtt.html
+
+.. _OpenOCD Windows:
+    http://gnutoolchains.com/arm-eabi/openocd/
