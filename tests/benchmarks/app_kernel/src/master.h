@@ -28,10 +28,6 @@
 /* printf format defines. */
 #define FORMAT "| %-65s|%10u|\n"
 
-/* global defines */
-/* number of nsec per usec */
-#define NSEC_PER_USEC 1000
-
 /* length of the output line */
 #define SLINE_LEN 256
 
