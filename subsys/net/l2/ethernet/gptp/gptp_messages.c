@@ -38,7 +38,7 @@ static const struct net_eth_addr gptp_multicast_eth_addr = {
 				sizeof(output));			\
 									\
 			NET_DBG("Sending %s seq %d pkt %p",		\
-				log_strdup(msg),			\
+				msg,					\
 				ntohs(hdr->sequence_id), pkt);		\
 									\
 			NET_DBG("  GM %d/%d/0x%x/%d/%s",\
@@ -49,7 +49,7 @@ static const struct net_eth_addr gptp_multicast_eth_addr = {
 				log_strdup(output));			\
 		} else {						\
 			NET_DBG("Sending %s seq %d pkt %p",		\
-				log_strdup(msg),			\
+				msg,					\
 				ntohs(hdr->sequence_id), pkt);		\
 		}							\
 	}
