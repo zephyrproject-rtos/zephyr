@@ -460,11 +460,10 @@ u16_t net_calc_chksum(struct net_pkt *pkt, u8_t proto)
 	size_t len = 0U;
 	u16_t sum = 0U;
 	struct net_pkt_cursor backup;
+	bool ow;
 
 	net_pkt_cursor_backup(pkt, &backup);
 	net_pkt_cursor_init(pkt);
-
-	net_pkt_set_overwrite(pkt, true);
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) &&
 	    net_pkt_family(pkt) == AF_INET) {
@@ -484,6 +483,9 @@ u16_t net_calc_chksum(struct net_pkt *pkt, u8_t proto)
 		return 0;
 	}
 
+	ow = net_pkt_is_being_overwritten(pkt);
+	net_pkt_set_overwrite(pkt, true);
+
 	net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) - len);
 
 	sum = calc_chksum(sum, pkt->cursor.pos, len);
@@ -495,6 +497,8 @@ u16_t net_calc_chksum(struct net_pkt *pkt, u8_t proto)
 	sum = (sum == 0) ? 0xffff : htons(sum);
 
 	net_pkt_cursor_restore(pkt, &backup);
+
+	net_pkt_set_overwrite(pkt, ow);
 
 	return ~sum;
 }
