@@ -1314,19 +1314,19 @@ add_custom_command(
 get_property(HEX_FILES_TO_MERGE GLOBAL PROPERTY HEX_FILES_TO_MERGE)
 if(HEX_FILES_TO_MERGE)
   # Merge in out-of-tree hex files.
-  set(merged_hex_name merged.hex)
+  set(MERGED_HEX_NAME merged.hex)
 
   add_custom_command(
-    OUTPUT ${merged_hex_name}
+    OUTPUT ${MERGED_HEX_NAME}
     COMMAND
     ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/mergehex.py
-    -o ${merged_hex_name}
+    -o ${MERGED_HEX_NAME}
     ${HEX_FILES_TO_MERGE}
     DEPENDS ${HEX_FILES_TO_MERGE} ${logical_target_for_zephyr_elf}
     )
 
-  add_custom_target(mergehex ALL DEPENDS ${merged_hex_name})
+  add_custom_target(mergehex ALL DEPENDS ${MERGED_HEX_NAME})
 endif()
 
 if(CONFIG_OUTPUT_PRINT_MEMORY_USAGE)
