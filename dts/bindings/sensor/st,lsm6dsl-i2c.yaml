@@ -18,4 +18,8 @@ properties:
     compatible:
       constraint: "st,lsm6dsl"
 
+    irq-gpios:
+      type: compound
+      category: required
+      generation: define, use-prop-name
 ...
