@@ -56,6 +56,88 @@ struct k_mem_domain;
 struct k_mem_partition;
 struct k_thread;
 
+#if defined(CONFIG_USERSPACE)
+
+/**
+ * @brief Maximum number of memory domain partitions
+ *
+ * This internal macro returns the maximum number of memory partitions, which
+ * may be defined in a memory domain, given the amount of available HW MPU
+ * regions.
+ *
+ * @param mpu_regions_num the number of available HW MPU regions.
+ */
+#if defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS)
+/*
+ * For ARM MPU architectures, where the domain partitions cannot be defined
+ * on top of the statically configured memory regions, the maximum number of
+ * memory domain partitions is set to half of the number of available MPU
+ * regions. This ensures that in the worst-case where there are gaps between
+ * the memory partitions of the domain, the desired memory map can still be
+ * programmed using the available number of HW MPU regions.
+ */
+#define ARM_CORE_MPU_MAX_DOMAIN_PARTITIONS_GET(mpu_regions_num) \
+	(mpu_regions_num/2)
+#else
+/*
+ * For ARM MPU architectures, where the domain partitions can be defined
+ * on top of the statically configured memory regions, the maximum number
+ * of memory domain partitions is equal to the number of available MPU regions.
+ */
+#define ARM_CORE_MPU_MAX_DOMAIN_PARTITIONS_GET(mpu_regions_num) \
+	(mpu_regions_num)
+#endif /* CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS */
+
+/**
+ * @brief Maximum number of MPU regions required to configure a
+ *        memory region for (user) Thread Stack.
+ */
+#if defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS)
+/* When dynamic regions may not be defined on top of statically
+ * allocated memory regions, defining a region for a thread stack
+ * requires two additional MPU regions to be configured; one for
+ * defining the thread stack and an additional one for partitioning
+ * the underlying memory area.
+ */
+#define ARM_CORE_MPU_NUM_MPU_REGIONS_FOR_THREAD_STACK 2
+#else
+/* When dynamic regions may be defined on top of statically allocated
+ * memory regions, a thread stack area may be configured using a
+ * single MPU region.
+ */
+#define ARM_CORE_MPU_NUM_MPU_REGIONS_FOR_THREAD_STACK 1
+#endif /* CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS */
+
+/**
+ * @brief Maximum number of MPU regions required to configure a
+ *        memory region for a (supervisor) Thread Stack Guard.
+ */
+#if defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS) \
+	|| defined(CONFIG_CPU_HAS_NXP_MPU)
+/*
+ * When dynamic regions may not be defined on top of statically
+ * allocated memory regions, defining a region for a supervisor
+ * thread stack guard requires two additional MPU regions to be
+ * configured; one for defining the stack guard and an additional
+ * one for partitioning the underlying memory area.
+ *
+ * The same is required for the NXP MPU due to its OR-based decision
+ * policy; the MPU stack guard applies more restrictive permissions on
+ * the underlying (SRAM) regions, and, therefore, we need to partition
+ * the underlying SRAM region.
+ */
+#define ARM_CORE_MPU_NUM_MPU_REGIONS_FOR_MPU_STACK_GUARD 2
+#elif defined(CONFIG_CPU_HAS_ARM_MPU)
+/* When dynamic regions may be defined on top of statically allocated
+ * memory regions, a supervisor thread stack guard area may be configured
+ * using a single MPU region.
+ */
+#define ARM_CORE_MPU_NUM_MPU_REGIONS_FOR_MPU_STACK_GUARD 1
+#endif /* CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS || CPU_HAS_NXP_MPU */
+
+#endif /* CONFIG_USERSPACE */
+
+
 /* ARM Core MPU Driver API */
 
 /*
@@ -214,9 +296,10 @@ void arm_core_mpu_configure_mem_partition(u32_t part_index,
 void arm_core_mpu_mem_partition_remove(u32_t part_index);
 
 /**
- * @brief get the maximum number of free regions for memory domain partitions
+ * @brief Get the maximum number of available (free) MPU region indices
+ *        for configuring dynamic MPU regions.
  */
-int arm_core_mpu_get_max_domain_partition_regions(void);
+int arm_core_mpu_get_max_available_dyn_regions(void);
 
 /**
  * @brief validate the given buffer is user accessible or not

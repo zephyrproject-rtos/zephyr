@@ -227,100 +227,89 @@ void _arch_configure_dynamic_mpu_regions(struct k_thread *thread)
 		region_num);
 }
 
-#if defined(CONFIG_MPU_STACK_GUARD)
-/*
- * @brief Configure MPU stack guard
- *
- * This function configures per thread stack guards reprogramming the MPU.
- * The functionality is meant to be used during context switch.
- *
- * @param thread thread info data structure.
- */
-void configure_mpu_stack_guard(struct k_thread *thread)
-{
-	u32_t guard_size = MPU_GUARD_ALIGN_AND_SIZE;
 #if defined(CONFIG_USERSPACE)
-	u32_t guard_start = thread->arch.priv_stack_start ?
-			    (u32_t)thread->arch.priv_stack_start :
-			    (u32_t)thread->stack_obj;
-#else
-	u32_t guard_start = thread->stack_info.start;
-#endif
 
-	arm_core_mpu_disable();
-	arm_core_mpu_configure(THREAD_STACK_GUARD_REGION, guard_start,
-			       guard_size);
-	arm_core_mpu_enable();
-}
-#endif
-
-#if defined(CONFIG_USERSPACE)
-/*
- * @brief Configure MPU user context
- *
- * This function configures the thread's user context.
- * The functionality is meant to be used during context switch.
- *
- * @param thread thread info data structure.
+/**
+ * @brief Get the maximum number of partitions for a memory domain
+ *        that is supported by the MPU hardware, and with respect
+ *        to the current static memory region configuration.
  */
-void configure_mpu_user_context(struct k_thread *thread)
-{
-	LOG_DBG("configure user thread %p's context", thread);
-	arm_core_mpu_disable();
-	arm_core_mpu_configure_user_context(thread);
-	arm_core_mpu_enable();
-}
-
-/*
- * @brief Configure MPU memory domain
- *
- * This function configures per thread memory domain reprogramming the MPU.
- * The functionality is meant to be used during context switch.
- *
- * @param thread thread info data structure.
- */
-void configure_mpu_mem_domain(struct k_thread *thread)
-{
-	LOG_DBG("configure thread %p's domain", thread);
-	arm_core_mpu_disable();
-	arm_core_mpu_configure_mem_domain(thread->mem_domain_info.mem_domain);
-	arm_core_mpu_enable();
-}
-
-void _arch_mem_domain_configure(struct k_thread *thread)
-{
-	configure_mpu_mem_domain(thread);
-}
-
 int _arch_mem_domain_max_partitions_get(void)
 {
-	return arm_core_mpu_get_max_domain_partition_regions();
+	int available_regions = arm_core_mpu_get_max_available_dyn_regions();
+
+	available_regions -=
+		ARM_CORE_MPU_NUM_MPU_REGIONS_FOR_THREAD_STACK;
+
+	if (IS_ENABLED(CONFIG_MPU_STACK_GUARD)) {
+		available_regions -=
+			ARM_CORE_MPU_NUM_MPU_REGIONS_FOR_MPU_STACK_GUARD;
+	}
+
+	return ARM_CORE_MPU_MAX_DOMAIN_PARTITIONS_GET(available_regions);
+}
+
+/**
+ * @brief Configure the memory domain of the thread.
+ */
+void _arch_mem_domain_configure(struct k_thread *thread)
+{
+	/* Request to configure memory domain for a thread.
+	 * This triggers re-programming of the entire dynamic
+	 * memory map.
+	 */
+	_arch_configure_dynamic_mpu_regions(thread);
 }
 
 /*
- * Reset MPU region for a single memory partition
+ * @brief Reset the MPU configuration related to the memory domain
+ *        partitions
+ *
+ * @param domain pointer to the memory domain (must be valid)
+ */
+void _arch_mem_domain_destroy(struct k_mem_domain *domain)
+{
+	/* This function will reset the access permission configuration
+	 * of the active partitions of the memory domain.
+	 */
+	int i;
+	struct k_mem_partition partition;
+	/* Partitions belonging to the memory domain will be reset
+	 * to default (Privileged RW, Unprivileged NA) permissions.
+	 */
+	k_mem_partition_attr_t reset_attr = K_MEM_PARTITION_P_RW_U_NA;
+
+	for (i = 0; i < CONFIG_MAX_DOMAIN_PARTITIONS; i++) {
+		partition = domain->partitions[i];
+		if (partition.size == 0) {
+			/* Zero size indicates a non-existing
+			 * memory partition.
+			 */
+			continue;
+		}
+		arm_core_mpu_mem_partition_config_update(&partition,
+			&reset_attr);
+	}
+}
+
+/*
+ * @brief Remove a partition from the memory domain
+ *
+ * @param domain pointer to the memory domain (must be valid
+ * @param partition_id the ID (sequence) number of the memory domain
+ *        partition (must be a valid partition).
  */
 void _arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 				       u32_t  partition_id)
 {
-	ARG_UNUSED(domain);
+	/* Request to remove a partition from a memory domain.
+	 * This resets the access permissions of the partition
+	 * to default (Privileged RW, Unprivileged NA).
+	 */
+	k_mem_partition_attr_t reset_attr = K_MEM_PARTITION_P_RW_U_NA;
 
-	arm_core_mpu_disable();
-	arm_core_mpu_mem_partition_remove(partition_id);
-	arm_core_mpu_enable();
-
-}
-
-/*
- * Destroy MPU regions for the mem domain
- */
-void _arch_mem_domain_destroy(struct k_mem_domain *domain)
-{
-	ARG_UNUSED(domain);
-
-	arm_core_mpu_disable();
-	arm_core_mpu_configure_mem_domain(NULL);
-	arm_core_mpu_enable();
+	arm_core_mpu_mem_partition_config_update(
+		&domain->partitions[partition_id], &reset_attr);
 }
 
 /*
@@ -331,4 +320,4 @@ int _arch_buffer_validate(void *addr, size_t size, int write)
 	return arm_core_mpu_buffer_validate(addr, size, write);
 }
 
-#endif
+#endif /* CONFIG_USERSPACE */
