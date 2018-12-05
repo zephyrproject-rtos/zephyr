@@ -36,7 +36,13 @@ echo-server directory:
   This overlay config enables support for IEEE 802.15.4 mcr20a and frdm_k64f
 
 - :file:`overlay-ot.conf`
-  This overlay config enables support for OpenThread
+  This overlay config enables support for OpenThread.
+
+- :file:`overlay-802154.conf`
+  This overlay config enables support for native IEEE 802.15.4 connectivity.
+  Note, that by default IEEE 802.15.4 L2 uses unacknowledged communication. To
+  improve connection reliability, acknowledgments can be enabled with shell
+  command: ``ieee802154 ack set``.
 
 - :file:`overlay-enc28j60.conf`
   This overlay config enables support for enc28j60 ethernet board. This
@@ -51,10 +57,6 @@ echo-server directory:
 - :file:`overlay-qemu_802154.conf`
   This overlay config enables support for two QEMU's when simulating
   IEEE 802.15.4 network that are connected together.
-
-- :file:`overlay-reel_board-15_4.conf`
-  This overlay config enables support for IEEE 802.15.4 chip on the
-  reel_board.
 
 - :file:`overlay-tls.conf`
   This overlay config enables support for TLS.
