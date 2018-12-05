@@ -255,29 +255,6 @@ void log_core_init(void)
 	}
 }
 
-/*
- * Initialize a backend's runtime filters to match the compile-time
- * settings.
- *
- * (Aggregated filters were already set up in log_core_init().
- */
-static void backend_filter_init(struct log_backend const *const backend)
-{
-	u8_t level;
-	int i;
-
-	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING)) {
-		for (i = 0; i < log_sources_count(); i++) {
-			level = log_compiled_level_get(i);
-
-			log_filter_set(backend,
-				       CONFIG_LOG_DOMAIN_ID,
-				       i,
-				       level);
-		}
-	}
-}
-
 void log_init(void)
 {
 	assert(log_backend_count_get() < LOG_FILTERS_NUM_OF_SLOTS);
@@ -291,17 +268,12 @@ void log_init(void)
 	for (i = 0; i < log_backend_count_get(); i++) {
 		const struct log_backend *backend = log_backend_get(i);
 
-		log_backend_id_set(backend,
-				   i + LOG_FILTER_FIRST_BACKEND_SLOT_IDX);
-
 		if (backend->autostart) {
-			backend_filter_init(backend);
 			if (backend->api->init) {
 				backend->api->init();
 			}
 
-			log_backend_activate(backend, NULL);
-			backend_attached = true;
+			log_backend_enable(backend, NULL, CONFIG_LOG_MAX_LEVEL);
 		}
 	}
 }
@@ -533,6 +505,12 @@ void log_backend_enable(struct log_backend const *const backend,
 			void *ctx,
 			u32_t level)
 {
+	/* As first slot in filtering mask is reserved, backend ID has offset.*/
+	u32_t id = LOG_FILTER_FIRST_BACKEND_SLOT_IDX;
+
+	id += backend - log_backend_get(0);
+
+	log_backend_id_set(backend, id);
 	backend_filter_set(backend, level);
 	log_backend_activate(backend, ctx);
 	backend_attached = true;
