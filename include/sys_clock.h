@@ -125,23 +125,21 @@ static ALWAYS_INLINE s32_t _ms_to_ticks(s32_t ms)
 #endif
 }
 
-static inline s64_t __ticks_to_ms(s64_t ticks)
+static inline u64_t __ticks_to_ms(s64_t ticks)
 {
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 
 #ifdef _NEED_PRECISE_TICK_MS_CONVERSION
 	/* use 64-bit math to keep precision */
-	return (u64_t)ticks * MSEC_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+	return (u64_t)ticks * MSEC_PER_SEC / (u64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 #else
 	/* simple multiplication keeps precision */
-	u32_t ms_per_tick = MSEC_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
-
-	return (u64_t)ticks * ms_per_tick;
+	return (u64_t)ticks * MSEC_PER_SEC / (u64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 #endif
 
 #else
 	__ASSERT(ticks == 0, "ticks not zero");
-	return 0;
+	return 0ULL;
 #endif
 }
 
