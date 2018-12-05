@@ -47,7 +47,7 @@ static inline void dw_write(u32_t base_addr, u32_t offset,
 }
 
 static void dw_set_bit(u32_t base_addr, u32_t offset,
-		       u32_t bit, u8_t value)
+		       u32_t bit, bool value)
 {
 	if (!value) {
 		sys_io_clear_bit(base_addr + offset, bit);
@@ -68,7 +68,7 @@ static inline void dw_write(u32_t base_addr, u32_t offset,
 }
 
 static void dw_set_bit(u32_t base_addr, u32_t offset,
-		       u32_t bit, u8_t value)
+		       u32_t bit, bool value)
 {
 	if (!value) {
 		sys_clear_bit(base_addr + offset, bit);
@@ -137,7 +137,7 @@ static inline void dw_interrupt_config(struct device *port, int access_op,
 	struct gpio_dw_runtime *context = port->driver_data;
 	const struct gpio_dw_config *config = port->config->config_info;
 	u32_t base_addr = dw_base_to_block_base(context->base_addr);
-	u8_t flag_is_set;
+	bool flag_is_set;
 
 	ARG_UNUSED(access_op);
 
