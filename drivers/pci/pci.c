@@ -113,6 +113,7 @@ struct lookup_data {
 	u32_t baridx:3;
 	u32_t barofs:3;
 	u32_t unused:7;
+	u8_t buses;
 };
 
 static struct lookup_data __noinit lookup;
@@ -274,6 +275,11 @@ static inline int pci_dev_scan(union pci_addr_reg pci_ctrl_addr,
 					pci_ctrl_addr,
 					&pci_dev_header);
 
+		if (pci_dev_header.field.class == PCI_CLASS_BRIDGE_CTLR &&
+		    pci_dev_header.field.subclass == PCI_SUBCLASS_P2P_BRIDGE) {
+			lookup.buses++;
+		}
+
 		/*
 		 * Skip a device if its class is specified by the
 		 * caller and does not match
@@ -347,6 +353,7 @@ void pci_bus_scan_init(void)
 	lookup.func = 0;
 	lookup.baridx = 0;
 	lookup.barofs = 0;
+	lookup.buses = LSPCI_MAX_BUS;
 }
 
 
@@ -388,7 +395,7 @@ int pci_bus_scan(struct pci_dev_info *dev_info)
 	}
 
 	/* run through the buses and devices */
-	for (; lookup.bus < LSPCI_MAX_BUS; lookup.bus++) {
+	for (; lookup.bus < lookup.buses; lookup.bus++) {
 		for (; lookup.dev < LSPCI_MAX_DEV; lookup.dev++) {
 			if (lookup.bus == 0 && lookup.dev == 0) {
 				LOG_DBG("Skip Host Bridge");
