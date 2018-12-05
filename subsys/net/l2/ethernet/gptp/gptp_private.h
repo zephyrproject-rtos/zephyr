@@ -119,6 +119,13 @@ static inline u64_t gptp_timestamp_to_nsec(struct net_ptp_time *ts)
 	return (ts->second * NSEC_PER_SEC) + ts->nanosecond;
 }
 
+#if CONFIG_NET_GPTP_LOG_LEVEL >= LOG_LEVEL_DBG
+void gptp_change_port_state_debug(int port, enum gptp_port_state state,
+				  const char *caller, int line);
+
+#define gptp_change_port_state(port, state)			\
+	gptp_change_port_state_debug(port, state, __func__, __LINE__)
+#else
 /**
  * @brief Change the port state
  *
@@ -126,6 +133,7 @@ static inline u64_t gptp_timestamp_to_nsec(struct net_ptp_time *ts)
  * @param state New state
  */
 void gptp_change_port_state(int port, enum gptp_port_state state);
+#endif
 
 #endif /* CONFIG_NET_GPTP */
 
