@@ -143,7 +143,7 @@ static void ss_gpio_qmsi_callback(void *data, uint32_t status)
 	}
 }
 
-static void ss_qmsi_write_bit(u32_t *target, u8_t bit, u8_t value)
+static void ss_qmsi_write_bit(u32_t *target, u8_t bit, bool value)
 {
 	if (value) {
 		sys_set_bit((uintptr_t) target, bit);
