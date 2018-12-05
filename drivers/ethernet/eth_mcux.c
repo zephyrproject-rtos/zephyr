@@ -380,8 +380,6 @@ static enet_ptp_time_data_t ptp_tx_buffer[CONFIG_ETH_MCUX_PTP_TX_BUFFERS];
 static bool eth_get_ptp_data(struct net_if *iface, struct net_pkt *pkt,
 			     enet_ptp_time_data_t *ptpTsData)
 {
-	struct gptp_hdr *hdr;
-
 #if defined(CONFIG_NET_VLAN)
 	struct net_eth_vlan_hdr *hdr_vlan;
 	struct ethernet_context *eth_ctx;
@@ -406,19 +404,8 @@ static bool eth_get_ptp_data(struct net_if *iface, struct net_pkt *pkt,
 	net_pkt_set_priority(pkt, NET_PRIORITY_CA);
 
 	if (ptpTsData) {
-
 		/* Cannot use GPTP_HDR as net_pkt fields are not all filled */
-
-#if defined(CONFIG_NET_VLAN)
-		if (vlan_enabled) {
-			hdr = (struct gptp_hdr *)((u8_t *)net_pkt_ll(pkt)
-				+ sizeof(struct net_eth_vlan_hdr));
-		} else
-#endif
-		{
-			hdr = (struct gptp_hdr *)((u8_t *)net_pkt_ll(pkt)
-						  + sizeof(struct net_eth_hdr));
-		}
+		struct gptp_hdr *hdr = gptp_get_hdr(pkt);
 
 		ptpTsData->version = hdr->ptp_version;
 		memcpy(ptpTsData->sourcePortId, &hdr->port_id,

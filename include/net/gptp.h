@@ -312,6 +312,15 @@ struct gptp_domain *gptp_get_domain(void);
  */
 void gptp_clk_src_time_invoke(struct gptp_clk_src_time_invoke_params *arg);
 
+/**
+ * @brief Return pointer to gPTP packet header in network packet.
+ *
+ * @param pkt Network packet (received or sent)
+ *
+ * @return Pointer to gPTP header.
+ */
+struct gptp_hdr *gptp_get_hdr(struct net_pkt *pkt);
+
 #ifdef __cplusplus
 }
 #endif

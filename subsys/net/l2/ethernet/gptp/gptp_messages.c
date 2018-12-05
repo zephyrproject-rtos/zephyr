@@ -54,6 +54,30 @@ static const struct net_eth_addr gptp_multicast_eth_addr = {
 		}							\
 	}
 
+struct gptp_hdr *gptp_get_hdr(struct net_pkt *pkt)
+{
+	struct net_buf *buf = pkt->frags;
+
+	NET_ASSERT(buf);
+
+	if (sizeof(struct gptp_hdr) <= buf->len) {
+		return (struct gptp_hdr *)buf->data;
+	}
+
+	/* Check if there is a link layer buf in the front and skip it
+	 * if needed.
+	 */
+	buf = buf->frags;
+	if (!buf) {
+		/* Do not return null here but let the caller failure
+		 * checks to fail the packet.
+		 */
+		return (struct gptp_hdr *)pkt->frags->data;
+	}
+
+	return (struct gptp_hdr *)buf->data;
+}
+
 static void gptp_sync_timestamp_callback(struct net_pkt *pkt)
 {
 	int port = 0;

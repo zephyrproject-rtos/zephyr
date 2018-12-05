@@ -329,7 +329,6 @@ static struct gptp_hdr *check_gptp_msg(struct net_if *iface,
 				       struct net_pkt *pkt)
 {
 	struct ethernet_context *eth_ctx;
-	struct gptp_hdr *gptp_hdr;
 	u8_t *msg_start;
 
 	if (net_pkt_ll_reserve(pkt)) {
@@ -347,9 +346,6 @@ static struct gptp_hdr *check_gptp_msg(struct net_if *iface,
 		if (ntohs(hdr_vlan->type) != NET_ETH_PTYPE_PTP) {
 			return NULL;
 		}
-
-		gptp_hdr = (struct gptp_hdr *)(msg_start +
-					sizeof(struct net_eth_vlan_hdr));
 	} else
 #else
 	ARG_UNUSED(eth_ctx);
@@ -361,12 +357,9 @@ static struct gptp_hdr *check_gptp_msg(struct net_if *iface,
 		if (ntohs(hdr->type) != NET_ETH_PTYPE_PTP) {
 			return NULL;
 		}
-
-		gptp_hdr = (struct gptp_hdr *)(msg_start +
-					sizeof(struct net_eth_hdr));
 	}
 
-	return gptp_hdr;
+	return gptp_get_hdr(pkt);
 }
 
 static bool need_timestamping(struct gptp_hdr *hdr)
