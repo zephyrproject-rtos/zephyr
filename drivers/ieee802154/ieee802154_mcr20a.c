@@ -1354,17 +1354,20 @@ static inline int configure_gpios(struct device *dev)
 			   GPIO_PUD_PULL_UP |
 			   GPIO_INT_ACTIVE_LOW);
 
-	/* setup gpio for the modems reset */
-	mcr20a->reset_gpio = device_get_binding(DT_MCR20A_GPIO_RESET_NAME);
-	if (mcr20a->reset_gpio == NULL) {
-		LOG_ERR("Failed to get pointer to %s device",
-			    DT_MCR20A_GPIO_RESET_NAME);
-		return -EINVAL;
-	}
+	if (!PART_OF_KW2XD_SIP) {
+		/* setup gpio for the modems reset */
+		mcr20a->reset_gpio = device_get_binding(
+					DT_MCR20A_GPIO_RESET_NAME);
+		if (mcr20a->reset_gpio == NULL) {
+			LOG_ERR("Failed to get pointer to %s device",
+				DT_MCR20A_GPIO_RESET_NAME);
+			return -EINVAL;
+		}
 
-	gpio_pin_configure(mcr20a->reset_gpio, DT_MCR20A_GPIO_RESET_PIN,
-			   GPIO_DIR_OUT);
-	set_reset(dev, 1);
+		gpio_pin_configure(mcr20a->reset_gpio, DT_MCR20A_GPIO_RESET_PIN,
+				   GPIO_DIR_OUT);
+		set_reset(dev, 0);
+	}
 
 	return 0;
 }
