@@ -858,17 +858,22 @@ static void state_collect(const struct shell *shell)
 		switch (shell->ctx->receive_state) {
 		case SHELL_RECEIVE_DEFAULT:
 			if (process_nl(shell, data)) {
+				int err = 0;
+
 				if (!shell->ctx->cmd_buff_len) {
 					history_mode_exit(shell);
 					cursor_next_line_move(shell);
 				} else {
 					/* Command execution */
-					(void)execute(shell);
+					err = execute(shell);
 				}
 				/* Function responsible for printing prompt
 				 * on received NL.
 				 */
-				state_set(shell, SHELL_STATE_ACTIVE);
+				if (err ||
+				    shell->ctx->state != SHELL_STATE_COMMAND) {
+					state_set(shell, SHELL_STATE_ACTIVE);
+				}
 				return;
 			}
 
@@ -1007,6 +1012,8 @@ static void state_collect(const struct shell *shell)
 			break;
 		}
 	}
+
+	transport_buffer_flush(shell);
 }
 
 static void transport_evt_handler(enum shell_transport_evt evt_type, void *ctx)
@@ -1023,24 +1030,37 @@ static void transport_evt_handler(enum shell_transport_evt evt_type, void *ctx)
 static void shell_log_process(const struct shell *shell)
 {
 	bool processed;
-	int signaled;
+	int signaled = 0;
 	int result;
 
 	do {
-		shell_cmd_line_erase(shell);
-		processed = shell_log_backend_process(shell->log_backend);
-		cmd_line_print(shell);
-
-		/* Arbitrary delay added to ensure that prompt is readable and
-		 * can be used to enter further commands.
-		 */
-		if (shell->ctx->cmd_buff_len) {
-			k_sleep(K_MSEC(15));
+		if (shell->ctx->state < SHELL_STATE_PANIC_MODE_ACTIVE) {
+			k_mutex_lock(&shell->ctx->wr_mtx, K_FOREVER);
 		}
 
-		k_poll_signal_check(&shell->ctx->signals[SHELL_SIGNAL_RXRDY],
-						    &signaled, &result);
+		shell_cmd_line_erase(shell);
 
+		processed = shell_log_backend_process(shell->log_backend);
+
+		if (shell->ctx->state != SHELL_STATE_COMMAND) {
+			struct k_poll_signal *signal =
+				&shell->ctx->signals[SHELL_SIGNAL_RXRDY];
+
+			cmd_line_print(shell);
+
+			/* Arbitrary delay added to ensure that prompt is readable and
+			 * can be used to enter further commands.
+			 */
+			if (shell->ctx->cmd_buff_len) {
+				k_sleep(K_MSEC(15));
+			}
+
+			k_poll_signal_check( signal, &signaled, &result);
+		}
+
+		if (shell->ctx->state < SHELL_STATE_PANIC_MODE_ACTIVE) {
+			k_mutex_unlock(&shell->ctx->wr_mtx);
+		}
 	} while (processed && !signaled);
 }
 
@@ -1055,14 +1075,15 @@ static int instance_init(const struct shell *shell, const void *p_config,
 	int err = shell->iface->api->init(shell->iface, p_config,
 					  transport_evt_handler,
 					  (void *) shell);
-
 	if (err != 0) {
 		return err;
 	}
 
+	memset(shell->ctx, 0, sizeof(*shell->ctx));
+
 	history_init(shell);
 
-	memset(shell->ctx, 0, sizeof(*shell->ctx));
+	k_mutex_init(&shell->ctx->wr_mtx);
 
 	if (IS_ENABLED(CONFIG_SHELL_STATS)) {
 		shell->stats->log_lost_cnt = 0;
@@ -1109,6 +1130,35 @@ static int instance_uninit(const struct shell *shell)
 	return 0;
 }
 
+typedef void (*shell_signal_handler_t)(const struct shell *shell);
+
+static void shell_signal_handle(const struct shell *shell,
+				enum shell_signal sig_idx,
+				shell_signal_handler_t handler)
+{
+	struct k_poll_signal *signal = &shell->ctx->signals[sig_idx];
+	int set;
+	int res;
+
+	k_poll_signal_check(signal, &set, &res);
+
+	if (set) {
+		k_poll_signal_reset(signal);
+		handler(shell);
+	}
+}
+
+static void kill_handler(const struct shell *shell)
+{
+	(void)instance_uninit(shell);
+	k_thread_abort(k_current_get());
+}
+
+static void command_exit_handler(const struct shell *shell)
+{
+	state_set(shell, SHELL_STATE_ACTIVE);
+}
+
 void shell_thread(void *shell_handle, void *arg_log_backend,
 		  void *arg_log_level)
 {
@@ -1136,40 +1186,29 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 	}
 
 	while (true) {
-		int signaled;
-		int result;
+		int num_events = (shell->ctx->state != SHELL_STATE_COMMAND) ?
+				SHELL_SIGNALS : SHELL_SIGNAL_TXDONE;
 
-		err = k_poll(shell->ctx->events, SHELL_SIGNALS, K_FOREVER);
+		err = k_poll(shell->ctx->events, num_events, K_FOREVER);
 		if (err != 0) {
 			return;
 		}
 
-		k_poll_signal_check(&shell->ctx->signals[SHELL_SIGNAL_KILL],
-				    &signaled, &result);
+		/* Check for KILL request */
+		shell_signal_handle(shell, SHELL_SIGNAL_KILL, kill_handler);
+		shell_signal_handle(shell, SHELL_SIGNAL_RXRDY, shell_process);
 
-		if (signaled) {
-			k_poll_signal_reset(
-				&shell->ctx->signals[SHELL_SIGNAL_KILL]);
-			(void)instance_uninit(shell);
-
-			k_thread_abort(k_current_get());
+		if  (shell->ctx->state == SHELL_STATE_COMMAND) {
+			shell_signal_handle(shell, SHELL_SIGNAL_COMMAND_EXIT,
+					    command_exit_handler);
+		} else {
+			shell_signal_handle(shell, SHELL_SIGNAL_TXDONE,
+					shell_process);
 		}
 
-		k_poll_signal_check(&shell->ctx->signals[SHELL_SIGNAL_LOG_MSG],
-				    &signaled, &result);
-
-		if (!signaled) {
-			/* Other signals handled together.*/
-			k_poll_signal_reset(
-				&shell->ctx->signals[SHELL_SIGNAL_RXRDY]);
-			k_poll_signal_reset(
-				&shell->ctx->signals[SHELL_SIGNAL_TXDONE]);
-			shell_process(shell);
-		} else if (IS_ENABLED(CONFIG_LOG)) {
-			k_poll_signal_reset(
-				&shell->ctx->signals[SHELL_SIGNAL_LOG_MSG]);
-			/* process log msg */
-			shell_log_process(shell);
+		if (IS_ENABLED(CONFIG_LOG)) {
+			shell_signal_handle(shell, SHELL_SIGNAL_LOG_MSG,
+					    shell_log_process);
 		}
 	}
 }
@@ -1192,6 +1231,7 @@ int shell_init(const struct shell *shell, const void *transport_config,
 			      (void *)init_log_level,
 			      K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_NO_WAIT);
 
+	shell->ctx->tid = tid;
 	k_thread_name_set(tid, shell->thread_name);
 
 	return 0;
@@ -1253,6 +1293,35 @@ int shell_stop(const struct shell *shell)
 	return 0;
 }
 
+void shell_command_enter(const struct shell *shell)
+{
+	state_set(shell, SHELL_STATE_COMMAND);
+}
+
+void shell_command_exit(const struct shell *shell)
+{
+	struct k_poll_signal *signal =
+			&shell->ctx->signals[SHELL_SIGNAL_COMMAND_EXIT];
+
+	(void)k_poll_signal_raise(signal, 0);
+}
+
+static void shell_state_command(const struct shell *shell)
+{
+	size_t count;
+	char data;
+
+	(void)shell->iface->api->read(shell->iface, &data,
+				      sizeof(data), &count);
+	if (count == 0) {
+		return;
+	}
+
+	if (data == SHELL_VT100_ASCII_CTRL_C) {
+		state_set(shell, SHELL_STATE_ACTIVE);
+	}
+}
+
 void shell_process(const struct shell *shell)
 {
 	__ASSERT_NO_MSG(shell);
@@ -1275,12 +1344,13 @@ void shell_process(const struct shell *shell)
 	case SHELL_STATE_ACTIVE:
 		state_collect(shell);
 		break;
+	case SHELL_STATE_COMMAND:
+		shell_state_command(shell);
+		break;
 
 	default:
 		break;
 	}
-
-	transport_buffer_flush(shell);
 
 	internal.value = 0xFFFFFFFF;
 	internal.flags.processing = 0;
@@ -1292,13 +1362,21 @@ void shell_fprintf(const struct shell *shell, enum shell_vt100_color color,
 		   const char *p_fmt, ...)
 {
 	__ASSERT_NO_MSG(shell);
+	__ASSERT(!k_is_in_isr(), "Thread context required.");
 	__ASSERT_NO_MSG(shell->ctx);
 	__ASSERT_NO_MSG(shell->fprintf_ctx);
 	__ASSERT_NO_MSG(p_fmt);
 
 	va_list args = { 0 };
 
+	if (k_current_get() != shell->ctx->tid &&
+			shell->ctx->state != SHELL_STATE_COMMAND) {
+		return;
+	}
+
 	va_start(args, p_fmt);
+
+	k_mutex_lock(&shell->ctx->wr_mtx, K_FOREVER);
 
 	if (IS_ENABLED(CONFIG_SHELL_VT100_COLORS) &&
 	    shell->ctx->internal.flags.use_colors &&
@@ -1316,6 +1394,8 @@ void shell_fprintf(const struct shell *shell, enum shell_vt100_color color,
 	}
 
 	va_end(args);
+
+	k_mutex_unlock(&shell->ctx->wr_mtx);
 }
 
 int shell_prompt_change(const struct shell *shell, char *prompt)
