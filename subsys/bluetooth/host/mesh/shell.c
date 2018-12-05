@@ -2031,7 +2031,7 @@ SHELL_CREATE_STATIC_SUBCMD_SET(mesh_cmds) {
 static int cmd_mesh(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc == 1) {
-		shell_help_print(shell);
+		shell_help(shell);
 		/* shell returns 1 when help is printed */
 		return 1;
 	}

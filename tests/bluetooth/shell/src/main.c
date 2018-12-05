@@ -49,7 +49,7 @@ static int cmd_hrs_simulate(const struct shell *shell,
 		hrs_simulate = false;
 	} else {
 		shell_print(shell, "Incorrect value: %s", argv[1]);
-		shell_help_print(shell);
+		shell_help(shell);
 		return -ENOEXEC;
 	}
 

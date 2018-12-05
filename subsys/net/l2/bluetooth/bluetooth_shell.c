@@ -85,7 +85,7 @@ static int shell_cmd_connect(const struct shell *shell,
 	struct net_if *iface = net_if_get_default();
 
 	if (argc < 3) {
-		shell_help_print(shell);
+		shell_help(shell);
 		return -ENOEXEC;
 	}
 
@@ -113,7 +113,7 @@ static int shell_cmd_scan(const struct shell *shell,
 	struct net_if *iface = net_if_get_default();
 
 	if (argc < 2) {
-		shell_help_print(shell);
+		shell_help(shell);
 		return -ENOEXEC;
 	}
 
@@ -150,7 +150,7 @@ static int shell_cmd_advertise(const struct shell *shell,
 	struct net_if *iface = net_if_get_default();
 
 	if (argc < 2) {
-		shell_help_print(shell);
+		shell_help(shell);
 		return -ENOEXEC;
 	}
 
