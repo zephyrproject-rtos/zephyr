@@ -6,7 +6,7 @@
 
 #include <shell/shell_rtt.h>
 #include <init.h>
-#include <rtt/SEGGER_RTT.h>
+#include <SEGGER_RTT.h>
 #include <logging/log.h>
 
 SHELL_RTT_DEFINE(shell_transport_rtt);

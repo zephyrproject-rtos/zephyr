@@ -146,7 +146,7 @@ Additional information:
 */
 
 #include "SEGGER_SYSVIEW_Int.h"
-#include "rtt/SEGGER_RTT.h"
+#include "SEGGER_RTT.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>

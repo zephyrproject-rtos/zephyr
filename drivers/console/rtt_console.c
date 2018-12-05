@@ -13,7 +13,7 @@
 #include <misc/printk.h>
 #include <device.h>
 #include <init.h>
-#include <rtt/SEGGER_RTT.h>
+#include <SEGGER_RTT.h>
 
 extern void __printk_hook_install(int (*fn)(int));
 extern void __stdout_hook_install(int (*fn)(int));
