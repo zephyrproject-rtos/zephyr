@@ -66,7 +66,7 @@ class DTInterrupts(DTDirective):
             except:
                 name = []
 
-            cell_yaml = get_binding(get_compat(irq_parent))
+            cell_yaml = get_binding(irq_parent)
             l_cell_prefix = ['IRQ']
 
             for i in range(reduced[irq_parent]['props']['#interrupt-cells']):

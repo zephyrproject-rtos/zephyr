@@ -22,8 +22,7 @@ class DTClocks(DTDirective):
     def _extract_consumer(self, node_address, clocks, def_label):
 
         clock_consumer = reduced[node_address]
-        clock_consumer_compat = get_compat(node_address)
-        clock_consumer_bindings = get_binding(clock_consumer_compat)
+        clock_consumer_bindings = get_binding(node_address)
         clock_consumer_label = 'DT_' + get_node_label(node_address)
 
         clock_index = 0
@@ -42,8 +41,8 @@ class DTClocks(DTDirective):
                                     str(clock_provider)))
                 clock_provider_node_address = phandles[cell]
                 clock_provider = reduced[clock_provider_node_address]
-                clock_provider_compat = get_compat(clock_provider_node_address)
-                clock_provider_bindings = get_binding(clock_provider_compat)
+                clock_provider_bindings = get_binding(
+                                            clock_provider_node_address)
                 clock_provider_label = get_node_label( \
                                                 clock_provider_node_address)
                 nr_clock_cells = int(clock_provider['props'].get(

@@ -289,7 +289,8 @@ def add_prop_aliases(node_address,
         if (old_alias_names and old_alias_label != prop_label):
             prop_aliases[old_alias_label] = prop_label
 
-def get_binding(compat):
+def get_binding(node_address):
+    compat = get_compat(node_address)
     return bindings[compat]
 
 def get_binding_compats():
