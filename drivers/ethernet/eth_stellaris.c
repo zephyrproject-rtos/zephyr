@@ -65,12 +65,6 @@ static int eth_stellaris_send(struct device *dev, struct net_pkt *pkt)
 	u16_t head_len_left, i, data_len;
 	u8_t *eth_hdr;
 
-	if (!pkt->frags) {
-		LOG_ERR("No data to send");
-		net_pkt_unref(pkt);
-		return -ENODATA;
-	}
-
 	/* Frame transmission
 	 * First two bytes are data_len for frame,
 	 * Initially send the data_len
@@ -104,7 +98,6 @@ static int eth_stellaris_send(struct device *dev, struct net_pkt *pkt)
 
 	if (dev_data->tx_err) {
 		dev_data->tx_err = false;
-		net_pkt_unref(pkt);
 		return -EIO;
 	}
 
@@ -123,8 +116,7 @@ static int eth_stellaris_send(struct device *dev, struct net_pkt *pkt)
 		}
 	}
 
-	LOG_DBG("pkt send %p len %d", pkt, net_pkt_get_len(pkt));
-	net_pkt_unref(pkt);
+	LOG_DBG("pkt sent %p len %d", pkt, data_len);
 
 	return 0;
 }
