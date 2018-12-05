@@ -1499,11 +1499,11 @@ extern s32_t z_timeout_remaining(struct _timeout *timeout);
  *
  * @return Remaining time (in milliseconds).
  */
-__syscall s32_t k_timer_remaining_get(struct k_timer *timer);
+__syscall u32_t k_timer_remaining_get(struct k_timer *timer);
 
-static inline s32_t _impl_k_timer_remaining_get(struct k_timer *timer)
+static inline u32_t _impl_k_timer_remaining_get(struct k_timer *timer)
 {
-	return __ticks_to_ms(z_timeout_remaining(&timer->timeout));
+	return (u32_t)__ticks_to_ms(z_timeout_remaining(&timer->timeout));
 }
 
 /**
