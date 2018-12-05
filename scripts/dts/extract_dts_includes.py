@@ -61,6 +61,9 @@ class Bindings(yaml.Loader):
                     cls._files.append(os.path.join(root, filename))
 
         yaml_list = {}
+        yaml_list['node'] = {}
+        yaml_list['bus'] = {}
+        yaml_list['compat'] = []
         file_load_list = set()
         for file in cls._files:
             for line in open(file, 'r', encoding='utf-8'):
@@ -73,8 +76,15 @@ class Bindings(yaml.Loader):
                             with open(file, 'r', encoding='utf-8') as yf:
                                 cls._included = []
                                 l = yaml_traverse_inherited(yaml.load(yf, cls))
-                                yaml_list[c] = l
-        return yaml_list
+                                if c not in yaml_list['compat']:
+                                    yaml_list['compat'].append(c)
+                                if 'parent' in l:
+                                    bus = l['parent']['bus']
+                                    if not bus in yaml_list['bus']:
+                                        yaml_list['bus'][bus] = {}
+                                    yaml_list['bus'][bus][c] = l
+                                yaml_list['node'][c] = l
+        return (yaml_list['node'], yaml_list['bus'], yaml_list['compat'])
 
     def __init__(self, stream):
         filepath = os.path.realpath(stream.name)
@@ -663,11 +673,11 @@ def load_and_parse_dts(dts_file):
 def load_yaml_descriptions(dts, yaml_dirs):
     compatibles = get_all_compatibles(dts['/'], '/', {})
 
-    yaml_list = Bindings.bindings(compatibles, yaml_dirs)
-    if yaml_list == {}:
+    (bindings, bus, bindings_compat) = Bindings.bindings(compatibles, yaml_dirs)
+    if not bindings:
         raise Exception("Missing YAML information.  Check YAML sources")
 
-    return yaml_list
+    return (bindings, bus, bindings_compat)
 
 
 def generate_node_definitions():
@@ -727,7 +737,8 @@ def main():
     get_aliases(dts['/'])
     get_chosen(dts['/'])
 
-    extract.globals.bindings = load_yaml_descriptions(dts, args.yaml)
+    (extract.globals.bindings, extract.globals.bus_bindings,
+     extract.globals.bindings_compat) = load_yaml_descriptions(dts, args.yaml)
 
     defs = generate_node_definitions()
 
