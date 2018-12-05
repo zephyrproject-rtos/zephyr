@@ -293,7 +293,21 @@ def add_prop_aliases(node_address,
 
 def get_binding(node_address):
     compat = get_compat(node_address)
-    return bindings[compat]
+    parent_addr = get_parent_address(node_address)
+    parent_compat = get_compat(parent_addr)
+
+    if parent_compat in get_binding_compats():
+        parent_binding = bindings[parent_compat]
+
+        if 'child' in parent_binding:
+            bus = parent_binding['child']['bus']
+            binding = bus_bindings[bus][compat]
+        else:
+            binding = bindings[compat]
+    else:
+        binding = bindings[compat]
+
+    return binding
 
 def get_binding_compats():
     return bindings_compat
