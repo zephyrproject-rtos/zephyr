@@ -29,12 +29,12 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/net_core.h>
 #include <net/net_if.h>
 #include <net/ethernet.h>
+#include <ethernet/eth_stats.h>
 
 #include <ptp_clock.h>
 #include <net/gptp.h>
 
 #include "eth_native_posix_priv.h"
-#include "ethernet/eth_stats.h"
 
 #if defined(CONFIG_NET_L2_ETHERNET)
 #define _ETH_MTU 1500
@@ -218,20 +218,6 @@ static int eth_send(struct device *dev, struct net_pkt *pkt)
 		frag = frag->frags;
 	}
 
-	eth_stats_update_bytes_tx(net_pkt_iface(pkt), count);
-	eth_stats_update_pkts_tx(net_pkt_iface(pkt));
-
-	if (IS_ENABLED(CONFIG_NET_STATISTICS_ETHERNET)) {
-		if (net_eth_is_addr_broadcast(
-			    &((struct net_eth_hdr *)NET_ETH_HDR(pkt))->dst)) {
-			eth_stats_update_broadcast_tx(net_pkt_iface(pkt));
-		} else if (net_eth_is_addr_multicast(
-				   &((struct net_eth_hdr *)
-						NET_ETH_HDR(pkt))->dst)) {
-			eth_stats_update_multicast_tx(net_pkt_iface(pkt));
-		}
-	}
-
 	update_gptp(net_pkt_iface(pkt), pkt, true);
 
 	LOG_DBG("Send pkt %p len %d", pkt, count);
@@ -338,20 +324,6 @@ static int read_data(struct eth_context *ctx, int fd)
 	iface = get_iface(ctx, vlan_tag);
 	pkt_len = net_pkt_get_len(pkt);
 
-	eth_stats_update_bytes_rx(iface, pkt_len);
-	eth_stats_update_pkts_rx(iface);
-
-	if (IS_ENABLED(CONFIG_NET_STATISTICS_ETHERNET)) {
-		if (net_eth_is_addr_broadcast(
-			    &((struct net_eth_hdr *)NET_ETH_HDR(pkt))->dst)) {
-			eth_stats_update_broadcast_rx(iface);
-		} else if (net_eth_is_addr_multicast(
-				   &((struct net_eth_hdr *)
-				    NET_ETH_HDR(pkt))->dst)) {
-			eth_stats_update_multicast_rx(iface);
-		}
-	}
-
 	LOG_DBG("Recv pkt %p len %d", pkt, pkt_len);
 
 	update_gptp(iface, pkt, false);
@@ -374,6 +346,8 @@ static void eth_rx(struct eth_context *ctx)
 			ret = eth_wait_data(ctx->dev_fd);
 			if (!ret) {
 				read_data(ctx, ctx->dev_fd);
+			} else {
+				eth_stats_update_errors_rx(ctx->iface);
 			}
 		}
 

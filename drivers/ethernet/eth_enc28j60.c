@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/net_pkt.h>
 #include <net/net_if.h>
 #include <net/ethernet.h>
+#include <ethernet/eth_stats.h>
 
 #include "eth_enc28j60_priv.h"
 
@@ -553,6 +554,7 @@ static int eth_enc28j60_rx(struct device *dev)
 		pkt = net_pkt_get_reserve_rx(0, config->timeout);
 		if (!pkt) {
 			LOG_ERR("Could not allocate rx buffer");
+			eth_stats_update_errors_rx(context->iface);
 			goto done;
 		}
 
@@ -565,6 +567,7 @@ static int eth_enc28j60_rx(struct device *dev)
 			pkt_buf = net_pkt_get_frag(pkt, config->timeout);
 			if (!pkt_buf) {
 				LOG_ERR("Could not allocate data buffer");
+				eth_stats_update_errors_rx(context->iface);
 				net_pkt_unref(pkt);
 
 				goto done;

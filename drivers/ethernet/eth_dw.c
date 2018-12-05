@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <string.h>
 #include <sys_io.h>
 #include <net/ethernet.h>
+#include <ethernet/eth_stats.h>
 
 #include "eth_dw_priv.h"
 
@@ -80,7 +81,7 @@ static void eth_rx(struct device *dev)
 	 */
 	if (frm_len < sizeof(u32_t)) {
 		LOG_ERR("Frame too small: %u", frm_len);
-		goto release_desc;
+		goto error;
 	} else {
 		frm_len -= sizeof(u32_t);
 	}
@@ -88,22 +89,26 @@ static void eth_rx(struct device *dev)
 	pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("Failed to obtain RX buffer");
-		goto release_desc;
+		goto error;
 	}
 
 	if (!net_pkt_append_all(pkt, frm_len, (u8_t *)context->rx_buf,
 				K_NO_WAIT)) {
 		LOG_ERR("Failed to append RX buffer to context buffer");
 		net_pkt_unref(pkt);
-		goto release_desc;
+		goto error;
 	}
 
 	r = net_recv_data(context->iface, pkt);
 	if (r < 0) {
 		LOG_ERR("Failed to enqueue frame into RX queue: %d", r);
 		net_pkt_unref(pkt);
+		goto error;
 	}
 
+	goto release_desc;
+error:
+	eth_stats_update_errors_rx(context->iface);
 release_desc:
 	/* Return ownership of the RX descriptor to the device. */
 	context->rx_desc.own = 1U;

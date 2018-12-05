@@ -101,21 +101,6 @@ static int eth_stellaris_send(struct device *dev, struct net_pkt *pkt)
 		return -EIO;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_STATISTICS_ETHERNET)) {
-		struct net_eth_hdr *pkt_hdr;
-
-		/* Update statistics counters */
-		eth_stats_update_bytes_tx(net_pkt_iface(pkt),
-					  data_len);
-		eth_stats_update_pkts_tx(net_pkt_iface(pkt));
-		pkt_hdr = NET_ETH_HDR(pkt);
-		if (net_eth_is_addr_multicast(&pkt_hdr->dst)) {
-			eth_stats_update_multicast_tx(net_pkt_iface(pkt));
-		} else if (net_eth_is_addr_broadcast(&pkt_hdr->dst)) {
-			eth_stats_update_broadcast_tx(net_pkt_iface(pkt));
-		}
-	}
-
 	LOG_DBG("pkt sent %p len %d", pkt, data_len);
 
 	return 0;
@@ -231,20 +216,6 @@ static void eth_stellaris_rx(struct device *dev)
 	if (ret < 0) {
 		LOG_ERR("Failed to place frame in RX Queue");
 		goto pkt_unref;
-	}
-
-	if (IS_ENABLED(CONFIG_NET_STATISTICS_ETHERNET)) {
-		struct net_eth_hdr *pkt_hdr;
-
-		/* Update statistics counters */
-		eth_stats_update_bytes_rx(iface, frame_len - 6);
-		eth_stats_update_pkts_rx(iface);
-		pkt_hdr = NET_ETH_HDR(pkt);
-		if (net_eth_is_addr_broadcast(&pkt_hdr->dst)) {
-			eth_stats_update_broadcast_rx(iface);
-		} else if (net_eth_is_addr_multicast(&pkt_hdr->dst)) {
-			eth_stats_update_multicast_rx(iface);
-		}
 	}
 
 	return;
