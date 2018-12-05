@@ -907,7 +907,6 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 
 	}
 
-	net_pkt_set_overwrite(pkt, true);
 	net_pkt_cursor_init(pkt);
 
 	if (net_pkt_skip(pkt, NET_IPV4UDPH_LEN)) {

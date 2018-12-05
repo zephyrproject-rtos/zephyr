@@ -381,6 +381,8 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 		return -ENETDOWN;
 	}
 
+	net_pkt_set_overwrite(pkt, true);
+
 	NET_DBG("prio %d iface %p pkt %p len %zu", net_pkt_priority(pkt),
 		iface, pkt, net_pkt_get_len(pkt));
 
