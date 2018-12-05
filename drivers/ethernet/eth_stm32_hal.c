@@ -18,6 +18,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/net_pkt.h>
 #include <net/net_if.h>
 #include <net/ethernet.h>
+#include <ethernet/eth_stats.h>
 #include <soc.h>
 #include <misc/printk.h>
 #include <clock_control.h>
@@ -186,6 +187,10 @@ release_desc:
 		heth->Instance->DMARPDR = 0;
 	}
 
+	if (!pkt) {
+		eth_stats_update_errors_rx(dev_data->iface);
+	}
+
 	return pkt;
 }
 
@@ -212,6 +217,7 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 			net_pkt_print_frags(pkt);
 			res = net_recv_data(dev_data->iface, pkt);
 			if (res < 0) {
+				eth_stats_update_errors_rx(dev_data->iface);
 				LOG_ERR("Failed to enqueue frame "
 					"into RX queue: %d", res);
 				net_pkt_unref(pkt);

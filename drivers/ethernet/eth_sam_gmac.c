@@ -35,6 +35,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/net_pkt.h>
 #include <net/net_if.h>
 #include <net/ethernet.h>
+#include <ethernet/eth_stats.h>
 #include <i2c.h>
 #include <soc.h>
 #include "phy_sam_gmac.h"
@@ -1263,6 +1264,8 @@ static void eth_rx(struct gmac_queue *queue)
 
 		if (net_recv_data(get_iface(dev_data, vlan_tag),
 				  rx_frame) < 0) {
+			eth_stats_update_errors_rx(get_iface(dev_data,
+							     vlan_tag));
 			net_pkt_unref(rx_frame);
 		}
 

@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/net_pkt.h>
 #include <net/net_if.h>
 #include <net/ethernet.h>
+#include <ethernet/eth_stats.h>
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 #include <ptp_clock.h>
@@ -550,36 +551,18 @@ static void eth_rx(struct device *iface)
 
 		ENET_GetRxErrBeforeReadFrame(&context->enet_handle,
 					     &error_stats);
-		/* Flush the current read buffer.  This operation can
-		 * only report failure if there is no frame to flush,
-		 * which cannot happen in this context.
-		 */
-		status = ENET_ReadFrame(ENET, &context->enet_handle, NULL, 0);
-		assert(status == kStatus_Success);
-		return;
+		goto flush;
 	}
 
 	pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
 	if (!pkt) {
-		/* We failed to get a receive buffer.  We don't add
-		 * any further logging here because the allocator
-		 * issued a diagnostic when it failed to allocate.
-		 *
-		 * Flush the current read buffer.  This operation can
-		 * only report failure if there is no frame to flush,
-		 * which cannot happen in this context.
-		 */
-		status = ENET_ReadFrame(ENET, &context->enet_handle, NULL, 0);
-		assert(status == kStatus_Success);
-		return;
+		goto flush;
 	}
 
 	if (sizeof(context->frame_buf) < frame_length) {
 		LOG_ERR("frame too large (%d)", frame_length);
 		net_pkt_unref(pkt);
-		status = ENET_ReadFrame(ENET, &context->enet_handle, NULL, 0);
-		assert(status == kStatus_Success);
-		return;
+		goto flush;
 	}
 
 	/* As context->frame_buf is shared resource used by both eth_tx
@@ -593,7 +576,7 @@ static void eth_rx(struct device *iface)
 		irq_unlock(imask);
 		LOG_ERR("ENET_ReadFrame failed: %d", (int)status);
 		net_pkt_unref(pkt);
-		return;
+		goto error;
 	}
 
 	src = context->frame_buf;
@@ -608,7 +591,7 @@ static void eth_rx(struct device *iface)
 			LOG_ERR("Failed to get fragment buf");
 			net_pkt_unref(pkt);
 			assert(status == kStatus_Success);
-			return;
+			goto error;
 		}
 
 		if (!prev_buf) {
@@ -672,7 +655,19 @@ static void eth_rx(struct device *iface)
 
 	if (net_recv_data(get_iface(context, vlan_tag), pkt) < 0) {
 		net_pkt_unref(pkt);
+		goto error;
 	}
+
+	return;
+flush:
+	/* Flush the current read buffer.  This operation can
+	 * only report failure if there is no frame to flush,
+	 * which cannot happen in this context.
+	 */
+	status = ENET_ReadFrame(ENET, &context->enet_handle, NULL, 0);
+	assert(status == kStatus_Success);
+error:
+	eth_stats_update_errors_rx(get_iface(context, vlan_tag));
 }
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)

@@ -11,6 +11,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <zephyr.h>
 #include <net/ethernet.h>
+#include <ethernet/eth_stats.h>
 #include <pci/pci.h>
 #include "eth_e1000_priv.h"
 
@@ -132,6 +133,8 @@ static void e1000_isr(struct device *device)
 
 		if (pkt) {
 			net_recv_data(dev->iface, pkt);
+		} else {
+			eth_stats_update_errors_rx(dev->iface);
 		}
 	}
 
