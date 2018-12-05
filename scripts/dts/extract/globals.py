@@ -284,11 +284,19 @@ def add_prop_aliases(node_address,
 
     for alias in aliases[node_address]:
         old_alias_label = alias_label_function(alias)
-        new_alias_label = new_alias_prefix + '_' + old_alias_label
+        dash = '_'
+        if alias == '':
+            dash = ''
+        new_alias_label = new_alias_prefix + dash + old_alias_label
+        cell_index = reduced[node_address]['props'].get('zephyr,index')
+        # If the node has a zephyr,index, use it since it means there might be
+        # multiple instances we need to tell apart
+        if (cell_index != None):
+            new_alias_label = new_alias_prefix + '_' + str(cell_index) + dash + old_alias_label
 
         if (new_alias_label != prop_label):
             prop_aliases[new_alias_label] = prop_label
-        if (old_alias_names and old_alias_label != prop_label):
+        if (old_alias_names and old_alias_label != prop_label and alias != ''):
             prop_aliases[old_alias_label] = prop_label
 
 def get_binding(node_address):

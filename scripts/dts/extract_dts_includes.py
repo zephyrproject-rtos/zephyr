@@ -376,6 +376,9 @@ def extract_property(node_compat, node_address, prop, prop_val, names):
                         # Need to generate alias name for this node:
                         aliases[node_address].append(node_alias)
 
+            # Add an alias for simple spi/i2c cases
+            aliases[node_address].append('')
+
             # Use parent label to generate label
             parent_label = get_node_label(parent_address)
             def_label = parent_label + '_' + def_label
