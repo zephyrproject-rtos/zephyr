@@ -69,3 +69,7 @@
 &gpio6 {
        status = "ok";
 };
+
+&spi0 {
+	status = "ok";
+};

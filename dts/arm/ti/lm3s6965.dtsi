@@ -57,6 +57,7 @@
 			label = "UART_2";
 		};
 
+
 		eth: ethernet@40048000 {
 			compatible = "ti,stellaris-ethernet";
 			reg = <0x40048000 0x3c>;
@@ -127,6 +128,16 @@
 			label = "GPIO_G";
 			gpio-controller;
 			#gpio-cells = <2>;
+		};
+			
+		spi0: spi@40008000 {
+			compatible = "arm,pl022";
+			reg = <0x40008000 0x24>;
+			interrupts = <7 3>;
+			label = "SPI_0";
+			clocks = <&clock 1 4>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 	};
 };
