@@ -89,7 +89,7 @@ static int shell_cmd_precheck(const struct shell *shell,
 			      shell->ctx->active_cmd.syntax);
 
 		if (IS_ENABLED(CONFIG_SHELL_HELP_ON_WRONG_ARGUMENT_COUNT)) {
-			shell_help_print(shell);
+			shell_help(shell);
 		}
 
 		return -EINVAL;
@@ -882,7 +882,7 @@ static int exec_cmd(const struct shell *shell, size_t argc, char **argv,
 			if (help_entry.help != shell->ctx->active_cmd.help) {
 				shell->ctx->active_cmd = help_entry;
 			}
-			shell_help_print(shell);
+			shell_help(shell);
 			/* 1 is return value when shell prints help */
 			ret_val = 1;
 		} else {
@@ -1001,7 +1001,7 @@ static int shell_execute(const struct shell *shell)
 			 */
 			if (help_entry.help) {
 				shell->ctx->active_cmd = help_entry;
-				shell_help_print(shell);
+				shell_help(shell);
 				return 1;
 			}
 
@@ -1434,7 +1434,7 @@ int shell_prompt_change(const struct shell *shell, char *prompt)
 	return -1;
 }
 
-void shell_help_print(const struct shell *shell)
+void shell_help(const struct shell *shell)
 {
 	__ASSERT_NO_MSG(shell);
 

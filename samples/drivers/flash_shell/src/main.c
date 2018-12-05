@@ -232,7 +232,7 @@ static int cmd_flash(const struct shell *shell, size_t argc, char **argv)
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_help_print(shell);
+	shell_help(shell);
 	return 0;
 }
 

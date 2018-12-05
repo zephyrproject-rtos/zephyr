@@ -640,7 +640,7 @@ int shell_prompt_change(const struct shell *shell, char *prompt);
  *
  * @param[in] shell      Pointer to the shell instance.
  */
-void shell_help_print(const struct shell *shell);
+void shell_help(const struct shell *shell);
 
 /** @brief Execute command.
  *

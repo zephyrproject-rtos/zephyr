@@ -200,7 +200,7 @@ static int cmd_discovery(const struct shell *shell, size_t argc, char *argv[])
 
 		shell_print(shell, "Discovery stopped");
 	} else {
-		shell_help_print(shell);
+		shell_help(shell);
 	}
 
 	return 0;
@@ -296,7 +296,7 @@ static int cmd_discoverable(const struct shell *shell,
 	} else if (!strcmp(action, "off")) {
 		err = bt_br_set_discoverable(false);
 	} else {
-		shell_help_print(shell);
+		shell_help(shell);
 		return 0;
 	}
 
@@ -324,7 +324,7 @@ static int cmd_connectable(const struct shell *shell,
 	} else if (!strcmp(action, "off")) {
 		err = bt_br_set_connectable(false);
 	} else {
-		shell_help_print(shell);
+		shell_help(shell);
 		return 0;
 	}
 
@@ -514,7 +514,7 @@ static int cmd_sdp_find_record(const struct shell *shell,
 	} else if (!strcmp(action, "A2SRC")) {
 		discov = discov_a2src;
 	} else {
-		shell_help_print(shell);
+		shell_help(shell);
 		return 0;
 	}
 
@@ -551,7 +551,7 @@ SHELL_CREATE_STATIC_SUBCMD_SET(br_cmds) {
 static int cmd_br(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc == 1) {
-		shell_help_print(shell);
+		shell_help(shell);
 		/* shell returns 1 when help is printed */
 		return 1;
 	}

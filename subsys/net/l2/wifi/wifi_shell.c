@@ -152,13 +152,13 @@ static int cmd_wifi_connect(const struct shell *shell, size_t argc,
 	int idx = 3;
 
 	if (argc < 3) {
-		shell_help_print(shell);
+		shell_help(shell);
 		return -ENOEXEC;
 	}
 
 	cnx_params.ssid_length = strtol(argv[2], &endptr, 10);
 	if (*endptr != '\0' || cnx_params.ssid_length <= 2) {
-		shell_help_print(shell);
+		shell_help(shell);
 		return -ENOEXEC;
 	}
 
@@ -167,7 +167,7 @@ static int cmd_wifi_connect(const struct shell *shell, size_t argc,
 	if ((idx < argc) && (strlen(argv[idx]) <= 2)) {
 		cnx_params.channel = strtol(argv[idx], &endptr, 10);
 		if (*endptr != '\0') {
-			shell_help_print(shell);
+			shell_help(shell);
 			return -ENOEXEC;
 		}
 

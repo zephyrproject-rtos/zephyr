@@ -226,7 +226,7 @@ static int cmd_setip(const struct shell *shell, size_t argc, char *argv[])
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && !IS_ENABLED(CONFIG_NET_IPV4)) {
 		if (argc != 3) {
-			shell_help_print(shell);
+			shell_help(shell);
 			return -ENOEXEC;
 		}
 
@@ -244,7 +244,7 @@ static int cmd_setip(const struct shell *shell, size_t argc, char *argv[])
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && !IS_ENABLED(CONFIG_NET_IPV6)) {
 		if (argc != 2) {
-			shell_help_print(shell);
+			shell_help(shell);
 			return -ENOEXEC;
 		}
 
@@ -262,7 +262,7 @@ static int cmd_setip(const struct shell *shell, size_t argc, char *argv[])
 	if (IS_ENABLED(CONFIG_NET_IPV6) && IS_ENABLED(CONFIG_NET_IPV4)) {
 		if (net_addr_pton(AF_INET6, argv[start + 1], &ipv6) < 0) {
 			if (argc != 2) {
-				shell_help_print(shell);
+				shell_help(shell);
 				return -ENOEXEC;
 			}
 
@@ -278,7 +278,7 @@ static int cmd_setip(const struct shell *shell, size_t argc, char *argv[])
 				      net_sprint_ipv4_addr(&ipv4));
 		} else {
 			if (argc != 3) {
-				shell_help_print(shell);
+				shell_help(shell);
 				return -ENOEXEC;
 			}
 
@@ -688,12 +688,12 @@ static int shell_cmd_upload(const struct shell *shell, size_t argc,
 
 		if (is_udp) {
 			if (IS_ENABLED(CONFIG_NET_UDP)) {
-				shell_help_print(shell);
+				shell_help(shell);
 				return -ENOEXEC;
 			}
 		} else {
 			if (IS_ENABLED(CONFIG_NET_TCP)) {
-				shell_help_print(shell);
+				shell_help(shell);
 				return -ENOEXEC;
 			}
 		}
@@ -828,12 +828,12 @@ static int shell_cmd_upload2(const struct shell *shell, size_t argc,
 
 		if (is_udp) {
 			if (IS_ENABLED(CONFIG_NET_UDP)) {
-				shell_help_print(shell);
+				shell_help(shell);
 				return -ENOEXEC;
 			}
 		} else {
 			if (IS_ENABLED(CONFIG_NET_TCP)) {
-				shell_help_print(shell);
+				shell_help(shell);
 				return -ENOEXEC;
 			}
 		}
@@ -936,7 +936,7 @@ static int cmd_tcp(const struct shell *shell, size_t argc, char *argv[])
 	if (IS_ENABLED(CONFIG_NET_TCP)) {
 		do_init(shell);
 
-		shell_help_print(shell);
+		shell_help(shell);
 		return -ENOEXEC;
 	}
 
@@ -951,7 +951,7 @@ static int cmd_udp(const struct shell *shell, size_t argc, char *argv[])
 	if (IS_ENABLED(CONFIG_NET_UDP)) {
 		do_init(shell);
 
-		shell_help_print(shell);
+		shell_help(shell);
 		return -ENOEXEC;
 	}
 
