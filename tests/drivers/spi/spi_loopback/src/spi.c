@@ -33,6 +33,12 @@ struct spi_cs_control spi_cs = {
 #define CS_CTRL_GPIO_DRV_NAME ""
 #endif
 
+#if defined(CONFIG_SOC_TI_LM3S6965)
+#define LOOPBACK_MODE   SPI_MODE_LOOP
+#else
+#define LOOPBACK_MODE   0
+#endif
+
 #define STACK_SIZE 512
 #define BUF_SIZE 17
 u8_t buffer_tx[] = "0123456789abcdef\0";
@@ -57,7 +63,7 @@ static void to_display_format(const u8_t *src, size_t size, char *dst)
 struct spi_config spi_cfg_slow = {
 	.frequency = SLOW_FREQ,
 	.operation = SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
-	SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE,
+	SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE | LOOPBACK_MODE,
 	.slave = SPI_SLAVE,
 	.cs = SPI_CS,
 };
@@ -65,7 +71,7 @@ struct spi_config spi_cfg_slow = {
 struct spi_config spi_cfg_fast = {
 	.frequency = FAST_FREQ,
 	.operation = SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
-	SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE,
+	SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE | LOOPBACK_MODE,
 	.slave = SPI_SLAVE,
 	.cs = SPI_CS,
 };
