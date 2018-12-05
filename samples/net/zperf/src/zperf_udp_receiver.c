@@ -304,6 +304,8 @@ void zperf_udp_receiver_init(const struct shell *shell, int port)
 {
 	struct net_context *context4 = NULL;
 	struct net_context *context6 = NULL;
+	const struct in_addr *in4_addr = NULL;
+	const struct in6_addr *in6_addr = NULL;
 	int ret;
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
@@ -314,7 +316,8 @@ void zperf_udp_receiver_init(const struct shell *shell, int port)
 		in4_addr_my = zperf_get_sin();
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV4) && MY_IP4ADDR) {
+
+	if (IS_ENABLED(CONFIG_NET_IPV4)) {
 		ret = net_context_get(AF_INET, SOCK_DGRAM, IPPROTO_UDP,
 				      &context4);
 		if (ret < 0) {
@@ -323,12 +326,25 @@ void zperf_udp_receiver_init(const struct shell *shell, int port)
 			return;
 		}
 
-		ret = zperf_get_ipv4_addr(shell, MY_IP4ADDR,
-					  &in4_addr_my->sin_addr);
-		if (ret < 0) {
-			shell_fprintf(shell, SHELL_WARNING,
-				      "Unable to set IPv4\n");
-			return;
+		if (MY_IP4ADDR && strlen(MY_IP4ADDR)) {
+			/* Use setting IP */
+			ret = zperf_get_ipv4_addr(shell, MY_IP4ADDR,
+						  &in4_addr_my->sin_addr);
+			if (ret < 0) {
+				shell_fprintf(shell, SHELL_WARNING,
+					      "Unable to set IPv4\n");
+				return;
+			}
+		} else {
+			/* Use existing IP */
+			in4_addr = zperf_get_default_if_in4_addr();
+			if (!in4_addr) {
+				shell_fprintf(shell, SHELL_WARNING,
+					      "Unable to get IPv4 by default\n");
+				return;
+			}
+			memcpy(&in4_addr_my->sin_addr, in4_addr,
+				sizeof(struct in_addr));
 		}
 
 		shell_fprintf(shell, SHELL_NORMAL, "Binding to %s\n",
@@ -350,7 +366,7 @@ void zperf_udp_receiver_init(const struct shell *shell, int port)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) && MY_IP6ADDR) {
+	if (IS_ENABLED(CONFIG_NET_IPV6)) {
 		ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP,
 				      &context6);
 		if (ret < 0) {
@@ -359,12 +375,26 @@ void zperf_udp_receiver_init(const struct shell *shell, int port)
 			return;
 		}
 
-		ret = zperf_get_ipv6_addr(shell, MY_IP6ADDR, MY_PREFIX_LEN_STR,
-					  &in6_addr_my->sin6_addr);
-		if (ret < 0) {
-			shell_fprintf(shell, SHELL_WARNING,
-				      "Unable to set IPv6\n");
-			return;
+		if (MY_IP6ADDR && strlen(MY_IP6ADDR)) {
+			/* Use setting IP */
+			ret = zperf_get_ipv6_addr(shell, MY_IP6ADDR,
+						  MY_PREFIX_LEN_STR,
+						  &in6_addr_my->sin6_addr);
+			if (ret < 0) {
+				shell_fprintf(shell, SHELL_WARNING,
+					      "Unable to set IPv6\n");
+				return;
+			}
+		} else {
+			/* Use existing IP */
+			in6_addr = zperf_get_default_if_in6_addr();
+			if (!in6_addr) {
+				shell_fprintf(shell, SHELL_WARNING,
+					      "Unable to get IPv4 by default\n");
+				return;
+			}
+			memcpy(&in6_addr_my->sin6_addr, in6_addr,
+				sizeof(struct in6_addr));
 		}
 
 		shell_fprintf(shell, SHELL_NORMAL, "Binding to %s\n",

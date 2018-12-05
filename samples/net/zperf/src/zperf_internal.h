@@ -114,4 +114,7 @@ extern void zperf_tcp_upload(const struct shell *shell,
 
 extern void connect_ap(char *ssid);
 
+const struct in_addr *zperf_get_default_if_in4_addr(void);
+const struct in6_addr *zperf_get_default_if_in6_addr(void);
+
 #endif /* __ZPERF_INTERNAL_H */
