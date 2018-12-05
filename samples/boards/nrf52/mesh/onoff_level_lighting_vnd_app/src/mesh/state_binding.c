@@ -162,6 +162,8 @@ void state_binding(u8_t lightness, u8_t temperature)
 				light_lightness_srv_user_data.last;
 		}
 
+		constrain_light_actual_state(light_lightness_srv_user_data.actual);
+
 		break;
 	case ONOFF: /* Lightness update as per Generic OnOff (root) state */
 		if (gen_onoff_srv_root_user_data.onoff == STATE_OFF) {
@@ -179,6 +181,8 @@ void state_binding(u8_t lightness, u8_t temperature)
 					light_lightness_srv_user_data.def;
 			}
 		}
+
+		constrain_light_actual_state(light_lightness_srv_user_data.actual);
 
 		break;
 	case LEVEL: /* Lightness update as per Generic Level (root) state */
