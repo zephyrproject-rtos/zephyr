@@ -64,7 +64,11 @@ static int gpio_stm32_config(struct device *dev, int access_op,
 	}
 
 	if (flags & GPIO_INT) {
-		stm32_exti_set_callback(pin, gpio_stm32_isr, dev);
+
+		if (stm32_exti_set_callback(pin, cfg->port,
+					    gpio_stm32_isr, dev)) {
+			return -EBUSY;
+		}
 
 		stm32_gpio_enable_int(cfg->port, pin);
 
