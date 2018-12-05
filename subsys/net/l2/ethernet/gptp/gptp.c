@@ -86,8 +86,12 @@ static void gptp_compute_clock_identity(int port)
 	}
 }
 
+/* Note that we do not use log_strdup() here when printing msg as currently the
+ * msg variable is always a const string that is not allocated from the stack.
+ * If this changes at some point, then add log_strdup(msg) here.
+ */
 #define PRINT_INFO(msg, hdr, pkt)				\
-	NET_DBG("Received %s seq %d pkt %p", log_strdup(msg),	\
+	NET_DBG("Received %s seq %d pkt %p", msg,		\
 		ntohs(hdr->sequence_id), pkt)			\
 
 
