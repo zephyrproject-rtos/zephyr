@@ -7,10 +7,10 @@
 #include <misc/util.h>
 #include <kernel.h>
 
-#define START_TRIG_INT1			BIT(0)
-#define START_TRIG_INT2			BIT(1)
-#define TRIGGED_INT1			BIT(4)
-#define TRIGGED_INT2			BIT(5)
+#define START_TRIG_INT1			0
+#define START_TRIG_INT2			1
+#define TRIGGED_INT1			4
+#define TRIGGED_INT2			5
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 #include <logging/log.h>
