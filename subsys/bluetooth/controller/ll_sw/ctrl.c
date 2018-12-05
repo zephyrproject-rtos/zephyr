@@ -7468,7 +7468,7 @@ static inline void event_conn_param_rsp(struct connection *conn)
 		conn->llcp.conn_upd.win_offset_us = 0U;
 		if (conn->llcp_conn_param.preferred_periodicity) {
 			conn->llcp.conn_upd.interval =
-				((conn->llcp_conn_param.interval_max /
+				((conn->llcp_conn_param.interval_min /
 				  conn->llcp_conn_param.preferred_periodicity) +
 				 1) *
 				conn->llcp_conn_param.preferred_periodicity;
