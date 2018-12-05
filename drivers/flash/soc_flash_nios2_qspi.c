@@ -162,7 +162,7 @@ static int flash_nios2_qspi_write_block(struct device *dev, int block_offset,
 	struct flash_nios2_qspi_config *flash_cfg = dev->driver_data;
 	alt_qspi_controller2_dev *qspi_dev = &flash_cfg->qspi_dev;
 	u32_t buffer_offset = 0U; /* offset into data buffer to get write data */
-	u32_t remaining_length = len; /* length left to write */
+	s32_t remaining_length = len; /* length left to write */
 	u32_t write_offset = mem_offset; /* offset into flash to write too */
 	u32_t word_to_write, padding, bytes_to_copy;
 	u32_t flag_status;
