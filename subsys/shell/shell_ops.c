@@ -276,7 +276,8 @@ void shell_cmd_line_erase(const struct shell *shell)
 
 static void shell_pend_on_txdone(const struct shell *shell)
 {
-	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+	if (IS_ENABLED(CONFIG_MULTITHREADING) &&
+	    (shell->ctx->state < SHELL_STATE_PANIC_MODE_ACTIVE)) {
 		k_poll(&shell->ctx->events[SHELL_SIGNAL_TXDONE], 1, K_FOREVER);
 		k_poll_signal_reset(&shell->ctx->signals[SHELL_SIGNAL_TXDONE]);
 	} else {
