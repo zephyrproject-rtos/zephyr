@@ -53,13 +53,6 @@ config SHELL_STACK_SIZE
 	help
 	  Stack size for thread created for each instance.
 
-config SHELL_THREAD_PRIO
-	int "Shell thread priority"
-	depends on MULTITHREADING
-	default -2
-	help
-	  Shell thread priority.
-
 config SHELL_BACKSPACE_MODE_DELETE
 	bool "Default escape code for backspace is DELETE (0x7F)"
 	default y
