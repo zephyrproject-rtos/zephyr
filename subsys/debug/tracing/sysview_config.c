@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <systemview/SEGGER_SYSVIEW.h>
+#include <SEGGER_SYSVIEW.h>
 #include "SEGGER_SYSVIEW_Zephyr.h"
 
 static void _cbSendSystemDesc(void)

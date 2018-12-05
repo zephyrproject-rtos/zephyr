@@ -8,7 +8,7 @@
 #include <logging/log_core.h>
 #include <logging/log_msg.h>
 #include <logging/log_output.h>
-#include <rtt/SEGGER_RTT.h>
+#include <SEGGER_RTT.h>
 
 #define DROP_MAX 99
 
