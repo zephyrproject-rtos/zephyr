@@ -880,7 +880,7 @@ static void gen_def_trans_time_get(struct bt_mesh_model *model,
 	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 1 + 4);
 	struct gen_def_trans_time_state *state = model->user_data;
 
-	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x10));
+	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_GEN_DEF_TRANS_TIME_STATUS);
 	net_buf_simple_add_u8(msg, state->tt);
 
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
@@ -898,7 +898,7 @@ static void gen_def_trans_time_publish(struct bt_mesh_model *model)
 		return;
 	}
 
-	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x10));
+	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_GEN_DEF_TRANS_TIME_STATUS);
 	net_buf_simple_add_u8(msg, state->tt);
 
 	err = bt_mesh_model_publish(model);
@@ -968,7 +968,7 @@ static void gen_onpowerup_get(struct bt_mesh_model *model,
 	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 1 + 4);
 	struct generic_onpowerup_state *state = model->user_data;
 
-	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x12));
+	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_GEN_ONPOWERUP_STATUS);
 	net_buf_simple_add_u8(msg, state->onpowerup);
 
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
@@ -997,7 +997,7 @@ static void gen_onpowerup_publish(struct bt_mesh_model *model)
 		return;
 	}
 
-	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x12));
+	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_GEN_ONPOWERUP_STATUS);
 	net_buf_simple_add_u8(msg, state->onpowerup);
 
 	err = bt_mesh_model_publish(model);
@@ -1128,7 +1128,7 @@ static void light_lightness_get(struct bt_mesh_model *model,
 	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 5 + 4);
 	struct light_lightness_state *state = model->user_data;
 
-	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x4E));
+	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_LIGHT_LIGHTNESS_STATUS);
 	net_buf_simple_add_le16(msg, state->actual);
 
 	if (state->transition->counter) {
@@ -1152,7 +1152,7 @@ void light_lightness_publish(struct bt_mesh_model *model)
 		return;
 	}
 
-	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x4E));
+	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_LIGHT_LIGHTNESS_STATUS);
 	net_buf_simple_add_le16(msg, state->actual);
 
 	if (state->transition->counter) {
@@ -1310,7 +1310,8 @@ static void light_lightness_linear_get(struct bt_mesh_model *model,
 	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 5 + 4);
 	struct light_lightness_state *state = model->user_data;
 
-	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x52));
+	bt_mesh_model_msg_init(msg,
+			       BT_MESH_MODEL_LIGHT_LIGHTNESS_LINEAR_STATUS);
 	net_buf_simple_add_le16(msg, state->linear);
 
 	if (state->transition->counter) {
@@ -1334,7 +1335,8 @@ void light_lightness_linear_publish(struct bt_mesh_model *model)
 		return;
 	}
 
-	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x52));
+	bt_mesh_model_msg_init(msg,
+			       BT_MESH_MODEL_LIGHT_LIGHTNESS_LINEAR_STATUS);
 	net_buf_simple_add_le16(msg, state->linear);
 
 	if (state->transition->counter) {
@@ -1478,7 +1480,7 @@ static void light_lightness_last_get(struct bt_mesh_model *model,
 	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 2 + 4);
 	struct light_lightness_state *state = model->user_data;
 
-	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x54));
+	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_LIGHT_LIGHTNESS_LAST_STATUS);
 	net_buf_simple_add_le16(msg, state->last);
 
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
@@ -1493,7 +1495,8 @@ static void light_lightness_default_get(struct bt_mesh_model *model,
 	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 2 + 4);
 	struct light_lightness_state *state = model->user_data;
 
-	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x56));
+	bt_mesh_model_msg_init(msg,
+			       BT_MESH_MODEL_LIGHT_LIGHTNESS_DEFAULT_STATUS);
 	net_buf_simple_add_le16(msg, state->def);
 
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
@@ -1510,7 +1513,7 @@ static void light_lightness_range_get(struct bt_mesh_model *model,
 
 	state->status_code = RANGE_SUCCESSFULLY_UPDATED;
 
-	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x58));
+	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_LIGHT_LIGHTNESS_RANGE_STATUS);
 	net_buf_simple_add_u8(msg, state->status_code);
 	net_buf_simple_add_le16(msg, state->light_range_min);
 	net_buf_simple_add_le16(msg, state->light_range_max);
@@ -1532,7 +1535,8 @@ static void light_lightness_default_publish(struct bt_mesh_model *model)
 		return;
 	}
 
-	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x56));
+	bt_mesh_model_msg_init(msg,
+			       BT_MESH_MODEL_LIGHT_LIGHTNESS_DEFAULT_STATUS);
 	net_buf_simple_add_le16(msg, state->def);
 
 	err = bt_mesh_model_publish(model);
@@ -1581,7 +1585,7 @@ static void light_lightness_range_publish(struct bt_mesh_model *model)
 		return;
 	}
 
-	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x58));
+	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_LIGHT_LIGHTNESS_RANGE_STATUS);
 	net_buf_simple_add_u8(msg, state->status_code);
 	net_buf_simple_add_le16(msg, state->light_range_min);
 	net_buf_simple_add_le16(msg, state->light_range_max);
@@ -1710,7 +1714,7 @@ static void light_ctl_get(struct bt_mesh_model *model,
 	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 9 + 4);
 	struct light_ctl_state *state = model->user_data;
 
-	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x60));
+	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_LIGHT_CTL_STATUS);
 	net_buf_simple_add_le16(msg, state->lightness);
 	net_buf_simple_add_le16(msg, state->temp);
 
@@ -1736,7 +1740,7 @@ void light_ctl_publish(struct bt_mesh_model *model)
 		return;
 	}
 
-	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x60));
+	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_LIGHT_CTL_STATUS);
 
 	/* Here, as per Model specification, status should be
 	 * made up of lightness & temperature values only
@@ -1928,7 +1932,7 @@ static void light_ctl_temp_range_get(struct bt_mesh_model *model,
 
 	state->status_code = RANGE_SUCCESSFULLY_UPDATED;
 
-	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x63));
+	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_LIGHT_CTL_TEMP_RANGE_STATUS);
 	net_buf_simple_add_u8(msg, state->status_code);
 	net_buf_simple_add_le16(msg, state->temp_range_min);
 	net_buf_simple_add_le16(msg, state->temp_range_max);
@@ -1945,7 +1949,7 @@ static void light_ctl_default_get(struct bt_mesh_model *model,
 	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 6 + 4);
 	struct light_ctl_state *state = model->user_data;
 
-	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x68));
+	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_LIGHT_CTL_DEFAULT_STATUS);
 	net_buf_simple_add_le16(msg, state->lightness_def);
 	net_buf_simple_add_le16(msg, state->temp_def);
 	net_buf_simple_add_le16(msg, state->delta_uv_def);
@@ -1967,7 +1971,7 @@ static void light_ctl_default_publish(struct bt_mesh_model *model)
 		return;
 	}
 
-	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x68));
+	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_LIGHT_CTL_DEFAULT_STATUS);
 	net_buf_simple_add_le16(msg, state->lightness_def);
 	net_buf_simple_add_le16(msg, state->temp_def);
 	net_buf_simple_add_le16(msg, state->delta_uv_def);
@@ -2043,7 +2047,7 @@ static void light_ctl_temp_range_publish(struct bt_mesh_model *model)
 		return;
 	}
 
-	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x63));
+	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_LIGHT_CTL_TEMP_RANGE_STATUS);
 	net_buf_simple_add_u8(msg, state->status_code);
 	net_buf_simple_add_le16(msg, state->temp_range_min);
 	net_buf_simple_add_le16(msg, state->temp_range_max);
@@ -2175,7 +2179,7 @@ static void light_ctl_temp_get(struct bt_mesh_model *model,
 	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 9 + 4);
 	struct light_ctl_state *state = model->user_data;
 
-	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x66));
+	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_LIGHT_CTL_TEMP_STATUS);
 	net_buf_simple_add_le16(msg, state->temp);
 	net_buf_simple_add_le16(msg, state->delta_uv);
 
@@ -2201,7 +2205,7 @@ void light_ctl_temp_publish(struct bt_mesh_model *model)
 		return;
 	}
 
-	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_2(0x82, 0x66));
+	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_LIGHT_CTL_TEMP_STATUS);
 	net_buf_simple_add_le16(msg, state->temp);
 	net_buf_simple_add_le16(msg, state->delta_uv);
 
