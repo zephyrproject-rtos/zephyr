@@ -406,6 +406,7 @@ int pci_bus_scan(struct pci_dev_info *dev_info)
 			pci_ctrl_addr.field.device = lookup.dev;
 
 			if (pci_dev_scan(pci_ctrl_addr, dev_info)) {
+				lookup.func++;
 				return 1;
 			}
 
