@@ -27,6 +27,12 @@ cmake_minimum_required(VERSION 3.8.2)
 
 cmake_policy(SET CMP0002 NEW)
 
+if(NOT (${CMAKE_VERSION} VERSION_LESS "3.13.0"))
+  # Use the old CMake behaviour until 3.13.x is required and the build
+  # scripts have been ported to the new behaviour.
+  cmake_policy(SET CMP0079 OLD)
+endif()
+
 define_property(GLOBAL PROPERTY ZEPHYR_LIBS
     BRIEF_DOCS "Global list of all Zephyr CMake libs that should be linked in"
     FULL_DOCS  "Global list of all Zephyr CMake libs that should be linked in.
