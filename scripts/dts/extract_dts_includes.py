@@ -83,7 +83,8 @@ class Bindings(yaml.Loader):
                                     if not bus in yaml_list['bus']:
                                         yaml_list['bus'][bus] = {}
                                     yaml_list['bus'][bus][c] = l
-                                yaml_list['node'][c] = l
+                                else:
+                                    yaml_list['node'][c] = l
         return (yaml_list['node'], yaml_list['bus'], yaml_list['compat'])
 
     def __init__(self, stream):
