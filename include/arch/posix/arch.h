@@ -54,6 +54,14 @@ FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
 FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 					  const NANO_ESF *esf);
 
+/**
+ * @brief Explicitly nop operation.
+ */
+static ALWAYS_INLINE void arch_nop(void)
+{
+	__asm__ volatile("nop");
+}
+
 #ifdef __cplusplus
 }
 #endif
