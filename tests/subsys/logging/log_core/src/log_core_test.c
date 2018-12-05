@@ -58,6 +58,7 @@ static void put(struct log_backend const *const backend,
 			      exp_id,
 			      "Unexpected source_id");
 	}
+
 	if (cb->check_timestamp) {
 		u32_t exp_timestamp = cb->exp_timestamps[cb->counter];
 
@@ -113,10 +114,10 @@ const struct log_backend_api log_backend_test_api = {
 	.dropped = dropped,
 };
 
-LOG_BACKEND_DEFINE(backend1, log_backend_test_api, true);
+LOG_BACKEND_DEFINE(backend1, log_backend_test_api, false);
 struct backend_cb backend1_cb;
 
-LOG_BACKEND_DEFINE(backend2, log_backend_test_api, true);
+LOG_BACKEND_DEFINE(backend2, log_backend_test_api, false);
 struct backend_cb backend2_cb;
 
 static u32_t stamp;
@@ -180,6 +181,7 @@ static void log_setup(bool backend2_enable)
 static void test_log_backend_runtime_filtering(void)
 {
 	log_setup(true);
+
 	backend1_cb.check_timestamp = true;
 	backend2_cb.check_timestamp = true;
 
