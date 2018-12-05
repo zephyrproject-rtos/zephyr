@@ -224,6 +224,18 @@ static inline int pci_bar_params_get(union pci_addr_reg pci_ctrl_addr,
 	return 0;
 }
 
+static bool pci_read_multifunction(union pci_addr_reg pci_ctrl_addr)
+{
+	u32_t header_type;
+
+	pci_ctrl_addr.field.reg = 3;
+	pci_ctrl_addr.field.offset = 0;
+	pci_read(DEFAULT_PCI_CONTROLLER, pci_ctrl_addr, sizeof(header_type),
+		 &header_type);
+
+	return header_type >> 16 & 0x80;
+}
+
 /**
  *
  * @brief Scan the specified PCI device for all sub functions
@@ -236,6 +248,7 @@ static inline int pci_dev_scan(union pci_addr_reg pci_ctrl_addr,
 	static union pci_dev pci_dev_header;
 	u32_t pci_data;
 	int max_bars;
+	bool multi_function;
 
 	/* verify first if there is a valid device at this point */
 	pci_ctrl_addr.field.func = 0;
@@ -249,12 +262,21 @@ static inline int pci_dev_scan(union pci_addr_reg pci_ctrl_addr,
 		return 0;
 	}
 
+	/* Check that PCI is multi a function device */
+	multi_function = pci_read_multifunction(pci_ctrl_addr);
+
 	/* scan all the possible functions for this device */
 	for (; lookup.func < LSPCI_MAX_FUNC;
 	     lookup.baridx = 0, lookup.barofs = 0, lookup.func++) {
 		if (lookup.info.function != PCI_FUNCTION_ANY &&
 		    lookup.func != lookup.info.function) {
 			return 0;
+		}
+
+		/* Skip single function device */
+		if (lookup.func != 0 && !multi_function) {
+			LOG_DBG("Skip single function device");
+			break;
 		}
 
 		pci_ctrl_addr.field.func = lookup.func;
