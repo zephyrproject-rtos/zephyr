@@ -16,6 +16,8 @@ reduced = {}
 defs = {}
 structs = {}
 bindings = {}
+bus_bindings = {}
+bindings_compat = []
 old_alias_names = False
 
 regs_config = {
@@ -294,4 +296,4 @@ def get_binding(node_address):
     return bindings[compat]
 
 def get_binding_compats():
-    return bindings.keys()
+    return bindings_compat
