@@ -161,7 +161,7 @@ def extract_controller(node_address, prop, prop_values, index, def_label, generi
 
         # Check node generation requirements
         try:
-            generation = get_binding(get_compat(node_address))['properties'
+            generation = get_binding(node_address)['properties'
                     ][prop]['generation']
         except:
             generation = ''
@@ -201,7 +201,7 @@ def extract_cells(node_address, prop, prop_values, names, index,
     cell_parent = phandles[prop_values.pop(0)]
 
     try:
-        cell_yaml = get_binding(get_compat(cell_parent))
+        cell_yaml = get_binding(cell_parent)
     except:
         raise Exception(
             "Could not find yaml description for " +
@@ -221,7 +221,7 @@ def extract_cells(node_address, prop, prop_values, names, index,
             else:
                 cell_yaml_names = '#cells'
     try:
-        generation = get_binding(get_compat(node_address))['properties'][prop
+        generation = get_binding(node_address)['properties'][prop
                 ]['generation']
     except:
         generation = ''
@@ -325,7 +325,7 @@ def extract_string_prop(node_address, key, label):
 def extract_property(node_compat, node_address, prop, prop_val, names):
 
     node = reduced[node_address]
-    yaml_node_compat = get_binding(node_compat)
+    yaml_node_compat = get_binding(node_address)
     if 'base_label' in yaml_node_compat:
         def_label = yaml_node_compat.get('base_label')
     else:
@@ -338,8 +338,7 @@ def extract_property(node_compat, node_address, prop, prop_val, names):
 
             #check parent has matching child bus value
             try:
-                parent_compat = get_compat(parent_address)
-                parent_yaml = get_binding(parent_compat)
+                parent_yaml = get_binding(parent_address)
                 parent_bus = parent_yaml['child']['bus']
             except (KeyError, TypeError) as e:
                 raise Exception(str(node_address) + " defines parent " +
@@ -423,7 +422,7 @@ def extract_node_include_info(reduced, root_node_address, sub_node_address,
         return {}, {}
 
     if y_sub is None:
-        y_node = get_binding(node_compat)
+        y_node = get_binding(root_node_address)
     else:
         y_node = y_sub
 
