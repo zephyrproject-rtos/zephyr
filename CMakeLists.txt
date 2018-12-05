@@ -1327,6 +1327,7 @@ if(HEX_FILES_TO_MERGE)
     )
 
   add_custom_target(mergehex ALL DEPENDS ${MERGED_HEX_NAME})
+  list(APPEND FLASH_DEPS mergehex)
 endif()
 
 if(CONFIG_OUTPUT_PRINT_MEMORY_USAGE)
