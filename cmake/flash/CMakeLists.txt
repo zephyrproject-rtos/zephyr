@@ -91,6 +91,8 @@ foreach(target flash debug debugserver attach)
     set(comment "Debugging ${BOARD}")
   endif()
 
+  list(APPEND FLASH_DEPS ${logical_target_for_zephyr_elf})
+
   # We pass --skip-rebuild here because the DEPENDS value ensures the
   # build is already up to date before west is run.
   set(cmd
@@ -101,7 +103,7 @@ foreach(target flash debug debugserver attach)
     ${RUNNER_VERBOSE}
     ${target}
     --skip-rebuild
-    DEPENDS ${logical_target_for_zephyr_elf}
+    DEPENDS ${FLASH_DEPS}
     WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
     )
 
