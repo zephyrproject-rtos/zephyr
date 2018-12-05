@@ -58,9 +58,8 @@ static void eth_stellaris_send_byte(struct device *dev, u8_t byte)
 	}
 }
 
-static int eth_stellaris_send(struct net_if *iface, struct net_pkt *pkt)
+static int eth_stellaris_send(struct device *dev, struct net_pkt *pkt)
 {
-	struct device *dev = net_if_get_device(iface);
 	struct eth_stellaris_runtime *dev_data = DEV_DATA(dev);
 	struct net_buf *frag;
 	u16_t head_len_left, i, data_len;
@@ -113,13 +112,14 @@ static int eth_stellaris_send(struct net_if *iface, struct net_pkt *pkt)
 		struct net_eth_hdr *pkt_hdr;
 
 		/* Update statistics counters */
-		eth_stats_update_bytes_tx(iface, net_pkt_get_len(pkt));
-		eth_stats_update_pkts_tx(iface);
+		eth_stats_update_bytes_tx(net_pkt_iface(pkt),
+					  data_len);
+		eth_stats_update_pkts_tx(net_pkt_iface(pkt));
 		pkt_hdr = NET_ETH_HDR(pkt);
 		if (net_eth_is_addr_multicast(&pkt_hdr->dst)) {
-			eth_stats_update_multicast_tx(iface);
+			eth_stats_update_multicast_tx(net_pkt_iface(pkt));
 		} else if (net_eth_is_addr_broadcast(&pkt_hdr->dst)) {
-			eth_stats_update_broadcast_tx(iface);
+			eth_stats_update_broadcast_tx(net_pkt_iface(pkt));
 		}
 	}
 
@@ -387,8 +387,8 @@ struct eth_stellaris_runtime eth_data = {
 
 static const struct ethernet_api eth_stellaris_apis = {
 	.iface_api.init	= eth_stellaris_init,
-	.iface_api.send = eth_stellaris_send,
 	.get_stats = eth_stellaris_stats,
+	.send =  eth_stellaris_send,
 };
 
 NET_DEVICE_INIT(eth_stellaris, DT_ETH_DRV_NAME,
@@ -396,4 +396,3 @@ NET_DEVICE_INIT(eth_stellaris, DT_ETH_DRV_NAME,
 		CONFIG_ETH_INIT_PRIORITY,
 		&eth_stellaris_apis, ETHERNET_L2,
 		NET_L2_GET_CTX_TYPE(ETHERNET_L2), ETH_MTU);
-
