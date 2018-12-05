@@ -51,7 +51,7 @@ void console_init(void)
 	struct device *uart_dev;
 
 	uart_dev = device_get_binding(CONFIG_UART_CONSOLE_ON_DEV_NAME);
-	tty_init(&console_serial, uart_dev,
-		 console_rxbuf, sizeof(console_rxbuf),
-		 console_txbuf, sizeof(console_txbuf));
+	tty_init(&console_serial, uart_dev);
+	tty_set_tx_buf(&console_serial, console_txbuf, sizeof(console_txbuf));
+	tty_set_rx_buf(&console_serial, console_rxbuf, sizeof(console_rxbuf));
 }
