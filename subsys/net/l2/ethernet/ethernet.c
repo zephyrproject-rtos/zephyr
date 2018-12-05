@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(net_ethernet, CONFIG_NET_L2_ETHERNET_LOG_LEVEL);
 #include <net/lldp.h>
 
 #include "arp.h"
+#include "eth_stats.h"
 #include "net_private.h"
 #include "ipv6.h"
 #include "ipv4_autoconf_internal.h"
@@ -115,6 +116,31 @@ static inline void ethernet_update_length(struct net_if *iface,
 	}
 }
 
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+static void ethernet_update_rx_stats(struct net_if *iface,
+				     struct net_pkt *pkt, size_t length)
+{
+	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
+
+	eth_stats_update_bytes_rx(iface, length);
+	eth_stats_update_pkts_rx(iface);
+
+	if (net_eth_is_addr_broadcast(&hdr->dst)) {
+		eth_stats_update_broadcast_rx(iface);
+	} else if (net_eth_is_addr_multicast(&hdr->dst)) {
+		eth_stats_update_multicast_rx(iface);
+	}
+}
+#else
+static void ethernet_update_rx_stats(struct net_if *iface,
+				     struct net_pkt *pkt, int length)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(length);
+}
+#endif /* CONFIG_NET_STATISTICS_ETHERNET */
+
 static enum net_verdict ethernet_recv(struct net_if *iface,
 				      struct net_pkt *pkt)
 {
@@ -157,11 +183,11 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		return net_lldp_recv(iface, pkt);
 #else
 		NET_DBG("LLDP Rx agent not enabled");
-		return NET_DROP;
+		goto drop;
 #endif
 	default:
 		NET_DBG("Unknown hdr type 0x%04x iface %p", type, iface);
-		return NET_DROP;
+		goto drop;
 	}
 
 	/* Set the pointers to ll src and dst addresses */
@@ -201,9 +227,10 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 			log_strdup(net_sprint_ll_addr(
 					   net_if_get_link_addr(iface)->addr,
 					   sizeof(struct net_eth_addr))));
-
-		return NET_DROP;
+		goto drop;
 	}
+
+	ethernet_update_rx_stats(iface, pkt, net_pkt_get_len(pkt));
 
 	net_pkt_set_ll_reserve(pkt, hdr_len);
 	net_buf_pull(pkt->frags, net_pkt_ll_reserve(pkt));
@@ -232,6 +259,9 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	ethernet_update_length(iface, pkt);
 
 	return NET_CONTINUE;
+drop:
+	eth_stats_update_errors_rx(iface);
+	return NET_DROP;
 }
 
 #ifdef CONFIG_NET_IPV4
@@ -464,6 +494,36 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 	return hdr_frag;
 }
 
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+static void ethernet_update_tx_stats(struct net_if *iface,
+				     struct net_pkt *pkt, int status)
+{
+	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
+
+	if (status > 0) {
+		eth_stats_update_bytes_tx(iface, status);
+		eth_stats_update_pkts_tx(iface);
+
+		if (net_eth_is_addr_multicast(&hdr->dst)) {
+			eth_stats_update_multicast_tx(iface);
+		} else if (net_eth_is_addr_broadcast(&hdr->dst)) {
+			eth_stats_update_broadcast_tx(iface);
+		}
+	} else {
+		eth_stats_update_errors_tx(iface);
+	}
+
+	net_pkt_unref(pkt);
+}
+#else
+static void ethernet_update_tx_stats(struct net_if *iface,
+				     struct net_pkt *pkt, int status)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(status);
+}
+#endif
 static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	const struct ethernet_api *api = net_if_get_device(iface)->driver_api;
@@ -530,12 +590,17 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 		goto error;
 	}
 
+	if (IS_ENABLED(CONFIG_NET_STATISTICS_ETHERNET)) {
+		net_pkt_ref(pkt);
+	}
+
 	ret = api->send(net_if_get_device(iface), pkt);
 	if (!ret) {
 		ret = net_pkt_get_len(pkt);
 		net_pkt_unref(pkt);
 	}
 
+	ethernet_update_tx_stats(iface, pkt, ret);
 error:
 	return ret;
 }
