@@ -154,7 +154,7 @@ static inline void dw_interrupt_config(struct device *port, int access_op,
 	struct gpio_dw_runtime *context = port->driver_data;
 	const struct gpio_dw_config *config = port->config->config_info;
 	u32_t base_addr = dw_base_to_block_base(context->base_addr);
-	u8_t flag_is_set;
+	bool flag_is_set;
 
 	ARG_UNUSED(access_op);
 
