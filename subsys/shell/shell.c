@@ -1049,14 +1049,14 @@ static void shell_log_process(const struct shell *shell)
 
 			cmd_line_print(shell);
 
-			/* Arbitrary delay added to ensure that prompt is readable and
-			 * can be used to enter further commands.
+			/* Arbitrary delay added to ensure that prompt is
+			 * readable and can be used to enter further commands.
 			 */
 			if (shell->ctx->cmd_buff_len) {
 				k_sleep(K_MSEC(15));
 			}
 
-			k_poll_signal_check( signal, &signaled, &result);
+			k_poll_signal_check(signal, &signaled, &result);
 		}
 
 		if (shell->ctx->state < SHELL_STATE_PANIC_MODE_ACTIVE) {
@@ -1243,8 +1243,11 @@ int shell_uninit(const struct shell *shell)
 	__ASSERT_NO_MSG(shell);
 
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+		struct k_poll_signal *signal =
+				&shell->ctx->signals[SHELL_SIGNAL_KILL];
+
 		/* signal kill message */
-		(void)k_poll_signal_raise(&shell->ctx->signals[SHELL_SIGNAL_KILL], 0);
+		(void)k_poll_signal_raise(signal, 0);
 
 		return 0;
 	} else {
