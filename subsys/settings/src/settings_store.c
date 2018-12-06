@@ -164,6 +164,11 @@ int settings_save_one(const char *name, void *value, size_t val_len)
 	return cs->cs_itf->csi_save(cs, name, (char *)value, val_len);
 }
 
+int settings_delete(const char *name)
+{
+	return settings_save_one(name, NULL, 0);
+}
+
 int settings_save(void)
 {
 	struct settings_store *cs;
