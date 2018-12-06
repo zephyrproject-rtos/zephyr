@@ -130,7 +130,8 @@ static inline void set_pkt_ll_addr(struct net_linkaddr *addr, bool comp,
 #ifdef CONFIG_NET_6LO
 static inline
 enum net_verdict ieee802154_manage_recv_packet(struct net_if *iface,
-					       struct net_pkt *pkt)
+					       struct net_pkt *pkt,
+					       size_t hdr_len)
 {
 	enum net_verdict verdict = NET_CONTINUE;
 	u32_t src;
@@ -155,9 +156,11 @@ enum net_verdict ieee802154_manage_recv_packet(struct net_if *iface,
 	 * will then be wrong and must be updated according to the new fragment.
 	 */
 	src = net_pkt_lladdr_src(pkt)->addr ?
-		net_pkt_lladdr_src(pkt)->addr - net_pkt_ll(pkt) : 0;
+		net_pkt_lladdr_src(pkt)->addr -
+		(net_pkt_data(pkt) - hdr_len) : 0;
 	dst = net_pkt_lladdr_dst(pkt)->addr ?
-		net_pkt_lladdr_dst(pkt)->addr - net_pkt_ll(pkt) : 0;
+		net_pkt_lladdr_dst(pkt)->addr -
+		(net_pkt_data(pkt) - hdr_len) : 0;
 
 #ifdef CONFIG_NET_L2_IEEE802154_FRAGMENT
 	verdict = ieee802154_reassemble(pkt);
@@ -171,8 +174,10 @@ enum net_verdict ieee802154_manage_recv_packet(struct net_if *iface,
 		goto out;
 	}
 #endif
-	net_pkt_lladdr_src(pkt)->addr = src ? net_pkt_ll(pkt) + src : NULL;
-	net_pkt_lladdr_dst(pkt)->addr = dst ? net_pkt_ll(pkt) + dst : NULL;
+	net_pkt_lladdr_src(pkt)->addr = src ?
+		(net_pkt_data(pkt) - hdr_len) + src : NULL;
+	net_pkt_lladdr_dst(pkt)->addr = dst ?
+		(net_pkt_data(pkt) - hdr_len) + dst : NULL;
 
 	pkt_hexdump(RX_PKT_TITLE, pkt, true);
 out:
@@ -186,8 +191,9 @@ static enum net_verdict ieee802154_recv(struct net_if *iface,
 					struct net_pkt *pkt)
 {
 	struct ieee802154_mpdu mpdu;
+	size_t hdr_len;
 
-	if (!ieee802154_validate_frame(net_pkt_ll(pkt),
+	if (!ieee802154_validate_frame(net_pkt_data(pkt),
 				       net_pkt_get_len(pkt), &mpdu)) {
 		return NET_DROP;
 	}
@@ -221,10 +227,11 @@ static enum net_verdict ieee802154_recv(struct net_if *iface,
 
 	pkt_hexdump(RX_PKT_TITLE " (with ll)", pkt, true);
 
-	net_pkt_set_ll(pkt, net_pkt_ll(pkt));
-	net_buf_pull(pkt->frags, (u8_t *)mpdu.payload - net_pkt_ll(pkt));
+	hdr_len = (u8_t *)mpdu.payload - net_pkt_data(pkt);
+	net_buf_pull(pkt->frags, hdr_len);
 
-	return ieee802154_manage_recv_packet(iface, pkt);
+	return ieee802154_manage_recv_packet(iface, pkt, hdr_len);
+
 }
 
 static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)

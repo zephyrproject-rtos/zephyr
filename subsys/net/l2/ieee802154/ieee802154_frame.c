@@ -817,7 +817,7 @@ ieee802154_create_mac_cmd_frame(struct ieee802154_context *ctx,
 	struct ieee802154_fcf_seq *fs;
 	struct net_pkt *pkt;
 	struct net_buf *frag;
-	u8_t *p_buf;
+	u8_t *p_buf, *p_start;
 
 	pkt = net_pkt_get_reserve_tx(BUF_TIMEOUT);
 	if (!pkt) {
@@ -830,7 +830,8 @@ ieee802154_create_mac_cmd_frame(struct ieee802154_context *ctx,
 	}
 
 	net_pkt_frag_add(pkt, frag);
-	p_buf = net_pkt_ll(pkt);
+	p_buf = net_pkt_data(pkt);
+	p_start = p_buf;
 
 	fs = generate_fcf_grounds(&p_buf,
 				  type == IEEE802154_CFI_BEACON_REQUEST ?
@@ -845,7 +846,7 @@ ieee802154_create_mac_cmd_frame(struct ieee802154_context *ctx,
 
 	p_buf = generate_addressing_fields(ctx, fs, params, p_buf);
 
-	net_buf_add(frag, p_buf - net_pkt_ll(pkt));
+	net_buf_add(frag, p_buf - p_start);
 
 	/* Let's insert the cfi */
 	((struct ieee802154_command *)p_buf)->cfi = type;
@@ -871,7 +872,7 @@ void ieee802154_mac_cmd_finalize(struct net_pkt *pkt,
 bool ieee802154_create_ack_frame(struct net_if *iface,
 				 struct net_pkt *pkt, u8_t seq)
 {
-	u8_t *p_buf = net_pkt_ll(pkt);
+	u8_t *p_buf = net_pkt_data(pkt);
 	struct ieee802154_fcf_seq *fs;
 
 	if (!p_buf) {
@@ -913,8 +914,8 @@ bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_pkt *pkt,
 	 * This will require to look up in nbr cache with short addr
 	 * in order to get the extended address related to it
 	 */
-	if (!ieee802154_decrypt_auth(&ctx->sec_ctx, net_pkt_ll(pkt),
-				     (u8_t *)mpdu->payload - net_pkt_ll(pkt),
+	if (!ieee802154_decrypt_auth(&ctx->sec_ctx, net_pkt_data(pkt),
+				     (u8_t *)mpdu->payload - net_pkt_data(pkt),
 				     net_pkt_get_len(pkt),
 				     net_pkt_lladdr_src(pkt)->addr,
 				     sys_le32_to_cpu(
