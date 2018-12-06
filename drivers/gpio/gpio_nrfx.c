@@ -486,10 +486,6 @@ static int gpio_nrfx_init(struct device *port)
 	return 0;
 }
 
-#ifdef CONFIG_SOC_SERIES_NRF51X
-#define NRF_P0 NRF_GPIO
-#endif
-
 #define GPIO_NRF_DEVICE(id)						\
 	static const struct gpio_nrfx_cfg gpio_nrfx_p##id##_cfg = {	\
 		.port = NRF_P##id,					\
