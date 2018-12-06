@@ -288,7 +288,7 @@ static int cmd_history(const struct shell *shell, size_t argc, char **argv)
 	ARG_UNUSED(argv);
 
 	size_t i = 0;
-	size_t len;
+	u16_t len;
 
 	if (!IS_ENABLED(CONFIG_SHELL_HISTORY)) {
 		shell_error(shell, "Command not supported.");
