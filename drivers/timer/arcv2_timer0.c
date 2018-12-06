@@ -39,7 +39,6 @@ static u32_t last_load;
 
 static u32_t cycle_count;
 
-static volatile u32_t ctrl_cache; /* overflow bit clears on read! */
 
 /**
  *
@@ -109,14 +108,14 @@ static ALWAYS_INLINE void timer0_limit_register_set(u32_t count)
 
 static u32_t elapsed(void)
 {
-	u32_t val, ov;
+	u32_t val, ov, ctrl;
 
 	do {
 		val =  timer0_count_register_get();
-		ctrl_cache = timer0_control_register_get();
+		ctrl = timer0_control_register_get();
 	} while (timer0_count_register_get() < val);
 
-	ov = (ctrl_cache & _ARC_V2_TMR_CTRL_IP) ? last_load : 0;
+	ov = (ctrl & _ARC_V2_TMR_CTRL_IP) ? last_load : 0;
 	return val + ov;
 }
 
