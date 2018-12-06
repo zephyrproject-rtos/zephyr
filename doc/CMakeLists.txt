@@ -74,27 +74,17 @@ set(CONTENT_OUTPUTS ${CMAKE_CURRENT_BINARY_DIR}/extracted-content.txt)
 
 configure_file(${DOXYFILE_IN} ${DOXYFILE_OUT} @ONLY)
 
-# This command is used to find all documentation source files so they
-# can be copied into the build directory, and the copies can be
-# properly tracked by CMake as built files.
+# This command is used to copy all documentation source files into the build
+# directory,
 #
 # We need to make copies because Sphinx requires a single
 # documentation root directory, but Zephyr's documentation is
 # scattered around the tree in samples/, boards/, and doc/. Putting
 # them into a single rooted tree in the build directory is a
 # workaround for this limitation.
-#
-# This command does NOT cause the content files to be copied; we leave
-# that up to an add_custom_command() below. (Ninja will copy them during
-# the first build regardless of if they exist already or not, so
-# --just-outputs means the copy only happens once. The build system
-# has to know about the relationship between sources and copies to
-# track dependencies properly, for the "clean" target, etc.)
 set(EXTRACT_CONTENT_COMMAND
   ${CMAKE_COMMAND} -E env
   ${PYTHON_EXECUTABLE} scripts/extract_content.py
-  # Just save the outputs for processing by this list file.
-  --outputs ${CONTENT_OUTPUTS} --just-outputs
   # Ignore any files in the output directory.
   --ignore ${CMAKE_CURRENT_BINARY_DIR}
   # Copy all files in doc to the rst folder.
@@ -112,42 +102,12 @@ set(EXTRACT_CONTENT_COMMAND
   "*.rst:samples:${RST_OUT}" "*.rst:boards:${RST_OUT}"
   "*.rst:samples:${RST_OUT}/doc" "*.rst:boards:${RST_OUT}/doc")
 
-# Run the content extraction command at configure time in order to
-# produce lists of input and output files, which are respectively its
-# dependencies and outputs.
-execute_process(
+add_custom_target(
+  content
+  # Copy all files in doc/ to the rst folder
   COMMAND ${EXTRACT_CONTENT_COMMAND}
   WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-  RESULT_VARIABLE RET)
-
-if (NOT RET EQUAL 0)
-  message(FATAL_ERROR "Cannot prepare documentation content extraction")
-endif()
-
-# Load the outputs listing from extract_content.py. This is a file
-# where each pair of lines is a source file in the Zephyr tree and a
-# destination file in the build directory.
-file(STRINGS ${CONTENT_OUTPUTS} EXTRACT_CONTENT_RAW)
-
-# Build up a list of output files for later use in target/command
-# DEPENDS. Make sure each output file gets updated if the
-# corresponding input file changes.
-set(EXTRACT_CONTENT_OUTPUTS)
-while(EXTRACT_CONTENT_RAW)
-  list(GET EXTRACT_CONTENT_RAW 0 SRC)
-  list(GET EXTRACT_CONTENT_RAW 1 DST)
-
-  add_custom_command(
-    COMMAND ${CMAKE_COMMAND} -E copy ${SRC} ${DST}
-    DEPENDS ${SRC}
-    OUTPUT ${DST}
-    )
-
-  list(REMOVE_AT EXTRACT_CONTENT_RAW 0 1)
-  list(APPEND EXTRACT_CONTENT_OUTPUTS ${DST})
-endwhile()
-
-add_custom_target(content DEPENDS ${EXTRACT_CONTENT_OUTPUTS})
+)
 
 set(ARGS ${DOXYFILE_OUT})
 
