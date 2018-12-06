@@ -220,10 +220,16 @@ static FUNC_NORETURN void generic_exc_handle(unsigned int vector,
 					     const NANO_ESF *pEsf)
 {
 	printk("***** ");
-	if (vector == 13) {
+	switch (vector) {
+	case IV_GENERAL_PROTECTION:
 		printk("General Protection Fault\n");
-	} else {
+		break;
+	case IV_DEVICE_NOT_AVAILABLE:
+		printk("Floating point unit not enabled\n");
+		break;
+	default:
 		printk("CPU exception %d\n", vector);
+		break;
 	}
 	if ((1 << vector) & _EXC_ERROR_CODE_FAULTS) {
 		printk("***** Exception code: 0x%x\n", pEsf->errorCode);
