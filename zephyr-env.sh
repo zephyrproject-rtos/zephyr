@@ -44,7 +44,7 @@ else
 fi
 
 # identify OS source tree root directory
-export ZEPHYR_BASE=$( builtin cd "$( dirname "$DIR" )" && pwd ${PWD_OPT})
+export ZEPHYR_BASE=$( builtin cd "$( dirname "$DIR" )" > /dev/null && pwd ${PWD_OPT})
 unset PWD_OPT
 
 scripts_path=${ZEPHYR_BASE}/scripts
