@@ -3,6 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Include esp-idf headers first to avoid redefining BIT() macro */
+#include <rom/ets_sys.h>
+
 #include <kernel.h>
 #include <irq_offload.h>
 #include <arch/xtensa/arch.h>

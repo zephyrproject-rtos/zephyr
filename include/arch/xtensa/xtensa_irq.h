@@ -13,6 +13,10 @@
 
 #ifdef CONFIG_MULTI_LEVEL_INTERRUPTS
 
+
+/* Include esp-idf headers first to avoid redefining BIT() macro */
+#include <rom/ets_sys.h>
+
 /* for _soc_irq_*() */
 #include <soc.h>
 
