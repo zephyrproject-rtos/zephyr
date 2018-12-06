@@ -5,16 +5,15 @@
  */
 
 #include <ctype.h>
-#include <stdarg.h>
 #include <stdlib.h>
+#include <atomic.h>
 #include <shell/shell.h>
 #include <shell/shell_dummy.h>
+#include "shell_ops.h"
 #include "shell_help.h"
 #include "shell_utils.h"
-#include "shell_ops.h"
-#include "shell_wildcard.h"
 #include "shell_vt100.h"
-#include <atomic.h>
+#include "shell_wildcard.h"
 
 /* 2 == 1 char for cmd + 1 char for '\0' */
 #if (CONFIG_SHELL_CMD_BUFF_SIZE < 2)
@@ -26,13 +25,8 @@
 #endif
 
 #define SHELL_MSG_COMMAND_NOT_FOUND	": command not found"
-#define SHELL_MSG_TAB_OVERFLOWED	\
-	"Tab function: commands counter overflowed.\r\n"
 
 #define SHELL_INIT_OPTION_PRINTER	(NULL)
-
-/* Initial cursor position is: (1, 1). */
-#define SHELL_INITIAL_CURS_POS		(1u)
 
 #define EXIT_HISTORY(shell)					\
 		((shell)->ctx->internal.flags.history_exit)
@@ -67,6 +61,26 @@ static void shell_cmd_buffer_clear(const struct shell *shell)
 	shell->ctx->cmd_buff[0] = '\0'; /* clear command buffer */
 	shell->ctx->cmd_buff_pos = 0;
 	shell->ctx->cmd_buff_len = 0;
+}
+
+static inline void shell_prompt_print(const struct shell *shell)
+{
+	shell_fprintf(shell, SHELL_INFO, "%s", shell->prompt);
+}
+
+static inline void shell_command_print(const struct shell *shell)
+{
+	shell_fprintf(shell, SHELL_NORMAL, "%s", shell->ctx->cmd_buff);
+}
+
+static void cmd_line_print(const struct shell *shell)
+{
+	shell_prompt_print(shell);
+
+	if (flag_echo_is_set(shell)) {
+		shell_command_print(shell);
+		shell_op_cursor_position_synchronize(shell);
+	}
 }
 
 /**
@@ -155,7 +169,7 @@ static void shell_state_set(const struct shell *shell, enum shell_state state)
 
 	if (state == SHELL_STATE_ACTIVE) {
 		shell_cmd_buffer_clear(shell);
-		shell_fprintf(shell, SHELL_INFO, "%s", shell->prompt);
+		shell_prompt_print(shell);
 	}
 }
 
@@ -269,7 +283,7 @@ static void history_handle(const struct shell *shell, bool up)
 
 	shell_op_cursor_home_move(shell);
 	clear_eos(shell);
-	shell_fprintf(shell, SHELL_NORMAL, "%s", shell->ctx->cmd_buff);
+	shell_command_print(shell);
 	shell->ctx->cmd_buff_pos = len;
 	shell->ctx->cmd_buff_len = len;
 	shell_op_cond_next_line(shell);
@@ -291,7 +305,7 @@ static const struct shell_static_entry *find_cmd(
 		}
 	} while (entry);
 
-	return entry;
+	return NULL;
 }
 
 /** @brief Function for getting last valid command in list of arguments. */
@@ -324,7 +338,6 @@ static const struct shell_static_entry *get_last_command(
 			prev_entry = entry;
 			(*match_arg)++;
 		} else {
-			entry = NULL;
 			break;
 		}
 	}
@@ -499,14 +512,14 @@ static void tab_options_print(const struct shell *shell,
 			      const char *str, size_t first, size_t cnt,
 			      u16_t longest)
 {
-	size_t str_len = shell_strlen(str);
 	const struct shell_static_entry *match;
+	size_t str_len = shell_strlen(str);
 	size_t idx = first;
 
 	/* Printing all matching commands (options). */
 	tab_item_print(shell, SHELL_INIT_OPTION_PRINTER, longest);
 
-	while (cnt) {
+	while (cnt--) {
 		/* shell->ctx->active_cmd can be safely used outside of command
 		 * context to save stack
 		 */
@@ -520,13 +533,10 @@ static void tab_options_print(const struct shell *shell,
 		}
 
 		tab_item_print(shell, match->syntax, longest);
-		cnt--;
 	}
 
-	shell_fprintf(shell, SHELL_INFO, "\r\n%s", shell->prompt);
-	shell_fprintf(shell, SHELL_NORMAL, "%s", shell->ctx->cmd_buff);
-
-	shell_op_cursor_position_synchronize(shell);
+	cursor_next_line_move(shell);
+	cmd_line_print(shell);
 }
 
 static u16_t common_beginning_find(const struct shell_static_entry *cmd,
@@ -538,6 +548,7 @@ static u16_t common_beginning_find(const struct shell_static_entry *cmd,
 	u16_t common = UINT16_MAX;
 	size_t idx = first + 1;
 
+	__ASSERT_NO_MSG(cnt > 1);
 
 	shell_cmd_get(cmd ? cmd->subcmd : NULL, cmd ? 1 : 0,
 		      first, &match, &dynamic_entry);
@@ -591,12 +602,11 @@ static void shell_tab_handle(const struct shell *shell)
 	/* d_entry - placeholder for dynamic command */
 	struct shell_static_entry d_entry;
 	const struct shell_static_entry *cmd;
+	size_t first = 0;
 	size_t arg_idx;
 	u16_t longest;
-	size_t first;
 	size_t argc;
 	size_t cnt;
-
 
 	bool tab_possible = shell_tab_prepare(shell, &cmd, argv, &argc,
 					      &arg_idx, &d_entry);
@@ -607,13 +617,10 @@ static void shell_tab_handle(const struct shell *shell)
 
 	find_completion_candidates(cmd, argv[arg_idx], &first, &cnt, &longest);
 
-	if (!cnt) {
-		/* No candidates to propose. */
-		return;
-	} else if (cnt == 1) {
+	if (cnt == 1) {
 		/* Autocompletion.*/
 		autocomplete(shell, cmd, argv[arg_idx], first);
-	} else {
+	} else if (cnt > 1) {
 		tab_options_print(shell, cmd, argv[arg_idx], first, cnt,
 				  longest);
 		partial_autocomplete(shell, cmd, argv[arg_idx], first, cnt);
@@ -648,12 +655,7 @@ static void metakeys_handle(const struct shell *shell, char data)
 	case SHELL_VT100_ASCII_CTRL_L: /* CTRL + L */
 		SHELL_VT100_CMD(shell, SHELL_VT100_CURSORHOME);
 		SHELL_VT100_CMD(shell, SHELL_VT100_CLEARSCREEN);
-		shell_fprintf(shell, SHELL_INFO, "%s", shell->prompt);
-		if (flag_echo_is_set(shell)) {
-			shell_fprintf(shell, SHELL_NORMAL, "%s",
-				      shell->ctx->cmd_buff);
-			shell_op_cursor_position_synchronize(shell);
-		}
+		cmd_line_print(shell);
 		break;
 
 	case SHELL_VT100_ASCII_CTRL_U: /* CTRL + U */
@@ -711,8 +713,6 @@ static void shell_state_collect(const struct shell *shell)
 		if (ascii_filter(data) != 0) {
 			continue;
 		}
-
-		/* todo pwr_mgmt_feed();*/
 
 		switch (shell->ctx->receive_state) {
 		case SHELL_RECEIVE_DEFAULT:
@@ -883,15 +883,12 @@ static int exec_cmd(const struct shell *shell, size_t argc, char **argv,
 				shell->ctx->active_cmd = help_entry;
 			}
 			shell_help(shell);
-			/* 1 is return value when shell prints help */
-			ret_val = 1;
+			return SHELL_CMD_HELP_PRINTED;
 		} else {
 			shell_fprintf(shell, SHELL_ERROR,
 				      SHELL_MSG_SPECIFY_SUBCOMMAND);
-			ret_val = -ENOEXEC;
+			return -ENOEXEC;
 		}
-
-		goto clear;
 	}
 
 	if (shell->ctx->active_cmd.args) {
@@ -917,7 +914,6 @@ static int exec_cmd(const struct shell *shell, size_t argc, char **argv,
 		ret_val = shell->ctx->active_cmd.handler(shell, argc, argv);
 	}
 
-clear:
 	return ret_val;
 }
 
@@ -973,12 +969,9 @@ static int shell_execute(const struct shell *shell)
 	p_cmd = root_cmd_find(argv[0]);
 	if (p_cmd == NULL) {
 		shell_fprintf(shell, SHELL_ERROR, "%s%s\r\n", argv[0],
-					SHELL_MSG_COMMAND_NOT_FOUND);
+			      SHELL_MSG_COMMAND_NOT_FOUND);
 		return -ENOEXEC;
 	}
-
-	/* Root command shall be always static. */
-	__ASSERT_NO_MSG(p_cmd->is_dynamic == false);
 
 	/* checking if root command has a handler */
 	shell->ctx->active_cmd = *p_cmd->u.entry;
@@ -994,15 +987,16 @@ static int shell_execute(const struct shell *shell)
 			break;
 		}
 
-		if (!strcmp(argv[cmd_lvl], "-h") ||
-		    !strcmp(argv[cmd_lvl], "--help")) {
+		if (IS_ENABLED(CONFIG_SHELL_HELP) &&
+		    (!strcmp(argv[cmd_lvl], "-h") ||
+		     !strcmp(argv[cmd_lvl], "--help"))) {
 			/* Command called with help option so it makes no sense
 			 * to search deeper commands.
 			 */
 			if (help_entry.help) {
 				shell->ctx->active_cmd = help_entry;
 				shell_help(shell);
-				return 1;
+				return SHELL_CMD_HELP_PRINTED;
 			}
 
 			shell_fprintf(shell, SHELL_ERROR,
@@ -1014,7 +1008,7 @@ static int shell_execute(const struct shell *shell)
 			enum shell_wildcard_status status;
 
 			status = shell_wildcard_process(shell, p_cmd,
-							 argv[cmd_lvl]);
+							argv[cmd_lvl]);
 			/* Wildcard character found but there is no matching
 			 * command.
 			 */
@@ -1105,7 +1099,7 @@ static void shell_transport_evt_handler(enum shell_transport_evt evt_type,
 	k_poll_signal_raise(signal, 0);
 }
 
-static void shell_current_command_erase(const struct shell *shell)
+static void cmd_line_erase(const struct shell *shell)
 {
 	shell_multiline_data_calc(&shell->ctx->vt100_ctx.cons,
 				  shell->ctx->cmd_buff_pos,
@@ -1116,16 +1110,6 @@ static void shell_current_command_erase(const struct shell *shell)
 	clear_eos(shell);
 }
 
-static void shell_current_command_print(const struct shell *shell)
-{
-	shell_fprintf(shell, SHELL_INFO, "%s", shell->prompt);
-
-	if (flag_echo_is_set(shell)) {
-		shell_fprintf(shell, SHELL_NORMAL, "%s", shell->ctx->cmd_buff);
-		shell_op_cursor_position_synchronize(shell);
-	}
-}
-
 static void shell_log_process(const struct shell *shell)
 {
 	bool processed;
@@ -1133,9 +1117,9 @@ static void shell_log_process(const struct shell *shell)
 	int result;
 
 	do {
-		shell_current_command_erase(shell);
+		cmd_line_erase(shell);
 		processed = shell_log_backend_process(shell->log_backend);
-		shell_current_command_print(shell);
+		cmd_line_print(shell);
 
 		/* Arbitrary delay added to ensure that prompt is readable and
 		 * can be used to enter further commands.
@@ -1155,14 +1139,13 @@ static int shell_instance_init(const struct shell *shell, const void *p_config,
 {
 	__ASSERT_NO_MSG(shell);
 	__ASSERT_NO_MSG(shell->ctx && shell->iface && shell->prompt);
-	__ASSERT_NO_MSG((shell->shell_flag == SHELL_FLAG_CRLF_DEFAULT)	||
+	__ASSERT_NO_MSG((shell->shell_flag == SHELL_FLAG_CRLF_DEFAULT) ||
 			(shell->shell_flag == SHELL_FLAG_OLF_CRLF));
 
-	int err;
+	int err = shell->iface->api->init(shell->iface, p_config,
+					  shell_transport_evt_handler,
+					  (void *) shell);
 
-	err = shell->iface->api->init(shell->iface, p_config,
-				      shell_transport_evt_handler,
-				      (void *) shell);
 	if (err != 0) {
 		return err;
 	}
@@ -1200,9 +1183,8 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 	bool log_backend = (bool)arg_log_backend;
 	u32_t log_level = (u32_t)arg_log_level;
 	int err;
-	int i;
 
-	for (i = 0; i < SHELL_SIGNALS; i++) {
+	for (int i = 0; i < SHELL_SIGNALS; i++) {
 		k_poll_signal_init(&shell->ctx->signals[i]);
 		k_poll_event_init(&shell->ctx->events[i],
 				  K_POLL_TYPE_SIGNAL,
@@ -1225,7 +1207,9 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 		int result;
 
 		err = k_poll(shell->ctx->events, SHELL_SIGNALS, K_FOREVER);
-		(void)err;
+		if (err != 0) {
+			return;
+		}
 
 		k_poll_signal_check(&shell->ctx->signals[SHELL_SIGNAL_KILL],
 				    &signaled, &result);
@@ -1239,7 +1223,7 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 		}
 
 		k_poll_signal_check(&shell->ctx->signals[SHELL_SIGNAL_LOG_MSG],
-						    &signaled, &result);
+				    &signaled, &result);
 
 		if (!signaled) {
 			/* Other signals handled together.*/
@@ -1261,9 +1245,10 @@ int shell_init(const struct shell *shell, const void *transport_config,
 	       bool use_colors, bool log_backend, u32_t init_log_level)
 {
 	__ASSERT_NO_MSG(shell);
-	int err;
+	__ASSERT_NO_MSG(shell->ctx && shell->iface && shell->prompt);
 
-	err = shell_instance_init(shell, transport_config, use_colors);
+	int err = shell_instance_init(shell, transport_config, use_colors);
+
 	if (err != 0) {
 		return err;
 	}
@@ -1283,6 +1268,7 @@ static int shell_instance_uninit(const struct shell *shell)
 {
 	__ASSERT_NO_MSG(shell);
 	__ASSERT_NO_MSG(shell->ctx && shell->iface && shell->prompt);
+
 	int err;
 
 	if (flag_processing_is_set(shell)) {
@@ -1308,6 +1294,8 @@ static int shell_instance_uninit(const struct shell *shell)
 
 int shell_uninit(const struct shell *shell)
 {
+	__ASSERT_NO_MSG(shell);
+
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
 		/* signal kill message */
 		(void)k_poll_signal_raise(&shell->ctx->signals[SHELL_SIGNAL_KILL], 0);
@@ -1322,6 +1310,7 @@ int shell_start(const struct shell *shell)
 {
 	__ASSERT_NO_MSG(shell);
 	__ASSERT_NO_MSG(shell->ctx && shell->iface && shell->prompt);
+
 	int err;
 
 	if (shell->ctx->state != SHELL_STATE_INITIALIZED) {
@@ -1347,6 +1336,7 @@ int shell_start(const struct shell *shell)
 int shell_stop(const struct shell *shell)
 {
 	__ASSERT_NO_MSG(shell);
+	__ASSERT_NO_MSG(shell->ctx);
 
 	if ((shell->ctx->state == SHELL_STATE_INITIALIZED) ||
 	    (shell->ctx->state == SHELL_STATE_UNINITIALIZED)) {
@@ -1361,6 +1351,7 @@ int shell_stop(const struct shell *shell)
 void shell_process(const struct shell *shell)
 {
 	__ASSERT_NO_MSG(shell);
+	__ASSERT_NO_MSG(shell->ctx);
 
 	union shell_internal internal;
 
@@ -1396,6 +1387,9 @@ void shell_fprintf(const struct shell *shell, enum shell_vt100_color color,
 		   const char *p_fmt, ...)
 {
 	__ASSERT_NO_MSG(shell);
+	__ASSERT_NO_MSG(shell->ctx);
+	__ASSERT_NO_MSG(shell->fprintf_ctx);
+	__ASSERT_NO_MSG(p_fmt);
 
 	va_list args = { 0 };
 
@@ -1421,17 +1415,16 @@ void shell_fprintf(const struct shell *shell, enum shell_vt100_color color,
 
 int shell_prompt_change(const struct shell *shell, char *prompt)
 {
-
-	size_t len = shell_strlen(prompt);
-
 	__ASSERT_NO_MSG(shell);
 	__ASSERT_NO_MSG(prompt);
+
+	size_t len = shell_strlen(prompt);
 
 	if (len <= CONFIG_SHELL_PROMPT_LENGTH) {
 		memcpy(shell->prompt, prompt, len + 1); /* +1 for '\0' */
 		return 0;
 	}
-	return -1;
+	return -ENOMEM;
 }
 
 void shell_help(const struct shell *shell)
