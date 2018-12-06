@@ -89,6 +89,8 @@ static inline int stm32_clock_control_on(struct device *dev,
 		LL_IOP_GRP1_EnableClock(pclken->enr);
 		break;
 #endif /* CONFIG_SOC_SERIES_STM32L0X */
+	default:
+		return -ENOTSUP;
 	}
 
 	return 0;
@@ -133,6 +135,8 @@ static inline int stm32_clock_control_off(struct device *dev,
 		LL_IOP_GRP1_DisableClock(pclken->enr);
 		break;
 #endif /* CONFIG_SOC_SERIES_STM32L0X */
+	default:
+		return -ENOTSUP;
 	}
 
 	return 0;
@@ -179,6 +183,8 @@ static int stm32_clock_control_get_subsys_rate(struct device *clock,
 		*rate = apb2_clock;
 		break;
 #endif /* CONFIG_SOC_SERIES_STM32F0X */
+	default:
+		return -ENOTSUP;
 	}
 
 	return 0;
