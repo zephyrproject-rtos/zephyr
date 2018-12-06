@@ -78,6 +78,15 @@ extern "C" {
     #define NRFX_PRS_BOX_3_ADDR     NRF_COMP
     // UARTE0, UART0
     #define NRFX_PRS_BOX_4_ADDR     NRF_UARTE0
+#elif defined(NRF9160_XXAA)
+    // UARTE0, SPIM0, SPIS0, TWIM0, TWIS0
+    #define NRFX_PRS_BOX_0_ADDR     NRF_UARTE0
+    // UARTE1, SPIM1, SPIS1, TWIM1, TWIS1
+    #define NRFX_PRS_BOX_1_ADDR     NRF_UARTE1
+    // UARTE2, SPIM2, SPIS2, TWIM2, TWIS2
+    #define NRFX_PRS_BOX_2_ADDR     NRF_UARTE2
+    // UARTE3, SPIM3, SPIS3, TWIM3, TWIS3
+    #define NRFX_PRS_BOX_3_ADDR     NRF_UARTE3
 #else
     #error "Unknown device."
 #endif

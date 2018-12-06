@@ -38,6 +38,10 @@
 #include <hal/nrf_egu.h>
 #endif
 
+#ifndef SWI_COUNT
+#define SWI_COUNT EGU_COUNT
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -161,8 +165,8 @@ __STATIC_INLINE NRF_EGU_Type * nrfx_swi_egu_instance_get(nrfx_swi_t swi)
         return NULL;
     }
 #endif
-    uint32_t offset = ((uint32_t)swi) * (NRF_EGU1_BASE - NRF_EGU0_BASE);
-    return (NRF_EGU_Type *)(NRF_EGU0_BASE + offset);
+    uint32_t offset = ((uint32_t)swi) * ((uint32_t)NRF_EGU1 - (uint32_t)NRF_EGU0);
+    return (NRF_EGU_Type *)((uint32_t)NRF_EGU0 + offset);
 }
 
 /**

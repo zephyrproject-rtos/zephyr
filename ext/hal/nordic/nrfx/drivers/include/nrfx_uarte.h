@@ -62,6 +62,12 @@ enum {
 #if NRFX_CHECK(NRFX_UARTE1_ENABLED)
     NRFX_UARTE1_INST_IDX,
 #endif
+#if NRFX_CHECK(NRFX_UARTE2_ENABLED)
+    NRFX_UARTE2_INST_IDX,
+#endif
+#if NRFX_CHECK(NRFX_UARTE3_ENABLED)
+    NRFX_UARTE3_INST_IDX,
+#endif
     NRFX_UARTE_ENABLED_COUNT
 };
 
@@ -344,6 +350,8 @@ __STATIC_INLINE uint32_t nrfx_uarte_event_address_get(nrfx_uarte_t const * p_ins
 
 void nrfx_uarte_0_irq_handler(void);
 void nrfx_uarte_1_irq_handler(void);
+void nrfx_uarte_2_irq_handler(void);
+void nrfx_uarte_3_irq_handler(void);
 
 /** @} */
 

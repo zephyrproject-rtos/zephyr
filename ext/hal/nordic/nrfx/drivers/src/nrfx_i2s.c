@@ -51,6 +51,8 @@
 // Enable workaround for nRF52832 and nRF52840 anomaly 194 (STOP task does not
 // switch off all resources).
 #define USE_WORKAROUND_FOR_ANOMALY_194 1
+#else
+#define USE_WORKAROUND_FOR_ANOMALY_194 0
 #endif
 
 // Control block - driver instance local data.

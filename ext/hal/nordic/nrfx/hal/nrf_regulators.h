@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 - 2018, Nordic Semiconductor ASA
+ * Copyright (c) 2018, Nordic Semiconductor ASA
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,8 +29,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef NRFX_POWER_CLOCK_H__
-#define NRFX_POWER_CLOCK_H__
+#ifndef NRF_REGULATORS_H__
+#define NRF_REGULATORS_H__
 
 #include <nrfx.h>
 
@@ -38,44 +38,58 @@
 extern "C" {
 #endif
 
+/**
+ * @defgroup nrf_regulators_hal REGULATORS HAL
+ * @{
+ * @ingroup nrf_power
+ * @brief   Hardware access layer for managing the REGULATORS peripheral.
+ */
 
-__STATIC_INLINE void nrfx_power_clock_irq_init(void);
+/**
+ * @brief Function for enabling or disabling DCDC converter.
+ *
+ * @param[in] p_reg  Pointer to the peripheral registers structure.
+ * @param[in] enable Set true to enable or false to disable DCDC converter.
+ */
+__STATIC_INLINE void nrf_regulators_dcdcen_set(NRF_REGULATORS_Type * p_reg, bool enable);
+
+/**
+ * @brief Function for putting CPU in system OFF mode.
+ *
+ * This function puts the CPU into system off mode.
+ * The only way to wake up the CPU is by reset.
+ *
+ * @note This function never returns.
+ *
+ * @param[in] p_reg Pointer to the peripheral registers structure.
+ */
+__STATIC_INLINE void nrf_regulators_system_off(NRF_REGULATORS_Type * p_reg);
 
 #ifndef SUPPRESS_INLINE_IMPLEMENTATION
-__STATIC_INLINE void nrfx_power_clock_irq_init(void)
-{
-    uint8_t priority;
-#if NRFX_CHECK(NRFX_POWER_ENABLED) && NRFX_CHECK(NRFX_CLOCK_ENABLED)
-    #if NRFX_POWER_CONFIG_IRQ_PRIORITY != NRFX_CLOCK_CONFIG_IRQ_PRIORITY
-    #error "IRQ priority for POWER and CLOCK have to be the same. Check <nrfx_config.h>."
-    #endif
-    priority = NRFX_POWER_CONFIG_IRQ_PRIORITY;
-#elif NRFX_CHECK(NRFX_POWER_ENABLED)
-    priority = NRFX_POWER_CONFIG_IRQ_PRIORITY;
-#elif NRFX_CHECK(NRFX_CLOCK_ENABLED)
-    priority = NRFX_CLOCK_CONFIG_IRQ_PRIORITY;
-#endif
 
-    if (!NRFX_IRQ_IS_ENABLED(nrfx_get_irq_number(NRF_CLOCK)))
+__STATIC_INLINE void nrf_regulators_dcdcen_set(NRF_REGULATORS_Type * p_reg, bool enable)
+{
+    p_reg->DCDCEN = (enable ? REGULATORS_DCDCEN_DCDCEN_Msk : 0);
+}
+
+__STATIC_INLINE void nrf_regulators_system_off(NRF_REGULATORS_Type * p_reg)
+{
+    p_reg->SYSTEMOFF = REGULATORS_SYSTEMOFF_SYSTEMOFF_Msk;
+    __DSB();
+
+    /* Solution for simulated System OFF in debug mode */
+    while (true)
     {
-        NRFX_IRQ_PRIORITY_SET(nrfx_get_irq_number(NRF_CLOCK), priority);
-        NRFX_IRQ_ENABLE(nrfx_get_irq_number(NRF_CLOCK));
+        __WFE();
     }
 }
+
 #endif // SUPPRESS_INLINE_IMPLEMENTATION
 
-
-#if NRFX_CHECK(NRFX_POWER_ENABLED) && NRFX_CHECK(NRFX_CLOCK_ENABLED)
-void nrfx_power_clock_irq_handler(void);
-#elif NRFX_CHECK(NRFX_POWER_ENABLED)
-#define nrfx_power_irq_handler  nrfx_power_clock_irq_handler
-#elif NRFX_CHECK(NRFX_CLOCK_ENABLED)
-#define nrfx_clock_irq_handler  nrfx_power_clock_irq_handler
-#endif
-
+/** @} */
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // NRFX_POWER_CLOCK_H__
+#endif // NRF_REGULATORS_H__

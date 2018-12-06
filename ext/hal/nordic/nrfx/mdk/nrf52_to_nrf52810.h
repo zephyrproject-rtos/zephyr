@@ -92,5 +92,5 @@ POSSIBILITY OF SUCH DAMAGE.
 
 /*lint --flb "Leave library region" */
 
-#endif /* NRF51_TO_NRF52810_H */
+#endif /* NRF52_TO_NRF52810_H */
 

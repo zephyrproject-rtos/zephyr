@@ -218,6 +218,44 @@ __STATIC_INLINE void nrf_gpiote_int_disable(uint32_t mask);
  */
 __STATIC_INLINE uint32_t nrf_gpiote_int_is_enabled(uint32_t mask);
 
+#if defined(DPPI_PRESENT) || defined(__NRFX_DOXYGEN__)
+/**
+ * @brief Function for setting the subscribe configuration for a given
+ *        GPIOTE task.
+ *
+ * @param[in] task    Task for which to set the configuration.
+ * @param[in] channel Channel through which to subscribe events.
+ */
+__STATIC_INLINE void nrf_gpiote_subscribe_set(nrf_gpiote_tasks_t task,
+                                              uint8_t            channel);
+
+/**
+ * @brief Function for clearing the subscribe configuration for a given
+ *        GPIOTE task.
+ *
+ * @param[in] task Task for which to clear the configuration.
+ */
+__STATIC_INLINE void nrf_gpiote_subscribe_clear(nrf_gpiote_tasks_t task);
+
+/**
+ * @brief Function for setting the publish configuration for a given
+ *        GPIOTE event.
+ *
+ * @param[in] event   Event for which to set the configuration.
+ * @param[in] channel Channel through which to publish the event.
+ */
+__STATIC_INLINE void nrf_gpiote_publish_set(nrf_gpiote_events_t event,
+                                            uint8_t             channel);
+
+/**
+ * @brief Function for clearing the publish configuration for a given
+ *        GPIOTE event.
+ *
+ * @param[in] event Event for which to clear the configuration.
+ */
+__STATIC_INLINE void nrf_gpiote_publish_clear(nrf_gpiote_events_t event);
+#endif // defined(DPPI_PRESENT) || defined(__NRFX_DOXYGEN__)
+
 /**@brief Function for enabling a GPIOTE event.
  *
  * @param[in]  idx        Task-Event index.
@@ -345,6 +383,32 @@ __STATIC_INLINE uint32_t nrf_gpiote_int_is_enabled(uint32_t mask)
 {
     return (NRF_GPIOTE->INTENSET & mask);
 }
+
+#if defined(DPPI_PRESENT)
+__STATIC_INLINE void nrf_gpiote_subscribe_set(nrf_gpiote_tasks_t task,
+                                              uint8_t            channel)
+{
+    *((volatile uint32_t *) ((uint8_t *) NRF_GPIOTE + (uint32_t) task + 0x80uL)) =
+            ((uint32_t)channel | GPIOTE_SUBSCRIBE_OUT_EN_Msk);
+}
+
+__STATIC_INLINE void nrf_gpiote_subscribe_clear(nrf_gpiote_tasks_t task)
+{
+    *((volatile uint32_t *) ((uint8_t *) NRF_GPIOTE + (uint32_t) task + 0x80uL)) = 0;
+}
+
+__STATIC_INLINE void nrf_gpiote_publish_set(nrf_gpiote_events_t event,
+                                            uint8_t             channel)
+{
+    *((volatile uint32_t *) ((uint8_t *) NRF_GPIOTE + (uint32_t) event + 0x80uL)) =
+            ((uint32_t)channel | GPIOTE_PUBLISH_IN_EN_Msk);
+}
+
+__STATIC_INLINE void nrf_gpiote_publish_clear(nrf_gpiote_events_t event)
+{
+    *((volatile uint32_t *) ((uint8_t *) NRF_GPIOTE + (uint32_t) event + 0x80uL)) = 0;
+}
+#endif // defined(DPPI_PRESENT)
 
 __STATIC_INLINE void nrf_gpiote_event_enable(uint32_t idx)
 {

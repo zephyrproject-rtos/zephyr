@@ -178,6 +178,44 @@ __STATIC_INLINE bool nrf_pdm_int_enable_check(uint32_t pdm_int_mask);
  */
 __STATIC_INLINE void nrf_pdm_int_disable(uint32_t pdm_int_mask);
 
+#if defined(DPPI_PRESENT) || defined(__NRFX_DOXYGEN__)
+/**
+ * @brief Function for setting the subscribe configuration for a given
+ *        PDM task.
+ *
+ * @param[in] task    Task for which to set the configuration.
+ * @param[in] channel Channel through which to subscribe events.
+ */
+__STATIC_INLINE void nrf_pdm_subscribe_set(nrf_pdm_task_t task,
+                                           uint8_t        channel);
+
+/**
+ * @brief Function for clearing the subscribe configuration for a given
+ *        PDM task.
+ *
+ * @param[in] task  Task for which to clear the configuration.
+ */
+__STATIC_INLINE void nrf_pdm_subscribe_clear(nrf_pdm_task_t task);
+
+/**
+ * @brief Function for setting the publish configuration for a given
+ *        PDM event.
+ *
+ * @param[in] event   Event for which to set the configuration.
+ * @param[in] channel Channel through which to publish the event.
+ */
+__STATIC_INLINE void nrf_pdm_publish_set(nrf_pdm_event_t event,
+                                         uint8_t         channel);
+
+/**
+ * @brief Function for clearing the publish configuration for a given
+ *        PDM event.
+ *
+ * @param[in] event Event for which to clear the configuration.
+ */
+__STATIC_INLINE void nrf_pdm_publish_clear(nrf_pdm_event_t event);
+#endif // defined(DPPI_PRESENT) || defined(__NRFX_DOXYGEN__)
+
 /**
  * @brief Function for enabling the PDM peripheral.
  *
@@ -318,6 +356,32 @@ __STATIC_INLINE void nrf_pdm_int_disable(uint32_t pdm_int_mask)
 {
     NRF_PDM->INTENCLR = pdm_int_mask;
 }
+
+#if defined(DPPI_PRESENT)
+__STATIC_INLINE void nrf_pdm_subscribe_set(nrf_pdm_task_t task,
+                                           uint8_t        channel)
+{
+    *((volatile uint32_t *) ((uint8_t *) NRF_PDM + (uint32_t) task + 0x80uL)) =
+            ((uint32_t)channel | PDM_SUBSCRIBE_START_EN_Msk);
+}
+
+__STATIC_INLINE void nrf_pdm_subscribe_clear(nrf_pdm_task_t task)
+{
+    *((volatile uint32_t *) ((uint8_t *) NRF_PDM + (uint32_t) task + 0x80uL)) = 0;
+}
+
+__STATIC_INLINE void nrf_pdm_publish_set(nrf_pdm_event_t event,
+                                         uint8_t         channel)
+{
+    *((volatile uint32_t *) ((uint8_t *) NRF_PDM + (uint32_t) event + 0x80uL)) =
+            ((uint32_t)channel | PDM_PUBLISH_STARTED_EN_Msk);
+}
+
+__STATIC_INLINE void nrf_pdm_publish_clear(nrf_pdm_event_t event)
+{
+    *((volatile uint32_t *) ((uint8_t *) NRF_PDM + (uint32_t) event + 0x80uL)) = 0;
+}
+#endif // defined(DPPI_PRESENT)
 
 __STATIC_INLINE void nrf_pdm_enable(void)
 {

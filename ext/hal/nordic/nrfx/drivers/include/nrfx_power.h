@@ -166,7 +166,9 @@ typedef struct
 typedef struct
 {
     nrfx_power_pofwarn_event_handler_t handler; //!< Event handler
+#if NRF_POWER_HAS_POFCON || defined(__NRFX_DOXYGEN__)
     nrf_power_pof_thr_t                thr;     //!< Threshold for power failure detection
+#endif
 #if NRF_POWER_HAS_VDDH || defined(__NRFX_DOXYGEN__)
     nrf_power_pof_thrvddh_t            thrvddh; //!< Threshold for power failure detection on VDDH pin
 #endif
@@ -233,6 +235,7 @@ nrfx_err_t nrfx_power_init(nrfx_power_config_t const * p_config);
  */
 void nrfx_power_uninit(void);
 
+#if NRF_POWER_HAS_POFCON || defined(__NRFX_DOXYGEN__)
 /**
  * @brief Initialize power failure comparator
  *
@@ -268,6 +271,7 @@ void nrfx_power_pof_disable(void);
  * Clears the settings of the power failure comparator.
  */
 void nrfx_power_pof_uninit(void);
+#endif // NRF_POWER_HAS_POFCON || defined(__NRFX_DOXYGEN__)
 
 #if NRF_POWER_HAS_SLEEPEVT || defined(__NRFX_DOXYGEN__)
 /**
