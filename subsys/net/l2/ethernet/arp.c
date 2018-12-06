@@ -464,12 +464,12 @@ static void arp_update(struct net_if *iface,
 }
 
 static inline struct net_pkt *arp_prepare_reply(struct net_if *iface,
-						struct net_pkt *req)
+						struct net_pkt *req,
+						struct net_eth_hdr *eth_query)
 {
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	struct net_arp_hdr *hdr, *query;
-	struct net_eth_hdr *eth_query;
 
 	pkt = net_pkt_get_reserve_tx(NET_BUF_TIMEOUT);
 	if (!pkt) {
@@ -478,8 +478,6 @@ static inline struct net_pkt *arp_prepare_reply(struct net_if *iface,
 
 	net_pkt_set_iface(pkt, iface);
 	net_pkt_set_family(pkt, AF_UNSPEC);
-
-	eth_query = NET_ETH_HDR(req);
 
 	frag = net_pkt_get_frag(pkt, NET_BUF_TIMEOUT);
 	if (!frag) {
@@ -536,21 +534,18 @@ static bool arp_hdr_check(struct net_arp_hdr *arp_hdr)
 	return true;
 }
 
-enum net_verdict net_arp_input(struct net_pkt *pkt)
+enum net_verdict net_arp_input(struct net_pkt *pkt,
+			       struct net_eth_hdr *eth_hdr)
 {
-	struct net_eth_hdr *eth_hdr;
 	struct net_arp_hdr *arp_hdr;
 	struct net_pkt *reply;
 	struct in_addr *addr;
 
 	if (net_pkt_get_len(pkt) < (sizeof(struct net_arp_hdr) -
-				    (net_pkt_ip_data(pkt) -
-				     net_pkt_ll(pkt)))) {
-		NET_DBG("Invalid ARP header (len %zu, min %zu bytes)",
-			net_pkt_get_len(pkt),
-			sizeof(struct net_arp_hdr) -
-			(net_pkt_ip_data(pkt) -
-			 net_pkt_ll(pkt)));
+				    (net_pkt_ip_data(pkt) - (u8_t *)eth_hdr))) {
+		NET_DBG("Invalid ARP header (len %zu, min %zu bytes) %p",
+			net_pkt_get_len(pkt), sizeof(struct net_arp_hdr) -
+			(net_pkt_ip_data(pkt) - (u8_t *)eth_hdr), pkt);
 		return NET_DROP;
 	}
 
@@ -561,8 +556,6 @@ enum net_verdict net_arp_input(struct net_pkt *pkt)
 
 	switch (ntohs(arp_hdr->opcode)) {
 	case NET_ARP_REQUEST:
-		eth_hdr = NET_ETH_HDR(pkt);
-
 		if (IS_ENABLED(CONFIG_NET_ARP_GRATUITOUS)) {
 			if (memcmp(&eth_hdr->dst,
 				   net_eth_broadcast_addr(),
@@ -609,7 +602,7 @@ enum net_verdict net_arp_input(struct net_pkt *pkt)
 					   &arp_hdr->dst_ipaddr)));
 
 		/* Send reply */
-		reply = arp_prepare_reply(net_pkt_iface(pkt), pkt);
+		reply = arp_prepare_reply(net_pkt_iface(pkt), pkt, eth_hdr);
 		if (reply) {
 			net_if_queue_tx(net_pkt_iface(reply), reply);
 		} else {

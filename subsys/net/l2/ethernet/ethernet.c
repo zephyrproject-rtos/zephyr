@@ -178,7 +178,6 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 #endif
 	case NET_ETH_PTYPE_LLDP:
 #if defined(CONFIG_NET_LLDP)
-		net_pkt_set_ll(pkt, pkt->frags->data);
 		net_buf_pull(pkt->frags, hdr_len);
 		return net_lldp_recv(iface, pkt);
 #else
@@ -192,12 +191,12 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 
 	/* Set the pointers to ll src and dst addresses */
 	lladdr = net_pkt_lladdr_src(pkt);
-	lladdr->addr = ((struct net_eth_hdr *)net_pkt_ll(pkt))->src.addr;
+	lladdr->addr = hdr->src.addr;
 	lladdr->len = sizeof(struct net_eth_addr);
 	lladdr->type = NET_LINK_ETHERNET;
 
 	lladdr = net_pkt_lladdr_dst(pkt);
-	lladdr->addr = ((struct net_eth_hdr *)net_pkt_ll(pkt))->dst.addr;
+	lladdr->addr = hdr->dst.addr;
 	lladdr->len = sizeof(struct net_eth_addr);
 	lladdr->type = NET_LINK_ETHERNET;
 
@@ -232,7 +231,6 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 
 	ethernet_update_rx_stats(iface, pkt, net_pkt_get_len(pkt));
 
-	net_pkt_set_ll(pkt, pkt->frags->data);
 	net_buf_pull(pkt->frags, hdr_len);
 
 #ifdef CONFIG_NET_ARP
@@ -246,7 +244,7 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 			return NET_DROP;
 		}
 #endif
-		return net_arp_input(pkt);
+		return net_arp_input(pkt, hdr);
 	}
 #endif
 
@@ -483,7 +481,6 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 	}
 
 	net_pkt_frag_insert(pkt, hdr_frag);
-	net_pkt_set_ll(pkt, hdr_frag->data);
 
 	return hdr_frag;
 }

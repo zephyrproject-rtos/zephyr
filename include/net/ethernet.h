@@ -39,7 +39,7 @@ struct net_eth_addr {
 	u8_t addr[6];
 };
 
-#define NET_ETH_HDR(pkt) ((struct net_eth_hdr *)net_pkt_ll(pkt))
+#define NET_ETH_HDR(pkt) ((struct net_eth_hdr *)net_pkt_data(pkt))
 
 #define NET_ETH_PTYPE_ARP		0x0806
 #define NET_ETH_PTYPE_IP		0x0800
