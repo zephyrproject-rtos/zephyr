@@ -82,27 +82,40 @@ struct app_region {
 #endif	/* CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT */
 
 #define appmem_partition(name) \
-	extern char *data_smem_##name; \
-	extern char *data_smem_##name##b; \
-	smem_size_declare(name);		  \
 	_app_dmem_pad(name) char name##_dmem_pad; \
 	_app_bmem_pad(name) char name##_bmem_pad; \
-	__kernel struct k_mem_partition mem_domain_##name; \
-	__kernel struct app_region name; \
+	__kernel struct k_mem_partition mem_partition_##name; \
+	__kernel struct app_region name;
+
+#define appmem_partition_header(name) \
+	extern char *data_smem_##name;	  \
+	extern char *data_smem_##name##b; \
+	smem_size_declare(name); \
+	extern struct k_mem_partition mem_partition_##name; \
+	extern struct app_region name; \
 	static inline void appmem_init_part_##name(void) \
 	{ \
 		name.dmem_start = (char *)&data_smem_##name; \
 		name.bmem_start = (char *)&data_smem_##name##b; \
 		smem_size_assign(name);				\
 		sys_dlist_append(&app_mem_list, &name.lnode); \
-		mem_domain_##name.start = (u32_t) name.dmem_start; \
-		mem_domain_##name.attr = K_MEM_PARTITION_P_RW_U_RW; \
-		name.partition = &mem_domain_##name; \
+		mem_partition_##name.start = (u32_t) name.dmem_start; \
+		mem_partition_##name.attr = K_MEM_PARTITION_P_RW_U_RW; \
+		name.partition = &mem_partition_##name; \
 	}
 
 /* A helper function that should be called to define multiple partitions*/
-#define APPMEM_PARTITION_DEFINE(...)\
+#define APPMEM_PARTITION_OBJECT_DEFINE(...)\
 	FOR_EACH(appmem_partition, __VA_ARGS__)
+
+/* This defines all the functions that are needed to configure
+ * the memory partitions. Usually goes in a common header file.
+ */
+#define APPMEM_PARTITION_HEADER_DEFINE(...)\
+	FOR_EACH(appmem_partition_header, __VA_ARGS__)
+
+/* Returns the mem_partition struct */
+#define APPMEM_PARTITION_GET(name) (mem_partition_##name)
 
 /*
  * A wrapper around the k_mem_domain_* functions. Goal here was
@@ -111,7 +124,10 @@ struct app_region {
  * types (i.e. app_region, k_mem_domain, etc).
  */
 #define appmem_domain(name) \
-	__kernel struct k_mem_domain domain_##name; \
+	__kernel struct k_mem_domain domain_##name;
+
+#define appmem_domain_header(name) \
+	extern struct k_mem_domain domain_##name; \
 	static inline void appmem_add_thread_##name(k_tid_t thread) \
 	{ \
 		k_mem_domain_add_thread(&domain_##name, thread); \
@@ -135,9 +151,17 @@ struct app_region {
 		k_mem_domain_init(&domain_##name, 1, &region.partition); \
 	}
 
-/* A helper function that should be called to define multiple domains*/
-#define APPMEM_DOMAIN_DEFINE(...)\
+/* A helper function that should be called to define multiple domains
+ * Only an object will get defined. Must be placed in a .c file.
+ */
+#define APPMEM_DOMAIN_OBJECT_DEFINE(...)\
 	FOR_EACH(appmem_domain, __VA_ARGS__)
+
+/* This defines all the functions that are needed to configure
+ * the memory domains. Usually goes in a common header file.
+ */
+#define APPMEM_DOMAIN_HEADER_DEFINE(...)\
+	FOR_EACH(appmem_domain_header, __VA_ARGS__)
 
 /*
  * The following allows the FOR_EACH macro to call each partition's
