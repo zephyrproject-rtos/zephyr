@@ -64,7 +64,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x48000000 0x400>;
-				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00020000>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00020000>;
 				label = "GPIOA";
 			};
 
@@ -73,7 +73,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x48000400 0x400>;
-				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00040000>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00040000>;
 				label = "GPIOB";
 			};
 
@@ -82,7 +82,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x48000800 0x400>;
-				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00080000>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00080000>;
 				label = "GPIOC";
 			};
 
@@ -91,7 +91,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x48000c00 0x400>;
-				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00100000>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00100000>;
 				label = "GPIOD";
 			};
 
@@ -100,7 +100,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x48001400 0x400>;
-				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00400000>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00400000>;
 				label = "GPIOF";
 			};
 		};
