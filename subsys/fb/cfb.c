@@ -283,13 +283,6 @@ int cfb_get_font_size(struct device *dev, u8_t idx, u8_t *width, u8_t *height)
 	return 0;
 }
 
-int cfb_get_numof_fonts(struct device *dev)
-{
-	const struct char_framebuffer *fb = &char_fb;
-
-	return fb->numof_fonts;
-}
-
 int cfb_framebuffer_init(struct device *dev)
 {
 	const struct display_driver_api *api = dev->driver_api;
