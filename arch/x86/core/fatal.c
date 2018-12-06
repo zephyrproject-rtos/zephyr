@@ -308,7 +308,7 @@ static void dump_entry_flags(x86_page_entry_data_t flags)
 	       "Writable" : "Read-only",
 	       flags & (x86_page_entry_data_t)MMU_ENTRY_USER ?
 	       "User" : "Supervisor");
-#endif
+#endif /* CONFIG_X86_PAE_MODE */
 }
 
 static void dump_mmu_flags(void *addr)
@@ -323,34 +323,16 @@ static void dump_mmu_flags(void *addr)
 	printk("PTE: ");
 	dump_entry_flags(pte_flags);
 }
-#endif
+#endif /* CONFIG_X86_MMU */
 
-#ifdef CONFIG_USERSPACE
-Z_EXC_DECLARE(z_arch_user_string_nlen);
-
-static const struct z_exc_handle exceptions[] = {
-	Z_EXC_HANDLE(z_arch_user_string_nlen)
-};
-#endif
-
-void page_fault_handler(NANO_ESF *pEsf)
+static void dump_page_fault(NANO_ESF *esf)
 {
 	u32_t err, cr2;
-
-#ifdef CONFIG_USERSPACE
-	for (int i = 0; i < ARRAY_SIZE(exceptions); i++) {
-		if ((void *)pEsf->eip >= exceptions[i].start &&
-		    (void *)pEsf->eip < exceptions[i].end) {
-			pEsf->eip = (unsigned int)(exceptions[i].fixup);
-			return;
-		}
-	}
-#endif
 
 	/* See Section 6.15 of the IA32 Software Developer's Manual vol 3 */
 	__asm__ ("mov %%cr2, %0" : "=r" (cr2));
 
-	err = pEsf->errorCode;
+	err = esf->errorCode;
 	printk("***** CPU Page Fault (error code 0x%08x)\n", err);
 
 	printk("%s thread %s address 0x%08x\n",
@@ -361,12 +343,37 @@ void page_fault_handler(NANO_ESF *pEsf)
 #ifdef CONFIG_X86_MMU
 	dump_mmu_flags((void *)cr2);
 #endif
+}
+#endif /* CONFIG_EXCEPTION_DEBUG */
 
-	_NanoFatalErrorHandler(_NANO_ERR_CPU_EXCEPTION, pEsf);
+#ifdef CONFIG_USERSPACE
+Z_EXC_DECLARE(z_arch_user_string_nlen);
+
+static const struct z_exc_handle exceptions[] = {
+	Z_EXC_HANDLE(z_arch_user_string_nlen)
+};
+#endif
+
+void page_fault_handler(NANO_ESF *esf)
+{
+#ifdef CONFIG_USERSPACE
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(exceptions); i++) {
+		if ((void *)esf->eip >= exceptions[i].start &&
+		    (void *)esf->eip < exceptions[i].end) {
+			esf->eip = (unsigned int)(exceptions[i].fixup);
+			return;
+		}
+	}
+#endif
+#ifdef CONFIG_EXCEPTION_DEBUG
+	dump_page_fault(esf);
+#endif
+	_NanoFatalErrorHandler(_NANO_ERR_CPU_EXCEPTION, esf);
 	CODE_UNREACHABLE;
 }
 _EXCEPTION_CONNECT_CODE(page_fault_handler, IV_PAGE_FAULT);
-#endif /* CONFIG_EXCEPTION_DEBUG */
 
 #ifdef CONFIG_X86_ENABLE_TSS
 static __noinit volatile NANO_ESF _df_esf;
