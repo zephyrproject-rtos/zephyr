@@ -463,7 +463,7 @@ void test_utils(void)
 
 	net_pkt_frag_add(pkt, frag);
 
-	memcpy(net_pkt_ll(pkt), pkt4, sizeof(pkt4));
+	memcpy(net_pkt_data(pkt), pkt4, sizeof(pkt4));
 	net_buf_add(frag, sizeof(pkt4));
 
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
@@ -494,7 +494,7 @@ void test_utils(void)
 
 	net_pkt_frag_add(pkt, frag);
 
-	memcpy(net_pkt_ll(pkt), pkt5, sizeof(pkt5));
+	memcpy(net_pkt_data(pkt), pkt5, sizeof(pkt5));
 	net_buf_add(frag, sizeof(pkt5));
 
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));

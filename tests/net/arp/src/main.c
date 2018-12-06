@@ -91,7 +91,7 @@ static int tester_send(struct device *dev, struct net_pkt *pkt)
 		return -ENODATA;
 	}
 
-	hdr = (struct net_eth_hdr *)net_pkt_ll(pkt);
+	hdr = (struct net_eth_hdr *)net_pkt_data(pkt);
 
 	if (ntohs(hdr->type) == NET_ETH_PTYPE_ARP) {
 		/* First frag has eth hdr */
@@ -191,6 +191,8 @@ static inline struct net_pkt *prepare_arp_reply(struct net_if *iface,
 
 	eth = NET_ETH_HDR(pkt);
 
+	net_buf_pull(frag, sizeof(struct net_eth_hdr));
+
 	(void)memset(&eth->dst.addr, 0xff, sizeof(struct net_eth_addr));
 	memcpy(&eth->src.addr, net_if_get_link_addr(iface)->addr,
 	       sizeof(struct net_eth_addr));
@@ -255,8 +257,6 @@ static inline struct net_pkt *prepare_arp_request(struct net_if *iface,
 
 	req_hdr = NET_ARP_HDR(req);
 
-	eth = NET_ETH_HDR(pkt);
-
 	(void)memset(&eth->dst.addr, 0xff, sizeof(struct net_eth_addr));
 	memcpy(&eth->src.addr, addr, sizeof(struct net_eth_addr));
 
@@ -291,7 +291,7 @@ fail:
 static void setup_eth_header(struct net_if *iface, struct net_pkt *pkt,
 			     const struct net_eth_addr *hwaddr, u16_t type)
 {
-	struct net_eth_hdr *hdr = (struct net_eth_hdr *)net_pkt_ll(pkt);
+	struct net_eth_hdr *hdr = (struct net_eth_hdr *)net_pkt_data(pkt);
 
 	memcpy(&hdr->dst.addr, hwaddr, sizeof(struct net_eth_addr));
 	memcpy(&hdr->src.addr, net_if_get_link_addr(iface)->addr,
