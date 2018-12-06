@@ -1,3 +1,2 @@
 zephyr_sources_ifdef(CONFIG_CHARACTER_FRAMEBUFFER cfb.c)
 zephyr_sources_ifdef(CONFIG_CHARACTER_FRAMEBUFFER_USE_DEFAULT_FONTS cfb_fonts.c)
-zephyr_sources_ifdef(CONFIG_CHARACTER_FRAMEBUFFER_SHELL cfb_shell.c)
