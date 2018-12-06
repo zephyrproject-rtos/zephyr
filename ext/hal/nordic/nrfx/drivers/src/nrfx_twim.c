@@ -33,7 +33,10 @@
 
 #if NRFX_CHECK(NRFX_TWIM_ENABLED)
 
-#if !(NRFX_CHECK(NRFX_TWIM0_ENABLED) || NRFX_CHECK(NRFX_TWIM1_ENABLED))
+#if !(NRFX_CHECK(NRFX_TWIM0_ENABLED) || \
+      NRFX_CHECK(NRFX_TWIM1_ENABLED) || \
+      NRFX_CHECK(NRFX_TWIM2_ENABLED) || \
+      NRFX_CHECK(NRFX_TWIM3_ENABLED))
 #error "No enabled TWIM instances. Check <nrfx_config.h>."
 #endif
 
@@ -90,9 +93,23 @@
 #define TWIM1_LENGTH_VALIDATE(...)  0
 #endif
 
+#if NRFX_CHECK(NRFX_TWIM2_ENABLED)
+#define TWIM2_LENGTH_VALIDATE(...)  TWIMX_LENGTH_VALIDATE(TWIM2, __VA_ARGS__)
+#else
+#define TWIM2_LENGTH_VALIDATE(...)  0
+#endif
+
+#if NRFX_CHECK(NRFX_TWIM3_ENABLED)
+#define TWIM3_LENGTH_VALIDATE(...)  TWIMX_LENGTH_VALIDATE(TWIM3, __VA_ARGS__)
+#else
+#define TWIM3_LENGTH_VALIDATE(...)  0
+#endif
+
 #define TWIM_LENGTH_VALIDATE(drv_inst_idx, len1, len2)  \
     (TWIM0_LENGTH_VALIDATE(drv_inst_idx, len1, len2) || \
-     TWIM1_LENGTH_VALIDATE(drv_inst_idx, len1, len2))
+     TWIM1_LENGTH_VALIDATE(drv_inst_idx, len1, len2) || \
+     TWIM2_LENGTH_VALIDATE(drv_inst_idx, len1, len2) || \
+     TWIM3_LENGTH_VALIDATE(drv_inst_idx, len1, len2))
 
 // Control block - driver instance local data.
 typedef struct
@@ -161,6 +178,12 @@ nrfx_err_t nrfx_twim_init(nrfx_twim_t const *        p_instance,
         #endif
         #if NRFX_CHECK(NRFX_TWIM1_ENABLED)
         nrfx_twim_1_irq_handler,
+        #endif
+        #if NRFX_CHECK(NRFX_TWIM2_ENABLED)
+        nrfx_twim_2_irq_handler,
+        #endif
+        #if NRFX_CHECK(NRFX_TWIM3_ENABLED)
+        nrfx_twim_3_irq_handler,
         #endif
     };
     if (nrfx_prs_acquire(p_instance->p_twim,
@@ -650,6 +673,20 @@ void nrfx_twim_0_irq_handler(void)
 void nrfx_twim_1_irq_handler(void)
 {
     twim_irq_handler(NRF_TWIM1, &m_cb[NRFX_TWIM1_INST_IDX]);
+}
+#endif
+
+#if NRFX_CHECK(NRFX_TWIM2_ENABLED)
+void nrfx_twim_2_irq_handler(void)
+{
+    twim_irq_handler(NRF_TWIM2, &m_cb[NRFX_TWIM2_INST_IDX]);
+}
+#endif
+
+#if NRFX_CHECK(NRFX_TWIM3_ENABLED)
+void nrfx_twim_3_irq_handler(void)
+{
+    twim_irq_handler(NRF_TWIM3, &m_cb[NRFX_TWIM3_INST_IDX]);
 }
 #endif
 

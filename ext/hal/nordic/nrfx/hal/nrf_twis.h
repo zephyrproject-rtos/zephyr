@@ -262,6 +262,52 @@ __STATIC_INLINE bool nrf_twis_int_enable_check(NRF_TWIS_Type const * const p_reg
  */
 __STATIC_INLINE void nrf_twis_int_disable(NRF_TWIS_Type * const p_reg, uint32_t int_mask);
 
+#if defined(DPPI_PRESENT) || defined(__NRFX_DOXYGEN__)
+/**
+ * @brief Function for setting the subscribe configuration for a given
+ *        TWIS task.
+ *
+ * @param[in] p_reg   Pointer to the structure of registers of the peripheral.
+ * @param[in] task    Task for which to set the configuration.
+ * @param[in] channel Channel through which to subscribe events.
+ */
+__STATIC_INLINE void nrf_twis_subscribe_set(NRF_TWIS_Type * p_reg,
+                                            nrf_twis_task_t task,
+                                            uint8_t         channel);
+
+/**
+ * @brief Function for clearing the subscribe configuration for a given
+ *        TWIS task.
+ *
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
+ * @param[in] task  Task for which to clear the configuration.
+ */
+__STATIC_INLINE void nrf_twis_subscribe_clear(NRF_TWIS_Type * p_reg,
+                                              nrf_twis_task_t task);
+
+/**
+ * @brief Function for setting the publish configuration for a given
+ *        TWIS event.
+ *
+ * @param[in] p_reg   Pointer to the structure of registers of the peripheral.
+ * @param[in] event   Event for which to set the configuration.
+ * @param[in] channel Channel through which to publish the event.
+ */
+__STATIC_INLINE void nrf_twis_publish_set(NRF_TWIS_Type *  p_reg,
+                                          nrf_twis_event_t event,
+                                          uint8_t         channel);
+
+/**
+ * @brief Function for clearing the publish configuration for a given
+ *        TWIS event.
+ *
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
+ * @param[in] event Event for which to clear the configuration.
+ */
+__STATIC_INLINE void nrf_twis_publish_clear(NRF_TWIS_Type *  p_reg,
+                                            nrf_twis_event_t event);
+#endif // defined(DPPI_PRESENT) || defined(__NRFX_DOXYGEN__)
+
 /**
  * @brief Function for retrieving and clearing the TWIS error source.
  *
@@ -569,6 +615,36 @@ void nrf_twis_int_disable(NRF_TWIS_Type * const p_reg, uint32_t int_mask)
 {
     p_reg->INTENCLR = int_mask;
 }
+
+#if defined(DPPI_PRESENT)
+__STATIC_INLINE void nrf_twis_subscribe_set(NRF_TWIS_Type * p_reg,
+                                            nrf_twis_task_t task,
+                                            uint8_t        channel)
+{
+    *((volatile uint32_t *) ((uint8_t *) p_reg + (uint32_t) task + 0x80uL)) =
+            ((uint32_t)channel | TWIS_SUBSCRIBE_STOP_EN_Msk);
+}
+
+__STATIC_INLINE void nrf_twis_subscribe_clear(NRF_TWIS_Type * p_reg,
+                                              nrf_twis_task_t task)
+{
+    *((volatile uint32_t *) ((uint8_t *) p_reg + (uint32_t) task + 0x80uL)) = 0;
+}
+
+__STATIC_INLINE void nrf_twis_publish_set(NRF_TWIS_Type *  p_reg,
+                                          nrf_twis_event_t event,
+                                          uint8_t         channel)
+{
+    *((volatile uint32_t *) ((uint8_t *) p_reg + (uint32_t) event + 0x80uL)) =
+            ((uint32_t)channel | TWIS_PUBLISH_STOPPED_EN_Msk);
+}
+
+__STATIC_INLINE void nrf_twis_publish_clear(NRF_TWIS_Type *  p_reg,
+                                            nrf_twis_event_t event)
+{
+    *((volatile uint32_t *) ((uint8_t *) p_reg + (uint32_t) event + 0x80uL)) = 0;
+}
+#endif // defined(DPPI_PRESENT)
 
 uint32_t nrf_twis_error_source_get_and_clear(NRF_TWIS_Type * const p_reg)
 {

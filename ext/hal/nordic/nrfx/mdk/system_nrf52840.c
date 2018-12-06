@@ -196,6 +196,9 @@ static bool errata_36(void)
         if (*(uint32_t *)0x10000134ul == 0x2ul){
             return true;
         }
+        if (*(uint32_t *)0x10000134ul == 0x3ul){
+            return true;
+        }
     }
     
     return true;
@@ -212,6 +215,9 @@ static bool errata_66(void)
             return true;
         }
         if (*(uint32_t *)0x10000134ul == 0x2ul){
+            return true;
+        }
+        if (*(uint32_t *)0x10000134ul == 0x3ul){
             return true;
         }
     }
@@ -278,6 +284,9 @@ static bool errata_136(void)
             return true;
         }
         if (*(uint32_t *)0x10000134ul == 0x2ul){
+            return true;
+        }
+        if (*(uint32_t *)0x10000134ul == 0x3ul){
             return true;
         }
     }

@@ -165,6 +165,44 @@ __STATIC_INLINE bool nrf_wdt_int_enable_check(uint32_t int_mask);
  */
 __STATIC_INLINE void nrf_wdt_int_disable(uint32_t int_mask);
 
+#if defined(DPPI_PRESENT) || defined(__NRFX_DOXYGEN__)
+/**
+ * @brief Function for setting the subscribe configuration for a given
+ *        WDT task.
+ *
+ * @param[in] task    Task for which to set the configuration.
+ * @param[in] channel Channel through which to subscribe events.
+ */
+__STATIC_INLINE void nrf_wdt_subscribe_set(nrf_wdt_task_t task,
+                                           uint8_t        channel);
+
+/**
+ * @brief Function for clearing the subscribe configuration for a given
+ *        WDT task.
+ *
+ * @param[in] task Task for which to clear the configuration.
+ */
+__STATIC_INLINE void nrf_wdt_subscribe_clear(nrf_wdt_task_t task);
+
+/**
+ * @brief Function for setting the publish configuration for a given
+ *        WDT event.
+ *
+ * @param[in] event   Event for which to set the configuration.
+ * @param[in] channel Channel through which to publish the event.
+ */
+__STATIC_INLINE void nrf_wdt_publish_set(nrf_wdt_event_t event,
+                                         uint8_t         channel);
+
+/**
+ * @brief Function for clearing the publish configuration for a given
+ *        WDT event.
+ *
+ * @param[in] event Event for which to clear the configuration.
+ */
+__STATIC_INLINE void nrf_wdt_publish_clear(nrf_wdt_event_t event);
+#endif // defined(DPPI_PRESENT) || defined(__NRFX_DOXYGEN__)
+
 /**
  * @brief Function for returning the address of a specific WDT task register.
  *
@@ -284,6 +322,32 @@ __STATIC_INLINE void nrf_wdt_int_disable(uint32_t int_mask)
 {
     NRF_WDT->INTENCLR = int_mask;
 }
+
+#if defined(DPPI_PRESENT)
+__STATIC_INLINE void nrf_wdt_subscribe_set(nrf_wdt_task_t task,
+                                           uint8_t        channel)
+{
+    *((volatile uint32_t *) ((uint8_t *) NRF_WDT + (uint32_t) task + 0x80uL)) =
+            ((uint32_t)channel | WDT_SUBSCRIBE_START_EN_Msk);
+}
+
+__STATIC_INLINE void nrf_wdt_subscribe_clear(nrf_wdt_task_t task)
+{
+    *((volatile uint32_t *) ((uint8_t *) NRF_WDT + (uint32_t) task + 0x80uL)) = 0;
+}
+
+__STATIC_INLINE void nrf_wdt_publish_set(nrf_wdt_event_t event,
+                                         uint8_t         channel)
+{
+    *((volatile uint32_t *) ((uint8_t *) NRF_WDT + (uint32_t) event + 0x80uL)) =
+            ((uint32_t)channel | WDT_PUBLISH_TIMEOUT_EN_Msk);
+}
+
+__STATIC_INLINE void nrf_wdt_publish_clear(nrf_wdt_event_t event)
+{
+    *((volatile uint32_t *) ((uint8_t *) NRF_WDT + (uint32_t) event + 0x80uL)) = 0;
+}
+#endif // defined(DPPI_PRESENT)
 
 __STATIC_INLINE uint32_t nrf_wdt_task_address_get(nrf_wdt_task_t task)
 {

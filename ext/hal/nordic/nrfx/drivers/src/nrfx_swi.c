@@ -155,7 +155,11 @@ static bool swi_is_available(nrfx_swi_t swi)
 
 static IRQn_Type swi_irq_number_get(nrfx_swi_t swi)
 {
+#if defined(SWI_PRESENT)
     return (IRQn_Type)((uint32_t)SWI0_IRQn + (uint32_t)swi);
+#else
+    return (IRQn_Type)((uint32_t)EGU0_IRQn + (uint32_t)swi);
+#endif
 }
 
 static void swi_int_enable(nrfx_swi_t swi)

@@ -375,6 +375,52 @@ __STATIC_INLINE void nrf_pwm_int_set(NRF_PWM_Type * p_reg,
 __STATIC_INLINE bool nrf_pwm_int_enable_check(NRF_PWM_Type const * p_reg,
                                               nrf_pwm_int_mask_t pwm_int);
 
+#if defined(DPPI_PRESENT) || defined(__NRFX_DOXYGEN__)
+/**
+ * @brief Function for setting the subscribe configuration for a given
+ *        PWM task.
+ *
+ * @param[in] p_reg   Pointer to the structure of registers of the peripheral.
+ * @param[in] task    Task for which to set the configuration.
+ * @param[in] channel Channel through which to subscribe events.
+ */
+__STATIC_INLINE void nrf_pwm_subscribe_set(NRF_PWM_Type * p_reg,
+                                           nrf_pwm_task_t task,
+                                           uint8_t        channel);
+
+/**
+ * @brief Function for clearing the subscribe configuration for a given
+ *        PWM task.
+ *
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
+ * @param[in] task  Task for which to clear the configuration.
+ */
+__STATIC_INLINE void nrf_pwm_subscribe_clear(NRF_PWM_Type * p_reg,
+                                             nrf_pwm_task_t task);
+
+/**
+ * @brief Function for setting the publish configuration for a given
+ *        PWM event.
+ *
+ * @param[in] p_reg   Pointer to the structure of registers of the peripheral.
+ * @param[in] event   Event for which to set the configuration.
+ * @param[in] channel Channel through which to publish the event.
+ */
+__STATIC_INLINE void nrf_pwm_publish_set(NRF_PWM_Type *  p_reg,
+                                         nrf_pwm_event_t event,
+                                         uint8_t         channel);
+
+/**
+ * @brief Function for clearing the publish configuration for a given
+ *        PWM event.
+ *
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
+ * @param[in] event Event for which to clear the configuration.
+ */
+__STATIC_INLINE void nrf_pwm_publish_clear(NRF_PWM_Type *  p_reg,
+                                           nrf_pwm_event_t event);
+#endif // defined(DPPI_PRESENT) || defined(__NRFX_DOXYGEN__)
+
 /**
  * @brief Function for enabling the PWM peripheral.
  *
@@ -577,6 +623,36 @@ __STATIC_INLINE bool nrf_pwm_int_enable_check(NRF_PWM_Type const * p_reg,
 {
     return (bool)(p_reg->INTENSET & pwm_int);
 }
+
+#if defined(DPPI_PRESENT)
+__STATIC_INLINE void nrf_pwm_subscribe_set(NRF_PWM_Type * p_reg,
+                                           nrf_pwm_task_t task,
+                                           uint8_t        channel)
+{
+    *((volatile uint32_t *) ((uint8_t *) p_reg + (uint32_t) task + 0x80uL)) =
+            ((uint32_t)channel | PWM_SUBSCRIBE_STOP_EN_Msk);
+}
+
+__STATIC_INLINE void nrf_pwm_subscribe_clear(NRF_PWM_Type * p_reg,
+                                             nrf_pwm_task_t task)
+{
+    *((volatile uint32_t *) ((uint8_t *) p_reg + (uint32_t) task + 0x80uL)) = 0;
+}
+
+__STATIC_INLINE void nrf_pwm_publish_set(NRF_PWM_Type *  p_reg,
+                                         nrf_pwm_event_t event,
+                                         uint8_t         channel)
+{
+    *((volatile uint32_t *) ((uint8_t *) p_reg + (uint32_t) event + 0x80uL)) =
+            ((uint32_t)channel | PWM_PUBLISH_STOPPED_EN_Msk);
+}
+
+__STATIC_INLINE void nrf_pwm_publish_clear(NRF_PWM_Type *  p_reg,
+                                           nrf_pwm_event_t event)
+{
+    *((volatile uint32_t *) ((uint8_t *) p_reg + (uint32_t) event + 0x80uL)) = 0;
+}
+#endif // defined(DPPI_PRESENT)
 
 __STATIC_INLINE void nrf_pwm_enable(NRF_PWM_Type * p_reg)
 {

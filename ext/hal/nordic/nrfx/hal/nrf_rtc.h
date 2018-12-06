@@ -45,29 +45,24 @@ extern "C" {
  * @brief   Hardware access layer for managing the Real Time Counter (RTC) peripheral.
  */
 
-/**
- * @brief Macro for getting the number of compare channels available
- *        in a given RTC instance.
- */
-
+/** @brief Macro for getting the number of compare channels available in a given RTC instance. */
 #define NRF_RTC_CC_CHANNEL_COUNT(id)    NRFX_CONCAT_3(RTC, id, _CC_NUM)
 
 #define RTC_INPUT_FREQ 32768 /**< Input frequency of the RTC instance. */
 
-/**
- * @brief Macro for converting expected frequency to prescaler setting.
- */
+/** @brief Macro for converting expected frequency to prescaler setting. */
 #define RTC_FREQ_TO_PRESCALER(FREQ) (uint16_t)(((RTC_INPUT_FREQ) / (FREQ)) - 1)
 
 /**< Macro for wrapping values to RTC capacity. */
 #define RTC_WRAP(val) ((val) & RTC_COUNTER_COUNTER_Msk)
 
-#define RTC_CHANNEL_INT_MASK(ch)    ((uint32_t)(NRF_RTC_INT_COMPARE0_MASK) << (ch))
-#define RTC_CHANNEL_EVENT_ADDR(ch)  (nrf_rtc_event_t)((NRF_RTC_EVENT_COMPARE_0) + (ch) * sizeof(uint32_t))
-/**
- * @enum nrf_rtc_task_t
- * @brief RTC tasks.
- */
+#define RTC_CHANNEL_INT_MASK(ch) \
+    ((uint32_t)(NRF_RTC_INT_COMPARE0_MASK) << (ch))
+
+#define RTC_CHANNEL_EVENT_ADDR(ch) \
+    (nrf_rtc_event_t)((NRF_RTC_EVENT_COMPARE_0) + (ch) * sizeof(uint32_t))
+
+/** @brief RTC tasks. */
 typedef enum
 {
     /*lint -save -e30*/
@@ -78,10 +73,7 @@ typedef enum
     /*lint -restore*/
 } nrf_rtc_task_t;
 
-/**
- * @enum nrf_rtc_event_t
- * @brief RTC events.
- */
+/** @brief RTC events. */
 typedef enum
 {
     /*lint -save -e30*/
@@ -94,10 +86,7 @@ typedef enum
     /*lint -restore*/
 } nrf_rtc_event_t;
 
-/**
- * @enum nrf_rtc_int_t
- * @brief RTC interrupts.
- */
+/** @brief RTC interrupts. */
 typedef enum
 {
     NRF_RTC_INT_TICK_MASK     = RTC_INTENSET_TICK_Msk,     /**< RTC interrupt from tick event. */
@@ -108,207 +97,299 @@ typedef enum
     NRF_RTC_INT_COMPARE3_MASK = RTC_INTENSET_COMPARE3_Msk  /**< RTC interrupt from compare event on channel 3. */
 } nrf_rtc_int_t;
 
-/**@brief Function for setting a compare value for a channel.
+/**
+ * @brief Function for setting a compare value for a channel.
  *
- * @param[in]  p_rtc         Pointer to the peripheral registers structure.
- * @param[in]  ch            Channel.
- * @param[in]  cc_val        Compare value to set.
+ * @param[in] p_reg  Pointer to the structure of registers of the peripheral.
+ * @param[in] ch     Channel.
+ * @param[in] cc_val Compare value to set.
  */
-__STATIC_INLINE  void nrf_rtc_cc_set(NRF_RTC_Type * p_rtc, uint32_t ch, uint32_t cc_val);
+__STATIC_INLINE  void nrf_rtc_cc_set(NRF_RTC_Type * p_reg, uint32_t ch, uint32_t cc_val);
 
-/**@brief Function for returning the compare value for a channel.
+/**
+ * @brief Function for returning the compare value for a channel.
  *
- * @param[in]  p_rtc         Pointer to the peripheral registers structure.
- * @param[in]  ch            Channel.
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
+ * @param[in] ch    Channel.
  *
- * @return                   COMPARE[ch] value.
+ * @return COMPARE[ch] value.
  */
-__STATIC_INLINE  uint32_t nrf_rtc_cc_get(NRF_RTC_Type * p_rtc, uint32_t ch);
+__STATIC_INLINE  uint32_t nrf_rtc_cc_get(NRF_RTC_Type * p_reg, uint32_t ch);
 
-/**@brief Function for enabling interrupts.
+/**
+ * @brief Function for enabling interrupts.
  *
- * @param[in]  p_rtc         Pointer to the peripheral registers structure.
- * @param[in]  mask          Interrupt mask to be enabled.
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
+ * @param[in] mask  Interrupt mask to be enabled.
  */
-__STATIC_INLINE void nrf_rtc_int_enable(NRF_RTC_Type * p_rtc, uint32_t mask);
+__STATIC_INLINE void nrf_rtc_int_enable(NRF_RTC_Type * p_reg, uint32_t mask);
 
-/**@brief Function for disabling interrupts.
+/**
+ * @brief Function for disabling interrupts.
  *
- * @param[in]  p_rtc         Pointer to the peripheral registers structure.
- * @param[in]  mask          Interrupt mask to be disabled.
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
+ * @param[in] mask  Interrupt mask to be disabled.
  */
-__STATIC_INLINE void nrf_rtc_int_disable(NRF_RTC_Type * p_rtc, uint32_t mask);
+__STATIC_INLINE void nrf_rtc_int_disable(NRF_RTC_Type * p_reg, uint32_t mask);
 
-/**@brief Function for checking if interrupts are enabled.
+/**
+ * @brief Function for checking if interrupts are enabled.
  *
- * @param[in]  p_rtc         Pointer to the peripheral registers structure.
- * @param[in]  mask          Mask of interrupt flags to check.
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
+ * @param[in] mask  Mask of interrupt flags to check.
  *
- * @return                   Mask with enabled interrupts.
+ * @return Mask with enabled interrupts.
  */
-__STATIC_INLINE uint32_t nrf_rtc_int_is_enabled(NRF_RTC_Type * p_rtc, uint32_t mask);
+__STATIC_INLINE uint32_t nrf_rtc_int_is_enabled(NRF_RTC_Type * p_reg, uint32_t mask);
 
-/**@brief Function for returning the status of currently enabled interrupts.
+/**
+ * @brief Function for returning the status of currently enabled interrupts.
  *
- * @param[in]  p_rtc         Pointer to the peripheral registers structure.
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
  *
- * @return                   Value in INTEN register.
+ * @return Value in INTEN register.
  */
-__STATIC_INLINE uint32_t nrf_rtc_int_get(NRF_RTC_Type * p_rtc);
+__STATIC_INLINE uint32_t nrf_rtc_int_get(NRF_RTC_Type * p_reg);
 
-/**@brief Function for checking if an event is pending.
+#if defined(DPPI_PRESENT) || defined(__NRFX_DOXYGEN__)
+/**
+ * @brief Function for setting the subscribe configuration for a given
+ *        RTC task.
  *
- * @param[in]  p_rtc         Pointer to the peripheral registers structure.
- * @param[in]  event         Address of the event.
- *
- * @return                   Mask of pending events.
+ * @param[in] p_reg   Pointer to the structure of registers of the peripheral.
+ * @param[in] task    Task for which to set the configuration.
+ * @param[in] channel Channel through which to subscribe events.
  */
-__STATIC_INLINE uint32_t nrf_rtc_event_pending(NRF_RTC_Type * p_rtc, nrf_rtc_event_t event);
+__STATIC_INLINE void nrf_rtc_subscribe_set(NRF_RTC_Type * p_reg,
+                                           nrf_rtc_task_t task,
+                                           uint8_t        channel);
 
-/**@brief Function for clearing an event.
+/**
+ * @brief Function for clearing the subscribe configuration for a given
+ *        RTC task.
  *
- * @param[in]  p_rtc         Pointer to the peripheral registers structure.
- * @param[in]  event         Event to clear.
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
+ * @param[in] task  Task for which to clear the configuration.
  */
-__STATIC_INLINE void nrf_rtc_event_clear(NRF_RTC_Type * p_rtc, nrf_rtc_event_t event);
+__STATIC_INLINE void nrf_rtc_subscribe_clear(NRF_RTC_Type * p_reg,
+                                             nrf_rtc_task_t task);
 
-/**@brief Function for returning a counter value.
+/**
+ * @brief Function for setting the publish configuration for a given
+ *        RTC event.
  *
- * @param[in]  p_rtc         Pointer to the peripheral registers structure.
- *
- * @return                   Counter value.
+ * @param[in] p_reg   Pointer to the structure of registers of the peripheral.
+ * @param[in] event   Event for which to set the configuration.
+ * @param[in] channel Channel through which to publish the event.
  */
-__STATIC_INLINE uint32_t nrf_rtc_counter_get(NRF_RTC_Type * p_rtc);
+__STATIC_INLINE void nrf_rtc_publish_set(NRF_RTC_Type *  p_reg,
+                                         nrf_rtc_event_t event,
+                                         uint8_t         channel);
 
-/**@brief Function for setting a prescaler value.
+/**
+ * @brief Function for clearing the publish configuration for a given
+ *        RTC event.
  *
- * @param[in]  p_rtc         Pointer to the peripheral registers structure.
- * @param[in]  val           Value to set the prescaler to.
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
+ * @param[in] event Event for which to clear the configuration.
  */
-__STATIC_INLINE void nrf_rtc_prescaler_set(NRF_RTC_Type * p_rtc, uint32_t val);
+__STATIC_INLINE void nrf_rtc_publish_clear(NRF_RTC_Type *  p_reg,
+                                           nrf_rtc_event_t event);
+#endif // defined(DPPI_PRESENT) || defined(__NRFX_DOXYGEN__)
 
-/**@brief Function for returning the address of an event.
+/**
+ * @brief Function for checking if an event is pending.
  *
- * @param[in]  p_rtc         Pointer to the peripheral registers structure.
- * @param[in]  event         Requested event.
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
+ * @param[in] event Address of the event.
  *
- * @return     Address of the requested event register.
+ * @return Mask of pending events.
  */
-__STATIC_INLINE uint32_t nrf_rtc_event_address_get(NRF_RTC_Type * p_rtc, nrf_rtc_event_t event);
+__STATIC_INLINE uint32_t nrf_rtc_event_pending(NRF_RTC_Type * p_reg, nrf_rtc_event_t event);
 
-/**@brief Function for returning the address of a task.
+/**
+ * @brief Function for clearing an event.
  *
- * @param[in]  p_rtc         Pointer to the peripheral registers structure.
- * @param[in]  task          Requested task.
- *
- * @return     Address of the requested task register.
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
+ * @param[in] event Event to clear.
  */
-__STATIC_INLINE uint32_t nrf_rtc_task_address_get(NRF_RTC_Type * p_rtc, nrf_rtc_task_t task);
+__STATIC_INLINE void nrf_rtc_event_clear(NRF_RTC_Type * p_reg, nrf_rtc_event_t event);
 
-/**@brief Function for starting a task.
+/**
+ * @brief Function for returning a counter value.
  *
- * @param[in]  p_rtc         Pointer to the peripheral registers structure.
- * @param[in]  task          Requested task.
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
+ *
+ * @return Counter value.
  */
-__STATIC_INLINE void nrf_rtc_task_trigger(NRF_RTC_Type * p_rtc, nrf_rtc_task_t task);
+__STATIC_INLINE uint32_t nrf_rtc_counter_get(NRF_RTC_Type * p_reg);
 
-/**@brief Function for enabling events.
+/**
+ * @brief Function for setting a prescaler value.
  *
- * @param[in]  p_rtc         Pointer to the peripheral registers structure.
- * @param[in]  mask          Mask of event flags to enable.
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
+ * @param[in] val   Value to set the prescaler to.
  */
-__STATIC_INLINE void nrf_rtc_event_enable(NRF_RTC_Type * p_rtc, uint32_t mask);
+__STATIC_INLINE void nrf_rtc_prescaler_set(NRF_RTC_Type * p_reg, uint32_t val);
 
-/**@brief Function for disabling an event.
+/**
+ * @brief Function for returning the address of an event.
  *
- * @param[in]  p_rtc         Pointer to the peripheral registers structure.
- * @param[in]  event         Requested event.
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
+ * @param[in] event Requested event.
+ *
+ * @return Address of the requested event register.
  */
-__STATIC_INLINE void nrf_rtc_event_disable(NRF_RTC_Type * p_rtc, uint32_t event);
+__STATIC_INLINE uint32_t nrf_rtc_event_address_get(NRF_RTC_Type * p_reg, nrf_rtc_event_t event);
+
+/**
+ * @brief Function for returning the address of a task.
+ *
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
+ * @param[in] task  Requested task.
+ *
+ * @return Address of the requested task register.
+ */
+__STATIC_INLINE uint32_t nrf_rtc_task_address_get(NRF_RTC_Type * p_reg, nrf_rtc_task_t task);
+
+/**
+ * @brief Function for starting a task.
+ *
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
+ * @param[in] task  Requested task.
+ */
+__STATIC_INLINE void nrf_rtc_task_trigger(NRF_RTC_Type * p_reg, nrf_rtc_task_t task);
+
+/**
+ * @brief Function for enabling events.
+ *
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
+ * @param[in] mask  Mask of event flags to enable.
+ */
+__STATIC_INLINE void nrf_rtc_event_enable(NRF_RTC_Type * p_reg, uint32_t mask);
+
+/**
+ * @brief Function for disabling an event.
+ *
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
+ * @param[in] event Requested event.
+ */
+__STATIC_INLINE void nrf_rtc_event_disable(NRF_RTC_Type * p_reg, uint32_t event);
+
 
 #ifndef SUPPRESS_INLINE_IMPLEMENTATION
 
-__STATIC_INLINE  void nrf_rtc_cc_set(NRF_RTC_Type * p_rtc, uint32_t ch, uint32_t cc_val)
+__STATIC_INLINE  void nrf_rtc_cc_set(NRF_RTC_Type * p_reg, uint32_t ch, uint32_t cc_val)
 {
-    p_rtc->CC[ch] = cc_val;
+    p_reg->CC[ch] = cc_val;
 }
 
-__STATIC_INLINE  uint32_t nrf_rtc_cc_get(NRF_RTC_Type * p_rtc, uint32_t ch)
+__STATIC_INLINE  uint32_t nrf_rtc_cc_get(NRF_RTC_Type * p_reg, uint32_t ch)
 {
-    return p_rtc->CC[ch];
+    return p_reg->CC[ch];
 }
 
-__STATIC_INLINE void nrf_rtc_int_enable(NRF_RTC_Type * p_rtc, uint32_t mask)
+__STATIC_INLINE void nrf_rtc_int_enable(NRF_RTC_Type * p_reg, uint32_t mask)
 {
-    p_rtc->INTENSET = mask;
+    p_reg->INTENSET = mask;
 }
 
-__STATIC_INLINE void nrf_rtc_int_disable(NRF_RTC_Type * p_rtc, uint32_t mask)
+__STATIC_INLINE void nrf_rtc_int_disable(NRF_RTC_Type * p_reg, uint32_t mask)
 {
-    p_rtc->INTENCLR = mask;
+    p_reg->INTENCLR = mask;
 }
 
-__STATIC_INLINE uint32_t nrf_rtc_int_is_enabled(NRF_RTC_Type * p_rtc, uint32_t mask)
+__STATIC_INLINE uint32_t nrf_rtc_int_is_enabled(NRF_RTC_Type * p_reg, uint32_t mask)
 {
-    return (p_rtc->INTENSET & mask);
+    return (p_reg->INTENSET & mask);
 }
 
-__STATIC_INLINE uint32_t nrf_rtc_int_get(NRF_RTC_Type * p_rtc)
+__STATIC_INLINE uint32_t nrf_rtc_int_get(NRF_RTC_Type * p_reg)
 {
-    return p_rtc->INTENSET;
+    return p_reg->INTENSET;
 }
 
-__STATIC_INLINE uint32_t nrf_rtc_event_pending(NRF_RTC_Type * p_rtc, nrf_rtc_event_t event)
+#if defined(DPPI_PRESENT)
+__STATIC_INLINE void nrf_rtc_subscribe_set(NRF_RTC_Type * p_reg,
+                                           nrf_rtc_task_t task,
+                                           uint8_t        channel)
 {
-    return *(volatile uint32_t *)((uint8_t *)p_rtc + (uint32_t)event);
+    *((volatile uint32_t *) ((uint8_t *) p_reg + (uint32_t) task + 0x80uL)) =
+            ((uint32_t)channel | RTC_SUBSCRIBE_START_EN_Msk);
 }
 
-__STATIC_INLINE void nrf_rtc_event_clear(NRF_RTC_Type * p_rtc, nrf_rtc_event_t event)
+__STATIC_INLINE void nrf_rtc_subscribe_clear(NRF_RTC_Type * p_reg,
+                                             nrf_rtc_task_t task)
 {
-    *((volatile uint32_t *)((uint8_t *)p_rtc + (uint32_t)event)) = 0;
+    *((volatile uint32_t *) ((uint8_t *) p_reg + (uint32_t) task + 0x80uL)) = 0;
+}
+
+__STATIC_INLINE void nrf_rtc_publish_set(NRF_RTC_Type *  p_reg,
+                                         nrf_rtc_event_t event,
+                                         uint8_t         channel)
+{
+    *((volatile uint32_t *) ((uint8_t *) p_reg + (uint32_t) event + 0x80uL)) =
+            ((uint32_t)channel | RTC_PUBLISH_TICK_EN_Msk);
+}
+
+__STATIC_INLINE void nrf_rtc_publish_clear(NRF_RTC_Type *  p_reg,
+                                           nrf_rtc_event_t event)
+{
+    *((volatile uint32_t *) ((uint8_t *) p_reg + (uint32_t) event + 0x80uL)) = 0;
+}
+#endif // defined(DPPI_PRESENT)
+
+__STATIC_INLINE uint32_t nrf_rtc_event_pending(NRF_RTC_Type * p_reg, nrf_rtc_event_t event)
+{
+    return *(volatile uint32_t *)((uint8_t *)p_reg + (uint32_t)event);
+}
+
+__STATIC_INLINE void nrf_rtc_event_clear(NRF_RTC_Type * p_reg, nrf_rtc_event_t event)
+{
+    *((volatile uint32_t *)((uint8_t *)p_reg + (uint32_t)event)) = 0;
 #if __CORTEX_M == 0x04
-    volatile uint32_t dummy = *((volatile uint32_t *)((uint8_t *)p_rtc + (uint32_t)event));
+    volatile uint32_t dummy = *((volatile uint32_t *)((uint8_t *)p_reg + (uint32_t)event));
     (void)dummy;
 #endif
 }
 
-__STATIC_INLINE uint32_t nrf_rtc_counter_get(NRF_RTC_Type * p_rtc)
+__STATIC_INLINE uint32_t nrf_rtc_counter_get(NRF_RTC_Type * p_reg)
 {
-     return p_rtc->COUNTER;
+     return p_reg->COUNTER;
 }
 
-__STATIC_INLINE void nrf_rtc_prescaler_set(NRF_RTC_Type * p_rtc, uint32_t val)
+__STATIC_INLINE void nrf_rtc_prescaler_set(NRF_RTC_Type * p_reg, uint32_t val)
 {
     NRFX_ASSERT(val <= (RTC_PRESCALER_PRESCALER_Msk >> RTC_PRESCALER_PRESCALER_Pos));
-    p_rtc->PRESCALER = val;
+    p_reg->PRESCALER = val;
 }
-__STATIC_INLINE uint32_t rtc_prescaler_get(NRF_RTC_Type * p_rtc)
+__STATIC_INLINE uint32_t rtc_prescaler_get(NRF_RTC_Type * p_reg)
 {
-    return p_rtc->PRESCALER;
-}
-
-__STATIC_INLINE uint32_t nrf_rtc_event_address_get(NRF_RTC_Type * p_rtc, nrf_rtc_event_t event)
-{
-    return (uint32_t)p_rtc + event;
+    return p_reg->PRESCALER;
 }
 
-__STATIC_INLINE uint32_t nrf_rtc_task_address_get(NRF_RTC_Type * p_rtc, nrf_rtc_task_t task)
+__STATIC_INLINE uint32_t nrf_rtc_event_address_get(NRF_RTC_Type * p_reg, nrf_rtc_event_t event)
 {
-    return (uint32_t)p_rtc + task;
+    return (uint32_t)p_reg + event;
 }
 
-__STATIC_INLINE void nrf_rtc_task_trigger(NRF_RTC_Type * p_rtc, nrf_rtc_task_t task)
+__STATIC_INLINE uint32_t nrf_rtc_task_address_get(NRF_RTC_Type * p_reg, nrf_rtc_task_t task)
 {
-    *(__IO uint32_t *)((uint32_t)p_rtc + task) = 1;
+    return (uint32_t)p_reg + task;
 }
 
-__STATIC_INLINE void nrf_rtc_event_enable(NRF_RTC_Type * p_rtc, uint32_t mask)
+__STATIC_INLINE void nrf_rtc_task_trigger(NRF_RTC_Type * p_reg, nrf_rtc_task_t task)
 {
-    p_rtc->EVTENSET = mask;
+    *(__IO uint32_t *)((uint32_t)p_reg + task) = 1;
 }
-__STATIC_INLINE void nrf_rtc_event_disable(NRF_RTC_Type * p_rtc, uint32_t mask)
+
+__STATIC_INLINE void nrf_rtc_event_enable(NRF_RTC_Type * p_reg, uint32_t mask)
 {
-    p_rtc->EVTENCLR = mask;
+    p_reg->EVTENSET = mask;
+}
+__STATIC_INLINE void nrf_rtc_event_disable(NRF_RTC_Type * p_reg, uint32_t mask)
+{
+    p_reg->EVTENCLR = mask;
 }
 #endif
 
