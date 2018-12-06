@@ -468,7 +468,7 @@ static void tab_options_print(const struct shell *shell,
 
 static u16_t common_beginning_find(const struct shell_static_entry *cmd,
 				   const char **str,
-				   size_t first, size_t cnt, size_t arg_len)
+				   size_t first, size_t cnt, u16_t arg_len)
 {
 	struct shell_static_entry dynamic_entry;
 	const struct shell_static_entry *match;
