@@ -67,12 +67,37 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 	const struct mcux_adc16_config *config = dev->config->config_info;
 	struct mcux_adc16_data *data = dev->driver_data;
 	adc16_hardware_average_mode_t mode;
+	adc16_resolution_t resolution;
 	int error;
+	u32_t tmp32;
+	ADC_Type *base = config->base;
 
-	if (sequence->resolution != 12) {
+	switch (sequence->resolution) {
+	case 8:
+	case 9:
+		resolution = kADC16_Resolution8or9Bit;
+		break;
+	case 10:
+	case 11:
+		resolution = kADC16_Resolution10or11Bit;
+		break;
+	case 12:
+	case 13:
+		resolution = kADC16_Resolution12or13Bit;
+		break;
+#if defined(FSL_FEATURE_ADC16_MAX_RESOLUTION) && (FSL_FEATURE_ADC16_MAX_RESOLUTION >= 16U)
+	case 16:
+		resolution = kADC16_Resolution16Bit;
+		break;
+#endif
+	default:
 		LOG_ERR("Invalid resolution");
 		return -EINVAL;
 	}
+
+	tmp32 = base->CFG1 & ~(ADC_CFG1_MODE_MASK);
+	tmp32 |= ADC_CFG1_MODE(resolution);
+	base->CFG1 = tmp32;
 
 	switch (sequence->oversampling) {
 	case 0:
