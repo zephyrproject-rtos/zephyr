@@ -46,11 +46,14 @@ static struct _timeout *next(struct _timeout *t)
 
 static void remove_timeout(struct _timeout *t)
 {
-	if (next(t) != NULL) {
-		next(t)->dticks += t->dticks;
-	}
+	if (t->node.next != NULL && t->node.prev != NULL) {
+		if (next(t) != NULL) {
+			next(t)->dticks += t->dticks;
+		}
 
-	sys_dlist_remove(&t->node);
+		sys_dlist_remove(&t->node);
+	}
+	t->node.next = t->node.prev = NULL;
 	t->dticks = _INACTIVE;
 }
 
