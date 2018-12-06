@@ -185,20 +185,6 @@ int cfb_framebuffer_clear(struct device *dev, bool clear_display)
 	return 0;
 }
 
-
-int cfb_framebuffer_invert(struct device *dev)
-{
-	struct char_framebuffer *fb = &char_fb;
-
-	if (!fb || !fb->buf) {
-		return -1;
-	}
-
-	fb->inverted = !fb->inverted;
-
-	return 0;
-}
-
 int cfb_framebuffer_finalize(struct device *dev)
 {
 	const struct display_driver_api *api = dev->driver_api;

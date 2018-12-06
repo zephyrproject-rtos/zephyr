@@ -101,15 +101,6 @@ int cfb_print(struct device *dev, char *str, u16_t x, u16_t y);
 int cfb_framebuffer_clear(struct device *dev, bool clear_display);
 
 /**
- * @brief Invert Pixels.
- *
- * @param dev Pointer to device structure for driver instance
- *
- * @return 0 on success, negative value otherwise
- */
-int cfb_framebuffer_invert(struct device *dev);
-
-/**
  * @brief Finalize framebuffer and write it to display RAM,
  * invert or reorder pixels if necessary.
  *
