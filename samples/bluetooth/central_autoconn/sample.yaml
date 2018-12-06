@@ -1,0 +1,8 @@
+sample:
+  description: TBD
+  name: TBD
+tests:
+  test:
+    harness: bluetooth
+    platform_whitelist: qemu_cortex_m3 qemu_x86
+    tags: bluetooth
