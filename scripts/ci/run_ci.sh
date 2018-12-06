@@ -252,7 +252,7 @@ if [ -n "$MAIN_CI" ]; then
 		# let the host settle down
 		sleep 10
 		${SANITYCHECK} ${SANITYCHECK_OPTIONS_RETRY} || \
-			( sleep 10; ${SANITYCHECK} ${SANITYCHECK_OPTIONS_RETRY}; )
+			( sleep 10; ${SANITYCHECK} ${SANITYCHECK_OPTIONS_RETRY_2}; )
 	fi
 
 	# cleanup
