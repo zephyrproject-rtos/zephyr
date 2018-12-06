@@ -627,8 +627,8 @@ void shell_process(const struct shell *shell);
  * @param[in] shell	Pointer to the shell instance.
  * @param[in] prompt	New shell prompt.
  *
- * @return 0		success
- * @return -1		new string is too long
+ * @return 0		Success.
+ * @return -ENOMEM	New prompt is too long.
  */
 int shell_prompt_change(const struct shell *shell, char *prompt);
 
@@ -642,6 +642,9 @@ int shell_prompt_change(const struct shell *shell, char *prompt);
  */
 void shell_help(const struct shell *shell);
 
+/* @brief Command's help has been printed */
+#define SHELL_CMD_HELP_PRINTED (1)
+
 /** @brief Execute command.
  *
  * Pass command line to shell to execute.
@@ -654,7 +657,7 @@ void shell_help(const struct shell *shell);
  *			enabled.
  * @param[in] cmd	Command to be executed.
  *
- * @returns Result of the execution
+ * @returns		Result of the execution
  */
 int shell_execute_cmd(const struct shell *shell, const char *cmd);
 
