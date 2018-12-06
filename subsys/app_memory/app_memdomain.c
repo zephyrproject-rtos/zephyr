@@ -92,6 +92,21 @@ void app_calc_size(void)
  */
 void appmem_init_app_memory(void)
 {
+#ifdef CONFIG_ARC
+	/*
+	 * appmem_init_app_memory will access all partitions
+	 * For CONFIG_ARC_MPU_VER == 3, these partitions are not added
+	 * into MPU now, so need to disable mpu first to do app_bss_zero()
+	 */
+	extern void arc_core_mpu_disable(void);
+	arc_core_mpu_disable();
+#endif
+
 	app_calc_size();
 	app_bss_zero();
+
+#ifdef CONFIG_ARC
+	extern void arc_core_mpu_enable(void);
+	arc_core_mpu_enable();
+#endif
 }

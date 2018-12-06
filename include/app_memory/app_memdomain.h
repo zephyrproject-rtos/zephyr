@@ -100,6 +100,10 @@ struct app_region {
 		name.partition = &mem_domain_##name; \
 	}
 
+/* A helper function that should be called to define multiple partitions*/
+#define APPMEM_PARTITION_DEFINE(...)\
+	FOR_EACH(appmem_partition, __VA_ARGS__)
+
 /*
  * A wrapper around the k_mem_domain_* functions. Goal here was
  * to a) differentiate these operations from the k_mem_domain*
@@ -131,6 +135,10 @@ struct app_region {
 		k_mem_domain_init(&domain_##name, 1, &region.partition); \
 	}
 
+/* A helper function that should be called to define multiple domains*/
+#define APPMEM_DOMAIN_DEFINE(...)\
+	FOR_EACH(appmem_domain, __VA_ARGS__)
+
 /*
  * The following allows the FOR_EACH macro to call each partition's
  * appmem_init_part_##name . Note: semicolon needed or else compiler
@@ -139,6 +147,10 @@ struct app_region {
  */
 #define appmem_init_part(name) \
 	appmem_init_part_##name();
+
+/* A helper function that should be called to initialize multiple partitions */
+#define APPMEM_INIT_PARTITIONS(...)		\
+	FOR_EACH(appmem_init_part, __VA_ARGS__)
 
 extern sys_dlist_t app_mem_list;
 

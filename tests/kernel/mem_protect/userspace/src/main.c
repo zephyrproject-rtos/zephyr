@@ -38,14 +38,23 @@ K_SEM_DEFINE(expect_fault_sem, 0, 1);
  * ztest and this test suite. part1 and part2 are for
  * subsequent test specifically for this new implementation.
  */
-FOR_EACH(appmem_partition, part0, part1, part2);
+APPMEM_PARTITION_OBJECT_DEFINE(part0, part1, part2);
 
+/* this defines all the functions that are needed to configure
+ * The memory partition. Usually goes in a common header file.
+ */
+APPMEM_PARTITION_HEADER_DEFINE(part0, part1, part2);
 /*
  * Create memory domains. dom0 is for the ztest and this
  * test suite, specifically. dom1 is for a specific test
  * in this test suite.
  */
-FOR_EACH(appmem_domain, dom0, dom1);
+APPMEM_DOMAIN_OBJECT_DEFINE(dom0, dom1);
+
+/* this defines all the functions that are needed to configure
+ * The memory domains. Usually goes in a common header file.
+ */
+APPMEM_DOMAIN_HEADER_DEFINE(dom0, dom1);
 
 _app_dmem(part0) static volatile bool give_uthread_end_sem;
 _app_dmem(part0) bool mem_access_check;
@@ -65,6 +74,12 @@ _app_bmem(part0) static volatile bool expect_fault;
 #error "Not implemented for this architecture"
 #endif
 _app_bmem(part0) static volatile unsigned int expected_reason;
+
+/* We can not have an empty partition created for the APP shared memory.
+ * Because of this we need to add this dummy variable and this will be
+ * placed in the part2.
+ */
+_app_dmem(part2) u32_t dummy_variable;
 
 /*
  * We need something that can act as a memory barrier
@@ -688,23 +703,13 @@ extern k_thread_stack_t ztest_thread_stack[];
 void test_main(void)
 {
 	/* partitions must be initialized first */
-	FOR_EACH(appmem_init_part, part0, part1, part2);
+	APPMEM_INIT_PARTITIONS(part0, part1, part2);
 	/*
 	 * Next, the app_memory must be initialized in order to
 	 * calculate size of the dynamically created subsections.
 	 */
-#if defined(CONFIG_ARC)
-	/*
-	 * appmem_init_app_memory will access all partitions
-	 * For CONFIG_ARC_MPU_VER == 3, these partitions are not added
-	 * into MPU now, so need to disable mpu first to do app_bss_zero()
-	 */
-	arc_core_mpu_disable();
 	appmem_init_app_memory();
-	arc_core_mpu_enable();
-#else
-	appmem_init_app_memory();
-#endif
+
 	/* Domain is initialized with partition part0 */
 	appmem_init_domain_dom0(part0);
 	/* Next, the partition must be added to the domain */
