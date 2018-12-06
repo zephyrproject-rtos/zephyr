@@ -36,6 +36,34 @@
 # get the currently active Python version by default with a consistent version
 # of PYTHON_LIBRARIES.
 
+function(determine_python_version exe result)
+    execute_process(COMMAND "${exe}" -c
+                            "import sys; sys.stdout.write(';'.join([str(x) for x in sys.version_info[:3]]))"
+                    OUTPUT_VARIABLE _VERSION
+                    RESULT_VARIABLE _PYTHON_VERSION_RESULT
+                    ERROR_QUIET)
+    if(_PYTHON_VERSION_RESULT)
+        message(FATAL_ERROR "Failed to test python version")
+    else()
+        string(REPLACE ";" "." ver "${_VERSION}")
+		set(${result} ${ver} PARENT_SCOPE)
+    endif()
+endfunction()
+
+# Find out if the 'python' executable on path has the correct version,
+# and choose it if it does. This gives this executable the highest
+# priority, which is expected behaviour.
+find_program(PYTHON_EXECUTABLE python)
+if(NOT (${PYTHON_EXECUTABLE} STREQUAL FIND_PY-NOTFOUND))
+  determine_python_version(${PYTHON_EXECUTABLE} ver)
+  if(${ver} VERSION_LESS PythonInterp_FIND_VERSION)
+	# We didn't find the correct version on path, so forget about it
+	# and continue looking.
+	unset(PYTHON_EXECUTABLE)
+	unset(PYTHON_EXECUTABLE CACHE)
+  endif()
+endif()
+
 unset(_Python_NAMES)
 
 set(_PYTHON1_VERSIONS 1.6 1.5)
@@ -119,46 +147,16 @@ endif()
 
 # determine python version string
 if(PYTHON_EXECUTABLE)
-    execute_process(COMMAND "${PYTHON_EXECUTABLE}" -c
-                            "import sys; sys.stdout.write(';'.join([str(x) for x in sys.version_info[:3]]))"
-                    OUTPUT_VARIABLE _VERSION
-                    RESULT_VARIABLE _PYTHON_VERSION_RESULT
-                    ERROR_QUIET)
-    if(NOT _PYTHON_VERSION_RESULT)
-        string(REPLACE ";" "." PYTHON_VERSION_STRING "${_VERSION}")
-        list(GET _VERSION 0 PYTHON_VERSION_MAJOR)
-        list(GET _VERSION 1 PYTHON_VERSION_MINOR)
-        list(GET _VERSION 2 PYTHON_VERSION_PATCH)
-        if(PYTHON_VERSION_PATCH EQUAL 0)
-            # it's called "Python 2.7", not "2.7.0"
-            string(REGEX REPLACE "\\.0$" "" PYTHON_VERSION_STRING "${PYTHON_VERSION_STRING}")
-        endif()
-    else()
-        # sys.version predates sys.version_info, so use that
-        execute_process(COMMAND "${PYTHON_EXECUTABLE}" -c "import sys; sys.stdout.write(sys.version)"
-                        OUTPUT_VARIABLE _VERSION
-                        RESULT_VARIABLE _PYTHON_VERSION_RESULT
-                        ERROR_QUIET)
-        if(NOT _PYTHON_VERSION_RESULT)
-            string(REGEX REPLACE " .*" "" PYTHON_VERSION_STRING "${_VERSION}")
-            string(REGEX REPLACE "^([0-9]+)\\.[0-9]+.*" "\\1" PYTHON_VERSION_MAJOR "${PYTHON_VERSION_STRING}")
-            string(REGEX REPLACE "^[0-9]+\\.([0-9])+.*" "\\1" PYTHON_VERSION_MINOR "${PYTHON_VERSION_STRING}")
-            if(PYTHON_VERSION_STRING MATCHES "^[0-9]+\\.[0-9]+\\.([0-9]+)")
-                set(PYTHON_VERSION_PATCH "${CMAKE_MATCH_1}")
-            else()
-                set(PYTHON_VERSION_PATCH "0")
-            endif()
-        else()
-            # sys.version was first documented for Python 1.5, so assume
-            # this is older.
-            set(PYTHON_VERSION_STRING "1.4")
-            set(PYTHON_VERSION_MAJOR "1")
-            set(PYTHON_VERSION_MINOR "4")
-            set(PYTHON_VERSION_PATCH "0")
-        endif()
-    endif()
-    unset(_PYTHON_VERSION_RESULT)
-    unset(_VERSION)
+    determine_python_version(${PYTHON_EXECUTABLE} res)
+	set(PYTHON_VERSION_STRING ${res})
+
+	if(PYTHON_VERSION_STRING MATCHES "^([0-9]+)\\.([0-9]+)\\.([0-9]+)")
+	  set(PYTHON_VERSION_PATCH "${CMAKE_MATCH_3}")
+	else()
+	  set(PYTHON_VERSION_PATCH "0")
+	endif()
+	set(PYTHON_VERSION_MAJOR "${CMAKE_MATCH_1}")
+	set(PYTHON_VERSION_MINOR "${CMAKE_MATCH_2}")
 endif()
 
 include(FindPackageHandleStandardArgs)
