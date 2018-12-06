@@ -94,7 +94,9 @@ static int tester_send(struct device *dev, struct net_pkt *pkt)
 	hdr = (struct net_eth_hdr *)net_pkt_ll(pkt);
 
 	if (ntohs(hdr->type) == NET_ETH_PTYPE_ARP) {
-		struct net_arp_hdr *arp_hdr = NET_ARP_HDR(pkt);
+		/* First frag has eth hdr */
+		struct net_arp_hdr *arp_hdr =
+			(struct net_arp_hdr *)pkt->frags->frags;
 
 		if (ntohs(arp_hdr->opcode) == NET_ARP_REPLY) {
 			if (!req_test && pkt != pending_pkt) {
@@ -166,7 +168,8 @@ static inline struct in_addr *if_get_addr(struct net_if *iface)
 
 static inline struct net_pkt *prepare_arp_reply(struct net_if *iface,
 						struct net_pkt *req,
-						struct net_eth_addr *addr)
+						struct net_eth_addr *addr,
+						struct net_eth_hdr **eth_rep)
 {
 	struct net_pkt *pkt;
 	struct net_buf *frag;
@@ -186,15 +189,16 @@ static inline struct net_pkt *prepare_arp_reply(struct net_if *iface,
 	net_pkt_frag_add(pkt, frag);
 	net_pkt_set_iface(pkt, iface);
 
-	net_pkt_set_ll(pkt, frag->data);
-	net_buf_pull(frag, sizeof(struct net_eth_hdr));
-
 	eth = NET_ETH_HDR(pkt);
 
 	(void)memset(&eth->dst.addr, 0xff, sizeof(struct net_eth_addr));
 	memcpy(&eth->src.addr, net_if_get_link_addr(iface)->addr,
 	       sizeof(struct net_eth_addr));
 	eth->type = htons(NET_ETH_PTYPE_ARP);
+
+	*eth_rep = eth;
+
+	net_buf_pull(frag, sizeof(struct net_eth_hdr));
 
 	hdr = NET_ARP_HDR(pkt);
 
@@ -223,7 +227,8 @@ fail:
 
 static inline struct net_pkt *prepare_arp_request(struct net_if *iface,
 						  struct net_pkt *req,
-						  struct net_eth_addr *addr)
+						  struct net_eth_addr *addr,
+						  struct net_eth_hdr **eth_hdr)
 {
 	struct net_pkt *pkt;
 	struct net_buf *frag;
@@ -243,11 +248,12 @@ static inline struct net_pkt *prepare_arp_request(struct net_if *iface,
 	net_pkt_frag_add(pkt, frag);
 	net_pkt_set_iface(pkt, iface);
 
-	req_hdr = NET_ARP_HDR(req);
 	eth_req = NET_ETH_HDR(req);
+	eth = NET_ETH_HDR(pkt);
 
-	net_pkt_set_ll(pkt, frag->data);
-	net_buf_pull(frag, sizeof(struct net_eth_hdr));
+	net_buf_pull(req->frags, sizeof(struct net_eth_hdr));
+
+	req_hdr = NET_ARP_HDR(req);
 
 	eth = NET_ETH_HDR(pkt);
 
@@ -255,6 +261,9 @@ static inline struct net_pkt *prepare_arp_request(struct net_if *iface,
 	memcpy(&eth->src.addr, addr, sizeof(struct net_eth_addr));
 
 	eth->type = htons(NET_ETH_PTYPE_ARP);
+	*eth_hdr = eth;
+
+	net_buf_pull(frag, sizeof(struct net_eth_hdr));
 
 	hdr = NET_ARP_HDR(pkt);
 
@@ -289,9 +298,6 @@ static void setup_eth_header(struct net_if *iface, struct net_pkt *pkt,
 	       sizeof(struct net_eth_addr));
 
 	hdr->type = htons(type);
-
-	net_pkt_set_ll(pkt, pkt->frags->data);
-	net_buf_pull(pkt->frags, sizeof(struct net_eth_hdr));
 }
 
 struct net_arp_context net_arp_context_data;
@@ -334,6 +340,7 @@ void test_arp(void)
 {
 	k_thread_priority_set(k_current_get(), K_PRIO_COOP(7));
 
+	struct net_eth_hdr *eth_hdr = NULL;
 	struct net_pkt *pkt, *pkt2;
 	struct net_buf *frag;
 	struct net_if *iface;
@@ -553,13 +560,12 @@ void test_arp(void)
 	net_ipaddr_copy(&arp_hdr->dst_ipaddr, &dst);
 	net_ipaddr_copy(&arp_hdr->src_ipaddr, &src);
 
-	pkt2 = prepare_arp_reply(iface, pkt, &hwaddr);
+	pkt2 = prepare_arp_reply(iface, pkt, &hwaddr, &eth_hdr);
 
-	zassert_not_null(pkt2,
-		"ARP reply generation failed.");
+	zassert_not_null(pkt2, "ARP reply generation failed.");
 
 	/* The pending packet should now be sent */
-	switch (net_arp_input(pkt2)) {
+	switch (net_arp_input(pkt2, eth_hdr)) {
 	case NET_OK:
 	case NET_CONTINUE:
 		break;
@@ -571,11 +577,10 @@ void test_arp(void)
 	k_yield();
 
 	/**TESTPOINTS: Check ARP reply*/
-	zassert_false(send_status < 0,
-		"ARP reply was not sent");
+	zassert_false(send_status < 0, "ARP reply was not sent");
 
 	zassert_equal(pkt->ref, 1,
-		"ARP cache should no longer own the original packet");
+		      "ARP cache should no longer own the original packet");
 
 	net_pkt_unref(pkt);
 
@@ -598,21 +603,21 @@ void test_arp(void)
 
 	setup_eth_header(iface, pkt, &hwaddr, NET_ETH_PTYPE_ARP);
 
-	arp_hdr = NET_ARP_HDR(pkt);
+	arp_hdr = (struct net_arp_hdr *)(frag->data +
+					 (sizeof(struct net_eth_hdr)));
 	net_buf_add(frag, sizeof(struct net_arp_hdr));
 
 	net_ipaddr_copy(&arp_hdr->dst_ipaddr, &src);
 	net_ipaddr_copy(&arp_hdr->src_ipaddr, &dst);
 
-	pkt2 = prepare_arp_request(iface, pkt, &hwaddr);
+	pkt2 = prepare_arp_request(iface, pkt, &hwaddr, &eth_hdr);
 
 	/**TESTPOINT: Check if ARP request generation failed*/
-	zassert_not_null(pkt2,
-		"ARP request generation failed.");
+	zassert_not_null(pkt2, "ARP request generation failed.");
 
 	req_test = true;
 
-	switch (net_arp_input(pkt2)) {
+	switch (net_arp_input(pkt2, eth_hdr)) {
 	case NET_OK:
 	case NET_CONTINUE:
 		break;
@@ -624,8 +629,7 @@ void test_arp(void)
 	k_yield();
 
 	/**TESTPOINT: Check if ARP request sent*/
-	zassert_false(send_status < 0,
-		"ARP req was not sent");
+	zassert_false(send_status < 0, "ARP req was not sent");
 
 	net_pkt_unref(pkt);
 
@@ -657,6 +661,8 @@ void test_arp(void)
 		setup_eth_header(iface, pkt, net_eth_broadcast_addr(),
 				 NET_ETH_PTYPE_ARP);
 
+		eth_hdr = (struct net_eth_hdr *)net_pkt_data(pkt);
+		net_buf_pull(frag, sizeof(struct net_eth_hdr));
 		arp_hdr = NET_ARP_HDR(pkt);
 
 		arp_hdr->hwtype = htons(NET_ARP_HTYPE_ETH);
@@ -671,7 +677,7 @@ void test_arp(void)
 
 		net_buf_add(frag, sizeof(struct net_arp_hdr));
 
-		verdict = net_arp_input(pkt);
+		verdict = net_arp_input(pkt, eth_hdr);
 		zassert_not_equal(verdict, NET_DROP, "Gratuitous ARP failed");
 
 		/* Then check that the HW address is changed for an existing

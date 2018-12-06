@@ -162,7 +162,7 @@ static int slip_send(struct device *dev, struct net_pkt *pkt)
 			LOG_DBG("sent data %d bytes", frag->len);
 
 			if (frag->len) {
-				LOG_HEXDUMP_DBG(net_pkt_ll(pkt),
+				LOG_HEXDUMP_DBG(frag->data,
 						frag->len, "<slip ");
 			}
 		}

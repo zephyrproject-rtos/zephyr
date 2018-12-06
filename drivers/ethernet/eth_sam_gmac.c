@@ -330,7 +330,7 @@ static struct gptp_hdr *check_gptp_msg(struct net_if *iface,
 				       struct net_pkt *pkt,
 				       bool is_tx)
 {
-	u8_t *msg_start = net_pkt_ll(pkt);
+	u8_t *msg_start = net_pkt_data(pkt);
 	struct ethernet_context *eth_ctx;
 	struct gptp_hdr *gptp_hdr;
 	int eth_hlen;
