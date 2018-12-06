@@ -140,6 +140,18 @@ int settings_save(void);
 int settings_save_one(const char *name, void *value, size_t val_len);
 
 /**
+ * Delete a single serialized in persisted storage.
+ *
+ * Deleting an existing key-value pair in the settings mean
+ * to set its value to NULL.
+ *
+ * @param name Name/key of the settings item.
+ *
+ * @return 0 on success, non-zero on failure.
+ */
+int settings_delete(const char *name);
+
+/**
  * Set settings item identified by @p name to be value @p value.
  * This finds the settings handler for this subtree and calls it's
  * set handler.
