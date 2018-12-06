@@ -46,34 +46,39 @@ echo "Attempting to run ${N_CASES} cases (logging to \
 
 chmod +x $ALL_CASES
 
+export CLEAN_XML="sed -E -e 's/&/\&amp;/g' -e 's/</\&lt;/g' -e 's/>/\&gt;/g' \
+                  -e 's/\"/&quot;/g'"
+
 echo -n "" > $TMP_RES_FILE
 
 if [ `command -v parallel` ]; then
   parallel '
   echo "<testcase name=\"{}\" time=\"0\">";
-  {} $@ > {#}.log ;
+  {} $@ &> {#}.log ;
   if [ $? -ne 0 ]; then
     (>&2 echo -e "\e[91m{} FAILED\e[39m");
     (>&2 cat {#}.log);
     echo "<failure message=\"failed\" type=\"failure\">";
-    cat {#}.log ;
+    cat {#}.log | eval $CLEAN_XML;
     echo "</failure>";
+    rm {#}.log ;
+    echo "</testcase>";
     exit 1;
   else
     (>&2 echo -e "{} PASSED");
+    rm {#}.log ;
+    echo "</testcase>";
   fi;
-  rm {#}.log ;
-  echo "</testcase>";
   ' ::: $ALL_CASES >> $TMP_RES_FILE ; err=$?
 else #fallback in case parallel is not installed
   for CASE in $ALL_CASES; do
     echo "<testcase name=\"$CASE\" time=\"0\">" >> $TMP_RES_FILE
-    $CASE $@ > $i.log
+    $CASE $@ &> $i.log
     if [ $? -ne 0 ]; then
       echo -e "\e[91m$CASE FAILED\e[39m"
       cat $i.log
       echo "<failure message=\"failed\" type=\"failure\">" >> $TMP_RES_FILE
-      cat $i.log >> $TMP_RES_FILE
+      cat $i.log | eval $CLEAN_XML >> $TMP_RES_FILE
       echo "</failure>" >> $TMP_RES_FILE
       let "err++"
     else
