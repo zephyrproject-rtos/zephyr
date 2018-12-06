@@ -81,6 +81,21 @@
 	status ="ok";
 };
 
+&i2c0 {
+	status = "ok";
+	sda-pin = <0>;
+	scl-pin = <1>;
+	/* smba-pin = <2>; */
+};
+
+&spi1 {
+	status = "ok";
+	sck-pin = <25>;
+	mosi-pin = <24>;
+	miso-pin = <23>;
+	cs-gpios = <&gpio0 30 0>;
+};
+
 &uart0 {
 	current-speed = <115200>;
 	status = "ok";

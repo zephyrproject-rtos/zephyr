@@ -11,4 +11,3 @@ tests:
     build_only: true
     platform_whitelist: nrf51_ble400
     tags: sensors
-    extra_args: CONF_FILE="prj_nrf.conf"
