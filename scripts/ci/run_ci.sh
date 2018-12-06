@@ -29,7 +29,7 @@ BSIM_BT_TEST_RESULTS_FILE="./bsim_bt_out/bsim_results.xml"
 MATRIX_BUILDS=1
 MATRIX=1
 
-while getopts ":p:m:b:r:M:cfsB:" opt; do
+while getopts ":p:m:b:r:M:cfs" opt; do
 	case $opt in
 		c)
 			echo "Execute CI" >&2
@@ -58,10 +58,6 @@ while getopts ":p:m:b:r:M:cfsB:" opt; do
 		b)
 			echo "Base Branch: $OPTARG" >&2
 			BRANCH=$OPTARG
-			;;
-		B)
-			echo "bsim BT tests xml results file: $OPTARG" >&2
-			BSIM_BT_TEST_RESULTS_FILE=$OPTARG
 			;;
 		r)
 			echo "Remote: $OPTARG" >&2
