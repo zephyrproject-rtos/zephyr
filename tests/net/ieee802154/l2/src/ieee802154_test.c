@@ -184,9 +184,9 @@ static bool test_ns_sending(struct ieee802154_pkt_test *t)
 		return false;
 	}
 
-	pkt_hexdump(net_pkt_ll(current_pkt), net_pkt_get_len(current_pkt));
+	pkt_hexdump(net_pkt_data(current_pkt), net_pkt_get_len(current_pkt));
 
-	if (!ieee802154_validate_frame(net_pkt_ll(current_pkt),
+	if (!ieee802154_validate_frame(net_pkt_data(current_pkt),
 				       net_pkt_get_len(current_pkt), &mpdu)) {
 		NET_ERR("*** Sent packet is not valid\n");
 		net_pkt_unref(current_pkt);
@@ -241,9 +241,9 @@ static bool test_ack_reply(struct ieee802154_pkt_test *t)
 		return false;
 	}
 
-	pkt_hexdump(net_pkt_ll(current_pkt), net_pkt_get_len(current_pkt));
+	pkt_hexdump(net_pkt_data(current_pkt), net_pkt_get_len(current_pkt));
 
-	if (!ieee802154_validate_frame(net_pkt_ll(current_pkt),
+	if (!ieee802154_validate_frame(net_pkt_data(current_pkt),
 				       net_pkt_get_len(current_pkt), &mpdu)) {
 		NET_ERR("*** ACK Reply is invalid\n");
 		return false;

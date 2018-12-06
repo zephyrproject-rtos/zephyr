@@ -155,12 +155,12 @@ static int eth_tx_offloading_disabled(struct device *dev, struct net_pkt *pkt)
 		udp_hdr->dst_port = port;
 
 		memcpy(lladdr,
-		       ((struct net_eth_hdr *)net_pkt_ll(pkt))->src.addr,
+		       ((struct net_eth_hdr *)net_pkt_data(pkt))->src.addr,
 		       sizeof(lladdr));
-		memcpy(((struct net_eth_hdr *)net_pkt_ll(pkt))->src.addr,
-		       ((struct net_eth_hdr *)net_pkt_ll(pkt))->dst.addr,
+		memcpy(((struct net_eth_hdr *)net_pkt_data(pkt))->src.addr,
+		       ((struct net_eth_hdr *)net_pkt_data(pkt))->dst.addr,
 		       sizeof(lladdr));
-		memcpy(((struct net_eth_hdr *)net_pkt_ll(pkt))->dst.addr,
+		memcpy(((struct net_eth_hdr *)net_pkt_data(pkt))->dst.addr,
 		       lladdr, sizeof(lladdr));
 
 		net_pkt_ref(pkt);

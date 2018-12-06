@@ -215,9 +215,8 @@ static struct net_buf *pkt_get_data(struct net_pkt *pkt, struct net_if *iface)
 
 	net_buf_add(frag, sizeof(struct net_eth_hdr));
 	net_pkt_frag_add(pkt, frag);
-	net_pkt_set_ll(pkt, frag->data);
 
-	hdr = (struct net_eth_hdr *)(net_pkt_ll(pkt));
+	hdr = (struct net_eth_hdr *)(net_pkt_data(pkt));
 	hdr->type = htons(NET_ETH_PTYPE_IP);
 
 	net_ipaddr_copy(&hdr->dst, &src_addr);
