@@ -20,6 +20,11 @@ config SENSOR_INIT_PRIORITY
 	help
 	  Sensor initialization priority.
 
+config SENSOR_SHELL
+	bool "Enable sensor shell"
+	help
+	  This shell provides access to basic sensor data.
+
 comment "Device Drivers"
 
 source "drivers/sensor/adt7420/Kconfig"
