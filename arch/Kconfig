@@ -80,6 +80,42 @@ config BIG_ENDIAN
          is used to select linker script OUTPUT_FORMAT and command
          line option for gen_isr_tables.py.
 
+if ARC || ARM || NIOS2 || X86
+
+config SRAM_SIZE
+	int "SRAM Size in kB"
+	default "$(dt_get_int_val,DT_SRAM_SIZE)"
+	help
+	This option specifies the size of the SRAM in kB.  It is normally set by
+	the board's defconfig file and the user should generally avoid modifying
+	it via the menu configuration.
+
+config SRAM_BASE_ADDRESS
+	hex "SRAM Base Address"
+	default "$(dt_get_hex_val,DT_SRAM_BASE_ADDRESS)"
+	help
+	This option specifies the base address of the SRAM on the board.  It is
+	normally set by the board's defconfig file and the user should generally
+	avoid modifying it via the menu configuration.
+
+config FLASH_SIZE
+	int "Flash Size in kB"
+	default "$(dt_get_int_val,DT_FLASH_SIZE)" if (XIP && ARM) || !ARM
+	help
+	This option specifies the size of the flash in kB.  It is normally set by
+	the board's defconfig file and the user should generally avoid modifying
+	it via the menu configuration.
+
+config FLASH_BASE_ADDRESS
+	hex "Flash Base Address"
+	default "$(dt_get_hex_val,DT_FLASH_BASE_ADDRESS)" if (XIP && ARM) || !ARM
+	help
+	This option specifies the base address of the flash on the board.  It is
+	normally set by the board's defconfig file and the user should generally
+	avoid modifying it via the menu configuration.
+
+endif # ARM || ARC || NIOS2 || X86
+
 if ARCH_HAS_TRUSTED_EXECUTION
 
 config TRUSTED_EXECUTION_SECURE

@@ -310,6 +310,7 @@ config FAULT_DUMP
 
 config XIP
 	default y
+
 endmenu
 
 menu "ARM Cortex-M0/M0+/M3/M4/M7/M23/M33 options"

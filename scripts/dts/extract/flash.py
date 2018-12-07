@@ -61,8 +61,8 @@ class DTFlash(DTDirective):
 
     def _extract_flash(self, node_address, prop, def_label):
         load_defs = {
-            'CONFIG_FLASH_BASE_ADDRESS': 0,
-            'CONFIG_FLASH_SIZE': 0
+            'DT_FLASH_BASE_ADDRESS': 0,
+            'DT_FLASH_SIZE': 0
         }
 
         if node_address == 'dummy-flash':
@@ -106,8 +106,8 @@ class DTFlash(DTDirective):
         addr += translate_addr(addr, node_address,
                 nr_address_cells, nr_size_cells)
 
-        load_defs['CONFIG_FLASH_BASE_ADDRESS'] = hex(addr)
-        load_defs['CONFIG_FLASH_SIZE'] = int(size / 1024)
+        load_defs['DT_FLASH_BASE_ADDRESS'] = hex(addr)
+        load_defs['DT_FLASH_SIZE'] = int(size / 1024)
 
         flash_props = ["label", "write-block-size", "erase-block-size"]
         for prop in flash_props:
