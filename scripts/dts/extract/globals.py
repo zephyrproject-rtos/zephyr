@@ -301,7 +301,11 @@ def get_binding(node_address):
 
         if 'child' in parent_binding:
             bus = parent_binding['child']['bus']
-            binding = bus_bindings[bus][compat]
+            try:
+                binding = bus_bindings[bus][compat]
+            except:
+                binding = bindings[compat]
+
         else:
             binding = bindings[compat]
     else:
