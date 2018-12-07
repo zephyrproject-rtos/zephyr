@@ -294,6 +294,8 @@ else()
   set(SOC_PATH ${SOC_FAMILY}/${SOC_SERIES})
 endif()
 
+include(${ZEPHYR_BASE}/cmake/dts-gen.cmake)
+
 include(${ZEPHYR_BASE}/cmake/target_toolchain.cmake)
 
 set(KERNEL_NAME ${CONFIG_KERNEL_BIN_NAME})
