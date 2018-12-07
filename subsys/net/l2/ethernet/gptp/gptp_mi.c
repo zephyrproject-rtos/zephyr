@@ -14,6 +14,7 @@ LOG_MODULE_DECLARE(net_gptp, CONFIG_NET_GPTP_LOG_LEVEL);
 #include "gptp_state.h"
 #include "gptp_private.h"
 
+#if CONFIG_NET_GPTP_LOG_LEVEL >= LOG_LEVEL_DBG
 static const char * const state2str(enum gptp_port_state state)
 {
 	switch (state) {
@@ -39,6 +40,7 @@ static const char * const state2str(enum gptp_port_state state)
 
 	return "<unknown>";
 }
+#endif
 
 #if CONFIG_NET_GPTP_LOG_LEVEL >= LOG_LEVEL_DBG
 void gptp_change_port_state_debug(int port, enum gptp_port_state state,
