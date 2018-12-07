@@ -56,7 +56,7 @@ assert(TOOLCHAIN_ROOT "Zephyr toolchain root path invalid: please set the TOOLCH
 set(ZEPHYR_TOOLCHAIN_VARIANT ${ZEPHYR_TOOLCHAIN_VARIANT} CACHE STRING "Zephyr toolchain variant")
 assert(ZEPHYR_TOOLCHAIN_VARIANT "Zephyr toolchain variant invalid: please set the ZEPHYR_TOOLCHAIN_VARIANT-variable")
 
-if(CONFIG_ARCH_POSIX OR (ZEPHYR_TOOLCHAIN_VARIANT STREQUAL "host"))
+if(${ARCH} STREQUAL "posix" OR (ZEPHYR_TOOLCHAIN_VARIANT STREQUAL "host"))
   set(COMPILER host-gcc)
 endif()
 
