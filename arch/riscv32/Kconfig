@@ -51,7 +51,7 @@ config RISCV_SOC_CONTEXT_SAVE
 	    See gen_offset.h for more details.
 
 	  The generic architecture IRQ wrapper will also call
-	  __soc_save_context and __soc_restore_context routines at
+	  \_\_soc_save_context and \_\_soc_restore_context routines at
 	  ISR entry and exit, respectively. These should typically
 	  be implemented in assembly. If they were C functions, they
 	  would have these signatures:
