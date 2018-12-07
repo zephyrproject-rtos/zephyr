@@ -1,9 +1,4 @@
-# NB: Depends on host-tools.cmake having been executed already
-
-# Ensures toolchain-gcc.cmake is run
 set(COMPILER gcc)
-
-# TODO fetch from environment
 
 # These defaults work for some targets like RISC-V
 set(CROSS_COMPILE_TARGET ${ARCH}-${TOOLCHAIN_VENDOR}-elf)
