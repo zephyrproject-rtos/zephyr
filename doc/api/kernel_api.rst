@@ -241,6 +241,14 @@ of variable-size data items.
    :project: Zephyr
    :content-only:
 
+Kernel Version
+**************
+Kernel version handling and APIs related to kernel version being used.
+
+.. doxygengroup:: version_apis
+   :project: Zephyr
+   :content-only:
+
 Memory Domain
 *************
 
