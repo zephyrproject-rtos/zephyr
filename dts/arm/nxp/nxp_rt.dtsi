@@ -51,7 +51,7 @@
 			interrupts = <108 0>;
 			label = "FLEXSPI0";
 			#address-cells = <1>;
-			#size-cells = <1>;
+			#size-cells = <0>;
 		};
 
 		semc0: semc0@402f0000 {

@@ -63,9 +63,10 @@
 arduino_serial: &uart3 {};
 
 &flexspi0 {
+	reg = <0x402a8000 0x4000>, <0x60000000 0x4000000>;
 	hyperflash0: hyperflash@0 {
-		/* Cypress S26KS512SDPBHI02 */
-		reg = <0x60000000 0x4000000>;
+		compatible = "cypress,s26ks512s";
+		reg = <0>;
 		status = "ok";
 	};
 };
