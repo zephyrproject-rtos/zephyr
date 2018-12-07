@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2017, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "mimxrt1050_evk.dts"
+
+/ {
+	chosen {
+#if defined(CONFIG_CODE_ITCM)
+		zephyr,flash = &itcm0;
+#elif defined(CONFIG_CODE_QSPI)
+		zephyr,flash = &qspi0;
+#endif
+	};
+};
+
+/delete-node/ &hyperflash0;
+
+&flexspi0 {
+	qspi0: qspi@0 {
+		/* ISSI IS25WP064AJBLE */
+		reg = <0x60000000 0x800000>;
+		status = "ok";
+	};
+};
