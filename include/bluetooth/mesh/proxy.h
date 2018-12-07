@@ -17,6 +17,10 @@
  * @{
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Enable advertising with Node Identity.
  *
@@ -28,7 +32,11 @@
  */
 int bt_mesh_proxy_identity_enable(void);
 
-/**
+#ifdef __cplusplus
+}
+#endif
+
+ /**
  * @}
  */
 
