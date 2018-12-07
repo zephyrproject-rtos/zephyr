@@ -1962,9 +1962,9 @@ static inline bool is_proper_ipv6_address(struct net_if_addr *addr)
 	return false;
 }
 
-static inline struct in6_addr *net_if_ipv6_get_best_match(struct net_if *iface,
-							  struct in6_addr *dst,
-							  u8_t *best_so_far)
+static struct in6_addr *net_if_ipv6_get_best_match(struct net_if *iface,
+						   const struct in6_addr *dst,
+						   u8_t *best_so_far)
 {
 	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
 	struct in6_addr *src = NULL;
@@ -1992,7 +1992,7 @@ static inline struct in6_addr *net_if_ipv6_get_best_match(struct net_if *iface,
 #endif /* CONFIG_NET_IPV6 */
 
 const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *dst_iface,
-						   struct in6_addr *dst)
+						   const struct in6_addr *dst)
 {
 #if defined(CONFIG_NET_IPV6)
 	struct in6_addr *src = NULL;
@@ -2047,7 +2047,7 @@ const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *dst_iface,
 #endif
 }
 
-struct net_if *net_if_ipv6_select_src_iface(struct in6_addr *dst)
+struct net_if *net_if_ipv6_select_src_iface(const struct in6_addr *dst)
 {
 #if defined(CONFIG_NET_IPV6)
 	const struct in6_addr *src;
@@ -2285,7 +2285,7 @@ bool net_if_ipv4_is_addr_bcast(struct net_if *iface,
 	return false;
 }
 
-struct net_if *net_if_ipv4_select_src_iface(struct in_addr *dst)
+struct net_if *net_if_ipv4_select_src_iface(const struct in_addr *dst)
 {
 #if defined(CONFIG_NET_IPV4)
 	struct net_if *iface;
@@ -2322,7 +2322,7 @@ static inline bool is_proper_ipv4_address(struct net_if_addr *addr)
 }
 
 static struct in_addr *net_if_ipv4_get_best_match(struct net_if *iface,
-						  struct in_addr *dst,
+						  const struct in_addr *dst,
 						  u8_t *best_so_far)
 {
 	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
@@ -2379,7 +2379,7 @@ struct in_addr *net_if_ipv4_get_ll(struct net_if *iface,
 }
 
 const struct in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
-						  struct in_addr *dst)
+						  const struct in_addr *dst)
 {
 #if defined(CONFIG_NET_IPV4)
 	struct in_addr *src = NULL;

@@ -1246,7 +1246,7 @@ static inline u32_t net_if_ipv6_get_retrans_timer(struct net_if *iface)
  * could be found.
  */
 const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *iface,
-						   struct in6_addr *dst);
+						   const struct in6_addr *dst);
 
 /**
  * @brief Get a network interface that should be used when sending
@@ -1257,7 +1257,7 @@ const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *iface,
  * @return Pointer to network interface to use, NULL if no suitable interface
  * could be found.
  */
-struct net_if *net_if_ipv6_select_src_iface(struct in6_addr *dst);
+struct net_if *net_if_ipv6_select_src_iface(const struct in6_addr *dst);
 
 /**
  * @brief Get a IPv6 link local address in a given state.
@@ -1474,7 +1474,7 @@ bool net_if_ipv4_is_addr_bcast(struct net_if *iface,
  * @return Pointer to network interface to use, NULL if no suitable interface
  * could be found.
  */
-struct net_if *net_if_ipv4_select_src_iface(struct in_addr *dst);
+struct net_if *net_if_ipv4_select_src_iface(const struct in_addr *dst);
 
 /**
  * @brief Get a IPv4 source address that should be used when sending
@@ -1488,7 +1488,7 @@ struct net_if *net_if_ipv4_select_src_iface(struct in_addr *dst);
  * could be found.
  */
 const struct in_addr *net_if_ipv4_select_src_addr(struct net_if *iface,
-						  struct in_addr *dst);
+						  const struct in_addr *dst);
 
 /**
  * @brief Get a IPv4 link local address in a given state.
