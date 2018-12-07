@@ -305,7 +305,7 @@ References
    https://www.nxp.com/docs/en/data-sheet/IMX7DCEC.pdf
 
 .. _i.MX 7 Dual Reference Manual:
-   https://www.nxp.com/docs/en/reference-manual/IMX7DRM.pdf
+   https://www.nxp.com/webapp/Download?colCode=IMX7DRM
 
 .. _J-Link Tools:
    https://www.segger.com/downloads/jlink/#J-LinkSoftwareAndDocumentationPack

@@ -178,7 +178,7 @@ your Zephyr application to flash. It will leave you at a GDB prompt.
    https://www.nxp.com/support/developer-resources/software-development-tools/mcuxpresso-software-and-tools/mimxrt1060-evk-i.mx-rt1060-evaluation-kit:MIMXRT1060-EVK
 
 .. _MIMXRT1060-EVK User Guide:
-   https://www.nxp.com/docs/en/user-guide/UM11151.PDF
+   https://www.nxp.com/webapp/Download?colCode=UM11151
 
 .. _MIMXRT1060-EVK Schematics:
    https://www.nxp.com/webapp/Download?colCode=MIMXRT1060-EVK-DESIGN-FILE-A2
@@ -190,7 +190,7 @@ your Zephyr application to flash. It will leave you at a GDB prompt.
    https://www.nxp.com/docs/en/nxp/data-sheets/IMXRT1060CEC.pdf
 
 .. _i.MX RT1060 Reference Manual:
-   https://www.nxp.com/docs/en/reference-manual/IMXRT1060RM.pdf
+   https://www.nxp.com/webapp/Download?colCode=IMXRT1060RM
 
 .. _Segger J-Link OpenSDA V2.1 Firmware:
    https://www.segger.com/downloads/jlink/OpenSDA_V2_1.bin

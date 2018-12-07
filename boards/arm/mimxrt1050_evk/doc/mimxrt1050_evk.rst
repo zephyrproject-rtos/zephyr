@@ -235,7 +235,7 @@ Current Zephyr build supports the new MIMXRT1050-EVKB
    https://www.nxp.com/products/microcontrollers-and-processors/arm-based-processors-and-mcus/i.mx-applications-processors/i.mx-rt-series/i.mx-rt1050-evaluation-kit:MIMXRT1050-EVK
 
 .. _MIMXRT1050-EVK User Guide:
-   https://www.nxp.com/docs/en/user-guide/IMXRT1050EVKBHUG.pdf
+   https://www.nxp.com/webapp/Download?colCode=IMXRT1050EVKBHUG
 
 .. _MIMXRT1050-EVK Schematics:
    https://www.nxp.com/webapp/Download?colCode=MIMXRT1050-EVK-DESIGNFILES

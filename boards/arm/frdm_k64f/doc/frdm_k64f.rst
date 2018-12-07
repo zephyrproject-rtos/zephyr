@@ -261,22 +261,22 @@ You can debug an application in the usual way.  Here is an example for the
    :goals: debug
 
 .. _FRDM-K64F Website:
-   http://www.nxp.com/products/software-and-tools/hardware-development-tools/freedom-development-boards/freedom-development-platform-for-kinetis-k64-k63-and-k24-mcus:FRDM-K64F
+   https://www.nxp.com/support/developer-resources/evaluation-and-development-boards/freedom-development-boards/mcu-boards/freedom-development-platform-for-kinetis-k64-k63-and-k24-mcus:FRDM-K64F
 
 .. _FRDM-K64F User Guide:
-   http://www.nxp.com/assets/documents/data/en/user-guides/FRDMK64FUG.pdf
+   https://www.nxp.com/webapp/Download?colCode=FRDMK64FUG
 
 .. _FRDM-K64F Schematics:
-   http://www.nxp.com/assets/downloads/data/en/schematics/FRDM-K64F-SCH-E4.pdf
+   https://www.nxp.com/webapp/Download?colCode=FRDM-K64F-SCH-E4
 
 .. _K64F Website:
-   http://www.nxp.com/products/microcontrollers-and-processors/arm-processors/kinetis-cortex-m-mcus/k-series-performance-m4/k6x-ethernet/kinetis-k64-120-mhz-256kb-sram-microcontrollers-mcus-based-on-arm-cortex-m4-core:K64_120
+   https://www.nxp.com/products/processors-and-microcontrollers/arm-based-processors-and-mcus/kinetis-cortex-m-mcus/k-seriesperformancem4/k6x-ethernet/kinetis-k64-120-mhz-256kb-sram-microcontrollers-mcus-based-on-arm-cortex-m4-core:K64_120
 
 .. _K64F Datasheet:
-   http://www.nxp.com/assets/documents/data/en/data-sheets/K64P144M120SF5.pdf
+   https://www.nxp.com/docs/en/data-sheet/K64P144M120SF5.pdf
 
 .. _K64F Reference Manual:
-   http://www.nxp.com/assets/documents/data/en/reference-manuals/K64P144M120SF5RM.pdf
+   https://www.nxp.com/docs/en/reference-manual/K64P144M120SF5RM.pdf
 
 .. _DAPLink FRDM-K64F Firmware:
    http://www.nxp.com/assets/downloads/data/en/ide-debug-compile-build-tools/OpenSDAv2.2_DAPLink_frdmk64f_rev0242.zip

@@ -185,22 +185,22 @@ program your Zephyr application to flash. It will leave you at a gdb prompt.
    :goals: debug
 
 .. _FRDM-KW41Z Website:
-   http://www.nxp.com/products/microcontrollers-and-processors/more-processors/application-specific-mcus-mpus/bluetooth-low-energy-ble/nxp-freedom-development-kit-for-kinetis-kw41z-31z-21z-mcus:FRDM-KW41Z
+   https://www.nxp.com/products/processors-and-microcontrollers/arm-based-processors-and-mcus/kinetis-cortex-m-mcus/w-serieswireless-conn.m0-plus-m4/freedom-development-kit-for-kinetis-kw41z-31z-21z-mcus:FRDM-KW41Z
 
 .. _FRDM-KW41Z User Guide:
-   http://www.nxp.com/assets/documents/data/en/user-guides/FRDMKW41ZUG.pdf
+   https://www.nxp.com/webapp/Download?colCode=FRDMKW41ZUG
 
 .. _FRDM-KW41Z Schematics:
-   http://www.nxp.com/assets/downloads/data/en/schematics/FRDM-KW41Z-SCH.pdf
+   https://www.nxp.com/webapp/Download?colCode=FRDM-KW41Z-SCH
 
 .. _KW41Z Website:
-   http://www.nxp.com/products/microcontrollers-and-processors/arm-processors/kinetis-cortex-m-mcus/w-series-wireless-m0-plus-m4/kinetis-kw41z-2.4-ghz-dual-mode-ble-and-802.15.4-wireless-radio-microcontroller-mcu-based-on-arm-cortex-m0-plus-core:KW41Z
+   https://www.nxp.com/products/wireless/zigbee/kinetis-kw41z-2.4-ghz-dual-mode-bluetooth-low-energy-and-802.15.4-wireless-radio-microcontroller-mcu-based-on-arm-cortex-m0-plus-core:KW41Z
 
 .. _KW41Z Datasheet:
-   http://www.nxp.com/assets/documents/data/en/data-sheets/MKW41Z512.pdf
+   https://www.nxp.com/docs/en/data-sheet/MKW41Z512.pdf
 
 .. _KW41Z Reference Manual:
-   http://www.nxp.com/assets/documents/data/en/reference-manuals/MKW41Z512RM.pdf
+   https://www.nxp.com/webapp/Download?colCode=MKW41Z512RM
 
 .. _DAPLink FRDM-KW41Z Firmware:
    http://www.nxp.com/assets/downloads/data/en/reference-applications/OpenSDAv2.2_DAPLink_frdmkw41z_rev0241.zip

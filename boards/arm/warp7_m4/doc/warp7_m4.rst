@@ -328,7 +328,7 @@ References
    https://www.nxp.com/docs/en/data-sheet/IMX7SCEC.pdf
 
 .. _i.MX 7 Solo Reference Manual:
-   https://www.nxp.com/docs/en/reference-manual/IMX7SRM.pdf
+   https://www.nxp.com/webapp/Download?colCode=IMX7SRM
 
 .. _J-Link Tools:
    https://www.segger.com/downloads/jlink/#J-LinkSoftwareAndDocumentationPack

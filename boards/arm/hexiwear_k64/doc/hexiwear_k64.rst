@@ -281,22 +281,22 @@ will then see a plot of the heart rate data that updates once per second.
 
 
 .. _Hexiwear Website:
-   http://www.nxp.com/hexiwear
+   https://www.nxp.com/support/developer-resources/nxp-designs/hexiwear-complete-iot-development-solution:HEXIWEAR?&tid=vanHEXIWEAR
 
 .. _Hexiwear Fact Sheet:
-   http://www.nxp.com/assets/documents/data/en/fact-sheets/HEXIWEAR-FS.pdf
+   https://www.nxp.com/docs/en/fact-sheet/HEXIWEAR-FS.pdf
 
 .. _Hexiwear Schematics:
    http://cdn-docs.mikroe.com/images/c/c0/Sch_Hexiwear_MainBoard_v106c.pdf
 
 .. _K64F Website:
-   http://www.nxp.com/products/microcontrollers-and-processors/arm-processors/kinetis-cortex-m-mcus/k-series-performance-m4/k6x-ethernet/kinetis-k64-120-mhz-256kb-sram-microcontrollers-mcus-based-on-arm-cortex-m4-core:K64_120
+   https://www.nxp.com/products/processors-and-microcontrollers/arm-based-processors-and-mcus/kinetis-cortex-m-mcus/k-seriesperformancem4/k6x-ethernet/kinetis-k64-120-mhz-256kb-sram-microcontrollers-mcus-based-on-arm-cortex-m4-core:K64_120
 
 .. _K64F Datasheet:
-   http://www.nxp.com/assets/documents/data/en/data-sheets/K64P144M120SF5.pdf
+   https://www.nxp.com/docs/en/data-sheet/K64P144M120SF5.pdf
 
 .. _K64F Reference Manual:
-   http://www.nxp.com/assets/documents/data/en/reference-manuals/K64P144M120SF5RM.pdf
+   https://www.nxp.com/docs/en/reference-manual/K64P144M120SF5RM.pdf
 
 .. _DAPLink Hexiwear Firmware:
    https://github.com/MikroElektronika/HEXIWEAR/blob/master/HW/HEXIWEAR_DockingStation/HEXIWEAR_DockingStation_DAPLINK_FW.bin
