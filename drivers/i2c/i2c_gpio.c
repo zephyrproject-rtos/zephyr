@@ -105,12 +105,6 @@ static int i2c_gpio_init(struct device *dev)
 
 	i2c_bitbang_init(&context->bitbang, &io_fns, context);
 
-	/*
-	 * Set driver_api at very end of init so if we return early with error
-	 * then the device can't be found later by device_get_binding. This is
-	 * important because driver framework ignores errors from init
-	 * functions.
-	 */
 	dev->driver_api = &api;
 
 	return 0;

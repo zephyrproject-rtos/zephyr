@@ -50,10 +50,18 @@ void _sys_device_do_config_level(s32_t level)
 
 	for (info = config_levels[level]; info < config_levels[level+1];
 								info++) {
+		int retval;
 		struct device_config *device_conf = info->config;
 
-		(void)device_conf->init(info);
-		_k_object_init(info);
+		retval = device_conf->init(info);
+		if (retval != 0) {
+			/* Initialization failed. Clear the API struct so that
+			 * device_get_binding() will not succeed for it.
+			 */
+			info->driver_api = NULL;
+		} else {
+			_k_object_init(info);
+		}
 	}
 }
 
