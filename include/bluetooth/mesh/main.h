@@ -360,11 +360,12 @@ int bt_mesh_lpn_poll(void);
  */
 void bt_mesh_lpn_set_cb(void (*cb)(u16_t friend_addr, bool established));
 
-/**
- * @}
- */
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 	
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_MESH_MAIN_H_ */
