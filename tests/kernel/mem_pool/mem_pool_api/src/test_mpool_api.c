@@ -15,7 +15,7 @@ K_MEM_POOL_DEFINE(kmpool, BLK_SIZE_MIN, BLK_SIZE_MAX, BLK_NUM_MAX, BLK_ALIGN);
 void tmpool_alloc_free(void *data)
 {
 	ARG_UNUSED(data);
-	struct k_mem_block block[BLK_NUM_MIN];
+	static struct k_mem_block block[BLK_NUM_MIN];
 
 	for (int i = 0; i < BLK_NUM_MIN; i++) {
 		/**
@@ -98,7 +98,7 @@ void test_mpool_alloc_free_isr(void)
  */
 void test_mpool_alloc_size(void)
 {
-	struct k_mem_block block[BLK_NUM_MIN];
+	static struct k_mem_block block[BLK_NUM_MIN];
 	size_t size = BLK_SIZE_MAX;
 	int i = 0;
 
@@ -144,7 +144,7 @@ void test_mpool_alloc_size(void)
  */
 void test_mpool_alloc_timeout(void)
 {
-	struct k_mem_block block[BLK_NUM_MIN], fblock;
+	static struct k_mem_block block[BLK_NUM_MIN], fblock;
 	s64_t tms;
 
 	for (int i = 0; i < BLK_NUM_MIN; i++) {
