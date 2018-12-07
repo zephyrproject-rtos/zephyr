@@ -113,12 +113,12 @@ SECTIONS
      * .plt and .iplt are here according to 'arm-zephyr-elf-ld --verbose',
      * before text section.
      */
-    SECTION_PROLOGUE(.plt,,)
+    /DISCARD/ :
 	{
 	*(.plt)
 	}
 
-    SECTION_PROLOGUE(.iplt,,)
+    /DISCARD/ :
 	{
 	*(.iplt)
 	}
@@ -293,8 +293,7 @@ SECTIONS
      * These are here according to 'arm-zephyr-elf-ld --verbose',
      * before data section.
      */
-    SECTION_PROLOGUE(.got,,)
-	{
+    /DISCARD/ : {
 	*(.got.plt)
 	*(.igot.plt)
 	*(.got)
