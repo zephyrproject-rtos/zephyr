@@ -79,6 +79,10 @@
 
 #include <soc.h>
 
+#define LOG_LEVEL CONFIG_PCI_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(pci);
+
 #include <pci/pci_mgr.h>
 #include <pci/pci.h>
 
@@ -456,9 +460,7 @@ static void pci_set_command_bits(struct pci_dev_info *dev_info, u32_t bits)
 	pci_ctrl_addr.field.device = dev_info->dev;
 	pci_ctrl_addr.field.reg = 1;
 
-#ifdef CONFIG_PCI_DEBUG
-	printk("pci_set_command_bits 0x%x\n", pci_ctrl_addr.value);
-#endif
+	LOG_DBG("bits 0x%x", bits);
 
 	pci_read(DEFAULT_PCI_CONTROLLER,
 			pci_ctrl_addr,
@@ -483,7 +485,7 @@ void pci_enable_bus_master(struct pci_dev_info *dev_info)
 	pci_set_command_bits(dev_info, PCI_CMD_MASTER_ENABLE);
 }
 
-#ifdef CONFIG_PCI_DEBUG
+#ifdef CONFIG_PCI_LOG_LEVEL_DBG
 /**
  *
  * @brief Show PCI device
@@ -509,4 +511,4 @@ void pci_show(struct pci_dev_info *dev_info)
 		(u32_t)(dev_info->addr + dev_info->size - 1),
 		dev_info->irq);
 }
-#endif /* CONFIG_PCI_DEBUG */
+#endif /* CONFIG_PCI_LOG_LEVEL_DBG */
