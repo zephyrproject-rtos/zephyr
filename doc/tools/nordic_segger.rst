@@ -34,12 +34,8 @@ nRF5x Command-Line Tools Installation
 The nRF5x command-line Tools allow you to control your nRF5x device from the command line,
 including resetting it, erasing or programming the flash memory and more.
 
-To install them, use the appropriate link for your operating system:
-
-* `nRF5x Command-Line Tools for Windows`_
-* `nRF5x Command-Line Tools for Linux 32-bit`_
-* `nRF5x Command-Line Tools for Linux 64-bit`_
-* `nRF5x Command-Line Tools for macOS`_
+To install them, visit `nRF5x Command-Line Tools`_ and select your operating
+system.
 
 After installing, make sure that ``nrfjprog`` is somewhere in your executable path
 to be able to invoke it from anywhere.
@@ -233,10 +229,7 @@ References
 
 .. target-notes::
 
-.. _nRF5x Command-Line Tools for Windows: https://www.nordicsemi.com/eng/nordic/Products/nRF51822/nRF5x-Command-Line-Tools-Win32/33444
-.. _nRF5x Command-Line Tools for Linux 32-bit: https://www.nordicsemi.com/eng/nordic/Products/nRF51822/nRF5x-Command-Line-Tools-Linux32/52615
-.. _nRF5x Command-Line Tools for Linux 64-bit: https://www.nordicsemi.com/eng/nordic/Products/nRF51822/nRF5x-Command-Line-Tools-Linux64/51386
-.. _nRF5x Command-Line Tools for macOS: https://www.nordicsemi.com/eng/nordic/Products/nRF51822/nRF5x-Command-Line-Tools-OSX/53402
+.. _nRF5x Command-Line Tools: https://www.nordicsemi.com/Software-and-Tools/Development-Tools/nRF5-Command-Line-Tools
 
 .. _Segger SAM3U Wiki: https://wiki.segger.com/index.php?title=J-Link-OB_SAM3U
 .. _Real-Time Tracing (RTT): https://www.segger.com/jlink-rtt.html
@@ -247,7 +240,5 @@ References
 .. _ModemManager send AT commands to TTY-like devices: https://bugs.freedesktop.org/show_bug.cgi?id=85007
 .. _blacklist Segger devices by editing udev rules: http://www.at91.com/linux4sam/bin/view/Linux4SAM/SoftwareTools#Device_or_resource_busy_dev_ttyA
 
-.. _nRF52 DK website: http://www.nordicsemi.com/eng/Products/Bluetooth-Smart-Bluetooth-low-energy/nRF52-DK
-.. _Nordic Semiconductor Infocenter: http://infocenter.nordicsemi.com/
 .. _J-Link Software and documentation pack: https://www.segger.com/jlink-software.html
 
