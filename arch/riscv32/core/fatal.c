@@ -166,7 +166,6 @@ hang_system:
 }
 
 
-#ifdef CONFIG_PRINTK
 static char *cause_str(u32_t cause)
 {
 	switch (cause) {
@@ -186,7 +185,6 @@ static char *cause_str(u32_t cause)
 		return "unknown";
 	}
 }
-#endif
 
 
 FUNC_NORETURN void _Fault(const NANO_ESF *esf)
@@ -196,9 +194,7 @@ FUNC_NORETURN void _Fault(const NANO_ESF *esf)
 	__asm__ volatile("csrr %0, mcause" : "=r" (mcause));
 
 	mcause &= SOC_MCAUSE_EXP_MASK;
-#ifdef CONFIG_PRINTK
 	printk("Exception cause %s (%d)\n", cause_str(mcause), (int)mcause);
-#endif
 
 	_NanoFatalErrorHandler(_NANO_ERR_CPU_EXCEPTION, esf);
 }
