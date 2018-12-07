@@ -139,13 +139,6 @@ function on_complete() {
 	mkdir -p shippable/testresults
 	mkdir -p shippable/codecoverage
 
-	if [ "$MATRIX" = "1" ]; then
-		echo "Handle coverage data..."
-		handle_coverage
-	else
-		rm -rf sanity-out out-2nd-pass;
-	fi;
-
 	if [ -e compliance.xml ]; then
 		echo "Copy compliance.xml"
 		cp compliance.xml shippable/testresults/;
@@ -159,6 +152,13 @@ function on_complete() {
 	if [ -e ${BSIM_BT_TEST_RESULTS_FILE} ]; then
 		echo "Copy ${BSIM_BT_TEST_RESULTS_FILE}"
 		cp ${BSIM_BT_TEST_RESULTS_FILE} shippable/testresults/;
+	fi;
+
+	if [ "$MATRIX" = "1" ]; then
+		echo "Handle coverage data..."
+		handle_coverage
+	else
+		rm -rf sanity-out out-2nd-pass;
 	fi;
 }
 
