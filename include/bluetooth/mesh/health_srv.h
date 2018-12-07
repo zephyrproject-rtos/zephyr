@@ -88,7 +88,7 @@ extern const struct bt_mesh_model_op bt_mesh_health_srv_op[];
 			      bt_mesh_health_srv_op, pub, srv)
 
 #ifdef __cplusplus
-extern "C" {
+}
 #endif
 
 /**
