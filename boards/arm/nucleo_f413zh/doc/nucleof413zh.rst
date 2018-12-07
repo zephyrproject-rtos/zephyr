@@ -106,22 +106,22 @@ input/output, pull-up, etc.
 
 Available pins:
 ---------------
-.. image:: img/nucleo_f412zg_zio_left.png
+.. image:: img/nucleo_f413zh_zio_left.png
    :width: 720px
    :align: center
    :height: 540px
    :alt: Nucleo F413ZH ZIO connectors (left)
-.. image:: img/nucleo_f412zg_zio_right.png
+.. image:: img/nucleo_f413zh_zio_right.png
    :width: 720px
    :align: center
    :height: 540px
    :alt: Nucleo F413ZH ZIO connectors (right)
-.. image:: img/nucleo_f412zg_morpho_left.png
+.. image:: img/nucleo_f413zh_morpho_left.png
    :width: 720px
    :align: center
    :height: 540px
    :alt: Nucleo F413ZH Morpho connectors (left)
-.. image:: img/nucleo_f412zg_morpho_right.png
+.. image:: img/nucleo_f413zh_morpho_right.png
    :width: 720px
    :align: center
    :height: 540px
