@@ -263,6 +263,7 @@ static int eth_initialize(struct device *dev)
 {
 	struct eth_stm32_hal_dev_data *dev_data;
 	struct eth_stm32_hal_dev_cfg *cfg;
+	int ret = 0;
 
 	__ASSERT_NO_MSG(dev != NULL);
 
@@ -276,14 +277,19 @@ static int eth_initialize(struct device *dev)
 	__ASSERT_NO_MSG(dev_data->clock != NULL);
 
 	/* enable clock */
-	clock_control_on(dev_data->clock,
+	ret = clock_control_on(dev_data->clock,
 		(clock_control_subsys_t *)&cfg->pclken);
-	clock_control_on(dev_data->clock,
+	ret |= clock_control_on(dev_data->clock,
 		(clock_control_subsys_t *)&cfg->pclken_tx);
-	clock_control_on(dev_data->clock,
+	ret |= clock_control_on(dev_data->clock,
 		(clock_control_subsys_t *)&cfg->pclken_rx);
-	clock_control_on(dev_data->clock,
+	ret |= clock_control_on(dev_data->clock,
 		(clock_control_subsys_t *)&cfg->pclken_ptp);
+
+	if (ret) {
+		LOG_ERR("Failed to enable ethernet clock");
+		return -EIO;
+	}
 
 	__ASSERT_NO_MSG(cfg->config_func != NULL);
 

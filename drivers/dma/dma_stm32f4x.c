@@ -499,7 +499,11 @@ static int dma_stm32_init(struct device *dev)
 
 	__ASSERT_NO_MSG(ddata->clk);
 
-	clock_control_on(ddata->clk, (clock_control_subsys_t *) &cdata->pclken);
+	if (clock_control_on(ddata->clk,
+		(clock_control_subsys_t *) &cdata->pclken) != 0) {
+		LOG_ERR("Could not enable DMA clock\n");
+		return -EIO;
+	}
 
 	/* Set controller specific configuration */
 	cdata->config(ddata);

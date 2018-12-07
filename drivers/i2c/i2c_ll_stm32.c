@@ -170,7 +170,11 @@ static int i2c_stm32_init(struct device *dev)
 #endif
 
 	__ASSERT_NO_MSG(clock);
-	clock_control_on(clock, (clock_control_subsys_t *) &cfg->pclken);
+	if (clock_control_on(clock,
+		(clock_control_subsys_t *) &cfg->pclken) != 0) {
+		LOG_ERR("i2c: failure enabling clock");
+		return -EIO;
+	}
 
 #if defined(CONFIG_SOC_SERIES_STM32F3X) || defined(CONFIG_SOC_SERIES_STM32F0X)
 	/*

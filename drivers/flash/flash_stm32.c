@@ -252,7 +252,9 @@ static int stm32_flash_init(struct device *dev)
 #endif
 
 	/* enable clock */
-	clock_control_on(clk, (clock_control_subsys_t *)&p->pclken);
+	if (clock_control_on(clk, (clock_control_subsys_t *)&p->pclken) != 0) {
+		return -EIO;
+	}
 #endif
 
 	k_sem_init(&p->sem, 1, 1);

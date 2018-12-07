@@ -214,7 +214,10 @@ static int rtc_stm32_init(struct device *dev)
 	k_sem_init(DEV_SEM(dev), 1, UINT_MAX);
 	DEV_DATA(dev)->cb_fn = NULL;
 
-	clock_control_on(clk, (clock_control_subsys_t *) &cfg->pclken);
+	if (clock_control_on(clk,
+		(clock_control_subsys_t *) &cfg->pclken) != 0) {
+		return -EIO;
+	}
 
 	LL_PWR_EnableBkUpAccess();
 	LL_RCC_ForceBackupDomainReset();
