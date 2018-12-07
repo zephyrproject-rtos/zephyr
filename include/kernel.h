@@ -96,11 +96,11 @@ typedef struct {
 #endif
 
 #ifdef CONFIG_OBJECT_TRACING
-#define _OBJECT_TRACING_NEXT_PTR(type) struct type *__next
+#define _OBJECT_TRACING_NEXT_PTR(type) struct type *__next;
 #define _OBJECT_TRACING_INIT .__next = NULL,
 #else
 #define _OBJECT_TRACING_INIT
-#define _OBJECT_TRACING_NEXT_PTR(type) u8_t __dummy_next[0]
+#define _OBJECT_TRACING_NEXT_PTR(type)
 #endif
 
 #ifdef CONFIG_POLL
@@ -1330,7 +1330,7 @@ struct k_timer {
 	/* user-specific data, also used to support legacy features */
 	void *user_data;
 
-	_OBJECT_TRACING_NEXT_PTR(k_timer);
+	_OBJECT_TRACING_NEXT_PTR(k_timer)
 };
 
 #define _K_TIMER_INITIALIZER(obj, expiry, stop) \
@@ -1670,7 +1670,7 @@ struct k_queue {
 		_POLL_EVENT;
 	};
 
-	_OBJECT_TRACING_NEXT_PTR(k_queue);
+	_OBJECT_TRACING_NEXT_PTR(k_queue)
 };
 
 #define _K_QUEUE_INITIALIZER(obj) \
@@ -2307,7 +2307,7 @@ struct k_stack {
 	_wait_q_t wait_q;
 	u32_t *base, *next, *top;
 
-	_OBJECT_TRACING_NEXT_PTR(k_stack);
+	_OBJECT_TRACING_NEXT_PTR(k_stack)
 	u8_t flags;
 };
 
@@ -2830,7 +2830,7 @@ struct k_mutex {
 	u32_t lock_count;
 	int owner_orig_prio;
 
-	_OBJECT_TRACING_NEXT_PTR(k_mutex);
+	_OBJECT_TRACING_NEXT_PTR(k_mutex)
 };
 
 /**
@@ -2932,7 +2932,7 @@ struct k_sem {
 	u32_t limit;
 	_POLL_EVENT;
 
-	_OBJECT_TRACING_NEXT_PTR(k_sem);
+	_OBJECT_TRACING_NEXT_PTR(k_sem)
 };
 
 #define _K_SEM_INITIALIZER(obj, initial_count, count_limit) \
@@ -3106,7 +3106,7 @@ struct k_alert {
 	struct k_work work_item;
 	struct k_sem sem;
 
-	_OBJECT_TRACING_NEXT_PTR(k_alert);
+	_OBJECT_TRACING_NEXT_PTR(k_alert)
 };
 
 /**
@@ -3234,7 +3234,7 @@ struct k_msgq {
 	char *write_ptr;
 	u32_t used_msgs;
 
-	_OBJECT_TRACING_NEXT_PTR(k_msgq);
+	_OBJECT_TRACING_NEXT_PTR(k_msgq)
 	u8_t flags;
 };
 /**
@@ -3529,7 +3529,7 @@ struct k_mbox {
 	_wait_q_t tx_msg_queue;
 	_wait_q_t rx_msg_queue;
 
-	_OBJECT_TRACING_NEXT_PTR(k_mbox);
+	_OBJECT_TRACING_NEXT_PTR(k_mbox)
 };
 /**
  * @cond INTERNAL_HIDDEN
@@ -3713,7 +3713,7 @@ struct k_pipe {
 		_wait_q_t      writers; /**< Writer wait queue */
 	} wait_q;
 
-	_OBJECT_TRACING_NEXT_PTR(k_pipe);
+	_OBJECT_TRACING_NEXT_PTR(k_pipe)
 	u8_t	       flags;		/**< Flags */
 };
 
@@ -3887,7 +3887,7 @@ struct k_mem_slab {
 	char *free_list;
 	u32_t num_used;
 
-	_OBJECT_TRACING_NEXT_PTR(k_mem_slab);
+	_OBJECT_TRACING_NEXT_PTR(k_mem_slab)
 };
 
 #define _K_MEM_SLAB_INITIALIZER(obj, slab_buffer, slab_block_size, \
