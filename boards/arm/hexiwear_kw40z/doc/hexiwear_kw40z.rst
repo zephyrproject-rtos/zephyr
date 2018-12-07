@@ -143,16 +143,16 @@ Continue program execution in GDB, then in the telnet terminal you should see:
 
 
 .. _KW40Z Website:
-   http://www.nxp.com/products/microcontrollers-and-processors/arm-processors/kinetis-cortex-m-mcus/w-series-wireless-m0-plus-m4/kinetis-kw40z-2.4-ghz-dual-mode-ble-and-802.15.4-wireless-radio-microcontroller-mcu-based-on-arm-cortex-m0-plus-core:KW40Z
+   https://www.nxp.com/products/processors-and-microcontrollers/arm-based-processors-and-mcus/kinetis-cortex-m-mcus/w-serieswireless-conn.m0-plus-m4/kinetis-kw40z-2.4-ghz-dual-mode-ble-and-802.15.4-wireless-radio-microcontroller-mcu-based-on-arm-cortex-m0-plus-core:KW40Z
 
 .. _KW40Z Datasheet:
-   http://www.nxp.com/assets/documents/data/en/data-sheets/MKW40Z160.pdf
+   https://www.nxp.com/docs/en/data-sheet/MKW40Z160.pdf
 
 .. _KW40Z Reference Manual:
-   http://www.nxp.com/assets/documents/data/en/reference-manuals/MKW40Z160RM.pdf
+   https://www.nxp.com/docs/en/reference-manual/MKW40Z160RM.pdf
 
 .. _Segger RTT:
-    https://www.segger.com/jlink-rtt.html
+   https://www.segger.com/products/debug-probes/j-link/technology/about-real-time-transfer/
 
 .. _DAPLink Hexiwear Firmware:
    https://github.com/MikroElektronika/HEXIWEAR/blob/master/HW/HEXIWEAR_DockingStation/HEXIWEAR_DockingStation_DAPLINK_FW.bin

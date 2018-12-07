@@ -172,19 +172,19 @@ Continue program execution in GDB, then in the telnet terminal you should see:
      Hello World! arm
 
 .. _USB-KW24D512 Website:
-   http://www.nxp.com/products/microcontrollers-and-processors/arm-processors/kinetis-cortex-m-mcus/w-series-wireless-m0-plus-m4/ieee-802.15.4-packet-sniffer-usb-dongle-form-factor:USB-KW24D512
+   https://www.nxp.com/products/processors-and-microcontrollers/arm-based-processors-and-mcus/kinetis-cortex-m-mcus/w-serieswireless-conn.m0-plus-m4/ieee-802.15.4-packet-sniffer-usb-dongle-form-factor:USB-KW24D512
 
 .. _USB-KW24D512 Hardware Reference Manual:
-   http://www.nxp.com/docs/en/reference-manual/USB-KW2XHWRM.pdf
+   https://www.nxp.com/docs/en/reference-manual/USB-KW2XHWRM.pdf
 
 .. _KW2xD Website:
-   http://www.nxp.com/products/wireless-connectivity/2.4-ghz-wireless-solutions/ieee-802.15.4-wireless-mcus/kinetis-kw2xd-2.4-ghz-802.15.4-wireless-radio-microcontroller-mcu-based-on-arm-cortex-m4-core:KW2xD
+   https://www.nxp.com/products/wireless/thread/kinetis-kw2xd-2.4-ghz-802.15.4-wireless-radio-microcontroller-mcu-based-on-arm-cortex-m4-core:KW2xD
 
 .. _KW2xD Datasheet:
-   http://www.nxp.com/docs/en/data-sheet/MKW2xDxxx.pdf
+   https://www.nxp.com/docs/en/data-sheet/MKW2xDxxx.pdf
 
 .. _KW2xD Reference Manual:
-   http://www.nxp.com/docs/en/reference-manual/MKW2xDxxxRM.pdf
+   https://www.nxp.com/docs/en/reference-manual/MKW2xDxxxRM.pdf
 
 .. _Segger J-Link debug probe:
     https://www.segger.com/products/debug-probes/j-link/models/j-link-base/
