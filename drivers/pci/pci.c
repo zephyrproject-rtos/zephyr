@@ -129,8 +129,7 @@ static struct lookup_data __noinit lookup;
  * @return 0 if BAR is implemented, -1 if not.
  */
 
-static inline int pci_bar_config_get(union pci_addr_reg pci_ctrl_addr,
-							u32_t *config)
+static int pci_bar_config_get(union pci_addr_reg pci_ctrl_addr, u32_t *config)
 {
 	u32_t old_value;
 
@@ -175,9 +174,9 @@ static inline int pci_bar_config_get(union pci_addr_reg pci_ctrl_addr,
  *
  * NOTE: Routine does not set up parameters for 64 bit BARS, they are ignored.
  */
-static inline int pci_bar_params_get(union pci_addr_reg pci_ctrl_addr,
-				     struct pci_dev_info *dev_info,
-				     int max_bars)
+static int pci_bar_params_get(union pci_addr_reg pci_ctrl_addr,
+			      struct pci_dev_info *dev_info,
+			      int max_bars)
 {
 	u32_t bar_value;
 	u32_t bar_config;
@@ -246,8 +245,8 @@ static bool pci_read_multifunction(union pci_addr_reg pci_ctrl_addr)
  *
  * @return 1 if a device has been found, 0 otherwise.
  */
-static inline int pci_dev_scan(union pci_addr_reg pci_ctrl_addr,
-					struct pci_dev_info *dev_info)
+static int pci_dev_scan(union pci_addr_reg pci_ctrl_addr,
+			struct pci_dev_info *dev_info)
 {
 	static union pci_dev pci_dev_header;
 	u32_t pci_data;
