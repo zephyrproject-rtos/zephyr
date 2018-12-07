@@ -22,7 +22,7 @@ set -xe
 SANITYCHECK_OPTIONS=" --inline-logs --enable-coverage -N"
 SANITYCHECK_OPTIONS_RETRY="${SANITYCHECK_OPTIONS} --only-failed --outdir=out-2nd-pass"
 SANITYCHECK_OPTIONS_RETRY_2="${SANITYCHECK_OPTIONS} --only-failed --outdir=out-3nd-pass"
-export BSIM_OUT_PATH="/opt/bsim/"
+export BSIM_OUT_PATH="${BSIM_OUT_PATH:-/opt/bsim/}"
 export BSIM_COMPONENTS_PATH="${BSIM_OUT_PATH}/components/"
 BSIM_BT_TEST_RESULTS_FILE="./bsim_bt_out/bsim_results.xml"
 
