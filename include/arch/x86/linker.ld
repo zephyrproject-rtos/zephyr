@@ -69,6 +69,17 @@ SECTIONS
 
 #include <linker/rel-sections.ld>
 
+    /DISCARD/ :
+	{
+	*(.plt)
+	}
+
+    /DISCARD/ :
+	{
+	*(.iplt)
+	}
+
+
 	GROUP_START(ROMABLE_REGION)
 #ifdef CONFIG_REALMODE
 	/* 16-bit sections */
@@ -164,7 +175,15 @@ SECTIONS
 	_image_rom_size = _image_rom_end - _image_rom_start;
 
 	GROUP_END(ROMABLE_REGION)
-
+	/*
+	 * Needed for dynamic linking which we do not have, do discard
+	 */
+	/DISCARD/ : {
+		*(.got.plt)
+		*(.igot.plt)
+		*(.got)
+		*(.igot)
+	}
 	/* RAMABLE_REGION */
 	GROUP_START(RAMABLE_REGION)
 
