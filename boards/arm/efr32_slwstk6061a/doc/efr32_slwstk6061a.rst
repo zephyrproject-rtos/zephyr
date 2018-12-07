@@ -132,7 +132,7 @@ board. The adaptor provides:
 - A physical UART connection which is relayed over interface USB Serial port.
 - An Ethernet connection to support remote debugging.
 
-Flashing an application to EFR32-SLWstk6061A
+Flashing an application to EFR32-SLWSTK6061A
 --------------------------------------------
 
 The sample application :ref:`hello_world` is used for this example.
@@ -145,18 +145,14 @@ Build the Zephyr kernel and application:
 
 Connect the EFR32-SLWSTK6061A to your host computer using the USB port and you
 should see a USB Serial Port. Use `J-Link`_ or Silicon Labs Simplicity Studio
-to flash the generated zephyr.bin.
-
-`OpenOCD`_ included in the Zephyr SDK v0.9.3 is too old and does not support the
-EFR32FG1P chip, neither does the latest OpenOCD 0.10.0 release. You will need to
-compile the newest version of the source code and install the tool yourself.
-Modify the following command if you install OpenOCD to a location different than
-the default /usr/local/.
+to flash the generated zephyr.bin. On a Linux host with Zephyr SDK installed you
+can run:
 
 .. code-block:: console
 
-   cmake -GNinja -DBOARD=efr32_slwstk6061a -DOPENOCD=/usr/local/bin/openocd -DOPENOCD_DEFAULT_PATH=/usr/local/share/openocd/scripts ..
    ninja flash
+
+The command is using `OpenOCD`_ runner.
 
 Open a serial terminal (minicom, putty, etc.) with the following settings:
 
@@ -201,4 +197,4 @@ the following message:
    https://www.segger.com/downloads/jlink
 
 .. _OpenOCD:
-    http://openocd.org/
+   http://openocd.org/
