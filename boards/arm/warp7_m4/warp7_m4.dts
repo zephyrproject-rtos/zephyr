@@ -22,9 +22,7 @@
 	};
 
 	chosen {
-#if defined(CONFIG_XIP)
 		zephyr,flash = &tcml_code;
-#endif
 		zephyr,sram = &tcmu_sys;
 		zephyr,console = &uart2;
 		zephyr,shell-uart = &uart2;

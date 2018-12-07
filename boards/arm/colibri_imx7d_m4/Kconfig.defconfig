@@ -65,5 +65,12 @@ config PWM_1
 
 endif # PWM_IMX
 
+if !XIP
+config FLASH_SIZE
+	default 0
+config FLASH_BASE_ADDRESS
+	default 0
+endif
+
 
 endif # BOARD_COLIBRI_IMX7D_M4
