@@ -465,8 +465,11 @@ static int spi_stm32_init(struct device *dev)
 
 	__ASSERT_NO_MSG(device_get_binding(STM32_CLOCK_CONTROL_NAME));
 
-	clock_control_on(device_get_binding(STM32_CLOCK_CONTROL_NAME),
-			       (clock_control_subsys_t) &cfg->pclken);
+	if (clock_control_on(device_get_binding(STM32_CLOCK_CONTROL_NAME),
+			       (clock_control_subsys_t) &cfg->pclken) != 0) {
+		LOG_ERR("Could not enable SPI clock");
+		return -EIO;
+	}
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 	cfg->irq_config(dev);

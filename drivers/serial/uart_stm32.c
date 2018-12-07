@@ -311,8 +311,10 @@ static int uart_stm32_init(struct device *dev)
 
 	__uart_stm32_get_clock(dev);
 	/* enable clock */
-	clock_control_on(data->clock,
-			(clock_control_subsys_t *)&config->pclken);
+	if (clock_control_on(data->clock,
+			(clock_control_subsys_t *)&config->pclken) != 0) {
+		return -EIO;
+	}
 
 	LL_USART_Disable(UartInstance);
 

@@ -99,6 +99,7 @@ static int i2s_stm32_enable_clock(struct device *dev)
 
 	ret = clock_control_on(clk, (clock_control_subsys_t *) &cfg->pclken);
 	if (ret != 0) {
+		LOG_ERR("Could not enable I2S clock");
 		return -EIO;
 	}
 
