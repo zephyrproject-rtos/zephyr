@@ -26,8 +26,6 @@
 	chosen {
 #if defined(CONFIG_CODE_ITCM)
 		zephyr,flash = &itcm0;
-#elif defined(CONFIG_CODE_HYPERFLASH)
-		zephyr,flash = &hyperflash0;
 #elif defined(CONFIG_CODE_QSPI)
 		zephyr,flash = &qspi0;
 #endif
@@ -60,24 +58,10 @@
 };
 
 &flexspi0 {
-	hyperflash0: hyperflash@60000000 {
-		/* Cypress S26KS512SDPBHI02 */
-		reg = <0x60000000 0x4000000>;
-#if defined(CONFIG_CODE_HYPERFLASH)
-		status = "ok";
-#else
-		status = "disabled";
-#endif
-	};
-
 	qspi0: qspi@60000000 {
 		/* ISSI IS25WP064AJBLE */
 		reg = <0x60000000 0x800000>;
-#if defined(CONFIG_CODE_QSPI)
 		status = "ok";
-#else
-		status = "disabled";
-#endif
 	};
 };
 

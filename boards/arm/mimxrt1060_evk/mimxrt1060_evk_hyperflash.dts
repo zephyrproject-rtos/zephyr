@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2018, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "mimxrt1060_evk.dts"
+
+/ {
+	chosen {
+#if defined(CONFIG_CODE_ITCM)
+		zephyr,flash = &itcm0;
+#elif defined(CONFIG_CODE_HYPERFLASH)
+		zephyr,flash = &hyperflash0;
+#endif
+	};
+};
+
+/delete-node/ &qspi0;
+&flexspi0 {
+	hyperflash0: hyperflash@60000000 {
+		/* Cypress S26KS512SDPBHI02 */
+		reg = <0x60000000 0x4000000>;
+		status = "ok";
+	};
+};
