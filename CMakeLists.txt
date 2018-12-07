@@ -253,7 +253,15 @@ zephyr_cc_option(-fno-pic)
 zephyr_cc_option(-fno-strict-overflow)
 zephyr_cc_option(-Wno-pointer-sign)
 
-zephyr_compile_options_ifdef(CONFIG_STACK_CANARIES -fstack-protector-all)
+if(CONFIG_STACK_CANARIES)
+  zephyr_cc_option(-fstack-protector-all)
+  # Only a valid option with GCC 7.x and above
+  check_c_compiler_flag(-mstack-protector-guard=global MSTACK_PROTECTOR_GUARD)
+
+  if(MSTACK_PROTECTOR_GUARD)
+    zephyr_cc_option(-mstack-protector-guard=global)
+  endif()
+endif()
 
 if(CONFIG_OVERRIDE_FRAME_POINTER_DEFAULT)
   if(CONFIG_OMIT_FRAME_POINTER)
