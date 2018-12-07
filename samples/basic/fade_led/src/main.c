@@ -38,6 +38,10 @@
 /* get the defines from dt (based on alias 'pwm-led0') */
 #define PWM_DRIVER	PWM_LED0_PWM_CONTROLLER
 #define PWM_CHANNEL	PWM_LED0_PWM_CHANNEL
+#elif defined(CONFIG_BOARD_HIFIVE1)
+/* Blink the blue channel of the RGB LED */
+#define PWM_DRIVER	LED1_PWM_CONTROLLER
+#define PWM_CHANNEL	LED1_PWM_CHANNEL
 #else
 #error "Choose supported PWM driver"
 #endif
