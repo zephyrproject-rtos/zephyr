@@ -17,6 +17,10 @@
  * @{
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+	
 typedef enum {
 	BT_MESH_NO_OUTPUT       = 0,
 	BT_MESH_BLINK           = BIT(0),
@@ -359,5 +363,8 @@ void bt_mesh_lpn_set_cb(void (*cb)(u16_t friend_addr, bool established));
 /**
  * @}
  */
-
+#ifdef __cplusplus
+}
+#endif
+	
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_MESH_MAIN_H_ */
