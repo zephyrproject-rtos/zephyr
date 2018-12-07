@@ -743,6 +743,14 @@ def main():
 
     defs = generate_node_definitions()
 
+    # Add DT_CHOSEN_<X> defines to generated files
+    for c in sorted(chosen.keys()):
+        chosen_def = 'DT_CHOSEN_' + convert_string_to_label(c)
+        load_defs = {
+            chosen_def: "1",
+        }
+        insert_defs('chosen', load_defs, {})
+
      # generate config and include file
     generate_keyvalue_file(args.keyvalue[0])
 
