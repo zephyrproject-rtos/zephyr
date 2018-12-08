@@ -54,8 +54,8 @@ if [ "$?" == "0" ]; then
 		DOC_RELEASE=${RELEASE}.0
 		aws s3 sync --quiet doc/_build/html s3://docs.zephyrproject.org/${DOC_RELEASE}
 	fi
-	if [ -d doc/doxygen/html ]; then
-		aws s3 sync --delete  --quiet doc/doxygen/html s3://docs.zephyrproject.org/apidoc/${RELEASE}
+	if [ -d doc/_build/doxygen/html ]; then
+		aws s3 sync --delete  --quiet doc/_build/doxygen/html s3://docs.zephyrproject.org/apidoc/${RELEASE}
 	fi
 else
 	echo "- Failed"
