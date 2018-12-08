@@ -90,6 +90,7 @@ def main():
 
     # Write the merged configuration and the C header
     kconf.write_config(args.dotconfig)
+    print("Configuration written to '{}'".format(args.dotconfig))
     kconf.write_autoconf(args.autoconf)
 
 

@@ -268,6 +268,12 @@ described above.)
 * :file:`.config`, which contains the configuration settings
   used to build the application.
 
+  .. note::
+
+     The previous version of :file:`.config` is saved to :file:`.config.old`
+     whenever the configuration is updated. This is for convenience, as
+     comparing the old and new versions can be handy.
+
 * Various object files (:file:`.o` files and :file:`.a` files) containing
   compiled kernel and application code.
 
