@@ -256,6 +256,10 @@ void _sys_device_do_config_level(s32_t level);
 __syscall struct device *device_get_binding(const char *name);
 
 /**
+ * @}
+ */
+
+/**
  * @brief Device Power Management APIs
  * @defgroup device_power_management_api Device Power Management APIs
  * @ingroup power_management_api
@@ -446,7 +450,4 @@ int device_busy_check(struct device *chk_dev);
 #ifdef __cplusplus
 }
 #endif
-/**
- * @}
- */
 #endif /* ZEPHYR_INCLUDE_DEVICE_H_ */
