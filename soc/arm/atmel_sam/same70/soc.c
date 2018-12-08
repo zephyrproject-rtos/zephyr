@@ -229,17 +229,9 @@ static int atmel_same70_init(struct device *arg)
 
 	SCB_EnableICache();
 
-/*
- * The Atmel SAM GMAC Ethernet driver is using a scatter-gather technique
- * to exchange data with the Ethernet driver. This requires the use use of
- * a non-cached memory area. This is currently not supported on Zephyr, so
- * do not enable the cache in that case.
- */
-#ifndef CONFIG_ETH_SAM_GMAC
 	if (!(SCB->CCR & SCB_CCR_DC_Msk)) {
 		SCB_EnableDCache();
 	}
-#endif
 
 	/* Clear all faults */
 	_ClearFaults();
