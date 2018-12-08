@@ -16,6 +16,7 @@ extern "C" {
 /**
  * @brief Logger
  * @defgroup logger Logger system
+ * @ingroup logging
  * @{
  * @}
  */

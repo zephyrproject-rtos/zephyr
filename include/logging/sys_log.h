@@ -33,6 +33,7 @@ extern "C" {
 /**
  * @brief System Log
  * @defgroup system_log System Log
+ * @ingroup logging
  * @{
  */
 #if defined(CONFIG_SYS_LOG) && (SYS_LOG_LEVEL > SYS_LOG_LEVEL_OFF)
@@ -134,6 +135,7 @@ void syslog_hook_install(void (*hook)(const char *, ...));
  *
  * @param ... A string optionally containing printk valid conversion specifier,
  * followed by as many values as specifiers.
+ * @deprecated Use LOG_ERR
  */
 #define SYS_LOG_ERR(...) { ; }
 #endif /* CONFIG_SYS_LOG */
@@ -151,6 +153,7 @@ void syslog_hook_install(void (*hook)(const char *, ...));
  *
  * @param ... A string optionally containing printk valid conversion specifier,
  * followed by as many values as specifiers.
+ * @deprecated Use LOG_WRN
  */
 #define SYS_LOG_WRN(...) { ; }
 #endif
@@ -166,6 +169,8 @@ void syslog_hook_install(void (*hook)(const char *, ...));
  *
  * @param ... A string optionally containing printk valid conversion specifier,
  * followed by as many values as specifiers.
+ *
+ * @deprecated Use LOG_INF
  */
 #define SYS_LOG_INF(...) { ; }
 #endif
@@ -181,6 +186,8 @@ void syslog_hook_install(void (*hook)(const char *, ...));
  *
  * @param ... A string optionally containing printk valid conversion specifier,
  * followed by as many values as specifiers.
+ *
+ * @deprecated Use LOG_DBG
  */
 #define SYS_LOG_DBG(...) { ; }
 #endif
