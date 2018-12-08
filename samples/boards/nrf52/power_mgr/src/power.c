@@ -68,7 +68,7 @@ static int low_power_state_entry(void)
 	} else {
 		printk("--> Entering into Low Power State -");
 	}
-	sys_soc_set_power_state(pm_state);
+	sys_set_power_state(pm_state);
 	return SYS_PM_LOW_POWER_STATE;
 }
 
@@ -83,24 +83,24 @@ static int low_power_suspend_entry(void)
 {
 	printk("--> Entering into Deep Sleep State -");
 	/* Don't need pm idle exit event notification */
-	sys_soc_pm_idle_exit_notification_disable();
+	sys_pm_idle_exit_notification_disable();
 	/* Save device states and turn off peripherals as necessary */
 	suspend_devices();
-	sys_soc_set_power_state(SYS_POWER_STATE_DEEP_SLEEP);
+	sys_set_power_state(SYS_POWER_STATE_DEEP_SLEEP);
 	 /* Exiting from Deep Sleep State */
 	low_power_suspend_exit();
 
 	return SYS_PM_DEEP_SLEEP;
 }
 
-/* Function name : sys_soc_suspend
+/* Function name : sys_suspend
  * Return Value : Power Mode Entered Success/Failure
  * Input : Idleness in number of Ticks
  *
  * Description: All request from Idle thread to Enter into
  * Low Power Mode or Deep Sleep State land in this function
  */
-int sys_soc_suspend(s32_t ticks)
+int sys_suspend(s32_t ticks)
 {
 	int ret = SYS_PM_NOT_HANDLED;
 
@@ -142,14 +142,14 @@ int sys_soc_suspend(s32_t ticks)
 				low_power_state_exit();
 			}
 			post_ops_done = 1;
-			sys_soc_power_state_post_ops(pm_state);
+			sys_power_state_post_ops(pm_state);
 		}
 	}
 
 	return ret;
 }
 
-void sys_soc_resume(void)
+void sys_resume(void)
 {
 	/*
 	 * This notification is called from the ISR of the event
@@ -163,7 +163,7 @@ void sys_soc_resume(void)
 	 * The kernel scheduler will get control after the ISR finishes
 	 * and it may schedule another thread.
 	 *
-	 * Call sys_soc_pm_idle_exit_notification_disable() if this
+	 * Call sys_pm_idle_exit_notification_disable() if this
 	 * notification is not required.
 	 */
 	if (!post_ops_done) {
@@ -171,6 +171,6 @@ void sys_soc_resume(void)
 			low_power_state_exit();
 		}
 		post_ops_done = 1;
-		sys_soc_power_state_post_ops(pm_state);
+		sys_power_state_post_ops(pm_state);
 	}
 }

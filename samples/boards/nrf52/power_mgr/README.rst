@@ -10,7 +10,7 @@ This sample demonstrates a power manager app that uses the Zephyr
 power management infrastructure to enter into Low Power state.
 
 This app will cycle through the following power schemes each time idle thread
-calls sys_soc_suspend() hook function :
+calls sys_suspend() hook function :
 
 1. Low Power State: Low Power State is SOC specific and being in this state is
    transparent to devices. SOC and devices do not lose context in this Mode.
