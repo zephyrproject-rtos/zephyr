@@ -806,7 +806,6 @@ RECURSIVE              = YES
 
 EXCLUDE                = @ZEPHYR_BASE@/include/spi_legacy.h \
                          @ZEPHYR_BASE@/include/net/http_legacy.h \
-                         @ZEPHYR_BASE@/include/misc/util.h \
                          @ZEPHYR_BASE@/include/cmsis_rtos_v1/cmsis_os.h \
                          @ZEPHYR_BASE@/include/net/coap.h \
                          @ZEPHYR_BASE@/include/net/coap_link_format.h \

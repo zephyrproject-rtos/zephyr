@@ -55,8 +55,9 @@ extern "C" {
 /**
  * @brief Macro for conditional code generation if provided log level allows.
  *
- * Macro behaves similarly to standard #if #else #endif clause. The difference
- * is that it is evaluated when used and not when header file is included.
+ * Macro behaves similarly to standard \#if \#else \#endif clause. The
+ * difference is that it is evaluated when used and not when header file is
+ * included.
  *
  * @param _eval_level Evaluated level. If level evaluates to one of existing log
  *		      log level (1-4) then macro evaluates to _iftrue.
