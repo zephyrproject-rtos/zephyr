@@ -17,6 +17,10 @@
  * @{
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct bt_mesh_health_srv_cb {
 	/* Fetch current faults */
 	int (*fault_get_cur)(struct bt_mesh_model *model, u8_t *test_id,
@@ -82,6 +86,10 @@ extern const struct bt_mesh_model_op bt_mesh_health_srv_op[];
 #define BT_MESH_MODEL_HEALTH_SRV(srv, pub)                                   \
 		BT_MESH_MODEL(BT_MESH_MODEL_ID_HEALTH_SRV,                   \
 			      bt_mesh_health_srv_op, pub, srv)
+
+#ifdef __cplusplus
+}
+#endif
 
 /**
  * @}
