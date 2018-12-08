@@ -47,8 +47,8 @@ enum fs_type {
 };
 
 /**
- * @brief File System
- * @defgroup file_system File System
+ * @brief File System and Storage
+ * @defgroup file_system_storage File System and Storage
  * @{
  * @}
  */
@@ -56,7 +56,7 @@ enum fs_type {
 /**
  * @brief File System Data Structures
  * @defgroup data_structures File System Data Structures
- * @ingroup file_system
+ * @ingroup file_system_storage
  * @{
  */
 
@@ -185,7 +185,7 @@ struct fs_file_system_t {
 /**
  * @brief File System APIs
  * @defgroup file_system_api File System APIs
- * @ingroup file_system
+ * @ingroup file_system_storage
  * @{
  */
 
