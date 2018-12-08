@@ -108,12 +108,19 @@ support systems:
   past posts and discussions, a good thing to do to discover more about the
   Zephyr project.
 
-* **IRC Chatting**: You can chat online with the Zephyr project developer
-  community and other users in our IRC channel #zephyrproject on the
-  freenode.net IRC server. You can use the http://webchat.freenode.net web
-  client or use a client-side application such as pidgin.
+* **Chatting**: You can chat online with the Zephyr project developer
+  community and other users in two ways:
 
+  * On `Slack`_: Zephyr has dedicated channels on Slack. To register, use the
+    following `Slack Invite`_.
 
+  * IRC channel #zephyrproject on the freenode.net IRC server. You can use the
+    http://webchat.freenode.net web client or use a client-side application such
+    as pidgin (Note that all discussions have moved to Slack, although we still
+    have many developers still available on the IRC channel).
+
+.. _Slack Invite: https://tinyurl.com/yarkuemx
+.. _Slack: https://zephyrproject.slack.com
 .. _supported boards: http://docs.zephyrproject.org/latest/boards/boards.html
 .. _Zephyr Documentation: http://docs.zephyrproject.org
 .. _Zephyr Introduction: http://docs.zephyrproject.org/latest/introduction/introducing_zephyr.html
