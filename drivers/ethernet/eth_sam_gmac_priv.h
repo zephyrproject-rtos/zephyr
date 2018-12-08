@@ -18,11 +18,7 @@
 /** Cache alignment */
 #define GMAC_DCACHE_ALIGNMENT             32
 /** Memory alignment of the RX/TX Buffer Descriptor List */
-#if __DCACHE_PRESENT == 1
-#define GMAC_DESC_ALIGNMENT               GMAC_DCACHE_ALIGNMENT
-#else
 #define GMAC_DESC_ALIGNMENT               4
-#endif
 /** Total number of queues supported by GMAC hardware module */
 #define GMAC_QUEUE_NO                     3
 /** Number of priority queues used */

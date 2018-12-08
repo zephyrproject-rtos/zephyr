@@ -16,8 +16,6 @@
  * Limitations:
  * - one shot PHY setup, no support for PHY disconnect/reconnect
  * - no statistics collection
- * - no support for devices with DCache enabled due to missing non-cacheable
- *   RAM regions in Zephyr.
  */
 
 #define LOG_MODULE_NAME eth_sam
@@ -84,18 +82,18 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 /* RX descriptors list */
 static struct gmac_desc rx_desc_que0[MAIN_QUEUE_RX_DESC_COUNT]
-	__aligned(GMAC_DESC_ALIGNMENT);
+	__nocache __aligned(GMAC_DESC_ALIGNMENT);
 static struct gmac_desc rx_desc_que1[PRIORITY_QUEUE1_RX_DESC_COUNT]
-	__aligned(GMAC_DESC_ALIGNMENT);
+	__nocache __aligned(GMAC_DESC_ALIGNMENT);
 static struct gmac_desc rx_desc_que2[PRIORITY_QUEUE2_RX_DESC_COUNT]
-	__aligned(GMAC_DESC_ALIGNMENT);
+	__nocache __aligned(GMAC_DESC_ALIGNMENT);
 /* TX descriptors list */
 static struct gmac_desc tx_desc_que0[MAIN_QUEUE_TX_DESC_COUNT]
-	__aligned(GMAC_DESC_ALIGNMENT);
+	__nocache __aligned(GMAC_DESC_ALIGNMENT);
 static struct gmac_desc tx_desc_que1[PRIORITY_QUEUE1_TX_DESC_COUNT]
-	__aligned(GMAC_DESC_ALIGNMENT);
+	__nocache __aligned(GMAC_DESC_ALIGNMENT);
 static struct gmac_desc tx_desc_que2[PRIORITY_QUEUE2_TX_DESC_COUNT]
-	__aligned(GMAC_DESC_ALIGNMENT);
+	__nocache __aligned(GMAC_DESC_ALIGNMENT);
 
 /* RX buffer accounting list */
 static struct net_buf *rx_frag_list_que0[MAIN_QUEUE_RX_DESC_COUNT];
@@ -153,13 +151,11 @@ static inline void dcache_clean(u32_t addr, u32_t size)
 /* Get operations */
 static inline u32_t gmac_desc_get_w0(struct gmac_desc *desc)
 {
-	dcache_invalidate((u32_t)desc, sizeof(struct gmac_desc));
 	return desc->w0;
 }
 
 static inline u32_t gmac_desc_get_w1(struct gmac_desc *desc)
 {
-	dcache_invalidate((u32_t)desc, sizeof(struct gmac_desc));
 	return desc->w1;
 }
 
@@ -167,13 +163,11 @@ static inline u32_t gmac_desc_get_w1(struct gmac_desc *desc)
 static inline void gmac_desc_set_w0(struct gmac_desc *desc, u32_t value)
 {
 	desc->w0 = value;
-	dcache_clean((u32_t)desc, sizeof(struct gmac_desc));
 }
 
 static inline void gmac_desc_set_w1(struct gmac_desc *desc, u32_t value)
 {
 	desc->w1 = value;
-	dcache_clean((u32_t)desc, sizeof(struct gmac_desc));
 }
 
 /* Set with 'or' operations */
