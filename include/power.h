@@ -22,10 +22,17 @@ extern "C" {
 
 extern unsigned char _sys_pm_idle_exit_notify;
 
+
 /**
- * @brief Power Management Hook Interface
+ * @defgroup power_management_api Power Management
+ * @{
+ * @}
+ */
+
+/**
+ * @brief Power Management Hooks
  *
- * @defgroup power_management_hook_interface Power Management Hook Interface
+ * @defgroup power_management_hook_interface Power Management Hooks
  * @ingroup power_management_api
  * @{
  */
