@@ -16,7 +16,7 @@
 /**
  * @brief Watchdog Interface
  * @defgroup watchdog_interface Watchdog Interface
- * @ingroup timer_counter_interfaces
+ * @ingroup io_interfaces
  * @{
  */
 
