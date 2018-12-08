@@ -18,6 +18,7 @@ extern "C" {
 
 /**
  * @defgroup settings Settings subsystem
+ * @ingroup file_system_storage
  * @{
  */
 
