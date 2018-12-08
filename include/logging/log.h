@@ -15,6 +15,13 @@ extern "C" {
 #endif
 
 /**
+ * @brief Logging
+ * @defgroup logging Logging
+ * @{
+ * @}
+ */
+
+/**
  * @brief Logger API
  * @defgroup log_api Logging API
  * @ingroup logger
