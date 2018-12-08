@@ -10,7 +10,7 @@ A sample implementation of a power manager app that uses the Zephyr
 power management infrastructure.
 
 This app will cycle through the various power schemes at every call
-to sys_soc_suspend() hook function.
+to sys_suspend() hook function.
 It will cycle through the following states:
 
 1. CPU Low Power State

@@ -210,7 +210,7 @@ static void do_soc_sleep(enum power_states state)
 						DEVICE_PM_SUSPEND_STATE);
 	}
 
-	sys_soc_set_power_state(state);
+	sys_set_power_state(state);
 
 	/*
 	 * Before enabling the interrupts, check the wake source
@@ -242,7 +242,7 @@ static void do_soc_sleep(enum power_states state)
 	}
 }
 
-int sys_soc_suspend(s32_t ticks)
+int sys_suspend(s32_t ticks)
 {
 	enum power_states state;
 	int pm_operation = SYS_PM_NOT_HANDLED;
@@ -298,12 +298,12 @@ int sys_soc_suspend(s32_t ticks)
 		 */
 		setup_wake_event();
 		pm_operation = SYS_PM_LOW_POWER_STATE;
-		sys_soc_set_power_state(state);
+		sys_set_power_state(state);
 		break;
 	case SYS_POWER_STATE_DEEP_SLEEP:
 	case SYS_POWER_STATE_DEEP_SLEEP_1:
 		/* Don't need pm idle exit notification */
-		sys_soc_pm_idle_exit_notification_disable();
+		sys_pm_idle_exit_notification_disable();
 
 		pm_operation = SYS_PM_DEEP_SLEEP;
 		do_soc_sleep(state);
@@ -317,14 +317,14 @@ int sys_soc_suspend(s32_t ticks)
 		if (!post_ops_done) {
 			post_ops_done = 1;
 			printk("Exiting %s state\n", state_to_string(state));
-			sys_soc_power_state_post_ops(state);
+			sys_power_state_post_ops(state);
 		}
 	}
 
 	return pm_operation;
 }
 
-void sys_soc_resume(void)
+void sys_resume(void)
 {
 	enum power_states state = states_list[current_state];
 
@@ -337,12 +337,12 @@ void sys_soc_resume(void)
 		if (!post_ops_done) {
 			post_ops_done = 1;
 			printk("Exiting %s state\n", state_to_string(state));
-			sys_soc_power_state_post_ops(state);
+			sys_power_state_post_ops(state);
 		}
 		break;
 	case SYS_POWER_STATE_DEEP_SLEEP:
 	case SYS_POWER_STATE_DEEP_SLEEP_1:
-		/* Do not perform post_ops in sys_soc_resume for deep sleep.
+		/* Do not perform post_ops in sys_resume for deep sleep.
 		 * This would make the application task run without the full
 		 * context restored.
 		 */

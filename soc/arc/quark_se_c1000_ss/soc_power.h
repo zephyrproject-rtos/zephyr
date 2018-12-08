@@ -65,7 +65,7 @@ enum power_states {
  * if the ARC wakes up and transitions again to
  * SYS_POWER_STATE_CPU_LPS. This is not required on the x86 side.
  */
-void sys_soc_set_power_state(enum power_states state);
+void sys_set_power_state(enum power_states state);
 
 /**
  * @brief Do any SoC or architecture specific post ops after low power states.
@@ -75,7 +75,7 @@ void sys_soc_set_power_state(enum power_states state);
  * interrupts after resuming from deep sleep. In future, the enabling
  * of interrupts may be moved into the kernel.
  */
-void sys_soc_power_state_post_ops(enum power_states state);
+void sys_power_state_post_ops(enum power_states state);
 
 #ifdef __cplusplus
 }

@@ -49,25 +49,25 @@ static void resume_devices(void)
 	}
 }
 
-int sys_soc_suspend(s32_t ticks)
+int sys_suspend(s32_t ticks)
 {
 	printk("LMT: Try to put the system in SYS_POWER_STATE_DEEP_SLEEP_2"
 	       " state\n");
 
-	if (!sys_soc_power_state_is_arc_ready()) {
+	if (!sys_power_state_is_arc_ready()) {
 		printk("LMT: Failed. ARC is busy.\n");
 		return SYS_PM_NOT_HANDLED;
 	}
 
 	suspend_devices();
 
-	sys_soc_set_power_state(SYS_POWER_STATE_CPU_LPS_2);
+	sys_set_power_state(SYS_POWER_STATE_CPU_LPS_2);
 
 	resume_devices();
 
 	printk("LMT: Succeed.\n");
 
-	sys_soc_power_state_post_ops(SYS_POWER_STATE_CPU_LPS_2);
+	sys_power_state_post_ops(SYS_POWER_STATE_CPU_LPS_2);
 
 	return SYS_PM_DEEP_SLEEP;
 }
