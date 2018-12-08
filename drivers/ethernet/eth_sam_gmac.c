@@ -1163,8 +1163,6 @@ static struct net_pkt *frame_get(struct gmac_queue *queue)
 				last_frag = frag;
 				frag = new_frag;
 				rx_frag_list->buf[tail] = (u32_t)frag;
-				dcache_clean((u32_t)&rx_frag_list->buf[tail],
-					     sizeof(u32_t));
 			}
 		}
 
