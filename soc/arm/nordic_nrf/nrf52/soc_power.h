@@ -27,17 +27,17 @@ enum power_states {
 /**
  * @brief Put processor into low power state
  */
-void _sys_soc_set_power_state(enum power_states state);
+void sys_soc_set_power_state(enum power_states state);
 
 /**
  * @brief Check a low power state is supported by SoC
  */
-bool _sys_soc_is_valid_power_state(enum power_states state);
+bool sys_soc_is_valid_power_state(enum power_states state);
 
 /**
  * @brief Do any SoC or architecture specific post ops after low power states.
  */
-void _sys_soc_power_state_post_ops(enum power_states state);
+void sys_soc_power_state_post_ops(enum power_states state);
 
 #ifdef __cplusplus
 }

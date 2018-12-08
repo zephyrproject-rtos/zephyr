@@ -8,7 +8,7 @@ Overview
 
 This sample demonstrates OS managed power saving mechanism through the sample
 application which will periodically go sleep there by invoking the idle thread
-which will call the _sys_soc_suspend() to enter into low power states. The Low
+which will call the sys_soc_suspend() to enter into low power states. The Low
 Power state will be selected based on the next timeout event.
 
 Requirements

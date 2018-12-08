@@ -62,7 +62,7 @@ int sys_pm_policy_next_state(s32_t ticks, enum power_states *pm_state)
 		cur_pm_idx = 0;
 	}
 
-	if (!_sys_soc_is_valid_power_state(pm_policy[cur_pm_idx].pm_state)) {
+	if (!sys_soc_is_valid_power_state(pm_policy[cur_pm_idx].pm_state)) {
 		LOG_ERR("pm_state(%d) not supported by SoC\n",
 						pm_policy[cur_pm_idx].pm_state);
 		return SYS_PM_NOT_HANDLED;
