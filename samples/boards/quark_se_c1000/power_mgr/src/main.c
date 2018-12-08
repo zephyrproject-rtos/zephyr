@@ -143,7 +143,7 @@ static int low_power_state_entry(s32_t ticks)
 
 	enable_wake_event();
 
-	_sys_soc_set_power_state(SYS_POWER_STATE_CPU_LPS);
+	sys_soc_set_power_state(SYS_POWER_STATE_CPU_LPS);
 
 	return SYS_PM_LOW_POWER_STATE;
 }
@@ -155,14 +155,14 @@ static int deep_sleep_entry(s32_t ticks)
 	start_time = rtc_read(rtc_dev);
 
 	/* Don't need pm idle exit event notification */
-	_sys_soc_pm_idle_exit_notification_disable();
+	sys_soc_pm_idle_exit_notification_disable();
 
 	/* Save device states and turn off peripherals as necessary */
 	suspend_devices();
 
 	enable_wake_event();
 
-	_sys_soc_set_power_state(SYS_POWER_STATE_DEEP_SLEEP);
+	sys_soc_set_power_state(SYS_POWER_STATE_DEEP_SLEEP);
 
 	/*
 	 * At this point system has woken up from
@@ -174,7 +174,7 @@ static int deep_sleep_entry(s32_t ticks)
 	return SYS_PM_DEEP_SLEEP;
 }
 
-int _sys_soc_suspend(s32_t ticks)
+int sys_soc_suspend(s32_t ticks)
 {
 	int ret = SYS_PM_NOT_HANDLED;
 
@@ -220,7 +220,7 @@ int _sys_soc_suspend(s32_t ticks)
 		 * Some CPU power states would require interrupts to be
 		 * enabled at the time of entering the low power state.
 		 * For such states the post operations need to be done
-		 * at _sys_soc_resume. To avoid doing it twice, check a
+		 * at sys_soc_resume. To avoid doing it twice, check a
 		 * flag.
 		 */
 		if (!post_ops_done) {
@@ -228,14 +228,14 @@ int _sys_soc_suspend(s32_t ticks)
 				low_power_state_exit();
 			}
 			post_ops_done = 1;
-			_sys_soc_power_state_post_ops(pm_state);
+			sys_soc_power_state_post_ops(pm_state);
 		}
 	}
 
 	return ret;
 }
 
-void _sys_soc_resume(void)
+void sys_soc_resume(void)
 {
 	/*
 	 * This notification is called from the ISR of the event
@@ -249,7 +249,7 @@ void _sys_soc_resume(void)
 	 * The kernel scheduler will get control after the ISR finishes
 	 * and it may schedule another thread.
 	 *
-	 * Call _sys_soc_pm_idle_exit_notification_disable() if this
+	 * Call sys_soc_pm_idle_exit_notification_disable() if this
 	 * notification is not required.
 	 */
 	if (!post_ops_done) {
@@ -257,7 +257,7 @@ void _sys_soc_resume(void)
 			low_power_state_exit();
 		}
 		post_ops_done = 1;
-		_sys_soc_power_state_post_ops(pm_state);
+		sys_soc_power_state_post_ops(pm_state);
 	}
 }
 

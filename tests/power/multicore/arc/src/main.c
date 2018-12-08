@@ -42,28 +42,28 @@ static void resume_devices(void)
 	}
 }
 
-int _sys_soc_suspend(s32_t ticks)
+int sys_soc_suspend(s32_t ticks)
 {
 	post_ops_done = 0;
 
 	suspend_devices();
 
-	_sys_soc_set_power_state(SYS_POWER_STATE_DEEP_SLEEP);
+	sys_soc_set_power_state(SYS_POWER_STATE_DEEP_SLEEP);
 
 	if (!post_ops_done) {
 		post_ops_done = 1;
 		resume_devices();
-		_sys_soc_power_state_post_ops(SYS_POWER_STATE_DEEP_SLEEP);
+		sys_soc_power_state_post_ops(SYS_POWER_STATE_DEEP_SLEEP);
 	}
 
 	return SYS_PM_DEEP_SLEEP;
 }
 
-void _sys_soc_resume(void)
+void sys_soc_resume(void)
 {
 	if (!post_ops_done) {
 		post_ops_done = 1;
-		_sys_soc_power_state_post_ops(SYS_POWER_STATE_DEEP_SLEEP);
+		sys_soc_power_state_post_ops(SYS_POWER_STATE_DEEP_SLEEP);
 		resume_devices();
 	}
 }

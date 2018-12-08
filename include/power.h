@@ -20,7 +20,7 @@ extern "C" {
 
 #define SYS_PM_NOT_HANDLED		SYS_PM_ACTIVE_STATE
 
-extern unsigned char _sys_pm_idle_exit_notify;
+extern unsigned char sys_pm_idle_exit_notify;
 
 
 /**
@@ -40,15 +40,15 @@ extern unsigned char _sys_pm_idle_exit_notify;
 /**
  * @brief Function to disable power management idle exit notification
  *
- * _sys_soc_resume() would be called from the ISR of the event that caused
+ * sys_soc_resume() would be called from the ISR of the event that caused
  * exit from kernel idling after PM operations. For some power operations,
  * this notification may not be necessary. This function can be called in
- * _sys_soc_suspend to disable the corresponding _sys_soc_resume notification.
+ * sys_soc_suspend to disable the corresponding sys_soc_resume notification.
  *
  */
-static inline void _sys_soc_pm_idle_exit_notification_disable(void)
+static inline void sys_soc_pm_idle_exit_notification_disable(void)
 {
-	_sys_pm_idle_exit_notify = 0;
+	sys_pm_idle_exit_notify = 0;
 }
 
 /**
@@ -66,13 +66,13 @@ static inline void _sys_soc_pm_idle_exit_notification_disable(void)
  * function should return immediately.
  *
  */
-void _sys_soc_resume_from_deep_sleep(void);
+void sys_soc_resume_from_deep_sleep(void);
 
 /**
  * @brief Hook function to notify exit from kernel idling after PM operations
  *
  * This function would notify exit from kernel idling if a corresponding
- * _sys_soc_suspend() notification was handled and did not return
+ * sys_soc_suspend() notification was handled and did not return
  * SYS_PM_NOT_HANDLED.
  *
  * This function would be called from the ISR context of the event
@@ -84,11 +84,11 @@ void _sys_soc_resume_from_deep_sleep(void);
  * those cases, the ISR would be invoked immediately after the event wakes up
  * the CPU, before code following the CPU wait, gets a chance to execute. This
  * can be ignored if no operation needs to be done at the wake event
- * notification. Alternatively _sys_soc_pm_idle_exit_notification_disable() can
- * be called in _sys_soc_suspend to disable this notification.
+ * notification. Alternatively sys_soc_pm_idle_exit_notification_disable() can
+ * be called in sys_soc_suspend to disable this notification.
  *
  */
-void _sys_soc_resume(void);
+void sys_soc_resume(void);
 
 /**
  * @brief Hook function to allow entry to low power state
@@ -116,7 +116,7 @@ void _sys_soc_resume(void);
  * @retval SYS_PM_LOW_POWER_STATE If CPU low power state was entered.
  * @retval SYS_PM_DEEP_SLEEP If SOC low power state was entered.
  */
-extern int _sys_soc_suspend(s32_t ticks);
+extern int sys_soc_suspend(s32_t ticks);
 
 #ifdef CONFIG_PM_CONTROL_OS_DEBUG
 /**
