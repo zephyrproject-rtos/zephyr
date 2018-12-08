@@ -179,11 +179,10 @@ static void transfer_next_chunk(struct device *dev)
 		xfer.p_rx_buffer = ctx->rx_buf;
 		xfer.rx_length   = spi_context_rx_buf_on(ctx) ? chunk_len : 0;
 		result = nrfx_spim_xfer(&dev_config->spim, &xfer, 0);
-		if (result == NRFX_SUCCESS) {
-			return;
-		}
 
-		error = -EIO;
+		if (result != NRFX_SUCCESS) {
+			error = -EIO;
+		}
 	}
 
 	spi_context_cs_control(ctx, false);
