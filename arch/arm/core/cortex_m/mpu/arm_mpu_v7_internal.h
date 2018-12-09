@@ -23,7 +23,8 @@ static void _mpu_init(void)
  * Note:
  *   The caller must provide a valid region index.
  */
-static void _region_init(u32_t index, const struct arm_mpu_region *region_conf)
+static void _region_init(const u32_t index,
+	const struct arm_mpu_region *region_conf)
 {
 	/* Select the region you want to access */
 	MPU->RNR = index;
@@ -35,11 +36,30 @@ static void _region_init(u32_t index, const struct arm_mpu_region *region_conf)
 		index, region_conf->base, region_conf->attr.rasr);
 }
 
-#if defined(CONFIG_USERSPACE) || defined(CONFIG_MPU_STACK_GUARD) || \
-	defined(CONFIG_APPLICATION_MEMORY) || defined(CONFIG_NOCACHE_MEMORY)
+/* @brief Partition sanity check
+ *
+ * This internal function performs run-time sanity check for
+ * MPU region start address and size.
+ *
+ * @param part Pointer to the data structure holding the partition
+ *             information (must be valid).
+ */
+static int _mpu_partition_is_valid(const struct k_mem_partition *part)
+{
+	/* Partition size must be power-of-two,
+	 * and greater or equal to the minimum
+	 * MPU region size. Start address of the
+	 * partition must align with size.
+	 */
+	int partition_is_valid =
+		((part->size & (part->size - 1)) == 0)
+		&&
+		(part->size >= CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE)
+		&&
+		((part->start & (part->size - 1)) == 0);
 
-static inline u8_t _get_num_regions(void);
-static inline u32_t _get_region_index_by_type(u32_t type);
+	return partition_is_valid;
+}
 
 /**
  * This internal function converts the region size to
@@ -90,41 +110,90 @@ static inline u32_t _get_region_attr(u32_t xn, u32_t ap, u32_t tex,
 		| (size));
 }
 
-#if defined(CONFIG_USERSPACE) || defined(CONFIG_MPU_STACK_GUARD) || \
-	defined(CONFIG_APPLICATION_MEMORY)
 /**
- * This internal function allocates default RAM cache-ability, share-ability,
- * and execution allowance attributes along with the requested access
- * permissions and size.
+ * This internal function is utilized by the MPU driver to combine a given
+ * region attribute configuration and size and fill-in a driver-specific
+ * structure with the correct MPU region configuration.
  */
-static inline void _get_mpu_ram_region_attr(arm_mpu_region_attr_t *p_attr,
-	u32_t ap, u32_t base, u32_t size)
+static inline void _get_region_attr_from_k_mem_partition_info(
+	arm_mpu_region_attr_t *p_attr,
+	const k_mem_partition_attr_t *attr, u32_t base, u32_t size)
 {
 	/* in ARMv7-M MPU the base address is not required
-	 * to determine region attributes.
+	 * to determine region attributes
 	 */
 	(void) base;
 
-	p_attr->rasr = _get_region_attr(1, ap, 1, 1, 1, 0, 0, size);
+	p_attr->rasr = attr->rasr_attr | _size_to_mpu_rasr_size(size);
 }
-#endif /* USERSPACE || MPU_STACK_GUARD || APPLICATION_MEMORY */
 
-#if defined(CONFIG_NOCACHE_MEMORY)
-/**
- * This internal function allocates non-cached, shareable, non-executable
- * memory along with the requested access permissions ans size.
+static int _mpu_configure_region(const u8_t index,
+	const struct k_mem_partition *new_region);
+
+/* This internal function programs a set of given MPU regions
+ * over a background memory area, optionally performing a
+ * sanity check of the memory regions to be programmed.
  */
-static inline void _get_mpu_ram_nocache_region_attr(arm_mpu_region_attr_t *p_attr,
-	u32_t ap, u32_t base, u32_t size)
+static int _mpu_configure_regions(const struct k_mem_partition
+	regions[], u8_t regions_num, u8_t start_reg_index,
+	bool do_sanity_check)
 {
-	/* in ARMv7-M MPU the base address is not required
-	 * to determine region attributes.
-	 */
-	(void) base;
+	int i;
+	u8_t reg_index = start_reg_index;
 
-	p_attr->rasr = _get_region_attr(1, ap, 1, 0, 0, 1, 0, size);
+	for (i = 0; i < regions_num; i++) {
+		if (regions[i].size == 0) {
+			continue;
+		}
+		/* Non-empty region. */
+
+		if (do_sanity_check &&
+				(!_mpu_partition_is_valid(&regions[i]))) {
+			LOG_ERR("Partition %u: sanity check failed.", i);
+			return -EINVAL;
+		}
+
+		reg_index = _mpu_configure_region(reg_index, &regions[i]);
+
+		if (reg_index == -EINVAL) {
+			return reg_index;
+		}
+
+		/* Increment number of programmed MPU indices. */
+		reg_index++;
+	}
+
+	return reg_index;
 }
-#endif /* CONFIG_NO_CACHE_MEMORY */
+
+/* This internal function programs the static MPU regions.
+ *
+ * It returns the number of MPU region indices configured.
+ *
+ * Note:
+ * If the static MPU regions configuration has not been successfully
+ * performed, the error signal is propagated to the caller of the function.
+ */
+static int _mpu_configure_static_mpu_regions(const struct k_mem_partition
+	static_regions[], const u8_t regions_num,
+	const u32_t background_area_base,
+	const u32_t background_area_end)
+{
+	int mpu_reg_index = static_regions_num;
+
+	/* In ARMv7-M architecture the static regions are
+	 * programmed on top of SRAM region configuration.
+	 */
+	ARG_UNUSED(background_area_base);
+	ARG_UNUSED(background_area_end);
+
+	mpu_reg_index = _mpu_configure_regions(static_regions,
+		regions_num, mpu_reg_index, true);
+
+	static_regions_num = mpu_reg_index;
+
+	return mpu_reg_index;
+}
 
 /**
  * This internal function is utilized by the MPU driver to combine a given

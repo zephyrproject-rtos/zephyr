@@ -16,17 +16,12 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(mpu);
 
-#if defined(CONFIG_CPU_CORTEX_M0PLUS) || \
-	defined(CONFIG_CPU_CORTEX_M3) || \
-	defined(CONFIG_CPU_CORTEX_M4) || \
-	defined(CONFIG_CPU_CORTEX_M7)
-#include <arm_mpu_v7_internal.h>
-#elif defined(CONFIG_CPU_CORTEX_M23) || \
-	defined(CONFIG_CPU_CORTEX_M33)
-#include <arm_mpu_v8_internal.h>
-#else
-#error "Unsupported ARM CPU"
-#endif
+/*
+ * Global status variable holding the number of HW MPU region indices, which
+ * have been reserved by the MPU driver to program the static (fixed) memory
+ * regions.
+ */
+static u8_t static_regions_num;
 
 /**
  *  Get the number of supported MPU regions.
@@ -47,6 +42,58 @@ static inline u8_t _get_num_regions(void)
 
 	return (u8_t)type;
 #endif
+}
+
+/* Include architecture-specific internal headers. */
+#if defined(CONFIG_CPU_CORTEX_M0PLUS) || \
+	defined(CONFIG_CPU_CORTEX_M3) || \
+	defined(CONFIG_CPU_CORTEX_M4) || \
+	defined(CONFIG_CPU_CORTEX_M7)
+#include <arm_mpu_v7_internal.h>
+#elif defined(CONFIG_CPU_CORTEX_M23) || \
+	defined(CONFIG_CPU_CORTEX_M33)
+#include <arm_mpu_v8_internal.h>
+#else
+#error "Unsupported ARM CPU"
+#endif
+
+static int _region_allocate_and_init(const u8_t index,
+	const struct arm_mpu_region *region_conf)
+{
+	/* Attempt to allocate new region index. */
+	if (index > (_get_num_regions() - 1)) {
+
+		/* No available MPU region index. */
+		LOG_ERR("Failed to allocate new MPU region %u\n", index);
+		return -EINVAL;
+	}
+
+	LOG_DBG("Program MPU region at index 0x%x", index);
+
+	/* Program region */
+	_region_init(index, region_conf);
+
+	return index;
+}
+
+/* This internal function programs an MPU region
+ * of a given configuration at a given MPU index.
+ */
+static int _mpu_configure_region(const u8_t index,
+	const struct k_mem_partition *new_region)
+{
+	struct arm_mpu_region region_conf;
+
+	LOG_DBG("Configure MPU region at index 0x%x", index);
+
+	/* Populate internal ARM MPU region configuration structure. */
+	region_conf.base = new_region->start;
+	_get_region_attr_from_k_mem_partition_info(&region_conf.attr,
+		&new_region->attr, new_region->start, new_region->size);
+
+	/* Allocate and program region */
+	return _region_allocate_and_init(index,
+		(const struct arm_mpu_region *)&region_conf);
 }
 
 /* ARM Core MPU Driver API Implementation for ARM MPU */
