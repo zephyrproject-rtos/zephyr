@@ -174,6 +174,17 @@ int arm_core_mpu_get_max_available_dyn_regions(void)
 {
 	return _get_num_regions() - static_regions_num;
 }
+
+/**
+ * @brief validate the given buffer is user accessible or not
+ *
+ * Presumes the background mapping is NOT user accessible.
+ */
+int arm_core_mpu_buffer_validate(void *addr, size_t size, int write)
+{
+	return _mpu_buffer_validate(addr, size, write);
+}
+
 #endif /* CONFIG_USERSPACE */
 
 /**
