@@ -157,6 +157,20 @@ void arm_core_mpu_mark_areas_for_dynamic_regions(
 }
 #endif /* CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS */
 
+/**
+ * @brief configure dynamic MPU regions.
+ */
+void arm_core_mpu_configure_dynamic_mpu_regions(const struct k_mem_partition
+	dynamic_regions[], u8_t regions_num)
+{
+	if (_mpu_configure_dynamic_mpu_regions(dynamic_regions, regions_num)
+		== -EINVAL) {
+
+		__ASSERT(0, "Configuring %u dynamic MPU regions failed\n",
+			regions_num);
+	}
+}
+
 
 #if defined(CONFIG_USERSPACE) || defined(CONFIG_MPU_STACK_GUARD) || \
 	defined(CONFIG_APPLICATION_MEMORY) || defined(CONFIG_NOCACHE_MEMORY)
