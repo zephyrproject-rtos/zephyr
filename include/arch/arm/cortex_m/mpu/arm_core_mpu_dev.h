@@ -137,6 +137,23 @@ void arm_core_mpu_mark_areas_for_dynamic_regions(
 #endif /* CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS */
 
 /**
+ * @brief configure a set of dynamic MPU regions
+ *
+ * Internal API function to configure a set of dynamic MPU memory regions
+ * within a (background) memory area. The total number of HW MPU regions
+ * to be programmed depends on the MPU architecture.
+ *
+ * @param dynamic_regions[] an array of memory partitions to be programmed
+ * @param regions_num the number of regions to be programmed
+ *
+ * The function shall assert if the operation cannot be not performed
+ * successfully. Therefore, the number of HW MPU regions to be programmed shall
+ * not exceed the number of (currently) available MPU indices.
+ */
+void arm_core_mpu_configure_dynamic_mpu_regions(
+	const struct k_mem_partition dynamic_regions[], u8_t regions_num);
+
+/**
  * @brief configure the base address and size for an MPU region
  *
  * @param   type    MPU region type
