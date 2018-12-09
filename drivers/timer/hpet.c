@@ -93,11 +93,8 @@ int z_clock_driver_init(struct device *device)
 	last_count = MAIN_COUNTER_REG;
 
 	TIMER0_CONF_REG |= TCONF_INT_ENABLE;
+	TIMER0_COMPARATOR_REG = MAIN_COUNTER_REG + cyc_per_tick;
 
-	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL) &&
-	    !IS_ENABLED(CONFIG_QEMU_TICKLESS_WORKAROUND)) {
-		TIMER0_COMPARATOR_REG = MAIN_COUNTER_REG + cyc_per_tick;
-	}
 	return 0;
 }
 
