@@ -12,6 +12,24 @@
 #define LOG_LEVEL CONFIG_MPU_LOG_LEVEL
 #include <logging/log.h>
 
+/**
+ * @brief internal structure holding information of
+ *        memory areas where dynamic MPU programming
+ *        is allowed.
+ */
+struct dynamic_region_info {
+	u8_t index;
+	struct arm_mpu_region region_conf;
+};
+
+/**
+ * Global array, holding the MPU region index of
+ * the memory region inside which dynamic memory
+ * regions may be configured.
+ */
+static struct dynamic_region_info dyn_reg_info[MPU_DYNAMIC_REGION_AREAS_NUM];
+
+
 /* Global MPU configuration at system initialization. */
 static void _mpu_init(void)
 {
@@ -39,7 +57,8 @@ static void _mpu_init(void)
  * Note:
  *   The caller must provide a valid region index.
  */
-static void _region_init(u32_t index, const struct arm_mpu_region *region_conf)
+static void _region_init(const u32_t index,
+	const struct arm_mpu_region *region_conf)
 {
 	ARM_MPU_SetRegion(
 		/* RNR */
@@ -58,6 +77,338 @@ static void _region_init(u32_t index, const struct arm_mpu_region *region_conf)
 	LOG_DBG("[%d] 0x%08x 0x%08x 0x%08x 0x%08x",
 			index, region_conf->base, region_conf->attr.rbar,
 			region_conf->attr.mair_idx, region_conf->attr.r_limit);
+}
+
+/* @brief Partition sanity check
+ *
+ * This internal function performs run-time sanity check for
+ * MPU region start address and size.
+ *
+ * @param part Pointer to the data structure holding the partition
+ *             information (must be valid).
+ * */
+static int _mpu_partition_is_valid(const struct k_mem_partition *part)
+{
+	/* Partition size must be a multiple of the minimum MPU region
+	 * size. Start address of the partition must align with the
+	 * minimum MPU region size.
+	 */
+	int partition_is_valid =
+		(part->size >= CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE)
+		&&
+		((part->size &
+			(~(CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE - 1)))
+			== part->size)
+		&&
+		((part->start &
+			(CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE - 1)) == 0);
+
+	return partition_is_valid;
+}
+
+/**
+ * This internal function returns the MPU region, in which a
+ * buffer, specified by its start address and size, lies. If
+ * a valid MPU region cannot be derived the function returns
+ * -EINVAL.
+ */
+static inline int _get_region_index(u32_t start, u32_t size)
+{
+	u32_t region_start_addr = arm_cmse_mpu_region_get(start);
+	u32_t region_end_addr = arm_cmse_mpu_region_get(start + size - 1);
+
+	/* MPU regions are contiguous so return the region number,
+	 * if both start and end address are in the same region.
+	 */
+	if (region_start_addr == region_end_addr) {
+		return region_start_addr;
+	}
+	return -EINVAL;
+}
+
+static inline u32_t _mpu_region_get_base(const u32_t index)
+{
+	MPU->RNR = index;
+	return MPU->RBAR & MPU_RBAR_BASE_Msk;
+}
+
+static inline void _mpu_region_set_base(const u32_t index, const u32_t base)
+{
+	MPU->RNR = index;
+	MPU->RBAR = (MPU->RBAR & (~MPU_RBAR_BASE_Msk))
+		| (base & MPU_RBAR_BASE_Msk);
+}
+
+static inline u32_t _mpu_region_get_last_addr(const u32_t index)
+{
+	MPU->RNR = index;
+	return (MPU->RLAR & MPU_RLAR_LIMIT_Msk) | (~MPU_RLAR_LIMIT_Msk);
+}
+
+static inline void _mpu_region_set_limit(const u32_t index, const u32_t limit)
+{
+	MPU->RNR = index;
+	MPU->RLAR = (MPU->RLAR & (~MPU_RLAR_LIMIT_Msk))
+		| (limit & MPU_RLAR_LIMIT_Msk);
+}
+
+static inline void _mpu_region_get_access_attr(const u32_t index,
+	arm_mpu_region_attr_t *attr)
+{
+	MPU->RNR = index;
+
+	attr->rbar = MPU->RBAR &
+		(MPU_RBAR_XN_Msk | MPU_RBAR_AP_Msk | MPU_RBAR_SH_Msk);
+	attr->mair_idx = (MPU->RLAR & MPU_RLAR_AttrIndx_Msk) >>
+		MPU_RLAR_AttrIndx_Pos;
+}
+
+static inline void _mpu_region_get_conf(const u32_t index,
+	struct arm_mpu_region *region_conf)
+{
+	MPU->RNR = index;
+
+	/* Region attribution:
+	 * - Cache-ability
+	 * - Share-ability
+	 * - Access Permissions
+	 */
+	_mpu_region_get_access_attr(index, &region_conf->attr);
+
+	/* Region base address */
+	region_conf->base = (MPU->RBAR & MPU_RBAR_BASE_Msk);
+
+	/* Region limit address */
+	region_conf->attr.r_limit = MPU->RLAR & MPU_RLAR_LIMIT_Msk;
+}
+
+/**
+ * This internal function is utilized by the MPU driver to combine a given
+ * region attribute configuration and size and fill-in a driver-specific
+ * structure with the correct MPU region configuration.
+ */
+static inline void _get_region_attr_from_k_mem_partition_info(
+	arm_mpu_region_attr_t *p_attr,
+	const k_mem_partition_attr_t *attr, u32_t base, u32_t size)
+{
+	p_attr->rbar = attr->rbar &
+		(MPU_RBAR_XN_Msk | MPU_RBAR_AP_Msk | MPU_RBAR_SH_Msk);
+	p_attr->mair_idx = attr->mair_idx;
+	p_attr->r_limit = REGION_LIMIT_ADDR(base, size);
+}
+
+static int _region_allocate_and_init(const u8_t index,
+	const struct arm_mpu_region *region_conf);
+
+static int _mpu_configure_region(const u8_t index,
+	const struct k_mem_partition *new_region);
+
+/* This internal function programs a set of given MPU regions
+ * over a background memory area, optionally performing a
+ * sanity check of the memory regions to be programmed.
+ */
+static int _mpu_configure_regions(const struct k_mem_partition
+	regions[], u8_t regions_num, u8_t start_reg_index,
+	bool do_sanity_check)
+{
+	int i;
+	u8_t reg_index = start_reg_index;
+
+	for (i = 0; i < regions_num; i++) {
+		if (regions[i].size == 0) {
+			continue;
+		}
+		/* Non-empty region. */
+
+		if (do_sanity_check &&
+			(!_mpu_partition_is_valid(&regions[i]))) {
+			LOG_ERR("Partition %u: sanity check failed.", i);
+			return -EINVAL;
+		}
+
+		/* Derive the index of the underlying MPU region,
+		 * inside which the new region will be configured.
+		 */
+		int u_reg_index =
+			_get_region_index(regions[i].start, regions[i].size);
+
+		if ((u_reg_index == -EINVAL) ||
+			(u_reg_index > (reg_index - 1))) {
+			LOG_ERR("Invalid underlying region index %u",
+				u_reg_index);
+			return -EINVAL;
+		}
+
+		/*
+		 * The new memory region is to be placed inside the underlying
+		 * region, possibly splitting the underlying region into two.
+		 */
+		u32_t u_reg_base = _mpu_region_get_base(u_reg_index);
+		u32_t u_reg_last = _mpu_region_get_last_addr(u_reg_index);
+		u32_t reg_last = regions[i].start + regions[i].size - 1;
+
+		if ((regions[i].start == u_reg_base) &&
+			(reg_last == u_reg_last)) {
+			/* The new region overlaps entirely with the
+			 * underlying region. In this case we simply
+			 * update the partition attributes of the
+			 * underlying region with those of the new
+			 * region.
+			 */
+			_mpu_configure_region(u_reg_index, &regions[i]);
+		} else if (regions[i].start == u_reg_base) {
+			/* The new region starts exactly at the start of the
+			 * underlying region; the start of the underlying
+			 * region needs to be set to the end of the new region.
+			 */
+			arm_core_mpu_disable();
+			_mpu_region_set_base(u_reg_index,
+				regions[i].start + regions[i].size);
+
+			reg_index =
+				_mpu_configure_region(reg_index, &regions[i]);
+			arm_core_mpu_enable();
+
+			if (reg_index == -EINVAL) {
+				return reg_index;
+			}
+
+			reg_index++;
+		} else if (reg_last == u_reg_last) {
+			/* The new region ends exactly at the end of the
+			 * underlying region; the end of the underlying
+			 * region needs to be set to the start of the
+			 * new region.
+			 */
+			arm_core_mpu_disable();
+			_mpu_region_set_limit(u_reg_index,
+				regions[i].start - 1);
+
+			reg_index =
+				_mpu_configure_region(reg_index, &regions[i]);
+			arm_core_mpu_enable();
+
+			if (reg_index == -EINVAL) {
+				return reg_index;
+			}
+
+			reg_index++;
+		} else {
+			/* The new regions lies strictly inside the
+			 * underlying region, which needs to split
+			 * into two regions.
+			 */
+			arm_core_mpu_disable();
+			_mpu_region_set_limit(u_reg_index,
+				regions[i].start - 1);
+
+			reg_index =
+				_mpu_configure_region(reg_index, &regions[i]);
+
+			if (reg_index == -EINVAL) {
+				return reg_index;
+			}
+			reg_index++;
+
+			/* The additional region shall have the same
+			 * access attributes as the initial underlying
+			 * region.
+			 */
+			struct arm_mpu_region fill_region;
+
+			_mpu_region_get_access_attr(u_reg_index,
+				&fill_region.attr);
+			fill_region.base = regions[i].start + regions[i].size;
+			fill_region.attr.r_limit =
+			REGION_LIMIT_ADDR((regions[i].start + regions[i].size),
+				(u_reg_last - reg_last));
+
+			reg_index =
+				_region_allocate_and_init(reg_index,
+					(const struct arm_mpu_region *)&fill_region);
+
+			arm_core_mpu_enable();
+
+			if (reg_index == -EINVAL) {
+				return reg_index;
+			}
+
+			reg_index++;
+		}
+	}
+
+	return reg_index;
+}
+
+/* This internal function programs the static MPU regions.
+ *
+ * It returns the number of MPU region indices configured.
+ *
+ * Note:
+ * If the static MPU regions configuration has not been successfully
+ * performed, the error signal is propagated to the caller of the function.
+ */
+static int _mpu_configure_static_mpu_regions(const struct k_mem_partition
+	static_regions[], const u8_t regions_num,
+	const u32_t background_area_base,
+	const u32_t background_area_end)
+{
+	u32_t mpu_reg_index = static_regions_num;
+
+	/* In ARMv8-M architecture the static regions are programmed on SRAM,
+	 * forming a full partition of the background area, specified by the
+	 * given boundaries.
+	 */
+	ARG_UNUSED(background_area_base);
+	ARG_UNUSED(background_area_end);
+
+	mpu_reg_index = _mpu_configure_regions(static_regions,
+		regions_num, mpu_reg_index, true);
+
+	static_regions_num = mpu_reg_index;
+
+	return mpu_reg_index;
+}
+
+/* This internal function marks and stores the configuration of memory areas
+ * where dynamic region programming is allowed. Return zero on success, or
+ * -EINVAL on error.
+ */
+static int _mpu_mark_areas_for_dynamic_regions(
+		const struct k_mem_partition dyn_region_areas[],
+		const u8_t dyn_region_areas_num)
+{
+	/* In ARMv8-M architecture we need to store the index values
+	 * and the default configuration of the MPU regions, inside
+	 * which dynamic memory regions may be programmed at run-time.
+	 */
+	for (int i = 0; i < dyn_region_areas_num; i++) {
+		if (dyn_region_areas[i].size == 0) {
+			continue;
+		}
+		/* Non-empty area */
+
+		/* Retrieve HW MPU region index */
+		dyn_reg_info[i].index =
+			_get_region_index(dyn_region_areas[i].start,
+					dyn_region_areas[i].size);
+
+		if (dyn_reg_info[i].index == -EINVAL) {
+
+			return -EINVAL;
+		}
+
+		if (dyn_reg_info[i].index >= static_regions_num) {
+
+			return -EINVAL;
+		}
+
+		/* Store default configuration */
+		_mpu_region_get_conf(dyn_reg_info[i].index,
+			&dyn_reg_info[i].region_conf);
+	}
+
+	return 0;
 }
 
 #if defined(CONFIG_USERSPACE) || defined(CONFIG_MPU_STACK_GUARD) || \
