@@ -21,8 +21,6 @@
 #define AT_RSP_DELIMITER "\r\n"
 #define AT_RSP_DELIMITER_LEN 2
 
-struct device *uarthost;
-
 struct eswifi_gpio {
 	struct device *dev;
 	unsigned int pin;
@@ -97,7 +95,7 @@ static inline void eswifi_unlock(struct eswifi_dev *eswifi)
 	k_mutex_unlock(&eswifi->mutex);
 }
 
-struct eswifi_bus_ops eswifi_bus_ops_spi;
+extern struct eswifi_bus_ops eswifi_bus_ops_spi;
 int eswifi_offload_init(struct eswifi_dev *eswifi);
 struct eswifi_dev *eswifi_by_iface_idx(u8_t iface);
 bool eswifi_is_buf_at_ok(char *str);
