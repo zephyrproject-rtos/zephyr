@@ -16,3 +16,9 @@
 		alert-gpios = <&gpio0 2 GPIO_INT_ACTIVE_HIGH>;
 	};
 };
+
+/ {
+	aliases {
+		sht3xd-0 = &sht3xd;
+	};
+};
