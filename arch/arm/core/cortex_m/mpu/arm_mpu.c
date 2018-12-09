@@ -165,6 +165,15 @@ void arm_core_mpu_mem_partition_config_update(
 	partition->attr = *new_attr;
 	_mpu_configure_region(reg_index, partition);
 }
+
+/**
+ * @brief get the maximum number of available (free) MPU region indices
+ *        for configuring dynamic MPU partitions
+ */
+int arm_core_mpu_get_max_available_dyn_regions(void)
+{
+	return _get_num_regions() - static_regions_num;
+}
 #endif /* CONFIG_USERSPACE */
 
 /**
