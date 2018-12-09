@@ -201,6 +201,29 @@ static inline void _get_region_attr_from_k_mem_partition_info(
 	p_attr->r_limit = REGION_LIMIT_ADDR(base, size);
 }
 
+#if defined(CONFIG_USERSPACE)
+
+static inline u32_t _mpu_region_get_size(u32_t index)
+{
+	return _mpu_region_get_last_addr(index) + 1
+		- _mpu_region_get_base(index);
+}
+
+/**
+ * This internal function checks if region is enabled or not.
+ *
+ * Note:
+ *   The caller must provide a valid region number.
+ */
+static inline int _is_enabled_region(u32_t index)
+{
+	MPU->RNR = index;
+
+	return (MPU->RLAR & MPU_RLAR_EN_Msk) ? 1 : 0;
+}
+
+#endif /* CONFIG_USERSPACE */
+
 static int _region_allocate_and_init(const u8_t index,
 	const struct arm_mpu_region *region_conf);
 
