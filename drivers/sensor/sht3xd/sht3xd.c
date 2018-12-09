@@ -16,6 +16,18 @@
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 LOG_MODULE_REGISTER(SHT3XD);
 
+static const u16_t measure_cmd[5][3] = {
+	{ 0x202F, 0x2024, 0x2032 },
+	{ 0x212D, 0x2126, 0x2130 },
+	{ 0x222B, 0x2220, 0x2236 },
+	{ 0x2329, 0x2322, 0x2334 },
+	{ 0x272A, 0x2721, 0x2737 }
+};
+
+static const int measure_wait[3] = {
+	4000, 6000, 15000
+};
+
 /*
  * CRC algorithm parameters were taken from the
  * "Checksum Calculation" section of the datasheet.
@@ -176,13 +188,13 @@ static int sht3xd_init(struct device *dev)
 
 	/* set periodic measurement mode */
 	if (sht3xd_write_command(drv_data,
-		sht3xd_measure_cmd[SHT3XD_MPS_IDX][SHT3XD_REPEATABILITY_IDX])
+		measure_cmd[SHT3XD_MPS_IDX][SHT3XD_REPEATABILITY_IDX])
 		< 0) {
 		LOG_DBG("Failed to set measurement mode!");
 		return -EIO;
 	}
 
-	k_busy_wait(sht3xd_measure_wait[SHT3XD_REPEATABILITY_IDX]);
+	k_busy_wait(measure_wait[SHT3XD_REPEATABILITY_IDX]);
 
 #ifdef CONFIG_SHT3XD_TRIGGER
 	if (sht3xd_init_interrupt(dev) < 0) {
