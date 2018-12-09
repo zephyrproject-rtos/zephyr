@@ -45,18 +45,6 @@
 
 #define SHT3XD_CLEAR_STATUS_WAIT_USEC	1000
 
-static const u16_t sht3xd_measure_cmd[5][3] = {
-	{0x202F, 0x2024, 0x2032},
-	{0x212D, 0x2126, 0x2130},
-	{0x222B, 0x2220, 0x2236},
-	{0x2329, 0x2322, 0x2334},
-	{0x272A, 0x2721, 0x2737}
-};
-
-static const int sht3xd_measure_wait[3] = {
-	4000, 6000, 15000
-};
-
 struct sht3xd_data {
 	struct device *i2c;
 	u16_t t_sample;
