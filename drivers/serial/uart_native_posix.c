@@ -189,8 +189,6 @@ static int np_uart_init(struct device *dev)
 		}
 	}
 
-	dev->driver_api = &np_uart_driver_api;
-
 	return 0;
 }
 
@@ -285,10 +283,11 @@ static int np_uart_tty_poll_in(struct device *dev, unsigned char *p_char)
 
 static struct native_uart_status native_uart_status_0;
 
-DEVICE_INIT(uart_native_posix0,
+DEVICE_AND_API_INIT(uart_native_posix0,
 	    CONFIG_UART_NATIVE_POSIX_PORT_0_NAME, &np_uart_init,
 	    (void *)&native_uart_status_0, NULL,
-	    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+	    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+	    &np_uart_driver_api);
 
 static void np_add_uart_options(void)
 {

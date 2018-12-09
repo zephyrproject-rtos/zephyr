@@ -203,12 +203,10 @@ int tmp112_init(struct device *dev)
 		return -EINVAL;
 	}
 
-	dev->driver_api = &tmp112_driver_api;
-
 	return 0;
 }
 
 static struct tmp112_data tmp112_driver;
 
-DEVICE_INIT(tmp112, CONFIG_TMP112_NAME, tmp112_init, &tmp112_driver,
-	    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY);
+DEVICE_AND_API_INIT(tmp112, CONFIG_TMP112_NAME, tmp112_init, &tmp112_driver,
+	    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &tmp112_driver_api);

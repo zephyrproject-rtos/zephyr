@@ -895,8 +895,6 @@ int bmi160_init(struct device *dev)
 	}
 #endif
 
-	dev->driver_api = &bmi160_api;
-
 	return 0;
 }
 
@@ -909,5 +907,6 @@ const struct bmi160_device_config bmi160_config = {
 
 
 
-DEVICE_INIT(bmi160, DT_BMI160_NAME, bmi160_init, &bmi160_data,
-	    &bmi160_config, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY);
+DEVICE_AND_API_INIT(bmi160, DT_BMI160_NAME, bmi160_init, &bmi160_data,
+		&bmi160_config, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
+		&bmi160_api);

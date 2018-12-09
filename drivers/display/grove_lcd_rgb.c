@@ -267,16 +267,6 @@ int glcd_initialize(struct device *port)
 		return -EPERM;
 	}
 
-	/* Since device_get_binding() will not return any
-	 * reference to a driver instance if port->driver_api
-	 * is NULL and grove_lcd does not have any API struct,
-	 * just populate it with some magic number
-	 * so grove_lcd can be referenced.
-	 *
-	 * Since dev is probably still in registers.
-	 * use that to minimize code addition.
-	 */
-	port->driver_api = (void *)dev;
 
 	/*
 	 * Initialization sequence from the data sheet:
@@ -344,6 +334,14 @@ static struct glcd_data grove_lcd_driver = {
 	.function = 0,
 };
 
-DEVICE_INIT(grove_lcd, GROVE_LCD_NAME, glcd_initialize,
+	/* Since device_get_binding() will not return any
+	 * reference to a driver instance if driver_api
+	 * is NULL and grove_lcd does not have any API struct,
+	 * just populate it with some magic number
+	 * so grove_lcd can be referenced.
+	 * since grove_lcd_driver struct is available, populating with it
+	 */
+DEVICE_AND_API_INIT(grove_lcd, GROVE_LCD_NAME, glcd_initialize,
 			&grove_lcd_driver, &grove_lcd_config,
-			POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY);
+			POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY,
+			(void *)&grove_lcd_driver);

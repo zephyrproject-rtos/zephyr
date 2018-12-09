@@ -145,8 +145,6 @@ int pwm_pca9685_init(struct device *dev)
 		return -EPERM;
 	}
 
-	dev->driver_api = &pwm_pca9685_drv_api_funcs;
-
 	return 0;
 }
 
@@ -163,9 +161,10 @@ static const struct pwm_pca9685_config pwm_pca9685_0_cfg = {
 static struct pwm_pca9685_drv_data pwm_pca9685_0_drvdata;
 
 /* This has to init after I2C master */
-DEVICE_INIT(pwm_pca9685_0, CONFIG_PWM_PCA9685_0_DEV_NAME,
+DEVICE_AND_API_INIT(pwm_pca9685_0, CONFIG_PWM_PCA9685_0_DEV_NAME,
 			pwm_pca9685_init,
 			&pwm_pca9685_0_drvdata, &pwm_pca9685_0_cfg,
-			POST_KERNEL, CONFIG_PWM_PCA9685_INIT_PRIORITY);
+			POST_KERNEL, CONFIG_PWM_PCA9685_INIT_PRIORITY,
+			&pwm_pca9685_drv_api_funcs);
 
 #endif /* CONFIG_PWM_PCA9685_0 */

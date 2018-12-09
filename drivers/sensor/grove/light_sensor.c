@@ -94,12 +94,11 @@ static int gls_init(struct device *dev)
 
 	adc_channel_setup(drv_data->adc, &drv_data->ch10_cfg);
 
-	dev->driver_api = &gls_api;
-
 	return 0;
 }
 
 static struct gls_data gls_data;
 
-DEVICE_INIT(gls_dev, CONFIG_GROVE_LIGHT_SENSOR_NAME, &gls_init, &gls_data,
-	    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY);
+DEVICE_AND_API_INIT(gls_dev, CONFIG_GROVE_LIGHT_SENSOR_NAME, &gls_init,
+		&gls_data, NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
+		&gls_api);

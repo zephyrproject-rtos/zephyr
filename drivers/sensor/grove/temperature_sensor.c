@@ -101,12 +101,11 @@ static int gts_init(struct device *dev)
 
 	adc_channel_setup(drv_data->adc, &drv_data->ch10_cfg);
 
-	dev->driver_api = &gts_api;
-
 	return 0;
 }
 
 static struct gts_data gts_data;
 
-DEVICE_INIT(gts_dev, CONFIG_GROVE_TEMPERATURE_SENSOR_NAME, &gts_init, &gts_data,
-	    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY);
+DEVICE_AND_API_INIT(gts_dev, CONFIG_GROVE_TEMPERATURE_SENSOR_NAME, &gts_init,
+		&gts_data, NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
+		&gts_api);
