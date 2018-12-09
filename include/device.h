@@ -83,8 +83,8 @@ extern "C" {
  * (e.g. CONFIG_KERNEL_INIT_PRIORITY_DEFAULT + 5).
  */
 #define DEVICE_INIT(dev_name, drv_name, init_fn, data, cfg_info, level, prio) \
-	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info,      \
-			    level, prio, NULL)
+	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn,\
+	data, cfg_info, level, prio, NULL)
 
 
 /**

@@ -117,10 +117,7 @@ static const struct shared_irq_driver_api api_funcs = {
 int shared_irq_initialize(struct device *dev)
 {
 	const struct shared_irq_config *config = dev->config->config_info;
-
-	dev->driver_api = &api_funcs;
 	config->config();
-
 	return 0;
 }
 
@@ -135,9 +132,10 @@ const struct shared_irq_config shared_irq_config_0 = {
 
 struct shared_irq_runtime shared_irq_0_runtime;
 
-DEVICE_INIT(shared_irq_0, CONFIG_SHARED_IRQ_0_NAME, shared_irq_initialize,
-				&shared_irq_0_runtime, &shared_irq_config_0,
-				POST_KERNEL, CONFIG_SHARED_IRQ_INIT_PRIORITY);
+DEVICE_AND_API_INIT(shared_irq_0, CONFIG_SHARED_IRQ_0_NAME,
+		shared_irq_initialize, &shared_irq_0_runtime,
+		&shared_irq_config_0, POST_KERNEL,
+		CONFIG_SHARED_IRQ_INIT_PRIORITY, &api_funcs);
 
 #if defined(CONFIG_IOAPIC)
 #if defined(CONFIG_SHARED_IRQ_0_FALLING_EDGE)
@@ -173,9 +171,10 @@ const struct shared_irq_config shared_irq_config_1 = {
 
 struct shared_irq_runtime shared_irq_1_runtime;
 
-DEVICE_INIT(shared_irq_1, CONFIG_SHARED_IRQ_1_NAME, shared_irq_initialize,
-				&shared_irq_1_runtime, &shared_irq_config_1,
-				POST_KERNEL, CONFIG_SHARED_IRQ_INIT_PRIORITY);
+DEVICE_AND_API_INIT(shared_irq_1, CONFIG_SHARED_IRQ_1_NAME,
+		shared_irq_initialize, &shared_irq_1_runtime,
+		&shared_irq_config_1, POST_KERNEL,
+		CONFIG_SHARED_IRQ_INIT_PRIORITY, &api_funcs);
 
 #if defined(CONFIG_IOAPIC)
 #if defined(CONFIG_SHARED_IRQ_1_FALLING_EDGE)

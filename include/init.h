@@ -41,13 +41,14 @@ extern "C" {
  *
  * @param init_fn Pointer to the boot function to run
  *
- * @param level The initialization level, See DEVICE_INIT for details.
+ * @param level The initialization level, See DEVICE_AND_API_INIT for details.
  *
  * @param prio Priority within the selected initialization level. See
- * DEVICE_INIT for details.
+ * DEVICE_AND_API_INIT for details.
  */
 #define SYS_INIT(init_fn, level, prio) \
-	DEVICE_INIT(_SYS_NAME(init_fn), "", init_fn, NULL, NULL, level, prio)
+	DEVICE_AND_API_INIT(_SYS_NAME(init_fn), "", init_fn, NULL, NULL, level,\
+	prio, NULL)
 
 /**
  * @def SYS_DEVICE_DEFINE
