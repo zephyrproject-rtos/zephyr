@@ -288,6 +288,10 @@ def add_prop_aliases(node_address,
 
         if (new_alias_label != prop_label):
             prop_aliases[new_alias_label] = prop_label
+        # Also without node_compat
+        new_alias_label = 'DT_' + old_alias_label
+        if (new_alias_label != prop_label):
+            prop_aliases[new_alias_label] = prop_label
         if (old_alias_names and old_alias_label != prop_label):
             prop_aliases[old_alias_label] = prop_label
 
