@@ -125,6 +125,48 @@ void arm_core_mpu_disable(void)
 	MPU->CTRL = 0;
 }
 
+#if defined(CONFIG_USERSPACE)
+/**
+ * @brief update configuration of an active memory partition
+ */
+void arm_core_mpu_mem_partition_config_update(
+	struct k_mem_partition *partition,
+	k_mem_partition_attr_t *new_attr)
+{
+	/* Find the partition. ASSERT if not found. */
+	u8_t i;
+	u8_t reg_index = _get_num_regions();
+
+	for (i = static_regions_num; i < _get_num_regions(); i++) {
+		if (!_is_enabled_region(i)) {
+			continue;
+		}
+
+		u32_t base = _mpu_region_get_base(i);
+
+		if (base != partition->start) {
+			continue;
+		}
+
+		u32_t size = _mpu_region_get_size(i);
+
+		if (size != partition->size) {
+			continue;
+		}
+
+		/* Region found */
+		reg_index = i;
+		break;
+	}
+	__ASSERT(reg_index != _get_num_regions(),
+		"Memory domain partition not found\n");
+
+	/* Modify the permissions */
+	partition->attr = *new_attr;
+	_mpu_configure_region(reg_index, partition);
+}
+#endif /* CONFIG_USERSPACE */
+
 /**
  * @brief configure fixed (static) MPU regions.
  */

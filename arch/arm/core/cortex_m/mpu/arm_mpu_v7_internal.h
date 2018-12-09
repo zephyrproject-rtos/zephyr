@@ -127,6 +127,45 @@ static inline void _get_region_attr_from_k_mem_partition_info(
 	p_attr->rasr = attr->rasr_attr | _size_to_mpu_rasr_size(size);
 }
 
+#if defined(CONFIG_USERSPACE)
+
+/**
+ * This internal function converts the SIZE field value of MPU_RASR
+ * to the region size (in bytes).
+ */
+static inline u32_t _mpu_rasr_size_to_size(u32_t rasr_size)
+{
+	return 1 << (rasr_size + 1);
+}
+
+static inline u32_t _mpu_region_get_base(u32_t index)
+{
+	MPU->RNR = index;
+	return MPU->RBAR & MPU_RBAR_ADDR_Msk;
+}
+
+static inline u32_t _mpu_region_get_size(u32_t index)
+{
+	MPU->RNR = index;
+	u32_t rasr_size = (MPU->RASR & MPU_RASR_SIZE_Msk) >> MPU_RASR_SIZE_Pos;
+
+	return _mpu_rasr_size_to_size(rasr_size);
+}
+
+/**
+ * This internal function checks if region is enabled or not.
+ *
+ * Note:
+ *   The caller must provide a valid region number.
+ */
+static inline int _is_enabled_region(u32_t index)
+{
+	MPU->RNR = index;
+	return (MPU->RASR & MPU_RASR_ENABLE_Msk) ? 1 : 0;
+}
+
+#endif /* CONFIG_USERSPACE */
+
 static int _mpu_configure_region(const u8_t index,
 	const struct k_mem_partition *new_region);
 
