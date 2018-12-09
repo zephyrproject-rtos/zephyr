@@ -153,6 +153,27 @@ void arm_core_mpu_mark_areas_for_dynamic_regions(
 void arm_core_mpu_configure_dynamic_mpu_regions(
 	const struct k_mem_partition dynamic_regions[], u8_t regions_num);
 
+#if defined(CONFIG_USERSPACE)
+/**
+ * @brief update configuration of an active memory partition
+ *
+ * Internal API function to re-configure the access permissions of an
+ * active memory partition, i.e. a partition that has earlier been
+ * configured in the (current) thread context.
+ *
+ * @param partition Pointer to a structure holding the partition information
+ *                  (must be valid).
+ * @param new_attr  New access permissions attribute for the partition.
+ *
+ * The function shall assert if the operation cannot be not performed
+ * successfully (e.g. the given partition can not be found).
+ */
+void arm_core_mpu_mem_partition_config_update(
+	struct k_mem_partition *partition,
+	k_mem_partition_attr_t *new_attr);
+
+#endif /* CONFIG_USERSPACE */
+
 /**
  * @brief configure the base address and size for an MPU region
  *
