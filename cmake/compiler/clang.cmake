@@ -9,6 +9,16 @@ if(NOT DEFINED NOSYSDEF_CFLAG)
   set(NOSYSDEF_CFLAG -undef)
 endif()
 
+set(CMAKE_C_COMPILER   ${CLANG_ROOT}/bin/clang)
+set(CMAKE_CXX_COMPILER ${CLANG_ROOT}/bin/clang++)
+set(CMAKE_AR           ${CLANG_ROOT}/bin/llvm-ar		CACHE INTERNAL " " FORCE)
+set(CMAKE_LINKER       ${CLANG_ROOT}/bin/llvm-link		CACHE INTERNAL " " FORCE)
+set(CMAKE_NM           ${CLANG_ROOT}/bin/llvm-nm		CACHE INTERNAL " " FORCE)
+set(CMAKE_OBJDUMP      ${CLANG_ROOT}/bin/llvm-objdump	CACHE INTERNAL " " FORCE)
+set(CMAKE_RANLIB       ${CLANG_ROOT}/bin/llvm-ranlib	CACHE INTERNAL " " FORCE)
+set(CMAKE_OBJCOPY                    objcopy			CACHE INTERNAL " " FORCE)
+set(CMAKE_READELF                    readelf			CACHE INTERNAL " " FORCE)
+
 foreach(file_name include include-fixed)
   execute_process(
     COMMAND ${CMAKE_C_COMPILER} --print-file-name=${file_name}
