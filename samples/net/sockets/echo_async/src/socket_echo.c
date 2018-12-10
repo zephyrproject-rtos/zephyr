@@ -5,7 +5,9 @@
  */
 
 #include <stdio.h>
+#include <stdbool.h>
 #include <errno.h>
+#include <stdlib.h>
 
 #ifndef __ZEPHYR__
 
@@ -41,16 +43,31 @@ LOG_MODULE_REGISTER(net_echo_async_sample, LOG_LEVEL_DBG);
 struct pollfd pollfds[NUM_FDS];
 int pollnum;
 
-static void nonblock(int fd)
-{
-	int fl = fcntl(fd, F_GETFL, 0);
-	fcntl(fd, F_SETFL, fl | O_NONBLOCK);
-}
+#define fatal(msg, ...) { \
+		printf("Error: " msg "\n", ##__VA_ARGS__); \
+		exit(1); \
+	}
 
-static void block(int fd)
+
+static void setblocking(int fd, bool val)
 {
-	int fl = fcntl(fd, F_GETFL, 0);
-	fcntl(fd, F_SETFL, fl & ~O_NONBLOCK);
+	int fl, res;
+
+	fl = fcntl(fd, F_GETFL, 0);
+	if (fl == -1) {
+		fatal("fcntl(F_GETFL): %d", errno);
+	}
+
+	if (val) {
+		fl &= ~O_NONBLOCK;
+	} else {
+		fl |= O_NONBLOCK;
+	}
+
+	res = fcntl(fd, F_SETFL, fl);
+	if (fl == -1) {
+		fatal("fcntl(F_SETFL): %d", errno);
+	}
 }
 
 int pollfds_add(int fd)
@@ -122,8 +139,8 @@ int main(void)
 		printf("Cannot bind IPv6, errno: %d\n", errno);
 	}
 
-	nonblock(serv4);
-	nonblock(serv6);
+	setblocking(serv4, false);
+	setblocking(serv6, false);
 	listen(serv4, 5);
 	listen(serv6, 5);
 
@@ -163,7 +180,7 @@ int main(void)
 					send(client, msg, sizeof(msg) - 1, 0);
 					close(client);
 				} else {
-					nonblock(client);
+					setblocking(client, false);
 				}
 			} else {
 				char buf[128];
@@ -186,7 +203,8 @@ error:
 					 * to not block, but to be robust, we
 					 * handle all possibilities.
 					 */
-					block(fd);
+					setblocking(fd, true);
+
 					for (p = buf; len; len -= out_len) {
 						out_len = send(fd, p, len, 0);
 						if (out_len < 0) {
@@ -197,7 +215,8 @@ error:
 						}
 						p += out_len;
 					}
-					nonblock(fd);
+
+					setblocking(fd, false);
 				}
 			}
 		}
