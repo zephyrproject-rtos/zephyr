@@ -1,0 +1,74 @@
+# Kconfig - Particle Agron board configuration
+#
+# Copyright (c) 2018 Matthias Boesl
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_PARTICLE_ARGON_NRF52
+
+config BOARD
+	default "particle_argon_nrf52"
+
+if USB
+
+config USB_NRF52840
+	default y
+
+config USB_DEVICE_STACK
+	default y
+
+endif # USB
+
+config I2C
+	default y
+
+if I2C
+
+config I2C_NRFX
+	default y
+
+if I2C_NRFX
+
+config I2C_0
+	default y
+
+endif #I2C_NRFX
+
+if I2C_0
+
+choice I2C_0_NRF_TYPE
+	default I2C_0_NRF_TWIM
+
+endchoice
+
+endif # I2C_0
+
+endif # I2C
+
+if SPI
+
+config SPI_NRFX
+	default y
+
+if SPI_NRFX
+
+config SPI_0
+	default n
+
+config SPI_1
+	default y
+
+config SPI_2
+	default n
+
+endif # SPI_NRFX
+endif # SPI
+
+if IEEE802154
+
+config IEEE802154_NRF5
+	default y
+
+endif # IEEE802154
+
+endif # BOARD_PARTICLE_ARGON
