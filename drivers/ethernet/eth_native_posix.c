@@ -20,7 +20,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <stdio.h>
 
 #include <kernel.h>
-
 #include <stdbool.h>
 #include <errno.h>
 #include <stddef.h>
@@ -118,9 +117,12 @@ static bool need_timestamping(struct gptp_hdr *hdr)
 }
 
 static struct gptp_hdr *check_gptp_msg(struct net_if *iface,
-				       struct net_pkt *pkt)
+				       struct net_pkt *pkt,
+				       bool is_tx)
 {
+	struct gptp_hdr *gptp_hdr;
 	u8_t *msg_start;
+	int eth_hlen;
 
 	if (net_pkt_ll_reserve(pkt)) {
 		msg_start = net_pkt_ll(pkt);
@@ -136,6 +138,8 @@ static struct gptp_hdr *check_gptp_msg(struct net_if *iface,
 		if (ntohs(hdr_vlan->type) != NET_ETH_PTYPE_PTP) {
 			return NULL;
 		}
+
+		eth_hlen = sizeof(struct net_eth_vlan_hdr);
 	} else
 #endif
 	{
@@ -145,9 +149,27 @@ static struct gptp_hdr *check_gptp_msg(struct net_if *iface,
 		if (ntohs(hdr->type) != NET_ETH_PTYPE_PTP) {
 			return NULL;
 		}
+
+
+		eth_hlen = sizeof(struct net_eth_hdr);
 	}
 
-	return gptp_get_hdr(pkt);
+	/* In TX, the first net_buf contains the Ethernet header
+	 * and the actual gPTP header is in the second net_buf.
+	 * In RX, the Ethernet header + other headers are in the
+	 * first net_buf.
+	 */
+	if (is_tx) {
+		if (pkt->frags->frags == NULL) {
+			return false;
+		}
+
+		gptp_hdr = (struct gptp_hdr *)pkt->frags->frags->data;
+	} else {
+		gptp_hdr = (struct gptp_hdr *)(pkt->frags->data + eth_hlen);
+	}
+
+	return gptp_hdr;
 }
 
 static void update_pkt_priority(struct gptp_hdr *hdr, struct net_pkt *pkt)
@@ -173,7 +195,7 @@ static void update_gptp(struct net_if *iface, struct net_pkt *pkt,
 
 	net_pkt_set_timestamp(pkt, &timestamp);
 
-	hdr = check_gptp_msg(iface, pkt);
+	hdr = check_gptp_msg(iface, pkt, send);
 	if (!hdr) {
 		return;
 	}
