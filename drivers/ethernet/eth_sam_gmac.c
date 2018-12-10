@@ -327,9 +327,12 @@ static void tx_descriptors_init(Gmac *gmac, struct gmac_queue *queue)
 
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 static struct gptp_hdr *check_gptp_msg(struct net_if *iface,
-				       struct net_pkt *pkt)
+				       struct net_pkt *pkt,
+				       bool is_tx)
 {
 	struct ethernet_context *eth_ctx;
+	struct gptp_hdr *gptp_hdr;
+	int eth_hlen;
 	u8_t *msg_start;
 
 	if (net_pkt_ll_reserve(pkt)) {
@@ -347,6 +350,8 @@ static struct gptp_hdr *check_gptp_msg(struct net_if *iface,
 		if (ntohs(hdr_vlan->type) != NET_ETH_PTYPE_PTP) {
 			return NULL;
 		}
+
+		eth_hlen = sizeof(struct net_eth_vlan_hdr);
 	} else
 #else
 	ARG_UNUSED(eth_ctx);
@@ -358,9 +363,26 @@ static struct gptp_hdr *check_gptp_msg(struct net_if *iface,
 		if (ntohs(hdr->type) != NET_ETH_PTYPE_PTP) {
 			return NULL;
 		}
+
+		eth_hlen = sizeof(struct net_eth_hdr);
 	}
 
-	return gptp_get_hdr(pkt);
+	/* In TX, the first net_buf contains the Ethernet header
+	 * and the actual gPTP header is in the second net_buf.
+	 * In RX, the Ethernet header + other headers are in the
+	 * first net_buf.
+	 */
+	if (is_tx) {
+		if (pkt->frags->frags == NULL) {
+			return false;
+		}
+
+		gptp_hdr = (struct gptp_hdr *)pkt->frags->frags->data;
+	} else {
+		gptp_hdr = (struct gptp_hdr *)(pkt->frags->data + eth_hlen);
+	}
+
+	return gptp_hdr;
 }
 
 static bool need_timestamping(struct gptp_hdr *hdr)
@@ -537,7 +559,7 @@ static void tx_completed(Gmac *gmac, struct gmac_queue *queue)
 			}
 #endif
 			hdr = check_gptp_msg(get_iface(dev_data, vlan_tag),
-					     pkt);
+					     pkt, true);
 
 			timestamp_tx_pkt(gmac, hdr, pkt);
 
@@ -1246,7 +1268,8 @@ static void eth_rx(struct gmac_queue *queue)
 		}
 #endif
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
-		hdr = check_gptp_msg(get_iface(dev_data, vlan_tag), rx_frame);
+		hdr = check_gptp_msg(get_iface(dev_data, vlan_tag), rx_frame,
+				     false);
 
 		timestamp_rx_pkt(gmac, hdr, rx_frame);
 
