@@ -1160,8 +1160,8 @@ static int cmd_net_allocs(const struct shell *shell, size_t argc, char *argv[])
 	PR("memory\t\tStatus\tPool\tFunction alloc -> freed\n");
 	net_pkt_allocs_foreach(allocs_cb, &user_data);
 #else
-	PR_INFO("Enable CONFIG_NET_DEBUG_NET_PKT to see allocations.\n");
-#endif /* CONFIG_NET_DEBUG_NET_PKT */
+	PR_INFO("Enable CONFIG_NET_PKT_LOG_LEVEL_DBG to see allocations.\n");
+#endif /* CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG */
 
 	return 0;
 }
