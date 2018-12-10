@@ -685,7 +685,11 @@ static int usb_dfu_init(struct device *dev)
 
 	ARG_UNUSED(dev);
 
+#if defined(DT_FLASH_DEV_NAME)
 	dfu_data.flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
+#elif defined(DT_SPI_NOR_DRV_NAME)
+	dfu_data.flash_dev = device_get_binding(DT_SPI_NOR_DRV_NAME);
+#endif
 	if (!dfu_data.flash_dev) {
 		LOG_ERR("Flash device not found\n");
 		return -ENODEV;
