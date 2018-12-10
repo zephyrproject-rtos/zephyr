@@ -50,20 +50,12 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 			      (tdelta <= expected_slice_max) &&
 			      ((int)p1 == thread_idx)), NULL);
 		thread_idx = (thread_idx + 1) % (NUM_THREAD);
-		u32_t t32 = k_uptime_get_32();
 
 		/* Keep the current thread busy for more than one slice,
 		 * even though, when timeslice used up the next thread
 		 * should be scheduled in.
 		 */
-		while (k_uptime_get_32() - t32 < BUSY_MS) {
-#if defined(CONFIG_ARCH_POSIX)
-			k_busy_wait(50);
-#else
-			;
-#endif
-		}
-
+		k_busy_wait(1000 * BUSY_MS);
 		k_sem_give(&sema1);
 	}
 
@@ -83,7 +75,6 @@ static void thread_tslice(void *p1, void *p2, void *p3)
  */
 void test_slice_scheduling(void)
 {
-	u32_t t32;
 	k_tid_t tid[NUM_THREAD];
 	int old_prio = k_thread_priority_get(k_current_get());
 	int count = 0;
@@ -111,14 +102,7 @@ void test_slice_scheduling(void)
 		 * even though, when timeslice used up the next thread
 		 * should be scheduled in.
 		 */
-		t32 = k_uptime_get_32();
-		while (k_uptime_get_32() - t32 < BUSY_MS) {
-#if defined(CONFIG_ARCH_POSIX)
-			k_busy_wait(50);
-#else
-			;
-#endif
-		}
+		k_busy_wait(1000 * BUSY_MS);
 
 		/* relinquish CPU and wait for each thread to complete*/
 		for (int i = 0; i < NUM_THREAD; i++) {
