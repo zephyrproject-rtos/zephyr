@@ -89,12 +89,12 @@ static inline int i2c_reg_write_word_be(struct device *dev, u16_t dev_addr,
 }
 
 /**
- * @brief Configure pin or port
+ * @brief Configure pin (port not supported)
  *
  * @param dev Device struct of the SX1509B
- * @param access_op Access operation (pin or port)
+ * @param access_op Access operation (pin only, port not supported)
  * @param pin The pin number
- * @param flags Flags of pin or port
+ * @param flags Flags of pin
  *
  * @return 0 if successful, failed otherwise
  */
@@ -104,84 +104,48 @@ static int gpio_sx1509b_config(struct device *dev, int access_op, u32_t pin,
 	const struct gpio_sx1509b_config *cfg = dev->config->config_info;
 	struct gpio_sx1509b_drv_data *drv_data = dev->driver_data;
 	struct gpio_sx1509b_pin_state *pins = &drv_data->pin_state;
-	int ret = 0;
+	int ret = -ENOTSUP;
 
 	if (flags & GPIO_INT) {
-		return -ENOTSUP;
+		goto out;
+	}
+
+	if (access_op != GPIO_ACCESS_BY_PIN) {
+		goto out;
 	}
 
 	k_sem_take(&drv_data->lock, K_FOREVER);
 
-	switch (access_op) {
-	case GPIO_ACCESS_BY_PIN:
-		if ((flags & GPIO_DIR_MASK) == GPIO_DIR_IN) {
-			pins->dir |= BIT(pin);
-			pins->input_disable &= ~BIT(pin);
-		} else {
-			pins->dir &= ~BIT(pin);
-			pins->input_disable |= BIT(pin);
-		}
-		if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_UP) {
-			pins->pull_up |= BIT(pin);
-		} else {
-			pins->pull_up &= ~BIT(pin);
-		}
-		if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_DOWN) {
-			pins->pull_down |= BIT(pin);
-		} else {
-			pins->pull_down &= ~BIT(pin);
-		}
-		if ((flags & GPIO_PUD_MASK) == GPIO_PUD_NORMAL) {
-			pins->pull_up &= ~BIT(pin);
-			pins->pull_down &= ~BIT(pin);
-		}
-		if (flags & GPIO_DS_DISCONNECT_HIGH) {
-			pins->open_drain |= BIT(pin);
-		} else {
-			pins->open_drain &= ~BIT(pin);
-		}
-		if (flags & GPIO_POL_INV) {
-			pins->polarity |= BIT(pin);
-		} else {
-			pins->polarity &= ~BIT(pin);
-		}
-		break;
-	case GPIO_ACCESS_BY_PORT:
-		if ((flags & GPIO_DIR_MASK) == GPIO_DIR_IN) {
-			pins->dir = 0xffff;
-			pins->input_disable = 0x0000;
-		} else {
-			pins->dir = 0x0000;
-			pins->input_disable = 0xffff;
-		}
-		if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_UP) {
-			pins->pull_up = 0xffff;
-		} else {
-			pins->pull_up = 0x0000;
-		}
-		if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_DOWN) {
-			pins->pull_down = 0xffff;
-		} else {
-			pins->pull_down = 0x0000;
-		}
-		if ((flags & GPIO_PUD_MASK) == GPIO_PUD_NORMAL) {
-			pins->pull_up = 0x0000;
-			pins->pull_down = 0x0000;
-		}
-		if (flags & GPIO_DS_DISCONNECT_HIGH) {
-			pins->open_drain = 0xffff;
-		} else {
-			pins->open_drain = 0x0000;
-		}
-		if (flags & GPIO_POL_INV) {
-			pins->polarity = 0xffff;
-		} else {
-			pins->polarity = 0x0000;
-		}
-		break;
-	default:
-		ret = -ENOTSUP;
-		goto out;
+	if ((flags & GPIO_DIR_MASK) == GPIO_DIR_IN) {
+		pins->dir |= BIT(pin);
+		pins->input_disable &= ~BIT(pin);
+	} else {
+		pins->dir &= ~BIT(pin);
+		pins->input_disable |= BIT(pin);
+	}
+	if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_UP) {
+		pins->pull_up |= BIT(pin);
+	} else {
+		pins->pull_up &= ~BIT(pin);
+	}
+	if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_DOWN) {
+		pins->pull_down |= BIT(pin);
+	} else {
+		pins->pull_down &= ~BIT(pin);
+	}
+	if ((flags & GPIO_PUD_MASK) == GPIO_PUD_NORMAL) {
+		pins->pull_up &= ~BIT(pin);
+		pins->pull_down &= ~BIT(pin);
+	}
+	if (flags & GPIO_DS_DISCONNECT_HIGH) {
+		pins->open_drain |= BIT(pin);
+	} else {
+		pins->open_drain &= ~BIT(pin);
+	}
+	if (flags & GPIO_POL_INV) {
+		pins->polarity |= BIT(pin);
+	} else {
+		pins->polarity &= ~BIT(pin);
 	}
 
 	ret = i2c_reg_write_word_be(drv_data->i2c_master, cfg->i2c_slave_addr,
