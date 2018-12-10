@@ -338,14 +338,14 @@ static int spi_nor_configure(struct device *dev)
 	struct spi_nor_data *data = dev->driver_data;
 	const struct spi_nor_config *params = dev->config->config_info;
 
-	data->spi = device_get_binding(CONFIG_SPI_NOR_SPI_NAME);
+	data->spi = device_get_binding(DT_SPI_NOR_SPI_NAME);
 	if (!data->spi) {
 		return -EINVAL;
 	}
 
-	data->spi_cfg.frequency = CONFIG_SPI_NOR_SPI_FREQ_0;
+	data->spi_cfg.frequency = DT_SPI_NOR_SPI_FREQ_0;
 	data->spi_cfg.operation = SPI_WORD_SET(8);
-	data->spi_cfg.slave = CONFIG_SPI_NOR_SPI_SLAVE;
+	data->spi_cfg.slave = DT_SPI_NOR_SPI_SLAVE;
 
 #if defined(CONFIG_SPI_NOR_GPIO_SPI_CS)
 	data->cs_ctrl.gpio_dev =
@@ -402,7 +402,7 @@ static const struct spi_nor_config flash_id = {
 
 static struct spi_nor_data spi_nor_memory_data;
 
-DEVICE_AND_API_INIT(spi_flash_memory, CONFIG_SPI_NOR_DRV_NAME,
+DEVICE_AND_API_INIT(spi_flash_memory, DT_SPI_NOR_DRV_NAME,
 		    &spi_nor_init, &spi_nor_memory_data,
 		    &flash_id, POST_KERNEL, CONFIG_SPI_NOR_INIT_PRIORITY,
 		    &spi_nor_api);
