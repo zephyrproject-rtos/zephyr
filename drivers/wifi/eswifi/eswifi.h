@@ -21,8 +21,6 @@
 #define AT_RSP_DELIMITER "\r\n"
 #define AT_RSP_DELIMITER_LEN 2
 
-struct device *uarthost;
-
 struct eswifi_gpio {
 	struct device *dev;
 	unsigned int pin;
