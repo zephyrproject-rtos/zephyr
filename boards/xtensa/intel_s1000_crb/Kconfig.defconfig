@@ -55,9 +55,6 @@ config HEAP_MEM_POOL_SIZE
 
 endif # DMA_CAVS
 
-config SPI_DW_FIFO_DEPTH
-	default 32
-
 if BOOTLOADER_MCUBOOT
 config TEXT_SECTION_OFFSET
 	default 0x100

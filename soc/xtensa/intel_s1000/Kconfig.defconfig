@@ -20,4 +20,7 @@ config XTENSA_ASM2
 config XTENSA_KERNEL_CPU_PTR_SR
 	default "EXCSAVE2"
 
+config SPI_DW_FIFO_DEPTH
+	default 32
+
 endif
