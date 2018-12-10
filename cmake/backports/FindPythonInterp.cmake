@@ -54,7 +54,7 @@ endfunction()
 # and choose it if it does. This gives this executable the highest
 # priority, which is expected behaviour.
 find_program(PYTHON_EXECUTABLE python)
-if(NOT (${PYTHON_EXECUTABLE} STREQUAL FIND_PY-NOTFOUND))
+if(NOT (${PYTHON_EXECUTABLE} STREQUAL PYTHON_EXECUTABLE-NOTFOUND))
   determine_python_version(${PYTHON_EXECUTABLE} ver)
   if(${ver} VERSION_LESS PythonInterp_FIND_VERSION)
 	# We didn't find the correct version on path, so forget about it
