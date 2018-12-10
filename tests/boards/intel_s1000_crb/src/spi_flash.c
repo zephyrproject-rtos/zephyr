@@ -23,7 +23,7 @@ void test_flash(void)
 	u8_t buf[TEST_DATA_LEN];
 	int i;
 
-	flash_dev = device_get_binding(CONFIG_SPI_NOR_DRV_NAME);
+	flash_dev = device_get_binding(DT_SPI_NOR_DRV_NAME);
 
 	if (!flash_dev) {
 		LOG_ERR("SPI flash driver was not found!\n");
