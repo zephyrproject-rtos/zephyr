@@ -1,6 +1,8 @@
 set(CLANG_ROOT $ENV{CLANG_ROOT_DIR})
 set_ifndef(CLANG_ROOT /usr)
 
+set(TOOLCHAIN_HOME ${CLANG_ROOT}/bin/)
+
 set(COMPILER clang)
 
 if("${ARCH}" STREQUAL "arm")
