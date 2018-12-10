@@ -8,33 +8,28 @@
 #include <device.h>
 #include <gpio.h>
 
-/**
- * the demo assumes use of nucleo_f103rb board, adjust defines below
- * to fit your board
- */
+#define LED0_PORT LED0_GPIO_CONTROLLER
+#define LED1_PORT LED1_GPIO_CONTROLLER
 
-/* we're going to use PB8 and PB5 */
-#define PORT "GPIOB"
-/* PB5 */
-#define LED1 5
-/* PB8 */
-#define LED2 8
+#define LED0 LED0_GPIO_PIN
+#define LED1 LED1_GPIO_PIN
 
 #define SLEEP_TIME	500
 
 void main(void)
 {
 	int cnt = 0;
-	struct device *gpiob;
+	struct device *gpio0, *gpio1;
 
-	gpiob = device_get_binding(PORT);
+	gpio0 = device_get_binding(LED0_PORT);
+	gpio1 = device_get_binding(LED1_PORT);
 
-	gpio_pin_configure(gpiob, LED1, GPIO_DIR_OUT);
-	gpio_pin_configure(gpiob, LED2, GPIO_DIR_OUT);
+	gpio_pin_configure(gpio0, LED0, GPIO_DIR_OUT);
+	gpio_pin_configure(gpio1, LED1, GPIO_DIR_OUT);
 
 	while (1) {
-		gpio_pin_write(gpiob, LED1, cnt % 2);
-		gpio_pin_write(gpiob, LED2, (cnt + 1) % 2);
+		gpio_pin_write(gpio0, LED0, cnt % 2);
+		gpio_pin_write(gpio1, LED1, (cnt + 1) % 2);
 		k_sleep(SLEEP_TIME);
 		cnt++;
 	}
