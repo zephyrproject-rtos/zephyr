@@ -1,0 +1,12 @@
+identifier: particle_argon_esp32
+name: Particle Argon ESP32
+type: mcu
+arch: xtensa
+toolchain:
+  - espressif
+supported:
+  - gpio
+  - i2c
+  - watchdog
+  - uart
+  - pinmux
