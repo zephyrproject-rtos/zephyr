@@ -13,6 +13,11 @@ simple SPI and I2S interfaces, to the microphone array via I2S or PDM
 interfaces, and to speakers via I2S. In addition, it has an I2C interface
 for controlling platform components such as ADCs, DACs, CODECs and PMICs.
 
+.. image:: IoT-SpeechEnablKit-banner-image.png
+   :width: 442px
+   :align: center
+   :alt: Intel Speech Enabling Developer Kit
+
 The Intel S1000 contains the following:
 
 - Dual DSP
@@ -44,6 +49,9 @@ The Intel S1000 contains the following:
   - Instrumentation: I2C master @ 100/400 KHz
   - Debug: UART up to 2.4 Mbaud/s
   - GPIO: 8 GPIOs with PWM output capability
+
+
+For more information refer to the `Intel Speech Enabling Developer Kit`_ page.
 
 System requirements
 *******************
@@ -215,3 +223,5 @@ Those 2 pins are Pin5 HOST_RST_N_LT_R) and Pin21 (+V_HOST_3P3_1P8).
 .. _`FT232 UART`: https://www.amazon.com/FT232RL-Serial-Converter-Adapter-Arduino/dp/B06XDH2VK9
 
 .. _Tensillica Tools for Sue Creek: https://tensilicatools.com/platform/intel-sue-creek
+
+.. _Intel Speech Enabling Developer Kit: https://software.intel.com/en-us/iot/speech-enabling-dev-kit
