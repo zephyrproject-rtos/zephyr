@@ -1,0 +1,8 @@
+# Kconfig - Particle Argon ESP32 board configuration
+#
+# Copyright (c) 2018 Matthias Boesl
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_PARTICLE_ARGON_ESP32
+	bool "Particle Argon board ESP32"
+	depends on SOC_ESP32
