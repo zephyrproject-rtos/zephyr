@@ -75,6 +75,7 @@ int net_icmpv4_get_hdr(struct net_pkt *pkt, struct net_icmp_hdr *hdr);
 int net_icmpv4_set_hdr(struct net_pkt *pkt, struct net_icmp_hdr *hdr);
 
 int net_icmpv4_set_chksum(struct net_pkt *pkt);
+int net_icmpv4_finalize(struct net_pkt *pkt);
 
 #if defined(CONFIG_NET_IPV4)
 void net_icmpv4_init(void);

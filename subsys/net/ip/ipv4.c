@@ -162,7 +162,7 @@ int net_ipv4_finalize_new(struct net_pkt *pkt, u8_t next_header_proto)
 			   next_header_proto == IPPROTO_TCP) {
 			net_tcp_set_chksum(pkt, pkt->buffer);
 		} else if (next_header_proto == IPPROTO_ICMP) {
-			net_icmpv4_set_chksum(pkt);
+			net_icmpv4_finalize(pkt);
 		}
 	} else {
 		net_pkt_set_data(pkt, &ipv4_access);

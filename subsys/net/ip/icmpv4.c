@@ -95,6 +95,23 @@ int net_icmpv4_set_chksum(struct net_pkt *pkt)
 	return 0;
 }
 
+int net_icmpv4_finalize(struct net_pkt *pkt)
+{
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmpv4_access,
+					      struct net_icmp_hdr);
+	struct net_icmp_hdr *icmp_hdr;
+
+	icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data_new(pkt,
+							       &icmpv4_access);
+	if (!icmp_hdr) {
+		return -ENOBUFS;
+	}
+
+	icmp_hdr->chksum = net_calc_chksum_icmpv4(pkt);
+
+	return net_pkt_set_data(pkt, &icmpv4_access);
+}
+
 static inline enum net_verdict icmpv4_handle_echo_request(struct net_pkt *pkt)
 {
 	/* Note that we send the same data packets back and just swap
