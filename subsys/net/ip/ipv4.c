@@ -185,19 +185,29 @@ const struct in_addr *net_ipv4_broadcast_address(void)
 	return &addr;
 }
 
-enum net_verdict net_ipv4_process_pkt(struct net_pkt *pkt)
+enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 {
-	struct net_ipv4_hdr *hdr = NET_IPV4_HDR(pkt);
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv4_access, struct net_ipv4_hdr);
 	int real_len = net_pkt_get_len(pkt);
-	int pkt_len = ntohs(hdr->len);
 	enum net_verdict verdict = NET_DROP;
+	struct net_ipv4_hdr *hdr;
+	int pkt_len;
 
+	net_stats_update_ipv4_recv(net_pkt_iface(pkt));
+
+	hdr = (struct net_ipv4_hdr *)net_pkt_get_data_new(pkt, &ipv4_access);
+	if (!hdr) {
+		NET_DBG("DROP: no buffer");
+		goto drop;
+	}
+
+	pkt_len = ntohs(hdr->len);
 	if (real_len < pkt_len) {
 		NET_DBG("DROP: pkt len per hdr %d != pkt real len %d",
 			pkt_len, real_len);
 		goto drop;
 	} else if (real_len > pkt_len) {
-		net_pkt_pull(pkt, pkt_len, real_len - pkt_len);
+		net_pkt_update_length(pkt, pkt_len);
 	}
 
 	if (net_ipv4_is_addr_mcast(&hdr->src)) {
@@ -235,6 +245,10 @@ enum net_verdict net_ipv4_process_pkt(struct net_pkt *pkt)
 	net_pkt_set_ipv4_ttl(pkt, hdr->ttl);
 
 	net_pkt_set_transport_proto(pkt, hdr->proto);
+
+	net_pkt_set_family(pkt, PF_INET);
+
+	net_pkt_acknowledge_data(pkt, &ipv4_access);
 
 	switch (hdr->proto) {
 	case IPPROTO_ICMP:

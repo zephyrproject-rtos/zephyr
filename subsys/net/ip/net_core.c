@@ -117,9 +117,7 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 #endif
 #if defined(CONFIG_NET_IPV4)
 	case 0x40:
-		net_stats_update_ipv4_recv(net_pkt_iface(pkt));
-		net_pkt_set_family(pkt, PF_INET);
-		return net_ipv4_process_pkt(pkt);
+		return net_ipv4_input(pkt);
 #endif
 	}
 
