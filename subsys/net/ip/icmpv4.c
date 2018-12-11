@@ -25,36 +25,6 @@ LOG_MODULE_REGISTER(net_icmpv4, CONFIG_NET_ICMPV4_LOG_LEVEL);
 
 static sys_slist_t handlers;
 
-int net_icmpv4_set_hdr(struct net_pkt *pkt, struct net_icmp_hdr *hdr)
-{
-	struct net_buf *frag;
-	u16_t pos;
-
-	frag = net_pkt_write(pkt, pkt->frags,
-				net_pkt_ip_hdr_len(pkt),
-				&pos, sizeof(*hdr), (u8_t *)hdr,
-				PKT_WAIT_TIME);
-	if (pos > 0 && !frag) {
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
-int net_icmpv4_get_hdr(struct net_pkt *pkt, struct net_icmp_hdr *hdr)
-{
-	struct net_buf *frag;
-	u16_t pos;
-
-	frag = net_frag_read(pkt->frags, net_pkt_ip_hdr_len(pkt), &pos,
-			     sizeof(*hdr), (u8_t *)hdr);
-	if (pos > 0 && !frag) {
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
 int net_icmpv4_set_chksum(struct net_pkt *pkt)
 {
 	u16_t chksum = 0U;
@@ -95,8 +65,7 @@ int net_icmpv4_set_chksum(struct net_pkt *pkt)
 	return 0;
 }
 
-static int icmpv4_create_new(struct net_pkt *pkt, u8_t icmp_type,
-			     u8_t icmp_code)
+static int icmpv4_create(struct net_pkt *pkt, u8_t icmp_type, u8_t icmp_code)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmpv4_access,
 					      struct net_icmp_hdr);
@@ -164,7 +133,7 @@ static enum net_verdict icmpv4_handle_echo_request(struct net_pkt *pkt,
 	net_pkt_set_overwrite(reply, true);
 
 	if (net_ipv4_create_new(reply, &ip_hdr->dst, &ip_hdr->src) ||
-	    icmpv4_create_new(reply, NET_ICMPV4_ECHO_REPLY, 0)) {
+	    icmpv4_create(reply, NET_ICMPV4_ECHO_REPLY, 0)) {
 		NET_DBG("DROP: wrong buffer");
 		goto drop;
 	}
@@ -195,21 +164,6 @@ drop:
 	return NET_DROP;
 }
 
-static struct net_buf *icmpv4_create(struct net_pkt *pkt, u8_t icmp_type,
-				     u8_t icmp_code)
-{
-	struct net_buf *frag = pkt->frags;
-	u16_t pos;
-
-	net_buf_add(frag, sizeof(struct net_icmp_hdr));
-
-	frag = net_pkt_write_u8_timeout(pkt, frag, net_pkt_ip_hdr_len(pkt),
-					&pos, icmp_type, PKT_WAIT_TIME);
-	frag = net_pkt_write_u8_timeout(pkt, frag, pos, &pos, icmp_code,
-					PKT_WAIT_TIME);
-	return frag;
-}
-
 int net_icmpv4_send_echo_request(struct net_if *iface,
 				 struct in_addr *dst,
 				 u16_t identifier,
@@ -238,7 +192,7 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 	}
 
 	if (net_ipv4_create_new(pkt, src, dst) ||
-	    icmpv4_create_new(pkt, NET_ICMPV4_ECHO_REQUEST, 0)) {
+	    icmpv4_create(pkt, NET_ICMPV4_ECHO_REQUEST, 0)) {
 		goto drop;
 	}
 
@@ -327,7 +281,7 @@ int net_icmpv4_send_error(struct net_pkt *orig, u8_t type, u8_t code)
 	}
 
 	if (net_ipv4_create_new(pkt, &ip_hdr->dst, &ip_hdr->src) ||
-	    icmpv4_create_new(pkt, type, code) ||
+	    icmpv4_create(pkt, type, code) ||
 	    net_pkt_memset(pkt, 0, NET_ICMPV4_UNUSED_LEN) ||
 	    net_pkt_copy_new(pkt, orig, copy_len)) {
 		goto drop;
