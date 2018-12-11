@@ -71,7 +71,6 @@ struct _thread_arch {
 
 #ifdef CONFIG_USERSPACE
 	u32_t priv_stack_start;
-	u32_t priv_stack_size;
 #endif
 };
 
