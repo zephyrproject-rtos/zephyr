@@ -598,20 +598,30 @@ drop:
 	return ret;
 }
 
-enum net_verdict net_icmpv6_input(struct net_pkt *pkt,
-				  u8_t type, u8_t code)
+enum net_verdict net_icmpv6_input(struct net_pkt *pkt)
 {
 	struct net_icmpv6_handler *cb;
+	struct net_icmp_hdr icmp_hdr;
 
 	if (net_calc_chksum_icmpv6(pkt) != 0) {
 		NET_DBG("DROP: invalid checksum");
 		goto drop;
 	}
 
+	if (net_icmpv6_get_hdr(pkt, &icmp_hdr)) {
+		NET_DBG("DROP: NULL ICMPv6 header");
+		goto drop;
+	}
+
+	NET_DBG("ICMPv6 %s received type %d code %d",
+		net_icmpv6_type2str(icmp_hdr.type),
+		icmp_hdr.type, icmp_hdr.code);
+
 	net_stats_update_icmp_recv(net_pkt_iface(pkt));
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&handlers, cb, node) {
-		if (cb->type == type && (cb->code == code || cb->code == 0)) {
+		if (cb->type == icmp_hdr.type &&
+		    (cb->code == icmp_hdr.code || cb->code == 0)) {
 			return cb->handler(pkt);
 		}
 	}
