@@ -682,27 +682,6 @@ Z_SYSCALL_HANDLER(zsock_recvfrom, sock, buf, max_len, flags, src_addr,
 }
 #endif /* CONFIG_USERSPACE */
 
-int zsock_fcntl_ctx(struct net_context *ctx, int cmd, int flags)
-{
-	switch (cmd) {
-	case F_GETFL:
-		if (sock_is_nonblock(ctx)) {
-		    return O_NONBLOCK;
-		}
-		return 0;
-	case F_SETFL:
-		if (flags & O_NONBLOCK) {
-			sock_set_flag(ctx, SOCK_NONBLOCK, SOCK_NONBLOCK);
-		} else {
-			sock_set_flag(ctx, SOCK_NONBLOCK, 0);
-		}
-		return 0;
-	default:
-		errno = EINVAL;
-		return -1;
-	}
-}
-
 /* As this is limited function, we don't follow POSIX signature, with
  * "..." instead of last arg.
  */
@@ -982,20 +961,33 @@ static ssize_t sock_write_vmeth(void *obj, const void *buffer, size_t count)
 static int sock_ioctl_vmeth(void *obj, unsigned int request, ...)
 {
 	switch (request) {
-	case ZFD_IOCTL_CLOSE:
-		return zsock_close_ctx(obj);
 
-	case ZFD_IOCTL_FCNTL: {
+	/* In Zephyr, fcntl() is just an alias of ioctl(). */
+	case F_GETFL:
+		if (sock_is_nonblock(obj)) {
+		    return O_NONBLOCK;
+		}
+
+		return 0;
+
+	case F_SETFL: {
 		va_list args;
-		int cmd, flags;
+		int flags;
 
 		va_start(args, request);
-		cmd = va_arg(args, int);
 		flags = va_arg(args, int);
-		va_end(args);
 
-		return zsock_fcntl_ctx(obj, cmd, flags);
+		if (flags & O_NONBLOCK) {
+			sock_set_flag(obj, SOCK_NONBLOCK, SOCK_NONBLOCK);
+		} else {
+			sock_set_flag(obj, SOCK_NONBLOCK, 0);
+		}
+
+		return 0;
 	}
+
+	case ZFD_IOCTL_CLOSE:
+		return zsock_close_ctx(obj);
 
 	case ZFD_IOCTL_POLL_PREPARE: {
 		va_list args;

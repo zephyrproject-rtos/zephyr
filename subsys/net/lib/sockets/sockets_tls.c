@@ -6,6 +6,7 @@
  */
 
 #include <stdbool.h>
+#include <fcntl.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
@@ -1851,10 +1852,10 @@ static ssize_t tls_sock_write_vmeth(void *obj, const void *buffer,
 static int tls_sock_ioctl_vmeth(void *obj, unsigned int request, ...)
 {
 	switch (request) {
-	case ZFD_IOCTL_CLOSE:
-		return ztls_close_ctx(obj);
 
-	case ZFD_IOCTL_FCNTL: {
+	/* fcntl() commands */
+	case F_GETFL:
+	case F_SETFL: {
 		va_list args;
 		int err;
 
@@ -1865,6 +1866,9 @@ static int tls_sock_ioctl_vmeth(void *obj, unsigned int request, ...)
 
 		return err;
 	}
+
+	case ZFD_IOCTL_CLOSE:
+		return ztls_close_ctx(obj);
 
 	case ZFD_IOCTL_POLL_PREPARE: {
 		va_list args;
