@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8.2)
+cmake_minimum_required(VERSION 3.13.1)
 project(Zephyr-Kernel-Doc VERSION ${PROJECT_VERSION} LANGUAGES)
 
 set(ZEPHYR_BASE $ENV{ZEPHYR_BASE})
