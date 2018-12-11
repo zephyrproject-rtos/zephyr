@@ -134,31 +134,39 @@ static int gpio_nrfx_config(struct device *port, int access_op,
 	u8_t from_pin;
 	u8_t to_pin;
 
+	/* Map default selections to Nordic standard (low) */
+	if ((flags & GPIO_DS_LOW_MASK) == GPIO_DS_DFLT_LOW) {
+		flags |= GPIO_DS_LO_LOW;
+	}
+	if ((flags & GPIO_DS_HIGH_MASK) == GPIO_DS_DFLT_HIGH) {
+		flags |= GPIO_DS_LO_HIGH;
+	}
+
 	switch (flags & (GPIO_DS_LOW_MASK | GPIO_DS_HIGH_MASK)) {
-	case GPIO_DS_DFLT_LOW | GPIO_DS_DFLT_HIGH:
+	case GPIO_DS_LO_LOW | GPIO_DS_LO_HIGH:
 		drive = NRF_GPIO_PIN_S0S1;
 		break;
-	case GPIO_DS_DFLT_LOW | GPIO_DS_ALT_HIGH:
+	case GPIO_DS_LO_LOW | GPIO_DS_HI_HIGH:
 		drive = NRF_GPIO_PIN_S0H1;
 		break;
-	case GPIO_DS_DFLT_LOW | GPIO_DS_DISCONNECT_HIGH:
+	case GPIO_DS_LO_LOW | GPIO_DS_DISCONNECT_HIGH:
 		drive = NRF_GPIO_PIN_S0D1;
 		break;
 
-	case GPIO_DS_ALT_LOW | GPIO_DS_DFLT_HIGH:
+	case GPIO_DS_HI_LOW | GPIO_DS_LO_HIGH:
 		drive = NRF_GPIO_PIN_H0S1;
 		break;
-	case GPIO_DS_ALT_LOW | GPIO_DS_ALT_HIGH:
+	case GPIO_DS_HI_LOW | GPIO_DS_HI_HIGH:
 		drive = NRF_GPIO_PIN_H0H1;
 		break;
-	case GPIO_DS_ALT_LOW | GPIO_DS_DISCONNECT_HIGH:
+	case GPIO_DS_HI_LOW | GPIO_DS_DISCONNECT_HIGH:
 		drive = NRF_GPIO_PIN_H0D1;
 		break;
 
-	case GPIO_DS_DISCONNECT_LOW | GPIO_DS_DFLT_HIGH:
+	case GPIO_DS_DISCONNECT_LOW | GPIO_DS_LO_HIGH:
 		drive = NRF_GPIO_PIN_D0S1;
 		break;
-	case GPIO_DS_DISCONNECT_LOW | GPIO_DS_ALT_HIGH:
+	case GPIO_DS_DISCONNECT_LOW | GPIO_DS_HI_HIGH:
 		drive = NRF_GPIO_PIN_D0H1;
 		break;
 
