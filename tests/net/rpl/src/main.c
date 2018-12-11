@@ -295,35 +295,6 @@ static void test_rpl_mcast_addr(void)
 	zassert_true(ret, "Generated RPL multicast address check failed.");
 }
 
-static void test_dio_dummy_input(void)
-{
-	struct net_pkt *pkt;
-	struct net_buf *frag;
-	int ret;
-
-	pkt = net_pkt_get_tx(udp_ctx, K_FOREVER);
-	frag = net_pkt_get_data(udp_ctx, K_FOREVER);
-
-	net_pkt_frag_add(pkt, frag);
-
-	msg_sending = NET_RPL_DODAG_INFO_OBJ;
-
-	set_pkt_ll_addr(net_if_get_device(net_if_get_default()), pkt);
-
-	ret = net_icmpv6_input(pkt, NET_ICMPV6_RPL, msg_sending);
-	if (!ret) {
-		zassert_true(0, "Callback is not called properly");
-	}
-
-	data_failure = false;
-	k_sem_take(&wait_data, WAIT_TIME);
-
-	zassert_false(data_failure,
-			"Unexpected ICMPv6 code received");
-
-	data_failure = false;
-}
-
 static void test_dis_sending(void)
 {
 	struct net_if *iface;
@@ -622,7 +593,6 @@ void test_main(void)
 			ztest_unit_test(test_init),
 			ztest_unit_test(net_ctx_create),
 			ztest_unit_test(test_rpl_mcast_addr),
-			ztest_unit_test(test_dio_dummy_input),
 			ztest_unit_test(test_dis_sending),
 			ztest_unit_test(test_dao_sending_fail),
 			ztest_unit_test(populate_nbr_cache),

@@ -146,30 +146,6 @@ int net_ipv6_finalize(struct net_pkt *pkt, u8_t next_header_proto)
 	return 0;
 }
 
-static inline enum net_verdict process_icmpv6_pkt(struct net_pkt *pkt,
-						  struct net_ipv6_hdr *ipv6)
-{
-	struct net_icmp_hdr icmp_hdr;
-	int ret;
-
-	if (net_calc_chksum_icmpv6(pkt) != 0) {
-		NET_DBG("DROP: ICMPv6 invalid checksum");
-		return NET_DROP;
-	}
-
-	ret = net_icmpv6_get_hdr(pkt, &icmp_hdr);
-	if (ret < 0) {
-		NET_DBG("NULL ICMPv6 header - dropping");
-		return NET_DROP;
-	}
-
-	NET_DBG("ICMPv6 %s received type %d code %d",
-		net_icmpv6_type2str(icmp_hdr.type), icmp_hdr.type,
-		icmp_hdr.code);
-
-	return net_icmpv6_input(pkt, icmp_hdr.type, icmp_hdr.code);
-}
-
 static inline struct net_pkt *check_unknown_option(struct net_pkt *pkt,
 						   u8_t opt_type,
 						   u16_t length)
@@ -645,7 +621,7 @@ upper_proto:
 
 	switch (next) {
 	case IPPROTO_ICMPV6:
-		return process_icmpv6_pkt(pkt, hdr);
+		return net_icmpv6_input(pkt);
 	case IPPROTO_UDP:
 #if defined(CONFIG_NET_UDP)
 		return net_conn_input(IPPROTO_UDP, pkt);
