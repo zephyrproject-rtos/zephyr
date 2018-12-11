@@ -141,29 +141,23 @@ enum net_verdict net_ipv4_process_pkt(struct net_pkt *pkt)
 		goto drop;
 	}
 
+	if (!net_ipv4_is_my_addr(&hdr->dst) &&
+	    !net_ipv4_is_addr_mcast(&hdr->dst) &&
+	    ((hdr->proto == IPPROTO_UDP &&
+	      net_ipv4_addr_cmp(&hdr->dst, net_ipv4_broadcast_address()) &&
+	      !IS_ENABLED(CONFIG_NET_DHCPV4)) ||
+	     (hdr->proto == IPPROTO_TCP &&
+	      net_ipv4_is_addr_bcast(net_pkt_iface(pkt), &hdr->dst)))) {
+		NET_DBG("DROP: not for me");
+		goto drop;
+	}
+
 	NET_DBG("IPv4 packet received from %s to %s",
 		log_strdup(net_sprint_ipv4_addr(&hdr->src)),
 		log_strdup(net_sprint_ipv4_addr(&hdr->dst)));
 
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
 	net_pkt_set_ipv4_ttl(pkt, hdr->ttl);
-
-	if (!net_ipv4_is_my_addr(&hdr->dst) &&
-	    !net_ipv4_is_addr_mcast(&hdr->dst)) {
-		if (IS_ENABLED(CONFIG_NET_DHCPV4) &&
-		    hdr->proto == IPPROTO_UDP &&
-		    net_ipv4_addr_cmp(&hdr->dst,
-				      net_ipv4_broadcast_address())) {
-
-			verdict = net_conn_input(IPPROTO_UDP, pkt);
-			if (verdict != NET_DROP) {
-				return verdict;
-			}
-		}
-
-		NET_DBG("IPv4 packet in pkt %p not for me", pkt);
-		goto drop;
-	}
 
 	net_pkt_set_transport_proto(pkt, hdr->proto);
 
@@ -172,10 +166,6 @@ enum net_verdict net_ipv4_process_pkt(struct net_pkt *pkt)
 		verdict = net_icmpv4_input(pkt);
 		break;
 	case IPPROTO_TCP:
-		if (net_ipv4_is_addr_bcast(net_pkt_iface(pkt), &hdr->dst)) {
-			goto drop;
-		}
-
 		/* Fall through */
 	case IPPROTO_UDP:
 		verdict = net_conn_input(hdr->proto, pkt);
