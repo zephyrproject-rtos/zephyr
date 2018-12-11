@@ -1001,7 +1001,7 @@ static void test_address_lifetime(void)
  */
 static void test_change_ll_addr(void)
 {
-	u8_t new_mac[] = { 00, 01, 02, 03, 04, 05 };
+	static u8_t new_mac[] = { 00, 01, 02, 03, 04, 05 };
 	struct net_linkaddr_storage *ll;
 	struct net_linkaddr *ll_iface;
 	struct net_pkt *pkt;
