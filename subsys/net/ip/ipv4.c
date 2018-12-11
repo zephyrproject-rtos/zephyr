@@ -252,9 +252,7 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 
 	switch (hdr->proto) {
 	case IPPROTO_ICMP:
-		verdict = net_icmpv4_input(
-			pkt, net_ipv4_is_addr_bcast(net_pkt_iface(pkt),
-						    &hdr->dst));
+		verdict = net_icmpv4_input(pkt, hdr);
 		break;
 	case IPPROTO_TCP:
 		/* Fall through */
