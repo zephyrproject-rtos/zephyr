@@ -43,10 +43,6 @@ GEN_OFFSET_SYM(tPreempCoprocReg, cpStack);
 /* Xtensa-specific _thread_arch_t structure member offsets */
 GEN_OFFSET_SYM(_thread_arch_t, flags);
 
-#ifdef CONFIG_THREAD_CUSTOM_DATA
-GEN_OFFSET_SYM(_thread_arch_t, custom_data);
-#endif
-
 /* Xtensa-specific ESF structure member offsets */
 GEN_OFFSET_SYM(__esf_t, sp);
 GEN_OFFSET_SYM(__esf_t, pc);
