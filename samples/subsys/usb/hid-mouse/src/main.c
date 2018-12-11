@@ -105,8 +105,8 @@ static struct hid_ops ops = {
 	.get_report = get_report_cb,
 };
 
-static int def_val;
-static volatile int status;
+static u32_t def_val;
+static volatile u8_t status;
 static K_SEM_DEFINE(sem, 0, 1);	/* starts off "not available" */
 
 #define MOUSE_BTN_LEFT			BIT(0)
@@ -116,7 +116,8 @@ static K_SEM_DEFINE(sem, 0, 1);	/* starts off "not available" */
 void button_pressed(struct device *gpio, struct gpio_callback *cb,
 		    u32_t pins)
 {
-	int cur_val, state = status;
+	u32_t cur_val;
+	u8_t state = status;
 
 	gpio_pin_read(gpio, PIN, &cur_val);
 	if (def_val != cur_val) {
