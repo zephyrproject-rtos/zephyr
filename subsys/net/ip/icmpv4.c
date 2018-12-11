@@ -277,90 +277,75 @@ drop:
 	return ret;
 }
 
-#define append(pkt, type, value)					\
-	do {								\
-		if (!net_pkt_append_##type##_timeout(pkt, value,	\
-						     PKT_WAIT_TIME)) {	\
-			err = -ENOMEM;					\
-			goto drop;					\
-		}							\
-	} while (0)
-
 int net_icmpv4_send_error(struct net_pkt *orig, u8_t type, u8_t code)
 {
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv4_access, struct net_ipv4_hdr);
 	int err = -EIO;
+	struct net_ipv4_hdr *ip_hdr;
 	struct net_pkt *pkt;
-	struct net_buf *frag;
-	struct net_if *iface;
 	size_t copy_len;
-	const struct in_addr *src, *dst;
 
-	iface = net_pkt_iface(orig);
+	net_pkt_cursor_init(orig);
 
-	if (NET_IPV4_HDR(orig)->proto == IPPROTO_ICMP) {
-		struct net_icmp_hdr icmp_hdr;
+	ip_hdr = (struct net_ipv4_hdr *)net_pkt_get_data_new(orig,
+							     &ipv4_access);
+	if (!ip_hdr) {
+		goto drop_no_pkt;
+	}
 
-		err = net_icmpv4_get_hdr(orig, &icmp_hdr);
-		if (err < 0 || icmp_hdr.code < 8) {
+	if (ip_hdr->proto == IPPROTO_ICMP) {
+		NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmpv4_access,
+						      struct net_icmp_hdr);
+		struct net_icmp_hdr *icmp_hdr;
+
+		icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data_new(
+							orig, &icmpv4_access);
+		if (!icmp_hdr || icmp_hdr->code < 8) {
 			/* We must not send ICMP errors back */
+			err = -EINVAL;
 			goto drop_no_pkt;
 		}
 	}
 
-	dst = &NET_IPV4_HDR(orig)->src;
-	src = &NET_IPV4_HDR(orig)->dst;
-
-	pkt = net_pkt_get_reserve_tx(PKT_WAIT_TIME);
-	if (!pkt) {
-		err = -ENOMEM;
-		goto drop_no_pkt;
-	}
-
-	net_pkt_set_iface(pkt, iface);
-
-	if (!net_ipv4_create(pkt, src, dst, iface, IPPROTO_ICMP)) {
-		err = -ENOMEM;
-		goto drop;
-	}
-
-	if (!icmpv4_create(pkt, type, code)) {
-		err = -ENOMEM;
-		goto drop;
-	}
-
-	/* Appending unused part, filled with 0s */
-	append(pkt, be32, 0);
-
-	if (NET_IPV4_HDR(orig)->proto == IPPROTO_UDP) {
+	if (ip_hdr->proto == IPPROTO_UDP) {
 		copy_len = sizeof(struct net_ipv4_hdr) +
 			sizeof(struct net_udp_hdr);
-	} else if (NET_IPV4_HDR(orig)->proto == IPPROTO_TCP) {
-		copy_len = sizeof(struct net_ipv4_hdr);
-		/* FIXME, add TCP header length too */
+	} else if (ip_hdr->proto == IPPROTO_TCP) {
+		copy_len = sizeof(struct net_ipv4_hdr) +
+			sizeof(struct net_tcp_hdr);
 	} else {
 		copy_len = 0;
 	}
 
-	frag = net_pkt_copy(orig, copy_len, 0, PKT_WAIT_TIME);
-	if (!frag) {
-		err = -ENOMEM;
+	pkt = net_pkt_alloc_with_buffer(net_pkt_iface(orig),
+					copy_len + NET_ICMPV4_UNUSED_LEN,
+					AF_INET, IPPROTO_ICMP,
+					PKT_WAIT_TIME);
+	if (!pkt) {
+		err =  -ENOMEM;
+		goto drop_no_pkt;
+	}
+
+	if (net_ipv4_create_new(pkt, &ip_hdr->dst, &ip_hdr->src) ||
+	    icmpv4_create_new(pkt, type, code) ||
+	    net_pkt_memset(pkt, 0, NET_ICMPV4_UNUSED_LEN) ||
+	    net_pkt_copy_new(pkt, orig, copy_len)) {
 		goto drop;
 	}
 
-	net_pkt_frag_add(pkt, frag);
-
-	net_ipv4_finalize(pkt, IPPROTO_ICMP);
+	net_pkt_cursor_init(pkt);
+	net_ipv4_finalize_new(pkt, IPPROTO_ICMP);
 
 	net_pkt_lladdr_dst(pkt)->addr = net_pkt_lladdr_src(orig)->addr;
 	net_pkt_lladdr_dst(pkt)->len = net_pkt_lladdr_src(orig)->len;
 
 	NET_DBG("Sending ICMPv4 Error Message type %d code %d from %s to %s",
 		type, code,
-		log_strdup(net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src)),
-		log_strdup(net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->dst)));
+		log_strdup(net_sprint_ipv4_addr(&ip_hdr->src)),
+		log_strdup(net_sprint_ipv4_addr(&ip_hdr->dst)));
 
 	if (net_send_data(pkt) >= 0) {
-		net_stats_update_icmp_sent(iface);
+		net_stats_update_icmp_sent(net_pkt_iface(orig));
 		return 0;
 	}
 
@@ -368,9 +353,10 @@ drop:
 	net_pkt_unref(pkt);
 
 drop_no_pkt:
-	net_stats_update_icmp_drop(iface);
+	net_stats_update_icmp_drop(net_pkt_iface(orig));
 
 	return err;
+
 }
 
 void net_icmpv4_register_handler(struct net_icmpv4_handler *handler)
