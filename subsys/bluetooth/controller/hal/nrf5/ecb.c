@@ -37,7 +37,7 @@ static void do_ecb(struct ecb_param *ecb)
 		       (NRF_ECB->EVENTS_ERRORECB == 0) &&
 		       (NRF_ECB->ECBDATAPTR != 0)) {
 #if defined(CONFIG_SOC_SERIES_BSIM_NRFXX)
-			__WFE();
+			k_busy_wait(10);
 #else
 			/*__WFE();*/
 #endif
