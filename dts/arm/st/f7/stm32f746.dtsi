@@ -29,5 +29,18 @@
 				label = "GPIOK";
 			};
 		};
+
+		i2c4: i2c@40006000 {
+			compatible = "st,stm32-i2c-v2";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40006000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x01000000>;
+			interrupts = <95 0>, <96 0>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+			label = "I2C_4";
+		};
 	};
 };
