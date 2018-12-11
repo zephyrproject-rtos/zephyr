@@ -188,7 +188,6 @@ int fsync(int fd)
 	}
 
 	res = fdtable[fd].vtable->ioctl(fdtable[fd].obj, ZFD_IOCTL_FSYNC);
-	z_free_fd(fd);
 
 	return res;
 }
