@@ -7,6 +7,7 @@
 
 menuconfig UART_NRFX
 	bool "nRF UART nrfx drivers"
+	default y
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	depends on SOC_FAMILY_NRF
