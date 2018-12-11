@@ -112,7 +112,8 @@ int net_icmpv4_finalize(struct net_pkt *pkt)
 	return net_pkt_set_data(pkt, &icmpv4_access);
 }
 
-static inline enum net_verdict icmpv4_handle_echo_request(struct net_pkt *pkt)
+static enum net_verdict icmpv4_handle_echo_request(struct net_pkt *pkt,
+						   struct net_ipv4_hdr *ip_hdr)
 {
 	/* Note that we send the same data packets back and just swap
 	 * the addresses etc.
@@ -120,6 +121,8 @@ static inline enum net_verdict icmpv4_handle_echo_request(struct net_pkt *pkt)
 	struct net_icmp_hdr icmp_hdr;
 	struct in_addr addr;
 	int ret;
+
+	ARG_UNUSED(ip_hdr);
 
 	NET_DBG("Received Echo Request from %s to %s",
 		log_strdup(net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src)),
@@ -371,7 +374,8 @@ void net_icmpv4_unregister_handler(struct net_icmpv4_handler *handler)
 	sys_slist_find_and_remove(&handlers, &handler->node);
 }
 
-enum net_verdict net_icmpv4_input(struct net_pkt *pkt, bool bcast)
+enum net_verdict net_icmpv4_input(struct net_pkt *pkt,
+				  struct net_ipv4_hdr *ip_hdr)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmp_access,
 					      struct net_icmp_hdr);
@@ -390,8 +394,9 @@ enum net_verdict net_icmpv4_input(struct net_pkt *pkt, bool bcast)
 		goto drop;
 	}
 
-	if (bcast && (!IS_ENABLED(CONFIG_NET_ICMPV4_ACCEPT_BROADCAST) ||
-		      icmp_hdr->type != NET_ICMPV4_ECHO_REQUEST)) {
+	if (net_ipv4_is_addr_bcast(net_pkt_iface(pkt), &ip_hdr->dst) &&
+	    (!IS_ENABLED(CONFIG_NET_ICMPV4_ACCEPT_BROADCAST) ||
+	     icmp_hdr->type != NET_ICMPV4_ECHO_REQUEST)) {
 		NET_DBG("DROP: broadcast pkt");
 		goto drop;
 	}
@@ -406,7 +411,7 @@ enum net_verdict net_icmpv4_input(struct net_pkt *pkt, bool bcast)
 	SYS_SLIST_FOR_EACH_CONTAINER(&handlers, cb, node) {
 		if (cb->type == icmp_hdr->type &&
 		    (cb->code == icmp_hdr->code || cb->code == 0)) {
-			return cb->handler(pkt);
+			return cb->handler(pkt, ip_hdr);
 		}
 	}
 
