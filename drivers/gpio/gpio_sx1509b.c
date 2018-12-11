@@ -14,15 +14,17 @@
 #include <misc/byteorder.h>
 #include <misc/util.h>
 
-/** Cache of the output configuration and data of the pins */
+/** Cache of the output configuration and data of the pins. */
 struct gpio_sx1509b_pin_state {
-	u16_t input_disable;
-	u16_t pull_up;
-	u16_t pull_down;
-	u16_t open_drain;
-	u16_t polarity;
-	u16_t dir;
-	u16_t data;
+	u16_t input_disable;	/* 0x00 */
+	u16_t long_slew;	/* 0x02 */
+	u16_t low_drive;	/* 0x04 */
+	u16_t pull_up;		/* 0x06 */
+	u16_t pull_down;	/* 0x08 */
+	u16_t open_drain;	/* 0x0A */
+	u16_t polarity;		/* 0x0C */
+	u16_t dir;		/* 0x0E */
+	u16_t data;		/* 0x10 */
 };
 
 /** Runtime driver data */
@@ -104,76 +106,108 @@ static int gpio_sx1509b_config(struct device *dev, int access_op, u32_t pin,
 	const struct gpio_sx1509b_config *cfg = dev->config->config_info;
 	struct gpio_sx1509b_drv_data *drv_data = dev->driver_data;
 	struct gpio_sx1509b_pin_state *pins = &drv_data->pin_state;
-	int ret = -ENOTSUP;
-
-	if (flags & GPIO_INT) {
-		goto out;
-	}
+	struct {
+		u8_t reg;
+		struct gpio_sx1509b_pin_state pins;
+	} __packed outbuf;
+	int ret = 0;
+	u16_t bit = BIT(pin);
+	bool data_first = false;
 
 	if (access_op != GPIO_ACCESS_BY_PIN) {
-		goto out;
+		return -ENOTSUP;
+	}
+
+	if (flags & GPIO_INT_ENABLE) {
+		return -ENOTSUP;
 	}
 
 	k_sem_take(&drv_data->lock, K_FOREVER);
 
-	if ((flags & GPIO_DIR_MASK) == GPIO_DIR_IN) {
-		pins->dir |= BIT(pin);
-		pins->input_disable &= ~BIT(pin);
+	if ((flags & GPIO_OPEN_MASK) == GPIO_OPEN_DRAIN) {
+		pins->open_drain |= bit;
 	} else {
-		pins->dir &= ~BIT(pin);
-		pins->input_disable |= BIT(pin);
+		pins->open_drain &= ~bit;
 	}
-	if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_UP) {
-		pins->pull_up |= BIT(pin);
+
+	switch (flags & GPIO_PUD_MASK) {
+	default:
+		ret = -EINVAL;
+		goto out;
+	case GPIO_PUD_NORMAL:
+		pins->pull_up &= ~bit;
+		pins->pull_down &= ~bit;
+		break;
+	case GPIO_PUD_PULL_UP:
+		pins->pull_up |= bit;
+		pins->pull_down &= ~bit;
+		break;
+	case GPIO_PUD_PULL_DOWN:
+		pins->pull_up &= ~bit;
+		pins->pull_down |= bit;
+		break;
+	}
+
+	if (flags & GPIO_IO_IN_ENABLED) {
+		pins->input_disable &= ~bit;
 	} else {
-		pins->pull_up &= ~BIT(pin);
+		pins->input_disable |= bit;
 	}
-	if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_DOWN) {
-		pins->pull_down |= BIT(pin);
+
+	if (flags & GPIO_IO_OUT_ENABLED) {
+		pins->dir &= ~bit;
 	} else {
-		pins->pull_down &= ~BIT(pin);
+		pins->dir |= bit;
 	}
-	if ((flags & GPIO_PUD_MASK) == GPIO_PUD_NORMAL) {
-		pins->pull_up &= ~BIT(pin);
-		pins->pull_down &= ~BIT(pin);
+
+	if (flags & GPIO_IO_INIT_ENABLED) {
+		data_first = true;
+		if ((flags & GPIO_IO_INIT_MASK) == GPIO_IO_INIT_HIGH) {
+			pins->data |= bit;
+		} else {
+			pins->data &= ~bit;
+		}
 	}
-	if (flags & GPIO_DS_DISCONNECT_HIGH) {
-		pins->open_drain |= BIT(pin);
-	} else {
-		pins->open_drain &= ~BIT(pin);
-	}
+
 	if (flags & GPIO_POL_INV) {
-		pins->polarity |= BIT(pin);
+		pins->polarity |= bit;
 	} else {
-		pins->polarity &= ~BIT(pin);
+		pins->polarity &= ~bit;
 	}
 
-	ret = i2c_reg_write_word_be(drv_data->i2c_master, cfg->i2c_slave_addr,
-				    SX1509B_REG_DIR, pins->dir);
-	if (ret)
-		goto out;
+	if (flags & GPIO_DS_LO_LOW) {
+		pins->low_drive |= bit;
+	} else {
+		pins->low_drive &= ~bit;
+	}
 
-	ret = i2c_reg_write_word_be(drv_data->i2c_master, cfg->i2c_slave_addr,
-				    SX1509B_REG_INPUT_DISABLE,
-				    pins->input_disable);
-	if (ret)
-		goto out;
+	outbuf.reg = SX1509B_REG_INPUT_DISABLE;
+	outbuf.pins.input_disable = sys_cpu_to_be16(pins->input_disable);
+	outbuf.pins.long_slew = sys_cpu_to_be16(pins->long_slew);
+	outbuf.pins.low_drive = sys_cpu_to_be16(pins->low_drive);
+	outbuf.pins.pull_up = sys_cpu_to_be16(pins->pull_up);
+	outbuf.pins.pull_down = sys_cpu_to_be16(pins->pull_down);
+	outbuf.pins.open_drain = sys_cpu_to_be16(pins->open_drain);
+	outbuf.pins.polarity = sys_cpu_to_be16(pins->polarity);
+	outbuf.pins.dir = sys_cpu_to_be16(pins->dir);
+	outbuf.pins.data = sys_cpu_to_be16(pins->data);
 
-	ret = i2c_reg_write_word_be(drv_data->i2c_master, cfg->i2c_slave_addr,
-				    SX1509B_REG_PULL_UP,
-				    pins->pull_up);
-	if (ret)
-		goto out;
-
-	ret = i2c_reg_write_word_be(drv_data->i2c_master, cfg->i2c_slave_addr,
-				    SX1509B_REG_PULL_DOWN,
-				    pins->pull_down);
-	if (ret)
-		goto out;
-
-	ret = i2c_reg_write_word_be(drv_data->i2c_master, cfg->i2c_slave_addr,
-				    SX1509B_REG_OPEN_DRAIN,
-				    pins->open_drain);
+	if (data_first) {
+		ret = i2c_reg_write_word_be(drv_data->i2c_master,
+					    cfg->i2c_slave_addr,
+					    SX1509B_REG_DATA, pins->data);
+		if (ret == 0) {
+			ret = i2c_write(drv_data->i2c_master,
+					&outbuf.reg,
+					sizeof(outbuf) - sizeof(pins->data),
+					cfg->i2c_slave_addr);
+		}
+	} else {
+		ret = i2c_write(drv_data->i2c_master,
+				&outbuf.reg,
+				sizeof(outbuf),
+				cfg->i2c_slave_addr);
+	}
 
 out:
 	k_sem_give(&drv_data->lock);
@@ -287,12 +321,8 @@ static int gpio_sx1509b_init(struct device *dev)
 
 	/* Reset state */
 	drv_data->pin_state = (struct gpio_sx1509b_pin_state) {
-		.input_disable	= 0x0000,
-		.pull_up	= 0x0000,
-		.pull_down	= 0x0000,
-		.open_drain	= 0x0000,
-		.dir		= 0xffff,
-		.data		= 0xffff,
+		.dir = -1,
+		.data = -1,
 	};
 
 	ret = i2c_reg_write_byte(drv_data->i2c_master, cfg->i2c_slave_addr,
