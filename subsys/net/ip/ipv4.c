@@ -146,7 +146,7 @@ enum net_verdict net_ipv4_process_pkt(struct net_pkt *pkt)
 		log_strdup(net_sprint_ipv4_addr(&hdr->dst)));
 
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
-	net_pkt_set_ipv4_ttl(pkt, NET_IPV4_HDR(pkt)->ttl);
+	net_pkt_set_ipv4_ttl(pkt, hdr->ttl);
 
 	if (!net_ipv4_is_my_addr(&hdr->dst) &&
 	    !net_ipv4_is_addr_mcast(&hdr->dst)) {
