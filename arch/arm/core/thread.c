@@ -99,7 +99,6 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #if CONFIG_USERSPACE
 	thread->arch.mode = 0;
 	thread->arch.priv_stack_start = 0;
-	thread->arch.priv_stack_size = 0;
 #endif
 
 	/* swap_return_value can contain garbage */
@@ -119,8 +118,6 @@ FUNC_NORETURN void _arch_user_mode_enter(k_thread_entry_t user_entry,
 	/* Set up privileged stack before entering user mode */
 	_current->arch.priv_stack_start =
 		(u32_t)_k_priv_stack_find(_current->stack_obj);
-	_current->arch.priv_stack_size =
-		(u32_t)CONFIG_PRIVILEGED_STACK_SIZE;
 
 	/* Truncate the stack size with the MPU region granularity. */
 	_current->stack_info.size &=
