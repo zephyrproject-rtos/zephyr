@@ -117,7 +117,7 @@ Follow these steps to create a new application directory. (Refer to
    .. code-block:: cmake
 
       # Boilerplate code, which pulls in the Zephyr build system.
-      cmake_minimum_required(VERSION 3.8.2)
+      cmake_minimum_required(VERSION 3.13.1)
       include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
       project(my_zephyr_app)
 

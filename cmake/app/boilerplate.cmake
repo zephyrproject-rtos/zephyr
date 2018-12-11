@@ -10,7 +10,11 @@
 # Omitting it is permitted, but doing so incurs a maintenance cost as
 # the application must manage upstream changes to this file.
 
-# CMake version 3.8.2 is the real minimum supported version.
+# app is a CMake library containing all the application code and is
+# modified by the entry point ${APPLICATION_SOURCE_DIR}/CMakeLists.txt
+# that was specified when cmake was called.
+
+# CMake version 3.13.1 is the real minimum supported version.
 #
 # Unfortunately CMake requires the toplevel CMakeLists.txt file to
 # define the required version, not even invoking it from an included
@@ -19,7 +23,7 @@
 #
 # Under these restraints we use a second 'cmake_minimum_required'
 # invocation in every toplevel CMakeLists.txt.
-cmake_minimum_required(VERSION 3.8.2)
+cmake_minimum_required(VERSION 3.13.1)
 
 # CMP0002: "Logical target names must be globally unique"
 cmake_policy(SET CMP0002 NEW)

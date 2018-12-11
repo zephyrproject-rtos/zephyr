@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8.2)
+cmake_minimum_required(VERSION 3.13.1)
 
 if (NOT DEFINED ENV{BSIM_COMPONENTS_PATH})
 	message(FATAL_ERROR "This test requires the BabbleSim simulator. Please set\
