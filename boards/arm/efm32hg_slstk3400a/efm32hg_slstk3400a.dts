@@ -56,6 +56,7 @@
 
 &usart1 {
 	current-speed = <115200>;
-	location = <4>;
+	location-rx = <4>;
+	location-tx = <4>;
 	status = "ok";
 };

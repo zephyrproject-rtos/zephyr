@@ -32,9 +32,14 @@
 
 #ifdef CONFIG_UART_GECKO
 #ifdef CONFIG_USART_GECKO_0
-#if (DT_SILABS_GECKO_USART_USART_0_LOCATION == 0)
-#define PIN_USART0_TXD {gpioPortA, 0, gpioModePushPull, 1}
+#if (DT_SILABS_GECKO_USART_USART_0_LOCATION_RX == 0)
 #define PIN_USART0_RXD {gpioPortA, 1, gpioModeInput, 0}
+#else
+#error ("Serial Driver for Gecko MCUs not implemented for this location index")
+#endif
+
+#if (DT_SILABS_GECKO_USART_USART_0_LOCATION_TX == 0)
+#define PIN_USART0_TXD {gpioPortA, 0, gpioModePushPull, 1}
 #else
 #error ("Serial Driver for Gecko MCUs not implemented for this location index")
 #endif

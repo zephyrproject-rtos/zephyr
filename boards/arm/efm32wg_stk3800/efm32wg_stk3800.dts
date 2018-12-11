@@ -55,6 +55,7 @@
 
 &uart0 {
 	current-speed = <115200>;
-	location = <1>;
+	location-rx = <1>;
+	location-tx = <1>;
 	status = "ok";
 };

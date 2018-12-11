@@ -15,11 +15,16 @@ struct uart_gecko_config {
 	USART_TypeDef *base;
 	CMU_Clock_TypeDef clock;
 	u32_t baud_rate;
-	struct soc_gpio_pin pin_rx;
-	struct soc_gpio_pin pin_tx;
-	unsigned int loc;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(struct device *dev);
+#endif
+	struct soc_gpio_pin pin_rx;
+	struct soc_gpio_pin pin_tx;
+#ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
+	u8_t loc_rx;
+	u8_t loc_tx;
+#else
+	u8_t loc;
 #endif
 };
 
@@ -228,11 +233,11 @@ static void uart_gecko_init_pins(struct device *dev)
 
 	soc_gpio_configure(&config->pin_rx);
 	soc_gpio_configure(&config->pin_tx);
-#if defined(_USART_ROUTEPEN_MASK) || defined(_UART_ROUTEPEN_MASK)
+#ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
 	config->base->ROUTEPEN = USART_ROUTEPEN_RXPEN | USART_ROUTEPEN_TXPEN;
 	config->base->ROUTELOC0 =
-		(config->loc << _USART_ROUTELOC0_TXLOC_SHIFT) |
-		(config->loc << _USART_ROUTELOC0_RXLOC_SHIFT);
+		(config->loc_tx << _USART_ROUTELOC0_TXLOC_SHIFT) |
+		(config->loc_rx << _USART_ROUTELOC0_RXLOC_SHIFT);
 	config->base->ROUTELOC1 = _USART_ROUTELOC1_RESETVALUE;
 #else
 	config->base->ROUTE = USART_ROUTE_RXPEN | USART_ROUTE_TXPEN
@@ -301,7 +306,16 @@ static const struct uart_gecko_config uart_gecko_0_config = {
 	.baud_rate = DT_SILABS_GECKO_UART_UART_0_CURRENT_SPEED,
 	.pin_rx = PIN_UART0_RXD,
 	.pin_tx = PIN_UART0_TXD,
-	.loc = DT_SILABS_GECKO_UART_UART_0_LOCATION,
+#ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
+	.loc_rx = DT_SILABS_GECKO_UART_UART_0_LOCATION_RX,
+	.loc_tx = DT_SILABS_GECKO_UART_UART_0_LOCATION_TX,
+#else
+#if DT_SILABS_GECKO_UART_UART_0_LOCATION_RX \
+	!= DT_SILABS_GECKO_UART_UART_0_LOCATION_TX
+#error UART_0 DTS location-* properties must have identical value
+#endif
+	.loc = DT_SILABS_GECKO_UART_UART_0_LOCATION_RX,
+#endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = uart_gecko_config_func_0,
 #endif
@@ -342,7 +356,16 @@ static const struct uart_gecko_config uart_gecko_1_config = {
 	.baud_rate = DT_SILABS_GECKO_UART_UART_1_CURRENT_SPEED,
 	.pin_rx = PIN_UART1_RXD,
 	.pin_tx = PIN_UART1_TXD,
-	.loc = DT_SILABS_GECKO_UART_UART_1_LOCATION,
+#ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
+	.loc_rx = DT_SILABS_GECKO_UART_UART_1_LOCATION_RX,
+	.loc_tx = DT_SILABS_GECKO_UART_UART_1_LOCATION_TX,
+#else
+#if DT_SILABS_GECKO_UART_UART_1_LOCATION_RX \
+	!= DT_SILABS_GECKO_UART_UART_1_LOCATION_TX
+#error UART_1 DTS location-* properties must have identical value
+#endif
+	.loc = DT_SILABS_GECKO_UART_UART_1_LOCATION_RX,
+#endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = uart_gecko_config_func_1,
 #endif
@@ -383,7 +406,16 @@ static const struct uart_gecko_config usart_gecko_0_config = {
 	.baud_rate = DT_SILABS_GECKO_USART_USART_0_CURRENT_SPEED,
 	.pin_rx = PIN_USART0_RXD,
 	.pin_tx = PIN_USART0_TXD,
-	.loc = DT_SILABS_GECKO_USART_USART_0_LOCATION,
+#ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
+	.loc_rx = DT_SILABS_GECKO_USART_USART_0_LOCATION_RX,
+	.loc_tx = DT_SILABS_GECKO_USART_USART_0_LOCATION_TX,
+#else
+#if DT_SILABS_GECKO_USART_USART_0_LOCATION_RX \
+	!= DT_SILABS_GECKO_USART_USART_0_LOCATION_TX
+#error USART_0 DTS location-* properties must have identical value
+#endif
+	.loc = DT_SILABS_GECKO_USART_USART_0_LOCATION_RX,
+#endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = usart_gecko_config_func_0,
 #endif
@@ -425,7 +457,16 @@ static const struct uart_gecko_config usart_gecko_1_config = {
 	.baud_rate = DT_SILABS_GECKO_USART_USART_1_CURRENT_SPEED,
 	.pin_rx = PIN_USART1_RXD,
 	.pin_tx = PIN_USART1_TXD,
-	.loc = DT_SILABS_GECKO_USART_USART_1_LOCATION,
+#ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
+	.loc_rx = DT_SILABS_GECKO_USART_USART_1_LOCATION_RX,
+	.loc_tx = DT_SILABS_GECKO_USART_USART_1_LOCATION_TX,
+#else
+#if DT_SILABS_GECKO_USART_USART_1_LOCATION_RX \
+	!= DT_SILABS_GECKO_USART_USART_1_LOCATION_TX
+#error USART_1 DTS location-* properties must have identical value
+#endif
+	.loc = DT_SILABS_GECKO_USART_USART_1_LOCATION_RX,
+#endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = usart_gecko_config_func_1,
 #endif
@@ -467,7 +508,16 @@ static const struct uart_gecko_config usart_gecko_2_config = {
 	.baud_rate = DT_SILABS_GECKO_USART_USART_2_CURRENT_SPEED,
 	.pin_rx = PIN_USART2_RXD,
 	.pin_tx = PIN_USART2_TXD,
-	.loc = DT_SILABS_GECKO_USART_USART_2_LOCATION,
+#ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
+	.loc_rx = DT_SILABS_GECKO_USART_USART_2_LOCATION_RX,
+	.loc_tx = DT_SILABS_GECKO_USART_USART_2_LOCATION_TX,
+#else
+#if DT_SILABS_GECKO_USART_USART_2_LOCATION_RX \
+	!= DT_SILABS_GECKO_USART_USART_2_LOCATION_TX
+#error USART_2 DTS location-* properties must have identical value
+#endif
+	.loc = DT_SILABS_GECKO_USART_USART_2_LOCATION_RX,
+#endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = usart_gecko_config_func_2,
 #endif
@@ -509,7 +559,16 @@ static const struct uart_gecko_config usart_gecko_3_config = {
 	.baud_rate = DT_SILABS_GECKO_USART_USART_3_CURRENT_SPEED,
 	.pin_rx = PIN_USART3_RXD,
 	.pin_tx = PIN_USART3_TXD,
-	.loc = DT_SILABS_GECKO_USART_USART_3_LOCATION,
+#ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
+	.loc_rx = DT_SILABS_GECKO_USART_USART_3_LOCATION_RX,
+	.loc_tx = DT_SILABS_GECKO_USART_USART_3_LOCATION_TX,
+#else
+#if DT_SILABS_GECKO_USART_USART_3_LOCATION_RX \
+	!= DT_SILABS_GECKO_USART_USART_3_LOCATION_TX
+#error USART_3 DTS location-* properties must have identical value
+#endif
+	.loc = DT_SILABS_GECKO_USART_USART_3_LOCATION_RX,
+#endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = usart_gecko_config_func_3,
 #endif
