@@ -356,10 +356,14 @@ void net_icmpv4_unregister_handler(struct net_icmpv4_handler *handler)
 
 enum net_verdict net_icmpv4_input(struct net_pkt *pkt, bool bcast)
 {
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmp_access,
+					      struct net_icmp_hdr);
+	struct net_icmp_hdr *icmp_hdr;
 	struct net_icmpv4_handler *cb;
-	struct net_icmp_hdr icmp_hdr;
 
-	if (net_icmpv4_get_hdr(pkt, &icmp_hdr) < 0) {
+	icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data_new(pkt,
+							       &icmp_access);
+	if (!icmp_hdr) {
 		NET_DBG("DROP: NULL ICMPv4 header");
 		return NET_DROP;
 	}
@@ -370,19 +374,21 @@ enum net_verdict net_icmpv4_input(struct net_pkt *pkt, bool bcast)
 	}
 
 	if (bcast && (!IS_ENABLED(CONFIG_NET_ICMPV4_ACCEPT_BROADCAST) ||
-		      icmp_hdr.type != NET_ICMPV4_ECHO_REQUEST)) {
+		      icmp_hdr->type != NET_ICMPV4_ECHO_REQUEST)) {
 		NET_DBG("DROP: broadcast pkt");
 		goto drop;
 	}
 
+	net_pkt_acknowledge_data(pkt, &icmp_access);
+
 	NET_DBG("ICMPv4 packet received type %d code %d",
-		icmp_hdr.type, icmp_hdr.code);
+		icmp_hdr->type, icmp_hdr->code);
 
 	net_stats_update_icmp_recv(net_pkt_iface(pkt));
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&handlers, cb, node) {
-		if (cb->type == icmp_hdr.type &&
-				(cb->code == icmp_hdr.code || cb->code == 0)) {
+		if (cb->type == icmp_hdr->type &&
+		    (cb->code == icmp_hdr->code || cb->code == 0)) {
 			return cb->handler(pkt);
 		}
 	}
