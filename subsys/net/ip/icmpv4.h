@@ -25,6 +25,8 @@
 #define NET_ICMPV4_DST_UNREACH_NO_PROTO  2 /* Protocol not supported */
 #define NET_ICMPV4_DST_UNREACH_NO_PORT   3 /* Port unreachable */
 
+#define NET_ICMPV4_UNUSED_LEN 4
+
 struct net_icmpv4_echo_req {
 	u16_t identifier;
 	u16_t sequence;
