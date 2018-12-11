@@ -128,7 +128,6 @@ int ipm_dummy_init(struct device *d)
 	struct ipm_dummy_driver_data *driver_data;
 
 	driver_data = d->driver_data;
-	d->driver_api = &ipm_dummy_api;
 
 	return 0;
 }
