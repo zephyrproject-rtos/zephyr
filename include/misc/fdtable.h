@@ -103,15 +103,15 @@ void *z_get_fd_obj_and_vtable(int fd, const struct fd_op_vtable **vtable);
  * Request codes for fd_op_vtable.ioctl().
  *
  * Note that these codes are internal Zephyr numbers, for internal
- * Zephyr operation (and subject to change without notice, not part
+ * Zephyr operations (and subject to change without notice, not part
  * of "stable ABI"). These are however expected to co-exist with
  * "well-known" POSIX/Linux ioctl numbers, and not clash with them.
  */
 enum {
-	ZFD_IOCTL_CLOSE = 1,
+	/* Codes below 0x100 are reserved for fcntl() codes. */
+	ZFD_IOCTL_CLOSE = 0x100,
 	ZFD_IOCTL_FSYNC,
 	ZFD_IOCTL_LSEEK,
-	ZFD_IOCTL_FCNTL,
 	ZFD_IOCTL_POLL_PREPARE,
 	ZFD_IOCTL_POLL_UPDATE,
 };
