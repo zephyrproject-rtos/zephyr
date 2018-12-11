@@ -343,6 +343,7 @@ class BinaryHandler(Handler):
         super().__init__(instance)
 
         self.valgrind = False
+        self.terminated = False
 
     def _output_reader(self, proc, harness):
         log_out_fp = open(self.log, "wt")
@@ -352,13 +353,18 @@ class BinaryHandler(Handler):
             log_out_fp.flush()
             harness.handle(line.decode('utf-8').rstrip())
             if harness.state:
-                proc.terminate()
+                try:
+                    #POSIX arch based ztests end on their own,
+                    #so let's give it up to 100ms to do so
+                    proc.wait(0.1)
+                except subprocess.TimeoutExpired:
+                    proc.terminate()
+                    self.terminated = True
                 break
 
         log_out_fp.close()
 
     def handle(self):
-        out_state = "failed"
 
         harness_name = self.instance.test.harness.capitalize()
         harness_import = HarnessImporter(harness_name)
@@ -384,13 +390,10 @@ class BinaryHandler(Handler):
             t.join(self.timeout)
             if t.is_alive():
                 proc.terminate()
-                out_state = "timeout"
+                self.terminated = True
                 t.join()
-
             proc.wait()
             self.returncode = proc.returncode
-            if proc.returncode != 0:
-                out_state = "failed"
 
         if options.enable_coverage:
             returncode = subprocess.call(["GCOV_PREFIX=" + self.outdir,
@@ -401,10 +404,14 @@ class BinaryHandler(Handler):
 
         subprocess.call(["stty", "sane"])
         self.instance.results = harness.tests
-        if harness.state:
+        if self.terminated==False and self.returncode != 0:
+            #When a process is killed, the default handler returns 128 + SIGTERM
+            #so in that case the return code itself is not meaningful
+            self.set_state("error", {})
+        elif harness.state:
             self.set_state(harness.state, {})
         else:
-            self.set_state(out_state, {})
+            self.set_state("timeout", {})
 
 class DeviceHandler(Handler):
 
