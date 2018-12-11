@@ -823,9 +823,9 @@ static void clear_iv(void)
 
 	err = settings_delete("bt/mesh/IV");
 	if (err) {
-		BT_ERR("Failed to store clear IV");
+		BT_ERR("Failed to clear IV");
 	} else {
-		BT_DBG("Stored clear IV");
+		BT_DBG("Cleared IV");
 	}
 }
 
@@ -835,9 +835,9 @@ static void clear_net(void)
 
 	err = settings_delete("bt/mesh/Net");
 	if (err) {
-		BT_ERR("Failed to store clear Network");
+		BT_ERR("Failed to clear Network");
 	} else {
-		BT_DBG("Stored clear Network");
+		BT_DBG("Cleared Network");
 	}
 }
 
@@ -958,9 +958,9 @@ static void clear_rpl(void)
 		snprintk(path, sizeof(path), "bt/mesh/RPL/%x", rpl->src);
 		err = settings_delete(path);
 		if (err) {
-			BT_ERR("Failed to store cleared RPL");
+			BT_ERR("Failed to clear RPL");
 		} else {
-			BT_DBG("Stored cleared RPL");
+			BT_DBG("Cleared RPL");
 		}
 
 		(void)memset(rpl, 0, sizeof(*rpl));
@@ -1051,9 +1051,9 @@ static void clear_cfg(void)
 
 	err = settings_delete("bt/mesh/Cfg");
 	if (err) {
-		BT_ERR("Failed to store clear configuration");
+		BT_ERR("Failed to clear configuration");
 	} else {
-		BT_DBG("Stored clear configuration");
+		BT_DBG("Cleared configuration");
 	}
 }
 
@@ -1065,9 +1065,9 @@ static void clear_app_key(u16_t app_idx)
 	snprintk(path, sizeof(path), "bt/mesh/AppKey/%x", app_idx);
 	err = settings_delete(path);
 	if (err) {
-		BT_ERR("Failed to store AppKeyIndex 0x%03x", app_idx);
+		BT_ERR("Failed to clear AppKeyIndex 0x%03x", app_idx);
 	} else {
-		BT_DBG("Stored AppKeyIndex 0x%03x", app_idx);
+		BT_DBG("Cleared AppKeyIndex 0x%03x", app_idx);
 	}
 }
 
@@ -1081,9 +1081,9 @@ static void clear_net_key(u16_t net_idx)
 	snprintk(path, sizeof(path), "bt/mesh/NetKey/%x", net_idx);
 	err = settings_delete(path);
 	if (err) {
-		BT_ERR("Failed to store NetKeyIndex 0x%03x", net_idx);
+		BT_ERR("Failed to clear NetKeyIndex 0x%03x", net_idx);
 	} else {
-		BT_DBG("Stored NetKeyIndex 0x%03x", net_idx);
+		BT_DBG("Cleared NetKeyIndex 0x%03x", net_idx);
 	}
 }
 
