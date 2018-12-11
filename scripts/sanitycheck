@@ -401,7 +401,9 @@ class BinaryHandler(Handler):
 
         subprocess.call(["stty", "sane"])
         self.instance.results = harness.tests
-        if harness.state:
+        if self.returncode != 0:
+            self.set_state(out_state, {})
+        elif harness.state:
             self.set_state(harness.state, {})
         else:
             self.set_state(out_state, {})
