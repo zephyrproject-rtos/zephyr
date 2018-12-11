@@ -12,13 +12,6 @@ source "soc/arm/nordic_nrf/*/Kconfig.defconfig.series"
 config BUILD_OUTPUT_HEX
 	default y
 
-if SERIAL
-
-config GPIO
-	default y
-
-endif # SERIAL
-
 if GPIO
 
 config GPIO_NRFX
