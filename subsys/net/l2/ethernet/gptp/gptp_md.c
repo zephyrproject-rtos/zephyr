@@ -417,8 +417,10 @@ static void gptp_md_pdelay_req_timeout(struct k_timer *timer)
 		if (timer == &state->pdelay_timer) {
 			state->pdelay_timer_expired = true;
 
-			GPTP_STATS_INC(port,
-				       pdelay_allowed_lost_resp_exceed_count);
+			if (state->rcvd_pdelay_resp == 0) {
+				GPTP_STATS_INC(port,
+					pdelay_allowed_lost_resp_exceed_count);
+			}
 		}
 	}
 }
