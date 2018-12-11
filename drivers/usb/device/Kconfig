@@ -58,6 +58,7 @@ config USB_DC_SAM
 
 config USB_NRF52840
 	bool "Nordic Semiconductor nRF52840 USB Device Controller Driver"
+	default y
 	depends on SOC_NRF52840
 	select USB_DEVICE_DRIVER
 	select HAS_DTS_USB
