@@ -623,17 +623,9 @@ upper_proto:
 	case IPPROTO_ICMPV6:
 		return net_icmpv6_input(pkt);
 	case IPPROTO_UDP:
-#if defined(CONFIG_NET_UDP)
-		return net_conn_input(IPPROTO_UDP, pkt);
-#else
-		return NET_DROP;
-#endif
+		/* Fall through */
 	case IPPROTO_TCP:
-#if defined(CONFIG_NET_TCP)
-		return net_conn_input(IPPROTO_TCP, pkt);
-#else
-		return NET_DROP;
-#endif
+		return net_conn_input(next, pkt);
 	}
 
 drop:
