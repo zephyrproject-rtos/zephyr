@@ -73,7 +73,7 @@ void net_icmpv4_register_handler(struct net_icmpv4_handler *handler);
 
 void net_icmpv4_unregister_handler(struct net_icmpv4_handler *handler);
 
-enum net_verdict net_icmpv4_input(struct net_pkt *pkt);
+enum net_verdict net_icmpv4_input(struct net_pkt *pkt, bool bcast);
 
 int net_icmpv4_get_hdr(struct net_pkt *pkt, struct net_icmp_hdr *hdr);
 int net_icmpv4_set_hdr(struct net_pkt *pkt, struct net_icmp_hdr *hdr);
