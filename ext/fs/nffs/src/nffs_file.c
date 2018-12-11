@@ -22,6 +22,12 @@
 #include <nffs/nffs.h>
 #include <nffs/os.h>
 
+#if !__ZEPHYR__
+#include "fs/fs.h"
+#include "fs/fs_if.h"
+struct fs_ops nffs_ops;
+#endif
+
 static struct nffs_file *
 nffs_file_alloc(void)
 {
@@ -242,6 +248,9 @@ nffs_file_open(struct nffs_file **out_file, const char *path,
     }
     nffs_inode_inc_refcnt(file->nf_inode_entry);
     file->nf_access_flags = access_flags;
+#if !__ZEPHYR__
+    file->fops = &nffs_ops;
+#endif
 
     *out_file = file;
 

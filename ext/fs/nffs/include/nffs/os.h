@@ -21,7 +21,9 @@
 #define H_OS_
 
 #include <stdint.h>
+#if __ZEPHYR__
 #include <kernel.h>
+#endif
 #include <nffs/config.h>
 
 #ifdef __cplusplus

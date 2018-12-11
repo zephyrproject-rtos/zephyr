@@ -22,6 +22,12 @@
 #include <nffs/nffs.h>
 #include <nffs/os.h>
 
+#if !__ZEPHYR__
+#include "fs/fs.h"
+#include "fs/fs_if.h"
+struct fs_ops nffs_ops;
+#endif
+
 static struct nffs_dir *
 nffs_dir_alloc(void)
 {
@@ -74,6 +80,9 @@ nffs_dir_open(const char *path, struct nffs_dir **out_dir)
     dir->nd_parent_inode_entry = parent_inode_entry;
     nffs_inode_inc_refcnt(dir->nd_parent_inode_entry);
     memset(&dir->nd_dirent, 0, sizeof dir->nd_dirent);
+#if !__ZEPHYR__
+    dir->fops = &nffs_ops;
+#endif
 
     *out_dir = dir;
 
@@ -104,6 +113,9 @@ nffs_dir_read(struct nffs_dir *dir, struct nffs_dirent **out_dirent)
     }
 
     nffs_inode_inc_refcnt(child);
+#if !__ZEPHYR__
+    dir->nd_dirent.fops = &nffs_ops;
+#endif
     *out_dirent = &dir->nd_dirent;
 
     return 0;

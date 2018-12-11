@@ -213,6 +213,9 @@ struct nffs_block {
 };
 
 struct nffs_file {
+#if !__ZEPHYR__
+    struct fs_ops *fops;
+#endif
     struct nffs_inode_entry *nf_inode_entry;
     uint32_t nf_offset;
     uint8_t nf_access_flags;
@@ -280,11 +283,16 @@ struct nffs_cache_inode {
 };
 
 struct nffs_dirent {
+#if !__ZEPHYR__
     struct fs_ops *fops;
+#endif
     struct nffs_inode_entry *nde_inode_entry;
 };
 
 struct nffs_dir {
+#if !__ZEPHYR__
+    struct fs_ops *fops;
+#endif
     struct nffs_inode_entry *nd_parent_inode_entry;
     struct nffs_dirent nd_dirent;
 };
@@ -328,7 +336,11 @@ extern void *nffs_dir_mem;
 extern uint32_t nffs_hash_next_file_id;
 extern uint32_t nffs_hash_next_dir_id;
 extern uint32_t nffs_hash_next_block_id;
-extern struct nffs_area nffs_areas[CONFIG_NFFS_FILESYSTEM_MAX_AREAS];
+#if NFFS_CONFIG_USE_HEAP
+struct nffs_area *nffs_areas;
+#else
+extern struct nffs_area nffs_areas[NFFS_CONFIG_MAX_AREAS];
+#endif
 extern uint8_t nffs_num_areas;
 extern uint8_t nffs_scratch_area_idx;
 extern uint16_t nffs_block_max_data_sz;
@@ -566,6 +578,8 @@ int nffs_write_to_file(struct nffs_file *file, const void *data, int len);
 #else
 
 /* Default to Mynewt */
+#include "log/log.h"
+#include "testutil/testutil.h"
 
 #define NFFS_LOG(lvl, ...) \
     LOG_ ## lvl(&nffs_log, LOG_MODULE_NFFS, __VA_ARGS__)

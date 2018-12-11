@@ -20,7 +20,9 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#if __ZEPHYR__
 #include <kernel.h>
+#endif
 #include <nffs/nffs.h>
 #include <nffs/os.h>
 

@@ -19,7 +19,9 @@
 
 #include <assert.h>
 #include <string.h>
+#if __ZEPHYR__
 #include <kernel.h>
+#endif
 #include <nffs/nffs.h>
 
 /**

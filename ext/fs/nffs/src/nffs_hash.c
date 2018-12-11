@@ -20,7 +20,9 @@
 #include <stddef.h>
 #include <string.h>
 #include <assert.h>
+#if __ZEPHYR__
 #include <kernel.h>
+#endif
 #include <nffs/nffs.h>
 
 struct nffs_hash_list *nffs_hash;
