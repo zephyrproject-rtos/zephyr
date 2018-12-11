@@ -252,6 +252,7 @@ void update_light_state(void)
 
 	if (*ptr_counter == 0 || reset == false) {
 		reset = true;
+		reassign_last_target_values();
 		k_work_submit(&no_transition_work);
 	}
 }

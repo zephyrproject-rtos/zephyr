@@ -42,6 +42,7 @@ extern struct transition lightness_transition, temp_transition;
 
 extern struct k_timer dummy_timer;
 
+void reassign_last_target_values(void);
 void calculate_rt(struct transition *transition);
 
 

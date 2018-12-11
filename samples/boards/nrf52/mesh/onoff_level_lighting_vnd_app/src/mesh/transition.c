@@ -19,6 +19,33 @@ struct k_timer *ptr_timer = &dummy_timer;
 
 struct transition lightness_transition, temp_transition;
 
+void reassign_last_target_values(void)
+{
+	gen_onoff_srv_root_user_data.last_target_onoff =
+		gen_onoff_srv_root_user_data.onoff;
+
+	gen_level_srv_root_user_data.last_target_level =
+		gen_level_srv_root_user_data.level;
+
+	gen_level_srv_s0_user_data.last_target_level =
+		gen_level_srv_s0_user_data.level;
+
+	light_lightness_srv_user_data.last_target_actual =
+		light_lightness_srv_user_data.actual;
+
+	light_lightness_srv_user_data.last_target_linear =
+		light_lightness_srv_user_data.linear;
+
+	light_ctl_srv_user_data.last_target_lightness =
+		light_ctl_srv_user_data.lightness;
+
+	light_ctl_srv_user_data.last_target_temp =
+		light_ctl_srv_user_data.temp;
+
+	light_ctl_srv_user_data.last_target_delta_uv =
+		light_ctl_srv_user_data.delta_uv;
+}
+
 /* Function to calculate Remaining Time (Start) */
 
 void calculate_rt(struct transition *transition)
