@@ -1,0 +1,25 @@
+#
+# Copyright (c) 2018, Piotr Mienkowski
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: SoC binding
+version: 0.1
+
+description: >
+    Binding for the SoC node.
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      generation: define
+
+    part-number:
+      type: string
+      category: required
+      description: SoC part number
+      generation: define
+...
