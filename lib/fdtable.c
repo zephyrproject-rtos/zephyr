@@ -199,6 +199,47 @@ off_t lseek(int fd, off_t offset, int whence)
 			  offset, whence);
 }
 
+int ioctl(int fd, unsigned long request, ...)
+{
+	va_list args;
+	int res;
+
+	if (_check_fd(fd) < 0) {
+		return -1;
+	}
+
+	va_start(args, request);
+	res = fdtable[fd].vtable->ioctl(fdtable[fd].obj, request, args);
+	va_end(args);
+
+	return res;
+}
+
+int fcntl(int fd, int cmd, ...)
+{
+	va_list args;
+	int res;
+
+	if (_check_fd(fd) < 0) {
+		return -1;
+	}
+
+	/* Handle fdtable commands. */
+	switch (cmd) {
+	case F_DUPFD:
+		/* Not implemented so far. */
+		errno = EINVAL;
+		return -1;
+	}
+
+	/* The rest of commands are per-fd, handled by ioctl vmethod. */
+	va_start(args, cmd);
+	res = fdtable[fd].vtable->ioctl(fdtable[fd].obj, cmd, args);
+	va_end(args);
+
+	return res;
+}
+
 /*
  * fd operations for stdio/stdout/stderr
  */
