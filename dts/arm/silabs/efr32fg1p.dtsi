@@ -18,6 +18,8 @@
 	};
 
 	soc {
+		compatible = "soc,silabs";
+
 		flash-controller@400e0000 {
 			compatible = "silabs,gecko-flash-controller";
 			label = "FLASH_CTRL";

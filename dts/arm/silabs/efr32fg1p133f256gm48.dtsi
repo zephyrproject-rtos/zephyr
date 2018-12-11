@@ -13,6 +13,8 @@
 	};
 
 	soc {
+		part-number = "EFR32FG1P133F256GM48";
+
 		flash-controller@400e0000 {
 			flash0: flash@0 {
 				reg = <0 DT_SIZE_K(256)>;
