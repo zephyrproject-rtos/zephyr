@@ -23,6 +23,13 @@ the app if you are using a different servo motor.
 Wiring
 ******
 
+BBC micro:bit
+=============
+
+You will need to connect the motor's red wire to external 5V, the
+black wire to ground and the white wire to pad 0 on the edge
+connector.
+
 Arduino 101 and Quark D2000 CRB
 ===============================
 
@@ -30,12 +37,6 @@ You will need to connect the motor's red wire to 5V,
 the black wire to ground and the white wire to PWM 0 via
 the shield.
 
-BBC micro:bit
-=============
-
-You will need to connect the motor's red wire to external 5V, the
-black wire to ground and the white wire to pad 0 on the edge
-connector.
 
 Building and Running
 ********************
@@ -45,6 +46,6 @@ for the arduino_101 board:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/servo_motor
-   :board: arduino_101
+   :board: bbc_microbit
    :goals: build flash
    :compact:
