@@ -681,7 +681,7 @@ static int mesh_set(int argc, char **argv, void *val_ctx)
 		}
 	}
 
-	BT_WARN("No matching handler for key %s", argv[0]);
+	BT_WARN("No matching handler for key %s", log_strdup(argv[0]));
 
 	return -ENOENT;
 }
@@ -935,9 +935,9 @@ static void store_rpl(struct bt_mesh_rpl *entry)
 
 	err = settings_save_one(path, &rpl, sizeof(rpl));
 	if (err) {
-		BT_ERR("Failed to store RPL %s value", path);
+		BT_ERR("Failed to store RPL %s value", log_strdup(path));
 	} else {
-		BT_DBG("Stored RPL %s value", path);
+		BT_DBG("Stored RPL %s value", log_strdup(path));
 	}
 }
 
@@ -1126,10 +1126,9 @@ static void store_app_key(struct bt_mesh_app_key *app)
 
 	err = settings_save_one(path, &key, sizeof(key));
 	if (err) {
-		BT_ERR("Failed to store AppKey %s value", path);
-
+		BT_ERR("Failed to store AppKey %s value", log_strdup(path));
 	} else {
-		BT_DBG("Stored AppKey %s value", path);
+		BT_DBG("Stored AppKey %s value", log_strdup(path));
 	}
 }
 
@@ -1208,9 +1207,9 @@ static void store_pending_mod_bind(struct bt_mesh_model *mod, bool vnd)
 
 	err = settings_save_one(path, keys, count * sizeof(keys[0]));
 	if (err) {
-		BT_ERR("Failed to store %s value", path);
+		BT_ERR("Failed to store %s value", log_strdup(path));
 	} else {
-		BT_DBG("Stored %s value", path);
+		BT_DBG("Stored %s value", log_strdup(path));
 	}
 }
 
@@ -1230,9 +1229,9 @@ static void store_pending_mod_sub(struct bt_mesh_model *mod, bool vnd)
 
 	err = settings_save_one(path, groups, count * sizeof(groups[0]));
 	if (err) {
-		BT_ERR("Failed to store %s value", path);
+		BT_ERR("Failed to store %s value", log_strdup(path));
 	} else {
-		BT_DBG("Stored %s value", path);
+		BT_DBG("Stored %s value", log_strdup(path));
 	}
 }
 
@@ -1264,9 +1263,9 @@ static void store_pending_mod_pub(struct bt_mesh_model *mod, bool vnd)
 
 	err = settings_save_one(path, val, len);
 	if (err) {
-		BT_ERR("Failed to store %s value", path);
+		BT_ERR("Failed to store %s value", log_strdup(path));
 	} else {
-		BT_DBG("Stored %s value", path);
+		BT_DBG("Stored %s value", log_strdup(path));
 	}
 }
 
