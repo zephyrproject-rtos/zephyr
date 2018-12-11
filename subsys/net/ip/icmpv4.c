@@ -95,6 +95,26 @@ int net_icmpv4_set_chksum(struct net_pkt *pkt)
 	return 0;
 }
 
+static int icmpv4_create_new(struct net_pkt *pkt, u8_t icmp_type,
+			     u8_t icmp_code)
+{
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmpv4_access,
+					      struct net_icmp_hdr);
+	struct net_icmp_hdr *icmp_hdr;
+
+	icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data_new(pkt,
+							       &icmpv4_access);
+	if (!icmp_hdr) {
+		return -ENOBUFS;
+	}
+
+	icmp_hdr->type   = icmp_type;
+	icmp_hdr->code   = icmp_code;
+	icmp_hdr->chksum = 0;
+
+	return net_pkt_set_data(pkt, &icmpv4_access);
+}
+
 int net_icmpv4_finalize(struct net_pkt *pkt)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmpv4_access,
@@ -115,55 +135,64 @@ int net_icmpv4_finalize(struct net_pkt *pkt)
 static enum net_verdict icmpv4_handle_echo_request(struct net_pkt *pkt,
 						   struct net_ipv4_hdr *ip_hdr)
 {
-	/* Note that we send the same data packets back and just swap
-	 * the addresses etc.
-	 */
-	struct net_icmp_hdr icmp_hdr;
-	struct in_addr addr;
-	int ret;
+	struct net_pkt *reply = NULL;
 
-	ARG_UNUSED(ip_hdr);
-
-	NET_DBG("Received Echo Request from %s to %s",
-		log_strdup(net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src)),
-		log_strdup(net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->dst)));
-
-	net_ipaddr_copy(&addr, &NET_IPV4_HDR(pkt)->src);
-	net_ipaddr_copy(&NET_IPV4_HDR(pkt)->src,
-			net_if_ipv4_select_src_addr(net_pkt_iface(pkt),
-						    &addr));
 	/* If interface can not select src address based on dst addr
 	 * and src address is unspecified, drop the echo request.
 	 */
-	if (net_ipv4_is_addr_unspecified(&NET_IPV4_HDR(pkt)->src)) {
+	if (net_ipv4_is_addr_unspecified(&ip_hdr->src)) {
 		NET_DBG("DROP: src addr is unspecified");
-		return NET_DROP;
+		goto drop;
 	}
 
-	net_ipaddr_copy(&NET_IPV4_HDR(pkt)->dst, &addr);
+	NET_DBG("Received Echo Request from %s to %s",
+		log_strdup(net_sprint_ipv4_addr(&ip_hdr->src)),
+		log_strdup(net_sprint_ipv4_addr(&ip_hdr->dst)));
 
-	icmp_hdr.type = NET_ICMPV4_ECHO_REPLY;
-	icmp_hdr.code = 0;
+	net_pkt_cursor_init(pkt);
 
-	ret = net_icmpv4_set_hdr(pkt, &icmp_hdr);
-	if (ret < 0) {
-		return NET_DROP;
+	/* Cloning is faster here as echo request might come with data behind */
+	reply = net_pkt_clone_new(pkt, PKT_WAIT_TIME);
+	if (!reply) {
+		NET_DBG("DROP: No buffer");
+		goto drop;
 	}
 
-	net_ipv4_finalize(pkt, IPPROTO_ICMP);
+	/* Let's keep the original data,
+	 * we will only overwrite what is relevant
+	 */
+	net_pkt_set_overwrite(reply, true);
+
+	if (net_ipv4_create_new(reply, &ip_hdr->dst, &ip_hdr->src) ||
+	    icmpv4_create_new(reply, NET_ICMPV4_ECHO_REPLY, 0)) {
+		NET_DBG("DROP: wrong buffer");
+		goto drop;
+	}
+
+	net_pkt_cursor_init(reply);
+	net_ipv4_finalize_new(reply, IPPROTO_ICMP);
 
 	NET_DBG("Sending Echo Reply from %s to %s",
-		log_strdup(net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src)),
-		log_strdup(net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->dst)));
+		log_strdup(net_sprint_ipv4_addr(&ip_hdr->dst)),
+		log_strdup(net_sprint_ipv4_addr(&ip_hdr->src)));
 
-	if (net_send_data(pkt) < 0) {
-		net_stats_update_icmp_drop(net_pkt_iface(pkt));
-		return NET_DROP;
+	if (net_send_data(reply) < 0) {
+		goto drop;
 	}
 
-	net_stats_update_icmp_sent(net_pkt_iface(pkt));
+	net_stats_update_icmp_sent(net_pkt_iface(reply));
+
+	net_pkt_unref(pkt);
 
 	return NET_OK;
+drop:
+	if (reply) {
+		net_pkt_unref(reply);
+	}
+
+	net_stats_update_icmp_drop(net_pkt_iface(pkt));
+
+	return NET_DROP;
 }
 
 static struct net_buf *icmpv4_create(struct net_pkt *pkt, u8_t icmp_type,
@@ -179,26 +208,6 @@ static struct net_buf *icmpv4_create(struct net_pkt *pkt, u8_t icmp_type,
 	frag = net_pkt_write_u8_timeout(pkt, frag, pos, &pos, icmp_code,
 					PKT_WAIT_TIME);
 	return frag;
-}
-
-static int icmpv4_create_new(struct net_pkt *pkt, u8_t icmp_type,
-			     u8_t icmp_code)
-{
-	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmpv4_access,
-					      struct net_icmp_hdr);
-	struct net_icmp_hdr *icmp_hdr;
-
-	icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data_new(pkt,
-							       &icmpv4_access);
-	if (!icmp_hdr) {
-		return -ENOBUFS;
-	}
-
-	icmp_hdr->type   = icmp_type;
-	icmp_hdr->code   = icmp_code;
-	icmp_hdr->chksum = 0;
-
-	return net_pkt_set_data(pkt, &icmpv4_access);
 }
 
 int net_icmpv4_send_echo_request(struct net_if *iface,
