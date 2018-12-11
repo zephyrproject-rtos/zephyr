@@ -340,11 +340,9 @@ enum net_verdict net_icmpv4_input(struct net_pkt *pkt, bool bcast)
 {
 	struct net_icmpv4_handler *cb;
 	struct net_icmp_hdr icmp_hdr;
-	int ret;
 
-	ret = net_icmpv4_get_hdr(pkt, &icmp_hdr);
-	if (ret < 0) {
-		NET_DBG("NULL ICMPv4 header - dropping");
+	if (net_icmpv4_get_hdr(pkt, &icmp_hdr) < 0) {
+		NET_DBG("DROP: NULL ICMPv4 header");
 		return NET_DROP;
 	}
 
