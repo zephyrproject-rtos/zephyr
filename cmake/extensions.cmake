@@ -745,15 +745,15 @@ endfunction()
 # 2.2 Misc
 #
 # Parse a KConfig fragment (typically with extension .config) and
-# introduce all the symbols that are prefixed with 'CONFIG_' into the
+# introduce all the symbols that are prefixed with 'prefix' into the
 # CMake namespace
-function(import_kconfig kconfig_fragment)
-  # Parse the lines prefixed with 'CONFIG_' in ${kconfig_fragment}
+function(import_kconfig prefix kconfig_fragment)
+  # Parse the lines prefixed with 'prefix' in ${kconfig_fragment}
   file(
     STRINGS
     ${kconfig_fragment}
     DOT_CONFIG_LIST
-    REGEX "^CONFIG_"
+    REGEX "^${prefix}"
     ENCODING "UTF-8"
   )
 
