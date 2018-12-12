@@ -44,6 +44,8 @@ NOTICE: This file has been modified by Nordic Semiconductor ASA.
 
 /* Errata are only handled in secure mode since they usually need access to FICR. */
 #if !defined(NRF_TRUSTZONE_NONSECURE)
+    static bool uicr_HFXOSRC_erased(void);
+    static bool uicr_HFXOCNT_erased(void);
     static bool errata_6(void);
     static bool errata_14(void);
     static bool errata_15(void);
@@ -78,8 +80,8 @@ void SystemInit(void)
           #endif
         }
           
-        /* Make sure UICR->HFXOSRC is set */
-        if ((NRF_UICR_S->HFXOSRC & UICR_HFXOSRC_HFXOSRC_Msk) != UICR_HFXOSRC_HFXOSRC_TCXO) {
+        /* Set UICR->HFXOSRC and UICR->HFXOCNT to working defaults if UICR was erased */
+        if (uicr_HFXOSRC_erased() || uicr_HFXOCNT_erased()) {
           /* Wait for pending NVMC operations to finish */
           while (NRF_NVMC_S->READY != NVMC_READY_READY_Ready);
           
@@ -87,9 +89,17 @@ void SystemInit(void)
           NRF_NVMC_S->CONFIG = NVMC_CONFIG_WEN_Wen;
           while (NRF_NVMC_S->READY != NVMC_READY_READY_Ready);
           
-          /* Write new value to UICR->HFXOSRC */
-          NRF_UICR_S->HFXOSRC = (NRF_UICR_S->HFXOSRC & ~UICR_HFXOSRC_HFXOSRC_Msk) | UICR_HFXOSRC_HFXOSRC_TCXO;
-          while (NRF_NVMC_S->READY != NVMC_READY_READY_Ready);
+          if (uicr_HFXOSRC_erased()){
+            /* Write default value to UICR->HFXOSRC */
+            NRF_UICR_S->HFXOSRC = (NRF_UICR_S->HFXOSRC & ~UICR_HFXOSRC_HFXOSRC_Msk) | UICR_HFXOSRC_HFXOSRC_TCXO;
+            while (NRF_NVMC_S->READY != NVMC_READY_READY_Ready);
+          }
+          
+          if (uicr_HFXOCNT_erased()){
+            /* Write default value to UICR->HFXOCNT */
+            NRF_UICR_S->HFXOCNT = (NRF_UICR_S->HFXOCNT & ~UICR_HFXOCNT_HFXOCNT_Msk) | 0x20;
+            while (NRF_NVMC_S->READY != NVMC_READY_READY_Ready);
+          }
                 
           /* Enable read mode in NVMC */
           NRF_NVMC_S->CONFIG = NVMC_CONFIG_WEN_Ren;
@@ -133,6 +143,25 @@ void SystemInit(void)
 
 
 #if !defined(NRF_TRUSTZONE_NONSECURE)
+
+    bool uicr_HFXOCNT_erased()
+    {
+        if (NRF_UICR_S->HFXOCNT == 0xFFFFFFFFul) {
+            return true;
+        }
+        return false;
+    }
+    
+    
+    bool uicr_HFXOSRC_erased()
+    {
+        if ((NRF_UICR_S->HFXOSRC & UICR_HFXOSRC_HFXOSRC_Msk) != UICR_HFXOSRC_HFXOSRC_TCXO) {
+            return true;
+        }
+        return false;
+    }
+    
+
     bool errata_6()
     {
         if (*(uint32_t *)0x00FF0130 == 0x9ul){
