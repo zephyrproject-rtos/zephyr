@@ -1057,6 +1057,9 @@ static void vnd_get(struct bt_mesh_model *model,
 	struct net_buf_simple *msg = NET_BUF_SIMPLE(3 + 6 + 4);
 	struct vendor_state *state = model->user_data;
 
+	/* This is dummy response for demo purpose */
+	state->response = 0xA578FEB3;
+
 	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_3(0x04, CID_ZEPHYR));
 	net_buf_simple_add_le16(msg, state->current);
 	net_buf_simple_add_le32(msg, state->response);
@@ -1088,9 +1091,6 @@ static void vnd_set_unack(struct bt_mesh_model *model,
 	state->last_tx_addr = ctx->addr;
 	state->last_msg_timestamp = now;
 	state->current = current;
-
-	/* This is dummy response for demo purpose */
-	state->response = 0xA578FEB3;
 
 	printk("Vendor model message = %04x\n", state->current);
 
