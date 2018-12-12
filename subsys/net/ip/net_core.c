@@ -102,6 +102,11 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 		}
 	}
 
+	/* L2 has modified the buffer starting point, it is easier
+	 * to re-initialize the cursor rather than updating it.
+	 */
+	net_pkt_cursor_init(pkt);
+
 	/* IP version and header length. */
 	switch (NET_IPV6_HDR(pkt)->vtc & 0xf0) {
 #if defined(CONFIG_NET_IPV6)
@@ -296,6 +301,8 @@ int net_send_data(struct net_pkt *pkt)
 	}
 #endif
 
+	net_pkt_cursor_init(pkt);
+
 	status = check_ip_addr(pkt);
 	if (status < 0) {
 		return status;
@@ -382,6 +389,7 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 	}
 
 	net_pkt_set_overwrite(pkt, true);
+	net_pkt_cursor_init(pkt);
 
 	NET_DBG("prio %d iface %p pkt %p len %zu", net_pkt_priority(pkt),
 		iface, pkt, net_pkt_get_len(pkt));
