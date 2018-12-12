@@ -242,6 +242,7 @@ config I2C_7_IRQ_PRI
 config I2C_GECKO
 	bool "Gecko I2C driver"
 	depends on HAS_SILABS_GECKO
+	select SOC_GECKO_I2C
 	help
 	  Enable the SiLabs Gecko I2C bus driver.
 

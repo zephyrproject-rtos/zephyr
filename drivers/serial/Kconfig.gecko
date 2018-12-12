@@ -11,6 +11,7 @@ menuconfig UART_GECKO
 	depends on GPIO_GECKO
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
+	select SOC_GECKO_USART
 	help
 	  Enable the Gecko uart driver.
 

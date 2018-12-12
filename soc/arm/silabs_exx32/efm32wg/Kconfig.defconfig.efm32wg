@@ -8,9 +8,6 @@
 
 if SOC_SERIES_EFM32WG
 
-config GPIO
-	default y
-
 if GPIO
 
 config GPIO_GECKO

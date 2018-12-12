@@ -9,6 +9,7 @@ menuconfig GPIO_GECKO
 	bool "Gecko GPIO driver"
 	depends on GPIO && HAS_SILABS_GECKO
 	select HAS_DTS_GPIO
+	select SOC_GECKO_GPIO
 	help
 	  Enable the Gecko gpio driver.
 

@@ -24,10 +24,82 @@ config SOC_PART_NUMBER
 	  that you should not set directly. The part number selection choice defines
 	  the default value for this string.
 
+config SOC_GECKO_CORE
+	bool
+	help
+	  Set if the Core interrupt handling (CORE) HAL module is used.
+
+config SOC_GECKO_CRYOTIMER
+	bool
+	help
+	  Set if the Ultra Low Energy Timer/Counter (CRYOTIMER) HAL module is used.
+
 config SOC_GECKO_EMU
 	bool
 	help
-	  Set if the energy management unit (EMU) is used.
+	  Set if the Energy Management Unit (EMU) HAL module is used.
+
+config SOC_GECKO_GPIO
+	bool
+	help
+	  Set if the General Purpose Input/Output (GPIO) HAL module is used.
+
+config SOC_GECKO_I2C
+	bool
+	help
+	  Set if the Inter-Integrated Circuit Interface (I2C) HAL module is used.
+
+config SOC_GECKO_LETIMER
+	bool
+	help
+	  Set if the Low Energy Timer (LETIMER) HAL module is used.
+
+config SOC_GECKO_LEUART
+	bool
+	help
+	  Set if the Low Energy Universal Asynchronous Receiver/Transmitter (LEUART)
+	  HAL module is used.
+
+config SOC_GECKO_MSC
+	bool
+	help
+	  Set if the Memory System Controller (MSC) HAL module is used.
+
+config SOC_GECKO_PRS
+	bool
+	help
+	  Set if the Peripheral Reflex System (PRS) HAL module is used.
+
+config SOC_GECKO_RMU
+	bool
+	help
+	  Set if the Reset Management Unit (RMU) HAL module is used.
+
+config SOC_GECKO_RTC
+	bool
+	help
+	  Set if the Real Time Counter (RTC) HAL module is used.
+
+config SOC_GECKO_RTCC
+	bool
+	help
+	  Set if the Real Time Counter and Calendar (RTCC) HAL module is used.
+
+config SOC_GECKO_TIMER
+	bool
+	help
+	  Set if the Timer/Counter (TIMER) HAL module is used.
+
+config SOC_GECKO_USART
+	bool
+	help
+	  Set if the Universal Synchronous Asynchronous Receiver/Transmitter (USART)
+	  HAL module is used.
+
+config SOC_GECKO_WDOG
+	bool
+	help
+	  Set if the Watchdog Timer (WDOG) HAL module is used.
 
 config SOC_GECKO_EMU_DCDC
 	bool "Enable SoC DC/DC regulator"
@@ -54,12 +126,12 @@ choice SOC_GECKO_EMU_DCDC_MODE
 		bool "Bypass"
 endchoice
 
-config HAS_CMU
+config SOC_GECKO_CMU
 	bool
 	help
 	  Set if the clock management unit (CMU) is present in the SoC.
 
-if HAS_CMU
+if SOC_GECKO_CMU
 
 choice
 	prompt "High Frequency Clock Selection"
@@ -96,5 +168,5 @@ config CMU_LFXO_FREQ
 	  Set the external low frequency oscillator frequency in Hz. This should be set by the
 	  board's defconfig.
 
-endif # HAS_CMU
+endif # SOC_GECKO_CMU
 endif # SOC_FAMILY_EXX32
