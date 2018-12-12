@@ -1715,7 +1715,7 @@ static int ztls_poll_update_ctx(struct net_context *ctx,
 			}
 
 			/* EAGAIN might happen during or just after
-			 * DLTS handshake.
+			 * DTLS handshake.
 			 */
 			if (recv(pfd->fd, NULL, 0, ZSOCK_MSG_DONTWAIT) < 0 &&
 			    errno != EAGAIN) {
