@@ -13,11 +13,12 @@ from shutil import copyfile, copytree
 import json
 from pprint import  pprint
 
+repository_path = os.getcwd()
 if "ZEPHYR_BASE" not in os.environ:
     logging.warn("$ZEPHYR_BASE environment variable undefined.\n")
-    repository_path = os.getcwd()
+    zephyr_path = repository_path
 else:
-    repository_path = os.environ['ZEPHYR_BASE']
+    zephyr_path = os.environ['ZEPHYR_BASE']
 
 logger = None
 DOCS_WARNING_FILE = "doc.warnings"
@@ -30,7 +31,7 @@ sh_special_args = {
 
 # Put the Kconfiglib path first to make sure no local Kconfiglib version is
 # used
-sys.path.insert(0, os.path.join(repository_path, "scripts/kconfig"))
+sys.path.insert(0, os.path.join(zephyr_path, "scripts/kconfig"))
 import kconfiglib
 
 
@@ -76,7 +77,7 @@ class CheckPatch(ComplianceTest):
         self.prepare()
         diff = subprocess.Popen(('git', 'diff', '%s' %(self.commit_range)), stdout=subprocess.PIPE)
         try:
-            output = subprocess.check_output(('%s/scripts/checkpatch.pl' %repository_path,
+            output = subprocess.check_output(('%s/scripts/checkpatch.pl' %zephyr_path,
                 '--mailback', '--no-tree', '-'), stdin=diff.stdout,
                 stderr=subprocess.STDOUT, shell=True)
 
@@ -95,7 +96,7 @@ class KconfigCheck(ComplianceTest):
         self.prepare()
 
         # Look up Kconfig files relative to ZEPHYR_BASE
-        os.environ["srctree"] = repository_path
+        os.environ["srctree"] = zephyr_path
 
         # Parse the entire Kconfig tree, to make sure we see all symbols
         os.environ["SOC_DIR"] = "soc/"
