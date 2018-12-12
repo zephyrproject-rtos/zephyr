@@ -55,8 +55,6 @@ struct generic_level_state {
 
 struct generic_onpowerup_state {
 	u8_t onpowerup;
-	u8_t last_tid;
-	u16_t last_tx_addr;
 };
 
 struct gen_def_trans_time_state {
