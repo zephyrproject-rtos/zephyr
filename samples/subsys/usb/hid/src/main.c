@@ -99,10 +99,17 @@ static void idle_cb(u16_t report_id)
 	LOG_DBG("Idle callback: wrote %d bytes with ret %d", wrote, ret);
 }
 
+static void protocol_cb(u8_t protocol)
+{
+	LOG_DBG("New protocol: %s", protocol == HID_PROTOCOL_BOOT ?
+		"boot" : "report");
+}
+
 static const struct hid_ops ops = {
 	.int_in_ready = in_ready_cb,
 	.status_cb = status_cb,
 	.on_idle = idle_cb,
+	.protocol_change = protocol_cb,
 };
 
 void main(void)
