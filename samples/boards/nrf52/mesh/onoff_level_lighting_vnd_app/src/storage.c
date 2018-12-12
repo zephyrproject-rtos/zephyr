@@ -89,7 +89,7 @@ static int ps_set(int argc, char **argv, void *val_ctx)
 {
 	int len = 0;
 
-	if (argc != 1) {
+	if (argc == 1) {
 		if (!strcmp(argv[0], "rc")) {
 			len = settings_val_read_cb(val_ctx, &reset_counter,
 						   sizeof(reset_counter));
