@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2017-2018 Linaro Limited
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,14 +31,21 @@
 extern "C" {
 #endif
 
+struct timeval;
+
 struct zsock_pollfd {
 	int fd;
 	short events;
 	short revents;
 };
 
+typedef struct zsock_fd_set {
+	u32_t bitset[(CONFIG_POSIX_MAX_FDS + 31) / 32];
+} zsock_fd_set;
+
 /* Values are compatible with Linux */
 #define ZSOCK_POLLIN 1
+#define ZSOCK_POLLPRI 2
 #define ZSOCK_POLLOUT 4
 #define ZSOCK_POLLERR 8
 #define ZSOCK_POLLHUP 0x10
@@ -153,6 +160,19 @@ __syscall int zsock_fcntl(int sock, int cmd, int flags);
 
 __syscall int zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout);
 
+/* select() API is inefficient, and implemented as inefficient wrapper on
+ * top of poll(). Avoid select(), use poll directly().
+ */
+int zsock_select(int nfds, zsock_fd_set *readfds, zsock_fd_set *writefds,
+		 zsock_fd_set *exceptfds, struct timeval *timeout);
+
+#define ZSOCK_FD_SETSIZE (sizeof(((zsock_fd_set *)0)->bitset) * 8)
+
+void ZSOCK_FD_ZERO(zsock_fd_set *set);
+int ZSOCK_FD_ISSET(int fd, zsock_fd_set *set);
+void ZSOCK_FD_CLR(int fd, zsock_fd_set *set);
+void ZSOCK_FD_SET(int fd, zsock_fd_set *set);
+
 int zsock_getsockopt(int sock, int level, int optname,
 		     void *optval, socklen_t *optlen);
 
@@ -171,7 +191,11 @@ int zsock_getaddrinfo(const char *host, const char *service,
 		      struct zsock_addrinfo **res);
 
 #if defined(CONFIG_NET_SOCKETS_POSIX_NAMES)
+
 #define pollfd zsock_pollfd
+#define fd_set zsock_fd_set
+#define FD_SETSIZE ZSOCK_FD_SETSIZE
+
 #if !defined(CONFIG_NET_SOCKETS_OFFLOAD)
 static inline int socket(int family, int type, int proto)
 {
@@ -233,6 +257,33 @@ static inline ssize_t recvfrom(int sock, void *buf, size_t max_len, int flags,
 static inline int poll(struct zsock_pollfd *fds, int nfds, int timeout)
 {
 	return zsock_poll(fds, nfds, timeout);
+}
+
+static inline int select(int nfds, zsock_fd_set *readfds,
+			 zsock_fd_set *writefds, zsock_fd_set *exceptfds,
+			 struct timeval *timeout)
+{
+	return zsock_select(nfds, readfds, writefds, exceptfds, timeout);
+}
+
+static inline void FD_ZERO(zsock_fd_set *set)
+{
+	ZSOCK_FD_ZERO(set);
+}
+
+static inline int FD_ISSET(int fd, zsock_fd_set *set)
+{
+	return ZSOCK_FD_ISSET(fd, set);
+}
+
+static inline void FD_CLR(int fd, zsock_fd_set *set)
+{
+	ZSOCK_FD_CLR(fd, set);
+}
+
+static inline void FD_SET(int fd, zsock_fd_set *set)
+{
+	ZSOCK_FD_SET(fd, set);
 }
 
 static inline int getsockopt(int sock, int level, int optname,

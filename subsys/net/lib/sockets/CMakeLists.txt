@@ -4,6 +4,7 @@ if(NOT CONFIG_NET_SOCKETS_OFFLOAD)
 zephyr_sources(
   getaddrinfo.c
   sockets.c
+  sockets_select.c
   )
 zephyr_sources_ifdef(CONFIG_NET_SOCKETS_SOCKOPT_TLS sockets_tls.c)
 endif()
