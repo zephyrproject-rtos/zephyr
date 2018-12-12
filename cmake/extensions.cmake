@@ -744,20 +744,21 @@ endfunction()
 
 # 2.2 Misc
 #
-# Parse a KConfig formatted file (typically named *.config) and
-# introduce all the CONF_ variables into the CMake namespace
-function(import_kconfig config_file)
-  # Parse the lines prefixed with CONFIG_ in ${config_file}
+# Parse a KConfig fragment (typically with extension .config) and
+# introduce all the symbols that are prefixed with 'CONFIG_' into the
+# CMake namespace
+function(import_kconfig kconfig_fragment)
+  # Parse the lines prefixed with 'CONFIG_' in ${kconfig_fragment}
   file(
     STRINGS
-    ${config_file}
+    ${kconfig_fragment}
     DOT_CONFIG_LIST
     REGEX "^CONFIG_"
     ENCODING "UTF-8"
   )
 
   foreach (CONFIG ${DOT_CONFIG_LIST})
-    # CONFIG looks like: CONFIG_NET_BUF=y
+    # CONFIG could look like: CONFIG_NET_BUF=y
 
     # Match the first part, the variable name
     string(REGEX MATCH "[^=]+" CONF_VARIABLE_NAME ${CONFIG})
