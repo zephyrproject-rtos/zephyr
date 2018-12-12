@@ -194,6 +194,7 @@ if(CONFIG_HAS_DTS)
   endif()
 
   import_kconfig(CONFIG_ ${GENERATED_DTS_BOARD_CONF})
+  import_kconfig(DT_     ${GENERATED_DTS_BOARD_CONF})
 
 else()
   file(WRITE ${GENERATED_DTS_BOARD_H} "/* WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY! */")
