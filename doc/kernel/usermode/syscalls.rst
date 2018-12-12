@@ -299,6 +299,14 @@ Several macros exist to validate arguments:
   instance, to validate the GPIO driver, one could use the
   :c:macro:`Z_SYSCALL_DRIVER_GPIO()` macro.
 
+* :c:macro:`Z_SYSCALL_SPECIFIC_DRIVER()` is a runtime check to verify that
+  a provided pointer is a valid instance of a specific device driver, that
+  the calling thread has permissions on it, and that the driver has been
+  initialized. It does this by checking the init function pointer that
+  is stored within the driver instance and ensuring that it matches the
+  provided value, which should be the address of the specific driver's
+  init function.
+
 If any check fails, the macros will return a nonzero value. The macro
 :c:macro:`Z_OOPS()` can be used to induce a kernel oops which will kill the
 calling thread. This is done instead of returning some error condition to
