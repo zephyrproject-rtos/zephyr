@@ -338,12 +338,21 @@ static int dma_stm32_config_devcpy(struct device *dev, u32_t id,
 	return 0;
 }
 
-static int dma_stm32_config_memcpy(struct device *dev, u32_t id)
+static int dma_stm32_config_memcpy(struct device *dev, u32_t id,
+				   struct dma_config *config)
 {
 	struct dma_stm32_device *ddata = dev->driver_data;
 	struct dma_stm32_stream_reg *regs = &ddata->stream[id].regs;
+	u32_t src_bus_width  = dma_width_index(config->source_data_size);
+	u32_t dst_bus_width  = dma_width_index(config->dest_data_size);
+	u32_t src_burst_size = dma_burst_index(config->source_burst_length);
+	u32_t dst_burst_size = dma_burst_index(config->dest_burst_length);
 
 	regs->scr = DMA_STM32_SCR_DIR(DMA_STM32_MEM_TO_MEM) |
+		DMA_STM32_SCR_PSIZE(src_bus_width) |
+		DMA_STM32_SCR_MSIZE(dst_bus_width) |
+		DMA_STM32_SCR_PBURST(src_burst_size) |
+		DMA_STM32_SCR_MBURST(dst_burst_size) |
 		DMA_STM32_SCR_MINC |		/* Memory increment mode */
 		DMA_STM32_SCR_PINC |		/* Peripheral increment mode */
 		DMA_STM32_SCR_TCIE |		/* Transfer comp IRQ enable */
@@ -398,7 +407,7 @@ static int dma_stm32_config(struct device *dev, u32_t id,
 	}
 
 	if (stream->direction == MEMORY_TO_MEMORY) {
-		ret = dma_stm32_config_memcpy(dev, id);
+		ret = dma_stm32_config_memcpy(dev, id, config);
 	} else {
 		ret = dma_stm32_config_devcpy(dev, id, config);
 	}
