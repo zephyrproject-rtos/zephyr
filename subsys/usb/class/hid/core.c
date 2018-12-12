@@ -44,8 +44,13 @@ USBD_CLASS_DESCR_DEFINE(primary) struct usb_hid_config hid_cfg = {
 		.bAlternateSetting = 0,
 		.bNumEndpoints = 1,
 		.bInterfaceClass = HID_CLASS,
+#ifdef CONFIG_USB_HID_BOOT_PROTOCOL
+		.bInterfaceSubClass = 1,
+		.bInterfaceProtocol = CONFIG_USB_HID_PROTOCOL_CODE,
+#else
 		.bInterfaceSubClass = 0,
 		.bInterfaceProtocol = 0,
+#endif
 		.iInterface = 0,
 	},
 	.if0_hid = {
@@ -95,6 +100,9 @@ static struct hid_device_info {
 	bool idle_id_report;
 	u8_t idle_rate[CONFIG_USB_HID_REPORTS + 1];
 #endif
+#ifdef CONFIG_USB_HID_BOOT_PROTOCOL
+	u8_t protocol;
+#endif
 } hid_device;
 
 static int hid_on_get_idle(struct usb_setup_packet *setup, s32_t *len,
@@ -133,11 +141,22 @@ static int hid_on_get_report(struct usb_setup_packet *setup, s32_t *len,
 static int hid_on_get_protocol(struct usb_setup_packet *setup, s32_t *len,
 			       u8_t **data)
 {
-	LOG_DBG("Get Protocol callback");
+#ifdef CONFIG_USB_HID_BOOT_PROTOCOL
+	if (setup->wValue) {
+		LOG_ERR("wValue should be 0");
+		return -ENOTSUP;
+	}
 
-	/* TODO: Do something. */
+	u32_t size = sizeof(hid_device.protocol);
 
+	LOG_DBG("Get Protocol callback, protocol: %d", hid_device.protocol);
+
+	*data = &hid_device.protocol;
+	len = &size;
+	return 0;
+#else
 	return -ENOTSUP;
+#endif
 }
 
 static int hid_on_set_idle(struct usb_setup_packet *setup, s32_t *len,
@@ -205,11 +224,28 @@ static int hid_on_set_report(struct usb_setup_packet *setup, s32_t *len,
 static int hid_on_set_protocol(struct usb_setup_packet *setup, s32_t *len,
 			       u8_t **data)
 {
-	LOG_DBG("Set Protocol callback");
+#ifdef CONFIG_USB_HID_BOOT_PROTOCOL
+	u16_t protocol = sys_le16_to_cpu(setup->wValue);
 
-	/* TODO: Do something. */
+	if (protocol > HID_PROTOCOL_REPORT) {
+		LOG_ERR("Unsupported protocol: %u", protocol);
+		return -ENOTSUP;
+	}
 
+	LOG_DBG("Set Protocol callback, protocol: %u", protocol);
+
+	if (hid_device.protocol != protocol) {
+		hid_device.protocol = protocol;
+
+		if (hid_device.ops && hid_device.ops->protocol_change) {
+			hid_device.ops->protocol_change(protocol);
+		}
+	}
+
+	return 0;
+#else
 	return -ENOTSUP;
+#endif
 }
 
 static void usb_set_hid_report_size(u16_t size)
@@ -264,6 +300,9 @@ static void hid_status_cb(enum usb_dc_status_code status, const u8_t *param)
 		break;
 	case USB_DC_RESET:
 		LOG_DBG("USB device reset detected");
+#ifdef CONFIG_USB_HID_BOOT_PROTOCOL
+		hid_device.protocol = HID_PROTOCOL_REPORT;
+#endif
 #ifdef CONFIG_USB_DEVICE_SOF
 		hid_clear_idle_ctx();
 #endif
