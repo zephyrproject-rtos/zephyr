@@ -6,10 +6,6 @@ toolchain:
   - zephyr
   - xtools
 ram: 128
-supported:
-  - i2c
-  - spi
-  - gpio
 testing:
   ignore_tags:
     - net
