@@ -27,9 +27,9 @@ typedef struct pll_conf {
 
 /* the following configuration is based on Fin = 16 Mhz */
 static const pll_conf_t pll_configuration[] = {
-	{100, PLL_CONF_VAL(1, 25, 2)}, /* 100 Mhz */
+	{100, PLL_CONF_VAL(1, 25, 2)},  /* 100 Mhz */
 	{50,  PLL_CONF_VAL(1, 25, 3)},  /* 50 Mhz */
-	{150, PLL_CONF_VAL(4, 75, 1)}, /* 150 Mhz */
+	{150, PLL_CONF_VAL(4, 75, 1)},  /* 150 Mhz */
 	{75,  PLL_CONF_VAL(4, 75, 2)},  /* 75 Mhz */
 	{25,  PLL_CONF_VAL(2, 25, 3)},  /* 25 Mhz */
 	{72,  PLL_CONF_VAL(8, 144, 2)}, /* 72 Mhz */
@@ -150,7 +150,6 @@ void arc_iot_dio_clk_divisor(uint8_t div)
 {
 	sysconf_reg_ptr->SDIO_REFCLK_DIV;
 }
-
 
 void arc_iot_spi_master_clk_divisor(uint8_t id, uint8_t div)
 {
