@@ -382,7 +382,10 @@ class BinaryHandler(Handler):
 
         if shutil.which("valgrind") and self.valgrind:
             command = ["valgrind", "--error-exitcode=2",
-                       "--leak-check=full"] + command
+                       "--leak-check=full",
+                       "--suppressions="+ZEPHYR_BASE+"/scripts/valgrind.supp",
+                       "--log-file="+self.outdir+"/valgrind.log"
+                       ] + command
 
         with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as proc:
             t = threading.Thread(target=self._output_reader, args=(proc, harness, ))
