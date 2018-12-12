@@ -13,6 +13,7 @@ config SOC_SERIES_EFM32HG
 	select SYS_POWER_LOW_POWER_STATE_SUPPORTED
 	select CPU_HAS_SYSTICK
 	select HAS_SILABS_GECKO
-	select HAS_CMU
+	select SOC_GECKO_CMU
+	select SOC_GECKO_GPIO
 	help
 	  Enable support for EFM32 Happy Gecko MCU series

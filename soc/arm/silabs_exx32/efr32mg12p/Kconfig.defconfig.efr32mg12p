@@ -8,9 +8,6 @@
 
 if SOC_SERIES_EFR32MG12P
 
-config GPIO
-	default y
-
 if GPIO
 
 config GPIO_GECKO
