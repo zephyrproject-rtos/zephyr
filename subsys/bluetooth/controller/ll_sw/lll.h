@@ -79,7 +79,7 @@ struct evt_hdr {
 };
 
 struct ull_hdr {
-	u8_t ref;
+	u8_t ref; /* Number of ongoing (between Prepare and Done) events */
 	void (*disabled_cb)(void *param);
 	void *disabled_param;
 };
@@ -108,17 +108,22 @@ struct lll_event {
 	lll_is_abort_cb_t        is_abort_cb;
 	lll_abort_cb_t           abort_cb;
 	int                      prio;
-	u8_t			 is_resume:1;
-	u8_t			 is_aborted:1;
+	u8_t                     is_resume:1;
+	u8_t                     is_aborted:1;
 };
 
 enum node_rx_type {
+	/* Unused */
 	NODE_RX_TYPE_NONE = 0x00,
+	/* Signals completion of RX event */
 	NODE_RX_TYPE_EVENT_DONE = 0x01,
+	/* Signals arrival of RX Data Channel payload */
 	NODE_RX_TYPE_DC_PDU = 0x02,
+	/* Signals release of RX Data Channel payload */
 	NODE_RX_TYPE_DC_PDU_RELEASE = 0x03,
 
 #if defined(CONFIG_BT_OBSERVER)
+	/* Advertisement report from scanning */
 	NODE_RX_TYPE_REPORT = 0x04,
 #endif /* CONFIG_BT_OBSERVER */
 
@@ -170,6 +175,7 @@ enum node_rx_type {
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 };
 
+/* Header of node_rx_pdu */
 struct node_rx_hdr {
 	union {
 		void        *next;
@@ -181,6 +187,9 @@ struct node_rx_hdr {
 	u16_t               handle;
 };
 
+/* Footer of node_rx_pdu.
+ * TODO: Eliminate footer (move contents to header) to avoid pointer arithmetic
+ */
 struct node_rx_ftr {
 	void  *param;
 	void  *extra;
@@ -192,6 +201,10 @@ struct node_rx_ftr {
 struct node_rx_pdu {
 	struct node_rx_hdr hdr;
 	u8_t               pdu[0];
+	/*
+	 * Footer follows here, but can not be part of this struct due to
+	 * flexible pdu member. Footer obtained by pointer arithmetic
+	 */
 };
 
 enum {
