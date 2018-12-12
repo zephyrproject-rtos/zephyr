@@ -55,7 +55,7 @@ typedef struct sysconf_reg {
 /* CLKSEL_CONST is not described in spec. */
 #define CLKSEL_CONST	(0x5A690000)
 #define CLKSEL_EXT_16M	(0 | CLKSEL_CONST)
-#define CLKSEL_PLL	(1 | CLKSEL_CONST)
+#define CLKSEL_PLL		(1 | CLKSEL_CONST)
 #define CLKSEL_EXT_32K	(2 | CLKSEL_CONST)
 
 #define PLLCON_BIT_OFFSET_N 		0
@@ -140,7 +140,6 @@ typedef struct sysconf_reg {
 
 extern void arc_iot_pll_conf_reg(uint32_t val);
 extern int32_t arc_iot_pll_fout_config(uint32_t freq);
-
 extern void arc_iot_ahb_clk_divisor(uint8_t div);
 extern void arc_iot_ahb_clk_enable(uint8_t dev);
 extern void arc_iot_ahb_clk_disable(uint8_t dev);

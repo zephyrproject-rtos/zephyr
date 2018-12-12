@@ -6,7 +6,7 @@
  */
 
 /**
- * This module provides routines to initialize and support board-level hardware
+ * This module provides routines to initialize and support soc-level hardware
  * for the IoT Development Kit board.
  *
  */
@@ -19,7 +19,7 @@ static int arc_iot_init(struct device *dev)
 	ARG_UNUSED(dev);
 
 	if (arc_iot_pll_fout_config(
-			CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC/1000000) < 0) {
+			CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / 1000000) < 0) {
 		return -1;
 	}
 
