@@ -193,7 +193,7 @@ if(CONFIG_HAS_DTS)
     message(FATAL_ERROR "command failed with return code: ${ret}")
   endif()
 
-  import_kconfig(${GENERATED_DTS_BOARD_CONF})
+  import_kconfig(CONFIG_ ${GENERATED_DTS_BOARD_CONF})
 
 else()
   file(WRITE ${GENERATED_DTS_BOARD_H} "/* WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY! */")

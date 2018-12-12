@@ -177,7 +177,7 @@ foreach (name ${cache_variable_names})
 endforeach()
 
 # Parse the lines prefixed with CONFIG_ in the .config file from Kconfig
-import_kconfig(${DOTCONFIG})
+import_kconfig(CONFIG_ ${DOTCONFIG})
 
 # Re-introduce the CLI Kconfig symbols that survived
 foreach (name ${cache_variable_names})
