@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-#define SHELL_MSG_SPECIFY_SUBCOMMAND	"Please specify a subcommand.\r\n"
+#define SHELL_MSG_SPECIFY_SUBCOMMAND	"Please specify a subcommand.\n"
 
 #define SHELL_DEFAULT_TERMINAL_WIDTH	(80u) /* Default PuTTY width. */
 #define SHELL_DEFAULT_TERMINAL_HEIGHT	(24u) /* Default PuTTY height. */

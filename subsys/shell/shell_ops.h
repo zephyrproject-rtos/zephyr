@@ -59,7 +59,7 @@ static inline void cursor_restore(const struct shell *shell)
  */
 static inline void cursor_next_line_move(const struct shell *shell)
 {
-	shell_raw_fprintf(shell->fprintf_ctx, "\r\n");
+	shell_raw_fprintf(shell->fprintf_ctx, "\n");
 }
 
 /* Function sends 1 character to the shell instance. */
