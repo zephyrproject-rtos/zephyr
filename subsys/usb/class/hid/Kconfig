@@ -80,4 +80,13 @@ config USB_HID_PROTOCOL_CODE
 
 endif # USB_HID_BOOT_PROTOCOL
 
+config USB_HID_PHYSICAL_DESCRIPTORS
+	int "HID physical descriptors in the instance"
+	default 0
+	range 0 255
+	help
+	  Number of HID physical descriptors in the instance. This number does not
+	  include the header of physical descriptors (see Chapter 6.2.3 of
+	  Device Class Definition for Human Interface Devices).
+
 endif # USB_DEVICE_HID

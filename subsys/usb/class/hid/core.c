@@ -61,17 +61,21 @@ struct usb_hid_config {
 #endif
 
 /* Descriptor length needs to be set after initialization */
-#define INITIALIZER_IF_HID						\
-	{								\
-		.bLength = sizeof(struct usb_hid_descriptor),		\
-		.bDescriptorType = USB_HID_DESC,			\
-		.bcdHID = sys_cpu_to_le16(USB_1_1),			\
-		.bCountryCode = 0,					\
-		.bNumDescriptors = 1,					\
-		.subdesc[0] = {						\
-			.bDescriptorType = USB_HID_REPORT_DESC,		\
-			.wDescriptorLength = 0,				\
-		},							\
+#define INITIALIZER_IF_HID							\
+	{									\
+		.bLength = sizeof(struct usb_hid_descriptor),			\
+		.bDescriptorType = USB_HID_DESC,				\
+		.bcdHID = sys_cpu_to_le16(USB_1_1),				\
+		.bCountryCode = 0,						\
+#if IS_ENABLED(CONFIG_USB_HID_PHYSICAL_DESCRIPTORS)				\
+		.bNumDescriptors = CONFIG_USB_HID_PHYSICAL_DESCRIPTORS + 1,	\
+#else										\
+		.bNumDescriptors = 1,						\
+#endif										\
+		.subdesc[0] = {							\
+			.bDescriptorType = USB_HID_REPORT_DESC,			\
+			.wDescriptorLength = 0,					\
+		},								\
 	}
 
 #define INITIALIZER_IF_EP(addr, attr, mps)				\
@@ -117,6 +121,11 @@ struct usb_hid_config {
 struct hid_device_info {
 	const u8_t *report_desc;
 	size_t report_size;
+#if IS_ENABLED(CONFIG_USB_HID_PHYSICAL_DESCRIPTORS)
+	const u8_t *physical_desc[CONFIG_USB_HID_PHYSICAL_DESCRIPTORS + 1];
+	size_t physical_size[CONFIG_USB_HID_PHYSICAL_DESCRIPTORS + 1];
+	u8_t physical_header;
+#endif
 	const struct hid_ops *ops;
 #ifdef CONFIG_USB_DEVICE_SOF
 	u32_t sof_cnt[CONFIG_USB_HID_REPORTS + 1];
@@ -541,6 +550,33 @@ static int hid_custom_handle_req(struct usb_setup_packet *setup,
 			}
 			*data = (u8_t *)dev_data->report_desc;
 			break;
+#if IS_ENABLED(CONFIG_USB_HID_PHYSICAL_DESCRIPTORS)
+		case HID_CLASS_DESCRIPTOR_PHYSICAL:
+		{
+			u8_t phy_id = sys_le16_to_cpu(setup->wValue) & 0xFF;
+
+			if (phy_id > CONFIG_USB_HID_PHYSICAL_DESCRIPTORS) {
+				LOG_ERR("Physical Descriptor id out of "
+					"range: %d", phy_id);
+				return  -ENOTSUP;
+			}
+
+			if (phy_id == 0) {
+				LOG_DBG("Return Physical Header");
+				*data = &hid_device.physical_header;
+				*len = min(*len,
+					   sizeof(hid_device.physical_header));
+			} else {
+				LOG_DBG("Return Physical Descriptor %d",
+					phy_id);
+				*data =
+				(u8_t *)hid_device.physical_desc[phy_id];
+				*len = min(*len,
+					   hid_device.physical_size[phy_id]);
+			}
+			break;
+		}
+#endif
 		default:
 			return -ENOTSUP;
 		}
@@ -702,6 +738,28 @@ void usb_hid_register_device(struct device *dev, const u8_t *desc,
 	LOG_DBG("Added dev_data %p dev %p to devlist %p", dev_data, dev,
 		&usb_hid_devlist);
 }
+
+#if IS_ENABLED(CONFIG_USB_HID_PHYSICAL_DESCRIPTORS)
+void usb_hid_physical_desc_add(u8_t id, const u8_t *desc, size_t size)
+{
+	__ASSERT(id != 0, "ID 0 is reserved for header");
+	__ASSERT(id <= CONFIG_USB_HID_PHYSICAL_DESCRIPTORS,
+		 "ID is higher than number of physical descriptors");
+
+	hid_device.physical_desc[id] = desc;
+	hid_device.physical_size[id] = size;
+
+	hid_cfg.if0_hid.subdesc[id].bDescriptorType =
+		HID_CLASS_DESCRIPTOR_PHYSICAL;
+	sys_put_le16(size,
+		(u8_t *)&(hid_cfg.if0_hid.subdesc[id].wDescriptorLength));
+}
+
+void usb_hid_physical_header_add(u8_t header)
+{
+	hid_device.physical_header = header;
+}
+#endif
 
 int hid_int_ep_write(const struct device *dev, const u8_t *data, u32_t data_len,
 		     u32_t *bytes_ret)

@@ -38,13 +38,19 @@ struct usb_hid_descriptor {
 	 * Specification says at least one Class Descriptor needs to
 	 * be present (Report Descriptor).
 	 */
+#if IS_ENABLED(CONFIG_USB_HID_PHYSICAL_DESCRIPTORS)
+	struct usb_hid_class_subdescriptor
+		subdesc[CONFIG_USB_HID_PHYSICAL_DESCRIPTORS + 1];
+#else
 	struct usb_hid_class_subdescriptor subdesc[1];
+#endif
 } __packed;
 
 /* HID Class Descriptor Types */
 
 #define HID_CLASS_DESCRIPTOR_HID	(REQTYPE_TYPE_CLASS << 5 | 0x01)
 #define HID_CLASS_DESCRIPTOR_REPORT	(REQTYPE_TYPE_CLASS << 5 | 0x02)
+#define HID_CLASS_DESCRIPTOR_PHYSICAL	(REQTYPE_TYPE_CLASS << 5 | 0x03)
 
 /* HID Class Specific Requests */
 
@@ -434,6 +440,24 @@ enum hid_kbd_led {
 /* Register HID device */
 void usb_hid_register_device(struct device *dev, const u8_t *desc, size_t size,
 			     const struct hid_ops *op);
+
+#if IS_ENABLED(CONFIG_USB_HID_PHYSICAL_DESCRIPTORS)
+/**
+ * @brief Add a header for physical descriptors
+ * @param header	Header of physical descriptors (see Chapter 6.2.3 of
+ *			Device Class Definition for Human Interface Devices).
+ */
+void usb_hid_physical_header_add(u8_t header);
+
+/**
+ * @brief Add a physical descriptor
+ * @param id	Physical descriptor's ID. Note that ID = 0 is reserved for
+ *		the header.
+ * @param desc	Pointer to descriptor values.
+ * @param size	Size of the descriptor.
+ */
+void usb_hid_physical_desc_add(u8_t id, const u8_t *desc, size_t size);
+#endif
 
 /* Write to hid interrupt endpoint */
 int hid_int_ep_write(const struct device *dev, const u8_t *data, u32_t data_len,
