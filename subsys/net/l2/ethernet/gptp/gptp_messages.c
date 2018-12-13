@@ -188,6 +188,7 @@ struct net_pkt *gptp_prepare_sync(int port)
 
 	pkt = setup_gptp_frame(iface);
 	if (!pkt) {
+		NET_DBG("Cannot get gPTP frame");
 		return NULL;
 	}
 
@@ -244,6 +245,7 @@ struct net_pkt *gptp_prepare_follow_up(int port, struct net_pkt *sync)
 
 	pkt = setup_gptp_frame(iface);
 	if (!pkt) {
+		NET_DBG("Cannot get gPTP frame");
 		return NULL;
 	}
 
@@ -297,6 +299,7 @@ struct net_pkt *gptp_prepare_pdelay_req(int port)
 
 	pkt = setup_gptp_frame(iface);
 	if (!pkt) {
+		NET_DBG("Cannot get gPTP frame");
 		return NULL;
 	}
 
@@ -354,6 +357,7 @@ struct net_pkt *gptp_prepare_pdelay_resp(int port,
 
 	pkt = setup_gptp_frame(iface);
 	if (!pkt) {
+		NET_DBG("Cannot get gPTP frame");
 		return NULL;
 	}
 
@@ -416,6 +420,7 @@ struct net_pkt *gptp_prepare_pdelay_follow_up(int port,
 
 	pkt = setup_gptp_frame(iface);
 	if (!pkt) {
+		NET_DBG("Cannot get gPTP frame");
 		return NULL;
 	}
 
@@ -485,6 +490,7 @@ struct net_pkt *gptp_prepare_announce(int port)
 
 	pkt = setup_gptp_frame(iface);
 	if (!pkt) {
+		NET_DBG("Cannot get gPTP frame");
 		return NULL;
 	}
 
