@@ -56,12 +56,6 @@
 			label = "SPI_2";
 		};
 
-		otgfs_phy: otgfs_phy {
-			compatible = "usb-nop-xceiv";
-			#phy-cells = <0>;
-			label = "OTGFS_PHY";
-		};
-
 		usb: usb@40005c00 {
 			compatible = "st,stm32-usb";
 			reg = <0x40005c00 0x400>;
@@ -73,5 +67,11 @@
 			status = "disabled";
 			label= "USB";
 		};
+	};
+
+	otgfs_phy: otgfs_phy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
+		label = "OTGFS_PHY";
 	};
 };
