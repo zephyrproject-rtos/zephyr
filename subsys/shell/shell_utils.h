@@ -64,19 +64,16 @@ void shell_cmd_get(const struct shell_cmd_entry *command, size_t lvl,
 int shell_command_add(char *buff, u16_t *buff_len,
 		      const char *new_cmd, const char *pattern);
 
-const struct shell_cmd_entry *root_cmd_find(const char *syntax);
+const struct shell_cmd_entry *shell_root_cmd_find(const char *syntax);
 
 void shell_spaces_trim(char *str);
-
-/** @brief Remove white chars from beginning and end of command buffer.
- *
- */
-void shell_buffer_trim(char *buff, u16_t *buff_len);
 
 static inline void transport_buffer_flush(const struct shell *shell)
 {
 	shell_fprintf_buffer_flush(shell->fprintf_ctx);
 }
+
+void shell_cmd_trim(const struct shell *shell);
 
 #ifdef __cplusplus
 }
