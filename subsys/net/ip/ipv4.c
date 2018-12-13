@@ -188,9 +188,13 @@ const struct in_addr *net_ipv4_broadcast_address(void)
 enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv4_access, struct net_ipv4_hdr);
+	NET_PKT_DATA_ACCESS_DEFINE(udp_access, struct net_udp_hdr);
+	NET_PKT_DATA_ACCESS_DEFINE(tcp_access, struct net_tcp_hdr);
 	int real_len = net_pkt_get_len(pkt);
 	enum net_verdict verdict = NET_DROP;
+	union proto_header proto_hdr;
 	struct net_ipv4_hdr *hdr;
+	union ip_header ip;
 	int pkt_len;
 
 	net_stats_update_ipv4_recv(net_pkt_iface(pkt));
@@ -255,16 +259,31 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 		verdict = net_icmpv4_input(pkt, hdr);
 		break;
 	case IPPROTO_TCP:
-		/* Fall through */
+		proto_hdr.tcp = net_tcp_input(pkt, &tcp_access);
+		if (proto_hdr.tcp) {
+			verdict = NET_OK;
+		}
+		break;
 	case IPPROTO_UDP:
-		verdict = net_conn_input(hdr->proto, pkt);
+		proto_hdr.udp = net_udp_input(pkt, &udp_access);
+		if (proto_hdr.udp) {
+			verdict = NET_OK;
+		}
 		break;
 	}
 
-	if (verdict != NET_DROP) {
+	if (verdict == NET_DROP) {
+		goto drop;
+	} else if (hdr->proto == IPPROTO_ICMP) {
 		return verdict;
 	}
 
+	ip.ipv4 = hdr;
+
+	verdict = net_conn_input(pkt, &ip, hdr->proto, &proto_hdr);
+	if (verdict != NET_DROP) {
+		return verdict;
+	}
 drop:
 	net_stats_update_ipv4_drop(net_pkt_iface(pkt));
 	return NET_DROP;
