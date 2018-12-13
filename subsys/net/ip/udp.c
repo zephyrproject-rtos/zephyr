@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(net_udp, CONFIG_NET_UDP_LOG_LEVEL);
 
 #include "net_private.h"
 #include "udp_internal.h"
+#include "net_stats.h"
 
 #define PKT_WAIT_TIME K_SECONDS(1)
 
@@ -260,4 +261,26 @@ int net_udp_register(const struct sockaddr *remote_addr,
 int net_udp_unregister(struct net_conn_handle *handle)
 {
 	return net_conn_unregister(handle);
+}
+
+struct net_udp_hdr *net_udp_input(struct net_pkt *pkt,
+				  struct net_pkt_data_access *udp_access)
+{
+	struct net_udp_hdr *udp_hdr;
+
+	if (IS_ENABLED(CONFIG_NET_UDP_CHECKSUM) &&
+	    net_if_need_calc_rx_checksum(net_pkt_iface(pkt)) &&
+	    net_calc_chksum_udp(pkt) != 0) {
+		NET_DBG("DROP: checksum mismatch");
+		goto drop;
+	}
+
+	udp_hdr = (struct net_udp_hdr *)net_pkt_get_data_new(pkt, udp_access);
+	if (udp_hdr && !net_pkt_set_data(pkt, udp_access)) {
+		return udp_hdr;
+	}
+
+drop:
+	net_stats_update_udp_chkerr(net_pkt_iface(pkt));
+	return NULL;
 }
