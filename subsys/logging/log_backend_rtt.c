@@ -197,7 +197,6 @@ static void put(const struct log_backend *const backend,
 	log_output_msg_process(&log_output, msg, flags);
 
 	log_msg_put(msg);
-
 }
 
 static void log_backend_rtt_cfg(void)
@@ -231,10 +230,18 @@ static void log_backend_rtt_flush(void)
 	}
 }
 
+static void dropped(const struct log_backend *const backend, u32_t cnt)
+{
+	ARG_UNUSED(backend);
+
+	log_output_dropped_process(&log_output, cnt);
+}
+
 const struct log_backend_api log_backend_rtt_api = {
 	.put = put,
 	.panic = panic,
 	.init = log_backend_rtt_init,
+	.dropped = dropped,
 };
 
 LOG_BACKEND_DEFINE(log_backend_rtt, log_backend_rtt_api, true);
