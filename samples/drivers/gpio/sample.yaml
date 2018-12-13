@@ -4,7 +4,7 @@ tests:
   test:
     tags: drivers
     # The filters below are from DTS
-    filter: LED0_GPIO_CONTROLLER and LED0_GPIO_PIN and SW0_GPIO_PIN
+    filter: LED0_GPIO_CONTROLLER and SW0_GPIO_CONTROLLER
     harness: console
     harness_config:
         type: one_line

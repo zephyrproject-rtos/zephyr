@@ -3,5 +3,5 @@ sample:
 tests:
   test:
     # The filters below are from DTS
-    filter: LED0_GPIO_CONTROLLER and LED1_GPIO_PIN and LED0_GPIO_PIN
+    filter: LED0_GPIO_CONTROLLER and LED1_GPIO_CONTROLLER
     tags: LED gpio
