@@ -108,6 +108,16 @@
 #error "MBEDTLS_ECJPAKE_C defined, but not all prerequisites"
 #endif
 
+#if defined(MBEDTLS_ECP_RESTARTABLE)           && \
+    ( defined(MBEDTLS_ECDH_COMPUTE_SHARED_ALT) || \
+      defined(MBEDTLS_ECDH_GEN_PUBLIC_ALT)     || \
+      defined(MBEDTLS_ECDSA_SIGN_ALT)          || \
+      defined(MBEDTLS_ECDSA_VERIFY_ALT)        || \
+      defined(MBEDTLS_ECDSA_GENKEY_ALT)        || \
+      defined(MBEDTLS_ECP_ALT) )
+#error "MBEDTLS_ECP_RESTARTABLE defined, but it cannot coexist with an alternative ECP implementation"
+#endif
+
 #if defined(MBEDTLS_ECDSA_DETERMINISTIC) && !defined(MBEDTLS_HMAC_DRBG_C)
 #error "MBEDTLS_ECDSA_DETERMINISTIC defined, but not all prerequisites"
 #endif

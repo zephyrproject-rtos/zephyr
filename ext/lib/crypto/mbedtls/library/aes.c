@@ -36,6 +36,7 @@
 #include <string.h>
 
 #include "mbedtls/aes.h"
+#include "mbedtls/platform.h"
 #include "mbedtls/platform_util.h"
 #if defined(MBEDTLS_PADLOCK_C)
 #include "mbedtls/padlock.h"
@@ -1142,11 +1143,11 @@ int mbedtls_aes_crypt_xts( mbedtls_aes_xts_context *ctx,
     unsigned char prev_tweak[16];
     unsigned char tmp[16];
 
-    /* Sectors must be at least 16 bytes. */
+    /* Data units must be at least 16 bytes long. */
     if( length < 16 )
         return MBEDTLS_ERR_AES_INVALID_INPUT_LENGTH;
 
-    /* NIST SP 80-38E disallows data units larger than 2**20 blocks. */
+    /* NIST SP 800-38E disallows data units larger than 2**20 blocks. */
     if( length > ( 1 << 20 ) * 16 )
         return MBEDTLS_ERR_AES_INVALID_INPUT_LENGTH;
 
@@ -1757,7 +1758,7 @@ int mbedtls_aes_self_test( int verbose )
          * there is an alternative underlying implementation i.e. when
          * MBEDTLS_AES_ALT is defined.
          */
-        if( ret == MBEDTLS_ERR_AES_FEATURE_UNAVAILABLE && keybits == 192 )
+        if( ret == MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED && keybits == 192 )
         {
             mbedtls_printf( "skipped\n" );
             continue;
@@ -1821,7 +1822,7 @@ int mbedtls_aes_self_test( int verbose )
          * there is an alternative underlying implementation i.e. when
          * MBEDTLS_AES_ALT is defined.
          */
-        if( ret == MBEDTLS_ERR_AES_FEATURE_UNAVAILABLE && keybits == 192 )
+        if( ret == MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED && keybits == 192 )
         {
             mbedtls_printf( "skipped\n" );
             continue;
@@ -1886,7 +1887,7 @@ int mbedtls_aes_self_test( int verbose )
          * there is an alternative underlying implementation i.e. when
          * MBEDTLS_AES_ALT is defined.
          */
-        if( ret == MBEDTLS_ERR_AES_FEATURE_UNAVAILABLE && keybits == 192 )
+        if( ret == MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED && keybits == 192 )
         {
             mbedtls_printf( "skipped\n" );
             continue;
@@ -1949,7 +1950,7 @@ int mbedtls_aes_self_test( int verbose )
          * there is an alternative underlying implementation i.e. when
          * MBEDTLS_AES_ALT is defined.
          */
-        if( ret == MBEDTLS_ERR_AES_FEATURE_UNAVAILABLE && keybits == 192 )
+        if( ret == MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED && keybits == 192 )
         {
             mbedtls_printf( "skipped\n" );
             continue;

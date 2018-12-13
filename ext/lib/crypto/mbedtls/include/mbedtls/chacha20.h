@@ -43,7 +43,13 @@
 #include <stddef.h>
 
 #define MBEDTLS_ERR_CHACHA20_BAD_INPUT_DATA         -0x0051 /**< Invalid input parameter(s). */
+
+/* MBEDTLS_ERR_CHACHA20_FEATURE_UNAVAILABLE is deprecated and should not be
+ * used. */
 #define MBEDTLS_ERR_CHACHA20_FEATURE_UNAVAILABLE    -0x0053 /**< Feature not available. For example, s part of the API is not implemented. */
+
+/* MBEDTLS_ERR_CHACHA20_HW_ACCEL_FAILED is deprecated and should not be used.
+ */
 #define MBEDTLS_ERR_CHACHA20_HW_ACCEL_FAILED        -0x0055  /**< Chacha20 hardware accelerator failed. */
 
 #ifdef __cplusplus
@@ -52,7 +58,7 @@ extern "C" {
 
 #if !defined(MBEDTLS_CHACHA20_ALT)
 
-typedef struct
+typedef struct mbedtls_chacha20_context
 {
     uint32_t state[16];          /*! The state (before round operations). */
     uint8_t  keystream8[64];     /*! Leftover keystream bytes. */

@@ -84,7 +84,10 @@
 #define MBEDTLS_ERR_DHM_INVALID_FORMAT                    -0x3380  /**< The ASN.1 data is not formatted correctly. */
 #define MBEDTLS_ERR_DHM_ALLOC_FAILED                      -0x3400  /**< Allocation of memory failed. */
 #define MBEDTLS_ERR_DHM_FILE_IO_ERROR                     -0x3480  /**< Read or write of file failed. */
+
+/* MBEDTLS_ERR_DHM_HW_ACCEL_FAILED is deprecated and should not be used. */
 #define MBEDTLS_ERR_DHM_HW_ACCEL_FAILED                   -0x3500  /**< DHM hardware accelerator failed. */
+
 #define MBEDTLS_ERR_DHM_SET_GROUP_FAILED                  -0x3580  /**< Setting the modulus and generator failed. */
 
 #ifdef __cplusplus
@@ -96,7 +99,7 @@ extern "C" {
 /**
  * \brief          The DHM context structure.
  */
-typedef struct
+typedef struct mbedtls_dhm_context
 {
     size_t len;         /*!<  The size of \p P in Bytes. */
     mbedtls_mpi P;      /*!<  The prime modulus. */

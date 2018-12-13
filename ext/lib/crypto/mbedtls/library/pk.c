@@ -69,6 +69,34 @@ void mbedtls_pk_free( mbedtls_pk_context *ctx )
     mbedtls_platform_zeroize( ctx, sizeof( mbedtls_pk_context ) );
 }
 
+#if defined(MBEDTLS_ECDSA_C) && defined(MBEDTLS_ECP_RESTARTABLE)
+/*
+ * Initialize a restart context
+ */
+void mbedtls_pk_restart_init( mbedtls_pk_restart_ctx *ctx )
+{
+    ctx->pk_info = NULL;
+    ctx->rs_ctx = NULL;
+}
+
+/*
+ * Free the components of a restart context
+ */
+void mbedtls_pk_restart_free( mbedtls_pk_restart_ctx *ctx )
+{
+    if( ctx == NULL || ctx->pk_info == NULL ||
+        ctx->pk_info->rs_free_func == NULL )
+    {
+        return;
+    }
+
+    ctx->pk_info->rs_free_func( ctx->rs_ctx );
+
+    ctx->pk_info = NULL;
+    ctx->rs_ctx = NULL;
+}
+#endif /* MBEDTLS_ECDSA_C && MBEDTLS_ECP_RESTARTABLE */
+
 /*
  * Get pk_info structure from type
  */
@@ -171,6 +199,73 @@ static inline int pk_hashlen_helper( mbedtls_md_type_t md_alg, size_t *hash_len 
     return( 0 );
 }
 
+#if defined(MBEDTLS_ECDSA_C) && defined(MBEDTLS_ECP_RESTARTABLE)
+/*
+ * Helper to set up a restart context if needed
+ */
+static int pk_restart_setup( mbedtls_pk_restart_ctx *ctx,
+                             const mbedtls_pk_info_t *info )
+{
+    /* Don't do anything if already set up or invalid */
+    if( ctx == NULL || ctx->pk_info != NULL )
+        return( 0 );
+
+    /* Should never happen when we're called */
+    if( info->rs_alloc_func == NULL || info->rs_free_func == NULL )
+        return( MBEDTLS_ERR_PK_BAD_INPUT_DATA );
+
+    if( ( ctx->rs_ctx = info->rs_alloc_func() ) == NULL )
+        return( MBEDTLS_ERR_PK_ALLOC_FAILED );
+
+    ctx->pk_info = info;
+
+    return( 0 );
+}
+#endif /* MBEDTLS_ECDSA_C && MBEDTLS_ECP_RESTARTABLE */
+
+/*
+ * Verify a signature (restartable)
+ */
+int mbedtls_pk_verify_restartable( mbedtls_pk_context *ctx,
+               mbedtls_md_type_t md_alg,
+               const unsigned char *hash, size_t hash_len,
+               const unsigned char *sig, size_t sig_len,
+               mbedtls_pk_restart_ctx *rs_ctx )
+{
+    if( ctx == NULL || ctx->pk_info == NULL ||
+        pk_hashlen_helper( md_alg, &hash_len ) != 0 )
+        return( MBEDTLS_ERR_PK_BAD_INPUT_DATA );
+
+#if defined(MBEDTLS_ECDSA_C) && defined(MBEDTLS_ECP_RESTARTABLE)
+    /* optimization: use non-restartable version if restart disabled */
+    if( rs_ctx != NULL &&
+        mbedtls_ecp_restart_is_enabled() &&
+        ctx->pk_info->verify_rs_func != NULL )
+    {
+        int ret;
+
+        if( ( ret = pk_restart_setup( rs_ctx, ctx->pk_info ) ) != 0 )
+            return( ret );
+
+        ret = ctx->pk_info->verify_rs_func( ctx->pk_ctx,
+                   md_alg, hash, hash_len, sig, sig_len, rs_ctx->rs_ctx );
+
+        if( ret != MBEDTLS_ERR_ECP_IN_PROGRESS )
+            mbedtls_pk_restart_free( rs_ctx );
+
+        return( ret );
+    }
+#else /* MBEDTLS_ECDSA_C && MBEDTLS_ECP_RESTARTABLE */
+    (void) rs_ctx;
+#endif /* MBEDTLS_ECDSA_C && MBEDTLS_ECP_RESTARTABLE */
+
+    if( ctx->pk_info->verify_func == NULL )
+        return( MBEDTLS_ERR_PK_TYPE_MISMATCH );
+
+    return( ctx->pk_info->verify_func( ctx->pk_ctx, md_alg, hash, hash_len,
+                                       sig, sig_len ) );
+}
+
 /*
  * Verify a signature
  */
@@ -178,15 +273,8 @@ int mbedtls_pk_verify( mbedtls_pk_context *ctx, mbedtls_md_type_t md_alg,
                const unsigned char *hash, size_t hash_len,
                const unsigned char *sig, size_t sig_len )
 {
-    if( ctx == NULL || ctx->pk_info == NULL ||
-        pk_hashlen_helper( md_alg, &hash_len ) != 0 )
-        return( MBEDTLS_ERR_PK_BAD_INPUT_DATA );
-
-    if( ctx->pk_info->verify_func == NULL )
-        return( MBEDTLS_ERR_PK_TYPE_MISMATCH );
-
-    return( ctx->pk_info->verify_func( ctx->pk_ctx, md_alg, hash, hash_len,
-                                       sig, sig_len ) );
+    return( mbedtls_pk_verify_restartable( ctx, md_alg, hash, hash_len,
+                                           sig, sig_len, NULL ) );
 }
 
 /*
@@ -248,6 +336,50 @@ int mbedtls_pk_verify_ext( mbedtls_pk_type_t type, const void *options,
 }
 
 /*
+ * Make a signature (restartable)
+ */
+int mbedtls_pk_sign_restartable( mbedtls_pk_context *ctx,
+             mbedtls_md_type_t md_alg,
+             const unsigned char *hash, size_t hash_len,
+             unsigned char *sig, size_t *sig_len,
+             int (*f_rng)(void *, unsigned char *, size_t), void *p_rng,
+             mbedtls_pk_restart_ctx *rs_ctx )
+{
+    if( ctx == NULL || ctx->pk_info == NULL ||
+        pk_hashlen_helper( md_alg, &hash_len ) != 0 )
+        return( MBEDTLS_ERR_PK_BAD_INPUT_DATA );
+
+#if defined(MBEDTLS_ECDSA_C) && defined(MBEDTLS_ECP_RESTARTABLE)
+    /* optimization: use non-restartable version if restart disabled */
+    if( rs_ctx != NULL &&
+        mbedtls_ecp_restart_is_enabled() &&
+        ctx->pk_info->sign_rs_func != NULL )
+    {
+        int ret;
+
+        if( ( ret = pk_restart_setup( rs_ctx, ctx->pk_info ) ) != 0 )
+            return( ret );
+
+        ret = ctx->pk_info->sign_rs_func( ctx->pk_ctx, md_alg,
+                hash, hash_len, sig, sig_len, f_rng, p_rng, rs_ctx->rs_ctx );
+
+        if( ret != MBEDTLS_ERR_ECP_IN_PROGRESS )
+            mbedtls_pk_restart_free( rs_ctx );
+
+        return( ret );
+    }
+#else /* MBEDTLS_ECDSA_C && MBEDTLS_ECP_RESTARTABLE */
+    (void) rs_ctx;
+#endif /* MBEDTLS_ECDSA_C && MBEDTLS_ECP_RESTARTABLE */
+
+    if( ctx->pk_info->sign_func == NULL )
+        return( MBEDTLS_ERR_PK_TYPE_MISMATCH );
+
+    return( ctx->pk_info->sign_func( ctx->pk_ctx, md_alg, hash, hash_len,
+                                     sig, sig_len, f_rng, p_rng ) );
+}
+
+/*
  * Make a signature
  */
 int mbedtls_pk_sign( mbedtls_pk_context *ctx, mbedtls_md_type_t md_alg,
@@ -255,15 +387,8 @@ int mbedtls_pk_sign( mbedtls_pk_context *ctx, mbedtls_md_type_t md_alg,
              unsigned char *sig, size_t *sig_len,
              int (*f_rng)(void *, unsigned char *, size_t), void *p_rng )
 {
-    if( ctx == NULL || ctx->pk_info == NULL ||
-        pk_hashlen_helper( md_alg, &hash_len ) != 0 )
-        return( MBEDTLS_ERR_PK_BAD_INPUT_DATA );
-
-    if( ctx->pk_info->sign_func == NULL )
-        return( MBEDTLS_ERR_PK_TYPE_MISMATCH );
-
-    return( ctx->pk_info->sign_func( ctx->pk_ctx, md_alg, hash, hash_len,
-                                     sig, sig_len, f_rng, p_rng ) );
+    return( mbedtls_pk_sign_restartable( ctx, md_alg, hash, hash_len,
+                                         sig, sig_len, f_rng, p_rng, NULL ) );
 }
 
 /*

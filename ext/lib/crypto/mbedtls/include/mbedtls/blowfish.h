@@ -41,7 +41,11 @@
 #define MBEDTLS_BLOWFISH_BLOCKSIZE   8          /* Blowfish uses 64 bit blocks */
 
 #define MBEDTLS_ERR_BLOWFISH_INVALID_KEY_LENGTH                -0x0016  /**< Invalid key length. */
+
+/* MBEDTLS_ERR_BLOWFISH_HW_ACCEL_FAILED is deprecated and should not be used.
+ */
 #define MBEDTLS_ERR_BLOWFISH_HW_ACCEL_FAILED                   -0x0017  /**< Blowfish hardware accelerator failed. */
+
 #define MBEDTLS_ERR_BLOWFISH_INVALID_INPUT_LENGTH              -0x0018  /**< Invalid data input length. */
 
 #ifdef __cplusplus
@@ -55,7 +59,7 @@ extern "C" {
 /**
  * \brief          Blowfish context structure
  */
-typedef struct
+typedef struct mbedtls_blowfish_context
 {
     uint32_t P[MBEDTLS_BLOWFISH_ROUNDS + 2];    /*!<  Blowfish round keys    */
     uint32_t S[4][256];                 /*!<  key dependent S-boxes  */

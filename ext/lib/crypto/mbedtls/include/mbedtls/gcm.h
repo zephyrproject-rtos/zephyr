@@ -41,7 +41,10 @@
 #define MBEDTLS_GCM_DECRYPT     0
 
 #define MBEDTLS_ERR_GCM_AUTH_FAILED                       -0x0012  /**< Authenticated decryption failed. */
+
+/* MBEDTLS_ERR_GCM_HW_ACCEL_FAILED is deprecated and should not be used. */
 #define MBEDTLS_ERR_GCM_HW_ACCEL_FAILED                   -0x0013  /**< GCM hardware accelerator failed. */
+
 #define MBEDTLS_ERR_GCM_BAD_INPUT                         -0x0014  /**< Bad input parameters to function. */
 
 #ifdef __cplusplus
@@ -53,7 +56,8 @@ extern "C" {
 /**
  * \brief          The GCM context structure.
  */
-typedef struct {
+typedef struct mbedtls_gcm_context
+{
     mbedtls_cipher_context_t cipher_ctx;  /*!< The cipher context used. */
     uint64_t HL[16];                      /*!< Precalculated HTable low. */
     uint64_t HH[16];                      /*!< Precalculated HTable high. */
@@ -145,9 +149,9 @@ int mbedtls_gcm_setkey( mbedtls_gcm_context *ctx,
  * \return          \c 0 if the encryption or decryption was performed
  *                  successfully. Note that in #MBEDTLS_GCM_DECRYPT mode,
  *                  this does not indicate that the data is authentic.
- * \return          #MBEDTLS_ERR_GCM_BAD_INPUT if the lengths are not valid.
- * \return          #MBEDTLS_ERR_GCM_HW_ACCEL_FAILED or a cipher-specific
- *                  error code if the encryption or decryption failed.
+ * \return          #MBEDTLS_ERR_GCM_BAD_INPUT if the lengths are not valid or
+ *                  a cipher-specific error code if the encryption
+ *                  or decryption failed.
  */
 int mbedtls_gcm_crypt_and_tag( mbedtls_gcm_context *ctx,
                        int mode,
@@ -184,9 +188,8 @@ int mbedtls_gcm_crypt_and_tag( mbedtls_gcm_context *ctx,
  *
  * \return          \c 0 if successful and authenticated.
  * \return          #MBEDTLS_ERR_GCM_AUTH_FAILED if the tag does not match.
- * \return          #MBEDTLS_ERR_GCM_BAD_INPUT if the lengths are not valid.
- * \return          #MBEDTLS_ERR_GCM_HW_ACCEL_FAILED or a cipher-specific
- *                  error code if the decryption failed.
+ * \return          #MBEDTLS_ERR_GCM_BAD_INPUT if the lengths are not valid or
+ *                  a cipher-specific error code if the decryption failed.
  */
 int mbedtls_gcm_auth_decrypt( mbedtls_gcm_context *ctx,
                       size_t length,

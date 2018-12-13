@@ -35,6 +35,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+/* MBEDTLS_ERR_SHA512_HW_ACCEL_FAILED is deprecated and should not be used. */
 #define MBEDTLS_ERR_SHA512_HW_ACCEL_FAILED                -0x0039  /**< SHA-512 hardware accelerator failed */
 
 #ifdef __cplusplus
@@ -52,7 +53,7 @@ extern "C" {
  *                 checksum calculations. The choice between these two is
  *                 made in the call to mbedtls_sha512_starts_ret().
  */
-typedef struct
+typedef struct mbedtls_sha512_context
 {
     uint64_t total[2];          /*!< The number of Bytes processed. */
     uint64_t state[8];          /*!< The intermediate digest state. */

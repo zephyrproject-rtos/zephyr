@@ -53,6 +53,8 @@
 
 #define MBEDTLS_ERR_CCM_BAD_INPUT       -0x000D /**< Bad input parameters to the function. */
 #define MBEDTLS_ERR_CCM_AUTH_FAILED     -0x000F /**< Authenticated decryption failed. */
+
+/* MBEDTLS_ERR_CCM_HW_ACCEL_FAILED is deprecated and should not be used. */
 #define MBEDTLS_ERR_CCM_HW_ACCEL_FAILED -0x0011 /**< CCM hardware accelerator failed. */
 
 
@@ -68,7 +70,8 @@ extern "C" {
  * \brief    The CCM context-type definition. The CCM context is passed
  *           to the APIs called.
  */
-typedef struct {
+typedef struct mbedtls_ccm_context
+{
     mbedtls_cipher_context_t cipher_ctx;    /*!< The cipher context used. */
 }
 mbedtls_ccm_context;

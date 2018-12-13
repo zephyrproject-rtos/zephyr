@@ -48,7 +48,12 @@
 
 #define MBEDTLS_ERR_ARIA_INVALID_KEY_LENGTH   -0x005C  /**< Invalid key length. */
 #define MBEDTLS_ERR_ARIA_INVALID_INPUT_LENGTH -0x005E  /**< Invalid data input length. */
+
+/* MBEDTLS_ERR_ARIA_FEATURE_UNAVAILABLE is deprecated and should not be used.
+ */
 #define MBEDTLS_ERR_ARIA_FEATURE_UNAVAILABLE  -0x005A  /**< Feature not available. For example, an unsupported ARIA key size. */
+
+/* MBEDTLS_ERR_ARIA_HW_ACCEL_FAILED is deprecated and should not be used. */
 #define MBEDTLS_ERR_ARIA_HW_ACCEL_FAILED      -0x0058  /**< ARIA hardware accelerator failed. */
 
 #if !defined(MBEDTLS_ARIA_ALT)
@@ -62,7 +67,7 @@ extern "C" {
 /**
  * \brief The ARIA context-type definition.
  */
-typedef struct
+typedef struct mbedtls_aria_context
 {
     unsigned char nr;           /*!< The number of rounds (12, 14 or 16) */
     /*! The ARIA round keys. */
