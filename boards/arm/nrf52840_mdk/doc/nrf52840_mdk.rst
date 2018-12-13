@@ -26,6 +26,6 @@ References
 **********
 .. target-notes::
 
-.. _nRF52840 website: http://www.nordicsemi.com/eng/Products/nRF52840
+.. _nRF52840 website: https://www.nordicsemi.com/Products/Low-power-short-range-wireless/nRF52840
 .. _nRF52840-mdk website: https://wiki.makerdiary.com/nrf52840-mdk
 
