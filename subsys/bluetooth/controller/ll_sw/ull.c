@@ -1462,7 +1462,7 @@ static inline void rx_demux_event_done(memq_link_t *link,
 
 	/* Decrement prepare reference */
 	LL_ASSERT(ull_hdr->ref);
-	ull_hdr->ref--;
+	ull_ref_dec(ull_hdr);
 
 	/* If disable initiated, signal the semaphore */
 	if (!ull_hdr->ref && ull_hdr->disabled_cb) {
