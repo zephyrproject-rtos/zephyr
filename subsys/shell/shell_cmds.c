@@ -197,7 +197,7 @@ static int cmd_bacskpace_mode_backspace(const struct shell *shell, size_t argc,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell->ctx->internal.flags.mode_delete = 0;
+	flag_mode_delete_set(shell, false);
 
 	return 0;
 }
@@ -208,7 +208,7 @@ static int cmd_bacskpace_mode_delete(const struct shell *shell, size_t argc,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell->ctx->internal.flags.mode_delete = 1;
+	flag_mode_delete_set(shell, true);
 
 	return 0;
 }
@@ -218,7 +218,7 @@ static int cmd_colors_off(const struct shell *shell, size_t argc, char **argv)
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell->ctx->internal.flags.use_colors = 0;
+	flag_use_colors_set(shell, false);
 
 	return 0;
 }
@@ -228,7 +228,7 @@ static int cmd_colors_on(const struct shell *shell, size_t argc, char **argv)
 	ARG_UNUSED(argv);
 	ARG_UNUSED(argv);
 
-	shell->ctx->internal.flags.use_colors = 1;
+	flag_use_colors_set(shell, true);
 
 	return 0;
 }
@@ -238,7 +238,7 @@ static int cmd_echo_off(const struct shell *shell, size_t argc, char **argv)
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell->ctx->internal.flags.echo = 0;
+	flag_echo_set(shell, false);
 
 	return 0;
 }
@@ -248,7 +248,7 @@ static int cmd_echo_on(const struct shell *shell, size_t argc, char **argv)
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell->ctx->internal.flags.echo = 1;
+	flag_echo_set(shell, true);
 
 	return 0;
 }
@@ -262,7 +262,7 @@ static int cmd_echo(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	shell_print(shell, "Echo status: %s",
-		    flag_echo_is_set(shell) ? "on" : "off");
+		    flag_echo_get(shell) ? "on" : "off");
 
 	return 0;
 }
