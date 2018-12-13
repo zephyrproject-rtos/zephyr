@@ -527,7 +527,7 @@ static int exec_cmd(const struct shell *shell, size_t argc, char **argv,
 	int ret_val = 0;
 
 	if (shell->ctx->active_cmd.handler == NULL) {
-		if (help_entry.help) {
+		if ((help_entry.help) && IS_ENABLED(CONFIG_SHELL_HELP)) {
 			if (help_entry.help != shell->ctx->active_cmd.help) {
 				shell->ctx->active_cmd = help_entry;
 			}
@@ -636,8 +636,9 @@ static int execute(const struct shell *shell)
 			break;
 		}
 
-		if (!strcmp(argv[cmd_lvl], "-h") ||
-		    !strcmp(argv[cmd_lvl], "--help")) {
+		if (IS_ENABLED(CONFIG_SHELL_HELP) &&
+		    (!strcmp(argv[cmd_lvl], "-h") ||
+		     !strcmp(argv[cmd_lvl], "--help"))) {
 			/* Command called with help option so it makes no sense
 			 * to search deeper commands.
 			 */
