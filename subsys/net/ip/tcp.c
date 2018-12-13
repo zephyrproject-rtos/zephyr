@@ -2670,3 +2670,25 @@ int net_tcp_connect(struct net_context *context,
 
 	return 0;
 }
+
+struct net_tcp_hdr *net_tcp_input(struct net_pkt *pkt,
+				  struct net_pkt_data_access *tcp_access)
+{
+	struct net_tcp_hdr *tcp_hdr;
+
+	if (IS_ENABLED(CONFIG_NET_TCP_CHECKSUM) &&
+	    net_if_need_calc_rx_checksum(net_pkt_iface(pkt)) &&
+	    net_calc_chksum_tcp(pkt) != 0) {
+		NET_DBG("DROP: checksum mismatch");
+		goto drop;
+	}
+
+	tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data_new(pkt, tcp_access);
+	if (tcp_hdr && !net_pkt_set_data(pkt, tcp_access)) {
+		return tcp_hdr;
+	}
+
+drop:
+	net_stats_update_tcp_seg_chkerr(net_pkt_iface(pkt));
+	return NULL;
+}
