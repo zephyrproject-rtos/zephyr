@@ -547,6 +547,9 @@ int net_tcp_connect(struct net_context *context,
 		    net_context_connect_cb_t cb,
 		    void *user_data);
 
+struct net_tcp_hdr *net_tcp_input(struct net_pkt *pkt,
+				  struct net_pkt_data_access *tcp_access);
+
 #else
 static inline struct net_tcp *net_tcp_alloc(struct net_context *context)
 {
@@ -772,6 +775,16 @@ static inline int net_tcp_connect(struct net_context *context,
 	ARG_UNUSED(user_data);
 
 	return -EPROTONOSUPPORT;
+}
+
+static inline
+struct net_tcp_hdr *net_tcp_input(struct net_pkt *pkt,
+				  struct net_pkt_data_access *tcp_access)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(tcp_access);
+
+	return NULL;
 }
 
 #endif
