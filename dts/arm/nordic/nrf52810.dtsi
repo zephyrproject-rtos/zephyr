@@ -93,9 +93,9 @@
 			label = "I2C_0";
 		};
 
-		pwm0: pwm@4001C000 {
+		pwm0: pwm@4001c000 {
 			compatible = "nordic,nrf-pwm";
-			reg = <0x4001C000 0x1000>;
+			reg = <0x4001c000 0x1000>;
 			interrupts = <28 1>;
 			status = "disabled";
 			label = "PWM_0";
