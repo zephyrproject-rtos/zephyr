@@ -34,7 +34,7 @@ config QMSI
 config QMSI_BUILTIN
 	default y
 
-if RTC
+if COUNTER
 
 config RTC_QMSI
 	default y
