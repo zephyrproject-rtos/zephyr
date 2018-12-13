@@ -57,7 +57,7 @@ static int nordicsemi_nrf52_init(struct device *arg)
 	NRF_NVMC->ICACHECNF = NVMC_ICACHECNF_CACHEEN_Msk;
 #endif
 
-#if defined(CONFIG_SOC_DCDC_NRF52X)
+#if defined(CONFIG_NRF_ENABLE_DCDC)
 	nrf_power_dcdcen_set(true);
 #endif
 

@@ -26,4 +26,7 @@ config IEEE802154_NRF5
 
 endif # IEEE802154
 
+config SOC_NRF52X_HAS_DCDC_SUPPORT
+    default y
+
 endif # BOARD_NRF52840_PCA10056
