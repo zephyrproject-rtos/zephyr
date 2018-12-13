@@ -269,11 +269,16 @@ void log_init(void)
 		const struct log_backend *backend = log_backend_get(i);
 
 		if (backend->autostart) {
+			bool ready = true;
+
 			if (backend->api->init) {
-				backend->api->init();
+				ready = backend->api->init();
 			}
 
-			log_backend_enable(backend, NULL, CONFIG_LOG_MAX_LEVEL);
+			if (ready) {
+				log_backend_enable(backend, NULL,
+						   CONFIG_LOG_MAX_LEVEL);
+			}
 		}
 	}
 }

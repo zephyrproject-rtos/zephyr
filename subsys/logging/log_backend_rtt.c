@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <soc.h>
 #include <logging/log_backend.h>
 #include <logging/log_core.h>
 #include <logging/log_msg.h>
@@ -207,14 +208,22 @@ static void log_backend_rtt_cfg(void)
 				  SEGGER_RTT_MODE_NO_BLOCK_SKIP);
 }
 
-static void log_backend_rtt_init(void)
+static bool log_backend_rtt_init(void)
 {
+#if defined(CoreDebug_DHCSR_C_DEBUGEN_Msk)
+	if ((CoreDebug->DHCSR & CoreDebug_DHCSR_C_DEBUGEN_Msk) == 0) {
+		return false;
+	}
+#endif
+
 	if (CONFIG_LOG_BACKEND_RTT_BUFFER > 0) {
 		log_backend_rtt_cfg();
 	}
 
 	panic_mode = 0;
 	line_pos = line_buf;
+
+	return true;
 }
 
 static void panic(struct log_backend const *const backend)

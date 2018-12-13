@@ -8,6 +8,7 @@
 
 #include <logging/log_msg.h>
 #include <assert.h>
+#include <stdbool.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -31,7 +32,7 @@ struct log_backend_api {
 
 	void (*dropped)(const struct log_backend *const backend, u32_t cnt);
 	void (*panic)(const struct log_backend *const backend);
-	void (*init)(void);
+	bool (*init)(void);
 };
 
 /**

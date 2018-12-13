@@ -48,7 +48,7 @@ static void put(const struct log_backend *const backend,
 
 }
 
-static void log_backend_uart_init(void)
+static bool log_backend_uart_init(void)
 {
 	struct device *dev;
 
@@ -56,6 +56,8 @@ static void log_backend_uart_init(void)
 	assert(dev);
 
 	log_output_ctx_set(&log_output, dev);
+
+	return true
 }
 
 static void panic(struct log_backend const *const backend)

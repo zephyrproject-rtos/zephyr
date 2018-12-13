@@ -208,7 +208,7 @@ static void send_output(const struct log_backend *const backend,
 	log_msg_put(msg);
 }
 
-static void init_net(void)
+static bool init_net(void)
 {
 	int ret;
 
@@ -219,10 +219,12 @@ static void init_net(void)
 			       &server_addr);
 	if (!ret) {
 		LOG_ERR("Cannot configure syslog server address");
-		return;
+		return false;
 	}
 
 	log_backend_deactivate(log_backend_net_get());
+
+	return true;
 }
 
 static void panic(struct log_backend const *const backend)
