@@ -208,8 +208,8 @@ References
 
 .. target-notes::
 
-.. _nRF51 DK website: http://www.nordicsemi.com/eng/Products/nRF51-DK
-.. _Nordic Semiconductor Infocenter: http://infocenter.nordicsemi.com/
+.. _nRF51 DK website: https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF51-DK
+.. _Nordic Semiconductor Documentation library: https://www.nordicsemi.com/DocLib
 .. _Waveshare Wiki BLE400: https://www.waveshare.com/wiki/BLE400
 .. _User manual: https://www.waveshare.com/w/upload/b/b7/NRF51822-Eval-Kit-UserManual-EN.pdf
 .. _Schematic: https://www.waveshare.com/w/upload/1/1b/BLE400-Schematic.pdf
