@@ -92,6 +92,9 @@ int net_udp_create(struct net_pkt *pkt, u16_t src_port, u16_t dst_port);
  */
 int net_udp_finalize(struct net_pkt *pkt);
 
+struct net_udp_hdr *net_udp_input(struct net_pkt *pkt,
+				  struct net_pkt_data_access *udp_access);
+
 #else
 #define net_udp_insert(pkt, offset, src_port, dst_port) (pkt)
 #define net_udp_get_chksum(pkt, frag) (0)
@@ -112,6 +115,16 @@ static inline int net_udp_finalize(struct net_pkt *pkt)
 	ARG_UNUSED(pkt);
 
 	return 0;
+}
+
+static inline
+struct net_udp_hdr *net_udp_input(struct net_pkt *pkt,
+				  struct net_pkt_data_access *udp_access)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(udp_access);
+
+	return NULL;
 }
 
 #endif /* CONFIG_NET_UDP */
