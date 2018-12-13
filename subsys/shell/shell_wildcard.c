@@ -112,7 +112,7 @@ static enum shell_wildcard_status commands_expand(const struct shell *shell,
 					      SHELL_WARNING,
 					      "Command buffer is too short to"
 					      " expand all commands matching"
-					      " wildcard pattern: %s\r\n",
+					      " wildcard pattern: %s\n",
 					      pattern);
 				break;
 			} else if (ret_val != SHELL_WILDCARD_CMD_ADDED) {

@@ -193,7 +193,7 @@ static void tab_item_print(const struct shell *shell, const char *option,
 	diff = longest_option - shell_strlen(option);
 
 	if (shell->ctx->vt100_ctx.printed_cmd++ % columns == 0) {
-		shell_fprintf(shell, SHELL_OPTION, "\r\n%s%s", tab, option);
+		shell_fprintf(shell, SHELL_OPTION, "\n%s%s", tab, option);
 	} else {
 		shell_fprintf(shell, SHELL_OPTION, "%s", option);
 	}
@@ -1326,7 +1326,7 @@ int shell_start(const struct shell *shell)
 		vt100_color_set(shell, SHELL_NORMAL);
 	}
 
-	shell_raw_fprintf(shell->fprintf_ctx, "\r\n\n");
+	shell_raw_fprintf(shell->fprintf_ctx, "\n\n");
 
 	shell_state_set(shell, SHELL_STATE_ACTIVE);
 

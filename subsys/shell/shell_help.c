@@ -175,7 +175,7 @@ void shell_help_subcmd_print(const struct shell *shell)
 		return;
 	}
 
-	shell_fprintf(shell, SHELL_NORMAL, "Subcommands:\r\n");
+	shell_fprintf(shell, SHELL_NORMAL, "Subcommands:\n");
 
 	/* Printing subcommands and help string (if exists). */
 	cmd_idx = 0;
