@@ -47,12 +47,6 @@
 			label = "SPI_2";
 		};
 
-		usb_fs_phy: usbphy {
-			compatible = "usb-nop-xceiv";
-			#phy-cells = <0>;
-			label = "USB_FS_PHY";
-		};
-
 		usb: usb@40005c00 {
 			compatible = "st,stm32-usb";
 			reg = <0x40005c00 0x400>;
@@ -79,5 +73,11 @@
 			prop_seg_phase_seg1 = <5>;
 			phase_seg2 = <6>;
 		};
+	};
+
+	usb_fs_phy: usbphy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
+		label = "USB_FS_PHY";
 	};
 };
