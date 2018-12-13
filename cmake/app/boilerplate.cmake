@@ -264,8 +264,22 @@ set(CMAKE_CXX_COMPILER_FORCED 1)
 
 include(${ZEPHYR_BASE}/cmake/version.cmake)
 include(${ZEPHYR_BASE}/cmake/host-tools.cmake)
+
+# DTS should be close to kconfig because CONFIG_ variables from
+# kconfig and dts should be available at the same time.
+#
+# The DT system uses a C preprocessor for it's code generation needs.
+# This creates an awkward chicken-and-egg problem, because we don't
+# always know exactly which toolchain the user needs until we know
+# more about the target, e.g. after DT and Kconfig.
+#
+# To resolve this we find "some" C toolchain, configure it generically
+# with the minimal amount of configuration needed to have it
+# preprocess DT sources, and then, after we have finished processing
+# both DT and Kconfig we complete the target-specific configuration,
+# and possibly change the toolchain.
+include(${ZEPHYR_BASE}/cmake/generic_toolchain.cmake)
 include(${ZEPHYR_BASE}/cmake/kconfig.cmake)
-include(${ZEPHYR_BASE}/cmake/toolchain.cmake)
 
 find_package(Git QUIET)
 if(GIT_FOUND)
@@ -294,13 +308,9 @@ else()
   set(SOC_PATH ${SOC_FAMILY}/${SOC_SERIES})
 endif()
 
-
-# DTS should be run directly after kconfig because CONFIG_ variables
-# from kconfig and dts should be available at the same time. But
-# running DTS involves running the preprocessor, so we put it behind
-# toolchain. Meaning toolchain.cmake is the only component where
-# kconfig and dts variables aren't available at the same time.
 include(${ZEPHYR_BASE}/cmake/dts.cmake)
+
+include(${ZEPHYR_BASE}/cmake/target_toolchain.cmake)
 
 set(KERNEL_NAME ${CONFIG_KERNEL_BIN_NAME})
 

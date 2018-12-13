@@ -1,8 +1,8 @@
-set_ifndef(CC gcc)
 set_ifndef(C++ g++)
 
 # Configures CMake for using GCC, this script is re-used by several
 # GCC-based toolchains
+
 find_program(CMAKE_C_COMPILER ${CROSS_COMPILE}${CC}   PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
 find_program(CMAKE_OBJCOPY    ${CROSS_COMPILE}objcopy PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
 find_program(CMAKE_OBJDUMP    ${CROSS_COMPILE}objdump PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
@@ -13,29 +13,6 @@ find_program(CMAKE_RANLIB     ${CROSS_COMPILE}ranlib  PATH ${TOOLCHAIN_HOME} NO_
 find_program(CMAKE_READELF    ${CROSS_COMPILE}readelf PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
 find_program(CMAKE_GDB        ${CROSS_COMPILE}gdb     PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
 find_program(CMAKE_NM         ${CROSS_COMPILE}nm      PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
-
-if(CMAKE_C_COMPILER STREQUAL CMAKE_C_COMPILER-NOTFOUND)
-  message(FATAL_ERROR "Zephyr was unable to find the toolchain. Is the environment misconfigured?
-User-configuration:
-ZEPHYR_TOOLCHAIN_VARIANT: ${ZEPHYR_TOOLCHAIN_VARIANT}
-Internal variables:
-CROSS_COMPILE: ${CROSS_COMPILE}
-TOOLCHAIN_HOME: ${TOOLCHAIN_HOME}
-")
-endif()
-
-execute_process(
-  COMMAND ${CMAKE_C_COMPILER} --version
-  RESULT_VARIABLE ret
-  OUTPUT_QUIET
-  ERROR_QUIET
-  )
-if(ret)
-  message(FATAL_ERROR "Executing the below command failed. Are permissions set correctly?
-'${CMAKE_C_COMPILER} --version'
-"
-    )
-endif()
 
 if(CONFIG_CPLUSPLUS)
   set(cplusplus_compiler ${CROSS_COMPILE}${C++})
