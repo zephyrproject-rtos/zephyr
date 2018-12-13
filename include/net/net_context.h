@@ -748,6 +748,41 @@ int net_context_send(struct net_pkt *pkt,
 		     void *user_data);
 
 /**
+ * @brief Send a network buffer to a peer.
+ *
+ * @details This function can be used to send network data to a peer
+ * connection. This function will return immediately if the timeout
+ * is set to K_NO_WAIT. If the timeout is set to K_FOREVER, the function
+ * will wait until the network buffer is sent. Timeout value > 0 will
+ * wait as many ms. After the network buffer is sent,
+ * a caller-supplied callback is called. The callback is called even
+ * if timeout was set to K_FOREVER, the callback is called
+ * before this function will return in this case. The callback is not
+ * called if the timeout expires. For context of type SOCK_DGRAM,
+ * the destination address must have been set by the call to
+ * net_context_connect().
+ * This is similar as BSD send() function.
+ *
+ * @param context The network context to use.
+ * @param buf The data buffer to send
+ * @param len Length of the buffer
+ * @param cb Caller-supplied callback function.
+ * @param timeout Timeout for the connection. Possible values
+ * are K_FOREVER, K_NO_WAIT, >0.
+ * @param token Caller specified value that is passed as is to callback.
+ * @param user_data Caller-supplied user data.
+ *
+ * @return 0 if ok, < 0 if error
+ */
+int net_context_send_new(struct net_context *context,
+			 const void *buf,
+			 size_t len,
+			 net_context_send_cb_t cb,
+			 s32_t timeout,
+			 void *token,
+			 void *user_data);
+
+/**
  * @brief Send a network buffer to a peer specified by address.
  *
  * @details This function can be used to send network data to a peer
@@ -781,6 +816,46 @@ int net_context_sendto(struct net_pkt *pkt,
 		       s32_t timeout,
 		       void *token,
 		       void *user_data);
+
+
+/**
+ * @brief Send a network buffer to a peer specified by address.
+ *
+ * @details This function can be used to send network data to a peer
+ * specified by address. This variant can only be used for datagram
+ * connections of type SOCK_DGRAM. This function will return immediately
+ * if the timeout is set to K_NO_WAIT. If the timeout is set to K_FOREVER,
+ * the function will wait until the network buffer is sent. Timeout
+ * value > 0 will wait as many ms. After the network buffer
+ * is sent, a caller-supplied callback is called. The callback is called
+ * even if timeout was set to K_FOREVER, the callback is called
+ * before this function will return. The callback is not called if the
+ * timeout expires.
+ * This is similar as BSD sendto() function.
+ *
+ * @param context The network context to use.
+ * @param buf The data buffer to send
+ * @param len Length of the buffer
+ * @param dst_addr Destination address. This will override the address
+ * already set in network buffer.
+ * @param addrlen Length of the address.
+ * @param cb Caller-supplied callback function.
+ * @param timeout Timeout for the connection. Possible values
+ * are K_FOREVER, K_NO_WAIT, >0.
+ * @param token Caller specified value that is passed as is to callback.
+ * @param user_data Caller-supplied user data.
+ *
+ * @return numbers of bytes sent on success, a negative errno otherwise
+ */
+int net_context_sendto_new(struct net_context *context,
+			   const void *buf,
+			   size_t len,
+			   const struct sockaddr *dst_addr,
+			   socklen_t addrlen,
+			   net_context_send_cb_t cb,
+			   s32_t timeout,
+			   void *token,
+			   void *user_data);
 
 /**
  * @brief Receive network data from a peer specified by context.
