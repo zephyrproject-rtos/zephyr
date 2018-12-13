@@ -53,7 +53,7 @@ config WDT_QMSI
 	default y
 endif # WATCHDOG
 
-if RTC
+if COUNTER
 config RTC_QMSI
 	default y
 
