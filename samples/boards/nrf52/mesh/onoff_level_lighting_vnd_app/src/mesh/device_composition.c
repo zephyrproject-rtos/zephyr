@@ -164,7 +164,9 @@ static void gen_onoff_set_unack(struct bt_mesh_model *model,
 	}
 
 	now = k_uptime_get();
-	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
+	if (state->last_tid == tid &&
+	    state->last_src_addr == ctx->addr &&
+	    state->last_dst_addr == ctx->recv_dst &&
 	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
 		return;
 	}
@@ -190,7 +192,8 @@ static void gen_onoff_set_unack(struct bt_mesh_model *model,
 	k_timer_stop(ptr_timer);
 
 	state->last_tid = tid;
-	state->last_tx_addr = ctx->addr;
+	state->last_src_addr = ctx->addr;
+	state->last_dst_addr = ctx->recv_dst;
 	state->last_msg_timestamp = now;
 	state->target_onoff = onoff;
 
@@ -227,7 +230,9 @@ static void gen_onoff_set(struct bt_mesh_model *model,
 	}
 
 	now = k_uptime_get();
-	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
+	if (state->last_tid == tid &&
+	    state->last_src_addr == ctx->addr &&
+	    state->last_dst_addr == ctx->recv_dst &&
 	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
 		return;
 	}
@@ -253,7 +258,8 @@ static void gen_onoff_set(struct bt_mesh_model *model,
 	k_timer_stop(ptr_timer);
 
 	state->last_tid = tid;
-	state->last_tx_addr = ctx->addr;
+	state->last_src_addr = ctx->addr;
+	state->last_dst_addr = ctx->recv_dst;
 	state->last_msg_timestamp = now;
 	state->target_onoff = onoff;
 
@@ -350,7 +356,9 @@ static void gen_level_set_unack(struct bt_mesh_model *model,
 	tid = net_buf_simple_pull_u8(buf);
 
 	now = k_uptime_get();
-	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
+	if (state->last_tid == tid &&
+	    state->last_src_addr == ctx->addr &&
+	    state->last_dst_addr == ctx->recv_dst &&
 	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
 		return;
 	}
@@ -376,7 +384,8 @@ static void gen_level_set_unack(struct bt_mesh_model *model,
 	k_timer_stop(ptr_timer);
 
 	state->last_tid = tid;
-	state->last_tx_addr = ctx->addr;
+	state->last_src_addr = ctx->addr;
+	state->last_dst_addr = ctx->recv_dst;
 	state->last_msg_timestamp = now;
 	state->target_level = level;
 
@@ -419,7 +428,9 @@ static void gen_level_set(struct bt_mesh_model *model,
 	tid = net_buf_simple_pull_u8(buf);
 
 	now = k_uptime_get();
-	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
+	if (state->last_tid == tid &&
+	    state->last_src_addr == ctx->addr &&
+	    state->last_dst_addr == ctx->recv_dst &&
 	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
 		return;
 	}
@@ -445,7 +456,8 @@ static void gen_level_set(struct bt_mesh_model *model,
 	k_timer_stop(ptr_timer);
 
 	state->last_tid = tid;
-	state->last_tx_addr = ctx->addr;
+	state->last_src_addr = ctx->addr;
+	state->last_dst_addr = ctx->recv_dst;
 	state->last_msg_timestamp = now;
 	state->target_level = level;
 
@@ -490,7 +502,9 @@ static void gen_delta_set_unack(struct bt_mesh_model *model,
 	tid = net_buf_simple_pull_u8(buf);
 
 	now = k_uptime_get();
-	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
+	if (state->last_tid == tid &&
+	    state->last_src_addr == ctx->addr &&
+	    state->last_dst_addr == ctx->recv_dst &&
 	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
 
 		if (state->last_delta == delta) {
@@ -523,10 +537,11 @@ static void gen_delta_set_unack(struct bt_mesh_model *model,
 	*ptr_counter = 0U;
 	k_timer_stop(ptr_timer);
 
-	state->last_delta = delta;
 	state->last_tid = tid;
-	state->last_tx_addr = ctx->addr;
+	state->last_src_addr = ctx->addr;
+	state->last_dst_addr = ctx->recv_dst;
 	state->last_msg_timestamp = now;
+	state->last_delta = delta;
 
 	if (tmp32 < INT16_MIN) {
 		tmp32 = INT16_MIN;
@@ -576,7 +591,9 @@ static void gen_delta_set(struct bt_mesh_model *model,
 	tid = net_buf_simple_pull_u8(buf);
 
 	now = k_uptime_get();
-	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
+	if (state->last_tid == tid &&
+	    state->last_src_addr == ctx->addr &&
+	    state->last_dst_addr == ctx->recv_dst &&
 	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
 
 		if (state->last_delta == delta) {
@@ -609,10 +626,11 @@ static void gen_delta_set(struct bt_mesh_model *model,
 	*ptr_counter = 0U;
 	k_timer_stop(ptr_timer);
 
-	state->last_delta = delta;
 	state->last_tid = tid;
-	state->last_tx_addr = ctx->addr;
+	state->last_src_addr = ctx->addr;
+	state->last_dst_addr = ctx->recv_dst;
 	state->last_msg_timestamp = now;
+	state->last_delta = delta;
 
 	if (tmp32 < INT16_MIN) {
 		tmp32 = INT16_MIN;
@@ -718,7 +736,9 @@ static void gen_move_set_unack(struct bt_mesh_model *model,
 	tid = net_buf_simple_pull_u8(buf);
 
 	now = k_uptime_get();
-	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
+	if (state->last_tid == tid &&
+	    state->last_src_addr == ctx->addr &&
+	    state->last_dst_addr == ctx->recv_dst &&
 	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
 		return;
 	}
@@ -743,10 +763,11 @@ static void gen_move_set_unack(struct bt_mesh_model *model,
 	*ptr_counter = 0U;
 	k_timer_stop(ptr_timer);
 
-	state->last_delta = delta;
 	state->last_tid = tid;
-	state->last_tx_addr = ctx->addr;
+	state->last_src_addr = ctx->addr;
+	state->last_dst_addr = ctx->recv_dst;
 	state->last_msg_timestamp = now;
+	state->last_delta = delta;
 
 	tmp32 = state->level + delta;
 	if (tmp32 < INT16_MIN) {
@@ -794,7 +815,9 @@ static void gen_move_set(struct bt_mesh_model *model,
 	tid = net_buf_simple_pull_u8(buf);
 
 	now = k_uptime_get();
-	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
+	if (state->last_tid == tid &&
+	    state->last_src_addr == ctx->addr &&
+	    state->last_dst_addr == ctx->recv_dst &&
 	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
 		return;
 	}
@@ -819,10 +842,11 @@ static void gen_move_set(struct bt_mesh_model *model,
 	*ptr_counter = 0U;
 	k_timer_stop(ptr_timer);
 
-	state->last_delta = delta;
 	state->last_tid = tid;
-	state->last_tx_addr = ctx->addr;
+	state->last_src_addr = ctx->addr;
+	state->last_dst_addr = ctx->recv_dst;
 	state->last_msg_timestamp = now;
+	state->last_delta = delta;
 
 	tmp32 = state->level + delta;
 	if (tmp32 < INT16_MIN) {
@@ -1082,13 +1106,16 @@ static void vnd_set_unack(struct bt_mesh_model *model,
 	tid = net_buf_simple_pull_u8(buf);
 
 	now = k_uptime_get();
-	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
-	    (now - state->last_msg_timestamp <= 6000)) {
+	if (state->last_tid == tid &&
+	    state->last_src_addr == ctx->addr &&
+	    state->last_dst_addr == ctx->recv_dst &&
+	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
 		return;
 	}
 
 	state->last_tid = tid;
-	state->last_tx_addr = ctx->addr;
+	state->last_src_addr = ctx->addr;
+	state->last_dst_addr = ctx->recv_dst;
 	state->last_msg_timestamp = now;
 	state->current = current;
 
@@ -1180,7 +1207,9 @@ static void light_lightness_set_unack(struct bt_mesh_model *model,
 	tid = net_buf_simple_pull_u8(buf);
 
 	now = k_uptime_get();
-	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
+	if (state->last_tid == tid &&
+	    state->last_src_addr == ctx->addr &&
+	    state->last_dst_addr == ctx->recv_dst &&
 	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
 		return;
 	}
@@ -1206,7 +1235,8 @@ static void light_lightness_set_unack(struct bt_mesh_model *model,
 	k_timer_stop(ptr_timer);
 
 	state->last_tid = tid;
-	state->last_tx_addr = ctx->addr;
+	state->last_src_addr = ctx->addr;
+	state->last_dst_addr = ctx->recv_dst;
 	state->last_msg_timestamp = now;
 
 	if (actual > 0 && actual < state->light_range_min) {
@@ -1247,7 +1277,9 @@ static void light_lightness_set(struct bt_mesh_model *model,
 	tid = net_buf_simple_pull_u8(buf);
 
 	now = k_uptime_get();
-	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
+	if (state->last_tid == tid &&
+	    state->last_src_addr == ctx->addr &&
+	    state->last_dst_addr == ctx->recv_dst &&
 	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
 		return;
 	}
@@ -1273,7 +1305,8 @@ static void light_lightness_set(struct bt_mesh_model *model,
 	k_timer_stop(ptr_timer);
 
 	state->last_tid = tid;
-	state->last_tx_addr = ctx->addr;
+	state->last_src_addr = ctx->addr;
+	state->last_dst_addr = ctx->recv_dst;
 	state->last_msg_timestamp = now;
 
 	if (actual > 0 && actual < state->light_range_min) {
@@ -1364,7 +1397,9 @@ static void light_lightness_linear_set_unack(struct bt_mesh_model *model,
 	tid = net_buf_simple_pull_u8(buf);
 
 	now = k_uptime_get();
-	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
+	if (state->last_tid == tid &&
+	    state->last_src_addr == ctx->addr &&
+	    state->last_dst_addr == ctx->recv_dst &&
 	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
 		return;
 	}
@@ -1390,7 +1425,8 @@ static void light_lightness_linear_set_unack(struct bt_mesh_model *model,
 	k_timer_stop(ptr_timer);
 
 	state->last_tid = tid;
-	state->last_tx_addr = ctx->addr;
+	state->last_src_addr = ctx->addr;
+	state->last_dst_addr = ctx->recv_dst;
 	state->last_msg_timestamp = now;
 	state->target_linear = linear;
 
@@ -1424,7 +1460,9 @@ static void light_lightness_linear_set(struct bt_mesh_model *model,
 	tid = net_buf_simple_pull_u8(buf);
 
 	now = k_uptime_get();
-	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
+	if (state->last_tid == tid &&
+	    state->last_src_addr == ctx->addr &&
+	    state->last_dst_addr == ctx->recv_dst &&
 	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
 		return;
 	}
@@ -1450,7 +1488,8 @@ static void light_lightness_linear_set(struct bt_mesh_model *model,
 	k_timer_stop(ptr_timer);
 
 	state->last_tid = tid;
-	state->last_tx_addr = ctx->addr;
+	state->last_src_addr = ctx->addr;
+	state->last_dst_addr = ctx->recv_dst;
 	state->last_msg_timestamp = now;
 	state->target_linear = linear;
 
@@ -1781,7 +1820,9 @@ static void light_ctl_set_unack(struct bt_mesh_model *model,
 	}
 
 	now = k_uptime_get();
-	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
+	if (state->last_tid == tid &&
+	    state->last_src_addr == ctx->addr &&
+	    state->last_dst_addr == ctx->recv_dst &&
 	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
 		return;
 	}
@@ -1807,7 +1848,8 @@ static void light_ctl_set_unack(struct bt_mesh_model *model,
 	k_timer_stop(ptr_timer);
 
 	state->last_tid = tid;
-	state->last_tx_addr = ctx->addr;
+	state->last_src_addr = ctx->addr;
+	state->last_dst_addr = ctx->recv_dst;
 	state->last_msg_timestamp = now;
 	state->target_lightness = lightness;
 
@@ -1861,7 +1903,9 @@ static void light_ctl_set(struct bt_mesh_model *model,
 	}
 
 	now = k_uptime_get();
-	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
+	if (state->last_tid == tid &&
+	    state->last_src_addr == ctx->addr &&
+	    state->last_dst_addr == ctx->recv_dst &&
 	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
 		return;
 	}
@@ -1887,7 +1931,8 @@ static void light_ctl_set(struct bt_mesh_model *model,
 	k_timer_stop(ptr_timer);
 
 	state->last_tid = tid;
-	state->last_tx_addr = ctx->addr;
+	state->last_src_addr = ctx->addr;
+	state->last_dst_addr = ctx->recv_dst;
 	state->last_msg_timestamp = now;
 	state->target_lightness = lightness;
 
@@ -2241,7 +2286,9 @@ static void light_ctl_temp_set_unack(struct bt_mesh_model *model,
 	}
 
 	now = k_uptime_get();
-	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
+	if (state->last_tid == tid &&
+	    state->last_src_addr == ctx->addr &&
+	    state->last_dst_addr == ctx->recv_dst &&
 	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
 		return;
 	}
@@ -2267,7 +2314,8 @@ static void light_ctl_temp_set_unack(struct bt_mesh_model *model,
 	k_timer_stop(ptr_timer);
 
 	state->last_tid = tid;
-	state->last_tx_addr = ctx->addr;
+	state->last_src_addr = ctx->addr;
+	state->last_dst_addr = ctx->recv_dst;
 	state->last_msg_timestamp = now;
 
 	if (temp < state->temp_range_min) {
@@ -2317,7 +2365,9 @@ static void light_ctl_temp_set(struct bt_mesh_model *model,
 	}
 
 	now = k_uptime_get();
-	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
+	if (state->last_tid == tid &&
+	    state->last_src_addr == ctx->addr &&
+	    state->last_dst_addr == ctx->recv_dst &&
 	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
 		return;
 	}
@@ -2343,7 +2393,8 @@ static void light_ctl_temp_set(struct bt_mesh_model *model,
 	k_timer_stop(ptr_timer);
 
 	state->last_tid = tid;
-	state->last_tx_addr = ctx->addr;
+	state->last_src_addr = ctx->addr;
+	state->last_dst_addr = ctx->recv_dst;
 	state->last_msg_timestamp = now;
 
 	if (temp < state->temp_range_min) {

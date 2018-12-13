@@ -31,7 +31,8 @@ struct generic_onoff_state {
 	u8_t target_onoff;
 
 	u8_t last_tid;
-	u16_t last_tx_addr;
+	u16_t last_src_addr;
+	u16_t last_dst_addr;
 	s64_t last_msg_timestamp;
 
 	struct transition *transition;
@@ -45,7 +46,8 @@ struct generic_level_state {
 	s32_t last_delta;
 
 	u8_t last_tid;
-	u16_t last_tx_addr;
+	u16_t last_src_addr;
+	u16_t last_dst_addr;
 	s64_t last_msg_timestamp;
 
 	s32_t tt_delta;
@@ -65,7 +67,8 @@ struct vendor_state {
 	int current;
 	u32_t response;
 	u8_t last_tid;
-	u16_t last_tx_addr;
+	u16_t last_src_addr;
+	u16_t last_dst_addr;
 	s64_t last_msg_timestamp;
 };
 
@@ -84,7 +87,8 @@ struct light_lightness_state {
 	u16_t light_range_max;
 
 	u8_t last_tid;
-	u16_t last_tx_addr;
+	u16_t last_src_addr;
+	u16_t last_dst_addr;
 	s64_t last_msg_timestamp;
 
 	s32_t tt_delta_actual;
@@ -115,7 +119,8 @@ struct light_ctl_state {
 	u32_t lightness_temp_last;
 
 	u8_t last_tid;
-	u16_t last_tx_addr;
+	u16_t last_src_addr;
+	u16_t last_dst_addr;
 	s64_t last_msg_timestamp;
 
 	s32_t tt_delta_lightness;
