@@ -28,27 +28,6 @@
 
 #define SHELL_INIT_OPTION_PRINTER	(NULL)
 
-#define EXIT_HISTORY(shell)					\
-		((shell)->ctx->internal.flags.history_exit)
-#define EXIT_HISTORY_REQUEST(shell)				\
-		((shell)->ctx->internal.flags.history_exit = 1)
-#define EXIT_HISTORY_CLEAR(shell)				\
-		((shell)->ctx->internal.flags.history_exit = 0)
-
-static int shell_execute(const struct shell *shell);
-
-/* Function returns true if delete escape code shall be interpreted as
- * backspace.
- */
-static inline bool flag_delete_mode_set(const struct shell *shell)
-{
-	return shell->ctx->internal.flags.mode_delete == 1 ? true : false;
-}
-
-static inline bool flag_processing_is_set(const struct shell *shell)
-{
-	return shell->ctx->internal.flags.processing == 1 ? true : false;
-}
 
 static inline void receive_state_change(const struct shell *shell,
 					enum shell_receive_state state)
@@ -56,29 +35,29 @@ static inline void receive_state_change(const struct shell *shell,
 	shell->ctx->receive_state = state;
 }
 
-static void shell_cmd_buffer_clear(const struct shell *shell)
+static void cmd_buffer_clear(const struct shell *shell)
 {
 	shell->ctx->cmd_buff[0] = '\0'; /* clear command buffer */
 	shell->ctx->cmd_buff_pos = 0;
 	shell->ctx->cmd_buff_len = 0;
 }
 
-static inline void shell_prompt_print(const struct shell *shell)
+static inline void prompt_print(const struct shell *shell)
 {
 	shell_fprintf(shell, SHELL_INFO, "%s", shell->prompt);
 }
 
-static inline void shell_command_print(const struct shell *shell)
+static inline void cmd_print(const struct shell *shell)
 {
 	shell_fprintf(shell, SHELL_NORMAL, "%s", shell->ctx->cmd_buff);
 }
 
 static void cmd_line_print(const struct shell *shell)
 {
-	shell_prompt_print(shell);
+	prompt_print(shell);
 
-	if (flag_echo_is_set(shell)) {
-		shell_command_print(shell);
+	if (flag_echo_get(shell)) {
+		cmd_print(shell);
 		shell_op_cursor_position_synchronize(shell);
 	}
 }
@@ -91,15 +70,13 @@ static void cmd_line_print(const struct shell *shell)
  * @param[in] arg_cnt_ok  Flag indicating valid number of arguments.
  *
  * @return 0		  if check passed
- * @return 1		  if help was requested
  * @return -EINVAL	  if wrong argument count
  */
-static int shell_cmd_precheck(const struct shell *shell,
-			      bool arg_cnt_ok)
+static int cmd_precheck(const struct shell *shell,
+			bool arg_cnt_ok)
 {
 	if (!arg_cnt_ok) {
-		shell_fprintf(shell, SHELL_ERROR,
-			      "%s: wrong parameter count\n",
+		shell_fprintf(shell, SHELL_ERROR, "%s: wrong parameter count\n",
 			      shell->ctx->active_cmd.syntax);
 
 		if (IS_ENABLED(CONFIG_SHELL_HELP_ON_WRONG_ARGUMENT_COUNT)) {
@@ -112,64 +89,13 @@ static int shell_cmd_precheck(const struct shell *shell,
 	return 0;
 }
 
-static void vt100_color_set(const struct shell *shell,
-			    enum shell_vt100_color color)
-{
-
-	if (shell->ctx->vt100_ctx.col.col == color) {
-		return;
-	}
-
-	shell->ctx->vt100_ctx.col.col = color;
-
-	if (color != SHELL_NORMAL) {
-
-		u8_t cmd[] = SHELL_VT100_COLOR(color - 1);
-
-		shell_raw_fprintf(shell->fprintf_ctx, "%s", cmd);
-	} else {
-		static const u8_t cmd[] = SHELL_VT100_MODESOFF;
-
-		shell_raw_fprintf(shell->fprintf_ctx, "%s", cmd);
-	}
-}
-
-static void vt100_bgcolor_set(const struct shell *shell,
-			      enum shell_vt100_color bgcolor)
-{
-	if ((bgcolor == SHELL_NORMAL) ||
-	    (shell->ctx->vt100_ctx.col.bgcol == bgcolor)) {
-		return;
-	}
-
-	/* -1 because default value is first in enum */
-	u8_t cmd[] = SHELL_VT100_BGCOLOR(bgcolor - 1);
-
-	shell->ctx->vt100_ctx.col.bgcol = bgcolor;
-	shell_raw_fprintf(shell->fprintf_ctx, "%s", cmd);
-
-}
-
-static inline void vt100_colors_store(const struct shell *shell,
-				      struct shell_vt100_colors *color)
-{
-	memcpy(color, &shell->ctx->vt100_ctx.col, sizeof(*color));
-}
-
-static void vt100_colors_restore(const struct shell *shell,
-				 const struct shell_vt100_colors *color)
-{
-	vt100_color_set(shell, color->col);
-	vt100_bgcolor_set(shell, color->bgcol);
-}
-
-static void shell_state_set(const struct shell *shell, enum shell_state state)
+static void state_set(const struct shell *shell, enum shell_state state)
 {
 	shell->ctx->state = state;
 
 	if (state == SHELL_STATE_ACTIVE) {
-		shell_cmd_buffer_clear(shell);
-		shell_prompt_print(shell);
+		cmd_buffer_clear(shell);
+		prompt_print(shell);
 	}
 }
 
@@ -225,7 +151,7 @@ static void history_mode_exit(const struct shell *shell)
 		return;
 	}
 
-	EXIT_HISTORY_CLEAR(shell);
+	flag_history_exit_set(shell, false);
 	shell_history_mode_exit(shell->history);
 }
 
@@ -249,8 +175,8 @@ static void history_handle(const struct shell *shell, bool up)
 	}
 
 	/* Checking if history process has been stopped */
-	if (EXIT_HISTORY(shell)) {
-		EXIT_HISTORY_CLEAR(shell);
+	if (flag_history_exit_get(shell)) {
+		flag_history_exit_set(shell, false);
 		shell_history_mode_exit(shell->history);
 	}
 
@@ -283,7 +209,7 @@ static void history_handle(const struct shell *shell, bool up)
 
 	shell_op_cursor_home_move(shell);
 	clear_eos(shell);
-	shell_command_print(shell);
+	cmd_print(shell);
 	shell->ctx->cmd_buff_pos = len;
 	shell->ctx->cmd_buff_len = len;
 	shell_op_cond_next_line(shell);
@@ -353,11 +279,11 @@ static inline u16_t completion_space_get(const struct shell *shell)
 }
 
 /* Prepare arguments and return number of space available for completion. */
-static bool shell_tab_prepare(const struct shell *shell,
-			      const struct shell_static_entry **cmd,
-			      char **argv, size_t *argc,
-			      size_t *complete_arg_idx,
-			      struct shell_static_entry *d_entry)
+static bool tab_prepare(const struct shell *shell,
+			const struct shell_static_entry **cmd,
+			char **argv, size_t *argc,
+			size_t *complete_arg_idx,
+			struct shell_static_entry *d_entry)
 {
 	u16_t compl_space = completion_space_get(shell);
 	size_t search_argc;
@@ -474,10 +400,10 @@ static void autocomplete(const struct shell *shell,
 	/* Next character in the buffer is not 'space'. */
 	if (!isspace((int) shell->ctx->cmd_buff[
 					shell->ctx->cmd_buff_pos])) {
-		if (shell->ctx->internal.flags.insert_mode) {
-			shell->ctx->internal.flags.insert_mode = 0;
+		if (flag_insert_mode_get(shell)) {
+			flag_insert_mode_set(shell, false);
 			shell_op_char_insert(shell, ' ');
-			shell->ctx->internal.flags.insert_mode = 1;
+			flag_insert_mode_set(shell, true);
 		} else {
 			shell_op_char_insert(shell, ' ');
 		}
@@ -493,7 +419,7 @@ static void autocomplete(const struct shell *shell,
 	}
 }
 
-static size_t shell_str_common(const char *s1, const char *s2, size_t n)
+static size_t str_common(const char *s1, const char *s2, size_t n)
 {
 	size_t common = 0;
 
@@ -567,8 +493,8 @@ static u16_t common_beginning_find(const struct shell_static_entry *cmd,
 			break;
 		}
 
-		curr_common = shell_str_common(match->syntax, match2->syntax,
-					       UINT16_MAX);
+		curr_common = str_common(match->syntax, match2->syntax,
+					 UINT16_MAX);
 		if ((arg_len == 0U) || (curr_common >= arg_len)) {
 			--cnt;
 			common = (curr_common < common) ? curr_common : common;
@@ -593,283 +519,6 @@ static void partial_autocomplete(const struct shell *shell,
 		shell_op_completion_insert(shell, &completion[arg_len],
 					   common - arg_len);
 	}
-}
-
-static void shell_tab_handle(const struct shell *shell)
-{
-	/* +1 reserved for NULL in function shell_make_argv */
-	char *argv[CONFIG_SHELL_ARGC_MAX + 1];
-	/* d_entry - placeholder for dynamic command */
-	struct shell_static_entry d_entry;
-	const struct shell_static_entry *cmd;
-	size_t first = 0;
-	size_t arg_idx;
-	u16_t longest;
-	size_t argc;
-	size_t cnt;
-
-	bool tab_possible = shell_tab_prepare(shell, &cmd, argv, &argc,
-					      &arg_idx, &d_entry);
-
-	if (tab_possible == false) {
-		return;
-	}
-
-	find_completion_candidates(cmd, argv[arg_idx], &first, &cnt, &longest);
-
-	if (cnt == 1) {
-		/* Autocompletion.*/
-		autocomplete(shell, cmd, argv[arg_idx], first);
-	} else if (cnt > 1) {
-		tab_options_print(shell, cmd, argv[arg_idx], first, cnt,
-				  longest);
-		partial_autocomplete(shell, cmd, argv[arg_idx], first, cnt);
-	}
-}
-
-static void metakeys_handle(const struct shell *shell, char data)
-{
-	/* Optional feature */
-	if (!IS_ENABLED(CONFIG_SHELL_METAKEYS)) {
-		return;
-	}
-
-	switch (data) {
-	case SHELL_VT100_ASCII_CTRL_A: /* CTRL + A */
-		shell_op_cursor_home_move(shell);
-		break;
-
-	case SHELL_VT100_ASCII_CTRL_C: /* CTRL + C */
-		shell_op_cursor_end_move(shell);
-		if (!shell_cursor_in_empty_line(shell)) {
-			cursor_next_line_move(shell);
-		}
-		EXIT_HISTORY_REQUEST(shell);
-		shell_state_set(shell, SHELL_STATE_ACTIVE);
-		break;
-
-	case SHELL_VT100_ASCII_CTRL_E: /* CTRL + E */
-		shell_op_cursor_end_move(shell);
-		break;
-
-	case SHELL_VT100_ASCII_CTRL_L: /* CTRL + L */
-		SHELL_VT100_CMD(shell, SHELL_VT100_CURSORHOME);
-		SHELL_VT100_CMD(shell, SHELL_VT100_CLEARSCREEN);
-		cmd_line_print(shell);
-		break;
-
-	case SHELL_VT100_ASCII_CTRL_U: /* CTRL + U */
-		shell_op_cursor_home_move(shell);
-		shell_cmd_buffer_clear(shell);
-		EXIT_HISTORY_REQUEST(shell);
-		clear_eos(shell);
-		break;
-
-	case SHELL_VT100_ASCII_CTRL_W: /* CTRL + W */
-		shell_op_word_remove(shell);
-		EXIT_HISTORY_REQUEST(shell);
-		break;
-
-	default:
-		break;
-	}
-}
-
-/* Functions returns true if new line character shall be processed */
-static bool process_nl(const struct shell *shell, u8_t data)
-{
-	if ((data != '\r') && (data != '\n')) {
-		shell->ctx->internal.flags.last_nl = 0;
-		return false;
-	}
-
-	if ((shell->ctx->internal.flags.last_nl == 0) ||
-	    (data == shell->ctx->internal.flags.last_nl)) {
-		shell->ctx->internal.flags.last_nl = data;
-		return true;
-	}
-
-	return false;
-}
-
-#define SHELL_ASCII_MAX_CHAR (127u)
-static inline int ascii_filter(const char data)
-{
-	return (u8_t) data > SHELL_ASCII_MAX_CHAR ? -EINVAL : 0;
-}
-
-static void shell_state_collect(const struct shell *shell)
-{
-	size_t count = 0;
-	char data;
-
-	while (true) {
-		(void)shell->iface->api->read(shell->iface, &data,
-					      sizeof(data), &count);
-		if (count == 0) {
-			return;
-		}
-
-		if (ascii_filter(data) != 0) {
-			continue;
-		}
-
-		switch (shell->ctx->receive_state) {
-		case SHELL_RECEIVE_DEFAULT:
-			if (process_nl(shell, data)) {
-				if (!shell->ctx->cmd_buff_len) {
-					history_mode_exit(shell);
-					cursor_next_line_move(shell);
-				} else {
-					/* Command execution */
-					(void)shell_execute(shell);
-				}
-				/* Function responsible for printing prompt
-				 * on received NL.
-				 */
-				shell_state_set(shell, SHELL_STATE_ACTIVE);
-				return;
-			}
-
-			switch (data) {
-			case SHELL_VT100_ASCII_ESC: /* ESCAPE */
-				receive_state_change(shell, SHELL_RECEIVE_ESC);
-				break;
-
-			case '\0':
-				break;
-
-			case '\t': /* TAB */
-				if (flag_echo_is_set(shell)) {
-					/* If the Tab key is pressed, "history
-					 * mode" must be terminated because
-					 * tab and history handlers are sharing
-					 * the same array: temp_buff.
-					 */
-					EXIT_HISTORY_REQUEST(shell);
-					shell_tab_handle(shell);
-				}
-				break;
-
-			case SHELL_VT100_ASCII_BSPACE: /* BACKSPACE */
-				if (flag_echo_is_set(shell)) {
-					EXIT_HISTORY_REQUEST(shell);
-					shell_op_char_backspace(shell);
-				}
-				break;
-
-			case SHELL_VT100_ASCII_DEL: /* DELETE */
-				if (flag_echo_is_set(shell)) {
-					EXIT_HISTORY_REQUEST(shell);
-					if (flag_delete_mode_set(shell)) {
-						shell_op_char_backspace(shell);
-
-					} else {
-						shell_op_char_delete(shell);
-					}
-				}
-				break;
-
-			default:
-				if (isprint((int) data)) {
-					EXIT_HISTORY_REQUEST(shell);
-					shell_op_char_insert(shell, data);
-				} else {
-					metakeys_handle(shell, data);
-				}
-				break;
-			}
-			break;
-
-		case SHELL_RECEIVE_ESC:
-			if (data == '[') {
-				receive_state_change(shell,
-						SHELL_RECEIVE_ESC_SEQ);
-			} else {
-				receive_state_change(shell,
-						SHELL_RECEIVE_DEFAULT);
-			}
-			break;
-
-		case SHELL_RECEIVE_ESC_SEQ:
-			receive_state_change(shell, SHELL_RECEIVE_DEFAULT);
-
-			if (!flag_echo_is_set(shell)) {
-				return;
-			}
-
-			switch (data) {
-			case 'A': /* UP arrow */
-				history_handle(shell, true);
-				break;
-
-			case 'B': /* DOWN arrow */
-				history_handle(shell, false);
-				break;
-
-			case 'C': /* RIGHT arrow */
-				shell_op_right_arrow(shell);
-				break;
-
-			case 'D': /* LEFT arrow */
-				shell_op_left_arrow(shell);
-				break;
-
-			case '4': /* END Button in ESC[n~ mode */
-				receive_state_change(shell,
-						SHELL_RECEIVE_TILDE_EXP);
-				/* fall through */
-				/* no break */
-			case 'F': /* END Button in VT100 mode */
-				shell_op_cursor_end_move(shell);
-				break;
-
-			case '1': /* HOME Button in ESC[n~ mode */
-				receive_state_change(shell,
-						SHELL_RECEIVE_TILDE_EXP);
-				/* fall through */
-				/* no break */
-			case 'H': /* HOME Button in VT100 mode */
-				shell_op_cursor_home_move(shell);
-				break;
-
-			case '2': /* INSERT Button in ESC[n~ mode */
-				receive_state_change(shell,
-						SHELL_RECEIVE_TILDE_EXP);
-				/* fall through */
-				/* no break */
-			case 'L': /* INSERT Button in VT100 mode */
-				shell->ctx->internal.flags.insert_mode ^= 1;
-				break;
-
-			case '3':/* DELETE Button in ESC[n~ mode */
-				receive_state_change(shell,
-						SHELL_RECEIVE_TILDE_EXP);
-				if (flag_echo_is_set(shell)) {
-					shell_op_char_delete(shell);
-				}
-				break;
-
-			default:
-				break;
-			}
-			break;
-
-		case SHELL_RECEIVE_TILDE_EXP:
-			receive_state_change(shell, SHELL_RECEIVE_DEFAULT);
-			break;
-
-		default:
-			receive_state_change(shell, SHELL_RECEIVE_DEFAULT);
-			break;
-		}
-	}
-}
-
-static void cmd_trim(const struct shell *shell)
-{
-	shell_buffer_trim(shell->ctx->cmd_buff, &shell->ctx->cmd_buff_len);
-	shell->ctx->cmd_buff_pos = shell->ctx->cmd_buff_len;
 }
 
 static int exec_cmd(const struct shell *shell, size_t argc, char **argv,
@@ -898,15 +547,15 @@ static int exec_cmd(const struct shell *shell, size_t argc, char **argv,
 
 		if (args->optional > 0) {
 			/* Check if argc is within allowed range */
-			ret_val = shell_cmd_precheck(shell,
-						     ((argc >= args->mandatory)
-						      &&
-						     (argc <= args->mandatory +
-						     args->optional)));
+			ret_val = cmd_precheck(shell,
+					       ((argc >= args->mandatory)
+					       &&
+					       (argc <= args->mandatory +
+					       args->optional)));
 		} else {
 			/* Perform exact match if there are no optional args */
-			ret_val = shell_cmd_precheck(shell,
-						     (args->mandatory == argc));
+			ret_val = cmd_precheck(shell,
+					       (args->mandatory == argc));
 		}
 	}
 
@@ -921,7 +570,7 @@ static int exec_cmd(const struct shell *shell, size_t argc, char **argv,
  * invokes the  last recognized command which has a handler and passes the rest
  * of command buffer as arguments.
  */
-static int shell_execute(const struct shell *shell)
+static int execute(const struct shell *shell)
 {
 	struct shell_static_entry d_entry; /* Memory for dynamic commands. */
 	char *argv[CONFIG_SHELL_ARGC_MAX + 1]; /* +1 reserved for NULL */
@@ -942,7 +591,7 @@ static int shell_execute(const struct shell *shell)
 
 	memset(&shell->ctx->active_cmd, 0, sizeof(shell->ctx->active_cmd));
 
-	cmd_trim(shell);
+	shell_cmd_trim(shell);
 
 	history_put(shell, shell->ctx->cmd_buff,
 		    shell->ctx->cmd_buff_len);
@@ -960,15 +609,15 @@ static int shell_execute(const struct shell *shell)
 	}
 
 	if (quote != 0) {
-		shell_fprintf(shell, SHELL_ERROR, "not terminated: %c\r\n",
+		shell_fprintf(shell, SHELL_ERROR, "not terminated: %c\n",
 			      quote);
 		return -ENOEXEC;
 	}
 
 	/*  Searching for a matching root command. */
-	p_cmd = root_cmd_find(argv[0]);
+	p_cmd = shell_root_cmd_find(argv[0]);
 	if (p_cmd == NULL) {
-		shell_fprintf(shell, SHELL_ERROR, "%s%s\r\n", argv[0],
+		shell_fprintf(shell, SHELL_ERROR, "%s%s\n", argv[0],
 			      SHELL_MSG_COMMAND_NOT_FOUND);
 		return -ENOEXEC;
 	}
@@ -987,9 +636,8 @@ static int shell_execute(const struct shell *shell)
 			break;
 		}
 
-		if (IS_ENABLED(CONFIG_SHELL_HELP) &&
-		    (!strcmp(argv[cmd_lvl], "-h") ||
-		     !strcmp(argv[cmd_lvl], "--help"))) {
+		if (!strcmp(argv[cmd_lvl], "-h") ||
+		    !strcmp(argv[cmd_lvl], "--help")) {
 			/* Command called with help option so it makes no sense
 			 * to search deeper commands.
 			 */
@@ -1051,7 +699,7 @@ static int shell_execute(const struct shell *shell)
 							      SHELL_ERROR,
 							"Error: requested"
 							" multiple function"
-							" executions\r\n");
+							" executions\n");
 
 						return -ENOEXEC;
 					}
@@ -1087,27 +735,288 @@ static int shell_execute(const struct shell *shell)
 			&argv[cmd_with_handler_lvl], help_entry);
 }
 
-static void shell_transport_evt_handler(enum shell_transport_evt evt_type,
-				      void *context)
+static void tab_handle(const struct shell *shell)
 {
-	struct shell *shell = (struct shell *)context;
+	/* +1 reserved for NULL in function shell_make_argv */
+	char *argv[CONFIG_SHELL_ARGC_MAX + 1];
+	/* d_entry - placeholder for dynamic command */
+	struct shell_static_entry d_entry;
+	const struct shell_static_entry *cmd;
+	size_t first = 0;
+	size_t arg_idx;
+	u16_t longest;
+	size_t argc;
+	size_t cnt;
+
+	bool tab_possible = tab_prepare(shell, &cmd, argv, &argc,
+					      &arg_idx, &d_entry);
+
+	if (tab_possible == false) {
+		return;
+	}
+
+	find_completion_candidates(cmd, argv[arg_idx], &first, &cnt, &longest);
+
+	if (cnt == 1) {
+		/* Autocompletion.*/
+		autocomplete(shell, cmd, argv[arg_idx], first);
+	} else if (cnt > 1) {
+		tab_options_print(shell, cmd, argv[arg_idx], first, cnt,
+				  longest);
+		partial_autocomplete(shell, cmd, argv[arg_idx], first, cnt);
+	}
+}
+
+static void metakeys_handle(const struct shell *shell, char data)
+{
+	/* Optional feature */
+	if (!IS_ENABLED(CONFIG_SHELL_METAKEYS)) {
+		return;
+	}
+
+	switch (data) {
+	case SHELL_VT100_ASCII_CTRL_A: /* CTRL + A */
+		shell_op_cursor_home_move(shell);
+		break;
+
+	case SHELL_VT100_ASCII_CTRL_C: /* CTRL + C */
+		shell_op_cursor_end_move(shell);
+		if (!shell_cursor_in_empty_line(shell)) {
+			cursor_next_line_move(shell);
+		}
+		flag_history_exit_set(shell, true);
+		state_set(shell, SHELL_STATE_ACTIVE);
+		break;
+
+	case SHELL_VT100_ASCII_CTRL_E: /* CTRL + E */
+		shell_op_cursor_end_move(shell);
+		break;
+
+	case SHELL_VT100_ASCII_CTRL_L: /* CTRL + L */
+		SHELL_VT100_CMD(shell, SHELL_VT100_CURSORHOME);
+		SHELL_VT100_CMD(shell, SHELL_VT100_CLEARSCREEN);
+		cmd_line_print(shell);
+		break;
+
+	case SHELL_VT100_ASCII_CTRL_U: /* CTRL + U */
+		shell_op_cursor_home_move(shell);
+		cmd_buffer_clear(shell);
+		flag_history_exit_set(shell, true);
+		clear_eos(shell);
+		break;
+
+	case SHELL_VT100_ASCII_CTRL_W: /* CTRL + W */
+		shell_op_word_remove(shell);
+		flag_history_exit_set(shell, true);
+		break;
+
+	default:
+		break;
+	}
+}
+
+/* Functions returns true if new line character shall be processed */
+static bool process_nl(const struct shell *shell, u8_t data)
+{
+	if ((data != '\r') && (data != '\n')) {
+		flag_last_nl_set(shell, 0);
+		return false;
+	}
+
+	if ((flag_last_nl_get(shell) == 0) ||
+	    (data == flag_last_nl_get(shell))) {
+		flag_last_nl_set(shell, data);
+		return true;
+	}
+
+	return false;
+}
+
+#define SHELL_ASCII_MAX_CHAR (127u)
+static inline int ascii_filter(const char data)
+{
+	return (u8_t) data > SHELL_ASCII_MAX_CHAR ? -EINVAL : 0;
+}
+
+static void state_collect(const struct shell *shell)
+{
+	size_t count = 0;
+	char data;
+
+	while (true) {
+		(void)shell->iface->api->read(shell->iface, &data,
+					      sizeof(data), &count);
+		if (count == 0) {
+			return;
+		}
+
+		if (ascii_filter(data) != 0) {
+			continue;
+		}
+
+		switch (shell->ctx->receive_state) {
+		case SHELL_RECEIVE_DEFAULT:
+			if (process_nl(shell, data)) {
+				if (!shell->ctx->cmd_buff_len) {
+					history_mode_exit(shell);
+					cursor_next_line_move(shell);
+				} else {
+					/* Command execution */
+					(void)execute(shell);
+				}
+				/* Function responsible for printing prompt
+				 * on received NL.
+				 */
+				state_set(shell, SHELL_STATE_ACTIVE);
+				return;
+			}
+
+			switch (data) {
+			case SHELL_VT100_ASCII_ESC: /* ESCAPE */
+				receive_state_change(shell, SHELL_RECEIVE_ESC);
+				break;
+
+			case '\0':
+				break;
+
+			case '\t': /* TAB */
+				if (flag_echo_get(shell)) {
+					/* If the Tab key is pressed, "history
+					 * mode" must be terminated because
+					 * tab and history handlers are sharing
+					 * the same array: temp_buff.
+					 */
+					flag_history_exit_set(shell, true);
+					tab_handle(shell);
+				}
+				break;
+
+			case SHELL_VT100_ASCII_BSPACE: /* BACKSPACE */
+				if (flag_echo_get(shell)) {
+					flag_history_exit_set(shell, true);
+					shell_op_char_backspace(shell);
+				}
+				break;
+
+			case SHELL_VT100_ASCII_DEL: /* DELETE */
+				if (flag_echo_get(shell)) {
+					flag_history_exit_set(shell, true);
+					if (flag_mode_delete_get(shell)) {
+						shell_op_char_backspace(shell);
+
+					} else {
+						shell_op_char_delete(shell);
+					}
+				}
+				break;
+
+			default:
+				if (isprint((int) data)) {
+					flag_history_exit_set(shell, true);
+					shell_op_char_insert(shell, data);
+				} else {
+					metakeys_handle(shell, data);
+				}
+				break;
+			}
+			break;
+
+		case SHELL_RECEIVE_ESC:
+			if (data == '[') {
+				receive_state_change(shell,
+						SHELL_RECEIVE_ESC_SEQ);
+			} else {
+				receive_state_change(shell,
+						SHELL_RECEIVE_DEFAULT);
+			}
+			break;
+
+		case SHELL_RECEIVE_ESC_SEQ:
+			receive_state_change(shell, SHELL_RECEIVE_DEFAULT);
+
+			if (!flag_echo_get(shell)) {
+				return;
+			}
+
+			switch (data) {
+			case 'A': /* UP arrow */
+				history_handle(shell, true);
+				break;
+
+			case 'B': /* DOWN arrow */
+				history_handle(shell, false);
+				break;
+
+			case 'C': /* RIGHT arrow */
+				shell_op_right_arrow(shell);
+				break;
+
+			case 'D': /* LEFT arrow */
+				shell_op_left_arrow(shell);
+				break;
+
+			case '4': /* END Button in ESC[n~ mode */
+				receive_state_change(shell,
+						SHELL_RECEIVE_TILDE_EXP);
+				/* fall through */
+				/* no break */
+			case 'F': /* END Button in VT100 mode */
+				shell_op_cursor_end_move(shell);
+				break;
+
+			case '1': /* HOME Button in ESC[n~ mode */
+				receive_state_change(shell,
+						SHELL_RECEIVE_TILDE_EXP);
+				/* fall through */
+				/* no break */
+			case 'H': /* HOME Button in VT100 mode */
+				shell_op_cursor_home_move(shell);
+				break;
+
+			case '2': /* INSERT Button in ESC[n~ mode */
+				receive_state_change(shell,
+						SHELL_RECEIVE_TILDE_EXP);
+				/* fall through */
+				/* no break */
+			case 'L': {/* INSERT Button in VT100 mode */
+				bool status = flag_insert_mode_get(shell);
+				flag_insert_mode_set(shell, !status);
+				break;
+			}
+
+			case '3':/* DELETE Button in ESC[n~ mode */
+				receive_state_change(shell,
+						SHELL_RECEIVE_TILDE_EXP);
+				if (flag_echo_get(shell)) {
+					shell_op_char_delete(shell);
+				}
+				break;
+
+			default:
+				break;
+			}
+			break;
+
+		case SHELL_RECEIVE_TILDE_EXP:
+			receive_state_change(shell, SHELL_RECEIVE_DEFAULT);
+			break;
+
+		default:
+			receive_state_change(shell, SHELL_RECEIVE_DEFAULT);
+			break;
+		}
+	}
+}
+
+static void transport_evt_handler(enum shell_transport_evt evt_type, void *ctx)
+{
+	struct shell *shell = (struct shell *)ctx;
 	struct k_poll_signal *signal;
 
 	signal = (evt_type == SHELL_TRANSPORT_EVT_RX_RDY) ?
 			&shell->ctx->signals[SHELL_SIGNAL_RXRDY] :
 			&shell->ctx->signals[SHELL_SIGNAL_TXDONE];
 	k_poll_signal_raise(signal, 0);
-}
-
-static void cmd_line_erase(const struct shell *shell)
-{
-	shell_multiline_data_calc(&shell->ctx->vt100_ctx.cons,
-				  shell->ctx->cmd_buff_pos,
-				  shell->ctx->cmd_buff_len);
-	shell_op_cursor_horiz_move(shell, -shell->ctx->vt100_ctx.cons.cur_x);
-	shell_op_cursor_vert_move(shell, shell->ctx->vt100_ctx.cons.cur_y - 1);
-
-	clear_eos(shell);
 }
 
 static void shell_log_process(const struct shell *shell)
@@ -1117,7 +1026,7 @@ static void shell_log_process(const struct shell *shell)
 	int result;
 
 	do {
-		cmd_line_erase(shell);
+		shell_cmd_line_erase(shell);
 		processed = shell_log_backend_process(shell->log_backend);
 		cmd_line_print(shell);
 
@@ -1134,8 +1043,8 @@ static void shell_log_process(const struct shell *shell)
 	} while (processed && !signaled);
 }
 
-static int shell_instance_init(const struct shell *shell, const void *p_config,
-			       bool use_colors)
+static int instance_init(const struct shell *shell, const void *p_config,
+			 bool use_colors)
 {
 	__ASSERT_NO_MSG(shell);
 	__ASSERT_NO_MSG(shell->ctx && shell->iface && shell->prompt);
@@ -1143,7 +1052,7 @@ static int shell_instance_init(const struct shell *shell, const void *p_config,
 			(shell->shell_flag == SHELL_FLAG_OLF_CRLF));
 
 	int err = shell->iface->api->init(shell->iface, p_config,
-					  shell_transport_evt_handler,
+					  transport_evt_handler,
 					  (void *) shell);
 
 	if (err != 0) {
@@ -1154,27 +1063,50 @@ static int shell_instance_init(const struct shell *shell, const void *p_config,
 
 	memset(shell->ctx, 0, sizeof(*shell->ctx));
 
-	if (IS_ENABLED(CONFIG_SHELL_BACKSPACE_MODE_DELETE)) {
-		shell->ctx->internal.flags.mode_delete = 1;
-	}
-
 	if (IS_ENABLED(CONFIG_SHELL_STATS)) {
 		shell->stats->log_lost_cnt = 0;
 	}
 
-	shell->ctx->internal.flags.tx_rdy = 1;
-	shell->ctx->internal.flags.echo = CONFIG_SHELL_ECHO_STATUS;
+	flag_tx_rdy_set(shell, true);
+	flag_echo_set(shell, CONFIG_SHELL_ECHO_STATUS);
+	flag_mode_delete_set(shell,
+			     IS_ENABLED(CONFIG_SHELL_BACKSPACE_MODE_DELETE));
 	shell->ctx->state = SHELL_STATE_INITIALIZED;
 	shell->ctx->vt100_ctx.cons.terminal_wid = SHELL_DEFAULT_TERMINAL_WIDTH;
 	shell->ctx->vt100_ctx.cons.terminal_hei = SHELL_DEFAULT_TERMINAL_HEIGHT;
 	shell->ctx->vt100_ctx.cons.name_len = shell_strlen(shell->prompt);
-	shell->ctx->internal.flags.use_colors =
-					IS_ENABLED(CONFIG_SHELL_VT100_COLORS);
+	flag_use_colors_set(shell, IS_ENABLED(CONFIG_SHELL_VT100_COLORS));
 
 	return 0;
 }
 
-static int shell_instance_uninit(const struct shell *shell);
+static int instance_uninit(const struct shell *shell)
+{
+	__ASSERT_NO_MSG(shell);
+	__ASSERT_NO_MSG(shell->ctx && shell->iface && shell->prompt);
+
+	int err;
+
+	if (flag_processing_get(shell)) {
+		return -EBUSY;
+	}
+
+	if (IS_ENABLED(CONFIG_LOG)) {
+		/* todo purge log queue */
+		shell_log_backend_disable(shell->log_backend);
+	}
+
+	err = shell->iface->api->uninit(shell->iface);
+	if (err != 0) {
+		return err;
+	}
+
+	history_purge(shell);
+
+	shell->ctx->state = SHELL_STATE_UNINITIALIZED;
+
+	return 0;
+}
 
 void shell_thread(void *shell_handle, void *arg_log_backend,
 		  void *arg_log_level)
@@ -1217,7 +1149,7 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 		if (signaled) {
 			k_poll_signal_reset(
 				&shell->ctx->signals[SHELL_SIGNAL_KILL]);
-			(void)shell_instance_uninit(shell);
+			(void)instance_uninit(shell);
 
 			k_thread_abort(k_current_get());
 		}
@@ -1247,7 +1179,7 @@ int shell_init(const struct shell *shell, const void *transport_config,
 	__ASSERT_NO_MSG(shell);
 	__ASSERT_NO_MSG(shell->ctx && shell->iface && shell->prompt);
 
-	int err = shell_instance_init(shell, transport_config, use_colors);
+	int err = instance_init(shell, transport_config, use_colors);
 
 	if (err != 0) {
 		return err;
@@ -1264,34 +1196,6 @@ int shell_init(const struct shell *shell, const void *transport_config,
 	return 0;
 }
 
-static int shell_instance_uninit(const struct shell *shell)
-{
-	__ASSERT_NO_MSG(shell);
-	__ASSERT_NO_MSG(shell->ctx && shell->iface && shell->prompt);
-
-	int err;
-
-	if (flag_processing_is_set(shell)) {
-		return -EBUSY;
-	}
-
-	if (IS_ENABLED(CONFIG_LOG)) {
-		/* todo purge log queue */
-		shell_log_backend_disable(shell->log_backend);
-	}
-
-	err = shell->iface->api->uninit(shell->iface);
-	if (err != 0) {
-		return err;
-	}
-
-	history_purge(shell);
-
-	shell->ctx->state = SHELL_STATE_UNINITIALIZED;
-
-	return 0;
-}
-
 int shell_uninit(const struct shell *shell)
 {
 	__ASSERT_NO_MSG(shell);
@@ -1302,7 +1206,7 @@ int shell_uninit(const struct shell *shell)
 
 		return 0;
 	} else {
-		return shell_instance_uninit(shell);
+		return instance_uninit(shell);
 	}
 }
 
@@ -1323,12 +1227,12 @@ int shell_start(const struct shell *shell)
 	}
 
 	if (IS_ENABLED(CONFIG_SHELL_VT100_COLORS)) {
-		vt100_color_set(shell, SHELL_NORMAL);
+		shell_vt100_color_set(shell, SHELL_NORMAL);
 	}
 
 	shell_raw_fprintf(shell->fprintf_ctx, "\n\n");
 
-	shell_state_set(shell, SHELL_STATE_ACTIVE);
+	state_set(shell, SHELL_STATE_ACTIVE);
 
 	return 0;
 }
@@ -1343,7 +1247,7 @@ int shell_stop(const struct shell *shell)
 		return -ENOTSUP;
 	}
 
-	shell_state_set(shell, SHELL_STATE_INITIALIZED);
+	state_set(shell, SHELL_STATE_INITIALIZED);
 
 	return 0;
 }
@@ -1368,7 +1272,7 @@ void shell_process(const struct shell *shell)
 		break;
 
 	case SHELL_STATE_ACTIVE:
-		shell_state_collect(shell);
+		state_collect(shell);
 		break;
 
 	default:
@@ -1400,12 +1304,12 @@ void shell_fprintf(const struct shell *shell, enum shell_vt100_color color,
 	    (color != shell->ctx->vt100_ctx.col.col)) {
 		struct shell_vt100_colors col;
 
-		vt100_colors_store(shell, &col);
-		vt100_color_set(shell, color);
+		shell_vt100_colors_store(shell, &col);
+		shell_vt100_color_set(shell, color);
 
 		shell_fprintf_fmt(shell->fprintf_ctx, p_fmt, args);
 
-		vt100_colors_restore(shell, &col);
+		shell_vt100_colors_restore(shell, &col);
 	} else {
 		shell_fprintf_fmt(shell->fprintf_ctx, p_fmt, args);
 	}
@@ -1463,5 +1367,5 @@ int shell_execute_cmd(const struct shell *shell, const char *cmd)
 	shell->ctx->cmd_buff_len = cmd_len;
 	shell->ctx->cmd_buff_pos = cmd_len;
 
-	return shell_execute(shell);
+	return execute(shell);
 }
