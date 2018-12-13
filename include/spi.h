@@ -139,7 +139,6 @@ struct spi_cs_control {
 /**
  * @brief SPI controller configuration structure
  *
- * @param dev is a valid pointer to an actual SPI device
  * @param frequency is the bus frequency in Hertz
  * @param operation is a bit field with the following parts:
  *
