@@ -60,7 +60,11 @@
 
 /* Error codes in range 0x0021-0x0025 */
 #define MBEDTLS_ERR_AES_BAD_INPUT_DATA                    -0x0021  /**< Invalid input data. */
+
+/* MBEDTLS_ERR_AES_FEATURE_UNAVAILABLE is deprecated and should not be used. */
 #define MBEDTLS_ERR_AES_FEATURE_UNAVAILABLE               -0x0023  /**< Feature not available. For example, an unsupported AES key size. */
+
+/* MBEDTLS_ERR_AES_HW_ACCEL_FAILED is deprecated and should not be used. */
 #define MBEDTLS_ERR_AES_HW_ACCEL_FAILED                   -0x0025  /**< AES hardware accelerator failed. */
 
 #if ( defined(__ARMCC_VERSION) || defined(_MSC_VER) ) && \
@@ -79,7 +83,7 @@ extern "C" {
 /**
  * \brief The AES context-type definition.
  */
-typedef struct
+typedef struct mbedtls_aes_context
 {
     int nr;                     /*!< The number of rounds. */
     uint32_t *rk;               /*!< AES round keys. */
@@ -98,7 +102,7 @@ mbedtls_aes_context;
 /**
  * \brief The AES XTS context-type definition.
  */
-typedef struct
+typedef struct mbedtls_aes_xts_context
 {
     mbedtls_aes_context crypt; /*!< The AES context to use for AES block
                                         encryption or decryption. */

@@ -48,9 +48,8 @@
 
 #if defined(MBEDTLS_SELF_TEST) && defined(MBEDTLS_AES_C)
 #include "mbedtls/aes.h"
-#if defined(MBEDTLS_PLATFORM_C)
 #include "mbedtls/platform.h"
-#else
+#if !defined(MBEDTLS_PLATFORM_C)
 #include <stdio.h>
 #define mbedtls_printf printf
 #endif /* MBEDTLS_PLATFORM_C */
@@ -764,7 +763,7 @@ int mbedtls_gcm_self_test( int verbose )
              * there is an alternative underlying implementation i.e. when
              * MBEDTLS_AES_ALT is defined.
              */
-            if( ret == MBEDTLS_ERR_AES_FEATURE_UNAVAILABLE && key_len == 192 )
+            if( ret == MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED && key_len == 192 )
             {
                 mbedtls_printf( "skipped\n" );
                 break;

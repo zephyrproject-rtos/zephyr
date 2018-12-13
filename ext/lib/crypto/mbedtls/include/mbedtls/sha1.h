@@ -40,6 +40,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+/* MBEDTLS_ERR_SHA1_HW_ACCEL_FAILED is deprecated and should not be used. */
 #define MBEDTLS_ERR_SHA1_HW_ACCEL_FAILED                  -0x0035  /**< SHA-1 hardware accelerator failed */
 
 #ifdef __cplusplus
@@ -58,7 +59,7 @@ extern "C" {
  *                 stronger message digests instead.
  *
  */
-typedef struct
+typedef struct mbedtls_sha1_context
 {
     uint32_t total[2];          /*!< The number of Bytes processed.  */
     uint32_t state[5];          /*!< The intermediate digest state.  */

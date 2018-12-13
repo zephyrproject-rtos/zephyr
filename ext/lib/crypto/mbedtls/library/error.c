@@ -165,6 +165,10 @@
 #include "mbedtls/pkcs5.h"
 #endif
 
+#if defined(MBEDTLS_PLATFORM_C)
+#include "mbedtls/platform.h"
+#endif
+
 #if defined(MBEDTLS_POLY1305_C)
 #include "mbedtls/poly1305.h"
 #endif
@@ -289,6 +293,8 @@ void mbedtls_strerror( int ret, char *buf, size_t buflen )
             mbedtls_snprintf( buf, buflen, "ECP - The buffer contains a valid signature followed by more data" );
         if( use_ret == -(MBEDTLS_ERR_ECP_HW_ACCEL_FAILED) )
             mbedtls_snprintf( buf, buflen, "ECP - The ECP hardware accelerator failed" );
+        if( use_ret == -(MBEDTLS_ERR_ECP_IN_PROGRESS) )
+            mbedtls_snprintf( buf, buflen, "ECP - Operation in progress, call again with the same parameters to continue" );
 #endif /* MBEDTLS_ECP_C */
 
 #if defined(MBEDTLS_MD_C)
@@ -515,6 +521,10 @@ void mbedtls_strerror( int ret, char *buf, size_t buflen )
             mbedtls_snprintf( buf, buflen, "SSL - Internal-only message signaling that further message-processing should be done" );
         if( use_ret == -(MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS) )
             mbedtls_snprintf( buf, buflen, "SSL - The asynchronous operation is not completed yet" );
+        if( use_ret == -(MBEDTLS_ERR_SSL_EARLY_MESSAGE) )
+            mbedtls_snprintf( buf, buflen, "SSL - Internal-only message signaling that a message arrived early" );
+        if( use_ret == -(MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS) )
+            mbedtls_snprintf( buf, buflen, "SSL - A cryptographic operation is in progress. Try again later" );
 #endif /* MBEDTLS_SSL_TLS_C */
 
 #if defined(MBEDTLS_X509_USE_C) || defined(MBEDTLS_X509_CREATE_C)
@@ -820,6 +830,13 @@ void mbedtls_strerror( int ret, char *buf, size_t buflen )
     if( use_ret == -(MBEDTLS_ERR_PADLOCK_DATA_MISALIGNED) )
         mbedtls_snprintf( buf, buflen, "PADLOCK - Input data should be aligned" );
 #endif /* MBEDTLS_PADLOCK_C */
+
+#if defined(MBEDTLS_PLATFORM_C)
+    if( use_ret == -(MBEDTLS_ERR_PLATFORM_HW_ACCEL_FAILED) )
+        mbedtls_snprintf( buf, buflen, "PLATFORM - Hardware accelerator failed" );
+    if( use_ret == -(MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED) )
+        mbedtls_snprintf( buf, buflen, "PLATFORM - The requested feature is not supported by the platform" );
+#endif /* MBEDTLS_PLATFORM_C */
 
 #if defined(MBEDTLS_POLY1305_C)
     if( use_ret == -(MBEDTLS_ERR_POLY1305_BAD_INPUT_DATA) )

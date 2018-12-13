@@ -45,7 +45,8 @@
 #define MBEDTLS_CIPHER_MODE_WITH_PADDING
 #endif
 
-#if defined(MBEDTLS_ARC4_C) || defined(MBEDTLS_CIPHER_NULL_CIPHER)
+#if defined(MBEDTLS_ARC4_C) || defined(MBEDTLS_CIPHER_NULL_CIPHER) || \
+    defined(MBEDTLS_CHACHA20_C)
 #define MBEDTLS_CIPHER_MODE_STREAM
 #endif
 
@@ -61,6 +62,8 @@
 #define MBEDTLS_ERR_CIPHER_FULL_BLOCK_EXPECTED  -0x6280  /**< Decryption of block requires a full block. */
 #define MBEDTLS_ERR_CIPHER_AUTH_FAILED          -0x6300  /**< Authentication failed (for AEAD modes). */
 #define MBEDTLS_ERR_CIPHER_INVALID_CONTEXT      -0x6380  /**< The context is invalid. For example, because it was freed. */
+
+/* MBEDTLS_ERR_CIPHER_HW_ACCEL_FAILED is deprecated and should not be used. */
 #define MBEDTLS_ERR_CIPHER_HW_ACCEL_FAILED      -0x6400  /**< Cipher hardware accelerator failed. */
 
 #define MBEDTLS_CIPHER_VARIABLE_IV_LEN     0x01    /**< Cipher accepts IVs of variable length. */
@@ -235,7 +238,8 @@ typedef struct mbedtls_cmac_context_t mbedtls_cmac_context_t;
  * Cipher information. Allows calling cipher functions
  * in a generic way.
  */
-typedef struct {
+typedef struct mbedtls_cipher_info_t
+{
     /** Full cipher identifier. For example,
      * MBEDTLS_CIPHER_AES_256_CBC.
      */
@@ -276,7 +280,8 @@ typedef struct {
 /**
  * Generic cipher context.
  */
-typedef struct {
+typedef struct mbedtls_cipher_context_t
+{
     /** Information about the associated cipher. */
     const mbedtls_cipher_info_t *cipher_info;
 

@@ -97,7 +97,7 @@ static int ssl_ticket_update_keys( mbedtls_ssl_ticket_context *ctx )
         uint32_t current_time = (uint32_t) mbedtls_time( NULL );
         uint32_t key_time = ctx->keys[ctx->active].generation_time;
 
-        if( current_time > key_time &&
+        if( current_time >= key_time &&
             current_time - key_time < ctx->ticket_lifetime )
         {
             return( 0 );

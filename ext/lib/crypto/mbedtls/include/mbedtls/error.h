@@ -80,6 +80,7 @@
  * CHACHA20  3                  0x0051-0x0055
  * POLY1305  3                  0x0057-0x005B
  * CHACHAPOLY 2 0x0054-0x0056
+ * PLATFORM  1  0x0070-0x0072
  *
  * High-level module nr (3 bits - 0x0...-0x7...)
  * Name      ID  Nr of Errors
@@ -90,12 +91,12 @@
  * DHM       3   11
  * PK        3   15 (Started from top)
  * RSA       4   11
- * ECP       4   9 (Started from top)
+ * ECP       4   10 (Started from top)
  * MD        5   5
  * HKDF      5   1 (Started from top)
  * CIPHER    6   8
- * SSL       6   22 (Started from top)
- * SSL       7   31
+ * SSL       6   23 (Started from top)
+ * SSL       7   32
  *
  * Module dependent error code (5 bits 0x.00.-0x.F8.)
  */

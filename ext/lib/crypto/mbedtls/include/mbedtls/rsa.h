@@ -55,7 +55,12 @@
 #define MBEDTLS_ERR_RSA_VERIFY_FAILED                     -0x4380  /**< The PKCS#1 verification failed. */
 #define MBEDTLS_ERR_RSA_OUTPUT_TOO_LARGE                  -0x4400  /**< The output buffer for decryption is not large enough. */
 #define MBEDTLS_ERR_RSA_RNG_FAILED                        -0x4480  /**< The random generator failed to generate non-zeros. */
+
+/* MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION is deprecated and should not be used.
+ */
 #define MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION             -0x4500  /**< The implementation does not offer the requested operation, for example, because of security violations or lack of functionality. */
+
+/* MBEDTLS_ERR_RSA_HW_ACCEL_FAILED is deprecated and should not be used. */
 #define MBEDTLS_ERR_RSA_HW_ACCEL_FAILED                   -0x4580  /**< RSA hardware accelerator failed. */
 
 /*
@@ -92,7 +97,7 @@ extern "C" {
  *          is deprecated. All manipulation should instead be done through
  *          the public interface functions.
  */
-typedef struct
+typedef struct mbedtls_rsa_context
 {
     int ver;                    /*!<  Always 0.*/
     size_t len;                 /*!<  The size of \p N in Bytes. */
@@ -281,7 +286,7 @@ int mbedtls_rsa_complete( mbedtls_rsa_context *ctx );
  *                 zero Bytes.
  *
  *                 Possible reasons for returning
- *                 #MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION:<ul>
+ *                 #MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED:<ul>
  *                 <li>An alternative RSA implementation is in use, which
  *                 stores the key externally, and either cannot or should
  *                 not export it into RAM.</li>
@@ -301,7 +306,7 @@ int mbedtls_rsa_complete( mbedtls_rsa_context *ctx );
  * \param E        The MPI to hold the public exponent, or NULL.
  *
  * \return         \c 0 on success.
- * \return         #MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION if exporting the
+ * \return         #MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED if exporting the
  *                 requested parameters cannot be done due to missing
  *                 functionality or because of security policies.
  * \return         A non-zero return code on any other failure.
@@ -321,7 +326,7 @@ int mbedtls_rsa_export( const mbedtls_rsa_context *ctx,
  *                 zero Bytes.
  *
  *                 Possible reasons for returning
- *                 #MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION:<ul>
+ *                 #MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED:<ul>
  *                 <li>An alternative RSA implementation is in use, which
  *                 stores the key externally, and either cannot or should
  *                 not export it into RAM.</li>
@@ -350,7 +355,7 @@ int mbedtls_rsa_export( const mbedtls_rsa_context *ctx,
  * \param E_len    The size of the buffer for the public exponent.
  *
  * \return         \c 0 on success.
- * \return         #MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION if exporting the
+ * \return         #MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED if exporting the
  *                 requested parameters cannot be done due to missing
  *                 functionality or because of security policies.
  * \return         A non-zero return code on any other failure.
@@ -563,7 +568,7 @@ int mbedtls_rsa_private( mbedtls_rsa_context *ctx,
  *
  * \note           Alternative implementations of RSA need not support
  *                 mode being set to #MBEDTLS_RSA_PRIVATE and might instead
- *                 return #MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION.
+ *                 return #MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED.
  *
  * \param ctx      The RSA context.
  * \param f_rng    The RNG function. Needed for padding, PKCS#1 v2.1
@@ -598,7 +603,7 @@ int mbedtls_rsa_pkcs1_encrypt( mbedtls_rsa_context *ctx,
  *
  * \note           Alternative implementations of RSA need not support
  *                 mode being set to #MBEDTLS_RSA_PRIVATE and might instead
- *                 return #MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION.
+ *                 return #MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED.
  *
  * \param ctx      The RSA context.
  * \param f_rng    The RNG function. Needed for padding and
@@ -633,7 +638,7 @@ int mbedtls_rsa_rsaes_pkcs1_v15_encrypt( mbedtls_rsa_context *ctx,
  *
  * \note             Alternative implementations of RSA need not support
  *                   mode being set to #MBEDTLS_RSA_PRIVATE and might instead
- *                   return #MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION.
+ *                   return #MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED.
  *
  * \param ctx        The RSA context.
  * \param f_rng      The RNG function. Needed for padding and PKCS#1 v2.1
@@ -682,7 +687,7 @@ int mbedtls_rsa_rsaes_oaep_encrypt( mbedtls_rsa_context *ctx,
  *
  * \note           Alternative implementations of RSA need not support
  *                 mode being set to #MBEDTLS_RSA_PUBLIC and might instead
- *                 return #MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION.
+ *                 return #MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED.
  *
  * \param ctx      The RSA context.
  * \param f_rng    The RNG function. Only needed for #MBEDTLS_RSA_PRIVATE.
@@ -725,7 +730,7 @@ int mbedtls_rsa_pkcs1_decrypt( mbedtls_rsa_context *ctx,
  *
  * \note           Alternative implementations of RSA need not support
  *                 mode being set to #MBEDTLS_RSA_PUBLIC and might instead
- *                 return #MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION.
+ *                 return #MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED.
  *
  * \param ctx      The RSA context.
  * \param f_rng    The RNG function. Only needed for #MBEDTLS_RSA_PRIVATE.
@@ -770,7 +775,7 @@ int mbedtls_rsa_rsaes_pkcs1_v15_decrypt( mbedtls_rsa_context *ctx,
  *
  * \note             Alternative implementations of RSA need not support
  *                   mode being set to #MBEDTLS_RSA_PUBLIC and might instead
- *                   return #MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION.
+ *                   return #MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED.
  *
  * \param ctx        The RSA context.
  * \param f_rng      The RNG function. Only needed for #MBEDTLS_RSA_PRIVATE.
@@ -817,7 +822,7 @@ int mbedtls_rsa_rsaes_oaep_decrypt( mbedtls_rsa_context *ctx,
  *
  * \note           Alternative implementations of RSA need not support
  *                 mode being set to #MBEDTLS_RSA_PUBLIC and might instead
- *                 return #MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION.
+ *                 return #MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED.
  *
  * \param ctx      The RSA context.
  * \param f_rng    The RNG function. Needed for PKCS#1 v2.1 encoding and for
@@ -856,7 +861,7 @@ int mbedtls_rsa_pkcs1_sign( mbedtls_rsa_context *ctx,
  *
  * \note           Alternative implementations of RSA need not support
  *                 mode being set to #MBEDTLS_RSA_PUBLIC and might instead
- *                 return #MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION.
+ *                 return #MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED.
  *
  * \param ctx      The RSA context.
  * \param f_rng    The RNG function. Only needed for #MBEDTLS_RSA_PRIVATE.
@@ -894,6 +899,16 @@ int mbedtls_rsa_rsassa_pkcs1_v15_sign( mbedtls_rsa_context *ctx,
  *                 Specifications</em> it is advised to keep both hashes the
  *                 same.
  *
+ * \note           This function always uses the maximum possible salt size,
+ *                 up to the length of the payload hash. This choice of salt
+ *                 size complies with FIPS 186-4 §5.5 (e) and RFC 8017 (PKCS#1
+ *                 v2.2) §9.1.1 step 3. Furthermore this function enforces a
+ *                 minimum salt size which is the hash size minus 2 bytes. If
+ *                 this minimum size is too large given the key size (the salt
+ *                 size, plus the hash size, plus 2 bytes must be no more than
+ *                 the key size in bytes), this function returns
+ *                 #MBEDTLS_ERR_RSA_BAD_INPUT_DATA.
+ *
  * \deprecated     It is deprecated and discouraged to call this function
  *                 in #MBEDTLS_RSA_PUBLIC mode. Future versions of the library
  *                 are likely to remove the \p mode argument and have it
@@ -901,7 +916,7 @@ int mbedtls_rsa_rsassa_pkcs1_v15_sign( mbedtls_rsa_context *ctx,
  *
  * \note           Alternative implementations of RSA need not support
  *                 mode being set to #MBEDTLS_RSA_PUBLIC and might instead
- *                 return #MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION.
+ *                 return #MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED.
  *
  * \param ctx      The RSA context.
  * \param f_rng    The RNG function. Needed for PKCS#1 v2.1 encoding and for
@@ -947,7 +962,7 @@ int mbedtls_rsa_rsassa_pss_sign( mbedtls_rsa_context *ctx,
  *
  * \note           Alternative implementations of RSA need not support
  *                 mode being set to #MBEDTLS_RSA_PRIVATE and might instead
- *                 return #MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION.
+ *                 return #MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED.
  *
  * \param ctx      The RSA public key context.
  * \param f_rng    The RNG function. Only needed for #MBEDTLS_RSA_PRIVATE.
@@ -985,7 +1000,7 @@ int mbedtls_rsa_pkcs1_verify( mbedtls_rsa_context *ctx,
  *
  * \note           Alternative implementations of RSA need not support
  *                 mode being set to #MBEDTLS_RSA_PRIVATE and might instead
- *                 return #MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION.
+ *                 return #MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED.
  *
  * \param ctx      The RSA public key context.
  * \param f_rng    The RNG function. Only needed for #MBEDTLS_RSA_PRIVATE.
@@ -1034,7 +1049,7 @@ int mbedtls_rsa_rsassa_pkcs1_v15_verify( mbedtls_rsa_context *ctx,
  *
  * \note           Alternative implementations of RSA need not support
  *                 mode being set to #MBEDTLS_RSA_PRIVATE and might instead
- *                 return #MBEDTLS_ERR_RSA_UNSUPPORTED_OPERATION.
+ *                 return #MBEDTLS_ERR_PLATFORM_FEATURE_UNSUPPORTED.
  *
  * \param ctx      The RSA public key context.
  * \param f_rng    The RNG function. Only needed for #MBEDTLS_RSA_PRIVATE.
