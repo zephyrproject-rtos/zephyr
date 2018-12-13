@@ -29,15 +29,17 @@
 struct ticker_node {
 	u8_t  next;
 
+	/* Imbalance between req and ack indicate ongoing operation */
 	u8_t  req;
 	u8_t  ack;
+
 	u8_t  force;
-	u32_t ticks_periodic;
-	u32_t ticks_to_expire;
+	u32_t ticks_periodic;  /* If non-zero, Interval between expirations */
+	u32_t ticks_to_expire; /* Ticks until expiration */
 	ticker_timeout_func timeout_func;
 	void  *context;
 
-	u32_t ticks_to_expire_minus;
+	u32_t ticks_to_expire_minus; /* Ticks since expiration */
 	u32_t ticks_slot;
 	u16_t lazy_periodic;
 	u16_t lazy_current;
@@ -421,6 +423,12 @@ static void ticks_to_expire_prep(struct ticker_node *ticker,
 
 	/* Calculate ticks to expire for this new node */
 	if (!((ticks_at_start - ticks_current) & BIT(HAL_TICKER_CNTR_MSBIT))) {
+		/* Most significant bit is 0 so ticks_at_start lies ahead
+		 * of ticks_current:
+		 *   ticks_at_start - ticks_current >= 0
+		 *   ticks_at_start >= ticks_current.
+		 * So diff is positive.
+		 */
 		ticks_to_expire += ticker_ticks_diff_get(ticks_at_start,
 							 ticks_current);
 	} else {
