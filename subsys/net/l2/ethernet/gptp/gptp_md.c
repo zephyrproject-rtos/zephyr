@@ -254,15 +254,22 @@ static void gptp_md_compute_pdelay_rate_ratio(int port)
 
 		state->neighbor_rate_ratio_valid = false;
 	} else {
-		neighbor_rate_ratio =
-			(resp_evt_tstamp - state->ini_resp_evt_tstamp);
-		neighbor_rate_ratio /=
-			(ingress_tstamp - state->ini_resp_ingress_tstamp);
+		if (resp_evt_tstamp == state->ini_resp_evt_tstamp) {
+			state->neighbor_rate_ratio_valid = false;
+			neighbor_rate_ratio = 1.0;
+		} else {
+			neighbor_rate_ratio =
+				(resp_evt_tstamp - state->ini_resp_evt_tstamp);
+			neighbor_rate_ratio /=
+				(ingress_tstamp -
+				 state->ini_resp_ingress_tstamp);
 
-		/* Measure the ratio with the previously sent response. */
-		state->ini_resp_ingress_tstamp = ingress_tstamp;
-		state->ini_resp_evt_tstamp = resp_evt_tstamp;
-		state->neighbor_rate_ratio_valid = true;
+			/* Measure the ratio with the previously sent response.
+			 */
+			state->ini_resp_ingress_tstamp = ingress_tstamp;
+			state->ini_resp_evt_tstamp = resp_evt_tstamp;
+			state->neighbor_rate_ratio_valid = true;
+		}
 	}
 
 	port_ds->neighbor_rate_ratio = neighbor_rate_ratio;
@@ -352,6 +359,9 @@ static void gptp_md_pdelay_compute(int port)
 
 	if (port_ds->compute_neighbor_prop_delay) {
 		gptp_md_compute_prop_time(port);
+
+		NET_DBG("Neighbor prop delay %d",
+			(s32_t)port_ds->neighbor_prop_delay);
 	}
 
 	state->lost_responses = 0;
