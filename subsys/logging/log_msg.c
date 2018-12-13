@@ -152,7 +152,7 @@ static struct log_msg *msg_alloc(u32_t nargs)
 	struct  log_msg *msg = _log_msg_std_alloc();
 	int n = (int)nargs;
 
-	if (!msg) {
+	if (!msg || nargs <= LOG_MSG_NARGS_SINGLE_CHUNK) {
 		return msg;
 	}
 
