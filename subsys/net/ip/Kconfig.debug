@@ -50,9 +50,9 @@ module-str = Log level for network packet and buffer allocation
 module-help = Enables debug of network packet and buffer allocations and frees.
 source "subsys/net/Kconfig.template.log_config.net"
 
-if NET_PKT_LOG_LEVEL >= 4
-config NET_DEBUG_NET_PKT_ALL
+config NET_DEBUG_NET_PKT_ALLOC
 	bool "Debug network packet and buffer individual allocation"
+	default y if NET_PKT_LOG_LEVEL_DBG
 	help
 	  Enables printing of network packet and buffer allocations and frees for
 	  each allocation. This can produce lot of output so it is disabled by
@@ -65,7 +65,6 @@ config NET_DEBUG_NET_PKT_EXTERNALS
 	  How many external net_pkt objects are there in user specific pools.
 	  This value is used when allocating space for tracking the
 	  memory allocations.
-endif
 
 module = NET_CONN
 module-dep = NET_LOG

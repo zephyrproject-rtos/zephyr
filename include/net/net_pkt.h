@@ -745,7 +745,8 @@ static inline void net_pkt_set_src_ipv6_addr(struct net_pkt *pkt)
 	NET_BUF_POOL_DEFINE(name, count, CONFIG_NET_BUF_DATA_SIZE,	\
 			    CONFIG_NET_BUF_USER_DATA_SIZE, NULL)
 
-#if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
+#if defined(CONFIG_NET_DEBUG_NET_PKT_ALLOC) || \
+	(CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG)
 
 /* Debug versions of the net_pkt functions that are used when tracking
  * buffer usage.
@@ -1891,7 +1892,7 @@ int net_pkt_get_dst_addr(struct net_pkt *pkt,
 			 struct sockaddr *addr,
 			 socklen_t addrlen);
 
-#if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
+#if defined(CONFIG_NET_DEBUG_NET_PKT_ALLOC)
 /**
  * @brief Debug helper to print out the buffer allocations
  */

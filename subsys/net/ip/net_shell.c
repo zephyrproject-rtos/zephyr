@@ -1080,7 +1080,7 @@ static void ipv6_frag_cb(struct net_ipv6_reassembly *reass,
 }
 #endif /* CONFIG_NET_IPV6_FRAGMENT */
 
-#if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
+#if defined(CONFIG_NET_DEBUG_NET_PKT_ALLOC)
 static void allocs_cb(struct net_pkt *pkt,
 		      struct net_buf *buf,
 		      const char *func_alloc,
@@ -1140,28 +1140,28 @@ buf:
 		}
 	}
 }
-#endif /* CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG */
+#endif /* CONFIG_NET_DEBUG_NET_PKT_ALLOC */
 
 /* Put the actual shell commands after this */
 
 static int cmd_net_allocs(const struct shell *shell, size_t argc, char *argv[])
 {
-#if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
+#if defined(CONFIG_NET_DEBUG_NET_PKT_ALLOC)
 	struct net_shell_user_data user_data;
 #endif
 
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-#if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
+#if defined(CONFIG_NET_DEBUG_NET_PKT_ALLOC)
 	user_data.shell = shell;
 
 	PR("Network memory allocations\n\n");
 	PR("memory\t\tStatus\tPool\tFunction alloc -> freed\n");
 	net_pkt_allocs_foreach(allocs_cb, &user_data);
 #else
-	PR_INFO("Enable CONFIG_NET_PKT_LOG_LEVEL_DBG to see allocations.\n");
-#endif /* CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG */
+	PR_INFO("Enable CONFIG_NET_DEBUG_NET_PKT_ALLOC to see allocations.\n");
+#endif /* CONFIG_NET_DEBUG_NET_PKT_ALLOC */
 
 	return 0;
 }
