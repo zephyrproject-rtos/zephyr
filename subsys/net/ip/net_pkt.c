@@ -353,7 +353,7 @@ struct net_pkt *net_pkt_get_reserve(struct k_mem_slab *slab,
 
 	net_pkt_alloc_add(pkt, true, caller, line);
 
-#if NET_LOG_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
+#if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
 	NET_DBG("%s [%u] pkt %p ref %d (%s():%d)",
 		slab2str(slab), k_mem_slab_num_free_get(slab),
 		pkt, pkt->ref, caller, line);
@@ -394,7 +394,7 @@ struct net_buf *net_pkt_get_reserve_data(struct net_buf_pool *pool,
 
 	net_pkt_alloc_add(frag, false, caller, line);
 
-#if NET_LOG_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
+#if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
 	NET_DBG("%s (%s) [%d] frag %p ref %d (%s():%d)",
 		pool2str(pool), get_name(pool), get_frees(pool),
 		frag, frag->ref, caller, line);
