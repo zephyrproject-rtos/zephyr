@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 Nordic Semiconductor ASA
+ * Copyright (c) 2016-2019 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,6 +37,33 @@ static inline const struct uart_nrfx_config *get_dev_config(struct device *dev)
 {
 	return dev->config->config_info;
 }
+
+#ifdef CONFIG_UART_ASYNC_API
+static struct {
+	uart_callback_t callback;
+	void *user_data;
+
+	u8_t *rx_buffer;
+	u8_t *rx_secondary_buffer;
+	size_t rx_buffer_length;
+	size_t rx_secondary_buffer_length;
+	volatile size_t rx_counter;
+	volatile size_t rx_offset;
+	size_t rx_timeout;
+	struct k_delayed_work rx_timeout_work;
+	bool rx_enabled;
+
+	bool tx_abort;
+	const u8_t *tx_buffer;
+	size_t tx_buffer_length;
+	volatile size_t tx_counter;
+#if defined(DT_NORDIC_NRF_UART_UART_0_RTS_PIN) && \
+		defined(DT_NORDIC_NRF_UART_UART_0_CTS_PIN)
+	size_t tx_timeout;
+	struct k_delayed_work tx_timeout_work;
+#endif
+} uart0_cb;
+#endif /* CONFIG_UART_ASYNC_API */
 
 #ifdef CONFIG_UART_0_INTERRUPT_DRIVEN
 
@@ -291,6 +318,347 @@ static int uart_nrfx_config_get(struct device *dev, struct uart_config *cfg)
 	return 0;
 }
 
+
+#ifdef CONFIG_UART_ASYNC_API
+
+static void user_callback(struct uart_event *event)
+{
+	if (uart0_cb.callback) {
+		uart0_cb.callback(event, uart0_cb.user_data);
+	}
+}
+
+static int uart_nrfx_callback_set(struct device *dev, uart_callback_t callback,
+				  void *user_data)
+{
+	uart0_cb.callback = callback;
+	uart0_cb.user_data = user_data;
+
+	return 0;
+}
+
+static int uart_nrfx_tx(struct device *dev, const u8_t *buf, size_t len,
+			u32_t timeout)
+{
+	if (uart0_cb.tx_buffer_length != 0) {
+		return -EBUSY;
+	}
+
+	uart0_cb.tx_buffer = buf;
+	uart0_cb.tx_buffer_length = len;
+#if	defined(DT_NORDIC_NRF_UART_UART_0_RTS_PIN) && \
+	defined(DT_NORDIC_NRF_UART_UART_0_CTS_PIN)
+	uart0_cb.tx_timeout = timeout;
+#endif
+	nrf_uart_event_clear(uart0_addr, NRF_UART_EVENT_TXDRDY);
+	nrf_uart_task_trigger(uart0_addr, NRF_UART_TASK_STARTTX);
+	nrf_uart_event_clear(uart0_addr, NRF_UART_EVENT_TXDRDY);
+	nrf_uart_int_enable(uart0_addr, NRF_UART_INT_MASK_TXDRDY);
+
+	u8_t txd = uart0_cb.tx_buffer[uart0_cb.tx_counter];
+
+	nrf_uart_txd_set(uart0_addr, txd);
+
+	return 0;
+}
+
+static int uart_nrfx_tx_abort(struct device *dev)
+{
+	if (uart0_cb.tx_buffer_length == 0) {
+		return -EINVAL;
+	}
+#if	defined(DT_NORDIC_NRF_UART_UART_0_RTS_PIN) && \
+	defined(DT_NORDIC_NRF_UART_UART_0_CTS_PIN)
+	k_delayed_work_cancel(&uart0_cb.tx_timeout_work);
+#endif
+	nrf_uart_task_trigger(uart0_addr, NRF_UART_TASK_STOPTX);
+
+	struct uart_event evt = {
+		.type = UART_TX_ABORTED,
+		.data.tx.buf = uart0_cb.tx_buffer,
+		.data.tx.len = uart0_cb.tx_counter
+	};
+
+	uart0_cb.tx_buffer_length = 0;
+	uart0_cb.tx_counter = 0;
+
+	user_callback(&evt);
+
+	return 0;
+}
+
+static int uart_nrfx_rx_enable(struct device *dev, u8_t *buf, size_t len,
+			       u32_t timeout)
+{
+	if (uart0_cb.rx_buffer_length != 0) {
+		return -EBUSY;
+	}
+	uart0_cb.rx_enabled = 1;
+	uart0_cb.rx_buffer = buf;
+	uart0_cb.rx_buffer_length = len;
+	uart0_cb.rx_counter = 0;
+	uart0_cb.rx_secondary_buffer_length = 0;
+	uart0_cb.rx_timeout = timeout;
+
+	nrf_uart_event_clear(uart0_addr, NRF_UART_EVENT_ERROR);
+	nrf_uart_event_clear(uart0_addr, NRF_UART_EVENT_RXDRDY);
+	nrf_uart_event_clear(uart0_addr, NRF_UART_EVENT_RXTO);
+	nrf_uart_task_trigger(uart0_addr, NRF_UART_TASK_STARTRX);
+	nrf_uart_int_enable(uart0_addr, NRF_UART_INT_MASK_RXDRDY |
+					NRF_UART_INT_MASK_ERROR |
+					NRF_UART_INT_MASK_RXTO);
+
+	return 0;
+}
+
+static int uart_nrfx_rx_buf_rsp(struct device *dev, u8_t *buf, size_t len)
+{
+	if (!uart0_cb.rx_enabled) {
+		return -EACCES;
+	}
+	if (uart0_cb.rx_secondary_buffer_length != 0) {
+		return -EBUSY;
+	}
+	uart0_cb.rx_secondary_buffer = buf;
+	uart0_cb.rx_secondary_buffer_length = len;
+
+	return 0;
+}
+
+static int uart_nrfx_rx_disable(struct device *dev)
+{
+	if (uart0_cb.rx_buffer_length == 0) {
+		return -EFAULT;
+	}
+
+	uart0_cb.rx_enabled = 0;
+	k_delayed_work_cancel(&uart0_cb.rx_timeout_work);
+	nrf_uart_task_trigger(uart0_addr, NRF_UART_TASK_STOPRX);
+
+	return 0;
+}
+
+static void rx_rdy_evt(void)
+{
+	struct uart_event event;
+	size_t rx_cnt = uart0_cb.rx_counter;
+
+	event.type = UART_RX_RDY;
+	event.data.rx.buf = uart0_cb.rx_buffer;
+	event.data.rx.len = rx_cnt - uart0_cb.rx_offset;
+	event.data.rx.offset = uart0_cb.rx_offset;
+
+	uart0_cb.rx_offset = rx_cnt;
+
+	user_callback(&event);
+}
+
+static void buf_released_evt(void)
+{
+	struct uart_event event = {
+		.type = UART_RX_BUF_RELEASED,
+		.data.rx_buf.buf = uart0_cb.rx_buffer
+	};
+	user_callback(&event);
+}
+
+static void rx_disabled_evt(void)
+{
+	struct uart_event event = {
+		.type = UART_RX_DISABLED
+	};
+	user_callback(&event);
+}
+
+static void rx_reset_state(void)
+{
+	nrf_uart_int_disable(uart0_addr,
+			     NRF_UART_INT_MASK_RXDRDY |
+			     NRF_UART_INT_MASK_ERROR |
+			     NRF_UART_INT_MASK_RXTO);
+	uart0_cb.rx_buffer_length = 0;
+	uart0_cb.rx_enabled = 0;
+	uart0_cb.rx_counter = 0;
+	uart0_cb.rx_offset = 0;
+	uart0_cb.rx_secondary_buffer_length = 0;
+}
+
+static void rx_isr(struct device *dev)
+{
+	struct uart_event event;
+
+	nrf_uart_event_clear(uart0_addr, NRF_UART_EVENT_RXDRDY);
+
+	if (!uart0_cb.rx_buffer_length || !uart0_cb.rx_enabled) {
+		/* Byte received when receiving is disabled - data lost. */
+		nrf_uart_rxd_get(uart0_addr);
+	} else {
+		if (uart0_cb.rx_counter == 0) {
+			event.type = UART_RX_BUF_REQUEST;
+			user_callback(&event);
+		}
+		uart0_cb.rx_buffer[uart0_cb.rx_counter] =
+			nrf_uart_rxd_get(uart0_addr);
+		uart0_cb.rx_counter++;
+		if (uart0_cb.rx_timeout == K_NO_WAIT) {
+			rx_rdy_evt();
+		} else if (uart0_cb.rx_timeout != K_FOREVER) {
+			k_delayed_work_submit(&uart0_cb.rx_timeout_work,
+					      uart0_cb.rx_timeout);
+		}
+	}
+
+	if (uart0_cb.rx_buffer_length == uart0_cb.rx_counter) {
+		k_delayed_work_cancel(&uart0_cb.rx_timeout_work);
+		rx_rdy_evt();
+
+		if (uart0_cb.rx_secondary_buffer_length) {
+			buf_released_evt();
+			/* Switch to secondary buffer. */
+			uart0_cb.rx_buffer_length =
+				uart0_cb.rx_secondary_buffer_length;
+			uart0_cb.rx_buffer = uart0_cb.rx_secondary_buffer;
+			uart0_cb.rx_secondary_buffer_length = 0;
+			uart0_cb.rx_counter = 0;
+			uart0_cb.rx_offset = 0;
+
+			event.type = UART_RX_BUF_REQUEST;
+			user_callback(&event);
+		} else {
+			uart_nrfx_rx_disable(dev);
+		}
+	}
+}
+
+static void tx_isr(void)
+{
+	uart0_cb.tx_counter++;
+	if (uart0_cb.tx_counter < uart0_cb.tx_buffer_length &&
+	    !uart0_cb.tx_abort) {
+#if	defined(DT_NORDIC_NRF_UART_UART_0_RTS_PIN) && \
+		defined(DT_NORDIC_NRF_UART_UART_0_CTS_PIN)
+		k_delayed_work_submit(&uart0_cb.tx_timeout_work,
+				uart0_cb.tx_timeout);
+#endif
+		nrf_uart_event_clear(uart0_addr, NRF_UART_EVENT_TXDRDY);
+
+		u8_t txd = uart0_cb.tx_buffer[uart0_cb.tx_counter];
+
+		nrf_uart_txd_set(uart0_addr, txd);
+	} else {
+#if	defined(DT_NORDIC_NRF_UART_UART_0_RTS_PIN) && \
+		defined(DT_NORDIC_NRF_UART_UART_0_CTS_PIN)
+		k_delayed_work_cancel(&uart0_cb.tx_timeout_work);
+#endif
+		nrf_uart_event_clear(uart0_addr, NRF_UART_EVENT_TXDRDY);
+		uart0_cb.tx_buffer_length = 0;
+		uart0_cb.tx_counter = 0;
+		struct uart_event event = {
+			.type = UART_TX_DONE,
+			.data.tx.buf = uart0_cb.tx_buffer,
+			.data.tx.len = uart0_cb.tx_counter
+		};
+		user_callback(&event);
+	}
+}
+
+#define UART_ERROR_FROM_MASK(mask) \
+	(mask & NRF_UART_ERROR_OVERRUN_MASK ? UART_ERROR_OVERRUN	\
+	 : mask & NRF_UART_ERROR_PARITY_MASK ? UART_ERROR_PARITY	\
+	 : mask & NRF_UART_ERROR_FRAMING_MASK ? UART_ERROR_FRAMING	\
+	 : mask & NRF_UART_ERROR_BREAK_MASK ? UART_BREAK		\
+	 : 0)
+
+static void error_isr(struct device *dev)
+{
+	k_delayed_work_cancel(&uart0_cb.rx_timeout_work);
+	nrf_uart_event_clear(uart0_addr, NRF_UART_EVENT_ERROR);
+
+	if (!uart0_cb.rx_enabled) {
+		nrf_uart_task_trigger(uart0_addr, NRF_UART_TASK_STOPRX);
+	}
+	struct uart_event event = {
+		.type = UART_RX_STOPPED,
+		.data.rx_stop.reason =
+			UART_ERROR_FROM_MASK(
+				nrf_uart_errorsrc_get_and_clear(uart0_addr)),
+		.data.rx_stop.data.len = uart0_cb.rx_counter
+					 - uart0_cb.rx_offset,
+		.data.rx_stop.data.offset = uart0_cb.rx_offset,
+		.data.rx_stop.data.buf = uart0_cb.rx_buffer
+	};
+
+	user_callback(&event);
+	/* Abort transfer. */
+	uart_nrfx_rx_disable(dev);
+}
+
+/*
+ * In nRF hardware RX timeout can occur only after stopping the peripheral,
+ * it is used as a sign that peripheral has finished its operation and is
+ * disabled.
+ */
+static void rxto_isr(void)
+{
+	nrf_uart_event_clear(uart0_addr, NRF_UART_EVENT_RXTO);
+
+	buf_released_evt();
+	if (uart0_cb.rx_secondary_buffer_length) {
+		uart0_cb.rx_buffer = uart0_cb.rx_secondary_buffer;
+		buf_released_evt();
+	}
+
+	rx_reset_state();
+	rx_disabled_evt();
+}
+
+void uart_nrfx_isr(void *arg)
+{
+	struct device *uart = (struct device *) arg;
+
+	if (nrf_uart_int_enable_check(uart0_addr, NRF_UART_INT_MASK_ERROR) &&
+	    nrf_uart_event_check(uart0_addr, NRF_UART_EVENT_ERROR)) {
+		error_isr(uart);
+	} else if (nrf_uart_int_enable_check(uart0_addr,
+					     NRF_UART_INT_MASK_RXDRDY) &&
+		   nrf_uart_event_check(uart0_addr, NRF_UART_EVENT_RXDRDY)) {
+		rx_isr(uart);
+	}
+
+	if (nrf_uart_event_check(uart0_addr, NRF_UART_EVENT_TXDRDY)) {
+		tx_isr();
+	}
+
+	if (nrf_uart_event_check(uart0_addr, NRF_UART_EVENT_RXTO)) {
+		rxto_isr();
+	}
+}
+
+static void rx_timeout(struct k_work *work)
+{
+	rx_rdy_evt();
+}
+#if	defined(DT_NORDIC_NRF_UART_UART_0_RTS_PIN) && \
+	defined(DT_NORDIC_NRF_UART_UART_0_CTS_PIN)
+static void tx_timeout(struct k_work *work)
+{
+	struct uart_event evt;
+
+	k_delayed_work_cancel(&uart0_cb.tx_timeout_work);
+	nrf_uart_task_trigger(uart0_addr, NRF_UART_TASK_STOPTX);
+	evt.type = UART_TX_ABORTED;
+	evt.data.tx.buf = uart0_cb.tx_buffer;
+	evt.data.tx.len = uart0_cb.tx_buffer_length;
+	uart0_cb.tx_buffer_length = 0;
+	uart0_cb.tx_counter = 0;
+	user_callback(&evt);
+
+}
+#endif
+
+#endif /* CONFIG_UART_ASYNC_API */
+
+
 #ifdef CONFIG_UART_0_INTERRUPT_DRIVEN
 
 /** Interrupt driven FIFO fill function */
@@ -525,6 +893,9 @@ static int uart_nrfx_init(struct device *dev)
 	 * is indicated correctly.
 	 */
 	uart_sw_event_txdrdy = 1U;
+#endif
+
+#if defined(CONFIG_UART_ASYNC_API) || defined(CONFIG_UART_0_INTERRUPT_DRIVEN)
 
 	IRQ_CONNECT(DT_NORDIC_NRF_UART_UART_0_IRQ,
 		    DT_NORDIC_NRF_UART_UART_0_IRQ_PRIORITY,
@@ -534,6 +905,13 @@ static int uart_nrfx_init(struct device *dev)
 	irq_enable(DT_NORDIC_NRF_UART_UART_0_IRQ);
 #endif
 
+#ifdef CONFIG_UART_ASYNC_API
+	k_delayed_work_init(&uart0_cb.rx_timeout_work, rx_timeout);
+#if	defined(DT_NORDIC_NRF_UART_UART_0_RTS_PIN) && \
+	defined(DT_NORDIC_NRF_UART_UART_0_CTS_PIN)
+	k_delayed_work_init(&uart0_cb.tx_timeout_work, tx_timeout);
+#endif
+#endif
 	return 0;
 }
 
@@ -541,6 +919,14 @@ static int uart_nrfx_init(struct device *dev)
  * because Nordic hardware does not distinguish between them.
  */
 static const struct uart_driver_api uart_nrfx_uart_driver_api = {
+#ifdef CONFIG_UART_ASYNC_API
+	.callback_set	  = uart_nrfx_callback_set,
+	.tx		  = uart_nrfx_tx,
+	.tx_abort	  = uart_nrfx_tx_abort,
+	.rx_enable	  = uart_nrfx_rx_enable,
+	.rx_buf_rsp	  = uart_nrfx_rx_buf_rsp,
+	.rx_disable	  = uart_nrfx_rx_disable,
+#endif /* CONFIG_UART_ASYNC_API */
 	.poll_in          = uart_nrfx_poll_in,
 	.poll_out         = uart_nrfx_poll_out,
 	.err_check        = uart_nrfx_err_check,
