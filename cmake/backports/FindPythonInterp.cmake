@@ -43,11 +43,22 @@ function(determine_python_version exe result)
                     RESULT_VARIABLE _PYTHON_VERSION_RESULT
                     ERROR_QUIET)
     if(_PYTHON_VERSION_RESULT)
-        message(FATAL_ERROR "Failed to test python version")
+        # sys.version predates sys.version_info, so use that
+        execute_process(COMMAND "${exe}" -c "import sys; sys.stdout.write(sys.version)"
+                        OUTPUT_VARIABLE _VERSION
+                        RESULT_VARIABLE _PYTHON_VERSION_RESULT
+                        ERROR_QUIET)
+        if(_PYTHON_VERSION_RESULT)
+            # sys.version was first documented for Python 1.5, so assume
+            # this is older.
+            set(ver "1.4")
+        else()
+            string(REGEX REPLACE " .*" "" ver "${_VERSION}")
+        endif()
     else()
         string(REPLACE ";" "." ver "${_VERSION}")
-        set(${result} ${ver} PARENT_SCOPE)
     endif()
+    set(${result} ${ver} PARENT_SCOPE)
 endfunction()
 
 # Find out if the 'python' executable on path has the correct version,
