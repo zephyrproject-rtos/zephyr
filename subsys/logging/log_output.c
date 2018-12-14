@@ -10,18 +10,19 @@
 #include <assert.h>
 #include <ctype.h>
 #include <time.h>
+#include <stdio.h>
+
+#define LOG_COLOR_CODE_DEFAULT "\x1B[0m"
+#define LOG_COLOR_CODE_RED     "\x1B[1;31m"
+#define LOG_COLOR_CODE_YELLOW  "\x1B[1;33m"
 
 #define HEXDUMP_BYTES_IN_LINE 8
 
-#define LOG_COLOR_CODE_DEFAULT "\x1B[0m"
-#define LOG_COLOR_CODE_BLACK   "\x1B[1;30m"
-#define LOG_COLOR_CODE_RED     "\x1B[1;31m"
-#define LOG_COLOR_CODE_GREEN   "\x1B[1;32m"
-#define LOG_COLOR_CODE_YELLOW  "\x1B[1;33m"
-#define LOG_COLOR_CODE_BLUE    "\x1B[1;34m"
-#define LOG_COLOR_CODE_MAGENTA "\x1B[1;35m"
-#define LOG_COLOR_CODE_CYAN    "\x1B[1;36m"
-#define LOG_COLOR_CODE_WHITE   "\x1B[1;37m"
+#define  DROPPED_COLOR_PREFIX \
+	_LOG_EVAL(CONFIG_LOG_BACKEND_SHOW_COLOR, (LOG_COLOR_CODE_RED), ())
+
+#define DROPPED_COLOR_POSTFIX \
+	_LOG_EVAL(CONFIG_LOG_BACKEND_SHOW_COLOR, (LOG_COLOR_CODE_DEFAULT), ())
 
 static const char *const severity[] = {
 	NULL,
@@ -114,18 +115,23 @@ static int print_formatted(const struct log_output *log_output,
 	return length;
 }
 
-void log_output_flush(const struct log_output *log_output)
+static void buffer_write(log_output_func_t outf, u8_t *buf, size_t len,
+			 void *ctx)
 {
-	int offset = 0;
-	int len = log_output->control_block->offset;
 	int processed;
 
 	do {
-		processed = log_output->func(&log_output->buf[offset], len,
-					     log_output->control_block->ctx);
+		processed = outf(buf, len, ctx);
 		len -= processed;
-		offset += processed;
+		buf += processed;
 	} while (len);
+}
+
+void log_output_flush(const struct log_output *log_output)
+{
+	buffer_write(log_output->func, log_output->buf,
+		     log_output->control_block->offset,
+		     log_output->control_block->ctx);
 
 	log_output->control_block->offset = 0;
 }
@@ -522,6 +528,24 @@ void log_output_msg_process(const struct log_output *log_output,
 	postfix_print(msg, log_output, flags);
 
 	log_output_flush(log_output);
+}
+
+void log_output_dropped_process(const struct log_output *log_output, u32_t cnt)
+{
+	char buf[5];
+	int len;
+	static const char prefix[] = DROPPED_COLOR_PREFIX "--- ";
+	static const char postfix[] =
+			" messages dropped ---\r\n" DROPPED_COLOR_POSTFIX;
+	log_output_func_t outf = log_output->func;
+	struct device *dev = (struct device *)log_output->control_block->ctx;
+
+	cnt = min(cnt, 9999);
+	len = snprintf(buf, sizeof(buf), "%d", cnt);
+
+	buffer_write(outf, (u8_t *)prefix, sizeof(prefix) - 1, dev);
+	buffer_write(outf, buf, len, dev);
+	buffer_write(outf, (u8_t *)postfix, sizeof(postfix) - 1, dev);
 }
 
 void log_output_timestamp_freq_set(u32_t frequency)
