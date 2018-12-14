@@ -354,4 +354,28 @@ config PLATFORM_SPECIFIC_INIT
 
 endmenu
 
+# At the time of writing 'BOOTLOADER_METADATA' is only implemented by
+# cortex_m/scripts/linker.ld. When implemented in other linker scripts
+# this option must be moved elsewhere.
+config BOOTLOADER_METADATA
+	bool
+	help
+	  Store bootloader metadata at a specific offset into the flash.
+
+if BOOTLOADER_METADATA
+
+# The *_OFFSET and *_INPUT_SECTION options are not user-settable and
+# must be set by additional declarions of the options.
+
+config BOOTLOADER_METADATA_OFFSET
+	hex
+	help
+	  The offset into flash where the metadata is stored.
+
+config BOOTLOADER_METADATA_INPUT_SECTION
+	string
+	default ".bootloader_metadata" if n
+
+endif # BOOTLOADER_METADATA
+
 endif # CPU_CORTEX_M
