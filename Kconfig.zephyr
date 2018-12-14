@@ -332,7 +332,7 @@ config BOOTLOADER_SRAM_SIZE
 	int "SRAM reserved for bootloader"
 	default 16
 	depends on !XIP || IS_BOOTLOADER
-	depends on ARM
+	depends on ARM || XTENSA
 	help
 	  This option specifies the amount of SRAM (measure in kB) reserved for
 	  a bootloader image, when either:
