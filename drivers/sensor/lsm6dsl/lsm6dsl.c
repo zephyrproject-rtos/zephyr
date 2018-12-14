@@ -773,7 +773,7 @@ static int lsm6dsl_init_chip(struct device *dev)
 }
 
 static struct lsm6dsl_config lsm6dsl_config = {
-#ifdef CONFIG_LSM6DSL_SPI
+#ifdef DT_ST_LSM6DSL_BUS_SPI
 	.comm_master_dev_name = DT_LSM6DSL_SPI_MASTER_DEV_NAME,
 #else
 	.comm_master_dev_name = DT_LSM6DSL_I2C_MASTER_DEV_NAME,
@@ -792,7 +792,7 @@ static int lsm6dsl_init(struct device *dev)
 		return -EINVAL;
 	}
 
-#ifdef CONFIG_LSM6DSL_SPI
+#ifdef DT_ST_LSM6DSL_BUS_SPI
 	lsm6dsl_spi_init(dev);
 #else
 	lsm6dsl_i2c_init(dev);

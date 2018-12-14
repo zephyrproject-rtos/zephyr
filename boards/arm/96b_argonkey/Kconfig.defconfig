@@ -78,10 +78,6 @@ endif # DMA
 
 if LSM6DSL
 
-choice LSM6DSL_BUS_TYPE
-	default LSM6DSL_SPI
-endchoice
-
 choice LSM6DSL_TRIGGER_MODE
 	default LSM6DSL_TRIGGER_GLOBAL_THREAD
 endchoice
