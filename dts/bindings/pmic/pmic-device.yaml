@@ -1,0 +1,29 @@
+#
+# Copyright (c) 2018, Makaio GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: PMIC Device Base Structure
+version: 0.1
+
+description: >
+  This binding gives the base structures for all PMIC devices
+
+properties:
+  boost:
+    type: int
+    generation: define
+    category: optional
+    description: Boost API enabled
+  charger:
+    type: int
+    generation: define
+    category: optional
+    description: Charger API enabled
+  fuelgauge:
+    type: int
+    generation: define
+    category: optional
+    description: Fuelgauge API enabled
+...
