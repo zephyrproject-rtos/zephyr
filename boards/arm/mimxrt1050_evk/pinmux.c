@@ -23,6 +23,7 @@ static int mimxrt1050_evk_init(struct device *dev)
 	CLOCK_EnableClock(kCLOCK_Iomuxc);
 	CLOCK_EnableClock(kCLOCK_IomuxcSnvs);
 
+#ifndef CONFIG_ETH_MCUX_0
 	/* LED */
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_09_GPIO1_IO09, 0);
 
@@ -33,6 +34,7 @@ static int mimxrt1050_evk_init(struct device *dev)
 
 	/* SW0 */
 	IOMUXC_SetPinMux(IOMUXC_SNVS_WAKEUP_GPIO5_IO00, 0);
+#endif
 
 #ifdef CONFIG_UART_MCUX_LPUART_1
 	/* LPUART1 TX/RX */
@@ -95,6 +97,8 @@ static int mimxrt1050_evk_init(struct device *dev)
 #endif
 
 #ifdef CONFIG_ETH_MCUX_0
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_09_GPIO1_IO09, 0U);
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_10_GPIO1_IO10, 0U);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_B1_04_ENET_RX_DATA00, 0);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_B1_05_ENET_RX_DATA01, 0);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_B1_06_ENET_RX_EN, 0);
@@ -106,6 +110,8 @@ static int mimxrt1050_evk_init(struct device *dev)
 	IOMUXC_SetPinMux(IOMUXC_GPIO_EMC_40_ENET_MDC, 0);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_EMC_41_ENET_MDIO, 0);
 
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_B0_09_GPIO1_IO09, 0xB0A9u);
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_B0_10_GPIO1_IO10, 0xB0A9u);
 	IOMUXC_SetPinConfig(IOMUXC_GPIO_B1_04_ENET_RX_DATA00, 0xB0E9);
 	IOMUXC_SetPinConfig(IOMUXC_GPIO_B1_05_ENET_RX_DATA01, 0xB0E9);
 	IOMUXC_SetPinConfig(IOMUXC_GPIO_B1_06_ENET_RX_EN, 0xB0E9);
@@ -126,12 +132,10 @@ static int mimxrt1050_evk_init(struct device *dev)
 	/* pull up the ENET_INT before RESET. */
 	GPIO_WritePinOutput(GPIO1, 10, 1);
 	/* RESET PHY chip. */
-	GPIO_WritePinOutput(GPIO1, 9, 0);
-	k_busy_wait(10 * USEC_PER_MSEC);
 	GPIO_WritePinOutput(GPIO1, 9, 1);
 #endif
 
 	return 0;
 }
 
-SYS_INIT(mimxrt1050_evk_init, PRE_KERNEL_2, 0);
+SYS_INIT(mimxrt1050_evk_init, PRE_KERNEL_1, 0);
