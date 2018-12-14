@@ -10,7 +10,7 @@
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(adc_mcux_adc16);
+LOG_MODULE_REGISTER(adc_nrfx_adc);
 
 struct driver_data {
 	struct adc_context ctx;
