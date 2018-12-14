@@ -2,7 +2,6 @@
 # conf/mconf needs to be run from a different directory because of: GH-3408
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig/include/generated)
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig/include/config)
-file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/include/generated)
 
 if(KCONFIG_ROOT)
   # KCONFIG_ROOT has either been specified as a CMake variable or is

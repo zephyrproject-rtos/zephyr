@@ -281,6 +281,7 @@ include(${ZEPHYR_BASE}/cmake/host-tools.cmake)
 # both DT and Kconfig we complete the target-specific configuration,
 # and possibly change the toolchain.
 include(${ZEPHYR_BASE}/cmake/generic_toolchain.cmake)
+include(${ZEPHYR_BASE}/cmake/dts.cmake)
 include(${ZEPHYR_BASE}/cmake/kconfig.cmake)
 
 set(SOC_NAME   ${CONFIG_SOC})
@@ -292,8 +293,6 @@ if("${SOC_SERIES}" STREQUAL "")
 else()
   set(SOC_PATH ${SOC_FAMILY}/${SOC_SERIES})
 endif()
-
-include(${ZEPHYR_BASE}/cmake/dts.cmake)
 
 include(${ZEPHYR_BASE}/cmake/target_toolchain.cmake)
 
