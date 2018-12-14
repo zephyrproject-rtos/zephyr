@@ -53,7 +53,9 @@ void _NanoFatalErrorHandler(unsigned int reason,
 	case _NANO_ERR_HW_EXCEPTION:
 		printk("***** Hardware exception *****\n");
 		break;
-#if defined(CONFIG_STACK_CANARIES) || defined(CONFIG_STACK_SENTINEL)
+#if defined(CONFIG_STACK_CANARIES) || defined(CONFIG_STACK_SENTINEL) || \
+		defined(CONFIG_HW_STACK_PROTECTION) || \
+		defined(CONFIG_USERSPACE)
 	case _NANO_ERR_STACK_CHK_FAIL:
 		printk("***** Stack Check Fail! *****\n");
 		break;
