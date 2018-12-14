@@ -90,9 +90,11 @@ static int sysview_init(struct device *arg)
 	ARG_UNUSED(arg);
 
 	SEGGER_SYSVIEW_Conf();
-	SEGGER_SYSVIEW_Start();
+	if (IS_ENABLED(CONFIG_SEGGER_SYSTEMVIEW_BOOT_ENABLE)) {
+		SEGGER_SYSVIEW_Start();
+	}
 	return 0;
 }
 
 
-SYS_INIT(sysview_init, PRE_KERNEL_1, 0);
+SYS_INIT(sysview_init, POST_KERNEL, 0);
