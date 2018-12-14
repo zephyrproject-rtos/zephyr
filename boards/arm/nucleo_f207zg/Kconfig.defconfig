@@ -12,7 +12,7 @@ config BOARD
 
 if UART_CONSOLE
 
-config UART_STM32_PORT_3
+config UART_3
 	default y
 
 endif # UART_CONSOLE
@@ -29,7 +29,7 @@ endif # NETWORKING
 
 if SERIAL
 
-config UART_STM32_PORT_6
+config UART_6
 	default y
 
 endif # SERIAL

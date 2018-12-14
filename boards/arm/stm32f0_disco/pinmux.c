@@ -15,14 +15,14 @@
 
 /* pin assignments for STM32F0DISCOVERY board */
 static const struct pin_config pinconf[] = {
-#ifdef CONFIG_UART_STM32_PORT_1
+#ifdef CONFIG_UART_1
 	{STM32_PIN_PA9, STM32F0_PINMUX_FUNC_PA9_USART1_TX},
 	{STM32_PIN_PA10, STM32F0_PINMUX_FUNC_PA10_USART1_RX},
-#endif	/* CONFIG_UART_STM32_PORT_1 */
-#ifdef CONFIG_UART_STM32_PORT_2
+#endif	/* CONFIG_UART_1 */
+#ifdef CONFIG_UART_2
 	{STM32_PIN_PA2, STM32F0_PINMUX_FUNC_PA2_USART2_TX},
 	{STM32_PIN_PA3, STM32F0_PINMUX_FUNC_PA3_USART2_RX},
-#endif	/* CONFIG_UART_STM32_PORT_2 */
+#endif	/* CONFIG_UART_2 */
 };
 
 static int pinmux_stm32_init(struct device *port)
