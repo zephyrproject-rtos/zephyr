@@ -35,6 +35,21 @@ menu "Ciphersuite configuration"
 
 comment "Supported key exchange modes"
 
+config TLS_KEY_EXCHANGE_ALL_ENABLED
+	bool "Enable all available ciphersuite modes"
+	select TLS_KEY_EXCHANGE_PSK_ENABLED
+	select TLS_KEY_EXCHANGE_DHE_PSK_ENABLED
+	select TLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
+	select TLS_KEY_EXCHANGE_RSA_PSK_ENABLED
+	select TLS_KEY_EXCHANGE_RSA_ENABLED
+	select TLS_KEY_EXCHANGE_DHE_RSA_ENABLED
+	select TLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
+	select TLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
+	select TLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
+	select TLS_KEY_EXCHANGE_ECDH_ECDSA_ENABLED
+	select TLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
+	select TLS_KEY_EXCHANGE_ECJPAKE_ENABLED
+
 config TLS_KEY_EXCHANGE_PSK_ENABLED
 	bool "Enable the PSK based ciphersuite modes"
 
@@ -77,6 +92,24 @@ if TLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED || \
    TLS_KEY_EXCHANGE_ECJPAKE_ENABLED
 
 comment "Supported elliptic curves"
+
+config TLS_ECP_ALL_ENABLED
+	bool "Enable all available elliptic curves"
+	select TLS_ECP_DP_SECP192R1_ENABLED
+	select TLS_ECP_DP_SECP192R1_ENABLED
+	select TLS_ECP_DP_SECP224R1_ENABLED
+	select TLS_ECP_DP_SECP256R1_ENABLED
+	select TLS_ECP_DP_SECP384R1_ENABLED
+	select TLS_ECP_DP_SECP521R1_ENABLED
+	select TLS_ECP_DP_SECP192K1_ENABLED
+	select TLS_ECP_DP_SECP224K1_ENABLED
+	select TLS_ECP_DP_SECP256K1_ENABLED
+	select TLS_ECP_DP_BP256R1_ENABLED
+	select TLS_ECP_DP_BP384R1_ENABLED
+	select TLS_ECP_DP_BP512R1_ENABLED
+	select TLS_ECP_DP_CURVE25519_ENABLED
+	select TLS_ECP_DP_CURVE448_ENABLED
+	select TLS_ECP_NIST_OPTIM
 
 config TLS_ECP_DP_SECP192R1_ENABLED
 	bool "Enable SECP192R1 elliptic curve"
@@ -124,6 +157,20 @@ endif
 
 comment "Supported cipher modes"
 
+config TLS_CIPHER_ALL_ENABLED
+	bool "Enable all available ciphers"
+	select TLS_CIPHER_AES_ENABLED
+	select TLS_CIPHER_CAMELLIA_ENABLED
+	select TLS_CIPHER_DES_ENABLED
+	select TLS_CIPHER_ARC4_ENABLED
+	select TLS_CIPHER_CHACHA20_ENABLED
+	select TLS_CIPHER_BLOWFISH_ENABLED
+	select TLS_CIPHER_CCM_ENABLED
+	select TLS_CIPHER_MODE_XTS_ENABLED
+	select TLS_CIPHER_MODE_GCM_ENABLED
+	select TLS_CIPHER_CBC_ENABLED
+	select TLS_CHACHAPOLY_AEAD_ENABLED
+
 config TLS_CIPHER_AES_ENABLED
 	bool "Enable the AES block cipher"
 	default y
@@ -135,15 +182,48 @@ config TLS_CIPHER_DES_ENABLED
 	bool "Enable the DES block cipher"
 	default y
 
+config TLS_CIPHER_ARC4_ENABLED
+	bool "Enable the ARC4 stream cipher"
+
+config TLS_CIPHER_CHACHA20_ENABLED
+	bool "Enable the ChaCha20 stream cipher"
+
+config TLS_CIPHER_BLOWFISH_ENABLED
+	bool "Enable the Blowfish block cipher"
+
 config TLS_CIPHER_CCM_ENABLED
 	bool "Enable the Counter with CBC-MAC (CCM) mode for 128-bit block cipher"
+	depends on TLS_CIPHER_AES_ENABLED || TLS_CIPHER_CAMELLIA_ENABLED
+
+config TLS_CIPHER_MODE_XTS_ENABLED
+	bool "Enable Xor-encrypt-xor with ciphertext stealing mode (XTS) for AES"
+	depends on TLS_CIPHER_AES_ENABLED || TLS_CIPHER_CAMELLIA_ENABLED
+
+config TLS_CIPHER_MODE_GCM_ENABLED
+	bool "Enable the Galois/Counter Mode (GCM) for AES"
 	depends on TLS_CIPHER_AES_ENABLED || TLS_CIPHER_CAMELLIA_ENABLED
 
 config TLS_CIPHER_CBC_ENABLED
 	bool "Enable Cipher Block Chaining mode (CBC) for symmetric ciphers"
 	default y
 
+config TLS_CHACHAPOLY_AEAD_ENABLED
+	bool "Enable the ChaCha20-Poly1305 AEAD algorithm"
+	depends on TLS_CIPHER_CHACHA20_ENABLED || TLS_MAC_POLY1305_ENABLED
+
 comment "Supported message authentication methods"
+
+config TLS_MAC_ALL_ENABLED
+	bool "Enable all available MAC methods"
+	select TLS_MAC_MD4_ENABLED
+	select TLS_MAC_MD5_ENABLED
+	select TLS_MAC_SHA1_ENABLED
+	select TLS_MAC_SHA256_ENABLED
+	select TLS_MAC_SHA512_ENABLED
+	select TLS_MAC_POLY1305_ENABLED
+
+config TLS_MAC_MD4_ENABLED
+	bool "Enable the MD4 hash algorithm"
 
 config TLS_MAC_MD5_ENABLED
 	bool "Enable the MD5 hash algorithm"
@@ -160,7 +240,25 @@ config TLS_MAC_SHA256_ENABLED
 config TLS_MAC_SHA512_ENABLED
 	bool "Enable the SHA-384 and SHA-512 hash algorithms"
 
+config TLS_MAC_POLY1305_ENABLED
+	bool "Enable the Poly1305 MAC algorithm"
+
 endmenu
+
+comment "Random number generators"
+
+config TLS_CTR_DRBG_ENABLED
+	bool "Enable the CTR_DRBG AES-256-based random generator"
+	depends on TLS_CIPHER_AES_ENABLED
+	default y
+
+config TLS_HMAC_DRBG_ENABLED
+	bool "Enable the HMAC_DRBG random generator"
+
+comment "Other configurations"
+
+config TLS_GENPRIME_ENABLED
+	bool "Enable the prime-number generation code."
 
 config TLS_PEM_CERTIFICATE_FORMAT
 	bool "Enable support for PEM certificate format"

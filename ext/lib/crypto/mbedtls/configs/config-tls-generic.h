@@ -55,7 +55,6 @@
 #define MBEDTLS_SSL_SRV_C
 #define MBEDTLS_SSL_CLI_C
 #define MBEDTLS_CIPHER_C
-#define MBEDTLS_MD_C
 #define MBEDTLS_SSL_MAX_FRAGMENT_LENGTH
 
 #endif
@@ -127,8 +126,28 @@
 #define MBEDTLS_DES_C
 #endif
 
+#if defined(CONFIG_TLS_CIPHER_ARC4_ENABLED)
+#define MBEDTLS_ARC4_C
+#endif
+
+#if defined(CONFIG_TLS_CIPHER_CHACHA20_ENABLED)
+#define MBEDTLS_CHACHA20_C
+#endif
+
+#if defined(CONFIG_TLS_CIPHER_BLOWFISH_ENABLED)
+#define MBEDTLS_BLOWFISH_C
+#endif
+
 #if defined(CONFIG_TLS_CIPHER_CCM_ENABLED)
 #define MBEDTLS_CCM_C
+#endif
+
+#if defined(CONFIG_TLS_CIPHER_MODE_XTS_ENABLED)
+#define MBEDTLS_CIPHER_MODE_XTS
+#endif
+
+#if defined(CONFIG_TLS_CIPHER_MODE_GCM_ENABLED)
+#define MBEDTLS_GCM_C
 #endif
 
 #if defined(CONFIG_TLS_CIPHER_CBC_ENABLED)
@@ -195,6 +214,10 @@
 
 /* Supported message authentication methods */
 
+#if defined(CONFIG_TLS_MAC_MD4_ENABLED)
+#define MBEDTLS_MD4_C
+#endif
+
 #if defined(CONFIG_TLS_MAC_MD5_ENABLED)
 #define MBEDTLS_MD5_C
 #endif
@@ -211,9 +234,50 @@
 #define MBEDTLS_SHA512_C
 #endif
 
+#if defined(CONFIG_TLS_MAC_POLY1305_ENABLED)
+#define MBEDTLS_POLY1305_C
+#endif
+
+/* mbedTLS modules */
+#if defined (CONFIG_TLS_PEM_CERTIFICATE_FORMAT) && \
+    defined(MBEDTLS_X509_CRT_PARSE_C)
+#define MBEDTLS_PEM_PARSE_C
+#define MBEDTLS_BASE64_C
+#endif
+
+#if defined(CONFIG_TLS_CTR_DRBG_ENABLED)
+#define MBEDTLS_CTR_DRBG_C
+#endif
+
+#if defined(CONFIG_TLS_HMAC_DRBG_ENABLED)
+#define MBEDTLS_HMAC_DRBG_C
+#endif
+
+#if defined(CONFIG_MBEDTLS_DEBUG)
+#define MBEDTLS_ERROR_C
+#define MBEDTLS_DEBUG_C
+#define MBEDTLS_SSL_DEBUG_ALL
+#define MBEDTLS_SSL_ALL_ALERT_MESSAGES
+#endif
+
+#if defined(CONFIG_TLS_CHACHAPOLY_AEAD_ENABLED)
+#define MBEDTLS_CHACHAPOLY_C
+#endif
+
+#if defined(CONFIG_TLS_GENPRIME_ENABLED)
+#define MBEDTLS_GENPRIME
+#endif
+
 /* Automatic dependencies */
 
-#if defined (MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED) || \
+#if defined(MBEDTLS_SSL_PROTO_TLS1) || \
+    defined(MBEDTLS_SSL_PROTO_TLS1_1) || \
+    defined(MBEDTLS_SSL_PROTO_TLS1_2) || \
+    defined(MBEDTLS_HMAC_DRBG_C)
+#define MBEDTLS_MD_C
+#endif
+
+#if defined(MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED) || \
     defined(MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED)
 #define MBEDTLS_DHM_C
 #endif
@@ -280,7 +344,8 @@
 #if defined(MBEDTLS_DHM_C) || \
     defined(MBEDTLS_ECP_C) || \
     defined(MBEDTLS_RSA_C) || \
-    defined(MBEDTLS_X509_USE_C)
+    defined(MBEDTLS_X509_USE_C) || \
+    defined(MBEDTLS_GENPRIME)
 #define MBEDTLS_BIGNUM_C
 #endif
 
@@ -295,24 +360,6 @@
 
 #if defined(MBEDTLS_PK_PARSE_C)
 #define MBEDTLS_PK_C
-#endif
-
-/* mbedTLS modules */
-#if defined (CONFIG_TLS_PEM_CERTIFICATE_FORMAT) && \
-    defined(MBEDTLS_X509_CRT_PARSE_C)
-#define MBEDTLS_PEM_PARSE_C
-#define MBEDTLS_BASE64_C
-#endif
-
-#if defined(MBEDTLS_AES_C)
-#define MBEDTLS_CTR_DRBG_C
-#endif
-
-#if defined(CONFIG_MBEDTLS_DEBUG)
-#define MBEDTLS_ERROR_C
-#define MBEDTLS_DEBUG_C
-#define MBEDTLS_SSL_DEBUG_ALL
-#define MBEDTLS_SSL_ALL_ALERT_MESSAGES
 #endif
 
 #define MBEDTLS_SSL_MAX_CONTENT_LEN  CONFIG_MBEDTLS_SSL_MAX_CONTENT_LEN
