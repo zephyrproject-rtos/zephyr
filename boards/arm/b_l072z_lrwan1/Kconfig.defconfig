@@ -11,13 +11,13 @@ config BOARD
 	default "b_l072z_lrwan1"
 
 if SERIAL
-config UART_STM32_PORT_1
+config UART_1
 	default y
 
 endif # SERIAL
 
 if UART_CONSOLE
-config UART_STM32_PORT_2
+config UART_2
 	default y
 
 endif # UART_CONSOLE

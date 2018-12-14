@@ -275,7 +275,7 @@ static void uart_stm32_usart_set_baud_rate(struct device *dev,
 			     baud_rate);
 }
 
-#ifdef CONFIG_UART_STM32_LPUART_1
+#ifdef CONFIG_LPUART_1
 static void uart_stm32_lpuart_set_baud_rate(struct device *dev,
 					    u32_t clock_rate, u32_t baud_rate)
 {
@@ -333,7 +333,7 @@ static int uart_stm32_init(struct device *dev)
 			       (clock_control_subsys_t *)&config->pclken,
 			       &clock_rate);
 
-#ifdef CONFIG_UART_STM32_LPUART_1
+#ifdef CONFIG_LPUART_1
 	if (IS_LPUART_INSTANCE(UartInstance)) {
 		uart_stm32_lpuart_set_baud_rate(dev, clock_rate, baud_rate);
 	} else {
@@ -410,21 +410,21 @@ DEVICE_AND_API_INIT(uart_stm32_##name, DT_UART_STM32_##name##_NAME,	\
 STM32_UART_IRQ_HANDLER(name)
 
 
-#ifdef CONFIG_UART_STM32_PORT_1
+#ifdef CONFIG_UART_1
 STM32_UART_INIT(USART_1)
-#endif	/* CONFIG_UART_STM32_PORT_1 */
+#endif	/* CONFIG_UART_1 */
 
-#ifdef CONFIG_UART_STM32_PORT_2
+#ifdef CONFIG_UART_2
 STM32_UART_INIT(USART_2)
-#endif	/* CONFIG_UART_STM32_PORT_2 */
+#endif	/* CONFIG_UART_2 */
 
-#ifdef CONFIG_UART_STM32_PORT_3
+#ifdef CONFIG_UART_3
 STM32_UART_INIT(USART_3)
-#endif	/* CONFIG_UART_STM32_PORT_3 */
+#endif	/* CONFIG_UART_3 */
 
-#ifdef CONFIG_UART_STM32_PORT_6
+#ifdef CONFIG_UART_6
 STM32_UART_INIT(USART_6)
-#endif /* CONFIG_UART_STM32_PORT_6 */
+#endif /* CONFIG_UART_6 */
 
 /*
  * STM32F0 and STM32L0 series differ from other STM32 series by some
@@ -432,56 +432,56 @@ STM32_UART_INIT(USART_6)
  */
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || defined(CONFIG_SOC_SERIES_STM32L0X)
 
-#ifdef CONFIG_UART_STM32_PORT_4
+#ifdef CONFIG_UART_4
 STM32_UART_INIT(USART_4)
-#endif /* CONFIG_UART_STM32_PORT_4 */
+#endif /* CONFIG_UART_4 */
 
-#ifdef CONFIG_UART_STM32_PORT_5
+#ifdef CONFIG_UART_5
 STM32_UART_INIT(USART_5)
-#endif /* CONFIG_UART_STM32_PORT_5 */
+#endif /* CONFIG_UART_5 */
 
 /* Following devices are not available in L0 series (for now)
  * But keeping them simplifies ifdefery and won't harm
  */
 
-#ifdef CONFIG_UART_STM32_PORT_7
+#ifdef CONFIG_UART_7
 STM32_UART_INIT(USART_7)
-#endif /* CONFIG_UART_STM32_PORT_7 */
+#endif /* CONFIG_UART_7 */
 
-#ifdef CONFIG_UART_STM32_PORT_8
+#ifdef CONFIG_UART_8
 STM32_UART_INIT(USART_8)
-#endif /* CONFIG_UART_STM32_PORT_8 */
+#endif /* CONFIG_UART_8 */
 
 #else
 
-#ifdef CONFIG_UART_STM32_PORT_4
+#ifdef CONFIG_UART_4
 STM32_UART_INIT(UART_4)
-#endif /* CONFIG_UART_STM32_PORT_4 */
+#endif /* CONFIG_UART_4 */
 
-#ifdef CONFIG_UART_STM32_PORT_5
+#ifdef CONFIG_UART_5
 STM32_UART_INIT(UART_5)
-#endif /* CONFIG_UART_STM32_PORT_5 */
+#endif /* CONFIG_UART_5 */
 
-#ifdef CONFIG_UART_STM32_PORT_7
+#ifdef CONFIG_UART_7
 STM32_UART_INIT(UART_7)
-#endif /* CONFIG_UART_STM32_PORT_7 */
+#endif /* CONFIG_UART_7 */
 
-#ifdef CONFIG_UART_STM32_PORT_8
+#ifdef CONFIG_UART_8
 STM32_UART_INIT(UART_8)
-#endif /* CONFIG_UART_STM32_PORT_8 */
+#endif /* CONFIG_UART_8 */
 
-#ifdef CONFIG_UART_STM32_PORT_9
+#ifdef CONFIG_UART_9
 STM32_UART_INIT(UART_9)
-#endif /* CONFIG_UART_STM32_PORT_9 */
+#endif /* CONFIG_UART_9 */
 
-#ifdef CONFIG_UART_STM32_PORT_10
+#ifdef CONFIG_UART_10
 STM32_UART_INIT(UART_10)
-#endif /* CONFIG_UART_STM32_PORT_10 */
+#endif /* CONFIG_UART_10 */
 
 #endif
 
 #if defined(CONFIG_SOC_SERIES_STM32L4X) || defined(CONFIG_SOC_SERIES_STM32L0X)
-#ifdef CONFIG_UART_STM32_LPUART_1
+#ifdef CONFIG_LPUART_1
 STM32_UART_INIT(LPUART_1)
-#endif /* CONFIG_UART_STM32_LPUART_1 */
+#endif /* CONFIG_UART_LPUART_1 */
 #endif

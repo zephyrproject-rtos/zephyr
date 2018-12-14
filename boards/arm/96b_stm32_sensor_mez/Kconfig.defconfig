@@ -12,7 +12,7 @@ config BOARD
 
 if UART_CONSOLE
 
-config UART_STM32_PORT_4
+config UART_4
 	default y
 
 endif # UART_CONSOLE
