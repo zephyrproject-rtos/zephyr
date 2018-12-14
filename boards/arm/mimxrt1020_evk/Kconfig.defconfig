@@ -50,4 +50,24 @@ config ETH_MCUX_0
 
 endif # NETWORKING
 
+if CODE_ITCM
+
+config FLASH_SIZE
+	default $(dt_int_val,DT_NXP_IMX_ITCM_0_SIZE,K)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_hex_val,DT_NXP_IMX_ITCM_0_BASE_ADDRESS)
+
+endif # CODE_ITCM
+
+if CODE_QSPI
+
+config FLASH_SIZE
+	default $(dt_int_val,DT_NXP_IMX_FLEXSPI_402A8000_SIZE_1,K)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_hex_val,DT_NXP_IMX_FLEXSPI_402A8000_BASE_ADDRESS_1)
+
+endif
+
 endif # BOARD_MIMXRT1020_EVK

@@ -6,16 +6,6 @@
 
 #include "mimxrt1050_evk.dts"
 
-/ {
-	chosen {
-#if defined(CONFIG_CODE_ITCM)
-		zephyr,flash = &itcm0;
-#elif defined(CONFIG_CODE_QSPI)
-		zephyr,flash = &is25wp064;
-#endif
-	};
-};
-
 /delete-node/ &hyperflash0;
 
 &flexspi0 {

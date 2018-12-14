@@ -28,16 +28,6 @@
 	};
 
 	chosen {
-#if defined(CONFIG_CODE_ITCM)
-		zephyr,flash = &itcm0;
-#elif defined(CONFIG_CODE_HYPERFLASH)
-		zephyr,flash = &hyperflash0;
-#endif
-#if defined(CONFIG_DATA_SDRAM)
-		zephyr,sram = &sdram0;
-#else
-		zephyr,sram = &dtcm0;
-#endif
 		zephyr,console = &uart1;
 		zephyr,shell-uart = &uart1;
 	};
