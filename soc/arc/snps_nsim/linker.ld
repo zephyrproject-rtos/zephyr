@@ -9,7 +9,7 @@
  */
 
 #include <generated_dts_board.h>
-
+#include <autoconf.h>
 
 /* Instruction Closely Coupled Memory (ICCM) base address and size */
 #if defined(DT_ICCM_BASE_ADDRESS) && (DT_ICCM_SIZE > 0)
