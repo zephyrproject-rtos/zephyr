@@ -16,21 +16,6 @@ menuconfig LSM6DSL
 
 if LSM6DSL
 
-choice LSM6DSL_BUS_TYPE
-	prompt "Interface to AP"
-	help
-	  Select interface the LSM6DSL driver is connected to AP
-
-config LSM6DSL_I2C
-	depends on I2C
-	bool "I2C Interface"
-
-config LSM6DSL_SPI
-	depends on SPI
-	bool "SPI Interface"
-
-endchoice
-
 choice LSM6DSL_TRIGGER_MODE
 	prompt "Trigger mode"
 	help

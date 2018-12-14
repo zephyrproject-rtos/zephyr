@@ -12,6 +12,8 @@
 #include "lsm6dsl.h"
 #include <logging/log.h>
 
+#ifdef DT_ST_LSM6DSL_BUS_SPI
+
 #define LSM6DSL_SPI_READ		(1 << 7)
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
@@ -168,3 +170,4 @@ int lsm6dsl_spi_init(struct device *dev)
 
 	return 0;
 }
+#endif /* DT_ST_LSM6DSL_BUS_SPI */
