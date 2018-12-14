@@ -134,19 +134,6 @@ static const u8_t hid_report_desc[] = {
 		/* END_COLLECTION				C0    */
 };
 
-static int get_report_cb(struct usb_setup_packet *setup, s32_t *len,
-			 u8_t **data)
-{
-	*len = sizeof(hid_report_desc);
-	*data = (u8_t *)hid_report_desc;
-
-	return 0;
-}
-
-static struct hid_ops ops = {
-	.get_report = get_report_cb,
-};
-
 static u32_t def_val[4];
 static volatile u8_t status[4];
 static K_SEM_DEFINE(sem, 0, 1);	/* starts off "not available" */
@@ -296,7 +283,7 @@ void main(void)
 	}
 #endif
 
-	usb_hid_register_device(hid_report_desc, sizeof(hid_report_desc), &ops);
+	usb_hid_register_device(hid_report_desc, sizeof(hid_report_desc), NULL);
 	usb_hid_init();
 
 	while (true) {
