@@ -400,7 +400,9 @@ static void cdc_acm_dev_status_cb(enum usb_dc_status_code status,
 	ARG_UNUSED(param);
 
 	/* Store the new status */
-	dev_data->usb_status = status;
+	if (status != USB_DC_SOF) {
+		dev_data->usb_status = status;
+	}
 
 	/* Check the USB status and do needed action if required */
 	switch (status) {
