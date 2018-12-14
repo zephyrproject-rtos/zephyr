@@ -188,6 +188,7 @@ static void check_samples(int expected_count)
 	TC_PRINT("\n");
 }
 
+
 /*******************************************************************************
  * test_adc_sample_one_channel
  */
@@ -218,6 +219,7 @@ void test_adc_sample_one_channel(void)
 {
 	zassert_true(test_task_one_channel() == TC_PASS, NULL);
 }
+
 
 /*******************************************************************************
  * test_adc_sample_two_channels
@@ -439,4 +441,52 @@ static int test_task_repeated_samplings(void)
 void test_adc_repeated_samplings(void)
 {
 	zassert_true(test_task_repeated_samplings() == TC_PASS, NULL);
+}
+
+
+/*******************************************************************************
+ * test_adc_invalid_request
+ */
+static int test_task_invalid_request(void)
+{
+	int ret;
+	struct adc_sequence sequence = {
+		.channels    = BIT(ADC_1ST_CHANNEL_ID),
+		.buffer      = m_sample_buffer,
+		.buffer_size = sizeof(m_sample_buffer),
+		.resolution  = 0, /* intentionally invalid value */
+	};
+#if defined(CONFIG_ADC_ASYNC)
+	struct k_poll_signal async_sig = K_POLL_SIGNAL_INITIALIZER(async_sig);
+#endif
+
+	struct device *adc_dev = init_adc();
+
+	if (!adc_dev) {
+		return TC_FAIL;
+	}
+
+	ret = adc_read(adc_dev, &sequence);
+	zassert_not_equal(ret, 0, "adc_read() unexpectedly succeeded");
+
+#if defined(CONFIG_ADC_ASYNC)
+	ret = adc_read_async(adc_dev, &sequence, &async_sig);
+	zassert_not_equal(ret, 0, "adc_read_async() unexpectedly succeeded");
+#endif
+
+	/*
+	 * Make the sequence parameters valid, now the request should succeed.
+	 */
+	sequence.resolution = ADC_RESOLUTION;
+
+	ret = adc_read(adc_dev, &sequence);
+	zassert_equal(ret, 0, "adc_read() failed with code %d", ret);
+
+	check_samples(1);
+
+	return TC_PASS;
+}
+void test_adc_invalid_request(void)
+{
+	zassert_true(test_task_invalid_request() == TC_PASS, NULL);
 }
