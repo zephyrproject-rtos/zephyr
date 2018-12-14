@@ -292,6 +292,7 @@ SECTIONS
 
     GROUP_START(RAMABLE_REGION)
 
+	. = RAM_ADDR;
 	/* Align the start of image SRAM with the
 	 * minimum granularity required by MPU.
 	 */
