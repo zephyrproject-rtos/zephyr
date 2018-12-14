@@ -25,6 +25,16 @@ config SEGGER_SYSTEMVIEW
 	select THREAD_STACK_INFO
 	select TRACING
 
+config SEGGER_SYSTEMVIEW_BOOT_ENABLE
+	bool "Start logging SystemView events on system start"
+	depends on SEGGER_SYSTEMVIEW
+	default n
+
+config SEGGER_SYSVIEW_RTT_BUFFER_SIZE
+	int "Buffer size for SystemView RTT"
+	depends on SEGGER_SYSTEMVIEW
+	default 4096
+
 config SEGGER_RTT_MAX_NUM_UP_BUFFERS
 	int "Maximum number of up-buffers"
 	default 3
