@@ -30,12 +30,12 @@
 			#size-cells = <1>;
 
 			itcm0: itcm@0 {
-				compatible = "nxp,imx-rt-itcm";
+				compatible = "nxp,imx-itcm";
 				reg = <0x00000000 0x20000>;
 			};
 
 			dtcm0: dtcm@20000000 {
-				compatible = "nxp,imx-rt-dtcm";
+				compatible = "nxp,imx-dtcm";
 				reg = <0x20000000 0x20000>;
 			};
 

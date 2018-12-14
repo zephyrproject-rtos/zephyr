@@ -4,17 +4,17 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 ---
-title: i.MX RT ITCM (Instruction Tightly Coupled Memory)
+title: i.MX DTCM (Data Tightly Coupled Memory)
 version: 0.1
 
 description: >
-  This binding gives a base representation of the i.MX-RT ITCM
+  This binding gives a base representation of the i.MX DTCM
 
 properties:
     compatible:
       type: string
       category: required
-      constraint: "nxp,imx-rt-itcm"
+      constraint: "nxp,imx-dtcm"
       generation: define
 
     reg:
