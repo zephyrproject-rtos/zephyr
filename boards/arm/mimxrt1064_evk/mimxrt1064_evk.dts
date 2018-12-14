@@ -24,11 +24,6 @@
 	};
 
 	chosen {
-#if defined(CONFIG_CODE_ITCM)
-		zephyr,flash = &itcm0;
-#elif defined(CONFIG_CODE_INTERNAL_QSPI)
-		zephyr,flash = &w25q32jvwj0;
-#endif
 		zephyr,sram = &dtcm0;
 		zephyr,console = &uart1;
 		zephyr,shell-uart = &uart1;
