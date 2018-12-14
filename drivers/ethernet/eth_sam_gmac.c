@@ -334,7 +334,6 @@ static struct gptp_hdr *check_gptp_msg(struct net_if *iface,
 	struct ethernet_context *eth_ctx;
 	struct gptp_hdr *gptp_hdr;
 	int eth_hlen;
-	u8_t *msg_start;
 
 #if defined(CONFIG_NET_VLAN)
 	eth_ctx = net_if_l2_data(iface);
