@@ -63,22 +63,30 @@ extern void _vprintk(out_func_t out, void *log_output,
  */
 static int level_to_rfc5424_severity(u32_t level)
 {
+	u8_t ret;
+
 	switch (level) {
 	case LOG_LEVEL_NONE:
-		return 7;
+		ret = 7;
+		break;
 	case LOG_LEVEL_ERR:
-		return 3;
+		ret =  3;
+		break;
 	case LOG_LEVEL_WRN:
-		return 4;
+		ret =  4;
+		break;
 	case LOG_LEVEL_INF:
-		return 6;
+		ret =  6;
+		break;
 	case LOG_LEVEL_DBG:
-		return 7;
+		ret = 7;
+		break;
 	default:
+		ret = 7;
 		break;
 	}
 
-	return 7;
+	return ret;
 }
 
 static int out_func(int c, void *ctx)
