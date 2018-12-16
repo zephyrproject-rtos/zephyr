@@ -16,6 +16,7 @@
 #include <syscall_handler.h>
 #include <device.h>
 #include <init.h>
+#include <stdbool.h>
 
 #define LOG_LEVEL CONFIG_KERNEL_LOG_LEVEL
 #include <logging/log.h>
@@ -161,9 +162,9 @@ static struct dyn_obj *dyn_object_find(void *obj)
  *
  * @param tidx The new thread index if successful
  *
- * @return 1 if successful, 0 if failed
+ * @return true if successful, false if failed
  **/
-static int _thread_idx_alloc(u32_t *tidx)
+static bool _thread_idx_alloc(u32_t *tidx)
 {
 	int i;
 	int idx;
@@ -183,13 +184,13 @@ static int _thread_idx_alloc(u32_t *tidx)
 			_k_object_wordlist_foreach(clear_perms_cb,
 						   (void *)*tidx);
 
-			return 1;
+			return true;
 		}
 
 		base += 8;
 	}
 
-	return 0;
+	return false;
 }
 
 /**
