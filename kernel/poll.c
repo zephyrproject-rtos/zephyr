@@ -24,6 +24,7 @@
 #include <misc/dlist.h>
 #include <misc/util.h>
 #include <misc/__assert.h>
+#include <stdbool.h>
 
 void k_poll_event_init(struct k_poll_event *event, u32_t type,
 		       int mode, void *obj)
@@ -43,25 +44,25 @@ void k_poll_event_init(struct k_poll_event *event, u32_t type,
 }
 
 /* must be called with interrupts locked */
-static inline int is_condition_met(struct k_poll_event *event, u32_t *state)
+static inline bool is_condition_met(struct k_poll_event *event, u32_t *state)
 {
 	switch (event->type) {
 	case K_POLL_TYPE_SEM_AVAILABLE:
 		if (k_sem_count_get(event->sem) > 0) {
 			*state = K_POLL_STATE_SEM_AVAILABLE;
-			return 1;
+			return true;
 		}
 		break;
 	case K_POLL_TYPE_DATA_AVAILABLE:
 		if (!k_queue_is_empty(event->queue)) {
 			*state = K_POLL_STATE_FIFO_DATA_AVAILABLE;
-			return 1;
+			return true;
 		}
 		break;
 	case K_POLL_TYPE_SIGNAL:
 		if (event->signal->signaled != 0) {
 			*state = K_POLL_STATE_SIGNALED;
-			return 1;
+			return true;
 		}
 		break;
 	case K_POLL_TYPE_IGNORE:
@@ -71,7 +72,7 @@ static inline int is_condition_met(struct k_poll_event *event, u32_t *state)
 		break;
 	}
 
-	return 0;
+	return false;
 }
 
 static inline void add_event(sys_dlist_t *events, struct k_poll_event *event,
