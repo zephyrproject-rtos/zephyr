@@ -399,7 +399,7 @@ static inline int _obj_validation_check(struct _k_object *ko,
 	ret = _k_object_validate(ko, otype, init);
 
 #ifdef CONFIG_PRINTK
-	if (ret) {
+	if (ret != 0) {
 		_dump_object_error(ret, obj, ko, otype);
 	}
 #else

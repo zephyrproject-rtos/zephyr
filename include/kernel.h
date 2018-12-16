@@ -2589,7 +2589,7 @@ static inline int k_work_submit_to_user_queue(struct k_work_q *work_q,
 		/* Couldn't insert into the queue. Clear the pending bit
 		 * so the work item can be submitted again
 		 */
-		if (ret) {
+		if (ret != 0) {
 			atomic_clear_bit(work->flags, K_WORK_STATE_PENDING);
 		}
 	}
@@ -4211,7 +4211,7 @@ extern void *k_calloc(size_t nmemb, size_t size);
 /* private - implementation data created as needed, per-type */
 struct _poller {
 	struct k_thread *thread;
-	volatile int is_polling;
+	volatile bool is_polling;
 };
 
 /* private - types bit positions */

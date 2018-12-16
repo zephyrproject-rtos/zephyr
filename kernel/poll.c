@@ -59,7 +59,7 @@ static inline int is_condition_met(struct k_poll_event *event, u32_t *state)
 		}
 		break;
 	case K_POLL_TYPE_SIGNAL:
-		if (event->signal->signaled) {
+		if (event->signal->signaled != 0) {
 			*state = K_POLL_STATE_SIGNALED;
 			return 1;
 		}
@@ -183,7 +183,7 @@ int _impl_k_poll(struct k_poll_event *events, int num_events, s32_t timeout)
 	int last_registered = -1, rc;
 	unsigned int key;
 
-	struct _poller poller = { .thread = _current, .is_polling = 1, };
+	struct _poller poller = { .thread = _current, .is_polling = true, };
 
 	/* find events whose condition is already fulfilled */
 	for (int ii = 0; ii < num_events; ii++) {
@@ -192,7 +192,7 @@ int _impl_k_poll(struct k_poll_event *events, int num_events, s32_t timeout)
 		key = irq_lock();
 		if (is_condition_met(&events[ii], &state)) {
 			set_event_ready(&events[ii], state);
-			poller.is_polling = 0;
+			poller.is_polling = false;
 		} else if (timeout != K_NO_WAIT && poller.is_polling) {
 			rc = register_event(&events[ii], &poller);
 			if (rc == 0) {
@@ -217,7 +217,7 @@ int _impl_k_poll(struct k_poll_event *events, int num_events, s32_t timeout)
 		return 0;
 	}
 
-	poller.is_polling = 0;
+	poller.is_polling = false;
 
 	if (timeout == K_NO_WAIT) {
 		irq_unlock(key);
@@ -331,7 +331,7 @@ static int signal_poll_event(struct k_poll_event *event, u32_t state)
 	__ASSERT(event->poller->thread != NULL,
 		 "poller should have a thread\n");
 
-	event->poller->is_polling = 0;
+	event->poller->is_polling = true;
 
 	if (!_is_thread_pending(thread)) {
 		goto ready_event;

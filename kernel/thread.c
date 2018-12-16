@@ -244,7 +244,7 @@ void _check_stack_sentinel(void)
 {
 	u32_t *stack;
 
-	if (_current->base.thread_state & _THREAD_DUMMY) {
+	if ((_current->base.thread_state & _THREAD_DUMMY) != 0) {
 		return;
 	}
 
@@ -403,7 +403,7 @@ void _setup_new_thread(struct k_thread *new_thread,
 					new_thread);
 	}
 
-	if (options & K_INHERIT_PERMS) {
+	if ((options & K_INHERIT_PERMS) != 0) {
 		_thread_perms_inherit(_current, new_thread);
 	}
 #endif

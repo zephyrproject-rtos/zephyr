@@ -9,6 +9,7 @@
 #include <init.h>
 #include <wait_q.h>
 #include <syscall_handler.h>
+#include <stdbool.h>
 
 extern struct k_timer _k_timer_list_start[];
 extern struct k_timer _k_timer_list_end[];
@@ -64,7 +65,7 @@ void _timer_expiration_handler(struct _timeout *t)
 	timer->status += 1;
 
 	/* invoke timer expiry function */
-	if (timer->expiry_fn) {
+	if (timer->expiry_fn != NULL) {
 		timer->expiry_fn(timer);
 	}
 
@@ -149,7 +150,7 @@ Z_SYSCALL_HANDLER(k_timer_start, timer, duration_p, period_p)
 void _impl_k_timer_stop(struct k_timer *timer)
 {
 	unsigned int key = irq_lock();
-	int inactive = (_abort_timeout(&timer->timeout) == _INACTIVE);
+	bool inactive = (_abort_timeout(&timer->timeout) == _INACTIVE);
 
 	irq_unlock(key);
 
@@ -157,7 +158,7 @@ void _impl_k_timer_stop(struct k_timer *timer)
 		return;
 	}
 
-	if (timer->stop_fn) {
+	if (timer->stop_fn != NULL) {
 		timer->stop_fn(timer);
 	}
 

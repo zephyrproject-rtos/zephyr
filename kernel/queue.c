@@ -237,7 +237,7 @@ void k_queue_append_list(struct k_queue *queue, void *head, void *tail)
 #if !defined(CONFIG_POLL)
 	struct k_thread *thread = NULL;
 
-	if (head) {
+	if (head != NULL) {
 		thread = _unpend_first_thread(&queue->wait_q);
 	}
 
