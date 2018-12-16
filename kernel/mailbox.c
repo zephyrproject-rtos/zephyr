@@ -204,7 +204,7 @@ static void mbox_message_dispose(struct k_mbox_msg *rx_msg)
 	 * asynchronous send: free asynchronous message descriptor +
 	 * dummy thread pair, then give semaphore (if needed)
 	 */
-	if (sending_thread->base.thread_state & _THREAD_DUMMY) {
+	if ((sending_thread->base.thread_state & _THREAD_DUMMY) != 0) {
 		struct k_sem *async_sem = tx_msg->_async_sem;
 
 		mbox_async_free((struct k_mbox_async *)sending_thread);
@@ -274,7 +274,8 @@ static int mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 			 * note: dummy sending thread sits (unqueued)
 			 * until the receiver consumes the message
 			 */
-			if (sending_thread->base.thread_state & _THREAD_DUMMY) {
+			if ((sending_thread->base.thread_state & _THREAD_DUMMY)
+			    != 0) {
 				_reschedule(key);
 				return 0;
 			}
@@ -297,7 +298,7 @@ static int mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 
 #if (CONFIG_NUM_MBOX_ASYNC_MSGS > 0)
 	/* asynchronous send: dummy thread waits on tx queue for receiver */
-	if (sending_thread->base.thread_state & _THREAD_DUMMY) {
+	if ((sending_thread->base.thread_state & _THREAD_DUMMY) != 0) {
 		_pend_thread(sending_thread, &mbox->tx_msg_queue, K_FOREVER);
 		irq_unlock(key);
 		return 0;

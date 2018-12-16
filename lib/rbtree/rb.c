@@ -21,7 +21,7 @@ enum rb_color { RED = 0, BLACK = 1 };
 static struct rbnode *get_child(struct rbnode *n, int side)
 {
 	CHECK(n);
-	if (side) {
+	if (side != 0) {
 		return n->children[1];
 	}
 
@@ -34,7 +34,7 @@ static struct rbnode *get_child(struct rbnode *n, int side)
 static void set_child(struct rbnode *n, int side, void *val)
 {
 	CHECK(n);
-	if (side) {
+	if (side != 0) {
 		n->children[1] = val;
 	} else {
 		uintptr_t old = (uintptr_t) n->children[0];
@@ -87,7 +87,7 @@ static int find_and_stack(struct rbtree *tree, struct rbnode *node,
 		int side = tree->lessthan_fn(node, stack[sz - 1]) ? 0 : 1;
 		struct rbnode *ch = get_child(stack[sz - 1], side);
 
-		if (ch) {
+		if (ch != NULL) {
 			stack[sz++] = ch;
 		} else {
 			break;
@@ -400,7 +400,7 @@ void rb_remove(struct rbtree *tree, struct rbnode *node)
 		 * pointers, so the stack tracking this structure
 		 * needs to be swapped too!
 		 */
-		if (hiparent) {
+		if (hiparent != NULL) {
 			set_child(hiparent, get_side(hiparent, node), node2);
 		} else {
 			tree->root = node2;
@@ -440,7 +440,7 @@ void rb_remove(struct rbtree *tree, struct rbnode *node)
 	/* Removing the root */
 	if (stacksz < 2) {
 		tree->root = child;
-		if (child) {
+		if (child != NULL) {
 			set_color(child, BLACK);
 		} else {
 			tree->max_depth = 0;
@@ -523,7 +523,7 @@ static inline struct rbnode *stack_left_limb(struct rbnode *n,
 	f->stack[f->top] = n;
 	f->is_left[f->top] = 0;
 
-	while ((n = get_child(n, 0))) {
+	while ((n = get_child(n, 0)) != NULL) {
 		f->top++;
 		f->stack[f->top] = n;
 		f->is_left[f->top] = 1;
@@ -568,7 +568,7 @@ struct rbnode *_rb_foreach_next(struct rbtree *tree, struct _rb_foreach *f)
 	 * above with is_left set to 0, so this condition still works
 	 * even if node has no parent).
 	 */
-	if (f->is_left[f->top]) {
+	if (f->is_left[f->top] != 0) {
 		return f->stack[--f->top];
 	}
 
@@ -576,7 +576,7 @@ struct rbnode *_rb_foreach_next(struct rbtree *tree, struct _rb_foreach *f)
 	 * parent was already walked, so walk up the stack looking for
 	 * a left child (whose parent is unwalked, and thus next).
 	 */
-	while (f->top > 0 && !f->is_left[f->top]) {
+	while ((f->top > 0) && (f->is_left[f->top] == 0)) {
 		f->top--;
 	}
 

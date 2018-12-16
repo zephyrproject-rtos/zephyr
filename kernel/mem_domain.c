@@ -84,7 +84,7 @@ void k_mem_domain_init(struct k_mem_domain *domain, u8_t num_parts,
 	domain->num_partitions = 0;
 	(void)memset(domain->partitions, 0, sizeof(domain->partitions));
 
-	if (num_parts) {
+	if (num_parts != 0) {
 		u32_t i;
 
 		for (i = 0U; i < num_parts; i++) {
