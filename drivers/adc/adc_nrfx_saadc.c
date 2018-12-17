@@ -247,7 +247,7 @@ static int check_buffer_size(const struct adc_sequence *sequence,
 
 static int start_read(struct device *dev, const struct adc_sequence *sequence)
 {
-	int error = 0;
+	int error;
 	u32_t selected_channels = sequence->channels;
 	u8_t active_channels;
 	u8_t channel_id;
@@ -322,8 +322,6 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 	adc_context_start_read(&m_data.ctx, sequence);
 
 	error = adc_context_wait_for_completion(&m_data.ctx);
-	adc_context_release(&m_data.ctx, error);
-
 	return error;
 }
 
@@ -331,8 +329,13 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 static int adc_nrfx_read(struct device *dev,
 			 const struct adc_sequence *sequence)
 {
+	int error;
+
 	adc_context_lock(&m_data.ctx, false, NULL);
-	return start_read(dev, sequence);
+	error = start_read(dev, sequence);
+	adc_context_release(&m_data.ctx, error);
+
+	return error;
 }
 
 #ifdef CONFIG_ADC_ASYNC
@@ -341,10 +344,15 @@ static int adc_nrfx_read_async(struct device *dev,
 			       const struct adc_sequence *sequence,
 			       struct k_poll_signal *async)
 {
+	int error;
+
 	adc_context_lock(&m_data.ctx, true, async);
-	return start_read(dev, sequence);
+	error = start_read(dev, sequence);
+	adc_context_release(&m_data.ctx, error);
+
+	return error;
 }
-#endif
+#endif /* CONFIG_ADC_ASYNC */
 
 static void saadc_irq_handler(void *param)
 {

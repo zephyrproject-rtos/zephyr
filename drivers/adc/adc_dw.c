@@ -302,14 +302,13 @@ static int adc_dw_read_request(struct device *dev,
 
 	adc_context_start_read(&info->ctx, seq_tbl);
 	error = adc_context_wait_for_completion(&info->ctx);
-	adc_context_release(&info->ctx, error);
 
 	if (info->state == ADC_STATE_ERROR) {
 		info->state = ADC_STATE_IDLE;
 		return -EIO;
 	}
 
-	return 0;
+	return error;
 }
 
 static int adc_dw_read(struct device *dev, const struct adc_sequence *seq_tbl)
@@ -318,8 +317,9 @@ static int adc_dw_read(struct device *dev, const struct adc_sequence *seq_tbl)
 	int ret;
 
 	adc_context_lock(&info->ctx, false, NULL);
-
 	ret = adc_dw_read_request(dev, seq_tbl);
+	adc_context_release(&info->ctx, ret);
+
 	return ret;
 }
 
@@ -330,9 +330,13 @@ static int adc_dw_read_async(struct device *dev,
 			       struct k_poll_signal *async)
 {
 	struct adc_info *info = dev->driver_data;
+	int ret;
 
 	adc_context_lock(&info->ctx, true, async);
-	return adc_dw_read_request(dev, sequence);
+	ret = adc_dw_read_request(dev, sequence);
+	adc_context_release(&info->ctx, ret);
+
+	return ret;
 }
 #endif
 

@@ -289,20 +289,22 @@ static int adc_quark_d2000_read_request(struct device *dev,
 	}
 
 	adc_context_start_read(&info->ctx, seq_tbl);
-	error = adc_context_wait_for_completion(&info->ctx);
-	adc_context_release(&info->ctx, error);
 
-	return 0;
+	error = adc_context_wait_for_completion(&info->ctx);
+	return error;
 }
 
 static int adc_quark_d2000_read(struct device *dev,
 			   const struct adc_sequence *sequence)
 {
 	struct adc_quark_d2000_info *info = dev->driver_data;
+	int error;
 
 	adc_context_lock(&info->ctx, false, NULL);
+	error = adc_quark_d2000_read_request(dev, sequence);
+	adc_context_release(&info->ctx, error);
 
-	return adc_quark_d2000_read_request(dev, sequence);
+	return error;
 }
 
 #ifdef CONFIG_ADC_ASYNC
@@ -311,10 +313,13 @@ static int adc_quark_d2000_read_async(struct device *dev,
 				      struct k_poll_signal *async)
 {
 	struct adc_quark_d2000_info *info = dev->driver_data;
+	int error;
 
 	adc_context_lock(&info->ctx, true, async);
+	error = adc_quark_d2000_read_request(dev, sequence);
+	adc_context_release(&info->ctx, error);
 
-	return adc_quark_d2000_read_request(dev, sequence);
+	return error;
 }
 #endif
 
