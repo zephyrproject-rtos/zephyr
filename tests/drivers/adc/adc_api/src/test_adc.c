@@ -194,19 +194,7 @@ static void check_samples(int expected_count)
 static int test_task_one_channel(void)
 {
 	int ret;
-
-#if defined(CONFIG_BOARD_QUARK_SE_C1000_DEVBOARD_SS) || \
-	defined(CONFIG_BOARD_ARDUINO_101_SSS)
-	const struct adc_sequence_options options = {
-		.interval_us     = 10,
-		.extra_samplings = 0,
-	};
-#endif
 	const struct adc_sequence sequence = {
-#if defined(CONFIG_BOARD_QUARK_SE_C1000_DEVBOARD_SS) || \
-	defined(CONFIG_BOARD_ARDUINO_101_SSS)
-		.options     = &options,
-#endif
 		.channels    = BIT(ADC_1ST_CHANNEL_ID),
 		.buffer      = m_sample_buffer,
 		.buffer_size = sizeof(m_sample_buffer),
@@ -238,19 +226,7 @@ void test_adc_sample_one_channel(void)
 static int test_task_two_channels(void)
 {
 	int ret;
-
-#if defined(CONFIG_BOARD_QUARK_SE_C1000_DEVBOARD_SS) || \
-	defined(CONFIG_BOARD_ARDUINO_101_SSS)
-	const struct adc_sequence_options options = {
-		.interval_us     = 30,
-		.extra_samplings = 0,
-	};
-#endif
 	const struct adc_sequence sequence = {
-#if defined(CONFIG_BOARD_QUARK_SE_C1000_DEVBOARD_SS) || \
-	defined(CONFIG_BOARD_ARDUINO_101_SSS)
-		.options     = &options,
-#endif
 		.channels    = BIT(ADC_1ST_CHANNEL_ID) |
 			       BIT(ADC_2ND_CHANNEL_ID),
 		.buffer      = m_sample_buffer,
@@ -292,7 +268,8 @@ static int test_task_asynchronous_call(void)
 	int ret;
 	const struct adc_sequence_options options = {
 		.extra_samplings = 4,
-		.interval_us = 30,
+		/* Start consecutive samplings as fast as possible. */
+		.interval_us     = 0,
 	};
 	const struct adc_sequence sequence = {
 		.options     = &options,
@@ -432,7 +409,8 @@ static int test_task_repeated_samplings(void)
 		 * Hence, the third sampling will not take place.
 		 */
 		.extra_samplings = 2,
-		.interval_us = 15,
+		/* Start consecutive samplings as fast as possible. */
+		.interval_us     = 0,
 	};
 	const struct adc_sequence sequence = {
 		.options     = &options,
