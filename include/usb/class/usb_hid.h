@@ -168,6 +168,73 @@ struct hid_ops {
 #define HID_PROTOCOL_BOOT		0x00
 #define HID_PROTOCOL_REPORT		0x01
 
+/* Example HID report descriptors */
+/**
+ * @brief Simple HID mouse report descriptor for n button mouse.
+ *
+ * @param bcnt	Button count. Allowed values from 1 to 8.
+ */
+#define HID_MOUSE_REPORT_DESC(bcnt) {				\
+	/* USAGE_PAGE (Generic Desktop) */			\
+	HID_GI_USAGE_PAGE, USAGE_GEN_DESKTOP,			\
+	/* USAGE (Mouse) */					\
+	HID_LI_USAGE, USAGE_GEN_DESKTOP_MOUSE,			\
+	/* COLLECTION (Application) */				\
+	HID_MI_COLLECTION, COLLECTION_APPLICATION,		\
+		/* USAGE (Pointer) */				\
+		HID_LI_USAGE, USAGE_GEN_DESKTOP_POINTER,	\
+		/* COLLECTION (Physical) */			\
+		HID_MI_COLLECTION, COLLECTION_PHYSICAL,		\
+			/* Bits used for button signalling */	\
+			/* USAGE_PAGE (Button) */		\
+			HID_GI_USAGE_PAGE, USAGE_GEN_BUTTON,	\
+			/* USAGE_MINIMUM (Button 1) */		\
+			HID_LI_USAGE_MIN(1), 0x01,		\
+			/* USAGE_MAXIMUM (Button bcnt) */	\
+			HID_LI_USAGE_MAX(1), bcnt,		\
+			/* LOGICAL_MINIMUM (0) */		\
+			HID_GI_LOGICAL_MIN(1), 0x00,		\
+			/* LOGICAL_MAXIMUM (1) */		\
+			HID_GI_LOGICAL_MAX(1), 0x01,		\
+			/* REPORT_SIZE (1) */			\
+			HID_GI_REPORT_SIZE, 0x01,		\
+			/* REPORT_COUNT (bcnt) */		\
+			HID_GI_REPORT_COUNT, bcnt,		\
+			/* INPUT (Data,Var,Abs) */		\
+			HID_MI_INPUT, 0x02,			\
+			/* Unused bits */			\
+			/* REPORT_SIZE (8 - bcnt) */		\
+			HID_GI_REPORT_SIZE, (8 - bcnt),		\
+			/* REPORT_COUNT (1) */			\
+			HID_GI_REPORT_COUNT, 0x01,		\
+			/* INPUT (Cnst,Ary,Abs) */		\
+			HID_MI_INPUT, 0x01,			\
+			/* X and Y axis, scroll */		\
+			/* USAGE_PAGE (Generic Desktop) */	\
+			HID_GI_USAGE_PAGE, USAGE_GEN_DESKTOP,	\
+			/* USAGE (X) */				\
+			HID_LI_USAGE, USAGE_GEN_DESKTOP_X,	\
+			/* USAGE (Y) */				\
+			HID_LI_USAGE, USAGE_GEN_DESKTOP_Y,	\
+			/* USAGE (WHEEL) */			\
+			HID_LI_USAGE, USAGE_GEN_DESKTOP_WHEEL,	\
+			/* LOGICAL_MINIMUM (-127) */		\
+			HID_GI_LOGICAL_MIN(1), -127,		\
+			/* LOGICAL_MAXIMUM (127) */		\
+			HID_GI_LOGICAL_MAX(1), 127,		\
+			/* REPORT_SIZE (8) */			\
+			HID_GI_REPORT_SIZE, 0x08,		\
+			/* REPORT_COUNT (3) */			\
+			HID_GI_REPORT_COUNT, 0x03,		\
+			/* INPUT (Data,Var,Rel) */		\
+			HID_MI_INPUT, 0x06,			\
+		/* END_COLLECTION */				\
+		HID_MI_COLLECTION_END,				\
+	/* END_COLLECTION */					\
+	HID_MI_COLLECTION_END,					\
+}
+
+
 /* Register HID device */
 void usb_hid_register_device(const u8_t *desc, size_t size,
 			     const struct hid_ops *op);
