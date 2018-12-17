@@ -75,6 +75,11 @@ struct net_icmpv6_nd_opt_6co {
 	struct in6_addr prefix;
 } __packed;
 
+struct net_icmpv6_echo_req {
+	u16_t identifier;
+	u16_t sequence;
+} __packed;
+
 #define NET_ICMPV6_ND_O_FLAG(flag) ((flag) & 0x40)
 #define NET_ICMPV6_ND_M_FLAG(flag) ((flag) & 0x80)
 
