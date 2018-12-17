@@ -135,6 +135,76 @@ int net_ipv6_finalize(struct net_pkt *pkt, u8_t next_header_proto)
 	return 0;
 }
 
+int net_ipv6_create_new(struct net_pkt *pkt,
+			const struct in6_addr *src,
+			const struct in6_addr *dst)
+{
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access, struct net_ipv6_hdr);
+	struct net_ipv6_hdr *ipv6_hdr;
+
+	ipv6_hdr = (struct net_ipv6_hdr *)net_pkt_get_data_new(pkt,
+							       &ipv6_access);
+	if (!ipv6_hdr) {
+		return -ENOBUFS;
+	}
+
+	ipv6_hdr->vtc     = 0x60;
+	ipv6_hdr->tcflow  = 0;
+	ipv6_hdr->flow    = 0;
+	ipv6_hdr->len     = 0;
+	ipv6_hdr->nexthdr = 0;
+
+	/* User can tweak the default hop limit if needed */
+	ipv6_hdr->hop_limit = net_pkt_ipv6_hop_limit(pkt);
+	if (ipv6_hdr->hop_limit == 0) {
+		ipv6_hdr->hop_limit =
+			net_if_ipv6_get_hop_limit(net_pkt_iface(pkt));
+	}
+
+	net_ipaddr_copy(&ipv6_hdr->dst, dst);
+	net_ipaddr_copy(&ipv6_hdr->src, src);
+
+	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
+	net_pkt_set_ipv6_ext_len(pkt, 0);
+
+	return net_pkt_set_data(pkt, &ipv6_access);
+}
+
+int net_ipv6_finalize_new(struct net_pkt *pkt, u8_t next_header_proto)
+{
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access, struct net_ipv6_hdr);
+	struct net_ipv6_hdr *ipv6_hdr;
+
+	net_pkt_set_overwrite(pkt, true);
+
+	ipv6_hdr = (struct net_ipv6_hdr *)net_pkt_get_data_new(pkt,
+							       &ipv6_access);
+	if (!ipv6_hdr) {
+		return -ENOBUFS;
+	}
+
+	ipv6_hdr->len     = htons(net_pkt_get_len(pkt) -
+				  sizeof(struct net_ipv6_hdr));
+	ipv6_hdr->nexthdr = next_header_proto;
+
+	net_pkt_set_data(pkt, &ipv6_access);
+
+	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt)) ||
+	    next_header_proto == IPPROTO_ICMPV6) {
+		if (IS_ENABLED(CONFIG_NET_UDP) &&
+		    next_header_proto == IPPROTO_UDP) {
+			net_udp_finalize(pkt);
+		} else if (IS_ENABLED(CONFIG_NET_TCP) &&
+			   next_header_proto == IPPROTO_TCP) {
+			net_tcp_set_chksum(pkt, pkt->buffer);
+		} else if (next_header_proto == IPPROTO_ICMPV6) {
+			return net_icmpv6_finalize(pkt);
+		}
+	}
+
+	return 0;
+}
+
 static inline struct net_pkt *check_unknown_option(struct net_pkt *pkt,
 						   u8_t opt_type,
 						   u16_t length)
