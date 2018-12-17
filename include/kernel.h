@@ -4608,7 +4608,7 @@ extern void _init_static_threads(void);
 /**
  * @internal
  */
-extern int _is_thread_essential(void);
+extern bool _is_thread_essential(void);
 /**
  * @internal
  */

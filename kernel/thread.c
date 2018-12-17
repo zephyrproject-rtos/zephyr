@@ -28,6 +28,7 @@
 #include <kswap.h>
 #include <init.h>
 #include <tracing.h>
+#include <stdbool.h>
 
 extern struct _static_thread_data _static_thread_data_list_start[];
 extern struct _static_thread_data _static_thread_data_list_end[];
@@ -87,11 +88,11 @@ void _thread_essential_clear(void)
 /*
  * This routine indicates if the current thread is an essential system thread.
  *
- * Returns non-zero if current thread is essential, zero if it is not.
+ * Returns true if current thread is essential, false if it is not.
  */
-int _is_thread_essential(void)
+bool _is_thread_essential(void)
 {
-	return _current->base.user_options & K_ESSENTIAL;
+	return (_current->base.user_options & K_ESSENTIAL) == K_ESSENTIAL;
 }
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
