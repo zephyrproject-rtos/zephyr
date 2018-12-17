@@ -24,10 +24,8 @@ static u8_t _refcount;
 void cntr_init(void)
 {
 	NRF_RTC->PRESCALER = 0;
-	nrf_rtc_event_enable(NRF_RTC, RTC_EVTENSET_COMPARE0_Msk |
-			     RTC_EVTENSET_COMPARE1_Msk);
-	nrf_rtc_int_enable(NRF_RTC, RTC_INTENSET_COMPARE0_Msk |
-			     RTC_INTENSET_COMPARE1_Msk);
+	nrf_rtc_event_enable(NRF_RTC, RTC_EVTENSET_COMPARE0_Msk);
+	nrf_rtc_int_enable(NRF_RTC, RTC_INTENSET_COMPARE0_Msk);
 }
 
 u32_t cntr_start(void)

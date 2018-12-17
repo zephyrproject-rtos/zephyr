@@ -29,18 +29,22 @@
 #error "Platform not defined."
 #endif
 
-static radio_isr_fp sfp_radio_isr;
+static radio_isr_cb_t isr_cb;
+static void           *isr_cb_param;
 
 void isr_radio(void)
 {
-	if (sfp_radio_isr) {
-		sfp_radio_isr();
+	if (radio_has_disabled()) {
+		isr_cb(isr_cb_param);
 	}
 }
 
-void radio_isr_set(radio_isr_fp fp_radio_isr)
+void radio_isr_set(radio_isr_cb_t cb, void *param)
 {
-	sfp_radio_isr = fp_radio_isr;	/* atomic assignment of 32-bit word */
+	irq_disable(RADIO_IRQn);
+
+	isr_cb_param = param;
+	isr_cb = cb;
 
 	nrf_radio_int_enable(0 |
 				/* RADIO_INTENSET_READY_Msk |
@@ -766,6 +770,11 @@ u32_t radio_tmr_start_now(u8_t trx)
 	} while (now > start);
 
 	return start;
+}
+
+u32_t radio_tmr_start_get(void)
+{
+	return nrf_rtc_cc_get(NRF_RTC0, 2);
 }
 
 void radio_tmr_stop(void)

@@ -7,8 +7,6 @@ zephyr_library_sources(
   ticker/ticker.c
   ll_sw/ll_addr.c
   ll_sw/ll_tx_pwr.c
-  ll_sw/ctrl.c
-  ll_sw/ll.c
   hci/hci_driver.c
   hci/hci.c
   )
@@ -18,25 +16,36 @@ zephyr_library_sources_ifdef(
   crypto/crypto.c
   )
 
-zephyr_library_sources_ifdef(
-  CONFIG_BT_BROADCASTER
-  ll_sw/ll_adv.c
-  )
-
-zephyr_library_sources_ifdef(
-  CONFIG_BT_OBSERVER
-  ll_sw/ll_scan.c
-  )
-
-zephyr_library_sources_ifdef(
-  CONFIG_BT_CENTRAL
-  ll_sw/ll_master.c
-  )
-
-zephyr_library_sources_ifdef(
-  CONFIG_BT_CTLR_DTM
-  ll_sw/ll_test.c
-  )
+if(CONFIG_BT_LL_SW)
+  zephyr_library_sources(
+    ll_sw/ctrl.c
+    ll_sw/ll.c
+    )
+  zephyr_library_sources_ifdef(
+    CONFIG_BT_BROADCASTER
+    ll_sw/ll_adv.c
+    )
+  zephyr_library_sources_ifdef(
+    CONFIG_BT_OBSERVER
+    ll_sw/ll_scan.c
+    )
+  zephyr_library_sources_ifdef(
+    CONFIG_BT_CTLR_FILTER
+    ll_sw/ll_filter.c
+    )
+  zephyr_library_sources_ifdef(
+    CONFIG_BT_CENTRAL
+    ll_sw/ll_master.c
+    )
+  zephyr_library_sources_ifdef(
+    CONFIG_BT_CTLR_ADV_EXT
+    ll_sw/ll_adv_aux.c
+    )
+  zephyr_library_sources_ifdef(
+    CONFIG_BT_CTLR_DTM
+    ll_sw/ll_test.c
+    )
+endif()
 
 zephyr_library_sources_ifdef(
   CONFIG_BT_CTLR_FILTER
@@ -45,20 +54,24 @@ zephyr_library_sources_ifdef(
 
 zephyr_library_sources_ifdef(
   CONFIG_SOC_COMPATIBLE_NRF
-  hal/nrf5/cntr.c
-  hal/nrf5/ecb.c
-  hal/nrf5/radio/radio.c
-  hal/nrf5/mayfly.c
-  hal/nrf5/ticker.c
+  ll_sw/nordic/hal/nrf5/cntr.c
+  ll_sw/nordic/hal/nrf5/ecb.c
+  ll_sw/nordic/hal/nrf5/radio/radio.c
+  ll_sw/nordic/hal/nrf5/mayfly.c
+  ll_sw/nordic/hal/nrf5/ticker.c
   )
 
 zephyr_library_include_directories(
   .
-  util
-  hal
-  ticker
   include
+  ll_sw
   )
+
+if(CONFIG_SOC_COMPATIBLE_NRF)
+  zephyr_library_include_directories(
+    ll_sw/nordic
+    )
+endif()
 
 zephyr_library_compile_options_ifdef(
   CONFIG_BT_CTLR_FAST_ENC

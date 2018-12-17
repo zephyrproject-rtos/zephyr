@@ -9,8 +9,10 @@
 #include <bluetooth/hci.h>
 
 #include "util/util.h"
+#include "util/memq.h"
 
 #include "pdu.h"
+#include "lll.h"
 #include "ctrl.h"
 #include "ll.h"
 #include "ll_filter.h"
@@ -29,10 +31,10 @@ static struct {
 	u8_t  filter_policy:2;
 } ll_scan;
 
-u32_t ll_scan_params_set(u8_t type, u16_t interval, u16_t window,
+u8_t ll_scan_params_set(u8_t type, u16_t interval, u16_t window,
 			 u8_t own_addr_type, u8_t filter_policy)
 {
-	if (ll_scan_is_enabled()) {
+	if (ll_scan_is_enabled(0)) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
@@ -57,7 +59,7 @@ u32_t ll_scan_params_set(u8_t type, u16_t interval, u16_t window,
 	return 0;
 }
 
-u32_t ll_scan_enable(u8_t enable)
+u8_t ll_scan_enable(u8_t enable)
 {
 	u8_t rpa_gen = 0U;
 	u32_t status;
@@ -67,7 +69,7 @@ u32_t ll_scan_enable(u8_t enable)
 		return radio_scan_disable(true);
 	}
 
-	scan = ll_scan_is_enabled();
+	scan = ll_scan_is_enabled(0);
 
 	/* Initiator and scanning are not supported */
 	if (scan & BIT(2)) {

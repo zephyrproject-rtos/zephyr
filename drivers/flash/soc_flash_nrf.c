@@ -18,7 +18,7 @@
 #if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC)
 #include <misc/__assert.h>
 #include <bluetooth/hci.h>
-#include "controller/hal/nrf5/ticker.h"
+#include "controller/hal/ticker.h"
 #include "controller/ticker/ticker.h"
 #include "controller/include/ll.h"
 

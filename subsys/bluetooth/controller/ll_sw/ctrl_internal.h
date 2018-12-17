@@ -296,18 +296,6 @@ struct pdu_data_q_tx {
 	struct radio_pdu_node_tx *node_tx;
 };
 
-/* Extra bytes for enqueued rx_node metadata: rssi (always) and resolving
- * index and directed adv report (with privacy or extended scanner filter
- * policies enabled).
- * Note: to simplify the code, both bytes are allocated even if only one of
- * the options is selected.
- */
-#if defined(CONFIG_BT_CTLR_PRIVACY) || defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
-#define PDU_AC_SIZE_EXTRA 3
-#else
-#define PDU_AC_SIZE_EXTRA 1
-#endif /* CONFIG_BT_CTLR_PRIVACY */
-
 /* Minimum Rx Data allocation size */
 #define PACKET_RX_DATA_SIZE_MIN \
 			MROUND(offsetof(struct radio_pdu_node_rx, pdu_data) + \
@@ -333,7 +321,7 @@ struct pdu_data_q_tx {
 					   pdu_data) + \
 				  max((PDU_AC_SIZE_MAX + PDU_AC_SIZE_EXTRA), \
 				      (offsetof(struct pdu_data, lldata) + \
-				       RADIO_LL_LENGTH_OCTETS_RX_MAX))) * \
+				       LL_LENGTH_OCTETS_RX_MAX))) * \
 			   (RADIO_PACKET_COUNT_RX_MAX + 3))
 
 #define LL_MEM_RX_LINK_POOL (sizeof(void *) * 2 * ((RADIO_PACKET_COUNT_RX_MAX +\

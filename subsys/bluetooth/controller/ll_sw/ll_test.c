@@ -17,10 +17,13 @@
 #include "hal/ccm.h"
 #include "hal/radio.h"
 
+#if defined(CONFIG_BT_LL_SW)
 #include "util/util.h"
-#include "ll_sw/pdu.h"
-#include "ll_sw/ctrl.h"
-
+#include "util/memq.h"
+#include "pdu.h"
+#include "lll.h"
+#include "ctrl.h"
+#endif
 #include "ll_test.h"
 
 #define CNTR_MIN_DELTA 3
@@ -77,7 +80,7 @@ static const u8_t prbs15[255] = { 0x00, };
 static u8_t tx_req;
 static u8_t volatile tx_ack;
 
-static void isr_tx(void)
+static void isr_tx(void *param)
 {
 	u32_t l, i, s, t;
 
@@ -125,7 +128,7 @@ static void isr_tx(void)
 #endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
 }
 
-static void isr_rx(void)
+static void isr_rx(void *param)
 {
 	u8_t crc_ok = 0U;
 	u8_t trx_done;
@@ -154,7 +157,7 @@ static void isr_rx(void)
 	}
 }
 
-static u32_t init(u8_t chan, u8_t phy, void (*isr)(void))
+static u32_t init(u8_t chan, u8_t phy, void (*isr)(void *param))
 {
 	struct device *hf_clock;
 
@@ -171,7 +174,7 @@ static u32_t init(u8_t chan, u8_t phy, void (*isr)(void))
 
 	/* Reset Radio h/w */
 	radio_reset();
-	radio_isr_set(isr);
+	radio_isr_set(isr, NULL);
 
 	/* Store value needed in Tx/Rx ISR */
 	if (phy < 0x04) {

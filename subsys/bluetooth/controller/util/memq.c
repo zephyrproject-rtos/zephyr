@@ -20,6 +20,21 @@ memq_link_t *memq_init(memq_link_t *link, memq_link_t **head, memq_link_t **tail
 	return link;
 }
 
+memq_link_t *memq_deinit(memq_link_t **head, memq_link_t **tail)
+{
+	memq_link_t *link;
+
+	/* if head and tail are not equal, then queue is not empty */
+	if (*head != *tail) {
+		return NULL;
+	}
+
+	link = *head;
+	*head = *tail = NULL;
+
+	return link;
+}
+
 memq_link_t *memq_enqueue(memq_link_t *link, void *mem, memq_link_t **tail)
 {
 	/* make the current tail link's next point to new link */

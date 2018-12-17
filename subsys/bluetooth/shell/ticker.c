@@ -16,12 +16,9 @@
 
 #include <shell/shell.h>
 
-#if defined(CONFIG_SOC_COMPATIBLE_NRF)
-#include "../controller/hal/nrf5/ticker.h"
-#endif /* CONFIG_SOC_COMPATIBLE_NRF */
-
 #include "../controller/util/memq.h"
 #include "../controller/util/mayfly.h"
+#include "../controller/hal/ticker.h"
 #include "../controller/ticker/ticker.h"
 
 #if defined(CONFIG_BT_MAX_CONN)

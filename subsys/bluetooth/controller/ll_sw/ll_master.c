@@ -9,13 +9,15 @@
 #include <bluetooth/hci.h>
 
 #include "util/util.h"
+#include "util/memq.h"
 
 #include "pdu.h"
+#include "lll.h"
 #include "ctrl.h"
 #include "ll.h"
 #include "ll_filter.h"
 
-u32_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
+u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 			   u8_t filter_policy, u8_t peer_addr_type,
 			   u8_t *peer_addr, u8_t own_addr_type,
 			   u16_t interval, u16_t latency,
@@ -25,7 +27,7 @@ u32_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 	u8_t  rpa_gen = 0U;
 	u8_t  rl_idx = FILTER_IDX_NONE;
 
-	if (ll_scan_is_enabled()) {
+	if (ll_scan_is_enabled(0)) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 

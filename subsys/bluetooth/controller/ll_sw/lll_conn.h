@@ -4,4 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "hal/radio_vendor_hal.h"
+struct node_tx {
+	union {
+		void        *next;
+		memq_link_t *link;
+	};
+
+	u8_t pdu[];
+};

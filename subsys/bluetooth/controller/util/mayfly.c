@@ -5,7 +5,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stddef.h>
 #include <zephyr/types.h>
+#include <misc/printk.h>
 #include "memq.h"
 #include "mayfly.h"
 
@@ -19,6 +21,11 @@ static struct {
 } mft[MAYFLY_CALLEE_COUNT][MAYFLY_CALLER_COUNT];
 
 static memq_link_t mfl[MAYFLY_CALLEE_COUNT][MAYFLY_CALLER_COUNT];
+static u8_t mfp[MAYFLY_CALLEE_COUNT];
+
+#if defined(CONFIG_MAYFLY_UT)
+static u8_t _state;
+#endif /* CONFIG_MAYFLY_UT */
 
 void mayfly_init(void)
 {
@@ -78,10 +85,7 @@ u32_t mayfly_enqueue(u8_t caller_id, u8_t callee_id, u8_t chain,
 				/* mark as ready in queue */
 				m->_req = ack + 1;
 
-				/* pend the callee for execution */
-				mayfly_pend(caller_id, callee_id);
-
-				return 0;
+				goto mayfly_enqueue_pend;
 			}
 
 			/* already ready */
@@ -104,10 +108,61 @@ u32_t mayfly_enqueue(u8_t caller_id, u8_t callee_id, u8_t chain,
 	m->_req = ack + 1;
 	memq_enqueue(m->_link, m, &mft[callee_id][caller_id].tail);
 
+mayfly_enqueue_pend:
+	/* set mayfly callee pending */
+	mfp[callee_id] = 1;
+
 	/* pend the callee for execution */
 	mayfly_pend(caller_id, callee_id);
 
 	return 0;
+}
+
+static void dequeue(u8_t callee_id, u8_t caller_id, memq_link_t *link,
+		    struct mayfly *m)
+{
+	u8_t req;
+
+	req = m->_req;
+	if (((req - m->_ack) & 0x03) != 1) {
+		u8_t ack;
+
+#if defined(CONFIG_MAYFLY_UT)
+		u32_t mayfly_ut_run_test(void);
+		void mayfly_ut_mfy(void *param);
+
+		if (_state && m->fp == mayfly_ut_mfy) {
+			static u8_t single;
+
+			if (!single) {
+				single = 1;
+				mayfly_ut_run_test();
+			}
+		}
+#endif /* CONFIG_MAYFLY_UT */
+
+		/* dequeue mayfly struct */
+		memq_dequeue(mft[callee_id][caller_id].tail,
+			     &mft[callee_id][caller_id].head,
+			     0);
+
+		/* release link into dequeued mayfly struct */
+		m->_link = link;
+
+		/* reset mayfly state to idle */
+		ack = m->_ack;
+		m->_ack = req;
+
+		/* re-insert, if re-pended by interrupt */
+		if (((m->_req - ack) & 0x03) == 1) {
+#if defined(CONFIG_MAYFLY_UT)
+			printk("%s: RACE\n", __func__);
+#endif /* CONFIG_MAYFLY_UT */
+
+			m->_ack = ack;
+			memq_enqueue(link, m, &mft[callee_id][callee_id].tail);
+		}
+	}
 }
 
 void mayfly_run(u8_t callee_id)
@@ -115,6 +170,11 @@ void mayfly_run(u8_t callee_id)
 	u8_t disable = 0U;
 	u8_t enable = 0U;
 	u8_t caller_id;
+
+	if (!mfp[callee_id]) {
+		return;
+	}
+	mfp[callee_id] = 1;
 
 	/* iterate through each caller queue to this callee_id */
 	caller_id = MAYFLY_CALLER_COUNT;
@@ -128,12 +188,18 @@ void mayfly_run(u8_t callee_id)
 				 (void **)&m);
 		while (link) {
 			u8_t state;
-			u8_t req;
+
+#if defined(CONFIG_MAYFLY_UT)
+			_state = 0;
+#endif /* CONFIG_MAYFLY_UT */
 
 			/* execute work if ready */
-			req = m->_req;
-			state = (req - m->_ack) & 0x03;
+			state = (m->_req - m->_ack) & 0x03;
 			if (state == 1) {
+#if defined(CONFIG_MAYFLY_UT)
+				_state = 1;
+#endif /* CONFIG_MAYFLY_UT */
+
 				/* mark mayfly as ran */
 				m->_ack--;
 
@@ -142,18 +208,7 @@ void mayfly_run(u8_t callee_id)
 			}
 
 			/* dequeue if not re-pended */
-			req = m->_req;
-			if (((req - m->_ack) & 0x03) != 1) {
-				memq_dequeue(mft[callee_id][caller_id].tail,
-					     &mft[callee_id][caller_id].head,
-					     0);
-
-				/* release link into dequeued mayfly struct */
-				m->_link = link;
-
-				/* reset mayfly state to idle */
-				m->_ack = req;
-			}
+			dequeue(callee_id, caller_id, link, m);
 
 			/* fetch next mayfly in callee queue, if any */
 			link = memq_peek(mft[callee_id][caller_id].head,
@@ -197,3 +252,82 @@ void mayfly_run(u8_t callee_id)
 		mayfly_enable_cb(callee_id, callee_id, 0);
 	}
 }
+
+#if defined(CONFIG_MAYFLY_UT)
+#define MAYFLY_CALL_ID_CALLER MAYFLY_CALL_ID_0
+#define MAYFLY_CALL_ID_CALLEE MAYFLY_CALL_ID_2
+
+void mayfly_ut_mfy(void *param)
+{
+	printk("%s: ran.\n", __func__);
+
+	(*((u32_t *)param))++;
+}
+
+void mayfly_ut_test(void *param)
+{
+	static u32_t *count;
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, mayfly_ut_mfy};
+	u32_t err;
+
+	printk("%s: req= %u, ack= %u\n", __func__, mfy._req, mfy._ack);
+
+	if (param) {
+		count = param;
+	}
+
+	mfy.param = count;
+
+	err = mayfly_enqueue(MAYFLY_CALL_ID_CALLER, MAYFLY_CALL_ID_CALLEE, 1,
+			     &mfy);
+	if (err) {
+		printk("%s: FAILED (%u).\n", __func__, err);
+	} else {
+		printk("%s: SUCCESS.\n", __func__);
+	}
+}
+
+u32_t mayfly_ut_run_test(void)
+{
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, mayfly_ut_test};
+	u32_t err;
+
+	printk("%s: req= %u, ack= %u\n", __func__, mfy._req, mfy._ack);
+
+	err = mayfly_enqueue(MAYFLY_CALL_ID_CALLEE, MAYFLY_CALL_ID_CALLER, 0,
+			     &mfy);
+
+	if (err) {
+		printk("%s: FAILED.\n", __func__);
+		return err;
+	}
+
+	printk("%s: SUCCESS.\n", __func__);
+
+	return 0;
+}
+
+u32_t mayfly_ut(void)
+{
+	static u32_t count;
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, &count, mayfly_ut_test};
+	u32_t err;
+
+	printk("%s: req= %u, ack= %u\n", __func__, mfy._req, mfy._ack);
+
+	err = mayfly_enqueue(MAYFLY_CALL_ID_PROGRAM, MAYFLY_CALL_ID_CALLER, 0,
+			     &mfy);
+
+	if (err) {
+		printk("%s: FAILED.\n", __func__);
+		return err;
+	}
+
+	printk("%s: count = %u.\n", __func__, count);
+	printk("%s: SUCCESS.\n", __func__);
+	return 0;
+}
+#endif /* CONFIG_MAYFLY_UT */

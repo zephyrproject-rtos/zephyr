@@ -52,12 +52,6 @@ config BT_CTLR_RX_PRIO
 	int
 	default 6
 
-config BT_CTLR_FILTER
-	# Hidden option to enable controller whitelist feature
-	depends on BT_LL_SW
-	bool
-	default y
-
 config BT_CTLR_HCI_VS_BUILD_INFO
 	string "Zephyr HCI VS Build Info string"
 	default ""
@@ -69,7 +63,6 @@ config BT_CTLR_HCI_VS_BUILD_INFO
 	  character is required at the beginning to separate it from the
 	  already included information.
 
-if BT_LL_SW
 config BT_CTLR_DUP_FILTER_LEN
 	int "Number of addresses in the scan duplicate filter"
 	depends on BT_OBSERVER
@@ -205,13 +198,29 @@ config BT_CTLR_LE_ENC
 
 config BT_CTLR_CONN_PARAM_REQ
 	bool "Connection Parameter Request"
+	select BT_CTLR_EXT_REJ_IND
 	default y
 	help
 	  Enable support for Bluetooth v4.1 Connection Parameter Request feature
 	  in the Controller.
 
+config BT_CTLR_EXT_REJ_IND
+	bool "Extended Reject Indication"
+	default y
+	help
+	  Enable support for Bluetooth v4.1 Extended Reject Indication feature
+	  in the Controller.
+
+config BT_CTLR_SLAVE_FEAT_REQ
+	bool "Slave-initiated Features Exchange"
+	default y
+	help
+	  Enable support for Bluetooth v4.1 Slave-initiated Features Exchange
+	  feature in the Controller.
+
 config BT_CTLR_LE_PING
 	bool "LE Ping"
+	depends on BT_CTLR_LE_ENC
 	default y
 	help
 	  Enable support for Bluetooth v4.1 LE Ping feature in the Controller.
@@ -220,6 +229,7 @@ config BT_CTLR_PRIVACY
 	bool "LE Controller-based Privacy"
 	depends on !SOC_SERIES_NRF51X
 	default y
+	select BT_CTLR_FILTER
 	select BT_RPA
 	help
 	  Enable support for Bluetooth v4.2 LE Controller-based Privacy feature
@@ -263,6 +273,7 @@ config BT_CTLR_PHY
 	# Procedure in the Controller.
 	bool
 	depends on BT_PHY_UPDATE
+	select BT_CTLR_EXT_REJ_IND
 	default y if SOC_COMPATIBLE_NRF52X
 
 endif # BT_CONN
@@ -309,6 +320,13 @@ config BT_CTLR_ADVANCED_FEATURES
 menu "Advanced features"
 	visible if BT_CTLR_ADVANCED_FEATURES
 
+config BT_CTLR_FILTER
+	prompt "Device Whitelist Support"
+	bool
+	default y
+	help
+	  Enable support for controller device whitelist feature
+
 config BT_CTLR_DATA_LENGTH_CLEAR
 	bool "Data Length Support (Cleartext only)"
 	depends on BT_CTLR_DATA_LENGTH && SOC_SERIES_NRF51X
@@ -334,14 +352,16 @@ config BT_CTLR_PHY_2M_NRF
 	  Enable support for Nordic Semiconductor proprietary 2Mbps PHY in the
 	  Controller. Encrypted connections are not supported.
 
+endif # BT_CTLR_PHY
+
 config BT_CTLR_PHY_CODED
 	bool "Coded PHY Support"
-	depends on SOC_NRF52840
+	depends on (BT_CTLR_PHY || BT_CTLR_ADV_EXT) && SOC_NRF52840
 	default y
 	help
 	  Enable support for Bluetooth 5.0 Coded PHY in the Controller.
 
-endif # BT_CTLR_PHY
+if BT_LL_SW
 
 config BT_CTLR_WORKER_PRIO
 	int "Radio and Ticker's Worker IRQ priority"
@@ -360,6 +380,8 @@ config BT_CTLR_JOB_PRIO
 	help
 	  The interrupt priority for Ticker's Job (SWI4) IRQ. This value shall
 	  be greater than or equal to the Ticker's Worker IRQ priority value.
+
+endif # BT_LL_SW
 
 config BT_CTLR_XTAL_ADVANCED
 	bool "Advanced event preparation"
@@ -477,11 +499,13 @@ endif # BT_CONN
 
 config BT_CTLR_ADV_INDICATION
 	bool "Advertisement indications"
+	depends on BT_BROADCASTER
 	help
 	  Generate events indicating on air advertisement events.
 
 config BT_CTLR_SCAN_REQ_NOTIFY
 	bool "Scan Request Notifications"
+	depends on BT_BROADCASTER
 	help
 	  Generate events notifying the on air scan requests received.
 
@@ -490,6 +514,12 @@ config BT_CTLR_SCAN_REQ_RSSI
 	depends on BT_CTLR_SCAN_REQ_NOTIFY
 	help
 	  Measure RSSI of the on air scan requests received.
+
+config BT_CTLR_SCAN_INDICATION
+	bool "Scanner indications"
+	depends on BT_OBSERVER
+	help
+	  Generate events indicating on air scanner events.
 
 endmenu
 
@@ -589,7 +619,5 @@ config BT_CTLR_DEBUG_PINS
 	  Turn on debug GPIO toggling for the BLE Controller. This is useful
 	  when debugging with a logic analyzer or profiling certain sections of
 	  the code.
-
-endif # BT_LL_SW
 
 endif # BT_CTLR

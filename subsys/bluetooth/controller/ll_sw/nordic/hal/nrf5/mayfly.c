@@ -29,9 +29,9 @@ void mayfly_enable_cb(u8_t caller_id, u8_t callee_id, u8_t enable)
 	LL_ASSERT(callee_id == MAYFLY_CALL_ID_JOB);
 
 	if (enable) {
-		irq_enable(SWI4_IRQn);
+		irq_enable(SWI5_IRQn);
 	} else {
-		irq_disable(SWI4_IRQn);
+		irq_disable(SWI5_IRQn);
 	}
 }
 
@@ -44,7 +44,7 @@ u32_t mayfly_is_enabled(u8_t caller_id, u8_t callee_id)
 		return irq_is_enabled(RTC0_IRQn);
 
 	case MAYFLY_CALL_ID_JOB:
-		return irq_is_enabled(SWI4_IRQn);
+		return irq_is_enabled(SWI5_IRQn);
 
 	default:
 		LL_ASSERT(0);
@@ -56,16 +56,16 @@ u32_t mayfly_is_enabled(u8_t caller_id, u8_t callee_id)
 
 u32_t mayfly_prio_is_equal(u8_t caller_id, u8_t callee_id)
 {
-#if (RADIO_TICKER_USER_ID_WORKER_PRIO == RADIO_TICKER_USER_ID_JOB_PRIO)
 	return (caller_id == callee_id) ||
+#if defined(CONFIG_BT_LL_SW)
+#if (CONFIG_BT_CTLR_WORKER_PRIO == CONFIG_BT_CTLR_JOB_PRIO)
 	       ((caller_id == MAYFLY_CALL_ID_WORKER) &&
 		(callee_id == MAYFLY_CALL_ID_JOB)) ||
 	       ((caller_id == MAYFLY_CALL_ID_JOB) &&
-		(callee_id == MAYFLY_CALL_ID_WORKER));
-#else
-	/* TODO: check Kconfig set priorities */
-	return caller_id == callee_id;
+		(callee_id == MAYFLY_CALL_ID_WORKER)) ||
 #endif
+#endif
+	       0;
 }
 
 void mayfly_pend(u8_t caller_id, u8_t callee_id)
@@ -78,7 +78,7 @@ void mayfly_pend(u8_t caller_id, u8_t callee_id)
 		break;
 
 	case MAYFLY_CALL_ID_JOB:
-		NVIC_SetPendingIRQ(SWI4_IRQn);
+		NVIC_SetPendingIRQ(SWI5_IRQn);
 		break;
 
 	default:
