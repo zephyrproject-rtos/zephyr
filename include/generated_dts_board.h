@@ -13,6 +13,8 @@
 
 #include <generated_dts_board_unfixed.h>
 
+#include <generated_dts_board_unfixed.h.deprecated>
+
 /* The following definitions fixup the generated include */
 
 #include <generated_dts_board_fixups.h>

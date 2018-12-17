@@ -1,0 +1,299 @@
+/*
+ * Copyright (c) 2019, Nordic Semiconductor
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+
+// Used by testedtlib.py
+
+/dts-v1/;
+
+/ {
+	//
+	// Interrupts
+	//
+
+	interrupt-parent-test {
+		controller {
+			compatible = "interrupt-three-cell";
+			#interrupt-cells = <3>;
+			interrupt-controller;
+		};
+		node {
+			interrupts = <1 2 3 4 5 6>;
+			interrupt-names = "foo", "bar";
+			interrupt-parent = <&{/interrupt-parent-test/controller}>;
+		};
+	};
+	interrupts-extended-test {
+		controller-0 {
+			compatible = "interrupt-one-cell";
+			#interrupt-cells = <1>;
+			interrupt-controller;
+		};
+		controller-1 {
+			compatible = "interrupt-two-cell";
+			#interrupt-cells = <2>;
+			interrupt-controller;
+		};
+		controller-2 {
+			compatible = "interrupt-three-cell";
+			#interrupt-cells = <3>;
+			interrupt-controller;
+		};
+		node {
+			interrupts-extended = <
+				&{/interrupts-extended-test/controller-0} 1
+				&{/interrupts-extended-test/controller-1} 2 3
+				&{/interrupts-extended-test/controller-2} 4 5 6>;
+		};
+	};
+	interrupt-map-test {
+		#address-cells = <2>;
+		#size-cells = <0>;
+
+		controller-0 {
+			compatible = "interrupt-one-cell";
+			#address-cells = <1>;
+			#interrupt-cells = <1>;
+			interrupt-controller;
+		};
+		controller-1 {
+			compatible = "interrupt-two-cell";
+			#address-cells = <2>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+		};
+		controller-2 {
+			compatible = "interrupt-three-cell";
+			#address-cells = <3>;
+			#interrupt-cells = <3>;
+			interrupt-controller;
+		};
+		nexus {
+			#interrupt-cells = <2>;
+			interrupt-map = <
+				0 0  0 0  &{/interrupt-map-test/controller-0}  0      0
+				0 0  0 1  &{/interrupt-map-test/controller-1}  0 0    0 1
+				0 0  0 2  &{/interrupt-map-test/controller-2}  0 0 0  0 0 2
+				0 1  0 0  &{/interrupt-map-test/controller-0}  0      3
+				0 1  0 1  &{/interrupt-map-test/controller-1}  0 0    0 4
+				0 1  0 2  &{/interrupt-map-test/controller-2}  0 0 0  0 0 5>;
+		};
+		node@0 {
+			reg = <0 0>;
+			interrupts = <0 0 0 1 0 2>;
+			interrupt-parent = <&{/interrupt-map-test/nexus}>;
+		};
+		node@1 {
+			reg = <0 1>;
+			interrupts-extended = <
+			    &{/interrupt-map-test/nexus} 0 0
+			    &{/interrupt-map-test/nexus} 0 1
+			    &{/interrupt-map-test/nexus} 0 2>;
+		};
+	};
+	interrupt-map-bitops-test {
+		#address-cells = <2>;
+		#size-cells = <0>;
+
+		controller {
+			compatible = "interrupt-two-cell";
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+		};
+		nexus {
+			#interrupt-cells = <2>;
+			interrupt-map = <
+			    6 6  6 6  &{/interrupt-map-bitops-test/controller}  2 1
+			>;
+			interrupt-map-mask = <0xE 0x7 0xE 0x7>;
+			// Not specified in the DT spec., but shows up due to
+			// common code with GPIO. Might as well test it here.
+			interrupt-map-pass-thru = <1 2 3 3>;
+		};
+		// Child unit specifier: 00000007 0000000E 00000007 0000000E
+		// Mask:                 0000000E 00000007 0000000E 00000007
+		// Pass-thru:            00000001 00000002 00000003 00000003
+		node@70000000E {
+			reg = <0x7 0xE>;
+			interrupt-parent = <&{/interrupt-map-bitops-test/nexus}>;
+			interrupts = <0x7 0xE>;
+		};
+	};
+
+	//
+	// GPIOS
+	//
+
+	gpio-test {
+		controller-1 {
+			compatible = "gpio-two-cell";
+			#gpio-cells = <2>;
+			gpio-controller;
+		};
+		node {
+			gpios = <&{/gpio-test/controller-0} 1
+				 &{/gpio-test/controller-1} 2 3>;
+			foo-gpios = <&{/gpio-test/controller-1} 4 5>;
+			bar-gpios = <&{/gpio-test/controller-1} 6 7>;
+		};
+		// Putting this controller last gives us some coverage for ordering
+		// issues during initialization
+		controller-0 {
+			compatible = "gpio-one-cell";
+			#gpio-cells = <1>;
+			gpio-controller;
+		};
+	};
+
+	//
+	// Clocks
+	//
+
+	clock-test {
+		fixed-clock {
+			// 'fixed-clock' is currently special-cased in the code
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <123>;
+		};
+		clock-1 {
+			compatible = "clock-one-cell";
+			#clock-cells = <1>;
+		};
+		clock-2 {
+			compatible = "clock-two-cell";
+			#clock-cells = <2>;
+		};
+		node {
+			clocks = <&{/clock-test/fixed-clock}
+				  &{/clock-test/clock-1} 1
+				  &{/clock-test/clock-2} 1 2>;
+			clock-names = "fixed", "one-cell", "two-cell";
+		};
+	};
+
+	//
+	// PWMs
+	//
+
+	pwm-test {
+		pwm-0 {
+			compatible = "pwm-zero-cell";
+			#pwm-cells = <0>;
+		};
+		pwm-1 {
+			compatible = "pwm-one-cell";
+			#pwm-cells = <1>;
+		};
+		node {
+			pwms = <&{/pwm-test/pwm-0}
+				&{/pwm-test/pwm-1} 1>;
+			pwm-names = "zero-cell", "one-cell";
+		};
+	};
+
+	//
+	// 'reg'
+	//
+
+	reg-zero-address-cells {
+		#address-cells = <0>;
+		#size-cells = <1>;
+
+		node {
+			reg = <1 2>;
+		};
+	};
+	reg-zero-size-cells {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		node {
+			reg = <1 2>;
+		};
+	};
+	// Use implied #size-cells = <1>
+	reg-ranges {
+		#address-cells = <2>;
+
+		parent {
+			#address-cells = <1>;
+			ranges = <1  0xA 0xB  1 /* 1    -> 0xA 0xB */
+				  2  0xC 0xD  2 /* 2..3 -> 0xC 0xD */
+				  4  0xE 0xF  1 /* 4    -> 0xE 0xF */
+				 >;
+
+			node {
+				reg = <5 1 /* Matches no range */
+				       4 1 /* Matches third range */
+				       3 1 /* Matches second range */
+				       2 1 /* Matches second range */
+				       1 1 /* Matches first range */
+				       0 1 /* Matches no range */
+				       >;
+			};
+		};
+	};
+	// Build up <3 2 1> address with nested 'ranges'
+	reg-nested-ranges {
+		#address-cells = <3>;
+
+		grandparent {
+			#address-cells = <2>;
+			#size-cells = <2>;
+			ranges = <0 0  3 0 0  2 2>;
+
+			parent {
+				#address-cells = <1>;
+				ranges = <0  2 0  2>;
+
+				node {
+					reg = <1 1>;
+				};
+			};
+		};
+	};
+
+	//
+	// !include in bindings
+	//
+
+	binding-include {
+		compatible = "binding-include-test";
+		foo = <0>;
+		bar = <1>;
+		baz = <2>;
+	};
+
+	//
+	// For testing Device.props (derived from 'properties:' in the binding)
+	//
+
+	props {
+		compatible = "props";
+		int = <1>;
+		array = <1 2 3>;
+		uint8-array = [ 12 34 ];
+		string = "foo";
+		string-array = "foo", "bar", "baz";
+		// Does not appear in the binding, so won't create an entry in
+		// Device.props
+		not-speced = <0>;
+	};
+
+	//
+	// Parent with 'sub-node:' in binding
+	//
+
+	parent-with-sub-node {
+		compatible = "parent-with-sub-node";
+		node {
+			foo = <1>;
+			bar = <2>;
+			not-speced = <0>;
+		};
+	};
+};

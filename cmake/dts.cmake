@@ -156,16 +156,39 @@ if(SUPPORTS_DTS)
     message(FATAL_ERROR "command failed with return code: ${ret}")
   endif()
 
+  #
+  # Run gen_defines.py to create a .conf file and a header file
+  #
+
+  set(CMD_NEW_EXTRACT ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/dts/gen_defines.py
+  --dts ${BOARD}.dts.pre.tmp
+  --bindings-dir ${DTS_ROOT_BINDINGS}
+  --conf-out ${GENERATED_DTS_BOARD_CONF}
+  --header-out ${GENERATED_DTS_BOARD_UNFIXED_H}
+  )
+
+  execute_process(
+    COMMAND ${CMD_NEW_EXTRACT}
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    RESULT_VARIABLE ret
+    )
+  if(NOT "${ret}" STREQUAL "0")
+    message(FATAL_ERROR "new extractor failed with return code: ${ret}")
+  endif()
+
+  #
+  # Run extract_dts_includes.py (the older DT/binding parser) to generate some
+  # legacy identifiers (via --deprecated-only). This will go away later.
+  #
+
   set(CMD_EXTRACT_DTS_INCLUDES ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/dts/extract_dts_includes.py
+    --deprecated-only
     --dts ${BOARD}.dts_compiled
     --yaml ${DTS_ROOT_BINDINGS}
-    --keyvalue ${GENERATED_DTS_BOARD_CONF}
-    --include ${GENERATED_DTS_BOARD_UNFIXED_H}
+    --include ${GENERATED_DTS_BOARD_UNFIXED_H}.deprecated
     --old-alias-names
     )
 
-  # Run extract_dts_includes.py to create a .conf and a header file that can be
-  # included into the CMake namespace
   execute_process(
     COMMAND ${CMD_EXTRACT_DTS_INCLUDES}
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
@@ -179,4 +202,5 @@ if(SUPPORTS_DTS)
 
 else()
   file(WRITE ${GENERATED_DTS_BOARD_UNFIXED_H} "/* WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY! */")
+  file(WRITE ${GENERATED_DTS_BOARD_UNFIXED_H}.deprecated "/* WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY! */")
 endif(SUPPORTS_DTS)
