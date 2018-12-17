@@ -7886,6 +7886,11 @@ static inline void event_phy_req_prep(struct connection *conn)
 
 	case LLCP_PHY_STATE_UPD:
 	{
+		/* Defer if another procedure in progress */
+		if (conn->llcp_ack != conn->llcp_req) {
+			return;
+		}
+
 		/* Procedure complete */
 		conn->llcp_phy.ack = conn->llcp_phy.req;
 
