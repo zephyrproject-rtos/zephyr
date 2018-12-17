@@ -4,6 +4,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_SOC_COMPATIBLE_NRF)
-#include "nrf5/radio/radio_nrf5_txp.h"
-#endif
+#include "hal/nrf5/debug.h"

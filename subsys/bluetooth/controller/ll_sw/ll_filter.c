@@ -12,8 +12,10 @@
 
 #include "util/util.h"
 #include "util/mem.h"
+#include "util/memq.h"
 
 #include "pdu.h"
+#include "lll.h"
 #include "ctrl.h"
 #include "ll.h"
 #include "ll_adv.h"
@@ -288,12 +290,12 @@ struct ll_filter *ctrl_filter_get(bool whitelist)
 #endif
 }
 
-u32_t ll_wl_size_get(void)
+u8_t ll_wl_size_get(void)
 {
 	return WL_SIZE;
 }
 
-u32_t ll_wl_clear(void)
+u8_t ll_wl_clear(void)
 {
 	if (radio_adv_filter_pol_get() || (radio_scan_filter_pol_get() & 0x1)) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
@@ -309,7 +311,7 @@ u32_t ll_wl_clear(void)
 	return 0;
 }
 
-u32_t ll_wl_add(bt_addr_le_t *addr)
+u8_t ll_wl_add(bt_addr_le_t *addr)
 {
 	if (radio_adv_filter_pol_get() || (radio_scan_filter_pol_get() & 0x1)) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
@@ -327,7 +329,7 @@ u32_t ll_wl_add(bt_addr_le_t *addr)
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 }
 
-u32_t ll_wl_remove(bt_addr_le_t *addr)
+u8_t ll_wl_remove(bt_addr_le_t *addr)
 {
 	if (radio_adv_filter_pol_get() || (radio_scan_filter_pol_get() & 0x1)) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
@@ -396,7 +398,7 @@ void ll_filters_adv_update(u8_t adv_fp)
 	/* Clear before populating rl filter */
 	filter_clear(&rl_filter);
 
-	if (rl_enable && !ll_scan_is_enabled()) {
+	if (rl_enable && !ll_scan_is_enabled(0)) {
 		/* rl not in use, update resolving list LUT */
 		filter_rl_update();
 	}
@@ -416,7 +418,7 @@ void ll_filters_scan_update(u8_t scan_fp)
 	/* Clear before populating rl filter */
 	filter_clear(&rl_filter);
 
-	if (rl_enable && !ll_adv_is_enabled()) {
+	if (rl_enable && !ll_adv_is_enabled(0)) {
 		/* rl not in use, update resolving list LUT */
 		filter_rl_update();
 	}
@@ -618,7 +620,7 @@ static int rl_access_check(bool check_ar)
 		}
 	}
 
-	return (ll_adv_is_enabled() || ll_scan_is_enabled()) ? 0 : 1;
+	return (ll_adv_is_enabled(0) || ll_scan_is_enabled(0)) ? 0 : 1;
 }
 
 void ll_rl_rpa_update(bool timeout)
@@ -667,7 +669,7 @@ void ll_rl_rpa_update(bool timeout)
 
 	if (timeout) {
 #if defined(CONFIG_BT_BROADCASTER)
-		if (ll_adv_is_enabled()) {
+		if (ll_adv_is_enabled(0)) {
 			rpa_adv_refresh();
 		}
 #endif
@@ -708,12 +710,12 @@ void ll_adv_scan_state_cb(u8_t bm)
 	}
 }
 
-u32_t ll_rl_size_get(void)
+u8_t ll_rl_size_get(void)
 {
 	return CONFIG_BT_CTLR_RL_SIZE;
 }
 
-u32_t ll_rl_clear(void)
+u8_t ll_rl_clear(void)
 {
 	if (!rl_access_check(false)) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
@@ -724,7 +726,7 @@ u32_t ll_rl_clear(void)
 	return 0;
 }
 
-u32_t ll_rl_add(bt_addr_le_t *id_addr, const u8_t pirk[16],
+u8_t ll_rl_add(bt_addr_le_t *id_addr, const u8_t pirk[16],
 		const u8_t lirk[16])
 {
 	u8_t i, j;
@@ -777,7 +779,7 @@ u32_t ll_rl_add(bt_addr_le_t *id_addr, const u8_t pirk[16],
 	return 0;
 }
 
-u32_t ll_rl_remove(bt_addr_le_t *id_addr)
+u8_t ll_rl_remove(bt_addr_le_t *id_addr)
 {
 	u8_t i;
 
@@ -839,7 +841,7 @@ void ll_rl_crpa_set(u8_t id_addr_type, u8_t *id_addr, u8_t rl_idx, u8_t *crpa)
 	}
 }
 
-u32_t ll_rl_crpa_get(bt_addr_le_t *id_addr, bt_addr_t *crpa)
+u8_t ll_rl_crpa_get(bt_addr_le_t *id_addr, bt_addr_t *crpa)
 {
 	u8_t i;
 
@@ -854,7 +856,7 @@ u32_t ll_rl_crpa_get(bt_addr_le_t *id_addr, bt_addr_t *crpa)
 	return BT_HCI_ERR_UNKNOWN_CONN_ID;
 }
 
-u32_t ll_rl_lrpa_get(bt_addr_le_t *id_addr, bt_addr_t *lrpa)
+u8_t ll_rl_lrpa_get(bt_addr_le_t *id_addr, bt_addr_t *lrpa)
 {
 	u8_t i;
 
@@ -868,7 +870,7 @@ u32_t ll_rl_lrpa_get(bt_addr_le_t *id_addr, bt_addr_t *lrpa)
 	return BT_HCI_ERR_UNKNOWN_CONN_ID;
 }
 
-u32_t ll_rl_enable(u8_t enable)
+u8_t ll_rl_enable(u8_t enable)
 {
 	if (!rl_access_check(false)) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
@@ -893,7 +895,7 @@ void ll_rl_timeout_set(u16_t timeout)
 	rpa_timeout_ms = timeout * 1000;
 }
 
-u32_t ll_priv_mode_set(bt_addr_le_t *id_addr, u8_t mode)
+u8_t ll_priv_mode_set(bt_addr_le_t *id_addr, u8_t mode)
 {
 	u8_t i;
 

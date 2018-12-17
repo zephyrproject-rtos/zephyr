@@ -35,9 +35,11 @@
 #include "ticker/ticker.h"
 
 #include "pdu.h"
+#include "lll.h"
 #include "ctrl.h"
 #include "ctrl_internal.h"
 #include "ll.h"
+#include "ll_feat.h"
 #include "ll_filter.h"
 
 /* Global singletons */
@@ -81,40 +83,39 @@ void radio_event_callback(void)
 
 ISR_DIRECT_DECLARE(radio_nrf5_isr)
 {
+	DEBUG_RADIO_ISR(1);
+
 	isr_radio();
 
 	ISR_DIRECT_PM();
+
+	DEBUG_RADIO_ISR(0);
 	return 1;
 }
 
 static void rtc0_nrf5_isr(void *arg)
 {
-	u32_t compare0, compare1;
-
-	/* store interested events */
-	compare0 = NRF_RTC0->EVENTS_COMPARE[0];
-	compare1 = NRF_RTC0->EVENTS_COMPARE[1];
+	DEBUG_TICKER_ISR(1);
 
 	/* On compare0 run ticker worker instance0 */
-	if (compare0) {
+	if (NRF_RTC0->EVENTS_COMPARE[0]) {
 		NRF_RTC0->EVENTS_COMPARE[0] = 0;
 
 		ticker_trigger(0);
 	}
 
-	/* On compare1 run ticker worker instance1 */
-	if (compare1) {
-		NRF_RTC0->EVENTS_COMPARE[1] = 0;
-
-		ticker_trigger(1);
-	}
-
 	mayfly_run(MAYFLY_CALL_ID_0);
+
+	DEBUG_TICKER_ISR(0);
 }
 
-static void swi4_nrf5_isr(void *arg)
+static void swi5_nrf5_isr(void *arg)
 {
+	DEBUG_TICKER_JOB(1);
+
 	mayfly_run(MAYFLY_CALL_ID_1);
+
+	DEBUG_TICKER_JOB(0);
 }
 
 int ll_init(struct k_sem *sem_rx)
@@ -166,7 +167,7 @@ int ll_init(struct k_sem *sem_rx)
 			 RADIO_CONNECTION_CONTEXT_MAX,
 			 RADIO_PACKET_COUNT_RX_MAX,
 			 RADIO_PACKET_COUNT_TX_MAX,
-			 RADIO_LL_LENGTH_OCTETS_RX_MAX,
+			 LL_LENGTH_OCTETS_RX_MAX,
 			 RADIO_PACKET_TX_DATA_SIZE, &_radio[0], sizeof(_radio));
 	if (err) {
 		BT_ERR("Required RAM size: %d, supplied: %u.", err,
@@ -180,12 +181,12 @@ int ll_init(struct k_sem *sem_rx)
 			   radio_nrf5_isr, 0);
 	IRQ_CONNECT(NRF5_IRQ_RTC0_IRQn, CONFIG_BT_CTLR_WORKER_PRIO,
 		    rtc0_nrf5_isr, NULL, 0);
-	IRQ_CONNECT(NRF5_IRQ_SWI4_IRQn, CONFIG_BT_CTLR_JOB_PRIO, swi4_nrf5_isr,
+	IRQ_CONNECT(NRF5_IRQ_SWI5_IRQn, CONFIG_BT_CTLR_JOB_PRIO, swi5_nrf5_isr,
 		    NULL, 0);
 
 	irq_enable(NRF5_IRQ_RADIO_IRQn);
 	irq_enable(NRF5_IRQ_RTC0_IRQn);
-	irq_enable(NRF5_IRQ_SWI4_IRQn);
+	irq_enable(NRF5_IRQ_SWI5_IRQn);
 
 	return 0;
 }

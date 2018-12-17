@@ -4,4 +4,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "hal/radio_vendor_hal.h"
+#include "hal/nrf5/ticker.h"
