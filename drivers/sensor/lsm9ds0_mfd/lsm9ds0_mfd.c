@@ -404,16 +404,16 @@ static inline int lsm9ds0_mfd_get_accel_channel(enum sensor_channel chan,
 						float scale)
 {
 	switch (chan) {
-	case SENSOR_CHAN_GYRO_X:
+	case SENSOR_CHAN_ACCEL_X:
 		lsm9ds0_mfd_convert_accel(val, data->sample_accel_x, scale);
 		break;
-	case SENSOR_CHAN_GYRO_Y:
+	case SENSOR_CHAN_ACCEL_Y:
 		lsm9ds0_mfd_convert_accel(val, data->sample_accel_y, scale);
 		break;
-	case SENSOR_CHAN_GYRO_Z:
+	case SENSOR_CHAN_ACCEL_Z:
 		lsm9ds0_mfd_convert_accel(val, data->sample_accel_z, scale);
 		break;
-	case SENSOR_CHAN_GYRO_XYZ:
+	case SENSOR_CHAN_ACCEL_XYZ:
 		lsm9ds0_mfd_convert_accel(val, data->sample_accel_x, scale);
 		lsm9ds0_mfd_convert_accel(val + 1, data->sample_accel_y, scale);
 		lsm9ds0_mfd_convert_accel(val + 2, data->sample_accel_z, scale);
@@ -490,16 +490,16 @@ static inline int lsm9ds0_mfd_get_magn_channel(enum sensor_channel chan,
 					       float scale)
 {
 	switch (chan) {
-	case SENSOR_CHAN_GYRO_X:
+	case SENSOR_CHAN_MAGN_X:
 		lsm9ds0_mfd_convert_magn(val, data->sample_magn_x, scale);
 		break;
-	case SENSOR_CHAN_GYRO_Y:
+	case SENSOR_CHAN_MAGN_Y:
 		lsm9ds0_mfd_convert_magn(val, data->sample_magn_y, scale);
 		break;
-	case SENSOR_CHAN_GYRO_Z:
+	case SENSOR_CHAN_MAGN_Z:
 		lsm9ds0_mfd_convert_magn(val, data->sample_magn_z, scale);
 		break;
-	case SENSOR_CHAN_GYRO_XYZ:
+	case SENSOR_CHAN_MAGN_XYZ:
 		lsm9ds0_mfd_convert_magn(val, data->sample_magn_x, scale);
 		lsm9ds0_mfd_convert_magn(val + 1, data->sample_magn_y, scale);
 		lsm9ds0_mfd_convert_magn(val + 2, data->sample_magn_z, scale);
