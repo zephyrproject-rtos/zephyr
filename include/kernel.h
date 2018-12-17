@@ -2560,7 +2560,7 @@ static inline void k_work_submit_to_queue(struct k_work_q *work_q,
 /**
  * @brief Submit a work item to a user mode workqueue
  *
- * Sumbits a work item to a workqueue that runs in user mode. A temporary
+ * Submits a work item to a workqueue that runs in user mode. A temporary
  * memory allocation is made from the caller's resource pool which is freed
  * once the worker thread consumes the k_work item. The workqueue
  * thread must have memory access to the k_work item being submitted. The caller

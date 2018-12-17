@@ -58,9 +58,9 @@ the ``net-setup.sh`` will create VLAN setup automatically with this command:
 
 The OpenAVNU repository at https://github.com/AVnu contains gPTP
 daemon that can be run in Linux host and which can act as a grandmaster for
-the IEEE 801.1AS network. Note that OpenAvnu will not work with
+the IEEE 801.1AS network. Note that OpenAVNU will not work with
 native_posix board as that board only supports software timestamping and
-OpenAvnu only supports hardware timestamping. See instructions at the end
+OpenAVNU only supports hardware timestamping. See instructions at the end
 of this chapter how to run linuxptp daemon with native_posix board.
 
 Get OpenAvnu/gPTP project sources

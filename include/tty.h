@@ -114,7 +114,7 @@ int tty_set_tx_buf(struct tty_serial *tty, void *buf, size_t size);
  * @param buf buffer to read data to
  * @param size maximum number of bytes to read
  * @return >0, number of actually read bytes (can be less than size param)
- *         =0, for EOF-like condition (e.g., break signalled)
+ *         =0, for EOF-like condition (e.g., break signaled)
  *         <0, in case of error (e.g. -EAGAIN if timeout expired). errno
  *             variable is also set.
  */
@@ -124,7 +124,7 @@ ssize_t tty_read(struct tty_serial *tty, void *buf, size_t size);
  * @brief Write data to tty device.
  *
  * @param tty tty device structure
- * @param buf buffer containg data
+ * @param buf buffer containing data
  * @param size maximum number of bytes to write
  * @return =>0, number of actually written bytes (can be less than size param)
  *         <0, in case of error (e.g. -EAGAIN if timeout expired). errno

@@ -38,7 +38,7 @@ Hardware
   network debugging
 - Breakout pads for GPIO access and connection to external hardware
 - Reset button
-- Automatic switchover between USB and battery power
+- Automatic switch-over between USB and battery power
 - CR2032 coin cell holder and external battery connector
 
 For more information about the EFR32MG SoC and Thunderboard Sense 2
