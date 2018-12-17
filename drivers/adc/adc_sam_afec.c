@@ -242,8 +242,6 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 	adc_context_start_read(&data->ctx, sequence);
 
 	error = adc_context_wait_for_completion(&data->ctx);
-	adc_context_release(&data->ctx, error);
-
 	return error;
 }
 
@@ -251,9 +249,13 @@ static int adc_sam_read(struct device *dev,
 			const struct adc_sequence *sequence)
 {
 	struct adc_sam_data *data = DEV_DATA(dev);
+	int error;
 
 	adc_context_lock(&data->ctx, false, NULL);
-	return start_read(dev, sequence);
+	error = start_read(dev, sequence);
+	adc_context_release(&data->ctx, error);
+
+	return error;
 }
 
 static int adc_sam_init(struct device *dev)
@@ -302,9 +304,13 @@ static int adc_sam_read_async(struct device *dev,
 			      struct k_poll_signal *async)
 {
 	struct adc_sam_data *data = DEV_DATA(dev);
+	int error;
 
 	adc_context_lock(&data->ctx, true, async);
-	return start_read(dev, sequence);
+	error = start_read(dev, sequence);
+	adc_context_release(&data->ctx, error);
+
+	return error;
 }
 #endif
 

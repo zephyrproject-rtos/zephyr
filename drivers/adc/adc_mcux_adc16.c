@@ -124,9 +124,8 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 	data->buffer = sequence->buffer;
 
 	adc_context_start_read(&data->ctx, sequence);
-	error = adc_context_wait_for_completion(&data->ctx);
-	adc_context_release(&data->ctx, error);
 
+	error = adc_context_wait_for_completion(&data->ctx);
 	return error;
 }
 
@@ -134,9 +133,13 @@ static int mcux_adc16_read(struct device *dev,
 			   const struct adc_sequence *sequence)
 {
 	struct mcux_adc16_data *data = dev->driver_data;
+	int error;
 
 	adc_context_lock(&data->ctx, false, NULL);
-	return start_read(dev, sequence);
+	error = start_read(dev, sequence);
+	adc_context_release(&data->ctx, error);
+
+	return error;
 }
 
 #ifdef CONFIG_ADC_ASYNC
@@ -145,9 +148,13 @@ static int mcux_adc16_read_async(struct device *dev,
 				 struct k_poll_signal *async)
 {
 	struct mcux_adc16_data *data = dev->driver_data;
+	int error;
 
 	adc_context_lock(&data->ctx, true, async);
-	return start_read(dev, sequence);
+	error = start_read(dev, sequence);
+	adc_context_release(&data->ctx, error);
+
+	return error;
 }
 #endif
 
