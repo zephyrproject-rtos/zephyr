@@ -222,3 +222,31 @@ config NRF_ENABLE_ICACHE
 	bool "Enable the instruction cache (I-Cache)"
 	depends on SOC_NRF52832 || SOC_NRF52840
 	default y
+
+if SOC_NRF52840
+    choice
+    prompt "REG0 output voltage"
+
+    comment "Only applied to a fresh/erased SoC"
+
+    config NRF52840_REG0_1V8
+        bool "1.8V"
+
+    config NRF52840_REG0_2V1
+        bool "2.1V"
+
+    config NRF52840_REG0_2V4
+        bool "2.4V"
+
+    config NRF52840_REG0_2V7
+        bool "2.7V"
+
+    config NRF52840_REG0_3V0
+        bool "3.0V"
+
+    config NRF52840_REG0_3V3
+        bool "3.3V"
+
+    endchoice
+
+endif # SOC_NRF52840
