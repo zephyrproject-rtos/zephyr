@@ -77,62 +77,7 @@ LOG_MODULE_REGISTER(main);
 #define LED_PORT	LED0_GPIO_CONTROLLER
 #define LED		LED0_GPIO_PIN
 
-static const u8_t hid_report_desc[] = {
-	HID_GI_USAGE_PAGE, USAGE_GEN_DESKTOP,
-	/* USAGE_PAGE (Generic Desktop)				05 01 */
-	HID_LI_USAGE, USAGE_GEN_DESKTOP_MOUSE,
-	/* USAGE (Mouse)					09 02 */
-		HID_MI_COLLECTION, COLLECTION_APPLICATION,
-		/* COLLECTION (Application)			A1 01 */
-			HID_LI_USAGE, USAGE_GEN_DESKTOP_POINTER,
-		/* 	USAGE (Pointer)				09 01 */
-			HID_MI_COLLECTION, COLLECTION_PHYSICAL,
-		/* 	COLLECTION (Physical)			A1 00 */
-				HID_GI_USAGE_PAGE, USAGE_GEN_BUTTON,
-		/* 		USAGE_PAGE (Button)		05 09 */
-				HID_LI_USAGE_MIN(1), 0x01,
-		/* 		USAGE_MINIMUM (Button 1)	19 01 */
-				HID_LI_USAGE_MAX(1), 0x03,
-		/* 		USAGE_MAXIMUM (Button 3)	29 03 */
-				HID_GI_LOGICAL_MIN(1), 0,
-		/* 		LOGICAL_MINIMUM (0)		15 00 */
-				HID_GI_LOGICAL_MAX(1), 1,
-		/* 		LOGICAL_MAXIMUM (1)		25 01 */
-				HID_GI_REPORT_COUNT, 3,
-		/* 		REPORT_COUNT (3)		95 03 */
-				HID_GI_REPORT_SIZE, 1,
-		/* 		REPORT_SIZE (1)			75 01 */
-				HID_MI_INPUT, 0x02,
-		/* 		INPUT (Data,Var,Abs)		81 02 */
-				HID_GI_REPORT_COUNT, 1,
-		/* 		REPORT_COUNT (1)		95 01 */
-				HID_GI_REPORT_SIZE, 5,
-		/* 		REPORT_SIZE (5)			75 05 */
-				HID_MI_INPUT, 0x01,
-		/* 		INPUT (Cnst,Ary,Abs)		81 01 */
-				HID_GI_USAGE_PAGE, USAGE_GEN_DESKTOP,
-		/* 		USAGE_PAGE (Generic Desktop)	05 01 */
-				HID_LI_USAGE, USAGE_GEN_DESKTOP_X,
-		/* 		USAGE (X)			09 30 */
-				HID_LI_USAGE, USAGE_GEN_DESKTOP_Y,
-		/* 		USAGE (Y)			09 31 */
-				HID_LI_USAGE, USAGE_GEN_DESKTOP_WHEEL,
-		/* 		USAGE (Wheel)			09 38 */
-				HID_GI_LOGICAL_MIN(1), -127,
-		/* 		LOGICAL_MINIMUM (-127)		15 81 */
-				HID_GI_LOGICAL_MAX(1), 127,
-		/* 		LOGICAL_MAXIMUM (127)		25 7F */
-				HID_GI_REPORT_SIZE, 8,
-		/* 		REPORT_SIZE (8)			75 08 */
-				HID_GI_REPORT_COUNT, 3,
-		/* 		REPORT_COUNT (3)		95 03 */
-				HID_MI_INPUT, 0x06,
-		/* 		INPUT (Data,Var,Rel)		81 06 */
-			HID_MI_COLLECTION_END,
-		/* 	END_COLLECTION				C0    */
-		HID_MI_COLLECTION_END,
-		/* END_COLLECTION				C0    */
-};
+static const u8_t hid_report_desc[] = HID_MOUSE_REPORT_DESC(2);
 
 static u32_t def_val[4];
 static volatile u8_t status[4];
