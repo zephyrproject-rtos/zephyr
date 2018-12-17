@@ -140,6 +140,23 @@ int net_icmpv6_set_chksum(struct net_pkt *pkt)
 	return 0;
 }
 
+int net_icmpv6_finalize(struct net_pkt *pkt)
+{
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmp_access,
+					      struct net_icmp_hdr);
+	struct net_icmp_hdr *icmp_hdr;
+
+	icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data_new(pkt,
+							       &icmp_access);
+	if (!icmp_hdr) {
+		return -ENOBUFS;
+	}
+
+	icmp_hdr->chksum = net_calc_chksum_icmpv6(pkt);
+
+	return net_pkt_set_data(pkt, &icmp_access);
+}
+
 int net_icmpv6_get_hdr(struct net_pkt *pkt, struct net_icmp_hdr *hdr)
 {
 	struct net_buf *frag;
