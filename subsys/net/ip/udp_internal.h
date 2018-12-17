@@ -41,17 +41,6 @@ extern "C" {
 struct net_buf *net_udp_set_chksum(struct net_pkt *pkt, struct net_buf *frag);
 
 /**
- * @brief Get UDP checksum from network packet.
- *
- * @param pkt Network packet
- * @param frag Fragment where to start calculating the offset.
- * Typically this is set to pkt->frags by the caller.
- *
- * @return Return the checksum in host byte order.
- */
-u16_t net_udp_get_chksum(struct net_pkt *pkt, struct net_buf *frag);
-
-/**
  * @brief Insert UDP packet into net_pkt after specific offset.
  *
  * @param pkt Network packet
@@ -97,7 +86,6 @@ struct net_udp_hdr *net_udp_input(struct net_pkt *pkt,
 
 #else
 #define net_udp_insert(pkt, offset, src_port, dst_port) (pkt)
-#define net_udp_get_chksum(pkt, frag) (0)
 #define net_udp_set_chksum(pkt, frag) NULL
 
 static inline int net_udp_create(struct net_pkt *pkt,

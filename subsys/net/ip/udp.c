@@ -165,27 +165,6 @@ struct net_buf *net_udp_set_chksum(struct net_pkt *pkt, struct net_buf *frag)
 	return frag;
 }
 
-u16_t net_udp_get_chksum(struct net_pkt *pkt, struct net_buf *frag)
-{
-	struct net_udp_hdr *hdr;
-	u16_t chksum;
-	u16_t pos;
-
-	hdr = net_pkt_udp_data(pkt);
-	if (net_udp_header_fits(pkt, hdr)) {
-		return hdr->chksum;
-	}
-
-	frag = net_frag_read(frag,
-			     net_pkt_ip_hdr_len(pkt) +
-			     net_pkt_ipv6_ext_len(pkt) +
-			     2 + 2 + 2 /* src + dst + len */,
-			     &pos, sizeof(chksum), (u8_t *)&chksum);
-	NET_ASSERT(frag);
-
-	return chksum;
-}
-
 struct net_udp_hdr *net_udp_get_hdr(struct net_pkt *pkt,
 				    struct net_udp_hdr *hdr)
 {
