@@ -1,0 +1,26 @@
+#
+# SPDX-License-Identifier: BSD-3-Clause
+#
+
+title: Device.props test
+description: Device.props test
+
+properties:
+    compatible:
+        constraint: "props"
+        type: string-array
+
+    int:
+        type: int
+
+    array:
+        type: array
+
+    uint8-array:
+        type: uint8-array
+
+    string:
+        type: string
+
+    string-array:
+        type: string-array
