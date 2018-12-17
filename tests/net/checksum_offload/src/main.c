@@ -108,6 +108,33 @@ static void eth_iface_init(struct net_if *iface)
 	ethernet_init(iface);
 }
 
+static u16_t get_udp_chksum(struct net_pkt *pkt)
+{
+	NET_PKT_DATA_ACCESS_DEFINE(udp_access, struct net_udp_hdr);
+	struct net_udp_hdr *udp_hdr;
+	struct net_pkt_cursor backup;
+
+	net_pkt_set_overwrite(pkt, true);
+	net_pkt_cursor_backup(pkt, &backup);
+	net_pkt_cursor_init(pkt);
+
+	/* Let's move the cursor to UDP header */
+	if (net_pkt_skip(pkt, sizeof(struct net_eth_hdr) +
+			 net_pkt_ip_hdr_len(pkt) +
+			 net_pkt_ipv6_ext_len(pkt))) {
+		return 0;
+	}
+
+	udp_hdr = (struct net_udp_hdr *)net_pkt_get_data_new(pkt, &udp_access);
+	if (!udp_hdr) {
+		return 0;
+	}
+
+	net_pkt_cursor_restore(pkt, &backup);
+
+	return udp_hdr->chksum;
+}
+
 static int eth_tx_offloading_disabled(struct device *dev, struct net_pkt *pkt)
 {
 	struct eth_context *context = dev->driver_data;
@@ -177,8 +204,7 @@ static int eth_tx_offloading_disabled(struct device *dev, struct net_pkt *pkt)
 	if (test_started) {
 		u16_t chksum;
 
-		/* First frag is always ethernet header, let's skip it */
-		chksum = net_udp_get_chksum(pkt, pkt->frags->frags);
+		chksum = get_udp_chksum(pkt);
 
 		DBG("Chksum 0x%x offloading disabled\n", chksum);
 
@@ -206,8 +232,7 @@ static int eth_tx_offloading_enabled(struct device *dev, struct net_pkt *pkt)
 	if (test_started) {
 		u16_t chksum;
 
-		/* First frag is always ethernet header, let's skip it */
-		chksum = net_udp_get_chksum(pkt, pkt->frags->frags);
+		chksum = get_udp_chksum(pkt);
 
 		DBG("Chksum 0x%x offloading enabled\n", chksum);
 
