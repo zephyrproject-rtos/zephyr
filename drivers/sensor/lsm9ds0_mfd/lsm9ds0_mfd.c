@@ -788,12 +788,12 @@ int lsm9ds0_mfd_init(struct device *dev)
 }
 
 static const struct lsm9ds0_mfd_config lsm9ds0_mfd_config = {
-	.i2c_master_dev_name = CONFIG_LSM9DS0_MFD_I2C_MASTER_DEV_NAME,
-	.i2c_slave_addr = LSM9DS0_MFD_I2C_ADDR,
+	.i2c_master_dev_name = DT_LSM9DS0_MFD_I2C_MASTER_DEV_NAME,
+	.i2c_slave_addr = DT_LSM9DS0_MFD_I2C_ADDRESS,
 };
 
 static struct lsm9ds0_mfd_data lsm9ds0_mfd_data;
 
-DEVICE_AND_API_INIT(lsm9ds0_mfd, CONFIG_LSM9DS0_MFD_DEV_NAME, lsm9ds0_mfd_init,
+DEVICE_AND_API_INIT(lsm9ds0_mfd, DT_LSM9DS0_MFD_DEV_NAME, lsm9ds0_mfd_init,
 		    &lsm9ds0_mfd_data, &lsm9ds0_mfd_config, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &lsm9ds0_mfd_api_funcs);

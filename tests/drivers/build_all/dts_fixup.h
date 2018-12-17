@@ -162,6 +162,12 @@
 #define DT_LIS2MDL_INT_GPIO_PIN_NUM 0
 #endif
 
+#ifndef DT_LSM9DS0_MFD_DEV_NAME
+#define DT_LSM9DS0_MFD_DEV_NAME ""
+#define DT_LSM9DS0_MFD_I2C_ADDRESS 0x1d
+#define DT_LSM9DS0_MFD_I2C_MASTER_DEV_NAME ""
+#endif
+
 #endif /* CONFIG_HAS_DTS_I2C */
 
 #if defined(CONFIG_HAS_DTS_SPI)
