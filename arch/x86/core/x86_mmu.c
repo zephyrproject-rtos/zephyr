@@ -46,7 +46,7 @@ void _x86_mmu_get_flags(void *addr,
 	*pde_flags = (x86_page_entry_data_t)(X86_MMU_GET_PDE(addr)->value &
 				~(x86_page_entry_data_t)MMU_PDE_PAGE_TABLE_MASK);
 
-	if (*pde_flags & MMU_ENTRY_PRESENT) {
+	if ((*pde_flags & MMU_ENTRY_PRESENT) != 0) {
 		*pte_flags = (x86_page_entry_data_t)
 			(X86_MMU_GET_PTE(addr)->value &
 			 ~(x86_page_entry_data_t)MMU_PTE_PAGE_MASK);
@@ -191,7 +191,7 @@ void _x86_mmu_set_flags(void *ptr,
 	__ASSERT(!(addr & MMU_PAGE_MASK), "unaligned address provided");
 	__ASSERT(!(size & MMU_PAGE_MASK), "unaligned size provided");
 
-	while (size) {
+	while (size != 0) {
 
 #ifdef CONFIG_X86_PAE_MODE
 		/* TODO we're not generating 2MB entries at the moment */
