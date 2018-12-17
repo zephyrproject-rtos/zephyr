@@ -1110,10 +1110,10 @@ extern void k_sched_time_slice_set(s32_t slice, int prio);
  *
  * @note Can be called by ISRs.
  *
- * @return 0 if invoked by a thread.
- * @return Non-zero if invoked by an ISR.
+ * @return false if invoked by a thread.
+ * @return true if invoked by an ISR.
  */
-extern int k_is_in_isr(void);
+extern bool k_is_in_isr(void);
 
 /**
  * @brief Determine if code is running in a preemptible thread.
