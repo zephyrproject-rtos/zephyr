@@ -11,6 +11,7 @@
 #include <ctype.h>
 #include <time.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 #define LOG_COLOR_CODE_DEFAULT "\x1B[0m"
 #define LOG_COLOR_CODE_RED     "\x1B[1;31m"
@@ -132,7 +133,7 @@ static void buffer_write(log_output_func_t outf, u8_t *buf, size_t len,
 		processed = outf(buf, len, ctx);
 		len -= processed;
 		buf += processed;
-	} while (len);
+	} while (len != 0);
 }
 
 void log_output_flush(const struct log_output *log_output)
@@ -157,7 +158,7 @@ static int timestamp_print(struct log_msg *msg,
 
 	if (!format) {
 		length = print_formatted(log_output, "[%08lu] ", timestamp);
-	} else if (freq) {
+	} else if (freq != 0) {
 		u32_t remainder;
 		u32_t seconds;
 		u32_t hours;
@@ -267,11 +268,11 @@ static void newline_print(const struct log_output *ctx, u32_t flags)
 		return;
 	}
 
-	if (flags & LOG_OUTPUT_FLAG_CRLF_NONE) {
+	if ((flags & LOG_OUTPUT_FLAG_CRLF_NONE) != 0) {
 		return;
 	}
 
-	if (flags & LOG_OUTPUT_FLAG_CRLF_LFONLY) {
+	if ((flags & LOG_OUTPUT_FLAG_CRLF_LFONLY) != 0) {
 		print_formatted(ctx, "\n");
 	} else {
 		print_formatted(ctx, "\r\n");
@@ -427,7 +428,7 @@ static void hexdump_print(struct log_msg *msg,
 		}
 
 		offset += length;
-	} while (1);
+	} while (true);
 }
 
 static void raw_string_print(struct log_msg *msg,
@@ -445,7 +446,7 @@ static void raw_string_print(struct log_msg *msg,
 		log_msg_hexdump_data_get(msg, log_output->buf, &length, offset);
 		log_output->control_block->offset = length;
 
-		if (length) {
+		if (length != 0) {
 			eol = (log_output->buf[length - 1] == '\n');
 		}
 

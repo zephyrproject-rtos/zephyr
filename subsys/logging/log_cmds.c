@@ -78,7 +78,7 @@ static int shell_backend_cmd_execute(const struct shell *shell,
 	char const *name = argv[-1];
 	const struct log_backend *backend = backend_find(name);
 
-	if (backend) {
+	if (backend != NULL) {
 		func(shell, backend, argc, argv);
 	} else {
 		shell_error(shell, "Invalid backend: %s", name);

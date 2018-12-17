@@ -168,7 +168,7 @@ int log_printk(const char *fmt, va_list ap)
 			 sizeof(formatted_str) : length;
 
 		msg = log_msg_hexdump_create(NULL, formatted_str, length);
-		if (!msg) {
+		if (msg == NULL) {
 			return 0;
 		}
 
@@ -260,7 +260,7 @@ void log_init(void)
 	assert(log_backend_count_get() < LOG_FILTERS_NUM_OF_SLOTS);
 	int i;
 
-	if (atomic_inc(&initialized)) {
+	if (atomic_inc(&initialized) != 0) {
 		return;
 	}
 
@@ -269,7 +269,7 @@ void log_init(void)
 		const struct log_backend *backend = log_backend_get(i);
 
 		if (backend->autostart) {
-			if (backend->api->init) {
+			if (backend->api->init != NULL) {
 				backend->api->init();
 			}
 
@@ -545,7 +545,7 @@ char *log_strdup(const char *str)
 	int err;
 
 	err = k_mem_slab_alloc(&log_strdup_pool, (void **)&dup, K_NO_WAIT);
-	if (err) {
+	if (err != 0) {
 		/* failed to allocate */
 		return (char *)log_strdup_fail_msg;
 	}
@@ -588,7 +588,7 @@ static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 	log_init();
 	thread_set(k_current_get());
 
-	while (1) {
+	while (true) {
 		if (log_process(false) == false) {
 			k_sleep(CONFIG_LOG_PROCESS_THREAD_SLEEP_MS);
 		}

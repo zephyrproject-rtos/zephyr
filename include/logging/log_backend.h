@@ -107,7 +107,7 @@ static inline void log_backend_dropped(const struct log_backend *const backend,
 {
 	__ASSERT_NO_MSG(backend);
 
-	if (backend->api->dropped) {
+	if (backend->api->dropped != NULL) {
 		backend->api->dropped(backend, cnt);
 	}
 }
