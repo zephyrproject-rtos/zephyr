@@ -582,7 +582,7 @@ int mqtt_subscribe(struct mqtt_client *client,
 		   const struct mqtt_subscription_list *param);
 
 /**
- * @brief API to request unsubscribtion of one or more topics on the connection.
+ * @brief API to request unsubscription of one or more topics on the connection.
  *
  * @param[in] client Identifies client instance for which the procedure is
  *                   requested. Shall not be NULL.

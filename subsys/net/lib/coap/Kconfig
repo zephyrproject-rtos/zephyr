@@ -18,8 +18,8 @@ choice COAP_CHOICE
 	prompt "CoAP Implementation"
 	default COAP_SOCK
 	help
-	  Select the CoAP implmentation. CoAP based on net_pkt is deprecated.
-	  Please use the socket based implmenetation for new applications.
+	  Select the CoAP implementation. CoAP based on net_pkt is deprecated.
+	  Please use the socket based implementation for new applications.
 
 config COAP_SOCK
 	bool "CoAP based on Sockets"

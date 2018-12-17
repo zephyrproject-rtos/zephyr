@@ -133,7 +133,7 @@ struct gna_driver_api {
  * @param cfg Device configuration information
  *
  * @retval 0 If the configuration is successful
- * @retval A negative erro code in case of a failure.
+ * @retval A negative error code in case of a failure.
  */
 static inline int gna_configure(struct device *dev, struct gna_config *cfg)
 {
@@ -153,7 +153,7 @@ static inline int gna_configure(struct device *dev, struct gna_config *cfg)
  * @param model_handle Handle to the registered model if registration succeeds
  *
  * @retval 0 If registration of the model is successful.
- * @retval A negative erro code in case of a failure.
+ * @retval A negative error code in case of a failure.
  */
 static inline int gna_register_model(struct device *dev,
 		struct gna_model_info *model, void **model_handle)
@@ -174,7 +174,7 @@ static inline int gna_register_model(struct device *dev,
  * @param model Model handle output by gna_register_model API
  *
  * @retval 0 If de-registration of the model is successful.
- * @retval A negative erro code in case of a failure.
+ * @retval A negative error code in case of a failure.
  */
 static inline int gna_deregister_model(struct device *dev, void *model)
 {
@@ -195,7 +195,7 @@ static inline int gna_deregister_model(struct device *dev, void *model)
  * @param callback A callback function to notify inference completion
  *
  * @retval 0 If the request is accepted
- * @retval A negative erro code in case of a failure.
+ * @retval A negative error code in case of a failure.
  */
 static inline int gna_infer(struct device *dev, struct gna_inference_req *req,
 	gna_callback callback)

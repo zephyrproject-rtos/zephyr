@@ -63,7 +63,7 @@ struct settings_handler {
 	 * Parameters:
 	 *  - argc - count of item in argv, argv - array of pointers to keyword
 	 *   names.
-	 *  - value_ctx - pointer to the value contex which is used paramiter
+	 *  - value_ctx - pointer to the value context which is used parameter
 	 *   for data extracting routine (@ref settings_val_read_cb).
 	 */
 
@@ -196,16 +196,16 @@ int settings_commit(char *name);
 /**
  * Persistent data extracting routine.
  *
- * This function read and decode data from non volatile storage to user buffer
+ * This function read and decode data from non-volatile storage to user buffer
  * This function should be used inside set handler in order to read the settings
  * data from backend storage.
  *
- * @param[in] value_ctx Data contex provided by the <p>h_set</p> handler.
+ * @param[in] value_ctx Data context provided by the h_set handler.
  * @param[out] buf Buffer for data read.
- * @param[in] len Length of <p>buf</p>.
+ * @param[in] len Length of @p buf.
  *
  * @retval Negative value on failure. 0 and positive: Length of data loaded to
- * the <p>buf</p>.
+ * the @p buf.
  */
 int settings_val_read_cb(void *value_ctx, void *buf, size_t len);
 
@@ -214,7 +214,7 @@ int settings_val_read_cb(void *value_ctx, void *buf, size_t len);
  * This function should be used inside set handler in order to detect the
  * settings data length.
  *
- * @param[in] value_ctx Data contex provided by the <p>h_set</p> handler.
+ * @param[in] value_ctx Data context provided by the h_set handler.
  *
  * @retval length of data.
  */
