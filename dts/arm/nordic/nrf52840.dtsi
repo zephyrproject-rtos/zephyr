@@ -160,9 +160,9 @@
 			label = "PWM_2";
 		};
 
-		pwm3: pwm@4002D000 {
+		pwm3: pwm@4002d000 {
 			compatible = "nordic,nrf-pwm";
-			reg = <0x4002D000 0x1000>;
+			reg = <0x4002d000 0x1000>;
 			interrupts = <45 1>;
 			status = "disabled";
 			label = "PWM_3";
