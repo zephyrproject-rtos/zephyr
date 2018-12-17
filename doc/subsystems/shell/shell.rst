@@ -435,4 +435,21 @@ the shell will only print the subcommands registered for this command:
 
 	  params  ping
 
+Shell as the logger backend
+***************************
 
+Shell instance can act as the :ref:`logger` backend. Shell ensures that log
+messages are correctly multiplexed with shell output. Log messages from logger
+thread are enqueued and processed in the shell thread. Logger thread will block
+for configurable amount of time if queue is full, blocking logger thread context
+for that time. Oldest log message is removed from the queue after timeout and
+new message is enqueued. Use the ``shell stats show`` command to retrieve
+number of log messages dropped by the shell instance. Log queue size and timeout
+are :c:macro:`SHELL_DEFINE` arguments.
+
+.. warning::
+	Enqueuing timeout must be set carefully when multiple backends are used
+	in the system. The shell instance could	have a slow transport or could
+	block, for example, by a UART with hardware flow control. If timeout is
+	set too high, the logger thread could be blocked and impact other logger
+	backends.

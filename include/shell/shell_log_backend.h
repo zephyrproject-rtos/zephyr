@@ -37,6 +37,7 @@ struct shell_log_backend {
 	struct k_msgq *msgq;
 	const struct log_output *log_output;
 	struct shell_log_backend_control_block *control_block;
+	u32_t timeout;
 };
 
 /** @brief Prototype of function outputing processed data. */
@@ -45,9 +46,12 @@ int shell_log_backend_output_func(u8_t *data, size_t length, void *ctx);
 /** @def SHELL_LOG_BACKEND_DEFINE
  *  @brief Macro for creating instance of shell log backend.
  *
- *  @param _name Shell name.
- *  @param _buf  Output buffer.
- *  @param _size Output buffer size.
+ *  @param _name	Shell name.
+ *  @param _buf		Output buffer.
+ *  @param _size	Output buffer size.
+ *  @param _queue_size	Log message queue size.
+ *  @param _timeout	Timeout in milliseconds for pending on queue full.
+ *			Message is dropped on timeout.
  */
 /** @def SHELL_LOG_BACKEND_PTR
  *  @brief Macro for retrieving pointer to the instance of shell log backend.
@@ -55,10 +59,10 @@ int shell_log_backend_output_func(u8_t *data, size_t length, void *ctx);
  *  @param _name Shell name.
  */
 #if CONFIG_LOG
-#define SHELL_LOG_BACKEND_DEFINE(_name, _buf, _size)			     \
+#define SHELL_LOG_BACKEND_DEFINE(_name, _buf, _size, _queue_size, _timeout)  \
 	LOG_BACKEND_DEFINE(_name##_backend, log_backend_shell_api, false);   \
 	K_MSGQ_DEFINE(_name##_msgq, sizeof(void *),			     \
-			CONFIG_SHELL_MAX_LOG_MSG_BUFFERED, sizeof(void *));  \
+			_queue_size, sizeof(void *));			     \
 	LOG_OUTPUT_DEFINE(_name##_log_output, shell_log_backend_output_func, \
 			  _buf, _size);					     \
 	static struct shell_log_backend_control_block _name##_control_block; \
@@ -66,12 +70,13 @@ int shell_log_backend_output_func(u8_t *data, size_t length, void *ctx);
 		.backend = &_name##_backend,				     \
 		.msgq = &_name##_msgq,					     \
 		.log_output = &_name##_log_output,			     \
-		.control_block = &_name##_control_block			     \
+		.control_block = &_name##_control_block,		     \
+		.timeout = _timeout					     \
 	}
 
 #define SHELL_LOG_BACKEND_PTR(_name) (&_name##_log_backend)
 #else /* CONFIG_LOG */
-#define SHELL_LOG_BACKEND_DEFINE(_name, _buf, _size) /* empty */
+#define SHELL_LOG_BACKEND_DEFINE(_name, _buf, _size, _queue_size, _timeout)
 #define SHELL_LOG_BACKEND_PTR(_name) NULL
 #endif /* CONFIG_LOG */
 
