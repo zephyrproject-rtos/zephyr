@@ -61,7 +61,7 @@ void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data)
 #endif
 }
 
-int k_is_in_isr(void)
+bool k_is_in_isr(void)
 {
 	return _is_in_isr();
 }
