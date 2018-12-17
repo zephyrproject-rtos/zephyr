@@ -87,9 +87,9 @@ u32_t ll_length_default_set(u16_t max_tx_octets, u16_t max_tx_time);
 void ll_length_max_get(u16_t *max_tx_octets, u16_t *max_tx_time,
 		       u16_t *max_rx_octets, u16_t *max_rx_time);
 
-u32_t ll_phy_get(u16_t handle, u8_t *tx, u8_t *rx);
-u32_t ll_phy_default_set(u8_t tx, u8_t rx);
-u32_t ll_phy_req_send(u16_t handle, u8_t tx, u8_t flags, u8_t rx);
+u8_t ll_phy_get(u16_t handle, u8_t *tx, u8_t *rx);
+u8_t ll_phy_default_set(u8_t tx, u8_t rx);
+u8_t ll_phy_req_send(u16_t handle, u8_t tx, u8_t flags, u8_t rx);
 
 /* Downstream - Data */
 void *ll_tx_mem_acquire(void);

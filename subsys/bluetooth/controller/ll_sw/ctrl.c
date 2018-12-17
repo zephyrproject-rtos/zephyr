@@ -11353,7 +11353,7 @@ void ll_length_max_get(u16_t *max_tx_octets, u16_t *max_tx_time,
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 #if defined(CONFIG_BT_CTLR_PHY)
-u32_t ll_phy_get(u16_t handle, u8_t *tx, u8_t *rx)
+u8_t ll_phy_get(u16_t handle, u8_t *tx, u8_t *rx)
 {
 	struct connection *conn;
 
@@ -11369,7 +11369,7 @@ u32_t ll_phy_get(u16_t handle, u8_t *tx, u8_t *rx)
 	return 0;
 }
 
-u32_t ll_phy_default_set(u8_t tx, u8_t rx)
+u8_t ll_phy_default_set(u8_t tx, u8_t rx)
 {
 	/* TODO: validate against supported phy */
 
@@ -11379,7 +11379,7 @@ u32_t ll_phy_default_set(u8_t tx, u8_t rx)
 	return 0;
 }
 
-u32_t ll_phy_req_send(u16_t handle, u8_t tx, u8_t flags, u8_t rx)
+u8_t ll_phy_req_send(u16_t handle, u8_t tx, u8_t flags, u8_t rx)
 {
 	struct connection *conn;
 
