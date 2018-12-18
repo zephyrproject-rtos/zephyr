@@ -13,7 +13,6 @@
 # copy in scripts/meta/west for mono-repo installs.
 
 import os
-import subprocess
 import sys
 
 import colorama
@@ -34,11 +33,7 @@ WEST = 'west'
 WEST_MARKER = '.west_topdir'
 
 
-class WestError(RuntimeError):
-    pass
-
-
-class WestNotFound(WestError):
+class WestNotFound(RuntimeError):
     '''Neither the current directory nor any parent has a West installation.'''
 
 
@@ -55,53 +50,35 @@ def find_west_topdir(start):
         parent_dir = os.path.dirname(cur_dir)
         if cur_dir == parent_dir:
             # At the root
-            raise WestNotFound('Could not find a West installation '
-                               'in this or any parent directory')
+            raise WestNotFound()
         cur_dir = parent_dir
 
 
-def append_to_pythonpath(directory):
-    pp = os.environ.get('PYTHONPATH')
-    os.environ['PYTHONPATH'] = ':'.join(([pp] if pp else []) + [directory])
+def wrap(west_dir, argv):
+    # Pull in the west main module, after adding the directory
+    # containing the package to sys.path.
+    sys.path.append(west_dir)
+    import west.main
 
-
-def wrap(topdir, argv):
-    # Replace the wrapper process with the "real" west
-
-    # sys.argv[1:] strips the argv[0] of the wrapper script itself
-    west_git_repo = os.path.join(topdir, WEST_DIR, WEST)
-    argv = ([sys.executable,
-             os.path.join(west_git_repo, 'src', 'west', 'main.py')] +
-            argv)
-
-    try:
-        append_to_pythonpath(os.path.join(west_git_repo, 'src'))
-        subprocess.check_call(argv)
-    except subprocess.CalledProcessError as e:
-        sys.exit(e.returncode)
-
-
-def run_scripts_meta_west():
-    try:
-        subprocess.check_call([sys.executable,
-                               os.path.join(os.environ['ZEPHYR_BASE'],
-                                            'scripts', 'meta', 'west',
-                                            'main.py')] + sys.argv[1:])
-    except subprocess.CalledProcessError as e:
-        sys.exit(e.returncode)
+    # Invoke west's main with our arguments. It needs to be run from
+    # this process for 'west debug' to work properly, so don't change
+    # this code to running main in a subprocess.
+    west.main.main(sys.argv[1:])
 
 
 def main():
+    # Figure out which west to run. If we're in a multirepo
+    # installation, prefer the standalone west. Otherwise, we're in a
+    # monorepo installation, so we need to fall back on the copy of
+    # west in the Zephyr repository's scripts/meta directory.
     try:
         topdir = find_west_topdir(__file__)
+        west_dir = os.path.join(topdir, 'west', 'west', 'src')
     except WestNotFound:
-        topdir = None
+        west_dir = os.path.join(os.environ['ZEPHYR_BASE'], 'scripts', 'meta')
 
     try:
-        if topdir is not None:
-            wrap(topdir, sys.argv[1:])
-        else:
-            run_scripts_meta_west()
+        wrap(west_dir, sys.argv[1:])
     finally:
         print(colorama.Fore.LIGHTRED_EX, end='')
         print('NOTE: you just ran a copy of west from {};'.
