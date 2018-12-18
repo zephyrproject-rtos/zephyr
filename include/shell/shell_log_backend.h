@@ -40,6 +40,12 @@ struct shell_log_backend {
 	u32_t timeout;
 };
 
+/** @brief Shell log backend message structure. */
+struct shell_log_backend_msg {
+	struct log_msg *msg;
+	u32_t timestamp;
+};
+
 /** @brief Prototype of function outputing processed data. */
 int shell_log_backend_output_func(u8_t *data, size_t length, void *ctx);
 
@@ -61,7 +67,7 @@ int shell_log_backend_output_func(u8_t *data, size_t length, void *ctx);
 #if CONFIG_LOG
 #define SHELL_LOG_BACKEND_DEFINE(_name, _buf, _size, _queue_size, _timeout)  \
 	LOG_BACKEND_DEFINE(_name##_backend, log_backend_shell_api, false);   \
-	K_MSGQ_DEFINE(_name##_msgq, sizeof(void *),			     \
+	K_MSGQ_DEFINE(_name##_msgq, sizeof(struct shell_log_backend_msg),    \
 			_queue_size, sizeof(void *));			     \
 	LOG_OUTPUT_DEFINE(_name##_log_output, shell_log_backend_output_func, \
 			  _buf, _size);					     \
