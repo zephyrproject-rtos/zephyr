@@ -445,7 +445,7 @@ static void tab_options_print(const struct shell *shell,
 	/* Printing all matching commands (options). */
 	tab_item_print(shell, SHELL_INIT_OPTION_PRINTER, longest);
 
-	while (cnt--) {
+	while (cnt) {
 		/* shell->ctx->active_cmd can be safely used outside of command
 		 * context to save stack
 		 */
@@ -459,6 +459,7 @@ static void tab_options_print(const struct shell *shell,
 		}
 
 		tab_item_print(shell, match->syntax, longest);
+		cnt--;
 	}
 
 	cursor_next_line_move(shell);
