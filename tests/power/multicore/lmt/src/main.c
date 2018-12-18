@@ -12,7 +12,7 @@
 #include <misc/printk.h>
 #include <power.h>
 #include <soc_power.h>
-#include <rtc.h>
+#include <counter.h>
 #include <ipm.h>
 #include <ipm/ipm_quark_se.h>
 
@@ -25,6 +25,9 @@
 #endif /* TEST_CASE_SLEEP_SUCCESS */
 
 #define MAX_SUSPEND_DEVICE_COUNT 15
+
+#define RTC_ALARM_SECOND (32768 / CONFIG_RTC_PRESCALER)
+
 
 static struct device *suspended_devices[MAX_SUSPEND_DEVICE_COUNT];
 static int suspend_device_count;
@@ -100,7 +103,9 @@ static void build_suspend_device_list(void)
 	}
 }
 
-static void alarm_handler(struct device *dev)
+static void alarm_handler(struct device *dev,
+			  const struct counter_alarm_cfg *cfg,
+			  u32_t counter)
 {
 	/* Unblock LMT application thread. */
 	k_fifo_put(&fifo, NULL);
@@ -114,7 +119,7 @@ static void alarm_handler(struct device *dev)
 void main(void)
 {
 	struct device *rtc_dev;
-	struct rtc_config config;
+	struct counter_alarm_cfg alarm_cfg;
 	u32_t now;
 
 	printk("LMT: Quark SE PM Multicore Demo\n");
@@ -129,13 +134,13 @@ void main(void)
 		return;
 	}
 
-	rtc_dev = device_get_binding("RTC_0");
+	rtc_dev = device_get_binding(DT_RTC_0_NAME);
 	if (!rtc_dev) {
 		printk("Error: Failed to get RTC device\n");
 		return;
 	}
 
-	rtc_enable(rtc_dev);
+	counter_start(rtc_dev);
 
 	/* In QMSI, in order to save the alarm callback we must set
 	 * 'alarm_enable = 1' during configuration. However, this
@@ -143,11 +148,10 @@ void main(void)
 	 * the alarm being fired any time soon, we set the 'init_val'
 	 * to 1 and the 'alarm_val' to 0.
 	 */
-	config.init_val = 1;
-	config.alarm_val = 0;
-	config.alarm_enable = 1;
-	config.cb_fn = alarm_handler;
-	rtc_set_config(rtc_dev, &config);
+	alarm_cfg.channel_id = 0;
+	alarm_cfg.absolute = true;
+	alarm_cfg.handler = alarm_handler;
+
 
 	while (1) {
 		/* Add a busy loop to syncronize the
@@ -159,9 +163,10 @@ void main(void)
 		printk("LMT: busy\n");
 		k_busy_wait(TASK_TIME_IN_SEC * 1000 * 1000);
 
-		now = rtc_read(rtc_dev);
-		rtc_set_alarm(rtc_dev,
-			      now + (RTC_ALARM_SECOND * IDLE_TIME_IN_SEC));
+		now = counter_read(rtc_dev);
+		alarm_cfg.ticks = now + RTC_ALARM_SECOND;
+		counter_set_ch_alarm(rtc_dev,
+			      &alarm_cfg);
 
 		printk("LMT: idle\n");
 		k_fifo_get(&fifo, K_FOREVER);

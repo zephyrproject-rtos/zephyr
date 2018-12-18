@@ -3,4 +3,5 @@ tests:
     filter: (CONFIG_SOC_QUARK_SE_C1000 or CONFIG_SOC_QUARK_SE_C1000_SS)
     platform_exclude: tinytile arduino_101 arduino_101_sss
     tags: power
+    skip: true
     depends_on: rtc
