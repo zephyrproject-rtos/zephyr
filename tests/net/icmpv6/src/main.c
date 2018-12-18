@@ -60,7 +60,8 @@ static char icmpv6_inval_chksum[] =
 NET_PKT_TX_SLAB_DEFINE(pkts_slab, 2);
 NET_BUF_POOL_DEFINE(data_pool, 2, 128, 0, NULL);
 
-static enum net_verdict handle_test_msg(struct net_pkt *pkt)
+static enum net_verdict handle_test_msg(struct net_pkt *pkt,
+					struct net_ipv6_hdr *ip_hdr)
 {
 	struct net_buf *last = net_buf_frag_last(pkt->frags);
 	enum net_verdict ret;
@@ -94,6 +95,7 @@ void test_icmpv6(void)
 {
 	k_thread_priority_set(k_current_get(), K_PRIO_COOP(7));
 
+	struct net_ipv6_hdr *hdr;
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	int ret;
@@ -115,7 +117,12 @@ void test_icmpv6(void)
 	memcpy(net_buf_add(frag, sizeof(icmpv6_inval_chksum)),
 	       icmpv6_inval_chksum, sizeof(icmpv6_inval_chksum));
 
-	ret = net_icmpv6_input(pkt);
+	hdr = (struct net_ipv6_hdr *)pkt->buffer->data;
+	net_pkt_cursor_init(pkt);
+	net_pkt_set_overwrite(pkt, true);
+	net_pkt_skip(pkt, sizeof(struct net_ipv6_hdr));
+
+	ret = net_icmpv6_input(pkt, hdr);
 
 	/**TESTPOINT: Check input*/
 	zassert_true(ret == NET_DROP, "Callback not called properly");
@@ -126,7 +133,12 @@ void test_icmpv6(void)
 	memcpy(net_buf_add(frag, sizeof(icmpv6_echo_rep)),
 	       icmpv6_echo_rep, sizeof(icmpv6_echo_rep));
 
-	ret = net_icmpv6_input(pkt);
+	hdr = (struct net_ipv6_hdr *)pkt->buffer->data;
+	net_pkt_cursor_init(pkt);
+	net_pkt_set_overwrite(pkt, true);
+	net_pkt_skip(pkt, sizeof(struct net_ipv6_hdr));
+
+	ret = net_icmpv6_input(pkt, hdr);
 
 	/**TESTPOINT: Check input*/
 	zassert_true(!(ret == NET_DROP || handler_status != 0),
@@ -138,7 +150,12 @@ void test_icmpv6(void)
 	memcpy(net_buf_add(frag, sizeof(icmpv6_echo_req)),
 	       icmpv6_echo_req, sizeof(icmpv6_echo_req));
 
-	ret = net_icmpv6_input(pkt);
+	hdr = (struct net_ipv6_hdr *)pkt->buffer->data;
+	net_pkt_cursor_init(pkt);
+	net_pkt_set_overwrite(pkt, true);
+	net_pkt_skip(pkt, sizeof(struct net_ipv6_hdr));
+
+	ret = net_icmpv6_input(pkt, hdr);
 
 	/**TESTPOINT: Check input*/
 	zassert_true(!(ret == NET_DROP || handler_status != 0),

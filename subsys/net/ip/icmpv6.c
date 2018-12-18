@@ -302,7 +302,8 @@ int net_icmpv6_get_ra_hdr(struct net_pkt *pkt, struct net_icmpv6_ra_hdr *hdr)
 	return 0;
 }
 
-static enum net_verdict handle_echo_request(struct net_pkt *orig)
+static enum net_verdict handle_echo_request(struct net_pkt *orig,
+					    struct net_ipv6_hdr *ip_hdr)
 {
 	struct net_icmp_hdr icmp_hdr;
 	struct net_pkt *pkt;
@@ -312,12 +313,12 @@ static enum net_verdict handle_echo_request(struct net_pkt *orig)
 	int ret;
 
 	NET_DBG("Received Echo Request from %s to %s",
-		log_strdup(net_sprint_ipv6_addr(&NET_IPV6_HDR(orig)->src)),
-		log_strdup(net_sprint_ipv6_addr(&NET_IPV6_HDR(orig)->dst)));
+		log_strdup(net_sprint_ipv6_addr(&ip_hdr->src)),
+		log_strdup(net_sprint_ipv6_addr(&ip_hdr->dst)));
 
 	iface = net_pkt_iface(orig);
 
-	payload_len = ntohs(NET_IPV6_HDR(orig)->len) -
+	payload_len = ntohs(ip_hdr->len) -
 		net_pkt_ipv6_ext_len(orig) - NET_ICMPH_LEN;
 	if (payload_len < NET_ICMPV6_UNUSED_LEN) {
 		/* No identifier or sequence number present */
@@ -353,17 +354,17 @@ static enum net_verdict handle_echo_request(struct net_pkt *orig)
 
 	if (net_ipv6_is_addr_mcast(&NET_IPV6_HDR(pkt)->dst)) {
 		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst,
-				&NET_IPV6_HDR(orig)->src);
+				&ip_hdr->src);
 
 		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src,
 				net_if_ipv6_select_src_addr(iface,
-						    &NET_IPV6_HDR(orig)->dst));
+						    &ip_hdr->dst));
 	} else {
 		struct in6_addr addr;
 
-		net_ipaddr_copy(&addr, &NET_IPV6_HDR(orig)->src);
+		net_ipaddr_copy(&addr, &ip_hdr->src);
 		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src,
-				&NET_IPV6_HDR(orig)->dst);
+				&ip_hdr->dst);
 		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst, &addr);
 	}
 
@@ -608,31 +609,36 @@ drop:
 	return ret;
 }
 
-enum net_verdict net_icmpv6_input(struct net_pkt *pkt)
+enum net_verdict net_icmpv6_input(struct net_pkt *pkt,
+				  struct net_ipv6_hdr *ip_hdr)
 {
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmp_access,
+					      struct net_icmp_hdr);
+	struct net_icmp_hdr *icmp_hdr;
 	struct net_icmpv6_handler *cb;
-	struct net_icmp_hdr icmp_hdr;
+
+	icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data_new(pkt,
+							       &icmp_access);
+	if (!icmp_hdr) {
+		NET_DBG("DROP: NULL ICMPv6 header");
+		return NET_DROP;
+	}
 
 	if (net_calc_chksum_icmpv6(pkt) != 0) {
 		NET_DBG("DROP: invalid checksum");
 		goto drop;
 	}
 
-	if (net_icmpv6_get_hdr(pkt, &icmp_hdr)) {
-		NET_DBG("DROP: NULL ICMPv6 header");
-		goto drop;
-	}
-
 	NET_DBG("ICMPv6 %s received type %d code %d",
-		net_icmpv6_type2str(icmp_hdr.type),
-		icmp_hdr.type, icmp_hdr.code);
+		net_icmpv6_type2str(icmp_hdr->type),
+		icmp_hdr->type, icmp_hdr->code);
 
 	net_stats_update_icmp_recv(net_pkt_iface(pkt));
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&handlers, cb, node) {
-		if (cb->type == icmp_hdr.type &&
-		    (cb->code == icmp_hdr.code || cb->code == 0)) {
-			return cb->handler(pkt);
+		if (cb->type == icmp_hdr->type &&
+		    (cb->code == icmp_hdr->code || cb->code == 0)) {
+			return cb->handler(pkt, ip_hdr);
 		}
 	}
 drop:

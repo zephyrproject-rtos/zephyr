@@ -132,7 +132,9 @@ struct net_icmpv6_echo_req {
 /* ICMPv6 header has 4 unused bytes that must be zero, RFC 4443 ch 3.1 */
 #define NET_ICMPV6_UNUSED_LEN 4
 
-typedef enum net_verdict (*icmpv6_callback_handler_t)(struct net_pkt *pkt);
+typedef enum net_verdict (*icmpv6_callback_handler_t)(
+						struct net_pkt *pkt,
+						struct net_ipv6_hdr *ip_hdr);
 
 const char *net_icmpv6_type2str(int icmpv6_type);
 
@@ -175,7 +177,8 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 
 void net_icmpv6_register_handler(struct net_icmpv6_handler *handler);
 void net_icmpv6_unregister_handler(struct net_icmpv6_handler *handler);
-enum net_verdict net_icmpv6_input(struct net_pkt *pkt);
+enum net_verdict net_icmpv6_input(struct net_pkt *pkt,
+				  struct net_ipv6_hdr *ip_hdr);
 
 int net_icmpv6_get_hdr(struct net_pkt *pkt, struct net_icmp_hdr *hdr);
 int net_icmpv6_set_hdr(struct net_pkt *pkt, struct net_icmp_hdr *hdr);
