@@ -5,9 +5,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @brief   Element of a memory-queue
+ * @details Elements form a linked list, and as payload carries a pointer
+ */
 struct _memq_link {
-	struct _memq_link *next;
-	void              *mem;
+	struct _memq_link *next; /* permit chaining */
+	void              *mem;  /* payload */
 };
 
 typedef struct _memq_link memq_link_t;
