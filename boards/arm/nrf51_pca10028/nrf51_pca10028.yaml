@@ -11,6 +11,7 @@ supported:
   - adc
   - ble
   - nvs
+  - counter
 testing:
   default: true
   ignore_tags:
