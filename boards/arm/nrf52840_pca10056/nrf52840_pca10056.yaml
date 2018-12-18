@@ -13,3 +13,4 @@ supported:
   - ieee802154
   - pwm
   - watchdog
+  - counter

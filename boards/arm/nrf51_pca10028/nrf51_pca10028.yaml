@@ -13,6 +13,7 @@ supported:
   - nvs
   - pwm
   - watchdog
+  - counter
 testing:
   default: true
   ignore_tags:
