@@ -31,6 +31,19 @@ static u8_t const caller_id_lut[] = {
 	TICKER_CALL_ID_NONE,
 	TICKER_CALL_ID_PROGRAM
 };
+#elif defined(CONFIG_BT_LL_SW_SPLIT)
+#include "ll_sw/lll.h"
+#define TICKER_MAYFLY_CALL_ID_ISR     TICKER_USER_ID_LLL
+#define TICKER_MAYFLY_CALL_ID_TRIGGER TICKER_USER_ID_ULL_HIGH
+#define TICKER_MAYFLY_CALL_ID_WORKER  TICKER_USER_ID_ULL_HIGH
+#define TICKER_MAYFLY_CALL_ID_JOB     TICKER_USER_ID_ULL_LOW
+#define TICKER_MAYFLY_CALL_ID_PROGRAM TICKER_USER_ID_THREAD
+static u8_t const caller_id_lut[] = {
+	TICKER_CALL_ID_ISR,
+	TICKER_CALL_ID_WORKER,
+	TICKER_CALL_ID_JOB,
+	TICKER_CALL_ID_PROGRAM
+};
 #else
 #error Unknown LL variant.
 #endif
@@ -55,6 +68,32 @@ void hal_ticker_instance0_sched(u8_t caller_id, u8_t callee_id, u8_t chain,
 	 * schedule.
 	 */
 	switch (caller_id) {
+#if defined(CONFIG_BT_LL_SW_SPLIT)
+	case TICKER_CALL_ID_ISR:
+		switch (callee_id) {
+		case TICKER_CALL_ID_JOB:
+		{
+			static memq_link_t link;
+			static struct mayfly m = {0, 0, &link, NULL,
+						  ticker_job};
+
+			m.param = instance;
+
+			/* TODO: scheduler lock, if preemptive threads used */
+			mayfly_enqueue(TICKER_MAYFLY_CALL_ID_ISR,
+				       TICKER_MAYFLY_CALL_ID_JOB,
+				       chain,
+				       &m);
+		}
+		break;
+
+		default:
+			LL_ASSERT(0);
+			break;
+		}
+		break;
+#endif /* CONFIG_BT_LL_SW_SPLIT */
+
 	case TICKER_CALL_ID_TRIGGER:
 		switch (callee_id) {
 		case TICKER_CALL_ID_WORKER:
