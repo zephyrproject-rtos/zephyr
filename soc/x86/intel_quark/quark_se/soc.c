@@ -68,7 +68,7 @@ int _arc_init(struct device *arg)
 
 	ARG_UNUSED(arg);
 
-	if (!SCSS_REG_VAL(SCSS_SS_STS)) {
+	if (SCSS_REG_VAL(SCSS_SS_STS) == 0) {
 		/* ARC shouldn't already be running! */
 		printk("ARC core already running!");
 		return -EIO;
@@ -81,7 +81,7 @@ int _arc_init(struct device *arg)
 	LOG_DBG("Reset vector address: %x", *reset_vector);
 	shared_data->arc_start = *reset_vector;
 	shared_data->flags = 0U;
-	if (!shared_data->arc_start) {
+	if (shared_data->arc_start == 0) {
 		/* Reset vector points to NULL => skip ARC init. */
 		LOG_DBG("Reset vector is NULL, skipping ARC init.");
 		goto skip_arc_init;
@@ -94,13 +94,13 @@ int _arc_init(struct device *arg)
 
 	LOG_DBG("Waiting for arc to start...");
 	/* Block until the ARC core actually starts up */
-	while (SCSS_REG_VAL(SCSS_SS_STS) & 0x4000) {
+	while ((SCSS_REG_VAL(SCSS_SS_STS) & 0x4000) != 0) {
 	}
 
 	/* Block until ARC's quark_se_init() sets a flag indicating it is ready,
 	 * if we get stuck here ARC has run but has exploded very early */
 	LOG_DBG("Waiting for arc to init...");
-	while (!(shared_data->flags & ARC_READY)) {
+	while ((shared_data->flags & ARC_READY) == 0) {
 	}
 
 skip_arc_init:
