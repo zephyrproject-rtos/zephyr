@@ -45,11 +45,6 @@ config SOC_NRF52810
 
 config SOC_NRF52832
 	depends on SOC_SERIES_NRF52X
-	select HAS_HW_NRF_TIMER0
-	select HAS_HW_NRF_TIMER1
-	select HAS_HW_NRF_TIMER2
-	select HAS_HW_NRF_TIMER3
-	select HAS_HW_NRF_TIMER4
 	bool
 	select SOC_COMPATIBLE_NRF52832
 	select CPU_HAS_FPU
@@ -116,11 +111,6 @@ config SOC_NRF52832
 config SOC_NRF52840
 	depends on SOC_SERIES_NRF52X
 	bool
-	select HAS_HW_NRF_TIMER0
-	select HAS_HW_NRF_TIMER1
-	select HAS_HW_NRF_TIMER2
-	select HAS_HW_NRF_TIMER3
-	select HAS_HW_NRF_TIMER4
 	select CPU_HAS_FPU
 	select HAS_HW_NRF_ACL
 	select HAS_HW_NRF_CC310
