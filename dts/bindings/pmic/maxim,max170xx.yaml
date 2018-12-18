@@ -1,0 +1,25 @@
+#
+# Copyright (c) 2018, Makaio GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: Maxim Integrated MAX170XX Fuel Gauge representation
+version: 0.1
+
+description: >
+  This binding gives a base representation of  MAX170XX Fuel Gauge
+
+inherits:
+  !include [i2c-device.yaml, pmic-device.yaml]
+
+properties:
+  compatible:
+    constraint: "maxim,max170xx"
+  alert-gpios:
+    type: compound
+    category: optional
+    description: ALERT pin
+    generation: define, use-prop-name
+
+...
