@@ -35,13 +35,17 @@ static inline u8_t get_num_regions(void)
 	 * have a fixed number of 8 MPU regions.
 	 */
 	return 8;
+#elif defined(DT_NUM_MPU_REGIONS)
+	/* Retrieve the number of regions from DTS configuration. */
+	return DT_NUM_MPU_REGIONS;
 #else
+
 	u32_t type = MPU->TYPE;
 
 	type = (type & MPU_TYPE_DREGION_Msk) >> MPU_TYPE_DREGION_Pos;
 
 	return (u8_t)type;
-#endif
+#endif /* CPU_CORTEX_M0PLUS | CPU_CORTEX_M3 | CPU_CORTEX_M4 */
 }
 
 /* Include architecture-specific internal headers. */
@@ -285,7 +289,12 @@ static int arm_mpu_init(struct device *arg)
 	__ASSERT(
 		(MPU->TYPE & MPU_TYPE_DREGION_Msk) >> MPU_TYPE_DREGION_Pos == 8,
 		"Invalid number of MPU regions\n");
-#endif
+#elif defined(DT_NUM_MPU_REGIONS)
+	__ASSERT(
+		(MPU->TYPE & MPU_TYPE_DREGION_Msk) >> MPU_TYPE_DREGION_Pos ==
+		DT_NUM_MPU_REGIONS,
+		"Invalid number of MPU regions\n");
+#endif /* CORTEX_M0PLUS || CPU_CORTEX_M3 || CPU_CORTEX_M4 */
 	return 0;
 }
 
