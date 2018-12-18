@@ -598,7 +598,7 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 
 	switch (nexthdr) {
 	case IPPROTO_ICMPV6:
-		verdict = net_icmpv6_input(pkt);
+		verdict = net_icmpv6_input(pkt, hdr);
 		break;
 	case IPPROTO_TCP:
 		proto_hdr.tcp = net_tcp_input(pkt, &tcp_access);

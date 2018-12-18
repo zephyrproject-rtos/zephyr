@@ -367,7 +367,8 @@ static void send_query(struct net_if *iface)
 }
 
 /* We are not really interested to parse the query at this point */
-static enum net_verdict handle_mld_query(struct net_pkt *pkt)
+static enum net_verdict handle_mld_query(struct net_pkt *pkt,
+					 struct net_ipv6_hdr *ip_hdr)
 {
 	is_query_received = true;
 

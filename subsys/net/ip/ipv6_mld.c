@@ -298,7 +298,8 @@ drop:
 #define dbg_addr_recv(pkt_str, src, dst)	\
 	dbg_addr("Received", pkt_str, src, dst)
 
-static enum net_verdict handle_mld_query(struct net_pkt *pkt)
+static enum net_verdict handle_mld_query(struct net_pkt *pkt,
+					 struct net_ipv6_hdr *ip_hdr)
 {
 	u16_t total_len = net_pkt_get_len(pkt);
 	struct in6_addr mcast;
@@ -307,9 +308,7 @@ static enum net_verdict handle_mld_query(struct net_pkt *pkt)
 	struct net_buf *frag;
 	int ret;
 
-	dbg_addr_recv("Multicast Listener Query",
-		      &NET_IPV6_HDR(pkt)->src,
-		      &NET_IPV6_HDR(pkt)->dst);
+	dbg_addr_recv("Multicast Listener Query", &ip_hdr->src, &ip_hdr->dst);
 
 	net_stats_update_ipv6_mld_recv(net_pkt_iface(pkt));
 
@@ -334,14 +333,14 @@ static enum net_verdict handle_mld_query(struct net_pkt *pkt)
 		sizeof(struct in6_addr) * num_src;
 
 	if ((total_len < pkt_len || pkt_len > NET_IPV6_MTU ||
-	     (NET_IPV6_HDR(pkt)->hop_limit != 1))) {
+	     (ip_hdr->hop_limit != 1))) {
 		struct net_icmp_hdr icmp_hdr;
 
 		ret = net_icmpv6_get_hdr(pkt, &icmp_hdr);
 		if (ret < 0 || icmp_hdr.code != 0) {
 			NET_DBG("Preliminary check failed %u/%u, code %u, "
 				"hop %u", total_len, pkt_len,
-				icmp_hdr.code, NET_IPV6_HDR(pkt)->hop_limit);
+				icmp_hdr.code, ip_hdr->hop_limit);
 			goto drop;
 		}
 	}

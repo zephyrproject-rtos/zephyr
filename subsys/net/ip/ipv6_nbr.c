@@ -1085,7 +1085,8 @@ static void ns_routing_info(struct net_pkt *pkt,
 	}
 }
 
-static enum net_verdict handle_ns_input(struct net_pkt *pkt)
+static enum net_verdict handle_ns_input(struct net_pkt *pkt,
+					struct net_ipv6_hdr *ip_hdr)
 {
 	u16_t total_len = net_pkt_get_len(pkt);
 	u8_t prev_opt_len = 0U;
@@ -1106,16 +1107,14 @@ static enum net_verdict handle_ns_input(struct net_pkt *pkt)
 	}
 
 	dbg_addr_recv_tgt("Neighbor Solicitation",
-			  &NET_IPV6_HDR(pkt)->src,
-			  &NET_IPV6_HDR(pkt)->dst,
-			  &ns_hdr.tgt);
+			  &ip_hdr->src, &ip_hdr->dst, &ns_hdr.tgt);
 
 	net_stats_update_ipv6_nd_recv(net_pkt_iface(pkt));
 
 	if ((total_len < (sizeof(struct net_ipv6_hdr) +
 			  sizeof(struct net_icmp_hdr) +
 			  sizeof(struct net_icmpv6_ns_hdr))) ||
-	    (NET_IPV6_HDR(pkt)->hop_limit != NET_IPV6_ND_HOP_LIMIT)) {
+	    (ip_hdr->hop_limit != NET_IPV6_ND_HOP_LIMIT)) {
 		if (net_ipv6_is_addr_mcast(&ns_hdr.tgt)) {
 			struct net_icmp_hdr icmp_hdr;
 
@@ -1127,8 +1126,7 @@ static enum net_verdict handle_ns_input(struct net_pkt *pkt)
 					(sizeof(struct net_ipv6_hdr) +
 					 sizeof(struct net_icmp_hdr) +
 					 sizeof(struct net_icmpv6_ns_hdr)),
-					icmp_hdr.code,
-					NET_IPV6_HDR(pkt)->hop_limit);
+					icmp_hdr.code, ip_hdr->hop_limit);
 				goto drop;
 			}
 		}
@@ -1148,8 +1146,7 @@ static enum net_verdict handle_ns_input(struct net_pkt *pkt)
 
 		switch (nd_opt_hdr.type) {
 		case NET_ICMPV6_ND_OPT_SLLAO:
-			if (net_ipv6_is_addr_unspecified(
-				    &NET_IPV6_HDR(pkt)->src)) {
+			if (net_ipv6_is_addr_unspecified(&ip_hdr->src)) {
 				goto drop;
 			}
 
@@ -1214,14 +1211,13 @@ static enum net_verdict handle_ns_input(struct net_pkt *pkt)
 				 * received.
 				 */
 				src = net_if_ipv6_select_src_addr(
-					net_pkt_iface(pkt),
-					&NET_IPV6_HDR(pkt)->src);
+					net_pkt_iface(pkt), &ip_hdr->src);
 				if (!src) {
 					NET_DBG("No interface address for "
 						"dst %s iface %p",
 						log_strdup(
 						  net_sprint_ipv6_addr(
-						     &NET_IPV6_HDR(pkt)->src)),
+							  &ip_hdr->src)),
 						net_pkt_iface(pkt));
 					goto drop;
 				}
@@ -1240,25 +1236,24 @@ static enum net_verdict handle_ns_input(struct net_pkt *pkt)
 		/* As we swap the addresses later, the source will correctly
 		 * have our address.
 		 */
-		src = &NET_IPV6_HDR(pkt)->src;
+		src = &ip_hdr->src;
 	}
 
 nexthop_found:
 
 #if !defined(CONFIG_NET_IPV6_DAD)
-	if (net_ipv6_is_addr_unspecified(&NET_IPV6_HDR(pkt)->src)) {
+	if (net_ipv6_is_addr_unspecified(&ip_hdr->src)) {
 		goto drop;
 	}
 
 #else /* CONFIG_NET_IPV6_DAD */
 
 	/* Do DAD */
-	if (net_ipv6_is_addr_unspecified(&NET_IPV6_HDR(pkt)->src)) {
+	if (net_ipv6_is_addr_unspecified(&ip_hdr->src)) {
 
-		if (!net_ipv6_is_addr_solicited_node(&NET_IPV6_HDR(pkt)->dst)) {
+		if (!net_ipv6_is_addr_solicited_node(&ip_hdr->dst)) {
 			NET_DBG("Not solicited node addr %s",
-				log_strdup(net_sprint_ipv6_addr(
-						   &NET_IPV6_HDR(pkt)->dst)));
+				log_strdup(net_sprint_ipv6_addr(&ip_hdr->dst)));
 			goto drop;
 		}
 
@@ -1274,27 +1269,25 @@ nexthop_found:
 		}
 
 		/* We reuse the received packet to send the NA */
-		net_ipv6_addr_create_ll_allnodes_mcast(&NET_IPV6_HDR(pkt)->dst);
-		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src,
+		net_ipv6_addr_create_ll_allnodes_mcast(&ip_hdr->dst);
+		net_ipaddr_copy(&ip_hdr->src,
 				net_if_ipv6_select_src_addr(net_pkt_iface(pkt),
-						&NET_IPV6_HDR(pkt)->dst));
+							    &ip_hdr->dst));
 		flags = NET_ICMPV6_NA_FLAG_OVERRIDE;
 		goto send_na;
 	}
 #endif /* CONFIG_NET_IPV6_DAD */
 
-	if (net_ipv6_is_my_addr(&NET_IPV6_HDR(pkt)->src)) {
+	if (net_ipv6_is_my_addr(&ip_hdr->src)) {
 		NET_DBG("Duplicate IPv6 %s address",
-			log_strdup(net_sprint_ipv6_addr(
-					   &NET_IPV6_HDR(pkt)->src)));
+			log_strdup(net_sprint_ipv6_addr(&ip_hdr->src)));
 		goto drop;
 	}
 
 	/* Address resolution */
-	if (net_ipv6_is_addr_solicited_node(&NET_IPV6_HDR(pkt)->dst)) {
-		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst,
-				&NET_IPV6_HDR(pkt)->src);
-		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src, &ns_hdr.tgt);
+	if (net_ipv6_is_addr_solicited_node(&ip_hdr->dst)) {
+		net_ipaddr_copy(&ip_hdr->dst, &ip_hdr->src);
+		net_ipaddr_copy(&ip_hdr->src, &ns_hdr.tgt);
 		flags = NET_ICMPV6_NA_FLAG_SOLICITED |
 			NET_ICMPV6_NA_FLAG_OVERRIDE;
 		goto send_na;
@@ -1307,18 +1300,16 @@ nexthop_found:
 
 	/* Neighbor Unreachability Detection (NUD) */
 	if (IS_ENABLED(CONFIG_NET_ROUTING)) {
-		ifaddr = net_if_ipv6_addr_lookup(&NET_IPV6_HDR(pkt)->dst,
-						 NULL);
+		ifaddr = net_if_ipv6_addr_lookup(&ip_hdr->dst, NULL);
 	} else {
 		ifaddr = net_if_ipv6_addr_lookup_by_iface(net_pkt_iface(pkt),
-						      &NET_IPV6_HDR(pkt)->dst);
+							  &ip_hdr->dst);
 	}
 
 	if (ifaddr) {
-		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst,
-				&NET_IPV6_HDR(pkt)->src);
-		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src, &ns_hdr.tgt);
-		src = &NET_IPV6_HDR(pkt)->src;
+		net_ipaddr_copy(&ip_hdr->dst, &ip_hdr->src);
+		net_ipaddr_copy(&ip_hdr->src, &ns_hdr.tgt);
+		src = &ip_hdr->src;
 		tgt = &ifaddr->address.in6_addr;
 		flags = NET_ICMPV6_NA_FLAG_SOLICITED |
 			NET_ICMPV6_NA_FLAG_OVERRIDE;
@@ -1329,11 +1320,8 @@ nexthop_found:
 	}
 
 send_na:
-	ret = net_ipv6_send_na(net_pkt_iface(pkt),
-			       src,
-			       &NET_IPV6_HDR(pkt)->dst,
-			       tgt,
-			       flags);
+	ret = net_ipv6_send_na(net_pkt_iface(pkt), src,
+			       &ip_hdr->dst, tgt, flags);
 	if (!ret) {
 		net_pkt_unref(pkt);
 		return NET_OK;
@@ -1685,7 +1673,8 @@ send_pending:
 	return true;
 }
 
-static enum net_verdict handle_na_input(struct net_pkt *pkt)
+static enum net_verdict handle_na_input(struct net_pkt *pkt,
+					struct net_ipv6_hdr *ip_hdr)
 {
 	u16_t total_len = net_pkt_get_len(pkt);
 	u16_t tllao_offset = 0U;
@@ -1703,9 +1692,7 @@ static enum net_verdict handle_na_input(struct net_pkt *pkt)
 	}
 
 	dbg_addr_recv_tgt("Neighbor Advertisement",
-			  &NET_IPV6_HDR(pkt)->src,
-			  &NET_IPV6_HDR(pkt)->dst,
-			  &na_hdr.tgt);
+			  &ip_hdr->src, &ip_hdr->dst, &na_hdr.tgt);
 
 	net_stats_update_ipv6_nd_recv(net_pkt_iface(pkt));
 
@@ -1713,10 +1700,10 @@ static enum net_verdict handle_na_input(struct net_pkt *pkt)
 			  sizeof(struct net_icmp_hdr) +
 			  sizeof(struct net_icmpv6_na_hdr) +
 			  sizeof(struct net_icmpv6_nd_opt_hdr))) ||
-	    (NET_IPV6_HDR(pkt)->hop_limit != NET_IPV6_ND_HOP_LIMIT) ||
+	    (ip_hdr->hop_limit != NET_IPV6_ND_HOP_LIMIT) ||
 	    net_ipv6_is_addr_mcast(&na_hdr.tgt) ||
 	    (net_is_solicited(pkt) &&
-	     net_ipv6_is_addr_mcast(&NET_IPV6_HDR(pkt)->dst))) {
+	     net_ipv6_is_addr_mcast(&ip_hdr->dst))) {
 		struct net_icmp_hdr icmp_hdr;
 
 		ret = net_icmpv6_get_hdr(pkt, &icmp_hdr);
@@ -2333,7 +2320,8 @@ static inline struct net_buf *handle_ra_6co(struct net_pkt *pkt,
 }
 #endif
 
-static enum net_verdict handle_ra_input(struct net_pkt *pkt)
+static enum net_verdict handle_ra_input(struct net_pkt *pkt,
+					struct net_ipv6_hdr *ip_hdr)
 {
 	u16_t total_len = net_pkt_get_len(pkt);
 	struct net_nbr *nbr = NULL;
@@ -2350,9 +2338,7 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt)
 	u32_t mtu;
 	int ret;
 
-	dbg_addr_recv("Router Advertisement",
-		      &NET_IPV6_HDR(pkt)->src,
-		      &NET_IPV6_HDR(pkt)->dst);
+	dbg_addr_recv("Router Advertisement", &ip_hdr->src, &ip_hdr->dst);
 
 	net_stats_update_ipv6_nd_recv(net_pkt_iface(pkt));
 
@@ -2360,8 +2346,8 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt)
 			  sizeof(struct net_icmp_hdr) +
 			  sizeof(struct net_icmpv6_ra_hdr) +
 			  sizeof(struct net_icmpv6_nd_opt_hdr))) ||
-	    (NET_IPV6_HDR(pkt)->hop_limit != NET_IPV6_ND_HOP_LIMIT) ||
-	    !net_ipv6_is_ll_addr(&NET_IPV6_HDR(pkt)->src)) {
+	    (ip_hdr->hop_limit != NET_IPV6_ND_HOP_LIMIT) ||
+	    !net_ipv6_is_ll_addr(&ip_hdr->src)) {
 		struct net_icmp_hdr icmp_hdr;
 
 		ret = net_icmpv6_get_hdr(pkt, &icmp_hdr);
@@ -2499,8 +2485,7 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt)
 		}
 	}
 
-	router = net_if_ipv6_router_lookup(net_pkt_iface(pkt),
-					   &NET_IPV6_HDR(pkt)->src);
+	router = net_if_ipv6_router_lookup(net_pkt_iface(pkt), &ip_hdr->src);
 	if (router) {
 		if (!router_lifetime) {
 			/* TODO: Start rs_timer on iface if no routers
@@ -2517,8 +2502,7 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt)
 		}
 	} else {
 		net_if_ipv6_router_add(net_pkt_iface(pkt),
-				       &NET_IPV6_HDR(pkt)->src,
-				       router_lifetime);
+				       &ip_hdr->src, router_lifetime);
 	}
 
 	if (nbr && net_ipv6_nbr_data(nbr)->pending) {

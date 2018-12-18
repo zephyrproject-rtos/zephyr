@@ -2741,7 +2741,8 @@ static const struct shell *shell_for_ping;
 
 #if defined(CONFIG_NET_IPV6)
 
-static enum net_verdict _handle_ipv6_echo_reply(struct net_pkt *pkt);
+static enum net_verdict _handle_ipv6_echo_reply(struct net_pkt *pkt,
+						struct net_ipv6_hdr *ip_hdr);
 
 static struct net_icmpv6_handler ping6_handler = {
 	.type = NET_ICMPV6_ECHO_REPLY,
@@ -2754,11 +2755,12 @@ static inline void _remove_ipv6_ping_handler(void)
 	net_icmpv6_unregister_handler(&ping6_handler);
 }
 
-static enum net_verdict _handle_ipv6_echo_reply(struct net_pkt *pkt)
+static enum net_verdict _handle_ipv6_echo_reply(struct net_pkt *pkt,
+						struct net_ipv6_hdr *ip_hdr)
 {
 	PR_SHELL(shell_for_ping, "Received echo reply from %s to %s\n",
-		 net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src),
-		 net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->dst));
+		 net_sprint_ipv6_addr(&ip_hdr->src),
+		 net_sprint_ipv6_addr(&ip_hdr->dst));
 	k_sem_give(&ping_timeout);
 	_remove_ipv6_ping_handler();
 
