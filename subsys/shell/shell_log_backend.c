@@ -26,12 +26,12 @@ void shell_log_backend_enable(const struct shell_log_backend *backend,
 
 static struct log_msg *msg_from_fifo(const struct shell_log_backend *backend)
 {
-	struct log_msg *msg;
+	struct shell_log_backend_msg msg;
 	int err;
 
 	err = k_msgq_get(backend->msgq, &msg, K_NO_WAIT);
 
-	return (err == 0) ? msg : NULL;
+	return (err == 0) ? msg.msg : NULL;
 }
 
 static void fifo_flush(const struct shell_log_backend *backend)
@@ -44,12 +44,40 @@ static void fifo_flush(const struct shell_log_backend *backend)
 	}
 }
 
+static void flush_expired_messages(const struct shell *shell)
+{
+	int err;
+	struct shell_log_backend_msg msg;
+	struct k_msgq *msgq = shell->log_backend->msgq;
+	u32_t timeout = shell->log_backend->timeout;
+	u32_t now = k_uptime_get_32();
+
+	while (1) {
+		err = k_msgq_peek(msgq, &msg);
+
+		if (err == 0 && ((now - msg.timestamp) > timeout)) {
+			(void)k_msgq_get(msgq, &msg, K_NO_WAIT);
+			log_msg_put(msg.msg);
+
+			if (IS_ENABLED(CONFIG_SHELL_STATS)) {
+				shell->stats->log_lost_cnt++;
+			}
+		} else {
+			break;
+		}
+	}
+}
+
 static void msg_to_fifo(const struct shell *shell,
 			struct log_msg *msg)
 {
 	int err;
+	struct shell_log_backend_msg t_msg = {
+		.msg = msg,
+		.timestamp = k_uptime_get_32()
+	};
 
-	err = k_msgq_put(shell->log_backend->msgq, &msg,
+	err = k_msgq_put(shell->log_backend->msgq, &t_msg,
 			 shell->log_backend->timeout);
 
 	switch (err) {
@@ -58,18 +86,7 @@ static void msg_to_fifo(const struct shell *shell,
 	case -EAGAIN:
 	case -ENOMSG:
 	{
-		struct log_msg *old_msg;
-
-		/* drop one message */
-		old_msg = msg_from_fifo(shell->log_backend);
-
-		if (old_msg) {
-			log_msg_put(old_msg);
-
-			if (IS_ENABLED(CONFIG_SHELL_STATS)) {
-				shell->stats->log_lost_cnt++;
-			}
-		}
+		flush_expired_messages(shell);
 
 		err = k_msgq_put(shell->log_backend->msgq, &msg, K_NO_WAIT);
 		if (err) {
