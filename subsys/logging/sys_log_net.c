@@ -169,7 +169,7 @@ void syslog_net_hook_install(void)
 	}
 
 #if CONFIG_NET_HOSTNAME_ENABLE
-	memcpy(hostname, net_hostname_get(), MAX_HOSTNAME_LEN);
+	(void)memcpy(hostname, net_hostname_get(), MAX_HOSTNAME_LEN);
 #else /* CONFIG_NET_HOSTNAME_ENABLE */
 	if (server_addr.sa_family == AF_INET6) {
 #if defined(CONFIG_NET_IPV6)

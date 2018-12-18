@@ -105,7 +105,7 @@ static int log_backend_rtt_write_drop(void)
 	if (drop_cnt > 0 && !drop_warn) {
 		memmove(line_buf + DROP_MSG_LEN, line_buf,
 			line_pos - line_buf);
-		memcpy(line_buf, drop_msg, DROP_MSG_LEN);
+		(void)memcpy(line_buf, drop_msg, DROP_MSG_LEN);
 		line_pos += DROP_MSG_LEN;
 		drop_warn = 1;
 	}

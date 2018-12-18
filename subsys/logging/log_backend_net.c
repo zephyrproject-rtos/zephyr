@@ -126,7 +126,7 @@ static int do_net_init(void)
 	}
 
 	if (IS_ENABLED(CONFIG_NET_HOSTNAME_ENABLE)) {
-		memcpy(hostname, net_hostname_get(), MAX_HOSTNAME_LEN);
+		(void)memcpy(hostname, net_hostname_get(), MAX_HOSTNAME_LEN);
 
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
 		   server_addr.sa_family == AF_INET6) {
