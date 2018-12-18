@@ -31,7 +31,6 @@ if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
     )
 endif()
 
-zephyr_cc_option_ifdef (CONFIG_LTO         -flto)
 zephyr_cc_option_ifndef(CONFIG_SSE_FP_MATH -mno-sse)
 
 if(CMAKE_VERBOSE_MAKEFILE)
