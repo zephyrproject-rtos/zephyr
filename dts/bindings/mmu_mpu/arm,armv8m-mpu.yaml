@@ -1,0 +1,28 @@
+---
+title: ARMv8-M Memory Protection Unit
+version: 0.1
+
+description: >
+    This binding describes the ARMv8-M Memory Protection Unit (MPU).
+
+properties:
+    compatible:
+      category: required
+      type: string
+      description: compatible strings
+      constraint: "arm,armv8m-mpu"
+      generation: define
+
+    reg:
+      category: required
+      type: int
+      description: mmio register space
+      generation: define
+
+    arm,num-mpu-regions:
+      category: required
+      type: int
+      description: number of MPU regions supported by hardware
+      generation: define
+
+...
