@@ -1,5 +1,3 @@
-zephyr_cc_option_ifdef(CONFIG_LTO -flto)
-
 set(ARCH_FOR_cortex-m0        armv6s-m        )
 set(ARCH_FOR_cortex-m0plus    armv6s-m        )
 set(ARCH_FOR_cortex-m3        armv7-m         )
