@@ -11,3 +11,4 @@ supported:
   - usb_device
   - ble
   - ieee802154
+  - counter
