@@ -93,7 +93,7 @@ static void setup_rtc(void)
 	cfg.alarm_enable = 0;
 	cfg.alarm_val = 0;
 	cfg.cb_fn = NULL;
-	rtc_dev = device_get_binding(CONFIG_RTC_0_NAME);
+	rtc_dev = device_get_binding(DT_RTC_0_NAME);
 	rtc_enable(rtc_dev);
 	rtc_set_config(rtc_dev, &cfg);
 }
