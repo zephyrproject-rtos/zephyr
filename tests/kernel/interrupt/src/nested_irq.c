@@ -5,6 +5,21 @@ struct k_timer timer;
 
 #define ISR0_OFFSET 1
 #define ISR1_OFFSET 2
+
+/* Keeping isr0 to be lowest priority than system timer
+ * so that it can be interrupted by timer triggered.
+ * In NRF5, RTC system timer is of priority 1 and
+ * in all other architectures, system timer is considered
+ * to be in priority 0.
+ */
+#if defined(CONFIG_ARM)
+	#define ISR0_PRIO 2
+	#define ISR1_PRIO 1
+#else
+	#define ISR0_PRIO 1
+	#define ISR1_PRIO 0
+#endif
+
 #define MS_TO_US(ms)  (K_MSEC(ms) * USEC_PER_MSEC)
 volatile u32_t new_val;
 u32_t old_val = 0xDEAD;
@@ -51,18 +66,13 @@ void isr0(void *param)
  * Interrupt nesting feature allows an ISR to be preempted in mid-execution
  * if a higher priority interrupt is signaled. The lower priority ISR resumes
  * execution once the higher priority ISR has completed its processing.
+ * The expected control flow should be isr0 -> handler -> isr1 -> isr0
  */
 #ifndef NO_TRIGGER_FROM_SW
 void test_nested_isr(void)
 {
-	/* Keeping isr0 to be lowest priority than system timer
-	 * so that it can be interrupted by timer triggered.
-	 * In NRF5, RTC system timer is of priority 1 and
-	 * in all other architectures, system timer is considered
-	 * to be in priority 0.
-	 */
-	IRQ_CONNECT(IRQ_LINE(ISR0_OFFSET), 2, isr0, NULL, 0);
-	IRQ_CONNECT(IRQ_LINE(ISR1_OFFSET), 1, isr1, NULL, 0);
+	IRQ_CONNECT(IRQ_LINE(ISR0_OFFSET), ISR0_PRIO, isr0, NULL, 0);
+	IRQ_CONNECT(IRQ_LINE(ISR1_OFFSET), ISR1_PRIO, isr1, NULL, 0);
 
 	k_timer_init(&timer, handler, NULL);
 	k_timer_start(&timer, DURATION, 0);
