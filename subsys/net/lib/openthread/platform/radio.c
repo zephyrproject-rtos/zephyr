@@ -28,11 +28,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/net_pkt.h>
 #include <misc/__assert.h>
 
+#include <openthread-system.h>
+#include <openthread/instance.h>
 #include <openthread/platform/radio.h>
 #include <openthread/platform/diag.h>
-#include <platform.h>
-
-#include <openthread/types.h>
 
 #include "platform-zephyr.h"
 
@@ -98,7 +97,7 @@ void platformRadioProcess(otInstance *aInstance)
 		radio_api->set_channel(radio_dev, sTransmitFrame.mChannel);
 		radio_api->set_txpower(radio_dev, tx_power);
 
-		if (sTransmitFrame.mIsCcaEnabled) {
+		if (sTransmitFrame.mInfo.mTxInfo.mCsmaCaEnabled) {
 			if (radio_api->cca(radio_dev) ||
 			    radio_api->tx(radio_dev, tx_pkt, tx_payload)) {
 				result = OT_ERROR_CHANNEL_ACCESS_FAILURE;
@@ -129,8 +128,8 @@ void platformRadioProcess(otInstance *aInstance)
 
 				ackPsdu[2] = sTransmitFrame.mPsdu[2];
 				ackFrame.mPsdu = ackPsdu;
-				ackFrame.mLqi = 80;
-				ackFrame.mRssi = -40;
+				ackFrame.mInfo.mRxInfo.mLqi = 80;
+				ackFrame.mInfo.mRxInfo.mRssi = -40;
 				ackFrame.mLength = 5;
 
 				otPlatRadioTxDone(aInstance, &sTransmitFrame,
@@ -243,7 +242,7 @@ otError otPlatRadioTransmit(otInstance *aInstance, otRadioFrame *aPacket)
 	if (sState == OT_RADIO_STATE_RECEIVE) {
 		error = OT_ERROR_NONE;
 		sState = OT_RADIO_STATE_TRANSMIT;
-		PlatformEventSignalPending();
+		otSysEventSignalPending();
 	}
 
 	return error;

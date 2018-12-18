@@ -9,8 +9,9 @@
 #include <misc/printk.h>
 #include <shell/shell.h>
 #include <shell/shell_uart.h>
+
 #include <openthread/cli.h>
-#include <platform.h>
+#include <openthread/instance.h>
 
 #include "platform-zephyr.h"
 

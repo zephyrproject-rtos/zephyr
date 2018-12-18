@@ -15,7 +15,7 @@
 
 #include <stdint.h>
 
-#include <openthread/openthread.h>
+#include <openthread/instance.h>
 
 /**
  * This function initializes the alarm service used by OpenThread.

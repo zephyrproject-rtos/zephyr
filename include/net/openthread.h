@@ -11,7 +11,7 @@
 
 #include <net/net_if.h>
 
-#include <openthread/openthread.h>
+#include <openthread/instance.h>
 
 #ifdef __cplusplus
 extern "C" {
