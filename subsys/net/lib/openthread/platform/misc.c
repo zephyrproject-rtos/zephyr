@@ -6,7 +6,7 @@
 
 #include <kernel.h>
 #include <misc/reboot.h>
-#include <openthread/types.h>
+#include <openthread/instance.h>
 #include <openthread/platform/misc.h>
 
 #include "platform-zephyr.h"
