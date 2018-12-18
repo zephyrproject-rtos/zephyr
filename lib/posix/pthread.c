@@ -283,7 +283,7 @@ int pthread_attr_init(pthread_attr_t *attr)
 		return ENOMEM;
 	}
 
-	memcpy(attr, &init_pthread_attrs, sizeof(pthread_attr_t));
+	(void)memcpy(attr, &init_pthread_attrs, sizeof(pthread_attr_t));
 
 	return 0;
 }
