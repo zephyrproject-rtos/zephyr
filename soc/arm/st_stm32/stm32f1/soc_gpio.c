@@ -29,7 +29,7 @@ int stm32_gpio_flags_to_conf(int flags, int *pincfg)
 {
 	int direction = flags & GPIO_DIR_MASK;
 
-	if (!pincfg) {
+	if (pincfg == NULL) {
 		return -EINVAL;
 	}
 
@@ -140,7 +140,7 @@ int stm32_gpio_set(u32_t *base, int pin, int value)
 
 	int pval = 1 << (pin & 0xf);
 
-	if (value) {
+	if (value != 0) {
 		gpio->odr |= pval;
 	} else {
 		gpio->odr &= ~pval;
