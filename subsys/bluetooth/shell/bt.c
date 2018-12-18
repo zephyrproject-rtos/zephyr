@@ -1333,7 +1333,7 @@ SHELL_CREATE_STATIC_SUBCMD_SET(bt_cmds) {
 		      cmd_scan, 3, 0),
 	SHELL_CMD_ARG(advertise, NULL,
 		      "<type: off, on, scan, nconn> <mode: discov, non_discov>",
-		      cmd_advertise, 3, 0),
+		      cmd_advertise, 2, 1),
 #if defined(CONFIG_BT_CONN)
 	SHELL_CMD_ARG(connect, NULL, HELP_ADDR_LE, cmd_connect_le, 3, 0),
 	SHELL_CMD_ARG(disconnect, NULL, HELP_NONE, cmd_disconnect, 1, 0),
