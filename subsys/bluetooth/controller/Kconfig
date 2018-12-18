@@ -29,7 +29,23 @@ config BT_LL_SW
 	help
 	  Use Zephyr software BLE Link Layer implementation.
 
+config BT_LL_SW_SPLIT
+	bool "Software-based BLE Link Layer (ULL/LLL split)"
+	select BT_RECV_IS_RX_THREAD
+	select ENTROPY_GENERATOR
+	help
+	  Use Zephyr software BLE Link Layer ULL LLL split implementation.
+
 endchoice
+
+config BT_LLL_VENDOR_NORDIC
+	bool "Use Nordic LLL"
+	depends on BT_LL_SW_SPLIT && SOC_COMPATIBLE_NRF
+	select ENTROPY_NRF5_RNG
+	select ENTROPY_NRF5_BIAS_CORRECTION
+	default y
+	help
+	  Use Nordic Lower Link Layer implementation.
 
 comment "BLE Controller configuration"
 
@@ -321,6 +337,14 @@ config BT_CTLR_ADV_EXT
 	  Enable support for Bluetooth 5.0 LE Advertising Extensions in the
 	  Controller.
 
+config BT_ADV_SET
+	prompt "LE Advertising Extensions Sets"
+	depends on BT_CTLR_ADV_EXT
+	int
+	default 1
+	help
+	  Maximum supported advertising sets.
+
 config BT_CTLR_DTM
 	bool
 	help
@@ -450,6 +474,57 @@ config BT_CTLR_SCHED_ADVANCED
 
 	  Disabling this feature will lead to overlapping role in timespace
 	  leading to skipped events amongst active roles.
+
+if BT_LL_SW_SPLIT
+config BT_CTLR_LLL_PRIO
+	prompt "Lower Link Layer (Radio) IRQ priority"
+	int
+	range 0 3 if SOC_SERIES_NRF51X
+	range 0 6 if SOC_SERIES_NRF52X
+	default 0
+	help
+	  The interrupt priority for event preparation and radio IRQ.
+
+config BT_CTLR_ULL_HIGH_PRIO
+	prompt "Upper Link Layer High IRQ priority"
+	int
+	range BT_CTLR_LLL_PRIO 3 if SOC_SERIES_NRF51X
+	range BT_CTLR_LLL_PRIO 6 if SOC_SERIES_NRF52X
+	default 0
+	help
+	  The interrupt priority for Ticker's Worker IRQ and Upper Link Layer
+	  higher priority functions.
+
+config BT_CTLR_ULL_LOW_PRIO
+	prompt "Upper Link Layer Low IRQ priority"
+	int
+	range BT_CTLR_ULL_HIGH_PRIO 3 if SOC_SERIES_NRF51X
+	range BT_CTLR_ULL_HIGH_PRIO 6 if SOC_SERIES_NRF52X
+	default 0
+	help
+	  The interrupt priority for Ticker's Job IRQ and Upper Link Layer
+	  lower priority functions.
+
+config BT_CTLR_LOWEST_PRIO
+	prompt "Link Layer Lowest IRQ priority"
+	int
+	range BT_CTLR_ULL_LOW_PRIO 3 if SOC_SERIES_NRF51X
+	range BT_CTLR_ULL_LOW_PRIO 6 if SOC_SERIES_NRF52X
+	default 0
+	help
+	  The interrupt priority for RNG and other non-critical functions.
+
+config BT_CTLR_LOW_LAT
+	prompt "Low latency non-negotiating event pre-emption"
+	bool
+	default y if SOC_SERIES_NRF51X
+	help
+	  Use low latency non-negotiating event pre-emption. This reduces
+	  Radio ISR latencies by the controller event scheduling framework.
+	  Consequently, this reduces on-air radio utilization due to redundant
+	  radio state switches.
+
+endif # BT_LL_SW_SPLIT
 
 config BT_CTLR_RADIO_ENABLE_FAST
 	bool "Use tTXEN/RXEN,FAST ramp-up"
@@ -611,6 +686,39 @@ config BT_CTLR_PA_LNA_GPIOTE_CHAN
 	default 0
 	help
 	  Select the nRF5 GPIOTE channel to use for PA/LNA GPIO feature.
+
+if BT_LL_SW_SPLIT
+config BT_TMP
+	prompt "Temporary Role"
+	depends on BT_SHELL
+	bool
+	default y
+	help
+	  Temporary role to manual test ULL/LLL split architecture.
+
+if BT_TMP
+config BT_TMP_MAX
+	prompt "Temporary Role Max. Instances"
+	int
+	default 3
+	help
+	  Maximum supported Temporary role instances.
+
+config BT_TMP_TX_SIZE_MAX
+	prompt "Temporary Role Max. Tx buffer size"
+	int
+	default 10
+	help
+	  Temporary role's maximum transmit buffer size in bytes.
+
+config BT_TMP_TX_COUNT_MAX
+	prompt "Temporary Role Max. Tx buffers"
+	int
+	default 1
+	help
+	  Temporary role's maximum transmit buffer count.
+endif # BT_TMP
+endif # BT_LL_SW_SPLIT
 
 comment "BLE Controller debug configuration"
 
