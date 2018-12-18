@@ -1,0 +1,5 @@
+tests:
+  peripheral.uart_async_api:
+    tags: drivers
+    filter: CONFIG_UART_CONSOLE
+    harness: keyboard
