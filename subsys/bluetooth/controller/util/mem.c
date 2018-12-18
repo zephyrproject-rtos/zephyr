@@ -17,8 +17,8 @@ void mem_init(void *mem_pool, u16_t mem_size, u16_t mem_count,
 {
 	*mem_head = mem_pool;
 
-	/* Store free mem_count after the list's next pointer at an aligned
-	 * memory location to ensure atomic read/write (in ARM for now).
+	/* Store free mem_count after the list's next pointer at an 32-bit
+	 * aligned memory location to ensure atomic read/write (in ARM for now).
 	 */
 	*((u16_t *)MROUND((u8_t *)mem_pool + sizeof(mem_pool))) = mem_count;
 
@@ -107,6 +107,10 @@ u16_t mem_index_get(void *mem, void *mem_pool, u16_t mem_size)
 	return ((u16_t)((u8_t *)mem - (u8_t *)mem_pool) / mem_size);
 }
 
+/**
+ * @brief  Copy bytes in reverse
+ * @details Example: [ 0x11 0x22 0x33 ] -> [ 0x33 0x22 0x11 ]
+ */
 void mem_rcopy(u8_t *dst, u8_t const *src, u16_t len)
 {
 	src += len;
@@ -115,6 +119,10 @@ void mem_rcopy(u8_t *dst, u8_t const *src, u16_t len)
 	}
 }
 
+/**
+ * @brief Determine if src[0..len-1] contains one or more non-zero bytes
+ * @return 0 if all bytes are zero; otherwise 1
+ */
 u8_t mem_nz(u8_t *src, u16_t len)
 {
 	while (len--) {
@@ -126,6 +134,9 @@ u8_t mem_nz(u8_t *src, u16_t len)
 	return 0;
 }
 
+/**
+ * @brief Unit test
+ */
 u32_t mem_ut(void)
 {
 #define BLOCK_SIZE  MROUND(10)
