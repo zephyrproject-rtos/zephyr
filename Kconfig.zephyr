@@ -110,6 +110,26 @@ config FLASH_LOAD_SIZE
 	  If unsure, leave at the default value 0.
 endif
 
+config MULTI_IMAGE_SHARED_SRAM
+	bool "Share RAM between images"
+	depends on ARM
+	help
+	  This option allows for sharing a memory region between multiple images
+	  in such a way that data can be shared between multiple kernels/bare-metal
+	  applications, bootloader and kernel etc. This is useful for storing
+	  information which are not cleared or overwritten by the zephyr kernel when
+	  doing a jump from a bootloader to kernel + application.
+
+if MULTI_IMAGE_SHARED_SRAM
+
+config SHARED_SRAM_SIZE
+	int "Shared RAM"
+	default 8
+	help
+	  This option specifies the amount of SRAM (measure in kB) reserved for
+	  for a shared memory section between multiple images.
+endif
+
 config TEXT_SECTION_OFFSET
 	hex "TEXT section offset"
 	default 0x200 if BOOTLOADER_MCUBOOT
