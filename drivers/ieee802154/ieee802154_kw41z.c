@@ -87,8 +87,8 @@ int kw41_dbg_idx;
 #define RADIO_0_IRQ_PRIO		0x0
 #define KW41Z_FCS_LENGTH		2
 #define KW41Z_PSDU_LENGTH		125
-#define KW41Z_OUTPUT_POWER_MAX		2
-#define KW41Z_OUTPUT_POWER_MIN		(-19)
+#define KW41Z_OUTPUT_POWER_MAX		4
+#define KW41Z_OUTPUT_POWER_MIN		(-31)
 
 #define IEEE802154_ACK_LENGTH		5
 
@@ -122,16 +122,28 @@ enum {
 };
 
 /* Lookup table for PA_PWR register */
-static const u8_t pa_pwr_lt[22] = {
-	2, 2, 2, 2, 2, 2,	/* -19:-14 dBm */
-	4, 4, 4,		/* -13:-11 dBm */
-	6, 6, 6,		/* -10:-8 dBm */
-	8, 8,			/* -7:-6 dBm */
-	10, 10,			/* -5:-4 dBm */
-	12,			/* -3 dBm */
-	14, 14,			/* -2:-1 dBm */
-	18, 18,			/* 0:1 dBm */
-	24			/* 2 dBm */
+static const u8_t pa_pwr_lt[] = {
+	1,                   /* -31.1 dBm: -31 */
+	2, 2, 2, 2, 2, 2, 2, /* -25.0 dBm: -30, -29, -28, -27, -26, -25 */
+	4, 4, 4, 4, 4,       /* -19.0 dBm: -24, -23, -22, -21, -20, -19 */
+	6, 6, 6,             /* -15.6 dBm: -18, -17, -16 */
+	8, 8,                /* -13.1 dBm: -15, -14 */
+	10, 10,              /* -11.2 dBm: -13, -12 */
+	12, 12,              /* - 9.6 dBm: -11, -10 */
+	14,                  /* - 8.3 dBm: -9 */
+	16,                  /* - 7.2 dBm: -8 */
+	18,                  /* - 6.2 dBm: -7 */
+	20,                  /* - 5.3 dBm: -6 */
+	22,                  /* - 4.5 dBm: -5 */
+	24,                  /* - 3.8 dBm: -4 */
+	28,                  /* - 2.5 dBm: -3 */
+	30,                  /* - 1.9 dBm: -2 */
+	34,                  /* - 1.0 dBm: -1 */
+	40,                  /* + 0.3 dBm:  0 */
+	44,                  /* + 1.1 dBm: +1 */
+	50,                  /* + 2.1 dBm: +2 */
+	58,                  /* + 3.1 dBm: +3 */
+	62                   /* + 3.5 dBm: +4 */
 };
 
 struct kw41z_context {
@@ -433,12 +445,20 @@ static int kw41z_filter(struct device *dev,
 static int kw41z_set_txpower(struct device *dev, s16_t dbm)
 {
 	if (dbm < KW41Z_OUTPUT_POWER_MIN) {
-		ZLL->PA_PWR = 0;
+		LOG_INF("TX-power %d dBm below min of %d dBm, using %d dBm",
+			    dbm,
+			    KW41Z_OUTPUT_POWER_MIN,
+			    KW41Z_OUTPUT_POWER_MIN);
+		dbm = KW41Z_OUTPUT_POWER_MIN;
 	} else if (dbm > KW41Z_OUTPUT_POWER_MAX) {
-		ZLL->PA_PWR = 30;
-	} else {
-		ZLL->PA_PWR = pa_pwr_lt[dbm - KW41Z_OUTPUT_POWER_MIN];
+		LOG_INF("TX-power %d dBm above max of %d dBm, using %d dBm",
+			    dbm,
+			    KW41Z_OUTPUT_POWER_MAX,
+			    KW41Z_OUTPUT_POWER_MAX);
+		dbm = KW41Z_OUTPUT_POWER_MAX;
 	}
+
+	ZLL->PA_PWR = pa_pwr_lt[dbm - KW41Z_OUTPUT_POWER_MIN];
 
 	return 0;
 }
