@@ -111,9 +111,7 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 	switch (NET_IPV6_HDR(pkt)->vtc & 0xf0) {
 #if defined(CONFIG_NET_IPV6)
 	case 0x60:
-		net_stats_update_ipv6_recv(net_pkt_iface(pkt));
-		net_pkt_set_family(pkt, PF_INET6);
-		return net_ipv6_process_pkt(pkt, is_loopback);
+		return net_ipv6_input(pkt, is_loopback);
 #endif
 #if defined(CONFIG_NET_IPV4)
 	case 0x40:
