@@ -28,7 +28,7 @@ int stm32_gpio_flags_to_conf(int flags, int *pincfg)
 	int direction = flags & GPIO_DIR_MASK;
 	int pud = flags & GPIO_PUD_MASK;
 
-	if (!pincfg) {
+	if (pincfg == NULL) {
 		return -EINVAL;
 	}
 
@@ -88,7 +88,7 @@ int stm32_gpio_set(u32_t *base, int pin, int value)
 {
 	struct stm32f4x_gpio *gpio = (struct stm32f4x_gpio *)base;
 
-	if (value) {
+	if (value != 0) {
 		/* atomic set */
 		gpio->bsr = (1 << (pin & 0x0f));
 	} else {
