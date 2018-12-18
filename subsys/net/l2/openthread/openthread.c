@@ -17,9 +17,7 @@ LOG_MODULE_REGISTER(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #include <init.h>
 #include <misc/util.h>
 #include <misc/__assert.h>
-#include <openthread/openthread.h>
 #include <openthread/cli.h>
-#include <platform.h>
 #include <platform-zephyr.h>
 
 #include "openthread_utils.h"
@@ -206,8 +204,8 @@ static enum net_verdict openthread_recv(struct net_if *iface,
 	/* Length inc. CRC. */
 	recv_frame.mLength = net_buf_frags_len(pkt->frags);
 	recv_frame.mChannel = platformRadioChannelGet(ot_context->instance);
-	recv_frame.mLqi = net_pkt_ieee802154_lqi(pkt);
-	recv_frame.mRssi = net_pkt_ieee802154_rssi(pkt);
+	recv_frame.mInfo.mRxInfo.mLqi = net_pkt_ieee802154_lqi(pkt);
+	recv_frame.mInfo.mRxInfo.mRssi = net_pkt_ieee802154_rssi(pkt);
 
 #if defined(CONFIG_OPENTHREAD_L2_DEBUG_DUMP_15_4)
 	net_hexdump_frags("Received 802.15.4 frame", pkt, true);
@@ -238,7 +236,7 @@ int openthread_send(struct net_if *iface, struct net_pkt *pkt)
 
 	NET_DBG("Sending Ip6 packet to ot stack");
 
-	message = otIp6NewMessage(ot_context->instance, true);
+	message = otIp6NewMessage(ot_context->instance, NULL);
 	if (message == NULL) {
 		goto exit;
 	}
@@ -281,9 +279,10 @@ enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface,
 static int openthread_init(struct net_if *iface)
 {
 	struct openthread_context *ot_context = net_if_l2_data(iface);
-	u8_t xpanid[8];
+	otExtendedPanId xpanid;
 
-	net_bytes_from_str(xpanid, 8, (char *)CONFIG_OPENTHREAD_XPANID);
+	net_bytes_from_str((u8_t *)&xpanid, 8,
+			   (char *)CONFIG_OPENTHREAD_XPANID);
 
 	NET_DBG("openthread_init");
 
@@ -307,7 +306,7 @@ static int openthread_init(struct net_if *iface)
 
 	otLinkSetChannel(ot_context->instance, CONFIG_OPENTHREAD_CHANNEL);
 	otLinkSetPanId(ot_context->instance, CONFIG_OPENTHREAD_PANID);
-	otThreadSetExtendedPanId(ot_context->instance, xpanid);
+	otThreadSetExtendedPanId(ot_context->instance, &xpanid);
 	otIp6SetEnabled(ot_context->instance, true);
 	otThreadSetEnabled(ot_context->instance, true);
 	otIp6SetReceiveFilterEnabled(ot_context->instance, true);

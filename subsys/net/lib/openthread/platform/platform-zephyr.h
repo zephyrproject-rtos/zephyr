@@ -15,7 +15,9 @@
 
 #include <stdint.h>
 
-#include <openthread/openthread.h>
+#include <openthread/instance.h>
+#include <openthread/tasklet.h>
+#include <openthread/thread.h>
 
 /**
  * This function initializes the alarm service used by OpenThread.
@@ -66,5 +68,9 @@ void platformRandomInit(void);
  *  Initialize platform Shell driver.
  */
 void platformShellInit(otInstance *aInstance);
+
+void PlatformProcessDrivers(otInstance *aInstance);
+void PlatformInit(int argc, char *argv[]);
+void PlatformEventSignalPending(void);
 
 #endif  /* PLATFORM_POSIX_H_ */

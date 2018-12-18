@@ -15,7 +15,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <inttypes.h>
 
 #include <openthread/platform/alarm-milli.h>
-#include <platform.h>
 
 #include <stdio.h>
 

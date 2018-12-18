@@ -11,8 +11,6 @@ LOG_MODULE_DECLARE(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #include <net/net_pkt.h>
 #include <net/openthread.h>
 
-#include <openthread/openthread.h>
-
 #include "openthread_utils.h"
 
 int pkt_list_add(struct openthread_context *context, struct net_pkt *pkt)

@@ -23,7 +23,7 @@ if(NOT EXTERNAL_PROJECT_PATH_OPENTHREAD)
   # TODO: Point to a Zephyr fork
   # Nov. 7
   set_ifndef(ot_GIT_REPOSITORY "https://github.com/openthread/openthread.git")
-  set_ifndef(ot_GIT_TAG db4759cc41257d0572ddedbeead1e02c52033620)
+  set_ifndef(ot_GIT_TAG ff0b30db5551bc6b87d10752363bdb1707ff72c8)
   set_ifndef(ot_GIT_PROGRESS 1)
 
   list(APPEND cmd
@@ -128,6 +128,7 @@ set(ZEPHYR_MBEDTLS_CPPFLAGS "${ZEPHYR_MBEDTLS_CPPFLAGS} ")
 set(ZEPHYR_MBEDTLS_CPPFLAGS "-DMBEDTLS_CONFIG_FILE='\"mbedtls-config.h\"'")
 set(ZEPHYR_MBEDTLS_CPPFLAGS "${ZEPHYR_MBEDTLS_CPPFLAGS} -DMBEDTLS_USER_CONFIG_FILE='\"${CMAKE_CURRENT_SOURCE_DIR}/zephyr-mbedtls-config.h\"'")
 set(ZEPHYR_MBEDTLS_CPPFLAGS "${ZEPHYR_MBEDTLS_CPPFLAGS} -I${ot_SOURCE_DIR}/third_party/mbedtls")
+set(ZEPHYR_MBEDTLS_CPPFLAGS "${ZEPHYR_MBEDTLS_CPPFLAGS} -I${ot_SOURCE_DIR}/third_party/mbedtls/repo/include")
 set(ZEPHYR_MBEDTLS_CPPFLAGS "${ZEPHYR_MBEDTLS_CPPFLAGS} -I${ot_SOURCE_DIR}/third_party/mbedtls/repo.patched/include")
 set(ZEPHYR_MBEDTLS_CPPFLAGS "${ZEPHYR_MBEDTLS_CPPFLAGS} -I${ot_SOURCE_DIR}/third_party/mbedtls/repo.patched/include/mbedtls")
 
@@ -155,13 +156,25 @@ endif()
 
 if(CONFIG_OPENTHREAD_SHELL)
   list(APPEND configure_flags
-    --enable-cli-app=all
+    --enable-cli
     )
 endif()
 
 if(CONFIG_OPENTHREAD_DIAG)
   list(APPEND configure_flags
     --enable-diag
+    )
+endif()
+
+if(CONFIG_OPENTHREAD_FTD)
+  list(APPEND configure_flags
+    --enable-ftd
+    )
+endif()
+
+if(CONFIG_OPENTHREAD_MTD)
+  list(APPEND configure_flags
+    --enable-mtd
     )
 endif()
 

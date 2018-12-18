@@ -11,7 +11,7 @@
  */
 
 #include <kernel.h>
-#include <openthread/openthread.h>
+#include <openthread/instance.h>
 #include <openthread/tasklet.h>
 
 #include "platform-zephyr.h"
