@@ -1,3 +1,14 @@
+# *DOCUMENTATION*
+#
+# Note that this is *NOT* the top-level CMakeLists.txt. That's in the
+# application. See the Application Development Primer documentation
+# for details.
+#
+# To see a list of typical targets execute "make usage"
+# More info can be located in ./README.rst
+# Comments in this file are targeted only to the developer, do not
+# expect to learn how to build the kernel reading this file.
+
 if(NOT DEFINED ZEPHYR_BINARY_DIR)
   message(FATAL_ERROR "A user error has occured.
 cmake was invoked with '${CMAKE_CURRENT_LIST_DIR}' specified as the source directory,
@@ -10,17 +21,6 @@ endif()
 
 project(Zephyr-Kernel VERSION ${PROJECT_VERSION})
 enable_language(C CXX ASM)
-
-# *DOCUMENTATION*
-#
-# Note that this is *NOT* the top-level CMakeLists.txt. That's in the
-# application. See the Application Development Primer documentation
-# for details.
-#
-# To see a list of typical targets execute "make usage"
-# More info can be located in ./README.rst
-# Comments in this file are targeted only to the developer, do not
-# expect to learn how to build the kernel reading this file.
 
 # Verify that the toolchain can compile a dummy file, if it is not we
 # won't be able to test for compatiblity with certain C flags.
