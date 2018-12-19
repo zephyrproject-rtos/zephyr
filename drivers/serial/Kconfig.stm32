@@ -111,7 +111,7 @@ if SOC_SERIES_STM32L0X || SOC_SERIES_STM32L4X
 
 # --- low power port 1 ---
 
-config UART_LPUART_1
+config LPUART_1
 	bool "Enable STM32 LPUART1 Port"
 	depends on UART_STM32
 	help
