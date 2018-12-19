@@ -39,8 +39,8 @@
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief CLOCK driver version 2.1.5. */
-#define FSL_CLOCK_DRIVER_VERSION (MAKE_VERSION(2, 1, 5))
+/*! @brief CLOCK driver version 2.1.6. */
+#define FSL_CLOCK_DRIVER_VERSION (MAKE_VERSION(2, 1, 6))
 
 /* analog pll definition */
 #define CCM_ANALOG_PLL_BYPASS_SHIFT (16U)
@@ -156,8 +156,8 @@ extern volatile uint32_t g_rtcXtalFreq;
     }
 
 /*! @brief Clock ip name array for ENET. */
-#define ENET_CLOCKS \
-    {               \
+#define ENET_CLOCKS                                 \
+    {                                               \
         kCLOCK_Enet, kCLOCK_IpInvalid, kCLOCK_Enet2 \
     }
 
@@ -168,20 +168,20 @@ extern volatile uint32_t g_rtcXtalFreq;
     }
 
 /*! @brief Clock ip name array for FLEXCAN. */
-#define FLEXCAN_CLOCKS                             \
-    {                                              \
+#define FLEXCAN_CLOCKS                                          \
+    {                                                           \
         kCLOCK_IpInvalid, kCLOCK_Can1, kCLOCK_Can2, kCLOCK_Can3 \
     }
 
 /*! @brief Clock ip name array for FLEXCAN Peripheral clock. */
-#define FLEXCAN_PERIPH_CLOCKS                        \
-    {                                                \
+#define FLEXCAN_PERIPH_CLOCKS                                      \
+    {                                                              \
         kCLOCK_IpInvalid, kCLOCK_Can1S, kCLOCK_Can2S, kCLOCK_Can3S \
     }
 
 /*! @brief Clock ip name array for FLEXIO. */
-#define FLEXIO_CLOCKS                                    \
-    {                                                    \
+#define FLEXIO_CLOCKS                                                    \
+    {                                                                    \
         kCLOCK_IpInvalid, kCLOCK_Flexio1, kCLOCK_Flexio2, kCLOCK_Flexio3 \
     }
 
@@ -192,8 +192,8 @@ extern volatile uint32_t g_rtcXtalFreq;
     }
 
 /*! @brief Clock ip name array for FLEXSPI. */
-#define FLEXSPI_CLOCKS \
-    {                  \
+#define FLEXSPI_CLOCKS                                    \
+    {                                                     \
         kCLOCK_FlexSpi, kCLOCK_IpInvalid, kCLOCK_FlexSpi2 \
     }
 
@@ -533,14 +533,14 @@ typedef enum _clock_ip_name
     kCLOCK_Timer3 = (6U << 8U) | CCM_CCGR6_CG15_SHIFT,  /*!< CCGR6, CG15  */
 
     /* CCM CCGR7 */
-    kCLOCK_Enet2 = (7U << 8U) | CCM_CCGR7_CG0_SHIFT,    /*!< CCGR7, CG0   */
-    kCLOCK_FlexSpi2 = (7U << 8U) | CCM_CCGR7_CG1_SHIFT, /*!< CCGR7, CG1   */
-    kCLOCK_Axbs_l = (7U << 8U) | CCM_CCGR7_CG2_SHIFT,   /*!< CCGR7, CG2   */
-    kCLOCK_Can3 = (7U << 8U) | CCM_CCGR7_CG3_SHIFT,     /*!< CCGR7, CG3   */
-    kCLOCK_Can3S = (7U << 8U) | CCM_CCGR7_CG4_SHIFT,    /*!< CCGR7, CG4   */
-    kCLOCK_Aips_lite = (7U << 8U) | CCM_CCGR7_CG5_SHIFT,/*!< CCGR7, CG5   */
-    kCLOCK_Flexio3 = (7U << 8U) | CCM_CCGR7_CG6_SHIFT,  /*!< CCGR7, CG6   */
-    
+    kCLOCK_Enet2 = (7U << 8U) | CCM_CCGR7_CG0_SHIFT,     /*!< CCGR7, CG0   */
+    kCLOCK_FlexSpi2 = (7U << 8U) | CCM_CCGR7_CG1_SHIFT,  /*!< CCGR7, CG1   */
+    kCLOCK_Axbs_l = (7U << 8U) | CCM_CCGR7_CG2_SHIFT,    /*!< CCGR7, CG2   */
+    kCLOCK_Can3 = (7U << 8U) | CCM_CCGR7_CG3_SHIFT,      /*!< CCGR7, CG3   */
+    kCLOCK_Can3S = (7U << 8U) | CCM_CCGR7_CG4_SHIFT,     /*!< CCGR7, CG4   */
+    kCLOCK_Aips_lite = (7U << 8U) | CCM_CCGR7_CG5_SHIFT, /*!< CCGR7, CG5   */
+    kCLOCK_Flexio3 = (7U << 8U) | CCM_CCGR7_CG6_SHIFT,   /*!< CCGR7, CG6   */
+
 } clock_ip_name_t;
 
 /*! @brief OSC 24M sorce select */
@@ -603,9 +603,9 @@ typedef enum _clock_mux
                                      CCM_CBCMR_PERIPH_CLK2_SEL_MASK,
                                      CCM_NO_BUSY_WAIT), /*!< periph clock2 mux name */
     kCLOCK_Flexspi2Mux = CCM_TUPLE(CBCMR,
-                                     CCM_CBCMR_FLEXSPI2_CLK_SEL_SHIFT,
-                                     CCM_CBCMR_FLEXSPI2_CLK_SEL_MASK,
-                                     CCM_NO_BUSY_WAIT), /*!< flexspi2 mux name */
+                                   CCM_CBCMR_FLEXSPI2_CLK_SEL_SHIFT,
+                                   CCM_CBCMR_FLEXSPI2_CLK_SEL_MASK,
+                                   CCM_NO_BUSY_WAIT), /*!< flexspi2 mux name */
     kCLOCK_LpspiMux = CCM_TUPLE(
         CBCMR, CCM_CBCMR_LPSPI_CLK_SEL_SHIFT, CCM_CBCMR_LPSPI_CLK_SEL_MASK, CCM_NO_BUSY_WAIT), /*!< lpspi mux name */
 
@@ -813,7 +813,9 @@ typedef struct _clock_sys_pll_config
     uint32_t numerator;   /*!< 30 bit numerator of fractional loop divider.*/
     uint32_t denominator; /*!< 30 bit denominator of fractional loop divider */
     uint8_t src;          /*!< Pll clock source, reference _clock_pll_clk_src */
-
+    uint16_t ss_stop;     /*!< Stop value to get frequency change. */
+    uint8_t ss_enable;    /*!< Enable spread spectrum modulation */
+    uint16_t ss_step;     /*!< Step value to get frequency change step. */
 } clock_sys_pll_config_t;
 
 /*! @brief PLL configuration for AUDIO and VIDEO */
@@ -841,20 +843,19 @@ typedef struct _clock_video_pll_config
 typedef struct _clock_enet_pll_config
 {
     bool enableClkOutput;    /*!< Power on and enable PLL clock output for ENET0 (ref_enetpll0). */
-    bool enableClkOutput1;   /*!< Power on and enable PLL clock output for ENET1 (ref_enetpll1). */
     bool enableClkOutput25M; /*!< Power on and enable PLL clock output for ENET2 (ref_enetpll2). */
     uint8_t loopDivider;     /*!< Controls the frequency of the ENET0 reference clock.
                                   b00 25MHz
                                   b01 50MHz
                                   b10 100MHz (not 50% duty cycle)
                                   b11 125MHz */
-    uint8_t loopDivider1;     /*!< Controls the frequency of the ENET1 reference clock.
+    uint8_t src;             /*!< Pll clock source, reference _clock_pll_clk_src */
+    bool enableClkOutput1;   /*!< Power on and enable PLL clock output for ENET1 (ref_enetpll1). */
+    uint8_t loopDivider1;    /*!< Controls the frequency of the ENET1 reference clock.
                                   b00 25MHz
                                   b01 50MHz
                                   b10 100MHz (not 50% duty cycle)
                                   b11 125MHz */
-    uint8_t src;             /*!< Pll clock source, reference _clock_pll_clk_src */
-
 } clock_enet_pll_config_t;
 
 /*! @brief PLL name */
@@ -1156,7 +1157,6 @@ void CLOCK_InitRcOsc24M(void);
  */
 void CLOCK_DeinitRcOsc24M(void);
 /* @} */
-
 
 /*! @brief Enable USB HS clock.
  *

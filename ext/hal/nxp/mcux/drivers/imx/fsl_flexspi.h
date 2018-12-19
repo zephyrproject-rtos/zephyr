@@ -2,7 +2,7 @@
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
  * All rights reserved.
- * 
+ *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
@@ -24,8 +24,8 @@
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief FLEXSPI driver version 2.0.3. */
-#define FSL_FLEXSPI_DRIVER_VERSION (MAKE_VERSION(2, 0, 3))
+/*! @brief FLEXSPI driver version 2.0.5. */
+#define FSL_FLEXSPI_DRIVER_VERSION (MAKE_VERSION(2, 0, 5))
 /*@}*/
 
 #define FSL_FEATURE_FLEXSPI_AHB_BUFFER_COUNT FSL_FEATURE_FLEXSPI_AHB_BUFFER_COUNTn(0)
@@ -185,9 +185,10 @@ typedef enum _flexspi_ahb_error_code
 typedef enum _flexspi_port
 {
     kFLEXSPI_PortA1 = 0x0U, /*!< Access flash on A1 port. */
-    kFLEXSPI_PortA2 = 0x1U, /*!< Access flash on A2 port. */
-    kFLEXSPI_PortB1 = 0x2U, /*!< Access flash on B1 port. */
-    kFLEXSPI_PortB2 = 0x3U, /*!< Access flash on B2 port. */
+    kFLEXSPI_PortA2,        /*!< Access flash on A2 port. */
+    kFLEXSPI_PortB1,        /*!< Access flash on B1 port. */
+    kFLEXSPI_PortB2,        /*!< Access flash on B2 port. */
+    kFLEXSPI_PortCount
 } flexspi_port_t;
 
 /*! @brief Trigger source of current command sequence granted by arbitrator.*/

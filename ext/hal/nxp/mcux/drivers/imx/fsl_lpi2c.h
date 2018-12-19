@@ -23,8 +23,8 @@
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief LPI2C driver version 2.1.5. */
-#define FSL_LPI2C_DRIVER_VERSION (MAKE_VERSION(2, 1, 5))
+/*! @brief LPI2C driver version 2.1.6. */
+#define FSL_LPI2C_DRIVER_VERSION (MAKE_VERSION(2, 1, 6))
 /*@}*/
 
 /*! @brief Timeout times for waiting flag. */
@@ -771,7 +771,7 @@ static inline status_t LPI2C_MasterRepeatedStart(LPI2C_Type *base, uint8_t addre
  * @retval #kStatus_LPI2C_ArbitrationLost Arbitration lost error.
  * @retval #kStatus_LPI2C_PinLowTimeout SCL or SDA were held low longer than the timeout.
  */
-status_t LPI2C_MasterSend(LPI2C_Type *base, const void *txBuff, size_t txSize);
+status_t LPI2C_MasterSend(LPI2C_Type *base, void *txBuff, size_t txSize);
 
 /*!
  * @brief Performs a polling receive transfer on the I2C bus.
@@ -1156,7 +1156,7 @@ static inline uint32_t LPI2C_SlaveGetReceivedAddress(LPI2C_Type *base)
  * @param[out] actualTxSize
  * @return Error or success status returned by API.
  */
-status_t LPI2C_SlaveSend(LPI2C_Type *base, const void *txBuff, size_t txSize, size_t *actualTxSize);
+status_t LPI2C_SlaveSend(LPI2C_Type *base, void *txBuff, size_t txSize, size_t *actualTxSize);
 
 /*!
  * @brief Performs a polling receive transfer on the I2C bus.

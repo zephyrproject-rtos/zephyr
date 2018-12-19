@@ -353,6 +353,34 @@ static void FLEXIO_I2C_MasterTransferComplete(FLEXIO_I2C_Type *base,
     }
 }
 
+/*!
+ * brief Ungates the FlexIO clock, resets the FlexIO module, and configures the FlexIO I2C
+ * hardware configuration.
+ *
+ * Example
+   code
+   FLEXIO_I2C_Type base = {
+   .flexioBase = FLEXIO,
+   .SDAPinIndex = 0,
+   .SCLPinIndex = 1,
+   .shifterIndex = {0,1},
+   .timerIndex = {0,1}
+   };
+   flexio_i2c_master_config_t config = {
+   .enableInDoze = false,
+   .enableInDebug = true,
+   .enableFastAccess = false,
+   .baudRate_Bps = 100000
+   };
+   FLEXIO_I2C_MasterInit(base, &config, srcClock_Hz);
+   endcode
+ *
+ * param base Pointer to FLEXIO_I2C_Type structure.
+ * param masterConfig Pointer to flexio_i2c_master_config_t structure.
+ * param srcClock_Hz FlexIO source clock in Hz.
+ * retval kStatus_Success Initialization successful
+ * retval kStatus_InvalidArgument The source clock exceed upper range limitation
+*/
 status_t FLEXIO_I2C_MasterInit(FLEXIO_I2C_Type *base, flexio_i2c_master_config_t *masterConfig, uint32_t srcClock_Hz)
 {
     assert(base && masterConfig);
@@ -463,6 +491,12 @@ status_t FLEXIO_I2C_MasterInit(FLEXIO_I2C_Type *base, flexio_i2c_master_config_t
     return result;
 }
 
+/*!
+ * brief De-initializes the FlexIO I2C master peripheral. Calling this API Resets the FlexIO I2C master
+ * shifer and timer config, module can't work unless the FLEXIO_I2C_MasterInit is called.
+ *
+ * param base pointer to FLEXIO_I2C_Type structure.
+ */
 void FLEXIO_I2C_MasterDeinit(FLEXIO_I2C_Type *base)
 {
     base->flexioBase->SHIFTCFG[base->shifterIndex[0]] = 0;
@@ -483,9 +517,23 @@ void FLEXIO_I2C_MasterDeinit(FLEXIO_I2C_Type *base)
     base->flexioBase->TIMSTAT = (1U << base->timerIndex[1]);
 }
 
+/*!
+ * brief Gets the default configuration to configure the FlexIO module. The configuration
+ * can be used directly for calling the FLEXIO_I2C_MasterInit().
+ *
+ * Example:
+   code
+   flexio_i2c_master_config_t config;
+   FLEXIO_I2C_MasterGetDefaultConfig(&config);
+   endcode
+ * param masterConfig Pointer to flexio_i2c_master_config_t structure.
+*/
 void FLEXIO_I2C_MasterGetDefaultConfig(flexio_i2c_master_config_t *masterConfig)
 {
     assert(masterConfig);
+
+    /* Initializes the configure structure to zero. */
+    memset(masterConfig, 0, sizeof(*masterConfig));
 
     masterConfig->enableMaster = true;
     masterConfig->enableInDoze = false;
@@ -495,6 +543,13 @@ void FLEXIO_I2C_MasterGetDefaultConfig(flexio_i2c_master_config_t *masterConfig)
     /* Default baud rate at 100kbps. */
     masterConfig->baudRate_Bps = 100000U;
 }
+
+/*!
+ * brief Gets the FlexIO I2C master status flags.
+ *
+ * param base Pointer to FLEXIO_I2C_Type structure
+ * return Status flag, use status flag to AND #_flexio_i2c_master_status_flags can get the related status.
+*/
 
 uint32_t FLEXIO_I2C_MasterGetStatusFlags(FLEXIO_I2C_Type *base)
 {
@@ -511,6 +566,16 @@ uint32_t FLEXIO_I2C_MasterGetStatusFlags(FLEXIO_I2C_Type *base)
 
     return status;
 }
+
+/*!
+ * brief Clears the FlexIO I2C master status flags.
+ *
+ * param base Pointer to FLEXIO_I2C_Type structure.
+ * param mask Status flag.
+ *      The parameter can be any combination of the following values:
+ *          arg kFLEXIO_I2C_RxFullFlag
+ *          arg kFLEXIO_I2C_ReceiveNakFlag
+*/
 
 void FLEXIO_I2C_MasterClearStatusFlags(FLEXIO_I2C_Type *base, uint32_t mask)
 {
@@ -530,6 +595,14 @@ void FLEXIO_I2C_MasterClearStatusFlags(FLEXIO_I2C_Type *base, uint32_t mask)
     }
 }
 
+/*!
+ * brief Enables the FlexIO i2c master interrupt requests.
+ *
+ * param base Pointer to FLEXIO_I2C_Type structure.
+ * param mask Interrupt source.
+ *     Currently only one interrupt request source:
+ *     arg kFLEXIO_I2C_TransferCompleteInterruptEnable
+ */
 void FLEXIO_I2C_MasterEnableInterrupts(FLEXIO_I2C_Type *base, uint32_t mask)
 {
     if (mask & kFLEXIO_I2C_TxEmptyInterruptEnable)
@@ -542,6 +615,12 @@ void FLEXIO_I2C_MasterEnableInterrupts(FLEXIO_I2C_Type *base, uint32_t mask)
     }
 }
 
+/*!
+ * brief Disables the FlexIO I2C master interrupt requests.
+ *
+ * param base Pointer to FLEXIO_I2C_Type structure.
+ * param mask Interrupt source.
+ */
 void FLEXIO_I2C_MasterDisableInterrupts(FLEXIO_I2C_Type *base, uint32_t mask)
 {
     if (mask & kFLEXIO_I2C_TxEmptyInterruptEnable)
@@ -554,6 +633,13 @@ void FLEXIO_I2C_MasterDisableInterrupts(FLEXIO_I2C_Type *base, uint32_t mask)
     }
 }
 
+/*!
+ * brief Sets the FlexIO I2C master transfer baudrate.
+ *
+ * param base Pointer to FLEXIO_I2C_Type structure
+ * param baudRate_Bps the baud rate value in HZ
+ * param srcClock_Hz source clock in HZ
+ */
 void FLEXIO_I2C_MasterSetBaudRate(FLEXIO_I2C_Type *base, uint32_t baudRate_Bps, uint32_t srcClock_Hz)
 {
     uint16_t timerDiv = 0;
@@ -571,6 +657,17 @@ void FLEXIO_I2C_MasterSetBaudRate(FLEXIO_I2C_Type *base, uint32_t baudRate_Bps, 
     flexioBase->TIMCMP[base->timerIndex[0]] = timerCmp;
 }
 
+/*!
+ * brief Sets the number of bytes to be transferred from a start signal to a stop signal.
+ *
+ * note Call this API before a transfer begins because the timer generates a number of clocks according
+ * to the number of bytes that need to be transferred.
+ *
+ * param base Pointer to FLEXIO_I2C_Type structure.
+ * param count Number of bytes need to be transferred from a start signal to a re-start/stop signal
+ * retval kStatus_Success Successfully configured the count.
+ * retval kStatus_InvalidArgument Input argument is invalid.
+*/
 status_t FLEXIO_I2C_MasterSetTransferCount(FLEXIO_I2C_Type *base, uint8_t count)
 {
     if (count > 14U)
@@ -594,6 +691,21 @@ status_t FLEXIO_I2C_MasterSetTransferCount(FLEXIO_I2C_Type *base, uint8_t count)
     return kStatus_Success;
 }
 
+/*!
+ * brief Sends START + 7-bit address to the bus.
+ *
+ * note This API should be called when the transfer configuration is ready to send a START signal
+ * and 7-bit address to the bus. This is a non-blocking API, which returns directly after the address
+ * is put into the data register but the address transfer is not finished on the bus. Ensure that
+ * the kFLEXIO_I2C_RxFullFlag status is asserted before calling this API.
+ * param base Pointer to FLEXIO_I2C_Type structure.
+ * param address 7-bit address.
+ * param direction transfer direction.
+ *     This parameter is one of the values in flexio_i2c_direction_t:
+ *        arg kFLEXIO_I2C_Write: Transmit
+ *        arg kFLEXIO_I2C_Read:  Receive
+ */
+
 void FLEXIO_I2C_MasterStart(FLEXIO_I2C_Type *base, uint8_t address, flexio_i2c_direction_t direction)
 {
     uint32_t data;
@@ -603,12 +715,22 @@ void FLEXIO_I2C_MasterStart(FLEXIO_I2C_Type *base, uint8_t address, flexio_i2c_d
     FLEXIO_I2C_MasterWriteByte(base, data);
 }
 
+/*!
+ * brief Sends the repeated start signal on the bus.
+ *
+ * param base Pointer to FLEXIO_I2C_Type structure.
+ */
 void FLEXIO_I2C_MasterRepeatedStart(FLEXIO_I2C_Type *base)
 {
     /* Prepare for RESTART condition, no stop.*/
     FLEXIO_I2C_MasterWriteByte(base, 0xFFFFFFFFU);
 }
 
+/*!
+ * brief Sends the stop signal on the bus.
+ *
+ * param base Pointer to FLEXIO_I2C_Type structure.
+ */
 void FLEXIO_I2C_MasterStop(FLEXIO_I2C_Type *base)
 {
     /* Prepare normal stop. */
@@ -616,6 +738,11 @@ void FLEXIO_I2C_MasterStop(FLEXIO_I2C_Type *base)
     FLEXIO_I2C_MasterWriteByte(base, 0x0U);
 }
 
+/*!
+ * brief Sends the stop signal when transfer is still on-going.
+ *
+ * param base Pointer to FLEXIO_I2C_Type structure.
+ */
 void FLEXIO_I2C_MasterAbortStop(FLEXIO_I2C_Type *base)
 {
     uint32_t tmpConfig;
@@ -627,6 +754,12 @@ void FLEXIO_I2C_MasterAbortStop(FLEXIO_I2C_Type *base)
     base->flexioBase->TIMCFG[base->timerIndex[0]] = tmpConfig;
 }
 
+/*!
+ * brief Configures the sent ACK/NAK for the following byte.
+ *
+ * param base Pointer to FLEXIO_I2C_Type structure.
+ * param enable True to configure send ACK, false configure to send NAK.
+ */
 void FLEXIO_I2C_MasterEnableAck(FLEXIO_I2C_Type *base, bool enable)
 {
     uint32_t tmpConfig = 0;
@@ -644,6 +777,17 @@ void FLEXIO_I2C_MasterEnableAck(FLEXIO_I2C_Type *base, bool enable)
     base->flexioBase->SHIFTCFG[base->shifterIndex[0]] = tmpConfig;
 }
 
+/*!
+ * brief Sends a buffer of data in bytes.
+ *
+ * note This function blocks via polling until all bytes have been sent.
+ *
+ * param base Pointer to FLEXIO_I2C_Type structure.
+ * param txBuff The data bytes to send.
+ * param txSize The number of data bytes to send.
+ * retval kStatus_Success Successfully write data.
+ * retval kStatus_FLEXIO_I2C_Nak Receive NAK during writing data.
+ */
 status_t FLEXIO_I2C_MasterWriteBlocking(FLEXIO_I2C_Type *base, const uint8_t *txBuff, uint8_t txSize)
 {
     assert(txBuff);
@@ -669,6 +813,15 @@ status_t FLEXIO_I2C_MasterWriteBlocking(FLEXIO_I2C_Type *base, const uint8_t *tx
     return kStatus_Success;
 }
 
+/*!
+ * brief Receives a buffer of bytes.
+ *
+ * note This function blocks via polling until all bytes have been received.
+ *
+ * param base Pointer to FLEXIO_I2C_Type structure.
+ * param rxBuff The buffer to store the received bytes.
+ * param rxSize The number of data bytes to be received.
+ */
 void FLEXIO_I2C_MasterReadBlocking(FLEXIO_I2C_Type *base, uint8_t *rxBuff, uint8_t rxSize)
 {
     assert(rxBuff);
@@ -685,6 +838,16 @@ void FLEXIO_I2C_MasterReadBlocking(FLEXIO_I2C_Type *base, uint8_t *rxBuff, uint8
     }
 }
 
+/*!
+ * brief Performs a master polling transfer on the I2C bus.
+ *
+ * note The API does not return until the transfer succeeds or fails due
+ * to receiving NAK.
+ *
+ * param base pointer to FLEXIO_I2C_Type structure.
+ * param xfer pointer to flexio_i2c_master_transfer_t structure.
+ * return status of status_t.
+ */
 status_t FLEXIO_I2C_MasterTransferBlocking(FLEXIO_I2C_Type *base, flexio_i2c_master_transfer_t *xfer)
 {
     assert(xfer);
@@ -714,6 +877,16 @@ status_t FLEXIO_I2C_MasterTransferBlocking(FLEXIO_I2C_Type *base, flexio_i2c_mas
     return result;
 }
 
+/*!
+ * brief Initializes the I2C handle which is used in transactional functions.
+ *
+ * param base Pointer to FLEXIO_I2C_Type structure.
+ * param handle Pointer to flexio_i2c_master_handle_t structure to store the transfer state.
+ * param callback Pointer to user callback function.
+ * param userData User param passed to the callback function.
+ * retval kStatus_Success Successfully create the handle.
+ * retval kStatus_OutOfRange The FlexIO type/handle/isr table out of range.
+ */
 status_t FLEXIO_I2C_MasterTransferCreateHandle(FLEXIO_I2C_Type *base,
                                                flexio_i2c_master_handle_t *handle,
                                                flexio_i2c_master_transfer_callback_t callback,
@@ -737,6 +910,20 @@ status_t FLEXIO_I2C_MasterTransferCreateHandle(FLEXIO_I2C_Type *base,
     return FLEXIO_RegisterHandleIRQ(base, handle, FLEXIO_I2C_MasterTransferHandleIRQ);
 }
 
+/*!
+ * brief Performs a master interrupt non-blocking transfer on the I2C bus.
+ *
+ * note The API returns immediately after the transfer initiates.
+ * Call FLEXIO_I2C_MasterGetTransferCount to poll the transfer status to check whether
+ * the transfer is finished. If the return status is not kStatus_FLEXIO_I2C_Busy, the transfer
+ * is finished.
+ *
+ * param base Pointer to FLEXIO_I2C_Type structure
+ * param handle Pointer to flexio_i2c_master_handle_t structure which stores the transfer state
+ * param xfer pointer to flexio_i2c_master_transfer_t structure
+ * retval kStatus_Success Successfully start a transfer.
+ * retval kStatus_FLEXIO_I2C_Busy FlexIO I2C is not idle, is running another transfer.
+ */
 status_t FLEXIO_I2C_MasterTransferNonBlocking(FLEXIO_I2C_Type *base,
                                               flexio_i2c_master_handle_t *handle,
                                               flexio_i2c_master_transfer_t *xfer)
@@ -760,6 +947,15 @@ status_t FLEXIO_I2C_MasterTransferNonBlocking(FLEXIO_I2C_Type *base,
     }
 }
 
+/*!
+ * brief Aborts an interrupt non-blocking transfer early.
+ *
+ * note This API can be called at any time when an interrupt non-blocking transfer initiates
+ * to abort the transfer early.
+ *
+ * param base Pointer to FLEXIO_I2C_Type structure
+ * param handle Pointer to flexio_i2c_master_handle_t structure which stores the transfer state
+ */
 void FLEXIO_I2C_MasterTransferAbort(FLEXIO_I2C_Type *base, flexio_i2c_master_handle_t *handle)
 {
     assert(handle);
@@ -771,6 +967,15 @@ void FLEXIO_I2C_MasterTransferAbort(FLEXIO_I2C_Type *base, flexio_i2c_master_han
     handle->state = kFLEXIO_I2C_Idle;
 }
 
+/*!
+ * brief Gets the master transfer status during a interrupt non-blocking transfer.
+ *
+ * param base Pointer to FLEXIO_I2C_Type structure.
+ * param handle Pointer to flexio_i2c_master_handle_t structure which stores the transfer state.
+ * param count Number of bytes transferred so far by the non-blocking transaction.
+ * retval kStatus_InvalidArgument count is Invalid.
+ * retval kStatus_Success Successfully return the count.
+ */
 status_t FLEXIO_I2C_MasterTransferGetCount(FLEXIO_I2C_Type *base, flexio_i2c_master_handle_t *handle, size_t *count)
 {
     if (!count)
@@ -783,6 +988,12 @@ status_t FLEXIO_I2C_MasterTransferGetCount(FLEXIO_I2C_Type *base, flexio_i2c_mas
     return kStatus_Success;
 }
 
+/*!
+ * brief Master interrupt handler.
+ *
+ * param i2cType Pointer to FLEXIO_I2C_Type structure
+ * param i2cHandle Pointer to flexio_i2c_master_transfer_t structure
+ */
 void FLEXIO_I2C_MasterTransferHandleIRQ(void *i2cType, void *i2cHandle)
 {
     FLEXIO_I2C_Type *base = (FLEXIO_I2C_Type *)i2cType;

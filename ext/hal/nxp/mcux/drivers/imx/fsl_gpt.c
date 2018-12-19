@@ -2,7 +2,7 @@
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
  * All rights reserved.
- * 
+ *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
@@ -12,7 +12,6 @@
 #ifndef FSL_COMPONENT_ID
 #define FSL_COMPONENT_ID "platform.drivers.gpt"
 #endif
-
 
 /*******************************************************************************
  * Prototypes
@@ -50,6 +49,12 @@ static uint32_t GPT_GetInstance(GPT_Type *base)
     return instance;
 }
 
+/*!
+ * brief Initialize GPT to reset state and initialize running mode.
+ *
+ * param base GPT peripheral base address.
+ * param initConfig GPT mode setting configuration.
+ */
 void GPT_Init(GPT_Type *base, const gpt_config_t *initConfig)
 {
     assert(initConfig);
@@ -72,6 +77,11 @@ void GPT_Init(GPT_Type *base, const gpt_config_t *initConfig)
     GPT_SetClockDivider(base, initConfig->divider);
 }
 
+/*!
+ * brief Disables the module and gates the GPT clock.
+ *
+ * param base GPT peripheral base address.
+ */
 void GPT_Deinit(GPT_Type *base)
 {
     /* Disable GPT timers */
@@ -83,9 +93,28 @@ void GPT_Deinit(GPT_Type *base)
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
+/*!
+ * brief Fills in the GPT configuration structure with default settings.
+ *
+ * The default values are:
+ * code
+ *    config->clockSource = kGPT_ClockSource_Periph;
+ *    config->divider = 1U;
+ *    config->enableRunInStop = true;
+ *    config->enableRunInWait = true;
+ *    config->enableRunInDoze = false;
+ *    config->enableRunInDbg = false;
+ *    config->enableFreeRun = true;
+ *    config->enableMode  = true;
+ * endcode
+ * param config Pointer to the user configuration structure.
+ */
 void GPT_GetDefaultConfig(gpt_config_t *config)
 {
     assert(config);
+
+    /* Initializes the configure structure to zero. */
+    memset(config, 0, sizeof(*config));
 
     config->clockSource = kGPT_ClockSource_Periph;
     config->divider = 1U;

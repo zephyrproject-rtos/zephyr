@@ -1,31 +1,9 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fsl_rnga.h"
@@ -35,6 +13,11 @@
 /*******************************************************************************
  * Definitions
  *******************************************************************************/
+
+/* Component ID definition, used by tools. */
+#ifndef FSL_COMPONENT_ID
+#define FSL_COMPONENT_ID "platform.drivers.rnga"
+#endif
 
 /*******************************************************************************
  * RNG_CR - RNGA Control Register
@@ -179,12 +162,20 @@ static uint32_t rnga_ReadEntropy(RNG_Type *base);
  * Code
  ******************************************************************************/
 
+/*!
+ * brief Initializes the RNGA.
+ *
+ * This function initializes the RNGA.
+ * When called, the RNGA entropy generation starts immediately.
+ *
+ * param base RNGA base address
+ */
 void RNGA_Init(RNG_Type *base)
 {
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Enable the clock gate. */
     CLOCK_EnableClock(kCLOCK_Rnga0);
-#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+#endif                                /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
     CLOCK_DisableClock(kCLOCK_Rnga0); /* To solve the release version on twrkm43z75m */
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     CLOCK_EnableClock(kCLOCK_Rnga0);
@@ -196,6 +187,13 @@ void RNGA_Init(RNG_Type *base)
     RNG_WR_CR_GO(base, 1);
 }
 
+/*!
+ * brief Shuts down the RNGA.
+ *
+ * This function shuts down the RNGA.
+ *
+ * param base RNGA base address
+ */
 void RNGA_Deinit(RNG_Type *base)
 {
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
@@ -224,6 +222,16 @@ static uint32_t rnga_ReadEntropy(RNG_Type *base)
     return data;
 }
 
+/*!
+ * brief Gets random data.
+ *
+ * This function gets random data from the RNGA.
+ *
+ * param base RNGA base address
+ * param data pointer to user buffer to be filled by random data
+ * param data_size size of data in bytes
+ * return RNGA status
+ */
 status_t RNGA_GetRandomData(RNG_Type *base, void *data, size_t data_size)
 {
     status_t result = kStatus_Success;
@@ -268,16 +276,41 @@ status_t RNGA_GetRandomData(RNG_Type *base, void *data, size_t data_size)
     return result;
 }
 
+/*!
+ * brief Sets the RNGA in normal mode or sleep mode.
+ *
+ * This function sets the RNGA in sleep mode or normal mode.
+ *
+ * param base RNGA base address
+ * param mode normal mode or sleep mode
+ */
 void RNGA_SetMode(RNG_Type *base, rnga_mode_t mode)
 {
     RNG_WR_CR_SLP(base, (uint32_t)mode);
 }
 
+/*!
+ * brief Gets the RNGA working mode.
+ *
+ * This function gets the RNGA working mode.
+ *
+ * param base RNGA base address
+ * return normal mode or sleep mode
+ */
 rnga_mode_t RNGA_GetMode(RNG_Type *base)
 {
     return (rnga_mode_t)RNG_RD_SR_SLP(base);
 }
 
+/*!
+ * brief Feeds the RNGA module.
+ *
+ * This function inputs an entropy value that the RNGA uses to seed its
+ * pseudo-random algorithm.
+ *
+ * param base RNGA base address
+ * param seed input seed value
+ */
 void RNGA_Seed(RNG_Type *base, uint32_t seed)
 {
     /* Write to RNGA Entropy Register.*/

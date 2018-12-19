@@ -215,9 +215,26 @@ static status_t SEMC_IsIPCommandDone(SEMC_Type *base)
     return kStatus_Success;
 }
 
+/*!
+ * brief Gets the SEMC default basic configuration structure.
+ *
+ * The purpose of this API is to get the default SEMC
+ * configure structure for SEMC_Init(). User may use the initialized
+ * structure unchanged in SEMC_Init(), or modify some fields of the
+ * structure before calling SEMC_Init().
+ * Example:
+   code
+   semc_config_t config;
+   SEMC_GetDefaultConfig(&config);
+   endcode
+ * param config The SEMC configuration structure pointer.
+ */
 void SEMC_GetDefaultConfig(semc_config_t *config)
 {
     assert(config);
+
+    /* Initializes the configure structure to zero. */
+    memset(config, 0, sizeof(*config));
 
     semc_queuea_weight_struct_t *queueaWeight = &(config->queueWeight.queueaWeight.queueaConfig);
     semc_queueb_weight_struct_t *queuebWeight = &(config->queueWeight.queuebWeight.queuebConfig);
@@ -238,6 +255,14 @@ void SEMC_GetDefaultConfig(semc_config_t *config)
     queuebWeight->bankRotation = SEMC_BMCR1_TYPICAL_WBR;
 }
 
+/*!
+ * brief Initializes SEMC.
+ * This function ungates the SEMC clock and initializes SEMC.
+ * This function must be called before calling any other SEMC driver functions.
+ *
+ * param base SEMC peripheral base address.
+ * param configure The SEMC configuration structure pointer.
+ */
 void SEMC_Init(SEMC_Type *base, semc_config_t *configure)
 {
     assert(configure);
@@ -274,6 +299,13 @@ void SEMC_Init(SEMC_Type *base, semc_config_t *configure)
     base->MCR &= ~SEMC_MCR_MDIS_MASK;
 }
 
+/*!
+ * brief Deinitializes the SEMC module and gates the clock.
+ * This function gates the SEMC clock. As a result, the SEMC
+ * module doesn't work after calling this function.
+ *
+ * param base SEMC peripheral base address.
+ */
 void SEMC_Deinit(SEMC_Type *base)
 {
     /* Disable module.  Check there is no pending command before disable module.  */
@@ -291,6 +323,14 @@ void SEMC_Deinit(SEMC_Type *base)
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
+/*!
+ * brief Configures SDRAM controller in SEMC.
+ *
+ * param base SEMC peripheral base address.
+ * param cs The chip selection.
+ * param config The sdram configuration.
+ * param clkSrc_Hz The SEMC clock frequency.
+ */
 status_t SEMC_ConfigureSDRAM(SEMC_Type *base, semc_sdram_cs_t cs, semc_sdram_config_t *config, uint32_t clkSrc_Hz)
 {
     assert(config);
@@ -392,6 +432,13 @@ status_t SEMC_ConfigureSDRAM(SEMC_Type *base, semc_sdram_cs_t cs, semc_sdram_con
     return kStatus_Success;
 }
 
+/*!
+ * brief Configures NAND controller in SEMC.
+ *
+ * param base SEMC peripheral base address.
+ * param config The nand configuration.
+ * param clkSrc_Hz The SEMC clock frequency.
+ */
 status_t SEMC_ConfigureNAND(SEMC_Type *base, semc_nand_config_t *config, uint32_t clkSrc_Hz)
 {
     assert(config);
@@ -466,6 +513,13 @@ status_t SEMC_ConfigureNAND(SEMC_Type *base, semc_nand_config_t *config, uint32_
     return kStatus_Success;
 }
 
+/*!
+ * brief Configures NOR controller in SEMC.
+ *
+ * param base SEMC peripheral base address.
+ * param config The nor configuration.
+ * param clkSrc_Hz The SEMC clock frequency.
+ */
 status_t SEMC_ConfigureNOR(SEMC_Type *base, semc_nor_config_t *config, uint32_t clkSrc_Hz)
 {
     assert(config);
@@ -584,6 +638,13 @@ status_t SEMC_ConfigureNOR(SEMC_Type *base, semc_nor_config_t *config, uint32_t 
     return SEMC_ConfigureIPCommand(base, (config->portSize + 1));
 }
 
+/*!
+ * brief Configures SRAM controller in SEMC.
+ *
+ * param base SEMC peripheral base address.
+ * param config The sram configuration.
+ * param clkSrc_Hz The SEMC clock frequency.
+ */
 status_t SEMC_ConfigureSRAM(SEMC_Type *base, semc_sram_config_t *config, uint32_t clkSrc_Hz)
 {
     assert(config);
@@ -690,6 +751,13 @@ status_t SEMC_ConfigureSRAM(SEMC_Type *base, semc_sram_config_t *config, uint32_
     return result;
 }
 
+/*!
+ * brief Configures DBI controller in SEMC.
+ *
+ * param base SEMC peripheral base address.
+ * param config The dbi configuration.
+ * param clkSrc_Hz The SEMC clock frequency.
+ */
 status_t SEMC_ConfigureDBI(SEMC_Type *base, semc_dbi_config_t *config, uint32_t clkSrc_Hz)
 {
     assert(config);
@@ -720,16 +788,30 @@ status_t SEMC_ConfigureDBI(SEMC_Type *base, semc_dbi_config_t *config, uint32_t 
         SEMC_DBICR0_PS(config->portSize) | SEMC_DBICR0_BL(config->burstLen) | SEMC_DBICR0_COL(config->columnAddrBitNum);
 
     /* Timing setting. */
-    base->DBICR1 = SEMC_DBICR1_CES(SEMC_ConvertTiming(config->tCsxSetup_Ns, clkSrc_Hz)) |
-                   SEMC_DBICR1_CEH(SEMC_ConvertTiming(config->tCsxHold_Ns, clkSrc_Hz)) |
-                   SEMC_DBICR1_WEL(SEMC_ConvertTiming(config->tWexLow_Ns, clkSrc_Hz)) |
-                   SEMC_DBICR1_WEH(SEMC_ConvertTiming(config->tWexHigh_Ns, clkSrc_Hz)) |
-                   SEMC_DBICR1_REL(SEMC_ConvertTiming(config->tRdxLow_Ns, clkSrc_Hz)) |
-                   SEMC_DBICR1_REH(SEMC_ConvertTiming(config->tRdxHigh_Ns, clkSrc_Hz)) |
-                   SEMC_DBICR1_CEITV(SEMC_ConvertTiming(config->tCsxInterval_Ns, clkSrc_Hz));
+    base->DBICR1 = SEMC_DBICR1_CES(SEMC_ConvertTiming(config->tCsxSetup_Ns, clkSrc_Hz) - 1) |
+                   SEMC_DBICR1_CEH(SEMC_ConvertTiming(config->tCsxHold_Ns, clkSrc_Hz) - 1) |
+                   SEMC_DBICR1_WEL(SEMC_ConvertTiming(config->tWexLow_Ns, clkSrc_Hz) - 1) |
+                   SEMC_DBICR1_WEH(SEMC_ConvertTiming(config->tWexHigh_Ns, clkSrc_Hz) - 1) |
+                   SEMC_DBICR1_REL(SEMC_ConvertTiming(config->tRdxLow_Ns, clkSrc_Hz) - 1) |
+                   SEMC_DBICR1_REH(SEMC_ConvertTiming(config->tRdxHigh_Ns, clkSrc_Hz) - 1) |
+                   SEMC_DBICR1_CEITV(SEMC_ConvertTiming(config->tCsxInterval_Ns, clkSrc_Hz) - 1);
     return SEMC_ConfigureIPCommand(base, (config->portSize + 1));
 }
 
+/*!
+ * brief SEMC IP command access.
+ *
+ * param base  SEMC peripheral base address.
+ * param type  SEMC memory type. refer to "semc_mem_type_t"
+ * param address  SEMC device address.
+ * param command  SEMC IP command.
+ * For NAND device, we should use the SEMC_BuildNandIPCommand to get the right nand command.
+ * For NOR/DBI device, take refer to "semc_ipcmd_nor_dbi_t".
+ * For SRAM device, take refer to "semc_ipcmd_sram_t".
+ * For SDRAM device, take refer to "semc_ipcmd_sdram_t".
+ * param write  Data for write access.
+ * param read   Data pointer for read data out.
+ */
 status_t SEMC_SendIPCommand(
     SEMC_Type *base, semc_mem_type_t type, uint32_t address, uint16_t command, uint32_t write, uint32_t *read)
 {
@@ -794,6 +876,14 @@ status_t SEMC_SendIPCommand(
     return kStatus_Success;
 }
 
+/*!
+ * brief SEMC NAND device memory write through IP command.
+ *
+ * param base  SEMC peripheral base address.
+ * param address  SEMC NAND device address.
+ * param data  Data for write access.
+ * param size_bytes   Data length.
+ */
 status_t SEMC_IPCommandNandWrite(SEMC_Type *base, uint32_t address, uint8_t *data, uint32_t size_bytes)
 {
     assert(data);
@@ -834,6 +924,14 @@ status_t SEMC_IPCommandNandWrite(SEMC_Type *base, uint32_t address, uint8_t *dat
     return result;
 }
 
+/*!
+ * brief SEMC NAND device memory read through IP command.
+ *
+ * param base  SEMC peripheral base address.
+ * param address  SEMC NAND device address.
+ * param data  Data pointer for data read out.
+ * param size_bytes   Data length.
+ */
 status_t SEMC_IPCommandNandRead(SEMC_Type *base, uint32_t address, uint8_t *data, uint32_t size_bytes)
 {
     assert(data);
@@ -874,6 +972,14 @@ status_t SEMC_IPCommandNandRead(SEMC_Type *base, uint32_t address, uint8_t *data
     return result;
 }
 
+/*!
+ * brief SEMC NOR device memory read through IP command.
+ *
+ * param base  SEMC peripheral base address.
+ * param address  SEMC NOR device address.
+ * param data  Data pointer for data read out.
+ * param size_bytes   Data length.
+ */
 status_t SEMC_IPCommandNorRead(SEMC_Type *base, uint32_t address, uint8_t *data, uint32_t size_bytes)
 {
     assert(data);
@@ -912,6 +1018,14 @@ status_t SEMC_IPCommandNorRead(SEMC_Type *base, uint32_t address, uint8_t *data,
     return result;
 }
 
+/*!
+ * brief SEMC NOR device memory write through IP command.
+ *
+ * param base  SEMC peripheral base address.
+ * param address  SEMC NOR device address.
+ * param data  Data for write access.
+ * param size_bytes   Data length.
+ */
 status_t SEMC_IPCommandNorWrite(SEMC_Type *base, uint32_t address, uint8_t *data, uint32_t size_bytes)
 {
     assert(data);

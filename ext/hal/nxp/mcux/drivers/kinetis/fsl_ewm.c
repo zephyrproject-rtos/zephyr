@@ -1,39 +1,41 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fsl_ewm.h"
+
+/* Component ID definition, used by tools. */
+#ifndef FSL_COMPONENT_ID
+#define FSL_COMPONENT_ID "platform.drivers.ewm"
+#endif
 
 /*******************************************************************************
  * Code
  ******************************************************************************/
 
+/*!
+ * brief Initializes the EWM peripheral.
+ *
+ * This function is used to initialize the EWM. After calling, the EWM
+ * runs immediately according to the configuration.
+ * Note that, except for the interrupt enable control bit, other control bits and registers are write once after a
+ * CPU reset. Modifying them more than once generates a bus transfer error.
+ *
+ * This is an example.
+ * code
+ *   ewm_config_t config;
+ *   EWM_GetDefaultConfig(&config);
+ *   config.compareHighValue = 0xAAU;
+ *   EWM_Init(ewm_base,&config);
+ * endcode
+ *
+ * param base EWM peripheral base address
+ * param config The configuration of the EWM
+*/
 void EWM_Init(EWM_Type *base, const ewm_config_t *config)
 {
     assert(config);
@@ -41,7 +43,7 @@ void EWM_Init(EWM_Type *base, const ewm_config_t *config)
     uint32_t value = 0U;
 
 #if !((defined(FSL_FEATURE_SOC_PCC_COUNT) && FSL_FEATURE_SOC_PCC_COUNT) && \
-    (defined(FSL_FEATURE_PCC_SUPPORT_EWM_CLOCK_REMOVE) && FSL_FEATURE_PCC_SUPPORT_EWM_CLOCK_REMOVE))
+      (defined(FSL_FEATURE_PCC_SUPPORT_EWM_CLOCK_REMOVE) && FSL_FEATURE_PCC_SUPPORT_EWM_CLOCK_REMOVE))
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     CLOCK_EnableClock(kCLOCK_Ewm0);
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
@@ -61,20 +63,49 @@ void EWM_Init(EWM_Type *base, const ewm_config_t *config)
     base->CTRL = value;
 }
 
+/*!
+ * brief Deinitializes the EWM peripheral.
+ *
+ * This function is used to shut down the EWM.
+ *
+ * param base EWM peripheral base address
+*/
 void EWM_Deinit(EWM_Type *base)
 {
     EWM_DisableInterrupts(base, kEWM_InterruptEnable);
 #if !((defined(FSL_FEATURE_SOC_PCC_COUNT) && FSL_FEATURE_SOC_PCC_COUNT) && \
-    (defined(FSL_FEATURE_PCC_SUPPORT_EWM_CLOCK_REMOVE) && FSL_FEATURE_PCC_SUPPORT_EWM_CLOCK_REMOVE))
+      (defined(FSL_FEATURE_PCC_SUPPORT_EWM_CLOCK_REMOVE) && FSL_FEATURE_PCC_SUPPORT_EWM_CLOCK_REMOVE))
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     CLOCK_DisableClock(kCLOCK_Ewm0);
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 #endif /* FSL_FEATURE_PCC_SUPPORT_EWM_CLOCK_REMOVE */
 }
 
+/*!
+ * brief Initializes the EWM configuration structure.
+ *
+ * This function initializes the EWM configuration structure to default values. The default
+ * values are as follows.
+ * code
+ *   ewmConfig->enableEwm = true;
+ *   ewmConfig->enableEwmInput = false;
+ *   ewmConfig->setInputAssertLogic = false;
+ *   ewmConfig->enableInterrupt = false;
+ *   ewmConfig->ewm_lpo_clock_source_t = kEWM_LpoClockSource0;
+ *   ewmConfig->prescaler = 0;
+ *   ewmConfig->compareLowValue = 0;
+ *   ewmConfig->compareHighValue = 0xFEU;
+ * endcode
+ *
+ * param config Pointer to the EWM configuration structure.
+ * see ewm_config_t
+ */
 void EWM_GetDefaultConfig(ewm_config_t *config)
 {
     assert(config);
+
+    /* Initializes the configure structure to zero. */
+    memset(config, 0, sizeof(*config));
 
     config->enableEwm = true;
     config->enableEwmInput = false;
@@ -90,6 +121,13 @@ void EWM_GetDefaultConfig(ewm_config_t *config)
     config->compareHighValue = 0xFEU;
 }
 
+/*!
+ * brief Services the EWM.
+ *
+ * This function resets the EWM counter to zero.
+ *
+ * param base EWM peripheral base address
+*/
 void EWM_Refresh(EWM_Type *base)
 {
     uint32_t primaskValue = 0U;

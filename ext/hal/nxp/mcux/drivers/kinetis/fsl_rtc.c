@@ -1,31 +1,9 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fsl_rtc.h"
@@ -33,6 +11,12 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
+
+/* Component ID definition, used by tools. */
+#ifndef FSL_COMPONENT_ID
+#define FSL_COMPONENT_ID "platform.drivers.rtc"
+#endif
+
 #define SECONDS_IN_A_DAY (86400U)
 #define SECONDS_IN_A_HOUR (3600U)
 #define SECONDS_IN_A_MINUTE (60U)
@@ -205,15 +189,27 @@ static void RTC_ConvertSecondsToDatetime(uint32_t seconds, rtc_datetime_t *datet
     datetime->day = days;
 }
 
+/*!
+ * brief Ungates the RTC clock and configures the peripheral for basic operation.
+ *
+ * This function issues a software reset if the timer invalid flag is set.
+ *
+ * note This API should be called at the beginning of the application using the RTC driver.
+ *
+ * param base   RTC peripheral base address
+ * param config Pointer to the user's RTC configuration structure.
+ */
 void RTC_Init(RTC_Type *base, const rtc_config_t *config)
 {
     assert(config);
 
     uint32_t reg;
 
+#if defined(RTC_CLOCKS)
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     CLOCK_EnableClock(kCLOCK_Rtc0);
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+#endif /* RTC_CLOCKS */
 
     /* Issue a software reset if timer is invalid */
     if (RTC_GetStatusFlags(RTC) & kRTC_TimeInvalidFlag)
@@ -222,9 +218,15 @@ void RTC_Init(RTC_Type *base, const rtc_config_t *config)
     }
 
     reg = base->CR;
-    /* Setup the update mode and supervisor access mode */
+/* Setup the update mode and supervisor access mode */
+#if !(defined(FSL_FEATURE_RTC_HAS_NO_CR_OSCE) && FSL_FEATURE_RTC_HAS_NO_CR_OSCE)
     reg &= ~(RTC_CR_UM_MASK | RTC_CR_SUP_MASK);
     reg |= RTC_CR_UM(config->updateMode) | RTC_CR_SUP(config->supervisorAccess);
+#else
+    reg &= ~RTC_CR_UM_MASK;
+    reg |= RTC_CR_UM(config->updateMode);
+#endif
+
 #if defined(FSL_FEATURE_RTC_HAS_WAKEUP_PIN_SELECTION) && FSL_FEATURE_RTC_HAS_WAKEUP_PIN_SELECTION
     /* Setup the wakeup pin select */
     reg &= ~(RTC_CR_WPS_MASK);
@@ -234,11 +236,32 @@ void RTC_Init(RTC_Type *base, const rtc_config_t *config)
 
     /* Configure the RTC time compensation register */
     base->TCR = (RTC_TCR_CIR(config->compensationInterval) | RTC_TCR_TCR(config->compensationTime));
+
+#if defined(FSL_FEATURE_RTC_HAS_TSIC) && FSL_FEATURE_RTC_HAS_TSIC
+    /* Configure RTC timer seconds interrupt to be generated once per second */
+    base->IER &= ~(RTC_IER_TSIC_MASK | RTC_IER_TSIE_MASK);
+#endif
 }
 
+/*!
+ * brief Fills in the RTC config struct with the default settings.
+ *
+ * The default values are as follows.
+ * code
+ *    config->wakeupSelect = false;
+ *    config->updateMode = false;
+ *    config->supervisorAccess = false;
+ *    config->compensationInterval = 0;
+ *    config->compensationTime = 0;
+ * endcode
+ * param config Pointer to the user's RTC configuration structure.
+ */
 void RTC_GetDefaultConfig(rtc_config_t *config)
 {
     assert(config);
+
+    /* Initializes the configure structure to zero. */
+    memset(config, 0, sizeof(*config));
 
     /* Wakeup pin will assert if the RTC interrupt asserts or if the wakeup pin is turned on */
     config->wakeupSelect = false;
@@ -252,6 +275,18 @@ void RTC_GetDefaultConfig(rtc_config_t *config)
     config->compensationTime = 0;
 }
 
+/*!
+ * brief Sets the RTC date and time according to the given time structure.
+ *
+ * The RTC counter must be stopped prior to calling this function because writes to the RTC
+ * seconds register fail if the RTC counter is running.
+ *
+ * param base     RTC peripheral base address
+ * param datetime Pointer to the structure where the date and time details are stored.
+ *
+ * return kStatus_Success: Success in setting the time and starting the RTC
+ *         kStatus_InvalidArgument: Error because the datetime format is incorrect
+ */
 status_t RTC_SetDatetime(RTC_Type *base, const rtc_datetime_t *datetime)
 {
     assert(datetime);
@@ -268,6 +303,12 @@ status_t RTC_SetDatetime(RTC_Type *base, const rtc_datetime_t *datetime)
     return kStatus_Success;
 }
 
+/*!
+ * brief Gets the RTC time and stores it in the given time structure.
+ *
+ * param base     RTC peripheral base address
+ * param datetime Pointer to the structure where the date and time details are stored.
+ */
 void RTC_GetDatetime(RTC_Type *base, rtc_datetime_t *datetime)
 {
     assert(datetime);
@@ -278,6 +319,19 @@ void RTC_GetDatetime(RTC_Type *base, rtc_datetime_t *datetime)
     RTC_ConvertSecondsToDatetime(seconds, datetime);
 }
 
+/*!
+ * brief Sets the RTC alarm time.
+ *
+ * The function checks whether the specified alarm time is greater than the present
+ * time. If not, the function does not set the alarm and returns an error.
+ *
+ * param base      RTC peripheral base address
+ * param alarmTime Pointer to the structure where the alarm time is stored.
+ *
+ * return kStatus_Success: success in setting the RTC alarm
+ *         kStatus_InvalidArgument: Error because the alarm datetime format is incorrect
+ *         kStatus_Fail: Error because the alarm time has already passed
+ */
 status_t RTC_SetAlarm(RTC_Type *base, const rtc_datetime_t *alarmTime)
 {
     assert(alarmTime);
@@ -308,6 +362,12 @@ status_t RTC_SetAlarm(RTC_Type *base, const rtc_datetime_t *alarmTime)
     return kStatus_Success;
 }
 
+/*!
+ * brief Returns the RTC alarm time.
+ *
+ * param base     RTC peripheral base address
+ * param datetime Pointer to the structure where the alarm date and time details are stored.
+ */
 void RTC_GetAlarm(RTC_Type *base, rtc_datetime_t *datetime)
 {
     assert(datetime);
@@ -320,6 +380,293 @@ void RTC_GetAlarm(RTC_Type *base, rtc_datetime_t *datetime)
     RTC_ConvertSecondsToDatetime(alarmSeconds, datetime);
 }
 
+/*!
+ * brief Enables the selected RTC interrupts.
+ *
+ * param base RTC peripheral base address
+ * param mask The interrupts to enable. This is a logical OR of members of the
+ *             enumeration ::rtc_interrupt_enable_t
+ */
+void RTC_EnableInterrupts(RTC_Type *base, uint32_t mask)
+{
+    uint32_t tmp32 = 0U;
+
+    /* RTC_IER */
+    if (kRTC_TimeInvalidInterruptEnable == (kRTC_TimeInvalidInterruptEnable & mask))
+    {
+        tmp32 |= RTC_IER_TIIE_MASK;
+    }
+    if (kRTC_TimeOverflowInterruptEnable == (kRTC_TimeOverflowInterruptEnable & mask))
+    {
+        tmp32 |= RTC_IER_TOIE_MASK;
+    }
+    if (kRTC_AlarmInterruptEnable == (kRTC_AlarmInterruptEnable & mask))
+    {
+        tmp32 |= RTC_IER_TAIE_MASK;
+    }
+    if (kRTC_SecondsInterruptEnable == (kRTC_SecondsInterruptEnable & mask))
+    {
+        tmp32 |= RTC_IER_TSIE_MASK;
+    }
+#if defined(FSL_FEATURE_RTC_HAS_MONOTONIC) && (FSL_FEATURE_RTC_HAS_MONOTONIC)
+    if (kRTC_MonotonicOverflowInterruptEnable == (kRTC_MonotonicOverflowInterruptEnable & mask))
+    {
+        tmp32 |= RTC_IER_MOIE_MASK;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_MONOTONIC */
+    base->IER |= tmp32;
+
+#if (defined(FSL_FEATURE_RTC_HAS_TIR) && FSL_FEATURE_RTC_HAS_TIR)
+    tmp32 = 0U;
+
+    /* RTC_TIR */
+    if (kRTC_TestModeInterruptEnable == (kRTC_TestModeInterruptEnable & mask))
+    {
+        tmp32 |= RTC_TIR_TMIE_MASK;
+    }
+    if (kRTC_FlashSecurityInterruptEnable == (kRTC_FlashSecurityInterruptEnable & mask))
+    {
+        tmp32 |= RTC_TIR_FSIE_MASK;
+    }
+#if (defined(FSL_FEATURE_RTC_HAS_TIR_TPIE) && FSL_FEATURE_RTC_HAS_TIR_TPIE)
+    if (kRTC_TamperPinInterruptEnable == (kRTC_TamperPinInterruptEnable & mask))
+    {
+        tmp32 |= RTC_TIR_TPIE_MASK;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_TIR_TPIE */
+#if (defined(FSL_FEATURE_RTC_HAS_TIR_SIE) && FSL_FEATURE_RTC_HAS_TIR_SIE)
+    if (kRTC_SecurityModuleInterruptEnable == (kRTC_SecurityModuleInterruptEnable & mask))
+    {
+        tmp32 |= RTC_TIR_SIE_MASK;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_TIR_SIE */
+#if (defined(FSL_FEATURE_RTC_HAS_TIR_LCIE) && FSL_FEATURE_RTC_HAS_TIR_LCIE)
+    if (kRTC_LossOfClockInterruptEnable == (kRTC_LossOfClockInterruptEnable & mask))
+    {
+        tmp32 |= RTC_TIR_LCIE_MASK;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_TIR_LCIE */
+    base->TIR |= tmp32;
+#endif /* FSL_FEATURE_RTC_HAS_TIR */
+}
+
+/*!
+ * brief Disables the selected RTC interrupts.
+ *
+ * param base RTC peripheral base address
+ * param mask The interrupts to enable. This is a logical OR of members of the
+ *             enumeration ::rtc_interrupt_enable_t
+ */
+void RTC_DisableInterrupts(RTC_Type *base, uint32_t mask)
+{
+    uint32_t tmp32 = 0U;
+
+    /* RTC_IER */
+    if (kRTC_TimeInvalidInterruptEnable == (kRTC_TimeInvalidInterruptEnable & mask))
+    {
+        tmp32 |= RTC_IER_TIIE_MASK;
+    }
+    if (kRTC_TimeOverflowInterruptEnable == (kRTC_TimeOverflowInterruptEnable & mask))
+    {
+        tmp32 |= RTC_IER_TOIE_MASK;
+    }
+    if (kRTC_AlarmInterruptEnable == (kRTC_AlarmInterruptEnable & mask))
+    {
+        tmp32 |= RTC_IER_TAIE_MASK;
+    }
+    if (kRTC_SecondsInterruptEnable == (kRTC_SecondsInterruptEnable & mask))
+    {
+        tmp32 |= RTC_IER_TSIE_MASK;
+    }
+#if defined(FSL_FEATURE_RTC_HAS_MONOTONIC) && (FSL_FEATURE_RTC_HAS_MONOTONIC)
+    if (kRTC_MonotonicOverflowInterruptEnable == (kRTC_MonotonicOverflowInterruptEnable & mask))
+    {
+        tmp32 |= RTC_IER_MOIE_MASK;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_MONOTONIC */
+    base->IER &= (uint32_t)(~tmp32);
+
+#if (defined(FSL_FEATURE_RTC_HAS_TIR) && FSL_FEATURE_RTC_HAS_TIR)
+    tmp32 = 0U;
+
+    /* RTC_TIR */
+    if (kRTC_TestModeInterruptEnable == (kRTC_TestModeInterruptEnable & mask))
+    {
+        tmp32 |= RTC_TIR_TMIE_MASK;
+    }
+    if (kRTC_FlashSecurityInterruptEnable == (kRTC_FlashSecurityInterruptEnable & mask))
+    {
+        tmp32 |= RTC_TIR_FSIE_MASK;
+    }
+#if (defined(FSL_FEATURE_RTC_HAS_TIR_TPIE) && FSL_FEATURE_RTC_HAS_TIR_TPIE)
+    if (kRTC_TamperPinInterruptEnable == (kRTC_TamperPinInterruptEnable & mask))
+    {
+        tmp32 |= RTC_TIR_TPIE_MASK;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_TIR_TPIE */
+#if (defined(FSL_FEATURE_RTC_HAS_TIR_SIE) && FSL_FEATURE_RTC_HAS_TIR_SIE)
+    if (kRTC_SecurityModuleInterruptEnable == (kRTC_SecurityModuleInterruptEnable & mask))
+    {
+        tmp32 |= RTC_TIR_SIE_MASK;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_TIR_SIE */
+#if (defined(FSL_FEATURE_RTC_HAS_TIR_LCIE) && FSL_FEATURE_RTC_HAS_TIR_LCIE)
+    if (kRTC_LossOfClockInterruptEnable == (kRTC_LossOfClockInterruptEnable & mask))
+    {
+        tmp32 |= RTC_TIR_LCIE_MASK;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_TIR_LCIE */
+    base->TIR &= (uint32_t)(~tmp32);
+#endif /* FSL_FEATURE_RTC_HAS_TIR */
+}
+
+/*!
+ * brief Gets the enabled RTC interrupts.
+ *
+ * param base RTC peripheral base address
+ *
+ * return The enabled interrupts. This is the logical OR of members of the
+ *         enumeration ::rtc_interrupt_enable_t
+ */
+uint32_t RTC_GetEnabledInterrupts(RTC_Type *base)
+{
+    uint32_t tmp32 = 0U;
+
+    /* RTC_IER */
+    if (RTC_IER_TIIE_MASK == (RTC_IER_TIIE_MASK & base->IER))
+    {
+        tmp32 |= kRTC_TimeInvalidInterruptEnable;
+    }
+    if (RTC_IER_TOIE_MASK == (RTC_IER_TOIE_MASK & base->IER))
+    {
+        tmp32 |= kRTC_TimeOverflowInterruptEnable;
+    }
+    if (RTC_IER_TAIE_MASK == (RTC_IER_TAIE_MASK & base->IER))
+    {
+        tmp32 |= kRTC_AlarmInterruptEnable;
+    }
+    if (RTC_IER_TSIE_MASK == (RTC_IER_TSIE_MASK & base->IER))
+    {
+        tmp32 |= kRTC_SecondsInterruptEnable;
+    }
+#if defined(FSL_FEATURE_RTC_HAS_MONOTONIC) && (FSL_FEATURE_RTC_HAS_MONOTONIC)
+    if (RTC_IER_MOIE_MASK == (RTC_IER_MOIE_MASK & base->IER))
+    {
+        tmp32 |= kRTC_MonotonicOverflowInterruptEnable;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_MONOTONIC */
+
+#if (defined(FSL_FEATURE_RTC_HAS_TIR) && FSL_FEATURE_RTC_HAS_TIR)
+    /* RTC_TIR */
+    if (RTC_TIR_TMIE_MASK == (RTC_TIR_TMIE_MASK & base->TIR))
+    {
+        tmp32 |= kRTC_TestModeInterruptEnable;
+    }
+    if (RTC_TIR_FSIE_MASK == (RTC_TIR_FSIE_MASK & base->TIR))
+    {
+        tmp32 |= kRTC_FlashSecurityInterruptEnable;
+    }
+#if (defined(FSL_FEATURE_RTC_HAS_TIR_TPIE) && FSL_FEATURE_RTC_HAS_TIR_TPIE)
+    if (RTC_TIR_TPIE_MASK == (RTC_TIR_TPIE_MASK & base->TIR))
+    {
+        tmp32 |= kRTC_TamperPinInterruptEnable;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_TIR_TPIE */
+#if (defined(FSL_FEATURE_RTC_HAS_TIR_SIE) && FSL_FEATURE_RTC_HAS_TIR_SIE)
+    if (RTC_TIR_SIE_MASK == (RTC_TIR_SIE_MASK & base->TIR))
+    {
+        tmp32 |= kRTC_SecurityModuleInterruptEnable;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_TIR_SIE */
+#if (defined(FSL_FEATURE_RTC_HAS_TIR_LCIE) && FSL_FEATURE_RTC_HAS_TIR_LCIE)
+    if (RTC_TIR_LCIE_MASK == (RTC_TIR_LCIE_MASK & base->TIR))
+    {
+        tmp32 |= kRTC_LossOfClockInterruptEnable;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_TIR_LCIE */
+#endif /* FSL_FEATURE_RTC_HAS_TIR */
+
+    return tmp32;
+}
+
+/*!
+ * brief Gets the RTC status flags.
+ *
+ * param base RTC peripheral base address
+ *
+ * return The status flags. This is the logical OR of members of the
+ *         enumeration ::rtc_status_flags_t
+ */
+uint32_t RTC_GetStatusFlags(RTC_Type *base)
+{
+    uint32_t tmp32 = 0U;
+
+    /* RTC_SR */
+    if (RTC_SR_TIF_MASK == (RTC_SR_TIF_MASK & base->SR))
+    {
+        tmp32 |= kRTC_TimeInvalidFlag;
+    }
+    if (RTC_SR_TOF_MASK == (RTC_SR_TOF_MASK & base->SR))
+    {
+        tmp32 |= kRTC_TimeOverflowFlag;
+    }
+    if (RTC_SR_TAF_MASK == (RTC_SR_TAF_MASK & base->SR))
+    {
+        tmp32 |= kRTC_AlarmFlag;
+    }
+#if defined(FSL_FEATURE_RTC_HAS_MONOTONIC) && (FSL_FEATURE_RTC_HAS_MONOTONIC)
+    if (RTC_SR_MOF_MASK == (RTC_SR_MOF_MASK & base->SR))
+    {
+        tmp32 |= kRTC_MonotonicOverflowFlag;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_MONOTONIC */
+#if (defined(FSL_FEATURE_RTC_HAS_SR_TIDF) && FSL_FEATURE_RTC_HAS_SR_TIDF)
+    if (RTC_SR_TIDF_MASK == (RTC_SR_TIDF_MASK & base->SR))
+    {
+        tmp32 |= kRTC_TamperInterruptDetectFlag;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_SR_TIDF */
+
+#if (defined(FSL_FEATURE_RTC_HAS_TDR) && FSL_FEATURE_RTC_HAS_TDR)
+    /* RTC_TDR */
+    if (RTC_TDR_TMF_MASK == (RTC_TDR_TMF_MASK & base->TDR))
+    {
+        tmp32 |= kRTC_TestModeFlag;
+    }
+    if (RTC_TDR_FSF_MASK == (RTC_TDR_FSF_MASK & base->TDR))
+    {
+        tmp32 |= kRTC_FlashSecurityFlag;
+    }
+#if (defined(FSL_FEATURE_RTC_HAS_TDR_TPF) && FSL_FEATURE_RTC_HAS_TDR_TPF)
+    if (RTC_TDR_TPF_MASK == (RTC_TDR_TPF_MASK & base->TDR))
+    {
+        tmp32 |= kRTC_TamperPinFlag;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_TDR_TPF */
+#if (defined(FSL_FEATURE_RTC_HAS_TDR_STF) && FSL_FEATURE_RTC_HAS_TDR_STF)
+    if (RTC_TDR_STF_MASK == (RTC_TDR_STF_MASK & base->TDR))
+    {
+        tmp32 |= kRTC_SecurityTamperFlag;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_TDR_STF */
+#if (defined(FSL_FEATURE_RTC_HAS_TDR_LCTF) && FSL_FEATURE_RTC_HAS_TDR_LCTF)
+    if (RTC_TDR_LCTF_MASK == (RTC_TDR_LCTF_MASK & base->TDR))
+    {
+        tmp32 |= kRTC_LossOfClockTamperFlag;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_TDR_LCTF */
+#endif /* FSL_FEATURE_RTC_HAS_TDR */
+
+    return tmp32;
+}
+
+/*!
+ * brief  Clears the RTC status flags.
+ *
+ * param base RTC peripheral base address
+ * param mask The status flags to clear. This is a logical OR of members of the
+ *             enumeration ::rtc_status_flags_t
+ */
 void RTC_ClearStatusFlags(RTC_Type *base, uint32_t mask)
 {
     /* The alarm flag is cleared by writing to the TAR register */
@@ -343,10 +690,51 @@ void RTC_ClearStatusFlags(RTC_Type *base, uint32_t mask)
     {
         base->TSR = 1U;
     }
+
+#if (defined(FSL_FEATURE_RTC_HAS_TDR) && FSL_FEATURE_RTC_HAS_TDR)
+    /* To clear, write logic one to this flag after exiting from all test modes */
+    if (kRTC_TestModeFlag == (kRTC_TestModeFlag & mask))
+    {
+        base->TDR = RTC_TDR_TMF_MASK;
+    }
+    /* To clear, write logic one to this flag after flash security is enabled */
+    if (kRTC_FlashSecurityFlag == (kRTC_FlashSecurityFlag & mask))
+    {
+        base->TDR = RTC_TDR_FSF_MASK;
+    }
+#if (defined(FSL_FEATURE_RTC_HAS_TDR_TPF) && FSL_FEATURE_RTC_HAS_TDR_TPF)
+    /* To clear, write logic one to the corresponding flag after that tamper pin negates */
+    if (kRTC_TamperPinFlag == (kRTC_TamperPinFlag & mask))
+    {
+        base->TDR = RTC_TDR_TPF_MASK;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_TDR_TPF */
+#if (defined(FSL_FEATURE_RTC_HAS_TDR_STF) && FSL_FEATURE_RTC_HAS_TDR_STF)
+    /* To clear, write logic one to this flag after security module has negated its tamper detect */
+    if (kRTC_SecurityTamperFlag == (kRTC_SecurityTamperFlag & mask))
+    {
+        base->TDR = RTC_TDR_STF_MASK;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_TDR_STF */
+#if (defined(FSL_FEATURE_RTC_HAS_TDR_LCTF) && FSL_FEATURE_RTC_HAS_TDR_LCTF)
+    /* To clear, write logic one to this flag after loss of clock negates */
+    if (kRTC_LossOfClockTamperFlag == (kRTC_LossOfClockTamperFlag & mask))
+    {
+        base->TDR = RTC_TDR_LCTF_MASK;
+    }
+#endif /* FSL_FEATURE_RTC_HAS_TDR_LCTF */
+#endif /* FSL_FEATURE_RTC_HAS_TDR */
 }
 
 #if defined(FSL_FEATURE_RTC_HAS_MONOTONIC) && (FSL_FEATURE_RTC_HAS_MONOTONIC)
 
+/*!
+ * brief Reads the values of the Monotonic Counter High and Monotonic Counter Low and returns
+ *        them as a single value.
+ *
+ * param base    RTC peripheral base address
+ * param counter Pointer to variable where the value is stored.
+ */
 void RTC_GetMonotonicCounter(RTC_Type *base, uint64_t *counter)
 {
     assert(counter);
@@ -354,6 +742,13 @@ void RTC_GetMonotonicCounter(RTC_Type *base, uint64_t *counter)
     *counter = (((uint64_t)base->MCHR << 32) | ((uint64_t)base->MCLR));
 }
 
+/*!
+ * brief Writes values Monotonic Counter High and Monotonic Counter Low by decomposing
+ *        the given single value. The Monotonic Overflow Flag in RTC_SR is cleared due to the API.
+ *
+ * param base    RTC peripheral base address
+ * param counter Counter value
+ */
 void RTC_SetMonotonicCounter(RTC_Type *base, uint64_t counter)
 {
     /* Prepare to initialize the register with the new value written */
@@ -363,6 +758,18 @@ void RTC_SetMonotonicCounter(RTC_Type *base, uint64_t counter)
     base->MCLR = (uint32_t)(counter);
 }
 
+/*!
+ * brief Increments the Monotonic Counter by one.
+ *
+ * Increments the Monotonic Counter (registers RTC_MCLR and RTC_MCHR accordingly) by setting
+ * the monotonic counter enable (MER[MCE]) and then writing to the RTC_MCLR register. A write to the
+ * monotonic counter low that causes it to overflow also increments the monotonic counter high.
+ *
+ * param base RTC peripheral base address
+ *
+ * return kStatus_Success: success
+ *         kStatus_Fail: error occurred, either time invalid or monotonic overflow flag was found
+ */
 status_t RTC_IncrementMonotonicCounter(RTC_Type *base)
 {
     if (base->SR & (RTC_SR_MOF_MASK | RTC_SR_TIF_MASK))

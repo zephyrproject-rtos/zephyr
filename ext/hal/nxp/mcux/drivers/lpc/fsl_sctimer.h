@@ -1,31 +1,9 @@
 /*
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 #ifndef _FSL_SCTIMER_H_
 #define _FSL_SCTIMER_H_
@@ -45,7 +23,7 @@
 
 /*! @name Driver version */
 /*@{*/
-#define FSL_SCTIMER_DRIVER_VERSION (MAKE_VERSION(2, 0, 0)) /*!< Version 2.0.0 */
+#define FSL_SCTIMER_DRIVER_VERSION (MAKE_VERSION(2, 0, 1)) /*!< Version 2.0.1 */
 /*@}*/
 
 /*! @brief SCTimer PWM operation modes */
@@ -85,7 +63,9 @@ typedef enum _sctimer_out
     kSCTIMER_Out_4,      /*!< SCTIMER output 4 */
     kSCTIMER_Out_5,      /*!< SCTIMER output 5 */
     kSCTIMER_Out_6,      /*!< SCTIMER output 6 */
-    kSCTIMER_Out_7       /*!< SCTIMER output 7 */
+    kSCTIMER_Out_7,      /*!< SCTIMER output 7 */
+    kSCTIMER_Out_8,      /*!< SCTIMER output 8 */
+    kSCTIMER_Out_9       /*!< SCTIMER output 9 */
 } sctimer_out_t;
 
 /*! @brief SCTimer PWM output pulse mode: high-true, low-true or no output */
@@ -249,7 +229,7 @@ typedef enum _sctimer_status_flags
     kSCTIMER_BusErrorLFlag =
         (1U << SCT_CONFLAG_BUSERRL_SHIFT), /*!< Bus error due to write when L counter was not halted */
     kSCTIMER_BusErrorHFlag =
-        (1U << SCT_CONFLAG_BUSERRH_SHIFT) /*!< Bus error due to write when H counter was not halted */
+        (int)(1U << SCT_CONFLAG_BUSERRH_SHIFT) /*!< Bus error due to write when H counter was not halted */
 } sctimer_status_flags_t;
 
 /*!
@@ -352,7 +332,7 @@ void SCTIMER_GetDefaultConfig(sctimer_config_t *config);
  * @note When setting PWM output from multiple output pins, they all should use the same PWM mode
  * i.e all PWM's should be either edge-aligned or center-aligned.
  * When using this API, the PWM signal frequency of all the initialized channels must be the same.
- * Otherwise all the initialized channels' PWM signal frequency is equal to the last call to the 
+ * Otherwise all the initialized channels' PWM signal frequency is equal to the last call to the
  * API's pwmFreq_Hz.
  *
  * @param base        SCTimer peripheral base address
@@ -661,6 +641,8 @@ static inline void SCTIMER_SetupNextStateAction(SCT_Type *base, uint32_t nextSta
  */
 static inline void SCTIMER_SetupOutputSetAction(SCT_Type *base, uint32_t whichIO, uint32_t event)
 {
+    assert(whichIO < FSL_FEATURE_SCT_NUMBER_OF_OUTPUTS);
+
     base->OUT[whichIO].SET |= (1U << event);
 }
 
@@ -675,6 +657,8 @@ static inline void SCTIMER_SetupOutputSetAction(SCT_Type *base, uint32_t whichIO
  */
 static inline void SCTIMER_SetupOutputClearAction(SCT_Type *base, uint32_t whichIO, uint32_t event)
 {
+    assert(whichIO < FSL_FEATURE_SCT_NUMBER_OF_OUTPUTS);
+
     base->OUT[whichIO].CLR |= (1U << event);
 }
 
@@ -783,6 +767,7 @@ static inline void SCTIMER_SetupCounterHaltAction(SCT_Type *base, sctimer_counte
     }
 }
 
+#if !(defined(FSL_FEATURE_SCT_HAS_NO_DMA_REQUEST) && FSL_FEATURE_SCT_HAS_NO_DMA_REQUEST)
 /*!
  * @brief Generate a DMA request.
  *
@@ -803,6 +788,7 @@ static inline void SCTIMER_SetupDmaTriggerAction(SCT_Type *base, uint32_t dmaNum
         base->DMA1REQUEST |= (1U << event);
     }
 }
+#endif /* FSL_FEATURE_SCT_HAS_NO_DMA_REQUEST */
 
 /*!
  * @brief SCTimer interrupt handler.

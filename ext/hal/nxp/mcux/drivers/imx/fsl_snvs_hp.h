@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
- * Copyright (c) 2017, NXP
+ * Copyright (c) 2017-2018, NXP
  * All rights reserved.
- * 
+ *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
@@ -22,7 +22,7 @@
 
 /*! @name Driver version */
 /*@{*/
-#define FSL_SNVS_HP_DRIVER_VERSION (MAKE_VERSION(2, 0, 0)) /*!< Version 2.0.0 */
+#define FSL_SNVS_HP_DRIVER_VERSION (MAKE_VERSION(2, 1, 1)) /*!< Version 2.1.1 */
 /*@}*/
 
 /*! @brief List of SNVS interrupts */
@@ -37,9 +37,34 @@ typedef enum _snvs_hp_status_flags
 {
     kSNVS_RTC_AlarmInterruptFlag = SNVS_HPSR_HPTA_MASK,  /*!< RTC time alarm flag */
     kSNVS_RTC_PeriodicInterruptFlag = SNVS_HPSR_PI_MASK, /*!< RTC periodic interrupt flag */
-    kSNVS_ZMK_ZeroFlag = SNVS_HPSR_ZMK_ZERO_MASK,        /*!< The ZMK is zero */
+    kSNVS_ZMK_ZeroFlag = (int)SNVS_HPSR_ZMK_ZERO_MASK,   /*!< The ZMK is zero */
     kSNVS_OTPMK_ZeroFlag = SNVS_HPSR_OTPMK_ZERO_MASK,    /*!< The OTPMK is zero */
 } snvs_hp_status_flags_t;
+
+/*! @brief List of SNVS security violation flags */
+typedef enum _snvs_hp_sv_status_flags
+{
+    kSNVS_LP_ViolationFlag = SNVS_HPSVSR_SW_LPSV_MASK,          /*!< Low Power section Security Violation */
+    kSNVS_ZMK_EccFailFlag = SNVS_HPSVSR_ZMK_ECC_FAIL_MASK,      /*!< Zeroizable Master Key Error Correcting Code Check
+                                                                  Failure */
+    kSNVS_LP_SoftwareViolationFlag = SNVS_HPSVSR_SW_LPSV_MASK,  /*!< LP Software Security Violation */
+    kSNVS_FatalSoftwareViolationFlag = SNVS_HPSVSR_SW_FSV_MASK, /*!< Software Fatal Security Violation */
+    kSNVS_SoftwareViolationFlag = SNVS_HPSVSR_SW_SV_MASK,       /*!< Software Security Violation */
+    kSNVS_Violation0Flag = SNVS_HPSVSR_SV0_MASK,                /*!< Security Violation 0 */
+    kSNVS_Violation1Flag = SNVS_HPSVSR_SV1_MASK,                /*!< Security Violation 1 */
+    kSNVS_Violation2Flag = SNVS_HPSVSR_SV2_MASK,                /*!< Security Violation 2 */
+    kSNVS_Violation3Flag = SNVS_HPSVSR_SV3_MASK,                /*!< Security Violation 3 */
+    kSNVS_Violation4Flag = SNVS_HPSVSR_SV4_MASK,                /*!< Security Violation 4 */
+    kSNVS_Violation5Flag = SNVS_HPSVSR_SV5_MASK,                /*!< Security Violation 5 */
+} snvs_hp_sv_status_flags_t;
+
+/*!
+ * @brief Macro to make security violation flag
+ *
+ * Macro help to make security violation flag kSNVS_Violation0Flag to kSNVS_Violation5Flag,
+ * For example, SNVS_MAKE_HP_SV_FLAG(0) is kSNVS_Violation0Flag.
+ */
+#define SNVS_MAKE_HP_SV_FLAG(x) (1U << (SNVS_HPSVSR_SV0_SHIFT + (x)))
 
 /*! @brief Structure is used to hold the date and time */
 typedef struct _snvs_hp_rtc_datetime
@@ -82,7 +107,6 @@ typedef enum _snvs_hp_ssm_state
     kSNVS_SSMTrusted = 0x0D,   /*!< Trusted */
     kSNVS_SSMSecure = 0x0F,    /*!< Secure */
 } snvs_hp_ssm_state_t;
-
 
 /*******************************************************************************
  * API
@@ -518,7 +542,7 @@ static inline void SNVS_HP_LockHighAssuranceCounter(SNVS_Type *base)
 /*!
  * @brief Get the SNVS HP status flags.
  *
- * The flags are returned as the OR'ed value of @ref snvs_hp_status_flags_t.
+ * The flags are returned as the OR'ed value of @ref snvs_hp_sgtatus_flags_t.
  *
  * @param base SNVS peripheral base address
  * @return The OR'ed value of status flags.
@@ -544,6 +568,40 @@ static inline void SNVS_HP_ClearStatusFlags(SNVS_Type *base, uint32_t mask)
     base->HPSR = mask;
 }
 
+/*!
+ * @brief Get the SNVS HP security violation status flags.
+ *
+ * The flags are returned as the OR'ed value of @ref snvs_hp_sv_status_flags_t.
+ *
+ * @param base SNVS peripheral base address
+ * @return The OR'ed value of security violation status flags.
+ */
+static inline uint32_t SNVS_HP_GetSecurityViolationStatusFlags(SNVS_Type *base)
+{
+    return base->HPSVSR;
+}
+
+/*!
+ * @brief Clear the SNVS HP security violation status flags.
+ *
+ * The flags to clear are passed in as the OR'ed value of @ref snvs_hp_sv_status_flags_t.
+ * Only these flags could be cleared using this API.
+ *
+ *  - @ref kSNVS_ZMK_EccFailFlag
+ *  - @ref kSNVS_Violation0Flag
+ *  - @ref kSNVS_Violation1Flag
+ *  - @ref kSNVS_Violation2Flag
+ *  - @ref kSNVS_Violation3Flag
+ *  - @ref kSNVS_Violation4Flag
+ *  - @ref kSNVS_Violation5Flag
+ *
+ * @param base SNVS peripheral base address
+ * @param mask OR'ed value of the flags to clear.
+ */
+static inline void SNVS_HP_ClearSecurityViolationStatusFlags(SNVS_Type *base, uint32_t mask)
+{
+    base->HPSVSR = mask;
+}
 
 #if defined(__cplusplus)
 }

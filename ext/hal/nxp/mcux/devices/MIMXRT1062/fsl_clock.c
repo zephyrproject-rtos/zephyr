@@ -14,20 +14,21 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
-/* To make full use of CM7 hardware FPU, use double instead of uint64_t in clock driver to 
+/* To make full use of CM7 hardware FPU, use double instead of uint64_t in clock driver to
 achieve better performance, it is depend on the IDE Floating point settings, if double precision is selected
 in IDE, clock_64b_t will switch to double type automatically. only support IAR and MDK here */
 #if __FPU_USED
 
 #if ((defined(__ICCARM__)) || (defined(__GNUC__)))
 
-#if (__ARMVFP__  >=  __ARMFPV5__) && (__ARM_FP == 0xE) /*0xe implies support for half, single and double precision operations*/
+#if (__ARMVFP__ >= __ARMFPV5__) && \
+    (__ARM_FP == 0xE) /*0xe implies support for half, single and double precision operations*/
 typedef double clock_64b_t;
 #else
 typedef uint64_t clock_64b_t;
 #endif
 
-#elif defined(__CC_ARM)
+#elif defined(__CC_ARM) || defined(__ARMCC_VERSION)
 
 #if defined __TARGET_FPU_FPV5_D16
 typedef double clock_64b_t;
@@ -447,7 +448,7 @@ bool CLOCK_EnableUsbhs0PhyPllClock(clock_usb_phy_src_t src, uint32_t freq)
     const clock_usb_pll_config_t g_ccmConfigUsbPll = {.loopDivider = 0U};
     if (CCM_ANALOG->PLL_USB1 & CCM_ANALOG_PLL_USB1_ENABLE_MASK)
     {
-        CCM_ANALOG->PLL_USB1 |= CCM_ANALOG_PLL_USB1_EN_USB_CLKS_MASK; 
+        CCM_ANALOG->PLL_USB1 |= CCM_ANALOG_PLL_USB1_EN_USB_CLKS_MASK;
     }
     else
     {
@@ -468,7 +469,7 @@ bool CLOCK_EnableUsbhs0PhyPllClock(clock_usb_phy_src_t src, uint32_t freq)
  */
 void CLOCK_DisableUsbhs0PhyPllClock(void)
 {
-    CCM_ANALOG->PLL_USB1 &= ~CCM_ANALOG_PLL_USB1_EN_USB_CLKS_MASK; 
+    CCM_ANALOG->PLL_USB1 &= ~CCM_ANALOG_PLL_USB1_EN_USB_CLKS_MASK;
     USBPHY1->CTRL |= USBPHY_CTRL_CLKGATE_MASK; /* Set to 1U to gate clocks */
 }
 
@@ -521,6 +522,15 @@ void CLOCK_InitSysPll(const clock_sys_pll_config_t *config)
     CCM_ANALOG->PLL_SYS =
         (CCM_ANALOG->PLL_SYS & (~(CCM_ANALOG_PLL_SYS_DIV_SELECT_MASK | CCM_ANALOG_PLL_SYS_POWERDOWN_MASK))) |
         CCM_ANALOG_PLL_SYS_ENABLE_MASK | CCM_ANALOG_PLL_SYS_DIV_SELECT(config->loopDivider);
+
+    /* Initialize the fractional mode */
+    CCM_ANALOG->PLL_SYS_NUM = CCM_ANALOG_PLL_SYS_NUM_A(config->numerator);
+    CCM_ANALOG->PLL_SYS_DENOM = CCM_ANALOG_PLL_SYS_DENOM_B(config->denominator);
+
+    /* Initialize the spread spectrum mode */
+    CCM_ANALOG->PLL_SYS_SS = CCM_ANALOG_PLL_SYS_SS_STEP(config->ss_step) |
+                             CCM_ANALOG_PLL_SYS_SS_ENABLE(config->ss_enable) |
+                             CCM_ANALOG_PLL_SYS_SS_STOP(config->ss_stop);
 
     while ((CCM_ANALOG->PLL_SYS & CCM_ANALOG_PLL_SYS_LOCK_MASK) == 0)
     {
@@ -809,7 +819,8 @@ void CLOCK_InitEnetPll(const clock_enet_pll_config_t *config)
 
     CCM_ANALOG->PLL_ENET =
         (CCM_ANALOG->PLL_ENET & (~(CCM_ANALOG_PLL_ENET_DIV_SELECT_MASK | CCM_ANALOG_PLL_ENET_ENET2_DIV_SELECT_MASK |
-                                   CCM_ANALOG_PLL_ENET_POWERDOWN_MASK))) | enet_pll;
+                                   CCM_ANALOG_PLL_ENET_POWERDOWN_MASK))) |
+        enet_pll;
 
     /* Wait for stable */
     while ((CCM_ANALOG->PLL_ENET & CCM_ANALOG_PLL_ENET_LOCK_MASK) == 0)
@@ -875,8 +886,8 @@ uint32_t CLOCK_GetPllFreq(clock_pll_t pll)
             break;
         case kCLOCK_PllSys:
             /* PLL output frequency = Fref * (DIV_SELECT + NUM/DENOM). */
-            freqTmp =
-                ((clock_64b_t)freq * ((clock_64b_t)(CCM_ANALOG->PLL_SYS_NUM))) / ((clock_64b_t)(CCM_ANALOG->PLL_SYS_DENOM));
+            freqTmp = ((clock_64b_t)freq * ((clock_64b_t)(CCM_ANALOG->PLL_SYS_NUM))) /
+                      ((clock_64b_t)(CCM_ANALOG->PLL_SYS_DENOM));
 
             if (CCM_ANALOG->PLL_SYS & CCM_ANALOG_PLL_SYS_DIV_SELECT_MASK)
             {
@@ -899,8 +910,8 @@ uint32_t CLOCK_GetPllFreq(clock_pll_t pll)
             divSelect =
                 (CCM_ANALOG->PLL_AUDIO & CCM_ANALOG_PLL_AUDIO_DIV_SELECT_MASK) >> CCM_ANALOG_PLL_AUDIO_DIV_SELECT_SHIFT;
 
-            freqTmp =
-                ((clock_64b_t)freq * ((clock_64b_t)(CCM_ANALOG->PLL_AUDIO_NUM))) / ((clock_64b_t)(CCM_ANALOG->PLL_AUDIO_DENOM));
+            freqTmp = ((clock_64b_t)freq * ((clock_64b_t)(CCM_ANALOG->PLL_AUDIO_NUM))) /
+                      ((clock_64b_t)(CCM_ANALOG->PLL_AUDIO_DENOM));
 
             freq = freq * divSelect + (uint32_t)freqTmp;
 
@@ -954,8 +965,8 @@ uint32_t CLOCK_GetPllFreq(clock_pll_t pll)
             divSelect =
                 (CCM_ANALOG->PLL_VIDEO & CCM_ANALOG_PLL_VIDEO_DIV_SELECT_MASK) >> CCM_ANALOG_PLL_VIDEO_DIV_SELECT_SHIFT;
 
-            freqTmp =
-                ((clock_64b_t)freq * ((clock_64b_t)(CCM_ANALOG->PLL_VIDEO_NUM))) / ((clock_64b_t)(CCM_ANALOG->PLL_VIDEO_DENOM));
+            freqTmp = ((clock_64b_t)freq * ((clock_64b_t)(CCM_ANALOG->PLL_VIDEO_NUM))) /
+                      ((clock_64b_t)(CCM_ANALOG->PLL_VIDEO_DENOM));
 
             freq = freq * divSelect + (uint32_t)freqTmp;
 
@@ -1212,6 +1223,6 @@ bool CLOCK_EnableUsbhs1PhyPllClock(clock_usb_phy_src_t src, uint32_t freq)
  */
 void CLOCK_DisableUsbhs1PhyPllClock(void)
 {
-    CCM_ANALOG->PLL_USB2 &= ~CCM_ANALOG_PLL_USB2_EN_USB_CLKS_MASK; 
+    CCM_ANALOG->PLL_USB2 &= ~CCM_ANALOG_PLL_USB2_EN_USB_CLKS_MASK;
     USBPHY2->CTRL |= USBPHY_CTRL_CLKGATE_MASK; /* Set to 1U to gate clocks */
 }

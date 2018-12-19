@@ -1,31 +1,9 @@
 /*
  * Copyright (c) 2015-2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 #ifndef _FSL_UART_H_
 #define _FSL_UART_H_
@@ -43,8 +21,8 @@
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief UART driver version 2.1.4. */
-#define FSL_UART_DRIVER_VERSION (MAKE_VERSION(2, 1, 4))
+/*! @brief UART driver version 2.1.6. */
+#define FSL_UART_DRIVER_VERSION (MAKE_VERSION(2, 1, 6))
 /*@}*/
 
 /*! @brief Error codes for the UART driver. */
@@ -66,6 +44,7 @@ enum _uart_status
     kStatus_UART_ParityError = MAKE_STATUS(kStatusGroup_UART, 12),        /*!< UART parity error. */
     kStatus_UART_BaudrateNotSupport =
         MAKE_STATUS(kStatusGroup_UART, 13), /*!< Baudrate is not support in current clock source */
+    kStatus_UART_IdleLineDetected = MAKE_STATUS(kStatusGroup_UART, 14), /*!< UART IDLE line detected. */
 };
 
 /*! @brief UART parity mode. */
@@ -82,6 +61,13 @@ typedef enum _uart_stop_bit_count
     kUART_OneStopBit = 0U, /*!< One stop bit */
     kUART_TwoStopBit = 1U, /*!< Two stop bits */
 } uart_stop_bit_count_t;
+
+/*! @brief UART idle type select. */
+typedef enum _uart_idle_type_select
+{
+    kUART_IdleTypeStartBit = 0U, /*!< Start counting after a valid start bit. */
+    kUART_IdleTypeStopBit = 1U,  /*!< Start counting after a stop bit. */
+} uart_idle_type_select_t;
 
 /*!
  * @brief UART interrupt configuration structure, default settings all disabled.
@@ -142,25 +128,22 @@ enum _uart_flags
 #if defined(FSL_FEATURE_UART_HAS_LIN_BREAK_DETECT) && FSL_FEATURE_UART_HAS_LIN_BREAK_DETECT
     kUART_LinBreakFlag =
         (UART_S2_LBKDIF_MASK
-         << 8), /*!< LIN break detect interrupt flag, sets when
-                                                       LIN break char detected and LIN circuit enabled */
+         << 8), /*!< LIN break detect interrupt flag, sets when LIN break char detected and LIN circuit enabled */
 #endif
     kUART_RxActiveEdgeFlag =
-        (UART_S2_RXEDGIF_MASK << 8), /*!< RX pin active edge interrupt flag,
-                                                                            sets when active edge detected */
+        (UART_S2_RXEDGIF_MASK << 8), /*!< RX pin active edge interrupt flag,sets when active edge detected */
     kUART_RxActiveFlag =
-        (UART_S2_RAF_MASK << 8), /*!< Receiver Active Flag (RAF),
-                                                                        sets at beginning of valid start bit */
+        (UART_S2_RAF_MASK << 8), /*!< Receiver Active Flag (RAF), sets at beginning of valid start bit */
 #if defined(FSL_FEATURE_UART_HAS_EXTENDED_DATA_REGISTER_FLAGS) && FSL_FEATURE_UART_HAS_EXTENDED_DATA_REGISTER_FLAGS
     kUART_NoiseErrorInRxDataRegFlag = (UART_ED_NOISY_MASK << 16),    /*!< Noisy bit, sets if noise detected. */
-    kUART_ParityErrorInRxDataRegFlag = (UART_ED_PARITYE_MASK << 16), /*!< Paritye bit, sets if parity error detected. */
+    kUART_ParityErrorInRxDataRegFlag = (UART_ED_PARITYE_MASK << 16), /*!< Parity bit, sets if parity error detected. */
 #endif
 #if defined(FSL_FEATURE_UART_HAS_FIFO) && FSL_FEATURE_UART_HAS_FIFO
-    kUART_TxFifoEmptyFlag = (UART_SFIFO_TXEMPT_MASK << 24),   /*!< TXEMPT bit, sets if TX buffer is empty */
-    kUART_RxFifoEmptyFlag = (UART_SFIFO_RXEMPT_MASK << 24),   /*!< RXEMPT bit, sets if RX buffer is empty */
-    kUART_TxFifoOverflowFlag = (UART_SFIFO_TXOF_MASK << 24),  /*!< TXOF bit, sets if TX buffer overflow occurred */
-    kUART_RxFifoOverflowFlag = (UART_SFIFO_RXOF_MASK << 24),  /*!< RXOF bit, sets if receive buffer overflow */
-    kUART_RxFifoUnderflowFlag = (UART_SFIFO_RXUF_MASK << 24), /*!< RXUF bit, sets if receive buffer underflow */
+    kUART_TxFifoEmptyFlag = (int)(UART_SFIFO_TXEMPT_MASK << 24), /*!< TXEMPT bit, sets if TX buffer is empty */
+    kUART_RxFifoEmptyFlag = (UART_SFIFO_RXEMPT_MASK << 24),      /*!< RXEMPT bit, sets if RX buffer is empty */
+    kUART_TxFifoOverflowFlag = (UART_SFIFO_TXOF_MASK << 24),     /*!< TXOF bit, sets if TX buffer overflow occurred */
+    kUART_RxFifoOverflowFlag = (UART_SFIFO_RXOF_MASK << 24),     /*!< RXOF bit, sets if receive buffer overflow */
+    kUART_RxFifoUnderflowFlag = (UART_SFIFO_RXUF_MASK << 24),    /*!< RXUF bit, sets if receive buffer underflow */
 #endif
 };
 
@@ -176,8 +159,13 @@ typedef struct _uart_config
     uint8_t txFifoWatermark; /*!< TX FIFO watermark */
     uint8_t rxFifoWatermark; /*!< RX FIFO watermark */
 #endif
-    bool enableTx; /*!< Enable TX */
-    bool enableRx; /*!< Enable RX */
+#if defined(FSL_FEATURE_UART_HAS_MODEM_SUPPORT) && FSL_FEATURE_UART_HAS_MODEM_SUPPORT
+    bool enableRxRTS; /*!< RX RTS enable */
+    bool enableTxCTS; /*!< TX CTS enable */
+#endif
+    uart_idle_type_select_t idleType; /*!< IDLE type select. */
+    bool enableTx;                    /*!< Enable TX */
+    bool enableRx;                    /*!< Enable RX */
 } uart_config_t;
 
 /*! @brief UART transfer structure. */
@@ -222,6 +210,14 @@ struct _uart_handle
 #if defined(__cplusplus)
 extern "C" {
 #endif /* _cplusplus */
+
+/*!
+ * @brief Get the UART instance from peripheral base address.
+ *
+ * @param base UART peripheral base address.
+ * @return UART instance.
+ */
+uint32_t UART_GetInstance(UART_Type *base);
 
 /*!
  * @name Initialization and deinitialization
@@ -272,6 +268,7 @@ void UART_Deinit(UART_Type *base);
  *   uartConfig->stopBitCount = kUART_OneStopBit;
  *   uartConfig->txFifoWatermark = 0;
  *   uartConfig->rxFifoWatermark = 1;
+ *   uartConfig->idleType = kUART_IdleTypeStartBit;
  *   uartConfig->enableTx = false;
  *   uartConfig->enableRx = false;
  *
@@ -642,6 +639,14 @@ void UART_TransferStartRingBuffer(UART_Type *base, uart_handle_t *handle, uint8_
  * @param handle UART handle pointer.
  */
 void UART_TransferStopRingBuffer(UART_Type *base, uart_handle_t *handle);
+
+/*!
+ * @brief Get the length of received data in RX ring buffer.
+ *
+ * @param handle UART handle pointer.
+ * @return Length of received data in RX ring buffer.
+ */
+size_t UART_TransferGetRxRingBufferLength(uart_handle_t *handle);
 
 /*!
  * @brief Transmits a buffer of data using the interrupt method.

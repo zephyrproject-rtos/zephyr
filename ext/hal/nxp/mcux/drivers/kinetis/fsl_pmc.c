@@ -1,35 +1,26 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 #include "fsl_pmc.h"
 
+/* Component ID definition, used by tools. */
+#ifndef FSL_COMPONENT_ID
+#define FSL_COMPONENT_ID "platform.drivers.pmc"
+#endif
+
 #if (defined(FSL_FEATURE_PMC_HAS_PARAM) && FSL_FEATURE_PMC_HAS_PARAM)
+/*!
+ * brief Gets the PMC parameter.
+ *
+ * This function gets the PMC parameter including the VLPO enable and the HVD enable.
+ *
+ * param base PMC peripheral base address.
+ * param param         Pointer to PMC param structure.
+ */
 void PMC_GetParam(PMC_Type *base, pmc_param_t *param)
 {
     uint32_t reg = base->PARAM;
@@ -39,6 +30,15 @@ void PMC_GetParam(PMC_Type *base, pmc_param_t *param)
 }
 #endif /* FSL_FEATURE_PMC_HAS_PARAM */
 
+/*!
+ * brief Configures the low-voltage detect setting.
+ *
+ * This function configures the low-voltage detect setting, including the trip
+ * point voltage setting, enables or disables the interrupt, enables or disables the system reset.
+ *
+ * param base PMC peripheral base address.
+ * param config  Low-voltage detect configuration structure.
+ */
 void PMC_ConfigureLowVoltDetect(PMC_Type *base, const pmc_low_volt_detect_config_t *config)
 {
     base->LVDSC1 = (0U |
@@ -51,6 +51,15 @@ void PMC_ConfigureLowVoltDetect(PMC_Type *base, const pmc_low_volt_detect_config
                     | PMC_LVDSC1_LVDACK_MASK);
 }
 
+/*!
+ * brief Configures the low-voltage warning setting.
+ *
+ * This function configures the low-voltage warning setting, including the trip
+ * point voltage setting and enabling or disabling the interrupt.
+ *
+ * param base PMC peripheral base address.
+ * param config  Low-voltage warning configuration structure.
+ */
 void PMC_ConfigureLowVoltWarning(PMC_Type *base, const pmc_low_volt_warning_config_t *config)
 {
     base->LVDSC2 = (0U |
@@ -63,6 +72,15 @@ void PMC_ConfigureLowVoltWarning(PMC_Type *base, const pmc_low_volt_warning_conf
 }
 
 #if (defined(FSL_FEATURE_PMC_HAS_HVDSC1) && FSL_FEATURE_PMC_HAS_HVDSC1)
+/*!
+ * brief Configures the high-voltage detect setting.
+ *
+ * This function configures the high-voltage detect setting, including the trip
+ * point voltage setting, enabling or disabling the interrupt, enabling or disabling the system reset.
+ *
+ * param base PMC peripheral base address.
+ * param config  High-voltage detect configuration structure.
+ */
 void PMC_ConfigureHighVoltDetect(PMC_Type *base, const pmc_high_volt_detect_config_t *config)
 {
     base->HVDSC1 = (((uint32_t)config->voltSelect << PMC_HVDSC1_HVDV_SHIFT) |
@@ -76,6 +94,15 @@ void PMC_ConfigureHighVoltDetect(PMC_Type *base, const pmc_high_volt_detect_conf
 #if ((defined(FSL_FEATURE_PMC_HAS_BGBE) && FSL_FEATURE_PMC_HAS_BGBE) || \
      (defined(FSL_FEATURE_PMC_HAS_BGEN) && FSL_FEATURE_PMC_HAS_BGEN) || \
      (defined(FSL_FEATURE_PMC_HAS_BGBDS) && FSL_FEATURE_PMC_HAS_BGBDS))
+/*!
+ * brief Configures the PMC bandgap.
+ *
+ * This function configures the PMC bandgap, including the drive select and
+ * behavior in low-power mode.
+ *
+ * param base PMC peripheral base address.
+ * param config Pointer to the configuration structure
+ */
 void PMC_ConfigureBandgapBuffer(PMC_Type *base, const pmc_bandgap_buffer_config_t *config)
 {
     base->REGSC = (0U

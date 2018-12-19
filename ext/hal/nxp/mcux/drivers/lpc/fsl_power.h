@@ -3,30 +3,8 @@
  * Copyright (c) 2016, NXP
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
  *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 #ifndef _FSL_POWER_H_
 #define _FSL_POWER_H_
@@ -42,7 +20,13 @@
  * Definitions
  ******************************************************************************/
 
-#define MAKE_PD_BITS(reg, slot) ((reg << 8) | slot)
+/*! @name Driver version */
+/*@{*/
+/*! @brief power driver version 2.0.0. */
+#define FSL_POWER_DRIVER_VERSION (MAKE_VERSION(2, 0, 0))
+/*@}*/
+
+#define MAKE_PD_BITS(reg, slot) (((reg) << 8) | (slot))
 #define PDRCFG0 0x0U
 #define PDRCFG1 0x1U
 
@@ -71,8 +55,12 @@ typedef enum pd_bits
 
     kPDRUNCFG_PD_ALT_FLASH_IBG = MAKE_PD_BITS(PDRCFG1, 28U),
     kPDRUNCFG_SEL_ALT_FLASH_IBG = MAKE_PD_BITS(PDRCFG1, 29U),
-    
-    kPDRUNCFG_ForceUnsigned = 0x80000000U
+
+    /*
+    This enum member has no practical meaning,it is used to avoid MISRA issue,
+    user should not trying to use it.
+    */
+    kPDRUNCFG_ForceUnsigned = (int)0x80000000U
 } pd_bit_t;
 
 /* Power mode configuration API parameter */
@@ -148,13 +136,16 @@ static inline void POWER_DisableDeepSleep(void)
 static inline void POWER_PowerDownFlash(void)
 {
     /* note, we retain flash trim to make waking back up faster */
-    SYSCON->PDRUNCFGSET[0] = SYSCON_PDRUNCFG_LP_VDDFLASH_MASK | SYSCON_PDRUNCFG_PD_VDDHV_ENA_MASK | SYSCON_PDRUNCFG_PD_FLASH_BG_MASK;
+    SYSCON->PDRUNCFGSET[0] =
+        SYSCON_PDRUNCFG_LP_VDDFLASH_MASK | SYSCON_PDRUNCFG_PD_VDDHV_ENA_MASK | SYSCON_PDRUNCFG_PD_FLASH_BG_MASK;
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* TURN OFF clock for Flash Controller (only needed for FLASH programming, will be turned on by ROM API) */
     CLOCK_DisableClock(kCLOCK_Flash);
 
     /* TURN OFF clock for Flash Accelerator */
     CLOCK_DisableClock(kCLOCK_Fmc);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
 /*!
@@ -166,8 +157,13 @@ static inline void POWER_PowerUpFlash(void)
 {
     SYSCON->PDRUNCFGCLR[0] = SYSCON_PDRUNCFG_LP_VDDFLASH_MASK | SYSCON_PDRUNCFG_PD_VDDHV_ENA_MASK;
 
-    /* TURN ON clock for flash controller */
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
+    /* TURN ON clock for flash Accelerator */
     CLOCK_EnableClock(kCLOCK_Fmc);
+
+    /* TURN ON clock for flash Controller */
+    CLOCK_EnableClock(kCLOCK_Flash);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
 /*!
@@ -185,7 +181,6 @@ void POWER_EnterPowerMode(power_mode_cfg_t mode, uint64_t exclude_from_pd);
  */
 void POWER_EnterSleep(void);
 
-
 /*!
  * @brief Power Library API to enter deep sleep mode.
  *
@@ -197,7 +192,7 @@ void POWER_EnterDeepSleep(uint64_t exclude_from_pd);
 /*!
  * @brief Power Library API to enter deep power down mode.
  *
- * @param exclude_from_pd  Bit mask of the PDRUNCFG bits that needs to be powered on during deep power down mode, 
+ * @param exclude_from_pd  Bit mask of the PDRUNCFG bits that needs to be powered on during deep power down mode,
  *                         but this is has no effect as the voltages are cut off.
  * @return none
  */
@@ -206,7 +201,7 @@ void POWER_EnterDeepPowerDown(uint64_t exclude_from_pd);
 /*!
  * @brief Power Library API to choose normal regulation and set the voltage for the desired operating frequency.
  *
- * @param freq  - The desired frequency at which the part would like to operate, 
+ * @param freq  - The desired frequency at which the part would like to operate,
  *                note that the voltage and flash wait states should be set before changing frequency
  * @return none
  */
@@ -215,7 +210,7 @@ void POWER_SetVoltageForFreq(uint32_t freq);
 /*!
  * @brief Power Library API to choose low power regulation and set the voltage for the desired operating frequency.
  *
- * @param freq  - The desired frequency at which the part would like to operate, 
+ * @param freq  - The desired frequency at which the part would like to operate,
  *                note only 12MHz and 48Mhz are supported
  * @return none
  */

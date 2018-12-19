@@ -1,32 +1,10 @@
 /*
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
- * Copyright (c) 2016 - 2017 , NXP
+ * Copyright (c) 2016 - 2018 , NXP
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
  *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name ofcopyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #ifndef _FSL_CLOCK_H_
@@ -45,6 +23,24 @@
 /*******************************************************************************
  * Definitions
  *****************************************************************************/
+
+/*! @name Driver version */
+/*@{*/
+/*! @brief CLOCK driver version 2.0.5. */
+#define FSL_CLOCK_DRIVER_VERSION (MAKE_VERSION(2, 0, 5))
+/*@}*/
+
+/*!
+ * @brief User-defined the size of cache for CLOCK_PllGetConfig() function.
+ *
+ * Once define this MACRO to be non-zero value, CLOCK_PllGetConfig() function
+ * would cache the recent calulation and accelerate the execution to get the
+ * right settings.
+ */
+#ifndef CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT
+#define CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT 2U
+#endif
+
 /*! @brief Clock ip name array for FLEXCOMM. */
 #define FLEXCOMM_CLOCKS                                                                                             \
     {                                                                                                               \
@@ -255,10 +251,10 @@ typedef enum _clock_name
     kCLOCK_ExtClk,      /*!< External Clock                                          */
     kCLOCK_PllOut,      /*!< PLL Output                                              */
     kCLOCK_UsbClk,      /*!< USB input                                               */
-    kClock_WdtOsc,      /*!< Watchdog Oscillator                                     */
+    kCLOCK_WdtOsc,      /*!< Watchdog Oscillator                                     */
     kCLOCK_Frg,         /*!< Frg Clock                                               */
     kCLOCK_Dmic,        /*!< Digital Mic clock                                       */
-    kCLOCK_AsyncApbClk, /*!< Async APB clock	                                     */
+    kCLOCK_AsyncApbClk, /*!< Async APB clock																			    */
     kCLOCK_FlexI2S,     /*!< FlexI2S clock                                           */
     kCLOCK_Flexcomm0,   /*!< Flexcomm0Clock                                          */
     kCLOCK_Flexcomm1,   /*!< Flexcomm1Clock                                          */
@@ -280,18 +276,22 @@ typedef enum _async_clock_src
 } async_clock_src_t;
 
 /*! @brief Clock Mux Switches
-*  The encoding is as follows each connection identified is 64bits wide
+*  The encoding is as follows each connection identified is 32bits wide while 24bits are valuable
 *  starting from LSB upwards
 *
-*  [4 bits for choice, where 1 is A, 2 is B, 3 is C and 4 is D, 0 means end of descriptor] [8 bits mux ID]*
+*  [4 bits for choice, 0 means invalid choice] [8 bits mux ID]*
 *
 */
 
-#define MUX_A(m, choice) (((m) << 0) | ((choice + 1) << 8))
-#define MUX_B(m, choice) (((m) << 12) | ((choice + 1) << 20))
-#define MUX_C(m, choice) (((m) << 24) | ((choice + 1) << 32))
-#define MUX_D(m, choice) (((m) << 36) | ((choice + 1) << 44))
-#define MUX_E(m, choice) (((m) << 48) | ((choice + 1) << 56))
+#define CLK_ATTACH_ID(mux, sel, pos) (((mux << 0U) | ((sel + 1) & 0xFU) << 8U) << (pos * 12U))
+#define MUX_A(mux, sel) CLK_ATTACH_ID(mux, sel, 0U)
+#define MUX_B(mux, sel, selector) (CLK_ATTACH_ID(mux, sel, 1U) | (selector << 24U))
+
+#define GET_ID_ITEM(connection) ((connection)&0xFFFU)
+#define GET_ID_NEXT_ITEM(connection) ((connection) >> 12U)
+#define GET_ID_ITEM_MUX(connection) ((connection)&0xFFU)
+#define GET_ID_ITEM_SEL(connection) ((((connection)&0xF00U) >> 8U) - 1U)
+#define GET_ID_SELECTOR(connection) ((connection)&0xF000000U)
 
 #define CM_MAINCLKSELA 0
 #define CM_MAINCLKSELB 1
@@ -327,12 +327,12 @@ typedef enum _async_clock_src
 typedef enum _clock_attach_id
 {
 
-    kFRO12M_to_MAIN_CLK = MUX_A(CM_MAINCLKSELA, 0) | MUX_B(CM_MAINCLKSELB, 0),
-    kEXT_CLK_to_MAIN_CLK = MUX_A(CM_MAINCLKSELA, 1) | MUX_B(CM_MAINCLKSELB, 0),
-    kWDT_OSC_to_MAIN_CLK = MUX_A(CM_MAINCLKSELA, 2) | MUX_B(CM_MAINCLKSELB, 0),
-    kFRO_HF_to_MAIN_CLK = MUX_A(CM_MAINCLKSELA, 3) | MUX_B(CM_MAINCLKSELB, 0),
-    kSYS_PLL_to_MAIN_CLK = MUX_A(CM_MAINCLKSELB, 2),
-    kOSC32K_to_MAIN_CLK = MUX_A(CM_MAINCLKSELB, 3),
+    kFRO12M_to_MAIN_CLK = MUX_A(CM_MAINCLKSELA, 0) | MUX_B(CM_MAINCLKSELB, 0, 0),
+    kEXT_CLK_to_MAIN_CLK = MUX_A(CM_MAINCLKSELA, 1) | MUX_B(CM_MAINCLKSELB, 0, 0),
+    kWDT_OSC_to_MAIN_CLK = MUX_A(CM_MAINCLKSELA, 2) | MUX_B(CM_MAINCLKSELB, 0, 0),
+    kFRO_HF_to_MAIN_CLK = MUX_A(CM_MAINCLKSELA, 3) | MUX_B(CM_MAINCLKSELB, 0, 0),
+    kSYS_PLL_to_MAIN_CLK = MUX_A(CM_MAINCLKSELA, 0) | MUX_B(CM_MAINCLKSELB, 2, 0),
+    kOSC32K_to_MAIN_CLK = MUX_A(CM_MAINCLKSELA, 0) | MUX_B(CM_MAINCLKSELB, 3, 0),
 
     kFRO12M_to_SYS_PLL = MUX_A(CM_SYSPLLCLKSEL, 0),
     kEXT_CLK_to_SYS_PLL = MUX_A(CM_SYSPLLCLKSEL, 1),
@@ -417,6 +417,7 @@ typedef enum _clock_attach_id
 
     kFRO_HF_to_MCLK = MUX_A(CM_FXI2S0MCLKCLKSEL, 0),
     kSYS_PLL_to_MCLK = MUX_A(CM_FXI2S0MCLKCLKSEL, 1),
+    kMAIN_CLK_to_MCLK = MUX_A(CM_FXI2S0MCLKCLKSEL, 2),
     kNONE_to_MCLK = MUX_A(CM_FXI2S0MCLKCLKSEL, 7),
 
     kFRO12M_to_DMIC = MUX_A(CM_DMICCLKSEL, 0),
@@ -440,7 +441,7 @@ typedef enum _clock_attach_id
     kFRO12M_to_CLKOUT = MUX_A(CM_CLKOUTCLKSELA, 5),
     kOSC32K_to_CLKOUT = MUX_A(CM_CLKOUTCLKSELA, 6),
     kNONE_to_CLKOUT = MUX_A(CM_CLKOUTCLKSELA, 7),
-    kNONE_to_NONE = 0x80000000U,
+    kNONE_to_NONE = (int)0x80000000U,
 } clock_attach_id_t;
 
 /*  Clock dividers */
@@ -536,6 +537,14 @@ status_t CLOCK_SetupFROClocking(uint32_t iFreq);
  */
 void CLOCK_AttachClk(clock_attach_id_t connection);
 /**
+ * @brief   Get the actual clock attach id.
+ * This fuction uses the offset in input attach id, then it reads the actual source value in
+ * the register and combine the offset to obtain an actual attach id.
+ * @param   attachId  : Clock attach id to get.
+ * @return  Clock source value.
+ */
+clock_attach_id_t CLOCK_GetClockAttachId(clock_attach_id_t attachId);
+/**
  * @brief	Setup peripheral clock dividers.
  * @param	div_name	: Clock divider name
  * @param divided_by_value: Value to be divided
@@ -559,6 +568,16 @@ uint32_t CLOCK_GetFreq(clock_name_t clockName);
  */
 uint32_t CLOCK_GetFRGInputClock(void);
 
+/*! @brief  Return Input frequency for the DMIC
+ *  @return Input Frequency for DMIC
+ */
+uint32_t CLOCK_GetDmicClkFreq(void);
+
+/*! @brief  Return Input frequency for the FRG
+ *  @return Input Frequency for FRG
+ */
+uint32_t CLOCK_GetFrgClkFreq(void);
+
 /*! @brief	Set output of the Fractional baud rate generator
  * @param	freq	: Desired output frequency
  * @return	Error Code 0 - fail 1 - success
@@ -581,6 +600,10 @@ uint32_t CLOCK_GetWdtOscFreq(void);
  *  @return	Frequency of High-Freq output of FRO
  */
 uint32_t CLOCK_GetFroHfFreq(void);
+/*! @brief  Return Frequency of USB
+ *  @return Frequency of USB
+ */
+uint32_t CLOCK_GetUsbClkFreq(void);
 /*! @brief	Return Frequency of PLL
  *  @return	Frequency of PLL
  */
@@ -674,10 +697,12 @@ void CLOCK_SetStoredPLLClockRate(uint32_t rate);
 #define PLL_CONFIGFLAG_FORCENOFRACT                                                                                    \
     (1 << 2) /*!< Force non-fractional output mode, PLL output will not use the fractional, automatic bandwidth, or SS \
                 \ \                                                                                                    \
-                   \ \ \ \                                                                                                                     \
-                     \ \ \ \ \ \                                                                                                                     \
+                  \ \ \ \                                                                                                                     \
+                    \ \ \ \ \ \                                                                                                                     \
                        \ \ \ \ \ \ \ \                                                                                                                     \
-                         hardware */
+                         \ \ \ \ \ \ \ \ \ \                                                                                                                     \
+                           \ \ \ \ \ \ \ \ \ \ \ \                                                                                                                     \
+                             hardware */
 
 /*! @brief PLL Spread Spectrum (SS) Programmable modulation frequency
  * See (MF) field in the SYSPLLSSCTRL1 register in the UM.

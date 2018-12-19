@@ -1,38 +1,22 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fsl_lptmr.h"
 
+/* Component ID definition, used by tools. */
+#ifndef FSL_COMPONENT_ID
+#define FSL_COMPONENT_ID "platform.drivers.lptmr"
+#endif
+
 /*******************************************************************************
  * Prototypes
  ******************************************************************************/
+#if defined(LPTMR_CLOCKS)
 /*!
  * @brief Gets the instance from the base address to be used to gate or ungate the module clock
  *
@@ -41,10 +25,12 @@
  * @return The LPTMR instance
  */
 static uint32_t LPTMR_GetInstance(LPTMR_Type *base);
+#endif /* LPTMR_CLOCKS */
 
 /*******************************************************************************
  * Variables
  ******************************************************************************/
+#if defined(LPTMR_CLOCKS)
 /*! @brief Pointers to LPTMR bases for each instance. */
 static LPTMR_Type *const s_lptmrBases[] = LPTMR_BASE_PTRS;
 
@@ -58,10 +44,12 @@ static const clock_ip_name_t s_lptmrPeriphClocks[] = LPTMR_PERIPH_CLOCKS;
 #endif
 
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+#endif /* LPTMR_CLOCKS */
 
 /*******************************************************************************
  * Code
  ******************************************************************************/
+#if defined(LPTMR_CLOCKS)
 static uint32_t LPTMR_GetInstance(LPTMR_Type *base)
 {
     uint32_t instance;
@@ -79,13 +67,23 @@ static uint32_t LPTMR_GetInstance(LPTMR_Type *base)
 
     return instance;
 }
+#endif /* LPTMR_CLOCKS */
 
+/*!
+ * brief Ungates the LPTMR clock and configures the peripheral for a basic operation.
+ *
+ * note This API should be called at the beginning of the application using the LPTMR driver.
+ *
+ * param base   LPTMR peripheral base address
+ * param config A pointer to the LPTMR configuration structure.
+ */
 void LPTMR_Init(LPTMR_Type *base, const lptmr_config_t *config)
 {
     assert(config);
 
+#if defined(LPTMR_CLOCKS)
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
-    
+
     uint32_t instance = LPTMR_GetInstance(base);
 
     /* Ungate the LPTMR clock*/
@@ -95,6 +93,7 @@ void LPTMR_Init(LPTMR_Type *base, const lptmr_config_t *config)
 #endif
 
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+#endif /* LPTMR_CLOCKS */
 
     /* Configure the timers operation mode and input pin setup */
     base->CSR = (LPTMR_CSR_TMS(config->timerMode) | LPTMR_CSR_TFC(config->enableFreeRunning) |
@@ -105,10 +104,17 @@ void LPTMR_Init(LPTMR_Type *base, const lptmr_config_t *config)
                  LPTMR_PSR_PCS(config->prescalerClockSource));
 }
 
+/*!
+ * brief Gates the LPTMR clock.
+ *
+ * param base LPTMR peripheral base address
+ */
 void LPTMR_Deinit(LPTMR_Type *base)
 {
     /* Disable the LPTMR and reset the internal logic */
     base->CSR &= ~LPTMR_CSR_TEN_MASK;
+
+#if defined(LPTMR_CLOCKS)
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
 
     uint32_t instance = LPTMR_GetInstance(base);
@@ -120,11 +126,30 @@ void LPTMR_Deinit(LPTMR_Type *base)
 #endif
 
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+#endif /* LPTMR_CLOCKS */
 }
 
+/*!
+ * brief Fills in the LPTMR configuration structure with default settings.
+ *
+ * The default values are as follows.
+ * code
+ *    config->timerMode = kLPTMR_TimerModeTimeCounter;
+ *    config->pinSelect = kLPTMR_PinSelectInput_0;
+ *    config->pinPolarity = kLPTMR_PinPolarityActiveHigh;
+ *    config->enableFreeRunning = false;
+ *    config->bypassPrescaler = true;
+ *    config->prescalerClockSource = kLPTMR_PrescalerClock_1;
+ *    config->value = kLPTMR_Prescale_Glitch_0;
+ * endcode
+ * param config A pointer to the LPTMR configuration structure.
+ */
 void LPTMR_GetDefaultConfig(lptmr_config_t *config)
 {
     assert(config);
+
+    /* Initializes the configure structure to zero. */
+    memset(config, 0, sizeof(*config));
 
     /* Use time counter mode */
     config->timerMode = kLPTMR_TimerModeTimeCounter;
