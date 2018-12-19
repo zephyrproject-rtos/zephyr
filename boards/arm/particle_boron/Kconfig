@@ -1,0 +1,14 @@
+# Kconfig - Particle Boron configuration
+#
+# Copyright (c) 2018 Peter Bigot Consulting, LLC
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_PARTICLE_BORON
+
+config BOARD_ENABLE_DCDC
+	bool "Enable DCDC mode"
+	select SOC_DCDC_NRF52X
+	default y
+
+endif # BOARD_PARTICLE_BORON

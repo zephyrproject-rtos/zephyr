@@ -1,5 +1,4 @@
 #
-# Copyright (c) 2018, Endre Karlson
 # Copyright (c) 2018, Peter Bigot Consulting, LLC
 #
 # SPDX-License-Identifier: Apache-2.0

@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2018 Peter Bigot Consulting, LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Add I2C1 support on Particle Mesh via nRF52840 TWI1
+ *
+ * NOTE: This file is replicated in particle_{argon,xenon}.
+ * Changes should be made in all instances. */
+&i2c1 { /* feather I2C1 */
+	status = "ok";
+	sda-pin = <33>;
+	scl-pin = <34>;
+};
+
