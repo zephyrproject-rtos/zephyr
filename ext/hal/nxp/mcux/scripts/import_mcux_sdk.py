@@ -37,21 +37,26 @@ def get_soc_family(device):
 def get_files(src, pattern):
     matches = []
     nonmatches = []
-    for filename in os.listdir(src):
-        path = os.path.join(src, filename)
-        if re.search(pattern, filename):
-            matches.append(path)
-        else:
-            nonmatches.append(path)
+    if os.path.exists(src):
+        for filename in os.listdir(src):
+            path = os.path.join(src, filename)
+            if re.search(pattern, filename):
+                matches.append(path)
+            else:
+                nonmatches.append(path)
 
     return [matches, nonmatches]
 
 def copy_files(files, dst):
+    if not files:
+        return
+    os.makedirs(dst, exist_ok=True)
     for f in files:
         shutil.copy2(f, dst)
 
 def import_sdk(directory):
     devices = os.listdir(os.path.join(directory, 'devices'))
+    boards = os.listdir(os.path.join(directory, 'boards'))
 
     for device in devices:
         family = get_soc_family(device)
@@ -66,6 +71,10 @@ def import_sdk(directory):
         drivers_pattern = "fsl_clock|fsl_iomuxc"
         [device_drivers, shared_drivers] = get_files(drivers_src, drivers_pattern)
 
+        xip_boot_src = os.path.join(directory, 'devices', device, 'xip')
+        xip_boot_pattern = ".*"
+        [xip_boot, ignore] = get_files(xip_boot_src, xip_boot_pattern)
+
         print('Importing {} device headers to {}'.format(device, device_dst))
         copy_files(device_headers, device_dst)
 
@@ -74,6 +83,20 @@ def import_sdk(directory):
 
         print('Importing {} family shared drivers to {}'.format(family, shared_dst))
         copy_files(shared_drivers, shared_dst)
+
+        print('Importing {} xip boot to {}'.format(device, shared_dst))
+        copy_files(xip_boot, shared_dst)
+
+    for board in boards:
+        board_src = os.path.join(directory, 'boards', board)
+        board_dst = os.path.join(ZEPHYR_BASE, 'ext/hal/nxp/mcux/boards', board)
+
+        xip_config_src = os.path.join(board_src, 'xip')
+        xip_config_pattern = ".*"
+        [xip_config, ignore] = get_files(xip_config_src, xip_config_pattern)
+
+        print('Importing {} xip config to {}'.format(board, board_dst))
+        copy_files(xip_config, board_dst)
 
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
