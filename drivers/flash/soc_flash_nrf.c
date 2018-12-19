@@ -87,8 +87,10 @@ static inline bool is_aligned_32(u32_t data)
 
 static inline bool is_regular_addr_valid(off_t addr, size_t len)
 {
-	if (addr + len > NRF_FICR->CODEPAGESIZE * NRF_FICR->CODESIZE ||
-			addr < 0) {
+	if (addr >= NRF_FICR->CODEPAGESIZE * NRF_FICR->CODESIZE ||
+	    addr < 0 ||
+	    len > NRF_FICR->CODEPAGESIZE * NRF_FICR->CODESIZE ||
+	    addr + len > NRF_FICR->CODEPAGESIZE * NRF_FICR->CODESIZE) {
 		return false;
 	}
 
