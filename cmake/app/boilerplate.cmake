@@ -21,11 +21,13 @@
 # invocation in every toplevel CMakeLists.txt.
 cmake_minimum_required(VERSION 3.8.2)
 
+# CMP0002: "Logical target names must be globally unique"
 cmake_policy(SET CMP0002 NEW)
 
 if(NOT (${CMAKE_VERSION} VERSION_LESS "3.13.0"))
   # Use the old CMake behaviour until 3.13.x is required and the build
   # scripts have been ported to the new behaviour.
+  # CMP0079: "target_link_libraries() allows use with targets in other directories"
   cmake_policy(SET CMP0079 OLD)
 endif()
 
