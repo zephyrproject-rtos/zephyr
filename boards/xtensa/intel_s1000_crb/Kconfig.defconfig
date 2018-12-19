@@ -93,6 +93,11 @@ config USB_HID_MAX_PAYLOAD_SIZE
 	default 128
 config USB_COMPOSITE_BUFFER_SIZE
 	default 128
+if USB_DFU_CLASS
+config USB_DFU_MAX_XFER_SIZE
+	default 4096
+endif
+
 endif # USB
 
 if UART_NS16550
