@@ -9,8 +9,8 @@ find_program(CMAKE_RANLILB      ranlib )
 find_program(CMAKE_READELF      readelf)
 find_program(CMAKE_GDB          gdb    )
 
-set(CMAKE_C_FLAGS 	          -m32 )
-set(CMAKE_CXX_FLAGS 	      -m32 )
+set(CMAKE_C_FLAGS             -m32 )
+set(CMAKE_CXX_FLAGS           -m32 )
 set(CMAKE_SHARED_LINKER_FLAGS -m32 )
 
 if(CONFIG_CPLUSPLUS)

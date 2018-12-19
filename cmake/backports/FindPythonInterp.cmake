@@ -46,7 +46,7 @@ function(determine_python_version exe result)
         message(FATAL_ERROR "Failed to test python version")
     else()
         string(REPLACE ";" "." ver "${_VERSION}")
-		set(${result} ${ver} PARENT_SCOPE)
+        set(${result} ${ver} PARENT_SCOPE)
     endif()
 endfunction()
 
@@ -57,10 +57,10 @@ find_program(PYTHON_EXECUTABLE python)
 if(NOT (${PYTHON_EXECUTABLE} STREQUAL PYTHON_EXECUTABLE-NOTFOUND))
   determine_python_version(${PYTHON_EXECUTABLE} ver)
   if(${ver} VERSION_LESS PythonInterp_FIND_VERSION)
-	# We didn't find the correct version on path, so forget about it
-	# and continue looking.
-	unset(PYTHON_EXECUTABLE)
-	unset(PYTHON_EXECUTABLE CACHE)
+    # We didn't find the correct version on path, so forget about it
+    # and continue looking.
+    unset(PYTHON_EXECUTABLE)
+    unset(PYTHON_EXECUTABLE CACHE)
   endif()
 endif()
 
@@ -131,12 +131,12 @@ if(NOT PYTHON_EXECUTABLE)
         list(APPEND _Python_NAMES python)
       endif()
 
-	  if(WIN32)
-        find_program(PYTHON_EXECUTABLE
-          NAMES ${_Python_NAMES}
-          HINTS [HKEY_LOCAL_MACHINE\\SOFTWARE\\Python\\PythonCore\\${_CURRENT_VERSION}\\InstallPath]
-          )
-	  endif()
+      if(WIN32)
+          find_program(PYTHON_EXECUTABLE
+            NAMES ${_Python_NAMES}
+            HINTS [HKEY_LOCAL_MACHINE\\SOFTWARE\\Python\\PythonCore\\${_CURRENT_VERSION}\\InstallPath]
+            )
+      endif()
 
       find_program(PYTHON_EXECUTABLE
         NAMES ${_Python_NAMES}
@@ -148,15 +148,15 @@ endif()
 # determine python version string
 if(PYTHON_EXECUTABLE)
     determine_python_version(${PYTHON_EXECUTABLE} res)
-	set(PYTHON_VERSION_STRING ${res})
+    set(PYTHON_VERSION_STRING ${res})
 
-	if(PYTHON_VERSION_STRING MATCHES "^([0-9]+)\\.([0-9]+)\\.([0-9]+)")
-	  set(PYTHON_VERSION_PATCH "${CMAKE_MATCH_3}")
-	else()
-	  set(PYTHON_VERSION_PATCH "0")
-	endif()
-	set(PYTHON_VERSION_MAJOR "${CMAKE_MATCH_1}")
-	set(PYTHON_VERSION_MINOR "${CMAKE_MATCH_2}")
+    if(PYTHON_VERSION_STRING MATCHES "^([0-9]+)\\.([0-9]+)\\.([0-9]+)")
+      set(PYTHON_VERSION_PATCH "${CMAKE_MATCH_3}")
+    else()
+      set(PYTHON_VERSION_PATCH "0")
+    endif()
+    set(PYTHON_VERSION_MAJOR "${CMAKE_MATCH_1}")
+    set(PYTHON_VERSION_MINOR "${CMAKE_MATCH_2}")
 endif()
 
 include(FindPackageHandleStandardArgs)

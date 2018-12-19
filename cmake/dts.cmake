@@ -36,23 +36,23 @@ foreach(board_root ${BOARD_ROOT})
   # we construct a list of shield names by extracting file name and
   # removing the extension.
   foreach(shield_path ${shields_refs_list})
-	get_filename_component(shield ${shield_path} NAME_WE)
+    get_filename_component(shield ${shield_path} NAME_WE)
 
-	# Generate CONFIG flags matching each shield
-	string(TOUPPER "CONFIG_SHIELD_${shield}" shield_config)
+    # Generate CONFIG flags matching each shield
+    string(TOUPPER "CONFIG_SHIELD_${shield}" shield_config)
 
-	if(${shield_config})
+    if(${shield_config})
       # if shield config flag is on, add shield overlay to the shield overlays
       # list and dts_fixup file to the shield fixup file
       list(APPEND
-		dts_files
-		${shield_dir}/${shield_path}
-		)
+        dts_files
+        ${shield_dir}/${shield_path}
+      )
       list(APPEND
-		dts_fixups
-		${shield_dir}/${shield}/dts_fixup.h
-		)
-	endif()
+        dts_fixups
+        ${shield_dir}/${shield}/dts_fixup.h
+      )
+    endif()
   endforeach()
 endforeach()
 
@@ -73,13 +73,13 @@ if(CONFIG_HAS_DTS)
     list(APPEND DTC_INCLUDE_FLAG_FOR_DTS
          -include ${dts_file})
 
-	if(i EQUAL 0)
-	  message(STATUS "Loading ${dts_file} as base")
-	else()
-	  message(STATUS "Overlaying ${dts_file}")
-	endif()
+    if(i EQUAL 0)
+      message(STATUS "Loading ${dts_file} as base")
+    else()
+      message(STATUS "Overlaying ${dts_file}")
+    endif()
 
-	math(EXPR i "${i}+1")
+    math(EXPR i "${i}+1")
   endforeach()
 
   # TODO: Cut down on CMake configuration time by avoiding
@@ -133,17 +133,17 @@ if(CONFIG_HAS_DTS)
   # Error-out when the deprecated naming convention is found (until
   # after 1.14.0 has been released)
   foreach(path
-	  ${BOARD_DIR}/dts.fixup
-	  ${PROJECT_SOURCE_DIR}/soc/${ARCH}/${SOC_PATH}/dts.fixup
+    ${BOARD_DIR}/dts.fixup
+    ${PROJECT_SOURCE_DIR}/soc/${ARCH}/${SOC_PATH}/dts.fixup
       ${APPLICATION_SOURCE_DIR}/dts.fixup
-	  )
-	if(EXISTS ${path})
-	  message(FATAL_ERROR
-		"A deprecated filename has been detected. Porting is required."
-		"The file '${path}' exists, but it should be named dts_fixup.h instead."
-		"See https://github.com/zephyrproject-rtos/zephyr/pull/10352 for more details"
-		)
-	endif()
+    )
+    if(EXISTS ${path})
+      message(FATAL_ERROR
+      "A deprecated filename has been detected. Porting is required."
+      "The file '${path}' exists, but it should be named dts_fixup.h instead."
+      "See https://github.com/zephyrproject-rtos/zephyr/pull/10352 for more details"
+      )
+    endif()
   endforeach()
 
   # Run extract_dts_includes.py for the header file
