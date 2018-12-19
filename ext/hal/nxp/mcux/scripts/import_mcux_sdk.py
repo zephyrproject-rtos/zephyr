@@ -63,7 +63,7 @@ def import_sdk(directory):
         [device_headers, ignore] = get_files(device_src, device_pattern)
 
         drivers_src = os.path.join(directory, 'devices', device, 'drivers')
-        drivers_pattern = "fsl_clock"
+        drivers_pattern = "fsl_clock|fsl_iomuxc"
         [device_drivers, shared_drivers] = get_files(drivers_src, drivers_pattern)
 
         print('Importing {} device headers to {}'.format(device, device_dst))
