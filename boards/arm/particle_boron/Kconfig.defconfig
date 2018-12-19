@@ -1,14 +1,13 @@
-# Kconfig - Particle Xenon board configuration
+# Kconfig - Particle Boron board configuration
 #
-# Copyright (c) 2018 Endre Karlson
 # Copyright (c) 2018 Peter Bigot Consulting, LLC
 #
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_PARTICLE_XENON
+if BOARD_PARTICLE_BORON
 
 config BOARD
-	default "particle_xenon"
+	default "particle_boron"
 
 if ADC
 
@@ -41,4 +40,4 @@ config IEEE802154_NRF5
 
 endif # IEEE802154
 
-endif # BOARD_PARTICLE_XENON
+endif # BOARD_PARTICLE_BORON

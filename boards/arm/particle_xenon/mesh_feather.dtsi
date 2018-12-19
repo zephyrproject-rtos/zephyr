@@ -1,0 +1,150 @@
+/*
+ * Copyright (c) 2018 Endre Karlson
+ * Copyright (c) 2018 Peter Bigot Consulting, LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Assignments common to all Feather-based Particle mesh boards.
+ *
+ * NOTE: This file is replicated in particle_{argon,boron,xenon}.
+ * Changes should be made in all instances. */
+
+/ {
+	aliases {
+		led0 = &user_led;
+		led1 = &status_red;
+		led2 = &status_green;
+		led3 = &status_blue;
+		sw0 = &mode_button;
+		sw1 = &reset_button;
+		flash1 = &gd25q32c;
+	};
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		user_led: led_0 {
+			gpios = <&gpio1 12 0>;
+			label = "User LED";
+		};
+		status_red: led_1 {
+			gpios = <&gpio0 13 0>;
+			label = "Red LED";
+		};
+		status_green: led_2 {
+			gpios = <&gpio0 14 0>;
+			label = "Green LED";
+		};
+		status_blue: led_3 {
+			gpios = <&gpio0 15 0>;
+			label = "Blue LED";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		mode_button: button_0 {
+			gpios = <&gpio0 11 GPIO_PUD_PULL_UP>;
+			label = "Mode Button";
+		};
+
+		reset_button: button_1 {
+			gpios = <&gpio0 18 GPIO_PUD_PULL_UP>;
+			label = "Reset Button";
+		};
+	};
+};
+
+&adc { /* feather ADC */
+	status = "ok";
+};
+
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x000000000 0x0000C000>;
+		};
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000C000 0x000069000>;
+		};
+		slot1_partition: partition@75000 {
+			label = "image-1";
+			reg = <0x00075000 0x000069000>;
+		};
+		scratch_partition: partition@de000 {
+			label = "image-scratch";
+			reg = <0x000de000 0x0001e000>;
+		};
+
+		storage_partition: partition@fc000 {
+			label = "storage";
+			reg = <0x000fc000 0x00004000>;
+		};
+	};
+};
+
+&gpio0 {
+	status ="ok";
+};
+
+&gpio1 {
+	status ="ok";
+};
+
+&gpiote {
+	status ="ok";
+};
+
+&i2c0 { /* feather I2C */
+	status = "ok";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	sda-pin = <26>;
+	scl-pin = <27>;
+};
+
+/* TWI1 used on Boron; also see mesh_feather_spi1_spi1.dtsi */
+
+&spi2 { /* dedicated MX25L */
+	status = "ok";
+	sck-pin = <19>;
+	mosi-pin = <20>;
+	miso-pin = <21>;
+	gd25q32c: gd25q32c@11 {
+		compatible = "spi,flash";
+		label = "GD25Q32C";
+		reg = <17>;
+		size = <4096>;
+		spi-max-frequency = <80000000>;
+	};
+};
+
+/* see mesh_feather_spi1_spi3.dtsi */
+
+&uart0 { /* feather UART1 */
+	compatible = "nordic,nrf-uarte";
+	current-speed = <115200>;
+	status = "ok";
+	tx-pin = <6>;
+	rx-pin = <8>;
+	/* optional mesh_feather_uart1_rtscts.dtsi */
+};
+
+&usbd {
+	compatible = "nordic,nrf-usbd";
+	status = "ok";
+};

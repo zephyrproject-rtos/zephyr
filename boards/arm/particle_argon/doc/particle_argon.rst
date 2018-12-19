@@ -1,28 +1,29 @@
-.. _particle_xenon:
+.. _particle_argon:
 
-Particle Xenon
+Particle Argon
 ##############
 
 Overview
 ********
 
-The Particle Xenon is a low-cost mesh-enabled development board based on the
-Nordic Semiconductor nRF52840 SoC. The board was developed by Particle
-Industries and has an SWD connector on it for programming.
+The Particle Argon is a Wi-Fi enabled development board with a Nordic
+Semiconductor nRF52840 for mesh support and an ESP32 for Wi-Fi.  The
+board was developed by Particle Industries and has a SWD connector on it
+for programming.
 
 It is equipped with a onboard LIPO circuit and conforms to the
 Adafruit Feather formfactor.
 
-Zephyr applications use the particle xenon board configuration
-to run on the particle xenon board hardware. It provides
+Zephyr applications use the particle argon board configuration
+to run on the particle argon board hardware. It provides
 support for the Nordic Semiconductor nRF52840 ARM |reg| Cortex |reg|-M4F SoC
 with an integrated 2.4 GHz transceiver supporting Bluetooth |reg| Low Energy
 and IEEE |reg| 802.15.4.
 
-For more information about the Particle Xenon board:
+For more information about the Particle Argon board:
 
-- `Xenon Datasheet`_
-- `Xenon Hardware Files`_
+- `Argon Datasheet`_
+- `Argon Hardware Files`_
 
 Hardware
 ********
@@ -30,25 +31,25 @@ Hardware
 On the front of the board are RGB-LED, LED and LIPO circuitry.
 The RGB-LED is controlled by the nRF52840 via GPIO pins.
 
-.. figure:: img/xenon-top.png
+.. figure:: img/argon-top.png
      :width: 150px
      :align: center
-     :alt: Particle Xenon
+     :alt: Particle Argon
 
-     Particle Xenon (Credit: Particle Industries)
+     Particle Argon (Credit: Particle Industries)
 
 Power supply
 ============
 
 The board is optimized for low power applications and supports two
-power source configurations, battery and micro USB connector.
+power source configurations: battery and micro USB connector.
 
 It contains circuitry for LIPO usage and can be charged via the USB port.
 
 Supported Features
 ==================
 
-The particle_xenon board configuration supports the following
+The particle_argon board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -77,7 +78,7 @@ Other hardware features are not supported by the Zephyr kernel.
 Connections and IOs
 ===================
 
-Please see the `Xenon Datasheet`_ for header pin assignments, which are
+Please see the `Argon Datasheet`_ for header pin assignments, which are
 common to all Feather-compatible Particle boards.  Some peripherals are
 available to applications through DTS overlay include directives:
 
@@ -91,8 +92,6 @@ available to applications through DTS overlay include directives:
   SPI1 pins
 - ``mesh_feather_uart1_rtscts.dtsi`` adds hardware flow control to
   labeled Feather UART pins
-- ``mesh_xenon_uart2.dtsi`` exposes UARTE1 on labeled Feather
-  UART2 pins
 
 LED
 ---
@@ -126,12 +125,12 @@ UART
 ----
 
 * UARTE0 enabled RX/TX on labeled header (UART1); add RTS/CTS with overlay
-* UARTE1 selectable with overlay (UART2)
+* UARTE1 internal to ESP32
 
 Programming and Debugging
 *************************
 
-Applications for the ``particle_xenon`` board configuration can be
+Applications for the ``particle_argon`` board configuration can be
 built and flashed in the usual way (see :ref:`build_an_application`
 and :ref:`application_run` for more details).
 
@@ -142,7 +141,7 @@ Build and flash an application in the usual way, for example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: particle_xenon
+   :board: particle_argon
    :goals: build flash
 
 Debugging
@@ -153,7 +152,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: particle_xenon
+   :board: particle_argon
    :maybe-skip-config:
    :goals: debug
 
@@ -170,8 +169,8 @@ LEDs on the board are working properly with Zephyr:
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board.
 
-.. _Xenon Datasheet:
-   https://docs.particle.io/datasheets/mesh/xenon-datasheet/
+.. _Argon Datasheet:
+   https://docs.particle.io/datasheets/wi-fi/argon-datasheet/
 
-.. _Xenon Hardware Files:
-   https://github.com/particle-iot/xenon
+.. _Argon Hardware Files:
+   https://github.com/particle-iot/argon
