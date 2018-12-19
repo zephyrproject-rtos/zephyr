@@ -68,36 +68,6 @@ void net_icmpv6_unregister_handler(struct net_icmpv6_handler *handler)
 	sys_slist_find_and_remove(&handlers, &handler->node);
 }
 
-static inline void setup_ipv6_header(struct net_pkt *pkt, u16_t extra_len,
-				     u8_t hop_limit, u8_t icmp_type,
-				     u8_t icmp_code)
-{
-	struct net_buf *frag = pkt->frags;
-	const u32_t unused = 0U;
-	u16_t pos;
-
-	NET_IPV6_HDR(pkt)->vtc = 0x60;
-	NET_IPV6_HDR(pkt)->tcflow = 0;
-	NET_IPV6_HDR(pkt)->flow = 0;
-
-	NET_IPV6_HDR(pkt)->len = htons(NET_ICMPH_LEN + extra_len +
-					NET_ICMPV6_UNUSED_LEN);
-
-	NET_IPV6_HDR(pkt)->nexthdr = IPPROTO_ICMPV6;
-	NET_IPV6_HDR(pkt)->hop_limit = hop_limit;
-
-	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
-
-	frag = net_pkt_write(pkt, frag, net_pkt_ip_hdr_len(pkt), &pos,
-			     sizeof(icmp_type), &icmp_type, PKT_WAIT_TIME);
-	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(icmp_code),
-			     &icmp_code, PKT_WAIT_TIME);
-
-	/* ICMPv6 header has 4 unused bytes that must be zero, RFC 4443 ch 3.1
-	 */
-	net_pkt_write(pkt, frag, pos, &pos, 4, (u8_t *)&unused, PKT_WAIT_TIME);
-}
-
 int net_icmpv6_set_chksum(struct net_pkt *pkt)
 {
 	u16_t chksum = 0U;
@@ -402,91 +372,85 @@ drop:
 int net_icmpv6_send_error(struct net_pkt *orig, u8_t type, u8_t code,
 			  u32_t param)
 {
-	struct net_pkt *pkt;
-	struct net_buf *frag;
-	struct net_if *iface = net_pkt_iface(orig);
-	size_t extra_len, reserve;
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access, struct net_ipv6_hdr);
 	int err = -EIO;
+	struct net_ipv6_hdr *ip_hdr;
+	const struct in6_addr *src;
+	struct net_pkt *pkt;
+	size_t copy_len;
 
-	if (NET_IPV6_HDR(orig)->nexthdr == IPPROTO_ICMPV6) {
-		struct net_icmp_hdr icmp_hdr[1];
+	net_pkt_cursor_init(orig);
 
-		if (!net_icmpv6_get_hdr(orig, icmp_hdr) ||
-		    icmp_hdr->code < 128) {
+	ip_hdr = (struct net_ipv6_hdr *)net_pkt_get_data_new(orig,
+							     &ipv6_access);
+	if (!ip_hdr) {
+		goto drop_no_pkt;
+	}
+
+	if (ip_hdr->nexthdr == IPPROTO_ICMPV6) {
+		NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmpv6_access,
+						      struct net_icmp_hdr);
+		struct net_icmp_hdr *icmp_hdr;
+
+		net_pkt_acknowledge_data(orig, &ipv6_access);
+
+		icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data_new(
+							orig, &icmpv6_access);
+		if (!icmp_hdr || icmp_hdr->code < 128) {
 			/* We must not send ICMP errors back */
 			err = -EINVAL;
 			goto drop_no_pkt;
 		}
+
+		net_pkt_cursor_init(orig);
 	}
 
-	pkt = net_pkt_get_reserve_tx(PKT_WAIT_TIME);
+	if (ip_hdr->nexthdr == IPPROTO_UDP) {
+		copy_len = sizeof(struct net_ipv6_hdr) +
+			sizeof(struct net_udp_hdr);
+	} else if (ip_hdr->nexthdr == IPPROTO_TCP) {
+		copy_len = sizeof(struct net_ipv6_hdr) +
+			sizeof(struct net_tcp_hdr);
+	} else {
+		copy_len = net_pkt_get_len(orig);
+	}
+
+	pkt = net_pkt_alloc_with_buffer(net_pkt_iface(orig),
+					copy_len + NET_ICMPV6_UNUSED_LEN,
+					AF_INET6, IPPROTO_ICMPV6,
+					PKT_WAIT_TIME);
 	if (!pkt) {
 		err = -ENOMEM;
 		goto drop_no_pkt;
 	}
 
-	/* There is unsed part in ICMPv6 error msg header what we might need
-	 * to store the param variable.
-	 */
-	reserve = sizeof(struct net_ipv6_hdr) + sizeof(struct net_icmp_hdr) +
-		NET_ICMPV6_UNUSED_LEN;
-
-	if (NET_IPV6_HDR(orig)->nexthdr == IPPROTO_UDP) {
-		extra_len = sizeof(struct net_ipv6_hdr) +
-			sizeof(struct net_udp_hdr);
-	} else if (NET_IPV6_HDR(orig)->nexthdr == IPPROTO_TCP) {
-		extra_len = sizeof(struct net_ipv6_hdr) +
-			sizeof(struct net_tcp_hdr);
-	} else if (NET_IPV6_HDR(orig)->nexthdr == NET_IPV6_NEXTHDR_FRAG) {
-		extra_len = net_pkt_get_len(orig);
+	if (net_ipv6_is_addr_mcast(&ip_hdr->dst)) {
+		src = net_if_ipv6_select_src_addr(net_pkt_iface(pkt),
+						  &ip_hdr->dst);
 	} else {
-		size_t space = CONFIG_NET_BUF_DATA_SIZE;
-
-		if (reserve > space) {
-			extra_len = 0;
-		} else {
-			extra_len = space - reserve;
-		}
+		src = &ip_hdr->dst;
 	}
 
-	/* We only copy minimal IPv6 + next header from original message.
-	 * This is so that the memory pressure is minimized.
-	 */
-	frag = net_pkt_copy(orig, extra_len, reserve, PKT_WAIT_TIME);
-	if (!frag) {
-		err = -ENOMEM;
+	if (net_ipv6_create_new(pkt, src, &ip_hdr->src) ||
+	    icmpv6_create(pkt, type, code)) {
 		goto drop;
 	}
-
-	net_pkt_frag_add(pkt, frag);
-	net_pkt_set_family(pkt, AF_INET6);
-	net_pkt_set_iface(pkt, iface);
-	net_pkt_set_ipv6_ext_len(pkt, 0);
-
-	setup_ipv6_header(pkt, extra_len, net_if_ipv6_get_hop_limit(iface),
-			  type, code);
 
 	/* Depending on error option, we store the param into the ICMP message.
 	 */
 	if (type == NET_ICMPV6_PARAM_PROBLEM) {
-		sys_put_be32(param, (u8_t *)net_pkt_icmp_data(pkt) +
-			     sizeof(struct net_icmp_hdr));
+		err = net_pkt_write_be32_new(pkt, param);
+	} else {
+		err = net_pkt_memset(pkt, 0, NET_ICMPV6_UNUSED_LEN);
 	}
 
-	if (net_ipv6_is_addr_mcast(&NET_IPV6_HDR(orig)->dst)) {
-		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst,
-				&NET_IPV6_HDR(orig)->src);
+	/* Allocator might not have been able to allocate all requested space,
+	 * so let's copy as much as we can.
+	 */
+	copy_len = net_pkt_available_buffer(pkt);
 
-		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src,
-				net_if_ipv6_select_src_addr(iface,
-						    &NET_IPV6_HDR(orig)->dst));
-	} else {
-		struct in6_addr addr;
-
-		net_ipaddr_copy(&addr, &NET_IPV6_HDR(orig)->src);
-		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src,
-				&NET_IPV6_HDR(orig)->dst);
-		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst, &addr);
+	if (err || net_pkt_copy_new(pkt, orig, copy_len)) {
+		goto drop;
 	}
 
 	net_pkt_lladdr_src(pkt)->addr = net_pkt_lladdr_dst(orig)->addr;
@@ -494,19 +458,16 @@ int net_icmpv6_send_error(struct net_pkt *orig, u8_t type, u8_t code,
 	net_pkt_lladdr_dst(pkt)->addr = net_pkt_lladdr_src(orig)->addr;
 	net_pkt_lladdr_dst(pkt)->len = net_pkt_lladdr_src(orig)->len;
 
-	/* Clear and then set the chksum */
-	err = net_icmpv6_set_chksum(pkt);
-	if (err < 0) {
-		goto drop;
-	}
+	net_pkt_cursor_init(pkt);
+	net_ipv6_finalize_new(pkt, IPPROTO_ICMPV6);
 
 	NET_DBG("Sending ICMPv6 Error Message type %d code %d param %d"
 		" from %s to %s", type, code, param,
-		log_strdup(net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src)),
-		log_strdup(net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->dst)));
+		log_strdup(net_sprint_ipv6_addr(src)),
+		log_strdup(net_sprint_ipv6_addr(&ip_hdr->src)));
 
 	if (net_send_data(pkt) >= 0) {
-		net_stats_update_icmp_sent(iface);
+		net_stats_update_icmp_sent(net_pkt_iface(pkt));
 		return 0;
 	}
 
@@ -514,7 +475,7 @@ drop:
 	net_pkt_unref(pkt);
 
 drop_no_pkt:
-	net_stats_update_icmp_drop(iface);
+	net_stats_update_icmp_drop(net_pkt_iface(orig));
 
 	return err;
 }
