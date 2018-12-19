@@ -92,6 +92,10 @@ features:
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | SPI controller                      |
 +-----------+------------+-------------------------------------+
+| CAN       | on-chip    | can controller                      |
++-----------+------------+-------------------------------------+
+
+.. note:: CAN feature requires CAN transceiver
 
 Other hardware features are not yet supported in this Zephyr port.
 
