@@ -345,17 +345,17 @@ static int lsm9ds0_gyro_init(struct device *dev)
 }
 
 static const struct lsm9ds0_gyro_config lsm9ds0_gyro_config = {
-	.i2c_master_dev_name = CONFIG_LSM9DS0_GYRO_I2C_MASTER_DEV_NAME,
-	.i2c_slave_addr = LSM9DS0_GYRO_I2C_ADDR,
+	.i2c_master_dev_name = DT_LSM9DS0_GYRO_I2C_MASTER_DEV_NAME,
+	.i2c_slave_addr = DT_LSM9DS0_GYRO_I2C_ADDRESS,
 #if defined(CONFIG_LSM9DS0_GYRO_TRIGGER_DRDY)
-	.gpio_drdy_dev_name = CONFIG_LSM9DS0_GYRO_GPIO_DRDY_DEV_NAME,
-	.gpio_drdy_int_pin = CONFIG_LSM9DS0_GYRO_GPIO_DRDY_INT_PIN,
+	.gpio_drdy_dev_name = DT_LSM9DS0_GYRO_INT_GPIO_DEV_NAME,
+	.gpio_drdy_int_pin = DT_LSM9DS0_GYRO_INT_GPIO_PIN,
 #endif
 };
 
 static struct lsm9ds0_gyro_data lsm9ds0_gyro_data;
 
-DEVICE_AND_API_INIT(lsm9ds0_gyro, CONFIG_LSM9DS0_GYRO_DEV_NAME,
+DEVICE_AND_API_INIT(lsm9ds0_gyro, DT_LSM9DS0_GYRO_DEV_NAME,
 		    lsm9ds0_gyro_init, &lsm9ds0_gyro_data, &lsm9ds0_gyro_config,
 		    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &lsm9ds0_gyro_api_funcs);
