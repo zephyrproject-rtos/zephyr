@@ -49,9 +49,9 @@ endforeach()
 if("${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "xcc")
 
   list(APPEND TOOLCHAIN_LIBS
-	gcc
-	hal
-	)
+    gcc
+    hal
+    )
 
 else()
   include(${ZEPHYR_BASE}/cmake/gcc-m-cpu.cmake)

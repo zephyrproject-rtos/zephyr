@@ -34,15 +34,16 @@ if(NOT PROPERTY_LINKER_SCRIPT_DEFINES)
 endif()
 
 define_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT BRIEF_DOCS " " FULL_DOCS " ")
-set_property(   GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf32-little${ARCH})
+set_property(   GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf32-little${ARCH}) # BFD format
 
-# zephyr_interface is a source-less library that has all the global
+# "zephyr_interface" is a source-less library that encapsulates all the global
 # compiler options needed by all source files. All zephyr libraries,
 # including the library named "zephyr" link with this library to
 # obtain these flags.
+# https://cmake.org/cmake/help/latest/manual/cmake-buildsystem.7.html#interface-libraries
 add_library(zephyr_interface INTERFACE)
 
-# zephyr is a catchall CMake library for source files that can be
+# "zephyr" is a catch-all CMake library for source files that can be
 # built purely with the include paths, defines, and other compiler
 # flags that come with zephyr_interface.
 zephyr_library_named(zephyr)
@@ -780,9 +781,9 @@ if(CONFIG_APPLICATION_MEMORY)
     set(def "${def} ${f}")
   endforeach()
   set_property(GLOBAL APPEND PROPERTY
-	PROPERTY_LINKER_SCRIPT_DEFINES
-	${def}
-	)
+    PROPERTY_LINKER_SCRIPT_DEFINES
+    ${def}
+    )
 endif() # CONFIG_APPLICATION_MEMORY
 
 if (CONFIG_CODE_DATA_RELOCATION)
@@ -1391,13 +1392,12 @@ else()
     COMMAND
     ${CMAKE_COMMAND} -E echo
     "==================================================="
-	"Emulation/Simulation not supported with this board."
+    "Emulation/Simulation not supported with this board."
     "==================================================="
     )
 endif()
 
 add_subdirectory(cmake/flash)
-
 add_subdirectory(cmake/usage)
 add_subdirectory(cmake/reports)
 
@@ -1407,14 +1407,14 @@ if(CONFIG_ASSERT AND (NOT CONFIG_FORCE_NO_ASSERT))
       --- WARNING:  __ASSERT() statements are globally ENABLED ---
       --- The kernel will run more slowly and use more memory  ---
       ------------------------------------------------------------"
-)
+  )
 endif()
 
 if(CONFIG_BOARD_DEPRECATED)
   message(WARNING "
       WARNING:  The board '${BOARD}' is deprecated and will be
       removed in version ${CONFIG_BOARD_DEPRECATED}"
-)
+  )
 endif()
 
 if(CONFIG_X86 AND CONFIG_USERSPACE AND NOT CONFIG_X86_NO_MELTDOWN)
@@ -1423,5 +1423,5 @@ if(CONFIG_X86 AND CONFIG_USERSPACE AND NOT CONFIG_X86_NO_MELTDOWN)
       If your CPU is vulnerable to the Meltdown CPU bug, security of
       supervisor-only memory pages is not guaranteed. This version of Zephyr
       does not contain a fix for this issue."
-)
+  )
 endif()

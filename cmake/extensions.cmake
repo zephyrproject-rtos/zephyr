@@ -27,7 +27,7 @@ include(CheckCXXCompilerFlag)
 # 1.1. zephyr_*
 #
 # The following methods are for modifying the CMake library[0] called
-# "zephyr". zephyr is a catchall CMake library for source files that
+# "zephyr". zephyr is a catch-all CMake library for source files that
 # can be built purely with the include paths, defines, and other
 # compiler flags that all zephyr source files use.
 # [0] https://cmake.org/cmake/help/latest/manual/cmake-buildsystem.7.html
@@ -36,13 +36,13 @@ include(CheckCXXCompilerFlag)
 # zephyr_sources(
 #   random_esp32.c
 #   utils.c
-#   )
+# )
 #
 # Is short for:
 # target_sources(zephyr PRIVATE
 #   ${CMAKE_CURRENT_SOURCE_DIR}/random_esp32.c
 #   ${CMAKE_CURRENT_SOURCE_DIR}/utils.c
-#  )
+# )
 
 # https://cmake.org/cmake/help/latest/command/target_sources.html
 function(zephyr_sources)
@@ -1109,14 +1109,14 @@ macro(assert_exists var)
 endmacro()
 
 function(print_usage)
-    message("see usage:")
-	string(REPLACE ";" " " BOARD_ROOT_SPACE_SEPARATED "${BOARD_ROOT}")
-    execute_process(
-      COMMAND
-      ${CMAKE_COMMAND}
-      -DBOARD_ROOT_SPACE_SEPARATED=${BOARD_ROOT_SPACE_SEPARATED}
-      -P ${ZEPHYR_BASE}/cmake/usage/usage.cmake
-      )
+  message("see usage:")
+  string(REPLACE ";" " " BOARD_ROOT_SPACE_SEPARATED "${BOARD_ROOT}")
+  execute_process(
+    COMMAND
+    ${CMAKE_COMMAND}
+    -DBOARD_ROOT_SPACE_SEPARATED=${BOARD_ROOT_SPACE_SEPARATED}
+    -P ${ZEPHYR_BASE}/cmake/usage/usage.cmake
+    )
 endfunction()
 
 # 3.5. File system management
@@ -1193,10 +1193,7 @@ function(find_appropriate_cache_directory dir)
   set(${dir} ${local_dir} PARENT_SCOPE)
 endfunction()
 
-function(generate_unique_target_name_from_filename
-	filename
-	target_name
-	)
+function(generate_unique_target_name_from_filename filename target_name)
   get_filename_component(basename ${filename} NAME)
   string(REPLACE "." "_" x ${basename})
   string(REPLACE "@" "_" x ${x})
