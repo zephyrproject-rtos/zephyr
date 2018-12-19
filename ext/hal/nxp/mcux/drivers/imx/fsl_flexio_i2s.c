@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2016-2017 NXP
+ * Copyright 2016-2018 NXP
  * All rights reserved.
- * 
+ *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
@@ -12,7 +12,6 @@
 #ifndef FSL_COMPONENT_ID
 #define FSL_COMPONENT_ID "platform.drivers.flexio_i2s"
 #endif
-
 
 /*******************************************************************************
 * Definitations
@@ -75,7 +74,7 @@ static void FLEXIO_I2S_WriteNonBlocking(FLEXIO_I2S_Type *base, uint8_t bitWidth,
             data |= (temp << (8U * j));
             txData++;
         }
-        base->flexioBase->SHIFTBUFBIS[base->txShifterIndex] = (data << (32U - bitWidth));
+        base->flexioBase->SHIFTBUFBIS[base->txShifterIndex] = data << (32U - bitWidth);
         data = 0;
     }
 }
@@ -89,7 +88,7 @@ static void FLEXIO_I2S_ReadNonBlocking(FLEXIO_I2S_Type *base, uint8_t bitWidth, 
 
     for (i = 0; i < size / bytesPerWord; i++)
     {
-        data = (base->flexioBase->SHIFTBUFBIS[base->rxShifterIndex] >> (32U - bitWidth));
+        data = (base->flexioBase->SHIFTBUFBIS[base->rxShifterIndex]);
         for (j = 0; j < bytesPerWord; j++)
         {
             *rxData = (data >> (8U * j)) & 0xFF;
@@ -98,6 +97,20 @@ static void FLEXIO_I2S_ReadNonBlocking(FLEXIO_I2S_Type *base, uint8_t bitWidth, 
     }
 }
 
+/*!
+ * brief Initializes the FlexIO I2S.
+ *
+ * This API configures FlexIO pins and shifter to I2S and configures the FlexIO I2S with a configuration structure.
+ * The configuration structure can be filled by the user, or be set with default values by
+ * FLEXIO_I2S_GetDefaultConfig().
+ *
+ * note  This API should be called at the beginning of the application to use
+ * the FlexIO I2S driver. Otherwise, any access to the FlexIO I2S module can cause hard fault
+ * because the clock is not enabled.
+ *
+ * param base FlexIO I2S base pointer
+ * param config FlexIO I2S configure structure.
+*/
 void FLEXIO_I2S_Init(FLEXIO_I2S_Type *base, const flexio_i2s_config_t *config)
 {
     assert(base && config);
@@ -109,6 +122,9 @@ void FLEXIO_I2S_Init(FLEXIO_I2S_Type *base, const flexio_i2s_config_t *config)
     /* Ungate flexio clock. */
     CLOCK_EnableClock(s_flexioClocks[FLEXIO_I2S_GetInstance(base)]);
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+
+    /* reset Flexio */
+    FLEXIO_Reset(base->flexioBase);
 
     /* Set shifter for I2S Tx data */
     shifterConfig.timerSelect = base->bclkTimerIndex;
@@ -228,8 +244,20 @@ void FLEXIO_I2S_Init(FLEXIO_I2S_Type *base, const flexio_i2s_config_t *config)
     }
 }
 
+/*!
+ * brief  Sets the FlexIO I2S configuration structure to default values.
+ *
+ * The purpose of this API is to get the configuration structure initialized for use in FLEXIO_I2S_Init().
+ * Users may use the initialized structure unchanged in FLEXIO_I2S_Init() or modify
+ * some fields of the structure before calling FLEXIO_I2S_Init().
+ *
+ * param config pointer to master configuration structure
+ */
 void FLEXIO_I2S_GetDefaultConfig(flexio_i2s_config_t *config)
 {
+    /* Initializes the configure structure to zero. */
+    memset(config, 0, sizeof(*config));
+
     config->masterSlave = kFLEXIO_I2S_Master;
     config->enableI2S = true;
     config->txPinPolarity = kFLEXIO_PinActiveHigh;
@@ -240,6 +268,14 @@ void FLEXIO_I2S_GetDefaultConfig(flexio_i2s_config_t *config)
     config->rxTimerPolarity = kFLEXIO_ShifterTimerPolarityOnNegitive;
 }
 
+/*!
+ * brief De-initializes the FlexIO I2S.
+ *
+ * Calling this API resets the FlexIO I2S shifter and timer config. After calling this API,
+ * call the FLEXO_I2S_Init to use the FlexIO I2S module.
+ *
+ * param base FlexIO I2S base pointer
+*/
 void FLEXIO_I2S_Deinit(FLEXIO_I2S_Type *base)
 {
     base->flexioBase->SHIFTCFG[base->txShifterIndex] = 0;
@@ -254,6 +290,14 @@ void FLEXIO_I2S_Deinit(FLEXIO_I2S_Type *base)
     base->flexioBase->TIMCTL[base->bclkTimerIndex] = 0;
 }
 
+/*!
+ * brief Enables the FlexIO I2S interrupt.
+ *
+ * This function enables the FlexIO UART interrupt.
+ *
+ * param base Pointer to FLEXIO_I2S_Type structure
+ * param mask interrupt source
+ */
 void FLEXIO_I2S_EnableInterrupts(FLEXIO_I2S_Type *base, uint32_t mask)
 {
     if (mask & kFLEXIO_I2S_TxDataRegEmptyInterruptEnable)
@@ -266,6 +310,12 @@ void FLEXIO_I2S_EnableInterrupts(FLEXIO_I2S_Type *base, uint32_t mask)
     }
 }
 
+/*!
+ * brief Gets the FlexIO I2S status flags.
+ *
+ * param base Pointer to FLEXIO_I2S_Type structure
+ * return Status flag, which are ORed by the enumerators in the _flexio_i2s_status_flags.
+*/
 uint32_t FLEXIO_I2S_GetStatusFlags(FLEXIO_I2S_Type *base)
 {
     uint32_t status = 0;
@@ -276,6 +326,14 @@ uint32_t FLEXIO_I2S_GetStatusFlags(FLEXIO_I2S_Type *base)
     return status;
 }
 
+/*!
+ * brief Disables the FlexIO I2S interrupt.
+ *
+ * This function enables the FlexIO UART interrupt.
+ *
+ * param base pointer to FLEXIO_I2S_Type structure
+ * param mask interrupt source
+ */
 void FLEXIO_I2S_DisableInterrupts(FLEXIO_I2S_Type *base, uint32_t mask)
 {
     if (mask & kFLEXIO_I2S_TxDataRegEmptyInterruptEnable)
@@ -288,9 +346,19 @@ void FLEXIO_I2S_DisableInterrupts(FLEXIO_I2S_Type *base, uint32_t mask)
     }
 }
 
+/*!
+ * brief Configures the FlexIO I2S audio format in master mode.
+ *
+ * Audio format can be changed in run-time of FlexIO I2S. This function configures the sample rate and audio data
+ * format to be transferred.
+ *
+ * param base Pointer to FLEXIO_I2S_Type structure
+ * param format Pointer to FlexIO I2S audio data format structure.
+ * param srcClock_Hz I2S master clock source frequency in Hz.
+*/
 void FLEXIO_I2S_MasterSetFormat(FLEXIO_I2S_Type *base, flexio_i2s_format_t *format, uint32_t srcClock_Hz)
 {
-    uint32_t timDiv = srcClock_Hz / (format->sampleRate_Hz * 32U * 2U);
+    uint32_t timDiv = srcClock_Hz / (format->sampleRate_Hz * format->bitWidth * 2U);
     uint32_t bclkDiv = 0;
 
     /* Shall keep bclk and fs div an integer */
@@ -299,22 +367,41 @@ void FLEXIO_I2S_MasterSetFormat(FLEXIO_I2S_Type *base, flexio_i2s_format_t *form
         timDiv += 1U;
     }
     /* Set Frame sync timer cmp */
-    base->flexioBase->TIMCMP[base->fsTimerIndex] = FLEXIO_TIMCMP_CMP(32U * timDiv - 1U);
+    base->flexioBase->TIMCMP[base->fsTimerIndex] = FLEXIO_TIMCMP_CMP(format->bitWidth * timDiv - 1U);
 
     /* Set bit clock timer cmp */
-    bclkDiv = ((timDiv / 2U - 1U) | (63U << 8U));
+    bclkDiv = ((timDiv / 2U - 1U) | ((format->bitWidth * 2U - 1U) << 8U));
     base->flexioBase->TIMCMP[base->bclkTimerIndex] = FLEXIO_TIMCMP_CMP(bclkDiv);
 }
 
+/*!
+ * brief Configures the FlexIO I2S audio format in slave mode.
+ *
+ * Audio format can be changed in run-time of FlexIO I2S. This function configures the sample rate and audio data
+ * format to be transferred.
+ *
+ * param base Pointer to FLEXIO_I2S_Type structure
+ * param format Pointer to FlexIO I2S audio data format structure.
+*/
 void FLEXIO_I2S_SlaveSetFormat(FLEXIO_I2S_Type *base, flexio_i2s_format_t *format)
 {
     /* Set Frame sync timer cmp */
-    base->flexioBase->TIMCMP[base->fsTimerIndex] = FLEXIO_TIMCMP_CMP(32U * 4U - 3U);
+    base->flexioBase->TIMCMP[base->fsTimerIndex] = FLEXIO_TIMCMP_CMP(format->bitWidth * 4U - 3U);
 
     /* Set bit clock timer cmp */
-    base->flexioBase->TIMCMP[base->bclkTimerIndex] = FLEXIO_TIMCMP_CMP(32U * 2U - 1U);
+    base->flexioBase->TIMCMP[base->bclkTimerIndex] = FLEXIO_TIMCMP_CMP(format->bitWidth * 2U - 1U);
 }
 
+/*!
+ * brief Sends data using a blocking method.
+ *
+ * note This function blocks via polling until data is ready to be sent.
+ *
+ * param base FlexIO I2S base pointer.
+ * param bitWidth How many bits in a audio word, usually 8/16/24/32 bits.
+ * param txData Pointer to the data to be written.
+ * param size Bytes to be written.
+ */
 void FLEXIO_I2S_WriteBlocking(FLEXIO_I2S_Type *base, uint8_t bitWidth, uint8_t *txData, size_t size)
 {
     uint32_t i = 0;
@@ -337,6 +424,16 @@ void FLEXIO_I2S_WriteBlocking(FLEXIO_I2S_Type *base, uint8_t bitWidth, uint8_t *
     }
 }
 
+/*!
+ * brief Receives a piece of data using a blocking method.
+ *
+ * note This function blocks via polling until data is ready to be sent.
+ *
+ * param base FlexIO I2S base pointer
+ * param bitWidth How many bits in a audio word, usually 8/16/24/32 bits.
+ * param rxData Pointer to the data to be read.
+ * param size Bytes to be read.
+ */
 void FLEXIO_I2S_ReadBlocking(FLEXIO_I2S_Type *base, uint8_t bitWidth, uint8_t *rxData, size_t size)
 {
     uint32_t i = 0;
@@ -354,6 +451,18 @@ void FLEXIO_I2S_ReadBlocking(FLEXIO_I2S_Type *base, uint8_t bitWidth, uint8_t *r
     }
 }
 
+/*!
+ * brief Initializes the FlexIO I2S handle.
+ *
+ * This function initializes the FlexIO I2S handle which can be used for other
+ * FlexIO I2S transactional APIs. Call this API once to get the
+ * initialized handle.
+ *
+ * param base Pointer to FLEXIO_I2S_Type structure
+ * param handle Pointer to flexio_i2s_handle_t structure to store the transfer state.
+ * param callback FlexIO I2S callback function, which is called while finished a block.
+ * param userData User parameter for the FlexIO I2S callback.
+ */
 void FLEXIO_I2S_TransferTxCreateHandle(FLEXIO_I2S_Type *base,
                                        flexio_i2s_handle_t *handle,
                                        flexio_i2s_callback_t callback,
@@ -380,6 +489,18 @@ void FLEXIO_I2S_TransferTxCreateHandle(FLEXIO_I2S_Type *base,
     EnableIRQ(flexio_irqs[FLEXIO_I2S_GetInstance(base)]);
 }
 
+/*!
+ * brief Initializes the FlexIO I2S receive handle.
+ *
+ * This function initializes the FlexIO I2S handle which can be used for other
+ * FlexIO I2S transactional APIs. Call this API once to get the
+ * initialized handle.
+ *
+ * param base Pointer to FLEXIO_I2S_Type structure.
+ * param handle Pointer to flexio_i2s_handle_t structure to store the transfer state.
+ * param callback FlexIO I2S callback function, which is called while finished a block.
+ * param userData User parameter for the FlexIO I2S callback.
+ */
 void FLEXIO_I2S_TransferRxCreateHandle(FLEXIO_I2S_Type *base,
                                        flexio_i2s_handle_t *handle,
                                        flexio_i2s_callback_t callback,
@@ -406,6 +527,17 @@ void FLEXIO_I2S_TransferRxCreateHandle(FLEXIO_I2S_Type *base,
     EnableIRQ(flexio_irqs[FLEXIO_I2S_GetInstance(base)]);
 }
 
+/*!
+ * brief Configures the FlexIO I2S audio format.
+ *
+ * Audio format can be changed at run-time of FlexIO I2S. This function configures the sample rate and audio data
+ * format to be transferred.
+ *
+ * param base Pointer to FLEXIO_I2S_Type structure.
+ * param handle FlexIO I2S handle pointer.
+ * param format Pointer to audio data format structure.
+ * param srcClock_Hz FlexIO I2S bit clock source frequency in Hz. This parameter should be 0 while in slave mode.
+*/
 void FLEXIO_I2S_TransferSetFormat(FLEXIO_I2S_Type *base,
                                   flexio_i2s_handle_t *handle,
                                   flexio_i2s_format_t *format,
@@ -428,6 +560,20 @@ void FLEXIO_I2S_TransferSetFormat(FLEXIO_I2S_Type *base,
     }
 }
 
+/*!
+ * brief Performs an interrupt non-blocking send transfer on FlexIO I2S.
+ *
+ * note The API returns immediately after transfer initiates.
+ * Call FLEXIO_I2S_GetRemainingBytes to poll the transfer status and check whether
+ * the transfer is finished. If the return status is 0, the transfer is finished.
+ *
+ * param base Pointer to FLEXIO_I2S_Type structure.
+ * param handle Pointer to flexio_i2s_handle_t structure which stores the transfer state
+ * param xfer Pointer to flexio_i2s_transfer_t structure
+ * retval kStatus_Success Successfully start the data transmission.
+ * retval kStatus_FLEXIO_I2S_TxBusy Previous transmission still not finished, data not all written to TX register yet.
+ * retval kStatus_InvalidArgument The input parameter is invalid.
+ */
 status_t FLEXIO_I2S_TransferSendNonBlocking(FLEXIO_I2S_Type *base,
                                             flexio_i2s_handle_t *handle,
                                             flexio_i2s_transfer_t *xfer)
@@ -461,6 +607,20 @@ status_t FLEXIO_I2S_TransferSendNonBlocking(FLEXIO_I2S_Type *base,
     return kStatus_Success;
 }
 
+/*!
+ * brief Performs an interrupt non-blocking receive transfer on FlexIO I2S.
+ *
+ * note The API returns immediately after transfer initiates.
+ * Call FLEXIO_I2S_GetRemainingBytes to poll the transfer status to check whether
+ * the transfer is finished. If the return status is 0, the transfer is finished.
+ *
+ * param base Pointer to FLEXIO_I2S_Type structure.
+ * param handle Pointer to flexio_i2s_handle_t structure which stores the transfer state
+ * param xfer Pointer to flexio_i2s_transfer_t structure
+ * retval kStatus_Success Successfully start the data receive.
+ * retval kStatus_FLEXIO_I2S_RxBusy Previous receive still not finished.
+ * retval kStatus_InvalidArgument The input parameter is invalid.
+ */
 status_t FLEXIO_I2S_TransferReceiveNonBlocking(FLEXIO_I2S_Type *base,
                                                flexio_i2s_handle_t *handle,
                                                flexio_i2s_transfer_t *xfer)
@@ -496,6 +656,15 @@ status_t FLEXIO_I2S_TransferReceiveNonBlocking(FLEXIO_I2S_Type *base,
     return kStatus_Success;
 }
 
+/*!
+ * brief Aborts the current send.
+ *
+ * note This API can be called at any time when interrupt non-blocking transfer initiates
+ * to abort the transfer in a early time.
+ *
+ * param base Pointer to FLEXIO_I2S_Type structure.
+ * param handle Pointer to flexio_i2s_handle_t structure which stores the transfer state
+ */
 void FLEXIO_I2S_TransferAbortSend(FLEXIO_I2S_Type *base, flexio_i2s_handle_t *handle)
 {
     assert(handle);
@@ -510,6 +679,15 @@ void FLEXIO_I2S_TransferAbortSend(FLEXIO_I2S_Type *base, flexio_i2s_handle_t *ha
     handle->queueUser = 0;
 }
 
+/*!
+ * brief Aborts the current receive.
+ *
+ * note This API can be called at any time when interrupt non-blocking transfer initiates
+ * to abort the transfer in a early time.
+ *
+ * param base Pointer to FLEXIO_I2S_Type structure.
+ * param handle Pointer to flexio_i2s_handle_t structure which stores the transfer state
+ */
 void FLEXIO_I2S_TransferAbortReceive(FLEXIO_I2S_Type *base, flexio_i2s_handle_t *handle)
 {
     assert(handle);
@@ -524,6 +702,15 @@ void FLEXIO_I2S_TransferAbortReceive(FLEXIO_I2S_Type *base, flexio_i2s_handle_t 
     handle->queueUser = 0;
 }
 
+/*!
+ * brief Gets the remaining bytes to be sent.
+ *
+ * param base Pointer to FLEXIO_I2S_Type structure.
+ * param handle Pointer to flexio_i2s_handle_t structure which stores the transfer state
+ * param count Bytes sent.
+ * retval kStatus_Success Succeed get the transfer count.
+ * retval kStatus_NoTransferInProgress There is not a non-blocking transaction currently in progress.
+ */
 status_t FLEXIO_I2S_TransferGetSendCount(FLEXIO_I2S_Type *base, flexio_i2s_handle_t *handle, size_t *count)
 {
     assert(handle);
@@ -542,6 +729,15 @@ status_t FLEXIO_I2S_TransferGetSendCount(FLEXIO_I2S_Type *base, flexio_i2s_handl
     return status;
 }
 
+/*!
+ * brief Gets the remaining bytes to be received.
+ *
+ * param base Pointer to FLEXIO_I2S_Type structure.
+ * param handle Pointer to flexio_i2s_handle_t structure which stores the transfer state
+ * return count Bytes received.
+ * retval kStatus_Success Succeed get the transfer count.
+ * retval kStatus_NoTransferInProgress There is not a non-blocking transaction currently in progress.
+ */
 status_t FLEXIO_I2S_TransferGetReceiveCount(FLEXIO_I2S_Type *base, flexio_i2s_handle_t *handle, size_t *count)
 {
     assert(handle);
@@ -560,6 +756,12 @@ status_t FLEXIO_I2S_TransferGetReceiveCount(FLEXIO_I2S_Type *base, flexio_i2s_ha
     return status;
 }
 
+/*!
+ * brief Tx interrupt handler.
+ *
+ * param i2sBase Pointer to FLEXIO_I2S_Type structure.
+ * param i2sHandle Pointer to flexio_i2s_handle_t structure
+ */
 void FLEXIO_I2S_TransferTxHandleIRQ(void *i2sBase, void *i2sHandle)
 {
     assert(i2sHandle);
@@ -603,6 +805,12 @@ void FLEXIO_I2S_TransferTxHandleIRQ(void *i2sBase, void *i2sHandle)
     }
 }
 
+/*!
+ * brief Rx interrupt handler.
+ *
+ * param i2sBase Pointer to FLEXIO_I2S_Type structure.
+ * param i2sHandle Pointer to flexio_i2s_handle_t structure.
+ */
 void FLEXIO_I2S_TransferRxHandleIRQ(void *i2sBase, void *i2sHandle)
 {
     assert(i2sHandle);

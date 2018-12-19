@@ -1,31 +1,9 @@
 /*
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fsl_dmic_dma.h"
@@ -33,6 +11,12 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
+
+/* Component ID definition, used by tools. */
+#ifndef FSL_COMPONENT_ID
+#define FSL_COMPONENT_ID "platform.drivers.dmic_dma"
+#endif
+
 #define DMIC_HANDLE_ARRAY_SIZE 1
 
 /*<! Structure definition for dmic_dma_handle_t. The structure is private. */
@@ -51,13 +35,7 @@ enum _dmic_dma_states_t
 /*******************************************************************************
  * Prototypes
  ******************************************************************************/
-/*!
- * @brief Get the DMIC instance from peripheral base address.
- *
- * @param base DMIC peripheral base address.
- * @return DMIC instance.
- */
-extern uint32_t DMIC_GetInstance(DMIC_Type *base);
+
 /*******************************************************************************
  * Variables
  ******************************************************************************/
@@ -83,6 +61,14 @@ static void DMIC_TransferReceiveDMACallback(dma_handle_t *handle, void *param, b
     }
 }
 
+/*!
+ * brief Initializes the DMIC handle which is used in transactional functions.
+ * param base DMIC peripheral base address.
+ * param handle Pointer to dmic_dma_handle_t structure.
+ * param callback Callback function.
+ * param userData User data.
+ * param rxDmaHandle User-requested DMA handle for RX DMA transfer.
+ */
 status_t DMIC_TransferCreateHandleDMA(DMIC_Type *base,
                                       dmic_dma_handle_t *handle,
                                       dmic_dma_transfer_callback_t callback,
@@ -132,6 +118,18 @@ status_t DMIC_TransferCreateHandleDMA(DMIC_Type *base,
     return kStatus_Success;
 }
 
+/*!
+ * brief Receives data using DMA.
+ *
+ * This function receives data using DMA. This is a non-blocking function, which returns
+ * right away. When all data is received, the receive callback function is called.
+ *
+ * param base USART peripheral base address.
+ * param handle Pointer to usart_dma_handle_t structure.
+ * param xfer DMIC DMA transfer structure. See #dmic_transfer_t.
+ * param dmic_channel DMIC channel
+ * retval kStatus_Success
+ */
 status_t DMIC_TransferReceiveDMA(DMIC_Type *base,
                                  dmic_dma_handle_t *handle,
                                  dmic_transfer_t *xfer,
@@ -145,6 +143,7 @@ status_t DMIC_TransferReceiveDMA(DMIC_Type *base,
 
     dma_transfer_config_t xferConfig;
     status_t status;
+    uint32_t srcAddr = (uint32_t)(&base->CHANNEL[dmic_channel].FIFO_DATA);
 
     /* Check if the device is busy. If previous RX not finished.*/
     if (handle->state == kDMIC_Busy)
@@ -157,8 +156,8 @@ status_t DMIC_TransferReceiveDMA(DMIC_Type *base,
         handle->transferSize = xfer->dataSize;
 
         /* Prepare transfer. */
-        DMA_PrepareTransfer(&xferConfig, (void *)&base->CHANNEL[dmic_channel].FIFO_DATA, xfer->data, sizeof(uint16_t),
-                            xfer->dataSize, kDMA_PeripheralToMemory, NULL);
+        DMA_PrepareTransfer(&xferConfig, (void *)srcAddr, xfer->data, sizeof(uint16_t), xfer->dataSize,
+                            kDMA_PeripheralToMemory, NULL);
 
         /* Submit transfer. */
         DMA_SubmitTransfer(handle->rxDmaHandle, &xferConfig);
@@ -170,6 +169,14 @@ status_t DMIC_TransferReceiveDMA(DMIC_Type *base,
     return status;
 }
 
+/*!
+ * brief Aborts the received data using DMA.
+ *
+ * This function aborts the received data using DMA.
+ *
+ * param base DMIC peripheral base address
+ * param handle Pointer to dmic_dma_handle_t structure
+ */
 void DMIC_TransferAbortReceiveDMA(DMIC_Type *base, dmic_dma_handle_t *handle)
 {
     assert(NULL != handle);
@@ -180,6 +187,18 @@ void DMIC_TransferAbortReceiveDMA(DMIC_Type *base, dmic_dma_handle_t *handle)
     handle->state = kDMIC_Idle;
 }
 
+/*!
+ * brief Get the number of bytes that have been received.
+ *
+ * This function gets the number of bytes that have been received.
+ *
+ * param base DMIC peripheral base address.
+ * param handle DMIC handle pointer.
+ * param count Receive bytes count.
+ * retval kStatus_NoTransferInProgress No receive in progress.
+ * retval kStatus_InvalidArgument Parameter is invalid.
+ * retval kStatus_Success Get successfully through the parameter count;
+ */
 status_t DMIC_TransferGetReceiveCountDMA(DMIC_Type *base, dmic_dma_handle_t *handle, uint32_t *count)
 {
     assert(handle);

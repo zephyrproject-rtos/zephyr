@@ -2,7 +2,7 @@
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
  * All rights reserved.
- * 
+ *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 #include "fsl_aoi.h"
@@ -11,7 +11,6 @@
 #ifndef FSL_COMPONENT_ID
 #define FSL_COMPONENT_ID "platform.drivers.aoi"
 #endif
-
 
 /*******************************************************************************
  * Variables
@@ -23,9 +22,9 @@ static AOI_Type *const s_aoiBases[] = AOI_BASE_PTRS;
 /*! @brief Pointers to aoi clocks for each instance. */
 static const clock_ip_name_t s_aoiClocks[] = AOI_CLOCKS;
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
-/*******************************************************************************
- * Prototypes
- ******************************************************************************/
+       /*******************************************************************************
+        * Prototypes
+        ******************************************************************************/
 /*!
  * @brief Get instance number for AOI module.
  *
@@ -56,6 +55,13 @@ static uint32_t AOI_GetInstance(AOI_Type *base)
     return instance;
 }
 
+/*!
+ * brief Initializes an AOI instance for operation.
+ *
+ * This function un-gates the AOI clock.
+ *
+ * param base AOI peripheral address.
+ */
 void AOI_Init(AOI_Type *base)
 {
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
@@ -64,6 +70,13 @@ void AOI_Init(AOI_Type *base)
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
+/*!
+ * brief Deinitializes an AOI instance for operation.
+ *
+ * This function shutdowns AOI module.
+ *
+ * param  base AOI peripheral address.
+ */
 void AOI_Deinit(AOI_Type *base)
 {
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
@@ -72,6 +85,22 @@ void AOI_Deinit(AOI_Type *base)
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
+/*!
+ * brief Gets the Boolean evaluation associated.
+ *
+ * This function returns the Boolean evaluation associated.
+ *
+ * Example:
+  code
+    aoi_event_config_t demoEventLogicStruct;
+
+    AOI_GetEventLogicConfig(AOI, kAOI_Event0, &demoEventLogicStruct);
+  endcode
+ *
+ * param  base AOI peripheral address.
+ * param  event Index of the event which will be set of type aoi_event_t.
+ * param  config Selected input configuration .
+ */
 void AOI_GetEventLogicConfig(AOI_Type *base, aoi_event_t event, aoi_event_config_t *config)
 {
     assert(event < FSL_FEATURE_AOI_EVENT_COUNT);
@@ -106,6 +135,45 @@ void AOI_GetEventLogicConfig(AOI_Type *base, aoi_event_t event, aoi_event_config
     config->PT3DC = (aoi_input_config_t)((value & AOI_BFCRT23_PT3_DC_MASK) >> AOI_BFCRT23_PT3_DC_SHIFT);
 }
 
+/*!
+ * brief Configures an AOI event.
+ *
+ * This function configures an AOI event according
+ * to the aoiEventConfig structure. This function configures all  inputs (A, B, C, and D)
+ * of all  product terms (0, 1, 2, and 3) of a desired event.
+ *
+ * Example:
+  code
+    aoi_event_config_t demoEventLogicStruct;
+
+    demoEventLogicStruct.PT0AC = kAOI_InvInputSignal;
+    demoEventLogicStruct.PT0BC = kAOI_InputSignal;
+    demoEventLogicStruct.PT0CC = kAOI_LogicOne;
+    demoEventLogicStruct.PT0DC = kAOI_LogicOne;
+
+    demoEventLogicStruct.PT1AC = kAOI_LogicZero;
+    demoEventLogicStruct.PT1BC = kAOI_LogicOne;
+    demoEventLogicStruct.PT1CC = kAOI_LogicOne;
+    demoEventLogicStruct.PT1DC = kAOI_LogicOne;
+
+    demoEventLogicStruct.PT2AC = kAOI_LogicZero;
+    demoEventLogicStruct.PT2BC = kAOI_LogicOne;
+    demoEventLogicStruct.PT2CC = kAOI_LogicOne;
+    demoEventLogicStruct.PT2DC = kAOI_LogicOne;
+
+    demoEventLogicStruct.PT3AC = kAOI_LogicZero;
+    demoEventLogicStruct.PT3BC = kAOI_LogicOne;
+    demoEventLogicStruct.PT3CC = kAOI_LogicOne;
+    demoEventLogicStruct.PT3DC = kAOI_LogicOne;
+
+    AOI_SetEventLogicConfig(AOI, kAOI_Event0, demoEventLogicStruct);
+  endcode
+ *
+ * param  base AOI peripheral address.
+ * param  event Event which will be configured of type aoi_event_t.
+ * param  eventConfig Pointer to type aoi_event_config_t structure. The user is responsible for
+ * filling out the members of this structure and passing the pointer to this function.
+ */
 void AOI_SetEventLogicConfig(AOI_Type *base, aoi_event_t event, const aoi_event_config_t *eventConfig)
 {
     assert(eventConfig != NULL);

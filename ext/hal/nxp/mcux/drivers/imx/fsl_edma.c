@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2016-2017 NXP
+ * Copyright 2016-2018 NXP
  * All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -70,6 +70,13 @@ static uint32_t EDMA_GetInstance(DMA_Type *base)
     return instance;
 }
 
+/*!
+ * brief Push content of TCD structure into hardware TCD register.
+ *
+ * param base EDMA peripheral base address.
+ * param channel EDMA channel number.
+ * param tcd Point to TCD structure.
+ */
 void EDMA_InstallTCD(DMA_Type *base, uint32_t channel, edma_tcd_t *tcd)
 {
     assert(channel < FSL_FEATURE_EDMA_MODULE_CHANNEL);
@@ -92,6 +99,16 @@ void EDMA_InstallTCD(DMA_Type *base, uint32_t channel, edma_tcd_t *tcd)
     base->TCD[channel].BITER_ELINKNO = tcd->BITER;
 }
 
+/*!
+ * brief Initializes the eDMA peripheral.
+ *
+ * This function ungates the eDMA clock and configures the eDMA peripheral according
+ * to the configuration structure.
+ *
+ * param base eDMA peripheral base address.
+ * param config A pointer to the configuration structure, see "edma_config_t".
+ * note This function enables the minor loop map feature.
+ */
 void EDMA_Init(DMA_Type *base, const edma_config_t *config)
 {
     assert(config != NULL);
@@ -102,6 +119,11 @@ void EDMA_Init(DMA_Type *base, const edma_config_t *config)
     /* Ungate EDMA peripheral clock */
     CLOCK_EnableClock(s_edmaClockName[EDMA_GetInstance(base)]);
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+
+    /* clear all the enabled request, status to make sure EDMA status is in normal condition */
+    base->ERQ = 0U;
+    base->INT = 0xFFFFFFFFU;
+    base->ERR = 0xFFFFFFFFU;
     /* Configure EDMA peripheral according to the configuration structure. */
     tmpreg = base->CR;
     tmpreg &= ~(DMA_CR_ERCA_MASK | DMA_CR_HOE_MASK | DMA_CR_CLM_MASK | DMA_CR_EDBG_MASK);
@@ -110,6 +132,13 @@ void EDMA_Init(DMA_Type *base, const edma_config_t *config)
     base->CR = tmpreg;
 }
 
+/*!
+ * brief Deinitializes the eDMA peripheral.
+ *
+ * This function gates the eDMA clock.
+ *
+ * param base eDMA peripheral base address.
+ */
 void EDMA_Deinit(DMA_Type *base)
 {
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
@@ -118,9 +147,26 @@ void EDMA_Deinit(DMA_Type *base)
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
+/*!
+ * brief Gets the eDMA default configuration structure.
+ *
+ * This function sets the configuration structure to default values.
+ * The default configuration is set to the following values.
+ * code
+ *   config.enableContinuousLinkMode = false;
+ *   config.enableHaltOnError = true;
+ *   config.enableRoundRobinArbitration = false;
+ *   config.enableDebugMode = false;
+ * endcode
+ *
+ * param config A pointer to the eDMA configuration structure.
+ */
 void EDMA_GetDefaultConfig(edma_config_t *config)
 {
     assert(config != NULL);
+
+    /* Initializes the configure structure to zero. */
+    memset(config, 0, sizeof(*config));
 
     config->enableRoundRobinArbitration = false;
     config->enableHaltOnError = true;
@@ -128,6 +174,17 @@ void EDMA_GetDefaultConfig(edma_config_t *config)
     config->enableDebugMode = false;
 }
 
+/*!
+ * brief Sets all TCD registers to default values.
+ *
+ * This function sets TCD registers for this channel to default values.
+ *
+ * param base eDMA peripheral base address.
+ * param channel eDMA channel number.
+ * note This function must not be called while the channel transfer is ongoing
+ *       or it causes unpredictable results.
+ * note This function enables the auto stop request feature.
+ */
 void EDMA_ResetChannel(DMA_Type *base, uint32_t channel)
 {
     assert(channel < FSL_FEATURE_EDMA_MODULE_CHANNEL);
@@ -135,6 +192,31 @@ void EDMA_ResetChannel(DMA_Type *base, uint32_t channel)
     EDMA_TcdReset((edma_tcd_t *)&base->TCD[channel]);
 }
 
+/*!
+ * brief Configures the eDMA transfer attribute.
+ *
+ * This function configures the transfer attribute, including source address, destination address,
+ * transfer size, address offset, and so on. It also configures the scatter gather feature if the
+ * user supplies the TCD address.
+ * Example:
+ * code
+ *  edma_transfer_t config;
+ *  edma_tcd_t tcd;
+ *  config.srcAddr = ..;
+ *  config.destAddr = ..;
+ *  ...
+ *  EDMA_SetTransferConfig(DMA0, channel, &config, &stcd);
+ * endcode
+ *
+ * param base eDMA peripheral base address.
+ * param channel eDMA channel number.
+ * param config Pointer to eDMA transfer configuration structure.
+ * param nextTcd Point to TCD structure. It can be NULL if users
+ *                do not want to enable scatter/gather feature.
+ * note If nextTcd is not NULL, it means scatter gather feature is enabled
+ *       and DREQ bit is cleared in the previous transfer configuration, which
+ *       is set in the eDMA_ResetChannel.
+ */
 void EDMA_SetTransferConfig(DMA_Type *base, uint32_t channel, const edma_transfer_config_t *config, edma_tcd_t *nextTcd)
 {
     assert(channel < FSL_FEATURE_EDMA_MODULE_CHANNEL);
@@ -144,6 +226,16 @@ void EDMA_SetTransferConfig(DMA_Type *base, uint32_t channel, const edma_transfe
     EDMA_TcdSetTransferConfig((edma_tcd_t *)&base->TCD[channel], config, nextTcd);
 }
 
+/*!
+ * brief Configures the eDMA minor offset feature.
+ *
+ * The minor offset means that the signed-extended value is added to the source address or destination
+ * address after each minor loop.
+ *
+ * param base eDMA peripheral base address.
+ * param channel eDMA channel number.
+ * param config A pointer to the minor offset configuration structure.
+ */
 void EDMA_SetMinorOffsetConfig(DMA_Type *base, uint32_t channel, const edma_minor_offset_config_t *config)
 {
     assert(channel < FSL_FEATURE_EDMA_MODULE_CHANNEL);
@@ -159,6 +251,22 @@ void EDMA_SetMinorOffsetConfig(DMA_Type *base, uint32_t channel, const edma_mino
     base->TCD[channel].NBYTES_MLOFFYES = tmpreg;
 }
 
+/*!
+ * brief Sets the channel link for the eDMA transfer.
+ *
+ * This function configures either the minor link or the major link mode. The minor link means that the channel link is
+ * triggered every time CITER decreases by 1. The major link means that the channel link is triggered when the CITER is
+ * exhausted.
+ *
+ * param base eDMA peripheral base address.
+ * param channel eDMA channel number.
+ * param type A channel link type, which can be one of the following:
+ *   arg kEDMA_LinkNone
+ *   arg kEDMA_MinorLink
+ *   arg kEDMA_MajorLink
+ * param linkedChannel The linked channel number.
+ * note Users should ensure that DONE flag is cleared before calling this interface, or the configuration is invalid.
+ */
 void EDMA_SetChannelLink(DMA_Type *base, uint32_t channel, edma_channel_link_type_t type, uint32_t linkedChannel)
 {
     assert(channel < FSL_FEATURE_EDMA_MODULE_CHANNEL);
@@ -167,6 +275,20 @@ void EDMA_SetChannelLink(DMA_Type *base, uint32_t channel, edma_channel_link_typ
     EDMA_TcdSetChannelLink((edma_tcd_t *)&base->TCD[channel], type, linkedChannel);
 }
 
+/*!
+ * brief Sets the bandwidth for the eDMA transfer.
+ *
+ * Because the eDMA processes the minor loop, it continuously generates read/write sequences
+ * until the minor count is exhausted. The bandwidth forces the eDMA to stall after the completion of
+ * each read/write access to control the bus request bandwidth seen by the crossbar switch.
+ *
+ * param base eDMA peripheral base address.
+ * param channel eDMA channel number.
+ * param bandWidth A bandwidth setting, which can be one of the following:
+ *     arg kEDMABandwidthStallNone
+ *     arg kEDMABandwidthStall4Cycle
+ *     arg kEDMABandwidthStall8Cycle
+ */
 void EDMA_SetBandWidth(DMA_Type *base, uint32_t channel, edma_bandwidth_t bandWidth)
 {
     assert(channel < FSL_FEATURE_EDMA_MODULE_CHANNEL);
@@ -174,6 +296,18 @@ void EDMA_SetBandWidth(DMA_Type *base, uint32_t channel, edma_bandwidth_t bandWi
     base->TCD[channel].CSR = (base->TCD[channel].CSR & (~DMA_CSR_BWC_MASK)) | DMA_CSR_BWC(bandWidth);
 }
 
+/*!
+ * brief Sets the source modulo and the destination modulo for the eDMA transfer.
+ *
+ * This function defines a specific address range specified to be the value after (SADDR + SOFF)/(DADDR + DOFF)
+ * calculation is performed or the original register value. It provides the ability to implement a circular data
+ * queue easily.
+ *
+ * param base eDMA peripheral base address.
+ * param channel eDMA channel number.
+ * param srcModulo A source modulo value.
+ * param destModulo A destination modulo value.
+ */
 void EDMA_SetModulo(DMA_Type *base, uint32_t channel, edma_modulo_t srcModulo, edma_modulo_t destModulo)
 {
     assert(channel < FSL_FEATURE_EDMA_MODULE_CHANNEL);
@@ -184,6 +318,14 @@ void EDMA_SetModulo(DMA_Type *base, uint32_t channel, edma_modulo_t srcModulo, e
     base->TCD[channel].ATTR = tmpreg | DMA_ATTR_DMOD(destModulo) | DMA_ATTR_SMOD(srcModulo);
 }
 
+/*!
+ * brief Enables the interrupt source for the eDMA transfer.
+ *
+ * param base eDMA peripheral base address.
+ * param channel eDMA channel number.
+ * param mask The mask of interrupt source to be set. Users need to use
+ *             the defined edma_interrupt_enable_t type.
+ */
 void EDMA_EnableChannelInterrupts(DMA_Type *base, uint32_t channel, uint32_t mask)
 {
     assert(channel < FSL_FEATURE_EDMA_MODULE_CHANNEL);
@@ -207,6 +349,14 @@ void EDMA_EnableChannelInterrupts(DMA_Type *base, uint32_t channel, uint32_t mas
     }
 }
 
+/*!
+ * brief Disables the interrupt source for the eDMA transfer.
+ *
+ * param base eDMA peripheral base address.
+ * param channel eDMA channel number.
+ * param mask The mask of the interrupt source to be set. Use
+ *             the defined edma_interrupt_enable_t type.
+ */
 void EDMA_DisableChannelInterrupts(DMA_Type *base, uint32_t channel, uint32_t mask)
 {
     assert(channel < FSL_FEATURE_EDMA_MODULE_CHANNEL);
@@ -230,6 +380,14 @@ void EDMA_DisableChannelInterrupts(DMA_Type *base, uint32_t channel, uint32_t ma
     }
 }
 
+/*!
+ * brief Sets all fields to default values for the TCD structure.
+ *
+ * This function sets all fields for this TCD structure to default value.
+ *
+ * param tcd Pointer to the TCD structure.
+ * note This function enables the auto stop request feature.
+ */
 void EDMA_TcdReset(edma_tcd_t *tcd)
 {
     assert(tcd != NULL);
@@ -250,6 +408,33 @@ void EDMA_TcdReset(edma_tcd_t *tcd)
     tcd->BITER = 0U;
 }
 
+/*!
+ * brief Configures the eDMA TCD transfer attribute.
+ *
+ * The TCD is a transfer control descriptor. The content of the TCD is the same as the hardware TCD registers.
+ * The STCD is used in the scatter-gather mode.
+ * This function configures the TCD transfer attribute, including source address, destination address,
+ * transfer size, address offset, and so on. It also configures the scatter gather feature if the
+ * user supplies the next TCD address.
+ * Example:
+ * code
+ *   edma_transfer_t config = {
+ *   ...
+ *   }
+ *   edma_tcd_t tcd __aligned(32);
+ *   edma_tcd_t nextTcd __aligned(32);
+ *   EDMA_TcdSetTransferConfig(&tcd, &config, &nextTcd);
+ * endcode
+ *
+ * param tcd Pointer to the TCD structure.
+ * param config Pointer to eDMA transfer configuration structure.
+ * param nextTcd Pointer to the next TCD structure. It can be NULL if users
+ *                do not want to enable scatter/gather feature.
+ * note TCD address should be 32 bytes aligned or it causes an eDMA error.
+ * note If the nextTcd is not NULL, the scatter gather feature is enabled
+ *       and DREQ bit is cleared in the previous transfer configuration, which
+ *       is set in the EDMA_TcdReset.
+ */
 void EDMA_TcdSetTransferConfig(edma_tcd_t *tcd, const edma_transfer_config_t *config, edma_tcd_t *nextTcd)
 {
     assert(tcd != NULL);
@@ -290,6 +475,15 @@ void EDMA_TcdSetTransferConfig(edma_tcd_t *tcd, const edma_transfer_config_t *co
     }
 }
 
+/*!
+ * brief Configures the eDMA TCD minor offset feature.
+ *
+ * A minor offset is a signed-extended value added to the source address or a destination
+ * address after each minor loop.
+ *
+ * param tcd A point to the TCD structure.
+ * param config A pointer to the minor offset configuration structure.
+ */
 void EDMA_TcdSetMinorOffsetConfig(edma_tcd_t *tcd, const edma_minor_offset_config_t *config)
 {
     assert(tcd != NULL);
@@ -305,6 +499,21 @@ void EDMA_TcdSetMinorOffsetConfig(edma_tcd_t *tcd, const edma_minor_offset_confi
     tcd->NBYTES = tmpreg;
 }
 
+/*!
+ * brief Sets the channel link for the eDMA TCD.
+ *
+ * This function configures either a minor link or a major link. The minor link means the channel link is
+ * triggered every time CITER decreases by 1. The major link means that the channel link  is triggered when the CITER is
+ * exhausted.
+ *
+ * note Users should ensure that DONE flag is cleared before calling this interface, or the configuration is invalid.
+ * param tcd Point to the TCD structure.
+ * param type Channel link type, it can be one of:
+ *   arg kEDMA_LinkNone
+ *   arg kEDMA_MinorLink
+ *   arg kEDMA_MajorLink
+ * param linkedChannel The linked channel number.
+ */
 void EDMA_TcdSetChannelLink(edma_tcd_t *tcd, edma_channel_link_type_t type, uint32_t linkedChannel)
 {
     assert(tcd != NULL);
@@ -344,6 +553,17 @@ void EDMA_TcdSetChannelLink(edma_tcd_t *tcd, edma_channel_link_type_t type, uint
     }
 }
 
+/*!
+ * brief Sets the source modulo and the destination modulo for the eDMA TCD.
+ *
+ * This function defines a specific address range specified to be the value after (SADDR + SOFF)/(DADDR + DOFF)
+ * calculation is performed or the original register value. It provides the ability to implement a circular data
+ * queue easily.
+ *
+ * param tcd A pointer to the TCD structure.
+ * param srcModulo A source modulo value.
+ * param destModulo A destination modulo value.
+ */
 void EDMA_TcdSetModulo(edma_tcd_t *tcd, edma_modulo_t srcModulo, edma_modulo_t destModulo)
 {
     assert(tcd != NULL);
@@ -355,6 +575,13 @@ void EDMA_TcdSetModulo(edma_tcd_t *tcd, edma_modulo_t srcModulo, edma_modulo_t d
     tcd->ATTR = tmpreg | DMA_ATTR_DMOD(destModulo) | DMA_ATTR_SMOD(srcModulo);
 }
 
+/*!
+ * brief Enables the interrupt source for the eDMA TCD.
+ *
+ * param tcd Point to the TCD structure.
+ * param mask The mask of interrupt source to be set. Users need to use
+ *             the defined edma_interrupt_enable_t type.
+ */
 void EDMA_TcdEnableInterrupts(edma_tcd_t *tcd, uint32_t mask)
 {
     assert(tcd != NULL);
@@ -372,6 +599,13 @@ void EDMA_TcdEnableInterrupts(edma_tcd_t *tcd, uint32_t mask)
     }
 }
 
+/*!
+ * brief Disables the interrupt source for the eDMA TCD.
+ *
+ * param tcd Point to the TCD structure.
+ * param mask The mask of interrupt source to be set. Users need to use
+ *             the defined edma_interrupt_enable_t type.
+ */
 void EDMA_TcdDisableInterrupts(edma_tcd_t *tcd, uint32_t mask)
 {
     assert(tcd != NULL);
@@ -389,6 +623,27 @@ void EDMA_TcdDisableInterrupts(edma_tcd_t *tcd, uint32_t mask)
     }
 }
 
+/*!
+ * brief Gets the remaining major loop count from the eDMA current channel TCD.
+ *
+ * This function checks the TCD (Task Control Descriptor) status for a specified
+ * eDMA channel and returns the number of major loop count that has not finished.
+ *
+ * param base eDMA peripheral base address.
+ * param channel eDMA channel number.
+ * return Major loop count which has not been transferred yet for the current TCD.
+ * note 1. This function can only be used to get unfinished major loop count of transfer without
+ *          the next TCD, or it might be inaccuracy.
+ *       2. The unfinished/remaining transfer bytes cannot be obtained directly from registers while
+ *          the channel is running.
+ *          Because to calculate the remaining bytes, the initial NBYTES configured in DMA_TCDn_NBYTES_MLNO
+ *          register is needed while the eDMA IP does not support getting it while a channel is active.
+ *          In another word, the NBYTES value reading is always the actual (decrementing) NBYTES value the dma_engine
+ *          is working with while a channel is running.
+ *          Consequently, to get the remaining transfer bytes, a software-saved initial value of NBYTES (for example
+ *          copied before enabling the channel) is needed. The formula to calculate it is shown below:
+ *          RemainingBytes = RemainingMajorLoopCount * NBYTES(initially configured)
+ */
 uint32_t EDMA_GetRemainingMajorLoopCount(DMA_Type *base, uint32_t channel)
 {
     assert(channel < FSL_FEATURE_EDMA_MODULE_CHANNEL);
@@ -417,6 +672,14 @@ uint32_t EDMA_GetRemainingMajorLoopCount(DMA_Type *base, uint32_t channel)
     return remainingCount;
 }
 
+/*!
+ * brief Gets the eDMA channel status flags.
+ *
+ * param base eDMA peripheral base address.
+ * param channel eDMA channel number.
+ * return The mask of channel status flags. Users need to use the
+ *         _edma_channel_status_flags type to decode the return variables.
+ */
 uint32_t EDMA_GetChannelStatusFlags(DMA_Type *base, uint32_t channel)
 {
     assert(channel < FSL_FEATURE_EDMA_MODULE_CHANNEL);
@@ -433,6 +696,14 @@ uint32_t EDMA_GetChannelStatusFlags(DMA_Type *base, uint32_t channel)
     return retval;
 }
 
+/*!
+ * brief Clears the eDMA channel status flags.
+ *
+ * param base eDMA peripheral base address.
+ * param channel eDMA channel number.
+ * param mask The mask of channel status to be cleared. Users need to use
+ *             the defined _edma_channel_status_flags type.
+ */
 void EDMA_ClearChannelStatusFlags(DMA_Type *base, uint32_t channel, uint32_t mask)
 {
     assert(channel < FSL_FEATURE_EDMA_MODULE_CHANNEL);
@@ -471,6 +742,17 @@ static uint8_t Get_StartInstance(void)
     return StartInstanceNum;
 }
 
+/*!
+ * brief Creates the eDMA handle.
+ *
+ * This function is called if using the transactional API for eDMA. This function
+ * initializes the internal state of the eDMA handle.
+ *
+ * param handle eDMA handle pointer. The eDMA handle stores callback function and
+ *               parameters.
+ * param base eDMA peripheral base address.
+ * param channel eDMA channel number.
+ */
 void EDMA_CreateHandle(edma_handle_t *handle, DMA_Type *base, uint32_t channel)
 {
     assert(handle != NULL);
@@ -514,6 +796,18 @@ void EDMA_CreateHandle(edma_handle_t *handle, DMA_Type *base, uint32_t channel)
     tcdRegs->BITER = 0;
 }
 
+/*!
+ * brief Installs the TCDs memory pool into the eDMA handle.
+ *
+ * This function is called after the EDMA_CreateHandle to use scatter/gather feature. This function shall only be used
+ * while users need to use scatter gather mode. Scatter gather mode enables EDMA to load a new transfer control block
+ * (tcd) in hardware, and automatically reconfigure that DMA channel for a new transfer.
+ * Users need to prepare tcd memory and also configure tcds using interface EDMA_SubmitTransfer.
+ *
+ * param handle eDMA handle pointer.
+ * param tcdPool A memory pool to store TCDs. It must be 32 bytes aligned.
+ * param tcdSize The number of TCD slots.
+ */
 void EDMA_InstallTCDMemory(edma_handle_t *handle, edma_tcd_t *tcdPool, uint32_t tcdSize)
 {
     assert(handle != NULL);
@@ -528,6 +822,16 @@ void EDMA_InstallTCDMemory(edma_handle_t *handle, edma_tcd_t *tcdPool, uint32_t 
     handle->tcdPool = tcdPool;
 }
 
+/*!
+ * brief Installs a callback function for the eDMA transfer.
+ *
+ * This callback is called in the eDMA IRQ handler. Use the callback to do something after
+ * the current major loop transfer completes. This function will be called every time one tcd finished transfer.
+ *
+ * param handle eDMA handle pointer.
+ * param callback eDMA callback function pointer.
+ * param userData A parameter for the callback function.
+ */
 void EDMA_SetCallback(edma_handle_t *handle, edma_callback callback, void *userData)
 {
     assert(handle != NULL);
@@ -536,6 +840,23 @@ void EDMA_SetCallback(edma_handle_t *handle, edma_callback callback, void *userD
     handle->userData = userData;
 }
 
+/*!
+ * brief Prepares the eDMA transfer structure.
+ *
+ * This function prepares the transfer configuration structure according to the user input.
+ *
+ * param config The user configuration structure of type edma_transfer_t.
+ * param srcAddr eDMA transfer source address.
+ * param srcWidth eDMA transfer source address width(bytes).
+ * param destAddr eDMA transfer destination address.
+ * param destWidth eDMA transfer destination address width(bytes).
+ * param bytesEachRequest eDMA transfer bytes per channel request.
+ * param transferBytes eDMA transfer bytes to be transferred.
+ * param type eDMA transfer type.
+ * note The data address and the data width must be consistent. For example, if the SRC
+ *       is 4 bytes, the source address must be 4 bytes aligned, or it results in
+ *       source address error (SAE).
+ */
 void EDMA_PrepareTransfer(edma_transfer_config_t *config,
                           void *srcAddr,
                           uint32_t srcWidth,
@@ -551,6 +872,9 @@ void EDMA_PrepareTransfer(edma_transfer_config_t *config,
     assert((srcWidth == 1U) || (srcWidth == 2U) || (srcWidth == 4U) || (srcWidth == 16U) || (srcWidth == 32U));
     assert((destWidth == 1U) || (destWidth == 2U) || (destWidth == 4U) || (destWidth == 16U) || (destWidth == 32U));
     assert(transferBytes % bytesEachRequest == 0);
+
+    /* Initializes the configure structure to zero. */
+    memset(config, 0, sizeof(*config));
 
     config->destAddr = (uint32_t)destAddr;
     config->srcAddr = (uint32_t)srcAddr;
@@ -615,6 +939,19 @@ void EDMA_PrepareTransfer(edma_transfer_config_t *config,
     }
 }
 
+/*!
+ * brief Submits the eDMA transfer request.
+ *
+ * This function submits the eDMA transfer request according to the transfer configuration structure.
+ * In scatter gather mode, call this function will add a configured tcd to the circular list of tcd pool.
+ * The tcd pools is setup by call function EDMA_InstallTCDMemory before.
+ *
+ * param handle eDMA handle pointer.
+ * param config Pointer to eDMA transfer configuration structure.
+ * retval kStatus_EDMA_Success It means submit transfer request succeed.
+ * retval kStatus_EDMA_QueueFull It means TCD queue is full. Submit transfer request is not allowed.
+ * retval kStatus_EDMA_Busy It means the given channel is busy, need to submit request later.
+ */
 status_t EDMA_SubmitTransfer(edma_handle_t *handle, const edma_transfer_config_t *config)
 {
     assert(handle != NULL);
@@ -754,6 +1091,14 @@ status_t EDMA_SubmitTransfer(edma_handle_t *handle, const edma_transfer_config_t
     }
 }
 
+/*!
+ * brief eDMA starts transfer.
+ *
+ * This function enables the channel request. Users can call this function after submitting the transfer request
+ * or before submitting the transfer request.
+ *
+ * param handle eDMA handle pointer.
+ */
 void EDMA_StartTransfer(edma_handle_t *handle)
 {
     assert(handle != NULL);
@@ -791,6 +1136,14 @@ void EDMA_StartTransfer(edma_handle_t *handle)
     }
 }
 
+/*!
+ * brief eDMA stops transfer.
+ *
+ * This function disables the channel request to pause the transfer. Users can call EDMA_StartTransfer()
+ * again to resume the transfer.
+ *
+ * param handle eDMA handle pointer.
+ */
 void EDMA_StopTransfer(edma_handle_t *handle)
 {
     assert(handle != NULL);
@@ -799,6 +1152,14 @@ void EDMA_StopTransfer(edma_handle_t *handle)
     handle->base->CERQ = DMA_CERQ_CERQ(handle->channel);
 }
 
+/*!
+ * brief eDMA aborts transfer.
+ *
+ * This function disables the channel request and clear transfer status bits.
+ * Users can submit another transfer after calling this API.
+ *
+ * param handle DMA handle pointer.
+ */
 void EDMA_AbortTransfer(edma_handle_t *handle)
 {
     handle->base->CERQ = DMA_CERQ_CERQ(handle->channel);
@@ -820,6 +1181,34 @@ void EDMA_AbortTransfer(edma_handle_t *handle)
     }
 }
 
+/*!
+ * brief eDMA IRQ handler for the current major loop transfer completion.
+ *
+ * This function clears the channel major interrupt flag and calls
+ * the callback function if it is not NULL.
+ *
+ * Note:
+ * For the case using TCD queue, when the major iteration count is exhausted, additional operations are performed.
+ * These include the final address adjustments and reloading of the BITER field into the CITER.
+ * Assertion of an optional interrupt request also occurs at this time, as does a possible fetch of a new TCD from
+ * memory using the scatter/gather address pointer included in the descriptor (if scatter/gather is enabled).
+ *
+ * For instance, when the time interrupt of TCD[0] happens, the TCD[1] has already been loaded into the eDMA engine.
+ * As sga and sga_index are calculated based on the DLAST_SGA bitfield lies in the TCD_CSR register, the sga_index
+ * in this case should be 2 (DLAST_SGA of TCD[1] stores the address of TCD[2]). Thus, the "tcdUsed" updated should be
+ * (tcdUsed - 2U) which indicates the number of TCDs can be loaded in the memory pool (because TCD[0] and TCD[1] have
+ * been loaded into the eDMA engine at this point already.).
+ *
+ * For the last two continuous ISRs in a scatter/gather process, they  both load the last TCD (The last ISR does not
+ * load a new TCD) from the memory pool to the eDMA engine when major loop completes.
+ * Therefore, ensure that the header and tcdUsed updated are identical for them.
+ * tcdUsed are both 0 in this case as no TCD to be loaded.
+ *
+ * See the "eDMA basic data flow" in the eDMA Functional description section of the Reference Manual for
+ * further details.
+ *
+ * param handle eDMA handle pointer.
+ */
 void EDMA_HandleIRQ(edma_handle_t *handle)
 {
     assert(handle != NULL);

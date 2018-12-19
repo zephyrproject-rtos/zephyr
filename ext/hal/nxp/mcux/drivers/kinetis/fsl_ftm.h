@@ -1,31 +1,9 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 #ifndef _FSL_FTM_H_
 #define _FSL_FTM_H_
@@ -37,15 +15,15 @@
  * @{
  */
 
-
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
 
 /*! @name Driver version */
 /*@{*/
-#define FSL_FTM_DRIVER_VERSION (MAKE_VERSION(2, 0, 2)) /*!< Version 2.0.2 */
-                                                       /*@}*/
+/*! @brief FTM driver version 2.1.0. */
+#define FSL_FTM_DRIVER_VERSION (MAKE_VERSION(2, 1, 0))
+/*@}*/
 
 /*!
  * @brief List of FTM channels
@@ -102,6 +80,18 @@ typedef struct _ftm_chnl_pwm_signal_param
                                         If unsure leave as 0; Should be specified as a
                                         percentage of the PWM period */
 } ftm_chnl_pwm_signal_param_t;
+
+/*! @brief Options to configure a FTM channel using precise setting.*/
+typedef struct _ftm_chnl_pwm_config_param
+{
+    ftm_chnl_t chnlNumber;        /*!< The channel/channel pair number.
+                                       In combined mode, this represents the channel pair number. */
+    ftm_pwm_level_select_t level; /*!< PWM output active level select. */
+    uint16_t dutyValue;           /*!< PWM pulse width, the uint of this value is timer ticks. */
+    uint16_t firstEdgeValue;      /*!< Used only in combined PWM mode to generate an asymmetrical PWM.
+                                             Specifies the delay to the first edge in a PWM period.
+                                             If unsure leave as 0, uint of this value is timer ticks. */
+} ftm_chnl_pwm_config_param_t;
 
 /*! @brief FlexTimer output compare mode */
 typedef enum _ftm_output_compare_mode
@@ -234,12 +224,18 @@ typedef enum _ftm_external_trigger
     kFTM_Chnl3Trigger = (1U << 1), /*!< Generate trigger when counter equals chnl 3 CnV reg */
     kFTM_Chnl4Trigger = (1U << 2), /*!< Generate trigger when counter equals chnl 4 CnV reg */
     kFTM_Chnl5Trigger = (1U << 3), /*!< Generate trigger when counter equals chnl 5 CnV reg */
+#if defined(FSL_FEATURE_FTM_HAS_CHANNEL6_TRIGGER) && (FSL_FEATURE_FTM_HAS_CHANNEL6_TRIGGER)
     kFTM_Chnl6Trigger =
         (1U << 8), /*!< Available on certain SoC's, generate trigger when counter equals chnl 6 CnV reg */
+#endif
+#if defined(FSL_FEATURE_FTM_HAS_CHANNEL7_TRIGGER) && (FSL_FEATURE_FTM_HAS_CHANNEL7_TRIGGER)
     kFTM_Chnl7Trigger =
         (1U << 9), /*!< Available on certain SoC's, generate trigger when counter equals chnl 7 CnV reg */
-    kFTM_InitTrigger = (1U << 6),      /*!< Generate Trigger when counter is updated with CNTIN */
+#endif
+    kFTM_InitTrigger = (1U << 6), /*!< Generate Trigger when counter is updated with CNTIN */
+#if defined(FSL_FEATURE_FTM_HAS_RELOAD_INITIALIZATION_TRIGGER) && (FSL_FEATURE_FTM_HAS_RELOAD_INITIALIZATION_TRIGGER)
     kFTM_ReloadInitTrigger = (1U << 7) /*!< Available on certain SoC's, trigger on reload point */
+#endif
 } ftm_external_trigger_t;
 
 /*! @brief FlexTimer PWM sync options to update registers with buffer */
@@ -309,6 +305,7 @@ typedef enum _ftm_status_flags
     kFTM_ReloadFlag = (1U << 11)       /*!< Reload Flag; Available only on certain SoC's */
 } ftm_status_flags_t;
 
+#if !(defined(FSL_FEATURE_FTM_HAS_NO_QDCTRL) && FSL_FEATURE_FTM_HAS_NO_QDCTRL)
 /*!
  * @brief List of FTM Quad Decoder flags.
  */
@@ -319,6 +316,7 @@ enum _ftm_quad_decoder_flags
     kFTM_QuadDecoderCountingOverflowOnTopFlag = FTM_QDCTRL_TOFDIR_MASK, /*!< Indicates if the TOF bit was set on the top
                                                                              or the bottom of counting. */
 };
+#endif
 
 /*!
  * @brief FTM configuration structure
@@ -464,6 +462,27 @@ void FTM_UpdatePwmDutycycle(FTM_Type *base,
  *                   See the Kinetis SoC reference manual for details about this field.
  */
 void FTM_UpdateChnlEdgeLevelSelect(FTM_Type *base, ftm_chnl_t chnlNumber, uint8_t level);
+
+/*!
+ * @brief Configures the PWM mode parameters.
+ *
+ * Call this function to configure the PWM signal mode, duty cycle in ticks, and edge. Use this
+ * function to configure all FTM channels that are used to output a PWM signal.
+ * Please note that: This API is similar with FTM_SetupPwm() API, but will not set the timer period,
+ *                   and this API will set channel match value in timer ticks, not period percent.
+ *
+ * @param base        FTM peripheral base address
+ * @param chnlParams  Array of PWM channel parameters to configure the channel(s)
+ * @param numOfChnls  Number of channels to configure; This should be the size of the array passed in
+ * @param mode        PWM operation mode, options available in enumeration ::ftm_pwm_mode_t
+ *
+ * @return kStatus_Success if the PWM setup was successful
+ *         kStatus_Error on failure
+ */
+status_t FTM_SetupPwmMode(FTM_Type *base,
+                          const ftm_chnl_pwm_config_param_t *chnlParams,
+                          uint8_t numOfChnls,
+                          ftm_pwm_mode_t mode);
 
 /*!
  * @brief Enables capturing an input signal on the channel using the function parameters.
@@ -875,6 +894,7 @@ void FTM_SetupQuadDecode(FTM_Type *base,
                          const ftm_phase_params_t *phaseBParams,
                          ftm_quad_decode_mode_t quadMode);
 
+#if !(defined(FSL_FEATURE_FTM_HAS_NO_QDCTRL) && FSL_FEATURE_FTM_HAS_NO_QDCTRL)
 /*!
  * @brief Gets the FTM Quad Decoder flags.
  *
@@ -885,12 +905,13 @@ static inline uint32_t FTM_GetQuadDecoderFlags(FTM_Type *base)
 {
     return base->QDCTRL & (FTM_QDCTRL_QUADIR_MASK | FTM_QDCTRL_TOFDIR_MASK);
 }
+#endif
 
 /*!
  * @brief Sets the modulo values for Quad Decoder.
  *
- * The modulo values configure the minimum and maximum values that the Quad decoder counter can reach. After the counter goes
- * over, the counter value goes to the other side and decrease/increase again.
+ * The modulo values configure the minimum and maximum values that the Quad decoder counter can reach. After the
+ * counter goes over, the counter value goes to the other side and decrease/increase again.
  *
  * @param base FTM peripheral base address.
  * @param startValue The low limit value for Quad Decoder counter.
@@ -963,6 +984,33 @@ static inline void FTM_SetWriteProtection(FTM_Type *base, bool enable)
         base->MODE |= FTM_MODE_WPDIS_MASK;
     }
 }
+
+#if defined(FSL_FEATURE_FTM_HAS_DMA_SUPPORT) && FSL_FEATURE_FTM_HAS_DMA_SUPPORT
+/*!
+ * @brief Enable DMA transfer or not.
+ *
+ * Note: CHnIE bit needs to be set when calling this API. The channel DMA transfer request
+ * is generated and the channel interrupt is not generated if (CHnF = 1) when DMA and CHnIE
+ * bits are set.
+ *
+ * @param base   FTM peripheral base address.
+ * @param chnlNumber Channel to be configured
+ * @param enable true to enable, false to disable
+ */
+static inline void FTM_EnableDmaTransfer(FTM_Type *base, ftm_chnl_t chnlNumber, bool enable)
+{
+    if (enable)
+    {
+        /* Enable DMA transfer */
+        base->CONTROLS[chnlNumber].CnSC |= FTM_CnSC_DMA_MASK;
+    }
+    else
+    {
+        /* Disable DMA transfer */
+        base->CONTROLS[chnlNumber].CnSC &= ~FTM_CnSC_DMA_MASK;
+    }
+}
+#endif /* FSL_FEATURE_FTM_HAS_DMA_SUPPORT */
 
 #if defined(__cplusplus)
 }

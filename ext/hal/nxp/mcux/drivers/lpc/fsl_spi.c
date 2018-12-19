@@ -1,39 +1,23 @@
 /*
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fsl_spi.h"
 #include "fsl_flexcomm.h"
 
 /*******************************************************************************
- * Definitons
+ * Definitions
  ******************************************************************************/
+
+/* Component ID definition, used by tools. */
+#ifndef FSL_COMPONENT_ID
+#define FSL_COMPONENT_ID "platform.drivers.flexcomm_spi"
+#endif
+
 /* Note:  FIFOCFG[SIZE] has always value 1 = 8 items depth */
 #define SPI_FIFO_DEPTH(base) ((((base)->FIFOCFG & SPI_FIFOCFG_SIZE_MASK) >> SPI_FIFOCFG_SIZE_SHIFT) << 3)
 
@@ -41,6 +25,7 @@
  * range <0,15>. Range <8,15> represents 2B transfer */
 #define SPI_COUNT_TO_BYTES(dataWidth, count) ((count) << ((dataWidth) >> 3U))
 #define SPI_BYTES_TO_COUNT(dataWidth, bytes) ((bytes) >> ((dataWidth) >> 3U))
+#define SPI_SSELPOL_MASK ((SPI_CFG_SPOL0_MASK) | (SPI_CFG_SPOL1_MASK) | (SPI_CFG_SPOL2_MASK) | (SPI_CFG_SPOL3_MASK))
 
 /*******************************************************************************
  * Variables
@@ -54,11 +39,14 @@ static const uint32_t s_spiBaseAddrs[FSL_FEATURE_SOC_SPI_COUNT] = SPI_BASE_ADDRS
 /*! @brief IRQ name array */
 static const IRQn_Type s_spiIRQ[] = SPI_IRQS;
 
+/* @brief Dummy data for each instance. This data is used when user's tx buffer is NULL*/
+volatile uint8_t s_dummyData[FSL_FEATURE_SOC_SPI_COUNT] = {0};
 /*******************************************************************************
  * Code
  ******************************************************************************/
 
 /* Get the index corresponding to the FLEXCOMM */
+/*! brief Returns instance number for SPI peripheral base address. */
 uint32_t SPI_GetInstance(SPI_Type *base)
 {
     int i;
@@ -75,6 +63,25 @@ uint32_t SPI_GetInstance(SPI_Type *base)
     return 0;
 }
 
+/*!
+ * brief Set up the dummy data.
+ *
+ * param base SPI peripheral address.
+ * param dummyData Data to be transferred when tx buffer is NULL.
+ */
+void SPI_SetDummyData(SPI_Type *base, uint8_t dummyData)
+{
+    uint32_t instance = SPI_GetInstance(base);
+    s_dummyData[instance] = dummyData;
+}
+
+/*!
+ * brief Returns the configurations.
+ *
+ * param base SPI peripheral address.
+ * return return configurations which contain datawidth and SSEL numbers.
+ *         return data type is a pointer of spi_config_t.
+ */
 void *SPI_GetConfig(SPI_Type *base)
 {
     int32_t instance;
@@ -86,9 +93,27 @@ void *SPI_GetConfig(SPI_Type *base)
     return &g_configs[instance];
 }
 
+/*!
+ * brief  Sets the SPI master configuration structure to default values.
+ *
+ * The purpose of this API is to get the configuration structure initialized for use in SPI_MasterInit().
+ * User may use the initialized structure unchanged in SPI_MasterInit(), or modify
+ * some fields of the structure before calling SPI_MasterInit(). After calling this API,
+ * the master is ready to transfer.
+ * Example:
+   code
+   spi_master_config_t config;
+   SPI_MasterGetDefaultConfig(&config);
+   endcode
+ *
+ * param config pointer to master config structure
+ */
 void SPI_MasterGetDefaultConfig(spi_master_config_t *config)
 {
     assert(NULL != config);
+
+    /* Initializes the configure structure to zero. */
+    memset(config, 0, sizeof(*config));
 
     config->enableLoopback = false;
     config->enableMaster = true;
@@ -100,8 +125,31 @@ void SPI_MasterGetDefaultConfig(spi_master_config_t *config)
     config->sselNum = kSPI_Ssel0;
     config->txWatermark = kSPI_TxFifo0;
     config->rxWatermark = kSPI_RxFifo1;
+    config->sselPol = kSPI_SpolActiveAllLow;
+    config->delayConfig.preDelay = 0U;
+    config->delayConfig.postDelay = 0U;
+    config->delayConfig.frameDelay = 0U;
+    config->delayConfig.transferDelay = 0U;
 }
 
+/*!
+ * brief Initializes the SPI with master configuration.
+ *
+ * The configuration structure can be filled by user from scratch, or be set with default
+ * values by SPI_MasterGetDefaultConfig(). After calling this API, the slave is ready to transfer.
+ * Example
+   code
+   spi_master_config_t config = {
+   .baudRate_Bps = 400000,
+   ...
+   };
+   SPI_MasterInit(SPI0, &config);
+   endcode
+ *
+ * param base SPI base pointer
+ * param config pointer to master configuration structure
+ * param srcClock_Hz Source clock frequency.
+ */
 status_t SPI_MasterInit(SPI_Type *base, const spi_master_config_t *config, uint32_t srcClock_Hz)
 {
     int32_t result = 0, instance = 0;
@@ -134,7 +182,8 @@ status_t SPI_MasterInit(SPI_Type *base, const spi_master_config_t *config, uint3
 
     /* configure SPI mode */
     tmp = base->CFG;
-    tmp &= ~(SPI_CFG_MASTER_MASK | SPI_CFG_LSBF_MASK | SPI_CFG_CPHA_MASK | SPI_CFG_CPOL_MASK | SPI_CFG_LOOP_MASK | SPI_CFG_ENABLE_MASK);
+    tmp &= ~(SPI_CFG_MASTER_MASK | SPI_CFG_LSBF_MASK | SPI_CFG_CPHA_MASK | SPI_CFG_CPOL_MASK | SPI_CFG_LOOP_MASK |
+             SPI_CFG_ENABLE_MASK | SPI_SSELPOL_MASK);
     /* phase */
     tmp |= SPI_CFG_CPHA(config->phase);
     /* polarity */
@@ -145,6 +194,8 @@ status_t SPI_MasterInit(SPI_Type *base, const spi_master_config_t *config, uint3
     tmp |= SPI_CFG_MASTER(1);
     /* loopback */
     tmp |= SPI_CFG_LOOP(config->enableLoopback);
+    /* configure active level for all CS */
+    tmp |= ((uint32_t)config->sselPol & (SPI_SSELPOL_MASK));
     base->CFG = tmp;
 
     /* store configuration */
@@ -161,13 +212,34 @@ status_t SPI_MasterInit(SPI_Type *base, const spi_master_config_t *config, uint3
     /* set FIFOTRIG */
     base->FIFOTRIG = tmp;
 
+    /* Set the delay configuration. */
+    SPI_SetTransferDelay(base, &config->delayConfig);
+    /* Set the dummy data. */
+    SPI_SetDummyData(base, (uint8_t)SPI_DUMMYDATA);
+
     SPI_Enable(base, config->enableMaster);
     return kStatus_Success;
 }
 
+/*!
+ * brief  Sets the SPI slave configuration structure to default values.
+ *
+ * The purpose of this API is to get the configuration structure initialized for use in SPI_SlaveInit().
+ * Modify some fields of the structure before calling SPI_SlaveInit().
+ * Example:
+   code
+   spi_slave_config_t config;
+   SPI_SlaveGetDefaultConfig(&config);
+   endcode
+ *
+ * param config pointer to slave configuration structure
+ */
 void SPI_SlaveGetDefaultConfig(spi_slave_config_t *config)
 {
     assert(NULL != config);
+
+    /* Initializes the configure structure to zero. */
+    memset(config, 0, sizeof(*config));
 
     config->enableSlave = true;
     config->polarity = kSPI_ClockPolarityActiveHigh;
@@ -176,8 +248,29 @@ void SPI_SlaveGetDefaultConfig(spi_slave_config_t *config)
     config->dataWidth = kSPI_Data8Bits;
     config->txWatermark = kSPI_TxFifo0;
     config->rxWatermark = kSPI_RxFifo1;
+    config->sselPol = kSPI_SpolActiveAllLow;
 }
 
+/*!
+ * brief Initializes the SPI with slave configuration.
+ *
+ * The configuration structure can be filled by user from scratch or be set with
+ * default values by SPI_SlaveGetDefaultConfig().
+ * After calling this API, the slave is ready to transfer.
+ * Example
+   code
+    spi_slave_config_t config = {
+    .polarity = flexSPIClockPolarity_ActiveHigh;
+    .phase = flexSPIClockPhase_FirstEdge;
+    .direction = flexSPIMsbFirst;
+    ...
+    };
+    SPI_SlaveInit(SPI0, &config);
+   endcode
+ *
+ * param base SPI base pointer
+ * param config pointer to slave configuration structure
+ */
 status_t SPI_SlaveInit(SPI_Type *base, const spi_slave_config_t *config)
 {
     int32_t result = 0, instance;
@@ -201,13 +294,16 @@ status_t SPI_SlaveInit(SPI_Type *base, const spi_slave_config_t *config)
 
     /* configure SPI mode */
     tmp = base->CFG;
-    tmp &= ~(SPI_CFG_MASTER_MASK | SPI_CFG_LSBF_MASK | SPI_CFG_CPHA_MASK | SPI_CFG_CPOL_MASK | SPI_CFG_ENABLE_MASK);
+    tmp &= ~(SPI_CFG_MASTER_MASK | SPI_CFG_LSBF_MASK | SPI_CFG_CPHA_MASK | SPI_CFG_CPOL_MASK | SPI_CFG_ENABLE_MASK |
+             SPI_SSELPOL_MASK);
     /* phase */
     tmp |= SPI_CFG_CPHA(config->phase);
     /* polarity */
     tmp |= SPI_CFG_CPOL(config->polarity);
     /* direction */
     tmp |= SPI_CFG_LSBF(config->direction);
+    /* configure active level for all CS */
+    tmp |= ((uint32_t)config->sselPol & (SPI_SSELPOL_MASK));
     base->CFG = tmp;
 
     /* store configuration */
@@ -223,10 +319,20 @@ status_t SPI_SlaveInit(SPI_Type *base, const spi_slave_config_t *config)
     /* set FIFOTRIG */
     base->FIFOTRIG = tmp;
 
+    SPI_SetDummyData(base, (uint8_t)SPI_DUMMYDATA);
+
     SPI_Enable(base, config->enableSlave);
     return kStatus_Success;
 }
 
+/*!
+ * brief De-initializes the SPI.
+ *
+ * Calling this API resets the SPI module, gates the SPI clock.
+ * The SPI module can't work unless calling the SPI_MasterInit/SPI_SlaveInit to initialize module.
+ *
+ * param base SPI base pointer
+ */
 void SPI_Deinit(SPI_Type *base)
 {
     /* Assert arguments */
@@ -238,6 +344,12 @@ void SPI_Deinit(SPI_Type *base)
     base->CFG &= ~(SPI_CFG_ENABLE_MASK);
 }
 
+/*!
+ * brief Enables the DMA request from SPI txFIFO.
+ *
+ * param base SPI base pointer
+ * param enable True means enable DMA, false means disable DMA
+ */
 void SPI_EnableTxDMA(SPI_Type *base, bool enable)
 {
     if (enable)
@@ -250,6 +362,12 @@ void SPI_EnableTxDMA(SPI_Type *base, bool enable)
     }
 }
 
+/*!
+ * brief Enables the DMA request from SPI rxFIFO.
+ *
+ * param base SPI base pointer
+ * param enable True means enable DMA, false means disable DMA
+ */
 void SPI_EnableRxDMA(SPI_Type *base, bool enable)
 {
     if (enable)
@@ -262,6 +380,13 @@ void SPI_EnableRxDMA(SPI_Type *base, bool enable)
     }
 }
 
+/*!
+ * brief Sets the baud rate for SPI transfer. This is only used in master.
+ *
+ * param base SPI base pointer
+ * param baudrate_Bps baud rate needed in Hz.
+ * param srcClock_Hz SPI source clock frequency in Hz.
+ */
 status_t SPI_MasterSetBaud(SPI_Type *base, uint32_t baudrate_Bps, uint32_t srcClock_Hz)
 {
     uint32_t tmp;
@@ -284,6 +409,13 @@ status_t SPI_MasterSetBaud(SPI_Type *base, uint32_t baudrate_Bps, uint32_t srcCl
     return kStatus_Success;
 }
 
+/*!
+ * brief Writes a data into the SPI data register.
+ *
+ * param base SPI base pointer
+ * param data needs to be write.
+ * param configFlags transfer configuration options ref spi_xfer_option_t
+ */
 void SPI_WriteData(SPI_Type *base, uint16_t data, uint32_t configFlags)
 {
     uint32_t control = 0;
@@ -310,6 +442,17 @@ void SPI_WriteData(SPI_Type *base, uint16_t data, uint32_t configFlags)
     base->FIFOWR = data | control;
 }
 
+/*!
+ * brief Initializes the SPI master handle.
+ *
+ * This function initializes the SPI master handle which can be used for other SPI master transactional APIs. Usually,
+ * for a specified SPI instance, call this API once to get the initialized handle.
+ *
+ * param base SPI peripheral base address.
+ * param handle SPI handle pointer.
+ * param callback Callback function.
+ * param userData User data.
+ */
 status_t SPI_MasterTransferCreateHandle(SPI_Type *base,
                                         spi_master_handle_t *handle,
                                         spi_master_callback_t callback,
@@ -341,11 +484,11 @@ status_t SPI_MasterTransferCreateHandle(SPI_Type *base,
     /* Initialize the handle */
     if (base->CFG & SPI_CFG_MASTER_MASK)
     {
-        FLEXCOMM_SetIRQHandler(base, (flexcomm_irq_handler_t)(uintptr_t)SPI_MasterTransferHandleIRQ, handle);
+        FLEXCOMM_SetIRQHandler(base, (flexcomm_irq_handler_t)SPI_MasterTransferHandleIRQ, handle);
     }
     else
     {
-        FLEXCOMM_SetIRQHandler(base, (flexcomm_irq_handler_t)(uintptr_t)SPI_SlaveTransferHandleIRQ, handle);
+        FLEXCOMM_SetIRQHandler(base, (flexcomm_irq_handler_t)SPI_SlaveTransferHandleIRQ, handle);
     }
 
     handle->dataWidth = g_configs[instance].dataWidth;
@@ -362,6 +505,14 @@ status_t SPI_MasterTransferCreateHandle(SPI_Type *base,
     return kStatus_Success;
 }
 
+/*!
+ * brief Transfers a block of data using a polling method.
+ *
+ * param base SPI base pointer
+ * param xfer pointer to spi_xfer_config_t structure
+ * retval kStatus_Success Successfully start a transfer.
+ * retval kStatus_InvalidArgument Input argument is invalid.
+ */
 status_t SPI_MasterTransferBlocking(SPI_Type *base, spi_transfer_t *xfer)
 {
     int32_t instance;
@@ -402,10 +553,10 @@ status_t SPI_MasterTransferBlocking(SPI_Type *base, spi_transfer_t *xfer)
     tx_ctrl |= (SPI_DEASSERT_ALL & (~SPI_DEASSERTNUM_SSEL(g_configs[instance].sselNum)));
     /* set width of data - range asserted at entry */
     tx_ctrl |= SPI_FIFOWR_LEN(dataWidth);
+    /* delay for frames */
+    tx_ctrl |= (xfer->configFlags & (uint32_t)kSPI_FrameDelay) ? (uint32_t)kSPI_FrameDelay : 0;
     /* end of transfer */
     last_ctrl |= (xfer->configFlags & (uint32_t)kSPI_FrameAssert) ? (uint32_t)kSPI_FrameAssert : 0;
-    /* delay end of transfer */
-    last_ctrl |= (xfer->configFlags & (uint32_t)kSPI_FrameDelay) ? (uint32_t)kSPI_FrameDelay : 0;
     /* last index of loop */
     while (txRemainingBytes || rxRemainingBytes || toReceiveCount)
     {
@@ -450,7 +601,7 @@ status_t SPI_MasterTransferBlocking(SPI_Type *base, spi_transfer_t *xfer)
             }
             else
             {
-                tmp32 = SPI_DUMMYDATA;
+                tmp32 = ((uint32_t)s_dummyData[instance] << 8U | (s_dummyData[instance]));
                 /* last transfer */
                 if (rxRemainingBytes == SPI_COUNT_TO_BYTES(dataWidth, toReceiveCount + 1))
                 {
@@ -470,6 +621,16 @@ status_t SPI_MasterTransferBlocking(SPI_Type *base, spi_transfer_t *xfer)
     return kStatus_Success;
 }
 
+/*!
+ * brief Performs a non-blocking SPI interrupt transfer.
+ *
+ * param base SPI peripheral base address.
+ * param handle pointer to spi_master_handle_t structure which stores the transfer state
+ * param xfer pointer to spi_xfer_config_t structure
+ * retval kStatus_Success Successfully start a transfer.
+ * retval kStatus_InvalidArgument Input argument is invalid.
+ * retval kStatus_SPI_Busy SPI is not idle, is running another transfer.
+ */
 status_t SPI_MasterTransferNonBlocking(SPI_Type *base, spi_master_handle_t *handle, spi_transfer_t *xfer)
 {
     /* check params */
@@ -513,6 +674,152 @@ status_t SPI_MasterTransferNonBlocking(SPI_Type *base, spi_master_handle_t *hand
     return kStatus_Success;
 }
 
+/*!
+ * brief Transfers a block of data using a polling method.
+ *
+ * This function will do a half-duplex transfer for SPI master, This is a blocking function,
+ * which does not retuen until all transfer have been completed. And data transfer mechanism is half-duplex,
+ * users can set transmit first or receive first.
+ *
+ * param base SPI base pointer
+ * param xfer pointer to spi_half_duplex_transfer_t structure
+ * return status of status_t.
+ */
+status_t SPI_MasterHalfDuplexTransferBlocking(SPI_Type *base, spi_half_duplex_transfer_t *xfer)
+{
+    assert(xfer);
+
+    spi_transfer_t tempXfer = {0};
+    status_t status;
+
+    if (xfer->isTransmitFirst)
+    {
+        tempXfer.txData = xfer->txData;
+        tempXfer.rxData = NULL;
+        tempXfer.dataSize = xfer->txDataSize;
+    }
+    else
+    {
+        tempXfer.txData = NULL;
+        tempXfer.rxData = xfer->rxData;
+        tempXfer.dataSize = xfer->rxDataSize;
+    }
+    /* If the pcs pin keep assert between transmit and receive. */
+    if (xfer->isPcsAssertInTransfer)
+    {
+        tempXfer.configFlags = (xfer->configFlags) & (uint32_t)(~kSPI_FrameAssert);
+    }
+    else
+    {
+        tempXfer.configFlags = (xfer->configFlags) | kSPI_FrameAssert;
+    }
+
+    status = SPI_MasterTransferBlocking(base, &tempXfer);
+
+    if (status != kStatus_Success)
+    {
+        return status;
+    }
+
+    if (xfer->isTransmitFirst)
+    {
+        tempXfer.txData = NULL;
+        tempXfer.rxData = xfer->rxData;
+        tempXfer.dataSize = xfer->rxDataSize;
+    }
+    else
+    {
+        tempXfer.txData = xfer->txData;
+        tempXfer.rxData = NULL;
+        tempXfer.dataSize = xfer->txDataSize;
+    }
+    tempXfer.configFlags = xfer->configFlags;
+
+    /* SPI transfer blocking. */
+    status = SPI_MasterTransferBlocking(base, &tempXfer);
+
+    return status;
+}
+
+/*!
+ * brief Performs a non-blocking SPI interrupt transfer.
+ *
+ * This function using polling way to do the first half transimission and using interrupts to
+ * do the second half transimission, the transfer mechanism is half-duplex.
+ * When do the second half transimission, code will return right away. When all data is transferred,
+ * the callback function is called.
+ *
+ * param base SPI peripheral base address.
+ * param handle pointer to spi_master_handle_t structure which stores the transfer state
+ * param xfer pointer to spi_half_duplex_transfer_t structure
+ * return status of status_t.
+ */
+status_t SPI_MasterHalfDuplexTransferNonBlocking(SPI_Type *base,
+                                                 spi_master_handle_t *handle,
+                                                 spi_half_duplex_transfer_t *xfer)
+{
+    assert(xfer);
+    assert(handle);
+    spi_transfer_t tempXfer = {0};
+    status_t status;
+
+    if (xfer->isTransmitFirst)
+    {
+        tempXfer.txData = xfer->txData;
+        tempXfer.rxData = NULL;
+        tempXfer.dataSize = xfer->txDataSize;
+    }
+    else
+    {
+        tempXfer.txData = NULL;
+        tempXfer.rxData = xfer->rxData;
+        tempXfer.dataSize = xfer->rxDataSize;
+    }
+    /* If the PCS pin keep assert between transmit and receive. */
+    if (xfer->isPcsAssertInTransfer)
+    {
+        tempXfer.configFlags = (xfer->configFlags) & (uint32_t)(~kSPI_FrameAssert);
+    }
+    else
+    {
+        tempXfer.configFlags = (xfer->configFlags) | kSPI_FrameAssert;
+    }
+
+    status = SPI_MasterTransferBlocking(base, &tempXfer);
+    if (status != kStatus_Success)
+    {
+        return status;
+    }
+
+    if (xfer->isTransmitFirst)
+    {
+        tempXfer.txData = NULL;
+        tempXfer.rxData = xfer->rxData;
+        tempXfer.dataSize = xfer->rxDataSize;
+    }
+    else
+    {
+        tempXfer.txData = xfer->txData;
+        tempXfer.rxData = NULL;
+        tempXfer.dataSize = xfer->txDataSize;
+    }
+    tempXfer.configFlags = xfer->configFlags;
+
+    status = SPI_MasterTransferNonBlocking(base, handle, &tempXfer);
+
+    return status;
+}
+
+/*!
+ * brief Gets the master transfer count.
+ *
+ * This function gets the master transfer count.
+ *
+ * param base SPI peripheral base address.
+ * param handle Pointer to the spi_master_handle_t structure which stores the transfer state.
+ * param count The number of bytes transferred by using the non-blocking transaction.
+ * return status of status_t.
+ */
 status_t SPI_MasterTransferGetCount(SPI_Type *base, spi_master_handle_t *handle, size_t *count)
 {
     assert(NULL != handle);
@@ -533,6 +840,14 @@ status_t SPI_MasterTransferGetCount(SPI_Type *base, spi_master_handle_t *handle,
     return kStatus_Success;
 }
 
+/*!
+ * brief SPI master aborts a transfer using an interrupt.
+ *
+ * This function aborts a transfer using an interrupt.
+ *
+ * param base SPI peripheral base address.
+ * param handle Pointer to the spi_master_handle_t structure which stores the transfer state.
+ */
 void SPI_MasterTransferAbort(SPI_Type *base, spi_master_handle_t *handle)
 {
     assert(NULL != handle);
@@ -552,6 +867,8 @@ static void SPI_TransferHandleIRQInternal(SPI_Type *base, spi_master_handle_t *h
     uint32_t tx_ctrl = 0, last_ctrl = 0, tmp32;
     bool loopContinue;
     uint32_t fifoDepth;
+    /* Get flexcomm instance by 'base' param */
+    uint32_t instance = SPI_GetInstance(base);
 
     /* check params */
     assert((NULL != base) && (NULL != handle) && ((NULL != handle->txData) || (NULL != handle->rxData)));
@@ -561,10 +878,10 @@ static void SPI_TransferHandleIRQInternal(SPI_Type *base, spi_master_handle_t *h
     tx_ctrl |= (SPI_DEASSERT_ALL & SPI_ASSERTNUM_SSEL(handle->sselNum));
     /* set width of data */
     tx_ctrl |= SPI_FIFOWR_LEN(handle->dataWidth);
+    /* delay for frames */
+    tx_ctrl |= (handle->configFlags & (uint32_t)kSPI_FrameDelay) ? (uint32_t)kSPI_FrameDelay : 0;
     /* end of transfer */
     last_ctrl |= (handle->configFlags & (uint32_t)kSPI_FrameAssert) ? (uint32_t)kSPI_FrameAssert : 0;
-    /* delay end of transfer */
-    last_ctrl |= (handle->configFlags & (uint32_t)kSPI_FrameDelay) ? (uint32_t)kSPI_FrameDelay : 0;
     do
     {
         loopContinue = false;
@@ -619,7 +936,7 @@ static void SPI_TransferHandleIRQInternal(SPI_Type *base, spi_master_handle_t *h
             }
             else
             {
-                tmp32 = SPI_DUMMYDATA;
+                tmp32 = ((uint32_t)s_dummyData[instance] << 8U | (s_dummyData[instance]));
                 /* last transfer */
                 if (handle->rxRemainingBytes == SPI_COUNT_TO_BYTES(handle->dataWidth, handle->toReceiveCount + 1))
                 {
@@ -636,6 +953,12 @@ static void SPI_TransferHandleIRQInternal(SPI_Type *base, spi_master_handle_t *h
     } while (loopContinue);
 }
 
+/*!
+ * brief Interrupts the handler for the SPI.
+ *
+ * param base SPI peripheral base address.
+ * param handle pointer to spi_master_handle_t structure which stores the transfer state.
+ */
 void SPI_MasterTransferHandleIRQ(SPI_Type *base, spi_master_handle_t *handle)
 {
     assert((NULL != base) && (NULL != handle));

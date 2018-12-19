@@ -27,8 +27,8 @@
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief IOMUXC driver version 2.0.0. */
-#define FSL_IOMUXC_DRIVER_VERSION (MAKE_VERSION(2, 0, 0))
+/*! @brief IOMUXC driver version 2.0.1. */
+#define FSL_IOMUXC_DRIVER_VERSION (MAKE_VERSION(2, 0, 1))
 /*@}*/
 
 /*! @name Pin function ID */
@@ -1206,8 +1206,10 @@ typedef enum _iomuxc_gpr_mode
 {
     kIOMUXC_GPR_GlobalInterruptRequest = IOMUXC_GPR_GPR1_GINT_MASK,
     kIOMUXC_GPR_ENET1RefClkMode = IOMUXC_GPR_GPR1_ENET1_CLK_SEL_MASK,
+    kIOMUXC_GPR_ENET2RefClkMode = IOMUXC_GPR_GPR1_ENET2_CLK_SEL_MASK,
     kIOMUXC_GPR_USBExposureMode = IOMUXC_GPR_GPR1_USB_EXP_MODE_MASK,
     kIOMUXC_GPR_ENET1TxClkOutputDir = IOMUXC_GPR_GPR1_ENET1_TX_CLK_DIR_MASK,
+    kIOMUXC_GPR_ENET2TxClkOutputDir = IOMUXC_GPR_GPR1_ENET2_TX_CLK_DIR_MASK,
     kIOMUXC_GPR_SAI1MClkOutputDir = IOMUXC_GPR_GPR1_SAI1_MCLK_DIR_MASK,
     kIOMUXC_GPR_SAI2MClkOutputDir = IOMUXC_GPR_GPR1_SAI2_MCLK_DIR_MASK,
     kIOMUXC_GPR_SAI3MClkOutputDir = IOMUXC_GPR_GPR1_SAI3_MCLK_DIR_MASK,

@@ -1,34 +1,17 @@
 /*
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fsl_gint.h"
+
+/* Component ID definition, used by tools. */
+#ifndef FSL_COMPONENT_ID
+#define FSL_COMPONENT_ID "platform.drivers.gint"
+#endif
 
 /*******************************************************************************
  * Variables
@@ -41,8 +24,10 @@ static GINT_Type *const s_gintBases[FSL_FEATURE_SOC_GINT_COUNT] = GINT_BASE_PTRS
 static const clock_ip_name_t s_gintClocks[FSL_FEATURE_SOC_GINT_COUNT] = GINT_CLOCKS;
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_RESET_CONTROL) && FSL_SDK_DISABLE_DRIVER_RESET_CONTROL)
 /*! @brief Resets for each instance. */
 static const reset_ip_name_t s_gintResets[FSL_FEATURE_SOC_GINT_COUNT] = GINT_RSTS;
+#endif /* FSL_SDK_DISABLE_DRIVER_RESET_CONTROL */
 
 /* @brief Irq number for each instance */
 static const IRQn_Type s_gintIRQ[FSL_FEATURE_SOC_GINT_COUNT] = GINT_IRQS;
@@ -72,6 +57,15 @@ static uint32_t GINT_GetInstance(GINT_Type *base)
     return instance;
 }
 
+/*!
+ * brief	Initialize GINT peripheral.
+
+ * This function initializes the GINT peripheral and enables the clock.
+ *
+ * param base Base address of the GINT peripheral.
+ *
+ * retval None.
+ */
 void GINT_Init(GINT_Type *base)
 {
     uint32_t instance;
@@ -85,10 +79,24 @@ void GINT_Init(GINT_Type *base)
     CLOCK_EnableClock(s_gintClocks[instance]);
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
-    /* Reset the peripheral */
+#if !(defined(FSL_SDK_DISABLE_DRIVER_RESET_CONTROL) && FSL_SDK_DISABLE_DRIVER_RESET_CONTROL)
+    /* Reset the module. */
     RESET_PeripheralReset(s_gintResets[instance]);
+#endif /* FSL_SDK_DISABLE_DRIVER_RESET_CONTROL */
 }
 
+/*!
+ * brief	Setup GINT peripheral control parameters.
+
+ * This function sets the control parameters of GINT peripheral.
+ *
+ * param base Base address of the GINT peripheral.
+ * param comb Controls if the enabled inputs are logically ORed or ANDed for interrupt generation.
+ * param trig Controls if the enabled inputs are level or edge sensitive based on polarity.
+ * param callback This function is called when configured group interrupt is generated.
+ *
+ * retval None.
+ */
 void GINT_SetCtrl(GINT_Type *base, gint_comb_t comb, gint_trig_t trig, gint_cb_t callback)
 {
     uint32_t instance;
@@ -101,6 +109,18 @@ void GINT_SetCtrl(GINT_Type *base, gint_comb_t comb, gint_trig_t trig, gint_cb_t
     s_gintCallback[instance] = callback;
 }
 
+/*!
+ * brief	Get GINT peripheral control parameters.
+
+ * This function returns the control parameters of GINT peripheral.
+ *
+ * param base Base address of the GINT peripheral.
+ * param comb Pointer to store combine input value.
+ * param trig Pointer to store trigger value.
+ * param callback Pointer to store callback function.
+ *
+ * retval None.
+ */
 void GINT_GetCtrl(GINT_Type *base, gint_comb_t *comb, gint_trig_t *trig, gint_cb_t *callback)
 {
     uint32_t instance;
@@ -112,18 +132,58 @@ void GINT_GetCtrl(GINT_Type *base, gint_comb_t *comb, gint_trig_t *trig, gint_cb
     *callback = s_gintCallback[instance];
 }
 
+/*!
+ * brief	Configure GINT peripheral pins.
+
+ * This function enables and controls the polarity of enabled pin(s) of a given port.
+ *
+ * param base Base address of the GINT peripheral.
+ * param port Port number.
+ * param polarityMask Each bit position selects the polarity of the corresponding enabled pin.
+ *        0 = The pin is active LOW. 1 = The pin is active HIGH.
+ * param enableMask Each bit position selects if the corresponding pin is enabled or not.
+ *        0 = The pin is disabled. 1 = The pin is enabled.
+ *
+ * retval None.
+ */
 void GINT_ConfigPins(GINT_Type *base, gint_port_t port, uint32_t polarityMask, uint32_t enableMask)
 {
     base->PORT_POL[port] = polarityMask;
     base->PORT_ENA[port] = enableMask;
 }
 
+/*!
+ * brief	Get GINT peripheral pin configuration.
+
+ * This function returns the pin configuration of a given port.
+ *
+ * param base Base address of the GINT peripheral.
+ * param port Port number.
+ * param polarityMask Pointer to store the polarity mask Each bit position indicates the polarity of the corresponding
+ enabled pin.
+ *        0 = The pin is active LOW. 1 = The pin is active HIGH.
+ * param enableMask Pointer to store the enable mask. Each bit position indicates if the corresponding pin is enabled
+ or not.
+ *        0 = The pin is disabled. 1 = The pin is enabled.
+ *
+ * retval None.
+ */
 void GINT_GetConfigPins(GINT_Type *base, gint_port_t port, uint32_t *polarityMask, uint32_t *enableMask)
 {
     *polarityMask = base->PORT_POL[port];
     *enableMask = base->PORT_ENA[port];
 }
 
+/*!
+ * brief	Enable callback.
+
+ * This function enables the interrupt for the selected GINT peripheral. Although the pin(s) are monitored
+ * as soon as they are enabled, the callback function is not enabled until this function is called.
+ *
+ * param base Base address of the GINT peripheral.
+ *
+ * retval None.
+ */
 void GINT_EnableCallback(GINT_Type *base)
 {
     uint32_t instance;
@@ -136,6 +196,16 @@ void GINT_EnableCallback(GINT_Type *base)
     EnableIRQ(s_gintIRQ[instance]);
 }
 
+/*!
+ * brief	Disable callback.
+
+ * This function disables the interrupt for the selected GINT peripheral. Although the pins are still
+ * being monitored but the callback function is not called.
+ *
+ * param base Base address of the peripheral.
+ *
+ * retval None.
+ */
 void GINT_DisableCallback(GINT_Type *base)
 {
     uint32_t instance;
@@ -146,6 +216,15 @@ void GINT_DisableCallback(GINT_Type *base)
     NVIC_ClearPendingIRQ(s_gintIRQ[instance]);
 }
 
+/*!
+ * brief	Deinitialize GINT peripheral.
+
+ * This function disables the GINT clock.
+ *
+ * param base Base address of the GINT peripheral.
+ *
+ * retval None.
+ */
 void GINT_Deinit(GINT_Type *base)
 {
     uint32_t instance;
@@ -156,8 +235,10 @@ void GINT_Deinit(GINT_Type *base)
     GINT_DisableCallback(base);
     s_gintCallback[instance] = NULL;
 
-    /* Reset the peripheral */
+#if !(defined(FSL_SDK_DISABLE_DRIVER_RESET_CONTROL) && FSL_SDK_DISABLE_DRIVER_RESET_CONTROL)
+    /* Reset the module. */
     RESET_PeripheralReset(s_gintResets[instance]);
+#endif /* FSL_SDK_DISABLE_DRIVER_RESET_CONTROL */
 
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Disable the peripheral clock */
@@ -176,6 +257,11 @@ void GINT0_DriverIRQHandler(void)
     {
         s_gintCallback[0]();
     }
+/* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+  exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 #endif
 
@@ -189,6 +275,11 @@ void GINT1_DriverIRQHandler(void)
     {
         s_gintCallback[1]();
     }
+/* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+  exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 #endif
 
@@ -202,6 +293,11 @@ void GINT2_DriverIRQHandler(void)
     {
         s_gintCallback[2]();
     }
+/* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+  exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 #endif
 
@@ -215,6 +311,11 @@ void GINT3_DriverIRQHandler(void)
     {
         s_gintCallback[3]();
     }
+/* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+  exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 #endif
 
@@ -228,6 +329,11 @@ void GINT4_DriverIRQHandler(void)
     {
         s_gintCallback[4]();
     }
+/* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+  exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 #endif
 
@@ -241,6 +347,11 @@ void GINT5_DriverIRQHandler(void)
     {
         s_gintCallback[5]();
     }
+/* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+  exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 #endif
 
@@ -254,6 +365,11 @@ void GINT6_DriverIRQHandler(void)
     {
         s_gintCallback[6]();
     }
+/* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+  exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 #endif
 
@@ -267,5 +383,10 @@ void GINT7_DriverIRQHandler(void)
     {
         s_gintCallback[7]();
     }
+/* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+  exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 #endif

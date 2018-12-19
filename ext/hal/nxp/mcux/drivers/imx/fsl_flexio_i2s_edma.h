@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2016-2017 NXP
+ * Copyright 2016-2018 NXP
  * All rights reserved.
- * 
+ *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 #ifndef _FSL_FLEXIO_I2S_EDMA_H_
@@ -22,8 +22,8 @@
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief FlexIO I2S EDMA driver version 2.1.4. */
-#define FSL_FLEXIO_I2S_EDMA_DRIVER_VERSION (MAKE_VERSION(2, 1, 4))
+/*! @brief FlexIO I2S EDMA driver version 2.1.5. */
+#define FSL_FLEXIO_I2S_EDMA_DRIVER_VERSION (MAKE_VERSION(2, 1, 5))
 /*@}*/
 
 typedef struct _flexio_i2s_edma_handle flexio_i2s_edma_handle_t;

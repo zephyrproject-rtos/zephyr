@@ -1,32 +1,10 @@
 /*
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
- * Copyright (c) 2016 - 2017 , NXP
+ * Copyright (c) 2016 - 2018 , NXP
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
  *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fsl_common.h"
@@ -35,6 +13,10 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
+/* Component ID definition, used by tools. */
+#ifndef FSL_COMPONENT_ID
+#define FSL_COMPONENT_ID "platform.drivers.clock"
+#endif
 #define NVALMAX (0x100U)
 #define PVALMAX (0x20U)
 #define MVALMAX (0x8000U)
@@ -86,12 +68,13 @@
    computation on each call to retrive the PLL rate. */
 static uint32_t s_Pll_Freq;
 
-uint32_t g_I2S_Mclk_Freq = 0U;
+/* I2S mclk. */
+static uint32_t s_I2S_Mclk_Freq = 0U;
 
 /** External clock rate on the CLKIN pin in Hz. If not used,
     set this to 0. Otherwise, set it to the exact rate in Hz this pin is
     being driven at. */
-const uint32_t g_Ext_Clk_Freq = 0U;
+static const uint32_t s_Ext_Clk_Freq = 0U;
 
 /*******************************************************************************
  * Variables
@@ -134,39 +117,104 @@ static const uint8_t wdtFreqLookup[32] = {0,  8,  12, 15, 18, 20, 24, 26, 28, 30
  * Code
  ******************************************************************************/
 
+/**
+ * brief	Configure the clock selection muxes.
+ * param	connection	: Clock to be configured.
+ * return	Nothing
+ */
 void CLOCK_AttachClk(clock_attach_id_t connection)
 {
-    bool final_descriptor = false;
     uint8_t mux;
-    uint8_t pos;
+    uint8_t sel;
+    uint16_t item;
     uint32_t i;
     volatile uint32_t *pClkSel;
 
     pClkSel = &(SYSCON->MAINCLKSELA);
 
-    for (i = 0U; (i <= 2U) && (!final_descriptor); i++)
+    if (connection != kNONE_to_NONE)
     {
-        connection = (clock_attach_id_t)(connection >> (i * 12U)); /* pick up next descriptor */
-        mux = (uint8_t)connection;
-        if (connection)
+        for (i = 0U; i < 2U; i++)
         {
-            pos = ((connection & 0xf00U) >> 8U) - 1U;
-            if (mux == CM_ASYNCAPB)
+            if (connection == 0U)
             {
-                ASYNC_SYSCON->ASYNCAPBCLKSELA = pos;
+                break;
             }
-            else
+            item = (uint16_t)GET_ID_ITEM(connection);
+            if (item)
             {
-                pClkSel[mux] = pos;
+                mux = GET_ID_ITEM_MUX(item);
+                sel = GET_ID_ITEM_SEL(item);
+                if (mux == CM_ASYNCAPB)
+                {
+                    ASYNC_SYSCON->ASYNCAPBCLKSELA = sel;
+                }
+                else
+                {
+                    pClkSel[mux] = sel;
+                }
             }
-        }
-        else
-        {
-            final_descriptor = true;
+            connection = GET_ID_NEXT_ITEM(connection); /* pick up next descriptor */
         }
     }
 }
 
+/* Return the actual clock attach id */
+/**
+ * brief   Get the actual clock attach id.
+ * This fuction uses the offset in input attach id, then it reads the actual source value in
+ * the register and combine the offset to obtain an actual attach id.
+ * param   attachId  : Clock attach id to get.
+ * return  Clock source value.
+ */
+clock_attach_id_t CLOCK_GetClockAttachId(clock_attach_id_t attachId)
+{
+    uint8_t mux;
+    uint8_t actualSel;
+    uint32_t i;
+    uint32_t actualAttachId = 0U;
+    uint32_t selector = GET_ID_SELECTOR(attachId);
+    volatile uint32_t *pClkSel;
+
+    pClkSel = &(SYSCON->MAINCLKSELA);
+
+    if (attachId == kNONE_to_NONE)
+    {
+        return kNONE_to_NONE;
+    }
+
+    for (i = 0U; i < 2U; i++)
+    {
+        mux = GET_ID_ITEM_MUX(attachId);
+        if (attachId)
+        {
+            if (mux == CM_ASYNCAPB)
+            {
+                actualSel = ASYNC_SYSCON->ASYNCAPBCLKSELA;
+            }
+            else
+            {
+                actualSel = pClkSel[mux];
+            }
+
+            /* Consider the combination of two registers */
+            actualAttachId |= CLK_ATTACH_ID(mux, actualSel, i);
+        }
+        attachId = GET_ID_NEXT_ITEM(attachId); /*!<  pick up next descriptor */
+    }
+
+    actualAttachId |= selector;
+
+    return (clock_attach_id_t)actualAttachId;
+}
+
+/**
+ * brief	Setup peripheral clock dividers.
+ * param	div_name	: Clock divider name
+ * param divided_by_value: Value to be divided
+ * param reset :  Whether to reset the divider counter.
+ * return	Nothing
+ */
 void CLOCK_SetClkDiv(clock_div_name_t div_name, uint32_t divided_by_value, bool reset)
 {
     volatile uint32_t *pClkDiv;
@@ -187,6 +235,13 @@ void CLOCK_SetClkDiv(clock_div_name_t div_name, uint32_t divided_by_value, bool 
 }
 
 /* Set FRO Clocking */
+/**
+ * brief	Initialize the Core clock to given frequency (12, 48 or 96 MHz).
+ * Turns on FRO and uses default CCO, if freq is 12000000, then high speed output is off, else high speed output is
+ * enabled.
+ * param	iFreq	: Desired frequency (must be one of CLK_FRO_12MHZ or CLK_FRO_48MHZ or CLK_FRO_96MHZ)
+ * return	returns success or fail status.
+ */
 status_t CLOCK_SetupFROClocking(uint32_t iFreq)
 {
     uint32_t usb_adj;
@@ -221,15 +276,24 @@ status_t CLOCK_SetupFROClocking(uint32_t iFreq)
     return 0U;
 }
 
+/*! brief	Return Frequency of FRO 12MHz
+ *  return	Frequency of FRO 12MHz
+ */
 uint32_t CLOCK_GetFro12MFreq(void)
 {
     return (SYSCON->PDRUNCFG[0] & SYSCON_PDRUNCFG_PDEN_FRO_MASK) ? 0U : 12000000U;
 }
 
+/*! brief	Return Frequency of External Clock
+ *  return	Frequency of External Clock. If no external clock is used returns 0.
+ */
 uint32_t CLOCK_GetExtClkFreq(void)
 {
-    return (g_Ext_Clk_Freq);
+    return (s_Ext_Clk_Freq);
 }
+/*! brief	Return Frequency of Watchdog Oscillator
+ *  return	Frequency of Watchdog Oscillator
+ */
 uint32_t CLOCK_GetWdtOscFreq(void)
 {
     uint8_t freq_sel, div_sel;
@@ -246,42 +310,97 @@ uint32_t CLOCK_GetWdtOscFreq(void)
     }
 }
 
+/* Get HF FRO Clk */
+/*! brief	Return Frequency of High-Freq output of FRO
+ *  return	Frequency of High-Freq output of FRO
+ */
 uint32_t CLOCK_GetFroHfFreq(void)
 {
-    return (SYSCON->PDRUNCFG[0] & SYSCON_PDRUNCFG_PDEN_FRO_MASK) ?
-               0 :
-               !(SYSCON->FROCTRL & SYSCON_FROCTRL_HSPDCLK_MASK) ? 0 : (SYSCON->FROCTRL & SYSCON_FROCTRL_SEL_MASK) ?
-                                                                  96000000U :
-                                                                  48000000U;
+    if ((SYSCON->PDRUNCFG[0] & SYSCON_PDRUNCFG_PDEN_FRO_MASK) || !(SYSCON->FROCTRL & SYSCON_FROCTRL_HSPDCLK_MASK))
+    {
+        return 0U;
+    }
+
+    if (SYSCON->FROCTRL & SYSCON_FROCTRL_SEL_MASK)
+    {
+        return 96000000U;
+    }
+    else
+    {
+        return 48000000U;
+    }
 }
 
+/*! brief	Return Frequency of PLL
+ *  return	Frequency of PLL
+ */
 uint32_t CLOCK_GetPllOutFreq(void)
 {
     return s_Pll_Freq;
 }
 
+/*! brief	Return Frequency of 32kHz osc
+ *  return	Frequency of 32kHz osc
+ */
 uint32_t CLOCK_GetOsc32KFreq(void)
 {
     return CLK_RTC_32K_CLK; /* Needs to be corrected to check that RTC Clock is enabled */
 }
+/*! brief	Return Frequency of Core System
+ *  return	Frequency of Core System
+ */
 uint32_t CLOCK_GetCoreSysClkFreq(void)
 {
-    return ((SYSCON->MAINCLKSELB == 0U) && (SYSCON->MAINCLKSELA == 0U)) ?
-               CLOCK_GetFro12MFreq() :
-               ((SYSCON->MAINCLKSELB == 0U) && (SYSCON->MAINCLKSELA == 1U)) ?
-               CLOCK_GetExtClkFreq() :
-               ((SYSCON->MAINCLKSELB == 0U) && (SYSCON->MAINCLKSELA == 2U)) ?
-               CLOCK_GetWdtOscFreq() :
-               ((SYSCON->MAINCLKSELB == 0U) && (SYSCON->MAINCLKSELA == 3U)) ?
-               CLOCK_GetFroHfFreq() :
-               (SYSCON->MAINCLKSELB == 2U) ? CLOCK_GetPllOutFreq() :
-                                             (SYSCON->MAINCLKSELB == 3U) ? CLOCK_GetOsc32KFreq() : 0U;
+    uint32_t freq = 0U;
+
+    switch (SYSCON->MAINCLKSELB)
+    {
+        case 0U:
+            if (SYSCON->MAINCLKSELA == 0U)
+            {
+                freq = CLOCK_GetFro12MFreq();
+            }
+            else if (SYSCON->MAINCLKSELA == 1U)
+            {
+                freq = CLOCK_GetExtClkFreq();
+            }
+            else if (SYSCON->MAINCLKSELA == 2U)
+            {
+                freq = CLOCK_GetWdtOscFreq();
+            }
+            else if (SYSCON->MAINCLKSELA == 3U)
+            {
+                freq = CLOCK_GetFroHfFreq();
+            }
+            else
+            {
+            }
+            break;
+        case 2U:
+            freq = CLOCK_GetPllOutFreq();
+            break;
+
+        case 3U:
+            freq = CLOCK_GetOsc32KFreq();
+            break;
+
+        default:
+            break;
+    }
+
+    return freq;
 }
+/*! brief	Return Frequency of I2S MCLK Clock
+ *  return	Frequency of I2S MCLK Clock
+ */
 uint32_t CLOCK_GetI2SMClkFreq(void)
 {
-    return g_I2S_Mclk_Freq;
+    return s_I2S_Mclk_Freq;
 }
 
+/*! brief	Return Frequency of Asynchronous APB Clock
+ *  return	Frequency of Asynchronous APB Clock Clock
+ */
 uint32_t CLOCK_GetAsyncApbClkFreq(void)
 {
     async_clock_src_t clkSrc;
@@ -305,26 +424,109 @@ uint32_t CLOCK_GetAsyncApbClkFreq(void)
     return clkRate;
 }
 
+/* Get FLEXCOMM Clk */
+/*! brief	Return Frequency of Flexcomm functional Clock
+ *  return	Frequency of Flexcomm functional Clock
+ */
 uint32_t CLOCK_GetFlexCommClkFreq(uint32_t id)
 {
-    return (SYSCON->FXCOMCLKSEL[id] == 0U) ? CLOCK_GetFro12MFreq() : (SYSCON->FXCOMCLKSEL[id] == 1U) ?
-                                             CLOCK_GetFroHfFreq() :
-                                             (SYSCON->FXCOMCLKSEL[id] == 2U) ?
-                                             CLOCK_GetPllOutFreq() :
-                                             (SYSCON->FXCOMCLKSEL[id] == 3U) ?
-                                             CLOCK_GetI2SMClkFreq() :
-                                             (SYSCON->FXCOMCLKSEL[id] == 4U) ? CLOCK_GetFreq(kCLOCK_Frg) : 0U;
+    uint32_t freq = 0U;
+
+    switch (SYSCON->FXCOMCLKSEL[id])
+    {
+        case 0U:
+            freq = CLOCK_GetFro12MFreq();
+            break;
+        case 1U:
+            freq = CLOCK_GetFroHfFreq();
+            break;
+        case 2U:
+            freq = CLOCK_GetPllOutFreq();
+            break;
+        case 3U:
+            freq = CLOCK_GetI2SMClkFreq();
+            break;
+        case 4U:
+            freq = CLOCK_GetFrgClkFreq();
+            break;
+
+        default:
+            break;
+    }
+
+    return freq;
 }
 
+/* Get FRG Clk */
+/*! brief	Return Input frequency for the Fractional baud rate generator
+ *  return	Input Frequency for FRG
+ */
 uint32_t CLOCK_GetFRGInputClock(void)
 {
-    return (SYSCON->FRGCLKSEL == 0U) ? CLOCK_GetCoreSysClkFreq() : (SYSCON->FRGCLKSEL == 1U) ?
-                                       CLOCK_GetPllOutFreq() :
-                                       (SYSCON->FRGCLKSEL == 2U) ? CLOCK_GetFro12MFreq() : (SYSCON->FRGCLKSEL == 3U) ?
-                                                                   CLOCK_GetFroHfFreq() :
-                                                                   0U;
+    uint32_t freq = 0U;
+
+    switch (SYSCON->FRGCLKSEL)
+    {
+        case 0U:
+            freq = CLOCK_GetCoreSysClkFreq();
+            break;
+        case 1U:
+            freq = CLOCK_GetPllOutFreq();
+            break;
+        case 2U:
+            freq = CLOCK_GetFro12MFreq();
+            break;
+        case 3U:
+            freq = CLOCK_GetFroHfFreq();
+            break;
+
+        default:
+            break;
+    }
+
+    return freq;
 }
 
+/* Get DMIC Clk */
+/*! brief  Return Input frequency for the DMIC
+ *  return Input Frequency for DMIC
+ */
+uint32_t CLOCK_GetDmicClkFreq(void)
+{
+    uint32_t freq = 0U;
+
+    switch (SYSCON->DMICCLKSEL)
+    {
+        case 0U:
+            freq = CLOCK_GetFro12MFreq();
+            break;
+        case 1U:
+            freq = CLOCK_GetFroHfFreq();
+            break;
+        case 2U:
+            freq = CLOCK_GetPllOutFreq();
+            break;
+        case 3U:
+            freq = CLOCK_GetI2SMClkFreq();
+            break;
+        case 4U:
+            freq = CLOCK_GetCoreSysClkFreq();
+            break;
+        case 5U:
+            freq = CLOCK_GetWdtOscFreq();
+            break;
+        default:
+            break;
+    }
+
+    return freq / ((SYSCON->DMICCLKDIV & 0xffU) + 1U);
+    ;
+}
+
+/*! brief	Set output of the Fractional baud rate generator
+ * param	freq	: Desired output frequency
+ * return	Error Code 0 - fail 1 - success
+ */
 uint32_t CLOCK_SetFRGClock(uint32_t freq)
 {
     uint32_t input = CLOCK_GetFRGInputClock();
@@ -343,6 +545,53 @@ uint32_t CLOCK_SetFRGClock(uint32_t freq)
     }
 }
 
+/* Get FRG Clk */
+/*! brief  Return Input frequency for the FRG
+ *  return Input Frequency for FRG
+ */
+uint32_t CLOCK_GetFrgClkFreq(void)
+{
+    uint32_t freq = 0U;
+
+    if ((SYSCON->FRGCTRL & SYSCON_FRGCTRL_DIV_MASK) == SYSCON_FRGCTRL_DIV_MASK)
+    {
+        freq = ((uint64_t)CLOCK_GetFRGInputClock() * (SYSCON_FRGCTRL_DIV_MASK + 1)) /
+               ((SYSCON_FRGCTRL_DIV_MASK + 1) +
+                ((SYSCON->FRGCTRL & SYSCON_FRGCTRL_MULT_MASK) >> SYSCON_FRGCTRL_MULT_SHIFT));
+    }
+    else
+    {
+        freq = 0U;
+    }
+
+    return freq;
+}
+
+/*! brief  Return Frequency of USB
+ *  return Frequency of USB
+ */
+uint32_t CLOCK_GetUsbClkFreq(void)
+{
+    uint32_t freq = 0U;
+
+    if (SYSCON->USBCLKSEL == 0U)
+    {
+        freq = CLOCK_GetFroHfFreq();
+    }
+    else if (SYSCON->USBCLKSEL == 1)
+    {
+        freq = CLOCK_GetPllOutFreq();
+    }
+    else
+    {
+    }
+
+    return freq / ((SYSCON->USBCLKDIV & 0xffU) + 1U);
+}
+
+/*! brief	Return Frequency of selected clock
+ *  return	Frequency of selected clock
+ */
 uint32_t CLOCK_GetFreq(clock_name_t clockName)
 {
     uint32_t freq;
@@ -364,31 +613,16 @@ uint32_t CLOCK_GetFreq(clock_name_t clockName)
             freq = CLOCK_GetPllOutFreq();
             break;
         case kCLOCK_UsbClk:
-            freq = (SYSCON->USBCLKSEL == 0U) ? CLOCK_GetFroHfFreq() : (SYSCON->USBCLKSEL == 1) ? CLOCK_GetPllOutFreq() :
-                                                                                                 0U;
-            freq = freq / ((SYSCON->USBCLKDIV & 0xffU) + 1U);
+            freq = CLOCK_GetUsbClkFreq();
             break;
-        case kClock_WdtOsc:
+        case kCLOCK_WdtOsc:
             freq = CLOCK_GetWdtOscFreq();
             break;
         case kCLOCK_Frg:
-            freq = ((SYSCON->FRGCTRL & SYSCON_FRGCTRL_DIV_MASK) == SYSCON_FRGCTRL_DIV_MASK) ?
-                       ((uint64_t)CLOCK_GetFRGInputClock() * (SYSCON_FRGCTRL_DIV_MASK + 1)) /
-                           ((SYSCON_FRGCTRL_DIV_MASK + 1) +
-                            ((SYSCON->FRGCTRL & SYSCON_FRGCTRL_MULT_MASK) >> SYSCON_FRGCTRL_MULT_SHIFT)) :
-                       0;
+            freq = CLOCK_GetFrgClkFreq();
             break;
         case kCLOCK_Dmic:
-            freq = (SYSCON->DMICCLKSEL == 0U) ? CLOCK_GetFro12MFreq() : (SYSCON->DMICCLKSEL == 1U) ?
-                                                CLOCK_GetFroHfFreq() :
-                                                (SYSCON->DMICCLKSEL == 2U) ?
-                                                CLOCK_GetPllOutFreq() :
-                                                (SYSCON->DMICCLKSEL == 3U) ?
-                                                CLOCK_GetI2SMClkFreq() :
-                                                (SYSCON->DMICCLKSEL == 4U) ?
-                                                CLOCK_GetCoreSysClkFreq() :
-                                                (SYSCON->DMICCLKSEL == 5U) ? CLOCK_GetWdtOscFreq() : 0U;
-            freq = freq / ((SYSCON->DMICCLKDIV & 0xffU) + 1U);
+            freq = CLOCK_GetDmicClkFreq();
             break;
 
         case kCLOCK_AsyncApbClk:
@@ -432,6 +666,11 @@ uint32_t CLOCK_GetFreq(clock_name_t clockName)
 }
 
 /* Set the FLASH wait states for the passed frequency */
+/**
+ * brief	Set the flash wait states for the input freuqency.
+ * param	iFreq	: Input frequency
+ * return	Nothing
+ */
 void CLOCK_SetFLASHAccessCyclesForFreq(uint32_t iFreq)
 {
     if (iFreq <= 12000000U)
@@ -789,8 +1028,13 @@ static uint32_t FindGreatestCommonDivisor(uint32_t m, uint32_t n)
     return m;
 }
 
-/* Set PLL output based on desired output rate */
-static pll_error_t CLOCK_GetPllConfig(
+/*
+ * Set PLL output based on desired output rate.
+ * In this function, the it calculates the PLL setting for output frequency from input clock
+ * frequency. The calculation would cost a few time. So it is not recommaned to use it frequently.
+ * the "pllctrl", "pllndec", "pllpdec", "pllmdec" would updated in this function.
+ */
+static pll_error_t CLOCK_GetPllConfigInternal(
     uint32_t finHz, uint32_t foutHz, pll_setup_t *pSetup, bool useFeedbackDiv2, bool useSS)
 {
     uint32_t nDivOutHz, fccoHz, multFccoDiv;
@@ -960,6 +1204,69 @@ static pll_error_t CLOCK_GetPllConfig(
     return kStatus_PLL_Success;
 }
 
+#if (defined(CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT) && CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT)
+/* Alloct the static buffer for cache. */
+static pll_setup_t s_PllSetupCacheStruct[CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT];
+static uint32_t s_FinHzCache[CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT] = {0};
+static uint32_t s_FoutHzCache[CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT] = {0};
+static bool s_UseFeedbackDiv2Cache[CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT] = {false};
+static bool s_UseSSCache[CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT] = {false};
+static uint32_t s_PllSetupCacheIdx = 0U;
+#endif /* CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT */
+
+/*
+ * Calculate the PLL setting values from input clock freq to output freq.
+ */
+static pll_error_t CLOCK_GetPllConfig(
+    uint32_t finHz, uint32_t foutHz, pll_setup_t *pSetup, bool useFeedbackDiv2, bool useSS)
+{
+    pll_error_t retErr;
+#if (defined(CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT) && CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT)
+    uint32_t i;
+
+    for (i = 0U; i < CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT; i++)
+    {
+        if ((finHz == s_FinHzCache[i]) && (foutHz == s_FoutHzCache[i]) &&
+            (useFeedbackDiv2 == s_UseFeedbackDiv2Cache[i]) && (useSS == s_UseSSCache[i]))
+        {
+            /* Hit the target in cache buffer. */
+            pSetup->syspllctrl = s_PllSetupCacheStruct[i].syspllctrl;
+            pSetup->syspllndec = s_PllSetupCacheStruct[i].syspllndec;
+            pSetup->syspllpdec = s_PllSetupCacheStruct[i].syspllpdec;
+            pSetup->syspllssctrl[0] = s_PllSetupCacheStruct[i].syspllssctrl[0];
+            pSetup->syspllssctrl[1] = s_PllSetupCacheStruct[i].syspllssctrl[1];
+            retErr = kStatus_PLL_Success;
+            break;
+        }
+    }
+
+    if (i < CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT)
+    {
+        return retErr;
+    }
+#endif /* CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT */
+
+    retErr = CLOCK_GetPllConfigInternal(finHz, foutHz, pSetup, useFeedbackDiv2, useSS);
+
+#if (defined(CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT) && CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT)
+    /* Cache the most recent calulation result into buffer. */
+    s_FinHzCache[s_PllSetupCacheIdx] = finHz;
+    s_FoutHzCache[s_PllSetupCacheIdx] = foutHz;
+    s_UseFeedbackDiv2Cache[s_PllSetupCacheIdx] = useFeedbackDiv2;
+    s_UseSSCache[s_PllSetupCacheIdx] = useSS;
+
+    s_PllSetupCacheStruct[s_PllSetupCacheIdx].syspllctrl = pSetup->syspllctrl;
+    s_PllSetupCacheStruct[s_PllSetupCacheIdx].syspllndec = pSetup->syspllndec;
+    s_PllSetupCacheStruct[s_PllSetupCacheIdx].syspllpdec = pSetup->syspllpdec;
+    s_PllSetupCacheStruct[s_PllSetupCacheIdx].syspllssctrl[0] = pSetup->syspllssctrl[0];
+    s_PllSetupCacheStruct[s_PllSetupCacheIdx].syspllssctrl[1] = pSetup->syspllssctrl[1];
+    /* Update the index for next available buffer. */
+    s_PllSetupCacheIdx = (s_PllSetupCacheIdx + 1U) % CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT;
+#endif /* CLOCK_USR_CFG_PLL_CONFIG_CACHE_COUNT */
+
+    return retErr;
+}
+
 /* Update local PLL rate variable */
 static void CLOCK_GetSystemPLLOutFromSetupUpdate(pll_setup_t *pSetup)
 {
@@ -967,6 +1274,9 @@ static void CLOCK_GetSystemPLLOutFromSetupUpdate(pll_setup_t *pSetup)
 }
 
 /* Return System PLL input clock rate */
+/*! brief	Return System PLL input clock rate
+ *  return	System PLL input clock rate
+ */
 uint32_t CLOCK_GetSystemPLLInClockRate(void)
 {
     uint32_t clkRate = 0U;
@@ -998,6 +1308,10 @@ uint32_t CLOCK_GetSystemPLLInClockRate(void)
 }
 
 /* Return System PLL output clock rate from setup structure */
+/*! brief	Return System PLL output clock rate from setup structure
+ *  param	pSetup	: Pointer to a PLL setup structure
+ *  return	System PLL output clock rate calculated from the setup structure
+ */
 uint32_t CLOCK_GetSystemPLLOutFromSetup(pll_setup_t *pSetup)
 {
     uint32_t prediv, postdiv, mMult, inPllRate;
@@ -1074,12 +1388,23 @@ uint32_t CLOCK_GetSystemPLLOutFromSetup(pll_setup_t *pSetup)
 }
 
 /* Set the current PLL Rate */
+/*! brief Store the current PLL rate
+ *  param	rate: Current rate of the PLL
+ *  return	Nothing
+ **/
 void CLOCK_SetStoredPLLClockRate(uint32_t rate)
 {
     s_Pll_Freq = rate;
 }
 
 /* Return System PLL output clock rate */
+/*! brief	Return System PLL output clock rate
+ *  param	recompute	: Forces a PLL rate recomputation if true
+ *  return	System PLL output clock rate
+ *  note	The PLL rate is cached in the driver in a variable as
+ *  the rate computation function can take some time to perform. It
+ *  is recommended to use 'false' with the 'recompute' parameter.
+ */
 uint32_t CLOCK_GetSystemPLLOutClockRate(bool recompute)
 {
     pll_setup_t Setup;
@@ -1102,6 +1427,13 @@ uint32_t CLOCK_GetSystemPLLOutClockRate(bool recompute)
 }
 
 /* Set PLL output based on the passed PLL setup data */
+/*! brief	Set PLL output based on the passed PLL setup data
+ *  param	pControl	: Pointer to populated PLL control structure to generate setup with
+ *  param	pSetup		: Pointer to PLL setup structure to be filled
+ *  return	PLL_ERROR_SUCCESS on success, or PLL setup error code
+ *  note	Actual frequency for setup may vary from the desired frequency based on the
+ *  accuracy of input clocks, rounding, non-fractional PLL mode, etc.
+ */
 pll_error_t CLOCK_SetupPLLData(pll_config_t *pControl, pll_setup_t *pSetup)
 {
     uint32_t inRate;
@@ -1145,6 +1477,16 @@ pll_error_t CLOCK_SetupPLLData(pll_config_t *pControl, pll_setup_t *pSetup)
 }
 
 /* Set PLL output from PLL setup structure */
+/*! brief	Set PLL output from PLL setup structure (precise frequency)
+ * param	pSetup	: Pointer to populated PLL setup structure
+* param flagcfg : Flag configuration for PLL config structure
+ * return	PLL_ERROR_SUCCESS on success, or PLL setup error code
+ * note	This function will power off the PLL, setup the PLL with the
+ * new setup data, and then optionally powerup the PLL, wait for PLL lock,
+ * and adjust system voltages to the new PLL rate. The function will not
+ * alter any source clocks (ie, main systen clock) that may use the PLL,
+ * so these should be setup prior to and after exiting the function.
+ */
 pll_error_t CLOCK_SetupSystemPLLPrec(pll_setup_t *pSetup, uint32_t flagcfg)
 {
     /* Power off PLL during setup changes */
@@ -1212,6 +1554,16 @@ pll_error_t CLOCK_SetupSystemPLLPrec(pll_setup_t *pSetup, uint32_t flagcfg)
 }
 
 /* Setup PLL Frequency from pre-calculated value */
+/**
+ * brief	Set PLL output from PLL setup structure (precise frequency)
+ * param	pSetup	: Pointer to populated PLL setup structure
+ * return	kStatus_PLL_Success on success, or PLL setup error code
+ * note	This function will power off the PLL, setup the PLL with the
+ * new setup data, and then optionally powerup the PLL, wait for PLL lock,
+ * and adjust system voltages to the new PLL rate. The function will not
+ * alter any source clocks (ie, main systen clock) that may use the PLL,
+ * so these should be setup prior to and after exiting the function.
+ */
 pll_error_t CLOCK_SetPLLFreq(const pll_setup_t *pSetup)
 {
     /* Power off PLL during setup changes */
@@ -1271,6 +1623,17 @@ pll_error_t CLOCK_SetPLLFreq(const pll_setup_t *pSetup)
 }
 
 /* Set System PLL clock based on the input frequency and multiplier */
+/*! brief	Set PLL output based on the multiplier and input frequency
+ * param	multiply_by	: multiplier
+ * param	input_freq	: Clock input frequency of the PLL
+ * return	Nothing
+ * note	Unlike the Chip_Clock_SetupSystemPLLPrec() function, this
+ * function does not disable or enable PLL power, wait for PLL lock,
+ * or adjust system voltages. These must be done in the application.
+ * The function will not alter any source clocks (ie, main systen clock)
+ * that may use the PLL, so these should be setup prior to and after
+ * exiting the function.
+ */
 void CLOCK_SetupSystemPLLMult(uint32_t multiply_by, uint32_t input_freq)
 {
     uint32_t cco_freq = input_freq * multiply_by;

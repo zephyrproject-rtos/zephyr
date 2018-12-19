@@ -1,31 +1,9 @@
 /*
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
- *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * All rights reserved.
+ * 
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 #ifndef _FSL_LPTMR_H_
 #define _FSL_LPTMR_H_
@@ -237,6 +215,26 @@ static inline uint32_t LPTMR_GetEnabledInterrupts(LPTMR_Type *base)
 }
 
 /*! @}*/
+
+#if defined(FSL_FEATURE_LPTMR_HAS_CSR_TDRE) && (FSL_FEATURE_LPTMR_HAS_CSR_TDRE)
+/*!
+ * @brief Enable or disable timer DMA request
+ *
+ * @param base base LPTMR peripheral base address
+ * @param enable Switcher of timer DMA feature. "true" means to enable, "false" means to disable.
+ */
+static inline void LPTMR_EnableTimerDMA(LPTMR_Type *base, bool enable)
+{
+    if(enable)
+    {
+        base->CSR |= LPTMR_CSR_TDRE_MASK;
+    }
+    else
+    {
+        base->CSR &= ~(LPTMR_CSR_TDRE_MASK);
+    }
+}
+#endif /* FSL_FEATURE_LPTMR_HAS_CSR_TDRE */
 
 /*!
  * @name Status Interface

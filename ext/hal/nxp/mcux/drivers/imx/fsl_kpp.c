@@ -1,7 +1,7 @@
 /*
  * Copyright 2017 NXP
  * All rights reserved.
- * 
+ *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
@@ -63,6 +63,14 @@ static void KPP_Mdelay(uint64_t tickets)
     }
 }
 
+/*!
+ * brief KPP initialize.
+ * This function ungates the KPP clock and initializes KPP.
+ * This function must be called before calling any other KPP driver functions.
+ *
+ * param base KPP peripheral base address.
+ * param configure The KPP configuration structure pointer.
+ */
 void KPP_Init(KPP_Type *base, kpp_config_t *configure)
 {
     assert(configure);
@@ -79,15 +87,14 @@ void KPP_Init(KPP_Type *base, kpp_config_t *configure)
 
     /* Enable the keypad row and set the column strobe output to open drain. */
     base->KPCR = KPP_KPCR_KRE(configure->activeRow);
-    base->KPDR = KPP_KPDR_KCD((uint8_t)~(configure->activeColumn));
+    base->KPDR = KPP_KPDR_KCD((uint8_t) ~(configure->activeColumn));
     base->KPCR |= KPP_KPCR_KCO(configure->activeColumn);
 
     /* Set the input direction for row and output direction for column. */
-    base->KDDR = KPP_KDDR_KCDD(configure->activeColumn) | KPP_KDDR_KRDD((uint8_t)~(configure->activeRow));
+    base->KDDR = KPP_KDDR_KCDD(configure->activeColumn) | KPP_KDDR_KRDD((uint8_t) ~(configure->activeRow));
 
     /* Clear the status flag and enable the interrupt. */
-    base->KPSR =
-        KPP_KPSR_KPKR_MASK | KPP_KPSR_KPKD_MASK | KPP_KPSR_KDSC_MASK | configure->interrupt;
+    base->KPSR = KPP_KPSR_KPKR_MASK | KPP_KPSR_KPKD_MASK | KPP_KPSR_KDSC_MASK | configure->interrupt;
 
     if (configure->interrupt)
     {
@@ -96,6 +103,13 @@ void KPP_Init(KPP_Type *base, kpp_config_t *configure)
     }
 }
 
+/*!
+ * brief Deinitializes the KPP module and gates the clock.
+ * This function gates the KPP clock. As a result, the KPP
+ * module doesn't work after calling this function.
+ *
+ * param base KPP peripheral base address.
+ */
 void KPP_Deinit(KPP_Type *base)
 {
     /* Disable interrupts and disable all rows. */
@@ -108,6 +122,18 @@ void KPP_Deinit(KPP_Type *base)
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
+/*!
+ * brief Keypad press scanning.
+ *
+ * This function will scanning all columns and rows. so
+ * all scanning data will be stored in the data pointer.
+ *
+ * param base  KPP peripheral base address.
+ * param data  KPP key press scanning data. The data buffer should be prepared with
+ * length at least equal to KPP_KEYPAD_COLUMNNUM_MAX * KPP_KEYPAD_ROWNUM_MAX.
+ * the data pointer is recommended to be a array like uint8_t data[KPP_KEYPAD_COLUMNNUM_MAX].
+ * for example the data[2] = 4, that means in column 1 row 2 has a key press event.
+ */
 void KPP_keyPressScanning(KPP_Type *base, uint8_t *data, uint32_t clockSrc_Hz)
 {
     assert(data);
@@ -152,7 +178,7 @@ void KPP_keyPressScanning(KPP_Type *base, uint8_t *data, uint32_t clockSrc_Hz)
             }
         }
     }
-    
+
     /* Return all columns to 0 in preparation for standby mode. */
     base->KPDR &= ~KPP_KPDR_KCD_MASK;
 

@@ -39,8 +39,8 @@
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief CLOCK driver version 2.1.5. */
-#define FSL_CLOCK_DRIVER_VERSION (MAKE_VERSION(2, 1, 5))
+/*! @brief CLOCK driver version 2.1.6. */
+#define FSL_CLOCK_DRIVER_VERSION (MAKE_VERSION(2, 1, 6))
 
 /* analog pll definition */
 #define CCM_ANALOG_PLL_BYPASS_SHIFT (16U)
@@ -48,9 +48,9 @@
 #define CCM_ANALOG_PLL_BYPASS_CLK_SRC_SHIFT (14U)
 
 /*@}*/
-#define CCM_TUPLE(reg, shift, mask, busyShift)                                                                     \
-    ((((uint32_t)(&((CCM_Type *)0U)->reg)) & 0xFFU) | ((shift) << 8U) | ((((mask) >> (shift)) & 0x1FFFU) << 13U) | \
-     ((busyShift) << 26U))
+#define CCM_TUPLE(reg, shift, mask, busyShift)                               \
+    (int)((((uint32_t)(&((CCM_Type *)0U)->reg)) & 0xFFU) | ((shift) << 8U) | \
+          ((((mask) >> (shift)) & 0x1FFFU) << 13U) | ((busyShift) << 26U))
 #define CCM_TUPLE_REG(base, tuple) (*((volatile uint32_t *)(((uint32_t)(base)) + ((tuple)&0xFFU))))
 #define CCM_TUPLE_SHIFT(tuple) (((tuple) >> 8U) & 0x1FU)
 #define CCM_TUPLE_MASK(tuple) ((uint32_t)((((tuple) >> 13U) & 0x1FFFU) << ((((tuple) >> 8U) & 0x1FU))))
@@ -769,8 +769,8 @@ typedef enum _clock_div
 /*! @brief USB clock source definition. */
 typedef enum _clock_usb_src
 {
-    kCLOCK_Usb480M = 0,                /*!< Use 480M.      */
-    kCLOCK_UsbSrcUnused = 0xFFFFFFFFU, /*!< Used when the function does not
+    kCLOCK_Usb480M = 0,                     /*!< Use 480M.      */
+    kCLOCK_UsbSrcUnused = (int)0xFFFFFFFFU, /*!< Used when the function does not
                                             care the clock source. */
 } clock_usb_src_t;
 
@@ -813,7 +813,9 @@ typedef struct _clock_sys_pll_config
     uint32_t numerator;   /*!< 30 bit numerator of fractional loop divider.*/
     uint32_t denominator; /*!< 30 bit denominator of fractional loop divider */
     uint8_t src;          /*!< Pll clock source, reference _clock_pll_clk_src */
-
+    uint16_t ss_stop;     /*!< Stop value to get frequency change. */
+    uint8_t ss_enable;    /*!< Enable spread spectrum modulation */
+    uint16_t ss_step;     /*!< Step value to get frequency change step. */
 } clock_sys_pll_config_t;
 
 /*! @brief PLL configuration for AUDIO and VIDEO */

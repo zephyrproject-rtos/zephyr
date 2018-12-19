@@ -21,8 +21,8 @@
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief LPSPI driver version 2.0.1. */
-#define FSL_LPSPI_DRIVER_VERSION (MAKE_VERSION(2, 0, 2))
+/*! @brief LPSPI driver version 2.0.3. */
+#define FSL_LPSPI_DRIVER_VERSION (MAKE_VERSION(2, 0, 3))
 /*@}*/
 
 #ifndef LPSPI_DUMMY_DATA
@@ -204,17 +204,17 @@ enum _lpspi_transfer_config_flag_for_master
 
     kLPSPI_MasterByteSwap =
         1U << 22 /*!< Is master swap the byte.
-                      * For example, when want to send data 1 2 3 4 5 6 7 8 (suppose you set
-                      * lpspi_shift_direction_t to MSB).
-                      * 1. If you set bitPerFrame = 8 , no matter the kLPSPI_MasterByteSwapyou flag is used
-                      * or not, the waveform is 1 2 3 4 5 6 7 8.
-                      * 2. If you set bitPerFrame = 16 :
-                      * (1) the waveform is 2 1 4 3 6 5 8 7 if you do not use the kLPSPI_MasterByteSwap flag.
-                      * (2) the waveform is 1 2 3 4 5 6 7 8 if you use the kLPSPI_MasterByteSwap flag.
-                      * 3. If you set bitPerFrame = 32 :
-                      * (1) the waveform is 4 3 2 1 8 7 6 5 if you do not use the kLPSPI_MasterByteSwap flag.
-                      * (2) the waveform is 1 2 3 4 5 6 7 8 if you use the kLPSPI_MasterByteSwap flag.
-                      */
+                       * For example, when want to send data 1 2 3 4 5 6 7 8 (suppose you set
+                       * lpspi_shift_direction_t to MSB).
+                       * 1. If you set bitPerFrame = 8 , no matter the kLPSPI_MasterByteSwapyou flag is used
+                       * or not, the waveform is 1 2 3 4 5 6 7 8.
+                       * 2. If you set bitPerFrame = 16 :
+                       * (1) the waveform is 2 1 4 3 6 5 8 7 if you do not use the kLPSPI_MasterByteSwap flag.
+                       * (2) the waveform is 1 2 3 4 5 6 7 8 if you use the kLPSPI_MasterByteSwap flag.
+                       * 3. If you set bitPerFrame = 32 :
+                       * (1) the waveform is 4 3 2 1 8 7 6 5 if you do not use the kLPSPI_MasterByteSwap flag.
+                       * (2) the waveform is 1 2 3 4 5 6 7 8 if you use the kLPSPI_MasterByteSwap flag.
+                       */
 };
 
 #define LPSPI_SLAVE_PCS_SHIFT (4U)   /*!< LPSPI slave PCS shift macro , internal used. */
@@ -230,17 +230,17 @@ enum _lpspi_transfer_config_flag_for_slave
 
     kLPSPI_SlaveByteSwap =
         1U << 22 /*!< Is slave swap the byte.
-                       * For example, when want to send data 1 2 3 4 5 6 7 8 (suppose you set
-                       * lpspi_shift_direction_t to MSB).
-                       * 1. If you set bitPerFrame = 8 , no matter the kLPSPI_SlaveByteSwap flag is used
-                       * or not, the waveform is 1 2 3 4 5 6 7 8.
-                       * 2. If you set bitPerFrame = 16 :
-                       * (1) the waveform is 2 1 4 3 6 5 8 7 if you do not use the kLPSPI_SlaveByteSwap flag.
-                       * (2) the waveform is 1 2 3 4 5 6 7 8 if you use the kLPSPI_SlaveByteSwap flag.
-                       * 3. If you set bitPerFrame = 32 :
-                       * (1) the waveform is 4 3 2 1 8 7 6 5 if you do not use the kLPSPI_SlaveByteSwap flag.
-                       * (2) the waveform is 1 2 3 4 5 6 7 8 if you use the kLPSPI_SlaveByteSwap flag.
-                       */
+                        * For example, when want to send data 1 2 3 4 5 6 7 8 (suppose you set
+                        * lpspi_shift_direction_t to MSB).
+                        * 1. If you set bitPerFrame = 8 , no matter the kLPSPI_SlaveByteSwap flag is used
+                        * or not, the waveform is 1 2 3 4 5 6 7 8.
+                        * 2. If you set bitPerFrame = 16 :
+                        * (1) the waveform is 2 1 4 3 6 5 8 7 if you do not use the kLPSPI_SlaveByteSwap flag.
+                        * (2) the waveform is 1 2 3 4 5 6 7 8 if you use the kLPSPI_SlaveByteSwap flag.
+                        * 3. If you set bitPerFrame = 32 :
+                        * (1) the waveform is 4 3 2 1 8 7 6 5 if you do not use the kLPSPI_SlaveByteSwap flag.
+                        * (2) the waveform is 1 2 3 4 5 6 7 8 if you use the kLPSPI_SlaveByteSwap flag.
+                        */
 };
 
 /*! @brief LPSPI transfer state, which is used for LPSPI transactional API state machine. */

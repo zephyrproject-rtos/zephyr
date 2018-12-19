@@ -1,31 +1,9 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
- *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * All rights reserved.
+ * 
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #ifndef _FSL_PDB_H_
@@ -178,6 +156,68 @@ typedef enum _pdb_trigger_input_source
     kPDB_TriggerInput14 = 14U,  /*!< Trigger-In 14. */
     kPDB_TriggerSoftware = 15U, /*!< Trigger-In 15, software trigger. */
 } pdb_trigger_input_source_t;
+
+/*!
+ * @brief List of PDB ADC trigger channels
+ * @note Actual number of available channels is SoC dependent
+ */
+typedef enum _pdb_adc_trigger_channel
+{
+    kPDB_ADCTriggerChannel0 = 0U, /*!< PDB ADC trigger channel number 0 */
+    kPDB_ADCTriggerChannel1 = 1U, /*!< PDB ADC trigger channel number 1 */
+    kPDB_ADCTriggerChannel2 = 2U, /*!< PDB ADC trigger channel number 2 */
+    kPDB_ADCTriggerChannel3 = 3U, /*!< PDB ADC trigger channel number 3 */
+} pdb_adc_trigger_channel_t;
+
+/*!
+ * @brief List of PDB ADC pretrigger
+ * @note Actual number of available pretrigger channels is SoC dependent
+ */
+typedef enum _pdb_adc_pretrigger
+{
+    kPDB_ADCPreTrigger0 = 0U, /*!< PDB ADC pretrigger number 0 */
+    kPDB_ADCPreTrigger1 = 1U, /*!< PDB ADC pretrigger number 1 */
+    kPDB_ADCPreTrigger2 = 2U, /*!< PDB ADC pretrigger number 2 */
+    kPDB_ADCPreTrigger3 = 3U, /*!< PDB ADC pretrigger number 3 */
+    kPDB_ADCPreTrigger4 = 4U, /*!< PDB ADC pretrigger number 4 */
+    kPDB_ADCPreTrigger5 = 5U, /*!< PDB ADC pretrigger number 5 */
+    kPDB_ADCPreTrigger6 = 6U, /*!< PDB ADC pretrigger number 6 */
+    kPDB_ADCPreTrigger7 = 7U, /*!< PDB ADC pretrigger number 7 */
+} pdb_adc_pretrigger_t;
+
+/*!
+ * @brief List of PDB DAC trigger channels
+ * @note Actual number of available channels is SoC dependent
+ */
+typedef enum _pdb_dac_trigger_channel
+{
+    kPDB_DACTriggerChannel0 = 0U, /*!< PDB DAC trigger channel number 0 */
+    kPDB_DACTriggerChannel1 = 1U, /*!< PDB DAC trigger channel number 1 */
+} pdb_dac_trigger_channel_t;
+
+/*!
+ * @brief List of PDB pulse out trigger channels
+ * @note Actual number of available channels is SoC dependent
+ */
+typedef enum _pdb_pulse_out_trigger_channel
+{
+    kPDB_PulseOutTriggerChannel0 = 0U, /*!< PDB pulse out trigger channel number 0 */
+    kPDB_PulseOutTriggerChannel1 = 1U, /*!< PDB pulse out trigger channel number 1 */
+    kPDB_PulseOutTriggerChannel2 = 2U, /*!< PDB pulse out trigger channel number 2 */
+    kPDB_PulseOutTriggerChannel3 = 3U, /*!< PDB pulse out trigger channel number 3 */
+} pdb_pulse_out_trigger_channel_t;
+
+/*!
+ * @brief List of PDB pulse out trigger channels mask
+ * @note Actual number of available channels mask is SoC dependent
+ */
+typedef enum _pdb_pulse_out_channel_mask
+{
+    kPDB_PulseOutChannel0Mask = (1U << 0U), /*!< PDB pulse out trigger channel number 0 mask */
+    kPDB_PulseOutChannel1Mask = (1U << 1U), /*!< PDB pulse out trigger channel number 1 mask */
+    kPDB_PulseOutChannel2Mask = (1U << 2U), /*!< PDB pulse out trigger channel number 2 mask */
+    kPDB_PulseOutChannel3Mask = (1U << 3U), /*!< PDB pulse out trigger channel number 3 mask */
+} pdb_pulse_out_channel_mask_t;
 
 /*!
  * @brief PDB module configuration.
@@ -427,7 +467,7 @@ static inline void PDB_SetCounterDelayValue(PDB_Type *base, uint32_t value)
  * @param channel Channel index for ADC instance.
  * @param config  Pointer to the configuration structure. See "pdb_adc_pretrigger_config_t".
  */
-static inline void PDB_SetADCPreTriggerConfig(PDB_Type *base, uint32_t channel, pdb_adc_pretrigger_config_t *config)
+static inline void PDB_SetADCPreTriggerConfig(PDB_Type *base, pdb_adc_trigger_channel_t channel, pdb_adc_pretrigger_config_t *config)
 {
     assert(channel < PDB_C1_COUNT);
     assert(NULL != config);
@@ -442,18 +482,18 @@ static inline void PDB_SetADCPreTriggerConfig(PDB_Type *base, uint32_t channel, 
  * This function sets the value for ADC pre-trigger delay event. It specifies the delay value for the channel's
  * corresponding pre-trigger. The pre-trigger asserts when the PDB counter is equal to the set value.
  *
- * @param base       PDB peripheral base address.
- * @param channel    Channel index for ADC instance.
- * @param preChannel Channel group index for ADC instance.
- * @param value      Setting value for ADC pre-trigger delay event. 16-bit is available.
+ * @param base             PDB peripheral base address.
+ * @param channel          Channel index for ADC instance.
+ * @param pretriggerNumber Channel group index for ADC instance.
+ * @param value            Setting value for ADC pre-trigger delay event. 16-bit is available.
  */
-static inline void PDB_SetADCPreTriggerDelayValue(PDB_Type *base, uint32_t channel, uint32_t preChannel, uint32_t value)
+static inline void PDB_SetADCPreTriggerDelayValue(PDB_Type *base, pdb_adc_trigger_channel_t channel, pdb_adc_pretrigger_t pretriggerNumber, uint32_t value)
 {
     assert(channel < PDB_C1_COUNT);
-    assert(preChannel < PDB_DLY_COUNT2);
+    assert(pretriggerNumber < PDB_DLY_COUNT2);
     /* xx_COUNT2 is actually the count for pre-triggers in header file. xx_COUNT is used for the count of channels. */
 
-    base->CH[channel].DLY[preChannel] = PDB_DLY_DLY(value);
+    base->CH[channel].DLY[pretriggerNumber] = PDB_DLY_DLY(value);
 }
 
 /*!
@@ -464,7 +504,7 @@ static inline void PDB_SetADCPreTriggerDelayValue(PDB_Type *base, uint32_t chann
  *
  * @return         Mask value for asserted flags. See "_pdb_adc_pretrigger_flags".
  */
-static inline uint32_t PDB_GetADCPreTriggerStatusFlags(PDB_Type *base, uint32_t channel)
+static inline uint32_t PDB_GetADCPreTriggerStatusFlags(PDB_Type *base, pdb_adc_trigger_channel_t channel)
 {
     assert(channel < PDB_C1_COUNT);
 
@@ -478,7 +518,7 @@ static inline uint32_t PDB_GetADCPreTriggerStatusFlags(PDB_Type *base, uint32_t 
  * @param channel Channel index for ADC instance.
  * @param mask    Mask value for flags. See "_pdb_adc_pretrigger_flags".
  */
-static inline void PDB_ClearADCPreTriggerStatusFlags(PDB_Type *base, uint32_t channel, uint32_t mask)
+static inline void PDB_ClearADCPreTriggerStatusFlags(PDB_Type *base, pdb_adc_trigger_channel_t channel, uint32_t mask)
 {
     assert(channel < PDB_C1_COUNT);
 
@@ -500,7 +540,7 @@ static inline void PDB_ClearADCPreTriggerStatusFlags(PDB_Type *base, uint32_t ch
  * @param channel Channel index for DAC instance.
  * @param config  Pointer to the configuration structure. See "pdb_dac_trigger_config_t".
  */
-void PDB_SetDACTriggerConfig(PDB_Type *base, uint32_t channel, pdb_dac_trigger_config_t *config);
+void PDB_SetDACTriggerConfig(PDB_Type *base, pdb_dac_trigger_channel_t channel, pdb_dac_trigger_config_t *config);
 
 /*!
  * @brief Sets the value for the DAC interval event.
@@ -512,7 +552,7 @@ void PDB_SetDACTriggerConfig(PDB_Type *base, uint32_t channel, pdb_dac_trigger_c
  * @param channel Channel index for DAC instance.
  * @param value   Setting value for the DAC interval event.
  */
-static inline void PDB_SetDACTriggerIntervalValue(PDB_Type *base, uint32_t channel, uint32_t value)
+static inline void PDB_SetDACTriggerIntervalValue(PDB_Type *base, pdb_dac_trigger_channel_t channel, uint32_t value)
 {
     assert(channel < PDB_INT_COUNT);
 
@@ -534,8 +574,10 @@ static inline void PDB_SetDACTriggerIntervalValue(PDB_Type *base, uint32_t chann
  * @param channelMask Channel mask value for multiple pulse out trigger channel.
  * @param enable Whether the feature is enabled or not.
  */
-static inline void PDB_EnablePulseOutTrigger(PDB_Type *base, uint32_t channelMask, bool enable)
+static inline void PDB_EnablePulseOutTrigger(PDB_Type *base, pdb_pulse_out_channel_mask_t channelMask, bool enable)
 {
+    assert(channelMask < (1 << PDB_PODLY_COUNT));
+
     if (enable)
     {
         base->POEN |= PDB_POEN_POEN(channelMask);
@@ -559,7 +601,7 @@ static inline void PDB_EnablePulseOutTrigger(PDB_Type *base, uint32_t channelMas
  * @param value1  Setting value for pulse out high.
  * @param value2  Setting value for pulse out low.
  */
-static inline void PDB_SetPulseOutTriggerDelayValue(PDB_Type *base, uint32_t channel, uint32_t value1, uint32_t value2)
+static inline void PDB_SetPulseOutTriggerDelayValue(PDB_Type *base, pdb_pulse_out_trigger_channel_t channel, uint32_t value1, uint32_t value2)
 {
     assert(channel < PDB_PODLY_COUNT);
 

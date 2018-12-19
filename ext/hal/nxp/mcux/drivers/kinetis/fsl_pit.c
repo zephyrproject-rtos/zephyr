@@ -1,34 +1,17 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fsl_pit.h"
+
+/* Component ID definition, used by tools. */
+#ifndef FSL_COMPONENT_ID
+#define FSL_COMPONENT_ID "platform.drivers.pit"
+#endif
 
 /*******************************************************************************
  * Prototypes
@@ -74,6 +57,14 @@ static uint32_t PIT_GetInstance(PIT_Type *base)
     return instance;
 }
 
+/*!
+ * brief Ungates the PIT clock, enables the PIT module, and configures the peripheral for basic operations.
+ *
+ * note This API should be called at the beginning of the application using the PIT driver.
+ *
+ * param base   PIT peripheral base address
+ * param config Pointer to the user's PIT config structure
+ */
 void PIT_Init(PIT_Type *base, const pit_config_t *config)
 {
     assert(config);
@@ -87,6 +78,15 @@ void PIT_Init(PIT_Type *base, const pit_config_t *config)
     /* Enable PIT timers */
     base->MCR &= ~PIT_MCR_MDIS_MASK;
 #endif
+
+#if defined(FSL_FEATURE_PIT_TIMER_COUNT) && (FSL_FEATURE_PIT_TIMER_COUNT)
+    /* Clear the timer enable bit for all channels to make sure the channel's timer is disabled. */
+    for (uint8_t i = 0U; i < FSL_FEATURE_PIT_TIMER_COUNT; i++)
+    {
+        base->CHANNEL[i].TCTRL &= ~PIT_TCTRL_TEN_MASK;
+    }
+#endif /* FSL_FEATURE_PIT_TIMER_COUNT */
+
     /* Config timer operation when in debug mode */
     if (config->enableRunInDebug)
     {
@@ -98,6 +98,11 @@ void PIT_Init(PIT_Type *base, const pit_config_t *config)
     }
 }
 
+/*!
+ * brief Gates the PIT clock and disables the PIT module.
+ *
+ * param base PIT peripheral base address
+ */
 void PIT_Deinit(PIT_Type *base)
 {
 #if defined(FSL_FEATURE_PIT_HAS_MDIS) && FSL_FEATURE_PIT_HAS_MDIS
@@ -113,6 +118,19 @@ void PIT_Deinit(PIT_Type *base)
 
 #if defined(FSL_FEATURE_PIT_HAS_LIFETIME_TIMER) && FSL_FEATURE_PIT_HAS_LIFETIME_TIMER
 
+/*!
+ * brief Reads the current lifetime counter value.
+ *
+ * The lifetime timer is a 64-bit timer which chains timer 0 and timer 1 together.
+ * Timer 0 and 1 are chained by calling the PIT_SetTimerChainMode before using this timer.
+ * The period of lifetime timer is equal to the "period of timer 0 * period of timer 1".
+ * For the 64-bit value, the higher 32-bit has the value of timer 1, and the lower 32-bit
+ * has the value of timer 0.
+ *
+ * param base PIT peripheral base address
+ *
+ * return Current lifetime timer value
+ */
 uint64_t PIT_GetLifetimeTimerCount(PIT_Type *base)
 {
     uint32_t valueH = 0U;

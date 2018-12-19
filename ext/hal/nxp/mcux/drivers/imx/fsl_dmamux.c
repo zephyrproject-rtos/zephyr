@@ -2,7 +2,7 @@
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
  * All rights reserved.
- * 
+ *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
@@ -16,7 +16,6 @@
 #ifndef FSL_COMPONENT_ID
 #define FSL_COMPONENT_ID "platform.drivers.dmamux"
 #endif
-
 
 /*******************************************************************************
  * Prototypes
@@ -62,6 +61,14 @@ static uint32_t DMAMUX_GetInstance(DMAMUX_Type *base)
     return instance;
 }
 
+/*!
+ * brief Initializes the DMAMUX peripheral.
+ *
+ * This function ungates the DMAMUX clock.
+ *
+ * param base DMAMUX peripheral base address.
+ *
+ */
 void DMAMUX_Init(DMAMUX_Type *base)
 {
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
@@ -69,6 +76,13 @@ void DMAMUX_Init(DMAMUX_Type *base)
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
+/*!
+ * brief Deinitializes the DMAMUX peripheral.
+ *
+ * This function gates the DMAMUX clock.
+ *
+ * param base DMAMUX peripheral base address.
+ */
 void DMAMUX_Deinit(DMAMUX_Type *base)
 {
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)

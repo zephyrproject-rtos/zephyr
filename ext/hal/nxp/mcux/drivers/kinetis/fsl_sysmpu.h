@@ -1,31 +1,9 @@
 /*
  * Copyright (c) 2015 - 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
- *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * All rights reserved.
+ * 
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 #ifndef _FSL_SYSMPU_H_
 #define _FSL_SYSMPU_H_
@@ -45,14 +23,14 @@
 /*! @name Driver version */
 /*@{*/
 /*! @brief SYSMPU driver version 2.2.0. */
-#define FSL_SYSMPU_DRIVER_VERSION (MAKE_VERSION(2, 2, 0))
+#define FSL_SYSMPU_DRIVER_VERSION (MAKE_VERSION(2, 2, 1))
 /*@}*/
 
 /*! @brief define the start master port with read and write attributes. */
 #define SYSMPU_MASTER_RWATTRIBUTE_START_PORT (4)
 
 /*! @brief SYSMPU the bit shift for masters with privilege rights: read write and execute. */
-#define SYSMPU_REGION_RWXRIGHTS_MASTER_SHIFT(n) (n * 6)
+#define SYSMPU_REGION_RWXRIGHTS_MASTER_SHIFT(n) ((n) * 6)
 
 /*! @brief SYSMPU masters with read, write and execute rights bit mask. */
 #define SYSMPU_REGION_RWXRIGHTS_MASTER_MASK(n) (0x1Fu << SYSMPU_REGION_RWXRIGHTS_MASTER_SHIFT(n))
@@ -65,7 +43,7 @@
     (((uint32_t)(((uint32_t)(x)) << SYSMPU_REGION_RWXRIGHTS_MASTER_SHIFT(n))) & SYSMPU_REGION_RWXRIGHTS_MASTER_MASK(n))
 
 /*! @brief SYSMPU masters with read, write and execute rights process enable bit shift. */
-#define SYSMPU_REGION_RWXRIGHTS_MASTER_PE_SHIFT(n) (n * 6 + SYSMPU_REGION_RWXRIGHTS_MASTER_WIDTH)
+#define SYSMPU_REGION_RWXRIGHTS_MASTER_PE_SHIFT(n) ((n) * 6 + SYSMPU_REGION_RWXRIGHTS_MASTER_WIDTH)
 
 /*! @brief SYSMPU masters with read, write and execute rights process enable bit mask. */
 #define SYSMPU_REGION_RWXRIGHTS_MASTER_PE_MASK(n) (0x1u << SYSMPU_REGION_RWXRIGHTS_MASTER_PE_SHIFT(n))
@@ -75,7 +53,7 @@
     (((uint32_t)(((uint32_t)(x)) << SYSMPU_REGION_RWXRIGHTS_MASTER_PE_SHIFT(n))) & SYSMPU_REGION_RWXRIGHTS_MASTER_PE_MASK(n))
 
 /*! @brief SYSMPU masters with normal read write permission bit shift. */
-#define SYSMPU_REGION_RWRIGHTS_MASTER_SHIFT(n) ((n - SYSMPU_MASTER_RWATTRIBUTE_START_PORT) * 2 + 24)
+#define SYSMPU_REGION_RWRIGHTS_MASTER_SHIFT(n) (((n) - SYSMPU_MASTER_RWATTRIBUTE_START_PORT) * 2 + 24)
 
 /*! @brief SYSMPU masters with normal read write rights bit mask. */
 #define SYSMPU_REGION_RWRIGHTS_MASTER_MASK(n) (0x3u << SYSMPU_REGION_RWRIGHTS_MASTER_SHIFT(n))
