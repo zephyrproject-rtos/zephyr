@@ -34,6 +34,11 @@
 /* base address for where GPIO registers start */
 #define GPIO_PORTS_BASE       (GPIOA_BASE)
 
+#ifdef CONFIG_GPIO_STM32
+/* Required to enable VDDio2 for port G */
+#include <stm32l4xx_ll_pwr.h>
+#endif
+
 #ifdef CONFIG_SERIAL_HAS_DRIVER
 #include <stm32l4xx_ll_usart.h>
 #include <stm32l4xx_ll_lpuart.h>
