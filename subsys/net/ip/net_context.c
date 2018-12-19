@@ -731,6 +731,28 @@ struct net_pkt *net_context_create_ipv6(struct net_context *context,
 			       net_context_get_iface(context),
 			       net_context_get_ip_proto(context));
 }
+
+static int context_create_ipv6_new(struct net_context *context,
+				   struct net_pkt *pkt,
+				   const struct in6_addr *src,
+				   const struct in6_addr *dst)
+{
+	NET_ASSERT(((struct sockaddr_in6_ptr *)&context->local)->sin6_addr);
+
+	if (!src) {
+		src = ((struct sockaddr_in6_ptr *)&context->local)->sin6_addr;
+	}
+
+	if (net_ipv6_is_addr_unspecified(src)
+	    || net_ipv6_is_addr_mcast(src)) {
+		src = net_if_ipv6_select_src_addr(net_pkt_iface(pkt),
+						  (struct in6_addr *)dst);
+	}
+
+	return net_ipv6_create_new(pkt, src, dst);
+}
+#else
+#define context_create_ipv6_new(...) -1
 #endif /* CONFIG_NET_IPV6 */
 
 int net_context_connect(struct net_context *context,
@@ -1244,6 +1266,14 @@ static int context_setup_udp_packet(struct net_context *context,
 
 		ret = context_create_ipv4_new(context, pkt,
 					      NULL, &addr4->sin_addr);
+	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
+		   net_context_get_family(context) == AF_INET6) {
+		struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)dst_addr;
+
+		dst_port = addr6->sin6_port;
+
+		ret = context_create_ipv6_new(context, pkt,
+					      NULL, &addr6->sin6_addr);
 	}
 
 	if (ret < 0) {
@@ -1289,6 +1319,10 @@ static void context_finalize_packet(struct net_context *context,
 	    net_context_get_family(context) == AF_INET) {
 		net_ipv4_finalize_new(pkt,
 				      net_context_get_ip_proto(context));
+	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
+		   net_context_get_family(context) == AF_INET6) {
+		net_ipv6_finalize_new(pkt,
+				      net_context_get_ip_proto(context));
 	}
 }
 
@@ -1333,7 +1367,15 @@ static int context_sendto_new(struct net_context *context,
 		}
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
 		   net_context_get_family(context) == AF_INET6) {
-		return -ENOTSUP;
+		struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)dst_addr;
+
+		if (addrlen < sizeof(struct sockaddr_in6)) {
+			return -EINVAL;
+		}
+
+		if (net_ipv6_is_addr_unspecified(&addr6->sin6_addr)) {
+			return -EDESTADDRREQ;
+		}
 	} else {
 		NET_DBG("Invalid protocol family %d",
 			net_context_get_family(context));
