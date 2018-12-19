@@ -197,6 +197,20 @@ static int gpio_stm32_init(struct device *device)
 		return -EIO;
 	}
 
+#ifdef PWR_CR2_IOSV
+	if (cfg->port == STM32_PORTG) {
+		/* Port G[15:2] requires external power supply */
+		/* Cf: L4XX RM, §5.1 Power supplies */
+		if (LL_APB1_GRP1_IsEnabledClock(LL_APB1_GRP1_PERIPH_PWR)) {
+			LL_PWR_EnableVddIO2();
+		} else {
+			LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
+			LL_PWR_EnableVddIO2();
+			LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_PWR);
+		}
+	}
+#endif /* PWR_CR2_IOSV */
+
 	return 0;
 }
 
