@@ -143,7 +143,7 @@ Prerequisites:
    Download and install the latest `XDS-110 emulation package`_.
 
    Follow the directions here to update the firmware:
-   http://processors.wiki.ti.com/index.php/XDS110#Updating_the_XDS110_Firmware
+   http://software-dl.ti.com/ccs/esd/documents/xdsdebugprobes/emu_xds110.html#updating-the-xds110-firmware
 
    Note that the emulation package install may place the xdsdfu utility
    in <install_dir>/ccs_base/common/uscif/xds110/.
