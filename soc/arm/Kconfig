@@ -20,3 +20,9 @@ config CPU_HAS_ARM_SAU
 	select CPU_HAS_TEE
 	help
 	  MCU implements the ARM Security Attribution Unit (SAU).
+
+config HAS_SWO
+	bool
+	# Omit prompt to signify "hidden" option
+	help
+	  When enabled, indicates that SoC has an SWO output
