@@ -184,6 +184,7 @@ int net_icmpv6_get_hdr(struct net_pkt *pkt, struct net_icmp_hdr *hdr);
 int net_icmpv6_set_hdr(struct net_pkt *pkt, struct net_icmp_hdr *hdr);
 
 int net_icmpv6_set_chksum(struct net_pkt *pkt);
+int net_icmpv6_create(struct net_pkt *pkt, u8_t icmp_type, u8_t icmp_code);
 int net_icmpv6_finalize(struct net_pkt *pkt);
 
 int net_icmpv6_get_ns_hdr(struct net_pkt *pkt, struct net_icmpv6_ns_hdr *hdr);

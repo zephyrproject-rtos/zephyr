@@ -272,7 +272,7 @@ int net_icmpv6_get_ra_hdr(struct net_pkt *pkt, struct net_icmpv6_ra_hdr *hdr)
 	return 0;
 }
 
-static int icmpv6_create(struct net_pkt *pkt, u8_t icmp_type, u8_t icmp_code)
+int net_icmpv6_create(struct net_pkt *pkt, u8_t icmp_type, u8_t icmp_code)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmp_access,
 					      struct net_icmp_hdr);
@@ -336,7 +336,7 @@ static enum net_verdict icmpv6_handle_echo_request(struct net_pkt *pkt,
 		goto drop;
 	}
 
-	if (icmpv6_create(reply, NET_ICMPV6_ECHO_REPLY, 0) ||
+	if (net_icmpv6_create(reply, NET_ICMPV6_ECHO_REPLY, 0) ||
 	    net_pkt_copy_new(reply, pkt, payload_len)) {
 		NET_DBG("DROP: wrong buffer");
 		goto drop;
@@ -432,7 +432,7 @@ int net_icmpv6_send_error(struct net_pkt *orig, u8_t type, u8_t code,
 	}
 
 	if (net_ipv6_create_new(pkt, src, &ip_hdr->src) ||
-	    icmpv6_create(pkt, type, code)) {
+	    net_icmpv6_create(pkt, type, code)) {
 		goto drop;
 	}
 
@@ -503,7 +503,7 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 	}
 
 	if (net_ipv6_create_new(pkt, src, dst) ||
-	    icmpv6_create(pkt, NET_ICMPV6_ECHO_REQUEST, 0)) {
+	    net_icmpv6_create(pkt, NET_ICMPV6_ECHO_REQUEST, 0)) {
 		goto drop;
 	}
 
