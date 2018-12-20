@@ -143,6 +143,12 @@ config HAS_HW_NRF_SPIS1
 config HAS_HW_NRF_SPIS2
 	bool
 
+config HAS_HW_NRF_SPIS3
+	bool
+
+config HAS_HW_NRF_SPU
+	bool
+
 config HAS_HW_NRF_SWI0
 	bool
 
@@ -191,10 +197,22 @@ config HAS_HW_NRF_TWIM0
 config HAS_HW_NRF_TWIM1
 	bool
 
+config HAS_HW_NRF_TWIM2
+	bool
+
+config HAS_HW_NRF_TWIM3
+	bool
+
 config HAS_HW_NRF_TWIS0
 	bool
 
 config HAS_HW_NRF_TWIS1
+	bool
+
+config HAS_HW_NRF_TWIS2
+	bool
+
+config HAS_HW_NRF_TWIS3
 	bool
 
 config HAS_HW_NRF_UART0
@@ -204,6 +222,12 @@ config HAS_HW_NRF_UARTE0
 	bool
 
 config HAS_HW_NRF_UARTE1
+	bool
+
+config HAS_HW_NRF_UARTE2
+	bool
+
+config HAS_HW_NRF_UARTE3
 	bool
 
 config HAS_HW_NRF_USBD
