@@ -118,8 +118,8 @@ int net_ipv6_start_dad(struct net_if *iface, struct net_if_addr *ifaddr);
 #endif
 
 int net_ipv6_send_ns(struct net_if *iface, struct net_pkt *pending,
-		     struct in6_addr *src, struct in6_addr *dst,
-		     struct in6_addr *tgt, bool is_my_address);
+		     const struct in6_addr *src, const struct in6_addr *dst,
+		     const struct in6_addr *tgt, bool is_my_address);
 
 int net_ipv6_send_rs(struct net_if *iface);
 int net_ipv6_start_rs(struct net_if *iface);
