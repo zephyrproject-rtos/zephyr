@@ -61,7 +61,8 @@ NET_PKT_TX_SLAB_DEFINE(pkts_slab, 2);
 NET_BUF_POOL_DEFINE(data_pool, 2, 128, 0, NULL);
 
 static enum net_verdict handle_test_msg(struct net_pkt *pkt,
-					struct net_ipv6_hdr *ip_hdr)
+					struct net_ipv6_hdr *ip_hdr,
+					struct net_icmp_hdr *icmp_hdr)
 {
 	struct net_buf *last = net_buf_frag_last(pkt->frags);
 	enum net_verdict ret;

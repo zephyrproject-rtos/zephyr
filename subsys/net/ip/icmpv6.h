@@ -134,7 +134,8 @@ struct net_icmpv6_echo_req {
 
 typedef enum net_verdict (*icmpv6_callback_handler_t)(
 						struct net_pkt *pkt,
-						struct net_ipv6_hdr *ip_hdr);
+						struct net_ipv6_hdr *ip_hdr,
+						struct net_icmp_hdr *icmp_hdr);
 
 const char *net_icmpv6_type2str(int icmpv6_type);
 
