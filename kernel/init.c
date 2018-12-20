@@ -188,7 +188,7 @@ void _data_copy(void)
 #endif	/* CONFIG_CODE_DATA_RELOCATION */
 #ifdef CONFIG_APP_SHARED_MEM
 	(void)memcpy(&_app_smem_start, &_app_smem_rom_start,
-		 ((u32_t) &_app_smem_end - (u32_t) &_app_smem_start));
+		     ((u32_t) &_app_smem_size));
 #endif
 #ifdef CONFIG_APPLICATION_MEMORY
 	(void)memcpy(&__app_data_ram_start, &__app_data_rom_start,
