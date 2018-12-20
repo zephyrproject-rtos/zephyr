@@ -302,6 +302,31 @@ config LOG_BACKEND_UART
 	help
 	  When enabled backend is using UART to output logs.
 
+config LOG_BACKEND_SWO
+	bool "Enable Serial Wire Output (SWO) backend"
+	depends on HAS_SWO
+	help
+	  When enabled, backend will use SWO for logging.
+
+if LOG_BACKEND_SWO
+
+config LOG_BACKEND_SWO_FREQ_HZ
+	int "Set SWO output frequency"
+	default 0
+	help
+	  Set SWO output frequency. Value 0 will select maximum frequency
+	  supported by the given MCU. Not all debug probes support high
+	  frequency SWO operation. In this case the frequency has to be set
+	  manually.
+
+	  SWO value defined by this option will be configured at boot. Most SWO
+	  viewer programs will configure SWO frequency when attached to the
+	  debug probe. Such configuration will persist only until the device
+	  reset. To ensure flawless operation the frequency configured here and
+	  by the SWO viewer program has to match.
+
+endif # LOG_BACKEND_SWO
+
 config LOG_BACKEND_RTT
 	bool "Enable Segger J-Link RTT backend"
 	depends on USE_SEGGER_RTT
@@ -448,14 +473,16 @@ endif # LOG_BACKEND_NET
 
 config LOG_BACKEND_SHOW_COLOR
 	bool "Enable colors in the backend"
-	depends on LOG_BACKEND_UART || LOG_BACKEND_NATIVE_POSIX || LOG_BACKEND_RTT
+	depends on LOG_BACKEND_UART || LOG_BACKEND_NATIVE_POSIX || LOG_BACKEND_RTT \
+	           || LOG_BACKEND_SWO
 	default y
 	help
 	  When enabled selected backend prints errors in red and warning in yellow.
 
 config LOG_BACKEND_FORMAT_TIMESTAMP
 	bool "Enable timestamp formatting in the backend"
-	depends on LOG_BACKEND_UART || LOG_BACKEND_NATIVE_POSIX || LOG_BACKEND_RTT
+	depends on LOG_BACKEND_UART || LOG_BACKEND_NATIVE_POSIX || LOG_BACKEND_RTT \
+	           || LOG_BACKEND_SWO
 	default y
 	help
 	  When enabled timestamp is formatted to hh:mm:ss:ms,us.
