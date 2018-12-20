@@ -11,29 +11,15 @@ config BOARD
 
 if I2C
 
-config I2C_NRFX
-	default y
-
-if I2C_NRFX
-
 config I2C_0
 	default y
-
-endif # I2C_NRFX
 
 endif # I2C
 
 if SPI
 
-config SPI_NRFX
-	default y
-
-if SPI_NRFX
-
 config SPI_0
 	default y
-
-endif # SPI_NRFX
 
 endif # SPI
 
