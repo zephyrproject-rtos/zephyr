@@ -324,10 +324,10 @@ zephyr_cc_option(-Wpointer-arith)
 
 # Declare MPU userspace dependencies before the linker scripts to make
 # sure the order of dependencies are met
-if(CONFIG_CPU_HAS_MPU AND CONFIG_USERSPACE)
-  if(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT AND CONFIG_APP_SHARED_MEM )
+if(CONFIG_APP_SHARED_MEM AND CONFIG_USERSPACE)
     set(APP_SMEM_DEP app_smem_linker)
-  endif()
+endif()
+if(CONFIG_CPU_HAS_MPU AND CONFIG_USERSPACE)
   if(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT AND CONFIG_ARC AND CONFIG_APPLICATION_MEMORY)
     set(ALIGN_SIZING_DEP app_sizing_prebuilt linker_app_sizing_script)
   endif()
@@ -1163,30 +1163,29 @@ configure_file(
      $ENV{ZEPHYR_BASE}/include/arch/arm/cortex_m/scripts/app_smem.ld
      ${PROJECT_BINARY_DIR}/include/generated/app_smem.ld)
 
+if(CONFIG_APP_SHARED_MEM AND CONFIG_USERSPACE)
+  set(APP_SMEM_LD "${PROJECT_BINARY_DIR}/include/generated/app_smem.ld")
+  set(OBJ_FILE_DIR "${PROJECT_BINARY_DIR}/../")
+
+  add_custom_target(
+    ${APP_SMEM_DEP} ALL
+    DEPENDS app
+    kernel
+    )
+
+  add_custom_command(
+    TARGET ${APP_SMEM_DEP}
+    COMMAND ${PYTHON_EXECUTABLE}
+    ${ZEPHYR_BASE}/scripts/gen_app_partitions.py
+    -d ${OBJ_FILE_DIR}
+    -o ${APP_SMEM_LD}
+    $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/
+    COMMENT "Generating power of 2 aligned app_smem linker section"
+    )
+endif()
+
 if(CONFIG_CPU_HAS_MPU AND CONFIG_USERSPACE)
-
-    if(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT AND CONFIG_APP_SHARED_MEM)
-        set(APP_SMEM_LD "${PROJECT_BINARY_DIR}/include/generated/app_smem.ld")
-        set(OBJ_FILE_DIR "${PROJECT_BINARY_DIR}/../")
-
-        add_custom_target(
-          ${APP_SMEM_DEP} ALL
-          DEPENDS app
-          kernel
-         )
-
-        add_custom_command(
-          TARGET ${APP_SMEM_DEP}
-          COMMAND ${PYTHON_EXECUTABLE}
-          ${ZEPHYR_BASE}/scripts/gen_app_partitions.py
-          -d ${OBJ_FILE_DIR}
-          -o ${APP_SMEM_LD}
-          $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
-          WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/
-          COMMENT "Generating power of 2 aligned app_smem linker section"
-         )
-  endif()
-
 
   if(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT AND CONFIG_ARC AND CONFIG_APPLICATION_MEMORY)
 
