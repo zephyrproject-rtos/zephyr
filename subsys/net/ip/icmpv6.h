@@ -48,15 +48,11 @@ struct net_icmpv6_ra_hdr {
 } __packed;
 
 struct net_icmpv6_nd_opt_mtu {
-	u8_t type;
-	u8_t len;
 	u16_t reserved;
 	u32_t mtu;
 } __packed;
 
 struct net_icmpv6_nd_opt_prefix_info {
-	u8_t type;
-	u8_t len;
 	u8_t prefix_len;
 	u8_t flags;
 	u32_t valid_lifetime;
@@ -66,8 +62,6 @@ struct net_icmpv6_nd_opt_prefix_info {
 } __packed;
 
 struct net_icmpv6_nd_opt_6co {
-	u8_t type;
-	u8_t len;
 	u8_t context_len;
 	u8_t flag; /*res:3,c:1,cid:4 */
 	u16_t reserved;
