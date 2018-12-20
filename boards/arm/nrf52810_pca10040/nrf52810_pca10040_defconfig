@@ -9,7 +9,6 @@ CONFIG_ARM_MPU=y
 
 # Enable UARTE
 CONFIG_SERIAL=y
-CONFIG_UART_NRFX=y
 CONFIG_UART_0_NRF_UARTE=y
 
 # enable console

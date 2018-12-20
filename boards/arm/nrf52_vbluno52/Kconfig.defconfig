@@ -11,15 +11,8 @@ config BOARD
 
 if I2C
 
-config I2C_NRFX
-	default y
-
-if I2C_NRFX
-
 config I2C_0
 	default y
-
-endif #I2C_NRFX
 
 if I2C_0
 
