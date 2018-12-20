@@ -51,6 +51,13 @@ config UART_0_INTERRUPT_DRIVEN
 	help
 	  This option enables UART interrupt support on port 0.
 
+config UART_0_ASYNC
+	bool "Enable Asynchronous API support on port 0"
+	depends on UART_ASYNC_API
+	default y
+	help
+	  This option enables UART Asynchronous API support on port 0.
+
 config UART_0_NRF_PARITY_BIT
 	bool "Enable parity bit"
 	help
@@ -71,6 +78,20 @@ config UART_0_NRF_TX_BUFFER_SIZE
 	  Size of the transmit buffer for API function: fifo_fill.
 	  This value is limited by range of TXD.MAXCNT register for
 	  particular SoC.
+
+config UART_0_NRF_HW_ASYNC
+	bool "Use hardware RX byte counting"
+	depends on UART_0_NRF_UARTE
+	depends on UART_ASYNC_API
+	help
+	  If default driver uses interrupts to count incoming bytes, it is possible
+	  that with higher speeds and/or high cpu load some data can be lost.
+	  It is recommended to use hardware byte counting in such scenarios.
+	  Hardware RX byte counting requires timer instance and one PPI channel
+
+config UART_0_NRF_HW_ASYNC_TIMER
+	int "Timer instance"
+	depends on UART_0_NRF_HW_ASYNC
 
 endif # UART_0_NRF_UART || UART_0_NRF_UARTE
 
@@ -94,6 +115,13 @@ config UART_1_INTERRUPT_DRIVEN
 	help
 	  This option enables UART interrupt support on port 1.
 
+config UART_1_ASYNC
+	bool "Enable Asynchronous API support on port 1"
+	depends on UART_ASYNC_API
+	default y
+	help
+	  This option enables UART Asynchronous API support on port 1.
+
 config UART_1_NRF_PARITY_BIT
 	bool "Enable parity bit"
 	help
@@ -107,12 +135,26 @@ config UART_1_NRF_FLOW_CONTROL
 
 config UART_1_NRF_TX_BUFFER_SIZE
 	int "Size of RAM buffer"
+	depends on UART_INTERRUPT_DRIVEN
 	range 1 65535
 	default 32
 	help
 	  Size of the transmit buffer for API function: fifo_fill.
 	  This value is limited by range of TXD.MAXCNT register for
 	  particular SoC.
+
+config UART_1_NRF_HW_ASYNC
+	bool "Use hardware RX byte counting"
+	depends on UART_1_ASYNC
+	help
+	  If default driver uses interrupts to count incoming bytes, it is possible
+	  that with higher speeds and/or high cpu load some data can be lost.
+	  It is recommended to use hardware byte counting in such scenarios.
+	  Hardware RX byte counting requires timer instance and one PPI channel
+
+config UART_1_NRF_HW_ASYNC_TIMER
+	int "Timer instance"
+	depends on UART_1_NRF_HW_ASYNC
 
 endif # UART_1_NRF_UARTE
 
@@ -136,6 +178,13 @@ config UART_2_INTERRUPT_DRIVEN
 	help
 	  This option enables UART interrupt support on port 2.
 
+config UART_2_ASYNC
+	bool "Enable Asynchronous API support on port 2"
+	depends on UART_ASYNC_API
+	default y
+	help
+	  This option enables UART Asynchronous API support on port 2.
+
 config UART_2_NRF_PARITY_BIT
 	bool "Enable parity bit"
 	help
@@ -155,6 +204,19 @@ config UART_2_NRF_TX_BUFFER_SIZE
 	  Size of the transmit buffer for API function: fifo_fill.
 	  This value is limited by range of TXD.MAXCNT register for
 	  particular SoC.
+
+config UART_2_NRF_HW_ASYNC
+	bool "Use hardware RX byte counting"
+	depends on UART_2_ASYNC
+	help
+	  If default driver uses interrupts to count incoming bytes, it is possible
+	  that with higher speeds and/or high cpu load some data can be lost.
+	  It is recommended to use hardware byte counting in such scenarios.
+	  Hardware RX byte counting requires timer instance and one PPI channel
+
+config UART_2_NRF_HW_ASYNC_TIMER
+	int "Timer instance"
+	depends on UART_2_NRF_HW_ASYNC
 
 endif # UART_2_NRF_UARTE
 
@@ -178,6 +240,13 @@ config UART_3_INTERRUPT_DRIVEN
 	help
 	  This option enables UART interrupt support on port 3.
 
+config UART_3_ASYNC
+	bool "Enable Asynchronous API support on port 3"
+	depends on UART_ASYNC_API
+	default y
+	help
+	  This option enables UART Asynchronous API support on port 3.
+
 config UART_3_NRF_PARITY_BIT
 	bool "Enable parity bit"
 	help
@@ -198,7 +267,61 @@ config UART_3_NRF_TX_BUFFER_SIZE
 	  This value is limited by range of TXD.MAXCNT register for
 	  particular SoC.
 
+config UART_3_NRF_HW_ASYNC
+	bool "Use hardware RX byte counting"
+	depends on UART_3_ASYNC
+	help
+	  If default driver uses interrupts to count incoming bytes, it is possible
+	  that with higher speeds and/or high cpu load some data can be lost.
+	  It is recommended to use hardware byte counting in such scenarios.
+	  Hardware RX byte counting requires timer instance and one PPI channel
+
+config UART_3_NRF_HW_ASYNC_TIMER
+	int "Timer instance"
+	depends on UART_3_NRF_HW_ASYNC
+
 endif # UART_3_NRF_UARTE
+
+
+config NRFX_TIMER0
+	default y
+	depends on UART_0_NRF_HW_ASYNC_TIMER = 0 || UART_1_NRF_HW_ASYNC_TIMER = 0 || \
+		   UART_3_NRF_HW_ASYNC_TIMER = 0 || UART_2_NRF_HW_ASYNC_TIMER = 0
+
+config NRFX_TIMER1
+	default y
+	depends on UART_0_NRF_HW_ASYNC_TIMER = 1 || UART_1_NRF_HW_ASYNC_TIMER = 1 || \
+		   UART_3_NRF_HW_ASYNC_TIMER = 1 || UART_2_NRF_HW_ASYNC_TIMER = 1
+
+config NRFX_TIMER2
+	default y
+	depends on UART_0_NRF_HW_ASYNC_TIMER = 2 || UART_1_NRF_HW_ASYNC_TIMER = 2 || \
+		   UART_3_NRF_HW_ASYNC_TIMER = 2 || UART_2_NRF_HW_ASYNC_TIMER = 2
+
+config NRFX_TIMER3
+	default y
+	depends on UART_0_NRF_HW_ASYNC_TIMER = 3 || UART_1_NRF_HW_ASYNC_TIMER = 3 || \
+		   UART_3_NRF_HW_ASYNC_TIMER = 3 || UART_2_NRF_HW_ASYNC_TIMER = 3
+
+config NRFX_TIMER4
+	default y
+	depends on UART_0_NRF_HW_ASYNC_TIMER = 4 || UART_1_NRF_HW_ASYNC_TIMER = 4 || \
+		   UART_3_NRF_HW_ASYNC_TIMER = 4 || UART_2_NRF_HW_ASYNC_TIMER = 4
+
+
+if UART_0_NRF_HW_ASYNC || UART_1_NRF_HW_ASYNC || UART_2_NRF_HW_ASYNC || UART_3_NRF_HW_ASYNC
+
+config NRFX_TIMER
+	default y
+
+config NRFX_PPI
+	default y
+
+config UARTE_NRF_HW_ASYNC
+	bool
+	default y
+
+endif
 
 config NRF_UART_PERIPHERAL
 	bool
