@@ -897,7 +897,6 @@ static inline struct net_nbr *handle_ns_neighbor(struct net_pkt *pkt,
 {
 	struct net_linkaddr_storage lladdr;
 	struct net_linkaddr nbr_lladdr;
-	u16_t pos;
 
 	lladdr.len = 8 * ll_len - 2;
 
@@ -1910,44 +1909,32 @@ int net_ipv6_start_rs(struct net_if *iface)
 	return net_ipv6_send_rs(iface);
 }
 
-static inline struct net_buf *handle_ra_neighbor(struct net_pkt *pkt,
-						 struct net_buf *frag,
-						 u8_t len,
-						 u16_t offset, u16_t *pos,
-						 struct net_nbr **nbr)
+static inline struct net_nbr *handle_ra_neighbor(struct net_pkt *pkt, u8_t len)
 
 {
 	struct net_linkaddr lladdr;
 	struct net_linkaddr_storage llstorage;
 	u8_t padding;
 
-	if (!nbr) {
-		return NULL;
-	}
-
 	llstorage.len = NET_LINK_ADDR_MAX_LENGTH;
-	lladdr.len = NET_LINK_ADDR_MAX_LENGTH;
 	lladdr.addr = llstorage.addr;
+	lladdr.len = NET_LINK_ADDR_MAX_LENGTH;
 	if (net_pkt_lladdr_src(pkt)->len < lladdr.len) {
 		lladdr.len = net_pkt_lladdr_src(pkt)->len;
 	}
 
-	frag = net_frag_read(frag, offset, pos, lladdr.len, lladdr.addr);
-	if (!frag && offset) {
+	if (net_pkt_read_new(pkt, lladdr.addr, lladdr.len)) {
 		return NULL;
 	}
 
 	padding = len * 8 - 2 - lladdr.len;
 	if (padding) {
-		frag = net_frag_read(frag, *pos, pos, padding, NULL);
-		if (!frag && *pos) {
+		if (net_pkt_skip(pkt, padding)) {
 			return NULL;
 		}
 	}
 
-	*nbr = nbr_add(pkt, &lladdr, true, NET_IPV6_NBR_STATE_STALE);
-
-	return frag;
+	return nbr_add(pkt, &lladdr, true, NET_IPV6_NBR_STATE_STALE);
 }
 
 static inline void handle_prefix_onlink(struct net_pkt *pkt,
@@ -2010,12 +1997,11 @@ static inline void handle_prefix_onlink(struct net_pkt *pkt,
 		NET_DBG("Interface %p update prefix %s/%u lifetime %u",
 			net_pkt_iface(pkt),
 			log_strdup(net_sprint_ipv6_addr(&prefix_info->prefix)),
-			prefix_info->prefix_len,
-			prefix_info->valid_lifetime);
+			prefix_info->prefix_len, prefix_info->valid_lifetime);
 
 		net_if_ipv6_prefix_set_lf(prefix, false);
 		net_if_ipv6_prefix_set_timer(prefix,
-					prefix_info->valid_lifetime);
+					     prefix_info->valid_lifetime);
 		break;
 	}
 }
@@ -2075,8 +2061,8 @@ static inline void handle_prefix_autonomous(struct net_pkt *pkt,
 				log_strdup(net_sprint_ipv6_addr(&addr)),
 				prefix_info->valid_lifetime);
 
-			net_if_ipv6_addr_update_lifetime(ifaddr,
-						  prefix_info->valid_lifetime);
+			net_if_ipv6_addr_update_lifetime(
+				ifaddr, prefix_info->valid_lifetime);
 		} else {
 			NET_DBG("Timer updating for address %s "
 				"lifetime %u secs",
@@ -2100,109 +2086,77 @@ static inline void handle_prefix_autonomous(struct net_pkt *pkt,
 	}
 }
 
-static inline struct net_buf *handle_ra_prefix(struct net_pkt *pkt,
-					       struct net_buf *frag,
-					       u8_t len,
-					       u16_t offset, u16_t *pos)
+static inline bool handle_ra_prefix(struct net_pkt *pkt)
 {
-	struct net_icmpv6_nd_opt_prefix_info prefix_info;
+	NET_PKT_DATA_ACCESS_DEFINE(rapfx_access,
+				   struct net_icmpv6_nd_opt_prefix_info);
+	struct net_icmpv6_nd_opt_prefix_info *pfx_info;
 
-	prefix_info.type = NET_ICMPV6_ND_OPT_PREFIX_INFO;
-	prefix_info.len = len * 8 - 2;
-
-	frag = net_frag_read(frag, offset, pos, 1, &prefix_info.prefix_len);
-	frag = net_frag_read(frag, *pos, pos, 1, &prefix_info.flags);
-	frag = net_frag_read_be32(frag, *pos, pos, &prefix_info.valid_lifetime);
-	frag = net_frag_read_be32(frag, *pos, pos,
-				  &prefix_info.preferred_lifetime);
-	/* Skip reserved bytes */
-	frag = net_frag_skip(frag, *pos, pos, 4);
-	frag = net_frag_read(frag, *pos, pos, sizeof(struct in6_addr),
-			     prefix_info.prefix.s6_addr);
-	if (!frag && *pos) {
-		return NULL;
+	pfx_info = (struct net_icmpv6_nd_opt_prefix_info *)
+				net_pkt_get_data_new(pkt, &rapfx_access);
+	if (!pfx_info) {
+		return false;
 	}
 
-	if (prefix_info.valid_lifetime >= prefix_info.preferred_lifetime &&
-	    !net_ipv6_is_ll_addr(&prefix_info.prefix)) {
+	net_pkt_acknowledge_data(pkt, &rapfx_access);
 
-		if (prefix_info.flags & NET_ICMPV6_RA_FLAG_ONLINK) {
-			handle_prefix_onlink(pkt, &prefix_info);
+	pfx_info->valid_lifetime = ntohl(pfx_info->valid_lifetime);
+	pfx_info->preferred_lifetime = ntohl(pfx_info->preferred_lifetime);
+
+	if (pfx_info->valid_lifetime >= pfx_info->preferred_lifetime &&
+	    !net_ipv6_is_ll_addr(&pfx_info->prefix)) {
+		if (pfx_info->flags & NET_ICMPV6_RA_FLAG_ONLINK) {
+			handle_prefix_onlink(pkt, pfx_info);
 		}
 
-		if ((prefix_info.flags & NET_ICMPV6_RA_FLAG_AUTONOMOUS) &&
-		    prefix_info.valid_lifetime &&
-		    (prefix_info.prefix_len == NET_IPV6_DEFAULT_PREFIX_LEN)) {
-			handle_prefix_autonomous(pkt, &prefix_info);
+		if ((pfx_info->flags & NET_ICMPV6_RA_FLAG_AUTONOMOUS) &&
+		    pfx_info->valid_lifetime &&
+		    (pfx_info->prefix_len == NET_IPV6_DEFAULT_PREFIX_LEN)) {
+			handle_prefix_autonomous(pkt, pfx_info);
 		}
 	}
 
-	return frag;
+	return true;
 }
 
 #if defined(CONFIG_NET_6LO_CONTEXT)
 /* 6lowpan Context Option RFC 6775, 4.2 */
-static inline struct net_buf *handle_ra_6co(struct net_pkt *pkt,
-					    struct net_buf *frag,
-					    u8_t len,
-					    u16_t offset, u16_t *pos)
+static inline bool handle_ra_6co(struct net_pkt *pkt, u8_t len)
 {
-	struct net_icmpv6_nd_opt_6co context;
+	NET_PKT_DATA_ACCESS_DEFINE(ctx_access, struct net_icmpv6_nd_opt_6co);
+	struct net_icmpv6_nd_opt_6co *context;
 
-	context.type = NET_ICMPV6_ND_OPT_6CO;
-	context.len = len * 8 - 2;
-
-	frag = net_frag_read_u8(frag, offset, pos, &context.context_len);
+	context = (struct net_icmpv6_nd_opt_6co *)
+				net_pkt_get_data_new(pkt, &ctx_access);
+	if (!context) {
+		return false;
+	}
 
 	/* RFC 6775, 4.2
 	 * Context Length: 8-bit unsigned integer.  The number of leading
 	 * bits in the Context Prefix field that are valid.  The value ranges
 	 * from 0 to 128.  If it is more than 64, then the Length MUST be 3.
 	 */
-	if (context.context_len > 64 && len != 3) {
-		return NULL;
+	if ((context->context_len > 64 && len != 3) ||
+	    (context->context_len <= 64 && len != 2)) {
+		return false;
 	}
 
-	if (context.context_len <= 64 && len != 2) {
-		return NULL;
-	}
-
-	context.context_len = context.context_len / 8;
-	frag = net_frag_read_u8(frag, *pos, pos, &context.flag);
-
-	/* Skip reserved bytes */
-	frag = net_frag_skip(frag, *pos, pos, 2);
-	frag = net_frag_read_be16(frag, *pos, pos, &context.lifetime);
-
-	/* RFC 6775, 4.2 (Length field). Length can be 2 or 3 depending
-	 * on the length of context prefix field.
-	 */
-	if (len == 3) {
-		frag = net_frag_read(frag, *pos, pos, sizeof(struct in6_addr),
-				     context.prefix.s6_addr);
-	} else if (len == 2) {
-		/* If length is 2 means only 64 bits of context prefix
-		 * is available, rest set to zeros.
-		 */
-		frag = net_frag_read(frag, *pos, pos, 8,
-				     context.prefix.s6_addr);
-	}
-
-	if (!frag && *pos) {
-		return NULL;
-	}
+	context->context_len = context->context_len / 8;
 
 	/* context_len: The number of leading bits in the Context Prefix
-	 * field that are valid. So set remaining data to zero.
+	 * field that are valid. Rest must be set to 0 by the sender and
+	 * ignored by the receiver. But since there is no way to make sure
+	 * the sender followed the rule, let's make sure rest is set to 0.
 	 */
-	if (context.context_len != sizeof(struct in6_addr)) {
-		(void)memset(context.prefix.s6_addr + context.context_len, 0,
-			     sizeof(struct in6_addr) - context.context_len);
+	if (context->context_len != sizeof(struct in6_addr)) {
+		(void)memset(context->prefix.s6_addr + context->context_len, 0,
+			     sizeof(struct in6_addr) - context->context_len);
 	}
 
-	net_6lo_set_context(net_pkt_iface(pkt), &context);
+	net_6lo_set_context(net_pkt_iface(pkt), context);
 
-	return frag;
+	return true;
 }
 #endif
 
@@ -2210,109 +2164,90 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt,
 					struct net_ipv6_hdr *ip_hdr,
 					struct net_icmp_hdr *icmp_hdr)
 {
-	u16_t total_len = net_pkt_get_len(pkt);
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ra_access,
+					      struct net_icmpv6_ra_hdr);
+	NET_PKT_DATA_ACCESS_DEFINE(nd_access, struct net_icmpv6_nd_opt_hdr);
+	u16_t length = net_pkt_get_len(pkt);
 	struct net_nbr *nbr = NULL;
-	struct net_icmpv6_ra_hdr ra_hdr;
+	struct net_icmpv6_nd_opt_hdr *nd_opt_hdr;
+	struct net_icmpv6_ra_hdr *ra_hdr;
 	struct net_if_router *router;
-	struct net_buf *frag;
-	u16_t router_lifetime;
-	u32_t reachable_time;
-	u32_t retrans_timer;
-	u8_t hop_limit;
-	u16_t offset;
-	u8_t length;
-	u8_t type;
 	u32_t mtu;
-	int ret;
+
+	ra_hdr = (struct net_icmpv6_ra_hdr *)net_pkt_get_data_new(pkt,
+								  &ra_access);
+	if (!ra_hdr) {
+		NET_ERR("DROP: NULL RA header");
+		goto drop;
+	}
 
 	dbg_addr_recv("Router Advertisement", &ip_hdr->src, &ip_hdr->dst);
 
 	net_stats_update_ipv6_nd_recv(net_pkt_iface(pkt));
 
-	if ((total_len < (sizeof(struct net_ipv6_hdr) +
-			  sizeof(struct net_icmp_hdr) +
-			  sizeof(struct net_icmpv6_ra_hdr) +
-			  sizeof(struct net_icmpv6_nd_opt_hdr))) ||
-	    (ip_hdr->hop_limit != NET_IPV6_ND_HOP_LIMIT) ||
-	    !net_ipv6_is_ll_addr(&ip_hdr->src)) {
-		struct net_icmp_hdr icmp_hdr;
-
-		ret = net_icmpv6_get_hdr(pkt, &icmp_hdr);
-		if (ret < 0 || icmp_hdr.code != 0) {
-			goto drop;
-		}
-	}
-
-	frag = pkt->frags;
-	offset = sizeof(struct net_ipv6_hdr) + net_pkt_ipv6_ext_len(pkt) +
-		sizeof(struct net_icmp_hdr);
-
-	frag = net_frag_read_u8(frag, offset, &offset, &hop_limit);
-	frag = net_frag_skip(frag, offset, &offset, 1); /* flags */
-	if (!frag) {
+	if (((length < (sizeof(struct net_ipv6_hdr) +
+			sizeof(struct net_icmp_hdr) +
+			sizeof(struct net_icmpv6_ra_hdr) +
+			sizeof(struct net_icmpv6_nd_opt_hdr))) ||
+	     (ip_hdr->hop_limit != NET_IPV6_ND_HOP_LIMIT) ||
+	     !net_ipv6_is_ll_addr(&ip_hdr->src)) && icmp_hdr->code != 0) {
 		goto drop;
 	}
 
-	if (hop_limit) {
-		net_ipv6_set_hop_limit(net_pkt_iface(pkt), hop_limit);
+	net_pkt_acknowledge_data(pkt, &ra_access);
+
+	ra_hdr->router_lifetime = ntohs(ra_hdr->router_lifetime);
+	ra_hdr->reachable_time = ntohl(ra_hdr->reachable_time);
+	ra_hdr->retrans_timer = ntohl(ra_hdr->retrans_timer);
+
+	if (ra_hdr->cur_hop_limit) {
+		net_ipv6_set_hop_limit(net_pkt_iface(pkt),
+				       ra_hdr->cur_hop_limit);
 		NET_DBG("New hop limit %d",
 			net_if_ipv6_get_hop_limit(net_pkt_iface(pkt)));
 	}
 
-	frag = net_frag_read_be16(frag, offset, &offset, &router_lifetime);
-	frag = net_frag_read_be32(frag, offset, &offset, &reachable_time);
-	frag = net_frag_read_be32(frag, offset, &offset, &retrans_timer);
-	if (!frag) {
-		goto drop;
-	}
-
-	ret = net_icmpv6_get_ra_hdr(pkt, &ra_hdr);
-	if (ret < 0) {
-		NET_ERR("could not get ra_hdr");
-		goto drop;
-	}
-
-	if (reachable_time && reachable_time <= MAX_REACHABLE_TIME &&
+	if (ra_hdr->reachable_time &&
+	    ra_hdr->reachable_time <= MAX_REACHABLE_TIME &&
 	    (net_if_ipv6_get_reachable_time(net_pkt_iface(pkt)) !=
-	     ra_hdr.reachable_time)) {
+	     ra_hdr->reachable_time)) {
 		net_if_ipv6_set_base_reachable_time(net_pkt_iface(pkt),
-						    reachable_time);
-
+						    ra_hdr->reachable_time);
 		net_if_ipv6_set_reachable_time(
 			net_pkt_iface(pkt)->config.ip.ipv6);
 	}
 
-	if (retrans_timer) {
+	if (ra_hdr->retrans_timer) {
 		net_if_ipv6_set_retrans_timer(net_pkt_iface(pkt),
-					      retrans_timer);
+					      ra_hdr->retrans_timer);
 	}
 
-	while (frag) {
-		frag = net_frag_read(frag, offset, &offset, 1, &type);
-		frag = net_frag_read(frag, offset, &offset, 1, &length);
-		if (!frag) {
-			goto drop;
-		}
+	net_pkt_set_ipv6_ext_opt_len(pkt, sizeof(struct net_icmpv6_ra_hdr));
+	length -= (sizeof(struct net_ipv6_hdr) + sizeof(struct net_icmp_hdr));
 
-		switch (type) {
+	nd_opt_hdr = (struct net_icmpv6_nd_opt_hdr *)
+		net_pkt_get_data_new(pkt, &nd_access);
+
+	while (nd_opt_hdr) {
+		net_pkt_acknowledge_data(pkt, &nd_access);
+
+		switch (nd_opt_hdr->type) {
 		case NET_ICMPV6_ND_OPT_SLLAO:
-			frag = handle_ra_neighbor(pkt, frag, length, offset,
-						  &offset, &nbr);
-			if (!frag && offset) {
+			nbr = handle_ra_neighbor(pkt, nd_opt_hdr->len);
+			if (!nbr) {
 				goto drop;
 			}
 
 			break;
 		case NET_ICMPV6_ND_OPT_MTU:
 			/* MTU has reserved 2 bytes, so skip it. */
-			frag = net_frag_skip(frag, offset, &offset, 2);
-			frag = net_frag_read_be32(frag, offset, &offset, &mtu);
-			if (!frag && offset) {
+			if (net_pkt_skip(pkt, 2) ||
+			    net_pkt_read_be32_new(pkt, &mtu)) {
 				goto drop;
 			}
 
 			if (mtu < MIN_IPV6_MTU || mtu > MAX_IPV6_MTU) {
-				NET_ERR("Unsupported MTU %u, min is %u, "
+				NET_ERR("DROP: Unsupported MTU %u, min is %u, "
 					"max is %u",
 					mtu, MIN_IPV6_MTU, MAX_IPV6_MTU);
 				goto drop;
@@ -2322,9 +2257,7 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt,
 
 			break;
 		case NET_ICMPV6_ND_OPT_PREFIX_INFO:
-			frag = handle_ra_prefix(pkt, frag, length, offset,
-						&offset);
-			if (!frag && offset) {
+			if (!handle_ra_prefix(pkt)) {
 				goto drop;
 			}
 
@@ -2332,49 +2265,49 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt,
 #if defined(CONFIG_NET_6LO_CONTEXT)
 		case NET_ICMPV6_ND_OPT_6CO:
 			/* RFC 6775, 4.2 (Length)*/
-			if (!(length == 2 || length == 3)) {
-				NET_ERR("Invalid 6CO length %d", length);
+			if (!(nd_opt_hdr->len == 2 || nd_opt_hdr->len == 3)) {
+				NET_ERR("DROP: Invalid 6CO length %d",
+					nd_opt_hdr->len);
 				goto drop;
 			}
 
-			frag = handle_ra_6co(pkt, frag, length, offset,
-					     &offset);
-			if (!frag && offset) {
+			if (!handle_ra_6co(pkt, nd_opt_hdr->len)) {
 				goto drop;
 			}
 
 			break;
 #endif
 		case NET_ICMPV6_ND_OPT_ROUTE:
-			NET_DBG("Route option (0x%x) skipped", type);
+			NET_DBG("Route option skipped");
 			goto skip;
 
 #if defined(CONFIG_NET_IPV6_RA_RDNSS)
 		case NET_ICMPV6_ND_OPT_RDNSS:
-			NET_DBG("RDNSS option (0x%x) skipped", type);
+			NET_DBG("RDNSS option skipped");
 			goto skip;
 #endif
 
 		case NET_ICMPV6_ND_OPT_DNSSL:
-			NET_DBG("DNSSL option (0x%x) skipped", type);
+			NET_DBG("DNSSL option skipped");
 			goto skip;
 
 		default:
-			NET_DBG("Unknown ND option 0x%x", type);
+			NET_DBG("Unknown ND option 0x%x", nd_opt_hdr->type);
 		skip:
-			frag = net_frag_skip(frag, offset, &offset,
-					     length * 8 - 2);
-			if (!frag && offset) {
+			if (net_pkt_skip(pkt, nd_opt_hdr->len * 8 - 2)) {
 				goto drop;
 			}
 
 			break;
 		}
+
+		nd_opt_hdr = (struct net_icmpv6_nd_opt_hdr *)
+			net_pkt_get_data_new(pkt, &nd_access);
 	}
 
 	router = net_if_ipv6_router_lookup(net_pkt_iface(pkt), &ip_hdr->src);
 	if (router) {
-		if (!router_lifetime) {
+		if (!ra_hdr->router_lifetime) {
 			/* TODO: Start rs_timer on iface if no routers
 			 * at all available on iface.
 			 */
@@ -2384,12 +2317,12 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt,
 				net_ipv6_nbr_data(nbr)->is_router = true;
 			}
 
-			net_if_ipv6_router_update_lifetime(router,
-							   router_lifetime);
+			net_if_ipv6_router_update_lifetime(
+					router, ra_hdr->router_lifetime);
 		}
 	} else {
 		net_if_ipv6_router_add(net_pkt_iface(pkt),
-				       &ip_hdr->src, router_lifetime);
+				       &ip_hdr->src, ra_hdr->router_lifetime);
 	}
 
 	if (nbr && net_ipv6_nbr_data(nbr)->pending) {
