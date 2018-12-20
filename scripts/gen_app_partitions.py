@@ -13,15 +13,19 @@ from elf_helper import ElfHelper
 from elftools.elf.elffile import ELFFile
 
 
-# This script will create linker comands for power of two aligned MPU
-# when APP_SHARED_MEM is enabled.
+# This script will create sections and linker variables to place the
+# application shared memory partitions.
+# these are later read by the macros defined in app_memdomain.h for
+# initialization purpose when APP_SHARED_MEM is enabled.
 print_template = """
 		/* Auto generated code do not modify */
-		MPU_ALIGN(data_smem_{0}b_end - data_smem_{0});
-		data_smem_{0} = .;
-		KEEP(*(SORT(data_smem_{0}*)))
-		MPU_ALIGN(data_smem_{0}b_end - data_smem_{0});
-		data_smem_{0}b_end = .;
+		SMEM_PARTITION_ALIGN(data_smem_{0}_bss_end - data_smem_{0}_data_start);
+		data_smem_{0}_data_start = .;
+		KEEP(*(data_smem_{0}))
+		data_smem_{0}_bss_start = .;
+		KEEP(*(data_smem_{0}b))
+		SMEM_PARTITION_ALIGN(data_smem_{0}_bss_end - data_smem_{0}_data_start);
+		data_smem_{0}_bss_end = .;
 """
 linker_start_seq = """
 	SECTION_PROLOGUE(_APP_SMEM_SECTION_NAME, (OPTIONAL),)
@@ -31,13 +35,15 @@ linker_start_seq = """
 """
 
 linker_end_seq = """
-		_app_smem_end = .;
 		APP_SHARED_ALIGN;
+		_app_smem_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 """
 
 size_cal_string = """
-	data_smem_{0}_size = data_smem_{0}b_end - data_smem_{0};
+	data_smem_{0}_size = data_smem_{0}_bss_end - data_smem_{0}_data_start;
+	data_smem_{0}_data_size = data_smem_{0}_bss_start - data_smem_{0}_data_start;
+	data_smem_{0}_bss_size = data_smem_{0}_bss_end - data_smem_{0}_bss_start;
 """
 
 
