@@ -893,19 +893,15 @@ static inline bool set_llao(struct net_pkt *pkt,
 }
 
 static inline struct net_nbr *handle_ns_neighbor(struct net_pkt *pkt,
-						 u8_t ll_len,
-						 u16_t sllao_offset)
+						 u8_t ll_len)
 {
 	struct net_linkaddr_storage lladdr;
 	struct net_linkaddr nbr_lladdr;
-	struct net_buf *frag;
 	u16_t pos;
 
 	lladdr.len = 8 * ll_len - 2;
 
-	frag = net_frag_read(pkt->frags, sllao_offset,
-			     &pos, lladdr.len, lladdr.addr);
-	if (!frag && pos == 0xffff) {
+	if (net_pkt_read_new(pkt, lladdr.addr, lladdr.len)) {
 		return NULL;
 	}
 
@@ -1023,86 +1019,71 @@ static enum net_verdict handle_ns_input(struct net_pkt *pkt,
 					struct net_ipv6_hdr *ip_hdr,
 					struct net_icmp_hdr *icmp_hdr)
 {
-	u16_t total_len = net_pkt_get_len(pkt);
-	u8_t prev_opt_len = 0U;
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ns_access,
+					      struct net_icmpv6_ns_hdr);
+	NET_PKT_DATA_ACCESS_DEFINE(nd_access, struct net_icmpv6_nd_opt_hdr);
+	u16_t length = net_pkt_get_len(pkt);
 	u8_t flags = 0U;
 	bool routing = false;
-	struct net_icmpv6_nd_opt_hdr nd_opt_hdr;
-	struct net_icmpv6_ns_hdr ns_hdr;
+	struct net_icmpv6_nd_opt_hdr *nd_opt_hdr;
+	struct net_icmpv6_ns_hdr *ns_hdr;
 	struct net_if_addr *ifaddr;
-	struct in6_addr *tgt;
 	const struct in6_addr *src;
-	size_t left_len;
-	int ret;
+	struct in6_addr *tgt;
 
-	ret = net_icmpv6_get_ns_hdr(pkt, &ns_hdr);
-	if (ret < 0) {
-		NET_ERR("NULL NS header - dropping");
+	ns_hdr = (struct net_icmpv6_ns_hdr *)net_pkt_get_data_new(pkt,
+								  &ns_access);
+	if (!ns_hdr) {
+		NET_ERR("DROP: NULL NS header");
 		goto drop;
 	}
 
 	dbg_addr_recv_tgt("Neighbor Solicitation",
-			  &ip_hdr->src, &ip_hdr->dst, &ns_hdr.tgt);
+			  &ip_hdr->src, &ip_hdr->dst, &ns_hdr->tgt);
 
 	net_stats_update_ipv6_nd_recv(net_pkt_iface(pkt));
 
-	if ((total_len < (sizeof(struct net_ipv6_hdr) +
+	if (((length < (sizeof(struct net_ipv6_hdr) +
 			  sizeof(struct net_icmp_hdr) +
 			  sizeof(struct net_icmpv6_ns_hdr))) ||
-	    (ip_hdr->hop_limit != NET_IPV6_ND_HOP_LIMIT)) {
-		if (net_ipv6_is_addr_mcast(&ns_hdr.tgt)) {
-			struct net_icmp_hdr icmp_hdr;
-
-			ret = net_icmpv6_get_hdr(pkt, &icmp_hdr);
-			if (ret < 0 || icmp_hdr.code != 0) {
-				NET_DBG("Preliminary check failed %u/%zu, "
-					"code %u, hop %u",
-					total_len,
-					(sizeof(struct net_ipv6_hdr) +
-					 sizeof(struct net_icmp_hdr) +
-					 sizeof(struct net_icmpv6_ns_hdr)),
-					icmp_hdr.code, ip_hdr->hop_limit);
-				goto drop;
-			}
-		}
+	    (ip_hdr->hop_limit != NET_IPV6_ND_HOP_LIMIT)) &&
+	    (net_ipv6_is_addr_mcast(&ns_hdr->tgt) && icmp_hdr->code != 0)) {
+		goto drop;
 	}
 
+	net_pkt_acknowledge_data(pkt, &ns_access);
+
 	net_pkt_set_ipv6_ext_opt_len(pkt, sizeof(struct net_icmpv6_ns_hdr));
+	length -= (sizeof(struct net_ipv6_hdr) + sizeof(struct net_icmp_hdr));
 
-	left_len = net_pkt_get_len(pkt) - (sizeof(struct net_ipv6_hdr) +
-					   sizeof(struct net_icmp_hdr));
+	nd_opt_hdr = (struct net_icmpv6_nd_opt_hdr *)
+		net_pkt_get_data_new(pkt, &nd_access);
 
-	ret = net_icmpv6_get_nd_opt_hdr(pkt, &nd_opt_hdr);
+	while (nd_opt_hdr && nd_opt_hdr->len > 0 &&
+	       net_pkt_ipv6_ext_opt_len(pkt) < length) {
+		u8_t prev_opt_len;
 
-	while (!ret && net_pkt_ipv6_ext_opt_len(pkt) < left_len) {
-		if (!nd_opt_hdr.len) {
-			break;
-		}
+		net_pkt_acknowledge_data(pkt, &nd_access);
 
-		switch (nd_opt_hdr.type) {
+		switch (nd_opt_hdr->type) {
 		case NET_ICMPV6_ND_OPT_SLLAO:
 			if (net_ipv6_is_addr_unspecified(&ip_hdr->src)) {
 				goto drop;
 			}
 
-			if (nd_opt_hdr.len > 2) {
-				NET_ERR("Too long source link-layer address "
+			if (nd_opt_hdr->len > 2) {
+				NET_ERR("DROP: Too long source ll address "
 					"in NS option");
 				goto drop;
 			}
 
-			if (!handle_ns_neighbor(pkt, nd_opt_hdr.len,
-						net_pkt_ip_hdr_len(pkt) +
-						net_pkt_ipv6_ext_len(pkt) +
-						sizeof(struct net_icmp_hdr) +
-						net_pkt_ipv6_ext_opt_len(pkt) +
-						1 + 1)) {
+			if (!handle_ns_neighbor(pkt, nd_opt_hdr->len)) {
 				goto drop;
 			}
-			break;
 
+			break;
 		default:
-			NET_DBG("Unknown ND option 0x%x", nd_opt_hdr.type);
+			NET_DBG("Unknown ND option 0x%x", nd_opt_hdr->type);
 			break;
 		}
 
@@ -1110,36 +1091,37 @@ static enum net_verdict handle_ns_input(struct net_pkt *pkt,
 
 		net_pkt_set_ipv6_ext_opt_len(pkt,
 					     net_pkt_ipv6_ext_opt_len(pkt) +
-					     (nd_opt_hdr.len << 3));
+					     (nd_opt_hdr->len << 3));
 
 		if (prev_opt_len >= net_pkt_ipv6_ext_opt_len(pkt)) {
-			NET_ERR("Corrupted NS message");
+			NET_ERR("DROP: Corrupted NS message");
 			goto drop;
 		}
 
-		ret = net_icmpv6_get_nd_opt_hdr(pkt, &nd_opt_hdr);
+		nd_opt_hdr = (struct net_icmpv6_nd_opt_hdr *)
+			net_pkt_get_data_new(pkt, &nd_access);
 	}
 
 	if (IS_ENABLED(CONFIG_NET_ROUTING)) {
-		ifaddr = net_if_ipv6_addr_lookup(&ns_hdr.tgt, NULL);
+		ifaddr = net_if_ipv6_addr_lookup(&ns_hdr->tgt, NULL);
 	} else {
 		ifaddr = net_if_ipv6_addr_lookup_by_iface(net_pkt_iface(pkt),
-							  &ns_hdr.tgt);
+							  &ns_hdr->tgt);
 	}
 
 	if (!ifaddr) {
 		if (IS_ENABLED(CONFIG_NET_ROUTING)) {
 			struct in6_addr *nexthop;
 
-			nexthop = check_route(NULL, &ns_hdr.tgt, NULL);
+			nexthop = check_route(NULL, &ns_hdr->tgt, NULL);
 			if (nexthop) {
-				ns_routing_info(pkt, nexthop, &ns_hdr.tgt);
+				ns_routing_info(pkt, nexthop, &ns_hdr->tgt);
 
 				/* Note that the target is not the address of
 				 * the "nethop" as that is a link-local address
 				 * which is not routable.
 				 */
-				tgt = &ns_hdr.tgt;
+				tgt = &ns_hdr->tgt;
 
 				/* Source address must be one of our real
 				 * interface address where the packet was
@@ -1148,8 +1130,8 @@ static enum net_verdict handle_ns_input(struct net_pkt *pkt,
 				src = net_if_ipv6_select_src_addr(
 					net_pkt_iface(pkt), &ip_hdr->src);
 				if (!src) {
-					NET_DBG("No interface address for "
-						"dst %s iface %p",
+					NET_DBG("DROP: No interface address "
+						"for dst %s iface %p",
 						log_strdup(
 						  net_sprint_ipv6_addr(
 							  &ip_hdr->src)),
@@ -1162,8 +1144,8 @@ static enum net_verdict handle_ns_input(struct net_pkt *pkt,
 			}
 		}
 
-		NET_DBG("No such interface address %s",
-			log_strdup(net_sprint_ipv6_addr(&ns_hdr.tgt)));
+		NET_DBG("DROP: No such interface address %s",
+			log_strdup(net_sprint_ipv6_addr(&ns_hdr->tgt)));
 		goto drop;
 	} else {
 		tgt = &ifaddr->address.in6_addr;
@@ -1187,13 +1169,13 @@ nexthop_found:
 	if (net_ipv6_is_addr_unspecified(&ip_hdr->src)) {
 
 		if (!net_ipv6_is_addr_solicited_node(&ip_hdr->dst)) {
-			NET_DBG("Not solicited node addr %s",
+			NET_DBG("DROP: Not solicited node addr %s",
 				log_strdup(net_sprint_ipv6_addr(&ip_hdr->dst)));
 			goto drop;
 		}
 
 		if (ifaddr->addr_state == NET_ADDR_TENTATIVE) {
-			NET_DBG("DAD failed for %s iface %p",
+			NET_DBG("DROP: DAD failed for %s iface %p",
 				log_strdup(net_sprint_ipv6_addr(
 						   &ifaddr->address.in6_addr)),
 				net_pkt_iface(pkt));
@@ -1214,7 +1196,7 @@ nexthop_found:
 #endif /* CONFIG_NET_IPV6_DAD */
 
 	if (net_ipv6_is_my_addr(&ip_hdr->src)) {
-		NET_DBG("Duplicate IPv6 %s address",
+		NET_DBG("DROP: Duplicate IPv6 %s address",
 			log_strdup(net_sprint_ipv6_addr(&ip_hdr->src)));
 		goto drop;
 	}
@@ -1222,7 +1204,7 @@ nexthop_found:
 	/* Address resolution */
 	if (net_ipv6_is_addr_solicited_node(&ip_hdr->dst)) {
 		net_ipaddr_copy(&ip_hdr->dst, &ip_hdr->src);
-		net_ipaddr_copy(&ip_hdr->src, &ns_hdr.tgt);
+		net_ipaddr_copy(&ip_hdr->src, &ns_hdr->tgt);
 		flags = NET_ICMPV6_NA_FLAG_SOLICITED |
 			NET_ICMPV6_NA_FLAG_OVERRIDE;
 		goto send_na;
@@ -1243,26 +1225,25 @@ nexthop_found:
 
 	if (ifaddr) {
 		net_ipaddr_copy(&ip_hdr->dst, &ip_hdr->src);
-		net_ipaddr_copy(&ip_hdr->src, &ns_hdr.tgt);
+		net_ipaddr_copy(&ip_hdr->src, &ns_hdr->tgt);
 		src = &ip_hdr->src;
 		tgt = &ifaddr->address.in6_addr;
 		flags = NET_ICMPV6_NA_FLAG_SOLICITED |
 			NET_ICMPV6_NA_FLAG_OVERRIDE;
 		goto send_na;
 	} else {
-		NET_DBG("NUD failed");
+		NET_DBG("DROP: NUD failed");
 		goto drop;
 	}
 
 send_na:
-	ret = net_ipv6_send_na(net_pkt_iface(pkt), src,
-			       &ip_hdr->dst, tgt, flags);
-	if (!ret) {
+	if (!net_ipv6_send_na(net_pkt_iface(pkt), src,
+			      &ip_hdr->dst, tgt, flags)) {
 		net_pkt_unref(pkt);
 		return NET_OK;
 	}
 
-	NET_DBG("Cannot send NA (%d)", ret);
+	NET_DBG("DROP: Cannot send NA");
 
 	return NET_DROP;
 
