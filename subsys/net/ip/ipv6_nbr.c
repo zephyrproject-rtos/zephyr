@@ -1795,110 +1795,92 @@ drop:
 
 int net_ipv6_send_ns(struct net_if *iface,
 		     struct net_pkt *pending,
-		     struct in6_addr *src,
-		     struct in6_addr *dst,
-		     struct in6_addr *tgt,
+		     const struct in6_addr *src,
+		     const struct in6_addr *dst,
+		     const struct in6_addr *tgt,
 		     bool is_my_address)
 {
-	struct net_icmpv6_ns_hdr ns_hdr;
-	struct net_pkt *pkt;
-	struct net_buf *frag;
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ns_access,
+					      struct net_icmpv6_ns_hdr);
+	struct net_pkt *pkt = NULL;
+	int ret = -ENOBUFS;
+	struct net_icmpv6_ns_hdr *ns_hdr;
+	struct in6_addr node_dst;
 	struct net_nbr *nbr;
 	u8_t llao_len;
-	int ret;
-
-	pkt = net_pkt_get_reserve_tx(ND_NET_BUF_TIMEOUT);
-	if (!pkt) {
-		return -ENOMEM;
-	}
-
-	frag = net_pkt_get_frag(pkt, ND_NET_BUF_TIMEOUT);
-	if (!frag) {
-		net_pkt_unref(pkt);
-		return -ENOMEM;
-	}
-
-	net_pkt_frag_add(pkt, frag);
-
-	net_pkt_set_iface(pkt, iface);
-	net_pkt_set_family(pkt, AF_INET6);
-	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
-	net_pkt_set_ipv6_ext_len(pkt, 0);
-
-	llao_len = get_llao_len(net_pkt_iface(pkt));
-
-	setup_headers(pkt, sizeof(struct net_icmpv6_ns_hdr) + llao_len,
-		      NET_ICMPV6_NS);
-
-	net_buf_add(frag, sizeof(struct net_icmpv6_ns_hdr));
 
 	if (!dst) {
-		net_ipv6_addr_create_solicited_node(tgt,
-						    &NET_IPV6_HDR(pkt)->dst);
-	} else {
-		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst, dst);
+		net_ipv6_addr_create_solicited_node(tgt, &node_dst);
+		dst = &node_dst;
 	}
 
-	net_ipaddr_copy(&ns_hdr.tgt, tgt);
-	ret = net_icmpv6_set_ns_hdr(pkt, &ns_hdr);
-	if (ret < 0) {
-		net_pkt_unref(pkt);
-		return ret;
-	}
+	llao_len = get_llao_len(iface);
 
 	if (is_my_address) {
-		u16_t len = ntohs(NET_IPV6_HDR(pkt)->len);
-		/* DAD */
-		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src,
-				net_ipv6_unspecified_address());
-		NET_IPV6_HDR(pkt)->len = htons(len - llao_len);
+		src = net_ipv6_unspecified_address();
+		llao_len = 0;
 	} else {
-		if (src) {
-			net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src, src);
-		} else {
-			net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src,
-					net_if_ipv6_select_src_addr(
-						net_pkt_iface(pkt),
-						&NET_IPV6_HDR(pkt)->dst));
+		if (!src) {
+			src = net_if_ipv6_select_src_addr(iface, dst);
 		}
 
-		if (net_ipv6_is_addr_unspecified(&NET_IPV6_HDR(pkt)->src)) {
+		if (net_ipv6_is_addr_unspecified(src)) {
 			NET_DBG("No source address for NS");
-			if (pending) {
-				net_pkt_unref(pending);
-			}
+			ret = -EINVAL;
 
 			goto drop;
 		}
-
-		net_buf_add(frag, llao_len);
-
-		set_llao(net_if_get_link_addr(net_pkt_iface(pkt)),
-			 (u8_t *)net_pkt_icmp_data(pkt) +
-					sizeof(struct net_icmp_hdr) +
-					sizeof(struct net_icmpv6_ns_hdr),
-			 llao_len, NET_ICMPV6_ND_OPT_SLLAO);
 	}
 
-	ret = net_icmpv6_set_chksum(pkt);
-	if (ret < 0) {
-		net_pkt_unref(pkt);
-		return ret;
+	pkt = net_pkt_alloc_with_buffer(iface,
+					sizeof(struct net_icmpv6_ns_hdr) +
+					llao_len,
+					AF_INET6, IPPROTO_ICMPV6,
+					ND_NET_BUF_TIMEOUT);
+	if (!pkt) {
+		ret = -ENOMEM;
+		goto drop;
 	}
 
-	nbr = nbr_lookup(&net_neighbor.table, net_pkt_iface(pkt), &ns_hdr.tgt);
+	net_pkt_set_ipv6_hop_limit(pkt, NET_IPV6_ND_HOP_LIMIT);
+
+	if (net_ipv6_create_new(pkt, src, dst) ||
+	    net_icmpv6_create(pkt, NET_ICMPV6_NS, 0)) {
+		goto drop;
+	}
+
+	ns_hdr = (struct net_icmpv6_ns_hdr *)net_pkt_get_data_new(pkt,
+								  &ns_access);
+	if (!ns_hdr) {
+		goto drop;
+	}
+
+	ns_hdr->reserved = 0;
+	net_ipaddr_copy(&ns_hdr->tgt, tgt);
+
+	if (net_pkt_set_data(pkt, &ns_access)) {
+		goto drop;
+	}
+
+	if (!is_my_address) {
+		if (!set_llao_new(pkt, net_if_get_link_addr(iface),
+				  llao_len, NET_ICMPV6_ND_OPT_SLLAO)) {
+			goto drop;
+		}
+	}
+
+	net_pkt_cursor_init(pkt);
+	net_ipv6_finalize_new(pkt, IPPROTO_ICMPV6);
+
+	nbr = nbr_lookup(&net_neighbor.table, iface, &ns_hdr->tgt);
 	if (!nbr) {
 		nbr_print();
 
-		nbr = nbr_new(net_pkt_iface(pkt), &ns_hdr.tgt, false,
+		nbr = nbr_new(iface, &ns_hdr->tgt, false,
 			      NET_IPV6_NBR_STATE_INCOMPLETE);
 		if (!nbr) {
 			NET_DBG("Could not create new neighbor %s",
-				log_strdup(net_sprint_ipv6_addr(&ns_hdr.tgt)));
-			if (pending) {
-				net_pkt_unref(pending);
-			}
-
+				log_strdup(net_sprint_ipv6_addr(&ns_hdr->tgt)));
 			goto drop;
 		}
 	}
@@ -1910,7 +1892,6 @@ int net_ipv6_send_ns(struct net_if *iface,
 			NET_DBG("Packet %p already pending for "
 				"operation. Discarding pending %p and pkt %p",
 				net_ipv6_nbr_data(nbr)->pending, pending, pkt);
-			net_pkt_unref(pending);
 			goto drop;
 		}
 
@@ -1925,30 +1906,35 @@ int net_ipv6_send_ns(struct net_if *iface,
 		}
 	}
 
-	dbg_addr_sent_tgt("Neighbor Solicitation",
-			  &NET_IPV6_HDR(pkt)->src,
-			  &NET_IPV6_HDR(pkt)->dst,
-			  &ns_hdr.tgt);
+	dbg_addr_sent_tgt("Neighbor Solicitation", src, dst, &ns_hdr->tgt);
 
 	if (net_send_data(pkt) < 0) {
 		NET_DBG("Cannot send NS %p (pending %p)", pkt, pending);
 
 		if (pending) {
 			nbr_clear_ns_pending(net_ipv6_nbr_data(nbr));
+			pending = NULL;
 		}
 
 		goto drop;
 	}
 
-	net_stats_update_ipv6_nd_sent(net_pkt_iface(pkt));
+	net_stats_update_ipv6_nd_sent(iface);
 
 	return 0;
 
 drop:
-	net_stats_update_ipv6_nd_drop(net_pkt_iface(pkt));
-	net_pkt_unref(pkt);
+	if (pending) {
+		net_pkt_unref(pending);
+	}
 
-	return -EINVAL;
+	if (pkt) {
+		net_pkt_unref(pkt);
+	}
+
+	net_stats_update_ipv6_nd_drop(iface);
+
+	return ret;
 }
 #endif /* CONFIG_NET_IPV6_NBR_CACHE */
 
