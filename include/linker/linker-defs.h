@@ -167,6 +167,7 @@ extern char _app_smem_start[];
 extern char _app_smem_end[];
 extern char _app_smem_size[];
 extern char _app_smem_rom_start[];
+extern char _app_smem_num_words[];
 
 #ifdef CONFIG_APPLICATION_MEMORY
 /* Memory owned by the application. Start and end will be aligned for memory

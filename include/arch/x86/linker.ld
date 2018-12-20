@@ -214,6 +214,7 @@ SECTIONS
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 
 	_app_smem_size = _app_smem_end - _app_smem_start;
+	_app_smem_num_words = _app_smem_size >> 2;
 	_app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
 
 
