@@ -411,22 +411,9 @@ SECTIONS
 
 #if defined(CONFIG_APP_SHARED_MEM)
 #define APP_SHARED_ALIGN . = ALIGN(_region_min_align);
-#if defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
-		#include <app_smem.ld>
-#else
-	SECTION_PROLOGUE(_APP_SMEM_SECTION_NAME, (OPTIONAL),)
-	{
-		APP_SHARED_ALIGN;
-		_app_smem_start = .;
-		APP_SMEM_SECTION()
-		/* Align the end of shared app mem section with the
-		 * minimum granularity required by MPU.
-		 */
-		APP_SHARED_ALIGN;
-		_app_smem_end = .;
+#define SMEM_PARTITION_ALIGN MPU_ALIGN
 
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-#endif  /* CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT */
+#include <app_smem.ld>
 
 	_app_smem_size = _app_smem_end - _app_smem_start;
 	_app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
