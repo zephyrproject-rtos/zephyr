@@ -5,6 +5,8 @@
 #include <misc/dlist.h>
 #include <kernel.h>
 
+#ifdef CONFIG_APP_SHARED_MEM
+
 #if defined(CONFIG_X86)
 #define MEM_DOMAIN_ALIGN_SIZE _STACK_BASE_ALIGN
 #elif defined(STACK_ALIGN)
@@ -55,11 +57,7 @@
 struct app_region {
 	char *dmem_start;
 	char *bmem_start;
-#ifdef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
-	char *smem_size;
-#else
 	u32_t smem_size;
-#endif	/* CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT */
 	u32_t dmem_size;
 	u32_t bmem_size;
 	struct k_mem_partition *partition;
@@ -70,38 +68,30 @@ struct app_region {
  * Declares a partition and provides a function to add the
  * partition to the linked list and initialize the partition.
  */
-#ifdef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
-/* For power of 2 MPUs linker provides support to help us
- * calculate the region sizes.
- */
-#define smem_size_declare(name) extern char data_smem_##name##_size[]
-#define smem_size_assign(name) name.smem_size = data_smem_##name##_size
-#else
-#define smem_size_declare(name)
-#define smem_size_assign(name)
-#endif	/* CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT */
-
 #define appmem_partition(name) \
-	_app_dmem_pad(name) char name##_dmem_pad; \
-	_app_bmem_pad(name) char name##_bmem_pad; \
 	__kernel struct k_mem_partition mem_partition_##name; \
 	__kernel struct app_region name;
 
 #define appmem_partition_header(name) \
-	extern char *data_smem_##name;	  \
-	extern char *data_smem_##name##b; \
-	smem_size_declare(name); \
-	extern struct k_mem_partition mem_partition_##name; \
-	extern struct app_region name; \
-	static inline void appmem_init_part_##name(void) \
-	{ \
-		name.dmem_start = (char *)&data_smem_##name; \
-		name.bmem_start = (char *)&data_smem_##name##b; \
-		smem_size_assign(name);				\
-		sys_dlist_append(&app_mem_list, &name.lnode); \
-		mem_partition_##name.start = (u32_t) name.dmem_start; \
-		mem_partition_##name.attr = K_MEM_PARTITION_P_RW_U_RW; \
-		name.partition = &mem_partition_##name; \
+	extern char data_smem_##name##_data_start[];			\
+	extern char data_smem_##name##_bss_start[];			\
+	extern char data_smem_##name##_size[];				\
+	extern char data_smem_##name##_data_size[];			\
+	extern char data_smem_##name##_bss_size[];			\
+	extern struct k_mem_partition mem_partition_##name;		\
+	extern struct app_region name;					\
+	static inline void appmem_init_part_##name(void)		\
+	{								\
+		name.dmem_start = (char *)&data_smem_##name##_data_start; \
+		name.bmem_start = (char *)&data_smem_##name##_bss_start; \
+		name.smem_size = (u32_t)data_smem_##name##_size;	\
+		name.dmem_size = (u32_t)data_smem_##name##_data_size;	\
+		name.bmem_size = (u32_t)data_smem_##name##_bss_size;	\
+		sys_dlist_append(&app_mem_list, &name.lnode);		\
+		mem_partition_##name.start = (u32_t) name.dmem_start;	\
+		mem_partition_##name.attr = K_MEM_PARTITION_P_RW_U_RW;	\
+		mem_partition_##name.size = name.smem_size;		\
+		name.partition = &mem_partition_##name;			\
 	}
 
 /* A helper function that should be called to define multiple partitions*/
@@ -115,7 +105,7 @@ struct app_region {
 	FOR_EACH(appmem_partition_header, __VA_ARGS__)
 
 /* Returns the mem_partition struct */
-#define APPMEM_PARTITION_GET(name) (mem_partition_##name)
+#define APPMEM_PARTITION_GET(name) (&mem_partition_##name)
 
 /*
  * A wrapper around the k_mem_domain_* functions. Goal here was
@@ -140,6 +130,13 @@ struct app_region {
 	{ \
 		k_mem_domain_add_partition(&domain_##name, \
 			&region.partition[0]); \
+	} \
+	static inline void appmem_add_custom_part_##name(struct		\
+							 k_mem_partition\
+							 *partition)	\
+	{ \
+		k_mem_domain_add_partition(&domain_##name, \
+			partition); \
 	} \
 	static inline void appmem_rm_part_##name(struct app_region region) \
 	{ \
@@ -178,10 +175,23 @@ struct app_region {
 
 extern sys_dlist_t app_mem_list;
 
-extern void app_bss_zero(void);
-
-extern void app_calc_size(void);
-
 extern void appmem_init_app_memory(void);
+
+
+#else  /* NO APP_SHARED_MEM */
+#define APPMEM_INIT_PARTITIONS(...)
+#define APPMEM_PARTITION_HEADER_DEFINE(...)
+#define APPMEM_PARTITION_OBJECT_DEFINE(...)
+
+#define APPMEM_DOMAIN_HEADER_DEFINE(...)
+#define APPMEM_DOMAIN_OBJECT_DEFINE(...)
+
+#define _app_dmem_pad(id)
+#define _app_bmem_pad(id)
+
+#define _app_dmem(id)
+#define _app_bmem(id)
+
+#endif /* CONFIG_APP_SHARED_MEM */
 
 #endif /* ZEPHYR_INCLUDE_APP_MEMORY_APP_MEMDOMAIN_H_ */
