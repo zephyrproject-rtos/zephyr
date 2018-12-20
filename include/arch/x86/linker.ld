@@ -202,25 +202,27 @@ SECTIONS
 	__gcov_bss_size = __gcov_bss_end - __gcov_bss_start;
 #endif /* CONFIG_COVERAGE_GCOV */
 
+#ifdef CONFIG_APP_SHARED_MEM
 	/* APP SHARED MEMORY REGION */
-	SECTION_PROLOGUE(_APP_SMEM_SECTION_NAME, (OPTIONAL),)
-	{
-		_image_ram_start = .;
-		_app_smem_start = .;
-		APP_SMEM_SECTION()
-		MMU_PAGE_ALIGN
-		_app_smem_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+#define SMEM_PARTITION_ALIGN(size) MMU_PAGE_ALIGN
+#define APP_SHARED_ALIGN  MMU_PAGE_ALIGN
 
+#include<app_smem.ld>
+
+	_image_ram_start = _app_smem_start;
 	_app_smem_size = _app_smem_end - _app_smem_start;
 	_app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
-
+	_app_smem_num_words = _app_smem_size >> 2;
+#endif /* CONFIG_APP_SHARED_MEM */
 
 #ifdef CONFIG_APPLICATION_MEMORY
 	SECTION_DATA_PROLOGUE(_APP_DATA_SECTION_NAME, (OPTIONAL),)
 	{
 #ifndef CONFIG_XIP
 		MMU_PAGE_ALIGN
+#endif
+#if !defined(CONFIG_APP_SHARED_MEM)
+		_image_ram_start = .;
 #endif
 		__app_ram_start = .;
 		__app_data_ram_start = .;
@@ -256,7 +258,9 @@ SECTIONS
 	SECTION_PROLOGUE(_BSS_SECTION_NAME, (NOLOAD OPTIONAL),)
 	{
 	MMU_PAGE_ALIGN
-
+#if !defined(CONFIG_APP_SHARED_MEM)  && !defined(CONFIG_APPLICATION_MEMORY)
+	_image_ram_start = .;
+#endif
 	/*
 	 * For performance, BSS section is forced to be both 4 byte aligned and
 	 * a multiple of 4 bytes.
