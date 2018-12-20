@@ -2479,24 +2479,6 @@ drop:
 }
 #endif /* CONFIG_NET_IPV6_ND */
 
-#define append(pkt, type, value)					\
-	do {								\
-		if (!net_pkt_append_##type##_timeout(pkt, value,	\
-						     NET_BUF_TIMEOUT)) { \
-			ret = -ENOMEM;					\
-			goto drop;					\
-		}							\
-	} while (0)
-
-#define append_all(pkt, size, value)					\
-	do {								\
-		if (!net_pkt_append_all(pkt, size, value,		\
-					NET_BUF_TIMEOUT)) {		\
-			ret = -ENOMEM;					\
-			goto drop;					\
-		}							\
-	} while (0)
-
 #if defined(CONFIG_NET_IPV6_NBR_CACHE)
 static struct net_icmpv6_handler ns_input_handler = {
 	.type = NET_ICMPV6_NS,
