@@ -519,7 +519,7 @@ static void led_timeout(struct k_work *work)
 	}
 
 	/* Stop after 5 iterations */
-	if (led_cntr > (ARRAY_SIZE(leds) * 5)) {
+	if (led_cntr >= (ARRAY_SIZE(leds) * 5)) {
 		led_cntr = 0;
 		return;
 	}
