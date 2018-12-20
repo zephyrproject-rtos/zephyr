@@ -299,7 +299,8 @@ drop:
 	dbg_addr("Received", pkt_str, src, dst)
 
 static enum net_verdict handle_mld_query(struct net_pkt *pkt,
-					 struct net_ipv6_hdr *ip_hdr)
+					 struct net_ipv6_hdr *ip_hdr,
+					 struct net_icmp_hdr *icmp_hdr)
 {
 	u16_t total_len = net_pkt_get_len(pkt);
 	struct in6_addr mcast;

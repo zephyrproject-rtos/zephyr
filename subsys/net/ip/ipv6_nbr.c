@@ -1062,7 +1062,8 @@ static void ns_routing_info(struct net_pkt *pkt,
 }
 
 static enum net_verdict handle_ns_input(struct net_pkt *pkt,
-					struct net_ipv6_hdr *ip_hdr)
+					struct net_ipv6_hdr *ip_hdr,
+					struct net_icmp_hdr *icmp_hdr)
 {
 	u16_t total_len = net_pkt_get_len(pkt);
 	u8_t prev_opt_len = 0U;
@@ -1650,7 +1651,8 @@ send_pending:
 }
 
 static enum net_verdict handle_na_input(struct net_pkt *pkt,
-					struct net_ipv6_hdr *ip_hdr)
+					struct net_ipv6_hdr *ip_hdr,
+					struct net_icmp_hdr *icmp_hdr)
 {
 	u16_t total_len = net_pkt_get_len(pkt);
 	u16_t tllao_offset = 0U;
@@ -2268,7 +2270,8 @@ static inline struct net_buf *handle_ra_6co(struct net_pkt *pkt,
 #endif
 
 static enum net_verdict handle_ra_input(struct net_pkt *pkt,
-					struct net_ipv6_hdr *ip_hdr)
+					struct net_ipv6_hdr *ip_hdr,
+					struct net_icmp_hdr *icmp_hdr)
 {
 	u16_t total_len = net_pkt_get_len(pkt);
 	struct net_nbr *nbr = NULL;

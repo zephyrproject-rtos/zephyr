@@ -291,12 +291,16 @@ int net_icmpv6_create(struct net_pkt *pkt, u8_t icmp_type, u8_t icmp_code)
 	return net_pkt_set_data(pkt, &icmp_access);
 }
 
-static enum net_verdict icmpv6_handle_echo_request(struct net_pkt *pkt,
-						   struct net_ipv6_hdr *ip_hdr)
+static
+enum net_verdict icmpv6_handle_echo_request(struct net_pkt *pkt,
+					    struct net_ipv6_hdr *ip_hdr,
+					    struct net_icmp_hdr *icmp_hdr)
 {
 	struct net_pkt *reply = NULL;
 	const struct in6_addr *src;
 	s16_t payload_len;
+
+	ARG_UNUSED(icmp_hdr);
 
 	NET_DBG("Received Echo Request from %s to %s",
 		log_strdup(net_sprint_ipv6_addr(&ip_hdr->src)),
@@ -571,7 +575,7 @@ enum net_verdict net_icmpv6_input(struct net_pkt *pkt,
 	SYS_SLIST_FOR_EACH_CONTAINER(&handlers, cb, node) {
 		if (cb->type == icmp_hdr->type &&
 		    (cb->code == icmp_hdr->code || cb->code == 0)) {
-			return cb->handler(pkt, ip_hdr);
+			return cb->handler(pkt, ip_hdr, icmp_hdr);
 		}
 	}
 drop:
