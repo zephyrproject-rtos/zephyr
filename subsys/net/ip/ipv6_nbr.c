@@ -118,48 +118,6 @@ static void ipv6_nbr_set_state(struct net_nbr *nbr,
 	net_ipv6_nbr_data(nbr)->state = new_state;
 }
 
-static inline bool net_is_solicited(struct net_pkt *pkt)
-{
-	struct net_icmpv6_na_hdr na_hdr;
-	int ret;
-
-	ret = net_icmpv6_get_na_hdr(pkt, &na_hdr);
-	if (ret < 0) {
-		NET_ERR("could not get na_hdr");
-		return false;
-	}
-
-	return na_hdr.flags & NET_ICMPV6_NA_FLAG_SOLICITED;
-}
-
-static inline bool net_is_router(struct net_pkt *pkt)
-{
-	struct net_icmpv6_na_hdr na_hdr;
-	int ret;
-
-	ret = net_icmpv6_get_na_hdr(pkt, &na_hdr);
-	if (ret < 0) {
-		NET_ERR("could not get na_hdr");
-		return false;
-	}
-
-	return na_hdr.flags & NET_ICMPV6_NA_FLAG_ROUTER;
-}
-
-static inline bool net_is_override(struct net_pkt *pkt)
-{
-	struct net_icmpv6_na_hdr na_hdr;
-	int ret;
-
-	ret = net_icmpv6_get_na_hdr(pkt, &na_hdr);
-	if (ret < 0) {
-		NET_ERR("could not get na_hdr");
-		return false;
-	}
-
-	return na_hdr.flags & NET_ICMPV6_NA_FLAG_OVERRIDE;
-}
-
 static inline struct net_nbr *get_nbr(int idx)
 {
 	return &net_neighbor_pool[idx].nbr;
@@ -1477,16 +1435,13 @@ static inline bool handle_na_neighbor(struct net_pkt *pkt,
 				      struct net_icmpv6_na_hdr *na_hdr,
 				      u16_t tllao_offset)
 {
-	bool lladdr_changed = false;
-	struct net_nbr *nbr;
 	struct net_linkaddr_storage lladdr = { 0 };
+	bool lladdr_changed = false;
 	struct net_linkaddr_storage *cached_lladdr;
 	struct net_pkt *pending;
-	struct net_buf *frag;
-	u16_t pos;
+	struct net_nbr *nbr;
 
-	nbr = nbr_lookup(&net_neighbor.table, net_pkt_iface(pkt),
-			 &na_hdr->tgt);
+	nbr = nbr_lookup(&net_neighbor.table, net_pkt_iface(pkt), &na_hdr->tgt);
 
 	NET_DBG("Neighbor lookup %p iface %p addr %s", nbr,
 		net_pkt_iface(pkt),
@@ -1502,9 +1457,10 @@ static inline bool handle_na_neighbor(struct net_pkt *pkt,
 	if (tllao_offset) {
 		lladdr.len = net_if_get_link_addr(net_pkt_iface(pkt))->len;
 
-		frag = net_frag_read(pkt->frags, tllao_offset,
-				     &pos, lladdr.len, lladdr.addr);
-		if (!frag && pos == 0xffff) {
+		net_pkt_cursor_init(pkt);
+
+		if (net_pkt_skip(pkt, tllao_offset) ||
+		    net_pkt_read_new(pkt, lladdr.addr, lladdr.len)) {
 			return false;
 		}
 	}
@@ -1559,7 +1515,7 @@ static inline bool handle_na_neighbor(struct net_pkt *pkt,
 					 cached_lladdr->len);
 		}
 
-		if (net_is_solicited(pkt)) {
+		if (na_hdr->flags & NET_ICMPV6_NA_FLAG_SOLICITED) {
 			ipv6_nbr_set_state(nbr, NET_IPV6_NBR_STATE_REACHABLE);
 			net_ipv6_nbr_data(nbr)->ns_count = 0U;
 
@@ -1573,7 +1529,8 @@ static inline bool handle_na_neighbor(struct net_pkt *pkt,
 			ipv6_nbr_set_state(nbr, NET_IPV6_NBR_STATE_STALE);
 		}
 
-		net_ipv6_nbr_data(nbr)->is_router = net_is_router(pkt);
+		net_ipv6_nbr_data(nbr)->is_router =
+			(na_hdr->flags & NET_ICMPV6_NA_FLAG_ROUTER);
 
 		goto send_pending;
 	}
@@ -1581,7 +1538,7 @@ static inline bool handle_na_neighbor(struct net_pkt *pkt,
 	/* We do not update the address if override bit is not set
 	 * and we have a valid address in the cache.
 	 */
-	if (!net_is_override(pkt) && lladdr_changed) {
+	if (!(na_hdr->flags & NET_ICMPV6_NA_FLAG_OVERRIDE) && lladdr_changed) {
 		if (net_ipv6_nbr_data(nbr)->state ==
 		    NET_IPV6_NBR_STATE_REACHABLE) {
 			ipv6_nbr_set_state(nbr, NET_IPV6_NBR_STATE_STALE);
@@ -1590,8 +1547,9 @@ static inline bool handle_na_neighbor(struct net_pkt *pkt,
 		return false;
 	}
 
-	if (net_is_override(pkt) ||
-	    (!net_is_override(pkt) && tllao_offset && !lladdr_changed)) {
+	if (na_hdr->flags & NET_ICMPV6_NA_FLAG_OVERRIDE ||
+	    (!(na_hdr->flags & NET_ICMPV6_NA_FLAG_OVERRIDE) &&
+	     tllao_offset && !lladdr_changed)) {
 
 		if (lladdr_changed) {
 			dbg_update_neighbor_lladdr_raw(
@@ -1601,7 +1559,7 @@ static inline bool handle_na_neighbor(struct net_pkt *pkt,
 					 cached_lladdr->len);
 		}
 
-		if (net_is_solicited(pkt)) {
+		if (na_hdr->flags & NET_ICMPV6_NA_FLAG_SOLICITED) {
 			ipv6_nbr_set_state(nbr, NET_IPV6_NBR_STATE_REACHABLE);
 
 			/* We might have active timer from PROBE */
@@ -1618,23 +1576,22 @@ static inline bool handle_na_neighbor(struct net_pkt *pkt,
 		}
 	}
 
-	if (net_ipv6_nbr_data(nbr)->is_router && !net_is_router(pkt)) {
+	if (net_ipv6_nbr_data(nbr)->is_router &&
+	    !(na_hdr->flags & NET_ICMPV6_NA_FLAG_ROUTER)) {
 		/* Update the routing if the peer is no longer
 		 * a router.
 		 */
 		/* FIXME */
 	}
 
-	net_ipv6_nbr_data(nbr)->is_router = net_is_router(pkt);
+	net_ipv6_nbr_data(nbr)->is_router =
+		(na_hdr->flags & NET_ICMPV6_NA_FLAG_ROUTER);
 
 send_pending:
 	/* Next send any pending messages to the peer. */
 	pending = net_ipv6_nbr_data(nbr)->pending;
-
 	if (pending) {
-		NET_DBG("Sending pending %p to %s lladdr %s", pending,
-			log_strdup(net_sprint_ipv6_addr(
-					   &NET_IPV6_HDR(pending)->dst)),
+		NET_DBG("Sending pending %p to lladdr %s", pending,
 			log_strdup(net_sprint_ll_addr(cached_lladdr->addr,
 						      cached_lladdr->len)));
 
@@ -1654,55 +1611,52 @@ static enum net_verdict handle_na_input(struct net_pkt *pkt,
 					struct net_ipv6_hdr *ip_hdr,
 					struct net_icmp_hdr *icmp_hdr)
 {
-	u16_t total_len = net_pkt_get_len(pkt);
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(na_access,
+					      struct net_icmpv6_na_hdr);
+	NET_PKT_DATA_ACCESS_DEFINE(nd_access, struct net_icmpv6_nd_opt_hdr);
+	u16_t length = net_pkt_get_len(pkt);
 	u16_t tllao_offset = 0U;
-	u8_t prev_opt_len = 0U;
-	struct net_icmpv6_nd_opt_hdr nd_opt_hdr;
-	struct net_icmpv6_na_hdr na_hdr;
+	struct net_icmpv6_nd_opt_hdr *nd_opt_hdr;
+	struct net_icmpv6_na_hdr *na_hdr;
 	struct net_if_addr *ifaddr;
-	size_t left_len;
-	int ret;
 
-	ret = net_icmpv6_get_na_hdr(pkt, &na_hdr);
-	if (ret < 0) {
-		NET_ERR("NULL NA header - dropping");
+	na_hdr = (struct net_icmpv6_na_hdr *)net_pkt_get_data_new(pkt,
+								  &na_access);
+	if (!na_hdr) {
+		NET_ERR("DROP: NULL NA header");
 		goto drop;
 	}
 
 	dbg_addr_recv_tgt("Neighbor Advertisement",
-			  &ip_hdr->src, &ip_hdr->dst, &na_hdr.tgt);
+			  &ip_hdr->src, &ip_hdr->dst, &na_hdr->tgt);
 
 	net_stats_update_ipv6_nd_recv(net_pkt_iface(pkt));
 
-	if ((total_len < (sizeof(struct net_ipv6_hdr) +
-			  sizeof(struct net_icmp_hdr) +
-			  sizeof(struct net_icmpv6_na_hdr) +
-			  sizeof(struct net_icmpv6_nd_opt_hdr))) ||
-	    (ip_hdr->hop_limit != NET_IPV6_ND_HOP_LIMIT) ||
-	    net_ipv6_is_addr_mcast(&na_hdr.tgt) ||
-	    (net_is_solicited(pkt) &&
-	     net_ipv6_is_addr_mcast(&ip_hdr->dst))) {
-		struct net_icmp_hdr icmp_hdr;
-
-		ret = net_icmpv6_get_hdr(pkt, &icmp_hdr);
-		if (ret < 0 || icmp_hdr.code != 0) {
-			goto drop;
-		}
+	if (((length < (sizeof(struct net_ipv6_hdr) +
+			sizeof(struct net_icmp_hdr) +
+			sizeof(struct net_icmpv6_na_hdr) +
+			sizeof(struct net_icmpv6_nd_opt_hdr))) ||
+	     (ip_hdr->hop_limit != NET_IPV6_ND_HOP_LIMIT) ||
+	     net_ipv6_is_addr_mcast(&na_hdr->tgt) ||
+	     (na_hdr->flags & NET_ICMPV6_NA_FLAG_SOLICITED &&
+	      net_ipv6_is_addr_mcast(&ip_hdr->dst))) &&
+	    (icmp_hdr->code != 0)) {
+		goto drop;
 	}
 
+	net_pkt_acknowledge_data(pkt, &na_access);
+
 	net_pkt_set_ipv6_ext_opt_len(pkt, sizeof(struct net_icmpv6_na_hdr));
+	length -= (sizeof(struct net_ipv6_hdr) + sizeof(struct net_icmp_hdr));
 
-	left_len = net_pkt_get_len(pkt) - (sizeof(struct net_ipv6_hdr) +
-					   sizeof(struct net_icmp_hdr));
+	nd_opt_hdr = (struct net_icmpv6_nd_opt_hdr *)
+		net_pkt_get_data_new(pkt, &nd_access);
 
-	ret = net_icmpv6_get_nd_opt_hdr(pkt, &nd_opt_hdr);
+	while (nd_opt_hdr && nd_opt_hdr->len &&
+	       net_pkt_ipv6_ext_opt_len(pkt) < length) {
+		u8_t prev_opt_len;
 
-	while (!ret && net_pkt_ipv6_ext_opt_len(pkt) < left_len) {
-		if (!nd_opt_hdr.len) {
-			break;
-		}
-
-		switch (nd_opt_hdr.type) {
+		switch (nd_opt_hdr->type) {
 		case NET_ICMPV6_ND_OPT_TLLAO:
 			tllao_offset = net_pkt_ip_hdr_len(pkt) +
 				net_pkt_ipv6_ext_len(pkt) +
@@ -1711,7 +1665,7 @@ static enum net_verdict handle_na_input(struct net_pkt *pkt,
 			break;
 
 		default:
-			NET_DBG("Unknown ND option 0x%x", nd_opt_hdr.type);
+			NET_DBG("Unknown ND option 0x%x", nd_opt_hdr->type);
 			break;
 		}
 
@@ -1719,33 +1673,35 @@ static enum net_verdict handle_na_input(struct net_pkt *pkt,
 
 		net_pkt_set_ipv6_ext_opt_len(pkt,
 					     net_pkt_ipv6_ext_opt_len(pkt) +
-					     (nd_opt_hdr.len << 3));
+					     (nd_opt_hdr->len << 3));
 
 		if (prev_opt_len >= net_pkt_ipv6_ext_opt_len(pkt)) {
-			NET_ERR("Corrupted NA message");
+			NET_ERR("DROP: Corrupted NA message");
 			goto drop;
 		}
 
-		ret = net_icmpv6_get_nd_opt_hdr(pkt, &nd_opt_hdr);
+		net_pkt_acknowledge_data(pkt, &nd_access);
+		nd_opt_hdr = (struct net_icmpv6_nd_opt_hdr *)
+			net_pkt_get_data_new(pkt, &nd_access);
 	}
 
 	ifaddr = net_if_ipv6_addr_lookup_by_iface(net_pkt_iface(pkt),
-						  &na_hdr.tgt);
+						  &na_hdr->tgt);
 	if (ifaddr) {
 		NET_DBG("Interface %p already has address %s",
 			net_pkt_iface(pkt),
-			log_strdup(net_sprint_ipv6_addr(&na_hdr.tgt)));
+			log_strdup(net_sprint_ipv6_addr(&na_hdr->tgt)));
 
 #if defined(CONFIG_NET_IPV6_DAD)
 		if (ifaddr->addr_state == NET_ADDR_TENTATIVE) {
-			dad_failed(net_pkt_iface(pkt), &na_hdr.tgt);
+			dad_failed(net_pkt_iface(pkt), &na_hdr->tgt);
 		}
 #endif /* CONFIG_NET_IPV6_DAD */
 
 		goto drop;
 	}
 
-	if (!handle_na_neighbor(pkt, &na_hdr, tllao_offset)) {
+	if (!handle_na_neighbor(pkt, na_hdr, tllao_offset)) {
 		goto drop;
 	}
 
