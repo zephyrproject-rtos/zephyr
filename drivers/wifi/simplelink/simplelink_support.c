@@ -27,9 +27,9 @@ LOG_MODULE_DECLARE(LOG_MODULE_NAME);
 
 #undef ASSERT_ON_ERROR
 #define ASSERT_ON_ERROR(ret, e) __ASSERT(ret >= 0, e)
-#define DEVICE_ERROR	 ("See \"DEVICE ERRORS CODES\" in SimpleLink errors.h")
-#define WLAN_ERROR	 ("See \"WLAN ERRORS CODES\" in SimpleLink errors.h")
-#define NETAPP_ERROR	 ("See \"NETAPP ERRORS CODES\" in SimpleLink errors.h")
+#define DEVICE_ERROR	 "See \"DEVICE ERRORS CODES\" in SimpleLink errors.h"
+#define WLAN_ERROR	 "See \"WLAN ERRORS CODES\" in SimpleLink errors.h"
+#define NETAPP_ERROR	 "See \"NETAPP ERRORS CODES\" in SimpleLink errors.h"
 
 #define CHANNEL_MASK_ALL	    (0x1FFF)
 #define RSSI_TH_MAX		    (-95)
