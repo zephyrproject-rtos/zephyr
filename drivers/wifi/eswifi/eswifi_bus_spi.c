@@ -20,6 +20,8 @@ LOG_MODULE_REGISTER(wifi_eswifi_bus_spi);
 #define ESWIFI_SPI_THREAD_STACK_SIZE 1024
 K_THREAD_STACK_MEMBER(eswifi_spi_poll_stack, ESWIFI_SPI_THREAD_STACK_SIZE);
 
+#define SPI_READ_CHUNK_SIZE 32
+
 struct eswifi_spi_data {
 	struct device *spi_dev;
 	struct eswifi_gpio csn;
@@ -100,6 +102,7 @@ static int eswifi_spi_request(struct eswifi_dev *eswifi, char *cmd, size_t clen,
 			      char *rsp, size_t rlen)
 {
 	struct eswifi_spi_data *spi = eswifi->bus_data;
+	unsigned int offset = 0, to_read = SPI_READ_CHUNK_SIZE;
 	char tmp[2];
 	int err;
 
@@ -155,9 +158,15 @@ data:
 		return err;
 	}
 
-	eswifi_spi_read(eswifi, rsp, rlen);
-	k_sleep(1);
+	while (eswifi_spi_cmddata_ready(spi) && to_read) {
+		to_read = min(rlen - offset, to_read);
+		memset(rsp + offset, 0, to_read);
+		eswifi_spi_read(eswifi, rsp + offset, to_read);
+		offset += to_read;
+		k_yield();
+	}
 
+	/* Flush remaining data if receiving buffer not large enough */
 	while (eswifi_spi_cmddata_ready(spi)) {
 		eswifi_spi_read(eswifi, tmp, 2);
 		k_sleep(1);
@@ -168,19 +177,19 @@ data:
 
 	LOG_DBG("success");
 
-	return 0;
+	return offset;
 }
 
 static void eswifi_spi_read_msg(struct eswifi_dev *eswifi)
 {
 	char cmd[] = "MR\r";
+	char *rsp;
 	int err;
 
 	eswifi_lock(eswifi);
 
-	err = eswifi_request(eswifi, cmd, strlen(cmd),
-			     eswifi->buf, sizeof(eswifi->buf));
-	if (err || !eswifi_is_buf_at_ok(eswifi->buf)) {
+	err = eswifi_at_cmd_rsp(eswifi, cmd, &rsp);
+	if (err < 0) {
 		LOG_ERR("Unable to read msg %d", err);
 	}
 

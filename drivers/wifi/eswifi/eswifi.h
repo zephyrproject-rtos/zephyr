@@ -98,6 +98,7 @@ static inline void eswifi_unlock(struct eswifi_dev *eswifi)
 extern struct eswifi_bus_ops eswifi_bus_ops_spi;
 int eswifi_offload_init(struct eswifi_dev *eswifi);
 struct eswifi_dev *eswifi_by_iface_idx(u8_t iface);
-bool eswifi_is_buf_at_ok(char *str);
+int eswifi_at_cmd_rsp(struct eswifi_dev *eswifi, char *cmd, char **rsp);
+int eswifi_at_cmd(struct eswifi_dev *eswifi, char *cmd);
 
 #endif
