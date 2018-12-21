@@ -88,6 +88,16 @@ int _impl_k_msgq_alloc_init(struct k_msgq *q, size_t msg_size,
 	return ret;
 }
 
+u32_t _impl_k_msgq_num_free_get(struct k_msgq *q)
+{
+	return q->max_msgs - q->used_msgs;
+}
+
+u32_t _impl_k_msgq_num_used_get(struct k_msgq *q)
+{
+	return q->used_msgs;
+}
+
 #ifdef CONFIG_USERSPACE
 Z_SYSCALL_HANDLER(k_msgq_alloc_init, q, msg_size, max_msgs)
 {

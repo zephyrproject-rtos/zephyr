@@ -1,24 +1,39 @@
 # kernel is a normal CMake library and not a zephyr_library because it
 # should not be --whole-archive'd
 add_library(kernel
+  aio_comparator.c
   alert.c
+  can.c
+  counter.c
   device.c
+  dma.c
+  entropy.c
   errno.c
+  flash.c
+  gpio.c
   idle.c
   init.c
+  ipm.c
+  i2c.c
+  i2s.c
+  led.c
   mailbox.c
   mem_slab.c
   mempool.c
   msg_q.c
   mutex.c
   pipes.c
+  pwm.c
   queue.c
   sched.c
   sem.c
+  sensor.c
+  spi.c
   stack.c
   system_work_q.c
   thread.c
   thread_abort.c
+  uart.c
   version.c
   work_q.c
   smp.c

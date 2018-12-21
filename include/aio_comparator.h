@@ -48,13 +48,6 @@ struct aio_cmp_driver_api {
  */
 __syscall int aio_cmp_disable(struct device *dev, u8_t index);
 
-static inline int _impl_aio_cmp_disable(struct device *dev, u8_t index)
-{
-	const struct aio_cmp_driver_api *api = dev->driver_api;
-
-	return api->disable(dev, index);
-}
-
 /**
  * @brief Configure and enable a particular comparator.
  *
@@ -94,14 +87,6 @@ static inline int aio_cmp_configure(struct device *dev, u8_t index,
  * @retval 0 if no aio_cmp interrupt is pending.
  */
 __syscall int aio_cmp_get_pending_int(struct device *dev);
-
-static inline int _impl_aio_cmp_get_pending_int(struct device *dev)
-{
-	struct aio_cmp_driver_api *api;
-
-	api = (struct aio_cmp_driver_api *)dev->driver_api;
-	return api->get_pending_int(dev);
-}
 
 #ifdef __cplusplus
 }

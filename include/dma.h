@@ -239,14 +239,6 @@ static inline int dma_reload(struct device *dev, u32_t channel,
  */
 __syscall int dma_start(struct device *dev, u32_t channel);
 
-static inline int _impl_dma_start(struct device *dev, u32_t channel)
-{
-	const struct dma_driver_api *api =
-		(const struct dma_driver_api *)dev->driver_api;
-
-	return api->start(dev, channel);
-}
-
 /**
  * @brief Stops the DMA transfer and disables the channel.
  *
@@ -261,14 +253,6 @@ static inline int _impl_dma_start(struct device *dev, u32_t channel)
  * @retval Negative errno code if failure.
  */
 __syscall int dma_stop(struct device *dev, u32_t channel);
-
-static inline int _impl_dma_stop(struct device *dev, u32_t channel)
-{
-	const struct dma_driver_api *api =
-		(const struct dma_driver_api *)dev->driver_api;
-
-	return api->stop(dev, channel);
-}
 
 /**
  * @brief Look-up generic width index to be used in registers

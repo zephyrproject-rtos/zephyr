@@ -75,6 +75,16 @@ void _impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 	sys_trace_end_call(SYS_TRACE_ID_SEMA_INIT);
 }
 
+void _impl_k_sem_reset(struct k_sem *sem)
+{
+	sem->count = 0;
+}
+
+unsigned int _impl_k_sem_count_get(struct k_sem *sem)
+{
+	return sem->count;
+}
+
 #ifdef CONFIG_USERSPACE
 Z_SYSCALL_HANDLER(k_sem_init, sem, initial_count, limit)
 {

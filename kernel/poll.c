@@ -244,6 +244,11 @@ int _impl_k_poll(struct k_poll_event *events, int num_events, s32_t timeout)
 	return swap_rc;
 }
 
+void _impl_k_poll_signal_reset(struct k_poll_signal *signal)
+{
+	signal->signaled = 0;
+}
+
 #ifdef CONFIG_USERSPACE
 Z_SYSCALL_HANDLER(k_poll, events, num_events, timeout)
 {

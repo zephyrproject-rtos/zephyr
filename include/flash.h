@@ -94,14 +94,6 @@ struct flash_driver_api {
 __syscall int flash_read(struct device *dev, off_t offset, void *data,
 			 size_t len);
 
-static inline int _impl_flash_read(struct device *dev, off_t offset, void *data,
-			     size_t len)
-{
-	const struct flash_driver_api *api = dev->driver_api;
-
-	return api->read(dev, offset, data, len);
-}
-
 /**
  *  @brief  Write buffer into flash memory.
  *
@@ -117,14 +109,6 @@ static inline int _impl_flash_read(struct device *dev, off_t offset, void *data,
  */
 __syscall int flash_write(struct device *dev, off_t offset, const void *data,
 			  size_t len);
-
-static inline int _impl_flash_write(struct device *dev, off_t offset,
-				    const void *data, size_t len)
-{
-	const struct flash_driver_api *api = dev->driver_api;
-
-	return api->write(dev, offset, data, len);
-}
 
 /**
  *  @brief  Erase part or all of a flash memory
@@ -149,14 +133,6 @@ static inline int _impl_flash_write(struct device *dev, off_t offset,
  */
 __syscall int flash_erase(struct device *dev, off_t offset, size_t size);
 
-static inline int _impl_flash_erase(struct device *dev, off_t offset,
-				    size_t size)
-{
-	const struct flash_driver_api *api = dev->driver_api;
-
-	return api->erase(dev, offset, size);
-}
-
 /**
  *  @brief  Enable or disable write protection for a flash memory
  *
@@ -174,14 +150,6 @@ static inline int _impl_flash_erase(struct device *dev, off_t offset,
  *  @return  0 on success, negative errno code on fail.
  */
 __syscall int flash_write_protection_set(struct device *dev, bool enable);
-
-static inline int _impl_flash_write_protection_set(struct device *dev,
-						   bool enable)
-{
-	const struct flash_driver_api *api = dev->driver_api;
-
-	return api->write_protection(dev, enable);
-}
 
 struct flash_pages_info {
 	off_t start_offset; /* offset from the base of flash address */
@@ -262,13 +230,6 @@ void flash_page_foreach(struct device *dev, flash_page_cb cb, void *data);
  *  @return  write block size in bytes.
  */
 __syscall size_t flash_get_write_block_size(struct device *dev);
-
-static inline size_t _impl_flash_get_write_block_size(struct device *dev)
-{
-	const struct flash_driver_api *api = dev->driver_api;
-
-	return api->write_block_size;
-}
 
 #ifdef __cplusplus
 }

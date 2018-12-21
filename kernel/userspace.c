@@ -315,6 +315,27 @@ void _k_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 	}
 	irq_unlock(key);
 }
+#else
+
+void *_impl_k_object_alloc(enum k_objects otype)
+{
+	ARG_UNUSED(otype);
+
+	return NULL;
+}
+
+void _impl_k_object_access_grant(void *object,
+					       struct k_thread *thread)
+{
+	ARG_UNUSED(object);
+	ARG_UNUSED(thread);
+}
+
+void _impl_k_object_release(void *object)
+{
+	ARG_UNUSED(object);
+}
+
 #endif /* CONFIG_DYNAMIC_OBJECTS */
 
 static int thread_index_get(struct k_thread *t)

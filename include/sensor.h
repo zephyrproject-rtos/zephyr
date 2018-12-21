@@ -281,20 +281,6 @@ __syscall int sensor_attr_set(struct device *dev,
 			      enum sensor_attribute attr,
 			      const struct sensor_value *val);
 
-static inline int _impl_sensor_attr_set(struct device *dev,
-					enum sensor_channel chan,
-					enum sensor_attribute attr,
-					const struct sensor_value *val)
-{
-	const struct sensor_driver_api *api = dev->driver_api;
-
-	if (!api->attr_set) {
-		return -ENOTSUP;
-	}
-
-	return api->attr_set(dev, chan, attr, val);
-}
-
 /**
  * @brief Activate a sensor's trigger and set the trigger handler
  *
@@ -343,13 +329,6 @@ static inline int sensor_trigger_set(struct device *dev,
  */
 __syscall int sensor_sample_fetch(struct device *dev);
 
-static inline int _impl_sensor_sample_fetch(struct device *dev)
-{
-	const struct sensor_driver_api *api = dev->driver_api;
-
-	return api->sample_fetch(dev, SENSOR_CHAN_ALL);
-}
-
 /**
  * @brief Fetch a sample from the sensor and store it in an internal
  * driver buffer
@@ -371,14 +350,6 @@ static inline int _impl_sensor_sample_fetch(struct device *dev)
  */
 __syscall int sensor_sample_fetch_chan(struct device *dev,
 				       enum sensor_channel type);
-
-static inline int _impl_sensor_sample_fetch_chan(struct device *dev,
-						 enum sensor_channel type)
-{
-	const struct sensor_driver_api *api = dev->driver_api;
-
-	return api->sample_fetch(dev, type);
-}
 
 /**
  * @brief Get a reading from a sensor device
@@ -404,15 +375,6 @@ static inline int _impl_sensor_sample_fetch_chan(struct device *dev,
 __syscall int sensor_channel_get(struct device *dev,
 				 enum sensor_channel chan,
 				 struct sensor_value *val);
-
-static inline int _impl_sensor_channel_get(struct device *dev,
-					   enum sensor_channel chan,
-					   struct sensor_value *val)
-{
-	const struct sensor_driver_api *api = dev->driver_api;
-
-	return api->channel_get(dev, chan, val);
-}
 
 /**
  * @brief The value of gravitational constant in micro m/s^2.

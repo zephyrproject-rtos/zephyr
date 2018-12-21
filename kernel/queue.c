@@ -351,6 +351,21 @@ void *_impl_k_queue_get(struct k_queue *queue, s32_t timeout)
 #endif /* CONFIG_POLL */
 }
 
+int _impl_k_queue_is_empty(struct k_queue *queue)
+{
+	return (int)sys_sflist_is_empty(&queue->data_q);
+}
+
+void *_impl_k_queue_peek_head(struct k_queue *queue)
+{
+	return z_queue_node_peek(sys_sflist_peek_head(&queue->data_q), false);
+}
+
+void *_impl_k_queue_peek_tail(struct k_queue *queue)
+{
+	return z_queue_node_peek(sys_sflist_peek_tail(&queue->data_q), false);
+}
+
 #ifdef CONFIG_USERSPACE
 Z_SYSCALL_HANDLER(k_queue_get, queue, timeout_p)
 {

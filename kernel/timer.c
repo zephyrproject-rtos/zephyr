@@ -109,6 +109,21 @@ void k_timer_init(struct k_timer *timer,
 	_k_object_init(timer);
 }
 
+u32_t _impl_k_timer_remaining_get(struct k_timer *timer)
+{
+	return (u32_t)__ticks_to_ms(z_timeout_remaining(&timer->timeout));
+}
+
+void _impl_k_timer_user_data_set(struct k_timer *timer,
+					       void *user_data)
+{
+	timer->user_data = user_data;
+}
+
+void *_impl_k_timer_user_data_get(struct k_timer *timer)
+{
+	return timer->user_data;
+}
 
 void _impl_k_timer_start(struct k_timer *timer, s32_t duration, s32_t period)
 {

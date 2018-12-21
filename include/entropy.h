@@ -65,17 +65,6 @@ __syscall int entropy_get_entropy(struct device *dev,
 				  u8_t *buffer,
 				  u16_t length);
 
-static inline int _impl_entropy_get_entropy(struct device *dev,
-					    u8_t *buffer,
-					    u16_t length)
-{
-	const struct entropy_driver_api *api = dev->driver_api;
-
-	__ASSERT(api->get_entropy != NULL,
-		"Callback pointer should not be NULL");
-	return api->get_entropy(dev, buffer, length);
-}
-
 /* Busy-wait for random data to be ready */
 #define ENTROPY_BUSYWAIT  BIT(0)
 

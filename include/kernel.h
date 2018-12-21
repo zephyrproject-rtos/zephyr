@@ -217,29 +217,11 @@ static inline void _k_object_init(void *obj)
 /**
  * @internal
  */
-static inline void _impl_k_object_access_grant(void *object,
-					       struct k_thread *thread)
-{
-	ARG_UNUSED(object);
-	ARG_UNUSED(thread);
-}
-
-/**
- * @internal
- */
 static inline void k_object_access_revoke(void *object,
 					  struct k_thread *thread)
 {
 	ARG_UNUSED(object);
 	ARG_UNUSED(thread);
-}
-
-/**
- * @internal
- */
-static inline void _impl_k_object_release(void *object)
-{
-	ARG_UNUSED(object);
 }
 
 static inline void k_object_access_all_grant(void *object)
@@ -322,13 +304,6 @@ __syscall void *k_object_alloc(enum k_objects otype);
  */
 void k_object_free(void *obj);
 #else
-static inline void *_impl_k_object_alloc(enum k_objects otype)
-{
-	ARG_UNUSED(otype);
-
-	return NULL;
-}
-
 static inline void k_obj_free(void *obj)
 {
 	ARG_UNUSED(obj);
@@ -1501,11 +1476,6 @@ extern s32_t z_timeout_remaining(struct _timeout *timeout);
  */
 __syscall u32_t k_timer_remaining_get(struct k_timer *timer);
 
-static inline u32_t _impl_k_timer_remaining_get(struct k_timer *timer)
-{
-	return (u32_t)__ticks_to_ms(z_timeout_remaining(&timer->timeout));
-}
-
 /**
  * @brief Associate user-specific data with a timer.
  *
@@ -1522,14 +1492,6 @@ static inline u32_t _impl_k_timer_remaining_get(struct k_timer *timer)
  */
 __syscall void k_timer_user_data_set(struct k_timer *timer, void *user_data);
 
-/**
- * @internal
- */
-static inline void _impl_k_timer_user_data_set(struct k_timer *timer,
-					       void *user_data)
-{
-	timer->user_data = user_data;
-}
 
 /**
  * @brief Retrieve the user-specific data from a timer.
@@ -1539,11 +1501,6 @@ static inline void _impl_k_timer_user_data_set(struct k_timer *timer,
  * @return The user data.
  */
 __syscall void *k_timer_user_data_get(struct k_timer *timer);
-
-static inline void *_impl_k_timer_user_data_get(struct k_timer *timer)
-{
-	return timer->user_data;
-}
 
 /** @} */
 
@@ -1919,11 +1876,6 @@ static inline bool k_queue_unique_append(struct k_queue *queue, void *data)
  */
 __syscall int k_queue_is_empty(struct k_queue *queue);
 
-static inline int _impl_k_queue_is_empty(struct k_queue *queue)
-{
-	return (int)sys_sflist_is_empty(&queue->data_q);
-}
-
 /**
  * @brief Peek element at the head of queue.
  *
@@ -1935,11 +1887,6 @@ static inline int _impl_k_queue_is_empty(struct k_queue *queue)
  */
 __syscall void *k_queue_peek_head(struct k_queue *queue);
 
-static inline void *_impl_k_queue_peek_head(struct k_queue *queue)
-{
-	return z_queue_node_peek(sys_sflist_peek_head(&queue->data_q), false);
-}
-
 /**
  * @brief Peek element at the tail of queue.
  *
@@ -1950,11 +1897,6 @@ static inline void *_impl_k_queue_peek_head(struct k_queue *queue)
  * @return Tail element, or NULL if queue is empty.
  */
 __syscall void *k_queue_peek_tail(struct k_queue *queue);
-
-static inline void *_impl_k_queue_peek_tail(struct k_queue *queue)
-{
-	return z_queue_node_peek(sys_sflist_peek_tail(&queue->data_q), false);
-}
 
 /**
  * @brief Statically define and initialize a queue.
@@ -3023,14 +2965,6 @@ __syscall void k_sem_give(struct k_sem *sem);
 __syscall void k_sem_reset(struct k_sem *sem);
 
 /**
- * @internal
- */
-static inline void _impl_k_sem_reset(struct k_sem *sem)
-{
-	sem->count = 0;
-}
-
-/**
  * @brief Get a semaphore's count.
  *
  * This routine returns the current count of @a sem.
@@ -3041,14 +2975,6 @@ static inline void _impl_k_sem_reset(struct k_sem *sem)
  * @req K-SEM-001
  */
 __syscall unsigned int k_sem_count_get(struct k_sem *sem);
-
-/**
- * @internal
- */
-static inline unsigned int _impl_k_sem_count_get(struct k_sem *sem)
-{
-	return sem->count;
-}
 
 /**
  * @brief Statically define and initialize a semaphore.
@@ -3445,12 +3371,6 @@ __syscall u32_t k_msgq_num_free_get(struct k_msgq *q);
  */
 __syscall void  k_msgq_get_attrs(struct k_msgq *q, struct k_msgq_attrs *attrs);
 
-
-static inline u32_t _impl_k_msgq_num_free_get(struct k_msgq *q)
-{
-	return q->max_msgs - q->used_msgs;
-}
-
 /**
  * @brief Get the number of messages in a message queue.
  *
@@ -3462,11 +3382,6 @@ static inline u32_t _impl_k_msgq_num_free_get(struct k_msgq *q)
  * @req K-MSGQ-002
  */
 __syscall u32_t k_msgq_num_used_get(struct k_msgq *q);
-
-static inline u32_t _impl_k_msgq_num_used_get(struct k_msgq *q)
-{
-	return q->used_msgs;
-}
 
 /** @} */
 
@@ -4460,11 +4375,6 @@ __syscall void k_poll_signal_init(struct k_poll_signal *signal);
  * @req K-POLL-001
  */
 __syscall void k_poll_signal_reset(struct k_poll_signal *signal);
-
-static inline void _impl_k_poll_signal_reset(struct k_poll_signal *signal)
-{
-	signal->signaled = 0;
-}
 
 /**
  * @brief Fetch the signaled state and result value of a poll signal

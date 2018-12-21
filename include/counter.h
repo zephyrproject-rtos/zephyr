@@ -59,13 +59,6 @@ struct counter_driver_api {
  */
 __syscall int counter_start(struct device *dev);
 
-static inline int _impl_counter_start(struct device *dev)
-{
-	const struct counter_driver_api *api = dev->driver_api;
-
-	return api->start(dev);
-}
-
 /**
  * @brief Stop counter device.
  * @param dev Pointer to the device structure for the driver instance.
@@ -76,13 +69,6 @@ static inline int _impl_counter_start(struct device *dev)
  */
 __syscall int counter_stop(struct device *dev);
 
-static inline int _impl_counter_stop(struct device *dev)
-{
-	const struct counter_driver_api *api = dev->driver_api;
-
-	return api->stop(dev);
-}
-
 /**
  * @brief Read current counter value.
  * @param dev Pointer to the device structure for the driver instance.
@@ -90,13 +76,6 @@ static inline int _impl_counter_stop(struct device *dev)
  * @return  32-bit value
  */
 __syscall u32_t counter_read(struct device *dev);
-
-static inline u32_t _impl_counter_read(struct device *dev)
-{
-	const struct counter_driver_api *api = dev->driver_api;
-
-	return api->read(dev);
-}
 
 /**
  * @brief Set an alarm.
@@ -136,14 +115,6 @@ static inline int counter_set_alarm(struct device *dev,
  * @retval 0 if no counter interrupt is pending.
  */
 __syscall int counter_get_pending_int(struct device *dev);
-
-static inline int _impl_counter_get_pending_int(struct device *dev)
-{
-	struct counter_driver_api *api;
-
-	api = (struct counter_driver_api *)dev->driver_api;
-	return api->get_pending_int(dev);
-}
 
 #ifdef __cplusplus
 }
