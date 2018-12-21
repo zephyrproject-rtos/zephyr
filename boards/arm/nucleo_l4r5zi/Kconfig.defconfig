@@ -12,7 +12,7 @@ config BOARD
 
 if UART_CONSOLE
 
-config UART_2
+config LPUART_1
 	default y
 
 endif # UART_CONSOLE
