@@ -10,3 +10,4 @@ flash: 256
 supported:
   - nvs
   - pwm
+  - can
