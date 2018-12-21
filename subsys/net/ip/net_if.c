@@ -284,11 +284,7 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
 	 * cache.
 	 */
 	if (net_pkt_family(pkt) == AF_INET6) {
-		pkt = net_ipv6_prepare_for_send(pkt);
-		if (!pkt) {
-			verdict = NET_CONTINUE;
-			goto done;
-		}
+		verdict = net_ipv6_prepare_for_send(pkt);
 	}
 #endif
 
