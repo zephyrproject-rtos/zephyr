@@ -29,6 +29,7 @@ add_subdirectory_if_kconfig(watchdog)
 add_subdirectory_if_kconfig(wifi)
 add_subdirectory_if_kconfig(can)
 add_subdirectory_if_kconfig(audio)
+add_subdirectory_if_kconfig(hwinfo)
 
 add_subdirectory_ifdef(CONFIG_FLASH_HAS_DRIVER_ENABLED flash)
 add_subdirectory_ifdef(CONFIG_SERIAL_HAS_DRIVER serial)
