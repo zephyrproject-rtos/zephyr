@@ -17,23 +17,19 @@ extern u32_t z_tick_get_32(void);
  */
 osStatus_t osKernelGetInfo(osVersion_t *version, char *id_buf, uint32_t id_size)
 {
-	char os_str[] = "Zephyr VMM.mm.pp";
-
 	if (version != NULL) {
 		version->api    = sys_kernel_version_get();
 		version->kernel = sys_kernel_version_get();
 	}
 
-	sprintf(os_str, "Zephyr V%2d.%2d.%2d",
-		SYS_KERNEL_VER_MAJOR(version->kernel),
-		SYS_KERNEL_VER_MINOR(version->kernel),
-		SYS_KERNEL_VER_PATCHLEVEL(version->kernel));
-
-	if ((id_buf != NULL) && (id_size > strlen(os_str))) {
-		memcpy(id_buf, os_str, strlen(os_str)+1);
+	if (id_buf != NULL) {
+		snprintf(id_buf, id_size, "Zephyr V%2d.%2d.%2d",
+			 SYS_KERNEL_VER_MAJOR(version->kernel),
+			 SYS_KERNEL_VER_MINOR(version->kernel),
+			 SYS_KERNEL_VER_PATCHLEVEL(version->kernel));
 	}
 
-	return (osOK);
+	return osOK;
 }
 
 /**
