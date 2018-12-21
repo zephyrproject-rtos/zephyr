@@ -643,14 +643,21 @@ static struct in6_addr *check_route(struct net_if *iface,
 	return nexthop;
 }
 
-struct net_pkt *net_ipv6_prepare_for_send(struct net_pkt *pkt)
+enum net_verdict net_ipv6_prepare_for_send(struct net_pkt *pkt)
 {
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access, struct net_ipv6_hdr);
 	struct in6_addr *nexthop = NULL;
 	struct net_if *iface = NULL;
+	struct net_ipv6_hdr *ip_hdr;
 	struct net_nbr *nbr;
 	int ret;
 
-	NET_ASSERT(pkt && pkt->frags);
+	NET_ASSERT(pkt && pkt->buffer);
+
+	ip_hdr = (struct net_ipv6_hdr *)net_pkt_get_data_new(pkt, &ipv6_access);
+	if (!ip_hdr) {
+		return NET_DROP;
+	}
 
 #if defined(CONFIG_NET_IPV6_FRAGMENT)
 	/* If we have already fragmented the packet, the fragment id will
@@ -681,7 +688,9 @@ struct net_pkt *net_ipv6_prepare_for_send(struct net_pkt *pkt)
 			 * thing to do here and will cause free memory access
 			 * if not done.
 			 */
-			net_pkt_set_sent(pkt, true);
+			if (IS_ENABLED(CONFIG_NET_TCP)) {
+				net_pkt_set_sent(pkt, true);
+			}
 
 			/* We need to unref here because we simulate the packet
 			 * sending.
@@ -692,19 +701,11 @@ struct net_pkt *net_ipv6_prepare_for_send(struct net_pkt *pkt)
 			 * is now split and its fragments will be sent
 			 * separately to network.
 			 */
-			return NULL;
+			return NET_CONTINUE;
 		}
 	}
 ignore_frag_error:
 #endif /* CONFIG_NET_IPV6_FRAGMENT */
-
-	/* Workaround Linux bug, see:
-	 * https://github.com/zephyrproject-rtos/zephyr/issues/3111
-	 */
-	if (atomic_test_bit(net_pkt_iface(pkt)->if_dev->flags,
-			    NET_IF_POINTOPOINT)) {
-		return pkt;
-	}
 
 	/* If the IPv6 destination address is not link local, then try to get
 	 * the next hop from routing table if we have multi interface routing
@@ -714,15 +715,19 @@ ignore_frag_error:
 	 */
 	if ((net_pkt_lladdr_dst(pkt)->addr &&
 	     ((IS_ENABLED(CONFIG_NET_ROUTING) &&
-	      net_ipv6_is_ll_addr(&NET_IPV6_HDR(pkt)->dst)) ||
+	      net_ipv6_is_ll_addr(&ip_hdr->dst)) ||
 	      !IS_ENABLED(CONFIG_NET_ROUTING))) ||
-	    net_ipv6_is_addr_mcast(&NET_IPV6_HDR(pkt)->dst)) {
-		return pkt;
+	    net_ipv6_is_addr_mcast(&ip_hdr->dst) ||
+	    /* Workaround Linux bug, see:
+	     * https://github.com/zephyrproject-rtos/zephyr/issues/3111
+	     */
+	    atomic_test_bit(net_pkt_iface(pkt)->if_dev->flags,
+			    NET_IF_POINTOPOINT)) {
+		return NET_OK;
 	}
 
-	if (net_if_ipv6_addr_onlink(&iface,
-				    &NET_IPV6_HDR(pkt)->dst)) {
-		nexthop = &NET_IPV6_HDR(pkt)->dst;
+	if (net_if_ipv6_addr_onlink(&iface, &ip_hdr->dst)) {
+		nexthop = &ip_hdr->dst;
 		net_pkt_set_iface(pkt, iface);
 	} else {
 		/* We need to figure out where the destination
@@ -730,11 +735,9 @@ ignore_frag_error:
 		 */
 		bool try_route = false;
 
-		nexthop = check_route(NULL, &NET_IPV6_HDR(pkt)->dst,
-				      &try_route);
+		nexthop = check_route(NULL, &ip_hdr->dst, &try_route);
 		if (!nexthop) {
-			net_pkt_unref(pkt);
-			return NULL;
+			return NET_DROP;
 		}
 
 		if (try_route) {
@@ -797,34 +800,31 @@ try_send:
 			}
 		}
 #endif
-
-		return pkt;
+		return NET_OK;
 	}
 
 #if defined(CONFIG_NET_IPV6_ND)
 	/* We need to send NS and wait for NA before sending the packet. */
 	ret = net_ipv6_send_ns(net_pkt_iface(pkt), pkt,
-			       &NET_IPV6_HDR(pkt)->src, NULL,
-			       nexthop, false);
+			       &ip_hdr->src, NULL, nexthop, false);
 	if (ret < 0) {
 		/* In case of an error, the NS send function will unref
 		 * the pkt.
 		 */
 		NET_DBG("Cannot send NS (%d)", ret);
-		return NULL;
 	}
 
-	NET_DBG("pkt %p (frag %p) will be sent later", pkt, pkt->frags);
+	NET_DBG("pkt %p (buffer %p) will be sent later", pkt, pkt->buffer);
+
+	return NET_CONTINUE;
 #else
 	ARG_UNUSED(ret);
 
-	NET_DBG("pkt %p (frag %p) cannot be sent, dropping it.", pkt,
-		pkt->frags);
+	NET_DBG("pkt %p (buffer %p) cannot be sent, dropping it.",
+		pkt, pkt->buffer);
 
-	net_pkt_unref(pkt);
+	return NET_DROP;
 #endif /* CONFIG_NET_IPV6_ND */
-
-	return NULL;
 }
 
 struct net_nbr *net_ipv6_nbr_lookup(struct net_if *iface,

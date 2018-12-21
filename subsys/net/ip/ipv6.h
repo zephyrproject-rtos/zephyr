@@ -232,9 +232,9 @@ typedef void (*net_nbr_cb_t)(struct net_nbr *nbr, void *user_data);
  *
  * @param pkt Network packet
  *
- * @return Return network packet to be sent.
+ * @return Return a verdict.
  */
-struct net_pkt *net_ipv6_prepare_for_send(struct net_pkt *pkt);
+enum net_verdict net_ipv6_prepare_for_send(struct net_pkt *pkt);
 
 /**
  * @brief Look for a neighbor from it's address on an iface
@@ -310,9 +310,9 @@ bool net_ipv6_nbr_rm(struct net_if *iface, struct in6_addr *addr);
 void net_ipv6_nbr_foreach(net_nbr_cb_t cb, void *user_data);
 
 #else /* CONFIG_NET_IPV6_NBR_CACHE */
-static inline struct net_pkt *net_ipv6_prepare_for_send(struct net_pkt *pkt)
+static inline enum net_verdict net_ipv6_prepare_for_send(struct net_pkt *pkt)
 {
-	return pkt;
+	return NET_OK;
 }
 
 static inline struct net_nbr *net_ipv6_nbr_lookup(struct net_if *iface,
