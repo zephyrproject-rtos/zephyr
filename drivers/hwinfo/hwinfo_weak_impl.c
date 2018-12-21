@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2018 Alexander Wachter
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <hwinfo.h>
+
+ssize_t __weak _impl_hwinfo_get_device_id(u8_t *buffer, size_t length)
+{
+	return -ENOTSUP;
+}
