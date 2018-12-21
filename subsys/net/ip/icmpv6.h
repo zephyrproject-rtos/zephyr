@@ -74,6 +74,14 @@ struct net_icmpv6_echo_req {
 	u16_t sequence;
 } __packed;
 
+struct net_icmpv6_mld_query {
+	u16_t max_response_code;
+	u16_t reserved;
+	struct in6_addr mcast_address;
+	u16_t flagg; /*S, QRV & QQIC */
+	u16_t num_sources;
+} __packed;
+
 #define NET_ICMPV6_ND_O_FLAG(flag) ((flag) & 0x40)
 #define NET_ICMPV6_ND_M_FLAG(flag) ((flag) & 0x80)
 

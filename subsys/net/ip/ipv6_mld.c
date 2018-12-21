@@ -302,58 +302,49 @@ static enum net_verdict handle_mld_query(struct net_pkt *pkt,
 					 struct net_ipv6_hdr *ip_hdr,
 					 struct net_icmp_hdr *icmp_hdr)
 {
-	u16_t total_len = net_pkt_get_len(pkt);
-	struct in6_addr mcast;
-	u16_t max_rsp_code, num_src, pkt_len;
-	u16_t offset, pos;
-	struct net_buf *frag;
-	int ret;
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(mld_access,
+					      struct net_icmpv6_mld_query);
+	u16_t length = net_pkt_get_len(pkt);
+	struct net_icmpv6_mld_query *mld_query;
+	u16_t pkt_len;
+
+	mld_query = (struct net_icmpv6_mld_query *)
+				net_pkt_get_data_new(pkt, &mld_access);
+	if (!mld_query) {
+		NET_DBG("DROP: NULL MLD query");
+		goto drop;
+	}
+
+	net_pkt_acknowledge_data(pkt, &mld_access);
 
 	dbg_addr_recv("Multicast Listener Query", &ip_hdr->src, &ip_hdr->dst);
 
 	net_stats_update_ipv6_mld_recv(net_pkt_iface(pkt));
 
-	/* offset tells now where the ICMPv6 header is starting */
-	frag = net_frag_get_pos(pkt,
-				net_pkt_ip_hdr_len(pkt) +
-				net_pkt_ipv6_ext_len(pkt) +
-				sizeof(struct net_icmp_hdr),
-				&offset);
+	mld_query->num_sources = ntohs(mld_query->num_sources);
 
-	frag = net_frag_read_be16(frag, offset, &pos, &max_rsp_code);
-	frag = net_frag_skip(frag, pos, &pos, 2); /* two reserved bytes */
-	frag = net_frag_read(frag, pos, &pos, sizeof(mcast), mcast.s6_addr);
-	frag = net_frag_skip(frag, pos, &pos, 2); /* skip S, QRV & QQIC */
-	frag = net_frag_read_be16(pkt->frags, pos, &pos, &num_src);
-	if (!frag && pos == 0xffff) {
+	pkt_len = sizeof(struct net_ipv6_hdr) +	net_pkt_ipv6_ext_len(pkt) +
+		sizeof(struct net_icmp_hdr) +
+		sizeof(struct net_icmpv6_mld_query) +
+		sizeof(struct in6_addr) * mld_query->num_sources;
+
+	if (length < pkt_len || pkt_len > NET_IPV6_MTU ||
+	    ip_hdr->hop_limit != 1 || icmp_hdr->code != 0) {
 		goto drop;
 	}
 
-	pkt_len = sizeof(struct net_ipv6_hdr) +	net_pkt_ipv6_ext_len(pkt) +
-		sizeof(struct net_icmp_hdr) + (2 + 2 + 16 + 2 + 2) +
-		sizeof(struct in6_addr) * num_src;
-
-	if ((total_len < pkt_len || pkt_len > NET_IPV6_MTU ||
-	     (ip_hdr->hop_limit != 1))) {
-		struct net_icmp_hdr icmp_hdr;
-
-		ret = net_icmpv6_get_hdr(pkt, &icmp_hdr);
-		if (ret < 0 || icmp_hdr.code != 0) {
-			NET_DBG("Preliminary check failed %u/%u, code %u, "
-				"hop %u", total_len, pkt_len,
-				icmp_hdr.code, ip_hdr->hop_limit);
-			goto drop;
-		}
-	}
-
-	/* Currently we only support a unspecified address query. */
-	if (!net_ipv6_addr_cmp(&mcast, net_ipv6_unspecified_address())) {
-		NET_DBG("Only supporting unspecified address query (%s)",
-			log_strdup(net_sprint_ipv6_addr(&mcast)));
+	/* Currently we only support an unspecified address query. */
+	if (!net_ipv6_addr_cmp(&mld_query->mcast_address,
+			       net_ipv6_unspecified_address())) {
+		NET_DBG("DROP: only supporting unspecified address query");
 		goto drop;
 	}
 
 	send_mld_report(net_pkt_iface(pkt));
+
+	net_pkt_unref(pkt);
+
+	return NET_OK;
 
 drop:
 	net_stats_update_ipv6_mld_drop(net_pkt_iface(pkt));
