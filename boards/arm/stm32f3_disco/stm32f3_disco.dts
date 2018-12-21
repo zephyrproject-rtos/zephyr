@@ -37,7 +37,7 @@
 			label = "User LD6";
 		};
 		green_led_7: led_7 {
-			gpios = <&gpiod 11 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpioe 11 GPIO_INT_ACTIVE_HIGH>;
 			label = "User LD7";
 		};
 		orange_led_8: led_8 {
