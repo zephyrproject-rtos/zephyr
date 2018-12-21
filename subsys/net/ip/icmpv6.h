@@ -82,6 +82,14 @@ struct net_icmpv6_mld_query {
 	u16_t num_sources;
 } __packed;
 
+struct net_icmpv6_mld_mcast_record {
+	u8_t record_type;
+	u8_t aux_data_len;
+	u16_t num_sources;
+	struct in6_addr mcast_address;
+} __packed;
+
+
 #define NET_ICMPV6_ND_O_FLAG(flag) ((flag) & 0x40)
 #define NET_ICMPV6_ND_M_FLAG(flag) ((flag) & 0x80)
 

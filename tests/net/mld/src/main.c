@@ -96,16 +96,28 @@ static void net_test_iface_init(struct net_if *iface)
 			     NET_LINK_ETHERNET);
 }
 
+static struct net_icmp_hdr *get_icmp_hdr(struct net_pkt *pkt)
+{
+	net_pkt_cursor_init(pkt);
+
+	net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) +
+		     net_pkt_ipv6_ext_len(pkt));
+
+	return (struct net_icmp_hdr *)net_pkt_cursor_get_pos(pkt);
+}
+
 #define NET_ICMP_HDR(pkt) ((struct net_icmp_hdr *)net_pkt_icmp_data(pkt))
 
 static int tester_send(struct device *dev, struct net_pkt *pkt)
 {
-	struct net_icmp_hdr *icmp = NET_ICMP_HDR(pkt);
+	struct net_icmp_hdr *icmp;
 
 	if (!pkt->frags) {
 		TC_ERROR("No data to send!\n");
 		return -ENODATA;
 	}
+
+	icmp = get_icmp_hdr(pkt);
 
 	if (icmp->type == NET_ICMPV6_MLDv2) {
 		/* FIXME, add more checks here */
@@ -353,11 +365,11 @@ static void send_query(struct net_if *iface)
 	net_pkt_append_be16(pkt, 0); /* Resv, S, QRV and QQIC */
 	net_pkt_append_be16(pkt, 0); /* number of addresses */
 
+	net_pkt_set_ipv6_ext_len(pkt, ROUTER_ALERT_LEN);
+
 	net_ipv6_finalize(pkt, NET_IPV6_NEXTHDR_HBHO);
 
 	net_pkt_set_iface(pkt, iface);
-
-	net_pkt_set_ipv6_ext_len(pkt, ROUTER_ALERT_LEN);
 
 	net_pkt_write_be16(pkt, pkt->frags,
 			   NET_IPV6H_LEN + ROUTER_ALERT_LEN + 2,
