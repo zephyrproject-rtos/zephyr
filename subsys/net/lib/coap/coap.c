@@ -681,7 +681,7 @@ int coap_handle_request(struct coap_packet *cpkt,
 		code = coap_header_get_code(cpkt);
 		method = method_from_code(resource, code);
 		if (!method) {
-			return 0;
+			return -EPERM;
 		}
 
 		return method(resource, cpkt);
