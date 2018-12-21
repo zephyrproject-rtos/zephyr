@@ -119,6 +119,54 @@ static void __parse_scan_res(char *str, struct wifi_scan_result *res)
 	}
 }
 
+int eswifi_at_cmd_rsp(struct eswifi_dev *eswifi, char *cmd, char **rsp)
+{
+	const char startstr[] = "\r\n";
+	const char endstr[] = "\r\nOK\r\n>";
+	int i, len, rsplen = -EINVAL;
+
+	len = eswifi_request(eswifi, cmd, strlen(cmd), eswifi->buf,
+			     sizeof(eswifi->buf));
+	if (len < 0) {
+		return -EIO;
+	}
+
+	/*
+	 * Check response, format should be "\r\n[DATA]\r\nOK\r\n>"
+	 * Data is in arbitrary format (not only ASCII)
+	 */
+
+	/* Check start characters */
+	if (strncmp(eswifi->buf, startstr, strlen(startstr))) {
+		return -EINVAL;
+	}
+
+	if (len < sizeof(endstr) - 1 + sizeof(startstr) - 1) {
+		return -EINVAL;
+	}
+
+	/* Check end characters */
+	for (i = len - sizeof(endstr); i > 0; i--) {
+		if (!strncmp(&eswifi->buf[i], endstr, 7)) {
+			if (rsp) {
+				eswifi->buf[i] = '\0';
+				*rsp = &eswifi->buf[2];
+				rsplen = &eswifi->buf[i] - *rsp;
+			} else {
+				rsplen = 0;
+			}
+			break;
+		}
+	}
+
+	return rsplen;
+}
+
+int eswifi_at_cmd(struct eswifi_dev *eswifi, char *cmd)
+{
+	return eswifi_at_cmd_rsp(eswifi, cmd, NULL);
+}
+
 struct eswifi_dev *eswifi_by_iface_idx(u8_t iface)
 {
 	/* only one instance */
@@ -149,58 +197,45 @@ static int __parse_ipv4_address(char *str, char *ssid, u8_t ip[4])
 	return 0;
 }
 
-bool eswifi_is_buf_at_ok(char *str)
-{
-	char at_ok[] = "OK\r\n> ";
-
-	while (*str) {
-		if (!strncmp(str++, at_ok, sizeof(at_ok) - 1)) {
-			return true;
-		}
-	}
-
-	return false;
-}
-
-static int eswifi_scan(struct eswifi_dev *eswifi)
+static void eswifi_scan(struct eswifi_dev *eswifi)
 {
 	char cmd[] = "F0\r";
-	int i, err;
+	char *data;
+	int i, ret;
 
 	LOG_DBG("");
 
 	eswifi_lock(eswifi);
 
-	err = eswifi_request(eswifi, cmd, strlen(cmd), eswifi->buf,
-			     sizeof(eswifi->buf));
-	if (err) {
+	ret = eswifi_at_cmd_rsp(eswifi, cmd, &data);
+	if (ret < 0) {
+		eswifi->scan_cb(eswifi->iface, -EIO, NULL);
 		eswifi_unlock(eswifi);
-		return err;
+		return;
 	}
 
-	for (i = 0; i < sizeof(eswifi->buf); i++) {
-		if (eswifi->buf[i] == '#') {
+	for (i = 0; i < ret; i++) {
+		if (data[i] == '#') {
 			struct wifi_scan_result res = {0};
 
-			__parse_scan_res(&eswifi->buf[i], &res);
+			__parse_scan_res(&data[i], &res);
 
 			eswifi->scan_cb(eswifi->iface, 0, &res);
 			k_yield();
 
-			while (eswifi->buf[i] != '\n')
+			while (data[i] && data[i] != '\n')
 				i++;
 		}
 	}
 
 	eswifi_unlock(eswifi);
-
-	return 0;
 }
 
 static int eswifi_connect(struct eswifi_dev *eswifi)
 {
 	char connect[] = "C0\r";
 	struct in_addr addr;
+	char *rsp;
 	int err;
 
 	LOG_DBG("Connecting to %s (pass=%s)", eswifi->sta.ssid,
@@ -210,18 +245,16 @@ static int eswifi_connect(struct eswifi_dev *eswifi)
 
 	/* Set SSID */
 	snprintf(eswifi->buf, sizeof(eswifi->buf), "C1=%s\r", eswifi->sta.ssid);
-	err = eswifi_request(eswifi, eswifi->buf, strlen(eswifi->buf),
-			     eswifi->buf, sizeof(eswifi->buf));
-	if (err || !eswifi_is_buf_at_ok(eswifi->buf)) {
+	err = eswifi_at_cmd(eswifi, eswifi->buf);
+	if (err < 0) {
 		LOG_ERR("Unable to set SSID");
 		goto error;
 	}
 
 	/* Set passphrase */
 	snprintf(eswifi->buf, sizeof(eswifi->buf), "C2=%s\r", eswifi->sta.pass);
-	err = eswifi_request(eswifi, eswifi->buf, strlen(eswifi->buf),
-			     eswifi->buf, sizeof(eswifi->buf));
-	if (err || !eswifi_is_buf_at_ok(eswifi->buf)) {
+	err = eswifi_at_cmd(eswifi, eswifi->buf);
+	if (err < 0) {
 		LOG_ERR("Unable to set passphrase");
 		goto error;
 	}
@@ -229,25 +262,23 @@ static int eswifi_connect(struct eswifi_dev *eswifi)
 	/* Set Security type */
 	snprintf(eswifi->buf, sizeof(eswifi->buf), "C3=%u\r",
 		 eswifi->sta.security);
-	err = eswifi_request(eswifi, eswifi->buf, strlen(eswifi->buf),
-			     eswifi->buf, sizeof(eswifi->buf));
-	if (err || !eswifi_is_buf_at_ok(eswifi->buf)) {
+	err = eswifi_at_cmd(eswifi, eswifi->buf);
+	if (err < 0) {
 		LOG_ERR("Unable to configure security");
 		goto error;
 	}
 
 	/* Join Network */
-	err = eswifi_request(eswifi, connect, strlen(connect),
-			     eswifi->buf, sizeof(eswifi->buf));
-	if (err || !eswifi_is_buf_at_ok(eswifi->buf)) {
+	err = eswifi_at_cmd_rsp(eswifi, connect, &rsp);
+	if (err < 0) {
 		LOG_ERR("Unable to join network");
 		goto error;
 	}
 
 	/* Any IP assigned ? (dhcp offload or manually) */
-	err = __parse_ipv4_address(eswifi->buf, eswifi->sta.ssid,
+	err = __parse_ipv4_address(rsp, eswifi->sta.ssid,
 				   (u8_t *)&addr.s4_addr);
-	if (err) {
+	if (err < 0) {
 		LOG_ERR("Unable to retrieve IP address");
 		goto error;
 	}
@@ -276,17 +307,15 @@ static int eswifi_disconnect(struct eswifi_dev *eswifi)
 
 	eswifi_lock(eswifi);
 
-	err = eswifi_request(eswifi, disconnect, strlen(disconnect),
-			     eswifi->buf, sizeof(eswifi->buf));
-	if (err || !eswifi_is_buf_at_ok(eswifi->buf)) {
+	err = eswifi_at_cmd(eswifi, disconnect);
+	if (err < 0) {
 		LOG_ERR("Unable to disconnect network");
-		eswifi_unlock(eswifi);
-		return -EIO;
+		err = -EIO;
 	}
 
 	eswifi_unlock(eswifi);
 
-	return 0;
+	return err;
 }
 
 static void eswifi_request_work(struct k_work *item)
@@ -319,23 +348,18 @@ static void eswifi_request_work(struct k_work *item)
 static int eswifi_get_mac_addr(struct eswifi_dev *eswifi, u8_t addr[6])
 {
 	char cmd[] = "Z5\r";
-	int err, i, byte = 0;
+	int ret, i, byte = 0;
+	char *rsp;
 
-	err = eswifi_request(eswifi, cmd, strlen(cmd), eswifi->buf,
-			     sizeof(eswifi->buf));
-	if (err) {
-		return err;
+	ret = eswifi_at_cmd_rsp(eswifi, cmd, &rsp);
+	if (ret < 0) {
+		return ret;
 	}
 
-	for (i = 0; i < sizeof(eswifi->buf) && byte < 6; i++) {
-		if (i < 2) {
-			continue;
-		}
-
-		if (eswifi->buf[i] == ':' ||
-		    ((byte == 5) && (eswifi->buf[i] == '\r'))) {
-			addr[byte++] = strtol(&eswifi->buf[i - 2], NULL, 16);
-		}
+	/* format is "ff:ff:ff:ff:ff:ff" */
+	for (i = 0; i < ret && byte < 6; i++) {
+		addr[byte++] = strtol(&rsp[i], NULL, 16);
+		i += 2;
 	}
 
 	if (byte != 6) {
@@ -349,20 +373,17 @@ static void eswifi_iface_init(struct net_if *iface)
 {
 	struct eswifi_dev *eswifi = &eswifi0;
 	u8_t mac[6];
-	int err;
 
 	LOG_DBG("");
 
 	eswifi_lock(eswifi);
 
-	err = eswifi_reset(eswifi);
-	if (err) {
+	if (eswifi_reset(eswifi) < 0) {
 		LOG_ERR("Unable to reset device");
 		return;
 	}
 
-	err = eswifi_get_mac_addr(eswifi, mac);
-	if (err) {
+	if (eswifi_get_mac_addr(eswifi, mac) < 0) {
 		LOG_ERR("Unable to read MAC address");
 		return;
 	}
