@@ -116,6 +116,10 @@ The Zephyr nucleo_l432kc board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+
+| CAN       | on-chip    | can                                 |
++-----------+------------+-------------------------------------+
+
+.. note:: CAN feature requires CAN transceiver
 
 Other hardware features are not yet supported on this Zephyr port.
 
