@@ -202,6 +202,38 @@ struct _k_object_assignment {
  * @param obj Address of the kernel object
  */
 void _k_object_init(void *obj);
+
+/**
+ * grant a thread access to a kernel object
+ *
+ * The thread will lose access to the object if the caller is from
+ * supervisor mode, or the caller is from user mode AND has permissions
+ * on both the object and the thread whose access is being revoked.
+ *
+ * @param object Address of kernel object
+ * @param thread Thread to remove access to the object
+ */
+void k_object_access_revoke(void *object, struct k_thread *thread);
+
+/**
+ * grant all present and future threads access to an object
+ *
+ * If the caller is from supervisor mode, or the caller is from user mode and
+ * have sufficient permissions on the object, then that object will have
+ * permissions granted to it for *all* current and future threads running in
+ * the system, effectively becoming a public kernel object.
+ *
+ * Use of this API should be avoided on systems that are running untrusted code
+ * as it is possible for such code to derive the addresses of kernel objects
+ * and perform unwanted operations on them.
+ *
+ * It is not possible to revoke permissions on public objects; once public,
+ * any thread may use it.
+ *
+ * @param object Address of kernel object
+ */
+void k_object_access_all_grant(void *object);
+
 #else
 
 #define K_THREAD_ACCESS_GRANT(thread, ...)
@@ -242,39 +274,8 @@ static inline void k_object_access_all_grant(void *object)
  */
 __syscall void k_object_access_grant(void *object, struct k_thread *thread);
 
-/**
- * grant a thread access to a kernel object
- *
- * The thread will lose access to the object if the caller is from
- * supervisor mode, or the caller is from user mode AND has permissions
- * on both the object and the thread whose access is being revoked.
- *
- * @param object Address of kernel object
- * @param thread Thread to remove access to the object
- */
-void k_object_access_revoke(void *object, struct k_thread *thread);
-
 
 __syscall void k_object_release(void *object);
-
-/**
- * grant all present and future threads access to an object
- *
- * If the caller is from supervisor mode, or the caller is from user mode and
- * have sufficient permissions on the object, then that object will have
- * permissions granted to it for *all* current and future threads running in
- * the system, effectively becoming a public kernel object.
- *
- * Use of this API should be avoided on systems that are running untrusted code
- * as it is possible for such code to derive the addresses of kernel objects
- * and perform unwanted operations on them.
- *
- * It is not possible to revoke permissions on public objects; once public,
- * any thread may use it.
- *
- * @param object Address of kernel object
- */
-void k_object_access_all_grant(void *object);
 
 /**
  * Allocate a kernel object of a designated type
