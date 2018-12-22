@@ -204,7 +204,7 @@ struct _k_object_assignment {
 void _k_object_init(void *obj);
 
 /**
- * grant a thread access to a kernel object
+ * revoke a thread access to a kernel object
  *
  * The thread will lose access to the object if the caller is from
  * supervisor mode, or the caller is from user mode AND has permissions
