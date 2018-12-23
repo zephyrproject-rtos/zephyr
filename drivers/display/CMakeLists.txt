@@ -13,3 +13,5 @@ zephyr_sources_ifdef(CONFIG_SSD1673 ssd1673.c)
 
 zephyr_sources_ifdef(CONFIG_SDL_DISPLAY display_sdl.c)
 
+zephyr_sources_ifdef(CONFIG_DUMMY_DISPLAY display_dummy.c)
+
