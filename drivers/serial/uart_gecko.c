@@ -378,12 +378,12 @@ static void usart_gecko_config_func_0(struct device *dev);
 #endif
 
 static const struct uart_gecko_config usart_gecko_0_config = {
-	.base = (USART_TypeDef *)DT_USART_GECKO_0_BASE_ADDRESS,
+	.base = (USART_TypeDef *)DT_UART_GECKO_USART0_BASE_ADDRESS,
 	.clock = cmuClock_USART0,
-	.baud_rate = DT_USART_GECKO_0_CURRENT_SPEED,
+	.baud_rate = DT_UART_GECKO_USART0_CURRENT_SPEED,
 	.pin_rx = PIN_USART0_RXD,
 	.pin_tx = PIN_USART0_TXD,
-	.loc = DT_USART_GECKO_0_LOCATION,
+	.loc = DT_UART_GECKO_USART0_LOCATION,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = usart_gecko_config_func_0,
 #endif
@@ -391,22 +391,22 @@ static const struct uart_gecko_config usart_gecko_0_config = {
 
 static struct uart_gecko_data usart_gecko_0_data;
 
-DEVICE_AND_API_INIT(usart_0, DT_USART_GECKO_0_LABEL, &uart_gecko_init,
+DEVICE_AND_API_INIT(usart_0, DT_UART_GECKO_USART0_LABEL, &uart_gecko_init,
 		    &usart_gecko_0_data, &usart_gecko_0_config, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &uart_gecko_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void usart_gecko_config_func_0(struct device *dev)
 {
-	IRQ_CONNECT(DT_USART_GECKO_0_IRQ_RX,
-		    DT_USART_GECKO_0_IRQ_RX_PRIORITY, uart_gecko_isr,
+	IRQ_CONNECT(DT_UART_GECKO_USART0_IRQ_RX,
+		    DT_UART_GECKO_USART0_IRQ_RX_PRIORITY, uart_gecko_isr,
 		    DEVICE_GET(usart_0), 0);
-	IRQ_CONNECT(DT_USART_GECKO_0_IRQ_TX,
-		    DT_USART_GECKO_0_IRQ_TX_PRIORITY, uart_gecko_isr,
+	IRQ_CONNECT(DT_UART_GECKO_USART0_IRQ_TX,
+		    DT_UART_GECKO_USART0_IRQ_TX_PRIORITY, uart_gecko_isr,
 		    DEVICE_GET(usart_0), 0);
 
-	irq_enable(DT_USART_GECKO_0_IRQ_RX);
-	irq_enable(DT_USART_GECKO_0_IRQ_TX);
+	irq_enable(DT_UART_GECKO_USART0_IRQ_RX);
+	irq_enable(DT_UART_GECKO_USART0_IRQ_TX);
 }
 #endif
 
@@ -419,12 +419,12 @@ static void usart_gecko_config_func_1(struct device *dev);
 #endif
 
 static const struct uart_gecko_config usart_gecko_1_config = {
-	.base = (USART_TypeDef *)DT_USART_GECKO_1_BASE_ADDRESS,
+	.base = (USART_TypeDef *)DT_UART_GECKO_USART1_BASE_ADDRESS,
 	.clock = cmuClock_USART1,
-	.baud_rate = DT_USART_GECKO_1_CURRENT_SPEED,
+	.baud_rate = DT_UART_GECKO_USART1_CURRENT_SPEED,
 	.pin_rx = PIN_USART1_RXD,
 	.pin_tx = PIN_USART1_TXD,
-	.loc = DT_USART_GECKO_1_LOCATION,
+	.loc = DT_UART_GECKO_USART1_LOCATION,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = usart_gecko_config_func_1,
 #endif
@@ -432,22 +432,22 @@ static const struct uart_gecko_config usart_gecko_1_config = {
 
 static struct uart_gecko_data usart_gecko_1_data;
 
-DEVICE_AND_API_INIT(usart_1, DT_USART_GECKO_1_LABEL, &uart_gecko_init,
+DEVICE_AND_API_INIT(usart_1, DT_UART_GECKO_USART1_LABEL, &uart_gecko_init,
 		    &usart_gecko_1_data, &usart_gecko_1_config, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &uart_gecko_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void usart_gecko_config_func_1(struct device *dev)
 {
-	IRQ_CONNECT(DT_USART_GECKO_1_IRQ_RX,
-		    DT_USART_GECKO_1_IRQ_RX_PRIORITY, uart_gecko_isr,
+	IRQ_CONNECT(DT_UART_GECKO_USART1_IRQ_RX,
+		    DT_UART_GECKO_USART1_IRQ_RX_PRIORITY, uart_gecko_isr,
 		    DEVICE_GET(usart_1), 0);
-	IRQ_CONNECT(DT_USART_GECKO_1_IRQ_TX,
-		    DT_USART_GECKO_1_IRQ_TX_PRIORITY, uart_gecko_isr,
+	IRQ_CONNECT(DT_UART_GECKO_USART1_IRQ_TX,
+		    DT_UART_GECKO_USART1_IRQ_TX_PRIORITY, uart_gecko_isr,
 		    DEVICE_GET(usart_1), 0);
 
-	irq_enable(DT_USART_GECKO_1_IRQ_RX);
-	irq_enable(DT_USART_GECKO_1_IRQ_TX);
+	irq_enable(DT_UART_GECKO_USART1_IRQ_RX);
+	irq_enable(DT_UART_GECKO_USART1_IRQ_TX);
 }
 #endif
 
@@ -460,12 +460,12 @@ static void usart_gecko_config_func_2(struct device *dev);
 #endif
 
 static const struct uart_gecko_config usart_gecko_2_config = {
-	.base = (USART_TypeDef *)DT_USART_GECKO_2_BASE_ADDRESS,
+	.base = (USART_TypeDef *)DT_UART_GECKO_USART2_BASE_ADDRESS,
 	.clock = cmuClock_USART2,
-	.baud_rate = DT_USART_GECKO_2_CURRENT_SPEED,
+	.baud_rate = DT_UART_GECKO_USART2_CURRENT_SPEED,
 	.pin_rx = PIN_USART2_RXD,
 	.pin_tx = PIN_USART2_TXD,
-	.loc = DT_USART_GECKO_2_LOCATION,
+	.loc = DT_UART_GECKO_USART2_LOCATION,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = usart_gecko_config_func_2,
 #endif
@@ -473,22 +473,22 @@ static const struct uart_gecko_config usart_gecko_2_config = {
 
 static struct uart_gecko_data usart_gecko_2_data;
 
-DEVICE_AND_API_INIT(usart_2, DT_USART_GECKO_2_LABEL, &uart_gecko_init,
+DEVICE_AND_API_INIT(usart_2, DT_UART_GECKO_USART2_LABEL, &uart_gecko_init,
 		    &usart_gecko_2_data, &usart_gecko_2_config, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &uart_gecko_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void usart_gecko_config_func_2(struct device *dev)
 {
-	IRQ_CONNECT(DT_USART_GECKO_2_IRQ_RX,
-		    DT_USART_GECKO_2_IRQ_RX_PRIORITY, uart_gecko_isr,
+	IRQ_CONNECT(DT_UART_GECKO_USART2_IRQ_RX,
+		    DT_UART_GECKO_USART2_IRQ_RX_PRIORITY, uart_gecko_isr,
 		    DEVICE_GET(usart_2), 0);
-	IRQ_CONNECT(DT_USART_GECKO_2_IRQ_TX,
-		    DT_USART_GECKO_2_IRQ_TX_PRIORITY, uart_gecko_isr,
+	IRQ_CONNECT(DT_UART_GECKO_USART2_IRQ_TX,
+		    DT_UART_GECKO_USART2_IRQ_TX_PRIORITY, uart_gecko_isr,
 		    DEVICE_GET(usart_2), 0);
 
-	irq_enable(DT_USART_GECKO_2_IRQ_RX);
-	irq_enable(DT_USART_GECKO_2_IRQ_TX);
+	irq_enable(DT_UART_GECKO_USART2_IRQ_RX);
+	irq_enable(DT_UART_GECKO_USART2_IRQ_TX);
 }
 #endif
 
@@ -501,12 +501,12 @@ static void usart_gecko_config_func_3(struct device *dev);
 #endif
 
 static const struct uart_gecko_config usart_gecko_3_config = {
-	.base = (USART_TypeDef *)DT_USART_GECKO_3_BASE_ADDRESS,
+	.base = (USART_TypeDef *)DT_UART_GECKO_USART3_BASE_ADDRESS,
 	.clock = cmuClock_USART3,
-	.baud_rate = DT_USART_GECKO_3_CURRENT_SPEED,
+	.baud_rate = DT_UART_GECKO_USART3_CURRENT_SPEED,
 	.pin_rx = PIN_USART3_RXD,
 	.pin_tx = PIN_USART3_TXD,
-	.loc = DT_USART_GECKO_3_LOCATION,
+	.loc = DT_UART_GECKO_USART3_LOCATION,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = usart_gecko_config_func_3,
 #endif
@@ -514,22 +514,22 @@ static const struct uart_gecko_config usart_gecko_3_config = {
 
 static struct uart_gecko_data usart_gecko_3_data;
 
-DEVICE_AND_API_INIT(usart_3, DT_USART_GECKO_3_LABEL, &uart_gecko_init,
+DEVICE_AND_API_INIT(usart_3, DT_UART_GECKO_USART3_LABEL, &uart_gecko_init,
 		    &usart_gecko_3_data, &usart_gecko_3_config, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &uart_gecko_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void usart_gecko_config_func_3(struct device *dev)
 {
-	IRQ_CONNECT(DT_USART_GECKO_3_IRQ_RX,
-		    DT_USART_GECKO_3_IRQ_RX_PRIORITY, uart_gecko_isr,
+	IRQ_CONNECT(DT_UART_GECKO_USART3_IRQ_RX,
+		    DT_UART_GECKO_USART3_IRQ_RX_PRIORITY, uart_gecko_isr,
 		    DEVICE_GET(usart_3), 0);
-	IRQ_CONNECT(DT_USART_GECKO_3_IRQ_TX,
-		    DT_USART_GECKO_3_IRQ_TX_PRIORITY, uart_gecko_isr,
+	IRQ_CONNECT(DT_UART_GECKO_USART3_IRQ_TX,
+		    DT_UART_GECKO_USART3_IRQ_TX_PRIORITY, uart_gecko_isr,
 		    DEVICE_GET(usart_3), 0);
 
-	irq_enable(DT_USART_GECKO_3_IRQ_RX);
-	irq_enable(DT_USART_GECKO_3_IRQ_TX);
+	irq_enable(DT_UART_GECKO_USART3_IRQ_RX);
+	irq_enable(DT_UART_GECKO_USART3_IRQ_TX);
 }
 #endif
 

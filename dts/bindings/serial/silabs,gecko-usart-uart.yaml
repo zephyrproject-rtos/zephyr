@@ -1,0 +1,32 @@
+---
+title: GECKO USART
+version: 0.1
+
+description: >
+    This binding gives a base representation of the Gecko USART UART driver
+
+inherits:
+    !include uart.yaml
+
+properties:
+    compatible:
+      constraint: "silabs,gecko-usart-uart"
+
+    reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+    interrupts:
+      type: compound
+      category: required
+      description: required interrupts
+      generation: define
+
+    location:
+     type: int
+     category: required
+     description: PIN location
+     generation: define
+...

@@ -40,7 +40,7 @@
 			interrupts = <3 0>, <4 0>;
 			interrupt-names = "rx", "tx";
 			status = "disabled";
-			label = "UART_0";
+			label = "USART0";
 		};
 
 		usart1: usart@4000c400 { /* USART1 */
@@ -49,7 +49,7 @@
 			interrupts = <15 0>, <16 0>;
 			interrupt-names = "rx", "tx";
 			status = "disabled";
-			label = "UART_1";
+			label = "USART1";
 		};
 
 		usart2: usart@4000c800 { /* USART2 */
@@ -58,7 +58,7 @@
 			interrupts = <18 0>, <19 0>;
 			interrupt-names = "rx", "tx";
 			status = "disabled";
-			label = "UART_2";
+			label = "USART2";
 		};
 
 		uart0: uart@4000e000 { /* UART0 */

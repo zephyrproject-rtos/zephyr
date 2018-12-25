@@ -59,6 +59,7 @@
 };
 
 &usart0 {
+	compatible = "silabs,gecko-usart-uart";
 	current-speed = <115200>;
 	location = <0>;
 	status = "ok";

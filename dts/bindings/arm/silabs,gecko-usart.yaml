@@ -3,14 +3,15 @@ title: GECKO USART
 version: 0.1
 
 description: >
-    This binding gives a base representation of the Gecko USART
-
-inherits:
-    !include uart.yaml
+    Binding for the Silabs Gecko multi-protocol (UART, SPI, ...) USART unit.
 
 properties:
     compatible:
+      type: string
+      category: required
+      description: compatible strings
       constraint: "silabs,gecko-usart"
+      generation: define
 
     reg:
       type: array
@@ -23,10 +24,4 @@ properties:
       category: required
       description: required interrupts
       generation: define
-
-    location:
-     type: int
-     category: required
-     description: PIN location
-     generation: define
 ...
