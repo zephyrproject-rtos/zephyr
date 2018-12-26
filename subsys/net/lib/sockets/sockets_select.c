@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/time.h>
-
 #include <net/socket.h>
 
 /* Get size, in elements, of an array within a struct. */
@@ -67,7 +65,7 @@ void ZSOCK_FD_SET(int fd, zsock_fd_set *set)
 }
 
 int zsock_select(int nfds, zsock_fd_set *readfds, zsock_fd_set *writefds,
-		 zsock_fd_set *exceptfds, struct timeval *timeout)
+		 zsock_fd_set *exceptfds, struct zsock_timeval *timeout)
 {
 	struct pollfd pfds[CONFIG_NET_SOCKETS_POLL_MAX];
 	int i, res, poll_timeout;

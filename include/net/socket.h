@@ -31,7 +31,11 @@
 extern "C" {
 #endif
 
-struct timeval;
+struct zsock_timeval {
+	/* Using longs, as many (?) implementations seem to use it. */
+	long tv_sec;
+	long tv_usec;
+};
 
 struct zsock_pollfd {
 	int fd;
@@ -164,7 +168,7 @@ __syscall int zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout);
  * top of poll(). Avoid select(), use poll directly().
  */
 int zsock_select(int nfds, zsock_fd_set *readfds, zsock_fd_set *writefds,
-		 zsock_fd_set *exceptfds, struct timeval *timeout);
+		 zsock_fd_set *exceptfds, struct zsock_timeval *timeout);
 
 #define ZSOCK_FD_SETSIZE (sizeof(((zsock_fd_set *)0)->bitset) * 8)
 
@@ -194,6 +198,7 @@ int zsock_getaddrinfo(const char *host, const char *service,
 
 #define pollfd zsock_pollfd
 #define fd_set zsock_fd_set
+#define timeval zsock_timeval
 #define FD_SETSIZE ZSOCK_FD_SETSIZE
 
 #if !defined(CONFIG_NET_SOCKETS_OFFLOAD)
