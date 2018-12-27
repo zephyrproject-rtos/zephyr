@@ -18,7 +18,7 @@ config CODE_HYPERFLASH
 	bool "Link code into external HyperFlash memory"
 
 config CODE_QSPI
-	depends on BOARD_MIMXRT1050_EVK
+	depends on BOARD_MIMXRT1060_EVK
 	bool "Link code into external QSPI memory"
 
 endchoice
