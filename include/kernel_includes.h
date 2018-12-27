@@ -19,11 +19,9 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <atomic.h>
-#include <misc/__assert.h>
 #include <sched_priq.h>
 #include <misc/dlist.h>
 #include <misc/slist.h>
-#include <misc/sflist.h>
 #include <misc/util.h>
 #include <misc/mempool_base.h>
 #include <kernel_version.h>
@@ -34,5 +32,8 @@
 #include <arch/cpu.h>
 #include <misc/rb.h>
 #include <sys_clock.h>
+#include <kernel_except.h>
+#include <misc/__assert.h>
+#include <misc/sflist.h>
 
 #endif /* ZEPHYR_INCLUDE_KERNEL_INCLUDES_H_ */

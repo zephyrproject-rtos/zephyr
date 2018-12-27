@@ -87,6 +87,7 @@ extern void posix_exit(int exit_code);
 #define __ASSERT_POST posix_exit(1)
 #else
 #define __ASSERT_POST             \
+	k_panic(); \
 	for (;;) {                \
 		/* spin thread */ \
 	}

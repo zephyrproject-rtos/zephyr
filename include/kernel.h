@@ -4544,6 +4544,7 @@ extern void k_cpu_atomic_idle(unsigned int key);
  */
 extern void _sys_power_save_idle_exit(s32_t ticks);
 
+#if 0
 #ifdef _ARCH_EXCEPT
 /* This archtecture has direct support for triggering a CPU exception */
 #define _k_except_reason(reason)	_ARCH_EXCEPT(reason)
@@ -4588,6 +4589,7 @@ extern void _sys_power_save_idle_exit(s32_t ticks);
  * @req K-MISC-004
  */
 #define k_panic()	_k_except_reason(_NANO_ERR_KERNEL_PANIC)
+#endif
 
 /*
  * private APIs that are utilized by one or more public APIs
