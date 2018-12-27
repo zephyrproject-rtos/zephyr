@@ -662,6 +662,7 @@ config USE_SWITCH
 
 config SMP
 	bool "Enable symmetric multithreading support"
+	depends on USE_SWITCH
 	help
 	  When true, kernel will be built with SMP support, allowing
 	  more than one CPU to schedule Zephyr tasks at a time.
