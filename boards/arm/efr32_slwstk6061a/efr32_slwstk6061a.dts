@@ -60,6 +60,11 @@
 	status = "ok";
 };
 
+&gpio {
+	location-swo = <0>;
+	status = "ok";
+};
+
 &flash0 {
 	/*
 	 * If the chosen node has no zephyr,code-partition property, the
