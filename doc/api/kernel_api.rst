@@ -109,16 +109,6 @@ with basic priority inheritance.
 .. doxygengroup:: mutex_apis
    :project: Zephyr
 
-Alerts
-******
-
-Alerts enable an application to perform asynchronous signaling,
-somewhat akin to Unix-style signals.
-(See :ref:`alerts_v2`.)
-
-.. doxygengroup:: alert_apis
-   :project: Zephyr
-
 FIFOs
 *****
 

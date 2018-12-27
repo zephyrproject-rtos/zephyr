@@ -11,4 +11,3 @@ of different threads, or the operation of an ISR and a thread.
 
    semaphores.rst
    mutexes.rst
-   alerts.rst

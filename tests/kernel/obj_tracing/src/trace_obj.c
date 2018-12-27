@@ -13,7 +13,6 @@ enum obj_name {
 	MEM_SLAB,
 	SEM,
 	MUTEX,
-	ALERT,
 	STACK,
 	MSGQ,
 	MBOX,
@@ -30,16 +29,10 @@ static inline void stop_dummy_fn(struct k_timer *timer)
 	ARG_UNUSED(timer);
 }
 
-static inline void alert_handler_dummy(struct k_alert *alert)
-{
-	ARG_UNUSED(alert);
-}
-
 K_TIMER_DEFINE(ktimer, expiry_dummy_fn, stop_dummy_fn);
 K_MEM_SLAB_DEFINE(kmslab, 4, 2, 4);
 K_SEM_DEFINE(ksema, 0, 1);
 K_MUTEX_DEFINE(kmutex);
-K_ALERT_DEFINE(kalert, alert_handler_dummy, 1);
 K_STACK_DEFINE(kstack, 512);
 K_MSGQ_DEFINE(kmsgq, 4, 2, 4);
 K_MBOX_DEFINE(kmbox);
@@ -50,7 +43,6 @@ static struct k_timer timer;
 static struct k_mem_slab mslab;
 static struct k_sem sema;
 static struct k_mutex mutex;
-static struct k_alert alert;
 static struct k_stack stack;
 static struct k_msgq msgq;
 static struct k_mbox mbox;
@@ -141,23 +133,6 @@ static void get_obj_count(int obj_type)
 						    obj_list);
 		}
 		zassert_equal(obj_found, 2, "Didn't find mutex objects");
-		break;
-	case ALERT:
-		k_alert_init(&alert, K_ALERT_IGNORE, 1);
-
-		obj_list = SYS_TRACING_HEAD(struct k_alert, k_alert);
-		while (obj_list != NULL) {
-			if (obj_list == &kalert || obj_list == &alert) {
-				obj_found++;
-				if (obj_found == 2) {
-					TC_PRINT("Found alert objects\n");
-					break;
-				}
-			}
-			obj_list = SYS_TRACING_NEXT(struct k_alert, k_alert,
-						    obj_list);
-		}
-		zassert_equal(obj_found, 2, "Didn't find alert objects");
 		break;
 	case STACK:
 		k_stack_init(&stack, sdata, NUM_BLOCKS);

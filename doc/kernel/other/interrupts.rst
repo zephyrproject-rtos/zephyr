@@ -166,12 +166,8 @@ processing to a thread.
 * An ISR can signal a helper thread to do interrupt-related processing
   using a kernel object, such as a fifo, lifo, or semaphore.
 
-* An ISR can signal an alert which causes the system workqueue thread
-  to execute an associated alert handler function.
-  (See :ref:`alerts_v2`.)
-
 * An ISR can instruct the system workqueue thread to execute a work item.
-  (See TBD.)
+  (See :ref:`workqueues_v2`.)
 
 When an ISR offloads work to a thread, there is typically a single context
 switch to that thread when the ISR completes, allowing interrupt-related
