@@ -46,14 +46,6 @@ config UART_MCUX_LPUART_3
 
 endif # UART_MCUX_LPUART
 
-if CODE_HYPERFLASH || CODE_QSPI
-
-# Reserve space for the IVT
-config TEXT_SECTION_OFFSET
-	default 0x2000
-
-endif
-
 if NETWORKING
 
 config NET_L2_ETHERNET
