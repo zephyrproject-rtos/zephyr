@@ -61,6 +61,19 @@ extern "C" {
 #include <ztest_test.h>
 #include <tc_util.h>
 
+#ifdef CONFIG_APP_SHARED_MEM
+/* Application memory define */
+APPMEM_DOMAIN_HEADER_DEFINE(ztest_dom0);
+APPMEM_PARTITION_HEADER_DEFINE(ztest_part0);
+
+#define APP_DATA_MEM _app_dmem(ztest_part0)
+#define APP_BSS_MEM _app_bmem(ztest_part0)
+#else
+/* no shared memory is selected therefore macros are empty */
+#define APP_DATA_MEM
+#define APP_BSS_MEM
+#endif
+
 void test_main(void);
 
 #ifdef __cplusplus

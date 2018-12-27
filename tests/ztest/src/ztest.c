@@ -11,16 +11,21 @@
 __kernel static struct k_thread ztest_thread;
 #endif
 
-/* APPDMEMP0 and APPBMEMP0 are used for the application shared memory test  */
+#ifdef CONFIG_APP_SHARED_MEM
 
-APPDMEMP0 enum {
+/* Application memory objects  */
+APPMEM_DOMAIN_OBJECT_DEFINE(ztest_dom0);
+APPMEM_PARTITION_OBJECT_DEFINE(ztest_part0);
+#endif
+
+APP_DATA_MEM enum {
 	TEST_PHASE_SETUP,
 	TEST_PHASE_TEST,
 	TEST_PHASE_TEARDOWN,
 	TEST_PHASE_FRAMEWORK
 } phase = TEST_PHASE_FRAMEWORK;
 
-APPBMEMP0 static int test_status;
+APP_BSS_MEM static int test_status;
 
 static int cleanup_test(struct unit_test *test)
 {
@@ -152,8 +157,8 @@ out:
 
 K_THREAD_STACK_DEFINE(ztest_thread_stack, CONFIG_ZTEST_STACKSIZE +
 		      CONFIG_TEST_EXTRA_STACKSIZE);
-/* APPBMEMP0 is used for the application shared memory test    */
-APPBMEMP0 static int test_result;
+
+APP_BSS_MEM static int test_result;
 
 __kernel static struct k_sem test_end_signal;
 
@@ -279,10 +284,25 @@ void end_report(void)
 	}
 }
 
+void grant_permissions(void)
+{
+#if defined(CONFIG_APP_SHARED_MEM) && defined(CONFIG_ZTEST_INIT_APP_SHARED_MEM)
+	/* partitions must be initialized first */
+	APPMEM_INIT_PARTITIONS(ztest_part0);
+
+	appmem_init_app_memory();
+	/* Domain is initialized with partition ztest_part0 */
+	appmem_init_domain_ztest_dom0(ztest_part0);
+	/* Finally, the current thread is added to domain */
+	appmem_add_thread_ztest_dom0(k_current_get());
+#endif
+}
+
 #ifndef KERNEL
 int main(void)
 {
 	_init_mock();
+	grant_permissions();
 	test_main();
 	end_report();
 
@@ -292,6 +312,7 @@ int main(void)
 void main(void)
 {
 	_init_mock();
+	grant_permissions();
 	test_main();
 	end_report();
 }

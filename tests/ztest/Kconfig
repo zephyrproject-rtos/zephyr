@@ -47,3 +47,11 @@ config ZTEST_PARAMETER_COUNT
 	default 1
 	help
 	  Maximum amount of concurrent return values / expected parameters.
+
+config ZTEST_INIT_APP_SHARED_MEM
+	bool "ZTEST will initialize the application shared memory"
+	depends on ZTEST
+	default y
+	help
+	  Initialize the shared memory by calling the required interfaces from
+	  the sub system app_memory.
