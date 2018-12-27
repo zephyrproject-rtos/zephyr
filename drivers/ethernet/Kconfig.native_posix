@@ -108,4 +108,4 @@ config	ETH_NATIVE_POSIX_MAC_ADDR
 
 endif
 
-endif
+endif # ETH_NATIVE_POSIX
