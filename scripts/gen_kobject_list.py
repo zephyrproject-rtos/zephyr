@@ -17,7 +17,6 @@ from elf_helper import ElfHelper, kobject_to_enum
 # available in all configurations.
 
 kobjects = {
-    "k_alert": None,
     "k_mem_slab": None,
     "k_msgq": None,
     "k_mutex": None,

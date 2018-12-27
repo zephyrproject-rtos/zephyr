@@ -63,8 +63,6 @@ K_PIPE_DEFINE(PIPE_BIGBUFF, 4096, 4);
 
 K_MEM_POOL_DEFINE(DEMOPOOL, 16, 16, 1, 4);
 
-K_ALERT_DEFINE(TEST_EVENT, NULL, 1);
-
 
 /**
  *
@@ -138,7 +136,6 @@ void main(void)
 		mutex_test();
 		memorymap_test();
 		mempool_test();
-		event_test();
 		mailbox_test();
 		pipe_test();
 		PRINT_STRING("|         END OF TESTS                     "

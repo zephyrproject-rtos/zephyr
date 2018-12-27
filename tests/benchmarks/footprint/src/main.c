@@ -61,11 +61,6 @@ static pfunc func_array[] = {
 	(pfunc)k_mem_slab_num_free_get,
 
 #ifdef TEST_max
-	/* alerts */
-	(pfunc)k_alert_init,
-	(pfunc)k_alert_send,
-	(pfunc)k_alert_recv,
-
 	/* message queues */
 	(pfunc)k_msgq_init,
 	(pfunc)k_msgq_put,
