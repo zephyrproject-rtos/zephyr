@@ -582,12 +582,12 @@ menu "Security Options"
 config RETPOLINE
 	bool "Build with retpolines enabled"
 	default y if !X86_NO_SPECTRE_V2
+	# Currently only implemented for x86
+	depends on X86
 	help
 	  This is recommended on platforms with speculative executions, to protect
 	  against branch target injection (AKA Spectre-V2).  Full description of
 	  how retpolines work can be found here[1].
-
-	  Currently only the x86 port
 
 	  [1] https://support.google.com/faqs/answer/7625886
 
