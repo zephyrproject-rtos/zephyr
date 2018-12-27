@@ -686,6 +686,8 @@ config MP_NUM_CPUS
 endmenu
 
 config TICKLESS_IDLE
+	# NB: This option is deprecated, see TICKLESS_KERNEL and
+	# https://github.com/zephyrproject-rtos/zephyr/pull/12234
 	bool "Tickless idle"
 	default y if SYS_POWER_MANAGEMENT || TICKLESS_CAPABLE
 	help
@@ -709,8 +711,7 @@ config TICKLESS_KERNEL
 	default y if TICKLESS_CAPABLE
 	help
 	  This option enables a fully event driven kernel. Periodic system
-	  clock interrupt generation would be stopped at all times. This option
-	  requires Tickless Idle option to be enabled.
+	  clock interrupt generation would be stopped at all times.
 
 source "kernel/Kconfig.power_mgmt"
 
