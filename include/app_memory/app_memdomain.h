@@ -30,11 +30,11 @@
  */
 #define _app_dmem_pad(id) \
 	__attribute__((aligned(MEM_DOMAIN_ALIGN_SIZE), \
-		section("data_smem_" #id)))
+		section("data_smem_" #id "_data")))
 
 #define _app_bmem_pad(id) \
 	__attribute__((aligned(MEM_DOMAIN_ALIGN_SIZE), \
-		section("data_smem_" #id "b")))
+		section("data_smem_" #id "_bss")))
 
 /*
  * Qualifier to collect any object preceded with _app
@@ -44,10 +44,10 @@
  * initialized to zero.
  */
 #define _app_dmem(id) \
-	__attribute__((section("data_smem_" #id)))
+	__attribute__((section("data_smem_" #id "_data")))
 
 #define _app_bmem(id) \
-	__attribute__((section("data_smem_" #id "b")))
+	__attribute__((section("data_smem_" #id "_bss")))
 
 /*
  * Creation of a struct to save start addresses, sizes, and

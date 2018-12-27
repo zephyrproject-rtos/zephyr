@@ -14,6 +14,7 @@
 #include <misc/errno_private.h>
 #include <misc/libc-hooks.h>
 #include <syscall_handler.h>
+#include <app_memory/app_memdomain.h>
 
 #define USED_RAM_END_ADDR   POINTER_TO_UINT(&_end)
 
@@ -50,7 +51,7 @@ extern void *_heap_sentry;
 static unsigned char *heap_base = UINT_TO_POINTER(USED_RAM_END_ADDR);
 #endif /* CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE */
 
-static unsigned int heap_sz;
+_app_bmem(libc) static unsigned int heap_sz;
 
 static int _stdout_hook_default(int c)
 {

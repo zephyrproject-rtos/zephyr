@@ -1179,6 +1179,7 @@ if(CONFIG_APP_SHARED_MEM AND CONFIG_USERSPACE)
     ${ZEPHYR_BASE}/scripts/gen_app_partitions.py
     -d ${OBJ_FILE_DIR}
     -o ${APP_SMEM_LD}
+    $<$<BOOL:CONFIG_NEWLIB_LIBC>:--newlib-libc>
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/
     COMMENT "Generating app_smem linker section"
