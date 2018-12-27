@@ -51,7 +51,7 @@
 
 #define STACKSIZE 512
 
-static int tc_rc = TC_PASS;         /* test case return code */
+APP_DATA_MEM static int tc_rc = TC_PASS;         /* test case return code */
 
 K_MUTEX_DEFINE(private_mutex);
 

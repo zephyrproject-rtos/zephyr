@@ -34,10 +34,10 @@ static k_thread_stack_t *overflow_stack =
 #endif
 #endif
 
-static struct k_thread alt_thread;
-volatile int rv;
+APP_BSS_MEM static struct k_thread alt_thread;
+APP_BSS_MEM volatile int rv;
 
-static volatile int crash_reason;
+APP_BSS_MEM static volatile int crash_reason;
 
 /* On some architectures, k_thread_abort(_current) will return instead
  * of _Swap'ing away.
