@@ -152,4 +152,41 @@ config IPG_DIV
 	int "IPG clock divider"
 	range 0 3
 
+menuconfig NXP_IMX_RT_BOOT_HEADER
+	bool "Enable the boot header"
+	help
+	  Enable data structures required by the boot ROM to boot the
+	  application from an external flash device.
+
+if NXP_IMX_RT_BOOT_HEADER
+
+choice BOOT_DEVICE
+	prompt "Boot device selection"
+	default BOOT_FLEXSPI_NOR
+
+config BOOT_FLEXSPI_NOR
+	bool "FlexSPI serial NOR"
+
+config BOOT_FLEXSPI_NAND
+	bool "FlexSPI serial NAND"
+
+config BOOT_SEMC_NOR
+	bool "SEMC parallel NOR"
+
+config BOOT_SEMC_NAND
+	bool "SEMC parallel NAND"
+
+endchoice
+
+config IMAGE_VECTOR_TABLE_OFFSET
+	hex "Image vector table offset"
+	default 0x1000 if BOOT_FLEXSPI_NOR || BOOT_SEMC_NOR
+	default 0x400 if BOOT_FLEXSPI_NAND || BOOT_SEMC_NAND
+	help
+	  The Image Vector Table (IVT) provides the boot ROM with pointers to
+	  the application entry point and device configuration data. The boot
+	  ROM reqiures a fixed IVT offset for each type of boot device.
+
+endif # NXP_IMX_RT_BOOT_HEADER
+
 endif # SOC_SERIES_IMX_RT
