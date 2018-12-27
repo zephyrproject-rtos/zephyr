@@ -1300,21 +1300,22 @@ struct net_buf *net_buf_frag_del(struct net_buf *parent, struct net_buf *frag);
 #endif
 
 /**
- * @brief Copy len bytes from src starting from offset to dst buffer
+ * @brief Copy bytes from net_buf chain starting at offset to linear buffer
  *
- * This routine assumes that dst is large enough to store @a len bytes
- * starting from offset at src.
+ * Copy (extract) @a len bytes from @a src net_buf chain, starting from @a
+ * offset in it, to a linear buffer @a dst. Return number of bytes actually
+ * copied, which may be less than requested, if net_buf chain doesn't have
+ * enough data, or destination buffer is too small.
  *
  * @param dst Destination buffer
- * @param dst_len Destination buffer max length
- * @param src Source buffer that may be fragmented
- * @param offset Starting point to copy from
+ * @param dst_len Destination buffer length
+ * @param src Source net_buf chain
+ * @param offset Starting offset to copy from
  * @param len Number of bytes to copy
- * @return number of bytes copied if everything is ok
- * @return -ENOMEM on error
+ * @return number of bytes actually copied
  */
-int net_buf_linearize(void *dst, size_t dst_len,
-		      struct net_buf *src, size_t offset, size_t len);
+size_t net_buf_linearize(void *dst, size_t dst_len,
+			 struct net_buf *src, size_t offset, size_t len);
 
 /**
  * @typedef net_buf_allocator_cb
