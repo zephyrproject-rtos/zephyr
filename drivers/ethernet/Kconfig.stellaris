@@ -8,6 +8,5 @@
 
 menuconfig ETH_STELLARIS
 	bool "Enable TI Stellaris MCU family ethernet driver."
-	depends on NET_L2_ETHERNET
 	help
 	  Stellaris on-board Ethernet Controller
