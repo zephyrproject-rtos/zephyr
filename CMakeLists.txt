@@ -1170,7 +1170,7 @@ if(CONFIG_APP_SHARED_MEM AND CONFIG_USERSPACE)
   add_custom_target(
     ${APP_SMEM_DEP} ALL
     DEPENDS app
-    kernel
+    kernel ${ZEPHYR_LIBS_PROPERTY}
     )
 
   add_custom_command(
