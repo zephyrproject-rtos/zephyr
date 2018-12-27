@@ -650,8 +650,10 @@ config MAX_DOMAIN_PARTITIONS
 	  Configure the maximum number of partitions per memory domain.
 
 menu "SMP Options"
+
 config USE_SWITCH
 	bool "Use new-style _arch_switch instead of __swap"
+	depends on USE_SWITCH_SUPPORTED
 	help
 	  The _arch_switch() API is a lower level context switching
 	  primitive than the original __swap mechanism.  It is required
@@ -659,6 +661,13 @@ config USE_SWITCH
 	  provide __swap.  In uniprocess situations where the
 	  architecture provides both, _arch_switch incurs more somewhat
 	  overhead and may be slower.
+
+config USE_SWITCH_SUPPORTED
+	bool
+	help
+	  Indicates whether _arch_switch() API is supported by the
+	  currently enabled platform. This option should be selected by
+	  platforms that implement it.
 
 config SMP
 	bool "Enable symmetric multithreading support"
