@@ -39,6 +39,9 @@ void ct(void);
 #define _app_ct_d _app_dmem(part4)
 #define _app_ct_b _app_bmem(part4)
 
+APPMEM_DOMAIN_HEADER_DEFINE(dom0, dom1, dom2);
+APPMEM_PARTITION_HEADER_DEFINE(part0, part1, part2, part3, part4);
+
 /*
  * Constant
  */

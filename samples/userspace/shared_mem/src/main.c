@@ -27,9 +27,9 @@
  */
 
 /* prepare the memory partition structures  */
-FOR_EACH(appmem_partition, part0, part1, part2, part3, part4);
+APPMEM_PARTITION_OBJECT_DEFINE(part0, part1, part2, part3, part4);
 /* prepare the memory domain structures  */
-FOR_EACH(appmem_domain, dom0, dom1, dom2);
+APPMEM_DOMAIN_OBJECT_DEFINE(dom0, dom1, dom2);
 /* each variable starts with a name defined in main.h
  * the names are symbolic for the memory partitions
  * purpose.
@@ -104,7 +104,7 @@ void main(void)
 
 	k_thread_access_grant(k_current_get(), &allforone);
 	/* initialize the partition structures  */
-	FOR_EACH(appmem_init_part, part0, part1, part2, part3, part4);
+	APPMEM_INIT_PARTITIONS(part0, part1, part2, part3, part4);
 
 	printk("init partitions complete\n");
 	appmem_init_app_memory();
