@@ -57,7 +57,7 @@
 			label = "USART_1";
 		};
 
-		gpio@4000a400 {
+		gpio: gpio@4000a400 {
 			compatible = "silabs,efr32xg1-gpio";
 			reg = <0x4000a400 0xc00>;
 			interrupts = <9 2 17 2>;

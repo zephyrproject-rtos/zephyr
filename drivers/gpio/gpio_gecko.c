@@ -285,6 +285,24 @@ DEVICE_AND_API_INIT(gpio_gecko_common, DT_GPIO_GECKO_COMMON_NAME,
 
 static int gpio_gecko_common_init(struct device *dev)
 {
+	/* Serial Wire Output (SWO) pin is controlled by GPIO module, configure
+	 * if enabled.
+	 */
+#if defined(DT_GPIO_GECKO_SWO_LOCATION)
+	struct soc_gpio_pin pin_swo = PIN_SWO;
+
+#if defined(_GPIO_ROUTEPEN_MASK)
+	/* Enable Serial wire output pin */
+	GPIO->ROUTEPEN |= GPIO_ROUTEPEN_SWVPEN;
+	/* Set SWO location */
+	GPIO->ROUTELOC0 =
+		DT_GPIO_GECKO_SWO_LOCATION << _GPIO_ROUTELOC0_SWVLOC_SHIFT;
+#else
+	GPIO->ROUTE = GPIO_ROUTE_SWOPEN | (DT_GPIO_GECKO_SWO_LOCATION << 8);
+#endif
+	soc_gpio_configure(&pin_swo);
+#endif /* defined(DT_GPIO_GECKO_SWO_LOCATION) */
+
 	gpio_gecko_common_data.count = 0;
 	IRQ_CONNECT(GPIO_EVEN_IRQn, DT_GPIO_GECKO_COMMON_EVEN_PRI,
 		    gpio_gecko_common_isr, DEVICE_GET(gpio_gecko_common), 0);

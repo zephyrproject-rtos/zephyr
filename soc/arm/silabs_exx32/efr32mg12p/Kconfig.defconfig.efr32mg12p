@@ -8,12 +8,12 @@
 
 if SOC_SERIES_EFR32MG12P
 
-if GPIO
+if GPIO || LOG_BACKEND_SWO
 
 config GPIO_GECKO
 	default y
 
-endif # GPIO
+endif # GPIO || LOG_BACKEND_SWO
 
 if SERIAL
 
