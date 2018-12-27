@@ -6,9 +6,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menu "Framebuffer"
-
-config CHARACTER_FRAMEBUFFER
+menuconfig CHARACTER_FRAMEBUFFER
 	bool "Character framebuffer for dot matrix displays"
 	help
 	  Character framebuffer for dot matrix displays.
@@ -42,6 +40,4 @@ module = CFB
 module-str = cfb
 source "subsys/logging/Kconfig.template.log_config"
 
-endif
-
-endmenu
+endif # CHARACTER_FRAMEBUFFER
