@@ -9,7 +9,6 @@
 #define __FLEXSPI_NOR_BOOT_H__
 
 #include <stdint.h>
-#include "board.h"
 
 /*! @name Driver version */
 /*@{*/

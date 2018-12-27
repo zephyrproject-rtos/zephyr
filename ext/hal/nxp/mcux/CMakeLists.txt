@@ -28,6 +28,7 @@ zephyr_compile_definitions(${MCUX_CPU})
 zephyr_sources(devices/${MCUX_DEVICE}/fsl_clock.c)
 
 # Build mcux drivers that can be used for multiple SoC's.
+add_subdirectory(boards)
 add_subdirectory(components)
 add_subdirectory(drivers)
 

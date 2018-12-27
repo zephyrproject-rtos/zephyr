@@ -135,6 +135,14 @@ SECTIONS
 	KEEP(*(.dbghdr))
 	KEEP(*(".dbghdr.*"))
 #endif
+
+#ifdef CONFIG_NXP_IMX_RT_BOOT_HEADER
+	KEEP(*(.boot_hdr.conf))
+	. = CONFIG_IMAGE_VECTOR_TABLE_OFFSET;
+	KEEP(*(.boot_hdr.ivt))
+	KEEP(*(.boot_hdr.data))
+#endif
+
 	. = CONFIG_TEXT_SECTION_OFFSET;
 
 #if defined(CONFIG_SW_VECTOR_RELAY)

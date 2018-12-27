@@ -12,6 +12,7 @@
 #include <fsl_clock.h>
 #include <arch/cpu.h>
 #include <cortex_m/exc.h>
+#include <fsl_flexspi_nor_boot.h>
 
 #ifdef CONFIG_INIT_ARM_PLL
 /* ARM PLL configuration for RUN mode */
@@ -44,6 +45,26 @@ const clock_enet_pll_config_t ethPllConfig = {
 #endif
 	.enableClkOutput25M = false,
 	.loopDivider = 1,
+};
+#endif
+
+#ifdef CONFIG_NXP_IMX_RT_BOOT_HEADER
+const __imx_boot_data_section BOOT_DATA_T boot_data = {
+	.start = CONFIG_FLASH_BASE_ADDRESS,
+	.size = CONFIG_FLASH_SIZE,
+	.plugin = PLUGIN_FLAG,
+	.placeholder = 0xFFFFFFFF,
+};
+
+const __imx_boot_ivt_section ivt image_vector_table = {
+	.hdr = IVT_HEADER,
+	.entry = CONFIG_FLASH_BASE_ADDRESS + CONFIG_TEXT_SECTION_OFFSET,
+	.reserved1 = IVT_RSVD,
+	.dcd = (uint32_t) NULL,
+	.boot_data = (uint32_t) &boot_data,
+	.self = (uint32_t) &image_vector_table,
+	.csf = (uint32_t)CSF_ADDRESS,
+	.reserved2 = IVT_RSVD,
 };
 #endif
 
