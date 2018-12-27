@@ -21,12 +21,26 @@ print_template = """
 		/* Auto generated code do not modify */
 		SMEM_PARTITION_ALIGN(data_smem_{0}_bss_end - data_smem_{0}_data_start);
 		data_smem_{0}_data_start = .;
-		KEEP(*(data_smem_{0}))
+		KEEP(*(data_smem_{0}_data))
 		data_smem_{0}_bss_start = .;
-		KEEP(*(data_smem_{0}b))
+		KEEP(*(data_smem_{0}_bss))
 		SMEM_PARTITION_ALIGN(data_smem_{0}_bss_end - data_smem_{0}_data_start);
 		data_smem_{0}_bss_end = .;
 """
+#code for library functions. that need to placed in partitions.
+print_template_libc = """
+		/* Auto generated code do not modify */
+		SMEM_PARTITION_ALIGN(data_smem_{0}_bss_end - data_smem_{0}_data_start);
+		data_smem_{0}_data_start = .;
+		*{0}.a:*(.data .data.*)
+		KEEP(*(data_smem_{0}_data))
+		data_smem_{0}_bss_start = .;
+		*{0}.a:*(.bss .bss.* COMMON COMMON.*)
+		KEEP(*(data_smem_{0}_bss))
+		SMEM_PARTITION_ALIGN(data_smem_{0}_bss_end - data_smem_{0}_data_start);
+		data_smem_{0}_bss_end = .;
+"""
+
 linker_start_seq = """
 	SECTION_PROLOGUE(_APP_SMEM_SECTION_NAME, (OPTIONAL),)
 	{
@@ -57,7 +71,9 @@ def find_partitions(filename, full_list_of_partitions, partitions_source_file):
         sections = [ x for x in full_lib.iter_sections()]
         for section in sections:
             if ("smem" in  section.name and not ".rel" in section.name):
-                partition_name = section.name.split("data_smem_")[1]
+                partition_name = section.name.split("data_smem_")[1].split("_data")[0].split("_bss")[0]
+                if partition_name == "libc":
+                    continue
                 if partition_name not in full_list_of_partitions:
                     full_list_of_partitions.append(partition_name)
                     if args.verbose:
@@ -67,16 +83,28 @@ def find_partitions(filename, full_list_of_partitions, partitions_source_file):
 
 def cleanup_remove_bss_regions(full_list_of_partitions):
     for partition in full_list_of_partitions:
-        if (partition+"b" in full_list_of_partitions):
-            full_list_of_partitions.remove(partition+"b")
+        if (partition+"_bss" in full_list_of_partitions):
+            full_list_of_partitions.remove(partition+"_bss")
     return full_list_of_partitions
 
-def generate_final_linker(linker_file, full_list_of_partitions):
+def libc_is_enabled(build_config_file):
+    with open(build_config_file, "r") as config_file_pointer:
+        full_file = config_file_pointer.readlines()
+        return "CONFIG_NEWLIB_LIBC=y\n" in full_file
+
+def generate_final_linker(linker_file, full_list_of_partitions, build_config_file):
     string = linker_start_seq
     size_string = ''
     for partition in full_list_of_partitions:
         string += print_template.format(partition)
         size_string += size_cal_string.format(partition)
+
+    # for libc we need to do a bit more linker magic to get it to
+    # work with APP_SHARED_MEM. Here we just check if libc is enabled
+    # if so we add some linker magic to get this working.
+    if(libc_is_enabled(build_config_file)):
+        string += print_template_libc.format("libc")
+        size_string += size_cal_string.format("libc")
 
     string += linker_end_seq
     string += size_string
@@ -107,12 +135,14 @@ def main():
 
     for dirpath, dirs, files in os.walk(root_directory):
         for filename in files:
+            if re.match(".*\.config",filename):
+                build_config_file = os.path.join(dirpath, filename)
             if re.match(".*\.obj$",filename):
                 fullname = os.path.join(dirpath, filename)
                 full_list_of_partitions, partitions_source_file = find_partitions(fullname, full_list_of_partitions, partitions_source_file)
 
     full_list_of_partitions = cleanup_remove_bss_regions(full_list_of_partitions)
-    generate_final_linker(linker_file, full_list_of_partitions)
+    generate_final_linker(linker_file, full_list_of_partitions, build_config_file)
     if args.verbose:
         print("Partitions retrieved: PARTITION, FILENAME")
         print([key + " "+ partitions_source_file[key] for key in full_list_of_partitions])
