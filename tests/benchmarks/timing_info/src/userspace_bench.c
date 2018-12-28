@@ -15,17 +15,20 @@
 #include <ksched.h>
 #include "timing_info.h"
 
-
 extern char sline[256];
 extern u64_t __end_drop_to_usermode_time;
 
-u32_t drop_to_user_mode_end_time, drop_to_user_mode_start_time;
-u32_t user_thread_creation_end_time, user_thread_creation_start_time;
+_app_bmem(part0) u32_t drop_to_user_mode_end_time, drop_to_user_mode_start_time;
+_app_bmem(part0) u32_t user_thread_creation_end_time;
+_app_bmem(part0) u32_t user_thread_creation_start_time;
 
 __kernel struct k_thread my_thread_user;
 K_THREAD_STACK_EXTERN(my_stack_area);
 K_THREAD_STACK_EXTERN(my_stack_area_0);
 
+/* Application memory objects  */
+APPMEM_DOMAIN_OBJECT_DEFINE(dom0);
+APPMEM_PARTITION_OBJECT_DEFINE(part0);
 
 /******************************************************************************/
 /* syscall needed to read timer value when in user space */
@@ -50,6 +53,13 @@ void validation_overhead(void);
 
 void userspace_bench(void)
 {
+
+	APPMEM_INIT_PARTITIONS(part0);
+
+	appmem_init_app_memory();
+	appmem_init_domain_dom0(part0);
+	appmem_add_thread_dom0(k_current_get());
+
 	drop_to_user_mode();
 
 	user_thread_creation();
@@ -146,7 +156,7 @@ void user_thread_creation(void)
 
 /******************************************************************************/
 /* dummy syscalls creation */
-u32_t syscall_overhead_start_time, syscall_overhead_end_time;
+_app_bmem(part0) u32_t syscall_overhead_start_time, syscall_overhead_end_time;
 
 int _impl_k_dummy_syscall(void)
 {
@@ -195,10 +205,10 @@ void syscall_overhead(void)
 
 /******************************************************************************/
 K_SEM_DEFINE(test_sema, 1, 10);
-u32_t validation_overhead_obj_init_start_time;
-u32_t validation_overhead_obj_init_end_time;
-u32_t validation_overhead_obj_start_time;
-u32_t validation_overhead_obj_end_time;
+_app_bmem(part0) u32_t validation_overhead_obj_init_start_time;
+_app_bmem(part0) u32_t validation_overhead_obj_init_end_time;
+_app_bmem(part0) u32_t validation_overhead_obj_start_time;
+_app_bmem(part0) u32_t validation_overhead_obj_end_time;
 
 int _impl_validation_overhead_syscall(void)
 {

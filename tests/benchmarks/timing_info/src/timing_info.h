@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <timestamp.h>
+#include <app_memory/app_memdomain.h>
 
 
 #define CALCULATE_TIME(special_char, profile, name)			     \
@@ -211,6 +212,9 @@ extern u64_t __start_tick_time;
 extern u64_t __end_tick_time;
 /******************************************************************************/
 #ifdef CONFIG_USERSPACE
+APPMEM_DOMAIN_HEADER_DEFINE(dom0);
+APPMEM_PARTITION_HEADER_DEFINE(part0);
+
 #include <syscall_handler.h>
 __syscall int k_dummy_syscall(void);
 __syscall u32_t userspace_read_timer_value(void);
