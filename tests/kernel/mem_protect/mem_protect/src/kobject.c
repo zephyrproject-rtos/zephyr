@@ -28,10 +28,10 @@ __kernel struct k_thread kobject_test_reuse_3_tid, kobject_test_reuse_4_tid;
 __kernel struct k_thread kobject_test_reuse_5_tid, kobject_test_reuse_6_tid;
 __kernel struct k_thread kobject_test_reuse_7_tid, kobject_test_reuse_8_tid;
 
-struct k_thread kobject_test_10_tid_uninitialized;
+APP_BSS_MEM struct k_thread kobject_test_10_tid_uninitialized;
 
-struct k_sem *random_sem_type;
-struct k_sem kobject_sem_not_hash_table;
+APP_BSS_MEM struct k_sem *random_sem_type;
+APP_BSS_MEM struct k_sem kobject_sem_not_hash_table;
 __kernel struct k_sem kobject_sem_no_init_no_access;
 __kernel struct k_sem kobject_sem_no_init_access;
 
@@ -958,4 +958,3 @@ void test_create_new_invalid_prio_thread_from_user(void *p1, void *p2, void *p3)
 	k_sem_take(&sync_sem, SYNC_SEM_TIMEOUT);
 
 }
-

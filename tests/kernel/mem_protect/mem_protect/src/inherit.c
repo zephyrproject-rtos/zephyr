@@ -24,7 +24,8 @@ K_TIMER_DEFINE(inherit_timer, dummy_start, dummy_end);
 K_MSGQ_DEFINE(inherit_msgq, MSG_Q_SIZE, MSG_Q_MAX_NUM_MSGS, MSG_Q_ALIGN);
 __kernel struct k_thread test_1_tid;
 
-u8_t MEM_DOMAIN_ALIGNMENT inherit_buf[MEM_REGION_ALLOC]; /* for mem domain */
+/* for mem domain */
+APP_BSS_MEM u8_t MEM_DOMAIN_ALIGNMENT inherit_buf[MEM_REGION_ALLOC];
 
 K_MEM_PARTITION_DEFINE(inherit_memory_partition,
 		       inherit_buf,
@@ -78,10 +79,16 @@ void test_thread_1_for_SU(void *p1, void *p2, void *p3)
  */
 void test_permission_inheritance(void *p1, void *p2, void *p3)
 {
+	/* Remove the domain because our testcase needs its own domain. */
+	appmem_rm_thread_ztest_dom0(k_current_get());
 
 	k_mem_domain_init(&inherit_mem_domain,
 			  1,
 			  inherit_memory_partition_array);
+
+	/* Take the smem partition and add it to the test case */
+	k_mem_domain_add_partition(&inherit_mem_domain,
+				   APPMEM_PARTITION_GET(ztest_part0));
 
 	k_mem_domain_add_thread(&inherit_mem_domain, k_current_get());
 

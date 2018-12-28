@@ -17,7 +17,7 @@ K_SEM_DEFINE(barrier_sem,
 	     SYNC_BARRIER_SEMAPHORE_INIT_COUNT,
 	     SYNC_BARRIER_SEMAPHORE_MAX_COUNT);
 
-bool valid_fault;
+APP_BSS_MEM bool valid_fault;
 
 void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
 {

@@ -710,12 +710,10 @@ void test_main(void)
 	 */
 	appmem_init_app_memory();
 
-	/* Domain is initialized with partition part0 */
-	appmem_init_domain_dom0(part0);
 	/* Next, the partition must be added to the domain */
-	appmem_add_part_dom0(part1);
-	/* Finally, the current thread is added to domain */
-	appmem_add_thread_dom0(k_current_get());
+	appmem_add_part_ztest_dom0(part0);
+	appmem_add_part_ztest_dom0(part1);
+
 
 #if defined(CONFIG_ARM)
 	priv_stack_ptr = (int *)_k_priv_stack_find(ztest_thread_stack) -

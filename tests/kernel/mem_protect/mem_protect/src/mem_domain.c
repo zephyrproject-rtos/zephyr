@@ -64,9 +64,16 @@ __kernel struct k_mem_domain mem_domain1;
 /* Common init functions */
 static inline void mem_domain_init(void)
 {
+	/* Remove the domain because our testcase needs its own domain. */
+	appmem_rm_thread_ztest_dom0(k_current_get());
+
 	k_mem_domain_init(&mem_domain_mem_domain,
 			  MEM_PARTITION_INIT_NUM,
 			  mem_domain_memory_partition_array);
+
+	/* Take the smem partition and add it to the test case */
+	k_mem_domain_add_partition(&mem_domain_mem_domain,
+				   APPMEM_PARTITION_GET(ztest_part0));
 }
 
 static inline void set_valid_fault_value(int test_case_number)
@@ -185,10 +192,7 @@ static void thread_entry_rw(void *p1, void *p2, void *p3)
  */
 void test_mem_domain_partitions_user_rw(void)
 {
-	/* Initialize the memory domain */
-	k_mem_domain_init(&mem_domain_mem_domain,
-			  MEM_PARTITION_INIT_NUM,
-			  mem_domain_memory_partition_array);
+	mem_domain_init();
 
 	k_mem_domain_add_thread(&mem_domain_mem_domain,
 				k_current_get());
@@ -228,9 +232,13 @@ void test_mem_domain_partitions_user_ro(void)
 	/* Initialize the memory domain containing the partition
 	 * with read only access privilege
 	 */
+	appmem_rm_thread_ztest_dom0(k_current_get());
 	k_mem_domain_init(&mem_domain1,
 			  MEM_PARTITION_INIT_NUM,
 			  mem_domain_memory_partition_array1);
+
+	k_mem_domain_add_partition(&mem_domain1,
+				   APPMEM_PARTITION_GET(ztest_part0));
 
 	k_mem_domain_add_thread(&mem_domain1, k_current_get());
 
@@ -245,9 +253,13 @@ void test_mem_domain_partitions_user_ro(void)
  */
 void test_mem_domain_partitions_supervisor_rw(void)
 {
+	appmem_rm_thread_ztest_dom0(k_current_get());
 	k_mem_domain_init(&mem_domain_mem_domain,
 			  MEM_PARTITION_INIT_NUM,
 			  mem_domain_memory_partition_array1);
+
+	k_mem_domain_add_partition(&mem_domain1,
+				   APPMEM_PARTITION_GET(ztest_part0));
 
 	k_mem_domain_add_thread(&mem_domain_mem_domain, k_current_get());
 
@@ -305,8 +317,8 @@ K_MEM_PARTITION_DEFINE(mem_domain_tc3_part8_struct,
 
 struct k_mem_partition *mem_domain_tc3_partition_array[] = {
 	&mem_domain_tc3_part1_struct,
-	&mem_domain_tc3_part2_struct,
 	&mem_domain_tc3_part3_struct,
+	&mem_domain_tc3_part2_struct,
 	&mem_domain_tc3_part4_struct,
 	&mem_domain_tc3_part5_struct,
 	&mem_domain_tc3_part6_struct,
@@ -414,11 +426,16 @@ void test_mem_domain_add_partitions_simple(void *p1, void *p2, void *p3)
 	u8_t max_partitions = (u8_t)_arch_mem_domain_max_partitions_get();
 	u8_t index;
 
+	appmem_rm_thread_ztest_dom0(k_current_get());
+
 	k_mem_domain_init(&mem_domain_tc3_mem_domain,
 			  1,
 			  mem_domain_tc3_partition_array);
 
-	for (index = 1U; (index < max_partitions) && (index < 8); index++) {
+	k_mem_domain_add_partition(&mem_domain_tc3_mem_domain,
+				   APPMEM_PARTITION_GET(ztest_part0));
+
+	for (index = 2U; (index < max_partitions) && (index < 8); index++) {
 		k_mem_domain_add_partition(&mem_domain_tc3_mem_domain,
 					   mem_domain_tc3_partition_array \
 					   [index]);
@@ -456,6 +473,7 @@ void mem_domain_for_user_tc5(void *p1, void *p2, void *p3)
  */
 void test_mem_domain_remove_partitions_simple(void *p1, void *p2, void *p3)
 {
+	appmem_rm_thread_ztest_dom0(k_current_get());
 	k_mem_domain_add_thread(&mem_domain_tc3_mem_domain,
 				k_current_get());
 
@@ -500,6 +518,7 @@ void mem_domain_test_6_2(void *p1, void *p2, void *p3)
 void test_mem_domain_remove_partitions(void *p1, void *p2, void *p3)
 {
 
+	appmem_rm_thread_ztest_dom0(k_current_get());
 	k_mem_domain_add_thread(&mem_domain_tc3_mem_domain,
 				k_current_get());
 
@@ -532,9 +551,6 @@ void test_mem_domain_remove_partitions(void *p1, void *p2, void *p3)
 
 void mem_domain_for_user_tc7(void *p1, void *p2, void *p3)
 {
-	valid_fault = true;
-	USERSPACE_BARRIER;
-
 	/* will generate a fault */
 	mem_domain_tc3_part4[0] = 10U;
 	zassert_unreachable(ERROR_STR);
@@ -552,14 +568,16 @@ void mem_domain_for_user_tc7(void *p1, void *p2, void *p3)
  */
 void test_mem_domain_remove_thread(void *p1, void *p2, void *p3)
 {
-
+	appmem_rm_thread_ztest_dom0(k_current_get());
 	k_mem_domain_add_thread(&mem_domain_tc3_mem_domain,
 				k_current_get());
 
-
 	k_mem_domain_remove_thread(k_current_get());
 
-
+	/* Valid fault has been moved down here from userspace is because
+	 * the domain has been removed from the thread in this testcase.
+	 */
+	valid_fault = true;
 	k_thread_user_mode_enter(mem_domain_for_user_tc7,
 				 NULL, NULL, NULL);
 
@@ -574,9 +592,13 @@ void test_mem_domain_remove_thread(void *p1, void *p2, void *p3)
  * */
 void test_mem_domain_destroy(void)
 {
+	appmem_rm_thread_ztest_dom0(k_current_get());
 	k_mem_domain_init(&mem_domain1,
 			  MEM_PARTITION_INIT_NUM,
 			  mem_domain_memory_partition_array1);
+
+	k_mem_domain_add_partition(&mem_domain1,
+				   APPMEM_PARTITION_GET(ztest_part0));
 
 	k_mem_domain_add_thread(&mem_domain1, k_current_get());
 

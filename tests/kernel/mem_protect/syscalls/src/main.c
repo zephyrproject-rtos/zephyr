@@ -13,7 +13,7 @@
 
 __kernel char kernel_string[BUF_SIZE];
 __kernel char kernel_buf[BUF_SIZE];
-char user_string[BUF_SIZE];
+APP_BSS_MEM char user_string[BUF_SIZE];
 
 size_t _impl_string_nlen(char *src, size_t maxlen, int *err)
 {
