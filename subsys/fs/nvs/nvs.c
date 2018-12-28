@@ -270,6 +270,24 @@ static int _nvs_ate_crc8_check(const struct nvs_ate *entry)
 	return 1;
 }
 
+/* _nvs_ate_cmp_const compares an ATE to a constant value. returns 0 if
+ * the whole ATE is equal to value, 1 if not equal.
+ */
+
+static int _nvs_ate_cmp_const(const struct nvs_ate *entry, u8_t value)
+{
+	const u8_t *data8 = (const u8_t *)entry;
+	int i;
+
+	for (i = 0; i < sizeof(struct nvs_ate); i++) {
+		if (data8[i] != value) {
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
 /* store an entry in flash */
 static int _nvs_flash_wrt_entry(struct nvs_fs *fs, u16_t id, const void *data,
 				size_t len)
@@ -333,17 +351,18 @@ static int _nvs_prev_ate(struct nvs_fs *fs, u32_t *addr, struct nvs_ate *ate)
 		*addr -= (1 << ADDR_SECT_SHIFT);
 	}
 
-	rc = _nvs_flash_cmp_const(fs, *addr, 0xff, sizeof(struct nvs_ate));
+	rc = _nvs_flash_ate_rd(fs, *addr, &close_ate);
+	if (rc) {
+		return rc;
+	}
+
+	rc = _nvs_ate_cmp_const(&close_ate, 0xff);
 	/* at the end of filesystem */
 	if (!rc) {
 		*addr = fs->ate_wra;
 		return 0;
 	}
 
-	rc = _nvs_flash_ate_rd(fs, *addr, &close_ate);
-	if (rc) {
-		return rc;
-	}
 	if (!_nvs_ate_crc8_check(&close_ate)) {
 		(*addr) &= ADDR_SECT_MASK;
 		/* update the address so it points to the last added ate */
@@ -433,11 +452,13 @@ static int _nvs_gc(struct nvs_fs *fs)
 	gc_addr = sec_addr + fs->sector_size - ate_size;
 
 	/* if the sector is not closed don't do gc */
-	rc = _nvs_flash_cmp_const(fs, gc_addr, 0xff, sizeof(struct nvs_ate));
+	rc = _nvs_flash_ate_rd(fs, gc_addr, &close_ate);
 	if (rc < 0) {
 		/* flash error */
 		return rc;
 	}
+
+	rc = _nvs_ate_cmp_const(&close_ate, 0xff);
 	if (!rc) {
 		rc = _nvs_flash_erase_sector(fs, sec_addr);
 		if (rc) {
@@ -447,11 +468,6 @@ static int _nvs_gc(struct nvs_fs *fs)
 	}
 
 	stop_addr = gc_addr - ate_size;
-
-	rc = _nvs_flash_ate_rd(fs, gc_addr, &close_ate);
-	if (rc) {
-		return rc;
-	}
 
 	gc_addr &= ADDR_SECT_MASK;
 	gc_addr += close_ate.offset;
