@@ -21,9 +21,13 @@
 
 
 K_MUTEX_DEFINE(pool_mutex);
+#ifdef CONFIG_APP_SHARED_MEM
+SYS_MEM_POOL_DEFINE(pool, &pool_mutex, BLK_SIZE_MIN, BLK_SIZE_MAX,
+		    BLK_NUM_MAX, BLK_ALIGN, data_smem_ztest_part0_data);
+#else
 SYS_MEM_POOL_DEFINE(pool, &pool_mutex, BLK_SIZE_MIN, BLK_SIZE_MAX,
 		    BLK_NUM_MAX, BLK_ALIGN, .data);
-
+#endif /* CONFIG_APP_SHARED_MEM */
 /**
  * @brief Verify sys_mem_pool allocation and free
  *
