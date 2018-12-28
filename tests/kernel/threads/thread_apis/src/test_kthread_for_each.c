@@ -15,9 +15,9 @@
 K_THREAD_STACK_EXTERN(tstack);
 extern struct k_thread tdata;
 
-static int tcount;
-static bool thread_flag;
-static bool stack_flag;
+APP_BSS_MEM static int tcount;
+APP_BSS_MEM static bool thread_flag;
+APP_BSS_MEM static bool stack_flag;
 
 static void thread_entry(void *p1, void *p2, void *p3)
 {

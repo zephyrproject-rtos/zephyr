@@ -9,7 +9,7 @@
 #define STACK_SIZE (384 + CONFIG_TEST_EXTRA_STACKSIZE)
 K_THREAD_STACK_EXTERN(tstack);
 extern struct k_thread tdata;
-static int thread2_data;
+APP_BSS_MEM static int thread2_data;
 
 K_SEM_DEFINE(sem_thread2, 0, 1);
 K_SEM_DEFINE(sem_thread1, 0, 1);

@@ -45,7 +45,7 @@ static K_THREAD_STACK_DEFINE(tstack_name, STACK_SIZE);
 __kernel static struct k_thread tdata_custom;
 __kernel static struct k_thread tdata_name;
 
-static int main_prio;
+APP_BSS_MEM static int main_prio;
 
 /**
  * @ingroup kernel_thread_tests

@@ -11,10 +11,10 @@
 K_THREAD_STACK_EXTERN(tstack);
 extern struct k_thread tdata;
 
-static char tp1[8];
-static int tp2 = 100;
-static struct k_sema *tp3;
-static int spawn_prio;
+static APP_BSS_MEM char tp1[8];
+static APP_DATA_MEM int tp2 = 100;
+static APP_BSS_MEM struct k_sema *tp3;
+static APP_BSS_MEM int spawn_prio;
 
 static void thread_entry_params(void *p1, void *p2, void *p3)
 {
