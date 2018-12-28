@@ -60,7 +60,11 @@ const __imx_boot_ivt_section ivt image_vector_table = {
 	.hdr = IVT_HEADER,
 	.entry = CONFIG_FLASH_BASE_ADDRESS + CONFIG_TEXT_SECTION_OFFSET,
 	.reserved1 = IVT_RSVD,
+#ifdef CONFIG_DEVICE_CONFIGURATION_DATA
+	.dcd = (uint32_t) dcd_data,
+#else
 	.dcd = (uint32_t) NULL,
+#endif
 	.boot_data = (uint32_t) &boot_data,
 	.self = (uint32_t) &image_vector_table,
 	.csf = (uint32_t)CSF_ADDRESS,
