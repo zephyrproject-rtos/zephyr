@@ -111,12 +111,14 @@ exit:
     return( ret );
 }
 
+#if !defined(MBEDTLS_DEPRECATED_REMOVED)
 void mbedtls_hmac_drbg_update( mbedtls_hmac_drbg_context *ctx,
                                const unsigned char *additional,
                                size_t add_len )
 {
     (void) mbedtls_hmac_drbg_update_ret( ctx, additional, add_len );
 }
+#endif /* MBEDTLS_DEPRECATED_REMOVED */
 
 /*
  * Simplified HMAC_DRBG initialisation (for use with deterministic ECDSA)
@@ -415,35 +417,36 @@ exit:
 int mbedtls_hmac_drbg_update_seed_file( mbedtls_hmac_drbg_context *ctx, const char *path )
 {
     int ret = 0;
-    FILE *f;
+    FILE *f = NULL;
     size_t n;
     unsigned char buf[ MBEDTLS_HMAC_DRBG_MAX_INPUT ];
+    unsigned char c;
 
     if( ( f = fopen( path, "rb" ) ) == NULL )
         return( MBEDTLS_ERR_HMAC_DRBG_FILE_IO_ERROR );
 
-    fseek( f, 0, SEEK_END );
-    n = (size_t) ftell( f );
-    fseek( f, 0, SEEK_SET );
-
-    if( n > MBEDTLS_HMAC_DRBG_MAX_INPUT )
+    n = fread( buf, 1, sizeof( buf ), f );
+    if( fread( &c, 1, 1, f ) != 0 )
     {
-        fclose( f );
-        return( MBEDTLS_ERR_HMAC_DRBG_INPUT_TOO_BIG );
+        ret = MBEDTLS_ERR_HMAC_DRBG_INPUT_TOO_BIG;
+        goto exit;
     }
-
-    if( fread( buf, 1, n, f ) != n )
+    if( n == 0 || ferror( f ) )
+    {
         ret = MBEDTLS_ERR_HMAC_DRBG_FILE_IO_ERROR;
-    else
-        ret = mbedtls_hmac_drbg_update_ret( ctx, buf, n );
-
+        goto exit;
+    }
     fclose( f );
+    f = NULL;
 
+    ret = mbedtls_hmac_drbg_update_ret( ctx, buf, n );
+
+exit:
     mbedtls_platform_zeroize( buf, sizeof( buf ) );
-
+    if( f != NULL )
+        fclose( f );
     if( ret != 0 )
         return( ret );
-
     return( mbedtls_hmac_drbg_write_seed_file( ctx, path ) );
 }
 #endif /* MBEDTLS_FS_IO */

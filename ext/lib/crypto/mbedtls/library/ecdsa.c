@@ -50,6 +50,14 @@
 #define mbedtls_free       free
 #endif
 
+#include "mbedtls/platform_util.h"
+
+/* Parameter validation macros based on platform_util.h */
+#define ECDSA_VALIDATE_RET( cond )    \
+    MBEDTLS_INTERNAL_VALIDATE_RET( cond, MBEDTLS_ERR_ECP_BAD_INPUT_DATA )
+#define ECDSA_VALIDATE( cond )        \
+    MBEDTLS_INTERNAL_VALIDATE( cond )
+
 #if defined(MBEDTLS_ECP_RESTARTABLE)
 
 /*
@@ -377,6 +385,13 @@ int mbedtls_ecdsa_sign( mbedtls_ecp_group *grp, mbedtls_mpi *r, mbedtls_mpi *s,
                 const mbedtls_mpi *d, const unsigned char *buf, size_t blen,
                 int (*f_rng)(void *, unsigned char *, size_t), void *p_rng )
 {
+    ECDSA_VALIDATE_RET( grp   != NULL );
+    ECDSA_VALIDATE_RET( r     != NULL );
+    ECDSA_VALIDATE_RET( s     != NULL );
+    ECDSA_VALIDATE_RET( d     != NULL );
+    ECDSA_VALIDATE_RET( f_rng != NULL );
+    ECDSA_VALIDATE_RET( buf   != NULL || blen == 0 );
+
     return( ecdsa_sign_restartable( grp, r, s, d, buf, blen,
                                     f_rng, p_rng, NULL ) );
 }
@@ -456,6 +471,12 @@ int mbedtls_ecdsa_sign_det( mbedtls_ecp_group *grp, mbedtls_mpi *r, mbedtls_mpi 
                     const mbedtls_mpi *d, const unsigned char *buf, size_t blen,
                     mbedtls_md_type_t md_alg )
 {
+    ECDSA_VALIDATE_RET( grp   != NULL );
+    ECDSA_VALIDATE_RET( r     != NULL );
+    ECDSA_VALIDATE_RET( s     != NULL );
+    ECDSA_VALIDATE_RET( d     != NULL );
+    ECDSA_VALIDATE_RET( buf   != NULL || blen == 0 );
+
     return( ecdsa_sign_det_restartable( grp, r, s, d, buf, blen, md_alg, NULL ) );
 }
 #endif /* MBEDTLS_ECDSA_DETERMINISTIC */
@@ -574,9 +595,17 @@ cleanup:
  * Verify ECDSA signature of hashed message
  */
 int mbedtls_ecdsa_verify( mbedtls_ecp_group *grp,
-                  const unsigned char *buf, size_t blen,
-                  const mbedtls_ecp_point *Q, const mbedtls_mpi *r, const mbedtls_mpi *s)
+                          const unsigned char *buf, size_t blen,
+                          const mbedtls_ecp_point *Q,
+                          const mbedtls_mpi *r,
+                          const mbedtls_mpi *s)
 {
+    ECDSA_VALIDATE_RET( grp != NULL );
+    ECDSA_VALIDATE_RET( Q   != NULL );
+    ECDSA_VALIDATE_RET( r   != NULL );
+    ECDSA_VALIDATE_RET( s   != NULL );
+    ECDSA_VALIDATE_RET( buf != NULL || blen == 0 );
+
     return( ecdsa_verify_restartable( grp, buf, blen, Q, r, s, NULL ) );
 }
 #endif /* !MBEDTLS_ECDSA_VERIFY_ALT */
@@ -618,6 +647,10 @@ int mbedtls_ecdsa_write_signature_restartable( mbedtls_ecdsa_context *ctx,
 {
     int ret;
     mbedtls_mpi r, s;
+    ECDSA_VALIDATE_RET( ctx  != NULL );
+    ECDSA_VALIDATE_RET( hash != NULL );
+    ECDSA_VALIDATE_RET( sig  != NULL );
+    ECDSA_VALIDATE_RET( slen != NULL );
 
     mbedtls_mpi_init( &r );
     mbedtls_mpi_init( &s );
@@ -652,12 +685,17 @@ cleanup:
 /*
  * Compute and write signature
  */
-int mbedtls_ecdsa_write_signature( mbedtls_ecdsa_context *ctx, mbedtls_md_type_t md_alg,
-                           const unsigned char *hash, size_t hlen,
-                           unsigned char *sig, size_t *slen,
-                           int (*f_rng)(void *, unsigned char *, size_t),
-                           void *p_rng )
+int mbedtls_ecdsa_write_signature( mbedtls_ecdsa_context *ctx,
+                                 mbedtls_md_type_t md_alg,
+                                 const unsigned char *hash, size_t hlen,
+                                 unsigned char *sig, size_t *slen,
+                                 int (*f_rng)(void *, unsigned char *, size_t),
+                                 void *p_rng )
 {
+    ECDSA_VALIDATE_RET( ctx  != NULL );
+    ECDSA_VALIDATE_RET( hash != NULL );
+    ECDSA_VALIDATE_RET( sig  != NULL );
+    ECDSA_VALIDATE_RET( slen != NULL );
     return( mbedtls_ecdsa_write_signature_restartable(
                 ctx, md_alg, hash, hlen, sig, slen, f_rng, p_rng, NULL ) );
 }
@@ -669,6 +707,10 @@ int mbedtls_ecdsa_write_signature_det( mbedtls_ecdsa_context *ctx,
                                unsigned char *sig, size_t *slen,
                                mbedtls_md_type_t md_alg )
 {
+    ECDSA_VALIDATE_RET( ctx  != NULL );
+    ECDSA_VALIDATE_RET( hash != NULL );
+    ECDSA_VALIDATE_RET( sig  != NULL );
+    ECDSA_VALIDATE_RET( slen != NULL );
     return( mbedtls_ecdsa_write_signature( ctx, md_alg, hash, hlen, sig, slen,
                                    NULL, NULL ) );
 }
@@ -681,6 +723,9 @@ int mbedtls_ecdsa_read_signature( mbedtls_ecdsa_context *ctx,
                           const unsigned char *hash, size_t hlen,
                           const unsigned char *sig, size_t slen )
 {
+    ECDSA_VALIDATE_RET( ctx  != NULL );
+    ECDSA_VALIDATE_RET( hash != NULL );
+    ECDSA_VALIDATE_RET( sig  != NULL );
     return( mbedtls_ecdsa_read_signature_restartable(
                 ctx, hash, hlen, sig, slen, NULL ) );
 }
@@ -698,6 +743,9 @@ int mbedtls_ecdsa_read_signature_restartable( mbedtls_ecdsa_context *ctx,
     const unsigned char *end = sig + slen;
     size_t len;
     mbedtls_mpi r, s;
+    ECDSA_VALIDATE_RET( ctx  != NULL );
+    ECDSA_VALIDATE_RET( hash != NULL );
+    ECDSA_VALIDATE_RET( sig  != NULL );
 
     mbedtls_mpi_init( &r );
     mbedtls_mpi_init( &s );
@@ -752,6 +800,9 @@ cleanup:
 int mbedtls_ecdsa_genkey( mbedtls_ecdsa_context *ctx, mbedtls_ecp_group_id gid,
                   int (*f_rng)(void *, unsigned char *, size_t), void *p_rng )
 {
+    ECDSA_VALIDATE_RET( ctx   != NULL );
+    ECDSA_VALIDATE_RET( f_rng != NULL );
+
     return( mbedtls_ecp_group_load( &ctx->grp, gid ) ||
             mbedtls_ecp_gen_keypair( &ctx->grp, &ctx->d, &ctx->Q, f_rng, p_rng ) );
 }
@@ -763,6 +814,8 @@ int mbedtls_ecdsa_genkey( mbedtls_ecdsa_context *ctx, mbedtls_ecp_group_id gid,
 int mbedtls_ecdsa_from_keypair( mbedtls_ecdsa_context *ctx, const mbedtls_ecp_keypair *key )
 {
     int ret;
+    ECDSA_VALIDATE_RET( ctx != NULL );
+    ECDSA_VALIDATE_RET( key != NULL );
 
     if( ( ret = mbedtls_ecp_group_copy( &ctx->grp, &key->grp ) ) != 0 ||
         ( ret = mbedtls_mpi_copy( &ctx->d, &key->d ) ) != 0 ||
@@ -779,6 +832,8 @@ int mbedtls_ecdsa_from_keypair( mbedtls_ecdsa_context *ctx, const mbedtls_ecp_ke
  */
 void mbedtls_ecdsa_init( mbedtls_ecdsa_context *ctx )
 {
+    ECDSA_VALIDATE( ctx != NULL );
+
     mbedtls_ecp_keypair_init( ctx );
 }
 
@@ -787,6 +842,9 @@ void mbedtls_ecdsa_init( mbedtls_ecdsa_context *ctx )
  */
 void mbedtls_ecdsa_free( mbedtls_ecdsa_context *ctx )
 {
+    if( ctx == NULL )
+        return;
+
     mbedtls_ecp_keypair_free( ctx );
 }
 
@@ -796,6 +854,8 @@ void mbedtls_ecdsa_free( mbedtls_ecdsa_context *ctx )
  */
 void mbedtls_ecdsa_restart_init( mbedtls_ecdsa_restart_ctx *ctx )
 {
+    ECDSA_VALIDATE( ctx != NULL );
+
     mbedtls_ecp_restart_init( &ctx->ecp );
 
     ctx->ver = NULL;
@@ -810,6 +870,9 @@ void mbedtls_ecdsa_restart_init( mbedtls_ecdsa_restart_ctx *ctx )
  */
 void mbedtls_ecdsa_restart_free( mbedtls_ecdsa_restart_ctx *ctx )
 {
+    if( ctx == NULL )
+        return;
+
     mbedtls_ecp_restart_free( &ctx->ecp );
 
     ecdsa_restart_ver_free( ctx->ver );
