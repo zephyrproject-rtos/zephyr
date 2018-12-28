@@ -12,8 +12,7 @@ LOG_MODULE_REGISTER(sdhc);
 #include <gpio.h>
 #include <misc/byteorder.h>
 #include <spi.h>
-#include <crc7.h>
-#include <crc16.h>
+#include <crc.h>
 
 #define SDHC_SECTOR_SIZE 512
 #define SDHC_CMD_SIZE 6
