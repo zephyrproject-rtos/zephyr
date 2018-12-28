@@ -16,7 +16,7 @@ __kernel struct k_stack stack;
 
 K_THREAD_STACK_DEFINE(threadstack, STACK_SIZE);
 __kernel struct k_thread thread_data;
-static u32_t data[STACK_LEN] = { 0xABCD, 0x1234 };
+static APP_DATA_MEM u32_t data[STACK_LEN] = { 0xABCD, 0x1234 };
 __kernel struct k_sem end_sema;
 
 static void tstack_push(struct k_stack *pstack)
