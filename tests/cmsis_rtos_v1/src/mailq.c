@@ -177,4 +177,5 @@ void test_mailq(void)
 	zassert_true(tid != NULL, "Thread creation failed");
 
 	mail_recv();
+	osThreadTerminate(tid);
 }
