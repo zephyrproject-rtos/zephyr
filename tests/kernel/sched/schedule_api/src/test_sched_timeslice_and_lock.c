@@ -9,16 +9,16 @@
 #define DURATION	1
 static K_THREAD_STACK_ARRAY_DEFINE(tstack, THREADS_NUM, STACK_SIZE);
 
-static struct thread_data tdata[THREADS_NUM];
-static struct k_thread tthread[THREADS_NUM];
-static int old_prio, init_prio;
+static APP_BSS_MEM struct thread_data tdata[THREADS_NUM];
+static APP_BSS_MEM struct k_thread tthread[THREADS_NUM];
+static APP_BSS_MEM int old_prio, init_prio;
 
 K_THREAD_STACK_DEFINE(t_stack, STACK_SIZE);
-struct k_thread t;
+APP_BSS_MEM struct k_thread t;
 
 K_SEM_DEFINE(pend_sema, 0, 1);
 K_SEM_DEFINE(timer_sema, 0, 1);
-struct k_timer timer;
+APP_BSS_MEM struct k_timer timer;
 
 static void thread_entry(void *p1, void *p2, void *p3)
 {

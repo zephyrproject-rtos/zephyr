@@ -27,8 +27,8 @@ static K_SEM_DEFINE(sema2, 0, NUM_THREAD);
 /* Semaphore on which application threads wait*/
 static K_SEM_DEFINE(sema3, 0, NUM_THREAD);
 
-static int thread_idx;
-static struct k_thread t[NUM_THREAD];
+static APP_BSS_MEM int thread_idx;
+static APP_BSS_MEM struct k_thread t[NUM_THREAD];
 
 /* Application thread */
 static void thread_tslice(void *p1, void *p2, void *p3)

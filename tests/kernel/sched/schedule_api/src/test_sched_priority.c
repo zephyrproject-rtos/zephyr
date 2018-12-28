@@ -7,8 +7,8 @@
 #include "test_sched.h"
 
 static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
-static struct k_thread tdata;
-static int last_prio;
+static APP_BSS_MEM struct k_thread tdata;
+static APP_BSS_MEM int last_prio;
 
 static void thread_entry(void *p1, void *p2, void *p3)
 {

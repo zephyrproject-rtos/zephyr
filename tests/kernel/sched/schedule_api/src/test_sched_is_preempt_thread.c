@@ -12,8 +12,8 @@
 
 /*local variables*/
 static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
-static struct k_thread tdata;
-static struct k_sem end_sema;
+static APP_BSS_MEM struct k_thread tdata;
+static APP_BSS_MEM struct k_sem end_sema;
 
 static void tIsr(void *data)
 {

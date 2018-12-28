@@ -19,8 +19,8 @@ static K_THREAD_STACK_ARRAY_DEFINE(tstack, NUM_THREAD, STACK_SIZE);
 
 K_SEM_DEFINE(sema, 0, NUM_THREAD);
 /*elapsed_slice taken by last thread*/
-static s64_t elapsed_slice;
-static int thread_idx;
+static APP_BSS_MEM s64_t elapsed_slice;
+static APP_BSS_MEM int thread_idx;
 
 static void thread_tslice(void *p1, void *p2, void *p3)
 {
