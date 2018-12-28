@@ -12,7 +12,7 @@
 #define BYTES_TO_READ BYTES_TO_WRITE
 K_MEM_POOL_DEFINE(mpool, BYTES_TO_WRITE, PIPE_LEN, 1, BYTES_TO_WRITE);
 
-static unsigned char __aligned(4) data[] = "abcd1234$%^&PIPE";
+static APP_DATA_MEM unsigned char __aligned(4) data[] = "abcd1234$%^&PIPE";
 /**TESTPOINT: init via K_PIPE_DEFINE*/
 K_PIPE_DEFINE(kpipe, PIPE_LEN, 4);
 K_PIPE_DEFINE(khalfpipe, (PIPE_LEN / 2), 4);

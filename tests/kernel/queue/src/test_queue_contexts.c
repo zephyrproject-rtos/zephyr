@@ -14,20 +14,20 @@ K_QUEUE_DEFINE(kqueue);
 K_MEM_POOL_DEFINE(mem_pool_fail, 4, 8, 1, 4);
 K_MEM_POOL_DEFINE(mem_pool_pass, 4, 64, 4, 4);
 
-struct k_queue queue;
-static qdata_t data[LIST_LEN];
-static qdata_t data_p[LIST_LEN];
-static qdata_t data_l[LIST_LEN];
-static qdata_t data_sl[LIST_LEN];
+APP_BSS_MEM struct k_queue queue;
+APP_BSS_MEM static qdata_t data[LIST_LEN];
+APP_BSS_MEM static qdata_t data_p[LIST_LEN];
+APP_BSS_MEM static qdata_t data_l[LIST_LEN];
+APP_BSS_MEM static qdata_t data_sl[LIST_LEN];
 
-static qdata_t *data_append;
-static qdata_t *data_prepend;
+APP_BSS_MEM static qdata_t *data_append;
+APP_BSS_MEM static qdata_t *data_prepend;
 
 static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
-static struct k_thread tdata;
+APP_BSS_MEM static struct k_thread tdata;
 static K_THREAD_STACK_DEFINE(tstack1, STACK_SIZE);
-static struct k_thread tdata1;
-static struct k_sem end_sema;
+APP_BSS_MEM static struct k_thread tdata1;
+APP_BSS_MEM static struct k_sem end_sema;
 
 static void tqueue_append(struct k_queue *pqueue)
 {

@@ -9,8 +9,8 @@
 K_THREAD_STACK_EXTERN(tstack);
 extern struct k_thread tdata;
 extern struct k_msgq msgq;
-static char __aligned(4) tbuffer[MSG_SIZE * MSGQ_LEN];
-static u32_t data[MSGQ_LEN] = { MSG0, MSG1 };
+static APP_BSS_MEM char __aligned(4) tbuffer[MSG_SIZE * MSGQ_LEN];
+static APP_DATA_MEM u32_t data[MSGQ_LEN] = { MSG0, MSG1 };
 
 static void tThread_entry(void *p1, void *p2, void *p3)
 {

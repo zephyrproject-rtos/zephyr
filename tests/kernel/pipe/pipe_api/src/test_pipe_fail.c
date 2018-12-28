@@ -10,7 +10,7 @@
 #define TIMEOUT 100
 #define PIPE_LEN 8
 
-static unsigned char __aligned(4) data[] = "abcd1234";
+static APP_DATA_MEM unsigned char __aligned(4) data[] = "abcd1234";
 
 __kernel struct k_pipe put_get_pipe;
 

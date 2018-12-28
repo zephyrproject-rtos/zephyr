@@ -17,9 +17,9 @@ K_THREAD_STACK_DEFINE(tstack2, STACK_SIZE);
 __kernel struct k_thread tdata;
 __kernel struct k_thread tdata1;
 __kernel struct k_thread tdata2;
-static char __aligned(4) tbuffer[MSG_SIZE * MSGQ_LEN];
-static char __aligned(4) tbuffer1[MSG_SIZE];
-static u32_t data[MSGQ_LEN] = { MSG0, MSG1 };
+static APP_BSS_MEM char __aligned(4) tbuffer[MSG_SIZE * MSGQ_LEN];
+static APP_BSS_MEM char __aligned(4) tbuffer1[MSG_SIZE];
+static APP_DATA_MEM u32_t data[MSGQ_LEN] = { MSG0, MSG1 };
 __kernel struct k_sem end_sema;
 
 static void put_msgq(struct k_msgq *pmsgq)

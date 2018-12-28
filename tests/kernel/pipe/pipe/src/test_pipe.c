@@ -19,8 +19,8 @@ K_SEM_DEFINE(sync_sem, 0, 1);
 K_SEM_DEFINE(multiple_send_sem, 0, 1);
 
 
-u8_t tx_buffer[PIPE_SIZE];
-u8_t rx_buffer[PIPE_SIZE];
+APP_BSS_MEM u8_t tx_buffer[PIPE_SIZE];
+APP_BSS_MEM u8_t rx_buffer[PIPE_SIZE];
 
 #define TOTAL_ELEMENTS (sizeof(single_elements) / sizeof(struct pipe_sequence))
 #define TOTAL_WAIT_ELEMENTS (sizeof(wait_elements) / \
@@ -51,7 +51,7 @@ struct pipe_sequence {
 	int return_value;
 };
 
-static struct pipe_sequence single_elements[] = {
+static APP_DATA_MEM struct pipe_sequence single_elements[] = {
 	{ 0, ALL_BYTES, 0, 0 },
 	{ 1, ALL_BYTES, 1, RETURN_SUCCESS },
 	{ PIPE_SIZE - 1, ALL_BYTES, PIPE_SIZE - 1, RETURN_SUCCESS },
@@ -71,7 +71,7 @@ static struct pipe_sequence single_elements[] = {
 	{ PIPE_SIZE + 1, NO_CONSTRAINT, PIPE_SIZE, RETURN_SUCCESS }
 };
 
-static struct pipe_sequence multiple_elements[] = {
+static APP_DATA_MEM struct pipe_sequence multiple_elements[] = {
 	{ PIPE_SIZE / 3, ALL_BYTES, PIPE_SIZE / 3, RETURN_SUCCESS, },
 	{ PIPE_SIZE / 3, ALL_BYTES, PIPE_SIZE / 3, RETURN_SUCCESS, },
 	{ PIPE_SIZE / 3, ALL_BYTES, PIPE_SIZE / 3, RETURN_SUCCESS, },
@@ -90,7 +90,7 @@ static struct pipe_sequence multiple_elements[] = {
 	{ PIPE_SIZE / 3, NO_CONSTRAINT, 0, RETURN_SUCCESS }
 };
 
-static struct pipe_sequence wait_elements[] = {
+static APP_DATA_MEM struct pipe_sequence wait_elements[] = {
 	{            1, ALL_BYTES,             1, RETURN_SUCCESS },
 	{ PIPE_SIZE - 1, ALL_BYTES, PIPE_SIZE - 1, RETURN_SUCCESS },
 	{    PIPE_SIZE, ALL_BYTES,     PIPE_SIZE, RETURN_SUCCESS },
@@ -101,7 +101,7 @@ static struct pipe_sequence wait_elements[] = {
 	{ PIPE_SIZE + 1, ATLEAST_1, PIPE_SIZE + 1, RETURN_SUCCESS }
 };
 
-static struct pipe_sequence timeout_elements[] = {
+static APP_DATA_MEM struct pipe_sequence timeout_elements[] = {
 	{            0, ALL_BYTES, 0, 0 },
 	{            1, ALL_BYTES, 0, -EAGAIN },
 	{ PIPE_SIZE - 1, ALL_BYTES, 0, -EAGAIN },
@@ -674,7 +674,7 @@ void pipe_put_get_timeout(void)
 }
 
 /******************************************************************************/
-bool valid_fault;
+APP_BSS_MEM bool valid_fault;
 void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
 {
 	printk("Caught system error -- reason %d\n", reason);

@@ -5,8 +5,8 @@
  */
 #include "test_msgq.h"
 
-static char __aligned(4) tbuffer[MSG_SIZE * MSGQ_LEN];
-static u32_t data[MSGQ_LEN] = { MSG0, MSG1 };
+static APP_BSS_MEM char __aligned(4) tbuffer[MSG_SIZE * MSGQ_LEN];
+static APP_DATA_MEM u32_t data[MSGQ_LEN] = { MSG0, MSG1 };
 extern struct k_msgq msgq;
 
 static void put_fail(struct k_msgq *q)

@@ -10,13 +10,13 @@
 #define LIST_LEN 4
 #define LOOPS 32
 
-static qdata_t data[LIST_LEN];
-static qdata_t data_p[LIST_LEN];
-static qdata_t data_r[LIST_LEN];
-static struct k_queue queue;
+APP_BSS_MEM static qdata_t data[LIST_LEN];
+APP_BSS_MEM static qdata_t data_p[LIST_LEN];
+APP_BSS_MEM static qdata_t data_r[LIST_LEN];
+APP_BSS_MEM static struct k_queue queue;
 static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
-static struct k_thread tdata;
-static struct k_sem end_sema;
+APP_BSS_MEM static struct k_thread tdata;
+APP_BSS_MEM static struct k_sem end_sema;
 
 static void tqueue_append(struct k_queue *pqueue)
 {

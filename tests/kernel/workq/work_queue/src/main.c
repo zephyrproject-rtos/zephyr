@@ -33,12 +33,12 @@ struct test_item {
 };
 
 static K_THREAD_STACK_DEFINE(co_op_stack, STACK_SIZE);
-static struct k_thread co_op_data;
+APP_BSS_MEM static struct k_thread co_op_data;
 
-static struct test_item tests[NUM_TEST_ITEMS];
+APP_BSS_MEM static struct test_item tests[NUM_TEST_ITEMS];
 
-static int results[NUM_TEST_ITEMS];
-static int num_results;
+APP_BSS_MEM static int results[NUM_TEST_ITEMS];
+APP_BSS_MEM static int num_results;
 
 static void work_handler(struct k_work *work)
 {
