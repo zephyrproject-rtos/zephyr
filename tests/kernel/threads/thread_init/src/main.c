@@ -44,8 +44,8 @@ static K_THREAD_STACK_DEFINE(stack_coop, INIT_COOP_STACK_SIZE);
 static K_THREAD_STACK_DEFINE(stack_preempt, INIT_PREEMPT_STACK_SIZE);
 __kernel static struct k_thread thread_coop;
 __kernel static struct k_thread thread_preempt;
-static u64_t t_create;
-static struct thread_data {
+static APP_BSS_MEM u32_t t_create;
+static APP_BSS_MEM struct thread_data {
 	int init_prio;
 	s32_t init_delay;
 	void *init_p1;
@@ -205,6 +205,12 @@ void test_kinit_coop_thread(void)
 /*test case main entry*/
 void test_main(void)
 {
+#ifdef CONFIG_APP_SHARED_MEM
+	/* app shared memory needs to be assigned to the following 2 threads */
+	appmem_add_thread_ztest_dom0(T_KDEFINE_COOP_THREAD);
+	appmem_add_thread_ztest_dom0(T_KDEFINE_PREEMPT_THREAD);
+#endif /* CONFIG_APP_SHARED_MEM */
+
 	k_thread_access_grant(k_current_get(), &thread_preempt, &stack_preempt,
 			      &start_sema, &end_sema);
 
