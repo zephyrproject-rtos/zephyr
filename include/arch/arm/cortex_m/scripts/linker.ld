@@ -141,6 +141,9 @@ SECTIONS
 	. = CONFIG_IMAGE_VECTOR_TABLE_OFFSET;
 	KEEP(*(.boot_hdr.ivt))
 	KEEP(*(.boot_hdr.data))
+#ifdef CONFIG_DEVICE_CONFIGURATION_DATA
+	KEEP(*(.boot_hdr.dcd_data))
+#endif
 #endif
 
 	. = CONFIG_TEXT_SECTION_OFFSET;

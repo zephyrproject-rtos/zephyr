@@ -26,6 +26,7 @@
 #define __imx_boot_conf_section	_GENERIC_SECTION(IMX_BOOT_CONF)
 #define __imx_boot_data_section	_GENERIC_SECTION(IMX_BOOT_DATA)
 #define __imx_boot_ivt_section	_GENERIC_SECTION(IMX_BOOT_IVT)
+#define __imx_boot_dcd_section	_GENERIC_SECTION(IMX_BOOT_DCD)
 #endif /* CONFIG_ARM */
 
 #if defined(CONFIG_NOCACHE_MEMORY)
