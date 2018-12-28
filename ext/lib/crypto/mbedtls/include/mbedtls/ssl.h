@@ -2044,6 +2044,14 @@ void mbedtls_ssl_conf_ca_chain( mbedtls_ssl_config *conf,
  *                 whether it matches those preferences - the server can then
  *                 decide what it wants to do with it.
  *
+ * \note           The provided \p pk_key needs to match the public key in the
+ *                 first certificate in \p own_cert, or all handshakes using
+ *                 that certificate will fail. It is your responsibility
+ *                 to ensure that; this function will not perform any check.
+ *                 You may use mbedtls_pk_check_pair() in order to perform
+ *                 this check yourself, but be aware that this function can
+ *                 be computationally expensive on some key types.
+ *
  * \param conf     SSL configuration
  * \param own_cert own public certificate chain
  * \param pk_key   own private key

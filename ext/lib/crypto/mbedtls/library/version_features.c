@@ -84,6 +84,9 @@ static const char *features[] = {
 #if defined(MBEDTLS_DEPRECATED_REMOVED)
     "MBEDTLS_DEPRECATED_REMOVED",
 #endif /* MBEDTLS_DEPRECATED_REMOVED */
+#if defined(MBEDTLS_CHECK_PARAMS)
+    "MBEDTLS_CHECK_PARAMS",
+#endif /* MBEDTLS_CHECK_PARAMS */
 #if defined(MBEDTLS_TIMING_ALT)
     "MBEDTLS_TIMING_ALT",
 #endif /* MBEDTLS_TIMING_ALT */

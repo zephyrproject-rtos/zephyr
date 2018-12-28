@@ -618,8 +618,8 @@ void mbedtls_strerror( int ret, char *buf, size_t buflen )
 #endif /* MBEDTLS_ARC4_C */
 
 #if defined(MBEDTLS_ARIA_C)
-    if( use_ret == -(MBEDTLS_ERR_ARIA_INVALID_KEY_LENGTH) )
-        mbedtls_snprintf( buf, buflen, "ARIA - Invalid key length" );
+    if( use_ret == -(MBEDTLS_ERR_ARIA_BAD_INPUT_DATA) )
+        mbedtls_snprintf( buf, buflen, "ARIA - Bad input data" );
     if( use_ret == -(MBEDTLS_ERR_ARIA_INVALID_INPUT_LENGTH) )
         mbedtls_snprintf( buf, buflen, "ARIA - Invalid data input length" );
     if( use_ret == -(MBEDTLS_ERR_ARIA_FEATURE_UNAVAILABLE) )
@@ -672,17 +672,17 @@ void mbedtls_strerror( int ret, char *buf, size_t buflen )
 #endif /* MBEDTLS_BIGNUM_C */
 
 #if defined(MBEDTLS_BLOWFISH_C)
-    if( use_ret == -(MBEDTLS_ERR_BLOWFISH_INVALID_KEY_LENGTH) )
-        mbedtls_snprintf( buf, buflen, "BLOWFISH - Invalid key length" );
-    if( use_ret == -(MBEDTLS_ERR_BLOWFISH_HW_ACCEL_FAILED) )
-        mbedtls_snprintf( buf, buflen, "BLOWFISH - Blowfish hardware accelerator failed" );
+    if( use_ret == -(MBEDTLS_ERR_BLOWFISH_BAD_INPUT_DATA) )
+        mbedtls_snprintf( buf, buflen, "BLOWFISH - Bad input data" );
     if( use_ret == -(MBEDTLS_ERR_BLOWFISH_INVALID_INPUT_LENGTH) )
         mbedtls_snprintf( buf, buflen, "BLOWFISH - Invalid data input length" );
+    if( use_ret == -(MBEDTLS_ERR_BLOWFISH_HW_ACCEL_FAILED) )
+        mbedtls_snprintf( buf, buflen, "BLOWFISH - Blowfish hardware accelerator failed" );
 #endif /* MBEDTLS_BLOWFISH_C */
 
 #if defined(MBEDTLS_CAMELLIA_C)
-    if( use_ret == -(MBEDTLS_ERR_CAMELLIA_INVALID_KEY_LENGTH) )
-        mbedtls_snprintf( buf, buflen, "CAMELLIA - Invalid key length" );
+    if( use_ret == -(MBEDTLS_ERR_CAMELLIA_BAD_INPUT_DATA) )
+        mbedtls_snprintf( buf, buflen, "CAMELLIA - Bad input data" );
     if( use_ret == -(MBEDTLS_ERR_CAMELLIA_INVALID_INPUT_LENGTH) )
         mbedtls_snprintf( buf, buflen, "CAMELLIA - Invalid data input length" );
     if( use_ret == -(MBEDTLS_ERR_CAMELLIA_HW_ACCEL_FAILED) )
@@ -855,16 +855,22 @@ void mbedtls_strerror( int ret, char *buf, size_t buflen )
 #if defined(MBEDTLS_SHA1_C)
     if( use_ret == -(MBEDTLS_ERR_SHA1_HW_ACCEL_FAILED) )
         mbedtls_snprintf( buf, buflen, "SHA1 - SHA-1 hardware accelerator failed" );
+    if( use_ret == -(MBEDTLS_ERR_SHA1_BAD_INPUT_DATA) )
+        mbedtls_snprintf( buf, buflen, "SHA1 - SHA-1 input data was malformed" );
 #endif /* MBEDTLS_SHA1_C */
 
 #if defined(MBEDTLS_SHA256_C)
     if( use_ret == -(MBEDTLS_ERR_SHA256_HW_ACCEL_FAILED) )
         mbedtls_snprintf( buf, buflen, "SHA256 - SHA-256 hardware accelerator failed" );
+    if( use_ret == -(MBEDTLS_ERR_SHA256_BAD_INPUT_DATA) )
+        mbedtls_snprintf( buf, buflen, "SHA256 - SHA-256 input data was malformed" );
 #endif /* MBEDTLS_SHA256_C */
 
 #if defined(MBEDTLS_SHA512_C)
     if( use_ret == -(MBEDTLS_ERR_SHA512_HW_ACCEL_FAILED) )
         mbedtls_snprintf( buf, buflen, "SHA512 - SHA-512 hardware accelerator failed" );
+    if( use_ret == -(MBEDTLS_ERR_SHA512_BAD_INPUT_DATA) )
+        mbedtls_snprintf( buf, buflen, "SHA512 - SHA-512 input data was malformed" );
 #endif /* MBEDTLS_SHA512_C */
 
 #if defined(MBEDTLS_THREADING_C)

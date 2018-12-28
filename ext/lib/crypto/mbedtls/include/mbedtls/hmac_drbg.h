@@ -205,23 +205,6 @@ int mbedtls_hmac_drbg_update_ret( mbedtls_hmac_drbg_context *ctx,
                        const unsigned char *additional, size_t add_len );
 
 /**
- * \brief               HMAC_DRBG update state
- *
- * \warning             This function cannot report errors. You should use
- *                      mbedtls_hmac_drbg_update_ret() instead.
- *
- * \param ctx           HMAC_DRBG context
- * \param additional    Additional data to update state with, or NULL
- * \param add_len       Length of additional data, or 0
- *
- * \note                Additional data is optional, pass NULL and 0 as second
- *                      third argument if no additional data is being used.
- */
-void mbedtls_hmac_drbg_update( mbedtls_hmac_drbg_context *ctx,
-                               const unsigned char *additional,
-                               size_t add_len );
-
-/**
  * \brief               HMAC_DRBG reseeding (extracts data from entropy source)
  *
  * \param ctx           HMAC_DRBG context
@@ -276,6 +259,31 @@ int mbedtls_hmac_drbg_random( void *p_rng, unsigned char *output, size_t out_len
  * \param ctx           HMAC_DRBG context to free.
  */
 void mbedtls_hmac_drbg_free( mbedtls_hmac_drbg_context *ctx );
+
+#if ! defined(MBEDTLS_DEPRECATED_REMOVED)
+#if defined(MBEDTLS_DEPRECATED_WARNING)
+#define MBEDTLS_DEPRECATED    __attribute__((deprecated))
+#else
+#define MBEDTLS_DEPRECATED
+#endif
+/**
+ * \brief               HMAC_DRBG update state
+ *
+ * \deprecated          Superseded by mbedtls_hmac_drbg_update_ret()
+ *                      in 2.16.0.
+ *
+ * \param ctx           HMAC_DRBG context
+ * \param additional    Additional data to update state with, or NULL
+ * \param add_len       Length of additional data, or 0
+ *
+ * \note                Additional data is optional, pass NULL and 0 as second
+ *                      third argument if no additional data is being used.
+ */
+MBEDTLS_DEPRECATED void mbedtls_hmac_drbg_update(
+    mbedtls_hmac_drbg_context *ctx,
+    const unsigned char *additional, size_t add_len );
+#undef MBEDTLS_DEPRECATED
+#endif /* !MBEDTLS_DEPRECATED_REMOVED */
 
 #if defined(MBEDTLS_FS_IO)
 /**

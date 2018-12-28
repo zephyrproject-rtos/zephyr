@@ -1,5 +1,62 @@
 mbed TLS ChangeLog (Sorted per branch, date)
 
+= mbed TLS 2.16.0 branch released 2018-12-21
+
+Features
+   * Add a new config.h option of MBEDTLS_CHECK_PARAMS that enables validation
+     of parameters in the API. This allows detection of obvious misuses of the
+     API, such as passing NULL pointers. The API of existing functions hasn't
+     changed, but requirements on parameters have been made more explicit in
+     the documentation. See the corresponding API documentation for each
+     function to see for which parameter values it is defined. This feature is
+     disabled by default. See its API documentation in config.h for additional
+     steps you have to take when enabling it.
+
+API Changes
+   * The following functions in the random generator modules have been
+     deprecated and replaced as shown below. The new functions change
+     the return type from void to int to allow returning error codes when
+     using MBEDTLS_<MODULE>_ALT for the underlying AES or message digest
+     primitive. Fixes #1798.
+     mbedtls_ctr_drbg_update() -> mbedtls_ctr_drbg_update_ret()
+     mbedtls_hmac_drbg_update() -> mbedtls_hmac_drbg_update_ret()
+   * Extend ECDH interface to enable alternative implementations.
+   * Deprecate error codes of the form MBEDTLS_ERR_xxx_INVALID_KEY_LENGTH for
+     ARIA, CAMELLIA and Blowfish. These error codes will be replaced by
+     the more generic per-module error codes MBEDTLS_ERR_xxx_BAD_INPUT_DATA.
+   * Additional parameter validation checks have been added for the following
+     modules - AES, ARIA, Blowfish, CAMELLIA, CCM, GCM, DHM, ECP, ECDSA, ECDH,
+     ECJPAKE, SHA, Chacha20 and Poly1305, cipher, pk, RSA, and MPI.
+     Where modules have had parameter validation added, existing parameter
+     checks may have changed. Some modules, such as Chacha20 had existing
+     parameter validation whereas other modules had little. This has now been
+     changed so that the same level of validation is present in all modules, and
+     that it is now optional with the MBEDTLS_CHECK_PARAMS flag which by default
+     is off. That means that checks which were previously present by default
+     will no longer be.
+
+New deprecations
+   * Deprecate mbedtls_ctr_drbg_update and mbedtls_hmac_drbg_update
+     in favor of functions that can return an error code.
+
+Bugfix
+   * Fix for Clang, which was reporting a warning for the bignum.c inline
+     assembly for AMD64 targets creating string literals greater than those
+     permitted by the ISO C99 standard. Found by Aaron Jones. Fixes #482.
+   * Fix runtime error in `mbedtls_platform_entropy_poll()` when run
+     through qemu user emulation. Reported and fix suggested by randombit
+     in #1212. Fixes #1212.
+   * Fix an unsafe bounds check when restoring an SSL session from a ticket.
+     This could lead to a buffer overflow, but only in case ticket authentication
+     was broken. Reported and fix suggested by Guido Vranken in #659.
+   * Add explicit integer to enumeration type casts to example program
+     programs/pkey/gen_key which previously led to compilation failure
+     on some toolchains. Reported by phoenixmcallister. Fixes #2170.
+   * Fix double initialization of ECC hardware that made some accelerators
+     hang.
+   * Clarify documentation of mbedtls_ssl_set_own_cert() regarding the absence
+     of check for certificate/key matching. Reported by Attila Molnar, #507.
+
 = mbed TLS 2.14.1 branch released 2018-11-30
 
 Security
