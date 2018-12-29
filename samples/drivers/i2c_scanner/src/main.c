@@ -28,7 +28,7 @@ void main(void)
 		return;
 	}
 
-	for (u8_t i = 4; i < 0x77; i++) {
+	for (u8_t i = 4; i <= 0x77; i++) {
 		struct i2c_msg msgs[1];
 
 		/* Send the address to read from */
