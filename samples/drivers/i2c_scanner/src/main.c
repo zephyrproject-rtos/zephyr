@@ -10,7 +10,11 @@
 #include <device.h>
 #include <i2c.h>
 
+#ifdef ARDUINO_I2C_LABEL
+#define I2C_DEV ARDUINO_I2C_LABEL
+#else
 #define I2C_DEV "I2C_0"
+#endif
 
 /**
  * @file This app scans I2C bus for any devices present
