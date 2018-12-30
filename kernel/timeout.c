@@ -46,14 +46,11 @@ static struct _timeout *next(struct _timeout *t)
 
 static void remove_timeout(struct _timeout *t)
 {
-	if (t->node.next != NULL && t->node.prev != NULL) {
-		if (next(t) != NULL) {
-			next(t)->dticks += t->dticks;
-		}
-
-		sys_dlist_remove(&t->node);
+	if (next(t) != NULL) {
+		next(t)->dticks += t->dticks;
 	}
-	t->node.next = t->node.prev = NULL;
+
+	sys_dlist_remove(&t->node);
 	t->dticks = _INACTIVE;
 }
 
@@ -99,7 +96,7 @@ int _abort_timeout(struct _timeout *to)
 	int ret = _INACTIVE;
 
 	LOCKED(&timeout_lock) {
-		if (to->dticks != _INACTIVE) {
+		if (sys_dnode_is_linked(&to->node)) {
 			remove_timeout(to);
 			ret = 0;
 		}
