@@ -181,7 +181,7 @@ typedef struct _dnode sys_dnode_t;
 	     __cns = SYS_DLIST_PEEK_NEXT_CONTAINER(__dl, __cn, __n))
 
 /**
- * @brief initialize list
+ * @brief initialize list to its empty state
  *
  * @param list the doubly-linked list
  *
@@ -195,6 +195,33 @@ static inline void sys_dlist_init(sys_dlist_t *list)
 }
 
 #define SYS_DLIST_STATIC_INIT(ptr_to_list) { {(ptr_to_list)}, {(ptr_to_list)} }
+
+/**
+ * @brief initialize node to its state when not in a list
+ *
+ * @param node the node
+ *
+ * @return N/A
+ */
+
+static inline void sys_dnode_init(sys_dnode_t *node)
+{
+	node->next = NULL;
+	node->prev = NULL;
+}
+
+/**
+ * @brief check if a node is a member of any list
+ *
+ * @param node the node
+ *
+ * @return true if node is linked into a list, false if it is not
+ */
+
+static inline bool sys_dnode_is_linked(const sys_dnode_t *node)
+{
+	return node->next != NULL;
+}
 
 /**
  * @brief check if a node is the list's head
@@ -500,6 +527,7 @@ static inline void sys_dlist_remove(sys_dnode_t *node)
 {
 	node->prev->next = node->next;
 	node->next->prev = node->prev;
+	sys_dnode_init(node);
 }
 
 /**

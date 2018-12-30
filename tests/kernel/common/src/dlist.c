@@ -189,9 +189,13 @@ void test_dlist(void)
 		     "test_list head/tail are wrong");
 
 	/* Finding and removing node 1 */
+	zassert_true(sys_dnode_is_linked(&test_node_1.node),
+		     "node1 is not linked");
 	sys_dlist_remove(&test_node_1.node);
 	zassert_true((verify_emptyness(&test_list)),
 		     "test_list should be empty");
+	zassert_false(sys_dnode_is_linked(&test_node_1.node),
+		      "node1 is still linked");
 
 	/* Prepending node 1 */
 	sys_dlist_prepend(&test_list, &test_node_1.node);
