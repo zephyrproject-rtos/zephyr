@@ -22,6 +22,7 @@ extern "C" {
 
 static inline void _init_timeout(struct _timeout *t, _timeout_func_t fn)
 {
+	sys_dnode_init(&t->node);
 	t->dticks = _INACTIVE;
 }
 
