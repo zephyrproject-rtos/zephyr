@@ -603,7 +603,11 @@ int nvs_reinit(struct nvs_fs *fs)
 	int rc;
 	struct nvs_ate last_ate;
 	size_t ate_size, empty_len;
-	u32_t addr;
+	/* Initialize addr to 0 for the case fs->sector_count == 0. This
+	 * should never happen as this is verified in nvs_init() but both
+	 * Coverity and GCC believe the contrary.
+	 */
+	u32_t addr = 0;
 
 
 	k_mutex_lock(&fs->nvs_lock, K_FOREVER);
