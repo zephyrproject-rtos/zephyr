@@ -1,0 +1,74 @@
+/*
+ * Copyright (c) 2019 Jan Van Winkel (jan.van_winkel@dxplore.eu)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <posix/posix.dtsi>
+
+/ {
+	model = "Native POSIX Board";
+	compatible = "zephyr,posix";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+		zephyr,flash = &flash0;
+	};
+
+
+	flash-controller@0 {
+		compatible = "zephyr,native-posix-flash-controller";
+		reg = <0x00000000 DT_SIZE_K(2048)>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		label = "flash_ctrl";
+
+		flash0: flash@0 {
+			status = "ok";
+			compatible = "soc-nv-flash";
+			label = "flash";
+			erase-block-size = <1>;
+			write-block-size = <1>;
+			reg = <0x00000000 DT_SIZE_K(2048)>;
+
+			partitions {
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				boot_partition: partition@0 {
+					label = "mcuboot";
+					reg = <0x000000000 0x0000C000>;
+				};
+				slot0_partition: partition@c000 {
+					label = "image-0";
+					reg = <0x0000C000 0x000069000>;
+				};
+				slot1_partition: partition@75000 {
+					label = "image-1";
+					reg = <0x00075000 0x000069000>;
+				};
+				scratch_partition: partition@de000 {
+					label = "image-scratch";
+					reg = <0x000de000 0x0001e000>;
+				};
+				storage_partition: partition@fc000 {
+					label = "storage";
+					reg = <0x000fc000 0x00004000>;
+				};
+			};
+		};
+	};
+
+	uart0: uart@1 {
+		status = "ok";
+		compatible = "zephyr,native-posix-uart";
+		reg = <1 0>;
+		label = "UART_0";
+	};
+};
