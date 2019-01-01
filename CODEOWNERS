@@ -115,6 +115,7 @@
 /drivers/dma/*sam0*                       @Sizurka
 /drivers/ethernet/                        @jukkar @tbursztyka @pfalcon
 /drivers/flash/                           @nashif
+/drivers/flash/*native_posix*             @vanwinkeljan
 /drivers/flash/*stm32*                    @superna9999
 /drivers/gpio/*ht16k33*                   @henrikbrixandersen
 /drivers/gpio/*stm32*                     @rsalveti @idlethread

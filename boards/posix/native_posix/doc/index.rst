@@ -533,8 +533,29 @@ The following peripherals are currently provided with this board:
 .. _SDL2:
    https://www.libsdl.org/download-2.0.php
 
+**Flash driver**:
+  A flash driver is provided that accesses all flash data through a binary file
+  on the host file system.
+
+  The size of the flash device can be configured through the native POSIX board
+  device tree and the sector size is configurable via the Kconfig option
+  :option:`CONFIG_FLASH_NATIVE_POSIX_SECTOR_SIZE`. The sector size will only be
+  used to return flash page layout related information and no restrictions are
+  imposed by the driver based on the configured sector size. As such an erase
+  operation of arbitrary size will succeed on the emulated flash device.
+  Further the emulated device will not impose any write restriction that are
+  applicable for a regular flash device, including changing the state of a bit
+  from zero to one.
+
+  By default the binary data is located in the file *flash.bin* in the current
+  working directory. The location of this file can be changed through the
+  command line parameter *--flash*. The flash data will be stored in raw format
+  and the file will be truncated to match the size specified in the device tree
+  configuration. In case the file does not exists the driver will take care of
+  creating the file, else the existing file is used.
+
 UART
-*****
+****
 
 This driver can be configured with :option:`CONFIG_UART_NATIVE_POSIX`
 to instantiate up to two UARTs. By default only one UART is enabled.
