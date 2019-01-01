@@ -11,12 +11,12 @@
 #include <irq_offload.h>
 #include <kernel_structs.h>
 
-#define TIMEOUT_TICKS	(100)
-#define FLAG1		(0x00000020)
-#define FLAG2		(0x00000004)
-#define FLAG		(FLAG1 | FLAG2)
-#define ISR_FLAG	0x50
-#define STACKSZ		512
+#define TIMEOUT_TICKS   (100)
+#define FLAG1           (0x00000020)
+#define FLAG2           (0x00000004)
+#define FLAG            (FLAG1 | FLAG2)
+#define ISR_FLAG        0x50
+#define STACKSZ         512
 
 osEventFlagsId_t evt_id;
 
@@ -71,13 +71,18 @@ void test_event_flags_no_wait_timeout(void)
 	osThreadId_t id1;
 	u32_t flags;
 	const char *name;
+	osEventFlagsId_t dummy_id = NULL;
 
 	evt_id = osEventFlagsNew(&event_flags_attrs);
 	zassert_true(evt_id != NULL, "Failed creating event flags");
 
+	name = osEventFlagsGetName(dummy_id);
+	zassert_true(name == NULL,
+		     "Invalid event Flags ID is unexpectedly working!");
+
 	name = osEventFlagsGetName(evt_id);
 	zassert_true(strcmp(event_flags_attrs.name, name) == 0,
-			"Error getting event_flags object name");
+		     "Error getting event_flags object name");
 
 	id1 = osThreadNew(thread1, evt_id, &thread1_attr);
 	zassert_true(id1 != NULL, "Failed creating thread1");
@@ -89,7 +94,7 @@ void test_event_flags_no_wait_timeout(void)
 	 * already triggered.
 	 */
 	flags = osEventFlagsWait(evt_id, FLAG1,
-				osFlagsWaitAny | osFlagsNoClear, 0);
+				 osFlagsWaitAny | osFlagsNoClear, 0);
 	zassert_equal(flags & FLAG1, FLAG1, "");
 
 	/* Since the flags are not cleared automatically in the previous step,
@@ -98,6 +103,9 @@ void test_event_flags_no_wait_timeout(void)
 	flags = osEventFlagsGet(evt_id);
 	zassert_equal(flags & FLAG1, FLAG1, "");
 
+	flags = osEventFlagsGet(dummy_id);
+	zassert_true(flags == 0,
+		     "Invalid event Flags ID is unexpectedly working!");
 	/* Clear the Flag explicitly */
 	flags = osEventFlagsClear(evt_id, FLAG1);
 	zassert_not_equal(flags, osFlagsErrorParameter, "Event clear failed");
@@ -137,21 +145,21 @@ void test_event_flags_signalled(void)
 
 	/* validate by passing invalid parameters */
 	zassert_equal(osEventFlagsSet(NULL, 0), osFlagsErrorParameter,
-			"Invalid event Flags ID is unexpectedly working!");
+		      "Invalid event Flags ID is unexpectedly working!");
 	zassert_equal(osEventFlagsSet(evt_id, 0x80010000),
-				osFlagsErrorParameter,
-				"Event with MSB set is set unexpectedly");
+		      osFlagsErrorParameter,
+		      "Event with MSB set is set unexpectedly");
 
 	zassert_equal(osEventFlagsClear(NULL, 0), osFlagsErrorParameter,
-			"Invalid event Flags ID is unexpectedly working!");
+		      "Invalid event Flags ID is unexpectedly working!");
 	zassert_equal(osEventFlagsClear(evt_id, 0x80010000),
-				osFlagsErrorParameter,
-				"Event with MSB set is cleared unexpectedly");
+		      osFlagsErrorParameter,
+		      "Event with MSB set is cleared unexpectedly");
 
 	/* cannot wait for Flag mask with MSB set */
 	zassert_equal(osEventFlagsWait(evt_id, 0x80010000, osFlagsWaitAny, 0),
-					osFlagsErrorParameter,
-					"EventFlagsWait passed unexpectedly");
+		      osFlagsErrorParameter,
+		      "EventFlagsWait passed unexpectedly");
 }
 
 /* IRQ offload function handler to set event flag */
@@ -164,7 +172,7 @@ static void offload_function(void *param)
 
 	flags = osEventFlagsSet((osEventFlagsId_t)param, ISR_FLAG);
 	zassert_equal(flags & ISR_FLAG, ISR_FLAG,
-				"EventFlagsSet failed in ISR");
+		      "EventFlagsSet failed in ISR");
 }
 
 void test_event_from_isr(void *event_id)
@@ -185,15 +193,24 @@ void test_event_flags_isr(void)
 {
 	osThreadId_t id;
 	int flags;
+	osEventFlagsId_t dummy_id = NULL;
 
 	id = osThreadNew(test_event_from_isr, evt_id, &thread3_attr);
 	zassert_true(id != NULL, "Failed creating thread");
 
+	flags = osEventFlagsWait(dummy_id, ISR_FLAG,
+				 osFlagsWaitAll, TIMEOUT_TICKS);
+	zassert_true(flags == osFlagsErrorParameter,
+		     "Invalid event Flags ID is unexpectedly working!");
+
 	flags = osEventFlagsWait(evt_id, ISR_FLAG,
-					osFlagsWaitAll, TIMEOUT_TICKS);
+				 osFlagsWaitAll, TIMEOUT_TICKS);
 	zassert_equal((flags & ISR_FLAG),
-		       ISR_FLAG, "unexpected event flags value");
+		      ISR_FLAG, "unexpected event flags value");
+
+	zassert_true(osEventFlagsDelete(dummy_id) == osErrorResource,
+		     "Invalid event Flags ID is unexpectedly working!");
 
 	zassert_true(osEventFlagsDelete(evt_id) == osOK,
-			"EventFlagsDelete failed");
+		     "EventFlagsDelete failed");
 }
