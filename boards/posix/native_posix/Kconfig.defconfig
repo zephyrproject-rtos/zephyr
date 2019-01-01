@@ -87,6 +87,13 @@ config TRACING_CTF_BOTTOM_POSIX
 
 endif # TRACING_CTF
 
+if FLASH
+
+config FLASH_NATIVE_POSIX
+	default y
+
+endif # FLASH
+
 endif # BOARD_NATIVE_POSIX
 
 if USB
