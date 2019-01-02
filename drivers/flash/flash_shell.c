@@ -52,7 +52,12 @@ static int cmd_erase(const struct shell *shell, size_t argc, char *argv[])
 	if (argc > 2) {
 		size = strtoul(argv[2], NULL, 16);
 	} else {
+#if defined(CONFIG_SOC_FLASH_NRF)
 		size = NRF_FICR->CODEPAGESIZE;
+#else
+		error(shell, "Missing size.");
+		return -EINVAL;
+#endif
 	}
 
 	flash_write_protection_set(flash_dev, 0);
