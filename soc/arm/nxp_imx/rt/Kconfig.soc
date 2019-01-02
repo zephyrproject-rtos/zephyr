@@ -48,6 +48,7 @@ config SOC_MIMXRT1052
 	select HAS_MCUX
 	select HAS_MCUX_CACHE
 	select HAS_MCUX_CCM
+	select HAS_MCUX_ELCDIF
 	select HAS_MCUX_ENET
 	select HAS_MCUX_IGPIO
 	select HAS_MCUX_LPI2C
@@ -59,6 +60,7 @@ config SOC_MIMXRT1052
 	select INIT_ARM_PLL
 	select INIT_SYS_PLL
 	select INIT_USB1_PLL
+	select INIT_VIDEO_PLL if DISPLAY_MCUX_ELCDIF
 
 config SOC_MIMXRT1061
 	bool "SOC_MIMXRT1061"
@@ -81,6 +83,7 @@ config SOC_MIMXRT1062
 	select HAS_MCUX
 	select HAS_MCUX_CACHE
 	select HAS_MCUX_CCM
+	select HAS_MCUX_ELCDIF
 	select HAS_MCUX_ENET
 	select HAS_MCUX_IGPIO
 	select HAS_MCUX_LPI2C
@@ -91,11 +94,13 @@ config SOC_MIMXRT1062
 	select INIT_ARM_PLL
 	select INIT_SYS_PLL
 	select INIT_USB1_PLL
+	select INIT_VIDEO_PLL if DISPLAY_MCUX_ELCDIF
 
 config SOC_MIMXRT1064
 	bool "SOC_MIMXRT1064"
 	select HAS_MCUX
 	select HAS_MCUX_CCM
+	select HAS_MCUX_ELCDIF
 	select HAS_MCUX_ENET
 	select HAS_MCUX_IGPIO
 	select HAS_MCUX_LPUART
@@ -105,6 +110,7 @@ config SOC_MIMXRT1064
 	select INIT_ARM_PLL
 	select INIT_SYS_PLL
 	select INIT_USB1_PLL
+	select INIT_VIDEO_PLL if DISPLAY_MCUX_ELCDIF
 
 endchoice
 
@@ -181,6 +187,9 @@ config INIT_SYS_PLL
 
 config INIT_USB1_PLL
 	bool "Initialize USB1 PLL"
+
+config INIT_VIDEO_PLL
+	bool "Initialize Video PLL"
 
 config ARM_DIV
 	int "ARM clock divider"

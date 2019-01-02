@@ -49,6 +49,15 @@ const clock_enet_pll_config_t ethPllConfig = {
 };
 #endif
 
+#ifdef CONFIG_INIT_VIDEO_PLL
+const clock_video_pll_config_t videoPllConfig = {
+	.loopDivider = 31,
+	.postDivider = 8,
+	.numerator = 0,
+	.denominator = 0,
+};
+#endif
+
 #ifdef CONFIG_NXP_IMX_RT_BOOT_HEADER
 const __imx_boot_data_section BOOT_DATA_T boot_data = {
 	.start = CONFIG_FLASH_BASE_ADDRESS,
@@ -115,6 +124,9 @@ static ALWAYS_INLINE void clkInit(void)
 #ifdef CONFIG_INIT_ENET_PLL
 	CLOCK_InitEnetPll(&ethPllConfig);
 #endif
+#ifdef CONFIG_INIT_VIDEO_PLL
+	CLOCK_InitVideoPll(&videoPllConfig);
+#endif
 
 	CLOCK_SetDiv(kCLOCK_ArmDiv, CONFIG_ARM_DIV); /* Set ARM PODF */
 	CLOCK_SetDiv(kCLOCK_AhbDiv, CONFIG_AHB_DIV); /* Set AHB PODF */
@@ -140,6 +152,12 @@ static ALWAYS_INLINE void clkInit(void)
 #ifdef CONFIG_SPI_MCUX_LPSPI
 	CLOCK_SetMux(kCLOCK_LpspiMux, 1); /* Set SPI source to USB1 PFD0 720M */
 	CLOCK_SetDiv(kCLOCK_LpspiDiv, 7); /* Set SPI divider to 8 */
+#endif
+
+#ifdef CONFIG_DISPLAY_MCUX_ELCDIF
+	CLOCK_SetMux(kCLOCK_LcdifPreMux, 2);
+	CLOCK_SetDiv(kCLOCK_LcdifPreDiv, 4);
+	CLOCK_SetDiv(kCLOCK_LcdifDiv, 1);
 #endif
 
 	/* Keep the system clock running so SYSTICK can wake up the system from
