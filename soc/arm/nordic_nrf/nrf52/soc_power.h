@@ -14,13 +14,29 @@ extern "C" {
 #endif
 
 enum power_states {
-	SYS_POWER_STATE_CPU_LPS,       /* CONSTLAT Task Activited */
-	SYS_POWER_STATE_CPU_LPS_1,     /* LOWPWR Task Activated */
-	SYS_POWER_STATE_CPU_LPS_2,     /* Not supported*/
-	SYS_POWER_STATE_DEEP_SLEEP,    /* System Off */
-	SYS_POWER_STATE_DEEP_SLEEP_1,  /* Not Supported */
-	SYS_POWER_STATE_DEEP_SLEEP_2,  /* Not Supported */
+#ifdef CONFIG_SYS_POWER_LOW_POWER_STATE
+# ifdef CONFIG_SYS_POWER_STATE_CPU_LPS_SUPPORTED
+	SYS_POWER_STATE_CPU_LPS,	/* Not used */
+# endif
+# ifdef CONFIG_SYS_POWER_STATE_CPU_LPS_1_SUPPORTED
+	SYS_POWER_STATE_CPU_LPS_1,	/* Not used */
+# endif
+# ifdef CONFIG_SYS_POWER_STATE_CPU_LPS_2_SUPPORTED
+	SYS_POWER_STATE_CPU_LPS_2,	/* Not used */
+# endif
+#endif /* CONFIG_SYS_POWER_LOW_POWER_STATE */
 
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
+# ifdef CONFIG_SYS_POWER_STATE_DEEP_SLEEP_SUPPORTED
+	SYS_POWER_STATE_DEEP_SLEEP,	/* System OFF */
+# endif
+# ifdef CONFIG_SYS_POWER_STATE_DEEP_SLEEP_1_SUPPORTED
+	SYS_POWER_STATE_DEEP_SLEEP_1,	/* Not used */
+# endif
+# ifdef CONFIG_SYS_POWER_STATE_DEEP_SLEEP_2_SUPPORTED
+	SYS_POWER_STATE_DEEP_SLEEP_2,	/* Not used */
+# endif
+#endif /* CONFIG_SYS_POWER_DEEP_SLEEP */
 	SYS_POWER_STATE_MAX		/* Do nothing */
 };
 
@@ -30,7 +46,7 @@ enum power_states {
 void sys_set_power_state(enum power_states state);
 
 /**
- * @brief Check a low power state is supported by SoC
+ * @brief Check the low power state is supported by SoC
  */
 bool sys_is_valid_power_state(enum power_states state);
 
