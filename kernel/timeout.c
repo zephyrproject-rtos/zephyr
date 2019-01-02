@@ -51,7 +51,6 @@ static void remove_timeout(struct _timeout *t)
 	}
 
 	sys_dlist_remove(&t->node);
-	t->dticks = _INACTIVE;
 }
 
 static s32_t elapsed(void)
@@ -61,7 +60,7 @@ static s32_t elapsed(void)
 
 void _add_timeout(struct _timeout *to, _timeout_func_t fn, s32_t ticks)
 {
-	__ASSERT(to->dticks < 0, "");
+	__ASSERT(!sys_dnode_is_linked(&to->node), "");
 	to->fn = fn;
 	ticks = max(1, ticks);
 
@@ -93,7 +92,7 @@ void _add_timeout(struct _timeout *to, _timeout_func_t fn, s32_t ticks)
 
 int _abort_timeout(struct _timeout *to)
 {
-	int ret = _INACTIVE;
+	int ret = -EINVAL;
 
 	LOCKED(&timeout_lock) {
 		if (sys_dnode_is_linked(&to->node)) {
@@ -109,7 +108,7 @@ s32_t z_timeout_remaining(struct _timeout *timeout)
 {
 	s32_t ticks = 0;
 
-	if (timeout->dticks == _INACTIVE) {
+	if (_is_inactive_timeout(timeout)) {
 		return 0;
 	}
 

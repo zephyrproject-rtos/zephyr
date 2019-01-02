@@ -23,12 +23,16 @@ extern "C" {
 static inline void _init_timeout(struct _timeout *t, _timeout_func_t fn)
 {
 	sys_dnode_init(&t->node);
-	t->dticks = _INACTIVE;
 }
 
 void _add_timeout(struct _timeout *to, _timeout_func_t fn, s32_t ticks);
 
 int _abort_timeout(struct _timeout *to);
+
+static inline bool _is_inactive_timeout(struct _timeout *t)
+{
+	return !sys_dnode_is_linked(&t->node);
+}
 
 static inline void _init_thread_timeout(struct _thread_base *thread_base)
 {
@@ -59,6 +63,7 @@ s32_t z_timeout_remaining(struct _timeout *timeout);
 #define _init_thread_timeout(t) do {} while (0)
 #define _add_thread_timeout(th, to) do {} while (0 && (void *)to && (void *)th)
 #define _abort_thread_timeout(t) (0)
+#define _is_inactive_timeout(t) 0
 #define _get_next_timeout_expiry() (K_FOREVER)
 #define z_set_timeout_expiry(t, i) do {} while (0)
 
