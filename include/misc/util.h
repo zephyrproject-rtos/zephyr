@@ -453,4 +453,42 @@ static inline s64_t arithmetic_shift_right(s64_t value, u8_t shift)
 	_for_10, _for_9, _for_8, _for_7, _for_6, _for_5, \
 	_for_4, _for_3, _for_2, _for_1, _for_0)(x, ##__VA_ARGS__)
 
+/* FOR_EACH_FIXED_ARG is used for calling the same function
+ * With one fixed argument and changing 2nd argument.
+ */
+
+#define z_rep_0(_fn, f, ...)
+#define z_rep_1(_fn, f, x) {_fn(x, f); z_rep_0(_fn, f)}
+#define z_rep_2(_fn, f, x, ...) {_fn(x, f); z_rep_1(_fn, f, ##__VA_ARGS__)}
+#define z_rep_3(_fn, f, x, ...) {_fn(x, f); z_rep_2(_fn, f, ##__VA_ARGS__)}
+#define z_rep_4(_fn, f, x, ...) {_fn(x, f); z_rep_3(_fn, f, ##__VA_ARGS__)}
+#define z_rep_5(_fn, f, x, ...) {_fn(x, f); z_rep_4(_fn, f, ##__VA_ARGS__)}
+#define z_rep_6(_fn, f, x, ...) {_fn(x, f); z_rep_5(_fn, f, ##__VA_ARGS__)}
+#define z_rep_7(_fn, f, x, ...) {_fn(x, f); z_rep_6(_fn, f, ##__VA_ARGS__)}
+#define z_rep_8(_fn, f, x, ...) {_fn(x, f); z_rep_7(_fn, f, ##__VA_ARGS__)}
+#define z_rep_9(_fn, f, x, ...) {_fn(x, f); z_rep_8(_fn, f, ##__VA_ARGS__)}
+#define z_rep_10(_fn, f, x, ...) {_fn(x, f); z_rep_9(_fn, f, ##__VA_ARGS__)}
+#define z_rep_11(_fn, f, x, ...) {_fn(x, f); z_rep_10(_fn, f, ##__VA_ARGS__)}
+#define z_rep_12(_fn, f, x, ...) {_fn(x, f); z_rep_11(_fn, f, ##__VA_ARGS__)}
+#define z_rep_13(_fn, f, x, ...) {_fn(x, f); z_rep_12(_fn, f, ##__VA_ARGS__)}
+#define z_rep_14(_fn, f, x, ...) {_fn(x, f); z_rep_13(_fn, f, ##__VA_ARGS__)}
+#define z_rep_15(_fn, f, x, ...) {_fn(x, f); z_rep_14(_fn, f, ##__VA_ARGS__)}
+#define z_rep_16(_fn, f, x, ...) {_fn(x, f); z_rep_15(_fn, f, ##__VA_ARGS__)}
+#define z_rep_17(_fn, f, x, ...) {_fn(x, f); z_rep_16(_fn, f, ##__VA_ARGS__)}
+#define z_rep_18(_fn, f, x, ...) {_fn(x, f); z_rep_17(_fn, f, ##__VA_ARGS__)}
+#define z_rep_19(_fn, f, x, ...) {_fn(x, f); z_rep_18(_fn, f, ##__VA_ARGS__)}
+#define z_rep_20(_fn, f, x, ...) {_fn(x, f); z_rep_19(_fn, f, ##__VA_ARGS__)}
+
+
+#define Z_GET_ARG_2(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, \
+		   _14, _15, _16, _17, _18, _19, _20, N, ...) N
+
+#define FOR_EACH_FIXED_ARG(fixed_arg, x, ...) \
+	{Z_GET_ARG_2(__VA_ARGS__,				\
+		     z_rep_20, z_rep_19, z_rep_18, z_rep_17, z_rep_16,	\
+		     z_rep_15, z_rep_14, z_rep_13, z_rep_12, z_rep_11,	\
+		     z_rep_10, z_rep_9, z_rep_8, z_rep_7, z_rep_6,	\
+		     z_rep_5, z_rep_4, z_rep_3, z_rep_2, z_rep_1, z_rep_0) \
+	 (fixed_arg, x, ##__VA_ARGS__)}
+
 #endif /* ZEPHYR_INCLUDE_MISC_UTIL_H_ */
