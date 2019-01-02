@@ -27,6 +27,13 @@ config CLOCK_CONTROL_MCUX_CCM
 
 endif # CLOCK_CONTROL
 
+if DISPLAY
+
+config DISPLAY_MCUX_ELCDIF
+	default y if HAS_MCUX_ELCDIF
+
+endif # DISPLAY
+
 if GPIO
 
 config GPIO_MCUX_IGPIO
