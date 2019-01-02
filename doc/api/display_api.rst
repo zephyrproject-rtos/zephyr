@@ -20,3 +20,9 @@ BBC micro:bit Display
 
 .. doxygengroup:: mb_display
    :project: Zephyr
+
+Monochrome Character Framebuffer
+********************************
+
+.. doxygengroup:: monochrome_character_framebuffer
+   :project: Zephyr

@@ -21,7 +21,7 @@ extern "C" {
 
 /**
  * @brief Display Drivers
- * @defgroup display_interfaces Display Drivers
+ * @addtogroup display_interfaces Display Drivers
  * @{
  * @}
  */
