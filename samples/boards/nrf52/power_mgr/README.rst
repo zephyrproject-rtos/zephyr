@@ -1,6 +1,6 @@
-.. _nrf52-power-mgr-sample:
+.. _nrf5x-power-mgr-sample:
 
-nRF52 Power management demo
+nRF5x Power management demo
 ###########################
 
 Overview
@@ -33,7 +33,7 @@ implemented by the Zephyr Power Management Subsystem.
 Requirements
 ************
 
-This application uses nrf52 DK board for the demo.
+This application uses nRF51 DK or nRF52 DK board for the demo.
 
 Building, Flashing and Running
 ******************************
@@ -55,12 +55,12 @@ Running:
 
 Sample Output
 =================
-nrf52 core output
+nRF52 core output
 -----------------
 
 .. code-block:: console
 
-   *** Power Management Demo on nrf51_pca10028 ***
+   *** Power Management Demo on nrf52_pca10040 ***
    Demo Description
    Application creates Idleness, Due to which System Idle Thread is
    scheduled and it enters into various Low Power States.

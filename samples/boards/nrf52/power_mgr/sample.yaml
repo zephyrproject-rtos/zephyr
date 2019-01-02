@@ -1,8 +1,8 @@
 sample:
-  name: Low Power state Sample for nrf52
+  name: Low Power State Sample for nRF5x
 tests:
   pm.low_power_state:
-    platform_whitelist: nrf52840_pca10056 nrf52_pca10040 
+    platform_whitelist: nrf52840_pca10056 nrf52_pca10040 nrf51_pca10028
     tags: power
     harness: console
     harness_config:
