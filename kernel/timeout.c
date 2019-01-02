@@ -151,8 +151,16 @@ void z_set_timeout_expiry(s32_t ticks, bool idle)
 {
 	LOCKED(&timeout_lock) {
 		int next = _get_next_timeout_expiry();
+		bool sooner = (next == K_FOREVER) || (ticks < next);
+		bool imminent = next <= 1;
 
-		if ((next == K_FOREVER) || (ticks < next)) {
+		/* Only set new timeouts when they are sooner than
+		 * what we have.  Also don't try to set a timeout when
+		 * one is about to expire: drivers have internal logic
+		 * that will bump the timeout to the "next" tick if
+		 * it's not considered to be settable as directed.
+		 */
+		if (sooner && !imminent) {
 			z_clock_set_timeout(ticks, idle);
 		}
 	}
