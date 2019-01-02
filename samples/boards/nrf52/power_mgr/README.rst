@@ -9,25 +9,26 @@ Overview
 This sample demonstrates a power manager app that uses the Zephyr
 power management infrastructure to enter into Low Power state.
 
-This app will cycle through the following power schemes each time idle thread
-calls sys_suspend() hook function :
+This app will cycle through the following power schemes each time the system
+enters idle state:
 
-1. Low Power State: Low Power State is SOC specific and being in this state is
-   transparent to devices. SOC and devices do not lose context in this Mode.
-   SOC supports the following two Low Power states :
+1. Low Power State: Low Power State could be SoC, board and/or application
+   specific. Being in this state is transparent to devices. SOC and devices
+   do not lose context in this Mode. This example implements two Low Power
+   states, which are signaled using LEDs on the development kit:
 
-   A. CONSTANT LATENCY LOW POWER MODE : This Low Power State triggers CONSTLAT
-      task on nrf52 SOC. In this Mode there is Low Exit latency and 16MHz Clock
-      is kept ON.
-   B. LOW POWER STATE : In this Power State LOWPWR task is triggered on nrf52
-      SOC. This is a deeper power state than CONSTANT LATENCY Mode. In this mode
-      the 16MHz Clock is turned off and only 32KHz clock is used.
+   A. LED1: [X], LED2: [X]: System is active, no low power state is selected.
+   B. LED1: [X], LED2: [ ]: System is idle, and the SYS_POWER_STATE_CPU_LPS_1
+      state is selected.
+   C. LED1: [ ], LED2: [ ]: System is idle, and the SYS_POWER_STATE_CPU_LPS_2
+      state is selected.
 
 2. Deep Sleep: This Power State is mapped to SYSTEM OFF state. In this mode
    all devices on board get suspended. All devices and SOC lose context on
    wake up.
 
-3. No-op: No operation, letting kernel idle.
+The power mode selection is done automatically by residency-based policy
+implemented by the Zephyr Power Management Subsystem.
 
 Requirements
 ************
@@ -59,34 +60,33 @@ nrf52 core output
 
 .. code-block:: console
 
-  ***Power Management Demo on arm****
-  Demo Description
-  Application creates Idleness, Due to which System Idle Thread is
-  scheduled and it enters into various Low Power States.
+   *** Power Management Demo on nrf51_pca10028 ***
+   Demo Description
+   Application creates Idleness, Due to which System Idle Thread is
+   scheduled and it enters into various Low Power States.
 
-  <-- App doing busy wait for 10 Sec -->
+   <-- App doing busy wait for 10 Sec -->
 
-  <-- App going to sleep for 30 Sec -->
-  --> Entering into Constant Latency State --- Low Power State exit !
-  --> Entering into Constant Latency State --- Low Power State exit !
+   <-- App going to sleep for 10 Sec -->
+   --> Entering to SYS_POWER_STATE_CPU_LPS_1 state.
+   --> Exited from SYS_POWER_STATE_CPU_LPS_1 state.
 
-  <-- App doing busy wait for 10 Sec -->
+   <-- App doing busy wait for 10 Sec -->
 
-  <-- App going to sleep for 90 Sec -->
-  --> Entering into Low Power State --- Low Power State exit !
-  --> Entering into Low Power State --- Low Power State exit !
+   <-- App going to sleep for 30 Sec -->
+   --> Entering to SYS_POWER_STATE_CPU_LPS_2 state.
+   --> Exited from SYS_POWER_STATE_CPU_LPS_2 state.
 
-  <-- App doing busy wait for 10 Sec -->
+   <-- App doing busy wait for 10 Sec -->
 
-  <-- App going to sleep for 30 Sec -->
-  --> Entering into Constant Latency State --- Low Power State exit !
-  --> Entering into Constant Latency State --- Low Power State exit !
+   <-- App going to sleep for 10 Sec -->
+   --> Entering to SYS_POWER_STATE_CPU_LPS_1 state.
+   --> Exited from SYS_POWER_STATE_CPU_LPS_1 state.
 
-  <-- App doing busy wait for 10 Sec -->
+   <-- App doing busy wait for 10 Sec -->
 
-  <-- App going to sleep for 90 Sec -->
-  --> Entering into Low Power State --- Low Power State exit !
-  --> Entering into Low Power State --- Low Power State exit !
+   <-- App going to sleep for 30 Sec -->
+   --> Entering to SYS_POWER_STATE_CPU_LPS_2 state.
+   --> Exited from SYS_POWER_STATE_CPU_LPS_2 state.
 
-  Press BUTTON1 to enter into Deep Dleep state...Press BUTTON2 to exit Deep Sleep state
-  --> Entering into Deep Sleep State -
+   Press BUTTON1 to enter into Deep Sleep state. Press BUTTON2 to exit Deep Sleep state.
