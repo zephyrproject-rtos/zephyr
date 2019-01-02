@@ -1408,3 +1408,19 @@ if(CONFIG_BOARD_DEPRECATED)
       removed in version ${CONFIG_BOARD_DEPRECATED}"
   )
 endif()
+
+if(CMAKE_HOST_WIN32)
+  if(DEFINED CMAKE_C_COMPILER_VERSION AND (CMAKE_C_COMPILER_VERSION VERSION_EQUAL 8.2.1))
+	if(NOT DEFINED SUPPRESS_ISSUE_12257)
+	  print(WIN32)
+	  print(CMAKE_C_COMPILER_VERSION)
+	  message(FATAL_ERROR
+		"It has been detected that you are affected by issue
+https://github.com/zephyrproject-rtos/zephyr/issues/12257.
+The issue affects Windows users that use objcopy of version '8-2018-q4-major'.
+If you are in fact not affected, you may suppress this error by defining the CMake variable SUPPRESS_ISSUE_12257.
+Otherwise you may work around the issue by downgrading the GCC revision."
+		)
+	endif()
+  endif()
+endif()
