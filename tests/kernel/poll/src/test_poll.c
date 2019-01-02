@@ -596,6 +596,5 @@ void test_poll_grant_access(void)
 			      &wait_signal, &poll_wait_helper_thread,
 			      &poll_wait_helper_stack, &multi_sem,
 			      &multi_reply, &multi_thread, &multi_stack,
-			      &multi_thread_lowprio, &multi_stack_lowprio,
-			      NULL);
+			      &multi_thread_lowprio, &multi_stack_lowprio);
 }

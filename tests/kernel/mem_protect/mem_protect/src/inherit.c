@@ -89,7 +89,7 @@ void test_permission_inheritance(void *p1, void *p2, void *p3)
 			      &inherit_sem,
 			      &inherit_mutex,
 			      &inherit_timer,
-			      &inherit_msgq, &test_1_stack, NULL);
+			      &inherit_msgq, &test_1_stack);
 
 	k_thread_create(&test_1_tid,
 			test_1_stack,

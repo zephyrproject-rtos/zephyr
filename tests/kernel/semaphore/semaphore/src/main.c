@@ -764,8 +764,7 @@ void test_main(void)
 			      &simple_sem, &multiple_thread_sem,
 			      &low_prio_sem, &mid_prio_sem, &high_prio_sem,
 			      &stack_1, &stack_2, &stack_3, &timeout_info_pipe,
-			      &sem_tid, &sem_tid_1, &sem_tid_2,
-			      NULL);
+			      &sem_tid, &sem_tid_1, &sem_tid_2);
 
 	ztest_test_suite(test_semaphore,
 			 ztest_unit_test(test_simple_sem_from_isr),

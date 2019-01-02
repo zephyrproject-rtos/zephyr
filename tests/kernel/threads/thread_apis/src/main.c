@@ -200,8 +200,8 @@ void test_user_mode(void)
 
 void test_main(void)
 {
-	k_thread_access_grant(k_current_get(), &tdata, tstack, NULL);
-	k_thread_access_grant(k_current_get(), &tdata_custom, tstack_custom, NULL);
+	k_thread_access_grant(k_current_get(), &tdata, tstack);
+	k_thread_access_grant(k_current_get(), &tdata_custom, tstack_custom);
 	main_prio = k_thread_priority_get(k_current_get());
 
 	ztest_test_suite(threads_lifecycle,
