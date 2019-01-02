@@ -280,7 +280,11 @@ struct bt_gatt_cpf {
 	u16_t description;
 } __packed;
 
-/* Server API */
+/**
+ * @defgroup bt_gatt_server GATT Server APIs
+ * @ingroup bt_gatt
+ * @{
+ */
 
 /** @brief Register GATT service.
  *
@@ -343,7 +347,7 @@ struct bt_gatt_attr *bt_gatt_attr_next(const struct bt_gatt_attr *attr);
 
 /** @brief Generic Read Attribute value helper.
  *
- *  Read attribute value storing the result into buffer.
+ *  Read attribute value from local database storing the result into buffer.
  *
  *  @param conn Connection object.
  *  @param attr Attribute to read.
@@ -362,8 +366,8 @@ ssize_t bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 /** @brief Read Service Attribute helper.
  *
- *  Read service attribute value storing the result into buffer after
- *  encoding it.
+ *  Read service attribute value from local database storing the result into
+ *  buffer after encoding it.
  *  NOTE: Only use this with attributes which user_data is a bt_uuid.
  *
  *  @param conn Connection object.
@@ -416,8 +420,8 @@ ssize_t bt_gatt_attr_read_service(struct bt_conn *conn,
 
 /** @brief Read Include Attribute helper.
  *
- *  Read include service attribute value storing the result into buffer after
- *  encoding it.
+ *  Read include service attribute value from local database storing the result
+ *  into buffer after encoding it.
  *  NOTE: Only use this with attributes which user_data is a bt_gatt_include.
  *
  *  @param conn Connection object.
@@ -446,8 +450,8 @@ ssize_t bt_gatt_attr_read_included(struct bt_conn *conn,
 
 /** @brief Read Characteristic Attribute helper.
  *
- *  Read characteristic attribute value storing the result into buffer after
- *  encoding it.
+ *  Read characteristic attribute value from local database storing the result
+ *  into buffer after encoding it.
  *  NOTE: Only use this with attributes which user_data is a bt_gatt_chrc.
  *
  *  @param conn Connection object.
@@ -509,8 +513,8 @@ struct _bt_gatt_ccc {
 
 /** @brief Read Client Characteristic Configuration Attribute helper.
  *
- *  Read CCC attribute value storing the result into buffer after
- *  encoding it.
+ *  Read CCC attribute value from local database storing the result into buffer
+ *  after encoding it.
  *  NOTE: Only use this with attributes which user_data is a _bt_gatt_ccc.
  *
  *  @param conn Connection object.
@@ -563,8 +567,8 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 
 /** @brief Read Characteristic Extended Properties Attribute helper
  *
- *  Read CEP attribute value storing the result into buffer after
- *  encoding it.
+ *  Read CEP attribute value from local database storing the result into buffer
+ *  after encoding it.
  *  NOTE: Only use this with attributes which user_data is a bt_gatt_cep.
  *
  *  @param conn Connection object
@@ -593,8 +597,8 @@ ssize_t bt_gatt_attr_read_cep(struct bt_conn *conn,
 
 /** @brief Read Characteristic User Description Descriptor Attribute helper
  *
- *  Read CUD attribute value storing the result into buffer after
- *  encoding it.
+ *  Read CUD attribute value from local database storing the result into buffer
+ *  after encoding it.
  *  NOTE: Only use this with attributes which user_data is a NULL-terminated C string.
  *
  *  @param conn Connection object
@@ -624,8 +628,8 @@ ssize_t bt_gatt_attr_read_cud(struct bt_conn *conn,
 
 /** @brief Read Characteristic Presentation format Descriptor Attribute helper
  *
- *  Read CPF attribute value storing the result into buffer after
- *  encoding it.
+ *  Read CPF attribute value from local database storing the result into buffer
+ *  after encoding it.
  *  NOTE: Only use this with attributes which user_data is a bt_gatt_pf.
  *
  *  @param conn Connection object
@@ -785,7 +789,13 @@ int bt_gatt_indicate(struct bt_conn *conn,
  */
 u16_t bt_gatt_get_mtu(struct bt_conn *conn);
 
-/* Client API */
+/** @} */
+
+/**
+ * @defgroup bt_gatt_client GATT Client APIs
+ * @ingroup bt_gatt
+ * @{
+ */
 
 /** @brief GATT Exchange MTU parameters */
 struct bt_gatt_exchange_params {
@@ -1088,6 +1098,8 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
  *  @param params Requested params address.
  */
 void bt_gatt_cancel(struct bt_conn *conn, void *params);
+
+/** @} */
 
 #ifdef __cplusplus
 }
