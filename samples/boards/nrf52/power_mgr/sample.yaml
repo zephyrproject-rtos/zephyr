@@ -2,11 +2,13 @@ sample:
   name: Low Power state Sample for nrf52
 tests:
   pm.low_power_state:
-    platform_whitelist: nrf52840_pca10056 nrf52_pca10040
+    platform_whitelist: nrf52840_pca10056 nrf52_pca10040 
     tags: power
     harness: console
     harness_config:
       type: multi_line
       regex:
-        - "---->Low power state entry - CONSTANT LATENCY MODE----- Low power state exit !"
-        - "---->Low power state entry - LOW POWER MODE ----- Low power state exit !"
+        - "--> Entering to SYS_POWER_STATE_CPU_LPS_1 state."
+        - "--> Exited from SYS_POWER_STATE_CPU_LPS_1 state."
+        - "--> Entering to SYS_POWER_STATE_CPU_LPS_2 state."
+        - "--> Exited from SYS_POWER_STATE_CPU_LPS_2 state."
