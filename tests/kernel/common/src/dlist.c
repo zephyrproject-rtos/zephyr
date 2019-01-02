@@ -8,6 +8,7 @@
 #include <misc/dlist.h>
 
 static sys_dlist_t test_list;
+static sys_dlist_t test_list2;
 
 struct container_node {
 	sys_dnode_t node;
@@ -280,6 +281,74 @@ void test_dlist(void)
 	sys_dlist_remove(&test_node_2.node);
 	zassert_true((verify_emptyness(&test_list)),
 		     "test_list should be empty");
+
+
+	/* Catenate an empty list to a non-empty list */
+	sys_dlist_append(&test_list, &test_node_1.node);
+	sys_dlist_init(&test_list2);
+	sys_dlist_join(&test_list, &test_list2);
+	zassert_true(sys_dlist_is_empty(&test_list2),
+		     "list2 not empty");
+	zassert_true((verify_tail_head(&test_list, &test_node_1.node,
+				       &test_node_1.node, true)),
+		     "test_list head/tail are wrong");
+
+	/* Catenate a non-empty list to an empty list moves elements. */
+	sys_dlist_join(&test_list2, &test_list);
+	zassert_true(sys_dlist_is_empty(&test_list),
+		     "list not empty");
+	zassert_true((verify_tail_head(&test_list2, &test_node_1.node,
+				       &test_node_1.node, true)),
+		     "test_list2 head/tail are wrong");
+
+	/* Catenate a non-empty list to a non-empty list moves elements. */
+	sys_dlist_append(&test_list, &test_node_2.node);
+	sys_dlist_append(&test_list, &test_node_3.node);
+	zassert_true((verify_tail_head(&test_list, &test_node_2.node,
+				       &test_node_3.node, false)),
+		     "test_list head/tail are wrong");
+	sys_dlist_join(&test_list2, &test_list);
+	zassert_true(sys_dlist_is_empty(&test_list),
+		     "list not empty");
+	zassert_true((verify_tail_head(&test_list2, &test_node_1.node,
+				       &test_node_3.node, false)),
+		     "test_list2 head/tail are wrong");
+	zassert_equal(test_node_1.node.next, &test_node_2.node,
+		      "node2 not after node1");
+	zassert_equal(test_node_2.node.prev, &test_node_1.node,
+		      "node1 not before node2");
+
+	/* Split list at head does nothing */
+	sys_dlist_split(&test_list, &test_list2, &test_node_1.node);
+	zassert_true(sys_dlist_is_empty(&test_list),
+		     "list not empty");
+
+	/* Split list after head moves */
+	sys_dlist_split(&test_list, &test_list2, &test_node_2.node);
+	zassert_true((verify_tail_head(&test_list, &test_node_1.node,
+				       &test_node_1.node, true)),
+		     "test_list head/tail are wrong");
+	zassert_true((verify_tail_head(&test_list2, &test_node_2.node,
+				       &test_node_3.node, false)),
+		     "test_list2 head/tail are wrong");
+
+	/* Split list after head moves */
+	sys_dlist_split(&test_list, &test_list2, &test_node_3.node);
+	zassert_true((verify_tail_head(&test_list, &test_node_1.node,
+				       &test_node_2.node, false)),
+		     "test_list head/tail are wrong");
+	zassert_true((verify_tail_head(&test_list2, &test_node_3.node,
+				       &test_node_3.node, true)),
+		     "test_list2 head/tail are wrong");
+
+	sys_dlist_remove(&test_node_1.node);
+	sys_dlist_remove(&test_node_2.node);
+	zassert_true(sys_dlist_is_empty(&test_list),
+		     "list not empty");
+
+	sys_dlist_remove(&test_node_3.node);
+	zassert_true(sys_dlist_is_empty(&test_list2),
+		     "list2 not empty");
 
 	/* test iterator from a node */
 	struct data_node {

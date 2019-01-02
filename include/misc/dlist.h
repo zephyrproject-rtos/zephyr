@@ -552,6 +552,68 @@ static inline sys_dnode_t *sys_dlist_get(sys_dlist_t *list)
 	return node;
 }
 
+/**
+ * @brief place the contents of one list at the end of another list.
+ *
+ * The @p to and @p from lists must be distinct.  On completion @p from
+ * will be empty, all of its elements having been appended in original
+ * order to @p to.
+ *
+ * @param to a list, possibly non-empty, to which from will be appended
+ * @param from the list providing the elements to append
+ *
+ * @return N/A
+ */
+static inline void sys_dlist_join(sys_dlist_t *to,
+				  sys_dlist_t *from)
+{
+	if (!sys_dlist_is_empty(from)) {
+		from->head->prev = to->tail;
+		to->tail->next = from->head;
+
+		from->tail->next = to;
+		to->tail = from->tail;
+
+		sys_dlist_init(from);
+	}
+}
+
+/**
+ * @brief split a list at a node
+ *
+ * list will be updated to start at node.  Any nodes before node will
+ * be appended to prefix.
+ *
+ * This and other sys_dlist_*() functions are not thread safe.
+ *
+ * @param prefix a list to which items in @p list before @p node
+ * will be appended
+ * @param list a non-empty list
+ * @param node a node within @p list
+ *
+ * @return N/A
+ */
+static inline void sys_dlist_split(sys_dlist_t *prefix,
+				   sys_dlist_t *list,
+				   sys_dnode_t *node)
+{
+	sys_dnode_t *old_pfx_tail = prefix->tail;
+	sys_dnode_t *new_pfx_tail = node->prev;
+
+	if (sys_dlist_peek_head(list) == node) {
+		return;
+	}
+
+	list->head->prev = old_pfx_tail;
+	old_pfx_tail->next = list->head;
+
+	prefix->tail = new_pfx_tail;
+	new_pfx_tail->next = prefix;
+
+	list->head = node;
+	node->prev = list;
+}
+
 #ifdef __cplusplus
 }
 #endif
