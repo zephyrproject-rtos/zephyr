@@ -7,73 +7,22 @@
 #include <soc_power.h>
 #include <nrf_power.h>
 
-#define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_DECLARE(soc);
-
-#if defined(CONFIG_SYS_POWER_DEEP_SLEEP)
-/* System_OFF is deepest Power state available, On exiting from this
- * state CPU including all peripherals reset
- */
-static void _system_off(void)
-{
-	nrf_power_system_off();
-}
-#endif
-
-static void _issue_low_power_command(void)
-{
-	__WFE();
-	__SEV();
-	__WFE();
-}
-
-/* Name: _low_power_mode
- * Parameter : Low Power Task ID
- *
- * Set Notdic SOC specific Low Power Task and invoke
- * _WFE event to put the nordic SOC into Low Power State.
- */
-static void _low_power_mode(enum power_states state)
-{
-	switch (state) {
-		/* CONSTANT LATENCY TASK */
-	case SYS_POWER_STATE_CPU_LPS:
-		nrf_power_task_trigger(NRF_POWER_TASK_CONSTLAT);
-		break;
-		/* LOW POWER TASK */
-	case SYS_POWER_STATE_CPU_LPS_1:
-		nrf_power_task_trigger(NRF_POWER_TASK_LOWPWR);
-		break;
-
-	default:
-		/* Unsupported State */
-		LOG_ERR("Unsupported State");
-		break;
-	}
-
-	/* Issue __WFE*/
-	_issue_low_power_command();
-}
+LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
 /* Invoke Low Power/System Off specific Tasks */
 void sys_set_power_state(enum power_states state)
 {
 	switch (state) {
-	case SYS_POWER_STATE_CPU_LPS:
-		_low_power_mode(SYS_POWER_STATE_CPU_LPS);
-		break;
-	case SYS_POWER_STATE_CPU_LPS_1:
-		_low_power_mode(SYS_POWER_STATE_CPU_LPS_1);
-		break;
-#if defined(CONFIG_SYS_POWER_DEEP_SLEEP)
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
+ #ifdef CONFIG_SYS_POWER_STATE_DEEP_SLEEP_SUPPORTED
 	case SYS_POWER_STATE_DEEP_SLEEP:
-		_system_off();
+		nrf_power_system_off();
 		break;
+ #endif
 #endif
 	default:
-		/* Unsupported State */
-		LOG_ERR("Unsupported State");
+		LOG_ERR("Unsupported power state %u", state);
 		break;
 	}
 }
@@ -82,38 +31,63 @@ void sys_set_power_state(enum power_states state)
 void sys_power_state_post_ops(enum power_states state)
 {
 	switch (state) {
-	case SYS_POWER_STATE_CPU_LPS:
-	case SYS_POWER_STATE_CPU_LPS_1:
-		/* Enable interrupts */
-		__set_BASEPRI(0);
-		break;
-#if defined(CONFIG_SYS_POWER_DEEP_SLEEP)
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
+ #ifdef CONFIG_SYS_POWER_STATE_DEEP_SLEEP_SUPPORTED
 	case SYS_POWER_STATE_DEEP_SLEEP:
+		/* Nothing to do. */
 		break;
+ #endif
 #endif
 	default:
-		/* Unsupported State */
-		LOG_ERR("Unsupported State");
+		LOG_ERR("Unsupported power state %u", state);
 		break;
 	}
+
+	/*
+	 * System is now in active mode. Reenable interrupts which were disabled
+	 * when OS started idling code.
+	 */
+	irq_unlock(0);
 }
 
 bool sys_is_valid_power_state(enum power_states state)
 {
 	switch (state) {
+#ifdef CONFIG_SYS_POWER_LOW_POWER_STATE
+ #ifdef CONFIG_SYS_POWER_STATE_CPU_LPS_SUPPORTED
 	case SYS_POWER_STATE_CPU_LPS:
-	case SYS_POWER_STATE_CPU_LPS_1:
-#if defined(CONFIG_SYS_POWER_DEEP_SLEEP)
-	case SYS_POWER_STATE_DEEP_SLEEP:
-#endif
 		return true;
-		break;
+ #endif
+ #ifdef CONFIG_SYS_POWER_STATE_CPU_LPS_1_SUPPORTED
+	case SYS_POWER_STATE_CPU_LPS_1:
+		return true;
+ #endif
+ #ifdef CONFIG_SYS_POWER_STATE_CPU_LPS_2_SUPPORTED
+	case SYS_POWER_STATE_CPU_LPS_2:
+		return true;
+ #endif
+#endif /* CONFIG_SYS_POWER_LOW_POWER_STATE */
+
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
+ #ifdef CONFIG_SYS_POWER_STATE_DEEP_SLEEP_SUPPORTED
+	case SYS_POWER_STATE_DEEP_SLEEP:
+		return true;
+ #endif
+ #ifdef CONFIG_SYS_POWER_STATE_DEEP_SLEEP_1_SUPPORTED
+	case SYS_POWER_STATE_DEEP_SLEEP_1:
+		return true;
+ #endif
+ #ifdef CONFIG_SYS_POWER_STATE_DEEP_SLEEP_2_SUPPORTED
+	case SYS_POWER_STATE_DEEP_SLEEP_2:
+		return true;
+ #endif
+#endif /* CONFIG_SYS_POWER_DEEP_SLEEP */
+
 	default:
-		LOG_DBG("Unsupported State");
-		break;
+		return false;
 	}
 
-	return false;
+	/* Not reached */
 }
 
 /* Overrides the weak ARM implementation:
