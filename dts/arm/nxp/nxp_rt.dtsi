@@ -180,6 +180,14 @@
 			label = "PINMUX_0";
 		};
 
+		lcdif1: display-controller@402b8000 {
+			compatible = "fsl,imx6sx-lcdif";
+			reg = <0x402b8000 0x4000>;
+			interrupts = <42 0>;
+			label = "ELCDIF_1";
+			status = "disabled";
+		};
+
 		spi1: spi@40394000 {
 			compatible = "nxp,imx-lpspi";
 			reg = <0x40394000 0x4000>;
