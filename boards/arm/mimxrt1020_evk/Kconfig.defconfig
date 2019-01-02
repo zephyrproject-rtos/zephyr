@@ -1,0 +1,38 @@
+# Kconfig - MIMXRT1020-EVK board
+#
+# Copyright (c) 2018, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_MIMXRT1020_EVK
+
+config BOARD
+	default "mimxrt1020_evk" if BOARD_MIMXRT1020_EVK
+
+if GPIO_MCUX_IGPIO
+
+config GPIO_MCUX_IGPIO_1
+	default y
+
+config GPIO_MCUX_IGPIO_5
+	default y
+
+endif # GPIO_MCUX_IGPIO
+
+if UART_MCUX_LPUART
+
+config UART_MCUX_LPUART_1
+	default y
+
+endif # UART_MCUX_LPUART
+
+if CODE_QSPI
+
+# Reserve space for the IVT
+config TEXT_SECTION_OFFSET
+	default 0x2000
+
+endif
+
+endif # BOARD_MIMXRT1020_EVK
