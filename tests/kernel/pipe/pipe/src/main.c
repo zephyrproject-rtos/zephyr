@@ -26,8 +26,7 @@ void test_main(void)
 	k_thread_access_grant(k_current_get(),
 			      &test_pipe, &put_sem, &get_sem,
 			      &sync_sem, &multiple_send_sem,
-			      &get_single_tid, &stack_1,
-			      NULL);
+			      &get_single_tid, &stack_1);
 
 	ztest_test_suite(test_pipe,
 			 ztest_user_unit_test(test_pipe_on_single_elements),

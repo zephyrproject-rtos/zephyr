@@ -59,7 +59,7 @@ void test_kobject_access_grant(void *p1, void *p2, void *p3)
 	k_thread_access_grant(k_current_get(),
 			      &kobject_sem,
 			      &kobject_mutex,
-			      random_sem_type, NULL);
+			      random_sem_type);
 
 	k_thread_user_mode_enter(kobject_user_tc1, NULL, NULL, NULL);
 
@@ -93,7 +93,7 @@ void test_syscall_invalid_kobject(void *p1, void *p2, void *p3)
 {
 	k_thread_access_grant(k_current_get(),
 			      &kobject_sem,
-			      &kobject_mutex, NULL);
+			      &kobject_mutex);
 
 	k_thread_user_mode_enter(kobject_user_tc2, NULL, NULL, NULL);
 
@@ -118,7 +118,7 @@ void kobject_user_tc3(void *p1, void *p2, void *p3)
 void test_thread_without_kobject_permission(void *p1, void *p2, void *p3)
 {
 	k_thread_access_grant(k_current_get(),
-			      &kobject_mutex, NULL);
+			      &kobject_mutex);
 
 	k_thread_user_mode_enter(kobject_user_tc3, NULL, NULL, NULL);
 
@@ -147,7 +147,7 @@ void kobject_user_test4(void *p1, void *p2, void *p3)
 void test_kobject_revoke_access(void *p1, void *p2, void *p3)
 {
 	k_thread_access_grant(k_current_get(),
-			      &kobject_sem, NULL);
+			      &kobject_sem);
 
 	k_thread_create(&kobject_test_4_tid,
 			kobject_stack_1,
@@ -204,7 +204,7 @@ void kobject_user_2_test5(void *p1, void *p2, void *p3)
 void test_kobject_grant_access_kobj(void *p1, void *p2, void *p3)
 {
 	k_thread_access_grant(k_current_get(),
-			      &kobject_sem, &kobject_test_reuse_2_tid, NULL);
+			      &kobject_sem, &kobject_test_reuse_2_tid);
 
 	k_thread_create(&kobject_test_reuse_1_tid,
 			kobject_stack_1,
@@ -255,7 +255,7 @@ void kobject_user_test6(void *p1, void *p2, void *p3)
 void test_kobject_grant_access_kobj_invalid(void *p1, void *p2, void *p3)
 {
 	k_thread_access_grant(k_current_get(),
-			      &kobject_sem, NULL);
+			      &kobject_sem);
 
 	k_thread_create(&kobject_test_6_tid,
 			kobject_stack_3,
@@ -294,7 +294,7 @@ void kobject_user_test7(void *p1, void *p2, void *p3)
 void test_kobject_release_from_user(void *p1, void *p2, void *p3)
 {
 	k_thread_access_grant(k_current_get(),
-			      &kobject_sem, NULL);
+			      &kobject_sem);
 
 	k_thread_create(&kobject_test_7_tid,
 			kobject_stack_1,
@@ -394,7 +394,7 @@ void test_thread_has_residual_permissions(void *p1, void *p2, void *p3)
 {
 
 	k_thread_access_grant(k_current_get(),
-			      &kobject_sem, NULL);
+			      &kobject_sem);
 
 	k_thread_create(&kobject_test_9_tid,
 			kobject_stack_1,
@@ -503,7 +503,7 @@ void test_access_kobject_without_init_with_access(void *p1,
 						  void *p2, void *p3)
 {
 	k_thread_access_grant(k_current_get(),
-			      &kobject_sem_no_init_access, NULL);
+			      &kobject_sem_no_init_access);
 
 	k_thread_create(&kobject_test_13_tid,
 			kobject_stack_1,
@@ -589,7 +589,7 @@ void test_create_new_thread_from_user(void *p1, void *p2, void *p3)
 
 	k_thread_access_grant(&kobject_test_reuse_3_tid,
 			      &kobject_test_reuse_4_tid,
-			      &kobject_stack_2, NULL);
+			      &kobject_stack_2);
 
 	k_thread_create(&kobject_test_reuse_3_tid,
 			kobject_stack_1,
@@ -639,7 +639,7 @@ void test_create_new_thread_from_user_no_access_stack(void *p1,
 {
 
 	k_thread_access_grant(&kobject_test_reuse_5_tid,
-			      &kobject_test_reuse_6_tid, NULL);
+			      &kobject_test_reuse_6_tid);
 
 	k_thread_create(&kobject_test_reuse_5_tid,
 			kobject_stack_1,
@@ -689,7 +689,7 @@ void test_create_new_thread_from_user_invalid_stacksize(void *p1,
 
 	k_thread_access_grant(&kobject_test_reuse_1_tid,
 			      &kobject_test_reuse_2_tid,
-			      &kobject_stack_3, NULL);
+			      &kobject_stack_3);
 
 	k_thread_create(&kobject_test_reuse_1_tid,
 			kobject_stack_3,
@@ -749,7 +749,7 @@ void test_create_new_thread_from_user_huge_stacksize(void *p1,
 
 	k_thread_access_grant(&kobject_test_reuse_3_tid,
 			      &kobject_test_reuse_4_tid,
-			      &kobject_stack_2, NULL);
+			      &kobject_stack_2);
 
 	k_thread_create(&kobject_test_reuse_3_tid,
 			kobject_stack_1,
@@ -801,7 +801,7 @@ void test_create_new_supervisor_thread_from_user(void *p1, void *p2, void *p3)
 {
 	k_thread_access_grant(&kobject_test_reuse_7_tid,
 			      &kobject_test_reuse_8_tid,
-			      &kobject_stack_2, NULL);
+			      &kobject_stack_2);
 
 	k_thread_create(&kobject_test_reuse_7_tid,
 			kobject_stack_1,
@@ -847,7 +847,7 @@ void test_create_new_essential_thread_from_user(void *p1, void *p2, void *p3)
 {
 	k_thread_access_grant(&kobject_test_reuse_1_tid,
 			      &kobject_test_reuse_2_tid,
-			      &kobject_stack_2, NULL);
+			      &kobject_stack_2);
 
 	k_thread_create(&kobject_test_reuse_1_tid,
 			kobject_stack_1,
@@ -896,7 +896,7 @@ void test_create_new_higher_prio_thread_from_user(void *p1, void *p2, void *p3)
 {
 	k_thread_access_grant(&kobject_test_reuse_3_tid,
 			      &kobject_test_reuse_4_tid,
-			      &kobject_stack_2, NULL);
+			      &kobject_stack_2);
 
 	k_thread_create(&kobject_test_reuse_3_tid,
 			kobject_stack_1,
@@ -945,7 +945,7 @@ void test_create_new_invalid_prio_thread_from_user(void *p1, void *p2, void *p3)
 {
 	k_thread_access_grant(&kobject_test_reuse_5_tid,
 			      &kobject_test_reuse_6_tid,
-			      &kobject_stack_2, NULL);
+			      &kobject_stack_2);
 
 
 	k_thread_create(&kobject_test_reuse_5_tid,

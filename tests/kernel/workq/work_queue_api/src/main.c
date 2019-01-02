@@ -509,7 +509,7 @@ void test_main(void)
 	main_thread = k_current_get();
 	k_thread_access_grant(main_thread, &sync_sema, &user_workq.thread,
 			      &user_workq.queue,
-			      &user_tstack, NULL);
+			      &user_tstack);
 	k_sem_init(&sync_sema, 0, NUM_OF_WORK);
 	k_thread_system_pool_assign(k_current_get());
 

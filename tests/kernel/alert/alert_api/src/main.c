@@ -492,7 +492,7 @@ void test_main(void)
 			      &thread_alerts[HANDLER_DEFAULT],
 			      &thread_alerts[HANDLER_IGNORE],
 			      &thread_alerts[HANDLER_0],
-			      &thread_alerts[HANDLER_1], NULL);
+			      &thread_alerts[HANDLER_1]);
 
 	k_alert_init(&thread_alerts[HANDLER_DEFAULT], K_ALERT_DEFAULT,
 		     PENDING_MAX);

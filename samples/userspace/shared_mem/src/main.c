@@ -102,7 +102,7 @@ void main(void)
 
 	k_tid_t tPT, tENC, tCT;
 
-	k_thread_access_grant(k_current_get(), &allforone, NULL);
+	k_thread_access_grant(k_current_get(), &allforone);
 	/* initialize the partition structures  */
 	FOR_EACH(appmem_init_part, part0, part1, part2, part3, part4);
 
@@ -117,7 +117,7 @@ void main(void)
 			(k_thread_entry_t)enc, NULL, NULL, NULL,
 			-1, K_USER,
 			K_FOREVER);
-	k_thread_access_grant(tENC, &allforone, NULL);
+	k_thread_access_grant(tENC, &allforone);
 	/* use K_FOREVER followed by k_thread_start*/
 	printk("ENC Thread Created %08X\n", (unsigned int) tENC);
 	appmem_init_domain_dom1(part2);
@@ -133,7 +133,7 @@ void main(void)
 			(k_thread_entry_t)pt, NULL, NULL, NULL,
 			-1, K_USER,
 			K_FOREVER);
-	k_thread_access_grant(tPT, &allforone, NULL);
+	k_thread_access_grant(tPT, &allforone);
 	printk("PT Thread Created %08X\n", (unsigned int) tPT);
 	appmem_init_domain_dom0(part0);
 	appmem_add_part_dom0(part1);
@@ -144,7 +144,7 @@ void main(void)
 			(k_thread_entry_t)ct, NULL, NULL, NULL,
 			-1, K_USER,
 			K_FOREVER);
-	k_thread_access_grant(tCT, &allforone, NULL);
+	k_thread_access_grant(tCT, &allforone);
 	printk("CT Thread Created %08X\n", (unsigned int) tCT);
 	appmem_init_domain_dom2(part4);
 	appmem_add_part_dom2(part3);

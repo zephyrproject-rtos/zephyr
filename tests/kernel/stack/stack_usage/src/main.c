@@ -241,7 +241,7 @@ static void test_isr_stack_play(void)
 void test_main(void)
 {
 	k_thread_access_grant(k_current_get(), &stack1, &stack2, &thread_data,
-			      &end_sema, &threadstack, NULL);
+			      &end_sema, &threadstack);
 
 	ztest_test_suite(test_stack_usage,
 			 ztest_user_unit_test(test_single_stack_play),

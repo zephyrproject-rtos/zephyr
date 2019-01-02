@@ -23,8 +23,7 @@ void test_main(void)
 
 	k_thread_access_grant(k_current_get(),
 			      &rx_0_mem_slab, &tx_0_mem_slab,
-			      &rx_1_mem_slab, &tx_1_mem_slab,
-			      NULL);
+			      &rx_1_mem_slab, &tx_1_mem_slab);
 	dev_i2s = device_get_binding(I2S_DEV_NAME);
 	if (dev_i2s != NULL) {
 		k_object_access_grant(dev_i2s, k_current_get());
