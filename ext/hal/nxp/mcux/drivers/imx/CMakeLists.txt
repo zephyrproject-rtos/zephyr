@@ -15,6 +15,7 @@ zephyr_library_compile_definitions_ifdef(
 )
 
 zephyr_sources_ifdef(CONFIG_HAS_MCUX_CACHE    fsl_cache.c)
+zephyr_sources_ifdef(CONFIG_DISPLAY_MCUX_ELCDIF	fsl_elcdif.c)
 zephyr_sources_ifdef(CONFIG_GPIO_MCUX_IGPIO   fsl_gpio.c)
 zephyr_sources_ifdef(CONFIG_I2C_MCUX_LPI2C    fsl_lpi2c.c)
 zephyr_sources_ifdef(CONFIG_SPI_MCUX_LPSPI    fsl_lpspi.c)

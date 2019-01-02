@@ -1,0 +1,48 @@
+#
+# Copyright (c) 2019, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig DISPLAY_MCUX_ELCDIF
+	bool "MCUX eLCDIF driver"
+	depends on HAS_MCUX_ELCDIF
+	help
+	  Enable support for mcux eLCDIF driver.
+
+if DISPLAY_MCUX_ELCDIF
+
+config MCUX_ELCDIF_POOL_BLOCK_NUM
+	int "Number of memory pool blocks"
+	default 2
+	help
+	  Number of blocks in the frame buffer memory pool.
+
+config MCUX_ELCDIF_POOL_BLOCK_MIN
+	hex "Minimum memory pool block size"
+	default 0x400
+	help
+	  Minimum block size in the frame buffer memory pool.
+
+config MCUX_ELCDIF_POOL_BLOCK_MAX
+	hex "Maximum memory pool block size"
+	default 0x40000
+	help
+	  Maximum block size in the frame buffer memory pool.
+
+config MCUX_ELCDIF_POOL_BLOCK_ALIGN
+	int "Alignment of memory pool blocks"
+	default 64
+	help
+	  Byte alignment in the frame buffer memory pool.
+
+choice MCUX_ELCDIF_PANEL
+	prompt "Panel selection"
+	default MCUX_ELCDIF_PANEL_RK043FN02H
+
+config MCUX_ELCDIF_PANEL_RK043FN02H
+	bool "Rocktech rk043fn02h-ct"
+
+endchoice
+
+endif # DISPLAY_MCUX_ELCDIF

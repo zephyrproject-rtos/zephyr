@@ -27,6 +27,12 @@ config HAS_MCUX_CCM
 	help
 	  Set if the clock control module (CCM) module is present in the SoC.
 
+config HAS_MCUX_ELCDIF
+	bool
+	help
+	  Set if the enhanced LCD interface (eLCDIF) module is present in the
+	  SoC.
+
 config HAS_MCUX_ENET
 	bool
 	help
