@@ -72,9 +72,9 @@ int sys_pm_policy_next_state(s32_t ticks, enum power_states *pm_state)
 		return SYS_PM_NOT_HANDLED;
 	}
 
-	for (i = 0; i < (ARRAY_SIZE(pm_policy) - 1); i++) {
-		if ((ticks >= pm_policy[i].min_residency) &&
-			       (ticks < pm_policy[i + 1].min_residency)) {
+	for (i = ARRAY_SIZE(pm_policy) - 1; i >= 0; i--) {
+		if ((ticks == K_FOREVER) ||
+		    (ticks >= pm_policy[i].min_residency)) {
 			break;
 		}
 	}
@@ -86,8 +86,8 @@ int sys_pm_policy_next_state(s32_t ticks, enum power_states *pm_state)
 	}
 
 	*pm_state = pm_policy[i].pm_state;
-	LOG_DBG("pm_state: %d, min_residency: %d, idx: %d\n",
-				*pm_state, pm_policy[i].min_residency, i);
+	LOG_DBG("ticks: %d, pm_state: %d, min_residency: %d, idx: %d\n",
+			ticks, *pm_state, pm_policy[i].min_residency, i);
 
 	return pm_policy[i].sys_state;
 }
