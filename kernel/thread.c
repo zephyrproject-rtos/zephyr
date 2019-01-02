@@ -682,25 +682,6 @@ void _init_thread_base(struct _thread_base *thread_base, int priority,
 	_init_thread_timeout(thread_base);
 }
 
-void k_thread_access_grant(struct k_thread *thread, ...)
-{
-#ifdef CONFIG_USERSPACE
-	va_list args;
-	va_start(args, thread);
-
-	while (true) {
-		void *object = va_arg(args, void *);
-		if (object == NULL) {
-			break;
-		}
-		k_object_access_grant(object, thread);
-	}
-	va_end(args);
-#else
-	ARG_UNUSED(thread);
-#endif
-}
-
 FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
 					    void *p1, void *p2, void *p3)
 {
