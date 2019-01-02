@@ -874,9 +874,6 @@ __syscall void k_thread_start(k_tid_t thread);
 /* timeout has timed out and is not on _timeout_q anymore */
 #define _EXPIRED (-2)
 
-/* timeout is not in use */
-#define _INACTIVE (-1)
-
 struct _static_thread_data {
 	struct k_thread *init_thread;
 	k_thread_stack_t *init_stack;
@@ -1335,7 +1332,7 @@ struct k_timer {
 
 #define _K_TIMER_INITIALIZER(obj, expiry, stop) \
 	{ \
-	.timeout.dticks = _INACTIVE, \
+	.timeout.dticks = 0, \
 	.timeout.fn = _timer_expiration_handler, \
 	.wait_q = _WAIT_Q_INIT(&obj.wait_q), \
 	.expiry_fn = expiry, \

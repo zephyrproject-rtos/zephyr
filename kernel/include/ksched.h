@@ -8,6 +8,7 @@
 #define ZEPHYR_KERNEL_INCLUDE_KSCHED_H_
 
 #include <kernel_structs.h>
+#include <timeout_q.h>
 #include <tracing.h>
 #include <stdbool.h>
 
@@ -83,11 +84,7 @@ static inline int _is_thread_prevented_from_running(struct k_thread *thread)
 
 static inline bool _is_thread_timeout_active(struct k_thread *thread)
 {
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-	return thread->base.timeout.dticks != _INACTIVE;
-#else
-	return false;
-#endif
+	return !_is_inactive_timeout(&thread->base.timeout);
 }
 
 static inline bool _is_thread_ready(struct k_thread *thread)

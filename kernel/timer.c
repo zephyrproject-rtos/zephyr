@@ -150,7 +150,7 @@ Z_SYSCALL_HANDLER(k_timer_start, timer, duration_p, period_p)
 void _impl_k_timer_stop(struct k_timer *timer)
 {
 	unsigned int key = irq_lock();
-	bool inactive = (_abort_timeout(&timer->timeout) == _INACTIVE);
+	int inactive = _abort_timeout(&timer->timeout) != 0;
 
 	irq_unlock(key);
 
@@ -203,7 +203,7 @@ u32_t _impl_k_timer_status_sync(struct k_timer *timer)
 	u32_t result = timer->status;
 
 	if (result == 0) {
-		if (timer->timeout.dticks != _INACTIVE) {
+		if (!_is_inactive_timeout(&timer->timeout)) {
 			/* wait for timer to expire or stop */
 			(void)_pend_current_thread(key, &timer->wait_q, K_FOREVER);
 
