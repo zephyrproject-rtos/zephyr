@@ -67,6 +67,10 @@ arduino_serial: &uart3 {};
 	};
 };
 
+&lcdif1 {
+	status = "ok";
+};
+
 &i2c1 {
 	status = "ok";
 
