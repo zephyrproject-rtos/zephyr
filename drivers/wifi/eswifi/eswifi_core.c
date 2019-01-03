@@ -435,15 +435,9 @@ static int eswifi_mgmt_disconnect(struct device *dev)
 	return 0;
 }
 
-static int eswifi_mgmt_connect(struct device *dev,
+static int __eswifi_sta_config(struct eswifi_dev *eswifi,
 			       struct wifi_connect_req_params *params)
 {
-	struct eswifi_dev *eswifi = dev->driver_data;
-
-	LOG_DBG("");
-
-	eswifi_lock(eswifi);
-
 	memcpy(eswifi->sta.ssid, params->ssid, params->ssid_length);
 	eswifi->sta.ssid[params->ssid_length] = '\0';
 
@@ -458,13 +452,163 @@ static int eswifi_mgmt_connect(struct device *dev,
 		eswifi->sta.security = ESWIFI_SEC_WPA2_MIXED;
 		break;
 	default:
-		LOG_ERR("Unsupported security type %d", params->security);
-		eswifi_unlock(eswifi);
 		return -EINVAL;
 	}
 
-	eswifi->req = ESWIFI_REQ_CONNECT;
-	k_work_submit_to_queue(&eswifi->work_q, &eswifi->request_work);
+	if (params->channel == WIFI_CHANNEL_ANY) {
+		eswifi->sta.channel = 0;
+	} else {
+		eswifi->sta.channel = params->channel;
+	}
+
+	return 0;
+}
+
+static int eswifi_mgmt_connect(struct device *dev,
+			       struct wifi_connect_req_params *params)
+{
+	struct eswifi_dev *eswifi = dev->driver_data;
+	int err;
+
+	LOG_DBG("");
+
+	eswifi_lock(eswifi);
+
+	err = __eswifi_sta_config(eswifi, params);
+	if (!err) {
+		eswifi->req = ESWIFI_REQ_CONNECT;
+		k_work_submit_to_queue(&eswifi->work_q,
+				       &eswifi->request_work);
+	}
+
+	eswifi_unlock(eswifi);
+
+	return err;
+}
+
+#if defined(CONFIG_NET_IPV4)
+static int eswifi_mgmt_ap_enable(struct device *dev,
+				 struct wifi_connect_req_params *params)
+{
+	struct eswifi_dev *eswifi = dev->driver_data;
+	struct net_if_ipv4 *ipv4 = eswifi->iface->config.ip.ipv4;
+	struct net_if_addr *unicast = NULL;
+	int err = -EIO, i;
+
+	LOG_DBG("");
+
+	eswifi_lock(eswifi);
+
+	if (eswifi->role == ESWIFI_ROLE_AP) {
+		err = -EALREADY;
+		goto error;
+	}
+
+	err = __eswifi_sta_config(eswifi, params);
+	if (err) {
+		goto error;
+	}
+
+	/* security */
+	snprintf(eswifi->buf, sizeof(eswifi->buf), "A1=%u\r",
+		 eswifi->sta.security);
+	err = eswifi_at_cmd(eswifi, eswifi->buf);
+	if (err < 0) {
+		LOG_ERR("Unable to set Security");
+		goto error;
+	}
+
+	/* Passkey */
+	if (eswifi->sta.security != ESWIFI_SEC_OPEN) {
+		snprintf(eswifi->buf, sizeof(eswifi->buf), "A2=%s\r",
+			 eswifi->sta.pass);
+		err = eswifi_at_cmd(eswifi, eswifi->buf);
+		if (err < 0) {
+			LOG_ERR("Unable to set passkey");
+			goto error;
+		}
+	}
+
+	/* Set SSID (0=no MAC, 1=append MAC) */
+	snprintf(eswifi->buf, sizeof(eswifi->buf), "AS=0,%s\r",
+		 eswifi->sta.ssid);
+	err = eswifi_at_cmd(eswifi, eswifi->buf);
+	if (err < 0) {
+		LOG_ERR("Unable to set SSID");
+		goto error;
+	}
+
+	/* Set Channel */
+	snprintf(eswifi->buf, sizeof(eswifi->buf), "AC=%u\r",
+		 eswifi->sta.channel);
+	err = eswifi_at_cmd(eswifi, eswifi->buf);
+	if (err < 0) {
+		LOG_ERR("Unable to set Channel");
+		goto error;
+	}
+
+	/* Set IP Address */
+	for (i = 0; ipv4 && i < NET_IF_MAX_IPV4_ADDR; i++) {
+		if (ipv4->unicast[i].is_used) {
+			unicast = &ipv4->unicast[i];
+			break;
+		}
+	}
+
+	if (!unicast) {
+		LOG_ERR("No IPv4 assigned for AP mode");
+		err = -EADDRNOTAVAIL;
+		goto error;
+	}
+
+	snprintf(eswifi->buf, sizeof(eswifi->buf), "Z6=%s\r",
+		 net_sprint_ipv4_addr(&unicast->address.in_addr));
+	err = eswifi_at_cmd(eswifi, eswifi->buf);
+	if (err < 0) {
+		LOG_ERR("Unable to active access point");
+		goto error;
+	}
+
+	/* Enable AP */
+	snprintf(eswifi->buf, sizeof(eswifi->buf), "AD\r");
+	err = eswifi_at_cmd(eswifi, eswifi->buf);
+	if (err < 0) {
+		LOG_ERR("Unable to active access point");
+		goto error;
+	}
+
+	eswifi->role = ESWIFI_ROLE_AP;
+
+	eswifi_unlock(eswifi);
+	return 0;
+error:
+	eswifi_unlock(eswifi);
+	return err;
+}
+#else
+static int eswifi_mgmt_ap_enable(struct device *dev,
+				 struct wifi_connect_req_params *params)
+{
+	LOG_ERR("IPv4 requested for AP mode");
+	return -ENOTSUP;
+}
+#endif /* CONFIG_NET_IPV4 */
+
+static int eswifi_mgmt_ap_disable(struct device *dev)
+{
+	struct eswifi_dev *eswifi = dev->driver_data;
+	char cmd[] = "AE\r";
+	int err;
+
+	eswifi_lock(eswifi);
+
+	err = eswifi_at_cmd(eswifi, cmd);
+	if (err < 0) {
+		eswifi_unlock(eswifi);
+		return -EIO;
+	}
+
+	eswifi->role = ESWIFI_ROLE_CLIENT;
 
 	eswifi_unlock(eswifi);
 
@@ -520,6 +664,8 @@ static const struct net_wifi_mgmt_offload eswifi_offload_api = {
 	.scan		= eswifi_mgmt_scan,
 	.connect	= eswifi_mgmt_connect,
 	.disconnect	= eswifi_mgmt_disconnect,
+	.ap_enable	= eswifi_mgmt_ap_enable,
+	.ap_disable	= eswifi_mgmt_ap_disable,
 };
 
 NET_DEVICE_OFFLOAD_INIT(eswifi_mgmt, CONFIG_WIFI_ESWIFI_NAME,
