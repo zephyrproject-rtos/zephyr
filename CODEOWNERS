@@ -131,7 +131,7 @@ ext/hal/nxp/                             @MaureenHelm
 ext/hal/qmsi/                            @nashif
 ext/hal/st/stm32cube/                    @erwango
 ext/lib/crypto/mbedtls/                  @nashif
-ext/lib/crypto/tinycrypt/                @lpereira
+ext/lib/crypto/tinycrypt/                @ceolin
 include/adc.h                            @anangl
 include/arch/arc/                        @vonhust @ruuddw
 include/arch/arc/arch.h                  @andrewboie
@@ -238,10 +238,10 @@ subsys/usb/                              @jfischer-phytec-iot @finikorg
 tests/boards/native_posix/               @aescolar
 tests/bluetooth/                         @sjanc @jhedberg @Vudentz
 tests/posix/                             @nniranjhana
-tests/crypto/                            @lpereira @pswarnak
-tests/crypto/mbedtls/                    @nashif @lpereira
+tests/crypto/                            @ceolin
+tests/crypto/mbedtls/                    @nashif @ceolin
 tests/drivers/spi/                       @tbursztyka
-tests/kernel/                            @andrewboie @andyross @spoorthik @pswarnak @nniranjhana
+tests/kernel/                            @andrewboie @andyross @spoorthik @nniranjhana
 tests/net/                               @jukkar @tbursztyka @pfalcon
 tests/net/buf/                           @jukkar @jhedberg @tbursztyka @pfalcon
 tests/net/lib/                           @jukkar @tbursztyka @pfalcon
