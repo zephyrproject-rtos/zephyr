@@ -7,5 +7,7 @@ toolchain:
   - zephyr
   - gnuarmemb
   - xtools
+supported:
+  - netif:slip
 testing:
   default: true
