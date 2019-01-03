@@ -192,7 +192,7 @@ import sys
 import textwrap
 
 from kconfiglib import Symbol, Choice, MENU, COMMENT, MenuNode, \
-                       BOOL, STRING, INT, HEX, UNKNOWN, \
+                       BOOL, TRISTATE, STRING, INT, HEX, UNKNOWN, \
                        AND, OR, \
                        expr_str, expr_value, split_expr, \
                        standard_sc_expr_str, \
@@ -631,8 +631,8 @@ def menuconfig(kconf):
 
     _kconf = kconf
 
-    # Always prompt for save if the configuration file doesn't exist
-    _conf_changed = not kconf.load_config()
+    # Load existing configuration and set _conf_changed True if it is outdated
+    _conf_changed = _load_config()
 
     # Any visible items in the top menu?
     _show_all = False
@@ -677,6 +677,33 @@ def menuconfig(kconf):
     # Enter curses mode. _menuconfig() returns a string to print on exit, after
     # curses has been de-initialized.
     print(curses.wrapper(_menuconfig))
+
+def _load_config():
+    # Loads any existing .config file. See the Kconfig.load_config() docstring.
+    #
+    # Returns True if .config is missing or outdated. We always prompt for
+    # saving the configuration in that case.
+
+    if not _kconf.load_config() or _kconf.missing_syms:
+        # Either no .config, or assignments to undefined symbols in the
+        # existing .config (which would get removed when saving)
+        return True
+
+    for sym in _kconf.unique_defined_syms:
+        if sym.user_value is None:
+            if sym.config_string:
+                # Unwritten symbol
+                return True
+        elif sym.type in (BOOL, TRISTATE):
+            if sym.tri_value != sym.user_value:
+                # Written bool/tristate symbol, new value
+                return True
+        elif sym.str_value != sym.user_value:
+            # Written string/int/hex symbol, new value
+            return True
+
+    # No need to prompt for save
+    return False
 
 # Global variables used below:
 #
@@ -811,7 +838,7 @@ def _menuconfig(stdscr):
                     continue
 
             if _load_dialog():
-                _conf_changed = False
+                _conf_changed = True
 
         elif c in ("s", "S"):
             if _save_dialog(_kconf.write_config, standard_config_filename(),
