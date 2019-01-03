@@ -1122,21 +1122,19 @@ int net_frag_linear_copy(struct net_buf *dst, struct net_buf *src,
 			 u16_t offset, u16_t len);
 
 /**
- * @brief Copy len bytes from src starting from offset to dst buffer
+ * @brief Copy bytes from src packet starting at offset to linear buffer
  *
- * This routine assumes that dst is large enough to store @a len bytes
- * starting from offset at src.
+ * This routine behaves is a convenience wrapper for @ref net_buf_linearize .
  *
  * @param dst Destination buffer
- * @param dst_len Destination buffer max length
- * @param src Source buffer that may be fragmented
- * @param offset Starting point to copy from
+ * @param dst_len Destination buffer length
+ * @param src Source packet with fragmented net_buf chain
+ * @param offset Starting offset to copy from
  * @param len Number of bytes to copy
- * @return number of bytes copied if everything is ok
- * @return -ENOMEM on error
+ * @return number of bytes actually copied
  */
-int net_frag_linearize(u8_t *dst, size_t dst_len,
-		       struct net_pkt *src, u16_t offset, u16_t len);
+size_t net_frag_linearize(void *dst, size_t dst_len,
+			  struct net_pkt *src, size_t offset, size_t len);
 
 /**
  * @brief Compact the fragment list of a packet.
