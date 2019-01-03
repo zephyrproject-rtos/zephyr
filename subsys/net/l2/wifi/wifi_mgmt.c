@@ -124,3 +124,37 @@ void wifi_mgmt_raise_disconnect_result_event(struct net_if *iface, int status)
 					iface, &cnx_status,
 					sizeof(struct wifi_status));
 }
+
+static int wifi_ap_enable(u32_t mgmt_request, struct net_if *iface,
+			  void *data, size_t len)
+{
+	struct wifi_connect_req_params *params =
+		(struct wifi_connect_req_params *)data;
+	struct device *dev = net_if_get_device(iface);
+	struct net_wifi_mgmt_offload *off_api =
+		(struct net_wifi_mgmt_offload *) dev->driver_api;
+
+	if (off_api == NULL || off_api->ap_enable == NULL) {
+		return -ENOTSUP;
+	}
+
+	return off_api->ap_enable(dev, params);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_ENABLE, wifi_ap_enable);
+
+static int wifi_ap_disable(u32_t mgmt_request, struct net_if *iface,
+			  void *data, size_t len)
+{
+	struct device *dev = net_if_get_device(iface);
+	struct net_wifi_mgmt_offload *off_api =
+		(struct net_wifi_mgmt_offload *) dev->driver_api;
+
+	if (off_api == NULL || off_api->ap_enable == NULL) {
+		return -ENOTSUP;
+	}
+
+	return off_api->ap_disable(dev);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_DISABLE, wifi_ap_disable);
