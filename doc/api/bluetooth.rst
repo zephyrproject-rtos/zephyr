@@ -20,6 +20,12 @@ BR/EDR (Bluetooth Classic) APIs require :option:`CONFIG_BT_BREDR`.
    .. doxygengroup:: bluetooth
    .. doxygengroup:: bt_test_cb
 
+Bluetooth Controller
+********************
+
+.. doxygengroup:: bt_ctrl
+   :project: Zephyr
+
 Bluetooth Mesh Profile
 **********************
 
@@ -96,6 +102,18 @@ Generic Attribute Profile (GATT)
 ********************************
 
 .. doxygengroup:: bt_gatt
+   :project: Zephyr
+
+GATT Server
+===========
+
+.. doxygengroup:: bt_gatt_server
+   :project: Zephyr
+
+GATT Client
+===========
+
+.. doxygengroup:: bt_gatt_client
    :project: Zephyr
 
 HCI RAW channel
