@@ -43,8 +43,8 @@ These are registered using a call to ``settings_register()``.
 Persistence
 ***********
 
-Backend storage for the settings can be either FCB, a file in the filesystem,
-or both.
+Backend storage for the settings can be a Flash Circular Buffer (FCB)
+or a file in the filesystem.
 
 You can declare multiple sources for settings; settings from
 all of these are restored when ``settings_load()`` is called.
@@ -57,6 +57,18 @@ using ``settings_fcb_dst()``. As a side-effect,  ``settings_fcb_src()``
 initializes the FCB area, so it must be called before calling
 ``settings_fcb_dst()``. File read target is registered using
 ``settings_file_src()``, and write target by using ``settings_file_dst()``.
+
+Loading data from persisted storage
+***********************************
+
+A call to ``settings_load()`` uses an ``h_set`` implementation
+to load settings data from storage to volatile memory.
+For both FCB and filesystem back-end the most
+recent key values are guaranteed by traversing all stored content
+and (potentially) overwriting older key values with newer ones.
+After all data is loaded, the ``h_commit`` handler is issued,
+signalling the application that the settings were successfully
+retrieved.
 
 Example: Device Configuration
 *****************************
@@ -77,26 +89,23 @@ export functionality, for example, writing to the shell console).
         .h_export = foo_settings_export
     };
 
-    static int foo_settings_set(int argc, char **argv, char *val)
+    static int foo_settings_set(int argc, char **argv, void *value_ctx)
     {
         if (argc == 1) {
             if (!strcmp(argv[0], "bar")) {
-                return SETTINGS_VALUE_SET(val, SETTINGS_INT8, foo_val);
+                return settings_val_read_cb(value_ctx, &foo_val,
+                                            sizeof(foo_val));
             }
         }
 
         return -ENOENT;
     }
 
-    static int foo_settings_export(void (*storage_func)(char *name, char *val),
-                               enum settings_export_tgt tgt)
+    static int foo_settings_export(int (*storage_func)(const char *name,
+                                                       void *value,
+                                                       size_t val_len))
     {
-        char buf[4];
-
-        settings_str_from_value(SETTINGS_INT8, &foo_val, buf, sizeof(buf));
-        storage_func("foo/bar", buf)
-
-        return 0;
+        return storage_func("foo/bar", &foo_val, sizeof(foo_val));
     }
 
 Example: Persist Runtime State
@@ -120,11 +129,12 @@ up from where it was before restart.
         .h_set = foo_settings_set
     };
 
-    static int foo_settings_set(int argc, char **argv, char *val)
+    static int foo_settings_set(int argc, char **argv, void *value_ctx)
     {
         if (argc == 1) {
             if (!strcmp(argv[0], "bar")) {
-                return SETTINGS_VALUE_SET(val, SETTINGS_INT8, foo_val);
+                return settings_val_read_cb(value_ctx, &foo_val,
+                                            sizeof(foo_val));
             }
         }
 
@@ -134,11 +144,9 @@ up from where it was before restart.
     static void foo_callout(struct os_event *ev)
     {
         struct os_callout *c = (struct os_callout *)ev;
-        char buf[4];
 
         foo_val++;
-        settings_str_from_value(SETTINGS_INT8, &foo_val, buf, sizeof(buf));
-        settings_save_one("foo/bar", bar);
+        settings_save_one("foo/bar", &foo_val, sizeof(foo_val));
 
         k_sleep(1000);
         sys_reboot(SYS_REBOOT_COLD);
