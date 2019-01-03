@@ -3,6 +3,10 @@
 Power Management APIs
 #####################
 
+.. comment
+   not documenting
+   .. doxygengroup:: power_management_api
+
 Power Management Hook Interface
 *******************************
 
