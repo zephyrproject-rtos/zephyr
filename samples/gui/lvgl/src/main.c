@@ -23,7 +23,7 @@ void main(void)
 	lv_obj_t *hello_world_label;
 	lv_obj_t *count_label;
 
-	display_dev = device_get_binding("DISPLAY");
+	display_dev = device_get_binding(CONFIG_LVGL_DISPLAY_DEV_NAME);
 
 	if (display_dev == NULL) {
 		LOG_ERR("device not found.  Aborting test.");
