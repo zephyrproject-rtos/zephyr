@@ -32,6 +32,7 @@ enum display_pixel_format {
 	PIXEL_FORMAT_MONO01		= BIT(1), /* 0=Black 1=White */
 	PIXEL_FORMAT_MONO10		= BIT(2), /* 1=Black 0=White */
 	PIXEL_FORMAT_ARGB_8888		= BIT(3),
+	PIXEL_FORMAT_RGB_565		= BIT(4),
 };
 
 enum display_screen_info {
