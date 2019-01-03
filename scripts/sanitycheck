@@ -2111,11 +2111,17 @@ class TestSuite:
             mg.add_test_instance(i, options.extra_args)
         self.goals = mg.execute(cb, cb_context)
 
-        # Parallelize size calculation
-        executor = concurrent.futures.ThreadPoolExecutor(JOBS)
-        futures = [executor.submit(calc_one_elf_size, name, goal)
-                   for name, goal in self.goals.items()]
-        concurrent.futures.wait(futures)
+        if not options.disable_size_report:
+            # Parallelize size calculation
+            executor = concurrent.futures.ThreadPoolExecutor(JOBS)
+            futures = [executor.submit(calc_one_elf_size, name, goal)
+                       for name, goal in self.goals.items()]
+            concurrent.futures.wait(futures)
+        else:
+            for goal in self.goals.values():
+                goal.metrics["ram_size"] = 0
+                goal.metrics["rom_size"] = 0
+                goal.metrics["unrecognized"] = []
 
         return self.goals
 
@@ -2616,6 +2622,8 @@ def parse_arguments():
                         help="deprecated, left for compatibility")
     parser.add_argument("-Q", "--error-on-deprecations", action="store_false",
                         help="Error on deprecation warnings.")
+    parser.add_argument("--disable-size-report", action="store_true",
+                        help="Skip expensive computation of ram/rom segment sizes.")
 
     parser.add_argument(
         "-x", "--extra-args", action="append", default=[],
