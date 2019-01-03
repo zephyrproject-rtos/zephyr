@@ -338,7 +338,7 @@ enum net_verdict net_icmpv4_input(struct net_pkt *pkt, bool bcast)
 		return NET_DROP;
 	}
 
-	if (!icmp_hdr.chksum || net_calc_chksum_icmpv4(pkt) != 0) {
+	if (net_calc_chksum_icmpv4(pkt) != 0) {
 		NET_DBG("DROP: Invalid checksum");
 		goto drop;
 	}
