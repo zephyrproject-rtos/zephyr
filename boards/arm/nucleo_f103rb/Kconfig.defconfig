@@ -32,6 +32,13 @@ config SPI_1
 config SPI_2
 	default y
 
-endif
+endif # SPI
+
+if I2C
+
+config I2C_1
+	default y
+
+endif # I2C
 
 endif # BOARD_NUCLEO_F103RB
