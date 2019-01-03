@@ -568,7 +568,7 @@ class BinaryHandler(Handler):
                 generator_cmd = "ninja"
             else:
                 generator_cmd = "make"
-            command = [generator_cmd, "-C", self.outdir, "run"]
+            command = [generator_cmd, "run"]
         else:
             command = [self.binary]
 
@@ -580,8 +580,9 @@ class BinaryHandler(Handler):
                        ] + command
 
         verbose("Spawning process: " +
-                " ".join(shlex.quote(word) for word in command))
-        with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as proc:
+                " ".join(shlex.quote(word) for word in command) + os.linesep +
+                "Spawning process in directory: " + self.outdir)
+        with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.outdir) as proc:
             verbose("Spawning BinaryHandler Thread for %s" % self.name)
             t = threading.Thread(target=self._output_reader, args=(proc, harness, ))
             t.start()
