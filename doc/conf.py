@@ -64,6 +64,7 @@ extensions = [
     'zephyr.application',
     'zephyr.html_redirects',
     'only.eager_only',
+    'zephyr.doc_scope',
     'zephyr.link-roles'
 ]
 
@@ -416,6 +417,8 @@ linkcheck_timeout = 30
 linkcheck_workers = 10
 # linkcheck_ignore = [r'https://jira\.zephyrproject\.org/']
 linkcheck_anchors = False
+
+zephyr_doc_scope = None
 
 def setup(app):
    app.add_stylesheet("zephyr-custom.css")
