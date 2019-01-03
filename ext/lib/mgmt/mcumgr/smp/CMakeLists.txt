@@ -3,5 +3,5 @@ target_include_directories(MCUMGR INTERFACE
 )
 
 zephyr_library_sources(
-    smp/src/smp.c
+    src/smp.c
 )
