@@ -40,8 +40,6 @@ tests:
     extra_args: OVERLAY_CONFIG="overlay-ot.conf"
     tags: net openthread
     platform_whitelist: nrf52840_pca10056
-  test_kw41z:
-    platform_whitelist: frdm_kw41z
   test_kw41z_openthread:
     extra_args: OVERLAY_CONFIG="overlay-ot.conf"
     tags: net openthread
