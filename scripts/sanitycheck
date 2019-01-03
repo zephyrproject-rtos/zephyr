@@ -27,10 +27,10 @@ pairs:
     skip testcase unconditionally. This can be used for broken tests.
 
   slow: <True|False> (default False)
-    Don't run this test case unless --enable-slow was passed in on the
-    command line. Intended for time-consuming test cases that are only
-    run under certain circumstances, like daily builds. These test cases
-    are still compiled.
+    Don't build or run this test case unless --enable-slow was passed
+    in on the command line. Intended for time-consuming test cases
+    that are only run under certain circumstances, like daily
+    builds.
 
   extra_args: <list of extra arguments>
     Extra cache entries to pass to CMake when building or running the
@@ -156,6 +156,7 @@ To load arguments from a file, write '+' before the file name, e.g.,
 line break instead of white spaces.
 
 Most everyday users will run with no arguments.
+
 """
 
 import contextlib
@@ -1061,9 +1062,9 @@ class MakeGenerator:
         args.append("BOARD={}".format(ti.platform.name))
         args.extend(extra_args)
 
-        do_run_slow = options.enable_slow or not ti.test.slow
         do_build_only = ti.build_only or options.build_only
-        do_run = (not do_build_only) and do_run_slow
+        do_run = not do_build_only
+        skip_slow = ti.test.slow and not options.enable_slow
 
         # FIXME: Need refactoring and cleanup
         type = None
@@ -1079,7 +1080,10 @@ class MakeGenerator:
         elif options.device_testing and (not ti.build_only) and (not options.build_only):
             type = "device"
 
-        self.add_goal(ti, type, args)
+        if not skip_slow:
+            self.add_goal(ti, type, args)
+        else:
+            verbose("Skipping slow test: " + ti.name)
 
     def execute(self, callback_fn=None, context=None):
         """Execute all the registered build goals
