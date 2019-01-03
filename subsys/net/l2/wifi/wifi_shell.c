@@ -146,49 +146,62 @@ static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
 	}
 }
 
+static int __wifi_args_to_params(size_t argc, char *argv[],
+				struct wifi_connect_req_params *params)
+{
+	char *endptr;
+	int idx = 2;
+
+	if (argc < 2) {
+		return -EINVAL;
+	}
+
+	/* SSID */
+	params->ssid = argv[0];
+
+	/* SSID length */
+	params->ssid_length = strtol(argv[1], &endptr, 10);
+	if (*endptr != '\0' || params->ssid_length <= 2) {
+		return -EINVAL;
+	}
+
+	/* Channel (optional) */
+	if ((idx < argc) && (strlen(argv[idx]) <= 2)) {
+		params->channel = strtol(argv[idx], &endptr, 10);
+		if (*endptr != '\0') {
+			return -EINVAL;
+		}
+
+		if (params->channel == 0) {
+			params->channel = WIFI_CHANNEL_ANY;
+		}
+
+		idx++;
+	} else {
+		params->channel = WIFI_CHANNEL_ANY;
+	}
+
+	/* PSK (optional) */
+	if (idx < argc) {
+		params->psk = argv[idx];
+		params->psk_length = strlen(argv[idx]);
+		params->security = WIFI_SECURITY_TYPE_PSK;
+	} else {
+		params->security = WIFI_SECURITY_TYPE_NONE;
+	}
+
+	return 0;
+}
+
 static int cmd_wifi_connect(const struct shell *shell, size_t argc,
 			    char *argv[])
 {
 	struct net_if *iface = net_if_get_default();
 	static struct wifi_connect_req_params cnx_params;
-	char *endptr;
-	int idx = 3;
 
-	if (argc < 3) {
+	if (__wifi_args_to_params(argc - 1, &argv[1], &cnx_params)) {
 		shell_help(shell);
 		return -ENOEXEC;
-	}
-
-	cnx_params.ssid_length = strtol(argv[2], &endptr, 10);
-	if (*endptr != '\0' || cnx_params.ssid_length <= 2) {
-		shell_help(shell);
-		return -ENOEXEC;
-	}
-
-	cnx_params.ssid = argv[1];
-
-	if ((idx < argc) && (strlen(argv[idx]) <= 2)) {
-		cnx_params.channel = strtol(argv[idx], &endptr, 10);
-		if (*endptr != '\0') {
-			shell_help(shell);
-			return -ENOEXEC;
-		}
-
-		if (cnx_params.channel == 0) {
-			cnx_params.channel = WIFI_CHANNEL_ANY;
-		}
-
-		idx++;
-	} else {
-		cnx_params.channel = WIFI_CHANNEL_ANY;
-	}
-
-	if (idx < argc) {
-		cnx_params.psk = argv[idx];
-		cnx_params.psk_length = strlen(argv[idx]);
-		cnx_params.security = WIFI_SECURITY_TYPE_PSK;
-	} else {
-		cnx_params.security = WIFI_SECURITY_TYPE_NONE;
 	}
 
 	context.connecting = true;
@@ -254,6 +267,56 @@ static int cmd_wifi_scan(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_wifi_ap_enable(const struct shell *shell, size_t argc,
+			      char *argv[])
+{
+	struct net_if *iface = net_if_get_default();
+	static struct wifi_connect_req_params cnx_params;
+
+	if (__wifi_args_to_params(argc - 1, &argv[1], &cnx_params)) {
+		shell_help(shell);
+		return -ENOEXEC;
+	}
+
+	context.shell = shell;
+
+	if (net_mgmt(NET_REQUEST_WIFI_AP_ENABLE, iface,
+		     &cnx_params, sizeof(struct wifi_connect_req_params))) {
+		shell_fprintf(shell, SHELL_WARNING, "AP mode failed\n");
+		return -ENOEXEC;
+	} else {
+		shell_fprintf(shell, SHELL_NORMAL, "AP mode enabled\n");
+	}
+
+	return 0;
+}
+
+static int cmd_wifi_ap_disable(const struct shell *shell, size_t argc,
+			       char *argv[])
+{
+	struct net_if *iface = net_if_get_default();
+
+	if (net_mgmt(NET_REQUEST_WIFI_AP_DISABLE, iface, NULL, 0)) {
+		shell_fprintf(shell, SHELL_WARNING, "AP mode disable failed\n");
+
+		return -ENOEXEC;
+	} else {
+		shell_fprintf(shell, SHELL_NORMAL, "AP mode disabled\n");
+	}
+
+	return 0;
+}
+
+SHELL_CREATE_STATIC_SUBCMD_SET(wifi_cmd_ap)
+{
+	SHELL_CMD(enable, NULL, "<SSID> <SSID length> [channel] [PSK]",
+		  cmd_wifi_ap_enable),
+	SHELL_CMD(disable, NULL,
+		  "Disable Access Point mode",
+		  cmd_wifi_ap_disable),
+	SHELL_SUBCMD_SET_END
+};
+
 SHELL_CREATE_STATIC_SUBCMD_SET(wifi_commands)
 {
 	SHELL_CMD(connect, NULL,
@@ -264,6 +327,7 @@ SHELL_CREATE_STATIC_SUBCMD_SET(wifi_commands)
 	SHELL_CMD(disconnect, NULL, "Disconnect from Wifi AP",
 		  cmd_wifi_disconnect),
 	SHELL_CMD(scan, NULL, "Scan Wifi AP", cmd_wifi_scan),
+	SHELL_CMD(ap, &wifi_cmd_ap, "Access Point mode commands", NULL),
 	SHELL_SUBCMD_SET_END
 };
 
