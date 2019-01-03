@@ -278,6 +278,15 @@ function(construct_latex_pdf_target scope)
     DEPENDS ${TGT_NAME_LATEX}
   )
 
+  # On Windows system, this needs to be double-quoted.
+  # On other systems, double-quote makes this passed as one quoted string
+  # and being treated as one command argument. So use single quotes.
+  if(WIN32)
+    set(LATEXOPTS "-halt-on-error -no-shell-escape")
+  else()
+    set(LATEXOPTS '-halt-on-error -no-shell-escape')
+  endif()
+
   if(NOT ${LATEXMK} STREQUAL LATEXMK-NOTFOUND)
     if(DEFINED SPHINX_OUTPUT_DIR)
       # SPHINX_OUTPUT_DIR is used to specify exactly where HTML (or other
@@ -294,7 +303,7 @@ function(construct_latex_pdf_target scope)
       OUTPUT ${SPHINX_OUTPUT_DIR_LATEX}/${LATEXPDF_FILESTEM}.pdf
       DEPENDS ${TGT_NAME_LATEX_DOCS} ${SPHINX_OUTPUT_DIR_LATEX}/${LATEXPDF_FILESTEM}.tex
       COMMAND ${CMAKE_COMMAND} -E env
-      LATEXOPTS="-halt-on-error -no-shell-escape"
+      LATEXOPTS=${LATEXOPTS}
       ${LATEXMK} -quiet -pdf -dvi- -ps-
       WORKING_DIRECTORY ${SPHINX_OUTPUT_DIR_LATEX}
     )
