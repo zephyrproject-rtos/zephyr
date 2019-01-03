@@ -30,6 +30,7 @@
 #define BLOCK_ERASE_64K BIT(2)
 
 #define SPI_NOR_MAX_ADDR_WIDTH 4
+#define SECTORS_COUNT (KB(CONFIG_FLASH_SIZE) / CONFIG_SPI_NOR_SECTOR_SIZE)
 
 #define JEDEC_ID(x)		    \
 	{			    \
@@ -411,7 +412,7 @@ static const struct flash_driver_api spi_nor_api = {
 static const struct spi_nor_config flash_id = {
 	JEDEC_ID(CONFIG_SPI_NOR_JEDEC_ID),
 	CONFIG_SPI_NOR_PAGE_SIZE, CONFIG_SPI_NOR_SECTOR_SIZE,
-	CONFIG_SPI_NOR_SECTORS, CONFIG_SPI_NOR_BLOCK_ERASE_SIZE,
+	SECTORS_COUNT, CONFIG_SPI_NOR_BLOCK_ERASE_SIZE,
 };
 
 static struct spi_nor_data spi_nor_memory_data;
