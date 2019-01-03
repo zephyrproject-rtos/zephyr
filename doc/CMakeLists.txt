@@ -137,6 +137,18 @@ function(construct_kconfig_target scope)
     return()
   endif()
 
+  if("${scope}" STREQUAL "kernel")
+    set(SRC "${ZEPHYR_BASE}/doc/scopes/kernel.kconfig")
+
+    # A particular scope may use the whole kconfig tree
+    # if a custom one is not found
+    if(NOT EXISTS ${SRC})
+      set(SRC "Kconfig")
+    endif()
+  else()
+    set(SRC "Kconfig")
+  endif()
+
   add_custom_target(
     ${TGT_NAME_KCONFIG}
     COMMAND ${CMAKE_COMMAND} -E make_directory ${RST_OUT}/doc/reference/kconfig
@@ -149,7 +161,7 @@ function(construct_kconfig_target scope)
     SOC_DIR=soc/
     SRCARCH=x86
     KCONFIG_TURBO_MODE=${KCONFIG_TURBO_MODE}
-    ${PYTHON_EXECUTABLE} scripts/genrest.py Kconfig ${RST_OUT}/doc/reference/kconfig/
+    ${PYTHON_EXECUTABLE} scripts/genrest.py ${SRC} ${RST_OUT}/doc/reference/kconfig/
     WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
   )
 endfunction()
@@ -389,3 +401,7 @@ endfunction()
 # HTML, LaTeX and PDF targets for whole document
 construct_target("html" "" FALSE FALSE)
 construct_target("latexpdf" "" FALSE FALSE)
+
+# HTML, LaTeX and PDF targets for kernel only document
+construct_target("html" "kernel" FALSE FALSE)
+construct_target("latexpdf" "kernel" FALSE FALSE)

@@ -1,0 +1,22 @@
+{
+    'application':
+        {
+            'name': 'Application Development Primer',
+            'url' : 'https://docs.zephyrproject.org/latest/application/application.html'
+        },
+    'glossary':
+        {
+            'name': 'Glossary',
+            'url' : 'https://docs.zephyrproject.org/latest/glossary.html#glossary'
+        },
+    'zephyr_licensing':
+        {
+            'name': 'Licensing of Zephyr Project components',
+            'url' : 'https://docs.zephyrproject.org/latest/LICENSING.html'
+        },
+    'zephyr_release_notes':
+        {
+            'name': 'Release Notes',
+            'url' : 'https://docs.zephyrproject.org/latest/release-notes.html'
+        }
+}

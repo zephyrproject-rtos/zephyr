@@ -1,0 +1,18 @@
+#
+# kernel.kconfig
+#
+# including only the kconfig options needed for
+# kernel documentation
+#
+
+mainmenu "Zephyr Kernel Configuration"
+
+source "arch/Kconfig"
+
+source "kernel/Kconfig"
+
+# need for
+#   CONFIG_MULTI_LEVEL_INTERRUPTS
+#   CONFIG_2ND_LEVEL_INTERRUPTS
+#   CONFIG_3RD_LEVEL_INTERRUPTS
+source "drivers/interrupt_controller/Kconfig.multilevel"

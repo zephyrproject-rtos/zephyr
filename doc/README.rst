@@ -152,6 +152,12 @@ folder, here are the commands to generate the html content locally:
    # To generate PDF output, run ninja on the generated build system:
    ninja pdfdocs
 
+   # To generate HTML output for documentation related to core Kernel
+   ninja kernelhtmldocs
+
+   # To generate PDF output for documentation related to core Kernel
+   ninja kernelpdfdocs
+
 .. warning::
 
    The documentation build system creates copies in the build

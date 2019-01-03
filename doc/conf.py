@@ -59,6 +59,7 @@ except CalledProcessError as e:
 # ones.
 extensions = [
     'breathe', 'sphinx.ext.todo',
+    'sphinx.ext.ifconfig',
     'sphinx.ext.extlinks',
     'sphinx.ext.autodoc',
     'zephyr.application',
@@ -282,7 +283,10 @@ sourcelink_suffix = '.txt'
 #html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'zephyrdoc'
+if tags.has("kernel"):
+    htmlhelp_basename = 'zephyrkerneldoc'
+else:
+    htmlhelp_basename = 'zephyrdoc'
 
 
 # Custom added feature to allow redirecting old URLs
@@ -310,10 +314,16 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
-latex_documents = [
-  (master_doc, 'zephyr.tex', u'Zephyr Project Documentation',
-   u'many', 'manual'),
-]
+if tags.has("kernel"):
+    latex_documents = [
+      (master_doc, 'kernel.tex', u'Zephyr Project Kernel Documentation',
+       u'many', 'manual'),
+    ]
+else:
+    latex_documents = [
+      (master_doc, 'zephyr.tex', u'Zephyr Project Documentation',
+       u'many', 'manual'),
+    ]
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
@@ -339,10 +349,16 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [
-    (master_doc, 'zephyr', u'Zephyr Project Documentation',
-     [author], 1)
-]
+if tags.has("kernel"):
+    man_pages = [
+        (master_doc, 'kernel', u'Zephyr Project Kernel Documentation',
+         [author], 1)
+    ]
+else:
+    man_pages = [
+        (master_doc, 'zephyr', u'Zephyr Project Documentation',
+         [author], 1)
+    ]
 
 # If true, show URL addresses after external links.
 #man_show_urls = False
@@ -353,11 +369,18 @@ man_pages = [
 # Grouping the document tree into Texinfo files. List of tuples
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
-texinfo_documents = [
-  (master_doc, 'zephyr', u'Zephyr Project Documentation',
-   author, 'Zephyr', 'One line description of project.',
-   'Miscellaneous'),
-]
+if tags.has("kernel"):
+    texinfo_documents = [
+      (master_doc, 'kernel', u'Zephyr Project Kernel Documentation',
+       author, 'Zephyr', 'One line description of project.',
+       'Miscellaneous'),
+    ]
+else:
+    texinfo_documents = [
+      (master_doc, 'zephyr', u'Zephyr Project Documentation',
+       author, 'Zephyr', 'One line description of project.',
+       'Miscellaneous'),
+    ]
 
 # Documents to append as an appendix to all manuals.
 #texinfo_appendices = []
@@ -419,6 +442,8 @@ linkcheck_workers = 10
 linkcheck_anchors = False
 
 zephyr_doc_scope = None
+if tags.has("kernel"):
+    zephyr_doc_scope = "kernel"
 
 def setup(app):
    app.add_stylesheet("zephyr-custom.css")

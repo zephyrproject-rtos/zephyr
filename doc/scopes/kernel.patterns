@@ -1,0 +1,7 @@
+index.rst
+api/index.rst
+api/kernel_api.rst
+application/index.rst
+kernel/*
+reference/index.rst
+reference/kconfig/*
