@@ -346,7 +346,7 @@ static int spi_nor_configure(struct device *dev)
 
 	data->spi_cfg.frequency = DT_SPI_NOR_SPI_FREQ_0;
 	data->spi_cfg.operation = SPI_WORD_SET(8);
-	data->spi_cfg.slave = DT_SPI_NOR_SPI_SLAVE;
+	data->spi_cfg.slave = DT_SPI_NOR_SPI_SLAVE_ID;
 
 #if defined(CONFIG_SPI_NOR_GPIO_SPI_CS)
 	data->cs_ctrl.gpio_dev =
