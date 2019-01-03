@@ -52,6 +52,7 @@ struct eswifi_sta {
 	enum eswifi_security_type security;
 	char pass[65];
 	bool connected;
+	uint8_t channel;
 };
 
 struct eswifi_bus_ops;
