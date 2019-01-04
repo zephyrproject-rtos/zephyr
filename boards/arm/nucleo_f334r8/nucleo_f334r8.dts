@@ -60,7 +60,12 @@
 	pinctrl-names = "default";
 };
 
-&spi1 {
+arduino_i2c: &i2c1 {
+      status = "ok";
+      clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+arduino_spi: &spi1 {
 	status = "ok";
 };
 
