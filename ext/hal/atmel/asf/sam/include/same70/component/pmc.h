@@ -1015,6 +1015,9 @@ typedef union {
 #define PMC_SR_PCKRDY2_Pos                  10                                             /**< (PMC_SR) Programmable Clock Ready Status Position */
 #define PMC_SR_PCKRDY2_Msk                  (0x1U << PMC_SR_PCKRDY2_Pos)                   /**< (PMC_SR) Programmable Clock Ready Status Mask */
 #define PMC_SR_PCKRDY2                      PMC_SR_PCKRDY2_Msk                             /**< \deprecated Old style mask definition for 1 bit bitfield. Use PMC_SR_PCKRDY2_Msk instead */
+#define PMC_SR_PCKRDY3_Pos                  11                                             /**< (PMC_SR) Programmable Clock Ready Status Position */
+#define PMC_SR_PCKRDY3_Msk                  (0x1U << PMC_SR_PCKRDY3_Pos)                   /**< (PMC_SR) Programmable Clock Ready Status Mask */
+#define PMC_SR_PCKRDY3                      PMC_SR_PCKRDY3_Msk                             /**< \deprecated Old style mask definition for 1 bit bitfield. Use PMC_SR_PCKRDY3_Msk instead */
 #define PMC_SR_MOSCSELS_Pos                 16                                             /**< (PMC_SR) Main Clock Source Oscillator Selection Status Position */
 #define PMC_SR_MOSCSELS_Msk                 (0x1U << PMC_SR_MOSCSELS_Pos)                  /**< (PMC_SR) Main Clock Source Oscillator Selection Status Mask */
 #define PMC_SR_MOSCSELS                     PMC_SR_MOSCSELS_Msk                            /**< \deprecated Old style mask definition for 1 bit bitfield. Use PMC_SR_MOSCSELS_Msk instead */
