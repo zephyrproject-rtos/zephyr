@@ -42,7 +42,6 @@
 
 arduino_i2c: &i2c1 {};
 arduino_spi: &spi2 {};
-arduino_serial: &usart3 {};
 
 &i2c1 {
       status = "ok";
