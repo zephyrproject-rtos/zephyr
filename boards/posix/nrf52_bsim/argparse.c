@@ -179,8 +179,23 @@ void nrfbsim_argsparse(int argc, char *argv[], struct NRF_bsim_args_t *args)
 		}
 	}
 
-	bs_args_typical_dev_post_check((bs_basic_dev_args_t *)args, args_struct,
-					(char *)default_phy);
+	if (args->device_nbr == UINT_MAX) {
+		bs_args_print_switches_help(args_struct);
+		bs_trace_error_line("The command line option <device number> "
+				    "needs to be set\n");
+	}
+	if (args->global_device_nbr == UINT_MAX) {
+		args->global_device_nbr = args->device_nbr;
+		bs_trace_set_prefix_dev(args->global_device_nbr);
+	}
+	if (!args->s_id) {
+		bs_args_print_switches_help(args_struct);
+		bs_trace_error_line("The command line option <simulation ID> "
+				    "needs to be set\n");
+	}
+	if (!args->p_id) {
+		args->p_id = default_phy;
+	}
 
 	if (args->rseed == UINT_MAX) {
 		args->rseed = 0x1000 + args->device_nbr;
