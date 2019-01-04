@@ -17,6 +17,13 @@ config UART_2
 
 endif # UART_CONSOLE
 
+if I2C
+
+config I2C_1
+	default y
+
+endif # I2C
+
 if SPI
 
 config SPI_1

@@ -9,16 +9,16 @@ STM32 Nucleo-64 development board with STM32F334R8 MCU, supports Arduino and ST 
 
 The STM32 Nucleo board provides an affordable and flexible way for users to try out new concepts,
 and build prototypes with the STM32 microcontroller, choosing from the various
-combinations of performance, power consumption and features. 
+combinations of performance, power consumption and features.
 
 The Arduino* Uno V3 connectivity support and the ST morpho headers allow easy functionality
-expansion of the STM32 Nucleo open development platform with a wide choice of 
-specialized shields. 
+expansion of the STM32 Nucleo open development platform with a wide choice of
+specialized shields.
 
 The STM32 Nucleo board does not require any separate probe as it integrates the ST-LINK/V2-1
-debugger and programmer. 
+debugger and programmer.
 
-The STM32 Nucleo board comes with the STM32 comprehensive software HAL library together 
+The STM32 Nucleo board comes with the STM32 comprehensive software HAL library together
 with various packaged software examples.
 
 .. image:: img/nucleo_f334r8_board.jpg
@@ -118,10 +118,11 @@ Board connectors:
 Default Zephyr Peripheral Mapping:
 ----------------------------------
 
-- UART_1_TX : PA9
-- UART_1_RX : PA10
-- UART_2_TX : PA2
-- UART_2_RX : PA3
+- UART_1 TX/RX : PA9/PA10
+- UART_2 TX/RX : PA2/PA3 (ST-Link Virtual Port Com)
+- UART_3 TX/RX : PB10/PB11
+- I2C1 SCL/SDA : PB8/PB9 (Arduino I2C)
+- SPI1 CS/SCK/MISO/MOSI : PA4/PA5/PA6/PA7 (Arduino SPI)
 - PWM_1_CH1 : PA8
 - USER_PB   : PC13
 - LD2       : PA5
@@ -180,4 +181,3 @@ References
 
 .. _STM32 Nucleo-64 board User Manual:
    http://www.st.com/resource/en/user_manual/dm00105823.pdf
-
