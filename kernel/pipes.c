@@ -369,7 +369,7 @@ static bool pipe_xfer_prepare(sys_dlist_t      *xfer_list,
 		 * Add it to the transfer list.
 		 */
 		_unpend_thread(thread);
-		sys_dlist_append(xfer_list, &thread->base.qnode_dlist);
+		sys_dlist_append(xfer_list, &thread->base.qnode_dnode);
 	}
 
 	*waiter = (num_bytes > bytes_to_xfer) ? thread : NULL;

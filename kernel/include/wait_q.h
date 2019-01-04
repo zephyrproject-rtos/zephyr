@@ -43,7 +43,7 @@ static inline struct k_thread *_waitq_head(_wait_q_t *w)
 
 #define _WAIT_Q_FOR_EACH(wq, thread_ptr) \
 	SYS_DLIST_FOR_EACH_CONTAINER(&((wq)->waitq), thread_ptr, \
-				     base.qnode_dlist)
+				     base.qnode_dnode)
 
 static inline void _waitq_init(_wait_q_t *w)
 {

@@ -571,29 +571,29 @@ void _priq_dumb_add(sys_dlist_t *pq, struct k_thread *thread)
 
 	__ASSERT_NO_MSG(!_is_idle(thread));
 
-	SYS_DLIST_FOR_EACH_CONTAINER(pq, t, base.qnode_dlist) {
+	SYS_DLIST_FOR_EACH_CONTAINER(pq, t, base.qnode_dnode) {
 		if (_is_t1_higher_prio_than_t2(thread, t)) {
-			sys_dlist_insert_before(pq, &t->base.qnode_dlist,
-						&thread->base.qnode_dlist);
+			sys_dlist_insert_before(pq, &t->base.qnode_dnode,
+						&thread->base.qnode_dnode);
 			return;
 		}
 	}
 
-	sys_dlist_append(pq, &thread->base.qnode_dlist);
+	sys_dlist_append(pq, &thread->base.qnode_dnode);
 }
 
 void _priq_dumb_remove(sys_dlist_t *pq, struct k_thread *thread)
 {
 	__ASSERT_NO_MSG(!_is_idle(thread));
 
-	sys_dlist_remove(&thread->base.qnode_dlist);
+	sys_dlist_remove(&thread->base.qnode_dnode);
 }
 
 struct k_thread *_priq_dumb_best(sys_dlist_t *pq)
 {
 	sys_dnode_t *n = sys_dlist_peek_head(pq);
 
-	return CONTAINER_OF(n, struct k_thread, base.qnode_dlist);
+	return CONTAINER_OF(n, struct k_thread, base.qnode_dnode);
 }
 
 bool _priq_rb_lessthan(struct rbnode *a, struct rbnode *b)
@@ -663,7 +663,7 @@ void _priq_mq_add(struct _priq_mq *pq, struct k_thread *thread)
 {
 	int priority_bit = thread->base.prio - K_HIGHEST_THREAD_PRIO;
 
-	sys_dlist_append(&pq->queues[priority_bit], &thread->base.qnode_dlist);
+	sys_dlist_append(&pq->queues[priority_bit], &thread->base.qnode_dnode);
 	pq->bitmask |= (1 << priority_bit);
 }
 
@@ -671,7 +671,7 @@ void _priq_mq_remove(struct _priq_mq *pq, struct k_thread *thread)
 {
 	int priority_bit = thread->base.prio - K_HIGHEST_THREAD_PRIO;
 
-	sys_dlist_remove(&thread->base.qnode_dlist);
+	sys_dlist_remove(&thread->base.qnode_dnode);
 	if (sys_dlist_is_empty(&pq->queues[priority_bit])) {
 		pq->bitmask &= ~(1 << priority_bit);
 	}
@@ -686,7 +686,7 @@ struct k_thread *_priq_mq_best(struct _priq_mq *pq)
 	sys_dlist_t *l = &pq->queues[__builtin_ctz(pq->bitmask)];
 	sys_dnode_t *n = sys_dlist_peek_head(l);
 
-	return CONTAINER_OF(n, struct k_thread, base.qnode_dlist);
+	return CONTAINER_OF(n, struct k_thread, base.qnode_dnode);
 }
 
 int _unpend_all(_wait_q_t *wait_q)
