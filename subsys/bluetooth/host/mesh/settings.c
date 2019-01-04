@@ -997,7 +997,7 @@ static void store_pending_hb_pub(void)
 	if (pub->dst == BT_MESH_ADDR_UNASSIGNED) {
 		to_store = NULL;
 	} else {
-		val.indefinite = (pub->count = 0xffff);
+		val.indefinite = (pub->count == 0xffff);
 		val.dst = pub->dst;
 		val.period = pub->period;
 		val.ttl = pub->ttl;
