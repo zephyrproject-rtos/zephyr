@@ -76,26 +76,26 @@ int main(int argc, char *argv[])
 	nrf_hw_pre_init();
 	run_native_tasks(_NATIVE_PRE_BOOT_1_LEVEL);
 
-	struct NRF_bsim_args_t args;
+	struct NRF_bsim_args_t *args;
 
-	nrfbsim_argsparse(argc, argv, &args);
-	global_device_nbr = args.global_device_nbr;
+	args = nrfbsim_argsparse(argc, argv);
+	global_device_nbr = args->global_device_nbr;
 
 	bs_read_function_names_from_Tsymbols(argv[0]);
 
 	run_native_tasks(_NATIVE_PRE_BOOT_2_LEVEL);
 
 	bs_trace_raw(9, "%s: Connecting to phy...\n", __func__);
-	hwll_connect_to_phy(args.device_nbr, args.s_id, args.p_id);
+	hwll_connect_to_phy(args->device_nbr, args->s_id, args->p_id);
 	bs_trace_raw(9, "%s: Connected\n", __func__);
 
-	bs_random_init(args.rseed);
-	bs_dump_files_open(args.s_id, args.global_device_nbr);
+	bs_random_init(args->rseed);
+	bs_dump_files_open(args->s_id, args->global_device_nbr);
 
 	/* We pass to a possible testcase its command line arguments */
-	bst_pass_args(args.test_case_argc, args.test_case_argv);
+	bst_pass_args(args->test_case_argc, args->test_case_argv);
 
-	nrf_hw_initialize(&args.nrf_hw);
+	nrf_hw_initialize(&args->nrf_hw);
 
 	run_native_tasks(_NATIVE_PRE_BOOT_3_LEVEL);
 
