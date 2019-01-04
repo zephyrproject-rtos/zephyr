@@ -161,15 +161,22 @@ void nrfbsim_argsparse(int argc, char *argv[], struct NRF_bsim_args_t *args)
 			bs_trace_error_line("Bad error\n");
 		}
 	}
-
-	if ((args->s_id == NULL) && (args->device_nbr == UINT_MAX)) {
-		if (!nosim) {
-			print_no_sim_warning();
-		}
-
-		args->s_id = (char *)bogus_sim_id;
-		args->device_nbr = 0;
+	/**
+	 * If the user did not set the simulation id or device number
+	 * we assume he wanted to run with nosim (but warn him)
+	 */
+	if ((!nosim) && (args->s_id == NULL) && (args->device_nbr == UINT_MAX)) {
+		print_no_sim_warning();
+		nosim = true;
 		hwll_set_nosim(true);
+	}
+	if (nosim) {
+		if (args->s_id == NULL) {
+			args->s_id = (char *)bogus_sim_id;
+		}
+		if (args->device_nbr == UINT_MAX) {
+			args->device_nbr = 0;
+		}
 	}
 
 	bs_args_typical_dev_post_check((bs_basic_dev_args_t *)args, args_struct,
