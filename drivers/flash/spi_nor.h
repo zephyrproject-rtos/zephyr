@@ -16,7 +16,6 @@ struct spi_nor_config {
 	u32_t page_size;
 	u32_t sector_size;
 	u32_t n_sectors;
-	u32_t flag;
 };
 
 /* Status register bits */

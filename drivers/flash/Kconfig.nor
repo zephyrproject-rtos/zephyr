@@ -39,25 +39,4 @@ config SPI_NOR_SECTOR_SIZE
 	help
 	This option specifies sector size of SPI flash
 
-choice SPI_NOR_BLOCK_ERASE_SIZE
-prompt "Select Block size for erasing"
-
-config SPI_NOR_BLOCK_ERASE_32K
-	bool "Select 32K block erase"
-	help
-	This Enables 32K Block erase
-
-config SPI_NOR_BLOCK_ERASE_64K
-	bool "Select 64K block erase"
-	help
-	This Enables 64K Block erase
-
-endchoice
-
-config SPI_NOR_BLOCK_ERASE_SIZE
-	int
-	default 2 if SPI_NOR_BLOCK_ERASE_32K
-	default 4 if SPI_NOR_BLOCK_ERASE_64K
-	help
-	This option specifies block size of SPI flash
 endif # SPI_NOR
