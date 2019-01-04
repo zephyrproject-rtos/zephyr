@@ -2001,39 +2001,38 @@ const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *dst_iface,
 
 	if (!net_ipv6_is_ll_addr(dst) && !net_ipv6_is_addr_mcast(dst)) {
 
-		for (iface = __net_if_start;
-		     !dst_iface && iface != __net_if_end;
-		     iface++) {
-			struct in6_addr *addr;
-
-			addr = net_if_ipv6_get_best_match(iface, dst,
-							  &best_match);
-			if (addr) {
-				src = addr;
-			}
-		}
-
 		/* If caller has supplied interface, then use that */
 		if (dst_iface) {
 			src = net_if_ipv6_get_best_match(dst_iface, dst,
 							 &best_match);
-		}
+		} else {
+			for (iface = __net_if_start;
+			     iface != __net_if_end; iface++) {
+				struct in6_addr *addr;
 
-	} else {
-		for (iface = __net_if_start;
-		     !dst_iface && iface != __net_if_end;
-		     iface++) {
-			struct in6_addr *addr;
-
-			addr = net_if_ipv6_get_ll(iface, NET_ADDR_PREFERRED);
-			if (addr) {
-				src = addr;
-				break;
+				addr = net_if_ipv6_get_best_match(iface, dst,
+								  &best_match);
+				if (addr) {
+					src = addr;
+				}
 			}
 		}
 
+	} else {
 		if (dst_iface) {
 			src = net_if_ipv6_get_ll(dst_iface, NET_ADDR_PREFERRED);
+		} else {
+			for (iface = __net_if_start;
+			     iface != __net_if_end; iface++) {
+				struct in6_addr *addr;
+
+				addr = net_if_ipv6_get_ll(iface,
+							  NET_ADDR_PREFERRED);
+				if (addr) {
+					src = addr;
+					break;
+				}
+			}
 		}
 	}
 
@@ -2388,39 +2387,38 @@ const struct in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
 
 	if (!net_ipv4_is_ll_addr(dst) && !net_ipv4_is_addr_mcast(dst)) {
 
-		for (iface = __net_if_start;
-		     !dst_iface && iface != __net_if_end;
-		     iface++) {
-			struct in_addr *addr;
-
-			addr = net_if_ipv4_get_best_match(iface, dst,
-							  &best_match);
-			if (addr) {
-				src = addr;
-			}
-		}
-
 		/* If caller has supplied interface, then use that */
 		if (dst_iface) {
 			src = net_if_ipv4_get_best_match(dst_iface, dst,
 							 &best_match);
-		}
+		} else {
+			for (iface = __net_if_start;
+			     iface != __net_if_end; iface++) {
+				struct in_addr *addr;
 
-	} else {
-		for (iface = __net_if_start;
-		     !dst_iface && iface != __net_if_end;
-		     iface++) {
-			struct in_addr *addr;
-
-			addr = net_if_ipv4_get_ll(iface, NET_ADDR_PREFERRED);
-			if (addr) {
-				src = addr;
-				break;
+				addr = net_if_ipv4_get_best_match(iface, dst,
+								  &best_match);
+				if (addr) {
+					src = addr;
+				}
 			}
 		}
 
+	} else {
 		if (dst_iface) {
 			src = net_if_ipv4_get_ll(dst_iface, NET_ADDR_PREFERRED);
+		} else {
+			for (iface = __net_if_start;
+			     iface != __net_if_end; iface++) {
+				struct in_addr *addr;
+
+				addr = net_if_ipv4_get_ll(iface,
+							  NET_ADDR_PREFERRED);
+				if (addr) {
+					src = addr;
+					break;
+				}
+			}
 		}
 	}
 
