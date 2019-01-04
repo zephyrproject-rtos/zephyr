@@ -56,7 +56,7 @@ config USB_DC_SAM
 	help
 	  SAM family USB HS device controller Driver.
 
-config USB_NRF52840
+menuconfig USB_NRF52840
 	bool "Nordic Semiconductor nRF52840 USB Device Controller Driver"
 	default y
 	depends on SOC_NRF52840
@@ -65,6 +65,14 @@ config USB_NRF52840
 	select NRFX_USBD
 	help
 	  nRF52840 USB Device Controller Driver
+
+config USB_NRFX_EVT_QUEUE_SIZE
+	int "USBD event queue size"
+	default 32
+	depends on USB_NRF52840
+	help
+	  Size of the driver's internal event queue.
+	  Required size will depend on number of endpoints (class instances) in use.
 
 config USB_KINETIS
 	bool "Kinetis USB Device Controller Driver"
