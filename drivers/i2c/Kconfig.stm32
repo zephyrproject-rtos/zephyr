@@ -13,8 +13,8 @@ menuconfig I2C_STM32
 if I2C_STM32
 
 config I2C_STM32_V1
-	bool "STM32 V1 Driver (F1/F4X)"
-	depends on SOC_SERIES_STM32F1X || SOC_SERIES_STM32F4X
+	bool "STM32 V1 Driver (F1/F4X/L1X)"
+	depends on SOC_SERIES_STM32F1X || SOC_SERIES_STM32F4X || SOC_SERIES_STM32L1X
 	select HAS_DTS_I2C
 	select USE_STM32_LL_I2C
 	help
