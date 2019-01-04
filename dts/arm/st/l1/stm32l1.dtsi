@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <st/l1/stm32l1-pinctrl.dtsi>
 #include <arm/armv7-m.dtsi>
 #include <dt-bindings/clock/stm32_clock.h>
 
@@ -50,6 +51,13 @@
 			interrupts = <37 0>;
 			status = "disabled";
 			label = "UART_1";
+		};
+
+		pinctrl: pin-controller@40020000 {
+			compatible = "st,stm32-pinmux";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x40020000 0x2000>;
 		};
 
 		rcc: rcc@40023800 {
