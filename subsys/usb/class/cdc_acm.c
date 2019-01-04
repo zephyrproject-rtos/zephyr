@@ -218,6 +218,7 @@ struct cdc_acm_dev_data_t {
 	/* Callback function pointer/arg */
 	uart_irq_callback_user_data_t cb;
 	void *cb_data;
+	struct k_work cb_work;
 	/* Tx ready status. Signals when */
 	u8_t tx_ready;
 	u8_t rx_ready;                 /* Rx ready status */
@@ -309,7 +310,7 @@ static void cdc_acm_bulk_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 	k_sem_give(&poll_wait_sem);
 	/* Call callback only if tx irq ena */
 	if (dev_data->cb && dev_data->tx_irq_ena) {
-		dev_data->cb(dev_data->cb_data);
+		k_work_submit(&dev_data->cb_work);
 	}
 }
 
@@ -363,7 +364,7 @@ static void cdc_acm_bulk_out(u8_t ep,
 	dev_data->rx_ready = 1U;
 	/* Call callback only if rx irq ena */
 	if (dev_data->cb && dev_data->rx_irq_ena) {
-		dev_data->cb(dev_data->cb_data);
+		k_work_submit(&dev_data->cb_work);
 	}
 }
 
@@ -497,6 +498,25 @@ static void cdc_acm_baudrate_set(struct device *dev, u32_t baudrate)
 }
 
 /**
+ * @brief Call the IRQ function callback.
+ *
+ * This routine is called from the system work queue to signal an UART
+ * IRQ.
+ *
+ * @param work Address of work item.
+ *
+ * @return N/A.
+ */
+static void cdc_acm_irq_callback_work_handler(struct k_work *work)
+{
+	struct cdc_acm_dev_data_t *dev_data;
+
+	dev_data = CONTAINER_OF(work, struct cdc_acm_dev_data_t, cb_work);
+
+	dev_data->cb(dev_data->cb_data);
+}
+
+/**
  * @brief Initialize UART channel
  *
  * This routine is called to reset the chip in a quiescent state.
@@ -531,6 +551,7 @@ static int cdc_acm_init(struct device *dev)
 	}
 #endif
 	k_sem_init(&poll_wait_sem, 0, UINT_MAX);
+	k_work_init(&dev_data->cb_work, cdc_acm_irq_callback_work_handler);
 
 	return 0;
 }
@@ -627,8 +648,8 @@ static void cdc_acm_irq_tx_enable(struct device *dev)
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
 	dev_data->tx_irq_ena = 1U;
-	if (dev_data->tx_ready) {
-		dev_data->cb(dev_data->cb_data);
+	if (dev_data->cb && dev_data->tx_ready) {
+		k_work_submit(&dev_data->cb_work);
 	}
 }
 
@@ -676,8 +697,8 @@ static void cdc_acm_irq_rx_enable(struct device *dev)
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
 	dev_data->rx_irq_ena = 1U;
-	if (dev_data->rx_ready) {
-		dev_data->cb(dev_data->cb_data);
+	if (dev_data->cb && dev_data->rx_ready) {
+		k_work_submit(&dev_data->cb_work);
 	}
 }
 
