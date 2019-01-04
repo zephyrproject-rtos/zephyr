@@ -5,6 +5,7 @@
  */
 
 #include <arm/armv7-m.dtsi>
+#include <dt-bindings/clock/stm32_clock.h>
 
 / {
 	cpus {
@@ -24,6 +25,14 @@
 	};
 
 	soc {
+		rcc: rcc@40023800 {
+			compatible = "st,stm32-rcc";
+			clocks-controller;
+			#clock-cells = <2>;
+			reg = <0x40023800 0x400>;
+			label = "STM32_CLK_RCC";
+		};
+
 		flash-controller@40023c00 {
 			compatible = "st,stm32l1-flash-controller";
 			label = "FLASH_CTRL";
@@ -40,7 +49,6 @@
 				write-block-size = <4>;
 			};
 		};
-
 	};
 };
 
