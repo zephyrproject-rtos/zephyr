@@ -12,7 +12,7 @@
 
 #define DROP_MAX 99
 
-#if CONFIG_LOG_BACKEND_RTT_MODE_DROP
+#ifdef CONFIG_LOG_BACKEND_RTT_MODE_DROP
 
 #define DROP_MSG "\nmessages dropped:    \r"
 #define DROP_MSG_LEN (sizeof(DROP_MSG) - 1)

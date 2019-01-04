@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(log_backend_net, CONFIG_LOG_DEFAULT_LEVEL);
 /* Set this to 1 if you want to see what is being sent to server */
 #define DEBUG_PRINTING 0
 
-#if DEBUG_PRINTING
+#if defined(DEBUG_PRINTING) && (DEBUG_PRINTING != 0)
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
 #else
 #define DBG(fmt, ...)

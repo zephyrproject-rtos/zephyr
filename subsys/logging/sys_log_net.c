@@ -103,7 +103,7 @@ static void syslog_hook_net(const char *fmt, ...)
 
 	net_buf_add(frag, ret);
 
-#if DEBUG_PRINTING
+#if defined(DEBUG_PRINTING) && (DEBUG_PRINTING != 0)
 	{
 		static u32_t count;
 
@@ -168,7 +168,7 @@ void syslog_net_hook_install(void)
 		return;
 	}
 
-#if CONFIG_NET_HOSTNAME_ENABLE
+#ifdef CONFIG_NET_HOSTNAME_ENABLE
 	(void)memcpy(hostname, net_hostname_get(), MAX_HOSTNAME_LEN);
 #else /* CONFIG_NET_HOSTNAME_ENABLE */
 	if (server_addr.sa_family == AF_INET6) {
