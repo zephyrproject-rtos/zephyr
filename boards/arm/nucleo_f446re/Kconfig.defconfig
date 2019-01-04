@@ -24,4 +24,14 @@ config I2C_1
 
 endif # I2C
 
+if SPI
+
+config SPI_1
+	default y
+
+config SPI_STM32_INTERRUPT
+	default y
+
+endif # SPI
+
 endif # BOARD_NUCLEO_F446RE
