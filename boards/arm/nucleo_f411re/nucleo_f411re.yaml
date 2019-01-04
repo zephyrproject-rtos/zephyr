@@ -8,3 +8,8 @@ toolchain:
   - xtools
 supported:
   - rtc
+  - gpio
+  - spi
+  - i2c
+ram: 96
+flash: 512
