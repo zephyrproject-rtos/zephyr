@@ -117,15 +117,12 @@ Board connectors:
 Default Zephyr Peripheral Mapping:
 ----------------------------------
 
-- UART_1_TX : PB6
-- UART_1_RX : PB7
-- UART_2_TX : PA2
-- UART_2_RX : PA3
-- I2C_1_SCL : PB8
-- I2C_1_SDA : PB9
-- SPI_1_SCK : PA5
-- SPI_1_MISO : PA6
-- SPI_1_MOSI : PA7
+- UART_1 TX/RX : PB6/PB7
+- UART_2 TX/RX : PA2/PA3 (ST-Link Virtual Port Com)
+- I2C1 SCL/SDA : PB8/PB9 (Arduino I2C)
+- SPI1 SCK/MISO/MOSI : PA5/PA6/PA7 (Arduino SPI)
+- USER_PB   : PC13
+- LD2       : PA5
 
 For mode details please refer to `STM32 Nucleo-64 board User Manual`_.
 
@@ -179,4 +176,3 @@ References
 
 .. _STM32 Nucleo-64 board User Manual:
    http://www.st.com/resource/en/user_manual/dm00105823.pdf
-

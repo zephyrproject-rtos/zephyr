@@ -8,3 +8,7 @@ toolchain:
   - xtools
 ram: 20
 flash: 192
+supported:
+  - gpio
+  - i2c
+  - spi
