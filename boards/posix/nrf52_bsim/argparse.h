@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include "NRF_hw_args.h"
+#include "bs_cmd_line.h"
 #include "bs_cmd_line_typical.h"
 
 #ifdef __cplusplus
@@ -23,7 +24,8 @@ struct NRF_bsim_args_t {
 	nrf_hw_sub_args_t nrf_hw;
 };
 
-void nrfbsim_argsparse(int argc, char *argv[], struct NRF_bsim_args_t *args);
+struct NRF_bsim_args_t *nrfbsim_argsparse(int argc, char *argv[]);
+void bs_add_extra_dynargs(bs_args_struct_t *args_struct_toadd);
 
 #ifdef __cplusplus
 }
