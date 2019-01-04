@@ -60,6 +60,7 @@ static void log_backend_uart_init(void)
 
 static void panic(struct log_backend const *const backend)
 {
+	log_output_flush(&log_output);
 }
 
 static void dropped(const struct log_backend *const backend, u32_t cnt)

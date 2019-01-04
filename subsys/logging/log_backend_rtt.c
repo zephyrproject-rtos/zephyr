@@ -232,6 +232,7 @@ static void log_backend_rtt_init(void)
 
 static void panic(struct log_backend const *const backend)
 {
+	log_output_flush(&log_output);
 	panic_mode = 1;
 }
 

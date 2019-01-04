@@ -81,7 +81,7 @@ static void put(const struct log_backend *const backend,
 
 static void panic(struct log_backend const *const backend)
 {
-	/* Nothing to be done, this backend can always process logs */
+	log_output_flush(&log_output);
 }
 
 static void dropped(const struct log_backend *const backend, u32_t cnt)
