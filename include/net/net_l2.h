@@ -60,6 +60,24 @@ struct net_l2 {
 	int (*enable)(struct net_if *iface, bool state);
 
 	/**
+	 * This function is used to override the default interface IPv6 address
+	 * lookup when sending outgoing data to dst.
+	 * Returns NULL if best_so_far value cannot be beaten.
+	 */
+	struct in6_addr *(*get_best_match_ipv6)(struct net_if *iface,
+						const struct in6_addr *addr,
+						u8_t *best_so_far);
+
+	/**
+	 * This function is used to override the default interface IPv4 address
+	 * lookup when sending outgoing data to dst.
+	 * Returns NULL if best_so_far value cannot be beaten.
+	 */
+	struct in_addr *(*get_best_match_ipv4)(struct net_if *iface,
+					       const struct in_addr *addr,
+					       u8_t *best_so_far);
+
+	/**
 	 * Return L2 flags for the network interface.
 	 */
 	enum net_l2_flags (*get_flags)(struct net_if *iface);
@@ -103,6 +121,20 @@ NET_L2_DECLARE_PUBLIC(OPENTHREAD_L2);
 		.recv = (_recv_fn),					\
 		.send = (_send_fn),					\
 		.enable = (_enable_fn),					\
+		.get_flags = (_get_flags_fn),				\
+	}
+
+
+#define NET_L2_INIT_MATCH(_name, _recv_fn, _send_fn, _enable_fn,	\
+			  _get_best_match_ipv6_fn, _get_best_match_ipv4_fn, \
+			  _get_flags_fn)				\
+	const struct net_l2 (NET_L2_GET_NAME(_name)) __used		\
+	__attribute__((__section__(".net_l2.init"))) = {		\
+		.recv = (_recv_fn),					\
+		.send = (_send_fn),					\
+		.enable = (_enable_fn),					\
+		.get_best_match_ipv6 = (_get_best_match_ipv6_fn),	\
+		.get_best_match_ipv4 = (_get_best_match_ipv4_fn),	\
 		.get_flags = (_get_flags_fn),				\
 	}
 
