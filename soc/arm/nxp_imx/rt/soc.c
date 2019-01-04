@@ -36,11 +36,9 @@ const clock_usb_pll_config_t usb1PllConfig = {
 
 #ifdef CONFIG_ETH_MCUX_0
 const clock_enet_pll_config_t ethPllConfig = {
-	.enableClkOutput0 = true,
-	.enableClkOutput1 = false,
-	.enableClkOutput2 = false,
-	.loopDivider0 = 1,
-	.loopDivider1 = 1
+	.enableClkOutput = true,
+	.enableClkOutput25M = false,
+	.loopDivider = 1,
 };
 #endif
 
