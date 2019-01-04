@@ -292,16 +292,19 @@ struct shell_transport_api {
 	int (*uninit)(const struct shell_transport *transport);
 
 	/**
-	 * @brief Function for reconfiguring the transport to work in blocking
-	 * mode.
+	 * @brief Function for enabling transport in given TX mode.
 	 *
-	 * @param transport  Pointer to the transfer instance.
-	 * @param blocking   If true, the transport is enabled in blocking mode.
+	 * Function can be used to reconfigure TX to work in blocking mode.
+	 *
+	 * @param transport   Pointer to the transfer instance.
+	 * @param blocking_tx If true, the transport TX is enabled in blocking
+	 *		      mode.
 	 *
 	 * @return NRF_SUCCESS on successful enabling, error otherwise (also if
 	 * not supported).
 	 */
-	int (*enable)(const struct shell_transport *transport, bool blocking);
+	int (*enable)(const struct shell_transport *transport,
+		      bool blocking_tx);
 
 	/**
 	 * @brief Function for writing data to the transport interface.

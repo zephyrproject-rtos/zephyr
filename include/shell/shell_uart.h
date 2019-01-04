@@ -26,7 +26,7 @@ struct shell_uart_ctrl_blk {
 	shell_transport_handler_t handler;
 	void *context;
 	atomic_t tx_busy;
-	bool blocking;
+	bool blocking_tx;
 #ifdef CONFIG_MCUMGR_SMP_SHELL
 	struct smp_shell_data smp;
 #endif /* CONFIG_MCUMGR_SMP_SHELL */

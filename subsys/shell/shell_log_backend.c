@@ -18,10 +18,23 @@ int shell_log_backend_output_func(u8_t *data, size_t length, void *ctx)
 void shell_log_backend_enable(const struct shell_log_backend *backend,
 			      void *ctx, u32_t init_log_level)
 {
-	log_backend_enable(backend->backend, ctx, init_log_level);
-	log_output_ctx_set(backend->log_output, ctx);
+	int err = 0;
+
+	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {
+		const struct shell *shell;
+
+		shell = (const struct shell *)ctx;
+
+		/* Reenable transport in blocking mode */
+		err = shell->iface->api->enable(shell->iface, true);
+	}
+
+	if (err == 0) {
+		log_backend_enable(backend->backend, ctx, init_log_level);
+		log_output_ctx_set(backend->log_output, ctx);
 	backend->control_block->dropped_cnt = 0;
-	backend->control_block->state = SHELL_LOG_BACKEND_ENABLED;
+		backend->control_block->state = SHELL_LOG_BACKEND_ENABLED;
+	}
 }
 
 static struct log_msg *msg_from_fifo(const struct shell_log_backend *backend)
@@ -179,9 +192,10 @@ static void put(const struct log_backend *const backend, struct log_msg *msg)
 		}
 
 		break;
-
 	case SHELL_LOG_BACKEND_PANIC:
+		shell_cmd_line_erase(shell);
 		msg_process(shell->log_backend->log_output, msg, colors);
+
 		break;
 
 	case SHELL_LOG_BACKEND_DISABLED:
@@ -193,10 +207,66 @@ static void put(const struct log_backend *const backend, struct log_msg *msg)
 	}
 }
 
+static void put_sync_string(const struct log_backend *const backend,
+			    struct log_msg_ids src_level, u32_t timestamp,
+			    const char *fmt, va_list ap)
+{
+	const struct shell *shell = (const struct shell *)backend->cb->ctx;
+	u32_t key;
+	u32_t flags = LOG_OUTPUT_FLAG_LEVEL |
+		      LOG_OUTPUT_FLAG_TIMESTAMP |
+		      LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
+
+	if (IS_ENABLED(CONFIG_SHELL_VT100_COLORS)) {
+		flags |= LOG_OUTPUT_FLAG_COLORS;
+	}
+
+	key = irq_lock();
+	shell_cmd_line_erase(shell);
+	log_output_string(shell->log_backend->log_output, src_level, timestamp,
+			  fmt, ap, flags);
+	shell_print_prompt_and_cmd(shell);
+	irq_unlock(key);
+}
+
+static void put_sync_hexdump(const struct log_backend *const backend,
+			 struct log_msg_ids src_level, u32_t timestamp,
+			 const char *metadata, const u8_t *data, u32_t length)
+{
+	const struct shell *shell = (const struct shell *)backend->cb->ctx;
+	struct k_poll_signal *signal;
+	u32_t key;
+	u32_t flags = LOG_OUTPUT_FLAG_LEVEL |
+		      LOG_OUTPUT_FLAG_TIMESTAMP |
+		      LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
+
+	if (IS_ENABLED(CONFIG_SHELL_VT100_COLORS)) {
+		flags |= LOG_OUTPUT_FLAG_COLORS;
+	}
+
+	key = irq_lock();
+	shell_cmd_line_erase(shell);
+	log_output_hexdump(shell->log_backend->log_output, src_level, timestamp,
+			   metadata, data, length, flags);
+	irq_unlock(key);
+
+	/* Even though log message is handled notify shell thread which
+	 * will print command buffer after the log message.
+	 */
+	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+		signal = &shell->ctx->signals[SHELL_SIGNAL_LOG_MSG];
+		k_poll_signal_raise(signal, 0);
+	}
+}
+
 static void panic(const struct log_backend *const backend)
 {
 	const struct shell *shell = (const struct shell *)backend->cb->ctx;
 	int err;
+
+	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {
+		return;
+	}
 
 	err = shell->iface->api->enable(shell->iface, true);
 
@@ -230,7 +300,11 @@ static void dropped(const struct log_backend *const backend, u32_t cnt)
 }
 
 const struct log_backend_api log_backend_shell_api = {
-	.put = put,
+	.put = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ? NULL : put,
+	.put_sync_string = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ?
+			put_sync_string : NULL,
+	.put_sync_hexdump = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ?
+			put_sync_hexdump : NULL,
+	.dropped = dropped,
 	.panic = panic,
-	.dropped = dropped
 };

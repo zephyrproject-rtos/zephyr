@@ -180,18 +180,14 @@ static int uninit(const struct shell_transport *transport)
 	return 0;
 }
 
-static int enable(const struct shell_transport *transport, bool blocking)
+static int enable(const struct shell_transport *transport, bool blocking_tx)
 {
 	const struct shell_uart *sh_uart = (struct shell_uart *)transport->ctx;
 
-	sh_uart->ctrl_blk->blocking = blocking;
+	sh_uart->ctrl_blk->blocking_tx = blocking_tx;
 
-	if (blocking) {
-		if (!IS_ENABLED(CONFIG_SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN)) {
-			k_timer_stop(sh_uart->timer);
-		}
+	if (blocking_tx) {
 #ifdef CONFIG_SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
-		uart_irq_rx_disable(sh_uart->ctrl_blk->dev);
 		uart_irq_tx_disable(sh_uart->ctrl_blk->dev);
 #endif
 	}
@@ -218,7 +214,7 @@ static int write(const struct shell_transport *transport,
 	const u8_t *data8 = (const u8_t *)data;
 
 	if (IS_ENABLED(CONFIG_SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN) &&
-		!sh_uart->ctrl_blk->blocking) {
+		!sh_uart->ctrl_blk->blocking_tx) {
 		irq_write(sh_uart, data, length, cnt);
 	} else {
 		for (size_t i = 0; i < length; i++) {
