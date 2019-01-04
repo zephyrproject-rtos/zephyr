@@ -1035,14 +1035,16 @@ static void transport_evt_handler(enum shell_transport_evt evt_type, void *ctx)
 
 static void shell_log_process(const struct shell *shell)
 {
-	bool processed;
+	bool processed = false;
 	int signaled = 0;
 	int result;
 
 	do {
-		shell_cmd_line_erase(shell);
+		if (!IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {
+			shell_cmd_line_erase(shell);
 
-		processed = shell_log_backend_process(shell->log_backend);
+			processed = shell_log_backend_process(shell->log_backend);
+		}
 
 		struct k_poll_signal *signal =
 			&shell->ctx->signals[SHELL_SIGNAL_RXRDY];
@@ -1167,7 +1169,7 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 				  &shell->ctx->signals[i]);
 	}
 
-	err = shell_start(shell);
+	err = shell->iface->api->enable(shell->iface, false);
 	if (err != 0) {
 		return;
 	}
@@ -1175,6 +1177,12 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 	if (log_backend && IS_ENABLED(CONFIG_LOG)) {
 		shell_log_backend_enable(shell->log_backend, (void *)shell,
 					 log_level);
+	}
+
+	/* Enable shell and print prompt. */
+	err = shell_start(shell);
+	if (err != 0) {
+		return;
 	}
 
 	while (true) {
@@ -1251,15 +1259,8 @@ int shell_start(const struct shell *shell)
 	__ASSERT_NO_MSG(shell);
 	__ASSERT_NO_MSG(shell->ctx && shell->iface && shell->prompt);
 
-	int err;
-
 	if (shell->ctx->state != SHELL_STATE_INITIALIZED) {
 		return -ENOTSUP;
-	}
-
-	err = shell->iface->api->enable(shell->iface, false);
-	if (err != 0) {
-		return err;
 	}
 
 	if (IS_ENABLED(CONFIG_SHELL_VT100_COLORS)) {
