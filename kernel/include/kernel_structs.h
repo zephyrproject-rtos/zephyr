@@ -185,7 +185,7 @@ extern struct z_kernel _kernel;
 
 #include <kernel_arch_func.h>
 
-#if CONFIG_USE_SWITCH
+#ifdef CONFIG_USE_SWITCH
 /* This is a arch function traditionally, but when the switch-based
  * _Swap() is in use it's a simple inline provided by the kernel.
  */

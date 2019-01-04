@@ -214,7 +214,7 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #endif
 
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_POST_KERNEL);
-#if CONFIG_STACK_POINTER_RANDOM
+#if defined(CONFIG_STACK_POINTER_RANDOM) && (CONFIG_STACK_POINTER_RANDOM != 0)
 	z_stack_adjust_initialized = 1;
 #endif
 	if (boot_delay > 0) {
