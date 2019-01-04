@@ -8,5 +8,8 @@ toolchain:
   - xtools
 supported:
   - pwm
+  - gpio
+  - spi
+  - i2c
 ram: 96
 flash: 1024
