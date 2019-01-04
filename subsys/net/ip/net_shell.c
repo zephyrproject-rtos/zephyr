@@ -2452,7 +2452,7 @@ static int cmd_net_http_monitor(const struct shell *shell, size_t argc,
 #if defined(CONFIG_NET_DEBUG_HTTP_CONN) && defined(CONFIG_HTTP_SERVER)
 	PR_INFO("Activating HTTP monitor. Type \"net http\" "
 		"to disable HTTP connection monitoring.\n");
-	http_server_conn_monitor(http_server_cb, &count);
+	http_server_conn_monitor(http_server_cb, &http_monitor_count);
 #else
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
