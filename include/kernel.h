@@ -388,7 +388,7 @@ struct _thread_base {
 
 	/* this thread's entry in a ready/wait queue */
 	union {
-		sys_dlist_t qnode_dlist;
+		sys_dnode_t qnode_dlist;
 		struct rbnode qnode_rb;
 	};
 
