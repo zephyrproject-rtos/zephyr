@@ -591,9 +591,13 @@ void _priq_dumb_remove(sys_dlist_t *pq, struct k_thread *thread)
 
 struct k_thread *_priq_dumb_best(sys_dlist_t *pq)
 {
+	struct k_thread *t = NULL;
 	sys_dnode_t *n = sys_dlist_peek_head(pq);
 
-	return CONTAINER_OF(n, struct k_thread, base.qnode_dnode);
+	if (n != NULL) {
+		t = CONTAINER_OF(n, struct k_thread, base.qnode_dnode);
+	}
+	return t;
 }
 
 bool _priq_rb_lessthan(struct rbnode *a, struct rbnode *b)
@@ -648,9 +652,13 @@ void _priq_rb_remove(struct _priq_rb *pq, struct k_thread *thread)
 
 struct k_thread *_priq_rb_best(struct _priq_rb *pq)
 {
+	struct k_thread *t = NULL;
 	struct rbnode *n = rb_get_min(&pq->tree);
 
-	return CONTAINER_OF(n, struct k_thread, base.qnode_rb);
+	if (n != NULL) {
+		t = CONTAINER_OF(n, struct k_thread, base.qnode_rb);
+	}
+	return t;
 }
 
 #ifdef CONFIG_SCHED_MULTIQ
@@ -683,10 +691,14 @@ struct k_thread *_priq_mq_best(struct _priq_mq *pq)
 		return NULL;
 	}
 
+	struct k_thread *t = NULL;
 	sys_dlist_t *l = &pq->queues[__builtin_ctz(pq->bitmask)];
 	sys_dnode_t *n = sys_dlist_peek_head(l);
 
-	return CONTAINER_OF(n, struct k_thread, base.qnode_dnode);
+	if (n != NULL) {
+		t = CONTAINER_OF(n, struct k_thread, base.qnode_dnode);
+	}
+	return t;
 }
 
 int _unpend_all(_wait_q_t *wait_q)
