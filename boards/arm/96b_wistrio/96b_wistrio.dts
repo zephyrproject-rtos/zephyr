@@ -1,0 +1,60 @@
+/*
+ * Copyright (c) 2019 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/l1/stm32l151Xb.dtsi>
+
+/ {
+	model = "RAKWireless 96boards WisTrio board";
+	compatible = "rak,wistrio", "st,stm32l151";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led_0: led_0 {
+			gpios = <&gpioa 12 GPIO_INT_ACTIVE_LOW>;
+			label = "User LD1";
+		};
+		blue_led_0: led_1 {
+			gpios = <&gpiob 4 GPIO_INT_ACTIVE_LOW>;
+			label = "User LD2";
+		};
+	};
+
+	aliases {
+		led0 = &green_led_0;
+	};
+};
+
+&usart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_pins_b>;
+	pinctrl-names = "default";
+	status = "ok";
+};
+
+&usart3 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart3_pins_a>;
+	pinctrl-names = "default";
+	status = "ok";
+};
+
+&i2c1 {
+	status = "ok";
+
+	lis3dh@32 {
+		compatible = "st,lis3dh";
+		reg = <0x32>;
+		label = "LIS3DH";
+	};
+};
