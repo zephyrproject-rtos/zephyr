@@ -114,13 +114,13 @@ For mode details please refer to `STM32 Nucleo-64 board User Manual`_.
 Default Zephyr Peripheral Mapping:
 ----------------------------------
 
-- UART_1_TX : PB6
-- UART_1_RX : PB7
-- UART_2_TX : PA2
-- UART_2_RX : PA3
+- UART_1 TX/RX : PB6/PB7
+- UART_2 TX/RX : PA2/PA3 (ST-Link Virtual Port Com)
+- I2C1 SCL/SDA : PB8/PB9 (Arduino I2C)
+- SPI1 CS/SCK/MISO/MOSI : PA4/PA5/PA6/PA7 (Arduino SPI)
 - PWM_2_CH1 : PA0
-- USER_PB : PC13
-- LD2 : PA5
+- USER_PB   : PC13
+- LD2       : PA5
 
 System Clock
 ============
