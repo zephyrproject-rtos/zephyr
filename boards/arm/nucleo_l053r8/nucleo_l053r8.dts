@@ -53,11 +53,11 @@
 	status = "ok";
 };
 
-&i2c1 {
+arduino_i2c: &i2c1 {
 	status = "ok";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
-&spi1 {
+arduino_spi: &spi1 {
 	status = "ok";
 };
