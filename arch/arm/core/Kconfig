@@ -23,6 +23,7 @@ config CPU_CORTEX_M
 	select ARCH_HAS_STACK_PROTECTION if ARM_MPU || CPU_CORTEX_M_HAS_SPLIM
 	select ARCH_HAS_USERSPACE if ARM_MPU
 	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT if ARM_MPU && CPU_HAS_ARM_MPU && CPU_CORTEX_M7
+	select SWAP_NONATOMIC
 	help
 	  This option signifies the use of a CPU of the Cortex-M family.
 
