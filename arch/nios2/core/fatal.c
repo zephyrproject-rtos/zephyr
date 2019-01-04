@@ -184,7 +184,7 @@ FUNC_NORETURN void _Fault(const NANO_ESF *esf)
 		 >> NIOS2_EXCEPTION_REG_CAUSE_OFST;
 
 	printk("Exception cause: %d ECCFTL: 0x%x\n", cause, eccftl);
-#if CONFIG_EXTRA_EXCEPTION_INFO
+#ifdef CONFIG_EXTRA_EXCEPTION_INFO
 	printk("reason: %s\n", cause_str(cause));
 #endif
 	if (BIT(cause) & NIOS2_BADADDR_CAUSE_MASK) {

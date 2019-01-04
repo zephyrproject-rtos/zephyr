@@ -117,7 +117,7 @@ static void dump_stack(int *stack)
 		       (void *)bsa[-10], (void *)bsa[-9]);
 	}
 
-#if XCHAL_HAVE_LOOPS
+#if defined(XCHAL_HAVE_LOOPS) && (XCHAL_HAVE_LOOPS != 0)
 	printk(" ** LBEG %p LEND %p LCOUNT %p\n",
 	       (void *)bsa[BSA_LBEG_OFF/4],
 	       (void *)bsa[BSA_LEND_OFF/4],

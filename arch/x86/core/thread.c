@@ -71,7 +71,7 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	stack_buf = K_THREAD_STACK_BUFFER(stack);
 	_new_thread_init(thread, stack_buf, stack_size, priority, options);
 
-#if CONFIG_X86_USERSPACE
+#ifdef CONFIG_X86_USERSPACE
 	if ((options & K_USER) == 0) {
 		/* Running in kernel mode, kernel stack region is also a guard
 		 * page */
@@ -81,7 +81,7 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	}
 #endif /* CONFIG_X86_USERSPACE */
 
-#if CONFIG_X86_STACK_PROTECTION
+#ifdef CONFIG_X86_STACK_PROTECTION
 	_x86_mmu_set_flags(stack, MMU_PAGE_SIZE, MMU_ENTRY_NOT_PRESENT,
 			   MMU_PTE_P_MASK);
 #endif

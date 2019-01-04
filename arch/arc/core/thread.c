@@ -74,7 +74,7 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	char *stackAdjEnd;
 	struct init_stack_frame *pInitCtx;
 
-#if CONFIG_USERSPACE
+#ifdef CONFIG_USERSPACE
 /* adjust stack and stack size */
 #if CONFIG_ARC_MPU_VER == 2
 	stackSize = POW2_CEIL(STACK_SIZE_ALIGN(stackSize));

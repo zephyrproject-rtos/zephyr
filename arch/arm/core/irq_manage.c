@@ -88,7 +88,7 @@ void _irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
 	 * of priority levels reserved by the kernel.
 	 */
 
-#if CONFIG_ZERO_LATENCY_IRQS
+#ifdef CONFIG_ZERO_LATENCY_IRQS
 	/* If we have zero latency interrupts, those interrupts will
 	 * run at a priority level which is not masked by irq_lock().
 	 * Our policy is to express priority levels with special properties

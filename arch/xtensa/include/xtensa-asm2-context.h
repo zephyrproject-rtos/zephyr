@@ -62,7 +62,7 @@
  * original/interrupted stack pointer.
  */
 
-#if XCHAL_HAVE_LOOPS
+#if defined(XCHAL_HAVE_LOOPS) && (XCHAL_HAVE_LOOPS != 0)
 #define BASE_SAVE_AREA_SIZE 56
 #else
 #define BASE_SAVE_AREA_SIZE 44

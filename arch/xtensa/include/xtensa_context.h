@@ -73,7 +73,7 @@ STRUCT_FIELD(long, 4, XT_STK_,      a15)
 STRUCT_FIELD(long, 4, XT_STK_,      sar)
 STRUCT_FIELD(long, 4, XT_STK_, exccause)
 STRUCT_FIELD(long, 4, XT_STK_, excvaddr)
-#if XCHAL_HAVE_LOOPS
+#if defined(XCHAL_HAVE_LOOPS) && (XCHAL_HAVE_LOOPS != 0)
 STRUCT_FIELD(long, 4, XT_STK_,   lbeg)
 STRUCT_FIELD(long, 4, XT_STK_,   lend)
 STRUCT_FIELD(long, 4, XT_STK_, lcount)

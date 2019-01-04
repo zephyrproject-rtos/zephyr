@@ -102,7 +102,7 @@
 .macro ODD_REG_SAVE
 	rsr.SAR a0
 	s32i a0, a1, BSA_SAR_OFF
-#if XCHAL_HAVE_LOOPS
+#if defined(XCHAL_HAVE_LOOPS) && (XCHAL_HAVE_LOOPS != 0)
 	rsr.LBEG a0
 	s32i a0, a1, BSA_LBEG_OFF
 	rsr.LEND a0

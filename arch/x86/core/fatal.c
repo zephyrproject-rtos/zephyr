@@ -214,7 +214,7 @@ const NANO_ESF _default_esf = {
 	0xdeaddead, /* EFLAGS */
 };
 
-#if CONFIG_EXCEPTION_DEBUG
+#ifdef CONFIG_EXCEPTION_DEBUG
 
 static FUNC_NORETURN void generic_exc_handle(unsigned int vector,
 					     const NANO_ESF *pEsf)

@@ -16,7 +16,7 @@
 #include <kernel_structs.h>
 #include <sw_isr_table.h>
 
-#if XCHAL_HAVE_EXCEPTIONS
+#if defined(XCHAL_HAVE_EXCEPTIONS) && (XCHAL_HAVE_EXCEPTIONS != 0)
 static void unhandled_exception_trampoline(XtExcFrame *frame)
 {
 	FatalErrorHandler();

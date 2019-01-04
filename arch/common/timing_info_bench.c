@@ -19,7 +19,7 @@ u64_t  __end_drop_to_usermode_time;
 u32_t __read_swap_end_time_value;
 u64_t __common_var_swap_end_time;
 
-#if CONFIG_ARM
+#ifdef CONFIG_ARM
 #include <arch/arm/cortex_m/cmsis.h>
 #endif
 #ifdef CONFIG_NRF_RTC_TIMER

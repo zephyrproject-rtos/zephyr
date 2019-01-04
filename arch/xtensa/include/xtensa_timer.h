@@ -85,7 +85,7 @@
 #define XT_TIMER_INTNUM         EXTERNAL_TIMER_IRQ
 #endif /* USE_INTERNAL_TIMER || (EXTERNAL_TIMER_IRQ < 0) */
 
-#if USE_INTERNAL_TIMER
+#if defined(USE_INTERNAL_TIMER) && (USE_INTERNAL_TIMER != 0)
 #define XT_TIMER_INTPRI         XCHAL_INT_LEVEL(XT_TIMER_INTNUM)
 #else
 #define XT_TIMER_INTPRI         EXTERNAL_TIMER_IRQ_PRIORITY
@@ -130,7 +130,7 @@
  * "-DXT_TICK_PER_SEC=<value>" where <value> is a suitable number.
  */
 #ifndef XT_TICK_PER_SEC
-#if CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_TICKLESS_KERNEL
 #define XT_TICK_PER_SEC         1000	/* In tickless kernel 1TICK  = 1msec */
 #else
 #define XT_TICK_PER_SEC         CONFIG_SYS_CLOCK_TICKS_PER_SEC

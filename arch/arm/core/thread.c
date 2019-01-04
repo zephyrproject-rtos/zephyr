@@ -59,7 +59,7 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 	_ASSERT_VALID_PRIO(priority, pEntry);
 
-#if CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
+#ifdef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 	char *stackEnd = pStackMem + stackSize - MPU_GUARD_ALIGN_AND_SIZE;
 #else
 	char *stackEnd = pStackMem + stackSize;
@@ -73,7 +73,7 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	pInitCtx = (struct __esf *)(STACK_ROUND_DOWN(stackEnd -
 						     sizeof(struct __esf)));
 
-#if CONFIG_USERSPACE
+#ifdef CONFIG_USERSPACE
 	if ((options & K_USER) != 0) {
 		pInitCtx->pc = (u32_t)_arch_user_mode_enter;
 	} else {
@@ -96,7 +96,7 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	thread->callee_saved.psp = (u32_t)pInitCtx;
 	thread->arch.basepri = 0;
 
-#if CONFIG_USERSPACE
+#ifdef CONFIG_USERSPACE
 	thread->arch.mode = 0;
 	thread->arch.priv_stack_start = 0;
 #endif
