@@ -26,9 +26,6 @@
 #define MASK_32K 0x7FFF
 #define MASK_64K 0xFFFF
 
-#define BLOCK_ERASE_32K BIT(1)
-#define BLOCK_ERASE_64K BIT(2)
-
 #define SPI_NOR_MAX_ADDR_WIDTH 4
 #define SECTORS_COUNT (KB(CONFIG_FLASH_SIZE) / CONFIG_SPI_NOR_SECTOR_SIZE)
 
@@ -275,14 +272,16 @@ static int spi_nor_erase(struct device *dev, off_t addr, size_t size)
 			/* chip erase */
 			spi_nor_cmd_write(dev, SPI_NOR_CMD_CE);
 			size -= (params->sector_size * params->n_sectors);
-		} else if ((params->flag & BLOCK_ERASE_64K) && (size >= SZ_64K)
+		} else if ((FLASH_ERASE_BLOCK_SIZE == SZ_64K)
+			  && (size >= SZ_64K)
 			  && ((addr & MASK_64K) == 0)) {
 			/* 64 KiB block erase */
 			spi_nor_cmd_addr_write(dev, SPI_NOR_CMD_BE, addr,
 			NULL, 0);
 			addr += SZ_64K;
 			size -= SZ_64K;
-		} else if ((params->flag & BLOCK_ERASE_32K) && (size >= SZ_32K)
+		} else if ((FLASH_ERASE_BLOCK_SIZE == SZ_32K)
+			  && (size >= SZ_32K)
 			  && ((addr & MASK_32K) == 0)) {
 			/* 32 KiB block erase */
 			spi_nor_cmd_addr_write(dev, SPI_NOR_CMD_BE_32K, addr,
@@ -412,7 +411,7 @@ static const struct flash_driver_api spi_nor_api = {
 static const struct spi_nor_config flash_id = {
 	JEDEC_ID(CONFIG_SPI_NOR_JEDEC_ID),
 	CONFIG_SPI_NOR_PAGE_SIZE, CONFIG_SPI_NOR_SECTOR_SIZE,
-	SECTORS_COUNT, CONFIG_SPI_NOR_BLOCK_ERASE_SIZE,
+	SECTORS_COUNT,
 };
 
 static struct spi_nor_data spi_nor_memory_data;

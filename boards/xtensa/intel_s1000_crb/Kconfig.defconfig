@@ -167,10 +167,6 @@ config SPI_NOR_PAGE_SIZE
 config SPI_NOR_SECTOR_SIZE
 	default 4096
 
-choice SPI_NOR_BLOCK_ERASE_SIZE
-	default SPI_NOR_BLOCK_ERASE_64K
-endchoice
-
 config FLASH_HAS_PAGE_LAYOUT
 	def_bool y
 
