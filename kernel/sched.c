@@ -121,7 +121,17 @@ static bool should_preempt(struct k_thread *th, int preempt_ok)
 	}
 
 	/* Or if we're pended/suspended/dummy (duh) */
-	if (!_current || !_is_thread_ready(_current)) {
+	if (!_current || _is_thread_prevented_from_running(_current)) {
+		return true;
+	}
+
+	/* Edge case on ARM where a thread can be pended out of an
+	 * interrupt handler before the "synchronous" swap starts
+	 * context switching.  Platforms with atomic swap can never
+	 * hit this.
+	 */
+	if (IS_ENABLED(CONFIG_SWAP_NONATOMIC)
+	    && _is_thread_timeout_active(th)) {
 		return true;
 	}
 
