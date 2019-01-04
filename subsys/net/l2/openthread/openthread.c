@@ -277,6 +277,51 @@ exit:
 	return len;
 }
 
+static inline bool is_valid_ipv6_address(struct net_if_addr *addr)
+{
+	return (addr->is_used && addr->address.family == AF_INET6);
+}
+
+static struct in6_addr *
+openthread_get_best_match_ipv6(struct net_if *iface,
+			       const struct in6_addr *addr,
+			       u8_t *best_so_far)
+{
+	struct openthread_context *ot_context = net_if_l2_data(iface);
+	otMessageInfo messageInfo;
+	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
+	struct in6_addr *src = NULL;
+	int i;
+
+	memset(&messageInfo, 0, sizeof(messageInfo));
+	memcpy(&messageInfo.mPeerAddr, addr, sizeof(messageInfo.mPeerAddr));
+	messageInfo.mInterfaceId = OT_NETIF_INTERFACE_ID_THREAD;
+
+	if (otIp6SelectSourceAddress(ot_context->instance, &messageInfo)
+			!= OT_ERROR_NONE) {
+		return NULL;
+	}
+
+	/* This function is only used for unicast IP addresses.
+	 * Let's match the returned address an interface unicast address.
+	 */
+	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
+		if (!is_valid_ipv6_address(&ipv6->unicast[i])) {
+			continue;
+		}
+
+		if (!memcmp(&ipv6->unicast[i].address.in6_addr,
+			    (struct in6_addr *)&messageInfo.mSockAddr,
+			    sizeof(ipv6->unicast[i].address.in6_addr))) {
+			*best_so_far = 1;
+			src = &ipv6->unicast[i].address.in6_addr;
+			break;
+		}
+	}
+
+	return src;
+}
+
 enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface,
 					     struct net_buf *buf)
 {
@@ -352,5 +397,5 @@ static enum net_l2_flags openthread_flags(struct net_if *iface)
 	return NET_L2_MULTICAST;
 }
 
-NET_L2_INIT(OPENTHREAD_L2, openthread_recv, openthread_send,
-	    NULL, openthread_flags);
+NET_L2_INIT_MATCH(OPENTHREAD_L2, openthread_recv, openthread_send, NULL,
+		  openthread_get_best_match_ipv6, NULL, openthread_flags);
