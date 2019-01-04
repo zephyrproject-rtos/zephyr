@@ -27,7 +27,7 @@ void get_version_check(void *param)
 	status = osKernelGetInfo(&osv, infobuf, sizeof(infobuf));
 	if (status == osOK) {
 		version_i->os_info.api = osv.api;
-		version_i->os_info.api = osv.kernel;
+		version_i->os_info.kernel = osv.kernel;
 		strcpy(version_i->info, infobuf);
 	}
 }
