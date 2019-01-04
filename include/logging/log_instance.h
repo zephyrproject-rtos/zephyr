@@ -73,7 +73,7 @@ struct log_source_dynamic_data {
 #define LOG_INSTANCE_FULL_NAME(_module_name, _inst_name) \
 	UTIL_CAT(_module_name, UTIL_CAT(_, _inst_name))
 
-#if CONFIG_LOG_RUNTIME_FILTERING
+#ifdef CONFIG_LOG_RUNTIME_FILTERING
 #define LOG_INSTANCE_PTR_DECLARE(_name)	\
 	struct log_source_dynamic_data *_name
 

@@ -22,7 +22,7 @@ struct shell_history {
 	sys_dlist_t list;
 	sys_dnode_t *current;
 };
-#if CONFIG_SHELL_HISTORY
+#ifdef CONFIG_SHELL_HISTORY
 #define SHELL_HISTORY_DEFINE(_name, block_size, block_count)	\
 								\
 	K_MEM_SLAB_DEFINE(_name##_history_memslab,		\

@@ -19,7 +19,7 @@ extern "C" {
 #error "Logger does not support 64 bit architecture."
 #endif
 
-#if !CONFIG_LOG
+#ifndef CONFIG_LOG
 #define CONFIG_LOG_DEFAULT_LEVEL 0
 #define CONFIG_LOG_DOMAIN_ID 0
 #define CONFIG_LOG_MAX_LEVEL 0
@@ -349,7 +349,7 @@ extern "C" {
 
 #define LOG_FILTER_FIRST_BACKEND_SLOT_IDX 1
 
-#if CONFIG_LOG_RUNTIME_FILTERING
+#ifdef CONFIG_LOG_RUNTIME_FILTERING
 #define LOG_RUNTIME_FILTER(_filter) \
 	LOG_FILTER_SLOT_GET(&(_filter)->filters, LOG_FILTER_AGGR_SLOT_IDX)
 #else

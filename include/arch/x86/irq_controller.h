@@ -35,7 +35,7 @@
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
 
-#if CONFIG_X86_FIXED_IRQ_MAPPING
+#ifdef CONFIG_X86_FIXED_IRQ_MAPPING
 /**
  * @brief Return fixed mapping for an IRQ
  *

@@ -79,7 +79,7 @@
 #error "Invalid __ASSERT() level: must be between 0 and 2"
 #endif
 
-#if __ASSERT_ON
+#if defined(__ASSERT_ON) && (__ASSERT_ON != 0)
 #include <misc/printk.h>
 
 #if defined(CONFIG_ARCH_POSIX)

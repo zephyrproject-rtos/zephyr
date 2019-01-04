@@ -93,11 +93,11 @@ struct ipm_console_sender_config_info {
 	int flags;
 };
 
-#if CONFIG_IPM_CONSOLE_RECEIVER
+#ifdef CONFIG_IPM_CONSOLE_RECEIVER
 int ipm_console_receiver_init(struct device *d);
 #endif
 
-#if CONFIG_IPM_CONSOLE_SENDER
+#ifdef CONFIG_IPM_CONSOLE_SENDER
 int ipm_console_sender_init(struct device *d);
 #endif
 

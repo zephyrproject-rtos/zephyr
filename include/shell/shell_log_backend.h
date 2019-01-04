@@ -64,7 +64,7 @@ int shell_log_backend_output_func(u8_t *data, size_t length, void *ctx);
  *
  *  @param _name Shell name.
  */
-#if CONFIG_LOG
+#ifdef CONFIG_LOG
 #define SHELL_LOG_BACKEND_DEFINE(_name, _buf, _size, _queue_size, _timeout)  \
 	LOG_BACKEND_DEFINE(_name##_backend, log_backend_shell_api, false);   \
 	K_MSGQ_DEFINE(_name##_msgq, sizeof(struct shell_log_backend_msg),    \

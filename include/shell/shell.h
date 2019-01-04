@@ -344,7 +344,7 @@ struct shell_stats {
 	u32_t log_lost_cnt; /*!< Lost log counter.*/
 };
 
-#if CONFIG_SHELL_STATS
+#ifdef CONFIG_SHELL_STATS
 #define SHELL_STATS_DEFINE(_name) static struct shell_stats _name##_stats
 #define SHELL_STATS_PTR(_name) (&(_name##_stats))
 #else

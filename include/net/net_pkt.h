@@ -125,7 +125,7 @@ struct net_pkt {
 				     */
 		u8_t gptp_pkt: 1; /* For outgoing packet: is this packet
 				   * a GPTP packet.
-				   * Used only if defined (CONFIG_NET_GPTP)
+				   * Used only if defined(CONFIG_NET_GPTP)
 				   */
 	};
 

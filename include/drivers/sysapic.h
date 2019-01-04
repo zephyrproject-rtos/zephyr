@@ -33,7 +33,7 @@ void _jailhouse_eoi(void);
 
 static inline void __irq_controller_eoi(void)
 {
-#if CONFIG_EOI_FORWARDING_BUG
+#ifdef CONFIG_EOI_FORWARDING_BUG
 	_lakemont_eoi();
 #else
 	*(volatile int *)(CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI) = 0;
@@ -42,7 +42,7 @@ static inline void __irq_controller_eoi(void)
 
 #else /* _ASMLANGUAGE */
 
-#if CONFIG_EOI_FORWARDING_BUG
+#ifdef CONFIG_EOI_FORWARDING_BUG
 .macro __irq_controller_eoi_macro
 	call	_lakemont_eoi
 .endm

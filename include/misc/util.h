@@ -27,7 +27,7 @@
 #define POINTER_TO_INT(x)  ((s32_t) (x))
 #define INT_TO_POINTER(x)  ((void *) (x))
 
-#if !(defined (__CHAR_BIT__) && defined (__SIZEOF_LONG__))
+#if !(defined(__CHAR_BIT__) && defined(__SIZEOF_LONG__))
 #	error Missing required predefined macros for BITS_PER_LONG calculation
 #endif
 

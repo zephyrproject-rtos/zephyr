@@ -168,7 +168,7 @@ void log_backend_enable(struct log_backend const *const backend,
  */
 void log_backend_disable(struct log_backend const *const backend);
 
-#if CONFIG_LOG
+#ifdef CONFIG_LOG
 #define LOG_INIT() log_init()
 #define LOG_PANIC() log_panic()
 #define LOG_PROCESS() log_process(false)

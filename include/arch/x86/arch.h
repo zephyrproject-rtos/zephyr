@@ -174,7 +174,7 @@ typedef struct s_isrList {
  *
  * These macros are only intended to be used by IRQ_CONNECT() macro.
  */
-#if CONFIG_X86_FIXED_IRQ_MAPPING
+#ifdef CONFIG_X86_FIXED_IRQ_MAPPING
 #define _VECTOR_ARG(irq_p)	_IRQ_CONTROLLER_VECTOR_MAPPING(irq_p)
 #else
 #define _VECTOR_ARG(irq_p)	(-1)

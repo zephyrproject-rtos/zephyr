@@ -48,7 +48,7 @@ extern void _irq_priority_set(unsigned int irq, unsigned int prio,
 
 
 /* Flags for use with IRQ_CONNECT() */
-#if CONFIG_ZERO_LATENCY_IRQS
+#ifdef CONFIG_ZERO_LATENCY_IRQS
 /**
  * Set this interrupt up as a zero-latency IRQ. It has a fixed hardware
  * priority level (discarding what was supplied in the interrupt's priority
