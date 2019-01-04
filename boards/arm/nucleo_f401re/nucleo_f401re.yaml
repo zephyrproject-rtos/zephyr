@@ -8,5 +8,8 @@ toolchain:
 supported:
   - pwm
   - rtc
+  - gpio
+  - i2c
+  - spi
 ram: 96
 flash: 512
