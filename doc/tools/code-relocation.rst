@@ -1,19 +1,18 @@
 .. _code_data_relocation:
 
-Code data relocation
-####################
+Code And Data Relocation
+########################
 
 Overview
 ********
-This script will relocate .text, .rodata, .data, and .bss sections from
-required files and place them in the required memory region. The
-memory region and file are given to this python script in the form
-of a string. This script is always invoked from inside cmake.
+This feature will allow relocating .text, .rodata, .data, and .bss sections from
+required files and place them in the required memory region. The memory region
+and file are given to this python script in the form of a string. This script is
+always invoked from inside cmake.
 
-This script provides a robust way to re-order
-the memory contents without actually having to modify the code.
-In simple terms this script will do the job of
-``__attribute__((section("name")))`` for a bunch of files together.
+This script provides a robust way to re-order the memory contents without
+actually having to modify the code.  In simple terms this script will do the job
+of ``__attribute__((section("name")))`` for a bunch of files together.
 
 Details
 *******
@@ -25,20 +24,23 @@ An example of such a string is:
 This script is invoked with the following parameters:
 ``python3 gen_relocate_app.py -i input_string -o generated_linker -c generated_code``
 
-Kconfig :option:`CONFIG_CODE_DATA_RELOCATION` option,  when enabled in ``prj.conf``, will
-invoke the script and do the required relocation.
+Kconfig :option:`CONFIG_CODE_DATA_RELOCATION` option,  when enabled in
+``prj.conf``, will invoke the script and do the required relocation.
 
-This script also trigger the generation of ``linker_relocate.ld`` and ``code_relocation.c`` files.
-The ``linker_relocate.ld`` file creates appropriate sections and
-links the required functions or variables from all the selected files.
+This script also trigger the generation of ``linker_relocate.ld`` and
+``code_relocation.c`` files.  The ``linker_relocate.ld`` file creates
+appropriate sections and links the required functions or variables from all the
+selected files.
 
-**Note**:
-The text section is split into 2 parts in the main linker script. The first section
-will have some info regarding vector tables and other debug related info.
-The second section will have the complete text section.
-This is needed to force the required functions and data variables to the correct locations.
-This is due to the behavior of the linker. The linker will only link once and
-hence this text section had to be split to make room for the generated linker script.
+.. note::
+
+   The text section is split into 2 parts in the main linker script. The first
+   section will have some info regarding vector tables and other debug related
+   info.  The second section will have the complete text section.  This is
+   needed to force the required functions and data variables to the correct
+   locations.  This is due to the behavior of the linker. The linker will only
+   link once and hence this text section had to be split to make room for the
+   generated linker script.
 
 The ``code_relocation.c`` file has code that is needed for
 initializing data sections, and a copy of the text sections (if XIP).
@@ -57,18 +59,20 @@ for  data copy operations from ROM to required memory type.
   Where the first argument is the file/files and the second
   argument is the memory where it must be placed.
 
- .. note::
-    The file argument supports limited regular expressions.
-    function zephyr_code_relocate() can be called  as many times as required.
-    This step has to be performed before the inclusion of boilerplate.cmake.
+  .. note::
+
+     The file argument supports limited regular expressions.
+     function zephyr_code_relocate() can be called  as many times as required.
+     This step has to be performed before the inclusion of boilerplate.cmake.
 
 
 Additional Configurations
 =========================
-This section shows additional configuration options that can be set in ``CMakeLists.txt``
+This section shows additional configuration options that can be set in
+``CMakeLists.txt``
 
-* if the memory is SRAM1, SRAM2, CCD, or AON, then place the full object in the sections
-  for example:
+* if the memory is SRAM1, SRAM2, CCD, or AON, then place the full object in the
+  sections for example:
 
   .. code-block:: none
 
@@ -93,5 +97,6 @@ A sample showcasing this feature is provided at
 ``$ZEPHYR_BASE/samples/test_relocation/``
 
 This is an example of using the code relocation feature.
+
 This example will place .text, .data, .bss from 3 files to various parts in the SRAM
 using a custom linker file derived from ``include/arch/arm/cortex_m/scripts/linker.ld``
