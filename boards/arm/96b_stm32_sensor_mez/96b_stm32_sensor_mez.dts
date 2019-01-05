@@ -86,6 +86,30 @@
 	status = "ok";
 };
 
+&timers3 {
+	status = "ok";
+
+	pwm {
+		status = "ok";
+	};
+};
+
+&timers4 {
+	status = "ok";
+
+	pwm {
+		status = "ok";
+	};
+};
+
+&timers9 {
+	status = "ok";
+
+	pwm {
+		status = "ok";
+	};
+};
+
 &usart1 {
 	current-speed = <115200>;
 	pinctrl-0 = <&usart1_pins_b>;

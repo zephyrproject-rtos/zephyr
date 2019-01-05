@@ -71,6 +71,8 @@ hardware features:
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
+| PWM       | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
 
 The default board configuration can be found in the defconfig file:
 
@@ -134,6 +136,18 @@ the LSM6DS3H sensor. The default SPI mapping is:
 - SPI2_SCK  : PD3
 - SPI2_MISO : PB14
 - SPI2_MOSI : PB15
+
+PWM
+---
+96Boards STM32 Sensor Mezzanine board exposes 6 PWM channels on the Arduino
+connector. The default PWM mapping is:
+
+- PWM3_CH1  : PB4  : D9
+- PWM3_CH3  : PC8  : D3
+- PWM4_CH3  : PD14 : D6
+- PWM4_CH4  : PD15 : D5
+- PWM9_CH1  : PE5  : D12
+- PWM9_CH2  : PE6  : D11
 
 Programming and Debugging
 *************************
