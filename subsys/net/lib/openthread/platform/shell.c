@@ -31,16 +31,15 @@ int otConsoleOutputCallback(const char *aBuf, uint16_t aBufLength,
 	return aBufLength;
 }
 
+#define SHELL_HELP_OT	"OpenThread subcommands\n" \
+			"Use \"ot help\" to get the list of subcommands"
+
 static int ot_cmd(const struct shell *shell, size_t argc, char *argv[])
 {
 	char *buf_ptr = rx_buffer;
 	size_t buf_len = OT_SHELL_BUFFER_SIZE;
 	size_t arg_len = 0;
 	int i;
-
-	if (argc < 2) {
-		return -ENOEXEC;
-	}
 
 	for (i = 1; i < argc; i++) {
 		if (arg_len) {
@@ -70,13 +69,7 @@ static int ot_cmd(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
-SHELL_CREATE_STATIC_SUBCMD_SET(ot_commands)
-{
-	SHELL_CMD(cmd, NULL, "OpenThread command", ot_cmd),
-	SHELL_SUBCMD_SET_END
-};
-
-SHELL_CMD_REGISTER(ot, &ot_commands, "OpenThread commands", NULL);
+SHELL_CMD_ARG_REGISTER(ot, NULL, SHELL_HELP_OT, ot_cmd, 2, 255);
 
 void platformShellInit(otInstance *aInstance)
 {
