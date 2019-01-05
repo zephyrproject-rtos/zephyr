@@ -117,7 +117,7 @@
 			status = "disabled";
 		};
 
-		gpio@4000a400 {
+		gpio: gpio@4000a400 {
 			compatible = "silabs,efm32-gpio";
 			reg = <0x4000a400 0xf00>;
 			interrupts = <1 2 11 2>;

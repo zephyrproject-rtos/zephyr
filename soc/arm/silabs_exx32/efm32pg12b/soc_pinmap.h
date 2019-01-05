@@ -16,6 +16,21 @@
 #include <soc.h>
 #include <em_gpio.h>
 
+#ifdef CONFIG_GPIO_GECKO
+/* Serial Wire Output (SWO) */
+#if (DT_GPIO_GECKO_SWO_LOCATION == 0)
+#define PIN_SWO {gpioPortF, 2, gpioModePushPull, 1}
+#elif (DT_GPIO_GECKO_SWO_LOCATION == 1)
+#define PIN_SWO {gpioPortB, 13, gpioModePushPull, 1}
+#elif (DT_GPIO_GECKO_SWO_LOCATION == 2)
+#define PIN_SWO {gpioPortD, 15, gpioModePushPull, 1}
+#elif (DT_GPIO_GECKO_SWO_LOCATION == 3)
+#define PIN_SWO {gpioPortC, 11, gpioModePushPull, 1}
+#elif (DT_GPIO_GECKO_SWO_LOCATION >= 4)
+#error ("Invalid SWO pin location")
+#endif
+#endif /* CONFIG_GPIO_GECKO */
+
 #ifdef CONFIG_USART_GECKO_0
 #if (DT_SILABS_GECKO_USART_USART_0_GPIO_LOC == 0)
 #define PIN_USART0_TXD {gpioPortA, 0, gpioModePushPull, 1}
