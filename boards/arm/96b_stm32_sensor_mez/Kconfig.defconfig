@@ -43,4 +43,17 @@ config SPI_STM32_INTERRUPT
 
 endif # SPI
 
+if PWM
+
+config PWM_STM32_3
+	default y
+
+config PWM_STM32_4
+	default y
+
+config PWM_STM32_9
+	default y
+
+endif # PWM
+
 endif # BOARD_96B_STM32_SENSOR_MEZ
