@@ -19,12 +19,14 @@
 
 static char rx_buffer[OT_SHELL_BUFFER_SIZE];
 
+static const struct shell *shell_p;
+
 int otConsoleOutputCallback(const char *aBuf, uint16_t aBufLength,
 			    void *aContext)
 {
 	ARG_UNUSED(aContext);
 
-	printk("%s", aBuf);
+	shell_fprintf(shell_p, SHELL_NORMAL, "%s", aBuf);
 
 	return aBufLength;
 }
@@ -62,6 +64,7 @@ static int ot_cmd(const struct shell *shell, size_t argc, char *argv[])
 		buf_len -= arg_len;
 	}
 
+	shell_p = shell;
 	otCliConsoleInputLine(rx_buffer, OT_SHELL_BUFFER_SIZE - buf_len);
 
 	return 0;
