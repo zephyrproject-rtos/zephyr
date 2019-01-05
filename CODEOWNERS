@@ -41,6 +41,7 @@ boards/arm/96b_argonkey/                 @avisconti
 boards/arm/96b_carbon/                   @rsalveti @idlethread
 boards/arm/96b_nitrogen/                 @idlethread
 boards/arm/96b_neonkey/                  @Mani-Sadhasivam
+boards/arm/96b_stm32_sensor_mez/         @Mani-Sadhasivam
 boards/arm/cc3220sf_launchxl/            @GAnthony
 boards/arm/curie_ble/                    @jhedberg
 boards/arm/disco_l475_iot1/              @erwango
