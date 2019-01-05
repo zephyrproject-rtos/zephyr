@@ -1,7 +1,7 @@
 .. _porting:
 
-Porting Guides
-##############
+Porting
+#######
 
 This section contains details regarding porting the Zephyr kernel to new
 architectures, SoCs and boards. This section also describes the standard

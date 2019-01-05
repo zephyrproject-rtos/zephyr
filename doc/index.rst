@@ -50,13 +50,19 @@ Source code for the Zephyr Project is maintained in the Zephyr Project's
 
    introduction/introducing_zephyr.rst
    getting_started/getting_started.rst
-   application/index.rst
-   boards/boards.rst
+   contribute/index.rst
+   documentation/index.rst
+   application/application.rst
    kernel/kernel.rst
-   devices/index.rst
-   subsystems/subsystems.rst
-   contribute/contribute.rst
    security/security.rst
+   subsystems/subsystems.rst
+   devices/index.rst
+   tools/index.rst
+   porting/index.rst
+   samples/samples.rst
+   api/index.rst
+   boards/boards.rst
+   reference/index.rst
 
 .. only:: html
 
