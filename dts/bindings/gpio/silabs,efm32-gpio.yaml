@@ -31,4 +31,9 @@ properties:
       description: Human readable string describing the device (used by Zephyr for API name)
       generation: define
 
+    location-swo:
+      type: int
+      category: optional
+      description: Serial Wire Output (SWO) PIN location
+      generation: define
 ...
