@@ -28,7 +28,7 @@ The current net-app API implementation is still experimental and may change and
 improve in future releases.
 
 Initialization
-##############
+**************
 
 The net-app API provides a :cpp:func:`net_app_init()` function that can
 configure the networking subsystem for the application. The following
@@ -66,7 +66,7 @@ configuration options control this configuration:
   subsystem.
 
 Setup
-#####
+*****
 
 Various system level network configuration options can be added to the project
 configuration file. These settings are enabled by the
@@ -129,7 +129,7 @@ technology support is enabled.
   level can be changed at runtime if needed.
 
 Client / Server Applications
-############################
+****************************
 
 The net-app API provides functions that enable the application to create
 client / server applications easily. If needed, the applications can
