@@ -1,7 +1,7 @@
 .. _application:
 
-Application Development Primer
-##############################
+Application Development
+#######################
 
 .. note::
 

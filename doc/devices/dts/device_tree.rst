@@ -1,10 +1,10 @@
 .. _device-tree:
 
-Device Tree in Zephyr
-########################
+Device Tree
+###########
 
-Introduction to Device Tree
-***************************
+Introduction
+************
 
 Device tree is a way of describing hardware and configuration information
 for boards.  Device tree was adopted for use in the Linux kernel for the

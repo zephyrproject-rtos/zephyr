@@ -1,7 +1,7 @@
 .. _kconfig_tips_and_tricks:
 
-Kconfig tips and best practices
-###############################
+Kconfig - Tips and Best Practices
+#################################
 
 This page covers some Kconfig best practices and explains some Kconfig
 behaviors and features that might be cryptic or that are easily overlooked.
@@ -40,7 +40,7 @@ See the `optional prompts`_ section for a way to deal with settings that are
 fixed on some machines and configurable on other machines.
 
 
-Best practices for ``select`` statements
+``select`` statements
 ****************************************
 
 The ``select`` statement is used to force one symbol to ``y`` whenever another

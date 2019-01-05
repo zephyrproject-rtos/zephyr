@@ -1,10 +1,7 @@
 .. _api:
 
-API Documentation
-#################
-
-Welcome to the Zephyr Project's :abbr:`API (Application Programing Interface)`
-documentation.
+APIs
+####
 
 This section contains the API documentation automatically extracted from the
 code. If you are looking for a specific API, enter it on the search box.
