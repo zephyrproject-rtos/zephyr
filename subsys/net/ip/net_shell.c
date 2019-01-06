@@ -3033,10 +3033,11 @@ static inline void _remove_ipv6_ping_handler(void)
 
 static enum net_verdict _handle_ipv6_echo_reply(struct net_pkt *pkt)
 {
+	shell_command_enter(shell_for_ping);
 	PR_SHELL(shell_for_ping, "Received echo reply from %s to %s\n",
 		 net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src),
 		 net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->dst));
-
+	shell_command_exit(shell_for_ping);
 	k_sem_give(&ping_timeout);
 	_remove_ipv6_ping_handler();
 
@@ -3107,10 +3108,11 @@ static inline void _remove_ipv4_ping_handler(void)
 
 static enum net_verdict _handle_ipv4_echo_reply(struct net_pkt *pkt)
 {
+	shell_command_enter(shell_for_ping);
 	PR_SHELL(shell_for_ping, "Received echo reply from %s to %s\n",
 		 net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src),
 		 net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->dst));
-
+	shell_command_exit(shell_for_ping);
 	k_sem_give(&ping_timeout);
 	_remove_ipv4_ping_handler();
 
