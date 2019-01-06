@@ -1,4 +1,4 @@
-.. _documentation_guidelines:
+.. documenting_zephyr:
 
 Documentation Guidelines
 ########################
