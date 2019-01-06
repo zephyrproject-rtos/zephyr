@@ -1,7 +1,7 @@
 .. _zephyr_doc:
 
-Zephyr Documentation Generation
-###############################
+Documentation Generation
+########################
 
 These instructions will walk you through generating the Zephyr Project's
 documentation on your local system using the same documentation sources

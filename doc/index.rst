@@ -51,7 +51,6 @@ Source code for the Zephyr Project is maintained in the Zephyr Project's
    introduction/introducing_zephyr.rst
    getting_started/getting_started.rst
    contribute/index.rst
-   documentation/index.rst
    application/application.rst
    kernel/kernel.rst
    security/security.rst
@@ -59,6 +58,7 @@ Source code for the Zephyr Project is maintained in the Zephyr Project's
    devices/index.rst
    tools/index.rst
    porting/index.rst
+   documentation/index.rst
    samples/samples.rst
    api/index.rst
    boards/boards.rst

@@ -1,7 +1,7 @@
 .. _doc_guidelines:
 
-Documentation Guidelines for the Zephyr Project
-###############################################
+Documentation Guidelines
+########################
 
 Zephyr Project content is written using the `reStructuredText`_ markup
 language (.rst file extension) with Sphinx extensions, and processed
