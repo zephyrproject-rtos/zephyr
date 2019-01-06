@@ -69,7 +69,7 @@ master_doc = 'index'
 # General information about the project.
 project = u'Zephyr Project'
 copyright = u'2015-2019 Zephyr Project members and individual contributors'
-author = u'many'
+author = u'The Zephyr Project'
 
 # The following code tries to extract the information by reading the Makefile,
 # when Sphinx is run directly (e.g. by Read the Docs).
