@@ -187,12 +187,14 @@ include/toolchain.h                      @andrewboie @andyross
 include/toolchain/                       @andrewboie @andyross
 include/zephyr.h                         @andrewboie @andyross
 kernel/                                  @andrewboie @andyross
+lib/gui/                                 @vanwinkeljan
 lib/posix/                               @ramakrishnapallala @nniranjhana
 kernel/device.c                          @ramakrishnapallala @nashif
 kernel/idle.c                            @ramakrishnapallala @nashif
 samples/bluetooth/                       @sjanc @jhedberg @Vudentz
 samples/boards/quark_se_c1000/power*/    @ramakrishnapallala @nashif
 samples/display/                         @vanwinkeljan
+samples/gui/                             @vanwinkeljan
 samples/net/                             @jukkar @tbursztyka @pfalcon
 samples/net/dns_resolve/                 @jukkar @tbursztyka @pfalcon
 samples/net/http_server/                 @jukkar @tbursztyka
