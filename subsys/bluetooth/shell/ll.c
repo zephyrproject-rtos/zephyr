@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2018 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,7 @@
 
 #include <shell/shell.h>
 
+#include "../controller/util/memq.h"
 #include "../controller/include/ll.h"
 
 #include "bt.h"
@@ -118,8 +119,9 @@ int cmd_test_end(const struct shell *shell, size_t  argc, char *argv[])
 #endif /* CONFIG_BT_CTLR_DTM */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-#define ADV_INTERVAL 0x000020
-#define ADV_TYPE 0x05 /* Adv. Ext. */
+#include "../controller/ll_sw/ll_adv_aux.h"
+#include "../controller/ll_sw/lll.h"
+
 #define OWN_ADDR_TYPE 1
 #define PEER_ADDR_TYPE 0
 #define PEER_ADDR NULL
@@ -131,14 +133,23 @@ int cmd_test_end(const struct shell *shell, size_t  argc, char *argv[])
 #define ADV_SID 0
 #define SCAN_REQ_NOT 0
 
+#define AD_OP 0x03
+#define AD_FRAG_PREF 0x00
+#define AD_LEN 0x00
+#define AD_DATA NULL
+
 #define SCAN_INTERVAL 0x0004
 #define SCAN_WINDOW 0x0004
 #define SCAN_OWN_ADDR_TYPE 1
 #define SCAN_FILTER_POLICY 0
 
+#if defined(CONFIG_BT_BROADCASTER)
 int cmd_advx(const struct shell *shell, size_t argc, char *argv[])
 {
+	u16_t adv_interval = 0x20;
+	u16_t handle = 0;
 	u16_t evt_prop;
+	u8_t adv_type;
 	u8_t enable;
 	u8_t phy_p;
 	s32_t err;
@@ -150,10 +161,22 @@ int cmd_advx(const struct shell *shell, size_t argc, char *argv[])
 	if (argc > 1) {
 		if (!strcmp(argv[1], "on")) {
 			evt_prop = 0U;
+			adv_type = 0x05; /* Adv. Ext. */
+			enable = 1U;
+		} else if (!strcmp(argv[1], "hdcd")) {
+			handle = 0U;
+			evt_prop = 0U;
+			adv_type = 0x01; /* Directed */
+			adv_interval = 0U; /* High Duty Cycle */
+			phy_p = BIT(0);
+			enable = 1U;
+			goto do_enable;
+		} else if (!strcmp(argv[1], "ldcd")) {
+			evt_prop = 0U;
+			adv_type = 0x04; /* Directed */
 			enable = 1U;
 		} else if (!strcmp(argv[1], "off")) {
 			enable = 0U;
-			goto disable;
 		} else {
 			return -EINVAL;
 		}
@@ -168,8 +191,12 @@ int cmd_advx(const struct shell *shell, size_t argc, char *argv[])
 			evt_prop |= BIT(5);
 		} else if (!strcmp(argv[2], "txp")) {
 			evt_prop |= BIT(6);
+		} else if (!strcmp(argv[2], "ad")) {
 		} else {
-			return -EINVAL;
+			handle = strtoul(argv[2], NULL, 16);
+			if (handle >= CONFIG_BT_ADV_MAX) {
+				return -EINVAL;
+			}
 		}
 	}
 
@@ -178,21 +205,51 @@ int cmd_advx(const struct shell *shell, size_t argc, char *argv[])
 			evt_prop |= BIT(5);
 		} else if (!strcmp(argv[3], "txp")) {
 			evt_prop |= BIT(6);
+		} else if (!strcmp(argv[3], "ad")) {
 		} else {
-			return -EINVAL;
+			handle = strtoul(argv[3], NULL, 16);
+			if (handle >= CONFIG_BT_ADV_MAX) {
+				return -EINVAL;
+			}
 		}
 	}
 
 	if (argc > 4) {
 		if (!strcmp(argv[4], "txp")) {
 			evt_prop |= BIT(6);
+		} else if (!strcmp(argv[4], "ad")) {
 		} else {
+			handle = strtoul(argv[4], NULL, 16);
+			if (handle >= CONFIG_BT_ADV_MAX) {
+				return -EINVAL;
+			}
+		}
+	}
+
+	if (argc > 5) {
+		if (!strcmp(argv[5], "ad")) {
+		} else {
+			handle = strtoul(argv[5], NULL, 16);
+			if (handle >= CONFIG_BT_ADV_MAX) {
+				return -EINVAL;
+			}
+		}
+	}
+
+	if (argc > 6) {
+		handle = strtoul(argv[6], NULL, 16);
+		if (handle >= CONFIG_BT_ADV_MAX) {
 			return -EINVAL;
 		}
 	}
 
+	if (!enable) {
+		goto disable;
+	}
+
+do_enable:
 	shell_print(shell, "adv param set...");
-	err = ll_adv_params_set(0x00, evt_prop, ADV_INTERVAL, ADV_TYPE,
+	err = ll_adv_params_set(handle, evt_prop, adv_interval, adv_type,
 				OWN_ADDR_TYPE, PEER_ADDR_TYPE, PEER_ADDR,
 				ADV_CHAN_MAP, FILTER_POLICY, ADV_TX_PWR,
 				phy_p, ADV_SEC_SKIP, ADV_PHY_S, ADV_SID,
@@ -203,7 +260,7 @@ int cmd_advx(const struct shell *shell, size_t argc, char *argv[])
 
 disable:
 	shell_print(shell, "adv enable (%u)...", enable);
-	err = ll_adv_enable(enable);
+	err = ll_adv_enable(handle, enable);
 	if (err) {
 		goto exit;
 	}
@@ -213,7 +270,9 @@ exit:
 
 	return 0;
 }
+#endif /* CONFIG_BT_BROADCASTER */
 
+#if defined(CONFIG_BT_OBSERVER)
 int cmd_scanx(const struct shell *shell, size_t  argc, char *argv[])
 {
 	u8_t type = 0U;
@@ -269,4 +328,5 @@ exit:
 
 	return err;
 }
+#endif /* CONFIG_BT_OBSERVER */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */

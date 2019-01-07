@@ -48,6 +48,7 @@ static struct bt_conn *pairing_conn;
 
 #define NAME_LEN 30
 
+#if defined(CONFIG_BT_OBSERVER)
 static bool data_cb(struct bt_data *data, void *user_data)
 {
 	char *name = user_data;
@@ -76,6 +77,7 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t evtype,
 	shell_print(ctx_shell, "[DEVICE]: %s, AD evt type %u, RSSI %i %s",
 	      le_addr, evtype, rssi, name);
 }
+#endif /* CONFIG_BT_OBSERVER */
 
 #if !defined(CONFIG_BT_CONN)
 #if 0 /* FIXME: Add support for changing prompt */
@@ -226,6 +228,7 @@ static struct bt_conn_cb conn_callbacks = {
 };
 #endif /* CONFIG_BT_CONN */
 
+#if defined(CONFIG_BT_BREDR) || defined(CONFIG_BT_CONN)
 static int char2hex(const char *c, u8_t *x)
 {
 	if (*c >= '0' && *c <= '9') {
@@ -275,6 +278,7 @@ int str2bt_addr(const char *str, bt_addr_t *addr)
 	return hexstr2array(str, addr->val, 6);
 }
 
+#if defined(CONFIG_BT_CONN)
 static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
 {
 	int err;
@@ -294,6 +298,8 @@ static int str2bt_addr_le(const char *str, const char *type, bt_addr_le_t *addr)
 
 	return 0;
 }
+#endif /* CONFIG_BT_CONN */
+#endif /* CONFIG_BT_BREDR || CONFIG_BT_CONN */
 
 static void bt_ready(int err)
 {
@@ -534,6 +540,7 @@ static int cmd_id_select(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
+#if defined(CONFIG_BT_OBSERVER)
 static int cmd_active_scan_on(const struct shell *shell, int dups)
 {
 	int err;
@@ -634,7 +641,9 @@ static int cmd_scan(const struct shell *shell, size_t argc, char *argv[])
 
 	return 0;
 }
+#endif /* CONFIG_BT_OBSERVER */
 
+#if defined(CONFIG_BT_BROADCASTER)
 static const struct bt_data ad_discov[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 };
@@ -706,7 +715,51 @@ fail:
 	return -ENOEXEC;
 }
 
-#if defined(CONFIG_BT_CONN)
+#if defined(CONFIG_BT_PERIPHERAL)
+static int cmd_directed_adv(const struct shell *shell,
+			     size_t argc, char *argv[])
+{
+	int err;
+	bt_addr_le_t addr;
+	struct bt_conn *conn;
+	struct bt_le_adv_param *param = BT_LE_ADV_CONN_DIR;
+
+	err = str2bt_addr_le(argv[1], argv[2], &addr);
+	if (err) {
+		shell_error(shell, "Invalid peer address (err %d)", err);
+		return err;
+	}
+
+	if (argc == 3) {
+		goto connect;
+	}
+
+	if (strcmp(argv[3], "low")) {
+		shell_help(shell);
+		/* shell returns 1 when help is printed */
+		return 1;
+	}
+
+	param = BT_LE_ADV_CONN_DIR_LOW_DUTY;
+
+connect:
+	conn = bt_conn_create_slave_le(&addr, param);
+	if (!conn) {
+		shell_error(shell, "Failed to start directed advertising");
+		return -ENOEXEC;
+	} else {
+		shell_print(shell, "Started directed advertising");
+
+		/* unref connection obj in advance as app user */
+		bt_conn_unref(conn);
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_PERIPHERAL */
+#endif /* CONFIG_BT_BROADCASTER */
+
+#if defined(CONFIG_BT_CENTRAL)
 static int cmd_connect_le(const struct shell *shell, size_t argc, char *argv[])
 {
 	int err;
@@ -735,6 +788,34 @@ static int cmd_connect_le(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_auto_conn(const struct shell *shell, size_t argc, char *argv[])
+{
+	bt_addr_le_t addr;
+	int err;
+
+	err = str2bt_addr_le(argv[1], argv[2], &addr);
+	if (err) {
+		shell_error(shell, "Invalid peer address (err %d)", err);
+		return err;
+	}
+
+	if (argc < 4) {
+		return bt_le_set_auto_conn(&addr, BT_LE_CONN_PARAM_DEFAULT);
+	} else if (!strcmp(argv[3], "on")) {
+		return bt_le_set_auto_conn(&addr, BT_LE_CONN_PARAM_DEFAULT);
+	} else if (!strcmp(argv[3], "off")) {
+		return bt_le_set_auto_conn(&addr, NULL);
+	} else {
+		shell_help(shell);
+		/* shell returns 1 when help is printed */
+		return 1;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_CENTRAL */
+
+#if defined(CONFIG_BT_CONN)
 static int cmd_disconnect(const struct shell *shell, size_t argc, char *argv[])
 {
 	struct bt_conn *conn;
@@ -773,73 +854,6 @@ static int cmd_disconnect(const struct shell *shell, size_t argc, char *argv[])
 	}
 
 	bt_conn_unref(conn);
-
-	return 0;
-}
-
-static int cmd_auto_conn(const struct shell *shell, size_t argc, char *argv[])
-{
-	bt_addr_le_t addr;
-	int err;
-
-	err = str2bt_addr_le(argv[1], argv[2], &addr);
-	if (err) {
-		shell_error(shell, "Invalid peer address (err %d)", err);
-		return err;
-	}
-
-	if (argc < 4) {
-		return bt_le_set_auto_conn(&addr, BT_LE_CONN_PARAM_DEFAULT);
-	} else if (!strcmp(argv[3], "on")) {
-		return bt_le_set_auto_conn(&addr, BT_LE_CONN_PARAM_DEFAULT);
-	} else if (!strcmp(argv[3], "off")) {
-		return bt_le_set_auto_conn(&addr, NULL);
-	} else {
-		shell_help(shell);
-		/* shell returns 1 when help is printed */
-		return 1;
-	}
-
-	return 0;
-}
-
-static int cmd_directed_adv(const struct shell *shell,
-			     size_t argc, char *argv[])
-{
-	int err;
-	bt_addr_le_t addr;
-	struct bt_conn *conn;
-	struct bt_le_adv_param *param = BT_LE_ADV_CONN_DIR;
-
-	err = str2bt_addr_le(argv[1], argv[2], &addr);
-	if (err) {
-		shell_error(shell, "Invalid peer address (err %d)", err);
-		return err;
-	}
-
-	if (argc == 3) {
-		goto connect;
-	}
-
-	if (strcmp(argv[3], "low")) {
-		shell_help(shell);
-		/* shell returns 1 when help is printed */
-		return 1;
-	}
-
-	param = BT_LE_ADV_CONN_DIR_LOW_DUTY;
-
-connect:
-	conn = bt_conn_create_slave_le(&addr, param);
-	if (!conn) {
-		shell_error(shell, "Failed to start directed advertising");
-		return -ENOEXEC;
-	} else {
-		shell_print(shell, "Started directed advertising");
-
-		/* unref connection obj in advance as app user */
-		bt_conn_unref(conn);
-	}
 
 	return 0;
 }
@@ -887,6 +901,27 @@ static int cmd_conn_update(const struct shell *shell,
 		shell_error(shell, "conn update failed (err %d).", err);
 	} else {
 		shell_print(shell, "conn update initiated.");
+	}
+
+	return err;
+}
+
+static int cmd_chan_map(const struct shell *shell, size_t argc, char *argv[])
+{
+	u8_t chan_map[5] = {};
+	int err;
+
+	err = hexstr2array(argv[1], chan_map, 5);
+	if (err) {
+		shell_error(shell, "Invalid channel map");
+		return -ENOEXEC;
+	}
+
+	err = bt_le_set_chan_map(chan_map);
+	if (err) {
+		shell_error(shell, "Failed to set channel map (err %d)", err);
+	} else {
+		shell_print(shell, "Channel map set");
 	}
 
 	return err;
@@ -957,27 +992,6 @@ static int cmd_clear(const struct shell *shell, size_t argc, char *argv[])
 		shell_error(shell, "Failed to clear pairing (err %d)", err);
 	} else {
 		shell_print(shell, "Pairing successfully cleared");
-	}
-
-	return err;
-}
-
-static int cmd_chan_map(const struct shell *shell, size_t argc, char *argv[])
-{
-	u8_t chan_map[5] = {};
-	int err;
-
-	err = hexstr2array(argv[1], chan_map, 5);
-	if (err) {
-		shell_error(shell, "Invalid channel map");
-		return -ENOEXEC;
-	}
-
-	err = bt_le_set_chan_map(chan_map);
-	if (err) {
-		shell_error(shell, "Failed to set channel map (err %d)", err);
-	} else {
-		shell_print(shell, "Channel map set");
 	}
 
 	return err;
@@ -1328,25 +1342,35 @@ SHELL_CREATE_STATIC_SUBCMD_SET(bt_cmds) {
 	SHELL_CMD_ARG(id-show, NULL, HELP_NONE, cmd_id_show, 1, 0),
 	SHELL_CMD_ARG(id-select, NULL, "<id>", cmd_id_select, 2, 0),
 	SHELL_CMD_ARG(name, NULL, "[name]", cmd_name, 1, 1),
+#if defined(CONFIG_BT_OBSERVER)
 	SHELL_CMD_ARG(scan, NULL,
 		      "<value: on, passive, off> <dup filter: dups, nodups>",
 		      cmd_scan, 3, 0),
+#endif /* CONFIG_BT_OBSERVER */
+#if defined(CONFIG_BT_BROADCASTER)
 	SHELL_CMD_ARG(advertise, NULL,
 		      "<type: off, on, scan, nconn> <mode: discov, non_discov>",
 		      cmd_advertise, 2, 1),
-#if defined(CONFIG_BT_CONN)
-	SHELL_CMD_ARG(connect, NULL, HELP_ADDR_LE, cmd_connect_le, 3, 0),
-	SHELL_CMD_ARG(disconnect, NULL, HELP_NONE, cmd_disconnect, 1, 0),
-	SHELL_CMD_ARG(auto-conn, NULL, HELP_ADDR_LE, cmd_auto_conn, 3, 0),
+#if defined(CONFIG_BT_PERIPHERAL)
 	SHELL_CMD_ARG(directed-adv, NULL, HELP_ADDR_LE " [mode: low]",
 		      cmd_directed_adv, 1, 1),
+#endif /* CONFIG_BT_PERIPHERAL */
+#endif /* CONFIG_BT_BROADCASTER */
+#if defined(CONFIG_BT_CONN)
+#if defined(CONFIG_BT_CENTRAL)
+	SHELL_CMD_ARG(connect, NULL, HELP_ADDR_LE, cmd_connect_le, 3, 0),
+	SHELL_CMD_ARG(auto-conn, NULL, HELP_ADDR_LE, cmd_auto_conn, 3, 0),
+#endif /* CONFIG_BT_CENTRAL */
+	SHELL_CMD_ARG(disconnect, NULL, HELP_NONE, cmd_disconnect, 1, 0),
 	SHELL_CMD_ARG(select, NULL, HELP_ADDR_LE, cmd_select, 3, 0),
 	SHELL_CMD_ARG(conn-update, NULL, "<min> <max> <latency> <timeout>",
 		      cmd_conn_update, 5, 0),
-	SHELL_CMD_ARG(oob, NULL, NULL, cmd_oob, 1, 0),
-	SHELL_CMD_ARG(clear, NULL, NULL, cmd_clear, 1, 0),
+#if defined(CONFIG_BT_CENTRAL)
 	SHELL_CMD_ARG(channel-map, NULL, "<channel-map: XX:XX:XX:XX:XX> (36-0)",
 		      cmd_chan_map, 2, 1),
+#endif /* CONFIG_BT_CENTRAL */
+	SHELL_CMD_ARG(oob, NULL, NULL, cmd_oob, 1, 0),
+	SHELL_CMD_ARG(clear, NULL, NULL, cmd_clear, 1, 0),
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 	SHELL_CMD_ARG(security, NULL, "<security level: 0, 1, 2, 3>",
 		      cmd_security, 2, 0),
@@ -1368,10 +1392,14 @@ SHELL_CREATE_STATIC_SUBCMD_SET(bt_cmds) {
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR) */
 #endif /* CONFIG_BT_CONN */
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+#if defined(CONFIG_BT_BROADCASTER)
 	SHELL_CMD_ARG(advx, NULL, "<on off> [coded] [anon] [txp]", cmd_advx,
 		      2, 3),
+#endif /* CONFIG_BT_BROADCASTER */
+#if defined(CONFIG_BT_OBSERVER)
 	SHELL_CMD_ARG(scanx, NULL, "<on passive off> [coded]", cmd_scanx,
 		      2, 1),
+#endif /* CONFIG_BT_OBSERVER */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #if defined(CONFIG_BT_LL_SW)
 	SHELL_CMD_ARG(ll-addr, NULL, "<random|public>", cmd_ll_addr_get, 2, 0),
