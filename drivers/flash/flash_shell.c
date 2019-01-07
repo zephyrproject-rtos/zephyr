@@ -52,12 +52,18 @@ static int cmd_erase(const struct shell *shell, size_t argc, char *argv[])
 	if (argc > 2) {
 		size = strtoul(argv[2], NULL, 16);
 	} else {
-#if defined(CONFIG_SOC_FLASH_NRF)
-		size = NRF_FICR->CODEPAGESIZE;
-#else
-		error(shell, "Missing size.");
-		return -EINVAL;
-#endif
+		struct flash_pages_info info;
+
+		result = flash_get_page_info_by_offs(flash_dev, page_addr,
+						     &info);
+
+		if (result != 0) {
+			error(shell, "Could not determine page size, "
+				    "code %d.", result);
+			return -EINVAL;
+		}
+
+		size = info.size;
 	}
 
 	flash_write_protection_set(flash_dev, 0);
