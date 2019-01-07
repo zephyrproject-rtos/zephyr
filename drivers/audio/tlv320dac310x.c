@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Intel Corporation
+ * Copyright (c) 2019 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 
 #include <device.h>
 #include <i2c.h>
+#include <gpio.h>
 
 #include <audio/codec.h>
 #include "tlv320dac310x.h"
@@ -21,10 +22,17 @@ LOG_MODULE_REGISTER(tlv320dac310x);
 #define CODEC_OUTPUT_VOLUME_MAX		0
 #define CODEC_OUTPUT_VOLUME_MIN		(-78 * 2)
 
+#define CODEC_RESET_PIN_ASSERT		0
+#define CODEC_RESET_PIN_DEASSERT	1
+
 struct codec_driver_config {
 	struct device	*i2c_device;
 	const char	*i2c_dev_name;
 	u8_t		i2c_address;
+	struct device	*gpio_device;
+	const char	*gpio_dev_name;
+	u32_t		gpio_pin;
+	int		gpio_flags;
 };
 
 struct codec_driver_data {
@@ -35,6 +43,10 @@ static struct codec_driver_config codec_device_config = {
 	.i2c_device	= NULL,
 	.i2c_dev_name	= DT_CODEC_I2C_BUS_NAME,
 	.i2c_address	= DT_CODEC_I2C_BUS_ADDR,
+	.gpio_device	= NULL,
+	.gpio_dev_name	= DT_CODEC_RESET_GPIO_NAME,
+	.gpio_pin	= DT_CODEC_RESET_GPIO_PIN,
+	.gpio_flags	= DT_CODEC_RESET_GPIO_FLAGS,
 };
 
 static struct codec_driver_data codec_device_data;
@@ -73,18 +85,35 @@ static int codec_initialize(struct device *dev)
 		LOG_ERR("I2C device binding error");
 		return -ENXIO;
 	}
+
+	/* bind GPIO */
+	dev_cfg->gpio_device = device_get_binding(dev_cfg->gpio_dev_name);
+
+	if (dev_cfg->gpio_device == NULL) {
+		LOG_ERR("GPIO device binding error");
+		return -ENXIO;
+	}
+
 	return 0;
 }
 
 static int codec_configure(struct device *dev,
 		struct audio_codec_cfg *cfg)
 {
+	struct codec_driver_config *const dev_cfg = DEV_CFG(dev);
 	int ret;
 
 	if (cfg->dai_type != AUDIO_DAI_TYPE_I2S) {
 		LOG_ERR("dai_type must be AUDIO_DAI_TYPE_I2S");
 		return -EINVAL;
 	}
+
+	/* configure reset GPIO */
+	gpio_pin_configure(dev_cfg->gpio_device, dev_cfg->gpio_pin,
+				     dev_cfg->gpio_flags);
+	/* de-assert reset */
+	gpio_pin_write(dev_cfg->gpio_device, dev_cfg->gpio_pin,
+				 CODEC_RESET_PIN_DEASSERT);
 
 	codec_soft_reset(dev);
 
@@ -176,12 +205,12 @@ static void codec_write_reg(struct device *dev, struct reg_addr reg, u8_t val)
 	/* set page if different */
 	if (dev_data->reg_addr_cache.page != reg.page) {
 		i2c_reg_write_byte(dev_cfg->i2c_device,
-				DAC_I2C_DEV_ADDR, 0, reg.page);
+				dev_cfg->i2c_address, 0, reg.page);
 		dev_data->reg_addr_cache.page = reg.page;
 	}
 
 	i2c_reg_write_byte(dev_cfg->i2c_device,
-			DAC_I2C_DEV_ADDR, reg.reg_addr, val);
+			dev_cfg->i2c_address, reg.reg_addr, val);
 	LOG_DBG("WR PG:%u REG:%02u VAL:0x%02x",
 			reg.page, reg.reg_addr, val);
 }
@@ -194,12 +223,12 @@ static void codec_read_reg(struct device *dev, struct reg_addr reg, u8_t *val)
 	/* set page if different */
 	if (dev_data->reg_addr_cache.page != reg.page) {
 		i2c_reg_write_byte(dev_cfg->i2c_device,
-				DAC_I2C_DEV_ADDR, 0, reg.page);
+				dev_cfg->i2c_address, 0, reg.page);
 		dev_data->reg_addr_cache.page = reg.page;
 	}
 
 	i2c_reg_read_byte(dev_cfg->i2c_device,
-			DAC_I2C_DEV_ADDR, reg.reg_addr, val);
+			dev_cfg->i2c_address, reg.reg_addr, val);
 	LOG_DBG("RD PG:%u REG:%02u VAL:0x%02x",
 			reg.page, reg.reg_addr, *val);
 }
