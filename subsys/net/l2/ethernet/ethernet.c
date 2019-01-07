@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Intel Corporation.
+ * Copyright (c) 2016-2018 Intel Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -116,10 +116,10 @@ static inline void ethernet_update_length(struct net_if *iface,
 	}
 }
 
-#if defined(CONFIG_NET_STATISTICS_ETHERNET)
 static void ethernet_update_rx_stats(struct net_if *iface,
 				     struct net_pkt *pkt, size_t length)
 {
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
 
 	eth_stats_update_bytes_rx(iface, length);
@@ -130,16 +130,8 @@ static void ethernet_update_rx_stats(struct net_if *iface,
 	} else if (net_eth_is_addr_multicast(&hdr->dst)) {
 		eth_stats_update_multicast_rx(iface);
 	}
-}
-#else
-static void ethernet_update_rx_stats(struct net_if *iface,
-				     struct net_pkt *pkt, int length)
-{
-	ARG_UNUSED(iface);
-	ARG_UNUSED(pkt);
-	ARG_UNUSED(length);
-}
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
+}
 
 static enum net_verdict ethernet_recv(struct net_if *iface,
 				      struct net_pkt *pkt)
@@ -486,35 +478,21 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 }
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-static void ethernet_update_tx_stats(struct net_if *iface,
-				     struct net_pkt *pkt, int status)
+static void ethernet_update_tx_stats(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
 
-	if (status > 0) {
-		eth_stats_update_bytes_tx(iface, status);
-		eth_stats_update_pkts_tx(iface);
+	eth_stats_update_bytes_tx(iface, net_pkt_get_len(pkt));
+	eth_stats_update_pkts_tx(iface);
 
-		if (net_eth_is_addr_multicast(&hdr->dst)) {
-			eth_stats_update_multicast_tx(iface);
-		} else if (net_eth_is_addr_broadcast(&hdr->dst)) {
-			eth_stats_update_broadcast_tx(iface);
-		}
-	} else {
-		eth_stats_update_errors_tx(iface);
+	if (net_eth_is_addr_multicast(&hdr->dst)) {
+		eth_stats_update_multicast_tx(iface);
+	} else if (net_eth_is_addr_broadcast(&hdr->dst)) {
+		eth_stats_update_broadcast_tx(iface);
 	}
+}
+#endif /* CONFIG_NET_STATISTICS_ETHERNET */
 
-	net_pkt_unref(pkt);
-}
-#else
-static void ethernet_update_tx_stats(struct net_if *iface,
-				     struct net_pkt *pkt, int status)
-{
-	ARG_UNUSED(iface);
-	ARG_UNUSED(pkt);
-	ARG_UNUSED(status);
-}
-#endif
 static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	const struct ethernet_api *api = net_if_get_device(iface)->driver_api;
@@ -581,17 +559,17 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 		goto error;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_STATISTICS_ETHERNET)) {
-		net_pkt_ref(pkt);
-	}
-
 	ret = api->send(net_if_get_device(iface), pkt);
-	if (!ret) {
-		ret = net_pkt_get_len(pkt);
-		net_pkt_unref(pkt);
+	if (ret != 0) {
+		eth_stats_update_errors_tx(iface);
+		goto error;
 	}
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+	ethernet_update_tx_stats(iface, pkt);
+#endif
+	ret = net_pkt_get_len(pkt);
 
-	ethernet_update_tx_stats(iface, pkt, ret);
+	net_pkt_unref(pkt);
 error:
 	return ret;
 }
