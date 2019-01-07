@@ -312,6 +312,7 @@ class Handler:
         self.metrics["rom_size"] = 0
 
         self.binary = None
+        self.pid_fn = None
         self.call_make_run = False
 
         self.name = instance.name
@@ -345,6 +346,16 @@ class BinaryHandler(Handler):
 
         self.valgrind = False
         self.terminated = False
+
+    def try_kill_process_by_pid(self):
+        if self.pid_fn != None:
+            pid = int(open(self.pid_fn).read())
+            os.unlink(self.pid_fn)
+            self.pid_fn = None  # clear so we don't try to kill the binary twice
+            try:
+                os.kill(pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
 
     def _output_reader(self, proc, harness):
         log_out_fp = open(self.log, "wt")
@@ -393,6 +404,7 @@ class BinaryHandler(Handler):
             t.start()
             t.join(self.timeout)
             if t.is_alive():
+                self.try_kill_process_by_pid()
                 proc.terminate()
                 self.terminated = True
                 t.join()
@@ -402,6 +414,8 @@ class BinaryHandler(Handler):
         if options.enable_coverage:
             returncode = subprocess.call(["GCOV_PREFIX=" + self.outdir,
                 "gcov", self.sourcedir, "-b", "-s", self.outdir], shell=True)
+
+        self.try_kill_process_by_pid()
 
         # FIME: This is needed when killing the simulator, the console is
         # garbled and needs to be reset. Did not find a better way to do that.
@@ -497,7 +511,6 @@ class DeviceHandler(Handler):
                     harness.tests[c] = "BLOCK"
 
         self.instance.results = harness.tests
-
         if harness.state:
             self.set_state(harness.state, {})
         else:
@@ -1024,6 +1037,10 @@ class MakeGenerator:
             handler.binary = os.path.join(outdir, "testbinary")
         elif type == "device":
             handler = DeviceHandler(instance)
+        elif type == "renode":
+            handler = BinaryHandler(instance)
+            handler.pid_fn = os.path.join(instance.outdir, "renode.pid")
+            handler.call_make_run = True
 
         if options.enable_coverage:
             args += ["EXTRA_LDFLAGS=--coverage"]
@@ -1077,6 +1094,9 @@ class MakeGenerator:
         elif ti.platform.simulation == "nsim" and do_run:
             if find_executable("nsimdrv"):
                 type = "nsim"
+        elif ti.platform.simulation == "renode" and do_run:
+            if find_executable("renode"):
+                type = "renode"
         elif options.device_testing and (not ti.build_only) and (not options.build_only):
             type = "device"
 
