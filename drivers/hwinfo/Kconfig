@@ -13,4 +13,12 @@ menuconfig HWINFO
 
 if HWINFO
 
+config HWINFO_STM32
+	bool "STM32 hwinfo"
+	default y
+	depends on (SOC_SERIES_STM32F0X || SOC_SERIES_STM32F3X || \
+		    SOC_SERIES_STM32L4X || SOC_SERIES_STM32F7X)
+	help
+	  Enable STM32 hwinfo driver.
+
 endif
