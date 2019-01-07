@@ -1,6 +1,5 @@
 zephyr_library()
 
-zephyr_library_sources_ifdef(CONFIG_I2C_ATMEL_SAM3	i2c_atmel_sam3.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_BITBANG		i2c_bitbang.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_CC32XX		i2c_cc32xx.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_DW		i2c_dw.c)
