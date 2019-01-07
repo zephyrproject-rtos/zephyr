@@ -30,6 +30,7 @@
 		compatible = "ti,tlv320dac";
 		reg = <0x18>;
 		label = "TLV320DAC";
+		reset-gpios = <&gpio0 4 GPIO_DIR_OUT>;
 	};
 };
 
