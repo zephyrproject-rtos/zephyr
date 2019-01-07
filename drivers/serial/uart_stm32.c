@@ -32,6 +32,337 @@
 
 #define TIMEOUT 1000
 
+static void uart_stm32_usart_set_baud_rate(struct device *dev,
+					   u32_t clock_rate, u32_t baud_rate)
+{
+	USART_TypeDef *UartInstance = UART_STRUCT(dev);
+
+	LL_USART_SetBaudRate(UartInstance,
+			     clock_rate,
+#ifdef USART_PRESC_PRESCALER
+			     LL_USART_PRESCALER_DIV1,
+#endif
+#ifdef USART_CR1_OVER8
+			     LL_USART_OVERSAMPLING_16,
+#endif
+			     baud_rate);
+}
+
+#ifdef CONFIG_LPUART_1
+static void uart_stm32_lpuart_set_baud_rate(struct device *dev,
+					    u32_t clock_rate, u32_t baud_rate)
+{
+	USART_TypeDef *UartInstance = UART_STRUCT(dev);
+
+	LL_LPUART_SetBaudRate(UartInstance,
+			      clock_rate,
+#ifdef USART_PRESC_PRESCALER
+			      LL_USART_PRESCALER_DIV1,
+#endif
+			      baud_rate);
+}
+#endif	/* CONFIG_LPUART_1 */
+
+static inline void uart_stm32_set_baudrate(struct device *dev, u32_t baud_rate)
+{
+	const struct uart_stm32_config *config = DEV_CFG(dev);
+	struct uart_stm32_data *data = DEV_DATA(dev);
+#ifdef CONFIG_LPUART_1
+	USART_TypeDef *UartInstance = UART_STRUCT(dev);
+#endif
+	u32_t clock_rate;
+
+	/* Get clock rate */
+	clock_control_get_rate(data->clock,
+			       (clock_control_subsys_t *)&config->pclken,
+			       &clock_rate);
+
+#ifdef CONFIG_LPUART_1
+	if (IS_LPUART_INSTANCE(UartInstance)) {
+		uart_stm32_lpuart_set_baud_rate(dev, clock_rate, baud_rate);
+	} else {
+		uart_stm32_usart_set_baud_rate(dev, clock_rate, baud_rate);
+	}
+#else
+	uart_stm32_usart_set_baud_rate(dev, clock_rate, baud_rate);
+#endif
+}
+
+static inline void uart_stm32_set_parity(struct device *dev, u32_t parity)
+{
+	USART_TypeDef *UartInstance = UART_STRUCT(dev);
+
+#ifdef CONFIG_LPUART_1
+	if (IS_LPUART_INSTANCE(UartInstance)) {
+		LL_LPUART_SetParity(UartInstance, parity);
+	} else {
+		LL_USART_SetParity(UartInstance, parity);
+	}
+#else
+	LL_USART_SetParity(UartInstance, parity);
+#endif	/* CONFIG_LPUART_1 */
+}
+
+static inline u32_t uart_stm32_get_parity(struct device *dev)
+{
+	USART_TypeDef *UartInstance = UART_STRUCT(dev);
+
+#ifdef CONFIG_LPUART_1
+	if (IS_LPUART_INSTANCE(UartInstance)) {
+		return LL_LPUART_GetParity(UartInstance);
+	} else {
+		return LL_USART_GetParity(UartInstance);
+	}
+#else
+	return LL_USART_GetParity(UartInstance);
+#endif	/* CONFIG_LPUART_1 */
+}
+
+static inline void uart_stm32_set_stopbits(struct device *dev, u32_t stopbits)
+{
+	USART_TypeDef *UartInstance = UART_STRUCT(dev);
+
+#ifdef CONFIG_LPUART_1
+	if (IS_LPUART_INSTANCE(UartInstance)) {
+		LL_LPUART_SetStopBitsLength(UartInstance, stopbits);
+	} else {
+		LL_USART_SetStopBitsLength(UartInstance, stopbits);
+	}
+#else
+	LL_USART_SetStopBitsLength(UartInstance, stopbits);
+#endif	/* CONFIG_LPUART_1 */
+}
+
+static inline u32_t uart_stm32_get_stopbits(struct device *dev)
+{
+	USART_TypeDef *UartInstance = UART_STRUCT(dev);
+
+#ifdef CONFIG_LPUART_1
+	if (IS_LPUART_INSTANCE(UartInstance)) {
+		return LL_LPUART_GetStopBitsLength(UartInstance);
+	} else {
+		return LL_USART_GetStopBitsLength(UartInstance);
+	}
+#else
+	return LL_USART_GetStopBitsLength(UartInstance);
+#endif	/* CONFIG_LPUART_1 */
+}
+
+static inline void uart_stm32_set_databits(struct device *dev, u32_t databits)
+{
+	USART_TypeDef *UartInstance = UART_STRUCT(dev);
+
+#ifdef CONFIG_LPUART_1
+	if (IS_LPUART_INSTANCE(UartInstance)) {
+		LL_LPUART_SetDataWidth(UartInstance, databits);
+	} else {
+		LL_USART_SetDataWidth(UartInstance, databits);
+	}
+#else
+	LL_USART_SetDataWidth(UartInstance, databits);
+#endif	/* CONFIG_LPUART_1 */
+}
+
+static inline u32_t uart_stm32_get_databits(struct device *dev)
+{
+	USART_TypeDef *UartInstance = UART_STRUCT(dev);
+
+#ifdef CONFIG_LPUART_1
+	if (IS_LPUART_INSTANCE(UartInstance)) {
+		return LL_LPUART_GetDataWidth(UartInstance);
+	} else {
+		return LL_USART_GetDataWidth(UartInstance);
+	}
+#else
+	return LL_USART_GetDataWidth(UartInstance);
+#endif	/* CONFIG_LPUART_1 */
+}
+
+static inline u32_t uart_stm32_cfg2ll_parity(enum uart_config_parity parity)
+{
+	switch (parity) {
+	case UART_CFG_PARITY_ODD:
+		return LL_USART_PARITY_ODD;
+	case UART_CFG_PARITY_EVEN:
+		return LL_USART_PARITY_EVEN;
+	case UART_CFG_PARITY_NONE:
+	default:
+		return LL_USART_PARITY_NONE;
+	}
+}
+
+static inline enum uart_config_parity uart_stm32_ll2cfg_parity(u32_t parity)
+{
+	switch (parity) {
+	case LL_USART_PARITY_ODD:
+		return UART_CFG_PARITY_ODD;
+	case LL_USART_PARITY_EVEN:
+		return UART_CFG_PARITY_EVEN;
+	case LL_USART_PARITY_NONE:
+	default:
+		return UART_CFG_PARITY_NONE;
+	}
+}
+
+static inline u32_t uart_stm32_cfg2ll_stopbits(enum uart_config_stop_bits sb)
+{
+	switch (sb) {
+/* Some MCU's don't support 0.5 stop bits */
+#ifdef LL_USART_STOPBITS_0_5
+	case UART_CFG_STOP_BITS_0_5:
+		return LL_USART_STOPBITS_0_5;
+#endif	/* LL_USART_STOPBITS_0_5 */
+	case UART_CFG_STOP_BITS_1:
+		return LL_USART_STOPBITS_1;
+/* Some MCU's don't support 1.5 stop bits */
+#ifdef LL_USART_STOPBITS_1_5
+	case UART_CFG_STOP_BITS_1_5:
+		return LL_USART_STOPBITS_1_5;
+#endif	/* LL_USART_STOPBITS_1_5 */
+	case UART_CFG_STOP_BITS_2:
+	default:
+		return LL_USART_STOPBITS_2;
+	}
+}
+
+static inline enum uart_config_stop_bits uart_stm32_ll2cfg_stopbits(u32_t sb)
+{
+	switch (sb) {
+/* Some MCU's don't support 0.5 stop bits */
+#ifdef LL_USART_STOPBITS_0_5
+	case LL_USART_STOPBITS_0_5:
+		return UART_CFG_STOP_BITS_0_5;
+#endif	/* LL_USART_STOPBITS_0_5 */
+	case LL_USART_STOPBITS_1:
+		return UART_CFG_STOP_BITS_1;
+/* Some MCU's don't support 1.5 stop bits */
+#ifdef LL_USART_STOPBITS_1_5
+	case LL_USART_STOPBITS_1_5:
+		return UART_CFG_STOP_BITS_1_5;
+#endif	/* LL_USART_STOPBITS_1_5 */
+	case LL_USART_STOPBITS_2:
+	default:
+		return UART_CFG_STOP_BITS_2;
+	}
+}
+
+static inline u32_t uart_stm32_cfg2ll_databits(enum uart_config_data_bits db)
+{
+	switch (db) {
+/* Some MCU's don't support 7B datawidth */
+#ifdef LL_USART_DATAWIDTH_7B
+	case UART_CFG_DATA_BITS_7:
+		return LL_USART_DATAWIDTH_7B;
+#endif	/* LL_USART_DATAWIDTH_7B */
+	case UART_CFG_DATA_BITS_8:
+	default:
+		return LL_USART_DATAWIDTH_8B;
+	}
+}
+
+static inline enum uart_config_data_bits uart_stm32_ll2cfg_databits(u32_t db)
+{
+	switch (db) {
+/* Some MCU's don't support 7B datawidth */
+#ifdef LL_USART_DATAWIDTH_7B
+	case LL_USART_DATAWIDTH_7B:
+		return UART_CFG_DATA_BITS_7;
+#endif	/* LL_USART_DATAWIDTH_7B */
+	case LL_USART_DATAWIDTH_8B:
+	default:
+		return UART_CFG_DATA_BITS_8;
+	}
+}
+
+static int uart_stm32_configure(struct device *dev,
+				const struct uart_config *cfg)
+{
+	struct uart_stm32_data *data = DEV_DATA(dev);
+	USART_TypeDef *UartInstance = UART_STRUCT(dev);
+	const u32_t parity = uart_stm32_cfg2ll_parity(cfg->parity);
+	const u32_t stopbits = uart_stm32_cfg2ll_stopbits(cfg->stop_bits);
+	const u32_t databits = uart_stm32_cfg2ll_databits(cfg->data_bits);
+
+	/* Hardware doesn't support mark or space parity */
+	if ((UART_CFG_PARITY_MARK == cfg->parity) ||
+	    (UART_CFG_PARITY_SPACE == cfg->parity)) {
+		return -ENOTSUP;
+	}
+
+#if defined(LL_USART_STOPBITS_0_5) && defined(CONFIG_LPUART_1)
+	if (IS_LPUART_INSTANCE(UartInstance) &&
+	    UART_CFG_STOP_BITS_0_5 == cfg->stop_bits) {
+		return -ENOTSUP;
+	}
+#else
+	if (UART_CFG_STOP_BITS_0_5 == cfg->stop_bits) {
+		return -ENOTSUP;
+	}
+#endif
+
+#if defined(LL_USART_STOPBITS_1_5) && defined(CONFIG_LPUART_1)
+	if (IS_LPUART_INSTANCE(UartInstance) &&
+	    UART_CFG_STOP_BITS_1_5 == cfg->stop_bits) {
+		return -ENOTSUP;
+	}
+#else
+	if (UART_CFG_STOP_BITS_1_5 == cfg->stop_bits) {
+		return -ENOTSUP;
+	}
+#endif
+
+	/* Driver doesn't support 5 or 6 databits and potentially 7 */
+	if ((UART_CFG_DATA_BITS_5 == cfg->data_bits) ||
+	    (UART_CFG_DATA_BITS_6 == cfg->data_bits)
+#ifndef LL_USART_DATAWIDTH_7B
+	    || (UART_CFG_DATA_BITS_7 == cfg->data_bits)
+#endif /* LL_USART_DATAWIDTH_7B */
+		) {
+		return -ENOTSUP;
+	}
+
+	/* Driver currently doesn't support line ctrl */
+	if (UART_CFG_FLOW_CTRL_NONE != cfg->flow_ctrl) {
+		return -ENOTSUP;
+	}
+
+	LL_USART_Disable(UartInstance);
+
+	if (parity != uart_stm32_get_parity(dev)) {
+		uart_stm32_set_parity(dev, parity);
+	}
+
+	if (stopbits != uart_stm32_get_stopbits(dev)) {
+		uart_stm32_set_stopbits(dev, stopbits);
+	}
+
+	if (databits != uart_stm32_get_databits(dev)) {
+		uart_stm32_set_databits(dev, databits);
+	}
+
+	if (cfg->baudrate != data->baud_rate) {
+		uart_stm32_set_baudrate(dev, cfg->baudrate);
+		data->baud_rate = cfg->baudrate;
+	}
+
+	LL_USART_Enable(UartInstance);
+	return 0;
+};
+
+static int uart_stm32_config_get(struct device *dev, struct uart_config *cfg)
+{
+	struct uart_stm32_data *data = DEV_DATA(dev);
+
+	cfg->baudrate = data->baud_rate;
+	cfg->parity = uart_stm32_ll2cfg_parity(uart_stm32_get_parity(dev));
+	cfg->stop_bits = uart_stm32_ll2cfg_stopbits(
+		uart_stm32_get_stopbits(dev));
+	cfg->data_bits = uart_stm32_ll2cfg_databits(
+		uart_stm32_get_databits(dev));
+	cfg->flow_ctrl = UART_CFG_FLOW_CTRL_NONE;
+	return 0;
+}
+
 static int uart_stm32_poll_in(struct device *dev, unsigned char *c)
 {
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
@@ -241,6 +572,8 @@ static void uart_stm32_isr(void *arg)
 static const struct uart_driver_api uart_stm32_driver_api = {
 	.poll_in = uart_stm32_poll_in,
 	.poll_out = uart_stm32_poll_out,
+	.configure = uart_stm32_configure,
+	.config_get = uart_stm32_config_get,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.fifo_fill = uart_stm32_fifo_fill,
 	.fifo_read = uart_stm32_fifo_read,
@@ -259,37 +592,6 @@ static const struct uart_driver_api uart_stm32_driver_api = {
 #endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
-static void uart_stm32_usart_set_baud_rate(struct device *dev,
-					   u32_t clock_rate, u32_t baud_rate)
-{
-	USART_TypeDef *UartInstance = UART_STRUCT(dev);
-
-	LL_USART_SetBaudRate(UartInstance,
-			     clock_rate,
-#ifdef USART_PRESC_PRESCALER
-			     LL_USART_PRESCALER_DIV1,
-#endif
-#ifdef USART_CR1_OVER8
-			     LL_USART_OVERSAMPLING_16,
-#endif
-			     baud_rate);
-}
-
-#ifdef CONFIG_LPUART_1
-static void uart_stm32_lpuart_set_baud_rate(struct device *dev,
-					    u32_t clock_rate, u32_t baud_rate)
-{
-	USART_TypeDef *UartInstance = UART_STRUCT(dev);
-
-	LL_LPUART_SetBaudRate(UartInstance,
-			      clock_rate,
-#ifdef USART_PRESC_PRESCALER
-			      LL_USART_PRESCALER_DIV1,
-#endif
-			      baud_rate);
-}
-#endif
-
 /**
  * @brief Initialize UART channel
  *
@@ -305,9 +607,6 @@ static int uart_stm32_init(struct device *dev)
 	const struct uart_stm32_config *config = DEV_CFG(dev);
 	struct uart_stm32_data *data = DEV_DATA(dev);
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
-
-	u32_t baud_rate = config->baud_rate;
-	u32_t clock_rate;
 
 	__uart_stm32_get_clock(dev);
 	/* enable clock */
@@ -328,20 +627,8 @@ static int uart_stm32_init(struct device *dev)
 				 LL_USART_PARITY_NONE,
 				 LL_USART_STOPBITS_1);
 
-	/* Get clock rate */
-	clock_control_get_rate(data->clock,
-			       (clock_control_subsys_t *)&config->pclken,
-			       &clock_rate);
-
-#ifdef CONFIG_LPUART_1
-	if (IS_LPUART_INSTANCE(UartInstance)) {
-		uart_stm32_lpuart_set_baud_rate(dev, clock_rate, baud_rate);
-	} else {
-		uart_stm32_usart_set_baud_rate(dev, clock_rate, baud_rate);
-	}
-#else
-	uart_stm32_usart_set_baud_rate(dev, clock_rate, baud_rate);
-#endif
+	/* Set the default baudrate */
+	uart_stm32_set_baudrate(dev, data->baud_rate);
 
 	LL_USART_Enable(UartInstance);
 
@@ -395,10 +682,10 @@ static const struct uart_stm32_config uart_stm32_cfg_##name = {		\
 	.pclken = { .bus = DT_UART_STM32_##name##_CLOCK_BUS,	\
 		    .enr = DT_UART_STM32_##name##_CLOCK_BITS	\
 	},								\
-	.baud_rate = DT_UART_STM32_##name##_BAUD_RATE		\
 };									\
 									\
 static struct uart_stm32_data uart_stm32_data_##name = {		\
+	.baud_rate = DT_UART_STM32_##name##_BAUD_RATE			\
 };									\
 									\
 DEVICE_AND_API_INIT(uart_stm32_##name, DT_UART_STM32_##name##_NAME,	\

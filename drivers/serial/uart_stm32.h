@@ -17,12 +17,12 @@ struct uart_stm32_config {
 	struct uart_device_config uconf;
 	/* clock subsystem driving this peripheral */
 	struct stm32_pclken pclken;
-	/* Baud rate */
-	u32_t baud_rate;
 };
 
 /* driver data */
 struct uart_stm32_data {
+	/* Baud rate */
+	u32_t baud_rate;
 	/* clock device */
 	struct device *clock;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
