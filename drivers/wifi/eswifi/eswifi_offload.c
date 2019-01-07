@@ -43,7 +43,7 @@ static int __read_data(struct eswifi_dev *eswifi, size_t len)
 	int err, i, read = 0;
 
 	/* Set max read size */
-	snprintf(size, sizeof(eswifi->buf), "R1=%u\r", len);
+	snprintf(size, sizeof(size), "R1=%u\r", len);
 	err = eswifi_request(eswifi, size, strlen(size),
 			     eswifi->buf, sizeof(eswifi->buf));
 	if (err || !eswifi_is_buf_at_ok(eswifi->buf)) {
@@ -52,7 +52,7 @@ static int __read_data(struct eswifi_dev *eswifi, size_t len)
 	}
 
 	/* Set timeout */
-	snprintf(timeout, sizeof(eswifi->buf), "R2=%u\r", 30); /* 30 ms */
+	snprintf(timeout, sizeof(timeout), "R2=%u\r", 30); /* 30 ms */
 	err = eswifi_request(eswifi, timeout, strlen(timeout),
 			     eswifi->buf, sizeof(eswifi->buf));
 	if (err || !eswifi_is_buf_at_ok(eswifi->buf)) {

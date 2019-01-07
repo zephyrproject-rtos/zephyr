@@ -45,9 +45,8 @@ static int eswifi_reset(struct eswifi_dev *eswifi)
 	k_sleep(500);
 
 	/* fetch the cursor */
-	eswifi_request(eswifi, NULL, 0, eswifi->buf, sizeof(eswifi->buf));
-
-	return 0;
+	return eswifi_request(eswifi, NULL, 0, eswifi->buf,
+			      sizeof(eswifi->buf));
 }
 
 static inline int __parse_ssid(char *str, char *ssid)
@@ -328,7 +327,7 @@ static int eswifi_get_mac_addr(struct eswifi_dev *eswifi, u8_t addr[6])
 		return err;
 	}
 
-	for (i = 0; i < sizeof(eswifi->buf); i++) {
+	for (i = 0; i < sizeof(eswifi->buf) && byte < 6; i++) {
 		if (i < 2) {
 			continue;
 		}
@@ -466,6 +465,7 @@ static int eswifi_init(struct device *dev)
 	if (!eswifi->resetn.dev) {
 		LOG_ERR("Failed to initialize GPIO driver: %s",
 			    DT_INVENTEK_ESWIFI_ESWIFI0_RESETN_GPIOS_CONTROLLER);
+		return -ENODEV;
 	}
 	eswifi->resetn.pin = DT_INVENTEK_ESWIFI_ESWIFI0_RESETN_GPIOS_PIN;
 	gpio_pin_configure(eswifi->resetn.dev, eswifi->resetn.pin,
@@ -476,6 +476,7 @@ static int eswifi_init(struct device *dev)
 	if (!eswifi->wakeup.dev) {
 		LOG_ERR("Failed to initialize GPIO driver: %s",
 			    DT_INVENTEK_ESWIFI_ESWIFI0_WAKEUP_GPIOS_CONTROLLER);
+		return -ENODEV;
 	}
 	eswifi->wakeup.pin = DT_INVENTEK_ESWIFI_ESWIFI0_WAKEUP_GPIOS_PIN;
 	gpio_pin_configure(eswifi->wakeup.dev, eswifi->wakeup.pin,
