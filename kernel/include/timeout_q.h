@@ -23,6 +23,7 @@ extern "C" {
 static inline void _init_timeout(struct _timeout *t, _timeout_func_t fn)
 {
 	sys_dnode_init(&t->node);
+	t->dticks = 0;
 }
 
 void _add_timeout(struct _timeout *to, _timeout_func_t fn, s32_t ticks);

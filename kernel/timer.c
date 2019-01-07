@@ -57,7 +57,7 @@ void _timer_expiration_handler(struct _timeout *t)
 	if (timer->period > 0) {
 		key = irq_lock();
 		_add_timeout(&timer->timeout, _timer_expiration_handler,
-			     timer->period);
+			     timer->timeout.dticks + timer->period);
 		irq_unlock(key);
 	}
 

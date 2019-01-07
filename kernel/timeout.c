@@ -23,9 +23,6 @@ static struct k_spinlock timeout_lock;
 
 static bool can_wait_forever;
 
-/* Cycles left to process in the currently-executing z_clock_announce() */
-static int announce_remaining;
-
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
 int z_clock_hw_cycles_per_sec = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
 #endif
@@ -44,33 +41,25 @@ static struct _timeout *next(struct _timeout *t)
 	return n == NULL ? NULL : CONTAINER_OF(n, struct _timeout, node);
 }
 
-static void remove_timeout(struct _timeout *t)
-{
-	if (next(t) != NULL) {
-		next(t)->dticks += t->dticks;
-	}
-
-	sys_dlist_remove(&t->node);
-}
-
-static s32_t elapsed(void)
-{
-	return announce_remaining == 0 ? z_clock_elapsed() : 0;
-}
-
 void _add_timeout(struct _timeout *to, _timeout_func_t fn, s32_t ticks)
 {
 	__ASSERT(!sys_dnode_is_linked(&to->node), "");
 	to->fn = fn;
+
+	/* @todo This really ought to be removed to allow scheduling
+	 * with negative delays, since the floor operation fails to
+	 * maintain correct periodicity for timers that are so late
+	 * they missed more than an interval.  But without it
+	 * kernel/timer/timer_api:test_timer_periodicity fails.  Is
+	 * the test making incorrect assumptions about how to trick
+	 * the system? */
 	ticks = max(1, ticks);
 
 	LOCKED(&timeout_lock) {
 		struct _timeout *t;
 
-		to->dticks = ticks + elapsed();
+		to->dticks = ticks + z_clock_elapsed();
 		for (t = first(); t != NULL; t = next(t)) {
-			__ASSERT(t->dticks >= 0, "");
-
 			if (t->dticks > to->dticks) {
 				t->dticks -= to->dticks;
 				sys_dlist_insert_before(&timeout_list,
@@ -96,10 +85,14 @@ int _abort_timeout(struct _timeout *to)
 
 	LOCKED(&timeout_lock) {
 		if (sys_dnode_is_linked(&to->node)) {
-			remove_timeout(to);
+			if (next(to) != NULL) {
+				next(to)->dticks += to->dticks;
+			}
+			sys_dlist_remove(&to->node);
 			ret = 0;
 		}
 	}
+	to->dticks = 0;
 
 	return ret;
 }
@@ -132,7 +125,7 @@ s32_t _get_next_timeout_expiry(void)
 	LOCKED(&timeout_lock) {
 		struct _timeout *to = first();
 
-		ret = to == NULL ? maxw : max(0, to->dticks - elapsed());
+		ret = to == NULL ? maxw : max(0, to->dticks - z_clock_elapsed());
 	}
 
 #ifdef CONFIG_TIMESLICING
@@ -168,33 +161,51 @@ void z_clock_announce(s32_t ticks)
 	z_time_slice(ticks);
 #endif
 
+	sys_dlist_t ready;
+	sys_dnode_t *node;
+	s32_t remaining_ticks = ticks;
 	k_spinlock_key_t key = k_spin_lock(&timeout_lock);
+	struct _timeout *t = first();
 
-	announce_remaining = ticks;
+	curr_tick += ticks;
 
-	while (first() != NULL && first()->dticks <= announce_remaining) {
-		struct _timeout *t = first();
-		int dt = t->dticks;
+	if (!t) {
+		/* Fast exit, no timeouts */
+		goto out;
+	}
 
-		curr_tick += dt;
-		announce_remaining -= dt;
-		t->dticks = 0;
-		remove_timeout(t);
+	/* Find the first timeout that isn't at/past its deadline */
+	while ((t != NULL) && (t->dticks <= remaining_ticks)) {
+		remaining_ticks -= t->dticks;
+		t = next(t);
+	}
 
+	sys_dlist_init(&ready);
+	if (t == NULL) {
+		sys_dlist_join(&ready, &timeout_list);
+	} else {
+		sys_dlist_split(&ready, &timeout_list, &t->node);
+		t->dticks -= remaining_ticks;
+	}
+
+	/* Invoke the callback of each expired timeout */
+	node = sys_dlist_peek_head(&ready);
+	if (node) {
 		k_spin_unlock(&timeout_lock, key);
-		t->fn(t);
+		do {
+			sys_dlist_remove(node);
+			t = CONTAINER_OF(node, struct _timeout, node);
+			t->dticks -= ticks;
+
+			t->fn(t);
+
+			node = sys_dlist_peek_head(&ready);
+		} while (node != NULL);
 		key = k_spin_lock(&timeout_lock);
 	}
 
-	if (first() != NULL) {
-		first()->dticks -= announce_remaining;
-	}
-
-	curr_tick += announce_remaining;
-	announce_remaining = 0;
-
+out:
 	z_clock_set_timeout(_get_next_timeout_expiry(), false);
-
 	k_spin_unlock(&timeout_lock, key);
 }
 
