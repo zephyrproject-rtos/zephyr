@@ -100,14 +100,14 @@ static bool received_dest_addr_matched(u8_t *rx_buffer)
 
 static u8_t *upipe_rx(u8_t *buf, size_t *off)
 {
-	struct upipe_context *upipe = upipe_dev->driver_data;
 	struct net_pkt *pkt = NULL;
-	struct net_buf *frag = NULL;
+	struct upipe_context *upipe;
 
 	if (!upipe_dev) {
 		goto done;
 	}
 
+	upipe = upipe_dev->driver_data;
 	if (!upipe->rx && *buf == UART_PIPE_RADIO_15_4_FRAME_TYPE) {
 		upipe->rx = true;
 		goto done;
@@ -125,6 +125,8 @@ static u8_t *upipe_rx(u8_t *buf, size_t *off)
 	upipe->rx_buf[upipe->rx_off++] = *buf;
 
 	if (upipe->rx_len == upipe->rx_off) {
+		struct net_buf *frag;
+
 		pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
 		if (!pkt) {
 			LOG_DBG("No pkt available");
