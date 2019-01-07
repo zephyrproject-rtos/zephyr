@@ -239,17 +239,6 @@ config I2C_7_IRQ_PRI
 	help
 	  IRQ priority.
 
-config I2C_ATMEL_SAM3
-	bool "[deprecated] Atmel SAM3X I2C Driver"
-	depends on SOC_SERIES_SAM3X
-	help
-	  This driver is deprecated and will be removed. Use
-	  "Atmel SAM (TWI) I2C driver" instead.
-
-	  Enable I2C support on the Atmel SAM3 family processor.
-	  Says y to enable additional options to enable support
-	  for individual controllers.
-
 config I2C_SAM_TWIHS
 	bool "Atmel SAM (TWIHS) I2C driver"
 	depends on SOC_FAMILY_SAM
