@@ -21,4 +21,11 @@ config HWINFO_STM32
 	help
 	  Enable STM32 hwinfo driver.
 
+config HWINFO_NRF
+	bool "NRF device ID"
+	default y
+	depends on (SOC_SERIES_NRF52X || SOC_SERIES_NRF51X)
+	help
+	  Enable Nordic NRF hwinfo driver.
+
 endif
