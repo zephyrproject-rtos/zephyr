@@ -73,7 +73,7 @@ endif()
 # tests defined by CONFIG_NET_TEST.
 if(CONFIG_NETWORKING)
   if(CONFIG_NET_QEMU_SLIP)
-    if(CONFIG_NET_SLIP_TAP)
+    if((CONFIG_NET_SLIP_TAP) OR (CONFIG_IEEE802154_UPIPE))
       set(QEMU_NET_STACK 1)
     endif()
   endif()
