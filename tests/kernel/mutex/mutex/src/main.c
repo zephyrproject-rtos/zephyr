@@ -183,7 +183,7 @@ void thread_09(void)
 {
 	int rv;
 
-	k_sleep(K_MSEC(500));	/* Allow lower priority thread to run */
+	k_sleep(K_MSEC(1000));	/* Allow lower priority thread to run */
 
 	/*<mutex_1> is already locked. */
 	rv = k_mutex_lock(&mutex_1, K_NO_WAIT);
