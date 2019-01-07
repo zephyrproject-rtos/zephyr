@@ -250,6 +250,83 @@ However, we need to short 2 pins on Host Connector J3 via a 3.3k resistor
 (simple shorting without the resistor will also do) for debugging to work.
 Those 2 pins are Pin5 HOST_RST_N_LT_R) and Pin21 (+V_HOST_3P3_1P8).
 
+MCUBoot Bootloader Support
+==========================
+
+Zephyr on Intel S1000 supports the open source, cross-RTOS MCUBoot Bootloader.
+MCUBoot Bootloader in conjuntion with USB DFU (Device Firmware Upgrade) can be
+used to upgrade Intel S1000 firmware. The MCUBoot Bootloader source code is
+hosted in the `MCUboot GitHub repo`_ page. Check out `MCUboot with Zephyr`_
+documentation page on the MCUboot website for more on MCUboot.
+
+First, you need to generate the MCUBoot Bootloader image for Intel S1000.
+Go to the MCUBoot Bootloader repository on your local machine and execute the
+below commands.
+
+.. zephyr-app-commands::
+   :app: ~/mcuboot/boot/zephyr
+   :board: intel_s1000_crb
+   :goals: build
+
+zephyr/zephyr_intel_s1000_crb.bin is one of the outputs of the above steps.
+This is the MCUBoot Bootloader which now needs to be flashed to address 0 in
+the SPI flash. Please ensure the flash is completely erased before loading
+the MCUBoot Bootloader.
+
+MCUBoot Bootloader requires 2 images viz. image0 (default image) and image1
+(new image). MCUBoot Bootloader for s1000 also has DFU support embedded in it.
+Image0 is the image that gets loaded by the MCUBoot Bootloader upon boot. The
+new image, Image1, is updated by the MCUBoot Bootloader via the `USB DFU Util`_
+utility. Refer to :ref: `usb_dfu` for details on sample usage of dfu. The
+MCUBoot Bootloader will wait for a prescribed duration during boot waiting for
+USB DFU to occur. Image1 gets overwritten with a fresh image if a USB DFU is
+initiated within this duration. The flash offsets into which image0 and image1
+are loaded can be found out by looking at
+``boards/xtensa/intel_s1000_crb/intel_s1000_crb.dts``. Refer to
+:ref:`flash_partitions` for details about partition layout.
+
+Build an MCUboot-compatible Intel S1000 Firmware image (image0/image1),
+by following these steps:
+
+1. Edit your application's :file:`.conf` file to enable the
+   :option:`CONFIG_BOOTLOADER_MCUBOOT` option. For example, to build
+   ``tests/boards/intel_s1000_crb`` as MCUboot-compatible, enable the
+   Kconfig option :option:`CONFIG_BOOTLOADER_MCUBOOT` in prj.conf.
+
+2. Use the ``scripts/imagetool.py`` script from the `MCUboot GitHub repo`_
+   to sign the ``image0`` image (see `MCUboot with Zephyr`_ documentation
+   for details.) Please note that zephyr/zephyr.bin over here refers to the
+   actual path to the bin file
+   (i.e. tests/boards/intel_s1000_crb/build/zephyr/zephyr.bin)
+
+   .. code-block:: console
+
+      scripts/imgtool.py sign \
+           --key root-rsa-2048.pem \
+           --header-size 0x100 \
+           --align 8 \
+           --version 1.2 \
+           --slot-size 0x1D0000 \
+           zephyr/zephyr.bin \
+           signed-zephyr0.bin
+
+3. Sign the ``image1`` upgrade image with the ``--pad`` option:
+
+   .. code-block:: console
+
+      scripts/imgtool.py sign \
+           --key root-rsa-2048.pem \
+           --header-size 0x100 \
+           --align 8 \
+           --version 1.2 \
+           --slot-size 0x1D0000 \
+           --pad
+           zephyr/zephyr.bin \
+           signed-zephyr1.bin
+
+More detailed information regarding the use of MCUboot with Zephyr can be found
+in the `MCUboot with Zephyr`_ documentation page on the MCUboot website.
+
 .. target-notes::
 
 .. _`FT232 UART`: https://www.amazon.com/FT232RL-Serial-Converter-Adapter-Arduino/dp/B06XDH2VK9
@@ -259,3 +336,9 @@ Those 2 pins are Pin5 HOST_RST_N_LT_R) and Pin21 (+V_HOST_3P3_1P8).
 .. _SDK portal: https://tensilicatools.com
 
 .. _Intel Speech Enabling Developer Kit: https://software.intel.com/en-us/iot/speech-enabling-dev-kit
+
+.. _MCUboot GitHub repo: https://github.com/runtimeco/mcuboot
+
+.. _MCUboot with Zephyr: https://mcuboot.com/mcuboot/readme-zephyr.html
+
+.. _USB DFU Util: http://dfu-util.sourceforge.net/
