@@ -287,7 +287,8 @@ class License(ComplianceTest):
 
         if report != "":
             self.case.result = Failure("License/Copyright issues", "failure")
-            self.case.result._elem.text = report
+            preamble = "In most cases you do not need to do anything here, especially if the files reported below are going into ext/ and if license was approved for inclusion into ext/ already. Fix any missing license/copyright issues. The license exception if a JFYI for the maintainers and can be overriden when merging the pull request.\n"
+            self.case.result._elem.text = preamble + report
 
 
 class Identity(ComplianceTest):
