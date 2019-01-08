@@ -84,6 +84,19 @@
 			label = "UART_5";
 		};
 
+		i2c2: i2c@40005800 {
+			compatible = "st,stm32-i2c-v2";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40005800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00400000>;
+			interrupts = <33 0>, <34 0>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+			label= "I2C_2";
+		};
+
 		i2c4: i2c@40008400 {
 			compatible = "st,stm32-i2c-v2";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
