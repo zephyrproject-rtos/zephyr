@@ -11,6 +11,7 @@
 		reg = <0x54>;
 		label = "EEPROM_SLAVE_0";
 		size = <1>;
+		zephyr,index = <0>;
 	};
 };
 
@@ -21,5 +22,6 @@
 		reg = <0x56>;
 		label = "EEPROM_SLAVE_1";
 		size = <1>;
+		zephyr,index = <1>;
 	};
 };
