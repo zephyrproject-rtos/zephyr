@@ -6,6 +6,10 @@
 
 zephyr_include_directories(.)
 
+zephyr_library_compile_definitions_ifdef(
+  CONFIG_PTP_CLOCK_MCUX ENET_ENHANCEDBUFFERDESCRIPTOR_MODE
+)
+
 zephyr_sources_ifdef(CONFIG_GPIO_MCUX_IGPIO   fsl_gpio.c)
 zephyr_sources_ifdef(CONFIG_SPI_MCUX_LPSPI    fsl_lpspi.c)
 zephyr_sources_ifdef(CONFIG_UART_MCUX_LPUART  fsl_lpuart.c)
