@@ -20,7 +20,7 @@
 #define ITRERATION_COUNT 5
 static K_THREAD_STACK_ARRAY_DEFINE(tstack, NUM_THREAD, STACK_SIZE);
 /* slice size in millisecond*/
-#define SLICE_SIZE 200
+#define SLICE_SIZE 300
 /* busy for more than one slice*/
 #define BUSY_MS (SLICE_SIZE + 20)
 static APP_BSS_MEM struct k_thread t[NUM_THREAD];
