@@ -188,7 +188,7 @@ found in :ref:`nordic_segger_flashing`.
 
 Locate the DTS file for the board under: boards/arm/nrf52840_pca10059.
 This file requires a small modification to use a different partition table.
-Edit the include directive to include "fstab-segger" instead of "fstab-stock".
+Edit the include directive to include "fstab-debugger" instead of "fstab-stock".
 
 Then build and flash applications as usual (see :ref:`build_an_application` and
 :ref:`application_run` for more details).
