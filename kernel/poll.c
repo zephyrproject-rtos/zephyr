@@ -332,7 +332,7 @@ static int signal_poll_event(struct k_poll_event *event, u32_t state)
 	__ASSERT(event->poller->thread != NULL,
 		 "poller should have a thread\n");
 
-	event->poller->is_polling = true;
+	event->poller->is_polling = false;
 
 	if (!_is_thread_pending(thread)) {
 		goto ready_event;
