@@ -333,8 +333,16 @@ if(DEFINED SHIELD AND DEFINED NOT_FOUND_SHIELD_LIST)
   message(FATAL_ERROR "Invalid usage")
 endif()
 
-get_filename_component(BOARD_ARCH_DIR ${BOARD_DIR}      DIRECTORY)
-get_filename_component(ARCH           ${BOARD_ARCH_DIR} NAME)
+# Determine arch by the directory name after 'boards'
+# We search until we find 'boards' so we can have any number
+get_filename_component(PARENT_DIR ${BOARD_DIR} PATH)
+get_filename_component(DIR_NAME  ${PARENT_DIR} NAME)
+while(NOT ("boards" STREQUAL ${DIR_NAME}))
+  set(ARCH ${DIR_NAME})
+  get_filename_component(GPARENT_DIR ${PARENT_DIR} PATH)
+  get_filename_component(DIR_NAME   ${GPARENT_DIR} NAME)
+  set(PARENT_DIR ${GPARENT_DIR})
+endwhile(NOT ("boards" STREQUAL ${DIR_NAME}))
 
 if(CONF_FILE)
   # CONF_FILE has either been specified on the cmake CLI or is already
