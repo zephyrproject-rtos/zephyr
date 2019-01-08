@@ -247,14 +247,14 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 		return -EINVAL;
 	}
 
+	ll_hdr_size = ieee802154_compute_header_size(iface,
+						     &NET_IPV6_HDR(pkt)->dst);
+
 	/* len will hold the hdr size difference on success */
 	len = net_6lo_compress(pkt, true);
 	if (len < 0) {
 		return len;
 	}
-
-	ll_hdr_size = ieee802154_compute_header_size(iface,
-						     &NET_IPV6_HDR(pkt)->dst);
 
 	fragment = ieee802154_fragment_is_needed(pkt, ll_hdr_size);
 	ieee802154_fragment_ctx_init(&f_ctx, pkt, len, true);
