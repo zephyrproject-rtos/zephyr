@@ -39,7 +39,7 @@ config NET_IF_MCAST_IPV4_ADDR_COUNT
 
 config NET_ICMPV4_ACCEPT_BROADCAST
 	bool "Accept broadcast ICMPv4 echo-request"
-	default y
+	default n
 	help
 	  If set, then respond to ICMPv4 echo-request that is sent to
 	  broadcast address.
