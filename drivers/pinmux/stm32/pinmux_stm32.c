@@ -105,7 +105,7 @@ static int stm32_pin_configure(int pin, int func, int altf)
 	/* not much here, on STM32F10x the alternate function is
 	 * controller by setting up GPIO pins in specific mode.
 	 */
-	return stm32_gpio_configure((u32_t *)port_base,
+	return gpio_stm32_configure((u32_t *)port_base,
 				    STM32_PIN(pin), func, altf);
 }
 
