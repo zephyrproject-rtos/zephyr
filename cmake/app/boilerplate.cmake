@@ -266,7 +266,7 @@ foreach(root ${BOARD_ROOT})
   # already set
   find_path(BOARD_DIR
     NAMES ${BOARD}_defconfig
-    PATHS ${root}/boards/*/*
+    PATHS ${root}/boards/*/* ${root}/boards/*/*/*
     NO_DEFAULT_PATH
     )
   if(BOARD_DIR AND NOT (${root} STREQUAL ${ZEPHYR_BASE}))
