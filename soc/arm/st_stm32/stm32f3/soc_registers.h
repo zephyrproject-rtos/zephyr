@@ -9,6 +9,5 @@
 
 /* include register mapping headers */
 #include "flash_registers.h"
-#include "syscfg_registers.h"
 
 #endif /* _STM32F3X_SOC_REGISTERS_H_ */
