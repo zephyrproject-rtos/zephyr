@@ -75,7 +75,7 @@ class Bindings(yaml.Loader):
                             file_load_list.add(file)
                             with open(file, 'r', encoding='utf-8') as yf:
                                 cls._included = []
-                                l = yaml_traverse_inherited(yaml.load(yf, cls))
+                                l = yaml_traverse_inherited(file, yaml.load(yf, cls))
                                 if c not in yaml_list['compat']:
                                     yaml_list['compat'].append(c)
                                 if 'parent' in l:
@@ -489,13 +489,15 @@ def extract_node_include_info(reduced, root_node_address, sub_node_address,
                         extract_property(
                             node_compat, sub_node_address, k, v, None)
 
-def dict_merge(dct, merge_dct):
+def dict_merge(parent, fname, dct, merge_dct):
     # from https://gist.github.com/angstwad/bf22d1822c38a92ec0a9
 
     """ Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
     updating only top-level keys, dict_merge recurses down into dicts nested
     to an arbitrary depth, updating keys. The ``merge_dct`` is merged into
     ``dct``.
+    :param parent: parent tuple key
+    :param fname: yaml file being processed
     :param dct: dict onto which the merge is executed
     :param merge_dct: dct merged into dct
     :return: None
@@ -503,19 +505,20 @@ def dict_merge(dct, merge_dct):
     for k, v in merge_dct.items():
         if (k in dct and isinstance(dct[k], dict)
                 and isinstance(merge_dct[k], Mapping)):
-            dict_merge(dct[k], merge_dct[k])
+            dict_merge(k, fname, dct[k], merge_dct[k])
         else:
             if k in dct and dct[k] != merge_dct[k]:
-                print("extract_dts_includes.py: Merge of '{}': '{}'  overwrites '{}'.".format(
-                        k, merge_dct[k], dct[k]))
+                print("extract_dts_includes.py: {}('{}') merge of property '{}': '{}' overwrites '{}'.".format(
+                        fname, parent, k, merge_dct[k], dct[k]))
             dct[k] = merge_dct[k]
 
 
-def yaml_traverse_inherited(node):
+def yaml_traverse_inherited(fname, node):
     """ Recursive overload procedure inside ``node``
     ``inherits`` section is searched for and used as node base when found.
     Base values are then overloaded by node values
     and some consistency checks are done.
+    :param fname: initial yaml file being processed
     :param node:
     :return: node
     """
@@ -545,14 +548,14 @@ def yaml_traverse_inherited(node):
         node.pop('inherits')
         for inherits in inherits_list:
             if 'inherits' in inherits:
-                inherits = yaml_traverse_inherited(inherits)
+                inherits = yaml_traverse_inherited(fname, inherits)
             # title, description, version of inherited node
             # are overwritten by intention. Remove to prevent dct_merge to
             # complain about duplicates.
             inherits.pop('title', None)
             inherits.pop('version', None)
             inherits.pop('description', None)
-            dict_merge(inherits, node)
+            dict_merge(None, fname, inherits, node)
             node = inherits
     return node
 
