@@ -33,7 +33,7 @@ Follow these steps to build the gPTP sample application:
 .. zephyr-app-commands::
    :zephyr-app: samples/net/gptp
    :board: <board to use>
-   :conf: prj.conf
+   :conf: prj_base.conf
    :goals: build
    :compact:
 
