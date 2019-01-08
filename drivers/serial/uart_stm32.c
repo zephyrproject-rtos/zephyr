@@ -275,7 +275,7 @@ static void uart_stm32_usart_set_baud_rate(struct device *dev,
 			     baud_rate);
 }
 
-#ifdef CONFIG_LPUART_1
+#ifdef CONFIG_UART_LPUART_1
 static void uart_stm32_lpuart_set_baud_rate(struct device *dev,
 					    u32_t clock_rate, u32_t baud_rate)
 {
@@ -333,7 +333,7 @@ static int uart_stm32_init(struct device *dev)
 			       (clock_control_subsys_t *)&config->pclken,
 			       &clock_rate);
 
-#ifdef CONFIG_LPUART_1
+#ifdef CONFIG_UART_LPUART_1
 	if (IS_LPUART_INSTANCE(UartInstance)) {
 		uart_stm32_lpuart_set_baud_rate(dev, clock_rate, baud_rate);
 	} else {
@@ -481,7 +481,7 @@ STM32_UART_INIT(UART_10)
 #endif
 
 #if defined(CONFIG_SOC_SERIES_STM32L4X) || defined(CONFIG_SOC_SERIES_STM32L0X)
-#ifdef CONFIG_LPUART_1
+#ifdef CONFIG_UART_LPUART_1
 STM32_UART_INIT(LPUART_1)
 #endif /* CONFIG_UART_LPUART_1 */
 #endif
