@@ -37,7 +37,11 @@ const clock_usb_pll_config_t usb1PllConfig = {
 #ifdef CONFIG_INIT_ENET_PLL
 /* ENET PLL configuration for RUN mode */
 const clock_enet_pll_config_t ethPllConfig = {
+#ifdef CONFIG_SOC_MIMXRT1021
+	.enableClkOutput500M = true,
+#else
 	.enableClkOutput = true,
+#endif
 	.enableClkOutput25M = false,
 	.loopDivider = 1,
 };
