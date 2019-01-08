@@ -456,7 +456,6 @@ if(DEFINED SHIELD AND NOT (SHIELD-NOTFOUND STREQUAL ""))
 endif()
 
 get_filename_component(BOARD_ARCH_DIR ${BOARD_DIR}      DIRECTORY)
-get_filename_component(BOARD_FAMILY   ${BOARD_DIR}      NAME)
 get_filename_component(ARCH           ${BOARD_ARCH_DIR} NAME)
 
 foreach(root ${ARCH_ROOT})
