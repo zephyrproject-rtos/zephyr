@@ -140,41 +140,6 @@ struct gpio_stm32_data {
 };
 
 /**
- * @brief layout of stm32 gpio registers
- */
-struct stm32_gpio {
-#ifdef CONFIG_SOC_SERIES_STM32F1X
-	u32_t crl;
-	u32_t crh;
-	u32_t idr;
-	u32_t odr;
-	u32_t bsrr;
-	u32_t brr;
-	u32_t lckr;
-#else
-	u32_t moder;
-	u32_t otyper;
-	u32_t ospeedr;
-	u32_t pupdr;
-	u32_t idr;
-	u32_t odr;
-	u32_t bsrr;
-	u32_t lckr;
-	u32_t afr[2];
-#if defined(CONFIG_SOC_SERIES_STM32F0X) || \
-	defined(CONFIG_SOC_SERIES_STM32F3X) || \
-	defined(CONFIG_SOC_SERIES_STM32F7X) || \
-	defined(CONFIG_SOC_SERIES_STM32L0X) || \
-	defined(CONFIG_SOC_SERIES_STM32L4X)
-	u32_t brr;
-#endif
-#ifdef CONFIG_SOC_SERIES_STM32L4X
-	u32_t ascr;
-#endif
-#endif /* CONFIG_SOC_SERIES_STM32F1X */
-};
-
-/**
  * @brief helper for configuration of GPIO pin
  *
  * @param base_addr GPIO port base address

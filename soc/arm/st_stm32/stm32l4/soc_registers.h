@@ -10,6 +10,5 @@
 
 /* include register mapping headers */
 #include "flash_registers.h"
-#include "syscfg_registers.h"
 
 #endif /* _STM32L4X_SOC_REGISTERS_H_ */

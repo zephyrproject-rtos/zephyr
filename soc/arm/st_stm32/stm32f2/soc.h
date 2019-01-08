@@ -42,6 +42,10 @@
 #include <stm32f2xx_ll_usart.h>
 #endif
 
+#ifdef CONFIG_GPIO_STM32
+#include <stm32f2xx_ll_gpio.h>
+#endif
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32F2_SOC_H_ */

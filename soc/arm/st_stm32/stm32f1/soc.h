@@ -55,6 +55,10 @@
 #include <stm32f1xx_ll_iwdg.h>
 #endif
 
+#ifdef CONFIG_GPIO_STM32
+#include <stm32f1xx_ll_gpio.h>
+#endif
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32F1_SOC_H_ */

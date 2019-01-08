@@ -8,6 +8,5 @@
 #define _STM32F2X_SOC_REGISTERS_H_
 
 /* include register mapping headers */
-#include "syscfg_registers.h"
 
 #endif /* _STM32F2X_SOC_REGISTERS_H_ */
