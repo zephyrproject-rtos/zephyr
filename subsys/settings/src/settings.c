@@ -18,6 +18,7 @@ sys_slist_t settings_handlers;
 
 static u8_t settings_cmd_inited;
 
+static struct settings_handler *settings_handler_lookup(char *name);
 void settings_store_init(void);
 
 void settings_init(void)
@@ -32,14 +33,18 @@ void settings_init(void)
 
 int settings_register(struct settings_handler *handler)
 {
+	if (settings_handler_lookup(handler->name)) {
+		return -EEXIST;
+	}
 	sys_slist_prepend(&settings_handlers, &handler->node);
+
 	return 0;
 }
 
 /*
  * Find settings_handler based on name.
  */
-struct settings_handler *settings_handler_lookup(char *name)
+static struct settings_handler *settings_handler_lookup(char *name)
 {
 	struct settings_handler *ch;
 
