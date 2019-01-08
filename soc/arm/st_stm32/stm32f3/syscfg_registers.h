@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _STM32F3X_GPIO_REGISTERS_H_
-#define _STM32F3X_GPIO_REGISTERS_H_
+#ifndef _STM32_SYSCFG_REGISTERS_H_
+#define _STM32_SYSCFG_REGISTERS_H_
 
 /**
  * @brief
@@ -13,22 +13,9 @@
  * Based on reference manual:
  *   STM32F303xB/C/D/E, STM32F303x6/8, STM32F328x8, STM32F358xC,
  *   STM32F398xE advanced ARM(r)-based MCUs
- *
- * Chapter 11: General-purpose I/Os
  */
 
-struct stm32f3x_gpio {
-	u32_t moder;
-	u32_t otyper;
-	u32_t ospeedr;
-	u32_t pupdr;
-	u32_t idr;
-	u32_t odr;
-	u32_t bsrr;
-	u32_t lckr;
-	u32_t afr[2];
-	u32_t brr;
-};
+#include "../common/soc_syscfg_common.h"
 
 union syscfg_cfgr1 {
 	u32_t val;
@@ -66,21 +53,13 @@ union syscfg_rcr {
 	} bit;
 };
 
-union syscfg__exticr {
-	u32_t val;
-	struct {
-		u16_t exti;
-		u16_t rsvd__16_31;
-	} bit;
-};
-
-struct stm32f3x_syscfg {
+struct stm32_syscfg {
 	union syscfg_cfgr1 cfgr1;
 	union syscfg_rcr rcr;
-	union syscfg__exticr exticr1;
-	union syscfg__exticr exticr2;
-	union syscfg__exticr exticr3;
-	union syscfg__exticr exticr4;
+	union syscfg_exticr exticr1;
+	union syscfg_exticr exticr2;
+	union syscfg_exticr exticr3;
+	union syscfg_exticr exticr4;
 	u32_t cfgr2;
 	u32_t rsvd_0x1C;
 	u32_t rsvd_0x20;
@@ -98,4 +77,4 @@ struct stm32f3x_syscfg {
 	u32_t cfgr3;
 };
 
-#endif /* _STM32F3X_GPIO_REGISTERS_H_ */
+#endif /* _STM32_GPIO_REGISTERS_H_ */

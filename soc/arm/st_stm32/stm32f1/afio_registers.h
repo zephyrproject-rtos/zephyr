@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _STM32F10X_GPIO_REGISTERS_H_
-#define _STM32F10X_GPIO_REGISTERS_H_
+#ifndef _STM32_AFIO_REGISTERS_H_
+#define _STM32_AFIO_REGISTERS_H_
 
 /**
  * @brief
@@ -18,16 +18,7 @@
  *            (GPIOs and AFIOs)
  */
 
-/* 9.2 GPIO registers - each GPIO port controls 16 pins */
-struct stm32f10x_gpio {
-	u32_t crl;
-	u32_t crh;
-	u32_t idr;
-	u32_t odr;
-	u32_t bsrr;
-	u32_t brr;
-	u32_t lckr;
-};
+#include "../common/soc_syscfg_common.h"
 
 /* 9.4.1 AFIO_EVCR */
 union __afio_evcr {
@@ -67,15 +58,6 @@ union __afio_mapr {
 	} bit;
 };
 
-/* 9.4.{3,4,5,6} AFIO_EXTICRx */
-union __afio_exticr {
-	u32_t val;
-	struct {
-		u16_t rsvd__16_31;
-		u16_t exti;
-	} bit;
-};
-
 /* 9.4.7 AFIO_MAPR2 */
 union __afio_mapr2 {
 	u32_t val;
@@ -92,14 +74,14 @@ union __afio_mapr2 {
 };
 
 /* 9.4 AFIO registers */
-struct stm32f10x_afio {
+struct stm32_afio {
 	union __afio_evcr evcr;
 	union __afio_mapr mapr;
-	union __afio_exticr exticr1;
-	union __afio_exticr exticr2;
-	union __afio_exticr exticr3;
-	union __afio_exticr exticr4;
+	union syscfg_exticr exticr1;
+	union syscfg_exticr exticr2;
+	union syscfg_exticr exticr3;
+	union syscfg_exticr exticr4;
 	union __afio_mapr2 mapr2;
 };
 
-#endif /* _STM32F10X_GPIO_REGISTERS_H_ */
+#endif /* _STM32_AFIO_REGISTERS_H_ */

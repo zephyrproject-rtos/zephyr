@@ -19,9 +19,17 @@
 #include "gpio_stm32.h"
 #include "gpio_utils.h"
 
+/* F1 series STM32 use AFIO register to configure interrupt generation
+ * and pinmux.
+ */
+#ifdef CONFIG_SOC_SERIES_STM32F1X
+#include "afio_registers.h"
+#else
+#include "syscfg_registers.h"
+#endif
+
 /**
- * @brief Common GPIO driver for STM32 MCUs. Each SoC must implement a
- * SoC specific integration glue
+ * @brief Common GPIO driver for STM32 MCUs.
  */
 
 /**
@@ -35,6 +43,202 @@ static void gpio_stm32_isr(int line, void *arg)
 	if (BIT(line) & data->cb_pins) {
 		_gpio_fire_callbacks(&data->cb, dev, BIT(line));
 	}
+}
+
+/**
+ * @brief Common gpio flags to custom flags
+ */
+const int gpio_stm32_flags_to_conf(int flags, int *pincfg)
+{
+	int direction = flags & GPIO_DIR_MASK;
+	int pud = flags & GPIO_PUD_MASK;
+
+	if (pincfg == NULL) {
+		return -EINVAL;
+	}
+
+	if (direction == GPIO_DIR_OUT) {
+		*pincfg = STM32_PINCFG_MODE_OUTPUT;
+	} else {
+		/* pull-{up,down} maybe? */
+		*pincfg = STM32_PINCFG_MODE_INPUT;
+		if (pud == GPIO_PUD_PULL_UP) {
+			*pincfg |= STM32_PINCFG_PULL_UP;
+		} else if (pud == GPIO_PUD_PULL_DOWN) {
+			*pincfg |= STM32_PINCFG_PULL_DOWN;
+		} else {
+			/* floating */
+			*pincfg |= STM32_PINCFG_FLOATING;
+		}
+	}
+
+	return 0;
+}
+
+/**
+ * @brief Configure the hardware.
+ */
+int gpio_stm32_configure(u32_t *base_addr, int pin, int conf, int altf)
+{
+	volatile struct stm32_gpio *gpio =
+		(struct stm32_gpio *)(base_addr);
+#ifdef CONFIG_SOC_SERIES_STM32F1X
+	int cnf, mode, mode_io;
+	int crpin = pin;
+
+	/* pins are configured in CRL (0-7) and CRH (8-15)
+	 * registers
+	 */
+	volatile u32_t *reg = &gpio->crl;
+
+	ARG_UNUSED(altf);
+
+	if (crpin > 7) {
+		reg = &gpio->crh;
+		crpin -= 8;
+	}
+
+	/* each port is configured by 2 registers:
+	 * CNFy[1:0]: Port x configuration bits
+	 * MODEy[1:0]: Port x mode bits
+	 *
+	 * memory layout is repeated for every port:
+	 *   |  CNF  |  MODE |
+	 *   | [0:1] | [0:1] |
+	 */
+
+	mode_io = (conf >> STM32_MODE_INOUT_SHIFT) & STM32_MODE_INOUT_MASK;
+
+	if (mode_io == STM32_MODE_INPUT) {
+		int in_pudpd = conf & (STM32_PUPD_MASK << STM32_PUPD_SHIFT);
+
+		/* Pin configured in input mode */
+		/* Mode: 00 */
+		mode = mode_io;
+		/* Configuration values: */
+		/* 00: Analog mode */
+		/* 01: Floating input */
+		/* 10: Pull-up/Pull-Down */
+		cnf = (conf >> STM32_CNF_IN_SHIFT) & STM32_CNF_IN_MASK;
+
+		if (in_pudpd == STM32_PUPD_PULL_UP) {
+			/* enable pull up */
+			gpio->odr |= 1 << pin;
+		} else if (in_pudpd == STM32_PUPD_PULL_DOWN) {
+			/* or pull down */
+			gpio->odr &= ~(1 << pin);
+		}
+	} else {
+		/* Pin configured in output mode */
+		int mode_speed = ((conf >> STM32_MODE_OSPEED_SHIFT) &
+				   STM32_MODE_OSPEED_MASK);
+		/* Mode output possible values */
+		/* 01: Max speed 10MHz (default value) */
+		/* 10: Max speed 2MHz */
+		/* 11: Max speed 50MHz */
+		mode = mode_speed + mode_io;
+		/* Configuration possible values */
+		/* x0: Push-pull */
+		/* x1: Open-drain */
+		/* 0x: General Purpose Output */
+		/* 1x: Alternate Function Output */
+		cnf = ((conf >> STM32_CNF_OUT_0_SHIFT) & STM32_CNF_OUT_0_MASK) |
+		      (((conf >> STM32_CNF_OUT_1_SHIFT) & STM32_CNF_OUT_1_MASK)
+		       << 1);
+	}
+
+	/* clear bits */
+	*reg &= ~(0xf << (crpin * 4));
+	/* set bits */
+	*reg |= (cnf << (crpin * 4 + 2) | mode << (crpin * 4));
+#else
+	unsigned int mode, otype, ospeed, pupd;
+	unsigned int pin_shift = pin << 1;
+	unsigned int afr_bank = pin / 8;
+	unsigned int afr_shift = (pin % 8) << 2;
+	u32_t scratch;
+
+	mode = (conf >> STM32_MODER_SHIFT) & STM32_MODER_MASK;
+	otype = (conf >> STM32_OTYPER_SHIFT) & STM32_OTYPER_MASK;
+	ospeed = (conf >> STM32_OSPEEDR_SHIFT) & STM32_OSPEEDR_MASK;
+	pupd = (conf >> STM32_PUPDR_SHIFT) & STM32_PUPDR_MASK;
+
+	scratch = gpio->moder & ~(STM32_MODER_MASK << pin_shift);
+	gpio->moder = scratch | (mode << pin_shift);
+
+	scratch = gpio->ospeedr & ~(STM32_OSPEEDR_MASK << pin_shift);
+	gpio->ospeedr = scratch | (ospeed << pin_shift);
+
+	scratch = gpio->otyper & ~(STM32_OTYPER_MASK << pin);
+	gpio->otyper = scratch | (otype << pin);
+
+	scratch = gpio->pupdr & ~(STM32_PUPDR_MASK << pin_shift);
+	gpio->pupdr = scratch | (pupd << pin_shift);
+
+	scratch = gpio->afr[afr_bank] & ~(STM32_AFR_MASK << afr_shift);
+	gpio->afr[afr_bank] = scratch | (altf << afr_shift);
+#endif
+	return 0;
+}
+
+/**
+ * @brief Enable EXTI of the specific line
+ */
+const int gpio_stm32_enable_int(int port, int pin)
+{
+#ifdef CONFIG_SOC_SERIES_STM32F1X
+	volatile struct stm32_afio *syscfg =
+		(struct stm32_afio *)AFIO_BASE;
+#else
+	volatile struct stm32_syscfg *syscfg =
+		(struct stm32_syscfg *)SYSCFG_BASE;
+#endif
+	volatile union syscfg_exticr *exticr;
+
+#if defined(CONFIG_SOC_SERIES_STM32F2X) || \
+	defined(CONFIG_SOC_SERIES_STM32F3X) || \
+	defined(CONFIG_SOC_SERIES_STM32F4X) || \
+	defined(CONFIG_SOC_SERIES_STM32F7X) || \
+	defined(CONFIG_SOC_SERIES_STM32L4X)
+	struct device *clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
+	struct stm32_pclken pclken = {
+		.bus = STM32_CLOCK_BUS_APB2,
+		.enr = LL_APB2_GRP1_PERIPH_SYSCFG
+	};
+	/* Enable SYSCFG clock */
+	clock_control_on(clk, (clock_control_subsys_t *) &pclken);
+#endif
+	int shift = 0;
+
+	if (pin <= 3) {
+		exticr = &syscfg->exticr1;
+	} else if (pin <= 7) {
+		exticr = &syscfg->exticr2;
+	} else if (pin <= 11) {
+		exticr = &syscfg->exticr3;
+	} else if (pin <= 15) {
+		exticr = &syscfg->exticr4;
+	} else {
+		return -EINVAL;
+	}
+
+#ifdef CONFIG_SOC_SERIES_STM32L0X
+	/*
+	 * Ports F and G are not present on some STM32L0 parts, so
+	 * for these parts port H external interrupt should be enabled
+	 * by writing value 0x5 instead of 0x7.
+	 */
+	if (port == STM32_PORTH) {
+		port = LL_SYSCFG_EXTI_PORTH;
+	}
+#endif
+
+	shift = 4 * (pin % 4);
+
+	exticr->val &= ~(0xf << shift);
+	exticr->val |= port << shift;
+
+	return 0;
 }
 
 /**
@@ -54,12 +258,12 @@ static int gpio_stm32_config(struct device *dev, int access_op,
 	/* figure out if we can map the requested GPIO
 	 * configuration
 	 */
-	map_res = stm32_gpio_flags_to_conf(flags, &pincfg);
+	map_res = gpio_stm32_flags_to_conf(flags, &pincfg);
 	if (map_res) {
 		return map_res;
 	}
 
-	if (stm32_gpio_configure(cfg->base, pin, pincfg, 0)) {
+	if (gpio_stm32_configure(cfg->base, pin, pincfg, 0)) {
 		return -EIO;
 	}
 
@@ -70,7 +274,7 @@ static int gpio_stm32_config(struct device *dev, int access_op,
 			return -EBUSY;
 		}
 
-		stm32_gpio_enable_int(cfg->port, pin);
+		gpio_stm32_enable_int(cfg->port, pin);
 
 		if (flags & GPIO_INT_EDGE) {
 			int edge = 0;
@@ -100,12 +304,20 @@ static int gpio_stm32_write(struct device *dev, int access_op,
 			    u32_t pin, u32_t value)
 {
 	const struct gpio_stm32_config *cfg = dev->config->config_info;
+	struct stm32_gpio *gpio = (struct stm32_gpio *)cfg->base;
+	int pval = 1 << (pin & 0xf);
 
 	if (access_op != GPIO_ACCESS_BY_PIN) {
 		return -ENOTSUP;
 	}
 
-	return stm32_gpio_set(cfg->base, pin, value);
+	if (value != 0) {
+		gpio->odr |= pval;
+	} else {
+		gpio->odr &= ~pval;
+	}
+
+	return 0;
 }
 
 /**
@@ -115,12 +327,13 @@ static int gpio_stm32_read(struct device *dev, int access_op,
 			   u32_t pin, u32_t *value)
 {
 	const struct gpio_stm32_config *cfg = dev->config->config_info;
+	struct stm32_gpio *gpio = (struct stm32_gpio *)cfg->base;
 
 	if (access_op != GPIO_ACCESS_BY_PIN) {
 		return -ENOTSUP;
 	}
 
-	*value = stm32_gpio_get(cfg->base, pin);
+	*value = (gpio->idr >> pin) & 0x1;
 
 	return 0;
 }
