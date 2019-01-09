@@ -191,6 +191,17 @@ void radio_ticks_active_to_start_set(u32_t ticks_active_to_start);
 struct radio_adv_data *radio_adv_data_get(void);
 struct radio_adv_data *radio_scan_data_get(void);
 
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+u32_t radio_adv_enable(u8_t phy_p, u16_t interval, u8_t chan_map,
+		       u8_t filter_policy, u8_t rl_idx,
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
+u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
+		       u8_t rl_idx,
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
+		       u8_t at_anchor, u32_t ticks_anchor, u8_t retry,
+		       u8_t scan_window, u8_t scan_delay);
+#else /* !CONFIG_BT_HCI_MESH_EXT */
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 u32_t radio_adv_enable(u8_t phy_p, u16_t interval, u8_t chan_map,
 		       u8_t filter_policy, u8_t rl_idx);
@@ -198,6 +209,7 @@ u32_t radio_adv_enable(u8_t phy_p, u16_t interval, u8_t chan_map,
 u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 		       u8_t rl_idx);
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
+#endif /* !CONFIG_BT_HCI_MESH_EXT */
 
 u8_t radio_adv_disable(void);
 u32_t ll_adv_is_enabled(u16_t handle);

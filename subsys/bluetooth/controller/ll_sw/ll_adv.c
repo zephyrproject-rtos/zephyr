@@ -381,11 +381,17 @@ u8_t ll_adv_scan_rsp_set(u8_t len, u8_t const *const data)
 	return 0;
 }
 
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
+#if defined(CONFIG_BT_CTLR_ADV_EXT) || defined(CONFIG_BT_HCI_MESH_EXT)
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+u8_t ll_adv_enable(u16_t handle, u8_t enable,
+		   u8_t at_anchor, u32_t ticks_anchor, u8_t retry,
+		   u8_t scan_window, u8_t scan_delay)
+#else /* !CONFIG_BT_HCI_MESH_EXT */
 u8_t ll_adv_enable(u16_t handle, u8_t enable)
-#else /* !CONFIG_BT_CTLR_ADV_EXT */
+#endif /* !CONFIG_BT_HCI_MESH_EXT */
+#else /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_HCI_MESH_EXT */
 u8_t ll_adv_enable(u8_t enable)
-#endif /* !CONFIG_BT_CTLR_ADV_EXT */
+#endif /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_HCI_MESH_EXT */
 {
 	struct radio_adv_data *radio_scan_data;
 	struct radio_adv_data *radio_adv_data;
@@ -467,6 +473,18 @@ u8_t ll_adv_enable(u8_t enable)
 		}
 	}
 
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	status = radio_adv_enable(ll_adv.phy_p, ll_adv.interval,
+				  ll_adv.chan_map, ll_adv.filter_policy,
+				   rl_idx,
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
+	status = radio_adv_enable(ll_adv.interval, ll_adv.chan_map,
+				  ll_adv.filter_policy, rl_idx,
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
+				  at_anchor, ticks_anchor, retry,
+				  scan_window, scan_delay);
+#else /* !CONFIG_BT_HCI_MESH_EXT */
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	status = radio_adv_enable(ll_adv.phy_p, ll_adv.interval,
 				  ll_adv.chan_map, ll_adv.filter_policy,
@@ -475,6 +493,6 @@ u8_t ll_adv_enable(u8_t enable)
 	status = radio_adv_enable(ll_adv.interval, ll_adv.chan_map,
 				  ll_adv.filter_policy, rl_idx);
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
-
+#endif /* !CONFIG_BT_HCI_MESH_EXT */
 	return status;
 }

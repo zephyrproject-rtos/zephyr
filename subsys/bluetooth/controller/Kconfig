@@ -71,6 +71,26 @@ config BT_CTLR_DUP_FILTER_LEN
 	  Set the number of unique BLE addresses that can be filtered as
 	  duplicates while scanning.
 
+config BT_CTLR_MESH_SCAN_FILTERS
+	prompt "Number of Mesh scan filters"
+	int
+	depends on BT_HCI_MESH_EXT
+	default 1
+	range 1 15
+	help
+	  Set the number of unique Mesh Scan Filters available as part of
+	  the Intel Mesh Vendor Specific Extensions.
+
+config BT_CTLR_MESH_SF_PATTERNS
+	prompt "Number of Mesh scan filter patterns"
+	int
+	depends on BT_HCI_MESH_EXT
+	default 15
+	range 1 15
+	help
+	  Set the number of unique Mesh Scan Filter patterns available per
+	  Scan Filter as part of the Intel Mesh Vendor Specific Extensions.
+
 config BT_CTLR_RX_BUFFERS
 	int "Number of Rx buffers"
 	default 6 if BT_HCI_RAW

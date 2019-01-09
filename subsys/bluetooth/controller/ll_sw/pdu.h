@@ -28,10 +28,16 @@
 #else
 #define PDU_AC_SIZE_SCFP 0
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+#define PDU_AC_SIZE_MESH 5
+#else
+#define PDU_AC_SIZE_MESH 0
+#endif /* CONFIG_BT_HCI_MESH_EXT */
 
 #define PDU_AC_SIZE_EXTRA (PDU_AC_SIZE_RSSI + \
 			   PDU_AC_SIZE_PRIV + \
-			   PDU_AC_SIZE_SCFP)
+			   PDU_AC_SIZE_SCFP + \
+			   PDU_AC_SIZE_MESH)
 
 struct pdu_adv_adv_ind {
 	u8_t addr[BDADDR_SIZE];

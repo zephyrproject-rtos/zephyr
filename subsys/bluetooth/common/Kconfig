@@ -35,6 +35,12 @@ config BT_HCI_VS_EXT_DETECT
 	  sending vendor commands to controller which may interpret them in
 	  completely different ways.
 
+config BT_HCI_MESH_EXT
+	bool "Mesh HCI Command support"
+	depends on BT_BROADCASTER && BT_OBSERVER && !BT_LL_SW_SPLIT
+	help
+	  Enable support for the Bluetooth Mesh HCI Commands.
+
 config BT_RPA
 	# Virtual/hidden option
 	bool
