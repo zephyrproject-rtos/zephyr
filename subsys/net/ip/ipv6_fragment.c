@@ -286,25 +286,29 @@ static void reassembly_timeout(struct k_work *work)
 
 static void reassemble_packet(struct net_ipv6_reassembly *reass)
 {
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access, struct net_ipv6_hdr);
+	NET_PKT_DATA_ACCESS_DEFINE(frag_access, struct net_ipv6_frag_hdr);
+	union {
+		struct net_ipv6_hdr *hdr;
+		struct net_ipv6_frag_hdr *frag_hdr;
+	} ipv6;
+
 	struct net_pkt *pkt;
 	struct net_buf *last;
-	struct net_buf *frag;
 	u8_t next_hdr;
-	int i, len, ret;
-	u16_t pos;
+	int i, len;
 
 	k_delayed_work_cancel(&reass->timer);
 
 	NET_ASSERT(reass->pkt[0]);
 
-	last = net_buf_frag_last(reass->pkt[0]->frags);
+	last = net_buf_frag_last(reass->pkt[0]->buffer);
 
 	/* We start from 2nd packet which is then appended to
 	 * the first one.
 	 */
 	for (i = 1; i < NET_IPV6_FRAGMENTS_MAX_PKT; i++) {
 		int removed_len;
-		int ret;
 
 		pkt = reass->pkt[i];
 
@@ -315,19 +319,19 @@ static void reassemble_packet(struct net_ipv6_reassembly *reass)
 			      sizeof(struct net_ipv6_frag_hdr);
 
 		NET_DBG("Removing %d bytes from start of pkt %p",
-			removed_len, pkt->frags);
+			removed_len, pkt->buffer);
 
-		ret = net_pkt_pull(pkt, 0, removed_len);
-		if (ret) {
+		if (net_pkt_pull_new(pkt, removed_len)) {
 			NET_ERR("Failed to pull headers");
-			NET_ASSERT(ret != 0);
+			reassembly_cancel(reass->id, &reass->src, &reass->dst);
+			return;
 		}
 
 		/* Attach the data to previous pkt */
-		last->frags = pkt->frags;
-		last = net_buf_frag_last(pkt->frags);
+		last->frags = pkt->buffer;
+		last = net_buf_frag_last(pkt->buffer);
 
-		pkt->frags = NULL;
+		pkt->buffer = NULL;
 		reass->pkt[i] = NULL;
 
 		net_pkt_unref(pkt);
@@ -339,34 +343,43 @@ static void reassemble_packet(struct net_ipv6_reassembly *reass)
 	/* Next we need to strip away the fragment header from the first packet
 	 * and set the various pointers and values in packet.
 	 */
+	net_pkt_cursor_init(pkt);
 
-	frag = net_frag_read_u8(pkt->frags, net_pkt_ipv6_fragment_start(pkt),
-				&pos, &next_hdr);
-	if (!frag && pos == 0xFFFF) {
-		NET_ERR("Failed to read next header");
-		NET_ASSERT(frag);
+	if (net_pkt_skip(pkt, net_pkt_ipv6_fragment_start(pkt))) {
+		NET_ERR("Failed to move to fragment header");
+		goto error;
 	}
 
-	ret = net_pkt_pull(pkt, net_pkt_ipv6_fragment_start(pkt),
-			   sizeof(struct net_ipv6_frag_hdr));
-	if (ret) {
-		NET_ERR("Failed to pull fragmentation header");
-		NET_ASSERT(ret);
+	ipv6.frag_hdr = (struct net_ipv6_frag_hdr *)net_pkt_get_data_new(
+							pkt, &frag_access);
+	if (!ipv6.frag_hdr) {
+		NET_ERR("Failed to get fragment header");
+		goto error;
 	}
+
+	next_hdr = ipv6.frag_hdr->nexthdr;
+
+	if (net_pkt_pull_new(pkt, sizeof(struct net_ipv6_frag_hdr))) {
+		NET_ERR("Failed to remove fragment header");
+		goto error;
+	}
+
+	net_pkt_cursor_init(pkt);
 
 	/* This one updates the previous header's nexthdr value */
-	if (!net_pkt_write_u8_timeout(pkt, pkt->frags,
-				      net_pkt_ipv6_hdr_prev(pkt),
-				      &pos, next_hdr, NET_BUF_TIMEOUT)) {
-		net_pkt_unref(pkt);
-		return;
+	if (net_pkt_skip(pkt, net_pkt_ipv6_hdr_prev(pkt)) ||
+	    net_pkt_write_u8_new(pkt, next_hdr)) {
+		goto error;
 	}
 
-	if (!net_pkt_compact(pkt)) {
-		NET_ERR("Cannot compact reassembly packet %p", pkt);
-		net_pkt_unref(pkt);
-		return;
+	net_pkt_cursor_init(pkt);
+
+	ipv6.hdr = (struct net_ipv6_hdr *)net_pkt_get_data_new(pkt,
+							       &ipv6_access);
+	if (!ipv6.hdr) {
+		goto error;
 	}
+
 
 	/* Fix the total length of the IPv6 packet. */
 	len = net_pkt_ipv6_ext_len(pkt);
@@ -378,7 +391,9 @@ static void reassemble_packet(struct net_ipv6_reassembly *reass)
 
 	len = net_pkt_get_len(pkt) - sizeof(struct net_ipv6_hdr);
 
-	NET_IPV6_HDR(pkt)->len = htons(len);
+	ipv6.hdr->len = htons(len);
+
+	net_pkt_set_data(pkt, &ipv6_access);
 
 	NET_DBG("New pkt %p IPv6 len is %d bytes", pkt, len);
 
@@ -388,10 +403,11 @@ static void reassemble_packet(struct net_ipv6_reassembly *reass)
 	 * MUST NOT pass it to L2 so there will be a special check for that
 	 * in process_data() when handling the packet.
 	 */
-	ret = net_recv_data(net_pkt_iface(pkt), pkt);
-	if (ret < 0) {
-		net_pkt_unref(pkt);
+	if (net_recv_data(net_pkt_iface(pkt), pkt) >= 0) {
+		return;
 	}
+error:
+	net_pkt_unref(pkt);
 }
 
 void net_ipv6_frag_foreach(net_ipv6_frag_cb_t cb, void *user_data)
@@ -471,18 +487,14 @@ static int shift_packets(struct net_ipv6_reassembly *reass, int pos)
 }
 
 enum net_verdict net_ipv6_handle_fragment_hdr(struct net_pkt *pkt,
-					      struct net_buf *frag,
-					      int total_len,
-					      u16_t buf_offset,
-					      u16_t *loc,
+					      struct net_ipv6_hdr *hdr,
 					      u8_t nexthdr)
 {
 	struct net_ipv6_reassembly *reass = NULL;
-	u32_t id;
-	u16_t offset;
 	u16_t flag;
-	u8_t more;
 	bool found;
+	u8_t more;
+	u32_t id;
 	int i;
 
 	if (!reassembly_init_done) {
@@ -497,29 +509,29 @@ enum net_verdict net_ipv6_handle_fragment_hdr(struct net_pkt *pkt,
 		reassembly_init_done = true;
 	}
 
-	/* Each fragment has a fragment header. */
-	frag = net_frag_skip(frag, buf_offset, loc, 1); /* reserved */
-	frag = net_frag_read_be16(frag, *loc, loc, &flag);
-	frag = net_frag_read_be32(frag, *loc, loc, &id);
-	if (!frag && *loc == 0xffff) {
+	/* Each fragment has a fragment header, however since we already
+	 * read the nexthdr part of it, we are not going to use
+	 * net_pkt_get_data_new() and access the header directly: the cursor
+	 * being 1 byte too far, let's just read the next relevant pieces.
+	 */
+	if (net_pkt_skip(pkt, 1) || /* reserved */
+	    net_pkt_read_be16_new(pkt, &flag) ||
+	    net_pkt_read_be32_new(pkt, &id)) {
 		goto drop;
 	}
 
-	reass = reassembly_get(id, &NET_IPV6_HDR(pkt)->src,
-			       &NET_IPV6_HDR(pkt)->dst);
+	reass = reassembly_get(id, &hdr->src, &hdr->dst);
 	if (!reass) {
 		NET_DBG("Cannot get reassembly slot, dropping pkt %p", pkt);
 		goto drop;
 	}
 
-	offset = flag & 0xfff8;
 	more = flag & 0x01;
-
-	net_pkt_set_ipv6_fragment_offset(pkt, offset);
+	net_pkt_set_ipv6_fragment_offset(pkt, flag & 0xfff8);
 
 	if (!reass->pkt[0]) {
-		NET_DBG("Storing pkt %p to slot %d offset 0x%x", pkt, 0,
-			offset);
+		NET_DBG("Storing pkt %p to slot %d offset 0x%x",
+			pkt, 0, net_pkt_ipv6_fragment_offset(pkt));
 		reass->pkt[0] = pkt;
 
 		reassembly_info("Reassembly 1st pkt", reass);
@@ -532,28 +544,25 @@ enum net_verdict net_ipv6_handle_fragment_hdr(struct net_pkt *pkt,
 	 * in reassembly chain in correct order.
 	 */
 	for (i = 0, found = false; i < NET_IPV6_FRAGMENTS_MAX_PKT; i++) {
-		if (!reass->pkt[i]) {
-			NET_DBG("Storing pkt %p to slot %d offset 0x%x", pkt,
-				i, offset);
-			reass->pkt[i] = pkt;
-			found = true;
-			break;
+		if (reass->pkt[i]) {
+			if (net_pkt_ipv6_fragment_offset(reass->pkt[i]) <
+			    net_pkt_ipv6_fragment_offset(pkt)) {
+				continue;
+			}
+
+			/* Make room for this fragment. If there is no room,
+			 * then it will discard the whole reassembly.
+			 */
+			if (shift_packets(reass, i)) {
+				break;
+			}
 		}
 
-		if (net_pkt_ipv6_fragment_offset(reass->pkt[i]) < offset) {
-			continue;
-		}
-
-		/* Make room for this fragment, if there is no room, then
-		 * discard the whole reassembly.
-		 */
-		if (shift_packets(reass, i)) {
-			break;
-		}
-
-		NET_DBG("Storing %p (offset 0x%x) to [%d]", pkt, offset, i);
+		NET_DBG("Storing pkt %p to slot %d offset 0x%x",
+			pkt, i, net_pkt_ipv6_fragment_offset(pkt));
 		reass->pkt[i] = pkt;
 		found = true;
+
 		break;
 	}
 

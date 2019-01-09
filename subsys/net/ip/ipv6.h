@@ -430,21 +430,27 @@ int net_ipv6_find_last_ext_hdr(struct net_pkt *pkt, u16_t *next_hdr_idx,
 /**
  * @brief Handles IPv6 fragmented packets.
  *
- * @param pkt Network head packet.
- * @param frag Network packet fragment
- * @param total_len Total length of the packet
- * @param offset Start of fragment header
- * @param loc End of fragment header, this is returned to the caller
+ * @param pkt     Network head packet.
+ * @param hdr     The IPv6 header of the current packet
  * @param nexthdr IPv6 next header after fragment header part
  *
  * @return Return verdict about the packet
  */
 enum net_verdict net_ipv6_handle_fragment_hdr(struct net_pkt *pkt,
-					      struct net_buf *frag,
-					      int total_len,
-					      u16_t buf_offset,
-					      u16_t *loc,
+					      struct net_ipv6_hdr *hdr,
 					      u8_t nexthdr);
+#else
+static inline
+enum net_verdict net_ipv6_handle_fragment_hdr(struct net_pkt *pkt,
+					      struct net_ipv6_hdr *hdr,
+					      u8_t nexthdr)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(hdr);
+	ARG_UNUSED(nexthdr);
+
+	return NET_DROP;
+}
 #endif /* CONFIG_NET_IPV6_FRAGMENT */
 
 #if defined(CONFIG_NET_IPV6)
