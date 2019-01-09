@@ -726,9 +726,9 @@ def parse_arguments():
                         help="YAML file directories, we allow multiple")
     parser.add_argument("-f", "--fixup", nargs='+',
                         help="Fixup file(s), we allow multiple")
-    parser.add_argument("-i", "--include", nargs=1, required=True,
+    parser.add_argument("-i", "--include", nargs=1,
                         help="Generate include file for the build system")
-    parser.add_argument("-k", "--keyvalue", nargs=1, required=True,
+    parser.add_argument("-k", "--keyvalue", nargs=1,
                         help="Generate config file for the build system")
     parser.add_argument("--old-alias-names", action='store_true',
                         help="Generate aliases also in the old way, without "
@@ -762,9 +762,11 @@ def main():
         insert_defs('chosen', load_defs, {})
 
      # generate config and include file
-    generate_keyvalue_file(args.keyvalue[0])
+    if (args.keyvalue is not None):
+       generate_keyvalue_file(args.keyvalue[0])
 
-    generate_include_file(args.include[0], args.fixup)
+    if (args.include is not None):
+       generate_include_file(args.include[0], args.fixup)
 
 
 if __name__ == '__main__':
