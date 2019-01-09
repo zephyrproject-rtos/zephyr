@@ -34,7 +34,8 @@ const clock_usb_pll_config_t usb1PllConfig = {
 };
 #endif
 
-#ifdef CONFIG_ETH_MCUX_0
+#ifdef CONFIG_INIT_ENET_PLL
+/* ENET PLL configuration for RUN mode */
 const clock_enet_pll_config_t ethPllConfig = {
 	.enableClkOutput = true,
 	.enableClkOutput25M = false,
@@ -81,7 +82,7 @@ static ALWAYS_INLINE void clkInit(void)
 #ifdef CONFIG_INIT_USB1_PLL
 	CLOCK_InitUsb1Pll(&usb1PllConfig); /* Configure USB1 PLL to 480M */
 #endif
-#ifdef CONFIG_ETH_MCUX_0
+#ifdef CONFIG_INIT_ENET_PLL
 	CLOCK_InitEnetPll(&ethPllConfig);
 #endif
 
