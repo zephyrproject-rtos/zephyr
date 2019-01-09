@@ -253,6 +253,14 @@
 				interrupts-names = "IEEE1588_TMR";
 			};
 		};
+
+		trng: random@400CC000 {
+			compatible = "nxp,kinetis-trng";
+			reg = <0x400CC000 0x4000>;
+			status = "ok";
+			interrupts = <53 0>;
+			label = "TRNG";
+		};
 	};
 };
 
