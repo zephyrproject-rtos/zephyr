@@ -56,6 +56,9 @@ if NET_L2_ETHERNET
 config ETH_MCUX
 	def_bool y
 
+config INIT_ENET_PLL
+	def_bool y
+
 endif # NET_L2_ETHERNET
 
 
