@@ -16,6 +16,7 @@
 #include <kernel.h>
 #include <init.h>
 #include <nrfx.h>
+#include <nrf_power.h>
 #include <soc/nrfx_coredep.h>
 #include <logging/log.h>
 
@@ -29,6 +30,14 @@ extern void _NmiInit(void);
 #include <system_nrf51.h>
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
+
+/* Overrides the weak ARM implementation:
+   Set general purpose retention register and reboot */
+void sys_arch_reboot(int type)
+{
+	nrf_power_gpregret_set((uint8_t)type);
+	NVIC_SystemReset();
+}
 
 static int nordicsemi_nrf51_init(struct device *arg)
 {
