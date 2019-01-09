@@ -1,0 +1,21 @@
+#
+# Copyright (c) 2018, Thomas Li Fredriksen
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: Silicon Labs Si1133 UV Index and Ambient Light Sensor with I2C Interface
+version: 0.1
+
+description: >
+    This binding gives a base representation of Si1133 UV Index and Ambient
+    Light Sensor
+
+inherits:
+    !include i2c-device.yaml
+
+properties:
+    compatible:
+      constraint: "si,si1133"
+
+...
