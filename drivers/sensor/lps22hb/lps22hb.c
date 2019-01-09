@@ -69,7 +69,7 @@ static inline void lps22hb_temp_convert(struct sensor_value *val,
 {
 	/* Temperature sensitivity is 100 LSB/deg C */
 	val->val1 = raw_val / 100;
-	val->val2 = (s32_t)raw_val % 100;
+	val->val2 = ((s32_t)raw_val % 100) * 10000;
 }
 
 static int lps22hb_channel_get(struct device *dev,
