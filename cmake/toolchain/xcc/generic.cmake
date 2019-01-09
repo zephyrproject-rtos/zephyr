@@ -23,3 +23,5 @@ list(APPEND TOOLCHAIN_C_FLAGS -fms-extensions)
 list(APPEND TOOLCHAIN_C_FLAGS
   -D__SIZEOF_LONG__=4
   )
+
+set(TOOLCHAIN_HAS_NEWLIB OFF CACHE BOOL "True if toolchain supports newlib")
