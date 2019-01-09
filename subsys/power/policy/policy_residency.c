@@ -79,12 +79,6 @@ int sys_pm_policy_next_state(s32_t ticks, enum power_states *pm_state)
 		}
 	}
 
-	if (!sys_is_valid_power_state(pm_policy[i].pm_state)) {
-		LOG_ERR("pm_state(%d) not supported by SoC\n",
-						pm_policy[i].pm_state);
-		return SYS_PM_NOT_HANDLED;
-	}
-
 	*pm_state = pm_policy[i].pm_state;
 	LOG_DBG("ticks: %d, pm_state: %d, min_residency: %d, idx: %d\n",
 			ticks, *pm_state, pm_policy[i].min_residency, i);
