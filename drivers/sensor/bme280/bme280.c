@@ -14,9 +14,9 @@
 #include <misc/byteorder.h>
 #include <misc/__assert.h>
 
-#ifdef CONFIG_BME280_DEV_TYPE_I2C
+#ifdef DT_BOSCH_BME280_BUS_I2C
 #include <i2c.h>
-#elif defined CONFIG_BME280_DEV_TYPE_SPI
+#elif defined DT_BOSCH_BME280_BUS_SPI
 #include <spi.h>
 #endif
 #include <logging/log.h>
@@ -30,10 +30,10 @@ static int bm280_reg_read(struct bme280_data *data,
 
 			  u8_t start, u8_t *buf, int size)
 {
-#ifdef CONFIG_BME280_DEV_TYPE_I2C
+#ifdef DT_BOSCH_BME280_BUS_I2C
 	return i2c_burst_read(data->i2c_master, data->i2c_slave_addr,
 			      start, buf, size);
-#elif defined CONFIG_BME280_DEV_TYPE_SPI
+#elif defined DT_BOSCH_BME280_BUS_SPI
 	u8_t addr;
 	const struct spi_buf tx_buf = {
 		.buf = &addr,
@@ -73,10 +73,10 @@ static int bm280_reg_read(struct bme280_data *data,
 
 static int bm280_reg_write(struct bme280_data *data, u8_t reg, u8_t val)
 {
-#ifdef CONFIG_BME280_DEV_TYPE_I2C
+#ifdef DT_BOSCH_BME280_BUS_I2C
 	return i2c_reg_write_byte(data->i2c_master, data->i2c_slave_addr,
 				  reg, val);
-#elif defined CONFIG_BME280_DEV_TYPE_SPI
+#elif defined DT_BOSCH_BME280_BUS_SPI
 	u8_t cmd[2] = { reg & 0x7F, val };
 	const struct spi_buf tx_buf = {
 		.buf = cmd,
@@ -333,20 +333,20 @@ static int bme280_chip_init(struct device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_BME280_DEV_TYPE_SPI
+#ifdef DT_BOSCH_BME280_BUS_SPI
 static inline int bme280_spi_init(struct bme280_data *data)
 {
-	data->spi = device_get_binding(CONFIG_BME280_SPI_DEV_NAME);
+	data->spi = device_get_binding(DT_BOSCH_BME280_0_BUS_NAME);
 	if (!data->spi) {
 		LOG_DBG("spi device not found: %s",
-			    CONFIG_BME280_SPI_DEV_NAME);
+			    DT_BOSCH_BME280_0_BUS_NAME);
 		return -EINVAL;
 	}
 
 	data->spi_cfg.operation = SPI_WORD_SET(8) | SPI_TRANSFER_MSB |
 		SPI_MODE_CPOL | SPI_MODE_CPHA;
-	data->spi_cfg.frequency = 8000000;
-	data->spi_cfg.slave = CONFIG_BME280_SPI_DEV_SLAVE;
+	data->spi_cfg.frequency = DT_BOSCH_BME280_0_SPI_MAX_FREQUENCY;
+	data->spi_cfg.slave = DT_BOSCH_BME280_0_BASE_ADDRESS;
 
 	return 0;
 }
@@ -356,19 +356,19 @@ int bme280_init(struct device *dev)
 {
 	struct bme280_data *data = dev->driver_data;
 
-#ifdef CONFIG_BME280_DEV_TYPE_I2C
-	data->i2c_master = device_get_binding(CONFIG_BME280_I2C_MASTER_DEV_NAME);
+#ifdef DT_BOSCH_BME280_BUS_I2C
+	data->i2c_master = device_get_binding(DT_BOSCH_BME280_0_BUS_NAME);
 	if (!data->i2c_master) {
 		LOG_DBG("i2c master not found: %s",
-			    CONFIG_BME280_I2C_MASTER_DEV_NAME);
+			    DT_BOSCH_BME280_0_BUS_NAME);
 		return -EINVAL;
 	}
 
-	data->i2c_slave_addr = BME280_I2C_ADDR;
-#elif defined CONFIG_BME280_DEV_TYPE_SPI
+	data->i2c_slave_addr = DT_BOSCH_BME280_0_BASE_ADDRESS;
+#elif defined DT_BOSCH_BME280_BUS_SPI
 	if (bme280_spi_init(data) < 0) {
 		LOG_DBG("spi master not found: %s",
-			    CONFIG_BME280_SPI_DEV_NAME);
+			    DT_BOSCH_BME280_0_BUS_NAME);
 		return -EINVAL;
 	}
 #endif
@@ -382,6 +382,6 @@ int bme280_init(struct device *dev)
 
 static struct bme280_data bme280_data;
 
-DEVICE_AND_API_INIT(bme280, CONFIG_BME280_DEV_NAME, bme280_init, &bme280_data,
+DEVICE_AND_API_INIT(bme280, DT_BOSCH_BME280_0_LABEL, bme280_init, &bme280_data,
 		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &bme280_api_funcs);

@@ -4,7 +4,7 @@ tests:
   test:
     harness: console
     tags: sensors
-    depends_on: i2c
+    depends_on: i2c bme280
     harness_config:
         type: one_line
         regex:
@@ -13,7 +13,7 @@ tests:
   test_spi:
     harness: console
     tags: sensors
-    depends_on: spi
+    depends_on: spi bme280
     extra_args: "CONF_FILE=prj_spi.conf"
     harness_config:
         type: one_line
