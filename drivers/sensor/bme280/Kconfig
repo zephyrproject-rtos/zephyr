@@ -15,60 +15,6 @@ menuconfig BME280
 
 if BME280
 
-config BME280_DEV_NAME
-	string "BME280 device name"
-	default "BME280"
-
-choice
-	prompt "BME280 device select"
-	default BME280_DEV_TYPE_I2C
-	help
-	  Select interface to communicate with BME280 sensor. This sensor can communicate
-	  with both SPI and I2C. I2C is the default, select SPI if you sensor is connected
-	  via the SPI interface.
-
-config BME280_DEV_TYPE_SPI
-	depends on SPI
-	bool "SPI"
-config BME280_DEV_TYPE_I2C
-	depends on I2C
-	bool "I2C"
-endchoice
-
-config BME280_I2C_ADDR
-	hex "BME280 I2C slave address"
-	default 0x76
-	depends on BME280_DEV_TYPE_I2C
-	help
-	  Specify the I2C slave address for the BME280.
-
-	  0x76: Ground
-	  0x77: VCC
-
-config BME280_I2C_MASTER_DEV_NAME
-	string "I2C master where BME280 is connected"
-	depends on BME280_DEV_TYPE_I2C
-	default "I2C_0"
-	help
-	 Specify the device name of the I2C master device to which BME280 is
-	 connected.
-
-config BME280_SPI_DEV_NAME
-	string "SPI device where BME280 is connected"
-	depends on BME280_DEV_TYPE_SPI
-	default "SPI_0"
-	help
-	 Specify the device name of the SPI device to which BME280 is
-	 connected.
-
-config BME280_SPI_DEV_SLAVE
-	int "SPI Slave Select where BME280 is connected"
-	depends on BME280_DEV_TYPE_SPI
-	default 3
-	help
-	 Specify the Slave Select pin of the SPI device to which BME280 CS is
-	 connected.
-
 menu "Attributes"
 
 choice
