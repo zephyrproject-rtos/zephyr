@@ -87,6 +87,8 @@ pairs:
     { ARCH : <architecture>,
       PLATFORM : <platform>,
       <all CONFIG_* key/value pairs in the test's generated defconfig>,
+      <all DT_* key/value pairs in the test's generated device tree file>,
+      <all CMake key/value pairs in the test's generated CMakeCache.txt file>,
       *<env>: any environment variable available
     }
 
@@ -228,6 +230,161 @@ else:
     COLOR_RED = ""
     COLOR_GREEN = ""
     COLOR_YELLOW = ""
+
+class CMakeCacheEntry:
+    '''Represents a CMake cache entry.
+
+    This class understands the type system in a CMakeCache.txt, and
+    converts the following cache types to Python types:
+
+    Cache Type    Python type
+    ----------    -------------------------------------------
+    FILEPATH      str
+    PATH          str
+    STRING        str OR list of str (if ';' is in the value)
+    BOOL          bool
+    INTERNAL      str OR list of str (if ';' is in the value)
+    ----------    -------------------------------------------
+    '''
+
+    # Regular expression for a cache entry.
+    #
+    # CMake variable names can include escape characters, allowing a
+    # wider set of names than is easy to match with a regular
+    # expression. To be permissive here, use a non-greedy match up to
+    # the first colon (':'). This breaks if the variable name has a
+    # colon inside, but it's good enough.
+    CACHE_ENTRY = re.compile(
+        r'''(?P<name>.*?)                               # name
+         :(?P<type>FILEPATH|PATH|STRING|BOOL|INTERNAL)  # type
+         =(?P<value>.*)                                 # value
+        ''', re.X)
+
+    @classmethod
+    def _to_bool(cls, val):
+        # Convert a CMake BOOL string into a Python bool.
+        #
+        #   "True if the constant is 1, ON, YES, TRUE, Y, or a
+        #   non-zero number. False if the constant is 0, OFF, NO,
+        #   FALSE, N, IGNORE, NOTFOUND, the empty string, or ends in
+        #   the suffix -NOTFOUND. Named boolean constants are
+        #   case-insensitive. If the argument is not one of these
+        #   constants, it is treated as a variable."
+        #
+        # https://cmake.org/cmake/help/v3.0/command/if.html
+        val = val.upper()
+        if val in ('ON', 'YES', 'TRUE', 'Y'):
+            return 1
+        elif val in ('OFF', 'NO', 'FALSE', 'N', 'IGNORE', 'NOTFOUND', ''):
+            return 0
+        elif val.endswith('-NOTFOUND'):
+            return 0
+        else:
+            try:
+                v = int(val)
+                return v != 0
+            except ValueError as exc:
+                raise ValueError('invalid bool {}'.format(val)) from exc
+
+    @classmethod
+    def from_line(cls, line, line_no):
+        # Comments can only occur at the beginning of a line.
+        # (The value of an entry could contain a comment character).
+        if line.startswith('//') or line.startswith('#'):
+            return None
+
+        # Whitespace-only lines do not contain cache entries.
+        if not line.strip():
+            return None
+
+        m = cls.CACHE_ENTRY.match(line)
+        if not m:
+            return None
+
+        name, type_, value = (m.group(g) for g in ('name', 'type', 'value'))
+        if type_ == 'BOOL':
+            try:
+                value = cls._to_bool(value)
+            except ValueError as exc:
+                args = exc.args + ('on line {}: {}'.format(line_no, line),)
+                raise ValueError(args) from exc
+        elif type_ == 'STRING' or type_ == 'INTERNAL':
+            # If the value is a CMake list (i.e. is a string which
+            # contains a ';'), convert to a Python list.
+            if ';' in value:
+                value = value.split(';')
+
+        return CMakeCacheEntry(name, value)
+
+    def __init__(self, name, value):
+        self.name = name
+        self.value = value
+
+    def __str__(self):
+        fmt = 'CMakeCacheEntry(name={}, value={})'
+        return fmt.format(self.name, self.value)
+
+
+class CMakeCache:
+    '''Parses and represents a CMake cache file.'''
+
+    @staticmethod
+    def from_file(cache_file):
+        return CMakeCache(cache_file)
+
+    def __init__(self, cache_file):
+        self.cache_file = cache_file
+        self.load(cache_file)
+
+    def load(self, cache_file):
+        entries = []
+        with open(cache_file, 'r') as cache:
+            for line_no, line in enumerate(cache):
+                entry = CMakeCacheEntry.from_line(line, line_no)
+                if entry:
+                    entries.append(entry)
+        self._entries = OrderedDict((e.name, e) for e in entries)
+
+    def get(self, name, default=None):
+        entry = self._entries.get(name)
+        if entry is not None:
+            return entry.value
+        else:
+            return default
+
+    def get_list(self, name, default=None):
+        if default is None:
+            default = []
+        entry = self._entries.get(name)
+        if entry is not None:
+            value = entry.value
+            if isinstance(value, list):
+                return value
+            elif isinstance(value, str):
+                return [value] if value else []
+            else:
+                msg = 'invalid value {} type {}'
+                raise RuntimeError(msg.format(value, type(value)))
+        else:
+            return default
+
+    def __contains__(self, name):
+        return name in self._entries
+
+    def __getitem__(self, name):
+        return self._entries[name].value
+
+    def __setitem__(self, name, entry):
+        if not isinstance(entry, CMakeCacheEntry):
+            msg = 'improper type {} for value {}, expecting CMakeCacheEntry'
+            raise TypeError(msg.format(type(entry), entry))
+        self._entries[name] = entry
+
+    def __delitem__(self, name):
+        del self._entries[name]
+
+    def __iter__(self):
+        return iter(self._entries.values())
 
 class SanityCheckException(Exception):
     pass
@@ -1488,6 +1645,7 @@ class TestCase:
 
         self.defconfig = {}
         self.dt_config = {}
+        self.cmake_cache = {}
         self.yamlfile = yamlfile
 
 
@@ -1846,6 +2004,7 @@ class TestSuite:
         mg = MakeGenerator(self.outdir)
         defconfig_list = {}
         dt_list = {}
+        cmake_list = {}
         for tc_name, tc in self.testcases.items():
             for arch_name, arch in self.arches.items():
                 for plat in arch.platforms:
@@ -1925,9 +2084,11 @@ class TestSuite:
                         # simultaneously
 
                         o = os.path.join(self.outdir, plat.name, tc.name)
+                        cmake_cache_path = os.path.join(o, "CMakeCache.txt")
                         generated_dt_confg = "include/generated/generated_dts_board.conf"
                         dt_config_path = os.path.join(o, "zephyr", generated_dt_confg)
                         dt_list[tc, plat, tc.name.split("/")[-1]] = dt_config_path
+                        cmake_list[tc, plat, tc.name.split("/")[-1]] = cmake_cache_path
                         defconfig_list[tc, plat, tc.name.split("/")[-1]] = os.path.join(o, "zephyr", ".config")
                         goal = "_".join([plat.name, "_".join(tc.name.split("/")), "config-sanitycheck"])
                         mg.add_build_goal(goal, os.path.join(ZEPHYR_BASE, tc.test_path),
@@ -1957,6 +2118,22 @@ class TestSuite:
                         continue
                     defconfig[m.group(1)] = m.group(2).strip()
             test.defconfig[plat] = defconfig
+
+        for k, cache_file in cmake_list.items():
+            if not os.path.exists(out_config):
+                continue
+
+            test, plat, name = k
+            cmake_conf = {}
+            try:
+                cache = CMakeCache.from_file(cache_file)
+            except FileNotFoundError:
+                cache = {}
+
+            for k in iter(cache):
+                cmake_conf[k.name] = k.value
+
+            test.cmake_cache[plat] = cmake_conf
 
         for k, out_config in dt_list.items():
             if not os.path.exists(out_config):
@@ -2079,6 +2256,11 @@ class TestSuite:
                             break
 
                     for p, tdefconfig in tc.dt_config.items():
+                        if p == plat:
+                            defconfig.update(tdefconfig)
+                            break
+
+                    for p, tdefconfig in tc.cmake_cache.items():
                         if p == plat:
                             defconfig.update(tdefconfig)
                             break
