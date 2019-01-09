@@ -42,15 +42,15 @@ if(CONFIG_BT_LL_SW)
     ll_sw/ll_adv_aux.c
     )
   zephyr_library_sources_ifdef(
+    CONFIG_BT_HCI_MESH_EXT
+    ll_sw/ll_mesh.c
+    )
+  zephyr_library_sources_ifdef(
     CONFIG_BT_CTLR_DTM
     ll_sw/ll_test.c
     )
 endif()
 
-zephyr_library_sources_ifdef(
-  CONFIG_BT_CTLR_FILTER
-  ll_sw/ll_filter.c
-  )
 
 zephyr_library_sources_ifdef(
   CONFIG_SOC_COMPATIBLE_NRF

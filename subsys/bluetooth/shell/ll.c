@@ -260,7 +260,11 @@ do_enable:
 
 disable:
 	shell_print(shell, "adv enable (%u)...", enable);
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+	err = ll_adv_enable(handle, enable, 0, 0, 0, 0, 0);
+#else /* !CONFIG_BT_HCI_MESH_EXT */
 	err = ll_adv_enable(handle, enable);
+#endif /* !CONFIG_BT_HCI_MESH_EXT */
 	if (err) {
 		goto exit;
 	}

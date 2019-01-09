@@ -119,6 +119,15 @@ struct advertiser {
 	u8_t rl_idx;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+	u8_t  retry:3;
+	u8_t  is_mesh:1;
+	u8_t  rfu1:4;
+
+	u8_t  scan_delay_ms;
+	u16_t scan_window_ms;
+#endif /* CONFIG_BT_HCI_MESH_EXT */
+
 	struct radio_adv_data adv_data;
 	struct radio_adv_data scan_data;
 
@@ -177,6 +186,10 @@ static struct {
 
 	struct advertiser advertiser;
 	struct scanner scanner;
+
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+	u32_t mesh_adv_end_us;
+#endif /* CONFIG_BT_HCI_MESH_EXT */
 
 	void  *conn_pool;
 	void  *conn_free;
@@ -258,15 +271,15 @@ static void ticker_update_adv_assert(u32_t status, void *params);
 static void ticker_stop_adv_assert(u32_t status, void *params);
 static void ticker_update_slave_assert(u32_t status, void *params);
 #endif /* CONFIG_BT_PERIPHERAL */
-#if defined(CONFIG_BT_PERIPHERAL)
-static void ticker_stop_adv_stop(u32_t status, void *params);
-#endif /* CONFIG_BT_PERIPHERAL */
 #if defined(CONFIG_BT_CENTRAL)
 static void ticker_stop_scan_assert(u32_t status, void *params);
 #endif /* CONFIG_BT_CENTRAL */
 static void ticker_stop_conn_assert(u32_t status, void *params);
 static void ticker_start_conn_assert(u32_t status, void *params);
 #endif /* CONFIG_BT_CONN */
+#if defined(CONFIG_BT_PERIPHERAL) || defined(CONFIG_BT_HCI_MESH_EXT)
+static void ticker_stop_adv_stop(u32_t status, void *params);
+#endif /* CONFIG_BT_PERIPHERAL || CONFIG_BT_HCI_MESH_EXT */
 static void event_inactive(u32_t ticks_at_expire, u32_t remainder,
 			   u16_t lazy, void *context);
 
@@ -1223,6 +1236,13 @@ static u32_t isr_rx_scan_report(u8_t rssi_ready, u8_t rl_idx, bool dir_report)
 	/* Prepare the report (adv or scan resp) */
 	node_rx->hdr.handle = 0xffff;
 	if (0) {
+
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+	} else if (_radio.advertiser.is_enabled &&
+		   _radio.advertiser.is_mesh) {
+		node_rx->hdr.type = NODE_RX_TYPE_MESH_REPORT;
+#endif /* CONFIG_BT_HCI_MESH_EXT */
+
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	} else if (_radio.scanner.phy) {
 		switch (_radio.scanner.phy) {
@@ -1257,11 +1277,38 @@ static u32_t isr_rx_scan_report(u8_t rssi_ready, u8_t rl_idx, bool dir_report)
 	*extra = rl_idx;
 	extra += PDU_AC_SIZE_PRIV;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
+
 #if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
 	/* save the directed adv report flag */
 	*extra = dir_report ? 1 : 0;
 	extra += PDU_AC_SIZE_SCFP;
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+	if (node_rx->hdr.type == NODE_RX_TYPE_MESH_REPORT) {
+		/* save the directed adv report flag */
+		*extra = _radio.scanner.chan - 1;
+		extra++;
+		sys_put_le32(_radio.ticks_anchor, extra);
+	}
+#endif /* CONFIG_BT_HCI_MESH_EXT */
+
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+	if (node_rx->hdr.type == NODE_RX_TYPE_MESH_REPORT) {
+		/* save the directed adv report flag */
+		*extra = _radio.scanner.chan - 1;
+		extra++;
+		sys_put_le32(_radio.ticks_anchor, extra);
+	}
+#endif /* CONFIG_BT_HCI_MESH_EXT */
+
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+	if (node_rx->hdr.type == NODE_RX_TYPE_MESH_REPORT) {
+		/* save the directed adv report flag */
+		*extra = _radio.scanner.chan - 1;
+		extra++;
+		sys_put_le32(_radio.ticks_anchor, extra);
+	}
+#endif /* CONFIG_BT_HCI_MESH_EXT */
 
 	packet_rx_enqueue();
 
@@ -3949,9 +3996,120 @@ static inline void isr_radio_state_rx(u8_t trx_done, u8_t crc_ok,
 	}
 }
 
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+static void mayfly_mesh_stop(void *param)
+{
+	struct radio_pdu_node_rx *node_rx;
+	u8_t *adv_slot;
+
+	/* Prepare the rx packet structure */
+	node_rx = packet_rx_reserve_get(1);
+	LL_ASSERT(node_rx);
+
+	/* Connection handle */
+	node_rx->hdr.handle = 0xffff;
+	node_rx->hdr.type = NODE_RX_TYPE_MESH_ADV_CPLT;
+
+	adv_slot = (u8_t *)node_rx->pdu_data;
+	*adv_slot = 0;
+
+	/* enqueue event into rx queue */
+	packet_rx_enqueue();
+}
+
+static void ticker_start_mesh_scan(u32_t status, void *params)
+{
+	ARG_UNUSED(params);
+
+	/* Failed to schedule mesh advertise scan window */
+	if (status && !_radio.advertiser.retry) {
+		static memq_link_t s_link;
+		static struct mayfly s_mfy_mesh_stop = {0, 0, &s_link, NULL,
+							mayfly_mesh_stop};
+		u32_t retval;
+
+		/* Generate an event in WORKER Prio */
+		retval = mayfly_enqueue(RADIO_TICKER_USER_ID_JOB,
+					RADIO_TICKER_USER_ID_WORKER, 0,
+					&s_mfy_mesh_stop);
+		LL_ASSERT(!retval);
+	}
+}
+
+static inline u32_t isr_close_adv_mesh(void)
+{
+	u32_t ticks_slot_offset;
+	u32_t ticker_status;
+	u32_t ticks_anchor;
+	u32_t ret = 0;
+
+	if (!_radio.advertiser.retry) {
+		ticker_status =	ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
+					    RADIO_TICKER_USER_ID_WORKER,
+					    RADIO_TICKER_ID_ADV,
+					    ticker_stop_adv_stop,
+					    (void *)__LINE__);
+		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
+			  (ticker_status == TICKER_STATUS_BUSY));
+
+		ret = 1;
+	} else {
+		_radio.advertiser.retry--;
+	}
+
+	_radio.scanner.ticks_window =
+		HAL_TICKER_US_TO_TICKS(_radio.advertiser.scan_window_ms * 1000 +
+				       radio_tmr_end_get() -
+				       _radio.mesh_adv_end_us);
+
+	_radio.scanner.hdr.ticks_active_to_start =
+		_radio.ticks_active_to_start;
+	_radio.scanner.hdr.ticks_xtal_to_start =
+		HAL_TICKER_US_TO_TICKS(RADIO_TICKER_XTAL_OFFSET_US);
+	_radio.scanner.hdr.ticks_preempt_to_start =
+		HAL_TICKER_US_TO_TICKS(RADIO_TICKER_PREEMPT_PART_MIN_US);
+	_radio.scanner.hdr.ticks_slot =
+		_radio.scanner.ticks_window +
+		HAL_TICKER_US_TO_TICKS(RADIO_TICKER_START_PART_US);
+
+	ticks_slot_offset = (_radio.scanner.hdr.ticks_active_to_start <
+			     _radio.scanner.hdr.ticks_xtal_to_start) ?
+			    _radio.scanner.hdr.ticks_xtal_to_start :
+			    _radio.scanner.hdr.ticks_active_to_start;
+
+	/* FIXME: remainder compensation and chain delays */
+	ticks_anchor = _radio.ticks_anchor +
+		       HAL_TICKER_US_TO_TICKS(_radio.mesh_adv_end_us +
+					      _radio.advertiser.scan_delay_ms *
+					      1000 -
+					      RADIO_TICKER_XTAL_OFFSET_US);
+
+	ticker_status = ticker_start(RADIO_TICKER_INSTANCE_ID_RADIO,
+				     RADIO_TICKER_USER_ID_WORKER,
+				     RADIO_TICKER_ID_SCAN,
+				     ticks_anchor, 0, 0, 0, TICKER_NULL_LAZY,
+				     (ticks_slot_offset +
+				      _radio.scanner.hdr.ticks_slot),
+				     event_scan_prepare, NULL,
+				     ticker_start_mesh_scan, NULL);
+	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
+		  (ticker_status == TICKER_STATUS_BUSY));
+
+	return ret;
+}
+#endif /* CONFIG_BT_HCI_MESH_EXT */
+
 static inline u32_t isr_close_adv(void)
 {
 	u32_t dont_close = 0U;
+
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+	if (_radio.advertiser.is_mesh &&
+	    _radio.state == STATE_CLOSE &&
+	    !_radio.mesh_adv_end_us) {
+		_radio.mesh_adv_end_us = radio_tmr_end_get();
+	}
+#endif /* CONFIG_BT_HCI_MESH_EXT */
 
 	if ((_radio.state == STATE_CLOSE) &&
 	    (_radio.advertiser.chan_map_current != 0)) {
@@ -3988,10 +4146,20 @@ static inline u32_t isr_close_adv(void)
 			u32_t ticker_status;
 			u16_t random_delay;
 
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+			if (_radio.advertiser.is_mesh) {
+				u32_t err;
+
+				err = isr_close_adv_mesh();
+				if (err) {
+					return 0;
+				}
+			}
+#endif /* CONFIG_BT_HCI_MESH_EXT */
+
 			entropy_get_entropy_isr(_radio.entropy,
 						(void *)&random_delay,
 						sizeof(random_delay), 0);
-
 			random_delay %= HAL_TICKER_US_TO_TICKS(10000);
 			random_delay += 1;
 
@@ -4076,6 +4244,14 @@ static inline u32_t isr_close_scan(void)
 		radio_tmr_end_capture();
 	} else {
 		radio_filter_disable();
+
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+		if (_radio.advertiser.is_enabled &&
+		    _radio.advertiser.is_mesh &&
+		    !_radio.advertiser.retry) {
+			mayfly_mesh_stop(NULL);
+		}
+#endif /* CONFIG_BT_HCI_MESH_EXT */
 
 		if (_radio.state == STATE_ABORT) {
 			/* Scanner stop can expire while here in this ISR.
@@ -4590,7 +4766,6 @@ static void ticker_update_slave_assert(u32_t status, void *params)
 		  (_radio.ticker_id_stop == ticker_id) ||
 		  (_radio.ticker_id_upd == ticker_id));
 }
-
 #endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CENTRAL)
@@ -4940,6 +5115,7 @@ static void mayfly_xtal_stop_calc(void *params)
 	struct shdr *hdr_curr = NULL;
 	struct shdr *hdr_next = NULL;
 	u32_t ticks_slot_abs;
+#endif /* CONFIG_BT_CONN */
 
 	ticker_id_next = 0xff;
 	ticks_to_expire = 0U;
@@ -6263,6 +6439,11 @@ static void event_adv(u32_t ticks_at_expire, u32_t remainder,
 	_radio.advertiser.chan_map_current = _radio.advertiser.chan_map;
 	adv_setup();
 
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+	_radio.mesh_adv_end_us = 0;
+#endif /* CONFIG_BT_HCI_MESH_EXT */
+
+
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	if (ctrl_rl_enabled()) {
 		struct ll_filter *filter =
@@ -6327,6 +6508,7 @@ static void event_adv(u32_t ticks_at_expire, u32_t remainder,
 	DEBUG_RADIO_START_A(0);
 }
 
+#if defined(CONFIG_BT_PERIPHERAL) || defined(CONFIG_BT_HCI_MESH_EXT)
 #if defined(CONFIG_BT_PERIPHERAL)
 static void mayfly_adv_stop(void *param)
 {
@@ -6500,6 +6682,12 @@ static void ticker_stop_adv_stop(u32_t status, void *params)
 		ticker_stop_adv_stop_active();
 	}
 
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+	if (params) {
+		return;
+	}
+#endif /* CONFIG_BT_HCI_MESH_EXT */
+
 #if defined(CONFIG_BT_PERIPHERAL)
 	/* Generate an event in WORKER Prio */
 	retval = mayfly_enqueue(RADIO_TICKER_USER_ID_JOB,
@@ -6532,6 +6720,7 @@ void event_adv_stop(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 		  (ticker_status == TICKER_STATUS_BUSY));
 }
+#endif /* CONFIG_BT_PERIPHERAL || CONFIG_BT_HCI_MESH_EXT */
 
 static void event_scan_prepare(u32_t ticks_at_expire, u32_t remainder,
 			      u16_t lazy, void *context)
@@ -10257,6 +10446,18 @@ role_disable_cleanup:
 	return ret_cb ? BT_HCI_ERR_CMD_DISALLOWED : 0;
 }
 
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+u32_t radio_adv_enable(u8_t phy_p, u16_t interval, u8_t chan_map,
+		       u8_t filter_policy, u8_t rl_idx,
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
+u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
+		       u8_t rl_idx,
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
+		       u8_t at_anchor, u32_t ticks_anchor, u8_t retry,
+		       u8_t scan_window, u8_t scan_delay)
+{
+#else /* !CONFIG_BT_HCI_MESH_EXT */
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 u32_t radio_adv_enable(u8_t phy_p, u16_t interval, u8_t chan_map,
 		       u8_t filter_policy, u8_t rl_idx)
@@ -10265,11 +10466,12 @@ u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 		       u8_t rl_idx)
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 {
+	u32_t ticks_anchor;
+#endif /* !CONFIG_BT_HCI_MESH_EXT */
 	u32_t volatile ret_cb = TICKER_STATUS_BUSY;
 	u32_t ticks_slot_offset;
 	struct connection *conn;
 	struct pdu_adv *pdu_adv;
-	u32_t ticks_anchor;
 	u32_t slot_us;
 	u8_t chan_cnt;
 	u32_t ret;
@@ -10278,9 +10480,18 @@ u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+	if (scan_delay) {
+		if (_radio.scanner.is_enabled) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+
+		_radio.advertiser.is_mesh = 1;
+	}
+#endif /* CONFIG_BT_HCI_MESH_EXT */
+
 	pdu_adv = (void *)&_radio.advertiser.adv_data.data
 					[_radio.advertiser.adv_data.last][0];
-
 	if ((pdu_adv->type == PDU_ADV_TYPE_ADV_IND) ||
 	    (pdu_adv->type == PDU_ADV_TYPE_DIRECT_IND)) {
 		void *link;
@@ -10440,13 +10651,51 @@ u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 		slot_us = (RADIO_TICKER_START_PART_US + 376 + 152 + 176 +
 			   152 + 376) * chan_cnt;
 	}
+
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+	if (_radio.advertiser.is_mesh) {
+		u16_t interval_min_us;
+
+		_radio.advertiser.retry = retry;
+		_radio.advertiser.scan_delay_ms = scan_delay;
+		_radio.advertiser.scan_window_ms = scan_window;
+
+		interval_min_us = slot_us + (scan_delay + scan_window) * 1000;
+		if ((interval * 625) < interval_min_us) {
+			interval = (interval_min_us + (625 - 1)) / 625;
+		}
+
+		/* passive scanning */
+		_radio.scanner.type = 0;
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+		/* TODO: Coded PHY support */
+		_radio.scanner.phy = 0;
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+		/* TODO: Privacy support */
+		_radio.scanner.rpa_gen = 0;
+		_radio.scanner.rl_idx = rl_idx;
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+
+		_radio.scanner.filter_policy = filter_policy;
+	}
+#endif /* CONFIG_BT_HCI_MESH_EXT */
+
 	_radio.advertiser.hdr.ticks_slot = HAL_TICKER_US_TO_TICKS(slot_us);
 
 	ticks_slot_offset =
 		max(_radio.advertiser.hdr.ticks_active_to_start,
 		    _radio.advertiser.hdr.ticks_xtal_to_start);
 
+#if !defined(CONFIG_BT_HCI_MESH_EXT)
 	ticks_anchor = ticker_ticks_now_get();
+#else /* CONFIG_BT_HCI_MESH_EXT */
+	if (!at_anchor) {
+		ticks_anchor = ticker_ticks_now_get();
+	}
+#endif /* !CONFIG_BT_HCI_MESH_EXT */
 
 #if defined(CONFIG_BT_PERIPHERAL)
 	/* High Duty Cycle Directed Advertising if interval is 0. */
@@ -10512,9 +10761,17 @@ u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 	if (ret_cb == TICKER_STATUS_SUCCESS) {
 		_radio.advertiser.is_enabled = 1U;
 
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+		if (_radio.advertiser.is_mesh) {
+			_radio.scanner.is_enabled = 1;
+
+			ll_adv_scan_state_cb(BIT(0) | BIT(1));
+		}
+#else /* !CONFIG_BT_HCI_MESH_EXT */
 		if (!_radio.scanner.is_enabled) {
 			ll_adv_scan_state_cb(BIT(0));
 		}
+#endif /* !CONFIG_BT_HCI_MESH_EXT */
 
 		return 0;
 	}
@@ -11559,6 +11816,11 @@ void ll_rx_dequeue(void)
 	case NODE_RX_TYPE_ADV_INDICATION:
 #endif /* CONFIG_BT_CTLR_ADV_INDICATION */
 
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+	case NODE_RX_TYPE_MESH_ADV_CPLT:
+	case NODE_RX_TYPE_MESH_REPORT:
+#endif /* CONFIG_BT_HCI_MESH_EXT */
+
 		/* release data link credit quota */
 		LL_ASSERT(_radio.link_rx_data_quota <
 			  (_radio.packet_rx_count - 1));
@@ -11617,6 +11879,17 @@ void ll_rx_dequeue(void)
 			ll_adv_scan_state_cb(0);
 		}
 #endif /* CONFIG_BT_CONN */
+
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+	} else if (node_rx->hdr.type == NODE_RX_TYPE_MESH_ADV_CPLT) {
+		LL_ASSERT(_radio.advertiser.is_enabled);
+		_radio.advertiser.is_enabled = 0;
+
+		LL_ASSERT(_radio.scanner.is_enabled);
+		_radio.scanner.is_enabled = 0;
+
+		ll_adv_scan_state_cb(0);
+#endif /* CONFIG_BT_HCI_MESH_EXT */
 	}
 
 }
@@ -11697,6 +11970,11 @@ void ll_rx_mem_release(void **node_rx)
 #if defined(CONFIG_BT_CTLR_ADV_INDICATION)
 		case NODE_RX_TYPE_ADV_INDICATION:
 #endif /* CONFIG_BT_CTLR_ADV_INDICATION */
+
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+		case NODE_RX_TYPE_MESH_ADV_CPLT:
+		case NODE_RX_TYPE_MESH_REPORT:
+#endif /* CONFIG_BT_HCI_MESH_EXT */
 
 			mem_release(_node_rx_free,
 				    &_radio.pkt_rx_data_free);
