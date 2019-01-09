@@ -30,7 +30,7 @@ foreach(board_root ${BOARD_ROOT})
 	# Generate CONFIG flags matching each shield
 	string(TOUPPER "CONFIG_SHIELD_${shield}" shield_config)
 
-	if(${shield_config})
+	if(${shield} STREQUAL ${SHIELD})
       # if shield config flag is on, add shield overlay to the shield overlays
       # list and dts_fixup file to the shield fixup file
       list(APPEND

@@ -16,3 +16,4 @@ supported:
   - pwm
   - rtc
   - usb_device
+  - arduino_i2c

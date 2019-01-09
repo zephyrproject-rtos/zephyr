@@ -8,6 +8,6 @@ tests:
     tags: bluetooth
   test.overlay-shield_frdm_kw41z:
     harness: bluetooth
-    extra_args: OVERLAY_CONFIG=overlay-shield_frdm_kw41z.conf
+    extra_args: SHIELD=frdm_kw41z
     platform_whitelist: mimxrt1050_evk frdm_k64f
     tags: bluetooth
