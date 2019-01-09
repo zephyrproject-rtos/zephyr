@@ -32,6 +32,7 @@
 
 #include "bt.h"
 #include "ll.h"
+#include "hci.h"
 
 #define DEVICE_NAME		CONFIG_BT_DEVICE_NAME
 #define DEVICE_NAME_LEN		(sizeof(DEVICE_NAME) - 1)
@@ -759,6 +760,7 @@ connect:
 #endif /* CONFIG_BT_PERIPHERAL */
 #endif /* CONFIG_BT_BROADCASTER */
 
+#if defined(CONFIG_BT_CONN)
 #if defined(CONFIG_BT_CENTRAL)
 static int cmd_connect_le(const struct shell *shell, size_t argc, char *argv[])
 {
@@ -815,7 +817,6 @@ static int cmd_auto_conn(const struct shell *shell, size_t argc, char *argv[])
 }
 #endif /* CONFIG_BT_CENTRAL */
 
-#if defined(CONFIG_BT_CONN)
 static int cmd_disconnect(const struct shell *shell, size_t argc, char *argv[])
 {
 	struct bt_conn *conn;
@@ -1391,6 +1392,9 @@ SHELL_CREATE_STATIC_SUBCMD_SET(bt_cmds) {
 #endif
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR) */
 #endif /* CONFIG_BT_CONN */
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+	SHELL_CMD(mesh_adv, NULL, "<on, off>", cmd_mesh_adv),
+#endif /* CONFIG_BT_HCI_MESH_EXT */
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 #if defined(CONFIG_BT_BROADCASTER)
 	SHELL_CMD_ARG(advx, NULL, "<on off> [coded] [anon] [txp]", cmd_advx,
@@ -1411,6 +1415,14 @@ SHELL_CREATE_STATIC_SUBCMD_SET(bt_cmds) {
 		      4, 0),
 	SHELL_CMD_ARG(test_end, NULL, HELP_NONE, cmd_test_end, 1, 0),
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
+#if defined(CONFIG_BT_LL_SW_SPLIT)
+	SHELL_CMD(ull_reset, NULL, HELP_NONE, cmd_ull_reset),
+#if defined(CONFIG_BT_TMP)
+	SHELL_CMD(ull_tmp_enable, NULL, "<on off> [handle]",
+		  cmd_ull_tmp_enable),
+	SHELL_CMD(ull_tmp_send, NULL, "[handle]", cmd_ull_tmp_send),
+#endif /* CONFIG_BT_TMP */
+#endif /* CONFIG_BT_LL_SW_SPLIT */
 	SHELL_SUBCMD_SET_END
 };
 
