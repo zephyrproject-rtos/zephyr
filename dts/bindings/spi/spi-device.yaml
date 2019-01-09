@@ -34,4 +34,8 @@ properties:
       category: required
       description: Human readable string describing the device (used by Zephyr for API name)
       generation: define
+    zephyr,index:
+      type: int
+      category: optional
+      description: Instance ID (Start at 0, used if system has more than one)
 ...
