@@ -2565,10 +2565,9 @@ static void le_conn_update_complete(struct pdu_data *pdu_data, u16_t handle,
 		return;
 	}
 
-	cu = (void *)pdu_data;
-
 	sep = meta_evt(buf, BT_HCI_EVT_LE_CONN_UPDATE_COMPLETE, sizeof(*sep));
 
+	cu = (void *)pdu_data;
 	sep->status = cu->status;
 	sep->handle = sys_cpu_to_le16(handle);
 	sep->interval = sys_cpu_to_le16(cu->interval);
