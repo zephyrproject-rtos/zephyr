@@ -568,7 +568,13 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 			break;
 
 		case NET_IPV6_NEXTHDR_FRAG:
-			/* Temporarly unsupported */
+			if (IS_ENABLED(CONFIG_NET_IPV6_FRAGMENT)) {
+				net_pkt_set_ipv6_fragment_start(
+					pkt, net_pkt_get_current_offset(pkt));
+				return net_ipv6_handle_fragment_hdr(pkt, hdr,
+								    nexthdr);
+			}
+
 			goto bad_hdr;
 
 		case NET_IPV6_NEXTHDR_NONE:
