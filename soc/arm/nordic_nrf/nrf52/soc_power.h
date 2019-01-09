@@ -25,11 +25,6 @@ extern "C" {
 void sys_set_power_state(enum power_states state);
 
 /**
- * @brief Check the low power state is supported by SoC
- */
-bool sys_is_valid_power_state(enum power_states state);
-
-/**
  * @brief Do any SoC or architecture specific post ops after low power states.
  */
 void sys_power_state_post_ops(enum power_states state);
