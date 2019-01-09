@@ -7,3 +7,4 @@ flash: 512
 toolchain:
   - zephyr
   - gnuarmemb
+  - xtools
