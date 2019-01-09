@@ -12,7 +12,7 @@ menuconfig LIS2MDL
 
 if LIS2MDL
 
-choice
+choice LIS2MDL_TRIGGER_MODE
 	prompt "Trigger mode"
 	default LIS2MDL_TRIGGER_GLOBAL_THREAD
 	help
@@ -31,7 +31,7 @@ config LIS2MDL_TRIGGER_OWN_THREAD
 	depends on GPIO
 	select LIS2MDL_TRIGGER
 
-endchoice
+endchoice # LIS2MDL_TRIGGER_MODE
 
 config LIS2MDL_TRIGGER
 	bool
