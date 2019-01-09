@@ -531,7 +531,11 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 		recv_len = max_len;
 	}
 
-	net_frag_linearize(buf, recv_len, pkt, header_len, recv_len);
+	/* Length passed as arguments are all based on packet data size
+	 * and output buffer size, so return value is invariantly == recv_len,
+	 * and we just ignore it.
+	 */
+	(void)net_frag_linearize(buf, recv_len, pkt, header_len, recv_len);
 
 	if (!(flags & ZSOCK_MSG_PEEK)) {
 		net_pkt_unref(pkt);

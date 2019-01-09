@@ -562,22 +562,34 @@ static void on_cmd_atcmdecho_nosock(struct net_buf **buf, u16_t len)
 
 static void on_cmd_atcmdinfo_manufacturer(struct net_buf **buf, u16_t len)
 {
-	net_buf_linearize(ictx.mdm_manufacturer, sizeof(ictx.mdm_manufacturer),
-			  *buf, 0, len);
+	size_t out_len;
+
+	out_len = net_buf_linearize(ictx.mdm_manufacturer,
+				    sizeof(ictx.mdm_manufacturer) - 1,
+				    *buf, 0, len);
+	ictx.mdm_manufacturer[out_len] = 0;
 	LOG_INF("Manufacturer: %s", ictx.mdm_manufacturer);
 }
 
 static void on_cmd_atcmdinfo_model(struct net_buf **buf, u16_t len)
 {
-	net_buf_linearize(ictx.mdm_model, sizeof(ictx.mdm_model),
-			  *buf, 0, len);
+	size_t out_len;
+
+	out_len = net_buf_linearize(ictx.mdm_model,
+				    sizeof(ictx.mdm_model) - 1,
+				    *buf, 0, len);
+	ictx.mdm_model[out_len] = 0;
 	LOG_INF("Model: %s", ictx.mdm_model);
 }
 
 static void on_cmd_atcmdinfo_revision(struct net_buf **buf, u16_t len)
 {
-	net_buf_linearize(ictx.mdm_revision, sizeof(ictx.mdm_revision),
-			  *buf, 0, len);
+	size_t out_len;
+
+	out_len = net_buf_linearize(ictx.mdm_revision,
+				    sizeof(ictx.mdm_revision) - 1,
+				    *buf, 0, len);
+	ictx.mdm_revision[out_len] = 0;
 	LOG_INF("Revision: %s", ictx.mdm_revision);
 }
 
@@ -585,6 +597,7 @@ static void on_cmd_atcmdecho_nosock_imei(struct net_buf **buf, u16_t len)
 {
 	struct net_buf *frag = NULL;
 	u16_t offset;
+	size_t out_len;
 
 	/* make sure IMEI data is received */
 	if (len < MDM_IMEI_LENGTH) {
@@ -607,7 +620,9 @@ static void on_cmd_atcmdecho_nosock_imei(struct net_buf **buf, u16_t len)
 		return;
 	}
 
-	net_buf_linearize(ictx.mdm_imei, sizeof(ictx.mdm_imei), *buf, 0, len);
+	out_len = net_buf_linearize(ictx.mdm_imei, sizeof(ictx.mdm_imei) - 1,
+				    *buf, 0, len);
+	ictx.mdm_imei[out_len] = 0;
 
 	LOG_INF("IMEI: %s", ictx.mdm_imei);
 }
@@ -685,10 +700,12 @@ static void on_cmd_sockerror(struct net_buf **buf, u16_t len)
 static void on_cmd_sockexterror(struct net_buf **buf, u16_t len)
 {
 	char value[8];
+	size_t out_len;
 
 	struct wncm14a2a_socket *sock = NULL;
 
-	net_buf_linearize(value, sizeof(value), *buf, 0, len);
+	out_len = net_buf_linearize(value, sizeof(value) - 1, *buf, 0, len);
+	value[out_len] = 0;
 	ictx.last_error = -atoi(value);
 	LOG_ERR("@EXTERR:%d", ictx.last_error);
 	sock = socket_from_id(ictx.last_socket_id);
@@ -703,8 +720,10 @@ static void on_cmd_sockexterror(struct net_buf **buf, u16_t len)
 static void on_cmd_sockdial(struct net_buf **buf, u16_t len)
 {
 	char value[8];
+	size_t out_len;
 
-	net_buf_linearize(value, sizeof(value), *buf, 0, len);
+	out_len = net_buf_linearize(value, sizeof(value) - 1, *buf, 0, len);
+	value[out_len] = 0;
 	ictx.last_error = atoi(value);
 	k_sem_give(&ictx.response_sem);
 }
@@ -729,11 +748,13 @@ static void on_cmd_sockcreat(struct net_buf **buf, u16_t len)
 static void on_cmd_sockwrite(struct net_buf **buf, u16_t len)
 {
 	char value[8];
+	size_t out_len;
 	int write_len;
 	struct wncm14a2a_socket *sock = NULL;
 
 	/* TODO: check against what we wanted to send */
-	net_buf_linearize(value, sizeof(value), *buf, 0, len);
+	out_len = net_buf_linearize(value, sizeof(value) - 1, *buf, 0, len);
+	value[out_len] = 0;
 	write_len = atoi(value);
 	if (write_len <= 0) {
 		return;
@@ -901,12 +922,14 @@ static void on_cmd_sockread(struct net_buf **buf, u16_t len)
 static void on_cmd_sockdataind(struct net_buf **buf, u16_t len)
 {
 	int socket_id, session_status, left_bytes;
+	size_t out_len;
 	char *delim1, *delim2;
 	char value[sizeof("#,#,#####\r")];
 	char sendbuf[sizeof("AT@SOCKREAD=#,#####\r")];
 	struct wncm14a2a_socket *sock = NULL;
 
-	net_buf_linearize(value, sizeof(value), *buf, 0, len);
+	out_len = net_buf_linearize(value, sizeof(value) - 1, *buf, 0, len);
+	value[out_len] = 0;
 
 	/* First comma separator marks the end of socket_id */
 	delim1 = strchr(value, ',');
@@ -961,9 +984,11 @@ static void on_cmd_sockdataind(struct net_buf **buf, u16_t len)
 static void on_cmd_socknotifyev(struct net_buf **buf, u16_t len)
 {
 	char value[40];
+	size_t out_len;
 	int p1 = 0, p2 = 0;
 
-	net_buf_linearize(value, sizeof(value), *buf, 0, len);
+	out_len = net_buf_linearize(value, sizeof(value) - 1, *buf, 0, len);
+	value[out_len] = 0;
 
 	/* walk value till 1st quote */
 	while (p1 < len && value[p1] != '\"') {
