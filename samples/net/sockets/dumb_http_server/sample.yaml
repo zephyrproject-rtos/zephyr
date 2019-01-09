@@ -3,7 +3,7 @@ sample:
   name: socket_dumb_http_server
 tests:
   test:
-    platform_exclude: esp32 qemu_x86_64 # No newlib
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
     harness: net
     min_ram: 32
     min_flash: 96
