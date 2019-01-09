@@ -7,6 +7,8 @@
 #ifndef ZEPHYR_INCLUDE_POWER_H_
 #define ZEPHYR_INCLUDE_POWER_H_
 
+#include <zephyr/types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -28,6 +30,36 @@ extern unsigned char sys_pm_idle_exit_notify;
  * @{
  * @}
  */
+
+/**
+ * @brief Power Management states.
+ */
+enum power_states {
+#ifdef CONFIG_SYS_POWER_LOW_POWER_STATE
+# ifdef CONFIG_SYS_POWER_STATE_CPU_LPS_SUPPORTED
+	SYS_POWER_STATE_CPU_LPS,
+# endif
+# ifdef CONFIG_SYS_POWER_STATE_CPU_LPS_1_SUPPORTED
+	SYS_POWER_STATE_CPU_LPS_1,
+# endif
+# ifdef CONFIG_SYS_POWER_STATE_CPU_LPS_2_SUPPORTED
+	SYS_POWER_STATE_CPU_LPS_2,
+# endif
+#endif /* CONFIG_SYS_POWER_LOW_POWER_STATE */
+
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
+# ifdef CONFIG_SYS_POWER_STATE_DEEP_SLEEP_SUPPORTED
+	SYS_POWER_STATE_DEEP_SLEEP,
+# endif
+# ifdef CONFIG_SYS_POWER_STATE_DEEP_SLEEP_1_SUPPORTED
+	SYS_POWER_STATE_DEEP_SLEEP_1,
+# endif
+# ifdef CONFIG_SYS_POWER_STATE_DEEP_SLEEP_2_SUPPORTED
+	SYS_POWER_STATE_DEEP_SLEEP_2,
+# endif
+#endif /* CONFIG_SYS_POWER_DEEP_SLEEP */
+	SYS_POWER_STATE_MAX
+};
 
 /**
  * @brief Power Management Hooks

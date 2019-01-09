@@ -7,6 +7,8 @@
 #ifndef _SOC_POWER_H_
 #define _SOC_POWER_H_
 
+#include <power.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -19,16 +21,14 @@ extern "C" {
  */
 #define GP0_BIT_SLEEP_READY BIT(0)
 
-enum power_states {
-	SYS_POWER_STATE_CPU_LPS,       /* SS1 state with Timer ON */
-	SYS_POWER_STATE_CPU_LPS_1,     /* SS2 state */
-	SYS_POWER_STATE_CPU_LPS_2,     /* Not supported*/
-	SYS_POWER_STATE_DEEP_SLEEP,    /* SS2 with LPSS enabled state */
-	SYS_POWER_STATE_DEEP_SLEEP_1,  /* SLEEP state */
-	SYS_POWER_STATE_DEEP_SLEEP_2,  /* SLEEP state with LPMODE enabled */
-
-	SYS_POWER_STATE_MAX
-};
+/*
+ * Power state map:
+ * SYS_POWER_STATE_CPU_LPS:		SS1 state with Timer ON
+ * SYS_POWER_STATE_CPU_LPS_1:		SS1 state with Timer ON
+ * SYS_POWER_STATE_DEEP_SLEEP:		SS2 with LPSS enabled state
+ * SYS_POWER_STATE_DEEP_SLEEP_1:	SLEEP state
+ * SYS_POWER_STATE_DEEP_SLEEP_2:	SLEEP state with LPMODE enabled
+ */
 
 /**
  * @brief Put processor into low power state

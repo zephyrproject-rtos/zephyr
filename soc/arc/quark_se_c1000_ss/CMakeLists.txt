@@ -12,6 +12,9 @@ zephyr_compile_definitions_ifdef(
 zephyr_sources(
   soc.c
   soc_config.c
+  )
+
+zephyr_sources_ifdef(CONFIG_SYS_POWER_MANAGEMENT
   power.c
   soc_power.S
   )
