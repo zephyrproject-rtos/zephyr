@@ -168,6 +168,9 @@ def find_node_by_path(nodes, path):
 
 def get_reduced(nodes, path):
     # compress nodes list to nodes w/ paths, add interrupt parent
+    if 'last_used_id' not in get_reduced.__dict__:
+        get_reduced.last_used_id = {}
+
     if 'props' in nodes:
         status = nodes['props'].get('status')
 
@@ -176,11 +179,24 @@ def get_reduced(nodes, path):
 
     if isinstance(nodes, dict):
         reduced[path] = dict(nodes)
+
+        # assign an instance ID for each compat
+        compat = nodes['props'].get('compatible')
+        if (compat is not None):
+            if type(compat) is not list: compat = [ compat, ]
+            reduced[path]['instance_id'] = {}
+            for k in compat:
+                if k not in get_reduced.last_used_id.keys():
+                    get_reduced.last_used_id[k] = 0
+                else:
+                    get_reduced.last_used_id[k] += 1
+                reduced[path]['instance_id'][k] = get_reduced.last_used_id[k]
+
         reduced[path].pop('children', None)
         if path != '/':
             path += '/'
         if nodes['children']:
-            for k, v in nodes['children'].items():
+            for k, v in sorted(nodes['children'].items()):
                 get_reduced(v, path + k)
 
 
