@@ -184,6 +184,7 @@ def extract_controller(node_address, prop, prop_values, index, def_label, generi
 
         label = l_base + [l_cellname] + l_idx
 
+        add_compat_alias(node_address, '_'.join(label[1:]), '_'.join(label), prop_alias)
         prop_def['_'.join(label)] = "\"" + l_cell + "\""
 
         #generate defs also if node is referenced as an alias in dts
@@ -262,6 +263,7 @@ def extract_cells(node_address, prop, prop_values, names, index,
         else:
             label = l_base + l_cell + l_cellname + l_idx
         label_name = l_base + [name] + l_cellname
+        add_compat_alias(node_address, '_'.join(label[1:]), '_'.join(label), prop_alias)
         prop_def['_'.join(label)] = prop_values.pop(0)
         if len(name):
             prop_alias['_'.join(label_name)] = '_'.join(label)
@@ -294,6 +296,10 @@ def extract_single(node_address, prop, key, def_label):
             label = def_label + '_' + k
             if isinstance(p, str):
                 p = "\"" + p + "\""
+            add_compat_alias(node_address,
+                    k + '_' + str(i),
+                    label + '_' + str(i),
+                    prop_alias)
             prop_def[label + '_' + str(i)] = p
     else:
         k = convert_string_to_label(key)
@@ -304,6 +310,7 @@ def extract_single(node_address, prop, key, def_label):
 
         if isinstance(prop, str):
             prop = "\"" + prop + "\""
+        add_compat_alias(node_address, k, label, prop_alias)
         prop_def[label] = prop
 
         # generate defs for node aliases

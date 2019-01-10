@@ -77,13 +77,17 @@ class DTReg(DTDirective):
             l_size_fqn = '_'.join(l_base + l_size + l_idx)
             if nr_address_cells:
                 prop_def[l_addr_fqn] = hex(addr)
+                add_compat_alias(node_address, '_'.join(l_addr + l_idx), l_addr_fqn, prop_alias)
             if nr_size_cells:
                 prop_def[l_size_fqn] = int(size / div)
+                add_compat_alias(node_address, '_'.join(l_size + l_idx), l_size_fqn, prop_alias)
             if len(name):
                 if nr_address_cells:
                     prop_alias['_'.join(l_base + name + l_addr)] = l_addr_fqn
+                    add_compat_alias(node_address, '_'.join(name + l_addr), l_addr_fqn, prop_alias)
                 if nr_size_cells:
                     prop_alias['_'.join(l_base + name + l_size)] = l_size_fqn
+                    add_compat_alias(node_address, '_'.join(name + l_size), l_size_fqn, prop_alias)
 
             # generate defs for node aliases
             if node_address in aliases:

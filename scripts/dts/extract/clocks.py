@@ -71,10 +71,19 @@ class DTClocks(DTDirective):
                         clock_label = self.get_label_string([
                             clock_consumer_label, clock_cells_string,
                             str(clock_index)])
+                        add_compat_alias(node_address,
+                                self.get_label_string(["",
+                                    clock_cells_string, str(clock_index)]),
+                                clock_label, prop_alias)
                     else:
                         clock_label = self.get_label_string([
                             clock_consumer_label, clock_cells_string,
                             clock_cell_name, str(clock_index)])
+                        add_compat_alias(node_address,
+                                self.get_label_string(["",
+                                    clock_cells_string, clock_cell_name,
+                                    str(clock_index)]),
+                                clock_label, prop_alias)
                     prop_def[clock_label] = str(cell)
                     if clock_index == 0 and \
                         len(clocks) == (len(clock_cells) + 1):
@@ -110,6 +119,12 @@ class DTClocks(DTDirective):
                             clock_consumer_label, clock_cells_string,
                             clock_cell_name])
                         prop_alias[clock_alias_label] = clock_label
+                        add_compat_alias(node_address,
+                                self.get_label_string(["",
+                                    clock_cells_string, clock_cell_name]),
+                                clock_label, prop_alias)
+
+
                 # Legacy clocks definitions by extract_controller
                 clock_provider_label_str = clock_provider['props'].get('label',
                                                                        None)
@@ -131,6 +146,9 @@ class DTClocks(DTDirective):
                     clock_label = self.get_label_string([clock_consumer_label,
                                                          clock_cell_name,
                                                          index])
+                    add_compat_alias(node_address,
+                            self.get_label_string(["", clock_cell_name, index]),
+                            clock_label, prop_alias)
                     prop_def[clock_label] = '"' + clock_provider_label_str + '"'
                     if node_address in aliases:
                         add_prop_aliases(

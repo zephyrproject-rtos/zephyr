@@ -297,6 +297,14 @@ def enable_old_alias_names(enable):
     global old_alias_names
     old_alias_names = enable
 
+def add_compat_alias(node_address, label_postfix, label, prop_aliases):
+    if ('instance_id' in reduced[node_address]):
+        instance = reduced[node_address]['instance_id']
+        for k in instance:
+            i = instance[k]
+            b = 'DT_' + convert_string_to_label(k) + '_' + str(i) + '_' + label_postfix
+            prop_aliases[b] = label
+
 def add_prop_aliases(node_address,
                      alias_label_function, prop_label, prop_aliases):
     node_compat = get_compat(node_address)

@@ -42,6 +42,10 @@ class DTDefault(DTDirective):
                 if isinstance(prop_value, str):
                     prop_value = "\"" + prop_value + "\""
                 prop_def[label + '_' + str(i)] = prop_value
+                add_compat_alias(node_address,
+                        prop_name + '_' + str(i),
+                        label + '_' + str(i),
+                        prop_alias)
         else:
             prop_name = convert_string_to_label(prop)
             label = def_label + '_' + prop_name
@@ -52,6 +56,7 @@ class DTDefault(DTDirective):
             if isinstance(prop_values, str):
                 prop_values = "\"" + prop_values + "\""
             prop_def[label] = prop_values
+            add_compat_alias(node_address, prop_name, label, prop_alias)
 
             # generate defs for node aliases
             if node_address in aliases:
