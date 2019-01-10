@@ -35,6 +35,8 @@ source "subsys/storage/Kconfig"
 
 source "subsys/settings/Kconfig"
 
+source "subsys/nsettings/Kconfig"
+
 source "subsys/app_memory/Kconfig"
 
 source "subsys/power/Kconfig"
