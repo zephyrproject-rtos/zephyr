@@ -2198,6 +2198,8 @@ NET_CONN_CB(tcp_synack_received)
 
 		net_stats_update_tcp_seg_rst(net_pkt_iface(pkt));
 
+		k_sem_give(&context->tcp->connect_wait);
+
 		if (context->connect_cb) {
 			context->connect_cb(context, -ECONNREFUSED,
 					    context->user_data);
