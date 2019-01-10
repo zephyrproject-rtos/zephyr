@@ -294,6 +294,12 @@ u8_t ll_chm_update(u8_t *chm)
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 
+		conn->llcp_req++;
+		if (((conn->llcp_req - conn->llcp_ack) & 0x03) != 1) {
+			conn->llcp_req--;
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+
 		memcpy(conn->llcp.chan_map.chm, chm,
 		       sizeof(conn->llcp.chan_map.chm));
 		/* conn->llcp.chan_map.instant     = 0; */
@@ -318,6 +324,12 @@ u8_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
 	}
 
 	if (conn->llcp_req != conn->llcp_ack) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	conn->llcp_req++;
+	if (((conn->llcp_req - conn->llcp_ack) & 0x03) != 1) {
+		conn->llcp_req--;
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 

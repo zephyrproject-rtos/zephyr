@@ -440,6 +440,12 @@ u8_t ll_start_enc_req_send(u16_t handle, u8_t error_code,
 				return BT_HCI_ERR_CMD_DISALLOWED;
 			}
 
+			conn->llcp_req++;
+			if (((conn->llcp_req - conn->llcp_ack) & 0x03) != 1) {
+				conn->llcp_req--;
+				return BT_HCI_ERR_CMD_DISALLOWED;
+			}
+
 			conn->llcp.encryption.error_code = error_code;
 			conn->llcp.encryption.initiate = 0;
 
@@ -460,6 +466,12 @@ u8_t ll_start_enc_req_send(u16_t handle, u8_t error_code,
 		       sizeof(conn->llcp.encryption.ltk));
 
 		if (conn->llcp_req != conn->llcp_ack) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+
+		conn->llcp_req++;
+		if (((conn->llcp_req - conn->llcp_ack) & 0x03) != 1) {
+			conn->llcp_req--;
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 
