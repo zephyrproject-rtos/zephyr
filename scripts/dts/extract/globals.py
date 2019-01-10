@@ -146,7 +146,12 @@ def insert_defs(node_address, new_defs, new_aliases):
         if key.startswith('DT_COMPAT_'):
             node_address = 'compatibles'
 
+    remove = [k for k in new_aliases if k in new_defs.keys()]
+    for k in remove: del new_aliases[k]
+
     if node_address in defs:
+        remove = [k for k in new_aliases if k in defs[node_address].keys()]
+        for k in remove: del new_aliases[k]
         if 'aliases' in defs[node_address]:
             defs[node_address]['aliases'].update(new_aliases)
         else:
