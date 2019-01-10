@@ -330,7 +330,7 @@ struct mqtt_sec_config {
 	u32_t sec_tag_count;
 
 	/** Indicates the list of security tags to be used for the session. */
-	sec_tag_t *seg_tag_list;
+	sec_tag_t *sec_tag_list;
 
 	/** Peer hostname for ceritificate verification.
 	 *  May be NULL to skip hostname verification.

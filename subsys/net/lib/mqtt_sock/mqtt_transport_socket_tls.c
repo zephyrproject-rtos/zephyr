@@ -55,9 +55,9 @@ int mqtt_client_tls_connect(struct mqtt_client *client)
 		}
 	}
 
-	if (tls_config->seg_tag_list != NULL && tls_config->sec_tag_count > 0) {
+	if (tls_config->sec_tag_list != NULL && tls_config->sec_tag_count > 0) {
 		ret = setsockopt(client->transport.tls.sock, SOL_TLS,
-				 TLS_SEC_TAG_LIST, tls_config->seg_tag_list,
+				 TLS_SEC_TAG_LIST, tls_config->sec_tag_list,
 				 sizeof(sec_tag_t) * tls_config->sec_tag_count);
 		if (ret < 0) {
 			goto error;
