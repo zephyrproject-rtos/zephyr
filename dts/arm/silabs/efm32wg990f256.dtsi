@@ -13,6 +13,8 @@
 	};
 
 	soc {
+		compatible = "silabs,efm32wg990f256", "silabs,efm32wg", "silabs,efm32", "simple-bus";
+
 		flash-controller@400c0000 {
 			flash0: flash@0 {
 				reg = <0 DT_SIZE_K(256)>;
