@@ -41,11 +41,30 @@ static void uart_rx_handle(const struct shell_uart *sh_uart)
 		if (len) {
 			rd_len = uart_fifo_read(sh_uart->ctrl_blk->dev,
 						data, len);
+#ifdef CONFIG_MCUMGR_SMP_SHELL
+			/* Divert bytes from shell handling if it is
+			 * part of an mcumgr frame.
+			 */
+			size_t i;
 
+			for (i = 0; i < rd_len; i++) {
+				if (!smp_shell_rx_byte(&sh_uart->ctrl_blk->smp,
+						       data[i])) {
+					break;
+				}
+			}
+			rd_len -= i;
+			if (rd_len) {
+				new_data = true;
+				for (u32_t j = 0; j < rd_len; j++) {
+					data[j] = data[i + j];
+				}
+			}
+#else
 			if (rd_len) {
 				new_data = true;
 			}
-
+#endif /* CONFIG_MCUMGR_SMP_SHELL */
 			ring_buf_put_finish(sh_uart->rx_ringbuf, rd_len);
 		} else {
 			u8_t dummy;
@@ -55,6 +74,12 @@ static void uart_rx_handle(const struct shell_uart *sh_uart)
 
 			rd_len = uart_fifo_read(sh_uart->ctrl_blk->dev,
 						&dummy, 1);
+#ifdef CONFIG_MCUMGR_SMP_SHELL
+			/* Divert this byte from shell handling if it
+			 * is part of an mcumgr frame.
+			 */
+			smp_shell_rx_byte(&sh_uart->ctrl_blk->smp, dummy);
+#endif /* CONFIG_MCUMGR_SMP_SHELL */
 		}
 	} while (rd_len && (rd_len == len));
 
@@ -219,12 +244,24 @@ static int read(const struct shell_transport *transport,
 	return 0;
 }
 
+#ifdef CONFIG_MCUMGR_SMP_SHELL
+static void update(const struct shell_transport *transport)
+{
+	struct shell_uart *sh_uart = (struct shell_uart *)transport->ctx;
+
+	smp_shell_process(&sh_uart->ctrl_blk->smp);
+}
+#endif /* CONFIG_MCUMGR_SMP_SHELL */
+
 const struct shell_transport_api shell_uart_transport_api = {
 	.init = init,
 	.uninit = uninit,
 	.enable = enable,
 	.write = write,
-	.read = read
+	.read = read,
+#ifdef CONFIG_MCUMGR_SMP_SHELL
+	.update = update,
+#endif /* CONFIG_MCUMGR_SMP_SHELL */
 };
 
 static int enable_shell_uart(struct device *arg)

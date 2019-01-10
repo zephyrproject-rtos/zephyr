@@ -1216,6 +1216,9 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 	}
 
 	while (true) {
+		if (shell->iface->api->update) {
+			shell->iface->api->update(shell->iface);
+		}
 		int num_events = (shell->ctx->state != SHELL_STATE_COMMAND) ?
 				SHELL_SIGNALS : SHELL_SIGNAL_TXDONE;
 
