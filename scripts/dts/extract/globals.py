@@ -21,7 +21,6 @@ bindings_compat = []
 old_alias_names = False
 
 regs_config = {
-    'zephyr,flash' : 'CONFIG_FLASH',
     'zephyr,sram'  : 'CONFIG_SRAM',
     'zephyr,ccm'   : 'CONFIG_CCM'
 }
