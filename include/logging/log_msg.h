@@ -65,7 +65,7 @@ extern "C" {
 	u16_t ext : 1
 
 /** @brief Number of bits used for storing length of hexdump log message. */
-#define LOG_MSG_HEXDUMP_LENGTH_BITS 13
+#define LOG_MSG_HEXDUMP_LENGTH_BITS 14
 
 /** @brief Maximum length of log hexdump message. */
 #define LOG_MSG_HEXDUMP_MAX_LENGTH ((1 << LOG_MSG_HEXDUMP_LENGTH_BITS) - 1)
@@ -102,7 +102,6 @@ BUILD_ASSERT_MSG((sizeof(struct log_msg_std_hdr) == sizeof(u16_t)),
 /** Part of log message header specific to hexdump log message. */
 struct log_msg_hexdump_hdr {
 	COMMON_PARAM_HDR();
-	u16_t raw_string : 1;
 	u16_t length     : LOG_MSG_HEXDUMP_LENGTH_BITS;
 };
 
@@ -233,20 +232,6 @@ static inline u32_t log_msg_timestamp_get(struct log_msg *msg)
 {
 	return msg->hdr.timestamp;
 }
-
-/** @brief Check if message is a raw string (see CONFIG_LOG_PRINTK).
- *
- * @param msg Message
- *
- * @retval true  Message contains raw string.
- * @retval false Message does not contain raw string.
- */
-static inline bool log_msg_is_raw_string(struct log_msg *msg)
-{
-	return (msg->hdr.params.generic.type == LOG_MSG_TYPE_HEXDUMP) &&
-	       (msg->hdr.params.hexdump.raw_string == 1);
-}
-
 
 /** @brief Check if message is of standard type.
  *

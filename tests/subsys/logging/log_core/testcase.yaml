@@ -2,4 +2,5 @@ tests:
   logging.log_core:
     tags: log_core logging
     platform_exclude: altera_max10 qemu_nios2 nucleo_l053r8
-      nucleo_f030r8 quark_d2000_crb stm32f0_disco
+      nucleo_f030r8 quark_d2000_crb stm32f0_disco native_posix
+      nrf52_bsim

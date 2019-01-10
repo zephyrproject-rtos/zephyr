@@ -161,9 +161,15 @@ extern "C" {
 
 #define _LOG_INTERNAL_X(N, ...)  UTIL_CAT(_LOG_INTERNAL_, N)(__VA_ARGS__)
 
-#define __LOG_INTERNAL(_src_level, ...)			 \
-	_LOG_INTERNAL_X(_LOG_NARGS_POSTFIX(__VA_ARGS__), \
-			_src_level, __VA_ARGS__)
+#define __LOG_INTERNAL(_src_level, ...)					 \
+	do {								 \
+		if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {		 \
+			log_string_sync(_src_level, __VA_ARGS__);	 \
+		} else {						 \
+			_LOG_INTERNAL_X(_LOG_NARGS_POSTFIX(__VA_ARGS__), \
+						_src_level, __VA_ARGS__);\
+		}							 \
+	} while (0)
 
 #define _LOG_INTERNAL_0(_src_level, _str) \
 	log_0(_str, _src_level)
@@ -246,17 +252,23 @@ extern "C" {
 /******************************************************************************/
 /****************** Macros for hexdump logging ********************************/
 /******************************************************************************/
-#define __LOG_HEXDUMP(_level, _id, _filter, _data, _length, _str)     \
-	do {							      \
-		if (_LOG_CONST_LEVEL_CHECK(_level) &&		      \
-		    (_level <= LOG_RUNTIME_FILTER(_filter))) {	      \
-			struct log_msg_ids src_level = {	      \
-				.level = _level,		      \
-				.source_id = _id,		      \
-				.domain_id = CONFIG_LOG_DOMAIN_ID     \
-			};					      \
-			log_hexdump(_str, _data, _length, src_level); \
-		}						      \
+#define __LOG_HEXDUMP(_level, _id, _filter, _data, _length, _str)	      \
+	do {								      \
+		if (_LOG_CONST_LEVEL_CHECK(_level) &&			      \
+		    (_level <= LOG_RUNTIME_FILTER(_filter))) {		      \
+			struct log_msg_ids src_level = {		      \
+				.level = _level,			      \
+				.source_id = _id,			      \
+				.domain_id = CONFIG_LOG_DOMAIN_ID	      \
+			};						      \
+									      \
+			if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {	      \
+				log_hexdump_sync(src_level, _str,	      \
+						 _data, _length);	      \
+			} else {					      \
+				log_hexdump(_str, _data, _length, src_level); \
+			}						      \
+		}							      \
 	} while (false)
 
 #define _LOG_HEXDUMP(_level, _data, _length, _str)	       \
@@ -321,6 +333,11 @@ extern "C" {
 #else
 #define LOG_RUNTIME_FILTER(_filter) LOG_LEVEL_DBG
 #endif
+
+/** @brief Log level value used to indicate log entry that should not be
+ *	   formatted (raw string).
+ */
+#define LOG_LEVEL_INTERNAL_RAW_STRING LOG_LEVEL_NONE
 
 extern struct log_source_const_data __log_const_start[0];
 extern struct log_source_const_data __log_const_end[0];
@@ -483,6 +500,24 @@ void log_hexdump(const char *str,
  * @return Number of bytes processed.
  */
 int log_printk(const char *fmt, va_list ap);
+
+/** @brief Process log message synchronously.
+ *
+ * @param src_level	Log message details.
+ * @param fmt		String to format.
+ * @param ...		Variable list of arguments.
+ */
+void log_string_sync(struct log_msg_ids src_level, const char *fmt, ...);
+
+/** @brief Process log hexdump message synchronously.
+ *
+ * @param src_level	Log message details.
+ * @param metadata	Raw string associated with the data.
+ * @param data		Data.
+ * @param len		Data length.
+ */
+void log_hexdump_sync(struct log_msg_ids src_level, const char *metadata,
+		      const u8_t *data, u32_t len);
 
 /**
  * @brief Writes a generic log message to the log.
