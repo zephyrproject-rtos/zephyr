@@ -325,7 +325,7 @@ static int cmd_init(const struct shell *shell, size_t argc, char *argv[])
 {
 	int err;
 
-    ctx_shell = shell;
+	ctx_shell = shell;
 
 	err = bt_enable(bt_ready);
 	if (err) {
