@@ -67,6 +67,7 @@ struct eswifi_dev {
 	struct eswifi_sta sta;
 	enum eswifi_request req;
 	enum eswifi_role role;
+	u8_t mac[6];
 	char buf[MAX_DATA_SIZE];
 	struct k_mutex mutex;
 	void *bus_data;

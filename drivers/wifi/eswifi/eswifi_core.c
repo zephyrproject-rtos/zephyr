@@ -391,7 +391,9 @@ static void eswifi_iface_init(struct net_if *iface)
 	LOG_DBG("MAC Address %02X:%02X:%02X:%02X:%02X:%02X",
 		   mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
-	net_if_set_link_addr(iface, mac, sizeof(mac), NET_LINK_ETHERNET);
+	memcpy(eswifi->mac, mac, sizeof(eswifi->mac));
+	net_if_set_link_addr(iface, eswifi->mac, sizeof(eswifi->mac),
+			     NET_LINK_ETHERNET);
 
 	eswifi->iface = iface;
 
