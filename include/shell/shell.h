@@ -330,6 +330,15 @@ struct shell_transport_api {
 	int (*read)(const struct shell_transport *transport,
 		    void *data, size_t length, size_t *cnt);
 
+	/**
+	 * @brief Function called in shell thread loop.
+	 *
+	 * Can be used for backend operations that require longer execution time
+	 *
+	 * @param[in] transport Pointer to the transfer instance.
+	 */
+	void (*update)(const struct shell_transport *transport);
+
 };
 
 struct shell_transport {
