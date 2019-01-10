@@ -5,9 +5,10 @@
 '''Runner for pyOCD .'''
 
 import os
-import sys
-from runners.core import ZephyrBinaryRunner, RunnerCaps, BuildConfiguration
-import log
+
+from west.runners.core import ZephyrBinaryRunner, RunnerCaps, \
+    BuildConfiguration
+from west import log
 
 DEFAULT_PYOCD_GDB_PORT = 3333
 
@@ -20,7 +21,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
                  flashtool_opts=None,
                  gdbserver='pyocd-gdbserver',
                  gdb_port=DEFAULT_PYOCD_GDB_PORT, tui=False,
-                 board_id=None, daparg=None):
+                 board_id=None, daparg=None, frequency=None):
         super(PyOcdBinaryRunner, self).__init__(cfg)
 
         self.target_args = ['-t', target]
@@ -30,8 +31,9 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
         self.gdbserver = gdbserver
         self.gdb_port = gdb_port
         self.tui_args = ['-tui'] if tui else []
-        self.bin_name = cfg.kernel_bin
-        self.elf_name = cfg.kernel_elf
+        self.hex_name = cfg.hex_file
+        self.bin_name = cfg.bin_file
+        self.elf_name = cfg.elf_file
 
         board_args = []
         if board_id is not None:
@@ -42,6 +44,11 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
         if daparg is not None:
             daparg_args = ['-da', daparg]
         self.daparg_args = daparg_args
+
+        frequency_args = []
+        if frequency is not None:
+            frequency_args = ['-f', frequency]
+        self.frequency_args = frequency_args
 
         self.flashtool_extra = flashtool_opts if flashtool_opts else []
 
@@ -66,6 +73,8 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--flashtool-opt', default=[], action='append',
                             help='''Additional options for pyocd-flashtool,
                             e.g. -ce to chip erase''')
+        parser.add_argument('--frequency',
+                            help='SWD clock frequency in Hz')
         parser.add_argument('--gdbserver', default='pyocd-gdbserver',
                             help='GDB server, default is pyocd-gdbserver')
         parser.add_argument('--gdb-port', default=DEFAULT_PYOCD_GDB_PORT,
@@ -94,7 +103,8 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
             cfg, args.target, flashtool=args.flashtool,
             flash_addr=flash_addr, flashtool_opts=args.flashtool_opt,
             gdbserver=args.gdbserver, gdb_port=args.gdb_port, tui=args.tui,
-            board_id=args.board_id, daparg=args.daparg)
+            board_id=args.board_id, daparg=args.daparg,
+            frequency=args.frequency)
 
     def port_args(self):
         return ['-p', str(self.gdb_port)]
@@ -106,16 +116,23 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
             self.debug_debugserver(command, **kwargs)
 
     def flash(self, **kwargs):
-        if self.bin_name is None:
-            raise ValueError('Cannot flash; bin_name is missing')
+        if os.path.isfile(self.hex_name):
+            fname = self.hex_name
+        elif os.path.isfile(self.bin_name):
+            fname = self.bin_name
+        else:
+            raise ValueError(
+                'Cannot flash; no hex ({}) or bin ({}) files'.format(
+                    self.hex_name, self.bin_name))
 
         cmd = ([self.flashtool] +
                self.flash_addr_args +
                self.daparg_args +
                self.target_args +
                self.board_args +
+               self.frequency_args +
                self.flashtool_extra +
-               [self.bin_name])
+               [fname])
 
         log.inf('Flashing Target Device')
         self.check_call(cmd)
@@ -128,7 +145,8 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
                       self.daparg_args +
                       self.port_args() +
                       self.target_args +
-                      self.board_args)
+                      self.board_args +
+                      self.frequency_args)
 
         if command == 'debugserver':
             self.print_gdbserver_message()
@@ -143,8 +161,9 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
                           [self.elf_name] +
                           ['-ex', 'target remote :{}'.format(self.gdb_port)])
             if command == 'debug':
-                client_cmd += ['-ex', 'load',
-                               '-ex', 'monitor reset halt']
+                client_cmd += ['-ex', 'monitor halt',
+                               '-ex', 'monitor reset',
+                               '-ex', 'load']
 
             self.print_gdbserver_message()
             self.run_server_and_client(server_cmd, client_cmd)

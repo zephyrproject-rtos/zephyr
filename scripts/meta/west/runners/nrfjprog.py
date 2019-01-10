@@ -6,8 +6,8 @@
 
 import sys
 
-import log
-from runners.core import ZephyrBinaryRunner, RunnerCaps
+from west import log
+from west.runners.core import ZephyrBinaryRunner, RunnerCaps
 
 
 class NrfJprogBinaryRunner(ZephyrBinaryRunner):
@@ -15,7 +15,7 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
 
     def __init__(self, cfg, family, softreset, snr, erase=False):
         super(NrfJprogBinaryRunner, self).__init__(cfg)
-        self.hex_ = cfg.kernel_hex
+        self.hex_ = cfg.hex_file
         self.family = family
         self.softreset = softreset
         self.snr = snr
@@ -44,19 +44,21 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def create(cls, cfg, args):
-        return NrfJprogBinaryRunner(cfg, args.nrf_family, args.softreset, args.snr,
-                                    erase=args.erase)
+        return NrfJprogBinaryRunner(cfg, args.nrf_family, args.softreset,
+                                    args.snr, erase=args.erase)
 
     def get_board_snr_from_user(self):
         snrs = self.check_output(['nrfjprog', '--ids'])
         snrs = snrs.decode(sys.getdefaultencoding()).strip().splitlines()
 
         if len(snrs) == 0:
-            raise RuntimeError('"nrfjprog --ids" did not find a board; Is the board connected?')
+            raise RuntimeError('"nrfjprog --ids" did not find a board; '
+                               'is the board connected?')
         elif len(snrs) == 1:
             board_snr = snrs[0]
             if board_snr == '0':
-                raise RuntimeError('"nrfjprog --ids" returned 0; is a debugger already connected?')
+                raise RuntimeError('"nrfjprog --ids" returned 0; '
+                                   'is a debugger already connected?')
             return board_snr
 
         log.dbg("Refusing the temptation to guess a board",
@@ -99,14 +101,14 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
                  '-f', self.family,
                  '--snr', board_snr],
                 program_cmd
-                ])
+            ])
         else:
             if self.family == 'NRF51':
                 commands.append(program_cmd + ['--sectorerase'])
             else:
                 commands.append(program_cmd + ['--sectoranduicrerase'])
 
-        if self.family == 'NRF52' and self.softreset == False:
+        if self.family == 'NRF52' and not self.softreset:
             commands.extend([
                 # Enable pin reset
                 ['nrfjprog', '--pinresetenable', '-f', self.family,

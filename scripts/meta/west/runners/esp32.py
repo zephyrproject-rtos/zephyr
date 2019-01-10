@@ -6,8 +6,8 @@
 
 from os import path
 
-import log
-from runners.core import ZephyrBinaryRunner, RunnerCaps
+from west import log
+from west.runners.core import ZephyrBinaryRunner, RunnerCaps
 
 
 class Esp32BinaryRunner(ZephyrBinaryRunner):
@@ -17,7 +17,7 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
                  flash_freq='40m', flash_mode='dio', espidf='espidf',
                  bootloader_bin=None, partition_table_bin=None):
         super(Esp32BinaryRunner, self).__init__(cfg)
-        self.elf = cfg.kernel_elf
+        self.elf = cfg.elf_file
         self.device = device
         self.baud = baud
         self.flash_size = flash_size

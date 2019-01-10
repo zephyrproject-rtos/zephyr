@@ -11,12 +11,12 @@ import shutil
 import subprocess
 import textwrap
 
-import pykwalify.core
-import yaml
-
-import log
-import util
-from commands import WestCommand
+from west.config import config
+from west import log
+from west import util
+from west.commands import WestCommand
+from west.manifest import default_path, SpecialProject, \
+                          Manifest, MalformedManifest, META_NAMES
 
 
 # Branch that points to the revision specified in the manifest (which might be
@@ -25,30 +25,143 @@ from commands import WestCommand
 _MANIFEST_REV_BRANCH = 'manifest-rev'
 
 
-class ListProjects(WestCommand):
+class List(WestCommand):
     def __init__(self):
         super().__init__(
-            'list-projects',
+            'list',
             _wrap('''
             List projects.
 
-            Prints the path to the manifest file and lists all projects along
-            with their clone paths and manifest revisions. Also includes
-            information on which projects are currently cloned.
-            '''))
+            Individual projects can be specified by name.
+
+            By default, lists all project names in the manifest, along with
+            each project's path, revision, URL, and whether it has been cloned.
+
+            The west and manifest repositories in the top-level west directory
+            are not included by default. Use --all or the special project
+            names "west" and "manifest" to include them.'''))
 
     def do_add_parser(self, parser_adder):
-        return _add_parser(parser_adder, self)
+        default_fmt = '{name:14} {path:18} {revision:13} {url} {cloned}'
+        return _add_parser(
+            parser_adder, self,
+            _arg('-a', '--all', action='store_true',
+                 help='''Do not ignore repositories in west/ (i.e. west and the
+                 manifest) in the output. Since these are not part of
+                 the manifest, some of their format values (like "revision")
+                 come from other sources. The behavior of this option is
+                 modeled after the Unix ls -a option.'''),
+            _arg('-f', '--format', default=default_fmt,
+                 help='''Format string to use to list each project; see
+                 FORMAT STRINGS below.'''),
+            _project_list_arg,
+            epilog=textwrap.dedent('''\
+            FORMAT STRINGS
+
+            Projects are listed using a Python 3 format string. Arguments
+            to the format string are accessed by name.
+
+            The default format string is:
+
+            "{}"
+
+            The following arguments are available:
+
+            - name: project name in the manifest
+            - url: full remote URL as specified by the manifest
+            - path: the relative path to the project from the top level,
+              as specified in the manifest where applicable
+            - abspath: absolute and normalized path to the project
+            - revision: project's manifest revision
+            - cloned: "(cloned)" if the project has been cloned, "(not cloned)"
+              otherwise
+            - clone_depth: project clone depth if specified, "None" otherwise
+            '''.format(default_fmt)))
 
     def do_run(self, args, user_args):
-        log.inf("Manifest path: {}\n".format(_manifest_path(args)))
+        # We should only list the meta projects if they were explicitly
+        # given by name, or --all was given.
+        list_meta = bool(args.projects) or args.all
 
-        for project in _all_projects(args):
-            log.inf('{:15} {:30} {:15} {}'.format(
-                project.name,
-                os.path.join(project.path, ''),  # Add final '/' if missing
-                project.revision,
-                "(cloned)" if _cloned(project) else "(not cloned)"))
+        for project in _projects(args, include_meta=True):
+            if project.name in META_NAMES and not list_meta:
+                continue
+
+            # Spelling out the format keys explicitly here gives us
+            # future-proofing if the internal Project representation
+            # ever changes.
+            try:
+                result = args.format.format(
+                    name=project.name,
+                    url=project.url,
+                    path=project.path,
+                    abspath=project.abspath,
+                    revision=project.revision,
+                    cloned="(cloned)" if _cloned(project) else "(not cloned)",
+                    clone_depth=project.clone_depth or "None")
+            except KeyError as e:
+                # The raised KeyError seems to just put the first
+                # invalid argument in the args tuple, regardless of
+                # how many unrecognizable keys there were.
+                log.die('unknown key "{}" in format string "{}"'.
+                        format(e.args[0], args.format))
+
+            log.inf(result)
+
+
+class Clone(WestCommand):
+    def __init__(self):
+        super().__init__(
+            'clone',
+            _wrap('''
+            Clone projects.
+
+            Clones each of the specified projects (default: all projects) and
+            creates a branch in each. The branch is named after the project's
+            revision, and tracks the 'manifest-rev' branch (see below).
+
+            If the project's revision is an SHA, the branch will simply be
+            called 'work'.
+
+            This command is really just a shorthand for 'west fetch' +
+            'west checkout -b <branch name>'. If you clone a project with
+            'west fetch' instead, you will start in a detached HEAD state at
+            'manifest-rev'.
+
+            {}
+
+            {}'''.format(_NO_UPDATE_HELP, _MANIFEST_REV_HELP)))
+
+    def do_add_parser(self, parser_adder):
+        return _add_parser(
+            parser_adder, self,
+            _arg('-b',
+                 dest='branch',
+                 metavar='BRANCH_NAME',
+                 help='an alternative branch name to use, instead of one '
+                      'based on the revision'),
+            _no_update_arg,
+            _project_list_arg)
+
+    def do_run(self, args, user_args):
+        if args.update:
+            _update_manifest(args)
+            _update_west(args)
+
+        for project in _projects(args, listed_must_be_cloned=False):
+            if args.branch:
+                branch = args.branch
+            elif _is_sha(project.revision):
+                # Don't name the branch after an SHA
+                branch = 'work'
+            else:
+                # Use the last component of the revision, in case it is a
+                # qualified ref (refs/heads/foo and the like)
+                branch = project.revision.split('/')[-1]
+
+            _fetch(project)
+            _create_branch(project, branch)
+            _checkout(project, branch)
 
 
 class Fetch(WestCommand):
@@ -56,17 +169,15 @@ class Fetch(WestCommand):
         super().__init__(
             'fetch',
             _wrap('''
-            Clone/fetch projects.
+            Fetch projects.
 
             Fetches upstream changes in each of the specified projects
             (default: all projects). Repositories that do not already exist are
             cloned.
 
-            Unless --no-update is passed, the manifest and West source code
-            repositories are updated prior to fetching. See the 'update'
-            command.
+            {}
 
-            ''' + _MANIFEST_REV_HELP))
+            {}'''.format(_NO_UPDATE_HELP, _MANIFEST_REV_HELP)))
 
     def do_add_parser(self, parser_adder):
         return _add_parser(parser_adder, self, _no_update_arg,
@@ -74,10 +185,10 @@ class Fetch(WestCommand):
 
     def do_run(self, args, user_args):
         if args.update:
-            _update(True, True)
+            _update_manifest(args)
+            _update_west(args)
 
         for project in _projects(args, listed_must_be_cloned=False):
-            log.dbg('fetching:', project, level=log.VERBOSE_VERY)
             _fetch(project)
 
 
@@ -94,11 +205,10 @@ class Pull(WestCommand):
             branch up to date. Repositories that do not already exist are
             cloned.
 
-            Unless --no-update is passed, the manifest and West source code
-            repositories are updated prior to pulling. See the 'update'
-            command.
+            {}
 
-            '''.format(_MANIFEST_REV_BRANCH) + _MANIFEST_REV_HELP))
+            {}'''.format(_MANIFEST_REV_BRANCH, _NO_UPDATE_HELP,
+                         _MANIFEST_REV_HELP)))
 
     def do_add_parser(self, parser_adder):
         return _add_parser(parser_adder, self, _no_update_arg,
@@ -106,11 +216,12 @@ class Pull(WestCommand):
 
     def do_run(self, args, user_args):
         if args.update:
-            _update(True, True)
+            _update_manifest(args)
+            _update_west(args)
 
         for project in _projects(args, listed_must_be_cloned=False):
-            if _fetch(project):
-                _rebase(project)
+            _fetch(project)
+            _rebase(project)
 
 
 class Rebase(WestCommand):
@@ -178,12 +289,20 @@ class Checkout(WestCommand):
         super().__init__(
             'checkout',
             _wrap('''
-            Check out topic branch.
+            Check out local branch.
 
-            Checks out the specified branch in each of the specified projects
+            Checks out a local branch in each of the specified projects
             (default: all cloned projects). Projects that do not have the
             branch are left alone.
-            '''))
+
+            Note: To check out remote branches, use ordinary Git commands
+            inside the repositories. This command is meant for switching
+            between work branches that span multiple repositories, without any
+            interference from whatever remote branches might exist.
+
+            If '-b BRANCH_NAME' is passed, the new branch will be set to track
+            '{}', like for 'west branch BRANCH_NAME'.
+            '''.format(_MANIFEST_REV_BRANCH)))
 
     def do_add_parser(self, parser_adder):
         return _add_parser(
@@ -236,7 +355,7 @@ class Diff(WestCommand):
         for project in _cloned_projects(args):
             # Use paths that are relative to the base directory to make it
             # easier to see where the changes are
-            _git(project, 'diff --src-prefix=(path)/ --dst-prefix=(path)/',
+            _git(project, 'diff --src-prefix={path}/ --dst-prefix={path}/',
                  extra_args=user_args)
 
 
@@ -255,7 +374,7 @@ class Status(WestCommand):
 
     def do_run(self, args, user_args):
         for project in _cloned_projects(args):
-            _inf(project, 'status of (name-and-path)')
+            _inf(project, 'status of {name_and_path}')
             _git(project, 'status', extra_args=user_args)
 
 
@@ -265,7 +384,10 @@ class Update(WestCommand):
             'update',
             _wrap('''
             Updates the manifest repository and/or the West source code
-            repository.
+            repository. The remote to update from is taken from the
+            manifest.remote and manifest.remote configuration settings, and the
+            revision from manifest.revision and west.revision configuration
+            settings.
 
             There is normally no need to run this command manually, because
             'west fetch' and 'west pull' automatically update the West and
@@ -274,6 +396,10 @@ class Update(WestCommand):
 
             Pass --update-west or --update-manifest to update just that
             repository. With no arguments, both are updated.
+
+            Updates are skipped (with a warning) if they can't be done via
+            fast-forward, unless --reset-manifest, --reset-west, or
+            --reset-projects is given.
             '''))
 
     def do_add_parser(self, parser_adder):
@@ -282,17 +408,52 @@ class Update(WestCommand):
             _arg('--update-west',
                  dest='update_west',
                  action='store_true',
-                 help='update the West source code repository'),
+                 help='update the west source code repository'),
             _arg('--update-manifest',
                  dest='update_manifest',
                  action='store_true',
-                 help='update the manifest repository'))
+                 help='update the manifest repository'),
+            _arg('--reset-west',
+                 action='store_true',
+                 help='''Like --update-west, but run 'git reset --keep'
+                      afterwards to reset the west repository to the commit
+                      pointed at by the west.remote and west.revision
+                      configuration settings. This is used internally when
+                      changing west.remote or west.revision via
+                      'west init'.'''),
+            _arg('--reset-manifest',
+                 action='store_true',
+                 help='''like --reset-west, for the manifest repository, using
+                      manifest.remote and manifest.revision.'''),
+            _arg('--reset-projects',
+                 action='store_true',
+                 help='''Fetches upstream data in all projects, then runs 'git
+                      reset --keep' to reset them to the manifest revision.
+                      This is used internally when changing manifest.remote or
+                      manifest.revision via 'west init'.'''))
 
     def do_run(self, args, user_args):
-        if not args.update_west and not args.update_manifest:
-            _update(True, True)
-        else:
-            _update(args.update_west, args.update_manifest)
+        if not (args.update_manifest or args.reset_manifest or
+                args.update_west or args.reset_west or
+                args.reset_projects):
+
+            # No arguments is an alias for --update-west --update-manifest
+            _update_manifest(args)
+            _update_west(args)
+            return
+
+        if args.reset_manifest:
+            _update_and_reset_special(args, 'manifest')
+        elif args.update_manifest:
+            _update_manifest(args)
+
+        if args.reset_west:
+            _update_and_reset_special(args, 'west')
+        elif args.update_west:
+            _update_west(args)
+
+        if args.reset_projects:
+            _reset_projects(args)
 
 
 class ForAll(WestCommand):
@@ -326,7 +487,7 @@ class ForAll(WestCommand):
 
     def do_run(self, args, user_args):
         for project in _cloned_projects(args):
-            _inf(project, "Running '{}' in (name-and-path)"
+            _inf(project, "Running '{}' in {{name_and_path}}"
                           .format(args.command))
 
             subprocess.Popen(args.command, shell=True, cwd=project.abspath) \
@@ -359,16 +520,19 @@ _no_update_arg = _arg(
 _project_list_arg = _arg('projects', metavar='PROJECT', nargs='*')
 
 
-def _add_parser(parser_adder, cmd, *extra_args):
+def _add_parser(parser_adder, cmd, *extra_args, **kwargs):
     # Adds and returns a subparser for the project-related WestCommand 'cmd'.
     # All of these commands (currently) take the manifest path flag, so it's
-    # hardcoded here.
+    # provided by default here, but any defaults can be overridden with kwargs.
 
-    return parser_adder.add_parser(
-        cmd.name,
-        description=cmd.description,
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        parents=(_manifest_arg,) + extra_args)
+    if 'description' not in kwargs:
+        kwargs['description'] = cmd.description
+    if 'formatter_class' not in kwargs:
+        kwargs['formatter_class'] = argparse.RawDescriptionHelpFormatter
+    if 'parents' not in kwargs:
+        kwargs['parents'] = (_manifest_arg,) + extra_args
+
+    return parser_adder.add_parser(cmd.name, **kwargs)
 
 
 def _wrap(s):
@@ -382,17 +546,16 @@ def _wrap(s):
     return "\n\n".join(textwrap.fill(paragraph) for paragraph in paragraphs)
 
 
+_NO_UPDATE_HELP = """
+Unless --no-update is passed, the manifest and West source code repositories
+are updated prior to cloning. See the 'update' command.
+"""[1:].replace('\n', ' ')
+
+
 _MANIFEST_REV_HELP = """
 The '{}' branch points to the revision that the manifest specified for the
 project as of the most recent 'west fetch'/'west pull'.
 """.format(_MANIFEST_REV_BRANCH)[1:].replace("\n", " ")
-
-
-# Holds information about a project, taken from the manifest file (or
-# constructed manually for "special" projects)
-Project = collections.namedtuple(
-    'Project',
-    'name url revision path abspath clone_depth')
 
 
 def _cloned_projects(args):
@@ -405,7 +568,7 @@ def _cloned_projects(args):
         [project for project in _all_projects(args) if _cloned(project)]
 
 
-def _projects(args, listed_must_be_cloned=True):
+def _projects(args, listed_must_be_cloned=True, include_meta=False):
     # Returns a list of project instances for the projects requested in 'args'
     # (the command-line arguments), in the same order that they were listed by
     # the user. If args.projects is empty, no projects were listed, and all
@@ -418,189 +581,191 @@ def _projects(args, listed_must_be_cloned=True):
     # listed_must_be_cloned (default: True):
     #   If True, an error is raised if an uncloned project was listed. This
     #   only applies to projects listed explicitly on the command line.
+    #
+    # include_meta (default: False):
+    #   If True, "meta" projects (i.e. west and the manifest) may be given
+    #   in args.projects without raising errors, and are also included in the
+    #   return value if args.projects is empty.
 
     projects = _all_projects(args)
+
+    if include_meta:
+        projects += [_special_project(args, name) for name in META_NAMES]
 
     if not args.projects:
         # No projects specified. Return all projects.
         return projects
 
-    # Got a list of projects on the command line. First, check that they exist
-    # in the manifest.
+    # Sort the projects by the length of their absolute paths, with the longest
+    # path first. That way, projects within projects (e.g., for submodules) are
+    # tried before their parent projects, when projects are specified via their
+    # path.
+    projects.sort(key=lambda project: len(project.abspath), reverse=True)
 
-    project_names = [project.name for project in projects]
-    nonexistent = set(args.projects) - set(project_names)
-    if nonexistent:
-        log.die('Unknown project{} {} (available projects: {})'
-                .format('s' if len(nonexistent) > 1 else '',
-                        ', '.join(nonexistent),
-                        ', '.join(project_names)))
+    # Listed but missing projects. Used for error reporting.
+    missing_projects = []
 
-    # Return the projects in the order they were listed
+    def normalize(path):
+        # Returns a case-normalized canonical absolute version of 'path', for
+        # comparisons. The normcase() is a no-op on platforms on case-sensitive
+        # filesystems.
+        return os.path.normcase(os.path.realpath(path))
+
     res = []
-    for name in args.projects:
+    for project_arg in args.projects:
         for project in projects:
-            if project.name == name:
+            if project.name == project_arg:
+                # The argument is a project name
                 res.append(project)
                 break
+        else:
+            # The argument is not a project name. See if it is a project
+            # (sub)path.
+            for project in projects:
+                # The startswith() means we also detect subdirectories of
+                # project repositories. Giving a plain file in the repo will
+                # work here too, but that probably doesn't hurt.
+                if normalize(project_arg).startswith(
+                        normalize(project.abspath)):
+                    res.append(project)
+                    break
+            else:
+                # Neither a project name nor a project path. We will report an
+                # error below.
+                missing_projects.append(project_arg)
+
+    if missing_projects:
+        log.die('Unknown project name{0}/path{0} {1} (available projects: {2})'
+                .format('s' if len(missing_projects) > 1 else '',
+                        ', '.join(missing_projects),
+                        ', '.join(project.name for project in projects)))
 
     # Check that all listed repositories are cloned, if requested
     if listed_must_be_cloned:
-        uncloned = [prj.name for prj in res if not _cloned(prj)]
+        # We could still get here with a missing manifest repository if the
+        # user gave a --manifest argument.
+        uncloned_meta = [prj.name for prj in res if not _cloned(prj) and
+                         prj.name in META_NAMES]
+        if uncloned_meta:
+            log.die('Missing meta project{}: {}.'.
+                    format('s' if len(uncloned_meta) > 1 else '',
+                           ', '.join(uncloned_meta)),
+                    'The Zephyr installation has been corrupted.')
+
+        uncloned = [prj.name for prj in res
+                    if not _cloned(prj) and prj.name not in META_NAMES]
         if uncloned:
             log.die('The following projects are not cloned: {}. Please clone '
-                    "them first (with 'west fetch')."
+                    "them first with 'west clone'."
                     .format(", ".join(uncloned)))
 
     return res
 
 
 def _all_projects(args):
-    # Parses the manifest file, returning a list of Project instances.
+    # Get a list of project objects from the manifest.
     #
-    # Before the manifest is parsed, it is validated against a pykwalify
-    # schema. An error is raised on validation errors.
-
-    manifest_path = _manifest_path(args)
-
-    _validate_manifest(manifest_path)
-
-    with open(manifest_path) as f:
-        manifest = yaml.safe_load(f)['manifest']
-
-    projects = []
-    # Manifest "defaults" keys whose values get copied to each project
-    # that doesn't specify its own value.
-    project_defaults = ('remote', 'revision')
-
-    # mp = manifest project (dictionary with values parsed from the manifest)
-    for mp in manifest['projects']:
-        # Fill in any missing fields in 'mp' with values from the 'defaults'
-        # dictionary
-        if 'defaults' in manifest:
-            for key, val in manifest['defaults'].items():
-                if key in project_defaults:
-                    mp.setdefault(key, val)
-
-        # Add the repository URL to 'mp'
-        for remote in manifest['remotes']:
-            if remote['name'] == mp['remote']:
-                mp['url'] = remote['url'] + '/' + mp['name']
-                break
-        else:
-            log.die('Remote {} not defined in {}'
-                    .format(mp['remote'], manifest_path))
-
-        # If no clone path is specified, the project's name is used
-        clone_path = mp.get('path', mp['name'])
-
-        # Use named tuples to store project information. That gives nicer
-        # syntax compared to a dict (project.name instead of project['name'],
-        # etc.)
-        projects.append(Project(
-            mp['name'],
-            mp['url'],
-            # If no revision is specified, 'master' is used
-            mp.get('revision', 'master'),
-            clone_path,
-            # Absolute clone path
-            os.path.join(util.west_topdir(), clone_path),
-            # If no clone depth is specified, we fetch the entire history
-            mp.get('clone-depth', None)))
-
-    return projects
-
-
-def _validate_manifest(manifest_path):
-    # Validates the manifest with pykwalify. schema.yml holds the schema.
-
-    schema_path = os.path.join(os.path.dirname(__file__), "schema.yml")
+    # If the manifest is malformed, a fatal error occurs and the
+    # command aborts.
 
     try:
-        pykwalify.core.Core(
-            source_file=manifest_path,
-            schema_files=[schema_path]
-        ).validate()
-    except pykwalify.errors.SchemaError as e:
-        log.die('{} malformed (schema: {}):\n{}'
-                .format(manifest_path, schema_path, e))
+        return list(Manifest.from_file(_manifest_path(args),
+                                       'manifest').projects)
+    except MalformedManifest as m:
+        log.die(m.args[0])
 
 
 def _manifest_path(args):
     # Returns the path to the manifest file. Defaults to
     # .west/manifest/default.yml if the user didn't specify a manifest.
 
-    return args.manifest or os.path.join(util.west_dir(), 'manifest',
-                                         'default.yml')
+    return args.manifest or default_path()
 
 
 def _fetch(project):
     # Fetches upstream changes for 'project' and updates the 'manifest-rev'
     # branch to point to the revision specified in the manifest. If the
     # project's repository does not already exist, it is created first.
-    #
-    # Returns True if the project's repository already existed.
 
-    exists = _cloned(project)
+    if not _cloned(project):
+        _inf(project, 'Creating repository for {name_and_path}')
+        _git_base(project, 'init {abspath}')
+        # This remote is only added for the user's convenience. We always fetch
+        # directly from the URL specified in the manifest.
+        _git(project, 'remote add -- {remote_name} {url}')
 
-    if not exists:
-        _inf(project, 'Creating repository for (name-and-path)')
-        _git_base(project, 'init (abspath)')
-        _git(project, 'remote add origin (url)')
+    # Fetch the revision specified in the manifest into the manifest-rev branch
 
+    msg = "Fetching changes for {name_and_path}"
     if project.clone_depth:
-        _inf(project,
-             'Fetching changes for (name-and-path) with --depth (clone-depth)')
-
-        # If 'clone-depth' is specified, fetch just the specified revision
-        # (probably a branch). That will download the minimum amount of data,
-        # which is probably what's wanted whenever 'clone-depth is used. The
-        # default 'git fetch' behavior is to do a shallow clone of all branches
-        # on the remote.
-        #
-        # Note: Many servers won't allow fetching arbitrary commits by SHA.
-        # Combining --depth with an SHA will break for those.
-
-        # Qualify branch names with refs/heads/, just to be safe. Just the
-        # branch name is likely to work as well though.
-        _git(project,
-             'fetch --depth=(clone-depth) origin ' +
-                 (project.revision if _is_sha(project.revision) else \
-                     'refs/heads/' + project.revision))
-
+        fetch_cmd = "fetch --depth={clone_depth}"
+        msg += " with --depth {clone_depth}"
     else:
-        _inf(project, 'Fetching changes for (name-and-path)')
+        fetch_cmd = "fetch"
 
-        # If 'clone-depth' is not specified, fetch all branches on the
-        # remote. This gives a more usable repository.
-        _git(project, 'fetch origin')
+    _inf(project, msg)
+    # This two-step approach avoids a "trying to write non-commit object" error
+    # when the revision is an annotated tag. ^{commit} type peeling isn't
+    # supported for the <src> in a <src>:<dst> refspec, so we have to do it
+    # separately.
+    #
+    # --tags is required to get tags when the remote is specified as an URL.
+    if _is_sha(project.revision):
+        # Don't fetch a SHA directly, as server may restrict from doing so.
+        _git(project, fetch_cmd + ' --tags -- {url}')
+        _git(project, 'update-ref {qual_manifest_rev_branch} {revision}')
+    else:
+        _git(project, fetch_cmd + ' --tags -- {url} {revision}')
+        _git(project,
+             'update-ref {qual_manifest_rev_branch} FETCH_HEAD^{{commit}}')
 
-    # Create/update the 'manifest-rev' branch
-    _git(project,
-         'update-ref refs/heads/(manifest-rev-branch) ' +
-             (project.revision if _is_sha(project.revision) else
-                 'remotes/origin/' + project.revision))
-
-    if not exists:
-        # If we just initialized the repository, check out 'manifest-rev' in a
-        # detached HEAD state.
+    if not _head_ok(project):
+        # If nothing it checked out (which would usually only happen just after
+        # we initialize the repository), check out 'manifest-rev' in a detached
+        # HEAD state.
         #
         # Otherwise, the initial state would have nothing checked out, and HEAD
         # would point to a non-existent refs/heads/master branch (that would
         # get created if the user makes an initial commit). That state causes
         # e.g. 'west rebase' to fail, and might look confusing.
         #
-        # (The --detach flag is strictly redundant here, because the
+        # The --detach flag is strictly redundant here, because the
         # refs/heads/<branch> form already detaches HEAD, but it avoids a
-        # spammy detached HEAD warning from Git.)
-        _git(project, 'checkout --detach refs/heads/(manifest-rev-branch)')
-
-    return exists
+        # spammy detached HEAD warning from Git.
+        _git(project, 'checkout --detach {qual_manifest_rev_branch}')
 
 
 def _rebase(project):
-    _inf(project, 'Rebasing (name-and-path) to (manifest-rev-branch)')
-    _git(project, 'rebase (manifest-rev-branch)')
+    # Rebases the project against the manifest-rev branch
+
+    if _up_to_date_with(project, _MANIFEST_REV_BRANCH):
+        _inf(project,
+             '{name_and_path} is up-to-date with {manifest_rev_branch}')
+    else:
+        _inf(project, 'Rebasing {name_and_path} to {manifest_rev_branch}')
+        _git(project, 'rebase {qual_manifest_rev_branch}')
+
+
+def _sha(project, rev):
+    # Returns the SHA of a revision (HEAD, v2.0.0, etc.), passed as a string in
+    # 'rev'
+
+    return _git(project, 'rev-parse ' + rev, capture_stdout=True).stdout
+
+
+def _merge_base(project, rev1, rev2):
+    # Returns the latest commit in common between 'rev1' and 'rev2'
+
+    return _git(project, 'merge-base -- {} {}'.format(rev1, rev2),
+                capture_stdout=True).stdout
+
+
+def _up_to_date_with(project, rev):
+    # Returns True if all commits in 'rev' are also in HEAD. This is used to
+    # check if 'project' needs rebasing. 'revision' can be anything that
+    # resolves to a commit.
+
+    return _sha(project, rev) == _merge_base(project, 'HEAD', rev)
 
 
 def _cloned(project):
@@ -641,73 +806,104 @@ def _branches(project):
 
 def _create_branch(project, branch):
     if _has_branch(project, branch):
-        _inf(project, "Branch '{}' already exists in (name-and-path)"
+        _inf(project, "Branch '{}' already exists in {{name_and_path}}"
                       .format(branch))
     else:
-        _inf(project, "Creating branch '{}' in (name-and-path)"
+        _inf(project, "Creating branch '{}' in {{name_and_path}}"
                       .format(branch))
-        _git(project, 'branch --quiet --track {} (manifest-rev-branch)'
-                      .format(branch))
+
+        _git(project,
+             'branch --quiet --track -- {} {{qual_manifest_rev_branch}}'
+             .format(branch))
 
 
 def _has_branch(project, branch):
-    return _git(project, 'show-ref --quiet --verify refs/heads/' + branch,
-                check=False).returncode == 0
+    return _ref_ok(project, 'refs/heads/' + branch)
+
+
+def _ref_ok(project, ref):
+    # Returns True if the reference 'ref' exists and can be resolved to a
+    # commit
+    return _git(project, 'show-ref --quiet --verify ' + ref, check=False) \
+           .returncode == 0
+
+
+def _head_ok(project):
+    # Returns True if the reference 'HEAD' exists and is not a tag or remote
+    # ref (e.g. refs/remotes/origin/HEAD).
+    # Some versions of git will report 1, when doing
+    # 'git show-ref --verify HEAD' even if HEAD is valid, see #119.
+    # 'git show-ref --head <reference>' will always return 0 if HEAD or
+    # <reference> is valid.
+    # We are only interested in HEAD, thus we must avoid <reference> being
+    # valid. '/' can never point to valid reference, thus 'show-ref --head /'
+    # will return:
+    # - 0 if HEAD is present
+    # - 1 otherwise
+    return _git(project, 'show-ref --quiet --head /', check=False) \
+           .returncode == 0
 
 
 def _checkout(project, branch):
-    _inf(project, "Checking out branch '{}' in (name-and-path)".format(branch))
+    _inf(project,
+         "Checking out branch '{}' in {{name_and_path}}".format(branch))
     _git(project, 'checkout ' + branch)
 
 
-def _special_project(name):
+def _special_project(args, name):
     # Returns a Project instance for one of the special repositories in west/,
     # so that we can reuse the project-related functions for them
 
-    return Project(
-        name,
-        'dummy URL for {} repository'.format(name),
-        'master',
-        os.path.join('west', name.lower()),  # Path
-        os.path.join(util.west_dir(), name.lower()),  # Absolute path
-        None  # Clone depth
-    )
+    if name == 'manifest':
+        url = config.get(name, 'remote', fallback='origin')
+        revision = config.get(name, 'revision', fallback='master')
+        return SpecialProject(name, revision=revision,
+                              path=os.path.join('west', name), url=url)
+
+    return Manifest.from_file(_manifest_path(args), name).west_project
 
 
-def _update(update_west, update_manifest):
-    # 'try' is a keyword
-    def attempt(project, cmd):
-        res = _git(project, cmd, capture_stdout=True, check=False)
-        if res.returncode:
-            # The Git command's stderr isn't redirected and will also be
-            # available
-            _die(project, _FAILED_UPDATE_MSG.format(cmd))
-        return res.stdout
+def _update_west(args):
+    _update_special(args, 'west')
 
-    projects = []
-    if update_west:
-        projects.append(_special_project('West'))
-    if update_manifest:
-        projects.append(_special_project('manifest'))
 
-    for project in projects:
-        _dbg(project, 'Updating (name-and-path)', level=log.VERBOSE_NORMAL)
+def _update_manifest(args):
+    _update_special(args, 'manifest')
 
-        # Fetch changes from upstream
-        attempt(project, 'fetch')
 
-        # Get the SHA of the last commit in common with the upstream branch
-        merge_base = attempt(project, 'merge-base HEAD remotes/origin/master')
+def _update_special(args, name):
+    with _error_context(_FAILED_UPDATE_MSG):
+        project = _special_project(args, name)
+        _dbg(project, 'Updating {name_and_path}', level=log.VERBOSE_NORMAL)
 
-        # Get the current SHA of the upstream branch
-        head_sha = attempt(project, 'show-ref --hash remotes/origin/master')
+        old_sha = _sha(project, 'HEAD')
 
-        # If they differ, we need to rebase
-        if merge_base != head_sha:
-            attempt(project, 'rebase remotes/origin/master')
+        # Only update special repositories if possible via fast-forward, as
+        # automatic rebasing is probably more annoying than useful when working
+        # directly on them.
+        #
+        # --tags is required to get tags when the remote is specified as a URL.
+        # --ff-only is required to ensure that the merge only takes place if it
+        # can be fast-forwarded.
+        if _git(project,
+                'fetch --quiet --tags -- {url} {revision}',
+                check=False).returncode:
 
-            _inf(project, 'Updated (rebased) (name-and-path) to the '
-                          'latest version')
+            _wrn(project,
+                 'Skipping automatic update of {name_and_path}. '
+                 "{revision} cannot be fetched (from {url}).")
+
+        elif _git(project,
+                  'merge --quiet --ff-only FETCH_HEAD',
+                  check=False).returncode:
+
+            _wrn(project,
+                 'Skipping automatic update of {name_and_path}. '
+                 "Can't be fast-forwarded to {revision} (from {url}).")
+
+        elif old_sha != _sha(project, 'HEAD'):
+            _inf(project,
+                 'Updated {name_and_path} to {revision} (from {url}).')
 
             if project.name == 'west':
                 # Signal self-update, which will cause a restart. This is a bit
@@ -716,10 +912,40 @@ def _update(update_west, update_manifest):
                 raise WestUpdated()
 
 
+def _update_and_reset_special(args, name):
+    # Updates one of the special repositories (the manifest and west) by
+    # resetting to the new revision after fetching it (with 'git reset --keep')
+
+    project = _special_project(args, name)
+    with _error_context(', while updating/resetting special project'):
+        _inf(project,
+             "Fetching and resetting {name_and_path} to '{revision}'")
+        _git(project, 'fetch -- {url} {revision}')
+        if _git(project, 'reset --keep FETCH_HEAD', check=False).returncode:
+            _wrn(project,
+                 'Failed to reset special project {name_and_path} to '
+                 "{revision} (with 'git reset --keep')")
+
+
+def _reset_projects(args):
+    # Fetches changes in all cloned projects and then resets them the manifest
+    # revision (with 'git reset --keep')
+
+    for project in _all_projects(args):
+        if _cloned(project):
+            _fetch(project)
+            _inf(project, 'Resetting {name_and_path} to {manifest_rev_branch}')
+            if _git(project, 'reset --keep {manifest_rev_branch}',
+                    check=False).returncode:
+
+                _wrn(project,
+                     'Failed to reset {name_and_path} to '
+                     "{manifest_rev_branch} (with 'git reset --keep')")
+
+
 _FAILED_UPDATE_MSG = """
-Failed to update (name-and-path), while running command '{}'. Please fix the
-state of the repository, or pass --no-update to 'west fetch/pull' to skip
-updating the manifest and West for the duration of the command."""[1:]
+, while running automatic self-update. Pass --no-update to 'west fetch/pull' to
+skip updating the manifest and West for the duration of the command."""[1:]
 
 
 class WestUpdated(Exception):
@@ -806,8 +1032,10 @@ def _git_helper(project, cmd, extra_args, cwd, capture_stdout, check):
     log.dbg(dbg_msg, level=log.VERBOSE_VERY)
 
     if check and popen.returncode:
-        _die(project, "Command '{}' failed for (name-and-path)"
-                      .format(cmd_str))
+        msg = "Command '{}' failed for {{name_and_path}}".format(cmd_str)
+        if _error_context_msg:
+            msg += _error_context_msg.replace('\n', ' ')
+        _die(project, msg)
 
     if capture_stdout:
         # Manual UTF-8 decoding and universal newlines. Before Python 3.6,
@@ -822,20 +1050,59 @@ def _git_helper(project, cmd, extra_args, cwd, capture_stdout, check):
     return CompletedProcess(popen.args, popen.returncode, stdout)
 
 
+# Some Python shenanigans to be able to set up a context with
+#
+#   with _error_context("Doing stuff"):
+#       Do the stuff
+#
+# A context is just some extra text that gets printed on Git errors.
+#
+# Note: If we ever need to support nested contexts, _error_context_msg could be
+# turned into a stack.
+
+_error_context_msg = None
+
+
+class _error_context:
+    def __init__(self, msg):
+        self.msg = msg
+
+    def __enter__(self):
+        global _error_context_msg
+        _error_context_msg = self.msg
+
+    def __exit__(self, *args):
+        global _error_context_msg
+        _error_context_msg = None
+
+
 def _expand_shorthands(project, s):
     # Expands project-related shorthands in 's' to their values,
     # returning the expanded string
 
-    return s.replace('(name)', project.name) \
-            .replace('(name-and-path)',
-                     '{} ({})'.format(
-                         project.name, os.path.join(project.path, ""))) \
-            .replace('(url)', project.url) \
-            .replace('(path)', project.path) \
-            .replace('(abspath)', project.abspath) \
-            .replace('(revision)', project.revision) \
-            .replace('(manifest-rev-branch)', _MANIFEST_REV_BRANCH) \
-            .replace('(clone-depth)', str(project.clone_depth))
+    # Some of the trickier ones below. 'qual' stands for 'qualified', meaning
+    # the full path to the ref (e.g. refs/heads/master).
+    #
+    # manifest-rev-branch:
+    #   The name of the magic branch that points to the manifest revision
+    #
+    # qual-manifest-rev-branch:
+    #   A qualified reference to the magic manifest revision branch, e.g.
+    #   refs/heads/manifest-rev
+
+    return s.format(name=project.name,
+                    name_and_path='{} ({})'.format(
+                        project.name, os.path.join(project.path, "")),
+                    remote_name=('None' if project.remote is None
+                                 else project.remote.name),
+                    url=project.url,
+                    path=project.path,
+                    abspath=project.abspath,
+                    revision=project.revision,
+                    manifest_rev_branch=_MANIFEST_REV_BRANCH,
+                    qual_manifest_rev_branch=('refs/heads/' +
+                                              _MANIFEST_REV_BRANCH),
+                    clone_depth=str(project.clone_depth))
 
 
 def _inf(project, msg):

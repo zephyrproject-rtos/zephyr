@@ -1,0 +1,17 @@
+## A pykwalify schema for basic validation of the structure of a
+## west YAML file.  (Full validation would require additional work,
+## e.g. to validate that remote URLs obey the URL format specified in
+## rfc1738.)
+##
+
+# The top-level west yaml is a map. The only top-level element is
+# 'west'. All other elements are contained within it. This allows
+# us a bit of future-proofing.
+type: map
+mapping:
+  url:
+    required: false
+    type: str
+  revision:
+    required: false
+    type: str

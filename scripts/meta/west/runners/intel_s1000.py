@@ -6,10 +6,9 @@
 '''Runner for debugging and flashing Intel S1000 CRB'''
 from os import path
 import time
-import subprocess
-
-import log
-from runners.core import ZephyrBinaryRunner
+import signal
+from west import log
+from west.runners.core import ZephyrBinaryRunner
 
 DEFAULT_XT_GDB_PORT = 20000
 
@@ -22,7 +21,7 @@ class IntelS1000BinaryRunner(ZephyrBinaryRunner):
                  gdb_port=DEFAULT_XT_GDB_PORT):
         super(IntelS1000BinaryRunner, self).__init__(cfg)
         self.board_dir = cfg.board_dir
-        self.elf_name = cfg.kernel_elf
+        self.elf_name = cfg.elf_file
         self.gdb_cmd = cfg.gdb
         self.xt_ocd_dir = xt_ocd_dir
         self.ocd_topology = ocd_topology
@@ -73,8 +72,7 @@ class IntelS1000BinaryRunner(ZephyrBinaryRunner):
         elif command == 'debugserver':
             self.debugserver(**kwargs)
         else:
-            self.debugserver(**kwargs)
-            self.do_debug()
+            self.do_debug(**kwargs)
 
     def flash(self, **kwargs):
         topology_file = kwargs['ocd-topology']
@@ -87,36 +85,66 @@ class IntelS1000BinaryRunner(ZephyrBinaryRunner):
                       '-I', jtag_instr_file]
 
         # Start the server
-        # Note that XTOCD always fails the first time. It has to be
-        # relaunched the second time to work.
-        self.call(server_cmd)
+        # Note that XTOCD takes a few seconds to execute and always fails the
+        # first time. It has to be relaunched the second time to work.
         server_proc = self.popen_ignore_int(server_cmd)
-        time.sleep(3)
+        time.sleep(6)
+        server_proc.terminate()
+        server_proc = self.popen_ignore_int(server_cmd)
+        time.sleep(6)
 
-        # Start the client, and wait for it to finish flashing the file.
+        # Start the client
         gdb_cmd = [self.gdb_cmd, '-x', gdb_flash_file]
         client_proc = self.popen_ignore_int(gdb_cmd)
-        client_proc.wait()
+
+        # Wait for 3 seconds (waiting for XTGDB to finish loading the image)
+        time.sleep(3)
 
         # At this point, the ELF image is loaded and the program is in
-        # execution. Now we can quit the server (xt-ocd); it is not
-        # needed anymore. The loaded program (ELF) will continue to
-        # run.
+        # execution. Now we can quit the client (xt-gdb) and the server
+        # (xt-ocd) as they are not needed anymore. The loaded program
+        # (ELF) will continue to run though.
+        client_proc.terminate()
         server_proc.terminate()
 
-    def do_debug(self):
+    def do_debug(self, **kwargs):
         if self.elf_name is None:
             raise ValueError('Cannot debug; elf is missing')
         if self.gdb_cmd is None:
             raise ValueError('Cannot debug; no gdb specified')
 
+        topology_file = kwargs['ocd-topology']
+        jtag_instr_file = kwargs['ocd-jtag-instr']
+
+        self.print_gdbserver_message(self.gdb_port)
+        server_cmd = [self.xt_ocd_dir,
+                      '-c', topology_file,
+                      '-I', jtag_instr_file]
+
+        # Start the server
+        # Note that XTOCD takes a few seconds to execute and always fails the
+        # first time. It has to be relaunched the second time to work.
+        server_proc = self.popen_ignore_int(server_cmd)
+        time.sleep(6)
+        server_proc.terminate()
+        server_proc = self.popen_ignore_int(server_cmd)
+        time.sleep(6)
+
         gdb_cmd = [self.gdb_cmd,
                    '-ex', 'target remote :{}'.format(self.gdb_port),
                    self.elf_name]
-        gdb_proc = self.popen_ignore_int(gdb_cmd)
-        retcode = gdb_proc.wait()
-        if retcode:
-            raise subprocess.CalledProcessError((retcode, gdb_cmd))
+
+        # Start the client
+        # The below statement will consume the "^C" keypress ensuring
+        # the python main application doesn't exit. This is important
+        # since ^C in gdb means a "halt" operation.
+        previous = signal.signal(signal.SIGINT, signal.SIG_IGN)
+        try:
+            self.check_call(gdb_cmd)
+        finally:
+            signal.signal(signal.SIGINT, previous)
+            server_proc.terminate()
+            server_proc.wait()
 
     def print_gdbserver_message(self, gdb_port):
         log.inf('Intel S1000 GDB server running on port {}'.format(gdb_port))
@@ -130,7 +158,9 @@ class IntelS1000BinaryRunner(ZephyrBinaryRunner):
                       '-c', topology_file,
                       '-I', jtag_instr_file]
 
-        # Note that XTOCD always fails the first time. It has to be
-        # relaunched the second time to work.
-        self.call(server_cmd)
+        # Note that XTOCD takes a few seconds to execute and always fails the
+        # first time. It has to be relaunched the second time to work.
+        server_proc = self.popen_ignore_int(server_cmd)
+        time.sleep(6)
+        server_proc.terminate()
         self.check_call(server_cmd)

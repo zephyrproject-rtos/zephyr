@@ -5,12 +5,12 @@
 '''Runner for flashing with dfu-util.'''
 
 from collections import namedtuple
-import os
 import sys
 import time
 
-import log
-from runners.core import ZephyrBinaryRunner, RunnerCaps, BuildConfiguration
+from west import log
+from west.runners.core import ZephyrBinaryRunner, RunnerCaps, \
+    BuildConfiguration
 
 
 DfuSeConfig = namedtuple('DfuSeConfig', ['address', 'options'])
@@ -54,7 +54,7 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
 
         # Optional:
         parser.add_argument("--img",
-                            help="binary to flash, default is --kernel-bin")
+                            help="binary to flash, default is --bin-file")
         parser.add_argument("--dfuse", default=False, action='store_true',
                             help='''set if target is a DfuSe device;
                             implies --dt-flash.''')
@@ -69,7 +69,7 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def create(cls, cfg, args):
         if args.img is None:
-            args.img = cfg.kernel_bin
+            args.img = cfg.bin_file
 
         if args.dfuse:
             args.dt_flash = True  # --dfuse implies --dt-flash.
