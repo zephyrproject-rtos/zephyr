@@ -6,10 +6,13 @@
 
 import os
 import tempfile
+import sys
 
-import log
-from runners.core import ZephyrBinaryRunner, RunnerCaps, BuildConfiguration
+from west import log
+from west.runners.core import ZephyrBinaryRunner, RunnerCaps, \
+    BuildConfiguration
 
+DEFAULT_JLINK_EXE = 'JLink.exe' if sys.platform == 'win32' else 'JLinkExe'
 DEFAULT_JLINK_GDB_PORT = 2331
 
 
@@ -17,14 +20,14 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for the J-Link GDB server.'''
 
     def __init__(self, cfg, device,
-                 commander='JLinkExe',
+                 commander=DEFAULT_JLINK_EXE,
                  flash_addr=0x0, erase=True,
                  iface='swd', speed='auto',
                  gdbserver='JLinkGDBServer', gdb_port=DEFAULT_JLINK_GDB_PORT,
                  tui=False):
         super(JLinkBinaryRunner, self).__init__(cfg)
-        self.bin_name = cfg.kernel_bin
-        self.elf_name = cfg.kernel_elf
+        self.bin_name = cfg.bin_file
+        self.elf_name = cfg.elf_file
         self.gdb_cmd = [cfg.gdb] if cfg.gdb else None
         self.device = device
         self.commander = commander
@@ -62,7 +65,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--gdb-port', default=DEFAULT_JLINK_GDB_PORT,
                             help='pyocd gdb port, defaults to {}'.format(
                                 DEFAULT_JLINK_GDB_PORT))
-        parser.add_argument('--commander', default='JLinkExe',
+        parser.add_argument('--commander', default=DEFAULT_JLINK_EXE,
                             help='J-Link Commander, default is JLinkExe')
         parser.add_argument('--erase', default=False, action='store_true',
                             help='if given, mass erase flash before loading')
@@ -126,6 +129,9 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                                                  self.flash_addr))
         lines.append('g') # Start the CPU
         lines.append('q') # Close the connection and quit
+
+        log.dbg('JLink commander script:')
+        log.dbg('\n'.join(lines))
 
         # Don't use NamedTemporaryFile: the resulting file can't be
         # opened again on Windows.
