@@ -207,7 +207,7 @@ void arm_core_mpu_configure_user_context(struct k_thread *thread)
 	 * it is essential to include this size increase, to avoid
 	 * MPU faults.
 	 */
-	size += thread->stack_info.start - thread->stack_obj;
+	size += thread->stack_info.start - base;
 #endif
 
 	arm_core_mpu_configure(THREAD_STACK_REGION, base, size);
