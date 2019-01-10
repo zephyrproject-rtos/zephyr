@@ -1,0 +1,78 @@
+# Kconfig - Kinetis K0X MCU line
+#
+# Copyright (c) 2018 Prevas A/S
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+choice
+prompt "Kinetis K0x MCU Selection"
+depends on SOC_SERIES_KINETIS_K0X
+
+config SOC_MK02F12810
+	bool "SOC_MK02F12810"
+	select HAS_MCUX
+	select HAS_MCUX_ADC16
+	select HAS_MCUX_FTM
+	select HAS_MCUX_RNGA
+	select HAS_MCUX_SIM
+	select HAS_OSC
+	select HAS_MCG
+	select CPU_HAS_FPU
+	select SMC_MCUX
+
+endchoice
+
+if SOC_SERIES_KINETIS_K0X
+
+config SOC_PART_NUMBER_MK02FN128VLH10
+	bool
+
+config SOC_PART_NUMBER_KINETIS_K0X
+	string
+	default "MK02FN128VLH10" if SOC_PART_NUMBER_MK02FN128VLH10
+	help
+	  This string holds the full part number of the SoC. It is a hidden option
+	  that you should not set directly. The part number selection choice defines
+	  the default value for this string.
+
+config K0X_CORE_CLOCK_DIVIDER
+	int "Freescale K0x core clock divider"
+	default 1
+	help
+	  This option specifies the divide value for the K22 processor core clock
+	  from the system clock.
+
+config K0X_BUS_CLOCK_DIVIDER
+	int "Freescale K0x bus clock divider"
+	default 2
+	help
+	  This option specifies the divide value for the K22 bus clock from the
+	  system clock.
+
+config K0X_FLEXBUS_CLOCK_DIVIDER
+	int "Freescale K0x FlexBus clock divider"
+	default 4
+	help
+	  This option specifies the divide value for the K22 FlexBus clock from the
+	  system clock.
+
+config K0X_FLASH_CLOCK_DIVIDER
+	int "Freescale K0X flash clock divider"
+	default 5
+	help
+	  This option specifies the divide value for the K64 flash clock from the
+	  system clock.
+
+config SMC_MCUX
+	bool "System Management Controller"
+
+config WDOG_INIT
+	def_bool y
+	# omit prompt to signify a "hidden" option
+	help
+	  This processor enables the watchdog timer with a short timeout
+	  upon reset. Therefore, this requires that the watchdog be configured
+	  during reset handling.
+
+endif # SOC_SERIES_KINETIS_K0X
