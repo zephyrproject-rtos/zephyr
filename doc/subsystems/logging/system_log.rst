@@ -1,7 +1,13 @@
+:orphan:
+
 .. _system_log:
 
-System Logging
-##############
+System Logging (Deprecated)
+###########################
+
+.. note::
+
+   This feature is deprecated, please use :ref:`logger` instead.
 
 The system log API provides a common interface to process messages issued by
 developers. These messages are currently printed on the terminal but the API is
