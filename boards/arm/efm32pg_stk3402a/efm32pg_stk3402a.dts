@@ -20,6 +20,9 @@
 
 	/* These aliases are provided for compatibility with samples */
 	aliases {
+		i2c-0  = &i2c0;
+		usart-0 = &usart0;
+		leuart-0 = &leuart0;
 		led0 = &led0;
 		led1 = &led1;
 		sw0 = &button0;

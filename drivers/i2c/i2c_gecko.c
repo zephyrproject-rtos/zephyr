@@ -180,38 +180,38 @@ static const struct i2c_driver_api i2c_gecko_driver_api = {
 
 #ifdef CONFIG_I2C_0
 static struct i2c_gecko_config i2c_gecko_config_0 = {
-	.base = (I2C_TypeDef *)DT_SILABS_GECKO_I2C_I2C_0_BASE_ADDRESS,
+	.base = (I2C_TypeDef *)DT_I2C_GECKO_0_BASE_ADDRESS,
 	.clock = cmuClock_I2C0,
 	.i2cInit = I2C_INIT_DEFAULT,
 	.pin_sda = PIN_I2C0_SDA,
 	.pin_scl = PIN_I2C0_SCL,
-	.loc = DT_SILABS_GECKO_I2C_I2C_0_LOCATION,
-	.bitrate = DT_SILABS_GECKO_I2C_I2C_0_CLOCK_FREQUENCY,
+	.loc = DT_I2C_GECKO_0_LOCATION,
+	.bitrate = DT_I2C_GECKO_0_CLOCK_FREQUENCY,
 };
 
 static struct i2c_gecko_data i2c_gecko_data_0;
 
-DEVICE_AND_API_INIT(i2c_gecko_0, DT_SILABS_GECKO_I2C_I2C_0_LABEL,
-		    &i2c_gecko_init, &i2c_gecko_data_0, &i2c_gecko_config_0,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &i2c_gecko_driver_api);
+DEVICE_AND_API_INIT(i2c_gecko_0, DT_I2C_GECKO_0_LABEL, &i2c_gecko_init,
+			&i2c_gecko_data_0, &i2c_gecko_config_0,
+			POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+			&i2c_gecko_driver_api);
 #endif /* CONFIG_I2C_0 */
 
 #ifdef CONFIG_I2C_1
 static struct i2c_gecko_config i2c_gecko_config_1 = {
-	.base = (I2C_TypeDef *)DT_SILABS_GECKO_I2C_I2C_1_BASE_ADDRESS,
+	.base = (I2C_TypeDef *)DT_I2C_GECKO_1_BASE_ADDRESS,
 	.clock = cmuClock_I2C1,
 	.i2cInit = I2C_INIT_DEFAULT,
 	.pin_sda = PIN_I2C1_SDA,
 	.pin_scl = PIN_I2C1_SCL,
-	.loc = DT_SILABS_GECKO_I2C_I2C_1_LOCATION,
-	.bitrate = DT_SILABS_GECKO_I2C_I2C_1_CLOCK_FREQUENCY,
+	.loc = DT_I2C_GECKO_1_LOCATION,
+	.bitrate = DT_I2C_GECKO_1_CLOCK_FREQUENCY,
 };
 
 static struct i2c_gecko_data i2c_gecko_data_1;
 
-DEVICE_AND_API_INIT(i2c_gecko_1, DT_SILABS_GECKO_I2C_I2C_1_LABEL,
-		    &i2c_gecko_init, &i2c_gecko_data_1, &i2c_gecko_config_1,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &i2c_gecko_driver_api);
+DEVICE_AND_API_INIT(i2c_gecko_1, DT_I2C_GECKO_1_LABEL, &i2c_gecko_init,
+			&i2c_gecko_data_1, &i2c_gecko_config_1,
+			POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+			&i2c_gecko_driver_api);
 #endif /* CONFIG_I2C_1 */
