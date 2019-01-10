@@ -320,12 +320,6 @@ static inline int ipv6_handle_ext_hdr_options(struct net_pkt *pkt,
 	return exthdr_len;
 }
 
-static inline bool ipv6_nexthdr_is_upper_layer(u8_t proto)
-{
-	return (proto == IPPROTO_ICMPV6 || proto == IPPROTO_UDP ||
-		proto == IPPROTO_TCP);
-}
-
 #if defined(CONFIG_NET_ROUTE)
 static struct net_route_entry *add_route(struct net_if *iface,
 					 struct in6_addr *addr,
@@ -528,7 +522,7 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 	net_pkt_acknowledge_data(pkt, &ipv6_access);
 
 	nexthdr = hdr->nexthdr;
-	while (!ipv6_nexthdr_is_upper_layer(nexthdr)) {
+	while (!net_ipv6_is_nexthdr_upper_layer(nexthdr)) {
 		u16_t exthdr_len;
 
 		NET_DBG("IPv6 next header %d", nexthdr);
