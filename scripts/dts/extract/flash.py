@@ -60,20 +60,54 @@ class DTFlash(DTDirective):
         insert_defs(node_address, prop_def, prop_alias)
 
     def _extract_flash(self, node_address, prop, def_label):
-        load_defs = {}
+        load_defs = {
+            'CONFIG_FLASH_BASE_ADDRESS': 0,
+            'CONFIG_FLASH_SIZE': 0
+        }
 
         if node_address == 'dummy-flash':
             # We will add addr/size of 0 for systems with no flash controller
             # This is what they already do in the Kconfig options anyway
-            load_defs = {
-                'CONFIG_FLASH_BASE_ADDRESS': 0,
-                'CONFIG_FLASH_SIZE': 0
-            }
             insert_defs(node_address, load_defs, {})
             self._flash_base_address = 0
             return
 
         self._flash_node = reduced[node_address]
+
+        (nr_address_cells, nr_size_cells) = get_addr_size_cells(node_address)
+        # if the nr_size_cells is 0, assume a SPI flash, need to look at parent
+        # for addr/size info, and the second reg property (assume first is mmio
+        # register for the controller itself)
+        if (nr_size_cells == 0):
+            node_address = get_parent_address(node_address)
+            (nr_address_cells, nr_size_cells) = get_addr_size_cells(node_address)
+
+        node_compat = get_compat(node_address)
+        reg = reduced[node_address]['props']['reg']
+        if type(reg) is not list: reg = [ reg, ]
+        props = list(reg)
+
+        # Newer versions of dtc might have the reg propertly look like
+        # reg = <1 2>, <3 4>;
+        # So we need to flatten the list in that case
+        if isinstance(props[0], list):
+            props = [item for sublist in props for item in sublist]
+
+        # We assume the last reg property is the one we want
+        while props:
+            addr = 0
+            size = 0
+
+            for x in range(nr_address_cells):
+                addr += props.pop(0) << (32 * (nr_address_cells - x - 1))
+            for x in range(nr_size_cells):
+                size += props.pop(0) << (32 * (nr_size_cells - x - 1))
+
+        addr += translate_addr(addr, node_address,
+                nr_address_cells, nr_size_cells)
+
+        load_defs['CONFIG_FLASH_BASE_ADDRESS'] = hex(addr)
+        load_defs['CONFIG_FLASH_SIZE'] = int(size / 1024)
 
         flash_props = ["label", "write-block-size", "erase-block-size"]
         for prop in flash_props:
