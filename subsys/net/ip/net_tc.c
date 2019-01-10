@@ -27,7 +27,7 @@ NET_STACK_ARRAY_DEFINE(TX, tx_stack,
 /* Stacks for RX work queue */
 NET_STACK_ARRAY_DEFINE(RX, rx_stack,
 		       CONFIG_NET_RX_STACK_SIZE,
-		       CONFIG_NET_RX_STACK_SIZE + CONFIG_NET_RX_STACK_RPL,
+		       CONFIG_NET_RX_STACK_SIZE,
 		       NET_TC_RX_COUNT);
 
 static struct net_traffic_class tx_classes[NET_TC_TX_COUNT];

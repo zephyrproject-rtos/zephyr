@@ -33,7 +33,6 @@ LOG_MODULE_DECLARE(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
 #include "nbr.h"
 #include "6lo.h"
 #include "route.h"
-#include "rpl.h"
 #include "net_stats.h"
 
 /* Timeout value to be used when allocating net buffer during various
@@ -654,8 +653,6 @@ static struct in6_addr *check_route(struct net_if *iface,
 		if (!nexthop) {
 			net_route_del(route);
 
-			net_rpl_global_repair(route);
-
 			NET_DBG("No route to host %s",
 				log_strdup(net_sprint_ipv6_addr(dst)));
 
@@ -748,12 +745,6 @@ ignore_frag_error:
 	 */
 	if (atomic_test_bit(net_pkt_iface(pkt)->if_dev->flags,
 			    NET_IF_POINTOPOINT)) {
-		/* Update RPL header */
-		if (net_rpl_update_header(pkt, &NET_IPV6_HDR(pkt)->dst) < 0) {
-			net_pkt_unref(pkt);
-			return NULL;
-		}
-
 		return pkt;
 	}
 
@@ -768,12 +759,6 @@ ignore_frag_error:
 	      net_ipv6_is_ll_addr(&NET_IPV6_HDR(pkt)->dst)) ||
 	      !IS_ENABLED(CONFIG_NET_ROUTING))) ||
 	    net_ipv6_is_addr_mcast(&NET_IPV6_HDR(pkt)->dst)) {
-		/* Update RPL header */
-		if (net_rpl_update_header(pkt, &NET_IPV6_HDR(pkt)->dst) < 0) {
-			net_pkt_unref(pkt);
-			return NULL;
-		}
-
 		return pkt;
 	}
 
@@ -815,11 +800,6 @@ ignore_frag_error:
 	}
 
 try_send:
-	if (net_rpl_update_header(pkt, nexthop) < 0) {
-		net_pkt_unref(pkt);
-		return NULL;
-	}
-
 	nbr = nbr_lookup(&net_neighbor.table, iface, nexthop);
 
 	NET_DBG("Neighbor lookup %p (%d) iface %p addr %s state %s", nbr,
@@ -1408,16 +1388,6 @@ static void ipv6_nd_reachable_timeout(struct k_work *work)
 		}
 
 		data->reachable = 0;
-
-		if (net_rpl_get_interface() && nbr->iface ==
-		    net_rpl_get_interface()) {
-			/* The address belongs to RPL network, no need to
-			 * activate full neighbor reachable rules in this case.
-			 * Mark the neighbor always reachable.
-			 */
-			data->state = NET_IPV6_NBR_STATE_REACHABLE;
-			continue;
-		}
 
 		switch (data->state) {
 		case NET_IPV6_NBR_STATE_STATIC:

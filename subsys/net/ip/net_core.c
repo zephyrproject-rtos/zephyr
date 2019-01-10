@@ -43,7 +43,6 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 #endif
 
 #include "route.h"
-#include "rpl.h"
 
 #include "connection.h"
 #include "udp_internal.h"

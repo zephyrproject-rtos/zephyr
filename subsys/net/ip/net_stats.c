@@ -153,40 +153,6 @@ static inline void stats(struct net_if *iface)
 			 GET_STAT(iface, tcp.connrst));
 #endif
 
-#if defined(CONFIG_NET_STATISTICS_RPL)
-		NET_INFO("RPL DIS recv   %d\tsent\t%d\tdrop\t%d",
-			 GET_STAT(iface, rpl.dis.recv),
-			 GET_STAT(iface, rpl.dis.sent),
-			 GET_STAT(iface, rpl.dis.drop));
-		NET_INFO("RPL DIO recv   %d\tsent\t%d\tdrop\t%d",
-			 GET_STAT(iface, rpl.dio.recv),
-			 GET_STAT(iface, rpl.dio.sent),
-			 GET_STAT(iface, rpl.dio.drop));
-		NET_INFO("RPL DAO recv   %d\tsent\t%d\tdrop\t%d\tforwarded\t%d",
-			 GET_STAT(iface, rpl.dao.recv),
-			 GET_STAT(iface, rpl.dao.sent),
-			 GET_STAT(iface, rpl.dao.drop),
-			 GET_STAT(iface, rpl.dao.forwarded));
-		NET_INFO("RPL DAOACK rcv %d\tsent\t%d\tdrop\t%d",
-			 GET_STAT(iface, rpl.dao_ack.recv),
-			 GET_STAT(iface, rpl.dao_ack.sent),
-			 GET_STAT(iface, rpl.dao_ack.drop));
-		NET_INFO("RPL overflows  %d\tl-repairs\t%d\tg-repairs\t%d",
-			 GET_STAT(iface, rpl.mem_overflows),
-			 GET_STAT(iface, rpl.local_repairs),
-			 GET_STAT(iface, rpl.global_repairs));
-		NET_INFO("RPL malformed  %d\tresets   \t%d\tp-switch\t%d",
-			 GET_STAT(iface, rpl.malformed_msgs),
-			 GET_STAT(iface, rpl.resets),
-			 GET_STAT(iface, rpl.parent_switch));
-		NET_INFO("RPL f-errors   %d\tl-errors\t%d\tl-warnings\t%d",
-			 GET_STAT(iface, rpl.forward_errors),
-			 GET_STAT(iface, rpl.loop_errors),
-			 GET_STAT(iface, rpl.loop_warnings));
-		NET_INFO("RPL r-repairs  %d",
-			 GET_STAT(iface, rpl.root_repairs));
-#endif /* CONFIG_NET_STATISTICS_RPL */
-
 		NET_INFO("Bytes received %u", GET_STAT(iface, bytes.received));
 		NET_INFO("Bytes sent     %u", GET_STAT(iface, bytes.sent));
 		NET_INFO("Processing err %d",
@@ -318,12 +284,6 @@ static int net_stats_get(u32_t mgmt_request, struct net_if *iface,
 		src = GET_STAT_ADDR(iface, tcp);
 		break;
 #endif
-#if defined(CONFIG_NET_STATISTICS_RPL)
-	case NET_REQUEST_STATS_CMD_GET_RPL:
-		len_chk = sizeof(struct net_stats_rpl);
-		src = GET_STAT_ADDR(iface, rpl);
-		break;
-#endif
 	}
 
 	if (len != len_chk || !src) {
@@ -374,11 +334,6 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_UDP,
 
 #if defined(CONFIG_NET_STATISTICS_TCP)
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_TCP,
-				  net_stats_get);
-#endif
-
-#if defined(CONFIG_NET_STATISTICS_RPL)
-NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_RPL,
 				  net_stats_get);
 #endif
 
