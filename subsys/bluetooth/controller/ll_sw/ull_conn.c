@@ -234,6 +234,12 @@ u8_t ll_conn_update(u16_t handle, u8_t cmd, u8_t status, u16_t interval_min,
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 
+		conn->llcp_req++;
+		if (((conn->llcp_req - conn->llcp_ack) & 0x03) != 1) {
+			conn->llcp_req--;
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+
 		conn->llcp.conn_upd.win_size = 1;
 		conn->llcp.conn_upd.win_offset_us = 0;
 		conn->llcp.conn_upd.interval = interval_max;
@@ -331,6 +337,12 @@ u8_t ll_feature_req_send(u16_t handle)
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
+	conn->llcp_req++;
+	if (((conn->llcp_req - conn->llcp_ack) & 0x03) != 1) {
+		conn->llcp_req--;
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
 	conn->llcp_type = LLCP_FEATURE_EXCHANGE;
 	conn->llcp_req++;
 
@@ -343,6 +355,12 @@ u8_t ll_version_ind_send(u16_t handle)
 
 	conn = ll_connected_get(handle);
 	if (!conn || (conn->llcp_req != conn->llcp_ack)) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	conn->llcp_req++;
+	if (((conn->llcp_req - conn->llcp_ack) & 0x03) != 1) {
+		conn->llcp_req--;
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
@@ -650,7 +668,7 @@ int ull_conn_llcp(struct ll_conn *conn, u32_t ticks_at_expire, u16_t lazy)
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ || CONFIG_BT_CTLR_PHY */
 
 	/* check if procedure is requested */
-	if (conn->llcp_ack != conn->llcp_req) {
+	if (((conn->llcp_req - conn->llcp_ack) & 0x03) == 0x02) {
 		switch (conn->llcp_type) {
 		case LLCP_CONN_UPD:
 		{
@@ -978,7 +996,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 			if ((conn->procedure_expire == 0) &&
 			    (conn->llcp_req == conn->llcp_ack)) {
 				conn->llcp_type = LLCP_PING;
-				conn->llcp_ack--;
+				conn->llcp_ack -= 2;
 			}
 		}
 	}
@@ -1011,7 +1029,7 @@ void ull_conn_done(struct node_rx_event_done *done)
 #endif /* CONFIG_BT_CTLR_CONN_RSSI */
 
 	/* break latency based on ctrl procedure pending */
-	if ((conn->llcp_ack != conn->llcp_req) &&
+	if ((((conn->llcp_req - conn->llcp_ack) & 0x03) == 0x02) &&
 	    ((conn->llcp_type == LLCP_CONN_UPD) ||
 	     (conn->llcp_type == LLCP_CHAN_MAP))) {
 		lll->latency_event = 0;
@@ -2182,7 +2200,7 @@ static inline void event_conn_param_rsp(struct ll_conn *conn)
 
 	/* master respond with connection update */
 	if (!conn->lll.role) {
-		if (conn->llcp_req != conn->llcp_ack) {
+		if (((conn->llcp_req - conn->llcp_ack) & 0x03) == 0x02) {
 			return;
 		}
 
@@ -2208,7 +2226,7 @@ static inline void event_conn_param_rsp(struct ll_conn *conn)
 		conn->llcp.conn_upd.state = LLCP_CUI_STATE_SELECT;
 		conn->llcp.conn_upd.is_internal = !conn->llcp_conn_param.cmd;
 		conn->llcp_type = LLCP_CONN_UPD;
-		conn->llcp_ack--;
+		conn->llcp_ack -= 2;
 
 		return;
 	}
@@ -2674,7 +2692,7 @@ static inline void event_phy_req_prep(struct ll_conn *conn)
 		conn->llcp.phy_upd_ind.cmd = conn->llcp_phy.cmd;
 
 		conn->llcp_type = LLCP_PHY_UPD;
-		conn->llcp_ack--;
+		conn->llcp_ack -= 2;
 	}
 	break;
 
@@ -2830,7 +2848,7 @@ static u8_t conn_upd_recv(struct ll_conn *conn, memq_link_t *link,
 	}
 
 	/* different transaction collision */
-	if (conn->llcp_req != conn->llcp_ack) {
+	if (((conn->llcp_req - conn->llcp_ack) & 0x03) == 0x02) {
 		/* Mark for buffer for release */
 		(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
 
@@ -2863,7 +2881,7 @@ static u8_t conn_upd_recv(struct ll_conn *conn, memq_link_t *link,
 	*rx = NULL;
 
 	conn->llcp_type = LLCP_CONN_UPD;
-	conn->llcp_ack--;
+	conn->llcp_ack -= 2;
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	if ((conn->llcp_conn_param.req != conn->llcp_conn_param.ack) &&
@@ -2888,7 +2906,7 @@ static u8_t chan_map_upd_recv(struct ll_conn *conn, struct node_rx_pdu *rx,
 	}
 
 	/* different transaction collision */
-	if (conn->llcp_req != conn->llcp_ack) {
+	if (((conn->llcp_req - conn->llcp_ack) & 0x03) == 0x02) {
 		err = BT_HCI_ERR_DIFF_TRANS_COLLISION;
 
 		goto chan_map_upd_recv_exit;
@@ -2901,7 +2919,7 @@ static u8_t chan_map_upd_recv(struct ll_conn *conn, struct node_rx_pdu *rx,
 	conn->llcp.chan_map.initiate = 0;
 
 	conn->llcp_type = LLCP_CHAN_MAP;
-	conn->llcp_ack--;
+	conn->llcp_ack -= 2;
 
 chan_map_upd_recv_exit:
 	/* Mark for buffer for release */
@@ -3347,7 +3365,7 @@ static inline void reject_ind_conn_upd_recv(struct ll_conn *conn,
 		conn->llcp.conn_upd.state = LLCP_CUI_STATE_USE;
 		conn->llcp.conn_upd.is_internal = !conn->llcp_conn_param.cmd;
 		conn->llcp_type = LLCP_CONN_UPD;
-		conn->llcp_ack--;
+		conn->llcp_ack -= 2;
 
 		goto reject_ind_conn_upd_recv_exit;
 	}
@@ -3633,7 +3651,7 @@ static inline u8_t phy_upd_ind_recv(struct ll_conn *conn, memq_link_t *link,
 	}
 
 	/* different transaction collision */
-	if (conn->llcp_req != conn->llcp_ack) {
+	if (((conn->llcp_req - conn->llcp_ack) & 0x03) == 0x02) {
 		/* Mark for buffer for release */
 		(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
 
@@ -3661,7 +3679,7 @@ static inline u8_t phy_upd_ind_recv(struct ll_conn *conn, memq_link_t *link,
 	*rx = NULL;
 
 	conn->llcp_type = LLCP_PHY_UPD;
-	conn->llcp_ack--;
+	conn->llcp_ack -= 2;
 
 	if (conn->llcp.phy_upd_ind.tx) {
 		conn->lll.phy_tx_time = conn->llcp.phy_upd_ind.tx;
@@ -3991,8 +4009,10 @@ static inline u8_t ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 
 		/* start enc rsp to be scheduled in master prepare */
 		conn->llcp.encryption.initiate = 0;
-		conn->llcp_type = LLCP_ENCRYPTION;
-		conn->llcp_ack--;
+		if (conn->llcp_req == conn->llcp_ack) {
+			conn->llcp_type = LLCP_ENCRYPTION;
+			conn->llcp_ack -= 2;
+		}
 
 		/* Mark for buffer for release */
 		(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
@@ -4012,8 +4032,10 @@ static inline u8_t ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 
 			/* start enc rsp to be scheduled in slave  prepare */
 			conn->llcp.encryption.initiate = 0;
-			conn->llcp_type = LLCP_ENCRYPTION;
-			conn->llcp_ack--;
+			if (conn->llcp_req == conn->llcp_ack) {
+				conn->llcp_type = LLCP_ENCRYPTION;
+				conn->llcp_ack -= 2;
+			}
 #else /* CONFIG_BT_CTLR_FAST_ENC */
 			nack = start_enc_rsp_send(conn, NULL);
 			if (nack) {
@@ -4156,19 +4178,23 @@ static inline u8_t ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 					BT_HCI_ERR_LL_PROC_COLLISION);
 #if defined(CONFIG_BT_CTLR_PHY)
 #if defined(CONFIG_BT_CTLR_LE_ENC)
-			} else if (((conn->llcp_req != conn->llcp_ack) &&
+			} else if (((((conn->llcp_req - conn->llcp_ack) &
+				      0x03) == 0x02) &&
 				    (conn->llcp_type != LLCP_ENCRYPTION)) ||
 				   (conn->llcp_phy.req != conn->llcp_phy.ack)) {
 #else /* !CONFIG_BT_CTLR_LE_ENC */
-			} else if ((conn->llcp_req != conn->llcp_ack) ||
+			} else if ((((conn->llcp_req - conn->llcp_ack) &
+				     0x03) == 0x02) &&
 				   (conn->llcp_phy.req != conn->llcp_phy.ack)) {
 #endif /* !CONFIG_BT_CTLR_LE_ENC */
 #else /* !CONFIG_BT_CTLR_PHY */
 #if defined(CONFIG_BT_CTLR_LE_ENC)
-			} else if ((conn->llcp_req != conn->llcp_ack) &&
+			} else if ((((conn->llcp_req - conn->llcp_ack) &
+				     0x03) == 0x02) &&
 				   (conn->llcp_type != LLCP_ENCRYPTION)) {
 #else /* !CONFIG_BT_CTLR_LE_ENC */
-			} else if (conn->llcp_req != conn->llcp_ack) {
+			} else if (((conn->llcp_req - conn->llcp_ack) &
+				      0x03) == 0x02) {
 #endif /* !CONFIG_BT_CTLR_LE_ENC */
 #endif /* !CONFIG_BT_CTLR_PHY */
 				/* Different procedure collision */
@@ -4468,7 +4494,7 @@ static inline u8_t ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 				conn->llcp.conn_upd.is_internal =
 					!conn->llcp_conn_param.cmd;
 				conn->llcp_type = LLCP_CONN_UPD;
-				conn->llcp_ack--;
+				conn->llcp_ack -= 2;
 
 				/* Mark for buffer for release */
 				(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
@@ -4605,27 +4631,27 @@ static inline u8_t ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 					BT_HCI_ERR_LL_PROC_COLLISION);
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 #if defined(CONFIG_BT_CTLR_LE_ENC)
-			} else if (((conn->llcp_req !=
-				     conn->llcp_ack) &&
+			} else if (((((conn->llcp_req - conn->llcp_ack) &
+				      0x03) == 0x02) &&
 				    (conn->llcp_type !=
 				     LLCP_ENCRYPTION)) ||
 				   (conn->llcp_conn_param.req !=
 				    conn->llcp_conn_param.ack)) {
 #else /* !CONFIG_BT_CTLR_LE_ENC */
-			} else if ((conn->llcp_req !=
-				     conn->llcp_ack) ||
+			} else if ((((conn->llcp_req - conn->llcp_ack) &
+				     0x03) == 0x02) &&
 				   (conn->llcp_conn_param.req !=
 				    conn->llcp_conn_param.ack)) {
 #endif /* !CONFIG_BT_CTLR_LE_ENC */
 #else /* !CONFIG_BT_CTLR_CONN_PARAM_REQ */
 #if defined(CONFIG_BT_CTLR_LE_ENC)
-			} else if ((conn->llcp_req !=
-				    conn->llcp_ack) &&
+			} else if ((((conn->llcp_req - conn->llcp_ack) &
+				     0x03) == 0x02) &&
 				   (conn->llcp_type !=
 				    LLCP_ENCRYPTION)) {
 #else /* !CONFIG_BT_CTLR_LE_ENC */
-			} else if (conn->llcp_req !=
-				    conn->llcp_ack) {
+			} else if (((conn->llcp_req - conn->llcp_ack) &
+				    0x03) == 0x02) {
 #endif /* !CONFIG_BT_CTLR_LE_ENC */
 #endif /* !CONFIG_BT_CTLR_CONN_PARAM_REQ */
 				/* Different procedure collision */
@@ -4728,7 +4754,8 @@ static inline u8_t ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 				break;
 			}
 
-			if (conn->llcp_req != conn->llcp_ack) {
+			if (((conn->llcp_req - conn->llcp_ack) & 0x03) ==
+			    0x02) {
 				break;
 			}
 
@@ -4738,7 +4765,7 @@ static inline u8_t ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 			conn->llcp.chan_map.initiate = 1;
 
 			conn->llcp_type = LLCP_CHAN_MAP;
-			conn->llcp_ack--;
+			conn->llcp_ack -= 2;
 		}
 
 		/* Mark for buffer for release */
