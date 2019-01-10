@@ -145,12 +145,10 @@ void log_output_flush(const struct log_output *log_output)
 	log_output->control_block->offset = 0;
 }
 
-static int timestamp_print(struct log_msg *msg,
-			   const struct log_output *log_output,
-			   u32_t flags)
+static int timestamp_print(const struct log_output *log_output,
+			   u32_t flags, u32_t timestamp)
 {
 	int length;
-	u32_t timestamp = log_msg_timestamp_get(msg);
 	bool format =
 		(flags & LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP) |
 		(flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG);
@@ -208,44 +206,32 @@ static int timestamp_print(struct log_msg *msg,
 	return length;
 }
 
-static void color_print(struct log_msg *msg,
-			const struct log_output *log_output,
-			bool color,
-			bool start)
+static void color_print(const struct log_output *log_output,
+			bool color, bool start, u32_t level)
 {
 	if (color) {
-		u32_t level = log_msg_level_get(msg);
-
-		if (colors[level] != NULL) {
-			const char *color = start ?
-					 colors[level] : LOG_COLOR_CODE_DEFAULT;
-
-			print_formatted(log_output, "%s", color);
-		}
+		const char *color = start && (colors[level] != NULL) ?
+				colors[level] : LOG_COLOR_CODE_DEFAULT;
+		print_formatted(log_output, "%s", color);
 	}
 }
 
-static void color_prefix(struct log_msg *msg,
-			 const struct log_output *log_output,
-			 bool color)
+static void color_prefix(const struct log_output *log_output,
+			 bool color, u32_t level)
 {
-	color_print(msg, log_output, color, true);
+	color_print(log_output, color, true, level);
 }
 
-static void color_postfix(struct log_msg *msg,
-			  const struct log_output *log_output,
-			  bool color)
+static void color_postfix(const struct log_output *log_output,
+			  bool color, u32_t level)
 {
-	color_print(msg, log_output, color, false);
+	color_print(log_output, color, false, level);
 }
 
 
-static int ids_print(struct log_msg *msg, const struct log_output *log_output,
-		     bool level_on, bool func_on)
+static int ids_print(const struct log_output *log_output, bool level_on,
+		    bool func_on, u32_t domain_id, u32_t source_id, u32_t level)
 {
-	u32_t domain_id = log_msg_domain_id_get(msg);
-	u32_t source_id = log_msg_source_id_get(msg);
-	u32_t level = log_msg_level_get(msg);
 	int total = 0;
 
 	if (level_on) {
@@ -368,46 +354,36 @@ static void std_print(struct log_msg *msg,
 	}
 }
 
-static u32_t hexdump_line_print(struct log_msg *msg,
-				const struct log_output *log_output,
-				int prefix_offset,
-				u32_t offset, u32_t flags)
+static void hexdump_line_print(const struct log_output *log_output,
+			       const u8_t *data, u32_t length,
+			       int prefix_offset, u32_t flags)
 {
-	u8_t buf[HEXDUMP_BYTES_IN_LINE];
-	size_t length = sizeof(buf);
+	newline_print(log_output, flags);
 
-	log_msg_hexdump_data_get(msg, buf, &length, offset);
+	for (int i = 0; i < prefix_offset; i++) {
+		print_formatted(log_output, " ");
+	}
 
-	if (length > 0) {
-		newline_print(log_output, flags);
-
-		for (int i = 0; i < prefix_offset; i++) {
-			print_formatted(log_output, " ");
-		}
-
-		for (int i = 0; i < HEXDUMP_BYTES_IN_LINE; i++) {
-			if (i < length) {
-				print_formatted(log_output, "%02x ", buf[i]);
-			} else {
-				print_formatted(log_output, "   ");
-			}
-		}
-
-		print_formatted(log_output, "|");
-
-		for (int i = 0; i < HEXDUMP_BYTES_IN_LINE; i++) {
-			if (i < length) {
-				char c = (char)buf[i];
-
-				print_formatted(log_output, "%c",
-				      isprint((int)c) ? c : '.');
-			} else {
-				print_formatted(log_output, " ");
-			}
+	for (int i = 0; i < HEXDUMP_BYTES_IN_LINE; i++) {
+		if (i < length) {
+			print_formatted(log_output, "%02x ", data[i]);
+		} else {
+			print_formatted(log_output, "   ");
 		}
 	}
 
-	return length;
+	print_formatted(log_output, "|");
+
+	for (int i = 0; i < HEXDUMP_BYTES_IN_LINE; i++) {
+		if (i < length) {
+			char c = (char)data[i];
+
+			print_formatted(log_output, "%c",
+			      isprint((int)c) ? c : '.');
+		} else {
+			print_formatted(log_output, " ");
+		}
+	}
 }
 
 static void hexdump_print(struct log_msg *msg,
@@ -415,19 +391,22 @@ static void hexdump_print(struct log_msg *msg,
 			  int prefix_offset, u32_t flags)
 {
 	u32_t offset = 0U;
-	u32_t length;
+	u8_t buf[HEXDUMP_BYTES_IN_LINE];
+	size_t length;
 
 	print_formatted(log_output, "%s", log_msg_str_get(msg));
 
 	do {
-		length = hexdump_line_print(msg, log_output, prefix_offset,
-					    offset, flags);
+		length = sizeof(buf);
+		log_msg_hexdump_data_get(msg, buf, &length, offset);
 
-		if (length < HEXDUMP_BYTES_IN_LINE) {
+		if (length) {
+			hexdump_line_print(log_output, buf, length,
+					   prefix_offset, flags);
+			offset += length;
+		} else {
 			break;
 		}
-
-		offset += length;
 	} while (true);
 }
 
@@ -459,83 +438,167 @@ static void raw_string_print(struct log_msg *msg,
 	}
 }
 
-static int prefix_print(struct log_msg *msg,
-			const struct log_output *log_output,
-			u32_t flags, bool func_on)
+static u32_t prefix_print(const struct log_output *log_output,
+			 u32_t flags, bool func_on, u32_t timestamp, u8_t level,
+			 u8_t domain_id, u16_t source_id)
 {
-	int length = 0;
+	u32_t length = 0;
 
-	if (log_msg_level_get(msg) != LOG_LEVEL_INTERNAL_RAW_STRING) {
-		bool stamp = flags & LOG_OUTPUT_FLAG_TIMESTAMP;
-		bool colors_on = flags & LOG_OUTPUT_FLAG_COLORS;
-		bool level_on = flags & LOG_OUTPUT_FLAG_LEVEL;
+	bool stamp = flags & LOG_OUTPUT_FLAG_TIMESTAMP;
+	bool colors_on = flags & LOG_OUTPUT_FLAG_COLORS;
+	bool level_on = flags & LOG_OUTPUT_FLAG_LEVEL;
 
-		if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
-		    flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) {
-			/* TODO: As there is no way to figure out the
-			 * facility at this point, use a pre-defined value.
-			 * Change this to use the real facility of the
-			 * logging call when that info is available.
-			 */
-			static const int facility = 16; /* local0 */
+	if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
+	    flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) {
+		/* TODO: As there is no way to figure out the
+		 * facility at this point, use a pre-defined value.
+		 * Change this to use the real facility of the
+		 * logging call when that info is available.
+		 */
+		static const int facility = 16; /* local0 */
 
-			length += print_formatted(
-				log_output,
-				"<%d>1 ",
-				facility * 8 +
-				level_to_rfc5424_severity(
-					log_msg_level_get(msg)));
-		}
+		length += print_formatted(
+			log_output,
+			"<%d>1 ",
+			facility * 8 +
+			level_to_rfc5424_severity(level));
+	}
 
-		if (stamp) {
-			length += timestamp_print(msg, log_output, flags);
-		}
+	if (stamp) {
+		length += timestamp_print(log_output, flags, timestamp);
+	}
 
-		if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
-		    flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) {
-			length += print_formatted(
-				log_output, "%s - - - - ",
-				log_output->control_block->hostname ?
-				log_output->control_block->hostname :
-				"zephyr");
+	if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
+	    flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) {
+		length += print_formatted(
+			log_output, "%s - - - - ",
+			log_output->control_block->hostname ?
+			log_output->control_block->hostname :
+			"zephyr");
 
-		} else {
-			color_prefix(msg, log_output, colors_on);
-		length += ids_print(msg, log_output, level_on, func_on);
-		}
+	} else {
+		color_prefix(log_output, colors_on, level);
+		length += ids_print(log_output, level_on, func_on,
+				    domain_id, source_id, level);
 	}
 
 	return length;
 }
 
-static void postfix_print(struct log_msg *msg,
-			  const struct log_output *log_output,
-			  u32_t flags)
+static void postfix_print(const struct log_output *log_output,
+			  u32_t flags, u8_t level)
 {
-	if (log_msg_level_get(msg) != LOG_LEVEL_INTERNAL_RAW_STRING) {
-		color_postfix(msg, log_output,
-			      (flags & LOG_OUTPUT_FLAG_COLORS));
-		newline_print(log_output, flags);
-	}
+	color_postfix(log_output, (flags & LOG_OUTPUT_FLAG_COLORS),
+			      level);
+	newline_print(log_output, flags);
 }
 
 void log_output_msg_process(const struct log_output *log_output,
 			    struct log_msg *msg,
 			    u32_t flags)
 {
-	int prefix_offset = prefix_print(msg, log_output, flags,
-					 log_msg_is_std(msg));
+	bool std_msg = log_msg_is_std(msg);
+	u32_t timestamp = log_msg_timestamp_get(msg);
+	u8_t level = (u8_t)log_msg_level_get(msg);
+	u8_t domain_id = (u8_t)log_msg_domain_id_get(msg);
+	u16_t source_id = (u16_t)log_msg_source_id_get(msg);
+	bool raw_string = (level == LOG_LEVEL_INTERNAL_RAW_STRING);
+	int prefix_offset;
+
+	prefix_offset = raw_string ?
+			0 : prefix_print(log_output, flags, std_msg, timestamp,
+					 level, domain_id, source_id);
 
 	if (log_msg_is_std(msg)) {
 		std_print(msg, log_output);
-	} else if (log_msg_level_get(msg) != LOG_LEVEL_INTERNAL_RAW_STRING) {
+	} else if (raw_string) {
 		raw_string_print(msg, log_output);
 	} else {
 		hexdump_print(msg, log_output, prefix_offset, flags);
 	}
 
-	postfix_print(msg, log_output, flags);
+	if (!raw_string) {
+		postfix_print(log_output, flags, level);
+	}
 
+	log_output_flush(log_output);
+}
+
+static bool ends_with_newline(const char *fmt)
+{
+	char c = '\0';
+
+	while (*fmt != '\0') {
+		c = *fmt;
+		fmt++;
+	}
+
+	return (c == '\n');
+}
+
+void log_output_string(const struct log_output *log_output,
+		       struct log_msg_ids src_level, u32_t timestamp,
+		       const char *fmt, va_list ap, u32_t flags)
+{
+	int length;
+	u8_t level = (u8_t)src_level.level;
+	u8_t domain_id = (u8_t)src_level.domain_id;
+	u16_t source_id = (u16_t)src_level.source_id;
+	bool raw_string = (level == LOG_LEVEL_INTERNAL_RAW_STRING);
+
+	if (!raw_string) {
+		prefix_print(log_output, flags, true, timestamp,
+				level, domain_id, source_id);
+	}
+
+#if !defined(CONFIG_NEWLIB_LIBC) && !defined(CONFIG_ARCH_POSIX)
+	length = _prf(out_func, (void *)log_output, (char *)fmt, ap);
+#else
+	_vprintk(out_func, (void *)log_output, fmt, ap);
+#endif
+
+	(void)length;
+
+	if (raw_string) {
+		/* add \r if string ends with newline. */
+		if (ends_with_newline(fmt)) {
+			print_formatted(log_output, "\r");
+		}
+	} else {
+		postfix_print(log_output, flags, level);
+	}
+
+	log_output_flush(log_output);
+}
+
+void log_output_hexdump(const struct log_output *log_output,
+			     struct log_msg_ids src_level, u32_t timestamp,
+			     const char *metadata, const u8_t *data,
+			     u32_t length, u32_t flags)
+{
+	u32_t prefix_offset;
+	u8_t level = (u8_t)src_level.level;
+	u8_t domain_id = (u8_t)src_level.domain_id;
+	u16_t source_id = (u16_t)src_level.source_id;
+
+	prefix_offset = prefix_print(log_output, flags, true, timestamp,
+				     level, domain_id, source_id);
+
+	/* Print metadata */
+	print_formatted(log_output, "%s", metadata);
+
+	while (length) {
+		u32_t part_len = length > HEXDUMP_BYTES_IN_LINE ?
+				HEXDUMP_BYTES_IN_LINE : length;
+
+		hexdump_line_print(log_output, data, part_len,
+				   prefix_offset, flags);
+
+		data += part_len;
+		length -= part_len;
+	};
+
+	postfix_print(log_output, flags, level);
 	log_output_flush(log_output);
 }
 
