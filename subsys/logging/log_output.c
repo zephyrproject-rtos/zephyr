@@ -465,7 +465,7 @@ static int prefix_print(struct log_msg *msg,
 {
 	int length = 0;
 
-	if (!log_msg_is_raw_string(msg)) {
+	if (log_msg_level_get(msg) != LOG_LEVEL_INTERNAL_RAW_STRING) {
 		bool stamp = flags & LOG_OUTPUT_FLAG_TIMESTAMP;
 		bool colors_on = flags & LOG_OUTPUT_FLAG_COLORS;
 		bool level_on = flags & LOG_OUTPUT_FLAG_LEVEL;
@@ -512,7 +512,7 @@ static void postfix_print(struct log_msg *msg,
 			  const struct log_output *log_output,
 			  u32_t flags)
 {
-	if (!log_msg_is_raw_string(msg)) {
+	if (log_msg_level_get(msg) != LOG_LEVEL_INTERNAL_RAW_STRING) {
 		color_postfix(msg, log_output,
 			      (flags & LOG_OUTPUT_FLAG_COLORS));
 		newline_print(log_output, flags);
@@ -528,7 +528,7 @@ void log_output_msg_process(const struct log_output *log_output,
 
 	if (log_msg_is_std(msg)) {
 		std_print(msg, log_output);
-	} else if (log_msg_is_raw_string(msg)) {
+	} else if (log_msg_level_get(msg) != LOG_LEVEL_INTERNAL_RAW_STRING) {
 		raw_string_print(msg, log_output);
 	} else {
 		hexdump_print(msg, log_output, prefix_offset, flags);

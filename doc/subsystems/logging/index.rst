@@ -24,7 +24,7 @@ Summary of logger features:
 - Timestamping with user provided function.
 - Dedicated API for dumping data
 - Dedicated API for handling transient strings
-- Panic support - in panic mode logger switches to blocking, in-place
+- Panic support - in panic mode logger switches to blocking, synchronous
   processing.
 - Printk support - printk message can be redirected to the logger.
 - Design ready for multi-domain/multi-processor system
@@ -121,9 +121,9 @@ function name.
 :option:`CONFIG_LOG_PRINTK_MAX_STRING_LENGTH`: Maximal string length that can
 be processed by printk. Longer strings are trimmed.
 
-:option:`CONFIG_LOG_INPLACE_PROCESS`: Messages are processed in the context of
-the log macro call. Note that it can lead to errors when logger is used in the
-interrupt context.
+:option:`CONFIG_LOG_IMMEDIATE`: Messages are processed in the context
+of the log macro call. Note that it can lead to errors when logger is used in
+the interrupt context.
 
 :option:`CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD`: When number of buffered log
 messages reaches the threshold dedicated thread (see :cpp:func:`log_thread_set`)

@@ -123,17 +123,6 @@ config LOG_RUNTIME_FILTERING
 	  Allow runtime configuration of maximal, independent severity
 	  level for instance.
 
-choice
-	prompt "Log full strategy"
-
-config LOG_MODE_OVERFLOW
-	bool "Oldest logs are discarded"
-
-config LOG_MODE_NO_OVERFLOW
-	bool "New logs are dropped"
-
-endchoice
-
 config LOG_DEFAULT_LEVEL
 	int "Default log level"
 	default 3
@@ -208,20 +197,33 @@ config LOG_PRINTK
 config LOG_PRINTK_MAX_STRING_LENGTH
 	int "Maximum string length supported by LOG_PRINTK"
 	depends on LOG_PRINTK
+	depends on !LOG_IMMEDIATE
 	default 128
 	help
 	  Array is allocated on the stack.
 
-config LOG_INPLACE_PROCESS
-	bool "Enable in place processing"
+config LOG_IMMEDIATE
+	bool "Enable synchronous processing"
 	help
 	  When enabled log is processed in the context of the call. It impacts
 	  performance of the system since time consuming operations are
 	  performed in the context of the log entry (e.g. high priority
-	  interrupt). When enabled LOG_BUFFER_SIZE can be reduced. Logger
-	  backends must support exclusive access to work flawlessly in that mode
-	  because one log operation can be interrupted by another one in higher
-	  priority context.
+	  interrupt).Logger backends must support exclusive access to work
+	  flawlessly in that mode because one log operation can be interrupted
+	  by another one in the higher priority context.
+
+if !LOG_IMMEDIATE
+
+choice
+	prompt "Log full strategy"
+
+config LOG_MODE_OVERFLOW
+	bool "Oldest logs are discarded"
+
+config LOG_MODE_NO_OVERFLOW
+	bool "New logs are dropped"
+
+endchoice
 
 config LOG_PROCESS_TRIGGER_THRESHOLD
 	int "Amount of buffered logs which triggers processing thread."
@@ -258,7 +260,7 @@ config LOG_PROCESS_THREAD_STACK_SIZE
 	help
 	  Set the internal stack size for log processing thread.
 
-endif
+endif # LOG_PROCESS_THREAD
 
 config LOG_BUFFER_SIZE
 	int "Number of bytes dedicated for the logger internal buffer."
@@ -283,6 +285,8 @@ config LOG_STRDUP_BUF_COUNT
 	  output, it means this value is too small and should be increased.
 	  Each entry takes CONFIG_LOG_STRDUP_MAX_STRING bytes of memory plus
 	  some additional fixed overhead.
+
+endif # !LOG_IMMEDIATE
 
 config LOG_DOMAIN_ID
 	int "Domain ID"

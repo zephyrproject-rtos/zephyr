@@ -28,6 +28,12 @@ struct log_backend;
 struct log_backend_api {
 	void (*put)(const struct log_backend *const backend,
 		    struct log_msg *msg);
+	void (*put_sync_string)(const struct log_backend *const backend,
+			 struct log_msg_ids src_level, u32_t timestamp,
+			 const char *fmt, va_list ap);
+	void (*put_sync_hexdump)(const struct log_backend *const backend,
+			 struct log_msg_ids src_level, u32_t timestamp,
+			 const char *metadata, const u8_t *data, u32_t len);
 
 	void (*dropped)(const struct log_backend *const backend, u32_t cnt);
 	void (*panic)(const struct log_backend *const backend);
@@ -92,6 +98,53 @@ static inline void log_backend_put(const struct log_backend *const backend,
 	__ASSERT_NO_MSG(backend);
 	__ASSERT_NO_MSG(msg);
 	backend->api->put(backend, msg);
+}
+
+/**
+ * @brief Synchronously process log message.
+ *
+ * @param[in] backend   Pointer to the backend instance.
+ * @param[in] src_level Message details.
+ * @param[in] timestamp Timestamp.
+ * @param[in] fmt       Log string.
+ * @param[in] ap        Log string arguments.
+ */
+static inline void log_backend_put_sync_string(
+					const struct log_backend *const backend,
+					struct log_msg_ids src_level,
+					u32_t timestamp, const char *fmt,
+					va_list ap)
+{
+	__ASSERT_NO_MSG(backend);
+
+	if (backend->api->put_sync_string) {
+		backend->api->put_sync_string(backend, src_level,
+					      timestamp, fmt, ap);
+	}
+}
+
+/**
+ * @brief Synchronously process log hexdump_message.
+ *
+ * @param[in] backend   Pointer to the backend instance.
+ * @param[in] src_level Message details.
+ * @param[in] timestamp Timestamp.
+ * @param[in] metadata  Raw string associated with the data.
+ * @param[in] data      Data.
+ * @param[in] len       Data length.
+ */
+static inline void log_backend_put_sync_hexdump(
+					const struct log_backend *const backend,
+					struct log_msg_ids src_level,
+					u32_t timestamp, const char *metadata,
+					const u8_t *data, u32_t len)
+{
+	__ASSERT_NO_MSG(backend);
+
+	if (backend->api->put_sync_hexdump) {
+		backend->api->put_sync_hexdump(backend, src_level, timestamp,
+					       metadata, data, len);
+	}
 }
 
 /**

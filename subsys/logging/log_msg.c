@@ -9,6 +9,10 @@
 #include <logging/log_core.h>
 #include <string.h>
 
+#ifndef CONFIG_LOG_BUFFER_SIZE
+#define CONFIG_LOG_BUFFER_SIZE 0
+#endif
+
 #define MSG_SIZE sizeof(union log_msg_chunk)
 #define NUM_OF_MSGS (CONFIG_LOG_BUFFER_SIZE / MSG_SIZE)
 
@@ -243,7 +247,6 @@ struct log_msg *log_msg_hexdump_create(const char *str,
 	/* all fields reset to 0, reference counter to 1 */
 	msg->hdr.ref_cnt = 1;
 	msg->hdr.params.hexdump.type = LOG_MSG_TYPE_HEXDUMP;
-	msg->hdr.params.hexdump.raw_string = 0;
 	msg->hdr.params.hexdump.length = length;
 	msg->str = str;
 

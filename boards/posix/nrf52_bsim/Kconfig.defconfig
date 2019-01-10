@@ -28,10 +28,10 @@ config LOG_BACKEND_NATIVE_POSIX
 
 # For this board we can log immediately without any problem
 # Doing so will be nicer for debugging
-config LOG_INPLACE_PROCESS
+config LOG_IMMEDIATE
 	default y
 
-# If we set LOG_INPLACE_PROCESS, there is no need to have the logging thread
+# If we set LOG_IMMEDIATE, there is no need to have the logging thread
 # running
 config LOG_PROCESS_THREAD
 	default n
