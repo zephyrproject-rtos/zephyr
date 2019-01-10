@@ -22,10 +22,6 @@ LOG_MODULE_REGISTER(net_icmpv6, CONFIG_NET_ICMPV6_LOG_LEVEL);
 #include "ipv6.h"
 #include "net_stats.h"
 
-#if defined(CONFIG_NET_RPL)
-#include "rpl.h"
-#endif
-
 #define PKT_WAIT_TIME K_SECONDS(1)
 
 static sys_slist_t handlers;
@@ -352,17 +348,6 @@ static enum net_verdict handle_echo_request(struct net_pkt *orig)
 		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src,
 				&NET_IPV6_HDR(orig)->dst);
 		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst, &addr);
-	}
-
-	if (NET_IPV6_HDR(pkt)->nexthdr == NET_IPV6_NEXTHDR_HBHO) {
-#if defined(CONFIG_NET_RPL)
-		u16_t offset = NET_IPV6H_LEN;
-
-		if (net_rpl_revert_header(pkt, offset, &offset) < 0) {
-			/* TODO: Handle error cases */
-			goto drop;
-		}
-#endif
 	}
 
 	net_pkt_lladdr_src(pkt)->addr = net_pkt_lladdr_dst(orig)->addr;

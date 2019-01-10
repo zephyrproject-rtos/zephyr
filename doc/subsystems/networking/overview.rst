@@ -82,9 +82,6 @@ can be disabled if not needed.
   Firmware objects.   DTLS and Bootstrap support are currently not supported.
   :ref:`lwm2m-client-sample` implements the library as an example.
 
-* **RPL** IPv6 Routing Protocol for Low-Power and Lossy Networks (RFC 6550)
-  is supported. RPL is an IPv6 based mesh routing protocol.
-
 * **DNS** Domain Name Service (RFC 1035) client functionality is supported.
   Applications can use an API to query domain name information or IP addresses
   from the DNS server. Both IPv4 (A) and IPv6 (AAAA) records can be queried.

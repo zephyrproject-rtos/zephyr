@@ -40,7 +40,6 @@ LOG_MODULE_REGISTER(net_pkt, CONFIG_NET_PKT_LOG_LEVEL);
 
 #include "net_private.h"
 #include "tcp_internal.h"
-#include "rpl.h"
 
 /* Find max header size of IP protocol (IPv4 or IPv6) */
 #if defined(CONFIG_NET_IPV6) || defined(CONFIG_NET_RAW_MODE)
@@ -575,10 +574,6 @@ static struct net_pkt *net_pkt_get(struct k_mem_slab *slab,
 
 		if (IS_ENABLED(CONFIG_NET_UDP) && proto == IPPROTO_UDP) {
 			data_len -= NET_UDPH_LEN;
-
-			if (IS_ENABLED(CONFIG_NET_RPL_INSERT_HBH_OPTION)) {
-				data_len -= NET_RPL_HOP_BY_HOP_LEN;
-			}
 		}
 
 		if (proto == IPPROTO_ICMP || proto == IPPROTO_ICMPV6) {

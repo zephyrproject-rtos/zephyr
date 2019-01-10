@@ -518,8 +518,6 @@ source "subsys/net/ip/Kconfig.stack"
 
 source "subsys/net/ip/Kconfig.mgmt"
 
-source "subsys/net/ip/Kconfig.rpl"
-
 source "subsys/net/ip/Kconfig.stats"
 
 config NET_OFFLOAD
