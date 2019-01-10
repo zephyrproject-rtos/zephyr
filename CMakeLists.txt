@@ -75,10 +75,13 @@ zephyr_compile_definitions(
   __ZEPHYR__=1
 )
 
-if(NOT CONFIG_NO_OPTIMIZATIONS)
-zephyr_compile_definitions(
-  _FORTIFY_SOURCE=2
-)
+# @Intent: Set compiler flags to enable buffer overflow checks in libc functions
+# @config in CONFIG_NO_OPTIMIZATIONS optional : Optimizations may affect security
+toolchain_cc_security_fortify()
+
+# @Intent: Set compiler flags to detect general stack overflows across all functions
+if(CONFIG_STACK_CANARIES)
+  toolchain_cc_security_canaries()
 endif()
 
 if(BUILD_VERSION)
@@ -268,13 +271,6 @@ zephyr_cc_option(-fno-pie)
 zephyr_cc_option(-fno-pic)
 zephyr_cc_option(-fno-strict-overflow)
 zephyr_cc_option(-Wno-pointer-sign)
-
-if(CONFIG_STACK_CANARIES)
-  zephyr_compile_options(-fstack-protector-all)
-
-  # Only a valid option with GCC 7.x and above
-  zephyr_cc_option(-mstack-protector-guard=global)
-endif()
 
 if(CONFIG_OVERRIDE_FRAME_POINTER_DEFAULT)
   if(CONFIG_OMIT_FRAME_POINTER)

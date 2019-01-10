@@ -41,3 +41,8 @@ assert_exists(LIBGCC_FILE_NAME)
 # "/usr/lib/gcc/x86_64-linux-gnu/7/IAMCU/libgcc.a" are unheard of.
 # So this does not support CONFIG_X86_IAMCU=y
 LIST(APPEND TOOLCHAIN_LIBS gcc)
+
+# Load toolchain_cc-family macros
+# Significant overlap with freestanding gcc compiler so reuse it
+include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_security_fortify.cmake)
+include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_security_canaries.cmake)

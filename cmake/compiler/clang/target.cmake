@@ -51,3 +51,8 @@ list(APPEND TOOLCHAIN_LIBS gcc)
 
 set(CMAKE_REQUIRED_FLAGS -nostartfiles -nostdlib ${isystem_include_flags} -Wl,--unresolved-symbols=ignore-in-object-files)
 string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
+
+# Load toolchain_cc-family macros
+# Clang and GCC are almost feature+flag compatible, so reuse freestanding gcc
+include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_security_fortify.cmake)
+include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_security_canaries.cmake)

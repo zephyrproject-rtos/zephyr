@@ -160,3 +160,7 @@ endforeach()
 # toolchain-specific flags at generation time.
 list(APPEND CMAKE_REQUIRED_FLAGS -nostartfiles -nostdlib ${isystem_include_flags} -Wl,--unresolved-symbols=ignore-in-object-files)
 string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
+
+# Load toolchain_cc-family macros
+include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_security_fortify.cmake)
+include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_security_canaries.cmake)
