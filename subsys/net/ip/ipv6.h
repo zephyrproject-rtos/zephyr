@@ -128,6 +128,13 @@ int net_ipv6_send_na(struct net_if *iface, const struct in6_addr *src,
 		     const struct in6_addr *dst, const struct in6_addr *tgt,
 		     u8_t flags);
 
+
+static inline bool net_ipv6_is_nexthdr_upper_layer(u8_t nexthdr)
+{
+	return (nexthdr == IPPROTO_ICMPV6 || nexthdr == IPPROTO_UDP ||
+		nexthdr == IPPROTO_TCP);
+}
+
 /**
  * @brief Create IPv6 packet in provided net_pkt.
  *
@@ -417,15 +424,15 @@ void net_ipv6_frag_foreach(net_ipv6_frag_cb_t cb, void *user_data);
  * @brief Find the last IPv6 extension header in the network packet.
  *
  * @param pkt Network head packet.
- * @param next_hdr_idx Where is the index to next header field that points
+ * @param next_hdr_off Offset of the next header field that points
  * to last header. This is returned to caller.
- * @param last_hdr_idx Where is the last header field in the packet.
+ * @param last_hdr_off Offset of the last header field in the packet.
  * This is returned to caller.
  *
- * @return Return 0 if ok or <0 if the packet is malformed.
+ * @return 0 on success, a negative errno otherwise.
  */
-int net_ipv6_find_last_ext_hdr(struct net_pkt *pkt, u16_t *next_hdr_idx,
-			       u16_t *last_hdr_idx);
+int net_ipv6_find_last_ext_hdr(struct net_pkt *pkt, u16_t *next_hdr_off,
+			       u16_t *last_hdr_off);
 
 /**
  * @brief Handles IPv6 fragmented packets.
