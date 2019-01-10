@@ -1,0 +1,4 @@
+tests:
+  peripheral.device_id:
+    tags: driver
+    depends_on: hwinfo
