@@ -17,6 +17,7 @@
 #include <zephyr.h>
 
 void settings_init(void);
+<<<<<<< HEAD
 
 #ifdef CONFIG_NSETTINGS_FS
 #include <fs.h>
@@ -84,10 +85,128 @@ static void settings_init_fcb(void)
 			k_panic();
 		} else {
 			rc = settings_fcb_src(&config_init_settings_fcb);
+=======
+static int settings_default_backend_init(void);
+
+int settings_subsys_init(void)
+{
+	static bool settings_initialized;
+	int rc;
+
+	if (settings_initialized) {
+		return 0;
+	}
+
+	settings_init();
+	rc = settings_default_backend_init();
+
+	if (!rc) {
+		settings_initialized = true;
+	}
+
+	return rc;
+}
+
+#ifdef CONFIG_NSETTINGS_DEFAULT_FS
+#include <fs.h>
+#include "settings_file.h"
+
+static struct settings_file default_settings = {
+	.cf_name = CONFIG_NSETTINGS_DEFAULT_FS_FILE,
+	.cf_maxlines = CONFIG_NSETTINGS_DEFAULT_FS_MAX_LINES
+};
+
+static int settings_default_backend_init(void)
+{
+	int rc;
+
+	rc = settings_file_src(&default_settings);
+	if (rc) {
+		return rc;
+	}
+
+	rc = settings_file_dst(&default_settings);
+	if (rc) {
+		return rc;
+	}
+
+	settings_mount_fs_backend(&default_settings);
+	/*
+	 * Must be called after root FS has been initialized.
+	 */
+	rc = fs_mkdir(CONFIG_NSETTINGS_FS_DIR);
+	/*
+	 * The following lines mask the file exist error.
+	 */
+	if (rc == -EEXIST) {
+		rc = 0;
+	}
+	return rc;
+}
+
+#elif defined(CONFIG_NSETTINGS_DEFAULT_FCB)
+#include "fcb.h"
+#include "settings_fcb.h"
+
+#define SETTINGS_FCB_VERS		1
+
+static struct flash_sector settings_fcb_area[
+		CONFIG_NSETTINGS_DEFAULT_FCB_NUM_AREAS + 1];
+
+static struct settings_fcb default_settings = {
+	.cf_fcb.f_magic = CONFIG_NSETTINGS_DEFAULT_FCB_MAGIC,
+	.cf_fcb.f_sectors = settings_fcb_area,
+};
+
+static int settings_default_backend_init(void)
+{
+	u32_t cnt = CONFIG_NSETTINGS_DEFAULT_FCB_NUM_AREAS + 1;
+	int rc;
+	const struct flash_area *fap;
+
+	rc = flash_area_get_sectors(CONFIG_NSETTINGS_DEFAULT_FCB_FLASH_AREA,
+				    &cnt, settings_fcb_area);
+	if (rc != 0 && rc != -ENOMEM) {
+		return rc;
+	}
+
+	default_settings.cf_fcb.f_sector_cnt = cnt;
+	default_settings.cf_fcb.f_version = SETTINGS_FCB_VERS;
+	default_settings.cf_fcb.f_scratch_cnt = 1;
+
+
+	while (1) {
+		rc = fcb_init(CONFIG_NSETTINGS_DEFAULT_FCB_FLASH_AREA,
+				&default_settings.cf_fcb);
+		if (rc) {
+			return rc;
+		}
+
+		/*
+		 * Check if system was reset in middle of emptying a sector.
+		 * This situation is recognized by checking if the scratch block
+		 * is missing.
+		 */
+		if (fcb_free_sector_cnt(&default_settings.cf_fcb) < 1) {
+
+			rc = flash_area_erase(default_settings.cf_fcb.fap,
+			default_settings.cf_fcb.f_active.fe_sector->fs_off,
+			default_settings.cf_fcb.f_active.fe_sector->fs_size);
+
+			if (rc) {
+				return rc;
+			}
+
+		} else {
+
+			break;
+
+>>>>>>> subsys/settings: Reworked settings module
 		}
 	}
 
 	if (rc != 0) {
+<<<<<<< HEAD
 		k_panic();
 	}
 
@@ -137,3 +256,36 @@ int settings_subsys_init(void)
 
 	return err;
 }
+=======
+		rc = flash_area_open(CONFIG_NSETTINGS_DEFAULT_FCB_FLASH_AREA,
+				     &fap);
+
+		if (rc == 0) {
+			rc = flash_area_erase(fap, 0, fap->fa_size);
+			flash_area_close(fap);
+		}
+
+		if (rc) {
+			return rc;
+		}
+	}
+
+	rc = settings_fcb_dst(&default_settings);
+
+	if (rc) {
+		return rc;
+	}
+
+	rc = settings_fcb_src(&default_settings);
+
+	return rc;
+}
+#elif defined(CONFIG_NSETTINGS_DEFAULT_NONE)
+static int settings_default_backend_init(void)
+{
+	return 0;
+}
+#endif
+
+
+>>>>>>> subsys/settings: Reworked settings module

@@ -8,13 +8,17 @@ menuconfig NSETTINGS
 	bool "Enable settings subsystem with non-volatile storage"
 	# Only NFFS is currently supported as FS.
 	# The reason in that FatFs doesn't implement the fs_rename() API
+<<<<<<< HEAD
 	depends on (FILE_SYSTEM && FILE_SYSTEM_NFFS) || (FCB && FLASH_PAGE_LAYOUT)
+=======
+>>>>>>> subsys/settings: Reworked settings module
 	help
 	  The settings subsystem allows its users to serialize and
 	  deserialize state in memory into and from non-volatile memory.
 	  It supports several back-ends to store and load serialized data from
 	  and it can do so atomically for all involved modules.
 
+<<<<<<< HEAD
 # Hidden option to enable encoding length into settings entry
 config NSETTINGS_ENCODE_LEN
 	depends on NSETTINGS
@@ -52,10 +56,55 @@ config NSETTINGS_FCB_NUM_AREAS
 	int "Number of flash areas used by the settings subsystem"
 	default 8
 	depends on NSETTINGS && NSETTINGS_FCB
+=======
+config NSETTINGS_RUNTIME
+	bool "Runtime support"
+	default y
+	depends on NSETTINGS
+	help
+	  Enables runtime support.
+
+choice
+	prompt "Default backend type"
+	default NSETTINGS_DEFAULT_FCB
+	depends on NSETTINGS
+	help
+	  Default storage back-end to be used by the settings subsystem.
+
+config NSETTINGS_DEFAULT_FCB
+	bool "FCB"
+	depends on FCB
+	help
+	  Use FCB as the default storage back-end.
+
+config NSETTINGS_DEFAULT_FS
+	bool "File System"
+	depends on FILE_SYSTEM
+	help
+	  Use a file system as the default storage back-end.
+
+config NSETTINGS_DEFAULT_NVS
+	bool "NVS"
+	depends on NVS
+	help
+	  Use NVS as the default storage back-end.
+
+config NSETTINGS_DEFAULT_NONE
+	bool "None"
+	help
+	  Don't use a default storage back-end.
+endchoice
+
+config NSETTINGS_DEFAULT_FCB_NUM_AREAS
+	int "Number of flash areas used by the settings subsystem"
+	default 8
+	depends on NSETTINGS && NSETTINGS_DEFAULT_FCB
+>>>>>>> subsys/settings: Reworked settings module
 	help
 	  Number of areas to allocate in the settings FCB. A smaller number is
 	  used if the flash hardware cannot support this value.
 
+<<<<<<< HEAD
 config NSETTINGS_FCB_MAGIC
 	hex "FCB magic for the settings subsystem"
 	default 0xc0ffeeee
@@ -67,10 +116,24 @@ config NSETTINGS_FCB_FLASH_AREA
 	int "Flash area id used for settings"
 	default 4
 	depends on NSETTINGS && NSETTINGS_FCB
+=======
+config NSETTINGS_DEFAULT_FCB_MAGIC
+	hex "FCB magic for the settings subsystem"
+	default 0xc0ffeeee
+	depends on NSETTINGS && NSETTINGS_DEFAULT_FCB
+	help
+	  Magic 32-bit word for to identify valid settings area
+
+config NSETTINGS_DEFAULT_FCB_FLASH_AREA
+	int "Flash area id used for settings"
+	default 4
+	depends on NSETTINGS && NSETTINGS_DEFAULT_FCB
+>>>>>>> subsys/settings: Reworked settings module
 	help
 	  Id of the Flash area where FCB instance used for settings is
 	  expected to operate.
 
+<<<<<<< HEAD
 config NSETTINGS_FS_DIR
 	string "Serialization directory"
 	default "/settings"
@@ -89,5 +152,25 @@ config NSETTINGS_FS_MAX_LINES
 	int "Compression threshold"
 	default 32
 	depends on NSETTINGS && NSETTINGS_FS
+=======
+config NSETTINGS_DEFAULT_FS_DIR
+	string "Serialization directory"
+	default "/settings"
+	depends on NSETTINGS && NSETTINGS_DEFAULT_FS
+	help
+	  Directory where the settings data is stored
+
+config NSETTINGS_DEFAULT_FS_FILE
+	string "Default settings file"
+	default "/settings/run"
+	depends on NSETTINGS && NSETTINGS_DEFAULT_FS
+	help
+	  Full path to the default settings file.
+
+config NSETTINGS_DEFAULT_FS_MAX_LINES
+	int "Compression threshold"
+	default 32
+	depends on NSETTINGS && NSETTINGS_DEFAULT_FS
+>>>>>>> subsys/settings: Reworked settings module
 	help
 	  Limit how many items stored in a file before compressing

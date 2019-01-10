@@ -21,12 +21,20 @@ u8_t reset_counter;
 static int ps_set(int argc, char **argv, size_t len, read_cb read, void *cb_arg)
 {
 	int rc;
+<<<<<<< HEAD
+=======
+	u8_t test;
+>>>>>>> subsys/settings: Reworked settings module
 
 	if (argc == 1) {
 		if (!strcmp(argv[0], "ra0")) {
 			rc = read(&reset_counter, sizeof(reset_counter),
 				  cb_arg);
+<<<<<<< HEAD
 			printk("ra0 found\n");
+=======
+			printk("Reset Counter ra0: %d\n", reset_counter);
+>>>>>>> subsys/settings: Reworked settings module
 		}
 		if (!strcmp(argv[0], "ra1")) {
 			printk("ra1 found\n");
@@ -35,7 +43,12 @@ static int ps_set(int argc, char **argv, size_t len, read_cb read, void *cb_arg)
 			printk("ra2 found\n");
 		}
 		if (!strcmp(argv[0], "rb")) {
+<<<<<<< HEAD
 			printk("rb found\n");
+=======
+			rc = read(&test, sizeof(test), cb_arg);
+			printk("Reset Counter rb: %d\n", test);
+>>>>>>> subsys/settings: Reworked settings module
 		}
 		return (len < 0) ? len : 0;
 	}
@@ -68,14 +81,27 @@ int ps_settings_init(void)
 
 void main(void)
 {
+<<<<<<< HEAD
+=======
+	u8_t test = 8;
+>>>>>>> subsys/settings: Reworked settings module
 	reset_counter = 0U;
 	ps_settings_init();
 	settings_load();
 
 	while (reset_counter < 6) {
+<<<<<<< HEAD
 		k_sleep(SLEEP_TIME);
 		reset_counter++;
 		printk("Reset counter %u\n", reset_counter);
+=======
+
+		reset_counter++;
+		printk("Reset counter %u\n", reset_counter);
+		if (reset_counter == 1) {
+			settings_runtime_set("ps/rb", &test, sizeof(test));
+		}
+>>>>>>> subsys/settings: Reworked settings module
 		settings_save_one("ps/ra0", &reset_counter,
 				  sizeof(reset_counter));
 		settings_save_one("ps/ra1", &reset_counter,
@@ -90,6 +116,10 @@ void main(void)
 		if (reset_counter == 4) {
 			settings_delete("ps/r");
 		}
+<<<<<<< HEAD
+=======
+		k_sleep(SLEEP_TIME);
+>>>>>>> subsys/settings: Reworked settings module
 		sys_reboot(0);
 	}
 	printk("Finished");

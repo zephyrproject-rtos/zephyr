@@ -13,8 +13,11 @@
 #include "settings_fcb.h"
 #include "settings_priv.h"
 
+<<<<<<< HEAD
 #define SETTINGS_FCB_VERS		1
 
+=======
+>>>>>>> subsys/settings: Reworked settings module
 struct settings_fcb_read_fn_arg {
 	struct fcb_entry_ctx *entry_ctx;
 	off_t off;
@@ -29,6 +32,7 @@ static struct settings_store_itf settings_fcb_itf = {
 	.csi_save = settings_fcb_save,
 };
 
+<<<<<<< HEAD
 int settings_fcb_src(struct settings_fcb *cf)
 {
 	int rc;
@@ -63,14 +67,27 @@ int settings_fcb_src(struct settings_fcb *cf)
 
 	cf->cf_store.cs_itf = &settings_fcb_itf;
 	settings_src_register(&cf->cf_store);
-
-	return 0;
-}
-
+=======
 int settings_fcb_dst(struct settings_fcb *cf)
 {
 	cf->cf_store.cs_itf = &settings_fcb_itf;
 	settings_dst_register(&cf->cf_store);
+>>>>>>> subsys/settings: Reworked settings module
+
+	return 0;
+}
+
+<<<<<<< HEAD
+int settings_fcb_dst(struct settings_fcb *cf)
+{
+	cf->cf_store.cs_itf = &settings_fcb_itf;
+	settings_dst_register(&cf->cf_store);
+=======
+int settings_fcb_src(struct settings_fcb *cf)
+{
+	cf->cf_store.cs_itf = &settings_fcb_itf;
+	settings_src_register(&cf->cf_store);
+>>>>>>> subsys/settings: Reworked settings module
 
 	return 0;
 }
@@ -103,6 +120,10 @@ static ssize_t settings_fcb_read_fn(void *data, size_t len, void *read_fn_arg)
 	if (rc < 0) {
 		return rc;
 	}
+<<<<<<< HEAD
+=======
+
+>>>>>>> subsys/settings: Reworked settings module
 	return len_read;
 }
 
@@ -202,6 +223,10 @@ static void settings_fcb_compress(struct settings_fcb *cf)
 
 		if (rc) {
 			continue;
+<<<<<<< HEAD
+=======
+		}
+>>>>>>> subsys/settings: Reworked settings module
 
 		len1_read = strchr(name1, '=') - name1;
 
@@ -302,7 +327,11 @@ static int settings_fcb_save_record(struct settings_fcb *cf,
 		len += wbs - rem;
 	}
 
+<<<<<<< HEAD
 	for (i = 0; i < CONFIG_NSETTINGS_FCB_NUM_AREAS; i++) {
+=======
+	for (i = 0; i < cf->cf_fcb.f_sector_cnt; i++) {
+>>>>>>> subsys/settings: Reworked settings module
 		rc = fcb_append(&cf->cf_fcb, len, &loc.loc);
 		if (rc != FCB_ERR_NOSPACE) {
 			break;
@@ -551,7 +580,10 @@ static int settings_fcb_save(struct settings_store *cs, const char *name,
 	}
 	return rc;
 }
+<<<<<<< HEAD
 
 void settings_mount_fcb_backend(struct settings_fcb *cf)
 {
 }
+=======
+>>>>>>> subsys/settings: Reworked settings module

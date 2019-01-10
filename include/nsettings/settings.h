@@ -49,7 +49,11 @@ struct settings_handler {
 	char *name;
 	/**< Name of subtree. */
 
+<<<<<<< HEAD
 	int (*h_get)(int argc, char **argv, char *val, int val_len_max);
+=======
+	int (*h_get)(int argc, char **argv, void *val, int val_len_max);
+>>>>>>> subsys/settings: Reworked settings module
 	/**< Get values handler of settings items identified by keyword names.
 	 *
 	 * Parameters:
@@ -178,6 +182,15 @@ struct settings_store {
 	const struct settings_store_itf *cs_itf;
 };
 
+<<<<<<< HEAD
+=======
+#ifdef CONFIG_NSETTINGS_RUNTIME
+/* If runtime interface is enabled */
+int settings_runtime_set(const char *name, void *data, size_t len);
+int settings_runtime_get(const char *name, void *data, size_t len);
+#endif
+
+>>>>>>> subsys/settings: Reworked settings module
 #ifdef __cplusplus
 }
 #endif

@@ -19,6 +19,10 @@
 #include "settings_priv.h"
 
 sys_slist_t  settings_load_srcs;
+<<<<<<< HEAD
+=======
+
+>>>>>>> subsys/settings: Reworked settings module
 struct settings_store *settings_save_dst;
 
 void settings_src_register(struct settings_store *cs)
@@ -44,6 +48,7 @@ int settings_load(void)
 	struct settings_store *cs;
 
 	/*
+<<<<<<< HEAD
 	 * for every config store
 	 *    load config
 	 *    apply config
@@ -53,12 +58,29 @@ int settings_load(void)
 	SYS_SLIST_FOR_EACH_CONTAINER(&settings_load_srcs, cs, cs_next) {
 		cs->cs_itf->csi_load(cs);
 	}
+=======
+	 * for every settings source
+	 *    load config
+	 *    apply config
+	 */
+	SYS_SLIST_FOR_EACH_CONTAINER(&settings_load_srcs, cs, cs_next) {
+		cs->cs_itf->csi_load(cs);
+	}
+
+	/*
+	 * finally commit the settings
+	 */
+>>>>>>> subsys/settings: Reworked settings module
 	return settings_commit(NULL);
 }
 
 
 /*
+<<<<<<< HEAD
  * Append a single value to persisted config. Don't store duplicate value.
+=======
+ * Append a single value to persisted config.
+>>>>>>> subsys/settings: Reworked settings module
  */
 int settings_save_one(const char *name, void *value, size_t val_len)
 {
