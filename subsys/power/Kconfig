@@ -9,8 +9,8 @@ config PM_CONTROL_STATE_LOCK
 	help
 	  Enable OS Power Management state locking capability
 	  if any application wants to temporarily disable certain
-	  System Low Power states while doing any critical work
-	  or needs quick response from hardware resources.
+	  Power States while doing any critical work or needs quick
+	  response from hardware resources.
 
 config PM_CONTROL_OS_DEBUG
 	bool "Enable OS Power Management debug hooks"
