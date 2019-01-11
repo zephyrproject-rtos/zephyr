@@ -31,7 +31,13 @@
 /** Memory alignment of the RX/TX Buffer Descriptor List */
 #define GMAC_DESC_ALIGNMENT               4
 /** Total number of queues supported by GMAC hardware module */
-#define GMAC_QUEUE_NO                     3
+#ifdef CONFIG_SOC_ATMEL_SAME70_REVB
+#define GMAC_QUEUE_NUM                    6
+#else
+#define GMAC_QUEUE_NUM                    3
+#endif
+BUILD_ASSERT_MSG(ARRAY_SIZE(GMAC->GMAC_TBQBAPQ) + 1 == GMAC_QUEUE_NUM,
+		 "GMAC_QUEUE_NUM doesn't match soc header");
 /** Number of priority queues used */
 #define GMAC_PRIORITY_QUEUE_NO            (CONFIG_ETH_SAM_GMAC_QUEUES - 1)
 
@@ -55,6 +61,17 @@
 #else
 #define PRIORITY_QUEUE1_RX_DESC_COUNT         1
 #define PRIORITY_QUEUE1_TX_DESC_COUNT         1
+#endif
+
+#if GMAC_QUEUE_NUM > 3
+#define PRIORITY_QUEUE3_RX_DESC_COUNT         1
+#define PRIORITY_QUEUE3_TX_DESC_COUNT         1
+
+#define PRIORITY_QUEUE4_RX_DESC_COUNT         1
+#define PRIORITY_QUEUE4_TX_DESC_COUNT         1
+
+#define PRIORITY_QUEUE5_RX_DESC_COUNT         1
+#define PRIORITY_QUEUE5_TX_DESC_COUNT         1
 #endif
 
 /*
@@ -147,6 +164,11 @@ enum queue_idx {
 	GMAC_QUE_0,  /** Main queue */
 	GMAC_QUE_1,  /** Priority queue 1 */
 	GMAC_QUE_2,  /** Priority queue 2 */
+#if GMAC_QUEUE_NUM > 3
+	GMAC_QUE_3,  /** Priority queue 3 */
+	GMAC_QUE_4,  /** Priority queue 4 */
+	GMAC_QUE_5,  /** Priority queue 5 */
+#endif
 };
 
 /** Minimal ring buffer implementation */
@@ -217,7 +239,7 @@ struct eth_sam_dev_data {
 	struct device *ptp_clock;
 #endif
 	u8_t mac_addr[6];
-	struct gmac_queue queue_list[GMAC_QUEUE_NO];
+	struct gmac_queue queue_list[GMAC_QUEUE_NUM];
 };
 
 #define DEV_CFG(dev) \
