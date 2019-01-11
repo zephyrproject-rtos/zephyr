@@ -73,15 +73,20 @@ int sys_pm_policy_next_state(s32_t ticks, enum power_states *pm_state)
 	}
 
 	for (i = ARRAY_SIZE(pm_policy) - 1; i >= 0; i--) {
+#ifdef CONFIG_PM_CONTROL_STATE_LOCK
+		if (!sys_pm_ctrl_is_state_enabled(pm_policy[i].pm_state)) {
+			continue;
+		}
+#endif
 		if ((ticks == K_FOREVER) ||
 		    (ticks >= pm_policy[i].min_residency)) {
-			break;
+			*pm_state = pm_policy[i].pm_state;
+			LOG_DBG("ticks: %d, pm_state: %d, min_residency: %d\n",
+				ticks, *pm_state, pm_policy[i].min_residency);
+			return pm_policy[i].sys_state;
 		}
 	}
 
-	*pm_state = pm_policy[i].pm_state;
-	LOG_DBG("ticks: %d, pm_state: %d, min_residency: %d, idx: %d\n",
-			ticks, *pm_state, pm_policy[i].min_residency, i);
-
-	return pm_policy[i].sys_state;
+	LOG_DBG("No suitable power state found!");
+	return SYS_PM_NOT_HANDLED;
 }

@@ -15,65 +15,35 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(power);
 
-struct pm_ctrl_info {
-	int pm_state;
-	atomic_t count;
-};
+static atomic_t power_state_disable_count[SYS_POWER_STATE_MAX];
 
-static struct pm_ctrl_info pm_ctrl[] = {
-	{SYS_PM_LOW_POWER_STATE, ATOMIC_INIT(0)},
-	{SYS_PM_DEEP_SLEEP, ATOMIC_INIT(0)},
-};
-
-void sys_pm_ctrl_disable_state(int state)
+void sys_pm_ctrl_disable_state(enum power_states state)
 {
-	if (state == SYS_PM_LOW_POWER_STATE) {
-		__ASSERT(pm_ctrl[0].count < UINT_MAX,
-				"Low Power state count overflowed\n");
-		atomic_inc(&pm_ctrl[0].count);
-	} else if (state == SYS_PM_DEEP_SLEEP) {
-		__ASSERT(pm_ctrl[1].count < UINT_MAX,
-				"Deep Sleep state count overflowed\n");
-		atomic_inc(&pm_ctrl[1].count);
-	} else {
-		LOG_WRN("\nInvalid PM state");
-	}
+	atomic_val_t v;
+
+	__ASSERT(state < SYS_POWER_STATE_MAX, "Invalid power state!");
+	v = atomic_inc(&power_state_disable_count[state]);
+	__ASSERT(v < UINT_MAX, "Power state disable count overflowed!");
+
+	/* Make compiler happy when assertions are disabled. */
+	(void)(v);
 }
 
-void sys_pm_ctrl_enable_state(int state)
+void sys_pm_ctrl_enable_state(enum power_states state)
 {
-	if (state == SYS_PM_LOW_POWER_STATE) {
-		__ASSERT(pm_ctrl[0].count > 0,
-				"Low Power state count underflowed\n");
-		atomic_dec(&pm_ctrl[0].count);
-	} else if (state == SYS_PM_DEEP_SLEEP) {
-		__ASSERT(pm_ctrl[1].count > 0,
-				"Deep Sleep state count underflowed\n");
-		atomic_dec(&pm_ctrl[1].count);
-	} else {
-		LOG_WRN("\nInvalid PM state");
-	}
+	atomic_val_t v;
+
+	__ASSERT(state < SYS_POWER_STATE_MAX, "Invalid power state!");
+	v = atomic_dec(&power_state_disable_count[state]);
+	__ASSERT(v > 0, "Power state disable count underflowed!");
+
+	/* Make compiler happy when assertions are disabled. */
+	(void)(v);
 }
 
-bool sys_pm_ctrl_is_state_enabled(int state)
+bool sys_pm_ctrl_is_state_enabled(enum power_states state)
 {
-	bool enabled = true;
+	__ASSERT(state < SYS_POWER_STATE_MAX, "Invalid power state!");
 
-	switch (state) {
-	case SYS_PM_LOW_POWER_STATE:
-		if (pm_ctrl[0].count) {
-			enabled = false;
-		}
-		break;
-	case SYS_PM_DEEP_SLEEP:
-		if (pm_ctrl[1].count) {
-			enabled = false;
-		}
-		break;
-	default:
-		LOG_WRN("\nInvalid PM state");
-		enabled = false;
-	}
-
-	return enabled;
+	return (atomic_get(&power_state_disable_count[state]) == 0);
 }
