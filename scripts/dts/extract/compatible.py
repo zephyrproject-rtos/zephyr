@@ -43,6 +43,13 @@ class DTCompatible(DTDirective):
                 compat_defs: "1",
             }
             insert_defs(node_address, load_defs, {})
+
+            # Generate #define for instances that have a reg prop
+            if reduced[node_address]['props'].get('reg') is not None:
+                load_defs = {
+                    def_label: "1",
+                }
+                insert_defs(node_address, load_defs, {})
             # Generate #define for BUS a "sensor" might be on
             # for example:
             # #define DT_ST_LPS22HB_PRESS_BUS_SPI 1
