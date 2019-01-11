@@ -60,33 +60,49 @@ nRF52 core output
 
 .. code-block:: console
 
-   *** Power Management Demo on nrf52_pca10040 ***
-   Demo Description
-   Application creates Idleness, Due to which System Idle Thread is
-   scheduled and it enters into various Low Power States.
+  *** Power Management Demo on nrf52_pca10040 ***
+  Demo Description
+  Application creates idleness, due to which System Idle Thread is
+  scheduled and it enters into various Low Power States.
 
-   <-- App doing busy wait for 10 Sec -->
+  <-- App doing busy wait for 10 Sec -->
 
-   <-- App going to sleep for 10 Sec -->
-   --> Entering to SYS_POWER_STATE_CPU_LPS_1 state.
-   --> Exited from SYS_POWER_STATE_CPU_LPS_1 state.
+  <-- App going to sleep for 10 Sec -->
+  --> Entering to SYS_POWER_STATE_CPU_LPS_1 state.
+  --> Exited from SYS_POWER_STATE_CPU_LPS_1 state.
 
-   <-- App doing busy wait for 10 Sec -->
+  <-- App doing busy wait for 10 Sec -->
 
-   <-- App going to sleep for 30 Sec -->
-   --> Entering to SYS_POWER_STATE_CPU_LPS_2 state.
-   --> Exited from SYS_POWER_STATE_CPU_LPS_2 state.
+  <-- App going to sleep for 30 Sec -->
+  --> Entering to SYS_POWER_STATE_CPU_LPS_2 state.
+  --> Exited from SYS_POWER_STATE_CPU_LPS_2 state.
 
-   <-- App doing busy wait for 10 Sec -->
+  <-- Disabling SYS_POWER_STATE_CPU_LPS_2 state --->
 
-   <-- App going to sleep for 10 Sec -->
-   --> Entering to SYS_POWER_STATE_CPU_LPS_1 state.
-   --> Exited from SYS_POWER_STATE_CPU_LPS_1 state.
+  <-- App doing busy wait for 10 Sec -->
 
-   <-- App doing busy wait for 10 Sec -->
+  <-- App going to sleep for 10 Sec -->
+  --> Entering to SYS_POWER_STATE_CPU_LPS_1 state.
+  --> Exited from SYS_POWER_STATE_CPU_LPS_1 state.
 
-   <-- App going to sleep for 30 Sec -->
-   --> Entering to SYS_POWER_STATE_CPU_LPS_2 state.
-   --> Exited from SYS_POWER_STATE_CPU_LPS_2 state.
+  <-- App doing busy wait for 10 Sec -->
 
-   Press BUTTON1 to enter into Deep Sleep state. Press BUTTON2 to exit Deep Sleep state.
+  <-- App going to sleep for 30 Sec -->
+  --> Entering to SYS_POWER_STATE_CPU_LPS_1 state.
+  --> Exited from SYS_POWER_STATE_CPU_LPS_1 state.
+
+  <-- Enabling SYS_POWER_STATE_CPU_LPS_2 state --->
+  <-- Disabling SYS_POWER_STATE_CPU_LPS_1 state --->
+
+  <-- App doing busy wait for 10 Sec -->
+
+  <-- App going to sleep for 10 Sec -->
+
+  <-- App doing busy wait for 10 Sec -->
+
+  <-- App going to sleep for 30 Sec -->
+  --> Entering to SYS_POWER_STATE_CPU_LPS_2 state.
+  --> Exited from SYS_POWER_STATE_CPU_LPS_2 state.
+
+  Press BUTTON1 to enter into Deep Sleep state. Press BUTTON2 to exit Deep Sleep state
+  --> Entering to SYS_POWER_STATE_DEEP_SLEEP state.
