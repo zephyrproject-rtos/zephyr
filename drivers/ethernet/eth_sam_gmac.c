@@ -79,6 +79,14 @@ static struct gmac_desc rx_desc_que1[PRIORITY_QUEUE1_RX_DESC_COUNT]
 	__nocache __aligned(GMAC_DESC_ALIGNMENT);
 static struct gmac_desc rx_desc_que2[PRIORITY_QUEUE2_RX_DESC_COUNT]
 	__nocache __aligned(GMAC_DESC_ALIGNMENT);
+#if GMAC_QUEUE_NUM > 3
+static struct gmac_desc rx_desc_que3[PRIORITY_QUEUE3_RX_DESC_COUNT]
+	__nocache __aligned(GMAC_DESC_ALIGNMENT);
+static struct gmac_desc rx_desc_que4[PRIORITY_QUEUE4_RX_DESC_COUNT]
+	__nocache __aligned(GMAC_DESC_ALIGNMENT);
+static struct gmac_desc rx_desc_que5[PRIORITY_QUEUE5_RX_DESC_COUNT]
+	__nocache __aligned(GMAC_DESC_ALIGNMENT);
+#endif
 /* TX descriptors list */
 static struct gmac_desc tx_desc_que0[MAIN_QUEUE_TX_DESC_COUNT]
 	__nocache __aligned(GMAC_DESC_ALIGNMENT);
@@ -86,6 +94,14 @@ static struct gmac_desc tx_desc_que1[PRIORITY_QUEUE1_TX_DESC_COUNT]
 	__nocache __aligned(GMAC_DESC_ALIGNMENT);
 static struct gmac_desc tx_desc_que2[PRIORITY_QUEUE2_TX_DESC_COUNT]
 	__nocache __aligned(GMAC_DESC_ALIGNMENT);
+#if GMAC_QUEUE_NUM > 3
+static struct gmac_desc tx_desc_que3[PRIORITY_QUEUE3_TX_DESC_COUNT]
+	__nocache __aligned(GMAC_DESC_ALIGNMENT);
+static struct gmac_desc tx_desc_que4[PRIORITY_QUEUE4_TX_DESC_COUNT]
+	__nocache __aligned(GMAC_DESC_ALIGNMENT);
+static struct gmac_desc tx_desc_que5[PRIORITY_QUEUE5_TX_DESC_COUNT]
+	__nocache __aligned(GMAC_DESC_ALIGNMENT);
+#endif
 
 /* RX buffer accounting list */
 static struct net_buf *rx_frag_list_que0[MAIN_QUEUE_RX_DESC_COUNT];
@@ -1702,7 +1718,7 @@ static void eth0_iface_init(struct net_if *iface)
 			     NET_LINK_ETHERNET);
 
 	/* Initialize GMAC queues */
-	for (i = 0; i < GMAC_QUEUE_NO; i++) {
+	for (i = 0; i < GMAC_QUEUE_NUM; i++) {
 		result = queue_init(cfg->regs, &dev_data->queue_list[i]);
 		if (result < 0) {
 			LOG_ERR("Unable to initialize ETH queue%d", i);
@@ -2050,6 +2066,38 @@ static struct eth_sam_dev_data eth0_data = {
 			}
 #endif
 #endif
+#endif
+#if GMAC_QUEUE_NUM > 3
+		}, {
+			.que_idx = GMAC_QUE_3,
+			.rx_desc_list = {
+				.buf = rx_desc_que3,
+				.len = ARRAY_SIZE(rx_desc_que3),
+			},
+			.tx_desc_list = {
+				.buf = tx_desc_que3,
+				.len = ARRAY_SIZE(tx_desc_que3),
+			},
+		}, {
+			.que_idx = GMAC_QUE_4,
+			.rx_desc_list = {
+				.buf = rx_desc_que4,
+				.len = ARRAY_SIZE(rx_desc_que4),
+			},
+			.tx_desc_list = {
+				.buf = tx_desc_que4,
+				.len = ARRAY_SIZE(tx_desc_que4),
+			},
+		}, {
+			.que_idx = GMAC_QUE_5,
+			.rx_desc_list = {
+				.buf = rx_desc_que5,
+				.len = ARRAY_SIZE(rx_desc_que5),
+			},
+			.tx_desc_list = {
+				.buf = tx_desc_que5,
+				.len = ARRAY_SIZE(tx_desc_que5),
+			},
 #endif
 		}
 	},
