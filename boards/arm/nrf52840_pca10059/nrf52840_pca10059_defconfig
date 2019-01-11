@@ -14,7 +14,6 @@ CONFIG_UART_INTERRUPT_DRIVEN=y
 
 # enable console
 CONFIG_CONSOLE=y
-CONFIG_RTT_CONSOLE=y
 
 # additional board options
 CONFIG_GPIO_AS_PINRESET=y
