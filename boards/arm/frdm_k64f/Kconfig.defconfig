@@ -75,9 +75,6 @@ if I2C
 config I2C_0
 	default y
 
-config I2C_1
-	default n
-
 endif # I2C
 
 if ADC
@@ -98,12 +95,6 @@ if SPI
 
 config SPI_0
 	default y
-
-config SPI_1
-	default n
-
-config SPI_2
-	default n
 
 endif # SPI
 
