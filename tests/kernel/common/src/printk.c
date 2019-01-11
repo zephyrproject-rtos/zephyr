@@ -18,14 +18,14 @@ int (*_old_char_out)(int);
 char *expected = "22 113 10000 32768 40000 22\n"
 		 "p 112 -10000 -32768 -40000 -22\n"
 		 "0xcafebabe 0x0000beef\n"
-		 "0x1 0x01 0x0001 0x00000001\n"
+		 "0x1 0x01 0x0001 0x00000001 0x0000000000000001\n"
 		 "0x1 0x 1 0x   1 0x       1\n"
 		 "42 42 0042 00000042\n"
 		 "-42 -42 -042 -0000042\n"
 		 "42 42   42       42\n"
 		 "42 42 0042 00000042\n"
 		 "255     42    abcdef  0x0000002a      42\n"
-		 "-1 4294967295 ffffffff\n"
+		 "-1 4294967295 ffffffffffffffff\n"
 ;
 
 
@@ -73,15 +73,13 @@ void test_printk(void)
 {
 	int count;
 
-	printk("%lld %llu %llx",
-	       1LL, -1ULL, -1ULL);
 	_old_char_out = __printk_get_hook();
 	__printk_hook_install(ram_console_out);
 
 	printk("%zu %hhu %hu %u %lu %llu\n", stv, uc, usi, ui, ul, ull);
 	printk("%c %hhd %hd %d %ld %lld\n", c, c, ssi, si, sl, sll);
 	printk("0x%x %p\n", hex, ptr);
-	printk("0x%x 0x%02x 0x%04x 0x%08x\n", 1, 1, 1, 1);
+	printk("0x%x 0x%02x 0x%04x 0x%08x 0x%016x\n", 1, 1, 1, 1, 1);
 	printk("0x%x 0x%2x 0x%4x 0x%8x\n", 1, 1, 1, 1);
 	printk("%d %02d %04d %08d\n", 42, 42, 42, 42);
 	printk("%d %02d %04d %08d\n", -42, -42, -42, -42);
@@ -104,7 +102,7 @@ void test_printk(void)
 	count += snprintk(ram_console + count, sizeof(ram_console) - count,
 			  "0x%x %p\n", hex, ptr);
 	count += snprintk(ram_console + count, sizeof(ram_console) - count,
-			  "0x%x 0x%02x 0x%04x 0x%08x\n", 1, 1, 1, 1);
+			  "0x%x 0x%02x 0x%04x 0x%08x 0x%016x\n", 1, 1, 1, 1, 1);
 	count += snprintk(ram_console + count, sizeof(ram_console) - count,
 			  "0x%x 0x%2x 0x%4x 0x%8x\n", 1, 1, 1, 1);
 	count += snprintk(ram_console + count, sizeof(ram_console) - count,

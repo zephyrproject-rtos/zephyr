@@ -33,7 +33,7 @@ static void _printk_dec_ulong(out_func_t out, void *ctx,
 			      const unsigned long num, enum pad_type padding,
 			      int min_width);
 static void _printk_hex_ulong(out_func_t out, void *ctx,
-			      const unsigned long num, enum pad_type padding,
+			      const unsigned long long num, enum pad_type padding,
 			      int min_width);
 
 /**
@@ -179,13 +179,12 @@ void _vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 				  /* Fall through */
 			case 'x':
 			case 'X': {
-				unsigned long x;
+				unsigned long long x;
 
 				if (long_ctr < 2) {
 					x = va_arg(ap, unsigned long);
 				} else {
-					x = (unsigned long)va_arg(ap,
-							unsigned long long);
+					x = va_arg(ap, unsigned long long);
 				}
 
 				_printk_hex_ulong(out, ctx, x, padding,
@@ -346,21 +345,22 @@ void printk(const char *fmt, ...)
 }
 
 /**
- * @brief Output an unsigned long in hex format
+ * @brief Output an unsigned long long in hex format
  *
- * Output an unsigned long on output installed by platform at init time. Should
- * be able to handle an unsigned long of any size, 32 or 64 bit.
+ * Output an unsigned long long on output installed by platform at init time.
+ * Able to print full 64-bit values.
  * @param num Number to output
  *
  * @return N/A
  */
 static void _printk_hex_ulong(out_func_t out, void *ctx,
-			      const unsigned long num, enum pad_type padding,
+			      const unsigned long long num,
+			      enum pad_type padding,
 			      int min_width)
 {
 	int size = sizeof(num) * 2;
 	int found_largest_digit = 0;
-	int remaining = 8; /* 8 digits max */
+	int remaining = 16; /* 16 digits max */
 	int digits = 0;
 
 	for (; size; size--) {
