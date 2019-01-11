@@ -143,40 +143,33 @@ out:
 
 #if defined(CONFIG_NET_DEBUG_NET_PKT_ALLOC)
 static struct net_pkt *setup_gptp_frame_debug(struct net_if *iface,
+					      size_t extra_header,
 					      const char *caller,
 					      int line)
-#define setup_gptp_frame(iface) \
-	setup_gptp_frame_debug(iface, __func__, __LINE__)
+#define setup_gptp_frame(iface, extra_header)				\
+	setup_gptp_frame_debug(iface, extra_header, __func__, __LINE__)
 #else
-static struct net_pkt *setup_gptp_frame(struct net_if *iface)
+static struct net_pkt *setup_gptp_frame(struct net_if *iface,
+					size_t extra_header)
 #endif
 {
 	struct net_pkt *pkt;
-	struct net_buf *frag;
 
 #if defined(CONFIG_NET_DEBUG_NET_PKT_ALLOC)
+	pkt = net_pkt_alloc_with_buffer_debug(iface, sizeof(struct gptp_hdr) +
+					      extra_header, AF_UNSPEC, 0,
+					      NET_BUF_TIMEOUT, caller, line);
 	pkt = net_pkt_get_reserve_tx_debug(NET_BUF_TIMEOUT, caller, line);
 #else
-	pkt = net_pkt_get_reserve_tx(NET_BUF_TIMEOUT);
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(struct gptp_hdr) +
+					extra_header, AF_UNSPEC, 0,
+					NET_BUF_TIMEOUT);
 #endif
 	if (!pkt) {
 		return NULL;
 	}
 
-#if defined(CONFIG_NET_DEBUG_NET_PKT_ALLOC)
-	frag = net_pkt_get_reserve_tx_data_debug(NET_BUF_TIMEOUT, caller,
-						 line);
-#else
-	frag = net_pkt_get_reserve_tx_data(NET_BUF_TIMEOUT);
-#endif
-	if (!frag) {
-		net_pkt_unref(pkt);
-		return NULL;
-	}
-
-	net_pkt_frag_add(pkt, frag);
-	net_pkt_set_iface(pkt, iface);
-	net_pkt_set_family(pkt, AF_UNSPEC);
+	net_buf_add(pkt->buffer, sizeof(struct gptp_hdr) + extra_header);
 	net_pkt_set_gptp(pkt, true);
 
 	net_pkt_lladdr_src(pkt)->addr = (u8_t *)net_if_get_link_addr(iface);
@@ -184,8 +177,6 @@ static struct net_pkt *setup_gptp_frame(struct net_if *iface)
 
 	net_pkt_lladdr_dst(pkt)->addr = (u8_t *)&gptp_multicast_eth_addr;
 	net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_eth_addr);
-
-	net_buf_add(frag, sizeof(struct gptp_hdr));
 
 	return pkt;
 }
@@ -202,7 +193,7 @@ struct net_pkt *gptp_prepare_sync(int port)
 	iface = GPTP_PORT_IFACE(port);
 	NET_ASSERT(iface);
 
-	pkt = setup_gptp_frame(iface);
+	pkt = setup_gptp_frame(iface, sizeof(struct gptp_sync));
 	if (!pkt) {
 		NET_DBG("Cannot get gPTP frame");
 		return NULL;
@@ -239,8 +230,6 @@ struct net_pkt *gptp_prepare_sync(int port)
 	/* PTP configuration. */
 	(void)memset(&sync->reserved, 0, sizeof(sync->reserved));
 
-	net_buf_add(pkt->frags, sizeof(struct gptp_sync));
-
 	/* Update sequence number. */
 	port_ds->sync_seq_id++;
 
@@ -259,7 +248,7 @@ struct net_pkt *gptp_prepare_follow_up(int port, struct net_pkt *sync)
 	iface = GPTP_PORT_IFACE(port);
 	NET_ASSERT(iface);
 
-	pkt = setup_gptp_frame(iface);
+	pkt = setup_gptp_frame(iface, sizeof(struct gptp_follow_up));
 	if (!pkt) {
 		NET_DBG("Cannot get gPTP frame");
 		return NULL;
@@ -296,8 +285,6 @@ struct net_pkt *gptp_prepare_follow_up(int port, struct net_pkt *sync)
 
 	/* PTP configuration will be set by the MDSyncSend state machine. */
 
-	net_buf_add(pkt->frags, sizeof(struct gptp_follow_up));
-
 	return pkt;
 }
 
@@ -313,7 +300,7 @@ struct net_pkt *gptp_prepare_pdelay_req(int port)
 	iface = GPTP_PORT_IFACE(port);
 	NET_ASSERT(iface);
 
-	pkt = setup_gptp_frame(iface);
+	pkt = setup_gptp_frame(iface, sizeof(struct gptp_pdelay_req));
 	if (!pkt) {
 		NET_DBG("Cannot get gPTP frame");
 		return NULL;
@@ -353,8 +340,6 @@ struct net_pkt *gptp_prepare_pdelay_req(int port)
 	(void)memset(&req->reserved1, 0, sizeof(req->reserved1));
 	(void)memset(&req->reserved2, 0, sizeof(req->reserved2));
 
-	net_buf_add(pkt->frags, sizeof(struct gptp_pdelay_req));
-
 	/* Update sequence number. */
 	port_ds->pdelay_req_seq_id++;
 
@@ -371,7 +356,7 @@ struct net_pkt *gptp_prepare_pdelay_resp(int port,
 	struct gptp_port_ds *port_ds;
 	struct net_pkt *pkt;
 
-	pkt = setup_gptp_frame(iface);
+	pkt = setup_gptp_frame(iface, sizeof(struct gptp_pdelay_resp));
 	if (!pkt) {
 		NET_DBG("Cannot get gPTP frame");
 		return NULL;
@@ -419,8 +404,6 @@ struct net_pkt *gptp_prepare_pdelay_resp(int port,
 	memcpy(&pdelay_resp->requesting_port_id,
 	       &query->port_id, sizeof(struct gptp_port_identity));
 
-	net_buf_add(pkt->frags, sizeof(struct gptp_pdelay_resp));
-
 	return pkt;
 }
 
@@ -434,7 +417,8 @@ struct net_pkt *gptp_prepare_pdelay_follow_up(int port,
 	struct gptp_port_ds *port_ds;
 	struct net_pkt *pkt;
 
-	pkt = setup_gptp_frame(iface);
+	pkt = setup_gptp_frame(iface,
+			       sizeof(struct gptp_pdelay_resp_follow_up));
 	if (!pkt) {
 		NET_DBG("Cannot get gPTP frame");
 		return NULL;
@@ -483,8 +467,6 @@ struct net_pkt *gptp_prepare_pdelay_follow_up(int port,
 	       &pdelay_resp->requesting_port_id,
 	       sizeof(struct gptp_port_identity));
 
-	net_buf_add(pkt->frags, sizeof(struct gptp_pdelay_resp_follow_up));
-
 	return pkt;
 }
 
@@ -504,7 +486,8 @@ struct net_pkt *gptp_prepare_announce(int port)
 	iface = GPTP_PORT_IFACE(port);
 	NET_ASSERT(iface);
 
-	pkt = setup_gptp_frame(iface);
+	pkt = setup_gptp_frame(iface, sizeof(struct gptp_announce) - 8 +
+			       ntohs(global_ds->path_trace.len));
 	if (!pkt) {
 		NET_DBG("Cannot get gPTP frame");
 		return NULL;
@@ -582,16 +565,24 @@ struct net_pkt *gptp_prepare_announce(int port)
 				    sizeof(struct gptp_announce) - 8 +
 				    ntohs(global_ds->path_trace.len));
 
-	net_buf_add(pkt->frags, sizeof(struct gptp_announce) - 8);
-
 	ann->tlv.len = global_ds->path_trace.len;
 
-	if (net_pkt_append(pkt, ntohs(global_ds->path_trace.len),
-			   &global_ds->path_trace.path_sequence[0][0],
-			   NET_BUF_TIMEOUT) <
-	    ntohs(global_ds->path_trace.len)) {
+	net_pkt_cursor_init(pkt);
+
+	/* setup_gptp_frame() already added all the length, so let's not
+	 * add up more with net_pkt_skip/write_new(), let's just overwrite
+	 */
+	net_pkt_set_overwrite(pkt, true);
+
+	if (net_pkt_skip(pkt, sizeof(struct gptp_hdr) +
+			 sizeof(struct gptp_announce) - 8) ||
+	    net_pkt_write_new(pkt,
+			      &global_ds->path_trace.path_sequence[0][0],
+			      ntohs(global_ds->path_trace.len))) {
 		goto fail;
 	}
+
+	net_pkt_set_overwrite(pkt, false);
 
 	return pkt;
 
