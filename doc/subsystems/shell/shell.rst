@@ -365,11 +365,19 @@ The shell module supports the following meta keys:
      - Action
    * - ctrl + a
      - Moves the cursor to the beginning of the line.
+   * - ctrl + b
+     - Moves the cursor backward one character.
    * - ctrl + c
      - Preserves the last command on the screen and starts a new command in
        a new line.
+   * - ctrl + d
+     - Deletes the character under the cursor.
    * - ctrl + e
      - Moves the cursor to the end of the line.
+   * - ctrl + f
+     - Moves the cursor forward one character.
+   * - ctrl + k
+     - Deletes from the cursor to the end of the line.
    * - ctrl + l
      - Clears the screen and leaves the currently typed command at the top of
        the screen.
@@ -378,6 +386,10 @@ The shell module supports the following meta keys:
    * - ctrl + w
      - Removes the word or part of the word to the left of the cursor. Words
        separated by period instead of space are treated as one word.
+   * - alt + b
+     - Moves the cursor backward one word.
+   * - alt + f
+     - Moves the cursor forward one word.
 
 Usage
 *****
