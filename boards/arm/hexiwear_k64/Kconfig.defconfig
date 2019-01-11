@@ -22,23 +22,13 @@ config MCG_VDIV0
 config MCG_FCRDIV
 	default 1
 
-if UART_MCUX
-
-config UART_MCUX_0
-	default y if UART_CONSOLE
-
-config UART_MCUX_4
-	default y if BT_UART
-
-endif # UART_MCUX
-
 if PINMUX_MCUX
 
 config PINMUX_MCUX_PORTA
 	default y if MAX30101
 
 config PINMUX_MCUX_PORTB
-	default y if UART_MCUX_0
+	default y if "$(dt_dev_exist_by_path,/soc/uart@4006a000)"
 
 config PINMUX_MCUX_PORTC
 	default y
@@ -47,7 +37,7 @@ config PINMUX_MCUX_PORTD
 	default y
 
 config PINMUX_MCUX_PORTE
-	default y if UART_MCUX_4
+	default y if "$(dt_dev_exist_by_path,/soc/uart@400ea000)"
 
 endif # PINMUX_MCUX
 

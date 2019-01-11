@@ -33,13 +33,13 @@ static int frdm_k64f_pinmux_init(struct device *dev)
 		device_get_binding(CONFIG_PINMUX_MCUX_PORTE_NAME);
 #endif
 
-#ifdef CONFIG_UART_MCUX_0
+#ifdef DT_NXP_KINETIS_UART_4006A000
 	/* UART0 RX, TX */
 	pinmux_pin_set(portb, 16, PORT_PCR_MUX(kPORT_MuxAlt3));
 	pinmux_pin_set(portb, 17, PORT_PCR_MUX(kPORT_MuxAlt3));
 #endif
 
-#ifdef CONFIG_UART_MCUX_2
+#ifdef DT_NXP_KINETIS_UART_4006C000
 	/* UART2 RX, TX */
 	pinmux_pin_set(portd, 0, PORT_PCR_MUX(kPORT_MuxAlt3));
 	pinmux_pin_set(portd, 1, PORT_PCR_MUX(kPORT_MuxAlt3));
@@ -47,7 +47,7 @@ static int frdm_k64f_pinmux_init(struct device *dev)
 	pinmux_pin_set(portd, 3, PORT_PCR_MUX(kPORT_MuxAlt3));
 #endif
 
-#ifdef CONFIG_UART_MCUX_3
+#ifdef DT_NXP_KINETIS_UART_4006D000
 	/* UART3 RX, TX */
 	pinmux_pin_set(portc, 16, PORT_PCR_MUX(kPORT_MuxAlt3));
 	pinmux_pin_set(portc, 17, PORT_PCR_MUX(kPORT_MuxAlt3));
