@@ -8,11 +8,6 @@
 #include <arch/xtensa/arch.h>
 #include <xtensa_api.h>
 
-#ifndef CONFIG_BOARD_QEMU_XTENSA
-/* qemu_xtensa has no soc definitions */
-#include <soc.h>
-#endif
-
 /*
  * Xtensa core should support software interrupt in order to allow using
  * irq_offload feature
