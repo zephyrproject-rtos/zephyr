@@ -3,7 +3,7 @@ sample:
   name: socket_dumb_http_server
 tests:
   test:
-    platform_exclude: esp32
+    platform_exclude: esp32 qemu_x86_64 # No newlib
     harness: net
     min_ram: 32
     tags: net

@@ -6,4 +6,5 @@ tests:
   libraries.libc.newlib:
     extra_args: CONF_FILE=prj_newlib.conf
     arch_exclude: posix
+    platform_exclude: qemu_x86_64 # No newlib
     tags: clib newlib
