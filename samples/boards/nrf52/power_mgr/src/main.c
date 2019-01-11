@@ -51,21 +51,40 @@ void main(void)
 	/*
 	 * Start the demo.
 	 */
-	for (int i = 1; i <= 4; i++) {
+	for (int i = 1; i <= 6; i++) {
+		unsigned int sleep_seconds;
+
+		switch (i) {
+		case 3:
+			printk("\n<-- Disabling %s state --->\n",
+					STRINGIFY(SYS_POWER_STATE_CPU_LPS_2));
+			sys_pm_ctrl_disable_state(SYS_POWER_STATE_CPU_LPS_2);
+			break;
+
+		case 5:
+			printk("\n<-- Enabling %s state --->\n",
+				       STRINGIFY(SYS_POWER_STATE_CPU_LPS_2));
+			sys_pm_ctrl_enable_state(SYS_POWER_STATE_CPU_LPS_2);
+
+			printk("<-- Disabling %s state --->\n",
+					STRINGIFY(SYS_POWER_STATE_CPU_LPS_1));
+			sys_pm_ctrl_disable_state(SYS_POWER_STATE_CPU_LPS_1);
+			break;
+
+		default:
+			/* Do nothing. */
+			break;
+		}
+
 		printk("\n<-- App doing busy wait for 10 Sec -->\n");
 		k_busy_wait(BUSY_WAIT_DELAY_US);
 
-		/* Create Idleness to make Idle thread run */
-		if ((i % 2) == 0) {
-			printk("\n<-- App going to sleep for %u Sec -->\n",
-							LPS2_STATE_ENTER_TO);
-			k_sleep(K_SECONDS(LPS2_STATE_ENTER_TO));
-		} else {
-			printk("\n<-- App going to sleep for %u Sec -->\n",
-							LPS1_STATE_ENTER_TO);
-			k_sleep(K_SECONDS(LPS1_STATE_ENTER_TO));
-		}
+		sleep_seconds = (i % 2 != 0) ? LPS1_STATE_ENTER_TO :
+					       LPS2_STATE_ENTER_TO;
 
+		printk("\n<-- App going to sleep for %u Sec -->\n",
+							sleep_seconds);
+		k_sleep(K_SECONDS(sleep_seconds));
 	}
 
 	printk("\nPress BUTTON1 to enter into Deep Sleep state. "
