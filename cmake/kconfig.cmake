@@ -27,6 +27,7 @@ set(ENV{PYTHON_EXECUTABLE} ${PYTHON_EXECUTABLE})
 # Set environment variables so that Kconfig can prune Kconfig source
 # files for other architectures
 set(ENV{ARCH}      ${ARCH})
+set(ENV{BOARD}     ${BOARD})
 set(ENV{BOARD_DIR} ${BOARD_DIR})
 set(ENV{SOC_DIR}   ${SOC_DIR})
 set(ENV{PROJECT_BINARY_DIR} ${PROJECT_BINARY_DIR})
@@ -39,6 +40,7 @@ add_custom_target(
   KERNELVERSION=${KERNELVERSION}
   KCONFIG_CONFIG=${DOTCONFIG}
   ARCH=$ENV{ARCH}
+  BOARD=$ENV{BOARD}
   BOARD_DIR=$ENV{BOARD_DIR}
   SOC_DIR=$ENV{SOC_DIR}
   PROJECT_BINARY_DIR=$ENV{PROJECT_BINARY_DIR}
