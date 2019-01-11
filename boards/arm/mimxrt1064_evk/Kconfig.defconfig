@@ -10,6 +10,13 @@ if BOARD_MIMXRT1064_EVK
 config BOARD
 	default "mimxrt1064_evk"
 
+if CODE_INTERNAL_QSPI
+
+config NXP_IMX_RT_BOOT_HEADER
+	def_bool y
+
+endif
+
 if GPIO_MCUX_IGPIO
 
 config GPIO_MCUX_IGPIO_1
