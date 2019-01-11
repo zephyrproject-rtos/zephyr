@@ -261,6 +261,11 @@ static inline void freeaddrinfo(struct zsock_addrinfo *ai)
 
 #define addrinfo zsock_addrinfo
 
+static inline int inet_pton(sa_family_t family, const char *src, void *dst)
+{
+	return zsock_inet_pton(family, src, dst);
+}
+
 #else
 
 struct addrinfo {
@@ -275,6 +280,21 @@ struct addrinfo {
 };
 
 #include <net/socket_offload.h>
+
+static inline int inet_pton(sa_family_t family, const char *src, void *dst)
+{
+	if ((family != AF_INET) && (family != AF_INET6)) {
+		errno = EAFNOSUPPORT;
+		return -1;
+	}
+
+	if (net_addr_pton(family, src, dst) == 0) {
+		return 1;
+	} else {
+		return 0;
+	}
+}
+
 #endif /* !defined(CONFIG_NET_SOCKETS_OFFLOAD) */
 
 #define POLLIN ZSOCK_POLLIN
@@ -290,11 +310,6 @@ static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 			      size_t size)
 {
 	return net_addr_ntop(family, src, dst, size);
-}
-
-static inline int inet_pton(sa_family_t family, const char *src, void *dst)
-{
-	return zsock_inet_pton(family, src, dst);
 }
 
 #define EAI_BADFLAGS DNS_EAI_BADFLAGS
