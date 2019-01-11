@@ -45,14 +45,13 @@ struct ticker_node {
 	u32_t remainder_current;
 };
 
-enum ticker_user_op_type {
-	TICKER_USER_OP_TYPE_NONE,
-	TICKER_USER_OP_TYPE_IDLE_GET,
-	TICKER_USER_OP_TYPE_SLOT_GET,
-	TICKER_USER_OP_TYPE_START,
-	TICKER_USER_OP_TYPE_UPDATE,
-	TICKER_USER_OP_TYPE_STOP,
-};
+/* possible values for field "op" in struct ticker_user_op */
+#define TICKER_USER_OP_TYPE_NONE     0
+#define TICKER_USER_OP_TYPE_IDLE_GET 1
+#define TICKER_USER_OP_TYPE_SLOT_GET 2
+#define TICKER_USER_OP_TYPE_START    3
+#define TICKER_USER_OP_TYPE_UPDATE   4
+#define TICKER_USER_OP_TYPE_STOP     5
 
 struct ticker_user_op_start {
 	u32_t ticks_at_start;
@@ -81,7 +80,7 @@ struct ticker_user_op_slot_get {
 };
 
 struct ticker_user_op {
-	enum ticker_user_op_type op;
+	u8_t op;
 	u8_t id;
 	union {
 		struct ticker_user_op_start start;
@@ -1163,6 +1162,10 @@ void ticker_job(void *param)
 /*****************************************************************************
  * Public Interface
  ****************************************************************************/
+BUILD_ASSERT(sizeof(struct ticker_node) == TICKER_NODE_T_SIZE);
+BUILD_ASSERT(sizeof(struct ticker_user) == TICKER_USER_T_SIZE);
+BUILD_ASSERT(sizeof(struct ticker_user_op) == TICKER_USER_OP_T_SIZE);
+
 u32_t ticker_init(u8_t instance_index, u8_t count_node, void *node,
 		  u8_t count_user, void *user, u8_t count_op, void *user_op,
 		  ticker_caller_id_get_cb_t caller_id_get_cb,
@@ -1173,10 +1176,7 @@ u32_t ticker_init(u8_t instance_index, u8_t count_node, void *node,
 	struct ticker_user_op *user_op_ = (void *)user_op;
 	struct ticker_user *users;
 
-	if ((sizeof(struct ticker_node) != TICKER_NODE_T_SIZE) ||
-	    (sizeof(struct ticker_user) != TICKER_USER_T_SIZE) ||
-	    (sizeof(struct ticker_user_op) != TICKER_USER_OP_T_SIZE) ||
-	    (instance_index >= TICKER_INSTANCE_MAX)) {
+	if (instance_index >= TICKER_INSTANCE_MAX) {
 		return TICKER_STATUS_FAILURE;
 	}
 
