@@ -386,7 +386,7 @@ bool log_process(bool bypass)
 {
 	struct log_msg *msg;
 
-	if (!backend_attached) {
+	if (!backend_attached && !bypass) {
 		return false;
 	}
 	unsigned int key = irq_lock();
