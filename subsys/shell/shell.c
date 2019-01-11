@@ -768,7 +768,20 @@ static void tab_handle(const struct shell *shell)
 	}
 }
 
-static void metakeys_handle(const struct shell *shell, char data)
+static void alt_metakeys_handle(const struct shell *shell, char data)
+{
+	/* Optional feature */
+	if (!IS_ENABLED(CONFIG_SHELL_METAKEYS)) {
+		return;
+	}
+	if (data == SHELL_VT100_ASCII_ALT_B) {
+		shell_op_cursor_word_move(shell, -1);
+	} else if (data == SHELL_VT100_ASCII_ALT_F) {
+		shell_op_cursor_word_move(shell, 1);
+	}
+}
+
+static void ctrl_metakeys_handle(const struct shell *shell, char data)
 {
 	/* Optional feature */
 	if (!IS_ENABLED(CONFIG_SHELL_METAKEYS)) {
@@ -780,6 +793,10 @@ static void metakeys_handle(const struct shell *shell, char data)
 		shell_op_cursor_home_move(shell);
 		break;
 
+	case SHELL_VT100_ASCII_CTRL_B: /* CTRL + B */
+		shell_op_left_arrow(shell);
+		break;
+
 	case SHELL_VT100_ASCII_CTRL_C: /* CTRL + C */
 		shell_op_cursor_end_move(shell);
 		if (!shell_cursor_in_empty_line(shell)) {
@@ -789,8 +806,20 @@ static void metakeys_handle(const struct shell *shell, char data)
 		state_set(shell, SHELL_STATE_ACTIVE);
 		break;
 
+	case SHELL_VT100_ASCII_CTRL_D: /* CTRL + D */
+		shell_op_char_delete(shell);
+		break;
+
 	case SHELL_VT100_ASCII_CTRL_E: /* CTRL + E */
 		shell_op_cursor_end_move(shell);
+		break;
+
+	case SHELL_VT100_ASCII_CTRL_F: /* CTRL + F */
+		shell_op_right_arrow(shell);
+		break;
+
+	case SHELL_VT100_ASCII_CTRL_K: /* CTRL + K */
+		shell_op_delete_from_cursor(shell);
 		break;
 
 	case SHELL_VT100_ASCII_CTRL_L: /* CTRL + L */
@@ -921,7 +950,7 @@ static void state_collect(const struct shell *shell)
 					flag_history_exit_set(shell, true);
 					shell_op_char_insert(shell, data);
 				} else {
-					metakeys_handle(shell, data);
+					ctrl_metakeys_handle(shell, data);
 				}
 				break;
 			}
@@ -932,6 +961,7 @@ static void state_collect(const struct shell *shell)
 				receive_state_change(shell,
 						SHELL_RECEIVE_ESC_SEQ);
 			} else {
+				alt_metakeys_handle(shell, data);
 				receive_state_change(shell,
 						SHELL_RECEIVE_DEFAULT);
 			}

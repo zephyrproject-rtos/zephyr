@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <ctype.h>
 #include "shell_ops.h"
 
 void shell_op_cursor_vert_move(const struct shell *shell, s32_t delta)
@@ -95,6 +96,51 @@ void shell_op_cursor_move(const struct shell *shell, s16_t val)
 	shell_op_cursor_vert_move(shell, -row_span);
 	shell_op_cursor_horiz_move(shell, col_span);
 	shell->ctx->cmd_buff_pos = new_pos;
+}
+
+static u16_t shift_calc(const char *str, u16_t pos, u16_t len, s16_t sign)
+{
+	bool found = false;
+	u16_t ret = 0;
+	u16_t idx;
+
+	while (1) {
+		idx = pos + ret * sign;
+		if (((idx == 0) && (sign < 0)) ||
+		    ((idx == len) && (sign > 0))) {
+			break;
+		}
+		if (isalnum((int)str[idx]) != 0) {
+			found = true;
+		} else {
+			if (found) {
+				break;
+			}
+		}
+		ret++;
+	}
+
+	return ret;
+}
+
+void shell_op_cursor_word_move(const struct shell *shell, s16_t val)
+{
+	s16_t shift;
+	s16_t sign;
+
+	if (val < 0) {
+		val = -val;
+		sign = -1;
+	} else {
+		sign = 1;
+	}
+
+	while (val--) {
+		shift = shift_calc(shell->ctx->cmd_buff,
+				   shell->ctx->cmd_buff_pos,
+				   shell->ctx->cmd_buff_len, sign);
+		shell_op_cursor_move(shell, sign * shift);
+	}
 }
 
 void shell_op_word_remove(const struct shell *shell)
@@ -254,6 +300,14 @@ void shell_op_char_delete(const struct shell *shell)
 	memmove(str, str + 1, diff);
 	--shell->ctx->cmd_buff_len;
 	reprint_from_cursor(shell, --diff, true);
+}
+
+void shell_op_delete_from_cursor(const struct shell *shell)
+{
+	shell->ctx->cmd_buff_len = shell->ctx->cmd_buff_pos;
+	shell->ctx->cmd_buff[shell->ctx->cmd_buff_pos] = '\0';
+
+	clear_eos(shell);
 }
 
 void shell_op_completion_insert(const struct shell *shell,
