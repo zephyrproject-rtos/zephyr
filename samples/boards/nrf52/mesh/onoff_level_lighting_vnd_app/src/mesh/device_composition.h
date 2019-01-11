@@ -35,6 +35,8 @@ struct generic_onoff_state {
 	u16_t last_dst_addr;
 	s64_t last_msg_timestamp;
 
+	s32_t tt_delta;
+
 	struct transition *transition;
 };
 
