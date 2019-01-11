@@ -853,41 +853,62 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 	}
 #endif
 
-	if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
-		if (evt->status) {
-			/*
-			 * if there was an error we are only interested in pending
-			 * connection so there is no need to check ID address as
-			 * only one connection can be in that state
-			 *
-			 * Depending on error code address might not be valid anyway.
-			 */
-			conn = find_pending_connect(NULL);
-			if (!conn) {
-				return;
-			}
-
-			conn->err = evt->status;
-
+	if (evt->status) {
 		/*
-		 * Handle advertising timeout after high duty directed
-		 * advertising.
+		 * If there was an error we are only interested in pending
+		 * connection. There is no need to check ID address as
+		 * only one connection can be in that state.
+		 *
+		 * Depending on error code address might not be valid anyway.
 		 */
-		if (conn->err == BT_HCI_ERR_ADV_TIMEOUT) {
-			atomic_clear_bit(bt_dev.flags, BT_DEV_ADVERTISING);
+		conn = find_pending_connect(NULL);
+		if (!conn) {
+			return;
 		}
 
-			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+		conn->err = evt->status;
 
-			/* check if device is market for auto connect */
-			if (atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT)) {
-				bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
+		if (IS_ENABLED(CONFIG_BT_PERIPHERAL)) {
+			/*
+			 * Handle advertising timeout after high duty directed
+			 * advertising.
+			 */
+			if (conn->err == BT_HCI_ERR_ADV_TIMEOUT) {
+				atomic_clear_bit(bt_dev.flags,
+						 BT_DEV_ADVERTISING);
+				bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+
+				goto done;
 			}
-
-			goto done;
 		}
-	} else {
-		BT_ASSERT(evt->status == 0);
+
+		if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
+			/*
+			 * Handle cancellation of outgoing connection attempt.
+			 */
+			if (conn->err == BT_HCI_ERR_UNKNOWN_CONN_ID) {
+				/* We notify before checking autoconnect flag
+				 * as application may choose to change it from
+				 * callback.
+				 */
+				bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+
+				/* Check if device is marked for autoconnect. */
+				if (atomic_test_bit(conn->flags,
+						    BT_CONN_AUTO_CONNECT)) {
+					bt_conn_set_state(conn,
+							  BT_CONN_CONNECT_SCAN);
+				}
+
+				goto done;
+			}
+		}
+
+		BT_WARN("Unexpected status 0x%02x", evt->status);
+
+		bt_conn_unref(conn);
+
+		return;
 	}
 
 	bt_addr_le_copy(&id_addr, &evt->peer_addr);
