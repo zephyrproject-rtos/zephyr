@@ -235,9 +235,9 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 					  struct net_pkt *pending,
 					  struct in_addr *current_ip)
 {
-	struct net_pkt *pkt;
 	struct net_arp_hdr *hdr;
 	struct in_addr *my_addr;
+	struct net_pkt *pkt;
 
 	if (current_ip) {
 		/* This is the IPv4 autoconf case where we have already
@@ -245,27 +245,17 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 		 */
 		pkt = pending;
 	} else {
-		struct net_buf *frag;
-
-		pkt = net_pkt_get_reserve_tx(NET_BUF_TIMEOUT);
+		pkt = net_pkt_alloc_with_buffer(iface,
+						sizeof(struct net_arp_hdr),
+						AF_UNSPEC, 0, NET_BUF_TIMEOUT);
 		if (!pkt) {
 			return NULL;
 		}
-
-		frag = net_pkt_get_frag(pkt, NET_BUF_TIMEOUT);
-		if (!frag) {
-			net_pkt_unref(pkt);
-			return NULL;
-		}
-
-		net_pkt_frag_add(pkt, frag);
-		net_pkt_set_iface(pkt, iface);
-		net_pkt_set_family(pkt, AF_UNSPEC);
 	}
 
 	net_pkt_set_vlan_tag(pkt, net_eth_get_vlan_tag(iface));
 
-	net_buf_add(pkt->frags, sizeof(struct net_arp_hdr));
+	net_buf_add(pkt->buffer, sizeof(struct net_arp_hdr));
 
 	hdr = NET_ARP_HDR(pkt);
 
@@ -329,7 +319,7 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 	struct arp_entry *entry;
 	struct in_addr *addr;
 
-	if (!pkt || !pkt->frags) {
+	if (!pkt || !pkt->buffer) {
 		return NULL;
 	}
 
@@ -468,24 +458,16 @@ static inline struct net_pkt *arp_prepare_reply(struct net_if *iface,
 						struct net_pkt *req,
 						struct net_eth_hdr *eth_query)
 {
-	struct net_pkt *pkt;
-	struct net_buf *frag;
 	struct net_arp_hdr *hdr, *query;
+	struct net_pkt *pkt;
 
-	pkt = net_pkt_get_reserve_tx(NET_BUF_TIMEOUT);
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(struct net_arp_hdr),
+					AF_UNSPEC, 0, NET_BUF_TIMEOUT);
 	if (!pkt) {
-		goto fail;
+		return NULL;
 	}
 
-	net_pkt_set_iface(pkt, iface);
-	net_pkt_set_family(pkt, AF_UNSPEC);
-
-	frag = net_pkt_get_frag(pkt, NET_BUF_TIMEOUT);
-	if (!frag) {
-		goto fail;
-	}
-
-	net_pkt_frag_add(pkt, frag);
+	net_buf_add(pkt->buffer, sizeof(struct net_arp_hdr));
 
 	hdr = NET_ARP_HDR(pkt);
 	query = NET_ARP_HDR(req);
@@ -512,13 +494,7 @@ static inline struct net_pkt *arp_prepare_reply(struct net_if *iface,
 	net_pkt_lladdr_dst(pkt)->addr = (u8_t *)&hdr->dst_hwaddr.addr;
 	net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_eth_addr);
 
-	net_buf_add(frag, sizeof(struct net_arp_hdr));
-
 	return pkt;
-
-fail:
-	net_pkt_unref(pkt);
-	return NULL;
 }
 
 static bool arp_hdr_check(struct net_arp_hdr *arp_hdr)
