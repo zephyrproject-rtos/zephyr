@@ -13,8 +13,8 @@
 		#size-cells = <1>;
 
 		/* MCUboot placed after Nordic MBR.
-		 * The size of this partition ensures MCUBoot can be built
-		 * with an RTT console, CDC ACM support, and w/o optimizations.
+		 * The size of this partition ensures that MCUBoot
+		 * can be built with CDC ACM support and w/o optimizations.
 		 */
 		boot_partition: partition@1000 {
 			label = "mcuboot";
