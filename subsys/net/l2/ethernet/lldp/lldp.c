@@ -88,7 +88,6 @@ static int lldp_send(struct ethernet_lldp *lldp)
 		{ 0x01, 0x80, 0xc2, 0x00, 0x00, 0x0e }
 	};
 	int ret = 0;
-	struct net_eth_hdr *hdr;
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	u16_t pos;
@@ -128,9 +127,6 @@ static int lldp_send(struct ethernet_lldp *lldp)
 	net_pkt_lladdr_src(pkt)->len = sizeof(struct net_eth_addr);
 	net_pkt_lladdr_dst(pkt)->addr = (u8_t *)lldp_multicast_eth_addr.addr;
 	net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_eth_addr);
-
-	hdr = NET_ETH_HDR(pkt);
-	hdr->type = htons(NET_ETH_PTYPE_LLDP);
 
 	net_pkt_set_iface(pkt, lldp->iface);
 
