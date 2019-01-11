@@ -19,3 +19,14 @@ add_custom_target(run
   WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
   USES_TERMINAL
   )
+
+add_custom_target(debugserver
+  COMMAND
+  ${NSIM}
+  -propsfile
+  ${BOARD_DIR}/support/${NSIM_PROPS}
+  -gdb -port=3333
+  DEPENDS ${logical_target_for_zephyr_elf}
+  WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
+  USES_TERMINAL
+  )
