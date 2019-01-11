@@ -1215,7 +1215,6 @@ static void light_lightness_set_unack(struct bt_mesh_model *model,
 	    state->last_dst_addr == ctx->recv_dst &&
 	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
 		goto ret;
-		return;
 	}
 
 	switch (buf->len) {
@@ -1286,7 +1285,6 @@ static void light_lightness_set(struct bt_mesh_model *model,
 	    state->last_dst_addr == ctx->recv_dst &&
 	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
 		goto ret;
-		return;
 	}
 
 	switch (buf->len) {
@@ -1407,7 +1405,6 @@ static void light_lightness_linear_set_unack(struct bt_mesh_model *model,
 	    state->last_dst_addr == ctx->recv_dst &&
 	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
 		goto ret;
-		return;
 	}
 
 	switch (buf->len) {
@@ -1471,7 +1468,6 @@ static void light_lightness_linear_set(struct bt_mesh_model *model,
 	    state->last_dst_addr == ctx->recv_dst &&
 	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
 		goto ret;
-		return;
 	}
 
 	switch (buf->len) {
@@ -1832,7 +1828,6 @@ static void light_ctl_set_unack(struct bt_mesh_model *model,
 	    state->last_dst_addr == ctx->recv_dst &&
 	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
 		goto ret;
-		return;
 	}
 
 	switch (buf->len) {
@@ -1916,7 +1911,6 @@ static void light_ctl_set(struct bt_mesh_model *model,
 	    state->last_dst_addr == ctx->recv_dst &&
 	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
 		goto ret;
-		return;
 	}
 
 	switch (buf->len) {
@@ -2300,7 +2294,6 @@ static void light_ctl_temp_set_unack(struct bt_mesh_model *model,
 	    state->last_dst_addr == ctx->recv_dst &&
 	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
 		goto ret;
-		return;
 	}
 
 	switch (buf->len) {
@@ -2380,7 +2373,6 @@ static void light_ctl_temp_set(struct bt_mesh_model *model,
 	    state->last_dst_addr == ctx->recv_dst &&
 	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
 		goto ret;
-		return;
 	}
 
 	switch (buf->len) {
