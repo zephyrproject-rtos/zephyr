@@ -149,10 +149,21 @@ struct net_pkt {
 				 * Used only if defined(CONFIG_NET_ROUTE)
 				 */
 	u8_t family     : 3;	/* IPv4 vs IPv6 */
-	u8_t ipv4_auto_arp_msg : 1; /* Is this pkt IPv4 autoconf ARP message.
-				     * Used only if
-				     * defined(CONFIG_NET_IPV4_AUTO)
-				     */
+
+	union {
+		u8_t ipv4_auto_arp_msg : 1; /* Is this pkt IPv4 autoconf ARP
+					     * message. Used only if
+					     * defined(CONFIG_NET_IPV4_AUTO).
+					     * Note: family needs to be
+					     * AF_INET.
+					     */
+		u8_t lldp_pkt          : 1; /* Is this pkt an LLDP message.
+					     * Used only if
+					     * defined(CONFIG_NET_LLDP).
+					     * Note: family needs to be
+					     * AF_UNSPEC.
+					     */
+	};
 
 	union {
 		/* IPv6 hop limit or IPv4 ttl for this network packet.
@@ -829,6 +840,31 @@ static inline void net_pkt_set_ipv4_auto(struct net_pkt *pkt,
 	ARG_UNUSED(is_auto_arp_msg);
 }
 #endif /* CONFIG_NET_IPV4_AUTO */
+
+#if defined(CONFIG_NET_LLDP)
+static inline bool net_pkt_is_lldp(struct net_pkt *pkt)
+{
+	return pkt->lldp_pkt;
+}
+
+static inline void net_pkt_set_lldp(struct net_pkt *pkt, bool is_lldp)
+{
+	pkt->lldp_pkt = is_lldp;
+}
+#else
+static inline bool net_pkt_is_lldp(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return false;
+}
+
+static inline void net_pkt_set_lldp(struct net_pkt *pkt, bool is_lldp)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(is_lldp);
+}
+#endif /* CONFIG_NET_LLDP */
 
 #define NET_IPV6_HDR(pkt) ((struct net_ipv6_hdr *)net_pkt_ip_data(pkt))
 #define NET_IPV4_HDR(pkt) ((struct net_ipv4_hdr *)net_pkt_ip_data(pkt))
