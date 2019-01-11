@@ -131,10 +131,8 @@ void onoff_tt_values(struct generic_onoff_state *state, u8_t tt, u8_t delay)
 	state->transition->quo_tt = state->transition->total_duration /
 					state->transition->counter;
 
-	light_lightness_srv_user_data.tt_delta_actual =
-		((float) (light_lightness_srv_user_data.actual -
-			  light_lightness_srv_user_data.target_actual) /
-		 state->transition->counter);
+	state->tt_delta = ((float) (lightness - target_lightness) /
+			   state->transition->counter);
 }
 
 void level_tt_values(struct generic_level_state *state, u8_t tt, u8_t delay)
@@ -287,19 +285,17 @@ static void onoff_work_handler(struct k_work *work)
 	if (state->transition->counter != 0) {
 		state->transition->counter--;
 
-		light_lightness_srv_user_data.actual -=
-			light_lightness_srv_user_data.tt_delta_actual;
+		lightness -= state->tt_delta;
 
-		state_binding(ACTUAL, IGNORE_TEMP);
+		state_binding(IGNORE, IGNORE_TEMP);
 		update_light_state();
 	}
 
 	if (state->transition->counter == 0) {
 		state->onoff = state->target_onoff;
-		light_lightness_srv_user_data.actual =
-			light_lightness_srv_user_data.target_actual;
+		lightness = target_lightness;
 
-		state_binding(ACTUAL, IGNORE_TEMP);
+		state_binding(IGNORE, IGNORE_TEMP);
 		update_light_state();
 
 		k_timer_stop(ptr_timer);

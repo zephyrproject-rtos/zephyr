@@ -220,13 +220,12 @@ void update_light_state(void)
 {
 	u8_t power, color;
 
-	power = 100 * ((float) light_lightness_srv_user_data.actual / 65535);
-	color = 100 * ((float) (gen_level_srv_s0_user_data.level + 32768)
-		       / 65535);
+	power = 100 * ((float) lightness / 65535);
+	color = 100 * ((float) (temperature + 32768) / 65535);
 
 	printk("power-> %d, color-> %d\n", power, color);
 
-	if (gen_onoff_srv_root_user_data.onoff == STATE_ON) {
+	if (lightness) {
 		/* LED1 On */
 		gpio_pin_write(led_device[0], LED0_GPIO_PIN, 0);
 	} else {
