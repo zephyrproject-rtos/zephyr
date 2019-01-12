@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Intel Corporation
+ * Copyright (c) 2019 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -184,10 +184,8 @@ u32_t soc_get_ref_clk_freq(void)
 	return ref_clk_freq;
 }
 
-static void soc_set_power_and_clock(void)
+static inline void soc_set_dmic_power(void)
 {
-	volatile struct soc_dsp_shim_regs *dsp_shim_regs =
-		(volatile struct soc_dsp_shim_regs *)SOC_DSP_SHIM_REG_BASE;
 #if (CONFIG_AUDIO_INTEL_DMIC)
 	volatile struct soc_dmic_shim_regs *dmic_shim_regs =
 		(volatile struct soc_dmic_shim_regs *)SOC_DMIC_SHIM_REG_BASE;
@@ -199,18 +197,46 @@ static void soc_set_power_and_clock(void)
 		/* wait for power status */
 	}
 #endif
+}
+
+static inline void soc_set_gna_power(void)
+{
+#if (CONFIG_INTEL_GNA)
+	volatile struct soc_global_regs *regs =
+		(volatile struct soc_global_regs *)SOC_S1000_GLB_CTRL_BASE;
+
+	/* power on GNA block */
+	regs->gna_power_control |= SOC_GNA_POWER_CONTROL_SPA;
+	while ((regs->gna_power_control & SOC_GNA_POWER_CONTROL_CPA) == 0) {
+		/* wait for power status */
+	}
+
+	/* enable clock for GNA block */
+	regs->gna_power_control |= SOC_GNA_POWER_CONTROL_CLK_EN;
+#endif
+}
+
+static inline void soc_set_power_and_clock(void)
+{
+	volatile struct soc_dsp_shim_regs *dsp_shim_regs =
+		(volatile struct soc_dsp_shim_regs *)SOC_DSP_SHIM_REG_BASE;
 
 	dsp_shim_regs->clkctl |= SOC_CLKCTL_REQ_FAST_CLK |
 		SOC_CLKCTL_OCS_FAST_CLK;
 	dsp_shim_regs->pwrctl |= SOC_PWRCTL_DISABLE_PWR_GATING_DSP1 |
 		SOC_PWRCTL_DISABLE_PWR_GATING_DSP0;
+
+	soc_set_dmic_power();
+	soc_set_gna_power();
 }
 
-static void soc_read_bootstraps(void)
+static inline void soc_read_bootstraps(void)
 {
+	volatile struct soc_global_regs *regs =
+		(volatile struct soc_global_regs *)SOC_S1000_GLB_CTRL_BASE;
 	u32_t bootstrap;
 
-	bootstrap = *((volatile u32_t *)SOC_S1000_GLB_CTRL_STRAPS);
+	bootstrap = regs->straps;
 
 	bootstrap &= SOC_S1000_STRAP_REF_CLK;
 
