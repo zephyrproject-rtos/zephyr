@@ -8,14 +8,14 @@ title: Virtual I2C slave eeprom
 version: 0.1
 
 description: >
-    This binding gives a base representation of I2C slave eeprom
+    This binding gives a base representation of a generic I2C slave EEPROM
 
 inherits:
     !include i2c-device.yaml
 
 properties:
     compatible:
-      constraint: "i2c,eeprom"
+      constraint: "atmel,at24"
     size:
       type: int
       category: required
