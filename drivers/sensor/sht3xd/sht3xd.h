@@ -11,8 +11,6 @@
 #include <kernel.h>
 #include <gpio.h>
 
-#define SHT3XD_I2C_ADDRESS              DT_SHT3XD_I2C_ADDR
-
 #define SHT3XD_CMD_FETCH                0xE000
 #define SHT3XD_CMD_ART                  0x2B32
 #define SHT3XD_CMD_READ_STATUS          0xF32D
@@ -45,14 +43,28 @@
 
 #define SHT3XD_CLEAR_STATUS_WAIT_USEC   1000
 
+struct sht3xd_config {
+	char *bus_name;
+#ifdef CONFIG_SHT3XD_TRIGGER
+	char *alert_gpio_name;
+#endif /* CONFIG_SHT3XD_TRIGGER */
+
+	u8_t base_address;
+#ifdef CONFIG_SHT3XD_TRIGGER
+	s8_t alert_pin;
+#endif /* CONFIG_SHT3XD_TRIGGER */
+};
+
 struct sht3xd_data {
-	struct device *i2c;
+	struct device *dev;
+	struct device *bus;
+
 	u16_t t_sample;
 	u16_t rh_sample;
 
 #ifdef CONFIG_SHT3XD_TRIGGER
-	struct device *gpio;
-	struct gpio_callback gpio_cb;
+	struct device *alert_gpio;
+	struct gpio_callback alert_cb;
 
 	u16_t t_low;
 	u16_t t_high;
@@ -68,17 +80,29 @@ struct sht3xd_data {
 	struct k_thread thread;
 #elif defined(CONFIG_SHT3XD_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	struct device *dev;
 #endif
 
 #endif /* CONFIG_SHT3XD_TRIGGER */
 };
 
-#ifdef CONFIG_SHT3XD_TRIGGER
-int sht3xd_write_command(struct sht3xd_data *drv_data, u16_t cmd);
+static inline u8_t sht3xd_i2c_address(struct device *dev)
+{
+	const struct sht3xd_config *dcp = dev->config->config_info;
 
-int sht3xd_write_reg(struct sht3xd_data *drv_data, u16_t cmd,
-		     u16_t val);
+	return dcp->base_address;
+}
+
+static inline struct device *sht3xd_i2c_device(struct device *dev)
+{
+	const struct sht3xd_data *ddp = dev->driver_data;
+
+	return ddp->bus;
+}
+
+#ifdef CONFIG_SHT3XD_TRIGGER
+int sht3xd_write_command(struct device *dev, u16_t cmd);
+
+int sht3xd_write_reg(struct device *dev, u16_t cmd, u16_t val);
 
 int sht3xd_attr_set(struct device *dev,
 		    enum sensor_channel chan,

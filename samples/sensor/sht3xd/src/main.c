@@ -23,7 +23,7 @@ static void trigger_handler(struct device *dev, struct sensor_trigger *trig)
 
 void main(void)
 {
-	struct device *dev = device_get_binding(DT_SHT3XD_NAME);
+	struct device *dev = device_get_binding("SHT3XD");
 	int rc;
 
 	if (dev == NULL) {
