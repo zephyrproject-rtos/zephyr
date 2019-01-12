@@ -1,0 +1,29 @@
+# Kconfig - Electronut Labs Blip board configuration
+#
+# Copyright (c) 2018 Electronut Labs
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NRF52840_BLIP
+
+config BOARD
+	default "nrf52840_blip"
+
+if USB
+
+config USB_NRF52840
+	default y
+
+config USB_DEVICE_STACK
+	default y
+
+endif # USB
+
+if IEEE802154
+
+config IEEE802154_NRF5
+	default y
+
+endif # IEEE802154
+
+endif # BOARD_NRF52840_BLIP

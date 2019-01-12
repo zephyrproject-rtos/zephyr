@@ -1,0 +1,12 @@
+identifier: nrf52840_blip
+name: Electronut Labs Blip
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - usb_device
+  - ble
+  - ieee802154
