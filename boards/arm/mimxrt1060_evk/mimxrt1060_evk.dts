@@ -63,6 +63,10 @@ arduino_serial: &uart3 {};
 	};
 };
 
+&lcdif1 {
+	status = "ok";
+};
+
 &uart1 {
 	status = "ok";
 	current-speed = <115200>;
