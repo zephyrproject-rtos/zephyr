@@ -31,7 +31,8 @@
 #define ADC_2ND_CHANNEL_INPUT	NRF_ADC_CONFIG_INPUT_3
 
 #elif defined(CONFIG_BOARD_NRF52_PCA10040) || \
-      defined(CONFIG_BOARD_NRF52840_PCA10056)
+      defined(CONFIG_BOARD_NRF52840_PCA10056) || \
+      defined(CONFIG_BOARD_NRF52840_BLIP)
 
 #include <hal/nrf_saadc.h>
 #define ADC_DEVICE_NAME		DT_ADC_0_NAME
