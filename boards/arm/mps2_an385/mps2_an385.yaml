@@ -7,6 +7,5 @@ toolchain:
   - zephyr
   - gnuarmemb
   - xtools
-  - xtools
 testing:
   default: true
