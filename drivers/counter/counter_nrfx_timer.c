@@ -250,7 +250,7 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 		.timer = NRFX_TIMER_INSTANCE(idx),			       \
 		LOG_INSTANCE_PTR_INIT(log, LOG_MODULE_NAME, idx)	       \
 	};								       \
-	DEVICE_AND_API_INIT(timer_##idx, CONFIG_COUNTER_##idx##_NAME,	       \
+	DEVICE_AND_API_INIT(timer_##idx, CONFIG_COUNTER_TIMER##idx##_NAME,     \
 			    counter_##idx##_init,			       \
 			    &counter_##idx##_data,			       \
 			    &nrfx_counter_##idx##_config.info,		       \
