@@ -158,6 +158,21 @@ static inline u8_t counter_get_num_of_channels(const struct device *dev)
 }
 
 /**
+ * @brief Function to get counter frequency.
+ *
+ * @param[in]  dev    Pointer to the device structure for the driver instance.
+ *
+ * @return Frequency of the counter in Hz, or zero if the counter does
+ * not have a fixed frequency.
+ */
+static inline u32_t counter_get_frequency(const struct device *dev)
+{
+	const struct counter_config_info *config = dev->config->config_info;
+
+	return config->freq;
+}
+
+/**
  * @brief Function to convert microseconds to ticks.
  *
  * @param[in]  dev    Pointer to the device structure for the driver instance.
