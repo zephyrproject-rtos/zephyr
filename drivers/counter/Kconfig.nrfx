@@ -19,7 +19,7 @@ config COUNTER_TIMER0
 
 if COUNTER_TIMER0
 
-config COUNTER_0_NAME
+config COUNTER_TIMER0_NAME
 	string "Counter device name"
 	default "Counter 0"
 	help
@@ -46,7 +46,7 @@ config COUNTER_TIMER1
 
 if COUNTER_TIMER1
 
-config COUNTER_1_NAME
+config COUNTER_TIMER1_NAME
 	string "Counter device name"
 	default "Counter 1"
 	help
@@ -73,7 +73,7 @@ config COUNTER_TIMER2
 
 if COUNTER_TIMER2
 
-config COUNTER_2_NAME
+config COUNTER_TIMER2_NAME
 	string "Counter device name"
 	default "Counter 2"
 	help
@@ -101,7 +101,7 @@ config COUNTER_TIMER3
 
 if COUNTER_TIMER3
 
-config COUNTER_3_NAME
+config COUNTER_TIMER3_NAME
 	string "Counter device name"
 	default "Counter 3"
 	help
@@ -129,7 +129,7 @@ config COUNTER_TIMER4
 
 if COUNTER_TIMER4
 
-config COUNTER_4_NAME
+config COUNTER_TIMER4_NAME
 	string "Counter device name"
 	default "Counter 4"
 	help
