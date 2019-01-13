@@ -7,92 +7,17 @@
 
 #include <gpio.h>
 
+#include "app_gpio.h"
+#include "storage.h"
+
 #include "ble_mesh.h"
 #include "device_composition.h"
+#include "no_transition_work_handler.h"
 #include "publisher.h"
 #include "state_binding.h"
 #include "transition.h"
-#include "storage.h"
 
 static bool reset;
-
-struct device *led_device[4];
-struct device *button_device[4];
-
-static struct k_work button_work;
-
-static void button_pressed(struct device *dev,
-			   struct gpio_callback *cb, u32_t pins)
-{
-	k_work_submit(&button_work);
-}
-
-static void gpio_init(void)
-{
-	static struct gpio_callback button_cb[4];
-
-	/* LEDs configuration & setting */
-
-	led_device[0] = device_get_binding(LED0_GPIO_CONTROLLER);
-	gpio_pin_configure(led_device[0], LED0_GPIO_PIN,
-			   GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
-	gpio_pin_write(led_device[0], LED0_GPIO_PIN, 1);
-
-	led_device[1] = device_get_binding(LED1_GPIO_CONTROLLER);
-	gpio_pin_configure(led_device[1], LED1_GPIO_PIN,
-			   GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
-	gpio_pin_write(led_device[1], LED1_GPIO_PIN, 1);
-
-	led_device[2] = device_get_binding(LED2_GPIO_CONTROLLER);
-	gpio_pin_configure(led_device[2], LED2_GPIO_PIN,
-			   GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
-	gpio_pin_write(led_device[2], LED2_GPIO_PIN, 1);
-
-	led_device[3] = device_get_binding(LED3_GPIO_CONTROLLER);
-	gpio_pin_configure(led_device[3], LED3_GPIO_PIN,
-			   GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
-	gpio_pin_write(led_device[3], LED3_GPIO_PIN, 1);
-
-	/* Buttons configuration & setting */
-
-	k_work_init(&button_work, publish);
-
-	button_device[0] = device_get_binding(SW0_GPIO_CONTROLLER);
-	gpio_pin_configure(button_device[0], SW0_GPIO_PIN,
-			   (GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			    GPIO_PUD_PULL_UP |
-			    GPIO_INT_DEBOUNCE | GPIO_INT_ACTIVE_LOW));
-	gpio_init_callback(&button_cb[0], button_pressed, BIT(SW0_GPIO_PIN));
-	gpio_add_callback(button_device[0], &button_cb[0]);
-	gpio_pin_enable_callback(button_device[0], SW0_GPIO_PIN);
-
-	button_device[1] = device_get_binding(SW1_GPIO_CONTROLLER);
-	gpio_pin_configure(button_device[1], SW1_GPIO_PIN,
-			   (GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			    GPIO_PUD_PULL_UP |
-			    GPIO_INT_DEBOUNCE | GPIO_INT_ACTIVE_LOW));
-	gpio_init_callback(&button_cb[1], button_pressed, BIT(SW1_GPIO_PIN));
-	gpio_add_callback(button_device[1], &button_cb[1]);
-	gpio_pin_enable_callback(button_device[1], SW1_GPIO_PIN);
-
-	button_device[2] = device_get_binding(SW2_GPIO_CONTROLLER);
-	gpio_pin_configure(button_device[2], SW2_GPIO_PIN,
-			   (GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			    GPIO_PUD_PULL_UP |
-			    GPIO_INT_DEBOUNCE | GPIO_INT_ACTIVE_LOW));
-	gpio_init_callback(&button_cb[2], button_pressed, BIT(SW2_GPIO_PIN));
-	gpio_add_callback(button_device[2], &button_cb[2]);
-	gpio_pin_enable_callback(button_device[2], SW2_GPIO_PIN);
-
-	button_device[3] = device_get_binding(SW3_GPIO_CONTROLLER);
-	gpio_pin_configure(button_device[3], SW3_GPIO_PIN,
-			   (GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			    GPIO_PUD_PULL_UP |
-			    GPIO_INT_DEBOUNCE | GPIO_INT_ACTIVE_LOW));
-	gpio_init_callback(&button_cb[3], button_pressed, BIT(SW3_GPIO_PIN));
-	gpio_add_callback(button_device[3], &button_cb[3]);
-	gpio_pin_enable_callback(button_device[3], SW3_GPIO_PIN);
-}
 
 static void light_default_var_init(void)
 {
@@ -162,60 +87,6 @@ static void light_default_status_init(void)
 	default_tt = gen_def_trans_time_srv_user_data.tt;
 }
 
-/* unsolicitedly_publish_states_timer related things (Start) */
-
-static void unsolicitedly_publish_states_work_handler(struct k_work *work)
-{
-	gen_onoff_publish(&root_models[2]);
-	gen_level_publish(&root_models[4]);
-	light_lightness_publish(&root_models[11]);
-	light_lightness_linear_publish(&root_models[11]);
-	light_ctl_publish(&root_models[14]);
-
-	gen_level_publish(&s0_models[0]);
-	light_ctl_temp_publish(&s0_models[2]);
-}
-
-K_WORK_DEFINE(unsolicitedly_publish_states_work,
-	      unsolicitedly_publish_states_work_handler);
-
-static void unsolicitedly_publish_states_timer_handler(struct k_timer *dummy)
-{
-	k_work_submit(&unsolicitedly_publish_states_work);
-}
-
-K_TIMER_DEFINE(unsolicitedly_publish_states_timer,
-	       unsolicitedly_publish_states_timer_handler, NULL);
-
-/* unsolicitedly_publish_states_timer related things (End) */
-
-/* save_lightness_temp_last_values_timer related things (Start) */
-
-static void save_lightness_temp_last_values_timer_handler(struct k_timer *dummy)
-{
-	save_on_flash(LIGHTNESS_TEMP_LAST_STATE);
-}
-
-K_TIMER_DEFINE(save_lightness_temp_last_values_timer,
-	       save_lightness_temp_last_values_timer_handler, NULL);
-
-/* save_lightness_temp_last_values_timer related things (End) */
-
-static void no_transition_work_handler(struct k_work *work)
-{
-	k_timer_start(&unsolicitedly_publish_states_timer, K_MSEC(5000), 0);
-
-	/* If Lightness & Temperature values remains stable for
-	 * 10 Seconds then & then only get stored on SoC flash.
-	 */
-	if (gen_power_onoff_srv_user_data.onpowerup == STATE_RESTORE) {
-		k_timer_start(&save_lightness_temp_last_values_timer,
-			      K_MSEC(10000), 0);
-	}
-}
-
-K_WORK_DEFINE(no_transition_work, no_transition_work_handler);
-
 void update_light_state(void)
 {
 	u8_t power, color;
@@ -284,7 +155,7 @@ void main(void)
 
 	light_default_var_init();
 
-	gpio_init();
+	app_gpio_init();
 
 	printk("Initializing...\n");
 

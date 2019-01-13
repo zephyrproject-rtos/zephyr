@@ -7,10 +7,11 @@
 
 #include <gpio.h>
 
-#include "common.h"
+#include "app_gpio.h"
+
 #include "ble_mesh.h"
-#include "publisher.h"
 #include "device_composition.h"
+#include "publisher.h"
 
 #define ONOFF
 #define GENERIC_LEVEL

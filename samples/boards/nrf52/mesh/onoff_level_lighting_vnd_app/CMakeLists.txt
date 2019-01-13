@@ -8,9 +8,11 @@ target_link_libraries(app PUBLIC subsys__bluetooth)
 
 target_sources(app PRIVATE
 	       src/main.c
+	       src/app_gpio.c
 	       src/storage.c
 	       src/mesh/ble_mesh.c
 	       src/mesh/device_composition.c
+	       src/mesh/no_transition_work_handler.c
 	       src/mesh/publisher.c
 	       src/mesh/state_binding.c
 	       src/mesh/transition.c
