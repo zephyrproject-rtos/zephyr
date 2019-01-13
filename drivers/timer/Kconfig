@@ -154,7 +154,6 @@ config NRF_RTC_TIMER
 	default y
 	depends on CLOCK_CONTROL_NRF
 	select TICKLESS_CAPABLE
-	select COUNTER_RTC1
 	help
 	  This module implements a kernel device driver for the nRF Real Time
 	  Counter NRF_RTC1 and provides the standard "system clock driver"

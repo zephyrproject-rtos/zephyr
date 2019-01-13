@@ -180,6 +180,7 @@ endif #COUNTER_RTC0
 config COUNTER_RTC1
 	bool "Enable Counter on RTC1"
 	depends on HAS_HW_NRF_RTC1
+	depends on !NRF_RTC_TIMER
 	select COUNTER_NRF_RTC
 	select NRFX_RTC1
 
