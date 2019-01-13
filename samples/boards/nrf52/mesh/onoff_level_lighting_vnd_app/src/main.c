@@ -51,6 +51,8 @@ static void light_default_status_init(void)
 		gen_onoff_srv_root_user_data.onoff = STATE_OFF;
 	}
 
+	/* Retrieve Default Lightness & Temperature Values */
+
 	if (light_ctl_srv_user_data.lightness_temp_def) {
 		light_ctl_srv_user_data.lightness_def = (u16_t)
 			(light_ctl_srv_user_data.lightness_temp_def >> 16);
@@ -63,6 +65,24 @@ static void light_default_status_init(void)
 		light_ctl_srv_user_data.lightness_def;
 
 	light_ctl_srv_user_data.temp = light_ctl_srv_user_data.temp_def;
+
+	/* Retrieve Range of Lightness & Temperature */
+
+	if (light_lightness_srv_user_data.lightness_range) {
+		light_lightness_srv_user_data.light_range_max = (u16_t)
+			(light_lightness_srv_user_data.lightness_range >> 16);
+
+		light_lightness_srv_user_data.light_range_min = (u16_t)
+			(light_lightness_srv_user_data.lightness_range);
+	}
+
+	if (light_ctl_srv_user_data.temperature_range) {
+		light_ctl_srv_user_data.temp_range_max = (u16_t)
+			(light_ctl_srv_user_data.temperature_range >> 16);
+
+		light_ctl_srv_user_data.temp_range_min = (u16_t)
+			(light_ctl_srv_user_data.temperature_range);
+	}
 
 	switch (gen_power_onoff_srv_user_data.onpowerup) {
 	case STATE_OFF:

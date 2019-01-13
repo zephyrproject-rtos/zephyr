@@ -87,6 +87,7 @@ struct light_lightness_state {
 	u8_t status_code;
 	u16_t light_range_min;
 	u16_t light_range_max;
+	u32_t lightness_range;
 
 	u8_t last_tid;
 	u16_t last_src_addr;
@@ -112,6 +113,7 @@ struct light_ctl_state {
 	u8_t status_code;
 	u16_t temp_range_min;
 	u16_t temp_range_max;
+	u32_t temperature_range;
 
 	u16_t lightness_def;
 	u16_t temp_def;

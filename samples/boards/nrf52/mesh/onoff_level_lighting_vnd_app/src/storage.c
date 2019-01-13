@@ -56,6 +56,29 @@ static void save_lightness_temp_last_state(void)
 	printk("Light CTL Last values have beed saved !!\n");
 }
 
+static void save_lightness_range(void)
+{
+	light_lightness_srv_user_data.lightness_range =
+		(u32_t) ((light_lightness_srv_user_data.light_range_max << 16) |
+			 light_lightness_srv_user_data.light_range_min);
+
+	settings_save_one("ps/lr",
+			  &light_lightness_srv_user_data.lightness_range,
+			  sizeof(light_lightness_srv_user_data.lightness_range)
+			 );
+}
+
+static void save_temperature_range(void)
+{
+	light_ctl_srv_user_data.temperature_range =
+		(u32_t) ((light_ctl_srv_user_data.temp_range_max << 16) |
+			 light_ctl_srv_user_data.temp_range_min);
+
+	settings_save_one("ps/tr",
+			  &light_ctl_srv_user_data.temperature_range,
+			  sizeof(light_ctl_srv_user_data.temperature_range));
+}
+
 static void storage_work_handler(struct k_work *work)
 {
 	switch (storage_id) {
@@ -73,6 +96,12 @@ static void storage_work_handler(struct k_work *work)
 		break;
 	case LIGHTNESS_TEMP_LAST_STATE:
 		save_lightness_temp_last_state();
+		break;
+	case LIGHTNESS_RANGE:
+		save_lightness_range();
+		break;
+	case TEMPERATURE_RANGE:
+		save_temperature_range();
 		break;
 	}
 }
@@ -121,6 +150,20 @@ static int ps_set(int argc, char **argv, void *val_ctx)
 			val_ctx,
 			&light_ctl_srv_user_data.lightness_temp_last,
 			sizeof(light_ctl_srv_user_data.lightness_temp_last));
+		}
+
+		if (!strcmp(argv[0], "lr")) {
+			len = settings_val_read_cb(
+			val_ctx,
+			&light_lightness_srv_user_data.lightness_range,
+			sizeof(light_lightness_srv_user_data.lightness_range));
+		}
+
+		if (!strcmp(argv[0], "tr")) {
+			len = settings_val_read_cb(
+			val_ctx,
+			&light_ctl_srv_user_data.temperature_range,
+			sizeof(light_ctl_srv_user_data.temperature_range));
 		}
 
 		return (len < 0) ? len : 0;
