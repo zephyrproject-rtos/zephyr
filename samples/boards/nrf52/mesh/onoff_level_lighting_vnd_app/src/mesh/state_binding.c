@@ -7,7 +7,6 @@
 
 #include <gpio.h>
 
-#include "common.h"
 #include "ble_mesh.h"
 #include "device_composition.h"
 #include "state_binding.h"
@@ -199,8 +198,7 @@ void state_binding(u8_t light, u8_t temp)
 
 jump:
 	if (lightness != 0) {
-		light_lightness_srv_user_data.last =
-			light_lightness_srv_user_data.actual;
+		light_lightness_srv_user_data.last = lightness;
 	}
 
 	if (lightness) {

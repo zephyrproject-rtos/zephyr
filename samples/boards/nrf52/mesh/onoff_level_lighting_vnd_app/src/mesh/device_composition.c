@@ -7,12 +7,13 @@
 
 #include <gpio.h>
 
-#include "common.h"
+#include "app_gpio.h"
+#include "storage.h"
+
 #include "ble_mesh.h"
 #include "device_composition.h"
 #include "state_binding.h"
 #include "transition.h"
-#include "storage.h"
 
 static struct bt_mesh_cfg_srv cfg_srv = {
 	.relay = BT_MESH_RELAY_ENABLED,

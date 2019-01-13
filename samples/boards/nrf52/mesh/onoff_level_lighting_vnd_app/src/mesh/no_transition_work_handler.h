@@ -5,9 +5,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _COMMON_H
-#define _COMMON_H
+#ifndef _NO_TRANSITION_WORK_HANDLER_H
+#define _NO_TRANSITION_WORK_HANDLER_H
 
-void update_light_state(void);
+extern struct k_work no_transition_work;
 
 #endif
