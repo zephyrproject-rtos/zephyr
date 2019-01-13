@@ -1657,14 +1657,14 @@ static bool light_lightness_range_setunack(struct bt_mesh_model *model,
 		if (min <= max) {
 			state->status_code = RANGE_SUCCESSFULLY_UPDATED;
 
-			state->light_range_min = min;
-			state->light_range_max = max;
+			if (state->light_range_min != min ||
+			    state->light_range_max != max) {
 
-			/* Do some work here to save values of
-			 * state->light_range_min &
-			 * state->light_range_max
-			 * on SoC flash
-			 */
+				state->light_range_min = min;
+				state->light_range_max = max;
+
+				save_on_flash(LIGHTNESS_RANGE);
+			}
 		} else {
 			/* The provided value for Range Max cannot be set */
 			state->status_code = CANNOT_SET_RANGE_MAX;
@@ -2127,13 +2127,15 @@ static bool light_ctl_temp_range_setunack(struct bt_mesh_model *model,
 
 	if (min <= max) {
 		state->status_code = RANGE_SUCCESSFULLY_UPDATED;
-		state->temp_range_min = min;
-		state->temp_range_max = max;
 
-		/* Do some work here to save values of
-		 * state->temp_range_min & state->temp_range_min
-		 * on SoC flash
-		 */
+			if (state->temp_range_min != min ||
+			    state->temp_range_max != max) {
+
+				state->temp_range_min = min;
+				state->temp_range_max = max;
+
+				save_on_flash(TEMPERATURE_RANGE);
+			}
 	} else {
 		/* The provided value for Range Max cannot be set */
 		state->status_code = CANNOT_SET_RANGE_MAX;
