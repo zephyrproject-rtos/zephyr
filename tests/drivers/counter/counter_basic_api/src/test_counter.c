@@ -23,6 +23,7 @@ struct counter_alarm_cfg alarm_cfg2;
 const char *devices[] = {
 
 #ifdef CONFIG_COUNTER_TIMER0
+	/* Nordic TIMER0 may be reserved for Bluetooth */
 	CONFIG_COUNTER_0_NAME,
 #endif
 #ifdef CONFIG_COUNTER_TIMER1
@@ -38,9 +39,10 @@ const char *devices[] = {
 	CONFIG_COUNTER_4_NAME,
 #endif
 #ifdef CONFIG_COUNTER_RTC0
+	/* Nordic RTC0 may be reserved for Bluetooth */
 	CONFIG_COUNTER_RTC0_NAME,
 #endif
-	/* RTC0 may be used for system clock */
+	/* Nordic RTC1 is used for the system clock */
 #ifdef CONFIG_COUNTER_RTC2
 	CONFIG_COUNTER_RTC2_NAME,
 #endif
