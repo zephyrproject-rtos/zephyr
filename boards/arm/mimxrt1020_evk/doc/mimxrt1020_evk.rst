@@ -98,6 +98,10 @@ The MIMXRT1020 SoC has five pairs of pinmux/gpio controllers.
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B0_07 | LPUART1_RX      | UART Console              |
 +---------------+-----------------+---------------------------+
+| GPIO_AD_B1_08 | LPUART2_TX      | UART BT HCI               |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_09 | LPUART2_RX      | UART BT HCI               |
++---------------+-----------------+---------------------------+
 | WAKEUP        | GPIO            | SW0                       |
 +---------------+-----------------+---------------------------+
 
@@ -110,7 +114,8 @@ board with the on-chip PLL to generate a 500 MHz core clock.
 Serial Port
 ===========
 
-The MIMXRT1020 SoC has eight UARTs. One is configured for the console and the
+The MIMXRT1020 SoC has eight UARTs. ``LPUART1`` is configured for the console,
+``LPUART2`` for the Bluetooth Host Controller Interface (BT HCI), and the
 remaining are not used.
 
 Programming and Debugging
