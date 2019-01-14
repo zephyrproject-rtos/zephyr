@@ -55,6 +55,15 @@
 			#size-cells = <0>;
 		};
 
+		flexspi1: flexspi1@402a4000 {
+			compatible = "nxp,imx-flexspi";
+			reg = <0x402a4000 0x4000>;
+			interrupts = <107 0>;
+			label = "FLEXSPI1";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
 		semc0: semc0@402f0000 {
 			compatible = "nxp,imx-semc";
 			reg = <0x402f0000 0x4000>;
