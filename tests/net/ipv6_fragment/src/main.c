@@ -1125,6 +1125,8 @@ static void add_nbr(struct net_if *iface,
 
 static enum net_verdict udp_data_received(struct net_conn *conn,
 					  struct net_pkt *pkt,
+					  union ip_header *ip_hdr,
+					  union proto_header *proto_hdr,
 					  void *user_data)
 {
 	DBG("Data %p received\n", pkt);

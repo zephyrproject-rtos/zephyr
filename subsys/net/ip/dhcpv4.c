@@ -875,6 +875,8 @@ static void dhcpv4_handle_reply(struct net_if *iface,
 
 static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 					 struct net_pkt *pkt,
+					 union ip_header *ip_hdr,
+					 union proto_header *proto_hdr,
 					 void *user_data)
 {
 	NET_PKT_DATA_ACCESS_DEFINE(dhcp_access, struct dhcp_msg);

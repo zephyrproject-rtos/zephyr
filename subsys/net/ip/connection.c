@@ -269,6 +269,7 @@ static void cache_clear(void)
 
 static inline enum net_verdict cache_check(struct net_pkt *pkt,
 					   union ip_header *hdr,
+					   union proto_header *proto_hdr,
 					   enum net_ip_protocol proto,
 					   u16_t src_port,
 					   u16_t dst_port,
@@ -288,7 +289,8 @@ static inline enum net_verdict cache_check(struct net_pkt *pkt,
 				net_pkt_family(pkt), *pos,
 				conn_cache[*pos].value);
 
-			return conn->cb(conn, pkt, conn->user_data);
+			return conn->cb(conn, pkt,
+					hdr, proto_hdr, conn->user_data);
 		}
 	} else if (*cache_value > 0) {
 		if (cache_check_neg(*cache_value)) {
@@ -808,7 +810,7 @@ enum net_verdict net_conn_input(struct net_pkt *pkt, union ip_header *ip_hdr,
 	}
 
 #if defined(CONFIG_NET_CONN_CACHE)
-	verdict = cache_check(pkt, ip_hdr, proto, src_port, dst_port,
+	verdict = cache_check(pkt, ip_hdr, proto_hdr, proto, src_port, dst_port,
 			      &cache_value, &pos);
 	if (verdict != NET_CONTINUE) {
 		return verdict;
@@ -891,8 +893,8 @@ enum net_verdict net_conn_input(struct net_pkt *pkt, union ip_header *ip_hdr,
 			conns[best_match].rank);
 #endif /* CONFIG_NET_CONN_CACHE */
 
-		if (conns[best_match].cb(&conns[best_match], pkt,
-			     conns[best_match].user_data) == NET_DROP) {
+		if (conns[best_match].cb(&conns[best_match], pkt, ip_hdr,
+			proto_hdr, conns[best_match].user_data) == NET_DROP) {
 			goto drop;
 		}
 
