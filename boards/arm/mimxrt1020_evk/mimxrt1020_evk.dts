@@ -57,6 +57,8 @@
 	};
 };
 
+arduino_serial: &uart2 {};
+
 &flexspi0 {
 	reg = <0x402a8000 0x4000>, <0x60000000 0x800000>;
 	is25wp064: is25wp064@0 {
