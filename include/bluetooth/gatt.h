@@ -270,7 +270,9 @@ struct bt_gatt_ccc {
 struct bt_gatt_cpf {
 	/** Format of the value of the characteristic */
 	u8_t format;
-	/** Exponent field to determine how the value of this characteristic is further formatted */
+	/** Exponent field to determine how the value of this characteristic is
+	 * further formatted
+	 */
 	s8_t exponent;
 	/** Unit of the characteristic */
 	u16_t unit;
@@ -599,7 +601,8 @@ ssize_t bt_gatt_attr_read_cep(struct bt_conn *conn,
  *
  *  Read CUD attribute value from local database storing the result into buffer
  *  after encoding it.
- *  NOTE: Only use this with attributes which user_data is a NULL-terminated C string.
+ *  NOTE: Only use this with attributes which user_data is a NULL-terminated C
+ *  string.
  *
  *  @param conn Connection object
  *  @param attr Attribute to read
@@ -729,7 +732,8 @@ int bt_gatt_notify_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
  *  @param data Pointer to Attribute data.
  *  @param len Attribute value length.
  */
-static inline int bt_gatt_notify(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+static inline int bt_gatt_notify(struct bt_conn *conn,
+				 const struct bt_gatt_attr *attr,
 				 const void *data, u16_t len)
 {
 	return bt_gatt_notify_cb(conn, attr, data, len, NULL);
