@@ -51,6 +51,12 @@ config FILE_SYSTEM_SHELL
 	  This shell provides basic browsing of the contents of the
 	  file system.
 
+config FUSE_FS_ACCESS
+	bool "Enable FUSE based access to file system partitions"
+	depends on ARCH_POSIX
+	help
+	  Expose file system partitions to the host system through FUSE.
+
 menu "FatFs Settings"
 	visible if FAT_FILESYSTEM_ELM
 
