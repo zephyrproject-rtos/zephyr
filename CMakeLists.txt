@@ -30,6 +30,14 @@ assert(toolchain_is_ok "The toolchain is unable to build a dummy C file. See CMa
 set(CMAKE_EXECUTABLE_SUFFIX .elf)
 set(ZEPHYR_PREBUILT_EXECUTABLE zephyr_prebuilt)
 
+set(OFFSETS_H_TARGET           offsets_h)
+set(SYSCALL_MACROS_H_TARGET    syscall_macros_h_target)
+set(SYSCALL_LIST_H_TARGET      syscall_list_h_target)
+set(DRIVER_VALIDATION_H_TARGET driver_validation_h_target)
+set(KOBJ_TYPES_H_TARGET        kobj_types_h_target)
+set(LINKER_SCRIPT_TARGET       linker_script_target)
+
+
 if(NOT PROPERTY_LINKER_SCRIPT_DEFINES)
   set_property(GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES -D__GCC_LINKER_CMD__)
 endif()
@@ -501,7 +509,7 @@ add_subdirectory(tests)
 
 set(syscall_macros_h ${ZEPHYR_BINARY_DIR}/include/generated/syscall_macros.h)
 
-add_custom_target(syscall_macros_h_target DEPENDS ${syscall_macros_h})
+add_custom_target(${SYSCALL_MACROS_H_TARGET} DEPENDS ${syscall_macros_h})
 add_custom_command(                       OUTPUT  ${syscall_macros_h}
   COMMAND
   ${PYTHON_EXECUTABLE}
@@ -604,7 +612,7 @@ add_custom_command(
   DEPENDS ${syscalls_subdirs_trigger} ${PARSE_SYSCALLS_HEADER_DEPENDS}
   )
 
-add_custom_target(syscall_list_h_target DEPENDS                ${syscall_list_h})
+add_custom_target(${SYSCALL_LIST_H_TARGET} DEPENDS             ${syscall_list_h})
 add_custom_command(OUTPUT include/generated/syscall_dispatch.c ${syscall_list_h}
   # Also, some files are written to include/generated/syscalls/
   COMMAND
@@ -628,7 +636,7 @@ add_custom_command(
   $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
-add_custom_target(driver_validation_h_target DEPENDS ${DRV_VALIDATION})
+add_custom_target(${DRIVER_VALIDATION_H_TARGET} DEPENDS ${DRV_VALIDATION})
 
 include($ENV{ZEPHYR_BASE}/cmake/kobj.cmake)
 gen_kobj(KOBJ_INCLUDE_PATH)
@@ -636,17 +644,19 @@ gen_kobj(KOBJ_INCLUDE_PATH)
 # Generate offsets.c.obj from offsets.c
 # Generate offsets.h     from offsets.c.obj
 
+set(OFFSETS_LIB offsets)
+
 set(OFFSETS_C_PATH ${ZEPHYR_BASE}/arch/${ARCH}/core/offsets/offsets.c)
-set(OFFSETS_O_PATH ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/offsets.dir/arch/${ARCH}/core/offsets/offsets.c.obj)
+set(OFFSETS_O_PATH ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/${OFFSETS_LIB}.dir/arch/${ARCH}/core/offsets/offsets.c.obj)
 set(OFFSETS_H_PATH ${PROJECT_BINARY_DIR}/include/generated/offsets.h)
 
-add_library(          offsets STATIC ${OFFSETS_C_PATH})
-target_link_libraries(offsets zephyr_interface)
-add_dependencies(     offsets
-  syscall_list_h_target
-  syscall_macros_h_target
-  driver_validation_h_target
-  kobj_types_h_target
+add_library(          ${OFFSETS_LIB} STATIC ${OFFSETS_C_PATH})
+target_link_libraries(${OFFSETS_LIB} zephyr_interface)
+add_dependencies(     ${OFFSETS_LIB}
+  ${SYSCALL_LIST_H_TARGET}
+  ${SYSCALL_MACROS_H_TARGET}
+  ${DRIVER_VALIDATION_H_TARGET}
+  ${KOBJ_TYPES_H_TARGET}
   )
 
 add_custom_command(
@@ -654,9 +664,9 @@ add_custom_command(
   COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/gen_offset_header.py
   -i ${OFFSETS_O_PATH}
   -o ${OFFSETS_H_PATH}
-  DEPENDS offsets
+  DEPENDS ${OFFSETS_LIB}
 )
-add_custom_target(offsets_h DEPENDS ${OFFSETS_H_PATH})
+add_custom_target(${OFFSETS_H_TARGET} DEPENDS ${OFFSETS_H_PATH})
 
 zephyr_include_directories(${TOOLCHAIN_INCLUDES})
 
@@ -669,7 +679,7 @@ get_property(ZEPHYR_LIBS_PROPERTY GLOBAL PROPERTY ZEPHYR_LIBS)
 
 foreach(zephyr_lib ${ZEPHYR_LIBS_PROPERTY})
   # TODO: Could this become an INTERFACE property of zephyr_interface?
-  add_dependencies(${zephyr_lib} offsets_h)
+  add_dependencies(${zephyr_lib} ${OFFSETS_H_TARGET})
 
   # Verify that all (non-imported) libraries have source
   # files. Libraries without source files are not supported because
@@ -797,16 +807,16 @@ add_custom_command(
 )
 
 add_custom_target(
-  linker_script
+  ${LINKER_SCRIPT_TARGET}
   DEPENDS
   ${ALIGN_SIZING_DEP} ${PRIV_STACK_DEP}
   ${APP_SMEM_DEP}
   ${CODE_RELOCATION_DEP}
   linker.cmd
-  offsets_h
+  ${OFFSETS_H_TARGET}
   )
 
-# Give the 'linker_script' target all of the include directories so
+# Give the '${LINKER_SCRIPT_TARGET}' target all of the include directories so
 # that cmake can successfully find the linker_script's header
 # dependencies.
 zephyr_get_include_directories_for_lang(C
@@ -814,7 +824,7 @@ zephyr_get_include_directories_for_lang(C
   STRIP_PREFIX # Don't use a -I prefix
   )
 set_property(TARGET
-  linker_script
+  ${LINKER_SCRIPT_TARGET}
   PROPERTY INCLUDE_DIRECTORIES
   ${ZEPHYR_INCLUDE_DIRS}
   )
@@ -1200,7 +1210,7 @@ if(CONFIG_CPU_HAS_MPU AND CONFIG_USERSPACE)
       linker_app_sizing_script
       DEPENDS
       linker_app_sizing.cmd
-      offsets_h
+      ${OFFSETS_H_TARGET}
       ${APP_SMEM_DEP}
       ${CODE_RELOCATION_DEP}
     )
@@ -1219,7 +1229,7 @@ if(CONFIG_CPU_HAS_MPU AND CONFIG_USERSPACE)
     add_executable(       app_sizing_prebuilt misc/empty_file.c)
     target_link_libraries(app_sizing_prebuilt ${TOPT} ${PROJECT_BINARY_DIR}/linker_app_sizing.cmd ${zephyr_lnk} ${CODE_RELOCATION_DEP})
     set_property(TARGET   app_sizing_prebuilt PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_app_sizing.cmd)
-    add_dependencies(     app_sizing_prebuilt linker_app_sizing_script offsets ${CODE_RELOCATION_DEP} )
+    add_dependencies(     app_sizing_prebuilt linker_app_sizing_script ${OFFSETS_LIB} ${CODE_RELOCATION_DEP} )
 
     add_custom_command(
       TARGET app_sizing_prebuilt
@@ -1244,7 +1254,7 @@ if(CONFIG_ARM)
     ${ALIGN_SIZING_DEP} ${APP_SMEM_DEP}
     ${CODE_RELOCATION_DEP}
     linker_priv_stacks.cmd
-    offsets_h
+    ${OFFSETS_H_TARGET}
     )
 
   set_property(TARGET
@@ -1257,7 +1267,7 @@ if(CONFIG_ARM)
   add_executable(       priv_stacks_prebuilt misc/empty_file.c)
   target_link_libraries(priv_stacks_prebuilt ${TOPT} ${PROJECT_BINARY_DIR}/linker_priv_stacks.cmd ${zephyr_lnk} ${CODE_RELOCATION_DEP})
   set_property(TARGET   priv_stacks_prebuilt PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_priv_stacks.cmd)
-  add_dependencies(     priv_stacks_prebuilt ${ALIGN_SIZING_DEP} linker_priv_stacks_script offsets)
+  add_dependencies(     priv_stacks_prebuilt ${ALIGN_SIZING_DEP} linker_priv_stacks_script ${OFFSETS_LIB})
 endif()
 
 endif()
@@ -1266,11 +1276,12 @@ endif()
 add_executable(       ${ZEPHYR_PREBUILT_EXECUTABLE} misc/empty_file.c)
 target_link_libraries(${ZEPHYR_PREBUILT_EXECUTABLE} ${TOPT} ${PROJECT_BINARY_DIR}/linker.cmd ${PRIV_STACK_LIB} ${zephyr_lnk} ${CODE_RELOCATION_DEP})
 set_property(TARGET   ${ZEPHYR_PREBUILT_EXECUTABLE} PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker.cmd)
-add_dependencies(     ${ZEPHYR_PREBUILT_EXECUTABLE} ${ALIGN_SIZING_DEP} ${PRIV_STACK_DEP} linker_script offsets)
+add_dependencies(     ${ZEPHYR_PREBUILT_EXECUTABLE} ${ALIGN_SIZING_DEP} ${PRIV_STACK_DEP} ${LINKER_SCRIPT_TARGET} ${OFFSETS_LIB})
 
 
 if(GKOF OR GKSF)
-  set(logical_target_for_zephyr_elf kernel_elf)
+  set(KERNEL_ELF kernel_elf)
+  set(logical_target_for_zephyr_elf ${KERNEL_ELF})
 
   # The second linker pass uses the same source linker script of the
   # first pass (LINKER_SCRIPT), but this time with a different output
@@ -1280,25 +1291,26 @@ if(GKOF OR GKSF)
     ${custom_command}
     )
 
+  set(LINKER_PASS_FINAL_SCRIPT_TARGET linker_pass_final_script_target)
   add_custom_target(
-    linker_pass_final_script
+    ${LINKER_PASS_FINAL_SCRIPT_TARGET}
     DEPENDS
     ${ALIGN_SIZING_DEP} ${PRIV_STACK_DEP}
     ${CODE_RELOCATION_DEP}
     ${ZEPHYR_PREBUILT_EXECUTABLE}
     linker_pass_final.cmd
-    offsets_h
+    ${OFFSETS_H_TARGET}
     )
   set_property(TARGET
-    linker_pass_final_script
+    ${LINKER_PASS_FINAL_SCRIPT_TARGET}
     PROPERTY INCLUDE_DIRECTORIES
     ${ZEPHYR_INCLUDE_DIRS}
   )
 
-  add_executable(       kernel_elf misc/empty_file.c ${GKSF})
-  target_link_libraries(kernel_elf ${GKOF} ${TOPT} ${PROJECT_BINARY_DIR}/linker_pass_final.cmd ${zephyr_lnk} ${CODE_RELOCATION_DEP})
-  set_property(TARGET   kernel_elf PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_pass_final.cmd)
-  add_dependencies(     kernel_elf ${ALIGN_SIZING_DEP} ${PRIV_STACK_DEP} linker_pass_final_script)
+  add_executable(       ${KERNEL_ELF} misc/empty_file.c ${GKSF})
+  target_link_libraries(${KERNEL_ELF} ${GKOF} ${TOPT} ${PROJECT_BINARY_DIR}/linker_pass_final.cmd ${zephyr_lnk} ${CODE_RELOCATION_DEP})
+  set_property(TARGET   ${KERNEL_ELF} PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_pass_final.cmd)
+  add_dependencies(     ${KERNEL_ELF} ${ALIGN_SIZING_DEP} ${PRIV_STACK_DEP} ${LINKER_PASS_FINAL_SCRIPT_TARGET})
 else()
   set(logical_target_for_zephyr_elf ${ZEPHYR_PREBUILT_EXECUTABLE})
   # Use the prebuilt elf as the final elf since we don't have a
