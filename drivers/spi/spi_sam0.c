@@ -280,8 +280,8 @@ static void spi_sam0_fast_transceive(struct device *dev,
 	size_t tx_count = 0;
 	size_t rx_count = 0;
 	SercomSpi *regs = cfg->regs;
-	const struct spi_buf *tx;
-	const struct spi_buf *rx;
+	const struct spi_buf *tx = NULL;
+	const struct spi_buf *rx = NULL;
 
 	if (tx_bufs) {
 		tx = tx_bufs->buffers;
