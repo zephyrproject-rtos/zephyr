@@ -28,6 +28,7 @@ check_c_compiler_flag("" toolchain_is_ok)
 assert(toolchain_is_ok "The toolchain is unable to build a dummy C file. See CMakeError.log.")
 
 set(CMAKE_EXECUTABLE_SUFFIX .elf)
+set(ZEPHYR_PREBUILT_EXECUTABLE zephyr_prebuilt)
 
 if(NOT PROPERTY_LINKER_SCRIPT_DEFINES)
   set_property(GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES -D__GCC_LINKER_CMD__)
@@ -841,7 +842,7 @@ if(CONFIG_GEN_ISR_TABLES)
     list(APPEND GEN_ISR_TABLE_EXTRA_ARG --vector-table)
   endif()
 
-  # isr_tables.c is generated from zephyr_prebuilt by
+  # isr_tables.c is generated from ${ZEPHYR_PREBUILT_EXECUTABLE} by
   # gen_isr_tables.py
   add_custom_command(
     OUTPUT isr_tables.c
@@ -849,17 +850,17 @@ if(CONFIG_GEN_ISR_TABLES)
     -I ${OUTPUT_FORMAT}
     -O binary
     --only-section=.intList
-    $<TARGET_FILE:zephyr_prebuilt>
+    $<TARGET_FILE:${ZEPHYR_PREBUILT_EXECUTABLE}>
     isrList.bin
     COMMAND ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/arch/common/gen_isr_tables.py
     --output-source isr_tables.c
-    --kernel $<TARGET_FILE:zephyr_prebuilt>
+    --kernel $<TARGET_FILE:${ZEPHYR_PREBUILT_EXECUTABLE}>
     --intlist isrList.bin
     $<$<BOOL:${CONFIG_BIG_ENDIAN}>:--big-endian>
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--debug>
     ${GEN_ISR_TABLE_EXTRA_ARG}
-    DEPENDS zephyr_prebuilt
+    DEPENDS ${ZEPHYR_PREBUILT_EXECUTABLE}
     )
   set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_SOURCE_FILES isr_tables.c)
 endif()
@@ -921,7 +922,7 @@ if(CONFIG_ARM AND CONFIG_USERSPACE)
   # elf file.
 
   # Use the script GEN_PRIV_STACKS to scan the kernel binary's
-  # (zephyr_prebuilt) DWARF information to produce a table of kernel
+  # (${ZEPHYR_PREBUILT_EXECUTABLE}) DWARF information to produce a table of kernel
   # objects (PRIV_STACKS) which we will then pass to gperf
   add_custom_command(
     OUTPUT ${PRIV_STACKS}
@@ -1040,17 +1041,17 @@ if(CONFIG_USERSPACE)
   # elf file.
 
   # Use the script GEN_KOBJ_LIST to scan the kernel binary's
-  # (zephyr_prebuilt) DWARF information to produce a table of kernel
+  # (${ZEPHYR_PREBUILT_EXECUTABLE}) DWARF information to produce a table of kernel
   # objects (OBJ_LIST) which we will then pass to gperf
   add_custom_command(
     OUTPUT ${OBJ_LIST}
     COMMAND
     ${PYTHON_EXECUTABLE}
     ${GEN_KOBJ_LIST}
-    --kernel $<TARGET_FILE:zephyr_prebuilt>
+    --kernel $<TARGET_FILE:${ZEPHYR_PREBUILT_EXECUTABLE}>
     --gperf-output ${OBJ_LIST}
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
-    DEPENDS zephyr_prebuilt
+    DEPENDS ${ZEPHYR_PREBUILT_EXECUTABLE}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
   add_custom_target(obj_list DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${OBJ_LIST})
@@ -1262,10 +1263,10 @@ endif()
 endif()
 
 # FIXME: Is there any way to get rid of empty_file.c?
-add_executable(       zephyr_prebuilt misc/empty_file.c)
-target_link_libraries(zephyr_prebuilt ${TOPT} ${PROJECT_BINARY_DIR}/linker.cmd ${PRIV_STACK_LIB} ${zephyr_lnk} ${CODE_RELOCATION_DEP})
-set_property(TARGET   zephyr_prebuilt PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker.cmd)
-add_dependencies(     zephyr_prebuilt ${ALIGN_SIZING_DEP} ${PRIV_STACK_DEP} linker_script offsets)
+add_executable(       ${ZEPHYR_PREBUILT_EXECUTABLE} misc/empty_file.c)
+target_link_libraries(${ZEPHYR_PREBUILT_EXECUTABLE} ${TOPT} ${PROJECT_BINARY_DIR}/linker.cmd ${PRIV_STACK_LIB} ${zephyr_lnk} ${CODE_RELOCATION_DEP})
+set_property(TARGET   ${ZEPHYR_PREBUILT_EXECUTABLE} PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker.cmd)
+add_dependencies(     ${ZEPHYR_PREBUILT_EXECUTABLE} ${ALIGN_SIZING_DEP} ${PRIV_STACK_DEP} linker_script offsets)
 
 
 if(GKOF OR GKSF)
@@ -1284,7 +1285,7 @@ if(GKOF OR GKSF)
     DEPENDS
     ${ALIGN_SIZING_DEP} ${PRIV_STACK_DEP}
     ${CODE_RELOCATION_DEP}
-    zephyr_prebuilt
+    ${ZEPHYR_PREBUILT_EXECUTABLE}
     linker_pass_final.cmd
     offsets_h
     )
@@ -1299,7 +1300,7 @@ if(GKOF OR GKSF)
   set_property(TARGET   kernel_elf PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_pass_final.cmd)
   add_dependencies(     kernel_elf ${ALIGN_SIZING_DEP} ${PRIV_STACK_DEP} linker_pass_final_script)
 else()
-  set(logical_target_for_zephyr_elf zephyr_prebuilt)
+  set(logical_target_for_zephyr_elf ${ZEPHYR_PREBUILT_EXECUTABLE})
   # Use the prebuilt elf as the final elf since we don't have a
   # generation stage.
 endif()
@@ -1410,7 +1411,7 @@ if(CONFIG_OUTPUT_PRINT_MEMORY_USAGE)
   zephyr_check_compiler_flag(C "" ${check})
   set(CMAKE_REQUIRED_FLAGS ${SAVED_CMAKE_REQUIRED_FLAGS})
 
-  target_link_libraries_ifdef(${check} zephyr_prebuilt ${option})
+  target_link_libraries_ifdef(${check} ${ZEPHYR_PREBUILT_EXECUTABLE} ${option})
 endif()
 
 if(EMU_PLATFORM)
