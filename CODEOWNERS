@@ -99,7 +99,6 @@ drivers/ethernet/                        @jukkar @tbursztyka @pfalcon
 drivers/flash/                           @nashif
 drivers/flash/*stm32*                    @superna9999
 drivers/gpio/*stm32*                     @rsalveti @idlethread
-drivers/gpio/gpio_pulpino.c              @kgugala @pgielda @nategraff-sifive
 drivers/i2s/i2s_ll_stm32*                @avisconti
 drivers/ieee802154/                      @jukkar @tbursztyka
 drivers/interrupt_controller/            @andrewboie
@@ -117,7 +116,6 @@ drivers/net/slip.c                       @jukkar @tbursztyka
 drivers/spi/                             @tbursztyka
 drivers/spi/spi_ll_stm32.*               @superna9999
 drivers/timer/altera_avalon_timer_hal.c  @ramakrishnapallala
-drivers/timer/pulpino_timer.c            @nategraff-sifive @kgugala @pgielda
 drivers/timer/riscv_machine_timer.c      @nategraff-sifive @kgugala @pgielda
 drivers/usb/                             @jfischer-phytec-iot @finikorg
 drivers/usb/device/usb_dc_stm32.c        @ydamigos @loicpoulain

@@ -48,8 +48,6 @@ source "drivers/gpio/Kconfig.cmsdk_ahb"
 
 source "drivers/gpio/Kconfig.cc32xx"
 
-source "drivers/gpio/Kconfig.pulpino"
-
 source "drivers/gpio/Kconfig.sifive"
 
 source "drivers/gpio/Kconfig.cc2650"
