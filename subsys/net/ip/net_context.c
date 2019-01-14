@@ -679,10 +679,10 @@ struct net_pkt *net_context_create_ipv4(struct net_context *context,
 			       net_context_get_ip_proto(context));
 }
 
-static int context_create_ipv4_new(struct net_context *context,
-				   struct net_pkt *pkt,
-				   const struct in_addr *src,
-				   const struct in_addr *dst)
+int net_context_create_ipv4_new(struct net_context *context,
+				struct net_pkt *pkt,
+				const struct in_addr *src,
+				const struct in_addr *dst)
 {
 	NET_ASSERT(((struct sockaddr_in_ptr *)&context->local)->sin_addr);
 
@@ -703,8 +703,6 @@ static int context_create_ipv4_new(struct net_context *context,
 
 	return net_ipv4_create_new(pkt, src, dst);
 }
-#else
-#define context_create_ipv4_new(...) -1
 #endif /* CONFIG_NET_IPV4 */
 
 #if defined(CONFIG_NET_IPV6)
@@ -732,10 +730,10 @@ struct net_pkt *net_context_create_ipv6(struct net_context *context,
 			       net_context_get_ip_proto(context));
 }
 
-static int context_create_ipv6_new(struct net_context *context,
-				   struct net_pkt *pkt,
-				   const struct in6_addr *src,
-				   const struct in6_addr *dst)
+int net_context_create_ipv6_new(struct net_context *context,
+				struct net_pkt *pkt,
+				const struct in6_addr *src,
+				const struct in6_addr *dst)
 {
 	NET_ASSERT(((struct sockaddr_in6_ptr *)&context->local)->sin6_addr);
 
@@ -751,8 +749,6 @@ static int context_create_ipv6_new(struct net_context *context,
 
 	return net_ipv6_create_new(pkt, src, dst);
 }
-#else
-#define context_create_ipv6_new(...) -1
 #endif /* CONFIG_NET_IPV6 */
 
 int net_context_connect(struct net_context *context,
@@ -1264,16 +1260,16 @@ static int context_setup_udp_packet(struct net_context *context,
 
 		dst_port = addr4->sin_port;
 
-		ret = context_create_ipv4_new(context, pkt,
-					      NULL, &addr4->sin_addr);
+		ret = net_context_create_ipv4_new(context, pkt,
+						  NULL, &addr4->sin_addr);
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
 		   net_context_get_family(context) == AF_INET6) {
 		struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)dst_addr;
 
 		dst_port = addr6->sin6_port;
 
-		ret = context_create_ipv6_new(context, pkt,
-					      NULL, &addr6->sin6_addr);
+		ret = net_context_create_ipv6_new(context, pkt,
+						  NULL, &addr6->sin6_addr);
 	}
 
 	if (ret < 0) {

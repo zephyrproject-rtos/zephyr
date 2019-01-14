@@ -596,6 +596,20 @@ struct net_pkt *net_context_create_ipv4(struct net_context *context,
 	return NULL;
 }
 #endif /* CONFIG_NET_IPV4 */
+#if defined(CONFIG_NET_IPV4)
+int net_context_create_ipv4_new(struct net_context *context,
+				struct net_pkt *pkt,
+				const struct in_addr *src,
+				const struct in_addr *dst);
+#else
+static inline int net_context_create_ipv4_new(struct net_context *context,
+					      struct net_pkt *pkt,
+					      const struct in_addr *src,
+					      const struct in_addr *dst)
+{
+	return -1;
+}
+#endif /* CONFIG_NET_IPV4 */
 
 /**
  * @brief Create IPv6 packet in provided net_pkt from context
@@ -620,6 +634,20 @@ struct net_pkt *net_context_create_ipv6(struct net_context *context,
 					const struct in6_addr *dst)
 {
 	return NULL;
+}
+#endif /* CONFIG_NET_IPV6 */
+#if defined(CONFIG_NET_IPV6)
+int net_context_create_ipv6_new(struct net_context *context,
+				struct net_pkt *pkt,
+				const struct in6_addr *src,
+				const struct in6_addr *dst);
+#else
+static inline int net_context_create_ipv6_new(struct net_context *context,
+					      struct net_pkt *pkt,
+					      const struct in6_addr *src,
+					      const struct in6_addr *dst)
+{
+	return -1;
 }
 #endif /* CONFIG_NET_IPV6 */
 
