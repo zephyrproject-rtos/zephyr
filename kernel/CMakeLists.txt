@@ -51,6 +51,6 @@ target_sources_ifdef(
   )
 
 
-add_dependencies(kernel offsets_h)
+add_dependencies(kernel ${OFFSETS_H_TARGET})
 
 target_link_libraries(kernel zephyr_interface)

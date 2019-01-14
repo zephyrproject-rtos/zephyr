@@ -62,7 +62,7 @@ endif (WITH_DEFAULT_LOGGER)
 
 if (WITH_ZEPHYR)
   zephyr_library_named(metal)
-  add_dependencies(metal offsets_h)
+  add_dependencies(metal ${OFFSETS_H_TARGET})
   zephyr_library_sources(${_sources})
   zephyr_include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
 else (WITH_ZEPHYR)
