@@ -264,6 +264,9 @@ static int sdl_display_set_contrast(const struct device *dev,
 static void sdl_display_get_capabilities(
 	const struct device *dev, struct display_capabilities *capabilities)
 {
+	struct sdl_display_data *disp_data =
+	    (struct sdl_display_data *)dev->driver_data;
+
 	memset(capabilities, 0, sizeof(struct display_capabilities));
 	capabilities->x_resolution = CONFIG_SDL_DISPLAY_X_RES;
 	capabilities->y_resolution = CONFIG_SDL_DISPLAY_Y_RES;
@@ -271,7 +274,7 @@ static void sdl_display_get_capabilities(
 		PIXEL_FORMAT_RGB_888 |
 		PIXEL_FORMAT_MONO01 |
 		PIXEL_FORMAT_MONO10;
-	capabilities->current_pixel_format = PIXEL_FORMAT_ARGB_8888;
+	capabilities->current_pixel_format = disp_data->current_pixel_format;
 	capabilities->screen_info = SCREEN_INFO_MONO_VTILED |
 		SCREEN_INFO_MONO_MSB_FIRST;
 }

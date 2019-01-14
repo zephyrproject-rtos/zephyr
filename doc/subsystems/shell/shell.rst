@@ -235,13 +235,41 @@ Simple command handler implementation:
 		return 0;
 	}
 
-.. warning::
-	Do not use function :cpp:func:`shell_fprintf` or shell print macros:
-	:c:macro:`shell_print`, :c:macro:`shell_info`, :c:macro:`shell_warn`,
-	:c:macro:`shell_error` outside of the command handler because this
-	might lead to incorrect text display on the screen. If any text should
-	be displayed outside of the command context, then use the
-	:ref:`logger` or `printk` function.
+Function :cpp:func:`shell_fprintf` or the shell print macros:
+:c:macro:`shell_print`, :c:macro:`shell_info`, :c:macro:`shell_warn` and
+:c:macro:`shell_error` can only be used from the command handler, or if the
+command context is forced to stay in the foreground by calling
+:cpp:func:`shell_command_enter` from within the command handler. In this latter
+case, the shell stops reading input and writing to the output (except for the
+logs), allowing a user to print from any thread context. Function
+:cpp:func:`shell_command_exit` or entering a :kbd:`CTRL+C` terminates a
+'foreground' command.
+
+Here is an example foreground command implementation:
+
+.. code-block:: c
+
+	static int cmd_handler(const struct shell *shell, size_t argc,
+				char **argv)
+	{
+		ARG_UNUSED(argc);
+		ARG_UNUSED(argv);
+
+		shell_command_enter(shell);
+
+		foo_shell = shell;
+		foo_signal_thread(); /* Swtich context */
+
+		return 0;
+	}
+
+	static void foo_thread_context(void)
+	{
+		shell_print(foo_shell, "Lorem ipsum");
+
+		/* Terminate foreground command. */
+		shell_command_exit(foo_shell);
+	}
 
 Command help
 ------------
@@ -435,4 +463,21 @@ the shell will only print the subcommands registered for this command:
 
 	  params  ping
 
+Shell as the logger backend
+***************************
 
+Shell instance can act as the :ref:`logger` backend. Shell ensures that log
+messages are correctly multiplexed with shell output. Log messages from logger
+thread are enqueued and processed in the shell thread. Logger thread will block
+for configurable amount of time if queue is full, blocking logger thread context
+for that time. Oldest log message is removed from the queue after timeout and
+new message is enqueued. Use the ``shell stats show`` command to retrieve
+number of log messages dropped by the shell instance. Log queue size and timeout
+are :c:macro:`SHELL_DEFINE` arguments.
+
+.. warning::
+	Enqueuing timeout must be set carefully when multiple backends are used
+	in the system. The shell instance could	have a slow transport or could
+	block, for example, by a UART with hardware flow control. If timeout is
+	set too high, the logger thread could be blocked and impact other logger
+	backends.

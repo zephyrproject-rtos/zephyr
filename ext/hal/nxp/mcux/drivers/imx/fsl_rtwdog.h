@@ -1,8 +1,8 @@
 /*
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
- * Copyright 2016-2017 NXP
+ * Copyright 2016-2018 NXP
  * All rights reserved.
- * 
+ *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 #ifndef _FSL_RTWDOG_H_
@@ -15,25 +15,24 @@
  * @{
  */
 
-
 /*******************************************************************************
  * Definitions
  *******************************************************************************/
 /*! @name Unlock sequence */
 /*@{*/
-#define WDOG_FIRST_WORD_OF_UNLOCK (RTWDOG_UPDATE_KEY & 0xFFFFU)  /*!< First word of unlock sequence */
-#define WDOG_SECOND_WORD_OF_UNLOCK ((RTWDOG_UPDATE_KEY >> 16U)& 0xFFFFU) /*!< Second word of unlock sequence */
+#define WDOG_FIRST_WORD_OF_UNLOCK (RTWDOG_UPDATE_KEY & 0xFFFFU)           /*!< First word of unlock sequence */
+#define WDOG_SECOND_WORD_OF_UNLOCK ((RTWDOG_UPDATE_KEY >> 16U) & 0xFFFFU) /*!< Second word of unlock sequence */
 /*@}*/
 
 /*! @name Refresh sequence */
 /*@{*/
-#define WDOG_FIRST_WORD_OF_REFRESH (RTWDOG_REFRESH_KEY & 0xFFFFU)  /*!< First word of refresh sequence */
-#define WDOG_SECOND_WORD_OF_REFRESH ((RTWDOG_REFRESH_KEY >> 16U)& 0xFFFFU) /*!< Second word of refresh sequence */
+#define WDOG_FIRST_WORD_OF_REFRESH (RTWDOG_REFRESH_KEY & 0xFFFFU)           /*!< First word of refresh sequence */
+#define WDOG_SECOND_WORD_OF_REFRESH ((RTWDOG_REFRESH_KEY >> 16U) & 0xFFFFU) /*!< Second word of refresh sequence */
 /*@}*/
 /*! @name Driver version */
 /*@{*/
-/*! @brief RTWDOG driver version 2.0.0. */
-#define FSL_RTWDOG_DRIVER_VERSION (MAKE_VERSION(2, 0, 0))
+/*! @brief RTWDOG driver version 2.0.1. */
+#define FSL_RTWDOG_DRIVER_VERSION (MAKE_VERSION(2, 0, 1))
 /*@}*/
 
 /*! @brief Describes RTWDOG clock source. */
@@ -331,6 +330,9 @@ static inline void RTWDOG_Unlock(RTWDOG_Type *base)
         base->CNT = WDOG_FIRST_WORD_OF_UNLOCK;
         base->CNT = WDOG_SECOND_WORD_OF_UNLOCK;
     }
+    while ((base->CS & RTWDOG_CS_ULK_MASK) == 0)
+    {
+    }
 }
 
 /*!
@@ -343,6 +345,8 @@ static inline void RTWDOG_Unlock(RTWDOG_Type *base)
  */
 static inline void RTWDOG_Refresh(RTWDOG_Type *base)
 {
+    uint32_t primaskValue = 0U;
+    primaskValue = DisableGlobalIRQ();
     if ((base->CS) & RTWDOG_CS_CMD32EN_MASK)
     {
         base->CNT = RTWDOG_REFRESH_KEY;
@@ -352,6 +356,7 @@ static inline void RTWDOG_Refresh(RTWDOG_Type *base)
         base->CNT = WDOG_FIRST_WORD_OF_REFRESH;
         base->CNT = WDOG_SECOND_WORD_OF_REFRESH;
     }
+    EnableGlobalIRQ(primaskValue);
 }
 
 /*!

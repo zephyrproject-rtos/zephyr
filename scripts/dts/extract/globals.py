@@ -21,7 +21,6 @@ bindings_compat = []
 old_alias_names = False
 
 regs_config = {
-    'zephyr,flash' : 'CONFIG_FLASH',
     'zephyr,sram'  : 'CONFIG_SRAM',
     'zephyr,ccm'   : 'CONFIG_CCM'
 }
@@ -293,23 +292,20 @@ def add_prop_aliases(node_address,
 
 def get_binding(node_address):
     compat = get_compat(node_address)
+
+    # For just look for the binding in the main dict
+    # if we find it here, return it, otherwise it best
+    # be in the bus specific dict
+    if compat in bindings:
+        return bindings[compat]
+
     parent_addr = get_parent_address(node_address)
     parent_compat = get_compat(parent_addr)
 
-    if parent_compat in get_binding_compats():
-        parent_binding = bindings[parent_compat]
+    parent_binding = bindings[parent_compat]
 
-        if 'child' in parent_binding:
-            bus = parent_binding['child']['bus']
-            try:
-                binding = bus_bindings[bus][compat]
-            except:
-                binding = bindings[compat]
-
-        else:
-            binding = bindings[compat]
-    else:
-        binding = bindings[compat]
+    bus = parent_binding['child']['bus']
+    binding = bus_bindings[bus][compat]
 
     return binding
 

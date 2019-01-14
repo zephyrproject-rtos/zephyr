@@ -1,6 +1,6 @@
 /*
 * Copyright (c) 2015-2016, Freescale Semiconductor, Inc.
- * Copyright 2016 NXP
+ * Copyright 2016-2018 NXP
 * All rights reserved.
 *
 *
@@ -26,7 +26,7 @@ typedef struct _mem_align_control_block
 uint32_t InstallIRQHandler(IRQn_Type irq, uint32_t irqHandler)
 {
 /* Addresses for VECTOR_TABLE and VECTOR_RAM come from the linker file */
-#if defined(__CC_ARM)
+#if defined(__CC_ARM) || defined(__ARMCC_VERSION)
     extern uint32_t Image$$VECTOR_ROM$$Base[];
     extern uint32_t Image$$VECTOR_RAM$$Base[];
     extern uint32_t Image$$RW_m_data$$Base[];
@@ -43,7 +43,7 @@ uint32_t InstallIRQHandler(IRQn_Type irq, uint32_t irqHandler)
     extern uint32_t __VECTOR_RAM[];
     extern uint32_t __RAM_VECTOR_TABLE_SIZE_BYTES[];
     uint32_t __RAM_VECTOR_TABLE_SIZE = (uint32_t)(__RAM_VECTOR_TABLE_SIZE_BYTES);
-#endif /* defined(__CC_ARM) */
+#endif /* defined(__CC_ARM) || defined(__ARMCC_VERSION) */
     uint32_t n;
     uint32_t ret;
     uint32_t irqMaskValue;
@@ -77,30 +77,22 @@ uint32_t InstallIRQHandler(IRQn_Type irq, uint32_t irqHandler)
 #endif /* ENABLE_RAM_VECTOR_TABLE. */
 #endif /* __GIC_PRIO_BITS. */
 
-#ifndef QN908XC_SERIES
 #if (defined(FSL_FEATURE_SOC_SYSCON_COUNT) && (FSL_FEATURE_SOC_SYSCON_COUNT > 0))
+#if !(defined(FSL_FEATURE_SYSCON_STARTER_DISCONTINUOUS) && FSL_FEATURE_SYSCON_STARTER_DISCONTINUOUS)
 
 void EnableDeepSleepIRQ(IRQn_Type interrupt)
 {
     uint32_t intNumber = (uint32_t)interrupt;
 
-#if (defined(FSL_FEATURE_SYSCON_STARTER_DISCONTINUOUS) && (FSL_FEATURE_SYSCON_STARTER_DISCONTINUOUS == 1))
-    {
-        SYSCON->STARTERP1 = 1u << intNumber;
-    }
-#else
-    {
-        uint32_t index = 0;
+    uint32_t index = 0;
 
-        while (intNumber >= 32u)
-        {
-            index++;
-            intNumber -= 32u;
-        }
-
-        SYSCON->STARTERSET[index] = 1u << intNumber;
+    while (intNumber >= 32u)
+    {
+        index++;
+        intNumber -= 32u;
     }
-#endif                    /* FSL_FEATURE_STARTER_DISCONTINUOUS */
+
+    SYSCON->STARTERSET[index] = 1u << intNumber;
     EnableIRQ(interrupt); /* also enable interrupt at NVIC */
 }
 
@@ -109,27 +101,18 @@ void DisableDeepSleepIRQ(IRQn_Type interrupt)
     uint32_t intNumber = (uint32_t)interrupt;
 
     DisableIRQ(interrupt); /* also disable interrupt at NVIC */
-#if (defined(FSL_FEATURE_SYSCON_STARTER_DISCONTINUOUS) && (FSL_FEATURE_SYSCON_STARTER_DISCONTINUOUS == 1))
-    {
-        SYSCON->STARTERP1 &= ~(1u << intNumber);
-    }
-#else
-    {
-        uint32_t index = 0;
+    uint32_t index = 0;
 
-        while (intNumber >= 32u)
-        {
-            index++;
-            intNumber -= 32u;
-        }
-
-        SYSCON->STARTERCLR[index] = 1u << intNumber;
+    while (intNumber >= 32u)
+    {
+        index++;
+        intNumber -= 32u;
     }
-#endif /* FSL_FEATURE_STARTER_DISCONTINUOUS */
+
+    SYSCON->STARTERCLR[index] = 1u << intNumber;
 }
+#endif /* FSL_FEATURE_SYSCON_STARTER_DISCONTINUOUS */
 #endif /* FSL_FEATURE_SOC_SYSCON_COUNT */
-
-#endif /* QN908XC_SERIES */
 
 void *SDK_Malloc(size_t size, size_t alignbytes)
 {

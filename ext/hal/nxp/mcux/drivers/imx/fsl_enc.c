@@ -2,7 +2,7 @@
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
  * All rights reserved.
- * 
+ *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
@@ -62,6 +62,17 @@ static uint32_t ENC_GetInstance(ENC_Type *base)
     return instance;
 }
 
+/*!
+ * brief Initialization for the ENC module.
+ *
+ * This function is to make the initialization for the ENC module. It should be called firstly before any operation to
+ * the ENC with the operations like:
+ *  - Enable the clock for ENC module.
+ *  - Configure the ENC's working attributes.
+ *
+ * param base   ENC peripheral base address.
+ * param config Pointer to configuration structure. See to "enc_config_t".
+ */
 void ENC_Init(ENC_Type *base, const enc_config_t *config)
 {
     assert(NULL != config);
@@ -151,6 +162,15 @@ void ENC_Init(ENC_Type *base, const enc_config_t *config)
     base->LINIT = (uint16_t)(config->positionInitialValue);        /* Lower 16 bits. */
 }
 
+/*!
+ * brief De-initialization for the ENC module.
+ *
+ * This function is to make the de-initialization for the ENC module. It could be called when ENC is no longer used with
+ * the operations like:
+ *  - Disable the clock for ENC module.
+ *
+ * param base ENC peripheral base address.
+ */
 void ENC_Deinit(ENC_Type *base)
 {
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
@@ -159,9 +179,36 @@ void ENC_Deinit(ENC_Type *base)
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
+/*!
+ * brief Get an available pre-defined settings for ENC's configuration.
+ *
+ * This function initializes the ENC configuration structure with an available settings, the default value are:
+ * code
+ *   config->enableReverseDirection                = false;
+ *   config->decoderWorkMode                       = kENC_DecoderWorkAsNormalMode;
+ *   config->HOMETriggerMode                       = kENC_HOMETriggerDisabled;
+ *   config->INDEXTriggerMode                      = kENC_INDEXTriggerDisabled;
+ *   config->enableTRIGGERClearPositionCounter     = false;
+ *   config->enableTRIGGERClearHoldPositionCounter = false;
+ *   config->enableWatchdog                        = false;
+ *   config->watchdogTimeoutValue                  = 0U;
+ *   config->filterCount                           = 0U;
+ *   config->filterSamplePeriod                    = 0U;
+ *   config->positionMatchMode                     = kENC_POSMATCHOnPositionCounterEqualToComapreValue;
+ *   config->positionCompareValue                  = 0xFFFFFFFFU;
+ *   config->revolutionCountCondition              = kENC_RevolutionCountOnINDEXPulse;
+ *   config->enableModuloCountMode                 = false;
+ *   config->positionModulusValue                  = 0U;
+ *   config->positionInitialValue                  = 0U;
+ * endcode
+ * param config Pointer to a variable of configuration structure. See to "enc_config_t".
+ */
 void ENC_GetDefaultConfig(enc_config_t *config)
 {
     assert(NULL != config);
+
+    /* Initializes the configure structure to zero. */
+    memset(config, 0, sizeof(*config));
 
     config->enableReverseDirection = false;
     config->decoderWorkMode = kENC_DecoderWorkAsNormalMode;
@@ -181,6 +228,14 @@ void ENC_GetDefaultConfig(enc_config_t *config)
     config->positionInitialValue = 0U;
 }
 
+/*!
+ * brief Load the initial position value to position counter.
+ *
+ * This function is to transfer the initial position value (UINIT and LINIT) contents to position counter (UPOS and
+ * LPOS), so that to provide the consistent operation the position counter registers.
+ *
+ * param base ENC peripheral base address.
+ */
 void ENC_DoSoftwareLoadInitialPositionValue(ENC_Type *base)
 {
     uint16_t tmp16 = base->CTRL & (uint16_t)(~ENC_CTRL_W1C_FLAGS);
@@ -189,6 +244,16 @@ void ENC_DoSoftwareLoadInitialPositionValue(ENC_Type *base)
     base->CTRL = tmp16;
 }
 
+/*!
+ * brief Enable and configure the self test function.
+ *
+ * This function is to enable and configuration the self test function. It controls and sets the frequency of a
+ * quadrature signal generator. It provides a quadrature test signal to the inputs of the quadrature decoder module.
+ * It is a factory test feature; however, it may be useful to customers' software development and testing.
+ *
+ * param base   ENC peripheral base address.
+ * param config Pointer to configuration structure. See to "enc_self_test_config_t". Pass "NULL" to disable.
+ */
 void ENC_SetSelfTestConfig(ENC_Type *base, const enc_self_test_config_t *config)
 {
     uint16_t tmp16 = 0U;
@@ -207,6 +272,12 @@ void ENC_SetSelfTestConfig(ENC_Type *base, const enc_self_test_config_t *config)
     base->TST = tmp16;
 }
 
+/*!
+ * brief Enable watchdog for ENC module.
+ *
+ * param base ENC peripheral base address
+ * param enable Enables or disables the watchdog
+ */
 void ENC_EnableWatchdog(ENC_Type *base, bool enable)
 {
     uint16_t tmp16 = base->CTRL & (uint16_t)(~(ENC_CTRL_W1C_FLAGS | ENC_CTRL_WDE_MASK));
@@ -218,6 +289,13 @@ void ENC_EnableWatchdog(ENC_Type *base, bool enable)
     base->CTRL = tmp16;
 }
 
+/*!
+ * brief  Get the status flags.
+ *
+ * param  base ENC peripheral base address.
+ *
+ * return      Mask value of status flags. For available mask, see to "_enc_status_flags".
+ */
 uint32_t ENC_GetStatusFlags(ENC_Type *base)
 {
     uint32_t ret32 = 0U;
@@ -261,6 +339,12 @@ uint32_t ENC_GetStatusFlags(ENC_Type *base)
     return ret32;
 }
 
+/*!
+ * brief Clear the status flags.
+ *
+ * param base ENC peripheral base address.
+ * param mask Mask value of status flags to be cleared. For available mask, see to "_enc_status_flags".
+ */
 void ENC_ClearStatusFlags(ENC_Type *base, uint32_t mask)
 {
     uint32_t tmp16 = 0U;
@@ -307,6 +391,12 @@ void ENC_ClearStatusFlags(ENC_Type *base, uint32_t mask)
     }
 }
 
+/*!
+ * brief Enable the interrupts.
+ *
+ * param base ENC peripheral base address.
+ * param mask Mask value of interrupts to be enabled. For available mask, see to "_enc_interrupt_enable".
+ */
 void ENC_EnableInterrupts(ENC_Type *base, uint32_t mask)
 {
     uint32_t tmp16 = 0U;
@@ -352,6 +442,12 @@ void ENC_EnableInterrupts(ENC_Type *base, uint32_t mask)
     }
 }
 
+/*!
+ * brief Disable the interrupts.
+ *
+ * param base ENC peripheral base address.
+ * param mask Mask value of interrupts to be disabled. For available mask, see to "_enc_interrupt_enable".
+ */
 void ENC_DisableInterrupts(ENC_Type *base, uint32_t mask)
 {
     uint16_t tmp16 = 0U;
@@ -397,6 +493,13 @@ void ENC_DisableInterrupts(ENC_Type *base, uint32_t mask)
     }
 }
 
+/*!
+ * brief  Get the enabled interrupts' flags.
+ *
+ * param  base ENC peripheral base address.
+ *
+ * return      Mask value of enabled interrupts.
+ */
 uint32_t ENC_GetEnabledInterrupts(ENC_Type *base)
 {
     uint32_t ret32 = 0U;
@@ -434,12 +537,25 @@ uint32_t ENC_GetEnabledInterrupts(ENC_Type *base)
     return ret32;
 }
 
+/*!
+ * brief Set initial position value for ENC module.
+ *
+ * param base ENC peripheral base address
+ * param value Positive initial value
+ */
 void ENC_SetInitialPositionValue(ENC_Type *base, uint32_t value)
 {
     base->UINIT = (uint16_t)(value >> 16U); /* Set upper 16 bits. */
     base->LINIT = (uint16_t)(value);        /* Set lower 16 bits. */
 }
 
+/*!
+ * brief  Get the current position counter's value.
+ *
+ * param  base ENC peripheral base address.
+ *
+ * return     Current position counter's value.
+ */
 uint32_t ENC_GetPositionValue(ENC_Type *base)
 {
     uint32_t ret32;
@@ -451,6 +567,17 @@ uint32_t ENC_GetPositionValue(ENC_Type *base)
     return ret32;
 }
 
+/*!
+ * brief  Get the hold position counter's value.
+ *
+ * When any of the counter registers is read, the contents of each counter register is written to the corresponding hold
+ * register. Taking a snapshot of the counters' values provides a consistent view of a system position and a velocity to
+ * be attained.
+ *
+ * param  base ENC peripheral base address.
+ *
+ * return      Hold position counter's value.
+ */
 uint32_t ENC_GetHoldPositionValue(ENC_Type *base)
 {
     uint32_t ret32;

@@ -107,7 +107,7 @@ static inline void log_backend_dropped(const struct log_backend *const backend,
 {
 	__ASSERT_NO_MSG(backend);
 
-	if (backend->api->dropped) {
+	if (backend->api->dropped != NULL) {
 		backend->api->dropped(backend, cnt);
 	}
 }
@@ -171,8 +171,7 @@ static inline const struct log_backend *log_backend_get(u32_t idx)
  */
 static inline int log_backend_count_get(void)
 {
-	return ((u8_t *)__log_backends_end - (u8_t *)__log_backends_start) /
-			sizeof(struct log_backend);
+	return __log_backends_end - __log_backends_start;
 }
 
 /**

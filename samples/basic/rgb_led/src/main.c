@@ -15,14 +15,7 @@
 #include <device.h>
 #include <pwm.h>
 
-#if defined(CONFIG_SOC_QUARK_SE_C1000)
-#define PWM_DEV0	CONFIG_PWM_QMSI_DEV_NAME
-#define PWM_CH0		0
-#define PWM_DEV1	CONFIG_PWM_QMSI_DEV_NAME
-#define PWM_CH1		1
-#define PWM_DEV2	CONFIG_PWM_QMSI_DEV_NAME
-#define PWM_CH2		2
-#elif defined(RED_PWM_LED_PWM_CONTROLLER) && \
+#if defined(RED_PWM_LED_PWM_CONTROLLER) && \
       defined(RED_PWM_LED_PWM_CHANNEL) && \
       defined(GREEN_PWM_LED_PWM_CONTROLLER) && \
       defined(GREEN_PWM_LED_PWM_CHANNEL) && \

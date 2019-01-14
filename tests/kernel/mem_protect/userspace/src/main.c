@@ -721,8 +721,7 @@ void test_main(void)
 			      &kthread_thread, &kthread_stack,
 			      &uthread_thread, &uthread_stack,
 			      &uthread_start_sem, &uthread_end_sem,
-			      &test_revoke_sem, &kpipe, &expect_fault_sem,
-			      NULL);
+			      &test_revoke_sem, &kpipe, &expect_fault_sem);
 	ztest_test_suite(userspace,
 			 ztest_user_unit_test(is_usermode),
 			 ztest_user_unit_test(write_control),

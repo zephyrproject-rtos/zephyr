@@ -12,7 +12,7 @@ config BOARD
 
 if UART_CONSOLE
 
-config UART_STM32_PORT_1
+config UART_1
 	default y
 
 endif # UART_CONSOLE
@@ -77,10 +77,6 @@ config DMA_STM32F4X
 endif # DMA
 
 if LSM6DSL
-
-choice LSM6DSL_BUS_TYPE
-	default LSM6DSL_SPI
-endchoice
 
 choice LSM6DSL_TRIGGER_MODE
 	default LSM6DSL_TRIGGER_GLOBAL_THREAD

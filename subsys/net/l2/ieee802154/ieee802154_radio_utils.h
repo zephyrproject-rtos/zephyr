@@ -28,8 +28,8 @@ static inline bool prepare_for_ack(struct ieee802154_context *ctx,
 	if (ieee802154_is_ar_flag_set(pkt)) {
 		struct ieee802154_fcf_seq *fs;
 
-		fs = (struct ieee802154_fcf_seq *)(frag->data -
-						   net_pkt_ll_reserve(pkt));
+		fs = (struct ieee802154_fcf_seq *)net_pkt_data(pkt);
+
 		ctx->ack_seq = fs->sequence;
 		ctx->ack_received = false;
 		k_sem_init(&ctx->ack_lock, 0, UINT_MAX);
@@ -70,7 +70,7 @@ static inline int handle_ack(struct ieee802154_context *ctx,
 	if (pkt->frags->len == IEEE802154_ACK_PKT_LENGTH) {
 		struct ieee802154_fcf_seq *fs;
 
-		fs = ieee802154_validate_fc_seq(net_pkt_ll(pkt), NULL);
+		fs = ieee802154_validate_fc_seq(net_pkt_data(pkt), NULL);
 		if (!fs || fs->sequence != ctx->ack_seq) {
 			return NET_CONTINUE;
 		}

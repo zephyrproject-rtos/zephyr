@@ -542,7 +542,6 @@ ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
 {
 	struct bt_gatt_chrc *chrc = attr->user_data;
 	struct gatt_chrc pdu;
-	const struct bt_gatt_attr *next;
 	u8_t value_len;
 
 	pdu.properties = chrc->properties;
@@ -553,13 +552,8 @@ ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
 	 * declaration. All characteristic definitions shall have a
 	 * Characteristic Value declaration.
 	 */
-	next = bt_gatt_attr_next(attr);
-	if (!next) {
-		BT_WARN("No value for characteristic at 0x%04x", attr->handle);
-		pdu.value_handle = 0x0000;
-	} else {
-		pdu.value_handle = sys_cpu_to_le16(next->handle);
-	}
+	pdu.value_handle = sys_cpu_to_le16(attr->handle + 1);
+
 	value_len = sizeof(pdu.properties) + sizeof(pdu.value_handle);
 
 	if (chrc->uuid->type == BT_UUID_TYPE_16) {

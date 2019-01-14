@@ -1,0 +1,136 @@
+/*
+ * Copyright (c) 2018 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f4/stm32f446Xe.dtsi>
+
+/ {
+	model = "STMicroelectronics 96Boards STM32 Sensor Mezzanine board";
+	compatible = "st,stm32f446-b96b-f446ve", "st,stm32f446";
+
+	chosen {
+		zephyr,console = &uart4;
+		zephyr,shell-uart = &uart4;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led_0: led_0 {
+			gpios = <&gpiod 10 GPIO_INT_ACTIVE_HIGH>;
+			label = "User LD0";
+		};
+		green_led_1: led_1 {
+			gpios = <&gpiod 11 GPIO_INT_ACTIVE_HIGH>;
+			label = "User LD1";
+		};
+		blue_led_2: led_2 {
+			gpios = <&gpiod 12 GPIO_INT_ACTIVE_HIGH>;
+			label = "User LD2";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "Key";
+			gpios = <&gpiod 13 GPIO_INT_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		led0 = &red_led_0;
+		led1 = &green_led_1;
+		led2 = &blue_led_2;
+		sw0 = &user_button;
+	};
+};
+
+&i2c1 {
+	status = "ok";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	/* ST Microelectronics LIS3MDL magnetic field sensor */
+	lis3mdl-magn@1e {
+		compatible = "st,lis3mdl-magn";
+		reg = <0x1e>;
+		label = "LIS3MDL";
+	};
+
+	/* ST Microelectronics LPS22HB pressure sensor */
+	lps22hb-press@5d {
+		compatible = "st,lps22hb-press";
+		reg = <0x5d>;
+		label = "LPS22HB";
+	};
+};
+
+&i2c2 {
+	status = "ok";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&i2s2 {
+	status = "ok";
+};
+
+&spi1 {
+	status = "ok";
+};
+
+&spi2 {
+	status = "ok";
+};
+
+&timers3 {
+	status = "ok";
+
+	pwm {
+		status = "ok";
+	};
+};
+
+&timers4 {
+	status = "ok";
+
+	pwm {
+		status = "ok";
+	};
+};
+
+&timers9 {
+	status = "ok";
+
+	pwm {
+		status = "ok";
+	};
+};
+
+&usart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_pins_b>;
+	pinctrl-names = "default";
+	status = "ok";
+};
+
+&usart2 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart2_pins_a>;
+	pinctrl-names = "default";
+	status = "ok";
+};
+
+&uart4 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart4_pins_b>;
+	pinctrl-names = "default";
+	status = "ok";
+};
+
+&rtc {
+	status = "ok";
+};

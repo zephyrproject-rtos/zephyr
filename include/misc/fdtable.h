@@ -6,6 +6,7 @@
 #ifndef ZEPHYR_INCLUDE_POSIX_POSIX__FDTABLE_H_
 #define ZEPHYR_INCLUDE_POSIX_POSIX__FDTABLE_H_
 
+#include <stdarg.h>
 #include <sys/types.h>
 /* FIXME: For native_posix ssize_t, off_t. */
 #include <fs.h>
@@ -21,7 +22,7 @@ extern "C" {
 struct fd_op_vtable {
 	ssize_t (*read)(void *obj, void *buf, size_t sz);
 	ssize_t (*write)(void *obj, const void *buf, size_t sz);
-	int (*ioctl)(void *obj, unsigned int request, ...);
+	int (*ioctl)(void *obj, unsigned int request, va_list args);
 };
 
 /**
@@ -100,18 +101,43 @@ void *z_get_fd_obj(int fd, const struct fd_op_vtable *vtable, int err);
 void *z_get_fd_obj_and_vtable(int fd, const struct fd_op_vtable **vtable);
 
 /**
+ * @brief Call ioctl vmethod on an object using varargs.
+ *
+ * We need this helper function because ioctl vmethod is declared to
+ * take va_list and the only portable way to construct va_list is from
+ * function's ... parameters.
+ *
+ * @param vtable vtable containing ioctl function pointer
+ * @param obj Object to call ioctl on
+ * @param request ioctl request number
+ * @param ... Variadic arguments to ioctl
+ */
+static inline int z_fdtable_call_ioctl(const struct fd_op_vtable *vtable, void *obj,
+				       unsigned long request, ...)
+{
+	va_list args;
+	int res;
+
+	va_start(args, request);
+	res = vtable->ioctl(obj, request, args);
+	va_end(args);
+
+	return res;
+}
+
+/**
  * Request codes for fd_op_vtable.ioctl().
  *
  * Note that these codes are internal Zephyr numbers, for internal
- * Zephyr operation (and subject to change without notice, not part
+ * Zephyr operations (and subject to change without notice, not part
  * of "stable ABI"). These are however expected to co-exist with
  * "well-known" POSIX/Linux ioctl numbers, and not clash with them.
  */
 enum {
-	ZFD_IOCTL_CLOSE = 1,
+	/* Codes below 0x100 are reserved for fcntl() codes. */
+	ZFD_IOCTL_CLOSE = 0x100,
 	ZFD_IOCTL_FSYNC,
 	ZFD_IOCTL_LSEEK,
-	ZFD_IOCTL_FCNTL,
 	ZFD_IOCTL_POLL_PREPARE,
 	ZFD_IOCTL_POLL_UPDATE,
 };

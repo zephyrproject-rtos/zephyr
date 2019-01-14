@@ -25,8 +25,21 @@ character in it in the current menu isn't supported. A jump-to feature for
 jumping directly to any symbol (including invisible symbols), choice, menu or
 comment (as in a Kconfig 'comment "Foo"') is available instead.
 
-Space and Enter are "smart" and try to do what you'd expect for the given
-menu entry.
+Space and Enter are "smart" and try to do what you'd expect for the given menu
+entry.
+
+A few different modes are available:
+
+  F: Toggle show-help mode, which shows the help text of the currently selected
+  item in the window at the bottom of the menu display. This is handy when
+  browsing through options.
+
+  C: Toggle show-name mode, which shows the symbol name before each symbol menu
+  entry
+
+  A: Toggle show-all mode, which shows all items, including currently invisible
+  items and items that lack a prompt. Invisible items are drawn in a different
+  style to make them stand out.
 
 
 Running
@@ -72,6 +85,7 @@ elements on the screen. This is the list of elements that can be stylized:
                     mode.
     - help          Help text windows at the bottom of various fullscreen
                     dialogs
+    - show-help     Window showing the help text in show-help mode
     - frame         Frame around dialog boxes
     - body          Body of dialog boxes
     - edit          Edit box in pop-up dialogs
@@ -178,7 +192,7 @@ import sys
 import textwrap
 
 from kconfiglib import Symbol, Choice, MENU, COMMENT, MenuNode, \
-                       BOOL, STRING, INT, HEX, UNKNOWN, \
+                       BOOL, TRISTATE, STRING, INT, HEX, UNKNOWN, \
                        AND, OR, \
                        expr_str, expr_value, split_expr, \
                        standard_sc_expr_str, \
@@ -205,6 +219,9 @@ _SUBMENU_INDENT = 4
 # Number of steps for Page Up/Down to jump
 _PG_JUMP = 6
 
+# Height of the help window in show-help mode
+_SHOW_HELP_HEIGHT = 8
+
 # How far the cursor needs to be from the edge of the window before it starts
 # to scroll. Used for the main menu display, the information display, the
 # search display, and for text boxes.
@@ -218,10 +235,10 @@ _N_SCROLL_ARROWS = 14
 
 # Lines of help text shown at the bottom of the "main" display
 _MAIN_HELP_LINES = """
-[Space/Enter] Toggle/enter   [ESC] Leave menu    [S] Save
-[O] Load                     [?] Symbol info     [/] Jump to symbol
-[A] Toggle show-all mode     [C] Toggle show-name mode
-[Q] Quit (prompts for save)  [D] Save minimal config (advanced)
+[Space/Enter] Toggle/enter  [ESC] Leave menu           [S] Save
+[O] Load                    [?] Symbol info            [/] Jump to symbol
+[F] Toggle show-help mode   [C] Toggle show-name mode  [A] Toggle show-all mode
+[Q] Quit (prompts for save) [D] Save minimal config (advanced)
 """[1:-1].split("\n")
 
 # Lines of help text shown at the bottom of the information dialog
@@ -251,6 +268,7 @@ _STYLES = {
     inv-list=fg:red,bg:white
     inv-selection=fg:red,bg:blue
     help=path
+    show-help=list
     frame=fg:black,bg:yellow,bold
     body=fg:white,bg:black
     edit=fg:white,bg:blue
@@ -267,6 +285,7 @@ _STYLES = {
     inv-list=bold
     inv-selection=bold,standout
     help=bold
+    show-help=
     frame=bold,standout
     body=
     edit=standout
@@ -411,7 +430,6 @@ def _color_from_num(num):
         return _alloc_rgb(_6cube_to_rgb(((num//36)%6, (num//6)%6, num%6)))
 
     return _alloc_rgb(_gray_to_rgb(num - 232))
-
 
 def _color_from_rgb(rgb):
     # Returns the index of a color matching the 888 RGB color 'rgb'. The
@@ -613,8 +631,8 @@ def menuconfig(kconf):
 
     _kconf = kconf
 
-    # Always prompt for save if the configuration file doesn't exist
-    _conf_changed = not kconf.load_config()
+    # Load existing configuration and set _conf_changed True if it is outdated
+    _conf_changed = _load_config()
 
     # Any visible items in the top menu?
     _show_all = False
@@ -660,6 +678,33 @@ def menuconfig(kconf):
     # curses has been de-initialized.
     print(curses.wrapper(_menuconfig))
 
+def _load_config():
+    # Loads any existing .config file. See the Kconfig.load_config() docstring.
+    #
+    # Returns True if .config is missing or outdated. We always prompt for
+    # saving the configuration in that case.
+
+    if not _kconf.load_config() or _kconf.missing_syms:
+        # Either no .config, or assignments to undefined symbols in the
+        # existing .config (which would get removed when saving)
+        return True
+
+    for sym in _kconf.unique_defined_syms:
+        if sym.user_value is None:
+            if sym.config_string:
+                # Unwritten symbol
+                return True
+        elif sym.type in (BOOL, TRISTATE):
+            if sym.tri_value != sym.user_value:
+                # Written bool/tristate symbol, new value
+                return True
+        elif sym.str_value != sym.user_value:
+            # Written string/int/hex symbol, new value
+            return True
+
+    # No need to prompt for save
+    return False
+
 # Global variables used below:
 #
 #   _stdscr:
@@ -685,15 +730,8 @@ def menuconfig(kconf):
 #     appeared on. This is used to prevent the scrolling from jumping around
 #     when going in and out of menus.
 #
-#   _show_all:
-#     If True, "show-all" mode is on. Show-all mode shows all symbols and other
-#     items in the current menu, including those that lack a prompt or aren't
-#     currently visible.
-#
-#     Invisible items are drawn in a different style to make them stand out.
-#
-#   _show_name:
-#     If True, the names of all symbol are shown in addition to the prompt.
+#   _show_help/_show_name/_show_all:
+#     If True, the corresponding mode is on. See the module docstring.
 #
 #   _conf_changed:
 #     True if the configuration has been changed. If False, we don't bother
@@ -707,6 +745,7 @@ def _menuconfig(stdscr):
 
     global _stdscr
     global _conf_changed
+    global _show_help
     global _show_name
 
     _stdscr = stdscr
@@ -799,7 +838,7 @@ def _menuconfig(stdscr):
                     continue
 
             if _load_dialog():
-                _conf_changed = False
+                _conf_changed = True
 
         elif c in ("s", "S"):
             if _save_dialog(_kconf.write_config, standard_config_filename(),
@@ -823,11 +862,16 @@ def _menuconfig(stdscr):
             # dialog was open
             _resize_main()
 
-        elif c in ("a", "A"):
-            _toggle_show_all()
+        elif c in ("f", "F"):
+            _show_help = not _show_help
+            _set_style(_help_win, "show-help" if _show_help else "help")
+            _resize_main()
 
         elif c in ("c", "C"):
             _show_name = not _show_name
+
+        elif c in ("a", "A"):
+            _toggle_show_all()
 
         elif c in ("q", "Q"):
             res = _quit_dialog()
@@ -878,6 +922,7 @@ def _init():
     global _sel_node_i
     global _menu_scroll
 
+    global _show_help
     global _show_name
 
     # Looking for this in addition to KEY_BACKSPACE (which is unreliable) makes
@@ -908,7 +953,7 @@ def _init():
     # Row below menu list, with arrows pointing down
     _bot_sep_win = _styled_win("separator")
 
-    # Help window with keys at the bottom
+    # Help window with keys at the bottom. Shows help texts in show-help mode.
     _help_win = _styled_win("help")
 
     # The rows we'd like the nodes in the parent menus to appear on. This
@@ -921,7 +966,7 @@ def _init():
     _shown = _shown_nodes(_cur_menu)
     _sel_node_i = _menu_scroll = 0
 
-    _show_name = False
+    _show_help = _show_name = False
 
     # Give windows their initial size
     _resize_main()
@@ -938,7 +983,9 @@ def _resize_main():
     _top_sep_win.resize(1, screen_width)
     _bot_sep_win.resize(1, screen_width)
 
-    help_win_height = len(_MAIN_HELP_LINES)
+    help_win_height = _SHOW_HELP_HEIGHT if _show_help else \
+                          len(_MAIN_HELP_LINES)
+
     menu_win_height = screen_height - help_win_height - 3
 
     if menu_win_height >= 1:
@@ -1272,27 +1319,39 @@ def _draw_main():
     if _menu_scroll < _max_scroll(_shown, _menu_win):
         _safe_hline(_bot_sep_win, 0, 4, curses.ACS_DARROW, _N_SCROLL_ARROWS)
 
-    # Indicate when show-all and/or show-name mode is enabled
+    # Indicate when show-name/show-help/show-all mode is enabled
     enabled_modes = []
-    if _show_all:
-        enabled_modes.append("show-all")
+    if _show_help:
+        enabled_modes.append("show-help (toggle with [F])")
     if _show_name:
         enabled_modes.append("show-name")
+    if _show_all:
+        enabled_modes.append("show-all")
     if enabled_modes:
         s = " and ".join(enabled_modes) + " mode enabled"
-        _safe_addstr(_bot_sep_win, 0, term_width - len(s) - 2, s)
+        _safe_addstr(_bot_sep_win, 0, max(term_width - len(s) - 2, 0), s)
 
     _bot_sep_win.noutrefresh()
 
 
     #
-    # Update the help window
+    # Update the help window, which shows either key bindings or help texts
     #
 
     _help_win.erase()
 
-    for i, line in enumerate(_MAIN_HELP_LINES):
-        _safe_addstr(_help_win, i, 0, line)
+    if _show_help:
+        node = _shown[_sel_node_i]
+        if isinstance(node.item, (Symbol, Choice)) and node.help:
+            help_win_height, help_win_width = _help_win.getmaxyx()
+            help_lines = textwrap.wrap(node.help, help_win_width)
+            for i in range(min(help_win_height, len(help_lines))):
+                _safe_addstr(_help_win, i, 0, help_lines[i])
+        else:
+            _safe_addstr(_help_win, 0, 0, "(no help)")
+    else:
+        for i, line in enumerate(_MAIN_HELP_LINES):
+            _safe_addstr(_help_win, i, 0, line)
 
     _help_win.noutrefresh()
 
@@ -2637,8 +2696,13 @@ def _styled_win(style):
     # sized and positioned separately.
 
     win = curses.newwin(1, 1)
-    win.bkgdset(" ", _style[style])
+    _set_style(win, style)
     return win
+
+def _set_style(win, style):
+    # Changes the style of an existing window
+
+    win.bkgdset(" ", _style[style])
 
 def _max_scroll(lst, win):
     # Assuming 'lst' is a list of items to be displayed in 'win',

@@ -55,6 +55,12 @@ static uint32_t TSC_GetInstance(TSC_Type *base)
     return instance;
 }
 
+/*!
+* brief Initialize the TSC module.
+*
+* param base TSC peripheral base address.
+* param config Pointer to "tsc_config_t" structure.
+*/
 void TSC_Init(TSC_Type *base, const tsc_config_t *config)
 {
     assert(NULL != config);
@@ -78,6 +84,11 @@ void TSC_Init(TSC_Type *base, const tsc_config_t *config)
     base->PRE_CHARGE_TIME = TSC_PRE_CHARGE_TIME_PRE_CHARGE_TIME(config->prechargeTime);
 }
 
+/*!
+* brief De-initializes the TSC module.
+*
+* param base TSC peripheral base address.
+*/
 void TSC_Deinit(TSC_Type *base)
 {
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
@@ -86,14 +97,40 @@ void TSC_Deinit(TSC_Type *base)
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
+/*!
+* brief Gets an available pre-defined settings for the controller's configuration.
+*
+* This function initializes the converter configuration structure with available settings.
+* The default values of measureDelayTime and prechargeTime is tested on LCD8000-43T screen and work normally.
+* The default values are:
+* code
+*    config->enableAutoMeausre = false;
+*    config->measureDelayTime = 0xFFFFU;
+*    config->prechargeTime = 0xFFFFU;
+*    config->detectionMode = kTSC_4WireDetectionMode;
+* endCode
+* param config Pointer to "tsc_config_t" structure.
+*/
 void TSC_GetDefaultConfig(tsc_config_t *config)
 {
+    /* Initializes the configure structure to zero. */
+    memset(config, 0, sizeof(*config));
+
     config->enableAutoMeasure = false;
     config->measureDelayTime = 0xFFFFU;
     config->prechargeTime = 0xFFFFU;
     config->detectionMode = kTSC_Detection4WireMode;
 }
 
+/*!
+* brief Get Y coordinate value or X coordinate value. The value is an ADC conversion value.
+*
+* param base TSC peripheral base address.
+* param selection Select alternative measure value which is Y coordinate value or X coordinate value.
+*        See "tsc_corrdinate_value_selection_t".
+* return If selection is "kTSC_XCoordinateValueSelection", the API returns x-coordinate vlaue.
+*         If selection is "kTSC_YCoordinateValueSelection", the API returns y-coordinate vlaue.
+*/
 uint32_t TSC_GetMeasureValue(TSC_Type *base, tsc_corrdinate_value_selection_t selection)
 {
     uint32_t tmp32 = 0;
@@ -112,6 +149,15 @@ uint32_t TSC_GetMeasureValue(TSC_Type *base, tsc_corrdinate_value_selection_t se
     return tmp32;
 }
 
+/*!
+* brief Send hardware trigger signal to ADC in debug mode. The trigger signal must last at least 1 ips clock period.
+*
+* param base TSC peripheral base address.
+* param hwts Hardware trigger select signal, select which channel to start conversion. See "tsc_trigger_signal_t".
+*             On ADC side, HWTS = 1 << x indicates the x logic channel is selected to start hardware ADC conversion.
+* param enable Switcher of the trigger signal. "true" means generate trigger signal, "false" means don't generate
+*               trigger signal.
+*/
 void TSC_DebugTriggerSignalToADC(TSC_Type *base, tsc_trigger_signal_t hwts, bool enable)
 {
     if (enable)
@@ -128,6 +174,13 @@ void TSC_DebugTriggerSignalToADC(TSC_Type *base, tsc_trigger_signal_t hwts, bool
     }
 }
 
+/*!
+* brief Enable/Disable detection in debug mode.
+*
+* param base TSC peripheral base address.
+* param detectionMode Set detect mode. See "tsc_detection_mode_t"
+* param enable Switcher of detect enable. "true" means enable detection, "false" means disable detection.
+*/
 void TSC_DebugEnableDetection(TSC_Type *base, tsc_detection_mode_t detectionMode, bool enable)
 {
     if (detectionMode == kTSC_Detection4WireMode)
@@ -157,6 +210,13 @@ void TSC_DebugEnableDetection(TSC_Type *base, tsc_detection_mode_t detectionMode
     }
 }
 
+/*!
+* brief Set TSC port mode in debug mode.(pull down, pull up and 200k-pull up)
+*
+* param base TSC peripheral base address.
+* param port TSC controller ports.
+* param mode TSC port mode.(pull down, pull up and 200k-pull up)
+*/
 void TSC_DebugSetPortMode(TSC_Type *base, tsc_port_source_t port, tsc_port_mode_t mode)
 {
     uint32_t tmp32;

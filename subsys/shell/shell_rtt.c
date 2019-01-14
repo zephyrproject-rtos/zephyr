@@ -10,7 +10,9 @@
 #include <logging/log.h>
 
 SHELL_RTT_DEFINE(shell_transport_rtt);
-SHELL_DEFINE(shell_rtt, "rtt:~$ ", &shell_transport_rtt, 10,
+SHELL_DEFINE(shell_rtt, "rtt:~$ ", &shell_transport_rtt,
+	     CONFIG_SHELL_BACKEND_RTT_LOG_MESSAGE_QUEUE_SIZE,
+	     CONFIG_SHELL_BACKEND_RTT_LOG_MESSAGE_QUEUE_TIMEOUT,
 	     SHELL_FLAG_OLF_CRLF);
 
 LOG_MODULE_REGISTER(shell_rtt, CONFIG_SHELL_RTT_LOG_LEVEL);

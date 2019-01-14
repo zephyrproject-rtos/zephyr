@@ -63,6 +63,12 @@ enum {
 #if NRFX_CHECK(NRFX_TWIS1_ENABLED)
     NRFX_TWIS1_INST_IDX,
 #endif
+#if NRFX_CHECK(NRFX_TWIS2_ENABLED)
+    NRFX_TWIS2_INST_IDX,
+#endif
+#if NRFX_CHECK(NRFX_TWIS3_ENABLED)
+    NRFX_TWIS3_INST_IDX,
+#endif
     NRFX_TWIS_ENABLED_COUNT
 };
 
@@ -385,6 +391,8 @@ __STATIC_INLINE size_t nrfx_twis_rx_amount(nrfx_twis_t const * p_instance)
 
 void nrfx_twis_0_irq_handler(void);
 void nrfx_twis_1_irq_handler(void);
+void nrfx_twis_2_irq_handler(void);
+void nrfx_twis_3_irq_handler(void);
 
 
 /** @} */

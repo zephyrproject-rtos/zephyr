@@ -254,15 +254,22 @@ static void gptp_md_compute_pdelay_rate_ratio(int port)
 
 		state->neighbor_rate_ratio_valid = false;
 	} else {
-		neighbor_rate_ratio =
-			(resp_evt_tstamp - state->ini_resp_evt_tstamp);
-		neighbor_rate_ratio /=
-			(ingress_tstamp - state->ini_resp_ingress_tstamp);
+		if (resp_evt_tstamp == state->ini_resp_evt_tstamp) {
+			state->neighbor_rate_ratio_valid = false;
+			neighbor_rate_ratio = 1.0;
+		} else {
+			neighbor_rate_ratio =
+				(resp_evt_tstamp - state->ini_resp_evt_tstamp);
+			neighbor_rate_ratio /=
+				(ingress_tstamp -
+				 state->ini_resp_ingress_tstamp);
 
-		/* Measure the ratio with the previously sent response. */
-		state->ini_resp_ingress_tstamp = ingress_tstamp;
-		state->ini_resp_evt_tstamp = resp_evt_tstamp;
-		state->neighbor_rate_ratio_valid = true;
+			/* Measure the ratio with the previously sent response.
+			 */
+			state->ini_resp_ingress_tstamp = ingress_tstamp;
+			state->ini_resp_evt_tstamp = resp_evt_tstamp;
+			state->neighbor_rate_ratio_valid = true;
+		}
 	}
 
 	port_ds->neighbor_rate_ratio = neighbor_rate_ratio;
@@ -278,7 +285,7 @@ static void gptp_md_compute_prop_time(int port)
 	struct gptp_port_ds *port_ds;
 	struct gptp_hdr *hdr;
 	struct net_pkt *pkt;
-	double prop_time;
+	double prop_time, turn_around;
 
 	state = &GPTP_PORT_STATE(port)->pdelay_req;
 	port_ds = GPTP_PORT_DS(port);
@@ -320,9 +327,22 @@ static void gptp_md_compute_prop_time(int port)
 		t3_ns += (ntohll(hdr->correction_field) >> 16);
 	}
 
-	prop_time = (t4_ns - t1_ns);
-	prop_time *= port_ds->neighbor_rate_ratio;
-	prop_time -= (t3_ns - t2_ns);
+	prop_time = t4_ns - t1_ns;
+
+	turn_around = t3_ns - t2_ns;
+
+	/* Adjusting the turn-around time for peer to local clock rate
+	 * difference. The check is implemented the same way as how Avnu/gptp
+	 * daemon is doing it. This comment is also found in their source
+	 * for the magic values "TODO: Are these .998 and 1.002 specifically
+	 * defined in the standard?"
+	 */
+	if (port_ds->neighbor_rate_ratio > .998 &&
+	    port_ds->neighbor_rate_ratio < 1.002) {
+		turn_around *= port_ds->neighbor_rate_ratio;
+	}
+
+	prop_time -= turn_around;
 	prop_time /= 2;
 
 	port_ds->neighbor_prop_delay = prop_time;
@@ -352,6 +372,9 @@ static void gptp_md_pdelay_compute(int port)
 
 	if (port_ds->compute_neighbor_prop_delay) {
 		gptp_md_compute_prop_time(port);
+
+		NET_DBG("Neighbor prop delay %d",
+			(s32_t)port_ds->neighbor_prop_delay);
 	}
 
 	state->lost_responses = 0;

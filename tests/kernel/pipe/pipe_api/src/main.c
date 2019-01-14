@@ -56,7 +56,7 @@ void test_main(void)
 {
 	k_thread_access_grant(k_current_get(), &pipe,
 			      &kpipe, &end_sema, &tdata, &tstack,
-			      &khalfpipe, &put_get_pipe, NULL);
+			      &khalfpipe, &put_get_pipe);
 
 	k_thread_resource_pool_assign(k_current_get(), &test_pool);
 

@@ -50,8 +50,6 @@ SECTION_FUNC(TEXT,_WdogInit)
      * interrupts to keep the code atomic and ensure the timing.
      */
 
-    cpsid i
-
     ldr r0, =PERIPH_ADDR_BASE_WDOG
 
     movw r1, #WDOG_UNLOCK_1_CMD
@@ -71,8 +69,6 @@ SECTION_FUNC(TEXT,_WdogInit)
     mov  r2, #1
     bics r1, r2
     strh r1, [r0, #WDOG_SCTRL_HI_OFFSET]
-
-    cpsie i
 
     bx lr
 

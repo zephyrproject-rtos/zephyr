@@ -12,3 +12,4 @@ to port those applications to Zephyr.
    :maxdepth: 1
 
    cmsis_rtos_v1.rst
+   cmsis_rtos_v2.rst

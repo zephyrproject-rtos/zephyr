@@ -490,7 +490,7 @@ static inline void kw41z_rx(struct kw41z_context *kw41z, u8_t len)
 	pkt_len = len - KW41Z_FCS_LENGTH;
 #endif
 
-	pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
+	pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("No buf available");
 		goto out;
@@ -558,7 +558,7 @@ static int kw41z_tx(struct device *dev, struct net_pkt *pkt,
 		    struct net_buf *frag)
 {
 	struct kw41z_context *kw41z = dev->driver_data;
-	u8_t payload_len = net_pkt_ll_reserve(pkt) + frag->len;
+	u8_t payload_len = frag->len;
 	u32_t tx_timeout;
 	u8_t xcvseq;
 	int key;
@@ -587,11 +587,11 @@ static int kw41z_tx(struct device *dev, struct net_pkt *pkt,
 #if CONFIG_SOC_MKW41Z4
 	((u8_t *)ZLL->PKT_BUFFER_TX)[0] = payload_len + KW41Z_FCS_LENGTH;
 	memcpy(((u8_t *)ZLL->PKT_BUFFER_TX) + 1,
-		(void *)(frag->data - net_pkt_ll_reserve(pkt)), payload_len);
+		(void *)frag->data, payload_len);
 #else /* CONFIG_SOC_MKW40Z4 */
 	((u8_t *)ZLL->PKT_BUFFER)[0] = payload_len + KW41Z_FCS_LENGTH;
 	memcpy(((u8_t *)ZLL->PKT_BUFFER) + 1,
-		(void *)(frag->data - net_pkt_ll_reserve(pkt)), payload_len);
+		(void *)frag->data, payload_len);
 #endif
 
 	/* Set CCA mode */
@@ -612,15 +612,14 @@ static int kw41z_tx(struct device *dev, struct net_pkt *pkt,
 				 KW41Z_ACK_WAIT_TIME;
 
 		LOG_DBG("AUTOACK ENABLED: len: %d, timeout: %d, seq: %d",
-			payload_len, tx_timeout,
-			(frag->data - net_pkt_ll_reserve(pkt))[2]);
+			payload_len, tx_timeout, frag->data[2]);
 
 		kw41z_tmr3_set_timeout(tx_timeout);
 		ZLL->PHY_CTRL |= ZLL_PHY_CTRL_RXACKRQD_MASK;
 		xcvseq = KW41Z_STATE_TXRX;
 	} else {
 		LOG_DBG("AUTOACK DISABLED: len: %d, seq: %d",
-			payload_len, (frag->data - net_pkt_ll_reserve(pkt))[2]);
+			payload_len, frag->data[2]);
 
 		ZLL->PHY_CTRL &= ~ZLL_PHY_CTRL_RXACKRQD_MASK;
 		xcvseq = KW41Z_STATE_TX;

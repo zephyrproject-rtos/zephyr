@@ -176,16 +176,17 @@ static bool test_ns_sending(struct ieee802154_pkt_test *t)
 		return false;
 	}
 
-	k_sem_take(&driver_lock, 10);
+	k_yield();
+	k_sem_take(&driver_lock, K_SECONDS(1));
 
 	if (!current_pkt->frags) {
 		NET_ERR("*** Could not send IPv6 NS packet\n");
 		return false;
 	}
 
-	pkt_hexdump(net_pkt_ll(current_pkt), net_pkt_get_len(current_pkt));
+	pkt_hexdump(net_pkt_data(current_pkt), net_pkt_get_len(current_pkt));
 
-	if (!ieee802154_validate_frame(net_pkt_ll(current_pkt),
+	if (!ieee802154_validate_frame(net_pkt_data(current_pkt),
 				       net_pkt_get_len(current_pkt), &mpdu)) {
 		NET_ERR("*** Sent packet is not valid\n");
 		net_pkt_unref(current_pkt);
@@ -218,7 +219,7 @@ static bool test_ack_reply(struct ieee802154_pkt_test *t)
 
 	NET_INFO("- Sending ACK reply to a data packet\n");
 
-	pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
+	pkt = net_pkt_get_reserve_rx(K_FOREVER);
 	frag = net_pkt_get_frag(pkt, K_FOREVER);
 
 	memcpy(frag->data, data_pkt, sizeof(data_pkt));
@@ -231,7 +232,8 @@ static bool test_ack_reply(struct ieee802154_pkt_test *t)
 		return false;
 	}
 
-	k_sem_take(&driver_lock, 20);
+	k_yield();
+	k_sem_take(&driver_lock, K_SECONDS(1));
 
 	/* an ACK packet should be in current_pkt */
 	if (!current_pkt->frags) {
@@ -239,9 +241,9 @@ static bool test_ack_reply(struct ieee802154_pkt_test *t)
 		return false;
 	}
 
-	pkt_hexdump(net_pkt_ll(current_pkt), net_pkt_get_len(current_pkt));
+	pkt_hexdump(net_pkt_data(current_pkt), net_pkt_get_len(current_pkt));
 
-	if (!ieee802154_validate_frame(net_pkt_ll(current_pkt),
+	if (!ieee802154_validate_frame(net_pkt_data(current_pkt),
 				       net_pkt_get_len(current_pkt), &mpdu)) {
 		NET_ERR("*** ACK Reply is invalid\n");
 		return false;
@@ -265,7 +267,7 @@ static bool initialize_test_environment(void)
 
 	k_sem_reset(&driver_lock);
 
-	current_pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
+	current_pkt = net_pkt_get_reserve_rx(K_FOREVER);
 	if (!current_pkt) {
 		NET_ERR("*** No buffer to allocate\n");
 		return false;

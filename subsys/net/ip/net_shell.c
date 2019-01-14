@@ -43,10 +43,6 @@ LOG_MODULE_REGISTER(net_shell, LOG_LEVEL_DBG);
 #include <net/net_app.h>
 #endif
 
-#if defined(CONFIG_NET_RPL)
-#include "rpl.h"
-#endif
-
 #if defined(CONFIG_NET_ARP)
 #include "ethernet/arp.h"
 #endif
@@ -754,40 +750,6 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 	   GET_STAT(iface, tcp.connrst));
 #endif
 
-#if defined(CONFIG_NET_STATISTICS_RPL)
-	PR("RPL DIS recv   %d\tsent\t%d\tdrop\t%d\n",
-	   GET_STAT(iface, rpl.dis.recv),
-	   GET_STAT(iface, rpl.dis.sent),
-	   GET_STAT(iface, rpl.dis.drop));
-	PR("RPL DIO recv   %d\tsent\t%d\tdrop\t%d\n",
-	   GET_STAT(iface, rpl.dio.recv),
-	   GET_STAT(iface, rpl.dio.sent),
-	   GET_STAT(iface, rpl.dio.drop));
-	PR("RPL DAO recv   %d\tsent\t%d\tdrop\t%d\tforwarded\t%d\n",
-	   GET_STAT(iface, rpl.dao.recv),
-	   GET_STAT(iface, rpl.dao.sent),
-	   GET_STAT(iface, rpl.dao.drop),
-	   GET_STAT(iface, rpl.dao.forwarded));
-	PR("RPL DAOACK rcv %d\tsent\t%d\tdrop\t%d\n",
-	   GET_STAT(iface, rpl.dao_ack.recv),
-	   GET_STAT(iface, rpl.dao_ack.sent),
-	   GET_STAT(iface, rpl.dao_ack.drop));
-	PR("RPL overflows  %d\tl-repairs\t%d\tg-repairs\t%d\n",
-	   GET_STAT(iface, rpl.mem_overflows),
-	   GET_STAT(iface, rpl.local_repairs),
-	   GET_STAT(iface, rpl.global_repairs));
-	PR("RPL malformed  %d\tresets   \t%d\tp-switch\t%d\n",
-	   GET_STAT(iface, rpl.malformed_msgs),
-	   GET_STAT(iface, rpl.resets),
-	   GET_STAT(iface, rpl.parent_switch));
-	PR("RPL f-errors   %d\tl-errors\t%d\tl-warnings\t%d\n",
-	   GET_STAT(iface, rpl.forward_errors),
-	   GET_STAT(iface, rpl.loop_errors),
-	   GET_STAT(iface, rpl.loop_warnings));
-	PR("RPL r-repairs  %d\n",
-	   GET_STAT(iface, rpl.root_repairs));
-#endif
-
 	PR("Bytes received %u\n", GET_STAT(iface, bytes.received));
 	PR("Bytes sent     %u\n", GET_STAT(iface, bytes.sent));
 	PR("Processing err %d\n", GET_STAT(iface, processing_error));
@@ -1080,7 +1042,7 @@ static void ipv6_frag_cb(struct net_ipv6_reassembly *reass,
 }
 #endif /* CONFIG_NET_IPV6_FRAGMENT */
 
-#if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
+#if defined(CONFIG_NET_DEBUG_NET_PKT_ALLOC)
 static void allocs_cb(struct net_pkt *pkt,
 		      struct net_buf *buf,
 		      const char *func_alloc,
@@ -1140,28 +1102,28 @@ buf:
 		}
 	}
 }
-#endif /* CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG */
+#endif /* CONFIG_NET_DEBUG_NET_PKT_ALLOC */
 
 /* Put the actual shell commands after this */
 
 static int cmd_net_allocs(const struct shell *shell, size_t argc, char *argv[])
 {
-#if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
+#if defined(CONFIG_NET_DEBUG_NET_PKT_ALLOC)
 	struct net_shell_user_data user_data;
 #endif
 
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-#if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
+#if defined(CONFIG_NET_DEBUG_NET_PKT_ALLOC)
 	user_data.shell = shell;
 
 	PR("Network memory allocations\n\n");
 	PR("memory\t\tStatus\tPool\tFunction alloc -> freed\n");
 	net_pkt_allocs_foreach(allocs_cb, &user_data);
 #else
-	PR_INFO("Enable CONFIG_NET_PKT_LOG_LEVEL_DBG to see allocations.\n");
-#endif /* CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG */
+	PR_INFO("Enable CONFIG_NET_DEBUG_NET_PKT_ALLOC to see allocations.\n");
+#endif /* CONFIG_NET_DEBUG_NET_PKT_ALLOC */
 
 	return 0;
 }
@@ -2452,7 +2414,7 @@ static int cmd_net_http_monitor(const struct shell *shell, size_t argc,
 #if defined(CONFIG_NET_DEBUG_HTTP_CONN) && defined(CONFIG_HTTP_SERVER)
 	PR_INFO("Activating HTTP monitor. Type \"net http\" "
 		"to disable HTTP connection monitoring.\n");
-	http_server_conn_monitor(http_server_cb, &count);
+	http_server_conn_monitor(http_server_cb, &http_monitor_count);
 #else
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
@@ -3033,10 +2995,11 @@ static inline void _remove_ipv6_ping_handler(void)
 
 static enum net_verdict _handle_ipv6_echo_reply(struct net_pkt *pkt)
 {
+	shell_command_enter(shell_for_ping);
 	PR_SHELL(shell_for_ping, "Received echo reply from %s to %s\n",
 		 net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->src),
 		 net_sprint_ipv6_addr(&NET_IPV6_HDR(pkt)->dst));
-
+	shell_command_exit(shell_for_ping);
 	k_sem_give(&ping_timeout);
 	_remove_ipv6_ping_handler();
 
@@ -3107,10 +3070,11 @@ static inline void _remove_ipv4_ping_handler(void)
 
 static enum net_verdict _handle_ipv4_echo_reply(struct net_pkt *pkt)
 {
+	shell_command_enter(shell_for_ping);
 	PR_SHELL(shell_for_ping, "Received echo reply from %s to %s\n",
 		 net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->src),
 		 net_sprint_ipv4_addr(&NET_IPV4_HDR(pkt)->dst));
-
+	shell_command_exit(shell_for_ping);
 	k_sem_give(&ping_timeout);
 	_remove_ipv4_ping_handler();
 
@@ -3222,205 +3186,6 @@ static int cmd_net_route(const struct shell *shell, size_t argc, char *argv[])
 
 #if defined(CONFIG_NET_ROUTE_MCAST)
 	net_if_foreach(iface_per_mcast_route_cb, &user_data);
-#endif
-
-	return 0;
-}
-
-#if defined(CONFIG_NET_RPL)
-static int power(int base, unsigned int exp)
-{
-	int i, result = 1;
-
-	for (i = 0; i < exp; i++) {
-		result *= base;
-	}
-
-	return result;
-}
-
-static void rpl_parent(struct net_rpl_parent *parent, void *user_data)
-{
-	struct net_shell_user_data *data = user_data;
-	const struct shell *shell = data->shell;
-	int *count = data->user_data;
-
-	if (*count == 0) {
-		PR("      Parent     Last TX   Rank  DTSN  Flags DAG\t\t\t"
-		   "Address\n");
-	}
-
-	(*count)++;
-
-	if (parent->dag) {
-		struct net_ipv6_nbr_data *data;
-		char addr[NET_IPV6_ADDR_LEN];
-
-		data = net_rpl_get_ipv6_nbr_data(parent);
-		if (data) {
-			snprintk(addr, sizeof(addr), "%s",
-				 net_sprint_ipv6_addr(&data->addr));
-		} else {
-			snprintk(addr, sizeof(addr), "<unknown>");
-		}
-
-		PR("[%2d]%s %p %7d  %5d   %3d  0x%02x  %s\t%s\n",
-		   *count,
-		   parent->dag->preferred_parent == parent ? "*" : " ",
-		   parent, parent->last_tx_time, parent->rank,
-		   parent->dtsn, parent->flags,
-		   net_sprint_ipv6_addr(&parent->dag->dag_id),
-		   addr);
-	}
-}
-
-#endif /* CONFIG_NET_RPL */
-
-static int cmd_net_rpl(const struct shell *shell, size_t argc, char *argv[])
-{
-#if defined(CONFIG_NET_RPL)
-	struct net_rpl_instance *instance;
-	struct net_shell_user_data user_data;
-	enum net_rpl_mode mode;
-	int i, count;
-#endif
-
-	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
-
-#if defined(CONFIG_NET_RPL)
-	mode = net_rpl_get_mode();
-	PR("RPL Configuration\n");
-	PR("=================\n");
-	PR("RPL mode                     : %s\n",
-	   mode == NET_RPL_MODE_MESH ? "mesh" :
-	   (mode == NET_RPL_MODE_FEATHER ? "feather" :
-	    (mode == NET_RPL_MODE_LEAF ? "leaf" : "<unknown>")));
-	PR("Used objective function      : %s\n",
-	   IS_ENABLED(CONFIG_NET_RPL_MRHOF) ? "MRHOF" :
-	   (IS_ENABLED(CONFIG_NET_RPL_OF0) ? "OF0" : "<unknown>"));
-	PR("Used routing metric          : %s\n",
-	   IS_ENABLED(CONFIG_NET_RPL_MC_NONE) ? "none" :
-	   (IS_ENABLED(CONFIG_NET_RPL_MC_ETX) ? "estimated num of TX" :
-	    (IS_ENABLED(CONFIG_NET_RPL_MC_ENERGY) ? "energy based" :
-	     "<unknown>")));
-	PR("Mode of operation (MOP)      : %s\n",
-	   IS_ENABLED(CONFIG_NET_RPL_MOP2) ? "Storing, no mcast (MOP2)" :
-	   (IS_ENABLED(CONFIG_NET_RPL_MOP3) ? "Storing (MOP3)" :
-	    "<unknown>"));
-	PR("Send probes to nodes         : %s\n",
-	   IS_ENABLED(CONFIG_NET_RPL_PROBING) ? "enabled" : "disabled");
-	PR("Max instances                : %d\n",
-	   CONFIG_NET_RPL_MAX_INSTANCES);
-	PR("Max DAG / instance           : %d\n",
-	   CONFIG_NET_RPL_MAX_DAG_PER_INSTANCE);
-
-	PR("Min hop rank increment       : %d\n",
-	   CONFIG_NET_RPL_MIN_HOP_RANK_INC);
-	PR("Initial link metric          : %d\n",
-	   CONFIG_NET_RPL_INIT_LINK_METRIC);
-	PR("RPL preference value         : %d\n",
-	   CONFIG_NET_RPL_PREFERENCE);
-	PR("DAG grounded by default      : %s\n",
-	   IS_ENABLED(CONFIG_NET_RPL_GROUNDED) ? "yes" : "no");
-	PR("Default instance id          : %d (0x%02x)\n",
-	   CONFIG_NET_RPL_DEFAULT_INSTANCE,
-	   CONFIG_NET_RPL_DEFAULT_INSTANCE);
-	PR("Insert Hop-by-hop option     : %s\n",
-	   IS_ENABLED(CONFIG_NET_RPL_INSERT_HBH_OPTION) ? "yes" : "no");
-
-	PR("Specify DAG when sending DAO : %s\n",
-	   IS_ENABLED(CONFIG_NET_RPL_DAO_SPECIFY_DAG) ? "yes" : "no");
-	PR("DIO min interval             : %d (%d ms)\n",
-	   CONFIG_NET_RPL_DIO_INTERVAL_MIN,
-	   power(2, CONFIG_NET_RPL_DIO_INTERVAL_MIN));
-	PR("DIO doublings interval       : %d\n",
-	   CONFIG_NET_RPL_DIO_INTERVAL_DOUBLINGS);
-	PR("DIO redundancy value         : %d\n",
-	   CONFIG_NET_RPL_DIO_REDUNDANCY);
-
-	PR("DAO sending timer value      : %d sec\n",
-	   CONFIG_NET_RPL_DAO_TIMER);
-	PR("DAO max retransmissions      : %d\n",
-	   CONFIG_NET_RPL_DAO_MAX_RETRANSMISSIONS);
-	PR("Node expecting DAO ack       : %s\n",
-	   IS_ENABLED(CONFIG_NET_RPL_DAO_ACK) ? "yes" : "no");
-
-	PR("Send DIS periodically        : %s\n",
-	   IS_ENABLED(CONFIG_NET_RPL_DIS_SEND) ? "yes" : "no");
-#if defined(CONFIG_NET_RPL_DIS_SEND)
-	PR("DIS interval                 : %d sec\n",
-	   CONFIG_NET_RPL_DIS_INTERVAL);
-#endif
-
-	PR("Default route lifetime unit  : %d sec\n",
-	   CONFIG_NET_RPL_DEFAULT_LIFETIME_UNIT);
-	PR("Default route lifetime       : %d\n",
-	   CONFIG_NET_RPL_DEFAULT_LIFETIME);
-#if defined(CONFIG_NET_RPL_MOP3)
-	PR("Multicast route lifetime     : %d\n",
-	   CONFIG_NET_RPL_MCAST_LIFETIME);
-#endif
-	PR("\nRuntime status\n");
-	PR("==============\n");
-
-	instance = net_rpl_get_default_instance();
-	if (!instance) {
-		PR_WARNING("No default RPL instance found.\n");
-		return -ENOEXEC;
-	}
-
-	PR("Default instance (id %d) : %p (%s)\n", instance->instance_id,
-	       instance, instance->is_used ? "active" : "disabled");
-
-	if (instance->default_route) {
-		PR("Default route   : %s\n",
-		       net_sprint_ipv6_addr(
-			       &instance->default_route->address.in6_addr));
-	}
-
-#if defined(CONFIG_NET_STATISTICS_RPL)
-	PR("DIO statistics  : intervals %d sent %d recv %d\n",
-	       instance->dio_intervals, instance->dio_send_pkt,
-	       instance->dio_recv_pkt);
-#endif /* CONFIG_NET_STATISTICS_RPL */
-
-	PR("Instance DAGs   :\n");
-	for (i = 0, count = 0; i < CONFIG_NET_RPL_MAX_DAG_PER_INSTANCE; i++) {
-
-		if (!instance->dags[i].is_used) {
-			continue;
-		}
-
-		PR("[%2d]%s %s prefix %s/%d rank %d/%d ver %d flags %c%c "
-			"parent %p\n",
-			++count,
-			&instance->dags[i] == instance->current_dag ? "*" : " ",
-			net_sprint_ipv6_addr(&instance->dags[i].dag_id),
-			net_sprint_ipv6_addr(
-					&instance->dags[i].prefix_info.prefix),
-			instance->dags[i].prefix_info.length,
-			instance->dags[i].rank, instance->dags[i].min_rank,
-			instance->dags[i].version,
-			instance->dags[i].is_grounded ? 'G' : 'g',
-			instance->dags[i].is_joined ? 'J' : 'j',
-			instance->dags[i].preferred_parent);
-	}
-	PR("\n");
-
-	count = 0;
-
-	user_data.shell = shell;
-	user_data.user_data = &count;
-
-	i = net_rpl_foreach_parent(rpl_parent, &user_data);
-	if (i == 0) {
-		PR_WARNING("No parents found.\n");
-	}
-
-	PR("\n");
-#else
-	PR_INFO("RPL not enabled, set CONFIG_NET_RPL to enable it.\n");
 #endif
 
 	return 0;
@@ -4390,7 +4155,6 @@ SHELL_CREATE_STATIC_SUBCMD_SET(net_commands)
 		  cmd_net_nbr),
 	SHELL_CMD(ping, NULL, "Ping a network host.", cmd_net_ping),
 	SHELL_CMD(route, NULL, "Show network route.", cmd_net_route),
-	SHELL_CMD(rpl, NULL, "Show RPL mesh routing status.", cmd_net_rpl),
 	SHELL_CMD(stacks, NULL, "Show network stacks information.",
 		  cmd_net_stacks),
 	SHELL_CMD(stats, &net_cmd_stats, "Show network statistics.",

@@ -13,6 +13,8 @@
 
 #include "lsm6dsl.h"
 
+#ifdef DT_ST_LSM6DSL_BUS_I2C
+
 static u16_t lsm6dsl_i2c_slave_addr = DT_LSM6DSL_I2C_ADDR;
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
@@ -61,3 +63,4 @@ int lsm6dsl_i2c_init(struct device *dev)
 
 	return 0;
 }
+#endif /* DT_ST_LSM6DSL_BUS_I2C */

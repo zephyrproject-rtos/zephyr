@@ -7,7 +7,7 @@
 
 from os import path
 
-from runners.core import ZephyrBinaryRunner
+from west.runners.core import ZephyrBinaryRunner
 
 DEFAULT_ARC_GDB_PORT = 3333
 DEFAULT_PROPS_FILE = 'nsim.props'
@@ -56,7 +56,7 @@ class NsimBinaryRunner(ZephyrBinaryRunner):
 
     def do_run(self, command, **kwargs):
         kwargs['nsim-cfg'] = path.join(self.cfg.board_dir, 'support',
-                                          self.props)
+                                       self.props)
 
         if command == 'flash':
             self.do_flash(**kwargs)
@@ -68,20 +68,19 @@ class NsimBinaryRunner(ZephyrBinaryRunner):
     def do_flash(self, **kwargs):
         config = kwargs['nsim-cfg']
 
-        cmd = (self.nsim_cmd +
-            ['-propsfile', config, self.cfg.kernel_elf])
+        cmd = (self.nsim_cmd + ['-propsfile', config, self.cfg.elf_file])
         self.check_call(cmd)
 
     def do_debug(self, **kwargs):
         config = kwargs['nsim-cfg']
 
-        server_cmd = (self.nsim_cmd +
-                       ['-gdb', '-port={}'.format(self.gdb_port),
-                       '-propsfile', config])
+        server_cmd = (self.nsim_cmd + ['-gdb',
+                                       '-port={}'.format(self.gdb_port),
+                                       '-propsfile', config])
 
         gdb_cmd = (self.gdb_cmd +
                    ['-ex', 'target remote :{}'.format(self.gdb_port),
-                    '-ex', 'load', self.cfg.kernel_elf])
+                    '-ex', 'load', self.cfg.elf_file])
 
         self.run_server_and_client(server_cmd, gdb_cmd)
 
@@ -89,7 +88,7 @@ class NsimBinaryRunner(ZephyrBinaryRunner):
         config = kwargs['nsim-cfg']
 
         cmd = (self.nsim_cmd +
-                       ['-gdb', '-port={}'.format(self.gdb_port),
-                       '-propsfile', config])
+               ['-gdb', '-port={}'.format(self.gdb_port),
+                '-propsfile', config])
 
         self.check_call(cmd)

@@ -8,12 +8,6 @@
 
 / {
 	soc {
-		otgfs_phy: otgfs_phy {
-			compatible = "usb-nop-xceiv";
-			#phy-cells = <0>;
-			label = "OTGFS_PHY";
-		};
-
 		usb: usb@40006800 {
 			compatible = "st,stm32-usb";
 			reg = <0x40006800 0x40000>;
@@ -25,5 +19,11 @@
 			status = "disabled";
 			label = "USB";
 		};
+	};
+
+	otgfs_phy: otgfs_phy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
+		label = "OTGFS_PHY";
 	};
 };

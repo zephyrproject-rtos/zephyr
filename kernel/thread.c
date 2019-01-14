@@ -28,6 +28,7 @@
 #include <kswap.h>
 #include <init.h>
 #include <tracing.h>
+#include <stdbool.h>
 
 extern struct _static_thread_data _static_thread_data_list_start[];
 extern struct _static_thread_data _static_thread_data_list_end[];
@@ -60,7 +61,7 @@ void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data)
 #endif
 }
 
-int k_is_in_isr(void)
+bool k_is_in_isr(void)
 {
 	return _is_in_isr();
 }
@@ -87,11 +88,11 @@ void _thread_essential_clear(void)
 /*
  * This routine indicates if the current thread is an essential system thread.
  *
- * Returns non-zero if current thread is essential, zero if it is not.
+ * Returns true if current thread is essential, false if it is not.
  */
-int _is_thread_essential(void)
+bool _is_thread_essential(void)
 {
-	return _current->base.user_options & K_ESSENTIAL;
+	return (_current->base.user_options & K_ESSENTIAL) == K_ESSENTIAL;
 }
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
@@ -244,7 +245,7 @@ void _check_stack_sentinel(void)
 {
 	u32_t *stack;
 
-	if (_current->base.thread_state & _THREAD_DUMMY) {
+	if ((_current->base.thread_state & _THREAD_DUMMY) != 0) {
 		return;
 	}
 
@@ -403,7 +404,7 @@ void _setup_new_thread(struct k_thread *new_thread,
 					new_thread);
 	}
 
-	if (options & K_INHERIT_PERMS) {
+	if ((options & K_INHERIT_PERMS) != 0) {
 		_thread_perms_inherit(_current, new_thread);
 	}
 #endif
@@ -680,25 +681,6 @@ void _init_thread_base(struct _thread_base *thread_base, int priority,
 	/* swap_data does not need to be initialized */
 
 	_init_thread_timeout(thread_base);
-}
-
-void k_thread_access_grant(struct k_thread *thread, ...)
-{
-#ifdef CONFIG_USERSPACE
-	va_list args;
-	va_start(args, thread);
-
-	while (true) {
-		void *object = va_arg(args, void *);
-		if (object == NULL) {
-			break;
-		}
-		k_object_access_grant(object, thread);
-	}
-	va_end(args);
-#else
-	ARG_UNUSED(thread);
-#endif
 }
 
 FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,

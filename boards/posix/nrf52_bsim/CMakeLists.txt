@@ -16,8 +16,8 @@ endif()
 if(NOT DEFINED ENV{NO_NRF52_BSIM_VERSION_WARNING})
   if(GIT_FOUND) #boilerplate.cmake searches for git
     file(STRINGS "hw_models_version" NRF52_HW_MODELS_TAG) #desired version
-    execute_process(COMMAND ${GIT_EXECUTABLE} describe --tags --abbrev=0
-      ${NRF52_HW_MODELS_TAG}
+    execute_process(COMMAND ${GIT_EXECUTABLE} merge-base --is-ancestor
+      ${NRF52_HW_MODELS_TAG} HEAD
       WORKING_DIRECTORY $ENV{BSIM_COMPONENTS_PATH}/ext_NRF52_hw_models/
       OUTPUT_VARIABLE NRF52_HW_MODELS_TAG_FOUND
       OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -41,12 +41,12 @@ if(NOT DEFINED ENV{NO_NRF52_BSIM_VERSION_WARNING})
       )
       message(STATUS "Found NRF52 models version ${NRF52_HW_MODELS_TAG_FOUND}")
 
-      message(STATUS "To disable this check set the environment variable\
+      message(FATAL_ERROR "To disable this check set the environment variable\
  NO_NRF52_BSIM_VERSION_WARNING")
 
     elseif(CMAKE_VERBOSE_MAKEFILE)
-      message(STATUS "nrf52_bsim: git describe --tags --abbrev=0\
- ${NRF52_HW_MODELS_TAG},
+      message(STATUS "nrf52_bsim: git merge-base --is-ancestor\
+ ${NRF52_HW_MODELS_TAG} HEAD,
  stdout: ${NRF52_HW_MODELS_TAG_FOUND}
  stderr: ${stderr}")
     endif()

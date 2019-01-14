@@ -1,34 +1,17 @@
 /*
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fsl_pint.h"
+
+/* Component ID definition, used by tools. */
+#ifndef FSL_COMPONENT_ID
+#define FSL_COMPONENT_ID "platform.drivers.pint"
+#endif
 
 /*******************************************************************************
  * Variables
@@ -44,6 +27,15 @@ static pint_cb_t s_pintCallback[FSL_FEATURE_PINT_NUMBER_OF_CONNECTED_OUTPUTS];
  * Code
  ******************************************************************************/
 
+/*!
+ * brief	Initialize PINT peripheral.
+
+ * This function initializes the PINT peripheral and enables the clock.
+ *
+ * param base Base address of the PINT peripheral.
+ *
+ * retval None.
+ */
 void PINT_Init(PINT_Type *base)
 {
     uint32_t i;
@@ -63,16 +55,56 @@ void PINT_Init(PINT_Type *base)
         pmcfg = pmcfg | (kPINT_PatternMatchNever << (PININT_BITSLICE_CFG_START + (i * 3U)));
     }
 
-    /* Enable the peripheral clock */
-    CLOCK_EnableClock(kCLOCK_Pint);
+#if defined(FSL_FEATURE_CLOCK_HAS_GPIOINT_CLOCK_SOURCE) && (FSL_FEATURE_CLOCK_HAS_GPIOINT_CLOCK_SOURCE == 1)
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
+    /* Enable the clock. */
+    CLOCK_EnableClock(kCLOCK_GpioInt);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
-    /* Reset the peripheral */
+#if !(defined(FSL_SDK_DISABLE_DRIVER_RESET_CONTROL) && FSL_SDK_DISABLE_DRIVER_RESET_CONTROL)
+    /* Reset the module. */
+    RESET_PeripheralReset(kGPIOINT_RST_N_SHIFT_RSTn);
+#endif /* FSL_SDK_DISABLE_DRIVER_RESET_CONTROL */
+
+#elif defined(FSL_FEATURE_CLOCK_HAS_GPIOINT_CLOCK_SOURCE) && (FSL_FEATURE_CLOCK_HAS_GPIOINT_CLOCK_SOURCE == 0)
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
+    /* Enable the clock. */
+    CLOCK_EnableClock(kCLOCK_Gpio0);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+
+#if !(defined(FSL_SDK_DISABLE_DRIVER_RESET_CONTROL) && FSL_SDK_DISABLE_DRIVER_RESET_CONTROL)
+    /* Reset the module. */
+    RESET_PeripheralReset(kGPIO0_RST_N_SHIFT_RSTn);
+#endif /* FSL_SDK_DISABLE_DRIVER_RESET_CONTROL */
+
+#else
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
+    /* Enable the clock. */
+    CLOCK_EnableClock(kCLOCK_Pint);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+
+#if !(defined(FSL_SDK_DISABLE_DRIVER_RESET_CONTROL) && FSL_SDK_DISABLE_DRIVER_RESET_CONTROL)
+    /* Reset the module. */
     RESET_PeripheralReset(kPINT_RST_SHIFT_RSTn);
+#endif /* FSL_SDK_DISABLE_DRIVER_RESET_CONTROL */
+#endif /* FSL_FEATURE_CLOCK_HAS_GPIOINT_CLOCK_SOURCE && FSL_FEATURE_CLOCK_HAS_NO_GPIOINT_CLOCK_SOURCE*/
 
     /* Disable all pattern match bit slices */
     base->PMCFG = pmcfg;
 }
 
+/*!
+ * brief	Configure PINT peripheral pin interrupt.
+
+ * This function configures a given pin interrupt.
+ *
+ * param base Base address of the PINT peripheral.
+ * param intr Pin interrupt.
+ * param enable Selects detection logic.
+ * param callback Callback.
+ *
+ * retval None.
+ */
 void PINT_PinInterruptConfig(PINT_Type *base, pint_pin_int_t intr, pint_pin_enable_t enable, pint_cb_t callback)
 {
     assert(base);
@@ -107,6 +139,18 @@ void PINT_PinInterruptConfig(PINT_Type *base, pint_pin_int_t intr, pint_pin_enab
     s_pintCallback[intr] = callback;
 }
 
+/*!
+ * brief	Get PINT peripheral pin interrupt configuration.
+
+ * This function returns the configuration of a given pin interrupt.
+ *
+ * param base Base address of the PINT peripheral.
+ * param pintr Pin interrupt.
+ * param enable Pointer to store the detection logic.
+ * param callback Callback.
+ *
+ * retval None.
+ */
 void PINT_PinInterruptGetConfig(PINT_Type *base, pint_pin_int_t pintr, pint_pin_enable_t *enable, pint_cb_t *callback)
 {
     uint32_t mask;
@@ -164,6 +208,17 @@ void PINT_PinInterruptGetConfig(PINT_Type *base, pint_pin_int_t pintr, pint_pin_
     *callback = s_pintCallback[pintr];
 }
 
+/*!
+ * brief	Configure PINT pattern match.
+
+ * This function configures a given pattern match bit slice.
+ *
+ * param base Base address of the PINT peripheral.
+ * param bslice Pattern match bit slice number.
+ * param cfg Pointer to bit slice configuration.
+ *
+ * retval None.
+ */
 void PINT_PatternMatchConfig(PINT_Type *base, pint_pmatch_bslice_t bslice, pint_pmatch_cfg_t *cfg)
 {
     uint32_t src_shift;
@@ -201,6 +256,17 @@ void PINT_PatternMatchConfig(PINT_Type *base, pint_pmatch_bslice_t bslice, pint_
     s_pintCallback[bslice] = cfg->callback;
 }
 
+/*!
+ * brief	Get PINT pattern match configuration.
+
+ * This function returns the configuration of a given pattern match bit slice.
+ *
+ * param base Base address of the PINT peripheral.
+ * param bslice Pattern match bit slice number.
+ * param cfg Pointer to bit slice configuration.
+ *
+ * retval None.
+ */
 void PINT_PatternMatchGetConfig(PINT_Type *base, pint_pmatch_bslice_t bslice, pint_pmatch_cfg_t *cfg)
 {
     uint32_t src_shift;
@@ -225,6 +291,16 @@ void PINT_PatternMatchGetConfig(PINT_Type *base, pint_pmatch_bslice_t bslice, pi
     cfg->callback = s_pintCallback[bslice];
 }
 
+/*!
+ * brief	Reset pattern match detection logic.
+
+ * This function resets the pattern match detection logic if any of the product term is matching.
+ *
+ * param base Base address of the PINT peripheral.
+ *
+ * retval pmstatus Each bit position indicates the match status of corresponding bit slice.
+ * = 0 Match was detected.  = 1 Match was not detected.
+ */
 uint32_t PINT_PatternMatchResetDetectLogic(PINT_Type *base)
 {
     uint32_t pmctrl;
@@ -242,6 +318,16 @@ uint32_t PINT_PatternMatchResetDetectLogic(PINT_Type *base)
     return (pmstatus);
 }
 
+/*!
+ * brief	Enable callback.
+
+ * This function enables the interrupt for the selected PINT peripheral. Although the pin(s) are monitored
+ * as soon as they are enabled, the callback function is not enabled until this function is called.
+ *
+ * param base Base address of the PINT peripheral.
+ *
+ * retval None.
+ */
 void PINT_EnableCallback(PINT_Type *base)
 {
     uint32_t i;
@@ -257,6 +343,35 @@ void PINT_EnableCallback(PINT_Type *base)
     }
 }
 
+/*!
+ * brief	enable callback by pin index.
+
+ * This function  enables callback by pin index instead of enabling all pins.
+ *
+ * param base Base address of the peripheral.
+ * param pinIdx pin index.
+ *
+ * retval None.
+ */
+void PINT_EnableCallbackByIndex(PINT_Type *base, pint_pin_int_t pintIdx)
+{
+    assert(base);
+
+    NVIC_ClearPendingIRQ(s_pintIRQ[pintIdx]);
+    PINT_PinInterruptClrStatus(base, (pint_pin_int_t)pintIdx);
+    EnableIRQ(s_pintIRQ[pintIdx]);
+}
+
+/*!
+ * brief	Disable callback.
+
+ * This function disables the interrupt for the selected PINT peripheral. Although the pins are still
+ * being monitored but the callback function is not called.
+ *
+ * param base Base address of the peripheral.
+ *
+ * retval None.
+ */
 void PINT_DisableCallback(PINT_Type *base)
 {
     uint32_t i;
@@ -271,6 +386,34 @@ void PINT_DisableCallback(PINT_Type *base)
     }
 }
 
+/*!
+ * brief disable callback by pin index.
+
+ * This function disables callback by pin index instead of disabling all pins.
+ *
+ * param base Base address of the peripheral.
+ * param pinIdx pin index.
+ *
+ * retval None.
+ */
+void PINT_DisableCallbackByIndex(PINT_Type *base, pint_pin_int_t pintIdx)
+{
+    assert(base);
+
+    DisableIRQ(s_pintIRQ[pintIdx]);
+    PINT_PinInterruptClrStatus(base, (pint_pin_int_t)pintIdx);
+    NVIC_ClearPendingIRQ(s_pintIRQ[pintIdx]);
+}
+
+/*!
+ * brief	Deinitialize PINT peripheral.
+
+ * This function disables the PINT clock.
+ *
+ * param base Base address of the PINT peripheral.
+ *
+ * retval None.
+ */
 void PINT_Deinit(PINT_Type *base)
 {
     uint32_t i;
@@ -284,11 +427,39 @@ void PINT_Deinit(PINT_Type *base)
         s_pintCallback[i] = NULL;
     }
 
-    /* Reset the peripheral */
-    RESET_PeripheralReset(kPINT_RST_SHIFT_RSTn);
+#if defined(FSL_FEATURE_CLOCK_HAS_GPIOINT_CLOCK_SOURCE) && (FSL_FEATURE_CLOCK_HAS_GPIOINT_CLOCK_SOURCE == 1)
+#if !(defined(FSL_SDK_DISABLE_DRIVER_RESET_CONTROL) && FSL_SDK_DISABLE_DRIVER_RESET_CONTROL)
+    /* Reset the module. */
+    RESET_PeripheralReset(kGPIOINT_RST_N_SHIFT_RSTn);
+#endif /* FSL_SDK_DISABLE_DRIVER_RESET_CONTROL */
 
-    /* Disable the peripheral clock */
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
+    /* Disable the clock. */
+    CLOCK_DisableClock(kCLOCK_GpioInt);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+
+#elif defined(FSL_FEATURE_CLOCK_HAS_GPIOINT_CLOCK_SOURCE) && (FSL_FEATURE_CLOCK_HAS_GPIOINT_CLOCK_SOURCE == 0)
+#if !(defined(FSL_SDK_DISABLE_DRIVER_RESET_CONTROL) && FSL_SDK_DISABLE_DRIVER_RESET_CONTROL)
+    /* Reset the module. */
+    RESET_PeripheralReset(kGPIO0_RST_N_SHIFT_RSTn);
+#endif /* FSL_SDK_DISABLE_DRIVER_RESET_CONTROL */
+
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
+    /* Disable the clock. */
+    CLOCK_DisableClock(kCLOCK_Gpio0);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+
+#else
+#if !(defined(FSL_SDK_DISABLE_DRIVER_RESET_CONTROL) && FSL_SDK_DISABLE_DRIVER_RESET_CONTROL)
+    /* Reset the module. */
+    RESET_PeripheralReset(kPINT_RST_SHIFT_RSTn);
+#endif /* FSL_SDK_DISABLE_DRIVER_RESET_CONTROL */
+
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
+    /* Disable the clock. */
     CLOCK_DisableClock(kCLOCK_Pint);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+#endif /* FSL_FEATURE_CLOCK_HAS_GPIOINT_CLOCK_SOURCE */
 }
 
 /* IRQ handler functions overloading weak symbols in the startup */
@@ -298,13 +469,21 @@ void PIN_INT0_DriverIRQHandler(void)
 
     /* Reset pattern match detection */
     pmstatus = PINT_PatternMatchResetDetectLogic(PINT);
-    /* Clear Pin interrupt before callback */
-    PINT_PinInterruptClrStatus(PINT, kPINT_PinInt0);
     /* Call user function */
     if (s_pintCallback[kPINT_PinInt0] != NULL)
     {
         s_pintCallback[kPINT_PinInt0](kPINT_PinInt0, pmstatus);
     }
+    if ((PINT->ISEL & 0x1U) == 0x0U)
+    {
+        /* Edge sensitive: clear Pin interrupt after callback */
+        PINT_PinInterruptClrStatus(PINT, kPINT_PinInt0);
+    }
+/* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+  exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 #if (FSL_FEATURE_PINT_NUMBER_OF_CONNECTED_OUTPUTS > 1U)
@@ -314,13 +493,21 @@ void PIN_INT1_DriverIRQHandler(void)
 
     /* Reset pattern match detection */
     pmstatus = PINT_PatternMatchResetDetectLogic(PINT);
-    /* Clear Pin interrupt before callback */
-    PINT_PinInterruptClrStatus(PINT, kPINT_PinInt1);
     /* Call user function */
     if (s_pintCallback[kPINT_PinInt1] != NULL)
     {
         s_pintCallback[kPINT_PinInt1](kPINT_PinInt1, pmstatus);
     }
+    if ((PINT->ISEL & 0x2U) == 0x0U)
+    {
+        /* Edge sensitive: clear Pin interrupt after callback */
+        PINT_PinInterruptClrStatus(PINT, kPINT_PinInt1);
+    }
+/* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+  exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 #endif
 
@@ -331,13 +518,21 @@ void PIN_INT2_DriverIRQHandler(void)
 
     /* Reset pattern match detection */
     pmstatus = PINT_PatternMatchResetDetectLogic(PINT);
-    /* Clear Pin interrupt before callback */
-    PINT_PinInterruptClrStatus(PINT, kPINT_PinInt2);
     /* Call user function */
     if (s_pintCallback[kPINT_PinInt2] != NULL)
     {
         s_pintCallback[kPINT_PinInt2](kPINT_PinInt2, pmstatus);
     }
+    if ((PINT->ISEL & 0x4U) == 0x0U)
+    {
+        /* Edge sensitive: clear Pin interrupt after callback */
+        PINT_PinInterruptClrStatus(PINT, kPINT_PinInt2);
+    }
+/* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+  exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 #endif
 
@@ -348,13 +543,21 @@ void PIN_INT3_DriverIRQHandler(void)
 
     /* Reset pattern match detection */
     pmstatus = PINT_PatternMatchResetDetectLogic(PINT);
-    /* Clear Pin interrupt before callback */
-    PINT_PinInterruptClrStatus(PINT, kPINT_PinInt3);
     /* Call user function */
     if (s_pintCallback[kPINT_PinInt3] != NULL)
     {
         s_pintCallback[kPINT_PinInt3](kPINT_PinInt3, pmstatus);
     }
+    if ((PINT->ISEL & 0x8U) == 0x0U)
+    {
+        /* Edge sensitive: clear Pin interrupt after callback */
+        PINT_PinInterruptClrStatus(PINT, kPINT_PinInt3);
+    }
+/* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+  exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 #endif
 
@@ -365,63 +568,107 @@ void PIN_INT4_DriverIRQHandler(void)
 
     /* Reset pattern match detection */
     pmstatus = PINT_PatternMatchResetDetectLogic(PINT);
-    /* Clear Pin interrupt before callback */
-    PINT_PinInterruptClrStatus(PINT, kPINT_PinInt4);
     /* Call user function */
     if (s_pintCallback[kPINT_PinInt4] != NULL)
     {
         s_pintCallback[kPINT_PinInt4](kPINT_PinInt4, pmstatus);
     }
+    if ((PINT->ISEL & 0x10U) == 0x0U)
+    {
+        /* Edge sensitive: clear Pin interrupt after callback */
+        PINT_PinInterruptClrStatus(PINT, kPINT_PinInt4);
+    }
+/* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+  exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 #endif
 
 #if (FSL_FEATURE_PINT_NUMBER_OF_CONNECTED_OUTPUTS > 5U)
+#if defined(FSL_FEATURE_NVIC_HAS_SHARED_INTERTTUPT_NUMBER) && FSL_FEATURE_NVIC_HAS_SHARED_INTERTTUPT_NUMBER
+void PIN_INT5_DAC1_IRQHandler(void)
+#else
 void PIN_INT5_DriverIRQHandler(void)
+#endif /* FSL_FEATURE_NVIC_HAS_SHARED_INTERTTUPT_NUMBER */
 {
     uint32_t pmstatus;
 
     /* Reset pattern match detection */
     pmstatus = PINT_PatternMatchResetDetectLogic(PINT);
-    /* Clear Pin interrupt before callback */
-    PINT_PinInterruptClrStatus(PINT, kPINT_PinInt5);
     /* Call user function */
     if (s_pintCallback[kPINT_PinInt5] != NULL)
     {
         s_pintCallback[kPINT_PinInt5](kPINT_PinInt5, pmstatus);
     }
+    if ((PINT->ISEL & 0x20U) == 0x0U)
+    {
+        /* Edge sensitive: clear Pin interrupt after callback */
+        PINT_PinInterruptClrStatus(PINT, kPINT_PinInt5);
+    }
+/* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+  exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 #endif
 
 #if (FSL_FEATURE_PINT_NUMBER_OF_CONNECTED_OUTPUTS > 6U)
+#if defined(FSL_FEATURE_NVIC_HAS_SHARED_INTERTTUPT_NUMBER) && FSL_FEATURE_NVIC_HAS_SHARED_INTERTTUPT_NUMBER
+void PIN_INT6_USART3_IRQHandler(void)
+#else
 void PIN_INT6_DriverIRQHandler(void)
+#endif /* FSL_FEATURE_NVIC_HAS_SHARED_INTERTTUPT_NUMBER */
 {
     uint32_t pmstatus;
 
     /* Reset pattern match detection */
     pmstatus = PINT_PatternMatchResetDetectLogic(PINT);
-    /* Clear Pin interrupt before callback */
-    PINT_PinInterruptClrStatus(PINT, kPINT_PinInt6);
     /* Call user function */
     if (s_pintCallback[kPINT_PinInt6] != NULL)
     {
         s_pintCallback[kPINT_PinInt6](kPINT_PinInt6, pmstatus);
     }
+    if ((PINT->ISEL & 0x40U) == 0x0U)
+    {
+        /* Edge sensitive: clear Pin interrupt after callback */
+        PINT_PinInterruptClrStatus(PINT, kPINT_PinInt6);
+    }
+/* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+  exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 #endif
 
 #if (FSL_FEATURE_PINT_NUMBER_OF_CONNECTED_OUTPUTS > 7U)
+#if defined(FSL_FEATURE_NVIC_HAS_SHARED_INTERTTUPT_NUMBER) && FSL_FEATURE_NVIC_HAS_SHARED_INTERTTUPT_NUMBER
+void PIN_INT7_USART4_IRQHandler(void)
+#else
 void PIN_INT7_DriverIRQHandler(void)
+#endif /* FSL_FEATURE_NVIC_HAS_SHARED_INTERTTUPT_NUMBER */
 {
     uint32_t pmstatus;
 
     /* Reset pattern match detection */
     pmstatus = PINT_PatternMatchResetDetectLogic(PINT);
-    /* Clear Pin interrupt before callback */
-    PINT_PinInterruptClrStatus(PINT, kPINT_PinInt7);
     /* Call user function */
     if (s_pintCallback[kPINT_PinInt7] != NULL)
     {
         s_pintCallback[kPINT_PinInt7](kPINT_PinInt7, pmstatus);
     }
+    if ((PINT->ISEL & 0x80U) == 0x0U)
+    {
+        /* Edge sensitive: clear Pin interrupt after callback */
+        PINT_PinInterruptClrStatus(PINT, kPINT_PinInt7);
+    }
+/* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+  exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 #endif

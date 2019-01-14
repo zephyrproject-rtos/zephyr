@@ -1,11 +1,11 @@
 #
-# Copyright (c) 2018 Intel Corporation
+# Copyright (c) 2019 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 
 menuconfig AUDIO_TLV320DAC
 	bool "TLV320DAC310x DAC support"
-	depends on I2C
+	depends on I2C && GPIO
 	help
 	  Enable TLV320DAC support on the selected board

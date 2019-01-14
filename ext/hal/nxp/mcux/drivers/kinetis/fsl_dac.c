@@ -1,34 +1,17 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fsl_dac.h"
+
+/* Component ID definition, used by tools. */
+#ifndef FSL_COMPONENT_ID
+#define FSL_COMPONENT_ID "platform.drivers.dac"
+#endif
 
 /*******************************************************************************
  * Prototypes
@@ -71,6 +54,17 @@ static uint32_t DAC_GetInstance(DAC_Type *base)
     return instance;
 }
 
+/*!
+ * brief Initializes the DAC module.
+ *
+ * This function initializes the DAC module including the following operations.
+ *  - Enabling the clock for DAC module.
+ *  - Configuring the DAC converter with a user configuration.
+ *  - Enabling the DAC module.
+ *
+ * param base DAC peripheral base address.
+ * param config Pointer to the configuration structure. See "dac_config_t".
+ */
 void DAC_Init(DAC_Type *base, const dac_config_t *config)
 {
     assert(NULL != config);
@@ -99,6 +93,15 @@ void DAC_Init(DAC_Type *base, const dac_config_t *config)
     /* Tip: The DAC output can be enabled till then after user sets their own available data in application. */
 }
 
+/*!
+ * brief De-initializes the DAC module.
+ *
+ * This function de-initializes the DAC module including the following operations.
+ *  - Disabling the DAC module.
+ *  - Disabling the clock for the DAC module.
+ *
+ * param base DAC peripheral base address.
+ */
 void DAC_Deinit(DAC_Type *base)
 {
     DAC_Enable(base, false);
@@ -109,14 +112,33 @@ void DAC_Deinit(DAC_Type *base)
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
+/*!
+ * brief Initializes the DAC user configuration structure.
+ *
+ * This function initializes the user configuration structure to a default value. The default values are as follows.
+ * code
+ *   config->referenceVoltageSource = kDAC_ReferenceVoltageSourceVref2;
+ *   config->enableLowPowerMode = false;
+ * endcode
+ * param config Pointer to the configuration structure. See "dac_config_t".
+ */
 void DAC_GetDefaultConfig(dac_config_t *config)
 {
     assert(NULL != config);
+
+    /* Initializes the configure structure to zero. */
+    memset(config, 0, sizeof(*config));
 
     config->referenceVoltageSource = kDAC_ReferenceVoltageSourceVref2;
     config->enableLowPowerMode = false;
 }
 
+/*!
+ * brief Configures the CMP buffer.
+ *
+ * param base   DAC peripheral base address.
+ * param config Pointer to the configuration structure. See "dac_buffer_config_t".
+ */
 void DAC_SetBufferConfig(DAC_Type *base, const dac_buffer_config_t *config)
 {
     assert(NULL != config);
@@ -150,9 +172,25 @@ void DAC_SetBufferConfig(DAC_Type *base, const dac_buffer_config_t *config)
     base->C2 = tmp8;
 }
 
+/*!
+ * brief Initializes the DAC buffer configuration structure.
+ *
+ * This function initializes the DAC buffer configuration structure to default values. The default values are as
+ * follows.
+ * code
+ *   config->triggerMode = kDAC_BufferTriggerBySoftwareMode;
+ *   config->watermark   = kDAC_BufferWatermark1Word;
+ *   config->workMode    = kDAC_BufferWorkAsNormalMode;
+ *   config->upperLimit  = DAC_DATL_COUNT - 1U;
+ * endcode
+ * param config Pointer to the configuration structure. See "dac_buffer_config_t".
+ */
 void DAC_GetDefaultBufferConfig(dac_buffer_config_t *config)
 {
     assert(NULL != config);
+
+    /* Initializes the configure structure to zero. */
+    memset(config, 0, sizeof(*config));
 
     config->triggerMode = kDAC_BufferTriggerBySoftwareMode;
 #if defined(FSL_FEATURE_DAC_HAS_WATERMARK_SELECTION) && FSL_FEATURE_DAC_HAS_WATERMARK_SELECTION
@@ -162,6 +200,14 @@ void DAC_GetDefaultBufferConfig(dac_buffer_config_t *config)
     config->upperLimit = DAC_DATL_COUNT - 1U;
 }
 
+/*!
+ * brief Sets the value for  items in the buffer.
+ *
+ * param base  DAC peripheral base address.
+ * param index Setting the index for items in the buffer. The available index should not exceed the size of the DAC
+ * buffer.
+ * param value Setting the value for items in the buffer. 12-bits are available.
+ */
 void DAC_SetBufferValue(DAC_Type *base, uint8_t index, uint16_t value)
 {
     assert(index < DAC_DATL_COUNT);
@@ -170,6 +216,16 @@ void DAC_SetBufferValue(DAC_Type *base, uint8_t index, uint16_t value)
     base->DAT[index].DATH = (uint8_t)((0xF00U & value) >> 8); /* High 4-bit. */
 }
 
+/*!
+ * brief Sets the current read pointer of the DAC buffer.
+ *
+ * This function sets the current read pointer of the DAC buffer.
+ * The current output value depends on the item indexed by the read pointer. It is updated either by a
+ * software trigger or a hardware trigger. After the read pointer changes, the DAC output value also changes.
+ *
+ * param base  DAC peripheral base address.
+ * param index Setting an index value for the pointer.
+ */
 void DAC_SetBufferReadPointer(DAC_Type *base, uint8_t index)
 {
     assert(index < DAC_DATL_COUNT);
@@ -180,6 +236,12 @@ void DAC_SetBufferReadPointer(DAC_Type *base, uint8_t index)
     base->C2 = tmp8;
 }
 
+/*!
+ * brief Enables interrupts for the DAC buffer.
+ *
+ * param base DAC peripheral base address.
+ * param mask Mask value for interrupts. See "_dac_buffer_interrupt_enable".
+ */
 void DAC_EnableBufferInterrupts(DAC_Type *base, uint32_t mask)
 {
     mask &= (
@@ -190,6 +252,12 @@ void DAC_EnableBufferInterrupts(DAC_Type *base, uint32_t mask)
     base->C0 |= ((uint8_t)mask); /* Write 1 to enable. */
 }
 
+/*!
+ * brief Disables interrupts for the DAC buffer.
+ *
+ * param base DAC peripheral base address.
+ * param mask Mask value for interrupts. See  "_dac_buffer_interrupt_enable".
+ */
 void DAC_DisableBufferInterrupts(DAC_Type *base, uint32_t mask)
 {
     mask &= (
@@ -200,6 +268,13 @@ void DAC_DisableBufferInterrupts(DAC_Type *base, uint32_t mask)
     base->C0 &= (uint8_t)(~((uint8_t)mask)); /* Write 0 to disable. */
 }
 
+/*!
+ * brief Gets the flags of events for the DAC buffer.
+ *
+ * param  base DAC peripheral base address.
+ *
+ * return      Mask value for the asserted flags. See  "_dac_buffer_status_flags".
+ */
 uint32_t DAC_GetBufferStatusFlags(DAC_Type *base)
 {
     return (uint32_t)(base->SR & (
@@ -209,6 +284,12 @@ uint32_t DAC_GetBufferStatusFlags(DAC_Type *base)
                                      DAC_SR_DACBFRPTF_MASK | DAC_SR_DACBFRPBF_MASK));
 }
 
+/*!
+ * brief Clears the flags of events for the DAC buffer.
+ *
+ * param base DAC peripheral base address.
+ * param mask Mask value for flags. See "_dac_buffer_status_flags_t".
+ */
 void DAC_ClearBufferStatusFlags(DAC_Type *base, uint32_t mask)
 {
     mask &= (

@@ -11,11 +11,14 @@ if SOC_SERIES_EFM32HG
 config SOC_SERIES
 	default "efm32hg"
 
+config SOC_PART_NUMBER
+	default "EFM32HG322F64" if SOC_PART_NUMBER_EFM32HG322F64
+
 config NUM_IRQS
 	int
 	# must be >= the highest interrupt number used
 	default 20
 
-source "soc/arm/silabs_exx32/efm32hg/Kconfig.defconfig.e*"
+source "soc/arm/silabs_exx32/efm32hg/Kconfig.defconfig.efm32hg"
 
 endif # SOC_SERIES_EFM32HG

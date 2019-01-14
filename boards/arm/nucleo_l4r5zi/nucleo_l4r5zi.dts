@@ -12,8 +12,8 @@
 	compatible = "st,stm32l4r5zi-nucleo", "st,stm32l4r5";
 
 	chosen {
-		zephyr,console = &usart2;
-		zephyr,shell-uart = &usart2;
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
@@ -71,6 +71,12 @@ arduino_serial: &usart3 {};
 };
 
 &usart3 {
+	current-speed = <115200>;
+	pinctrl-names = "default";
+	status = "ok";
+};
+
+&lpuart1 {
 	current-speed = <115200>;
 	pinctrl-names = "default";
 	status = "ok";

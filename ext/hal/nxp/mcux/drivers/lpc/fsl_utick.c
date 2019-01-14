@@ -1,31 +1,9 @@
 /*
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fsl_utick.h"
@@ -33,6 +11,11 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
+
+/* Component ID definition, used by tools. */
+#ifndef FSL_COMPONENT_ID
+#define FSL_COMPONENT_ID "platform.drivers.utick"
+#endif
 
 /* Typedef for interrupt handler. */
 typedef void (*utick_isr_t)(UTICK_Type *base, utick_callback_t cb);
@@ -62,6 +45,12 @@ static const IRQn_Type s_utickIRQ[] = UTICK_IRQS;
 /* Array of UTICK clock name. */
 static const clock_ip_name_t s_utickClock[] = UTICK_CLOCKS;
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+
+#if !(defined(FSL_FEATURE_UTICK_HAS_NO_RESET) && FSL_FEATURE_UTICK_HAS_NO_RESET)
+/*! @brief Pointers to UTICK resets for each instance. */
+static const reset_ip_name_t s_utickResets[] = UTICK_RSTS;
+#endif
+
 /* UTICK ISR for transactional APIs. */
 static utick_isr_t s_utickIsr;
 
@@ -86,6 +75,17 @@ static uint32_t UTICK_GetInstance(UTICK_Type *base)
     return instance;
 }
 
+/*!
+ * brief Starts UTICK.
+ *
+ * This function starts a repeat/onetime countdown with an optional callback
+ *
+ * param base   UTICK peripheral base address.
+ * param mode  UTICK timer mode (ie kUTICK_onetime or kUTICK_repeat)
+ * param count  UTICK timer mode (ie kUTICK_onetime or kUTICK_repeat)
+ * param cb  UTICK callback (can be left as NULL if none, otherwise should be a void func(void))
+ * return none
+ */
 void UTICK_SetTick(UTICK_Type *base, utick_mode_t mode, uint32_t count, utick_callback_t cb)
 {
     uint32_t instance;
@@ -99,33 +99,80 @@ void UTICK_SetTick(UTICK_Type *base, utick_mode_t mode, uint32_t count, utick_ca
     base->CTRL = count | UTICK_CTRL_REPEAT(mode);
 }
 
+/*!
+* brief Initializes an UTICK by turning its bus clock on
+*
+*/
 void UTICK_Init(UTICK_Type *base)
 {
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Enable utick clock */
     CLOCK_EnableClock(s_utickClock[UTICK_GetInstance(base)]);
+#endif
+
+#if !(defined(FSL_FEATURE_UTICK_HAS_NO_RESET) && FSL_FEATURE_UTICK_HAS_NO_RESET)
+    RESET_PeripheralReset(s_utickResets[UTICK_GetInstance(base)]);
+#endif
+
     /* Power up Watchdog oscillator*/
     POWER_DisablePD(kPDRUNCFG_PD_WDT_OSC);
     s_utickIsr = UTICK_HandleIRQ;
 }
 
+/*!
+ * brief Deinitializes a UTICK instance.
+ *
+ * This function shuts down Utick bus clock
+ *
+ * param base UTICK peripheral base address.
+ */
 void UTICK_Deinit(UTICK_Type *base)
 {
     /* Turn off utick */
     base->CTRL = 0;
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Disable utick clock */
     CLOCK_DisableClock(s_utickClock[UTICK_GetInstance(base)]);
+#endif
 }
 
+/*!
+ * brief Get Status Flags.
+ *
+ * This returns the status flag
+ *
+ * param base UTICK peripheral base address.
+ * return status register value
+ */
 uint32_t UTICK_GetStatusFlags(UTICK_Type *base)
 {
     return (base->STAT);
 }
 
+/*!
+ * brief Clear Status Interrupt Flags.
+ *
+ * This clears intr status flag
+ *
+ * param base UTICK peripheral base address.
+ * return none
+ */
 void UTICK_ClearStatusFlags(UTICK_Type *base)
 {
     base->STAT = UTICK_STAT_INTR_MASK;
 }
 
+/*!
+ * brief UTICK Interrupt Service Handler.
+ *
+ * This function handles the interrupt and refers to the callback array in the driver to callback user (as per request
+ * in UTICK_SetTick()).
+ * if no user callback is scheduled, the interrupt will simply be cleared.
+ *
+ * param base   UTICK peripheral base address.
+ * param cb  callback scheduled for this instance of UTICK
+ * return none
+ */
 void UTICK_HandleIRQ(UTICK_Type *base, utick_callback_t cb)
 {
     UTICK_ClearStatusFlags(base);
@@ -139,17 +186,32 @@ void UTICK_HandleIRQ(UTICK_Type *base, utick_callback_t cb)
 void UTICK0_DriverIRQHandler(void)
 {
     s_utickIsr(UTICK0, s_utickHandle[0]);
+/* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+  exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 #endif
 #if defined(UTICK1)
 void UTICK1_DriverIRQHandler(void)
 {
     s_utickIsr(UTICK1, s_utickHandle[1]);
+/* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+  exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 #endif
 #if defined(UTICK2)
 void UTICK2_DriverIRQHandler(void)
 {
     s_utickIsr(UTICK2, s_utickHandle[2]);
+/* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+  exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 #endif

@@ -33,7 +33,7 @@ Follow these steps to build the gPTP sample application:
 .. zephyr-app-commands::
    :zephyr-app: samples/net/gptp
    :board: <board to use>
-   :conf: prj.conf
+   :conf: prj_base.conf
    :goals: build
    :compact:
 
@@ -56,12 +56,18 @@ the ``net-setup.sh`` will create VLAN setup automatically with this command:
 
    ./net-setup.sh -c zeth-vlan.conf
 
-The OpenAVNU repository at https://github.com/AVnu/OpenAvnu contains gPTP
+The OpenAVNU repository at https://github.com/AVnu contains gPTP
 daemon that can be run in Linux host and which can act as a grandmaster for
-the IEEE 801.1AS network. Note that OpenAvnu will not work with
+the IEEE 801.1AS network. Note that OpenAVNU will not work with
 native_posix board as that board only supports software timestamping and
-OpenAvnu only supports hardware timestamping. See instructions at the end
+OpenAVNU only supports hardware timestamping. See instructions at the end
 of this chapter how to run linuxptp daemon with native_posix board.
+
+Get OpenAvnu/gPTP project sources
+
+.. code-block:: console
+
+    git clone git@github.com:AVnu/gptp.git
 
 After downloading the source code, compile it like this in Linux:
 
@@ -71,8 +77,7 @@ After downloading the source code, compile it like this in Linux:
     cd build
     cmake ..
     make
-    cp daemons/gptp/gptp_cfg.ini build/daemons/gptp/
-    cd build/daemons/gptp
+    cp ../gptp_cfg.ini .
 
 Edit the :file:`gptp_cfg.ini` file and set the neighborPropDelayThresh to 10000
 as the default value 800 is too low if you run the gPTP in FRDM-K64F.
@@ -85,7 +90,7 @@ file.
     sudo ./gptp enp0s25 -F gptp_cfg.ini
 
 Note that here the example network interface **enp0s25** is the name of the
-non-VLAN network interface that is connected to your Zephyr device.
+network interface that is connected to your Zephyr device.
 
 If everything is configured correctly, you should see following kind of
 messages from gptp:

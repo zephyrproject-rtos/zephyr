@@ -107,9 +107,6 @@ struct _thread_arch {
 	 * fixed offset to read the 'flags' field.
 	 */
 	u32_t flags;
-#ifdef CONFIG_THREAD_CUSTOM_DATA
-	void *custom_data;     /* available for custom use */
-#endif
 #ifdef CONFIG_ERRNO
 	int errno_var;
 #endif

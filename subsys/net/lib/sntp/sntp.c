@@ -113,6 +113,7 @@ static void sntp_recv_cb(struct net_app_ctx *ctx, struct net_pkt *pkt,
 	u64_t epoch_time = 0U;
 	u64_t tmp = 0U;
 	u16_t offset = 0U;
+	size_t out_len;
 
 	if (status < 0) {
 		goto error_exit;
@@ -125,9 +126,9 @@ static void sntp_recv_cb(struct net_app_ctx *ctx, struct net_pkt *pkt,
 
 	/* copy to buf */
 	offset = net_pkt_get_len(pkt) - net_pkt_appdatalen(pkt);
-	status = net_frag_linearize((u8_t *)&buf, sizeof(buf), pkt, offset,
-				    sizeof(buf));
-	if (status < 0) {
+	out_len = net_frag_linearize((u8_t *)&buf, sizeof(buf), pkt, offset,
+				     sizeof(buf));
+	if (out_len != sizeof(buf)) {
 		goto error_exit;
 	}
 

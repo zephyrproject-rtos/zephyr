@@ -27,7 +27,6 @@ LOG_MODULE_DECLARE(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
 #include "nbr.h"
 #include "6lo.h"
 #include "route.h"
-#include "rpl.h"
 #include "net_stats.h"
 
 /* Timeout for various buffer allocations in this file. */

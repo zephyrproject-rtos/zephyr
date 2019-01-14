@@ -126,7 +126,7 @@ void test_sys_mem_pool_min_block_size(void)
 /*test case main entry*/
 void test_main(void)
 {
-	k_thread_access_grant(k_current_get(), &pool_mutex, NULL);
+	k_thread_access_grant(k_current_get(), &pool_mutex);
 	sys_mem_pool_init(&pool);
 
 	ztest_test_suite(test_sys_mem_pool_api,

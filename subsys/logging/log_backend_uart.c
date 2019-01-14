@@ -60,12 +60,21 @@ static void log_backend_uart_init(void)
 
 static void panic(struct log_backend const *const backend)
 {
+	log_output_flush(&log_output);
+}
+
+static void dropped(const struct log_backend *const backend, u32_t cnt)
+{
+	ARG_UNUSED(backend);
+
+	log_output_dropped_process(&log_output, cnt);
 }
 
 const struct log_backend_api log_backend_uart_api = {
 	.put = put,
 	.panic = panic,
 	.init = log_backend_uart_init,
+	.dropped = dropped,
 };
 
 LOG_BACKEND_DEFINE(log_backend_uart, log_backend_uart_api, true);

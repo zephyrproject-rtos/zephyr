@@ -52,13 +52,10 @@ static enum ethernet_hw_caps e1000_caps(struct device *dev)
 
 static size_t e1000_linearize(struct net_pkt *pkt, void *buf, size_t bufsize)
 {
-	size_t len = net_pkt_ll_reserve(pkt) + pkt->frags->len;
+	size_t len = 0;
 	struct net_buf *nb;
 
-	/* First fragment contains link layer (Ethernet) header */
-	memcpy(buf, net_pkt_ll(pkt), len);
-
-	for (nb = pkt->frags->frags; nb; nb = nb->frags) {
+	for (nb = pkt->frags; nb; nb = nb->frags) {
 		memcpy((u8_t *) buf + len, nb->data, nb->len);
 		len += nb->len;
 	}
@@ -102,7 +99,7 @@ static struct net_pkt *e1000_rx(struct e1000_dev *dev)
 		goto out;
 	}
 
-	pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
+	pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("Out of RX buffers");
 		goto out;

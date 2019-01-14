@@ -14,7 +14,8 @@
 LOG_MODULE_REGISTER(i2c_nrfx_twi);
 
 struct i2c_nrfx_twi_data {
-	struct k_sem sync;
+	struct k_sem transfer_sync;
+	struct k_sem completion_sync;
 	volatile nrfx_err_t res;
 };
 
@@ -38,6 +39,7 @@ static int i2c_nrfx_twi_transfer(struct device *dev, struct i2c_msg *msgs,
 {
 	int ret = 0;
 
+	k_sem_take(&(get_dev_data(dev)->transfer_sync), K_FOREVER);
 	nrfx_twi_enable(&get_dev_config(dev)->twi);
 
 	for (size_t i = 0; i < num_msgs; i++) {
@@ -68,7 +70,7 @@ static int i2c_nrfx_twi_transfer(struct device *dev, struct i2c_msg *msgs,
 			}
 		}
 
-		k_sem_take(&(get_dev_data(dev)->sync), K_FOREVER);
+		k_sem_take(&(get_dev_data(dev)->completion_sync), K_FOREVER);
 		res = get_dev_data(dev)->res;
 		if (res != NRFX_SUCCESS) {
 			LOG_ERR("Error %d occurred for message %d", res, i);
@@ -78,6 +80,7 @@ static int i2c_nrfx_twi_transfer(struct device *dev, struct i2c_msg *msgs,
 	}
 
 	nrfx_twi_disable(&get_dev_config(dev)->twi);
+	k_sem_give(&(get_dev_data(dev)->transfer_sync));
 
 	return ret;
 }
@@ -102,7 +105,7 @@ static void event_handler(nrfx_twi_evt_t const *p_event, void *p_context)
 		break;
 	}
 
-	k_sem_give(&dev_data->sync);
+	k_sem_give(&dev_data->completion_sync);
 }
 
 static int i2c_nrfx_twi_configure(struct device *dev, u32_t dev_config)
@@ -172,7 +175,10 @@ static int init_twi(struct device *dev, const nrfx_twi_config_t *config)
 		return init_twi(dev, &config);				       \
 	}								       \
 	static struct i2c_nrfx_twi_data twi_##idx##_data = {		       \
-		.sync = _K_SEM_INITIALIZER(twi_##idx##_data.sync, 0, 1)	       \
+		.transfer_sync = _K_SEM_INITIALIZER(                           \
+			twi_##idx##_data.transfer_sync, 1, 1),                 \
+		.completion_sync = _K_SEM_INITIALIZER(                         \
+			twi_##idx##_data.completion_sync, 0, 1)	               \
 	};								       \
 	static const struct i2c_nrfx_twi_config twi_##idx##_config = {	       \
 		.twi = NRFX_TWI_INSTANCE(idx)				       \

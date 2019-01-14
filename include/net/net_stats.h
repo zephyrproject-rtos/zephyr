@@ -155,74 +155,6 @@ struct net_stats_ipv6_nd {
 	net_stats_t sent;
 };
 
-struct net_stats_rpl_dis {
-	/** Number of received DIS packets. */
-	net_stats_t recv;
-
-	/** Number of sent DIS packets. */
-	net_stats_t sent;
-
-	/** Number of dropped DIS packets. */
-	net_stats_t drop;
-};
-
-struct net_stats_rpl_dio {
-	/** Number of received DIO packets. */
-	net_stats_t recv;
-
-	/** Number of sent DIO packets. */
-	net_stats_t sent;
-
-	/** Number of dropped DIO packets. */
-	net_stats_t drop;
-
-	/** Number of DIO intervals. */
-	net_stats_t interval;
-};
-
-struct net_stats_rpl_dao {
-	/** Number of received DAO packets. */
-	net_stats_t recv;
-
-	/** Number of sent DAO packets. */
-	net_stats_t sent;
-
-	/** Number of dropped DAO packets. */
-	net_stats_t drop;
-
-	/** Number of forwarded DAO packets. */
-	net_stats_t forwarded;
-};
-
-struct net_stats_rpl_dao_ack {
-	/** Number of received DAO-ACK packets. */
-	net_stats_t recv;
-
-	/** Number of sent DAO-ACK packets. */
-	net_stats_t sent;
-
-	/** Number of dropped DAO-ACK packets. */
-	net_stats_t drop;
-};
-
-struct net_stats_rpl {
-	u16_t mem_overflows;
-	u16_t local_repairs;
-	u16_t global_repairs;
-	u16_t malformed_msgs;
-	u16_t resets;
-	u16_t parent_switch;
-	u16_t forward_errors;
-	u16_t loop_errors;
-	u16_t loop_warnings;
-	u16_t root_repairs;
-
-	struct net_stats_rpl_dis dis;
-	struct net_stats_rpl_dio dio;
-	struct net_stats_rpl_dao dao;
-	struct net_stats_rpl_dao_ack dao_ack;
-};
-
 struct net_stats_ipv6_mld {
 	/** Number of received IPv6 MLD queries */
 	net_stats_t recv;
@@ -284,10 +216,6 @@ struct net_stats {
 
 #if defined(CONFIG_NET_STATISTICS_IPV6_ND)
 	struct net_stats_ipv6_nd ipv6_nd;
-#endif
-
-#if defined(CONFIG_NET_STATISTICS_RPL)
-	struct net_stats_rpl rpl;
 #endif
 
 #if defined(CONFIG_NET_IPV6_MLD)
@@ -390,7 +318,6 @@ enum net_request_stats_cmd {
 	NET_REQUEST_STATS_CMD_GET_ICMP,
 	NET_REQUEST_STATS_CMD_GET_UDP,
 	NET_REQUEST_STATS_CMD_GET_TCP,
-	NET_REQUEST_STATS_CMD_GET_RPL,
 	NET_REQUEST_STATS_CMD_GET_ETHERNET,
 };
 
@@ -455,13 +382,6 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_UDP);
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_TCP);
 #endif /* CONFIG_NET_STATISTICS_TCP */
-
-#if defined(CONFIG_NET_STATISTICS_RPL)
-#define NET_REQUEST_STATS_GET_RPL				\
-	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_RPL)
-
-NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_RPL);
-#endif /* CONFIG_NET_STATISTICS_RPL */
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 #define NET_REQUEST_STATS_GET_ETHERNET				\

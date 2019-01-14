@@ -1,31 +1,9 @@
 /*
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #ifndef __FSL_ADC_H__
@@ -46,8 +24,8 @@
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief ADC driver version 2.0.0. */
-#define LPC_ADC_DRIVER_VERSION (MAKE_VERSION(2, 0, 0))
+/*! @brief ADC driver version 2.2.0. */
+#define FSL_ADC_DRIVER_VERSION (MAKE_VERSION(2, 2, 0))
 /*@}*/
 
 /*!
@@ -96,7 +74,7 @@ enum _adc_status_flags
     kADC_ConvSeqAInterruptFlag = 1U << 28U,    /*!< Sequence A interrupt/DMA trigger. */
     kADC_ConvSeqBInterruptFlag = 1U << 29U,    /*!< Sequence B interrupt/DMA trigger. */
     kADC_ThresholdCompareInterruptFlag = 1U << 30U, /*!< Threshold comparision interrupt flag. */
-    kADC_OverrunInterruptFlag = 1U << 31U,          /*!< Overrun interrupt flag. */
+    kADC_OverrunInterruptFlag = (int)(1U << 31U),   /*!< Overrun interrupt flag. */
 };
 
 /*!
@@ -114,6 +92,7 @@ enum _adc_interrupt_enable
                                                                  interrupt/DMA trigger. */
 };
 
+#if defined(FSL_FEATURE_ADC_HAS_CTRL_ASYNMODE) & FSL_FEATURE_ADC_HAS_CTRL_ASYNMODE
 /*!
  * @brief Define selection of clock mode.
  */
@@ -123,7 +102,9 @@ typedef enum _adc_clock_mode
         0U, /*!< The ADC clock would be derived from the system clock based on "clockDividerNumber". */
     kADC_ClockAsynchronousMode = 1U, /*!< The ADC clock would be based on the SYSCON block's divider. */
 } adc_clock_mode_t;
+#endif /* FSL_FEATURE_ADC_HAS_CTRL_ASYNMODE. */
 
+#if defined(FSL_FEATURE_ADC_HAS_CTRL_RESOL) & FSL_FEATURE_ADC_HAS_CTRL_RESOL
 /*!
  * @brief Define selection of resolution.
  */
@@ -134,6 +115,18 @@ typedef enum _adc_resolution
     kADC_Resolution10bit = 2U, /*!< 10-bit resolution. */
     kADC_Resolution12bit = 3U, /*!< 12-bit resolution. */
 } adc_resolution_t;
+#endif /* FSL_FEATURE_ADC_HAS_CTRL_RESOL. */
+
+#if defined(FSL_FEATURE_ADC_HAS_TRIM_REG) & FSL_FEATURE_ADC_HAS_TRIM_REG
+/*!
+* @brief Definfe range of the analog supply voltage VDDA.
+*/
+typedef enum _adc_voltage_range
+{
+    kADC_HighVoltageRange = 0U, /* High voltage. VDD = 2.7 V to 3.6 V. */
+    kADC_LowVoltageRange = 1U,  /* Low voltage. VDD = 2.4 V to 2.7 V. */
+} adc_vdda_range_t;
+#endif /* FSL_FEATURE_ADC_HAS_TRIM_REG. */
 
 /*!
  * @brief Define selection of polarity of selected input trigger for conversion sequence.
@@ -150,7 +143,7 @@ typedef enum _adc_trigger_polarity
 typedef enum _adc_priority
 {
     kADC_PriorityLow = 0U,  /*!< This sequence would be preempted when another sequence is started. */
-    kADC_PriorityHigh = 1U, /*!< This sequence would preempt other sequence even when is is started. */
+    kADC_PriorityHigh = 1U, /*!< This sequence would preempt other sequence even when it is started. */
 } adc_priority_t;
 
 /*!
@@ -209,17 +202,36 @@ typedef enum _adc_threshold_interrupt_mode
  */
 typedef struct _adc_config
 {
-    adc_clock_mode_t clockMode;   /*!< Select the clock mode for ADC converter. */
-    uint32_t clockDividerNumber;  /*!< This field is only available when using kADC_ClockSynchronousMode for "clockMode"
-                                       field. The divider would be plused by 1 based on the value in this field. The
-                                       available range is in 8 bits. */
-    adc_resolution_t resolution;  /*!< Select the conversion bits. */
+#if defined(FSL_FEATURE_ADC_HAS_CTRL_ASYNMODE) & FSL_FEATURE_ADC_HAS_CTRL_ASYNMODE
+    adc_clock_mode_t clockMode;  /*!< Select the clock mode for ADC converter. */
+#endif                           /* FSL_FEATURE_ADC_HAS_CTRL_ASYNMODE. */
+    uint32_t clockDividerNumber; /*!< This field is only available when using kADC_ClockSynchronousMode for "clockMode"
+                                      field. The divider would be plused by 1 based on the value in this field. The
+                                      available range is in 8 bits. */
+#if defined(FSL_FEATURE_ADC_HAS_CTRL_RESOL) & FSL_FEATURE_ADC_HAS_CTRL_RESOL
+    adc_resolution_t resolution; /*!< Select the conversion bits. */
+#endif                           /* FSL_FEATURE_ADC_HAS_CTRL_RESOL. */
+#if defined(FSL_FEATURE_ADC_HAS_CTRL_BYPASSCAL) & FSL_FEATURE_ADC_HAS_CTRL_BYPASSCAL
     bool enableBypassCalibration; /*!< By default, a calibration cycle must be performed each time the chip is
                                        powered-up. Re-calibration may be warranted periodically - especially if
                                        operating conditions have changed. To enable this option would avoid the need to
                                        calibrate if offset error is not a concern in the application. */
-    uint32_t sampleTimeNumber;    /*!< By default, with value as "0U", the sample period would be 2.5 ADC clocks. Then,
-                                       to plus the "sampleTimeNumber" value here. The available value range is in 3 bits.*/
+#endif                            /* FSL_FEATURE_ADC_HAS_CTRL_BYPASSCAL. */
+#if defined(FSL_FEATURE_ADC_HAS_CTRL_TSAMP) & FSL_FEATURE_ADC_HAS_CTRL_TSAMP
+    uint32_t sampleTimeNumber; /*!< By default, with value as "0U", the sample period would be 2.5 ADC clocks. Then,
+                                    to plus the "sampleTimeNumber" value here. The available value range is in 3 bits.*/
+#endif                         /* FSL_FEATURE_ADC_HAS_CTRL_TSAMP. */
+#if defined(FSL_FEATURE_ADC_HAS_CTRL_LPWRMODE) & FSL_FEATURE_ADC_HAS_CTRL_LPWRMODE
+    bool enableLowPowerMode; /*!< If disable low-power mode, ADC remains activated even when no conversions are
+                              requested.
+                              If enable low-power mode, The ADC is automatically powered-down when no conversions are
+                              taking place. */
+#endif                       /* FSL_FEATURE_ADC_HAS_CTRL_LPWRMODE. */
+#if defined(FSL_FEATURE_ADC_HAS_TRIM_REG) & FSL_FEATURE_ADC_HAS_TRIM_REG
+    adc_vdda_range_t
+        voltageRange; /*!<  Configure the ADC for the appropriate operating range of the analog supply voltage VDDA.
+                            Failure to set the area correctly causes the ADC to return incorrect conversion results. */
+#endif                /* FSL_FEATURE_ADC_HAS_TRIM_REG. */
 } adc_config_t;
 
 /*!
@@ -247,7 +259,7 @@ typedef struct _adc_conv_seq_config
  */
 typedef struct _adc_result_info
 {
-    uint32_t result;                                         /*!< Keey the conversion data value. */
+    uint32_t result;                                         /*!< Keep the conversion data value. */
     adc_threshold_compare_status_t thresholdCompareStatus;   /*!< Keep the threshold compare status. */
     adc_threshold_crossing_status_t thresholdCorssingStatus; /*!< Keep the threshold crossing status. */
     uint32_t channelNumber;                                  /*!< Keep the channel number for this conversion. */
@@ -298,6 +310,8 @@ void ADC_Deinit(ADC_Type *base);
  */
 void ADC_GetDefaultConfig(adc_config_t *config);
 
+#if !(defined(FSL_FEATURE_ADC_HAS_NO_CALIB_FUNC) && FSL_FEATURE_ADC_HAS_NO_CALIB_FUNC)
+#if defined(FSL_FEATURE_ADC_HAS_CALIB_REG) && FSL_FEATURE_ADC_HAS_CALIB_REG
 /*!
  * @brief Do the self hardware calibration.
  *
@@ -306,7 +320,22 @@ void ADC_GetDefaultConfig(adc_config_t *config);
  * @retval false Calibration failed.
  */
 bool ADC_DoSelfCalibration(ADC_Type *base);
+#else
+/*!
+ * @brief Do the self calibration. To calibrate the ADC, set the ADC clock to 500 kHz.
+ *        In order to achieve the specified ADC accuracy, the A/D converter must be recalibrated, at a minimum,
+ *        following every chip reset before initiating normal ADC operation.
+ *
+ * @param base ADC peripheral base address.
+ * @param frequency The ststem clock frequency to ADC.
+ * @retval true  Calibration succeed.
+ * @retval false Calibration failed.
+ */
+bool ADC_DoSelfCalibration(ADC_Type *base, uint32_t frequency);
+#endif /* FSL_FEATURE_ADC_HAS_CALIB_REG */
+#endif /* FSL_FEATURE_ADC_HAS_NO_CALIB_FUNC */
 
+#if !(defined(FSL_FEATURE_ADC_HAS_NO_INSEL) && FSL_FEATURE_ADC_HAS_NO_INSEL)
 /*!
  * @brief Enable the internal temperature sensor measurement.
  *
@@ -327,7 +356,7 @@ static inline void ADC_EnableTemperatureSensor(ADC_Type *base, bool enable)
         base->INSEL = (base->INSEL & ~ADC_INSEL_SEL_MASK) | ADC_INSEL_SEL(0);
     }
 }
-
+#endif /* FSL_FEATURE_ADC_HAS_NO_INSEL. */
 /* @} */
 
 /*!
@@ -611,13 +640,24 @@ static inline void ADC_DisableInterrupts(ADC_Type *base, uint32_t mask)
 }
 
 /*!
- * @brief Enable the interrupt of shreshold compare event for each channel.
+ * @brief Enable the interrupt of threshold compare event for each channel.
+ * @deprecated Do not use this function.  It has been superceded by @ADC_EnableThresholdCompareInterrupt
+ */
+static inline void ADC_EnableShresholdCompareInterrupt(ADC_Type *base,
+                                                       uint32_t channel,
+                                                       adc_threshold_interrupt_mode_t mode)
+{
+    base->INTEN = (base->INTEN & ~(0x3U << ((channel << 1U) + 3U))) | ((uint32_t)(mode) << ((channel << 1U) + 3U));
+}
+
+/*!
+ * @brief Enable the interrupt of threshold compare event for each channel.
  *
  * @param base ADC peripheral base address.
  * @param channel Channel number.
  * @param mode Interrupt mode for threshold compare event, see to #adc_threshold_interrupt_mode_t.
  */
-static inline void ADC_EnableShresholdCompareInterrupt(ADC_Type *base,
+static inline void ADC_EnableThresholdCompareInterrupt(ADC_Type *base,
                                                        uint32_t channel,
                                                        adc_threshold_interrupt_mode_t mode)
 {

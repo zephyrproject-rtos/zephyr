@@ -1,0 +1,14 @@
+identifier: 96b_stm32_sensor_mez
+name: 96B_STM32_SENSOR_MEZ
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - uart
+  - gpio
+  - i2c
+  - spi
+  - rtc

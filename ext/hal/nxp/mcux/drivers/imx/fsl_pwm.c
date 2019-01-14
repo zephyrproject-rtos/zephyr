@@ -2,7 +2,7 @@
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
  * All rights reserved.
- * 
+ *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
@@ -12,7 +12,6 @@
 #ifndef FSL_COMPONENT_ID
 #define FSL_COMPONENT_ID "platform.drivers.pwm"
 #endif
-
 
 /*******************************************************************************
  * Prototypes
@@ -58,6 +57,17 @@ static uint32_t PWM_GetInstance(PWM_Type *base)
     return instance;
 }
 
+/*!
+ * brief Ungates the PWM submodule clock and configures the peripheral for basic operation.
+ *
+ * note This API should be called at the beginning of the application using the PWM driver.
+ *
+ * param base      PWM peripheral base address
+ * param subModule PWM submodule to configure
+ * param config    Pointer to user's PWM config structure.
+ *
+ * return kStatus_Success means success; else failed.
+ */
 status_t PWM_Init(PWM_Type *base, pwm_submodule_t subModule, const pwm_config_t *config)
 {
     assert(config);
@@ -161,6 +171,12 @@ status_t PWM_Init(PWM_Type *base, pwm_submodule_t subModule, const pwm_config_t 
     return kStatus_Success;
 }
 
+/*!
+ * brief Gate the PWM submodule clock
+ *
+ * param base      PWM peripheral base address
+ * param subModule PWM submodule to deinitialize
+ */
 void PWM_Deinit(PWM_Type *base, pwm_submodule_t subModule)
 {
     /* Stop the submodule */
@@ -172,9 +188,32 @@ void PWM_Deinit(PWM_Type *base, pwm_submodule_t subModule)
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
+/*!
+ * brief  Fill in the PWM config struct with the default settings
+ *
+ * The default values are:
+ * code
+ *   config->enableDebugMode = false;
+ *   config->enableWait = false;
+ *   config->reloadSelect = kPWM_LocalReload;
+ *   config->faultFilterCount = 0;
+ *   config->faultFilterPeriod = 0;
+ *   config->clockSource = kPWM_BusClock;
+ *   config->prescale = kPWM_Prescale_Divide_1;
+ *   config->initializationControl = kPWM_Initialize_LocalSync;
+ *   config->forceTrigger = kPWM_Force_Local;
+ *   config->reloadFrequency = kPWM_LoadEveryOportunity;
+ *   config->reloadLogic = kPWM_ReloadImmediate;
+ *   config->pairOperation = kPWM_Independent;
+ * endcode
+ * param config Pointer to user's PWM config structure.
+ */
 void PWM_GetDefaultConfig(pwm_config_t *config)
 {
     assert(config);
+
+    /* Initializes the configure structure to zero. */
+    memset(config, 0, sizeof(*config));
 
     /* PWM is paused in debug mode */
     config->enableDebugMode = false;
@@ -204,6 +243,25 @@ void PWM_GetDefaultConfig(pwm_config_t *config)
     config->pairOperation = kPWM_Independent;
 }
 
+/*!
+ * brief Sets up the PWM signals for a PWM submodule.
+ *
+ * The function initializes the submodule according to the parameters passed in by the user. The function
+ * also sets up the value compare registers to match the PWM signal requirements.
+ * If the dead time insertion logic is enabled, the pulse period is reduced by the
+ * dead time period specified by the user.
+ *
+ * param base        PWM peripheral base address
+ * param subModule   PWM submodule to configure
+ * param chnlParams  Array of PWM channel parameters to configure the channel(s)
+ * param numOfChnls  Number of channels to configure, this should be the size of the array passed in.
+ *                    Array size should not be more than 2 as each submodule has 2 pins to output PWM
+ * param mode        PWM operation mode, options available in enumeration ::pwm_mode_t
+ * param pwmFreq_Hz  PWM signal frequency in Hz
+ * param srcClock_Hz PWM main counter clock in Hz.
+ *
+ * return Returns kStatusFail if there was error setting up the signal; kStatusSuccess otherwise
+ */
 status_t PWM_SetupPwm(PWM_Type *base,
                       pwm_submodule_t subModule,
                       const pwm_signal_param_t *chnlParams,
@@ -365,6 +423,21 @@ status_t PWM_SetupPwm(PWM_Type *base,
     return kStatus_Success;
 }
 
+/*!
+ * brief Updates the PWM signal's dutycycle.
+ *
+ * The function updates the PWM dutycyle to the new value that is passed in.
+ * If the dead time insertion logic is enabled then the pulse period is reduced by the
+ * dead time period specified by the user.
+ *
+ * param base              PWM peripheral base address
+ * param subModule         PWM submodule to configure
+ * param pwmSignal         Signal (PWM A or PWM B) to update
+ * param currPwmMode       The current PWM mode set during PWM setup
+ * param dutyCyclePercent  New PWM pulse width, value should be between 0 to 100
+ *                          0=inactive signal(0% duty cycle)...
+ *                          100=active signal (100% duty cycle)
+ */
 void PWM_UpdatePwmDutycycle(PWM_Type *base,
                             pwm_submodule_t subModule,
                             pwm_channels_t pwmSignal,
@@ -453,6 +526,17 @@ void PWM_UpdatePwmDutycycle(PWM_Type *base,
     }
 }
 
+/*!
+ * brief Sets up the PWM input capture
+ *
+ * Each PWM submodule has 3 pins that can be configured for use as input capture pins. This function
+ * sets up the capture parameters for each pin and enables the pin for input capture operation.
+ *
+ * param base               PWM peripheral base address
+ * param subModule          PWM submodule to configure
+ * param pwmChannel         Channel in the submodule to setup
+ * param inputCaptureParams Parameters passed in to set up the input pin
+ */
 void PWM_SetupInputCapture(PWM_Type *base,
                            pwm_submodule_t subModule,
                            pwm_channels_t pwmChannel,
@@ -529,6 +613,15 @@ void PWM_SetupInputCapture(PWM_Type *base,
     }
 }
 
+/*!
+ * brief Sets up the PWM fault protection.
+ *
+ * PWM has 4 fault inputs.
+ *
+ * param base        PWM peripheral base address
+ * param faultNum    PWM fault to configure.
+ * param faultParams Pointer to the PWM fault config structure
+ */
 void PWM_SetupFaults(PWM_Type *base, pwm_fault_input_t faultNum, const pwm_fault_param_t *faultParams)
 {
     assert(faultParams);
@@ -603,6 +696,17 @@ void PWM_SetupFaults(PWM_Type *base, pwm_fault_input_t faultNum, const pwm_fault
     base->FSTS = reg;
 }
 
+/*!
+ * brief Selects the signal to output on a PWM pin when a FORCE_OUT signal is asserted.
+ *
+ * The user specifies which channel to configure by supplying the submodule number and whether
+ * to modify PWM A or PWM B within that submodule.
+ *
+ * param base       PWM peripheral base address
+ * param subModule  PWM submodule to configure
+ * param pwmChannel Channel to configure
+ * param mode       Signal to output when a FORCE_OUT is triggered
+ */
 void PWM_SetupForceSignal(PWM_Type *base, pwm_submodule_t subModule, pwm_channels_t pwmChannel, pwm_force_signal_t mode)
 
 {
@@ -619,6 +723,14 @@ void PWM_SetupForceSignal(PWM_Type *base, pwm_submodule_t subModule, pwm_channel
     base->DTSRCSEL = reg;
 }
 
+/*!
+ * brief Enables the selected PWM interrupts
+ *
+ * param base      PWM peripheral base address
+ * param subModule PWM submodule to configure
+ * param mask      The interrupts to enable. This is a logical OR of members of the
+ *                  enumeration ::pwm_interrupt_enable_t
+ */
 void PWM_EnableInterrupts(PWM_Type *base, pwm_submodule_t subModule, uint32_t mask)
 {
     /* Upper 16 bits are for related to the submodule */
@@ -627,12 +739,29 @@ void PWM_EnableInterrupts(PWM_Type *base, pwm_submodule_t subModule, uint32_t ma
     base->FCTRL |= ((mask >> 16U) & PWM_FCTRL_FIE_MASK);
 }
 
+/*!
+ * brief Disables the selected PWM interrupts
+ *
+ * param base      PWM peripheral base address
+ * param subModule PWM submodule to configure
+ * param mask      The interrupts to enable. This is a logical OR of members of the
+ *                  enumeration ::pwm_interrupt_enable_t
+ */
 void PWM_DisableInterrupts(PWM_Type *base, pwm_submodule_t subModule, uint32_t mask)
 {
     base->SM[subModule].INTEN &= ~(mask & 0xFFFF);
     base->FCTRL &= ~((mask >> 16U) & PWM_FCTRL_FIE_MASK);
 }
 
+/*!
+ * brief Gets the enabled PWM interrupts
+ *
+ * param base      PWM peripheral base address
+ * param subModule PWM submodule to configure
+ *
+ * return The enabled interrupts. This is the logical OR of members of the
+ *         enumeration ::pwm_interrupt_enable_t
+ */
 uint32_t PWM_GetEnabledInterrupts(PWM_Type *base, pwm_submodule_t subModule)
 {
     uint32_t enabledInterrupts;
@@ -642,6 +771,15 @@ uint32_t PWM_GetEnabledInterrupts(PWM_Type *base, pwm_submodule_t subModule)
     return enabledInterrupts;
 }
 
+/*!
+ * brief Gets the PWM status flags
+ *
+ * param base      PWM peripheral base address
+ * param subModule PWM submodule to configure
+ *
+ * return The status flags. This is the logical OR of members of the
+ *         enumeration ::pwm_status_flags_t
+ */
 uint32_t PWM_GetStatusFlags(PWM_Type *base, pwm_submodule_t subModule)
 {
     uint32_t statusFlags;
@@ -652,6 +790,14 @@ uint32_t PWM_GetStatusFlags(PWM_Type *base, pwm_submodule_t subModule)
     return statusFlags;
 }
 
+/*!
+ * brief Clears the PWM status flags
+ *
+ * param base      PWM peripheral base address
+ * param subModule PWM submodule to configure
+ * param mask      The status flags to clear. This is a logical OR of members of the
+ *                  enumeration ::pwm_status_flags_t
+ */
 void PWM_ClearStatusFlags(PWM_Type *base, pwm_submodule_t subModule, uint32_t mask)
 {
     uint16_t reg;

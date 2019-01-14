@@ -473,7 +473,7 @@ static void cc1200_rx(struct device *dev)
 			goto flush;
 		}
 
-		pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
+		pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
 		if (!pkt) {
 			LOG_ERR("No free pkt available");
 			goto flush;
@@ -608,8 +608,8 @@ static int cc1200_tx(struct device *dev,
 		     struct net_buf *frag)
 {
 	struct cc1200_context *cc1200 = dev->driver_data;
-	u8_t *frame = frag->data - net_pkt_ll_reserve(pkt);
-	u8_t len = net_pkt_ll_reserve(pkt) + frag->len;
+	u8_t *frame = frag->data;
+	u8_t len = frag->len;
 	bool status = false;
 
 	LOG_DBG("%p (%u)", frag, len);

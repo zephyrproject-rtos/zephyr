@@ -218,6 +218,26 @@ int zperf_get_ipv4_addr(const struct shell *shell, char *host,
 	return 0;
 }
 
+const struct in_addr *zperf_get_default_if_in4_addr(void)
+{
+#if CONFIG_NET_IPV4
+	return net_if_ipv4_select_src_addr(NULL,
+					   net_ipv4_unspecified_address());
+#else
+	return NULL;
+#endif
+}
+
+const struct in6_addr *zperf_get_default_if_in6_addr(void)
+{
+#if CONFIG_NET_IPV6
+	return net_if_ipv6_select_src_addr(NULL,
+					   net_ipv6_unspecified_address());
+#else
+	return NULL;
+#endif
+}
+
 static int cmd_setip(const struct shell *shell, size_t argc, char *argv[])
 {
 	int start = 0;

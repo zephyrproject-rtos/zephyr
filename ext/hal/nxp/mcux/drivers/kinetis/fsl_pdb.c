@@ -1,34 +1,17 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fsl_pdb.h"
+
+/* Component ID definition, used by tools. */
+#ifndef FSL_COMPONENT_ID
+#define FSL_COMPONENT_ID "platform.drivers.pdb"
+#endif
 
 /*******************************************************************************
  * Prototypes
@@ -71,6 +54,17 @@ static uint32_t PDB_GetInstance(PDB_Type *base)
     return instance;
 }
 
+/*!
+ * brief Initializes the PDB module.
+ *
+ * This function initializes the PDB module. The operations included are as follows.
+ *  - Enable the clock for PDB instance.
+ *  - Configure the PDB module.
+ *  - Enable the PDB module.
+ *
+ * param base PDB peripheral base address.
+ * param config Pointer to the configuration structure. See "pdb_config_t".
+ */
 void PDB_Init(PDB_Type *base, const pdb_config_t *config)
 {
     assert(NULL != config);
@@ -98,6 +92,11 @@ void PDB_Init(PDB_Type *base, const pdb_config_t *config)
     PDB_Enable(base, true); /* Enable the PDB module. */
 }
 
+/*!
+ * brief De-initializes the PDB module.
+ *
+ * param base PDB peripheral base address.
+ */
 void PDB_Deinit(PDB_Type *base)
 {
     PDB_Enable(base, false); /* Disable the PDB module. */
@@ -108,9 +107,25 @@ void PDB_Deinit(PDB_Type *base)
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
+/*!
+ * brief Initializes the PDB user configuration structure.
+ *
+ * This function initializes the user configuration structure to a default value. The default values are as follows.
+ * code
+ *   config->loadValueMode = kPDB_LoadValueImmediately;
+ *   config->prescalerDivider = kPDB_PrescalerDivider1;
+ *   config->dividerMultiplicationFactor = kPDB_DividerMultiplicationFactor1;
+ *   config->triggerInputSource = kPDB_TriggerSoftware;
+ *   config->enableContinuousMode = false;
+ * endcode
+ * param config Pointer to configuration structure. See "pdb_config_t".
+ */
 void PDB_GetDefaultConfig(pdb_config_t *config)
 {
     assert(NULL != config);
+
+    /* Initializes the configure structure to zero. */
+    memset(config, 0, sizeof(*config));
 
     config->loadValueMode = kPDB_LoadValueImmediately;
     config->prescalerDivider = kPDB_PrescalerDivider1;
@@ -120,7 +135,14 @@ void PDB_GetDefaultConfig(pdb_config_t *config)
 }
 
 #if defined(FSL_FEATURE_PDB_HAS_DAC) && FSL_FEATURE_PDB_HAS_DAC
-void PDB_SetDACTriggerConfig(PDB_Type *base, uint32_t channel, pdb_dac_trigger_config_t *config)
+/*!
+ * brief Configures the DAC trigger in the PDB module.
+ *
+ * param base    PDB peripheral base address.
+ * param channel Channel index for DAC instance.
+ * param config  Pointer to the configuration structure. See "pdb_dac_trigger_config_t".
+ */
+void PDB_SetDACTriggerConfig(PDB_Type *base, pdb_dac_trigger_channel_t channel, pdb_dac_trigger_config_t *config)
 {
     assert(channel < PDB_INTC_COUNT);
     assert(NULL != config);

@@ -81,12 +81,20 @@ static void put(const struct log_backend *const backend,
 
 static void panic(struct log_backend const *const backend)
 {
-	/* Nothing to be done, this backend can always process logs */
+	log_output_flush(&log_output);
+}
+
+static void dropped(const struct log_backend *const backend, u32_t cnt)
+{
+	ARG_UNUSED(backend);
+
+	log_output_dropped_process(&log_output, cnt);
 }
 
 const struct log_backend_api log_backend_native_posix_api = {
 	.put = put,
 	.panic = panic,
+	.dropped = dropped,
 };
 
 LOG_BACKEND_DEFINE(log_backend_native_posix,

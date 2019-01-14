@@ -12,9 +12,9 @@ menu "Timer Drivers"
 
 config HPET_TIMER
 	bool "HPET timer"
-	depends on X86
-	select IOAPIC
-	select LOAPIC
+	depends on (X86 || X86_64)
+	select IOAPIC if X86
+	select LOAPIC if X86
 	select TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 	select TICKLESS_CAPABLE
 	help
@@ -44,7 +44,7 @@ config HPET_TIMER_BASE_ADDRESS
 
 config HPET_TIMER_IRQ
 	int "HPET Timer IRQ"
-	default 20
+	default 2
 	depends on HPET_TIMER
 	help
 	  This option specifies the IRQ used by the HPET timer.

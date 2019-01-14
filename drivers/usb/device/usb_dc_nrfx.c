@@ -117,6 +117,7 @@ struct nrf_usbd_ep_buf {
  * @param read_complete		A flag indicating that DMA read operation has been completed.
  * @param read_pending		A flag indicating that the Host has requested a data transfer.
  * @param write_in_progress	A flag indicating that write operation has been scheduled.
+ * @param write_fragmented	A flag indicating that IN transfer has been fragmented.
  */
 struct nrf_usbd_ep_ctx {
 	struct nrf_usbd_ep_cfg cfg;
@@ -124,6 +125,7 @@ struct nrf_usbd_ep_ctx {
 	volatile bool read_complete;
 	volatile bool read_pending;
 	volatile bool write_in_progress;
+	bool write_fragmented;
 };
 
 /**
@@ -815,7 +817,12 @@ static void usbd_work_handler(struct k_work *item)
 				break;
 
 			case EP_EVT_WRITE_COMPLETE:
-				if (ep_ctx->cfg.type == USB_DC_EP_CONTROL) {
+				if ((ep_ctx->cfg.type == USB_DC_EP_CONTROL)
+				    && (!ep_ctx->write_fragmented)) {
+					/* Trigger the hardware to perform
+					 * status stage, but only if there is
+					 * no more data to send (IN transfer
+					 * has not beed fragmented). */
 					k_mutex_lock(&ctx->drv_lock, K_FOREVER);
 					nrfx_usbd_setup_clear();
 					k_mutex_unlock(&ctx->drv_lock);
@@ -1438,10 +1445,20 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 		return -EAGAIN;
 	}
 
-	/* Data length longer than ep_ctx->cfg.max_sz is allowed.
-	 * NRFX driver performs the fragmentation.
+	/* NRFX driver performs the fragmentation if buffer length exceeds
+	 * maximum packet size, however in current implementation, data is
+	 * copied to the internal buffer and must me fragmented here.
+	 * In case of fragmentation, a flag is set to prevent triggering
+	 * status stage which is handled by hardware, because there will be
+	 * another write coming.
 	 */
-	bytes_to_copy = data_len;
+	if (data_len > ep_ctx->cfg.max_sz) {
+		bytes_to_copy = ep_ctx->cfg.max_sz;
+		ep_ctx->write_fragmented = true;
+	} else {
+		bytes_to_copy = data_len;
+		ep_ctx->write_fragmented = false;
+	}
 	memcpy(ep_ctx->buf.data, data, bytes_to_copy);
 	ep_ctx->buf.len = bytes_to_copy;
 

@@ -82,9 +82,10 @@ static int net_bt_send(struct net_if *iface, struct net_pkt *pkt)
 		return -EINVAL;
 	}
 
-	if (!net_6lo_compress(pkt, true, NULL)) {
+	ret = net_6lo_compress(pkt, true);
+	if (ret < 0) {
 		NET_DBG("Packet compression failed");
-		return -ENOBUFS;
+		return ret;
 	}
 
 	length = net_pkt_get_len(pkt);
@@ -101,14 +102,6 @@ static int net_bt_send(struct net_if *iface, struct net_pkt *pkt)
 	net_pkt_unref(pkt);
 
 	return length;
-}
-
-static inline u16_t net_bt_reserve(struct net_if *iface, void *unused)
-{
-	ARG_UNUSED(iface);
-	ARG_UNUSED(unused);
-
-	return 0;
 }
 
 static int net_bt_enable(struct net_if *iface, bool state)
@@ -129,7 +122,7 @@ static enum net_l2_flags net_bt_flags(struct net_if *iface)
 	return NET_L2_MULTICAST | NET_L2_MULTICAST_SKIP_JOIN_SOLICIT_NODE;
 }
 
-NET_L2_INIT(BLUETOOTH_L2, net_bt_recv, net_bt_send, net_bt_reserve,
+NET_L2_INIT(BLUETOOTH_L2, net_bt_recv, net_bt_send,
 	    net_bt_enable, net_bt_flags);
 
 static void ipsp_connected(struct bt_l2cap_chan *chan)
@@ -207,7 +200,7 @@ static int ipsp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		net_buf_frags_len(buf));
 
 	/* Get packet for bearer / protocol related data */
-	pkt = net_pkt_get_reserve_rx(0, BUF_TIMEOUT);
+	pkt = net_pkt_get_reserve_rx(BUF_TIMEOUT);
 	if (!pkt) {
 		return -ENOMEM;
 	}
@@ -239,7 +232,7 @@ static struct net_buf *ipsp_alloc_buf(struct bt_l2cap_chan *chan)
 {
 	NET_DBG("Channel %p requires buffer", chan);
 
-	return net_pkt_get_reserve_rx_data(0, K_FOREVER);
+	return net_pkt_get_reserve_rx_data(K_FOREVER);
 }
 
 static struct bt_l2cap_chan_ops ipsp_ops = {

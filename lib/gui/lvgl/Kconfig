@@ -1,0 +1,341 @@
+#
+# Copyright (c) 2018 Jan Van Winkel <jan.van_winkel@dxplore.eu>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config LVGL
+	bool "LittlevGL Support"
+	help
+	  This option enables the LittlevGL GUI library.
+
+if LVGL
+
+module = LVGL
+module-str = lvgl
+source "subsys/logging/Kconfig.template.log_config"
+
+config LVGL_DISPLAY_DEV_NAME
+	string "Display device name"
+	default "DISPLAY"
+	help
+	  Name of the display device to use for rendering.
+
+config LVGL_HOR_RES
+	int "Horizontal Screen Resolution"
+	default 320
+	help
+	  Horizontal screen resolution in pixels
+
+config LVGL_VER_RES
+	int "Vertical Screen Resolution"
+	default 240
+	help
+	  Vertical screen resolution in pixels
+
+config LVGL_DPI
+	int "DPI"
+	default 100
+	help
+	  Dots per inch (DPI)
+
+choice
+	prompt "Color Depth"
+	default LVGL_COLOR_DEPTH_32
+	help
+	  Color depth to be used by library
+
+	config LVGL_COLOR_DEPTH_32
+		bool "32-bit"
+
+	config LVGL_COLOR_DEPTH_16
+		bool "16-bit"
+
+	config LVGL_COLOR_DEPTH_8
+		bool "8-bit"
+
+	config LVGL_COLOR_DEPTH_1
+		bool "1-bit"
+
+endchoice
+
+config LVGL_BITS_PER_PIXEL
+	int "Bits per pixel"
+	default 0
+	help
+	  Number of bits per pixel, in case the number of pixels should be derived
+	  from the color depth set the number of pixels to zero.
+
+if LVGL_COLOR_DEPTH_16
+
+config LVGL_COLOR_16_SWAP
+	bool "RGB565 byte swap"
+	help
+	  Swap the 2 bytes of a RGB565 pixel.
+
+endif
+
+if LVGL_COLOR_DEPTH_32
+
+config CONFIG_LVGL_COLOR_SCREEN_TRANSP
+	bool "Transparency support"
+	help
+	  Enable screen transparency. Useful for OSD or other overlapping GUISs.
+
+endif
+
+choice
+	prompt "Chroma key color"
+	default LVGL_CHROMA_KEY_GREEN
+	help
+	  Color to to use as chroma key
+
+	config LVGL_CHROMA_KEY_RED
+		bool "Red"
+
+	config LVGL_CHROMA_KEY_GREEN
+		bool "Green"
+
+	config LVGL_CHROMA_KEY_BLUE
+		bool "Blue"
+
+	config LVGL_CHROMA_KEY_CUSTOM
+		bool "Custom"
+
+endchoice
+
+if LVGL_CHROMA_KEY_CUSTOM
+
+config LVGL_CUSTOM_CHROMA_KEY_RED
+	hex "Chroma Key Red"
+	range 0x00 0xFF
+	default 0x00
+	help
+	  Value of the color red to be used in the chroma key
+
+config LVGL_CUSTOM_CHROMA_KEY_GREEN
+	hex "Chroma Key Green"
+	range 0x00 0xFF
+	default 0xFF
+	help
+	  Value of the color green to be used in the chroma key
+
+config LVGL_CUSTOM_CHROMA_KEY_BLUE
+	hex "Chroma Key Blue"
+	range 0x00 0xFF
+	default 0x00
+	help
+	  Value of the color blue to be used in the chroma key
+
+endif
+
+choice
+	prompt "Memory pool"
+	default LVGL_MEM_POOL_HEAP_KERNEL
+	help
+	  Memory pool to use for lvgl allocated objects
+
+	config LVGL_MEM_POOL_HEAP_KERNEL
+		bool "Kernel Heap"
+		depends on HEAP_MEM_POOL_SIZE != 0
+		help
+		  Use k_malloc and k_free to allocate objects on the kernel heap
+
+	config LVGL_MEM_POOL_HEAP_LIB_C
+	  bool "C library Heap"
+	  depends on NEWLIB_LIBC || (MINIMAL_LIBC_MALLOC_ARENA_SIZE != 0)
+	  help
+		Use C library malloc and free to allocate objects on the C library heap
+
+	config LVGL_MEM_POOL_KERNEL
+		bool "Kernel space lvgl pool"
+		help
+		  Use a dedicated memory pool in kernel space to allocate lvgl objects
+		  on
+
+	config LVGL_MEM_POOL_USER
+		bool "User space lvgl pool"
+		help
+		  Use a dedicated memory pool in user space to allocate lvgl objects on
+
+endchoice
+
+if LVGL_MEM_POOL_KERNEL || LVGL_MEM_POOL_USER
+
+config LVGL_MEM_POOL_MIN_SIZE
+	int "Minimum memory pool block size"
+	default 16
+	help
+	  Size of the smallest block in the memory pool in bytes
+
+config LVGL_MEM_POOL_MAX_SIZE
+	int "Maximum memory pool block size"
+	default 2048
+	help
+	  Size of the largest block in the memory pool in bytes
+
+config LVGL_MEM_POOL_NUMBER_BLOCKS
+	int "Number of max size blocks in memory pool"
+	default 1
+	help
+	  Number of maximum sized blocks in the memory pool.
+
+endif
+
+config LVGL_VDB_SIZE
+	int "Virtual Display Buffer Size"
+	default 10
+	range 1 100
+	help
+	  Virtual Display Buffer (double buffering) size as a percentage of
+	  total display size.
+
+config LVGL_VDB_STATIC
+	bool "Statically allocate virtual display buffer"
+	default y
+	help
+	  Statically allocate virtual display buffer. If disabled pointer should be
+	  passed via lv_vdb_set_adr().
+
+config LVGL_DOUBLE_VDB
+	bool "Use 2 Virtual Display Buffers"
+	help
+	  Use 2 virtual display buffers to render and flush data in parallel
+
+config LVGL_SCREEN_REFRESH_PERIOD
+	int "Screen refresh period"
+	default 50
+	help
+	  Screen refresh period in milliseconds
+
+config LVGL_INPUT_REFRESH_PERIOD
+	int "Input device refresh period"
+	default 50
+	help
+	  Refresh period for input devices in milliseconds
+
+config LVGL_INPUT_MARK_PRESSED_POINTS
+	bool "Mark pressed points"
+	depends on LVGL_DIRECT_DRAW
+	help
+	  Mark the pressed points on the screen.
+
+config LVGL_INPUT_DRAG_THRESHOLD
+	int "Drag Threshold"
+	default 10
+	help
+	  Threshold in pixels before entering drag mode
+
+config LVGL_INPUT_DRAG_THROW_SLOW_DOWN
+	int "Drag throw slow-down"
+	default 20
+	range 0 100
+	help
+	  Percentage of slow down of a throw following a drag.
+	  Greater percentage means faster slow-down.
+
+config LVGL_INPUT_LONG_PRESS_TIME
+	int "Long press time"
+	default 400
+	help
+	  Period in milliseconds before a press is seen as a long press
+
+config LVGL_INPUT_LONG_RESS_REPEAT_TIME
+	int "Long press repeat time"
+	default 100
+	help
+	  Period in milliseconds after which a new trigger is generated
+	  for a long press
+
+config LVGL_AVG_OBJ_COUNT
+	int "Average object counter"
+	default 32
+	help
+	  Average object counter on a screen
+
+config LVGL_UTF_8
+	bool "Enable UTF-8 support"
+	default y
+	help
+	  Enable UTF-8 support
+
+config LVGL_TEXT_BREAK_CHARACTERS
+	string "Text break characters"
+	default " ,.;:-_"
+	help
+	  Characters on which a text break can take place
+
+config LVGL_ANTIALIAS
+	bool "Enable anti-aliasing"
+	default y
+	help
+	  Enable anti-aliasing
+
+config LVGL_ANIMATION
+	bool "Enable animations"
+	default y
+	help
+	  Enable animations
+
+config LVGL_SHADOW
+	bool "Enable shadows"
+	default y
+	help
+	  Enable shadows
+
+config LVGL_GROUP
+	bool "Enable group support"
+	default y
+	help
+	  Enable group support.
+	  Used by keyboard and button input
+
+config LVGL_GPU
+	bool "Enable GPU support"
+	help
+	  Enable GPU support
+
+config LVGL_DIRECT_DRAW
+	bool "Enable direct draw"
+	default y
+	help
+	  Enable direct draw support.
+	  Direct draw bypasses virtual display buffer and directly writes to
+	  frame buffer
+
+config LVGL_FILESYSTEM
+	bool "Enable file system"
+	depends on FILE_SYSTEM
+	default y if FILE_SYSTEM
+	help
+	  Enable LittlevGL file system
+
+config LVGL_VLA_SUPPORT
+	bool "Enable variable length array support"
+	default y
+	help
+	  Enable variable length array support
+
+config LVGL_COMPILER_NON_CONST_INIT_SUPPORTED
+	bool "Enable non constant init"
+	default y
+	help
+	  Indicate if initialization with non constant values is supported
+
+rsource "Kconfig.themes"
+
+rsource "Kconfig.fonts"
+
+rsource "Kconfig.objects"
+
+config APP_LINK_WITH_LVGL
+	bool "Link 'app' with LVGL"
+	default y
+	depends on LVGL
+	help
+	  Add LVGL header files to the 'app' include path. It may be
+	  disabled if the include paths for LVGL are causing aliasing
+	  issues for 'app'.
+
+endif
+

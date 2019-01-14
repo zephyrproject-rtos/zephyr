@@ -16,12 +16,11 @@ Building and Running
 
 Verify the board and chip you are targeting provide Wi-Fi support.
 
-For instance, Atmel's Winc1500 chip is supported on top of
-quark_se_c1000_devboard board.
+For instance you can use TI's CC3220 by selecting the cc3220sf_launchxl board.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/wifi
-   :board: quark_se_c1000_devboard
+   :board: cc3220sf_launchxl
    :goals: build
    :compact:
 

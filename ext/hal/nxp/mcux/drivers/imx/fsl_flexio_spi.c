@@ -2,7 +2,7 @@
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
  * All rights reserved.
- * 
+ *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
@@ -16,7 +16,6 @@
 #ifndef FSL_COMPONENT_ID
 #define FSL_COMPONENT_ID "platform.drivers.flexio_spi"
 #endif
-
 
 /*! @brief FLEXIO SPI transfer state, which is used for SPI transactiaonl APIs' internal state. */
 enum _flexio_spi_transfer_states
@@ -137,6 +136,42 @@ static void FLEXIO_SPI_TransferReceiveTransaction(FLEXIO_SPI_Type *base, flexio_
     handle->rxRemainingBytes -= handle->bytePerFrame;
 }
 
+/*!
+ * brief Ungates the FlexIO clock, resets the FlexIO module, configures the FlexIO SPI master hardware,
+ * and configures the FlexIO SPI with FlexIO SPI master configuration. The
+ * configuration structure can be filled by the user, or be set with default values
+ * by the FLEXIO_SPI_MasterGetDefaultConfig().
+ *
+ * note FlexIO SPI master only support CPOL = 0, which means clock inactive low.
+ *
+ * Example
+   code
+   FLEXIO_SPI_Type spiDev = {
+   .flexioBase = FLEXIO,
+   .SDOPinIndex = 0,
+   .SDIPinIndex = 1,
+   .SCKPinIndex = 2,
+   .CSnPinIndex = 3,
+   .shifterIndex = {0,1},
+   .timerIndex = {0,1}
+   };
+   flexio_spi_master_config_t config = {
+   .enableMaster = true,
+   .enableInDoze = false,
+   .enableInDebug = true,
+   .enableFastAccess = false,
+   .baudRate_Bps = 500000,
+   .phase = kFLEXIO_SPI_ClockPhaseFirstEdge,
+   .direction = kFLEXIO_SPI_MsbFirst,
+   .dataMode = kFLEXIO_SPI_8BitMode
+   };
+   FLEXIO_SPI_MasterInit(&spiDev, &config, srcClock_Hz);
+   endcode
+ *
+ * param base Pointer to the FLEXIO_SPI_Type structure.
+ * param masterConfig Pointer to the flexio_spi_master_config_t structure.
+ * param srcClock_Hz FlexIO source clock in Hz.
+*/
 void FLEXIO_SPI_MasterInit(FLEXIO_SPI_Type *base, flexio_spi_master_config_t *masterConfig, uint32_t srcClock_Hz)
 {
     assert(base);
@@ -259,6 +294,11 @@ void FLEXIO_SPI_MasterInit(FLEXIO_SPI_Type *base, flexio_spi_master_config_t *ma
     FLEXIO_SetTimerConfig(base->flexioBase, base->timerIndex[1], &timerConfig);
 }
 
+/*!
+ * brief Resets the FlexIO SPI timer and shifter config.
+ *
+ * param base Pointer to the FLEXIO_SPI_Type.
+*/
 void FLEXIO_SPI_MasterDeinit(FLEXIO_SPI_Type *base)
 {
     base->flexioBase->SHIFTCFG[base->shifterIndex[0]] = 0;
@@ -273,9 +313,22 @@ void FLEXIO_SPI_MasterDeinit(FLEXIO_SPI_Type *base)
     base->flexioBase->TIMCTL[base->timerIndex[1]] = 0;
 }
 
+/*!
+ * brief Gets the default configuration to configure the FlexIO SPI master. The configuration
+ * can be used directly by calling the FLEXIO_SPI_MasterConfigure().
+ * Example:
+   code
+   flexio_spi_master_config_t masterConfig;
+   FLEXIO_SPI_MasterGetDefaultConfig(&masterConfig);
+   endcode
+ * param masterConfig Pointer to the flexio_spi_master_config_t structure.
+*/
 void FLEXIO_SPI_MasterGetDefaultConfig(flexio_spi_master_config_t *masterConfig)
 {
     assert(masterConfig);
+
+    /* Initializes the configure structure to zero. */
+    memset(masterConfig, 0, sizeof(*masterConfig));
 
     masterConfig->enableMaster = true;
     masterConfig->enableInDoze = false;
@@ -289,6 +342,39 @@ void FLEXIO_SPI_MasterGetDefaultConfig(flexio_spi_master_config_t *masterConfig)
     masterConfig->dataMode = kFLEXIO_SPI_8BitMode;
 }
 
+/*!
+ * brief Ungates the FlexIO clock, resets the FlexIO module, configures the FlexIO SPI slave hardware
+ * configuration, and configures the FlexIO SPI with FlexIO SPI slave configuration. The
+ * configuration structure can be filled by the user, or be set with default values
+ * by the FLEXIO_SPI_SlaveGetDefaultConfig().
+ *
+ * note Only one timer is needed in the FlexIO SPI slave. As a result, the second timer index is ignored.
+ * FlexIO SPI slave only support CPOL = 0, which means clock inactive low.
+ * Example
+   code
+   FLEXIO_SPI_Type spiDev = {
+   .flexioBase = FLEXIO,
+   .SDOPinIndex = 0,
+   .SDIPinIndex = 1,
+   .SCKPinIndex = 2,
+   .CSnPinIndex = 3,
+   .shifterIndex = {0,1},
+   .timerIndex = {0}
+   };
+   flexio_spi_slave_config_t config = {
+   .enableSlave = true,
+   .enableInDoze = false,
+   .enableInDebug = true,
+   .enableFastAccess = false,
+   .phase = kFLEXIO_SPI_ClockPhaseFirstEdge,
+   .direction = kFLEXIO_SPI_MsbFirst,
+   .dataMode = kFLEXIO_SPI_8BitMode
+   };
+   FLEXIO_SPI_SlaveInit(&spiDev, &config);
+   endcode
+ * param base Pointer to the FLEXIO_SPI_Type structure.
+ * param slaveConfig Pointer to the flexio_spi_slave_config_t structure.
+*/
 void FLEXIO_SPI_SlaveInit(FLEXIO_SPI_Type *base, flexio_spi_slave_config_t *slaveConfig)
 {
     assert(base && slaveConfig);
@@ -391,14 +477,32 @@ void FLEXIO_SPI_SlaveInit(FLEXIO_SPI_Type *base, flexio_spi_slave_config_t *slav
     FLEXIO_SetTimerConfig(base->flexioBase, base->timerIndex[0], &timerConfig);
 }
 
+/*!
+ * brief Gates the FlexIO clock.
+ *
+ * param base Pointer to the FLEXIO_SPI_Type.
+*/
 void FLEXIO_SPI_SlaveDeinit(FLEXIO_SPI_Type *base)
 {
     FLEXIO_SPI_MasterDeinit(base);
 }
 
+/*!
+ * brief Gets the default configuration to configure the FlexIO SPI slave. The configuration
+ * can be used directly for calling the FLEXIO_SPI_SlaveConfigure().
+ * Example:
+   code
+   flexio_spi_slave_config_t slaveConfig;
+   FLEXIO_SPI_SlaveGetDefaultConfig(&slaveConfig);
+   endcode
+ * param slaveConfig Pointer to the flexio_spi_slave_config_t structure.
+*/
 void FLEXIO_SPI_SlaveGetDefaultConfig(flexio_spi_slave_config_t *slaveConfig)
 {
     assert(slaveConfig);
+
+    /* Initializes the configure structure to zero. */
+    memset(slaveConfig, 0, sizeof(*slaveConfig));
 
     slaveConfig->enableSlave = true;
     slaveConfig->enableInDoze = false;
@@ -410,6 +514,16 @@ void FLEXIO_SPI_SlaveGetDefaultConfig(flexio_spi_slave_config_t *slaveConfig)
     slaveConfig->dataMode = kFLEXIO_SPI_8BitMode;
 }
 
+/*!
+ * brief Enables the FlexIO SPI interrupt.
+ *
+ * This function enables the FlexIO SPI interrupt.
+ *
+ * param base Pointer to the FLEXIO_SPI_Type structure.
+ * param mask interrupt source. The parameter can be any combination of the following values:
+ *        arg kFLEXIO_SPI_RxFullInterruptEnable
+ *        arg kFLEXIO_SPI_TxEmptyInterruptEnable
+ */
 void FLEXIO_SPI_EnableInterrupts(FLEXIO_SPI_Type *base, uint32_t mask)
 {
     if (mask & kFLEXIO_SPI_TxEmptyInterruptEnable)
@@ -422,6 +536,16 @@ void FLEXIO_SPI_EnableInterrupts(FLEXIO_SPI_Type *base, uint32_t mask)
     }
 }
 
+/*!
+ * brief Disables the FlexIO SPI interrupt.
+ *
+ * This function disables the FlexIO SPI interrupt.
+ *
+ * param base Pointer to the FLEXIO_SPI_Type structure.
+ * param mask interrupt source The parameter can be any combination of the following values:
+ *        arg kFLEXIO_SPI_RxFullInterruptEnable
+ *        arg kFLEXIO_SPI_TxEmptyInterruptEnable
+ */
 void FLEXIO_SPI_DisableInterrupts(FLEXIO_SPI_Type *base, uint32_t mask)
 {
     if (mask & kFLEXIO_SPI_TxEmptyInterruptEnable)
@@ -434,6 +558,14 @@ void FLEXIO_SPI_DisableInterrupts(FLEXIO_SPI_Type *base, uint32_t mask)
     }
 }
 
+/*!
+ * brief Enables/disables the FlexIO SPI transmit DMA. This function enables/disables the FlexIO SPI Tx DMA,
+ * which means that asserting the kFLEXIO_SPI_TxEmptyFlag does/doesn't trigger the DMA request.
+ *
+ * param base Pointer to the FLEXIO_SPI_Type structure.
+ * param mask SPI DMA source.
+ * param enable True means enable DMA, false means disable DMA.
+ */
 void FLEXIO_SPI_EnableDMA(FLEXIO_SPI_Type *base, uint32_t mask, bool enable)
 {
     if (mask & kFLEXIO_SPI_TxDmaEnable)
@@ -447,6 +579,15 @@ void FLEXIO_SPI_EnableDMA(FLEXIO_SPI_Type *base, uint32_t mask, bool enable)
     }
 }
 
+/*!
+ * brief Gets FlexIO SPI status flags.
+ *
+ * param base Pointer to the FLEXIO_SPI_Type structure.
+ * return status flag; Use the status flag to AND the following flag mask and get the status.
+ *          arg kFLEXIO_SPI_TxEmptyFlag
+ *          arg kFLEXIO_SPI_RxEmptyFlag
+*/
+
 uint32_t FLEXIO_SPI_GetStatusFlags(FLEXIO_SPI_Type *base)
 {
     uint32_t shifterStatus = FLEXIO_GetShifterStatusFlags(base->flexioBase);
@@ -457,6 +598,16 @@ uint32_t FLEXIO_SPI_GetStatusFlags(FLEXIO_SPI_Type *base)
 
     return status;
 }
+
+/*!
+ * brief Clears FlexIO SPI status flags.
+ *
+ * param base Pointer to the FLEXIO_SPI_Type structure.
+ * param mask status flag
+ *      The parameter can be any combination of the following values:
+ *          arg kFLEXIO_SPI_TxEmptyFlag
+ *          arg kFLEXIO_SPI_RxEmptyFlag
+*/
 
 void FLEXIO_SPI_ClearStatusFlags(FLEXIO_SPI_Type *base, uint32_t mask)
 {
@@ -470,6 +621,13 @@ void FLEXIO_SPI_ClearStatusFlags(FLEXIO_SPI_Type *base, uint32_t mask)
     }
 }
 
+/*!
+ * brief Sets baud rate for the FlexIO SPI transfer, which is only used for the master.
+ *
+ * param base Pointer to the FLEXIO_SPI_Type structure.
+ * param baudRate_Bps Baud Rate needed in Hz.
+ * param srcClockHz SPI source clock frequency in Hz.
+ */
 void FLEXIO_SPI_MasterSetBaudRate(FLEXIO_SPI_Type *base, uint32_t baudRate_Bps, uint32_t srcClockHz)
 {
     uint16_t timerDiv = 0;
@@ -487,6 +645,16 @@ void FLEXIO_SPI_MasterSetBaudRate(FLEXIO_SPI_Type *base, uint32_t baudRate_Bps, 
     flexioBase->TIMCMP[base->timerIndex[0]] = timerCmp;
 }
 
+/*!
+ * brief Sends a buffer of data bytes.
+ *
+ * note This function blocks using the polling method until all bytes have been sent.
+ *
+ * param base Pointer to the FLEXIO_SPI_Type structure.
+ * param direction Shift direction of MSB first or LSB first.
+ * param buffer The data bytes to send.
+ * param size The number of data bytes to send.
+ */
 void FLEXIO_SPI_WriteBlocking(FLEXIO_SPI_Type *base,
                               flexio_spi_shift_direction_t direction,
                               const uint8_t *buffer,
@@ -505,6 +673,17 @@ void FLEXIO_SPI_WriteBlocking(FLEXIO_SPI_Type *base,
     }
 }
 
+/*!
+ * brief Receives a buffer of bytes.
+ *
+ * note This function blocks using the polling method until all bytes have been received.
+ *
+ * param base Pointer to the FLEXIO_SPI_Type structure.
+ * param direction Shift direction of MSB first or LSB first.
+ * param buffer The buffer to store the received bytes.
+ * param size The number of data bytes to be received.
+ * param direction Shift direction of MSB first or LSB first.
+ */
 void FLEXIO_SPI_ReadBlocking(FLEXIO_SPI_Type *base,
                              flexio_spi_shift_direction_t direction,
                              uint8_t *buffer,
@@ -523,6 +702,14 @@ void FLEXIO_SPI_ReadBlocking(FLEXIO_SPI_Type *base,
     }
 }
 
+/*!
+ * brief Receives a buffer of bytes.
+ *
+ * note This function blocks via polling until all bytes have been received.
+ *
+ * param base pointer to FLEXIO_SPI_Type structure
+ * param xfer FlexIO SPI transfer structure, see #flexio_spi_transfer_t.
+ */
 void FLEXIO_SPI_MasterTransferBlocking(FLEXIO_SPI_Type *base, flexio_spi_transfer_t *xfer)
 {
     flexio_spi_shift_direction_t direction;
@@ -638,6 +825,16 @@ void FLEXIO_SPI_MasterTransferBlocking(FLEXIO_SPI_Type *base, flexio_spi_transfe
     }
 }
 
+/*!
+ * brief Initializes the FlexIO SPI Master handle, which is used in transactional functions.
+ *
+ * param base Pointer to the FLEXIO_SPI_Type structure.
+ * param handle Pointer to the flexio_spi_master_handle_t structure to store the transfer state.
+ * param callback The callback function.
+ * param userData The parameter of the callback function.
+ * retval kStatus_Success Successfully create the handle.
+ * retval kStatus_OutOfRange The FlexIO type/handle/ISR table out of range.
+ */
 status_t FLEXIO_SPI_MasterTransferCreateHandle(FLEXIO_SPI_Type *base,
                                                flexio_spi_master_handle_t *handle,
                                                flexio_spi_master_transfer_callback_t callback,
@@ -661,6 +858,19 @@ status_t FLEXIO_SPI_MasterTransferCreateHandle(FLEXIO_SPI_Type *base,
     return FLEXIO_RegisterHandleIRQ(base, handle, FLEXIO_SPI_MasterTransferHandleIRQ);
 }
 
+/*!
+ * brief Master transfer data using IRQ.
+ *
+ * This function sends data using IRQ. This is a non-blocking function, which returns
+ * right away. When all data is sent out/received, the callback function is called.
+ *
+ * param base Pointer to the FLEXIO_SPI_Type structure.
+ * param handle Pointer to the flexio_spi_master_handle_t structure to store the transfer state.
+ * param xfer FlexIO SPI transfer structure. See #flexio_spi_transfer_t.
+ * retval kStatus_Success Successfully start a transfer.
+ * retval kStatus_InvalidArgument Input argument is invalid.
+ * retval kStatus_FLEXIO_SPI_Busy SPI is not idle, is running another transfer.
+ */
 status_t FLEXIO_SPI_MasterTransferNonBlocking(FLEXIO_SPI_Type *base,
                                               flexio_spi_master_handle_t *handle,
                                               flexio_spi_transfer_t *xfer)
@@ -769,6 +979,15 @@ status_t FLEXIO_SPI_MasterTransferNonBlocking(FLEXIO_SPI_Type *base,
     return kStatus_Success;
 }
 
+/*!
+ * brief Gets the data transfer status which used IRQ.
+ *
+ * param base Pointer to the FLEXIO_SPI_Type structure.
+ * param handle Pointer to the flexio_spi_master_handle_t structure to store the transfer state.
+ * param count Number of bytes transferred so far by the non-blocking transaction.
+ * retval kStatus_InvalidArgument count is Invalid.
+ * retval kStatus_Success Successfully return the count.
+ */
 status_t FLEXIO_SPI_MasterTransferGetCount(FLEXIO_SPI_Type *base, flexio_spi_master_handle_t *handle, size_t *count)
 {
     assert(handle);
@@ -791,6 +1010,12 @@ status_t FLEXIO_SPI_MasterTransferGetCount(FLEXIO_SPI_Type *base, flexio_spi_mas
     return kStatus_Success;
 }
 
+/*!
+ * brief Aborts the master data transfer, which used IRQ.
+ *
+ * param base Pointer to the FLEXIO_SPI_Type structure.
+ * param handle Pointer to the flexio_spi_master_handle_t structure to store the transfer state.
+ */
 void FLEXIO_SPI_MasterTransferAbort(FLEXIO_SPI_Type *base, flexio_spi_master_handle_t *handle)
 {
     assert(handle);
@@ -806,6 +1031,12 @@ void FLEXIO_SPI_MasterTransferAbort(FLEXIO_SPI_Type *base, flexio_spi_master_han
     handle->txRemainingBytes = 0;
 }
 
+/*!
+ * brief FlexIO SPI master IRQ handler function.
+ *
+ * param spiType Pointer to the FLEXIO_SPI_Type structure.
+ * param spiHandle Pointer to the flexio_spi_master_handle_t structure to store the transfer state.
+ */
 void FLEXIO_SPI_MasterTransferHandleIRQ(void *spiType, void *spiHandle)
 {
     assert(spiHandle);
@@ -845,6 +1076,16 @@ void FLEXIO_SPI_MasterTransferHandleIRQ(void *spiType, void *spiHandle)
     }
 }
 
+/*!
+ * brief Initializes the FlexIO SPI Slave handle, which is used in transactional functions.
+ *
+ * param base Pointer to the FLEXIO_SPI_Type structure.
+ * param handle Pointer to the flexio_spi_slave_handle_t structure to store the transfer state.
+ * param callback The callback function.
+ * param userData The parameter of the callback function.
+ * retval kStatus_Success Successfully create the handle.
+ * retval kStatus_OutOfRange The FlexIO type/handle/ISR table out of range.
+ */
 status_t FLEXIO_SPI_SlaveTransferCreateHandle(FLEXIO_SPI_Type *base,
                                               flexio_spi_slave_handle_t *handle,
                                               flexio_spi_slave_transfer_callback_t callback,
@@ -868,6 +1109,19 @@ status_t FLEXIO_SPI_SlaveTransferCreateHandle(FLEXIO_SPI_Type *base,
     return FLEXIO_RegisterHandleIRQ(base, handle, FLEXIO_SPI_SlaveTransferHandleIRQ);
 }
 
+/*!
+ * brief Slave transfer data using IRQ.
+ *
+ * This function sends data using IRQ. This is a non-blocking function, which returns
+ * right away. When all data is sent out/received, the callback function is called.
+ * param handle Pointer to the flexio_spi_slave_handle_t structure to store the transfer state.
+ *
+ * param base Pointer to the FLEXIO_SPI_Type structure.
+ * param xfer FlexIO SPI transfer structure. See #flexio_spi_transfer_t.
+ * retval kStatus_Success Successfully start a transfer.
+ * retval kStatus_InvalidArgument Input argument is invalid.
+ * retval kStatus_FLEXIO_SPI_Busy SPI is not idle; it is running another transfer.
+ */
 status_t FLEXIO_SPI_SlaveTransferNonBlocking(FLEXIO_SPI_Type *base,
                                              flexio_spi_slave_handle_t *handle,
                                              flexio_spi_transfer_t *xfer)
@@ -939,6 +1193,12 @@ status_t FLEXIO_SPI_SlaveTransferNonBlocking(FLEXIO_SPI_Type *base,
     return kStatus_Success;
 }
 
+/*!
+ * brief FlexIO SPI slave IRQ handler function.
+ *
+ * param spiType Pointer to the FLEXIO_SPI_Type structure.
+ * param spiHandle Pointer to the flexio_spi_slave_handle_t structure to store the transfer state.
+ */
 void FLEXIO_SPI_SlaveTransferHandleIRQ(void *spiType, void *spiHandle)
 {
     assert(spiHandle);

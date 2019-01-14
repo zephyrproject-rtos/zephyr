@@ -5,10 +5,11 @@
 import argparse
 import os
 
-import log
-import cmake
-from build import DEFAULT_BUILD_DIR, DEFAULT_CMAKE_GENERATOR, is_zephyr_build
-from commands import WestCommand
+from west import log
+from west import cmake
+from west.build import DEFAULT_BUILD_DIR, DEFAULT_CMAKE_GENERATOR, \
+    is_zephyr_build
+from west.commands import WestCommand
 
 BUILD_HELP = '''\
 Convenience wrapper for building Zephyr applications.
@@ -72,24 +73,33 @@ class Build(WestCommand):
             formatter_class=argparse.RawDescriptionHelpFormatter,
             description=self.description)
 
+        # Remember to update scripts/west-completion.bash if you add or remove
+        # flags
+
         parser.add_argument('-b', '--board',
-                            help='''board to build for (must be given for the
+                            help='''Board to build for (must be given for the
                             first build, can be omitted later)''')
         parser.add_argument('-s', '--source-dir',
-                            help='''explicitly sets the source directory;
-                            if not given, infer it from directory context''')
+                            help='''Explicitly set the source directory.
+                            If not given and rebuilding an existing Zephyr
+                            build directory, this is taken from the CMake
+                            cache. Otherwise, the current directory is
+                            assumed.''')
         parser.add_argument('-d', '--build-dir',
-                            help='''explicitly sets the build directory;
-                            if not given, infer it from directory context''')
+                            help='''Explicitly sets the build directory.
+                            If not given and the current directory is a Zephyr
+                            build directory, it will be used; otherwise, "{}"
+                            is assumed. The directory will be created if
+                            it doesn't exist.'''.format(DEFAULT_BUILD_DIR))
         parser.add_argument('-t', '--target',
-                            help='''override the build system target (e.g.
+                            help='''Override the build system target (e.g.
                             'clean', 'pristine', etc.)''')
         parser.add_argument('-c', '--cmake', action='store_true',
-                            help='force CMake to run')
+                            help='Force CMake to run')
         parser.add_argument('-f', '--force', action='store_true',
-                            help='ignore any errors and try to build anyway')
+                            help='Ignore any errors and try to build anyway')
         parser.add_argument('cmake_opts', nargs='*', metavar='cmake_opt',
-                            help='extra option to pass to CMake; implies -c')
+                            help='Extra option to pass to CMake; implies -c')
 
         return parser
 

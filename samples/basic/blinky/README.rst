@@ -14,12 +14,11 @@ Requirements
 ************
 
 The demo assumes that an LED is connected to one of GPIO lines. The
-sample code is configured to work on boards with user defined buttons and that
-have defined the LED0\_* variables in :file:`board.h`.
+sample code is configured to work on boards that have defined the led0
+alias in their board device tree description file. Doing so will generate
+these variables:
 
-The :file:`board.h` must define the following variables:
-
-- LED0_GPIO_NAME (or LED0_GPIO_CONTROLLER)
+- LED0_GPIO_CONTROLLER
 - LED0_GPIO_PIN
 
 

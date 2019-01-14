@@ -38,8 +38,8 @@
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief common driver version 2.0.0. */
-#define FSL_COMMON_DRIVER_VERSION (MAKE_VERSION(2, 0, 0))
+/*! @brief common driver version 2.0.1. */
+#define FSL_COMMON_DRIVER_VERSION (MAKE_VERSION(2, 0, 1))
 /*@}*/
 
 /* Debug console type definition. */
@@ -121,11 +121,34 @@ enum _status_groups
     kStatusGroup_ICS = 74,                    /*!< Group number for ICS status codes. */
     kStatusGroup_SPDIF = 75,                  /*!< Group number for SPDIF status codes. */
     kStatusGroup_LPC_MINISPI = 76,            /*!< Group number for LPC_MINISPI status codes. */
+    kStatusGroup_HASHCRYPT = 77,              /*!< Group number for Hashcrypt status codes */
+    kStatusGroup_LPC_SPI_SSP = 78,            /*!< Group number for LPC_SPI_SSP status codes. */
+    kStatusGroup_LPC_I2C_1 = 97,              /*!< Group number for LPC_I2C_1 status codes. */
     kStatusGroup_NOTIFIER = 98,               /*!< Group number for NOTIFIER status codes. */
     kStatusGroup_DebugConsole = 99,           /*!< Group number for debug console status codes. */
     kStatusGroup_SEMC = 100,                  /*!< Group number for SEMC status codes. */    
     kStatusGroup_ApplicationRangeStart = 101, /*!< Starting number for application groups. */
     kStatusGroup_IAP = 102,                   /*!< Group number for IAP status codes */
+
+    kStatusGroup_HAL_GPIO = 121,              /*!< Group number for HAL GPIO status codes. */
+    kStatusGroup_HAL_UART = 122,              /*!< Group number for HAL UART status codes. */
+    kStatusGroup_HAL_TIMER = 123,             /*!< Group number for HAL TIMER status codes. */
+    kStatusGroup_HAL_SPI = 124,               /*!< Group number for HAL SPI status codes. */
+    kStatusGroup_HAL_I2C = 125,               /*!< Group number for HAL I2C status codes. */
+    kStatusGroup_HAL_FLASH = 126,             /*!< Group number for HAL FLASH status codes. */
+    kStatusGroup_HAL_PWM = 127,               /*!< Group number for HAL PWM status codes. */
+    kStatusGroup_HAL_RNG = 128,               /*!< Group number for HAL RNG status codes. */
+    kStatusGroup_TIMERMANAGER = 135,          /*!< Group number for TiMER MANAGER status codes. */
+    kStatusGroup_SERIALMANAGER = 136,         /*!< Group number for SERIAL MANAGER status codes. */
+    kStatusGroup_LED = 137,                   /*!< Group number for LED status codes. */
+    kStatusGroup_BUTTON = 138,                /*!< Group number for BUTTON status codes. */
+    kStatusGroup_EXTERN_EEPROM = 139,         /*!< Group number for EXTERN EEPROM status codes. */
+    kStatusGroup_SHELL = 140,                 /*!< Group number for SHELL status codes. */
+    kStatusGroup_MEM_MANAGER = 141,           /*!< Group number for MEM MANAGER status codes. */
+    kStatusGroup_LIST = 142,                  /*!< Group number for List status codes. */
+    kStatusGroup_OSA = 143,                   /*!< Group number for OSA status codes. */
+    kStatusGroup_COMMON_TASK = 144,           /*!< Group number for Common task status codes. */
+    kStatusGroup_MSG = 145,                   /*!< Group number for messaging status codes. */
 };
 
 /*! @brief Generic status return codes. */
@@ -224,16 +247,16 @@ _Pragma("diag_suppress=Pm120")
 #if defined(FSL_FEATURE_L2CACHE_LINESIZE_BYTE)
 #define SDK_L2CACHE_ALIGN(var) SDK_PRAGMA(data_alignment = FSL_FEATURE_L2CACHE_LINESIZE_BYTE) var
 #endif
-#elif defined(__ARMCC_VERSION)
+#elif defined(__CC_ARM) || defined(__ARMCC_VERSION)
 /*! Macro to define a variable with alignbytes alignment */
-#define SDK_ALIGN(var, alignbytes) __align(alignbytes) var
+#define SDK_ALIGN(var, alignbytes) __attribute__((aligned(alignbytes))) var
 /*! Macro to define a variable with L1 d-cache line size alignment */
 #if defined(FSL_FEATURE_L1DCACHE_LINESIZE_BYTE)
-#define SDK_L1DCACHE_ALIGN(var) __align(FSL_FEATURE_L1DCACHE_LINESIZE_BYTE) var
+#define SDK_L1DCACHE_ALIGN(var) __attribute__((aligned(FSL_FEATURE_L1DCACHE_LINESIZE_BYTE))) var
 #endif
 /*! Macro to define a variable with L2 cache line size alignment */
 #if defined(FSL_FEATURE_L2CACHE_LINESIZE_BYTE)
-#define SDK_L2CACHE_ALIGN(var) __align(FSL_FEATURE_L2CACHE_LINESIZE_BYTE) var
+#define SDK_L2CACHE_ALIGN(var) __attribute__((aligned(FSL_FEATURE_L2CACHE_LINESIZE_BYTE))) var
 #endif
 #elif defined(__GNUC__)
 /*! Macro to define a variable with alignbytes alignment */
@@ -270,7 +293,7 @@ _Pragma("diag_suppress=Pm120")
  */
 /* @{ */
 #if (defined(__ICCARM__))
-#if defined(FSL_FEATURE_L1ICACHE_LINESIZE_BYTE)
+#if ((!(defined(FSL_FEATURE_HAS_NO_NONCACHEABLE_SECTION) && FSL_FEATURE_HAS_NO_NONCACHEABLE_SECTION)) && defined(FSL_FEATURE_L1ICACHE_LINESIZE_BYTE))
 #define AT_NONCACHEABLE_SECTION(var) var @"NonCacheable"
 #define AT_NONCACHEABLE_SECTION_ALIGN(var, alignbytes) SDK_PRAGMA(data_alignment = alignbytes) var @"NonCacheable"
 #define AT_NONCACHEABLE_SECTION_INIT(var) var @"NonCacheable.init"
@@ -281,25 +304,25 @@ _Pragma("diag_suppress=Pm120")
 #define AT_NONCACHEABLE_SECTION_INIT(var) var
 #define AT_NONCACHEABLE_SECTION_ALIGN_INIT(var, alignbytes) SDK_PRAGMA(data_alignment = alignbytes) var
 #endif
-#elif(defined(__ARMCC_VERSION))
-#if defined(FSL_FEATURE_L1ICACHE_LINESIZE_BYTE)
+#elif(defined(__CC_ARM) || defined(__ARMCC_VERSION))
+#if ((!(defined(FSL_FEATURE_HAS_NO_NONCACHEABLE_SECTION) && FSL_FEATURE_HAS_NO_NONCACHEABLE_SECTION)) && defined(FSL_FEATURE_L1ICACHE_LINESIZE_BYTE))
 #define AT_NONCACHEABLE_SECTION(var) __attribute__((section("NonCacheable"), zero_init)) var
 #define AT_NONCACHEABLE_SECTION_ALIGN(var, alignbytes) \
-    __attribute__((section("NonCacheable"), zero_init)) __align(alignbytes) var
+    __attribute__((section("NonCacheable"), zero_init)) __attribute__((aligned(alignbytes))) var
 #define AT_NONCACHEABLE_SECTION_INIT(var) __attribute__((section("NonCacheable.init"))) var
 #define AT_NONCACHEABLE_SECTION_ALIGN_INIT(var, alignbytes) \
-    __attribute__((section("NonCacheable.init"))) __align(alignbytes) var
+    __attribute__((section("NonCacheable.init"))) __attribute__((aligned(alignbytes))) var
 #else
 #define AT_NONCACHEABLE_SECTION(var) var
-#define AT_NONCACHEABLE_SECTION_ALIGN(var, alignbytes) __align(alignbytes) var
+#define AT_NONCACHEABLE_SECTION_ALIGN(var, alignbytes) __attribute__((aligned(alignbytes))) var
 #define AT_NONCACHEABLE_SECTION_INIT(var) var
-#define AT_NONCACHEABLE_SECTION_ALIGN_INIT(var, alignbytes) __align(alignbytes) var
+#define AT_NONCACHEABLE_SECTION_ALIGN_INIT(var, alignbytes) __attribute__((aligned(alignbytes))) var
 #endif
 #elif(defined(__GNUC__))
 /* For GCC, when the non-cacheable section is required, please define "__STARTUP_INITIALIZE_NONCACHEDATA"
  * in your projects to make sure the non-cacheable section variables will be initialized in system startup.
  */
-#if defined(FSL_FEATURE_L1ICACHE_LINESIZE_BYTE)
+#if ((!(defined(FSL_FEATURE_HAS_NO_NONCACHEABLE_SECTION) && FSL_FEATURE_HAS_NO_NONCACHEABLE_SECTION)) && defined(FSL_FEATURE_L1ICACHE_LINESIZE_BYTE))
 #define AT_NONCACHEABLE_SECTION_INIT(var) __attribute__((section("NonCacheable.init"))) var
 #define AT_NONCACHEABLE_SECTION_ALIGN_INIT(var, alignbytes) \
     __attribute__((section("NonCacheable.init"))) var __attribute__((aligned(alignbytes)))
@@ -327,7 +350,7 @@ _Pragma("diag_suppress=Pm120")
 #if (defined(__ICCARM__))
 #define AT_QUICKACCESS_SECTION_CODE(func) func @"CodeQuickAccess"
 #define AT_QUICKACCESS_SECTION_DATA(func) func @"DataQuickAccess"
-#elif(defined(__ARMCC_VERSION))
+#elif(defined(__CC_ARM) || defined(__ARMCC_VERSION))
 #define AT_QUICKACCESS_SECTION_CODE(func) __attribute__((section("CodeQuickAccess"))) func
 #define AT_QUICKACCESS_SECTION_DATA(func) __attribute__((section("DataQuickAccess"))) func
 #elif(defined(__GNUC__))
@@ -340,7 +363,7 @@ _Pragma("diag_suppress=Pm120")
 #if (defined(__ICCARM__))
 #define AT_QUICKACCESS_SECTION_CODE(func) func
 #define AT_QUICKACCESS_SECTION_DATA(func) func
-#elif(defined(__ARMCC_VERSION))
+#elif(defined(__CC_ARM) || defined(__ARMCC_VERSION))
 #define AT_QUICKACCESS_SECTION_CODE(func) func
 #define AT_QUICKACCESS_SECTION_DATA(func) func
 #elif(defined(__GNUC__))
@@ -352,6 +375,17 @@ _Pragma("diag_suppress=Pm120")
 #endif /* __FSL_SDK_DRIVER_QUICK_ACCESS_ENABLE */
 /* @} */
 
+/*! @name Ram Function */
+#if (defined(__ICCARM__))
+#define RAMFUNCTION_SECTION_CODE(func) func @"RamFunction"
+#elif(defined(__CC_ARM) || defined(__ARMCC_VERSION))
+#define RAMFUNCTION_SECTION_CODE(func) __attribute__((section("RamFunction"))) func
+#elif(defined(__GNUC__))
+#define RAMFUNCTION_SECTION_CODE(func) __attribute__((section("RamFunction"))) func
+#else
+#error Toolchain not supported.
+#endif /* defined(__ICCARM__) */
+/* @} */
 /*******************************************************************************
  * API
  ******************************************************************************/
@@ -463,7 +497,7 @@ _Pragma("diag_suppress=Pm120")
     }
 
     /*!
-     * @brief Enaable the global IRQ
+     * @brief Enable the global IRQ
      *
      * Set the primask register with the provided primask value but not just enable the primask. The idea is for the
      * convenience of integration of RTOS. some RTOS get its own management mechanism of primask. User is required to
@@ -491,7 +525,7 @@ _Pragma("diag_suppress=Pm120")
      */
     uint32_t InstallIRQHandler(IRQn_Type irq, uint32_t irqHandler);
 #endif /* ENABLE_RAM_VECTOR_TABLE. */
-
+		
 #if (defined(FSL_FEATURE_SOC_SYSCON_COUNT) && (FSL_FEATURE_SOC_SYSCON_COUNT > 0))
     /*!
      * @brief Enable specific interrupt for wake-up from deep-sleep mode.

@@ -2,7 +2,7 @@
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
  * All rights reserved.
- * 
+ *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 #include "fsl_pmu.h"
@@ -12,6 +12,10 @@
 #define FSL_COMPONENT_ID "platform.drivers.pmu"
 #endif
 
+/*!
+ * name Status.
+ * {
+ */
 
 uint32_t PMU_GetStatusFlags(PMU_Type *base)
 {

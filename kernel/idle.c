@@ -21,19 +21,19 @@
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 /*
- * Used to allow _sys_soc_suspend() implementation to control notification
+ * Used to allow sys_suspend() implementation to control notification
  * of the event that caused exit from kernel idling after pm operations.
  */
-unsigned char _sys_pm_idle_exit_notify;
+unsigned char sys_pm_idle_exit_notify;
 
 #if defined(CONFIG_SYS_POWER_LOW_POWER_STATE)
-void __attribute__((weak)) _sys_soc_resume(void)
+void __attribute__((weak)) sys_resume(void)
 {
 }
 #endif
 
 #if defined(CONFIG_SYS_POWER_DEEP_SLEEP)
-void __attribute__((weak)) _sys_soc_resume_from_deep_sleep(void)
+void __attribute__((weak)) sys_resume_from_deep_sleep(void)
 {
 }
 #endif
@@ -77,7 +77,7 @@ static void sys_power_save_idle(void)
 #if (defined(CONFIG_SYS_POWER_LOW_POWER_STATE) || \
 	defined(CONFIG_SYS_POWER_DEEP_SLEEP))
 
-	_sys_pm_idle_exit_notify = 1U;
+	sys_pm_idle_exit_notify = 1U;
 
 	/*
 	 * Call the suspend hook function of the soc interface to allow
@@ -92,8 +92,8 @@ static void sys_power_save_idle(void)
 	 * idle processing re-enables interrupts which is essential for
 	 * the kernel's scheduling logic.
 	 */
-	if (_sys_soc_suspend(ticks) == SYS_PM_NOT_HANDLED) {
-		_sys_pm_idle_exit_notify = 0U;
+	if (sys_suspend(ticks) == SYS_PM_NOT_HANDLED) {
+		sys_pm_idle_exit_notify = 0U;
 		k_cpu_idle();
 	}
 #else
@@ -108,11 +108,11 @@ void _sys_power_save_idle_exit(s32_t ticks)
 	/* Some CPU low power states require notification at the ISR
 	 * to allow any operations that needs to be done before kernel
 	 * switches task or processes nested interrupts. This can be
-	 * disabled by calling _sys_soc_pm_idle_exit_notification_disable().
+	 * disabled by calling sys_pm_idle_exit_notification_disable().
 	 * Alternatively it can be simply ignored if not required.
 	 */
-	if (_sys_pm_idle_exit_notify) {
-		_sys_soc_resume();
+	if (sys_pm_idle_exit_notify) {
+		sys_resume();
 	}
 #endif
 

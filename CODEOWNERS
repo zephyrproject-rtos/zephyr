@@ -1,5 +1,8 @@
 # CODEOWNERS for autoreview assigning in github
 
+# Order is important; the last matching pattern takes the most
+# precedence.
+
 # Do not use wildcard on all source yet
 # *                                        @galak @nashif
 
@@ -38,6 +41,7 @@ boards/arm/96b_argonkey/                 @avisconti
 boards/arm/96b_carbon/                   @rsalveti @idlethread
 boards/arm/96b_nitrogen/                 @idlethread
 boards/arm/96b_neonkey/                  @Mani-Sadhasivam
+boards/arm/96b_stm32_sensor_mez/         @Mani-Sadhasivam
 boards/arm/cc3220sf_launchxl/            @GAnthony
 boards/arm/curie_ble/                    @jhedberg
 boards/arm/disco_l475_iot1/              @erwango
@@ -117,6 +121,7 @@ drivers/timer/riscv_machine_timer.c      @nategraff-sifive @kgugala @pgielda
 drivers/usb/                             @jfischer-phytec-iot @finikorg
 drivers/usb/device/usb_dc_stm32.c        @ydamigos @loicpoulain
 drivers/i2c/i2c_ll_stm32*                @ldts @ydamigos
+drivers/wifi/                            @jukkar @tbursztyka @pfalcon
 drivers/wifi/eswifi                      @loicpoulain
 dts/arm/st/                              @erwango
 dts/arm/nordic/                          @ioannisg @carlescufi
@@ -127,7 +132,7 @@ ext/hal/nxp/                             @MaureenHelm
 ext/hal/qmsi/                            @nashif
 ext/hal/st/stm32cube/                    @erwango
 ext/lib/crypto/mbedtls/                  @nashif
-ext/lib/crypto/tinycrypt/                @lpereira
+ext/lib/crypto/tinycrypt/                @ceolin
 include/adc.h                            @anangl
 include/arch/arc/                        @vonhust @ruuddw
 include/arch/arc/arch.h                  @andrewboie
@@ -182,12 +187,14 @@ include/toolchain.h                      @andrewboie @andyross
 include/toolchain/                       @andrewboie @andyross
 include/zephyr.h                         @andrewboie @andyross
 kernel/                                  @andrewboie @andyross
+lib/gui/                                 @vanwinkeljan
 lib/posix/                               @ramakrishnapallala @nniranjhana
 kernel/device.c                          @ramakrishnapallala @nashif
 kernel/idle.c                            @ramakrishnapallala @nashif
 samples/bluetooth/                       @sjanc @jhedberg @Vudentz
 samples/boards/quark_se_c1000/power*/    @ramakrishnapallala @nashif
 samples/display/                         @vanwinkeljan
+samples/gui/                             @vanwinkeljan
 samples/net/                             @jukkar @tbursztyka @pfalcon
 samples/net/dns_resolve/                 @jukkar @tbursztyka @pfalcon
 samples/net/http_server/                 @jukkar @tbursztyka
@@ -234,10 +241,10 @@ subsys/usb/                              @jfischer-phytec-iot @finikorg
 tests/boards/native_posix/               @aescolar
 tests/bluetooth/                         @sjanc @jhedberg @Vudentz
 tests/posix/                             @nniranjhana
-tests/crypto/                            @lpereira @pswarnak
-tests/crypto/mbedtls/                    @nashif @lpereira
+tests/crypto/                            @ceolin
+tests/crypto/mbedtls/                    @nashif @ceolin
 tests/drivers/spi/                       @tbursztyka
-tests/kernel/                            @andrewboie @andyross @spoorthik @pswarnak @nniranjhana
+tests/kernel/                            @andrewboie @andyross @spoorthik @nniranjhana
 tests/net/                               @jukkar @tbursztyka @pfalcon
 tests/net/buf/                           @jukkar @jhedberg @tbursztyka @pfalcon
 tests/net/lib/                           @jukkar @tbursztyka @pfalcon

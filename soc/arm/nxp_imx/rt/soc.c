@@ -12,6 +12,7 @@
 #include <fsl_clock.h>
 #include <arch/cpu.h>
 #include <cortex_m/exc.h>
+#include <fsl_flexspi_nor_boot.h>
 
 #ifdef CONFIG_INIT_ARM_PLL
 /* ARM PLL configuration for RUN mode */
@@ -34,13 +35,40 @@ const clock_usb_pll_config_t usb1PllConfig = {
 };
 #endif
 
-#ifdef CONFIG_ETH_MCUX_0
+#ifdef CONFIG_INIT_ENET_PLL
+/* ENET PLL configuration for RUN mode */
 const clock_enet_pll_config_t ethPllConfig = {
-	.enableClkOutput0 = true,
-	.enableClkOutput1 = false,
-	.enableClkOutput2 = false,
-	.loopDivider0 = 1,
-	.loopDivider1 = 1
+#ifdef CONFIG_SOC_MIMXRT1021
+	.enableClkOutput500M = true,
+#else
+	.enableClkOutput = true,
+#endif
+	.enableClkOutput25M = false,
+	.loopDivider = 1,
+};
+#endif
+
+#ifdef CONFIG_NXP_IMX_RT_BOOT_HEADER
+const __imx_boot_data_section BOOT_DATA_T boot_data = {
+	.start = CONFIG_FLASH_BASE_ADDRESS,
+	.size = CONFIG_FLASH_SIZE,
+	.plugin = PLUGIN_FLAG,
+	.placeholder = 0xFFFFFFFF,
+};
+
+const __imx_boot_ivt_section ivt image_vector_table = {
+	.hdr = IVT_HEADER,
+	.entry = CONFIG_FLASH_BASE_ADDRESS + CONFIG_TEXT_SECTION_OFFSET,
+	.reserved1 = IVT_RSVD,
+#ifdef CONFIG_DEVICE_CONFIGURATION_DATA
+	.dcd = (uint32_t) dcd_data,
+#else
+	.dcd = (uint32_t) NULL,
+#endif
+	.boot_data = (uint32_t) &boot_data,
+	.self = (uint32_t) &image_vector_table,
+	.csf = (uint32_t)CSF_ADDRESS,
+	.reserved2 = IVT_RSVD,
 };
 #endif
 
@@ -83,7 +111,7 @@ static ALWAYS_INLINE void clkInit(void)
 #ifdef CONFIG_INIT_USB1_PLL
 	CLOCK_InitUsb1Pll(&usb1PllConfig); /* Configure USB1 PLL to 480M */
 #endif
-#ifdef CONFIG_ETH_MCUX_0
+#ifdef CONFIG_INIT_ENET_PLL
 	CLOCK_InitEnetPll(&ethPllConfig);
 #endif
 
@@ -135,11 +163,11 @@ static int imxrt_init(struct device *arg)
 	oldLevel = irq_lock();
 
 	/* Watchdog disable */
-	if (WDOG1->WCR & WDOG_WCR_WDE_MASK) {
+	if ((WDOG1->WCR & WDOG_WCR_WDE_MASK) != 0) {
 		WDOG1->WCR &= ~WDOG_WCR_WDE_MASK;
 	}
 
-	if (WDOG2->WCR & WDOG_WCR_WDE_MASK) {
+	if ((WDOG2->WCR & WDOG_WCR_WDE_MASK) != 0) {
 		WDOG2->WCR &= ~WDOG_WCR_WDE_MASK;
 	}
 
@@ -149,12 +177,12 @@ static int imxrt_init(struct device *arg)
 		| RTWDOG_CS_UPDATE_MASK;
 
 	/* Disable Systick which might be enabled by bootrom */
-	if (SysTick->CTRL & SysTick_CTRL_ENABLE_Msk) {
+	if ((SysTick->CTRL & SysTick_CTRL_ENABLE_Msk) != 0) {
 		SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
 	}
 
 	SCB_EnableICache();
-	if (!(SCB->CCR & SCB_CCR_DC_Msk)) {
+	if ((SCB->CCR & SCB_CCR_DC_Msk) == 0) {
 		SCB_EnableDCache();
 	}
 

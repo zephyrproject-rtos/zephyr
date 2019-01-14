@@ -433,7 +433,7 @@ static int i2c_dw_transfer(struct device *dev,
 
 	/*
 	 * While waiting at device_sync_sem, kernel can switch to idle
-	 * task which in turn can call _sys_soc_suspend() hook of Power
+	 * task which in turn can call sys_suspend() hook of Power
 	 * Management App (PMA).
 	 * device_busy_set() call here, would indicate to PMA that it should not
 	 * execute PM policies that would turn off this ip block, causing an

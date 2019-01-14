@@ -7,6 +7,7 @@
 
 #include <ctype.h>
 #include <string.h>
+#include <assert.h>
 
 #include "settings/settings.h"
 #include "settings_priv.h"
@@ -438,7 +439,38 @@ size_t settings_line_val_get_len(off_t val_off, void *read_cb_ctx)
 	size_t len;
 
 	len = settings_io_cb.get_len_cb(read_cb_ctx);
+#ifdef CONFIG_SETTINGS_USE_BASE64
+	u8_t raw[2];
+	int rc;
+	size_t len_base64 = len - val_off;
+
+	/* don't care about lack of alignmet to 4 B */
+	/* entire value redout call will return error anyway */
+	if (len_base64 >= 4) {
+		/* read last 2 B of base64 */
+		rc = settings_line_raw_read(len - 2, raw, 2, &len, read_cb_ctx);
+		if (rc || len != 2) {
+			/* very unexpected error */
+			__ASSERT(rc == 0, "Failed to read the storage.\n");
+			return 0;
+		}
+
+		len = (len_base64 / 4) * 3;
+
+		/* '=' is the padding of Base64 */
+		if (raw[0] == '=') {
+			len -= 2;
+		} else if (raw[1] == '=') {
+			len--;
+		}
+
+		return len;
+	} else {
+		return 0;
+	}
+#else
 	return len - val_off;
+#endif
 }
 
 /**

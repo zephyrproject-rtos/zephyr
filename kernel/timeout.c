@@ -46,11 +46,14 @@ static struct _timeout *next(struct _timeout *t)
 
 static void remove_timeout(struct _timeout *t)
 {
-	if (next(t) != NULL) {
-		next(t)->dticks += t->dticks;
-	}
+	if (t->node.next != NULL && t->node.prev != NULL) {
+		if (next(t) != NULL) {
+			next(t)->dticks += t->dticks;
+		}
 
-	sys_dlist_remove(&t->node);
+		sys_dlist_remove(&t->node);
+	}
+	t->node.next = t->node.prev = NULL;
 	t->dticks = _INACTIVE;
 }
 
@@ -125,46 +128,6 @@ s32_t z_timeout_remaining(struct _timeout *timeout)
 	return ticks;
 }
 
-void z_clock_announce(s32_t ticks)
-{
-	struct _timeout *t = NULL;
-
-#ifdef CONFIG_TIMESLICING
-	z_time_slice(ticks);
-#endif
-
-	announce_remaining = ticks;
-	while (true) {
-		LOCKED(&timeout_lock) {
-			t = first();
-			if (t != NULL) {
-				if (t->dticks <= announce_remaining) {
-					announce_remaining -= t->dticks;
-					curr_tick += t->dticks;
-					t->dticks = 0;
-					remove_timeout(t);
-				} else {
-					t->dticks -= announce_remaining;
-					t = NULL;
-				}
-			}
-		}
-
-		if (t == NULL) {
-			break;
-		}
-
-		t->fn(t);
-	}
-
-	LOCKED(&timeout_lock) {
-		curr_tick += announce_remaining;
-		announce_remaining = 0;
-
-		z_clock_set_timeout(_get_next_timeout_expiry(), false);
-	}
-}
-
 s32_t _get_next_timeout_expiry(void)
 {
 	s32_t ret = 0;
@@ -188,11 +151,55 @@ void z_set_timeout_expiry(s32_t ticks, bool idle)
 {
 	LOCKED(&timeout_lock) {
 		int next = _get_next_timeout_expiry();
+		bool sooner = (next == K_FOREVER) || (ticks < next);
+		bool imminent = next <= 1;
 
-		if ((next == K_FOREVER) || (ticks < next)) {
+		/* Only set new timeouts when they are sooner than
+		 * what we have.  Also don't try to set a timeout when
+		 * one is about to expire: drivers have internal logic
+		 * that will bump the timeout to the "next" tick if
+		 * it's not considered to be settable as directed.
+		 */
+		if (sooner && !imminent) {
 			z_clock_set_timeout(ticks, idle);
 		}
 	}
+}
+
+void z_clock_announce(s32_t ticks)
+{
+#ifdef CONFIG_TIMESLICING
+	z_time_slice(ticks);
+#endif
+
+	k_spinlock_key_t key = k_spin_lock(&timeout_lock);
+
+	announce_remaining = ticks;
+
+	while (first() != NULL && first()->dticks <= announce_remaining) {
+		struct _timeout *t = first();
+		int dt = t->dticks;
+
+		curr_tick += dt;
+		announce_remaining -= dt;
+		t->dticks = 0;
+		remove_timeout(t);
+
+		k_spin_unlock(&timeout_lock, key);
+		t->fn(t);
+		key = k_spin_lock(&timeout_lock);
+	}
+
+	if (first() != NULL) {
+		first()->dticks -= announce_remaining;
+	}
+
+	curr_tick += announce_remaining;
+	announce_remaining = 0;
+
+	z_clock_set_timeout(_get_next_timeout_expiry(), false);
+
+	k_spin_unlock(&timeout_lock, key);
 }
 
 int k_enable_sys_clock_always_on(void)

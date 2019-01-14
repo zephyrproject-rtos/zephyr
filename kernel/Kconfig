@@ -582,12 +582,12 @@ menu "Security Options"
 config RETPOLINE
 	bool "Build with retpolines enabled"
 	default y if !X86_NO_SPECTRE_V2
+	# Currently only implemented for x86
+	depends on X86
 	help
 	  This is recommended on platforms with speculative executions, to protect
 	  against branch target injection (AKA Spectre-V2).  Full description of
 	  how retpolines work can be found here[1].
-
-	  Currently only the x86 port
 
 	  [1] https://support.google.com/faqs/answer/7625886
 
@@ -650,8 +650,10 @@ config MAX_DOMAIN_PARTITIONS
 	  Configure the maximum number of partitions per memory domain.
 
 menu "SMP Options"
+
 config USE_SWITCH
 	bool "Use new-style _arch_switch instead of __swap"
+	depends on USE_SWITCH_SUPPORTED
 	help
 	  The _arch_switch() API is a lower level context switching
 	  primitive than the original __swap mechanism.  It is required
@@ -660,8 +662,16 @@ config USE_SWITCH
 	  architecture provides both, _arch_switch incurs more somewhat
 	  overhead and may be slower.
 
+config USE_SWITCH_SUPPORTED
+	bool
+	help
+	  Indicates whether _arch_switch() API is supported by the
+	  currently enabled platform. This option should be selected by
+	  platforms that implement it.
+
 config SMP
 	bool "Enable symmetric multithreading support"
+	depends on USE_SWITCH
 	help
 	  When true, kernel will be built with SMP support, allowing
 	  more than one CPU to schedule Zephyr tasks at a time.
@@ -676,6 +686,8 @@ config MP_NUM_CPUS
 endmenu
 
 config TICKLESS_IDLE
+	# NB: This option is deprecated, see TICKLESS_KERNEL and
+	# https://github.com/zephyrproject-rtos/zephyr/pull/12234
 	bool "Tickless idle"
 	default y if SYS_POWER_MANAGEMENT || TICKLESS_CAPABLE
 	help
@@ -699,8 +711,7 @@ config TICKLESS_KERNEL
 	default y if TICKLESS_CAPABLE
 	help
 	  This option enables a fully event driven kernel. Periodic system
-	  clock interrupt generation would be stopped at all times. This option
-	  requires Tickless Idle option to be enabled.
+	  clock interrupt generation would be stopped at all times.
 
 source "kernel/Kconfig.power_mgmt"
 

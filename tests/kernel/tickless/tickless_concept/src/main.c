@@ -58,15 +58,8 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 	/*less than one tick delay*/
 	zassert_true(t <= SLICE_SIZE_LIMIT, NULL);
 
-	u32_t t32 = k_uptime_get_32();
-
 	/*keep the current thread busy for more than one slice*/
-	while (k_uptime_get_32() - t32 < SLEEP_TICKLESS)
-#if defined(CONFIG_ARCH_POSIX)
-		k_busy_wait(50);
-#else
-		;
-#endif
+	k_busy_wait(1000 * SLEEP_TICKLESS);
 	k_sem_give(&sema);
 }
 /**

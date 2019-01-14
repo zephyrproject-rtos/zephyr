@@ -60,7 +60,7 @@ extern u32_t _sse_mxcsr_default_value;
 static void _FpCtxSave(struct k_thread *thread)
 {
 #ifdef CONFIG_SSE
-	if (thread->base.user_options & K_SSE_REGS) {
+	if ((thread->base.user_options & K_SSE_REGS) != 0) {
 		_do_fp_and_sse_regs_save(&thread->arch.preempFloatReg);
 		return;
 	}
@@ -78,7 +78,7 @@ static inline void _FpCtxInit(struct k_thread *thread)
 {
 	_do_fp_regs_init();
 #ifdef CONFIG_SSE
-	if (thread->base.user_options & K_SSE_REGS) {
+	if ((thread->base.user_options & K_SSE_REGS) != 0) {
 		_do_sse_regs_init();
 	}
 #endif
@@ -121,8 +121,8 @@ void k_float_enable(struct k_thread *thread, unsigned int options)
 	 */
 
 	fp_owner = _kernel.current_fp;
-	if (fp_owner) {
-		if (fp_owner->base.thread_state & _INT_OR_EXC_MASK) {
+	if (fp_owner != NULL) {
+		if ((fp_owner->base.thread_state & _INT_OR_EXC_MASK) != 0) {
 			_FpCtxSave(fp_owner);
 		}
 	}

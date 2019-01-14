@@ -312,7 +312,7 @@ static struct net_pkt *create_pkt(struct net_6lo_data *data)
 	u16_t len;
 	int remaining;
 
-	pkt = net_pkt_get_reserve_tx(0, K_FOREVER);
+	pkt = net_pkt_get_reserve_tx(K_FOREVER);
 	if (!pkt) {
 		return NULL;
 	}
@@ -866,7 +866,7 @@ static void test_6lo(struct net_6lo_data *data)
 	net_hexdump_frags("before-compression", pkt, false);
 #endif
 
-	zassert_true(net_6lo_compress(pkt, data->iphc, NULL),
+	zassert_true((net_6lo_compress(pkt, data->iphc) >= 0),
 		     "compression failed");
 
 #if DEBUG > 0

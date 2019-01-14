@@ -18,8 +18,8 @@ import platform
 import signal
 import subprocess
 
-import log
-from util import quote_sh_list
+from west import log
+from west.util import quote_sh_list
 
 # Turn on to enable just printing the commands that would be run,
 # without actually running them. This can break runners that are expecting
@@ -191,8 +191,8 @@ class RunnerConfig:
     This class's __slots__ contains exactly the configuration variables.
     '''
 
-    __slots__ = ['build_dir', 'board_dir', 'kernel_elf', 'kernel_hex',
-                 'kernel_bin', 'gdb', 'openocd', 'openocd_search']
+    __slots__ = ['build_dir', 'board_dir', 'elf_file', 'hex_file',
+                 'bin_file', 'gdb', 'openocd', 'openocd_search']
 
     # TODO: revisit whether we can get rid of some of these.  Having
     # tool-specific configuration options here is a layering
@@ -200,7 +200,7 @@ class RunnerConfig:
     # store the locations of tools (like gdb and openocd) that are
     # needed by multiple ZephyrBinaryRunner subclasses.
     def __init__(self, build_dir, board_dir,
-                 kernel_elf, kernel_hex, kernel_bin,
+                 elf_file, hex_file, bin_file,
                  gdb=None, openocd=None, openocd_search=None):
         self.build_dir = build_dir
         '''Zephyr application build directory'''
@@ -208,14 +208,14 @@ class RunnerConfig:
         self.board_dir = board_dir
         '''Zephyr board directory'''
 
-        self.kernel_elf = kernel_elf
-        '''Path to kernel binary in .elf format'''
+        self.elf_file = elf_file
+        '''Path to the elf file that the runner should operate on'''
 
-        self.kernel_hex = kernel_hex
-        '''Path to kernel binary in .hex format'''
+        self.hex_file = hex_file
+        '''Path to the hex file that the runner should operate on'''
 
-        self.kernel_bin = kernel_bin
-        '''Path to kernel binary in .bin format'''
+        self.bin_file = bin_file
+        '''Path to the bin file that the runner should operate on'''
 
         self.gdb = gdb
         ''''Path to GDB compatible with the target, may be None.'''

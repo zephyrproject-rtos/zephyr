@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2018 Endre Karlson
+ * Copyright (c) 2018 Peter Bigot Consulting, LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf52840_qiaa.dtsi>
+#include "mesh_feather.dtsi"
+
+/ {
+	model = "Particle Xenon";
+	compatible = "particle,xenon", "particle,feather",
+		"nordic,nrf52840-qiaa", "nordic,nrf52840";
+};

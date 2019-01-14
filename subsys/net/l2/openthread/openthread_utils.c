@@ -11,7 +11,7 @@ LOG_MODULE_DECLARE(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #include <net/net_pkt.h>
 #include <net/openthread.h>
 
-#include <openthread/openthread.h>
+#include <openthread/ip6.h>
 
 #include "openthread_utils.h"
 

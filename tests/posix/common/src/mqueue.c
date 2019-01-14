@@ -11,7 +11,7 @@
 #include <pthread.h>
 
 #define N_THR 2
-#define STACKSZ 1024
+#define STACKSZ (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define SENDER_THREAD 0
 #define RECEIVER_THREAD 1
 #define MESSAGE_SIZE 16

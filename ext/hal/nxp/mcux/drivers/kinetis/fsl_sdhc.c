@@ -1,31 +1,9 @@
 /*
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fsl_sdhc.h"
@@ -33,6 +11,12 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
+
+/* Component ID definition, used by tools. */
+#ifndef FSL_COMPONENT_ID
+#define FSL_COMPONENT_ID "platform.drivers.sdhc"
+#endif
+
 /*! @brief Clock setting */
 /* Max SD clock divisor from base clock */
 #define SDHC_MAX_DVS ((SDHC_SYSCTL_DVS_MASK >> SDHC_SYSCTL_DVS_SHIFT) + 1U)
@@ -172,10 +156,11 @@ static status_t SDHC_TransferDataBlocking(sdhc_dma_mode_t dmaMode, SDHC_Type *ba
 /*!
  * @brief Handle card detect interrupt.
  *
+ * @param base SDHC peripheral base address.
  * @param handle SDHC handle.
  * @param interruptFlags Card detect related interrupt flags.
  */
-static void SDHC_TransferHandleCardDetect(sdhc_handle_t *handle, uint32_t interruptFlags);
+static void SDHC_TransferHandleCardDetect(SDHC_Type *base, sdhc_handle_t *handle, uint32_t interruptFlags);
 
 /*!
  * @brief Handle command interrupt.
@@ -198,16 +183,18 @@ static void SDHC_TransferHandleData(SDHC_Type *base, sdhc_handle_t *handle, uint
 /*!
  * @brief Handle SDIO card interrupt signal.
  *
+ * @param base SDHC peripheral base address.
  * @param handle SDHC handle.
  */
-static void SDHC_TransferHandleSdioInterrupt(sdhc_handle_t *handle);
+static void SDHC_TransferHandleSdioInterrupt(SDHC_Type *base, sdhc_handle_t *handle);
 
 /*!
  * @brief Handle SDIO block gap event.
  *
+ * @param base SDHC peripheral base address.
  * @param handle SDHC handle.
  */
-static void SDHC_TransferHandleSdioBlockGap(sdhc_handle_t *handle);
+static void SDHC_TransferHandleSdioBlockGap(SDHC_Type *base, sdhc_handle_t *handle);
 
 /*******************************************************************************
  * Variables
@@ -325,7 +312,15 @@ static void SDHC_StartTransfer(SDHC_Type *base, sdhc_command_t *command, sdhc_da
         if (dmaMode != kSDHC_DmaModeNo)
         {
             flags |= kSDHC_EnableDmaFlag;
+            base->IRQSIGEN &= ~(kSDHC_BufferWriteReadyFlag | kSDHC_BufferReadReadyFlag | kSDHC_DmaCompleteFlag);
+            base->IRQSTATEN &= ~(kSDHC_BufferWriteReadyFlag | kSDHC_BufferReadReadyFlag | kSDHC_DmaCompleteFlag);
         }
+        else
+        {
+            base->IRQSIGEN |= kSDHC_BufferWriteReadyFlag | kSDHC_BufferReadReadyFlag;
+            base->IRQSTATEN |= kSDHC_BufferWriteReadyFlag | kSDHC_BufferReadReadyFlag;
+        }
+
         if (data->rxData)
         {
             flags |= kSDHC_DataReadFlag;
@@ -684,20 +679,20 @@ static status_t SDHC_TransferDataBlocking(sdhc_dma_mode_t dmaMode, SDHC_Type *ba
     return error;
 }
 
-static void SDHC_TransferHandleCardDetect(sdhc_handle_t *handle, uint32_t interruptFlags)
+static void SDHC_TransferHandleCardDetect(SDHC_Type *base, sdhc_handle_t *handle, uint32_t interruptFlags)
 {
     if (interruptFlags & kSDHC_CardInsertionFlag)
     {
         if (handle->callback.CardInserted)
         {
-            handle->callback.CardInserted();
+            handle->callback.CardInserted(base, handle->userData);
         }
     }
     else
     {
         if (handle->callback.CardRemoved)
         {
-            handle->callback.CardRemoved();
+            handle->callback.CardRemoved(base, handle->userData);
         }
     }
 }
@@ -755,22 +750,42 @@ static void SDHC_TransferHandleData(SDHC_Type *base, sdhc_handle_t *handle, uint
     }
 }
 
-static void SDHC_TransferHandleSdioInterrupt(sdhc_handle_t *handle)
+static void SDHC_TransferHandleSdioInterrupt(SDHC_Type *base, sdhc_handle_t *handle)
 {
     if (handle->callback.SdioInterrupt)
     {
-        handle->callback.SdioInterrupt();
+        handle->callback.SdioInterrupt(base, handle->userData);
     }
 }
 
-static void SDHC_TransferHandleSdioBlockGap(sdhc_handle_t *handle)
+static void SDHC_TransferHandleSdioBlockGap(SDHC_Type *base, sdhc_handle_t *handle)
 {
     if (handle->callback.SdioBlockGap)
     {
-        handle->callback.SdioBlockGap();
+        handle->callback.SdioBlockGap(base, handle->userData);
     }
 }
 
+/*!
+ * brief SDHC module initialization function.
+ *
+ * Configures the SDHC according to the user configuration.
+ *
+ * Example:
+   code
+   sdhc_config_t config;
+   config.cardDetectDat3 = false;
+   config.endianMode = kSDHC_EndianModeLittle;
+   config.dmaMode = kSDHC_DmaModeAdma2;
+   config.readWatermarkLevel = 128U;
+   config.writeWatermarkLevel = 128U;
+   SDHC_Init(SDHC, &config);
+   endcode
+ *
+ * param base SDHC peripheral base address.
+ * param config SDHC configuration information.
+ * retval kStatus_Success Operate successfully.
+ */
 void SDHC_Init(SDHC_Type *base, const sdhc_config_t *config)
 {
     assert(config);
@@ -818,6 +833,11 @@ void SDHC_Init(SDHC_Type *base, const sdhc_config_t *config)
     SDHC_SetTransferInterrupt(base, false);
 }
 
+/*!
+ * brief Deinitializes the SDHC.
+ *
+ * param base SDHC peripheral base address.
+ */
 void SDHC_Deinit(SDHC_Type *base)
 {
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
@@ -826,6 +846,15 @@ void SDHC_Deinit(SDHC_Type *base)
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
+/*!
+ * brief Resets the SDHC.
+ *
+ * param base SDHC peripheral base address.
+ * param mask The reset type mask(_sdhc_reset).
+ * param timeout Timeout for reset.
+ * retval true Reset successfully.
+ * retval false Reset failed.
+ */
 bool SDHC_Reset(SDHC_Type *base, uint32_t mask, uint32_t timeout)
 {
     base->SYSCTL |= (mask & (SDHC_SYSCTL_RSTA_MASK | SDHC_SYSCTL_RSTC_MASK | SDHC_SYSCTL_RSTD_MASK));
@@ -842,6 +871,12 @@ bool SDHC_Reset(SDHC_Type *base, uint32_t mask, uint32_t timeout)
     return ((!timeout) ? false : true);
 }
 
+/*!
+ * brief Gets the capability information.
+ *
+ * param base SDHC peripheral base address.
+ * param capability Structure to save capability information.
+ */
 void SDHC_GetCapability(SDHC_Type *base, sdhc_capability_t *capability)
 {
     assert(capability);
@@ -872,6 +907,15 @@ void SDHC_GetCapability(SDHC_Type *base, sdhc_capability_t *capability)
     capability->flags |= (kSDHC_Support4BitFlag | kSDHC_Support8BitFlag);
 }
 
+/*!
+ * brief Sets the SD bus clock frequency.
+ *
+ * param base SDHC peripheral base address.
+ * param srcClock_Hz SDHC source clock frequency united in Hz.
+ * param busClock_Hz SD bus clock frequency united in Hz.
+ *
+ * return The nearest frequency of busClock_Hz configured to SD bus.
+ */
 uint32_t SDHC_SetSdClock(SDHC_Type *base, uint32_t srcClock_Hz, uint32_t busClock_Hz)
 {
     assert(srcClock_Hz != 0U);
@@ -884,7 +928,10 @@ uint32_t SDHC_SetSdClock(SDHC_Type *base, uint32_t srcClock_Hz, uint32_t busCloc
     uint32_t nearestFrequency = 0U;
 
     /* calucate total divisor first */
-    totalDiv = srcClock_Hz / busClock_Hz;
+    if ((totalDiv = srcClock_Hz / busClock_Hz) > (SDHC_MAX_CLKFS * SDHC_MAX_DVS))
+    {
+        return 0U;
+    }
 
     if (totalDiv != 0U)
     {
@@ -910,7 +957,8 @@ uint32_t SDHC_SetSdClock(SDHC_Type *base, uint32_t srcClock_Hz, uint32_t busCloc
             {
                 divisor++;
             }
-            nearestFrequency = srcClock_Hz / divisor / prescaler;
+
+            nearestFrequency = srcClock_Hz / (divisor == 0U ? 1U : divisor) / prescaler;
         }
         else
         {
@@ -958,6 +1006,17 @@ uint32_t SDHC_SetSdClock(SDHC_Type *base, uint32_t srcClock_Hz, uint32_t busCloc
     return nearestFrequency;
 }
 
+/*!
+ * brief Sends 80 clocks to the card to set it to the active state.
+ *
+ * This function must be called each time the card is inserted to ensure that the card can receive the command
+ * correctly.
+ *
+ * param base SDHC peripheral base address.
+ * param timeout Timeout to initialize card.
+ * retval true Set card active successfully.
+ * retval false Set card active failed.
+ */
 bool SDHC_SetCardActive(SDHC_Type *base, uint32_t timeout)
 {
     base->SYSCTL |= SDHC_SYSCTL_INITA_MASK;
@@ -974,6 +1033,27 @@ bool SDHC_SetCardActive(SDHC_Type *base, uint32_t timeout)
     return ((!timeout) ? false : true);
 }
 
+/*!
+ * brief Sets the card transfer-related configuration.
+ *
+ * This function fills the card transfer-related command argument/transfer flag/data size. The command and data are sent
+ by
+ * SDHC after calling this function.
+ *
+ * Example:
+   code
+   sdhc_transfer_config_t transferConfig;
+   transferConfig.dataBlockSize = 512U;
+   transferConfig.dataBlockCount = 2U;
+   transferConfig.commandArgument = 0x01AAU;
+   transferConfig.commandIndex = 8U;
+   transferConfig.flags |= (kSDHC_EnableDmaFlag | kSDHC_EnableAutoCommand12Flag | kSDHC_MultipleBlockFlag);
+   SDHC_SetTransferConfig(SDHC, &transferConfig);
+   endcode
+ *
+ * param base SDHC peripheral base address.
+ * param config Command configuration structure.
+ */
 void SDHC_SetTransferConfig(SDHC_Type *base, const sdhc_transfer_config_t *config)
 {
     assert(config);
@@ -990,6 +1070,13 @@ void SDHC_SetTransferConfig(SDHC_Type *base, const sdhc_transfer_config_t *confi
                                        SDHC_XFERTYP_AC12EN_MASK)));
 }
 
+/*!
+ * brief Enables or disables the SDIO card control.
+ *
+ * param base SDHC peripheral base address.
+ * param mask SDIO card control flags mask(_sdhc_sdio_control_flag).
+ * param enable True to enable, false to disable.
+ */
 void SDHC_EnableSdioControl(SDHC_Type *base, uint32_t mask, bool enable)
 {
     uint32_t proctl = base->PROCTL;
@@ -1038,6 +1125,24 @@ void SDHC_EnableSdioControl(SDHC_Type *base, uint32_t mask, bool enable)
     base->VENDOR = vendor;
 }
 
+/*!
+ * brief Configures the MMC boot feature.
+ *
+ * Example:
+   code
+   sdhc_boot_config_t config;
+   config.ackTimeoutCount = 4;
+   config.bootMode = kSDHC_BootModeNormal;
+   config.blockCount = 5;
+   config.enableBootAck = true;
+   config.enableBoot = true;
+   config.enableAutoStopAtBlockGap = true;
+   SDHC_SetMmcBootConfig(SDHC, &config);
+   endcode
+ *
+ * param base SDHC peripheral base address.
+ * param config The MMC boot configuration information.
+ */
 void SDHC_SetMmcBootConfig(SDHC_Type *base, const sdhc_boot_config_t *config)
 {
     assert(config);
@@ -1063,6 +1168,18 @@ void SDHC_SetMmcBootConfig(SDHC_Type *base, const sdhc_boot_config_t *config)
     base->MMCBOOT = mmcboot;
 }
 
+/*!
+ * brief Sets the ADMA descriptor table configuration.
+ *
+ * param base SDHC peripheral base address.
+ * param dmaMode DMA mode.
+ * param table ADMA table address.
+ * param tableWords ADMA table buffer length united as Words.
+ * param data Data buffer address.
+ * param dataBytes Data length united as bytes.
+ * retval kStatus_OutOfRange ADMA descriptor table length isn't enough to describe data.
+ * retval kStatus_Success Operate successfully.
+ */
 status_t SDHC_SetAdmaTableConfig(SDHC_Type *base,
                                  sdhc_dma_mode_t dmaMode,
                                  uint32_t *table,
@@ -1136,8 +1253,7 @@ status_t SDHC_SetAdmaTableConfig(SDHC_Type *base,
                             adma1EntryAddress[i] = ((uint32_t)(dataBytes - sizeof(uint32_t) * (startAddress - data))
                                                     << SDHC_ADMA1_DESCRIPTOR_LENGTH_SHIFT);
                             adma1EntryAddress[i] |= kSDHC_Adma1DescriptorTypeSetLength;
-                            adma1EntryAddress[i + 1U] =
-                                ((uint32_t)(startAddress) << SDHC_ADMA1_DESCRIPTOR_ADDRESS_SHIFT);
+                            adma1EntryAddress[i + 1U] = (uint32_t)(startAddress);
                             adma1EntryAddress[i + 1U] |=
                                 (kSDHC_Adma1DescriptorTypeTransfer | kSDHC_Adma1DescriptorEndFlag);
                         }
@@ -1156,9 +1272,6 @@ status_t SDHC_SetAdmaTableConfig(SDHC_Type *base,
                     /* When use ADMA, disable simple DMA */
                     base->DSADDR = 0U;
                     base->ADSADDR = (uint32_t)table;
-                    /* disable the buffer ready flag in DMA mode */
-                    SDHC_DisableInterruptSignal(base, kSDHC_BufferReadReadyFlag | kSDHC_BufferWriteReadyFlag);
-                    SDHC_DisableInterruptStatus(base, kSDHC_BufferReadReadyFlag | kSDHC_BufferWriteReadyFlag);
                 }
                 break;
 #endif /* FSL_SDHC_ENABLE_ADMA1 */
@@ -1210,9 +1323,6 @@ status_t SDHC_SetAdmaTableConfig(SDHC_Type *base,
                     /* When use ADMA, disable simple DMA */
                     base->DSADDR = 0U;
                     base->ADSADDR = (uint32_t)table;
-                    /* disable the buffer read flag in DMA mode */
-                    SDHC_DisableInterruptSignal(base, kSDHC_BufferReadReadyFlag | kSDHC_BufferWriteReadyFlag);
-                    SDHC_DisableInterruptStatus(base, kSDHC_BufferReadReadyFlag | kSDHC_BufferWriteReadyFlag);
                 }
                 break;
             default:
@@ -1223,6 +1333,28 @@ status_t SDHC_SetAdmaTableConfig(SDHC_Type *base,
     return error;
 }
 
+/*!
+ * brief Transfers the command/data using a blocking method.
+ *
+ * This function waits until the command response/data is received or the SDHC encounters an error by polling the status
+ * flag.
+ * This function support non word align data addr transfer support, if data buffer addr is not align in DMA mode,
+ * the API will continue finish the transfer by polling IO directly
+ * The application must not call this API in multiple threads at the same time. Because of that this API doesn't support
+ * the re-entry mechanism.
+ *
+ * note There is no need to call the API 'SDHC_TransferCreateHandle' when calling this API.
+ *
+ * param base SDHC peripheral base address.
+ * param admaTable ADMA table address, can't be null if transfer way is ADMA1/ADMA2.
+ * param admaTableWords ADMA table length united as words, can't be 0 if transfer way is ADMA1/ADMA2.
+ * param transfer Transfer content.
+ * retval kStatus_InvalidArgument Argument is invalid.
+ * retval kStatus_SDHC_PrepareAdmaDescriptorFailed Prepare ADMA descriptor failed.
+ * retval kStatus_SDHC_SendCommandFailed Send command failed.
+ * retval kStatus_SDHC_TransferDataFailed Transfer data failed.
+ * retval kStatus_Success Operate successfully.
+ */
 status_t SDHC_TransferBlocking(SDHC_Type *base, uint32_t *admaTable, uint32_t admaTableWords, sdhc_transfer_t *transfer)
 {
     assert(transfer);
@@ -1253,37 +1385,36 @@ status_t SDHC_TransferBlocking(SDHC_Type *base, uint32_t *admaTable, uint32_t ad
             SDHC_SetAdmaTableConfig(base, dmaMode, admaTable, admaTableWords,
                                     (data->rxData ? data->rxData : data->txData), (data->blockCount * data->blockSize));
         /* in this situation , we disable the DMA instead of polling transfer mode */
-        if (error == kStatus_SDHC_DMADataBufferAddrNotAlign)
+        if (error != kStatus_Success)
         {
             dmaMode = kSDHC_DmaModeNo;
-            SDHC_EnableInterruptStatus(base, kSDHC_BufferReadReadyFlag | kSDHC_BufferWriteReadyFlag);
-        }
-        else if (error != kStatus_Success)
-        {
-            return error;
-        }
-        else
-        {
         }
     }
 
     /* Send command and receive data. */
     SDHC_StartTransfer(base, command, data, dmaMode);
+
     if (kStatus_Success != SDHC_SendCommandBlocking(base, command))
     {
         return kStatus_SDHC_SendCommandFailed;
     }
-    else if (data && (kStatus_Success != SDHC_TransferDataBlocking(dmaMode, base, data)))
+
+    if (data && (kStatus_Success != SDHC_TransferDataBlocking(dmaMode, base, data)))
     {
         return kStatus_SDHC_TransferDataFailed;
-    }
-    else
-    {
     }
 
     return kStatus_Success;
 }
 
+/*!
+ * brief Creates the SDHC handle.
+ *
+ * param base SDHC peripheral base address.
+ * param handle SDHC handle pointer.
+ * param callback Structure pointer to contain all callback functions.
+ * param userData Callback function parameter.
+ */
 void SDHC_TransferCreateHandle(SDHC_Type *base,
                                sdhc_handle_t *handle,
                                const sdhc_transfer_callback_t *callback,
@@ -1315,6 +1446,28 @@ void SDHC_TransferCreateHandle(SDHC_Type *base,
     EnableIRQ(s_sdhcIRQ[SDHC_GetInstance(base)]);
 }
 
+/*!
+ * brief Transfers the command/data using an interrupt and an asynchronous method.
+ *
+ * This function sends a command and data and returns immediately. It doesn't wait the transfer complete or encounter an
+ * error.
+ * This function support non word align data addr transfer support, if data buffer addr is not align in DMA mode,
+ * the API will continue finish the transfer by polling IO directly
+ * The application must not call this API in multiple threads at the same time. Because of that this API doesn't support
+ * the re-entry mechanism.
+ *
+ * note Call the API 'SDHC_TransferCreateHandle' when calling this API.
+ *
+ * param base SDHC peripheral base address.
+ * param handle SDHC handle.
+ * param admaTable ADMA table address, can't be null if transfer way is ADMA1/ADMA2.
+ * param admaTableWords ADMA table length united as words, can't be 0 if transfer way is ADMA1/ADMA2.
+ * param transfer Transfer content.
+ * retval kStatus_InvalidArgument Argument is invalid.
+ * retval kStatus_SDHC_BusyTransferring Busy transferring.
+ * retval kStatus_SDHC_PrepareAdmaDescriptorFailed Prepare ADMA descriptor failed.
+ * retval kStatus_Success Operate successfully.
+ */
 status_t SDHC_TransferNonBlocking(
     SDHC_Type *base, sdhc_handle_t *handle, uint32_t *admaTable, uint32_t admaTableWords, sdhc_transfer_t *transfer)
 {
@@ -1345,19 +1498,10 @@ status_t SDHC_TransferNonBlocking(
             SDHC_SetAdmaTableConfig(base, dmaMode, admaTable, admaTableWords,
                                     (data->rxData ? data->rxData : data->txData), (data->blockCount * data->blockSize));
         /* in this situation , we disable the DMA instead of polling transfer mode */
-        if (error == kStatus_SDHC_DMADataBufferAddrNotAlign)
+        if (error != kStatus_Success)
         {
             /* change to polling mode */
             dmaMode = kSDHC_DmaModeNo;
-            SDHC_EnableInterruptSignal(base, kSDHC_BufferReadReadyFlag | kSDHC_BufferWriteReadyFlag);
-            SDHC_EnableInterruptStatus(base, kSDHC_BufferReadReadyFlag | kSDHC_BufferWriteReadyFlag);
-        }
-        else if (error != kStatus_Success)
-        {
-            return error;
-        }
-        else
-        {
         }
     }
 
@@ -1373,6 +1517,14 @@ status_t SDHC_TransferNonBlocking(
     return kStatus_Success;
 }
 
+/*!
+ * brief IRQ handler for the SDHC.
+ *
+ * This function deals with the IRQs on the given host controller.
+ *
+ * param base SDHC peripheral base address.
+ * param handle SDHC handle.
+ */
 void SDHC_TransferHandleIRQ(SDHC_Type *base, sdhc_handle_t *handle)
 {
     assert(handle);
@@ -1384,7 +1536,7 @@ void SDHC_TransferHandleIRQ(SDHC_Type *base, sdhc_handle_t *handle)
 
     if (interruptFlags & kSDHC_CardDetectFlag)
     {
-        SDHC_TransferHandleCardDetect(handle, (interruptFlags & kSDHC_CardDetectFlag));
+        SDHC_TransferHandleCardDetect(base, handle, (interruptFlags & kSDHC_CardDetectFlag));
     }
     if (interruptFlags & kSDHC_CommandFlag)
     {
@@ -1396,11 +1548,11 @@ void SDHC_TransferHandleIRQ(SDHC_Type *base, sdhc_handle_t *handle)
     }
     if (interruptFlags & kSDHC_CardInterruptFlag)
     {
-        SDHC_TransferHandleSdioInterrupt(handle);
+        SDHC_TransferHandleSdioInterrupt(base, handle);
     }
     if (interruptFlags & kSDHC_BlockGapEventFlag)
     {
-        SDHC_TransferHandleSdioBlockGap(handle);
+        SDHC_TransferHandleSdioBlockGap(base, handle);
     }
 
     SDHC_ClearInterruptStatusFlags(base, interruptFlags);
@@ -1412,5 +1564,10 @@ void SDHC_DriverIRQHandler(void)
     assert(s_sdhcHandle[0]);
 
     s_sdhcIsr(SDHC, s_sdhcHandle[0]);
+/* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+  exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 #endif

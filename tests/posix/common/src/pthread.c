@@ -12,7 +12,7 @@
 #define N_THR_E 3
 #define N_THR_T 4
 #define BOUNCES 64
-#define STACKS 1024
+#define STACKS (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define THREAD_PRIORITY 3
 #define ONE_SECOND 1
 

@@ -107,6 +107,13 @@ extern "C" {
  * @{
  */
 
+/*!
+ * @brief Get PMU status flags. 
+ *
+ * @param base PMU peripheral base address.
+ * @return PMU status flags.It indicate if regulator output of 1P1,3P0 and 2P5 is ok 
+ * and brownout output of 1P1,3P0 and 2P5 is detected.
+ */
 uint32_t PMU_GetStatusFlags(PMU_Type *base);
 
 /*@}*/

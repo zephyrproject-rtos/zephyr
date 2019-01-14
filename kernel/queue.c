@@ -21,6 +21,7 @@
 #include <misc/sflist.h>
 #include <init.h>
 #include <syscall_handler.h>
+#include <kernel_internal.h>
 
 extern struct k_queue _k_queue_list_start[];
 extern struct k_queue _k_queue_list_end[];
@@ -237,7 +238,7 @@ void k_queue_append_list(struct k_queue *queue, void *head, void *tail)
 #if !defined(CONFIG_POLL)
 	struct k_thread *thread = NULL;
 
-	if (head) {
+	if (head != NULL) {
 		thread = _unpend_first_thread(&queue->wait_q);
 	}
 

@@ -8,7 +8,7 @@
 #include <init.h>
 
 SHELL_DUMMY_DEFINE(shell_transport_dummy);
-SHELL_DEFINE(shell_dummy, "~$ ", &shell_transport_dummy, 10,
+SHELL_DEFINE(shell_dummy, "~$ ", &shell_transport_dummy, 1, 0,
 	     SHELL_FLAG_OLF_CRLF);
 
 static int init(const struct shell_transport *transport,

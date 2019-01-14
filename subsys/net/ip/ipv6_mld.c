@@ -27,7 +27,6 @@ LOG_MODULE_DECLARE(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
 #include "nbr.h"
 #include "6lo.h"
 #include "route.h"
-#include "rpl.h"
 #include "net_stats.h"
 
 /* Timeout for various buffer allocations in this file. */
@@ -88,8 +87,7 @@ static int send_mldv2_raw(struct net_if *iface, struct net_buf *frags)
 	/* Sent to all MLDv2-capable routers */
 	net_ipv6_addr_create(&dst, 0xff02, 0, 0, 0, 0, 0, 0, 0x0016);
 
-	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, &dst),
-				     NET_BUF_TIMEOUT);
+	pkt = net_pkt_get_reserve_tx(NET_BUF_TIMEOUT);
 	if (!pkt) {
 		return -ENOMEM;
 	}
@@ -171,8 +169,7 @@ static int send_mldv2(struct net_if *iface, const struct in6_addr *addr,
 	struct net_pkt *pkt;
 	int ret;
 
-	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
-				     NET_BUF_TIMEOUT);
+	pkt = net_pkt_get_reserve_tx(NET_BUF_TIMEOUT);
 	if (!pkt) {
 		return -ENOMEM;
 	}
@@ -253,8 +250,7 @@ static void send_mld_report(struct net_if *iface)
 
 	NET_ASSERT(ipv6);
 
-	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
-				     NET_BUF_TIMEOUT);
+	pkt = net_pkt_get_reserve_tx(NET_BUF_TIMEOUT);
 	if (!pkt) {
 		return;
 	}

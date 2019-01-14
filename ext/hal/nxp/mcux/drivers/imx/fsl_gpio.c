@@ -13,7 +13,6 @@
 #define FSL_COMPONENT_ID "platform.drivers.igpio"
 #endif
 
-
 /*******************************************************************************
  * Variables
  ******************************************************************************/
@@ -60,6 +59,15 @@ static uint32_t GPIO_GetInstance(GPIO_Type *base)
     return instance;
 }
 
+/*!
+ * brief Initializes the GPIO peripheral according to the specified
+ *        parameters in the initConfig.
+ *
+ * param base GPIO base pointer.
+ * param pin Specifies the pin number
+ * param initConfig pointer to a ref gpio_pin_config_t structure that
+ *        contains the configuration information.
+ */
 void GPIO_PinInit(GPIO_Type *base, uint32_t pin, const gpio_pin_config_t *Config)
 {
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
@@ -85,6 +93,15 @@ void GPIO_PinInit(GPIO_Type *base, uint32_t pin, const gpio_pin_config_t *Config
     GPIO_SetPinInterruptConfig(base, pin, Config->interruptMode);
 }
 
+/*!
+ * brief Sets the output level of the individual GPIO pin to logic 1 or 0.
+ *
+ * param base GPIO base pointer.
+ * param pin GPIO port pin number.
+ * param output GPIOpin output logic level.
+ *        - 0: corresponding pin output low-logic level.
+ *        - 1: corresponding pin output high-logic level.
+ */
 void GPIO_PinWrite(GPIO_Type *base, uint32_t pin, uint8_t output)
 {
     assert(pin < 32);
@@ -98,6 +115,14 @@ void GPIO_PinWrite(GPIO_Type *base, uint32_t pin, uint8_t output)
     }
 }
 
+/*!
+ * brief Sets the current pin interrupt mode.
+ *
+ * param base GPIO base pointer.
+ * param pin GPIO port pin number.
+ * param pininterruptMode pointer to a ref gpio_interrupt_mode_t structure
+ *        that contains the interrupt mode information.
+ */
 void GPIO_PinSetInterruptConfig(GPIO_Type *base, uint32_t pin, gpio_interrupt_mode_t pinInterruptMode)
 {
     volatile uint32_t *icr;

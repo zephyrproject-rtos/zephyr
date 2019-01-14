@@ -3,30 +3,8 @@
  * Copyright (c) 2016 - 2017 , NXP
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
  *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #ifndef _FSL_CLOCK_H_
@@ -65,7 +43,7 @@
  *
  * When set to 0, peripheral drivers will enable clock in initialize function
  * and disable clock in de-initialize function. When set to 1, peripheral
- * driver will not control the clock, application could contol the clock out of
+ * driver will not control the clock, application could control the clock out of
  * the driver.
  *
  * @note All drivers share this feature switcher. If it is set to 1, application
@@ -99,7 +77,7 @@
  * OSC0 using the CLOCK_InitOsc0. All other cores need to call the CLOCK_SetXtal0Freq
  * to get a valid clock frequency.
  */
-extern uint32_t g_xtal0Freq;
+extern volatile uint32_t g_xtal0Freq;
 
 /*! @brief External XTAL32/EXTAL32/RTC_CLKIN clock frequency.
  *
@@ -110,7 +88,7 @@ extern uint32_t g_xtal0Freq;
  * the clock. All other cores need to call the CLOCK_SetXtal32Freq
  * to get a valid clock frequency.
  */
-extern uint32_t g_xtal32Freq;
+extern volatile uint32_t g_xtal32Freq;
 
 /*! @brief IRC48M clock frequency in Hz. */
 #define MCG_INTERNAL_IRC_48M 48000000U
@@ -1005,8 +983,8 @@ static inline void CLOCK_SetLowPowerEnable(bool enable)
  * @param enableMode MCGIRCLK enable mode, OR'ed value of @ref _mcg_irclk_enable_mode.
  * @param ircs       MCGIRCLK clock source, choose fast or slow.
  * @param fcrdiv     Fast IRC divider setting (\c FCRDIV).
- * @retval kStatus_MCG_SourceUsed Because the internall reference clock is used as a clock source,
- * the confuration should not be changed. Otherwise, a glitch occurs.
+ * @retval kStatus_MCG_SourceUsed Because the internal reference clock is used as a clock source,
+ * the configuration should not be changed. Otherwise, a glitch occurs.
  * @retval kStatus_Success MCGIRCLK configuration finished successfully.
  */
 status_t CLOCK_SetInternalRefClkConfig(uint8_t enableMode, mcg_irc_mode_t ircs, uint8_t fcrdiv);
@@ -1020,7 +998,7 @@ status_t CLOCK_SetInternalRefClkConfig(uint8_t enableMode, mcg_irc_mode_t ircs, 
  *
  * @param oscsel MCG external reference clock source, MCG_C7[OSCSEL].
  * @retval kStatus_MCG_SourceUsed Because the external reference clock is used as a clock source,
- * the confuration should not be changed. Otherwise, a glitch occurs.
+ * the configuration should not be changed. Otherwise, a glitch occurs.
  * @retval kStatus_Success External reference clock set successfully.
  */
 status_t CLOCK_SetExternalRefClkConfig(mcg_oscsel_t oscsel);
@@ -1431,7 +1409,7 @@ status_t CLOCK_SetPeeMode(void);
  * @brief Switches the MCG to FBE mode from the external mode.
  *
  * This function switches the MCG from external modes (PEE/PBE/BLPE/FEE) to the FBE mode quickly.
- * The external clock is used as the system clock souce and PLL is disabled. However,
+ * The external clock is used as the system clock source and PLL is disabled. However,
  * the FLL settings are not configured. This is a lite function with a small code size, which is useful
  * during the mode switch. For example, to switch from PEE mode to FEI mode:
  *
@@ -1449,7 +1427,7 @@ status_t CLOCK_ExternalModeToFbeModeQuick(void);
  * @brief Switches the MCG to FBI mode from internal modes.
  *
  * This function switches the MCG from internal modes (PEI/PBI/BLPI/FEI) to the FBI mode quickly.
- * The MCGIRCLK is used as the system clock souce and PLL is disabled. However,
+ * The MCGIRCLK is used as the system clock source and PLL is disabled. However,
  * FLL settings are not configured. This is a lite function with a small code size, which is useful
  * during the mode switch. For example, to switch from PEI mode to FEE mode:
  *
@@ -1502,7 +1480,7 @@ status_t CLOCK_BootToFeeMode(
  * @brief Sets the MCG to BLPI mode during system boot up.
  *
  * This function sets the MCG to BLPI mode from the reset mode. It can also be used to
- * set up the MCG during sytem boot up.
+ * set up the MCG during system boot up.
  *
  * @param  fcrdiv Fast IRC divider, FCRDIV.
  * @param  ircs   The internal reference clock to select, IRCS.
@@ -1514,10 +1492,10 @@ status_t CLOCK_BootToFeeMode(
 status_t CLOCK_BootToBlpiMode(uint8_t fcrdiv, mcg_irc_mode_t ircs, uint8_t ircEnableMode);
 
 /*!
- * @brief Sets the MCG to BLPE mode during sytem boot up.
+ * @brief Sets the MCG to BLPE mode during system boot up.
  *
  * This function sets the MCG to BLPE mode from the reset mode. It can also be used to
- * set up the MCG during sytem boot up.
+ * set up the MCG during system boot up.
  *
  * @param  oscsel OSC clock select, MCG_C7[OSCSEL].
  *

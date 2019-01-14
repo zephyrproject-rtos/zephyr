@@ -123,7 +123,7 @@ struct ieee802154_radio_api {
  */
 static inline bool ieee802154_is_ar_flag_set(struct net_pkt *pkt)
 {
-	return (*net_pkt_ll(pkt) & IEEE802154_AR_FLAG_SET);
+	return (*net_pkt_data(pkt) & IEEE802154_AR_FLAG_SET);
 }
 
 #ifndef CONFIG_IEEE802154_RAW_MODE

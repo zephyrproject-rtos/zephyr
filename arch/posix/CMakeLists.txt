@@ -1,5 +1,3 @@
-zephyr_cc_option_ifdef(CONFIG_LTO -flto)
-
 zephyr_compile_options(
   -fno-freestanding
   -m32

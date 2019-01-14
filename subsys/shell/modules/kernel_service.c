@@ -22,7 +22,7 @@ static int cmd_kernel_version(const struct shell *shell,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_fprintf(shell, SHELL_NORMAL, "Zephyr version %d.%d.%d\r\n",
+	shell_fprintf(shell, SHELL_NORMAL, "Zephyr version %d.%d.%d\n",
 		      SYS_KERNEL_VER_MAJOR(version),
 		      SYS_KERNEL_VER_MINOR(version),
 		      SYS_KERNEL_VER_PATCHLEVEL(version));
@@ -35,7 +35,7 @@ static int cmd_kernel_uptime(const struct shell *shell,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_fprintf(shell, SHELL_NORMAL, "Uptime: %u ms\r\n",
+	shell_fprintf(shell, SHELL_NORMAL, "Uptime: %u ms\n",
 			k_uptime_get_32());
 	return 0;
 }
@@ -46,7 +46,7 @@ static int cmd_kernel_cycles(const struct shell *shell,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_fprintf(shell, SHELL_NORMAL, "cycles: %u hw cycles\r\n",
+	shell_fprintf(shell, SHELL_NORMAL, "cycles: %u hw cycles\n",
 			k_cycle_get_32());
 	return 0;
 }
@@ -68,16 +68,16 @@ static void shell_tdata_dump(const struct k_thread *thread, void *user_data)
 	tname = k_thread_name_get((struct k_thread *)thread);
 
 	shell_fprintf((const struct shell *)user_data, SHELL_NORMAL,
-		      "%s%p %-10s\r\n",
+		      "%s%p %-10s\n",
 		      (thread == k_current_get()) ? "*" : " ",
 		      thread,
 		      tname ? tname : "NA");
 	shell_fprintf((const struct shell *)user_data, SHELL_NORMAL,
-		      "\toptions: 0x%x, priority: %d\r\n",
+		      "\toptions: 0x%x, priority: %d\n",
 		      thread->base.user_options,
 		      thread->base.prio);
 	shell_fprintf((const struct shell *)user_data, SHELL_NORMAL,
-		"\tstack size %u, unused %u, usage %u / %u (%u %%)\r\n\n",
+		"\tstack size %u, unused %u, usage %u / %u (%u %%)\n\n",
 		      size, unused, size - unused, size, pcnt);
 
 }
@@ -88,7 +88,7 @@ static int cmd_kernel_threads(const struct shell *shell,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_fprintf(shell, SHELL_NORMAL, "Threads:\r\n");
+	shell_fprintf(shell, SHELL_NORMAL, "Threads:\n");
 	k_thread_foreach(shell_tdata_dump, (void *)shell);
 	return 0;
 }
@@ -107,7 +107,7 @@ static void shell_stack_dump(const struct k_thread *thread, void *user_data)
 	pcnt = ((size - unused) * 100) / size;
 
 	shell_fprintf((const struct shell *)user_data, SHELL_NORMAL,
-		"0x%08X %-10s (real size %u):\tunused %u\tusage %u / %u (%u %%)\r\n",
+		"0x%08X %-10s (real size %u):\tunused %u\tusage %u / %u (%u %%)\n",
 		      (u32_t)thread,
 		      tname ? tname : "NA",
 		      size, unused, size - unused, size, pcnt);

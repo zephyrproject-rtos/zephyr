@@ -236,7 +236,7 @@ void validation_overhead_user_thread(void *p1, void *p2, void *p3)
 void validation_overhead(void)
 {
 
-	k_thread_access_grant(k_current_get(), &test_sema, NULL);
+	k_thread_access_grant(k_current_get(), &test_sema);
 
 
 	k_thread_create(&my_thread_user, my_stack_area, STACK_SIZE,

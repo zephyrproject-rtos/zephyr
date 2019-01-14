@@ -9,6 +9,7 @@
 
 #define O_NONBLOCK 0x4000
 
+#define F_DUPFD 0
 #define F_GETFL 3
 #define F_SETFL 4
 

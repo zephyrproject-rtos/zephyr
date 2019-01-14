@@ -14,10 +14,10 @@
 
 /* pin assignments for 96boards Argonkey board */
 static const struct pin_config pinconf[] = {
-#ifdef CONFIG_UART_STM32_PORT_1
+#ifdef CONFIG_UART_1
 	{STM32_PIN_PA9, STM32F4_PINMUX_FUNC_PA9_USART1_TX},
 	{STM32_PIN_PA10, STM32F4_PINMUX_FUNC_PA10_USART1_RX},
-#endif	/* CONFIG_UART_STM32_PORT_1 */
+#endif	/* CONFIG_UART_1 */
 #ifdef CONFIG_I2C_1
 	{STM32_PIN_PB6, STM32F4_PINMUX_FUNC_PB6_I2C1_SCL},
 	{STM32_PIN_PB7, STM32F4_PINMUX_FUNC_PB7_I2C1_SDA},

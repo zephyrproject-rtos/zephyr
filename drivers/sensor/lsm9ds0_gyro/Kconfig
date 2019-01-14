@@ -8,31 +8,11 @@
 
 menuconfig LSM9DS0_GYRO
 	bool "LSM9DS0 I2C gyroscope Chip"
-	depends on I2C
+	depends on (I2C && HAS_DTS_I2C)
 	help
 	  Enable driver for LSM9DS0 I2C-based gyroscope sensor.
 
 if LSM9DS0_GYRO
-
-config LSM9DS0_GYRO_DEV_NAME
-	string "LSM9DS0_GYRO device name"
-	default "lsm9ds0_gyro"
-
-config LSM9DS0_GYRO_I2C_ADDR
-	hex "LSM9DS0_GYRO I2C slave address"
-	default 0x6A
-	help
-	  Specify the I2C slave address for the LSM9DS0_GYRO.
-
-	  0x6A: GND
-	  0x6B: VCC
-
-config LSM9DS0_GYRO_I2C_MASTER_DEV_NAME
-	string "I2C master where LSM9DS0 gyroscope is connected"
-	default "I2C_0"
-	help
-	  Specify the device name of the I2C master device to which LSM9DS0_GYRO
-	  is connected.
 
 menu "Attributes"
 
@@ -99,18 +79,5 @@ config LSM9DS0_GYRO_THREAD_STACK_SIZE
 config LSM9DS0_GYRO_TRIGGER_DRDY
 	bool "Enable data ready trigger"
 	depends on LSM9DS0_GYRO_TRIGGERS
-
-config LSM9DS0_GYRO_GPIO_DRDY_DEV_NAME
-	string "GPIO device where LSM9DS0_GYRO data ready interrupt is connected"
-	depends on LSM9DS0_GYRO_TRIGGER_DRDY
-	default "GPIO_0"
-	help
-	  Specify the device name of the GPIO controller the BMC150_MAGN interrupt
-	  is connected to.
-
-config LSM9DS0_GYRO_GPIO_DRDY_INT_PIN
-	int "GPIO pin number for the data ready interrupt pin"
-	default 3
-	depends on LSM9DS0_GYRO_TRIGGER_DRDY
 
 endif # LSM9DS0_GYRO

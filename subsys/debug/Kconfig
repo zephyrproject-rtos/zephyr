@@ -239,7 +239,7 @@ config TRACING_CPU_STATS
 	  Module provides information about percent of CPU usage based on
 	  tracing hooks for threads switching in and out, interrupts enters
 	  and exits (only distinguishes between idle thread, non idle thread
-	  and scheduler). Use provided API or enable automatical logging to
+	  and scheduler). Use provided API or enable automatic logging to
 	  get values.
 
 config TRACING_CPU_STATS_LOG

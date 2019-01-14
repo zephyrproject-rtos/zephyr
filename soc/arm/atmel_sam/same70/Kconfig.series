@@ -15,6 +15,7 @@ config SOC_SERIES_SAME70
 	select SYS_POWER_LOW_POWER_STATE_SUPPORTED
 	select CPU_HAS_ARM_MPU
 	select ARM_MPU
+	select HAS_SWO
 	help
 	  Enable support for Atmel SAM E70 ARM Cortex-M7 Microcontrollers.
 	  Part No.: SAME70J19, SAME70J20, SAME70J21, SAME70N19, SAME70N20,

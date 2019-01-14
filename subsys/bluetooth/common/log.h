@@ -36,16 +36,9 @@ extern "C" {
 
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#if IS_ENABLED(CONFIG_LOG_FUNCTION_NAME)
 #define BT_DBG(fmt, ...) LOG_DBG(fmt, ##__VA_ARGS__)
 #define BT_ERR(fmt, ...) LOG_ERR(fmt, ##__VA_ARGS__)
 #define BT_WARN(fmt, ...) LOG_WRN(fmt, ##__VA_ARGS__)
-#else
-#define BT_DBG(fmt, ...) LOG_DBG("%s: " fmt, __func__, ##__VA_ARGS__)
-#define BT_ERR(fmt, ...) LOG_ERR("%s: " fmt, __func__, ##__VA_ARGS__)
-#define BT_WARN(fmt, ...) LOG_WRN("%s: " fmt, __func__, ##__VA_ARGS__)
-#endif
-
 #define BT_INFO(fmt, ...) LOG_INF(fmt, ##__VA_ARGS__)
 
 #define BT_ASSERT(cond) if (!(cond)) { \

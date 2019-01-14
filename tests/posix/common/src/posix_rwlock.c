@@ -8,7 +8,7 @@
 #include <pthread.h>
 
 #define N_THR 3
-#define STACKSZ 1024
+#define STACKSZ (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
 
 K_THREAD_STACK_ARRAY_DEFINE(stack, N_THR, STACKSZ);
 pthread_rwlock_t rwlock;

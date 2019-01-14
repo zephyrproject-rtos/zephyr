@@ -2,7 +2,7 @@
  * Copyright (c) 2017, NXP Semiconductors, Inc.
  * All rights reserved.
  *
- * 
+ *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
@@ -48,7 +48,7 @@
 
 /*! @name Driver version */
 /*@{*/
-#define FSL_PXP_DRIVER_VERSION (MAKE_VERSION(2, 0, 0)) /*!< Version 2.0.0 */
+#define FSL_PXP_DRIVER_VERSION (MAKE_VERSION(2, 0, 1)) /*!< Version 2.0.1 */
 /*@}*/
 
 /* This macto indicates whether the rotate sub module is shared by process surface and output buffer. */
@@ -888,11 +888,31 @@ static inline void PXP_SetRotateConfig(PXP_Type *base,
 
     if (kPXP_RotateOutputBuffer == position)
     {
+        if ((degree != kPXP_Rotate0) || (flipMode != kPXP_FlipDisable))
+        {
+            base->DATA_PATH_CTRL0 =
+                (base->DATA_PATH_CTRL0 & (~PXP_DATA_PATH_CTRL0_MUX12_SEL_MASK)) | PXP_DATA_PATH_CTRL0_MUX12_SEL(0);
+        }
+        else
+        {
+            base->DATA_PATH_CTRL0 =
+                (base->DATA_PATH_CTRL0 & (~PXP_DATA_PATH_CTRL0_MUX12_SEL_MASK)) | PXP_DATA_PATH_CTRL0_MUX12_SEL(1);
+        }
         ctrl &= ~(PXP_CTRL_HFLIP0_MASK | PXP_CTRL_VFLIP0_MASK | PXP_CTRL_ROTATE0_MASK);
         ctrl |= (PXP_CTRL_ROTATE0(degree) | ((uint32_t)flipMode << PXP_CTRL_HFLIP0_SHIFT));
     }
     else
     {
+        if ((degree != kPXP_Rotate0) || (flipMode != kPXP_FlipDisable))
+        {
+            base->DATA_PATH_CTRL0 =
+                (base->DATA_PATH_CTRL0 & (~PXP_DATA_PATH_CTRL0_MUX3_SEL_MASK)) | PXP_DATA_PATH_CTRL0_MUX3_SEL(1);
+        }
+        else
+        {
+            base->DATA_PATH_CTRL0 =
+                (base->DATA_PATH_CTRL0 & (~PXP_DATA_PATH_CTRL0_MUX3_SEL_MASK)) | PXP_DATA_PATH_CTRL0_MUX3_SEL(0);
+        }
         ctrl &= ~(PXP_CTRL_HFLIP1_MASK | PXP_CTRL_VFLIP1_MASK | PXP_CTRL_ROTATE1_MASK);
         ctrl |= (PXP_CTRL_ROTATE1(degree) | ((uint32_t)flipMode << PXP_CTRL_HFLIP1_SHIFT));
     }

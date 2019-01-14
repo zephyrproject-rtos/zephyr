@@ -1,0 +1,9 @@
+# Kconfig - Electronut Labs Blip board configuration
+#
+# Copyright (c) 2018 Electronut Labs
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config  BOARD_NRF52840_BLIP
+	bool "Electronut Labs Blip"
+	depends on SOC_NRF52840_QIAA

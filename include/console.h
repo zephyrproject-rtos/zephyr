@@ -63,7 +63,7 @@ ssize_t console_write(void *dummy, const void *buf, size_t size);
  *  or console_getline().
  *
  *  @return 0-255: a character read, including control characters.
- *          <0: error occured.
+ *          <0: error occurred.
  */
 int console_getchar(void);
 

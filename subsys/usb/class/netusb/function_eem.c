@@ -107,15 +107,11 @@ static int eem_send(struct net_pkt *pkt)
 	/* With EEM, it's possible to send multiple ethernet packets in one
 	 * transfer, we don't do that for now.
 	 */
-	len = net_pkt_ll_reserve(pkt) + net_pkt_get_len(pkt) + sizeof(sentinel);
+	len = net_pkt_get_len(pkt) + sizeof(sentinel);
 
 	/* Add EEM header */
 	*hdr = sys_cpu_to_le16(0x3FFF & len);
 	b_idx += sizeof(u16_t);
-
-	/* Add Ethernet Header */
-	memcpy(&tx_buf[b_idx], net_pkt_ll(pkt), net_pkt_ll_reserve(pkt));
-	b_idx += net_pkt_ll_reserve(pkt);
 
 	/* generate transfer buffer */
 	for (frag = pkt->frags; frag; frag = frag->frags) {
@@ -177,7 +173,7 @@ static void eem_read_cb(u8_t ep, int size, void *priv)
 			break;
 		}
 
-		pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
+		pkt = net_pkt_get_reserve_rx(K_FOREVER);
 		if (!pkt) {
 			LOG_ERR("Unable to alloc pkt\n");
 			break;

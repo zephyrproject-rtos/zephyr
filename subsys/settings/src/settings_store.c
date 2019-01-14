@@ -110,19 +110,15 @@ static void settings_dup_check_cb(char *name, void *val_read_cb_ctx, off_t off,
 	struct settings_dup_check_arg *cdca = (struct settings_dup_check_arg *)
 					      cb_arg;
 	size_t len_read;
-	char temp;
-	int rc;
-
 
 	if (strcmp(name, cdca->name)) {
 		return;
 	}
 
-	rc = settings_line_raw_read(off, &temp, 1, &len_read,
-					    val_read_cb_ctx);
-	if (rc || len_read == 0 || temp == '\0') {
+	len_read = settings_line_val_get_len(off, val_read_cb_ctx);
+	if (len_read == 0) {
 		/* treat as an empty entry */
-		if (!cdca->val || cdca->val[0] == '\0') {
+		if (!cdca->val || cdca->val_len == 0) {
 			cdca->is_dup = 1;
 		} else {
 			cdca->is_dup = 0;

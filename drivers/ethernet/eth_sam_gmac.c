@@ -275,7 +275,7 @@ static int rx_descriptors_init(Gmac *gmac, struct gmac_queue *queue)
 	rx_frag_list->tail = 0U;
 
 	for (int i = 0; i < rx_desc_list->len; i++) {
-		rx_buf = net_pkt_get_reserve_rx_data(0, K_NO_WAIT);
+		rx_buf = net_pkt_get_reserve_rx_data(K_NO_WAIT);
 		if (rx_buf == NULL) {
 			free_rx_bufs(rx_frag_list);
 			LOG_ERR("Failed to reserve data net buffers");
@@ -330,16 +330,10 @@ static struct gptp_hdr *check_gptp_msg(struct net_if *iface,
 				       struct net_pkt *pkt,
 				       bool is_tx)
 {
+	u8_t *msg_start = net_pkt_data(pkt);
 	struct ethernet_context *eth_ctx;
 	struct gptp_hdr *gptp_hdr;
 	int eth_hlen;
-	u8_t *msg_start;
-
-	if (net_pkt_ll_reserve(pkt)) {
-		msg_start = net_pkt_ll(pkt);
-	} else {
-		msg_start = net_pkt_ip_data(pkt);
-	}
 
 #if defined(CONFIG_NET_VLAN)
 	eth_ctx = net_if_l2_data(iface);
@@ -1134,7 +1128,7 @@ static struct net_pkt *frame_get(struct gmac_queue *queue)
 		return NULL;
 	}
 
-	rx_frame = net_pkt_get_reserve_rx(0, K_NO_WAIT);
+	rx_frame = net_pkt_get_reserve_rx(K_NO_WAIT);
 
 	/* Process a frame */
 	tail = rx_desc_list->tail;
@@ -1318,7 +1312,7 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 	struct gmac_desc_list *tx_desc_list;
 	struct gmac_desc *tx_desc;
 	struct net_buf *frag;
-	u8_t *frag_data, *frag_orig;
+	u8_t *frag_data;
 	u16_t frag_len;
 	u32_t err_tx_flushed_count_at_entry;
 	unsigned int key;
@@ -1342,15 +1336,6 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 
 	tx_desc_list = &queue->tx_desc_list;
 	err_tx_flushed_count_at_entry = queue->err_tx_flushed_count;
-
-	/* Store the original frag data pointer */
-	frag_orig = pkt->frags->data;
-
-	/* First fragment is special - it contains link layer (Ethernet
-	 * in our case) header. Modify the data pointer to account for more data
-	 * in the beginning of the buffer.
-	 */
-	net_buf_push(pkt->frags, net_pkt_ll_reserve(pkt));
 
 	frag = pkt->frags;
 	while (frag) {
@@ -1402,9 +1387,6 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 		/* Continue with the rest of fragments (only data) */
 		frag = frag->frags;
 	}
-
-	/* Restore the original frag data pointer */
-	pkt->frags->data = frag_orig;
 
 	key = irq_lock();
 

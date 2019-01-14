@@ -94,7 +94,7 @@ int open(const char *name, int flags)
 	return fd;
 }
 
-static int fs_ioctl_vmeth(void *obj, unsigned int request, ...)
+static int fs_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 {
 	int rc;
 	struct posix_fs_desc *ptr = obj;
@@ -105,14 +105,11 @@ static int fs_ioctl_vmeth(void *obj, unsigned int request, ...)
 		break;
 
 	case ZFD_IOCTL_LSEEK: {
-		va_list args;
 		off_t offset;
 		int whence;
 
-		va_start(args, request);
 		offset = va_arg(args, off_t);
 		whence = va_arg(args, int);
-		va_end(args);
 
 		rc = fs_seek(&ptr->file, offset, whence);
 		break;
@@ -253,7 +250,7 @@ struct dirent *readdir(DIR *dirp)
 
 	rc = strlen(fdirent.name);
 	rc = (rc < PATH_MAX) ? rc : (PATH_MAX - 1);
-	memcpy(pdirent.d_name, fdirent.name, rc);
+	(void)memcpy(pdirent.d_name, fdirent.name, rc);
 
 	/* Make sure the name is NULL terminated */
 	pdirent.d_name[rc] = '\0';

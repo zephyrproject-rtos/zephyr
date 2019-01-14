@@ -133,8 +133,7 @@ void test_sema_count_get(void)
 /*test case main entry*/
 void test_main(void)
 {
-	k_thread_access_grant(k_current_get(), &ksema, &tdata, &sema, &tstack,
-			      NULL);
+	k_thread_access_grant(k_current_get(), &ksema, &tdata, &sema, &tstack);
 
 	ztest_test_suite(sema_api,
 			 ztest_user_unit_test(test_sema_thread2thread),

@@ -35,7 +35,7 @@ static bool device_get_config_level(const struct shell *shell, int level)
 								info++) {
 		if (info->driver_api != NULL) {
 			devices = true;
-			shell_fprintf(shell, SHELL_NORMAL, "- %s\r\n",
+			shell_fprintf(shell, SHELL_NORMAL, "- %s\n",
 					info->config->name);
 		}
 	}
@@ -49,28 +49,28 @@ static int cmd_device_levels(const struct shell *shell,
 	ARG_UNUSED(argv);
 	bool ret;
 
-	shell_fprintf(shell, SHELL_NORMAL, "POST_KERNEL:\r\n");
+	shell_fprintf(shell, SHELL_NORMAL, "POST_KERNEL:\n");
 	ret = device_get_config_level(shell, _SYS_INIT_LEVEL_POST_KERNEL);
 	if (ret == false) {
-		shell_fprintf(shell, SHELL_NORMAL, "- None\r\n");
+		shell_fprintf(shell, SHELL_NORMAL, "- None\n");
 	}
 
-	shell_fprintf(shell, SHELL_NORMAL, "APPLICATION:\r\n");
+	shell_fprintf(shell, SHELL_NORMAL, "APPLICATION:\n");
 	ret = device_get_config_level(shell, _SYS_INIT_LEVEL_APPLICATION);
 	if (ret == false) {
-		shell_fprintf(shell, SHELL_NORMAL, "- None\r\n");
+		shell_fprintf(shell, SHELL_NORMAL, "- None\n");
 	}
 
-	shell_fprintf(shell, SHELL_NORMAL, "PRE KERNEL 1:\r\n");
+	shell_fprintf(shell, SHELL_NORMAL, "PRE KERNEL 1:\n");
 	ret = device_get_config_level(shell, _SYS_INIT_LEVEL_PRE_KERNEL_1);
 	if (ret == false) {
-		shell_fprintf(shell, SHELL_NORMAL, "- None\r\n");
+		shell_fprintf(shell, SHELL_NORMAL, "- None\n");
 	}
 
-	shell_fprintf(shell, SHELL_NORMAL, "PRE KERNEL 2:\r\n");
+	shell_fprintf(shell, SHELL_NORMAL, "PRE KERNEL 2:\n");
 	ret = device_get_config_level(shell, _SYS_INIT_LEVEL_PRE_KERNEL_2);
 	if (ret == false) {
-		shell_fprintf(shell, SHELL_NORMAL, "- None\r\n");
+		shell_fprintf(shell, SHELL_NORMAL, "- None\n");
 	}
 
 	return 0;
@@ -83,10 +83,10 @@ static int cmd_device_list(const struct shell *shell,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_fprintf(shell, SHELL_NORMAL, "devices:\r\n");
+	shell_fprintf(shell, SHELL_NORMAL, "devices:\n");
 	for (info = __device_init_start; info != __device_init_end; info++) {
 		if (info->driver_api != NULL) {
-			shell_fprintf(shell, SHELL_NORMAL, "- %s\r\n",
+			shell_fprintf(shell, SHELL_NORMAL, "- %s\n",
 					info->config->name);
 		}
 	}

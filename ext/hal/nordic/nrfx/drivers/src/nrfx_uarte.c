@@ -33,7 +33,10 @@
 
 #if NRFX_CHECK(NRFX_UARTE_ENABLED)
 
-#if !(NRFX_CHECK(NRFX_UARTE0_ENABLED) || NRFX_CHECK(NRFX_UARTE1_ENABLED))
+#if !(NRFX_CHECK(NRFX_UARTE0_ENABLED) || \
+      NRFX_CHECK(NRFX_UARTE1_ENABLED) || \
+      NRFX_CHECK(NRFX_UARTE2_ENABLED) || \
+      NRFX_CHECK(NRFX_UARTE3_ENABLED))
 #error "No enabled UARTE instances. Check <nrfx_config.h>."
 #endif
 
@@ -64,9 +67,23 @@
 #define UARTE1_LENGTH_VALIDATE(...)  0
 #endif
 
+#if NRFX_CHECK(NRFX_UARTE2_ENABLED)
+#define UARTE2_LENGTH_VALIDATE(...)  UARTEX_LENGTH_VALIDATE(UARTE2, __VA_ARGS__)
+#else
+#define UARTE2_LENGTH_VALIDATE(...)  0
+#endif
+
+#if NRFX_CHECK(NRFX_UARTE3_ENABLED)
+#define UARTE3_LENGTH_VALIDATE(...)  UARTEX_LENGTH_VALIDATE(UARTE3, __VA_ARGS__)
+#else
+#define UARTE3_LENGTH_VALIDATE(...)  0
+#endif
+
 #define UARTE_LENGTH_VALIDATE(drv_inst_idx, length)     \
     (UARTE0_LENGTH_VALIDATE(drv_inst_idx, length, 0) || \
-     UARTE1_LENGTH_VALIDATE(drv_inst_idx, length, 0))
+     UARTE1_LENGTH_VALIDATE(drv_inst_idx, length, 0) || \
+     UARTE2_LENGTH_VALIDATE(drv_inst_idx, length, 0) || \
+     UARTE3_LENGTH_VALIDATE(drv_inst_idx, length, 0))
 
 
 typedef struct
@@ -196,6 +213,12 @@ nrfx_err_t nrfx_uarte_init(nrfx_uarte_t const *        p_instance,
         #endif
         #if NRFX_CHECK(NRFX_UARTE1_ENABLED)
         nrfx_uarte_1_irq_handler,
+        #endif
+        #if NRFX_CHECK(NRFX_UARTE2_ENABLED)
+        nrfx_uarte_2_irq_handler,
+        #endif
+        #if NRFX_CHECK(NRFX_UARTE3_ENABLED)
+        nrfx_uarte_3_irq_handler,
         #endif
     };
     if (nrfx_prs_acquire(p_instance->p_reg,
@@ -580,6 +603,20 @@ void nrfx_uarte_0_irq_handler(void)
 void nrfx_uarte_1_irq_handler(void)
 {
     uarte_irq_handler(NRF_UARTE1, &m_cb[NRFX_UARTE1_INST_IDX]);
+}
+#endif
+
+#if NRFX_CHECK(NRFX_UARTE2_ENABLED)
+void nrfx_uarte_2_irq_handler(void)
+{
+    uarte_irq_handler(NRF_UARTE2, &m_cb[NRFX_UARTE2_INST_IDX]);
+}
+#endif
+
+#if NRFX_CHECK(NRFX_UARTE3_ENABLED)
+void nrfx_uarte_3_irq_handler(void)
+{
+    uarte_irq_handler(NRF_UARTE3, &m_cb[NRFX_UARTE3_INST_IDX]);
 }
 #endif
 

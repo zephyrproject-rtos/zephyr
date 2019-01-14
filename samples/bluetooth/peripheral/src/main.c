@@ -173,7 +173,7 @@ static ssize_t write_without_rsp_vnd(struct bt_conn *conn,
 	/* Write request received. Reject it since this char only accepts
 	 * Write Commands.
 	 */
-	if (!(flags | BT_GATT_WRITE_FLAG_CMD)) {
+	if (!(flags & BT_GATT_WRITE_FLAG_CMD)) {
 		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 	}
 

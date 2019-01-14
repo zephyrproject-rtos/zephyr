@@ -11,7 +11,7 @@
  *       controller implementation. */
 #include <toolchain.h>
 
-u32_t __weak ll_tx_pwr_lvl_get(u16_t handle, u8_t type, s8_t *tx_pwr_lvl)
+u8_t __weak ll_tx_pwr_lvl_get(u16_t handle, u8_t type, s8_t *tx_pwr_lvl)
 {
 	/* TODO: check for active connection */
 

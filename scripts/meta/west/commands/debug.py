@@ -6,8 +6,9 @@
 
 from textwrap import dedent
 
-from commands.run_common import desc_common, add_parser_common, do_run_common
-from commands import WestCommand
+from west.commands.run_common import desc_common, add_parser_common, \
+    do_run_common
+from west.commands import WestCommand
 
 
 class Debug(WestCommand):

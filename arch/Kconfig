@@ -32,6 +32,10 @@ config X86
 	select ATOMIC_OPERATIONS_BUILTIN
 	select HAS_DTS
 
+config X86_64
+	bool "x86_64 architecture"
+	select ATOMIC_OPERATIONS_BUILTIN
+
 config NIOS2
 	bool "Nios II Gen 2 architecture"
 	select ATOMIC_OPERATIONS_C
@@ -410,11 +414,9 @@ config MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 	  and size for MPU regions.
 
 
-menu "Floating Point Options"
-depends on CPU_HAS_FPU
-
-config FLOAT
-	bool "Floating point registers"
+menuconfig FLOAT
+	bool "Floating point"
+	depends on CPU_HAS_FPU
 	help
 	  This option allows threads to use the floating point registers.
 	  By default, only a single thread may use the registers.
@@ -422,14 +424,15 @@ config FLOAT
 	  Disabling this option means that any thread that uses a
 	  floating point register will get a fatal exception.
 
+if FLOAT
+
 config FP_SHARING
 	bool "Floating point register sharing"
-	depends on FLOAT
 	help
 	  This option allows multiple threads to use the floating point
 	  registers.
 
-endmenu
+endif # FLOAT
 
 #
 # End hidden PM feature configs

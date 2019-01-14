@@ -157,8 +157,8 @@ int zsock_close_ctx(struct net_context *ctx)
 
 int _impl_zsock_close(int sock)
 {
-	const struct socket_op_vtable *vtable;
-	void *ctx = get_sock_vtable(sock, &vtable);
+	const struct fd_op_vtable *vtable;
+	void *ctx = z_get_fd_obj_and_vtable(sock, &vtable);
 
 	if (ctx == NULL) {
 		return -1;
@@ -166,7 +166,7 @@ int _impl_zsock_close(int sock)
 
 	z_free_fd(sock);
 
-	return vtable->fd_vtable.ioctl(ctx, ZFD_IOCTL_CLOSE);
+	return z_fdtable_call_ioctl(vtable, ctx, ZFD_IOCTL_CLOSE);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -531,7 +531,11 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 		recv_len = max_len;
 	}
 
-	net_frag_linearize(buf, recv_len, pkt, header_len, recv_len);
+	/* Length passed as arguments are all based on packet data size
+	 * and output buffer size, so return value is invariantly == recv_len,
+	 * and we just ignore it.
+	 */
+	(void)net_frag_linearize(buf, recv_len, pkt, header_len, recv_len);
 
 	if (!(flags & ZSOCK_MSG_PEEK)) {
 		net_pkt_unref(pkt);
@@ -682,33 +686,20 @@ Z_SYSCALL_HANDLER(zsock_recvfrom, sock, buf, max_len, flags, src_addr,
 }
 #endif /* CONFIG_USERSPACE */
 
-int zsock_fcntl_ctx(struct net_context *ctx, int cmd, int flags)
-{
-	switch (cmd) {
-	case F_GETFL:
-		if (sock_is_nonblock(ctx)) {
-		    return O_NONBLOCK;
-		}
-		return 0;
-	case F_SETFL:
-		if (flags & O_NONBLOCK) {
-			sock_set_flag(ctx, SOCK_NONBLOCK, SOCK_NONBLOCK);
-		} else {
-			sock_set_flag(ctx, SOCK_NONBLOCK, 0);
-		}
-		return 0;
-	default:
-		errno = EINVAL;
-		return -1;
-	}
-}
-
 /* As this is limited function, we don't follow POSIX signature, with
  * "..." instead of last arg.
  */
 int _impl_zsock_fcntl(int sock, int cmd, int flags)
 {
-	VTABLE_CALL(fd_vtable.ioctl, sock, cmd, flags);
+	const struct fd_op_vtable *vtable;
+	void *obj;
+
+	obj = z_get_fd_obj_and_vtable(sock, &vtable);
+	if (obj == NULL) {
+		return -1;
+	}
+
+	return z_fdtable_call_ioctl(vtable, obj, cmd, flags);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -776,7 +767,7 @@ int _impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout)
 	struct k_poll_event poll_events[CONFIG_NET_SOCKETS_POLL_MAX];
 	struct k_poll_event *pev;
 	struct k_poll_event *pev_end = poll_events + ARRAY_SIZE(poll_events);
-	const struct socket_op_vtable *vtable;
+	const struct fd_op_vtable *vtable;
 	u32_t entry_time = k_uptime_get_32();
 
 	if (timeout < 0) {
@@ -792,14 +783,14 @@ int _impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout)
 			continue;
 		}
 
-		ctx = get_sock_vtable(pfd->fd, &vtable);
+		ctx = z_get_fd_obj_and_vtable(pfd->fd, &vtable);
 		if (ctx == NULL) {
 			/* Will set POLLNVAL in return loop */
 			continue;
 		}
 
-		if (vtable->fd_vtable.ioctl(ctx, ZFD_IOCTL_POLL_PREPARE,
-					    pfd, &pev, pev_end) < 0) {
+		if (z_fdtable_call_ioctl(vtable, ctx, ZFD_IOCTL_POLL_PREPARE,
+					 pfd, &pev, pev_end) < 0) {
 			if (errno == EALREADY) {
 				timeout = K_NO_WAIT;
 				continue;
@@ -832,15 +823,15 @@ int _impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout)
 				continue;
 			}
 
-			ctx = get_sock_vtable(pfd->fd, &vtable);
+			ctx = z_get_fd_obj_and_vtable(pfd->fd, &vtable);
 			if (ctx == NULL) {
 				pfd->revents = ZSOCK_POLLNVAL;
 				ret++;
 				continue;
 			}
 
-			if (vtable->fd_vtable.ioctl(ctx, ZFD_IOCTL_POLL_UPDATE,
-						    pfd, &pev) < 0) {
+			if (z_fdtable_call_ioctl(vtable, ctx, ZFD_IOCTL_POLL_UPDATE,
+						 pfd, &pev) < 0) {
 				if (errno == EAGAIN) {
 					retry = true;
 					continue;
@@ -979,48 +970,53 @@ static ssize_t sock_write_vmeth(void *obj, const void *buffer, size_t count)
 	return zsock_sendto_ctx(obj, buffer, count, 0, NULL, 0);
 }
 
-static int sock_ioctl_vmeth(void *obj, unsigned int request, ...)
+static int sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 {
 	switch (request) {
+
+	/* In Zephyr, fcntl() is just an alias of ioctl(). */
+	case F_GETFL:
+		if (sock_is_nonblock(obj)) {
+		    return O_NONBLOCK;
+		}
+
+		return 0;
+
+	case F_SETFL: {
+		int flags;
+
+		flags = va_arg(args, int);
+
+		if (flags & O_NONBLOCK) {
+			sock_set_flag(obj, SOCK_NONBLOCK, SOCK_NONBLOCK);
+		} else {
+			sock_set_flag(obj, SOCK_NONBLOCK, 0);
+		}
+
+		return 0;
+	}
+
 	case ZFD_IOCTL_CLOSE:
 		return zsock_close_ctx(obj);
 
-	case ZFD_IOCTL_FCNTL: {
-		va_list args;
-		int cmd, flags;
-
-		va_start(args, request);
-		cmd = va_arg(args, int);
-		flags = va_arg(args, int);
-		va_end(args);
-
-		return zsock_fcntl_ctx(obj, cmd, flags);
-	}
-
 	case ZFD_IOCTL_POLL_PREPARE: {
-		va_list args;
 		struct zsock_pollfd *pfd;
 		struct k_poll_event **pev;
 		struct k_poll_event *pev_end;
 
-		va_start(args, request);
 		pfd = va_arg(args, struct zsock_pollfd *);
 		pev = va_arg(args, struct k_poll_event **);
 		pev_end = va_arg(args, struct k_poll_event *);
-		va_end(args);
 
 		return zsock_poll_prepare_ctx(obj, pfd, pev, pev_end);
 	}
 
 	case ZFD_IOCTL_POLL_UPDATE: {
-		va_list args;
 		struct zsock_pollfd *pfd;
 		struct k_poll_event **pev;
 
-		va_start(args, request);
 		pfd = va_arg(args, struct zsock_pollfd *);
 		pev = va_arg(args, struct k_poll_event **);
-		va_end(args);
 
 		return zsock_poll_update_ctx(obj, pfd, pev);
 	}

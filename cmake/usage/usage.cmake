@@ -16,25 +16,25 @@ string(REPLACE " " ";" BOARD_ROOT "${BOARD_ROOT_SPACE_SEPARATED}")
 
 foreach(arch ${arch_list})
   foreach(root ${BOARD_ROOT})
-	set(board_arch_dir ${root}/boards/${arch})
+    set(board_arch_dir ${root}/boards/${arch})
 
-	# Match the .yanl files in the board directories to make sure we are
-	# finding boards, e.g. qemu_xtensa/qemu_xtensa.yaml
-	file(GLOB_RECURSE yamls_for_${arch}
+    # Match the .yaml files in the board directories to make sure we are
+    # finding boards, e.g. qemu_xtensa/qemu_xtensa.yaml
+    file(GLOB_RECURSE yamls_for_${arch}
       RELATIVE ${board_arch_dir}
       ${board_arch_dir}/*.yaml
       )
 
-	# The above gives a list like
-	# nrf51_blenano/nrf51_blenano_yaml;nrf51_pca10028/nrf51_pca10028_yaml
-	# we construct a list of board names by removing both the .yaml
-	# suffix and the path.
-	set(boards_for_${arch} "")
-	foreach(yaml_path ${yamls_for_${arch}})
+    # The above gives a list like
+    # nrf51_blenano/nrf51_blenano_yaml;nrf51_pca10028/nrf51_pca10028_yaml
+    # we construct a list of board names by removing both the .yaml
+    # suffix and the path.
+    set(boards_for_${arch} "")
+    foreach(yaml_path ${yamls_for_${arch}})
       get_filename_component(board ${yaml_path} NAME_WE)
 
       list(APPEND boards_for_${arch} ${board})
-	endforeach()
+    endforeach()
   endforeach()
 endforeach()
 
@@ -78,7 +78,7 @@ message("Build flags:")
 message("")
 message("  ${generator} VERBOSE=1 [targets] verbose build")
 message("  cmake -DW=n   Enable extra gcc checks, n=1,2,3 where")
-message("		1: warnings which may be relevant and do not occur too often")
-message("		2: warnings which occur quite often but may still be relevant")
-message("		3: more obscure warnings, can most likely be ignored")
-message("		Multiple levels can be combined with W=12 or W=123")
+message("   1: warnings which may be relevant and do not occur too often")
+message("   2: warnings which occur quite often but may still be relevant")
+message("   3: more obscure warnings, can most likely be ignored")
+message("   Multiple levels can be combined with W=12 or W=123")

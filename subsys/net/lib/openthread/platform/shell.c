@@ -9,8 +9,9 @@
 #include <misc/printk.h>
 #include <shell/shell.h>
 #include <shell/shell_uart.h>
+
 #include <openthread/cli.h>
-#include <platform.h>
+#include <openthread/instance.h>
 
 #include "platform-zephyr.h"
 
@@ -18,15 +19,20 @@
 
 static char rx_buffer[OT_SHELL_BUFFER_SIZE];
 
+static const struct shell *shell_p;
+
 int otConsoleOutputCallback(const char *aBuf, uint16_t aBufLength,
 			    void *aContext)
 {
 	ARG_UNUSED(aContext);
 
-	printk("%s", aBuf);
+	shell_fprintf(shell_p, SHELL_NORMAL, "%s", aBuf);
 
 	return aBufLength;
 }
+
+#define SHELL_HELP_OT	"OpenThread subcommands\n" \
+			"Use \"ot help\" to get the list of subcommands"
 
 static int ot_cmd(const struct shell *shell, size_t argc, char *argv[])
 {
@@ -34,10 +40,6 @@ static int ot_cmd(const struct shell *shell, size_t argc, char *argv[])
 	size_t buf_len = OT_SHELL_BUFFER_SIZE;
 	size_t arg_len = 0;
 	int i;
-
-	if (argc < 2) {
-		return -ENOEXEC;
-	}
 
 	for (i = 1; i < argc; i++) {
 		if (arg_len) {
@@ -61,18 +63,13 @@ static int ot_cmd(const struct shell *shell, size_t argc, char *argv[])
 		buf_len -= arg_len;
 	}
 
+	shell_p = shell;
 	otCliConsoleInputLine(rx_buffer, OT_SHELL_BUFFER_SIZE - buf_len);
 
 	return 0;
 }
 
-SHELL_CREATE_STATIC_SUBCMD_SET(ot_commands)
-{
-	SHELL_CMD(cmd, NULL, "OpenThread command", ot_cmd),
-	SHELL_SUBCMD_SET_END
-};
-
-SHELL_CMD_REGISTER(ot, &ot_commands, "OpenThread commands", NULL);
+SHELL_CMD_ARG_REGISTER(ot, NULL, SHELL_HELP_OT, ot_cmd, 2, 255);
 
 void platformShellInit(otInstance *aInstance)
 {

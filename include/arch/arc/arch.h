@@ -220,6 +220,15 @@ extern "C" {
 #ifndef _ASMLANGUAGE
 /* Typedef for the k_mem_partition attribute*/
 typedef u32_t k_mem_partition_attr_t;
+
+/**
+ * @brief Explicitly nop operation.
+ */
+static ALWAYS_INLINE void arch_nop(void)
+{
+	__asm__ volatile("nop");
+}
+
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus

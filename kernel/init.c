@@ -259,6 +259,7 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 void __weak main(void)
 {
 	/* NOP default main() if the application does not provide one. */
+	arch_nop();
 }
 
 #if defined(CONFIG_MULTITHREADING)

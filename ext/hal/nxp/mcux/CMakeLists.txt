@@ -7,6 +7,8 @@ if("${MCUX_DEVICE}" STREQUAL "LPC54114")
 elseif("${MCUX_DEVICE}" STREQUAL "LPC54114_M0")
   set(MCUX_CPU CPU_${CONFIG_SOC_PART_NUMBER}_cm0plus)
   set(MCUX_DEVICE LPC54114)
+elseif("${MCUX_DEVICE}" STREQUAL "MIMXRT1052")
+  string(REGEX REPLACE "(.*)A$" "CPU_\\1B" MCUX_CPU ${CONFIG_SOC_PART_NUMBER})
 else()
   set(MCUX_CPU CPU_${CONFIG_SOC_PART_NUMBER})
 endif()
@@ -26,6 +28,7 @@ zephyr_compile_definitions(${MCUX_CPU})
 zephyr_sources(devices/${MCUX_DEVICE}/fsl_clock.c)
 
 # Build mcux drivers that can be used for multiple SoC's.
+add_subdirectory(boards)
 add_subdirectory(components)
 add_subdirectory(drivers)
 

@@ -141,18 +141,34 @@ out:
 	}
 }
 
+#if defined(CONFIG_NET_DEBUG_NET_PKT_ALLOC)
+static struct net_pkt *setup_gptp_frame_debug(struct net_if *iface,
+					      const char *caller,
+					      int line)
+#define setup_gptp_frame(iface) \
+	setup_gptp_frame_debug(iface, __func__, __LINE__)
+#else
 static struct net_pkt *setup_gptp_frame(struct net_if *iface)
+#endif
 {
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 
-	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
-				     NET_BUF_TIMEOUT);
+#if defined(CONFIG_NET_DEBUG_NET_PKT_ALLOC)
+	pkt = net_pkt_get_reserve_tx_debug(NET_BUF_TIMEOUT, caller, line);
+#else
+	pkt = net_pkt_get_reserve_tx(NET_BUF_TIMEOUT);
+#endif
 	if (!pkt) {
 		return NULL;
 	}
 
-	frag = net_pkt_get_reserve_tx_data(0, NET_BUF_TIMEOUT);
+#if defined(CONFIG_NET_DEBUG_NET_PKT_ALLOC)
+	frag = net_pkt_get_reserve_tx_data_debug(NET_BUF_TIMEOUT, caller,
+						 line);
+#else
+	frag = net_pkt_get_reserve_tx_data(NET_BUF_TIMEOUT);
+#endif
 	if (!frag) {
 		net_pkt_unref(pkt);
 		return NULL;
@@ -188,6 +204,7 @@ struct net_pkt *gptp_prepare_sync(int port)
 
 	pkt = setup_gptp_frame(iface);
 	if (!pkt) {
+		NET_DBG("Cannot get gPTP frame");
 		return NULL;
 	}
 
@@ -244,6 +261,7 @@ struct net_pkt *gptp_prepare_follow_up(int port, struct net_pkt *sync)
 
 	pkt = setup_gptp_frame(iface);
 	if (!pkt) {
+		NET_DBG("Cannot get gPTP frame");
 		return NULL;
 	}
 
@@ -297,6 +315,7 @@ struct net_pkt *gptp_prepare_pdelay_req(int port)
 
 	pkt = setup_gptp_frame(iface);
 	if (!pkt) {
+		NET_DBG("Cannot get gPTP frame");
 		return NULL;
 	}
 
@@ -354,6 +373,7 @@ struct net_pkt *gptp_prepare_pdelay_resp(int port,
 
 	pkt = setup_gptp_frame(iface);
 	if (!pkt) {
+		NET_DBG("Cannot get gPTP frame");
 		return NULL;
 	}
 
@@ -416,6 +436,7 @@ struct net_pkt *gptp_prepare_pdelay_follow_up(int port,
 
 	pkt = setup_gptp_frame(iface);
 	if (!pkt) {
+		NET_DBG("Cannot get gPTP frame");
 		return NULL;
 	}
 
@@ -485,6 +506,7 @@ struct net_pkt *gptp_prepare_announce(int port)
 
 	pkt = setup_gptp_frame(iface);
 	if (!pkt) {
+		NET_DBG("Cannot get gPTP frame");
 		return NULL;
 	}
 

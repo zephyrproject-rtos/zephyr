@@ -206,7 +206,7 @@ void test_kinit_coop_thread(void)
 void test_main(void)
 {
 	k_thread_access_grant(k_current_get(), &thread_preempt, &stack_preempt,
-			      &start_sema, &end_sema, NULL);
+			      &start_sema, &end_sema);
 
 	ztest_test_suite(thread_init,
 			 ztest_user_unit_test(test_kdefine_preempt_thread),

@@ -4,6 +4,12 @@
 Logger system API
 #################
 
+.. comment
+   not documenting
+   .. doxygengroup:: logging
+   .. doxygengroup:: logger
+
+
 .. contents::
    :depth: 2
    :local:

@@ -63,6 +63,16 @@ LOG_MODULE_REGISTER(usb_dfu);
 #define USB_DFU_MAX_XFER_SIZE		CONFIG_USB_DFU_MAX_XFER_SIZE
 #endif
 
+static struct k_work dfu_work;
+
+struct dfu_worker_data_t {
+	u8_t buf[USB_DFU_MAX_XFER_SIZE];
+	enum dfu_state worker_state;
+	u16_t worker_len;
+};
+
+static struct dfu_worker_data_t dfu_data_worker;
+
 struct usb_dfu_config {
 	struct usb_if_descriptor if0;
 	struct dfu_runtime_descriptor dfu_descr;
@@ -430,13 +440,22 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 				break;
 			}
 
-			if (boot_erase_img_bank(FLASH_AREA_IMAGE_1_OFFSET)) {
-				dfu_data.state = dfuERROR;
-				dfu_data.status = errERASE;
-				break;
-			}
+			dfu_data.state = dfuDNBUSY;
+			dfu_data_worker.worker_state = dfuIDLE;
+			dfu_data_worker.worker_len  = pSetup->wLength;
+			memcpy(dfu_data_worker.buf, *data, pSetup->wLength);
+			k_work_submit(&dfu_work);
+			break;
 		case dfuDNLOAD_IDLE:
-			dfu_flash_write(*data, pSetup->wLength);
+			dfu_data.state = dfuDNBUSY;
+			dfu_data_worker.worker_state = dfuDNLOAD_IDLE;
+			dfu_data_worker.worker_len  = pSetup->wLength;
+			if (dfu_data_worker.worker_len == 0) {
+				dfu_data.state = dfuMANIFEST_SYNC;
+			}
+
+			memcpy(dfu_data_worker.buf, *data, pSetup->wLength);
+			k_work_submit(&dfu_work);
 			break;
 		default:
 			LOG_ERR("DFU_DNLOAD wrong state %d", dfu_data.state);
@@ -679,17 +698,44 @@ USBD_CFG_DATA_DEFINE(dfu_mode) struct usb_cfg_data dfu_mode_config = {
 	.num_endpoints = 0,
 };
 
+static void dfu_work_handler(struct k_work *item)
+{
+	ARG_UNUSED(item);
+
+	switch (dfu_data_worker.worker_state) {
+	case dfuIDLE:
+		if (boot_erase_img_bank(FLASH_AREA_IMAGE_1_OFFSET)) {
+			dfu_data.state = dfuERROR;
+			dfu_data.status = errERASE;
+			break;
+		}
+	case dfuDNLOAD_IDLE:
+		dfu_flash_write(dfu_data_worker.buf,
+				dfu_data_worker.worker_len);
+		break;
+	default:
+		LOG_ERR("OUT of state machine");
+		break;
+	}
+}
+
 static int usb_dfu_init(struct device *dev)
 {
 	int ret;
 
 	ARG_UNUSED(dev);
 
+#if defined(DT_FLASH_DEV_NAME)
 	dfu_data.flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
+#elif defined(DT_SPI_NOR_DRV_NAME)
+	dfu_data.flash_dev = device_get_binding(DT_SPI_NOR_DRV_NAME);
+#endif
 	if (!dfu_data.flash_dev) {
 		LOG_ERR("Flash device not found\n");
 		return -ENODEV;
 	}
+
+	k_work_init(&dfu_work, dfu_work_handler);
 
 #ifndef CONFIG_USB_COMPOSITE_DEVICE
 	dfu_config.interface.payload_data = dfu_data.buffer;

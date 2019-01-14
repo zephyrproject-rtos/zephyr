@@ -55,6 +55,12 @@ static uint32_t ADC_GetInstance(ADC_Type *base)
     return instance;
 }
 
+/*!
+ * brief Initialize the ADC module.
+ *
+ * param base ADC peripheral base address.
+ * param config Pointer to "adc_config_t" structure.
+ */
 void ADC_Init(ADC_Type *base, const adc_config_t *config)
 {
     assert(NULL != config);
@@ -100,6 +106,11 @@ void ADC_Init(ADC_Type *base, const adc_config_t *config)
     base->GC = tmp32;
 }
 
+/*!
+ * brief De-initializes the ADC module.
+ *
+ * param base ADC peripheral base address.
+ */
 void ADC_Deinit(ADC_Type *base)
 {
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
@@ -108,9 +119,32 @@ void ADC_Deinit(ADC_Type *base)
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
+/*!
+ * brief Gets an available pre-defined settings for the converter's configuration.
+ *
+ * This function initializes the converter configuration structure with available settings. The default values are:
+ * code
+ *  config->enableAsynchronousClockOutput = true;
+ *  config->enableOverWrite =               false;
+ *  config->enableContinuousConversion =    false;
+ *  config->enableHighSpeed =               false;
+ *  config->enableLowPower =                false;
+ *  config->enableLongSample =              false;
+ *  config->referenceVoltageSource =        kADC_ReferenceVoltageSourceAlt0;
+ *  config->samplePeriodMode =              kADC_SamplePeriod2or12Clocks;
+ *  config->clockSource =                   kADC_ClockSourceAD;
+ *  config->clockDriver =                   kADC_ClockDriver1;
+ *  config->resolution =                    kADC_Resolution12Bit;
+ * endcode
+ * param base   ADC peripheral base address.
+ * param config Pointer to the configuration structure.
+ */
 void ADC_GetDefaultConfig(adc_config_t *config)
 {
     assert(NULL != config);
+
+    /* Initializes the configure structure to zero. */
+    memset(config, 0, sizeof(*config));
 
     config->enableAsynchronousClockOutput = true;
     config->enableOverWrite = false;
@@ -125,6 +159,33 @@ void ADC_GetDefaultConfig(adc_config_t *config)
     config->resolution = kADC_Resolution12Bit;
 }
 
+/*!
+ * brief Configures the conversion channel.
+ *
+ * This operation triggers the conversion when in software trigger mode. When in hardware trigger mode, this API
+ * configures the channel while the external trigger source helps to trigger the conversion.
+ *
+ * Note that the "Channel Group" has a detailed description.
+ * To allow sequential conversions of the ADC to be triggered by internal peripherals, the ADC has more than one
+ * group of status and control registers, one for each conversion. The channel group parameter indicates which group of
+ * registers are used, for example channel group 0 is for Group A registers and channel group 1 is for Group B
+ * registers. The
+ * channel groups are used in a "ping-pong" approach to control the ADC operation.  At any point, only one of
+ * the channel groups is actively controlling ADC conversions. The channel group 0 is used for both software and
+ * hardware
+ * trigger modes. Channel groups 1 and greater indicate potentially multiple channel group registers for
+ * use only in hardware trigger mode. See the chip configuration information in the appropriate MCU reference manual
+ * about the
+ * number of SC1n registers (channel groups) specific to this device.  None of the channel groups 1 or greater are used
+ * for software trigger operation. Therefore, writing to these channel groups does not initiate a new conversion.
+ * Updating the channel group 0 while a different channel group is actively controlling a conversion is allowed and
+ * vice versa. Writing any of the channel group registers while that specific channel group is actively controlling a
+ * conversion aborts the current conversion.
+ *
+ * param base          ADC peripheral base address.
+ * param channelGroup  Channel group index.
+ * param config        Pointer to the "adc_channel_config_t" structure for the conversion channel.
+ */
 void ADC_SetChannelConfig(ADC_Type *base, uint32_t channelGroup, const adc_channel_config_t *config)
 {
     assert(NULL != config);
@@ -146,6 +207,19 @@ void ADC_SetChannelConfig(ADC_Type *base, uint32_t channelGroup, const adc_chann
  *  2. Configure the ADC_GC values along with CAL bit.
  *  3. Check the status of CALF bit in ADC_GS and the CAL bit in ADC_GC.
  *  4. When CAL bit becomes '0' then check the CALF status and COCO[0] bit status.
+ */
+/*!
+ * brief  Automates the hardware calibration.
+ *
+ * This auto calibration helps to adjust the plus/minus side gain automatically.
+ * Execute the calibration before using the converter. Note that the software trigger should be used
+ * during calibration.
+ *
+ * param  base ADC peripheral base address.
+ *
+ * return                 Execution status.
+ * retval kStatus_Success Calibration is done successfully.
+ * retval kStatus_Fail    Calibration has failed.
  */
 status_t ADC_DoAutoCalibration(ADC_Type *base)
 {
@@ -201,6 +275,12 @@ status_t ADC_DoAutoCalibration(ADC_Type *base)
     return status;
 }
 
+/*!
+ * brief Set user defined offset.
+ *
+ * param base   ADC peripheral base address.
+ * param config Pointer to "adc_offest_config_t" structure.
+ */
 void ADC_SetOffsetConfig(ADC_Type *base, const adc_offest_config_t *config)
 {
     assert(NULL != config);
@@ -215,6 +295,19 @@ void ADC_SetOffsetConfig(ADC_Type *base, const adc_offest_config_t *config)
     base->OFS = tmp32;
 }
 
+/*!
+ * brief Configures the hardware compare mode.
+ *
+ * The hardware compare mode provides a way to process the conversion result automatically by using hardware. Only the
+ * result
+ * in the compare range is available. To compare the range, see "adc_hardware_compare_mode_t" or the appopriate
+ * reference
+ * manual for more information.
+ *
+ * param base ADC peripheral base address.
+ * param Pointer to "adc_hardware_compare_config_t" structure.
+ *
+ */
 void ADC_SetHardwareCompareConfig(ADC_Type *base, const adc_hardware_compare_config_t *config)
 {
     uint32_t tmp32;
@@ -252,6 +345,16 @@ void ADC_SetHardwareCompareConfig(ADC_Type *base, const adc_hardware_compare_con
     base->CV = tmp32;
 }
 
+/*!
+ * brief Configures the hardware average mode.
+ *
+ * The hardware average mode provides a way to process the conversion result automatically by using hardware. The
+ * multiple
+ * conversion results are accumulated and averaged internally making them easier to read.
+ *
+ * param base ADC peripheral base address.
+ * param mode Setting the hardware average mode. See "adc_hardware_average_mode_t".
+ */
 void ADC_SetHardwareAverageConfig(ADC_Type *base, adc_hardware_average_mode_t mode)
 {
     uint32_t tmp32;
@@ -269,6 +372,12 @@ void ADC_SetHardwareAverageConfig(ADC_Type *base, adc_hardware_average_mode_t mo
     }
 }
 
+/*!
+ * brief Clears the converter's status falgs.
+ *
+ * param base ADC peripheral base address.
+ * param mask Mask value for the cleared flags. See "adc_status_flags_t".
+ */
 void ADC_ClearStatusFlags(ADC_Type *base, uint32_t mask)
 {
     uint32_t tmp32 = 0;

@@ -6,6 +6,7 @@
  */
 
 #include <stdbool.h>
+#include <fcntl.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(net_sock_tls, CONFIG_NET_SOCKETS_LOG_LEVEL);
@@ -1179,7 +1180,7 @@ int ztls_close_ctx(struct net_context *ctx)
 		err = -EBADF;
 	}
 
-	ret = sock_fd_op_vtable.fd_vtable.ioctl(ctx, ZFD_IOCTL_CLOSE);
+	ret = z_fdtable_call_ioctl(&sock_fd_op_vtable.fd_vtable, ctx, ZFD_IOCTL_CLOSE);
 
 	/* In case close fails, we propagate errno value set by close.
 	 * In case close succeeds, but tls_release fails, set errno
@@ -1314,7 +1315,7 @@ error:
 		__ASSERT(err == 0, "TLS context release failed");
 	}
 
-	err = sock_fd_op_vtable.fd_vtable.ioctl(child, ZFD_IOCTL_CLOSE);
+	err = z_fdtable_call_ioctl(&sock_fd_op_vtable.fd_vtable, child, ZFD_IOCTL_CLOSE);
 	__ASSERT(err == 0, "Child socket close failed");
 
 	z_free_fd(fd);
@@ -1714,7 +1715,7 @@ static int ztls_poll_update_ctx(struct net_context *ctx,
 			}
 
 			/* EAGAIN might happen during or just after
-			 * DLTS handshake.
+			 * DTLS handshake.
 			 */
 			if (recv(pfd->fd, NULL, 0, ZSOCK_MSG_DONTWAIT) < 0 &&
 			    errno != EAGAIN) {
@@ -1848,48 +1849,37 @@ static ssize_t tls_sock_write_vmeth(void *obj, const void *buffer,
 	return ztls_sendto_ctx(obj, buffer, count, 0, NULL, 0);
 }
 
-static int tls_sock_ioctl_vmeth(void *obj, unsigned int request, ...)
+static int tls_sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 {
 	switch (request) {
+
+	/* fcntl() commands */
+	case F_GETFL:
+	case F_SETFL:
+		/* Pass the call to the core socket implementation. */
+		return sock_fd_op_vtable.fd_vtable.ioctl(obj, request, args);
+
 	case ZFD_IOCTL_CLOSE:
 		return ztls_close_ctx(obj);
 
-	case ZFD_IOCTL_FCNTL: {
-		va_list args;
-		int err;
-
-		/* Pass the call to the core socket implementation. */
-		va_start(args, request);
-		err = sock_fd_op_vtable.fd_vtable.ioctl(obj, request, args);
-		va_end(args);
-
-		return err;
-	}
-
 	case ZFD_IOCTL_POLL_PREPARE: {
-		va_list args;
 		struct zsock_pollfd *pfd;
 		struct k_poll_event **pev;
 		struct k_poll_event *pev_end;
 
-		va_start(args, request);
 		pfd = va_arg(args, struct zsock_pollfd *);
 		pev = va_arg(args, struct k_poll_event **);
 		pev_end = va_arg(args, struct k_poll_event *);
-		va_end(args);
 
 		return ztls_poll_prepare_ctx(obj, pfd, pev, pev_end);
 	}
 
 	case ZFD_IOCTL_POLL_UPDATE: {
-		va_list args;
 		struct zsock_pollfd *pfd;
 		struct k_poll_event **pev;
 
-		va_start(args, request);
 		pfd = va_arg(args, struct zsock_pollfd *);
 		pev = va_arg(args, struct k_poll_event **);
-		va_end(args);
 
 		return ztls_poll_update_ctx(obj, pfd, pev);
 	}

@@ -382,8 +382,8 @@ void test_main(void)
 {
 	k_thread_access_grant(k_current_get(), &private_mutex,
 			      &mutex_1, &mutex_2, &mutex_3, &mutex_4,
-			      &thread_12_thread_data, &thread_12_stack_area,
-			      NULL);
+			      &thread_12_thread_data, &thread_12_stack_area);
+
 	ztest_test_suite(mutex_complex, ztest_user_unit_test(test_mutex));
 	ztest_run_test_suite(mutex_complex);
 }

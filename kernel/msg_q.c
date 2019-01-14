@@ -20,6 +20,7 @@
 #include <misc/dlist.h>
 #include <init.h>
 #include <syscall_handler.h>
+#include <kernel_internal.h>
 
 extern struct k_msgq _k_msgq_list_start[];
 extern struct k_msgq _k_msgq_list_end[];
@@ -101,7 +102,7 @@ void k_msgq_cleanup(struct k_msgq *q)
 {
 	__ASSERT_NO_MSG(!_waitq_head(&q->wait_q));
 
-	if (q->flags & K_MSGQ_FLAG_ALLOC) {
+	if ((q->flags & K_MSGQ_FLAG_ALLOC) != 0) {
 		k_free(q->buffer_start);
 		q->flags &= ~K_MSGQ_FLAG_ALLOC;
 	}

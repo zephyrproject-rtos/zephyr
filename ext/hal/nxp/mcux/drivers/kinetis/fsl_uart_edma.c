@@ -1,39 +1,21 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fsl_uart_edma.h"
-#include "fsl_dmamux.h"
 
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
+
+/* Component ID definition, used by tools. */
+#ifndef FSL_COMPONENT_ID
+#define FSL_COMPONENT_ID "platform.drivers.uart_edma"
+#endif
 
 /* Array of UART handle. */
 #if (defined(UART5))
@@ -79,7 +61,7 @@ enum _uart_edma_tansfer_states
 };
 
 /*******************************************************************************
- * Definitions
+ * Variables
  ******************************************************************************/
 
 /*<! Private handle only used for internally. */
@@ -110,14 +92,6 @@ static void UART_SendEDMACallback(edma_handle_t *handle, void *param, bool trans
  * @param param Callback function parameter.
  */
 static void UART_ReceiveEDMACallback(edma_handle_t *handle, void *param, bool transferDone, uint32_t tcds);
-
-/*!
- * @brief Get the UART instance from peripheral base address.
- *
- * @param base UART peripheral base address.
- * @return UART instance.
- */
-extern uint32_t UART_GetInstance(UART_Type *base);
 
 /*******************************************************************************
  * Code
@@ -168,6 +142,15 @@ static void UART_ReceiveEDMACallback(edma_handle_t *handle, void *param, bool tr
     }
 }
 
+/*!
+ * brief Initializes the UART handle which is used in transactional functions.
+ * param base UART peripheral base address.
+ * param handle Pointer to the uart_edma_handle_t structure.
+ * param callback UART callback, NULL means no callback.
+ * param userData User callback function data.
+ * param rxEdmaHandle User-requested DMA handle for RX DMA transfer.
+ * param txEdmaHandle User-requested DMA handle for TX DMA transfer.
+ */
 void UART_TransferCreateHandleEDMA(UART_Type *base,
                                    uart_edma_handle_t *handle,
                                    uart_edma_transfer_callback_t callback,
@@ -221,6 +204,19 @@ void UART_TransferCreateHandleEDMA(UART_Type *base,
     }
 }
 
+/*!
+ * brief Sends data using eDMA.
+ *
+ * This function sends data using eDMA. This is a non-blocking function, which returns
+ * right away. When all data is sent, the send callback function is called.
+ *
+ * param base UART peripheral base address.
+ * param handle UART handle pointer.
+ * param xfer UART eDMA transfer structure. See #uart_transfer_t.
+ * retval kStatus_Success if succeeded; otherwise failed.
+ * retval kStatus_UART_TxBusy Previous transfer ongoing.
+ * retval kStatus_InvalidArgument Invalid argument.
+ */
 status_t UART_SendEDMA(UART_Type *base, uart_edma_handle_t *handle, uart_transfer_t *xfer)
 {
     assert(handle);
@@ -262,6 +258,19 @@ status_t UART_SendEDMA(UART_Type *base, uart_edma_handle_t *handle, uart_transfe
     return status;
 }
 
+/*!
+ * brief Receives data using eDMA.
+ *
+ * This function receives data using eDMA. This is a non-blocking function, which returns
+ * right away. When all data is received, the receive callback function is called.
+ *
+ * param base UART peripheral base address.
+ * param handle Pointer to the uart_edma_handle_t structure.
+ * param xfer UART eDMA transfer structure. See #uart_transfer_t.
+ * retval kStatus_Success if succeeded; otherwise failed.
+ * retval kStatus_UART_RxBusy Previous transfer ongoing.
+ * retval kStatus_InvalidArgument Invalid argument.
+ */
 status_t UART_ReceiveEDMA(UART_Type *base, uart_edma_handle_t *handle, uart_transfer_t *xfer)
 {
     assert(handle);
@@ -303,6 +312,14 @@ status_t UART_ReceiveEDMA(UART_Type *base, uart_edma_handle_t *handle, uart_tran
     return status;
 }
 
+/*!
+ * brief Aborts the sent data using eDMA.
+ *
+ * This function aborts sent data using eDMA.
+ *
+ * param base UART peripheral base address.
+ * param handle Pointer to the uart_edma_handle_t structure.
+ */
 void UART_TransferAbortSendEDMA(UART_Type *base, uart_edma_handle_t *handle)
 {
     assert(handle);
@@ -317,6 +334,14 @@ void UART_TransferAbortSendEDMA(UART_Type *base, uart_edma_handle_t *handle)
     handle->txState = kUART_TxIdle;
 }
 
+/*!
+ * brief Aborts the receive data using eDMA.
+ *
+ * This function aborts receive data using eDMA.
+ *
+ * param base UART peripheral base address.
+ * param handle Pointer to the uart_edma_handle_t structure.
+ */
 void UART_TransferAbortReceiveEDMA(UART_Type *base, uart_edma_handle_t *handle)
 {
     assert(handle);
@@ -331,6 +356,18 @@ void UART_TransferAbortReceiveEDMA(UART_Type *base, uart_edma_handle_t *handle)
     handle->rxState = kUART_RxIdle;
 }
 
+/*!
+ * brief Gets the number of received bytes.
+ *
+ * This function gets the number of received bytes.
+ *
+ * param base UART peripheral base address.
+ * param handle UART handle pointer.
+ * param count Receive bytes count.
+ * retval kStatus_NoTransferInProgress No receive in progress.
+ * retval kStatus_InvalidArgument Parameter is invalid.
+ * retval kStatus_Success Get successfully through the parameter \p count;
+ */
 status_t UART_TransferGetReceiveCountEDMA(UART_Type *base, uart_edma_handle_t *handle, uint32_t *count)
 {
     assert(handle);
@@ -349,6 +386,19 @@ status_t UART_TransferGetReceiveCountEDMA(UART_Type *base, uart_edma_handle_t *h
     return kStatus_Success;
 }
 
+/*!
+ * brief Gets the number of bytes that have been written to UART TX register.
+ *
+ * This function gets the number of bytes that have been written to UART TX
+ * register by DMA.
+ *
+ * param base UART peripheral base address.
+ * param handle UART handle pointer.
+ * param count Send bytes count.
+ * retval kStatus_NoTransferInProgress No send in progress.
+ * retval kStatus_InvalidArgument Parameter is invalid.
+ * retval kStatus_Success Get successfully through the parameter \p count;
+ */
 status_t UART_TransferGetSendCountEDMA(UART_Type *base, uart_edma_handle_t *handle, uint32_t *count)
 {
     assert(handle);

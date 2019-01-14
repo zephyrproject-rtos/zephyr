@@ -10,13 +10,13 @@ from os import getcwd, path
 from subprocess import CalledProcessError
 import textwrap
 
-import cmake
-import log
-import util
-from build import DEFAULT_BUILD_DIR, is_zephyr_build
-from runners import get_runner_cls, ZephyrBinaryRunner
-from runners.core import RunnerConfig
-from commands import CommandContextError
+from west import cmake
+from west import log
+from west import util
+from west.build import DEFAULT_BUILD_DIR, is_zephyr_build
+from west.runners import get_runner_cls, ZephyrBinaryRunner
+from west.runners.core import RunnerConfig
+from west.commands import CommandContextError
 
 # Context-sensitive help indentation.
 # Don't change this, or output from argparse won't match up.
@@ -28,6 +28,9 @@ def add_parser_common(parser_adder, command):
         command.name,
         formatter_class=argparse.RawDescriptionHelpFormatter,
         description=command.description)
+
+    # Remember to update scripts/west-completion.bash if you add or remove
+    # flags
 
     parser.add_argument('-H', '--context', action='store_true',
                         help='''Rebuild application and print context-sensitive
@@ -72,14 +75,17 @@ def add_parser_common(parser_adder, command):
     #
     # This is how we detect if the user provided them or not when
     # overriding values from the cached configuration.
+
+    command_verb = "flash" if command == "flash" else "debug"
+
     group.add_argument('--board-dir',
                        help='Zephyr board directory')
-    group.add_argument('--kernel-elf',
-                       help='Path to kernel binary in .elf format')
-    group.add_argument('--kernel-hex',
-                       help='Path to kernel binary in .hex format')
-    group.add_argument('--kernel-bin',
-                       help='Path to kernel binary in .bin format')
+    group.add_argument('--elf-file',
+                       help='Path to elf file to {0}'.format(command_verb))
+    group.add_argument('--hex-file',
+                       help='Path to hex file to {0}'.format(command_verb))
+    group.add_argument('--bin-file',
+                       help='Path to binary file to {0}'.format(command_verb))
     group.add_argument('--gdb',
                        help='Path to GDB, if applicable')
     group.add_argument('--openocd',
@@ -108,15 +114,18 @@ def desc_common(command_name):
 def cached_runner_config(build_dir, cache):
     '''Parse the RunnerConfig from a build directory and CMake Cache.'''
     board_dir = cache['ZEPHYR_RUNNER_CONFIG_BOARD_DIR']
-    kernel_elf = cache['ZEPHYR_RUNNER_CONFIG_KERNEL_ELF']
-    kernel_hex = cache['ZEPHYR_RUNNER_CONFIG_KERNEL_HEX']
-    kernel_bin = cache['ZEPHYR_RUNNER_CONFIG_KERNEL_BIN']
+    elf_file = cache.get('ZEPHYR_RUNNER_CONFIG_ELF_FILE',
+                         cache['ZEPHYR_RUNNER_CONFIG_KERNEL_ELF'])
+    hex_file = cache.get('ZEPHYR_RUNNER_CONFIG_HEX_FILE',
+                         cache['ZEPHYR_RUNNER_CONFIG_KERNEL_HEX'])
+    bin_file = cache.get('ZEPHYR_RUNNER_CONFIG_BIN_FILE',
+                         cache['ZEPHYR_RUNNER_CONFIG_KERNEL_BIN'])
     gdb = cache.get('ZEPHYR_RUNNER_CONFIG_GDB')
     openocd = cache.get('ZEPHYR_RUNNER_CONFIG_OPENOCD')
     openocd_search = cache.get('ZEPHYR_RUNNER_CONFIG_OPENOCD_SEARCH')
 
     return RunnerConfig(build_dir, board_dir,
-                        kernel_elf, kernel_hex, kernel_bin,
+                        elf_file, hex_file, bin_file,
                         gdb=gdb, openocd=openocd,
                         openocd_search=openocd_search)
 

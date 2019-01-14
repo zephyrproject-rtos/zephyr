@@ -65,6 +65,13 @@ config SHELL_BACKEND_SERIAL_RX_POLL_PERIOD
 	help
 	  Determines how often UART is polled for RX byte.
 
+module = SHELL_BACKEND_SERIAL
+default-timeout = 100
+source "subsys/shell/Kconfig.template.shell_log_queue_timeout"
+
+default-size = 10
+source "subsys/shell/Kconfig.template.shell_log_queue_size"
+
 choice
 	prompt "Initial log level limit"
 	default SHELL_BACKEND_SERIAL_LOG_LEVEL_DEFAULT
@@ -114,6 +121,13 @@ config SHELL_RTT_RX_POLL_PERIOD
 	default 10
 	help
 	  Determines how often RTT is polled for RX byte.
+
+module = SHELL_BACKEND_RTT
+default-timeout = 100
+source "subsys/shell/Kconfig.template.shell_log_queue_timeout"
+
+default-size = 10
+source "subsys/shell/Kconfig.template.shell_log_queue_size"
 
 choice
 	prompt "Initial log level limit"

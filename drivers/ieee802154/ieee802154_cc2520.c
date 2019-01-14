@@ -638,7 +638,7 @@ static void cc2520_rx(int arg)
 			goto flush;
 		}
 
-		pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
+		pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
 		if (!pkt) {
 			LOG_ERR("No pkt available");
 			goto flush;
@@ -813,8 +813,8 @@ static int cc2520_tx(struct device *dev,
 		     struct net_pkt *pkt,
 		     struct net_buf *frag)
 {
-	u8_t *frame = frag->data - net_pkt_ll_reserve(pkt);
-	u8_t len = net_pkt_ll_reserve(pkt) + frag->len;
+	u8_t *frame = frag->data;
+	u8_t len = frag->len;
 	struct cc2520_context *cc2520 = dev->driver_data;
 	u8_t retry = 2U;
 	bool status;

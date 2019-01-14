@@ -547,7 +547,7 @@ static inline void mcr20a_rx(struct mcr20a_context *mcr20a, u8_t len)
 
 	pkt_len = len - MCR20A_FCS_LENGTH;
 
-	pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
+	pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("No buf available");
 		goto out;
@@ -1065,7 +1065,7 @@ static inline bool write_txfifo_content(struct mcr20a_context *dev,
 					struct net_pkt *pkt,
 					struct net_buf *frag)
 {
-	size_t payload_len = net_pkt_ll_reserve(pkt) + frag->len;
+	size_t payload_len = frag->len;
 	u8_t cmd_buf[2] = {
 		MCR20A_BUF_WRITE,
 		payload_len + MCR20A_FCS_LENGTH
@@ -1076,7 +1076,7 @@ static inline bool write_txfifo_content(struct mcr20a_context *dev,
 			.len = 2
 		},
 		{
-			.buf = frag->data - net_pkt_ll_reserve(pkt),
+			.buf = frag->data,
 			.len = payload_len
 		}
 	};
@@ -1104,8 +1104,7 @@ static int mcr20a_tx(struct device *dev,
 
 	k_mutex_lock(&mcr20a->phy_mutex, K_FOREVER);
 
-	LOG_DBG("%p (%u)",
-		    frag, net_pkt_ll_reserve(pkt) + frag->len);
+	LOG_DBG("%p (%u)", frag, frag->len);
 
 	if (!mcr20a_mask_irqb(mcr20a, true)) {
 		LOG_ERR("Failed to mask IRQ_B");

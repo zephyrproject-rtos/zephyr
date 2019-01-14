@@ -453,30 +453,14 @@ static int winc1500_send(struct net_pkt *pkt,
 {
 	struct net_context *context = pkt->context;
 	SOCKET socket = (int)context->offload_context;
-	bool first_frag;
 	struct net_buf *frag;
 	int ret;
 
 	w1500_data.socket_data[socket].send_cb = cb;
 	w1500_data.socket_data[socket].send_user_data = user_data;
 
-	first_frag = true;
-
 	for (frag = pkt->frags; frag; frag = frag->frags) {
-		u8_t *data_ptr;
-		u16_t data_len;
-
-		if (first_frag) {
-			data_ptr = net_pkt_ll(pkt);
-			data_len = net_pkt_ll_reserve(pkt) + frag->len;
-			first_frag = false;
-		} else {
-			data_ptr = frag->data;
-			data_len = frag->len;
-
-		}
-
-		ret = send(socket, data_ptr, data_len, 0);
+		ret = send(socket, frag->data, frag->len, 0);
 		if (ret) {
 			LOG_ERR("send error %d %s!",
 				ret, socket_error_string(ret));
@@ -502,29 +486,14 @@ static int winc1500_sendto(struct net_pkt *pkt,
 {
 	struct net_context *context = pkt->context;
 	SOCKET socket = (int)context->offload_context;
-	bool first_frag;
 	struct net_buf *frag;
 	int ret;
 
 	w1500_data.socket_data[socket].send_cb = cb;
 	w1500_data.socket_data[socket].send_user_data = user_data;
 
-	first_frag = true;
-
 	for (frag = pkt->frags; frag; frag = frag->frags) {
-		u8_t *data_ptr;
-		u16_t data_len;
-
-		if (first_frag) {
-			data_ptr = net_pkt_ll(pkt);
-			data_len = net_pkt_ll_reserve(pkt) + frag->len;
-			first_frag = false;
-		} else {
-			data_ptr = frag->data;
-			data_len = frag->len;
-		}
-
-		ret = sendto(socket, data_ptr, data_len, 0,
+		ret = sendto(socket, frag->data, frag->len, 0,
 			     (struct sockaddr *)dst_addr, addrlen);
 		if (ret) {
 			LOG_ERR("send error %d %s!",
@@ -543,7 +512,7 @@ static int winc1500_sendto(struct net_pkt *pkt,
 static int prepare_pkt(struct socket_data *sock_data)
 {
 	/* Get the frame from the buffer */
-	sock_data->rx_pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
+	sock_data->rx_pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
 	if (!sock_data->rx_pkt) {
 		LOG_ERR("Could not allocate rx packet");
 		return -1;

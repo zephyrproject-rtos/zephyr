@@ -78,7 +78,7 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 
 		LOG_DBG("Frame received");
 
-		pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
+		pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
 		if (!pkt) {
 			LOG_ERR("No pkt available");
 			goto out;
@@ -121,9 +121,13 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 			goto out;
 		}
 
-		net_analyze_stack("nRF5 rx stack",
-				  K_THREAD_STACK_BUFFER(nrf5_radio->rx_stack),
-				  K_THREAD_STACK_SIZEOF(nrf5_radio->rx_stack));
+		if (CONFIG_IEEE802154_DRIVER_LOG_LEVEL >= LOG_LEVEL_DBG) {
+			net_analyze_stack(
+				"nRF5 rx stack",
+				K_THREAD_STACK_BUFFER(nrf5_radio->rx_stack),
+				K_THREAD_STACK_SIZEOF(nrf5_radio->rx_stack));
+		}
+
 		continue;
 
 out:
@@ -263,8 +267,8 @@ static int nrf5_tx(struct device *dev,
 		   struct net_buf *frag)
 {
 	struct nrf5_802154_data *nrf5_radio = NRF5_802154_DATA(dev);
-	u8_t payload_len = net_pkt_ll_reserve(pkt) + frag->len;
-	u8_t *payload = frag->data - net_pkt_ll_reserve(pkt);
+	u8_t payload_len = frag->len;
+	u8_t *payload = frag->data;
 
 	LOG_DBG("%p (%u)", payload, payload_len);
 

@@ -2,7 +2,7 @@
  * Copyright (c) 2017, NXP Semiconductors, Inc.
  * All rights reserved.
  *
- * 
+ *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
@@ -12,7 +12,6 @@
 #ifndef FSL_COMPONENT_ID
 #define FSL_COMPONENT_ID "platform.drivers.elcdif"
 #endif
-
 
 /*******************************************************************************
  * Prototypes
@@ -91,6 +90,15 @@ static uint32_t ELCDIF_GetInstance(LCDIF_Type *base)
     return instance;
 }
 
+/*!
+ * brief Initializes the eLCDIF to work in RGB mode (DOTCLK mode).
+ *
+ * This function ungates the eLCDIF clock and configures the eLCDIF peripheral according
+ * to the configuration structure.
+ *
+ * param base eLCDIF peripheral base address.
+ * param config Pointer to the configuration structure.
+ */
 void ELCDIF_RgbModeInit(LCDIF_Type *base, const elcdif_rgb_mode_config_t *config)
 {
     assert(config);
@@ -138,9 +146,37 @@ void ELCDIF_RgbModeInit(LCDIF_Type *base, const elcdif_rgb_mode_config_t *config
     base->NEXT_BUF = config->bufferAddr;
 }
 
+/*!
+ * brief Gets the eLCDIF default configuration structure for RGB (DOTCLK) mode.
+ *
+ * This function sets the configuration structure to default values.
+ * The default configuration is set to the following values.
+ * code
+    config->panelWidth = 480U;
+    config->panelHeight = 272U;
+    config->hsw = 41;
+    config->hfp = 4;
+    config->hbp = 8;
+    config->vsw = 10;
+    config->vfp = 4;
+    config->vbp = 2;
+    config->polarityFlags = kELCDIF_VsyncActiveLow |
+                            kELCDIF_HsyncActiveLow |
+                            kELCDIF_DataEnableActiveLow |
+                            kELCDIF_DriveDataOnFallingClkEdge;
+    config->bufferAddr = 0U;
+    config->pixelFormat = kELCDIF_PixelFormatRGB888;
+    config->dataBus = kELCDIF_DataBus24Bit;
+    code
+ *
+ * param config Pointer to the eLCDIF configuration structure.
+ */
 void ELCDIF_RgbModeGetDefaultConfig(elcdif_rgb_mode_config_t *config)
 {
     assert(config);
+
+    /* Initializes the configure structure to zero. */
+    memset(config, 0, sizeof(*config));
 
     config->panelWidth = 480U;
     config->panelHeight = 272U;
@@ -157,6 +193,11 @@ void ELCDIF_RgbModeGetDefaultConfig(elcdif_rgb_mode_config_t *config)
     config->dataBus = kELCDIF_DataBus24Bit;
 }
 
+/*!
+ * brief Deinitializes the eLCDIF peripheral.
+ *
+ * param base eLCDIF peripheral base address.
+ */
 void ELCDIF_Deinit(LCDIF_Type *base)
 {
     ELCDIF_Reset(base);
@@ -171,6 +212,11 @@ void ELCDIF_Deinit(LCDIF_Type *base)
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
+/*!
+ * brief Stop display in RGB (DOTCLK) mode and wait until finished.
+ *
+ * param base eLCDIF peripheral base address.
+ */
 void ELCDIF_RgbModeStop(LCDIF_Type *base)
 {
     base->CTRL_CLR = LCDIF_CTRL_DOTCLK_MODE_MASK;
@@ -181,6 +227,11 @@ void ELCDIF_RgbModeStop(LCDIF_Type *base)
     }
 }
 
+/*!
+ * brief Reset the eLCDIF peripheral.
+ *
+ * param base eLCDIF peripheral base address.
+ */
 void ELCDIF_Reset(LCDIF_Type *base)
 {
     volatile uint32_t i = 0x100;
@@ -211,6 +262,12 @@ void ELCDIF_Reset(LCDIF_Type *base)
 }
 
 #if !(defined(FSL_FEATURE_LCDIF_HAS_NO_AS) && FSL_FEATURE_LCDIF_HAS_NO_AS)
+/*!
+ * brief Set the configuration for alpha surface buffer.
+ *
+ * param base eLCDIF peripheral base address.
+ * param config Pointer to the configuration structure.
+ */
 void ELCDIF_SetAlphaSurfaceBufferConfig(LCDIF_Type *base, const elcdif_as_buffer_config_t *config)
 {
     assert(config);
@@ -220,6 +277,12 @@ void ELCDIF_SetAlphaSurfaceBufferConfig(LCDIF_Type *base, const elcdif_as_buffer
     base->AS_NEXT_BUF = config->bufferAddr;
 }
 
+/*!
+ * brief Set the alpha surface blending configuration.
+ *
+ * param base eLCDIF peripheral base address.
+ * param config Pointer to the configuration structure.
+ */
 void ELCDIF_SetAlphaSurfaceBlendConfig(LCDIF_Type *base, const elcdif_as_blend_config_t *config)
 {
     assert(config);
@@ -241,6 +304,20 @@ void ELCDIF_SetAlphaSurfaceBlendConfig(LCDIF_Type *base, const elcdif_as_blend_c
 #endif /* FSL_FEATURE_LCDIF_HAS_NO_AS */
 
 #if (defined(FSL_FEATURE_LCDIF_HAS_LUT) && FSL_FEATURE_LCDIF_HAS_LUT)
+/*!
+ * brief Load the LUT value.
+ *
+ * This function loads the LUT value to the specific LUT memory, user can
+ * specify the start entry index.
+ *
+ * param base eLCDIF peripheral base address.
+ * param lut Which LUT to load.
+ * param startIndex The start index of the LUT entry to update.
+ * param lutData The LUT data to load.
+ * param count Count of p lutData.
+ * retval kStatus_Success Initialization success.
+ * retval kStatus_InvalidArgument Wrong argument.
+ */
 status_t ELCDIF_UpdateLut(
     LCDIF_Type *base, elcdif_lut_t lut, uint16_t startIndex, const uint32_t *lutData, uint16_t count)
 {

@@ -2,7 +2,7 @@
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
  * All rights reserved.
- * 
+ *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 #include "fsl_trng.h"
@@ -1222,6 +1222,44 @@ static uint32_t trng_GetInstance(TRNG_Type *base)
  * Description   :  Initializes user configuration structure to default settings.
  *
  *END*************************************************************************/
+/*!
+ * brief Initializes the user configuration structure to default values.
+ *
+ * This function initializes the configuration structure to default values. The default
+ * values are as follows.
+ * code
+ *     user_config->lock = 0;
+ *     user_config->clockMode = kTRNG_ClockModeRingOscillator;
+ *     user_config->ringOscDiv = kTRNG_RingOscDiv0;  Or  to other kTRNG_RingOscDiv[2|8] depending on the platform.
+ *     user_config->sampleMode = kTRNG_SampleModeRaw;
+ *     user_config->entropyDelay = 3200;
+ *     user_config->sampleSize = 2500;
+ *     user_config->sparseBitLimit = TRNG_USER_CONFIG_DEFAULT_SPARSE_BIT_LIMIT;
+ *     user_config->retryCount = 63;
+ *     user_config->longRunMaxLimit = 34;
+ *     user_config->monobitLimit.maximum = 1384;
+ *     user_config->monobitLimit.minimum = 1116;
+ *     user_config->runBit1Limit.maximum = 405;
+ *     user_config->runBit1Limit.minimum = 227;
+ *     user_config->runBit2Limit.maximum = 220;
+ *     user_config->runBit2Limit.minimum = 98;
+ *     user_config->runBit3Limit.maximum = 125;
+ *     user_config->runBit3Limit.minimum = 37;
+ *     user_config->runBit4Limit.maximum = 75;
+ *     user_config->runBit4Limit.minimum = 11;
+ *     user_config->runBit5Limit.maximum = 47;
+ *     user_config->runBit5Limit.minimum = 1;
+ *     user_config->runBit6PlusLimit.maximum = 47;
+ *     user_config->runBit6PlusLimit.minimum = 1;
+ *     user_config->pokerLimit.maximum = 26912;
+ *     user_config->pokerLimit.minimum = 24445;
+ *     user_config->frequencyCountLimit.maximum = 25600;
+ *     user_config->frequencyCountLimit.minimum = 1600;
+ * endcode
+ *
+ * param user_config   User configuration structure.
+ * return If successful, returns the kStatus_TRNG_Success. Otherwise, it returns an error.
+ */
 status_t TRNG_GetDefaultConfig(trng_config_t *userConfig)
 {
     status_t result;
@@ -1498,6 +1536,16 @@ static uint32_t trng_ReadEntropy(TRNG_Type *base, uint32_t index)
     return data;
 }
 
+/*!
+ * brief Initializes the TRNG.
+ *
+ * This function initializes the TRNG.
+ * When called, the TRNG entropy generation starts immediately.
+ *
+ * param base  TRNG base address
+ * param userConfig    Pointer to the initialization configuration structure.
+ * return If successful, returns the kStatus_TRNG_Success. Otherwise, it returns an error.
+ */
 status_t TRNG_Init(TRNG_Type *base, const trng_config_t *userConfig)
 {
     status_t result;
@@ -1528,6 +1576,8 @@ status_t TRNG_Init(TRNG_Type *base, const trng_config_t *userConfig)
             TRNG_WR_MCTL_TRNG_ACC(base, 1);
 #endif /* !FSL_FEATURE_TRNG_HAS_NO_TRNG_ACC */
 
+            (void)trng_ReadEntropy(base, (TRNG_ENT_COUNT - 1));
+
             if (userConfig->lock == 1) /* Disable programmability of TRNG registers. */
             {
                 TRNG_WR_SEC_CFG_NO_PRGM(base, 1);
@@ -1544,6 +1594,13 @@ status_t TRNG_Init(TRNG_Type *base, const trng_config_t *userConfig)
     return result;
 }
 
+/*!
+ * brief Shuts down the TRNG.
+ *
+ * This function shuts down the TRNG.
+ *
+ * param base  TRNG base address.
+ */
 void TRNG_Deinit(TRNG_Type *base)
 {
     /* Check input parameters.*/
@@ -1569,6 +1626,16 @@ void TRNG_Deinit(TRNG_Type *base)
     }
 }
 
+/*!
+ * brief Gets random data.
+ *
+ * This function gets random data from the TRNG.
+ *
+ * param base  TRNG base address.
+ * param data  Pointer address used to store random data.
+ * param dataSize  Size of the buffer pointed by the data parameter.
+ * return random data
+ */
 status_t TRNG_GetRandomData(TRNG_Type *base, void *data, size_t dataSize)
 {
     status_t result = kStatus_Success;

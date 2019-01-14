@@ -28,7 +28,6 @@ LOG_MODULE_REGISTER(net_route, CONFIG_NET_ROUTE_LOG_LEVEL);
 #include "icmpv6.h"
 #include "nbr.h"
 #include "route.h"
-#include "rpl.h"
 
 #if !defined(NET_ROUTE_EXTRA_DATA_SIZE)
 #define NET_ROUTE_EXTRA_DATA_SIZE 0

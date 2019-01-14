@@ -237,6 +237,14 @@ struct device {
 	struct device_config *config;
 	const void *driver_api;
 	void *driver_data;
+#if defined(__x86_64) && __SIZEOF_POINTER__ == 4
+	/* The x32 ABI hits an edge case.  This is a 12 byte struct,
+	 * but the x86_64 linker will pack them only in units of 8
+	 * bytes, leading to alignment problems when iterating over
+	 * the link-time array.
+	 */
+	void *padding;
+#endif
 };
 
 void _sys_device_do_config_level(s32_t level);

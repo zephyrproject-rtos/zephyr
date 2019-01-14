@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2018 Matthias Boesl
+ * Copyright (c) 2018 Peter Bigot Consulting, LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf52840_qiaa.dtsi>
+#include "mesh_feather.dtsi"
+
+/ {
+	model = "Particle Argon";
+	compatible = "particle,argon", "particle,feather",
+		"nordic,nrf52840-qiaa", "nordic,nrf52840";
+};
+
+&uart1 { /* ESP32 */
+	compatible = "nordic,nrf-uarte";
+	current-speed = <921600>;
+	status = "ok";
+	tx-pin = <37>;
+	rx-pin = <36>;
+	rts-pin = <39>;
+	cts-pin = <38>;
+};

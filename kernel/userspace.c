@@ -16,6 +16,7 @@
 #include <syscall_handler.h>
 #include <device.h>
 #include <init.h>
+#include <stdbool.h>
 
 #define LOG_LEVEL CONFIG_KERNEL_LOG_LEVEL
 #include <logging/log.h>
@@ -161,9 +162,9 @@ static struct dyn_obj *dyn_object_find(void *obj)
  *
  * @param tidx The new thread index if successful
  *
- * @return 1 if successful, 0 if failed
+ * @return true if successful, false if failed
  **/
-static int _thread_idx_alloc(u32_t *tidx)
+static bool _thread_idx_alloc(u32_t *tidx)
 {
 	int i;
 	int idx;
@@ -173,7 +174,7 @@ static int _thread_idx_alloc(u32_t *tidx)
 	for (i = 0; i < CONFIG_MAX_THREAD_BYTES; i++) {
 		idx = find_lsb_set(_thread_idx_map[i]);
 
-		if (idx) {
+		if (idx != 0) {
 			*tidx = base + (idx - 1);
 
 			sys_bitfield_clear_bit((mem_addr_t)_thread_idx_map,
@@ -183,13 +184,13 @@ static int _thread_idx_alloc(u32_t *tidx)
 			_k_object_wordlist_foreach(clear_perms_cb,
 						   (void *)*tidx);
 
-			return 1;
+			return true;
 		}
 
 		base += 8;
 	}
 
-	return 0;
+	return false;
 }
 
 /**
@@ -333,7 +334,7 @@ static int thread_index_get(struct k_thread *t)
 static void unref_check(struct _k_object *ko)
 {
 	for (int i = 0; i < CONFIG_MAX_THREAD_BYTES; i++) {
-		if (ko->perms[i]) {
+		if (ko->perms[i] != 0) {
 			return;
 		}
 	}
@@ -359,7 +360,7 @@ static void unref_check(struct _k_object *ko)
 	}
 
 #ifdef CONFIG_DYNAMIC_OBJECTS
-	if (ko->flags & K_OBJ_FLAG_ALLOC) {
+	if ((ko->flags & K_OBJ_FLAG_ALLOC) != 0) {
 		struct dyn_obj *dyn_obj =
 			CONTAINER_OF(ko, struct dyn_obj, kobj);
 		rb_remove(&obj_rb_tree, &dyn_obj->node);
@@ -437,7 +438,7 @@ static int thread_perms_test(struct _k_object *ko)
 {
 	int index;
 
-	if (ko->flags & K_OBJ_FLAG_PUBLIC) {
+	if ((ko->flags & K_OBJ_FLAG_PUBLIC) != 0) {
 		return 1;
 	}
 
@@ -662,7 +663,7 @@ char *z_user_string_alloc_copy(char *src, size_t maxlen)
 
 	key = irq_lock();
 	actual_len = z_user_string_nlen(src, maxlen, &err);
-	if (err) {
+	if (err != 0) {
 		goto out;
 	}
 	if (actual_len == maxlen) {
@@ -689,7 +690,7 @@ int z_user_string_copy(char *dst, char *src, size_t maxlen)
 
 	key = irq_lock();
 	actual_len = z_user_string_nlen(src, maxlen, &err);
-	if (err) {
+	if (err != 0) {
 		ret = EFAULT;
 		goto out;
 	}

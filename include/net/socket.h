@@ -52,7 +52,8 @@ struct zsock_pollfd {
  */
 #define SOL_TLS 282
 
-/** @defgroup secure_sockets_options Socket options for TLS
+/**
+ *  @defgroup secure_sockets_options Socket options for TLS
  *  @{
  */
 

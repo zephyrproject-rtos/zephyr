@@ -171,7 +171,7 @@ int settings_file_save_and_compress(struct settings_file *cf, const char *name,
 	int copy;
 	int lines;
 	size_t new_name_len;
-	off_t val1_off;
+	size_t val1_off;
 
 	if (fs_open(&rf, cf->cf_name) != 0) {
 		return -ENOEXEC;
@@ -219,7 +219,7 @@ int settings_file_save_and_compress(struct settings_file *cf, const char *name,
 
 		copy = 1;
 		while (1) {
-			off_t val2_off;
+			size_t val2_off;
 
 			rc = settings_next_line_ctx(&loc2);
 

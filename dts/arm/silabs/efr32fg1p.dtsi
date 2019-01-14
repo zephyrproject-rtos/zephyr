@@ -17,6 +17,11 @@
 		compatible = "mmio-sram";
 	};
 
+	aliases {
+		usart-0 = &usart0;
+		usart-1 = &usart1;
+	};
+
 	soc {
 		flash-controller@400e0000 {
 			compatible = "silabs,gecko-flash-controller";
@@ -52,7 +57,7 @@
 			label = "USART_1";
 		};
 
-		gpio@4000a400 {
+		gpio: gpio@4000a400 {
 			compatible = "silabs,efr32xg1-gpio";
 			reg = <0x4000a400 0xc00>;
 			interrupts = <9 2 17 2>;

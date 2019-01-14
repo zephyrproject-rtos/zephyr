@@ -1,31 +1,9 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fsl_i2c_edma.h"
@@ -33,6 +11,11 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
+
+/* Component ID definition, used by tools. */
+#ifndef FSL_COMPONENT_ID
+#define FSL_COMPONENT_ID "platform.drivers.i2c_edma"
+#endif
 
 /*<! @breif Structure definition for i2c_master_edma_private_handle_t. The structure is private. */
 typedef struct _i2c_master_edma_private_handle
@@ -103,14 +86,6 @@ static void I2C_MasterTransferEDMAConfig(I2C_Type *base, i2c_master_edma_handle_
 static status_t I2C_InitTransferStateMachineEDMA(I2C_Type *base,
                                                  i2c_master_edma_handle_t *handle,
                                                  i2c_master_transfer_t *xfer);
-
-/*!
- * @brief Get the I2C instance from peripheral base address.
- *
- * @param base I2C peripheral base address.
- * @return I2C instance.
- */
-extern uint32_t I2C_GetInstance(I2C_Type *base);
 
 /*******************************************************************************
  * Variables
@@ -316,7 +291,7 @@ static status_t I2C_InitTransferStateMachineEDMA(I2C_Type *base,
                     return result;
                 }
 
-            } while ((handle->transfer.subaddressSize > 0) && (result == kStatus_Success));
+            } while (handle->transfer.subaddressSize > 0);
 
             if (handle->transfer.direction == kI2C_Read)
             {
@@ -355,7 +330,7 @@ static status_t I2C_InitTransferStateMachineEDMA(I2C_Type *base,
 
 static void I2C_MasterTransferEDMAConfig(I2C_Type *base, i2c_master_edma_handle_t *handle)
 {
-    edma_transfer_config_t transfer_config;
+    edma_transfer_config_t transfer_config = {0};
 
     if (handle->transfer.direction == kI2C_Read)
     {
@@ -387,6 +362,15 @@ static void I2C_MasterTransferEDMAConfig(I2C_Type *base, i2c_master_edma_handle_
     EDMA_StartTransfer(handle->dmaHandle);
 }
 
+/*!
+ * brief Initializes the I2C handle which is used in transcational functions.
+ *
+ * param base I2C peripheral base address.
+ * param handle A pointer to the i2c_master_edma_handle_t structure.
+ * param callback A pointer to the user callback function.
+ * param userData A user parameter passed to the callback function.
+ * param edmaHandle eDMA handle pointer.
+ */
 void I2C_MasterCreateEDMAHandle(I2C_Type *base,
                                 i2c_master_edma_handle_t *handle,
                                 i2c_master_edma_transfer_callback_t callback,
@@ -417,6 +401,18 @@ void I2C_MasterCreateEDMAHandle(I2C_Type *base,
     EDMA_SetCallback(edmaHandle, (edma_callback)I2C_MasterTransferCallbackEDMA, &s_edmaPrivateHandle[instance]);
 }
 
+/*!
+ * brief Performs a master eDMA non-blocking transfer on the I2C bus.
+ *
+ * param base I2C peripheral base address.
+ * param handle A pointer to the i2c_master_edma_handle_t structure.
+ * param xfer A pointer to the transfer structure of i2c_master_transfer_t.
+ * retval kStatus_Success Sucessfully completed the data transmission.
+ * retval kStatus_I2C_Busy A previous transmission is still not finished.
+ * retval kStatus_I2C_Timeout Transfer error, waits for a signal timeout.
+ * retval kStatus_I2C_ArbitrationLost Transfer error, arbitration lost.
+ * retval kStataus_I2C_Nak Transfer error, receive NAK during transfer.
+ */
 status_t I2C_MasterTransferEDMA(I2C_Type *base, i2c_master_edma_handle_t *handle, i2c_master_transfer_t *xfer)
 {
     assert(handle);
@@ -533,6 +529,13 @@ status_t I2C_MasterTransferEDMA(I2C_Type *base, i2c_master_edma_handle_t *handle
     return result;
 }
 
+/*!
+ * brief Gets a master transfer status during the eDMA non-blocking transfer.
+ *
+ * param base I2C peripheral base address.
+ * param handle A pointer to the i2c_master_edma_handle_t structure.
+ * param count A number of bytes transferred by the non-blocking transaction.
+ */
 status_t I2C_MasterTransferGetCountEDMA(I2C_Type *base, i2c_master_edma_handle_t *handle, size_t *count)
 {
     assert(handle->dmaHandle);
@@ -556,6 +559,12 @@ status_t I2C_MasterTransferGetCountEDMA(I2C_Type *base, i2c_master_edma_handle_t
     return kStatus_Success;
 }
 
+/*!
+ * brief Aborts a master eDMA non-blocking transfer early.
+ *
+ * param base I2C peripheral base address.
+ * param handle A pointer to the i2c_master_edma_handle_t structure.
+ */
 void I2C_MasterTransferAbortEDMA(I2C_Type *base, i2c_master_edma_handle_t *handle)
 {
     EDMA_AbortTransfer(handle->dmaHandle);

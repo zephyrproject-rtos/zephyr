@@ -579,8 +579,12 @@ void SEMC_Init(SEMC_Type *base, semc_config_t *configure);
 
 /*!
  * @brief Deinitializes the SEMC module and gates the clock.
- * This function gates the SEMC clock. As a result, the SEMC
- * module doesn't work after calling this function.
+ *
+ * This function gates the SEMC clock. As a result, the SEMC module doesn't work after
+ * calling this function, for some IDE, calling this API may cause the next downloading
+ * operation failed. so, please call this API cautiously. Additional, users can
+ * using "#define FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL (1)" to disable the clock control
+ * operation in drivers.
  *
  * @param base SEMC peripheral base address.
  */

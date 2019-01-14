@@ -33,7 +33,6 @@ LOG_MODULE_REGISTER(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
 #include "nbr.h"
 #include "6lo.h"
 #include "route.h"
-#include "rpl.h"
 #include "net_stats.h"
 
 /* Timeout value to be used when allocating net buffer during various
@@ -106,16 +105,6 @@ int net_ipv6_finalize(struct net_pkt *pkt, u8_t next_header_proto)
 	size_t total_len;
 	int ret;
 
-#if defined(CONFIG_NET_UDP) && defined(CONFIG_NET_RPL_INSERT_HBH_OPTION)
-	if (next_header_proto != IPPROTO_TCP &&
-	    next_header_proto != IPPROTO_ICMPV6) {
-		/* Check if we need to add RPL header to sent UDP packet. */
-		if (net_rpl_insert_header(pkt) < 0) {
-			NET_DBG("RPL HBHO insert failed");
-			return -EINVAL;
-		}
-	}
-#endif
 	net_pkt_compact(pkt);
 
 	total_len = net_pkt_get_len(pkt) - sizeof(struct net_ipv6_hdr);
@@ -197,9 +186,6 @@ static inline struct net_buf *handle_ext_hdr_options(struct net_pkt *pkt,
 {
 	u8_t opt_type, opt_len;
 	u16_t length = 0U, loc;
-#if defined(CONFIG_NET_RPL)
-	bool result;
-#endif
 
 	if (len > total_len) {
 		NET_DBG("Corrupted packet, extension header %d too long "
@@ -233,23 +219,6 @@ static inline struct net_buf *handle_ext_hdr_options(struct net_pkt *pkt,
 			length += opt_len + 2;
 			loc += opt_len + 2;
 			break;
-#if defined(CONFIG_NET_RPL)
-		case NET_IPV6_EXT_HDR_OPT_RPL:
-			NET_DBG("Processing RPL option");
-			frag = net_rpl_verify_header(pkt, frag, loc, &loc,
-						     &result);
-			if (!result) {
-				NET_DBG("RPL option error, packet dropped");
-				goto drop;
-			}
-
-			if (!frag && *pos == 0xffff) {
-				goto drop;
-			}
-
-			*verdict = NET_CONTINUE;
-			return frag;
-#endif
 		default:
 			if (!check_unknown_option(pkt, opt_type, length)) {
 				goto drop;

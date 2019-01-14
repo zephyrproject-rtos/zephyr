@@ -9,6 +9,5 @@
 
 /* include register mapping headers */
 #include "flash_registers.h"
-#include "gpio_registers.h"
 
 #endif /* _STM32F0X_SOC_REGISTERS_H_ */

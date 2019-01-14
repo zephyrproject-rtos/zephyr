@@ -14,18 +14,11 @@ config I2C
 
 if I2C
 
-config I2C_NRFX
-	default y
-
-if I2C_NRFX
-
 config I2C_0
 	default y
 
 config I2C_1
 	default n
-
-endif #I2C_NRFX
 
 if I2C_0
 
@@ -49,23 +42,13 @@ endif # I2C
 
 if SPI
 
-config SPI_NRFX
-	default y
-
-if SPI_NRFX
-
 config SPI_3
 	default y
 
 config SPI_NRFX_RAM_BUFFER_SIZE
 	default 8
 
-endif #SPI_NRFX
-
 if SPI_3
-
-config SPI_3_NRF_SPIM
-	default y
 
 config SPI_3_NRF_RX_DELAY
 	default 1

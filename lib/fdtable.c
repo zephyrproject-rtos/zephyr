@@ -14,6 +14,7 @@
  */
 
 #include <errno.h>
+#include <fcntl.h>
 #include <kernel.h>
 #include <misc/fdtable.h>
 
@@ -173,7 +174,7 @@ int close(int fd)
 		return -1;
 	}
 
-	res = fdtable[fd].vtable->ioctl(fdtable[fd].obj, ZFD_IOCTL_CLOSE);
+	res = z_fdtable_call_ioctl(fdtable[fd].vtable, fdtable[fd].obj, ZFD_IOCTL_CLOSE);
 	z_free_fd(fd);
 
 	return res;
@@ -181,16 +182,11 @@ int close(int fd)
 
 int fsync(int fd)
 {
-	int res;
-
 	if (_check_fd(fd) < 0) {
 		return -1;
 	}
 
-	res = fdtable[fd].vtable->ioctl(fdtable[fd].obj, ZFD_IOCTL_FSYNC);
-	z_free_fd(fd);
-
-	return res;
+	return z_fdtable_call_ioctl(fdtable[fd].vtable, fdtable[fd].obj, ZFD_IOCTL_FSYNC);
 }
 
 off_t lseek(int fd, off_t offset, int whence)
@@ -199,8 +195,49 @@ off_t lseek(int fd, off_t offset, int whence)
 		return -1;
 	}
 
-	return fdtable[fd].vtable->ioctl(fdtable[fd].obj, ZFD_IOCTL_LSEEK,
-					 offset, whence);
+	return z_fdtable_call_ioctl(fdtable[fd].vtable, fdtable[fd].obj, ZFD_IOCTL_LSEEK,
+			  offset, whence);
+}
+
+int ioctl(int fd, unsigned long request, ...)
+{
+	va_list args;
+	int res;
+
+	if (_check_fd(fd) < 0) {
+		return -1;
+	}
+
+	va_start(args, request);
+	res = fdtable[fd].vtable->ioctl(fdtable[fd].obj, request, args);
+	va_end(args);
+
+	return res;
+}
+
+int fcntl(int fd, int cmd, ...)
+{
+	va_list args;
+	int res;
+
+	if (_check_fd(fd) < 0) {
+		return -1;
+	}
+
+	/* Handle fdtable commands. */
+	switch (cmd) {
+	case F_DUPFD:
+		/* Not implemented so far. */
+		errno = EINVAL;
+		return -1;
+	}
+
+	/* The rest of commands are per-fd, handled by ioctl vmethod. */
+	va_start(args, cmd);
+	res = fdtable[fd].vtable->ioctl(fdtable[fd].obj, cmd, args);
+	va_end(args);
+
+	return res;
 }
 
 /*
@@ -225,7 +262,7 @@ static ssize_t stdinout_write_vmeth(void *obj, const void *buffer, size_t count)
 #endif
 }
 
-static int stdinout_ioctl_vmeth(void *obj, unsigned int request, ...)
+static int stdinout_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 {
 	errno = EINVAL;
 	return -1;

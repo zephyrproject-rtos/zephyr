@@ -197,8 +197,8 @@ char shell_make_argv(size_t *argc, char **argv, char *cmd, u8_t max_argc)
 void shell_pattern_remove(char *buff, u16_t *buff_len, const char *pattern)
 {
 	char *pattern_addr = strstr(buff, pattern);
+	u16_t shift;
 	u16_t pattern_len = shell_strlen(pattern);
-	size_t shift;
 
 	if (!pattern_addr) {
 		return;
@@ -225,7 +225,7 @@ static inline u32_t shell_root_cmd_count(void)
 }
 
 /* Function returning pointer to root command matching requested syntax. */
-const struct shell_cmd_entry *root_cmd_find(const char *syntax)
+const struct shell_cmd_entry *shell_root_cmd_find(const char *syntax)
 {
 	const size_t cmd_count = shell_root_cmd_count();
 	const struct shell_cmd_entry *cmd;
@@ -335,7 +335,10 @@ void shell_spaces_trim(char *str)
 	}
 }
 
-void shell_buffer_trim(char *buff, u16_t *buff_len)
+/** @brief Remove white chars from beginning and end of command buffer.
+ *
+ */
+static void buffer_trim(char *buff, u16_t *buff_len)
 {
 	u16_t i = 0U;
 
@@ -368,4 +371,10 @@ void shell_buffer_trim(char *buff, u16_t *buff_len)
 		memmove(buff, buff + i, (*buff_len + 1) - i); /* +1 for '\0' */
 		*buff_len = *buff_len - i;
 	}
+}
+
+void shell_cmd_trim(const struct shell *shell)
+{
+	buffer_trim(shell->ctx->cmd_buff, &shell->ctx->cmd_buff_len);
+	shell->ctx->cmd_buff_pos = shell->ctx->cmd_buff_len;
 }

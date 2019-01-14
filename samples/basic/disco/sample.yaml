@@ -2,6 +2,6 @@ sample:
   name: Disco Lights
 tests:
   test:
-    platform_whitelist: nucleo_f103rb nucleo_f401re
+    # The filters below are from DTS
+    filter: LED0_GPIO_CONTROLLER and LED1_GPIO_CONTROLLER
     tags: LED gpio
-    depends_on: gpio

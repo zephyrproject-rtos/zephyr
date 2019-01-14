@@ -1,34 +1,17 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2016-2017 NXP
+ * Copyright 2016-2018 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fsl_flexbus.h"
+
+/* Component ID definition, used by tools. */
+#ifndef FSL_COMPONENT_ID
+#define FSL_COMPONENT_ID "platform.drivers.flexbus"
+#endif
 
 /*******************************************************************************
  * Prototypes
@@ -77,13 +60,35 @@ static uint32_t FLEXBUS_GetInstance(FB_Type *base)
     return instance;
 }
 
+/*!
+ * brief Initializes and configures the FlexBus module.
+ *
+ * This function enables the clock gate for FlexBus module.
+ * Only chip 0 is validated and set to known values. Other chips are disabled.
+ * Note that in this function, certain parameters, depending on external memories,  must
+ * be set before using the FLEXBUS_Init() function.
+ * This example shows how to set up the uart_state_t and the
+ * flexbus_config_t parameters and how to call the FLEXBUS_Init function by passing
+ * in these parameters.
+   code
+    flexbus_config_t flexbusConfig;
+    FLEXBUS_GetDefaultConfig(&flexbusConfig);
+    flexbusConfig.waitStates            = 2U;
+    flexbusConfig.chipBaseAddress       = 0x60000000U;
+    flexbusConfig.chipBaseAddressMask   = 7U;
+    FLEXBUS_Init(FB, &flexbusConfig);
+   endcode
+ *
+ * param base FlexBus peripheral address.
+ * param config Pointer to the configuration structure
+*/
 void FLEXBUS_Init(FB_Type *base, const flexbus_config_t *config)
 {
     assert(config != NULL);
     assert(config->chip < FB_CSAR_COUNT);
     assert(config->waitStates <= 0x3FU);
 
-    uint32_t chip = 0;
+    uint32_t chip = config->chip;
     uint32_t reg_value = 0;
 
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
@@ -91,16 +96,14 @@ void FLEXBUS_Init(FB_Type *base, const flexbus_config_t *config)
     CLOCK_EnableClock(s_flexbusClocks[FLEXBUS_GetInstance(base)]);
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
-    /* Reset all the register to default state */
-    for (chip = 0; chip < FB_CSAR_COUNT; chip++)
-    {
-        /* Reset CSMR register, all chips not valid (disabled) */
-        base->CS[chip].CSMR = 0x0000U;
-        /* Set default base address */
-        base->CS[chip].CSAR &= (~FB_CSAR_BA_MASK);
-        /* Reset FB_CSCRx register */
-        base->CS[chip].CSCR = 0x0000U;
-    }
+    /* Reset the associated register to default state */
+    /* Set CSMR register, all chips not valid (disabled) */
+    base->CS[chip].CSMR = 0x0000U;
+    /* Set default base address */
+    base->CS[chip].CSAR &= (~FB_CSAR_BA_MASK);
+    /* Reset FB_CSCRx register */
+    base->CS[chip].CSCR = 0x0000U;
+
     /* Set FB_CSPMCR register */
     /* FlexBus signal group 1 multiplex control */
     reg_value |= kFLEXBUS_MultiplexGroup1_FB_ALE << FB_CSPMCR_GROUP1_SHIFT;
@@ -114,9 +117,6 @@ void FLEXBUS_Init(FB_Type *base, const flexbus_config_t *config)
     reg_value |= kFLEXBUS_MultiplexGroup5_FB_TA << FB_CSPMCR_GROUP5_SHIFT;
     /* Write to CSPMCR register */
     base->CSPMCR = reg_value;
-
-    /* Update chip value */
-    chip = config->chip;
 
     /* Base address */
     reg_value = config->chipBaseAddress;
@@ -168,8 +168,20 @@ void FLEXBUS_Init(FB_Type *base, const flexbus_config_t *config)
     reg_value |= (uint32_t)config->group5MultiplexControl << FB_CSPMCR_GROUP5_SHIFT;
     /* Write to CSPMCR register */
     base->CSPMCR = reg_value;
+    /* Enable CSPMCR0[V] to make all chip select registers take effect. */
+    if (chip)
+    {
+        base->CS[0].CSMR |= FB_CSMR_V_MASK;
+    }
 }
 
+/*!
+ * brief De-initializes a FlexBus instance.
+ *
+ * This function disables the clock gate of the FlexBus module clock.
+ *
+ * param base FlexBus peripheral address.
+ */
 void FLEXBUS_Deinit(FB_Type *base)
 {
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
@@ -178,8 +190,39 @@ void FLEXBUS_Deinit(FB_Type *base)
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
+/*!
+ * brief Initializes the FlexBus configuration structure.
+ *
+ * This function initializes the FlexBus configuration structure to default value. The default
+ * values are.
+   code
+   fbConfig->chip                   = 0;
+   fbConfig->writeProtect           = 0;
+   fbConfig->burstWrite             = 0;
+   fbConfig->burstRead              = 0;
+   fbConfig->byteEnableMode         = 0;
+   fbConfig->autoAcknowledge        = true;
+   fbConfig->extendTransferAddress  = 0;
+   fbConfig->secondaryWaitStates    = 0;
+   fbConfig->byteLaneShift          = kFLEXBUS_NotShifted;
+   fbConfig->writeAddressHold       = kFLEXBUS_Hold1Cycle;
+   fbConfig->readAddressHold        = kFLEXBUS_Hold1Or0Cycles;
+   fbConfig->addressSetup           = kFLEXBUS_FirstRisingEdge;
+   fbConfig->portSize               = kFLEXBUS_1Byte;
+   fbConfig->group1MultiplexControl = kFLEXBUS_MultiplexGroup1_FB_ALE;
+   fbConfig->group2MultiplexControl = kFLEXBUS_MultiplexGroup2_FB_CS4 ;
+   fbConfig->group3MultiplexControl = kFLEXBUS_MultiplexGroup3_FB_CS5;
+   fbConfig->group4MultiplexControl = kFLEXBUS_MultiplexGroup4_FB_TBST;
+   fbConfig->group5MultiplexControl = kFLEXBUS_MultiplexGroup5_FB_TA;
+   endcode
+ * param config Pointer to the initialization structure.
+ * see FLEXBUS_Init
+ */
 void FLEXBUS_GetDefaultConfig(flexbus_config_t *config)
 {
+    /* Initializes the configure structure to zero. */
+    memset(config, 0, sizeof(*config));
+
     config->chip = 0;                                  /* Chip 0 FlexBus for validation */
     config->writeProtect = 0;                          /* Write accesses are allowed */
     config->burstWrite = 0;                            /* Burst-Write disable */

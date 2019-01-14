@@ -178,13 +178,7 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 	/* Take the first address of the network interface */
 	src = &ipv4->unicast[0].address.in_addr;
 
-	/* We cast to IPv6 address but that should be ok in this case
-	 * as IPv4 cannot be used in 802.15.4 where it is the reserve
-	 * size can change depending on address.
-	 */
-	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface,
-					      (const struct in6_addr *)dst),
-				     PKT_WAIT_TIME);
+	pkt = net_pkt_get_reserve_tx(PKT_WAIT_TIME);
 	if (!pkt) {
 		return -ENOMEM;
 	}
@@ -261,9 +255,7 @@ int net_icmpv4_send_error(struct net_pkt *orig, u8_t type, u8_t code)
 	dst = &NET_IPV4_HDR(orig)->src;
 	src = &NET_IPV4_HDR(orig)->dst;
 
-	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface,
-					      (const struct in6_addr *)dst),
-				     PKT_WAIT_TIME);
+	pkt = net_pkt_get_reserve_tx(PKT_WAIT_TIME);
 	if (!pkt) {
 		err = -ENOMEM;
 		goto drop_no_pkt;
@@ -346,7 +338,7 @@ enum net_verdict net_icmpv4_input(struct net_pkt *pkt, bool bcast)
 		return NET_DROP;
 	}
 
-	if (!icmp_hdr.chksum || net_calc_chksum_icmpv4(pkt) != 0) {
+	if (net_calc_chksum_icmpv4(pkt) != 0) {
 		NET_DBG("DROP: Invalid checksum");
 		goto drop;
 	}

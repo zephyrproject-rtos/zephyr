@@ -12,12 +12,6 @@
 			num-bidir-endpoints = <6>;
 		};
 
-		otghs_fs_phy: otghs_fs_phy {
-			compatible = "usb-nop-xceiv";
-			#phy-cells = <0>;
-			label = "OTGHS_FS_PHY";
-		};
-
 		usbotg_hs: usb@40040000 {
 			compatible = "st,stm32-otghs", "st,stm32-otgfs";
 			reg = <0x40040000 0x40000>;
@@ -30,5 +24,11 @@
 			status = "disabled";
 			label= "OTGHS";
 		};
+	};
+
+	otghs_fs_phy: otghs_fs_phy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
+		label = "OTGHS_FS_PHY";
 	};
 };

@@ -110,3 +110,7 @@ The NVS subsystem APIs are provided by ``nvs.h``:
 
 .. doxygengroup:: nvs_high_level_api
    :project: Zephyr
+
+.. comment
+   not documenting
+   .. doxygengroup:: nvs

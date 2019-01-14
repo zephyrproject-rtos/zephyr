@@ -1,6 +1,6 @@
 # Kconfig.soc - Nordic Semiconductor nRF52 MCU line
 #
-# Copyright (c) 2016 Nordic Semiconductor ASA
+# Copyright (c) 2016-2019 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -187,8 +187,16 @@ config SOC_NRF52810_QFAA
 	bool "NRF52810_QFAA"
 	select SOC_NRF52810
 
+config SOC_NRF52832_CIAA
+	bool "NRF52832_CIAA"
+	select SOC_NRF52832
+
 config SOC_NRF52832_QFAA
 	bool "NRF52832_QFAA"
+	select SOC_NRF52832
+
+config SOC_NRF52832_QFAB
+	bool "NRF52832_QFAB"
 	select SOC_NRF52832
 
 config SOC_NRF52840_QIAA

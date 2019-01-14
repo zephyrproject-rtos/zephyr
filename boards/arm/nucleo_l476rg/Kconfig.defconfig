@@ -13,7 +13,7 @@ config BOARD
 
 if UART_CONSOLE
 
-config UART_STM32_PORT_2
+config UART_2
 	default y
 
 endif # UART_CONSOLE
@@ -24,6 +24,13 @@ config SPI_1
 	default y
 
 config SPI_STM32_INTERRUPT
+	default y
+
+endif # SPI
+
+if I2C
+
+config I2C_3
 	default y
 
 endif # SPI

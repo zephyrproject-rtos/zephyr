@@ -23,6 +23,10 @@
 #define __ccm_data_section _GENERIC_SECTION(_CCM_DATA_SECTION_NAME)
 #define __ccm_bss_section _GENERIC_SECTION(_CCM_BSS_SECTION_NAME)
 #define __ccm_noinit_section _GENERIC_SECTION(_CCM_NOINIT_SECTION_NAME)
+#define __imx_boot_conf_section	_GENERIC_SECTION(IMX_BOOT_CONF)
+#define __imx_boot_data_section	_GENERIC_SECTION(IMX_BOOT_DATA)
+#define __imx_boot_ivt_section	_GENERIC_SECTION(IMX_BOOT_IVT)
+#define __imx_boot_dcd_section	_GENERIC_SECTION(IMX_BOOT_DCD)
 #endif /* CONFIG_ARM */
 
 #if defined(CONFIG_NOCACHE_MEMORY)

@@ -27,10 +27,10 @@ pairs:
     skip testcase unconditionally. This can be used for broken tests.
 
   slow: <True|False> (default False)
-    Don't run this test case unless --enable-slow was passed in on the
-    command line. Intended for time-consuming test cases that are only
-    run under certain circumstances, like daily builds. These test cases
-    are still compiled.
+    Don't build or run this test case unless --enable-slow was passed
+    in on the command line. Intended for time-consuming test cases
+    that are only run under certain circumstances, like daily
+    builds.
 
   extra_args: <list of extra arguments>
     Extra cache entries to pass to CMake when building or running the
@@ -156,6 +156,7 @@ To load arguments from a file, write '+' before the file name, e.g.,
 line break instead of white spaces.
 
 Most everyday users will run with no arguments.
+
 """
 
 import contextlib
@@ -343,6 +344,7 @@ class BinaryHandler(Handler):
         super().__init__(instance)
 
         self.valgrind = False
+        self.terminated = False
 
     def _output_reader(self, proc, harness):
         log_out_fp = open(self.log, "wt")
@@ -352,13 +354,18 @@ class BinaryHandler(Handler):
             log_out_fp.flush()
             harness.handle(line.decode('utf-8').rstrip())
             if harness.state:
-                proc.terminate()
+                try:
+                    #POSIX arch based ztests end on their own,
+                    #so let's give it up to 100ms to do so
+                    proc.wait(0.1)
+                except subprocess.TimeoutExpired:
+                    proc.terminate()
+                    self.terminated = True
                 break
 
         log_out_fp.close()
 
     def handle(self):
-        out_state = "failed"
 
         harness_name = self.instance.test.harness.capitalize()
         harness_import = HarnessImporter(harness_name)
@@ -376,7 +383,10 @@ class BinaryHandler(Handler):
 
         if shutil.which("valgrind") and self.valgrind:
             command = ["valgrind", "--error-exitcode=2",
-                       "--leak-check=full"] + command
+                       "--leak-check=full",
+                       "--suppressions="+ZEPHYR_BASE+"/scripts/valgrind.supp",
+                       "--log-file="+self.outdir+"/valgrind.log"
+                       ] + command
 
         with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as proc:
             t = threading.Thread(target=self._output_reader, args=(proc, harness, ))
@@ -384,13 +394,10 @@ class BinaryHandler(Handler):
             t.join(self.timeout)
             if t.is_alive():
                 proc.terminate()
-                out_state = "timeout"
+                self.terminated = True
                 t.join()
-
             proc.wait()
             self.returncode = proc.returncode
-            if proc.returncode != 0:
-                out_state = "failed"
 
         if options.enable_coverage:
             returncode = subprocess.call(["GCOV_PREFIX=" + self.outdir,
@@ -401,10 +408,14 @@ class BinaryHandler(Handler):
 
         subprocess.call(["stty", "sane"])
         self.instance.results = harness.tests
-        if harness.state:
+        if self.terminated==False and self.returncode != 0:
+            #When a process is killed, the default handler returns 128 + SIGTERM
+            #so in that case the return code itself is not meaningful
+            self.set_state("error", {})
+        elif harness.state:
             self.set_state(harness.state, {})
         else:
-            self.set_state(out_state, {})
+            self.set_state("timeout", {})
 
 class DeviceHandler(Handler):
 
@@ -1051,9 +1062,9 @@ class MakeGenerator:
         args.append("BOARD={}".format(ti.platform.name))
         args.extend(extra_args)
 
-        do_run_slow = options.enable_slow or not ti.test.slow
         do_build_only = ti.build_only or options.build_only
-        do_run = (not do_build_only) and do_run_slow
+        do_run = not do_build_only
+        skip_slow = ti.test.slow and not options.enable_slow
 
         # FIXME: Need refactoring and cleanup
         type = None
@@ -1069,7 +1080,10 @@ class MakeGenerator:
         elif options.device_testing and (not ti.build_only) and (not options.build_only):
             type = "device"
 
-        self.add_goal(ti, type, args)
+        if not skip_slow:
+            self.add_goal(ti, type, args)
+        else:
+            verbose("Skipping slow test: " + ti.name)
 
     def execute(self, callback_fn=None, context=None):
         """Execute all the registered build goals
@@ -1441,6 +1455,7 @@ class TestCase:
         self.name = self.get_unique(testcase_root, workdir, name)
 
         self.defconfig = {}
+        self.dt_config = {}
         self.yamlfile = yamlfile
 
 
@@ -1623,6 +1638,7 @@ def defconfig_cb(context, goals, goal):
 
 class TestSuite:
     config_re = re.compile('(CONFIG_[A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
+    dt_re = re.compile('([A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
 
     yaml_tc_schema = scl.yaml_load(
         os.path.join(ZEPHYR_BASE,
@@ -1795,7 +1811,8 @@ class TestSuite:
             default_platforms = True
 
         mg = MakeGenerator(self.outdir)
-        dlist = {}
+        defconfig_list = {}
+        dt_list = {}
         for tc_name, tc in self.testcases.items():
             for arch_name, arch in self.arches.items():
                 for plat in arch.platforms:
@@ -1875,7 +1892,10 @@ class TestSuite:
                         # simultaneously
 
                         o = os.path.join(self.outdir, plat.name, tc.name)
-                        dlist[tc, plat, tc.name.split("/")[-1]] = os.path.join(o, "zephyr", ".config")
+                        generated_dt_confg = "include/generated/generated_dts_board.conf"
+                        dt_config_path = os.path.join(o, "zephyr", generated_dt_confg)
+                        dt_list[tc, plat, tc.name.split("/")[-1]] = dt_config_path
+                        defconfig_list[tc, plat, tc.name.split("/")[-1]] = os.path.join(o, "zephyr", ".config")
                         goal = "_".join([plat.name, "_".join(tc.name.split("/")), "config-sanitycheck"])
                         mg.add_build_goal(goal, os.path.join(ZEPHYR_BASE, tc.test_path),
                                 o, args, "config-sanitycheck.log", make_args="config-sanitycheck")
@@ -1892,7 +1912,7 @@ class TestSuite:
                 sys.exit(2)
 
 
-        for k, out_config in dlist.items():
+        for k, out_config in defconfig_list.items():
             test, plat, name = k
             defconfig = {}
             with open(out_config, "r") as fp:
@@ -1904,6 +1924,22 @@ class TestSuite:
                         continue
                     defconfig[m.group(1)] = m.group(2).strip()
             test.defconfig[plat] = defconfig
+
+        for k, out_config in dt_list.items():
+            if not os.path.exists(out_config):
+                continue
+
+            test, plat, name = k
+            dt_conf = {}
+            with open(out_config, "r") as fp:
+                for line in fp.readlines():
+                    m = TestSuite.dt_re.match(line)
+                    if not m:
+                        if line.strip() and not line.startswith("#"):
+                            sys.stderr.write("Unrecognized line %s\n" % line)
+                        continue
+                    dt_conf[m.group(1)] = m.group(2).strip()
+            test.dt_config[plat] = dt_conf
 
         for tc_name, tc in self.testcases.items():
             for arch_name, arch in self.arches.items():
@@ -2009,6 +2045,11 @@ class TestSuite:
                             defconfig.update(tdefconfig)
                             break
 
+                    for p, tdefconfig in tc.dt_config.items():
+                        if p == plat:
+                            defconfig.update(tdefconfig)
+                            break
+
                     if tc.tc_filter:
                         try:
                             res = expr_parser.parse(tc.tc_filter, defconfig)
@@ -2074,11 +2115,17 @@ class TestSuite:
             mg.add_test_instance(i, options.extra_args)
         self.goals = mg.execute(cb, cb_context)
 
-        # Parallelize size calculation
-        executor = concurrent.futures.ThreadPoolExecutor(JOBS)
-        futures = [executor.submit(calc_one_elf_size, name, goal)
-                   for name, goal in self.goals.items()]
-        concurrent.futures.wait(futures)
+        if not options.disable_size_report:
+            # Parallelize size calculation
+            executor = concurrent.futures.ThreadPoolExecutor(JOBS)
+            futures = [executor.submit(calc_one_elf_size, name, goal)
+                       for name, goal in self.goals.items()]
+            concurrent.futures.wait(futures)
+        else:
+            for goal in self.goals.values():
+                goal.metrics["ram_size"] = 0
+                goal.metrics["rom_size"] = 0
+                goal.metrics["unrecognized"] = []
 
         return self.goals
 
@@ -2579,6 +2626,8 @@ def parse_arguments():
                         help="deprecated, left for compatibility")
     parser.add_argument("-Q", "--error-on-deprecations", action="store_false",
                         help="Error on deprecation warnings.")
+    parser.add_argument("--disable-size-report", action="store_true",
+                        help="Skip expensive computation of ram/rom segment sizes.")
 
     parser.add_argument(
         "-x", "--extra-args", action="append", default=[],

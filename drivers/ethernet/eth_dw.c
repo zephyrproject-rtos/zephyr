@@ -86,7 +86,7 @@ static void eth_rx(struct device *dev)
 		frm_len -= sizeof(u32_t);
 	}
 
-	pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
+	pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("Failed to obtain RX buffer");
 		goto error;
@@ -172,21 +172,13 @@ static void eth_tx_data(struct eth_runtime *context, u8_t *data, u16_t len)
 static int eth_tx(struct device *dev, struct net_pkt *pkt)
 {
 	struct eth_runtime *context = dev->driver_data;
+	struct net_buf *frag;
 
 	/* Ensure we're clear to transmit. */
 	eth_tx_spin_wait(context);
 
-	if (!pkt->frags) {
-		eth_tx_data(context, net_pkt_ll(pkt),
-			    net_pkt_ll_reserve(pkt));
-	} else {
-		struct net_buf *frag;
-
-		eth_tx_data(context, net_pkt_ll(pkt),
-			    net_pkt_ll_reserve(pkt) + pkt->frags->len);
-		for (frag = pkt->frags->frags; frag; frag = frag->frags) {
-			eth_tx_data(context, frag->data, frag->len);
-		}
+	for (frag = pkt->frags; frag; frag = frag->frags) {
+		eth_tx_data(context, frag->data, frag->len);
 	}
 
 	return 0;

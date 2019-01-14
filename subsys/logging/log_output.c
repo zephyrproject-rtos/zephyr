@@ -10,18 +10,20 @@
 #include <assert.h>
 #include <ctype.h>
 #include <time.h>
+#include <stdio.h>
+#include <stdbool.h>
+
+#define LOG_COLOR_CODE_DEFAULT "\x1B[0m"
+#define LOG_COLOR_CODE_RED     "\x1B[1;31m"
+#define LOG_COLOR_CODE_YELLOW  "\x1B[1;33m"
 
 #define HEXDUMP_BYTES_IN_LINE 8
 
-#define LOG_COLOR_CODE_DEFAULT "\x1B[0m"
-#define LOG_COLOR_CODE_BLACK   "\x1B[1;30m"
-#define LOG_COLOR_CODE_RED     "\x1B[1;31m"
-#define LOG_COLOR_CODE_GREEN   "\x1B[1;32m"
-#define LOG_COLOR_CODE_YELLOW  "\x1B[1;33m"
-#define LOG_COLOR_CODE_BLUE    "\x1B[1;34m"
-#define LOG_COLOR_CODE_MAGENTA "\x1B[1;35m"
-#define LOG_COLOR_CODE_CYAN    "\x1B[1;36m"
-#define LOG_COLOR_CODE_WHITE   "\x1B[1;37m"
+#define  DROPPED_COLOR_PREFIX \
+	_LOG_EVAL(CONFIG_LOG_BACKEND_SHOW_COLOR, (LOG_COLOR_CODE_RED), ())
+
+#define DROPPED_COLOR_POSTFIX \
+	_LOG_EVAL(CONFIG_LOG_BACKEND_SHOW_COLOR, (LOG_COLOR_CODE_DEFAULT), ())
 
 static const char *const severity[] = {
 	NULL,
@@ -62,22 +64,30 @@ extern void _vprintk(out_func_t out, void *log_output,
  */
 static int level_to_rfc5424_severity(u32_t level)
 {
+	u8_t ret;
+
 	switch (level) {
 	case LOG_LEVEL_NONE:
-		return 7;
+		ret = 7;
+		break;
 	case LOG_LEVEL_ERR:
-		return 3;
+		ret =  3;
+		break;
 	case LOG_LEVEL_WRN:
-		return 4;
+		ret =  4;
+		break;
 	case LOG_LEVEL_INF:
-		return 6;
+		ret =  6;
+		break;
 	case LOG_LEVEL_DBG:
-		return 7;
+		ret = 7;
+		break;
 	default:
+		ret = 7;
 		break;
 	}
 
-	return 7;
+	return ret;
 }
 
 static int out_func(int c, void *ctx)
@@ -114,18 +124,23 @@ static int print_formatted(const struct log_output *log_output,
 	return length;
 }
 
-void log_output_flush(const struct log_output *log_output)
+static void buffer_write(log_output_func_t outf, u8_t *buf, size_t len,
+			 void *ctx)
 {
-	int offset = 0;
-	int len = log_output->control_block->offset;
 	int processed;
 
 	do {
-		processed = log_output->func(&log_output->buf[offset], len,
-					     log_output->control_block->ctx);
+		processed = outf(buf, len, ctx);
 		len -= processed;
-		offset += processed;
-	} while (len);
+		buf += processed;
+	} while (len != 0);
+}
+
+void log_output_flush(const struct log_output *log_output)
+{
+	buffer_write(log_output->func, log_output->buf,
+		     log_output->control_block->offset,
+		     log_output->control_block->ctx);
 
 	log_output->control_block->offset = 0;
 }
@@ -143,7 +158,7 @@ static int timestamp_print(struct log_msg *msg,
 
 	if (!format) {
 		length = print_formatted(log_output, "[%08lu] ", timestamp);
-	} else if (freq) {
+	} else if (freq != 0) {
 		u32_t remainder;
 		u32_t seconds;
 		u32_t hours;
@@ -225,8 +240,8 @@ static void color_postfix(struct log_msg *msg,
 }
 
 
-static int ids_print(struct log_msg *msg,
-		     const struct log_output *log_output, bool level_on)
+static int ids_print(struct log_msg *msg, const struct log_output *log_output,
+		     bool level_on, bool func_on)
 {
 	u32_t domain_id = log_msg_domain_id_get(msg);
 	u32_t source_id = log_msg_source_id_get(msg);
@@ -238,7 +253,8 @@ static int ids_print(struct log_msg *msg,
 	}
 
 	total += print_formatted(log_output,
-				IS_ENABLED(CONFIG_LOG_FUNCTION_NAME) ?
+				(func_on &&
+				((1 << level) & LOG_FUNCTION_PREFIX_MASK)) ?
 				"%s." : "%s: ",
 				log_source_name_get(domain_id, source_id));
 
@@ -252,11 +268,11 @@ static void newline_print(const struct log_output *ctx, u32_t flags)
 		return;
 	}
 
-	if (flags & LOG_OUTPUT_FLAG_CRLF_NONE) {
+	if ((flags & LOG_OUTPUT_FLAG_CRLF_NONE) != 0) {
 		return;
 	}
 
-	if (flags & LOG_OUTPUT_FLAG_CRLF_LFONLY) {
+	if ((flags & LOG_OUTPUT_FLAG_CRLF_LFONLY) != 0) {
 		print_formatted(ctx, "\n");
 	} else {
 		print_formatted(ctx, "\r\n");
@@ -412,7 +428,7 @@ static void hexdump_print(struct log_msg *msg,
 		}
 
 		offset += length;
-	} while (1);
+	} while (true);
 }
 
 static void raw_string_print(struct log_msg *msg,
@@ -430,7 +446,7 @@ static void raw_string_print(struct log_msg *msg,
 		log_msg_hexdump_data_get(msg, log_output->buf, &length, offset);
 		log_output->control_block->offset = length;
 
-		if (length) {
+		if (length != 0) {
 			eol = (log_output->buf[length - 1] == '\n');
 		}
 
@@ -445,7 +461,7 @@ static void raw_string_print(struct log_msg *msg,
 
 static int prefix_print(struct log_msg *msg,
 			const struct log_output *log_output,
-			u32_t flags)
+			u32_t flags, bool func_on)
 {
 	int length = 0;
 
@@ -485,7 +501,7 @@ static int prefix_print(struct log_msg *msg,
 
 		} else {
 			color_prefix(msg, log_output, colors_on);
-			length += ids_print(msg, log_output, level_on);
+		length += ids_print(msg, log_output, level_on, func_on);
 		}
 	}
 
@@ -507,7 +523,8 @@ void log_output_msg_process(const struct log_output *log_output,
 			    struct log_msg *msg,
 			    u32_t flags)
 {
-	int prefix_offset = prefix_print(msg, log_output, flags);
+	int prefix_offset = prefix_print(msg, log_output, flags,
+					 log_msg_is_std(msg));
 
 	if (log_msg_is_std(msg)) {
 		std_print(msg, log_output);
@@ -520,6 +537,24 @@ void log_output_msg_process(const struct log_output *log_output,
 	postfix_print(msg, log_output, flags);
 
 	log_output_flush(log_output);
+}
+
+void log_output_dropped_process(const struct log_output *log_output, u32_t cnt)
+{
+	char buf[5];
+	int len;
+	static const char prefix[] = DROPPED_COLOR_PREFIX "--- ";
+	static const char postfix[] =
+			" messages dropped ---\r\n" DROPPED_COLOR_POSTFIX;
+	log_output_func_t outf = log_output->func;
+	struct device *dev = (struct device *)log_output->control_block->ctx;
+
+	cnt = min(cnt, 9999);
+	len = snprintf(buf, sizeof(buf), "%d", cnt);
+
+	buffer_write(outf, (u8_t *)prefix, sizeof(prefix) - 1, dev);
+	buffer_write(outf, buf, len, dev);
+	buffer_write(outf, (u8_t *)postfix, sizeof(postfix) - 1, dev);
 }
 
 void log_output_timestamp_freq_set(u32_t frequency)

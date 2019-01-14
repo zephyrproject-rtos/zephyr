@@ -456,14 +456,8 @@ module being run by default, as well as installation directories.
 If the KCONFIG_FUNCTIONS environment variable is set, it gives a different
 module name to use instead of 'kconfigfunctions'.
 
-The imported module is expected to define a dictionary named 'functions', with
-the following format:
-
-  functions = {
-      "my-fn":       (my_fn,       <min.args>, <max.args>/None),
-      "my-other-fn": (my_other_fn, <min.args>, <max.args>/None),
-      ...
-  }
+The imported module is expected to define a global dictionary named 'functions'
+that maps function names to Python functions, as follows:
 
   def my_fn(kconf, name, arg_1, arg_2, ...):
       # kconf:
@@ -481,6 +475,12 @@ the following format:
 
   def my_other_fn(kconf, name, arg_1, arg_2, ...):
       ...
+
+  functions = {
+      "my-fn":       (my_fn,       <min.args>, <max.args>/None),
+      "my-other-fn": (my_other_fn, <min.args>, <max.args>/None),
+      ...
+  }
 
   ...
 
@@ -700,6 +700,14 @@ class Kconfig(object):
       enabled will get added to Kconfig.warnings. See the various
       Kconfig.enable/disable_*_warnings() functions.
 
+    missing_syms:
+      A list with (name, value) tuples for all assignments to undefined symbols
+      within the most recently loaded .config file(s). 'name' is the symbol
+      name without the 'CONFIG_' prefix. 'value' is a string that gives the
+      right-hand side of the assignment verbatim.
+
+      See Kconfig.load_config() as well.
+
     srctree:
       The value of the $srctree environment variable when the configuration was
       loaded, or the empty string if $srctree wasn't set. This gives nice
@@ -747,6 +755,7 @@ class Kconfig(object):
         "m",
         "mainmenu_text",
         "menus",
+        "missing_syms",
         "modules",
         "n",
         "named_choices",
@@ -761,7 +770,7 @@ class Kconfig(object):
 
         # Parsing-related
         "_parsing_kconfigs",
-        "_file",
+        "_readline",
         "_filename",
         "_linenr",
         "_include_path",
@@ -863,6 +872,8 @@ class Kconfig(object):
         self.const_syms = {}
         self.defined_syms = []
 
+        self.missing_syms = []
+
         self.named_choices = {}
         self.choices = []
 
@@ -952,8 +963,10 @@ class Kconfig(object):
         self._filename = filename
         self._linenr = 0
 
-        # Open the top-level Kconfig file
-        self._file = self._open(os.path.join(self.srctree, filename), "r")
+        # Open the top-level Kconfig file. Store the readline() method directly
+        # as a small optimization.
+        self._readline = \
+            self._open(os.path.join(self.srctree, filename), "r").readline
 
         try:
             # Parse everything
@@ -961,8 +974,9 @@ class Kconfig(object):
         except UnicodeDecodeError as e:
             _decoding_error(e, self._filename)
 
-        # Close the top-level Kconfig file
-        self._file.close()
+        # Close the top-level Kconfig file. __self__ fetches the 'file' object
+        # for the method.
+        self._readline.__self__.close()
 
         self.top_node.list = self.top_node.next
         self.top_node.next = None
@@ -1029,21 +1043,27 @@ class Kconfig(object):
         "# CONFIG_FOO is not set" within a .config file sets the user value of
         FOO to n. The C tools work the same way.
 
-        The Symbol.user_value attribute can be inspected afterwards to see what
-        value the symbol was assigned in the .config file (if any). The user
-        value might differ from Symbol.str/tri_value if there are unsatisfied
-        dependencies.
+        For each symbol, the Symbol.user_value attribute holds the value the
+        symbol was assigned in the .config file (if any). The user value might
+        differ from Symbol.str/tri_value if there are unsatisfied dependencies.
+
+        Calling this function also updates the Kconfig.missing_syms attribute
+        with a list of all assignments to undefined symbols within the
+        configuration file. Kconfig.missing_syms is cleared if 'replace' is
+        True, and appended to otherwise. See the documentation for
+        Kconfig.missing_syms as well.
 
         Raises (possibly a subclass of) IOError on IO errors ('errno',
         'strerror', and 'filename' are available). Note that IOError can be
         caught as OSError on Python 3.
 
-        filename:
+        filename (default: None):
           Path to load configuration from (a string). Respects $srctree if set
           (see the class documentation).
 
-          If 'filename' is None, the configuration file to load (if any) is
-          calculated automatically, giving the behavior you'd usually want:
+          If 'filename' is None (the default), the configuration file to load
+          (if any) is calculated automatically, giving the behavior you'd
+          usually want:
 
             1. If the KCONFIG_CONFIG environment variable is set, it gives the
                path to the configuration file to load. Otherwise, ".config" is
@@ -1111,6 +1131,8 @@ class Kconfig(object):
     def _load_config(self, filename, replace):
         with self._open_config(filename) as f:
             if replace:
+                self.missing_syms = []
+
                 # If we're replacing the configuration, keep track of which
                 # symbols and choices got set so that we can unset the rest
                 # later. This avoids invalidating everything and is faster.
@@ -1136,14 +1158,12 @@ class Kconfig(object):
                 if match:
                     name, val = match.groups()
                     if name not in syms:
-                        self._warn_undef_assign_load(name, val, filename,
-                                                     linenr)
+                        self._undef_assign(name, val, filename, linenr)
                         continue
 
                     sym = syms[name]
                     if not sym.nodes:
-                        self._warn_undef_assign_load(name, val, filename,
-                                                     linenr)
+                        self._undef_assign(name, val, filename, linenr)
                         continue
 
                     if sym.orig_type in _BOOL_TRISTATE:
@@ -1205,11 +1225,14 @@ class Kconfig(object):
 
                     name = match.group(1)
                     if name not in syms:
-                        self._warn_undef_assign_load(name, "n", filename,
-                                                     linenr)
+                        self._undef_assign(name, "n", filename, linenr)
                         continue
 
                     sym = syms[name]
+                    if not sym.nodes:
+                        self._undef_assign(name, "n", filename, linenr)
+                        continue
+
                     if sym.orig_type not in _BOOL_TRISTATE:
                         continue
 
@@ -1246,6 +1269,16 @@ class Kconfig(object):
             for choice in self.unique_choices:
                 if not choice._was_set:
                     choice.unset_value()
+
+    def _undef_assign(self, name, val, filename, linenr):
+        # Called for assignments to undefined symbols during .config loading
+
+        self.missing_syms.append((name, val))
+
+        if self._warn_for_undef_assign:
+            self._warn(
+                "attempt to assign the value '{}' to the undefined symbol {}"
+                .format(val, name), filename, linenr)
 
     def write_autoconf(self, filename,
                        header="/* Generated by Kconfiglib (https://github.com/ulfalizer/Kconfiglib) */\n"):
@@ -1311,8 +1344,8 @@ class Kconfig(object):
         filename (default: None):
           Filename to save configuration to (a string).
 
-          If None, the filename in the the environment variable KCONFIG_CONFIG
-          is used if set, and ".config" otherwise. See
+          If None (the default), the filename in the the environment variable
+          KCONFIG_CONFIG is used if set, and ".config" otherwise. See
           standard_config_filename().
 
         header (default: "# Generated by Kconfiglib (https://github.com/ulfalizer/Kconfiglib)\n"):
@@ -1827,8 +1860,9 @@ class Kconfig(object):
         # to be assigned directly to MenuNode.include_path without having to
         # copy it, sharing it wherever possible.
 
-        # Save include path and 'file' object before entering the file
-        self._filestack.append((self._include_path, self._file))
+        # Save include path and 'file' object (via its 'readline' function)
+        # before entering the file
+        self._filestack.append((self._include_path, self._readline))
 
         # _include_path is a tuple, so this rebinds the variable instead of
         # doing in-place modification
@@ -1848,7 +1882,7 @@ class Kconfig(object):
         # Note: We already know that the file exists
 
         try:
-            self._file = self._open(full_filename, "r")
+            self._readline = self._open(full_filename, "r").readline
         except IOError as e:
             raise _KconfigIOError(
                 e, "{}:{}: Could not open '{}' ({}: {})"
@@ -1862,11 +1896,12 @@ class Kconfig(object):
         # Returns from a Kconfig file to the file that sourced it. See
         # _enter_file().
 
-        self._file.close()
+        # __self__ fetches the 'file' object for the method
+        self._readline.__self__.close()
         # Restore location from parent Kconfig file
         self._filename, self._linenr = self._include_path[-1]
         # Restore include path and 'file' object
-        self._include_path, self._file = self._filestack.pop()
+        self._include_path, self._readline = self._filestack.pop()
 
     def _next_line(self):
         # Fetches and tokenizes the next line from the current Kconfig file.
@@ -1883,17 +1918,18 @@ class Kconfig(object):
 
         # Note: readline() returns '' over and over at EOF, which we rely on
         # for help texts at the end of files (see _line_after_help())
-        self._line = self._file.readline()
-        if not self._line:
+        line = self._readline()
+        if not line:
             return False
         self._linenr += 1
 
         # Handle line joining
-        while self._line.endswith("\\\n"):
-            self._line = self._line[:-2] + self._file.readline()
+        while line.endswith("\\\n"):
+            line = line[:-2] + self._readline()
             self._linenr += 1
 
-        self._tokens = self._tokenize(self._line)
+        self._line = line  # Used for error reporting
+        self._tokens = self._tokenize(line)
         # Initialize to 1 instead of 0 to factor out code from _parse_block()
         # and _parse_properties(). They immediately fetch self._tokens[0].
         self._tokens_i = 1
@@ -1911,11 +1947,10 @@ class Kconfig(object):
 
         # Handle line joining
         while line.endswith("\\\n"):
-            line = line[:-2] + self._file.readline()
+            line = line[:-2] + self._readline()
             self._linenr += 1
 
         self._line = line
-
         self._tokens = self._tokenize(line)
         self._reuse_tokens = True
 
@@ -2725,7 +2760,12 @@ class Kconfig(object):
         # End of file reached. Terminate the final node and return it.
 
         if end_token:
-            raise KconfigError("Unexpected end of file " + self._filename)
+            raise KconfigError(
+                "expected '{}' at end of '{}'"
+                .format("endchoice" if end_token is _T_ENDCHOICE else
+                        "endif"     if end_token is _T_ENDIF else
+                        "endmenu",
+                        self._filename))
 
         prev.next = None
         return prev
@@ -2942,7 +2982,7 @@ class Kconfig(object):
                        "one help text -- only the last one will be used")
 
         # Micro-optimization. This code is pretty hot.
-        readline = self._file.readline
+        readline = self._readline
 
         # Find first non-blank (not all-space) line and get its
         # indentation
@@ -2976,12 +3016,12 @@ class Kconfig(object):
 
         while 1:
             line = readline()
-            if not line:
-                break
-
             if line.isspace():
                 # No need to preserve the exact whitespace in these
                 add_line("\n")
+            elif not line:
+                # End of file
+                break
             else:
                 expline = line.expandtabs()
                 if len_(expline) - len_(expline.lstrip()) < indent:
@@ -3605,19 +3645,6 @@ class Kconfig(object):
             self.warnings.append(msg)
             if self._warn_to_stderr:
                 sys.stderr.write(msg + "\n")
-
-    def _warn_undef_assign(self, msg, filename, linenr):
-        # See the class documentation
-
-        if self._warn_for_undef_assign:
-            self._warn(msg, filename, linenr)
-
-    def _warn_undef_assign_load(self, name, val, filename, linenr):
-        # Special version for load_config()
-
-        self._warn_undef_assign(
-            'attempt to assign the value "{}" to the undefined symbol {}'
-            .format(val, name), filename, linenr)
 
     def _warn_override(self, msg, filename, linenr):
         # See the class documentation
@@ -5892,18 +5919,15 @@ def _decoding_error(e, filename, macro_linenr=None):
     # macro_linenr holds the line number where it was run (the exact line
     # number isn't available for decoding errors in files).
 
-    if macro_linenr is None:
-        loc = filename
-    else:
-        loc = "output from macro at {}:{}".format(filename, macro_linenr)
-
     raise KconfigError(
         "\n"
         "Malformed {} in {}\n"
         "Context: {}\n"
         "Problematic data: {}\n"
         "Reason: {}".format(
-            e.encoding, loc,
+            e.encoding,
+            "'{}'".format(filename) if macro_linenr is None else
+                "output from macro at {}:{}".format(filename, macro_linenr),
             e.object[max(e.start - 40, 0):e.end + 40],
             e.object[e.start:e.end],
             e.reason))

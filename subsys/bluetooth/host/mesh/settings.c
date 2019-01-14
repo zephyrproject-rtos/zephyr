@@ -987,7 +987,6 @@ static void store_pending_hb_pub(void)
 {
 	struct bt_mesh_hb_pub *pub = bt_mesh_hb_pub_get();
 	struct hb_pub_val val;
-	void *to_store;
 	int err;
 
 	if (!pub) {
@@ -995,26 +994,22 @@ static void store_pending_hb_pub(void)
 	}
 
 	if (pub->dst == BT_MESH_ADDR_UNASSIGNED) {
-		to_store = NULL;
+		err = settings_delete("bt/mesh/HBPub");
 	} else {
-		val.indefinite = (pub->count = 0xffff);
+		val.indefinite = (pub->count == 0xffff);
 		val.dst = pub->dst;
 		val.period = pub->period;
 		val.ttl = pub->ttl;
 		val.feat = pub->feat;
 		val.net_idx = pub->net_idx;
+
+		err = settings_save_one("bt/mesh/HBPub", &val, sizeof(val));
 	}
 
-	err = settings_save_one("bt/mesh/HBPub", to_store,
-				(to_store) ? sizeof(val) : 0);
 	if (err) {
 		BT_ERR("Failed to store Heartbeat Publication");
 	} else {
-		if (to_store) {
-			BT_DBG("Stored Heartbeat Publication");
-		} else {
-			BT_DBG("Stored Heartbeat Publication as (null) value");
-		}
+		BT_DBG("Stored Heartbeat Publication");
 	}
 }
 

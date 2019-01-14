@@ -60,12 +60,12 @@ static int line_out(u8_t *data, size_t length, void *output_ctx)
 	int ret = -ENOMEM;
 	struct net_pkt *pkt;
 
-	if (!ctx) {
+	if (ctx == NULL) {
 		return length;
 	}
 
 	pkt = net_pkt_get_tx(ctx, K_NO_WAIT);
-	if (!pkt) {
+	if (pkt == NULL) {
 		goto fail;
 	}
 
@@ -81,7 +81,7 @@ static int line_out(u8_t *data, size_t length, void *output_ctx)
 	DBG(data);
 
 fail:
-	if (ret < 0 && pkt) {
+	if (ret < 0 && (pkt != NULL)) {
 		net_pkt_unref(pkt);
 	}
 
@@ -111,7 +111,7 @@ static int do_net_init(void)
 		local_addr6.sin6_port = 0;
 	}
 
-	if (!local_addr) {
+	if (local_addr == NULL) {
 		DBG("Server address unknown\n");
 		return -EINVAL;
 	}
@@ -126,7 +126,7 @@ static int do_net_init(void)
 	}
 
 	if (IS_ENABLED(CONFIG_NET_HOSTNAME_ENABLE)) {
-		memcpy(hostname, net_hostname_get(), MAX_HOSTNAME_LEN);
+		(void)memcpy(hostname, net_hostname_get(), MAX_HOSTNAME_LEN);
 
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
 		   server_addr.sa_family == AF_INET6) {
@@ -217,7 +217,7 @@ static void init_net(void)
 	ret = net_ipaddr_parse(CONFIG_LOG_BACKEND_NET_SERVER,
 			       sizeof(CONFIG_LOG_BACKEND_NET_SERVER) - 1,
 			       &server_addr);
-	if (!ret) {
+	if (ret == 0) {
 		LOG_ERR("Cannot configure syslog server address");
 		return;
 	}

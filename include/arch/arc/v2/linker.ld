@@ -11,7 +11,6 @@
 #define _LINKER
 #define _ASMLANGUAGE
 
-#include <autoconf.h>
 #include <linker/sections.h>
 
 #if defined(CONFIG_UART_NSIM)

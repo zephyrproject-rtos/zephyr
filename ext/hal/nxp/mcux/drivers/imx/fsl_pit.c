@@ -57,6 +57,14 @@ static uint32_t PIT_GetInstance(PIT_Type *base)
     return instance;
 }
 
+/*!
+ * brief Ungates the PIT clock, enables the PIT module, and configures the peripheral for basic operations.
+ *
+ * note This API should be called at the beginning of the application using the PIT driver.
+ *
+ * param base   PIT peripheral base address
+ * param config Pointer to the user's PIT config structure
+ */
 void PIT_Init(PIT_Type *base, const pit_config_t *config)
 {
     assert(config);
@@ -90,6 +98,11 @@ void PIT_Init(PIT_Type *base, const pit_config_t *config)
     }
 }
 
+/*!
+ * brief Gates the PIT clock and disables the PIT module.
+ *
+ * param base PIT peripheral base address
+ */
 void PIT_Deinit(PIT_Type *base)
 {
 #if defined(FSL_FEATURE_PIT_HAS_MDIS) && FSL_FEATURE_PIT_HAS_MDIS
@@ -105,6 +118,19 @@ void PIT_Deinit(PIT_Type *base)
 
 #if defined(FSL_FEATURE_PIT_HAS_LIFETIME_TIMER) && FSL_FEATURE_PIT_HAS_LIFETIME_TIMER
 
+/*!
+ * brief Reads the current lifetime counter value.
+ *
+ * The lifetime timer is a 64-bit timer which chains timer 0 and timer 1 together.
+ * Timer 0 and 1 are chained by calling the PIT_SetTimerChainMode before using this timer.
+ * The period of lifetime timer is equal to the "period of timer 0 * period of timer 1".
+ * For the 64-bit value, the higher 32-bit has the value of timer 1, and the lower 32-bit
+ * has the value of timer 0.
+ *
+ * param base PIT peripheral base address
+ *
+ * return Current lifetime timer value
+ */
 uint64_t PIT_GetLifetimeTimerCount(PIT_Type *base)
 {
     uint32_t valueH = 0U;

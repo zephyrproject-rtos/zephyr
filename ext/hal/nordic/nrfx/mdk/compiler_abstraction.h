@@ -58,6 +58,30 @@ POSSIBILITY OF SUCH DAMAGE.
     #endif
 
     #define GET_SP()                __current_sp()
+    
+#elif defined (__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
+
+    #ifndef __ASM
+        #define __ASM               __asm
+    #endif
+
+    #ifndef __INLINE
+        #define __INLINE            __inline
+    #endif
+
+    #ifndef __WEAK
+        #define __WEAK              __attribute__((weak))
+    #endif
+
+    #ifndef __ALIGN
+        #define __ALIGN(n)          __attribute__((aligned(n)))
+    #endif
+
+    #ifndef __PACKED
+        #define __PACKED            __attribute__((packed, aligned(1)))
+    #endif
+
+    #define GET_SP()                __current_sp()
 
 #elif defined ( __ICCARM__ )
 

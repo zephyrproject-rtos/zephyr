@@ -49,7 +49,7 @@
 
 		dtimer0: dtimer@40002000 {
 			compatible = "arm,cmsdk-dtimer";
-			reg = <0x40000000 0x1000>;
+			reg = <0x40002000 0x1000>;
 			interrupts = <10 3>;
 		};
 

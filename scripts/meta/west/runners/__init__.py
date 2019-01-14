@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from runners.core import ZephyrBinaryRunner
+from west.runners.core import ZephyrBinaryRunner
 
 # We import these here to ensure the ZephyrBinaryRunner subclasses are
 # defined; otherwise, ZephyrBinaryRunner.create_for_shell_script()
@@ -10,19 +10,20 @@ from runners.core import ZephyrBinaryRunner
 
 # Explicitly silence the unused import warning.
 # flake8: noqa: F401
-from runners import arc
-from runners import bossac
-from runners import dfu
-from runners import esp32
-from runners import jlink
-from runners import nios2
-from runners import nrfjprog
-from runners import nsim
-from runners import openocd
-from runners import pyocd
-from runners import qemu
-from runners import xtensa
-from runners import intel_s1000
+from west.runners import arc
+from west.runners import bossac
+from west.runners import dfu
+from west.runners import esp32
+from west.runners import jlink
+from west.runners import nios2
+from west.runners import nrfjprog
+from west.runners import nsim
+from west.runners import openocd
+from west.runners import pyocd
+from west.runners import qemu
+from west.runners import xtensa
+from west.runners import intel_s1000
+from west.runners import blackmagicprobe
 
 def get_runner_cls(runner):
     '''Get a runner's class object, given its name.'''

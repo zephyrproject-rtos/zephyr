@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2018 Peter Bigot Consulting, LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf52840_qiaa.dtsi>
+#include "mesh_feather.dtsi"
+
+/ {
+	model = "Particle Boron";
+	compatible = "particle,boron", "particle,feather",
+		"nordic,nrf52840-qiaa", "nordic,nrf52840";
+};
+
+&i2c1 { /* power monitoring */
+	status = "ok";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	sda-pin = <24>;
+	scl-pin = <41>;
+};
+
+&uart1 { /* u-blox SARA-U2 or SARA-R4 */
+	compatible = "nordic,nrf-uarte";
+	current-speed = <921600>;
+	status = "ok";
+	tx-pin = <37>;
+	rx-pin = <36>;
+	rts-pin = <39>;
+	cts-pin = <38>;
+};

@@ -58,6 +58,11 @@
 #define _CCM_NOINIT_SECTION_NAME	.ccm_noinit
 #endif
 
+#define IMX_BOOT_CONF	.boot_hdr.conf
+#define IMX_BOOT_DATA	.boot_hdr.data
+#define IMX_BOOT_IVT	.boot_hdr.ivt
+#define IMX_BOOT_DCD	.boot_hdr.dcd_data
+
 #ifdef CONFIG_NOCACHE_MEMORY
 #define _NOCACHE_SECTION_NAME nocache
 #endif

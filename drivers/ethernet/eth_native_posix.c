@@ -120,15 +120,9 @@ static struct gptp_hdr *check_gptp_msg(struct net_if *iface,
 				       struct net_pkt *pkt,
 				       bool is_tx)
 {
+	u8_t *msg_start = net_pkt_data(pkt);
 	struct gptp_hdr *gptp_hdr;
-	u8_t *msg_start;
 	int eth_hlen;
-
-	if (net_pkt_ll_reserve(pkt)) {
-		msg_start = net_pkt_ll(pkt);
-	} else {
-		msg_start = net_pkt_ip_data(pkt);
-	}
 
 #if defined(CONFIG_NET_VLAN)
 	if (net_eth_get_vlan_status(iface)) {
@@ -220,13 +214,7 @@ static int eth_send(struct device *dev, struct net_pkt *pkt)
 	int count = 0;
 	int ret;
 
-	/* First fragment contains link layer (Ethernet) headers.
-	 */
-	count = net_pkt_ll_reserve(pkt) + pkt->frags->len;
-	memcpy(ctx->send, net_pkt_ll(pkt), count);
-
-	/* Then the remaining data */
-	frag = pkt->frags->frags;
+	frag = pkt->frags;
 	while (frag) {
 		memcpy(ctx->send + count, frag->data, frag->len);
 		count += frag->len;
@@ -293,7 +281,7 @@ static int read_data(struct eth_context *ctx, int fd)
 		return 0;
 	}
 
-	pkt = net_pkt_get_reserve_rx(0, NET_BUF_TIMEOUT);
+	pkt = net_pkt_get_reserve_rx(NET_BUF_TIMEOUT);
 	if (!pkt) {
 		return -ENOMEM;
 	}

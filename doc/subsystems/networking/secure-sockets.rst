@@ -33,7 +33,7 @@ The following TLS credential types can be registered in the system:
 - ``TLS_CREDENTIAL_PSK``
 - ``TLS_CREDENTIAL_PSK_ID``
 
-An example registeration of CA certificate (provided in ``ca_certificate``
+An example registration of CA certificate (provided in ``ca_certificate``
 array) looks like this:
 
 .. code-block:: c
@@ -71,7 +71,7 @@ CA certificate and hostname can be set:
 
    ret = setsockopt(sock, SOL_TLS, TLS_HOSTNAME, host, sizeof(host));
 
-Once configured, socket can be used just like a regualar TCP socket.
+Once configured, socket can be used just like a regular TCP socket.
 
 Several samples in Zephyr use secure sockets for communication. For a sample use
 see e.g. :ref:`sockets-echo-server-sample` or :ref:`sockets-http-get`.

@@ -109,6 +109,8 @@ static int ieee802154_scan(u32_t mgmt_request, struct net_if *iface,
 			NET_DBG("Could not create Beacon Request");
 			return -ENOBUFS;
 		}
+
+		ieee802154_mac_cmd_finalize(pkt, IEEE802154_CFI_BEACON_REQUEST);
 	}
 
 	ctx->scan_ctx = scan;
@@ -262,6 +264,8 @@ static int ieee802154_associate(u32_t mgmt_request, struct net_if *iface,
 
 	ctx->associated = false;
 
+	ieee802154_mac_cmd_finalize(pkt, IEEE802154_CFI_ASSOCIATION_REQUEST);
+
 	if (net_if_send_data(iface, pkt)) {
 		net_pkt_unref(pkt);
 		ret = -EIO;
@@ -325,6 +329,9 @@ static int ieee802154_disassociate(u32_t mgmt_request, struct net_if *iface,
 
 	cmd = ieee802154_get_mac_command(pkt);
 	cmd->disassoc_note.reason = IEEE802154_DRF_DEVICE_WISH;
+
+	ieee802154_mac_cmd_finalize(
+		pkt, IEEE802154_CFI_DISASSOCIATION_NOTIFICATION);
 
 	if (net_if_send_data(iface, pkt)) {
 		net_pkt_unref(pkt);

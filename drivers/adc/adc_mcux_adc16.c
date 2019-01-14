@@ -67,12 +67,37 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 	const struct mcux_adc16_config *config = dev->config->config_info;
 	struct mcux_adc16_data *data = dev->driver_data;
 	adc16_hardware_average_mode_t mode;
+	adc16_resolution_t resolution;
 	int error;
+	u32_t tmp32;
+	ADC_Type *base = config->base;
 
-	if (sequence->resolution != 12) {
+	switch (sequence->resolution) {
+	case 8:
+	case 9:
+		resolution = kADC16_Resolution8or9Bit;
+		break;
+	case 10:
+	case 11:
+		resolution = kADC16_Resolution10or11Bit;
+		break;
+	case 12:
+	case 13:
+		resolution = kADC16_Resolution12or13Bit;
+		break;
+#if defined(FSL_FEATURE_ADC16_MAX_RESOLUTION) && (FSL_FEATURE_ADC16_MAX_RESOLUTION >= 16U)
+	case 16:
+		resolution = kADC16_Resolution16Bit;
+		break;
+#endif
+	default:
 		LOG_ERR("Invalid resolution");
 		return -EINVAL;
 	}
+
+	tmp32 = base->CFG1 & ~(ADC_CFG1_MODE_MASK);
+	tmp32 |= ADC_CFG1_MODE(resolution);
+	base->CFG1 = tmp32;
 
 	switch (sequence->oversampling) {
 	case 0:
@@ -97,7 +122,6 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 	ADC16_SetHardwareAverage(config->base, mode);
 
 	data->buffer = sequence->buffer;
-	data->repeat_buffer = sequence->buffer;
 
 	adc_context_start_read(&data->ctx, sequence);
 	error = adc_context_wait_for_completion(&data->ctx);
@@ -153,6 +177,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 		CONTAINER_OF(ctx, struct mcux_adc16_data, ctx);
 
 	data->channels = ctx->sequence->channels;
+	data->repeat_buffer = data->buffer;
 
 	mcux_adc16_start_channel(data->dev);
 }
@@ -199,7 +224,29 @@ static int mcux_adc16_init(struct device *dev)
 	adc16_config_t adc_config;
 
 	ADC16_GetDefaultConfig(&adc_config);
+
+#if CONFIG_ADC_MCUX_ADC16_VREF_DEFAULT
+	adc_config.referenceVoltageSource = kADC16_ReferenceVoltageSourceVref;
+#else /* CONFIG_ADC_MCUX_ADC16_VREF_ALTERNATE */
+	adc_config.referenceVoltageSource = kADC16_ReferenceVoltageSourceValt;
+#endif
+
+#if CONFIG_ADC_MCUX_ADC16_CLK_DIV_RATIO_1
+	adc_config.clockDivider = kADC16_ClockDivider1;
+#elif CONFIG_ADC_MCUX_ADC16_CLK_DIV_RATIO_2
+	adc_config.clockDivider = kADC16_ClockDivider2;
+#elif CONFIG_ADC_MCUX_ADC16_CLK_DIV_RATIO_4
+	adc_config.clockDivider = kADC16_ClockDivider4;
+#else /* CONFIG_ADC_MCUX_ADC16_CLK_DIV_RATIO_8 */
+	adc_config.clockDivider = kADC16_ClockDivider8;
+#endif
+
 	ADC16_Init(base, &adc_config);
+#if defined(FSL_FEATURE_ADC16_HAS_CALIBRATION) && \
+	    FSL_FEATURE_ADC16_HAS_CALIBRATION
+	ADC16_SetHardwareAverage(base, kADC16_HardwareAverageCount32);
+	ADC16_DoAutoCalibration(base);
+#endif
 
 	ADC16_EnableHardwareTrigger(base, false);
 

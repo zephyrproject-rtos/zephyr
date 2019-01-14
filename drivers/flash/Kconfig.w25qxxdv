@@ -12,9 +12,6 @@ menuconfig SPI_FLASH_W25QXXDV
 
 if SPI_FLASH_W25QXXDV
 
-config SPI_FLASH_W25QXXDV_SPI_NAME
-	string "SPI controller device name"
-
 config SPI_FLASH_W25QXXDV_DRV_NAME
 	string "SPI flash device name"
 	default "W25QXXDV"
@@ -27,40 +24,11 @@ config SPI_FLASH_W25QXXDV_INIT_PRIORITY
 	  Device is connected to SPI bus, it has to
 	  be initialized after SPI driver.
 
-config SPI_FLASH_W25QXXDV_SPI_FREQ_0
-	int "SPI system frequency"
-	default 8000000
-	help
-	  This option sets the SPI controller's frequency. Beware this value
-	  depends on the SPI controller being used and also on the system
-	  clock.
-
-config SPI_FLASH_W25QXXDV_SPI_SLAVE
-	int "SPI slave linked to SPI flash"
-	help
-	  This option sets the SPI slave number the SPI controller has to switch
-	  to when dealing with WinBond SPI flash chip.
-
 config SPI_FLASH_W25QXXDV_GPIO_SPI_CS
 	bool "Manage SPI CS through a GPIO pin"
 	help
 	This option is useful if one needs to manage SPI CS through a GPIO
 	pin to by-pass the SPI controller's CS logic.
-
-config SPI_FLASH_W25QXXDV_GPIO_SPI_CS_DRV_NAME
-	string "GPIO driver's name to use to drive SPI CS through"
-	depends on SPI_FLASH_W25QXXDV_GPIO_SPI_CS
-	help
-	This option is mandatory to set which GPIO controller to use in order
-	to actually emulate the SPI CS.
-
-config SPI_FLASH_W25QXXDV_GPIO_SPI_CS_PIN
-	int "GPIO PIN to use to drive SPI CS through"
-	default 0
-	depends on SPI_FLASH_W25QXXDV_GPIO_SPI_CS
-	help
-	This option is mandatory to set which GPIO pin to use in order
-	to actually emulate the SPI CS.
 
 config SPI_FLASH_W25QXXDV_GPIO_CS_WAIT_DELAY
 	int "Delay time in us"
@@ -81,5 +49,13 @@ config SPI_FLASH_W25QXXDV_DEVICE_ID
 	help
 	  This is the device ID of the flash chip to use, which is 0x00ef4015 for
           the W25QXXDV
+
+config SPI_FLASH_W25QXXDV_PAGE_PROGRAM_SIZE
+	int "Page Program Size in bytes"
+	default 256
+	help
+	  This is the maximum size of a page program operation. Writing data
+	  over this page boundary will split the write operation into two
+	  pages.
 
 endif # SPI_FLASH_W25QXXDV

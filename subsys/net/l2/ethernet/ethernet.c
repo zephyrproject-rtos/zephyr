@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Intel Corporation.
+ * Copyright (c) 2016-2018 Intel Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -116,10 +116,10 @@ static inline void ethernet_update_length(struct net_if *iface,
 	}
 }
 
-#if defined(CONFIG_NET_STATISTICS_ETHERNET)
 static void ethernet_update_rx_stats(struct net_if *iface,
 				     struct net_pkt *pkt, size_t length)
 {
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
 
 	eth_stats_update_bytes_rx(iface, length);
@@ -130,16 +130,8 @@ static void ethernet_update_rx_stats(struct net_if *iface,
 	} else if (net_eth_is_addr_multicast(&hdr->dst)) {
 		eth_stats_update_multicast_rx(iface);
 	}
-}
-#else
-static void ethernet_update_rx_stats(struct net_if *iface,
-				     struct net_pkt *pkt, int length)
-{
-	ARG_UNUSED(iface);
-	ARG_UNUSED(pkt);
-	ARG_UNUSED(length);
-}
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
+}
 
 static enum net_verdict ethernet_recv(struct net_if *iface,
 				      struct net_pkt *pkt)
@@ -178,8 +170,7 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 #endif
 	case NET_ETH_PTYPE_LLDP:
 #if defined(CONFIG_NET_LLDP)
-		net_pkt_set_ll_reserve(pkt, hdr_len);
-		net_buf_pull(pkt->frags, net_pkt_ll_reserve(pkt));
+		net_buf_pull(pkt->frags, hdr_len);
 		return net_lldp_recv(iface, pkt);
 #else
 		NET_DBG("LLDP Rx agent not enabled");
@@ -192,12 +183,12 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 
 	/* Set the pointers to ll src and dst addresses */
 	lladdr = net_pkt_lladdr_src(pkt);
-	lladdr->addr = ((struct net_eth_hdr *)net_pkt_ll(pkt))->src.addr;
+	lladdr->addr = hdr->src.addr;
 	lladdr->len = sizeof(struct net_eth_addr);
 	lladdr->type = NET_LINK_ETHERNET;
 
 	lladdr = net_pkt_lladdr_dst(pkt);
-	lladdr->addr = ((struct net_eth_hdr *)net_pkt_ll(pkt))->dst.addr;
+	lladdr->addr = hdr->dst.addr;
 	lladdr->len = sizeof(struct net_eth_addr);
 	lladdr->type = NET_LINK_ETHERNET;
 
@@ -232,8 +223,7 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 
 	ethernet_update_rx_stats(iface, pkt, net_pkt_get_len(pkt));
 
-	net_pkt_set_ll_reserve(pkt, hdr_len);
-	net_buf_pull(pkt->frags, net_pkt_ll_reserve(pkt));
+	net_buf_pull(pkt->frags, hdr_len);
 
 #ifdef CONFIG_NET_ARP
 	if (family == AF_INET && type == NET_ETH_PTYPE_ARP) {
@@ -246,7 +236,7 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 			return NET_DROP;
 		}
 #endif
-		return net_arp_input(pkt);
+		return net_arp_input(pkt, hdr);
 	}
 #endif
 
@@ -444,11 +434,7 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 	    net_eth_is_vlan_enabled(ctx, net_pkt_iface(pkt))) {
 		struct net_eth_vlan_hdr *hdr_vlan;
 
-		NET_ASSERT(net_buf_headroom(hdr_frag) >=
-			   sizeof(struct net_eth_vlan_hdr));
-
-		hdr_vlan = (struct net_eth_vlan_hdr *)(hdr_frag->data -
-						       net_pkt_ll_reserve(pkt));
+		hdr_vlan = (struct net_eth_vlan_hdr *)(hdr_frag->data);
 
 		if (!ethernet_fill_in_dst_on_ipv4_mcast(pkt, &hdr_vlan->dst) &&
 		    !ethernet_fill_in_dst_on_ipv6_mcast(pkt, &hdr_vlan->dst)) {
@@ -468,11 +454,7 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 				    hdr_frag->len,
 				    &hdr_vlan->src, &hdr_vlan->dst);
 	} else {
-		NET_ASSERT(net_buf_headroom(hdr_frag) >=
-			   sizeof(struct net_eth_hdr));
-
-		hdr = (struct net_eth_hdr *)(hdr_frag->data -
-					     net_pkt_ll_reserve(pkt));
+		hdr = (struct net_eth_hdr *)(hdr_frag->data);
 
 		if (!ethernet_fill_in_dst_on_ipv4_mcast(pkt, &hdr->dst) &&
 		    !ethernet_fill_in_dst_on_ipv6_mcast(pkt, &hdr->dst)) {
@@ -484,6 +466,7 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 		       sizeof(struct net_eth_addr));
 
 		hdr->type = ptype;
+		net_buf_add(hdr_frag, sizeof(struct net_eth_hdr));
 
 		print_ll_addrs(pkt, ntohs(hdr->type),
 			       hdr_frag->len, &hdr->src, &hdr->dst);
@@ -495,35 +478,21 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 }
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-static void ethernet_update_tx_stats(struct net_if *iface,
-				     struct net_pkt *pkt, int status)
+static void ethernet_update_tx_stats(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
 
-	if (status > 0) {
-		eth_stats_update_bytes_tx(iface, status);
-		eth_stats_update_pkts_tx(iface);
+	eth_stats_update_bytes_tx(iface, net_pkt_get_len(pkt));
+	eth_stats_update_pkts_tx(iface);
 
-		if (net_eth_is_addr_multicast(&hdr->dst)) {
-			eth_stats_update_multicast_tx(iface);
-		} else if (net_eth_is_addr_broadcast(&hdr->dst)) {
-			eth_stats_update_broadcast_tx(iface);
-		}
-	} else {
-		eth_stats_update_errors_tx(iface);
+	if (net_eth_is_addr_multicast(&hdr->dst)) {
+		eth_stats_update_multicast_tx(iface);
+	} else if (net_eth_is_addr_broadcast(&hdr->dst)) {
+		eth_stats_update_broadcast_tx(iface);
 	}
+}
+#endif /* CONFIG_NET_STATISTICS_ETHERNET */
 
-	net_pkt_unref(pkt);
-}
-#else
-static void ethernet_update_tx_stats(struct net_if *iface,
-				     struct net_pkt *pkt, int status)
-{
-	ARG_UNUSED(iface);
-	ARG_UNUSED(pkt);
-	ARG_UNUSED(status);
-}
-#endif
 static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	const struct ethernet_api *api = net_if_get_device(iface)->driver_api;
@@ -590,34 +559,19 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 		goto error;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_STATISTICS_ETHERNET)) {
-		net_pkt_ref(pkt);
-	}
-
 	ret = api->send(net_if_get_device(iface), pkt);
-	if (!ret) {
-		ret = net_pkt_get_len(pkt);
-		net_pkt_unref(pkt);
+	if (ret != 0) {
+		eth_stats_update_errors_tx(iface);
+		goto error;
 	}
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+	ethernet_update_tx_stats(iface, pkt);
+#endif
+	ret = net_pkt_get_len(pkt);
 
-	ethernet_update_tx_stats(iface, pkt, ret);
+	net_pkt_unref(pkt);
 error:
 	return ret;
-}
-
-static inline u16_t ethernet_reserve(struct net_if *iface, void *unused)
-{
-	ARG_UNUSED(unused);
-
-	if (IS_ENABLED(CONFIG_NET_VLAN)) {
-		struct ethernet_context *ctx = net_if_l2_data(iface);
-
-		if (net_eth_is_vlan_enabled(ctx, iface)) {
-			return sizeof(struct net_eth_vlan_hdr);
-		}
-	}
-
-	return sizeof(struct net_eth_hdr);
 }
 
 static inline int ethernet_enable(struct net_if *iface, bool state)
@@ -876,8 +830,8 @@ int net_eth_vlan_disable(struct net_if *iface, u16_t tag)
 }
 #endif
 
-NET_L2_INIT(ETHERNET_L2, ethernet_recv, ethernet_send, ethernet_reserve,
-	    ethernet_enable, ethernet_flags);
+NET_L2_INIT(ETHERNET_L2, ethernet_recv, ethernet_send, ethernet_enable,
+	    ethernet_flags);
 
 static void carrier_on(struct k_work *work)
 {

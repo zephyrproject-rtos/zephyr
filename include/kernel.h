@@ -96,11 +96,11 @@ typedef struct {
 #endif
 
 #ifdef CONFIG_OBJECT_TRACING
-#define _OBJECT_TRACING_NEXT_PTR(type) struct type *__next
+#define _OBJECT_TRACING_NEXT_PTR(type) struct type *__next;
 #define _OBJECT_TRACING_INIT .__next = NULL,
 #else
 #define _OBJECT_TRACING_INIT
-#define _OBJECT_TRACING_NEXT_PTR(type) u8_t __dummy_next[0]
+#define _OBJECT_TRACING_NEXT_PTR(type)
 #endif
 
 #ifdef CONFIG_POLL
@@ -724,21 +724,21 @@ extern FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
 						   void *p3);
 
 /**
- * @brief Grant a thread access to a NULL-terminated  set of kernel objects
+ * @brief Grant a thread access to a set of kernel objects
  *
  * This is a convenience function. For the provided thread, grant access to
  * the remaining arguments, which must be pointers to kernel objects.
- * The final argument must be a NULL.
  *
  * The thread object must be initialized (i.e. running). The objects don't
  * need to be.
+ * Note that NULL shouldn't be passed as an argument.
  *
  * @param thread Thread to grant access to objects
- * @param ... NULL-terminated list of kernel object pointers
+ * @param ... list of kernel object pointers
  * @req K-THREAD-004
  */
-extern void __attribute__((sentinel))
-	k_thread_access_grant(struct k_thread *thread, ...);
+#define k_thread_access_grant(thread, ...) \
+	FOR_EACH_FIXED_ARG(k_object_access_grant, thread, __VA_ARGS__)
 
 /**
  * @brief Assign a resource memory pool to a thread
@@ -1110,10 +1110,10 @@ extern void k_sched_time_slice_set(s32_t slice, int prio);
  *
  * @note Can be called by ISRs.
  *
- * @return 0 if invoked by a thread.
- * @return Non-zero if invoked by an ISR.
+ * @return false if invoked by a thread.
+ * @return true if invoked by an ISR.
  */
-extern int k_is_in_isr(void);
+extern bool k_is_in_isr(void);
 
 /**
  * @brief Determine if code is running in a preemptible thread.
@@ -1330,7 +1330,7 @@ struct k_timer {
 	/* user-specific data, also used to support legacy features */
 	void *user_data;
 
-	_OBJECT_TRACING_NEXT_PTR(k_timer);
+	_OBJECT_TRACING_NEXT_PTR(k_timer)
 };
 
 #define _K_TIMER_INITIALIZER(obj, expiry, stop) \
@@ -1499,11 +1499,11 @@ extern s32_t z_timeout_remaining(struct _timeout *timeout);
  *
  * @return Remaining time (in milliseconds).
  */
-__syscall s32_t k_timer_remaining_get(struct k_timer *timer);
+__syscall u32_t k_timer_remaining_get(struct k_timer *timer);
 
-static inline s32_t _impl_k_timer_remaining_get(struct k_timer *timer)
+static inline u32_t _impl_k_timer_remaining_get(struct k_timer *timer)
 {
-	return __ticks_to_ms(z_timeout_remaining(&timer->timeout));
+	return (u32_t)__ticks_to_ms(z_timeout_remaining(&timer->timeout));
 }
 
 /**
@@ -1670,7 +1670,7 @@ struct k_queue {
 		_POLL_EVENT;
 	};
 
-	_OBJECT_TRACING_NEXT_PTR(k_queue);
+	_OBJECT_TRACING_NEXT_PTR(k_queue)
 };
 
 #define _K_QUEUE_INITIALIZER(obj) \
@@ -2307,7 +2307,7 @@ struct k_stack {
 	_wait_q_t wait_q;
 	u32_t *base, *next, *top;
 
-	_OBJECT_TRACING_NEXT_PTR(k_stack);
+	_OBJECT_TRACING_NEXT_PTR(k_stack)
 	u8_t flags;
 };
 
@@ -2560,7 +2560,7 @@ static inline void k_work_submit_to_queue(struct k_work_q *work_q,
 /**
  * @brief Submit a work item to a user mode workqueue
  *
- * Sumbits a work item to a workqueue that runs in user mode. A temporary
+ * Submits a work item to a workqueue that runs in user mode. A temporary
  * memory allocation is made from the caller's resource pool which is freed
  * once the worker thread consumes the k_work item. The workqueue
  * thread must have memory access to the k_work item being submitted. The caller
@@ -2589,7 +2589,7 @@ static inline int k_work_submit_to_user_queue(struct k_work_q *work_q,
 		/* Couldn't insert into the queue. Clear the pending bit
 		 * so the work item can be submitted again
 		 */
-		if (ret) {
+		if (ret != 0) {
 			atomic_clear_bit(work->flags, K_WORK_STATE_PENDING);
 		}
 	}
@@ -2830,7 +2830,7 @@ struct k_mutex {
 	u32_t lock_count;
 	int owner_orig_prio;
 
-	_OBJECT_TRACING_NEXT_PTR(k_mutex);
+	_OBJECT_TRACING_NEXT_PTR(k_mutex)
 };
 
 /**
@@ -2932,7 +2932,7 @@ struct k_sem {
 	u32_t limit;
 	_POLL_EVENT;
 
-	_OBJECT_TRACING_NEXT_PTR(k_sem);
+	_OBJECT_TRACING_NEXT_PTR(k_sem)
 };
 
 #define _K_SEM_INITIALIZER(obj, initial_count, count_limit) \
@@ -3106,7 +3106,7 @@ struct k_alert {
 	struct k_work work_item;
 	struct k_sem sem;
 
-	_OBJECT_TRACING_NEXT_PTR(k_alert);
+	_OBJECT_TRACING_NEXT_PTR(k_alert)
 };
 
 /**
@@ -3234,7 +3234,7 @@ struct k_msgq {
 	char *write_ptr;
 	u32_t used_msgs;
 
-	_OBJECT_TRACING_NEXT_PTR(k_msgq);
+	_OBJECT_TRACING_NEXT_PTR(k_msgq)
 	u8_t flags;
 };
 /**
@@ -3529,7 +3529,7 @@ struct k_mbox {
 	_wait_q_t tx_msg_queue;
 	_wait_q_t rx_msg_queue;
 
-	_OBJECT_TRACING_NEXT_PTR(k_mbox);
+	_OBJECT_TRACING_NEXT_PTR(k_mbox)
 };
 /**
  * @cond INTERNAL_HIDDEN
@@ -3713,7 +3713,7 @@ struct k_pipe {
 		_wait_q_t      writers; /**< Writer wait queue */
 	} wait_q;
 
-	_OBJECT_TRACING_NEXT_PTR(k_pipe);
+	_OBJECT_TRACING_NEXT_PTR(k_pipe)
 	u8_t	       flags;		/**< Flags */
 };
 
@@ -3887,7 +3887,7 @@ struct k_mem_slab {
 	char *free_list;
 	u32_t num_used;
 
-	_OBJECT_TRACING_NEXT_PTR(k_mem_slab);
+	_OBJECT_TRACING_NEXT_PTR(k_mem_slab)
 };
 
 #define _K_MEM_SLAB_INITIALIZER(obj, slab_buffer, slab_block_size, \
@@ -4211,7 +4211,7 @@ extern void *k_calloc(size_t nmemb, size_t size);
 /* private - implementation data created as needed, per-type */
 struct _poller {
 	struct k_thread *thread;
-	volatile int is_polling;
+	volatile bool is_polling;
 };
 
 /* private - types bit positions */
@@ -4608,7 +4608,7 @@ extern void _init_static_threads(void);
 /**
  * @internal
  */
-extern int _is_thread_essential(void);
+extern bool _is_thread_essential(void);
 /**
  * @internal
  */

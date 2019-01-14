@@ -33,18 +33,19 @@ config CONSOLE_GETCHAR_BUFSIZE
 	int "console_getchar() buffer size"
 	default 16
 	help
-	  Buffer size for console_getchar(). Must be power of 2. The
-	  default is optimized to save RAM. You may need to increase
-	  it e.g. to support large host-side clipboard pastes.
+	  Buffer size for console_getchar(). The default is optimized
+	  to save RAM. You may need to increase it e.g. to support
+	  large host-side clipboard pastes. Set to 0 to disable
+	  interrupt-driven operation and use busy-polling.
 
 config CONSOLE_PUTCHAR_BUFSIZE
 	int "console_putchar() buffer size"
 	default 16
 	help
-	  Buffer size for console_putchar(). Must be power of 2. The
-	  default is optimized to save RAM. You may need to increase
-	  it e.g. to support large host-side clipboard pastes (with
-	  echo).
+	  Buffer size for console_putchar().  The default is optimized
+	  to save RAM. You may need to increase it e.g. to support
+	  large host-side clipboard pastes. Set to 0 to disable
+	  interrupt-driven operation and use busy-polling.
 
 endif # CONSOLE_GETCHAR
 

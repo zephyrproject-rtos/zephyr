@@ -146,48 +146,16 @@ static int spi_flash_wb_read(struct device *dev, off_t offset, void *data,
 	return ret;
 }
 
-static int spi_flash_wb_write(struct device *dev, off_t offset,
-			      const void *data, size_t len)
-{
-	struct spi_flash_data *const driver_data = dev->driver_data;
-	u8_t reg;
-	int ret;
-
-	if (offset < 0) {
-		return -ENOTSUP;
-	}
-
-	SYNC_LOCK();
-
-	wait_for_flash_idle(dev);
-
-	reg = spi_flash_wb_reg_read(dev, W25QXXDV_CMD_RDSR);
-	if (!(reg & W25QXXDV_WEL_BIT)) {
-		SYNC_UNLOCK();
-		return -EIO;
-	}
-
-	wait_for_flash_idle(dev);
-
-	/* Assume write protection has been disabled. Note that w25qxxdv
-	 * flash automatically turns on write protection at the completion
-	 * of each write or erase transaction.
-	 */
-	ret = spi_flash_wb_access(driver_data, W25QXXDV_CMD_PP,
-				  true, offset, (void *)data, len, true);
-
-	SYNC_UNLOCK();
-
-	return ret;
-}
-
-static int spi_flash_wb_write_protection_set(struct device *dev, bool enable)
+static int spi_flash_wb_write_protection_set_with_lock(struct device *dev,
+						       bool enable, bool lock)
 {
 	struct spi_flash_data *const driver_data = dev->driver_data;
 	u8_t reg = 0U;
 	int ret;
 
-	SYNC_LOCK();
+	if (lock) {
+		SYNC_LOCK();
+	}
 
 	wait_for_flash_idle(dev);
 
@@ -199,6 +167,102 @@ static int spi_flash_wb_write_protection_set(struct device *dev, bool enable)
 
 	ret = spi_flash_wb_reg_write(dev, reg);
 
+	if (lock) {
+		SYNC_UNLOCK();
+	}
+
+	return ret;
+}
+
+static int spi_flash_wb_write_protection_set(struct device *dev, bool enable)
+{
+	return spi_flash_wb_write_protection_set_with_lock(dev, enable, true);
+}
+
+static int spi_flash_wb_program_page(struct device *dev, off_t offset,
+		const void *data, size_t len)
+{
+	u8_t reg;
+	struct spi_flash_data *const driver_data = dev->driver_data;
+
+	__ASSERT(len <= CONFIG_SPI_FLASH_W25QXXDV_PAGE_PROGRAM_SIZE,
+		 "Maximum length is %d for page programming (actual:%d)",
+		 CONFIG_SPI_FLASH_W25QXXDV_PAGE_PROGRAM_SIZE, len);
+
+	wait_for_flash_idle(dev);
+
+	reg = spi_flash_wb_reg_read(dev, W25QXXDV_CMD_RDSR);
+	if (!(reg & W25QXXDV_WEL_BIT)) {
+		return -EIO;
+	}
+
+	wait_for_flash_idle(dev);
+
+	/* Assume write protection has been disabled. Note that w25qxxdv
+	 * flash automatically turns on write protection at the completion
+	 * of each write or erase transaction.
+	 */
+	return spi_flash_wb_access(driver_data, W25QXXDV_CMD_PP,
+				  true, offset, (void *)data, len, true);
+
+}
+
+static int spi_flash_wb_write(struct device *dev, off_t offset,
+			      const void *data, size_t len)
+{
+	int ret;
+	off_t page_offset;
+	/* Cast `data`  to prevent `void*` arithmetic */
+	const u8_t *data_ptr = data;
+	struct spi_flash_data *const driver_data = dev->driver_data;
+
+	if (offset < 0) {
+		return -ENOTSUP;
+	}
+
+	SYNC_LOCK();
+
+	/* Calculate the offset in the first page we write */
+	page_offset = offset % CONFIG_SPI_FLASH_W25QXXDV_PAGE_PROGRAM_SIZE;
+
+	/*
+	 * Write all data that does not fit into a single programmable page.
+	 * By doing this logic, we can safely disable lock protection in
+	 * between pages as in case the user did not disable protection then
+	 * it will fail on the first write.
+	 */
+	while ((page_offset + len) >
+			CONFIG_SPI_FLASH_W25QXXDV_PAGE_PROGRAM_SIZE) {
+		size_t len_to_write_in_page =
+			CONFIG_SPI_FLASH_W25QXXDV_PAGE_PROGRAM_SIZE -
+			page_offset;
+
+		ret = spi_flash_wb_program_page(dev, offset,
+						data_ptr, len_to_write_in_page);
+		if (ret) {
+			goto end;
+		}
+
+		ret = spi_flash_wb_write_protection_set_with_lock(dev,
+				false, false);
+		if (ret) {
+			goto end;
+		}
+
+		len -= len_to_write_in_page;
+		offset += len_to_write_in_page;
+		data_ptr += len_to_write_in_page;
+
+		/*
+		 * For the subsequent pages we always start at the beginning
+		 * of a page
+		 */
+		page_offset = 0;
+	}
+
+	ret = spi_flash_wb_program_page(dev, offset, data_ptr, len);
+
+end:
 	SYNC_UNLOCK();
 
 	return ret;
@@ -335,23 +399,23 @@ static int spi_flash_wb_configure(struct device *dev)
 {
 	struct spi_flash_data *data = dev->driver_data;
 
-	data->spi = device_get_binding(CONFIG_SPI_FLASH_W25QXXDV_SPI_NAME);
+	data->spi = device_get_binding(DT_SPI_FLASH_W25QXXDV_SPI_NAME);
 	if (!data->spi) {
 		return -EINVAL;
 	}
 
-	data->spi_cfg.frequency = CONFIG_SPI_FLASH_W25QXXDV_SPI_FREQ_0;
+	data->spi_cfg.frequency = DT_SPI_FLASH_W25QXXDV_SPI_FREQ;
 	data->spi_cfg.operation = SPI_WORD_SET(8);
-	data->spi_cfg.slave = CONFIG_SPI_FLASH_W25QXXDV_SPI_SLAVE;
+	data->spi_cfg.slave = DT_SPI_FLASH_W25QXXDV_SPI_SLAVE;
 
 #if defined(CONFIG_SPI_FLASH_W25QXXDV_GPIO_SPI_CS)
 	data->cs_ctrl.gpio_dev = device_get_binding(
-		CONFIG_SPI_FLASH_W25QXXDV_GPIO_SPI_CS_DRV_NAME);
+		DT_SPI_FLASH_W25QXXDV_GPIO_SPI_CS_DRV_NAME);
 	if (!data->cs_ctrl.gpio_dev) {
 		return -ENODEV;
 	}
 
-	data->cs_ctrl.gpio_pin = CONFIG_SPI_FLASH_W25QXXDV_GPIO_SPI_CS_PIN;
+	data->cs_ctrl.gpio_pin = DT_SPI_FLASH_W25QXXDV_GPIO_SPI_CS_PIN;
 	data->cs_ctrl.delay = CONFIG_SPI_FLASH_W25QXXDV_GPIO_CS_WAIT_DELAY;
 
 	data->spi_cfg.cs = &data->cs_ctrl;

@@ -23,6 +23,7 @@
 #include <kernel_internal.h>
 #include <misc/__assert.h>
 #include <init.h>
+#include <stdbool.h>
 
 #if defined(CONFIG_CACHE_FLUSHING)
 
@@ -48,12 +49,12 @@
 #define DC_CTRL_OP_SUCCEEDED         0x4  /* d-cache operation succeeded */
 
 
-static int dcache_available(void)
+static bool dcache_available(void)
 {
 	unsigned long val = _arc_v2_aux_reg_read(_ARC_V2_D_CACHE_BUILD);
 
 	val &= 0xff; /* extract version */
-	return (val == 0)?0:1;
+	return (val == 0) ? false : true;
 }
 
 static void dcache_dc_ctrl(u32_t dcache_en_mask)

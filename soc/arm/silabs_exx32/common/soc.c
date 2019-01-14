@@ -66,6 +66,11 @@ static ALWAYS_INLINE void clkInit(void)
 	/* Enable the High Frequency Peripheral Clock */
 	CMU_ClockEnable(cmuClock_HFPER, true);
 
+#ifdef CONFIG_LOG_BACKEND_SWO
+	/* Select HFCLK as the debug trace clock */
+	CMU->DBGCLKSEL = CMU_DBGCLKSEL_DBG_HFCLK;
+#endif
+
 #ifdef CONFIG_GPIO_GECKO
 	CMU_ClockEnable(cmuClock_GPIO, true);
 #endif

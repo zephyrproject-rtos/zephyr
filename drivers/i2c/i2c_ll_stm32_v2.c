@@ -467,14 +467,48 @@ error:
 }
 
 #else /* !CONFIG_I2C_STM32_INTERRUPT */
-static inline void msg_done(struct device *dev, unsigned int current_msg_flags)
+static inline int check_errors(struct device *dev, const char *funcname)
+{
+	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
+	I2C_TypeDef *i2c = cfg->i2c;
+
+	if (LL_I2C_IsActiveFlag_NACK(i2c)) {
+		LL_I2C_ClearFlag_NACK(i2c);
+		LOG_DBG("%s: NACK", funcname);
+		return -EIO;
+	}
+
+	if (LL_I2C_IsActiveFlag_ARLO(i2c)) {
+		LL_I2C_ClearFlag_ARLO(i2c);
+		LOG_DBG("%s: ARLO", funcname);
+		return -EIO;
+	}
+
+	if (LL_I2C_IsActiveFlag_OVR(i2c)) {
+		LL_I2C_ClearFlag_OVR(i2c);
+		LOG_DBG("%s: OVR", funcname);
+		return -EIO;
+	}
+
+	if (LL_I2C_IsActiveFlag_BERR(i2c)) {
+		LL_I2C_ClearFlag_BERR(i2c);
+		LOG_DBG("%s: BERR", funcname);
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static inline int msg_done(struct device *dev, unsigned int current_msg_flags)
 {
 	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
 	I2C_TypeDef *i2c = cfg->i2c;
 
 	/* Wait for transfer to complete */
 	while (!LL_I2C_IsActiveFlag_TC(i2c) && !LL_I2C_IsActiveFlag_TCR(i2c)) {
-		;
+		if (check_errors(dev, __func__)) {
+			return -EIO;
+		}
 	}
 	/* Issue stop condition if necessary */
 	if (current_msg_flags & I2C_MSG_STOP) {
@@ -485,6 +519,8 @@ static inline void msg_done(struct device *dev, unsigned int current_msg_flags)
 		LL_I2C_ClearFlag_STOP(i2c);
 		LL_I2C_DisableReloadMode(i2c);
 	}
+
+	return 0;
 }
 
 int stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
@@ -504,8 +540,8 @@ int stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 				break;
 			}
 
-			if (LL_I2C_IsActiveFlag_NACK(i2c)) {
-				goto error;
+			if (check_errors(dev, __func__)) {
+				return -EIO;
 			}
 		}
 
@@ -514,14 +550,7 @@ int stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 		len--;
 	}
 
-	msg_done(dev, msg->flags);
-
-	return 0;
-error:
-	LL_I2C_ClearFlag_NACK(i2c);
-	LOG_DBG("%s: NACK", __func__);
-
-	return -EIO;
+	return msg_done(dev, msg->flags);
 }
 
 int stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
@@ -537,7 +566,9 @@ int stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 	len = msg->len;
 	while (len) {
 		while (!LL_I2C_IsActiveFlag_RXNE(i2c)) {
-			;
+			if (check_errors(dev, __func__)) {
+				return -EIO;
+			}
 		}
 
 		*buf = LL_I2C_ReceiveData8(i2c);
@@ -545,9 +576,7 @@ int stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 		len--;
 	}
 
-	msg_done(dev, msg->flags);
-
-	return 0;
+	return msg_done(dev, msg->flags);
 }
 #endif
 

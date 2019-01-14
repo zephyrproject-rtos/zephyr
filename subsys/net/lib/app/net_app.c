@@ -1698,10 +1698,6 @@ static int tls_sendto(struct net_app_ctx *ctx,
 				 tx_data->pkt,
 				 net_pkt_ip_hdr_len(tx_data->pkt),
 				 len);
-	if (ret < 0) {
-		NET_DBG("Cannot linearize send data (%d)", ret);
-		goto out;
-	}
 
 	if (ret != len) {
 		NET_DBG("Linear copy error (%u vs %d)", len, ret);

@@ -37,7 +37,7 @@
 			label = "User LD6";
 		};
 		green_led_7: led_7 {
-			gpios = <&gpiod 11 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpioe 11 GPIO_INT_ACTIVE_HIGH>;
 			label = "User LD7";
 		};
 		orange_led_8: led_8 {
@@ -64,6 +64,7 @@
 
 	aliases {
 		led0 = &green_led_6;
+		led1 = &green_led_7;
 		sw0 = &user_button;
 	};
 };

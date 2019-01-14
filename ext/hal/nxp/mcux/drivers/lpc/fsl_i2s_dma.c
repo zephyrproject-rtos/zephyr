@@ -1,31 +1,9 @@
 /*
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fsl_dma.h"
@@ -36,6 +14,11 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
+
+/* Component ID definition, used by tools. */
+#ifndef FSL_COMPONENT_ID
+#define FSL_COMPONENT_ID "platform.drivers.flexcomm_i2s_dma"
+#endif
 
 #define DMA_MAX_TRANSFER_BYTES (DMA_MAX_TRANSFER_COUNT * sizeof(uint32_t))
 #define DMA_DESCRIPTORS (2U)
@@ -95,7 +78,7 @@ static void I2S_AddTransferDMA(I2S_Type *base, i2s_dma_handle_t *handle);
 #if defined(__ICCARM__)
 #pragma data_alignment = 16
 static dma_descriptor_t s_DmaDescriptors[DMA_DESCRIPTORS * FSL_FEATURE_SOC_I2S_COUNT];
-#elif defined(__CC_ARM)
+#elif defined(__CC_ARM) || defined(__ARMCC_VERSION)
 __attribute__((aligned(16))) static dma_descriptor_t s_DmaDescriptors[DMA_DESCRIPTORS * FSL_FEATURE_SOC_I2S_COUNT];
 #elif defined(__GNUC__)
 __attribute__((aligned(16))) static dma_descriptor_t s_DmaDescriptors[DMA_DESCRIPTORS * FSL_FEATURE_SOC_I2S_COUNT];
@@ -105,7 +88,7 @@ __attribute__((aligned(16))) static dma_descriptor_t s_DmaDescriptors[DMA_DESCRI
 #if defined(__ICCARM__)
 #pragma data_alignment = 4
 static uint32_t s_DummyBufferTx = 0U;
-#elif defined(__CC_ARM)
+#elif defined(__CC_ARM) || defined(__ARMCC_VERSION)
 __attribute__((aligned(4))) static uint32_t s_DummyBufferTx = 0U;
 #elif defined(__GNUC__)
 __attribute__((aligned(4))) static uint32_t s_DummyBufferTx = 0U;
@@ -115,7 +98,7 @@ __attribute__((aligned(4))) static uint32_t s_DummyBufferTx = 0U;
 #if defined(__ICCARM__)
 #pragma data_alignment = 4
 static uint32_t s_DummyBufferRx = 0U;
-#elif defined(__CC_ARM)
+#elif defined(__CC_ARM) || defined(__ARMCC_VERSION)
 __attribute__((aligned(4))) static uint32_t s_DummyBufferRx = 0U;
 #elif defined(__GNUC__)
 __attribute__((aligned(4))) static uint32_t s_DummyBufferRx = 0U;
@@ -210,6 +193,15 @@ static inline void I2S_EnableDMAInterrupts(i2s_dma_handle_t *handle)
     }
 }
 
+/*!
+ * brief Initializes handle for transfer of audio data.
+ *
+ * param base I2S base pointer.
+ * param handle pointer to handle structure.
+ * param dmaHandle pointer to dma handle structure.
+ * param callback function to be called back when transfer is done or fails.
+ * param userData pointer to data passed to callback.
+ */
 void I2S_TxTransferCreateHandleDMA(I2S_Type *base,
                                    i2s_dma_handle_t *handle,
                                    dma_handle_t *dmaHandle,
@@ -235,6 +227,16 @@ void I2S_TxTransferCreateHandleDMA(I2S_Type *base,
     DMA_SetCallback(dmaHandle, I2S_DMACallback, privateHandle);
 }
 
+/*!
+ * brief Begins or queue sending of the given data.
+ *
+ * param base I2S base pointer.
+ * param handle pointer to handle structure.
+ * param transfer data buffer.
+ *
+ * retval kStatus_Success
+ * retval kStatus_I2S_Busy if all queue slots are occupied with unsent buffers.
+ */
 status_t I2S_TxTransferSendDMA(I2S_Type *base, i2s_dma_handle_t *handle, i2s_transfer_t transfer)
 {
     status_t status;
@@ -267,6 +269,12 @@ status_t I2S_TxTransferSendDMA(I2S_Type *base, i2s_dma_handle_t *handle, i2s_tra
     return kStatus_Success;
 }
 
+/*!
+ * brief Aborts transfer of data.
+ *
+ * param base I2S base pointer.
+ * param handle pointer to handle structure.
+ */
 void I2S_TransferAbortDMA(I2S_Type *base, i2s_dma_handle_t *handle)
 {
     assert(handle);
@@ -323,6 +331,15 @@ void I2S_TransferAbortDMA(I2S_Type *base, i2s_dma_handle_t *handle)
     privateHandle->intA = false;
 }
 
+/*!
+ * brief Initializes handle for reception of audio data.
+ *
+ * param base I2S base pointer.
+ * param handle pointer to handle structure.
+ * param dmaHandle pointer to dma handle structure.
+ * param callback function to be called back when transfer is done or fails.
+ * param userData pointer to data passed to callback.
+ */
 void I2S_RxTransferCreateHandleDMA(I2S_Type *base,
                                    i2s_dma_handle_t *handle,
                                    dma_handle_t *dmaHandle,
@@ -332,6 +349,17 @@ void I2S_RxTransferCreateHandleDMA(I2S_Type *base,
     I2S_TxTransferCreateHandleDMA(base, handle, dmaHandle, callback, userData);
 }
 
+/*!
+ * brief Begins or queue reception of data into given buffer.
+ *
+ * param base I2S base pointer.
+ * param handle pointer to handle structure.
+ * param transfer data buffer.
+ *
+ * retval kStatus_Success
+ * retval kStatus_I2S_Busy if all queue slots are occupied with buffers
+ *         which are not full.
+ */
 status_t I2S_RxTransferReceiveDMA(I2S_Type *base, i2s_dma_handle_t *handle, i2s_transfer_t transfer)
 {
     status_t status;
@@ -437,9 +465,11 @@ static status_t I2S_StartTransferDMA(I2S_Type *base, i2s_dma_handle_t *handle)
 
     /* Prepare transfer of data via initial DMA transfer descriptor */
     DMA_PrepareTransfer(
-        &xferConfig, (handle->state == kI2S_DmaStateTx) ? (void *)transfer->data : (void *)&(base->FIFORD),
-        (handle->state == kI2S_DmaStateTx) ? (void *)&(base->FIFOWR) : (void *)transfer->data, sizeof(uint32_t),
-        transferBytes, (handle->state == kI2S_DmaStateTx) ? kDMA_MemoryToPeripheral : kDMA_PeripheralToMemory,
+        &xferConfig,
+        (void *)((handle->state == kI2S_DmaStateTx) ? (uint32_t)transfer->data : (uint32_t)(&(base->FIFORD))),
+        (void *)((handle->state == kI2S_DmaStateTx) ? (uint32_t)(&(base->FIFOWR)) : (uint32_t)transfer->data),
+        sizeof(uint32_t), transferBytes,
+        (handle->state == kI2S_DmaStateTx) ? kDMA_MemoryToPeripheral : kDMA_PeripheralToMemory,
         (void *)&(s_DmaDescriptors[(instance * DMA_DESCRIPTORS) + 0U]));
 
     /* Initial descriptor is stored in another place in memory, but treat it as another descriptor for simplicity */
@@ -475,10 +505,11 @@ static status_t I2S_StartTransferDMA(I2S_Type *base, i2s_dma_handle_t *handle)
         xfercfg.dstInc = 0U;
         xfercfg.transferCount = 8U;
 
-        DMA_CreateDescriptor(descriptor, &xfercfg,
-                             (handle->state == kI2S_DmaStateTx) ? (void *)&s_DummyBufferTx : (void *)&(base->FIFORD),
-                             (handle->state == kI2S_DmaStateTx) ? (void *)&(base->FIFOWR) : (void *)&s_DummyBufferRx,
-                             (void *)nextDescriptor);
+        DMA_CreateDescriptor(
+            descriptor, &xfercfg,
+            ((handle->state == kI2S_DmaStateTx) ? (void *)&s_DummyBufferTx : (void *)(uint32_t)(&(base->FIFORD))),
+            ((handle->state == kI2S_DmaStateTx) ? (void *)(uint32_t)(&(base->FIFOWR)) : (void *)&s_DummyBufferRx),
+            (void *)nextDescriptor);
     }
 
     /* Submit and start initial DMA transfer */
@@ -513,6 +544,7 @@ static void I2S_AddTransferDMA(I2S_Type *base, i2s_dma_handle_t *handle)
     i2s_dma_private_handle_t *privateHandle;
     dma_descriptor_t *descriptor;
     dma_descriptor_t *nextDescriptor;
+    uint32_t srcAddr = 0, destAddr = 0;
 
     instance = I2S_GetInstance(base);
     privateHandle = &(s_DmaPrivateHandle[instance]);
@@ -548,11 +580,10 @@ static void I2S_AddTransferDMA(I2S_Type *base, i2s_dma_handle_t *handle)
         xfercfg.srcInc = (handle->state == kI2S_DmaStateTx) ? 1U : 0U;
         xfercfg.dstInc = (handle->state == kI2S_DmaStateTx) ? 0U : 1U;
         xfercfg.transferCount = transferBytes / sizeof(uint32_t);
+        srcAddr = ((handle->state == kI2S_DmaStateTx) ? (uint32_t)transfer->data : (uint32_t) & (base->FIFORD));
+        destAddr = ((handle->state == kI2S_DmaStateTx) ? (uint32_t) & (base->FIFOWR) : (uint32_t)transfer->data);
 
-        DMA_CreateDescriptor(descriptor, &xfercfg,
-                             (handle->state == kI2S_DmaStateTx) ? (void *)transfer->data : (void *)&(base->FIFORD),
-                             (handle->state == kI2S_DmaStateTx) ? (void *)&(base->FIFOWR) : (void *)transfer->data,
-                             (void *)nextDescriptor);
+        DMA_CreateDescriptor(descriptor, &xfercfg, (void *)srcAddr, (void *)destAddr, (void *)nextDescriptor);
 
         /* Advance internal state */
 
@@ -569,13 +600,21 @@ static void I2S_AddTransferDMA(I2S_Type *base, i2s_dma_handle_t *handle)
     }
 }
 
+/*!
+ * brief Invoked from DMA interrupt handler.
+ *
+ * param handle pointer to DMA handle structure.
+ * param userData argument for user callback.
+ * param transferDone if transfer was done.
+ * param tcds
+ */
 void I2S_DMACallback(dma_handle_t *handle, void *userData, bool transferDone, uint32_t tcds)
 {
     i2s_dma_private_handle_t *privateHandle = (i2s_dma_private_handle_t *)userData;
     i2s_dma_handle_t *i2sHandle = privateHandle->handle;
     I2S_Type *base = privateHandle->base;
 
-    if (!transferDone || (i2sHandle->state == kI2S_DmaStateIdle))
+    if ((!transferDone) || (i2sHandle->state == kI2S_DmaStateIdle))
     {
         return;
     }

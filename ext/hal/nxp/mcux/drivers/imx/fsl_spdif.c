@@ -2,7 +2,7 @@
  * Copyright (c) 2017, NXP Semiconductor, Inc.
  * All rights reserved.
  *
- * 
+ *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
@@ -12,7 +12,6 @@
 #ifndef FSL_COMPONENT_ID
 #define FSL_COMPONENT_ID "platform.drivers.spdif"
 #endif
-
 
 /*******************************************************************************
  * Definitations
@@ -80,6 +79,20 @@ uint32_t SPDIF_GetInstance(SPDIF_Type *base)
     return instance;
 }
 
+/*!
+ * brief Initializes the SPDIF peripheral.
+ *
+ * Ungates the SPDIF clock, resets the module, and configures SPDIF with a configuration structure.
+ * The configuration structure can be custom filled or set with default values by
+ * SPDIF_GetDefaultConfig().
+ *
+ * note  This API should be called at the beginning of the application to use
+ * the SPDIF driver. Otherwise, accessing the SPDIF module can cause a hard fault
+ * because the clock is not enabled.
+ *
+ * param base SPDIF base pointer
+ * param config SPDIF configuration structure.
+*/
 void SPDIF_Init(SPDIF_Type *base, const spdif_config_t *config)
 {
     uint32_t val = 0;
@@ -112,6 +125,13 @@ void SPDIF_Init(SPDIF_Type *base, const spdif_config_t *config)
     base->STC = val;
 }
 
+/*!
+ * brief De-initializes the SPDIF peripheral.
+ *
+ * This API gates the SPDIF clock. The SPDIF module can't operate unless SPDIF_Init is called to enable the clock.
+ *
+ * param base SPDIF base pointer
+*/
 void SPDIF_Deinit(SPDIF_Type *base)
 {
     SPDIF_TxEnable(base, false);
@@ -121,8 +141,25 @@ void SPDIF_Deinit(SPDIF_Type *base)
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
+/*!
+ * brief  Sets the SPDIF configuration structure to default values.
+ *
+ * This API initializes the configuration structure for use in SPDIF_Init.
+ * The initialized structure can remain unchanged in SPDIF_Init, or it can be modified
+ *  before calling SPDIF_Init.
+ * This is an example.
+   code
+   spdif_config_t config;
+   SPDIF_GetDefaultConfig(&config);
+   endcode
+ *
+ * param config pointer to master configuration structure
+ */
 void SPDIF_GetDefaultConfig(spdif_config_t *config)
 {
+    /* Initializes the configure structure to zero. */
+    memset(config, 0, sizeof(*config));
+
     config->isTxAutoSync = true;
     config->isRxAutoSync = true;
     config->DPLLClkSource = 1;
@@ -135,6 +172,12 @@ void SPDIF_GetDefaultConfig(spdif_config_t *config)
     config->gain = kSPDIF_GAIN_8;
 }
 
+/*!
+ * brief Enables/disables the SPDIF Tx.
+ *
+ * param base SPDIF base pointer
+ * param enable True means enable SPDIF Tx, false means disable.
+ */
 void SPDIF_TxEnable(SPDIF_Type *base, bool enable)
 {
     uint32_t val = 0;
@@ -156,6 +199,15 @@ void SPDIF_TxEnable(SPDIF_Type *base, bool enable)
     }
 }
 
+/*!
+ * brief Configures the SPDIF Tx sample rate.
+ *
+ * The audio format can be changed at run-time. This function configures the sample rate.
+ *
+ * param base SPDIF base pointer.
+ * param sampleRate_Hz SPDIF sample rate frequency in Hz.
+ * param sourceClockFreq_Hz SPDIF tx clock source frequency in Hz.
+*/
 void SPDIF_TxSetSampleRate(SPDIF_Type *base, uint32_t sampleRate_Hz, uint32_t sourceClockFreq_Hz)
 {
     uint32_t clkDiv = sourceClockFreq_Hz / (sampleRate_Hz * 64);
@@ -194,6 +246,15 @@ void SPDIF_TxSetSampleRate(SPDIF_Type *base, uint32_t sampleRate_Hz, uint32_t so
     }
 }
 
+/*!
+ * brief Configures the SPDIF Rx audio format.
+ *
+ * The audio format can be changed at run-time. This function configures the sample rate and audio data
+ * format to be transferred.
+ *
+ * param base SPDIF base pointer.
+ * param clockSourceFreq_Hz SPDIF system clock frequency in hz.
+ */
 uint32_t SPDIF_GetRxSampleRate(SPDIF_Type *base, uint32_t clockSourceFreq_Hz)
 {
     uint32_t gain = s_spdif_gain[((base->SRPC & SPDIF_SRPC_GAINSEL_MASK) >> SPDIF_SRPC_GAINSEL_SHIFT)];
@@ -214,6 +275,15 @@ uint32_t SPDIF_GetRxSampleRate(SPDIF_Type *base, uint32_t clockSourceFreq_Hz)
     return sampleRate;
 }
 
+/*!
+ * brief Sends data using a blocking method.
+ *
+ * note This function blocks by polling until data is ready to be sent.
+ *
+ * param base SPDIF base pointer.
+ * param buffer Pointer to the data to be written.
+ * param size Bytes to be written.
+ */
 void SPDIF_WriteBlocking(SPDIF_Type *base, uint8_t *buffer, uint32_t size)
 {
     assert(buffer);
@@ -249,6 +319,15 @@ void SPDIF_WriteBlocking(SPDIF_Type *base, uint8_t *buffer, uint32_t size)
     }
 }
 
+/*!
+ * brief Receives data using a blocking method.
+ *
+ * note This function blocks by polling until data is ready to be sent.
+ *
+ * param base SPDIF base pointer.
+ * param buffer Pointer to the data to be read.
+ * param size Bytes to be read.
+ */
 void SPDIF_ReadBlocking(SPDIF_Type *base, uint8_t *buffer, uint32_t size)
 {
     assert(buffer);
@@ -283,6 +362,17 @@ void SPDIF_ReadBlocking(SPDIF_Type *base, uint8_t *buffer, uint32_t size)
     }
 }
 
+/*!
+ * brief Initializes the SPDIF Tx handle.
+ *
+ * This function initializes the Tx handle for the SPDIF Tx transactional APIs. Call
+ * this function once to get the handle initialized.
+ *
+ * param base SPDIF base pointer
+ * param handle SPDIF handle pointer.
+ * param callback Pointer to the user callback function.
+ * param userData User parameter passed to the callback function
+ */
 void SPDIF_TransferTxCreateHandle(SPDIF_Type *base,
                                   spdif_handle_t *handle,
                                   spdif_transfer_callback_t callback,
@@ -307,6 +397,17 @@ void SPDIF_TransferTxCreateHandle(SPDIF_Type *base,
     EnableIRQ(s_spdifIRQ[SPDIF_GetInstance(base)]);
 }
 
+/*!
+ * brief Initializes the SPDIF Rx handle.
+ *
+ * This function initializes the Rx handle for the SPDIF Rx transactional APIs. Call
+ * this function once to get the handle initialized.
+ *
+ * param base SPDIF base pointer.
+ * param handle SPDIF handle pointer.
+ * param callback Pointer to the user callback function.
+ * param userData User parameter passed to the callback function.
+ */
 void SPDIF_TransferRxCreateHandle(SPDIF_Type *base,
                                   spdif_handle_t *handle,
                                   spdif_transfer_callback_t callback,
@@ -331,6 +432,21 @@ void SPDIF_TransferRxCreateHandle(SPDIF_Type *base,
     EnableIRQ(s_spdifIRQ[SPDIF_GetInstance(base)]);
 }
 
+/*!
+ * brief Performs an interrupt non-blocking send transfer on SPDIF.
+ *
+ * note This API returns immediately after the transfer initiates.
+ * Call the SPDIF_TxGetTransferStatusIRQ to poll the transfer status and check whether
+ * the transfer is finished. If the return status is not kStatus_SPDIF_Busy, the transfer
+ * is finished.
+ *
+ * param base SPDIF base pointer.
+ * param handle Pointer to the spdif_handle_t structure which stores the transfer state.
+ * param xfer Pointer to the spdif_transfer_t structure.
+ * retval kStatus_Success Successfully started the data receive.
+ * retval kStatus_SPDIF_TxBusy Previous receive still not finished.
+ * retval kStatus_InvalidArgument The input parameter is invalid.
+ */
 status_t SPDIF_TransferSendNonBlocking(SPDIF_Type *base, spdif_handle_t *handle, spdif_transfer_t *xfer)
 {
     assert(handle);
@@ -359,6 +475,21 @@ status_t SPDIF_TransferSendNonBlocking(SPDIF_Type *base, spdif_handle_t *handle,
     return kStatus_Success;
 }
 
+/*!
+ * brief Performs an interrupt non-blocking receive transfer on SPDIF.
+ *
+ * note This API returns immediately after the transfer initiates.
+ * Call the SPDIF_RxGetTransferStatusIRQ to poll the transfer status and check whether
+ * the transfer is finished. If the return status is not kStatus_SPDIF_Busy, the transfer
+ * is finished.
+ *
+ * param base SPDIF base pointer
+ * param handle Pointer to the spdif_handle_t structure which stores the transfer state.
+ * param xfer Pointer to the spdif_transfer_t structure.
+ * retval kStatus_Success Successfully started the data receive.
+ * retval kStatus_SPDIF_RxBusy Previous receive still not finished.
+ * retval kStatus_InvalidArgument The input parameter is invalid.
+ */
 status_t SPDIF_TransferReceiveNonBlocking(SPDIF_Type *base, spdif_handle_t *handle, spdif_transfer_t *xfer)
 {
     assert(handle);
@@ -390,6 +521,15 @@ status_t SPDIF_TransferReceiveNonBlocking(SPDIF_Type *base, spdif_handle_t *hand
     return kStatus_Success;
 }
 
+/*!
+ * brief Gets a set byte count.
+ *
+ * param base SPDIF base pointer.
+ * param handle Pointer to the spdif_handle_t structure which stores the transfer state.
+ * param count Bytes count sent.
+ * retval kStatus_Success Succeed get the transfer count.
+ * retval kStatus_NoTransferInProgress There is not a non-blocking transaction currently in progress.
+ */
 status_t SPDIF_TransferGetSendCount(SPDIF_Type *base, spdif_handle_t *handle, size_t *count)
 {
     assert(handle);
@@ -408,6 +548,15 @@ status_t SPDIF_TransferGetSendCount(SPDIF_Type *base, spdif_handle_t *handle, si
     return status;
 }
 
+/*!
+ * brief Gets a received byte count.
+ *
+ * param base SPDIF base pointer.
+ * param handle Pointer to the spdif_handle_t structure which stores the transfer state.
+ * param count Bytes count received.
+ * retval kStatus_Success Succeed get the transfer count.
+ * retval kStatus_NoTransferInProgress There is not a non-blocking transaction currently in progress.
+ */
 status_t SPDIF_TransferGetReceiveCount(SPDIF_Type *base, spdif_handle_t *handle, size_t *count)
 {
     assert(handle);
@@ -426,6 +575,15 @@ status_t SPDIF_TransferGetReceiveCount(SPDIF_Type *base, spdif_handle_t *handle,
     return status;
 }
 
+/*!
+ * brief Aborts the current send.
+ *
+ * note This API can be called any time when an interrupt non-blocking transfer initiates
+ * to abort the transfer early.
+ *
+ * param base SPDIF base pointer.
+ * param handle Pointer to the spdif_handle_t structure which stores the transfer state.
+ */
 void SPDIF_TransferAbortSend(SPDIF_Type *base, spdif_handle_t *handle)
 {
     assert(handle);
@@ -441,6 +599,15 @@ void SPDIF_TransferAbortSend(SPDIF_Type *base, spdif_handle_t *handle)
     handle->queueUser = 0;
 }
 
+/*!
+ * brief Aborts the current IRQ receive.
+ *
+ * note This API can be called when an interrupt non-blocking transfer initiates
+ * to abort the transfer early.
+ *
+ * param base SPDIF base pointer
+ * param handle Pointer to the spdif_handle_t structure which stores the transfer state.
+ */
 void SPDIF_TransferAbortReceive(SPDIF_Type *base, spdif_handle_t *handle)
 {
     assert(handle);
@@ -457,6 +624,12 @@ void SPDIF_TransferAbortReceive(SPDIF_Type *base, spdif_handle_t *handle)
     handle->queueUser = 0;
 }
 
+/*!
+ * brief Tx interrupt handler.
+ *
+ * param base SPDIF base pointer.
+ * param handle Pointer to the spdif_handle_t structure.
+ */
 void SPDIF_TransferTxHandleIRQ(SPDIF_Type *base, spdif_handle_t *handle)
 {
     assert(handle);
@@ -513,6 +686,12 @@ void SPDIF_TransferTxHandleIRQ(SPDIF_Type *base, spdif_handle_t *handle)
     }
 }
 
+/*!
+ * brief Tx interrupt handler.
+ *
+ * param base SPDIF base pointer.
+ * param handle Pointer to the spdif_handle_t structure.
+ */
 void SPDIF_TransferRxHandleIRQ(SPDIF_Type *base, spdif_handle_t *handle)
 {
     assert(handle);

@@ -155,17 +155,13 @@ static int eth_tx_offloading_disabled(struct device *dev, struct net_pkt *pkt)
 		udp_hdr->dst_port = port;
 
 		memcpy(lladdr,
-		       ((struct net_eth_hdr *)net_pkt_ll(pkt))->src.addr,
+		       ((struct net_eth_hdr *)net_pkt_data(pkt))->src.addr,
 		       sizeof(lladdr));
-		memcpy(((struct net_eth_hdr *)net_pkt_ll(pkt))->src.addr,
-		       ((struct net_eth_hdr *)net_pkt_ll(pkt))->dst.addr,
+		memcpy(((struct net_eth_hdr *)net_pkt_data(pkt))->src.addr,
+		       ((struct net_eth_hdr *)net_pkt_data(pkt))->dst.addr,
 		       sizeof(lladdr));
-		memcpy(((struct net_eth_hdr *)net_pkt_ll(pkt))->dst.addr,
+		memcpy(((struct net_eth_hdr *)net_pkt_data(pkt))->dst.addr,
 		       lladdr, sizeof(lladdr));
-
-		pkt->frags->data -= net_pkt_ll_reserve(pkt);
-		pkt->frags->len += net_pkt_ll_reserve(pkt);
-		net_pkt_set_ll_reserve(pkt, 0);
 
 		net_pkt_ref(pkt);
 
@@ -181,7 +177,8 @@ static int eth_tx_offloading_disabled(struct device *dev, struct net_pkt *pkt)
 	if (test_started) {
 		u16_t chksum;
 
-		chksum = net_udp_get_chksum(pkt, pkt->frags);
+		/* First frag is always ethernet header, let's skip it */
+		chksum = net_udp_get_chksum(pkt, pkt->frags->frags);
 
 		DBG("Chksum 0x%x offloading disabled\n", chksum);
 
@@ -209,7 +206,8 @@ static int eth_tx_offloading_enabled(struct device *dev, struct net_pkt *pkt)
 	if (test_started) {
 		u16_t chksum;
 
-		chksum = net_udp_get_chksum(pkt, pkt->frags);
+		/* First frag is always ethernet header, let's skip it */
+		chksum = net_udp_get_chksum(pkt, pkt->frags->frags);
 
 		DBG("Chksum 0x%x offloading enabled\n", chksum);
 

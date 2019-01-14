@@ -98,6 +98,15 @@ void log_output_msg_process(const struct log_output *log_output,
 			    struct log_msg *msg,
 			    u32_t flags);
 
+/** @brief Process dropped messages indication.
+ *
+ * Function prints error message indicating lost log messages.
+ *
+ * @param log_output Pointer to the log output instance.
+ * @param cnt        Number of dropped messages.
+ */
+void log_output_dropped_process(const struct log_output *log_output, u32_t cnt);
+
 /** @brief Flush output buffer.
  *
  * @param log_output Pointer to the log output instance.

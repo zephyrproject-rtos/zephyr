@@ -234,16 +234,9 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 					  struct net_pkt *pending,
 					  struct in_addr *current_ip)
 {
-	struct ethernet_context *ctx = net_if_l2_data(iface);
-	int eth_hdr_len = sizeof(struct net_eth_hdr);
 	struct net_pkt *pkt;
 	struct net_arp_hdr *hdr;
 	struct in_addr *my_addr;
-
-	if (net_eth_is_vlan_enabled(ctx, iface) &&
-	    net_eth_get_vlan_tag(iface) != NET_VLAN_TAG_UNSPEC) {
-		eth_hdr_len = sizeof(struct net_eth_vlan_hdr);
-	}
 
 	if (current_ip) {
 		/* This is the IPv4 autoconf case where we have already
@@ -253,7 +246,7 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 	} else {
 		struct net_buf *frag;
 
-		pkt = net_pkt_get_reserve_tx(eth_hdr_len, NET_BUF_TIMEOUT);
+		pkt = net_pkt_get_reserve_tx(NET_BUF_TIMEOUT);
 		if (!pkt) {
 			return NULL;
 		}
@@ -332,15 +325,12 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 				struct in_addr *request_ip,
 				struct in_addr *current_ip)
 {
-	struct ethernet_context *ctx;
 	struct arp_entry *entry;
 	struct in_addr *addr;
 
 	if (!pkt || !pkt->frags) {
 		return NULL;
 	}
-
-	ctx = net_if_l2_data(net_pkt_iface(pkt));
 
 	/* Is the destination in the local network, if not route via
 	 * the gateway address.
@@ -474,29 +464,20 @@ static void arp_update(struct net_if *iface,
 }
 
 static inline struct net_pkt *arp_prepare_reply(struct net_if *iface,
-						struct net_pkt *req)
+						struct net_pkt *req,
+						struct net_eth_hdr *eth_query)
 {
-	struct ethernet_context *ctx = net_if_l2_data(iface);
-	int eth_hdr_len = sizeof(struct net_eth_hdr);
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	struct net_arp_hdr *hdr, *query;
-	struct net_eth_hdr *eth_query;
 
-	if (net_eth_is_vlan_enabled(ctx, iface) &&
-	    net_eth_get_vlan_tag(iface) != NET_VLAN_TAG_UNSPEC) {
-		eth_hdr_len = sizeof(struct net_eth_vlan_hdr);
-	}
-
-	pkt = net_pkt_get_reserve_tx(eth_hdr_len, NET_BUF_TIMEOUT);
+	pkt = net_pkt_get_reserve_tx(NET_BUF_TIMEOUT);
 	if (!pkt) {
 		goto fail;
 	}
 
 	net_pkt_set_iface(pkt, iface);
 	net_pkt_set_family(pkt, AF_UNSPEC);
-
-	eth_query = NET_ETH_HDR(req);
 
 	frag = net_pkt_get_frag(pkt, NET_BUF_TIMEOUT);
 	if (!frag) {
@@ -553,19 +534,18 @@ static bool arp_hdr_check(struct net_arp_hdr *arp_hdr)
 	return true;
 }
 
-enum net_verdict net_arp_input(struct net_pkt *pkt)
+enum net_verdict net_arp_input(struct net_pkt *pkt,
+			       struct net_eth_hdr *eth_hdr)
 {
-	struct net_eth_hdr *eth_hdr;
 	struct net_arp_hdr *arp_hdr;
 	struct net_pkt *reply;
 	struct in_addr *addr;
 
 	if (net_pkt_get_len(pkt) < (sizeof(struct net_arp_hdr) -
-				    net_pkt_ll_reserve(pkt))) {
-		NET_DBG("Invalid ARP header (len %zu, min %zu bytes)",
-			net_pkt_get_len(pkt),
-			sizeof(struct net_arp_hdr) -
-			net_pkt_ll_reserve(pkt));
+				    (net_pkt_ip_data(pkt) - (u8_t *)eth_hdr))) {
+		NET_DBG("Invalid ARP header (len %zu, min %zu bytes) %p",
+			net_pkt_get_len(pkt), sizeof(struct net_arp_hdr) -
+			(net_pkt_ip_data(pkt) - (u8_t *)eth_hdr), pkt);
 		return NET_DROP;
 	}
 
@@ -576,8 +556,6 @@ enum net_verdict net_arp_input(struct net_pkt *pkt)
 
 	switch (ntohs(arp_hdr->opcode)) {
 	case NET_ARP_REQUEST:
-		eth_hdr = NET_ETH_HDR(pkt);
-
 		if (IS_ENABLED(CONFIG_NET_ARP_GRATUITOUS)) {
 			if (memcmp(&eth_hdr->dst,
 				   net_eth_broadcast_addr(),
@@ -624,7 +602,7 @@ enum net_verdict net_arp_input(struct net_pkt *pkt)
 					   &arp_hdr->dst_ipaddr)));
 
 		/* Send reply */
-		reply = arp_prepare_reply(net_pkt_iface(pkt), pkt);
+		reply = arp_prepare_reply(net_pkt_iface(pkt), pkt, eth_hdr);
 		if (reply) {
 			net_if_queue_tx(net_pkt_iface(reply), reply);
 		} else {

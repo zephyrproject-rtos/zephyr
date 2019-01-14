@@ -409,9 +409,8 @@ static void eth_enc28j60_init_phy(struct device *dev)
 static int eth_enc28j60_tx(struct device *dev, struct net_pkt *pkt)
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
-	u16_t len = net_pkt_ll_reserve(pkt) + net_pkt_get_len(pkt);
 	u16_t tx_bufaddr = ENC28J60_TXSTART;
-	bool first_frag = true;
+	u16_t len = net_pkt_get_len(pkt);
 	u8_t per_packet_control;
 	u16_t tx_bufaddr_end;
 	struct net_buf *frag;
@@ -446,19 +445,7 @@ static int eth_enc28j60_tx(struct device *dev, struct net_pkt *pkt)
 	eth_enc28j60_write_mem(dev, &per_packet_control, 1);
 
 	for (frag = pkt->frags; frag; frag = frag->frags) {
-		u8_t *data_ptr;
-		u16_t data_len;
-
-		if (first_frag) {
-			data_ptr = net_pkt_ll(pkt);
-			data_len = net_pkt_ll_reserve(pkt) + frag->len;
-			first_frag = false;
-		} else {
-			data_ptr = frag->data;
-			data_len = frag->len;
-		}
-
-		eth_enc28j60_write_mem(dev, data_ptr, data_len);
+		eth_enc28j60_write_mem(dev, frag->data, frag->len);
 	}
 
 	tx_bufaddr_end = tx_bufaddr + len;
@@ -551,7 +538,7 @@ static int eth_enc28j60_rx(struct device *dev)
 		lengthfr = frm_len;
 
 		/* Get the frame from the buffer */
-		pkt = net_pkt_get_reserve_rx(0, config->timeout);
+		pkt = net_pkt_get_reserve_rx(config->timeout);
 		if (!pkt) {
 			LOG_ERR("Could not allocate rx buffer");
 			eth_stats_update_errors_rx(context->iface);

@@ -22,11 +22,11 @@ execute_process(
 string(REGEX MATCH "Version: DTC ([0-9]+\.[0-9]+.[0-9]+).*" out_var ${dtc_version_output})
 if(${CMAKE_MATCH_1} VERSION_LESS ${MIN_DTC_VERSION})
   assert(0 "The detected dtc version is unsupported.                                 \n\
-	  The version was found to be ${CMAKE_MATCH_1}                                   \n\
-	  But the minimum supported version is ${MIN_DTC_VERSION}                        \n\
-	  See https://docs.zephyrproject.org/latest/getting_started/getting_started.html \n\
-	  for how to use the SDK's dtc alongside a custom toolchain."
-	)
+    The version was found to be ${CMAKE_MATCH_1}                                   \n\
+    But the minimum supported version is ${MIN_DTC_VERSION}                        \n\
+    See https://docs.zephyrproject.org/latest/getting_started/getting_started.html \n\
+    for how to use the SDK's dtc alongside a custom toolchain."
+  )
 endif()
 
 find_program(

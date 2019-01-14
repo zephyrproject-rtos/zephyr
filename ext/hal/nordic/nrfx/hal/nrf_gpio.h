@@ -45,9 +45,13 @@ extern "C" {
  * @brief   Hardware access layer for managing the GPIO peripheral.
  */
 
+#ifndef NRF_P0
+#define NRF_P0 NRF_GPIO
+#endif
+
 #if (GPIO_COUNT == 1)
 #define NUMBER_OF_PINS (P0_PIN_NUM)
-#define GPIO_REG_LIST  {NRF_GPIO}
+#define GPIO_REG_LIST  {NRF_P0}
 #elif (GPIO_COUNT == 2)
 #define NUMBER_OF_PINS (P0_PIN_NUM + P1_PIN_NUM)
 #define GPIO_REG_LIST  {NRF_P0, NRF_P1}
@@ -463,8 +467,7 @@ __STATIC_INLINE NRF_GPIO_Type * nrf_gpio_pin_port_decode(uint32_t * p_pin)
 {
     NRFX_ASSERT(*p_pin < NUMBER_OF_PINS);
 #if (GPIO_COUNT == 1)
-    // The oldest definition case
-    return NRF_GPIO;
+    return NRF_P0;
 #else
     if (*p_pin < P0_PIN_NUM)
     {

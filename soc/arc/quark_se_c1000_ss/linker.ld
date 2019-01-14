@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <generated_dts_board.h>
+#include <autoconf.h>
+
 /**
  * @brief Linker script for the Quark SE platform, both standard images and XIP
  * images.
@@ -26,5 +29,4 @@
 #define DCCM_START		DT_DCCM_BASE_ADDRESS
 #define DCCM_SIZE		DT_DCCM_SIZE
 
-#include <generated_dts_board.h>
 #include <arch/arc/v2/linker.ld>

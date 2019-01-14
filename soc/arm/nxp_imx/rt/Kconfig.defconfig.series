@@ -15,6 +15,9 @@ config NUM_IRQS
 	# must be >= the highest interrupt number used
 	default 160
 
+config TEXT_SECTION_OFFSET
+	default 0x2000 if BOOT_FLEXSPI_NOR || BOOT_SEMC_NOR
+
 source "soc/arm/nxp_imx/rt/Kconfig.defconfig.mimxrt*"
 
 endif # SOC_SERIES_IMX_RT

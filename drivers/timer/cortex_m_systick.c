@@ -145,5 +145,5 @@ void z_clock_idle_exit(void)
 
 void sys_clock_disable(void)
 {
-	SysTick->CTRL |= SysTick_CTRL_ENABLE_Msk;
+	SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
 }

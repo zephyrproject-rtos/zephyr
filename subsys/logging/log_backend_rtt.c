@@ -16,12 +16,18 @@
 
 #define DROP_MSG "\nmessages dropped:    \r"
 #define DROP_MSG_LEN (sizeof(DROP_MSG) - 1)
-
+#define MESSAGE_SIZE CONFIG_LOG_BACKEND_RTT_MESSAGE_SIZE
+#define CHAR_BUF_SIZE 1
+#define RETRY_DELAY_MS 10 /* Long enough to detect host presence */
+#define RETRY_CNT 10      /* Big enough to detect host presence */
 #else
 
 #define DROP_MSG NULL
 #define DROP_MSG_LEN 0
-
+#define MESSAGE_SIZE 0
+#define CHAR_BUF_SIZE CONFIG_LOG_BACKEND_RTT_OUTPUT_BUFFER_SIZE
+#define RETRY_DELAY_MS CONFIG_LOG_BACKEND_RTT_RETRY_DELAY_MS
+#define RETRY_CNT CONFIG_LOG_BACKEND_RTT_RETRY_CNT
 #endif /* CONFIG_LOG_BACKEND_RTT_MODE_DROP */
 
 #if CONFIG_LOG_BACKEND_RTT_BUFFER > 0
@@ -40,38 +46,32 @@
 
 static const char *drop_msg = DROP_MSG;
 static u8_t rtt_buf[RTT_BUFFER_SIZE];
-static u8_t line_buf[CONFIG_LOG_BACKEND_RTT_MESSAGE_SIZE + DROP_MSG_LEN];
+static u8_t line_buf[MESSAGE_SIZE + DROP_MSG_LEN];
 static u8_t *line_pos;
-static u8_t char_buf;
+static u8_t char_buf[CHAR_BUF_SIZE];
 static int drop_cnt;
 static int drop_warn;
 static int panic_mode;
 
-static int msg_out(u8_t *data, size_t length, void *ctx);
+static bool host_present;
 
-static int line_out(u8_t data);
+static int data_out_block_mode(u8_t *data, size_t length, void *ctx);
+static int data_out_drop_mode(u8_t *data, size_t length, void *ctx);
 
-static void log_backend_rtt_flush(void);
+static int char_out_drop_mode(u8_t data);
+static int line_out_drop_mode(void);
 
-static int log_backend_rtt_write(void);
-
-static int log_backend_rtt_write_drop(void);
-
-static int log_backend_rtt_write_block(void);
-
-static int log_backend_rtt_panic(u8_t *data, size_t length);
-
-static int msg_out(u8_t *data, size_t length, void *ctx)
+static int data_out_drop_mode(u8_t *data, size_t length, void *ctx)
 {
 	(void) ctx;
 	u8_t *pos;
 
 	if (panic_mode) {
-		return log_backend_rtt_panic(data, length);
+		return data_out_block_mode(data, length, ctx);
 	}
 
 	for (pos = data; pos < data + length; pos++) {
-		if (line_out(*pos)) {
+		if (char_out_drop_mode(*pos)) {
 			break;
 		}
 	}
@@ -79,10 +79,10 @@ static int msg_out(u8_t *data, size_t length, void *ctx)
 	return (int) (pos - data);
 }
 
-static int line_out(u8_t data)
+static int char_out_drop_mode(u8_t data)
 {
 	if (data == '\r') {
-		if (log_backend_rtt_write()) {
+		if (line_out_drop_mode()) {
 			return 1;
 		}
 		line_pos = drop_cnt > 0 ? line_buf + DROP_MSG_LEN : line_buf;
@@ -97,15 +97,14 @@ static int line_out(u8_t data)
 	return 0;
 }
 
-
-static int log_backend_rtt_write_drop(void)
+static int line_out_drop_mode(void)
 {
 	*line_pos = '\r';
 
 	if (drop_cnt > 0 && !drop_warn) {
 		memmove(line_buf + DROP_MSG_LEN, line_buf,
 			line_pos - line_buf);
-		memcpy(line_buf, drop_msg, DROP_MSG_LEN);
+		(void)memcpy(line_buf, drop_msg, DROP_MSG_LEN);
 		line_pos += DROP_MSG_LEN;
 		drop_warn = 1;
 	}
@@ -129,7 +128,7 @@ static int log_backend_rtt_write_drop(void)
 					     line_buf, line_pos - line_buf + 1);
 	RTT_UNLOCK();
 
-	if (!ret) {
+	if (ret == 0) {
 		drop_cnt++;
 		return 0;
 	}
@@ -139,45 +138,59 @@ static int log_backend_rtt_write_drop(void)
 	return 0;
 }
 
-static int log_backend_rtt_write_block(void)
+static void on_write(void)
 {
-	unsigned int ret;
-	*line_pos = '\r';
+	host_present = true;
 
-	RTT_LOCK();
-	ret = SEGGER_RTT_WriteSkipNoLock(CONFIG_LOG_BACKEND_RTT_BUFFER,
-					 line_buf, line_pos - line_buf + 1);
-	RTT_UNLOCK();
-
-	if (ret) {
-		log_backend_rtt_flush();
-		return 0;
-	}
-	return 1;
-}
-
-static int log_backend_rtt_write(void)
-{
-	if (IS_ENABLED(CONFIG_LOG_BACKEND_RTT_MODE_BLOCK)) {
-		return log_backend_rtt_write_block();
-	} else if (IS_ENABLED(CONFIG_LOG_BACKEND_RTT_MODE_DROP)) {
-		return log_backend_rtt_write_drop();
+	if (panic_mode) {
+		while (SEGGER_RTT_HasDataUp(CONFIG_LOG_BACKEND_RTT_BUFFER)) {
+			/* Pend until data is fetched by the host. */
+		}
 	}
 }
 
-static int log_backend_rtt_panic(u8_t *data, size_t length)
+static void on_failed_write(int retry_cnt)
 {
-	unsigned int written;
-
-	/* do not respect mutex, take it over */
-	written = SEGGER_RTT_WriteNoLock(CONFIG_LOG_BACKEND_RTT_BUFFER, data,
-					 length);
-	log_backend_rtt_flush();
-	return written;
+	if (retry_cnt == 0) {
+		host_present = false;
+	} else if (panic_mode) {
+		k_busy_wait(USEC_PER_MSEC * RETRY_DELAY_MS);
+	} else {
+		k_sleep(RETRY_DELAY_MS);
+	}
 }
 
+static int data_out_block_mode(u8_t *data, size_t length, void *ctx)
+{
+	int ret;
+	int retry_cnt = RETRY_CNT;
 
-LOG_OUTPUT_DEFINE(log_output, msg_out, &char_buf, 1);
+	do {
+		if (!panic_mode) {
+			RTT_LOCK();
+		}
+
+		ret = SEGGER_RTT_WriteSkipNoLock(CONFIG_LOG_BACKEND_RTT_BUFFER,
+						 data, length);
+
+		if (!panic_mode) {
+			RTT_UNLOCK();
+		}
+
+		if (ret) {
+			on_write();
+		} else {
+			retry_cnt--;
+			on_failed_write(retry_cnt);
+		}
+	} while ((ret == 0) && host_present);
+
+	return length;
+}
+
+LOG_OUTPUT_DEFINE(log_output, IS_ENABLED(CONFIG_LOG_BACKEND_RTT_MODE_BLOCK) ?
+		  data_out_block_mode : data_out_drop_mode,
+		  char_buf, sizeof(char_buf));
 
 static void put(const struct log_backend *const backend,
 		struct log_msg *msg)
@@ -197,7 +210,6 @@ static void put(const struct log_backend *const backend,
 	log_output_msg_process(&log_output, msg, flags);
 
 	log_msg_put(msg);
-
 }
 
 static void log_backend_rtt_cfg(void)
@@ -213,28 +225,29 @@ static void log_backend_rtt_init(void)
 		log_backend_rtt_cfg();
 	}
 
+	host_present = true;
 	panic_mode = 0;
 	line_pos = line_buf;
 }
 
 static void panic(struct log_backend const *const backend)
 {
+	log_output_flush(&log_output);
 	panic_mode = 1;
 }
 
-static void log_backend_rtt_flush(void)
+static void dropped(const struct log_backend *const backend, u32_t cnt)
 {
-	while (SEGGER_RTT_HasDataUp(CONFIG_LOG_BACKEND_RTT_BUFFER)) {
-		if (!panic_mode) {
-			k_yield();
-		}
-	}
+	ARG_UNUSED(backend);
+
+	log_output_dropped_process(&log_output, cnt);
 }
 
 const struct log_backend_api log_backend_rtt_api = {
 	.put = put,
 	.panic = panic,
 	.init = log_backend_rtt_init,
+	.dropped = dropped,
 };
 
 LOG_BACKEND_DEFINE(log_backend_rtt, log_backend_rtt_api, true);

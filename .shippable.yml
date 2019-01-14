@@ -7,14 +7,16 @@ env:
         - SDK=0.9.5
         - ZEPHYR_SDK_INSTALL_DIR=/opt/sdk/zephyr-sdk-0.9.5
         - ZEPHYR_TOOLCHAIN_VARIANT=zephyr
-        - MATRIX_BUILDS="5"
-        - MATRIX_BUILDS_EXTRA="5"
+        - MATRIX_BUILDS="7"
+        - MATRIX_BUILDS_EXTRA="7"
     matrix:
         - MATRIX_BUILD="1"
         - MATRIX_BUILD="2"
         - MATRIX_BUILD="3"
         - MATRIX_BUILD="4"
         - MATRIX_BUILD="5"
+        - MATRIX_BUILD="6"
+        - MATRIX_BUILD="7"
 
 build:
     cache: false
@@ -22,7 +24,7 @@ build:
         - ${SHIPPABLE_BUILD_DIR}/ccache
     pre_ci_boot:
         image_name: zephyrprojectrtos/ci
-        image_tag: v0.5-rc3
+        image_tag: v0.5-rc5
         pull: true
         options: "-e HOME=/home/buildslave --privileged=true --tty --net=bridge --user buildslave"
 

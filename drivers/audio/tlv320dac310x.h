@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Intel Corporation.
+ * Copyright (c) 2019 Intel Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,9 +10,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/* I2C device address of TLV320DAC3101 */
-#define DAC_I2C_DEV_ADDR	(0x30 >> 1)
 
 /* Register addresses */
 #define PAGE_CONTROL_ADDR	0

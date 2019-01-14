@@ -12,7 +12,7 @@ config BOARD
 
 if UART_CONSOLE
 
-config UART_STM32_PORT_1
+config UART_1
 	default y
 
 endif # UART_CONSOLE
@@ -30,5 +30,15 @@ config PWM_STM32_1
 	default y
 
 endif # PWM
+
+if SPI
+
+config SPI_1
+	default y
+
+config SPI_2
+	default y
+
+endif # SPI
 
 endif # BOARD_STM32_MIN_DEV

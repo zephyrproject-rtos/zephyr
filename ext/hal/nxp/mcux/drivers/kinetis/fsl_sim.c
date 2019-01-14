@@ -1,39 +1,35 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fsl_sim.h"
+
+/* Component ID definition, used by tools. */
+#ifndef FSL_COMPONENT_ID
+#define FSL_COMPONENT_ID "platform.drivers.sim"
+#endif
 
 /*******************************************************************************
  * Codes
  ******************************************************************************/
 #if (defined(FSL_FEATURE_SIM_OPT_HAS_USB_VOLTAGE_REGULATOR) && FSL_FEATURE_SIM_OPT_HAS_USB_VOLTAGE_REGULATOR)
+/*!
+ * brief Sets the USB voltage regulator setting.
+ *
+ * This function configures whether the USB voltage regulator is enabled in
+ * normal RUN mode, STOP/VLPS/LLS/VLLS modes, and VLPR/VLPW modes. The configurations
+ * are passed in as mask value of \ref _sim_usb_volt_reg_enable_mode. For example, to enable
+ * USB voltage regulator in RUN/VLPR/VLPW modes and disable in STOP/VLPS/LLS/VLLS mode,
+ * use:
+ *
+ * SIM_SetUsbVoltRegulatorEnableMode(kSIM_UsbVoltRegEnable | kSIM_UsbVoltRegEnableInLowPower);
+ *
+ * param mask  USB voltage regulator enable setting.
+ */
 void SIM_SetUsbVoltRegulatorEnableMode(uint32_t mask)
 {
     SIM->SOPT1CFG |= (SIM_SOPT1CFG_URWE_MASK | SIM_SOPT1CFG_UVSWE_MASK | SIM_SOPT1CFG_USSWE_MASK);
@@ -42,12 +38,34 @@ void SIM_SetUsbVoltRegulatorEnableMode(uint32_t mask)
 }
 #endif /* FSL_FEATURE_SIM_OPT_HAS_USB_VOLTAGE_REGULATOR */
 
+/*!
+ * brief Gets the unique identification register value.
+ *
+ * param uid Pointer to the structure to save the UID value.
+ */
 void SIM_GetUniqueId(sim_uid_t *uid)
 {
 #if defined(SIM_UIDH)
     uid->H = SIM->UIDH;
 #endif
+#if (defined(FSL_FEATURE_SIM_HAS_UIDM) && FSL_FEATURE_SIM_HAS_UIDM)
+    uid->M = SIM->UIDM;
+#else
     uid->MH = SIM->UIDMH;
     uid->ML = SIM->UIDML;
+#endif /* FSL_FEATURE_SIM_HAS_UIDM */
     uid->L = SIM->UIDL;
 }
+
+#if (defined(FSL_FEATURE_SIM_HAS_RF_MAC_ADDR) && FSL_FEATURE_SIM_HAS_RF_MAC_ADDR)
+/*!
+ * brief Gets the RF address register value.
+ *
+ * param info Pointer to the structure to save the RF address value.
+ */
+void SIM_GetRfAddr(sim_rf_addr_t *info)
+{
+    info->rfAddrL = SIM->RFADDRL;
+    info->rfAddrH = SIM->RFADDRH;
+}
+#endif /* FSL_FEATURE_SIM_HAS_RF_MAC_ADDR */

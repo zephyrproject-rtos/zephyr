@@ -7,9 +7,9 @@
 
 menuconfig UART_NRFX
 	bool "nRF UART nrfx drivers"
+	default y
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
-	select GPIO
 	depends on SOC_FAMILY_NRF
 	help
 	  Enable support for nrfx UART drivers for nRF MCU series.

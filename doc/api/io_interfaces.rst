@@ -18,6 +18,12 @@ ADC Interface
 .. doxygengroup:: adc_interface
    :project: Zephyr
 
+CAN Interface
+*************
+
+.. doxygengroup:: can_interface
+   :project: Zephyr
+
 DMA Interface
 *************
 
@@ -34,6 +40,12 @@ I2C Interface
 *************
 
 .. doxygengroup:: i2c_interface
+   :project: Zephyr
+
+I2C EEPROM Slave Driver
+***********************
+
+.. doxygengroup:: i2c_eeprom_slave_api
    :project: Zephyr
 
 I2S Interface

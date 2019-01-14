@@ -14,7 +14,19 @@
 
 #include "flash_stm32.h"
 
-#define STM32_FLASH_TIMEOUT	((u32_t) 0x000B0000)
+/* STM32F0: maximum erase time of 40ms for a 2K sector */
+#if defined(CONFIG_SOC_SERIES_STM32F0X)
+#define STM32_FLASH_TIMEOUT	(K_MSEC(40))
+/* STM32F4: maximum erase time of 4s for a 128K sector */
+#elif defined(CONFIG_SOC_SERIES_STM32F4X)
+#define STM32_FLASH_TIMEOUT	(K_MSEC(4000))
+/* STM32F7: maximum erase time of 4s for a 256K sector */
+#elif defined(CONFIG_SOC_SERIES_STM32F7X)
+#define STM32_FLASH_TIMEOUT	(K_MSEC(4000))
+/* STM32L4: maximum erase time of 24.47ms for a 2K sector */
+#elif defined(CONFIG_SOC_SERIES_STM32L4X)
+#define STM32_FLASH_TIMEOUT	(K_MSEC(25))
+#endif
 
 /*
  * This is named flash_stm32_sem_take instead of flash_stm32_lock (and
@@ -63,7 +75,7 @@ static int flash_stm32_check_status(struct device *dev)
 
 int flash_stm32_wait_flash_idle(struct device *dev)
 {
-	u32_t timeout = STM32_FLASH_TIMEOUT;
+	s64_t timeout_time = k_uptime_get() + STM32_FLASH_TIMEOUT;
 	int rc;
 
 	rc = flash_stm32_check_status(dev);
@@ -71,41 +83,41 @@ int flash_stm32_wait_flash_idle(struct device *dev)
 		return -EIO;
 	}
 
-	while ((FLASH_STM32_REGS(dev)->sr & FLASH_SR_BSY) && timeout) {
-		timeout--;
-	}
-
-	if (!timeout) {
-		return -EIO;
+	while ((FLASH_STM32_REGS(dev)->sr & FLASH_SR_BSY)) {
+		if (k_uptime_get() > timeout_time) {
+			return -EIO;
+		}
 	}
 
 	return 0;
 }
 
-#if !defined(CONFIG_SOC_SERIES_STM32F0X)
-static void flash_stm32_flush_caches(struct device *dev)
+static void flash_stm32_flush_caches(struct device *dev,
+				     off_t offset, size_t len)
 {
+#if defined(CONFIG_SOC_SERIES_STM32F0X)
+	ARG_UNUSED(dev);
+	ARG_UNUSED(offset);
+	ARG_UNUSED(len);
+#elif defined(CONFIG_SOC_SERIES_STM32F4X) || defined(CONFIG_SOC_SERIES_STM32L4X)
+	ARG_UNUSED(offset);
+	ARG_UNUSED(len);
 #if defined(CONFIG_SOC_SERIES_STM32F4X)
 	struct stm32f4x_flash *regs = FLASH_STM32_REGS(dev);
 #elif defined(CONFIG_SOC_SERIES_STM32L4X)
 	struct stm32l4x_flash *regs = FLASH_STM32_REGS(dev);
 #endif
-
-	if (regs->acr.val & FLASH_ACR_ICEN) {
-		regs->acr.val &= ~FLASH_ACR_ICEN;
-		regs->acr.val |= FLASH_ACR_ICRST;
-		regs->acr.val &= ~FLASH_ACR_ICRST;
-		regs->acr.val |= FLASH_ACR_ICEN;
-	}
-
 	if (regs->acr.val & FLASH_ACR_DCEN) {
 		regs->acr.val &= ~FLASH_ACR_DCEN;
 		regs->acr.val |= FLASH_ACR_DCRST;
 		regs->acr.val &= ~FLASH_ACR_DCRST;
 		regs->acr.val |= FLASH_ACR_DCEN;
 	}
-}
+#elif defined(CONFIG_SOC_SERIES_STM32F7X)
+	SCB_InvalidateDCache_by_Addr((uint32_t *)(CONFIG_FLASH_BASE_ADDRESS
+						  + offset), len);
 #endif
+}
 
 static int flash_stm32_read(struct device *dev, off_t offset, void *data,
 			    size_t len)
@@ -139,9 +151,7 @@ static int flash_stm32_erase(struct device *dev, off_t offset, size_t len)
 
 	rc = flash_stm32_block_erase_loop(dev, offset, len);
 
-#if !defined(CONFIG_SOC_SERIES_STM32F0X)
-	flash_stm32_flush_caches(dev);
-#endif
+	flash_stm32_flush_caches(dev, offset, len);
 
 	flash_stm32_sem_give(dev);
 
@@ -174,6 +184,8 @@ static int flash_stm32_write_protection(struct device *dev, bool enable)
 {
 #if defined(CONFIG_SOC_SERIES_STM32F4X)
 	struct stm32f4x_flash *regs = FLASH_STM32_REGS(dev);
+#elif defined(CONFIG_SOC_SERIES_STM32F7X)
+	struct stm32f7x_flash *regs = FLASH_STM32_REGS(dev);
 #elif defined(CONFIG_SOC_SERIES_STM32F0X)
 	struct stm32f0x_flash *regs = FLASH_STM32_REGS(dev);
 #elif defined(CONFIG_SOC_SERIES_STM32L4X)
@@ -209,6 +221,8 @@ static struct flash_stm32_priv flash_data = {
 		    .enr = LL_AHB1_GRP1_PERIPH_FLASH },
 #elif defined(CONFIG_SOC_SERIES_STM32F4X)
 	.regs = (struct stm32f4x_flash *) DT_FLASH_DEV_BASE_ADDRESS,
+#elif defined(CONFIG_SOC_SERIES_STM32F7X)
+	.regs = (struct stm32f7x_flash *) DT_FLASH_DEV_BASE_ADDRESS,
 #elif defined(CONFIG_SOC_SERIES_STM32L4X)
 	.regs = (struct stm32l4x_flash *) DT_FLASH_DEV_BASE_ADDRESS,
 	.pclken = { .bus = STM32_CLOCK_BUS_AHB1,

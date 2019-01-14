@@ -1,0 +1,101 @@
+/*
+ * Copyright (c) 2018 AJ Palmer
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f7/stm32f756Xg.dtsi>
+
+/ {
+	model = "STMicroelectronics STM32F756ZG-NUCLEO board";
+	compatible = "st,stm32f756zg-nucleo", "st,stm32f756";
+
+	chosen {
+		zephyr,console = &usart3;
+		zephyr,shell-uart = &usart3;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led: led_0 {
+			gpios = <&gpiob 0 GPIO_INT_ACTIVE_HIGH>;
+			label = "User LD1";
+		};
+		blue_led: led_1 {
+			gpios = <&gpiob 7 GPIO_INT_ACTIVE_HIGH>;
+			label = "User LD2";
+		};
+		red_led: led_2 {
+			gpios = <&gpiob 14 GPIO_INT_ACTIVE_HIGH>;
+			label = "User LD3";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button_0 {
+			label = "User";
+			gpios = <&gpioc 13 GPIO_INT_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		led0 = &green_led;
+		led1 = &blue_led;
+		led2 = &red_led;
+		sw0 = &user_button;
+	};
+};
+
+arduino_serial: &usart6 {};
+arduino_i2c: &i2c1 {};
+arduino_spi: &spi1 {};
+
+&usart2 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart2_pins_b>;
+	pinctrl-names = "default";
+	status = "ok";
+};
+
+&usart3 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart3_pins_b>;
+	pinctrl-names = "default";
+	status = "ok";
+};
+
+&usart6 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart6_pins_a>;
+	pinctrl-names = "default";
+	status = "ok";
+};
+
+&usbotg_fs {
+	status = "ok";
+};
+
+&i2c1 {
+	status = "ok";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&timers1 {
+	status = "ok";
+
+	pwm {
+		status = "ok";
+	};
+};
+
+&spi1 {
+	/*
+	 * WARNING: The pin PA7 will conflict on selection of SPI_1 and
+	 *          ETH_STM32_HAL. See pinmux.c for further details.
+	 */
+	status = "ok";
+};

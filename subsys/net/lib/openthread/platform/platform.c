@@ -11,12 +11,12 @@
  */
 
 #include <kernel.h>
-#include <openthread/openthread.h>
+#include <openthread/instance.h>
 #include <openthread/tasklet.h>
 
 #include "platform-zephyr.h"
 
-void PlatformInit(int argc, char *argv[])
+void otSysInit(int argc, char *argv[])
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
@@ -25,7 +25,7 @@ void PlatformInit(int argc, char *argv[])
 	platformRadioInit();
 }
 
-void PlatformProcessDrivers(otInstance *aInstance)
+void otSysProcessDrivers(otInstance *aInstance)
 {
 	platformRadioProcess(aInstance);
 	platformAlarmProcess(aInstance);

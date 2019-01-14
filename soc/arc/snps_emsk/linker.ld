@@ -9,6 +9,7 @@
  */
 
 #include <generated_dts_board.h>
+#include <autoconf.h>
 
 /*
  * DRAM base address and size

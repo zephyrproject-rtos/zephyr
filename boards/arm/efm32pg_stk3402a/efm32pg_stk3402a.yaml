@@ -12,5 +12,6 @@ supported:
   - gpio
 testing:
   ignore_tags:
+  - xtools
     - net
     - bluetooth

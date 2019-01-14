@@ -192,27 +192,21 @@ static inline void net_hexdump(const char *str,
 }
 
 
-/* Hexdump from all fragments
- * Set full as true to get also the L2 reserve part printed out
- */
+/* Hexdump from all fragments */
 static inline void net_hexdump_frags(const char *str,
 				     struct net_pkt *pkt, bool full)
 {
-	u8_t reserve = full ? net_pkt_ll_reserve(pkt) : 0;
 	struct net_buf *frag = pkt->frags;
+
+	ARG_UNUSED(full);
 
 	if (str && str[0]) {
 		LOG_DBG("%s", str);
 	}
 
 	while (frag) {
-		LOG_HEXDUMP_DBG(full ? frag->data - reserve : frag->data,
-				frag->len + reserve, "");
+		LOG_HEXDUMP_DBG(frag->data, frag->len, "");
 		frag = frag->frags;
-
-		if (full && reserve) {
-			reserve -= net_pkt_ll_reserve(pkt);
-		}
 	}
 }
 

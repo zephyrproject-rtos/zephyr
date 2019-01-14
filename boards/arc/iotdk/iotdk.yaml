@@ -1,0 +1,12 @@
+identifier: iotdk
+name: IoT Development Kit
+type: mcu
+arch: arc
+toolchain:
+  - zephyr
+  - xtools
+ram: 128
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

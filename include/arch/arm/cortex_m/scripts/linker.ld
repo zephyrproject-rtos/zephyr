@@ -135,6 +135,17 @@ SECTIONS
 	KEEP(*(.dbghdr))
 	KEEP(*(".dbghdr.*"))
 #endif
+
+#ifdef CONFIG_NXP_IMX_RT_BOOT_HEADER
+	KEEP(*(.boot_hdr.conf))
+	. = CONFIG_IMAGE_VECTOR_TABLE_OFFSET;
+	KEEP(*(.boot_hdr.ivt))
+	KEEP(*(.boot_hdr.data))
+#ifdef CONFIG_DEVICE_CONFIGURATION_DATA
+	KEEP(*(.boot_hdr.dcd_data))
+#endif
+#endif
+
 	. = CONFIG_TEXT_SECTION_OFFSET;
 
 #if defined(CONFIG_SW_VECTOR_RELAY)
@@ -292,6 +303,7 @@ SECTIONS
 
     GROUP_START(RAMABLE_REGION)
 
+	. = RAM_ADDR;
 	/* Align the start of image SRAM with the
 	 * minimum granularity required by MPU.
 	 */

@@ -26,8 +26,7 @@ static void dyn_thread_entry(void *p1, void *p2, void *p3)
 static void prep(void)
 {
 	k_thread_access_grant(k_current_get(), dyn_thread_stack,
-			      &start_sem, &end_sem,
-			      NULL);
+			      &start_sem, &end_sem);
 }
 
 static void create_dynamic_thread(void)

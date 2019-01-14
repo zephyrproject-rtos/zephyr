@@ -10,6 +10,7 @@
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 
 #include <zephyr.h>
+#include <ztest.h>
 #include <linker/sections.h>
 
 #include <zephyr/types.h>
@@ -145,10 +146,6 @@ struct net_fragment_data {
 
 int net_fragment_dev_init(struct device *dev)
 {
-	struct net_fragment_context *net_fragment_context = dev->driver_data;
-
-	net_fragment_context = net_fragment_context;
-
 	return 0;
 }
 
@@ -225,12 +222,11 @@ static struct net_pkt *create_pkt(struct net_fragment_data *data)
 	u16_t len;
 	int remaining;
 
-	pkt = net_pkt_get_reserve_tx(0, K_FOREVER);
+	pkt = net_pkt_get_reserve_tx(K_FOREVER);
 	if (!pkt) {
 		return NULL;
 	}
 
-	net_pkt_set_ll_reserve(pkt, 0);
 	net_pkt_set_iface(pkt, net_if_get_default());
 	net_pkt_set_ip_hdr_len(pkt, NET_IPV6H_LEN);
 
@@ -417,12 +413,24 @@ static struct net_fragment_data test_data_8 = {
 	.iphc = false
 };
 
-static int test_fragment(struct net_fragment_data *data)
+static u8_t frame_buffer_data[IEEE802154_MTU - 2];
+
+static struct net_buf frame_buf = {
+	.data = frame_buffer_data,
+	.size = IEEE802154_MTU - 2,
+	.frags = NULL,
+	.__buf = frame_buffer_data,
+};
+
+static bool test_fragment(struct net_fragment_data *data)
 {
 	struct net_pkt *rxpkt = NULL;
-	int result = TC_FAIL;
-	struct net_pkt *pkt;
+	struct net_pkt *f_pkt = NULL;
+	int result = false;
+	struct ieee802154_fragment_ctx ctx;
 	struct net_buf *frag, *dfrag;
+	struct net_pkt *pkt;
+	int hdr_diff;
 
 	pkt = create_pkt(data);
 	if (!pkt) {
@@ -435,27 +443,62 @@ static int test_fragment(struct net_fragment_data *data)
 	net_hexdump_frags("before-compression", pkt, false);
 #endif
 
-	if (!net_6lo_compress(pkt, data->iphc,
-			      ieee802154_fragment)) {
+	hdr_diff = net_6lo_compress(pkt, data->iphc);
+	if (hdr_diff < 0) {
 		TC_PRINT("compression failed\n");
 		goto end;
 	}
 
-#if DEBUG > 0
-	printk("length after compression and fragmentation %zd\n",
-	       net_pkt_get_len(pkt));
-	net_hexdump_frags("after-compression", pkt, false);
-#endif
+	if (!ieee802154_fragment_is_needed(pkt, 0)) {
+		f_pkt = pkt;
+		pkt = NULL;
+
+		goto reassemble;
+	}
+
+	f_pkt = net_pkt_get_reserve_tx(K_FOREVER);
+	if (!f_pkt) {
+		goto end;
+	}
+
+	ieee802154_fragment_ctx_init(&ctx, pkt, hdr_diff, data->iphc);
+	frame_buf.len = 0;
 
 	frag = pkt->frags;
-
 	while (frag) {
-		rxpkt = net_pkt_get_reserve_rx(0, K_FOREVER);
-		if (!rxpkt) {
+		ieee802154_fragment(&ctx, &frame_buf, data->iphc);
+		frag = ctx.frag;
+
+		dfrag = net_pkt_get_frag(f_pkt, K_FOREVER);
+		if (!dfrag) {
 			goto end;
 		}
 
-		net_pkt_set_ll_reserve(rxpkt, 0);
+		memcpy(dfrag->data, frame_buf.data, frame_buf.len);
+		dfrag->len = frame_buf.len;
+
+		net_pkt_frag_add(f_pkt, dfrag);
+
+		frame_buf.len = 0;
+	}
+
+	net_pkt_unref(pkt);
+	pkt = NULL;
+
+reassemble:
+
+#if DEBUG > 0
+	printk("length after compression and fragmentation %zd\n",
+	       net_pkt_get_len(f_pkt));
+	net_hexdump_frags("after-compression", f_pkt, false);
+#endif
+
+	frag = f_pkt->frags;
+	while (frag) {
+		rxpkt = net_pkt_get_reserve_rx(K_FOREVER);
+		if (!rxpkt) {
+			goto end;
+		}
 
 		dfrag = net_pkt_get_frag(rxpkt, K_FOREVER);
 		if (!dfrag) {
@@ -487,12 +530,21 @@ compare:
 #endif
 
 	if (compare_data(rxpkt, data)) {
-		result = TC_PASS;
+		result = true;
 	}
 
 end:
-	net_pkt_unref(rxpkt);
-	net_pkt_unref(pkt);
+	if (pkt) {
+		net_pkt_unref(pkt);
+	}
+
+	if (f_pkt) {
+		net_pkt_unref(f_pkt);
+	}
+
+	if (rxpkt) {
+		net_pkt_unref(rxpkt);
+	}
 
 	return result;
 }
@@ -515,21 +567,75 @@ static const struct {
 	{ "test_fragment_ipv6_dispatch_big", &test_data_8},
 };
 
-void main(void)
+static void test_fragment_sam00_dam00(void)
 {
-	int count, pass;
-	k_thread_priority_set(k_current_get(), K_PRIO_COOP(7));
+	bool ret = test_fragment(&test_data_1);
 
-	for (count = 0, pass = 0; count < ARRAY_SIZE(tests); count++) {
-		TC_START(tests[count].name);
+	zassert_true(ret, NULL);
+}
 
-		if (test_fragment(tests[count].data)) {
-			TC_END(FAIL, "failed\n");
-		} else {
-			TC_END(PASS, "passed\n");
-			pass++;
-		}
-	}
+static void test_fragment_sam01_dam01(void)
+{
+	bool ret = test_fragment(&test_data_2);
 
-	TC_END_REPORT(((pass != ARRAY_SIZE(tests)) ? TC_FAIL : TC_PASS));
+	zassert_true(ret, NULL);
+}
+
+static void test_fragment_sam10_dam10(void)
+{
+	bool ret = test_fragment(&test_data_3);
+
+	zassert_true(ret, NULL);
+}
+
+static void test_fragment_sam00_m1_dam00(void)
+{
+	bool ret = test_fragment(&test_data_4);
+
+	zassert_true(ret, NULL);
+}
+
+static void test_fragment_sam01_m1_dam01(void)
+{
+	bool ret = test_fragment(&test_data_5);
+
+	zassert_true(ret, NULL);
+}
+
+static void test_fragment_sam10_m1_dam10(void)
+{
+	bool ret = test_fragment(&test_data_6);
+
+	zassert_true(ret, NULL);
+}
+
+static void test_fragment_ipv6_dispatch_small(void)
+{
+	bool ret = test_fragment(&test_data_7);
+
+	zassert_true(ret, NULL);
+}
+
+static void test_fragment_ipv6_dispatch_big(void)
+{
+	bool ret = test_fragment(&test_data_8);
+
+	zassert_true(ret, NULL);
+}
+
+
+void test_main(void)
+{
+	ztest_test_suite(ieee802154_fragment,
+			 ztest_unit_test(test_fragment_sam00_dam00),
+			 ztest_unit_test(test_fragment_sam01_dam01),
+			 ztest_unit_test(test_fragment_sam10_dam10),
+			 ztest_unit_test(test_fragment_sam00_m1_dam00),
+			 ztest_unit_test(test_fragment_sam01_m1_dam01),
+			 ztest_unit_test(test_fragment_sam10_m1_dam10),
+			 ztest_unit_test(test_fragment_ipv6_dispatch_small),
+			 ztest_unit_test(test_fragment_ipv6_dispatch_big)
+		);
+
+	ztest_run_test_suite(ieee802154_fragment);
 }

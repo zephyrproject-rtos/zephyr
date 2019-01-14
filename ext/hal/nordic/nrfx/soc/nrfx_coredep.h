@@ -43,7 +43,7 @@
 
 /** @brief Core frequency (in MHz). */
 #define NRFX_DELAY_CPU_FREQ_MHZ
-/** @brief Availability of DWT unit in the given SoC. */
+/** @brief Availability of Data Watchpoint and Trace (DWT) unit in the given SoC. */
 #define NRFX_DELAY_DWT_PRESENT
 
 #elif defined(NRF51)
@@ -56,6 +56,9 @@
     #define NRFX_DELAY_CPU_FREQ_MHZ 64
     #define NRFX_DELAY_DWT_PRESENT  1
 #elif defined(NRF52840_XXAA)
+    #define NRFX_DELAY_CPU_FREQ_MHZ 64
+    #define NRFX_DELAY_DWT_PRESENT  1
+#elif defined(NRF9160_XXAA)
     #define NRFX_DELAY_CPU_FREQ_MHZ 64
     #define NRFX_DELAY_DWT_PRESENT  1
 #else
@@ -93,16 +96,16 @@ __STATIC_INLINE void nrfx_coredep_delay_us(uint32_t time_us)
     uint32_t time_cycles = time_us * NRFX_DELAY_CPU_FREQ_MHZ;
 
     // Save the current state of the DEMCR register to be able to restore it before exiting
-    // this function. Enable the trace and debug blocks (DWT is one of them).
+    // this function. Enable the trace and debug blocks (including DWT).
     uint32_t core_debug = CoreDebug->DEMCR;
     CoreDebug->DEMCR = core_debug | CoreDebug_DEMCR_TRCENA_Msk;
 
-    // Save the current state of the CTRL register in DWT block. Make sure
-    // that cycle counter is enabled.
+    // Save the current state of the CTRL register in the DWT block. Make sure
+    // that the cycle counter is enabled.
     uint32_t dwt_ctrl = DWT->CTRL;
     DWT->CTRL = dwt_ctrl | DWT_CTRL_CYCCNTENA_Msk;
 
-    // Store start value of cycle counter.
+    // Store start value of the cycle counter.
     uint32_t cyccnt_initial = DWT->CYCCNT;
 
     // Delay required time.
@@ -124,22 +127,25 @@ __STATIC_INLINE void nrfx_coredep_delay_us(uint32_t time_us)
     }
 
     #if defined(NRF51)
-    // The loop takes 4 cycles: 1 for SUBS and 3 for BHI.
+    // The loop takes 4 cycles: 1 for SUBS, 3 for BHI.
     static const uint16_t delay_bytecode[] = {
         0x3804, // SUBS r0, #4
         0xd8fd, // BHI .-2
         0x4770  // BX LR
         };
     #elif defined(NRF52810_XXAA)
-    // The loop takes 7 cycles: 1 for SUBS and 2 for BHI and 2 for flash wait states.
+    // The loop takes 7 cycles: 1 for SUBS, 2 for BHI, 2 flash wait states for each instruction.
     static const uint16_t delay_bytecode[] = {
         0x3807, // SUBS r0, #7
         0xd8fd, // BHI .-2
         0x4770  // BX LR
         };
-    #elif  defined(NRF52832_XXAA) || defined (NRF52832_XXAB) ||  defined(NRF52840_XXAA)
-    // The loop takes 3 cycles: 1 for SUBS and 2 for BHI.
-    // Make sure that code will be cached properly, so that no extra wait states appear.
+    #elif  (defined(NRF52832_XXAA) || \
+           defined (NRF52832_XXAB) || \
+           defined(NRF52840_XXAA)  || \
+           defined(NRF9160_XXAA))
+    // The loop takes 3 cycles: 1 for SUBS, 2 for BHI.
+    // Make sure that code is cached properly, so that no extra wait states appear.
     __ALIGN(16)
     static const uint16_t delay_bytecode[] = {
         0x3803, // SUBS r0, #3
