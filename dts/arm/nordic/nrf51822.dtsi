@@ -15,7 +15,7 @@
 	};
 
 	flash-controller@4001E000 {
-			compatible = "nrf,nrf51-flash-controller";
+			compatible = "nordic,nrf51-flash-controller";
 			reg = <0x4001E000 0x518>;
 
 			#address-cells = <1>;
