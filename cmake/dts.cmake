@@ -18,43 +18,8 @@ set_ifndef(DTS_APP_INCLUDE ${APPLICATION_SOURCE_DIR}/dts)
 set(dts_files
   ${DTS_SOURCE}
   ${DTS_COMMON_OVERLAYS}
+  ${shield_dts_files}
   )
-
-# Parse boards/shields of each board root to generate the shield list
-foreach(board_root ${BOARD_ROOT})
-  set(shield_dir ${board_root}/boards/shields)
-
-  # Match the .overlay files in the shield directories to make sure we are
-  # finding shields, e.g. x_nucleo_iks01a1/x_nucleo_iks01a1.overlay
-  file(GLOB_RECURSE shields_refs_list
-    RELATIVE ${shield_dir}
-    ${shield_dir}/*/*.overlay
-    )
-
-  # The above gives a list like
-  # x_nucleo_iks01a1/x_nucleo_iks01a1.overlay;x_nucleo_iks01a2/x_nucleo_iks01a2.overlay
-  # we construct a list of shield names by extracting file name and
-  # removing the extension.
-  foreach(shield_path ${shields_refs_list})
-    get_filename_component(shield ${shield_path} NAME_WE)
-
-    # Generate CONFIG flags matching each shield
-    string(TOUPPER "CONFIG_SHIELD_${shield}" shield_config)
-
-    if(${shield_config})
-      # if shield config flag is on, add shield overlay to the shield overlays
-      # list and dts_fixup file to the shield fixup file
-      list(APPEND
-        dts_files
-        ${shield_dir}/${shield_path}
-      )
-      list(APPEND
-        dts_fixups
-        ${shield_dir}/${shield}/dts_fixup.h
-      )
-    endif()
-  endforeach()
-endforeach()
 
 if(CONFIG_HAS_DTS)
 
@@ -155,6 +120,7 @@ if(CONFIG_HAS_DTS)
     ${DTS_BOARD_FIXUP_FILE}
     ${DTS_SOC_FIXUP_FILE}
     ${APPLICATION_SOURCE_DIR}/dts_fixup.h
+    ${shield_dts_fixups}
     )
 
   foreach(fixup ${dts_fixups})

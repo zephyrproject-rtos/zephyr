@@ -186,6 +186,65 @@ message(STATUS "Selected BOARD ${BOARD}")
 # Store the selected board in the cache
 set(CACHED_BOARD ${BOARD} CACHE STRING "Selected board")
 
+# The SHIELD can be set by 3 sources. Through environment variables,
+# through the cmake CLI, and through CMakeLists.txt.
+#
+# CLI has the highest precedence, then comes environment variables,
+# and then finally CMakeLists.txt.
+#
+# A user can ignore all the precedence rules if he simply always uses
+# the same source. E.g. always specifies -DSHIELD= on the command line,
+# always has an environment variable set, or always has a set(SHIELD
+# foo) line in his CMakeLists.txt and avoids mixing sources.
+#
+# The selected SHIELD can be accessed through the variable 'SHIELD'.
+
+# Read out the cached shield value if present
+get_property(cached_shield_value CACHE SHIELD PROPERTY VALUE)
+
+# There are actually 4 sources, the three user input sources, and the
+# previously used value (CACHED_SHIELD). The previously used value has
+# precedence, and if we detect that the user is trying to change the
+# value we give him a warning about needing to clean the build
+# directory to be able to change shields.
+
+set(shield_cli_argument ${cached_shield_value}) # Either new or old
+if(shield_cli_argument STREQUAL CACHED_SHIELD)
+  # We already have a CACHED_SHIELD so there is no new input on the CLI
+  unset(shield_cli_argument)
+endif()
+
+set(shield_app_cmake_lists ${SHIELD})
+if(cached_shield_value STREQUAL SHIELD)
+  # The app build scripts did not set a default, The SHIELD we are
+  # reading is the cached value from the CLI
+  unset(shield_app_cmake_lists)
+endif()
+
+if(CACHED_SHIELD)
+  # Warn the user if it looks like he is trying to change the shield
+  # without cleaning first
+  if(shield_cli_argument)
+    if(NOT (CACHED_SHIELD STREQUAL shield_cli_argument))
+      message(WARNING "The build directory must be cleaned pristinely when changing shields")
+      # TODO: Support changing shields without requiring a clean build
+    endif()
+  endif()
+
+  set(SHIELD ${CACHED_SHIELD})
+elseif(shield_cli_argument)
+  set(SHIELD ${shield_cli_argument})
+
+elseif(DEFINED ENV{SHIELD})
+  set(SHIELD $ENV{SHIELD})
+
+elseif(shield_app_cmake_lists)
+  set(SHIELD ${shield_app_cmake_lists})
+endif()
+
+# Store the selected shield in the cache
+set(CACHED_SHIELD ${SHIELD} CACHE STRING "Selected shield")
+
 # 'BOARD_ROOT' is a prioritized list of directories where boards may
 # be found. It always includes ${ZEPHYR_BASE} at the lowest priority.
 list(APPEND BOARD_ROOT ${ZEPHYR_BASE})
@@ -210,12 +269,63 @@ foreach(root ${BOARD_ROOT})
   if(BOARD_DIR AND NOT (${root} STREQUAL ${ZEPHYR_BASE}))
     set(USING_OUT_OF_TREE_BOARD 1)
   endif()
+
+  set(shield_dir ${root}/boards/shields)
+  if(DEFINED SHIELD)
+     string(REPLACE " " ";" SHIELD_AS_LIST "${SHIELD}")
+  endif()
+  # Match the .overlay files in the shield directories to make sure we are
+  # finding shields, e.g. x_nucleo_iks01a1/x_nucleo_iks01a1.overlay
+  file(GLOB_RECURSE shields_refs_list
+    RELATIVE ${shield_dir}
+    ${shield_dir}/*/*.overlay
+    )
+
+  # The above gives a list like
+  # x_nucleo_iks01a1/x_nucleo_iks01a1.overlay;x_nucleo_iks01a2/x_nucleo_iks01a2.overlay
+  # we construct a list of shield names by extracting file name and
+  # removing the extension.
+  foreach(shield_path ${shields_refs_list})
+    get_filename_component(shield ${shield_path} NAME_WE)
+    list(APPEND SHIELD_LIST ${shield})
+  endforeach()
+
+  if(DEFINED SHIELD)
+    foreach(s ${SHIELD_AS_LIST})
+      list(FIND SHIELD_LIST ${s} _idx)
+      if (NOT _idx EQUAL -1)
+        list(GET shields_refs_list ${_idx} s_path)
+
+        # if shield config flag is on, add shield overlay to the shield overlays
+        # list and dts_fixup file to the shield fixup file
+        list(APPEND
+          shield_dts_files
+          ${shield_dir}/${s_path}
+        )
+        list(APPEND
+          shield_dts_fixups
+          ${shield_dir}/${s}/dts_fixup.h
+        )
+      else()
+        list(APPEND NOT_FOUND_SHIELD_LIST ${s})
+      endif()
+    endforeach()
+  endif()
 endforeach()
 
 if(NOT BOARD_DIR)
   message("No board named '${BOARD}' found")
   print_usage()
   unset(CACHED_BOARD CACHE)
+  message(FATAL_ERROR "Invalid usage")
+endif()
+
+if(DEFINED SHIELD AND DEFINED NOT_FOUND_SHIELD_LIST)
+  foreach (s ${NOT_FOUND_SHIELD_LIST})
+    message("No shield named '${s}' found")
+  endforeach()
+  print_usage()
+  unset(CACHED_SHIELD CACHE)
   message(FATAL_ERROR "Invalid usage")
 endif()
 

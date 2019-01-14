@@ -1,4 +1,14 @@
 cmake_minimum_required(VERSION 3.13.1)
+
+# Some boards could run this sample using frdm_kw41z shield, enforce
+# -DSHIELD option in case they are used
+if(BOARD STREQUAL mimxrt1020_evk OR
+   BOARD STREQUAL mimxrt1050_evk OR
+   BOARD STREQUAL mimxrt1060_evk OR
+   BOARD STREQUAL frdm_k64f)
+set(SHIELD frdm_kw41z)
+endif()
+
 include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
 project(peripheral_hr)
 
