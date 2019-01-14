@@ -345,40 +345,19 @@ int net_tcp_release(struct net_tcp *tcp)
 	return 0;
 }
 
-static inline u8_t net_tcp_add_options(struct net_buf *header, size_t len,
-				       void *data)
+static int finalize_segment(struct net_pkt *pkt)
 {
-	u8_t optlen;
+	net_pkt_cursor_init(pkt);
 
-	memcpy(net_buf_add(header, len), data, len);
-
-	/* Set the length (this value is saved in 4-byte words format) */
-	if ((len & 0x3u) != 0u) {
-		optlen = (len & 0xfffCu) + 4u;
-	} else {
-		optlen = len;
+	if (IS_ENABLED(CONFIG_NET_IPV4) &&
+	    net_pkt_family(pkt) == AF_INET) {
+		return net_ipv4_finalize_new(pkt, IPPROTO_TCP);
+	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
+		   net_pkt_family(pkt) == AF_INET6) {
+		return net_ipv6_finalize_new(pkt, IPPROTO_TCP);
 	}
 
-	return optlen;
-}
-
-static int finalize_segment(struct net_context *context, struct net_pkt *pkt)
-{
-#if defined(CONFIG_NET_IPV4)
-	if (net_pkt_family(pkt) == AF_INET) {
-		net_ipv4_finalize(pkt, net_context_get_ip_proto(context));
-	} else
-#endif
-#if defined(CONFIG_NET_IPV6)
-	if (net_pkt_family(pkt) == AF_INET6) {
-		return net_ipv6_finalize(pkt,
-					 net_context_get_ip_proto(context));
-	}
-#endif
-	{
-	}
-
-	return 0;
+	return -EINVAL;
 }
 
 static int prepare_segment(struct net_tcp *tcp,
@@ -386,10 +365,10 @@ static int prepare_segment(struct net_tcp *tcp,
 			   struct net_pkt *pkt,
 			   struct net_pkt **out_pkt)
 {
-	struct net_buf *header, *tail = NULL;
+	NET_PKT_DATA_ACCESS_DEFINE(tcp_access, struct net_tcp_hdr);
 	struct net_context *context = tcp->context;
+	struct net_buf *tail = NULL;
 	struct net_tcp_hdr *tcp_hdr;
-	struct net_pkt *alloc_pkt;
 	u16_t dst_port, src_port;
 	bool pkt_allocated;
 	u8_t optlen = 0U;
@@ -403,51 +382,53 @@ static int prepare_segment(struct net_tcp *tcp,
 		 * the context), and the data after.  Rejigger so we
 		 * can insert a TCP header cleanly
 		 */
-		tail = pkt->frags;
-		pkt->frags = NULL;
+		tail = pkt->buffer;
+		pkt->buffer = NULL;
 		pkt_allocated = false;
+
+		status = net_pkt_alloc_buffer(pkt, segment->optlen,
+					      IPPROTO_TCP, ALLOC_TIMEOUT);
+		if (status) {
+			goto fail;
+		}
 	} else {
-		pkt = net_pkt_get_tx(context, ALLOC_TIMEOUT);
+		pkt = net_pkt_alloc_with_buffer(net_context_get_iface(context),
+						segment->optlen,
+						net_context_get_family(context),
+						IPPROTO_TCP, ALLOC_TIMEOUT);
 		if (!pkt) {
 			return -ENOMEM;
 		}
 
+		net_pkt_set_context(pkt, context);
 		pkt_allocated = true;
 	}
 
-#if defined(CONFIG_NET_IPV4)
-	if (net_pkt_family(pkt) == AF_INET) {
-		alloc_pkt = net_context_create_ipv4(context, pkt,
-				      net_sin_ptr(segment->src_addr)->sin_addr,
-				      &(net_sin(segment->dst_addr)->sin_addr));
-		if (!alloc_pkt) {
-			status = -ENOMEM;
+	if (IS_ENABLED(CONFIG_NET_IPV4) &&
+	    net_pkt_family(pkt) == AF_INET) {
+		status = net_context_create_ipv4_new(context, pkt,
+				net_sin_ptr(segment->src_addr)->sin_addr,
+				&(net_sin(segment->dst_addr)->sin_addr));
+		if (status < 0) {
 			goto fail;
 		}
 
 		dst_port = net_sin(segment->dst_addr)->sin_port;
 		src_port = ((struct sockaddr_in_ptr *)&context->local)->
 								sin_port;
-		NET_IPV4_HDR(pkt)->proto = IPPROTO_TCP;
-	} else
-#endif
-#if defined(CONFIG_NET_IPV6)
-	if (net_pkt_family(pkt) == AF_INET6) {
-		alloc_pkt = net_context_create_ipv6(tcp->context, pkt,
-				    net_sin6_ptr(segment->src_addr)->sin6_addr,
-				    &(net_sin6(segment->dst_addr)->sin6_addr));
-		if (!alloc_pkt) {
-			status = -ENOMEM;
+	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
+		   net_pkt_family(pkt) == AF_INET6) {
+		status = net_context_create_ipv6_new(context, pkt,
+				net_sin6_ptr(segment->src_addr)->sin6_addr,
+				&(net_sin6(segment->dst_addr)->sin6_addr));
+		if (status < 0) {
 			goto fail;
 		}
 
 		dst_port = net_sin6(segment->dst_addr)->sin6_port;
 		src_port = ((struct sockaddr_in6_ptr *)&context->local)->
 								sin6_port;
-		NET_IPV6_HDR(pkt)->nexthdr = IPPROTO_TCP;
-	} else
-#endif
-	{
+	} else {
 		NET_DBG("[%p] Protocol family %d not supported", tcp,
 			net_pkt_family(pkt));
 
@@ -455,39 +436,47 @@ static int prepare_segment(struct net_tcp *tcp,
 		goto fail;
 	}
 
-	header = net_pkt_get_data(context, ALLOC_TIMEOUT);
-	if (!header) {
-		NET_WARN("[%p] Unable to alloc TCP header", tcp);
-
-		status = -ENOMEM;
+	tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data_new(pkt, &tcp_access);
+	if (!tcp_hdr) {
+		status = -ENOBUFS;
 		goto fail;
 	}
 
-	net_pkt_frag_add(pkt, header);
-
-	tcp_hdr = (struct net_tcp_hdr *)net_buf_add(header, NET_TCPH_LEN);
-
 	if (segment->options && segment->optlen) {
-		optlen = net_tcp_add_options(header, segment->optlen,
-					segment->options);
+		/* Set the length (this value is saved in 4-byte words format)
+		 */
+		if ((segment->optlen & 0x3u) != 0u) {
+			optlen = (segment->optlen & 0xfffCu) + 4u;
+		} else {
+			optlen = segment->optlen;
+		}
 	}
 
-	tcp_hdr->offset = (NET_TCPH_LEN + optlen) << 2;
+	memset(tcp_hdr, 0, NET_TCPH_LEN);
 
 	tcp_hdr->src_port = src_port;
 	tcp_hdr->dst_port = dst_port;
 	sys_put_be32(segment->seq, tcp_hdr->seq);
 	sys_put_be32(segment->ack, tcp_hdr->ack);
-	tcp_hdr->flags = segment->flags;
+	tcp_hdr->offset   = (NET_TCPH_LEN + optlen) << 2;
+	tcp_hdr->flags    = segment->flags;
 	sys_put_be16(segment->wnd, tcp_hdr->wnd);
-	tcp_hdr->urg[0] = 0;
-	tcp_hdr->urg[1] = 0;
+	tcp_hdr->chksum   = 0;
+	tcp_hdr->urg[0]   = 0;
+	tcp_hdr->urg[1]   = 0;
 
-	if (tail) {
-		net_pkt_frag_add(pkt, tail);
+	net_pkt_set_data(pkt, &tcp_access);
+
+	if (optlen &&
+	    net_pkt_write_new(pkt, segment->options, segment->optlen)) {
+		goto fail;
 	}
 
-	status = finalize_segment(context, pkt);
+	if (tail) {
+		net_pkt_append_buffer(pkt, tail);
+	}
+
+	status = finalize_segment(pkt);
 	if (status < 0) {
 		if (pkt_allocated) {
 			net_pkt_unref(pkt);
@@ -506,7 +495,8 @@ fail:
 	if (pkt_allocated) {
 		net_pkt_unref(pkt);
 	} else {
-		pkt->frags = tail;
+		net_buf_unref(pkt->buffer);
+		pkt->buffer = tail;
 	}
 
 	return status;
@@ -523,9 +513,9 @@ int net_tcp_prepare_segment(struct net_tcp *tcp, u8_t flags,
 			    const struct sockaddr *remote,
 			    struct net_pkt **send_pkt)
 {
+	struct tcp_segment segment = { 0 };
 	u32_t seq;
 	u16_t wnd;
-	struct tcp_segment segment = { 0 };
 	int status;
 
 	if (!local) {
