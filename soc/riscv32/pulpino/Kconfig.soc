@@ -1,3 +1,0 @@
-config SOC_RISCV32_PULPINO
-	bool "Pulpino SOC implementation"
-	select ATOMIC_OPERATIONS_C

@@ -24,7 +24,7 @@ static void trigger_irq(int irq)
 #endif
 }
 
-#elif defined(CONFIG_RISCV32) && !defined(CONFIG_SOC_RISCV32_PULPINO)
+#elif defined(CONFIG_RISCV32)
 static void trigger_irq(int irq)
 {
 	u32_t mip;

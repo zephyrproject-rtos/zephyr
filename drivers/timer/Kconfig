@@ -118,14 +118,6 @@ config NRF_RTC_TIMER
 	  Counter NRF_RTC1 and provides the standard "system clock driver"
 	  interfaces.
 
-config PULPINO_TIMER
-	bool "pulpino Timer"
-	default y
-	depends on SOC_RISCV32_PULPINO
-	help
-	  This module implements a kernel device driver for the pulpino processor
-	  timer driver. It provides the standard "system clock driver" interfaces.
-
 config RISCV_MACHINE_TIMER
 	bool "RISCV Machine Timer"
 	depends on SOC_FAMILY_RISCV_PRIVILEGE

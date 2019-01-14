@@ -1,6 +1,5 @@
 tests:
   arch.common.xip:
     arch_exclude: xtensa
-    filter: not CONFIG_SOC_RISCV32_PULPINO
     platform_exclude: cc3220sf_launchxl
     tags: xip

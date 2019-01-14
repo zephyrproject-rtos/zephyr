@@ -1,6 +1,0 @@
-if BOARD_ZEDBOARD_PULPINO
-
-config BOARD
-	default "zedboard_pulpino"
-
-endif
