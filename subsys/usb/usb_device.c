@@ -1445,7 +1445,6 @@ static int vendor_handler(struct usb_setup_packet *pSetup,
 			  s32_t *len, u8_t **data)
 {
 	size_t size = (__usb_data_end - __usb_data_start);
-	const struct usb_if_descriptor *if_descr;
 	struct usb_interface_cfg_data *iface;
 
 	LOG_DBG("bRequest 0x%x, wIndex 0x%x", pSetup->bRequest,
@@ -1459,7 +1458,6 @@ static int vendor_handler(struct usb_setup_packet *pSetup,
 
 	for (size_t i = 0; i < size; i++) {
 		iface = &(__usb_data_start[i].interface);
-		if_descr = __usb_data_start[i].interface_descriptor;
 		if (iface->vendor_handler) {
 			if (!iface->vendor_handler(pSetup, len, data)) {
 				return 0;
