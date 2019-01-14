@@ -165,7 +165,7 @@ int sht3xd_init_interrupt(struct device *dev)
 
 	/* set alert thresholds to match reamsurement ranges */
 	if (sht3xd_write_reg(drv_data, SHT3XD_CMD_WRITE_TH_HIGH_SET, 0xFFFF)
-			     < 0) {
+	    < 0) {
 		LOG_DBG("Failed to write threshold high set value!");
 		return -EIO;
 	}
@@ -190,7 +190,7 @@ int sht3xd_init_interrupt(struct device *dev)
 	drv_data->gpio = device_get_binding(DT_SHT3XD_GPIO_ALERT_DEV_NAME);
 	if (drv_data->gpio == NULL) {
 		LOG_DBG("Failed to get pointer to %s device!",
-		    DT_SHT3XD_GPIO_ALERT_DEV_NAME);
+			DT_SHT3XD_GPIO_ALERT_DEV_NAME);
 		return -EINVAL;
 	}
 

@@ -34,13 +34,13 @@ static const int measure_wait[3] = {
  */
 static u8_t sht3xd_compute_crc(u16_t value)
 {
-	u8_t buf[2] = {value >> 8, value & 0xFF};
+	u8_t buf[2] = { value >> 8, value & 0xFF };
 	u8_t crc = 0xFF;
 	u8_t polynom = 0x31;
 	int i, j;
 
 	for (i = 0; i < 2; ++i) {
-		crc  = crc ^ buf[i];
+		crc = crc ^ buf[i];
 		for (j = 0; j < 8; ++j) {
 			if (crc & 0x80) {
 				crc = (crc << 1) ^ polynom;
@@ -55,7 +55,7 @@ static u8_t sht3xd_compute_crc(u16_t value)
 
 int sht3xd_write_command(struct sht3xd_data *drv_data, u16_t cmd)
 {
-	u8_t tx_buf[2] = {cmd >> 8, cmd & 0xFF};
+	u8_t tx_buf[2] = { cmd >> 8, cmd & 0xFF };
 
 	return i2c_write(drv_data->i2c, tx_buf, sizeof(tx_buf),
 			 SHT3XD_I2C_ADDRESS);
@@ -188,8 +188,8 @@ static int sht3xd_init(struct device *dev)
 
 	/* set periodic measurement mode */
 	if (sht3xd_write_command(drv_data,
-		measure_cmd[SHT3XD_MPS_IDX][SHT3XD_REPEATABILITY_IDX])
-		< 0) {
+				 measure_cmd[SHT3XD_MPS_IDX][SHT3XD_REPEATABILITY_IDX])
+	    < 0) {
 		LOG_DBG("Failed to set measurement mode!");
 		return -EIO;
 	}
