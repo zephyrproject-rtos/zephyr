@@ -309,6 +309,7 @@
 /subsys/debug/                            @nashif
 /subsys/fs/                               @nashif
 /subsys/fs/fcb/                           @nvlsianpu
+/subsys/fs/fuse_fs_access.c               @vanwinkeljan
 /subsys/fs/nvs/                           @Laczen
 /subsys/logging/                          @nordic-krch
 /subsys/net/buf.c                         @jukkar @jhedberg @tbursztyka @pfalcon
