@@ -1108,10 +1108,12 @@ endmacro()
 function(print_usage)
   message("see usage:")
   string(REPLACE ";" " " BOARD_ROOT_SPACE_SEPARATED "${BOARD_ROOT}")
+  string(REPLACE ";" " " SHIELD_LIST_SPACE_SEPARATED "${SHIELD_LIST}")
   execute_process(
     COMMAND
     ${CMAKE_COMMAND}
     -DBOARD_ROOT_SPACE_SEPARATED=${BOARD_ROOT_SPACE_SEPARATED}
+    -DSHIELD_LIST_SPACE_SEPARATED=${SHIELD_LIST_SPACE_SEPARATED}
     -P ${ZEPHYR_BASE}/cmake/usage/usage.cmake
     )
 endfunction()

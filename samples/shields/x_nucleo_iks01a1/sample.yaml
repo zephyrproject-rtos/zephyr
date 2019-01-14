@@ -6,3 +6,4 @@ tests:
     harness: shield
     tags: shield
     depends_on: arduino_i2c
+    platform_exclude: disco_l475_iot1

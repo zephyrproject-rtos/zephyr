@@ -17,21 +17,10 @@ under :file:`/boards/shields`:
 .. code-block:: none
 
    boards/shields/<shield>
-   ├── Kconfig.shield
-   ├── Kconfig.defconfig
    ├── <shield>.overlay
    └── dts_fixup.h
 
 These files provides shield configuration as follows:
-
-* **Kconfig.shield**: This file defines the shield's config flag
-  (CONFIG_SHIELD_X). Applications use this flag to trigger the shield
-  configuration on top of the board configuration, enabling each shield
-  component or sensor driver.
-
-* **Kconfig.defconfig**: This file provides conditional configuration of
-  specific driver default configurations, offering flexibility for broad
-  board support.
 
 * **<shield>.overlay**: This file provides a shield description in device tree
   format that is merged with the board's device tree information before
@@ -74,9 +63,17 @@ introduced overriding node element:
 Shield activation
 *****************
 
-Activate support for a shield by enabling the corresponding Kconfig shield
-option in the application's prj.conf file.
+Activate support for a shield by adding the matching -DSHIELD arg to CMake
+command
+
+  .. zephyr-app-commands::
+     :zephyr-app: your_app
+     :gen-args: -DSHIELD=x_nucleo_iks01a1
+     :goals: build
+
+
+Alternatively, it could be set by default in a project's CMakeLists.txt:
 
 .. code-block:: none
 
-        #CONFIG_SHIELD_X_NUCLEO_IKS01A2=y
+	set(SHIELD x_nucleo_iks01a1)
