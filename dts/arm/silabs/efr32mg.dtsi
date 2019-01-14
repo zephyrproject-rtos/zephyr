@@ -1,6 +1,7 @@
 #include <arm/armv7-m.dtsi>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/i2c/i2c.h>
+#include "gpio_gecko.h"
 
 / {
 	cpus {
@@ -19,10 +20,6 @@
 	};
 
 	aliases {
-		usart-0 = &usart0;
-		usart-1 = &usart1;
-		usart-2 = &usart2;
-		usart-3 = &usart3;
 		leuart-0 = &leuart0;
 		i2c-0 = &i2c0;
 		i2c-1 = &i2c1;

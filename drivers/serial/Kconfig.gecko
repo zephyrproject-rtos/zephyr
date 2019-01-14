@@ -17,40 +17,4 @@ menuconfig UART_GECKO
 
 if UART_GECKO
 
-config UART_GECKO_0
-	bool "Enable Gecko UART 0"
-	help
-	  Enable support for Gecko UART0 port in the driver. Say y here if you
-	  want to use UART0 device.
-
-config UART_GECKO_1
-	bool "Enable Gecko UART 1"
-	help
-	  Enable support for Gecko UART1 port in the driver. Say y here if you
-	  want to use UART1 device.
-
-config USART_GECKO_0
-	bool "Enable Gecko USART 0"
-	help
-	  Enable support for Gecko USART0 port in the driver. Say y here if you
-	  want to use USART0 device.
-
-config USART_GECKO_1
-	bool "Enable Gecko USART 1"
-	help
-	  Enable support for Gecko USART1 port in the driver. Say y here if you
-	  want to use USART1 device.
-
-config USART_GECKO_2
-	bool "Enable Gecko USART 2"
-	help
-	  Enable support for Gecko USART2 port in the driver. Say y here if you
-	  want to use USART2 device.
-
-config USART_GECKO_3
-	bool "Enable Gecko USART 3"
-	help
-	  Enable support for Gecko USART3 port in the driver. Say y here if you
-	  want to use USART3 device.
-
 endif # UART_GECKO
