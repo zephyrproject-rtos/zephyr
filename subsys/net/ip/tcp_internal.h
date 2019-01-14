@@ -393,11 +393,11 @@ static inline enum net_tcp_state net_tcp_get_state(const struct net_tcp *tcp)
  * @brief Check if the sequence number is valid i.e., it is inside the window.
  *
  * @param tcp TCP context
- * @param pkt Network packet
+ * @param tcp_hdr TCP header pointer
  *
  * @return true if network packet sequence number is valid, false otherwise
  */
-bool net_tcp_validate_seq(struct net_tcp *tcp, struct net_pkt *pkt);
+bool net_tcp_validate_seq(struct net_tcp *tcp, struct net_tcp_hdr *tcp_hdr);
 
 /**
  * @brief Set TCP checksum in network packet.
@@ -657,10 +657,10 @@ static inline enum net_tcp_state net_tcp_get_state(const struct net_tcp *tcp)
 }
 
 static inline bool net_tcp_validate_seq(struct net_tcp *tcp,
-					struct net_pkt *pkt)
+					struct net_tcp_hdr *tcp_hdr)
 {
 	ARG_UNUSED(tcp);
-	ARG_UNUSED(pkt);
+	ARG_UNUSED(tcp_hdr);
 	return false;
 }
 

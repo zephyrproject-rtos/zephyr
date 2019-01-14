@@ -229,6 +229,8 @@ static struct ud *returned_ud;
 
 static enum net_verdict test_ok(struct net_conn *conn,
 				struct net_pkt *pkt,
+				union ip_header *ip_hdr,
+				union proto_header *proto_hdr,
 				void *user_data)
 {
 	struct ud *ud = (struct ud *)user_data;
@@ -254,6 +256,8 @@ static enum net_verdict test_ok(struct net_conn *conn,
 
 static enum net_verdict test_fail(struct net_conn *conn,
 				  struct net_pkt *pkt,
+				  union ip_header *ip_hdr,
+				  union proto_header *proto_hdr,
 				  void *user_data)
 {
 	/* This function should never be called as there should not
