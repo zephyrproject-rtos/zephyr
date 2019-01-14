@@ -13,9 +13,8 @@
 #include <crc.h>
 #include "nvs_priv.h"
 
-#define LOG_LEVEL CONFIG_NVS_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(fs_nvs);
+LOG_MODULE_REGISTER(fs_nvs, CONFIG_NVS_LOG_LEVEL);
 
 
 /* basic routines */

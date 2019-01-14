@@ -12,6 +12,7 @@ extern "C" {
 #endif
 
 #include <sys/types.h>
+#include <kernel.h>
 /**
  * @brief Non-volatile Storage
  * @defgroup nvs Non-volatile Storage

@@ -1,0 +1,7 @@
+sample:
+  name: Settings Sample
+
+tests:
+  test:
+    tags: settings
+    depends_on: nsettings
