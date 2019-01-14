@@ -337,6 +337,11 @@ static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 	return err;
 }
 
+static void write_without_rsp_cb(struct bt_conn *conn)
+{
+	shell_print(ctx_shell, "Write transmission complete");
+}
+
 static int cmd_write_without_rsp(const struct shell *shell,
 				 size_t argc, char *argv[])
 {
@@ -345,6 +350,7 @@ static int cmd_write_without_rsp(const struct shell *shell,
 	int err;
 	u16_t len;
 	bool sign;
+	bt_gatt_complete_func_t func = NULL;
 
 	if (!default_conn) {
 		shell_error(shell, "Not connected");
@@ -352,6 +358,12 @@ static int cmd_write_without_rsp(const struct shell *shell,
 	}
 
 	sign = !strcmp(argv[0], "signed-write");
+	if (!sign) {
+		if (!strcmp(argv[0], "write-without-response-cb")) {
+			func = write_without_rsp_cb;
+		}
+	}
+
 	handle = strtoul(argv[1], NULL, 16);
 	gatt_write_buf[0] = strtoul(argv[2], NULL, 16);
 	len = 1U;
@@ -377,8 +389,9 @@ static int cmd_write_without_rsp(const struct shell *shell,
 	}
 
 	while (repeat--) {
-		err = bt_gatt_write_without_response(default_conn, handle,
-						     gatt_write_buf, len, sign);
+		err = bt_gatt_write_without_response_cb(default_conn, handle,
+							gatt_write_buf, len,
+							sign, func);
 		if (err) {
 			break;
 		}
@@ -776,6 +789,9 @@ SHELL_CREATE_STATIC_SUBCMD_SET(gatt_cmds) {
 	SHELL_CMD_ARG(write, NULL, "<handle> <offset> <data> [length]",
 		      cmd_write, 4, 1),
 	SHELL_CMD_ARG(write-without-response, NULL,
+		      "<handle> <data> [length] [repeat]",
+		      cmd_write_without_rsp, 3, 2),
+	SHELL_CMD_ARG(write-without-response-cb, NULL,
 		      "<handle> <data> [length] [repeat]",
 		      cmd_write_without_rsp, 3, 2),
 	SHELL_CMD_ARG(unsubscribe, NULL, HELP_NONE, cmd_unsubscribe, 1, 0),
