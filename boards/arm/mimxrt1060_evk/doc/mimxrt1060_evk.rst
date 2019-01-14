@@ -118,6 +118,10 @@ The MIMXRT1060 SoC has five pairs of pinmux/gpio controllers.
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B0_13 | LPUART1_RX      | UART Console              |
 +---------------+-----------------+---------------------------+
+| GPIO_AD_B1_06 | LPUART3_TX      | UART BT HCI               |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_07 | LPUART3_RX      | UART BT HCI               |
++---------------+-----------------+---------------------------+
 | WAKEUP        | GPIO            | SW0                       |
 +---------------+-----------------+---------------------------+
 
@@ -130,7 +134,8 @@ board with the on-chip PLL to generate a 600 MHz core clock.
 Serial Port
 ===========
 
-The MIMXRT1060 SoC has eight UARTs. One is configured for the console and the
+The MIMXRT1060 SoC has eight UARTs. ``LPUART1`` is configured for the console,
+``LPUART3`` for the Bluetooth Host Controller Interface (BT HCI), and the
 remaining are not used.
 
 Programming and Debugging
