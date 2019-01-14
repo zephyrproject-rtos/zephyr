@@ -30,10 +30,6 @@
  */
 #include <kernel_includes.h>
 
-#define GPIO_REG_SIZE         0x400
-/* base address for where GPIO registers start */
-#define GPIO_PORTS_BASE       (GPIOA_BASE)
-
 #ifdef CONFIG_GPIO_STM32
 /* Required to enable VDDio2 for port G */
 #include <stm32l4xx_ll_pwr.h>

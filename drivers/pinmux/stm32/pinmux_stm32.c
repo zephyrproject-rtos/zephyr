@@ -23,6 +23,10 @@
 
 #include "pinmux.h"
 
+#define GPIO_REG_SIZE         0x400
+/* base address for where GPIO registers start */
+#define GPIO_PORTS_BASE       (GPIOA_BASE)
+
 static const u32_t ports_enable[STM32_PORTS_MAX] = {
 	STM32_PERIPH_GPIOA,
 	STM32_PERIPH_GPIOB,
