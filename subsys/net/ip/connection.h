@@ -46,6 +46,8 @@ union proto_header {
  */
 typedef enum net_verdict (*net_conn_cb_t)(struct net_conn *conn,
 					  struct net_pkt *pkt,
+					  union ip_header *ip_hdr,
+					  union proto_header *proto_hdr,
 					  void *user_data);
 
 /**

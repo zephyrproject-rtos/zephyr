@@ -1470,6 +1470,8 @@ int net_context_sendto_new(struct net_context *context,
 
 enum net_verdict net_context_packet_received(struct net_conn *conn,
 					     struct net_pkt *pkt,
+					     union ip_header *ip_hdr,
+					     union proto_header *proto_hdr,
 					     void *user_data)
 {
 	struct net_context *context = find_context(conn);
