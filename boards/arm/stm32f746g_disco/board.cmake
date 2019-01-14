@@ -5,4 +5,4 @@ if(STLINK_FW STREQUAL jlink)
   include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
 elseif(STLINK_FW STREQUAL stlink)
   include($ENV{ZEPHYR_BASE}/boards/common/openocd.board.cmake)
-endif
+endif()
