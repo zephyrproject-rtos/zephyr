@@ -5,7 +5,7 @@
  */
 
 flash_controller: flash-controller@39000 {
-	compatible = "nrf,nrf91-flash-controller";
+	compatible = "nordic,nrf91-flash-controller";
 	reg = <0x39000 0x1000>;
 
 	#address-cells = <1>;
