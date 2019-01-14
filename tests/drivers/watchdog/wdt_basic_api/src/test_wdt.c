@@ -62,7 +62,11 @@
 #include <ztest.h>
 #include "test_wdt.h"
 
+#ifdef CONFIG_WDT_0_NAME
 #define WDT_DEV_NAME CONFIG_WDT_0_NAME
+#else
+#define WDT_DEV_NAME DT_WDT_0_NAME
+#endif
 
 #define WDT_TEST_STATE_IDLE        0
 #define WDT_TEST_STATE_CHECK_RESET 1

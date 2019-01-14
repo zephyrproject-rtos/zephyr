@@ -10,8 +10,14 @@
 #include <watchdog.h>
 #include <misc/printk.h>
 
-#define WDT_DEV_NAME   CONFIG_WDT_0_NAME
 #define WDT_FEED_TRIES 5
+
+
+#ifdef CONFIG_WDT_0_NAME
+#define WDT_DEV_NAME CONFIG_WDT_0_NAME
+#else
+#define WDT_DEV_NAME DT_WDT_0_NAME
+#endif
 
 static void wdt_callback(struct device *wdt_dev, int channel_id)
 {
