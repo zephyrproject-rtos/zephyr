@@ -25,7 +25,3 @@ menu "Board Options"
 # There might not be any board options, hence the optional source
 osource "$(BOARD_DIR)/Kconfig"
 endmenu
-
-menu "Shields"
-source "boards/shields/*/Kconfig.shield"
-endmenu
