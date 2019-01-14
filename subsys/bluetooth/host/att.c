@@ -2191,7 +2191,7 @@ u16_t bt_att_get_mtu(struct bt_conn *conn)
 	return att->chan.tx.mtu;
 }
 
-int bt_att_send(struct bt_conn *conn, struct net_buf *buf)
+int bt_att_send(struct bt_conn *conn, struct net_buf *buf, bt_conn_tx_cb_t cb)
 {
 	struct bt_att *att;
 	struct bt_att_hdr *hdr;
@@ -2205,11 +2205,14 @@ int bt_att_send(struct bt_conn *conn, struct net_buf *buf)
 		return -ENOTCONN;
 	}
 
-	k_sem_take(&att->tx_sem, K_FOREVER);
-	if (!att_is_connected(att)) {
-		BT_WARN("Disconnected");
-		k_sem_give(&att->tx_sem);
-		return -ENOTCONN;
+	/* Don't use tx_sem if caller has set it own callback */
+	if (!cb) {
+		k_sem_take(&att->tx_sem, K_FOREVER);
+		if (!att_is_connected(att)) {
+			BT_WARN("Disconnected");
+			k_sem_give(&att->tx_sem);
+			return -ENOTCONN;
+		}
 	}
 
 	hdr = (void *)buf->data;
@@ -2227,7 +2230,7 @@ int bt_att_send(struct bt_conn *conn, struct net_buf *buf)
 		}
 	}
 
-	bt_l2cap_send_cb(conn, BT_L2CAP_CID_ATT, buf, att_cb(buf));
+	bt_l2cap_send_cb(conn, BT_L2CAP_CID_ATT, buf, cb ? cb : att_cb(buf));
 
 	return 0;
 }
