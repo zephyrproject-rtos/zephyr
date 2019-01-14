@@ -169,4 +169,14 @@ config CMU_LFXO_FREQ
 	  board's defconfig.
 
 endif # SOC_GECKO_CMU
+
+config SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
+	bool
+	# omit prompt to signify a "hidden" option
+	help
+	  If enabled, indicates that SoC allows to configure individual pin
+	  locations. This is supported by e.g. efr32fg1p, efr32mg12p series.
+	  If disabled, indicates that pin locations are configured in groups.
+	  This is supported by e.g. efm32hg, efm32wg series.
+
 endif # SOC_FAMILY_EXX32

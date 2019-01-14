@@ -30,17 +30,6 @@
 #endif
 #endif /* CONFIG_GPIO_GECKO */
 
-#ifdef CONFIG_UART_GECKO
-#ifdef CONFIG_USART_GECKO_0
-#if (DT_SILABS_GECKO_USART_USART_0_LOCATION == 0)
-#define PIN_USART0_TXD {gpioPortA, 0, gpioModePushPull, 1}
-#define PIN_USART0_RXD {gpioPortA, 1, gpioModeInput, 0}
-#else
-#error ("Serial Driver for Gecko MCUs not implemented for this location index")
-#endif
-#endif /* CONFIG_USART_GECKO_0 */
-#endif /* CONFIG_UART_GECKO */
-
 #ifdef CONFIG_LEUART_GECKO
 #ifdef CONFIG_LEUART_GECKO_0
 #if (DT_SILABS_GECKO_LEUART_LEUART_0_LOCATION == 27)

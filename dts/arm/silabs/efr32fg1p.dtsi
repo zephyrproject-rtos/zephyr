@@ -1,5 +1,6 @@
 #include <arm/armv7-m.dtsi>
 #include <dt-bindings/gpio/gpio.h>
+#include "gpio_gecko.h"
 
 / {
 	cpus {
@@ -15,11 +16,6 @@
 	sram0: memory@20000000 {
 		device_type = "memory";
 		compatible = "mmio-sram";
-	};
-
-	aliases {
-		usart-0 = &usart0;
-		usart-1 = &usart1;
 	};
 
 	soc {

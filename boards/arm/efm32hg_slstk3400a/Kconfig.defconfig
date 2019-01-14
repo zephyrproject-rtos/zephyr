@@ -38,11 +38,4 @@ config GPIO_GECKO_PORTF
 
 endif # GPIO_GECKO
 
-if UART_GECKO
-
-config USART_GECKO_1
-	default y
-
-endif # UART_GECKO
-
 endif # BOARD_EFM32HG_SLSTK3400A
