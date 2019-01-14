@@ -43,6 +43,15 @@ find_program(
   openocd
   )
 
+# jlink is an optional dependency
+
+find_program(
+  JLINK
+  jlink
+  HINTS $ENV{JLINK_PATH}
+  )
+
+
 # bossac is an optional dependency
 find_program(
   BOSSAC

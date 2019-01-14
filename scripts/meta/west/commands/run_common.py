@@ -94,6 +94,9 @@ def add_parser_common(parser_adder, command):
         '--openocd-search',
         help='Path to add to OpenOCD search path, if applicable')
 
+    group.add_argument('--jlink',
+                       help='Path to jlink, if applicable')
+
     return parser
 
 
@@ -123,11 +126,11 @@ def cached_runner_config(build_dir, cache):
     gdb = cache.get('ZEPHYR_RUNNER_CONFIG_GDB')
     openocd = cache.get('ZEPHYR_RUNNER_CONFIG_OPENOCD')
     openocd_search = cache.get('ZEPHYR_RUNNER_CONFIG_OPENOCD_SEARCH')
-
+    jlink = cache.get('ZEPHYR_RUNNER_CONFIG_JLINK')
     return RunnerConfig(build_dir, board_dir,
                         elf_file, hex_file, bin_file,
                         gdb=gdb, openocd=openocd,
-                        openocd_search=openocd_search)
+                        openocd_search=openocd_search, jlink=jlink)
 
 
 def _override_config_from_namespace(cfg, namespace):

@@ -192,7 +192,7 @@ class RunnerConfig:
     '''
 
     __slots__ = ['build_dir', 'board_dir', 'elf_file', 'hex_file',
-                 'bin_file', 'gdb', 'openocd', 'openocd_search']
+                 'bin_file', 'gdb', 'openocd', 'openocd_search', 'jlink']
 
     # TODO: revisit whether we can get rid of some of these.  Having
     # tool-specific configuration options here is a layering
@@ -201,7 +201,7 @@ class RunnerConfig:
     # needed by multiple ZephyrBinaryRunner subclasses.
     def __init__(self, build_dir, board_dir,
                  elf_file, hex_file, bin_file,
-                 gdb=None, openocd=None, openocd_search=None):
+                 gdb=None, openocd=None, openocd_search=None, jlink=None):
         self.build_dir = build_dir
         '''Zephyr application build directory'''
 
@@ -226,6 +226,8 @@ class RunnerConfig:
         self.openocd_search = openocd_search
         '''directory to add to OpenOCD search path, may be None.'''
 
+        self.jlink = jlink
+        '''Path to jlink to use for this target, may be None.'''
 
 _YN_CHOICES = ['Y', 'y', 'N', 'n', 'yes', 'no', 'YES', 'NO']
 

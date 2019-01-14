@@ -53,7 +53,10 @@ if(RUNNERS)
     set(ZEPHYR_RUNNER_CONFIG_OPENOCD_SEARCH "${OPENOCD_DEFAULT_PATH}"
       CACHE STRING "Path to add to openocd search path, if applicable" FORCE)
   endif()
-
+  if(DEFINED JLINK)
+    set(ZEPHYR_RUNNER_CONFIG_JLINK "${JLINK}"
+      CACHE STRING "Path to jlink binary, if applicable" FORCE)
+  endif()
   # Runner-specific command line arguments obtained from the board's
   # build scripts, the application's scripts, etc.
   foreach(runner ${RUNNERS})

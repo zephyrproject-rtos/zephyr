@@ -30,7 +30,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         self.elf_name = cfg.elf_file
         self.gdb_cmd = [cfg.gdb] if cfg.gdb else None
         self.device = device
-        self.commander = commander
+        self.commander = cfg.jlink if cfg.jlink else commander
         self.flash_addr = flash_addr
         self.erase = erase
         self.gdbserver_cmd = [gdbserver]
