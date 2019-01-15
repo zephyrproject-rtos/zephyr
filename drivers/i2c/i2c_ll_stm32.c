@@ -26,6 +26,7 @@ int i2c_stm32_runtime_configure(struct device *dev, u32_t config)
 	struct i2c_stm32_data *data = DEV_DATA(dev);
 	I2C_TypeDef *i2c = cfg->i2c;
 	u32_t clock = 0U;
+	int ret;
 
 #if defined(CONFIG_SOC_SERIES_STM32F3X) || defined(CONFIG_SOC_SERIES_STM32F0X)
 	LL_RCC_ClocksTypeDef rcc_clocks;
@@ -44,10 +45,13 @@ int i2c_stm32_runtime_configure(struct device *dev, u32_t config)
 
 	data->dev_config = config;
 
+	k_sem_take(&data->bus_mutex, K_FOREVER);
 	LL_I2C_Disable(i2c);
 	LL_I2C_SetMode(i2c, LL_I2C_MODE_I2C);
+	ret = stm32_i2c_configure_timing(dev, clock);
+	k_sem_give(&data->bus_mutex);
 
-	return stm32_i2c_configure_timing(dev, clock);
+	return ret;
 }
 
 #define OPERATION(msg) (((struct i2c_msg *) msg)->flags & I2C_MSG_RW_MASK)
@@ -55,6 +59,7 @@ int i2c_stm32_runtime_configure(struct device *dev, u32_t config)
 static int i2c_stm32_transfer(struct device *dev, struct i2c_msg *msg,
 			      u8_t num_msgs, u16_t slave)
 {
+	struct i2c_stm32_data *data = DEV_DATA(dev);
 #if defined(CONFIG_I2C_STM32_V1)
 	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
 	I2C_TypeDef *i2c = cfg->i2c;
@@ -112,6 +117,7 @@ static int i2c_stm32_transfer(struct device *dev, struct i2c_msg *msg,
 	}
 
 	/* Send out messages */
+	k_sem_take(&data->bus_mutex, K_FOREVER);
 #if defined(CONFIG_I2C_STM32_V1)
 	LL_I2C_Enable(i2c);
 #endif
@@ -144,6 +150,7 @@ static int i2c_stm32_transfer(struct device *dev, struct i2c_msg *msg,
 #if defined(CONFIG_I2C_STM32_V1)
 	LL_I2C_Disable(i2c);
 #endif
+	k_sem_give(&data->bus_mutex);
 	return ret;
 }
 
@@ -162,12 +169,18 @@ static int i2c_stm32_init(struct device *dev)
 	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
 	u32_t bitrate_cfg;
 	int ret;
-#ifdef CONFIG_I2C_STM32_INTERRUPT
 	struct i2c_stm32_data *data = DEV_DATA(dev);
-
+#ifdef CONFIG_I2C_STM32_INTERRUPT
 	k_sem_init(&data->device_sync_sem, 0, UINT_MAX);
 	cfg->irq_config_func(dev);
 #endif
+
+	/*
+	 * initialize mutex used when multiple transfers
+	 * are taking place to guarantee that each one is
+	 * atomic and has exclusive access to the I2C bus.
+	 */
+	k_sem_init(&data->bus_mutex, 1, 1);
 
 	__ASSERT_NO_MSG(clock);
 	if (clock_control_on(clock,

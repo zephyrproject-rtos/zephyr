@@ -24,6 +24,7 @@ struct i2c_stm32_data {
 #ifdef CONFIG_I2C_STM32_INTERRUPT
 	struct k_sem device_sync_sem;
 #endif
+	struct k_sem bus_mutex;
 	u32_t dev_config;
 #ifdef CONFIG_I2C_STM32_V1
 	u16_t slave_address;
