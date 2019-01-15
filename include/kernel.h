@@ -1427,6 +1427,15 @@ extern void k_timer_init(struct k_timer *timer,
  * The timer's status is reset to zero and the timer begins counting down
  * using the new duration and period values.
  *
+ * @note There is a subtle difference in the timer conventions between
+ * duration and period.  The "duration" argument takes a timeout in
+ * true real time from the instant of the call; the callback will not
+ * occur until after the specified timeout has expired.  But
+ * subsequent callbacks using the "period" callback will be scheduled
+ * relative to their nominal time in the sequence to preserve regular
+ * timekeeping.  They may be closer together than period in the case
+ * where a previous callback was delayed.
+ *
  * @param timer     Address of timer.
  * @param duration  Initial timer duration (in milliseconds).
  * @param period    Timer period (in milliseconds).

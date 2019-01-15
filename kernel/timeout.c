@@ -62,7 +62,8 @@ static s32_t elapsed(void)
 	return announce_remaining == 0 ? z_clock_elapsed() : 0;
 }
 
-void _add_timeout(struct _timeout *to, _timeout_func_t fn, s32_t ticks)
+void _add_timeout(struct _timeout *to, _timeout_func_t fn,
+		  s32_t ticks, bool realtime)
 {
 	__ASSERT(to->dticks < 0, "");
 	to->fn = fn;
@@ -70,6 +71,10 @@ void _add_timeout(struct _timeout *to, _timeout_func_t fn, s32_t ticks)
 
 	LOCKED(&timeout_lock) {
 		struct _timeout *t;
+
+		if (realtime) {
+			ticks += announce_remaining;
+		}
 
 		to->dticks = ticks + elapsed();
 		for (t = first(); t != NULL; t = next(t)) {

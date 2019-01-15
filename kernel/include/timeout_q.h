@@ -25,7 +25,8 @@ static inline void _init_timeout(struct _timeout *t, _timeout_func_t fn)
 	t->dticks = _INACTIVE;
 }
 
-void _add_timeout(struct _timeout *to, _timeout_func_t fn, s32_t ticks);
+void _add_timeout(struct _timeout *to, _timeout_func_t fn,
+		  s32_t ticks, bool realtime);
 
 int _abort_timeout(struct _timeout *to);
 
@@ -38,7 +39,7 @@ extern void z_thread_timeout(struct _timeout *to);
 
 static inline void _add_thread_timeout(struct k_thread *th, s32_t ticks)
 {
-	_add_timeout(&th->base.timeout, z_thread_timeout, ticks);
+	_add_timeout(&th->base.timeout, z_thread_timeout, ticks, true);
 }
 
 static inline int _abort_thread_timeout(struct k_thread *thread)

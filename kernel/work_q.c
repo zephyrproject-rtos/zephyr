@@ -77,7 +77,7 @@ int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 	} else {
 		/* Add timeout */
 		_add_timeout(&work->timeout, work_timeout,
-			     _TICK_ALIGN + _ms_to_ticks(delay));
+			     _TICK_ALIGN + _ms_to_ticks(delay), true);
 	}
 
 	err = 0;

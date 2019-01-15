@@ -57,7 +57,7 @@ void _timer_expiration_handler(struct _timeout *t)
 	if (timer->period > 0) {
 		key = irq_lock();
 		_add_timeout(&timer->timeout, _timer_expiration_handler,
-			     timer->period);
+			     timer->period, false);
 		irq_unlock(key);
 	}
 
@@ -127,7 +127,7 @@ void _impl_k_timer_start(struct k_timer *timer, s32_t duration, s32_t period)
 	timer->period = period_in_ticks;
 	timer->status = 0;
 	_add_timeout(&timer->timeout, _timer_expiration_handler,
-		     duration_in_ticks);
+		     duration_in_ticks, true);
 	irq_unlock(key);
 }
 
