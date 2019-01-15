@@ -29,7 +29,7 @@ static void trigger_handler(struct device *dev, struct sensor_trigger *trigger)
 void main(void)
 {
 	struct sensor_value accel[3];
-	struct device *dev = device_get_binding(DT_FXOS8700_NAME);
+	struct device *dev = device_get_binding(DT_NXP_FXOS8700_0_LABEL);
 
 	if (dev == NULL) {
 		printf("Could not get fxos8700 device\n");
