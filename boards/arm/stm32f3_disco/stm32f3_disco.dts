@@ -94,8 +94,9 @@
 	};
 
 	lsm303dlhc-accel@19 {
-		compatible = "st,lsm303dlhc-accel";
+		compatible = "st,lis2dh", "st,lsm303dlhc-accel";
 		reg = <0x19>;
+		irq-gpios = <&gpioe 4 0>, <&gpioe 5 0>;
 		label = "LSM303DLHC-ACCEL";
 	};
 };
