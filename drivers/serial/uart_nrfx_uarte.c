@@ -15,7 +15,11 @@
 #if (defined(CONFIG_UART_0_NRF_UARTE) &&         \
      defined(CONFIG_UART_0_INTERRUPT_DRIVEN)) || \
     (defined(CONFIG_UART_1_NRF_UARTE) &&         \
-     defined(CONFIG_UART_1_INTERRUPT_DRIVEN))
+     defined(CONFIG_UART_1_INTERRUPT_DRIVEN)) || \
+    (defined(CONFIG_UART_2_NRF_UARTE) &&         \
+     defined(CONFIG_UART_2_INTERRUPT_DRIVEN)) || \
+    (defined(CONFIG_UART_3_NRF_UARTE) &&         \
+     defined(CONFIG_UART_3_INTERRUPT_DRIVEN))
 	#define UARTE_INTERRUPT_DRIVEN	(1u)
 #endif
 
@@ -728,3 +732,80 @@ static int uarte_instance_init(struct device *dev,
 	UART_NRF_UARTE_DEVICE(1);
 #endif /* CONFIG_UART_1_NRF_UARTE */
 
+#ifdef CONFIG_UART_2_NRF_UARTE
+	#ifdef CONFIG_UART_2_INTERRUPT_DRIVEN
+		#define UARTE_2_INTERRUPT_DRIVEN       (1u)
+		#define UARTE_2_INTERRUPTS_INIT()      UARTE_NRF_IRQ_ENABLED(2)
+		#define UARTE_2_CREATE_TX_BUFF	       UARTE_TX_BUFFER_INIT(2)
+		#define UARTE_2_DATA_INIT	       UARTE_DATA_INT(2)
+		#define UARTE_2_CONFIG_INIT	       UARTE_CONFIG_INT(2)
+	#else
+		#define UARTE_2_INTERRUPT_DRIVEN       (0u)
+		#define UARTE_2_INTERRUPTS_INIT()
+		#define UARTE_2_CREATE_TX_BUFF
+		#define UARTE_2_DATA_INIT
+		#define UARTE_2_CONFIG_INIT
+	#endif /* CONFIG_UART_2_INTERRUPT_DRIVEN */
+
+	#ifdef CONFIG_UART_2_NRF_FLOW_CONTROL
+		#define UARTE_2_NRF_HWFC_CONFIG        NRF_UARTE_HWFC_ENABLED
+	#else
+		#define UARTE_2_NRF_HWFC_CONFIG        NRF_UARTE_HWFC_DISABLED
+	#endif /* CONFIG_UART_2_NRF_FLOW_CONTROL */
+
+	#if defined(DT_NORDIC_NRF_UARTE_UART_2_RTS_PIN) && \
+	    defined(DT_NORDIC_NRF_UARTE_UART_2_CTS_PIN)
+		#define UARTE_2_NRF_RTS_CTS_PINS       UARTE_NRF_RTS_CTS_SET(2)
+		#define UARTE_2_CONFIG_RTS_CTS         .rts_cts_pins_set = true
+	#else
+		#define UARTE_2_NRF_RTS_CTS_PINS       UARTE_NRF_RTS_CTS_NOT_SET
+		#define UARTE_2_CONFIG_RTS_CTS         .rts_cts_pins_set = false
+	#endif
+
+	#ifdef CONFIG_UART_2_NRF_PARITY_BIT
+		#define UARTE_2_NRF_PARITY_BIT	       NRF_UARTE_PARITY_INCLUDED
+	#else
+		#define UARTE_2_NRF_PARITY_BIT	       NRF_UARTE_PARITY_EXCLUDED
+	#endif /* CONFIG_UART_2_NRF_PARITY_BIT */
+
+	UART_NRF_UARTE_DEVICE(2);
+#endif /* CONFIG_UART_2_NRF_UARTE */
+
+#ifdef CONFIG_UART_3_NRF_UARTE
+	#ifdef CONFIG_UART_3_INTERRUPT_DRIVEN
+		#define UARTE_3_INTERRUPT_DRIVEN       (1u)
+		#define UARTE_3_INTERRUPTS_INIT()      UARTE_NRF_IRQ_ENABLED(3)
+		#define UARTE_3_CREATE_TX_BUFF	       UARTE_TX_BUFFER_INIT(3)
+		#define UARTE_3_DATA_INIT	       UARTE_DATA_INT(3)
+		#define UARTE_3_CONFIG_INIT	       UARTE_CONFIG_INT(3)
+	#else
+		#define UARTE_3_INTERRUPT_DRIVEN       (0u)
+		#define UARTE_3_INTERRUPTS_INIT()
+		#define UARTE_3_CREATE_TX_BUFF
+		#define UARTE_3_DATA_INIT
+		#define UARTE_3_CONFIG_INIT
+	#endif /* CONFIG_UART_3_INTERRUPT_DRIVEN */
+
+	#ifdef CONFIG_UART_3_NRF_FLOW_CONTROL
+		#define UARTE_3_NRF_HWFC_CONFIG        NRF_UARTE_HWFC_ENABLED
+	#else
+		#define UARTE_3_NRF_HWFC_CONFIG        NRF_UARTE_HWFC_DISABLED
+	#endif /* CONFIG_UART_3_NRF_FLOW_CONTROL */
+
+	#if defined(DT_NORDIC_NRF_UARTE_UART_3_RTS_PIN) && \
+	    defined(DT_NORDIC_NRF_UARTE_UART_3_CTS_PIN)
+		#define UARTE_3_NRF_RTS_CTS_PINS       UARTE_NRF_RTS_CTS_SET(3)
+		#define UARTE_3_CONFIG_RTS_CTS         .rts_cts_pins_set = true
+	#else
+		#define UARTE_3_NRF_RTS_CTS_PINS       UARTE_NRF_RTS_CTS_NOT_SET
+		#define UARTE_3_CONFIG_RTS_CTS         .rts_cts_pins_set = false
+	#endif
+
+	#ifdef CONFIG_UART_3_NRF_PARITY_BIT
+		#define UARTE_3_NRF_PARITY_BIT	       NRF_UARTE_PARITY_INCLUDED
+	#else
+		#define UARTE_3_NRF_PARITY_BIT	       NRF_UARTE_PARITY_EXCLUDED
+	#endif /* CONFIG_UART_3_NRF_PARITY_BIT */
+
+	UART_NRF_UARTE_DEVICE(3);
+#endif /* CONFIG_UART_3_NRF_UARTE */
