@@ -7,7 +7,7 @@
 
 #include <soc.h>
 #include <clock_control.h>
-#include <drivers/clock_control/nrf5_clock_control.h>
+#include <drivers/clock_control/nrf_clock_control.h>
 #include <system_timer.h>
 #include <sys_clock.h>
 #include <nrf_rtc.h>

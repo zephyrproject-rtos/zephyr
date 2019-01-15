@@ -32,7 +32,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <random/rand32.h>
 
 #include <net/ieee802154_radio.h>
-#include <drivers/clock_control/nrf5_clock_control.h>
+#include <drivers/clock_control/nrf_clock_control.h>
 #include <clock_control.h>
 
 #include "nrf52840.h"
