@@ -54,7 +54,7 @@ LOG_MODULE_REGISTER(main);
 
 #ifdef CONFIG_FXOS8700
 #include <sensor.h>
-#define CONFIG_SENSOR_ACCEL_NAME DT_FXOS8700_NAME
+#define CONFIG_SENSOR_ACCEL_NAME DT_NXP_FXOS8700_0_LABEL
 #endif
 
 static const u8_t hid_report_desc[] = {
