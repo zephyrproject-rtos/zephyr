@@ -12,3 +12,5 @@ testing:
     - net
 supported:
   - ble
+  - i2c
+  - gpio
