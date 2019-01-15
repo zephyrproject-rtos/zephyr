@@ -68,8 +68,11 @@ static int simplelink_socket(int family, int type, int proto)
 		if (retval < 0) {
 			retval = EPROTONOSUPPORT;
 			(void)sl_Close(sd);
+			goto exit;
 		}
 	}
+
+	retval = sd;
 
 exit:
 	return _SlDrvSetErrno(retval);
