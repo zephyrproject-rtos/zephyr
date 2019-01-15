@@ -55,10 +55,12 @@ static int pinmux_stm32_init(struct device *port)
 
 	stm32_setup_pins(pinconf, ARRAY_SIZE(pinconf));
 
+#ifdef CONFIG_I2C_1
 	/* Enablio AFIO clock */
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_AFIO);
 	/* Remap I2C1 from PB6/PB7 to PB8/PB9 for Arduino pin compatibility */
 	LL_GPIO_AF_EnableRemap_I2C1();
+#endif /* CONFIG_I2C_1 */
 
 	return 0;
 }
