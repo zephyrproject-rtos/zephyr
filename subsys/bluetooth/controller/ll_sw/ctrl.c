@@ -21,7 +21,7 @@
 #include "ll_feat.h"
 
 #if defined(CONFIG_SOC_COMPATIBLE_NRF)
-#include <drivers/clock_control/nrf5_clock_control.h>
+#include <drivers/clock_control/nrf_clock_control.h>
 #endif /* CONFIG_SOC_COMPATIBLE_NRF */
 
 #include "hal/cpu.h"
