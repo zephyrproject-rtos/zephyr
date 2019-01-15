@@ -400,6 +400,15 @@ static inline enum net_tcp_state net_tcp_get_state(const struct net_tcp *tcp)
 bool net_tcp_validate_seq(struct net_tcp *tcp, struct net_tcp_hdr *tcp_hdr);
 
 /**
+ * @brief Finalize TCP packet
+ *
+ * @param pkt Network packet
+ *
+ * @return 0 on success, negative errno otherwise.
+ */
+int net_tcp_finalize(struct net_pkt *pkt);
+
+/**
  * @brief Set TCP checksum in network packet.
  *
  * @param pkt Network packet
@@ -409,17 +418,6 @@ bool net_tcp_validate_seq(struct net_tcp *tcp, struct net_tcp_hdr *tcp_hdr);
  * @return Return the actual fragment where the checksum was written.
  */
 struct net_buf *net_tcp_set_chksum(struct net_pkt *pkt, struct net_buf *frag);
-
-/**
- * @brief Get TCP checksum from network packet.
- *
- * @param pkt Network packet
- * @param frag Fragment where to start calculating the offset.
- * Typically this is set to pkt->frags by the caller.
- *
- * @return Return the checksum in host byte order.
- */
-u16_t net_tcp_get_chksum(struct net_pkt *pkt, struct net_buf *frag);
 
 /**
  * @brief Parse TCP options from network packet.
@@ -664,11 +662,9 @@ static inline bool net_tcp_validate_seq(struct net_tcp *tcp,
 	return false;
 }
 
-static inline u16_t net_tcp_get_chksum(struct net_pkt *pkt,
-				       struct net_buf *frag)
+static inline int net_tcp_finalize(struct net_pkt *pkt)
 {
 	ARG_UNUSED(pkt);
-	ARG_UNUSED(frag);
 	return 0;
 }
 

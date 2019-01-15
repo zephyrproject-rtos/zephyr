@@ -206,7 +206,7 @@ int net_ipv6_finalize_new(struct net_pkt *pkt, u8_t next_header_proto)
 			net_udp_finalize(pkt);
 		} else if (IS_ENABLED(CONFIG_NET_TCP) &&
 			   next_header_proto == IPPROTO_TCP) {
-			net_tcp_set_chksum(pkt, pkt->buffer);
+			net_tcp_finalize(pkt);
 		} else if (next_header_proto == IPPROTO_ICMPV6) {
 			return net_icmpv6_finalize(pkt);
 		}

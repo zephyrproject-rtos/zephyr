@@ -116,18 +116,14 @@ static char upper_if_set(char chr, bool set)
 	return chr | 0x20;
 }
 
-static void net_tcp_trace(struct net_pkt *pkt, struct net_tcp *tcp)
+static void net_tcp_trace(struct net_pkt *pkt,
+			  struct net_tcp *tcp,
+			  struct net_tcp_hdr *tcp_hdr)
 {
-	struct net_tcp_hdr hdr, *tcp_hdr;
 	u32_t rel_ack, ack;
 	u8_t flags;
 
 	if (CONFIG_NET_TCP_LOG_LEVEL < LOG_LEVEL_DBG) {
-		return;
-	}
-
-	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
-	if (!tcp_hdr) {
 		return;
 	}
 
@@ -492,7 +488,7 @@ static int prepare_segment(struct net_tcp *tcp,
 		return status;
 	}
 
-	net_tcp_trace(pkt, tcp);
+	net_tcp_trace(pkt, tcp, tcp_hdr);
 
 	*out_pkt = pkt;
 
@@ -861,11 +857,26 @@ static int net_tcp_queue_pkt(struct net_context *context, struct net_pkt *pkt)
 
 int net_tcp_send_pkt(struct net_pkt *pkt)
 {
+	NET_PKT_DATA_ACCESS_DEFINE(tcp_access, struct net_tcp_hdr);
 	struct net_context *ctx = net_pkt_context(pkt);
-	struct net_tcp_hdr hdr, *tcp_hdr;
+	struct net_tcp_hdr *tcp_hdr;
 	bool calc_chksum = false;
 
-	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
+	if (!ctx || !ctx->tcp) {
+		NET_ERR("%scontext is not set on pkt %p",
+			!ctx ? "" : "TCP ", pkt);
+		return -EINVAL;
+	}
+
+	net_pkt_cursor_init(pkt);
+	net_pkt_set_overwrite(pkt, true);
+
+	if (net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) +
+			 net_pkt_ipv6_ext_len(pkt))) {
+		return -EMSGSIZE;
+	}
+
+	tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data_new(pkt, &tcp_access);
 	if (!tcp_hdr) {
 		NET_ERR("Packet %p does not contain TCP header", pkt);
 		return -EMSGSIZE;
@@ -873,6 +884,7 @@ int net_tcp_send_pkt(struct net_pkt *pkt)
 
 	if (sys_get_be32(tcp_hdr->ack) != ctx->tcp->send_ack) {
 		sys_put_be32(ctx->tcp->send_ack, tcp_hdr->ack);
+		tcp_hdr->chksum = 0;
 		calc_chksum = true;
 	}
 
@@ -884,11 +896,23 @@ int net_tcp_send_pkt(struct net_pkt *pkt)
 	if (ctx->tcp->sent_ack != ctx->tcp->send_ack &&
 		(tcp_hdr->flags & NET_TCP_ACK) == 0) {
 		tcp_hdr->flags |= NET_TCP_ACK;
+		tcp_hdr->chksum = 0;
 		calc_chksum = true;
 	}
 
+	/* As we modified the header, we need to write it back.
+	 */
+	net_pkt_set_data(pkt, &tcp_access);
+
 	if (calc_chksum) {
-		net_tcp_set_chksum(pkt, pkt->frags);
+		net_pkt_cursor_init(pkt);
+		net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) +
+			     net_pkt_ipv6_ext_len(pkt));
+
+		/* No need to get tcp_hdr again */
+		tcp_hdr->chksum = net_calc_chksum_tcp(pkt);
+
+		net_pkt_set_data(pkt, &tcp_access);
 	}
 
 	if (tcp_hdr->flags & NET_TCP_FIN) {
@@ -896,10 +920,6 @@ int net_tcp_send_pkt(struct net_pkt *pkt)
 	}
 
 	ctx->tcp->sent_ack = ctx->tcp->send_ack;
-
-	/* As we modified the header, we need to write it back.
-	 */
-	net_tcp_set_hdr(pkt, tcp_hdr);
 
 	/* We must have special handling for some network technologies that
 	 * tweak the IP protocol headers during packet sending. This happens
@@ -929,7 +949,7 @@ int net_tcp_send_pkt(struct net_pkt *pkt)
 		}
 
 		if (pkt_in_slist) {
-			new_pkt = net_pkt_clone(pkt, ALLOC_TIMEOUT);
+			new_pkt = net_pkt_clone_new(pkt, ALLOC_TIMEOUT);
 			if (!new_pkt) {
 				return -ENOMEM;
 			}
@@ -1038,14 +1058,26 @@ bool net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 	}
 
 	while (!sys_slist_is_empty(list)) {
-		struct net_tcp_hdr hdr, *tcp_hdr;
+		NET_PKT_DATA_ACCESS_DEFINE(tcp_access, struct net_tcp_hdr);
+		struct net_tcp_hdr *tcp_hdr;
 		u32_t last_seq;
 		u32_t seq_len;
 
 		head = sys_slist_peek_head(list);
 		pkt = CONTAINER_OF(head, struct net_pkt, sent_list);
 
-		tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
+		net_pkt_cursor_init(pkt);
+		net_pkt_set_overwrite(pkt, true);
+
+		if (net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) +
+			 net_pkt_ipv6_ext_len(pkt))) {
+			sys_slist_remove(list, NULL, head);
+			net_pkt_unref(pkt);
+			continue;
+		}
+
+		tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data_new(
+							pkt, &tcp_access);
 		if (!tcp_hdr) {
 			/* The pkt does not contain TCP header, this should
 			 * not happen.
@@ -1236,109 +1268,83 @@ bool net_tcp_validate_seq(struct net_tcp *tcp, struct net_tcp_hdr *tcp_hdr)
 struct net_tcp_hdr *net_tcp_get_hdr(struct net_pkt *pkt,
 				    struct net_tcp_hdr *hdr)
 {
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(tcp_access, struct net_tcp_hdr);
+	struct net_pkt_cursor backup;
 	struct net_tcp_hdr *tcp_hdr;
-	struct net_buf *frag;
-	u16_t pos;
+	bool overwrite;
 
-	tcp_hdr = net_pkt_tcp_data(pkt);
-	if (!tcp_hdr) {
-		NET_ERR("NULL TCP header!");
-		return NULL;
+	tcp_access.data = hdr;
+
+	overwrite = net_pkt_is_being_overwritten(pkt);
+	net_pkt_set_overwrite(pkt, true);
+
+	net_pkt_cursor_backup(pkt, &backup);
+	net_pkt_cursor_init(pkt);
+
+	if (net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) +
+			 net_pkt_ipv6_ext_len(pkt))) {
+		tcp_hdr = NULL;
+		goto out;
 	}
 
-	if (net_tcp_header_fits(pkt, tcp_hdr)) {
-		return tcp_hdr;
-	}
+	tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data_new(pkt, &tcp_access);
 
-	frag = net_frag_read(pkt->frags, net_pkt_ip_hdr_len(pkt) +
-			     net_pkt_ipv6_ext_len(pkt),
-			     &pos, sizeof(hdr->src_port),
-			     (u8_t *)&hdr->src_port);
-	frag = net_frag_read(frag, pos, &pos, sizeof(hdr->dst_port),
-			     (u8_t *)&hdr->dst_port);
-	frag = net_frag_read(frag, pos, &pos, sizeof(hdr->seq), hdr->seq);
-	frag = net_frag_read(frag, pos, &pos, sizeof(hdr->ack), hdr->ack);
-	frag = net_frag_read_u8(frag, pos, &pos, &hdr->offset);
-	frag = net_frag_read_u8(frag, pos, &pos, &hdr->flags);
-	frag = net_frag_read(frag, pos, &pos, sizeof(hdr->wnd), hdr->wnd);
-	frag = net_frag_read(frag, pos, &pos, sizeof(hdr->chksum),
-			     (u8_t *)&hdr->chksum);
-	frag = net_frag_read(frag, pos, &pos, sizeof(hdr->urg), hdr->urg);
+out:
+	net_pkt_cursor_restore(pkt, &backup);
+	net_pkt_set_overwrite(pkt, overwrite);
 
-	if (!frag && pos == 0xffff) {
-		/* If the pkt is compressed, then this is the typical outcome
-		 * so no use printing error in this case.
-		 */
-		if ((CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG) &&
-		    !is_6lo_technology(pkt)) {
-			NET_ASSERT(frag);
-		}
-
-		return NULL;
-	}
-
-	return hdr;
+	return tcp_hdr;
 }
 
 struct net_tcp_hdr *net_tcp_set_hdr(struct net_pkt *pkt,
 				    struct net_tcp_hdr *hdr)
 {
-	struct net_buf *frag;
-	u16_t pos;
+	NET_PKT_DATA_ACCESS_DEFINE(tcp_access, struct net_tcp_hdr);
+	struct net_pkt_cursor backup;
+	struct net_tcp_hdr *tcp_hdr;
+	bool overwrite;
 
-	if (net_tcp_header_fits(pkt, hdr)) {
-		return hdr;
+	overwrite = net_pkt_is_being_overwritten(pkt);
+	net_pkt_set_overwrite(pkt, true);
+
+	net_pkt_cursor_backup(pkt, &backup);
+	net_pkt_cursor_init(pkt);
+
+	if (net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) +
+			 net_pkt_ipv6_ext_len(pkt))) {
+		tcp_hdr = NULL;
+		goto out;
 	}
 
-	frag = net_pkt_write(pkt, pkt->frags, net_pkt_ip_hdr_len(pkt) +
-			     net_pkt_ipv6_ext_len(pkt),
-			     &pos, sizeof(hdr->src_port),
-			     (u8_t *)&hdr->src_port, ALLOC_TIMEOUT);
-	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(hdr->dst_port),
-			     (u8_t *)&hdr->dst_port, ALLOC_TIMEOUT);
-	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(hdr->seq), hdr->seq,
-			     ALLOC_TIMEOUT);
-	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(hdr->ack), hdr->ack,
-			     ALLOC_TIMEOUT);
-	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(hdr->offset),
-			     &hdr->offset, ALLOC_TIMEOUT);
-	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(hdr->flags),
-			     &hdr->flags, ALLOC_TIMEOUT);
-	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(hdr->wnd), hdr->wnd,
-			     ALLOC_TIMEOUT);
-	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(hdr->chksum),
-			     (u8_t *)&hdr->chksum, ALLOC_TIMEOUT);
-	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(hdr->urg), hdr->urg,
-			     ALLOC_TIMEOUT);
-
-	if (!frag) {
-		NET_ASSERT(frag);
-		return NULL;
+	tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data_new(pkt, &tcp_access);
+	if (!tcp_hdr) {
+		goto out;
 	}
 
-	return hdr;
+	memcpy(tcp_hdr, hdr, sizeof(struct net_tcp_hdr));
+
+	net_pkt_set_data(pkt, &tcp_access);
+out:
+	net_pkt_cursor_restore(pkt, &backup);
+	net_pkt_set_overwrite(pkt, overwrite);
+
+	return tcp_hdr == NULL ? NULL : hdr;
 }
 
-u16_t net_tcp_get_chksum(struct net_pkt *pkt, struct net_buf *frag)
+int net_tcp_finalize(struct net_pkt *pkt)
 {
-	struct net_tcp_hdr *hdr;
-	u16_t chksum;
-	u16_t pos;
+	NET_PKT_DATA_ACCESS_DEFINE(tcp_access, struct net_tcp_hdr);
+	struct net_tcp_hdr *tcp_hdr;
 
-	hdr = net_pkt_tcp_data(pkt);
-	if (net_tcp_header_fits(pkt, hdr)) {
-		return hdr->chksum;
+	tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data_new(pkt, &tcp_access);
+	if (!tcp_hdr) {
+		return -ENOBUFS;
 	}
 
-	frag = net_frag_read(frag,
-			     net_pkt_ip_hdr_len(pkt) +
-			     net_pkt_ipv6_ext_len(pkt) +
-			     2 + 2 + 4 + 4 + /* src + dst + seq + ack */
-			     1 + 1 + 2 /* offset + flags + wnd */,
-			     &pos, sizeof(chksum), (u8_t *)&chksum);
-	NET_ASSERT(frag);
+	tcp_hdr->chksum = 0;
+	tcp_hdr->chksum = net_calc_chksum_tcp(pkt);
 
-	return chksum;
+	return net_pkt_set_data(pkt, &tcp_access);
 }
 
 struct net_buf *net_tcp_set_chksum(struct net_pkt *pkt, struct net_buf *frag)
@@ -1377,21 +1383,14 @@ struct net_buf *net_tcp_set_chksum(struct net_pkt *pkt, struct net_buf *frag)
 int net_tcp_parse_opts(struct net_pkt *pkt, int opt_totlen,
 		       struct net_tcp_options *opts)
 {
-	struct net_buf *frag = pkt->frags;
-	u16_t pos = net_pkt_ip_hdr_len(pkt)
-		  + net_pkt_ipv6_ext_len(pkt)
-		  + sizeof(struct net_tcp_hdr);
 	u8_t opt, optlen;
 
-	/* TODO: this should be done for each TCP pkt, on reception */
-	if (pos + opt_totlen > net_pkt_get_len(pkt)) {
-		NET_ERR("Truncated pkt len: %d, expected: %d",
-			(int)net_pkt_get_len(pkt), pos + opt_totlen);
-		return -EINVAL;
-	}
-
 	while (opt_totlen) {
-		frag = net_frag_read(frag, pos, &pos, sizeof(opt), &opt);
+		if (net_pkt_read_u8_new(pkt, &opt)) {
+			optlen = 0U;
+			goto error;
+		}
+
 		opt_totlen--;
 
 		/* https://www.iana.org/assignments/tcp-parameters/tcp-parameters.xhtml#tcp-parameters-1 */
@@ -1411,11 +1410,11 @@ int net_tcp_parse_opts(struct net_pkt *pkt, int opt_totlen,
 			goto error;
 		}
 
-		frag = net_frag_read(frag, pos, &pos, sizeof(optlen), &optlen);
-		opt_totlen--;
-		if (optlen < 2) {
+		if (net_pkt_read_u8_new(pkt, &optlen) || optlen < 2) {
 			goto error;
 		}
+
+		opt_totlen--;
 
 		/* Subtract opt/optlen size now to avoid doing this
 		 * repeatedly.
@@ -1430,11 +1429,17 @@ int net_tcp_parse_opts(struct net_pkt *pkt, int opt_totlen,
 			if (optlen != 2) {
 				goto error;
 			}
-			frag = net_frag_read_be16(frag, pos, &pos,
-						  &opts->mss);
+
+			if (net_pkt_read_be16_new(pkt, &opts->mss)) {
+				goto error;
+			}
+
 			break;
 		default:
-			frag = net_frag_skip(frag, pos, &pos, optlen);
+			if (net_pkt_skip(pkt, optlen)) {
+				goto error;
+			}
+
 			break;
 		}
 
@@ -1450,9 +1455,17 @@ error:
 
 int tcp_hdr_len(struct net_pkt *pkt)
 {
-	struct net_tcp_hdr hdr, *tcp_hdr;
+	NET_PKT_DATA_ACCESS_DEFINE(tcp_access, struct net_tcp_hdr);
+	struct net_tcp_hdr *tcp_hdr;
 
-	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
+	net_pkt_cursor_init(pkt);
+
+	if (net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) +
+			 net_pkt_ipv6_ext_len(pkt))) {
+		return 0;
+	}
+
+	tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data_new(pkt, &tcp_access);
 	if (tcp_hdr) {
 		return NET_TCP_HDR_LEN(tcp_hdr);
 	}
@@ -1868,15 +1881,27 @@ int net_tcp_unref(struct net_context *context)
 		}							\
 	}
 
-static void print_send_info(struct net_pkt *pkt, const char *msg)
+static void print_send_info(struct net_pkt *pkt,
+			    const char *msg, const struct sockaddr *remote)
 {
 	if (CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG) {
-		struct net_tcp_hdr hdr, *tcp_hdr;
+		u16_t port = 0;
 
-		tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
-		if (tcp_hdr) {
-			net_tcp_print_send_info(msg, pkt, tcp_hdr->dst_port);
+		if (IS_ENABLED(CONFIG_NET_IPV4) &&
+		    net_pkt_family(pkt) == AF_INET) {
+			struct sockaddr_in *addr4 = net_sin(remote);
+
+			port = addr4->sin_port;
 		}
+
+		if (IS_ENABLED(CONFIG_NET_IPV6) &&
+		    net_pkt_family(pkt) == AF_INET6) {
+			struct sockaddr_in6 *addr6 = net_sin6(remote);
+
+			port = addr6->sin6_port;
+		}
+
+		net_tcp_print_send_info(msg, pkt, port);
 	}
 }
 
@@ -1901,7 +1926,7 @@ static inline int send_syn_segment(struct net_context *context,
 		return ret;
 	}
 
-	print_send_info(pkt, msg);
+	print_send_info(pkt, msg, remote);
 
 	ret = net_send_data(pkt);
 	if (ret < 0) {
@@ -1949,7 +1974,7 @@ static int send_ack(struct net_context *context,
 		return ret;
 	}
 
-	print_send_info(pkt, "ACK");
+	print_send_info(pkt, "ACK", remote);
 
 	ret = net_tcp_send_pkt(pkt);
 	if (ret < 0) {
@@ -1971,7 +1996,7 @@ static int send_reset(struct net_context *context,
 		return ret;
 	}
 
-	print_send_info(pkt, "RST");
+	print_send_info(pkt, "RST", remote);
 
 	ret = net_send_data(pkt);
 	if (ret < 0) {
