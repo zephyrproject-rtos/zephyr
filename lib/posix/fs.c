@@ -12,7 +12,7 @@
 #include <string.h>
 #include <misc/fdtable.h>
 
-BUILD_ASSERT_MSG(PATH_MAX > MAX_FILE_NAME,
+BUILD_ASSERT_MSG(PATH_MAX >= MAX_FILE_NAME,
 		"PATH_MAX is less than MAX_FILE_NAME");
 
 struct posix_fs_desc {
