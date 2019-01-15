@@ -91,6 +91,7 @@
 		reg = <0x1d>;
 		label = "MMA8652FC";
 		int1-gpios = <&gpio0 24 0>;
+		int2-gpios = <&gpio0 25 0>;
 	};
 
 	hdc1008@43 {
