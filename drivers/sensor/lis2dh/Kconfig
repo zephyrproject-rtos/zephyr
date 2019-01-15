@@ -10,7 +10,8 @@ menuconfig LIS2DH
 	bool "LIS2DH Three Axis Accelerometer"
 	depends on (I2C && HAS_DTS_I2C) || (SPI && HAS_DTS_SPI)
 	help
-	  Enable driver for LIS2DH SPI/I2C-based triaxial accelerometer sensor.
+	  Enable SPI/I2C-based driver for LIS2DH, LIS3DH, LSM303DLHC,
+	  LIS2DH12, LSM303AGR triaxial accelerometer sensors.
 
 if LIS2DH
 

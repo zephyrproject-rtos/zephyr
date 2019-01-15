@@ -75,15 +75,11 @@ source "drivers/sensor/lis2ds12/Kconfig"
 
 source "drivers/sensor/lis2mdl/Kconfig"
 
-source "drivers/sensor/lis3dh/Kconfig"
-
 source "drivers/sensor/lis3mdl/Kconfig"
 
 source "drivers/sensor/lps22hb/Kconfig"
 
 source "drivers/sensor/lps25hb/Kconfig"
-
-source "drivers/sensor/lsm303dlhc_accel/Kconfig"
 
 source "drivers/sensor/lsm303dlhc_magn/Kconfig"
 
