@@ -563,10 +563,10 @@ static struct net_pkt *net_pkt_get(struct k_mem_slab *slab,
 #endif /* CONFIG_NET_CONTEXT_PRIORITY */
 
 	if (slab != &rx_pkts) {
-		uint16_t iface_len, data_len = 0U;
+		u16_t iface_len, data_len;
 		enum net_ip_protocol proto;
 
-		iface_len = net_if_get_mtu(iface);
+		iface_len = data_len = net_if_get_mtu(iface);
 
 		if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
 			data_len = max(iface_len, NET_IPV6_MTU);
