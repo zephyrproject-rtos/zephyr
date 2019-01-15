@@ -479,7 +479,7 @@ static int hf_clock_enable(bool on, bool blocking)
 	int ret = -ENODEV;
 	struct device *clock;
 
-	clock = device_get_binding(CONFIG_CLOCK_CONTROL_NRF5_M16SRC_DRV_NAME);
+	clock = device_get_binding(CONFIG_CLOCK_CONTROL_NRF_M16SRC_DRV_NAME);
 	if (!clock) {
 		LOG_ERR("NRF HF Clock device not found!");
 		return ret;

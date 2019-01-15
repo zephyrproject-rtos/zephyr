@@ -79,12 +79,12 @@ int z_clock_driver_init(struct device *device)
 
 	ARG_UNUSED(device);
 
-	clock = device_get_binding(CONFIG_CLOCK_CONTROL_NRF5_K32SRC_DRV_NAME);
+	clock = device_get_binding(CONFIG_CLOCK_CONTROL_NRF_K32SRC_DRV_NAME);
 	if (!clock) {
 		return -1;
 	}
 
-	clock_control_on(clock, (void *)CLOCK_CONTROL_NRF5_K32SRC);
+	clock_control_on(clock, (void *)CLOCK_CONTROL_NRF_K32SRC);
 
 	/* TODO: replace with counter driver to access RTC */
 	nrf_rtc_prescaler_set(RTC, 0);

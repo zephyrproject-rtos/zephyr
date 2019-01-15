@@ -152,7 +152,7 @@ config ALTERA_AVALON_TIMER
 config NRF_RTC_TIMER
 	bool "nRF Real Time Counter (NRF_RTC1) Timer"
 	default y
-	depends on CLOCK_CONTROL_NRF5
+	depends on CLOCK_CONTROL_NRF
 	select TICKLESS_CAPABLE
 	help
 	  This module implements a kernel device driver for the nRF Real Time

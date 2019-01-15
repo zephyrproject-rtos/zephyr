@@ -354,7 +354,7 @@ static int nrf5_init(struct device *dev)
 	k_sem_init(&nrf5_radio->tx_wait, 0, 1);
 	k_sem_init(&nrf5_radio->cca_wait, 0, 1);
 
-	clk_m16 = device_get_binding(CONFIG_CLOCK_CONTROL_NRF5_M16SRC_DRV_NAME);
+	clk_m16 = device_get_binding(CONFIG_CLOCK_CONTROL_NRF_M16SRC_DRV_NAME);
 	if (!clk_m16) {
 		return -ENODEV;
 	}
