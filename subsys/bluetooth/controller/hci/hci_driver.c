@@ -444,11 +444,13 @@ static int hci_driver_open(void)
 			K_THREAD_STACK_SIZEOF(prio_recv_thread_stack),
 			prio_recv_thread, NULL, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BT_CTLR_RX_PRIO), 0, K_NO_WAIT);
+	k_thread_name_set(&prio_recv_thread_data, "BT RX pri");
 
 	k_thread_create(&recv_thread_data, recv_thread_stack,
 			K_THREAD_STACK_SIZEOF(recv_thread_stack),
 			recv_thread, NULL, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BT_RX_PRIO), 0, K_NO_WAIT);
+	k_thread_name_set(&recv_thread_data, "BT RX");
 
 	BT_DBG("Success.");
 
