@@ -23,7 +23,7 @@ module = CLOCK_CONTROL
 module-str = clock control
 source "subsys/logging/Kconfig.template.log_config"
 
-source "drivers/clock_control/Kconfig.nrf5"
+source "drivers/clock_control/Kconfig.nrf"
 
 source "drivers/clock_control/Kconfig.quark_se"
 
