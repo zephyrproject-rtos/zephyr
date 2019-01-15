@@ -4753,11 +4753,11 @@ static void k32src_wait(void)
 	done = true;
 
 	struct device *lf_clock = device_get_binding(
-		CONFIG_CLOCK_CONTROL_NRF5_K32SRC_DRV_NAME);
+		CONFIG_CLOCK_CONTROL_NRF_K32SRC_DRV_NAME);
 
 	LL_ASSERT(lf_clock);
 
-	while (clock_control_on(lf_clock, (void *)CLOCK_CONTROL_NRF5_K32SRC)) {
+	while (clock_control_on(lf_clock, (void *)CLOCK_CONTROL_NRF_K32SRC)) {
 		DEBUG_CPU_SLEEP(1);
 		cpu_sleep();
 		DEBUG_CPU_SLEEP(0);

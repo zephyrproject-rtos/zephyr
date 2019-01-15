@@ -150,9 +150,9 @@ static int _k32src_start(struct device *dev, clock_control_subsys_t sub_system)
 	u32_t imask;
 	u32_t stat;
 
-#if defined(CONFIG_CLOCK_CONTROL_NRF5_K32SRC_BLOCKING)
+#if defined(CONFIG_CLOCK_CONTROL_NRF_K32SRC_BLOCKING)
 	u32_t intenset;
-#endif /* CONFIG_CLOCK_CONTROL_NRF5_K32SRC_BLOCKING */
+#endif /* CONFIG_CLOCK_CONTROL_NRF_K32SRC_BLOCKING */
 
 	/* If the LF clock is already started, but wasn't initialized with
 	 * this function, allow it to run once. This is needed because if a
@@ -183,7 +183,7 @@ static int _k32src_start(struct device *dev, clock_control_subsys_t sub_system)
 	lf_clk_src = POINTER_TO_UINT(sub_system);
 	NRF_CLOCK->LFCLKSRC = lf_clk_src;
 
-#if defined(CONFIG_CLOCK_CONTROL_NRF5_K32SRC_BLOCKING)
+#if defined(CONFIG_CLOCK_CONTROL_NRF_K32SRC_BLOCKING)
 	irq_disable(POWER_CLOCK_IRQn);
 
 	intenset = NRF_CLOCK->INTENSET;
@@ -208,13 +208,13 @@ static int _k32src_start(struct device *dev, clock_control_subsys_t sub_system)
 
 	irq_enable(POWER_CLOCK_IRQn);
 
-#else /* !CONFIG_CLOCK_CONTROL_NRF5_K32SRC_BLOCKING */
+#else /* !CONFIG_CLOCK_CONTROL_NRF_K32SRC_BLOCKING */
 	/* NOTE: LFCLK will initially start running from the LFRC if LFXO is
 	 *       selected.
 	 */
 	nrf_clock_int_enable(NRF_CLOCK_INT_LF_STARTED_MASK);
 	nrf_clock_task_trigger(NRF_CLOCK_TASK_LFCLKSTART);
-#endif /* !CONFIG_CLOCK_CONTROL_NRF5_K32SRC_BLOCKING */
+#endif /* !CONFIG_CLOCK_CONTROL_NRF_K32SRC_BLOCKING */
 
 	/* If RC selected, calibrate and start timer for consecutive
 	 * calibrations.
@@ -420,7 +420,7 @@ static int _clock_control_init(struct device *dev)
 	 * NOTE: Currently the operations here are idempotent.
 	 */
 	IRQ_CONNECT(NRF5_IRQ_POWER_CLOCK_IRQn,
-		    CONFIG_CLOCK_CONTROL_NRF5_IRQ_PRIORITY,
+		    CONFIG_CLOCK_CONTROL_NRF_IRQ_PRIORITY,
 		    _power_clock_isr, 0, 0);
 
 	irq_enable(POWER_CLOCK_IRQn);
@@ -435,7 +435,7 @@ static const struct clock_control_driver_api _m16src_clock_control_api = {
 };
 
 DEVICE_AND_API_INIT(clock_nrf5_m16src,
-		    CONFIG_CLOCK_CONTROL_NRF5_M16SRC_DRV_NAME,
+		    CONFIG_CLOCK_CONTROL_NRF_M16SRC_DRV_NAME,
 		    _clock_control_init, NULL, NULL, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &_m16src_clock_control_api);
@@ -447,7 +447,7 @@ static const struct clock_control_driver_api _k32src_clock_control_api = {
 };
 
 DEVICE_AND_API_INIT(clock_nrf5_k32src,
-		    CONFIG_CLOCK_CONTROL_NRF5_K32SRC_DRV_NAME,
+		    CONFIG_CLOCK_CONTROL_NRF_K32SRC_DRV_NAME,
 		    _clock_control_init, NULL, NULL, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &_k32src_clock_control_api);
