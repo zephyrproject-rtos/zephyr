@@ -49,14 +49,14 @@ config BT_RX_BUF_LEN
 
 config BT_HCI_TX_STACK_SIZE
 	int
-	default 256 if BT_H4
-	default 256 if BT_H5
+	default 512 if BT_H4
+	default 512 if BT_H5
 	default 416 if BT_SPI
 	default 640 if BT_CTLR
-	default 256 if BT_USERCHAN
+	default 512 if BT_USERCHAN
 	# Even if no driver is selected the following default is still
 	# needed e.g. for unit tests.
-	default 256
+	default 512
 	help
 	  Stack size needed for executing bt_send with specified driver
 
