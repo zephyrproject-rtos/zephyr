@@ -1,0 +1,25 @@
+#
+# Copyright (c) 2019 STMicroelectronics
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: STMicroelectronics MEMS sensors LIS2DS12 SPI
+version: 0.1
+
+description: >
+    This binding gives a base representation of LIS2DS12 3-axis accelerometer
+    accessed through SPI bus
+
+inherits:
+    !include spi-device.yaml
+
+properties:
+    compatible:
+        constraint: "st,lis2ds12"
+
+    irq-gpios:
+      type: compound
+      category: required
+      generation: define, use-prop-name
+...
