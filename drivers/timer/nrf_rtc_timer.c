@@ -49,7 +49,7 @@ static u32_t counter(void)
  * it by pointer at runtime, maybe?) so we don't have this leaky
  * symbol.
  */
-void rtc1_nrf5_isr(void *arg)
+void rtc1_nrf_isr(void *arg)
 {
 	ARG_UNUSED(arg);
 	RTC->EVENTS_COMPARE[0] = 0;
@@ -94,10 +94,10 @@ int z_clock_driver_init(struct device *device)
 
 	/* Clear the event flag and possible pending interrupt */
 	nrf_rtc_event_clear(RTC, NRF_RTC_EVENT_COMPARE_0);
-	NVIC_ClearPendingIRQ(NRF5_IRQ_RTC1_IRQn);
+	NVIC_ClearPendingIRQ(RTC1_IRQn);
 
-	IRQ_CONNECT(NRF5_IRQ_RTC1_IRQn, 1, rtc1_nrf5_isr, 0, 0);
-	irq_enable(NRF5_IRQ_RTC1_IRQn);
+	IRQ_CONNECT(RTC1_IRQn, 1, rtc1_nrf_isr, 0, 0);
+	irq_enable(RTC1_IRQn);
 
 	nrf_rtc_task_trigger(RTC, NRF_RTC_TASK_CLEAR);
 	nrf_rtc_task_trigger(RTC, NRF_RTC_TASK_START);

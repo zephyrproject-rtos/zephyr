@@ -11,7 +11,7 @@
 #include <device.h>
 #include <clock_control.h>
 #include <misc/__assert.h>
-#include "nrf_clock.h"
+#include <nrf_clock.h>
 #if defined(CONFIG_USB) && defined(CONFIG_SOC_NRF52840)
 #include <nrf_power.h>
 #include <drivers/clock_control/nrf_clock_control.h>
@@ -95,7 +95,7 @@ hf_already_started:
 	 */
 	__ASSERT_NO_MSG(m16src_ref);
 
-	stat = CLOCK_HFCLKSTAT_SRC_Xtal | CLOCK_HFCLKSTAT_STATE_Msk;
+	stat = NRF_CLOCK_HFCLK_HIGH_ACCURACY | CLOCK_HFCLKSTAT_STATE_Msk;
 	if ((NRF_CLOCK->HFCLKSTAT & stat) == stat) {
 		return 0;
 	} else {
@@ -216,6 +216,7 @@ static int _k32src_start(struct device *dev, clock_control_subsys_t sub_system)
 	nrf_clock_task_trigger(NRF_CLOCK_TASK_LFCLKSTART);
 #endif /* !CONFIG_CLOCK_CONTROL_NRF_K32SRC_BLOCKING */
 
+#if NRF_CLOCK_HAS_CALIBRATION
 	/* If RC selected, calibrate and start timer for consecutive
 	 * calibrations.
 	 */
@@ -254,6 +255,7 @@ static int _k32src_start(struct device *dev, clock_control_subsys_t sub_system)
 			__ASSERT_NO_MSG(err == -EINPROGRESS);
 		}
 	}
+#endif /* NRF_CLOCK_HAS_CALIBRATION */
 
 lf_already_started:
 	stat = (NRF_CLOCK->LFCLKSRCCOPY & CLOCK_LFCLKSRCCOPY_SRC_Msk) |
@@ -276,11 +278,14 @@ static inline void power_event_cb(nrf_power_event_t event)
 
 static void _power_clock_isr(void *arg)
 {
-	u8_t pof, hf_intenset, hf, lf_intenset, lf, done, ctto;
+	u8_t pof, hf_intenset, hf, lf_intenset, lf;
+#if NRF_CLOCK_HAS_CALIBRATION
+	u8_t ctto, done;
+	struct device *dev = arg;
+#endif
 #if defined(CONFIG_USB) && defined(CONFIG_SOC_NRF52840)
 	bool usb_detected, usb_pwr_rdy, usb_removed;
 #endif
-	struct device *dev = arg;
 
 	pof = (NRF_POWER->EVENTS_POFWARN != 0);
 
@@ -292,19 +297,24 @@ static void _power_clock_isr(void *arg)
 		       CLOCK_INTENSET_LFCLKSTARTED_Msk) != 0);
 	lf = (NRF_CLOCK->EVENTS_LFCLKSTARTED != 0);
 
+#if NRF_CLOCK_HAS_CALIBRATION
 	done = (NRF_CLOCK->EVENTS_DONE != 0);
 	ctto = (NRF_CLOCK->EVENTS_CTTO != 0);
-
+#endif
 #if defined(CONFIG_USB) && defined(CONFIG_SOC_NRF52840)
 	usb_detected = nrf_power_event_check(NRF_POWER_EVENT_USBDETECTED);
 	usb_pwr_rdy = nrf_power_event_check(NRF_POWER_EVENT_USBPWRRDY);
 	usb_removed = nrf_power_event_check(NRF_POWER_EVENT_USBREMOVED);
-
-	__ASSERT_NO_MSG(pof || hf || hf_intenset || lf || done || ctto ||
-			usb_detected || usb_pwr_rdy || usb_removed);
-#else
-	__ASSERT_NO_MSG(pof || hf || hf_intenset || lf || done || ctto);
 #endif
+
+	__ASSERT_NO_MSG(pof || hf || hf_intenset || lf
+#if NRF_CLOCK_HAS_CALIBRATION
+			|| done || ctto
+#endif
+#if defined(CONFIG_USB) && defined(CONFIG_SOC_NRF52840)
+			|| usb_detected || usb_pwr_rdy || usb_removed
+#endif
+	);
 
 	if (pof) {
 		NRF_POWER->EVENTS_POFWARN = 0;
@@ -332,8 +342,10 @@ static void _power_clock_isr(void *arg)
 		*(volatile u32_t *)0x40000C34 = 0x00000002;
 #endif /* CONFIG_SOC_SERIES_NRF52X */
 
+#if NRF_CLOCK_HAS_CALIBRATION
 		/* Start Calibration */
 		NRF_CLOCK->TASKS_CAL = 1;
+#endif
 	}
 
 	if (lf) {
@@ -345,14 +357,17 @@ static void _power_clock_isr(void *arg)
 			 */
 			NRF_CLOCK->INTENCLR = CLOCK_INTENCLR_LFCLKSTARTED_Msk;
 
+#if NRF_CLOCK_HAS_CALIBRATION
 			/* Start HF Clock if LF RC is used. */
 			if ((NRF_CLOCK->LFCLKSRCCOPY & CLOCK_LFCLKSRCCOPY_SRC_Msk) ==
 			    CLOCK_LFCLKSRCCOPY_SRC_RC) {
 				ctto = 1U;
 			}
+#endif
 		}
 	}
 
+#if NRF_CLOCK_HAS_CALIBRATION
 	if (done) {
 		int err;
 
@@ -392,6 +407,7 @@ static void _power_clock_isr(void *arg)
 			__ASSERT_NO_MSG(err == -EINPROGRESS);
 		}
 	}
+#endif /* NRF_CLOCK_HAS_CALIBRATION */
 
 #if defined(CONFIG_USB) && defined(CONFIG_SOC_NRF52840)
 	if (usb_detected) {
