@@ -36,7 +36,7 @@ static bool encrypt_link;
  *   We expect to find a connectable peripheral (a Zephyr's
  *   samples/bluetooth/peripheral) to which we will connect.
  *
- *   After connecting we expect to receive some notification.
+ *   After connecting we expect to receive 2 notifications.
  *   If we do, the test case passes.
  *   If we do not in 5 seconds, the testcase is considered failed
  *
@@ -73,6 +73,7 @@ static u8_t notify_func(struct bt_conn *conn,
 			struct bt_gatt_subscribe_params *params,
 			const void *data, u16_t length)
 {
+	static int notify_count;
 	if (!data) {
 		printk("[UNSUBSCRIBED]\n");
 		params->value_handle = 0;
@@ -81,10 +82,10 @@ static u8_t notify_func(struct bt_conn *conn,
 
 	printk("[NOTIFICATION] data %p length %u\n", data, length);
 
-	/* We have passed*/
-	bst_result = Passed;
-	bs_trace_exit_time("Testcase passed\n");
-	/**/
+	if (notify_count++ >= 1) { /* We consider it passed */
+		bst_result = Passed;
+		bs_trace_exit_time("Testcase passed\n");
+	}
 
 	return BT_GATT_ITER_CONTINUE;
 }
