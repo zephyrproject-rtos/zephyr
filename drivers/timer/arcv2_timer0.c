@@ -22,7 +22,7 @@
 #define _ARC_V2_TMR_CTRL_IP 0x8 /* interrupt pending flag */
 
 /* Minimum cycles in the future to try to program. */
-#define MIN_DELAY 1024
+#define MIN_DELAY 512
 #define COUNTER_MAX 0xffffffff
 #define TIMER_STOPPED 0x0
 #define CYC_PER_TICK (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC	\
@@ -160,7 +160,6 @@ int z_clock_driver_init(struct device *device)
 
 	/* ensure that the timer will not generate interrupts */
 	timer0_control_register_set(0);
-	timer0_count_register_set(0);
 
 	last_load = CYC_PER_TICK;
 
@@ -168,6 +167,7 @@ int z_clock_driver_init(struct device *device)
 		    _timer_int_handler, NULL, 0);
 
 	timer0_limit_register_set(last_load - 1);
+	timer0_count_register_set(0);
 	timer0_control_register_set(_ARC_V2_TMR_CTRL_NH | _ARC_V2_TMR_CTRL_IE);
 
 	/* everything has been configured: safe to enable the interrupt */
@@ -205,10 +205,16 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 
 	/* Round delay up to next tick boundary */
 	delay = ((delay + CYC_PER_TICK - 1) / CYC_PER_TICK) * CYC_PER_TICK;
-	last_load = delay;
 
-	timer0_limit_register_set(last_load - 1);
-	timer0_control_register_set(_ARC_V2_TMR_CTRL_NH | _ARC_V2_TMR_CTRL_IE);
+	if (last_load != delay) {
+		if (timer0_control_register_get() & _ARC_V2_TMR_CTRL_IP) {
+			delay -= last_load;
+		}
+		timer0_limit_register_set(delay - 1);
+		last_load = delay;
+		timer0_control_register_set(_ARC_V2_TMR_CTRL_NH |
+							 _ARC_V2_TMR_CTRL_IE);
+	}
 
 	k_spin_unlock(&lock, key);
 #endif
