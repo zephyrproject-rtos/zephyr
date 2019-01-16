@@ -300,4 +300,5 @@ SECTIONS {
 	KEEP(*(.gnu.attributes))
 	}
 
+    /DISCARD/ : { *(.note.GNU-stack) }
 	}
