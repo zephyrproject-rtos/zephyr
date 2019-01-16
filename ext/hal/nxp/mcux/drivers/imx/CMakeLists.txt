@@ -11,6 +11,7 @@ zephyr_library_compile_definitions_ifdef(
 )
 
 zephyr_sources_ifdef(CONFIG_GPIO_MCUX_IGPIO   fsl_gpio.c)
+zephyr_sources_ifdef(CONFIG_I2C_MCUX_LPI2C    fsl_lpi2c.c)
 zephyr_sources_ifdef(CONFIG_SPI_MCUX_LPSPI    fsl_lpspi.c)
 zephyr_sources_ifdef(CONFIG_UART_MCUX_LPUART  fsl_lpuart.c)
 zephyr_sources_ifdef(CONFIG_ETH_MCUX          fsl_enet.c)
