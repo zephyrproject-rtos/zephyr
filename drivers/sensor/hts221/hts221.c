@@ -62,7 +62,7 @@ static int hts221_sample_fetch(struct device *dev, enum sensor_channel chan)
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
-	if (i2c_burst_read(drv_data->i2c, HTS221_I2C_ADDR,
+	if (i2c_burst_read(drv_data->i2c, DT_ST_HTS221_0_BASE_ADDRESS,
 			   HTS221_REG_DATA_START | HTS221_AUTOINCREMENT_ADDR,
 			   buf, 4) < 0) {
 		LOG_ERR("Failed to fetch data sample.");
@@ -79,7 +79,7 @@ static int hts221_read_conversion_data(struct hts221_data *drv_data)
 {
 	u8_t buf[16];
 
-	if (i2c_burst_read(drv_data->i2c, HTS221_I2C_ADDR,
+	if (i2c_burst_read(drv_data->i2c, DT_ST_HTS221_0_BASE_ADDRESS,
 			   HTS221_REG_CONVERSION_START |
 			   HTS221_AUTOINCREMENT_ADDR, buf, 16) < 0) {
 		LOG_ERR("Failed to read conversion data.");
@@ -119,7 +119,7 @@ int hts221_init(struct device *dev)
 	}
 
 	/* check chip ID */
-	if (i2c_reg_read_byte(drv_data->i2c, HTS221_I2C_ADDR,
+	if (i2c_reg_read_byte(drv_data->i2c, DT_ST_HTS221_0_BASE_ADDRESS,
 			      HTS221_REG_WHO_AM_I, &id) < 0) {
 		LOG_ERR("Failed to read chip ID.");
 		return -EIO;
@@ -142,7 +142,8 @@ int hts221_init(struct device *dev)
 		return -EINVAL;
 	}
 
-	if (i2c_reg_write_byte(drv_data->i2c, HTS221_I2C_ADDR, HTS221_REG_CTRL1,
+	if (i2c_reg_write_byte(drv_data->i2c, DT_ST_HTS221_0_BASE_ADDRESS,
+			       HTS221_REG_CTRL1,
 			       (idx + 1) << HTS221_ODR_SHIFT | HTS221_BDU_BIT |
 			       HTS221_PD_BIT) < 0) {
 		LOG_ERR("Failed to configure chip.");
