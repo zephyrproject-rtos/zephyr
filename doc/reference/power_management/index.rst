@@ -113,21 +113,9 @@ can be done in the available time. The power management operation must halt
 execution on a CPU or SOC low power state. Before entering the low power state,
 the SOC interface must setup a wake event.
 
-The power management subsystem expects the :code:`sys_suspend()` to
-return one of the following values based on the power management operations
-the SOC interface executed:
-
-:code:`SYS_PM_NOT_HANDLED`
-
-   Indicates that no power management operations were performed.
-
-:code:`SYS_PM_LOW_POWER_STATE`
-
-   Indicates that the CPU was put in a low power state.
-
-:code:`SYS_PM_DEEP_SLEEP`
-
-   Indicates that the SOC was put in a deep sleep state.
+The power management subsystem expects the :code:`sys_suspend()` to return
+the power state which was used or :code:`SYS_POWER_STATE_ACTIVE` if SoC was
+kept in active state.
 
 Resume Hook function
 ====================
@@ -184,26 +172,26 @@ The power management subsystem classifies power management schemes
 into two categories based on whether the CPU loses execution context during the
 power state transition.
 
-* SYS_PM_LOW_POWER_STATE
-* SYS_PM_DEEP_SLEEP
+* Low Power State
+* Deep Sleep State
 
-SYS_PM_LOW_POWER_STATE
-======================
+Low Power State
+===============
 
 CPU does not lose execution context. Devices also do not lose power while
 entering power states in this category. The wake latencies of power states
 in this category are relatively low.
 
-SYS_PM_DEEP_SLEEP
-=================
+Deep Sleep State
+================
 
 CPU is power gated and loses execution context. Execution will resume at
 OS startup code or at a resume point determined by a bootloader that supports
 deep sleep resume. Depending on the SOC's implementation of the power saving
 feature, it may turn off power to most devices. RAM may be retained by some
 implementations, while others may remove power from RAM saving considerable
-power. Power states in this category save more power than
-`SYS_PM_LOW_POWER_STATE`_ and would have higher wake latencies.
+power. Power states in this category save more power than Low Power states
+and would have higher wake latencies.
 
 Device Power Management Infrastructure
 **************************************
@@ -451,11 +439,11 @@ the following configuration flags.
 
 :option:`CONFIG_SYS_POWER_LOW_POWER_STATE`
 
-   The SOC interface enables this flag to use the :code:`SYS_PM_LOW_POWER_STATE` policy.
+   This flag enables support for the Low Power states.
 
 :option:`CONFIG_SYS_POWER_DEEP_SLEEP`
 
-   This flag enables support for the :code:`SYS_PM_DEEP_SLEEP` policy.
+   This flag enables support for the Deep Sleep states.
 
 :option:`CONFIG_DEVICE_POWER_MANAGEMENT`
 

@@ -5,6 +5,7 @@
  */
 
 #include <ztest.h>
+#include <power.h>
 #include <irq_offload.h>
 #include <misc/stack.h>
 
@@ -23,7 +24,8 @@ static void tdata_dump_callback(const struct k_thread *thread, void *user_data)
 }
 
 /*power hook functions*/
-int sys_suspend(s32_t ticks)
+
+enum power_states sys_suspend(s32_t ticks)
 {
 	static bool test_flag;
 
@@ -35,7 +37,7 @@ int sys_suspend(s32_t ticks)
 		test_flag = true;
 	}
 
-	return 0;
+	return SYS_POWER_STATE_ACTIVE;
 }
 
 void sys_resume(void)

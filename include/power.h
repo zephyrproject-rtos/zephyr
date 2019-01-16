@@ -15,13 +15,6 @@ extern "C" {
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 
-/* Constants identifying power state categories */
-#define SYS_PM_ACTIVE_STATE		0 /* SOC and CPU are in active state */
-#define SYS_PM_LOW_POWER_STATE		1 /* CPU low power state */
-#define SYS_PM_DEEP_SLEEP		2 /* SOC low power state */
-
-#define SYS_PM_NOT_HANDLED		SYS_PM_ACTIVE_STATE
-
 extern unsigned char sys_pm_idle_exit_notify;
 
 
@@ -35,6 +28,7 @@ extern unsigned char sys_pm_idle_exit_notify;
  * @brief Power Management states.
  */
 enum power_states {
+	SYS_POWER_STATE_ACTIVE	= (-1),
 #ifdef CONFIG_SYS_POWER_LOW_POWER_STATE
 # ifdef CONFIG_SYS_POWER_STATE_CPU_LPS_SUPPORTED
 	SYS_POWER_STATE_CPU_LPS,
@@ -60,6 +54,64 @@ enum power_states {
 #endif /* CONFIG_SYS_POWER_DEEP_SLEEP */
 	SYS_POWER_STATE_MAX
 };
+
+/**
+ * @brief Check if particular power state is a low power state.
+ *
+ * This function returns true if given power state is a low power state.
+ */
+static inline bool sys_pm_is_low_power_state(enum power_states state)
+{
+	switch (state) {
+#ifdef CONFIG_SYS_POWER_LOW_POWER_STATE
+# ifdef CONFIG_SYS_POWER_STATE_CPU_LPS_SUPPORTED
+	case SYS_POWER_STATE_CPU_LPS:
+		/* FALLTHROUGH */
+# endif
+# ifdef CONFIG_SYS_POWER_STATE_CPU_LPS_1_SUPPORTED
+	case SYS_POWER_STATE_CPU_LPS_1:
+		/* FALLTHROUGH */
+# endif
+# ifdef CONFIG_SYS_POWER_STATE_CPU_LPS_2_SUPPORTED
+	case SYS_POWER_STATE_CPU_LPS_2:
+		/* FALLTHROUGH */
+# endif
+		return true;
+#endif /* CONFIG_SYS_POWER_LOW_POWER_STATE */
+
+	default:
+		return false;
+	}
+}
+
+/**
+ * @brief Check if particular power state is a deep sleep state.
+ *
+ * This function returns true if given power state is a deep sleep state.
+ */
+static inline bool sys_pm_is_deep_sleep_state(enum power_states state)
+{
+	switch (state) {
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
+# ifdef CONFIG_SYS_POWER_STATE_DEEP_SLEEP_SUPPORTED
+	case SYS_POWER_STATE_DEEP_SLEEP:
+		/* FALLTHROUGH */
+# endif
+# ifdef CONFIG_SYS_POWER_STATE_DEEP_SLEEP_1_SUPPORTED
+	case SYS_POWER_STATE_DEEP_SLEEP_1:
+		/* FALLTHROUGH */
+# endif
+# ifdef CONFIG_SYS_POWER_STATE_DEEP_SLEEP_2_SUPPORTED
+	case SYS_POWER_STATE_DEEP_SLEEP_2:
+		/* FALLTHROUGH */
+# endif
+		return true;
+#endif /* CONFIG_SYS_POWER_DEEP_SLEEP */
+
+	default:
+		return false;
+	}
+}
 
 /**
  * @brief Power Management Hooks
@@ -105,7 +157,7 @@ void sys_resume_from_deep_sleep(void);
  *
  * This function would notify exit from kernel idling if a corresponding
  * sys_suspend() notification was handled and did not return
- * SYS_PM_NOT_HANDLED.
+ * SYS_POWER_STATE_ACTIVE.
  *
  * This function would be called from the ISR context of the event
  * that caused the exit from kernel idling. This will be called immediately
@@ -144,11 +196,9 @@ void sys_resume(void);
  *
  * @param ticks the upcoming kernel idle time
  *
- * @retval SYS_PM_NOT_HANDLED If low power state was not entered.
- * @retval SYS_PM_LOW_POWER_STATE If CPU low power state was entered.
- * @retval SYS_PM_DEEP_SLEEP If SOC low power state was entered.
+ * @return Power state which was selected and entered.
  */
-extern int sys_suspend(s32_t ticks);
+extern enum power_states sys_suspend(s32_t ticks);
 
 #ifdef CONFIG_PM_CONTROL_OS_DEBUG
 /**
