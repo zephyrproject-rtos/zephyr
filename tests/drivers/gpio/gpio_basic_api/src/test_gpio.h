@@ -61,6 +61,7 @@ struct drv_data {
 	struct gpio_callback gpio_cb;
 	int mode;
 	int index;
+	int aux;
 };
 
 void test_gpio_pin_read_write(void);
@@ -69,6 +70,7 @@ void test_gpio_callback_edge_low(void);
 void test_gpio_callback_level_high(void);
 void test_gpio_callback_level_low(void);
 void test_gpio_callback_add_remove(void);
+void test_gpio_callback_self_remove(void);
 void test_gpio_callback_enable_disable(void);
 
 #endif /* __TEST_GPIO_H__ */
