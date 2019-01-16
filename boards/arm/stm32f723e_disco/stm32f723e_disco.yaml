@@ -9,6 +9,7 @@ toolchain:
 ram: 256
 flash: 512
 supported:
+  - arduino_i2c
   - gpio
   - i2c
   - spi

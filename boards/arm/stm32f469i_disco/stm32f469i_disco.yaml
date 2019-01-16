@@ -7,6 +7,7 @@ toolchain:
   - gnuarmemb
   - xtools
 supported:
+  - arduino_i2c
   - rtc
   - i2c
   - spi
