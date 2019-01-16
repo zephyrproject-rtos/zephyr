@@ -303,9 +303,9 @@
 			};
 		};
 
-		trng: random@400CC000 {
+		trng: random@400cc000 {
 			compatible = "nxp,kinetis-trng";
-			reg = <0x400CC000 0x4000>;
+			reg = <0x400cc000 0x4000>;
 			status = "ok";
 			interrupts = <53 0>;
 			label = "TRNG";
