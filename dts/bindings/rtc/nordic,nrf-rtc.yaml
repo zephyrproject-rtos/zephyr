@@ -1,0 +1,25 @@
+#
+# Copyright (c) 2018 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: Nordic nRF Real Time Counter
+version: 0.1
+
+description: >
+    This is a representation of the Nordic nRF RTC node
+
+inherits:
+    !include rtc.yaml
+
+properties:
+    compatible:
+      constraint: "nordic,nrf-rtc"
+
+    reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+...
