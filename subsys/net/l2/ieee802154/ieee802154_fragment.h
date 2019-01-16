@@ -34,7 +34,8 @@ struct ieee802154_fragment_ctx {
 static inline bool ieee802154_fragment_is_needed(struct net_pkt *pkt,
 						 u8_t ll_hdr_size)
 {
-	return (net_pkt_get_len(pkt) + ll_hdr_size > IEEE802154_MTU);
+	return (net_pkt_get_len(pkt) + ll_hdr_size >
+			IEEE802154_MTU - IEEE802154_MFR_LENGTH);
 }
 
 static inline
