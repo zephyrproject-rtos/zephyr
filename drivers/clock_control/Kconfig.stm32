@@ -300,6 +300,44 @@ config CLOCK_STM32_PLL_Q_DIVISOR
 
 endif # SOC_SERIES_STM32F4X || SOC_SERIES_STM32F7X
 
+if SOC_SERIES_STM32G0X
+
+config CLOCK_STM32_PLL_M_DIVISOR
+	int "PLL divisor"
+	depends on CLOCK_STM32_SYSCLK_SRC_PLL
+	default 1
+	range 1 8
+	help
+	  PLL divisor, allowed values: 1-8. With this ensure that the PLL
+	  VCO input frequency ranges from 4 to 16MHz.
+
+config CLOCK_STM32_PLL_N_MULTIPLIER
+	int "PLL multiplier"
+	depends on CLOCK_STM32_SYSCLK_SRC_PLL
+	default 8
+	range 8 86
+	help
+	  PLL multiplier, allowed values: 8-86. PLL output must not
+	  exceed 344MHz.
+
+config CLOCK_STM32_PLL_Q_DIVISOR
+	int "PLL Q Divisor"
+	depends on CLOCK_STM32_SYSCLK_SRC_PLL
+	default 2
+	range 2 8
+	help
+	  PLL Q Output divisor, allowed values: 2-8.
+
+config CLOCK_STM32_PLL_R_DIVISOR
+	int "PLL R Divisor"
+	depends on CLOCK_STM32_SYSCLK_SRC_PLL
+	default 2
+	range 2 8
+	help
+	  PLL R Output divisor, allowed values: 2-8
+
+endif # SOC_SERIES_STM32G0X
+
 if SOC_SERIES_STM32L0X
 
 config CLOCK_STM32_PLL_MULTIPLIER
@@ -395,7 +433,7 @@ config CLOCK_STM32_APB1_PRESCALER
 	  APB1 Low speed clock (PCLK1) prescaler, allowed values:
 	  1, 2, 4, 8, 16
 
-if SOC_SERIES_STM32F0X!=y
+if SOC_SERIES_STM32F0X!=y && SOC_SERIES_STM32G0X!=y
 
 config CLOCK_STM32_APB2_PRESCALER
 	int "APB2 prescaler"
@@ -405,7 +443,7 @@ config CLOCK_STM32_APB2_PRESCALER
 	  APB2 High speed clock (PCLK2) prescaler, allowed values:
 	  1, 2, 4, 8, 16
 
-endif # SOC_SERIES_STM32F0X!=y
+endif # SOC_SERIES_STM32F0X!=y && SOC_SERIES_STM32G0X!=y
 
 choice
 prompt "STM32 MCO1 Clock Source"
