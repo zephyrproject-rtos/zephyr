@@ -114,16 +114,16 @@ struct ieee802154_radio_api {
 /**
  * @brief Check if AR flag is set on the frame inside given net_pkt
  *
- * @param pkt A valid pointer on a net_pkt structure, must not be NULL,
+ * @param frag A valid pointer on a net_buf structure, must not be NULL,
  *        and its length should be at least made of 1 byte (ACK frames
  *        are the smallest frames on 15.4 and made of 3 bytes, not
  *        not counting the FCS part).
  *
  * @return True if AR flag is set, False otherwise
  */
-static inline bool ieee802154_is_ar_flag_set(struct net_pkt *pkt)
+static inline bool ieee802154_is_ar_flag_set(struct net_buf *frag)
 {
-	return (*net_pkt_data(pkt) & IEEE802154_AR_FLAG_SET);
+	return (*frag->data & IEEE802154_AR_FLAG_SET);
 }
 
 #ifndef CONFIG_IEEE802154_RAW_MODE

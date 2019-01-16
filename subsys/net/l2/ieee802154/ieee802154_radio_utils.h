@@ -25,10 +25,10 @@ static inline bool prepare_for_ack(struct ieee802154_context *ctx,
 				   struct net_pkt *pkt,
 				   struct net_buf *frag)
 {
-	if (ieee802154_is_ar_flag_set(pkt)) {
+	if (ieee802154_is_ar_flag_set(frag)) {
 		struct ieee802154_fcf_seq *fs;
 
-		fs = (struct ieee802154_fcf_seq *)net_pkt_data(pkt);
+		fs = (struct ieee802154_fcf_seq *)frag->data;
 
 		ctx->ack_seq = fs->sequence;
 		ctx->ack_received = false;

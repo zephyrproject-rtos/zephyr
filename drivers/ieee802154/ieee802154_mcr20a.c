@@ -1098,8 +1098,8 @@ static int mcr20a_tx(struct device *dev,
 		     struct net_buf *frag)
 {
 	struct mcr20a_context *mcr20a = dev->driver_data;
-	u8_t seq = ieee802154_is_ar_flag_set(pkt) ? MCR20A_XCVSEQ_TX_RX :
-						    MCR20A_XCVSEQ_TX;
+	u8_t seq = ieee802154_is_ar_flag_set(frag) ? MCR20A_XCVSEQ_TX_RX :
+						     MCR20A_XCVSEQ_TX;
 	int retval;
 
 	k_mutex_lock(&mcr20a->phy_mutex, K_FOREVER);

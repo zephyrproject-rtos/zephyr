@@ -606,7 +606,7 @@ static int kw41z_tx(struct device *dev, struct net_pkt *pkt,
 	 */
 
 	/* Perform automatic reception of ACK frame, if required */
-	if (ieee802154_is_ar_flag_set(pkt)) {
+	if (ieee802154_is_ar_flag_set(frag)) {
 		tx_timeout = kw41z->tx_warmup_time + KW41Z_SHR_PHY_TIME +
 				 payload_len * KW41Z_PER_BYTE_TIME + 10 +
 				 KW41Z_ACK_WAIT_TIME;
