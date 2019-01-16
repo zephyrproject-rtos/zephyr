@@ -202,12 +202,12 @@ static int lis2dh_acc_odr_set(struct device *dev, u16_t freq)
 	}
 
 	/* some odr values cannot be set in certain power modes */
-	if ((value & LIS2DH_LP_EN_BIT) == 0 && odr == LIS2DH_ODR_8) {
+	if ((value & LIS2DH_LP_EN_BIT_MASK) == 0 && odr == LIS2DH_ODR_8) {
 		return -ENOTSUP;
 	}
 
 	/* adjust odr index for LP enabled mode, see table above */
-	if ((value & LIS2DH_LP_EN_BIT) == 1 && (odr == LIS2DH_ODR_9 + 1)) {
+	if ((value & LIS2DH_LP_EN_BIT_MASK) == 1 && (odr == LIS2DH_ODR_9 + 1)) {
 		odr--;
 	}
 
