@@ -132,13 +132,13 @@ static int lsm303dlhc_magn_init(struct device *dev)
 }
 
 static const struct lsm303dlhc_magn_config lsm303dlhc_magn_config = {
-	.i2c_name = DT_LSM303DLHC_MAGN_I2C_MASTER_DEV,
-	.i2c_address = DT_LSM303DLHC_MAGN_I2C_ADDR,
+	.i2c_name = DT_ST_LSM303DLHC_MAGN_0_BUS_NAME,
+	.i2c_address = DT_ST_LSM303DLHC_MAGN_0_BASE_ADDRESS,
 };
 
 static struct lsm303dlhc_magn_data lsm303dlhc_magn_driver;
 
-DEVICE_AND_API_INIT(lsm303dlhc_magn, DT_LSM303DLHC_MAGN_NAME,
+DEVICE_AND_API_INIT(lsm303dlhc_magn, DT_ST_LSM303DLHC_MAGN_0_LABEL,
 		    lsm303dlhc_magn_init, &lsm303dlhc_magn_driver,
 		    &lsm303dlhc_magn_config, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &lsm303dlhc_magn_driver_api);
