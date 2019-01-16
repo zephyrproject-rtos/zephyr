@@ -14,6 +14,7 @@ config SOC_MIMXRT1021
 	select HAS_MCUX
 	select HAS_MCUX_CCM
 	select HAS_MCUX_IGPIO
+	select HAS_MCUX_LPI2C
 	select HAS_MCUX_LPSPI
 	select HAS_MCUX_LPUART
 	select HAS_MCUX_TRNG
@@ -28,6 +29,7 @@ config SOC_MIMXRT1051
 	select HAS_MCUX
 	select HAS_MCUX_CCM
 	select HAS_MCUX_IGPIO
+	select HAS_MCUX_LPI2C
 	select HAS_MCUX_LPSPI
 	select HAS_MCUX_LPUART
 	select HAS_MCUX_TRNG
@@ -42,6 +44,7 @@ config SOC_MIMXRT1052
 	select HAS_MCUX
 	select HAS_MCUX_CCM
 	select HAS_MCUX_IGPIO
+	select HAS_MCUX_LPI2C
 	select HAS_MCUX_LPSPI
 	select HAS_MCUX_LPUART
 	select HAS_MCUX_TRNG
@@ -56,6 +59,7 @@ config SOC_MIMXRT1061
 	select HAS_MCUX
 	select HAS_MCUX_CCM
 	select HAS_MCUX_IGPIO
+	select HAS_MCUX_LPI2C
 	select HAS_MCUX_LPUART
 	select HAS_MCUX_TRNG
 	select CPU_HAS_FPU
@@ -69,6 +73,7 @@ config SOC_MIMXRT1062
 	select HAS_MCUX
 	select HAS_MCUX_CCM
 	select HAS_MCUX_IGPIO
+	select HAS_MCUX_LPI2C
 	select HAS_MCUX_LPUART
 	select HAS_MCUX_TRNG
 	select CPU_HAS_FPU

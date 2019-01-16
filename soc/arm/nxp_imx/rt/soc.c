@@ -131,6 +131,11 @@ static ALWAYS_INLINE void clkInit(void)
 	CLOCK_SetDiv(kCLOCK_UartDiv, 0); /* Set UART divider to 1 */
 #endif
 
+#ifdef CONFIG_I2C_MCUX_LPI2C
+	CLOCK_SetMux(kCLOCK_Lpi2cMux, 0); /* Set I2C source as USB1 PLL 480M */
+	CLOCK_SetDiv(kCLOCK_Lpi2cDiv, 5); /* Set I2C divider to 6 */
+#endif
+
 #ifdef CONFIG_SPI_MCUX_LPSPI
 	CLOCK_SetMux(kCLOCK_LpspiMux, 1); /* Set SPI source to USB1 PFD0 720M */
 	CLOCK_SetDiv(kCLOCK_LpspiDiv, 7); /* Set SPI divider to 8 */
