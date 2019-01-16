@@ -15,9 +15,9 @@
 
 static
 struct winc1500_gpio_configuration winc1500_gpios[WINC1500_GPIO_IDX_MAX] = {
-	{ .dev = NULL, .pin = DT_WINC1500_GPIO_CHIP_EN },
-	{ .dev = NULL, .pin = DT_WINC1500_GPIO_IRQN },
-	{ .dev = NULL, .pin = DT_WINC1500_GPIO_RESET_N },
+	{ .dev = NULL, .pin = DT_ATMEL_WINC1500_0_ENABLE_GPIOS_PIN },
+	{ .dev = NULL, .pin = DT_ATMEL_WINC1500_0_IRQ_GPIOS_PIN },
+	{ .dev = NULL, .pin = DT_ATMEL_WINC1500_0_RESET_GPIOS_PIN },
 };
 
 struct winc1500_gpio_configuration *winc1500_configure_gpios(void)
@@ -28,9 +28,9 @@ struct winc1500_gpio_configuration *winc1500_configure_gpios(void)
 	const int flags_noint_out = GPIO_DIR_OUT;
 	struct device *gpio_en, *gpio_irq, *gpio_reset;
 
-	gpio_en = device_get_binding(DT_WINC1500_GPIO_CHIP_EN_DRV_NAME);
-	gpio_irq = device_get_binding(DT_WINC1500_GPIO_IRQN_DRV_NAME);
-	gpio_reset = device_get_binding(DT_WINC1500_GPIO_RESET_N_DRV_NAME);
+	gpio_en = device_get_binding(DT_ATMEL_WINC1500_0_ENABLE_GPIOS_CONTROLLER);
+	gpio_irq = device_get_binding(DT_ATMEL_WINC1500_0_IRQ_GPIOS_CONTROLLER);
+	gpio_reset = device_get_binding(DT_ATMEL_WINC1500_0_RESET_GPIOS_CONTROLLER);
 
 	gpio_pin_configure(gpio_en,
 			   winc1500_gpios[WINC1500_GPIO_IDX_CHIP_EN].pin,
