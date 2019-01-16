@@ -1,9 +1,5 @@
 cmake_minimum_required(VERSION 3.13.1)
-if(BOARD STREQUAL nrf51_pca10028)
-    set(CONF_FILE nrf5x.conf)
-elseif(BOARD STREQUAL nrf52_pca10040)
-    set(CONF_FILE nrf5x.conf)
-elseif(BOARD STREQUAL nrf52840_pca10056)
+if(BOARD STREQUAL nrf52840_pca10056)
     set(CONF_FILE nrf5x.conf)
 endif()
 
@@ -15,14 +11,6 @@ if(BOARD STREQUAL qemu_x86)
         -DTEST_FLASH_OFFSET=0
 	-DFLASH_AREA_STORAGE_OFFSET=0
 	-DFLASH_AREA_STORAGE_SIZE=1048576
-    )
-elseif(BOARD STREQUAL nrf51_pca10028)
-    zephyr_compile_definitions(
-        -DTEST_FLASH_OFFSET=0x20000
-    )
-elseif(BOARD STREQUAL nrf52_pca10040)
-    zephyr_compile_definitions(
-        -DTEST_FLASH_OFFSET=0x20000
     )
 elseif(BOARD STREQUAL nrf52840_pca10056)
     zephyr_compile_definitions(
