@@ -12,7 +12,6 @@
 #include <zephyr/types.h>
 #include <gpio.h>
 
-#define HTS221_I2C_ADDR			0x5F
 #define HTS221_AUTOINCREMENT_ADDR	BIT(7)
 
 #define HTS221_REG_WHO_AM_I		0x0F

@@ -120,7 +120,7 @@ int hts221_init_interrupt(struct device *dev)
 	}
 
 	/* enable data-ready interrupt */
-	if (i2c_reg_write_byte(drv_data->i2c, HTS221_I2C_ADDR,
+	if (i2c_reg_write_byte(drv_data->i2c, DT_ST_HTS221_0_BASE_ADDRESS,
 			       HTS221_REG_CTRL3, HTS221_DRDY_EN) < 0) {
 		LOG_ERR("Could not enable data-ready interrupt.");
 		return -EIO;
