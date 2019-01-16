@@ -1,0 +1,21 @@
+# Kconfig - ST Microelectronics STM32G071RB MCU
+#
+# Copyright (c) 2019 Philippe Retornaz <philippe@shapescale.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_STM32G071RB
+
+config SOC
+	string
+	default "stm32g071xx"
+
+config NUM_IRQS
+	int
+	default 31
+
+if GPIO_STM32
+
+endif # GPIO_STM32
+endif # SOC_STM32G071RB
