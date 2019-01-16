@@ -21,13 +21,6 @@ flash_controller: flash-controller@39000 {
 	};
 };
 
-nvmc: nvmc@39000 {
-	compatible = "nordic,nrf-nvmc";
-	reg = <0x39000 0x1000>;
-	status = "ok";
-	label = "NVMC";
-};
-
 adc: adc@e000 {
 	compatible = "nordic,nrf-saadc";
 	reg = <0xe000 0x1000>;
@@ -159,6 +152,13 @@ gpio0: gpio@842500 {
 	#gpio-cells = <2>;
 	label = "GPIO_0";
 	status = "disabled";
+};
+
+rtc0: rtc@14000 {
+	compatible = "nordic,nrf-rtc";
+	reg = <0x14000 0x1000>;
+	interrupts = <20 1>;
+	status = "ok";
 };
 
 rtc1: rtc@15000 {

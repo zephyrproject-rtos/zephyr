@@ -28,10 +28,11 @@
 	aliases {
 		flash-controller = &flash_controller;
 		ficr = &ficr;
+		rtc-0 = &rtc0;
 		rtc-1 = &rtc1;
 		clock = &clock;
 		power = &power;
-		nvmc = &nvmc;
+		nvmc = &flash_controller;
 		spu = &spu;
 		uart-0 = &uart0;
 		uart-1 = &uart1;
