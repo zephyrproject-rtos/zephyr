@@ -159,11 +159,11 @@ void main(void)
 #endif
 
 #ifdef CONFIG_HTS221
-	struct device *hum_dev = device_get_binding(DT_HTS221_NAME);
+	struct device *hum_dev = device_get_binding(DT_ST_HTS221_0_LABEL);
 
 	if (!hum_dev) {
 		printk("Could not get pointer to %s sensor\n",
-			DT_HTS221_NAME);
+			DT_ST_HTS221_0_LABEL);
 		return;
 	}
 #endif

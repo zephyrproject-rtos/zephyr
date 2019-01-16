@@ -59,9 +59,9 @@
 #define DT_FXOS8700_GPIO_PIN 0
 #endif
 
-#ifndef DT_HTS221_NAME
-#define DT_HTS221_NAME ""
-#define DT_HTS221_I2C_MASTER_DEV_NAME ""
+#ifndef DT_ST_HTS221_0_LABEL
+#define DT_ST_HTS221_0_LABEL ""
+#define DT_ST_HTS221_0_BUS_NAME ""
 #endif
 
 #ifndef CONFIG_LIS2MDL_GPIO_PIN_NUM
