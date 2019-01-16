@@ -95,7 +95,7 @@ static inline void set_datagram_tag(u8_t *ptr, u16_t tag)
 static inline void set_up_frag_hdr(struct net_buf *frag, u16_t size,
 				   u8_t offset)
 {
-	u8_t pos = frag->len > 0 ? (u8_t) frag->len - 1 : 0U;
+	u8_t pos = frag->len;
 
 	if (!offset) {
 		net_buf_add(frag, NET_6LO_FRAG1_HDR_LEN);
