@@ -28,7 +28,7 @@ static int handler_status;
 
 #define TEST_MSG "foobar devnull"
 
-#define ICMPV6_MSG_SIZE 105
+#define ICMPV6_MSG_SIZE 104
 
 static char icmpv6_echo_req[] =
 	"\x60\x02\xea\x12\x00\x40\x3a\x40\xfe\x80\x00\x00\x00\x00\x00\x00" \
@@ -115,8 +115,8 @@ void test_icmpv6(void)
 	net_pkt_set_family(pkt, AF_INET6);
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 
-	memcpy(net_buf_add(frag, sizeof(icmpv6_inval_chksum)),
-	       icmpv6_inval_chksum, sizeof(icmpv6_inval_chksum));
+	memcpy(net_buf_add(frag, ICMPV6_MSG_SIZE),
+	       icmpv6_inval_chksum, ICMPV6_MSG_SIZE);
 
 	hdr = (struct net_ipv6_hdr *)pkt->buffer->data;
 	net_pkt_cursor_init(pkt);
@@ -131,8 +131,8 @@ void test_icmpv6(void)
 	handler_status = -1;
 
 	frag->len = 0;
-	memcpy(net_buf_add(frag, sizeof(icmpv6_echo_rep)),
-	       icmpv6_echo_rep, sizeof(icmpv6_echo_rep));
+	memcpy(net_buf_add(frag, ICMPV6_MSG_SIZE),
+	       icmpv6_echo_rep, ICMPV6_MSG_SIZE);
 
 	hdr = (struct net_ipv6_hdr *)pkt->buffer->data;
 	net_pkt_cursor_init(pkt);
@@ -148,8 +148,8 @@ void test_icmpv6(void)
 	handler_status = -1;
 	frag->len = 0;
 
-	memcpy(net_buf_add(frag, sizeof(icmpv6_echo_req)),
-	       icmpv6_echo_req, sizeof(icmpv6_echo_req));
+	memcpy(net_buf_add(frag, ICMPV6_MSG_SIZE),
+	       icmpv6_echo_req, ICMPV6_MSG_SIZE);
 
 	hdr = (struct net_ipv6_hdr *)pkt->buffer->data;
 	net_pkt_cursor_init(pkt);
