@@ -37,6 +37,13 @@ config GPIO_MCUX_IGPIO
 
 endif # GPIO
 
+if I2C
+
+config I2C_MCUX_LPI2C
+	default y
+
+endif # I2C
+
 if SERIAL
 
 config UART_MCUX_LPUART
