@@ -7,7 +7,7 @@
 
 #include <ctype.h>
 #include <string.h>
-#include <assert.h>
+#include <misc/__assert.h>
 
 #include "settings/settings.h"
 #include "settings_priv.h"
