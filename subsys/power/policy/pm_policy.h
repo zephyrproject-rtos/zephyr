@@ -37,7 +37,7 @@ extern void sys_pm_resume_devices(void);
 /**
  * @brief Function to get the next PM state based on the ticks
  */
-extern int sys_pm_policy_next_state(s32_t ticks, enum power_states *state);
+extern enum power_states sys_pm_policy_next_state(s32_t ticks);
 
 /**
  * @brief Application defined function for Lower Power entry
