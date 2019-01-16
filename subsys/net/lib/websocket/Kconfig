@@ -4,7 +4,7 @@
 #
 
 menuconfig WEBSOCKET
-	bool "Websocket support [EXPERIMENTAL]"
+	bool "Websocket support [EXPERIMENTAL, Deprecated]"
 	depends on HTTP
 	select NET_TCP
 	select BASE64

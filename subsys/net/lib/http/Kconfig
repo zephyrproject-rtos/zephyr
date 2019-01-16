@@ -4,7 +4,7 @@
 #
 
 config HTTP
-	bool "HTTP support"
+	bool "HTTP support [Deprecated]"
 	help
 	  This option enables the HTTP library
 

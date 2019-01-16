@@ -55,13 +55,13 @@ extern "C" {
  * @{
  */
 
-enum net_app_type {
+__deprecated enum net_app_type {
 	NET_APP_UNSPEC = 0,
 	NET_APP_SERVER,
 	NET_APP_CLIENT,
 } __packed;
 
-struct net_app_ctx;
+__deprecated struct net_app_ctx;
 
 /**
  * @typedef net_app_recv_cb_t
@@ -79,7 +79,7 @@ struct net_app_ctx;
  * pkt parameter is set to NULL.
  * @param user_data The user data given in init call.
  */
-typedef void (*net_app_recv_cb_t)(struct net_app_ctx *ctx,
+__deprecated typedef void (*net_app_recv_cb_t)(struct net_app_ctx *ctx,
 				  struct net_pkt *pkt,
 				  int status,
 				  void *user_data);
@@ -97,7 +97,7 @@ typedef void (*net_app_recv_cb_t)(struct net_app_ctx *ctx,
  * error.
  * @param user_data The user data given in init call.
  */
-typedef void (*net_app_connect_cb_t)(struct net_app_ctx *ctx,
+__deprecated typedef void (*net_app_connect_cb_t)(struct net_app_ctx *ctx,
 				     int status,
 				     void *user_data);
 
@@ -115,7 +115,7 @@ typedef void (*net_app_connect_cb_t)(struct net_app_ctx *ctx,
  * @param user_data_send The user data given in net_app_send() call.
  * @param user_data The user data given in init call.
  */
-typedef void (*net_app_send_cb_t)(struct net_app_ctx *ctx,
+__deprecated typedef void (*net_app_send_cb_t)(struct net_app_ctx *ctx,
 				  int status,
 				  void *user_data_send,
 				  void *user_data);
@@ -131,12 +131,12 @@ typedef void (*net_app_send_cb_t)(struct net_app_ctx *ctx,
  * @param status Error code for the closing.
  * @param user_data The user data given in init call.
  */
-typedef void (*net_app_close_cb_t)(struct net_app_ctx *ctx,
+__deprecated typedef void (*net_app_close_cb_t)(struct net_app_ctx *ctx,
 				   int status,
 				   void *user_data);
 
 /** Network application callbacks */
-struct net_app_cb {
+__deprecated struct net_app_cb {
 	/** Function that is called when a connection is established.
 	 */
 	net_app_connect_cb_t connect;
@@ -157,7 +157,7 @@ struct net_app_cb {
 /* This is the same prototype as what net_context_sendto() has
  * so that we can override the sending of the data for TLS traffic.
  */
-typedef int (*net_app_send_data_t)(struct net_pkt *pkt,
+__deprecated typedef int (*net_app_send_data_t)(struct net_pkt *pkt,
 				   const struct sockaddr *dst_addr,
 				   socklen_t addrlen,
 				   net_context_send_cb_t cb,
@@ -167,7 +167,7 @@ typedef int (*net_app_send_data_t)(struct net_pkt *pkt,
 
 #if defined(CONFIG_NET_APP_TLS) || defined(CONFIG_NET_APP_DTLS)
 /* Internal information for managing TLS data */
-struct tls_context {
+__deprecated struct tls_context {
 	struct net_pkt *rx_pkt;
 	struct net_buf *hdr; /* IP + UDP/TCP header */
 	struct net_buf *frag;
@@ -182,7 +182,7 @@ struct tls_context {
 /* This struct is used to pass data to TLS thread when reading or sending
  * data.
  */
-struct net_app_fifo_block {
+__deprecated struct net_app_fifo_block {
 	struct k_mem_block block;
 	struct net_pkt *pkt;
 	void *token; /* Used when sending data */
@@ -205,7 +205,7 @@ struct net_app_fifo_block {
  *
  * @return 0 if ok, <0 if there is an error
  */
-typedef int (*net_app_cert_cb_t)(struct net_app_ctx *ctx,
+__deprecated typedef int (*net_app_cert_cb_t)(struct net_app_ctx *ctx,
 				 mbedtls_x509_crt *cert,
 				 mbedtls_pk_context *pkey);
 #endif /* CONFIG_NET_APP_SERVER */
@@ -221,7 +221,7 @@ typedef int (*net_app_cert_cb_t)(struct net_app_ctx *ctx,
  *
  * @return 0 if ok, <0 if there is an error
  */
-typedef int (*net_app_ca_cert_cb_t)(struct net_app_ctx *ctx,
+__deprecated typedef int (*net_app_ca_cert_cb_t)(struct net_app_ctx *ctx,
 				    void *ca_cert);
 #endif /* CONFIG_NET_APP_CLIENT */
 
@@ -235,12 +235,13 @@ typedef int (*net_app_ca_cert_cb_t)(struct net_app_ctx *ctx,
  * @param len Maximum size to provide
  * @param olen The actual amount of bytes put into the buffer (Can be 0)
  */
-typedef int (*net_app_entropy_src_cb_t)(void *data, unsigned char *output,
+__deprecated typedef int (*net_app_entropy_src_cb_t)(void *data,
+						     unsigned char *output,
 					size_t len, size_t *olen);
 #endif /* CONFIG_NET_APP_TLS || CONFIG_NET_APP_DTLS */
 
 #if defined(CONFIG_NET_APP_DTLS)
-struct dtls_timing_context {
+__deprecated struct dtls_timing_context {
 	u32_t snapshot;
 	u32_t int_ms;
 	u32_t fin_ms;
@@ -248,7 +249,7 @@ struct dtls_timing_context {
 #endif /* CONFIG_NET_APP_DTLS */
 
 /* Information for the context and local/remote addresses used. */
-struct net_app_endpoint {
+__deprecated struct net_app_endpoint {
 	/** Network context. */
 	struct net_context *ctx;
 
@@ -260,7 +261,7 @@ struct net_app_endpoint {
 };
 
 /** Network application context. */
-struct net_app_ctx {
+__deprecated struct net_app_ctx {
 #if defined(CONFIG_NET_IPV6)
 	struct net_app_endpoint ipv6;
 #endif
@@ -460,7 +461,7 @@ struct net_app_ctx {
  * @param data_pool Function which is used when allocating data network buffer.
  * This can be NULL in which case default DATA net_buf pool is used.
  */
-int net_app_set_net_pkt_pool(struct net_app_ctx *ctx,
+__deprecated int net_app_set_net_pkt_pool(struct net_app_ctx *ctx,
 			     net_pkt_get_slab_func_t tx_slab,
 			     net_pkt_get_pool_func_t data_pool);
 #else
@@ -489,7 +490,7 @@ int net_app_set_net_pkt_pool(struct net_app_ctx *ctx,
  *
  * @return 0 if ok, <0 if error.
  */
-int net_app_init_server(struct net_app_ctx *ctx,
+__deprecated int net_app_init_server(struct net_app_ctx *ctx,
 			enum net_sock_type sock_type,
 			enum net_ip_protocol proto,
 			struct sockaddr *server_addr,
@@ -515,7 +516,7 @@ int net_app_init_server(struct net_app_ctx *ctx,
  *
  * @return 0 if ok, <0 if error.
  */
-static inline int net_app_init_tcp_server(struct net_app_ctx *ctx,
+__deprecated static inline int net_app_init_tcp_server(struct net_app_ctx *ctx,
 					  struct sockaddr *server_addr,
 					  u16_t port,
 					  void *user_data)
@@ -547,7 +548,7 @@ static inline int net_app_init_tcp_server(struct net_app_ctx *ctx,
  *
  * @return 0 if ok, <0 if error.
  */
-static inline int net_app_init_udp_server(struct net_app_ctx *ctx,
+__deprecated static inline int net_app_init_udp_server(struct net_app_ctx *ctx,
 					  struct sockaddr *server_addr,
 					  u16_t port,
 					  void *user_data)
@@ -574,7 +575,7 @@ static inline int net_app_init_udp_server(struct net_app_ctx *ctx,
  *
  * @return 0 if ok, <0 if error.
  */
-int net_app_listen(struct net_app_ctx *ctx);
+__deprecated int net_app_listen(struct net_app_ctx *ctx);
 
 /**
  * @brief Enable server to serve connections.
@@ -585,7 +586,7 @@ int net_app_listen(struct net_app_ctx *ctx);
  *
  * @return 0 if ok, <0 if error.
  */
-bool net_app_server_enable(struct net_app_ctx *ctx);
+__deprecated bool net_app_server_enable(struct net_app_ctx *ctx);
 
 /**
  * @brief Disable server so that it will not serve any clients.
@@ -594,7 +595,7 @@ bool net_app_server_enable(struct net_app_ctx *ctx);
  *
  * @return 0 if ok, <0 if error.
  */
-bool net_app_server_disable(struct net_app_ctx *ctx);
+__deprecated bool net_app_server_disable(struct net_app_ctx *ctx);
 
 #endif /* CONFIG_NET_APP_SERVER */
 
@@ -635,7 +636,7 @@ bool net_app_server_disable(struct net_app_ctx *ctx);
  *
  * @return 0 if ok, <0 if error.
  */
-int net_app_init_client(struct net_app_ctx *ctx,
+__deprecated int net_app_init_client(struct net_app_ctx *ctx,
 			enum net_sock_type sock_type,
 			enum net_ip_protocol proto,
 			struct sockaddr *client_addr,
@@ -679,7 +680,7 @@ int net_app_init_client(struct net_app_ctx *ctx,
  *
  * @return 0 if ok, <0 if error.
  */
-static inline int net_app_init_tcp_client(struct net_app_ctx *ctx,
+__deprecated static inline int net_app_init_tcp_client(struct net_app_ctx *ctx,
 					  struct sockaddr *client_addr,
 					  struct sockaddr *peer_addr,
 					  const char *peer_addr_str,
@@ -732,7 +733,7 @@ static inline int net_app_init_tcp_client(struct net_app_ctx *ctx,
  *
  * @return 0 if ok, <0 if error.
  */
-static inline int net_app_init_udp_client(struct net_app_ctx *ctx,
+__deprecated static inline int net_app_init_udp_client(struct net_app_ctx *ctx,
 					  struct sockaddr *client_addr,
 					  struct sockaddr *peer_addr,
 					  const char *peer_addr_str,
@@ -759,7 +760,7 @@ static inline int net_app_init_udp_client(struct net_app_ctx *ctx,
  *
  * @return 0 if ok, <0 if error.
  */
-int net_app_connect(struct net_app_ctx *ctx, s32_t timeout);
+__deprecated int net_app_connect(struct net_app_ctx *ctx, s32_t timeout);
 #endif /* CONFIG_NET_APP_CLIENT */
 
 /**
@@ -773,7 +774,7 @@ int net_app_connect(struct net_app_ctx *ctx, s32_t timeout);
  *
  * @return 0 if ok, <0 if error.
  */
-int net_app_set_cb(struct net_app_ctx *ctx,
+__deprecated int net_app_set_cb(struct net_app_ctx *ctx,
 		   net_app_connect_cb_t connect_cb,
 		   net_app_recv_cb_t recv_cb,
 		   net_app_send_cb_t send_cb,
@@ -796,7 +797,7 @@ int net_app_set_cb(struct net_app_ctx *ctx,
  *
  * @return 0 if ok, <0 if error.
  */
-int net_app_send_pkt(struct net_app_ctx *ctx,
+__deprecated int net_app_send_pkt(struct net_app_ctx *ctx,
 		     struct net_pkt *pkt,
 		     const struct sockaddr *dst,
 		     socklen_t dst_len,
@@ -817,7 +818,7 @@ int net_app_send_pkt(struct net_app_ctx *ctx,
  *
  * @return 0 if ok, <0 if error.
  */
-int net_app_send_buf(struct net_app_ctx *ctx,
+__deprecated int net_app_send_buf(struct net_app_ctx *ctx,
 		     u8_t *buf,
 		     size_t buf_len,
 		     const struct sockaddr *dst,
@@ -834,7 +835,7 @@ int net_app_send_buf(struct net_app_ctx *ctx,
  *
  * @return valid net_pkt if ok, NULL if error.
  */
-struct net_pkt *net_app_get_net_pkt(struct net_app_ctx *ctx,
+__deprecated struct net_pkt *net_app_get_net_pkt(struct net_app_ctx *ctx,
 				    sa_family_t family,
 				    s32_t timeout);
 
@@ -863,7 +864,7 @@ struct net_pkt *net_app_get_net_pkt_with_dst(struct net_app_ctx *ctx,
  *
  * @return valid net_pkt if ok, NULL if error.
  */
-struct net_buf *net_app_get_net_buf(struct net_app_ctx *ctx,
+__deprecated struct net_buf *net_app_get_net_buf(struct net_app_ctx *ctx,
 				    struct net_pkt *pkt,
 				    s32_t timeout);
 
@@ -874,7 +875,7 @@ struct net_buf *net_app_get_net_buf(struct net_app_ctx *ctx,
  *
  * @return 0 if ok, <0 if error.
  */
-int net_app_close(struct net_app_ctx *ctx);
+__deprecated int net_app_close(struct net_app_ctx *ctx);
 
 /**
  * @brief Close a specific network connection.
@@ -884,7 +885,7 @@ int net_app_close(struct net_app_ctx *ctx);
  *
  * @return 0 if ok, <0 if error.
  */
-int net_app_close2(struct net_app_ctx *ctx,
+__deprecated int net_app_close2(struct net_app_ctx *ctx,
 		   struct net_context *net_ctx);
 
 /**
@@ -897,7 +898,7 @@ int net_app_close2(struct net_app_ctx *ctx,
  *
  * @return 0 if ok, <0 if error.
  */
-int net_app_release(struct net_app_ctx *ctx);
+__deprecated int net_app_release(struct net_app_ctx *ctx);
 
 #if defined(CONFIG_NET_APP_TLS) || defined(CONFIG_NET_APP_DTLS)
 #if defined(CONFIG_NET_APP_CLIENT)
@@ -927,7 +928,7 @@ int net_app_release(struct net_app_ctx *ctx);
  *
  * @return Return 0 if ok, <0 if error.
  */
-int net_app_client_tls(struct net_app_ctx *ctx,
+__deprecated int net_app_client_tls(struct net_app_ctx *ctx,
 		       u8_t *request_buf,
 		       size_t request_buf_len,
 		       u8_t *personalization_data,
@@ -963,7 +964,7 @@ int net_app_client_tls(struct net_app_ctx *ctx,
  *
  * @return Return 0 if ok, <0 if error.
  */
-int net_app_server_tls(struct net_app_ctx *ctx,
+__deprecated int net_app_server_tls(struct net_app_ctx *ctx,
 		       u8_t *request_buf,
 		       size_t request_buf_len,
 		       const char *server_banner,
@@ -983,9 +984,10 @@ int net_app_server_tls(struct net_app_ctx *ctx,
  * @}
  */
 
-typedef void (*net_app_ctx_cb_t)(struct net_app_ctx *ctx, void *user_data);
-void net_app_server_foreach(net_app_ctx_cb_t cb, void *user_data);
-void net_app_client_foreach(net_app_ctx_cb_t cb, void *user_data);
+__deprecated typedef void (*net_app_ctx_cb_t)(struct net_app_ctx *ctx,
+					      void *user_data);
+__deprecated void net_app_server_foreach(net_app_ctx_cb_t cb, void *user_data);
+__deprecated void net_app_client_foreach(net_app_ctx_cb_t cb, void *user_data);
 
 #ifdef __cplusplus
 }

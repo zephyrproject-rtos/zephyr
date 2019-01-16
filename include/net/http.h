@@ -47,7 +47,7 @@ extern "C" {
 
 struct http_ctx;
 
-enum http_state {
+__deprecated enum http_state {
 	  HTTP_STATE_CLOSED,
 	  HTTP_STATE_WAITING_HEADER,
 	  HTTP_STATE_RECEIVING_HEADER,
@@ -55,18 +55,18 @@ enum http_state {
 	  HTTP_STATE_OPEN,
 } __packed;
 
-enum http_url_flags {
+__deprecated enum http_url_flags {
 	HTTP_URL_STANDARD = 0,
 	HTTP_URL_WEBSOCKET,
 } __packed;
 
-enum http_connection_type {
+__deprecated enum http_connection_type {
 	HTTP_CONNECTION = 1,
 	WS_CONNECTION,
 };
 
 /* HTTP header fields struct */
-struct http_field_value {
+__deprecated struct http_field_value {
 	/** Field name, this variable will point to the beginning of the string
 	 *  containing the HTTP field name
 	 */
@@ -85,7 +85,7 @@ struct http_field_value {
 };
 
 /* HTTP root URL struct, used for pattern matching */
-struct http_root_url {
+__deprecated struct http_root_url {
 	/** URL */
 	const char *root;
 
@@ -102,7 +102,7 @@ struct http_root_url {
 	u8_t is_used;
 };
 
-enum http_verdict {
+__deprecated enum http_verdict {
 	HTTP_VERDICT_DROP,
 	HTTP_VERDICT_ACCEPT,
 };
@@ -120,12 +120,12 @@ enum http_verdict {
  * @return HTTP_VERDICT_DROP if connection is to be dropped,
  * HTTP_VERDICT_ACCEPT if the application wants to accept the unknown URL.
  */
-typedef enum http_verdict (*http_url_cb_t)(struct http_ctx *ctx,
+__deprecated typedef enum http_verdict (*http_url_cb_t)(struct http_ctx *ctx,
 					   enum http_connection_type type,
 					   const struct sockaddr *dst);
 
 /* Collection of URLs that this server will handle */
-struct http_server_urls {
+__deprecated struct http_server_urls {
 	/* First item is the default handler and it is always there.
 	 */
 	struct http_root_url default_url;
@@ -155,7 +155,7 @@ struct http_server_urls {
  * @param dst Remote socket address from where HTTP packet is received.
  * @param user_data The user data given in init call.
  */
-typedef void (*http_recv_cb_t)(struct http_ctx *ctx,
+__deprecated typedef void (*http_recv_cb_t)(struct http_ctx *ctx,
 			       struct net_pkt *pkt,
 			       int status,
 			       u32_t flags,
@@ -174,7 +174,7 @@ typedef void (*http_recv_cb_t)(struct http_ctx *ctx,
  * @param dst Remote socket address where the connection is established.
  * @param user_data The user data given in init call.
  */
-typedef void (*http_connect_cb_t)(struct http_ctx *ctx,
+__deprecated typedef void (*http_connect_cb_t)(struct http_ctx *ctx,
 				  enum http_connection_type type,
 				  const struct sockaddr *dst,
 				  void *user_data);
@@ -193,7 +193,7 @@ typedef void (*http_connect_cb_t)(struct http_ctx *ctx,
  * @param user_data_send The user data given in http_send() call.
  * @param user_data The user data given in init call.
  */
-typedef void (*http_send_cb_t)(struct http_ctx *ctx,
+__deprecated typedef void (*http_send_cb_t)(struct http_ctx *ctx,
 			       int status,
 			       void *user_data_send,
 			       void *user_data);
@@ -208,12 +208,12 @@ typedef void (*http_send_cb_t)(struct http_ctx *ctx,
  * @param status Error code for the closing.
  * @param user_data The user data given in init call.
  */
-typedef void (*http_close_cb_t)(struct http_ctx *ctx,
+__deprecated typedef void (*http_close_cb_t)(struct http_ctx *ctx,
 				int status,
 				void *user_data);
 
 /** Websocket and HTTP callbacks */
-struct http_cb {
+__deprecated struct http_cb {
 	/** Function that is called when a connection is established.
 	 */
 	http_connect_cb_t connect;
@@ -233,7 +233,7 @@ struct http_cb {
 
 #if defined(CONFIG_HTTP_CLIENT)
 /* Is there more data to come */
-enum http_final_call {
+__deprecated enum http_final_call {
 	HTTP_DATA_MORE = 0,
 	HTTP_DATA_FINAL = 1,
 };
@@ -256,7 +256,7 @@ enum http_final_call {
  * is there still more data to come.
  * @param user_data A valid pointer on some user data or NULL
  */
-typedef void (*http_response_cb_t)(struct http_ctx *ctx,
+__deprecated typedef void (*http_response_cb_t)(struct http_ctx *ctx,
 				   u8_t *data,
 				   size_t buflen,
 				   size_t datalen,
@@ -267,7 +267,7 @@ typedef void (*http_response_cb_t)(struct http_ctx *ctx,
  * HTTP client request. This contains all the data that is needed when doing
  * a HTTP request.
  */
-struct http_request {
+__deprecated struct http_request {
 	/** The HTTP method: GET, HEAD, OPTIONS, POST, ... */
 	enum http_method method;
 
@@ -303,7 +303,7 @@ struct http_request {
  * Http context information. This contains all the data that is
  * needed when working with http API.
  */
-struct http_ctx {
+__deprecated struct http_ctx {
 	/** Net app context. The http connection is handled via
 	 * the net app API.
 	 */
@@ -520,7 +520,7 @@ struct http_ctx {
  *
  * @return 0 if ok, <0 if error.
  */
-int http_server_init(struct http_ctx *ctx,
+__deprecated int http_server_init(struct http_ctx *ctx,
 		     struct http_server_urls *urls,
 		     struct sockaddr *server_addr,
 		     u8_t *request_buf,
@@ -548,7 +548,7 @@ int http_server_init(struct http_ctx *ctx,
  *
  * @return Return 0 if ok, <0 if error.
  */
-int http_server_set_tls(struct http_ctx *ctx,
+__deprecated int http_server_set_tls(struct http_ctx *ctx,
 			const char *server_banner,
 			u8_t *personalization_data,
 			size_t personalization_data_len,
@@ -569,7 +569,7 @@ int http_server_set_tls(struct http_ctx *ctx,
  *
  * @return 0 if server is enabled, <0 otherwise
  */
-int http_server_enable(struct http_ctx *ctx);
+__deprecated int http_server_enable(struct http_ctx *ctx);
 
 /**
  * @brief Disable HTTP server that is related to this context.
@@ -580,7 +580,7 @@ int http_server_enable(struct http_ctx *ctx);
  *
  * @return 0 if server is disabled, <0 if there was an error
  */
-int http_server_disable(struct http_ctx *ctx);
+__deprecated int http_server_disable(struct http_ctx *ctx);
 
 /**
  * @brief Add an URL to a list of URLs that are tied to certain webcontext.
@@ -593,7 +593,8 @@ int http_server_disable(struct http_ctx *ctx);
  * @return NULL if the URL is already registered, pointer to  URL if
  * registering was ok.
  */
-struct http_root_url *http_server_add_url(struct http_server_urls *urls,
+__deprecated struct http_root_url *http_server_add_url(
+					  struct http_server_urls *urls,
 					  const char *url, u8_t flags);
 
 /**
@@ -606,7 +607,8 @@ struct http_root_url *http_server_add_url(struct http_server_urls *urls,
  *
  * @return 0 if ok, <0 if error.
  */
-int http_server_del_url(struct http_server_urls *urls, const char *url);
+__deprecated int http_server_del_url(struct http_server_urls *urls,
+				     const char *url);
 
 /**
  * @brief Add default URL handler.
@@ -622,7 +624,8 @@ int http_server_del_url(struct http_server_urls *urls, const char *url);
  * @return NULL if default URL is already registered, pointer to default
  * URL if registering was ok.
  */
-struct http_root_url *http_server_add_default(struct http_server_urls *urls,
+__deprecated struct http_root_url *http_server_add_default(
+					      struct http_server_urls *urls,
 					      http_url_cb_t cb);
 
 /**
@@ -635,11 +638,11 @@ struct http_root_url *http_server_add_default(struct http_server_urls *urls,
  *
  * @return 0 if ok, <0 if error.
  */
-int http_server_del_default(struct http_server_urls *urls);
+__deprecated int http_server_del_default(struct http_server_urls *urls);
 
 #else /* CONFIG_HTTP_SERVER */
 
-static inline int http_server_init(struct http_ctx *ctx,
+__deprecated static inline int http_server_init(struct http_ctx *ctx,
 				   struct http_server_urls *urls,
 				   struct sockaddr *server_addr,
 				   u8_t *request_buf,
@@ -657,7 +660,7 @@ static inline int http_server_init(struct http_ctx *ctx,
 }
 
 #if defined(CONFIG_HTTPS) && defined(CONFIG_NET_APP_SERVER)
-static inline int http_server_set_tls(struct http_ctx *ctx,
+__deprecated static inline int http_server_set_tls(struct http_ctx *ctx,
 				      const char *server_banner,
 				      u8_t *personalization_data,
 				      size_t personalization_data_len,
@@ -718,7 +721,7 @@ struct http_root_url *http_server_add_url(struct http_server_urls *urls,
  *
  * @return Return 0 if ok, and <0 if error.
  */
-int http_request(struct http_ctx *ctx,
+__deprecated int http_request(struct http_ctx *ctx,
 		 struct http_request *req,
 		 s32_t timeout,
 		 void *user_data);
@@ -730,7 +733,7 @@ int http_request(struct http_ctx *ctx,
  *
  * @return Return 0 if ok, and <0 if error.
  */
-int http_request_cancel(struct http_ctx *ctx);
+__deprecated int http_request_cancel(struct http_ctx *ctx);
 
 /**
  * @brief Send a HTTP request to peer.
@@ -747,7 +750,7 @@ int http_request_cancel(struct http_ctx *ctx);
  *
  * @return Return 0 if ok, and <0 if error.
  */
-int http_client_send_req(struct http_ctx *http_ctx,
+__deprecated int http_client_send_req(struct http_ctx *http_ctx,
 			 struct http_request *req,
 			 http_response_cb_t cb,
 			 u8_t *response_buf,
@@ -775,7 +778,8 @@ int http_client_send_req(struct http_ctx *http_ctx,
  *
  * @return Return 0 if ok, and <0 if error.
  */
-static inline int http_client_send_get_req(struct http_ctx *http_ctx,
+__deprecated static inline
+int http_client_send_get_req(struct http_ctx *http_ctx,
 					   const char *url,
 					   const char *host,
 					   const char *extra_header_fields,
@@ -817,7 +821,7 @@ static inline int http_client_send_get_req(struct http_ctx *http_ctx,
  *
  * @return Return 0 if ok, <0 if error.
  */
-int http_client_init(struct http_ctx *http_ctx,
+__deprecated int http_client_init(struct http_ctx *http_ctx,
 		     const char *server,
 		     u16_t server_port,
 		     struct sockaddr *server_addr,
@@ -853,7 +857,7 @@ int http_client_init(struct http_ctx *http_ctx,
  *
  * @return Return 0 if ok, <0 if error.
  */
-int http_client_set_tls(struct http_ctx *ctx,
+__deprecated int http_client_set_tls(struct http_ctx *ctx,
 			u8_t *request_buf,
 			size_t request_buf_len,
 			u8_t *personalization_data,
@@ -874,7 +878,7 @@ int http_client_set_tls(struct http_ctx *ctx,
  *
  * @return 0 if ok, <0 if error.
  */
-int http_close(struct http_ctx *ctx);
+__deprecated int http_close(struct http_ctx *ctx);
 
 /**
  * @brief Release this http context.
@@ -886,7 +890,7 @@ int http_close(struct http_ctx *ctx);
  *
  * @return 0 if ok, <0 if error.
  */
-int http_release(struct http_ctx *ctx);
+__deprecated int http_release(struct http_ctx *ctx);
 
 /**
  * @brief Set various callbacks that are called at various stage of ws session.
@@ -899,7 +903,7 @@ int http_release(struct http_ctx *ctx);
  *
  * @return 0 if ok, <0 if error.
  */
-int http_set_cb(struct http_ctx *ctx,
+__deprecated int http_set_cb(struct http_ctx *ctx,
 		http_connect_cb_t connect_cb,
 		http_recv_cb_t recv_cb,
 		http_send_cb_t send_cb,
@@ -918,7 +922,7 @@ int http_set_cb(struct http_ctx *ctx,
  *
  * @return 0 if ok, <0 if error.
  */
-int http_send_msg_raw(struct http_ctx *ctx, struct net_pkt *pkt,
+__deprecated int http_send_msg_raw(struct http_ctx *ctx, struct net_pkt *pkt,
 		      void *user_send_data);
 
 /**
@@ -934,7 +938,8 @@ int http_send_msg_raw(struct http_ctx *ctx, struct net_pkt *pkt,
  *
  * @return 0 if ok, <0 if error.
  */
-int http_prepare_and_send(struct http_ctx *ctx, const char *payload,
+__deprecated int http_prepare_and_send(struct http_ctx *ctx,
+			  const char *payload,
 			  size_t payload_len,
 			  const struct sockaddr *dst,
 			  void *user_send_data);
@@ -951,7 +956,7 @@ int http_prepare_and_send(struct http_ctx *ctx, const char *payload,
  *
  * @return 0 if ok, <0 if error.
  */
-int http_send_chunk(struct http_ctx *ctx, const char *payload,
+__deprecated int http_send_chunk(struct http_ctx *ctx, const char *payload,
 		    size_t payload_len,
 		    const struct sockaddr *dst,
 		    void *user_send_data);
@@ -965,7 +970,7 @@ int http_send_chunk(struct http_ctx *ctx, const char *payload,
  *
  * @return 0 if ok, <0 if error.
  */
-int http_send_flush(struct http_ctx *ctx, void *user_send_data);
+__deprecated int http_send_flush(struct http_ctx *ctx, void *user_send_data);
 
 /**
  * @brief Send HTTP error message to peer.
@@ -978,7 +983,7 @@ int http_send_flush(struct http_ctx *ctx, void *user_send_data);
  *
  * @return 0 if ok, <0 if error.
  */
-int http_send_error(struct http_ctx *ctx, int code,
+__deprecated int http_send_error(struct http_ctx *ctx, int code,
 		    u8_t *html_payload, size_t html_len,
 		    const struct sockaddr *dst);
 
@@ -998,7 +1003,8 @@ int http_send_error(struct http_ctx *ctx, int code,
  *
  * @return <0 if error, other value tells how many bytes were added
  */
-int http_add_header(struct http_ctx *ctx, const char *http_header_field,
+__deprecated int http_add_header(struct http_ctx *ctx,
+		    const char *http_header_field,
 		    const struct sockaddr *dst,
 		    void *user_send_data);
 
@@ -1019,7 +1025,7 @@ int http_add_header(struct http_ctx *ctx, const char *http_header_field,
  *
  * @return <0 if error, other value tells how many bytes were added
  */
-int http_add_header_field(struct http_ctx *ctx, const char *name,
+__deprecated int http_add_header_field(struct http_ctx *ctx, const char *name,
 			  const char *value,
 			  const struct sockaddr *dst,
 			  void *user_send_data);
@@ -1034,7 +1040,7 @@ int http_add_header_field(struct http_ctx *ctx, const char *name,
  *
  * @return URL handler or NULL if no such handler was found.
  */
-struct http_root_url *http_url_find(struct http_ctx *ctx,
+__deprecated struct http_root_url *http_url_find(struct http_ctx *ctx,
 				    enum http_url_flags flags);
 
 #define http_change_state(ctx, new_state)			\
@@ -1050,7 +1056,7 @@ struct http_root_url *http_url_find(struct http_ctx *ctx,
  * @param func Function that changed the state (for debugging)
  * @param line Line number of the function (for debugging)
  */
-void _http_change_state(struct http_ctx *ctx,
+__deprecated void _http_change_state(struct http_ctx *ctx,
 			enum http_state new_state,
 			const char *func, int line);
 
@@ -1066,7 +1072,7 @@ void _http_change_state(struct http_ctx *ctx,
  * @param ctx The HTTP context to use.
  * @param user_data User specified data.
  */
-typedef void (*http_server_cb_t)(struct http_ctx *entry,
+__deprecated typedef void (*http_server_cb_t)(struct http_ctx *entry,
 				 void *user_data);
 
 /**
@@ -1076,7 +1082,8 @@ typedef void (*http_server_cb_t)(struct http_ctx *entry,
  * @param cb Callback to call for each HTTP connection.
  * @param user_data User provided data that is passed to callback.
  */
-void http_server_conn_foreach(http_server_cb_t cb, void *user_data);
+__deprecated void http_server_conn_foreach(http_server_cb_t cb,
+					   void *user_data);
 
 /**
  * @brief Register a callback that is called if HTTP connection is
@@ -1088,7 +1095,8 @@ void http_server_conn_foreach(http_server_cb_t cb, void *user_data);
  * deleted.
  * @param user_data User provided data that is passed to callback.
  */
-void http_server_conn_monitor(http_server_cb_t cb, void *user_data);
+__deprecated void http_server_conn_monitor(http_server_cb_t cb,
+					   void *user_data);
 
 /**
  * @brief HTTP connection was established.
@@ -1097,7 +1105,7 @@ void http_server_conn_monitor(http_server_cb_t cb, void *user_data);
  *
  * @param ctx HTTP context.
  */
-void http_server_conn_add(struct http_ctx *ctx);
+__deprecated void http_server_conn_add(struct http_ctx *ctx);
 
 /**
  * @brief HTTP connection was disconnected.
@@ -1106,7 +1114,7 @@ void http_server_conn_add(struct http_ctx *ctx);
  *
  * @param ctx HTTP context.
  */
-void http_server_conn_del(struct http_ctx *ctx);
+__deprecated void http_server_conn_del(struct http_ctx *ctx);
 #else
 #define http_server_conn_foreach(...)
 #define http_server_conn_monitor(...)

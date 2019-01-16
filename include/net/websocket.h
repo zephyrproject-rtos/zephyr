@@ -28,7 +28,7 @@ extern "C" {
 #define WS_FLAG_PING   0x00000010
 #define WS_FLAG_PONG   0x00000011
 
-enum ws_opcode  {
+__deprecated enum ws_opcode  {
 	WS_OPCODE_CONTINUE     = 0x00,
 	WS_OPCODE_DATA_TEXT    = 0x01,
 	WS_OPCODE_DATA_BINARY  = 0x02,
@@ -58,7 +58,8 @@ enum ws_opcode  {
  *
  * @return 0 if ok, <0 if error.
  */
-int ws_send_msg(struct http_ctx *ctx, u8_t *payload, size_t payload_len,
+__deprecated int ws_send_msg(struct http_ctx *ctx, u8_t *payload,
+		size_t payload_len,
 		enum ws_opcode opcode, bool mask, bool final,
 		const struct sockaddr *dst,
 		void *user_send_data);
@@ -80,7 +81,7 @@ int ws_send_msg(struct http_ctx *ctx, u8_t *payload, size_t payload_len,
  *
  * @return 0 if ok, <0 if error.
  */
-static inline int ws_send_msg_to_client(struct http_ctx *ctx,
+__deprecated static inline int ws_send_msg_to_client(struct http_ctx *ctx,
 					u8_t *payload,
 					size_t payload_len,
 					enum ws_opcode opcode,
