@@ -62,6 +62,20 @@ static s32_t elapsed(void)
 	return announce_remaining == 0 ? z_clock_elapsed() : 0;
 }
 
+static s32_t next_timeout(void)
+{
+	int maxw = can_wait_forever ? K_FOREVER : INT_MAX;
+	struct _timeout *to = first();
+	s32_t ret = to == NULL ? maxw : max(0, to->dticks - elapsed());
+
+#ifdef CONFIG_TIMESLICING
+	if (_current_cpu->slice_ticks && _current_cpu->slice_ticks < ret) {
+		ret = _current_cpu->slice_ticks;
+	}
+#endif
+	return ret;
+}
+
 void _add_timeout(struct _timeout *to, _timeout_func_t fn, s32_t ticks)
 {
 	__ASSERT(to->dticks < 0, "");
@@ -89,7 +103,7 @@ void _add_timeout(struct _timeout *to, _timeout_func_t fn, s32_t ticks)
 		}
 
 		if (to == first()) {
-			z_clock_set_timeout(_get_next_timeout_expiry(), false);
+			z_clock_set_timeout(next_timeout(), false);
 		}
 	}
 }
@@ -130,27 +144,18 @@ s32_t z_timeout_remaining(struct _timeout *timeout)
 
 s32_t _get_next_timeout_expiry(void)
 {
-	s32_t ret = 0;
-	int maxw = can_wait_forever ? K_FOREVER : INT_MAX;
+	s32_t ret = K_FOREVER;
 
 	LOCKED(&timeout_lock) {
-		struct _timeout *to = first();
-
-		ret = to == NULL ? maxw : max(0, to->dticks - elapsed());
+		ret = next_timeout();
 	}
-
-#ifdef CONFIG_TIMESLICING
-	if (_current_cpu->slice_ticks && _current_cpu->slice_ticks < ret) {
-		ret = _current_cpu->slice_ticks;
-	}
-#endif
 	return ret;
 }
 
 void z_set_timeout_expiry(s32_t ticks, bool idle)
 {
 	LOCKED(&timeout_lock) {
-		int next = _get_next_timeout_expiry();
+		int next = next_timeout();
 		bool sooner = (next == K_FOREVER) || (ticks < next);
 		bool imminent = next <= 1;
 
