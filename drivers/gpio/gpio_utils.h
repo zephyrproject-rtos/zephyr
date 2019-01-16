@@ -44,9 +44,9 @@ static inline void _gpio_fire_callbacks(sys_slist_t *list,
 					struct device *port,
 					u32_t pins)
 {
-	struct gpio_callback *cb;
+	struct gpio_callback *cb, *tmp;
 
-	SYS_SLIST_FOR_EACH_CONTAINER(list, cb, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(list, cb, tmp, node) {
 		if (cb->pin_mask & pins) {
 			__ASSERT(cb->handler, "No callback handler!");
 			cb->handler(port, cb, pins);

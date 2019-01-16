@@ -30,7 +30,18 @@ static void callback_2(struct device *dev,
 	TC_PRINT("%s triggered: %d\n", __func__, ++cb_cnt[1]);
 }
 
-static void init_callback(struct device *dev)
+static void callback_remove_self(struct device *dev,
+		       struct gpio_callback *gpio_cb, u32_t pins)
+{
+	struct drv_data *dd = CONTAINER_OF(gpio_cb, struct drv_data, gpio_cb);
+
+	TC_PRINT("%s triggered: %d\n", __func__, ++cb_cnt[1]);
+	dd->aux = gpio_remove_callback(dev, gpio_cb);
+}
+
+static void init_callback(struct device *dev,
+			  gpio_callback_handler_t handler_1,
+			  gpio_callback_handler_t handler_2)
 {
 	gpio_pin_disable_callback(dev, PIN_IN);
 	gpio_pin_disable_callback(dev, PIN_OUT);
@@ -44,10 +55,10 @@ static void init_callback(struct device *dev)
 			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE | \
 			   GPIO_INT_ACTIVE_HIGH | GPIO_INT_DEBOUNCE);
 
-	gpio_init_callback(&cb_data[0].gpio_cb, callback_1, BIT(PIN_IN));
+	gpio_init_callback(&cb_data[0].gpio_cb, handler_1, BIT(PIN_IN));
 	gpio_add_callback(dev, &cb_data[0].gpio_cb);
 
-	gpio_init_callback(&cb_data[1].gpio_cb, callback_2, BIT(PIN_IN));
+	gpio_init_callback(&cb_data[1].gpio_cb, handler_2, BIT(PIN_IN));
 	gpio_add_callback(dev, &cb_data[1].gpio_cb);
 }
 
@@ -73,7 +84,7 @@ static int test_callback_add_remove(void)
 	struct device *dev = device_get_binding(DEV_NAME);
 
 	/* SetUp: initialize environment */
-	init_callback(dev);
+	init_callback(dev, callback_1, callback_2);
 
 	/* 3. enable callback, trigger PIN_IN interrupt by operate PIN_OUT */
 	trigger_callback(dev, 1);
@@ -109,12 +120,58 @@ err_exit:
 	return TC_FAIL;
 }
 
+static int test_callback_self_remove(void)
+{
+	int res = TC_FAIL;
+	struct device *dev = device_get_binding(DEV_NAME);
+
+	/* SetUp: initialize environment */
+	init_callback(dev, callback_1, callback_remove_self);
+
+	gpio_pin_write(dev, PIN_OUT, 0);
+	k_sleep(100);
+
+	cb_data[0].aux = INT_MAX;
+	cb_data[1].aux = INT_MAX;
+
+	/* 3. enable callback, trigger PIN_IN interrupt by operate PIN_OUT */
+	trigger_callback(dev, 1);
+
+	/*= checkpoint: check both callbacks are triggered =*/
+	if (cb_cnt[0] != 1 || cb_cnt[1] != 1) {
+		TC_ERROR("not trigger callback correctly\n");
+		goto err_exit;
+	}
+
+	/*= checkpoint: check remove executed is invoked =*/
+	if (cb_data[0].aux != INT_MAX || cb_data[1].aux != 0) {
+		TC_ERROR("not remove callback correctly\n");
+		goto err_exit;
+	}
+
+	/* 4 enable callback, trigger PIN_IN interrupt by operate PIN_OUT */
+	trigger_callback(dev, 1);
+
+	/*= checkpoint: check only remaining callback is triggered =*/
+	if (cb_cnt[0] != 1 || cb_cnt[1] != 0) {
+		TC_ERROR("not trigger remaining callback correctly\n");
+		goto err_exit;
+	}
+
+	res = TC_PASS;
+
+err_exit:
+	gpio_remove_callback(dev, &cb_data[0].gpio_cb);
+	gpio_remove_callback(dev, &cb_data[1].gpio_cb);
+	return res;
+}
+
 static int test_callback_enable_disable(void)
 {
 	struct device *dev = device_get_binding(DEV_NAME);
 
 	/* SetUp: initialize environment */
-	init_callback(dev);
+	init_callback(dev, callback_1, callback_2);
 
 	/* 3. enable callback, trigger PIN_IN interrupt by operate PIN_OUT */
 	trigger_callback(dev, 1);
@@ -153,6 +210,12 @@ void test_gpio_callback_add_remove(void)
 {
 	zassert_true(
 		test_callback_add_remove() == TC_PASS, NULL);
+}
+
+void test_gpio_callback_self_remove(void)
+{
+	zassert_true(
+		test_callback_self_remove() == TC_PASS, NULL);
 }
 
 void test_gpio_callback_enable_disable(void)

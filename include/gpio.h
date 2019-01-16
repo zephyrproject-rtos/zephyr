@@ -252,6 +252,10 @@ static inline void gpio_init_callback(struct gpio_callback *callback,
  * @param callback A valid Application's callback structure pointer.
  * @return 0 if successful, negative errno code on failure.
  *
+ * @note Callbacks may be added to the device from within a callback
+ * handler invocation, but whether they are invoked for the current
+ * GPIO event is not specified.
+ *
  * Note: enables to add as many callback as needed on the same port.
  */
 static inline int gpio_add_callback(struct device *port,
@@ -270,6 +274,13 @@ static inline int gpio_add_callback(struct device *port,
  * @param port Pointer to the device structure for the driver instance.
  * @param callback A valid application's callback structure pointer.
  * @return 0 if successful, negative errno code on failure.
+ *
+ * @warning It is explicitly permitted, within a callback handler, to
+ * remove the registration for the callback that is running, i.e. @p
+ * callback.  Attempts to remove other registrations on the same
+ * device may result in undefined behavior, including failure to
+ * invoke callbacks that remain registered and unintended invocation
+ * of removed callbacks.
  *
  * Note: enables to remove as many callbacks as added through
  *       gpio_add_callback().
