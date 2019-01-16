@@ -18,4 +18,9 @@ properties:
     compatible:
       constraint: "st,hts221"
 
+    drdy-gpios:
+      type: compound
+      category: optional
+      generation: define, use-prop-name
+
 ...
