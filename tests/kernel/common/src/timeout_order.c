@@ -73,7 +73,7 @@ void test_timeout_order(void)
 #endif
 
 	for (ii = 0; ii < NUM_TIMEOUTS; ii++) {
-		k_timer_start(&timer[ii], 100, 0);
+		k_timer_start(&timer[ii], 150, 0);
 	}
 
 	struct k_poll_event poll_events[NUM_TIMEOUTS];
