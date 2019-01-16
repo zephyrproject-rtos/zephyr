@@ -6,7 +6,6 @@
  */
 
 #include <string.h>
-#include <assert.h>
 #include <zephyr.h>
 
 #include <fs.h>
