@@ -23,7 +23,6 @@ LOG_MODULE_REGISTER(mpu);
  */
 void configure_mpu_thread(struct k_thread *thread)
 {
-	arc_core_mpu_disable();
 #if defined(CONFIG_MPU_STACK_GUARD)
 	configure_mpu_stack_guard(thread);
 #endif
@@ -32,7 +31,6 @@ void configure_mpu_thread(struct k_thread *thread)
 	configure_mpu_user_context(thread);
 	configure_mpu_mem_domain(thread);
 #endif
-	arc_core_mpu_enable();
 }
 
 #if defined(CONFIG_MPU_STACK_GUARD)
@@ -116,10 +114,7 @@ void _arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 {
 	ARG_UNUSED(domain);
 
-	arc_core_mpu_disable();
 	arc_core_mpu_mem_partition_remove(partition_id);
-	arc_core_mpu_enable();
-
 }
 
 /*
@@ -137,9 +132,7 @@ void _arch_mem_domain_destroy(struct k_mem_domain *domain)
 {
 	ARG_UNUSED(domain);
 
-	arc_core_mpu_disable();
 	arc_core_mpu_configure_mem_domain(NULL);
-	arc_core_mpu_enable();
 }
 
 /*
