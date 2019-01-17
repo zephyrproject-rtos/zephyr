@@ -1,0 +1,11 @@
+identifier: nrf9160_pca10090ns
+name: nRF9160-PCA10090-Non-Secure
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - xtools
+ram: 128
+flash: 256
+supported:
+  - i2c
