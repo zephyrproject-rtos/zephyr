@@ -15,5 +15,6 @@ toolchain:
 ram: 128
 flash: 128
 supported:
+  - i2c
   - spi
   - netif:eth

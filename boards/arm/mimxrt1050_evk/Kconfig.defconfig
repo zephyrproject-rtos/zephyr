@@ -29,6 +29,13 @@ config GPIO_MCUX_IGPIO_5
 
 endif # GPIO_MCUX_IGPIO
 
+if I2C_MCUX_LPI2C
+
+config I2C_1
+	default y
+
+endif # I2C_MCUX_LPI2C
+
 if SPI_MCUX_LPSPI
 
 config SPI_3
