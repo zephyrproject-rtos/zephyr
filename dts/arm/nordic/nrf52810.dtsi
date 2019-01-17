@@ -56,6 +56,13 @@
 			label = "ADC_0";
 		};
 
+		clock: clock@40000000 {
+			compatible = "nordic,nrf-clock";
+			reg = <0x40000000 0x1000>;
+			interrupts = <0 1>;
+			status = "ok";
+		};
+
 		uart0: uart@40002000 {
 			compatible = "nordic,nrf-uarte";
 			reg = <0x40002000 0x1000>;
