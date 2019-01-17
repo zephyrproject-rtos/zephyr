@@ -515,8 +515,15 @@ def dict_merge(parent, fname, dct, merge_dct):
             dict_merge(k, fname, dct[k], merge_dct[k])
         else:
             if k in dct and dct[k] != merge_dct[k]:
-                print("extract_dts_includes.py: {}('{}') merge of property '{}': '{}' overwrites '{}'.".format(
-                        fname, parent, k, merge_dct[k], dct[k]))
+                merge_warn = True
+                # Don't warn if we are changing the "category" from "optional
+                # to "required"
+                if (k == "category" and dct[k] == "optional" and
+                    merge_dct[k] == "required"):
+                    merge_warn = False
+                if merge_warn:
+                    print("extract_dts_includes.py: {}('{}') merge of property '{}': '{}' overwrites '{}'.".format(
+                            fname, parent, k, merge_dct[k], dct[k]))
             dct[k] = merge_dct[k]
 
 
