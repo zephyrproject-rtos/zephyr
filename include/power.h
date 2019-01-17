@@ -28,6 +28,7 @@ extern unsigned char sys_pm_idle_exit_notify;
  * @brief Power Management states.
  */
 enum power_states {
+	SYS_POWER_STATE_AUTO	= (-2),
 	SYS_POWER_STATE_ACTIVE	= (-1),
 #ifdef CONFIG_SYS_POWER_LOW_POWER_STATE
 # ifdef CONFIG_SYS_POWER_STATE_CPU_LPS_SUPPORTED
@@ -199,6 +200,22 @@ void sys_resume(void);
  * @return Power state which was selected and entered.
  */
 extern enum power_states sys_suspend(s32_t ticks);
+
+/**
+ * @brief Force usage of given power state.
+ *
+ * This function overrides decision made by PM policy
+ * forcing usage of given power state in all subseqent
+ * suspend operations.
+ *
+ * Forcing the SYS_POWER_STATE_AUTO power state restores
+ * normal operation.
+ *
+ * @param state Power state which should be used in all
+ *		subsequent suspend operations or
+ *		SYS_POWER_STATE_AUTO.
+ */
+extern void sys_pm_force_power_state(enum power_states state);
 
 #ifdef CONFIG_PM_CONTROL_OS_DEBUG
 /**
