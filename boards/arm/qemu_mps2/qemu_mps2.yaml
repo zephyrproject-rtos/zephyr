@@ -1,0 +1,11 @@
+identifier: qemu_mps2
+name: ARM V2M MPS2 (Qemu Variant)
+type: mcu
+arch: arm
+simulation: qemu
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+testing:
+  default: true
