@@ -6,17 +6,11 @@ description: >
     This binding gives a base representation of the Kinetis UART
 
 inherits:
-    !include uart.yaml
+    !include [uart.yaml, soc.yaml]
 
 properties:
     compatible:
       constraint: "nxp,kinetis-uart"
-
-    reg:
-      type: array
-      description: mmio register space
-      generation: define
-      category: required
 
     interrupts:
       type: array

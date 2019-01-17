@@ -5,6 +5,9 @@ version: 0.1
 description: >
     This is a representation of the Kinetis GPIO nodes
 
+inherits:
+    !include [soc.yaml]
+
 properties:
     compatible:
       type: string
@@ -12,12 +15,6 @@ properties:
       description: compatible strings
       constraint: "nxp,kinetis-gpio"
       generation: define
-
-    reg:
-      type: int
-      description: mmio register space
-      generation: define
-      category: required
 
     interrupts:
       type: compound

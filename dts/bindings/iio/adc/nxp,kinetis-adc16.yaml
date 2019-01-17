@@ -11,17 +11,11 @@ description: >
     This binding gives a base representation of the Kinetis ADC16
 
 inherits:
-    !include adc.yaml
+    !include [adc.yaml, soc.yaml]
 
 properties:
     compatible:
       constraint: "nxp,kinetis-adc16"
-
-    reg:
-      type: array
-      description: mmio register space
-      generation: define
-      category: required
 
     interrupts:
       type: array

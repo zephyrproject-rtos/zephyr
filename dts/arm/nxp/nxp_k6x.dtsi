@@ -109,6 +109,7 @@
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1034 6>;
 			label = "I2C_0";
 			status = "disabled";
+			soc-label = "0";
 		};
 
 		i2c1: i2c@40067000 {
@@ -121,6 +122,7 @@
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1034 7>;
 			label = "I2C_1";
 			status = "disabled";
+			soc-label = "1";
 		};
 
 		i2c2: i2c@400e6000 {
@@ -133,6 +135,7 @@
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1028 6>;
 			label = "I2C_2";
 			status = "disabled";
+			soc-label = "2";
 		};
 
 		uart0: uart@4006a000 {
@@ -142,6 +145,7 @@
 			interrupt-names = "status", "error";
 			clocks = <&sim KINETIS_SIM_CORESYS_CLK 0x1034 10>;
 			label = "UART_0";
+			soc-label = "0";
 
 			pinctrl-0 = <&uart0_default>;
 			pinctrl-names = "default";
@@ -156,6 +160,7 @@
 			interrupt-names = "status", "error";
 			clocks = <&sim KINETIS_SIM_CORESYS_CLK 0x1034 11>;
 			label = "UART_1";
+			soc-label = "1";
 
 			status = "disabled";
 		};
@@ -167,6 +172,7 @@
 			interrupt-names = "status", "error";
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1034 12>;
 			label = "UART_2";
+			soc-label = "2";
 
 			status = "disabled";
 		};
@@ -178,6 +184,7 @@
 			interrupt-names = "status", "error";
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1034 13>;
 			label = "UART_3";
+			soc-label = "3";
 
 			status = "disabled";
 		};
@@ -189,6 +196,7 @@
 			interrupt-names = "status", "error";
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1028 10>;
 			label = "UART_4";
+			soc-label = "4";
 
 			status = "disabled";
 		};
@@ -200,6 +208,7 @@
 			interrupt-names = "status", "error";
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1028 11>;
 			label = "UART_5";
+			soc-label = "5";
 
 			status = "disabled";
 		};
@@ -208,12 +217,14 @@
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x40049000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 9>;
+			soc-label = "A";
 		};
 
 		pinmux_b: pinmux@4004a000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004a000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 10>;
+			soc-label = "B";
 			uart0_default: uart0_default {
 				rx-tx {
 					pins = <16>, <17>;
@@ -240,18 +251,21 @@
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004b000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 11>;
+			soc-label = "C";
 		};
 
 		pinmux_d: pinmux@4004c000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004c000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 12>;
+			soc-label = "D";
 		};
 
 		pinmux_e: pinmux@4004d000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004d000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 13>;
+			soc-label = "E";
 		};
 
 		gpioa: gpio@400ff000 {
@@ -261,6 +275,7 @@
 			label = "GPIO_0";
 			gpio-controller;
 			#gpio-cells = <2>;
+			soc-label = "A";
 		};
 
 		gpiob: gpio@400ff040 {
@@ -270,6 +285,7 @@
 			label = "GPIO_1";
 			gpio-controller;
 			#gpio-cells = <2>;
+			soc-label = "B";
 		};
 
 		gpioc: gpio@400ff080 {
@@ -279,6 +295,7 @@
 			label = "GPIO_2";
 			gpio-controller;
 			#gpio-cells = <2>;
+			soc-label = "C";
 		};
 
 		gpiod: gpio@400ff0c0 {
@@ -288,6 +305,7 @@
 			label = "GPIO_3";
 			gpio-controller;
 			#gpio-cells = <2>;
+			soc-label = "D";
 		};
 
 		gpioe: gpio@400ff100 {
@@ -297,6 +315,7 @@
 			label = "GPIO_4";
 			gpio-controller;
 			#gpio-cells = <2>;
+			soc-label = "E";
 		};
 
 		spi0: spi@4002c000 {
@@ -307,6 +326,7 @@
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 12>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			soc-label = "0";
 
 			cs = <&gpiob 10 0>, <&gpiob 9 0>;
 			pinctrl-0 = <&spi0_default>;
@@ -322,6 +342,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
+			soc-label = "1";
 		};
 
 		spi2: spi@400ac000 {
@@ -333,6 +354,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
+			soc-label = "2";
 		};
 
 		wdog: watchdog@40052000 {
@@ -354,6 +376,7 @@
 			label = "PWM_0";
 			status = "disabled";
 			#pwm-cells = <2>;
+			soc-label = "0";
 		};
 
 		pwm1: pwm@40039000{
@@ -363,6 +386,7 @@
 			label = "PWM_1";
 			status = "disabled";
 			#pwm-cells = <2>;
+			soc-label = "1";
 		};
 
 		pwm2: pwm@4003a000{
@@ -372,6 +396,7 @@
 			label = "PWM_2";
 			status = "disabled";
 			#pwm-cells = <2>;
+			soc-label = "2";
 		};
 
 		pwm3: pwm@400b9000{
@@ -381,6 +406,7 @@
 			label = "PWM_3";
 			status = "disabled";
 			#pwm-cells = <2>;
+			soc-label = "3";
 		};
 
 		adc0: adc@4003b000{
@@ -389,6 +415,7 @@
 			interrupts = <39 0>;
 			label = "ADC_0";
 			status = "disabled";
+			soc-label = "0";
 		};
 
 		adc1: adc@400bb000{
@@ -397,6 +424,7 @@
 			interrupts = <73 0>;
 			label = "ADC_1";
 			status = "disabled";
+			soc-label = "1";
 		};
 
 		usbd: usbd@40072000 {

@@ -11,17 +11,11 @@ description: >
     This is a representation of the Kinetis I2C nodes
 
 inherits:
-    !include i2c.yaml
+    !include [i2c.yaml, soc.yaml]
 
 properties:
     compatible:
       constraint: "nxp,kinetis-i2c"
-
-    reg:
-      type: int
-      description: mmio register space
-      generation: define
-      category: required
 
     interrupts:
       type: compound

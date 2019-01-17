@@ -11,17 +11,11 @@ description: >
     This binding gives a base representation of the Kinetis FTM
 
 inherits:
-    !include pwm.yaml
+    !include [pwm.yaml, soc.yaml]
 
 properties:
     compatible:
       constraint: "nxp,kinetis-ftm"
-
-    reg:
-      type: array
-      description: mmio register space
-      generation: define
-      category: required
 
     interrupts:
       type: array
