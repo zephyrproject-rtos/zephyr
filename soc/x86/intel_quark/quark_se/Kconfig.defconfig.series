@@ -27,9 +27,6 @@ config LOAPIC_TIMER_IRQ
 config QMSI
 	default y
 
-config QMSI_BUILTIN
-	default y
-
 if PWM
 config PWM_QMSI
 	default y

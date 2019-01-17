@@ -31,9 +31,6 @@ config HARVARD
 config QMSI
 	default y
 
-config QMSI_BUILTIN
-	default y
-
 if RTC
 
 config RTC_QMSI
