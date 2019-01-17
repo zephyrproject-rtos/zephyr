@@ -56,7 +56,7 @@ static int _m16src_start(struct device *dev, clock_control_subsys_t sub_system)
 	if (blocking) {
 		u32_t intenset;
 
-		irq_disable(POWER_CLOCK_IRQn);
+		irq_disable(DT_NORDIC_NRF_CLOCK_0_IRQ_0);
 
 		NRF_CLOCK->EVENTS_HFCLKSTARTED = 0;
 
@@ -77,9 +77,9 @@ static int _m16src_start(struct device *dev, clock_control_subsys_t sub_system)
 			nrf_clock_int_disable(NRF_CLOCK_INT_HF_STARTED_MASK);
 		}
 
-		NVIC_ClearPendingIRQ(POWER_CLOCK_IRQn);
+		NVIC_ClearPendingIRQ(DT_NORDIC_NRF_CLOCK_0_IRQ_0);
 
-		irq_enable(POWER_CLOCK_IRQn);
+		irq_enable(DT_NORDIC_NRF_CLOCK_0_IRQ_0);
 	} else {
 		NRF_CLOCK->EVENTS_HFCLKSTARTED = 0;
 
@@ -184,7 +184,7 @@ static int _k32src_start(struct device *dev, clock_control_subsys_t sub_system)
 	NRF_CLOCK->LFCLKSRC = lf_clk_src;
 
 #if defined(CONFIG_CLOCK_CONTROL_NRF_K32SRC_BLOCKING)
-	irq_disable(POWER_CLOCK_IRQn);
+	irq_disable(DT_NORDIC_NRF_CLOCK_0_IRQ_0);
 
 	intenset = NRF_CLOCK->INTENSET;
 	nrf_clock_int_enable(NRF_CLOCK_INT_LF_STARTED_MASK);
@@ -204,9 +204,9 @@ static int _k32src_start(struct device *dev, clock_control_subsys_t sub_system)
 		nrf_clock_int_disable(NRF_CLOCK_INT_LF_STARTED_MASK);
 	}
 
-	NVIC_ClearPendingIRQ(POWER_CLOCK_IRQn);
+	NVIC_ClearPendingIRQ(DT_NORDIC_NRF_CLOCK_0_IRQ_0);
 
-	irq_enable(POWER_CLOCK_IRQn);
+	irq_enable(DT_NORDIC_NRF_CLOCK_0_IRQ_0);
 
 #else /* !CONFIG_CLOCK_CONTROL_NRF_K32SRC_BLOCKING */
 	/* NOTE: LFCLK will initially start running from the LFRC if LFXO is
@@ -249,7 +249,7 @@ static int _k32src_start(struct device *dev, clock_control_subsys_t sub_system)
 
 		err = _m16src_start(dev, false);
 		if (!err) {
-			NVIC_SetPendingIRQ(POWER_CLOCK_IRQn);
+			NVIC_SetPendingIRQ(DT_NORDIC_NRF_CLOCK_0_IRQ_0);
 		} else {
 			__ASSERT_NO_MSG(err == -EINPROGRESS);
 		}
@@ -387,7 +387,7 @@ static void _power_clock_isr(void *arg)
 
 		err = _m16src_start(dev, false);
 		if (!err) {
-			NVIC_SetPendingIRQ(POWER_CLOCK_IRQn);
+			NVIC_SetPendingIRQ(DT_NORDIC_NRF_CLOCK_0_IRQ_0);
 		} else {
 			__ASSERT_NO_MSG(err == -EINPROGRESS);
 		}
@@ -419,11 +419,11 @@ static int _clock_control_init(struct device *dev)
 	 * power peripheral driver and/or new SoC series.
 	 * NOTE: Currently the operations here are idempotent.
 	 */
-	IRQ_CONNECT(NRF5_IRQ_POWER_CLOCK_IRQn,
+	IRQ_CONNECT(DT_NORDIC_NRF_CLOCK_0_IRQ_0,
 		    CONFIG_CLOCK_CONTROL_NRF_IRQ_PRIORITY,
 		    _power_clock_isr, 0, 0);
 
-	irq_enable(POWER_CLOCK_IRQn);
+	irq_enable(DT_NORDIC_NRF_CLOCK_0_IRQ_0);
 
 	return 0;
 }
@@ -465,7 +465,7 @@ void nrf5_power_usb_power_int_enable(bool enable)
 
 	if (enable) {
 		nrf_power_int_enable(mask);
-		irq_enable(POWER_CLOCK_IRQn);
+		irq_enable(DT_NORDIC_NRF_CLOCK_0_IRQ_0);
 	} else {
 		nrf_power_int_disable(mask);
 	}
