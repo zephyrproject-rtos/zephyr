@@ -74,6 +74,20 @@ arduino_serial: &uart3 {};
 
 &i2c1 {
 	status = "ok";
+
+	fxos8700@1f {
+		compatible = "nxp,fxos8700";
+		reg = <0x1f>;
+		label = "FXOS8700";
+
+		/* Two zero ohm resistors (R263 and R264) isolate sensor
+		 * interrupt gpios from the soc and are unpopulated by default.
+		 * Note that if you populate them, they conflict with LCD and
+		 * Ethernet interrupt gpios.
+		 */
+		int1-gpios = <&gpio1 10 0>;
+		int2-gpios = <&gpio1 11 0>;
+	};
 };
 
 &uart1 {
