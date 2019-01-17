@@ -92,7 +92,6 @@ application as follows.
 
 #. Make sure that the SPI timing will generate pulses of the
    appropriate widths. This involves setting the configuration options
-   :option:`CONFIG_WS2812_STRIP_SPI_BAUD_RATE`,
    :option:`CONFIG_WS2812_STRIP_ONE_FRAME`, and
    :option:`CONFIG_WS2812_STRIP_ZERO_FRAME`. Refer to the Kconfig help for
    those options, as well as this `blog post on WS2812 timing`_, for

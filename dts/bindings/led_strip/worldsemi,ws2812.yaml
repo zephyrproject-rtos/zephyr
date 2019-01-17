@@ -1,0 +1,18 @@
+#
+# Copyright (c) 2019, Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: Worldsemi WS2812 SPI LED strip
+version: 0.1
+
+description: Worldsemi WS2812 SPI LED strip binding
+
+inherits:
+    !include spi-device.yaml
+
+properties:
+    compatible:
+      constraint: "worldsemi,ws2812"
+...
