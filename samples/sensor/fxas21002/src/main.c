@@ -18,7 +18,7 @@ static void trigger_handler(struct device *dev, struct sensor_trigger *trigger)
 void main(void)
 {
 	struct sensor_value gyro[3];
-	struct device *dev = device_get_binding(DT_FXAS21002_NAME);
+	struct device *dev = device_get_binding(DT_NXP_FXAS21002_0_LABEL);
 
 	if (dev == NULL) {
 		printf("Could not get fxas21002 device\n");

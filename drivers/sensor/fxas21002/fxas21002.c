@@ -285,20 +285,25 @@ static const struct sensor_driver_api fxas21002_driver_api = {
 };
 
 static const struct fxas21002_config fxas21002_config = {
-	.i2c_name = DT_FXAS21002_I2C_NAME,
-	.i2c_address = DT_FXAS21002_I2C_ADDRESS,
+	.i2c_name = DT_NXP_FXAS21002_0_BUS_NAME,
+	.i2c_address = DT_NXP_FXAS21002_0_BASE_ADDRESS,
 	.whoami = CONFIG_FXAS21002_WHOAMI,
 	.range = CONFIG_FXAS21002_RANGE,
 	.dr = CONFIG_FXAS21002_DR,
 #ifdef CONFIG_FXAS21002_TRIGGER
-	.gpio_name = DT_FXAS21002_GPIO_NAME,
-	.gpio_pin = DT_FXAS21002_GPIO_PIN,
+#ifdef CONFIG_FXAS21002_DRDY_INT1
+	.gpio_name = DT_NXP_FXAS21002_0_INT1_GPIOS_CONTROLLER,
+	.gpio_pin = DT_NXP_FXAS21002_0_INT1_GPIOS_PIN,
+#else
+	.gpio_name = DT_NXP_FXAS21002_0_INT2_GPIOS_CONTROLLER,
+	.gpio_pin = DT_NXP_FXAS21002_0_INT2_GPIOS_PIN,
+#endif
 #endif
 };
 
 static struct fxas21002_data fxas21002_data;
 
-DEVICE_AND_API_INIT(fxas21002, DT_FXAS21002_NAME, fxas21002_init,
+DEVICE_AND_API_INIT(fxas21002, DT_NXP_FXAS21002_0_LABEL, fxas21002_init,
 		    &fxas21002_data, &fxas21002_config,
 		    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &fxas21002_driver_api);
