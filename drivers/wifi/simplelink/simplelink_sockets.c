@@ -777,6 +777,16 @@ static void simplelink_freeaddrinfo(struct addrinfo *res)
 	free(res);
 }
 
+static int simplelink_fctnl(int fd, int cmd, va_list args)
+{
+	ARG_UNUSED(fd);
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(args);
+
+	errno = ENOTSUP;
+	return -1;
+}
+
 void simplelink_sockets_init(void)
 {
 	k_mutex_init(&ga_mutex);
@@ -798,4 +808,5 @@ const struct socket_offload simplelink_ops = {
 	.sendto = simplelink_sendto,
 	.getaddrinfo = simplelink_getaddrinfo,
 	.freeaddrinfo = simplelink_freeaddrinfo,
+	.fcntl = simplelink_fctnl,
 };
