@@ -555,6 +555,7 @@ class QEMUHandler(Handler):
 
         metrics = {}
         line = ""
+        timeout_extended = False
         while True:
             this_timeout = int((timeout_time - time.time()) * 1000)
             if this_timeout < 0 or not p.poll(this_timeout):
@@ -592,13 +593,15 @@ class QEMUHandler(Handler):
                     out_state = harness.state
 
                 # if we get some state, that means test is doing well, we reset
-                # the timeout and wait for 5 more seconds just in case we have
+                # the timeout and wait for 2 more seconds just in case we have
                 # crashed after test has completed
 
                 if harness.type:
                     break
                 else:
-                    timeout_time = time.time() + 2
+                    if not timeout_extended:
+                        timeout_extended= True
+                        timeout_time = time.time() + 2
 
             # TODO: Add support for getting numerical performance data
             # from test cases. Will involve extending test case reporting
