@@ -278,6 +278,13 @@ static int cmd_help(const struct shell *shell, size_t argc, char **argv)
 		" all commands or its subcommands.\n"
 		"You can try to call commands with <-h> or <--help> parameter"
 		" for more information.");
+#if CONFIG_SHELL_METAKEYS
+	shell_print(shell,
+		"Shell supports following meta-keys:\n"
+		"Ctrl+a, Ctrl+b, Ctrl+c, Ctrl+d, Ctrl+e, Ctrl+f, Ctrl+k,"
+		" Ctrl+l, Ctrl+u, Ctrl+w\nAlt+b, Alt+f.\nPlease refer to"
+		" shell documentation for more details.");
+#endif
 
 	return 0;
 }

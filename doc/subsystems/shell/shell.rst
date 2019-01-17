@@ -39,7 +39,8 @@ See the :ref:`shell_api` documentation for more information.
 Connecting to Segger RTT via TCP (on macOS, for example)
 ========================================================
 
-On macOS JLinkRTTClient won't let you enter input. Instead, please use following procedure:
+On macOS JLinkRTTClient won't let you enter input. Instead, please use following
+procedure:
 
 * Open up a first Terminal window and enter:
 
@@ -55,7 +56,8 @@ On macOS JLinkRTTClient won't let you enter input. Instead, please use following
 
      nc localhost 19021
 
-* Now you should have a network connection to RTT that will let you enter input to the shell.
+* Now you should have a network connection to RTT that will let you enter input
+  to the shell.
 
 
 Commands
@@ -363,32 +365,32 @@ The shell module supports the following meta keys:
 
    * - Meta keys
      - Action
-   * - ctrl + a
+   * - :kbd:`Ctrl + a`
      - Moves the cursor to the beginning of the line.
-   * - ctrl + b
+   * - :kbd:`Ctrl + b`
      - Moves the cursor backward one character.
-   * - ctrl + c
+   * - :kbd:`Ctrl + c`
      - Preserves the last command on the screen and starts a new command in
        a new line.
-   * - ctrl + d
+   * - :kbd:`Ctrl + d`
      - Deletes the character under the cursor.
-   * - ctrl + e
+   * - :kbd:`Ctrl + e`
      - Moves the cursor to the end of the line.
-   * - ctrl + f
+   * - :kbd:`Ctrl + f`
      - Moves the cursor forward one character.
-   * - ctrl + k
+   * - :kbd:`Ctrl + k`
      - Deletes from the cursor to the end of the line.
-   * - ctrl + l
+   * - :kbd:`Ctrl + l`
      - Clears the screen and leaves the currently typed command at the top of
        the screen.
-   * - ctrl + u
+   * - :kbd:`Ctrl + u`
      - Clears the currently typed command.
-   * - ctrl + w
+   * - :kbd:`Ctrl + w`
      - Removes the word or part of the word to the left of the cursor. Words
        separated by period instead of space are treated as one word.
-   * - alt + b
+   * - :kbd:`Alt + b`
      - Moves the cursor backward one word.
-   * - alt + f
+   * - :kbd:`Alt + f`
      - Moves the cursor forward one word.
 
 Usage
