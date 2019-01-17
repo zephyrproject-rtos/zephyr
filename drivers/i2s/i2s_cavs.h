@@ -96,6 +96,7 @@ struct i2s_cavs_ssp {
 #define SSSR_TFS		(1 << 5)
 #define SSSR_RFS		(1 << 6)
 #define SSSR_ROR		(1 << 7)
+#define SSSR_TUR		(1 << 21)
 
 /* SSPSP bits */
 #define SSPSP_SCMODE(x)		((x) << 0)
