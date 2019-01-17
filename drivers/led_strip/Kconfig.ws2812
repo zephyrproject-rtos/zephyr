@@ -23,12 +23,6 @@ menuconfig WS2812_STRIP
 
 if WS2812_STRIP
 
-config WS2812_STRIP_NAME
-	string "Driver name"
-	default "ws2812_strip"
-	help
-		Device name for WS2812 LED strip.
-
 config WS2812_STRIP_MAX_PIXELS
 	int "Maximum number of pixels in a strip"
 	default 12
@@ -36,27 +30,6 @@ config WS2812_STRIP_MAX_PIXELS
 		Set this to the maximum number of pixels you need
 		to control at once. There is an 8x memory penalty associated
 		with each increment of this value, so it's worth optimizing.
-
-config WS2812_STRIP_SPI_DEV_NAME
-	string "SPI master to use to drive the strip"
-	default ""
-	help
-		Specify the device name of the SPI master which the
-		WS2812 driver should use to control the LED strip.
-		The MOSI pin of this SPI peripheral should be connected
-		to the signal pin for the first chip in the strip.
-		Examples: SPI_0, SPI_1, etc.
-
-config WS2812_STRIP_SPI_BAUD_RATE
-	int "Baud rate to use to drive LED strip"
-	default 5250000 if SOC_SERIES_STM32F4X
-	default 4000000 if SOC_FAMILY_NRF
-	help
-		SPI clock rate, in Hz, to use while driving the strip.
-		The baud rate must be chosen carefully together with the
-		WS2812_STRIP_SPI_ONE_FRAME and WS2812_STRIP_SPI_ZERO_FRAME
-		values so that the transmitted frames meet the chipset
-		pulse widths for one and zero bits.
 
 config WS2812_STRIP_ONE_FRAME
 	hex "SPI frame to shift out to signal a one bit"
