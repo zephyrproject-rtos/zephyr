@@ -22,8 +22,6 @@
 
 #define MIN_DELAY 32
 
-static struct k_spinlock lock;
-
 static u32_t last_count;
 
 static u32_t counter_sub(u32_t a, u32_t b)
@@ -54,7 +52,7 @@ void rtc1_nrf_isr(void *arg)
 	ARG_UNUSED(arg);
 	RTC->EVENTS_COMPARE[0] = 0;
 
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	u32_t key = irq_lock();
 	u32_t t = counter();
 	u32_t dticks = counter_sub(t, last_count) / CYC_PER_TICK;
 
@@ -69,7 +67,7 @@ void rtc1_nrf_isr(void *arg)
 		set_comparator(next);
 	}
 
-	k_spin_unlock(&lock, key);
+	irq_unlock(key);
 	z_clock_announce(dticks);
 }
 
@@ -117,7 +115,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	ticks = (ticks == K_FOREVER) ? MAX_TICKS : ticks;
 	ticks = max(min(ticks - 1, (s32_t)MAX_TICKS), 0);
 
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	u32_t key = irq_lock();
 	u32_t cyc, t = counter();
 
 	/* Round up to next tick boundary */
@@ -131,7 +129,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	}
 
 	set_comparator(cyc);
-	k_spin_unlock(&lock, key);
+	irq_unlock(key);
 #endif
 }
 
@@ -141,18 +139,18 @@ u32_t z_clock_elapsed(void)
 		return 0;
 	}
 
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	u32_t key = irq_lock();
 	u32_t ret = counter_sub(counter(), last_count) / CYC_PER_TICK;
 
-	k_spin_unlock(&lock, key);
+	irq_unlock(key);
 	return ret;
 }
 
 u32_t _timer_cycle_get_32(void)
 {
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	u32_t key = irq_lock();
 	u32_t ret = counter_sub(counter(), last_count) + last_count;
 
-	k_spin_unlock(&lock, key);
+	irq_unlock(key);
 	return ret;
 }
