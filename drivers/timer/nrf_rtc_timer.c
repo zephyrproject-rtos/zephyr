@@ -31,7 +31,7 @@ static u32_t counter_sub(u32_t a, u32_t b)
 
 static void set_comparator(u32_t cyc)
 {
-	nrf_rtc_cc_set(RTC, 0, cyc & COUNTER_MAX);
+	nrf_rtc_cc_set(RTC, 0, cyc);
 }
 
 static u32_t counter(void)
