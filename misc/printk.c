@@ -82,6 +82,13 @@ void *__printk_get_hook(void)
 	return _char_out;
 }
 
+static void print_err(out_func_t out, void *ctx)
+{
+	out('E', ctx);
+	out('R', ctx);
+	out('R', ctx);
+}
+
 /**
  * @brief Printk internals
  *
@@ -141,11 +148,25 @@ void _vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 				goto still_might_format;
 			case 'd':
 			case 'i': {
-				long d;
-				if (long_ctr < 2) {
-					d = va_arg(ap, long);
+				s32_t d;
+
+				if (long_ctr == 0) {
+					d = va_arg(ap, int);
+				} else if (long_ctr == 1) {
+					long ld = va_arg(ap, long);
+					if (ld > INT32_MAX || ld < INT32_MIN) {
+						print_err(out, ctx);
+						break;
+					}
+					d = (s32_t)ld;
 				} else {
-					d = (long)va_arg(ap, long long);
+					long long lld = va_arg(ap, long long);
+					if (lld > INT32_MAX ||
+					    lld < INT32_MIN) {
+						print_err(out, ctx);
+						break;
+					}
+					d = (s32_t)lld;
 				}
 
 				if (d < 0) {
@@ -158,14 +179,27 @@ void _vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 				break;
 			}
 			case 'u': {
-				unsigned long u;
+				u32_t u;
 
-				if (long_ctr < 2) {
-					u = va_arg(ap, unsigned long);
+				if (long_ctr == 0) {
+					u = va_arg(ap, unsigned int);
+				} else if (long_ctr == 1) {
+					long lu = va_arg(ap, unsigned long);
+					if (lu > INT32_MAX) {
+						print_err(out, ctx);
+						break;
+					}
+					u = (u32_t)lu;
 				} else {
-					u = (unsigned long)va_arg(ap,
-							unsigned long long);
+					unsigned long long llu =
+						va_arg(ap, unsigned long long);
+					if (llu > INT32_MAX) {
+						print_err(out, ctx);
+						break;
+					}
+					u = (u32_t)llu;
 				}
+
 				_printk_dec_ulong(out, ctx, u, padding,
 						  min_width);
 				break;
