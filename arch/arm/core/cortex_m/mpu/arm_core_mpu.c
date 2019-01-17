@@ -35,10 +35,8 @@ void configure_mpu_stack_guard(struct k_thread *thread)
 	u32_t guard_start = thread->stack_info.start;
 #endif
 
-	arm_core_mpu_disable();
 	arm_core_mpu_configure(THREAD_STACK_GUARD_REGION, guard_start,
 			       guard_size);
-	arm_core_mpu_enable();
 }
 #endif
 
@@ -54,9 +52,7 @@ void configure_mpu_stack_guard(struct k_thread *thread)
 void configure_mpu_user_context(struct k_thread *thread)
 {
 	LOG_DBG("configure user thread %p's context", thread);
-	arm_core_mpu_disable();
 	arm_core_mpu_configure_user_context(thread);
-	arm_core_mpu_enable();
 }
 
 /*
@@ -70,9 +66,7 @@ void configure_mpu_user_context(struct k_thread *thread)
 void configure_mpu_mem_domain(struct k_thread *thread)
 {
 	LOG_DBG("configure thread %p's domain", thread);
-	arm_core_mpu_disable();
 	arm_core_mpu_configure_mem_domain(thread->mem_domain_info.mem_domain);
-	arm_core_mpu_enable();
 }
 
 void _arch_mem_domain_configure(struct k_thread *thread)
@@ -93,10 +87,7 @@ void _arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 {
 	ARG_UNUSED(domain);
 
-	arm_core_mpu_disable();
 	arm_core_mpu_mem_partition_remove(partition_id);
-	arm_core_mpu_enable();
-
 }
 
 /*
@@ -106,9 +97,7 @@ void _arch_mem_domain_destroy(struct k_mem_domain *domain)
 {
 	ARG_UNUSED(domain);
 
-	arm_core_mpu_disable();
 	arm_core_mpu_configure_mem_domain(NULL);
-	arm_core_mpu_enable();
 }
 
 /*
