@@ -432,6 +432,7 @@ def extract_node_include_info(reduced, root_node_address, sub_node_address,
     filter_list = ['interrupt-names',
                     'reg-names',
                     'phandle',
+                    'soc-label',
                     'linux,phandle']
     node = reduced[sub_node_address]
     node_compat = get_compat(root_node_address)

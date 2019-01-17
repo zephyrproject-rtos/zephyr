@@ -43,6 +43,18 @@ class DTCompatible(DTDirective):
                 compat_defs: "1",
             }
             insert_defs(node_address, load_defs, {})
+
+            # Generate defines of the form:
+            # #define DT_<COMPAT>_SOC_<SOC LABEL> 1
+            if 'soc-label' in reduced[node_address]['props'].keys():
+                soc_label = reduced[node_address]['props']['soc-label']
+
+                soc_instance = 'DT_' + compat_label + '_SOC_' + str(soc_label)
+                load_defs = {
+                    soc_instance: "1",
+                }
+                insert_defs(node_address, load_defs, {})
+
             # Generate #define for BUS a "sensor" might be on
             # for example:
             # #define DT_ST_LPS22HB_PRESS_BUS_SPI 1
