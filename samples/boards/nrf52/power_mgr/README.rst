@@ -104,5 +104,9 @@ nRF52 core output
   --> Entering to SYS_POWER_STATE_CPU_LPS_2 state.
   --> Exited from SYS_POWER_STATE_CPU_LPS_2 state.
 
-  Press BUTTON1 to enter into Deep Sleep state. Press BUTTON2 to exit Deep Sleep state
-  --> Entering to SYS_POWER_STATE_DEEP_SLEEP state.
+  <-- Enabling SYS_POWER_STATE_CPU_LPS_1 state --->
+  <-- Forcing SYS_POWER_STATE_CPU_LPS_2 state --->
+
+  <-- App doing busy wait for 10 Sec -->
+
+  <-- App going to sleep for 10 Sec -->
