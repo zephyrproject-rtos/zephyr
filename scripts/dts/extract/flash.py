@@ -60,12 +60,14 @@ class DTFlash(DTDirective):
         insert_defs(node_address, prop_def, prop_alias)
 
     def _extract_flash(self, node_address, prop, def_label):
-        load_defs = {
-            'CONFIG_FLASH_BASE_ADDRESS': 0,
-            'CONFIG_FLASH_SIZE': 0
-        }
+        load_defs = {}
 
         if node_address == 'dummy-flash':
+            load_defs = {
+                'CONFIG_FLASH_BASE_ADDRESS': 0,
+                'CONFIG_FLASH_SIZE': 0
+            }
+
             # We will add addr/size of 0 for systems with no flash controller
             # This is what they already do in the Kconfig options anyway
             insert_defs(node_address, load_defs, {})
@@ -73,12 +75,15 @@ class DTFlash(DTDirective):
             return
 
         self._flash_node = reduced[node_address]
+        orig_node_addr = node_address
 
         (nr_address_cells, nr_size_cells) = get_addr_size_cells(node_address)
         # if the nr_size_cells is 0, assume a SPI flash, need to look at parent
         # for addr/size info, and the second reg property (assume first is mmio
         # register for the controller itself)
+        is_spi_flash = False
         if (nr_size_cells == 0):
+            is_spi_flash = True
             node_address = get_parent_address(node_address)
             (nr_address_cells, nr_size_cells) = get_addr_size_cells(node_address)
 
@@ -93,21 +98,29 @@ class DTFlash(DTDirective):
         if isinstance(props[0], list):
             props = [item for sublist in props for item in sublist]
 
-        # We assume the last reg property is the one we want
-        while props:
-            addr = 0
-            size = 0
+        num_reg_elem = len(props)/(nr_address_cells + nr_size_cells)
 
-            for x in range(nr_address_cells):
-                addr += props.pop(0) << (32 * (nr_address_cells - x - 1))
-            for x in range(nr_size_cells):
-                size += props.pop(0) << (32 * (nr_size_cells - x - 1))
+        # if we found a spi flash, but don't have mmio direct access support
+        # which we determin by the spi controller node only have on reg element
+        # (ie for the controller itself and no region for the MMIO flash access)
+        if (num_reg_elem == 1 and is_spi_flash):
+            node_address = orig_node_addr
+        else:
+            # We assume the last reg property is the one we want
+            while props:
+                addr = 0
+                size = 0
 
-        addr += translate_addr(addr, node_address,
-                nr_address_cells, nr_size_cells)
+                for x in range(nr_address_cells):
+                    addr += props.pop(0) << (32 * (nr_address_cells - x - 1))
+                for x in range(nr_size_cells):
+                    size += props.pop(0) << (32 * (nr_size_cells - x - 1))
 
-        load_defs['CONFIG_FLASH_BASE_ADDRESS'] = hex(addr)
-        load_defs['CONFIG_FLASH_SIZE'] = int(size / 1024)
+            addr += translate_addr(addr, node_address,
+                    nr_address_cells, nr_size_cells)
+
+            load_defs['CONFIG_FLASH_BASE_ADDRESS'] = hex(addr)
+            load_defs['CONFIG_FLASH_SIZE'] = int(size / 1024)
 
         flash_props = ["label", "write-block-size", "erase-block-size"]
         for prop in flash_props:
