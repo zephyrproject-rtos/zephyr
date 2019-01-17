@@ -1,0 +1,21 @@
+---
+title: Common MMIO SOC properties
+version: 0.1
+
+description: >
+    This binding gives a base representation of a SoC Device
+
+properties:
+    reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+    soc-label:
+      type: string
+      category: optional
+      description: >
+              Label as defined by SoC Vendor documentation (ie "0", "1",
+              or "A", "B") meant for code generation specifically
+      generation: define
