@@ -16,6 +16,7 @@
 LOG_MODULE_REGISTER(power);
 
 static int post_ops_done = 1;
+static enum power_states forced_pm_state = SYS_POWER_STATE_AUTO;
 static enum power_states pm_state;
 
 #ifdef CONFIG_PM_CONTROL_OS_DEBUG
@@ -73,11 +74,22 @@ __weak void sys_pm_notify_lps_exit(enum power_states state)
 	/* This function can be overridden by the application. */
 }
 
+void sys_pm_force_power_state(enum power_states state)
+{
+	__ASSERT(state >= SYS_POWER_STATE_AUTO &&
+		 state <  SYS_POWER_STATE_MAX,
+		 "Invalid power state %d!", state);
+
+	forced_pm_state = state;
+}
+
 enum power_states sys_suspend(s32_t ticks)
 {
 	bool deep_sleep;
 
-	pm_state = sys_pm_policy_next_state(ticks);
+	pm_state = (forced_pm_state == SYS_POWER_STATE_AUTO) ?
+		   sys_pm_policy_next_state(ticks) : forced_pm_state;
+
 	if (pm_state == SYS_POWER_STATE_ACTIVE) {
 		LOG_DBG("No PM operations done.");
 		return pm_state;
