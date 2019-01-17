@@ -1,0 +1,9 @@
+# Kconfig - nRF9160 PCA10090 board configuration
+#
+# Copyright (c) 2018 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NRF9160_PCA10090
+	bool "nRF9160 PCA10090"
+	depends on SOC_NRF9160_SICA
