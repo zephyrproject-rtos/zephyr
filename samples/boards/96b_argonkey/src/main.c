@@ -149,11 +149,12 @@ void main(void)
 	printk("ArgonKey test!!\n");
 
 #ifdef CONFIG_LPS22HB
-	struct device *baro_dev = device_get_binding(DT_LPS22HB_DEV_NAME);
+	struct device *baro_dev =
+			device_get_binding(DT_ST_LPS22HB_PRESS_0_LABEL);
 
 	if (!baro_dev) {
 		printk("Could not get pointer to %s sensor\n",
-			DT_LPS22HB_DEV_NAME);
+			DT_ST_LPS22HB_PRESS_0_LABEL);
 		return;
 	}
 #endif
