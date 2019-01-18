@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Linaro Limited
+ * Copyright (c) 2018-2019 Linaro Limited
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,20 @@ dtimer0: dtimer@2000 {
 	reg = <0x2000 0x1000>;
 	interrupts = <5 3>;
 	label = "DTIMER_0";
+};
+
+mhu0: mhu@3000 {
+	compatible = "arm,mhu";
+	reg = <0x3000 0x1000>;
+	interrupts = <6 3>;
+	label = "MHU_0";
+};
+
+mhu1: mhu@4000 {
+	compatible = "arm,mhu";
+	reg = <0x4000 0x1000>;
+	interrupts = <7 3>;
+	label = "MHU_1";
 };
 
 wdog0: wdog@81000 {
