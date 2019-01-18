@@ -91,6 +91,7 @@ config OPENTHREAD_THREAD_PRIORITY
 
 config OPENTHREAD_THREAD_STACK_SIZE
 	int "OpenThread thread stack size"
+	default 6144 if OPENTHREAD_COMMISSIONER
 	default 3072
 
 config OPENTHREAD_PKT_LIST_SIZE
