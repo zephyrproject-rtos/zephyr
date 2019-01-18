@@ -80,12 +80,20 @@ if(CONFIG_HAS_DTS)
   endif()
 
   # Run the DTC on *.dts.pre.tmp to create the intermediary file *.dts_compiled
+
+  set(DTC_WARN_UNIT_ADDR_IF_ENABLED "")
+  check_dtc_flag("-Wunique_unit_address_if_enabled" check)
+  if (check)
+    set(DTC_WARN_UNIT_ADDR_IF_ENABLED "-Wunique_unit_address_if_enabled")
+  endif()
   execute_process(
     COMMAND ${DTC}
     -O dts
     -o ${BOARD}.dts_compiled
     -b 0
     -E unit_address_vs_reg
+    -W no-unique_unit_address
+    ${DTC_WARN_UNIT_ADDR_IF_ENABLED}
     ${EXTRA_DTC_FLAGS} # User settable
     ${BOARD}.dts.pre.tmp
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
