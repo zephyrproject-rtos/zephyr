@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2019 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,7 +8,7 @@
 #ifndef ZEPHYR_INCLUDE_NET_SNTP_H_
 #define ZEPHYR_INCLUDE_NET_SNTP_H_
 
-#include <net/net_app.h>
+#include <net/socket.h>
 
 struct sntp_ctx;
 
@@ -20,64 +21,52 @@ struct sntp_ctx;
  * @param ctx Address of sntp context.
  * @param status Error code of sntp response.
  * @param epoch_time Seconds since 1 January 1970.
- * @param user_data The user data given in sntp_request().
  */
 
-typedef void (*sntp_resp_cb_t)(struct sntp_ctx *ctx,
-			       int status,
-			       u64_t epoch_time,
-			       void *user_data);
+typedef void (*sntp_resp_cb_t)(struct sntp_ctx *ctx, int status,
+			       u64_t epoch_time);
 
 /** SNTP context */
 struct sntp_ctx {
-	/** Network application context */
-	struct net_app_ctx  net_app_ctx;
+	struct {
+		struct pollfd fds[1];
+		int nfds;
+		int fd;
+	} sock;
 
-	/** Timestamp when the request is departed the client for the server.
+	/** Timestamp when the request was sent from client to server.
 	 *  This is used to check if the originated timestamp in the server
 	 *  reply matches the one in client request.
 	 */
-	u32_t		    expected_orig_ts;
+	u32_t expected_orig_ts;
 
 	/** SNTP response callback */
-	sntp_resp_cb_t      cb;
-
-	/** The user data of SNTP response callback */
-	void                *user_data;
-
-	/** Is this context setup or not */
-	bool                is_init;
+	sntp_resp_cb_t cb;
 };
 
 /**
  * @brief Initialize SNTP context
  *
  * @param ctx Address of sntp context.
- * @param srv_addr IP address of NTP/SNTP server.
- * @param srv_port Port number of NTP/SNTP server.
- * @param timeout Timeout of sntp context initialization (in milliseconds).
+ * @param addr IP address of NTP/SNTP server.
+ * @param addr_len IP address length of NTP/SNTP server.
  *
  * @return 0 if ok, <0 if error.
  */
-int sntp_init(struct sntp_ctx *ctx,
-	      const char *srv_addr,
-	      u16_t srv_port,
-	      u32_t timeout);
+int sntp_init(struct sntp_ctx *ctx, struct sockaddr *addr,
+	      socklen_t addr_len);
 
 /**
  * @brief Send SNTP request
  *
  * @param ctx Address of sntp context.
- * @param timeout Timeout of sending sntp request (in milliseconds).
+ * @param timeout Timeout of waiting for sntp response (in milliseconds).
  * @param callback Callback function of sntp response.
- * @param user_data User data that will be passed to callback function.
  *
  * @return 0 if ok, <0 if error.
  */
-int sntp_request(struct sntp_ctx *ctx,
-		 u32_t timeout,
-		 sntp_resp_cb_t callback,
-		 void *user_data);
+int sntp_request(struct sntp_ctx *ctx, u32_t timeout,
+		 sntp_resp_cb_t callback);
 
 /**
  * @brief Release SNTP context

@@ -5,8 +5,8 @@
 #
 
 menuconfig SNTP
-	bool "SNTP Support"
-	select NET_APP_CLIENT
+	bool "SNTP"
+	select NET_SOCKETS
 	help
 	  Enable SNTP client library
 

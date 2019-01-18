@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2019 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -45,9 +46,10 @@ static void sntp_pkt_dump(struct sntp_pkt *pkt)
 }
 
 static s32_t parse_response(u8_t *data, u16_t len, u32_t orig_ts,
-				u64_t *epoch_time)
+			    u64_t *epoch_time)
 {
 	struct sntp_pkt *pkt = (struct sntp_pkt *)data;
+	u32_t ts;
 
 	sntp_pkt_dump(pkt);
 
@@ -81,69 +83,62 @@ static s32_t parse_response(u8_t *data, u16_t len, u32_t orig_ts,
 		return -EINVAL;
 	}
 
-	if (epoch_time) {
-		u32_t ts = ntohl(pkt->tx_tm_s);
+	ts = ntohl(pkt->tx_tm_s);
 
-		/* Check if most significant bit is set */
-		if (ts & 0x80000000) {
-			/* UTC time is reckoned from 0h 0m 0s UTC
-			 * on 1 January 1900.
-			 */
-			if (ts >= OFFSET_1970_JAN_1) {
-				*epoch_time = ts - OFFSET_1970_JAN_1;
-			} else {
-				return -EINVAL;
-			}
+	/* Check if most significant bit is set */
+	if (ts & 0x80000000) {
+		/* UTC time is reckoned from 0h 0m 0s UTC
+		 * on 1 January 1900.
+		 */
+		if (ts >= OFFSET_1970_JAN_1) {
+			*epoch_time = ts - OFFSET_1970_JAN_1;
 		} else {
-			/* UTC time is reckoned from 6h 28m 16s UTC
-			 * on 7 February 2036.
-			 */
-			*epoch_time = ts + 0x100000000 - OFFSET_1970_JAN_1;
+			return -EINVAL;
 		}
+	} else {
+		/* UTC time is reckoned from 6h 28m 16s UTC
+		 * on 7 February 2036.
+		 */
+		*epoch_time = ts + 0x100000000 - OFFSET_1970_JAN_1;
 	}
 
 	return 0;
 }
 
-static void sntp_recv_cb(struct net_app_ctx *ctx, struct net_pkt *pkt,
-			int status, void *user_data)
+static int sntp_recv_response(struct sntp_ctx *sntp, u32_t timeout)
 {
-	struct sntp_ctx *sntp = (struct sntp_ctx *)user_data;
 	struct sntp_pkt buf = { 0 };
-	u64_t epoch_time = 0U;
-	u64_t tmp = 0U;
-	u16_t offset = 0U;
-	size_t out_len;
+	u64_t epoch_time = 0;
+	int status;
+	int rcvd;
 
-	if (status < 0) {
+	if (poll(sntp->sock.fds, sntp->sock.nfds, timeout) < 0) {
+		NET_ERR("Error in poll:%d", errno);
+		status = -errno;
 		goto error_exit;
 	}
 
-	if (net_pkt_appdatalen(pkt) != sizeof(struct sntp_pkt)) {
+	rcvd = recv(sntp->sock.fd, (u8_t *)&buf, sizeof(buf), 0);
+	if (rcvd < 0) {
+		status = -errno;
+		goto error_exit;
+	}
+
+	if (rcvd != sizeof(struct sntp_pkt)) {
 		status = -EMSGSIZE;
 		goto error_exit;
 	}
 
-	/* copy to buf */
-	offset = net_pkt_get_len(pkt) - net_pkt_appdatalen(pkt);
-	out_len = net_frag_linearize((u8_t *)&buf, sizeof(buf), pkt, offset,
-				     sizeof(buf));
-	if (out_len != sizeof(buf)) {
-		goto error_exit;
-	}
-
 	status = parse_response((u8_t *)&buf, sizeof(buf),
-				sntp->expected_orig_ts, &tmp);
-	if (status == 0) {
-		epoch_time = tmp;
-	}
+				sntp->expected_orig_ts,
+				&epoch_time);
 
 error_exit:
 	if (sntp->cb) {
-		sntp->cb(sntp, status, epoch_time, sntp->user_data);
+		sntp->cb(sntp, status, epoch_time);
 	}
 
-	net_pkt_unref(pkt);
+	return status;
 }
 
 static u32_t get_uptime_in_sec(void)
@@ -155,53 +150,46 @@ static u32_t get_uptime_in_sec(void)
 	return time / MSEC_PER_SEC;
 }
 
-int sntp_init(struct sntp_ctx *ctx, const char *srv_addr, u16_t srv_port,
-	      u32_t timeout)
+int sntp_init(struct sntp_ctx *ctx, struct sockaddr *addr, socklen_t addr_len)
 {
-	int rv;
+	int ret;
 
-	if (!ctx) {
+	if (!ctx || !addr) {
 		return -EFAULT;
 	}
 
-	(void)memset(ctx, 0, sizeof(struct sntp_ctx));
+	memset(ctx, 0, sizeof(struct sntp_ctx));
 
-	rv = net_app_init_udp_client(&ctx->net_app_ctx, NULL, NULL, srv_addr,
-				     srv_port, timeout, ctx);
-	if (rv < 0) {
-		NET_DBG("Failed to init udp client: %d", rv);
-		return rv;
+	ctx->sock.fd = socket(addr->sa_family, SOCK_DGRAM, IPPROTO_UDP);
+	if (ctx->sock.fd < 0) {
+		NET_ERR("Failed to create UDP socket %d", errno);
+		return -errno;
 	}
 
-	rv = net_app_set_cb(&ctx->net_app_ctx, NULL, sntp_recv_cb, NULL, NULL);
-	if (rv < 0) {
-		NET_DBG("Failed to set net app callback: %d", rv);
-		return rv;
+	ret = connect(ctx->sock.fd, addr, addr_len);
+	if (ret < 0) {
+		NET_ERR("Cannot connect to UDP remote : %d", errno);
+		return -errno;
 	}
 
-	ctx->is_init = true;
+	ctx->sock.fds[ctx->sock.nfds].fd = ctx->sock.fd;
+	ctx->sock.fds[ctx->sock.nfds].events = POLLIN;
+	ctx->sock.nfds++;
 
 	return 0;
 }
 
-int sntp_request(struct sntp_ctx *ctx,
-		 u32_t timeout,
-		 sntp_resp_cb_t callback,
-		 void *user_data)
+int sntp_request(struct sntp_ctx *ctx, u32_t timeout,
+		 sntp_resp_cb_t callback)
 {
 	struct sntp_pkt tx_pkt = { 0 };
-	int rv = 0;
+	int ret = 0;
 
-	if (!ctx) {
+	if (!ctx || !callback) {
 		return -EFAULT;
 	}
 
-	if (!ctx->is_init) {
-		return -EINVAL;
-	}
-
 	ctx->cb = callback;
-	ctx->user_data = user_data;
 
 	/* prepare request pkt */
 	LVM_SET_LI(tx_pkt.lvm, 0);
@@ -210,27 +198,18 @@ int sntp_request(struct sntp_ctx *ctx,
 	ctx->expected_orig_ts = get_uptime_in_sec() + OFFSET_1970_JAN_1;
 	tx_pkt.tx_tm_s = htonl(ctx->expected_orig_ts);
 
-	rv = net_app_connect(&ctx->net_app_ctx, K_NO_WAIT);
-	if (rv < 0) {
-		NET_DBG("Failed to connect: %d", rv);
-		return rv;
+	ret = send(ctx->sock.fd, (u8_t *)&tx_pkt, sizeof(tx_pkt), 0);
+	if (ret < 0) {
+		NET_ERR("Failed to send over UDP socket %d", ret);
+		return ret;
 	}
 
-	rv = net_app_send_buf(&ctx->net_app_ctx, (u8_t *)&tx_pkt,
-			      sizeof(tx_pkt),
-			      &SNTP_CTX_SRV_SOCKADDR(ctx),
-			      sizeof(SNTP_CTX_SRV_SOCKADDR(ctx)),
-			      timeout, NULL);
-	return rv;
+	return sntp_recv_response(ctx, timeout);
 }
 
 void sntp_close(struct sntp_ctx *ctx)
 {
-	if (!ctx || !ctx->is_init) {
-		return;
+	if (ctx) {
+		close(ctx->sock.fd);
 	}
-
-	net_app_close(&ctx->net_app_ctx);
-	net_app_release(&ctx->net_app_ctx);
-	ctx->is_init = false;
 }
