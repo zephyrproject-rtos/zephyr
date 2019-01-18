@@ -49,4 +49,6 @@ struct socket_op_vtable {
 
 int ztls_socket(int family, int type, int proto);
 
+int zpacket_socket(int family, int type, int proto);
+
 #endif /* _SOCKETS_INTERNAL_H_ */

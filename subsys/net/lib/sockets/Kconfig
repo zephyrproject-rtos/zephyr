@@ -96,6 +96,18 @@ config NET_SOCKETS_OFFLOAD
 	  See NET_OFFLOAD for a more deeply integrated approach which offloads
 	  from the net_context() API within the Zephyr IP stack.
 
+config NET_SOCKETS_PACKET
+	bool "Enable packet socket support"
+	default n
+	depends on NET_L2_ETHERNET
+	help
+	  This is an initial version of packet socket support (special type
+	  raw socket). Packets are passed to and from the device driver
+	  without any changes in the packet headers. It's API caller
+	  responsibility to provide all the headers (e.g L2, L3 and so on)
+	  while sending. While receiving, packets (including all the headers)
+	  will be feed to sockets as it as from the driver.
+
 module = NET_SOCKETS
 module-dep = NET_LOG
 module-str = Log level for BSD sockets compatible API calls
