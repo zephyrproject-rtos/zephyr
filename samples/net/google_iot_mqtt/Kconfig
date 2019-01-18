@@ -1,0 +1,36 @@
+# Kconfig - Private config options for Google Cloud IOT application
+
+#
+# Copyright (c) 2018 Linaro
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+mainmenu "Google IOT MQTT/TLS sample application"
+
+config CLOUD_CLIENT_ID
+	string "Client ID string"
+	default "put client string here"
+	help
+	  Set required client string that matches Google Cloud project
+
+config CLOUD_AUDIENCE
+	string "Audience string"
+	default "put audience string here"
+	help
+	  Set required audience string that matches Google Cloud project
+
+config CLOUD_SUBSCRIBE_CONFIG
+	string "Subscription string for config"
+	default "put subscription string here"
+	help
+	  Set required subscription string that matches Google Cloud project
+	  config item.
+
+config CLOUD_PUBLISH_TOPIC
+	string "Publish topic string"
+	default "put topic string here"
+	help
+	  Set publish topics string that matches Google Cloud project
+
+source "Kconfig.zephyr"
