@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&i2c0 { /* SDA 0, SCL 1 */
+&i2c0 { /* SDA H16=PC10, SCL H15=PC11, ALERT H13=PF6 */
 	sht3xd@44 {
 		compatible = "sensirion,sht3xd";
 		reg = <0x44>;
 		label = "SHT3XD";
-		alert-gpios = <&gpio0 2 GPIO_INT_ACTIVE_HIGH>;
+		alert-gpios = <&gpiof 6 GPIO_INT_ACTIVE_HIGH>;
 	};
 };
