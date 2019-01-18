@@ -32,7 +32,7 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def do_add_parser(cls, parser):
         parser.add_argument('--nrf-family', required=True,
-                            choices=['NRF51', 'NRF52'],
+                            choices=['NRF51', 'NRF52', 'NRF91'],
                             help='family of nRF MCU')
         parser.add_argument('--softreset', required=False,
                             action='store_true',
