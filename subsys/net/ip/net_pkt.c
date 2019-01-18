@@ -2183,7 +2183,13 @@ struct net_pkt *net_pkt_clone(struct net_pkt *pkt, s32_t timeout)
 
 	net_pkt_set_ip_hdr_len(clone, net_pkt_ip_hdr_len(pkt));
 	net_pkt_set_vlan_tag(clone, net_pkt_vlan_tag(pkt));
+	net_pkt_set_appdata(clone, NULL);
 	net_pkt_set_appdatalen(clone, net_pkt_appdatalen(pkt));
+	net_pkt_set_transport_proto(clone, net_pkt_transport_proto(pkt));
+
+	net_pkt_set_timestamp(clone, net_pkt_timestamp(pkt));
+	net_pkt_set_priority(clone, net_pkt_priority(pkt));
+	net_pkt_set_orig_iface(clone, net_pkt_orig_iface(pkt));
 
 	net_pkt_set_family(clone, net_pkt_family(pkt));
 
