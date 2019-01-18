@@ -35,7 +35,7 @@ config ETH_MCUX_PHY_EXTRA_DEBUG
 config ETH_MCUX_RX_BUFFERS
 	int "Number of MCUX RX buffers"
 	depends on ETH_MCUX
-	default 2
+	default 1
 	range 1 16
 	help
 	  Set the number of RX buffers provided to the MCUX driver.
@@ -43,7 +43,7 @@ config ETH_MCUX_RX_BUFFERS
 config ETH_MCUX_TX_BUFFERS
 	int "Number of MCUX TX buffers"
 	depends on ETH_MCUX
-	default 2
+	default 1
 	range 1 16
 	help
 	  Set the number of TX buffers provided to the MCUX driver.
