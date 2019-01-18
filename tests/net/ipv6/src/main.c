@@ -119,7 +119,6 @@ static const unsigned char ipv6_hbho[] = {
 };
 
 static bool expecting_ra;
-static bool expecting_dad;
 static u32_t dad_time[3];
 static bool test_failed;
 static struct k_sem wait_data;
@@ -233,17 +232,15 @@ static int tester_send(struct device *dev, struct net_pkt *pkt)
 	}
 
 	if (icmp->type == NET_ICMPV6_NS) {
-		if (expecting_dad) {
-			if (dad_time[0] == 0) {
-				dad_time[0] = k_uptime_get_32();
-			} else if (dad_time[1] == 0) {
-				dad_time[1] = k_uptime_get_32();
-			} else if (dad_time[2] == 0) {
-				dad_time[2] = k_uptime_get_32();
-			}
-
-			goto out;
+		if (dad_time[0] == 0) {
+			dad_time[0] = k_uptime_get_32();
+		} else if (dad_time[1] == 0) {
+			dad_time[1] = k_uptime_get_32();
+		} else if (dad_time[2] == 0) {
+			dad_time[2] = k_uptime_get_32();
 		}
+
+		goto out;
 	}
 
 	/* Feed this data back to us */
@@ -1075,7 +1072,7 @@ static void test_dad_timeout(void)
 
 	struct net_if_addr *ifaddr;
 
-	expecting_dad = true;
+	dad_time[0] = dad_time[1] = dad_time[2] = 0;
 
 	ifaddr = net_if_ipv6_addr_add(iface, &addr1, NET_ADDR_AUTOCONF, 0xffff);
 	zassert_not_null(ifaddr, "Address 1 cannot be added");
@@ -1100,8 +1097,6 @@ static void test_dad_timeout(void)
 	zassert_true((dad_time[2] - dad_time[0]) < 100,
 		     "DAD timers took too long time [%u] [%u] [%u]",
 		     dad_time[0], dad_time[1], dad_time[2]);
-
-	expecting_dad = false;
 #endif
 }
 
