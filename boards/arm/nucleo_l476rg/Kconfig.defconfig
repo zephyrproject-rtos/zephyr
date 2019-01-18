@@ -30,7 +30,7 @@ endif # SPI
 
 if I2C
 
-config I2C_3
+config I2C_1
 	default y
 
 endif # SPI

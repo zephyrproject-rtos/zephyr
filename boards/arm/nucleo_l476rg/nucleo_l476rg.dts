@@ -54,7 +54,12 @@
 	status = "ok";
 };
 
-arduino_i2c: &i2c3 {
+arduino_i2c: &i2c1 {
+	status = "ok";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&i2c3 {
 	status = "ok";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
