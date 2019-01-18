@@ -46,6 +46,10 @@
 		spi-1 = &spi1;
 		spi-2 = &spi2;
 		spi-3 = &spi3;
+		pwm-0 = &pwm0;
+		pwm-1 = &pwm1;
+		pwm-2 = &pwm2;
+		pwm-3 = &pwm3;
 		wdt-0 = &wdt;
 		timer-0 = &timer0;
 		timer-1 = &timer1;
