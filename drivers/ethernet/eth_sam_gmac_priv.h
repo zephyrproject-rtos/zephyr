@@ -169,7 +169,6 @@ struct gmac_queue {
 	struct gmac_desc_list rx_desc_list;
 	struct gmac_desc_list tx_desc_list;
 	struct k_sem tx_desc_sem;
-	struct k_delayed_work tx_timeout_work;
 
 	struct ring_buf rx_frag_list;
 	struct ring_buf tx_frames;
